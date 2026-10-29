@@ -66,7 +66,7 @@ const AI_GRADING_ACTOR = "system";
 
 export interface AiGradingDeps {
 	getDb(): Db;
-	/** Vắng mặt / binding thiếu → `AI_GRADING_DISABLED` (fail-closed). */
+	/** Vắng mặt / binding thiếu → pipeline thoát sớm, không draft, không Credit. */
 	getAiGrader?(): AiGrader | undefined;
 	/** Xem `AppDeps.runInBackground` — vắng mặt thì fire-and-forget. */
 	runInBackground?(promise: Promise<unknown>): void;
@@ -282,6 +282,9 @@ function waitBackoff(ms: number): Promise<void> {
 /**
  * Pipeline chấm nháp một attempt (TOS-30 D3; vòng retry TOS-33 D2):
  *
+ * - Không có grader (AI tắt) → thoát ngay, trước draft và reserve: prod tắt AI
+ *   không sinh dòng ledger/ví nhiễu. Riêng entry retry (draft đã CAS về
+ *   `ai_processing`) trả draft về `manual_pending` `AI_GRADING_DISABLED`.
  * - Luồng thường: tạo draft `ai_processing` (idempotent — đã có draft thì
  *   thoát) → Speaking thiếu transcript thoát không tốn Credit (TOS-31 thay)
  *   → reserve → gọi grader TỐI ĐA 3 LƯỢT (1 + 2 retry, backoff 1s/2s,
@@ -301,6 +304,16 @@ export async function runAiGrading(
 ): Promise<void> {
 	const db = deps.getDb();
 	const retryCount = options.retryCount ?? 0;
+	const grader = deps.getAiGrader?.();
+	if (!grader) {
+		if (retryCount >= 1) {
+			await casDraftFromProcessing(db, attemptId, {
+				status: "manual_pending",
+				errorCode: AI_GRADING_ERROR_CODES.DISABLED,
+			});
+		}
+		return;
+	}
 	const attempt = await loadAttemptForGrading(db, attemptId);
 	if (!attempt) return;
 
@@ -394,23 +407,6 @@ export async function runAiGrading(
 		} else {
 			throw error;
 		}
-	}
-
-	const grader = deps.getAiGrader?.();
-	if (!grader) {
-		// Fail-closed như extractor (binding AI thiếu) — hoàn Credit hoặc lượt quick.
-		// KHÔNG retry: lỗi cấu hình, gọi lại vô ích.
-		if (quickMode) {
-			await failQuickDraft(
-				db,
-				attempt.orgId,
-				attemptId,
-				AI_GRADING_ERROR_CODES.DISABLED,
-			);
-		} else {
-			await failDraft(db, settle, attemptId, AI_GRADING_ERROR_CODES.DISABLED);
-		}
-		return;
 	}
 
 	// Ngân sách TỔNG đo từ TRƯỚC lượt gọi đầu (kongming advisory #481 R3):

@@ -92,7 +92,7 @@ export interface StudentRouteDeps {
 	getMediaStore?(): MediaStore | undefined;
 	/** Xem `AppDeps.runInBackground`. */
 	runInBackground?(promise: Promise<unknown>): void;
-	/** TOS-30: grader chấm nháp AI — vắng mặt → draft `AI_GRADING_DISABLED`. */
+	/** TOS-30: grader chấm nháp AI — vắng mặt → bỏ qua chấm nháp. */
 	getAiGrader?(): AiGrader | undefined;
 }
 

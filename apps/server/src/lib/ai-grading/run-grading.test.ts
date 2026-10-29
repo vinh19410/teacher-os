@@ -293,7 +293,10 @@ describe("runAiGrading (TOS-30 pipeline reserve → grade → settle/release)", 
 			submittedAt: new Date(),
 		});
 
-		await runAiGrading({ getDb: () => db }, "a-spk");
+		await runAiGrading(
+			{ getDb: () => db, getAiGrader: () => createFakeAiGrader() },
+			"a-spk",
+		);
 
 		const row = await draft("a-spk");
 		expect(row?.status).toBe("manual_pending");
@@ -350,17 +353,35 @@ describe("runAiGrading (TOS-30 pipeline reserve → grade → settle/release)", 
 		expect(await draft("a-missing")).toBeNull();
 	});
 
-	test("binding AI thiếu → manual_pending AI_GRADING_DISABLED + released", async () => {
+	test("AI tắt (không có grader) → không draft, không dòng credit_usage_log, ví không đổi", async () => {
 		await seedSubmittedWritingAttempt("a-disabled");
+		const before = await readWallet(db, ORG);
 		await runAiGrading({ getDb: () => db }, "a-disabled");
 
-		const row = await draft("a-disabled");
+		expect(await draft("a-disabled")).toBeNull();
+		expect(await logs("a-disabled")).toEqual([]);
+		expect(await readWallet(db, ORG)).toEqual(before);
+	});
+
+	test("AI tắt + entry retry → draft về manual_pending AI_GRADING_DISABLED, không đụng ví", async () => {
+		await seedSubmittedWritingAttempt("a-disabled-retry");
+		await db.insert(aiGradingDraft).values({
+			attemptId: "a-disabled-retry",
+			orgId: ORG,
+			skill: "writing",
+			creditCost: 1,
+			status: "ai_processing",
+		});
+		const before = await readWallet(db, ORG);
+		await runAiGrading({ getDb: () => db }, "a-disabled-retry", {
+			retryCount: 1,
+		});
+
+		const row = await draft("a-disabled-retry");
 		expect(row?.status).toBe("manual_pending");
 		expect(row?.errorCode).toBe("AI_GRADING_DISABLED");
-		expect((await logs("a-disabled")).map((l) => l.txStatus)).toEqual([
-			"reserved",
-			"released",
-		]);
+		expect(await logs("a-disabled-retry")).toEqual([]);
+		expect(await readWallet(db, ORG)).toEqual(before);
 	});
 
 	test("org chưa từng có ví → ensureWallet tạo lười, vẫn ai_drafted", async () => {
@@ -652,33 +673,6 @@ describe("runAiGrading (TOS-30 pipeline reserve → grade → settle/release)", 
 		// Sổ cái của a-quick-fail có đủ settled + reverted (triệt tiêu lượt)
 		const ledger = await logs("a-quick-fail");
 		expect(ledger.map((l) => l.txStatus)).toEqual(["settled", "reverted"]);
-	});
-
-	test("TOS-32: quick mode nhưng binding AI thiếu (getAiGrader undefined) → manual_pending DISABLED, hoàn lượt quick, KHÔNG đụng held của job khác", async () => {
-		await db
-			.update(schema.creditWallet)
-			.set({ balance: 5, held: 0, planKind: "monthly", planStatus: "active" })
-			.where(eq(schema.creditWallet.orgId, ORG));
-		await reserveCredits(db, {
-			orgId: ORG,
-			actorUserId: "teacher-1",
-			amount: 5,
-			refId: "import-job-disabled",
-			actionType: "exam_import",
-		});
-
-		await seedSubmittedWritingAttempt("a-quick-disabled");
-		await runAiGrading({ getDb: () => db }, "a-quick-disabled");
-
-		const row = await draft("a-quick-disabled");
-		expect(row?.status).toBe("manual_pending");
-		expect(row?.gradingMode).toBe("quick");
-		expect(row?.errorCode).toBe(AI_GRADING_ERROR_CODES.DISABLED);
-		expect(await readWallet(db, ORG)).toEqual({ balance: 5, held: 5 });
-		expect((await logs("a-quick-disabled")).map((l) => l.txStatus)).toEqual([
-			"settled",
-			"reverted",
-		]);
 	});
 
 	test("TOS-32: quick mode thua CAS ai_drafted (teacher publish trước khi AI xong) → hoàn lượt quick, KHÔNG đụng held của job khác", async () => {
