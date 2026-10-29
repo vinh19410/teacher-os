@@ -36,7 +36,8 @@
 			"!**/apps/landing/public",
 			"!**/packages/api/src/srs/vectors",
 			"!assets/videos",
-			"!plans/reports/**/*.html"
+			"!plans/reports/**/*.html",
+			"!.cursor/skills"
 		]
 	},
 	"formatter": {
