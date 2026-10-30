@@ -10,6 +10,7 @@ export * from "./credit-wallet";
 export * from "./enrollment";
 export * from "./exam-import-job";
 export * from "./invoice";
+export * from "./lead";
 export * from "./lesson";
 export * from "./library-test";
 export * from "./membership";

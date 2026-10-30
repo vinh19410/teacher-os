@@ -101,6 +101,7 @@ import { activateEnrollment } from "./enrollment-activation";
 import { eventRoutes } from "./events";
 import { gradingRoutes } from "./grading";
 import { holidayRoutes, isRollbackableConstraintError } from "./holidays";
+import { leadRoutes } from "./leads";
 import { notificationLogRoutes } from "./notification-logs";
 import { paymentTransactionRoutes } from "./payment-transactions";
 import { commentBankRoutes, notifRoutes, reportRoutes } from "./reporting";
@@ -1972,6 +1973,8 @@ export function kernelRoutes(deps: {
 	kernel.route("/grading", gradingRoutes(deps));
 	// #454 phase 5: log thông báo cho teacher — GET /api/notification-logs.
 	kernel.route("/notification-logs", notificationLogRoutes(deps));
+	// #506 phase 3: quản lý lead đăng ký — GET/PATCH /api/leads.
+	kernel.route("/leads", leadRoutes(deps));
 	// TOS-6 (#439): bộ đếm 3 thẻ "Việc cần làm hôm nay" — GET /api/dashboard/reminders.
 	kernel.route("/dashboard", dashboardReminderRoutes(deps));
 	// TOS-7 (#440): danh sách ca điểm danh theo ngày — GET /api/attendance/daily.

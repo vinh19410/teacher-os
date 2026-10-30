@@ -22,6 +22,9 @@ This is the navigation surface for the repository. It points to the owning files
 - [apps/server/src/routes/snapshot.ts](../apps/server/src/routes/snapshot.ts) - snapshot loader
 - [apps/server/src/routes/bank-hub-webhooks.ts](../apps/server/src/routes/bank-hub-webhooks.ts) - SePay Bank Hub inbound webhooks (lifecycle events + balance IPN), mounted outside `/api/*` (#320)
 - [apps/server/src/routes/bank-link.ts](../apps/server/src/routes/bank-link.ts) - teacher bank-account linking via hosted link + manual reconciliation, kernel-tree subrouter (#320)
+- [apps/server/src/routes/public-leads.ts](../apps/server/src/routes/public-leads.ts) - public lead intake `POST /public/leads` cho form đăng ký msmy.io.vn — mount ngoài `/api/*`, CORS riêng theo `LEAD_ORIGINS`, honeypot + rate limit theo IP hash (`LEAD_IP_*`, HMAC `BETTER_AUTH_SECRET`) + trần ngày + dedupe SĐT 24h, email báo lead qua `apps/server/src/lib/lead-notify.ts` (#506)
+- [apps/server/src/routes/leads.ts](../apps/server/src/routes/leads.ts) - teacher lead management `GET/PATCH /api/leads` (list + counts chip, đổi trạng thái), kernel-tree subrouter; `ipHash` không bao giờ trả client (#506)
+- [packages/api/src/lead-contracts.ts](../packages/api/src/lead-contracts.ts) - lead contracts: danh mục khóa/ngày/giờ theo Google Form (code ổn định + nhãn tiếng Việt), `normalizeVietnamPhone`, submit/query/patch schemas (#506)
 - [apps/server/src/lib/payments/ingest-transaction.ts](../apps/server/src/lib/payments/ingest-transaction.ts) - the single ledger write path for inbound transfers (idempotent matching, tenant-scoped codes) (#320)
 - [packages/api/src/contracts.ts](../packages/api/src/contracts.ts) - shared API contracts
 - [packages/db/src/schema/index.ts](../packages/db/src/schema/index.ts) - database schema barrel
