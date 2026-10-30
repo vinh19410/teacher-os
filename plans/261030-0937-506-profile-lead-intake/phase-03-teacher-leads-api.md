@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "API giáo viên /api/leads"
-status: pending
+status: completed
 priority: P2
 effort: "0.4d"
 dependencies: [1]

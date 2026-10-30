@@ -1,22 +1,22 @@
 import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
 import { readVerificationEmails, signUpViaUi } from "./helpers";
-import { API_ORIGIN } from "./origins";
+import { API_ORIGIN, PROFILE_ORIGIN } from "./origins";
 
 /**
- * E2E lead intake (#506): POST /public/leads từ origin profile → lead vào
- * đúng org → giáo viên thấy trên /leads, đổi trạng thái, chip đếm cập nhật;
- * email báo lead mới; dedupe theo SĐT; chống spam (honeypot + tần suất IP).
+ * E2E lead intake (#506): form thật trên apps/profile (đã commit 738eb150,
+ * phase 5) → POST /public/leads → lead vào đúng org → giáo viên thấy trên
+ * /leads, đổi trạng thái, chip đếm cập nhật; email báo lead mới; dedupe theo
+ * SĐT; chống spam (honeypot + tần suất IP).
  *
- * apps/profile chưa commit (phase 5 blocked) nên phần intake driver là
- * request API với Origin profile e2e (port 8105) — cùng hợp đồng CORS/
- * payload mà form trên msmy.io.vn dùng. Fallback copy-Zalo là behavior
- * client-side của form profile — kiểm khi profile vào repo.
+ * AC-001 chạy qua FORM thật (#consultForm trên PROFILE_ORIGIN). AC-002/003
+ * vẫn API-driven (request với Origin profile e2e — cùng hợp đồng CORS/
+ * payload mà form dùng) vì kiểm dedupe/honeypot/rate-limit ở mức server.
+ * AC-004 kiểm fallback copy-Zalo (behavior client-side của form).
  */
 
 // Phải khớp boot.ts (LEAD_ORG_ID + LEAD_ORIGIN).
 const LEAD_ORG_ID = "e2e-lead-org";
-const LEAD_ORIGIN = `http://localhost:${process.env.E2E_PROFILE_PORT ?? 8105}`;
 
 const HANOI_STUDENT = {
 	name: "Nguyễn Thu Hà",
@@ -74,7 +74,7 @@ async function submitLead(
 	return page.request.post(`${API_ORIGIN}/public/leads`, {
 		headers: {
 			"content-type": "application/json",
-			Origin: LEAD_ORIGIN,
+			Origin: PROFILE_ORIGIN,
 			...headers,
 		},
 		data: body,
@@ -105,23 +105,68 @@ async function leadEmailsFor(teacherEmail: string) {
 	);
 }
 
+/** Chờ mọi <img> trong trang load xong. Ảnh load trễ ⇒ layout shift +
+ * scroll anchoring của browser đẩy nút submit giữa cú click (click rơi lệch
+ * điểm, retry vô hạn) — phải chờ trước khi bấm/cuộn tương tác. Ảnh
+ * `loading="lazy"` dưới fold không bao giờ fire onload — ép eager trước. */
+async function waitForImagesLoaded(page: Page): Promise<void> {
+	await page.evaluate(() => {
+		for (const img of document.images) {
+			if (img.loading === "lazy") img.loading = "eager";
+		}
+		return Promise.all([
+			// Font swap trễ ⇒ reflow toàn trang + scroll anchoring bù trượt ngay
+			// giữa cú click — phải đợi font xong trước khi bấm.
+			document.fonts.ready,
+			...[...document.images].map((img) => {
+				if (img.complete) return Promise.resolve();
+				const { promise, resolve } = Promise.withResolvers<void>();
+				img.onload = () => resolve();
+				img.onerror = () => resolve();
+				return promise;
+			}),
+		]);
+	});
+}
+
 test.describe("profile lead intake", () => {
+	// Trang profile có `html { scroll-behavior: smooth }` — Playwright scroll
+	// qua JS scrollIntoView() sẽ animate, click rơi lệch điểm giữa run (bị
+	// floating-cta-bar/header che). Trang đã có media prefers-reduced-motion
+	// đặt scroll-behavior: auto — bật reducedMotion để scroll test là instant.
+	test.use({ contextOptions: { reducedMotion: "reduce" } });
+
 	test("AC-001: lead mới vào org, giáo viên thấy trên /leads, đổi trạng thái, có email báo", async ({
 		page,
 	}) => {
 		const teacherEmail = await signUpLeadTeacher(page);
 		const phone = uniquePhone();
 
-		// Intake từ form profile (origin cho phép) — chỉ Tên + SĐT bắt buộc.
-		const res = await submitLead(page, {
-			...validLead(phone),
-			email: "hanguyen@example.com",
-			note: "Muốn học IELTS để du học",
-		});
-		expect(res.status()).toBe(201);
-		const body = (await res.json()) as { id: string; submitCount: number };
-		expect(body.id).toBeTruthy();
-		expect(body.submitCount).toBe(1);
+		// Intake qua FORM thật trên profile — chỉ Tên + SĐT bắt buộc. Submit
+		// ngay sau khi điền: client tự chờ nốt elapsedMs < 3s trước khi fetch
+		// (guard chống 201-giả của server) — test này cũng chặn chính guard đó.
+		await page.goto(PROFILE_ORIGIN);
+		await waitForImagesLoaded(page);
+		const form = page.locator("#consultForm");
+		await expect(form).toBeVisible();
+		await form.locator("#studentName").fill(HANOI_STUDENT.name);
+		await form.locator("#studentPhone").fill(phone);
+		// floating-cta-bar fixed che nút submit khi scroll minimal — đưa nút
+		// vào giữa viewport trước khi click (giống người dùng thật scroll qua).
+		await form
+			.locator('button[type="submit"]')
+			.evaluate((el) =>
+				el.scrollIntoView({ block: "center", behavior: "instant" }),
+			);
+		await form.locator('button[type="submit"]').click();
+
+		const success = page.locator('#leadSuccess[role="status"]');
+		await expect(success).toBeVisible();
+		await expect(success).toContainText(HANOI_STUDENT.name);
+		// Thành công KHÔNG được gợi ý chuyển khoản/VietQR (chỉ Zalo fallback).
+		expect((await success.textContent()) ?? "").not.toMatch(
+			/chuyển khoản|VietQR/i,
+		);
 
 		// Web: /leads hiện dòng lead mới.
 		await page.goto("/leads");
@@ -156,6 +201,8 @@ test.describe("profile lead intake", () => {
 		expect(leadEmails[0]!.subject).toBe(
 			`Đăng ký học mới: ${HANOI_STUDENT.name}`,
 		);
+		// #506: text email KHÔNG chứa SĐT (dẫn về /leads, không lộ số).
+		expect(leadEmails[0]!.text ?? "").not.toContain(phone);
 	});
 
 	test("AC-002: gửi lại cùng SĐT trong 24 giờ ⇒ 1 dòng, submitCount tăng, không email thêm", async ({
@@ -237,5 +284,46 @@ test.describe("profile lead intake", () => {
 			"CF-Connecting-IP": "203.0.113.78",
 		});
 		expect(otherIp.status()).toBe(201);
+	});
+
+	test("AC-004: server 5xx ⇒ form giữ dữ liệu, fallback copy-Zalo hiện tên + SĐT", async ({
+		page,
+	}) => {
+		await page.goto(PROFILE_ORIGIN);
+		await waitForImagesLoaded(page);
+		const form = page.locator("#consultForm");
+		await expect(form).toBeVisible();
+
+		// Chặn POST /public/leads → 500 (mô phỏng server lỗi/timeout/network).
+		await page.route("**/public/leads", (route) =>
+			route.fulfill({
+				status: 500,
+				contentType: "application/json",
+				body: JSON.stringify({ code: "LEAD_ERROR" }),
+			}),
+		);
+
+		const phone = uniquePhone();
+		await form.locator("#studentName").fill(HANOI_STUDENT.name);
+		await form.locator("#studentPhone").fill(phone);
+		// Submit ngay (guard elapsedMs client tự chờ nốt) — server 500 thật
+		// tới sau khi đi qua guard 201-giả.
+		await form
+			.locator('button[type="submit"]')
+			.evaluate((el) =>
+				el.scrollIntoView({ block: "center", behavior: "instant" }),
+			);
+		await form.locator('button[type="submit"]').click();
+
+		const box = page.locator("#generatedMsgBox");
+		await expect(box).toBeVisible();
+		await expect(box).toHaveClass(/is-visible/);
+		const pre = page.locator("#generatedMsgPre");
+		await expect(pre).toContainText(HANOI_STUDENT.name);
+		await expect(pre).toContainText(phone);
+
+		// Dữ liệu form giữ nguyên để người dùng retry/copy tay.
+		await expect(form.locator("#studentName")).toHaveValue(HANOI_STUDENT.name);
+		await expect(form.locator("#studentPhone")).toHaveValue(phone);
 	});
 });

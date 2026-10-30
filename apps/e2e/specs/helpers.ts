@@ -55,6 +55,9 @@ export interface VerificationEmailEntry {
 	// Plan TOS-21 (#454): recordingMailer lưu thêm header mới của thư thông báo.
 	replyTo?: string | null;
 	fromName?: string | null;
+	// #506: text body của thư (recordingMailer log đầy đủ) — assert nội dung
+	// email báo lead không chứa SĐT.
+	text?: string;
 	// Plan TOS-22 (#463): recordingMailer đánh dấu failed: true cho thư thông báo tới @bounce.test.
 	failed?: boolean;
 }

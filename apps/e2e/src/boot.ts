@@ -61,10 +61,12 @@ const recordingMailer: Mailer = {
 		);
 		const base = {
 			// Plan TOS-21 (#454): lưu TOÀN BỘ thư để E2E kiểm header mới.
+			// #506: kèm `text` để assert nội dung email báo lead (không lộ SĐT).
 			to: input.to,
 			subject: input.subject,
 			replyTo: input.replyTo ?? null,
 			fromName: input.fromName ?? null,
+			text: input.text,
 		};
 		const at = new Date().toISOString();
 		if (

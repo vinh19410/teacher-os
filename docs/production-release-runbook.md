@@ -110,6 +110,14 @@ Vận hành:
   export trong `public-leads.ts` — chỉnh qua code, không phải env.
 - **Tùy chọn — WAF rate limiting** trên zone teacheros.io.vn cho path
   `/public/leads` khi có spam thật (lớp 3 của plan; Turnstile chỉ bật khi cần).
+- **Deploy trang profile:** build kèm knob API —
+  `LEAD_API_URL=https://api.teacheros.io.vn pnpm --filter profile build`
+  (thay content của `<meta name="lead-api">` trong `dist/index.html`); meta
+  gốc trong repo đã là URL prod nên build không env vẫn đúng. Chạy site qua
+  `serve.mjs` (không qua build) thì đặt env `LEAD_API_URL` — vắng mặc định
+  trỏ `http://localhost:8000`, chỉ dành cho dev. Sai origin/URL API ⇒ mọi
+  POST rơi về fallback copy-Zalo im lặng (không có dòng lead, không email)
+  — theo dõi số lead `/leads` sau deploy.
 - Email báo lead mới gửi mọi thành viên org qua mailer chung (D13); mailer
   lỗi không ảnh hưởng response — check log `[leads]` khi nghi ngờ.
 

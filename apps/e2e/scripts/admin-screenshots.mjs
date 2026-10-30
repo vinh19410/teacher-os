@@ -18,6 +18,7 @@ const API_PORT = Number(process.env.E2E_API_PORT ?? 8100);
 const WEB_PORT = Number(process.env.E2E_WEB_PORT ?? 8101);
 const STUDENT_PORT = Number(process.env.E2E_STUDENT_PORT ?? 8103);
 const ADMIN_PORT = Number(process.env.E2E_ADMIN_PORT ?? 8104);
+const PROFILE_PORT = Number(process.env.E2E_PROFILE_PORT ?? 8105);
 const API_ORIGIN = `http://localhost:${API_PORT}`;
 const ADMIN_ORIGIN = `http://localhost:${ADMIN_PORT}`;
 const ADMIN_EMAIL =
@@ -67,6 +68,7 @@ async function main() {
 		web: WEB_PORT,
 		student: STUDENT_PORT,
 		admin: ADMIN_PORT,
+		profile: PROFILE_PORT,
 	};
 	const services = Object.fromEntries(
 		buildServices(ports).map((svc) => [svc.name, svc]),

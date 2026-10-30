@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="lead-api" content="https://api.teacheros.io.vn">
   <title>Cô Mỹ Dạy Tiếng Anh | Hồ Sơ Giảng Viên, Quy Trình 365 Ngày &amp; Lộ Trình Khóa Học</title>
   <meta name="description" content="Trang tổng hợp Hồ sơ Năng lực Giảng viên Cô Đỗ Thị Thục Mỹ (Ms. Thuc My), Quy trình kèm cặp IELTS 365 ngày, 5 tài liệu PDF chính thức và đăng ký kiểm tra đầu vào 1-1.">
   <meta name="theme-color" content="#163828">
@@ -1412,6 +1413,114 @@
       border: 1px solid var(--line);
     }
 
+    /* ==================== LEAD FORM CHIPS + SUCCESS (#506) ==================== */
+    .field-heading {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--brand);
+    }
+
+    .choice-chips {
+      border: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .choice-chips legend {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--brand);
+      padding: 0;
+      margin-bottom: 6px;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .choice-chip {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .choice-chip input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .choice-chip span {
+      display: inline-block;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1.5px solid var(--line-strong);
+      background: #FFFFFF;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--ink-2);
+      cursor: pointer;
+      transition:
+        border-color var(--dur-state) var(--ease-out),
+        background var(--dur-state) var(--ease-out);
+    }
+
+    .choice-chip input[type="radio"]:checked + span {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #FFFFFF;
+    }
+
+    .choice-chip input[type="radio"]:focus-visible + span {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(22, 56, 40, 0.25);
+    }
+
+    .examenglish-details {
+      font-size: 13.5px;
+      color: var(--ink-2);
+    }
+
+    .examenglish-details summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--brand);
+    }
+
+    .examenglish-details .input-control {
+      margin-top: 8px;
+      min-height: 40px;
+    }
+
+    .examenglish-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 8px;
+    }
+
+    .examenglish-links a {
+      color: var(--brand);
+      font-weight: 600;
+    }
+
+    .lead-success {
+      margin-top: var(--space-5);
+      padding: var(--space-5);
+      background: var(--success-soft);
+      border: 1px solid var(--success);
+      border-radius: var(--radius-sm);
+      display: none;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+
+    .lead-success.is-visible {
+      display: flex;
+    }
+
     /* ==================== FOOTER ==================== */
     .site-footer {
       background: var(--brand-deep);
@@ -2188,7 +2297,7 @@
               Trạng thái: Sẵn sàng chấm điểm (5 câu hỏi)
             </div>
             <p id="quizResultAnalysis" style="color: var(--brand-tint); font-size: 14.5px; line-height: 1.55;">
-              Sau khi bạn bấm nút chấm điểm, hệ thống sẽ phân tích kết quả 4 câu học thuật + tình trạng thực tế của bạn để gợi ý chính xác lộ trình học và tạo phiếu đăng ký gửi cô Thục Mỹ.
+              Sau khi bạn bấm nút chấm điểm, hệ thống sẽ phân tích kết quả 4 câu học thuật + tình trạng thực tế của bạn để gợi ý khóa học phù hợp; bấm "Đăng Ký Khóa Học Theo Kết Quả Test Này" để điền sẵn vào form đăng ký bên dưới.
             </p>
             <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); border-radius: var(--radius-sm); padding: 14px; font-size: 13.8px; color: var(--brand-tint);">
               <strong style="color: var(--gold); display: block; margin-bottom: 4px;">🎁 Quyền lợi đi kèm sau khi làm Test trên web:</strong>
@@ -2571,7 +2680,7 @@
               </ul>
             </div>
             <div style="display: flex; flex-direction: column; gap: 8px;">
-              <button type="button" class="btn btn-primary" data-select-course="Lộ trình 01: Lấy Gốc & Xây Nền Bản Chất (Foundation → IELTS 4.5-5.0)">
+              <button type="button" class="btn btn-primary" data-select-course="ielts-foundation">
                 🎓 Đăng Ký Khóa Học Foundation
               </button>
               <a href="#lam-test-mien-phi" class="btn btn-outline btn-sm">
@@ -2596,7 +2705,7 @@
               </ul>
             </div>
             <div style="display: flex; flex-direction: column; gap: 8px;">
-              <button type="button" class="btn btn-gold" data-select-course="Lộ trình 02: IELTS Học Thuật Thực Chiến (Mục tiêu IELTS 6.0 - 7.5+)">
+              <button type="button" class="btn btn-gold" data-select-course="ielts-advanced">
                 🎓 Đăng Ký Khóa IELTS 6.0–7.5+ Ngay
               </button>
               <a href="#lam-test-mien-phi" class="btn btn-ghost-dark btn-sm">
@@ -2621,7 +2730,7 @@
               </ul>
             </div>
             <div style="display: flex; flex-direction: column; gap: 8px;">
-              <button type="button" class="btn btn-primary" data-select-course="Lộ trình 03: Tiếng Anh Giao Tiếp Công Sở & Phỏng Vấn Global Company">
+              <button type="button" class="btn btn-primary" data-select-course="comm-1">
                 🎓 Đăng Ký Khóa Tiếng Anh Công Sở
               </button>
               <a href="#lam-test-mien-phi" class="btn btn-outline btn-sm">
@@ -2715,67 +2824,147 @@
 
           <!-- Right: Interactive Consultation Booking Form -->
           <div class="form-card">
-            <h3 style="font-size: var(--step-2);">Phiếu Đăng Ký Tư Vấn Lộ Trình &amp; Đặt Lịch Test Đầu Vào 1-1</h3>
+            <h3 style="font-size: var(--step-2);">Đăng Ký Khóa Học — Cô Mỹ Liên Hệ Qua Zalo</h3>
             <p style="font-size: 14.5px; color: var(--ink-2); margin-top: 6px;">
-              Điền thông tin bên dưới để hệ thống tạo phiếu đăng ký chuẩn xác. Bạn có thể bấm gửi trực tiếp qua Zalo hoặc Email của cô Thục Mỹ chỉ với 1 thao tác.
+              Chỉ cần Tên + SĐT Zalo là gửi được đăng ký. Cô Mỹ sẽ nhắn Zalo cho bạn để tư vấn, xếp lịch test đầu vào 1-1 và xây dựng lộ trình phù hợp.
             </p>
 
             <form id="consultForm" novalidate>
               <div class="form-grid">
                 <div class="field" id="fieldName">
                   <label for="studentName">Họ và tên học viên *</label>
-                  <input type="text" id="studentName" name="studentName" class="input-control" required aria-describedby="helpName errName" placeholder="Ví dụ: Nguyễn Minh Anh">
-                  <span class="field-help" id="helpName">Tên để cô Mỹ xưng hô trong buổi tư vấn 1-1.</span>
-                  <span class="field-error" id="errName">Vui lòng nhập họ và tên của bạn.</span>
+                  <input type="text" id="studentName" name="studentName" class="input-control" required autocomplete="name" maxlength="80" aria-describedby="helpName errName" placeholder="Ví dụ: Nguyễn Minh Anh">
+                  <span class="field-help" id="helpName">Tên để cô Mỹ xưng hô khi liên hệ qua Zalo.</span>
+                  <span class="field-error" id="errName">Vui lòng nhập họ và tên của bạn (ít nhất 2 ký tự).</span>
                 </div>
 
                 <div class="field" id="fieldPhone">
                   <label for="studentPhone">Số điện thoại Zalo *</label>
-                  <input type="tel" id="studentPhone" name="studentPhone" class="input-control" required aria-describedby="helpPhone errPhone" placeholder="Ví dụ: 0909 123 456">
-                  <span class="field-help" id="helpPhone">Số Zalo để cô gửi lịch Test và kết quả lộ trình CEFR.</span>
-                  <span class="field-error" id="errPhone">Vui lòng nhập số điện thoại hợp lệ (ít nhất 9 chữ số).</span>
+                  <input type="tel" id="studentPhone" name="studentPhone" class="input-control" required inputmode="tel" autocomplete="tel" maxlength="20" aria-describedby="helpPhone errPhone" placeholder="Ví dụ: 0909 123 456">
+                  <span class="field-help" id="helpPhone">Số Zalo để cô Mỹ liên hệ xếp lịch và gửi lộ trình.</span>
+                  <span class="field-error" id="errPhone">Vui lòng nhập số điện thoại Việt Nam hợp lệ (10 số, bắt đầu bằng 0).</span>
                 </div>
 
-                <div class="field full-span">
-                  <label for="courseTrack">Lộ trình khóa học bạn quan tâm *</label>
-                  <select id="courseTrack" name="courseTrack" class="input-control">
-                    <option value="Lộ trình 02: IELTS Học Thuật Thực Chiến (Mục tiêu IELTS 6.0 - 7.5+)">Lộ trình 02: IELTS Học Thuật Thực Chiến (Mục tiêu IELTS 6.0 - 7.5+)</option>
-                    <option value="Lộ trình 01: Lấy Gốc & Xây Nền Bản Chất (Foundation → IELTS 4.5-5.0)">Lộ trình 01: Lấy Gốc &amp; Xây Nền Bản Chất (Foundation → IELTS 4.5-5.0)</option>
-                    <option value="Lộ trình 03: Tiếng Anh Giao Tiếp Công Sở & Phỏng Vấn Global Company">Lộ trình 03: Tiếng Anh Giao Tiếp Công Sở &amp; Phỏng Vấn Global Company</option>
-                    <option value="Chưa rõ trình độ - Cần Khám Bệnh Tiếng Anh 1-1 cùng Cô Mỹ">Chưa rõ trình độ • Cần Khám Bệnh Tiếng Anh 1-1 cùng Cô Mỹ</option>
+                <div class="field" id="fieldEmail">
+                  <label for="leadEmail">Email (không bắt buộc)</label>
+                  <input type="email" id="leadEmail" name="email" class="input-control" autocomplete="email" maxlength="120" aria-describedby="errEmail" placeholder="vidu@email.com">
+                  <span class="field-error" id="errEmail">Email chưa đúng định dạng.</span>
+                </div>
+
+                <div class="field" id="fieldBirthDate">
+                  <label for="leadBirthDate">Ngày sinh (không bắt buộc)</label>
+                  <input type="date" id="leadBirthDate" name="birthDate" class="input-control" aria-describedby="errBirthDate">
+                  <span class="field-error" id="errBirthDate">Ngày sinh chưa hợp lệ (yyyy-mm-dd).</span>
+                </div>
+
+                <div class="field full-span" id="fieldCourse">
+                  <label for="course">Khóa học quan tâm (không bắt buộc)</label>
+                  <select id="course" name="course" class="input-control">
+                    <option value="">Chọn khóa (không bắt buộc)</option>
+                    <optgroup label="IELTS">
+                      <option value="ielts-foundation">IELTS Foundation (0–3.0)</option>
+                      <option value="ielts-first-step">IELTS First Step (3.0–3.5)</option>
+                      <option value="ielts-pre">Pre IELTS (4.0–4.5)</option>
+                      <option value="ielts-advanced">IELTS Advanced (5.0–7.5+)</option>
+                      <option value="ielts-sw-intensive">IELTS Speaking &amp; Writing cấp tốc</option>
+                      <option value="ielts-single-skill">IELTS cấp tốc 1 kỹ năng</option>
+                    </optgroup>
+                    <optgroup label="Giao tiếp định hướng IELTS">
+                      <option value="comm-1">Giao tiếp 1</option>
+                      <option value="comm-2">Giao tiếp 2</option>
+                      <option value="comm-3">Giao tiếp 3</option>
+                      <option value="comm-4">Giao tiếp 4</option>
+                      <option value="comm-5">Giao tiếp 5</option>
+                    </optgroup>
+                    <option value="undecided">Chưa rõ – cần test 1-1 cùng cô Mỹ</option>
                   </select>
+                  <span class="field-help">Chưa chắc khóa? Chọn "Chưa rõ" — cô Mỹ sẽ tư vấn sau buổi test 1-1.</span>
                 </div>
 
-                <div class="field">
-                  <label for="studyMode">Hình thức &amp; Quy mô lớp mong muốn</label>
+                <div class="field full-span" id="fieldStudyMode">
+                  <label for="studyMode">Hình thức &amp; Quy mô lớp (không bắt buộc)</label>
                   <select id="studyMode" name="studyMode" class="input-control">
-                    <option value="Lớp Bàn tròn nhỏ (4-6 học viên) • Online Google Meet">Lớp Bàn tròn nhỏ (4-6 bạn) • Online Google Meet</option>
-                    <option value="Lớp Kèm 1-1 Cá nhân hóa • Online Google Meet">Lớp Kèm 1-1 Cá nhân hóa • Online Google Meet</option>
-                    <option value="Lớp Offline tại Vinhomes Grand Park (TP. Thủ Đức)">Lớp Offline tại Vinhomes Grand Park (TP. Thủ Đức)</option>
+                    <option value="">Chọn hình thức học</option>
+                    <option value="group-online">Lớp Bàn tròn nhỏ (4–6 bạn) • Online Google Meet</option>
+                    <option value="private-online">Lớp Kèm 1-1 cá nhân hóa • Online Google Meet</option>
+                    <option value="offline-vgp">Lớp Offline tại Vinhomes Grand Park (TP. Thủ Đức)</option>
                   </select>
                 </div>
 
-                <div class="field">
-                  <label for="targetNote">Mục tiêu đầu ra &amp; Thời gian cần đạt</label>
-                  <input type="text" id="targetNote" name="targetNote" class="input-control" placeholder="Ví dụ: Cần IELTS 6.5 trong 6 tháng / Phỏng vấn IT">
+                <fieldset class="field" id="fieldStudyDays">
+                  <legend>Ngày học mong muốn</legend>
+                  <div class="chip-row">
+                    <label class="choice-chip"><input type="radio" name="studyDays" value="mt"><span>Thứ 2 &amp; Thứ 5</span></label>
+                    <label class="choice-chip"><input type="radio" name="studyDays" value="tf"><span>Thứ 3 &amp; Thứ 6</span></label>
+                    <label class="choice-chip"><input type="radio" name="studyDays" value="ws"><span>Thứ 4 &amp; Thứ 7</span></label>
+                    <label class="choice-chip"><input type="radio" name="studyDays" value="ss"><span>Thứ 7 &amp; Chủ nhật</span></label>
+                    <label class="choice-chip"><input type="radio" name="studyDays" value="flexible" checked><span>Linh hoạt</span></label>
+                  </div>
+                </fieldset>
+
+                <fieldset class="field" id="fieldTimeSlot">
+                  <legend>Khung giờ mong muốn</legend>
+                  <div class="chip-row">
+                    <label class="choice-chip"><input type="radio" name="timeSlot" value="0900"><span>9:00</span></label>
+                    <label class="choice-chip"><input type="radio" name="timeSlot" value="1330"><span>13:30</span></label>
+                    <label class="choice-chip"><input type="radio" name="timeSlot" value="1545"><span>15:45</span></label>
+                    <label class="choice-chip"><input type="radio" name="timeSlot" value="1815"><span>18:15</span></label>
+                    <label class="choice-chip"><input type="radio" name="timeSlot" value="2000"><span>20:00</span></label>
+                    <label class="choice-chip"><input type="radio" name="timeSlot" value="flexible" checked><span>Linh hoạt</span></label>
+                  </div>
+                </fieldset>
+
+                <div class="field full-span" id="fieldNote">
+                  <label for="note">Mục tiêu &amp; ghi chú cho cô Mỹ (không bắt buộc)</label>
+                  <textarea id="note" name="note" class="input-control" rows="3" maxlength="500" placeholder="Ví dụ: Cần IELTS 6.5 trong 6 tháng để phỏng vấn du học"></textarea>
                 </div>
+
+                <div class="field full-span" id="fieldPlacement">
+                  <span class="field-heading">Kết quả test đầu vào (tự động điền từ bài test trên trang)</span>
+                  <input type="hidden" id="placement" name="placement" maxlength="300">
+                  <details id="examenglishDetails" class="examenglish-details">
+                    <summary>Đã làm test trên examenglish.info? Dán kết quả vào đây (không bắt buộc)</summary>
+                    <input type="text" id="examenglishNote" class="input-control" maxlength="200" placeholder="Ví dụ: Grammar 42/60, Listening 38/60" aria-label="Kết quả test examenglish">
+                    <div class="examenglish-links">
+                      <a href="https://www.examenglish.com/grammar/level_test.html" target="_blank" rel="noopener">Làm test Grammar</a>
+                      <a href="https://www.examenglish.com/listening/level_test.html" target="_blank" rel="noopener">Làm test Listening</a>
+                    </div>
+                  </details>
+                </div>
+              </div>
+
+              <!-- Honeypot chống bot (#506): field ẩn ngoài màn hình, người thật
+                   không thấy; bot điền là bị server lọc im lặng. -->
+              <div aria-hidden="true" style="position: absolute; left: -9999px;">
+                <label for="website">Website</label>
+                <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
               </div>
 
               <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px;">
                 <button type="submit" class="btn btn-primary">
-                  Tạo Phiếu Đăng Ký &amp; Copy Gửi Zalo Cô Mỹ
+                  🎓 Đăng Ký Khóa Học — Gửi Trực Tiếp Cho Cô Mỹ
                 </button>
                 <a href="https://zalo.me/0929060994" target="_blank" rel="noopener" class="btn btn-gold">
-                  Mở Trực Tiếp Zalo: 0929.060.994
-                </a>
-                <a href="mailto:mydt13@gmail.com?subject=Dang%20Ky%20Kham%20Benh%20Tieng%20Anh%201-1%20Cung%20Co%20Thuc%20My" class="btn btn-outline">
-                  Gửi Email Cho Cô Mỹ
+                  Nhắn Zalo Cô Mỹ: 0929.060.994
                 </a>
               </div>
             </form>
 
+            <!-- Màn thành công (D10): chỉ tóm tắt + nút Zalo, KHÔNG thông tin
+                 thanh toán/chuyển khoản/VietQR. -->
+            <div class="lead-success" id="leadSuccess" role="status" tabindex="-1">
+              <strong style="color: var(--success);">✓ Đã gửi đăng ký thành công! Cô Mỹ sẽ nhắn Zalo cho bạn để xếp lịch.</strong>
+              <p id="leadSuccessSummary" style="margin: 0; color: var(--ink-2); font-size: 14.5px;"></p>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <a href="https://zalo.me/0929060994" target="_blank" rel="noopener" class="btn btn-primary">
+                  💬 Nhắn Zalo Cô Mỹ
+                </a>
+              </div>
+            </div>
+
+            <!-- Fallback (D11): API lỗi ⇒ giữ nguyên dữ liệu, copy gửi Zalo. -->
             <div class="generated-msg-box" id="generatedMsgBox" aria-live="polite">
-              <strong style="color: var(--success);">✓ Đã tạo và sao chép nội dung đăng ký vào bộ nhớ tạm! Bạn chỉ cần dán (Paste) vào Zalo 0929.060.994:</strong>
+              <strong style="color: var(--warning);">⚠ Chưa gửi được đăng ký lúc này. Copy nội dung bên dưới và gửi thẳng cho cô Mỹ qua Zalo 0929.060.994 nhé:</strong>
               <pre class="generated-msg-pre" id="generatedMsgPre"></pre>
               <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <a href="https://zalo.me/0929060994" target="_blank" rel="noopener" class="btn btn-primary btn-sm">
@@ -3076,12 +3265,12 @@
       });
 
       // 7. Course Track Selection -> Scroll to Form
-      const courseTrackSelect = document.getElementById('courseTrack');
+      const courseSelect = document.getElementById('course');
       document.querySelectorAll('[data-select-course]').forEach((btn) => {
         btn.addEventListener('click', () => {
           const val = btn.getAttribute('data-select-course');
-          if (courseTrackSelect) {
-            courseTrackSelect.value = val;
+          if (courseSelect) {
+            courseSelect.value = val;
           }
           const formSection = document.getElementById('dang-ky-tu-van');
           if (formSection) {
@@ -3094,15 +3283,66 @@
         });
       });
 
-      // 8. Form Validation on Blur & Submit
-      const consultForm = document.getElementById('consultForm');
-      const studentName = document.getElementById('studentName');
-      const studentPhone = document.getElementById('studentPhone');
-      const fieldName = document.getElementById('fieldName');
-      const fieldPhone = document.getElementById('fieldPhone');
-      const generatedMsgBox = document.getElementById('generatedMsgBox');
-      const generatedMsgPre = document.getElementById('generatedMsgPre');
-      const reCopyGeneratedBtn = document.getElementById('reCopyGeneratedBtn');
+      // 8. Lead form (#506): validate → POST /public/leads → thành công /
+      // fallback copy-Zalo. Chỉ Tên + SĐT bắt buộc; elapsedMs tính từ lúc
+      // script chạy (server coi < 3s là bot ⇒ 201 giả, không ghi DB).
+      const LEAD_DRAFT_KEY = 'lead-draft-v1';
+      const formRenderedAt = Date.now();
+
+      const leadEmail = document.getElementById('leadEmail');
+      const leadBirthDate = document.getElementById('leadBirthDate');
+      const studyModeSelect = document.getElementById('studyMode');
+      const noteInput = document.getElementById('note');
+      const placementInput = document.getElementById('placement');
+      const examenglishNote = document.getElementById('examenglishNote');
+      const websiteInput = document.getElementById('website');
+      const fieldEmail = document.getElementById('fieldEmail');
+      const fieldBirthDate = document.getElementById('fieldBirthDate');
+      const leadSuccess = document.getElementById('leadSuccess');
+      const leadSuccessSummary = document.getElementById('leadSuccessSummary');
+
+      // Nhãn hiển thị — phải khớp packages/api/src/lead-contracts.ts (drift
+      // test apps/server/src/lead-catalog-drift.test.ts chặn lệch value).
+      const LEAD_COURSE_LABELS = {
+        'ielts-foundation': 'IELTS Foundation (0–3.0)',
+        'ielts-first-step': 'IELTS First Step (3.0–3.5)',
+        'ielts-pre': 'Pre IELTS (4.0–4.5)',
+        'ielts-advanced': 'IELTS Advanced (5.0–7.5+)',
+        'ielts-sw-intensive': 'IELTS Speaking & Writing cấp tốc',
+        'ielts-single-skill': 'IELTS cấp tốc 1 kỹ năng',
+        'comm-1': 'Giao tiếp 1',
+        'comm-2': 'Giao tiếp 2',
+        'comm-3': 'Giao tiếp 3',
+        'comm-4': 'Giao tiếp 4',
+        'comm-5': 'Giao tiếp 5',
+        undecided: 'Chưa rõ – cần test 1-1',
+      };
+      const LEAD_STUDY_MODE_LABELS = {
+        'group-online': 'Bàn tròn 4–6 bạn, Google Meet',
+        'private-online': 'Kèm 1-1, Google Meet',
+        'offline-vgp': 'Offline Vinhomes Grand Park',
+      };
+      const LEAD_STUDY_DAY_LABELS = {
+        mt: 'Thứ 2 & Thứ 5',
+        tf: 'Thứ 3 & Thứ 6',
+        ws: 'Thứ 4 & Thứ 7',
+        ss: 'Thứ 7 & Chủ nhật',
+        flexible: 'Linh hoạt',
+      };
+      const LEAD_TIME_SLOT_LABELS = {
+        '0900': '9:00',
+        '1330': '13:30',
+        '1545': '15:45',
+        '1815': '18:15',
+        '2000': '20:00',
+        flexible: 'Linh hoạt',
+      };
+
+      function normalizeLeadPhone(raw) {
+        const digits = String(raw || '').replace(/\D+/g, '');
+        const local = digits.startsWith('84') ? '0' + digits.slice(2) : digits;
+        return /^0\d{9}$/.test(local) ? local : null;
+      }
 
       function validateName() {
         const ok = studentName.value.trim().length >= 2;
@@ -3111,41 +3351,282 @@
       }
 
       function validatePhone() {
-        const digits = studentPhone.value.replace(/\D/g, '');
-        const ok = digits.length >= 9;
+        const ok = normalizeLeadPhone(studentPhone.value) !== null;
         fieldPhone.classList.toggle('has-error', !ok);
+        return ok;
+      }
+
+      function validateEmail() {
+        const raw = leadEmail.value.trim();
+        if (raw === '') {
+          fieldEmail.classList.remove('has-error');
+          return true;
+        }
+        const ok = raw.length <= 120 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw);
+        fieldEmail.classList.toggle('has-error', !ok);
+        return ok;
+      }
+
+      function validateBirthDate() {
+        const raw = leadBirthDate.value;
+        if (raw === '') {
+          fieldBirthDate.classList.remove('has-error');
+          return true;
+        }
+        const ok =
+          /^\d{4}-\d{2}-\d{2}$/.test(raw) &&
+          !Number.isNaN(Date.parse(raw + 'T00:00:00Z'));
+        fieldBirthDate.classList.toggle('has-error', !ok);
         return ok;
       }
 
       studentName.addEventListener('blur', validateName);
       studentPhone.addEventListener('blur', validatePhone);
+      leadEmail.addEventListener('blur', validateEmail);
+      leadBirthDate.addEventListener('blur', validateBirthDate);
 
-      consultForm.addEventListener('submit', (e) => {
+      // Nháp localStorage (try/catch — private mode có thể ném).
+      function saveDraft() {
+        try {
+          localStorage.setItem(
+            LEAD_DRAFT_KEY,
+            JSON.stringify({
+              name: studentName.value,
+              phone: studentPhone.value,
+              email: leadEmail.value,
+              birthDate: leadBirthDate.value,
+              course: courseSelect.value,
+              studyMode: studyModeSelect.value,
+              note: noteInput.value,
+            }),
+          );
+        } catch (err) {
+          /* không lưu được nháp — bỏ qua */
+        }
+      }
+      consultForm.addEventListener('input', saveDraft);
+
+      (function loadDraft() {
+        try {
+          const raw = localStorage.getItem(LEAD_DRAFT_KEY);
+          if (!raw) return;
+          const draft = JSON.parse(raw);
+          if (typeof draft.name === 'string') studentName.value = draft.name;
+          if (typeof draft.phone === 'string') studentPhone.value = draft.phone;
+          if (typeof draft.email === 'string') leadEmail.value = draft.email;
+          if (typeof draft.birthDate === 'string')
+            leadBirthDate.value = draft.birthDate;
+          if (typeof draft.course === 'string') courseSelect.value = draft.course;
+          if (typeof draft.studyMode === 'string')
+            studyModeSelect.value = draft.studyMode;
+          if (typeof draft.note === 'string') noteInput.value = draft.note;
+        } catch (err) {
+          try {
+            localStorage.removeItem(LEAD_DRAFT_KEY);
+          } catch (err2) {
+            /* bỏ qua */
+          }
+        }
+      })();
+
+      function clearDraft() {
+        try {
+          localStorage.removeItem(LEAD_DRAFT_KEY);
+        } catch (err) {
+          /* bỏ qua */
+        }
+      }
+
+      function leadLabel(map, code) {
+        return (code && map[code]) || '';
+      }
+
+      function leadChoice(name) {
+        const el = consultForm.querySelector('input[name="' + name + '"]:checked');
+        return el ? el.value : '';
+      }
+
+      /** Fallback Zalo khi API lỗi (D11) — người học tự copy; đây là nội dung
+       * người dùng tự nhập nên có đủ chi tiết để cô Mỹ phản hồi. */
+      function buildFallbackMsg(payload) {
+        const lines = [
+          '🌟 ĐĂNG KÝ KHÓA HỌC (GỬI CHO CÔ THỤC MỸ)',
+          '• Họ và tên: ' + payload.name,
+          '• Số Zalo liên hệ: ' + payload.phone,
+        ];
+        if (payload.email) lines.push('• Email: ' + payload.email);
+        if (payload.birthDate) lines.push('• Ngày sinh: ' + payload.birthDate);
+        const course = leadLabel(LEAD_COURSE_LABELS, payload.course);
+        if (course) lines.push('• Khóa học quan tâm: ' + course);
+        const mode = leadLabel(LEAD_STUDY_MODE_LABELS, payload.studyMode);
+        if (mode) lines.push('• Hình thức học: ' + mode);
+        const day = leadLabel(LEAD_STUDY_DAY_LABELS, payload.studyDays);
+        const slot = leadLabel(LEAD_TIME_SLOT_LABELS, payload.timeSlot);
+        if (day || slot) {
+          lines.push(
+            '• Lịch mong muốn: ' + [day, slot].filter(Boolean).join(' • '),
+          );
+        }
+        if (payload.note) lines.push('• Mục tiêu & ghi chú: ' + payload.note);
+        if (payload.placement) lines.push('• Kết quả test: ' + payload.placement);
+        return lines.join('\n');
+      }
+
+      /** Tóm tắt rút gọn cho màn thành công. */
+      function buildSuccessSummary(payload) {
+        const parts = [];
+        const course = leadLabel(LEAD_COURSE_LABELS, payload.course);
+        if (course) parts.push('Khóa: ' + course);
+        const mode = leadLabel(LEAD_STUDY_MODE_LABELS, payload.studyMode);
+        if (mode) parts.push('Hình thức: ' + mode);
+        const day = leadLabel(LEAD_STUDY_DAY_LABELS, payload.studyDays);
+        const slot = leadLabel(LEAD_TIME_SLOT_LABELS, payload.timeSlot);
+        if (day || slot) {
+          parts.push('Lịch: ' + [day, slot].filter(Boolean).join(' • '));
+        }
+        return parts.join(' • ');
+      }
+
+      /** 400 từ server: { error, code, fields: [...] } — map về .has-error
+       * đúng trường, không hiển thị giá trị probe. */
+      function markServerFieldErrors(fields) {
+        const byField = {
+          name: fieldName,
+          phone: fieldPhone,
+          email: fieldEmail,
+          birthDate: fieldBirthDate,
+          course: document.getElementById('fieldCourse'),
+          studyMode: document.getElementById('fieldStudyMode'),
+          note: document.getElementById('fieldNote'),
+        };
+        [fieldName, fieldPhone, fieldEmail, fieldBirthDate].forEach((el) => {
+          el.classList.remove('has-error');
+        });
+        for (const field of fields) {
+          const el = byField[field];
+          if (el) el.classList.add('has-error');
+        }
+      }
+
+      consultForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const okName = validateName();
         const okPhone = validatePhone();
-        if (!okName || !okPhone) {
-          if (!okName) studentName.focus();
-          else studentPhone.focus();
+        const okEmail = validateEmail();
+        const okBirth = validateBirthDate();
+        if (!okName || !okPhone || !okEmail || !okBirth) {
+          const firstInvalid = [
+            studentName,
+            studentPhone,
+            leadEmail,
+            leadBirthDate,
+          ].find((el) => {
+            const holder = el.closest('.field');
+            return holder && holder.classList.contains('has-error');
+          });
+          if (firstInvalid) firstInvalid.focus();
           return;
         }
 
-        const msg = [
-          '🌟 ĐĂNG KÝ KHÁM BỆNH TIẾNG ANH 1-1 & TƯ VẤN LỘ TRÌNH (CÔ THỤC MỸ)',
-          '• Họ và tên: ' + studentName.value.trim(),
-          '• Số Zalo liên hệ: ' + studentPhone.value.trim(),
-          '• Lộ trình quan tâm: ' + courseTrackSelect.value,
-          '• Hình thức học: ' + document.getElementById('studyMode').value,
-          '• Mục tiêu & Thời gian: ' + (document.getElementById('targetNote').value.trim() || 'Trao đổi trực tiếp cùng cô Mỹ')
-        ].join('\n');
+        const email = leadEmail.value.trim();
+        const examResult = examenglishNote ? examenglishNote.value.trim() : '';
+        const placementParts = [placementInput.value, examResult].filter(Boolean);
+        const payload = {
+          name: studentName.value.trim(),
+          phone: normalizeLeadPhone(studentPhone.value),
+          website: websiteInput ? websiteInput.value : '',
+          elapsedMs: Math.max(0, Date.now() - formRenderedAt),
+        };
+        if (email) payload.email = email;
+        if (leadBirthDate.value) payload.birthDate = leadBirthDate.value;
+        if (courseSelect.value) payload.course = courseSelect.value;
+        if (studyModeSelect.value) payload.studyMode = studyModeSelect.value;
+        const studyDays = leadChoice('studyDays');
+        if (studyDays) payload.studyDays = studyDays;
+        const timeSlot = leadChoice('timeSlot');
+        if (timeSlot) payload.timeSlot = timeSlot;
+        if (noteInput.value.trim()) payload.note = noteInput.value.trim();
+        if (placementParts.length > 0) {
+          payload.placement = placementParts.join(' | ').slice(0, 300);
+        }
 
-        generatedMsgPre.textContent = msg;
+        const leadApiMeta = document.querySelector('meta[name="lead-api"]');
+        const leadApi =
+          (leadApiMeta && leadApiMeta.getAttribute('content')) || '';
+        const submitBtn = consultForm.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.setAttribute('aria-busy', 'true');
+        // Server coi elapsedMs < 3s là bot (trả 201 giả, KHÔNG ghi DB) — người
+        // dùng thật quay lại có draft tự điền có thể bấm gửi trong 3s đầu,
+        // lọc vậy là mất lead im lặng. Chờ nốt phần còn lại rồi mới gửi; bot
+        // không đợi được elapsedMs nên vẫn bị lọc như cũ.
+        const elapsedSoFar = Date.now() - formRenderedAt;
+        if (elapsedSoFar < 3000) {
+          await new Promise((resolve) => {
+            setTimeout(resolve, 3000 - elapsedSoFar);
+          });
+        }
+        payload.elapsedMs = Date.now() - formRenderedAt;
+        const abort = new AbortController();
+        const timeoutId = setTimeout(() => abort.abort(), 10000);
+        let res = null;
+        try {
+          res = await fetch(leadApi + '/public/leads', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            signal: abort.signal,
+          });
+        } catch (err) {
+          res = null; // mạng lỗi hoặc timeout 10s ⇒ fallback Zalo
+        } finally {
+          clearTimeout(timeoutId);
+          submitBtn.disabled = false;
+          submitBtn.removeAttribute('aria-busy');
+        }
+
+        if (res && (res.status === 200 || res.status === 201)) {
+          clearDraft();
+          const summary = buildSuccessSummary(payload);
+          leadSuccessSummary.textContent =
+            'Học viên: ' + payload.name + (summary ? ' • ' + summary : '');
+          consultForm.setAttribute('hidden', '');
+          leadSuccess.classList.add('is-visible');
+          leadSuccess.focus();
+          leadSuccess.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
+        }
+
+        if (res && res.status === 400) {
+          let fields = [];
+          try {
+            const body = await res.json();
+            fields = Array.isArray(body.fields) ? body.fields : [];
+          } catch (err) {
+            /* body lạ coi như không có danh sách field */
+          }
+          markServerFieldErrors(fields);
+          const firstInvalid = consultForm.querySelector(
+            '.field.has-error input, .field.has-error select, .field.has-error textarea',
+          );
+          if (firstInvalid) firstInvalid.focus();
+          showToast('Vui lòng kiểm tra lại thông tin được đánh dấu.');
+          return;
+        }
+
+        // 403/413/429/5xx/timeout/mạng (D11): giữ nguyên dữ liệu, hiện khối
+        // copy-Zalo — lead không mất khi API gặp sự cố.
+        const fallbackMsg = buildFallbackMsg(payload);
+        generatedMsgPre.textContent = fallbackMsg;
         generatedMsgBox.classList.add('is-visible');
-        copyTextToClipboard(msg, 'Đã tạo phiếu đăng ký & copy vào bộ nhớ tạm!');
+        copyTextToClipboard(
+          fallbackMsg,
+          'Hệ thống đang bận — đã copy nội dung, bạn dán vào Zalo giúp mình nhé!',
+        );
       });
 
       reCopyGeneratedBtn.addEventListener('click', () => {
-        copyTextToClipboard(generatedMsgPre.textContent, 'Đã sao chép lại nội dung phiếu đăng ký!');
+        copyTextToClipboard(generatedMsgPre.textContent, 'Đã sao chép lại nội dung đăng ký!');
       });
 
       // 9. Interactive Placement Quiz Grading
@@ -3186,14 +3667,28 @@
         });
       }
 
+      // 9b. Đưa kết quả quiz vào form lead (#506): map 3 lộ trình cũ sang code
+      // contract (value trong <option> là nguồn sự thật — drift test chặn lệch)
+      // và điền placement để server lưu bối cảnh test.
+      const QUIZ_COURSE_MAP = {
+        'Lộ trình 01: Lấy Gốc & Xây Nền Bản Chất (Foundation → IELTS 4.5-5.0)':
+          'ielts-foundation',
+        'Lộ trình 02: IELTS Học Thuật Thực Chiến (Mục tiêu IELTS 6.0 - 7.5+)':
+          'ielts-advanced',
+        'Lộ trình 03: Tiếng Anh Giao Tiếp Công Sở & Phỏng Vấn Global Company':
+          'comm-1',
+        'Chưa rõ trình độ - Cần Khám Bệnh Tiếng Anh 1-1 cùng Cô Mỹ': 'undecided',
+      };
+
       if (applyQuizToFormBtn) {
         applyQuizToFormBtn.addEventListener('click', () => {
-          if (courseTrackSelect && lastRecommendedCourse) {
-            courseTrackSelect.value = lastRecommendedCourse;
+          if (courseSelect) {
+            courseSelect.value = QUIZ_COURSE_MAP[lastRecommendedCourse] || 'undecided';
           }
-          const targetNoteInput = document.getElementById('targetNote');
-          if (targetNoteInput && lastQuizSummaryNote) {
-            targetNoteInput.value = lastQuizSummaryNote;
+          if (placementInput && lastQuizSummaryNote) {
+            const examResult = examenglishNote ? examenglishNote.value.trim() : '';
+            const parts = [lastQuizSummaryNote, examResult].filter(Boolean);
+            placementInput.value = parts.join(' | ').slice(0, 300);
           }
           const formSection = document.getElementById('dang-ky-tu-van');
           if (formSection) {

@@ -9,12 +9,14 @@ const apiPort = Number(process.env.E2E_API_PORT ?? 8000);
 const webPort = Number(process.env.E2E_WEB_PORT ?? 8001);
 const studentPort = Number(process.env.E2E_STUDENT_PORT ?? 8003);
 const adminPort = Number(process.env.E2E_ADMIN_PORT ?? 8104);
+const profilePort = Number(process.env.E2E_PROFILE_PORT ?? 8105);
 const requireService = (name: string) => {
 	const svc = buildServices({
 		api: apiPort,
 		web: webPort,
 		student: studentPort,
 		admin: adminPort,
+		profile: profilePort,
 	}).find((s) => s.name === name);
 	if (!svc) throw new Error(`devserver-services thiếu service ${name}`);
 	return svc;
@@ -22,6 +24,7 @@ const requireService = (name: string) => {
 const webSvc = requireService("web");
 const studentSvc = requireService("student");
 const adminSvc = requireService("admin");
+const profileSvc = requireService("profile");
 export default defineConfig({
 	testDir: "./specs",
 	// #402: fail-loud khi hạ tầng dev server bất ổn giữa run (marker/heartbeat
@@ -63,6 +66,7 @@ export default defineConfig({
 				E2E_WEB_PORT: String(webPort),
 				E2E_STUDENT_PORT: String(studentPort),
 				E2E_ADMIN_PORT: String(adminPort),
+				E2E_PROFILE_PORT: String(profilePort),
 			},
 		},
 		{
@@ -106,10 +110,23 @@ export default defineConfig({
 			stderr: "pipe",
 		},
 		{
-			// #402: giám sát 4 service trên — vite web/student/admin chết giữa run
-			// được restart (tối đa 1 lần/vite), api chết → marker fail-loud.
+			// Issue #506 phase 5: static server apps/profile (serve.mjs đọc env
+			// PORT + LEAD_API_URL). Chết → không restart, marker fail-loud.
+			command: "pnpm --filter profile run dev:bare",
+			url: profileSvc.pollUrl,
+			env: {
+				PORT: String(profilePort),
+				LEAD_API_URL: `http://localhost:${apiPort}`,
+			},
+			reuseExistingServer: false,
+			timeout: 120_000,
+			stderr: "pipe",
+		},
+		{
+			// #402: giám sát các service trên — vite web/student/admin chết giữa run
+			// được restart (tối đa 1 lần/vite), api/profile chết → marker fail-loud.
 			// KHÔNG có `url` (playwright spawn xong không chờ) và đặt CUỐI mảng:
-			// plugin setup chạy tuần tự nên watchdog chỉ poll khi 4 service đã
+			// plugin setup chạy tuần tự nên watchdog chỉ poll khi 5 service đã
 			// available.
 			name: "dev-watchdog",
 			command: "node devserver-watchdog.mjs",
@@ -120,6 +137,7 @@ export default defineConfig({
 				E2E_WEB_PORT: String(webPort),
 				E2E_STUDENT_PORT: String(studentPort),
 				E2E_ADMIN_PORT: String(adminPort),
+				E2E_PROFILE_PORT: String(profilePort),
 			},
 		},
 	],

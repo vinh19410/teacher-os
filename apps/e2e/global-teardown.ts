@@ -81,13 +81,14 @@ export default async function globalTeardown(): Promise<void> {
 			);
 	}
 
-	// 3. Probe cuối 3 service — bắt death-window ở giây cuối mà marker bỏ lỡ
+	// 3. Probe cuối 5 service — bắt death-window ở giây cuối mà marker bỏ lỡ
 	if (problems.length === 0) {
 		const ports = parsePorts({
 			E2E_API_PORT: process.env.E2E_API_PORT ?? "8000",
 			E2E_WEB_PORT: process.env.E2E_WEB_PORT ?? "8001",
 			E2E_STUDENT_PORT: process.env.E2E_STUDENT_PORT ?? "8003",
 			E2E_ADMIN_PORT: process.env.E2E_ADMIN_PORT ?? "8104",
+			E2E_PROFILE_PORT: process.env.E2E_PROFILE_PORT ?? "8105",
 		});
 		for (const svc of buildServices(ports)) {
 			if (await isDead(svc.pollUrl, svc.deadStatus))

@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Màn Đăng ký mới trong web"
-status: pending
+status: completed
 priority: P2
 effort: "0.6d"
 dependencies: [3]

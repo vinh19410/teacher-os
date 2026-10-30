@@ -1,7 +1,7 @@
 ---
 phase: 6
 title: "E2E, docs, cấu hình deploy"
-status: pending
+status: completed
 priority: P2
 effort: "0.3d"
 dependencies: [2, 3, 4, 5]
