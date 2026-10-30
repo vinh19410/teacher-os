@@ -14,6 +14,7 @@ Quy ước khi cập nhật:
 ## 2026-10-30
 
 ### Added
+- Thêm học viên thủ công, kích hoạt lớp tức thì và bài nộp mẫu dùng thử Chấm điểm (#508): khôi phục `POST /api/students` theo org (chỉ bắt buộc tên, trùng email → `409 STUDENT_ALREADY_IN_ORG`, tự đóng lời mời `pending` cùng email), `activateNow` trên `POST /api/classes/:id/enroll` để vào trạng thái Đang học ngay, `AddStudentModal` + `EnrollStudentModal` hai chế độ, và `POST/DELETE /api/grading/demo-sample` tạo/xóa bài Writing mẫu không tốn credit AI, cô lập khỏi snapshot/nhắc việc. Không có migration mới.
 - Lead intake từ form đăng ký học trên trang profile cô Mỹ (`apps/profile`, `msmy.io.vn`) vào `teacher-os` (#506): bảng `lead` (migration `0057`), contract `@teacher-os/api/lead-contracts`, endpoint công khai `POST /public/leads` (CORS riêng `LEAD_ORIGINS`, chống spam 2 lớp honeypot/`elapsedMs` + tần suất IP HMAC-SHA256 3 lần/10 phút + trần 100 lead/ngày + dedupe SĐT 24 giờ, gửi email báo thành viên org không chứa PII), API giáo viên `GET/PATCH /api/leads`, màn `/leads` ("Đăng ký mới") trên `apps/web`, và viết lại form `#consultForm` trên `apps/profile` (chỉ bắt buộc Tên + SĐT Zalo, danh mục khóa theo Google Form + hình thức lớp, màn thành công không kèm thông tin thanh toán, lưu nháp `localStorage`, fallback copy-Zalo khi API lỗi, inject `<meta name="lead-api">` qua `LEAD_API_URL` trong `serve.mjs`/`build.mjs`, kèm test chống lệch danh mục `lead-catalog-drift.test.ts` và E2E đầu-cuối trên cổng `8105`).
 
 ## 2026-10-29
