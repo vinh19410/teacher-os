@@ -108,6 +108,7 @@ Vận hành:
   theo IP (HMAC `BETTER_AUTH_SECRET`, ngưỡng 3 lead/10 phút); trần 100 lead
   mới/ngày/org; SĐT gửi lại trong 24 giờ cập nhật lead cũ. Ngưỡng là hằng số
   export trong `public-leads.ts` — chỉnh qua code, không phải env.
+- **Build & deploy `apps/profile`:** `LEAD_API_URL=https://api.teacheros.io.vn pnpm --filter profile build` (script `build.mjs` ghi URL API vào `<meta name="lead-api">` trong `dist/index.html`).
 - **Tùy chọn — WAF rate limiting** trên zone teacheros.io.vn cho path
   `/public/leads` khi có spam thật (lớp 3 của plan; Turnstile chỉ bật khi cần).
 - Email báo lead mới gửi mọi thành viên org qua mailer chung (D13); mailer

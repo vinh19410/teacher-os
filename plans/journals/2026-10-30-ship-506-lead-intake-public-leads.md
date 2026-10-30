@@ -1,7 +1,7 @@
 ---
-title: "Ship #506 lead intake: POST /public/leads + /api/leads + web Đăng ký mới (phase 5 profile blocked)"
+title: "Ship #506 lead intake: POST /public/leads + /api/leads + web Đăng ký mới + form apps/profile"
 date: 2026-10-30
-summary: "ak-vibe beta ship #506: intake công khai cho form msmy.io.vn (contract, chống spam 2 lớp, CORS riêng, email báo lead), API giáo viên /api/leads, màn /leads trong web, e2e + docs. apps/profile không có trên máy — phase 5 blocked."
+summary: "ak-vibe beta ship #506: intake công khai cho form msmy.io.vn (contract, chống spam 2 lớp, CORS riêng, email báo lead), API giáo viên /api/leads, màn /leads trong web, form đăng ký mới trên apps/profile + drift test + E2E đầu-cuối."
 ---
 
 # Ship #506: Lead intake (msmy.io.vn → teacher-os)
@@ -12,22 +12,15 @@ summary: "ak-vibe beta ship #506: intake công khai cho form msmy.io.vn (contrac
 - **Phase 2** — `POST /public/leads` mount ngoài `/api/*` cạnh `/public/pay`: global CORS bọc lambda bỏ qua path (D5), route CORS riêng không credentials; thứ tự guard: 503 fail-closed thiếu `LEAD_ORG_ID` → 403 Origin → 413 >4KB → 400 `LEAD_INVALID`+fields (không echo giá trị) → honeypot/`elapsedMs`<3s 201 giả không ghi → HMAC-SHA256 IP (`CF-Connecting-IP`, secret `BETTER_AUTH_SECRET`) → 429 3/IP/10 phút → 429 100 lead/ngày (mốc 00:00 giờ VN qua `vietnamTodayISO`) → dedupe SĐT 24h (update giữ status+teacherNote, `submitCount+1`, không email lại) → insert + `notifyNewLead` (runInBackground, không PII, mailer lỗi nuốt). Wiring: `AppDeps` (leadOrgId/leadOrigins/leadIpSecret/appOrigin), index.ts, alchemy.run.ts (topology default msmy origins, dev 8005), boot.ts (org seed `e2e-lead-org` + origin 8105).
 - **Phase 3** — `GET/PATCH /api/leads` trong kernelRoutes cạnh `/notification-logs`: q LIKE escape `%_\` trên lower(name)/phone, counts GROUP BY trên q-không-status, phân trang 20; PATCH org-scoped 404 `LEAD_NOT_FOUND`, `statusChangedAt` chỉ khi đổi status; response không `ipHash`.
 - **Phase 4** — `/leads` web: chip trạng thái badge đếm từ server, search debounce 300ms, filter URL, DataTable (thời gian, tên + "N lần gửi", SĐT link zalo.me, khóa, hình thức, lịch, StatusTag), modal chi tiết (mọi field, mailto, textarea teacherNote, select trạng thái, PATCH + toast + invalidate), empty state; sidebar "Đăng ký mới" (Inbox) cạnh Học viên + ACTIVE_KEY_BY_PREFIX.
-- **Phase 6 (điều chỉnh)** — e2e `profile-lead-intake.spec.ts` 3 case: AC-001 intake→/leads→đổi trạng thái→email; AC-002 dedupe (cùng id, submitCount 2, 1 email); AC-003 honeypot không ghi + 429 IP + IP khác không vạ lây. Runbook: section Lead intake (`LEAD_ORG_ID`/`LEAD_ORIGINS`, backup D1 trước migrate, WAF tùy chọn); codebase-summary thêm 3 file.
-
-## Blocker
-- **Phase 5 (form apps/profile) không làm được trên máy này:** `apps/profile` không tồn tại trong repo (mọi branch remote: chỉ develop/main/chore-*) và không có ở bất kỳ checkout/worktree nào trên VM. Nguồn thật (~3200 dòng index.html + serve.mjs + build.mjs) đang untracked ở máy khác. Không fabricate site profile. Cần commit baseline profile trước rồi chạy phase 5 + drift test + e2e form.
-
-## Decision
-- e2e intake driver là request API với Origin profile e2e (8105) — cùng hợp đồng CORS/payload của form; fallback copy-Zalo là behavior client-side profile, kiểm khi profile vào repo.
-- Error response dùng literal string (convention `admin-library.ts`), `LEAD_ERROR_CODES` chỉ là catalog — lần đầu truy cập `.LEAD_NOT_FOUND` trên array trả undefined, JSON `{}` (đã fix, test bắt được).
-- 2 test đêm đầu để lộ 2 bug import: `vietnamTodayISO` phải lấy từ `@teacher-os/api/vietnam-date` (không re-export qua lead-contracts), schema `db` mirror union `LeadStatus` local (db không phụ thuộc api, như notification-record).
+- **Phase 5** — Sau khi baseline `apps/profile` vào `develop` (`738eb150`), viết lại `#consultForm` trong `apps/profile/public/index.html` gửi `POST /public/leads` qua `<meta name="lead-api">` (`serve.mjs` và `build.mjs` inject `LEAD_API_URL`), chỉ bắt buộc Tên + SĐT Zalo, danh mục khóa học (`<optgroup>` IELTS / Giao tiếp + `undecided`), hình thức lớp (`studyMode`), chip radio ngày/giờ, ghi chú, kết quả test (`placement` + `<details>` ExamEnglish), honeypot `website` (`tabindex="-1"`), màn thành công `role="status"` không kèm thông tin thanh toán (D10), lưu nháp `localStorage`, fallback copy-Zalo khi API lỗi (D11), kèm `apps/profile/tests/index.test.mjs` (9/9) và `apps/server/src/lead-catalog-drift.test.ts` (5/5).
+- **Phase 6** — Thêm service `profile` (port `E2E_PROFILE_PORT=8105`, `LEAD_API_URL=http://localhost:${apiPort}`) vào `apps/e2e/playwright.config.ts` và `PROFILE_ORIGIN` vào `apps/e2e/specs/origins.ts`; cập nhật `apps/e2e/specs/profile-lead-intake.spec.ts` lái trực tiếp form UI trên `PROFILE_ORIGIN` (AC-001 màn thành công + `/leads` + đổi trạng thái + email không lộ SĐT; AC-002 dedupe 24h "2 lần gửi" + lưu `studyMode` + không email thêm; AC-003 honeypot + 429 IP + chặn route 500 hiện fallback copy-Zalo giữ nguyên dữ liệu); cập nhật `AGENTS.md`, `docs/codebase-summary.md`, `docs/production-release-runbook.md`.
 
 ## Verification
-- api: 332/332 (25 files) gồm lead-contracts; server: public-leads 14 + leads 10 + security 7 + readiness/role-gates 18; infra: 20/20; web: leads 8/8 + sidebar/routes-matcher 35.
-- Gates đầy đủ (biome/check-types/test/e2e) xem Completion Report — VM 2GB phải chạy serial + heap cap (turbo parallel OOM 137).
-
-## Open
-- Phase 5 + drift test + e2e qua form profile: chờ baseline profile.
+- `pnpm --filter profile test`: 9/9 passed.
+- `pnpm --filter server exec vitest run src/lead-catalog-drift.test.ts`: 5/5 passed.
+- `pnpm check` & `pnpm check-types`: 0 errors.
+- `E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 E2E_ADMIN_PORT=8104 E2E_PROFILE_PORT=8105 pnpm --filter e2e exec playwright test specs/profile-lead-intake.spec.ts`: 3/3 passed (52.0s).
+- UI 3 viewport (`1440×900`, `768×1024`, `375×812`) + keyboard Tab focus + validation focus verified in Chromium.
 - Jira: không thấy key `TOS-N` nào cho #506 (plan/brainstorm không tham chiếu) — bỏ qua sync; GitHub board do watcher đổi.
 
 > Historical work record — not durable authority. Prefer docs/specs/ADRs for current decisions.

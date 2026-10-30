@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Endpoint công khai + chống spam + CORS"
-status: pending
+status: completed
 priority: P1
 effort: "1d"
 dependencies: [1]

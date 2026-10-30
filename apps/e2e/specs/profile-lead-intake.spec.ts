@@ -1,23 +1,19 @@
 import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
 import { readVerificationEmails, signUpViaUi } from "./helpers";
-import { API_ORIGIN } from "./origins";
+import { API_ORIGIN, PROFILE_ORIGIN } from "./origins";
 
 /**
- * E2E lead intake (#506): POST /public/leads từ origin profile → lead vào
- * đúng org → giáo viên thấy trên /leads, đổi trạng thái, chip đếm cập nhật;
- * email báo lead mới; dedupe theo SĐT; chống spam (honeypot + tần suất IP).
- *
- * apps/profile chưa commit (phase 5 blocked) nên phần intake driver là
- * request API với Origin profile e2e (port 8105) — cùng hợp đồng CORS/
- * payload mà form trên msmy.io.vn dùng. Fallback copy-Zalo là behavior
- * client-side của form profile — kiểm khi profile vào repo.
+ * E2E lead intake (#506): form đăng ký trên apps/profile (port 8105) gửi
+ * POST /public/leads → màn thành công (tóm tắt + nút Zalo, không thông tin
+ * thanh toán) → giáo viên thấy lead trên /leads, đổi trạng thái, chip đếm
+ * cập nhật; email báo lead mới không lộ SĐT; dedupe SĐT 24h; chống spam
+ * (honeypot + tần suất IP) và fallback copy-Zalo khi API lỗi 500.
  */
 
 // Phải khớp boot.ts (LEAD_ORG_ID + LEAD_ORIGIN).
 const LEAD_ORG_ID = "e2e-lead-org";
-const LEAD_ORIGIN = `http://localhost:${process.env.E2E_PROFILE_PORT ?? 8105}`;
-
+const LEAD_ORIGIN = PROFILE_ORIGIN;
 const HANOI_STUDENT = {
 	name: "Nguyễn Thu Hà",
 	phone: "0909123456",
@@ -59,6 +55,9 @@ async function signUpLeadTeacher(page: Page): Promise<string> {
 			await page.waitForTimeout(250);
 		}
 		expect(reassigned, "membership reassign sang lead org").toBe(1);
+		// Xoá ip_hash của các lượt chạy trước để browser fetch (ip="unknown")
+		// không chạm ngưỡng 3/10 phút khi chạy liên tiếp hoặc retry.
+		await client.execute("UPDATE lead SET ip_hash = '' WHERE ip_hash != ''");
 	} finally {
 		client.close();
 	}
@@ -106,39 +105,50 @@ async function leadEmailsFor(teacherEmail: string) {
 }
 
 test.describe("profile lead intake", () => {
-	test("AC-001: lead mới vào org, giáo viên thấy trên /leads, đổi trạng thái, có email báo", async ({
+	test("AC-001: gửi form profile chỉ Tên + SĐT ⇒ màn thành công không thanh toán, /leads hiện dòng mới, đổi trạng thái, có email báo", async ({
 		page,
 	}) => {
 		const teacherEmail = await signUpLeadTeacher(page);
 		const phone = uniquePhone();
 
-		// Intake từ form profile (origin cho phép) — chỉ Tên + SĐT bắt buộc.
-		const res = await submitLead(page, {
-			...validLead(phone),
-			email: "hanguyen@example.com",
-			note: "Muốn học IELTS để du học",
-		});
-		expect(res.status()).toBe(201);
-		const body = (await res.json()) as { id: string; submitCount: number };
-		expect(body.id).toBeTruthy();
-		expect(body.submitCount).toBe(1);
+		await page.goto(PROFILE_ORIGIN);
+		const form = page.locator("#consultForm");
+		await form.locator("#studentName").fill(HANOI_STUDENT.name);
+		await form.locator("#studentPhone").fill(phone);
+		// Chờ qua ngưỡng chống bot 3 giây (LEAD_MIN_ELAPSED_MS = 3000).
+		await page.waitForTimeout(3100);
+		await form.getByRole("button", { name: "Đăng Ký Khóa Học" }).click();
+
+		const successBox = page.locator("#leadSuccessBox");
+		await expect(successBox).toBeVisible();
+		await expect(successBox).toHaveAttribute("role", "status");
+		await expect(successBox).toContainText(HANOI_STUDENT.name);
+		await expect(successBox).toContainText(phone);
+		await expect(
+			successBox.getByRole("link", { name: "Nhắn Zalo cô Mỹ" }),
+		).toBeVisible();
+		// D10: không hiện thông tin thanh toán / VietQR trên màn thành công.
+		await expect(successBox).not.toContainText(
+			/VietQR|chuyển khoản|TPBank|số tài khoản/i,
+		);
 
 		// Web: /leads hiện dòng lead mới.
 		await page.goto("/leads");
 		await expect(
-			page.getByRole("heading", { name: "Đăng ký mới" }),
+			page
+				.getByRole("heading", { name: "Đăng Ký Mới" })
+				.or(page.getByRole("heading", { name: "Đăng ký mới" })),
 		).toBeVisible();
 		const table = page.getByTestId("leads-table");
 		await expect(table.getByText(phone)).toBeVisible();
-		// Chip "Mới" có badge đếm (số tuyệt đối không khẳng định — run có
-		// retry của test khác cùng org).
+		// Chip "Mới" có badge đếm.
 		const newChip = page.getByRole("button", { name: /Mới/ });
 		const contactedChip = page.getByRole("button", { name: /Đã liên hệ/ });
 		const newBefore = (await newChip.textContent()) ?? "";
 		const contactedBefore = (await contactedChip.textContent()) ?? "";
 		expect(newBefore).toMatch(/\d/);
 
-		// Đổi trạng thái → Đã liên hệ, chip đếm giảm về sau khi PATCH.
+		// Đổi trạng thái → Đã liên hệ, chip đếm cập nhật sau khi PATCH.
 		await table.locator("tr", { hasText: phone }).click();
 		const statusSelect = page
 			.getByRole("dialog", { name: HANOI_STUDENT.name })
@@ -150,54 +160,54 @@ test.describe("profile lead intake", () => {
 		await expect(newChip).not.toHaveText(newBefore);
 		await expect(contactedChip).not.toHaveText(contactedBefore);
 
-		// Email báo lead mới cho thành viên org — đúng 1 thư.
+		// Email báo lead mới cho thành viên org — đúng 1 thư, không chứa SĐT.
 		const leadEmails = await leadEmailsFor(teacherEmail);
 		expect(leadEmails).toHaveLength(1);
-		expect(leadEmails[0]!.subject).toBe(
+		expect(leadEmails[0]?.subject).toBe(
 			`Đăng ký học mới: ${HANOI_STUDENT.name}`,
 		);
+		expect(JSON.stringify(leadEmails[0])).not.toContain(phone);
 	});
 
-	test("AC-002: gửi lại cùng SĐT trong 24 giờ ⇒ 1 dòng, submitCount tăng, không email thêm", async ({
+	test("AC-002: gửi lại cùng SĐT trong 24 giờ từ form profile ⇒ 1 dòng, submitCount tăng, lưu Hình thức lớp, không email thêm", async ({
 		page,
 	}) => {
 		const teacherEmail = await signUpLeadTeacher(page);
 		const phone = uniquePhone();
 
-		const first = await submitLead(page, validLead(phone));
-		expect(first.status()).toBe(201);
-		const firstBody = (await first.json()) as {
-			id: string;
-			submitCount: number;
-		};
-		expect(firstBody.id).toBeTruthy();
+		await page.goto(PROFILE_ORIGIN);
+		const form = page.locator("#consultForm");
+		await form.locator("#studentName").fill(HANOI_STUDENT.name);
+		await form.locator("#studentPhone").fill(phone);
+		await form.locator("#courseTrack").selectOption("ielts-foundation");
+		await form.locator("#studyMode").selectOption("group-online");
+		await page.waitForTimeout(3100);
+		await form.getByRole("button", { name: "Đăng Ký Khóa Học" }).click();
+		await expect(page.locator("#leadSuccessBox")).toBeVisible();
 
-		const second = await submitLead(page, {
-			...validLead(phone),
-			course: "comm-2",
-		});
-		expect(second.status()).toBe(201);
-		const secondBody = (await second.json()) as {
-			id: string;
-			submitCount: number;
-		};
-		// Cùng lead cũ — không tạo dòng mới; submitCount tăng đúng 1.
-		expect(secondBody.id).toBe(firstBody.id);
-		expect(secondBody.submitCount).toBe(firstBody.submitCount + 1);
+		// Gửi lại lần 2 cùng SĐT, đổi khóa sang comm-2.
+		await page.getByRole("button", { name: "Gửi đăng ký khác" }).click();
+		await form.locator("#studentName").fill(HANOI_STUDENT.name);
+		await form.locator("#studentPhone").fill(phone);
+		await form.locator("#courseTrack").selectOption("comm-2");
+		await form.locator("#studyMode").selectOption("group-online");
+		await page.waitForTimeout(3100);
+		await form.getByRole("button", { name: "Đăng Ký Khóa Học" }).click();
+		await expect(page.locator("#leadSuccessBox")).toBeVisible();
 
 		await page.goto("/leads");
 		const table = page.getByTestId("leads-table");
-		// Đúng 1 dòng cho SĐT này (retry của Playwright re-run mutation —
-		// submitCount có thể > 2, nhưng KHÔNG BAO GIỜ tạo dòng thứ hai).
 		const leadRow = table.locator("tr", { hasText: phone });
 		await expect(leadRow).toHaveCount(1);
-		await expect(leadRow).toContainText(/lần gửi/);
+		await expect(leadRow).toContainText(/2 lần gửi/);
+		await expect(leadRow).toContainText("Giao tiếp 2");
+		await expect(leadRow).toContainText("Bàn tròn 4–6 bạn, Google Meet");
 
 		// Chỉ 1 email — dedupe không báo lại.
 		expect(await leadEmailsFor(teacherEmail)).toHaveLength(1);
 	});
 
-	test("AC-003: honeypot không ghi; IP gửi dồn vượt 3/10 phút ⇒ 429", async ({
+	test("AC-003: honeypot không ghi; IP gửi dồn vượt 3/10 phút ⇒ 429; API 500 ⇒ form giữ dữ liệu và hiện fallback copy-Zalo", async ({
 		page,
 	}) => {
 		await signUpLeadTeacher(page);
@@ -237,5 +247,45 @@ test.describe("profile lead intake", () => {
 			"CF-Connecting-IP": "203.0.113.78",
 		});
 		expect(otherIp.status()).toBe(201);
+
+		// Chặn POST /public/leads trả 500 (giữ CORS header) ⇒ form không mất
+		// dữ liệu và hiện khối fallback copy-Zalo (D11).
+		await page.route("**/public/leads", async (route) => {
+			if (route.request().method() === "POST") {
+				await route.fulfill({
+					status: 500,
+					headers: {
+						"Access-Control-Allow-Origin": PROFILE_ORIGIN,
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({ error: "internal" }),
+				});
+				return;
+			}
+			await route.continue();
+		});
+
+		await page.goto(PROFILE_ORIGIN);
+		const form = page.locator("#consultForm");
+		await form.locator("#studentName").fill(HANOI_STUDENT.name);
+		await form.locator("#studentPhone").fill("0909888777");
+		await form.locator("#targetNote").fill("Cần IELTS 6.5 trong 6 tháng");
+		await form.getByRole("button", { name: "Đăng Ký Khóa Học" }).click();
+
+		const fallbackBox = page.locator("#generatedMsgBox");
+		await expect(fallbackBox).toBeVisible();
+		await expect(page.locator("#generatedMsgPre")).toContainText(
+			HANOI_STUDENT.name,
+		);
+		await expect(page.locator("#generatedMsgPre")).toContainText("0909888777");
+		await expect(page.locator("#generatedMsgPre")).toContainText(
+			"Cần IELTS 6.5 trong 6 tháng",
+		);
+		// Dữ liệu trên form vẫn giữ nguyên.
+		await expect(form.locator("#studentName")).toHaveValue(HANOI_STUDENT.name);
+		await expect(form.locator("#studentPhone")).toHaveValue("0909888777");
+		await expect(form.locator("#targetNote")).toHaveValue(
+			"Cần IELTS 6.5 trong 6 tháng",
+		);
 	});
 });

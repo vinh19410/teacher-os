@@ -1,7 +1,7 @@
 ---
 title: "#506: Form đăng ký học trên msmy.io.vn lưu vào teacher-os (lead intake)"
 description: "Thay form copy-Zalo của apps/profile bằng form gửi thẳng vào endpoint công khai /public/leads của teacher-os, có chống spam 2 lớp, và màn Đăng ký mới trong app web để giáo viên xử lý."
-status: pending
+status: completed
 priority: P2
 effort: 3.3d
 issue: 506
