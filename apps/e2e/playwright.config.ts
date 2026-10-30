@@ -9,6 +9,7 @@ const apiPort = Number(process.env.E2E_API_PORT ?? 8000);
 const webPort = Number(process.env.E2E_WEB_PORT ?? 8001);
 const studentPort = Number(process.env.E2E_STUDENT_PORT ?? 8003);
 const adminPort = Number(process.env.E2E_ADMIN_PORT ?? 8104);
+const profilePort = Number(process.env.E2E_PROFILE_PORT ?? 8105);
 const requireService = (name: string) => {
 	const svc = buildServices({
 		api: apiPort,
@@ -63,6 +64,7 @@ export default defineConfig({
 				E2E_WEB_PORT: String(webPort),
 				E2E_STUDENT_PORT: String(studentPort),
 				E2E_ADMIN_PORT: String(adminPort),
+				E2E_PROFILE_PORT: String(profilePort),
 			},
 		},
 		{
@@ -103,6 +105,19 @@ export default defineConfig({
 			},
 			reuseExistingServer: false,
 			timeout: 120_000,
+			stderr: "pipe",
+		},
+		{
+			// Plan #506 phase 6: trang profile cô Mỹ (static http server :8105)
+			// gửi POST /public/leads tới apiPort.
+			command: "pnpm --filter profile run dev:bare",
+			url: `http://localhost:${profilePort}/`,
+			env: {
+				PORT: String(profilePort),
+				LEAD_API_URL: `http://localhost:${apiPort}`,
+			},
+			reuseExistingServer: false,
+			timeout: 30_000,
 			stderr: "pipe",
 		},
 		{

@@ -1,7 +1,7 @@
 ---
 phase: 5
 title: "Form đăng ký mới trên profile"
-status: pending
+status: completed
 priority: P1
 effort: "0.6d"
 dependencies: [2]

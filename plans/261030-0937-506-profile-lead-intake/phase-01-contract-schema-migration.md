@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Contract + schema + migration"
-status: pending
+status: completed
 priority: P2
 effort: "0.4d"
 dependencies: []

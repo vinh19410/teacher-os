@@ -35,7 +35,7 @@ This is the navigation surface for the repository. It points to the owning files
 - `apps/web` - route files, UI shell, client state, and kernel-facing repository helpers
 - `apps/student` - student portal (React + TanStack Router): login/sign-up, onboarding, overview, class detail (`/classes/$classId`), and quiz take/review routes (`/learn/quizzes/...` with autosave) on its own origin
 - `apps/landing` - static landing page, zero-framework, public/index.html from Open Design design, build = copy, serve.mjs :8002, zero dependencies
-- `apps/profile` - static personal-profile landing page (giảng viên Thục Mỹ), zero-framework, public/index.html + assets, build = copy, serve.mjs :8005, zero dependencies, chưa deploy
+- `apps/profile` - static personal-profile landing page (giảng viên Thục Mỹ), zero-framework, public/index.html + assets, build = copy (+ inject `<meta name="lead-api">` từ `LEAD_API_URL`), serve.mjs :8005 (e2e :8105), gửi form đăng ký học tới `POST /public/leads` (quản lý tại `/leads` trong `apps/web`, #506)
 - `apps/admin` - admin console (React + TanStack Router) on its own origin (`admin.<domain>`, dev 8004/8104): ba lớp gate (`ADMIN_EMAILS` allowlist + `requireAdmin` role/email gate + CSRF theo `ADMIN_ORIGINS`) và màn hình "Thư viện đề" soạn đề Reading/Listening dùng chung (#413)
 - `apps/server` - Hono app, auth/session handling, snapshot loaders, and org-scoped kernel routes
 - `apps/e2e` - Playwright specs that boot the real server app under Node with a fresh local D1 database
