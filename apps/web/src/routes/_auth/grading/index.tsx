@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	createFileRoute,
 	Link,
@@ -30,7 +30,13 @@ import { AI_ENABLED } from "@/lib/features";
 import { initialsFromName } from "@/lib/initials";
 import { isHttpError } from "@/lib/kernel-load-state";
 import { reauth } from "@/lib/reauth";
-import { gradingQueueQueryOptions } from "@/lib/repos/grading";
+import {
+	createDemoGradingSample,
+	DEMO_ATTEMPT_PREFIX,
+	deleteDemoGradingSample,
+	gradingQueueQueryKey,
+	gradingQueueQueryOptions,
+} from "@/lib/repos/grading";
 
 export type GradingModeFilter = "all" | "assignment" | "practice";
 export type GradingSkillFilter = "all" | "writing" | "speaking";
@@ -131,6 +137,8 @@ function filtersToSearch(
 export function GradingQueueRoute() {
 	const navigate = useNavigate();
 	const searchParams = useSearch({ from: "/_auth/grading/" });
+	const queryClient = useQueryClient();
+	const [sampleBusy, setSampleBusy] = useState(false);
 	const { data, error, isPending } = useQuery(gradingQueueQueryOptions());
 
 	useEffect(() => {
@@ -196,6 +204,40 @@ export function GradingQueueRoute() {
 	}, [query, modeFilter, skillFilter, statusFilter, navigate]);
 
 	const items = data?.items ?? [];
+	const hasDemoSample = useMemo(
+		() => items.some((item) => item.attemptId.startsWith(DEMO_ATTEMPT_PREFIX)),
+		[items],
+	);
+
+	async function handleCreateDemoSample() {
+		if (sampleBusy) return;
+		setSampleBusy(true);
+		try {
+			await createDemoGradingSample();
+			await queryClient.invalidateQueries({ queryKey: gradingQueueQueryKey });
+		} catch (err) {
+			if (isHttpError(err) && err.status === 401) {
+				reauth();
+			}
+		} finally {
+			setSampleBusy(false);
+		}
+	}
+
+	async function handleDeleteDemoSample() {
+		if (sampleBusy) return;
+		setSampleBusy(true);
+		try {
+			await deleteDemoGradingSample();
+			await queryClient.invalidateQueries({ queryKey: gradingQueueQueryKey });
+		} catch (err) {
+			if (isHttpError(err) && err.status === 401) {
+				reauth();
+			}
+		} finally {
+			setSampleBusy(false);
+		}
+	}
 	const qNorm = useMemo(() => normalizeVi(query.trim()), [query]);
 
 	// Counts chéo nhóm: mỗi nhóm chip đếm trên tập đã áp dụng các bộ lọc của nhóm KHÁC.
@@ -294,6 +336,19 @@ export function GradingQueueRoute() {
 				kicker={`${awaitingCount} bài chờ chấm · ${items.length} bài đã nộp`}
 				title="Chấm bài"
 				lead="Danh sách bài Writing và Speaking học viên đã nộp từ lớp học và tự luyện."
+				action={
+					hasDemoSample ? (
+						<Button
+							variant="secondary"
+							size="sm"
+							data-testid="delete-demo-grading-sample"
+							disabled={sampleBusy}
+							onClick={() => void handleDeleteDemoSample()}
+						>
+							Xóa bài nộp mẫu
+						</Button>
+					) : undefined
+				}
 			/>
 
 			{items.length === 0 ? (
@@ -310,6 +365,17 @@ export function GradingQueueRoute() {
 						tập, bài nộp sẽ xuất hiện tại đây để giáo viên chấm điểm và nhận
 						xét.
 					</p>
+					<div className="mt-4 flex justify-center">
+						<Button
+							variant="secondary"
+							size="sm"
+							data-testid="create-demo-grading-sample"
+							disabled={sampleBusy}
+							onClick={() => void handleCreateDemoSample()}
+						>
+							Tạo bài nộp mẫu dùng thử
+						</Button>
+					</div>
 				</Card>
 			) : (
 				<div className="flex min-w-0 flex-col gap-4">

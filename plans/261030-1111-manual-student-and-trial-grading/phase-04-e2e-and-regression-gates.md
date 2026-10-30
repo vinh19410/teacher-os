@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Phase 4: E2E, kiểm tra 3 viewport & cổng chất lượng toàn diện"
-status: pending
+status: completed
 priority: P1
 effort: "1.5h"
 dependencies: [1, 2, 3]

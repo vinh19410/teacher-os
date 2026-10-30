@@ -23,6 +23,7 @@ import {
 	lt,
 	lte,
 	ne,
+	notLike,
 	or,
 } from "drizzle-orm";
 import { type Context, Hono } from "hono";
@@ -204,6 +205,7 @@ export async function computeReminders(
 							inArray(assignmentTest.skill, ["writing", "speaking"]),
 							isNull(quizAttempt.gradeScores),
 							lt(quizAttempt.submittedAt, overdueCutoff),
+							notLike(quizAttempt.id, "demo-attempt:%"),
 						),
 					),
 	]);

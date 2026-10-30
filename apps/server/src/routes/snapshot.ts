@@ -43,7 +43,7 @@ import {
 	vocabSuggestion,
 	vocabWord,
 } from "@teacher-os/db/schema/vocab";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, notLike } from "drizzle-orm";
 import type { Db } from "../app";
 import { toQuizAttemptGrade } from "../lib/quiz-grade";
 import { loadCommentBank, loadNotifs, loadReports } from "./reporting/loaders";
@@ -256,7 +256,9 @@ export async function loadSnapshot(
 		db
 			.select()
 			.from(student)
-			.where(eq(student.orgId, orgId))
+			.where(
+				and(eq(student.orgId, orgId), notLike(student.id, "demo-student:%")),
+			)
 			.orderBy(asc(student.createdAt)),
 		db
 			.select()
@@ -324,7 +326,12 @@ export async function loadSnapshot(
 		db
 			.select()
 			.from(assignmentPrompt)
-			.where(eq(assignmentPrompt.orgId, orgId))
+			.where(
+				and(
+					eq(assignmentPrompt.orgId, orgId),
+					notLike(assignmentPrompt.id, "demo-prompt:%"),
+				),
+			)
 			.orderBy(asc(assignmentPrompt.createdAt), asc(assignmentPrompt.id)),
 		financeAllowed ? loadInvoices(db, orgId) : Promise.resolve([]),
 		loadReports(db, orgId),
@@ -333,7 +340,12 @@ export async function loadSnapshot(
 		db
 			.select()
 			.from(assignmentTest)
-			.where(eq(assignmentTest.orgId, orgId))
+			.where(
+				and(
+					eq(assignmentTest.orgId, orgId),
+					notLike(assignmentTest.id, "demo-test:%"),
+				),
+			)
 			.orderBy(asc(assignmentTest.createdAt), asc(assignmentTest.id)),
 		db
 			.select({
@@ -351,7 +363,12 @@ export async function loadSnapshot(
 				assignmentTest,
 				eq(assignmentTestPart.testId, assignmentTest.id),
 			)
-			.where(eq(assignmentTest.orgId, orgId))
+			.where(
+				and(
+					eq(assignmentTest.orgId, orgId),
+					notLike(assignmentTest.id, "demo-test:%"),
+				),
+			)
 			.orderBy(asc(assignmentTestPart.position)),
 		db
 			.select()

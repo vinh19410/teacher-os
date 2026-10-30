@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, screen, within } from "@testing-library/react";
+import {
+	cleanup,
+	fireEvent,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	classRow,
@@ -52,17 +58,38 @@ describe("students list", () => {
 		expect(screen.getByRole("tab", { name: "Học viên (2)" })).toBeTruthy();
 	});
 
-	it("adds students only by invitation — no manual create or enroll from the list", async () => {
-		startServer();
+	it("supports both manual student creation (+ Thêm học viên) and email invitation (Mời học viên)", async () => {
+		const server = startServer();
 		renderWithKernel(<StudentsRoute />);
 		await screen.findByText("Học viên Một");
 		expect(screen.getByRole("button", { name: /Mời học viên/ })).toBeTruthy();
-		expect(screen.queryByRole("button", { name: /Thêm học viên/ })).toBeNull();
+		expect(
+			screen.getByRole("button", { name: /\+ Thêm học viên/ }),
+		).toBeTruthy();
 
-		fireEvent.click(screen.getByRole("button", { name: /Mời học viên/ }));
-		const dialogs = screen.getAllByRole("dialog");
-		expect(dialogs).toHaveLength(1);
-		expect(dialogs[0].textContent).not.toMatch(/Thêm học viên vào lớp/);
+		fireEvent.click(screen.getByRole("button", { name: /\+ Thêm học viên/ }));
+		const dialog = await screen.findByRole("dialog");
+		fireEvent.change(within(dialog).getByLabelText(/Họ tên học viên/), {
+			target: { value: "Nguyễn Văn Mới" },
+		});
+		fireEvent.click(within(dialog).getByRole("button", { name: "Lưu" }));
+
+		await waitFor(() =>
+			expect(server.writes.filter((w) => w.method !== "GET")).toEqual([
+				{
+					method: "POST",
+					path: "/api/students",
+					body: {
+						name: "Nguyễn Văn Mới",
+						phone: "",
+						email: "",
+						parentName: "",
+						parentPhone: "",
+						activateNow: true,
+					},
+				},
+			]),
+		);
 	});
 });
 

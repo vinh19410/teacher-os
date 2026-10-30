@@ -24,6 +24,7 @@ export const gradingQueryKey = (attemptId: string) =>
 	["kernel", "grading", attemptId] as const;
 
 export const gradingQueueQueryKey = ["kernel", "grading", "queue"] as const;
+export const DEMO_ATTEMPT_PREFIX = "demo-attempt:";
 
 /** Fetch chung cho các route /api/grading — luôn gửi cookie và ném
  * HttpError kèm status khi response không ok. */
@@ -233,6 +234,35 @@ export async function deleteAnnotation(
 		`/${encodeURIComponent(attemptId)}/annotations/${encodeURIComponent(annotationId)}`,
 		{ method: "DELETE" },
 		"delete annotation",
+		baseUrl,
+	);
+}
+
+export async function createDemoGradingSample(
+	baseUrl: string = getApiBaseUrl(),
+): Promise<{ attemptId: string }> {
+	const res = await gradingFetch(
+		"/demo-sample",
+		{
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: "{}",
+		},
+		"create demo grading sample",
+		baseUrl,
+	);
+	return (await res.json()) as { attemptId: string };
+}
+
+export async function deleteDemoGradingSample(
+	baseUrl: string = getApiBaseUrl(),
+): Promise<void> {
+	await gradingFetch(
+		"/demo-sample",
+		{
+			method: "DELETE",
+		},
+		"delete demo grading sample",
 		baseUrl,
 	);
 }

@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Phase 3: API & Web UI bài nộp mẫu dùng thử trên /grading"
-status: pending
+status: completed
 priority: P1
 effort: "2.5h"
 dependencies: [1, 2]

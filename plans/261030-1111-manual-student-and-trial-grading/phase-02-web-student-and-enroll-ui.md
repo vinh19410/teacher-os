@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Phase 2: Web UI tạo học viên thủ công & modal thêm vào lớp"
-status: pending
+status: completed
 priority: P1
 effort: "3h"
 dependencies: [1]
@@ -19,7 +19,7 @@ Cung cấp giao diện tạo học viên thủ công (`AddStudentModal`) tại `
 - Modify: `apps/web/src/lib/repos/kernel.ts` — thêm nhánh `case "add-student"` trong `kernelCommand` và truyền `activateNow` trong `case "enroll-student"`.
 - Modify: `apps/web/src/lib/data-store-reducer.ts` — thêm `case "add-student"` vào danh sách action server-owned (refresh từ snapshot).
 - Create: `apps/web/src/components/modals/add-student-modal.tsx` — modal tạo học viên thủ công (Họ tên bắt buộc; SĐT, Email, Tên phụ huynh, SĐT phụ huynh, Lớp học và checkbox Kích hoạt Đang học ngay tùy chọn).
-- Modify: `apps/web/src/components/modals/enroll-student-modal.tsx` — sửa thông báo khi org chưa có học viên, thêm chuyển đổi 2 chế độ ("Chọn học viên có sẵn" / "Tạo học viên mới") và checkbox "Kích hoạt trạng thái Đang học ngay" (mặc định `true`).
+- Modify: `apps/web/src/components/modals/enroll-student-modal.tsx` — sửa thông báo khi org chưa có học viên, thêm chuyển đổi 2 chế độ ("Chọn học viên có sẵn" / "Tạo học viên mới") và checkbox "Kích hoạt trạng thái Đang học ngay" (mặc định `true` ở chế độ tạo mới, `false` ở chế độ chọn học viên có sẵn).
 - Modify: `apps/web/src/routes/_auth/students/index.tsx` — thêm nút "+ Thêm học viên" mở `AddStudentModal` cạnh nút "Mời học viên", thêm nút "+ Thêm học viên" trong empty state, và hiển thị nhãn "Chưa liên kết Portal" khi `student.email === ""`.
 - Modify: `apps/web/src/routes/_auth/students/$studentId.tsx` — hiển thị rõ trạng thái `Email: <email>` hoặc `"Chưa có email (chưa liên kết Portal)"` ở phần thông tin học viên.
 - Modify: `apps/web/src/routes/_auth/students/index.test.tsx`, `apps/web/src/components/modals/enroll-student-modal.test.tsx`, `apps/web/src/routes/_auth/classes/$classId.test.tsx`, `apps/web/src/lib/repos/kernel.test.ts` — cập nhật và bổ sung unit test cho hành vi mới.
@@ -98,14 +98,14 @@ Cung cấp giao diện tạo học viên thủ công (`AddStudentModal`) tại `
      - Hiển thị ghi chú nhỏ dưới ô Email: *"Tùy chọn. Nếu nhập email, học viên đăng nhập Student Portal bằng email này sẽ tự động khớp vào hồ sơ."*
      - Nếu `data.classes.length > 0` và không truyền `defaultClassId` cố định, hiển thị dropdown `Select` "Ghi danh vào lớp (tùy chọn)" (mặc định `"— Chưa chọn lớp —"`). Khi có `classId` được chọn, hiển thị checkbox `"Kích hoạt trạng thái Đang học ngay"` (mặc định checked).
   2. Cập nhật `apps/web/src/components/modals/enroll-student-modal.tsx`:
-     - Thêm state `mode: "existing" | "create"` (khi mở modal: nếu `data.students.length === 0` thì mặc định `"create"`, ngược lại `"existing"`) và `activateNow` (mặc định `true`).
+     - Thêm state `mode: "existing" | "create"` (khi mở modal: nếu `data.students.length === 0` thì mặc định `"create"`, ngược lại `"existing"`) và `activateNow` (mặc định `true` khi `mode === "create"`, `false` khi `mode === "existing"`).
      - Thêm thanh chuyển chế độ (2 nút tab/segmented: `"Chọn học viên có sẵn"` và `"Tạo học viên mới"`) ở đầu modal.
      - Ở chế độ `"existing"`:
        - Sửa câu thông báo khi `filteredStudents.length === 0` (dòng 97–101):
          - Nếu `data.students.length === 0`: hiển thị `"Chưa có học viên nào trong tổ chức."` kèm nút `"Tạo học viên mới ngay"` (bấm vào chuyển `setMode("create")`).
          - Nếu `eligibleStudents.length === 0`: giữ `"Tất cả học viên đã được thêm vào lớp."`.
          - Ngược lại: `"Không có học viên phù hợp."`.
-       - Thêm checkbox `"Kích hoạt trạng thái Đang học ngay"` (mặc định `true`).
+       - Thêm checkbox `"Kích hoạt trạng thái Đang học ngay"` (mặc định `false` ở chế độ `"existing"` để giữ nguyên luồng mời-rồi-kích-hoạt của E2E hiện hữu).
        - Khi submit, gửi `run({ type: "enroll-student", classId, studentId: selectedStudentId, activateNow })`.
      - Ở chế độ `"create"`:
        - Hiển thị các trường `Họ tên học viên *`, `Số điện thoại`, `Email`, `Tên phụ huynh`, `SĐT phụ huynh` và checkbox `"Kích hoạt trạng thái Đang học ngay"` (mặc định `true`), gửi `run({ type: "add-student", payload: { name: name.trim(), phone, email: email.trim().toLowerCase(), parentName: parentName.trim(), parentPhone, classId, activateNow } })`.
@@ -145,7 +145,7 @@ Cung cấp giao diện tạo học viên thủ công (`AddStudentModal`) tại `
   1. Trong `apps/web/src/routes/_auth/students/index.test.tsx` (dòng 55–66):
      - Cập nhật test `"adds students only by invitation..."` thành `"supports both manual student creation (+ Thêm học viên) and email invitation (Mời học viên)"`: kiểm tra cả 2 nút đều hiển thị, bấm `+ Thêm học viên` mở dialog tạo học viên mới và gửi `POST /api/students` với `{ name: "Nguyễn Văn Mới", phone: "", email: "", parentName: "", parentPhone: "", activateNow: true }`.
   2. Trong `apps/web/src/components/modals/enroll-student-modal.test.tsx` (dòng 28–30) và `apps/web/src/routes/_auth/classes/$classId.test.tsx` (dòng 102–108):
-     - Cập nhật `expectedWrite.body` của `POST /api/classes/cl-1/enroll` thành `{ studentId: "st-2", activateNow: true }`.
+     - Cập nhật `expectedWrite.body` của `POST /api/classes/cl-1/enroll` thành `{ studentId: "st-2", activateNow: false }` và thêm test tích chọn checkbox gửi `{ studentId: "st-2", activateNow: true }`.
      - Thêm test case trong `apps/web/src/components/modals/enroll-student-modal.test.tsx`: khi `students: []` (org chưa có học viên), mở `EnrollStudentModal` tự động hiển thị chế độ `"Tạo học viên mới"`, điền Họ tên và bấm Lưu sẽ gửi `POST /api/students` kèm `classId: "cl-1", activateNow: true`.
   3. Trong `apps/web/src/lib/repos/kernel.test.ts`:
      - Thêm test cho `kernelCommand({ type: "add-student", payload: ... })` và `kernelCommand({ type: "enroll-student", classId: "cl-1", studentId: "st-9", activateNow: true })`.
