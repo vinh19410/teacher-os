@@ -71,7 +71,7 @@ function renderText(body: string, linkUrl: string): string {
 }
 
 /** Escape entities cho plain-text body khi nhúng vào HTML email (CR M2). */
-function escapeHtml(value: string): string {
+export function escapeHtml(value: string): string {
 	return value
 		.replaceAll("&", "&amp;")
 		.replaceAll("<", "&lt;")

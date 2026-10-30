@@ -10,6 +10,7 @@ import { user } from "@teacher-os/db/schema/auth";
 import { membership } from "@teacher-os/db/schema/membership";
 import { eq } from "drizzle-orm";
 import type { Db } from "../app";
+import { escapeHtml } from "./notifications/deliver";
 
 /**
  * Email báo lead mới (plan #506 D13) — chạy nền sau khi lead đã ghi DB;
@@ -92,7 +93,9 @@ export async function notifyNewLead({
 				.send({
 					to,
 					subject: `Đăng ký học mới: ${lead.name}`,
-					html: `<pre>${text}</pre>`,
+					// `text` chứa name/note do người dùng gõ vào form — escape trước
+					// khi nhúng vào HTML (cùng rule CR M2 của notification email).
+					html: `<pre>${escapeHtml(text)}</pre>`,
 					text,
 				})
 				.catch((error: unknown) => {
