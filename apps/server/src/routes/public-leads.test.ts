@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, test } from "vitest";
 import { buildApp, type Db, type ServerApp } from "../app";
 import {
 	LEAD_DAILY_CAP,
+	LEAD_DEDUPE_MAX_SUBMITS,
 	LEAD_IP_MAX,
 	LEAD_MIN_ELAPSED_MS,
 } from "./public-leads";
@@ -297,6 +298,38 @@ describe("POST /public/leads (#506 phase 2)", () => {
 		expect(rows[0]!.teacherNote).toBe("Đã nhắn Zalo");
 		expect(rows[0]!.course).toBe("comm-2");
 		expect(rows[0]!.submitCount).toBe(2);
+	});
+
+	test("gửi lại cùng SĐT không ghi đè tên/email; quá ngưỡng gửi lại ⇒ 429", async () => {
+		const instance = app();
+		const first = await submit(instance, {
+			...validBody("0909123456"),
+			email: "goc@example.com",
+		});
+		expect(first.status).toBe(201);
+
+		for (let i = 2; i <= LEAD_DEDUPE_MAX_SUBMITS; i++) {
+			const res = await submit(
+				instance,
+				{
+					...validBody("0909123456"),
+					name: "Người Khác",
+					email: "khac@example.com",
+				},
+				{ "CF-Connecting-IP": `10.0.0.${i}` },
+			);
+			expect(res.status).toBe(201);
+		}
+		const rows = await leadRows();
+		expect(rows).toHaveLength(1);
+		expect(rows[0]!.name).toBe("Nguyễn Thu Hà");
+		expect(rows[0]!.email).toBe("goc@example.com");
+
+		const blocked = await submit(instance, validBody("0909123456"), {
+			"CF-Connecting-IP": "10.0.0.99",
+		});
+		expect(blocked.status).toBe(429);
+		expect((await leadRows())[0]!.submitCount).toBe(LEAD_DEDUPE_MAX_SUBMITS);
 	});
 
 	test("lead mới ⇒ đúng 1 email mỗi thành viên org, không PII trong email (D13)", async () => {

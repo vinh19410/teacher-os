@@ -33,6 +33,8 @@ export const LEAD_DAILY_CAP = 100;
 export const LEAD_MIN_ELAPSED_MS = 3000;
 /** Cửa sổ dedupe theo SĐT (24 giờ) — gửi lại cập nhật lead cũ (D7). */
 export const LEAD_DEDUPE_WINDOW_MS = 24 * 60 * 60 * 1000;
+/** Số lần gửi tối đa cho một SĐT trong cửa sổ dedupe — quá ngưỡng ⇒ 429. */
+export const LEAD_DEDUPE_MAX_SUBMITS = 5;
 
 /** Body tối đa nhận — form không bao giờ cần hơn; lớn hơn là probe. */
 const LEAD_BODY_MAX_BYTES = 4096;
@@ -208,7 +210,7 @@ export function publicLeadRoutes(deps: PublicLeadRouteDeps) {
 			return c.json({ error: "LEAD_DAILY_CAP", code: "LEAD_DAILY_CAP" }, 429);
 		}
 
-		// (i) Dedupe SĐT 24 giờ: cập nhật lead cũ (giữ status + teacherNote,
+		// (i) Dedupe SĐT 24 giờ kể từ lúc tạo: cập nhật lead cũ (giữ status + teacherNote,
 		// submitCount + 1) thay vì tạo dòng mới (D7).
 		const [existing] = await db
 			.select()
@@ -217,18 +219,27 @@ export function publicLeadRoutes(deps: PublicLeadRouteDeps) {
 				and(
 					eq(lead.orgId, leadOrgId),
 					eq(lead.phone, submit.phone),
-					gte(lead.updatedAt, new Date(now - LEAD_DEDUPE_WINDOW_MS)),
+					gte(lead.createdAt, new Date(now - LEAD_DEDUPE_WINDOW_MS)),
 				),
 			)
-			.orderBy(desc(lead.updatedAt))
+			.orderBy(desc(lead.createdAt))
 			.limit(1);
 
 		if (existing) {
+			if (existing.submitCount >= LEAD_DEDUPE_MAX_SUBMITS) {
+				c.header("Retry-After", "600");
+				return c.json(
+					{ error: "LEAD_RATE_LIMITED", code: "LEAD_RATE_LIMITED" },
+					429,
+				);
+			}
+			// Tên/email là định danh giáo viên đang thấy: người gửi lại không ghi
+			// đè được, chỉ bổ sung khi lead cũ để trống.
 			await db
 				.update(lead)
 				.set({
-					name: submit.name,
-					email: submit.email ?? "",
+					name: existing.name || submit.name,
+					email: existing.email || (submit.email ?? ""),
 					birthDate: submit.birthDate ?? "",
 					course: submit.course ?? "",
 					studyMode: submit.studyMode ?? "",
