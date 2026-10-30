@@ -2584,4 +2584,105 @@ describe("TOS-33 (#481) — vai TA, publish version, ai-retry", () => {
 			"ai_grading:att-t33:r1:settle",
 		]);
 	});
+
+	test("POST /api/grading/demo-sample creates an isolated demo Writing attempt with static AI draft (0 credits) and DELETE removes it cleanly (#508)", async () => {
+		const beforeRemRes = await app.request("/api/dashboard/reminders", {
+			headers: TEACHER,
+		});
+		expect(beforeRemRes.status).toBe(200);
+		const beforeReminders = (await beforeRemRes.json()) as {
+			overdueGrading: { count: number };
+		};
+		const beforeCount = beforeReminders.overdueGrading.count;
+
+		const createRes = await app.request("/api/grading/demo-sample", {
+			method: "POST",
+			headers: {
+				...TEACHER,
+				Origin: TEACHER_ORIGIN,
+				"Content-Type": "application/json",
+			},
+			body: "{}",
+		});
+		expect(createRes.status).toBe(201);
+		const { attemptId } = (await createRes.json()) as { attemptId: string };
+		expect(attemptId).toBe("demo-attempt:org-1");
+
+		// Backdate demo attempt past 24h so it would count as overdue if not excluded by notLike("demo-attempt:%")
+		await libsql
+			.update(schema.quizAttempt)
+			.set({ submittedAt: new Date(Date.now() - 48 * 3600_000) })
+			.where(eq(schema.quizAttempt.id, attemptId));
+
+		const queueRes = await app.request("/api/grading", {
+			headers: TEACHER,
+		});
+		expect(queueRes.status).toBe(200);
+		const queue = (await queueRes.json()) as GradingQueueResponse;
+		const demoItem = queue.items.find((i) => i.attemptId === attemptId);
+		expect(demoItem).toBeDefined();
+		expect(demoItem?.skill).toBe("writing");
+		expect(demoItem?.aiStatus).toBe("ai_drafted");
+
+		const kernelRes = await app.request("/api/kernel", {
+			headers: TEACHER,
+		});
+		expect(kernelRes.status).toBe(200);
+		const snap = (await kernelRes.json()) as {
+			students: Array<{ id: string }>;
+			assignmentPrompts: Array<{ id: string }>;
+			assignmentTests: Array<{ id: string }>;
+		};
+		expect(snap.students.some((s) => s.id.startsWith("demo-student:"))).toBe(
+			false,
+		);
+		expect(
+			snap.assignmentPrompts.some((p) => p.id.startsWith("demo-prompt:")),
+		).toBe(false);
+		expect(
+			snap.assignmentTests.some((t) => t.id.startsWith("demo-test:")),
+		).toBe(false);
+
+		const remRes = await app.request("/api/dashboard/reminders", {
+			headers: TEACHER,
+		});
+		expect(remRes.status).toBe(200);
+		const reminders = (await remRes.json()) as {
+			overdueGrading: { count: number };
+		};
+		expect(reminders.overdueGrading.count).toBe(beforeCount);
+		const gradeRes = await app.request(
+			`/api/grading/${encodeURIComponent(attemptId)}/grade`,
+			{
+				method: "POST",
+				headers: {
+					...TEACHER,
+					Origin: TEACHER_ORIGIN,
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					scores: { task: 6.5, coherence: 6.5, lexical: 6.0, grammar: 6.0 },
+					feedback: "Bài mẫu tốt",
+					version: 1,
+				}),
+			},
+		);
+		expect(gradeRes.status).toBe(200);
+
+		const delRes = await app.request("/api/grading/demo-sample", {
+			method: "DELETE",
+			headers: {
+				...TEACHER,
+				Origin: TEACHER_ORIGIN,
+			},
+		});
+		expect(delRes.status).toBe(200);
+
+		const queueAfterRes = await app.request("/api/grading", {
+			headers: TEACHER,
+		});
+		expect(queueAfterRes.status).toBe(200);
+		const queueAfter = (await queueAfterRes.json()) as GradingQueueResponse;
+		expect(queueAfter.items.some((i) => i.attemptId === attemptId)).toBe(false);
+	});
 });

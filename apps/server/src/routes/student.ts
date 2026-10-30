@@ -122,6 +122,15 @@ export function createStudentGuard(deps: StudentRouteDeps) {
 		if (!sessionUser) {
 			return c.json({ error: "unauthorized", code: "UNAUTHORIZED" }, 401);
 		}
+		if (sessionUser.emailVerified !== true) {
+			return c.json(
+				{
+					error: STUDENT_ERROR_CODES.EMAIL_UNVERIFIED,
+					code: STUDENT_ERROR_CODES.EMAIL_UNVERIFIED,
+				},
+				403,
+			);
+		}
 		const db = deps.getDb();
 		const normalizedEmail = sessionUser.email.toLowerCase();
 
@@ -132,34 +141,28 @@ export function createStudentGuard(deps: StudentRouteDeps) {
 			.orderBy(desc(student.createdAt), asc(student.id));
 
 		if (rows.length === 0) {
-			if (sessionUser.emailVerified === true) {
-				try {
-					await provisionStudentForUser(db, {
-						name: sessionUser.userName,
-						email: sessionUser.email,
-					});
-					rows = await db
-						.select()
-						.from(student)
-						.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
-						.orderBy(desc(student.createdAt), asc(student.id));
-				} catch (err) {
-					console.error("Failed to provision student for user", {
-						userId: sessionUser.userId,
-						error: err,
-					});
-				}
+			try {
+				await provisionStudentForUser(db, {
+					name: sessionUser.userName,
+					email: sessionUser.email,
+				});
+				rows = await db
+					.select()
+					.from(student)
+					.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
+					.orderBy(desc(student.createdAt), asc(student.id));
+			} catch (err) {
+				console.error("Failed to provision student for user", {
+					userId: sessionUser.userId,
+					error: err,
+				});
 			}
 
 			if (rows.length === 0) {
-				const code =
-					sessionUser.emailVerified === true
-						? STUDENT_ERROR_CODES.NOT_LINKED
-						: STUDENT_ERROR_CODES.EMAIL_UNVERIFIED;
 				return c.json(
 					{
-						error: code,
-						code,
+						error: STUDENT_ERROR_CODES.NOT_LINKED,
+						code: STUDENT_ERROR_CODES.NOT_LINKED,
 					},
 					403,
 				);

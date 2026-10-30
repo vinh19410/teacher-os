@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Phase 1: Contracts & Server API tạo học viên thủ công + kích hoạt ngay"
-status: pending
+status: completed
 priority: P1
 effort: "3h"
 dependencies: []

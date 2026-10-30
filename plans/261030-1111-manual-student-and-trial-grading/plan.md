@@ -1,11 +1,11 @@
 ---
 title: "Thêm học viên thủ công, kích hoạt lớp tức thì & bài nộp mẫu dùng thử Chấm điểm"
 description: "Mở lại luồng thêm học viên thủ công trên app giáo viên (tự khớp Student Portal qua email), cho phép ghi danh & kích hoạt Đang học ngay lập tức, và bổ sung nút tạo/xóa bài nộp mẫu dùng thử trên /grading không tốn credit AI."
-status: pending
+status: completed
 priority: P1
 effort: 10h
 issue: 508
-branch: develop
+branch: vinh19410/ai-handle-issue-508
 tags: [feature, api, backend, frontend, e2e]
 blockedBy: []
 blocks: []
@@ -28,7 +28,7 @@ Kế hoạch này giải quyết triệt để qua 2 trụ cột (Phương án A
 |---|-----------|----------|
 | D1 | Khôi phục `POST /api/students` org-scoped | Chỉ bắt buộc `name` (1–120 ký tự); `phone`, `email`, `parentName`, `parentPhone` tùy chọn (`default("")`). Email chuẩn hóa `lower(trim(email))`; nếu khác rỗng và trùng học viên trong cùng `orgId` (không tính `demo-student:*`) → trả `409 STUDENT_ALREADY_IN_ORG` kèm `existingStudentName`. Khi race condition xảy ra lúc insert, re-query bảng `student` theo `(orgId, normalizedEmail)` để trả `409` chính xác mà không nuốt nhầm lỗi FK/NOT NULL. |
 | D2 | Tự đóng lời mời `pending` khi tạo tay | Trong cùng `db.batch` tạo `student`, nếu `email !== ""` thì chạy `UPDATE student_invitation SET status = 'accepted' WHERE org_id = ctx.orgId AND lower(trim(email)) = normalizedEmail AND status = 'pending'` để không còn lời mời mồ côi. |
-| D3 | Ghi danh & Kích hoạt `active` ngay lập tức | `studentCreateSchema` nhận `classId?: string` và `activateNow: boolean` (mặc định `true`); `enrollStudentSchema` nhận thêm `activateNow?: boolean` (mặc định `false` trên wire để giữ tương thích ngược 100% với test server cũ, nhưng UI `EnrollStudentModal` bật sẵn `true`). Khi `activateNow === true`: ghi `enrollment` (`status: 'invited'`) rồi gọi `activateEnrollment(db, ctx.orgId, enrollmentId)`; nếu `!act.ok` thì trả `500` (không trả `201` nửa vời), và chỉ bắn `classEnrolledEvent` ("Được mời vào lớp") khi `!activateNow` (trạng thái còn `invited`). |
+| D3 | Ghi danh & Kích hoạt `active` ngay lập tức | `studentCreateSchema` nhận `classId?: string` và `activateNow: boolean` (mặc định `true`); `enrollStudentSchema` nhận thêm `activateNow?: boolean` (mặc định `false` trên wire để giữ tương thích ngược 100% với test server và E2E chọn học viên có sẵn, còn chế độ Tạo học viên mới trong `EnrollStudentModal` và `AddStudentModal` bật sẵn `true`). Khi `activateNow === true`: ghi `enrollment` (`status: 'invited'`) rồi gọi `activateEnrollment(db, ctx.orgId, enrollmentId)`; nếu `!act.ok` thì trả `500` (không trả `201` nửa vời), và chỉ bắn `classEnrolledEvent` ("Được mời vào lớp") khi `!activateNow` (trạng thái còn `invited`). |
 | D4 | Defense-in-depth cho `createStudentGuard` | Bổ sung kiểm tra `sessionUser.emailVerified === true` ngay đầu `createStudentGuard` (`apps/server/src/routes/student.ts`) bên cạnh middleware `router.use("*")` hiện có. |
 | D5 | Cô lập bài nộp mẫu `/grading` bằng ID tất định `demo-*:${orgId}` | Không thêm cột schema hay chạy migration D1. Dùng 5 ID tất định theo `orgId` (`demo-student:${orgId}`, `demo-prompt:${orgId}`, `demo-test:${orgId}`, `demo-test-part:${orgId}`, `demo-attempt:${orgId}`). `loadSnapshot` lọc bỏ `demo-student:%`, `demo-prompt:%`, `demo-test:%`; `computeReminders` lọc bỏ `demo-attempt:%`; `POST /api/grading/:attemptId/grade` bỏ qua `emitNotifications` với `demo-attempt:%`. Bản nháp AI mẫu ghi thẳng `status = 'ai_drafted'`, `creditCost = 0`, không gọi model AI thật. |
 
@@ -36,10 +36,10 @@ Kế hoạch này giải quyết triệt để qua 2 trụ cột (Phương án A
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: Contracts & Server API tạo học viên thủ công + kích hoạt ngay](./phase-01-start.md) | Pending |
-| 2 | [Phase 2: Web UI tạo học viên thủ công & modal thêm vào lớp](./phase-02-web-student-and-enroll-ui.md) | Pending |
-| 3 | [Phase 3: API & Web UI bài nộp mẫu dùng thử trên /grading](./phase-03-demo-grading-sample.md) | Pending |
-| 4 | [Phase 4: E2E, kiểm tra 3 viewport & cổng chất lượng toàn diện](./phase-04-e2e-and-regression-gates.md) | Pending |
+| 1 | [Phase 1: Contracts & Server API tạo học viên thủ công + kích hoạt ngay](./phase-01-start.md) | Completed |
+| 2 | [Phase 2: Web UI tạo học viên thủ công & modal thêm vào lớp](./phase-02-web-student-and-enroll-ui.md) | Completed |
+| 3 | [Phase 3: API & Web UI bài nộp mẫu dùng thử trên /grading](./phase-03-demo-grading-sample.md) | Completed |
+| 4 | [Phase 4: E2E, kiểm tra 3 viewport & cổng chất lượng toàn diện](./phase-04-e2e-and-regression-gates.md) | Completed |
 
 ## Cross-Plan Dependencies
 
@@ -50,11 +50,11 @@ Kế hoạch này giải quyết triệt để qua 2 trụ cột (Phương án A
 
 ## Success Criteria
 
-- [ ] `POST /api/students` tạo học viên mới với chỉ `name` bắt buộc; trả `409 STUDENT_ALREADY_IN_ORG` khi trùng email trong cùng org; tự chuyển `student_invitation` `pending` cùng email sang `accepted`.
-- [ ] Tạo học viên kèm `classId` + `activateNow: true` (hoặc `POST /api/classes/:id/enroll` với `activateNow: true`) kích hoạt luôn `enrollment.status = 'active'`, sinh `session_package` và `lesson`, mở khóa ngay `POST /api/invoices` và `POST /api/classes/:id/assignments`.
-- [ ] Trang `/students` có nút **+ Thêm học viên** mở `AddStudentModal`; `EnrollStudentModal` trên `/classes/$classId` sửa thông báo khi org rỗng và cho phép chuyển sang chế độ **Tạo học viên mới** hoặc chọn học viên có sẵn kèm checkbox **Kích hoạt trạng thái Đang học ngay** (mặc định bật).
-- [ ] `POST /api/grading/demo-sample` tạo idempotent 1 bài nộp Writing Task 2 mẫu (`demo-attempt:${orgId}`) kèm `ai_grading_draft` (`status = 'ai_drafted'`, `creditCost = 0`) hiện ngay trong `/grading` mà không xuất hiện ở `/students`, `/assignments` hay thẻ nhắc việc Dashboard; `DELETE /api/grading/demo-sample` xóa sạch bộ mẫu.
-- [ ] Toàn bộ `pnpm exec biome check .`, `pnpm check-types`, `pnpm test` và spec E2E mới đều xanh.
+- [x] `POST /api/students` tạo học viên mới với chỉ `name` bắt buộc; trả `409 STUDENT_ALREADY_IN_ORG` khi trùng email trong cùng org; tự chuyển `student_invitation` `pending` cùng email sang `accepted`.
+- [x] Tạo học viên kèm `classId` + `activateNow: true` (hoặc `POST /api/classes/:id/enroll` với `activateNow: true`) kích hoạt luôn `enrollment.status = 'active'`, sinh `session_package` và `lesson`, mở khóa ngay `POST /api/invoices` và `POST /api/classes/:id/assignments`.
+- [x] Trang `/students` có nút **+ Thêm học viên** mở `AddStudentModal`; `EnrollStudentModal` trên `/classes/$classId` sửa thông báo khi org rỗng và cho phép chuyển sang chế độ **Tạo học viên mới** (mặc định bật `activateNow`) hoặc chọn học viên có sẵn kèm checkbox **Kích hoạt trạng thái Đang học ngay** (mặc định tắt ở chế độ chọn học viên có sẵn để giữ nguyên luồng mời-rồi-kích-hoạt của E2E hiện hữu).
+- [x] `POST /api/grading/demo-sample` tạo idempotent 1 bài nộp Writing Task 2 mẫu (`demo-attempt:${orgId}`) kèm `ai_grading_draft` (`status = 'ai_drafted'`, `creditCost = 0`) hiện ngay trong `/grading` mà không xuất hiện ở `/students`, `/assignments` hay thẻ nhắc việc Dashboard; `DELETE /api/grading/demo-sample` xóa sạch bộ mẫu.
+- [x] Toàn bộ `pnpm exec biome check .`, `pnpm check-types`, `pnpm test` và spec E2E mới đều xanh.
 
 ## Red Team Review
 

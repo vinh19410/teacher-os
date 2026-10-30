@@ -355,6 +355,45 @@ describe("kernelCommand", () => {
 		});
 	});
 
+	test("enroll-student forwards activateNow when specified (#508)", () => {
+		const req = kernelCommand({
+			type: "enroll-student",
+			classId: "cl-1",
+			studentId: "st-9",
+			activateNow: true,
+		});
+		expect(req.path).toBe("/api/classes/cl-1/enroll");
+		expect(req.body).toEqual({
+			studentId: "st-9",
+			activateNow: true,
+		});
+	});
+
+	test("add-student maps to POST /api/students (#508)", () => {
+		const req = kernelCommand({
+			type: "add-student",
+			payload: {
+				name: "Lê Minh",
+				phone: "0901234567",
+				email: "minh@test.local",
+				parentName: "",
+				parentPhone: "",
+				classId: "cl-1",
+				activateNow: true,
+			},
+		});
+		expect(req.path).toBe("/api/students");
+		expect(req.body).toEqual({
+			name: "Lê Minh",
+			phone: "0901234567",
+			email: "minh@test.local",
+			parentName: "",
+			parentPhone: "",
+			classId: "cl-1",
+			activateNow: true,
+		});
+	});
+
 	test("add-invoice posts the invoice-create contract body (#61)", () => {
 		const req = kernelCommand({
 			type: "add-invoice",

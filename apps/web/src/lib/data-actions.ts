@@ -6,6 +6,7 @@ import type {
 	AssignmentTestUpdate,
 	ClassType,
 	InvoicePaymentCreate,
+	StudentCreateInput,
 	SyllabusModuleContent,
 } from "@teacher-os/api/contracts";
 import type { Scores, SyllabusLesson } from "./mock-data";
@@ -84,11 +85,16 @@ export type KernelAction =
 			};
 	  }
 	| {
-			/** Issue #122 / #251 — enroll an EXISTING student into a viewed class.
+			type: "add-student";
+			payload: StudentCreateInput;
+	  }
+	| {
+			/** Issue #122 / #251 / #508 — enroll an EXISTING student into a viewed class.
 			 * Package is derived by server from class attributes (D1 pattern). */
 			type: "enroll-student";
 			classId: string;
 			studentId: string;
+			activateNow?: boolean;
 	  }
 	| {
 			/** Issue #61 — create an invoice for an existing enrollment.

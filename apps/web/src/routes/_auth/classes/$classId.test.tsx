@@ -103,7 +103,7 @@ describe("class detail → enroll an existing student", () => {
 			{
 				method: "POST",
 				path: "/api/classes/cl-1/enroll",
-				body: { studentId: "st-2" },
+				body: { studentId: "st-2", activateNow: false },
 			},
 		]);
 		expect(await screen.findByText("Học viên Hai")).toBeTruthy();
