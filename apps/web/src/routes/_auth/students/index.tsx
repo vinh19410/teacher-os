@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { UserPlus } from "lucide-react";
+import { Plus, UserPlus } from "lucide-react";
 import { useState } from "react";
+import { AddStudentModal } from "@/components/modals/add-student-modal";
 import { InviteStudentModal } from "@/components/modals/invite-student-modal";
 import { PendingInvitationsList } from "@/components/students/pending-invitations-list";
 import { Avatar } from "@/components/ui/avatar";
@@ -41,7 +42,7 @@ export function StudentsRoute() {
 		"students",
 	);
 	const [inviteModalOpen, setInviteModalOpen] = useState(false);
-
+	const [addModalOpen, setAddModalOpen] = useState(false);
 	const pendingInvites = (invitations ?? []).filter(
 		(inv) => inv.status === "pending",
 	);
@@ -71,13 +72,18 @@ export function StudentsRoute() {
 				title="Học viên"
 				lead={`${attentionCount} cần chú ý (nợ học phí / sắp hết gói)`}
 				action={
-					<Button
-						onClick={() => setInviteModalOpen(true)}
-						className="self-start sm:self-center"
-					>
-						<UserPlus className="h-4 w-4" />
-						Mời học viên
-					</Button>
+					<div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
+						<Button
+							variant="secondary"
+							onClick={() => setInviteModalOpen(true)}
+						>
+							<UserPlus className="h-4 w-4" />
+							Mời học viên
+						</Button>
+						<Button variant="primary" onClick={() => setAddModalOpen(true)}>
+							<Plus className="h-4 w-4" />+ Thêm học viên
+						</Button>
+					</div>
 				}
 			/>
 
@@ -116,10 +122,14 @@ export function StudentsRoute() {
 				>
 					<h2 className="font-semibold text-lg">Chưa có học viên nào</h2>
 					<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
-						Học viên sẽ tự xuất hiện tại đây khi đăng ký và đăng nhập student
-						portal lần đầu. Giáo viên có thể thêm học viên vào lớp từ trang chi
-						tiết lớp học.
+						Bạn có thể thêm học viên thủ công để quản lý lớp học, học phí, bài
+						tập ngay lập tức, hoặc mời học viên đăng nhập student portal.
 					</p>
+					<div className="mt-4 flex justify-center">
+						<Button variant="primary" onClick={() => setAddModalOpen(true)}>
+							<Plus className="h-4 w-4" />+ Thêm học viên
+						</Button>
+					</div>
 				</Card>
 			) : list.length === 0 ? (
 				<Card variant="white" className="p-8 text-center">
@@ -145,8 +155,18 @@ export function StudentsRoute() {
 										<Avatar text={s.avatar} size="sm" />
 										<div>
 											<div className="font-semibold text-sm">{s.name}</div>
-											<div className="text-muted-foreground text-xs">
-												{s.phone}
+											<div className="flex flex-wrap items-center gap-1.5 text-muted-foreground text-xs">
+												<span>
+													{s.phone || s.email || "Chưa có SĐT / Email"}
+												</span>
+												{!s.email && (
+													<Badge
+														variant="muted"
+														className="px-1.5 py-0 text-[10px]"
+													>
+														Chưa liên kết Portal
+													</Badge>
+												)}
 											</div>
 										</div>
 									</div>,
@@ -191,6 +211,10 @@ export function StudentsRoute() {
 			<InviteStudentModal
 				open={inviteModalOpen}
 				onClose={() => setInviteModalOpen(false)}
+			/>
+			<AddStudentModal
+				open={addModalOpen}
+				onClose={() => setAddModalOpen(false)}
 			/>
 		</div>
 	);

@@ -11,6 +11,7 @@ import {
 	CalendarCheck,
 	CalendarDays,
 	ClipboardList,
+	Inbox,
 	LayoutDashboard,
 	PenLine,
 	ReceiptText,
@@ -46,6 +47,8 @@ export const TEACHER_NAV: NavGroup[] = [
 			},
 			{ key: "classes", label: "Lớp học", icon: School, href: "/classes" },
 			{ key: "students", label: "Học viên", icon: Users, href: "/students" },
+			// #506: lead từ form đăng ký trên msmy.io.vn — màn Đăng ký mới.
+			{ key: "leads", label: "Đăng ký mới", icon: Inbox, href: "/leads" },
 			{
 				key: "schedule",
 				label: "Lịch dạy",
@@ -169,6 +172,7 @@ const ACTIVE_KEY_BY_PREFIX: Record<string, string> = {
 	"/attendance": "attendance",
 	"/classes": "classes",
 	"/students": "students",
+	"/leads": "leads",
 	"/schedule": "schedule",
 	"/syllabus": "syllabus",
 	"/notifications": "notifications",

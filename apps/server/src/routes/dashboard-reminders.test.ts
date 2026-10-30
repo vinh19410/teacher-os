@@ -409,6 +409,17 @@ describe("computeReminders — overdue grading", () => {
 				questionsSnapshot: "[]",
 				submittedAt: new Date(NOW.getTime() - 30 * HOUR_MS),
 			},
+			// Bài nộp mẫu dùng thử (demo-attempt:*) quá 24h — phải bị loại trừ (#508).
+			{
+				id: "demo-attempt:org-1",
+				orgId: "org-1",
+				studentId: "student-1",
+				testId: "test-writing",
+				mode: "practice",
+				status: "submitted",
+				questionsSnapshot: "[]",
+				submittedAt: new Date(NOW.getTime() - 48 * HOUR_MS),
+			},
 		]);
 
 		const result = await computeReminders(db, "org-1", { kind: "org" }, NOW);

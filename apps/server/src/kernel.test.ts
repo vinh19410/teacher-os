@@ -4978,7 +4978,7 @@ describe("student package minimums (issue #115)", () => {
 		).toBe(12);
 	});
 
-	test("POST /api/students route is removed and returns 404", async () => {
+	test("POST /api/students creates a manual student and returns 201", async () => {
 		const res = await t.call("/api/students", {
 			session,
 			method: "POST",
@@ -4988,7 +4988,7 @@ describe("student package minimums (issue #115)", () => {
 				email: "hv@test.local",
 			},
 		});
-		expect(res.status).toBe(404);
+		expect(res.status).toBe(201);
 	});
 
 	test("GET /api/students route remains active and returns 200", async () => {

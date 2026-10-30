@@ -24,6 +24,8 @@ export const VALID_EXACT_ROUTES: Record<string, true> = {
 	"/students": true,
 	// Nhật ký gửi thông báo (#454, TOS-21) — màn [5].
 	"/notifications": true,
+	// Đăng ký mới (#506) — lead từ form msmy.io.vn.
+	"/leads": true,
 	"/syllabus": true,
 	"/vocab": true,
 };

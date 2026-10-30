@@ -453,3 +453,54 @@ describe("GradingRoute (/grading/$attemptId) — practice submission support (#3
 		).toContain("Nhận xét đang gõ dở");
 	});
 });
+
+describe("GradingQueueRoute — demo grading sample (#508)", () => {
+	afterEach(() => {
+		cleanup();
+		vi.restoreAllMocks();
+	});
+
+	it("shows create demo sample button in empty state and delete button when demo-attempt is present", async () => {
+		const createSpy = vi
+			.spyOn(gradingRepo, "createDemoGradingSample")
+			.mockResolvedValue({ attemptId: "demo-attempt:org-1" });
+		const deleteSpy = vi
+			.spyOn(gradingRepo, "deleteDemoGradingSample")
+			.mockResolvedValue(undefined);
+
+		renderQueue([]);
+		const createBtn = screen.getByTestId("create-demo-grading-sample");
+		expect(createBtn.textContent).toContain("Tạo bài nộp mẫu dùng thử");
+		fireEvent.click(createBtn);
+		await vi.waitFor(() => {
+			expect(createSpy).toHaveBeenCalledTimes(1);
+		});
+
+		cleanup();
+		renderQueue([
+			{
+				attemptId: "demo-attempt:org-1",
+				mode: "practice",
+				classId: "",
+				className: "Luyện tập",
+				title: "[Mẫu dùng thử] IELTS Writing Task 2 — AI in Education",
+				due: "",
+				student: {
+					id: "demo-student:org-1",
+					name: "Nguyễn Minh Anh (Học viên mẫu)",
+				},
+				skill: "writing",
+				part: "task2",
+				submittedAt: "2026-10-30T10:00:00.000Z",
+				grade: null,
+				aiStatus: "ai_drafted",
+			},
+		]);
+		const deleteBtn = screen.getByTestId("delete-demo-grading-sample");
+		expect(deleteBtn.textContent).toContain("Xóa bài nộp mẫu");
+		fireEvent.click(deleteBtn);
+		await vi.waitFor(() => {
+			expect(deleteSpy).toHaveBeenCalledTimes(1);
+		});
+	});
+});

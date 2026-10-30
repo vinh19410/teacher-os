@@ -8,3 +8,5 @@ export const WEB_ORIGIN = `http://localhost:${process.env.E2E_WEB_PORT ?? 8001}`
 export const STUDENT_ORIGIN = `http://localhost:${process.env.E2E_STUDENT_PORT ?? 8003}`;
 // Cổng console admin (plan #413) — cùng nguồn env với playwright config.
 export const ADMIN_ORIGIN = `http://localhost:${process.env.E2E_ADMIN_PORT ?? 8104}`;
+// Trang profile cô Mỹ (plan #506) — gửi form đăng ký học tới /public/leads.
+export const PROFILE_ORIGIN = `http://localhost:${process.env.E2E_PROFILE_PORT ?? 8105}`;

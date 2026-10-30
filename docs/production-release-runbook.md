@@ -88,6 +88,32 @@ loads `packages/infra/.env` first — a value there wins over the same name in
 | `SEPAY_BANKHUB_BASE_URL` | Deploy operator | operator env → Worker binding | n/a (endpoint); production MUST set `https://bankhub-api.sepay.vn` — blank falls back to the sandbox host and the feature silently no-ops |
 | `GITHUB_WEBHOOK_SECRET` | Operator-generated (`openssl rand -hex 32`) | GitHub environment secret `GH_WEBHOOK_SECRET` → bước deploy CI → Worker binding `GITHUB_WEBHOOK_SECRET` (#421) | sinh mới → cập nhật secret trên trang webhook GitHub và GitHub environment → redeploy; trong lúc lệch, delivery trả 401 và có thể "Redeliver" từ UI. **Cảnh báo:** `withDefault("")` nghĩa là deploy prod/staging NGOÀI CI mà không export `GITHUB_WEBHOOK_SECRET` sẽ ghi đè secret đang chạy về rỗng ⇒ endpoint 503 — deploy tay phải export biến từ `.env` (hoặc chờ CI) |
 
+## Lead intake — form đăng ký msmy.io.vn (#506)
+
+Form đăng ký học trên `msmy.io.vn` POST thẳng vào `POST /public/leads` của API
+(route công khai, không đăng nhập; CORS + chống spam riêng trong
+`apps/server/src/routes/public-leads.ts`). Cấu hình qua 2 binding:
+
+| Binding | Bắt buộc | Giá trị |
+| --- | --- | --- |
+| `LEAD_ORG_ID` | Có (prod) — bỏ trống ⇒ endpoint trả 503 `LEAD_INTAKE_DISABLED` (fail-closed, tắt intake bằng cách xoá binding) | `organization.id` của cô Mỹ — query D1: `SELECT id FROM organization;` (đối chiếu email giáo viên qua `membership`) |
+| `LEAD_ORIGINS` | Có khi deploy không topology (workers.dev); topology tự mặc định `https://msmy.io.vn,https://www.msmy.io.vn`, dev `http://localhost:8005` | Origin trang profile, phân tách dấu phẩy; sai/ thiếu origin ⇒ POST bị 403 `LEAD_ORIGIN_FORBIDDEN` |
+
+Vận hành:
+
+- **Backup trước migration `lead` (0057):** `wrangler d1 export <db> --remote
+  --output backup-<date>.sql` rồi mới apply migration (rule repo cho mọi
+  migration D1 có bảng mới).
+- **Chống spam:** honeypot + `elapsedMs` < 3s ⇒ 201 giả không ghi; tần suất
+  theo IP (HMAC `BETTER_AUTH_SECRET`, ngưỡng 3 lead/10 phút); trần 100 lead
+  mới/ngày/org; SĐT gửi lại trong 24 giờ cập nhật lead cũ. Ngưỡng là hằng số
+  export trong `public-leads.ts` — chỉnh qua code, không phải env.
+- **Build & deploy `apps/profile`:** `LEAD_API_URL=https://api.teacheros.io.vn pnpm --filter profile build` (script `build.mjs` ghi URL API vào `<meta name="lead-api">` trong `dist/index.html`).
+- **Tùy chọn — WAF rate limiting** trên zone teacheros.io.vn cho path
+  `/public/leads` khi có spam thật (lớp 3 của plan; Turnstile chỉ bật khi cần).
+- Email báo lead mới gửi mọi thành viên org qua mailer chung (D13); mailer
+  lỗi không ảnh hưởng response — check log `[leads]` khi nghi ngờ.
+
 ## Deploy preflight (all releases)
 
 1. **Operator authority** — the named release operator (recorded per release

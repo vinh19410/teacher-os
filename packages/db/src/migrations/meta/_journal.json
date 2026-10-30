@@ -400,6 +400,13 @@
       "when": 1793180353912,
       "tag": "0056_demonic_nuke",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "6",
+      "when": 1793331410798,
+      "tag": "0057_exotic_vulture",
+      "breakpoints": true
     }
   ]
 }

@@ -72,6 +72,26 @@ const GRADING_QUEUE_BRANCH_LIMIT = 500;
 /** Chia nhỏ inArray theo ngưỡng 50 để tránh trần bind parameter của Cloudflare D1 (#366 RT-F2). */
 const D1_IN_ARRAY_CHUNK = 50;
 
+export const DEMO_ATTEMPT_PREFIX = "demo-attempt:";
+
+function demoIdsForOrg(orgId: string) {
+	return {
+		studentId: `demo-student:${orgId}`,
+		promptId: `demo-prompt:${orgId}`,
+		testId: `demo-test:${orgId}`,
+		partId: `demo-test-part:${orgId}`,
+		attemptId: `${DEMO_ATTEMPT_PREFIX}${orgId}`,
+	};
+}
+
+const DEMO_SAMPLE_ESSAY = `<p>In recent years, rapid advances in artificial intelligence have sparked a heated debate over whether machines could eventually replace human teachers in the classroom. While AI tools offer remarkable benefits for personalized instruction, I strongly disagree that they can ever fully substitute the role of teachers.</p><p>On the one hand, AI-powered platforms can adapt learning materials to each student's pace and provide instant feedback on grammar, vocabulary, and pronunciation. For instance, language learners can practice writing essays at home and receive automated suggestions within seconds, which reduces the routine workload of educators.</p><p>On the other hand, education is fundamentally a human process that extends far beyond knowledge transmission. Teachers inspire curiosity, cultivate critical thinking, and provide emotional support when students face difficulties. Empathy, moral guidance, and classroom collaboration cannot be replicated by algorithms.</p><p>In conclusion, although artificial intelligence is a valuable assistant in modern education, human teachers remain irreplaceable mentors in shaping well-rounded individuals.</p>`;
+
+const DEMO_SAMPLE_AI_FEEDBACK = `Nhận xét tổng quan (Bản nháp AI mẫu):
+- Task Achievement (6.5): Bài viết trả lời trực tiếp câu hỏi, nêu rõ quan điểm ngay mở bài và duy trì xuyên suốt. Luận điểm ở hai đoạn thân bài hợp lý, tuy nhiên ví dụ ở đoạn thân bài thứ hai có thể cụ thể hơn.
+- Coherence & Cohesion (6.5): Bố cục 4 đoạn rõ ràng, sử dụng tốt các cụm nối ("On the one hand", "On the other hand", "In conclusion"). Liên kết câu tự nhiên.
+- Lexical Resource (6.0): Từ vựng đúng chủ đề giáo dục và công nghệ ("personalized instruction", "routine workload", "knowledge transmission"). Có thể nâng cấp thêm collocations học thuật để đạt 7.0+.
+- Grammatical Range & Accuracy (6.0): Sử dụng đan xen câu đơn và câu phức mệnh đề quan hệ/trạng ngữ chính xác, hầu như không có lỗi ngữ pháp cản trở nghĩa.`;
+
 /** `ai_grading_draft.status` (string|null) → union an toàn cho wire. */
 function toAiStatus(value: string | null): AiGradingStatus | null {
 	return value !== null && isAiGradingStatus(value) ? value : null;
@@ -669,6 +689,220 @@ export function gradingRoutes(deps: {
 		return c.json(response);
 	});
 
+	routes.post("/demo-sample", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		if (!canPublishGrade(ctx.role)) {
+			return c.json({ error: "forbidden" }, 403);
+		}
+		const ids = demoIdsForOrg(ctx.orgId);
+		const now = new Date();
+		const db = deps.getDb();
+		const demoScores = {
+			task: 6.5,
+			coherence: 6.5,
+			lexical: 6.0,
+			grammar: 6.0,
+		};
+
+		await db.batch([
+			db
+				.insert(student)
+				.values({
+					id: ids.studentId,
+					orgId: ctx.orgId,
+					name: "Nguyễn Minh Anh (Học viên mẫu)",
+					email: "",
+					phone: "",
+					zalo: "",
+					parentName: "",
+					parentPhone: "",
+					createdAt: now,
+				})
+				.onConflictDoNothing(),
+			db
+				.insert(assignmentPrompt)
+				.values({
+					id: ids.promptId,
+					orgId: ctx.orgId,
+					task: "task2",
+					genre: "opinion",
+					skill: "writing",
+					part: "task2",
+					type: "opinion",
+					title: "[Mẫu dùng thử] IELTS Writing Task 2 — AI in Education",
+					band: "6.5",
+					source: "Teacher OS Demo",
+					prompt:
+						"<p>Some people believe that artificial intelligence will soon replace teachers in the classroom. To what extent do you agree or disagree?</p>",
+					intro: "",
+					passage: "",
+					transcript: "",
+					cueTopic: "",
+					cuePoints: "",
+					audioName: "",
+					imageUrl: "",
+					questions: "[]",
+					optionBank: "[]",
+					note: "Đề mẫu giúp giáo viên trải nghiệm giao diện chấm bài và gợi ý AI.",
+					status: "draft",
+					createdAt: now,
+				})
+				.onConflictDoNothing(),
+			db
+				.insert(assignmentTest)
+				.values({
+					id: ids.testId,
+					orgId: ctx.orgId,
+					title: "[Mẫu dùng thử] IELTS Writing Task 2 — AI in Education",
+					description: "Bài nộp mẫu dùng thử tính năng chấm điểm",
+					skill: "writing",
+					status: "draft",
+					createdAt: now,
+					updatedAt: now,
+				})
+				.onConflictDoNothing(),
+			db
+				.insert(assignmentTestPart)
+				.values({
+					id: ids.partId,
+					testId: ids.testId,
+					promptId: ids.promptId,
+					part: "task2",
+					position: 0,
+				})
+				.onConflictDoNothing(),
+			db
+				.insert(quizAttempt)
+				.values({
+					id: ids.attemptId,
+					orgId: ctx.orgId,
+					assignmentId: null,
+					studentId: ids.studentId,
+					testId: ids.testId,
+					mode: "practice",
+					status: "submitted",
+					questionsSnapshot: "[]",
+					answers: "{}",
+					essay: DEMO_SAMPLE_ESSAY,
+					gradeScores: null,
+					gradeFeedback: "",
+					gradedAt: null,
+					startedAt: now,
+					submittedAt: now,
+				})
+				.onConflictDoUpdate({
+					target: quizAttempt.id,
+					set: {
+						status: "submitted",
+						essay: DEMO_SAMPLE_ESSAY,
+						gradeScores: null,
+						gradeFeedback: "",
+						gradedAt: null,
+						submittedAt: now,
+					},
+				}),
+			db
+				.insert(aiGradingDraft)
+				.values({
+					attemptId: ids.attemptId,
+					orgId: ctx.orgId,
+					skill: "writing",
+					status: "ai_drafted",
+					aiScores: demoScores,
+					aiFeedback: DEMO_SAMPLE_AI_FEEDBACK,
+					reviewedScores: null,
+					reviewedFeedback: "",
+					gradingMode: "standard",
+					creditCost: 0,
+					version: 1,
+					retryCount: 0,
+					startedAt: now,
+					draftedAt: now,
+					publishedAt: null,
+				})
+				.onConflictDoUpdate({
+					target: aiGradingDraft.attemptId,
+					set: {
+						status: "ai_drafted",
+						aiScores: demoScores,
+						aiFeedback: DEMO_SAMPLE_AI_FEEDBACK,
+						reviewedScores: null,
+						reviewedFeedback: "",
+						creditCost: 0,
+						version: 1,
+						publishedAt: null,
+						draftedAt: now,
+					},
+				}),
+		]);
+
+		return c.json({ attemptId: ids.attemptId }, 201);
+	});
+
+	routes.delete("/demo-sample", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		if (!canPublishGrade(ctx.role)) {
+			return c.json({ error: "forbidden" }, 403);
+		}
+		const ids = demoIdsForOrg(ctx.orgId);
+		const db = deps.getDb();
+
+		await db.batch([
+			db
+				.delete(quizAttemptAnnotation)
+				.where(
+					and(
+						eq(quizAttemptAnnotation.attemptId, ids.attemptId),
+						eq(quizAttemptAnnotation.orgId, ctx.orgId),
+					),
+				),
+			db
+				.delete(aiGradingDraft)
+				.where(
+					and(
+						eq(aiGradingDraft.attemptId, ids.attemptId),
+						eq(aiGradingDraft.orgId, ctx.orgId),
+					),
+				),
+			db
+				.delete(quizAttempt)
+				.where(
+					and(
+						eq(quizAttempt.id, ids.attemptId),
+						eq(quizAttempt.orgId, ctx.orgId),
+					),
+				),
+			db
+				.delete(assignmentTestPart)
+				.where(eq(assignmentTestPart.id, ids.partId)),
+			db
+				.delete(assignmentTest)
+				.where(
+					and(
+						eq(assignmentTest.id, ids.testId),
+						eq(assignmentTest.orgId, ctx.orgId),
+					),
+				),
+			db
+				.delete(assignmentPrompt)
+				.where(
+					and(
+						eq(assignmentPrompt.id, ids.promptId),
+						eq(assignmentPrompt.orgId, ctx.orgId),
+					),
+				),
+			db
+				.delete(student)
+				.where(
+					and(eq(student.id, ids.studentId), eq(student.orgId, ctx.orgId)),
+				),
+		]);
+
+		return c.json({ ok: true });
+	});
+
 	routes.get("/:attemptId", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
@@ -838,20 +1072,22 @@ export function gradingRoutes(deps: {
 		}
 		// #454 phase 3: phát grade_returned theo attempt sau khi chấm thành
 		// công (fail-open — lỗi thông báo không đổi response chấm bài).
-		await emitNotifications(notificationDepsFrom(deps), ctx.orgId, [
-			gradeReturnedEvent({
-				attemptId: loaded.row.id,
-				studentId: loaded.row.studentId,
-				title: loaded.row.title,
-				// Attempt gắn lượt giao → xem bài đã chấm tại
-				// /learn/quizzes/attempt/$attemptId (CR I1 — portal không có
-				// /assignments/$id); attempt tự luyện (phase 10) → /practice.
-				linkPath:
-					loaded.row.caId !== null
-						? `/learn/quizzes/attempt/${loaded.row.id}`
-						: "/practice",
-			}),
-		]);
+		if (!loaded.row.id.startsWith(DEMO_ATTEMPT_PREFIX)) {
+			await emitNotifications(notificationDepsFrom(deps), ctx.orgId, [
+				gradeReturnedEvent({
+					attemptId: loaded.row.id,
+					studentId: loaded.row.studentId,
+					title: loaded.row.title,
+					// Attempt gắn lượt giao → xem bài đã chấm tại
+					// /learn/quizzes/attempt/$attemptId (CR I1 — portal không có
+					// /assignments/$id); attempt tự luyện (phase 10) → /practice.
+					linkPath:
+						loaded.row.caId !== null
+							? `/learn/quizzes/attempt/${loaded.row.id}`
+							: "/practice",
+				}),
+			]);
+		}
 		return c.json(grade);
 	});
 

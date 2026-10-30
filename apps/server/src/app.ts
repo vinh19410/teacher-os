@@ -21,6 +21,7 @@ import { creditRoutes } from "./routes/credits";
 import { examImportRoutes } from "./routes/exam-imports";
 import { githubWebhookRoutes } from "./routes/github-webhooks";
 import { kernelRoutes } from "./routes/kernel";
+import { publicLeadRoutes } from "./routes/public-leads";
 import { publicPayRoutes } from "./routes/public-pay";
 import { readinessRoute } from "./routes/readiness";
 import { studentRoutes } from "./routes/student";
@@ -141,11 +142,33 @@ export interface AppDeps {
 	 */
 	getExamImportStore?(): MediaStore | undefined;
 	/**
-	 * TOS-30 (#478): grader chấm nháp AI — Workers AI ở production (binding
-	 * `AI`), fake ở e2e/test. Vắng mặt → bỏ qua chấm nháp (không draft,
+	 * TOS-30 (#478): grader chấm nháp AI — Workers AI ở production (từ
+	 * binding `AI`), fake ở e2e/test. Vắng mặt → bỏ qua chấm nháp (không draft,
 	 * không đụng Credit), cùng hợp đồng fail-closed với `getExamExtractor`.
 	 */
 	getAiGrader?(): AiGrader | undefined;
+	/**
+	 * Lead intake (#506 D4): org đích cho POST /public/leads — org lấy từ
+	 * env, KHÔNG tin client. Rỗng/vắng ⇒ route trả 503 LEAD_INTAKE_DISABLED
+	 * (fail-closed như getBankHub).
+	 */
+	leadOrgId?: string;
+	/**
+	 * Lead intake (#506 D5): origin profile được phép POST /public/leads —
+	 * tách khỏi `corsOrigin` (biến đó nuôi better-auth trustedOrigins và bị
+	 * check topology). Rỗng ⇒ mọi POST bị 403 (fail-closed).
+	 */
+	leadOrigins?: string[];
+	/**
+	 * Lead intake (#506 D7): secret HMAC băm IP chống spam. Vắng ⇒ ipHash
+	 * rỗng ⇒ bước tần suất IP bỏ qua (trần ngày vẫn chạy).
+	 */
+	leadIpSecret?: string;
+	/**
+	 * Origin app web đầu tiên cho link tuyệt đối trong email báo lead mới
+	 * (#506 D13) — cùng cách `studentOrigin`.
+	 */
+	appOrigin?: string;
 }
 
 /** Better-Auth handles its own session bootstrapping under /api/auth. */
@@ -286,24 +309,35 @@ export function buildApp(deps: AppDeps) {
 		url.protocol = "https:";
 		return c.redirect(url.toString(), 301);
 	});
-	app.use(
-		"/*",
-		cors({
-			origin: deps.corsOrigin,
-			// PATCH: full-test builder phase-2 (PATCH /assignments/prompts/:id,
-			// /assignments/tests/:id) — coordinator-approved 2026-09-28.
-			allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-			// X-File-Name: tên file bài nói Speaking (#305), upload là raw body
-			// nên tên đi qua header (encodeURIComponent).
-			allowHeaders: [
-				"Content-Type",
-				"Authorization",
-				"x-student-org-id",
-				"X-File-Name",
-			],
-			credentials: true,
-		}),
-	);
+	// CORS toàn cục cho /api/* + auth — bọc trong lambda để /public/leads
+	// bỏ qua được (xem comment ngay dưới).
+	const corsMiddleware = cors({
+		origin: deps.corsOrigin,
+		// PATCH: full-test builder phase-2 (PATCH /assignments/prompts/:id,
+		// /assignments/tests/:id) — coordinator-approved 2026-09-28.
+		allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+		// X-File-Name: tên file bài nói Speaking (#305), upload là raw body
+		// nên tên đi qua header (encodeURIComponent).
+		allowHeaders: [
+			"Content-Type",
+			"Authorization",
+			"x-student-org-id",
+			"X-File-Name",
+		],
+		credentials: true,
+	});
+	// Lead intake (#506 D5): preflight của cors TOÀN CỤC trả sớm với origin
+	// list teacher/student — /public/leads cần CORS riêng (origin profile,
+	// không credentials) nên path này phải ĐI QUA không đụng middleware dưới.
+	app.use("/*", async (c, next) => {
+		if (
+			c.req.path === "/public/leads" ||
+			c.req.path.startsWith("/public/leads/")
+		) {
+			return next();
+		}
+		return corsMiddleware(c, next);
+	});
 	app.use("/api/*", bootstrapMiddleware(deps));
 	app.on(["POST", "GET"], "/api/auth/*", (c) => deps.authHandler(c.req.raw));
 	app.get("/", (c) => c.text("OK"));
@@ -322,6 +356,10 @@ export function buildApp(deps: AppDeps) {
 	// Public pay page data (#320): outside /api/* (bootstrap 403s student
 	// roles there) and readable signed-out — the token is the capability.
 	app.route("/public/pay", publicPayRoutes(deps));
+	// Lead intake (#506): cùng treatment ngoài-/api/* như /public/pay — CORS
+	// riêng + chống spam tự gắn trong router (public-leads.ts); global cors
+	// bỏ qua path này (middleware ở trên).
+	app.route("/public/leads", publicLeadRoutes(deps));
 	// Readiness probe: mounted outside /api/* so the bootstrap middleware and
 	// Better Auth never run — it answers purely from the D1 schema catalog.
 	app.get("/readyz", readinessRoute(deps));
