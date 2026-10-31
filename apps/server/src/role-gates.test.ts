@@ -114,6 +114,16 @@ describe("api role gates", () => {
 		});
 	}
 
+	async function setEmailVerified(
+		token: string,
+		verified: boolean,
+	): Promise<void> {
+		await raw.execute({
+			sql: "UPDATE user SET email_verified = ? WHERE id IN (SELECT user_id FROM session WHERE token = ?)",
+			args: [verified ? 1 : 0, dbToken(token)],
+		});
+	}
+
 	test("student-role session gets 403 ACCOUNT_STUDENT_ROLE from teacher APIs and no org/membership is created", async () => {
 		const token = await signUp({ origin: PORTAL_ORIGIN });
 		const orgsBefore = await countRows(schema.organization);
@@ -337,7 +347,7 @@ describe("api role gates", () => {
 		expect(await countRows(schema.membership)).toBe(membershipsBefore);
 	});
 
-	test("teacherEmails allowlist: session OWNER@x.vn (khác hoa/thường) → 200", async () => {
+	test("teacherEmails allowlist: session thuộc allowlist nhưng chưa verify email → 403 ACCOUNT_TEACHER_EMAIL_UNVERIFIED, không tạo org/membership; sau khi verify → 200 (#524)", async () => {
 		const ownerToken = await signUp({
 			origin: WEB_ORIGIN,
 			email: "OWNER@x.vn",
@@ -349,13 +359,37 @@ describe("api role gates", () => {
 			authHandler: (req) => auth.handler(req),
 			teacherEmails: ["owner@x.vn"],
 		});
-		const res = await gatedApp.request("/api/kernel", {
+		const orgsBefore = await countRows(schema.organization);
+		const membershipsBefore = await countRows(schema.membership);
+
+		const unverifiedRes = await gatedApp.request("/api/kernel", {
 			headers: {
 				origin: WEB_ORIGIN,
 				cookie: `better-auth.session_token=${ownerToken}`,
 			},
 		});
-		expect(res.status).toBe(200);
+		expect(unverifiedRes.status).toBe(403);
+		const unverifiedBody = (await unverifiedRes.json()) as {
+			error?: string;
+			code?: string;
+		};
+		expect(unverifiedBody.error).toBe(
+			ACCOUNT_ERROR_CODES.TEACHER_EMAIL_UNVERIFIED,
+		);
+		expect(unverifiedBody.code).toBe(
+			ACCOUNT_ERROR_CODES.TEACHER_EMAIL_UNVERIFIED,
+		);
+		expect(await countRows(schema.organization)).toBe(orgsBefore);
+		expect(await countRows(schema.membership)).toBe(membershipsBefore);
+
+		await setEmailVerified(ownerToken, true);
+		const verifiedRes = await gatedApp.request("/api/kernel", {
+			headers: {
+				origin: WEB_ORIGIN,
+				cookie: `better-auth.session_token=${ownerToken}`,
+			},
+		});
+		expect(verifiedRes.status).toBe(200);
 	});
 
 	test("teacherEmails allowlist rỗng → 200 như cũ", async () => {

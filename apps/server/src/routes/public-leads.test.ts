@@ -350,6 +350,24 @@ describe("POST /public/leads (#506 phase 2)", () => {
 		expect(text).not.toContain("2008-05-14");
 	});
 
+	test("notifyNewLead chỉ gửi email cho thành viên có canAccessFinance (teacher/owner/admin), bỏ qua ta và class_teacher (#524)", async () => {
+		await db.insert(schema.user).values([
+			{ id: "u-ta", name: "TA", email: "ta@test.local", role: "teacher" },
+			{ id: "u-ct", name: "CT", email: "ct@test.local", role: "teacher" },
+			{ id: "u-ow", name: "Owner", email: "owner@test.local", role: "teacher" },
+		]);
+		await db.insert(schema.membership).values([
+			{ id: "m-ta", orgId: "org-1", userId: "u-ta", role: "ta" },
+			{ id: "m-ct", orgId: "org-1", userId: "u-ct", role: "class_teacher" },
+			{ id: "m-ow", orgId: "org-1", userId: "u-ow", role: "owner" },
+		]);
+
+		const res = await submit(app(), validBody("0909555666"));
+		expect(res.status).toBe(201);
+		const recipients = sent.map((m) => m.to).sort();
+		expect(recipients).toEqual(["lan@test.local", "owner@test.local"]);
+	});
+
 	test("dedupe update và honeypot không gửi email; mailer lỗi vẫn 201 + ghi DB", async () => {
 		const instance = app();
 		await submit(instance, validBody("0909123456"));
@@ -361,5 +379,124 @@ describe("POST /public/leads (#506 phase 2)", () => {
 		expect(res.status).toBe(201);
 		const rows = await leadRows();
 		expect(rows.some((row) => row.phone === "0911222333")).toBe(true);
+	});
+
+	test(`request song song cùng IP (10 request đồng thời, SĐT khác nhau) chỉ cho phép đúng ${LEAD_IP_MAX} lead và ${LEAD_IP_MAX} email (#524)`, async () => {
+		const instance = app();
+		const responses = await Promise.all(
+			Array.from({ length: 10 }, (_, i) =>
+				submit(instance, validBody(`090910000${i}`), {
+					"CF-Connecting-IP": "198.51.100.77",
+				}),
+			),
+		);
+		const created = responses.filter((res) => res.status === 201);
+		const limited = responses.filter((res) => res.status === 429);
+		expect(created).toHaveLength(LEAD_IP_MAX);
+		expect(limited).toHaveLength(10 - LEAD_IP_MAX);
+		for (const res of limited) {
+			const body = (await res.json()) as { code: string };
+			expect(body.code).toBe("LEAD_RATE_LIMITED");
+		}
+		expect(await leadRows()).toHaveLength(LEAD_IP_MAX);
+		expect(sent).toHaveLength(LEAD_IP_MAX);
+	});
+
+	test(`request song song cùng SĐT (8 request đồng thời từ các IP khác nhau) chỉ tạo 1 dòng lead, gửi 1 email, tăng submitCount tới ${LEAD_DEDUPE_MAX_SUBMITS} và chặn 3 request còn lại bằng 429 (#524)`, async () => {
+		const instance = app();
+		const responses = await Promise.all(
+			Array.from({ length: 8 }, (_, i) =>
+				submit(instance, validBody("0909888777"), {
+					"CF-Connecting-IP": `10.20.0.${i + 1}`,
+				}),
+			),
+		);
+		const created = responses.filter((res) => res.status === 201);
+		const limited = responses.filter((res) => res.status === 429);
+		expect(created).toHaveLength(LEAD_DEDUPE_MAX_SUBMITS);
+		expect(limited).toHaveLength(8 - LEAD_DEDUPE_MAX_SUBMITS);
+
+		const submitCounts = await Promise.all(
+			created.map(async (res) => {
+				const body = (await res.json()) as { submitCount: number };
+				return body.submitCount;
+			}),
+		);
+		expect([...submitCounts].sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5]);
+
+		const rows = await leadRows();
+		expect(rows).toHaveLength(1);
+		expect(rows[0]!.submitCount).toBe(LEAD_DEDUPE_MAX_SUBMITS);
+		expect(sent).toHaveLength(1);
+	});
+
+	test(`request song song sát trần ngày (seed ${LEAD_DAILY_CAP - 2} dòng, bắn 6 request đồng thời) chỉ nhận thêm đúng 2 dòng và trả 429 LEAD_DAILY_CAP cho 4 request còn lại (#524)`, async () => {
+		const now = new Date();
+		await db.insert(schema.lead).values(
+			Array.from({ length: LEAD_DAILY_CAP - 2 }, (_, i) => ({
+				id: `seed-cap-${i}`,
+				orgId: "org-1",
+				name: `Seed ${i}`,
+				phone: `09010000${String(i).padStart(2, "0")}`,
+				createdAt: now,
+				updatedAt: now,
+			})),
+		);
+		const instance = app();
+		const responses = await Promise.all(
+			Array.from({ length: 6 }, (_, i) =>
+				submit(instance, validBody(`090930000${i}`), {
+					"CF-Connecting-IP": `10.30.0.${i + 1}`,
+				}),
+			),
+		);
+		const created = responses.filter((res) => res.status === 201);
+		const limited = responses.filter((res) => res.status === 429);
+		expect(created).toHaveLength(2);
+		expect(limited).toHaveLength(4);
+		for (const res of limited) {
+			const body = (await res.json()) as { code: string };
+			expect(body.code).toBe("LEAD_DAILY_CAP");
+		}
+		expect(await leadRows()).toHaveLength(LEAD_DAILY_CAP);
+		expect(sent).toHaveLength(2);
+
+		// Khi org đã chạm trần ngày (100 dòng), gửi lại cùng SĐT đã có trong 24h (dedupe UPDATE)
+		// vẫn được cập nhật 201 vì không tạo thêm dòng lead mới.
+		const dedupeAtCap = await submit(
+			instance,
+			{ ...validBody("0901000000"), note: "Cập nhật khi đã chạm trần ngày" },
+			{ "CF-Connecting-IP": "10.30.0.99" },
+		);
+		expect(dedupeAtCap.status).toBe(201);
+		expect(await leadRows()).toHaveLength(LEAD_DAILY_CAP);
+	});
+
+	test("dedupe UPDATE từ IP khác không xóa ip_hash của IP tạo ban đầu để lách LEAD_IP_MAX, và lead thứ 3 của cùng IP vẫn tự cập nhật dedupe được (#524)", async () => {
+		const instance = app();
+		for (let i = 1; i <= LEAD_IP_MAX; i++) {
+			const res = await submit(instance, validBody(`090920000${i}`), {
+				"CF-Connecting-IP": "198.51.100.90",
+			});
+			expect(res.status).toBe(201);
+		}
+
+		// Cùng IP gửi lại SĐT thứ 3 (chỉ update dòng của chính nó, không tạo dòng thứ 4) ⇒ vẫn 201.
+		const selfUpdate = await submit(instance, validBody("0909200003"), {
+			"CF-Connecting-IP": "198.51.100.90",
+		});
+		expect(selfUpdate.status).toBe(201);
+
+		// IP khác cập nhật SĐT thứ 1 ⇒ 201, nhưng KHÔNG được xóa ip_hash gốc của 198.51.100.90.
+		const otherIpUpdate = await submit(instance, validBody("0909200001"), {
+			"CF-Connecting-IP": "198.51.100.91",
+		});
+		expect(otherIpUpdate.status).toBe(201);
+
+		// IP ban đầu (198.51.100.90) thử tạo SĐT thứ 4 mới ⇒ vẫn phải bị 429 LEAD_RATE_LIMITED.
+		const fourthPhone = await submit(instance, validBody("0909200004"), {
+			"CF-Connecting-IP": "198.51.100.90",
+		});
+		expect(fourthPhone.status).toBe(429);
 	});
 });

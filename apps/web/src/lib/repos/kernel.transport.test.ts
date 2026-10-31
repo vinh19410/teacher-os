@@ -145,6 +145,26 @@ describe("GET snapshot transport role reason (plan #260)", () => {
 		expect(isStudentRoleRejected(caught)).toBe(true);
 	});
 
+	test("403 body {error: ACCOUNT_TEACHER_EMAIL_UNVERIFIED} rides on HttpError.reason and isStudentRoleRejected returns true (#524)", async () => {
+		stubFetchOnce(
+			403,
+			JSON.stringify({
+				error: ACCOUNT_ERROR_CODES.TEACHER_EMAIL_UNVERIFIED,
+			}),
+		);
+		let caught: unknown;
+		try {
+			await fetchKernelSnapshot(BASE);
+		} catch (err) {
+			caught = err;
+		}
+		expect(caught).toMatchObject({
+			status: 403,
+			reason: ACCOUNT_ERROR_CODES.TEACHER_EMAIL_UNVERIFIED,
+		});
+		expect(isStudentRoleRejected(caught)).toBe(true);
+	});
+
 	test("403 body {reason: ...} (legacy shape) still parses", async () => {
 		stubFetchOnce(403, JSON.stringify({ reason: "some-legacy-reason" }));
 		await expect(fetchKernelSnapshot(BASE)).rejects.toMatchObject({
@@ -227,6 +247,31 @@ describe("bus onRoleBlocked seam (plan #260)", () => {
 		expect(result.kind).toBe("definite-failure");
 		expect(blockedCalls).toHaveLength(1);
 		expect(authLostCalls).toHaveLength(0);
+	});
+
+	test("write 403 ACCOUNT_TEACHER_EMAIL_UNVERIFIED passes reason to onRoleBlocked (#524)", async () => {
+		const blockedReasons: Array<string | undefined> = [];
+		const bus = createKernelCommandBus({
+			postCommand: (() =>
+				Promise.reject(
+					new HttpError(403, ACCOUNT_ERROR_CODES.TEACHER_EMAIL_UNVERIFIED, {
+						reason: ACCOUNT_ERROR_CODES.TEACHER_EMAIL_UNVERIFIED,
+					}),
+				)) as never,
+			refetch: async () => {},
+			onAuthLost: () => {},
+			onRoleBlocked: (reason) => {
+				blockedReasons.push(reason);
+			},
+		});
+		const result = await bus.run({
+			type: "check-in",
+			lessonId: "l",
+		} as KernelAction);
+		expect(result.kind).toBe("definite-failure");
+		expect(blockedReasons).toEqual([
+			ACCOUNT_ERROR_CODES.TEACHER_EMAIL_UNVERIFIED,
+		]);
 	});
 
 	test("other 403s never fire onRoleBlocked", async () => {

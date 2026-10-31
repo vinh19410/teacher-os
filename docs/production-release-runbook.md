@@ -97,8 +97,8 @@ Form đăng ký học trên `msmy.io.vn` POST thẳng vào `POST /public/leads` 
 
 | Binding | Bắt buộc | Giá trị |
 | --- | --- | --- |
-| `LEAD_ORG_ID` | Có (prod) — bỏ trống ⇒ endpoint trả 503 `LEAD_INTAKE_DISABLED` (fail-closed, tắt intake bằng cách xoá binding) | `organization.id` của cô Mỹ — query D1: `SELECT id FROM organization;` (đối chiếu email giáo viên qua `membership`) |
-| `LEAD_ORIGINS` | Có khi deploy không topology (workers.dev); topology tự mặc định `https://msmy.io.vn,https://www.msmy.io.vn`, dev `http://localhost:8005` | Origin trang profile, phân tách dấu phẩy; sai/ thiếu origin ⇒ POST bị 403 `LEAD_ORIGIN_FORBIDDEN` |
+| `LEAD_ORG_ID` | Có (prod/staging khi bật luồng công khai) — bỏ trống ⇒ endpoint trả 503 `LEAD_INTAKE_DISABLED` / `PLACEMENT_DISABLED` (fail-closed, tắt intake bằng cách xoá binding) | `organization.id` của cô Mỹ — query D1: `SELECT id FROM organization;` (đối chiếu email giáo viên qua `membership`). Đặt trên GitHub Environment: `gh variable set LEAD_ORG_ID --env staging --body "<org-id-staging>"` và `gh variable set LEAD_ORG_ID --env production --body "<org-id-co-my>"` (`deploy-staging.yml` và `deploy.yml` truyền `vars.LEAD_ORG_ID` sang Worker) |
+| `LEAD_ORIGINS` | Có khi deploy không topology (workers.dev); topology tự mặc định `https://msmy.io.vn,https://www.msmy.io.vn`, dev `http://localhost:8005` (qua `resolveLeadOrigins`, kể cả khi `vars.LEAD_ORIGINS` để trống) | Origin trang profile, phân tách dấu phẩy; sai/thiếu origin ⇒ POST bị 403 `LEAD_ORIGIN_FORBIDDEN`. Khi cần thêm origin QA trên staging: `gh variable set LEAD_ORIGINS --env staging --body "https://msmy.io.vn,https://www.msmy.io.vn,<origin-qa>"` |
 
 Vận hành:
 
@@ -909,8 +909,8 @@ ngoài kernel tree.
 
 ### Single-org allowlist giáo viên (`TEACHER_EMAILS`, #513)
 
-1. **Kiểm tra trước khi deploy production:** chạy truy vấn đọc `SELECT email, created_at FROM user WHERE role = 'teacher';` trên D1 production để đối chiếu chính xác địa chỉ email đang lưu của chủ app.
-2. Đặt biến `TEACHER_EMAILS` trên GitHub Environment `production` (`gh variable set TEACHER_EMAILS --env production --body "<email-chủ-app>"`, hoặc truyền trong môi trường deploy) khớp đúng email trong kết quả truy vấn. Nếu `TEACHER_EMAILS` rỗng trên `APP_DOMAIN=teacheros.io.vn`, Alchemy fail-closed ngay lúc deploy. Các tài khoản `role = 'teacher'` khác (nếu có) sẽ bị chặn ở mỗi request bằng 403 `ACCOUNT_TEACHER_NOT_ALLOWED`; không xoá dữ liệu trong bước này.
+1. **Hard Gate kiểm tra trước khi deploy production (#513, #524):** chạy truy vấn đọc `SELECT id, email, email_verified, created_at FROM user WHERE role = 'teacher';` trên D1 production để đối chiếu chính xác địa chỉ email và trạng thái xác thực của chủ app. **Bắt buộc tài khoản đưa vào `TEACHER_EMAILS` phải đã tồn tại (`role = 'teacher'`) VÀ có `email_verified = 1`** trước khi deploy (vì `bootstrapMiddleware` đòi `session.emailVerified === true` và trả 403 `ACCOUNT_TEACHER_EMAIL_UNVERIFIED` nếu chưa xác thực nhằm chống đăng ký chiếm chỗ). Nếu tài khoản chủ app trên D1 đang có `email_verified = 0`, chủ app phải xác thực qua email (hoặc nếu cập nhật `UPDATE user SET email_verified = 1` thủ công trên D1 thì bắt buộc chạy kèm `DELETE FROM session WHERE user_id = '<id>';` để thu hồi mọi session cũ trước khi mở gate).
+2. Đặt biến `TEACHER_EMAILS` trên GitHub Environment `production` (`gh variable set TEACHER_EMAILS --env production --body "<email-chủ-app>"`, hoặc truyền trong môi trường deploy) khớp đúng email đã `email_verified = 1` trong kết quả truy vấn. Nếu `TEACHER_EMAILS` rỗng trên `APP_DOMAIN=teacheros.io.vn`, Alchemy fail-closed ngay lúc deploy. Các tài khoản `role = 'teacher'` khác (nếu có) sẽ bị chặn ở mỗi request bằng 403 `ACCOUNT_TEACHER_NOT_ALLOWED`; không xoá dữ liệu trong bước này.
 3. **Rollback / đổi danh sách:** đổi hoặc bổ sung email trong binding `TEACHER_EMAILS` rồi deploy lại; có hiệu lực ngay ở request kế tiếp và không cần migration D1.
 
 ### Bucket `library-audio` (kho audio đề Listening)

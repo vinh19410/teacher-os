@@ -23,6 +23,7 @@ const toastMock = vi.hoisted(() => ({
 	error: vi.fn(),
 }));
 const reauthMock = vi.hoisted(() => vi.fn());
+const financeGuardState = vi.hoisted(() => ({ canAccessFinance: true }));
 vi.mock("@tanstack/react-router", () => ({
 	createFileRoute: () => (options: Record<string, unknown>) => ({
 		...options,
@@ -34,6 +35,9 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 vi.mock("sonner", () => ({ toast: toastMock }));
 vi.mock("@/lib/reauth", () => ({ reauth: reauthMock }));
+vi.mock("@/lib/use-finance-route-guard", () => ({
+	useFinanceRouteGuard: () => financeGuardState.canAccessFinance,
+}));
 
 import { Route, validateLeadsSearch } from "./index";
 
@@ -117,6 +121,7 @@ beforeEach(() => {
 	toastMock.success.mockReset();
 	toastMock.error.mockReset();
 	reauthMock.mockReset();
+	financeGuardState.canAccessFinance = true;
 });
 
 afterEach(() => {
@@ -255,5 +260,12 @@ describe("màn /leads (#506 phase 4)", () => {
 			</QueryClientProvider>,
 		);
 		await waitFor(() => expect(reauthMock).toHaveBeenCalled());
+	});
+
+	it("ẩn màn /leads (container rỗng) và không gọi /api/leads khi canAccessFinance = false (#524)", () => {
+		financeGuardState.canAccessFinance = false;
+		const view = renderRoute();
+		expect(view.container.innerHTML).toBe("");
+		expect(fetchMock).not.toHaveBeenCalled();
 	});
 });

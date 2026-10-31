@@ -133,3 +133,33 @@ test("workflow LANDING_ORIGIN matches each stage apex", () => {
 	)?.[1];
 	assert.equal(staging, "https://staging.teacheros.io.vn");
 });
+
+test("deploy workflows pass LEAD_ORG_ID and LEAD_ORIGINS to alchemy deploy and alchemy.run.ts wires resolveLeadOrigins (#524)", () => {
+	for (const workflow of [
+		"../.github/workflows/deploy.yml",
+		"../.github/workflows/deploy-staging.yml",
+	]) {
+		const content = read(workflow);
+		const deployStep = content
+			.split("- name: Deploy to Cloudflare")[1]
+			?.split("- name:")[0];
+		assert.ok(deployStep, `Deploy to Cloudflare step found in ${workflow}`);
+		assert.match(
+			deployStep,
+			/^\s*LEAD_ORG_ID:\s*\$\{\{\s*vars\.LEAD_ORG_ID\s*\}\}\s*$/m,
+			`${workflow} Deploy step must pass LEAD_ORG_ID from vars.LEAD_ORG_ID`,
+		);
+		assert.match(
+			deployStep,
+			/^\s*LEAD_ORIGINS:\s*\$\{\{\s*vars\.LEAD_ORIGINS\s*\}\}\s*$/m,
+			`${workflow} Deploy step must pass LEAD_ORIGINS from vars.LEAD_ORIGINS`,
+		);
+	}
+
+	const run = read("../packages/infra/alchemy.run.ts");
+	assert.match(
+		run,
+		/resolveLeadOrigins\(/,
+		"packages/infra/alchemy.run.ts must normalize LEAD_ORIGINS via resolveLeadOrigins",
+	);
+});
