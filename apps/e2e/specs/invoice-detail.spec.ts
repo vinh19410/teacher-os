@@ -279,6 +279,13 @@ test.describe("Invoice detail page (#345)", () => {
 		await teacherSignIn(page);
 		await clickInvoiceRow(page, "500.000đ");
 		await expect(page).toHaveURL(new RegExp(`/tuition/${partialId}$`));
+		// URL đổi trước khi chunk route detail render: list còn trên màn hình có
+		// một nút "Đã nhận" mỗi hóa đơn, click lúc đó vi phạm strict mode.
+		await expect(
+			page.getByRole("heading", {
+				name: `INV-${partialId.slice(-8).toUpperCase()}`,
+			}),
+		).toBeVisible();
 		await page.getByRole("button", { name: "Đã nhận" }).click();
 		await expect(page.getByText("Đã thu").first()).toBeVisible({
 			timeout: 15_000,
