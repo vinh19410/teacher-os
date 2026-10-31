@@ -11,7 +11,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { pathToFileURL } from "node:url";
-import { buildProfile } from "../build.mjs";
+import { buildProfile, resolveBuildChannel } from "../build.mjs";
 import {
 	buildPlacementSummary,
 	flattenQuestions,
@@ -49,7 +49,9 @@ function hasKeyRecursive(value, targetKey) {
 test("questions.json has 15 Vocab+Grammar (8 grammar, 7 vocab) and 5 Listening clips (15 questions), unique IDs, valid answers, existing audio < 2MB, and no transcript", () => {
 	assert.equal(questionsData.version, 1);
 	assert.ok(
-		questionsData.status === "draft" || questionsData.status === "approved",
+		questionsData.status === "draft" ||
+			questionsData.status === "beta" ||
+			questionsData.status === "approved",
 	);
 	assert.equal(
 		hasKeyRecursive(questionsData, "transcript"),
@@ -276,10 +278,45 @@ test("serve.mjs serves /kiem-tra-dau-vao/ 200 HTML, redirects /kiem-tra-dau-vao 
 	}
 });
 
-test("build.mjs blocks build when status !== approved and succeeds when status === approved", async () => {
+test("build.mjs blocks draft in all channels, allows beta only in beta channel, and requires approved in production channel", async () => {
+	assert.equal(resolveBuildChannel({}), "production");
+	assert.equal(resolveBuildChannel({ GITHUB_BASE_REF: "develop" }), "beta");
+	assert.equal(resolveBuildChannel({ GITHUB_REF_NAME: "develop" }), "beta");
+	assert.equal(
+		resolveBuildChannel({
+			GITHUB_BASE_REF: "main",
+			GITHUB_REF_NAME: "develop",
+		}),
+		"production",
+	);
+	assert.equal(resolveBuildChannel({ GITHUB_REF_NAME: "main" }), "production");
+	assert.equal(
+		resolveBuildChannel({
+			GITHUB_REF_NAME: "develop",
+			APP_DOMAIN: "teacheros.io.vn",
+		}),
+		"production",
+	);
+	assert.equal(
+		resolveBuildChannel({
+			PROFILE_CHANNEL: "beta",
+			LEAD_API_URL: "https://api.teacheros.io.vn",
+		}),
+		"production",
+	);
+	assert.equal(resolveBuildChannel({ PROFILE_CHANNEL: "beta" }), "beta");
+	assert.equal(
+		resolveBuildChannel({
+			PROFILE_CHANNEL: "production",
+			GITHUB_REF_NAME: "develop",
+		}),
+		"production",
+	);
+
 	const tmpRoot = mkdtempSync(join(tmpdir(), "profile-build-test-"));
 	try {
 		const draftJsonPath = join(tmpRoot, "questions-draft.json");
+		const betaJsonPath = join(tmpRoot, "questions-beta.json");
 		const approvedJsonPath = join(tmpRoot, "questions-approved.json");
 		const distDir = join(tmpRoot, "dist");
 
@@ -289,25 +326,53 @@ test("build.mjs blocks build when status !== approved and succeeds when status =
 			"utf8",
 		);
 		writeFileSync(
+			betaJsonPath,
+			JSON.stringify({ ...questionsData, status: "beta" }),
+			"utf8",
+		);
+		writeFileSync(
 			approvedJsonPath,
 			JSON.stringify({ ...questionsData, status: "approved" }),
 			"utf8",
 		);
 
+		for (const channel of ["production", "beta"]) {
+			await assert.rejects(
+				() =>
+					buildProfile({
+						questionsUrl: pathToFileURL(draftJsonPath),
+						distUrl: pathToFileURL(distDir),
+						channel,
+					}),
+				/questions\.json đang ở trạng thái "draft".*approved/,
+			);
+		}
+
 		await assert.rejects(
 			() =>
 				buildProfile({
-					questionsUrl: pathToFileURL(draftJsonPath),
+					questionsUrl: pathToFileURL(betaJsonPath),
 					distUrl: pathToFileURL(distDir),
+					channel: "production",
 				}),
-			/questions\.json đang ở trạng thái "draft".*approved/,
+			/questions\.json đang ở trạng thái "beta".*approved/,
 		);
 
 		await buildProfile({
-			questionsUrl: pathToFileURL(approvedJsonPath),
+			questionsUrl: pathToFileURL(betaJsonPath),
 			distUrl: pathToFileURL(distDir),
-			leadApiUrl: "http://localhost:8100",
+			channel: "beta",
 		});
+		assert.ok(existsSync(join(distDir, "kiem-tra-dau-vao", "index.html")));
+
+		for (const channel of ["production", "beta"]) {
+			await buildProfile({
+				questionsUrl: pathToFileURL(approvedJsonPath),
+				distUrl: pathToFileURL(distDir),
+				leadApiUrl: "http://localhost:8100",
+				channel,
+			});
+		}
 
 		const builtIndex = readFileSync(join(distDir, "index.html"), "utf8");
 		assert.match(
