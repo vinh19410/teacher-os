@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Sửa check-then-act tại POST /public/leads bằng SQL nguyên tử"
-status: pending
+status: completed
 priority: P1
 effort: "2.5h"
 dependencies: []

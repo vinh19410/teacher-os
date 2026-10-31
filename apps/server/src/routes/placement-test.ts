@@ -161,7 +161,10 @@ export function placementTestRoutes(deps: PlacementTestRouteDeps) {
 				row.draft !== null &&
 				(row.published === null || row.revision !== row.publishedRevision),
 		);
-		const isLeadOrg = Boolean(deps.leadOrgId && deps.leadOrgId === ctx.orgId);
+		const trimmedLeadOrgId = deps.leadOrgId?.trim() ?? "";
+		const isLeadOrg = Boolean(
+			trimmedLeadOrgId && trimmedLeadOrgId === ctx.orgId,
+		);
 
 		const response: PlacementTeacherStateResponse = {
 			draft,

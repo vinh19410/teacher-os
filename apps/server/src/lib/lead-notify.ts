@@ -6,6 +6,7 @@ import {
 	type LeadRow,
 } from "@teacher-os/api/lead-contracts";
 import type { Mailer } from "@teacher-os/auth/mail/mailer";
+import { canAccessFinance } from "@teacher-os/auth/role";
 import { user } from "@teacher-os/db/schema/auth";
 import { membership } from "@teacher-os/db/schema/membership";
 import { eq } from "drizzle-orm";
@@ -40,13 +41,14 @@ export async function notifyNewLead({
 	let recipients: string[];
 	try {
 		const rows = await db
-			.select({ email: user.email })
+			.select({ email: user.email, role: membership.role })
 			.from(membership)
 			.innerJoin(user, eq(user.id, membership.userId))
 			.where(eq(membership.orgId, orgId));
 		recipients = [
 			...new Set(
 				rows
+					.filter((row) => canAccessFinance(row.role))
 					.map((row) => row.email.trim().toLowerCase())
 					.filter((email) => email.length > 0),
 			),

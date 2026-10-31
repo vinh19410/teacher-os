@@ -109,6 +109,9 @@ jobs:
           ADMIN_EMAILS: ${{ vars.ADMIN_EMAILS }}
           # Single-org (#513): rỗng trên staging = không giới hạn.
           TEACHER_EMAILS: ${{ vars.TEACHER_EMAILS }}
+          # Lead intake & placement test (#506, #515, #524): truyền từ GitHub Environment staging.
+          LEAD_ORG_ID: ${{ vars.LEAD_ORG_ID }}
+          LEAD_ORIGINS: ${{ vars.LEAD_ORIGINS }}
           AI_ENABLED: ${{ vars.AI_ENABLED }}
           # Staging không gửi mail: mọi tài khoản coi như đã xác minh email.
           AUTH_ASSUME_EMAIL_VERIFIED: "true"

@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Map biến deploy, chuẩn hóa LEAD_ORIGINS và cập nhật runbook"
-status: in_progress
+status: completed
 priority: P1
 effort: "1.5h"
 dependencies: []

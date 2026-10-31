@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Bắt buộc emailVerified cho TEACHER_EMAILS và áp role gate canAccessFinance cho /api/leads"
-status: pending
+status: completed
 priority: P1
 effort: "2h"
 dependencies: []

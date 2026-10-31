@@ -69,6 +69,7 @@ describe("teacherNavForViewer (TOS-17 #451)", () => {
 		const teaching = teacherNavForViewer(true).find(
 			(group) => group.group === "Giảng dạy",
 		);
+		expect(teaching?.items.map((item) => item.key)).toContain("leads");
 		expect(teaching?.items.map((item) => item.key)).toContain("placement-test");
 	});
 
@@ -83,6 +84,7 @@ describe("teacherNavForViewer (TOS-17 #451)", () => {
 		const teaching = teacherNavForViewer(false).find(
 			(group) => group.group === "Giảng dạy",
 		);
+		expect(teaching?.items.map((item) => item.key)).not.toContain("leads");
 		expect(teaching?.items.map((item) => item.key)).not.toContain(
 			"placement-test",
 		);

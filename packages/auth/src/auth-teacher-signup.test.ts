@@ -105,4 +105,14 @@ describe("user.create.before — teacher allowlist gate (#513)", () => {
 		);
 		expect(rows.rows[0]?.role).toBe("student");
 	});
+
+	test("student origin + email thuộc allowlist teacherEmails ('Owner@X.vn') → 403 TEACHER_SIGNUP_FORBIDDEN, chống role-poisoning thành student (#524)", async () => {
+		const ctx = await setup(["owner@x.vn"]);
+		const before = await countUsers(ctx);
+		const res = await signUp(ctx, STUDENT_ORIGIN, "Owner@X.vn");
+		expect(res.status).toBe(403);
+		const body = (await res.json()) as { code?: string };
+		expect(body.code).toBe("TEACHER_SIGNUP_FORBIDDEN");
+		expect(await countUsers(ctx)).toBe(before);
+	});
 });

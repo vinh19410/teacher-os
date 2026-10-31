@@ -316,20 +316,26 @@ export function createAuth(input: CreateAuthInput) {
 								});
 							}
 						}
-						// Single-org (#513): khi TEACHER_EMAILS khác rỗng, chỉ email trong
-						// allowlist mới đăng ký được tài khoản giáo viên.
-						if (
-							appRole === "teacher" &&
-							(input.teacherEmails ?? []).length > 0
-						) {
+						// Single-org (#513, #524): khi TEACHER_EMAILS khác rỗng, chỉ email
+						// trong allowlist mới đăng ký được tài khoản giáo viên; đồng thời
+						// không cho phép đăng ký email trong TEACHER_EMAILS từ cổng khác
+						// (student/admin) để tránh làm nhiễm role='student' gây khóa tài khoản.
+						if ((input.teacherEmails ?? []).length > 0) {
 							const email = user.email?.trim().toLowerCase() ?? "";
 							const allow = (input.teacherEmails ?? []).some(
 								(e) => e.trim().toLowerCase() === email,
 							);
-							if (!email || !allow) {
+							if (appRole === "teacher" && (!email || !allow)) {
 								throw new APIError("FORBIDDEN", {
 									message:
 										"Ứng dụng giáo viên hiện chỉ dành cho chủ tài khoản. Học viên vui lòng dùng cổng học viên.",
+									code: "TEACHER_SIGNUP_FORBIDDEN",
+								});
+							}
+							if (appRole !== "teacher" && email && allow) {
+								throw new APIError("FORBIDDEN", {
+									message:
+										"Email này thuộc tài khoản giáo viên. Vui lòng đăng nhập tại ứng dụng giáo viên.",
 									code: "TEACHER_SIGNUP_FORBIDDEN",
 								});
 							}

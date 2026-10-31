@@ -41,7 +41,7 @@ export function createKernelQueryClient(): QueryClient {
 				// through the same single-flight flag the write path (bus
 				// onRoleBlocked) uses; other 403s keep their own error surfaces.
 				if (isStudentRoleRejected(error)) {
-					markRoleBlocked();
+					markRoleBlocked(error.reason);
 				}
 			},
 		}),

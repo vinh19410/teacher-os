@@ -1735,6 +1735,8 @@ export const ACCOUNT_ERROR_CODES = {
 	TEACHER_SIGNUP_FORBIDDEN: "ACCOUNT_TEACHER_SIGNUP_FORBIDDEN",
 	/** Session teacher có email ngoài TEACHER_EMAILS chạm kernel tree. */
 	TEACHER_NOT_ALLOWED: "ACCOUNT_TEACHER_NOT_ALLOWED",
+	/** Session teacher trong TEACHER_EMAILS nhưng chưa xác thực email (#524). */
+	TEACHER_EMAIL_UNVERIFIED: "ACCOUNT_TEACHER_EMAIL_UNVERIFIED",
 } as const;
 export type AccountErrorCode =
 	(typeof ACCOUNT_ERROR_CODES)[keyof typeof ACCOUNT_ERROR_CODES];

@@ -1,7 +1,7 @@
 ---
 title: "#524: Xử lý các release blocker từ đợt review promote develop → staging"
 description: "Map LEAD_ORG_ID/LEAD_ORIGINS vào workflow deploy kèm chuẩn hóa fallback, sửa race check-then-act ở POST /public/leads bằng câu lệnh SQL nguyên tử, bắt buộc emailVerified cho allowlist TEACHER_EMAILS kèm luồng gửi lại mail xác thực, và áp role gate canAccessFinance cho /api/leads."
-status: in_progress
+status: completed
 priority: P1
 effort: 6h
 issue: 524
@@ -36,20 +36,20 @@ Từ kết quả review PR #523 (promote `develop` → `staging`), 5 hạng mụ
 
 | # | Phase | Trạng thái | Effort | Phụ thuộc |
 |---|---|---|---|---|
-| 1 | [Map biến deploy, chuẩn hóa `LEAD_ORIGINS` và cập nhật runbook](phase-01-deploy-env-and-runbook.md) | in_progress | 1.5h | — |
-| 2 | [Sửa check-then-act tại `POST /public/leads` bằng SQL nguyên tử](phase-02-atomic-public-leads-rate-limit.md) | pending | 2.5h | — |
-| 3 | [Bắt buộc `emailVerified` cho `TEACHER_EMAILS` và áp role gate `canAccessFinance` cho `/api/leads`](phase-03-teacher-email-verified-and-leads-role-gate.md) | pending | 2h | — |
+| 1 | [Map biến deploy, chuẩn hóa `LEAD_ORIGINS` và cập nhật runbook](phase-01-deploy-env-and-runbook.md) | completed | 1.5h | — |
+| 2 | [Sửa check-then-act tại `POST /public/leads` bằng SQL nguyên tử](phase-02-atomic-public-leads-rate-limit.md) | completed | 2.5h | — |
+| 3 | [Bắt buộc `emailVerified` cho `TEACHER_EMAILS` và áp role gate `canAccessFinance` cho `/api/leads`](phase-03-teacher-email-verified-and-leads-role-gate.md) | completed | 2h | — |
 
 ## Acceptance Criteria
 
-- [ ] `.github/workflows/deploy-staging.yml` và `.github/workflows/deploy.yml` truyền `LEAD_ORG_ID: ${{ vars.LEAD_ORG_ID }}` và `LEAD_ORIGINS: ${{ vars.LEAD_ORIGINS }}` vào bước `Deploy to Cloudflare`.
-- [ ] `resolveLeadOrigins` trong `packages/infra/src/topology.ts` chuẩn hóa giá trị rỗng / khoảng trắng / chỉ dấu phẩy về mặc định theo chế độ (`https://msmy.io.vn,https://www.msmy.io.vn` khi có topology, `http://localhost:8005` khi dev), và `LEAD_ORG_ID` được `.trim()` đồng nhất ở `alchemy.run.ts`, `public-leads.ts`, `placement-test.ts`, được kiểm chứng bằng unit test và `scripts/topology-drift.test.mjs`.
-- [ ] `docs/production-release-runbook.md` quy định rõ cổng preflight cứng kiểm tra tài khoản `TEACHER_EMAILS` đã tồn tại với `email_verified = 1` trên D1 production và lệnh `gh variable set` cho `TEACHER_EMAILS`, `LEAD_ORG_ID`, `LEAD_ORIGINS`.
-- [ ] `POST /public/leads` thực thi kiểm tra tần suất IP (`LEAD_IP_MAX`), trần ngày (`LEAD_DAILY_CAP`) và dedupe SĐT 24h (`LEAD_DEDUPE_MAX_SUBMITS`) nguyên tử ngay trong câu lệnh `INSERT ... SELECT ... WHERE ... RETURNING` và `UPDATE ... WHERE ... RETURNING` (không ghi đè `ip_hash` khi dedupe `UPDATE`, không tự chặn `UPDATE` tại biên `LEAD_IP_MAX` / `LEAD_DAILY_CAP`); các test `Promise.all` bắn request song song chứng minh không vượt ngưỡng, không tạo dòng trùng cho cùng SĐT trong 24h và chỉ gửi đúng 1 email cho lead mới.
-- [ ] Khi `teacherEmails` khác rỗng, `bootstrapMiddleware` (`apps/server/src/app.ts`) trả 403 `ACCOUNT_TEACHER_NOT_ALLOWED` cho email ngoài danh sách và trả 403 `ACCOUNT_TEACHER_EMAIL_UNVERIFIED` cho email trong danh sách nhưng `session.emailVerified !== true` (không tạo org/membership); `packages/auth/src/index.ts` chặn đăng ký email thuộc `teacherEmails` từ origin không phải `teacher`. Khi `teacherEmails` rỗng, hành vi soft-mode cho dev/E2E giữ nguyên.
-- [ ] `AccountBlockedView` (`apps/web/src/components/account-blocked-view.tsx`) giữ tiêu đề `"Đây là tài khoản học viên"` (tương thích E2E `account-role-separation.spec.ts`), và khi bị chặn bởi `ACCOUNT_TEACHER_EMAIL_UNVERIFIED` thì hiển thị hướng dẫn xác thực email kèm nút `"Gửi lại email xác thực"` (xử lý `res.error` và `EMAIL_ALREADY_VERIFIED`) và nút `"Tôi đã xác thực — Kiểm tra lại"`.
-- [ ] `GET /api/leads` và `PATCH /api/leads/:id` chặn `ta` và `class_teacher` bằng 403 `leads-forbidden` (chỉ cho phép `canAccessFinance(ctx.role)`); `PATCH /api/leads/:id` trả 400 `invalid body` khi body JSON hỏng; `notifyNewLead` chỉ gửi email cho thành viên có `canAccessFinance(membership.role)`; Sidebar, ⌘K và màn `/leads` trên web ẩn/chặn khi `viewer.canAccessFinance === false`.
-- [ ] Toàn bộ gate local (`pnpm exec biome check .`, `pnpm check-types`, `pnpm test`, `pnpm build`) xanh.
++- [x] `.github/workflows/deploy-staging.yml` và `.github/workflows/deploy.yml` truyền `LEAD_ORG_ID: ${{ vars.LEAD_ORG_ID }}` và `LEAD_ORIGINS: ${{ vars.LEAD_ORIGINS }}` vào bước `Deploy to Cloudflare`.
++- [x] `resolveLeadOrigins` trong `packages/infra/src/topology.ts` chuẩn hóa giá trị rỗng / khoảng trắng / chỉ dấu phẩy về mặc định theo chế độ (`https://msmy.io.vn,https://www.msmy.io.vn` khi có topology, `http://localhost:8005` khi dev), và `LEAD_ORG_ID` được `.trim()` đồng nhất ở `alchemy.run.ts`, `public-leads.ts`, `placement-test.ts`, được kiểm chứng bằng unit test và `scripts/topology-drift.test.mjs`.
++- [x] `docs/production-release-runbook.md` quy định rõ cổng preflight cứng kiểm tra tài khoản `TEACHER_EMAILS` đã tồn tại với `email_verified = 1` trên D1 production và lệnh `gh variable set` cho `TEACHER_EMAILS`, `LEAD_ORG_ID`, `LEAD_ORIGINS`.
++- [x] `POST /public/leads` thực thi kiểm tra tần suất IP (`LEAD_IP_MAX`), trần ngày (`LEAD_DAILY_CAP`) và dedupe SĐT 24h (`LEAD_DEDUPE_MAX_SUBMITS`) nguyên tử ngay trong câu lệnh `INSERT ... SELECT ... WHERE ... RETURNING` và `UPDATE ... WHERE ... RETURNING` (không ghi đè `ip_hash` khi dedupe `UPDATE`, không tự chặn `UPDATE` tại biên `LEAD_IP_MAX` / `LEAD_DAILY_CAP`); các test `Promise.all` bắn request song song chứng minh không vượt ngưỡng, không tạo dòng trùng cho cùng SĐT trong 24h và chỉ gửi đúng 1 email cho lead mới.
++- [x] Khi `teacherEmails` khác rỗng, `bootstrapMiddleware` (`apps/server/src/app.ts`) trả 403 `ACCOUNT_TEACHER_NOT_ALLOWED` cho email ngoài danh sách và trả 403 `ACCOUNT_TEACHER_EMAIL_UNVERIFIED` cho email trong danh sách nhưng `session.emailVerified !== true` (không tạo org/membership); `packages/auth/src/index.ts` chặn đăng ký email thuộc `teacherEmails` từ origin không phải `teacher`. Khi `teacherEmails` rỗng, hành vi soft-mode cho dev/E2E giữ nguyên.
++- [x] `AccountBlockedView` (`apps/web/src/components/account-blocked-view.tsx`) giữ tiêu đề `"Đây là tài khoản học viên"` (tương thích E2E `account-role-separation.spec.ts`), và khi bị chặn bởi `ACCOUNT_TEACHER_EMAIL_UNVERIFIED` thì hiển thị hướng dẫn xác thực email kèm nút `"Gửi lại email xác thực"` (xử lý `res.error` và `EMAIL_ALREADY_VERIFIED`) và nút `"Tôi đã xác thực — Kiểm tra lại"`.
++- [x] `GET /api/leads` và `PATCH /api/leads/:id` chặn `ta` và `class_teacher` bằng 403 `leads-forbidden` (chỉ cho phép `canAccessFinance(ctx.role)`); `PATCH /api/leads/:id` trả 400 `invalid body` khi body JSON hỏng; `notifyNewLead` chỉ gửi email cho thành viên có `canAccessFinance(membership.role)`; Sidebar, ⌘K và màn `/leads` trên web ẩn/chặn khi `viewer.canAccessFinance === false`.
++- [x] Toàn bộ gate local (`pnpm exec biome check .`, `pnpm check-types`, `pnpm test`, `pnpm build`) xanh.
 
 ## Handover
 

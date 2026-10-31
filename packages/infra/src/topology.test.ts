@@ -1,8 +1,11 @@
 import { describe, expect, it, test } from "vitest";
 import {
+	DEFAULT_DEV_LEAD_ORIGINS,
+	DEFAULT_PROD_LEAD_ORIGINS,
 	PROD_APP_DOMAIN,
 	resolveAssumeEmailVerified,
 	resolveDomainTopology,
+	resolveLeadOrigins,
 	resolveTeacherEmails,
 } from "./topology";
 
@@ -166,5 +169,41 @@ describe("resolveTeacherEmails (#513)", () => {
 	test("returns empty string on staging when unset or empty", () => {
 		expect(resolveTeacherEmails("", "staging.teacheros.io.vn")).toBe("");
 		expect(resolveTeacherEmails(undefined, "staging.teacheros.io.vn")).toBe("");
+	});
+});
+
+describe("resolveLeadOrigins (#524)", () => {
+	test("falls back to DEFAULT_PROD_LEAD_ORIGINS when hasTopology is true and raw is unset, empty, whitespace, or comma-only", () => {
+		for (const raw of [undefined, "", "   ", " , , "]) {
+			expect(resolveLeadOrigins(raw, { hasTopology: true, isDev: false })).toBe(
+				DEFAULT_PROD_LEAD_ORIGINS,
+			);
+		}
+	});
+
+	test("trims and joins explicit origins when provided under topology", () => {
+		expect(
+			resolveLeadOrigins(
+				" https://profile.staging.teacheros.io.vn , https://msmy.io.vn , ",
+				{ hasTopology: true, isDev: false },
+			),
+		).toBe("https://profile.staging.teacheros.io.vn,https://msmy.io.vn");
+	});
+
+	test("falls back to DEFAULT_DEV_LEAD_ORIGINS when hasTopology is false and isDev is true", () => {
+		for (const raw of [undefined, "", " , "]) {
+			expect(resolveLeadOrigins(raw, { hasTopology: false, isDev: true })).toBe(
+				DEFAULT_DEV_LEAD_ORIGINS,
+			);
+		}
+	});
+
+	test("throws when deploying without APP_DOMAIN and LEAD_ORIGINS is empty", () => {
+		expect(() =>
+			resolveLeadOrigins(undefined, { hasTopology: false, isDev: false }),
+		).toThrow(/LEAD_ORIGINS must be set/);
+		expect(() =>
+			resolveLeadOrigins(" , ", { hasTopology: false, isDev: false }),
+		).toThrow(/LEAD_ORIGINS must be set/);
 	});
 });

@@ -143,3 +143,36 @@ export function resolveTeacherEmails(
 	}
 	return value;
 }
+
+/** Origin mặc định của trang profile công khai khi có topology (prod/staging). */
+export const DEFAULT_PROD_LEAD_ORIGINS =
+	"https://msmy.io.vn,https://www.msmy.io.vn";
+
+/** Origin mặc định của trang profile công khai ở môi trường dev local. */
+export const DEFAULT_DEV_LEAD_ORIGINS = "http://localhost:8005";
+
+/**
+ * Lead intake (#506, #524): chuẩn hóa danh sách origin cho phép gửi
+ * `/public/leads` và đọc `/public/placement-test`. Khi biến GitHub Environment
+ * chưa đặt (`""`), khoảng trắng hoặc chỉ có dấu phẩy (`,`), tự rơi về mặc định
+ * theo chế độ thay vì để chuỗi rỗng chặn toàn bộ POST.
+ */
+export function resolveLeadOrigins(
+	raw: string | undefined,
+	options: { hasTopology: boolean; isDev: boolean },
+): string {
+	const entries = (raw ?? "")
+		.split(",")
+		.map((s) => s.trim())
+		.filter((s) => s.length > 0);
+	if (entries.length > 0) {
+		return entries.join(",");
+	}
+	if (options.hasTopology) {
+		return DEFAULT_PROD_LEAD_ORIGINS;
+	}
+	if (options.isDev) {
+		return DEFAULT_DEV_LEAD_ORIGINS;
+	}
+	throw new Error("LEAD_ORIGINS must be set when deploying without APP_DOMAIN");
+}
