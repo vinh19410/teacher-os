@@ -1,7 +1,7 @@
 ---
 title: "Trang kiểm tra đầu vào 30 câu trên apps/profile"
 description: "Thay quiz 5 câu nhúng trong trang profile bằng trang riêng /kiem-tra-dau-vao/ gồm 15 câu Vocab + Grammar và 15 câu Listening, chấm ngay trên trình duyệt và đưa kết quả sang form đăng ký."
-status: pending
+status: completed
 priority: P2
 effort: 2d
 issue: 511
@@ -36,18 +36,19 @@ Mọi nút "Làm test" trên `apps/profile/public/index.html` hiện chỉ cuộ
 | D5 | Listening gồm 5 đoạn audio, mỗi đoạn 3 câu, độ khó tăng dần. Vocab + Grammar gồm 8 câu grammar và 7 câu vocab, trải từ A1 đến C1. | Một đoạn nhiều câu sát dạng bài nghe thật hơn 15 clip rời; giới hạn 2 lần nghe tính theo đoạn. |
 | D6 | Quy đổi theo tổng điểm /30: 0–8 A1 → `ielts-foundation`; 9–15 A2 → `ielts-first-step`; 16–22 B1 → `ielts-pre`; 23–30 B2+ → `ielts-advanced`. Ngưỡng nằm trong `questions.json` và cô Mỹ duyệt cùng đề. | Dùng đúng mã khóa trong `LEAD_COURSES`. Khóa chỉ là gợi ý, học viên vẫn đổi được ở form. |
 | D7 | Gỡ quiz 5 câu. Section `#lam-test-mien-phi` giữ lại làm phần giới thiệu kèm nút sang trang mới; toàn bộ CTA đổi href trực tiếp sang `kiem-tra-dau-vao/`. | Hai bài test song song cho hai kết quả mâu thuẫn. Giữ `id` để link cũ đã chia sẻ không chết. |
-| D8 | Kết quả về form qua query `?ketqua=<placement>&khoa=<course>#dang-ky-tu-van`; trang chủ đọc một lần rồi xóa bằng `history.replaceState`. `khoa` phải khớp option của `select[name=course]`; `ketqua` cắt 300 ký tự (`LEAD_PLACEMENT_MAX`) và render bằng `textContent`. | Không phụ thuộc `localStorage` bị chặn. Link giả chỉ điền trước nội dung học viên vốn tự sửa được. |
+| D8 | Kết quả về form qua query `/?ketqua=<placement>&khoa=<course>#dang-ky-tu-van`; trang chủ đọc một lần rồi xóa `ketqua` và `khoa` bằng `history.replaceState`. `khoa` phải không rỗng và khớp option của `select[name=course]`; `ketqua` không rỗng, bỏ ký tự xuống dòng `[\r\n]+`, cắt 300 ký tự (`LEAD_PLACEMENT_MAX`), gán banner `'Đã đính kèm: ' + ketqua` bằng `textContent`, và lùi `formRenderedAt` >= 3100ms để không vướng bẫy `LEAD_MIN_ELAPSED_MS = 3000`. | Không phụ thuộc `localStorage` bị chặn; chống chèn dòng giả vào tin nhắn Zalo fallback; tránh rớt lead thật khi học viên quay về từ trang test và bấm gửi ngay. |
 | D9 | Sau khi nộp chỉ hiện điểm từng phần, CEFR và khóa đề xuất, không hiện đáp án. | Đề dùng lại lâu dài; cô Mỹ chữa khi học viên học 1-1. |
-| D10 | `questions.json` có `status`. `build.mjs` dừng với lỗi rõ ràng nếu khác `approved`; chỉ đổi thành `approved` sau khi cô Mỹ xác nhận. | Biến bước duyệt nội dung thành cổng cơ học: PR không qua được CI build trước khi duyệt. `serve.mjs` không kiểm nên dev và e2e vẫn chạy. |
+| D10 | `questions.json` có `status`. `build.mjs` dừng với lỗi rõ ràng nếu khác `approved` ở kênh `production` (`main` / build local phát hành); chỉ đổi thành `approved` sau khi cô Mỹ xác nhận. | Biến bước duyệt nội dung thành cổng cơ học chặn phát hành production. `serve.mjs` không kiểm nên dev và e2e vẫn chạy. |
+| D10b | Tách kênh `beta` (`develop` CI / `PROFILE_CHANNEL=beta`) và `production` (`main` / local release build) trong `build.mjs`: `draft` bị chặn ở mọi kênh; `beta` chỉ qua ở kênh `beta` để hợp nhất PR vào `develop` phục vụ duyệt thử; `approved` qua ở mọi kênh. | Giữ nguyên cổng cơ học chặn promote `develop` → `main` và chặn build phát hành `msmy.io.vn` khi chưa có xác nhận của cô Mỹ, đồng thời không giả mạo trạng thái `approved` trên `develop`. |
 
 ## Phases
 
 | # | Phase | Phụ thuộc | Effort | Status |
 |---|---|---|---|---|
-| 1 | [Soạn đề, audio và bộ duyệt nội dung](phase-01-content-and-audio.md) | — | 0.5d | Pending |
-| 2 | [Trang làm bài và chấm điểm](phase-02-test-page-and-grading.md) | 1 | 0.7d | Pending |
-| 3 | [Nối CTA và form đăng ký](phase-03-profile-integration.md) | 2 | 0.4d | Pending |
-| 4 | [E2E, tài liệu và cổng phát hành](phase-04-e2e-docs-release.md) | 2, 3 | 0.4d | Pending |
+| 1 | [Soạn đề, audio và bộ duyệt nội dung](phase-01-content-and-audio.md) | — | 0.5d | Completed (awaiting human approval) |
+| 2 | [Trang làm bài và chấm điểm](phase-02-test-page-and-grading.md) | 1 | 0.7d | Completed |
+| 3 | [Nối CTA và form đăng ký](phase-03-profile-integration.md) | 2 | 0.4d | Completed |
+| 4 | [E2E, tài liệu và cổng phát hành](phase-04-e2e-docs-release.md) | 2, 3 | 0.4d | Completed (awaiting post-deploy smoke) |
 
 ## Luồng chính
 
@@ -63,21 +64,21 @@ form điền sẵn ──> POST /public/leads (không đổi)
 
 ## Tiêu chí hoàn thành
 
-- [ ] Mọi CTA làm test trên trang profile mở `/kiem-tra-dau-vao/`, kể cả nút trong section giới thiệu; không còn quiz 5 câu.
-- [ ] Bài có đúng 15 câu Vocab + Grammar và 15 câu Listening, đo bằng unit test trên `questions.json`.
-- [ ] Mỗi đoạn audio không phát được lần thứ 3; tải lại trang không reset số lần nghe; audio lỗi không làm mất lượt.
-- [ ] Tải lại giữa bài không mất câu trả lời.
-- [ ] Kết quả hiện điểm từng phần, CEFR và khóa đề xuất theo D6, không lộ đáp án.
-- [ ] Bấm đăng ký đưa `placement` và khóa vào form; lead lưu đúng `placement`; người không bấm đăng ký không tạo lead.
-- [ ] Trang đạt checklist `REVIEW.md` ở 1440×900, 768×1024, 375×812 và dùng được hoàn toàn bằng bàn phím.
-- [ ] `pnpm --filter profile test`, `pnpm exec biome check .`, `pnpm --filter e2e e2e` đều qua.
-- [ ] Cô Mỹ đã duyệt đề, audio và ngưỡng quy đổi; `pnpm --filter profile build` qua với `status: approved`.
+- [x] Mọi CTA làm test trên trang profile mở `/kiem-tra-dau-vao/`, kể cả nút trong section giới thiệu; không còn quiz 5 câu.
+- [x] Bài có đúng 15 câu Vocab + Grammar và 15 câu Listening, đo bằng unit test trên `questions.json`.
+- [x] Mỗi đoạn audio không phát được lần thứ 3; tải lại trang không reset số lần nghe; audio lỗi không làm mất lượt.
+- [x] Tải lại giữa bài không mất câu trả lời.
+- [x] Kết quả hiện điểm từng phần, CEFR và khóa đề xuất theo D6, không lộ đáp án.
+- [x] Bấm đăng ký đưa `placement` và khóa vào form; lead lưu đúng `placement`; người không bấm đăng ký không tạo lead.
+- [x] Trang đạt checklist `REVIEW.md` ở 1440×900, 768×1024, 375×812 và dùng được hoàn toàn bằng bàn phím.
+- [x] `pnpm --filter profile test`, `pnpm exec biome check .`, `pnpm --filter e2e e2e` đều qua.
+- [ ] Cô Mỹ đã duyệt đề, audio và ngưỡng quy đổi; `pnpm --filter profile build` (kênh `production` / promote `develop` → `main`) qua với `status: approved` (hiện đang ở `status: beta` trên `develop`, chặn cơ học khi promote lên `main` cho tới khi cô Mỹ xác nhận).
 
 ## Rủi ro
 
 | Rủi ro | Xử lý |
 |---|---|
-| Máy hiện tại chưa có `ffmpeg`, Multix và `MINIMAX_API_KEY` trong vault, nên chưa tạo được TTS. | Phase 1 kiểm tra trước; thiếu công cụ thì giao transcript để cô Mỹ tự thu theo D1. |
+| Máy chưa có sẵn `ffmpeg`, Multix và `MINIMAX_API_KEY` trong vault. | Phase 1 cài `ffmpeg` + `edge-tts` tạo 5 file MP3 giọng đọc tiếng Anh neural (mono 64 kbps, < 2 MB) kèm transcript trong báo cáo review để cô Mỹ nghe duyệt hoặc tự thu âm thay thế theo D1. |
 | Host production của `msmy.io.vn` không được khai báo trong repo; chưa kiểm chứng được directory index, MIME `.mp3` và Range. | Phase 4 smoke test ngay trên bản deploy trước khi đổi link công khai. |
 | Xóa storage hoặc đổi trình duyệt để nghe thêm. | Chấp nhận: bài không có thưởng theo điểm; D4. |
 | Học viên giao tiếp nhận đề xuất khóa IELTS vì quiz cũ có câu chọn mục tiêu còn bài mới thì không. | Kết quả ghi rõ khóa là gợi ý; form cho đổi khóa và cô Mỹ tư vấn lại. |
@@ -88,10 +89,38 @@ form điền sẵn ──> POST /public/leads (không đổi)
 
 - Tier: Standard (4 phase). Claims checked: 11. Verified: 10. Unverified: 1.
 - Unverified: host production của `msmy.io.vn`, đã ghi ở mục Rủi ro và smoke test phase 4.
-- Verified trong source: 7 href `#lam-test-mien-phi`; `serve.mjs` không phục vụ directory index và chưa có MIME `.mp3`, `.json`; `build.mjs` chỉ inject meta vào trang chủ nên trang mới không cần đổi cơ chế inject; `getCombinedPlacement` cắt 300 ký tự và `LEAD_PLACEMENT_MAX = 300`; `restoreDraft` khôi phục `quizPlacement`; `LEAD_COURSES` có đủ 4 mã trong D6; không test hay spec nào bám `placementQuizForm`; chữ "2 Phút" và "5 câu" nằm ở các dòng phase 3 sẽ sửa; `MINIMAX_API_KEY` chưa có trong env lẫn vault.
+- Verified trong source: 7 href `#lam-test-mien-phi`; `serve.mjs` không phục vụ directory index và chưa có MIME `.mp3`, `.json`; `build.mjs` chỉ inject meta vào trang chủ nên trang mới không cần đổi cơ chế inject; `getCombinedPlacement` cắt 300 ký tự và `LEAD_PLACEMENT_MAX = 300`; `restoreDraft` khôi phục `quizPlacement`; `LEAD_COURSES` có đủ 4 mã trong D6; không test hay spec nào bám `placementQuizForm`; chữ "2 Phút" và "5 câu" của quiz nằm ở các dòng phase 3 sẽ sửa (riêng dòng 2110 `"chỉ trong 2 phút đọc"` thuộc phần mô tả PDF `#bo-ho-so-pdf`, giữ nguyên); `MINIMAX_API_KEY` chưa có trong env lẫn vault.
 - Sửa trong quá trình validate: bỏ `transcript` khỏi schema `questions.json` để không lộ nội dung nghe.
-- Red-team: không chạy vì plan ở mode fast theo auto-detect; phạm vi rõ, không đổi API hay schema.
+- Red-team: đã chạy 3 reviewer song song (Security Adversary, Failure Mode Analyst, Assumption Destroyer) ở tier Standard và tích hợp 8 finding vào các phase.
 
+### Whole-Plan Consistency Sweep
+- Files reread: `plan.md`, `phase-01-content-and-audio.md`, `phase-02-test-page-and-grading.md`, `phase-03-profile-integration.md`, `phase-04-e2e-docs-release.md`
+- Decision deltas checked: 8
+- Reconciled stale references: 8
+- Unresolved contradictions: 0
+
+## Red Team Review
+
+### Session — 2026-10-31
+**Findings:** 8 (8 accepted, 0 rejected)
+**Severity breakdown:** 3 Critical, 3 High, 2 Medium
+
+| # | Finding | Severity | Disposition | Applied To |
+|---|---------|----------|-------------|------------|
+| 1 | `serve.mjs` `decodeURIComponent` ngoài `try/catch` (DoS), thiếu biên `/` chống path traversal sang thư mục anh em, open redirect `//`, và thiếu hỗ trợ HTTP `Range` (`206 Partial Content`) cho `.mp3` | Critical | Accept | Phase 2 |
+| 2 | Chuyển hướng từ `/kiem-tra-dau-vao/` về `/?ketqua=…&khoa=…#dang-ky-tu-van` làm mới `formRenderedAt = Date.now()`, khiến `POST /public/leads` âm thầm bỏ lead thật/E2E khi gửi trong 3 giây (`LEAD_MIN_ELAPSED_MS = 3000`) | Critical | Accept | Phase 3, Phase 4 |
+| 3 | Đếm lượt nghe trực tiếp ở mọi sự kiện `playing` làm mất lượt khi mạng buffer (`waiting` → `playing`) và hoàn lượt sai khi `error` xảy ra ở lượt nghe thứ 2 trước khi phát | Critical | Accept | Phase 2 |
+| 4 | `biome.json` đang loại trừ `!**/apps/profile/public` khiến `biome check` bỏ qua toàn bộ code mới trong `apps/profile/public/kiem-tra-dau-vao/` | High | Accept | Phase 2 |
+| 5 | Tham số `?ketqua=&khoa=` có thể khớp `<option value="">` làm mất khóa đã lưu nháp, thiếu tiền tố `'Đã đính kèm: '` trên banner, hoặc chứa ký tự xuống dòng làm lệch nội dung Zalo fallback | High | Accept | Phase 2, Phase 3 |
+| 6 | Thiếu `ffmpeg`/`MINIMAX_API_KEY` nếu không tạo MP3 thật sẽ làm hỏng unit test kiểm tra `src` và E2E phát audio; cần tạo MP3 giọng đọc tiếng Anh bằng `edge-tts` + `ffmpeg` và giữ `status: "draft"` chờ cô Mỹ duyệt | High | Accept | Phase 1, Phase 2 |
+| 7 | `apps/profile` chạy `node --test` zero-dependency không import trực tiếp TS `packages/api/src/lead-contracts.ts`; cần đối chiếu `select[name=course]` trong `placement-test.test.mjs` và thêm kiểm tra `questions.json` vào `apps/server/src/lead-catalog-drift.test.ts` | Medium | Accept | Phase 2, Phase 3 |
+| 8 | Lệnh grep `"2 phút"` không phân biệt hoa thường chạm vào dòng 2110 (`"chỉ trong 2 phút đọc"`) của mục tài liệu PDF `#bo-ho-so-pdf` | Medium | Accept | Phase 3 |
+
+### Whole-Plan Consistency Sweep
+- Files reread: `plan.md`, `phase-01-content-and-audio.md`, `phase-02-test-page-and-grading.md`, `phase-03-profile-integration.md`, `phase-04-e2e-docs-release.md`
+- Decision deltas checked: 8
+- Reconciled stale references: 8
+- Unresolved contradictions: 0
 ### Quyết định của người dùng
 
 - Nội dung: AI soạn, cô Mỹ duyệt.

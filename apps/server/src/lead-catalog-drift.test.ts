@@ -103,4 +103,17 @@ describe("profile lead catalog drift (#506 phase 5)", () => {
 			expect(LEAD_COURSES).toContain(code);
 		}
 	});
+
+	it("questions.json bands chỉ trỏ tới mã khóa trong LEAD_COURSES (D6)", () => {
+		const questionsPath = new URL(
+			"../../profile/public/kiem-tra-dau-vao/questions.json",
+			import.meta.url,
+		);
+		const questions = JSON.parse(readFileSync(questionsPath.pathname, "utf8"));
+		expect(Array.isArray(questions.bands)).toBe(true);
+		expect(questions.bands.length).toBeGreaterThan(0);
+		for (const band of questions.bands) {
+			expect(LEAD_COURSES).toContain(band.course);
+		}
+	});
 });

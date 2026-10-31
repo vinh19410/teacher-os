@@ -5,6 +5,6 @@
 	"scripts": {
 		"dev:bare": "node serve.mjs",
 		"build": "node build.mjs",
-		"test": "node --test"
+		"test": "node --test tests/*.test.mjs"
 	}
 }
