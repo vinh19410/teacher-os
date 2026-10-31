@@ -10,7 +10,7 @@
 
 - CI quality (`ci.yml`: biome check, test, check-types, build) trigger cho push + PR vào `main` **và `develop`** (từ #409). E2E workflow vẫn chỉ trigger `main` — E2E chạy local qua bộ lệnh (`pnpm --filter <app> test`, `pnpm --filter e2e e2e` với port 8100/8101/8103). Bộ lệnh local (`pnpm check`, `pnpm check-types`, test, e2e) **vẫn là gate chính** cho agent — CI develop chỉ là lưới an toàn sau merge, không phải lý do bỏ local gate. Develop CI đỏ vì lint/format → remedy: `pnpm check:fix` rồi commit lại.
 - Artifact report sinh tự động (HTML…) đặt trong `plans/reports/` — glob `plans/reports/**/*.html` bị biome exclude (từ #409), không commit artifact report ở chỗ khác. Caveat: file dưới glob exclude không được lint quét — không dán secret/token/log nhạy cảm vào report.
-- Dev stack local chiếm port 8000/8001/8003/8004 (8004 = admin, plan #413 phase 5) — e2e dùng override `E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 E2E_ADMIN_PORT=8104`.
+- Dev stack local chiếm port 8000/8001/8003/8004/8005 (8004 = admin, plan #413 phase 5; 8005 = profile, plan #506 phase 6) — e2e dùng override `E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 E2E_ADMIN_PORT=8104 E2E_PROFILE_PORT=8105`.
 - E2E có watchdog hạ tầng (#402, entry `dev-watchdog`): vite web/student chết giữa run được restart tối đa 1 lần; chết lần 2 hoặc api chết → run FAIL cuối run với message `[dev-watchdog] hạ tầng dev server bất ổn…` — đừng nhầm đây là lỗi test; `design:compare` thì hủy run ngay kèm log tail. Root cause death (nếu gặp lại): native abort trong rolldown-binding của vite 8 dưới memory pressure — xem crash report `.ips` trong `~/Library/Logs/DiagnosticReports/`.
 
 ## Quy ước UI
@@ -39,3 +39,18 @@
 - Khi skill `ak-plan` hoàn tất (plan đã được duyệt/chốt), **luôn gọi tiếp skill `ak-git cp`** để commit và push các file đã tạo ra trong session (plan, journal, các file liên quan).
 - Không tự viết lệnh git thủ công thay cho `ak-git cp` trừ khi skill đó lỗi.
 
+## Cursor Cloud specific instructions
+
+- `node -v` phải là **v24** (CI pin Node 24; repo không có `engines`). Binary `/exec-daemon/node` là v22 và đứng trước nvm trên `PATH`. Snapshot này symlink Node 24 + pnpm 10.33.1 vào `/usr/local/cargo/bin` (đứng đầu `PATH`). Nếu `node -v` ra v22, đừng chạy test/dev bằng binary đó.
+- `pnpm dev` là `alchemy dev` và **không chạy được** khi thiếu credential Cloudflare. Process non-interactive báo `AuthError: No credentials configured for 'Cloudflare'`. Cần `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_API_TOKEN` (và `CI=1` để Alchemy đọc env thay vì `alchemy login`), cộng `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`. Không có các biến này trong VM.
+- Không có credential Cloudflare thì stack đầy đủ (cùng app Hono + better-auth, libsql thay D1) là boot của e2e — đúng đường CI. Mở app bằng `http://localhost:8001`, không dùng `http://127.0.0.1:8001`: `CORS_ORIGIN` chỉ có `localhost`, sign-up từ `127.0.0.1` fail fetch.
+
+```bash
+pnpm --filter e2e run boot:api
+VITE_SERVER_URL=http://localhost:8000 pnpm --filter web exec vite --port 8001 --strictPort
+VITE_SERVER_URL=http://localhost:8000 pnpm --filter student exec vite --port 8003 --strictPort
+pnpm run dev:landing
+```
+
+- `boot:api` xóa `apps/e2e/local.db` mỗi lần khởi động. Cổng 8000/8001/8003 phải trống trước `pnpm --filter e2e e2e` (override đã ghi ở mục vận hành). Chromium Playwright nằm trong cache VM; nếu lockfile đổi revision thì chạy lại `pnpm --filter e2e exec playwright install chromium`.
+- Gate lint đọc-only là `pnpm exec biome check .`. `pnpm check` là `biome check --write` và sửa file. `pnpm test` và `pnpm check-types` là gate còn lại (xem `README.md` và `package.json`).

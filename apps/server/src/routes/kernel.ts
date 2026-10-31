@@ -6,6 +6,7 @@ import type {
 	InvoicePaymentMethod,
 	InvoiceTransactionItem,
 	OccurrenceMutationResponse,
+	StudentCreateResponse,
 } from "@teacher-os/api/contracts";
 import {
 	classAssignmentCreateSchema,
@@ -24,6 +25,7 @@ import {
 	occurrenceEditSchema,
 	STUDENT_INVITATION_ERROR_CODES,
 	sessionAttendanceSaveSchema,
+	studentCreateSchema,
 	studentInviteSchema,
 } from "@teacher-os/api/contracts";
 import {
@@ -101,8 +103,10 @@ import { activateEnrollment } from "./enrollment-activation";
 import { eventRoutes } from "./events";
 import { gradingRoutes } from "./grading";
 import { holidayRoutes, isRollbackableConstraintError } from "./holidays";
+import { leadRoutes } from "./leads";
 import { notificationLogRoutes } from "./notification-logs";
 import { paymentTransactionRoutes } from "./payment-transactions";
+import { placementTestRoutes } from "./placement-test";
 import { commentBankRoutes, notifRoutes, reportRoutes } from "./reporting";
 import { loadInvoices, loadSnapshot } from "./snapshot";
 import { syllabusRoutes } from "./syllabus";
@@ -119,6 +123,8 @@ type KernelContext = Context<Env>;
 export function kernelRoutes(deps: {
 	getDb(): Db;
 	getMediaStore?(): MediaStore | undefined;
+	getLibraryAudioStore?(): MediaStore | undefined;
+	leadOrgId?: string;
 	corsOrigin?: string | string[];
 	corsOrigins?: string | string[];
 	/** #454 phase 3: thông báo qua queue — route phát sau khi ghi thành công. */
@@ -312,6 +318,144 @@ export function kernelRoutes(deps: {
 		return c.json(snapshot.students);
 	});
 
+	kernel.post("/students", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, studentCreateSchema);
+		if (!body.ok) return body.response;
+		const input = body.data;
+		const db = deps.getDb();
+		const normalizedEmail = input.email.trim().toLowerCase();
+		const classId = input.classId?.trim() ?? "";
+
+		const cls =
+			classId !== "" ? await findClass(db, classId, ctx.orgId) : undefined;
+		if (classId !== "" && !cls) {
+			return c.json({ error: "class not found" }, 404);
+		}
+
+		async function findExistingByEmail() {
+			if (normalizedEmail === "") return undefined;
+			const [row] = await db
+				.select({ id: student.id, name: student.name })
+				.from(student)
+				.where(
+					and(
+						eq(student.orgId, ctx.orgId),
+						sql`lower(trim(${student.email})) = ${normalizedEmail}`,
+						sql`${student.id} NOT LIKE 'demo-student:%'`,
+					),
+				)
+				.limit(1);
+			return row;
+		}
+
+		const existingStudent = await findExistingByEmail();
+		if (existingStudent) {
+			return c.json(
+				{
+					error: `Email này đã được dùng cho học viên ${existingStudent.name}`,
+					code: STUDENT_INVITATION_ERROR_CODES.ALREADY_IN_ORG,
+					existingStudentName: existingStudent.name,
+				},
+				409,
+			);
+		}
+
+		const studentId = crypto.randomUUID();
+		const enrollmentId = cls ? crypto.randomUUID() : undefined;
+		const now = new Date();
+		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
+			db.insert(student).values({
+				id: studentId,
+				orgId: ctx.orgId,
+				name: input.name,
+				phone: input.phone,
+				email: normalizedEmail,
+				zalo: input.phone,
+				parentName: input.parentName,
+				parentPhone: input.parentPhone,
+				createdAt: now,
+			}),
+		];
+		if (normalizedEmail !== "") {
+			statements.push(
+				db
+					.update(studentInvitation)
+					.set({ status: "accepted", updatedAt: now })
+					.where(
+						and(
+							eq(studentInvitation.orgId, ctx.orgId),
+							sql`lower(trim(${studentInvitation.email})) = ${normalizedEmail}`,
+							eq(studentInvitation.status, "pending"),
+						),
+					),
+			);
+		}
+		if (cls && enrollmentId) {
+			statements.push(
+				db.insert(enrollment).values({
+					id: enrollmentId,
+					orgId: ctx.orgId,
+					classId: cls.id,
+					studentId,
+					status: "invited",
+				}),
+			);
+		}
+
+		try {
+			await db.batch(statements);
+		} catch (cause) {
+			const raced = await findExistingByEmail();
+			if (raced) {
+				return c.json(
+					{
+						error: `Email này đã được dùng cho học viên ${raced.name}`,
+						code: STUDENT_INVITATION_ERROR_CODES.ALREADY_IN_ORG,
+						existingStudentName: raced.name,
+					},
+					409,
+				);
+			}
+			throw cause;
+		}
+
+		if (cls && enrollmentId) {
+			if (input.activateNow) {
+				const act = await activateEnrollment(db, ctx.orgId, enrollmentId);
+				if (!act.ok) {
+					return c.json({ error: "enrollment activation failed" }, 500);
+				}
+				return c.json(
+					{
+						id: studentId,
+						enrollmentId,
+						activated: true,
+					} satisfies StudentCreateResponse,
+					201,
+				);
+			}
+			await notify(ctx.orgId, [
+				classEnrolledEvent({
+					enrollmentId,
+					studentId,
+					className: cls.name,
+				}),
+			]);
+			return c.json(
+				{
+					id: studentId,
+					enrollmentId,
+					activated: false,
+				} satisfies StudentCreateResponse,
+				201,
+			);
+		}
+
+		return c.json({ id: studentId } satisfies StudentCreateResponse, 201);
+	});
+
 	kernel.post("/students/invite", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
@@ -479,13 +623,20 @@ export function kernelRoutes(deps: {
 			studentId: input.studentId,
 			status: "invited",
 		});
-		await notify(ctx.orgId, [
-			classEnrolledEvent({
-				enrollmentId,
-				studentId: input.studentId,
-				className: cls.name,
-			}),
-		]);
+		if (input.activateNow === true) {
+			const act = await activateEnrollment(db, ctx.orgId, enrollmentId);
+			if (!act.ok) {
+				return c.json({ error: "enrollment activation failed" }, 500);
+			}
+		} else {
+			await notify(ctx.orgId, [
+				classEnrolledEvent({
+					enrollmentId,
+					studentId: input.studentId,
+					className: cls.name,
+				}),
+			]);
+		}
 		return c.json({ id: enrollmentId } satisfies CreatedResponse, 201);
 	});
 
@@ -1972,6 +2123,10 @@ export function kernelRoutes(deps: {
 	kernel.route("/grading", gradingRoutes(deps));
 	// #454 phase 5: log thông báo cho teacher — GET /api/notification-logs.
 	kernel.route("/notification-logs", notificationLogRoutes(deps));
+	// #506 phase 3: quản lý lead đăng ký — GET/PATCH /api/leads.
+	kernel.route("/leads", leadRoutes(deps));
+	// #515 phase 2: soạn và phát hành bộ đề kiểm tra đầu vào — /api/placement-test.
+	kernel.route("/placement-test", placementTestRoutes(deps));
 	// TOS-6 (#439): bộ đếm 3 thẻ "Việc cần làm hôm nay" — GET /api/dashboard/reminders.
 	kernel.route("/dashboard", dashboardReminderRoutes(deps));
 	// TOS-7 (#440): danh sách ca điểm danh theo ngày — GET /api/attendance/daily.

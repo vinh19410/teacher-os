@@ -12,7 +12,7 @@ export const SECURITY_HEADERS: Record<string, string> = {
 	"Referrer-Policy": "strict-origin-when-cross-origin",
 	"Permissions-Policy":
 		"camera=(), microphone=(), geolocation=(), browsing-topics=()",
-	"Content-Security-Policy": `default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:; frame-src ${FRAME_SRC}; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com;`,
+	"Content-Security-Policy": `default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob:; font-src 'self' data:; connect-src 'self' https:; frame-src ${FRAME_SRC}; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com;`,
 };
 
 export function isLocalHost(hostname: string): boolean {

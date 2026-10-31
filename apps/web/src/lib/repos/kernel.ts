@@ -41,12 +41,22 @@ export interface KernelRequest {
 /** Map a kernel write action to its POST endpoint and JSON body. */
 export function kernelCommand(action: KernelAction): KernelRequest {
 	switch (action.type) {
+		case "add-student":
+			return {
+				path: "/api/students",
+				body: {
+					...action.payload,
+				},
+			};
 		case "enroll-student":
-			// Issue #122 / #251: enroll an EXISTING student into the viewed class.
+			// Issue #122 / #251 / #508: enroll an EXISTING student into the viewed class.
 			return {
 				path: `/api/classes/${action.classId}/enroll`,
 				body: {
 					studentId: action.studentId,
+					...(action.activateNow !== undefined
+						? { activateNow: action.activateNow }
+						: {}),
 				},
 			};
 		case "add-class":
@@ -668,15 +678,17 @@ export interface KernelCommandBus {
 }
 
 /**
- * Only the exact account-role code triggers the blocked exit — never a bare
- * 403 (e.g. the legacy "no membership after bootstrap"). Shared with the
- * QueryCache read path (query-client.ts) so both gates stay in lockstep.
+ * Only the exact account-role / teacher-allowlist codes trigger the blocked
+ * exit — never a bare 403 (e.g. the legacy "no membership after bootstrap").
+ * Shared with the QueryCache read path (query-client.ts) so both gates stay in
+ * lockstep.
  */
 export function isStudentRoleRejected(error: unknown): boolean {
 	return (
 		isHttpError(error) &&
 		error.status === 403 &&
-		error.reason === ACCOUNT_ERROR_CODES.STUDENT_ON_TEACHER_APP
+		(error.reason === ACCOUNT_ERROR_CODES.STUDENT_ON_TEACHER_APP ||
+			error.reason === ACCOUNT_ERROR_CODES.TEACHER_NOT_ALLOWED)
 	);
 }
 

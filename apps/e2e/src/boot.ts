@@ -133,6 +133,18 @@ const auth = createAuth({
 	mailer: recordingMailer,
 });
 
+// Lead intake (#506): org đích cố định cho POST /public/leads — spec e2e
+// reassign membership giáo viên sang org này (cùng trick seedOrgMember) để
+// /leads thấy lead. Idempotent: boot chạy 1 lần/run (db bị wipe) nhưng
+// INSERT OR IGNORE vẫn an toàn khi retry.
+const LEAD_ORG_ID = "e2e-lead-org";
+await client.execute({
+	sql: "INSERT OR IGNORE INTO organization (id, name, created_at) VALUES (?, ?, ?)",
+	args: [LEAD_ORG_ID, "Org Lead E2E", Date.now()],
+});
+// Origin form profile trong e2e (port 8105, AGENTS.md mục vận hành).
+const LEAD_ORIGIN = `http://localhost:${Number(process.env.E2E_PROFILE_PORT ?? 8105)}`;
+
 // File bài nói Speaking (#305) ghi xuống thư mục tạm mỗi lần boot — adapter
 // lưu trữ thật cho runtime Node, giống libsql thay D1.
 const MEDIA_DIR = mkdtempSync(join(tmpdir(), "teacher-os-e2e-media-"));
@@ -186,6 +198,12 @@ const app = buildApp({
 	notificationRetryDelaysMs: [0, 0],
 	// Plan TOS-33 (#481): không chờ 1s/2s giữa 3 lượt retry chấm bài trong E2E.
 	aiRetryDelaysMs: [0, 0],
+	// Lead intake (#506): org đích cố định + origin profile e2e (port 8105);
+	// secret HMAC tái dùng secret auth; email link trỏ app web e2e.
+	leadOrgId: LEAD_ORG_ID,
+	leadOrigins: [LEAD_ORIGIN],
+	leadIpSecret: "e2e-local-secret-0123456789abcdef0123456789abcdef",
+	appOrigin: CORS_ORIGINS[0],
 });
 
 // Fake SePay hosted-link pages (#320) ride the same API server — the iframe

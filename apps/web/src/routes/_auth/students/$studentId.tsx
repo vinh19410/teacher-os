@@ -151,9 +151,15 @@ function StudentDetailRoute() {
 				kicker={
 					<span className="flex flex-wrap items-center gap-x-3 gap-y-1">
 						<span>
-							{student.phone} · Zalo: {student.zalo}
+							{student.phone
+								? `${student.phone} · Zalo: ${student.zalo || student.phone}`
+								: "Chưa có SĐT"}
 						</span>
-						{student.email && <span>Email: {student.email}</span>}
+						<span>
+							{student.email
+								? `Email: ${student.email}`
+								: "Chưa có email (chưa liên kết Portal)"}
+						</span>
 						<span>
 							Mục tiêu: Band {student.targetBand} ({student.skills.join(", ")})
 						</span>

@@ -16,8 +16,53 @@ export * from "./event-contracts";
  * Package derives from class via D1 pattern (sessionsTotal, tuitionFee ?? 0, mode).
  * Client only sends studentId.
  */
+export const PHONE_DIGITS_REGEX = /^[0-9]{1,20}$/;
+
+export const studentCreateSchema = z
+	.object({
+		name: z
+			.string()
+			.trim()
+			.min(1, "Vui lòng nhập họ tên học viên")
+			.max(120, "Họ tên tối đa 120 ký tự"),
+		phone: z
+			.string()
+			.trim()
+			.refine((v) => v === "" || PHONE_DIGITS_REGEX.test(v), {
+				message: "Số điện thoại chỉ gồm chữ số (tối đa 20 số)",
+			})
+			.default(""),
+		email: z
+			.string()
+			.trim()
+			.toLowerCase()
+			.refine((v) => v === "" || z.string().email().safeParse(v).success, {
+				message: "Email không hợp lệ",
+			})
+			.default(""),
+		parentName: z.string().trim().max(120).default(""),
+		parentPhone: z
+			.string()
+			.trim()
+			.refine((v) => v === "" || PHONE_DIGITS_REGEX.test(v), {
+				message: "Số điện thoại phụ huynh chỉ gồm chữ số (tối đa 20 số)",
+			})
+			.default(""),
+		classId: z.string().trim().optional(),
+		activateNow: z.boolean().default(true),
+	})
+	.strict();
+export type StudentCreateInput = z.infer<typeof studentCreateSchema>;
+
+export interface StudentCreateResponse {
+	id: string;
+	enrollmentId?: string;
+	activated?: boolean;
+}
+
 export const enrollStudentSchema = z.object({
 	studentId: z.string().min(1),
+	activateNow: z.boolean().optional(),
 });
 export type EnrollStudent = z.infer<typeof enrollStudentSchema>;
 
@@ -1686,6 +1731,10 @@ export const ACCOUNT_ERROR_CODES = {
 	ADMIN_SIGNUP_FORBIDDEN: "ACCOUNT_ADMIN_SIGNUP_FORBIDDEN",
 	/** requireAdmin: session không thỏa admin gate (plan #413). */
 	NOT_ADMIN: "ACCOUNT_NOT_ADMIN",
+	/** Sign-up teacher với email ngoài TEACHER_EMAILS (single-org). */
+	TEACHER_SIGNUP_FORBIDDEN: "ACCOUNT_TEACHER_SIGNUP_FORBIDDEN",
+	/** Session teacher có email ngoài TEACHER_EMAILS chạm kernel tree. */
+	TEACHER_NOT_ALLOWED: "ACCOUNT_TEACHER_NOT_ALLOWED",
 } as const;
 export type AccountErrorCode =
 	(typeof ACCOUNT_ERROR_CODES)[keyof typeof ACCOUNT_ERROR_CODES];

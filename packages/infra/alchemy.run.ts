@@ -6,6 +6,7 @@ import * as Effect from "effect/Effect";
 import {
 	resolveAssumeEmailVerified,
 	resolveDomainTopology,
+	resolveTeacherEmails,
 } from "./src/topology.ts";
 
 config({ path: "./.env" });
@@ -119,6 +120,26 @@ const aiEnabledConfig = Config.string("AI_ENABLED").pipe(
 	Config.withDefault("false"),
 );
 
+// Lead intake (#506): LEAD_ORG_ID KHÔNG có default theo deploy — rỗng (không
+// set) ⇒ /public/leads trả 503 LEAD_INTAKE_DISABLED (fail-closed, dev không
+// cần cấu hình gì).
+const leadOrgIdConfig = Config.string("LEAD_ORG_ID").pipe(
+	Config.withDefault(""),
+);
+
+// Lead intake (#506 D5): origin form profile — topology mặc định prod msmy
+// (cả www), dev mặc định port profile local; deploy KHÔNG topology (workers.dev)
+// bắt buộc set như CORS_ORIGIN.
+const leadOriginsConfig = topology
+	? Config.string("LEAD_ORIGINS").pipe(
+			Config.withDefault("https://msmy.io.vn,https://www.msmy.io.vn"),
+		)
+	: isDevCommand
+		? Config.string("LEAD_ORIGINS").pipe(
+				Config.withDefault("http://localhost:8005"),
+			)
+		: Config.string("LEAD_ORIGINS");
+
 const adminOriginsConfig = topology
 	? Config.string("ADMIN_ORIGINS").pipe(
 			Config.withDefault(topology.adminOrigin),
@@ -134,6 +155,13 @@ const adminOriginsConfig = topology
 // phẩy; server so khớp lowercase mỗi request.
 const adminEmailsConfig = Config.string("ADMIN_EMAILS").pipe(
 	Config.withDefault(""),
+);
+
+// Single-org theo chính sách (#513): rỗng = không giới hạn (dev/e2e/staging);
+// production bắt buộc set (fail-closed khi deploy với APP_DOMAIN=teacheros.io.vn).
+const teacherEmails = resolveTeacherEmails(
+	process.env.TEACHER_EMAILS,
+	process.env.APP_DOMAIN,
 );
 
 // Staging QA: coi mọi tài khoản là đã xác minh email, vì staging không
@@ -176,6 +204,10 @@ export const server = Cloudflare.Worker("server", {
 		STUDENT_ORIGINS: studentOriginsConfig,
 		ADMIN_ORIGINS: adminOriginsConfig,
 		ADMIN_EMAILS: adminEmailsConfig,
+		TEACHER_EMAILS: teacherEmails,
+		// Lead intake (#506): org đích + origin profile cho /public/leads.
+		LEAD_ORG_ID: leadOrgIdConfig,
+		LEAD_ORIGINS: leadOriginsConfig,
 		BETTER_AUTH_SECRET: Config.redacted("BETTER_AUTH_SECRET"),
 		BETTER_AUTH_URL: topology ? topology.apiOrigin : Cloudflare.Worker.URL,
 		COOKIE_DOMAIN: topology ? topology.cookieDomain : "",

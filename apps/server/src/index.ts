@@ -76,6 +76,7 @@ const getAuth = (): Auth => {
 			// admin; so khớp lowercase diễn ra trong createAuth ở mỗi request).
 			adminOrigins: parseCORSOrigins(env.ADMIN_ORIGINS),
 			adminEmails: parseCORSOrigins(env.ADMIN_EMAILS),
+			teacherEmails: parseCORSOrigins(env.TEACHER_EMAILS ?? ""),
 			secret: env.BETTER_AUTH_SECRET,
 			baseURL: env.BETTER_AUTH_URL,
 			...(env.COOKIE_DOMAIN ? { cookieDomain: env.COOKIE_DOMAIN } : {}),
@@ -130,6 +131,7 @@ export default buildApp({
 	...createAiProviders(env),
 	// Plan #413: cổng admin — allowlist email + origin console cho CSRF.
 	adminEmails: parseCORSOrigins(env.ADMIN_EMAILS),
+	teacherEmails: parseCORSOrigins(env.TEACHER_EMAILS ?? ""),
 	adminOrigins: parseCORSOrigins(env.ADMIN_ORIGINS),
 	// Thiếu bất kỳ secret Bank Hub nào (#320) → undefined → route ngân hàng
 	// trả 503 BANKHUB_DISABLED; local/dev không cần cấu hình gì.
@@ -154,5 +156,12 @@ export default buildApp({
 	// Plan TOS-21 (#454): origin cổng học viên đầu tiên cho link tuyệt đối
 	// trong email — env STUDENT_ORIGINS là chuỗi thô nên parse ở đây.
 	studentOrigin: parseCORSOrigins(env.STUDENT_ORIGINS)[0],
+	// Lead intake (#506): org đích từ env (fail-closed khi rỗng), origin
+	// profile tách khỏi CORS_ORIGIN (D5), secret HMAC tái dùng
+	// BETTER_AUTH_SECRET, appOrigin cho link trong email báo lead (D13).
+	leadOrgId: env.LEAD_ORG_ID,
+	leadOrigins: parseCORSOrigins(env.LEAD_ORIGINS),
+	leadIpSecret: env.BETTER_AUTH_SECRET,
+	appOrigin: parseCORSOrigins(env.CORS_ORIGIN)[0],
 	runInBackground: (promise) => waitUntil(promise),
 });

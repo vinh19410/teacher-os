@@ -273,6 +273,24 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 						role: "teacher",
 					};
 				}
+				if (userKey === "manual-verified") {
+					return {
+						userId: "u-manual-ver",
+						userName: "Minh Manual",
+						email: "manual-minh@test.local",
+						emailVerified: true,
+						role: "student",
+					};
+				}
+				if (userKey === "manual-unverified") {
+					return {
+						userId: "u-manual-unv",
+						userName: "Minh Manual Unverified",
+						email: "manual-minh@test.local",
+						emailVerified: false,
+						role: "student",
+					};
+				}
 				return null;
 			},
 			authHandler: () => new Response("auth OK"),
@@ -1563,6 +1581,237 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 				time: "10:30",
 				topic: "Ranh giới",
 			});
+		});
+	});
+
+	describe("manual student creation & instant activation (#508)", () => {
+		const teacherHeaders = {
+			Origin: "http://localhost:8001",
+			"Content-Type": "application/json",
+			"x-test-user": "teacher",
+		};
+
+		test("POST /api/students creates a student with only name (no email, no phone) and returns 201", async () => {
+			const res = await app.request("/api/students", {
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({ name: "Bé An" }),
+			});
+			expect(res.status).toBe(201);
+			const created = (await res.json()) as { id: string };
+			expect(created.id).toBeTruthy();
+
+			const listRes = await app.request("/api/students", {
+				headers: { "x-test-user": "teacher" },
+			});
+			expect(listRes.status).toBe(200);
+			const students = (await listRes.json()) as Array<{
+				id: string;
+				name: string;
+				email: string;
+				phone: string;
+			}>;
+			const found = students.find((s) => s.id === created.id);
+			expect(found).toMatchObject({
+				id: created.id,
+				name: "Bé An",
+				email: "",
+				phone: "",
+			});
+		});
+
+		test("POST /api/students creates multiple students without email in the same org without unique collision", async () => {
+			const res1 = await app.request("/api/students", {
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({ name: "Học viên Không Email 1" }),
+			});
+			const res2 = await app.request("/api/students", {
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({ name: "Học viên Không Email 2" }),
+			});
+			expect(res1.status).toBe(201);
+			expect(res2.status).toBe(201);
+		});
+
+		test("POST /api/students with classId and activateNow=true creates active enrollment, session_package, and lessons, unlocking invoice and assignment creation", async () => {
+			const classRes = await app.request("/api/classes", {
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({
+					name: "IELTS Writing #508",
+					type: "ielts",
+					skills: ["Writing"],
+					schedule: { days: [0, 3], start: "18:30", end: "20:00" },
+					sessionsTotal: 8,
+					tuitionFee: 3000000,
+					startDate: "2027-01-04",
+				}),
+			});
+			expect(classRes.status).toBe(201);
+			const { id: classId } = (await classRes.json()) as { id: string };
+
+			const stRes = await app.request("/api/students", {
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({
+					name: "Lê Minh",
+					classId,
+					activateNow: true,
+				}),
+			});
+			expect(stRes.status).toBe(201);
+			const stData = (await stRes.json()) as {
+				id: string;
+				enrollmentId?: string;
+				activated?: boolean;
+			};
+			expect(stData.activated).toBe(true);
+			expect(stData.enrollmentId).toBeTruthy();
+
+			const invRes = await app.request("/api/invoices", {
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({
+					enrollmentId: stData.enrollmentId,
+					amount: 3000000,
+					due: "2027-01-10",
+				}),
+			});
+			expect(invRes.status).toBe(201);
+
+			const promptRes = await app.request("/api/assignments/prompts", {
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({
+					skill: "writing",
+					part: "task2",
+					type: "opinion",
+					title: "Đề Writing #508",
+					band: "6.5",
+					source: "Cambridge",
+					prompt: "<p>Discuss both views and give your opinion.</p>",
+					passage: "",
+					intro: "",
+					transcript: "",
+					cueTopic: "",
+					cuePoints: "",
+					audioName: "",
+					imageUrl: "",
+					questions: [],
+					optionBank: [],
+					note: "",
+					status: "ready",
+				}),
+			});
+			expect(promptRes.status).toBe(201);
+			const { id: promptId } = (await promptRes.json()) as { id: string };
+
+			const asgRes = await app.request(`/api/classes/${classId}/assignments`, {
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({
+					promptId,
+					due: "2099-12-31",
+					note: "Làm bài đúng hạn",
+					studentIds: [stData.id],
+				}),
+			});
+			expect(asgRes.status).toBe(201);
+		});
+
+		test("POST /api/students with duplicate email in same org returns 409 STUDENT_ALREADY_IN_ORG; auto-accepts pending student_invitation on creation", async () => {
+			const invRes = await app.request("/api/students/invite", {
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({ email: "manual-minh@test.local" }),
+			});
+			expect(invRes.status).toBe(201);
+
+			const createRes = await app.request("/api/students", {
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({
+					name: "Minh Manual",
+					email: "Manual-Minh@Test.Local",
+				}),
+			});
+			expect(createRes.status).toBe(201);
+
+			const listInvRes = await app.request("/api/students/invitations", {
+				headers: { "x-test-user": "teacher" },
+			});
+			expect(listInvRes.status).toBe(200);
+			const invitations = (await listInvRes.json()) as Array<{
+				email: string;
+				status: string;
+			}>;
+			const matchedInv = invitations.find(
+				(i) => i.email === "manual-minh@test.local",
+			);
+			expect(matchedInv?.status).toBe("accepted");
+
+			const dupeRes = await app.request("/api/students", {
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({
+					name: "Minh Manual 2",
+					email: "manual-minh@test.local",
+				}),
+			});
+			expect(dupeRes.status).toBe(409);
+			const dupeBody = (await dupeRes.json()) as {
+				code?: string;
+				existingStudentName?: string;
+			};
+			expect(dupeBody.code).toBe("STUDENT_ALREADY_IN_ORG");
+			expect(dupeBody.existingStudentName).toBe("Minh Manual");
+		});
+
+		test("Student created manually with email links automatically when logging into Student Portal with verified email, and rejects unverified email with 403 EMAIL_UNVERIFIED", async () => {
+			const unverifiedRes = await app.request("/api/student/me", {
+				headers: { "x-test-user": "manual-unverified" },
+			});
+			expect(unverifiedRes.status).toBe(403);
+			const unverifiedBody = (await unverifiedRes.json()) as { code?: string };
+			expect(unverifiedBody.code).toBe(STUDENT_ERROR_CODES.EMAIL_UNVERIFIED);
+
+			const verifiedRes = await app.request("/api/student/me", {
+				headers: { "x-test-user": "manual-verified" },
+			});
+			expect(verifiedRes.status).toBe(200);
+			const verifiedBody = (await verifiedRes.json()) as StudentMe;
+			expect(verifiedBody.student.name).toBe("Minh Manual");
+			expect(verifiedBody.student.orgId).toBe("org-1");
+		});
+
+		test("POST /api/classes/:id/enroll with activateNow=true activates enrollment immediately", async () => {
+			const stRes = await app.request("/api/students", {
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({ name: "Phạm Gia Bảo" }),
+			});
+			expect(stRes.status).toBe(201);
+			const { id: studentId } = (await stRes.json()) as { id: string };
+
+			const enrollRes = await app.request("/api/classes/class-1/enroll", {
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({ studentId, activateNow: true }),
+			});
+			expect(enrollRes.status).toBe(201);
+			const { id: enrollmentId } = (await enrollRes.json()) as { id: string };
+
+			const kernelRes = await app.request("/api/kernel", {
+				headers: { "x-test-user": "teacher" },
+			});
+			expect(kernelRes.status).toBe(200);
+			const snap = (await kernelRes.json()) as {
+				enrollments: Array<{ id: string; status: string }>;
+			};
+			const enr = snap.enrollments.find((e) => e.id === enrollmentId);
+			expect(enr?.status).toBe("active");
 		});
 	});
 });

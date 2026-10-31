@@ -11,7 +11,30 @@ Quy ước khi cập nhật:
 ---
 
 
+## 2026-10-31
+
+### Added
+- Màn sửa và phát hành bộ đề kiểm tra đầu vào (`/placement-test` trong `apps/web` → `/kiem-tra-dau-vao/` trên `apps/profile`, #515): chuyển bộ đề và 5 file MP3 từ file tĩnh sang D1 (`placement_test`, `placement_test_audio`, migration `0058`) + R2 `LIBRARY_AUDIO` (`placement/<orgId>/<uuid>`, trần 20 MB); giáo viên có quyền `canAccessFinance` sửa toàn bộ câu hỏi, 4 đáp án, đáp án đúng, phân loại, cấp độ, đoạn nghe, `maxPlays` và bảng ngưỡng CEFR, nhập đề gốc 30 câu bằng một nút bấm, lưu nháp có CAS `revision` (409 khi đụng độ giữa nhiều tab) và bấm **Phát hành** dựng snapshot bất biến có hiệu lực ngay mà không cần deploy lại; mở rộng `MediaStore.get(key, range?)` và route công khai `GET /public/placement-test` + `GET /public/placement-test/audio/:id` hỗ trợ HTTP `Range` (`206 Partial Content`) cho Safari iOS và dọn rác nền các audio mồ côi > 24 giờ; trang `/kiem-tra-dau-vao/` đọc đề từ API, tính động số câu/đoạn, hiện trang bảo trì khi chưa phát hành hoặc lỗi mạng mà không xóa bài làm dở trong `localStorage`, và bỏ cổng `status` trong `apps/profile/build.mjs`.
+- App giáo viên chỉ cho phép email trong danh sách `TEACHER_EMAILS` (bắt buộc trên production, fail-closed khi deploy nếu rỗng; rỗng ở dev/e2e/staging giữ nguyên không giới hạn; chặn cả sign-up `TEACHER_SIGNUP_FORBIDDEN` lẫn mỗi request kernel `ACCOUNT_TEACHER_NOT_ALLOWED`, #513).
+- Trang kiểm tra đầu vào 30 câu trên `apps/profile` (`/kiem-tra-dau-vao/`, #511): thay quiz 5 câu nhúng trong trang bằng trang tĩnh riêng gồm 15 câu Vocab + Grammar (8 grammar, 7 vocab từ A1 đến C1) và 5 đoạn Listening (15 câu từ A2 đến C1, mỗi đoạn nghe tối đa 2 lần, lưu tiến độ và số lượt nghe trong `localStorage` key `msmy_placement_attempt_v1`); module chấm điểm thuần `grading.js` quy đổi tổng điểm `/30` sang CEFR (`A1`/`A2`/`B1`/`B2+`) và khóa đề xuất thuộc `LEAD_COURSES` rồi chuyển kết quả về form đăng ký qua query `/?ketqua=&khoa=#dang-ky-tu-van` (đọc một lần, lùi `formRenderedAt` tránh ngưỡng chống bot 3 giây và xóa query bằng `history.replaceState`); nâng cấp `serve.mjs` hỗ trợ directory index, redirect 301 an toàn và HTTP `Range` (`206 Partial Content`) cho `.mp3`; `build.mjs` chặn build phát hành khi `questions.json` chưa ở trạng thái `status: "approved"`.
+
+## 2026-10-30
+
+### Added
+- Thêm học viên thủ công, kích hoạt lớp tức thì và bài nộp mẫu dùng thử Chấm điểm (#508): khôi phục `POST /api/students` theo org (chỉ bắt buộc tên, trùng email → `409 STUDENT_ALREADY_IN_ORG`, tự đóng lời mời `pending` cùng email), `activateNow` trên `POST /api/classes/:id/enroll` để vào trạng thái Đang học ngay, `AddStudentModal` + `EnrollStudentModal` hai chế độ, và `POST/DELETE /api/grading/demo-sample` tạo/xóa bài Writing mẫu không tốn credit AI, cô lập khỏi snapshot/nhắc việc. Không có migration mới.
+- Lead intake từ form đăng ký học trên trang profile cô Mỹ (`apps/profile`, `msmy.io.vn`) vào `teacher-os` (#506): bảng `lead` (migration `0057`), contract `@teacher-os/api/lead-contracts`, endpoint công khai `POST /public/leads` (CORS riêng `LEAD_ORIGINS`, chống spam 2 lớp honeypot/`elapsedMs` + tần suất IP HMAC-SHA256 3 lần/10 phút + trần 100 lead/ngày + dedupe SĐT 24 giờ, gửi email báo thành viên org không chứa PII), API giáo viên `GET/PATCH /api/leads`, màn `/leads` ("Đăng ký mới") trên `apps/web`, và viết lại form `#consultForm` trên `apps/profile` (chỉ bắt buộc Tên + SĐT Zalo, danh mục khóa theo Google Form + hình thức lớp, màn thành công không kèm thông tin thanh toán, lưu nháp `localStorage`, fallback copy-Zalo khi API lỗi, inject `<meta name="lead-api">` qua `LEAD_API_URL` trong `serve.mjs`/`build.mjs`, kèm test chống lệch danh mục `lead-catalog-drift.test.ts` và E2E đầu-cuối trên cổng `8105`).
+
 ## 2026-10-29
+
+### Added
+- Release lõi vận hành lớp + học phí lên production (`develop` → `main`, #501, issue #494): lịch tháng/tuần/ngày + kỳ nghỉ, điểm danh theo buổi và theo ngày, hóa đơn/thu tiền/sổ công nợ, nhắc học phí, nhật ký thông báo; 22 migration (0035–0056) áp lên D1 prod (ledger 35 → 57), dữ liệu prod giữ nguyên.
+- Cờ `AI_ENABLED` (mặc định tắt, #496): nhập đề AI và chấm nháp AI tắt hẳn trên prod, UI ẩn mọi điểm vào AI; khi tắt, `runAiGrading` thoát sớm không tạo draft hay reserve Credit (#497).
+
+### Fixed
+- Lịch nhiều thứ trong tuần (ví dụ T2+T5) sinh sai buổi cuối khi ngày bắt đầu không phải thứ đầu tiên trong lịch: `skeletonOf` giờ đi theo lịch từ `startDate` thay vì dồn buổi dư vào thứ đầu mảng (#498). Backfill #98 giữ công thức cũ qua `legacySkeletonOf`.
+
+### CI/Infra
+- Job e2e nâng `timeout-minutes` 20 → 40: suite 243 test (1 worker) cần ~23 phút trên runner chậm, làm `Deploy Production` bị hủy hai lần trước khi deploy (#502).
 
 ### Fixed
 - `/readyz` trả 503 `{"ok":false}` trên D1 dù database đã migrate đủ: probe trong `apps/server/src/routes/readiness.ts` truyền mỗi bảng/index một tham số (~132 tham số), vượt giới hạn 100 tham số mỗi câu lệnh của Cloudflare D1 nên D1 từ chối query. Danh sách tên giờ đi trong **một** tham số JSON (`name IN (SELECT value FROM json_each(?))`), hành vi kiểm tra giữ nguyên; thêm test chặn probe vượt 100 tham số (libsql in-memory dùng trong test không có giới hạn này).

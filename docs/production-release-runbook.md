@@ -24,6 +24,7 @@ environment — never editing this runbook.
 | `STUDENT_ORIGINS` (server binding) | `https://student.<domain>` | default derived from `APP_DOMAIN`; an explicit value missing the portal origin fails the run (drives portal sign-up role classification) |
 | `ADMIN_ORIGINS` (server binding) | `https://admin.<domain>` | default derived from `APP_DOMAIN` (`alchemy.run.ts`); an explicit value missing the admin origin fails the run (drives admin CSRF + sign-up classification, plan #413) |
 | `ADMIN_EMAILS` (server binding) | comma-separated allowlist, **no default — empty means nobody is admin** | operator-set secret-like binding; matched lowercase by `requireAdmin` on every request and by the admin-origin sign-up hook (`ADMIN_SIGNUP_FORBIDDEN`) |
+| `TEACHER_EMAILS` (server binding) | comma-separated allowlist, **required on production** (deploy fails if empty); empty elsewhere means unrestricted | operator-set binding (`vars.TEACHER_EMAILS` on GitHub Environment `production`); matched lowercase on every request in `bootstrapMiddleware` (`ACCOUNT_TEACHER_NOT_ALLOWED`) and at teacher sign-up (`TEACHER_SIGNUP_FORBIDDEN`, #513) |
 | `BETTER_AUTH_URL` (server binding) | `https://api.<domain>` | derived from `APP_DOMAIN`; worker URL otherwise |
 | Better Auth base URL | `https://api.<domain>/api/auth` | `authBaseURL()` in `packages/auth/src/topology.ts` (mount path `/api/auth`) |
 | Google redirect URI | `https://api.<domain>/api/auth/callback/google` | derived from the Better Auth base URL |
@@ -87,6 +88,40 @@ loads `packages/infra/.env` first — a value there wins over the same name in
 | `SEPAY_BANKHUB_WEBHOOK_SECRET` | Operator-generated, registered via `apps/server/scripts/bankhub-setup.ts` | operator env → Worker binding | generate new, re-run bankhub-setup, update `.env`, redeploy |
 | `SEPAY_BANKHUB_BASE_URL` | Deploy operator | operator env → Worker binding | n/a (endpoint); production MUST set `https://bankhub-api.sepay.vn` — blank falls back to the sandbox host and the feature silently no-ops |
 | `GITHUB_WEBHOOK_SECRET` | Operator-generated (`openssl rand -hex 32`) | GitHub environment secret `GH_WEBHOOK_SECRET` → bước deploy CI → Worker binding `GITHUB_WEBHOOK_SECRET` (#421) | sinh mới → cập nhật secret trên trang webhook GitHub và GitHub environment → redeploy; trong lúc lệch, delivery trả 401 và có thể "Redeliver" từ UI. **Cảnh báo:** `withDefault("")` nghĩa là deploy prod/staging NGOÀI CI mà không export `GITHUB_WEBHOOK_SECRET` sẽ ghi đè secret đang chạy về rỗng ⇒ endpoint 503 — deploy tay phải export biến từ `.env` (hoặc chờ CI) |
+
+## Lead intake — form đăng ký msmy.io.vn (#506)
+
+Form đăng ký học trên `msmy.io.vn` POST thẳng vào `POST /public/leads` của API
+(route công khai, không đăng nhập; CORS + chống spam riêng trong
+`apps/server/src/routes/public-leads.ts`). Cấu hình qua 2 binding:
+
+| Binding | Bắt buộc | Giá trị |
+| --- | --- | --- |
+| `LEAD_ORG_ID` | Có (prod) — bỏ trống ⇒ endpoint trả 503 `LEAD_INTAKE_DISABLED` (fail-closed, tắt intake bằng cách xoá binding) | `organization.id` của cô Mỹ — query D1: `SELECT id FROM organization;` (đối chiếu email giáo viên qua `membership`) |
+| `LEAD_ORIGINS` | Có khi deploy không topology (workers.dev); topology tự mặc định `https://msmy.io.vn,https://www.msmy.io.vn`, dev `http://localhost:8005` | Origin trang profile, phân tách dấu phẩy; sai/ thiếu origin ⇒ POST bị 403 `LEAD_ORIGIN_FORBIDDEN` |
+
+Vận hành:
+
+- **Backup trước migration `lead` (0057):** `wrangler d1 export <db> --remote
+  --output backup-<date>.sql` rồi mới apply migration (rule repo cho mọi
+  migration D1 có bảng mới).
+- **Chống spam:** honeypot + `elapsedMs` < 3s ⇒ 201 giả không ghi; tần suất
+  theo IP (HMAC `BETTER_AUTH_SECRET`, ngưỡng 3 lead/10 phút); trần 100 lead
+  mới/ngày/org; SĐT gửi lại trong 24 giờ cập nhật lead cũ. Ngưỡng là hằng số
+  export trong `public-leads.ts` — chỉnh qua code, không phải env.
+- **Thứ tự phát hành bộ đề kiểm tra đầu vào (`/placement-test` → `/kiem-tra-dau-vao/`, #515):**
+  1. Đảm bảo biến `LEAD_ORG_ID` (UUID `organization.id` của cô Mỹ) được truyền khi deploy `server`, sau đó deploy `server` và `web` (migration `0058` tạo bảng `placement_test` và `placement_test_audio` chạy cùng deploy). **Tuyệt đối không deploy `apps/profile` trước bước 4**, nếu không học viên mở `/kiem-tra-dau-vao/` sẽ thấy trang bảo trì.
+  2. Đăng nhập `https://app.teacheros.io.vn/placement-test`, xác nhận `LEAD_ORG_ID` khớp org của cô Mỹ (màn sửa không hiện cảnh báo lệch tổ chức).
+  3. Cô Mỹ bấm **"Nhập đề gốc (30 câu, 5 audio)"**, nghe thử từng đoạn, chỉnh sửa câu hỏi / ngưỡng CEFR nếu cần, đối chiếu `plans/reports/placement-test-content-review.md`, rồi bấm **Phát hành**.
+  4. Kiểm tra API công khai và HTTP `Range` trước khi deploy profile:
+     - `curl -i https://api.teacheros.io.vn/public/placement-test -H "Origin: https://msmy.io.vn"` trả `200` kèm `Access-Control-Allow-Origin: https://msmy.io.vn` và `Cache-Control: no-cache`.
+     - `curl -i -H "Range: bytes=0-99" https://api.teacheros.io.vn<src-của-clip-1>` trả `206 Partial Content` kèm `Content-Range: bytes 0-99/<size>`.
+  5. Build và deploy `apps/profile`: `LEAD_API_URL=https://api.teacheros.io.vn pnpm --filter profile build` (script `build.mjs` copy `public/` sang `dist/` và thay `<meta name="lead-api">` ở cả `dist/index.html` lẫn `dist/kiem-tra-dau-vao/index.html`; cổng `status` tĩnh trong `build.mjs` đã bỏ vì bước duyệt nay là nút **Phát hành** trên `/placement-test`).
+  6. Smoke test trên Safari iOS (`https://msmy.io.vn/kiem-tra-dau-vao/`): nghe thử audio, hoàn thành bài test và gửi form tạo lead có `placement` trên `/leads`.
+- **Tùy chọn — WAF rate limiting** trên zone teacheros.io.vn cho path
+  `/public/leads` khi có spam thật (lớp 3 của plan; Turnstile chỉ bật khi cần).
+- Email báo lead mới gửi mọi thành viên org qua mailer chung (D13); mailer
+  lỗi không ảnh hưởng response — check log `[leads]` khi nghi ngờ.
 
 ## Deploy preflight (all releases)
 
@@ -855,6 +890,7 @@ ngoài kernel tree.
 | --- | --- | --- |
 | `ADMIN_ORIGINS` | `https://admin.<domain>` | Có default từ `APP_DOMAIN` (`alchemy.run.ts`); giá trị explicit thiếu origin admin fail loud khi deploy |
 | `ADMIN_EMAILS` | danh sách email phân tách dấu phẩy | **KHÔNG có default** — rỗng (không set) = không ai là admin và không ai đăng ký được account admin; so khớp lowercase trong `requireAdmin` ở MỖI request (gỡ email khỏi danh sách là mất quyền ngay) |
+| `TEACHER_EMAILS` | danh sách email phân tách dấu phẩy | **Bắt buộc trên production** (`resolveTeacherEmails` ném lỗi khi deploy nếu rỗng); ở môi trường khác rỗng = không giới hạn. Kiểm lowercase mỗi request ở kernel (`bootstrapMiddleware`) và ở hook sign-up (`TEACHER_SIGNUP_FORBIDDEN`, #513) |
 | `LIBRARY_AUDIO` | R2 bucket `library-audio` | Private bucket tạo trong `alchemy.run.ts`; thiếu binding → route audio trả 503 `LIBRARY_AUDIO_DISABLED` |
 
 ### Quy trình cấp admin đầu tiên
@@ -870,6 +906,12 @@ ngoài kernel tree.
    admin lúc sign-up).
 4. Smoke: đăng nhập tại `https://admin.<domain>/login` → shell hiện mục
    "Thư viện đề" và `GET /api/admin/me` trả 200.
+
+### Single-org allowlist giáo viên (`TEACHER_EMAILS`, #513)
+
+1. **Kiểm tra trước khi deploy production:** chạy truy vấn đọc `SELECT email, created_at FROM user WHERE role = 'teacher';` trên D1 production để đối chiếu chính xác địa chỉ email đang lưu của chủ app.
+2. Đặt biến `TEACHER_EMAILS` trên GitHub Environment `production` (`gh variable set TEACHER_EMAILS --env production --body "<email-chủ-app>"`, hoặc truyền trong môi trường deploy) khớp đúng email trong kết quả truy vấn. Nếu `TEACHER_EMAILS` rỗng trên `APP_DOMAIN=teacheros.io.vn`, Alchemy fail-closed ngay lúc deploy. Các tài khoản `role = 'teacher'` khác (nếu có) sẽ bị chặn ở mỗi request bằng 403 `ACCOUNT_TEACHER_NOT_ALLOWED`; không xoá dữ liệu trong bước này.
+3. **Rollback / đổi danh sách:** đổi hoặc bổ sung email trong binding `TEACHER_EMAILS` rồi deploy lại; có hiệu lực ngay ở request kế tiếp và không cần migration D1.
 
 ### Bucket `library-audio` (kho audio đề Listening)
 

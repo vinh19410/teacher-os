@@ -25,14 +25,20 @@ export function createR2MediaStore(bucket: R2Bucket): MediaStore {
 				throw error;
 			}
 		},
-		async get(key) {
-			const object = await bucket.get(key);
+		async get(key, range) {
+			const object = await bucket.get(
+				key,
+				range
+					? { range: { offset: range.offset, length: range.length } }
+					: undefined,
+			);
 			if (!object) return null;
 			return {
 				body: object.body,
 				contentType:
 					object.httpMetadata?.contentType ?? "application/octet-stream",
 				size: object.size,
+				...(range ? { range } : {}),
 			};
 		},
 		async delete(key) {

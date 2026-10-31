@@ -5,10 +5,16 @@
  * `index.ts` import. Production dùng R2, e2e dùng đĩa, unit test dùng Map.
  */
 
+export interface MediaByteRange {
+	offset: number;
+	length: number;
+}
+
 export interface StoredMedia {
 	body: ReadableStream<Uint8Array>;
 	contentType: string;
 	size: number;
+	range?: MediaByteRange;
 }
 
 export interface MediaStore {
@@ -22,7 +28,7 @@ export interface MediaStore {
 		body: ReadableStream<Uint8Array>,
 		meta: { contentType: string; size: number },
 	): Promise<void>;
-	get(key: string): Promise<StoredMedia | null>;
+	get(key: string, range?: MediaByteRange): Promise<StoredMedia | null>;
 	delete(key: string): Promise<void>;
 }
 
