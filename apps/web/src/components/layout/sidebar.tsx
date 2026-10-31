@@ -49,6 +49,13 @@ export const TEACHER_NAV: NavGroup[] = [
 			{ key: "students", label: "Học viên", icon: Users, href: "/students" },
 			// #506: lead từ form đăng ký trên msmy.io.vn — màn Đăng ký mới.
 			{ key: "leads", label: "Đăng ký mới", icon: Inbox, href: "/leads" },
+			// #515: màn sửa và phát hành bộ đề kiểm tra đầu vào (/kiem-tra-dau-vao/).
+			{
+				key: "placement-test",
+				label: "Bài test đầu vào",
+				icon: ClipboardList,
+				href: "/placement-test",
+			},
 			{
 				key: "schedule",
 				label: "Lịch dạy",
@@ -113,6 +120,7 @@ export const TEACHER_NAV: NavGroup[] = [
 const FINANCE_NAV_KEY_MAP: Record<string, true> = {
 	tuition: true,
 	debts: true,
+	"placement-test": true,
 };
 
 /**
@@ -173,6 +181,7 @@ const ACTIVE_KEY_BY_PREFIX: Record<string, string> = {
 	"/classes": "classes",
 	"/students": "students",
 	"/leads": "leads",
+	"/placement-test": "placement-test",
 	"/schedule": "schedule",
 	"/syllabus": "syllabus",
 	"/notifications": "notifications",

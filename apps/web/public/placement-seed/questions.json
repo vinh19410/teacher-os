@@ -1,6 +1,4 @@
 {
-	"version": 1,
-	"status": "beta",
 	"bands": [
 		{
 			"min": 0,
@@ -170,7 +168,7 @@
 			"clips": [
 				{
 					"id": "clip-1",
-					"src": "audio/clip-1.mp3",
+					"audioId": null,
 					"maxPlays": 2,
 					"level": "A2",
 					"title": "Đoạn nghe 1 (A2) – Thông báo tại thư viện cộng đồng",
@@ -215,7 +213,7 @@
 				},
 				{
 					"id": "clip-2",
-					"src": "audio/clip-2.mp3",
+					"audioId": null,
 					"maxPlays": 2,
 					"level": "B1",
 					"title": "Đoạn nghe 2 (B1) – Hội thoại tư vấn khóa kỹ năng thuyết trình",
@@ -260,7 +258,7 @@
 				},
 				{
 					"id": "clip-3",
-					"src": "audio/clip-3.mp3",
+					"audioId": null,
 					"maxPlays": 2,
 					"level": "B1",
 					"title": "Đoạn nghe 3 (B1) – Hướng dẫn chuyến khảo sát khu bảo tồn đất ngập nước",
@@ -305,7 +303,7 @@
 				},
 				{
 					"id": "clip-4",
-					"src": "audio/clip-4.mp3",
+					"audioId": null,
 					"maxPlays": 2,
 					"level": "B2",
 					"title": "Đoạn nghe 4 (B2) – Thảo luận học thuật về dự án khảo sát không gian xanh đô thị",
@@ -350,7 +348,7 @@
 				},
 				{
 					"id": "clip-5",
-					"src": "audio/clip-5.mp3",
+					"audioId": null,
 					"maxPlays": 2,
 					"level": "C1",
 					"title": "Đoạn nghe 5 (C1) – Bài giảng về kiến trúc lựa chọn và hình thành thói quen bền vững",

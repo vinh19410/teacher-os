@@ -66,6 +66,10 @@ describe("teacherNavForViewer (TOS-17 #451)", () => {
 		expect(keys).toContain("tuition");
 		expect(keys).toContain("debts");
 		expect(keys).toContain("profile");
+		const teaching = teacherNavForViewer(true).find(
+			(group) => group.group === "Giảng dạy",
+		);
+		expect(teaching?.items.map((item) => item.key)).toContain("placement-test");
 	});
 
 	it("ẩn Doanh thu và Công nợ khỏi nhóm Kinh doanh khi canAccessFinance = false", () => {
@@ -76,6 +80,12 @@ describe("teacherNavForViewer (TOS-17 #451)", () => {
 		expect(keys).not.toContain("tuition");
 		expect(keys).not.toContain("debts");
 		expect(keys).toContain("profile");
+		const teaching = teacherNavForViewer(false).find(
+			(group) => group.group === "Giảng dạy",
+		);
+		expect(teaching?.items.map((item) => item.key)).not.toContain(
+			"placement-test",
+		);
 	});
 });
 
@@ -188,6 +198,7 @@ describe("teacherActiveKey", () => {
 		expect(teacherActiveKey("/grading")).toBe("grading");
 		expect(teacherActiveKey("/grading/a-1")).toBe("grading");
 		expect(teacherActiveKey("/debts")).toBe("debts");
+		expect(teacherActiveKey("/placement-test")).toBe("placement-test");
 		expect(teacherActiveKey("/login")).toBe("");
 	});
 });

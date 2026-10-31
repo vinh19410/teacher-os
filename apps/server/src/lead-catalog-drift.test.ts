@@ -6,6 +6,10 @@ import {
 	LEAD_STUDY_MODES,
 	LEAD_TIME_SLOTS,
 } from "@teacher-os/api/lead-contracts";
+import {
+	placementContentSchema,
+	validatePlacementForPublish,
+} from "@teacher-os/api/placement-test-contracts";
 import { describe, expect, it } from "vitest";
 
 const profileHtmlPath = new URL(
@@ -104,16 +108,21 @@ describe("profile lead catalog drift (#506 phase 5)", () => {
 		}
 	});
 
-	it("questions.json bands chỉ trỏ tới mã khóa trong LEAD_COURSES (D6)", () => {
+	it("placement-seed/questions.json khớp LEAD_COURSES và hợp lệ với validatePlacementForPublish khi gắn audioId (D6, D12)", () => {
 		const questionsPath = new URL(
-			"../../profile/public/kiem-tra-dau-vao/questions.json",
+			"../../web/public/placement-seed/questions.json",
 			import.meta.url,
 		);
-		const questions = JSON.parse(readFileSync(questionsPath.pathname, "utf8"));
-		expect(Array.isArray(questions.bands)).toBe(true);
-		expect(questions.bands.length).toBeGreaterThan(0);
-		for (const band of questions.bands) {
+		const raw = JSON.parse(readFileSync(questionsPath.pathname, "utf8"));
+		const parsed = placementContentSchema.parse(raw);
+		expect(parsed.bands.length).toBeGreaterThan(0);
+		for (const band of parsed.bands) {
 			expect(LEAD_COURSES).toContain(band.course);
 		}
+		const withFakeAudio = structuredClone(parsed);
+		withFakeAudio.parts[1].clips.forEach((clip, idx) => {
+			clip.audioId = `00000000-0000-4000-8000-00000000000${idx + 1}`;
+		});
+		expect(validatePlacementForPublish(withFakeAudio)).toEqual([]);
 	});
 });
