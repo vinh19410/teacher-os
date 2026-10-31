@@ -56,7 +56,7 @@ dependencies: [1]
   4. Nếu đường dẫn trỏ tới thư mục tồn tại nhưng không kết thúc bằng `/` (ví dụ `/kiem-tra-dau-vao`), chuẩn hóa đường dẫn bắt đầu bằng một dấu `/` duy nhất (`pathname.replace(/^\/+/, "/") + "/"` + `url.search`) và trả `301 Moved Permanently` với header `Location`.
   5. Nếu đường dẫn kết thúc bằng `/` (ví dụ `/` hoặc `/kiem-tra-dau-vao/`), phục vụ `index.html` trong thư mục đó (riêng `/index.html` gốc vẫn chạy `replaceLeadApiMeta`).
   6. Hỗ trợ header `Range: bytes=start-end` trên file tĩnh (đặc biệt `.mp3`): luôn gửi `Accept-Ranges: bytes` và `Content-Length`; nếu có `Range` hợp lệ thì trả `206 Partial Content` kèm `Content-Range: bytes start-end/total` và slice buffer; nếu `Range` sai phạm vi thì trả `416 Range Not Satisfiable`.
-  7. Trong `apps/profile/build.mjs`, xuất hàm `buildProfile({ questionsPath, distUrl, leadApiUrl })` (và chạy mặc định khi gọi `node build.mjs`): đọc `questions.json`, nếu `status !== "approved"` thì throw Error rõ ràng nêu tên file và `status` hiện tại để chặn build trước khi cô Mỹ duyệt (D10).
+  7. Trong `apps/profile/build.mjs`, xuất hàm `resolveBuildChannel` và `buildProfile({ questionsUrl, distUrl, leadApiUrl, channel })`: chặn `status: "draft"` ở mọi kênh, cho phép `status: "beta"` ở kênh `beta` (`develop` CI / `PROFILE_CHANNEL=beta`), và bắt buộc `status === "approved"` ở kênh `production` (`main` / build phát hành local) theo D10 & D10b.
 - **Success criteria:** `/kiem-tra-dau-vao` trả 301 sang `/kiem-tra-dau-vao/`; `/kiem-tra-dau-vao/` trả 200 HTML; `.mp3` hỗ trợ 200 và 206 Range; `/%FF` trả 400 không sập server; path traversal trả 403; `build.mjs` dừng với lỗi khi `status !== "approved"`.
 - **Verify:** no verification needed (verified by Task 2.5 unit tests).
 

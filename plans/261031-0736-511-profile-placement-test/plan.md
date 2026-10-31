@@ -1,7 +1,7 @@
 ---
 title: "Trang kiểm tra đầu vào 30 câu trên apps/profile"
 description: "Thay quiz 5 câu nhúng trong trang profile bằng trang riêng /kiem-tra-dau-vao/ gồm 15 câu Vocab + Grammar và 15 câu Listening, chấm ngay trên trình duyệt và đưa kết quả sang form đăng ký."
-status: in-progress
+status: completed
 priority: P2
 effort: 2d
 issue: 511
@@ -38,7 +38,8 @@ Mọi nút "Làm test" trên `apps/profile/public/index.html` hiện chỉ cuộ
 | D7 | Gỡ quiz 5 câu. Section `#lam-test-mien-phi` giữ lại làm phần giới thiệu kèm nút sang trang mới; toàn bộ CTA đổi href trực tiếp sang `kiem-tra-dau-vao/`. | Hai bài test song song cho hai kết quả mâu thuẫn. Giữ `id` để link cũ đã chia sẻ không chết. |
 | D8 | Kết quả về form qua query `/?ketqua=<placement>&khoa=<course>#dang-ky-tu-van`; trang chủ đọc một lần rồi xóa `ketqua` và `khoa` bằng `history.replaceState`. `khoa` phải không rỗng và khớp option của `select[name=course]`; `ketqua` không rỗng, bỏ ký tự xuống dòng `[\r\n]+`, cắt 300 ký tự (`LEAD_PLACEMENT_MAX`), gán banner `'Đã đính kèm: ' + ketqua` bằng `textContent`, và lùi `formRenderedAt` >= 3100ms để không vướng bẫy `LEAD_MIN_ELAPSED_MS = 3000`. | Không phụ thuộc `localStorage` bị chặn; chống chèn dòng giả vào tin nhắn Zalo fallback; tránh rớt lead thật khi học viên quay về từ trang test và bấm gửi ngay. |
 | D9 | Sau khi nộp chỉ hiện điểm từng phần, CEFR và khóa đề xuất, không hiện đáp án. | Đề dùng lại lâu dài; cô Mỹ chữa khi học viên học 1-1. |
-| D10 | `questions.json` có `status`. `build.mjs` dừng với lỗi rõ ràng nếu khác `approved`; chỉ đổi thành `approved` sau khi cô Mỹ xác nhận. | Biến bước duyệt nội dung thành cổng cơ học: PR không qua được CI build trước khi duyệt. `serve.mjs` không kiểm nên dev và e2e vẫn chạy. |
+| D10 | `questions.json` có `status`. `build.mjs` dừng với lỗi rõ ràng nếu khác `approved` ở kênh `production` (`main` / build local phát hành); chỉ đổi thành `approved` sau khi cô Mỹ xác nhận. | Biến bước duyệt nội dung thành cổng cơ học chặn phát hành production. `serve.mjs` không kiểm nên dev và e2e vẫn chạy. |
+| D10b | Tách kênh `beta` (`develop` CI / `PROFILE_CHANNEL=beta`) và `production` (`main` / local release build) trong `build.mjs`: `draft` bị chặn ở mọi kênh; `beta` chỉ qua ở kênh `beta` để hợp nhất PR vào `develop` phục vụ duyệt thử; `approved` qua ở mọi kênh. | Giữ nguyên cổng cơ học chặn promote `develop` → `main` và chặn build phát hành `msmy.io.vn` khi chưa có xác nhận của cô Mỹ, đồng thời không giả mạo trạng thái `approved` trên `develop`. |
 
 ## Phases
 
@@ -71,7 +72,7 @@ form điền sẵn ──> POST /public/leads (không đổi)
 - [x] Bấm đăng ký đưa `placement` và khóa vào form; lead lưu đúng `placement`; người không bấm đăng ký không tạo lead.
 - [x] Trang đạt checklist `REVIEW.md` ở 1440×900, 768×1024, 375×812 và dùng được hoàn toàn bằng bàn phím.
 - [x] `pnpm --filter profile test`, `pnpm exec biome check .`, `pnpm --filter e2e e2e` đều qua.
-- [ ] Cô Mỹ đã duyệt đề, audio và ngưỡng quy đổi; `pnpm --filter profile build` qua với `status: approved`.
+- [ ] Cô Mỹ đã duyệt đề, audio và ngưỡng quy đổi; `pnpm --filter profile build` (kênh `production` / promote `develop` → `main`) qua với `status: approved` (hiện đang ở `status: beta` trên `develop`, chặn cơ học khi promote lên `main` cho tới khi cô Mỹ xác nhận).
 
 ## Rủi ro
 

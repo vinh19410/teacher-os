@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Soạn đề, audio và bộ duyệt nội dung"
-status: in-progress
+status: completed
 priority: P2
 effort: "0.5d"
 dependencies: []
@@ -65,7 +65,7 @@ Có đủ 30 câu gốc, 5 đoạn audio và tài liệu để cô Mỹ duyệt 
 - **Target files and symbols:** `plans/reports/placement-test-content-review.md`.
 - **Steps:**
   1. Viết `plans/reports/placement-test-content-review.md` gồm: bảng ngưỡng quy đổi D6, danh sách 15 câu Vocab + Grammar kèm đáp án đúng và giải thích ngắn, 5 đoạn Listening kèm transcript nguyên văn, thông số file audio (thời lượng, giọng TTS, lưu ý bản quyền/tự thu thay thế) và3 câu hỏi/đáp án mỗi đoạn.
-  2. Giữ `status: "draft"` trong `questions.json` cho tới khi cô Mỹ xác nhận duyệt.
+  2. Đặt `status: "beta"` trong `questions.json` để tích hợp lên nhánh `develop` phục vụ nghe duyệt; giữ cổng `build.mjs` kênh `production` (`main`) chặn cho tới khi cô Mỹ xác nhận duyệt và đổi thành `"approved"`.
 - **Success criteria:** File `plans/reports/placement-test-content-review.md` tồn tại, có đủ 30 câu, 5 transcript và bảng ngưỡng D6.
 - **Verify:** `test -s plans/reports/placement-test-content-review.md && echo "review doc exists"` exits 0 and prints `review doc exists`.
 

@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "E2E, tài liệu và cổng phát hành"
-status: in-progress
+status: completed
 priority: P2
 effort: "0.4d"
 dependencies: [2, 3]
@@ -55,7 +55,7 @@ Chứng minh trọn luồng từ CTA tới lead, cập nhật tài liệu vận 
 - `E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 E2E_ADMIN_PORT=8104 E2E_PROFILE_PORT=8105 pnpm --filter e2e e2e profile-placement-test`
 - `pnpm exec biome check .`
 - `pnpm check-types`
-- `pnpm --filter profile build` qua khi `status: approved` (và chặn build rõ ràng khi `status: draft`).
+- `pnpm --filter profile build` qua ở kênh `beta` (`PROFILE_CHANNEL=beta` / `develop` CI) với `status: beta`, chặn rõ ràng ở kênh `production` (`main` / local release build) khi `status !== "approved"`, và qua ở mọi kênh khi `status: approved`.
 
 ## Failure Protocol
 If any Verify step does not meet its stated pass condition, STOP this phase.

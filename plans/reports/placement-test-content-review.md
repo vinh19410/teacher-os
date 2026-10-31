@@ -3,7 +3,7 @@
 - **Issue:** [#511](https://github.com/vinh19410/teacher-os/issues/511)
 - **Plan:** `plans/261031-0736-511-profile-placement-test/plan.md`
 - **File cấu hình đề:** `apps/profile/public/kiem-tra-dau-vao/questions.json`
-- **Trạng thái hiện tại (`status`):** `draft` *(chờ cô Đỗ Thị Thục Mỹ xác nhận trước khi chuyển sang `approved`)*
+- **Trạng thái hiện tại (`status`):** `beta` *(đã tích hợp lên nhánh `develop` để kiểm thử & nghe duyệt; cổng `build.mjs` kênh `production` / nhánh `main` vẫn chặn cho tới khi cô Đỗ Thị Thục Mỹ xác nhận và đổi sang `approved`)*
 - **Ngày tạo bản nháp:** 2026-10-31
 
 ---
@@ -205,7 +205,7 @@ Phân bổ vị trí đáp án đúng (`answer`): `A (0): 6 câu`, `B (1): 4 câ
    - Cập nhật `apps/profile/public/kiem-tra-dau-vao/questions.json` (và tăng `"version"` nếu muốn xóa tiến độ làm thử cũ trên trình duyệt).
    - Thay file `.mp3` tương ứng trong `apps/profile/public/kiem-tra-dau-vao/audio/`.
 3. Khi đã xác nhận duyệt toàn bộ nội dung:
-   - Đổi `"status": "draft"` thành `"status": "approved"` trong `apps/profile/public/kiem-tra-dau-vao/questions.json`.
+   - Đổi `"status": "beta"` thành `"status": "approved"` trong `apps/profile/public/kiem-tra-dau-vao/questions.json`.
    - Ghi ngày xác nhận duyệt dưới đây và chạy `pnpm --filter profile build`.
 
 - **Trạng thái duyệt:** `[ ] Đã duyệt (Approved)`
