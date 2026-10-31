@@ -7,13 +7,38 @@ import {
 const STORAGE_KEY = "msmy_placement_attempt_v1";
 const ZALO_URL = "https://zalo.me/0929060994";
 
-const COURSE_LABELS = {
-	"ielts-foundation": "IELTS Foundation (0–3.0)",
-	"ielts-first-step": "IELTS First Step (3.0–4.0)",
-	"ielts-pre": "Pre-IELTS (4.0–5.0)",
-	"ielts-advanced": "IELTS Advanced (6.0–7.0+)",
-};
+function getLeadApiBase() {
+	if (typeof document === "undefined") return "http://localhost:8000";
+	const meta = document.querySelector('meta[name="lead-api"]');
+	const raw = meta?.getAttribute("content")?.trim() || "http://localhost:8000";
+	return raw.replace(/\/+$/, "");
+}
 
+function resolveAudioUrl(src) {
+	const raw = String(src ?? "").trim();
+	if (!raw) return "";
+	if (/^https?:\/\//i.test(raw)) return raw;
+	const base = getLeadApiBase();
+	return `${base}${raw.startsWith("/") ? "" : "/"}${raw}`;
+}
+
+function getPartCounts(test) {
+	const part1 = test?.parts?.find((p) => p.id === "vocab-grammar");
+	const part2 = test?.parts?.find((p) => p.id === "listening");
+	const vgCount = Array.isArray(part1?.questions) ? part1.questions.length : 0;
+	const clips = Array.isArray(part2?.clips) ? part2.clips : [];
+	const clipCount = clips.length;
+	const listeningCount = clips.reduce(
+		(sum, c) => sum + (Array.isArray(c?.questions) ? c.questions.length : 0),
+		0,
+	);
+	return {
+		vgCount,
+		listeningCount,
+		clipCount,
+		totalQuestions: vgCount + listeningCount,
+	};
+}
 const VALID_STEPS = new Set(["intro", "part1", "part2", "result"]);
 const OPTION_LETTERS = ["A", "B", "C", "D"];
 
@@ -140,17 +165,25 @@ function clearAttempt(test) {
 	};
 }
 
-function renderError(root, message) {
+function renderMaintenance(root) {
 	root.replaceChildren();
 	const card = createEl("section", "error-card");
-	card.appendChild(createEl("span", "kicker-pill", "Thông báo kỹ thuật"));
+	card.id = "maintenanceCard";
+	card.appendChild(createEl("span", "kicker-pill", "Thông báo hệ thống"));
+	card.appendChild(createEl("h1", "", "Bài kiểm tra đang bảo trì"));
 	card.appendChild(
-		createEl("h1", "", "Không thể tải đề kiểm tra đầu vào lúc này"),
+		createEl(
+			"p",
+			"muted-copy",
+			"Bộ đề kiểm tra đầu vào hiện đang được cô Thục Mỹ cập nhật. Bạn vui lòng quay lại sau ít phút hoặc quay về trang chủ để đăng ký tư vấn lộ trình 1-1.",
+		),
 	);
-	card.appendChild(createEl("p", "muted-copy", message));
 
 	const actions = createEl("div", "btn-row");
-	const retryBtn = createEl("button", "btn btn-primary", "Thử Tải Lại Trang");
+	const homeLink = createEl("a", "btn btn-primary", "← Quay Về Trang Chủ");
+	homeLink.href = "../";
+
+	const retryBtn = createEl("button", "btn btn-outline", "Thử Tải Lại Trang");
 	retryBtn.type = "button";
 	retryBtn.addEventListener("click", () => window.location.reload());
 
@@ -163,7 +196,7 @@ function renderError(root, message) {
 	zaloLink.target = "_blank";
 	zaloLink.rel = "noopener";
 
-	actions.append(retryBtn, zaloLink);
+	actions.append(homeLink, retryBtn, zaloLink);
 	card.appendChild(actions);
 	root.appendChild(card);
 }
@@ -172,10 +205,11 @@ function createStepperBar(test, state) {
 	const bar = createEl("div", "stepper-bar");
 	const pills = createEl("div", "stepper-pills");
 
+	const { vgCount, listeningCount } = getPartCounts(test);
 	const steps = [
 		{ id: "intro", label: "1. Giới thiệu" },
-		{ id: "part1", label: "2. Phần 1: Vocab + Grammar (15 câu)" },
-		{ id: "part2", label: "3. Phần 2: Listening (15 câu)" },
+		{ id: "part1", label: `2. Phần 1: Vocab + Grammar (${vgCount} câu)` },
+		{ id: "part2", label: `3. Phần 2: Listening (${listeningCount} câu)` },
 		{ id: "result", label: "4. Kết quả & Lộ trình" },
 	];
 
@@ -295,6 +329,8 @@ function renderApp(root, test, state) {
 }
 
 function renderIntroStep(root, test, state, rerender) {
+	const { vgCount, listeningCount, clipCount, totalQuestions } =
+		getPartCounts(test);
 	const card = createEl("section", "intro-card");
 	card.appendChild(
 		createEl(
@@ -307,7 +343,7 @@ function renderIntroStep(root, test, state, rerender) {
 		createEl(
 			"h1",
 			"",
-			"Đánh Giá Năng Lực Tiếng Anh Đầu Vào 30 Câu (Vocab, Grammar & Listening)",
+			`Đánh Giá Năng Lực Tiếng Anh Đầu Vào (${totalQuestions} Câu • Vocab, Grammar & Listening)`,
 		),
 	);
 	card.appendChild(
@@ -328,7 +364,7 @@ function renderIntroStep(root, test, state, rerender) {
 			createEl(
 				"span",
 				"resume-banner-text",
-				`Bạn đang có bài làm dở (${Object.keys(state.answers).length}/30 câu đã chọn). Bạn có thể tiếp tục hoặc xóa để làm lại từ đầu.`,
+				`Bạn đang có bài làm dở (${Object.keys(state.answers).length}/${totalQuestions} câu đã chọn). Bạn có thể tiếp tục hoặc xóa để làm lại từ đầu.`,
 			),
 		);
 		const bannerActions = createEl("div", "header-actions");
@@ -364,16 +400,16 @@ function renderIntroStep(root, test, state, rerender) {
 	const grid = createEl("div", "intro-grid");
 	const features = [
 		{
-			title: "Phần 1: Vocab + Grammar (15 câu)",
-			desc: "8 câu ngữ pháp bản chất và 7 câu từ vựng học thuật trải đều từ mức A1 đến C1.",
+			title: `Phần 1: Vocab + Grammar (${vgCount} câu)`,
+			desc: "Các câu hỏi ngữ pháp bản chất và từ vựng học thuật trải đều từ mức A1 đến C1.",
 		},
 		{
-			title: "Phần 2: Listening (5 đoạn • 15 câu)",
-			desc: "5 đoạn nghe độc thoại và hội thoại thực tế (A2 – C1), mỗi đoạn gồm 3 câu hỏi trắc nghiệm.",
+			title: `Phần 2: Listening (${clipCount} đoạn • ${listeningCount} câu)`,
+			desc: `${clipCount} đoạn nghe độc thoại và hội thoại thực tế (A2 – C1) kèm câu hỏi trắc nghiệm.`,
 		},
 		{
 			title: "Quy định làm bài & Lưu tự động",
-			desc: "Không giới hạn thời gian. Mỗi đoạn âm thanh được nghe tối đa 2 lần. Câu trả lời tự động lưu khi tải lại trang.",
+			desc: "Không giới hạn thời gian. Mỗi đoạn âm thanh có số lượt nghe quy định riêng. Câu trả lời tự động lưu khi tải lại trang.",
 		},
 	];
 	for (const f of features) {
@@ -412,6 +448,7 @@ function updateProgressCounter(root, test, state) {
 
 function renderPart1Step(root, test, state, rerender) {
 	const part1 = test.parts.find((p) => p.id === "vocab-grammar");
+	const { vgCount, listeningCount } = getPartCounts(test);
 	const card = createEl("section", "step-card");
 	card.appendChild(createEl("span", "kicker-pill", "Phần 1 / 2"));
 	card.appendChild(
@@ -421,7 +458,7 @@ function renderPart1Step(root, test, state, rerender) {
 		createEl(
 			"p",
 			"muted-copy",
-			"Chọn đáp án đúng nhất cho 15 câu bên dưới. Bạn có thể chuyển sang Phần 2 bất cứ lúc nào và quay lại chỉnh sửa trước khi nộp bài.",
+			`Chọn đáp án đúng nhất cho ${vgCount} câu bên dưới. Bạn có thể chuyển sang Phần 2 bất cứ lúc nào và quay lại chỉnh sửa trước khi nộp bài.`,
 		),
 	);
 
@@ -444,7 +481,7 @@ function renderPart1Step(root, test, state, rerender) {
 	const nextBtn = createEl(
 		"button",
 		"btn btn-primary",
-		"Tiếp Tục Sang Phần 2: Listening (15 câu) →",
+		`Tiếp Tục Sang Phần 2: Listening (${listeningCount} câu) →`,
 	);
 	nextBtn.type = "button";
 	nextBtn.id = "toPart2Btn";
@@ -456,22 +493,27 @@ function renderPart1Step(root, test, state, rerender) {
 }
 
 function renderPart2Step(root, test, state, rerender, activeClipsCleanup) {
+	const part1 = test.parts.find((p) => p.id === "vocab-grammar");
 	const part2 = test.parts.find((p) => p.id === "listening");
+	const clips = part2?.clips ?? [];
 	const card = createEl("section", "step-card");
 	card.appendChild(createEl("span", "kicker-pill", "Phần 2 / 2"));
 	card.appendChild(
-		createEl("h1", "", "Phần 2: Nghe Hiểu (Listening – 5 Đoạn Audio)"),
+		createEl(
+			"h1",
+			"",
+			`Phần 2: Nghe Hiểu (Listening – ${clips.length} Đoạn Audio)`,
+		),
 	);
 	card.appendChild(
 		createEl(
 			"p",
 			"muted-copy",
-			"Mỗi đoạn âm thanh được phát tối đa 2 lần và không thể tua. Hãy đọc trước 3 câu hỏi của từng đoạn rồi bấm nút Phát đoạn nghe.",
+			"Mỗi đoạn âm thanh có giới hạn số lần phát và không thể tua. Hãy đọc trước các câu hỏi của từng đoạn rồi bấm nút Phát đoạn nghe.",
 		),
 	);
 
-	const clips = part2?.clips ?? [];
-	let questionNumber = 16;
+	let questionNumber = (part1?.questions?.length ?? 0) + 1;
 	const clipControllers = [];
 
 	const pauseAllOtherClips = (exceptClipId) => {
@@ -511,7 +553,7 @@ function renderPart2Step(root, test, state, rerender, activeClipsCleanup) {
 
 		const audio = document.createElement("audio");
 		audio.preload = "none";
-		audio.src = `./${clip.src.replace(/^\.?\//, "")}`;
+		audio.src = resolveAudioUrl(clip.src);
 		audio.dataset.audioClip = clip.id;
 
 		let activeSession = false;
@@ -736,7 +778,7 @@ function renderResultStep(root, test, state, rerender) {
 
 	const summaryText = buildPlacementSummary(result);
 	const courseCode = result.band.course;
-	const courseLabel = COURSE_LABELS[courseCode] || courseCode;
+	const courseLabel = result.band.courseLabel || courseCode;
 
 	const card = createEl("section", "result-card");
 	card.id = "testResultCard";
@@ -857,21 +899,26 @@ async function init() {
 	const root = document.getElementById("appRoot");
 	if (!root) return;
 	try {
-		const res = await fetch("./questions.json", { cache: "no-cache" });
+		const apiBase = getLeadApiBase();
+		const res = await fetch(`${apiBase}/public/placement-test`, {
+			cache: "no-cache",
+		});
 		if (!res.ok) {
 			throw new Error(`HTTP ${res.status}`);
 		}
 		const test = await res.json();
-		if (!test || !Array.isArray(test.parts) || !Array.isArray(test.bands)) {
+		if (
+			!test ||
+			!Array.isArray(test.parts) ||
+			!Array.isArray(test.bands) ||
+			flattenQuestions(test).length === 0
+		) {
 			throw new Error("Invalid schema");
 		}
 		const state = loadSavedAttempt(test);
 		renderApp(root, test, state);
 	} catch {
-		renderError(
-			root,
-			"Hệ thống chưa tải được bộ câu hỏi kiểm tra đầu vào. Vui lòng kiểm tra kết nối mạng rồi tải lại trang, hoặc nhắn trực tiếp qua Zalo để cô Thục Mỹ gửi bài test và xếp lịch tư vấn 1-1.",
-		);
+		renderMaintenance(root);
 	}
 }
 

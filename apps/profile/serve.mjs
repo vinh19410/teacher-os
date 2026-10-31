@@ -6,6 +6,7 @@ import { pathToFileURL } from "node:url";
 const root = new URL("./public", import.meta.url).pathname;
 const rootWithSep = root.endsWith(sep) ? root : `${root}${sep}`;
 const rootIndexFile = join(root, "index.html");
+const testIndexFile = join(root, "kiem-tra-dau-vao", "index.html");
 const port = Number(process.env.PORT) || 8005;
 const types = {
 	".html": "text/html; charset=utf-8",
@@ -35,34 +36,6 @@ export function replaceLeadApiMeta(html, leadApiUrl) {
 		/<meta\s+name="lead-api"\s+content="[^"]*"\s*\/?>/,
 		`<meta name="lead-api" content="${escapeAttr(trimmed)}">`,
 	);
-}
-
-function parseByteRange(rangeHeader, totalLength) {
-	const match = /^bytes=(\d*)-(\d*)$/.exec(rangeHeader.trim());
-	if (!match) return null;
-	const [, startStr, endStr] = match;
-	if (startStr === "" && endStr === "") return null;
-	let start;
-	let end;
-	if (startStr === "") {
-		const suffixLength = Number(endStr);
-		if (!Number.isInteger(suffixLength) || suffixLength <= 0) return null;
-		start = Math.max(0, totalLength - suffixLength);
-		end = totalLength - 1;
-	} else {
-		start = Number(startStr);
-		end = endStr === "" ? totalLength - 1 : Number(endStr);
-	}
-	if (
-		!Number.isInteger(start) ||
-		!Number.isInteger(end) ||
-		start < 0 ||
-		start >= totalLength ||
-		start > end
-	) {
-		return null;
-	}
-	return { start, end: Math.min(end, totalLength - 1) };
 }
 
 export function createProfileServer(
@@ -118,7 +91,7 @@ export function createProfileServer(
 				return;
 			}
 
-			if (file === rootIndexFile) {
+			if (file === rootIndexFile || file === testIndexFile) {
 				const raw = await readFile(file, "utf8");
 				const rendered = replaceLeadApiMeta(raw, leadApiUrl);
 				const buf = Buffer.from(rendered, "utf8");
@@ -140,32 +113,9 @@ export function createProfileServer(
 			const body = await readFile(file);
 			const total = body.length;
 			const contentType = types[extname(file)] ?? "application/octet-stream";
-			const rangeHeader = req.headers.range;
-
-			if (typeof rangeHeader === "string" && rangeHeader.startsWith("bytes=")) {
-				const range = parseByteRange(rangeHeader, total);
-				if (!range) {
-					res.writeHead(416, {
-						"content-type": "text/plain; charset=utf-8",
-						"content-range": `bytes */${total}`,
-					});
-					res.end("Range Not Satisfiable");
-					return;
-				}
-				const chunk = body.subarray(range.start, range.end + 1);
-				res.writeHead(206, {
-					"content-type": contentType,
-					"accept-ranges": "bytes",
-					"content-range": `bytes ${range.start}-${range.end}/${total}`,
-					"content-length": String(chunk.length),
-				});
-				res.end(req.method === "HEAD" ? undefined : chunk);
-				return;
-			}
 
 			res.writeHead(200, {
 				"content-type": contentType,
-				"accept-ranges": "bytes",
 				"content-length": String(total),
 			});
 			res.end(req.method === "HEAD" ? undefined : body);

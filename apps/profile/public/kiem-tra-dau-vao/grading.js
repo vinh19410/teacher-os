@@ -7,7 +7,7 @@ export const LEAD_PLACEMENT_MAX = 300;
 
 /**
  * Trải phẳng toàn bộ câu hỏi của bài kiểm tra theo thứ tự Phần 1 -> Phần 2.
- * @param {object} test Dữ liệu từ questions.json
+ * @param {object} test Dữ liệu bộ đề kiểm tra đầu vào
  * @returns {Array<{id: string, partId: string, clipId?: string, level: string, prompt: string, options: string[], answer: number}>}
  */
 export function flattenQuestions(test) {
@@ -43,7 +43,7 @@ export function flattenQuestions(test) {
  * Chấm điểm bài làm và quy đổi sang CEFR + mã khóa học đề xuất theo bảng bands.
  * Câu bỏ trống hoặc đáp án không phải số nguyên hợp lệ được tính là 0 điểm.
  *
- * @param {object} test Dữ liệu từ questions.json
+ * @param {object} test Dữ liệu bộ đề kiểm tra đầu vào
  * @param {Record<string, number | undefined | null>} answers Map id câu hỏi -> chỉ số đáp án (0..3)
  */
 export function gradeAttempt(test, answers = {}) {
@@ -85,6 +85,7 @@ export function gradeAttempt(test, answers = {}) {
 			max: maxScore,
 			cefr: "A1",
 			course: "ielts-foundation",
+			courseLabel: "",
 		};
 
 	return {
@@ -103,6 +104,7 @@ export function gradeAttempt(test, answers = {}) {
 			max: matchedBand.max,
 			cefr: matchedBand.cefr,
 			course: matchedBand.course,
+			courseLabel: matchedBand.courseLabel ?? "",
 		},
 	};
 }

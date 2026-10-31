@@ -407,6 +407,13 @@
       "when": 1793331410798,
       "tag": "0057_exotic_vulture",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "6",
+      "when": 1793452308708,
+      "tag": "0058_simple_lady_deathstrike",
+      "breakpoints": true
     }
   ]
 }

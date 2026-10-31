@@ -23,6 +23,7 @@ import { githubWebhookRoutes } from "./routes/github-webhooks";
 import { kernelRoutes } from "./routes/kernel";
 import { publicLeadRoutes } from "./routes/public-leads";
 import { publicPayRoutes } from "./routes/public-pay";
+import { publicPlacementTestRoutes } from "./routes/public-placement-test";
 import { readinessRoute } from "./routes/readiness";
 import { studentRoutes } from "./routes/student";
 import { studentClassmatesRoutes } from "./routes/student-classmates";
@@ -43,6 +44,7 @@ export type {
 // `.`, `./app`, `./session`).
 export {
 	enforceDeclaredSize,
+	type MediaByteRange,
 	MediaSizeMismatchError,
 	type MediaStore,
 	type StoredMedia,
@@ -298,6 +300,11 @@ export function buildApp(deps: AppDeps) {
 		await next();
 		c.res.headers.set("Cross-Origin-Resource-Policy", "same-site");
 	});
+	// Audio nháp của đề kiểm tra đầu vào (#515): CORP same-site như media chấm bài.
+	app.use("/api/placement-test/audio/:id", async (c, next) => {
+		await next();
+		c.res.headers.set("Cross-Origin-Resource-Policy", "same-site");
+	});
 	app.use(
 		"/*",
 		secureHeaders({
@@ -353,7 +360,9 @@ export function buildApp(deps: AppDeps) {
 	app.use("/*", async (c, next) => {
 		if (
 			c.req.path === "/public/leads" ||
-			c.req.path.startsWith("/public/leads/")
+			c.req.path.startsWith("/public/leads/") ||
+			c.req.path === "/public/placement-test" ||
+			c.req.path.startsWith("/public/placement-test/")
 		) {
 			return next();
 		}
@@ -381,6 +390,8 @@ export function buildApp(deps: AppDeps) {
 	// riêng + chống spam tự gắn trong router (public-leads.ts); global cors
 	// bỏ qua path này (middleware ở trên).
 	app.route("/public/leads", publicLeadRoutes(deps));
+	// Bộ đề kiểm tra đầu vào công khai (#515): CORS theo leadOrigins, audio hỗ trợ Range.
+	app.route("/public/placement-test", publicPlacementTestRoutes(deps));
 	// Readiness probe: mounted outside /api/* so the bootstrap middleware and
 	// Better Auth never run — it answers purely from the D1 schema catalog.
 	app.get("/readyz", readinessRoute(deps));

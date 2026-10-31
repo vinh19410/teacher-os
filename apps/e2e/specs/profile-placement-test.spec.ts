@@ -1,14 +1,13 @@
 import { readFileSync } from "node:fs";
 import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
-import { PROFILE_ORIGIN } from "./origins";
+import { signUpViaUi } from "./helpers";
+import { API_ORIGIN, PROFILE_ORIGIN, WEB_ORIGIN } from "./origins";
 
-const questionsPath = new URL(
-	"../../profile/public/kiem-tra-dau-vao/questions.json",
-	import.meta.url,
-);
+const LEAD_ORG_ID = "e2e-lead-org";
+const SEED_DIR = new URL("../../web/public/placement-seed/", import.meta.url);
+const questionsPath = new URL("questions.json", SEED_DIR);
 const questionsData = JSON.parse(readFileSync(questionsPath.pathname, "utf8"));
-
 function openDb() {
 	const client = createClient({
 		url: `file:${new URL("../local.db", import.meta.url).pathname}`,
@@ -20,6 +19,91 @@ function openDb() {
 const uniquePhone = () =>
 	`0909${String(Date.now()).slice(-5)}${Math.floor(Math.random() * 10)}`;
 
+async function ensurePlacementPublished(page: Page) {
+	const client = openDb();
+	try {
+		await client.execute({
+			sql: "DELETE FROM placement_test WHERE org_id = ?",
+			args: [LEAD_ORG_ID],
+		});
+		await client.execute({
+			sql: "DELETE FROM placement_test_audio WHERE org_id = ?",
+			args: [LEAD_ORG_ID],
+		});
+	} finally {
+		client.close();
+	}
+
+	const email = await signUpViaUi(page, { name: "Cô Mỹ Seed E2E" });
+	const db = openDb();
+	try {
+		const user = await db.execute({
+			sql: "SELECT id FROM user WHERE lower(email) = lower(?) LIMIT 1",
+			args: [email],
+		});
+		const userId = user.rows[0]?.id;
+		if (typeof userId !== "string") {
+			throw new Error("teacher user row chưa xuất hiện sau sign-up");
+		}
+		let reassigned = 0;
+		for (let i = 0; i < 40; i++) {
+			const updated = await db.execute({
+				sql: "UPDATE membership SET org_id = ? WHERE user_id = ?",
+				args: [LEAD_ORG_ID, userId],
+			});
+			reassigned = updated.rowsAffected;
+			if (reassigned > 0) break;
+			await page.waitForTimeout(250);
+		}
+		expect(reassigned).toBe(1);
+	} finally {
+		db.close();
+	}
+
+	const content = structuredClone(questionsData);
+	for (const clip of content.parts[1].clips) {
+		const mp3Bytes = readFileSync(new URL(`${clip.id}.mp3`, SEED_DIR).pathname);
+		const uploadRes = await page.request.put(
+			`${API_ORIGIN}/api/placement-test/audio`,
+			{
+				headers: {
+					Origin: WEB_ORIGIN,
+					"Content-Type": "audio/mpeg",
+					"Content-Length": String(mp3Bytes.byteLength),
+					"X-File-Name": encodeURIComponent(`${clip.id}.mp3`),
+				},
+				data: mp3Bytes,
+			},
+		);
+		expect(uploadRes.status()).toBe(200);
+		const uploaded = (await uploadRes.json()) as { audioId: string };
+		clip.audioId = uploaded.audioId;
+	}
+
+	const draftRes = await page.request.put(
+		`${API_ORIGIN}/api/placement-test/draft`,
+		{
+			headers: {
+				Origin: WEB_ORIGIN,
+				"Content-Type": "application/json",
+			},
+			data: { revision: 0, content },
+		},
+	);
+	expect(draftRes.status()).toBe(200);
+
+	const pubRes = await page.request.post(
+		`${API_ORIGIN}/api/placement-test/publish`,
+		{
+			headers: {
+				Origin: WEB_ORIGIN,
+				"Content-Type": "application/json",
+			},
+			data: { revision: 1 },
+		},
+	);
+	expect(pubRes.status()).toBe(200);
+}
 async function playClipOnceToEnd(page: Page, clipId: string) {
 	const playBtn = page.locator(`button[data-play-clip="${clipId}"]`);
 	await expect(playBtn).toBeEnabled();
@@ -58,6 +142,16 @@ async function playClipOnceToEnd(page: Page, clipId: string) {
 }
 
 test.describe("profile placement test (/kiem-tra-dau-vao/)", () => {
+	test.beforeAll(async ({ browser }) => {
+		const context = await browser.newContext();
+		const page = await context.newPage();
+		try {
+			await ensurePlacementPublished(page);
+		} finally {
+			await context.close();
+		}
+	});
+
 	test("bấm CTA từ trang chủ sang /kiem-tra-dau-vao/, giữ đáp án khi reload, khóa nút nghe sau 2 lần kể cả khi reload, xem kết quả không tạo lead, bấm đăng ký điền sẵn form và lưu đúng lead.placement", async ({
 		page,
 	}) => {
@@ -84,13 +178,13 @@ test.describe("profile placement test (/kiem-tra-dau-vao/)", () => {
 		await page.goto(PROFILE_ORIGIN);
 		await page
 			.getByRole("link", {
-				name: /Làm Bài Kiểm Tra Đầu Vào Miễn Phí \(30 Câu\)/,
+				name: /Làm Bài Kiểm Tra Đầu Vào Miễn Phí/,
 			})
 			.click();
 		await expect(page).toHaveURL(/\/kiem-tra-dau-vao\/$/);
 		await expect(
 			page.getByRole("heading", {
-				name: /Đánh Giá Năng Lực Tiếng Anh Đầu Vào 30 Câu/,
+				name: /Đánh Giá Năng Lực Tiếng Anh Đầu Vào/,
 			}),
 		).toBeVisible();
 
@@ -191,7 +285,7 @@ test.describe("profile placement test (/kiem-tra-dau-vao/)", () => {
 		await expect(page.locator("#listeningScoreValue")).toHaveText("7/15");
 		await expect(page.locator("#cefrBandValue")).toHaveText("B1");
 		await expect(resultCard).toContainText(
-			"Khóa học gợi ý tham khảo: Pre-IELTS (4.0–5.0)",
+			"Khóa học gợi ý tham khảo: Pre IELTS (4.0–4.5)",
 		);
 
 		// Làm xong chưa bấm đăng ký -> không phát sinh dòng lead nào trong DB
@@ -284,7 +378,19 @@ test.describe("profile placement test (/kiem-tra-dau-vao/)", () => {
 		).toBeVisible();
 
 		// Kiểm tra hoàn lượt khi audio lỗi trước khi ended
-		await page.route("**/audio/clip-2.mp3", (route) => route.abort("failed"));
+		const pubDataRes = await page.request.get(
+			`${API_ORIGIN}/public/placement-test`,
+			{
+				headers: { Origin: PROFILE_ORIGIN },
+			},
+		);
+		const pubData = (await pubDataRes.json()) as {
+			parts: [unknown, { clips: Array<{ id: string; src: string }> }];
+		};
+		const clip2Src =
+			pubData.parts[1].clips.find((c) => c.id === "clip-2")?.src ??
+			"/public/placement-test/audio/clip-2";
+		await page.route(`**${clip2Src}`, (route) => route.abort("failed"));
 		const clip2Btn = page.locator('button[data-play-clip="clip-2"]');
 		const clip2Status = page.locator('[data-clip-status="clip-2"]');
 		await clip2Btn.click();
@@ -295,8 +401,7 @@ test.describe("profile placement test (/kiem-tra-dau-vao/)", () => {
 			return raw ? (JSON.parse(raw)?.plays?.["clip-2"] ?? 0) : 0;
 		});
 		expect(savedPlaysClip2).toBe(0);
-		await page.unroute("**/audio/clip-2.mp3");
-
+		await page.unroute(`**${clip2Src}`);
 		// Nộp bài khi còn câu trống -> hiện hộp xác nhận số câu trống
 		await page.locator("#submitTestBtn").click();
 		const confirmBox = page.locator("#unansweredConfirmBox");

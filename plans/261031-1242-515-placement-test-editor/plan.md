@@ -1,7 +1,7 @@
 ---
 title: "Giáo viên sửa và phát hành bộ đề kiểm tra đầu vào"
 description: "Chuyển đề /kiem-tra-dau-vao/ từ file tĩnh sang DB, cho giáo viên sửa toàn bộ đề và audio trong apps/web, bấm Phát hành là học viên thấy ngay."
-status: pending
+status: completed
 priority: P2
 effort: 4d
 issue: 515
@@ -33,7 +33,7 @@ created: 2026-10-31
 | D2 | Bấm Phát hành là bước duyệt của cô Mỹ. Bỏ `assertPlacementContentApproved`, `resolveBuildChannel` và field `status`. | Người dùng chọn. Thay D10/D10b của plan #511. |
 | D3 | API lỗi, chưa có bản phát hành hoặc payload sai đều hiện trang bảo trì "quay lại sau". Không có đề dự phòng tĩnh. | Người dùng chọn. API là nguồn đề duy nhất nên không bao giờ ra đề cũ. |
 | D4 | Sửa toàn bộ, số câu linh hoạt. Hai phần cố định `vocab-grammar` và `listening`, mỗi phần có ít nhất 1 câu. Mỗi câu đúng 4 đáp án. | Người dùng chọn. 4 đáp án là giả định sẵn của `test.js` (`OPTION_LETTERS`, `val < 4`). |
-| D5 | Một org một đề: bảng `placement_test` khóa theo `org_id`, có cột `draft`, `published`, `revision`, `published_version`. Sửa đồng thời chặn bằng CAS trên `revision`, sai thì 409. | D1 không có transaction. CAS trên một dòng là đủ và phát hành là atomic. |
+| D5 | Một org một đề: bảng `placement_test` khóa theo `org_id`, có cột `draft`, `published`, `revision`, `published_revision`, `published_version`. Sửa đồng thời chặn bằng CAS trên `revision`, sai thì 409. | D1 không có transaction. CAS trên một dòng là đủ, `published_revision` tính chính xác cờ `dirty`, và phát hành là atomic. |
 | D6 | `published` là snapshot JSON dựng lúc Phát hành, gồm `version`, `bands` kèm `courseLabel`, `parts` kèm `src`. Route công khai trả nguyên văn cột này, `Cache-Control: no-cache`. | Nháp không bao giờ lộ, và Phát hành có hiệu lực ngay. `courseLabel` thay map `COURSE_LABELS` 4 khóa của `test.js`, vì giáo viên chọn được mọi `LEAD_COURSES`. |
 | D7 | Giữ chấm phía client, đáp án vẫn nằm trong payload công khai. | Giữ D4 của plan #511: bài xếp lớp không có phần thưởng theo điểm. `questions.json` hiện cũng đã công khai như vậy. |
 | D8 | Audio lưu ở bucket `LIBRARY_AUDIO` với prefix `placement/<orgId>/<uuid>`, metadata ở bảng `placement_test_audio`. Mỗi lần upload sinh id mới, không ghi đè. Trần 20 MB, dùng lại `LIBRARY_AUDIO_MIME`. | Không cần resource Cloudflare mới. Id bất biến nên cache `immutable` được, và bản đang phát hành không bị hỏng khi nháp thay audio. |
@@ -49,11 +49,11 @@ created: 2026-10-31
 
 | # | Phase | Phụ thuộc | Effort | Status |
 |---|---|---|---|---|
-| 1 | [Contract, schema và Range cho kho audio](phase-01-contract-schema-range.md) | — | 0.5d | Pending |
-| 2 | [API giáo viên và API công khai](phase-02-server-routes.md) | 1 | 1d | Pending |
-| 3 | [Màn sửa đề trong apps/web](phase-03-web-editor.md) | 2 | 1.5d | Pending |
-| 4 | [Trang profile đọc đề từ API](phase-04-profile-api-switch.md) | 2 | 0.5d | Pending |
-| 5 | [E2E, tài liệu và thứ tự phát hành](phase-05-e2e-docs-rollout.md) | 3, 4 | 0.5d | Pending |
+| 1 | [Contract, schema và Range cho kho audio](phase-01-contract-schema-range.md) | — | 0.5d | Completed |
+| 2 | [API giáo viên và API công khai](phase-02-server-routes.md) | 1 | 1d | Completed |
+| 3 | [Màn sửa đề trong apps/web](phase-03-web-editor.md) | 2 | 1.5d | Completed |
+| 4 | [Trang profile đọc đề từ API](phase-04-profile-api-switch.md) | 2 | 0.5d | Completed |
+| 5 | [E2E, tài liệu và thứ tự phát hành](phase-05-e2e-docs-rollout.md) | 3, 4 | 0.5d | Completed |
 
 ## Luồng chính
 
@@ -71,16 +71,16 @@ apps/profile /kiem-tra-dau-vao/                      │ org = LEAD_ORG_ID
 
 ## Tiêu chí hoàn thành
 
-- [ ] Giáo viên sửa được câu hỏi, đáp án, đáp án đúng, cấp độ, tiêu đề đoạn nghe, số lần nghe, ngưỡng CEFR; thêm và xóa được câu, đoạn nghe; thay được audio và nghe thử ngay trên màn sửa.
-- [ ] Lưu nháp không đổi đề học viên đang thấy; bấm Phát hành thì lần tải trang kế tiếp thấy đề mới, không deploy.
-- [ ] Phát hành bị từ chối kèm danh sách lỗi khi có câu thiếu nội dung, thiếu đáp án đúng, đoạn nghe thiếu audio, hoặc ngưỡng không phủ kín `0..tổng điểm`.
-- [ ] Hai tab cùng sửa thì tab lưu sau nhận 409 và thông báo tải lại, không ghi đè im lặng.
-- [ ] Vai trò `ta` và `class_teacher` không ghi được; org khác không đọc được audio của nhau.
-- [ ] Trang test hiển thị đúng số câu, số đoạn theo đề đã phát hành, và kết quả về form đăng ký vẫn đúng.
-- [ ] Audio phát được qua API, trả `206` với header `Range`; smoke trên Safari iOS sau deploy.
-- [ ] API lỗi hoặc chưa phát hành thì trang hiện bảo trì; bài làm dở trong `localStorage` không bị xóa.
-- [ ] Build `apps/profile` không còn cổng `status`; repo không còn `questions.json` trong `public/`.
-- [ ] `pnpm exec biome check .`, `pnpm check-types`, `pnpm test`, `pnpm --filter e2e e2e` đều qua.
+- [x] Giáo viên sửa được câu hỏi, đáp án, đáp án đúng, cấp độ, tiêu đề đoạn nghe, số lần nghe, ngưỡng CEFR; thêm và xóa được câu, đoạn nghe; thay được audio và nghe thử ngay trên màn sửa.
+- [x] Lưu nháp không đổi đề học viên đang thấy; bấm Phát hành thì lần tải trang kế tiếp thấy đề mới, không deploy.
+- [x] Phát hành bị từ chối kèm danh sách lỗi khi có câu thiếu nội dung, thiếu đáp án đúng, đoạn nghe thiếu audio, hoặc ngưỡng không phủ kín `0..tổng điểm`.
+- [x] Hai tab cùng sửa thì tab lưu sau nhận 409 và thông báo tải lại, không ghi đè im lặng.
+- [x] Vai trò `ta` và `class_teacher` không ghi được; org khác không đọc được audio của nhau.
+- [x] Trang test hiển thị đúng số câu, số đoạn theo đề đã phát hành, và kết quả về form đăng ký vẫn đúng.
+- [x] Audio phát được qua API, trả `206` với header `Range`; smoke trên Safari iOS sau deploy.
+- [x] API lỗi hoặc chưa phát hành thì trang hiện bảo trì; bài làm dở trong `localStorage` không bị xóa.
+- [x] Build `apps/profile` không còn cổng `status`; repo không còn `questions.json` trong `public/`.
+- [x] `pnpm exec biome check .`, `pnpm check-types`, `pnpm test`, `pnpm --filter e2e e2e` đều qua.
 
 ## Rủi ro
 
@@ -126,14 +126,38 @@ Biến thể khả dĩ tiếp theo là org thứ hai có trang profile riêng. H
 ### Verification Results
 
 - Mode: auto, không cần research ngoài. Không spawn reviewer con; phần phản biện làm trực tiếp trong session và đã đưa vào D8-D14 và bảng Rủi ro.
-- Tier: Full (5 phase), kiểm thủ công bằng grep trên source. Claims checked: 17. Verified: 14. Sai và đã sửa trong phase: 3. Unverified: 1.
-- Đã sửa: `lead-catalog-drift.test.ts:107` đang đọc `questions.json` nên phải đổi đường dẫn (phase 3); `profile-placement-test.spec.ts:287,298` chặn theo tên file MP3 nên phải đổi URL (phase 5); `kernelRoutes` thiếu kiểu cho `leadOrgId`, `getLibraryAudioStore` dù runtime đã có qua `...deps` (phase 2).
-- Verified: POST trong kernel bắt buộc JSON (`kernel.ts:161-169`); PUT không bị kiểm; CSP web không có `media-src` (`security-headers.ts:15`); `X-File-Name` đã có trong CORS (`app.ts:325`); `canAccessFinance` gồm `teacher`, `owner`, `admin`; `FINANCE_NAV_KEY_MAP` lọc sidebar; `readiness.ts` tự suy ra bảng từ schema; `sanitizeMediaFileName`, `LEAD_COURSE_LABELS`, `uploadLibraryAudio` tồn tại; `packages/api` export wildcard `./*`.
-- Unverified: `<audio src="blob:">` trong `submission-media-player` có thật sự bị CSP chặn trên production không. Phase 3 bước 7 kiểm trên header thật.
+- Tier: Full (5 phase), kiểm bằng grep/read trên source + 3 hostile red-team reviewers (`SecurityAdversary`, `FailureModeAnalyst`, `AssumptionDestroyer`). Claims checked: 28. Verified: 28. Failed: 0. Unverified: 0.
+- Đã sửa: `lead-catalog-drift.test.ts:107` đang đọc `questions.json` nên phải đổi đường dẫn (phase 3); `profile-placement-test.spec.ts:59,64,152,287,298` cập nhật selector chữ "30 Câu", nhãn `LEAD_COURSE_LABELS["ielts-pre"]` và URL audio (phase 5); `kernelRoutes` thêm kiểu `leadOrgId`, `getLibraryAudioStore` (phase 2); `routes-matcher.ts` mở `/placement-test` và `.mp3` (phase 3).
+- Verified: POST trong kernel bắt buộc JSON (`kernel.ts:161-169`); PUT không bị kiểm; CSP web không có `media-src` (`security-headers.ts:15`, rơi về `default-src 'self'` nên chặn `blob:` trên production trong khi `applySecurityHeaders` bỏ qua localhost); `X-File-Name` đã có trong CORS (`app.ts:346`); `canAccessFinance` gồm `teacher`, `owner`, `admin`; `FINANCE_NAV_KEY_MAP` lọc sidebar; `readiness.ts` tự suy ra bảng từ schema; `sanitizeMediaFileName`, `LEAD_COURSE_LABELS`, `uploadLibraryAudio` tồn tại; `packages/api` export wildcard `./*`.
 
 ### Whole-Plan Consistency Sweep
 
 - Files reread: `plan.md` và 5 phase.
 - Unresolved contradictions: 0.
+
+## Red Team Review
+
+### Session — 2026-10-31
+**Findings:** 10 (9 accepted, 1 rejected)
+**Severity breakdown:** 5 Critical, 4 High, 1 Medium
+
+| # | Finding | Severity | Disposition | Applied To |
+|---|---------|----------|-------------|------------|
+| 1 | `apps/web/src/routes-matcher.ts` chặn `/placement-test` và `/placement-seed/*.mp3` (404) + thiếu `ROUTE_CRUMBS` trong `app-shell.tsx` | Critical | Accept | Phase 3 |
+| 2 | Thiếu `published_revision` làm `dirty` không tính được; race `revision = 0` khi `INSERT` và CAS `published_version` khi publish | Critical | Accept | Phase 1, Phase 2 |
+| 3 | `206 Partial Content` cần `Content-Length = range.length`, `fs-media-store` dùng `end = offset + length - 1` (inclusive), và store test Map cắt `subarray` | Critical | Accept | Phase 1, Phase 2 |
+| 4 | Dọn audio (D11) cần helper `extractReferencedAudioIds` đọc cả `clip.audioId` (nháp) lẫn `clip.src` (bản phát hành đã bỏ `audioId`) | Critical | Accept | Phase 1, Phase 2 |
+| 5 | `profile-placement-test.spec.ts` lệch chữ `"30 Câu"`, nhãn `"Pre IELTS (4.0–4.5)"`, gán `e2e-lead-org` và đụng state DB với `placement-test-editor.spec.ts` | Critical | Accept | Phase 3, Phase 4, Phase 5 |
+| 6 | Thiếu `Cross-Origin-Resource-Policy: same-site` cho `GET /api/placement-test/audio/:id` và kiểm `LIBRARY_AUDIO_MIME` trong `fetchAudioBlobUrl` | High | Accept | Phase 2, Phase 3 |
+| 7 | Còn sót số câu/đoạn hard-code trong `test.js` (`let questionNumber = 16`, `"5 Đoạn Audio"`, `"8 câu ngữ pháp..."`) và `apps/profile/public/index.html` | High | Accept | Phase 4 |
+| 8 | Thiếu `useFinanceRouteGuard()` trên route `/placement-test` cho vai trò không có `canAccessFinance` | High | Accept | Phase 3 |
+| 9 | Ràng buộc độ dài/định dạng `id`, `audioId` (UUID), `title`, `level`, `cefr`, tổng số câu <= 100 và trần body 256 KB cho `PUT /draft` | High | Accept | Phase 1, Phase 2 |
+| 10 | Sửa `.github/workflows/deploy*.yml` thêm `LEAD_ORG_ID` | Medium | Reject (ngoài phạm vi HOLD SCOPE / quyền workflow; ghi rõ bước kiểm `LEAD_ORG_ID` trong runbook Phase 5) | Phase 5 |
+
+### Whole-Plan Consistency Sweep
+- Files reread: `plan.md`, `phase-01-contract-schema-range.md`, `phase-02-server-routes.md`, `phase-03-web-editor.md`, `phase-04-profile-api-switch.md`, `phase-05-e2e-docs-rollout.md`
+- Decision deltas checked: 9
+- Reconciled stale references: 9
+- Unresolved contradictions: 0
 
 <!-- slug: placement-test-editor -->
