@@ -121,6 +121,7 @@ const EVENT_TYPE_LABELS: Record<NotificationEventType, string> = {
 	tuition_reminder: "Nhắc học phí",
 	schedule_changed: "Đổi lịch",
 	holiday_created: "Nghỉ lễ",
+	self_study_released: "Bài tự học",
 };
 
 const CHANNEL_LABELS: Record<string, string> = {

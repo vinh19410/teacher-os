@@ -20,6 +20,7 @@ import { migrate } from "drizzle-orm/libsql/migrator";
 import { buildApp, type Db } from "server/app";
 import { createFakeAiGrader } from "server/lib/ai-grading/fake-grader";
 import { createFakeExamExtractor } from "server/lib/exam-import/fake-extractor";
+import { runSelfStudyPlanTick } from "server/lib/self-study-plan";
 import { getSessionUser } from "server/session";
 import { createFakeBankHub } from "./fake-bank-hub";
 import { createFsMediaStore } from "./fs-media-store";
@@ -209,10 +210,63 @@ const app = buildApp({
 // Fake SePay hosted-link pages (#320) ride the same API server — the iframe
 // src is relative (/__fake-bankhub/...) so the postMessage origin check in
 // the web app sees the API origin, exactly like the real hosted link.
+async function handleE2eSelfStudyTick(
+	request: Request,
+): Promise<Response | null> {
+	const url = new URL(request.url);
+	if (url.pathname !== "/__e2e/self-study-tick" || request.method !== "POST") {
+		return null;
+	}
+	let body: { now?: string | number; setReleasedDueAt?: string | number } = {};
+	try {
+		const parsed: unknown = await request.json();
+		if (parsed && typeof parsed === "object") {
+			body = parsed as typeof body;
+		}
+	} catch {
+		body = {};
+	}
+
+	const nowDate = body.now !== undefined ? new Date(body.now) : new Date();
+	const validNow = Number.isNaN(nowDate.getTime()) ? new Date() : nowDate;
+
+	const result = await runSelfStudyPlanTick({
+		db: libsql as unknown as Db,
+		now: validNow,
+		mailer: recordingMailer,
+		studentOrigin: STUDENT_ORIGIN,
+		retryDelaysMs: [0, 0],
+	});
+
+	if (body.setReleasedDueAt !== undefined) {
+		const dueAtMs =
+			typeof body.setReleasedDueAt === "number"
+				? body.setReleasedDueAt
+				: Date.parse(String(body.setReleasedDueAt));
+		if (Number.isFinite(dueAtMs)) {
+			await client.execute({
+				sql: "UPDATE self_study_plan_day SET due_at = ? WHERE status = 'released'",
+				args: [dueAtMs],
+			});
+			await client.execute({
+				sql: "UPDATE class_assignment SET due_at = ? WHERE plan_item_id IS NOT NULL",
+				args: [dueAtMs],
+			});
+		}
+	}
+
+	return new Response(JSON.stringify({ ok: true, result }), {
+		status: 200,
+		headers: { "content-type": "application/json" },
+	});
+}
+
 const server = serve(
 	{
-		fetch: (request) =>
-			fakeBankHub.handleFakePage(request) ?? app.fetch(request),
+		fetch: async (request) =>
+			fakeBankHub.handleFakePage(request) ??
+			(await handleE2eSelfStudyTick(request)) ??
+			(await app.fetch(request)),
 		port: PORT,
 		hostname: HOSTNAME,
 	},

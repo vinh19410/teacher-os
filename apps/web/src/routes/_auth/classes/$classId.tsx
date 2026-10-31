@@ -11,6 +11,7 @@ import type {
 	OccurrenceEditPayload,
 } from "@/components/class-detail/session-actions-modal";
 import { ClassAssignmentsTab } from "@/components/classes/class-assignments-tab";
+import { SelfStudyPlanSection } from "@/components/classes/self-study-plan-section";
 import { EditClassFeeModal } from "@/components/modals/edit-class-fee-modal";
 import { EnrollStudentModal } from "@/components/modals/enroll-student-modal";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -157,6 +158,9 @@ function ClassDetailRoute() {
 	const [assignmentsView, setAssignmentsView] = useState<
 		"list" | "assign" | "success"
 	>("list");
+	const [practiceMode, setPracticeMode] = useState<"manual" | "self-study">(
+		"manual",
+	);
 	const [addStudentOpen, setAddStudentOpen] = useState(false);
 	const [feeModalOpen, setFeeModalOpen] = useState(false);
 	const [notes, setNotes] = useState<string | null>(null);
@@ -307,13 +311,51 @@ function ClassDetailRoute() {
 							isPending={isPending}
 							busy={busy}
 						/>
-						<ClassAssignmentsTab
-							key={`assign-${classId}`}
-							classGroup={cls}
-							view="list"
-							onViewChange={setAssignmentsView}
-							assignmentsFocus={assignmentsFocus}
-						/>
+						<div className="space-y-4">
+							<fieldset
+								aria-label="Chế độ giao bài"
+								className="inline-flex rounded-md border border-border bg-background p-1"
+							>
+								<button
+									type="button"
+									aria-pressed={practiceMode === "manual"}
+									onClick={() => setPracticeMode("manual")}
+									className={cn(
+										"rounded px-3 py-1 font-medium text-xs transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
+										practiceMode === "manual"
+											? "bg-muted text-foreground"
+											: "text-muted-foreground hover:text-foreground",
+									)}
+								>
+									Bài giao tay
+								</button>
+								<button
+									type="button"
+									aria-pressed={practiceMode === "self-study"}
+									data-testid="practice-mode-self-study"
+									onClick={() => setPracticeMode("self-study")}
+									className={cn(
+										"rounded px-3 py-1 font-medium text-xs transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
+										practiceMode === "self-study"
+											? "bg-muted text-foreground"
+											: "text-muted-foreground hover:text-foreground",
+									)}
+								>
+									Kế hoạch tự học
+								</button>
+							</fieldset>
+							{practiceMode === "manual" ? (
+								<ClassAssignmentsTab
+									key={`assign-${classId}`}
+									classGroup={cls}
+									view="list"
+									onViewChange={setAssignmentsView}
+									assignmentsFocus={assignmentsFocus}
+								/>
+							) : (
+								<SelfStudyPlanSection key={`ssp-${classId}`} classId={cls.id} />
+							)}
+						</div>
 					</div>
 				))}
 

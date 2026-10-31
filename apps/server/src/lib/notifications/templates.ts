@@ -181,3 +181,31 @@ export function holidayCreatedEvents(input: {
 		refId: input.holidayId,
 	}));
 }
+
+/**
+ * Sự kiện "giao bài tự học hằng ngày" (#526) — mỗi học viên 1 thông báo mỗi
+ * ngày (`idempotencyKey = self_study_released:<dayId>:<studentId>`).
+ */
+export function selfStudyReleasedEvents(input: {
+	dayId: string;
+	className: string;
+	date: string;
+	dueTime: string;
+	itemCount: number;
+	firstAssignmentId: string;
+	studentIds: string[];
+}): NotificationEvent[] {
+	const linkPath = input.firstAssignmentId
+		? `/learn/quizzes/${input.firstAssignmentId}`
+		: "/assignments";
+	return input.studentIds.map((studentId) => ({
+		studentId,
+		eventType: "self_study_released",
+		idempotencyKey: `self_study_released:${input.dayId}:${studentId}`,
+		title: "Bài tự học hôm nay",
+		body: `Lớp ${input.className} có ${input.itemCount} bài tự học ngày ${input.date}, hạn nộp ${input.dueTime}.`,
+		linkPath,
+		refType: "self_study_plan_day",
+		refId: input.dayId,
+	}));
+}

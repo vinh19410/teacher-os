@@ -240,3 +240,134 @@ describe("deriveAssignmentStatus", () => {
 		expect(derived.bandScore).toBe(6.5);
 	});
 });
+
+describe("deriveAssignmentStatus with dueAt (#526)", () => {
+	const today = "2026-11-02";
+	// 2026-11-02T17:00:00+07:00 = 2026-11-02T10:00:00.000Z
+	const dueAtISO = "2026-11-02T10:00:00.000Z";
+
+	it("shows due-soon before 17:00 (16:59:59 VN) on due day", () => {
+		const asg = {
+			id: "ssp-1",
+			title: "Self Study Reading 1",
+			source: "class_assignment",
+			classId: "c1",
+			className: "IELTS 6.5",
+			due: "2026-11-02",
+			dueAt: dueAtISO,
+			submittedAt: null,
+			scores: null,
+			skill: "reading",
+		} as StudentAssignment;
+		const nowMs = Date.parse("2026-11-02T09:59:59.000Z");
+		const derived = deriveAssignmentStatus(asg, today, nowMs);
+		expect(derived.status).toBe("due-soon");
+		expect(derived.statusLabel).toBe("Sắp đến hạn");
+		expect(derived.dueText).toBe("Hạn: 17:00 02/11 · hôm nay");
+		expect(derived.sortOrder).toBe(1);
+	});
+
+	it("shows overdue (Quá hạn) starting at exact 17:00:00 VN on the same day without 'quá 0 ngày'", () => {
+		const asg = {
+			id: "ssp-2",
+			title: "Self Study Reading 2",
+			source: "class_assignment",
+			classId: "c1",
+			className: "IELTS 6.5",
+			due: "2026-11-02",
+			dueAt: dueAtISO,
+			submittedAt: null,
+			scores: null,
+			skill: "reading",
+		} as StudentAssignment;
+		const nowMs = Date.parse("2026-11-02T10:00:00.000Z");
+		const derived = deriveAssignmentStatus(asg, today, nowMs);
+		expect(derived.status).toBe("overdue");
+		expect(derived.statusLabel).toBe("Quá hạn");
+		expect(derived.dueText).toBe("Hạn: 17:00 02/11 · quá hạn");
+		expect(derived.dueText).not.toContain("quá 0 ngày");
+		expect(derived.sortOrder).toBe(0);
+	});
+
+	it("does not mark submission at exact 17:00:00 VN as late", () => {
+		const readingAsg = {
+			id: "ssp-3",
+			title: "Self Study Reading 3",
+			source: "class_assignment",
+			classId: "c1",
+			className: "IELTS 6.5",
+			due: "2026-11-02",
+			dueAt: dueAtISO,
+			submittedAt: "2026-11-02T10:00:00.000Z",
+			scores: null,
+			skill: "reading",
+		} as StudentAssignment;
+		const derivedReading = deriveAssignmentStatus(readingAsg, today);
+		expect(derivedReading.status).toBe("submitted");
+		expect(derivedReading.isLate).toBe(false);
+		expect(derivedReading.statusLabel).toBe("Đã nộp");
+		expect(derivedReading.dueText).toBe("Hạn: 17:00 02/11");
+
+		const writingAsg = {
+			...readingAsg,
+			id: "ssp-3w",
+			skill: "writing",
+		} as StudentAssignment;
+		const derivedWriting = deriveAssignmentStatus(writingAsg, today);
+		expect(derivedWriting.isLate).toBe(false);
+		expect(derivedWriting.statusLabel).toBe("Đã nộp — Đang chờ giáo viên chấm");
+	});
+
+	it("marks submission after 17:00:00 VN (17:00:01 VN) as late", () => {
+		const readingAsg = {
+			id: "ssp-4",
+			title: "Self Study Reading 4",
+			source: "class_assignment",
+			classId: "c1",
+			className: "IELTS 6.5",
+			due: "2026-11-02",
+			dueAt: dueAtISO,
+			submittedAt: "2026-11-02T10:00:01.000Z",
+			scores: null,
+			skill: "reading",
+		} as StudentAssignment;
+		const derivedReading = deriveAssignmentStatus(readingAsg, today);
+		expect(derivedReading.status).toBe("submitted");
+		expect(derivedReading.isLate).toBe(true);
+		expect(derivedReading.statusLabel).toBe("Đã nộp · Trễ hạn");
+		expect(derivedReading.badgeClass).toBe("bg-warn-soft text-warn");
+
+		const writingAsg = {
+			...readingAsg,
+			id: "ssp-4w",
+			skill: "writing",
+		} as StudentAssignment;
+		const derivedWriting = deriveAssignmentStatus(writingAsg, today);
+		expect(derivedWriting.isLate).toBe(true);
+		expect(derivedWriting.statusLabel).toBe(
+			"Đã nộp trễ — Đang chờ giáo viên chấm",
+		);
+		expect(derivedWriting.badgeClass).toBe("bg-warn-soft text-warn");
+	});
+
+	it("preserves late indicator when graded after late submission", () => {
+		const gradedAsg = {
+			id: "ssp-5",
+			title: "Self Study Writing 5",
+			source: "class_assignment",
+			classId: "c1",
+			className: "IELTS 6.5",
+			due: "2026-11-02",
+			dueAt: dueAtISO,
+			submittedAt: "2026-11-02T10:05:00.000Z",
+			scores: { task: 7, coherence: 7, lexical: 7, grammar: 7 },
+			skill: "writing",
+			gradedAt: "2026-11-02T11:00:00.000Z",
+		} as StudentAssignment;
+		const derived = deriveAssignmentStatus(gradedAsg, today);
+		expect(derived.status).toBe("graded");
+		expect(derived.isLate).toBe(true);
+		expect(derived.statusLabel).toBe("Điểm: 7 · Nộp trễ");
+		expect(derived.dueText).toBe("Hạn: 17:00 02/11");
+	});
+});

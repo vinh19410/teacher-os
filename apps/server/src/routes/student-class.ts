@@ -154,6 +154,7 @@ export async function loadClassAssignmentItems(
 			classId: classAssignment.classId,
 			className: classTable.name,
 			due: classAssignment.due,
+			dueAt: classAssignment.dueAt,
 			submittedAt: classAssignmentTarget.submittedAt,
 			// TOS-30 #478: skill của đề — cổng học viên phân biệt nhãn chờ
 			// chấm giáo viên (Writing/Speaking) với bài tự chấm.
@@ -163,6 +164,8 @@ export async function loadClassAssignmentItems(
 			// mãi cả sau publish).
 			gradeScores: quizAttempt.gradeScores,
 			gradedAt: quizAttempt.gradedAt,
+			attemptStatus: quizAttempt.status,
+			attemptSubmittedAt: quizAttempt.submittedAt,
 		})
 		.from(classAssignmentTarget)
 		.innerJoin(
@@ -177,6 +180,7 @@ export async function loadClassAssignmentItems(
 		.leftJoin(
 			quizAttempt,
 			and(
+				eq(quizAttempt.orgId, orgId),
 				eq(quizAttempt.assignmentId, classAssignment.id),
 				eq(quizAttempt.studentId, classAssignmentTarget.studentId),
 			),
@@ -206,7 +210,11 @@ export async function loadClassAssignmentItems(
 			classId: row.classId,
 			className: row.className ?? null,
 			due: row.due,
-			submittedAt: row.submittedAt ?? null,
+			dueAt: row.dueAt ? row.dueAt.toISOString() : null,
+			submittedAt:
+				row.attemptStatus === "submitted" && row.attemptSubmittedAt
+					? row.attemptSubmittedAt.toISOString()
+					: (row.submittedAt ?? null),
 			scores: parsedScores.success ? parsedScores.data : null,
 			skill: row.skill,
 			gradedAt: row.gradedAt ? row.gradedAt.toISOString() : null,

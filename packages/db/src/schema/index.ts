@@ -25,6 +25,7 @@ export * from "./placement-test";
 export * from "./quiz-attempt";
 export * from "./quiz-attempt-annotation";
 export * from "./report";
+export * from "./self-study-plan";
 export * from "./session-package";
 export * from "./settings";
 export * from "./student";

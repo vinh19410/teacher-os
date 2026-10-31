@@ -3,7 +3,11 @@ import type {
 	StudentAssignmentScores,
 } from "@teacher-os/api/contracts";
 import { isGradableSkill } from "@teacher-os/api/lib/ielts-band";
-import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
+import {
+	formatVietnamTimeHHMM,
+	vietnamDateKeyOf,
+	vietnamTodayISO,
+} from "@teacher-os/api/vietnam-date";
 
 export type AssignmentDisplayStatus =
 	| "overdue"
@@ -19,6 +23,7 @@ export interface DerivedAssignmentStatus {
 	dueText: string;
 	bandScore: number | null;
 	sortOrder: number;
+	isLate?: boolean;
 }
 
 /**
@@ -85,18 +90,38 @@ function formatDayMonth(iso: string): string {
 export function deriveAssignmentStatus(
 	assignment: StudentAssignment,
 	todayISO: string = vietnamTodayISO(),
+	nowMs: number = Date.now(),
 ): DerivedAssignmentStatus {
 	const bandScore = calculateIeltsBand(assignment.scores);
+	const rawDueAtMs = assignment.dueAt
+		? Date.parse(assignment.dueAt)
+		: Number.NaN;
+	const hasDueAt = Number.isFinite(rawDueAtMs);
+	const dueDateISO =
+		assignment.due || (hasDueAt ? vietnamDateKeyOf(new Date(rawDueAtMs)) : "");
+	const dueLabelBase = hasDueAt
+		? `${formatVietnamTimeHHMM(rawDueAtMs)} ${formatDayMonth(dueDateISO)}`
+		: dueDateISO
+			? formatDayMonth(dueDateISO)
+			: "";
+	const submittedMs = assignment.submittedAt
+		? Date.parse(assignment.submittedAt)
+		: Number.NaN;
+	const isLate =
+		hasDueAt && Number.isFinite(submittedMs) ? submittedMs > rawDueAtMs : false;
 
 	// Graded takes precedence if scores exist
 	if (bandScore != null) {
 		return {
 			status: "graded",
-			statusLabel: `Điểm: ${bandScore}`,
+			statusLabel: isLate
+				? `Điểm: ${bandScore} · Nộp trễ`
+				: `Điểm: ${bandScore}`,
 			badgeClass: "bg-success-soft text-success",
-			dueText: assignment.due ? `Hạn: ${formatDayMonth(assignment.due)}` : "",
+			dueText: dueLabelBase ? `Hạn: ${dueLabelBase}` : "",
 			bandScore,
 			sortOrder: 4,
+			isLate,
 		};
 	}
 
@@ -105,11 +130,12 @@ export function deriveAssignmentStatus(
 	if (assignment.gradedAt) {
 		return {
 			status: "graded",
-			statusLabel: "Đã chấm",
+			statusLabel: isLate ? "Đã chấm · Nộp trễ" : "Đã chấm",
 			badgeClass: "bg-success-soft text-success",
-			dueText: assignment.due ? `Hạn: ${formatDayMonth(assignment.due)}` : "",
+			dueText: dueLabelBase ? `Hạn: ${dueLabelBase}` : "",
 			bandScore: null,
 			sortOrder: 4,
+			isLate,
 		};
 	}
 
@@ -120,13 +146,62 @@ export function deriveAssignmentStatus(
 		const needsTeacherGrading = isGradableSkill(assignment.skill ?? "");
 		return {
 			status: "submitted",
-			statusLabel: needsTeacherGrading
-				? "Đã nộp — Đang chờ giáo viên chấm"
-				: "Đã nộp",
-			badgeClass: "bg-success-soft text-success",
-			dueText: assignment.due ? `Hạn: ${formatDayMonth(assignment.due)}` : "",
+			statusLabel: isLate
+				? needsTeacherGrading
+					? "Đã nộp trễ — Đang chờ giáo viên chấm"
+					: "Đã nộp · Trễ hạn"
+				: needsTeacherGrading
+					? "Đã nộp — Đang chờ giáo viên chấm"
+					: "Đã nộp",
+			badgeClass: isLate
+				? "bg-warn-soft text-warn"
+				: "bg-success-soft text-success",
+			dueText: dueLabelBase ? `Hạn: ${dueLabelBase}` : "",
 			bandScore: null,
 			sortOrder: 3,
+			isLate,
+		};
+	}
+
+	// Not submitted — evaluate dueAt first when present (#526)
+	if (hasDueAt) {
+		const diff = dueDateISO ? daysDiff(todayISO, dueDateISO) : 0;
+		if (nowMs >= rawDueAtMs) {
+			const suffix =
+				diff != null && diff < 0 ? `quá ${Math.abs(diff)} ngày` : "quá hạn";
+			return {
+				status: "overdue",
+				statusLabel: "Quá hạn",
+				badgeClass: "bg-primary font-medium text-primary-foreground",
+				dueText: `Hạn: ${dueLabelBase} · ${suffix}`,
+				bandScore: null,
+				sortOrder: 0,
+				isLate: false,
+			};
+		}
+		if (diff != null && diff <= 3) {
+			const relativeMsg = diff <= 0 ? "hôm nay" : `còn ${diff} ngày`;
+			return {
+				status: "due-soon",
+				statusLabel: "Sắp đến hạn",
+				badgeClass: "border border-dashed border-border text-muted-foreground",
+				dueText: `Hạn: ${dueLabelBase} · ${relativeMsg}`,
+				bandScore: null,
+				sortOrder: 1,
+				isLate: false,
+			};
+		}
+		return {
+			status: "not-submitted",
+			statusLabel: "Chưa nộp",
+			badgeClass: "bg-muted text-muted-foreground",
+			dueText:
+				diff != null
+					? `Hạn: ${dueLabelBase} · còn ${diff} ngày`
+					: `Hạn: ${dueLabelBase}`,
+			bandScore: null,
+			sortOrder: 2,
+			isLate: false,
 		};
 	}
 
