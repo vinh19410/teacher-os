@@ -108,7 +108,9 @@ Vận hành:
   theo IP (HMAC `BETTER_AUTH_SECRET`, ngưỡng 3 lead/10 phút); trần 100 lead
   mới/ngày/org; SĐT gửi lại trong 24 giờ cập nhật lead cũ. Ngưỡng là hằng số
   export trong `public-leads.ts` — chỉnh qua code, không phải env.
-- **Build & deploy `apps/profile`:** `LEAD_API_URL=https://api.teacheros.io.vn pnpm --filter profile build` (script `build.mjs` ghi URL API vào `<meta name="lead-api">` trong `dist/index.html`).
+- **Build & deploy `apps/profile`:** `LEAD_API_URL=https://api.teacheros.io.vn pnpm --filter profile build` (script `build.mjs` kiểm tra `apps/profile/public/kiem-tra-dau-vao/questions.json` phải có `"status": "approved"` rồi mới copy `public/` sang `dist/` và ghi URL API vào `<meta name="lead-api">` trong `dist/index.html`).
+  - **Cổng duyệt nội dung bài kiểm tra đầu vào (#511):** Khi đề mới hoặc chỉnh sửa đang ở `"status": "draft"`, `build.mjs` dừng ngay với lỗi rõ ràng để chặn phát hành trước khi cô Mỹ duyệt đề, 5 file audio MP3 và bảng ngưỡng quy đổi CEFR (xem `plans/reports/placement-test-content-review.md`). Sau khi cô Mỹ xác nhận, đổi `"status"` sang `"approved"` trong `questions.json`. Khi cập nhật bộ câu hỏi hoặc thay file audio sau phát hành, tăng `"version"` trong `questions.json` (ví dụ `1` → `2`) để trình duyệt học viên tự động xóa tiến độ/lượt nghe lưu nháp cũ (`msmy_placement_attempt_v1`).
+  - **Smoke test trên host thật (`https://msmy.io.vn` và `https://www.msmy.io.vn`) sau deploy:** (1) `GET /kiem-tra-dau-vao/` trả `200` HTML; (2) `GET /kiem-tra-dau-vao/audio/clip-1.mp3` trả đúng MIME `audio/mpeg` và hỗ trợ `Range: bytes=0-99` (`206 Partial Content`); (3) nghe thử audio trên Safari iOS; (4) làm bài → bấm đăng ký → gửi form tạo lead có `placement` trên `/leads`.
 - **Tùy chọn — WAF rate limiting** trên zone teacheros.io.vn cho path
   `/public/leads` khi có spam thật (lớp 3 của plan; Turnstile chỉ bật khi cần).
 - Email báo lead mới gửi mọi thành viên org qua mailer chung (D13); mailer
