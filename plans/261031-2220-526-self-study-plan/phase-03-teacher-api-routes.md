@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Phase 3: Teacher Self Study Plan API Routes"
-status: pending
+status: done
 priority: P1
 effort: "2h"
 dependencies: [1, 2]

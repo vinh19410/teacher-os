@@ -1898,6 +1898,7 @@ export const studentAssignmentSchema = z.object({
 	 * graded_at) — phân biệt đã chấm với đang chờ khi scores chưa đủ band.
 	 * Optional: server cũ không gửi. */
 	gradedAt: z.string().nullable().optional(),
+	dueAt: z.string().nullable().optional(),
 });
 export type StudentAssignment = z.infer<typeof studentAssignmentSchema>;
 
@@ -3590,6 +3591,7 @@ export const NOTIFICATION_EVENT_TYPES = [
 	"tuition_reminder",
 	"schedule_changed",
 	"holiday_created",
+	"self_study_released",
 ] as const;
 
 /** #454 — 4 nhóm chip lọc màn notification log (plan TOS-21 D2). */
@@ -3615,6 +3617,7 @@ export const NOTIFICATION_EVENT_GROUP_BY_TYPE: Record<
 	tuition_reminder: "tuition",
 	schedule_changed: "schedule",
 	holiday_created: "schedule",
+	self_study_released: "assignment",
 };
 
 export const NOTIFICATION_STATUSES = [
@@ -4141,3 +4144,157 @@ export const creditWalletSchema = z
 	})
 	.strict();
 export type CreditWallet = z.infer<typeof creditWalletSchema>;
+
+// --- #526: Self study plan — tự động giao đề hằng ngày cho lớp theo khung giờ ---
+
+export const MAX_SELF_STUDY_DAYS = 366;
+export const MAX_SELF_STUDY_ITEMS_PER_DAY = 10;
+export const SELF_STUDY_TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
+export const SELF_STUDY_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+export const selfStudyPlanItemInputSchema = z
+	.object({
+		promptId: z.string().trim().min(1).max(100),
+		note: z.string().trim().max(2000).default(""),
+	})
+	.strict();
+export type SelfStudyPlanItemInput = z.infer<
+	typeof selfStudyPlanItemInputSchema
+>;
+
+export const selfStudyPlanDayInputSchema = z
+	.object({
+		date: z.string().regex(SELF_STUDY_DATE_REGEX),
+		holidayOverride: z.boolean().default(false),
+		items: z
+			.array(selfStudyPlanItemInputSchema)
+			.max(MAX_SELF_STUDY_ITEMS_PER_DAY)
+			.default([]),
+	})
+	.strict();
+export type SelfStudyPlanDayInput = z.infer<typeof selfStudyPlanDayInputSchema>;
+
+export const selfStudyPlanCreateSchema = z
+	.object({
+		planId: z.string().trim().min(1).max(100).optional(),
+		title: z.string().trim().min(1).max(200).default("Kế hoạch tự học"),
+		startDate: z.string().regex(SELF_STUDY_DATE_REGEX),
+		endDate: z.string().regex(SELF_STUDY_DATE_REGEX),
+		releaseTime: z.string().regex(SELF_STUDY_TIME_REGEX).default("06:00"),
+		dueTime: z.string().regex(SELF_STUDY_TIME_REGEX).default("17:00"),
+		days: z
+			.array(selfStudyPlanDayInputSchema)
+			.max(MAX_SELF_STUDY_DAYS)
+			.default([]),
+	})
+	.strict();
+export type SelfStudyPlanCreateInput = z.infer<
+	typeof selfStudyPlanCreateSchema
+>;
+
+export const selfStudyPlanUpdateHoursSchema = z
+	.object({
+		releaseTime: z.string().regex(SELF_STUDY_TIME_REGEX),
+		dueTime: z.string().regex(SELF_STUDY_TIME_REGEX),
+	})
+	.strict();
+export type SelfStudyPlanUpdateHoursInput = z.infer<
+	typeof selfStudyPlanUpdateHoursSchema
+>;
+
+export const selfStudyPlanDayPatchSchema = z
+	.object({
+		holidayOverride: z.boolean().optional(),
+		items: z
+			.array(selfStudyPlanItemInputSchema)
+			.max(MAX_SELF_STUDY_ITEMS_PER_DAY),
+	})
+	.strict();
+export type SelfStudyPlanDayPatchInput = z.infer<
+	typeof selfStudyPlanDayPatchSchema
+>;
+
+export const selfStudyPlanReleaseMissedSchema = z
+	.object({
+		dueAt: z.string().datetime({ offset: true }).optional(),
+	})
+	.strict();
+export type SelfStudyPlanReleaseMissedInput = z.infer<
+	typeof selfStudyPlanReleaseMissedSchema
+>;
+
+export interface SelfStudyPlanStudentProgress {
+	studentId: string;
+	studentName: string;
+	submittedAt: string | null;
+	isLate: boolean;
+	status: "submitted_on_time" | "submitted_late" | "overdue" | "pending";
+	attemptId: string | null;
+	gradedAt: string | null;
+	band: number | null;
+}
+
+export interface SelfStudyPlanItemView {
+	id: string;
+	promptId: string;
+	promptTitle: string;
+	promptSkill: string;
+	promptStatus: string;
+	position: number;
+	note: string;
+	assignmentId: string | null;
+	dueAt: string | null;
+	targetsTotal: number;
+	submittedOnTimeCount: number;
+	submittedLateCount: number;
+	overdueCount: number;
+	pendingCount: number;
+	students: SelfStudyPlanStudentProgress[];
+}
+
+export interface SelfStudyPlanDayView {
+	id: string | null;
+	date: string;
+	releaseAt: string;
+	dueAt: string;
+	status: "pending" | "released" | "skipped" | "missed";
+	holidayOverride: boolean;
+	isHoliday: boolean;
+	holidayName: string | null;
+	warning: string;
+	notifiedAt: string | null;
+	releasedAt: string | null;
+	editable: boolean;
+	items: SelfStudyPlanItemView[];
+}
+
+export interface SelfStudyPlanSummaryView {
+	id: string;
+	classId: string;
+	title: string;
+	startDate: string;
+	endDate: string;
+	releaseTime: string;
+	dueTime: string;
+	status: "draft" | "published" | "completed" | "cancelled";
+	publishedAt: string | null;
+	completedAt: string | null;
+	cancelledAt: string | null;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface SelfStudyPlanDetailResponse {
+	plan: SelfStudyPlanSummaryView | null;
+	plans: SelfStudyPlanSummaryView[];
+	page: {
+		from: string;
+		to: string;
+		prevFrom: string | null;
+		prevTo: string | null;
+		nextFrom: string | null;
+		nextTo: string | null;
+		totalDays: number;
+	};
+	days: SelfStudyPlanDayView[];
+}

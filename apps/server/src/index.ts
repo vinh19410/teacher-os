@@ -14,6 +14,7 @@ import {
 	createBankHubContext,
 } from "./lib/bank-hub/bank-hub-client";
 import { createR2MediaStore } from "./lib/r2-media-store";
+import { runSelfStudyPlanTick } from "./lib/self-study-plan";
 import { getSessionUser } from "./session";
 
 export function parseCORSOrigins(raw: string): string[] {
@@ -95,7 +96,7 @@ const getAuth = (): Auth => {
 	return auth;
 };
 
-export default buildApp({
+const app = buildApp({
 	getDb: () => (db ??= createDb() as unknown as Db),
 	corsOrigin: parseCORSOrigins(env.CORS_ORIGIN),
 	getSessionUser: (headers) =>
@@ -165,3 +166,32 @@ export default buildApp({
 	appOrigin: parseCORSOrigins(env.CORS_ORIGIN)[0],
 	runInBackground: (promise) => waitUntil(promise),
 });
+
+/**
+ * Handler Cron Trigger của Cloudflare Workers (mỗi 5 phút) cho #526:
+ * quét và giao bài tự học đúng giờ cho các lớp có kế hoạch đang chạy.
+ */
+export async function scheduled(
+	controller: ScheduledController,
+	_env?: unknown,
+	ctx?: ExecutionContext,
+): Promise<void> {
+	const now = controller?.scheduledTime
+		? new Date(controller.scheduledTime)
+		: new Date();
+	if (!db) {
+		db = createDb() as unknown as Db;
+	}
+	const work = runSelfStudyPlanTick({
+		db,
+		now,
+		mailer: getMailer(),
+		studentOrigin: parseCORSOrigins(env.STUDENT_ORIGINS)[0] ?? "",
+	});
+	if (ctx?.waitUntil) {
+		ctx.waitUntil(work);
+	}
+	await work;
+}
+
+export default Object.assign(app, { scheduled });

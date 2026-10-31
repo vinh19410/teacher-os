@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Phase 1: Schema, Contracts & Late Status"
-status: pending
+status: done
 priority: P1
 effort: "2.5h"
 dependencies: []

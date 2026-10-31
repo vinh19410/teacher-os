@@ -34,6 +34,8 @@ export const classAssignment = sqliteTable(
 		title: text("title").notNull(),
 		due: text("due").notNull(), // ISO yyyy-mm-dd (so ngày được, khác dd/mm display)
 		note: text("note").notNull().default(""),
+		dueAt: integer("due_at", { mode: "timestamp_ms" }),
+		planItemId: text("plan_item_id"),
 		createdAt: integer("created_at", { mode: "timestamp_ms" })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 			.notNull(),
@@ -41,6 +43,7 @@ export const classAssignment = sqliteTable(
 	(table) => [
 		index("class_assignment_org_idx").on(table.orgId),
 		index("class_assignment_class_idx").on(table.classId),
+		index("class_assignment_plan_item_idx").on(table.planItemId),
 	],
 );
 

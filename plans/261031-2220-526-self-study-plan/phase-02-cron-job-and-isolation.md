@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Phase 2: Cron Job, Notifications & Snapshot/200-Cap Isolation"
-status: pending
+status: done
 priority: P1
 effort: "3h"
 dependencies: [1]

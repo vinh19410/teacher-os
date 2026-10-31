@@ -1,7 +1,7 @@
 ---
 title: "#526: Self study plan — tự động giao đề hằng ngày cho lớp theo khung giờ"
 description: "Thêm module Self Study Plan dài hạn cho lớp với job định kỳ */5 phút, thông báo chủ động, đánh dấu nộp trễ theo dueAt và quiz_attempt.submittedAt, bỏ qua ngày nghỉ có override, tách khỏi giới hạn 200 bài/snapshot và màn quản lý tiến độ giáo viên."
-status: pending
+status: completed
 priority: P1
 effort: 10h
 issue: 526
@@ -63,12 +63,10 @@ Hiện tại trung tâm vận hành kế hoạch tự học (self study plan) th
 
 | # | Phase | Status | Effort | Dependencies |
 |---|-------|--------|--------|--------------|
-| 1 | [Phase 1: Schema, Contracts & Late Status](./phase-01-schema-contracts-and-late-status.md) | Pending | 2.5h | — |
-| 2 | [Phase 2: Cron Job, Notifications & Snapshot/200-Cap Isolation](./phase-02-cron-job-and-isolation.md) | Pending | 3h | Phase 1 |
-| 3 | [Phase 3: Teacher Self Study Plan API Routes](./phase-03-teacher-api-routes.md) | Pending | 2h | Phase 1, Phase 2 |
-| 4 | [Phase 4: Teacher UI, E2E Tick & End-to-End Verification](./phase-04-teacher-ui-and-e2e.md) | Pending | 2.5h | Phase 2, Phase 3 |
-
-## Extension Trace
+| 1 | [Phase 1: Schema, Contracts & Late Status](./phase-01-schema-contracts-and-late-status.md) | Completed | 2.5h | — |
+| 2 | [Phase 2: Cron Job, Notifications & Snapshot/200-Cap Isolation](./phase-02-cron-job-and-isolation.md) | Completed | 3h | Phase 1 |
+| 3 | [Phase 3: Teacher Self Study Plan API Routes](./phase-03-teacher-api-routes.md) | Completed | 2h | Phase 1, Phase 2 |
+| 4 | [Phase 4: Teacher UI, E2E Tick & End-to-End Verification](./phase-04-teacher-ui-and-e2e.md) | Completed | 2.5h | Phase 2, Phase 3 |
 
 - **Boundary:** `runSelfStudyPlanTick` (`apps/server/src/lib/self-study-plan.ts`) và bảng `self_study_plan_item` / `class_assignment`.
 - **Credible next variant:** Mở rộng giao tự động sang một loại học liệu ngân hàng khác hoặc khung giờ riêng theo ca học.
@@ -102,17 +100,15 @@ Hiện tại trung tâm vận hành kế hoạch tự học (self study plan) th
 
 ## Success Criteria
 
-- [ ] Giáo viên tạo, sửa, công bố và huỷ được plan dài hạn của lớp, với giờ mặc định 06:00-17:00.
-- [ ] Đến `releaseAt`, mọi học viên `active` nhận đủ bài của ngày; trước giờ đó học viên không thấy bài.
-- [ ] Chạy lại hoặc chạy chồng job không tạo trùng bài và không gửi trùng thông báo.
-- [ ] Đổi giờ của plan chỉ ảnh hưởng các ngày chưa tới và không cần deploy.
-- [ ] Bài nộp sau `dueAt` vẫn được nhận và hiện nhãn trễ; bài nộp đúng hạn không bị gắn nhãn sai quanh mốc 17:00.
-- [ ] Từ 17:00 cùng ngày, bài chưa nộp hiện "Quá hạn" ở app học viên.
-- [ ] Ngày nghỉ được bỏ qua và hiện trên plan; giáo viên chọn vẫn giao được.
-- [ ] Giao tay vẫn hoạt động khi lớp có nhiều hơn 200 bài từ plan.
-- [ ] Payload snapshot không tăng theo số bài tự học.
-- [ ] Unit test phủ: chạy lại, chạy chồng, bù lượt lỡ, quá `dueAt`, ngày nghỉ, học viên vào giữa ngày, đề mất `ready`.
-- [ ] E2E chạy trên libsql và kích hoạt được tick.
-- [ ] 99% ngày được giao trong vòng 10 phút sau `releaseAt`, và không có thông báo `queued` quá 30 phút.
-
-<!-- slug: 526-self-study-plan -->
+- [x] Giáo viên tạo, sửa, công bố và huỷ được plan dài hạn của lớp, với giờ mặc định 06:00-17:00.
+- [x] Đến `releaseAt`, mọi học viên `active` nhận đủ bài của ngày; trước giờ đó học viên không thấy bài.
+- [x] Chạy lại hoặc chạy chồng job không tạo trùng bài và không gửi trùng thông báo.
+- [x] Đổi giờ của plan chỉ ảnh hưởng các ngày chưa tới và không cần deploy.
+- [x] Bài nộp sau `dueAt` vẫn được nhận và hiện nhãn trễ; bài nộp đúng hạn không bị gắn nhãn sai quanh mốc 17:00.
+- [x] Từ 17:00 cùng ngày, bài chưa nộp hiện "Quá hạn" ở app học viên.
+- [x] Ngày nghỉ được bỏ qua và hiện trên plan; giáo viên chọn vẫn giao được.
+- [x] Giao tay vẫn hoạt động khi lớp có nhiều hơn 200 bài từ plan.
+- [x] Payload snapshot không tăng theo số bài tự học.
+- [x] Unit test phủ: chạy lại, chạy chồng, bù lượt lỡ, quá `dueAt`, ngày nghỉ, học viên vào giữa ngày, đề mất `ready`.
+- [x] E2E chạy trên libsql và kích hoạt được tick.
+- [x] 99% ngày được giao trong vòng 10 phút sau `releaseAt`, và không có thông báo `queued` quá 30 phút.

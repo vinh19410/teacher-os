@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Phase 4: Teacher UI, E2E Tick & End-to-End Verification"
-status: pending
+status: done
 priority: P1
 effort: "2.5h"
 dependencies: [2, 3]
