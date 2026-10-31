@@ -14,6 +14,7 @@ Quy ước khi cập nhật:
 ## 2026-10-31
 
 ### Added
+- App giáo viên chỉ cho phép email trong danh sách `TEACHER_EMAILS` (bắt buộc trên production, fail-closed khi deploy nếu rỗng; rỗng ở dev/e2e/staging giữ nguyên không giới hạn; chặn cả sign-up `TEACHER_SIGNUP_FORBIDDEN` lẫn mỗi request kernel `ACCOUNT_TEACHER_NOT_ALLOWED`, #513).
 - Trang kiểm tra đầu vào 30 câu trên `apps/profile` (`/kiem-tra-dau-vao/`, #511): thay quiz 5 câu nhúng trong trang bằng trang tĩnh riêng gồm 15 câu Vocab + Grammar (8 grammar, 7 vocab từ A1 đến C1) và 5 đoạn Listening (15 câu từ A2 đến C1, mỗi đoạn nghe tối đa 2 lần, lưu tiến độ và số lượt nghe trong `localStorage` key `msmy_placement_attempt_v1`); module chấm điểm thuần `grading.js` quy đổi tổng điểm `/30` sang CEFR (`A1`/`A2`/`B1`/`B2+`) và khóa đề xuất thuộc `LEAD_COURSES` rồi chuyển kết quả về form đăng ký qua query `/?ketqua=&khoa=#dang-ky-tu-van` (đọc một lần, lùi `formRenderedAt` tránh ngưỡng chống bot 3 giây và xóa query bằng `history.replaceState`); nâng cấp `serve.mjs` hỗ trợ directory index, redirect 301 an toàn và HTTP `Range` (`206 Partial Content`) cho `.mp3`; `build.mjs` chặn build phát hành khi `questions.json` chưa ở trạng thái `status: "approved"`.
 
 ## 2026-10-30

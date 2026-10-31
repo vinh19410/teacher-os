@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Tài liệu, runbook và roadmap"
-status: pending
+status: completed
 priority: P2
 effort: "1h"
 dependencies: [1]
@@ -36,7 +36,7 @@ Người vận hành biết cách set `TEACHER_EMAILS` an toàn trước khi dep
 - Target: `docs/production-release-runbook.md`, hai bảng đang có dòng `ADMIN_EMAILS` (khoảng dòng 26 và 885) và mục các bước deploy gần dòng 890.
 - Steps:
   1. Thêm dòng `TEACHER_EMAILS` vào từng bảng, mô tả: bắt buộc trên production (deploy fail nếu rỗng), rỗng ở môi trường khác là không giới hạn, kiểm mỗi request ở kernel và ở hook sign-up.
-  2. Thêm bước trước deploy: chạy truy vấn đọc `SELECT email, created_at FROM user WHERE role = 'teacher';` trên D1 production và đặt `TEACHER_EMAILS` đúng email của chủ app như trong kết quả. Tài khoản teacher khác trong kết quả sẽ bị chặn bởi gate mỗi request; không xoá dữ liệu trong bước này.
+  2. Thêm bước trước deploy: chạy truy vấn đọc `SELECT email, created_at FROM user WHERE role = 'teacher';` trên D1 production và đặt `TEACHER_EMAILS` trên GitHub Environment `production` (`gh variable set TEACHER_EMAILS --env production --body "<email>"`) đúng email của chủ app như trong kết quả. Tài khoản teacher khác trong kết quả sẽ bị chặn bởi gate mỗi request; không xoá dữ liệu trong bước này. <!-- Updated: Red Team RT-1 -->
   3. Thêm cách rollback: đổi hoặc bổ sung email trong binding rồi deploy lại; không cần migration.
 - Success criteria: không có email thật hay ID database trong runbook.
 - Verify: `grep -c "TEACHER_EMAILS" docs/production-release-runbook.md` in ra số lớn hơn hoặc bằng 3.

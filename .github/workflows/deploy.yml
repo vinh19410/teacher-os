@@ -90,6 +90,8 @@ jobs:
           GITHUB_WEBHOOK_SECRET: ${{ secrets.GH_WEBHOOK_SECRET }}
           MAILER_IMPL: ${{ vars.MAILER_IMPL }}
           MAIL_FROM: ${{ vars.MAIL_FROM }}
+          # Single-org (#513): danh sách email giáo viên chủ app; rỗng trên prod sẽ fail-closed.
+          TEACHER_EMAILS: ${{ vars.TEACHER_EMAILS }}
         run: pnpm alchemy deploy --stage prod --yes
         # --yes auto-approves the plan: without it Alchemy exits code 0 in a
         # non-interactive terminal WITHOUT applying anything ("Non-interactive

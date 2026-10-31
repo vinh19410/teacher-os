@@ -124,3 +124,22 @@ export function resolveAssumeEmailVerified(
 	}
 	return enabled;
 }
+
+/** Single-org theo chính sách (#513): rỗng = không giới hạn (dev/e2e/staging);
+ * trên production bắt buộc phải có ít nhất một email hợp lệ sau khi tách dấu phẩy. */
+export function resolveTeacherEmails(
+	raw: string | undefined,
+	appDomain: string | undefined,
+): string {
+	const value = raw?.trim() ?? "";
+	const entries = value
+		.split(",")
+		.map((s) => s.trim())
+		.filter((s) => s.length > 0);
+	if (entries.length === 0 && appDomain?.trim() === PROD_APP_DOMAIN) {
+		throw new Error(
+			"TEACHER_EMAILS must be set on production (single-org owner mode)",
+		);
+	}
+	return value;
+}

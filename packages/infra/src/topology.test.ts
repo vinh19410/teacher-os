@@ -3,6 +3,7 @@ import {
 	PROD_APP_DOMAIN,
 	resolveAssumeEmailVerified,
 	resolveDomainTopology,
+	resolveTeacherEmails,
 } from "./topology";
 
 describe("resolveDomainTopology", () => {
@@ -142,5 +143,28 @@ describe("resolveAssumeEmailVerified", () => {
 			true,
 		);
 		expect(resolveAssumeEmailVerified(undefined, PROD_APP_DOMAIN)).toBe(false);
+	});
+});
+
+describe("resolveTeacherEmails (#513)", () => {
+	test("throws when empty or comma-only on the prod domain", () => {
+		expect(() => resolveTeacherEmails("", PROD_APP_DOMAIN)).toThrow(
+			/TEACHER_EMAILS must be set/,
+		);
+		expect(() => resolveTeacherEmails(undefined, PROD_APP_DOMAIN)).toThrow(
+			/TEACHER_EMAILS must be set/,
+		);
+		expect(() => resolveTeacherEmails(" , , ", PROD_APP_DOMAIN)).toThrow(
+			/TEACHER_EMAILS must be set/,
+		);
+	});
+
+	test("returns the value when set on the prod domain", () => {
+		expect(resolveTeacherEmails("a@x.vn", PROD_APP_DOMAIN)).toBe("a@x.vn");
+	});
+
+	test("returns empty string on staging when unset or empty", () => {
+		expect(resolveTeacherEmails("", "staging.teacheros.io.vn")).toBe("");
+		expect(resolveTeacherEmails(undefined, "staging.teacheros.io.vn")).toBe("");
 	});
 });

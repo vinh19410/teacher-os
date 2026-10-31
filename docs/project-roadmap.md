@@ -21,6 +21,8 @@ Không thuộc roadmap này: parent login, Zalo/GCal, dark mode. Chỉ thay đ�
 
 Đổi định hướng 2026-10-25: mời và quản trị nhiều giáo viên/nhân sự **không còn là non-goal dài hạn** — sản phẩm được phép mở rộng cho trung tâm nhiều nhân sự. Mốc M1–M5 vẫn giữ phạm vi một giáo viên; phần mở rộng nằm ở mục "Định hướng quý sau" bên dưới.
 
+Đổi định hướng 2026-10-31: app chạy **single-org theo chính sách** (allowlist `TEACHER_EMAILS`, [plan #513](../plans/261031-1759-513-single-org-owner-mode/plan.md)) — chỉ chủ app dùng app giáo viên và chỉ học viên của chủ app dùng portal. Schema multi-org (`organization`, `membership`, `orgId`) được giữ để thương mại hoá sau.
+
 ## Các mốc
 
 Trạng thái: `Chưa bắt đầu` → `Đang thực hiện` → `Hoàn thành` hoặc `Blocked`. Mỗi mốc có GitHub milestone tương ứng (số issue tổng ghi kèm).
@@ -122,10 +124,20 @@ Console quản trị độc lập (`apps/admin`, origin riêng `admin.<domain>` 
 
 Quyết định 2026-10-25: (1) mở rộng được cho trung tâm nhiều nhân sự; (2) đưa AI vào roadmap. Nguồn đối chiếu: [so sánh feature Selfomy One vs Teacher OS](../plans/reports/research-261025-2315-selfomy-vs-teacher-os-feature-gap.md). Mục này chưa mirror thành milestone; khi chốt phạm vi từng giai đoạn thì tạo milestone + issue và chuyển thành mốc có DOD.
 
-- **Giai đoạn A — AI trợ giảng:** nhập đề bằng AI, tạo bài tập bằng AI, chấm Writing/Speaking bằng AI, trợ giảng chat. Nhà cung cấp LLM chưa chọn (nên có lớp trừu tượng nhà cung cấp). Chi phí AI do hệ thống trả và tính vào gói subscription của giáo viên, nên bước A0 đi trước: đo lượng dùng AI theo org, gói subscription cho giáo viên và hạn mức theo gói. Gói đề xuất (giá 200–500 nghìn đồng/tháng, tính bằng credit AI): Cơ bản 200.000 đ/70 credit, Chuyên nghiệp 350.000 đ/130 credit, Nâng cao 500.000 đ/200 credit; chi tiết và giả định ở [báo cáo tư vấn AI](../plans/reports/advise-261025-2328-ai-model-selection-cost-and-pricing.md).
+- **Giai đoạn A — AI trợ giảng:** nhập đề bằng AI, tạo bài tập bằng AI, chấm Writing/Speaking bằng AI, trợ giảng chat. Nhà cung cấp LLM chưa chọn (nên có lớp trừu tượng nhà cung cấp). **A0 (gói subscription/credit theo org) hoãn** tới khi qua cổng thương mại hoá; trong chế độ single-org hiện tại, AI dùng cho chủ app và không tính tiền theo gói. Khi mở thương mại hoá, chi phí AI do hệ thống trả và tính vào gói subscription của giáo viên (đo lượng dùng AI theo org, hạn mức theo gói; gói đề xuất 200–500 nghìn đồng/tháng: Cơ bản 200.000 đ/70 credit, Chuyên nghiệp 350.000 đ/130 credit, Nâng cao 500.000 đ/200 credit; chi tiết tại [báo cáo tư vấn AI](../plans/reports/advise-261025-2328-ai-model-selection-cost-and-pricing.md)).
 - **Giai đoạn B — Vận hành lớp mở rộng:** phòng thi ảo và đề thử công khai cho khách vãng lai, dashboard bài chờ chấm/lớp chưa điểm danh, màn điểm danh theo ngày, lịch tháng/ngày + lịch nghỉ, công nợ theo học viên, thông báo gửi thật.
-- **Giai đoạn C — Nhiều nhân sự:** mời giáo viên/nhân sự vào org, phân quyền theo vai trò, gán giáo viên cho lớp (hiện bảng `class` chưa có cột giáo viên), sau đó mới tới chấm công, nhân viên chăm sóc/mục tiêu bán hàng, đa cơ sở.
+- **Giai đoạn C — Nhiều nhân sự (hoãn tới khi qua cổng thương mại hoá):** mời giáo viên/nhân sự vào org, phân quyền theo vai trò, gán giáo viên cho lớp (hiện bảng `class` chưa có cột giáo viên), sau đó mới tới chấm công, nhân viên chăm sóc/mục tiêu bán hàng, đa cơ sở.
 - **Để sau:** CMS website cho từng trung tâm, tổng đài, sổ thu chi đầy đủ, biểu mẫu.
+
+### Cổng thương mại hoá
+
+Tiêu chí đề xuất để chuyển từ chế độ single-org (phục vụ chủ app) sang mở đăng ký/thương mại hoá cho giáo viên khác (user chỉnh lại ngưỡng khi cần):
+
+1. Chủ app vận hành lớp thật liên tục ít nhất **8 tuần** trên production.
+2. **4 tuần liền** không có lỗi chặn vận hành (lỗi khiến phải quay về làm tay).
+3. Các việc lặp lại hằng tuần (điểm danh, thu phí, giao và chấm bài) đều làm trên app, không còn sổ tay hay bảng tính song song.
+
+Khi qua cổng: bỏ ràng buộc fail-closed của `TEACHER_EMAILS` trên production, sau đó mở lại **A0 (subscription/credit theo org)** và **Giai đoạn C (nhiều nhân sự)**.
 
 ## Thước đo thành công
 

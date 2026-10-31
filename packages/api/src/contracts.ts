@@ -1731,6 +1731,10 @@ export const ACCOUNT_ERROR_CODES = {
 	ADMIN_SIGNUP_FORBIDDEN: "ACCOUNT_ADMIN_SIGNUP_FORBIDDEN",
 	/** requireAdmin: session không thỏa admin gate (plan #413). */
 	NOT_ADMIN: "ACCOUNT_NOT_ADMIN",
+	/** Sign-up teacher với email ngoài TEACHER_EMAILS (single-org). */
+	TEACHER_SIGNUP_FORBIDDEN: "ACCOUNT_TEACHER_SIGNUP_FORBIDDEN",
+	/** Session teacher có email ngoài TEACHER_EMAILS chạm kernel tree. */
+	TEACHER_NOT_ALLOWED: "ACCOUNT_TEACHER_NOT_ALLOWED",
 } as const;
 export type AccountErrorCode =
 	(typeof ACCOUNT_ERROR_CODES)[keyof typeof ACCOUNT_ERROR_CODES];

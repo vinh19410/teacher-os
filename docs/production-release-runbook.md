@@ -24,6 +24,7 @@ environment — never editing this runbook.
 | `STUDENT_ORIGINS` (server binding) | `https://student.<domain>` | default derived from `APP_DOMAIN`; an explicit value missing the portal origin fails the run (drives portal sign-up role classification) |
 | `ADMIN_ORIGINS` (server binding) | `https://admin.<domain>` | default derived from `APP_DOMAIN` (`alchemy.run.ts`); an explicit value missing the admin origin fails the run (drives admin CSRF + sign-up classification, plan #413) |
 | `ADMIN_EMAILS` (server binding) | comma-separated allowlist, **no default — empty means nobody is admin** | operator-set secret-like binding; matched lowercase by `requireAdmin` on every request and by the admin-origin sign-up hook (`ADMIN_SIGNUP_FORBIDDEN`) |
+| `TEACHER_EMAILS` (server binding) | comma-separated allowlist, **required on production** (deploy fails if empty); empty elsewhere means unrestricted | operator-set binding (`vars.TEACHER_EMAILS` on GitHub Environment `production`); matched lowercase on every request in `bootstrapMiddleware` (`ACCOUNT_TEACHER_NOT_ALLOWED`) and at teacher sign-up (`TEACHER_SIGNUP_FORBIDDEN`, #513) |
 | `BETTER_AUTH_URL` (server binding) | `https://api.<domain>` | derived from `APP_DOMAIN`; worker URL otherwise |
 | Better Auth base URL | `https://api.<domain>/api/auth` | `authBaseURL()` in `packages/auth/src/topology.ts` (mount path `/api/auth`) |
 | Google redirect URI | `https://api.<domain>/api/auth/callback/google` | derived from the Better Auth base URL |
@@ -883,6 +884,7 @@ ngoài kernel tree.
 | --- | --- | --- |
 | `ADMIN_ORIGINS` | `https://admin.<domain>` | Có default từ `APP_DOMAIN` (`alchemy.run.ts`); giá trị explicit thiếu origin admin fail loud khi deploy |
 | `ADMIN_EMAILS` | danh sách email phân tách dấu phẩy | **KHÔNG có default** — rỗng (không set) = không ai là admin và không ai đăng ký được account admin; so khớp lowercase trong `requireAdmin` ở MỖI request (gỡ email khỏi danh sách là mất quyền ngay) |
+| `TEACHER_EMAILS` | danh sách email phân tách dấu phẩy | **Bắt buộc trên production** (`resolveTeacherEmails` ném lỗi khi deploy nếu rỗng); ở môi trường khác rỗng = không giới hạn. Kiểm lowercase mỗi request ở kernel (`bootstrapMiddleware`) và ở hook sign-up (`TEACHER_SIGNUP_FORBIDDEN`, #513) |
 | `LIBRARY_AUDIO` | R2 bucket `library-audio` | Private bucket tạo trong `alchemy.run.ts`; thiếu binding → route audio trả 503 `LIBRARY_AUDIO_DISABLED` |
 
 ### Quy trình cấp admin đầu tiên
@@ -898,6 +900,12 @@ ngoài kernel tree.
    admin lúc sign-up).
 4. Smoke: đăng nhập tại `https://admin.<domain>/login` → shell hiện mục
    "Thư viện đề" và `GET /api/admin/me` trả 200.
+
+### Single-org allowlist giáo viên (`TEACHER_EMAILS`, #513)
+
+1. **Kiểm tra trước khi deploy production:** chạy truy vấn đọc `SELECT email, created_at FROM user WHERE role = 'teacher';` trên D1 production để đối chiếu chính xác địa chỉ email đang lưu của chủ app.
+2. Đặt biến `TEACHER_EMAILS` trên GitHub Environment `production` (`gh variable set TEACHER_EMAILS --env production --body "<email-chủ-app>"`, hoặc truyền trong môi trường deploy) khớp đúng email trong kết quả truy vấn. Nếu `TEACHER_EMAILS` rỗng trên `APP_DOMAIN=teacheros.io.vn`, Alchemy fail-closed ngay lúc deploy. Các tài khoản `role = 'teacher'` khác (nếu có) sẽ bị chặn ở mỗi request bằng 403 `ACCOUNT_TEACHER_NOT_ALLOWED`; không xoá dữ liệu trong bước này.
+3. **Rollback / đổi danh sách:** đổi hoặc bổ sung email trong binding `TEACHER_EMAILS` rồi deploy lại; có hiệu lực ngay ở request kế tiếp và không cần migration D1.
 
 ### Bucket `library-audio` (kho audio đề Listening)
 

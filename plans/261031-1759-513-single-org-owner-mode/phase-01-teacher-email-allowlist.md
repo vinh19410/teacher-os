@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Allowlist email giáo viên (TEACHER_EMAILS)"
-status: pending
+status: completed
 priority: P2
 effort: "4h"
 dependencies: []
@@ -29,10 +29,10 @@ Khi binding `TEACHER_EMAILS` được set, chỉ email trong danh sách đăng k
 
 - Modify: `packages/api/src/contracts.ts` (thêm 2 mã vào `ACCOUNT_ERROR_CODES`)
 - Modify: `packages/infra/src/topology.ts`, `packages/infra/src/topology.test.ts`
-- Modify: `packages/infra/alchemy.run.ts`
+- Modify: `packages/infra/alchemy.run.ts`, `.github/workflows/deploy.yml`, `.github/workflows/deploy-staging.yml`
 - Modify: `packages/auth/src/index.ts`, `packages/auth/src/auth-admin-signup.test.ts` (hoặc tạo `packages/auth/src/auth-teacher-signup.test.ts` theo cùng khuôn)
 - Modify: `apps/server/src/app.ts`, `apps/server/src/index.ts`, `apps/server/src/role-gates.test.ts`
-- Modify: `apps/web/src/lib/repos/kernel.ts`, `apps/web/src/lib/repos/kernel.transport.test.ts`
+- Modify: `apps/web/src/lib/repos/kernel.ts`, `apps/web/src/lib/repos/kernel.transport.test.ts`, `apps/web/src/components/account-blocked-view.tsx`
 - Không sửa: `apps/e2e/src/boot.ts` (e2e chạy với allowlist rỗng, tức là không giới hạn)
 
 ## Tasks
@@ -43,8 +43,8 @@ Khi binding `TEACHER_EMAILS` được set, chỉ email trong danh sách đăng k
 - Target: `packages/infra/src/topology.ts`, tạo hàm export `resolveTeacherEmails(raw: string | undefined, appDomain: string | undefined): string`.
 - Steps:
   1. Đặt hàm ngay dưới `resolveAssumeEmailVerified`, cùng phong cách comment tiếng Việt.
-  2. `const value = raw?.trim() ?? ""`. Nếu `value === ""` và `appDomain?.trim() === PROD_APP_DOMAIN` thì `throw new Error("TEACHER_EMAILS must be set on production (single-org owner mode)")`. Ngược lại trả `value`.
-  3. Trong `topology.test.ts` thêm 3 test: prod + rỗng thì ném lỗi khớp `/TEACHER_EMAILS must be set/`; prod + `"a@x.vn"` trả `"a@x.vn"`; staging (`staging.teacheros.io.vn`) + rỗng trả `""`.
+  2. `const value = raw?.trim() ?? ""`; tách danh sách `const entries = value.split(",").map((s) => s.trim()).filter((s) => s.length > 0)`. Nếu `entries.length === 0` và `appDomain?.trim() === PROD_APP_DOMAIN` thì `throw new Error("TEACHER_EMAILS must be set on production (single-org owner mode)")`. Ngược lại trả `value`. <!-- Updated: Red Team RT-5 -->
+  3. Trong `topology.test.ts` thêm test: prod + rỗng (hoặc chỉ dấu phẩy `","`) thì ném lỗi khớp `/TEACHER_EMAILS must be set/`; prod + `"a@x.vn"` trả `"a@x.vn"`; staging (`staging.teacheros.io.vn`) + rỗng trả `""`.
 - Success criteria: 3 test mới pass.
 - Verify: `pnpm --filter @teacher-os/infra test` exits 0.
 
@@ -56,7 +56,7 @@ Khi binding `TEACHER_EMAILS` được set, chỉ email trong danh sách đăng k
   1. Import `resolveTeacherEmails` cạnh `resolveAssumeEmailVerified`.
   2. Dưới `adminEmailsConfig` thêm comment ngắn giải thích "rỗng = không giới hạn; production bắt buộc set" và `const teacherEmails = resolveTeacherEmails(process.env.TEACHER_EMAILS, process.env.APP_DOMAIN);`.
   3. Trong `env` của `server`, ngay dưới `ADMIN_EMAILS: adminEmailsConfig,` thêm `TEACHER_EMAILS: teacherEmails,`.
-  4. Nếu type `Env` của server khai báo binding thủ công (grep `ADMIN_EMAILS` trong `apps/server` và `packages/env`), thêm `TEACHER_EMAILS` theo cùng chỗ.
+  4. Trong `.github/workflows/deploy.yml` và `.github/workflows/deploy-staging.yml`, truyền `TEACHER_EMAILS: ${{ vars.TEACHER_EMAILS }}` vào khối `env:` của bước `pnpm alchemy deploy` để CI production/staging nhận biến từ GitHub Environment. <!-- Updated: Red Team RT-1 -->
 - Success criteria: typecheck sạch.
 - Verify: `pnpm check-types` exits 0.
 
@@ -98,25 +98,24 @@ Khi binding `TEACHER_EMAILS` được set, chỉ email trong danh sách đăng k
 ### Task 1.5 — Gate mỗi request trong kernel
 
 - Goal: session teacher ngoài allowlist không bao giờ tạo org và nhận 403 `ACCOUNT_TEACHER_NOT_ALLOWED`.
-- Target: `apps/server/src/app.ts` (`AppDeps`, `bootstrapMiddleware`, các chỗ truyền `adminEmails` vào `createAuth`), `apps/server/src/index.ts`.
+- Target: `apps/server/src/app.ts` (`AppDeps`, `bootstrapMiddleware`), `apps/server/src/index.ts`. <!-- Updated: Validation & Red Team RT-2 -->
 - Steps:
   1. Thêm `teacherEmails?: string[]` vào `AppDeps`, comment giống task 1.4.
   2. Trong `bootstrapMiddleware`, ngay sau nhánh `session.role === "admin"` và **trước** `const db = deps.getDb();`, thêm: nếu `(deps.teacherEmails ?? []).length > 0` và email lowercase của session không nằm trong danh sách (so khớp lowercase, trim) thì `return c.json({ error: ACCOUNT_ERROR_CODES.TEACHER_NOT_ALLOWED, code: ACCOUNT_ERROR_CODES.TEACHER_NOT_ALLOWED }, 403);`.
-  3. Ở mọi chỗ trong `app.ts` truyền `adminEmails: deps.adminEmails ?? []` vào auth (khoảng dòng 387 và 400), thêm `teacherEmails: deps.teacherEmails ?? []`.
-  4. Trong `apps/server/src/index.ts`, ở cả hai chỗ có `adminEmails: parseCORSOrigins(env.ADMIN_EMAILS)`, thêm `teacherEmails: parseCORSOrigins(env.TEACHER_EMAILS ?? "")`. Thêm `?? ""` vì binding có thể vắng ở runtime chưa cấu hình; nếu type `env` khai báo `TEACHER_EMAILS` là `string` bắt buộc thì đổi thành optional.
-  5. Trong `role-gates.test.ts`, theo khuôn test hiện có, thêm 3 test: (a) `teacherEmails: ["owner@x.vn"]`, session teacher `stranger@x.vn` gọi một route kernel (route snapshot đang được test trong file) thì 403, body `error === "ACCOUNT_TEACHER_NOT_ALLOWED"`, và bảng `organization` không có row mới; (b) session `OWNER@x.vn` thì 200; (c) allowlist rỗng thì 200 như cũ.
+  3. Trong `apps/server/src/index.ts`, ở cả hai chỗ có `adminEmails: parseCORSOrigins(env.ADMIN_EMAILS)` (trong `getAuth` và `buildApp`), thêm `teacherEmails: parseCORSOrigins(env.TEACHER_EMAILS ?? "")`.
+  4. Trong `role-gates.test.ts`, giữ `auth` trong `beforeAll` không set `teacherEmails` để các test hiện có giữ nguyên, và dựng `buildApp` riêng (hoặc truyền `teacherEmails`) để thêm 3 test: (a) `teacherEmails: ["owner@x.vn"]`, session teacher `stranger@x.vn` gọi `/api/kernel` thì 403, body `error === "ACCOUNT_TEACHER_NOT_ALLOWED"`, và bảng `organization` không có row mới; (b) session `OWNER@x.vn` thì 200; (c) allowlist rỗng thì 200 như cũ. <!-- Updated: Red Team RT-3 -->
 - Success criteria: 3 test mới pass, mọi test server khác giữ nguyên.
 - Verify: `pnpm --filter server test` exits 0.
 
 ### Task 1.6 — Web xử lý mã mới
 
 - Goal: web chuyển sang màn hình role-blocked khi nhận 403 `ACCOUNT_TEACHER_NOT_ALLOWED`.
-- Target: `apps/web/src/lib/repos/kernel.ts`, hàm `isStudentRoleRejected`; component dùng `isRoleBlocked` trong `apps/web/src/lib/data-provider.tsx`.
+- Target: `apps/web/src/lib/repos/kernel.ts` (hàm `isStudentRoleRejected`), `apps/web/src/components/account-blocked-view.tsx`. <!-- Updated: Validation & Red Team RT-4 -->
 - Steps:
   1. Đổi điều kiện thành `error.reason === ACCOUNT_ERROR_CODES.STUDENT_ON_TEACHER_APP || error.reason === ACCOUNT_ERROR_CODES.TEACHER_NOT_ALLOWED`. Giữ tên hàm để không phải đổi call site, và cập nhật JSDoc.
-  2. Mở `data-provider.tsx` và đọc copy của màn hình blocked. Nếu copy chỉ nói về "tài khoản học viên", đổi thành câu trung tính đúng cho cả hai trường hợp, ví dụ "Tài khoản này không có quyền dùng ứng dụng giáo viên."
-  3. Trong `kernel.transport.test.ts` thêm 1 test theo khuôn test "403 body {error: ACCOUNT_STUDENT_ROLE}...": 403 với `ACCOUNT_TEACHER_NOT_ALLOWED` thì `isStudentRoleRejected` trả `true`.
-- Success criteria: test mới pass. Nếu có test snapshot hoặc copy của màn hình blocked, cập nhật theo copy mới.
+  2. Trong `apps/web/src/components/account-blocked-view.tsx`, cập nhật mô tả để bao hàm cả trường hợp tài khoản giáo viên chưa nằm trong danh sách được phép của ứng dụng giáo viên, đồng thời **giữ nguyên tiêu đề `"Đây là tài khoản học viên"`** (hoặc giữ nguyên cụm chữ này trên màn hình) để không phá vỡ E2E `account-role-separation.spec.ts:140`.
+  3. Trong `kernel.transport.test.ts` thêm 1 test theo khuôn test "403 body {error: ACCOUNT_STUDENT_ROLE}...": 403 với `ACCOUNT_TEACHER_NOT_ALLOWED` thì `isStudentRoleRejected` trả `true` (và `onRoleBlocked` được gọi trên bus).
+  - Success criteria: test mới pass, E2E `account-role-separation.spec.ts` không bị ảnh hưởng.
 - Verify: `pnpm --filter web test` exits 0.
 
 ### Task 1.7 — Gate toàn repo

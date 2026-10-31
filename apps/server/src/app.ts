@@ -85,6 +85,10 @@ export interface AppDeps {
 	 */
 	adminEmails?: string[];
 	/**
+	 * Allowlist email giáo viên (binding TEACHER_EMAILS). Rỗng = không giới hạn.
+	 */
+	teacherEmails?: string[];
+	/**
 	 * Plan #413: origin của console admin dùng cho CSRF /api/admin — cố ý
 	 * tách khỏi `corsOrigin` (gồm cả origin teacher/student). Rỗng → mọi
 	 * write /api/admin bị 403 (fail-closed).
@@ -222,6 +226,23 @@ function bootstrapMiddleware(deps: AppDeps) {
 				},
 				403,
 			);
+		}
+		// Single-org (#513): khi TEACHER_EMAILS khác rỗng, chỉ email trong
+		// allowlist mới được truy cập kernel và bootstrap org.
+		if ((deps.teacherEmails ?? []).length > 0) {
+			const email = session.email?.trim().toLowerCase() ?? "";
+			const allow = (deps.teacherEmails ?? []).some(
+				(e) => e.trim().toLowerCase() === email,
+			);
+			if (!email || !allow) {
+				return c.json(
+					{
+						error: ACCOUNT_ERROR_CODES.TEACHER_NOT_ALLOWED,
+						code: ACCOUNT_ERROR_CODES.TEACHER_NOT_ALLOWED,
+					},
+					403,
+				);
+			}
 		}
 		const db = deps.getDb();
 		const readMemberships = () =>
