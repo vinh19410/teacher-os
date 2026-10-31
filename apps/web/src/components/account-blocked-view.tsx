@@ -28,8 +28,9 @@ export default function AccountBlockedView() {
 					Đây là tài khoản học viên
 				</h2>
 				<p className="mt-2 text-[14px] text-muted-foreground leading-relaxed">
-					Tài khoản này thuộc cổng học viên và không thể truy cập trang quản lý
-					của giáo viên. Vui lòng đăng xuất để tiếp tục.
+					Tài khoản này không có quyền dùng ứng dụng giáo viên (thuộc cổng học
+					viên hoặc email chưa nằm trong danh sách được phép). Vui lòng đăng
+					xuất để tiếp tục.
 				</p>
 				<div className="mt-6 flex justify-center">
 					<button

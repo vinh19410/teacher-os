@@ -678,15 +678,17 @@ export interface KernelCommandBus {
 }
 
 /**
- * Only the exact account-role code triggers the blocked exit — never a bare
- * 403 (e.g. the legacy "no membership after bootstrap"). Shared with the
- * QueryCache read path (query-client.ts) so both gates stay in lockstep.
+ * Only the exact account-role / teacher-allowlist codes trigger the blocked
+ * exit — never a bare 403 (e.g. the legacy "no membership after bootstrap").
+ * Shared with the QueryCache read path (query-client.ts) so both gates stay in
+ * lockstep.
  */
 export function isStudentRoleRejected(error: unknown): boolean {
 	return (
 		isHttpError(error) &&
 		error.status === 403 &&
-		error.reason === ACCOUNT_ERROR_CODES.STUDENT_ON_TEACHER_APP
+		(error.reason === ACCOUNT_ERROR_CODES.STUDENT_ON_TEACHER_APP ||
+			error.reason === ACCOUNT_ERROR_CODES.TEACHER_NOT_ALLOWED)
 	);
 }
 

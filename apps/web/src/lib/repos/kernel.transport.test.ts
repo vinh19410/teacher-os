@@ -11,6 +11,7 @@ import { HttpError } from "@/lib/kernel-load-state";
 import {
 	createKernelCommandBus,
 	fetchKernelSnapshot,
+	isStudentRoleRejected,
 	postKernelCommand,
 } from "./kernel";
 
@@ -126,6 +127,24 @@ describe("GET snapshot transport role reason (plan #260)", () => {
 		});
 	});
 
+	test("403 body {error: ACCOUNT_TEACHER_NOT_ALLOWED} rides on HttpError.reason and isStudentRoleRejected returns true (#513)", async () => {
+		stubFetchOnce(
+			403,
+			JSON.stringify({ error: ACCOUNT_ERROR_CODES.TEACHER_NOT_ALLOWED }),
+		);
+		let caught: unknown;
+		try {
+			await fetchKernelSnapshot(BASE);
+		} catch (err) {
+			caught = err;
+		}
+		expect(caught).toMatchObject({
+			status: 403,
+			reason: ACCOUNT_ERROR_CODES.TEACHER_NOT_ALLOWED,
+		});
+		expect(isStudentRoleRejected(caught)).toBe(true);
+	});
+
 	test("403 body {reason: ...} (legacy shape) still parses", async () => {
 		stubFetchOnce(403, JSON.stringify({ reason: "some-legacy-reason" }));
 		await expect(fetchKernelSnapshot(BASE)).rejects.toMatchObject({
@@ -164,6 +183,33 @@ describe("bus onRoleBlocked seam (plan #260)", () => {
 				Promise.reject(
 					new HttpError(403, ACCOUNT_ERROR_CODES.STUDENT_ON_TEACHER_APP, {
 						reason: ACCOUNT_ERROR_CODES.STUDENT_ON_TEACHER_APP,
+					}),
+				)) as never,
+			refetch: async () => {},
+			onAuthLost: () => {
+				authLostCalls.push(1);
+			},
+			onRoleBlocked: () => {
+				blockedCalls.push(1);
+			},
+		});
+		const result = await bus.run({
+			type: "check-in",
+			lessonId: "l",
+		} as KernelAction);
+		expect(result.kind).toBe("definite-failure");
+		expect(blockedCalls).toHaveLength(1);
+		expect(authLostCalls).toHaveLength(0);
+	});
+
+	test("write 403 ACCOUNT_TEACHER_NOT_ALLOWED fires onRoleBlocked as definite-failure (#513)", async () => {
+		const blockedCalls: number[] = [];
+		const authLostCalls: number[] = [];
+		const bus = createKernelCommandBus({
+			postCommand: (() =>
+				Promise.reject(
+					new HttpError(403, ACCOUNT_ERROR_CODES.TEACHER_NOT_ALLOWED, {
+						reason: ACCOUNT_ERROR_CODES.TEACHER_NOT_ALLOWED,
 					}),
 				)) as never,
 			refetch: async () => {},

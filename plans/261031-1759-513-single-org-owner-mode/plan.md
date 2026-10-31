@@ -1,11 +1,11 @@
 ---
 title: "Single-org theo chính sách: chỉ giáo viên chủ dùng app, giữ nguyên schema multi-org"
 description: "Khoá đăng ký và truy cập app giáo viên bằng allowlist TEACHER_EMAILS (fail-closed trên production), giữ nguyên orgId/membership, và chỉnh roadmap về phục vụ một giáo viên trước khi thương mại hoá."
-status: pending
+status: completed
 priority: P2
 effort: 5h
 issue: 513
-branch: develop
+branch: feat/513-single-org-owner-mode
 tags: [feature, backend, auth, infra, docs]
 blockedBy: []
 blocks: []
@@ -52,18 +52,18 @@ Lỗ hổng duy nhất so với mục tiêu: **ai cũng đăng ký được tài
 
 | # | Phase | Trạng thái | Effort | Phụ thuộc |
 |---|---|---|---|---|
-| 1 | [Allowlist email giáo viên](phase-01-teacher-email-allowlist.md) | pending | 4h | — |
-| 2 | [Tài liệu, runbook và roadmap](phase-02-docs-runbook-roadmap.md) | pending | 1h | 1 |
+| 1 | [Allowlist email giáo viên](phase-01-teacher-email-allowlist.md) | completed | 4h | — |
+| 2 | [Tài liệu, runbook và roadmap](phase-02-docs-runbook-roadmap.md) | completed | 1h | 1 |
 
 ## Acceptance criteria
 
-- [ ] Sign-up role teacher với email ngoài `TEACHER_EMAILS` (đã set) bị 403 `TEACHER_SIGNUP_FORBIDDEN`. Có unit test trong `packages/auth`.
-- [ ] Session teacher có email ngoài `TEACHER_EMAILS` (đã set) gọi kernel API thì nhận 403 `ACCOUNT_TEACHER_NOT_ALLOWED`, và không có row `organization`/`membership` mới. Có test server.
-- [ ] `TEACHER_EMAILS` rỗng thì hành vi y như cũ: toàn bộ test server và e2e hiện có vẫn xanh.
-- [ ] `resolveTeacherEmails("", PROD_APP_DOMAIN)` ném lỗi. Có test trong `packages/infra`.
-- [ ] Web hiển thị màn hình role-blocked khi gặp mã mới. Có test transport trong `apps/web`.
-- [ ] Runbook, `.env.example` và roadmap được cập nhật, gồm cổng "chạy tốt cho tôi" trước khi thương mại hoá.
-- [ ] `pnpm exec biome check .`, `pnpm check-types`, `pnpm test` và e2e đầy đủ đều xanh.
+- [x] Sign-up role teacher với email ngoài `TEACHER_EMAILS` (đã set) bị 403 `TEACHER_SIGNUP_FORBIDDEN`. Có unit test trong `packages/auth`.
+- [x] Session teacher có email ngoài `TEACHER_EMAILS` (đã set) gọi kernel API thì nhận 403 `ACCOUNT_TEACHER_NOT_ALLOWED`, và không có row `organization`/`membership` mới. Có test server.
+- [x] `TEACHER_EMAILS` rỗng thì hành vi y như cũ: toàn bộ test server và e2e hiện có vẫn xanh.
+- [x] `resolveTeacherEmails("", PROD_APP_DOMAIN)` ném lỗi. Có test trong `packages/infra`.
+- [x] Web hiển thị màn hình role-blocked khi gặp mã mới. Có test transport trong `apps/web`.
+- [x] Runbook, `.env.example` và roadmap được cập nhật, gồm cổng "chạy tốt cho tôi" trước khi thương mại hoá.
+- [x] `pnpm exec biome check .`, `pnpm check-types`, `pnpm test` và e2e đầy đủ đều xanh.
 
 ## Non-goals
 
@@ -88,3 +88,33 @@ Plan được viết theo contract `--advice`: mỗi phase tách task kèm Verif
 
 - Đăng ký học viên: giữ mở (mặc định trong plan) hay chỉ cho đăng ký khi có lời mời?
 - Ngưỡng cụ thể của cổng "chạy tốt cho tôi" (phase 2 đề xuất giá trị mặc định, user chỉnh lại).
+
+## Validation Log
+
+### Verification Results
+- Claims checked: 10
+- Verified: 8 | Failed: 2 | Unverified: 0
+- Tier: Light (Fact Checker)
+- Failures resolved inline:
+  1. `phase-01-teacher-email-allowlist.md:105` — `apps/server/src/app.ts:387,400` truyền `adminEmails` vào `adminLibraryRoutes` và `createAdminMeRoutes`, không phải `createAuth` (`createAuth` chỉ gọi ở `apps/server/src/index.ts:71`). Đã bỏ bước dư thừa ở Task 1.5.
+  2. `phase-01-teacher-email-allowlist.md:114,117` — copy màn hình role-blocked nằm ở `apps/web/src/components/account-blocked-view.tsx:27-33` (không phải `data-provider.tsx:166`), và E2E `apps/e2e/specs/account-role-separation.spec.ts:140` assert chuỗi `"Đây là tài khoản học viên"`. Đã chỉnh Task 1.6 để giữ chuỗi `"Đây là tài khoản học viên"` trong nội dung màn hình blocked kèm giải thích chung cho tài khoản giáo viên chưa được cấp quyền.
+
+### Whole-Plan Consistency Sweep
+- Đã rà soát toàn bộ `plan.md`, `phase-01-teacher-email-allowlist.md` và `phase-02-docs-runbook-roadmap.md`: tên biến `TEACHER_EMAILS`, mã lỗi `TEACHER_SIGNUP_FORBIDDEN` / `ACCOUNT_TEACHER_NOT_ALLOWED`, danh sách file và lệnh verify thống nhất xuyên suốt.
+
+## Red Team Review
+
+### Session — 2026-10-31
+**Findings:** 5 (5 accepted, 0 rejected)
+**Severity breakdown:** 1 Critical, 3 High, 1 Medium
+
+| # | Finding | Severity | Disposition | Applied To |
+|---|---|---|---|---|
+| 1 | `.github/workflows/deploy.yml` (và `deploy-staging.yml`) chưa truyền `TEACHER_EMAILS` vào bước `alchemy deploy` | Critical | Accept | Phase 1 (Task 1.2), Phase 2 (Task 2.2) |
+| 2 | `apps/server/src/app.ts:387,400` là admin route factories, không phải `createAuth` | High | Accept | Phase 1 (Task 1.5) |
+| 3 | `apps/server/src/role-gates.test.ts` dùng chung `auth` trong `beforeAll`; cần tách `buildApp({ teacherEmails })` riêng cho test middleware gate | High | Accept | Phase 1 (Task 1.5) |
+| 4 | Copy màn hình blocked nằm ở `account-blocked-view.tsx` và E2E assert `"Đây là tài khoản học viên"` | High | Accept | Phase 1 (Task 1.6) |
+| 5 | `resolveTeacherEmails` cần kiểm danh sách sau khi tách dấu phẩy để `","` không lách fail-closed trên production | Medium | Accept | Phase 1 (Task 1.1) |
+
+### Whole-Plan Consistency Sweep
+- Mọi thay đổi từ Red Team (RT-1..RT-5) đã được cập nhật đồng bộ vào `phase-01-teacher-email-allowlist.md` và `phase-02-docs-runbook-roadmap.md`, được `kongming` duyệt Go tại checkpoint Plan Gates.

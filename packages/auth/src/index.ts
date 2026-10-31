@@ -58,6 +58,10 @@ export interface CreateAuthInput {
 	 * parse; so khớp lowercase). Rỗng = không ai đăng ký được role admin.
 	 */
 	adminEmails?: string[];
+	/**
+	 * Allowlist email giáo viên (binding TEACHER_EMAILS). Rỗng = không giới hạn.
+	 */
+	teacherEmails?: string[];
 	secret: string;
 	/** API origin; authBaseURL() appends the /api/auth mount path. */
 	baseURL: string;
@@ -309,6 +313,24 @@ export function createAuth(input: CreateAuthInput) {
 									message:
 										"Email này không được cấp quyền quản trị. Vui lòng dùng cổng học viên hoặc liên hệ quản trị viên.",
 									code: "ADMIN_SIGNUP_FORBIDDEN",
+								});
+							}
+						}
+						// Single-org (#513): khi TEACHER_EMAILS khác rỗng, chỉ email trong
+						// allowlist mới đăng ký được tài khoản giáo viên.
+						if (
+							appRole === "teacher" &&
+							(input.teacherEmails ?? []).length > 0
+						) {
+							const email = user.email?.trim().toLowerCase() ?? "";
+							const allow = (input.teacherEmails ?? []).some(
+								(e) => e.trim().toLowerCase() === email,
+							);
+							if (!email || !allow) {
+								throw new APIError("FORBIDDEN", {
+									message:
+										"Ứng dụng giáo viên hiện chỉ dành cho chủ tài khoản. Học viên vui lòng dùng cổng học viên.",
+									code: "TEACHER_SIGNUP_FORBIDDEN",
 								});
 							}
 						}

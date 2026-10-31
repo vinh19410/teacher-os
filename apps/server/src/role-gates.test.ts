@@ -9,7 +9,7 @@
 
 import { createClient } from "@libsql/client";
 import { ACCOUNT_ERROR_CODES } from "@teacher-os/api/contracts";
-import { createAuth } from "@teacher-os/auth";
+import { type Auth, createAuth } from "@teacher-os/auth";
 import { createLogMailer } from "@teacher-os/auth/mail/mailer";
 import * as schema from "@teacher-os/db/schema/index";
 import { count } from "drizzle-orm";
@@ -51,6 +51,7 @@ describe("api role gates", () => {
 	let app: ReturnType<typeof buildApp>;
 	let raw: ReturnType<typeof createClient>;
 	let libsqlDb: ReturnType<typeof drizzle<typeof schema>>;
+	let auth: Auth;
 
 	/** Row count of a table — typed non-optional access over drizzle's count(). */
 	async function countRows(
@@ -65,7 +66,7 @@ describe("api role gates", () => {
 		libsqlDb = drizzle(raw, { schema });
 		await migrate(libsqlDb, { migrationsFolder: MIGRATIONS_DIR });
 
-		const auth = createAuth({
+		auth = createAuth({
 			db: libsqlDb,
 			corsOrigin: [WEB_ORIGIN, PORTAL_ORIGIN, ADMIN_ORIGIN],
 			studentOrigins: [PORTAL_ORIGIN],
@@ -305,5 +306,76 @@ describe("api role gates", () => {
 		const body = (await res.json()) as { code?: string };
 		expect(body.code).toBe(ACCOUNT_ERROR_CODES.NOT_ADMIN);
 		expect(await countRows(schema.organization)).toBe(orgsBefore);
+	});
+
+	test("teacherEmails allowlist: session teacher ngoài allowlist → 403 ACCOUNT_TEACHER_NOT_ALLOWED, không tạo org/membership", async () => {
+		const strangerToken = await signUp({
+			origin: WEB_ORIGIN,
+			email: "stranger@x.vn",
+		});
+		const gatedApp = buildApp({
+			getDb: () => libsqlDb as unknown as Db,
+			corsOrigin: [WEB_ORIGIN, PORTAL_ORIGIN],
+			getSessionUser: (headers) => getSessionUser(auth, headers),
+			authHandler: (req) => auth.handler(req),
+			teacherEmails: ["owner@x.vn"],
+		});
+		const orgsBefore = await countRows(schema.organization);
+		const membershipsBefore = await countRows(schema.membership);
+
+		const res = await gatedApp.request("/api/kernel", {
+			headers: {
+				origin: WEB_ORIGIN,
+				cookie: `better-auth.session_token=${strangerToken}`,
+			},
+		});
+		expect(res.status).toBe(403);
+		const body = (await res.json()) as { error?: string; code?: string };
+		expect(body.error).toBe(ACCOUNT_ERROR_CODES.TEACHER_NOT_ALLOWED);
+		expect(body.code).toBe(ACCOUNT_ERROR_CODES.TEACHER_NOT_ALLOWED);
+		expect(await countRows(schema.organization)).toBe(orgsBefore);
+		expect(await countRows(schema.membership)).toBe(membershipsBefore);
+	});
+
+	test("teacherEmails allowlist: session OWNER@x.vn (khác hoa/thường) → 200", async () => {
+		const ownerToken = await signUp({
+			origin: WEB_ORIGIN,
+			email: "OWNER@x.vn",
+		});
+		const gatedApp = buildApp({
+			getDb: () => libsqlDb as unknown as Db,
+			corsOrigin: [WEB_ORIGIN, PORTAL_ORIGIN],
+			getSessionUser: (headers) => getSessionUser(auth, headers),
+			authHandler: (req) => auth.handler(req),
+			teacherEmails: ["owner@x.vn"],
+		});
+		const res = await gatedApp.request("/api/kernel", {
+			headers: {
+				origin: WEB_ORIGIN,
+				cookie: `better-auth.session_token=${ownerToken}`,
+			},
+		});
+		expect(res.status).toBe(200);
+	});
+
+	test("teacherEmails allowlist rỗng → 200 như cũ", async () => {
+		const token = await signUp({
+			origin: WEB_ORIGIN,
+			email: `open-teacher-${crypto.randomUUID()}@x.vn`,
+		});
+		const openApp = buildApp({
+			getDb: () => libsqlDb as unknown as Db,
+			corsOrigin: [WEB_ORIGIN, PORTAL_ORIGIN],
+			getSessionUser: (headers) => getSessionUser(auth, headers),
+			authHandler: (req) => auth.handler(req),
+			teacherEmails: [],
+		});
+		const res = await openApp.request("/api/kernel", {
+			headers: {
+				origin: WEB_ORIGIN,
+				cookie: `better-auth.session_token=${token}`,
+			},
+		});
+		expect(res.status).toBe(200);
 	});
 });

@@ -6,6 +6,7 @@ import * as Effect from "effect/Effect";
 import {
 	resolveAssumeEmailVerified,
 	resolveDomainTopology,
+	resolveTeacherEmails,
 } from "./src/topology.ts";
 
 config({ path: "./.env" });
@@ -156,6 +157,13 @@ const adminEmailsConfig = Config.string("ADMIN_EMAILS").pipe(
 	Config.withDefault(""),
 );
 
+// Single-org theo chính sách (#513): rỗng = không giới hạn (dev/e2e/staging);
+// production bắt buộc set (fail-closed khi deploy với APP_DOMAIN=teacheros.io.vn).
+const teacherEmails = resolveTeacherEmails(
+	process.env.TEACHER_EMAILS,
+	process.env.APP_DOMAIN,
+);
+
 // Staging QA: coi mọi tài khoản là đã xác minh email, vì staging không
 // gửi mail. Chặn cứng trên prod để cờ không thể lọt sang môi trường thật.
 const assumeEmailVerified = resolveAssumeEmailVerified(
@@ -196,6 +204,7 @@ export const server = Cloudflare.Worker("server", {
 		STUDENT_ORIGINS: studentOriginsConfig,
 		ADMIN_ORIGINS: adminOriginsConfig,
 		ADMIN_EMAILS: adminEmailsConfig,
+		TEACHER_EMAILS: teacherEmails,
 		// Lead intake (#506): org đích + origin profile cho /public/leads.
 		LEAD_ORG_ID: leadOrgIdConfig,
 		LEAD_ORIGINS: leadOriginsConfig,
