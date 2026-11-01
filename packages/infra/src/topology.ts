@@ -55,11 +55,29 @@ export interface DomainTopology {
 	 * token lacks); duplicate content is handled by the page's canonical tag.
 	 */
 	landingAliases: string[];
+	/**
+	 * Teacher profile hostname (#536): `msmy.io.vn` on production
+	 * (`APP_DOMAIN === PROD_APP_DOMAIN`), `profile.<domain>` everywhere else.
+	 */
+	profileHost: string;
+	/**
+	 * Additional hostnames attached to the profile Worker (#536):
+	 * `["www.msmy.io.vn"]` on production, empty elsewhere.
+	 */
+	profileAliases: string[];
+	/**
+	 * Browser origins of the profile site (`https://` + host and aliases, #536).
+	 * Drives the default `LEAD_ORIGINS` binding via `resolveLeadOrigins`.
+	 */
+	profileOrigins: string[];
 }
 
 /** The prod apex — the only member of its cookie zone allowed to keep the
  * default auth cookie namespace. */
 export const PROD_APP_DOMAIN = "teacheros.io.vn";
+
+/** The prod teacher-profile apex (#536) — only attached when APP_DOMAIN === PROD_APP_DOMAIN. */
+export const PROD_PROFILE_DOMAIN = "msmy.io.vn";
 
 /** Auth cookie namespace assigned to every non-prod member of the prod zone. */
 export const AUTH_COOKIE_PREFIX = "teacheros-staging";
@@ -88,6 +106,12 @@ export function resolveDomainTopology(appDomain: string): DomainTopology {
 		domain === PROD_APP_DOMAIN || domain.endsWith(`.${PROD_APP_DOMAIN}`);
 	const apiOrigin = `https://api.${domain}`;
 	const appAliases: string[] = [];
+	const isProd = domain === PROD_APP_DOMAIN;
+	const profileHost = isProd ? PROD_PROFILE_DOMAIN : `profile.${domain}`;
+	const profileAliases = isProd ? [`www.${PROD_PROFILE_DOMAIN}`] : [];
+	const profileOrigins = [profileHost, ...profileAliases].map(
+		(h) => `https://${h}`,
+	);
 	return {
 		appHost: `app.${domain}`,
 		apiHost: `api.${domain}`,
@@ -107,6 +131,9 @@ export function resolveDomainTopology(appDomain: string): DomainTopology {
 		appAliases,
 		landingHost: domain,
 		landingAliases: [`www.${domain}`],
+		profileHost,
+		profileAliases,
+		profileOrigins,
 	};
 }
 
@@ -144,22 +171,23 @@ export function resolveTeacherEmails(
 	return value;
 }
 
-/** Origin mặc định của trang profile công khai khi có topology (prod/staging). */
-export const DEFAULT_PROD_LEAD_ORIGINS =
-	"https://msmy.io.vn,https://www.msmy.io.vn";
-
 /** Origin mặc định của trang profile công khai ở môi trường dev local. */
 export const DEFAULT_DEV_LEAD_ORIGINS = "http://localhost:8005";
 
 /**
- * Lead intake (#506, #524): chuẩn hóa danh sách origin cho phép gửi
+ * Lead intake (#506, #524, #536): chuẩn hóa danh sách origin cho phép gửi
  * `/public/leads` và đọc `/public/placement-test`. Khi biến GitHub Environment
- * chưa đặt (`""`), khoảng trắng hoặc chỉ có dấu phẩy (`,`), tự rơi về mặc định
- * theo chế độ thay vì để chuỗi rỗng chặn toàn bộ POST.
+ * chưa đặt (`""`), khoảng trắng hoặc chỉ có dấu phẩy (`,`), tự rơi về
+ * `topology.profileOrigins` (prod: `msmy.io.vn` + `www`; staging:
+ * `profile.<domain>`) hoặc `DEFAULT_DEV_LEAD_ORIGINS` ở dev thay vì để chuỗi
+ * rỗng chặn toàn bộ POST.
  */
 export function resolveLeadOrigins(
 	raw: string | undefined,
-	options: { hasTopology: boolean; isDev: boolean },
+	options: {
+		topology?: Pick<DomainTopology, "profileOrigins">;
+		isDev: boolean;
+	},
 ): string {
 	const entries = (raw ?? "")
 		.split(",")
@@ -168,8 +196,8 @@ export function resolveLeadOrigins(
 	if (entries.length > 0) {
 		return entries.join(",");
 	}
-	if (options.hasTopology) {
-		return DEFAULT_PROD_LEAD_ORIGINS;
+	if (options.topology) {
+		return options.topology.profileOrigins.join(",");
 	}
 	if (options.isDev) {
 		return DEFAULT_DEV_LEAD_ORIGINS;

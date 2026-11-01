@@ -126,12 +126,13 @@ const aiEnabledConfig = Config.string("AI_ENABLED").pipe(
 // LEAD_INTAKE_DISABLED (fail-closed, dev không cần cấu hình gì).
 const leadOrgId = (process.env.LEAD_ORG_ID ?? "").trim();
 
-// Lead intake (#506 D5, #524): origin form profile — topology mặc định prod
-// msmy (cả www), dev mặc định port profile local; rỗng/khoảng trắng/dấu phẩy
-// từ `${{ vars.LEAD_ORIGINS }}` chưa set đều rơi về mặc định qua
+// Lead intake (#506 D5, #524, #536): origin form profile — topology mặc định
+// theo stage (`topology.profileOrigins`: prod msmy + www, staging
+// profile.<domain>), dev mặc định port profile local; rỗng/khoảng trắng/dấu
+// phẩy từ `${{ vars.LEAD_ORIGINS }}` chưa set đều rơi về mặc định qua
 // resolveLeadOrigins.
 const leadOrigins = resolveLeadOrigins(process.env.LEAD_ORIGINS, {
-	hasTopology: Boolean(topology),
+	topology,
 	isDev: isDevCommand,
 });
 
@@ -363,12 +364,41 @@ export default Alchemy.Stack(
 			},
 		});
 
+		// Plan #536: trang hồ sơ giảng viên cô Mỹ — StaticSite tại msmy.io.vn (+ www)
+		// trên prod, profile.<domain> trên staging, dev port 8005.
+		const profileWorker = yield* Cloudflare.Website.StaticSite("profile", {
+			cwd: "../../apps/profile",
+			command: "pnpm build",
+			outdir: "dist",
+			env: {
+				LEAD_API_URL: topology
+					? topology.apiOrigin
+					: serverWorker.url.as<string>(),
+			},
+			assets: {
+				htmlHandling: "auto-trailing-slash",
+				notFoundHandling: "none",
+			},
+			...(topology && {
+				domain: {
+					name: topology.profileHost,
+					aliases: topology.profileAliases,
+				},
+				workersDev: false,
+			}),
+			dev: {
+				command: "pnpm dev:bare",
+				url: "http://localhost:8005",
+			},
+		});
+
 		return {
 			web: webWorker.url,
 			server: serverWorker.url,
 			landing: landingWorker.url,
 			student: studentWorker.url,
 			admin: adminWorker.url,
+			profile: profileWorker.url,
 		};
 	}),
 );

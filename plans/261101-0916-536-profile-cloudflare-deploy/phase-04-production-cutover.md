@@ -38,8 +38,19 @@ Gắn custom domain msmy.io.vn và www vào Worker profile trên prod, giữ ngu
 - Làm bài ở `/kiem-tra-dau-vao/`, audio phát được trên Safari iOS, kết quả chuyển về form.
 
 ## Failure Protocol
+If any Verify step does not meet its stated pass condition, STOP this phase.
+Do not improvise a fix, retry blindly, or reason around the failure.
+Spawn the `kongming` subagent for next-step counsel and pass:
+- the phase and task id,
+- what you attempted (the steps you ran),
+- the exact command and its full output,
+- the pass condition it failed to meet.
+Apply kongming's guidance, then re-run the Verify step.
+If `kongming` cannot be spawned in this environment, STOP and report the same
+failure evidence to the user. Never continue by self-reasoning.
 
-- **Deploy báo lỗi zone hoặc quyền:** server đã deploy, chỉ phần profile lỗi. Sửa token ở Cloudflare, cập nhật secret, chạy lại `workflow_dispatch`.
+Ghi chú vận hành:
+- **Deploy báo lỗi zone hoặc quyền:** bước `Deploy to Cloudflare` dừng trước khi chạy các smoke check sau deploy; sửa token ở Cloudflare, cập nhật secret, chạy lại `workflow_dispatch`.
 - **Deploy báo trùng hostname hoặc bản ghi DNS:** đọc lỗi, kiểm tra bản ghi còn sót. Không tự thêm cờ override.
-- **Smoke fail do `lead-api` sai:** kiểm tra lại việc truyền `LEAD_API_URL`; revert PR nếu không sửa nhanh được.
+- **Smoke fail do `lead-api` sai:** kiểm tra lại việc truyền `LEAD_API_URL`; nếu revert PR profile sau khi đã xóa DNS ở bước 4, nhớ khôi phục các bản ghi DNS từ snapshot bước 2 để tránh `NXDOMAIN`.
 - **Mail lỗi:** khôi phục bản ghi từ snapshot trước tiên, rồi mới điều tra.

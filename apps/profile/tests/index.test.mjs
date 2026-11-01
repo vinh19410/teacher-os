@@ -49,6 +49,13 @@ test("has meta[name=lead-api] and replaceLeadApiMeta replaces content", () => {
 	assert.equal(replaceLeadApiMeta(html, ""), html);
 });
 
+test("has canonical link pointing to https://msmy.io.vn/ (#536)", () => {
+	assert.match(
+		html,
+		/<link\s+rel="canonical"\s+href="https:\/\/msmy\.io\.vn\/"\s*\/?>/,
+	);
+});
+
 test("consultForm has exactly 2 required inputs (name and phone)", () => {
 	const formMatch = html.match(/<form id="consultForm"[\s\S]*?<\/form>/);
 	assert.ok(formMatch, "consultForm must exist");
