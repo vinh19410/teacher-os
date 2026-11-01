@@ -101,6 +101,10 @@ test("HTML tĩnh của trang chủ và trang kiểm tra đầu vào không còn 
 		testPageHtml,
 		/<meta\s+name="lead-api"\s+content="https:\/\/api\.teacheros\.io\.vn"\s*\/?>/,
 	);
+	assert.match(
+		testPageHtml,
+		/<link\s+rel="canonical"\s+href="https:\/\/msmy\.io\.vn\/kiem-tra-dau-vao\/"\s*\/?>/,
+	);
 });
 
 test("gradeAttempt và buildPlacementSummary tính đúng ngưỡng 0, 8/9, 15/16, 22/23, 30, trả kèm courseLabel và cắt summary ở 300 ký tự", () => {
@@ -234,6 +238,10 @@ test("build.mjs copy public sang dist, không có questions.json và thay meta l
 			builtIndex,
 			/<meta name="lead-api" content="http:\/\/localhost:8100">/,
 		);
+		assert.match(
+			builtIndex,
+			/<link\s+rel="canonical"\s+href="https:\/\/msmy\.io\.vn\/"\s*\/?>/,
+		);
 		const builtTestIndex = readFileSync(
 			join(distDir, "kiem-tra-dau-vao", "index.html"),
 			"utf8",
@@ -241,6 +249,10 @@ test("build.mjs copy public sang dist, không có questions.json và thay meta l
 		assert.match(
 			builtTestIndex,
 			/<meta name="lead-api" content="http:\/\/localhost:8100">/,
+		);
+		assert.match(
+			builtTestIndex,
+			/<link\s+rel="canonical"\s+href="https:\/\/msmy\.io\.vn\/kiem-tra-dau-vao\/"\s*\/?>/,
 		);
 	} finally {
 		rmSync(tmpRoot, { recursive: true, force: true });
