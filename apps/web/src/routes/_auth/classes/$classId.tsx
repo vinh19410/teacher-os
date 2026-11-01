@@ -238,9 +238,11 @@ function ClassDetailRoute() {
 						)}
 						<Button
 							size="sm"
-							disabled={!sy}
 							onClick={() => {
-								setTab("sessions-practice");
+								if (sy) {
+									setTab("sessions-practice");
+									setAssignmentsView("list");
+								}
 								setManageOpen(true);
 							}}
 						>
@@ -438,8 +440,13 @@ function ClassDetailRoute() {
 			)}
 
 			<ClassSessionsManageModal
+				key={`manage-sessions-${cls.id}`}
 				open={manageOpen}
 				onClose={() => setManageOpen(false)}
+				onOpenCurriculum={() => {
+					setManageOpen(false);
+					handleTabChange("curriculum");
+				}}
 				cls={cls}
 				run={run}
 				isPending={isPending}

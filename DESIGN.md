@@ -147,7 +147,8 @@ có chủ đích (dữ liệu thật > hình dáng design), không phải sót q
 - **Header giữ kicker `loại · lịch · hình thức`, không có `lead`**: học phí chuyển hiển thị ở tab
   Học viên (design đặt học phí trong bảng Students; app cần thấy phí cả khi chưa có học viên).
 - **"Add session" = nút primary "Sắp xếp buổi"** mở modal Quản lý buổi: kernel không có action
-  add-session theo ngày riêng; thêm buổi = thêm bài vào module giáo trình (#221).
+  add-session theo ngày riêng; thêm buổi = thêm bài vào module giáo trình (#221). Khi lớp chưa gắn
+  giáo trình, nút vẫn bấm được và modal hiển thị lý do kèm nút "Mở tab Giáo trình" (#521).
 - **Nhãn nút giữ tiếng Việt**: "Điều chỉnh" (Edit session), "Chấm bài" (Grade), "Điểm danh →" /
   "Sửa điểm danh →" (Take/Edit attendance →). Link attendance chỉ hiện trên card **đã qua ngày hoặc
   đã học** — design hiển thị trên mọi card, nhưng buổi tương lai mở modal chỉ được view rỗng nên

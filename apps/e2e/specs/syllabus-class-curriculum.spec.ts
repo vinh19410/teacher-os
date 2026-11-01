@@ -149,7 +149,47 @@ test("B: gán sau — lớp trống nhập từ template; nhập lần hai bằn
 	await openClassFromList(page, `E2E 394 Trống ${stamp}`);
 	// #391, #520: tab "Buổi học" đã gộp vào "Buổi học & luyện tập"; empty state
 	// giáo trình nằm ở tab "Giáo trình".
-	await page.getByRole("tab", { name: "Giáo trình", exact: true }).click();
+	const manageBtn = page.getByRole("button", {
+		name: "Sắp xếp buổi",
+		exact: true,
+	});
+	await expect(manageBtn).toBeEnabled();
+	await manageBtn.focus();
+	await expect(manageBtn).toBeFocused();
+	await page.keyboard.press("Enter");
+	const emptyManageDialog = page.getByRole("dialog", {
+		name: "Quản lý buổi của lớp",
+	});
+	await expect(
+		emptyManageDialog.getByText("Gắn giáo trình cho lớp để sắp xếp buổi."),
+	).toBeVisible();
+	const openCurriculumBtn = emptyManageDialog.getByRole("button", {
+		name: "Mở tab Giáo trình",
+		exact: true,
+	});
+	for (const vp of [
+		{ width: 1440, height: 900 },
+		{ width: 768, height: 1024 },
+		{ width: 375, height: 812 },
+	]) {
+		await page.setViewportSize(vp);
+		await expect(emptyManageDialog).toBeVisible();
+		await expect(openCurriculumBtn).toBeVisible();
+		const overflow = await page.evaluate(
+			() =>
+				document.documentElement.scrollWidth >
+				document.documentElement.clientWidth,
+		);
+		expect(overflow, `Overflow at ${vp.width}x${vp.height}`).toBe(false);
+	}
+	await page.setViewportSize({ width: 1280, height: 720 });
+	await openCurriculumBtn.focus();
+	await expect(openCurriculumBtn).toBeFocused();
+	await page.keyboard.press("Enter");
+	await expect(emptyManageDialog).toBeHidden();
+	await expect(
+		page.getByRole("tab", { name: "Giáo trình", exact: true }),
+	).toHaveAttribute("aria-selected", "true");
 	await expect(
 		page.getByText("Lớp chưa có giáo trình", { exact: false }),
 	).toBeVisible();

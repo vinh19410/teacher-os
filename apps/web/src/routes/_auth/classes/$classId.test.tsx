@@ -376,6 +376,72 @@ describe("class detail → Buổi học tab", () => {
 			within(dialog).getByRole("option", { name: "Template A · 0 buổi" }),
 		).toBeTruthy();
 	});
+
+	it("opens the manage sessions modal with an empty-state explanation and switches to the Giáo trình tab when the class has no syllabus (#521)", async () => {
+		startKernelServer(
+			snapshotFixture({
+				classes: [classRow({ id: "cl-1", syllabusId: null })],
+				syllabi: [syllabusRow({ id: "sy-t", name: "Template A" })],
+			}),
+		);
+		renderWithKernel(<ClassDetail />);
+		const manageBtn = (await screen.findByRole("button", {
+			name: "Sắp xếp buổi",
+		})) as HTMLButtonElement;
+		expect(manageBtn.disabled).toBe(false);
+
+		// Opening and dismissing the modal from another tab preserves that tab.
+		fireEvent.click(screen.getByRole("tab", { name: "Học viên" }));
+		fireEvent.click(manageBtn);
+		const dismissedDialog = screen.getByRole("dialog", {
+			name: "Quản lý buổi của lớp",
+		});
+		fireEvent.click(
+			within(dismissedDialog).getByRole("button", { name: "Đóng" }),
+		);
+		expect(
+			screen.queryByRole("dialog", { name: "Quản lý buổi của lớp" }),
+		).toBeNull();
+		expect(
+			screen
+				.getByRole("tab", { name: "Học viên" })
+				.getAttribute("aria-selected"),
+		).toBe("true");
+
+		// Enter assign view on Buổi học & luyện tập to verify switching to curriculum resets assignmentsView.
+		fireEvent.click(screen.getByRole("tab", { name: "Buổi học & luyện tập" }));
+		const assignBtns = screen.getAllByRole("button", { name: "Giao bài tập" });
+		expect(assignBtns).toHaveLength(2);
+		fireEvent.click(assignBtns[0]);
+		expect(screen.getByText("Chọn một đề")).toBeTruthy();
+		expect(
+			screen.getAllByRole("button", { name: "Giao bài tập" }),
+		).toHaveLength(1);
+
+		fireEvent.click(manageBtn);
+		const dialog = screen.getByRole("dialog", {
+			name: "Quản lý buổi của lớp",
+		});
+		expect(
+			within(dialog).getByText("Gắn giáo trình cho lớp để sắp xếp buổi."),
+		).toBeTruthy();
+
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Mở tab Giáo trình" }),
+		);
+		expect(
+			screen.queryByRole("dialog", { name: "Quản lý buổi của lớp" }),
+		).toBeNull();
+		expect(
+			screen
+				.getByRole("tab", { name: "Giáo trình" })
+				.getAttribute("aria-selected"),
+		).toBe("true");
+		expect(
+			screen.getByRole("button", { name: "Nhập từ template" }),
+		).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Giao bài tập" })).toBeTruthy();
+	});
 });
 
 describe("class screen → lesson kind stays with the syllabus", () => {
