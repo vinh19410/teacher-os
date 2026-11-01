@@ -29,9 +29,9 @@ Fix the unreadable CTA buttons ("Tiếp tục" and "Hoàn thành") in `Onboardin
 
 ## Requirements
 
-- [ ] Write a failing unit test in `apps/student/test/onboarding.test.tsx` (TDD Red) exercising `OnboardingWizard` across disabled and enabled states on Steps 1–4 ("Tiếp tục") and Step 5 ("Hoàn thành"), asserting that neither CTA uses the non-existent `text-bg` or `hover:bg-primary` utilities, both active CTAs carry `bg-primary`, `text-primary-foreground`, and `hover:bg-primary/90`, and the disabled "Tiếp tục" button uses `bg-muted` + `text-muted-foreground` without `opacity-50`.
-- [ ] Update `apps/student/src/components/onboarding/onboarding-wizard.tsx` (TDD Green) at lines 230–231 and 242 to use `text-primary-foreground hover:bg-primary/90` and remove `opacity-50` from the disabled "Tiếp tục" state.
-- [ ] Add real-browser WCAG contrast assertions (`>= 4.5`) in `apps/e2e/specs/student-portal-onboarding.spec.ts` for the "Tiếp tục" (disabled and enabled) and "Hoàn thành" buttons across light and dark themes and 3 viewports (`1440×900`, `768×1024`, `375×812`).
+- [x] Write a failing unit test in `apps/student/test/onboarding.test.tsx` (TDD Red) exercising `OnboardingWizard` across disabled and enabled states on Steps 1–4 ("Tiếp tục") and Step 5 ("Hoàn thành"), asserting that neither CTA uses the non-existent `text-bg` or `hover:bg-primary` utilities, both active CTAs carry `bg-primary`, `text-primary-foreground`, and `hover:bg-primary/90`, and the disabled "Tiếp tục" button uses `bg-muted` + `text-muted-foreground` without `opacity-50`.
+- [x] Update `apps/student/src/components/onboarding/onboarding-wizard.tsx` (TDD Green) at lines 230–231 and 242 to use `text-primary-foreground hover:bg-primary/90` and remove `opacity-50` from the disabled "Tiếp tục" state.
+- [x] Add real-browser WCAG contrast assertions (`>= 4.5`) in `apps/e2e/specs/student-portal-onboarding.spec.ts` for the "Tiếp tục" (disabled and enabled) and "Hoàn thành" buttons across light and dark themes and 3 viewports (`1440×900`, `768×1024`, `375×812`).
 
 ## Tasks & Steps
 
@@ -95,9 +95,9 @@ Fix the unreadable CTA buttons ("Tiếp tục" and "Hoàn thành") in `Onboardin
 
 ## Todo
 
-- [ ] Task 1.1: Add TDD Red test for `OnboardingWizard` CTA button states and contrast tokens
-- [ ] Task 1.2: Fix CTA button classes in `OnboardingWizard` (TDD Green)
-- [ ] Task 1.3: Add computed WCAG contrast verification in Playwright E2E spec and verify gates
+- [x] Task 1.1: Add TDD Red test for `OnboardingWizard` CTA button states and contrast tokens
+- [x] Task 1.2: Fix CTA button classes in `OnboardingWizard` (TDD Green)
+- [x] Task 1.3: Add computed WCAG contrast verification in Playwright E2E spec and verify gates
 
 ## Verification
 

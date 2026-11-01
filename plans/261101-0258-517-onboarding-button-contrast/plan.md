@@ -1,7 +1,7 @@
 ---
 title: "Fix Student Onboarding Wizard CTA Button Contrast (#517)"
 description: "Replace removed v1 text-bg utility with text-primary-foreground on enabled 'Tiếp tục' and 'Hoàn thành' buttons, remove double-fading opacity-50 on disabled 'Tiếp tục' button, and verify WCAG AA contrast in unit and Playwright E2E tests."
-status: pending
+status: completed
 priority: P2
 effort: "1h"
 tags: [student, onboarding, ui, accessibility, contrast]
@@ -43,9 +43,9 @@ This plan is authored under the `--advice` handover contract and `--tdd` test-fi
 
 ## Success Criteria
 
-- [ ] Enabled **"Tiếp tục"** and **"Hoàn thành"** buttons in `apps/student/src/components/onboarding/onboarding-wizard.tsx` use `bg-primary text-primary-foreground hover:bg-primary/90` (no `text-bg`), achieving ≥ 4.5:1 WCAG AA contrast in both light and dark themes.
-- [ ] Disabled **"Tiếp tục"** button uses `cursor-not-allowed rounded-md bg-muted text-muted-foreground` without `opacity-50`, preserving the calibrated ≥ 4.5:1 contrast of `--muted-foreground` on `--muted` in both light and dark themes.
-- [ ] `pnpm --filter student exec vitest run test/onboarding.test.tsx`, `pnpm --filter student check-types`, `pnpm --filter e2e check-types`, `pnpm exec biome check .`, and Playwright E2E `student-portal-onboarding.spec.ts` pass with 0 errors.
+- [x] Enabled **"Tiếp tục"** and **"Hoàn thành"** buttons in `apps/student/src/components/onboarding/onboarding-wizard.tsx` use `bg-primary text-primary-foreground hover:bg-primary/90` (no `text-bg`), achieving ≥ 4.5:1 WCAG AA contrast in both light and dark themes.
+- [x] Disabled **"Tiếp tục"** button uses `cursor-not-allowed rounded-md bg-muted text-muted-foreground` without `opacity-50`, preserving the calibrated ≥ 4.5:1 contrast of `--muted-foreground` on `--muted` in both light and dark themes.
+- [x] `pnpm --filter student exec vitest run test/onboarding.test.tsx`, `pnpm --filter student check-types`, `pnpm --filter e2e check-types`, `pnpm exec biome check .`, and Playwright E2E `student-portal-onboarding.spec.ts` pass with 0 errors.
 
 ## Red Team Review
 

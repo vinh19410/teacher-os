@@ -11,6 +11,11 @@ Quy ước khi cập nhật:
 ---
 
 
+## 2026-11-01
+
+### Fixed
+- Sửa lỗi độ tương phản nút **"Tiếp tục"** và **"Hoàn thành"** trong wizard onboarding cổng học viên (`apps/student/src/components/onboarding/onboarding-wizard.tsx`, #517): thay class v1 đã bị xóa `text-bg hover:bg-primary hover:text-primary-foreground` bằng `text-primary-foreground hover:bg-primary/90` để chữ đạt chuẩn WCAG AA (≥ 4.5:1) trên nền `bg-primary` ở cả giao diện sáng và tối, đồng thời bỏ `opacity-50` chồng lên `bg-muted text-muted-foreground` ở trạng thái disabled của nút **"Tiếp tục"**.
+
 ## 2026-10-31
 
 ### Added
