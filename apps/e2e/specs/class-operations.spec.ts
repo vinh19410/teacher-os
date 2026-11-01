@@ -64,7 +64,9 @@ test("login → tạo lớp có lịch → thấy buổi → buổi tương lai 
 	await enrollDialog1.getByRole("option", { name: STUDENT_NAME }).click();
 	await enrollDialog1.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(enrollDialog1).toBeHidden();
-	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
+	await expect(
+		page.locator("tbody tr", { hasText: STUDENT_NAME }),
+	).toBeVisible();
 	await page.getByRole("button", { name: "Kích hoạt" }).click();
 	const confirmModal1 = page
 		.getByRole("dialog")
@@ -196,7 +198,9 @@ test("điểm danh tại chỗ trên tab Buổi học & luyện tập (lớp sta
 	await enrollDialog2.getByRole("option", { name: STUDENT_NAME }).click();
 	await enrollDialog2.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(enrollDialog2).toBeHidden();
-	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
+	await expect(
+		page.locator("tbody tr", { hasText: STUDENT_NAME }),
+	).toBeVisible();
 	await page.getByRole("button", { name: "Kích hoạt" }).click();
 	const confirmModal2 = page
 		.getByRole("dialog")

@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Bell, Building2, Check, Loader2, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { cn } from "@/lib/cn";
 import {
 	useAcceptInvitation,
@@ -62,9 +63,14 @@ export function NotificationBell() {
 	};
 
 	const handleAccept = async (id: string) => {
+		if (processingId !== null) return;
+		const orgName = pendingNotifications
+			.find((n) => n.id === id)
+			?.orgName?.trim();
 		setProcessingId(id);
 		try {
 			await acceptMutation.mutateAsync(id);
+			toast.success(orgName ? `Đã tham gia ${orgName}` : "Đã tham gia tổ chức");
 		} catch (err) {
 			console.error("Failed to accept invitation", err);
 		} finally {
@@ -73,6 +79,7 @@ export function NotificationBell() {
 	};
 
 	const handleReject = async (id: string) => {
+		if (processingId !== null) return;
 		setProcessingId(id);
 		try {
 			await rejectMutation.mutateAsync(id);
@@ -197,7 +204,7 @@ export function NotificationBell() {
 															<button
 																type="button"
 																onClick={() => handleAccept(inv.id)}
-																disabled={isCurrentProcessing}
+																disabled={processingId !== null}
 																className="inline-flex flex-1 items-center justify-center gap-1 rounded-md bg-primary px-3 py-1.5 font-medium text-primary-foreground text-xs shadow-xs transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
 															>
 																{isCurrentProcessing ? (
@@ -211,7 +218,7 @@ export function NotificationBell() {
 															<button
 																type="button"
 																onClick={() => handleReject(inv.id)}
-																disabled={isCurrentProcessing}
+																disabled={processingId !== null}
 																className={cn(
 																	"inline-flex items-center justify-center gap-1 rounded-md border bg-background px-3 py-1.5 font-medium text-xs shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50",
 																)}

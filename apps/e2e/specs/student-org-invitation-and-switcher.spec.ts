@@ -101,6 +101,11 @@ test.describe("Student Org Invitation & Multi-Org Switcher", () => {
 			await expect(acceptBtn).toBeVisible();
 			// Click "Chấp nhận"
 			await acceptBtn.click();
+			await expect(
+				studentPage
+					.locator("[data-sonner-toast]")
+					.filter({ hasText: "Đã tham gia Teacher Alpha" }),
+			).toBeVisible();
 
 			// After accepting, gate redirects new un-onboarded student to /onboarding
 			await expect(studentPage).toHaveURL(/\/onboarding/, { timeout: 10_000 });

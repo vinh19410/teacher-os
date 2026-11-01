@@ -53,7 +53,9 @@ test("class detail → enroll học viên có sẵn KHÔNG có input gói, chọ
 	// Chọn học viên → click Lưu → enroll thành công, dialog đóng
 	await dialog.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(dialog).toBeHidden();
-	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
+	await expect(
+		page.locator("tbody tr", { hasText: STUDENT_NAME }),
+	).toBeVisible();
 });
 
 test("enroll học viên vào lớp → kích hoạt derive gói từ lớp, detail hiển thị lớp học (D1)", async ({
@@ -101,7 +103,9 @@ test("enroll học viên vào lớp → kích hoạt derive gói từ lớp, det
 	await expect(dialog).toBeHidden();
 
 	// Roster hiện học viên và kích hoạt
-	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
+	await expect(
+		page.locator("tbody tr", { hasText: STUDENT_NAME }),
+	).toBeVisible();
 	await page.getByRole("button", { name: "Kích hoạt" }).click();
 	const confirmModal = page
 		.getByRole("dialog")
