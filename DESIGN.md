@@ -165,6 +165,7 @@ có chủ đích (dữ liệu thật > hình dáng design), không phải sót q
   gán/gỡ template.
 - **Card buổi học render đủ N buổi**, không cắt 6 như design: số buổi thật là dữ liệu chấm điểm
   danh, cắt làm sai đếm.
+- **Nhãn tab đầu tiên Việt hóa thành "Buổi học & luyện tập" và ngày mở lớp định dạng `Từ dd/mm/yyyy` (#520)**: đồng nhất tiếng Việt cho dải 5 tab của trang chi tiết lớp (giữ nguyên `id: "sessions-practice"` trên URL) và format `cls.startDate` qua `fmtDue` trên thẻ stat học viên.
 
 ## Lệch có chủ đích so với design v2 — trang soạn đề admin (Quiz Builder) (#424)
 

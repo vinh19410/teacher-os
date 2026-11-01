@@ -182,7 +182,7 @@ test("màn hình lớp không có select Loại; sửa buổi thi từ lớp gi�
 	// Locator scope lesson row (grid 20px_1fr_auto) của curriculum section.
 	await page.goto(`/classes/${copy.classId}`);
 	await page
-		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
 	// #221: the curriculum tree moved into the "Quản lý buổi" modal.
 	await page.getByRole("button", { name: "Sắp xếp buổi", exact: true }).click();
@@ -207,7 +207,7 @@ test("màn hình lớp không có select Loại; sửa buổi thi từ lớp gi�
 	).toBeVisible();
 	await page.goto(`/classes/${copy.classId}`);
 	await page
-		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
 	await expect(page.getByText("Buổi 3 — giữa kỳ đã đổi")).toBeVisible();
 });

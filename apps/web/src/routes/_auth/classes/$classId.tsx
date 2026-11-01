@@ -2,6 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { fmtDue } from "@/components/assignments/assignment-status";
 import { ClassRosterTab } from "@/components/class-detail/class-roster-tab";
 import { ClassSessionsManageModal } from "@/components/class-detail/class-sessions-manage-modal";
 import { ClassSessionsSection } from "@/components/class-detail/class-sessions-section";
@@ -257,7 +258,7 @@ function ClassDetailRoute() {
 							? `học viên · ${cls.invitedStudentIds.length} chờ xác nhận`
 							: "học viên"
 					}
-					sub={`Từ ${cls.startDate}`}
+					sub={cls.startDate.trim() ? `Từ ${fmtDue(cls.startDate)}` : undefined}
 				/>
 				<StatCard
 					num={`${cls.sessionsDone}/${cls.sessionsTotal}`}
@@ -277,7 +278,7 @@ function ClassDetailRoute() {
 
 			<Tabs
 				tabs={[
-					{ id: "sessions-practice", label: "Sessions & practice" },
+					{ id: "sessions-practice", label: "Buổi học & luyện tập" },
 					{ id: "roster", label: "Học viên" },
 					{ id: "curriculum", label: "Giáo trình" },
 					{ id: "vocab", label: "Từ vựng" },

@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Phase 1: TDD Class Detail Tab Localization, Date Formatting & Caller Migration"
-status: pending
+status: completed
 priority: P3
 effort: "1h"
 dependencies: []
@@ -56,9 +56,9 @@ Localize the teacher class detail default tab label to `"Buổi học & luyện 
 
 ## Requirements
 
-- [ ] Write failing unit tests (TDD Red) in `apps/web/src/routes/_auth/classes/$classId.test.tsx` and `apps/web/src/routes/_auth/classes/$classId.sessions.test.tsx` for the `"Buổi học & luyện tập"` tab label, `"Từ 03/11/2026"` formatted `startDate` subtitle, legacy `"01/08"` passthrough, empty `""` subtitle omission, and `?tab=assignments` tab selection.
-- [ ] Implement the tab label localization and `cls.startDate.trim() ? \`Từ ${fmtDue(cls.startDate)}\` : undefined` date formatting in `apps/web/src/routes/_auth/classes/$classId.tsx` (TDD Green).
-- [ ] Migrate all E2E specs, helpers, comments, and docs from `Sessions & practice` to `Buổi học & luyện tập`, add the deterministic `"Từ 04/01/2027"`, keyboard focus, and 3-viewport checks in `apps/e2e/specs/projected-sessions.spec.ts` plus the `/^Từ \d{2}\/\d{2}\/\d{4}$/` check in `apps/e2e/specs/class-assign.spec.ts`, and verify with unit tests, typecheck, lint, grep gate, and Playwright E2E.
+- [x] Write failing unit tests (TDD Red) in `apps/web/src/routes/_auth/classes/$classId.test.tsx` and `apps/web/src/routes/_auth/classes/$classId.sessions.test.tsx` for the `"Buổi học & luyện tập"` tab label, `"Từ 03/11/2026"` formatted `startDate` subtitle, legacy `"01/08"` passthrough, empty `""` subtitle omission, and `?tab=assignments` tab selection.
+- [x] Implement the tab label localization and `cls.startDate.trim() ? \`Từ ${fmtDue(cls.startDate)}\` : undefined` date formatting in `apps/web/src/routes/_auth/classes/$classId.tsx` (TDD Green).
+- [x] Migrate all E2E specs, helpers, comments, and docs from `Sessions & practice` to `Buổi học & luyện tập`, add the deterministic `"Từ 04/01/2027"`, keyboard focus, and 3-viewport checks in `apps/e2e/specs/projected-sessions.spec.ts` plus the `/^Từ \d{2}\/\d{2}\/\d{4}$/` check in `apps/e2e/specs/class-assign.spec.ts`, and verify with unit tests, typecheck, lint, grep gate, and Playwright E2E.
 
 ## Tasks & Steps
 

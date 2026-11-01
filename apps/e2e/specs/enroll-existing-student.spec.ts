@@ -265,7 +265,7 @@ test("class detail → picker enroll học viên có sẵn → roster + KPI tăn
 
 	// 8. The schedule's lesson series was generated for the active enrollment.
 	await page
-		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
 	await expect(page.getByText("Sắp tới").first()).toBeVisible();
 	await expect(page.getByText("0/12").first()).toBeVisible();

@@ -1,7 +1,7 @@
 ---
 title: "Localize Class Detail Tab Label and Format Start Date as dd/mm/yyyy (#520)"
 description: "Localize the teacher class detail default tab label from 'Sessions & practice' to 'Buổi học & luyện tập' and format the student stat card startDate subtitle as dd/mm/yyyy ('Từ dd/mm/yyyy') using fmtDue, migrating all unit/E2E callers and design docs."
-status: pending
+status: completed
 priority: P3
 effort: "1h"
 tags: [web, classes, i18n, date-format, e2e, bugfix]
@@ -48,14 +48,14 @@ This plan is authored under the `--advice` handover contract and `--tdd` test-fi
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: TDD Class Detail Tab Localization, Date Formatting & Caller Migration](./phase-01-start.md) | Pending |
+| 1 | [Phase 1: TDD Class Detail Tab Localization, Date Formatting & Caller Migration](./phase-01-start.md) | Completed |
 
 ## Success Criteria
 
-- [ ] `apps/web/src/routes/_auth/classes/$classId.tsx` renders tab label `"Buổi học & luyện tập"` (with `id: "sessions-practice"`) and stat card subtitle `sub={cls.startDate.trim() ? \`Từ ${fmtDue(cls.startDate)}\` : undefined}`.
-- [ ] Unit tests in `apps/web/src/routes/_auth/classes/$classId.test.tsx` and `apps/web/src/routes/_auth/classes/$classId.sessions.test.tsx` assert the 5 Vietnamese tab labels `["Buổi học & luyện tập", "Học viên", "Giáo trình", "Từ vựng", "Ghi chú"]`, verify that ISO `startDate: "2026-11-03"` renders `"Từ 03/11/2026"` (not `"Từ 2026-11-03"`), legacy `"01/08"` renders `"Từ 01/08"`, empty `""` omits `"Từ"`, and `?tab=assignments` selects `"Buổi học & luyện tập"`.
-- [ ] Zero occurrences of `"Sessions & practice"` remain in `apps/`, `packages/`, `scripts/`, `DESIGN.md`, or `.cursor/` (`! grep -rn "Sessions & practice" apps packages scripts DESIGN.md .cursor`).
-- [ ] `pnpm check-types`, `pnpm exec biome check .`, `pnpm --filter web test`, and Playwright E2E specs (`projected-sessions.spec.ts`, `class-assign.spec.ts`, `class-operations.spec.ts`) pass with 0 errors, including 3-viewport (`1440×900`, `768×1024`, `375×812`) overflow checks and keyboard focus verification.
+- [x] `apps/web/src/routes/_auth/classes/$classId.tsx` renders tab label `"Buổi học & luyện tập"` (with `id: "sessions-practice"`) and stat card subtitle `sub={cls.startDate.trim() ? \`Từ ${fmtDue(cls.startDate)}\` : undefined}`.
+- [x] Unit tests in `apps/web/src/routes/_auth/classes/$classId.test.tsx` and `apps/web/src/routes/_auth/classes/$classId.sessions.test.tsx` assert the 5 Vietnamese tab labels `["Buổi học & luyện tập", "Học viên", "Giáo trình", "Từ vựng", "Ghi chú"]`, verify that ISO `startDate: "2026-11-03"` renders `"Từ 03/11/2026"` (not `"Từ 2026-11-03"`), legacy `"01/08"` renders `"Từ 01/08"`, empty `""` omits `"Từ"`, and `?tab=assignments` selects `"Buổi học & luyện tập"`.
+- [x] Zero occurrences of `"Sessions & practice"` remain in `apps/`, `packages/`, `scripts/`, `DESIGN.md`, or `.cursor/` (`! grep -rn "Sessions & practice" apps packages scripts DESIGN.md .cursor`).
+- [x] `pnpm check-types`, `pnpm exec biome check .`, `pnpm --filter web test`, and Playwright E2E specs (`projected-sessions.spec.ts`, `class-assign.spec.ts`, `class-operations.spec.ts`) pass with 0 errors, including 3-viewport (`1440×900`, `768×1024`, `375×812`) overflow checks and keyboard focus verification.
 
 ## Red Team Review
 

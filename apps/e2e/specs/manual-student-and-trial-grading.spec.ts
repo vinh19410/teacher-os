@@ -84,11 +84,11 @@ test("manual student creation + instant activation unlocks invoice & assignment,
 		STUDENT_NAME,
 	);
 
-	// 7. Quay lại lớp → tab Sessions & practice → Giao bài tập cho học viên vừa kích hoạt
+	// 7. Quay lại lớp → tab Buổi học & luyện tập → Giao bài tập cho học viên vừa kích hoạt
 	await page.goto("/classes");
 	await page.getByText(CLASS_NAME).click();
 	await page
-		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
 	await page.getByRole("button", { name: "Giao bài tập" }).first().click();
 	await page.getByRole("button", { name: new RegExp(PROMPT_TITLE) }).click();

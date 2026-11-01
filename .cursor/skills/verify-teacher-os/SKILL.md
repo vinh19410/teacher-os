@@ -62,7 +62,7 @@ Stable handles used by this repo (do not invent CSS-class selectors):
 - Classes: sidebar text `Lớp học` → `/classes`; button `+ Tạo lớp`; dialog `Tạo lớp mới`; label `Tên lớp *`; skill chip `Writing`; weekday chips `T2`/`T4`; submit `Tạo lớp`.
 - Tuition: sidebar `Doanh thu` → `/tuition`; `data-testid="create-invoice"`; dialog heading `Tạo hóa đơn`.
 - Schedule: sidebar `Lịch dạy` → `/schedule`.
-- Tabs on class detail: `role="tab"` names `Học viên`, `Sessions & practice`.
+- Tabs on class detail: `role="tab"` names `Học viên`, `Buổi học & luyện tập`.
 
 Timezone for browser contexts: `Asia/Ho_Chi_Minh` (matches `apps/e2e/playwright.config.ts`).
 

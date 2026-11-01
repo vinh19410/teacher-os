@@ -70,7 +70,7 @@ async function openClassDetail(page: Page): Promise<void> {
 	await page.getByText("Lớp học", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/classes$/);
 	await page.getByText(CLASS_NAME, { exact: true }).click();
-	// #391: tab mặc định là "Sessions & practice" — roster ở tab "Học viên".
+	// #391, #520: tab mặc định là "Buổi học & luyện tập" — roster ở tab "Học viên".
 	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 	await expect(rosterRow(page)).toBeVisible();
 }
@@ -154,7 +154,7 @@ test("class roster reflects the tuition-debt lifecycle of the class", async ({
 	await expect(rosterFee(page, "Đã thu")).toBeVisible();
 	await expect(rosterFee(page, "còn 800.000đ")).toBeHidden();
 	await page.reload();
-	// #391: reload đưa tab về mặc định "Sessions & practice" — roster phải
+	// #391, #520: reload đưa tab về mặc định "Buổi học & luyện tập" — roster phải
 	// mở lại tab "Học viên".
 	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
 	await expect(rosterFee(page, "Đã thu")).toBeVisible();

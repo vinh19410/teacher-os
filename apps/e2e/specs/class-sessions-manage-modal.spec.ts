@@ -108,7 +108,7 @@ test("manage modal reorders lessons and the schedule table follows (#221)", asyn
 
 	// Curriculum card is assignment-only: no progress, no expandable tree.
 	await page
-		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
 	await expect(page.getByRole("button", { name: /^Mở rộng \(/ })).toHaveCount(
 		0,

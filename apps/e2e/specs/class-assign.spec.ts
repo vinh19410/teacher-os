@@ -84,10 +84,11 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 	// Initial stats: chưa có bài nào → "bài chờ nộp" = 0, sub "Trên 0 bài đã giao".
 	await expect(page.getByText("bài chờ nộp")).toBeVisible();
 	await expect(page.getByText("Trên 0 bài đã giao")).toBeVisible();
+	await expect(page.getByText(/^Từ \d{2}\/\d{2}\/\d{4}$/)).toBeVisible();
 
-	// #391: tab gộp "Sessions & practice" chứa accordion bài đã giao.
+	// #391, #520: tab gộp "Buổi học & luyện tập" chứa accordion bài đã giao.
 	await page
-		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
 	await expect(page.getByText("Chưa giao bài nào cho lớp này.")).toBeVisible();
 
@@ -125,7 +126,7 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 	// 11. Full reload keeps the assignment (tab resets to roster, switch to Bài tập)
 	await page.reload();
 	await page
-		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
 	await expect(page.getByText(PROMPT_TITLE)).toBeVisible();
 	await expect(page.getByText("Đang mở").first()).toBeVisible();
@@ -141,7 +142,7 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 	await page.getByText(CLASS_NAME).click();
 	await expect(page).toHaveURL(/\/classes\/[a-zA-Z0-9_-]+$/);
 	await page
-		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
 	await page.getByRole("button", { name: "Giao thêm đề" }).click();
 
