@@ -120,7 +120,9 @@ test("lớp có lịch chưa có học viên → buổi dự kiến đúng tuầ
 	await enrollDialog.getByRole("option", { name: STUDENT_NAME }).click();
 	await enrollDialog.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(enrollDialog).toBeHidden();
-	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
+	await expect(
+		page.locator("tbody tr", { hasText: STUDENT_NAME }),
+	).toBeVisible();
 	await expect(page.getByText("Đã mời")).toBeVisible();
 
 	// Projection still shows "Dự kiến" because enrollment is invited

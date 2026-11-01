@@ -238,9 +238,16 @@ test("class detail → picker enroll học viên có sẵn → roster + KPI tăn
 	});
 	await dialog.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(dialog).toBeHidden();
+	await expect(
+		page
+			.locator("[data-sonner-toast]")
+			.filter({ hasText: `Đã thêm ${STUDENT_NAME} vào lớp` }),
+	).toBeVisible();
 
 	// 6. Roster shows the student with badge "Đã mời"; KPI active count is 0 (with 1 chờ xác nhận).
-	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
+	await expect(
+		page.locator("tbody tr", { hasText: STUDENT_NAME }),
+	).toBeVisible();
 	await expect(page.getByText("Đã mời")).toBeVisible();
 	await expect(page.getByText("chờ xác nhận")).toBeVisible();
 

@@ -1,5 +1,6 @@
 import { Check } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
@@ -41,6 +42,7 @@ export function EnrollStudentModal({
 	const [emailError, setEmailError] = useState<string | undefined>();
 	const { saving, error, notice, submitBlocked, run, reconcile, reset } =
 		useKernelFormSubmit();
+	const committedToastMessageRef = useRef<string | null>(null);
 
 	const eligibleStudents = (() => {
 		if (!classId) return [];
@@ -72,6 +74,7 @@ export function EnrollStudentModal({
 			setParentPhone("");
 			setNameError(undefined);
 			setEmailError(undefined);
+			committedToastMessageRef.current = null;
 			reset();
 		}
 		wasOpenRef.current = open;
@@ -90,6 +93,13 @@ export function EnrollStudentModal({
 
 		if (mode === "existing") {
 			if (!selectedStudentId) return;
+			const selectedStudentName = data.students
+				.find((s) => s.id === selectedStudentId)
+				?.name.trim();
+			const successMessage = selectedStudentName
+				? `Đã thêm ${selectedStudentName} vào lớp`
+				: "Đã thêm học viên vào lớp";
+			committedToastMessageRef.current = null;
 			const result = await run({
 				type: "enroll-student",
 				classId,
@@ -97,9 +107,12 @@ export function EnrollStudentModal({
 				activateNow,
 			});
 			if (result?.kind === "refreshed") {
+				toast.success(successMessage);
 				setSelectedStudentId("");
 				setFilter("");
 				onClose();
+			} else if (result?.kind === "committed") {
+				committedToastMessageRef.current = successMessage;
 			}
 			return;
 		}
@@ -121,6 +134,8 @@ export function EnrollStudentModal({
 		}
 		if (hasError) return;
 
+		const successMessage = `Đã thêm ${trimmedName} vào lớp`;
+		committedToastMessageRef.current = null;
 		const result = await run({
 			type: "add-student",
 			payload: {
@@ -134,19 +149,32 @@ export function EnrollStudentModal({
 			},
 		});
 		if (result?.kind === "refreshed") {
+			toast.success(successMessage);
 			setName("");
 			setPhone("");
 			setEmail("");
 			setParentName("");
 			setParentPhone("");
 			onClose();
+		} else if (result?.kind === "committed") {
+			committedToastMessageRef.current = successMessage;
 		}
 	}
 
 	async function reconcileAndFinish() {
+		const pendingToastMessage = committedToastMessageRef.current;
 		if (await reconcile()) {
+			committedToastMessageRef.current = null;
+			if (pendingToastMessage) {
+				toast.success(pendingToastMessage);
+			}
 			setSelectedStudentId("");
 			setFilter("");
+			setName("");
+			setPhone("");
+			setEmail("");
+			setParentName("");
+			setParentPhone("");
 			onClose();
 		}
 	}

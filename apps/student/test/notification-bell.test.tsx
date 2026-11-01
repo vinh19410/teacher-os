@@ -16,6 +16,8 @@ const acceptMutateMock = vi.fn(() =>
 );
 const rejectMutateMock = vi.fn(() => Promise.resolve({ ok: true }));
 const markReadMutateMock = vi.fn(() => Promise.resolve({ ok: true }));
+const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
+vi.mock("sonner", () => ({ toast }));
 
 let invitations: Array<Record<string, unknown>> = [];
 let inbox: { items: Array<Record<string, unknown>>; unread: number } = {
@@ -85,6 +87,8 @@ beforeEach(() => {
 	acceptMutateMock.mockClear();
 	rejectMutateMock.mockClear();
 	markReadMutateMock.mockClear();
+	toast.success.mockReset();
+	toast.error.mockReset();
 	invitations = [];
 	inbox = { items: [], unread: 0 };
 });
@@ -164,6 +168,35 @@ describe("NotificationBell — lời mời org (giữ nguyên v1)", () => {
 		expect(screen.getByText(/đã mời bạn tham gia tổ chức/)).toBeTruthy();
 		fireEvent.click(screen.getByRole("button", { name: /Chấp nhận/ }));
 		await waitFor(() => expect(acceptMutateMock).toHaveBeenCalledWith("inv-1"));
+		await waitFor(() => {
+			expect(toast.success).toHaveBeenCalledTimes(1);
+			expect(toast.success).toHaveBeenCalledWith("Đã tham gia Academy 1");
+		});
+	});
+
+	it("bấm Chấp nhận khi orgName trống hiển thị toast fallback 'Đã tham gia tổ chức' (#522)", async () => {
+		invitations = [{ ...invite, orgName: "   " }];
+		renderBell();
+		fireEvent.click(screen.getByRole("button", { name: /1 mục chưa xử lý/ }));
+
+		fireEvent.click(screen.getByRole("button", { name: /Chấp nhận/ }));
+		await waitFor(() => {
+			expect(acceptMutateMock).toHaveBeenCalledWith("inv-1");
+			expect(toast.success).toHaveBeenCalledTimes(1);
+			expect(toast.success).toHaveBeenCalledWith("Đã tham gia tổ chức");
+		});
+	});
+
+	it("không hiển thị toast xác nhận khi acceptMutation bị lỗi (#522)", async () => {
+		vi.spyOn(console, "error").mockImplementation(() => {});
+		acceptMutateMock.mockRejectedValueOnce(new Error("network failed"));
+		invitations = [invite];
+		renderBell();
+		fireEvent.click(screen.getByRole("button", { name: /1 mục chưa xử lý/ }));
+
+		fireEvent.click(screen.getByRole("button", { name: /Chấp nhận/ }));
+		await waitFor(() => expect(acceptMutateMock).toHaveBeenCalledWith("inv-1"));
+		expect(toast.success).not.toHaveBeenCalled();
 	});
 
 	it("bấm Từ chối gọi reject mutation", async () => {

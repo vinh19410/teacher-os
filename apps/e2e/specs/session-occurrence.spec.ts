@@ -45,7 +45,9 @@ test("hủy buổi tương lai từ modal Điều chỉnh → persist sau reload
 	await enrollDialog1.getByRole("option", { name: STUDENT_NAME }).click();
 	await enrollDialog1.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(enrollDialog1).toBeHidden();
-	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
+	await expect(
+		page.locator("tbody tr", { hasText: STUDENT_NAME }),
+	).toBeVisible();
 	await page.getByRole("button", { name: "Kích hoạt" }).click();
 	const confirmModal1 = page
 		.getByRole("dialog")
@@ -112,7 +114,9 @@ test("edit topic trên occurrence k hiển thị đúng row k (ngay + sau reload
 	await enrollDialog2.getByRole("option", { name: "Phạm Topic E2E" }).click();
 	await enrollDialog2.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(enrollDialog2).toBeHidden();
-	await expect(page.getByText("Phạm Topic E2E")).toBeVisible();
+	await expect(
+		page.locator("tbody tr", { hasText: "Phạm Topic E2E" }),
+	).toBeVisible();
 	await page.getByRole("button", { name: "Kích hoạt" }).click();
 	const confirmModal2 = page
 		.getByRole("dialog")

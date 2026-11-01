@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Phase 1: TDD Confirmation Toasts in EnrollStudentModal and NotificationBell, E2E & Changelog"
-status: pending
+status: completed
 priority: P3
 effort: "1h"
 dependencies: []
@@ -50,9 +50,9 @@ Add `sonner` confirmation toasts (`Đã thêm <tên> vào lớp` in `EnrollStude
 
 ## Requirements
 
-- [ ] Write failing unit tests (TDD Red) in `apps/web/src/components/modals/enroll-student-modal.test.tsx` and `apps/student/test/notification-bell.test.tsx` for confirmation toasts, fallback copy, `committed` reconcile, and negative failure paths.
-- [ ] Implement confirmation toasts in `apps/web/src/components/modals/enroll-student-modal.tsx` and `apps/student/src/components/layout/notification-bell.tsx` (TDD Green).
-- [ ] Update E2E specs (`enroll-existing-student.spec.ts`, `manual-student-and-trial-grading.spec.ts`, `student-org-invitation-and-switcher.spec.ts`, plus post-enroll `tbody tr` roster scoping) and `CHANGELOG.md`, and pass all unit, typecheck, lint, and E2E gates.
+- [x] Write failing unit tests (TDD Red) in `apps/web/src/components/modals/enroll-student-modal.test.tsx` and `apps/student/test/notification-bell.test.tsx` for confirmation toasts, fallback copy, `committed` reconcile, and negative failure paths.
+- [x] Implement confirmation toasts in `apps/web/src/components/modals/enroll-student-modal.tsx` and `apps/student/src/components/layout/notification-bell.tsx` (TDD Green).
+- [x] Update E2E specs (`enroll-existing-student.spec.ts`, `manual-student-and-trial-grading.spec.ts`, `student-org-invitation-and-switcher.spec.ts`, plus post-enroll `tbody tr` roster scoping) and `CHANGELOG.md`, and pass all unit, typecheck, lint, and E2E gates.
 
 ## Tasks & Steps
 

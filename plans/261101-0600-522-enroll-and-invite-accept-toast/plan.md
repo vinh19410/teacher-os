@@ -1,7 +1,7 @@
 ---
 title: "Add Confirmation Toasts for Student Class Enrollment and Org Invitation Acceptance (#522)"
 description: "Display a confirmation toast ('Đã thêm <tên> vào lớp') when a teacher enrolls or creates a student in EnrollStudentModal, and display a confirmation toast ('Đã tham gia <tổ chức>') when a student accepts an organization invitation in NotificationBell."
-status: pending
+status: completed
 priority: P3
 effort: "1h"
 tags: [web, student, ux, toast, e2e, bugfix]
@@ -51,14 +51,14 @@ This plan is authored under the `--advice` handover contract and `--tdd` test-fi
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: TDD Confirmation Toasts in EnrollStudentModal and NotificationBell, E2E & Changelog](./phase-01-start.md) | Pending |
+| 1 | [Phase 1: TDD Confirmation Toasts in EnrollStudentModal and NotificationBell, E2E & Changelog](./phase-01-start.md) | Completed |
 
 ## Success Criteria
 
-- [ ] `apps/web/src/components/modals/enroll-student-modal.tsx` calls `toast.success(\`Đã thêm \${studentName} vào lớp\`)` (fallback `"Đã thêm học viên vào lớp"`) when `run(...)` resolves with `kind === "refreshed"` in both `"existing"` and `"create"` modes, calls `toast.success(pendingToastMessage)` when `reconcile()` resolves `true` in `reconcileAndFinish()` after a `committed` write, and never calls `toast.success` on `definite-failure`, un-reconciled `committed`/`unknown` outcomes, or `outcome-unknown` reconcile.
-- [ ] `apps/student/src/components/layout/notification-bell.tsx` guards `if (processingId !== null) return;`, captures `inv.orgName` before `await acceptMutation.mutateAsync(id)`, and calls `toast.success(orgName ? \`Đã tham gia \${orgName}\` : "Đã tham gia tổ chức")` only when `acceptMutation.mutateAsync(id)` resolves.
-- [ ] Unit tests in `apps/web/src/components/modals/enroll-student-modal.test.tsx` and `apps/student/test/notification-bell.test.tsx` pass and cover positive, fallback, `committed` reconcile, and negative (rejection / un-reconciled / `outcome-unknown`) cases in isolated `it(...)` blocks.
-- [ ] Playwright E2E specs `apps/e2e/specs/enroll-existing-student.spec.ts`, `apps/e2e/specs/manual-student-and-trial-grading.spec.ts`, and `apps/e2e/specs/student-org-invitation-and-switcher.spec.ts` assert the rendered confirmation toasts (`Đã thêm ${STUDENT_NAME} vào lớp` and `Đã tham gia Teacher Alpha`) and pass alongside scoped `tbody tr` roster checks, and `CHANGELOG.md` is updated under `## 2026-11-01` → `### Fixed`.
+- [x] `apps/web/src/components/modals/enroll-student-modal.tsx` calls `toast.success(\`Đã thêm \${studentName} vào lớp\`)` (fallback `"Đã thêm học viên vào lớp"`) when `run(...)` resolves with `kind === "refreshed"` in both `"existing"` and `"create"` modes, calls `toast.success(pendingToastMessage)` when `reconcile()` resolves `true` in `reconcileAndFinish()` after a `committed` write, and never calls `toast.success` on `definite-failure`, un-reconciled `committed`/`unknown` outcomes, or `outcome-unknown` reconcile.
+- [x] `apps/student/src/components/layout/notification-bell.tsx` guards `if (processingId !== null) return;`, captures `inv.orgName` before `await acceptMutation.mutateAsync(id)`, and calls `toast.success(orgName ? \`Đã tham gia \${orgName}\` : "Đã tham gia tổ chức")` only when `acceptMutation.mutateAsync(id)` resolves.
+- [x] Unit tests in `apps/web/src/components/modals/enroll-student-modal.test.tsx` and `apps/student/test/notification-bell.test.tsx` pass and cover positive, fallback, `committed` reconcile, and negative (rejection / un-reconciled / `outcome-unknown`) cases in isolated `it(...)` blocks.
+- [x] Playwright E2E specs `apps/e2e/specs/enroll-existing-student.spec.ts`, `apps/e2e/specs/manual-student-and-trial-grading.spec.ts`, and `apps/e2e/specs/student-org-invitation-and-switcher.spec.ts` assert the rendered confirmation toasts (`Đã thêm ${STUDENT_NAME} vào lớp` and `Đã tham gia Teacher Alpha`) and pass alongside scoped `tbody tr` roster checks, and `CHANGELOG.md` is updated under `## 2026-11-01` → `### Fixed`.
 
 ## Red Team Review
 
