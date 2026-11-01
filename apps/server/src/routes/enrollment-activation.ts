@@ -21,6 +21,7 @@ import { sessionPackage } from "@teacher-os/db/schema/session-package";
 import { and, eq, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import type { Db } from "../app";
+import { backfillStudyPackTargetsForStudent } from "../lib/study-pack-assign";
 import { isRollbackableConstraintError } from "./holidays";
 
 type GeneratorRow = Omit<typeof lesson.$inferInsert, "id" | "createdAt">;
@@ -297,6 +298,12 @@ export async function activateEnrollment(
 		return { ok: false, error: "enrollment" };
 	}
 	if (existingEnrollment.status === "active") {
+		await backfillStudyPackTargetsForStudent(
+			db,
+			orgId,
+			existingEnrollment.classId,
+			existingEnrollment.studentId,
+		);
 		return { ok: true };
 	}
 
@@ -340,6 +347,12 @@ export async function activateEnrollment(
 	if (updated.length === 0) {
 		// Đã bị kích hoạt bởi request đồng thời khác
 		if (await isAlreadyActive()) {
+			await backfillStudyPackTargetsForStudent(
+				db,
+				orgId,
+				existingEnrollment.classId,
+				existingEnrollment.studentId,
+			);
 			return { ok: true };
 		}
 		return { ok: false, error: "enrollment" };
@@ -545,6 +558,12 @@ export async function activateEnrollment(
 		}
 		try {
 			await db.batch(statements);
+			await backfillStudyPackTargetsForStudent(
+				db,
+				orgId,
+				existingEnrollment.classId,
+				existingEnrollment.studentId,
+			);
 			return { ok: true };
 		} catch (err: unknown) {
 			if (attempt >= 3 || !isRollbackableConstraintError(err)) {

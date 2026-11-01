@@ -1243,3 +1243,237 @@ describe("groups corrupt guard (#425)", () => {
 		expect(statusAfter?.status).toBe("draft");
 	});
 });
+
+describe("admin library exercises & study packs (#533)", () => {
+	let app: ServerApp;
+	let db: Db;
+
+	beforeAll(async () => {
+		const client = createClient({ url: "file::memory:" });
+		const libsql = drizzle(client, { schema });
+		await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
+		db = libsql as unknown as Db;
+
+		app = buildApp({
+			getDb: () => db,
+			authHandler: () => new Response(null, { status: 404 }),
+			corsOrigin: [TEACHER_ORIGIN],
+			getSessionUser: async (headers) => {
+				const key = headers.get("x-test-user");
+				return key ? (SESSIONS[key] ?? null) : null;
+			},
+			adminEmails: ADMIN_EMAILS,
+			adminOrigins: [ADMIN_ORIGIN],
+		});
+	});
+
+	test("CRUD /api/admin/library/exercises và /api/admin/library/packs", async () => {
+		const postExercise = makeRequest(
+			app,
+			"POST",
+			"/api/admin/library/exercises",
+		);
+		const denied = await postExercise({
+			user: "teacher",
+			body: {
+				skill: "grammar",
+				part: "g1",
+				type: "mcq",
+				title: "Grammar 1",
+				questions: [
+					{
+						stem: "He ____ a teacher.",
+						opts: ["is", "are", "am", "be"],
+						answer: "A",
+						alts: "",
+					},
+				],
+				status: "ready",
+			},
+		});
+		expect(denied.status).toBe(403);
+
+		const createdExRes = await postExercise({
+			user: "admin",
+			body: {
+				skill: "grammar",
+				part: "g1",
+				type: "mcq",
+				title: "Grammar Exercise 1",
+				band: "6.5",
+				intro: "<p>Choose the correct answer.</p>",
+				questions: [
+					{
+						stem: "He ____ a teacher.",
+						opts: ["is", "are", "am", "be"],
+						answer: "A",
+						alts: "",
+					},
+				],
+				status: "ready",
+			},
+		});
+		expect(createdExRes.status).toBe(201);
+		const { exercise } = (await createdExRes.json()) as {
+			exercise: { id: string; title: string; skill: string; status: string };
+		};
+		expect(exercise.title).toBe("Grammar Exercise 1");
+		expect(exercise.skill).toBe("grammar");
+		expect(exercise.status).toBe("ready");
+
+		const getExercises = makeRequest(
+			app,
+			"GET",
+			"/api/admin/library/exercises?skill=grammar&status=ready",
+		);
+		const listExRes = await getExercises({ user: "admin" });
+		expect(listExRes.status).toBe(200);
+		const listExData = (await listExRes.json()) as {
+			exercises: Array<{ id: string }>;
+		};
+		expect(listExData.exercises).toHaveLength(1);
+		expect(listExData.exercises[0]?.id).toBe(exercise.id);
+
+		const putExercise = makeRequest(
+			app,
+			"PUT",
+			`/api/admin/library/exercises/${exercise.id}`,
+		);
+		const updatedExRes = await putExercise({
+			user: "admin",
+			body: {
+				skill: "grammar",
+				part: "g1",
+				type: "mcq",
+				title: "Grammar Exercise 1 Updated",
+				band: "7.0",
+				intro: "<p>Choose the best answer.</p>",
+				questions: [
+					{
+						stem: "He ____ a doctor.",
+						opts: ["is", "are", "am", "be"],
+						answer: "A",
+						alts: "",
+					},
+				],
+				status: "ready",
+			},
+		});
+		expect(updatedExRes.status).toBe(200);
+		const updatedExData = (await updatedExRes.json()) as {
+			exercise: { title: string; band: string };
+		};
+		expect(updatedExData.exercise.title).toBe("Grammar Exercise 1 Updated");
+		expect(updatedExData.exercise.band).toBe("7.0");
+
+		const postPack = makeRequest(app, "POST", "/api/admin/library/packs");
+		const forbiddenOrgPromptRes = await postPack({
+			user: "admin",
+			body: {
+				title: "Bad System Pack",
+				status: "ready",
+				items: [
+					{
+						dayIndex: 1,
+						sourceKind: "org_prompt",
+						sourceId: "some-org-prompt",
+					},
+				],
+			},
+		});
+		expect(forbiddenOrgPromptRes.status).toBe(422);
+
+		const createdPackRes = await postPack({
+			user: "admin",
+			body: {
+				title: "System Grammar Pack",
+				description: "7-day system pack",
+				status: "ready",
+				items: [
+					{
+						dayIndex: 1,
+						sourceKind: "library_exercise",
+						sourceId: exercise.id,
+						note: "Day 1 note",
+					},
+				],
+			},
+		});
+		expect(createdPackRes.status).toBe(201);
+		const { pack } = (await createdPackRes.json()) as {
+			pack: {
+				id: string;
+				scope: string;
+				orgId: string | null;
+				dayCount: number;
+				itemCount: number;
+				items: Array<{ title: string; skill: string }>;
+			};
+		};
+		expect(pack.scope).toBe("system");
+		expect(pack.orgId).toBeNull();
+		expect(pack.dayCount).toBe(1);
+		expect(pack.itemCount).toBe(1);
+		expect(pack.items[0]?.title).toBe("Grammar Exercise 1 Updated");
+		expect(pack.items[0]?.skill).toBe("grammar");
+
+		const getPacks = makeRequest(app, "GET", "/api/admin/library/packs");
+		const listPackRes = await getPacks({ user: "admin" });
+		expect(listPackRes.status).toBe(200);
+		const listPackData = (await listPackRes.json()) as {
+			packs: Array<{ id: string }>;
+		};
+		expect(listPackData.packs.map((p) => p.id)).toContain(pack.id);
+
+		const getPackDetail = makeRequest(
+			app,
+			"GET",
+			`/api/admin/library/packs/${pack.id}`,
+		);
+		const detailRes = await getPackDetail({ user: "admin" });
+		expect(detailRes.status).toBe(200);
+
+		const putPack = makeRequest(
+			app,
+			"PUT",
+			`/api/admin/library/packs/${pack.id}`,
+		);
+		const updatedPackRes = await putPack({
+			user: "admin",
+			body: {
+				title: "System Grammar Pack v2",
+				description: "Updated description",
+				status: "ready",
+				items: [
+					{
+						dayIndex: 1,
+						sourceKind: "library_exercise",
+						sourceId: exercise.id,
+						note: "Updated note",
+					},
+				],
+			},
+		});
+		expect(updatedPackRes.status).toBe(200);
+		const updatedPackData = (await updatedPackRes.json()) as {
+			pack: { title: string };
+		};
+		expect(updatedPackData.pack.title).toBe("System Grammar Pack v2");
+
+		const delPack = makeRequest(
+			app,
+			"DELETE",
+			`/api/admin/library/packs/${pack.id}`,
+		);
+		const delPackRes = await delPack({ user: "admin" });
+		expect(delPackRes.status).toBe(200);
+
+		const delEx = makeRequest(
+			app,
+			"DELETE",
+			`/api/admin/library/exercises/${exercise.id}`,
+		);
+		const delExRes = await delEx({ user: "admin" });
+		expect(delExRes.status).toBe(200);
+	});
+});

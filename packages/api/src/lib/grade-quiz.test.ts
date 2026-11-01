@@ -1,5 +1,9 @@
 import { describe, expect, test } from "vitest";
-import type { AssignmentQuestion } from "../contracts";
+import {
+	type AssignmentQuestion,
+	assignmentPromptCreateSchema,
+	assignmentTestCreateSchema,
+} from "../contracts";
 import { gradeQuiz, isAcceptedAnswer } from "./grade-quiz";
 
 const question = (
@@ -142,5 +146,118 @@ describe("isAcceptedAnswer — rule so khớp dùng chung grader/UI (#351)", () 
 		expect(isAcceptedAnswer("a", "a/b", "")).toBe(false);
 		// Alt rỗng (separator thừa) bị drop — value rỗng không khớp được.
 		expect(isAcceptedAnswer("", "Paris", " / ")).toBe(false);
+	});
+});
+
+describe("gradeQuiz & contracts — Grammar & Vocabulary (#533)", () => {
+	test("chấm đúng câu mcq, gap, transform (grammar g1) và match (vocabulary v1)", () => {
+		const questions: AssignmentQuestion[] = [
+			question({
+				type: "mcq",
+				stem: "She ____ to school every day.",
+				opts: ["go", "goes", "going", "gone"],
+				answer: "B",
+			}),
+			question({
+				type: "gap",
+				stem: "If I ____ you, I would study harder.",
+				answer: "were",
+				alts: "was",
+			}),
+			question({
+				type: "transform",
+				stem: "It is a pity I did not meet her. (WISH)",
+				answer: "I wish I had met her",
+				alts: "I wish I'd met her",
+			}),
+			question({
+				type: "match",
+				stem: "Ubiquitous",
+				answer: "C",
+			}),
+		];
+
+		const graded = gradeQuiz(questions, {
+			"0": "b",
+			"1": "  WAS ",
+			"2": "i wish   i had met her",
+			"3": "C",
+		});
+		expect(graded.correctCount).toBe(4);
+		expect(graded.verdicts).toEqual([
+			"correct",
+			"correct",
+			"correct",
+			"correct",
+		]);
+	});
+
+	test("contract nhận đề grammar/vocabulary không cần passage, kiểm tra gap có 1 blank và chặn assignment_test", () => {
+		const baseGrammar = {
+			skill: "grammar" as const,
+			part: "g1",
+			type: "gap",
+			title: "Conditional sentences",
+			band: "7.0" as const,
+			source: "",
+			prompt: "",
+			passage: "",
+			intro: "",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			imageUrl: "",
+			optionBank: [],
+			note: "",
+			status: "ready" as const,
+		};
+
+		const validGap = assignmentPromptCreateSchema.safeParse({
+			...baseGrammar,
+			questions: [
+				{
+					stem: "If I ____ rich, I would travel.",
+					opts: null,
+					answer: "were",
+					alts: "was",
+				},
+			],
+		});
+		expect(validGap.success).toBe(true);
+
+		const invalidGapNoBlank = assignmentPromptCreateSchema.safeParse({
+			...baseGrammar,
+			questions: [
+				{
+					stem: "If I were rich, I would travel.",
+					opts: null,
+					answer: "were",
+					alts: "",
+				},
+			],
+		});
+		expect(invalidGapNoBlank.success).toBe(false);
+
+		const validTransformNoBlank = assignmentPromptCreateSchema.safeParse({
+			...baseGrammar,
+			type: "transform",
+			questions: [
+				{
+					stem: "Rewrite: I last saw him in May.",
+					opts: null,
+					answer: "I have not seen him since May",
+					alts: "",
+				},
+			],
+		});
+		expect(validTransformNoBlank.success).toBe(true);
+
+		const invalidTestSkill = assignmentTestCreateSchema.safeParse({
+			title: "Grammar Full Test",
+			skill: "grammar",
+			timeLimitSeconds: 1800,
+		});
+		expect(invalidTestSkill.success).toBe(false);
 	});
 });

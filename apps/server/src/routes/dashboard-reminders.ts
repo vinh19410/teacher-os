@@ -28,6 +28,7 @@ import {
 } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import type { Db, KernelCtx } from "../app";
+import { visibleAssignmentFilter } from "../lib/assignment-visibility";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type DashboardContext = Context<Env>;
@@ -179,6 +180,7 @@ export async function computeReminders(
 					inArray(assignmentPrompt.skill, ["writing", "speaking"]),
 					isNull(quizAttempt.gradeScores),
 					lt(quizAttempt.submittedAt, overdueCutoff),
+					visibleAssignmentFilter(now),
 					scope.kind === "assigned"
 						? inArray(classAssignment.classId, scope.classIds)
 						: undefined,

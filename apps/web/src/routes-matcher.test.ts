@@ -28,6 +28,7 @@ describe("routes-matcher", () => {
 			"/assignments",
 			"/assignments/new",
 			"/assignments/preview",
+			"/assignments/packs",
 			"/assignments/tests/new",
 			"/assignments/tests/preview",
 			"/grading",

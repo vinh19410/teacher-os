@@ -304,6 +304,9 @@ describe("QUIZ_TYPE_DISPLAY — shared display metadata", () => {
 			...Object.keys(answerKindByType),
 			...ASSIGNMENT_OPTION_BANK_TYPES.reading,
 			...ASSIGNMENT_OPTION_BANK_TYPES.listening,
+			...ASSIGNMENT_OPTION_BANK_TYPES.vocabulary,
+			"gap",
+			"transform",
 		];
 		for (const type of knownTypes) {
 			expect(QUIZ_TYPE_DISPLAY[type], type).toBeDefined();
@@ -444,5 +447,111 @@ describe("assignmentPromptUpdateSchema — answer choice theo type từng câu (
 			],
 		});
 		expect(result.success).toBe(false);
+	});
+});
+
+describe("assignmentPromptCreateSchema — grammar & vocabulary (#533)", () => {
+	const baseAuto = {
+		band: "7.0",
+		source: "",
+		prompt: "",
+		passage: "",
+		intro: "",
+		transcript: "",
+		cueTopic: "",
+		cuePoints: "",
+		audioName: "",
+		imageUrl: "",
+		optionBank: [],
+		note: "",
+	} as const;
+
+	it("cho phép đề grammar ready với passage rỗng và câu transform không có ____", () => {
+		const result = assignmentPromptCreateSchema.safeParse({
+			...baseAuto,
+			skill: "grammar",
+			part: "g1",
+			type: "transform",
+			title: "Grammar Transform",
+			status: "ready",
+			questions: [
+				{
+					stem: "She started learning English 3 years ago.",
+					opts: null,
+					answer: "She has been learning English for 3 years",
+					alts: "",
+				},
+			],
+		});
+		expect(result.success).toBe(true);
+	});
+
+	it("từ chối câu gap ở trạng thái ready khi không có đúng 1 chỗ trống ____", () => {
+		const result = assignmentPromptCreateSchema.safeParse({
+			...baseAuto,
+			skill: "grammar",
+			part: "g1",
+			type: "gap",
+			title: "Grammar Gap",
+			status: "ready",
+			questions: [
+				{
+					stem: "She goes to school every day.",
+					opts: null,
+					answer: "goes",
+					alts: "",
+				},
+			],
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("yêu cầu optionBank hợp lệ cho vocabulary match khi ready", () => {
+		const badBank = assignmentPromptCreateSchema.safeParse({
+			...baseAuto,
+			skill: "vocabulary",
+			part: "v1",
+			type: "match",
+			title: "Vocab Match",
+			status: "ready",
+			optionBank: ["Only one"],
+			questions: [
+				{ stem: "Word 1", opts: null, answer: "A", alts: "" },
+				{ stem: "Word 2", opts: null, answer: "B", alts: "" },
+			],
+		});
+		expect(badBank.success).toBe(false);
+
+		const goodBank = assignmentPromptCreateSchema.safeParse({
+			...baseAuto,
+			skill: "vocabulary",
+			part: "v1",
+			type: "match",
+			title: "Vocab Match",
+			status: "ready",
+			optionBank: ["Definition A", "Definition B", "Definition C"],
+			questions: [
+				{ stem: "Word 1", opts: null, answer: "A", alts: "" },
+				{ stem: "Word 2", opts: null, answer: "C", alts: "" },
+			],
+		});
+		expect(goodBank.success).toBe(true);
+	});
+
+	it("chặn tạo assignment_test với skill grammar hoặc vocabulary", () => {
+		expect(
+			assignmentTestCreateSchema.safeParse({
+				title: "Grammar Test",
+				skill: "grammar",
+				timeLimitSeconds: 1200,
+			}).success,
+		).toBe(false);
+		expect(
+			assignmentTestCreateSchema.safeParse({
+				title: "Vocabulary Test",
+				skill: "vocabulary",
+				timeLimitSeconds: 1200,
+			}).success,
+		).toBe(false);
 	});
 });

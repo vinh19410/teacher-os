@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import {
+	isAutoSkill,
 	partOf,
 	type QuestionItem,
 	skillOf,
@@ -33,7 +34,7 @@ export function CreateSuccessCard({
 	const skillPreset = skillOf(skill);
 	const partPreset = partOf(skill, part);
 	const typePreset = typeOf(skill, part, type);
-	const auto = skill === "reading" || skill === "listening";
+	const auto = isAutoSkill(skill);
 	const locked = questions.filter((item) => item.answer.trim()).length;
 	return (
 		// rounded-md bg-muted có border:0 nên card viền trái dùng nền sunk trực tiếp

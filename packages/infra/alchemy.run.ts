@@ -185,7 +185,6 @@ export const server = Cloudflare.Worker("server", {
 	compatibility: {
 		flags: ["nodejs_compat"],
 	},
-	crons: ["*/5 * * * *"],
 	...(topology && { domain: topology.apiHost, workersDev: false }),
 	env: {
 		DB: db,

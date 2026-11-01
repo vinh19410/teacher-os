@@ -12,7 +12,7 @@ import type {
 	OccurrenceEditPayload,
 } from "@/components/class-detail/session-actions-modal";
 import { ClassAssignmentsTab } from "@/components/classes/class-assignments-tab";
-import { SelfStudyPlanSection } from "@/components/classes/self-study-plan-section";
+import { ClassStudyPackSection } from "@/components/classes/class-study-pack-section";
 import { EditClassFeeModal } from "@/components/modals/edit-class-fee-modal";
 import { EnrollStudentModal } from "@/components/modals/enroll-student-modal";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -156,12 +156,12 @@ function ClassDetailRoute() {
 	const assignmentsFocus = search.tab === "assignments";
 	const [tab, setTab] = useState<string>(activeTab);
 	const [manageOpen, setManageOpen] = useState(false);
+	const [practiceMode, setPracticeMode] = useState<"sessions" | "study-pack">(
+		"sessions",
+	);
 	const [assignmentsView, setAssignmentsView] = useState<
 		"list" | "assign" | "success"
 	>("list");
-	const [practiceMode, setPracticeMode] = useState<"manual" | "self-study">(
-		"manual",
-	);
 	const [addStudentOpen, setAddStudentOpen] = useState(false);
 	const [feeModalOpen, setFeeModalOpen] = useState(false);
 	const [notes, setNotes] = useState<string | null>(null);
@@ -169,6 +169,7 @@ function ClassDetailRoute() {
 		setTab(nextTab);
 		if (nextTab !== "sessions-practice") {
 			setAssignmentsView("list");
+			setPracticeMode("sessions");
 		}
 	};
 	const sy = useClassCurriculum(classId);
@@ -230,6 +231,7 @@ function ClassDetailRoute() {
 								size="sm"
 								onClick={() => {
 									setTab("sessions-practice");
+									setPracticeMode("sessions");
 									setAssignmentsView("assign");
 								}}
 							>
@@ -291,76 +293,81 @@ function ClassDetailRoute() {
 			/>
 
 			{tab === "vocab" && <VocabDeckList classId={classId} />}
-			{tab === "sessions-practice" &&
-				(assignmentsView !== "list" ? (
-					<ClassAssignmentsTab
-						key={classId}
-						classGroup={cls}
-						view={assignmentsView}
-						onViewChange={setAssignmentsView}
-					/>
-				) : (
-					<div className="grid gap-6 xl:grid-cols-2 xl:items-start">
-						<ClassSessionsSection
-							cls={cls}
-							lessons={data.lessons.filter((l) => l.classId === classId)}
-							legacyLessons={classLessons}
-							syllabus={sy}
-							studentById={studentById}
-							run={run}
-							onComplete={handleCompleteOccurrence}
-							onCancelOccurrence={handleCancelOccurrence}
-							onSaveEdit={handleSaveOccurrenceEdit}
-							isPending={isPending}
-							busy={busy}
-						/>
-						<div className="space-y-4">
-							<fieldset
-								aria-label="Chế độ giao bài"
-								className="inline-flex rounded-md border border-border bg-background p-1"
-							>
-								<button
-									type="button"
-									aria-pressed={practiceMode === "manual"}
-									onClick={() => setPracticeMode("manual")}
-									className={cn(
-										"rounded px-3 py-1 font-medium text-xs transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
-										practiceMode === "manual"
-											? "bg-muted text-foreground"
-											: "text-muted-foreground hover:text-foreground",
-									)}
-								>
-									Bài giao tay
-								</button>
-								<button
-									type="button"
-									aria-pressed={practiceMode === "self-study"}
-									data-testid="practice-mode-self-study"
-									onClick={() => setPracticeMode("self-study")}
-									className={cn(
-										"rounded px-3 py-1 font-medium text-xs transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
-										practiceMode === "self-study"
-											? "bg-muted text-foreground"
-											: "text-muted-foreground hover:text-foreground",
-									)}
-								>
-									Kế hoạch tự học
-								</button>
-							</fieldset>
-							{practiceMode === "manual" ? (
-								<ClassAssignmentsTab
-									key={`assign-${classId}`}
-									classGroup={cls}
-									view="list"
-									onViewChange={setAssignmentsView}
-									assignmentsFocus={assignmentsFocus}
-								/>
-							) : (
-								<SelfStudyPlanSection key={`ssp-${classId}`} classId={cls.id} />
+			{tab === "sessions-practice" && (
+				<div className="space-y-4">
+					<fieldset
+						aria-label="Chế độ luyện tập"
+						className="inline-flex rounded-md bg-muted p-1"
+					>
+						<button
+							type="button"
+							aria-pressed={practiceMode === "sessions"}
+							onClick={() => setPracticeMode("sessions")}
+							className={cn(
+								"rounded-sm px-3 py-1.5 font-medium text-sm transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+								practiceMode === "sessions"
+									? "bg-background text-foreground shadow-sm"
+									: "text-muted-foreground hover:text-foreground",
 							)}
+						>
+							{"Buổi học & bài giao"}
+						</button>
+						<button
+							type="button"
+							aria-pressed={practiceMode === "study-pack"}
+							onClick={() => {
+								setAssignmentsView("list");
+								setPracticeMode("study-pack");
+							}}
+							className={cn(
+								"rounded-sm px-3 py-1.5 font-medium text-sm transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+								practiceMode === "study-pack"
+									? "bg-background text-foreground shadow-sm"
+									: "text-muted-foreground hover:text-foreground",
+							)}
+						>
+							Bộ đề tự học
+						</button>
+					</fieldset>
+
+					{practiceMode === "study-pack" ? (
+						<ClassStudyPackSection
+							key={`study-pack-${cls.id}`}
+							classId={cls.id}
+						/>
+					) : assignmentsView !== "list" ? (
+						<ClassAssignmentsTab
+							key={classId}
+							classGroup={cls}
+							view={assignmentsView}
+							onViewChange={setAssignmentsView}
+						/>
+					) : (
+						<div className="grid gap-6 xl:grid-cols-2 xl:items-start">
+							<ClassSessionsSection
+								cls={cls}
+								lessons={data.lessons.filter((l) => l.classId === classId)}
+								legacyLessons={classLessons}
+								syllabus={sy}
+								studentById={studentById}
+								run={run}
+								onComplete={handleCompleteOccurrence}
+								onCancelOccurrence={handleCancelOccurrence}
+								onSaveEdit={handleSaveOccurrenceEdit}
+								isPending={isPending}
+								busy={busy}
+							/>
+							<ClassAssignmentsTab
+								key={`assign-${classId}`}
+								classGroup={cls}
+								view="list"
+								onViewChange={setAssignmentsView}
+								assignmentsFocus={assignmentsFocus}
+							/>
 						</div>
-					</div>
-				))}
+					)}
+				</div>
+			)}
 
 			{tab === "roster" && (
 				<div className="space-y-4">

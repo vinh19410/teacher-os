@@ -59,6 +59,7 @@ import { bodyLimit } from "hono/body-limit";
 import type { Db } from "../app";
 import type { AiGrader } from "../lib/ai-grading/grader";
 import { scheduleAiGrading } from "../lib/ai-grading/run-grading";
+import { visibleAssignmentFilter } from "../lib/assignment-visibility";
 import { mediaObjectResponse, toQuizAttemptMedia } from "../lib/media-response";
 import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
 import {
@@ -832,6 +833,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				status: quizAttempt.status,
 				mode: quizAttempt.mode,
 				testId: quizAttempt.testId,
+				assignmentId: classAssignment.id,
+				availableAt: classAssignment.availableAt,
 				skill: assignmentPrompt.skill,
 				testSkill: assignmentTest.skill,
 				mediaKey: quizAttempt.mediaKey,
@@ -868,6 +871,12 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			// Đề gốc bị xoá (test_id set null) → skill rỗng: caller gate speaking
 			// theo skill nên attempt rơi về luồng tự chấm an toàn.
 			return { ...row, skill: row.testSkill ?? "" };
+		}
+		if (
+			!row.assignmentId ||
+			(row.availableAt !== null && row.availableAt.getTime() > Date.now())
+		) {
+			return undefined;
 		}
 		return row;
 	};
@@ -1188,6 +1197,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				and(
 					eq(classAssignment.id, assignmentId),
 					eq(classAssignment.orgId, orgId),
+					visibleAssignmentFilter(new Date()),
 				),
 			);
 		if (!row) {
@@ -1307,6 +1317,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				and(
 					eq(classAssignment.id, assignmentId),
 					eq(classAssignment.orgId, orgId),
+					visibleAssignmentFilter(new Date()),
 				),
 			);
 		if (!target) {
@@ -1396,6 +1407,10 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			eq(quizAttempt.orgId, orgId),
 			eq(quizAttempt.studentId, s.id),
 		);
+		const ownedHeader = await loadOwnedAttemptWithSkill(attemptId, s.id, orgId);
+		if (!ownedHeader) {
+			return c.json({ error: "attempt not found" }, 404);
+		}
 		const [attempt] = await db
 			.select({
 				status: quizAttempt.status,
@@ -1708,16 +1723,11 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		if (!store) {
 			return c.json({ error: "media storage unavailable" }, 503);
 		}
-		const [attempt] = await deps
-			.getDb()
-			.select({
-				mediaKey: quizAttempt.mediaKey,
-				mediaName: quizAttempt.mediaName,
-				mediaType: quizAttempt.mediaType,
-			})
-			.from(quizAttempt)
-			.where(ownedAttempt(attemptId, s.id, orgId));
-		if (!attempt || attempt.mediaKey === null) {
+		const attempt = await loadOwnedAttemptWithSkill(attemptId, s.id, orgId);
+		if (!attempt) {
+			return c.json({ error: "attempt not found" }, 404);
+		}
+		if (attempt.mediaKey === null) {
 			return c.json({ error: "media not found" }, 404);
 		}
 		const object = await store.get(attempt.mediaKey);
@@ -1756,8 +1766,10 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		// trong câu UPDATE flip nên atomic với DELETE media song song. Attempt
 		// không tồn tại → skill undefined → giữ luồng cũ (404 ở re-read).
 		const header = await loadOwnedAttemptWithSkill(attemptId, s.id, orgId);
-		const requiresMedia = header?.skill === "speaking";
-
+		if (!header) {
+			return c.json({ error: "attempt not found" }, 404);
+		}
+		const requiresMedia = header.skill === "speaking";
 		const flipped = await db
 			.update(quizAttempt)
 			.set({ status: "submitted", submittedAt: new Date() })
@@ -1888,11 +1900,6 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		);
 		const [attempt] = await db.select().from(quizAttempt).where(owner);
 		if (!attempt) return { error: 404 } as const;
-		if (attempt.status !== "submitted") return { error: 409 } as const;
-
-		const questions = parseQuizQuestions(attempt.questionsSnapshot, attempt.id);
-		const answers = parseQuizAnswers(attempt.answers);
-		const grade = gradeQuiz(questions, answers);
 		// Header đề: luồng assignment join class_assignment → prompt như cũ;
 		// luồng tự luyện (phase 10) lấy title/skill từ assignment_test và
 		// note/type/part từ prompt của part ĐẦU (position thấp nhất) — phần
@@ -1953,8 +1960,17 @@ export function studentRoutes(deps: StudentRouteDeps) {
 							// `?? ""` chỉ để thu hẹp kiểu.
 							eq(classAssignment.id, attempt.assignmentId ?? ""),
 							eq(classAssignment.orgId, orgId),
+							visibleAssignmentFilter(new Date()),
 						),
 					));
+		if (attempt.mode !== "practice" && header.length === 0) {
+			return { error: 404 } as const;
+		}
+		if (attempt.status !== "submitted") return { error: 409 } as const;
+
+		const questions = parseQuizQuestions(attempt.questionsSnapshot, attempt.id);
+		const answers = parseQuizAnswers(attempt.answers);
+		const grade = gradeQuiz(questions, answers);
 		return {
 			attempt,
 			questions,

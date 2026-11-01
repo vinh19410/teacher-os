@@ -77,8 +77,12 @@ function hasCoreContent(value: ComposerValue) {
 			!isEmptyRichText(value.passage) &&
 			value.items.some((item) => item.stem.trim())
 		);
-	if (value.skill === "listening")
-		return value.items.some((item) => item.stem.trim());
+	if (
+		value.skill === "listening" ||
+		value.skill === "grammar" ||
+		value.skill === "vocabulary"
+	)
+		return value.items.some((item) => item.stem.trim().length > 0);
 	return value.part === "part2"
 		? !!value.cueTopic.trim()
 		: !isEmptyRichText(value.prompt);
@@ -371,7 +375,13 @@ export function NewAssignmentRoute() {
 		const result = await submit.run({
 			type: "create-assignment-prompt",
 			payload: {
-				skill: value.skill as "writing" | "reading" | "listening" | "speaking",
+				skill: value.skill as
+					| "writing"
+					| "reading"
+					| "listening"
+					| "speaking"
+					| "grammar"
+					| "vocabulary",
 				part: value.part,
 				type: value.type,
 				title: value.title.trim(),

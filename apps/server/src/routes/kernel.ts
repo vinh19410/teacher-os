@@ -108,8 +108,8 @@ import { notificationLogRoutes } from "./notification-logs";
 import { paymentTransactionRoutes } from "./payment-transactions";
 import { placementTestRoutes } from "./placement-test";
 import { commentBankRoutes, notifRoutes, reportRoutes } from "./reporting";
-import { selfStudyPlanRoutes } from "./self-study-plan";
 import { loadInvoices, loadSnapshot } from "./snapshot";
+import { studyPackRoutes } from "./study-pack";
 import { syllabusRoutes } from "./syllabus";
 import { vocabLibraryRoutes } from "./vocab-library";
 import { vocabTeacherRoutes } from "./vocab-teacher";
@@ -766,7 +766,7 @@ export function kernelRoutes(deps: {
 				and(
 					eq(classAssignment.classId, classId),
 					eq(classAssignment.orgId, ctx.orgId),
-					isNull(classAssignment.planItemId),
+					isNull(classAssignment.classStudyPackId),
 				),
 			);
 		if (existing.length >= 200) {
@@ -2116,7 +2116,7 @@ export function kernelRoutes(deps: {
 	// Mounted after the Origin/content-type middleware above, so the
 	// sub-router's POSTs are CSRF-guarded exactly like the kernel writes.
 	kernel.route("/", syllabusRoutes(deps));
-	kernel.route("/", selfStudyPlanRoutes(deps));
+	kernel.route("/", studyPackRoutes(deps));
 	kernel.route("/assignments", assignmentRoutes(deps));
 	kernel.route("/reports", reportRoutes(deps));
 	kernel.route("/notifs", notifRoutes(deps));
