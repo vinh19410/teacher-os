@@ -133,13 +133,21 @@ function LibraryTestsRoute() {
 						Quản lý đề Reading / Listening dùng chung cho hệ thống.
 					</p>
 				</div>
-				<Link
-					to="/library/tests/new"
-					className={buttonVariants({ className: "gap-2" })}
-				>
-					<Plus aria-hidden="true" className="size-4" />
-					Tạo bộ đề
-				</Link>
+				<div className="flex flex-wrap items-center gap-2">
+					<Link
+						to="/library/packs"
+						className={buttonVariants({ variant: "outline" })}
+					>
+						Bộ đề tự học
+					</Link>
+					<Link
+						to="/library/tests/new"
+						className={buttonVariants({ className: "gap-2" })}
+					>
+						<Plus aria-hidden="true" className="size-4" />
+						Tạo bộ đề
+					</Link>
+				</div>
 			</div>
 
 			<div className="flex flex-col gap-3 rounded-lg border bg-card p-4">

@@ -330,6 +330,7 @@ export async function loadSnapshot(
 				and(
 					eq(assignmentPrompt.orgId, orgId),
 					notLike(assignmentPrompt.id, "demo-prompt:%"),
+					isNull(assignmentPrompt.libraryRef),
 				),
 			)
 			.orderBy(asc(assignmentPrompt.createdAt), asc(assignmentPrompt.id)),
@@ -435,7 +436,10 @@ export async function loadSnapshot(
 		.select()
 		.from(classAssignment)
 		.where(
-			and(eq(classAssignment.orgId, orgId), isNull(classAssignment.planItemId)),
+			and(
+				eq(classAssignment.orgId, orgId),
+				isNull(classAssignment.classStudyPackId),
+			),
 		)
 		.orderBy(desc(classAssignment.createdAt), desc(classAssignment.id));
 	const classAssignmentTargetRows = await db
@@ -452,7 +456,7 @@ export async function loadSnapshot(
 			and(
 				eq(classAssignment.id, classAssignmentTarget.assignmentId),
 				eq(classAssignment.orgId, orgId),
-				isNull(classAssignment.planItemId),
+				isNull(classAssignment.classStudyPackId),
 			),
 		)
 		.where(eq(classAssignmentTarget.orgId, orgId));
@@ -460,7 +464,7 @@ export async function loadSnapshot(
 	// cột nhẹ (không kéo essay/answers/snapshot đề). Phase 10 (#378): attempt
 	// `mode='practice'` không gắn target và không được lọt bảng điểm lớp —
 	// không lọc sẽ sinh key "null:<studentId>" rác trong attemptByTarget.
-	// #526: loại trừ bài tự học (`isNull(classAssignment.planItemId)`) ở tầng SQL.
+	// #533: loại trừ bài bộ đề tự học (`isNull(classAssignment.classStudyPackId)`) ở tầng SQL.
 	const submittedAttemptRows = await db
 		.select({
 			id: quizAttempt.id,
@@ -475,7 +479,7 @@ export async function loadSnapshot(
 			and(
 				eq(classAssignment.id, quizAttempt.assignmentId),
 				eq(classAssignment.orgId, orgId),
-				isNull(classAssignment.planItemId),
+				isNull(classAssignment.classStudyPackId),
 			),
 		)
 		.where(

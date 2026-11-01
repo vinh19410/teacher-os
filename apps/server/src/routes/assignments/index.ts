@@ -218,7 +218,9 @@ export function assignmentRoutes(deps: {
 		if (
 			body.data.questions?.length &&
 			row.skill !== "reading" &&
-			row.skill !== "listening"
+			row.skill !== "listening" &&
+			row.skill !== "grammar" &&
+			row.skill !== "vocabulary"
 		)
 			return c.json(
 				{ error: "questions only apply to reading or listening" },

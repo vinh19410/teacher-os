@@ -1,5 +1,11 @@
 import { sql } from "drizzle-orm";
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import {
+	index,
+	integer,
+	sqliteTable,
+	text,
+	uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 import { organization } from "./organization";
 
 /**
@@ -42,9 +48,16 @@ export const assignmentPrompt = sqliteTable(
 		optionBank: text("option_bank").notNull().default("[]"),
 		note: text("note").notNull().default(""),
 		status: text("status").notNull().default("draft"), // "draft" | "ready"
+		libraryRef: text("library_ref"),
 		createdAt: integer("created_at", { mode: "timestamp_ms" })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 			.notNull(),
 	},
-	(table) => [index("assignment_prompt_org_idx").on(table.orgId)],
+	(table) => [
+		index("assignment_prompt_org_idx").on(table.orgId),
+		uniqueIndex("assignment_prompt_org_library_ref_uq").on(
+			table.orgId,
+			table.libraryRef,
+		),
+	],
 );

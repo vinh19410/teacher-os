@@ -25,6 +25,7 @@ import {
 } from "@teacher-os/db/schema/index";
 import { and, asc, desc, eq, gte, isNotNull } from "drizzle-orm";
 import type { Db } from "../app";
+import { visibleAssignmentFilter } from "../lib/assignment-visibility";
 
 /** Cột lớp + enrollment mà overview và trang chi tiết lớp cùng select. */
 export const studentClassColumns = {
@@ -146,6 +147,7 @@ export async function loadClassAssignmentItems(
 	orgId: string,
 	studentId: string,
 	classId?: string,
+	now: Date = new Date(),
 ): Promise<StudentAssignment[]> {
 	const targetRows = await db
 		.select({
@@ -189,6 +191,7 @@ export async function loadClassAssignmentItems(
 			and(
 				eq(classAssignmentTarget.orgId, orgId),
 				eq(classAssignmentTarget.studentId, studentId),
+				visibleAssignmentFilter(now),
 				classId === undefined
 					? undefined
 					: eq(classAssignment.classId, classId),

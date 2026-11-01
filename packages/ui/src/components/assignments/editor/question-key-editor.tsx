@@ -110,7 +110,8 @@ export function QuestionKeyEditor({
 	// Phase-03: the 8 cloze completion types get the click-to-blank editor,
 	// tablecomp gets the grid editor; `shortans` keeps the phase-01 text rows
 	// (no content block — coordinator scope note).
-	const showClozeEditor = CLOZE_EDITOR_TYPES.has(typeId);
+	// `gap` (Grammar/Vocabulary) reuses the click-to-blank editor without being an IELTS completion type.
+	const showClozeEditor = CLOZE_EDITOR_TYPES.has(typeId) || typeId === "gap";
 	const showTableEditor = typeId === TABLECOMP_TYPE;
 	const [pasteOpen, setPasteOpen] = useState(false);
 	const [pasteRaw, setPasteRaw] = useState("");

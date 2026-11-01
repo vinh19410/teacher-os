@@ -65,6 +65,9 @@ export const KIND: Record<string, AnswerKind> = {
 	flow: "text",
 	notes: "text",
 	sent4: "text",
+	match: "letter",
+	gap: "text",
+	transform: "text",
 };
 
 /**
@@ -308,6 +311,50 @@ export const SKILLS: SkillPreset[] = [
 			},
 		],
 	},
+	{
+		id: "grammar",
+		name: "Grammar",
+		heading: "Grammar",
+		bankLabel: "Đề Grammar đã có",
+		partLabel: "Phần thi",
+		typeLabel: "Dạng câu hỏi",
+		parts: [
+			{
+				id: "g1",
+				label: "Grammar",
+				spec: "Grammar · Tự chấm",
+				help: "Bài tập ngữ pháp tự chấm. Câu điền từ dùng ____ để đánh dấu chỗ trống; câu viết lại có thể để nguyên câu gốc.",
+				qStart: 1,
+				types: [
+					{ id: "mcq", label: "Multiple choice" },
+					{ id: "gap", label: "Gap-fill" },
+					{ id: "transform", label: "Sentence transformation" },
+				],
+			},
+		],
+	},
+	{
+		id: "vocabulary",
+		name: "Vocabulary",
+		heading: "Vocabulary",
+		bankLabel: "Đề Vocabulary đã có",
+		partLabel: "Phần thi",
+		typeLabel: "Dạng câu hỏi",
+		parts: [
+			{
+				id: "v1",
+				label: "Vocabulary",
+				spec: "Vocabulary · Tự chấm",
+				help: "Bài tập từ vựng tự chấm. Dạng nối từ khóa đáp án từ Ngân hàng lựa chọn A–H; câu điền từ dùng ____.",
+				qStart: 1,
+				types: [
+					{ id: "mcq", label: "Multiple choice" },
+					{ id: "match", label: "Matching" },
+					{ id: "gap", label: "Gap-fill" },
+				],
+			},
+		],
+	},
 ];
 
 const fallbackSkill = SKILLS[0];
@@ -334,7 +381,12 @@ export function qStartOf(skillId: string, partId: string): number {
 	return partOf(skillId, partId).qStart ?? 1;
 }
 export function isAutoSkill(skillId: string): boolean {
-	return skillId === "reading" || skillId === "listening";
+	return (
+		skillId === "reading" ||
+		skillId === "listening" ||
+		skillId === "grammar" ||
+		skillId === "vocabulary"
+	);
 }
 export function answerChoices(kind: AnswerKind): readonly string[] | null {
 	return kind === "text" ? null : ASSIGNMENT_ANSWER_CHOICES[kind];

@@ -421,6 +421,13 @@
       "when": 1793488686192,
       "tag": "0059_self_study_plan",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "6",
+      "when": 1793530000000,
+      "tag": "0060_study_pack",
+      "breakpoints": true
     }
   ]
 }

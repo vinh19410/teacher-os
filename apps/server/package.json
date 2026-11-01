@@ -7,8 +7,7 @@
 		"./app": "./src/app.ts",
 		"./session": "./src/session.ts",
 		"./lib/exam-import/fake-extractor": "./src/lib/exam-import/fake-extractor.ts",
-		"./lib/ai-grading/fake-grader": "./src/lib/ai-grading/fake-grader.ts",
-		"./lib/self-study-plan": "./src/lib/self-study-plan.ts"
+		"./lib/ai-grading/fake-grader": "./src/lib/ai-grading/fake-grader.ts"
 	},
 	"scripts": {
 		"build": "tsdown",

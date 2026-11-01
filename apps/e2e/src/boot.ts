@@ -20,7 +20,6 @@ import { migrate } from "drizzle-orm/libsql/migrator";
 import { buildApp, type Db } from "server/app";
 import { createFakeAiGrader } from "server/lib/ai-grading/fake-grader";
 import { createFakeExamExtractor } from "server/lib/exam-import/fake-extractor";
-import { runSelfStudyPlanTick } from "server/lib/self-study-plan";
 import { getSessionUser } from "server/session";
 import { createFakeBankHub } from "./fake-bank-hub";
 import { createFsMediaStore } from "./fs-media-store";
@@ -207,66 +206,70 @@ const app = buildApp({
 	appOrigin: CORS_ORIGINS[0],
 });
 
+// #533 E2E-only helper: deterministically shift available_at / due_at of
+// class_assignment rows so Playwright specs can test scheduled release and
+// overdue cutoffs without cron or wall-clock waits.
+app.post("/__e2e/study-pack-shift", async (c) => {
+	const raw: unknown = await c.req.json().catch(() => null);
+	if (!raw || typeof raw !== "object") {
+		return c.json({ error: "invalid-body" }, 400);
+	}
+	const assignmentId =
+		"assignmentId" in raw && typeof raw.assignmentId === "string"
+			? raw.assignmentId.trim()
+			: "";
+	const classStudyPackId =
+		"classStudyPackId" in raw && typeof raw.classStudyPackId === "string"
+			? raw.classStudyPackId.trim()
+			: "";
+	const availableAtMs =
+		"availableAtMs" in raw && typeof raw.availableAtMs === "number"
+			? Math.trunc(raw.availableAtMs)
+			: undefined;
+	const dueAtMs =
+		"dueAtMs" in raw && typeof raw.dueAtMs === "number"
+			? Math.trunc(raw.dueAtMs)
+			: undefined;
+
+	if (!assignmentId && !classStudyPackId) {
+		return c.json({ error: "missing-target" }, 400);
+	}
+	const setClauses: string[] = [];
+	const args: (string | number)[] = [];
+	if (availableAtMs !== undefined) {
+		setClauses.push("available_at = ?");
+		args.push(availableAtMs);
+	}
+	if (dueAtMs !== undefined) {
+		setClauses.push("due_at = ?");
+		args.push(dueAtMs);
+	}
+	if (setClauses.length === 0) {
+		return c.json({ error: "missing-fields" }, 400);
+	}
+	const whereClauses: string[] = [];
+	if (assignmentId) {
+		whereClauses.push("id = ?");
+		args.push(assignmentId);
+	}
+	if (classStudyPackId) {
+		whereClauses.push("class_study_pack_id = ?");
+		args.push(classStudyPackId);
+	}
+	const res = await client.execute({
+		sql: `UPDATE class_assignment SET ${setClauses.join(", ")} WHERE ${whereClauses.join(" AND ")}`,
+		args,
+	});
+	return c.json({ ok: true, rowsAffected: res.rowsAffected });
+});
+
 // Fake SePay hosted-link pages (#320) ride the same API server — the iframe
 // src is relative (/__fake-bankhub/...) so the postMessage origin check in
 // the web app sees the API origin, exactly like the real hosted link.
-async function handleE2eSelfStudyTick(
-	request: Request,
-): Promise<Response | null> {
-	const url = new URL(request.url);
-	if (url.pathname !== "/__e2e/self-study-tick" || request.method !== "POST") {
-		return null;
-	}
-	let body: { now?: string | number; setReleasedDueAt?: string | number } = {};
-	try {
-		const parsed: unknown = await request.json();
-		if (parsed && typeof parsed === "object") {
-			body = parsed as typeof body;
-		}
-	} catch {
-		body = {};
-	}
-
-	const nowDate = body.now !== undefined ? new Date(body.now) : new Date();
-	const validNow = Number.isNaN(nowDate.getTime()) ? new Date() : nowDate;
-
-	const result = await runSelfStudyPlanTick({
-		db: libsql as unknown as Db,
-		now: validNow,
-		mailer: recordingMailer,
-		studentOrigin: STUDENT_ORIGIN,
-		retryDelaysMs: [0, 0],
-	});
-
-	if (body.setReleasedDueAt !== undefined) {
-		const dueAtMs =
-			typeof body.setReleasedDueAt === "number"
-				? body.setReleasedDueAt
-				: Date.parse(String(body.setReleasedDueAt));
-		if (Number.isFinite(dueAtMs)) {
-			await client.execute({
-				sql: "UPDATE self_study_plan_day SET due_at = ? WHERE status = 'released'",
-				args: [dueAtMs],
-			});
-			await client.execute({
-				sql: "UPDATE class_assignment SET due_at = ? WHERE plan_item_id IS NOT NULL",
-				args: [dueAtMs],
-			});
-		}
-	}
-
-	return new Response(JSON.stringify({ ok: true, result }), {
-		status: 200,
-		headers: { "content-type": "application/json" },
-	});
-}
-
 const server = serve(
 	{
-		fetch: async (request) =>
-			fakeBankHub.handleFakePage(request) ??
-			(await handleE2eSelfStudyTick(request)) ??
-			(await app.fetch(request)),
+		fetch: (request) =>
+			fakeBankHub.handleFakePage(request) ?? app.fetch(request),
 		port: PORT,
 		hostname: HOSTNAME,
 	},
