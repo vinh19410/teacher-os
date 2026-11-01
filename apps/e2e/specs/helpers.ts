@@ -201,7 +201,7 @@ export async function seedStudent(opts: {
 		client.close();
 	}
 }
-/** Navigate to a class's merged "Sessions & practice" tab (#391) — it renders
+/** Navigate to a class's merged "Buổi học & luyện tập" tab (#391, #520) — it renders
  * the session cards and the assigned-practice accordion. Text counts must
  * scope to the tab while on it. */
 export async function openClassScheduleTab(page: Page, className: string) {
@@ -213,7 +213,7 @@ export async function openClassScheduleTab(page: Page, className: string) {
 	await expect(classRow).toBeVisible();
 	await classRow.click();
 	await page
-		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
 }
 

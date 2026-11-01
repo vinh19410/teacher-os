@@ -35,7 +35,7 @@ const stopActionKeyPropagation = (e: KeyboardEvent<HTMLButtonElement>) => {
 };
 
 /**
- * Tab "Sessions & practice" — cột Sessions (#391): danh sách buổi dạng card
+ * Tab "Buổi học & luyện tập" — cột Sessions (#391, #520): danh sách buổi dạng card
  * `li[data-testid="session-row"]` thay cho bảng (#89). Giữ nguyên toàn bộ
  * hành vi ghi từ bảng cũ: check-in 1-click cho lớp 1:1 (#91), modal điểm
  * danh roster cho nhóm, modal Điều chỉnh (hoàn thành/huỷ/dời), chi tiết bài

@@ -147,7 +147,7 @@ test("B: gán sau — lớp trống nhập từ template; nhập lần hai bằn
 	await expect(dialog).toBeHidden();
 
 	await openClassFromList(page, `E2E 394 Trống ${stamp}`);
-	// #391: tab "Buổi học" đã gộp vào "Sessions & practice"; empty state
+	// #391, #520: tab "Buổi học" đã gộp vào "Buổi học & luyện tập"; empty state
 	// giáo trình nằm ở tab "Giáo trình".
 	await page.getByRole("tab", { name: "Giáo trình", exact: true }).click();
 	await expect(

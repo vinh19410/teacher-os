@@ -160,17 +160,56 @@ function RerenderableClassDetail() {
 }
 
 describe("class detail tabs", () => {
-	it("offers Sessions & practice, roster, curriculum, vocab and notes — sessions & assignments merged (#391)", async () => {
+	it("offers Buổi học & luyện tập, roster, curriculum, vocab and notes — sessions & assignments merged (#391, #520)", async () => {
 		startKernelServer(twoClasses());
 		renderWithKernel(<ClassDetail />);
 		const tabs = await screen.findAllByRole("tab");
 		expect(tabs.map((t) => t.textContent)).toEqual([
-			"Sessions & practice",
+			"Buổi học & luyện tập",
 			"Học viên",
 			"Giáo trình",
 			"Từ vựng",
 			"Ghi chú",
 		]);
+		expect(screen.getByText("Từ 01/08")).toBeTruthy();
+	});
+
+	it("formats ISO startDate as dd/mm/yyyy in the student stat card subtitle and omits empty startDate (#520)", async () => {
+		startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-1",
+						name: "IELTS Writing",
+						startDate: "2026-11-03",
+					}),
+					classRow({
+						id: "cl-2",
+						name: "IELTS Speaking",
+						startDate: "",
+					}),
+				],
+			}),
+		);
+		renderWithKernel(<RerenderableClassDetail />);
+		expect(await screen.findByText("Từ 03/11/2026")).toBeTruthy();
+		expect(screen.queryByText("Từ 2026-11-03")).toBeNull();
+
+		routerState.params = { classId: "cl-2" };
+		fireEvent.click(screen.getByTestId("rerender"));
+		await screen.findByRole("heading", { name: "IELTS Speaking" });
+		expect(screen.queryByText("Từ")).toBeNull();
+		expect(screen.queryByText(/^Từ \d/)).toBeNull();
+	});
+
+	it("selects Buổi học & luyện tập when opened with legacy ?tab=assignments (#391, #520)", async () => {
+		routerState.search = { tab: "assignments" };
+		startKernelServer(twoClasses());
+		renderWithKernel(<ClassDetail />);
+		const tab = await screen.findByRole("tab", {
+			name: "Buổi học & luyện tập",
+		});
+		expect(tab.getAttribute("aria-selected")).toBe("true");
 	});
 });
 
@@ -227,7 +266,7 @@ describe("class detail → Buổi học tab", () => {
 
 	async function openSessionsTab() {
 		fireEvent.click(
-			await screen.findByRole("tab", { name: "Sessions & practice" }),
+			await screen.findByRole("tab", { name: "Buổi học & luyện tập" }),
 		);
 	}
 
@@ -357,7 +396,7 @@ describe("class screen → lesson kind stays with the syllabus", () => {
 		);
 		renderWithKernel(<ClassDetail />);
 		fireEvent.click(
-			await screen.findByRole("tab", { name: "Sessions & practice" }),
+			await screen.findByRole("tab", { name: "Buổi học & luyện tập" }),
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Sắp xếp buổi" }));
 		fireEvent.click(screen.getByRole("button", { name: "+ Thêm buổi học" }));

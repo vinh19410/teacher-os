@@ -94,7 +94,7 @@ test("self study plan: create & publish on 3 viewports -> pre-release hidden -> 
 	await page.getByText("Lớp học", { exact: true }).first().click();
 	await page.getByText(CLASS_NAME).click();
 	await page
-		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
 
 	const selfStudySwitchBtn = page.getByTestId("practice-mode-self-study");
@@ -239,7 +239,7 @@ test("self study plan: create & publish on 3 viewports -> pre-release hidden -> 
 	// 10. Màn hình Self Study Plan của giáo viên hiển thị "1 nộp trễ"
 	await page.reload();
 	await page
-		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
 	await page.getByTestId("practice-mode-self-study").click();
 	await expect(page.getByText("1 nộp trễ")).toBeVisible();
