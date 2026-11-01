@@ -1,7 +1,7 @@
 ---
 title: "Fix Selected State Contrast on Onboarding Cards/Chips, ChipMulti, and Enroll Student Rows (#518)"
 description: "Restore unmistakable selected-state contrast in light and dark themes across student onboarding steps, teacher ChipMulti (Tạo lớp), and EnrollStudentModal student picker rows, backed by TDD unit tests and Playwright E2E contrast verification."
-status: pending
+status: completed
 priority: P2
 effort: "1.5h"
 tags: [student, web, onboarding, classes, ui, accessibility, contrast]
@@ -54,15 +54,15 @@ This plan is authored under the `--advice` handover contract and `--tdd` test-fi
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: TDD Selection Contrast Fix & E2E Verification](./phase-01-start.md) | Pending |
+| 1 | [Phase 1: TDD Selection Contrast Fix & E2E Verification](./phase-01-start.md) | Completed |
 
 ## Success Criteria
 
-- [ ] `OptionButton` and `LearningGoalsStep` in `apps/student/src/components/onboarding/onboarding-steps.tsx` render `aria-pressed={selected}`, use `border-primary bg-muted font-medium text-foreground ring-1 ring-primary` when selected and `border-input bg-transparent text-foreground hover:bg-accent` when unselected, include `focus-visible:ring-0` alongside `focus-visible:shadow-[var(--focus-ring)]`, and mark their check indicator `<div>` with `aria-hidden="true"` and `border-input` when unselected (0 occurrences of `border-transparent` in `onboarding-steps.tsx`).
-- [ ] `TargetScoreStep` in `apps/student/src/components/onboarding/onboarding-steps.tsx` renders `aria-pressed={selected}` and uses `border-primary bg-primary font-semibold text-primary-foreground` when selected and `border-input bg-transparent text-foreground hover:bg-accent` when unselected.
-- [ ] `ChipMulti` in `apps/web/src/components/ui/chip-multi.tsx` uses `border-primary bg-primary text-primary-foreground` when selected and `border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:hover:bg-input/50` when unselected (0 occurrences of `border-transparent` in `chip-multi.tsx`).
-- [ ] `EnrollStudentModal` in `apps/web/src/components/modals/enroll-student-modal.tsx` renders `role="option"` rows with base `border`, `outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50`, `disabled={saving}`, `border-primary bg-muted font-medium ring-1 ring-primary` plus `<Check aria-hidden="true" />` inside a `shrink-0` phone container when selected, and `border-transparent hover:bg-accent hover:text-accent-foreground` when unselected (0 occurrences of `bg-line-soft`).
-- [ ] Unit tests (`onboarding.test.tsx`, `chip-multi.test.tsx`, `enroll-student-modal.test.tsx`), typechecks, `biome check`, and Playwright E2E specs (`student-portal-onboarding.spec.ts`, `enroll-existing-student.spec.ts`) pass with 0 errors.
+- [x] `OptionButton` and `LearningGoalsStep` in `apps/student/src/components/onboarding/onboarding-steps.tsx` render `aria-pressed={selected}`, use `border-primary bg-muted font-medium text-foreground ring-1 ring-primary` when selected and `border-input bg-transparent text-foreground hover:bg-accent` when unselected, include `focus-visible:ring-0` alongside `focus-visible:shadow-[var(--focus-ring)]`, and mark their check indicator `<div>` with `aria-hidden="true"` and `border-input` when unselected (0 occurrences of `border-transparent` in `onboarding-steps.tsx`).
+- [x] `TargetScoreStep` in `apps/student/src/components/onboarding/onboarding-steps.tsx` renders `aria-pressed={selected}` and uses `border-primary bg-primary font-semibold text-primary-foreground` when selected and `border-input bg-transparent text-foreground hover:bg-accent` when unselected.
+- [x] `ChipMulti` in `apps/web/src/components/ui/chip-multi.tsx` uses `border-primary bg-primary text-primary-foreground` when selected and `border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:hover:bg-input/50` when unselected (0 occurrences of `border-transparent` in `chip-multi.tsx`).
+- [x] `EnrollStudentModal` in `apps/web/src/components/modals/enroll-student-modal.tsx` renders `role="option"` rows with base `border`, `outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50`, `disabled={saving}`, `border-primary bg-muted font-medium ring-1 ring-primary` plus `<Check aria-hidden="true" />` inside a `shrink-0` phone container when selected, and `border-transparent hover:bg-accent hover:text-accent-foreground` when unselected (0 occurrences of `bg-line-soft`).
+- [x] Unit tests (`onboarding.test.tsx`, `chip-multi.test.tsx`, `enroll-student-modal.test.tsx`), typechecks, `biome check`, and Playwright E2E specs (`student-portal-onboarding.spec.ts`, `enroll-existing-student.spec.ts`) pass with 0 errors.
 
 ## Red Team Review
 

@@ -66,9 +66,10 @@ giấy trên nền trắng (shadcn neutral), hành động chính = mực đậm
 
 ## Quy tắc component
 
-- **Selection = nền chìm:** tab/chip đang chọn `bg-muted text-foreground` (trong segmented:
-  item chọn `bg-background shadow-sm` trên container `bg-muted rounded-md`); nav item active
-  dùng nền `bg-sidebar-accent` của shell `sidebar-07`.
+- **Selection:** trong segmented (`Tabs`), item chọn `bg-background shadow-sm` trên container `bg-muted rounded-md`;
+  chip lựa chọn độc lập (`ChipMulti`, band chip onboarding) khi chọn dùng nền đặc `border-primary bg-primary text-primary-foreground`;
+  thẻ/hàng lựa chọn (`OptionButton`, `LearningGoalsStep`, `EnrollStudentModal` `role="option"`) khi chọn dùng `border-primary bg-muted text-foreground ring-1 ring-primary` kèm chỉ báo check (`<Check aria-hidden="true" />`);
+  nav item active dùng nền `bg-sidebar-accent` của shell `sidebar-07`.
 - **Nút chính = mực:** `Button primary` = `bg-primary text-primary-foreground` (mực), hover
     đậm nhạt theo token. `secondary` = `bg-secondary`/outline. `danger` = `bg-destructive`
     (đỏ, chỉ phá hủy).
@@ -80,8 +81,8 @@ giấy trên nền trắng (shadcn neutral), hành động chính = mực đậm
 - **Badge/TuitionBadge v2:** Badge theo variant shadcn (`default`/`secondary`/`outline`/
   `destructive`) với chấm màu `bg-current`; trạng thái học phí tô bằng `--success`/`--warn`/
   `--destructive` qua `tuitionDot`, chữ muted. Hết mono 10px uppercase.
-- **Chip lọc (`ChipFilter`/`ChipMulti`):** `rounded-md border border-input bg-transparent`,
-  chọn = `bg-muted`; badge đếm `font-mono text-[10px]` (`aria-hidden` để accessible name chỉ
+- **Chip lọc (`ChipFilter`) và chip chọn nhiều (`ChipMulti`):** `ChipMulti` chưa chọn dùng `rounded-md border border-input bg-background text-foreground dark:bg-input/30`,
+  đã chọn dùng `border-primary bg-primary text-primary-foreground`; `ChipFilter` giữ badge đếm `font-mono text-[10px]` (`aria-hidden` để accessible name chỉ
   là label); chip 0 kết quả vẫn full contrast, vẫn bấm được; nhóm chip liên quan phải có
   `role="group"` + `aria-label`.
 - **Bộ lọc hai cấp (skill → part):** khi "Tất cả", nhóm part theo skill với nhãn muted;
@@ -126,7 +127,7 @@ giấy trên nền trắng (shadcn neutral), hành động chính = mực đậm
   `--destructive` cho hành động phá hủy/quá hạn — **trừ cặp verdict của màn soi bài**
   (`--verdict-correct`/`--verdict-wrong`, xem Tokens); đỏ verdict không thay cho
   `--destructive`.
-- Không dùng `--accent` (xám hover) làm nền chip selection — selection là `bg-muted`.
+- Không dùng `--accent` (xám hover) hay `border-transparent` + `bg-muted`/`bg-secondary` đơn độc làm trạng thái chọn (trên nền sáng `oklch(0.97)` chỉ đạt ~1.06:1) — chip chọn độc lập dùng `border-primary bg-primary text-primary-foreground`, thẻ/hàng chọn dùng `bg-muted` kèm `border-primary ring-1 ring-primary` + icon check.
 - Không hard-code hex — trừ nền trắng QR và SVG logo (whitelist phase-07 sweep).
 - Không render bức tường chip phẳng trộn nhiều taxonomy — luôn nhóm có nhãn.
 - Không điều hướng URL trên mỗi phím gõ (debounce ~300ms rồi mới đẩy query lên URL).

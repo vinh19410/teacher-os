@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Phase 1: TDD Selection Contrast Fix & E2E Verification"
-status: todo
+status: completed
 priority: P2
 effort: "1.5h"
 dependencies: []
@@ -47,9 +47,9 @@ Replace the indistinguishable `border-transparent` + `bg-muted`/`bg-secondary`/`
 
 ## Requirements
 
-- [ ] Add failing unit tests (TDD Red) in `apps/student/test/onboarding.test.tsx`, `apps/web/src/components/ui/chip-multi.test.tsx`, and `apps/web/src/components/modals/enroll-student-modal.test.tsx` asserting the new selected/unselected contracts and `aria-pressed` / `aria-selected` states.
-- [ ] Implement the selected-state fixes (TDD Green) in `apps/student/src/components/onboarding/onboarding-steps.tsx`, `apps/web/src/components/ui/chip-multi.tsx`, and `apps/web/src/components/modals/enroll-student-modal.tsx`.
-- [ ] Add Playwright E2E computed contrast and state distinction assertions in `apps/e2e/specs/student-portal-onboarding.spec.ts` and `apps/e2e/specs/enroll-existing-student.spec.ts` across 3 viewports (`1440×900`, `768×1024`, `375×812`) and both themes (`light`, `dark`), and update `DESIGN.md`.
+- [x] Add failing unit tests (TDD Red) in `apps/student/test/onboarding.test.tsx`, `apps/web/src/components/ui/chip-multi.test.tsx`, and `apps/web/src/components/modals/enroll-student-modal.test.tsx` asserting the new selected/unselected contracts and `aria-pressed` / `aria-selected` states.
+- [x] Implement the selected-state fixes (TDD Green) in `apps/student/src/components/onboarding/onboarding-steps.tsx`, `apps/web/src/components/ui/chip-multi.tsx`, and `apps/web/src/components/modals/enroll-student-modal.tsx`.
+- [x] Add Playwright E2E computed contrast and state distinction assertions in `apps/e2e/specs/student-portal-onboarding.spec.ts` and `apps/e2e/specs/enroll-existing-student.spec.ts` across 3 viewports (`1440×900`, `768×1024`, `375×812`) and both themes (`light`, `dark`), and update `DESIGN.md`.
 
 ## Tasks & Steps
 
@@ -166,9 +166,9 @@ Replace the indistinguishable `border-transparent` + `bg-muted`/`bg-secondary`/`
 
 ## Todo
 
-- [ ] Task 1.1: Add TDD Red unit tests for Onboarding Steps, `ChipMulti`, and `EnrollStudentModal`
-- [ ] Task 1.2: Implement high-contrast selected states in `onboarding-steps.tsx`, `chip-multi.tsx`, and `enroll-student-modal.tsx` (TDD Green)
-- [ ] Task 1.3: Add Playwright E2E contrast/selection assertions, update `DESIGN.md`, and run full verification gates
+- [x] Task 1.1: Add TDD Red unit tests for Onboarding Steps, `ChipMulti`, and `EnrollStudentModal`
+- [x] Task 1.2: Implement high-contrast selected states in `onboarding-steps.tsx`, `chip-multi.tsx`, and `enroll-student-modal.tsx` (TDD Green)
+- [x] Task 1.3: Add Playwright E2E contrast/selection assertions, update `DESIGN.md`, and run full verification gates
 
 ## Verification
 

@@ -1,7 +1,9 @@
+import { Check } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
+import { cn } from "@/lib/cn";
 import { useData } from "@/lib/data-store";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
@@ -218,25 +220,36 @@ export function EnrollStudentModal({
 									</p>
 								)
 							) : (
-								filteredStudents.map((s) => (
-									<button
-										key={s.id}
-										type="button"
-										role="option"
-										aria-selected={selectedStudentId === s.id}
-										className={`flex items-center justify-between rounded px-3 py-2 text-left text-sm ${
-											selectedStudentId === s.id
-												? "bg-accent font-medium"
-												: "hover:bg-line-soft"
-										}`}
-										onClick={() => setSelectedStudentId(s.id)}
-									>
-										<span>{s.name}</span>
-										<span className="text-muted-foreground text-xs">
-											{s.phone}
-										</span>
-									</button>
-								))
+								filteredStudents.map((s) => {
+									const isSelected = selectedStudentId === s.id;
+									return (
+										<button
+											key={s.id}
+											type="button"
+											role="option"
+											aria-selected={isSelected}
+											disabled={saving}
+											className={cn(
+												"flex items-center justify-between rounded-md border px-3 py-2 text-left text-foreground text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-60",
+												isSelected
+													? "border-primary bg-muted font-medium ring-1 ring-primary"
+													: "border-transparent hover:bg-accent hover:text-accent-foreground",
+											)}
+											onClick={() => setSelectedStudentId(s.id)}
+										>
+											<span>{s.name}</span>
+											<span className="flex shrink-0 items-center gap-2 text-muted-foreground text-xs">
+												<span>{s.phone}</span>
+												{isSelected ? (
+													<Check
+														aria-hidden="true"
+														className="size-4 shrink-0 text-primary"
+													/>
+												) : null}
+											</span>
+										</button>
+									);
+								})
 							)}
 						</div>
 					</>

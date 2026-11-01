@@ -100,4 +100,41 @@ describe("EnrollStudentModal", () => {
 			},
 		]);
 	});
+
+	it("highlights the selected student option with border-primary, ring-primary, and a check icon while keeping unselected options border-transparent without dead bg-line-soft", async () => {
+		startKernelServer(
+			snapshotFixture({
+				classes: [classRow({ id: "cl-1" })],
+				students: [
+					studentRow({ id: "st-1", name: "Học viên Một" }),
+					studentRow({ id: "st-2", name: "Học viên Hai" }),
+				],
+			}),
+		);
+		renderWithKernel(
+			<EnrollStudentModal open onClose={vi.fn()} classId="cl-1" />,
+		);
+		const dialog = await screen.findByRole("dialog");
+		const optMot = within(dialog).getByRole("option", { name: /Học viên Một/ });
+		const optHai = within(dialog).getByRole("option", { name: /Học viên Hai/ });
+
+		fireEvent.click(optHai);
+
+		expect(optHai.getAttribute("aria-selected")).toBe("true");
+		expect(optHai.classList.contains("border-primary")).toBe(true);
+		expect(optHai.classList.contains("bg-muted")).toBe(true);
+		expect(optHai.classList.contains("ring-1")).toBe(true);
+		expect(optHai.classList.contains("ring-primary")).toBe(true);
+		expect(optHai.classList.contains("focus-visible:ring-[3px]")).toBe(true);
+		expect(optHai.classList.contains("focus-visible:ring-ring/50")).toBe(true);
+		expect(optHai.classList.contains("border-transparent")).toBe(false);
+		expect(optHai.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+
+		expect(optMot.getAttribute("aria-selected")).toBe("false");
+		expect(optMot.classList.contains("border-transparent")).toBe(true);
+		expect(optMot.classList.contains("hover:bg-accent")).toBe(true);
+		expect(optMot.classList.contains("hover:bg-line-soft")).toBe(false);
+		expect(optMot.classList.contains("border-primary")).toBe(false);
+		expect(optMot.querySelector("svg")).toBeNull();
+	});
 });

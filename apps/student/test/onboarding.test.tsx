@@ -168,4 +168,99 @@ describe("OnboardingStep Components", () => {
 		});
 		assertEnabledPrimaryCta(finishBtn);
 	});
+
+	it("Onboarding steps: selected cards and band chips expose aria-pressed and high-contrast selection classes without border-transparent", () => {
+		const { unmount: unmountExam } = render(
+			<ExamInterestStep value="ielts" onSelect={vi.fn()} />,
+		);
+		const ieltsBtn = screen.getByRole("button", { name: /IELTS/ });
+		const toeicBtn = screen.getByRole("button", { name: /TOEIC/ });
+		expect(ieltsBtn.getAttribute("aria-pressed")).toBe("true");
+		expect(ieltsBtn.classList.contains("border-primary")).toBe(true);
+		expect(ieltsBtn.classList.contains("bg-muted")).toBe(true);
+		expect(ieltsBtn.classList.contains("text-foreground")).toBe(true);
+		expect(ieltsBtn.classList.contains("ring-1")).toBe(true);
+		expect(ieltsBtn.classList.contains("ring-primary")).toBe(true);
+		expect(ieltsBtn.classList.contains("focus-visible:ring-0")).toBe(true);
+		expect(ieltsBtn.classList.contains("border-transparent")).toBe(false);
+		expect(ieltsBtn.classList.contains("text-primary")).toBe(false);
+
+		expect(toeicBtn.getAttribute("aria-pressed")).toBe("false");
+		expect(toeicBtn.classList.contains("border-input")).toBe(true);
+		expect(toeicBtn.classList.contains("bg-transparent")).toBe(true);
+		expect(toeicBtn.classList.contains("hover:bg-accent")).toBe(true);
+		const toeicBadge = toeicBtn.lastElementChild;
+		expect(toeicBadge?.getAttribute("aria-hidden")).toBe("true");
+		expect(toeicBadge?.classList.contains("border-input")).toBe(true);
+		expect(toeicBadge?.classList.contains("border-border")).toBe(false);
+		unmountExam();
+
+		const { unmount: unmountBand } = render(
+			<TargetScoreStep examInterest="ielts" value="6.5" onSelect={vi.fn()} />,
+		);
+		const band65 = screen.getByRole("button", { name: "Band 6.5" });
+		const band60 = screen.getByRole("button", { name: "Band 6.0" });
+		expect(band65.getAttribute("aria-pressed")).toBe("true");
+		expect(band65.classList.contains("border-primary")).toBe(true);
+		expect(band65.classList.contains("bg-primary")).toBe(true);
+		expect(band65.classList.contains("text-primary-foreground")).toBe(true);
+		expect(band65.classList.contains("border-transparent")).toBe(false);
+		expect(band65.classList.contains("bg-muted")).toBe(false);
+
+		expect(band60.getAttribute("aria-pressed")).toBe("false");
+		expect(band60.classList.contains("border-input")).toBe(true);
+		expect(band60.classList.contains("bg-transparent")).toBe(true);
+		expect(band60.classList.contains("hover:bg-accent")).toBe(true);
+		unmountBand();
+
+		const { unmount: unmountGoals } = render(
+			<LearningGoalsStep
+				value={["study-abroad"]}
+				onToggle={vi.fn()}
+				note=""
+				onNoteChange={vi.fn()}
+			/>,
+		);
+		const studyAbroadBtn = screen.getByRole("button", { name: "Du học" });
+		const careerBtn = screen.getByRole("button", {
+			name: "Thăng tiến công việc",
+		});
+		expect(studyAbroadBtn.getAttribute("aria-pressed")).toBe("true");
+		expect(studyAbroadBtn.classList.contains("border-primary")).toBe(true);
+		expect(studyAbroadBtn.classList.contains("bg-muted")).toBe(true);
+		expect(studyAbroadBtn.classList.contains("text-foreground")).toBe(true);
+		expect(studyAbroadBtn.classList.contains("ring-1")).toBe(true);
+		expect(studyAbroadBtn.classList.contains("ring-primary")).toBe(true);
+		expect(studyAbroadBtn.classList.contains("focus-visible:ring-0")).toBe(
+			true,
+		);
+		expect(studyAbroadBtn.classList.contains("border-transparent")).toBe(false);
+		expect(studyAbroadBtn.classList.contains("text-primary")).toBe(false);
+
+		expect(careerBtn.getAttribute("aria-pressed")).toBe("false");
+		expect(careerBtn.classList.contains("border-input")).toBe(true);
+		expect(careerBtn.classList.contains("bg-transparent")).toBe(true);
+		expect(careerBtn.classList.contains("hover:bg-accent")).toBe(true);
+		const careerBadge = careerBtn.lastElementChild;
+		expect(careerBadge?.getAttribute("aria-hidden")).toBe("true");
+		expect(careerBadge?.classList.contains("border-input")).toBe(true);
+		expect(careerBadge?.classList.contains("border-border")).toBe(false);
+		unmountGoals();
+
+		const { unmount: unmountHours } = render(
+			<StudyHoursStep value="1-2" onSelect={vi.fn()} />,
+		);
+		const hourSelected = screen.getByRole("button", { name: "1–2 giờ" });
+		const hourUnselected = screen.getByRole("button", { name: "Dưới 1 giờ" });
+		expect(hourSelected.getAttribute("aria-pressed")).toBe("true");
+		expect(hourSelected.classList.contains("border-primary")).toBe(true);
+		expect(hourSelected.classList.contains("bg-muted")).toBe(true);
+		expect(hourSelected.classList.contains("ring-1")).toBe(true);
+		expect(hourSelected.classList.contains("ring-primary")).toBe(true);
+		expect(hourSelected.classList.contains("border-transparent")).toBe(false);
+		expect(hourUnselected.getAttribute("aria-pressed")).toBe("false");
+		expect(hourUnselected.classList.contains("border-input")).toBe(true);
+		expect(hourUnselected.classList.contains("bg-transparent")).toBe(true);
+		unmountHours();
+	});
 });

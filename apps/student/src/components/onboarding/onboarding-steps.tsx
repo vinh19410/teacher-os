@@ -53,15 +53,13 @@ export function OptionButton({
 	return (
 		<button
 			type="button"
+			aria-pressed={selected}
 			onClick={onClick}
 			className={cn(
-				"flex w-full items-center justify-between rounded-lg border p-4 text-left transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
-				// Selection = nền sunk + chữ cam (contrast AA ở cả 2 theme —
-				// accent cam trên surface đo 6.38 dark / 5.05 light); viền trong
-				// suốt để không đè border-state.
+				"flex w-full items-center justify-between rounded-lg border p-4 text-left transition-[color,background-color,border-color,box-shadow] focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none focus-visible:ring-0",
 				selected
-					? "border-transparent bg-muted font-medium text-primary"
-					: "rounded-md border border-input bg-transparent text-foreground",
+					? "border-primary bg-muted font-medium text-foreground ring-1 ring-primary"
+					: "border-input bg-transparent text-foreground hover:bg-accent",
 				className,
 			)}
 		>
@@ -72,11 +70,12 @@ export function OptionButton({
 				) : null}
 			</div>
 			<div
+				aria-hidden="true"
 				className={cn(
 					"ml-3 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
 					selected
 						? "border-primary bg-primary text-primary-foreground"
-						: "border-border bg-transparent",
+						: "border-input bg-transparent",
 				)}
 			>
 				{selected ? <Check className="h-3 w-3 stroke-[3]" /> : null}
@@ -152,12 +151,13 @@ export function TargetScoreStep({
 						<button
 							key={opt}
 							type="button"
+							aria-pressed={selected}
 							onClick={() => onSelect(opt)}
 							className={cn(
-								"rounded-lg border p-3.5 text-center transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+								"rounded-lg border p-3.5 text-center transition-[color,background-color,border-color,box-shadow] focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
 								selected
-									? "border-transparent bg-muted font-semibold text-primary"
-									: "rounded-md border border-input bg-transparent text-foreground",
+									? "border-primary bg-primary font-semibold text-primary-foreground"
+									: "border-input bg-transparent text-foreground hover:bg-accent",
 							)}
 						>
 							<div className="font-mono font-semibold text-base">
@@ -199,21 +199,23 @@ export function LearningGoalsStep({
 						<button
 							key={goal}
 							type="button"
+							aria-pressed={selected}
 							onClick={() => onToggle(goal)}
 							className={cn(
-								"flex items-center justify-between rounded-lg border p-3 text-left transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+								"flex items-center justify-between rounded-lg border p-3 text-left transition-[color,background-color,border-color,box-shadow] focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none focus-visible:ring-0",
 								selected
-									? "border-transparent bg-muted font-medium text-primary"
-									: "rounded-md border border-input bg-transparent text-foreground",
+									? "border-primary bg-muted font-medium text-foreground ring-1 ring-primary"
+									: "border-input bg-transparent text-foreground hover:bg-accent",
 							)}
 						>
 							<span className="text-sm">{GOAL_LABELS[goal]}</span>
 							<div
+								aria-hidden="true"
 								className={cn(
 									"flex h-4 w-4 items-center justify-center rounded border transition-colors",
 									selected
 										? "border-primary bg-primary text-primary-foreground"
-										: "border-border bg-transparent",
+										: "border-input bg-transparent",
 								)}
 							>
 								{selected ? <Check className="h-3 w-3 stroke-[3]" /> : null}
