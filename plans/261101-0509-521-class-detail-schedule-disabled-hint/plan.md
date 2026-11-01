@@ -1,7 +1,7 @@
 ---
 title: "Enable 'Sắp xếp buổi' on Empty Classes with Empty-State Explanation and Curriculum Tab CTA (#521)"
 description: "Keep the 'Sắp xếp buổi' button on the teacher class detail page enabled when a class has no curriculum attached, and render an actionable empty state in ClassSessionsManageModal explaining why ('Gắn giáo trình cho lớp để sắp xếp buổi.') with a 'Mở tab Giáo trình' CTA."
-status: pending
+status: completed
 priority: P3
 effort: "1h"
 tags: [web, classes, ux, a11y, e2e, bugfix]
@@ -48,14 +48,14 @@ This plan is authored under the `--advice` handover contract and `--tdd` test-fi
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: TDD Empty-Curriculum Session Management Modal, E2E & Design Verification](./phase-01-start.md) | Pending |
+| 1 | [Phase 1: TDD Empty-Curriculum Session Management Modal, E2E & Design Verification](./phase-01-start.md) | Completed |
 
 ## Success Criteria
 
-- [ ] `apps/web/src/routes/_auth/classes/$classId.tsx` renders `<Button size="sm" ...>Sắp xếp buổi</Button>` without `disabled={!sy}`, only switches to `"sessions-practice"` (and resets `assignmentsView` to `"list"`) on button click when `sy` is present, and passes `key={\`manage-sessions-${cls.id}\`}` and required `onOpenCurriculum` to `ClassSessionsManageModal`.
-- [ ] `apps/web/src/components/class-detail/class-sessions-manage-modal.tsx` requires `onOpenCurriculum: () => void`, renders `"Gắn giáo trình cho lớp để sắp xếp buổi."` and a `"Mở tab Giáo trình"` button when `!sy`, gates child syllabus-mutation modals behind `{sy && (...)}`, and clicking `"Mở tab Giáo trình"` closes the dialog and activates the `"Giáo trình"` tab (resetting `assignmentsView` to `"list"`).
-- [ ] Unit tests in `apps/web/src/routes/_auth/classes/$classId.test.tsx` and Playwright E2E specs (`syllabus-class-curriculum.spec.ts`, `class-sessions-manage-modal.spec.ts`, `syllabus-test-session-mark.spec.ts`) pass with 0 errors, including 3-viewport (`1440×900`, `768×1024`, `375×812`) overflow checks and keyboard focus/activation while `ClassSessionsManageModal` is open.
-- [ ] `pnpm check-types`, `pnpm exec biome check .`, `pnpm --filter web test`, and `rm -rf scripts/design-compare/.state/raw/new/t-class-detail plans/261020-1446-378-redesign-design-v2/screenshots/t-class-detail && pnpm design:compare --screens t-class-detail --side both --label new` exit 0, with `DESIGN.md` and `CHANGELOG.md` updated.
+- [x] `apps/web/src/routes/_auth/classes/$classId.tsx` renders `<Button size="sm" ...>Sắp xếp buổi</Button>` without `disabled={!sy}`, only switches to `"sessions-practice"` (and resets `assignmentsView` to `"list"`) on button click when `sy` is present, and passes `key={\`manage-sessions-${cls.id}\`}` and required `onOpenCurriculum` to `ClassSessionsManageModal`.
+- [x] `apps/web/src/components/class-detail/class-sessions-manage-modal.tsx` requires `onOpenCurriculum: () => void`, renders `"Gắn giáo trình cho lớp để sắp xếp buổi."` and a `"Mở tab Giáo trình"` button when `!sy`, gates child syllabus-mutation modals behind `{sy && (...)}`, and clicking `"Mở tab Giáo trình"` closes the dialog and activates the `"Giáo trình"` tab (resetting `assignmentsView` to `"list"`).
+- [x] Unit tests in `apps/web/src/routes/_auth/classes/$classId.test.tsx` and Playwright E2E specs (`syllabus-class-curriculum.spec.ts`, `class-sessions-manage-modal.spec.ts`, `syllabus-test-session-mark.spec.ts`) pass with 0 errors, including 3-viewport (`1440×900`, `768×1024`, `375×812`) overflow checks and keyboard focus/activation while `ClassSessionsManageModal` is open.
+- [x] `pnpm check-types`, `pnpm exec biome check .`, `pnpm --filter web test`, and `rm -rf scripts/design-compare/.state/raw/new/t-class-detail plans/261020-1446-378-redesign-design-v2/screenshots/t-class-detail && pnpm design:compare --screens t-class-detail --side both --label new` exit 0, with `DESIGN.md` and `CHANGELOG.md` updated.
 
 ## Red Team Review
 

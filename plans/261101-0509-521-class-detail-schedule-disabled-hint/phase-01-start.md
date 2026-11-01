@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Phase 1: TDD Empty-Curriculum Session Management Modal, E2E & Design Verification"
-status: pending
+status: completed
 priority: P3
 effort: "1h"
 dependencies: []
@@ -45,9 +45,9 @@ Enable the **"Sắp xếp buổi"** button on `/classes/$classId` when a class h
 
 ## Requirements
 
-- [ ] Write a failing unit test (TDD Red) in `apps/web/src/routes/_auth/classes/$classId.test.tsx` asserting that `"Sắp xếp buổi"` is enabled when `syllabusId: null`, dismissing `"Quản lý buổi của lớp"` preserves the active tab, and clicking `"Mở tab Giáo trình"` closes the modal, resets `assignmentsView`, and activates the `"Giáo trình"` tab.
-- [ ] Implement the fix in `apps/web/src/routes/_auth/classes/$classId.tsx` and `apps/web/src/components/class-detail/class-sessions-manage-modal.tsx` (TDD Green).
-- [ ] Update `apps/e2e/specs/syllabus-class-curriculum.spec.ts` (including 3-viewport `1440×900`, `768×1024`, `375×812` and keyboard `Enter` checks while the modal is open), `DESIGN.md`, and `CHANGELOG.md`, regenerate `t-class-detail` screenshots via `pnpm design:compare`, and verify all unit/type/lint/E2E gates pass.
+- [x] Write a failing unit test (TDD Red) in `apps/web/src/routes/_auth/classes/$classId.test.tsx` asserting that `"Sắp xếp buổi"` is enabled when `syllabusId: null`, dismissing `"Quản lý buổi của lớp"` preserves the active tab, and clicking `"Mở tab Giáo trình"` closes the modal, resets `assignmentsView`, and activates the `"Giáo trình"` tab.
+- [x] Implement the fix in `apps/web/src/routes/_auth/classes/$classId.tsx` and `apps/web/src/components/class-detail/class-sessions-manage-modal.tsx` (TDD Green).
+- [x] Update `apps/e2e/specs/syllabus-class-curriculum.spec.ts` (including 3-viewport `1440×900`, `768×1024`, `375×812` and keyboard `Enter` checks while the modal is open), `DESIGN.md`, and `CHANGELOG.md`, regenerate `t-class-detail` screenshots via `pnpm design:compare`, and verify all unit/type/lint/E2E gates pass.
 
 ## Tasks & Steps
 
@@ -93,8 +93,13 @@ Enable the **"Sắp xếp buổi"** button on `/classes/$classId` when a class h
        fireEvent.click(
          screen.getByRole("tab", { name: "Buổi học & luyện tập" }),
        );
-       fireEvent.click(screen.getByRole("button", { name: "Giao bài tập" }));
-       expect(screen.queryByRole("button", { name: "Giao bài tập" })).toBeNull();
+       const assignBtns = screen.getAllByRole("button", { name: "Giao bài tập" });
+       expect(assignBtns).toHaveLength(2);
+       fireEvent.click(assignBtns[0]);
+       expect(screen.getByText("Chọn một đề")).toBeTruthy();
+       expect(
+         screen.getAllByRole("button", { name: "Giao bài tập" }),
+       ).toHaveLength(1);
 
        fireEvent.click(manageBtn);
        const dialog = screen.getByRole("dialog", {

@@ -20,6 +20,7 @@ import type { DirectKernelAction } from "@/lib/use-direct-kernel-action";
 export interface ClassSessionsManageModalProps {
 	open: boolean;
 	onClose: () => void;
+	onOpenCurriculum: () => void;
 	cls: ClassGroup;
 	run: DirectKernelAction["run"];
 	isPending: DirectKernelAction["isPending"];
@@ -39,6 +40,7 @@ export interface ClassSessionsManageModalProps {
 export function ClassSessionsManageModal({
 	open,
 	onClose,
+	onOpenCurriculum,
 	cls,
 	run,
 	busy,
@@ -66,9 +68,14 @@ export function ClassSessionsManageModal({
 	return (
 		<Modal open={open} onClose={onClose} title="Quản lý buổi của lớp">
 			{!sy ? (
-				<p className="text-muted-foreground text-sm">
-					Lớp chưa có giáo trình để quản lý buổi.
-				</p>
+				<div className="rounded-lg border border-dashed p-6 text-center">
+					<p className="text-muted-foreground text-sm">
+						Gắn giáo trình cho lớp để sắp xếp buổi.
+					</p>
+					<Button size="sm" className="mt-4" onClick={onOpenCurriculum}>
+						Mở tab Giáo trình
+					</Button>
+				</div>
 			) : (
 				<div className="flex flex-col gap-4">
 					<p className="text-muted-foreground text-xs">
@@ -182,33 +189,37 @@ export function ClassSessionsManageModal({
 				</div>
 			)}
 
-			<AddModuleModal
-				open={addModuleOpen}
-				onClose={() => setAddModuleOpen(false)}
-				target={{ kind: "class", classId: cls.id }}
-			/>
-			<EditModuleModal
-				open={editModuleId !== null}
-				onClose={() => setEditModuleId(null)}
-				target={{ kind: "class", classId: cls.id }}
-				moduleId={editModuleId}
-			/>
-			<AddLessonModal
-				open={addLessonModuleId !== null}
-				onClose={() => setAddLessonModuleId(null)}
-				target={{ kind: "class", classId: cls.id }}
-				moduleId={addLessonModuleId}
-				showStatus
-			/>
-			<EditLessonModal
-				open={editLessonRef !== null}
-				onClose={() => setEditLessonRef(null)}
-				target={{ kind: "class", classId: cls.id }}
-				moduleId={editLessonRef?.moduleId ?? null}
-				lessonId={editLessonRef?.lessonId ?? null}
-				showStatus
-			/>
-			{mutations.confirmModal}
+			{sy && (
+				<>
+					<AddModuleModal
+						open={addModuleOpen}
+						onClose={() => setAddModuleOpen(false)}
+						target={{ kind: "class", classId: cls.id }}
+					/>
+					<EditModuleModal
+						open={editModuleId !== null}
+						onClose={() => setEditModuleId(null)}
+						target={{ kind: "class", classId: cls.id }}
+						moduleId={editModuleId}
+					/>
+					<AddLessonModal
+						open={addLessonModuleId !== null}
+						onClose={() => setAddLessonModuleId(null)}
+						target={{ kind: "class", classId: cls.id }}
+						moduleId={addLessonModuleId}
+						showStatus
+					/>
+					<EditLessonModal
+						open={editLessonRef !== null}
+						onClose={() => setEditLessonRef(null)}
+						target={{ kind: "class", classId: cls.id }}
+						moduleId={editLessonRef?.moduleId ?? null}
+						lessonId={editLessonRef?.lessonId ?? null}
+						showStatus
+					/>
+					{mutations.confirmModal}
+				</>
+			)}
 		</Modal>
 	);
 }
