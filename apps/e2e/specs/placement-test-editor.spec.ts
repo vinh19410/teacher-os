@@ -175,7 +175,13 @@ test.describe("placement test editor (/placement-test -> /kiem-tra-dau-vao/)", (
 		});
 		await page.getByRole("switch", { name: "Giao diện tối" }).click();
 
-		// 6. Tải lại trang profile -> thấy ngay đề 29 câu và nội dung câu 1 mới
+		// 6. Tải lại trang profile -> thấy ngay đề 29 câu, điền bước thông tin và thấy nội dung câu 1 mới
+		const dbClean = openDb();
+		try {
+			await dbClean.execute("UPDATE lead SET ip_hash = '' WHERE ip_hash != ''");
+		} finally {
+			dbClean.close();
+		}
 		await profileTab.reload();
 		await expect(
 			profileTab.getByRole("heading", {
@@ -184,12 +190,22 @@ test.describe("placement test editor (/placement-test -> /kiem-tra-dau-vao/)", (
 		).toBeVisible();
 		await profileTab.locator("#startTestBtn").click();
 		await expect(
+			profileTab.getByRole("heading", {
+				name: "Thông Tin Của Bạn Trước Khi Làm Bài",
+			}),
+		).toBeVisible();
+		await profileTab.locator("#leadName").fill("Học Viên Kiểm Đề");
+		await profileTab.locator("#leadEmail").fill("kiemde@example.com");
+		await profileTab
+			.locator("#leadPhone")
+			.fill(`0909${String(Date.now()).slice(-6)}`);
+		await profileTab.locator("#submitLeadGateBtn").click();
+		await expect(
 			profileTab.locator('fieldset[data-question-id="vg-01"]'),
 		).toContainText(updatedPrompt);
 		await expect(profileTab.locator(".progress-counter")).toContainText(
 			"Đã trả lời: 0/29 câu",
 		);
-
 		// 7. Thay audio đoạn 1, bấm Nghe thử ở màn sửa (blob:), rồi Phát hành v2 và phát ở trang profile
 		const mp3Buffer = readFileSync(SAMPLE_MP3_PATH);
 		await page

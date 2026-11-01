@@ -117,7 +117,10 @@ body {
 
 a:focus-visible,
 button:focus-visible,
-input:focus-visible {
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
 	outline: 3px solid var(--gold-border);
 	outline-offset: 2px;
 }
@@ -414,6 +417,158 @@ h2 {
 	align-items: center;
 	gap: var(--space-3);
 	margin-top: var(--space-5);
+}
+
+/* Info Gate Form & Identity Bar (#534) */
+.honeypot-field {
+	position: absolute;
+	left: -9999px;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+}
+
+.lead-identity-bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-2);
+	background: var(--paper-warm);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-sm);
+	padding: var(--space-2) var(--space-3);
+	margin-top: var(--space-3);
+	margin-bottom: var(--space-3);
+	font-size: 0.9rem;
+}
+
+.lead-identity-text {
+	color: var(--ink-2);
+	font-weight: 600;
+}
+
+.btn-link-inline {
+	background: none;
+	border: none;
+	color: var(--brand);
+	font-family: var(--font-body);
+	font-size: 0.88rem;
+	font-weight: 700;
+	text-decoration: underline;
+	cursor: pointer;
+	padding: 6px 4px;
+	min-height: 36px;
+}
+
+.btn-link-inline:hover {
+	color: var(--brand-surface);
+}
+
+.lead-gate-form {
+	margin-top: var(--space-5);
+}
+
+.info-form-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: var(--space-4);
+}
+
+.field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.field.full-span {
+	grid-column: 1 / -1;
+}
+
+.field label {
+	font-size: 0.92rem;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.required-star {
+	color: var(--danger);
+}
+
+.input-control {
+	width: 100%;
+	min-height: 44px;
+	padding: 10px 14px;
+	font-family: var(--font-body);
+	font-size: 0.98rem;
+	color: var(--ink);
+	background: var(--paper-elevated);
+	border: 1.5px solid var(--line-strong);
+	border-radius: var(--radius-sm);
+	transition: border-color var(--dur-state) var(--ease-out);
+}
+
+.input-control:hover {
+	border-color: var(--brand);
+}
+
+.field.has-error .input-control {
+	border-color: var(--danger);
+	background: var(--danger-soft);
+}
+
+.field-help {
+	font-size: 0.82rem;
+	color: var(--ink-3);
+}
+
+.field-error {
+	display: none;
+	font-size: 0.84rem;
+	font-weight: 600;
+	color: var(--danger);
+}
+
+.field.has-error .field-error {
+	display: block;
+}
+
+.optional-details {
+	margin-top: var(--space-4);
+	background: var(--paper-warm);
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	padding: var(--space-3) var(--space-4);
+}
+
+.optional-details summary {
+	cursor: pointer;
+	font-weight: 700;
+	font-size: 0.94rem;
+	color: var(--brand);
+	padding: 6px 0;
+}
+
+.optional-grid {
+	margin-top: var(--space-3);
+}
+
+.gate-error-alert {
+	margin-top: var(--space-4);
+	background: var(--danger-soft);
+	border: 1.5px solid var(--danger);
+	border-radius: var(--radius);
+	padding: var(--space-4);
+}
+
+.gate-error-alert[hidden] {
+	display: none !important;
+}
+
+.gate-error-text {
+	font-weight: 700;
+	color: var(--danger);
+	margin-bottom: var(--space-3);
 }
 
 /* Questions & Fieldsets */

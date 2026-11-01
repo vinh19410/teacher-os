@@ -57,7 +57,7 @@ created: 2026-11-01
 | 3 | [Merge và kiểm chứng trên staging](./phase-03-staging-verification.md) | Pending | 1, 2 |
 | 4 | [Đợt 2: dọn DNS, đưa profile lên prod](./phase-04-production-cutover.md) | Pending | 3 |
 
-Phase 1 được ship và merge vào `develop` theo hợp đồng pipeline beta (`ak-vibe --ship --beta`, chỉ chạy `ci.yml`, không tự deploy). **Cảnh báo promote:** SHA `develop` ngay trước khi merge Phase 1 là `0fa33c66f26f44e8bf1ebcf9041b56f0e6c290e4` — ở Phase 2 (đợt 1: promote server trước khi đưa profile lên prod), người vận hành phải promote từ SHA `0fa33c66f26f44e8bf1ebcf9041b56f0e6c290e4` (chưa chứa `profileWorker`) lên `main`, chỉ promote `develop` HEAD ở Phase 4 sau khi bộ đề đã phát hành và DNS `msmy.io.vn` đã được dọn. <!-- Updated: Red Team RT-5 & Kongming -->
+Phase 1 được ship và merge vào `develop` theo hợp đồng pipeline beta (`ak-vibe --ship --beta`, chỉ chạy `ci.yml`, không tự deploy). **Cảnh báo promote:** SHA `develop` ngay trước khi merge Phase 1 là `7d331c05b305fbe7fd16b98fb0942e5ab93a68cb` — ở Phase 2 (đợt 1: promote server trước khi đưa profile lên prod), người vận hành phải promote từ SHA `7d331c05b305fbe7fd16b98fb0942e5ab93a68cb` (chưa chứa `profileWorker`) lên `main`, chỉ promote `develop` HEAD ở Phase 4 sau khi bộ đề đã phát hành và DNS `msmy.io.vn` đã được dọn. <!-- Updated: Red Team RT-5 & Kongming -->
 
 ## Rủi ro chính
 
@@ -117,7 +117,7 @@ Biến thể tiếp theo có thể là thêm trang profile cho giáo viên khác
 | 2 | Nhánh fallback inline `command` cho `StaticSite` trong `alchemy@2.0.0-beta.72` làm hỏng `Command.Build` / `PropExpr` | High | Accept | Phase 1 |
 | 3 | `Smoke check profile` thiếu kiểm tra `lead-api` trên `/kiem-tra-dau-vao/`, redirect `/kiem-tra-dau-vao`, `www.msmy.io.vn` và `timeout-minutes` | High | Accept | Phase 1 |
 | 4 | Thiếu `apps/profile/tests/placement-test.test.mjs`, sai mục `CHANGELOG.md` (`## 2026-11-01`) và thiếu drift test cổng `8005` | Medium | Accept | Phase 1 |
-| 5 | Cảnh báo SHA `0fa33c66f26f44e8bf1ebcf9041b56f0e6c290e4` cho đợt 1 promote server, kiểm tra quyền API zone `msmy.io.vn`, query `LEAD_ORG_ID` staging và Rollback DNS | High | Accept | Plan, Phase 1, Phase 2, Phase 3, Phase 4 |
+| 5 | Cảnh báo SHA `7d331c05b305fbe7fd16b98fb0942e5ab93a68cb` cho đợt 1 promote server, kiểm tra quyền API zone `msmy.io.vn`, query `LEAD_ORG_ID` staging và Rollback DNS | High | Accept | Plan, Phase 1, Phase 2, Phase 3, Phase 4 |
 | 6 | Thêm `resolveLeadOrgId` ném lỗi lúc deploy khi `LEAD_ORG_ID` rỗng | Critical | Reject (trái thiết kế fail-closed 503 khi để trống `LEAD_ORG_ID` tại `alchemy.run.ts:124-127`) | — |
 | 7 | Thêm file `apps/profile/public/_headers` | Medium | Reject (ngoài phạm vi; `StaticSite` cùng mẫu `apps/landing` và trang có PDF iframe modal nội bộ) | — |
 

@@ -37,9 +37,9 @@ dependencies: []
 
 ### Promote
 
-6. Tính lại migration đang chờ: `git diff --name-only --diff-filter=A origin/main 0fa33c66f26f44e8bf1ebcf9041b56f0e6c290e4 -- packages/db/src/migrations`. Đảm bảo các migration này (`0057`..`0060`) đã được chạy thử trên `staging` trước khi promote lên `main`. <!-- Updated: Red Team RT-5 -->
+6. Tính lại migration đang chờ: `git diff --name-only --diff-filter=A origin/main 7d331c05b305fbe7fd16b98fb0942e5ab93a68cb -- packages/db/src/migrations`. Đảm bảo các migration này (`0057`..`0060`) đã được chạy thử trên `staging` trước khi promote lên `main`. <!-- Updated: Red Team RT-5 -->
 7. Backup prod D1 bằng `wrangler d1 export <db> --remote --output backup-<date>.sql`, lưu ngoài repo.
-8. Mở PR từ commit `0fa33c66f26f44e8bf1ebcf9041b56f0e6c290e4` (SHA của `develop` ngay trước khi merge PR Phase 1, **không chứa `profileWorker`**) vào `main`. Thao tác này là phát hành production nên cần người dùng duyệt merge. <!-- Updated: Red Team RT-5 & Kongming -->
+8. Mở PR từ commit `7d331c05b305fbe7fd16b98fb0942e5ab93a68cb` (SHA của `develop` ngay trước khi merge PR Phase 1, **không chứa `profileWorker`**) vào `main`. Thao tác này là phát hành production nên cần người dùng duyệt merge. <!-- Updated: Red Team RT-5 & Kongming -->
 9. Theo dõi `deploy.yml` đến khi xanh.
 
 ### Phát hành bộ đề

@@ -11,7 +11,7 @@ dependencies: []
 
 ## Goal
 
-Mô tả `profile` trong topology và stack Alchemy kèm canonical tag, smoke check CI/CD, drift test và tài liệu, sau đó mở PR vào `develop`, review và merge theo hợp đồng beta pipeline (kèm cảnh báo rõ SHA `0fa33c66f26f44e8bf1ebcf9041b56f0e6c290e4` trước merge để đợt 1 promote server không kéo theo `profileWorker`). <!-- Updated: Red Team RT-5 & Kongming -->
+Mô tả `profile` trong topology và stack Alchemy kèm canonical tag, smoke check CI/CD, drift test và tài liệu, sau đó mở PR vào `develop`, review và merge theo hợp đồng beta pipeline (kèm cảnh báo rõ SHA `7d331c05b305fbe7fd16b98fb0942e5ab93a68cb` trước merge để đợt 1 promote server không kéo theo `profileWorker`). <!-- Updated: Red Team RT-5 & Kongming -->
 
 ## Files to Create / Modify
 
@@ -106,7 +106,7 @@ Mô tả `profile` trong topology và stack Alchemy kèm canonical tag, smoke ch
   1. Trong `docs/production-release-runbook.md`:
      - Thêm dòng `Profile origin` (`https://msmy.io.vn` + `https://www.msmy.io.vn` trên prod, `https://profile.<domain>` trên stage khác) và `LEAD_API_URL (profile build)` vào bảng Topology, cập nhật mô tả staging (`https://profile.staging.teacheros.io.vn`).
      - Cập nhật dòng `LEAD_ORIGINS` ở bảng Lead intake (#506) dòng 101: mặc định lấy từ `topology.profileOrigins` (`https://msmy.io.vn,https://www.msmy.io.vn` trên prod, `https://profile.staging.teacheros.io.vn` trên staging); cảnh báo không để biến `LEAD_ORIGINS` cũ trên GitHub Environment `staging`/`production` làm mất origin mặc định của stage.
-     - Thay bước 5 của mục thứ tự phát hành bộ đề (#515) bằng cơ chế deploy tự động qua `deploy.yml` (giữ nguyên cổng: bộ đề phải được phát hành ở bước 3–4 trước khi đưa resource `profile` lên prod; ghi rõ SHA `0fa33c66f26f44e8bf1ebcf9041b56f0e6c290e4` nếu cần promote riêng `server` ở đợt 1).
+     - Thay bước 5 của mục thứ tự phát hành bộ đề (#515) bằng cơ chế deploy tự động qua `deploy.yml` (giữ nguyên cổng: bộ đề phải được phát hành ở bước 3–4 trước khi đưa resource `profile` lên prod; ghi rõ SHA `7d331c05b305fbe7fd16b98fb0942e5ab93a68cb` nếu cần promote riêng `server` ở đợt 1).
      - Bổ sung vào mục Deploy preflight yêu cầu xác nhận zone `msmy.io.vn` cùng Cloudflare account và `CLOUDFLARE_API_TOKEN` có quyền trên zone `msmy.io.vn`.
   2. Cập nhật `docs/system-architecture.md` và `docs/codebase-summary.md` phản ánh `apps/profile` được đóng gói qua `Cloudflare.Website.StaticSite("profile")` trong `packages/infra/alchemy.run.ts` với topology `msmy.io.vn` (+ `www`) trên prod và `profile.<domain>` trên staging.
   3. Thêm mục dưới `## 2026-11-01` (`### CI/Infra`) trong `CHANGELOG.md` mô tả việc đưa `apps/profile` vào stack Alchemy, topology, smoke check và runbook (#536).

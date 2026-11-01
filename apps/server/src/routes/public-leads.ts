@@ -12,10 +12,11 @@ import type { Db } from "../app";
 import { notifyNewLead } from "../lib/lead-notify";
 
 /**
- * POST /public/leads (plan #506 phase 2, D4–D7): intake công khai cho form
- * đăng ký trên msmy.io.vn. Mount NGOÀI /api/* như /public/pay — bootstrap
- * middleware và Better Auth không chạy; "auth" là tổ hợp Origin allowlist +
- * chống spam, org đích luôn lấy từ env (không tin client).
+ * POST /public/leads (plan #506 phase 2, D4–D7; #534): intake công khai cho
+ * form đăng ký và cổng bài kiểm tra đầu vào trên msmy.io.vn. Mount NGOÀI
+ * /api/* như /public/pay — bootstrap middleware và Better Auth không chạy;
+ * "auth" là tổ hợp Origin allowlist + chống spam, org đích luôn lấy từ env
+ * (không tin client).
  *
  * Hợp đồng fail-closed: thiếu LEAD_ORG_ID ⇒ 503 LEAD_INTAKE_DISABLED (như
  * getBankHub); Origin không thuộc LEAD_ORIGINS ⇒ 403; bot dính honeypot /
@@ -181,6 +182,14 @@ export function publicLeadRoutes(deps: PublicLeadRouteDeps) {
 		const dedupeWindowStartMs = now - LEAD_DEDUPE_WINDOW_MS;
 		const skipIpCheck = ipHash.length === 0 ? 1 : 0;
 		const id = crypto.randomUUID();
+		const source = submit.source ?? "profile";
+		const birthDate = submit.birthDate ?? "";
+		const course = submit.course ?? "";
+		const studyMode = submit.studyMode ?? "";
+		const studyDays = submit.studyDays ?? "";
+		const timeSlot = submit.timeSlot ?? "";
+		const note = submit.note ?? "";
+		const placement = submit.placement ?? "";
 
 		const inserted = (await db.all(sql`
 			INSERT INTO lead (
@@ -194,15 +203,15 @@ export function publicLeadRoutes(deps: PublicLeadRouteDeps) {
 				${submit.name},
 				${submit.phone},
 				${submit.email ?? ""},
-				${submit.birthDate ?? ""},
-				${submit.course ?? ""},
-				${submit.studyMode ?? ""},
-				${submit.studyDays ?? ""},
-				${submit.timeSlot ?? ""},
-				${submit.note ?? ""},
-				${submit.placement ?? ""},
+				${birthDate},
+				${course},
+				${studyMode},
+				${studyDays},
+				${timeSlot},
+				${note},
+				${placement},
 				'',
-				'profile',
+				${source},
 				'new',
 				${ipHash},
 				1,
@@ -240,13 +249,13 @@ export function publicLeadRoutes(deps: PublicLeadRouteDeps) {
 				SET
 					name = CASE WHEN lead.name = '' THEN ${submit.name} ELSE lead.name END,
 					email = CASE WHEN lead.email = '' THEN ${submit.email ?? ""} ELSE lead.email END,
-					birth_date = ${submit.birthDate ?? ""},
-					course = ${submit.course ?? ""},
-					study_mode = ${submit.studyMode ?? ""},
-					study_days = ${submit.studyDays ?? ""},
-					time_slot = ${submit.timeSlot ?? ""},
-					note = ${submit.note ?? ""},
-					placement = ${submit.placement ?? ""},
+					birth_date = CASE WHEN ${birthDate} = '' THEN lead.birth_date ELSE ${birthDate} END,
+					course = CASE WHEN ${course} = '' THEN lead.course ELSE ${course} END,
+					study_mode = CASE WHEN ${studyMode} = '' THEN lead.study_mode ELSE ${studyMode} END,
+					study_days = CASE WHEN ${studyDays} = '' THEN lead.study_days ELSE ${studyDays} END,
+					time_slot = CASE WHEN ${timeSlot} = '' THEN lead.time_slot ELSE ${timeSlot} END,
+					note = CASE WHEN ${note} = '' THEN lead.note ELSE ${note} END,
+					placement = CASE WHEN ${placement} = '' THEN lead.placement ELSE ${placement} END,
 					ip_hash = CASE WHEN lead.ip_hash = '' THEN ${ipHash} ELSE lead.ip_hash END,
 					submit_count = lead.submit_count + 1,
 					updated_at = max(lead.updated_at, ${now})
@@ -325,15 +334,15 @@ export function publicLeadRoutes(deps: PublicLeadRouteDeps) {
 			name: submit.name,
 			phone: submit.phone,
 			email: submit.email ?? "",
-			birthDate: submit.birthDate ?? "",
-			course: submit.course ?? "",
-			studyMode: submit.studyMode ?? "",
-			studyDays: submit.studyDays ?? "",
-			timeSlot: submit.timeSlot ?? "",
-			note: submit.note ?? "",
-			placement: submit.placement ?? "",
+			birthDate,
+			course,
+			studyMode,
+			studyDays,
+			timeSlot,
+			note,
+			placement,
 			teacherNote: "",
-			source: "profile",
+			source,
 			status: "new",
 			submitCount: 1,
 			createdAt: new Date(now).toISOString(),

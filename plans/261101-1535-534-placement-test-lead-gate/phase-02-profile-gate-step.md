@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Trang test: bước form, gửi lead, đồng bộ điểm"
-status: pending
+status: completed
 priority: P2
 effort: "4h"
 dependencies: [1]
@@ -15,7 +15,7 @@ Thêm bước `info` giữa `intro` và `part1`: validate client, gửi `POST /p
 
 ## Files to Create / Modify
 
-- Create: `apps/profile/public/kiem-tra-dau-vao/lead-gate.js` — hàm thuần, import được từ test Node: `normalizeVietnamPhone`, `validateLeadForm(values)` ⇒ `{ ok, errors }`, `buildLeadPayload({ lead, placement, elapsedMs, website })`, `leadErrorMessage(status, body)`.
+- Create: `apps/profile/public/kiem-tra-dau-vao/lead-gate.js` — hàm thuần và hằng số danh mục, import được từ test Node: `PLACEMENT_COURSE_GROUPS`, `PLACEMENT_STUDY_MODES`, `normalizeVietnamPhone`, `validateLeadForm(values)` ⇒ `{ ok, errors }`, `buildLeadPayload({ lead, placement, elapsedMs, website })`, `leadErrorMessage(status, body)`.
 - Modify: `apps/profile/public/kiem-tra-dau-vao/test.js`
 - Modify: `apps/profile/public/kiem-tra-dau-vao/test.css`
 - Modify: `apps/profile/public/kiem-tra-dau-vao/index.html` (chỉ nếu cần meta/landmark; giữ `<meta name="lead-api">`)
@@ -24,31 +24,62 @@ Thêm bước `info` giữa `intro` và `part1`: validate client, gửi `POST /p
 
 ## Tasks & Steps
 
-1. **State**: thêm `"info"` vào `VALID_STEPS`; thêm `lead` (`{ name, phone, email, birthDate, course, studyMode, note, registered: boolean, syncedPlacement: string }`) vào trạng thái lưu của `saveAttempt/loadSavedAttempt/clearAttempt`. Giữ `version` khoá hiện tại; bản lưu cũ thiếu `lead` đọc ra `lead = null`. Nếu `step` là `part1/part2/result` mà `lead?.registered` không đúng ⇒ đưa về `info`.
-2. **Stepper**: thêm pill "Thông tin" (bước 2); đánh số lại 1–5.
-3. **Intro**: sửa câu "Bạn không cần đăng nhập hay điền thông tin cá nhân trước khi làm bài" thành nội dung đúng mới ("Bạn chỉ cần để lại họ tên, email và số điện thoại trước khi bắt đầu"). Nút "Bắt đầu" và "Tiếp tục bài đang làm" đi tới `info` nếu chưa `registered`, ngược lại `part1`.
-4. **Form (`renderInfoStep`)**: dựng bằng `createEl` (không `innerHTML`). Trường bắt buộc có dấu `*`, `required`, `aria-required`, `autocomplete` (`name`, `email`, `tel`), `inputmode`; trường tuỳ chọn trong `<details>` "Thông tin thêm (không bắt buộc)": ngày sinh (`type=date`, `min=1940-01-01`), khóa học (`<select>` cùng danh mục/nhóm `optgroup` như `profile/public/index.html`), hình thức lớp, ghi chú (`maxlength=500`). Honeypot `website` ẩn (`tabindex=-1`, `aria-hidden`). Lỗi từng trường hiện dưới ô, `aria-invalid` + `aria-describedby`, focus ô lỗi đầu tiên khi submit; validate khi `blur`.
-5. **Gửi lead**: `fetch(`${apiBase}/public/leads`, { method: "POST", ... })` với `AbortController` 10 giây, `elapsedMs = Date.now() - pageLoadedAt` (tính từ lúc tải trang, không phải lúc hiện form). Lý do: server trả **201 giả và không ghi DB** khi `elapsedMs < 3000`; nếu đo từ lúc hiện form thì trình duyệt autofill + bấm gửi nhanh sẽ khiến học viên tưởng đã đăng ký mà lead không được lưu. Người dùng luôn đã ở trang ≥ 3 giây (tải đề, đọc intro) trước khi tới form; thêm test đơn vị cho `buildLeadPayload` chứng minh `elapsedMs` không bao giờ nhỏ hơn thời gian từ lúc tải trang.
-   - `201/200` ⇒ `lead.registered = true`, `saveAttempt`, `rerender("part1")`.
-   - `400` ⇒ map `fields` ⇒ lỗi từng trường, không echo giá trị.
-   - `429` ⇒ "Có quá nhiều lượt đăng ký từ mạng này. Vui lòng thử lại sau ít phút hoặc nhắn Zalo cô Mỹ." (`Retry-After` nếu có).
-   - `403/503/5xx/lỗi mạng` ⇒ "Hệ thống đang bận" + nút Thử lại + link Zalo; **không** cho vào Phần 1.
-   - Khoá nút gửi và `aria-busy` khi đang gửi (chống bấm đúp).
-6. **Đồng bộ điểm** trong `renderResultStep`: nếu `lead.registered` và `lead.syncedPlacement !== summaryText`, gửi nền `POST /public/leads` với **toàn bộ** trường của form + `placement: summaryText` + `source: "placement-test"` (dedupe ghi đè nên phải gửi đủ). Thành công ⇒ `lead.syncedPlacement = summaryText` + `saveAttempt`. Lỗi bất kỳ ⇒ nuốt, không đổi UI, cho thử lại ở lần render kết quả sau.
-7. **Làm lại / Đổi thông tin**: "Làm Lại" giữ `lead` (`clearAttempt(test, { keepLead: true })`) và đặt `syncedPlacement = ""`; thêm liên kết "Không phải bạn? Đổi thông tin" ở intro và đầu Phần 1 để xoá `lead` và về `info`. Khi `clearAttempt` thông thường ("Làm lại từ đầu" ở banner resume) cũng giữ `lead`.
-8. **CSS**: thêm style cho form, lỗi, `details`; tái dùng token trong `test.css`; mục tiêu chạm ≥ 44px, không tràn ngang ở 375px.
-9. **Test (viết trước)** trong `apps/profile/tests/placement-test.test.mjs` + `lead-gate.js`:
-   - `validateLeadForm`: thiếu từng trường bắt buộc, email sai, SĐT `84…`/`+84…` hợp lệ, SĐT 9 số sai, tên 1 ký tự sai, ngày sinh tương lai sai, `note` quá 500.
-   - `buildLeadPayload`: luôn có `source`, bỏ trường rỗng, chuỗi `placement` ≤ `LEAD_PLACEMENT_MAX`, kèm đủ trường khi đồng bộ điểm.
-   - `leadErrorMessage`: map 400/429/503/mạng.
-   - Drift: `<select>` khóa học/hình thức lớp trong trang test khớp `LEAD_COURSES`/`LEAD_STUDY_MODES` (mở rộng `lead-catalog-drift.test.ts`).
+<!-- Updated: Red Team & Validation Session 1 - elapsedMs backdate, submitCount check, keepalive score sync, shared-PC clearAttempt, details.open, catalog exports, and advice handover structure -->
+
+### Task 2.1 — Tạo `lead-gate.js` và viết/chạy unit test + catalog drift test
+- **Goal:** Có module thuần `apps/profile/public/kiem-tra-dau-vao/lead-gate.js` chứa danh mục khóa học/hình thức lớp, validate form, tạo payload `POST /public/leads`, thông báo lỗi tiếng Việt, kèm unit test và drift test.
+- **Target files and symbols:**
+  - `apps/profile/public/kiem-tra-dau-vao/lead-gate.js` (`PLACEMENT_COURSE_GROUPS`, `PLACEMENT_STUDY_MODES`, `normalizeVietnamPhone`, `validateLeadForm`, `buildLeadPayload`, `leadErrorMessage`)
+  - `apps/profile/tests/placement-test.test.mjs`
+  - `apps/server/src/lead-catalog-drift.test.ts`
+- **Steps:**
+  1. Viết test trước trong `apps/profile/tests/placement-test.test.mjs` và `apps/server/src/lead-catalog-drift.test.ts`:
+     - `validateLeadForm`: thiếu từng trường bắt buộc (`name`, `email`, `phone`), email sai định dạng, SĐT `84…`/`+84…` hợp lệ, SĐT 9 số sai, tên 1 ký tự sai, ngày sinh sai lịch (`2026-02-30`)/năm `< 1940`/năm tương lai (`> currentYear` theo giờ VN), `note` quá 500 ký tự.
+     - `buildLeadPayload`: luôn có `source: "placement-test"`, chuẩn hoá `phone`, ép `elapsedMs >= 0` (và khi `isScoreSync: true` hoặc đã đăng ký thì `elapsedMs >= 3500`), bỏ trường tuỳ chọn rỗng, cắt `placement` ≤ `LEAD_PLACEMENT_MAX` (300), giữ đủ trường của `lead` khi đồng bộ điểm.
+     - `leadErrorMessage`: map đúng thông báo tiếng Việt cho `400`, `429`, `403/503/5xx` và lỗi mạng.
+     - Drift test trong `apps/server/src/lead-catalog-drift.test.ts`: import `PLACEMENT_COURSE_GROUPS` và `PLACEMENT_STUDY_MODES` từ `lead-gate.js`, kiểm khớp 100% với `LEAD_COURSE_GROUPS`, `LEAD_COURSES`, `LEAD_COURSE_LABELS`, `LEAD_STUDY_MODES`, `LEAD_STUDY_MODE_LABELS`.
+  2. Tạo `apps/profile/public/kiem-tra-dau-vao/lead-gate.js` thỏa mãn toàn bộ test trên.
+- **Success criteria:** Unit test của `profile` và drift test của `server` chạy xanh.
+- **Verify:** `pnpm --filter profile test && pnpm --filter server test -- lead-catalog-drift` thoát mã 0.
+
+### Task 2.2 — Tích hợp bước `info`, gửi lead, đồng bộ điểm ngầm và "Đổi thông tin" trong `test.js` + `test.css`
+- **Goal:** Trang `/kiem-tra-dau-vao/` hiển thị bước `info` (2/5) giữa `intro` và `part1`, gửi lead trước khi vào Phần 1, đồng bộ điểm ở màn kết quả, và hỗ trợ đổi thông tin/làm lại an toàn trên máy dùng chung.
+- **Target files and symbols:**
+  - `apps/profile/public/kiem-tra-dau-vao/test.js` (`VALID_STEPS`, `loadSavedAttempt`, `saveAttempt`, `clearAttempt`, `createStepperBar`, `renderIntroStep`, `renderInfoStep`, `renderPart1Step`, `renderPart2Step`, `renderResultStep`)
+  - `apps/profile/public/kiem-tra-dau-vao/test.css`
+- **Steps:**
+  1. **State & `pageLoadedAt`:** Thêm `"info"` vào `VALID_STEPS`; thêm `lead` (`{ name, phone, email, birthDate, course, studyMode, note, registered: boolean, syncedPlacement: string }`) vào `loadSavedAttempt`/`saveAttempt`/`clearAttempt`. Khi `parsed.version !== test.version`, vẫn giữ `parsed.lead` hợp lệ (đặt `syncedPlacement = ""`) để không bắt học viên nhập lại khi giáo viên vừa phát hành đề mới. Nếu `loadSavedAttempt` khôi phục `lead` đã có hoặc `step !== "intro"`, lùi `pageLoadedAt = Math.min(pageLoadedAt, Date.now() - 3500)` để tránh bẫy honeypot `elapsedMs < 3000` sau khi reload. Nếu `step` là `part1`/`part2`/`result` mà `!lead?.registered` ⇒ đưa `step` về `"info"`.
+  2. **Stepper (1–5):** Thêm pill `"2. Thông tin của bạn"`; đánh số lại `1. Giới thiệu`, `2. Thông tin của bạn`, `3. Phần 1: Vocab + Grammar`, `4. Phần 2: Listening`, `5. Kết quả & Lộ trình`.
+  3. **Intro:** Đổi câu `"Bạn không cần đăng nhập hay điền thông tin cá nhân trước khi làm bài."` thành `"Bạn chỉ cần để lại họ tên, email và số điện thoại trước khi bắt đầu để nhận kết quả CEFR và lộ trình học cá nhân hóa."`. Nút `#startTestBtn` và `#resumeAttemptBtn` chuyển sang `state.lead?.registered ? "part1" : "info"`.
+  4. **Form (`renderInfoStep`):** Dựng bằng `createEl` (không `innerHTML`). Trường bắt buộc: Họ và tên (`#leadName`, `name="name"`, `autocomplete="name"`, `required`, `aria-required="true"`), Email (`#leadEmail`, `name="email"`, `type="email"`, `autocomplete="email"`, `required`, `aria-required="true"`), Số điện thoại Zalo (`#leadPhone`, `name="phone"`, `type="tel"`, `inputmode="tel"`, `autocomplete="tel"`, `required`, `aria-required="true"`). Trường tuỳ chọn trong `<details id="leadOptionalDetails">` (`"Thông tin thêm (không bắt buộc)"`): ngày sinh (`#leadBirthDate`, `type="date"`, `min="1940-01-01"`), khóa học (`#leadCourse`, `<select name="course">` dựng từ `PLACEMENT_COURSE_GROUPS`), hình thức lớp (`#leadStudyMode`, `<select name="studyMode">` dựng từ `PLACEMENT_STUDY_MODES`), ghi chú (`#leadNote`, `<textarea name="note" maxlength="500">`). Honeypot `website` ẩn (`tabindex="-1"`, `aria-hidden="true"`). Lỗi từng trường hiện dưới ô với `aria-invalid` + `aria-describedby`; nếu trường lỗi nằm trong `<details>`, đặt `details.open = true` trước khi `.focus()` ô lỗi đầu tiên; validate khi `blur` và `submit`.
+  5. **Gửi lead ở bước `info`:** Gọi `POST ${apiBase}/public/leads` với `AbortController` 10 giây, khoá nút gửi + `aria-busy="true"`.
+     - `201/200` (và `typeof body?.submitCount === "number"` hoặc thành công hợp lệ): đặt `lead.registered = true`, lưu `saveAttempt(state)` đồng thời đồng bộ thông tin sang `localStorage` khoá `msmy_lead_draft_v1` (để khi bấm `#registerWithResultBtn` sang trang chủ form tư vấn có sẵn thông tin), rồi `rerender("part1")`.
+     - `400`: map `fields` sang lỗi từng trường (mở `<details>` nếu trường lỗi nằm bên trong) và focus trường đầu tiên; nếu `fields` rỗng/không khớp trường nào thì hiện hộp lỗi form.
+     - `429`: hiện thông báo `"Có quá nhiều lượt đăng ký từ mạng này. Vui lòng thử lại sau ít phút hoặc nhắn Zalo cô Mỹ."` kèm nút Thử lại + link Zalo.
+     - `403/503/5xx/lỗi mạng`: hiện `"Hệ thống đang bận, chưa thể lưu thông tin của bạn."` kèm nút Thử lại + link Zalo; **không** cho vào Phần 1.
+  6. **Đồng bộ điểm ở `renderResultStep`:** Nếu `state.lead?.registered && state.lead.syncedPlacement !== summaryText`, gửi nền `POST ${apiBase}/public/leads` (`keepalive: true`, `elapsedMs: Math.max(3500, Date.now() - pageLoadedAt)`) kèm toàn bộ trường của `state.lead` + `placement: summaryText` + `source: "placement-test"`. Khi trả về `200/201` (và `state.lead` chưa bị reset/đổi), gán `state.lead.syncedPlacement = summaryText` và `saveAttempt(state)`. Lỗi bất kỳ ⇒ nuốt, không chặn UI.
+  7. **Làm lại & Đổi thông tin:** `"Làm Lại"` (`#retryTestBtn`) và `"Làm Lại Từ Đầu"` (`#resetAttemptBtn`) gọi `clearAttempt(test, { keepLead: true, currentLead: state.lead })` (giữ `lead`, đặt `syncedPlacement = ""`) và gán lại đầy đủ `state.lead = fresh.lead`. Hiển thị thanh thông tin học viên kèm nút/liên kết `"Không phải bạn? Đổi thông tin"` (`#changeLeadInfoBtn`) ở `intro` (khi `lead?.registered`), `part1`, `part2`, và `result`: khi bấm sẽ gọi `clearAttempt(test, { keepLead: false })`, xoá cả `msmy_lead_draft_v1`, gán `state.lead = null`, và `rerender("info")`.
+  8. **CSS (`test.css`):** Bổ sung `select:focus-visible, textarea:focus-visible, summary:focus-visible` vào rule focus ring; thêm style cho `.info-form-grid`, `.field`, `.input-control`, `.field-error`, `.optional-details`, `.lead-identity-bar`, `.gate-error-alert`; đảm bảo touch target ≥ 44px và không tràn ngang ở 375px.
+- **Success criteria:** Unit test, drift test và biome check đều xanh.
+- **Verify:** `pnpm --filter profile test && pnpm --filter server test -- lead-catalog-drift && pnpm exec biome check apps/profile apps/server` thoát mã 0.
 
 ## Verification
 
 - `pnpm --filter profile test`
 - `pnpm --filter server test -- lead-catalog-drift`
 - `pnpm exec biome check apps/profile apps/server`
-- Chạy tay `PORT=8105 LEAD_API_URL=http://localhost:8100 node apps/profile/serve.mjs` (chỉ khi cổng trống; tắt tiến trình sau khi xong), duyệt 3 viewport + bàn phím theo `REVIEW.md`.
+
+## Failure Protocol
+If any Verify step does not meet its stated pass condition, STOP this phase.
+Do not improvise a fix, retry blindly, or reason around the failure.
+Spawn the `kongming` subagent for next-step counsel and pass:
+- the phase and task id,
+- what you attempted (the steps you ran),
+- the exact command and its full output,
+- the pass condition it failed to meet.
+Apply kongming's guidance, then re-run the Verify step.
+If `kongming` cannot be spawned in this environment, STOP and report the same
+failure evidence to the user. Never continue by self-reasoning.
 
 ## Risk / Rollback
 
