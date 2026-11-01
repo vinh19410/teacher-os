@@ -499,4 +499,115 @@ describe("POST /public/leads (#506 phase 2)", () => {
 		});
 		expect(fourthPhone.status).toBe(429);
 	});
+
+	test("source=placement-test: bắt buộc email (thiếu ⇒ 400 LEAD_INVALID fields=['email']), lưu source=placement-test, gửi lần 2 gắn placement và giữ nguyên trường tuỳ chọn đã có (#534)", async () => {
+		const instance = app();
+
+		// 1. Thiếu email hoặc email rỗng khi source=placement-test ⇒ 400 LEAD_INVALID
+		for (const badBody of [
+			{ ...validBody("0909444555"), source: "placement-test" },
+			{ ...validBody("0909444555"), source: "placement-test", email: "   " },
+		]) {
+			const badRes = await submit(instance, badBody);
+			expect(badRes.status).toBe(400);
+			const payload = (await badRes.json()) as {
+				code: string;
+				fields: string[];
+			};
+			expect(payload.code).toBe("LEAD_INVALID");
+			expect(payload.fields).toContain("email");
+		}
+		expect(await leadRows()).toHaveLength(0);
+		expect(sent).toHaveLength(0);
+
+		// 2. Hợp lệ ở bước gate ⇒ 201, source = "placement-test", gửi 1 email
+		const gateRes = await submit(instance, {
+			name: "Lê Hoàng Nam",
+			phone: "0909444555",
+			email: "nam.le@example.com",
+			birthDate: "2004-08-20",
+			course: "ielts-pre",
+			studyMode: "group-online",
+			note: "Mục tiêu 6.5",
+			source: "placement-test",
+			elapsedMs: LEAD_MIN_ELAPSED_MS + 500,
+		});
+		expect(gateRes.status).toBe(201);
+		const gateJson = (await gateRes.json()) as {
+			id: string;
+			submitCount: number;
+		};
+		expect(gateJson.submitCount).toBe(1);
+		expect(sent).toHaveLength(1);
+
+		let rows = await leadRows();
+		expect(rows).toHaveLength(1);
+		expect(rows[0]!.source).toBe("placement-test");
+		expect(rows[0]!.email).toBe("nam.le@example.com");
+		expect(rows[0]!.placement).toBe("");
+
+		// 3. Nộp bài đồng bộ điểm (cùng SĐT, kèm placement, ngay cả khi bỏ trống trường tuỳ chọn) ⇒ cập nhật cùng dòng, giữ trường cũ, không gửi email thứ 2
+		const syncRes = await submit(instance, {
+			name: "Lê Hoàng Nam",
+			phone: "0909444555",
+			email: "nam.le@example.com",
+			placement:
+				"Kiểm tra đầu vào: 19/30 (Vocab + Grammar 12/15, Listening 7/15) – CEFR B1",
+			source: "placement-test",
+			elapsedMs: LEAD_MIN_ELAPSED_MS + 1000,
+		});
+		expect(syncRes.status).toBe(201);
+		const syncJson = (await syncRes.json()) as {
+			id: string;
+			submitCount: number;
+		};
+		expect(syncJson.id).toBe(gateJson.id);
+		expect(syncJson.submitCount).toBe(2);
+		expect(sent).toHaveLength(1);
+
+		rows = await leadRows();
+		expect(rows).toHaveLength(1);
+		expect(rows[0]!.source).toBe("placement-test");
+		expect(rows[0]!.placement).toBe(
+			"Kiểm tra đầu vào: 19/30 (Vocab + Grammar 12/15, Listening 7/15) – CEFR B1",
+		);
+		expect(rows[0]!.birthDate).toBe("2004-08-20");
+		expect(rows[0]!.course).toBe("ielts-pre");
+		expect(rows[0]!.studyMode).toBe("group-online");
+		expect(rows[0]!.note).toBe("Mục tiêu 6.5");
+		expect(rows[0]!.submitCount).toBe(2);
+
+		// 4. Lead tạo từ form trang chủ (profile) sau đó làm bài test (placement-test) ⇒ giữ nguyên source="profile" và giữ studyDays/timeSlot cũ
+		const profileFirst = await submit(
+			instance,
+			{
+				...validBody("0909777888"),
+				studyDays: "tf",
+				timeSlot: "1815",
+			},
+			{ "CF-Connecting-IP": "198.51.100.120" },
+		);
+		expect(profileFirst.status).toBe(201);
+
+		const testLater = await submit(
+			instance,
+			{
+				name: "Nguyễn Thu Hà",
+				phone: "0909777888",
+				email: "ha.test@example.com",
+				placement: "Kiểm tra đầu vào: 24/30 – CEFR B2+",
+				source: "placement-test",
+				elapsedMs: LEAD_MIN_ELAPSED_MS + 500,
+			},
+			{ "CF-Connecting-IP": "198.51.100.120" },
+		);
+		expect(testLater.status).toBe(201);
+
+		const profileRow = (await leadRows()).find((r) => r.phone === "0909777888");
+		expect(profileRow?.source).toBe("profile");
+		expect(profileRow?.email).toBe("ha.test@example.com");
+		expect(profileRow?.studyDays).toBe("tf");
+		expect(profileRow?.timeSlot).toBe("1815");
+		expect(profileRow?.placement).toBe("Kiểm tra đầu vào: 24/30 – CEFR B2+");
+	});
 });
