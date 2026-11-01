@@ -13,97 +13,277 @@ async function assertButtonContrastAcrossThemesAndViewports(
 	page: Page,
 	button: Locator,
 ): Promise<void> {
-	for (const viewport of REVIEW_VIEWPORTS) {
-		await page.setViewportSize(viewport);
-		for (const theme of ["light", "dark"] as const) {
-			await page.evaluate(
-				(isDark) => document.documentElement.classList.toggle("dark", isDark),
-				theme === "dark",
-			);
-			await expect(button).toBeVisible();
-			await expect
-				.poll(() =>
-					button.evaluate((el) => {
-						const canvas = document.createElement("canvas");
-						canvas.width = 1;
-						canvas.height = 1;
-						const ctx = canvas.getContext("2d", { willReadFrequently: true });
-						if (!ctx) return 0;
+	try {
+		for (const viewport of REVIEW_VIEWPORTS) {
+			await page.setViewportSize(viewport);
+			for (const theme of ["light", "dark"] as const) {
+				await page.evaluate(
+					(isDark) => document.documentElement.classList.toggle("dark", isDark),
+					theme === "dark",
+				);
+				await expect(button).toBeVisible();
+				await expect
+					.poll(() =>
+						button.evaluate((el) => {
+							const canvas = document.createElement("canvas");
+							canvas.width = 1;
+							canvas.height = 1;
+							const ctx = canvas.getContext("2d", {
+								willReadFrequently: true,
+							});
+							if (!ctx) return 0;
 
-						const parseRgba = (
-							cssColor: string,
-						): [number, number, number, number] => {
-							ctx.clearRect(0, 0, 1, 1);
-							ctx.fillStyle = "#010203";
-							ctx.fillStyle = cssColor;
-							ctx.fillRect(0, 0, 1, 1);
-							const data = ctx.getImageData(0, 0, 1, 1).data;
-							return [
-								data[0] ?? 0,
-								data[1] ?? 0,
-								data[2] ?? 0,
-								(data[3] ?? 0) / 255,
+							const parseRgba = (
+								cssColor: string,
+							): [number, number, number, number] => {
+								ctx.clearRect(0, 0, 1, 1);
+								ctx.fillStyle = "#010203";
+								ctx.fillStyle = cssColor;
+								ctx.fillRect(0, 0, 1, 1);
+								const data = ctx.getImageData(0, 0, 1, 1).data;
+								return [
+									data[0] ?? 0,
+									data[1] ?? 0,
+									data[2] ?? 0,
+									(data[3] ?? 0) / 255,
+								];
+							};
+
+							const blend = (
+								fg: [number, number, number],
+								bg: [number, number, number],
+								alpha: number,
+							): [number, number, number] => [
+								fg[0] * alpha + bg[0] * (1 - alpha),
+								fg[1] * alpha + bg[1] * (1 - alpha),
+								fg[2] * alpha + bg[2] * (1 - alpha),
 							];
-						};
 
-						let backdrop: [number, number, number] = [255, 255, 255];
-						let anc: HTMLElement | null = el.parentElement;
-						while (anc) {
-							const ancRgba = parseRgba(getComputedStyle(anc).backgroundColor);
-							if (ancRgba[3] > 0) {
-								backdrop = [ancRgba[0], ancRgba[1], ancRgba[2]];
-								break;
+							const chain: HTMLElement[] = [];
+							let anc: HTMLElement | null = el.parentElement;
+							while (anc) {
+								chain.push(anc);
+								anc = anc.parentElement;
 							}
-							anc = anc.parentElement;
-						}
+							let backdrop: [number, number, number] = [255, 255, 255];
+							for (let i = chain.length - 1; i >= 0; i--) {
+								const node = chain[i];
+								if (!node) continue;
+								const ancRgba = parseRgba(
+									getComputedStyle(node).backgroundColor,
+								);
+								if (ancRgba[3] > 0) {
+									backdrop = blend(
+										[ancRgba[0], ancRgba[1], ancRgba[2]],
+										backdrop,
+										ancRgba[3],
+									);
+								}
+							}
 
-						const style = getComputedStyle(el);
-						const fgRaw = parseRgba(style.color);
-						const bgRaw = parseRgba(style.backgroundColor);
-						const opacity = Number.parseFloat(style.opacity || "1");
-						if (bgRaw[3] === 0) return 0;
+							const style = getComputedStyle(el);
+							const fgRaw = parseRgba(style.color);
+							const bgRaw = parseRgba(style.backgroundColor);
+							const opacity = Number.parseFloat(style.opacity || "1");
+							if (bgRaw[3] === 0) return 0;
 
-						const blend = (
-							fg: [number, number, number],
-							bg: [number, number, number],
-							alpha: number,
-						): [number, number, number] => [
-							fg[0] * alpha + bg[0] * (1 - alpha),
-							fg[1] * alpha + bg[1] * (1 - alpha),
-							fg[2] * alpha + bg[2] * (1 - alpha),
-						];
+							let bgRgb = blend(
+								[bgRaw[0], bgRaw[1], bgRaw[2]],
+								backdrop,
+								bgRaw[3],
+							);
+							let fgRgb = blend(
+								[fgRaw[0], fgRaw[1], fgRaw[2]],
+								bgRgb,
+								fgRaw[3],
+							);
+							if (opacity < 1) {
+								bgRgb = blend(bgRgb, backdrop, opacity);
+								fgRgb = blend(fgRgb, backdrop, opacity);
+							}
 
-						let bgRgb = blend(
-							[bgRaw[0], bgRaw[1], bgRaw[2]],
-							backdrop,
-							bgRaw[3],
-						);
-						let fgRgb = blend([fgRaw[0], fgRaw[1], fgRaw[2]], bgRgb, fgRaw[3]);
-						if (opacity < 1) {
-							bgRgb = blend(bgRgb, backdrop, opacity);
-							fgRgb = blend(fgRgb, backdrop, opacity);
-						}
-
-						const channelLum = (c: number): number => {
-							const s = c / 255;
-							return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
-						};
-						const lFg =
-							0.2126 * channelLum(fgRgb[0]) +
-							0.7152 * channelLum(fgRgb[1]) +
-							0.0722 * channelLum(fgRgb[2]);
-						const lBg =
-							0.2126 * channelLum(bgRgb[0]) +
-							0.7152 * channelLum(bgRgb[1]) +
-							0.0722 * channelLum(bgRgb[2]);
-						return (Math.max(lFg, lBg) + 0.05) / (Math.min(lFg, lBg) + 0.05);
-					}),
-				)
-				.toBeGreaterThanOrEqual(4.5);
+							const channelLum = (c: number): number => {
+								const s = c / 255;
+								return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+							};
+							const lFg =
+								0.2126 * channelLum(fgRgb[0]) +
+								0.7152 * channelLum(fgRgb[1]) +
+								0.0722 * channelLum(fgRgb[2]);
+							const lBg =
+								0.2126 * channelLum(bgRgb[0]) +
+								0.7152 * channelLum(bgRgb[1]) +
+								0.0722 * channelLum(bgRgb[2]);
+							return (Math.max(lFg, lBg) + 0.05) / (Math.min(lFg, lBg) + 0.05);
+						}),
+					)
+					.toBeGreaterThanOrEqual(4.5);
+			}
 		}
+	} finally {
+		await page.evaluate(() =>
+			document.documentElement.classList.remove("dark"),
+		);
+		await page.setViewportSize({ width: 1280, height: 720 });
 	}
-	await page.evaluate(() => document.documentElement.classList.remove("dark"));
-	await page.setViewportSize({ width: 1280, height: 720 });
+}
+
+async function assertSelectionDistinctionAcrossThemesAndViewports(
+	page: Page,
+	selectedBtn: Locator,
+	unselectedBtn: Locator,
+	mode: "card-border" | "solid-chip",
+): Promise<void> {
+	try {
+		for (const viewport of REVIEW_VIEWPORTS) {
+			await page.setViewportSize(viewport);
+			for (const theme of ["light", "dark"] as const) {
+				await page.evaluate(
+					(isDark) => document.documentElement.classList.toggle("dark", isDark),
+					theme === "dark",
+				);
+				await expect(selectedBtn).toBeVisible();
+				await expect(unselectedBtn).toBeVisible();
+				await expect
+					.poll(() =>
+						selectedBtn.evaluate(
+							(selEl, { unselSelector, checkMode }) => {
+								const unselEl =
+									document.querySelector<HTMLElement>(unselSelector);
+								if (!unselEl) return false;
+
+								const canvas = document.createElement("canvas");
+								canvas.width = 1;
+								canvas.height = 1;
+								const ctx = canvas.getContext("2d", {
+									willReadFrequently: true,
+								});
+								if (!ctx) return false;
+
+								const parseRgba = (
+									cssColor: string,
+								): [number, number, number, number] => {
+									ctx.clearRect(0, 0, 1, 1);
+									ctx.fillStyle = "#010203";
+									ctx.fillStyle = cssColor;
+									ctx.fillRect(0, 0, 1, 1);
+									const data = ctx.getImageData(0, 0, 1, 1).data;
+									return [
+										data[0] ?? 0,
+										data[1] ?? 0,
+										data[2] ?? 0,
+										(data[3] ?? 0) / 255,
+									];
+								};
+
+								const blend = (
+									fg: [number, number, number],
+									bg: [number, number, number],
+									alpha: number,
+								): [number, number, number] => [
+									fg[0] * alpha + bg[0] * (1 - alpha),
+									fg[1] * alpha + bg[1] * (1 - alpha),
+									fg[2] * alpha + bg[2] * (1 - alpha),
+								];
+
+								const resolveBackdrop = (
+									node: Element,
+								): [number, number, number] => {
+									const chain: HTMLElement[] = [];
+									let cur: HTMLElement | null = node.parentElement;
+									while (cur) {
+										chain.push(cur);
+										cur = cur.parentElement;
+									}
+									let rgb: [number, number, number] = [255, 255, 255];
+									for (let i = chain.length - 1; i >= 0; i--) {
+										const item = chain[i];
+										if (!item) continue;
+										const [r, g, b, a] = parseRgba(
+											getComputedStyle(item).backgroundColor,
+										);
+										if (a > 0) rgb = blend([r, g, b], rgb, a);
+									}
+									return rgb;
+								};
+
+								const lum = (rgb: [number, number, number]): number => {
+									const rS = rgb[0] / 255;
+									const gS = rgb[1] / 255;
+									const bS = rgb[2] / 255;
+									const rL =
+										rS <= 0.04045 ? rS / 12.92 : ((rS + 0.055) / 1.055) ** 2.4;
+									const gL =
+										gS <= 0.04045 ? gS / 12.92 : ((gS + 0.055) / 1.055) ** 2.4;
+									const bL =
+										bS <= 0.04045 ? bS / 12.92 : ((bS + 0.055) / 1.055) ** 2.4;
+									return 0.2126 * rL + 0.7152 * gL + 0.0722 * bL;
+								};
+
+								const ratio = (
+									a: [number, number, number],
+									b: [number, number, number],
+								): number => {
+									const la = lum(a);
+									const lb = lum(b);
+									return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+								};
+
+								const selBackdrop = resolveBackdrop(selEl);
+								const selStyle = getComputedStyle(selEl);
+								const selBgRaw = parseRgba(selStyle.backgroundColor);
+								const selBg = blend(
+									[selBgRaw[0], selBgRaw[1], selBgRaw[2]],
+									selBackdrop,
+									selBgRaw[3],
+								);
+								const selFgRaw = parseRgba(selStyle.color);
+								const selFg = blend(
+									[selFgRaw[0], selFgRaw[1], selFgRaw[2]],
+									selBg,
+									selFgRaw[3],
+								);
+								const textRatio = ratio(selFg, selBg);
+
+								if (checkMode === "card-border") {
+									const borderRaw = parseRgba(selStyle.borderTopColor);
+									if (borderRaw[3] === 0) {
+										return false;
+									}
+									const borderRgb = blend(
+										[borderRaw[0], borderRaw[1], borderRaw[2]],
+										selBackdrop,
+										borderRaw[3],
+									);
+									return textRatio >= 4.5 && ratio(borderRgb, selBackdrop) >= 3;
+								}
+
+								const unselBackdrop = resolveBackdrop(unselEl);
+								const unselBgRaw = parseRgba(
+									getComputedStyle(unselEl).backgroundColor,
+								);
+								const unselBg = blend(
+									[unselBgRaw[0], unselBgRaw[1], unselBgRaw[2]],
+									unselBackdrop,
+									unselBgRaw[3],
+								);
+								return textRatio >= 4.5 && ratio(selBg, unselBg) >= 3;
+							},
+							{
+								unselSelector: 'button[aria-pressed="false"]',
+								checkMode: mode,
+							},
+						),
+					)
+					.toBe(true);
+			}
+		}
+	} finally {
+		await page.evaluate(() =>
+			document.documentElement.classList.remove("dark"),
+		);
+		await page.setViewportSize({ width: 1280, height: 720 });
+	}
 }
 test.describe("Student Portal Onboarding Wizard", () => {
 	test.beforeAll(async () => {
@@ -160,24 +340,57 @@ test.describe("Student Portal Onboarding Wizard", () => {
 		await expect(continueBtn).toBeDisabled();
 		await assertButtonContrastAcrossThemesAndViewports(page, continueBtn);
 
-		await page.getByRole("button", { name: /IELTS/ }).click();
+		const ieltsBtn = page.getByRole("button", { name: /IELTS/ });
+		const toeicBtn = page.getByRole("button", { name: /TOEIC/ });
+		await ieltsBtn.click();
+		await expect(ieltsBtn).toHaveAttribute("aria-pressed", "true");
+		await expect(toeicBtn).toHaveAttribute("aria-pressed", "false");
+		await assertSelectionDistinctionAcrossThemesAndViewports(
+			page,
+			ieltsBtn,
+			toeicBtn,
+			"card-border",
+		);
 		await expect(continueBtn).toBeEnabled();
 		await assertButtonContrastAcrossThemesAndViewports(page, continueBtn);
 		await continueBtn.click();
 
 		// Bước 2: Band 6.5
-		await page.getByRole("button", { name: "Band 6.5" }).click();
+		const band65Btn = page.getByRole("button", { name: "Band 6.5" });
+		const band60Btn = page.getByRole("button", { name: "Band 6.0" });
+		await band65Btn.click();
+		await expect(band65Btn).toHaveAttribute("aria-pressed", "true");
+		await expect(band60Btn).toHaveAttribute("aria-pressed", "false");
+		await assertSelectionDistinctionAcrossThemesAndViewports(
+			page,
+			band65Btn,
+			band60Btn,
+			"solid-chip",
+		);
 		await page.getByRole("button", { name: "Tiếp tục" }).click();
 
 		// Bước 3: Du học + Giao tiếp tự tin
 		await page.getByRole("button", { name: "Du học" }).click();
 		await page.getByRole("button", { name: "Giao tiếp tự tin" }).click();
+		await expect(page.getByRole("button", { name: "Du học" })).toHaveAttribute(
+			"aria-pressed",
+			"true",
+		);
+		await expect(
+			page.getByRole("button", { name: "Thăng tiến công việc" }),
+		).toHaveAttribute("aria-pressed", "false");
 		await page.getByRole("button", { name: "Tiếp tục" }).click();
 
 		// Bước 4: 1–2 giờ
 		await page.getByRole("button", { name: "1–2 giờ" }).click();
+		await expect(page.getByRole("button", { name: "1–2 giờ" })).toHaveAttribute(
+			"aria-pressed",
+			"true",
+		);
+		await expect(
+			page.getByRole("button", { name: "Dưới 1 giờ" }),
+		).toHaveAttribute("aria-pressed", "false");
 		await page.getByRole("button", { name: "Tiếp tục" }).click();
-
 		// Màn xác nhận
 		await expect(page.getByText("Xác nhận thông tin của bạn")).toBeVisible();
 		await expect(page.getByText("IELTS")).toBeVisible();
