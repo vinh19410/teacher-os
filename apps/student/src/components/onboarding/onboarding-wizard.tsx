@@ -227,8 +227,8 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 						className={cn(
 							"inline-flex items-center gap-1.5 rounded-lg px-4 py-2 font-medium text-sm transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
 							isCurrentStepValid
-								? "cursor-pointer bg-primary text-bg hover:bg-primary hover:text-primary-foreground"
-								: "cursor-not-allowed rounded-md bg-muted text-muted-foreground opacity-50",
+								? "cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
+								: "cursor-not-allowed rounded-md bg-muted text-muted-foreground",
 						)}
 					>
 						<span>Tiếp tục</span>
@@ -239,7 +239,7 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 						type="button"
 						disabled={submitMutation.isPending}
 						onClick={handleSubmit}
-						className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2 font-medium text-bg text-sm transition-colors hover:bg-primary hover:text-primary-foreground focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+						className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2 font-medium text-primary-foreground text-sm transition-colors hover:bg-primary/90 focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 					>
 						{submitMutation.isPending ? (
 							<>
