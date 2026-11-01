@@ -4,6 +4,7 @@ import {
 	LEAD_COURSE_LABELS,
 	LEAD_COURSES,
 	LEAD_ERROR_CODES,
+	LEAD_SOURCES,
 	LEAD_STATUS_LABELS,
 	LEAD_STATUSES,
 	leadPatchSchema,
@@ -138,6 +139,59 @@ describe("leadSubmitSchema (#506 phase 1)", () => {
 		expect(
 			leadSubmitSchema.safeParse({ ...VALID_SUBMIT, elapsedMs: 1.5 }).success,
 		).toBe(false);
+	});
+
+	it("requires valid email when source is placement-test, keeps email optional for profile or omitted source (#534)", () => {
+		expect(LEAD_SOURCES).toEqual(["profile", "placement-test"]);
+
+		const okPlacement = leadSubmitSchema.safeParse({
+			...VALID_SUBMIT,
+			source: "placement-test",
+			email: "  hocvien@example.com  ",
+		});
+		expect(okPlacement.success).toBe(true);
+		if (okPlacement.success) {
+			expect(okPlacement.data.source).toBe("placement-test");
+			expect(okPlacement.data.email).toBe("hocvien@example.com");
+		}
+
+		const missingEmail = leadSubmitSchema.safeParse({
+			...VALID_SUBMIT,
+			source: "placement-test",
+		});
+		expect(missingEmail.success).toBe(false);
+		if (!missingEmail.success) {
+			expect(missingEmail.error.issues.map((i) => i.path.join("."))).toContain(
+				"email",
+			);
+		}
+
+		const blankEmail = leadSubmitSchema.safeParse({
+			...VALID_SUBMIT,
+			source: "placement-test",
+			email: "   ",
+		});
+		expect(blankEmail.success).toBe(false);
+		if (!blankEmail.success) {
+			expect(blankEmail.error.issues.map((i) => i.path.join("."))).toContain(
+				"email",
+			);
+		}
+
+		const unknownSource = leadSubmitSchema.safeParse({
+			...VALID_SUBMIT,
+			source: "other-form",
+			email: "hocvien@example.com",
+		});
+		expect(unknownSource.success).toBe(false);
+
+		expect(
+			leadSubmitSchema.safeParse({
+				...VALID_SUBMIT,
+				source: "profile",
+			}).success,
+		).toBe(true);
+		expect(leadSubmitSchema.safeParse(VALID_SUBMIT).success).toBe(true);
 	});
 });
 

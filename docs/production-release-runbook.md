@@ -117,7 +117,7 @@ Vận hành:
      - `curl -i https://api.teacheros.io.vn/public/placement-test -H "Origin: https://msmy.io.vn"` trả `200` kèm `Access-Control-Allow-Origin: https://msmy.io.vn` và `Cache-Control: no-cache`.
      - `curl -i -H "Range: bytes=0-99" https://api.teacheros.io.vn<src-của-clip-1>` trả `206 Partial Content` kèm `Content-Range: bytes 0-99/<size>`.
   5. Build và deploy `apps/profile`: `LEAD_API_URL=https://api.teacheros.io.vn pnpm --filter profile build` (script `build.mjs` copy `public/` sang `dist/` và thay `<meta name="lead-api">` ở cả `dist/index.html` lẫn `dist/kiem-tra-dau-vao/index.html`; cổng `status` tĩnh trong `build.mjs` đã bỏ vì bước duyệt nay là nút **Phát hành** trên `/placement-test`).
-  6. Smoke test trên Safari iOS (`https://msmy.io.vn/kiem-tra-dau-vao/`): nghe thử audio, hoàn thành bài test và gửi form tạo lead có `placement` trên `/leads`.
+  6. Smoke test trên Safari iOS (`https://msmy.io.vn/kiem-tra-dau-vao/`): bấm bắt đầu, điền form thông tin cá nhân (tạo lead `source = placement-test`), nghe thử audio, hoàn thành bài test và xác nhận dòng lead trên `/leads` đã được cập nhật `placement` kèm điểm CEFR (#534).
 - **Tùy chọn — WAF rate limiting** trên zone teacheros.io.vn cho path
   `/public/leads` khi có spam thật (lớp 3 của plan; Turnstile chỉ bật khi cần).
 - Email báo lead mới gửi mọi thành viên org qua mailer chung (D13); mailer
