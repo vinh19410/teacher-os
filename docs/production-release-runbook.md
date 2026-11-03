@@ -196,11 +196,13 @@ GitHub — record only "staging D1 exists, rehearsal OK"). Destroy with
 `.github/workflows/deploy.yml` deploys stage `prod` automatically on every
 push to `main` (i.e. merging `develop` into `main` is the release trigger).
 The workflow reproduces this runbook's gates in order: the same quality steps
-as CI and the full Playwright E2E suite (the reusable `e2e.yml`, credential-free)
-must both pass — a red E2E blocks the release — then `APP_DOMAIN=<domain> pnpm alchemy deploy --stage prod` (secrets
+as CI must pass, then `APP_DOMAIN=<domain> pnpm alchemy deploy --stage prod` (secrets
 come from GitHub repo secrets mirroring the inventory above — same names, no
 values in Git), then a `/readyz` smoke that must return `200 {"ok":true}`
-within ~10 minutes or the run is marked failed. Deploys are serialized
+within ~10 minutes or the run is marked failed. The full Playwright E2E suite
+is not part of this workflow: run it locally before shipping (`ak-ship
+official` / `staging`); a red local E2E is the release blocker, not CI.
+Deploys are serialized
 (`cancel-in-progress: false`) so forward-only D1 migrations never race.
 
 Scope of automation: code + bindings + migrations only. The operator gates

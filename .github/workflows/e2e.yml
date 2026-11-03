@@ -1,6 +1,6 @@
-# PR gate for main, and the reusable E2E job deploy.yml calls before shipping
-# prod (a red E2E must block the release). No standalone push trigger: every
-# push to main already runs this suite through deploy.yml.
+# PR gate for main. deploy.yml no longer calls this workflow: the release E2E
+# run happens locally before ak-ship. No push trigger; workflow_call stays so
+# the suite can still be reused on demand.
 name: E2E
 
 on:

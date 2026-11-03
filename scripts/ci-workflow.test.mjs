@@ -171,26 +171,23 @@ test("e2e workflow exists and matches the e2e contract", () => {
 	);
 });
 
-test("prod deploy is blocked unless quality and e2e both pass", () => {
+test("prod deploy is gated on quality only (e2e runs locally before shipping)", () => {
 	const deployPath = join(repoRoot, ".github/workflows/deploy.yml");
 	const yaml = readFileSync(deployPath, "utf8");
 
-	const e2eJob = yaml.match(/^ {2}e2e:\n((?: {4}.*\n|\s*\n)+)/m);
-	assert.ok(e2eJob, "deploy.yml must declare an e2e job");
-	assert.match(
-		e2eJob[1],
-		/^ {4}uses: \.\/\.github\/workflows\/e2e\.yml\s*$/m,
-		"e2e job must reuse e2e.yml (one definition of the suite)",
+	assert.doesNotMatch(
+		yaml,
+		/^ {2}e2e:/m,
+		"deploy.yml must not declare an e2e job (e2e runs locally before ak-ship)",
 	);
 	assert.doesNotMatch(
-		e2eJob[1],
-		/^ {4}secrets:/m,
-		"e2e job must not receive prod secrets",
+		yaml,
+		/workflows\/e2e\.yml/,
+		"deploy.yml must not call the reusable e2e workflow",
 	);
 
 	const needs = yaml.match(/^ {2}deploy:\n {4}needs: \[([^\]]*)\]/m);
 	assert.ok(needs, "deploy job must declare needs");
 	const deps = needs[1].split(",").map((d) => d.trim());
-	assert.ok(deps.includes("quality"), "deploy must need quality");
-	assert.ok(deps.includes("e2e"), "deploy must need e2e");
+	assert.deepEqual(deps, ["quality"], "deploy must need exactly quality");
 });
