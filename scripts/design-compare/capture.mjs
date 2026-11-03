@@ -854,19 +854,28 @@ async function main() {
 						sc.id,
 						`${vpName}-${theme}.png`,
 					);
-					const newFile = path.join(
+					// Cột "App mới" luôn đọc RAW/new (nguyên tắc gốc): run `--label
+					// old` chỉ đổ cột "App cũ" — newFile = label dir sẽ tạo 2 cột
+					// giống hệt nhau khi label=old (post-PR review #546).
+					const labelFile = path.join(
 						RAW,
 						label,
 						sc.id,
 						`${vpName}-${theme}.png`,
 					);
+					const newFile =
+						label === "new"
+							? labelFile
+							: path.join(RAW, "new", sc.id, `${vpName}-${theme}.png`);
 					// #546 red-team: cell thiếu raw bắt buộc (app hoặc design) hoặc
 					// thuộc failedShots → ghi lỗi, KHÔNG ghép cột thiếu. Key so khớp
 					// chính xác (tránh trùng prefix t-syllabus / t-syllabus-detail);
 					// check failedShots TRƯỚC để cell chụp lỗi không bị đếm lỗi 2 lần.
 					if (failedShots.has(cellKey)) continue;
 					const missing = [];
-					if (!existsSync(newFile)) missing.push(newFile);
+					// Output app của run này (RAW/<label>) là bắt buộc; RAW/new với
+					// `--label old` là cột tùy chọn (worktree mới chưa có run "new").
+					if (!existsSync(labelFile)) missing.push(labelFile);
 					if (
 						sc.design &&
 						!sc.design.skipViewports?.includes(vpName) &&

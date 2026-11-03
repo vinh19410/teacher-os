@@ -3,7 +3,7 @@
 // Không thêm dependency mới: PNG nạp từ chuỗi phụ thuộc sẵn có của harness
 // (@playwright/test → playwright-core/lib/utilsBundle), fallback qua root `e2e`.
 import { spawn } from "node:child_process";
-import { chmodSync, mkdirSync, readFileSync, statSync } from "node:fs";
+import { chmodSync, mkdirSync, statSync } from "node:fs";
 import { readFile, rm } from "node:fs/promises";
 import { createRequire } from "node:module";
 import net from "node:net";
@@ -457,5 +457,3 @@ export function spawnAsync(
 		});
 	});
 }
-
-export { readFileSync };
