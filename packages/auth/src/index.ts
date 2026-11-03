@@ -176,6 +176,10 @@ export function createAuth(input: CreateAuthInput) {
 			google: {
 				clientId: input.googleClientId,
 				clientSecret: input.googleClientSecret,
+				// Luôn hiện màn chọn tài khoản Google: sau khi bị chặn role
+				// mismatch, người dùng phải chọn được Gmail khác thay vì bị
+				// Google tự dùng lại phiên đang đăng nhập.
+				prompt: "select_account",
 			},
 		},
 		emailAndPassword: {

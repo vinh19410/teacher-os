@@ -15,6 +15,7 @@ Quy ước khi cập nhật:
 
 ### Fixed
 - Sửa bố cục chân side menu giáo viên: nút **"Đăng xuất"** rơi xuống hàng riêng thay vì nằm cuối hàng user (`packages/ui/src/components/app-shell/user-footer.tsx`): wrapper footer đổi thành flex row (`relative flex items-center gap-1`), control hồ sơ thêm `min-w-0 flex-1` để tên/email truncate đúng, chevron menu thêm `shrink-0` khỏi bị nén; ở rail thu gọn desktop (56px) avatar + nút đăng xuất xếp dọc (`lg:flex-col`, `lg:w-full`), drawer mobile (<1024px) giữ hàng ngang. Không đổi hành vi, a11y name hay testid (`sidebar-user-email`, `sidebar-avatar`); student không dùng `trailing` giữ nguyên bố cục (#540).
+- Bỏ ký tự `+` thừa trong nhãn nút **"Thêm học viên"** ở trang Học viên (`apps/web/src/routes/_auth/students/index.tsx`): trước đây nút render icon `Plus` kèm chữ `+ Thêm học viên` nên hiển thị "+ + Thêm học viên" ở cả nút header lẫn empty state; nay giữ icon `Plus`, nhãn thuần **"Thêm học viên"** như nút **"Mời học viên"** bên cạnh. Nút **"+ Thêm học viên vào lớp"** ở chi tiết lớp (không có icon) giữ nguyên (#544).
 
 ## 2026-11-01
 
