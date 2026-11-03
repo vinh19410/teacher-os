@@ -17,8 +17,17 @@ permissions:
 
 jobs:
   e2e:
+    # Suite is sharded by spec file across 4 runners: each runner boots its own
+    # api/vite stack and fresh libsql DB, so the single-worker isolation of a
+    # local run is preserved while wall-clock time drops ~4x. The reusable-
+    # workflow result seen by deploy.yml is red unless every shard passes.
+    name: e2e (shard ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -34,10 +43,10 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-1.62.1-ubuntu-latest
       - run: pnpm --filter e2e exec playwright install --with-deps chromium
-      - run: pnpm --filter e2e e2e
+      - run: pnpm --filter e2e e2e --shard=${{ matrix.shard }}/4
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
-          name: playwright-report
+          name: playwright-report-shard-${{ matrix.shard }}
           path: apps/e2e/playwright-report/
           retention-days: 7

@@ -146,8 +146,21 @@ test("e2e workflow exists and matches the e2e contract", () => {
 	assert.match(yaml, /playwright install/, "must install playwright browsers");
 	assert.match(
 		yaml,
-		/^\s*- run: pnpm --filter e2e e2e\s*$/m,
-		"must run the e2e package as its own step",
+		/^\s*- run: pnpm --filter e2e e2e --shard=\$\{\{ matrix\.shard \}\}\/(\d+)\s*$/m,
+		"must run the e2e package as its own sharded step",
+	);
+	const shardList = yaml.match(/shard:\s*\[([^\]]*)\]/);
+	assert.ok(shardList, "e2e job must declare a shard matrix");
+	const shardTotal = yaml.match(/--shard=\$\{\{ matrix\.shard \}\}\/(\d+)/);
+	assert.equal(
+		shardList[1].split(",").length,
+		Number(shardTotal?.[1]),
+		"shard matrix size must equal the --shard total (a mismatch silently skips specs)",
+	);
+	assert.match(
+		yaml,
+		/fail-fast:\s*false/,
+		"must run every shard to completion so one failure shows the full picture",
 	);
 	// Blocks secrets.X and secrets['X'] anywhere — including indirect forms
 	// like ${{ fromJSON(secrets.X) }} that a ${{-anchored regex would miss.
