@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
 import { DataTable } from "@/components/ui/data-table";
-import { inputCls } from "@/components/ui/field";
+import { inputCls, Select } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { PageHead } from "@/components/ui/page-head";
 import { isHttpError } from "@/lib/kernel-load-state";
@@ -557,18 +557,17 @@ function LeadDetailModal({
 					>
 						Trạng thái
 					</label>
-					<select
+					<Select
 						id="lead-status"
 						value={status}
 						onChange={(e) => setStatus(e.target.value as LeadStatus)}
-						className={inputCls}
 					>
 						{LEAD_STATUSES.map((value) => (
 							<option key={value} value={value}>
 								{LEAD_STATUS_LABELS[value]}
 							</option>
 						))}
-					</select>
+					</Select>
 				</div>
 				<div className="flex flex-col gap-1.5">
 					<label

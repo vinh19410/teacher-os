@@ -1,5 +1,5 @@
 import { Input } from "@teacher-os/ui/components/input";
-import { ChevronDown, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
 
@@ -16,12 +16,12 @@ export function PracticeSelect({
 	onChange: (value: string) => void;
 }) {
 	return (
-		<label className="relative inline-flex">
+		<label className="inline-flex">
 			<span className="sr-only">{label}</span>
 			<select
 				value={value}
 				onChange={(event) => onChange(event.target.value)}
-				className="h-9 appearance-none rounded-md border border-input bg-background pr-8 pl-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30"
+				className="select-chevron h-9 rounded-md border border-input bg-background pr-9 pl-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30"
 			>
 				<option value="">{label}</option>
 				{options.map((option) => (
@@ -30,7 +30,6 @@ export function PracticeSelect({
 					</option>
 				))}
 			</select>
-			<ChevronDown className="pointer-events-none absolute top-1/2 right-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
 		</label>
 	);
 }

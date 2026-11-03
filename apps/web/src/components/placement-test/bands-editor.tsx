@@ -11,7 +11,7 @@ import {
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { inputCls } from "@/components/ui/field";
+import { inputCls, Select } from "@/components/ui/field";
 
 export interface BandsEditorProps {
 	bands: readonly PlacementBand[];
@@ -120,20 +120,20 @@ export function BandsEditor({
 									/>
 								</td>
 								<td className="px-3 py-2">
-									<select
+									<Select
 										aria-label={`Khóa học gợi ý ngưỡng ${idx + 1}`}
 										value={band.course}
 										onChange={(e) =>
 											onUpdateBand(idx, { course: e.target.value })
 										}
-										className={`${inputCls} h-8 min-w-[220px]`}
+										className="h-8 min-w-[220px]"
 									>
 										{LEAD_COURSES.map((code) => (
 											<option key={code} value={code}>
 												{LEAD_COURSE_LABELS[code]}
 											</option>
 										))}
-									</select>
+									</Select>
 								</td>
 								<td className="px-3 py-2 text-right">
 									<Button

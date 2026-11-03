@@ -1,7 +1,7 @@
 ---
 title: "#542: Mũi tên dropdown dính sát mép phải"
 description: "Chuẩn hoá chevron của Select ở primitive web-kit với padding phải nhất quán, chuyển các select thô và student về cùng một cách."
-status: pending
+status: completed
 priority: P2
 effort: 1.5h
 issue: 542
@@ -30,7 +30,8 @@ Mọi dropdown có mũi tên xuống cách mép phải ô một khoảng đồng
 Sửa tại primitive để không phải đụng từng call site và không đổi layout (callers truyền `className` như `h-8 min-w-[220px]` vào chính `<select>`):
 
 - Thêm `appearance-none pr-9` cho `Select`, vẽ chevron bằng `background-image` (SVG lucide chevron-down) đặt `right 0.75rem center`, `size 1rem`, không dùng wrapper.
-- Màu chevron theo token `muted-foreground` cho light và dark: khai báo class `select-chevron` trong `packages/ui/src/styles/globals.css` với biến `--select-chevron` đổi theo `.dark`.
+- Màu chevron theo token `muted-foreground` cho light và dark: khai báo class `select-chevron` trong `packages/ui/src/styles/globals.css`. Biến CSS không vào được trong `url()`, nên màu nhúng cứng 2 data-URI (light `#6a6a6a`, dark `#a1a1a1` — xấp xỉ `--muted-foreground`), override bằng `.dark .select-chevron`.
+- Padding phải do utility `pr-9` (2.25rem) đảm nhiệm ở `Select` primitive, class `select-chevron` chỉ vẽ chevron (`background-position: right 0.75rem center`, `background-size: 1rem`) và đứng trong `@layer components` để utility của caller thắng (#438). Lưu ý: caller không được truyền `px-*`/`p-*` vì twMerge sẽ xoá `pr-9` (đã quét 38 callsite, không có case này).
 - Không dùng wrapper + icon overlay vì sẽ phá `className` width/flex của các call site hiện có.
 
 ## Non-goals
