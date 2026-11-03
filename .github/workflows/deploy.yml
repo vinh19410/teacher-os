@@ -11,7 +11,7 @@
 # - CORS_ORIGIN must NOT be set here — with APP_DOMAIN present it defaults to
 #   the derived https://app.<domain> and an explicit disagreeing value fails
 #   the whole run by design.
-# - ci-workflow.test.mjs forbids secrets.* in ci.yml/e2e.yml; this file is
+# - ci-workflow.test.mjs forbids secrets.* in ci.yml; this file is
 #   deliberately separate so prod credentials stay out of the PR pipeline.
 name: Deploy Production
 

@@ -119,55 +119,11 @@ test("staging deploy workflow deploys only from the staging branch", () => {
 	);
 });
 
-test("e2e workflow exists and matches the e2e contract", () => {
-	const e2ePath = join(repoRoot, ".github/workflows/e2e.yml");
-	assert.equal(existsSync(e2ePath), true, "missing .github/workflows/e2e.yml");
-
-	const yaml = readFileSync(e2ePath, "utf8");
-
-	assert.match(yaml, /pull_request:/, "must trigger on pull_request");
-	assert.doesNotMatch(
-		yaml,
-		/pull_request_target/,
-		"must never use pull_request_target (fork PR escalation)",
-	);
-	assert.match(
-		yaml,
-		/^\s*workflow_call:/m,
-		"must be callable so deploy.yml can gate prod on it",
-	);
-	assert.match(yaml, /\bmain\b/, "must include main");
-	assert.doesNotMatch(
-		yaml,
-		/\bdevelop\b/,
-		"must not trigger on develop (runs on main only)",
-	);
-	assert.match(yaml, /contents:\s*read/, "must keep read-only permissions");
-	assert.match(yaml, /playwright install/, "must install playwright browsers");
-	assert.match(
-		yaml,
-		/^\s*- run: pnpm --filter e2e e2e --shard=\$\{\{ matrix\.shard \}\}\/(\d+)\s*$/m,
-		"must run the e2e package as its own sharded step",
-	);
-	const shardList = yaml.match(/shard:\s*\[([^\]]*)\]/);
-	assert.ok(shardList, "e2e job must declare a shard matrix");
-	const shardTotal = yaml.match(/--shard=\$\{\{ matrix\.shard \}\}\/(\d+)/);
+test("e2e does not run on GitHub Actions (it runs locally before ak-ship)", () => {
 	assert.equal(
-		shardList[1].split(",").length,
-		Number(shardTotal?.[1]),
-		"shard matrix size must equal the --shard total (a mismatch silently skips specs)",
-	);
-	assert.match(
-		yaml,
-		/fail-fast:\s*false/,
-		"must run every shard to completion so one failure shows the full picture",
-	);
-	// Blocks secrets.X and secrets['X'] anywhere — including indirect forms
-	// like ${{ fromJSON(secrets.X) }} that a ${{-anchored regex would miss.
-	assert.doesNotMatch(
-		yaml,
-		/\bsecrets\s*[.[]/,
-		"must not require GitHub secrets",
+		existsSync(join(repoRoot, ".github/workflows/e2e.yml")),
+		false,
+		"e2e.yml must stay removed: the E2E suite runs locally, not in CI",
 	);
 });
 

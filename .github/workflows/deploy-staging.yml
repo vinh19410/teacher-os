@@ -20,7 +20,7 @@
 # - CORS_ORIGIN must NOT be set here — with APP_DOMAIN present it defaults to
 #   the derived https://app.staging.teacheros.io.vn and an explicit disagreeing
 #   value fails the whole run by design.
-# - ci-workflow.test.mjs forbids secrets.* in ci.yml/e2e.yml; staging
+# - ci-workflow.test.mjs forbids secrets.* in ci.yml; staging
 #   credentials live in the GitHub environment "staging" (same secret names as
 #   production) and stay out of the PR pipeline.
 # - The deploy smoke covers auth (issue #125): /readyz alone shipped green
