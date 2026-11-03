@@ -1,7 +1,10 @@
+import { Check } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
+import { cn } from "@/lib/cn";
 import { useData } from "@/lib/data-store";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
@@ -39,6 +42,7 @@ export function EnrollStudentModal({
 	const [emailError, setEmailError] = useState<string | undefined>();
 	const { saving, error, notice, submitBlocked, run, reconcile, reset } =
 		useKernelFormSubmit();
+	const committedToastMessageRef = useRef<string | null>(null);
 
 	const eligibleStudents = (() => {
 		if (!classId) return [];
@@ -70,6 +74,7 @@ export function EnrollStudentModal({
 			setParentPhone("");
 			setNameError(undefined);
 			setEmailError(undefined);
+			committedToastMessageRef.current = null;
 			reset();
 		}
 		wasOpenRef.current = open;
@@ -88,6 +93,13 @@ export function EnrollStudentModal({
 
 		if (mode === "existing") {
 			if (!selectedStudentId) return;
+			const selectedStudentName = data.students
+				.find((s) => s.id === selectedStudentId)
+				?.name.trim();
+			const successMessage = selectedStudentName
+				? `Đã thêm ${selectedStudentName} vào lớp`
+				: "Đã thêm học viên vào lớp";
+			committedToastMessageRef.current = null;
 			const result = await run({
 				type: "enroll-student",
 				classId,
@@ -95,9 +107,12 @@ export function EnrollStudentModal({
 				activateNow,
 			});
 			if (result?.kind === "refreshed") {
+				toast.success(successMessage);
 				setSelectedStudentId("");
 				setFilter("");
 				onClose();
+			} else if (result?.kind === "committed") {
+				committedToastMessageRef.current = successMessage;
 			}
 			return;
 		}
@@ -119,6 +134,8 @@ export function EnrollStudentModal({
 		}
 		if (hasError) return;
 
+		const successMessage = `Đã thêm ${trimmedName} vào lớp`;
+		committedToastMessageRef.current = null;
 		const result = await run({
 			type: "add-student",
 			payload: {
@@ -132,19 +149,32 @@ export function EnrollStudentModal({
 			},
 		});
 		if (result?.kind === "refreshed") {
+			toast.success(successMessage);
 			setName("");
 			setPhone("");
 			setEmail("");
 			setParentName("");
 			setParentPhone("");
 			onClose();
+		} else if (result?.kind === "committed") {
+			committedToastMessageRef.current = successMessage;
 		}
 	}
 
 	async function reconcileAndFinish() {
+		const pendingToastMessage = committedToastMessageRef.current;
 		if (await reconcile()) {
+			committedToastMessageRef.current = null;
+			if (pendingToastMessage) {
+				toast.success(pendingToastMessage);
+			}
 			setSelectedStudentId("");
 			setFilter("");
+			setName("");
+			setPhone("");
+			setEmail("");
+			setParentName("");
+			setParentPhone("");
 			onClose();
 		}
 	}
@@ -218,25 +248,36 @@ export function EnrollStudentModal({
 									</p>
 								)
 							) : (
-								filteredStudents.map((s) => (
-									<button
-										key={s.id}
-										type="button"
-										role="option"
-										aria-selected={selectedStudentId === s.id}
-										className={`flex items-center justify-between rounded px-3 py-2 text-left text-sm ${
-											selectedStudentId === s.id
-												? "bg-accent font-medium"
-												: "hover:bg-line-soft"
-										}`}
-										onClick={() => setSelectedStudentId(s.id)}
-									>
-										<span>{s.name}</span>
-										<span className="text-muted-foreground text-xs">
-											{s.phone}
-										</span>
-									</button>
-								))
+								filteredStudents.map((s) => {
+									const isSelected = selectedStudentId === s.id;
+									return (
+										<button
+											key={s.id}
+											type="button"
+											role="option"
+											aria-selected={isSelected}
+											disabled={saving}
+											className={cn(
+												"flex items-center justify-between rounded-md border px-3 py-2 text-left text-foreground text-sm outline-none transition-[color,background-color,border-color,box-shadow] focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-60",
+												isSelected
+													? "border-primary bg-muted font-medium ring-1 ring-primary"
+													: "border-transparent hover:bg-accent hover:text-accent-foreground",
+											)}
+											onClick={() => setSelectedStudentId(s.id)}
+										>
+											<span>{s.name}</span>
+											<span className="flex shrink-0 items-center gap-2 text-muted-foreground text-xs">
+												<span>{s.phone}</span>
+												{isSelected ? (
+													<Check
+														aria-hidden="true"
+														className="size-4 shrink-0 text-primary"
+													/>
+												) : null}
+											</span>
+										</button>
+									);
+								})
 							)}
 						</div>
 					</>

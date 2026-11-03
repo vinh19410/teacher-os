@@ -26,7 +26,7 @@ async function addStudent(page: Page, name: string, teacherEmail?: string) {
 	await enrollDialog.getByRole("option", { name }).click();
 	await enrollDialog.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(enrollDialog).toBeHidden();
-	await expect(page.getByText(name)).toBeVisible();
+	await expect(page.locator("tbody tr", { hasText: name })).toBeVisible();
 	const row = page.locator("tr", { hasText: name });
 	await row.getByRole("button", { name: "Kích hoạt" }).click();
 	const confirmModal = page

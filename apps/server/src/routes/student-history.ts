@@ -23,9 +23,10 @@ import {
 	quizAttempt,
 	vocabReviewLog,
 } from "@teacher-os/db/schema/index";
-import { and, count, desc, eq, gte, lt, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, lt, sql } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import type { Db } from "../app";
+import { visibleAssignmentFilter } from "../lib/assignment-visibility";
 import {
 	createStudentGuard,
 	parseQuizQuestions,
@@ -261,6 +262,8 @@ async function attemptRows(
 				eq(quizAttempt.orgId, orgId),
 				eq(quizAttempt.studentId, studentId),
 				eq(quizAttempt.mode, "assignment"),
+				inArray(assignmentPrompt.skill, [...HISTORY_SKILLS]),
+				visibleAssignmentFilter(new Date()),
 				submittedRange,
 			),
 		)

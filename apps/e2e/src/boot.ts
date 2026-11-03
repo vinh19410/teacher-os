@@ -206,6 +206,63 @@ const app = buildApp({
 	appOrigin: CORS_ORIGINS[0],
 });
 
+// #533 E2E-only helper: deterministically shift available_at / due_at of
+// class_assignment rows so Playwright specs can test scheduled release and
+// overdue cutoffs without cron or wall-clock waits.
+app.post("/__e2e/study-pack-shift", async (c) => {
+	const raw: unknown = await c.req.json().catch(() => null);
+	if (!raw || typeof raw !== "object") {
+		return c.json({ error: "invalid-body" }, 400);
+	}
+	const assignmentId =
+		"assignmentId" in raw && typeof raw.assignmentId === "string"
+			? raw.assignmentId.trim()
+			: "";
+	const classStudyPackId =
+		"classStudyPackId" in raw && typeof raw.classStudyPackId === "string"
+			? raw.classStudyPackId.trim()
+			: "";
+	const availableAtMs =
+		"availableAtMs" in raw && typeof raw.availableAtMs === "number"
+			? Math.trunc(raw.availableAtMs)
+			: undefined;
+	const dueAtMs =
+		"dueAtMs" in raw && typeof raw.dueAtMs === "number"
+			? Math.trunc(raw.dueAtMs)
+			: undefined;
+
+	if (!assignmentId && !classStudyPackId) {
+		return c.json({ error: "missing-target" }, 400);
+	}
+	const setClauses: string[] = [];
+	const args: (string | number)[] = [];
+	if (availableAtMs !== undefined) {
+		setClauses.push("available_at = ?");
+		args.push(availableAtMs);
+	}
+	if (dueAtMs !== undefined) {
+		setClauses.push("due_at = ?");
+		args.push(dueAtMs);
+	}
+	if (setClauses.length === 0) {
+		return c.json({ error: "missing-fields" }, 400);
+	}
+	const whereClauses: string[] = [];
+	if (assignmentId) {
+		whereClauses.push("id = ?");
+		args.push(assignmentId);
+	}
+	if (classStudyPackId) {
+		whereClauses.push("class_study_pack_id = ?");
+		args.push(classStudyPackId);
+	}
+	const res = await client.execute({
+		sql: `UPDATE class_assignment SET ${setClauses.join(", ")} WHERE ${whereClauses.join(" AND ")}`,
+		args,
+	});
+	return c.json({ ok: true, rowsAffected: res.rowsAffected });
+});
+
 // Fake SePay hosted-link pages (#320) ride the same API server — the iframe
 // src is relative (/__fake-bankhub/...) so the postMessage origin check in
 // the web app sees the API origin, exactly like the real hosted link.

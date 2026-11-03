@@ -118,14 +118,20 @@ afterEach(() => {
 async function openSessionsTab() {
 	renderWithKernel(<ClassDetail />);
 	fireEvent.click(
-		await screen.findByRole("tab", { name: "Sessions & practice" }),
+		await screen.findByRole("tab", { name: "Buổi học & luyện tập" }),
 	);
 }
 
 function sessionRow(dateLabel: string): HTMLElement {
-	return screen
-		.getByText(new RegExp(dateLabel))
-		.closest("[data-testid='session-row']") as HTMLElement;
+	const rows = screen
+		.getAllByTestId("session-row")
+		.filter((row) => row.textContent?.includes(dateLabel));
+	if (rows.length !== 1) {
+		throw new Error(
+			`Expected exactly 1 session-row containing "${dateLabel}", found ${rows.length}`,
+		);
+	}
+	return rows[0];
 }
 
 describe("1:1 class — in-place check-in", () => {
@@ -203,7 +209,7 @@ describe("one action at a time across the class page", () => {
 		);
 		await waitFor(() => expect(server.writes).toHaveLength(1));
 		fireEvent.click(
-			await screen.findByRole("tab", { name: "Sessions & practice" }),
+			await screen.findByRole("tab", { name: "Buổi học & luyện tập" }),
 		);
 
 		const checkIn = within(sessionRow("12/10")).getByRole("button", {

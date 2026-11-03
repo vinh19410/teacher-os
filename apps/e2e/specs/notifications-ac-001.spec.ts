@@ -160,7 +160,7 @@ async function assignPromptToClass(page: Page) {
 	await expect(page).toHaveURL(/\/classes$/);
 	await page.getByText(CLASS_NAME).click();
 	await page
-		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
 	await page.getByRole("button", { name: "Giao bài tập" }).first().click();
 	await page.getByRole("button", { name: new RegExp(PROMPT_TITLE) }).click();

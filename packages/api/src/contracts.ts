@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { KernelEventRow } from "./event-contracts";
 import { isBandStep } from "./lib/ielts-band";
+import { CLOZE_MARKER_SOURCE } from "./lib/infer-question-types";
 import { isEmptyRichText, richTextField } from "./rich-text";
 
 export * from "./event-contracts";
@@ -315,8 +316,18 @@ export const ASSIGNMENT_SKILLS = [
 	"reading",
 	"listening",
 	"speaking",
+	"grammar",
+	"vocabulary",
 ] as const;
 export type AssignmentSkill = (typeof ASSIGNMENT_SKILLS)[number];
+/** Kỹ năng có đề luyện tập trong thư viện `assignment_test`. */
+export const PRACTICE_SKILLS = [
+	"reading",
+	"listening",
+	"writing",
+	"speaking",
+] as const;
+export type PracticeSkill = (typeof PRACTICE_SKILLS)[number];
 
 export const ASSIGNMENT_PART_TYPES: Record<
 	AssignmentSkill,
@@ -352,6 +363,18 @@ export const ASSIGNMENT_PART_TYPES: Record<
 			part1: ["hometown", "work"],
 			part2: ["place", "person", "object"],
 			part3: ["cities", "education"],
+		},
+	},
+	grammar: {
+		parts: ["g1"],
+		types: {
+			g1: ["mcq", "gap", "transform"],
+		},
+	},
+	vocabulary: {
+		parts: ["v1"],
+		types: {
+			v1: ["mcq", "match", "gap"],
 		},
 	},
 };
@@ -393,6 +416,12 @@ export const ASSIGNMENT_TEST_PRESETS: Record<
 			{ part: "part3", label: "Part 3" },
 		],
 	},
+	grammar: {
+		slots: [{ part: "g1", label: "Grammar" }],
+	},
+	vocabulary: {
+		slots: [{ part: "v1", label: "Vocabulary" }],
+	},
 };
 
 export const ASSIGNMENT_ANSWER_CHOICES = {
@@ -423,6 +452,7 @@ export const answerKindByType: Record<
 	mcq3: "mcq3",
 	features: "letter",
 	sentend: "letter",
+	match: "letter",
 };
 
 /**
@@ -442,6 +472,8 @@ export const ASSIGNMENT_OPTION_BANK_TYPES: Record<
 	reading: ["headings", "info", "sentend", "features"],
 	listening: ["match2", "map"],
 	speaking: [],
+	grammar: [],
+	vocabulary: ["match"],
 };
 export function isOptionBankable(skill: string, type: string): boolean {
 	return (
@@ -586,6 +618,19 @@ export const QUIZ_TYPE_DISPLAY: Record<
 		label: "Matching",
 		instruction: "Choose your answers from the option bank A–H.",
 	},
+	match: {
+		label: "Matching",
+		instruction: "Choose your answers from the option bank A–H.",
+	},
+	gap: {
+		label: "Gap-fill",
+		instruction: "Complete each sentence by filling in the blank.",
+	},
+	transform: {
+		label: "Sentence transformation",
+		instruction:
+			"Rewrite each sentence using the word given so that it has a similar meaning.",
+	},
 };
 
 /** Entry hiển thị cho type bất kỳ — type lạ giữ nguyên id làm label. */
@@ -612,6 +657,8 @@ export const ASSIGNMENT_IMAGE_BASED_TYPES: Record<
 	reading: ["diagram"],
 	listening: ["map"],
 	speaking: [],
+	grammar: [],
+	vocabulary: [],
 };
 export function isImageBasedType(skill: string, type: string): boolean {
 	return (
@@ -637,6 +684,10 @@ export function isAssignmentImageUrl(value: string): boolean {
 		trimmed.length <= ASSIGNMENT_IMAGE_URL_MAX_LENGTH &&
 		ASSIGNMENT_IMAGE_SRC_PATTERN.test(trimmed)
 	);
+}
+
+function countPromptBlanks(stem: string): number {
+	return stem.split(new RegExp(CLOZE_MARKER_SOURCE)).length - 1;
 }
 
 /**
@@ -749,7 +800,11 @@ export const assignmentPromptCreateSchema =
 				});
 			}
 		}
-		const auto = value.skill === "reading" || value.skill === "listening";
+		const auto =
+			value.skill === "reading" ||
+			value.skill === "listening" ||
+			value.skill === "grammar" ||
+			value.skill === "vocabulary";
 		if (!auto && value.questions.length)
 			ctx.addIssue({
 				code: "custom",
@@ -796,6 +851,17 @@ export const assignmentPromptCreateSchema =
 					message: "audio required when ready",
 				});
 		}
+		if (value.skill === "grammar" || value.skill === "vocabulary") {
+			if (
+				value.questions.length < 1 ||
+				!value.questions.some((question) => question.stem.trim())
+			)
+				ctx.addIssue({
+					code: "custom",
+					path: ["questions"],
+					message: "question stem required",
+				});
+		}
 		// Phase-04 FR2 — image-based pairs are (skill, type)-qualified:
 		// reading `diagram` + listening `map`. Writing task1 shares the `map`
 		// type id and must NEVER be gated on image/pin (red-team #1). Ready
@@ -832,6 +898,17 @@ export const assignmentPromptCreateSchema =
 						code: "custom",
 						path: ["questions", index, "stem"],
 						message: "stem required when ready",
+					});
+				const effectiveType = question.type ?? value.type;
+				if (
+					effectiveType === "gap" &&
+					question.stem.trim() &&
+					countPromptBlanks(question.stem) !== 1
+				)
+					ctx.addIssue({
+						code: "custom",
+						path: ["questions", index, "stem"],
+						message: "gap question requires exactly one blank (____)",
 					});
 				if (!question.answer.trim())
 					ctx.addIssue({
@@ -987,7 +1064,7 @@ export const assignmentTestCreateSchema = z
 	.object({
 		title: z.string().trim().min(1).max(200),
 		description: richTextField(2000).optional(),
-		skill: z.enum(ASSIGNMENT_SKILLS),
+		skill: z.enum(PRACTICE_SKILLS),
 		timeLimitSeconds: z
 			.number()
 			.int()
@@ -1735,6 +1812,8 @@ export const ACCOUNT_ERROR_CODES = {
 	TEACHER_SIGNUP_FORBIDDEN: "ACCOUNT_TEACHER_SIGNUP_FORBIDDEN",
 	/** Session teacher có email ngoài TEACHER_EMAILS chạm kernel tree. */
 	TEACHER_NOT_ALLOWED: "ACCOUNT_TEACHER_NOT_ALLOWED",
+	/** Session teacher trong TEACHER_EMAILS nhưng chưa xác thực email (#524). */
+	TEACHER_EMAIL_UNVERIFIED: "ACCOUNT_TEACHER_EMAIL_UNVERIFIED",
 } as const;
 export type AccountErrorCode =
 	(typeof ACCOUNT_ERROR_CODES)[keyof typeof ACCOUNT_ERROR_CODES];
@@ -1896,6 +1975,7 @@ export const studentAssignmentSchema = z.object({
 	 * graded_at) — phân biệt đã chấm với đang chờ khi scores chưa đủ band.
 	 * Optional: server cũ không gửi. */
 	gradedAt: z.string().nullable().optional(),
+	dueAt: z.string().nullable().optional(),
 });
 export type StudentAssignment = z.infer<typeof studentAssignmentSchema>;
 
@@ -1944,15 +2024,6 @@ export type ClassmatesResponse = z.infer<typeof classmatesResponseSchema>;
 
 // --- Tự luyện (phase 10, #378) — /api/student/practice domain --------------
 // KHÔNG có "dictation": kỹ năng này chưa có đề trong thư viện.
-
-/** Kỹ năng có đề luyện tập trong thư viện `assignment_test`. */
-export const PRACTICE_SKILLS = [
-	"reading",
-	"listening",
-	"writing",
-	"speaking",
-] as const;
-export type PracticeSkill = (typeof PRACTICE_SKILLS)[number];
 
 /** Số đề mỗi trang catalog (design-v2 SkillCatalog PER=12). */
 export const PRACTICE_CATALOG_PAGE_SIZE = 12;
@@ -4139,3 +4210,350 @@ export const creditWalletSchema = z
 	})
 	.strict();
 export type CreditWallet = z.infer<typeof creditWalletSchema>;
+
+// --- #533: Study Pack — bộ đề tự học gán vào lớp, hiển thị theo lịch ---
+
+export const STUDY_PACK_SKILLS = [
+	"reading",
+	"listening",
+	"grammar",
+	"vocabulary",
+] as const;
+export type StudyPackSkill = (typeof STUDY_PACK_SKILLS)[number];
+
+export const STUDY_PACK_SOURCE_KINDS = [
+	"org_prompt",
+	"library_test_part",
+	"library_exercise",
+] as const;
+export type StudyPackSourceKind = (typeof STUDY_PACK_SOURCE_KINDS)[number];
+
+export const LIBRARY_EXERCISE_SKILLS = [
+	"reading",
+	"grammar",
+	"vocabulary",
+] as const;
+export type LibraryExerciseSkill = (typeof LIBRARY_EXERCISE_SKILLS)[number];
+
+export const MAX_PACK_DAYS = 366;
+export const MAX_PACK_ITEMS_PER_DAY = 10;
+export const MAX_PACK_TOTAL_ITEMS = 200;
+export const STUDY_PACK_TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
+export const STUDY_PACK_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+export const studyPackItemInputSchema = z
+	.object({
+		dayIndex: z.number().int().min(1).max(MAX_PACK_DAYS),
+		sourceKind: z.enum(STUDY_PACK_SOURCE_KINDS).default("org_prompt"),
+		sourceId: z.string().trim().min(1).max(100),
+		note: z.string().trim().max(2000).default(""),
+	})
+	.strict();
+export type StudyPackItemInput = z.infer<typeof studyPackItemInputSchema>;
+
+const studyPackBaseSchema = z
+	.object({
+		title: z.string().trim().min(1).max(200),
+		description: z.string().trim().max(2000).default(""),
+		status: z.enum(["draft", "ready"]).default("draft"),
+		items: z
+			.array(studyPackItemInputSchema)
+			.max(MAX_PACK_TOTAL_ITEMS)
+			.default([]),
+	})
+	.strict()
+	.superRefine((value, ctx) => {
+		if (value.status === "ready" && value.items.length < 1) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["items"],
+				message: "at least one item is required when status is ready",
+			});
+		}
+		const countByDay = new Map<number, number>();
+		const seenKeys = new Set<string>();
+		for (const [index, item] of value.items.entries()) {
+			const nextCount = (countByDay.get(item.dayIndex) ?? 0) + 1;
+			countByDay.set(item.dayIndex, nextCount);
+			if (nextCount > MAX_PACK_ITEMS_PER_DAY) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["items", index, "dayIndex"],
+					message: `at most ${MAX_PACK_ITEMS_PER_DAY} items per day`,
+				});
+			}
+			const dedupeKey = `${item.dayIndex}:${item.sourceKind}:${item.sourceId}`;
+			if (seenKeys.has(dedupeKey)) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["items", index, "sourceId"],
+					message: "duplicate item in the same day",
+				});
+			}
+			seenKeys.add(dedupeKey);
+		}
+	});
+
+export const studyPackCreateSchema = studyPackBaseSchema;
+export type StudyPackCreateInput = z.infer<typeof studyPackCreateSchema>;
+
+export const studyPackUpdateSchema = studyPackBaseSchema;
+export type StudyPackUpdateInput = z.infer<typeof studyPackUpdateSchema>;
+
+const libraryExerciseBaseSchema = z
+	.object({
+		skill: z.enum(LIBRARY_EXERCISE_SKILLS),
+		part: z.string().trim().min(1).max(20),
+		type: z.string().trim().min(1).max(20),
+		title: z.string().trim().min(1).max(200),
+		band: z.enum(["6.0", "6.5", "7.0", "7.5"]).default("7.0"),
+		intro: richTextField(2000).default(""),
+		passage: richTextField(20000).default(""),
+		questions: z.array(assignmentQuestionSchema).max(40).default([]),
+		optionBank: z
+			.array(z.string().trim().min(1).max(200))
+			.max(ASSIGNMENT_OPTION_BANK_MAX)
+			.default([]),
+		note: richTextField(2000).default(""),
+		status: z.enum(["draft", "ready"]).default("draft"),
+	})
+	.strict()
+	.superRefine((value, ctx) => {
+		const config = ASSIGNMENT_PART_TYPES[value.skill];
+		if (!config.parts.includes(value.part)) {
+			ctx.addIssue({ code: "custom", path: ["part"], message: "invalid part" });
+			return;
+		}
+		const partTypes = config.types[value.part] ?? [];
+		if (!partTypes.includes(value.type)) {
+			ctx.addIssue({ code: "custom", path: ["type"], message: "invalid type" });
+		}
+		for (const [index, question] of value.questions.entries()) {
+			if (question.type && !partTypes.includes(question.type)) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["questions", index, "type"],
+					message: "invalid type",
+				});
+			}
+		}
+		if (value.skill === "reading" && isEmptyRichText(value.passage)) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["passage"],
+				message: "passage required",
+			});
+		}
+		if (
+			value.questions.length < 1 ||
+			!value.questions.some((q) => q.stem.trim())
+		) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["questions"],
+				message: "question stem required",
+			});
+		}
+		if (value.status === "ready") {
+			for (const [index, question] of value.questions.entries()) {
+				if (!question.stem.trim())
+					ctx.addIssue({
+						code: "custom",
+						path: ["questions", index, "stem"],
+						message: "stem required when ready",
+					});
+				const effectiveType = question.type ?? value.type;
+				if (
+					effectiveType === "gap" &&
+					question.stem.trim() &&
+					countPromptBlanks(question.stem) !== 1
+				)
+					ctx.addIssue({
+						code: "custom",
+						path: ["questions", index, "stem"],
+						message: "gap question requires exactly one blank (____)",
+					});
+				if (!question.answer.trim())
+					ctx.addIssue({
+						code: "custom",
+						path: ["questions", index, "answer"],
+						message: "answer required when ready",
+					});
+			}
+		}
+		for (const [index, question] of value.questions.entries()) {
+			const kind = answerKindByType[question.type ?? value.type];
+			if (!kind) continue;
+			const choices = ASSIGNMENT_ANSWER_CHOICES[kind];
+			if (question.answer && !choices.includes(question.answer as never))
+				ctx.addIssue({
+					code: "custom",
+					path: ["questions", index, "answer"],
+					message: "invalid answer choice",
+				});
+		}
+		const bankKind = optionBankKindFor(
+			value.skill,
+			value.type,
+			value.questions.map((question) => question.type),
+		);
+		if (!bankKind) {
+			if (value.optionBank.length > 0)
+				ctx.addIssue({
+					code: "custom",
+					path: ["optionBank"],
+					message: "optionBank only applies to bankable matching types",
+				});
+		} else if (value.status === "ready") {
+			const bankQuestions = value.questions
+				.map((question, index) => ({ question, index }))
+				.filter(
+					({ question }) =>
+						answerKindByType[question.type ?? value.type] === bankKind,
+				);
+			if (
+				value.optionBank.length < 2 ||
+				value.optionBank.length < bankQuestions.length
+			)
+				ctx.addIssue({
+					code: "custom",
+					path: ["optionBank"],
+					message: `bank must have 2–${ASSIGNMENT_OPTION_BANK_MAX} items and cover every bankable question`,
+				});
+			const labels = ASSIGNMENT_ANSWER_CHOICES[bankKind];
+			for (const { question, index } of bankQuestions) {
+				if (!question.answer.trim()) continue;
+				const labelIndex = labels.indexOf(question.answer as never);
+				if (labelIndex < 0 || labelIndex >= value.optionBank.length)
+					ctx.addIssue({
+						code: "custom",
+						path: ["questions", index, "answer"],
+						message: "answer must be a label inside the option bank",
+					});
+			}
+		}
+	});
+
+export const libraryExerciseCreateSchema = libraryExerciseBaseSchema;
+export type LibraryExerciseCreateInput = z.infer<
+	typeof libraryExerciseCreateSchema
+>;
+
+export const libraryExerciseUpdateSchema = libraryExerciseBaseSchema;
+export type LibraryExerciseUpdateInput = z.infer<
+	typeof libraryExerciseUpdateSchema
+>;
+
+export const assignStudyPackSchema = z
+	.object({
+		packId: z.string().trim().min(1).max(100),
+		startDate: z
+			.string()
+			.regex(STUDY_PACK_DATE_REGEX)
+			.refine((value) => {
+				if (!STUDY_PACK_DATE_REGEX.test(value)) return false;
+				const date = new Date(`${value}T00:00:00Z`);
+				return (
+					!Number.isNaN(date.getTime()) &&
+					date.toISOString().slice(0, 10) === value
+				);
+			}, "invalid startDate"),
+		releaseTime: z.string().regex(STUDY_PACK_TIME_REGEX).default("06:00"),
+		dueTime: z.string().regex(STUDY_PACK_TIME_REGEX).default("17:00"),
+	})
+	.strict()
+	.superRefine((value, ctx) => {
+		if (value.dueTime <= value.releaseTime) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["dueTime"],
+				message: "dueTime must be greater than releaseTime",
+			});
+		}
+	});
+export type AssignStudyPackInput = z.infer<typeof assignStudyPackSchema>;
+
+export interface StudyPackItemView {
+	id: string;
+	dayIndex: number;
+	position: number;
+	sourceKind: StudyPackSourceKind;
+	sourceId: string;
+	title: string;
+	skill: StudyPackSkill | string;
+	part: string;
+	type: string;
+	status: string;
+	note: string;
+}
+
+export interface StudyPackSummaryView {
+	id: string;
+	orgId: string | null;
+	scope: "org" | "system";
+	title: string;
+	description: string;
+	status: "draft" | "ready";
+	sourcePackId: string | null;
+	dayCount: number;
+	itemCount: number;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface StudyPackDetailView extends StudyPackSummaryView {
+	items: StudyPackItemView[];
+}
+
+export interface LibraryExerciseView {
+	id: string;
+	skill: LibraryExerciseSkill;
+	part: string;
+	type: string;
+	title: string;
+	band: string;
+	intro: string;
+	passage: string;
+	questions: AssignmentQuestion[];
+	optionBank: string[];
+	note: string;
+	status: "draft" | "ready";
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface ClassStudyPackAssignmentView {
+	assignmentId: string;
+	promptId: string;
+	title: string;
+	skill: string;
+	dayIndex: number;
+	date: string;
+	availableAt: string;
+	dueAt: string;
+	isReleased: boolean;
+	targetsTotal: number;
+	submittedCount: number;
+	submittedLateCount: number;
+	overdueCount: number;
+	pendingCount: number;
+}
+
+export interface ClassStudyPackView {
+	id: string;
+	classId: string;
+	packId: string;
+	title: string;
+	startDate: string;
+	releaseTime: string;
+	dueTime: string;
+	status: "active" | "cancelled";
+	createdAt: string;
+	cancelledAt: string | null;
+	assignments: ClassStudyPackAssignmentView[];
+}
+
+export interface ClassStudyPacksResponse {
+	packs: ClassStudyPackView[];
+	holidays: { date: string; name: string }[];
+}

@@ -29,6 +29,7 @@ export * from "./session-package";
 export * from "./settings";
 export * from "./student";
 export * from "./student-invitation";
+export * from "./study-pack";
 export * from "./syllabus";
 export * from "./vocab";
 export * from "./vocab-library";

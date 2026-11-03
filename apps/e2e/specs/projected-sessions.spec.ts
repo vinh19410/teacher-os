@@ -2,7 +2,7 @@
  * QC #121 regression — "tạo lớp có lịch không sinh buổi".
  *
  * A class created with a structured schedule and NO students must show its
- * projected sessions: chronologically on the "Sessions & practice" tab and ONLY in the
+ * projected sessions: chronologically on the "Buổi học & luyện tập" tab and ONLY in the
  * weeks that contain them on /schedule, with zero write targets; the first
  * enrollment (in-page, no reload) flips the projection to real generated
  * rows with identical dates.
@@ -39,10 +39,34 @@ test("lớp có lịch chưa có học viên → buổi dự kiến đúng tuầ
 	await expect(page).toHaveURL(/\/classes$/);
 	await page.getByText(CLASS_NAME).click();
 
-	// Sessions & practice tab: all 12 projected sessions, chronological, muted badges.
-	await page
-		.getByRole("tab", { name: "Sessions & practice", exact: true })
-		.click();
+	// Buổi học & luyện tập tab: all 12 projected sessions, chronological, muted badges.
+	const sessionsTab = page.getByRole("tab", {
+		name: "Buổi học & luyện tập",
+		exact: true,
+	});
+	await sessionsTab.click();
+	await sessionsTab.focus();
+	await expect(sessionsTab).toBeFocused();
+	await expect(page.getByText("Từ 04/01/2027", { exact: true })).toBeVisible();
+	await expect(page.getByText("Từ 2027-01-04")).toHaveCount(0);
+	for (const vp of [
+		{ width: 1440, height: 900 },
+		{ width: 768, height: 1024 },
+		{ width: 375, height: 812 },
+	]) {
+		await page.setViewportSize(vp);
+		await expect(sessionsTab).toBeVisible();
+		await expect(
+			page.getByText("Từ 04/01/2027", { exact: true }),
+		).toBeVisible();
+		const overflow = await page.evaluate(
+			() =>
+				document.documentElement.scrollWidth >
+				document.documentElement.clientWidth,
+		);
+		expect(overflow, `Overflow at ${vp.width}x${vp.height}`).toBe(false);
+	}
+	await page.setViewportSize({ width: 1280, height: 720 });
 	await expect(page.locator("[data-testid='session-row']")).toHaveCount(12);
 	const firstRow = page.locator("[data-testid='session-row']").first();
 	await expect(firstRow).toContainText("04/01");
@@ -96,12 +120,14 @@ test("lớp có lịch chưa có học viên → buổi dự kiến đúng tuầ
 	await enrollDialog.getByRole("option", { name: STUDENT_NAME }).click();
 	await enrollDialog.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(enrollDialog).toBeHidden();
-	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
+	await expect(
+		page.locator("tbody tr", { hasText: STUDENT_NAME }),
+	).toBeVisible();
 	await expect(page.getByText("Đã mời")).toBeVisible();
 
 	// Projection still shows "Dự kiến" because enrollment is invited
 	await page
-		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
 	await expect(page.locator("[data-testid='session-row']")).toHaveCount(12);
 	await expect(page.getByText("Dự kiến", { exact: true })).toHaveCount(12);
@@ -119,7 +145,7 @@ test("lớp có lịch chưa có học viên → buổi dự kiến đúng tuầ
 
 	// Now projection flips to real rows: same dates, no "Dự kiến", real targets.
 	await page
-		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
 	await expect(page.locator("[data-testid='session-row']")).toHaveCount(12);
 	await expect(page.getByText("Dự kiến", { exact: true })).toHaveCount(0);

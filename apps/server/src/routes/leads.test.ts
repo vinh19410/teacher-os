@@ -23,11 +23,28 @@ const TEACHER_ORG2 = {
 };
 
 const sessionFor = async (headers: Headers) => {
-	if (headers.get("x-test-user") === "teacher-1") {
+	const key = headers.get("x-test-user");
+	if (key === "teacher-1") {
 		return { userId: "t-1", userName: "Cô Lan", role: "teacher" as const };
 	}
-	if (headers.get("x-test-user") === "teacher-2") {
+	if (key === "teacher-2") {
 		return { userId: "t-2", userName: "Cô Hoa", role: "teacher" as const };
+	}
+	if (key === "ta-1") {
+		return { userId: "ta-1", userName: "Trợ giảng", role: "teacher" as const };
+	}
+	if (key === "ct-1") {
+		return {
+			userId: "ct-1",
+			userName: "GV đứng lớp",
+			role: "teacher" as const,
+		};
+	}
+	if (key === "owner-1") {
+		return { userId: "ow-1", userName: "Chủ TT", role: "teacher" as const };
+	}
+	if (key === "admin-1") {
+		return { userId: "ad-1", userName: "Quản trị", role: "teacher" as const };
 	}
 	return null;
 };
@@ -47,12 +64,29 @@ beforeEach(async () => {
 	await db.insert(schema.user).values([
 		{ id: "t-1", name: "Cô Lan", email: "lan@test.local", role: "teacher" },
 		{ id: "t-2", name: "Cô Hoa", email: "hoa@test.local", role: "teacher" },
+		{ id: "ta-1", name: "Trợ giảng", email: "ta@test.local", role: "teacher" },
+		{
+			id: "ct-1",
+			name: "GV đứng lớp",
+			email: "ct@test.local",
+			role: "teacher",
+		},
+		{ id: "ow-1", name: "Chủ TT", email: "owner@test.local", role: "teacher" },
+		{
+			id: "ad-1",
+			name: "Quản trị",
+			email: "admin@test.local",
+			role: "teacher",
+		},
 	]);
 	await db.insert(schema.membership).values([
 		{ id: "mem-1", orgId: "org-1", userId: "t-1", role: "teacher" },
 		{ id: "mem-2", orgId: "org-2", userId: "t-2", role: "teacher" },
+		{ id: "mem-ta", orgId: "org-1", userId: "ta-1", role: "ta" },
+		{ id: "mem-ct", orgId: "org-1", userId: "ct-1", role: "class_teacher" },
+		{ id: "mem-ow", orgId: "org-1", userId: "ow-1", role: "owner" },
+		{ id: "mem-ad", orgId: "org-1", userId: "ad-1", role: "admin" },
 	]);
-
 	await db.insert(schema.lead).values([
 		{
 			id: "lead-1",
@@ -215,6 +249,24 @@ describe("GET /api/leads (#506 phase 3)", () => {
 		});
 		expect(res.status).toBe(400);
 	});
+
+	test("role gate canAccessFinance (#524): ta và class_teacher bị 403 leads-forbidden; owner và admin được 200", async () => {
+		const instance = app();
+		for (const userHeader of ["ta-1", "ct-1"]) {
+			const res = await instance.request("/api/leads", {
+				headers: { ...TEACHER, "x-test-user": userHeader },
+			});
+			expect(res.status, userHeader).toBe(403);
+			const body = (await res.json()) as { error?: string; code?: string };
+			expect(body.code).toBe("leads-forbidden");
+		}
+		for (const userHeader of ["owner-1", "admin-1"]) {
+			const res = await instance.request("/api/leads", {
+				headers: { ...TEACHER, "x-test-user": userHeader },
+			});
+			expect(res.status, userHeader).toBe(200);
+		}
+	});
 });
 
 describe("PATCH /api/leads/:id (#506 phase 3)", () => {
@@ -277,5 +329,38 @@ describe("PATCH /api/leads/:id (#506 phase 3)", () => {
 			body: JSON.stringify({ status: "new" }),
 		});
 		expect(unauthorized.status).toBe(401);
+	});
+
+	test("JSON hỏng trả 400 invalid body thay vì 500 (#524)", async () => {
+		const res = await app().request("/api/leads/lead-1", {
+			method: "PATCH",
+			headers: TEACHER,
+			body: "{bad-json",
+		});
+		expect(res.status).toBe(400);
+		const body = (await res.json()) as { error?: string };
+		expect(body.error).toBe("invalid body");
+	});
+
+	test("role gate canAccessFinance trên PATCH (#524): ta và class_teacher bị 403 leads-forbidden; owner và admin được 200", async () => {
+		const instance = app();
+		for (const userHeader of ["ta-1", "ct-1"]) {
+			const res = await instance.request("/api/leads/lead-1", {
+				method: "PATCH",
+				headers: { ...TEACHER, "x-test-user": userHeader },
+				body: JSON.stringify({ status: "contacted" }),
+			});
+			expect(res.status, userHeader).toBe(403);
+			const body = (await res.json()) as { code?: string };
+			expect(body.code).toBe("leads-forbidden");
+		}
+		for (const userHeader of ["owner-1", "admin-1"]) {
+			const res = await instance.request("/api/leads/lead-1", {
+				method: "PATCH",
+				headers: { ...TEACHER, "x-test-user": userHeader },
+				body: JSON.stringify({ status: "contacted" }),
+			});
+			expect(res.status, userHeader).toBe(200);
+		}
 	});
 });

@@ -54,6 +54,7 @@ env:
   APP_ORIGIN: https://app.staging.teacheros.io.vn
   LANDING_ORIGIN: https://staging.teacheros.io.vn
   API_BASE_URL: https://api.staging.teacheros.io.vn
+  PROFILE_ORIGIN: https://profile.staging.teacheros.io.vn
 
 jobs:
   quality:
@@ -79,7 +80,7 @@ jobs:
   deploy:
     needs: [quality]
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     environment: staging
     steps:
       - uses: actions/checkout@v7
@@ -109,6 +110,9 @@ jobs:
           ADMIN_EMAILS: ${{ vars.ADMIN_EMAILS }}
           # Single-org (#513): rỗng trên staging = không giới hạn.
           TEACHER_EMAILS: ${{ vars.TEACHER_EMAILS }}
+          # Lead intake & placement test (#506, #515, #524): truyền từ GitHub Environment staging.
+          LEAD_ORG_ID: ${{ vars.LEAD_ORG_ID }}
+          LEAD_ORIGINS: ${{ vars.LEAD_ORIGINS }}
           AI_ENABLED: ${{ vars.AI_ENABLED }}
           # Staging không gửi mail: mọi tài khoản coi như đã xác minh email.
           AUTH_ASSUME_EMAIL_VERIFIED: "true"
@@ -242,4 +246,36 @@ jobs:
             sleep 20
           done
           echo "::error::landing apex did not serve HTML within 10 minutes of deploy"
+          exit 1
+      - name: Smoke check profile
+        # Plan #536: teacher profile StaticSite on staging
+        # (profile.staging.teacheros.io.vn). Poll up to ~10 minutes like
+        # landing; verify both HTML pages have the staging lead-api meta and
+        # /kiem-tra-dau-vao redirects to the trailing-slash directory URL.
+        run: |
+          for attempt in $(seq 1 30); do
+            home_code=$(curl -sS --connect-timeout 5 --max-time 30 \
+              -D /tmp/profile-headers.txt -o /tmp/profile.html \
+              -w '%{http_code}' "$PROFILE_ORIGIN/" || true)
+            test_code=$(curl -sS --connect-timeout 5 --max-time 30 \
+              -D /tmp/profile-test-headers.txt -o /tmp/profile-test.html \
+              -w '%{http_code}' "$PROFILE_ORIGIN/kiem-tra-dau-vao/" || true)
+            redir_code=$(curl -sS --connect-timeout 5 --max-time 30 \
+              -D /tmp/profile-redir-headers.txt -o /dev/null \
+              -w '%{http_code}' "$PROFILE_ORIGIN/kiem-tra-dau-vao" || true)
+            if [ "$home_code" = "200" ] \
+              && grep -qi '^content-type: text/html' /tmp/profile-headers.txt \
+              && grep -Fq "<meta name=\"lead-api\" content=\"$API_BASE_URL\">" /tmp/profile.html \
+              && [ "$test_code" = "200" ] \
+              && grep -qi '^content-type: text/html' /tmp/profile-test-headers.txt \
+              && grep -Fq "<meta name=\"lead-api\" content=\"$API_BASE_URL\">" /tmp/profile-test.html \
+              && echo "$redir_code" | grep -Eq '^(301|307|308)$' \
+              && grep -Eiq '^location:.*kiem-tra-dau-vao/' /tmp/profile-redir-headers.txt; then
+              echo "profile smoke OK after attempt $attempt"
+              exit 0
+            fi
+            echo "attempt $attempt: home=$home_code test=$test_code redir=$redir_code, retrying in 20s"
+            sleep 20
+          done
+          echo "::error::profile did not pass smoke checks within 10 minutes of deploy"
           exit 1

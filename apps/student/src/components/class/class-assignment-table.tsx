@@ -79,7 +79,14 @@ export function ClassAssignmentTable({
 											{derived.statusLabel}
 										</span>
 									) : derived.status === "submitted" ? (
-										<Badge variant="secondary">{derived.statusLabel}</Badge>
+										<Badge
+											variant="secondary"
+											className={
+												derived.isLate ? "bg-warn-soft text-warn" : undefined
+											}
+										>
+											{derived.statusLabel}
+										</Badge>
 									) : derived.status === "overdue" ? (
 										<Badge variant="destructive">{derived.statusLabel}</Badge>
 									) : (

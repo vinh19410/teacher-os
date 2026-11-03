@@ -6,6 +6,7 @@ import {
 	leadPatchSchema,
 	leadQuerySchema,
 } from "@teacher-os/api/lead-contracts";
+import { canAccessFinance } from "@teacher-os/auth/role";
 import { lead } from "@teacher-os/db/schema/lead";
 import { and, count, desc, eq, sql } from "drizzle-orm";
 import { type Context, Hono } from "hono";
@@ -15,15 +16,25 @@ type Env = { Variables: { kernelCtx: KernelCtx } };
 type LeadContext = Context<Env>;
 
 /**
- * API giáo viên cho lead (#506 phase 3) — mount TRONG kernelRoutes
- * (`kernel.route("/leads", …)` cạnh /notification-logs) để thừa hưởng
- * Origin guard + role gate teacher; lead org khác ⇒ 404 (không lộ tồn tại).
+ * API giáo viên cho lead (#506 phase 3, #524) — mount TRONG kernelRoutes
+ * (`kernel.route("/leads", …)`) để thừa hưởng Origin guard + session
+ * bootstrap, và tự gắn role gate `canAccessFinance(ctx.role)` (chỉ
+ * `teacher`/`owner`/`admin` được đọc/sửa PII của lead; `ta` và `class_teacher`
+ * bị 403 `leads-forbidden`). Lead org khác ⇒ 404 (không lộ tồn tại).
  *
  * Response KHÔNG trả `ipHash` (vết chống spam là nội bộ).
  */
 export function leadRoutes(deps: { getDb(): Db }) {
 	const routes = new Hono<Env>();
 
+	routes.use("*", async (c, next) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return c.json({ error: "unauthorized" }, 401);
+		if (!canAccessFinance(ctx.role)) {
+			return c.json({ error: "leads-forbidden", code: "leads-forbidden" }, 403);
+		}
+		return next();
+	});
 	/** Map row DB → LeadRow wire (timestamps ISO, bỏ ipHash). */
 	function toLeadRow(row: typeof lead.$inferSelect): LeadRow {
 		return {
@@ -134,7 +145,13 @@ export function leadRoutes(deps: { getDb(): Db }) {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return c.json({ error: "unauthorized" }, 401);
 
-		const parsedBody = leadPatchSchema.safeParse(await c.req.raw.json());
+		let rawBody: unknown;
+		try {
+			rawBody = await c.req.raw.json();
+		} catch {
+			return c.json({ error: "invalid body" }, 400);
+		}
+		const parsedBody = leadPatchSchema.safeParse(rawBody);
 		if (!parsedBody.success) return c.json({ error: "invalid body" }, 400);
 
 		const db = deps.getDb();

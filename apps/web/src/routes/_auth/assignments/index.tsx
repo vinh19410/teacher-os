@@ -50,6 +50,8 @@ const SKILL_FILTERS: ReadonlyArray<{ label: string; id: "all" | SkillId }> = [
 	{ label: "Reading", id: "reading" },
 	{ label: "Listening", id: "listening" },
 	{ label: "Speaking", id: "speaking" },
+	{ label: "Grammar", id: "grammar" },
+	{ label: "Vocabulary", id: "vocabulary" },
 ];
 const SKILL_OPTIONS = SKILL_FILTERS.map((filter) => filter.label);
 
@@ -271,9 +273,17 @@ export function AssignmentsRoute() {
 				title="Bài tập"
 				lead="Danh sách bài tập đã tạo. Lọc theo kỹ năng rồi giao cho lớp ở trang Lớp học."
 				action={
-					<Button onClick={() => navigate({ to: "/assignments/new" })}>
-						+ Tạo bài tập
-					</Button>
+					<>
+						<Button
+							variant="outline"
+							onClick={() => navigate({ to: "/assignments/packs" })}
+						>
+							Bộ đề tự học
+						</Button>
+						<Button onClick={() => navigate({ to: "/assignments/new" })}>
+							+ Tạo bài tập
+						</Button>
+					</>
 				}
 			/>
 

@@ -229,8 +229,8 @@ function bootstrapMiddleware(deps: AppDeps) {
 				403,
 			);
 		}
-		// Single-org (#513): khi TEACHER_EMAILS khác rỗng, chỉ email trong
-		// allowlist mới được truy cập kernel và bootstrap org.
+		// Single-org (#513, #524): khi TEACHER_EMAILS khác rỗng, chỉ email trong
+		// allowlist và đã xác thực mới được truy cập kernel và bootstrap org.
 		if ((deps.teacherEmails ?? []).length > 0) {
 			const email = session.email?.trim().toLowerCase() ?? "";
 			const allow = (deps.teacherEmails ?? []).some(
@@ -241,6 +241,15 @@ function bootstrapMiddleware(deps: AppDeps) {
 					{
 						error: ACCOUNT_ERROR_CODES.TEACHER_NOT_ALLOWED,
 						code: ACCOUNT_ERROR_CODES.TEACHER_NOT_ALLOWED,
+					},
+					403,
+				);
+			}
+			if (session.emailVerified !== true) {
+				return c.json(
+					{
+						error: ACCOUNT_ERROR_CODES.TEACHER_EMAIL_UNVERIFIED,
+						code: ACCOUNT_ERROR_CODES.TEACHER_EMAIL_UNVERIFIED,
 					},
 					403,
 				);

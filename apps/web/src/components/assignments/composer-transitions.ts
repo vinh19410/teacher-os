@@ -204,12 +204,17 @@ export function clozeStemIssue(
 		return `Tối đa ${QUESTION_MAX_COUNT} câu cho một phần — đang có ${value.items.length}.`;
 	const qStart = qStartOf(value.skill, value.part);
 	for (const [index, item] of value.items.entries()) {
-		const issue = clozeRowIssue(item, qStart + index);
+		const number = qStart + index;
+		const issue = clozeRowIssue(item, number);
 		if (issue) return issue;
+		if (
+			status === "ready" &&
+			(item.type ?? value.type) === "gap" &&
+			countBlanks(item.stem) !== 1
+		) {
+			return `Câu ${number} dạng điền từ cần đúng 1 chỗ trống (____).`;
+		}
 	}
-	// `status` is unused today (every rule blocks both statuses) but kept in
-	// the signature to mirror `optionBankIssue` — future ready-only rules slot in.
-	void status;
 	return null;
 }
 

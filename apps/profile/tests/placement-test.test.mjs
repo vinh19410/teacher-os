@@ -11,6 +11,12 @@ import {
 	gradeAttempt,
 	LEAD_PLACEMENT_MAX,
 } from "../public/kiem-tra-dau-vao/grading.js";
+import {
+	buildLeadPayload,
+	leadErrorMessage,
+	normalizeVietnamPhone,
+	validateLeadForm,
+} from "../public/kiem-tra-dau-vao/lead-gate.js";
 import { createProfileServer } from "../serve.mjs";
 
 const publicDir = new URL("../public/", import.meta.url);
@@ -100,6 +106,10 @@ test("HTML tĩnh của trang chủ và trang kiểm tra đầu vào không còn 
 	assert.match(
 		testPageHtml,
 		/<meta\s+name="lead-api"\s+content="https:\/\/api\.teacheros\.io\.vn"\s*\/?>/,
+	);
+	assert.match(
+		testPageHtml,
+		/<link\s+rel="canonical"\s+href="https:\/\/msmy\.io\.vn\/kiem-tra-dau-vao\/"\s*\/?>/,
 	);
 });
 
@@ -234,6 +244,10 @@ test("build.mjs copy public sang dist, không có questions.json và thay meta l
 			builtIndex,
 			/<meta name="lead-api" content="http:\/\/localhost:8100">/,
 		);
+		assert.match(
+			builtIndex,
+			/<link\s+rel="canonical"\s+href="https:\/\/msmy\.io\.vn\/"\s*\/?>/,
+		);
 		const builtTestIndex = readFileSync(
 			join(distDir, "kiem-tra-dau-vao", "index.html"),
 			"utf8",
@@ -242,7 +256,155 @@ test("build.mjs copy public sang dist, không có questions.json và thay meta l
 			builtTestIndex,
 			/<meta name="lead-api" content="http:\/\/localhost:8100">/,
 		);
+		assert.match(
+			builtTestIndex,
+			/<link\s+rel="canonical"\s+href="https:\/\/msmy\.io\.vn\/kiem-tra-dau-vao\/"\s*\/?>/,
+		);
 	} finally {
 		rmSync(tmpRoot, { recursive: true, force: true });
 	}
+});
+
+test("validateLeadForm kiểm tra họ tên, email bắt buộc, SĐT Việt Nam (0…/84…/+84…), ngày sinh và ghi chú (#534)", () => {
+	assert.equal(normalizeVietnamPhone("0909 123 456"), "0909123456");
+	assert.equal(normalizeVietnamPhone("+84 909 123 456"), "0909123456");
+	assert.equal(normalizeVietnamPhone("84909123456"), "0909123456");
+	assert.equal(normalizeVietnamPhone("090912345"), null);
+
+	const missingAll = validateLeadForm({});
+	assert.equal(missingAll.ok, false);
+	assert.ok(missingAll.errors.name);
+	assert.ok(missingAll.errors.email);
+	assert.ok(missingAll.errors.phone);
+
+	const shortName = validateLeadForm({
+		name: "A",
+		email: "hocvien@example.com",
+		phone: "0909123456",
+	});
+	assert.equal(shortName.ok, false);
+	assert.ok(shortName.errors.name);
+
+	const badEmail = validateLeadForm({
+		name: "Nguyễn Minh Anh",
+		email: "khong-phai-email",
+		phone: "0909123456",
+	});
+	assert.equal(badEmail.ok, false);
+	assert.ok(badEmail.errors.email);
+
+	const badPhone = validateLeadForm({
+		name: "Nguyễn Minh Anh",
+		email: "minhanh@example.com",
+		phone: "090912345",
+	});
+	assert.equal(badPhone.ok, false);
+	assert.ok(badPhone.errors.phone);
+
+	const futureBirth = validateLeadForm({
+		name: "Nguyễn Minh Anh",
+		email: "minhanh@example.com",
+		phone: "+84 909 123 456",
+		birthDate: "2099-01-01",
+	});
+	assert.equal(futureBirth.ok, false);
+	assert.ok(futureBirth.errors.birthDate);
+
+	const invalidCalendarBirth = validateLeadForm({
+		name: "Nguyễn Minh Anh",
+		email: "minhanh@example.com",
+		phone: "84909123456",
+		birthDate: "2026-02-30",
+	});
+	assert.equal(invalidCalendarBirth.ok, false);
+	assert.ok(invalidCalendarBirth.errors.birthDate);
+
+	const tooLongNote = validateLeadForm({
+		name: "Nguyễn Minh Anh",
+		email: "minhanh@example.com",
+		phone: "0909123456",
+		note: "a".repeat(501),
+	});
+	assert.equal(tooLongNote.ok, false);
+	assert.ok(tooLongNote.errors.note);
+
+	const validMinimal = validateLeadForm({
+		name: "  Nguyễn Minh Anh  ",
+		email: "  minhanh@example.com ",
+		phone: "+84 909 123 456",
+	});
+	assert.equal(validMinimal.ok, true);
+	assert.deepEqual(validMinimal.errors, {});
+	assert.equal(validMinimal.normalized.name, "Nguyễn Minh Anh");
+	assert.equal(validMinimal.normalized.email, "minhanh@example.com");
+	assert.equal(validMinimal.normalized.phone, "0909123456");
+});
+
+test("buildLeadPayload luôn gắn source=placement-test, bỏ trường rỗng, cắt placement <= 300 ký tự và giữ đủ trường khi đồng bộ điểm (#534)", () => {
+	const gatePayload = buildLeadPayload({
+		lead: {
+			name: "  Lê Hoàng Nam ",
+			phone: "+84 912 345 678",
+			email: " nam@example.com ",
+			birthDate: "",
+			course: "",
+			studyMode: "",
+			note: "",
+		},
+		elapsedMs: 1200,
+	});
+	assert.equal(gatePayload.source, "placement-test");
+	assert.equal(gatePayload.name, "Lê Hoàng Nam");
+	assert.equal(gatePayload.phone, "0912345678");
+	assert.equal(gatePayload.email, "nam@example.com");
+	assert.ok(gatePayload.elapsedMs >= 1200);
+	assert.ok(gatePayload.elapsedMs >= 3500);
+	assert.equal("birthDate" in gatePayload, false);
+	assert.equal("course" in gatePayload, false);
+	assert.equal("studyMode" in gatePayload, false);
+	assert.equal("note" in gatePayload, false);
+	assert.equal("placement" in gatePayload, false);
+
+	const longPlacement = `Kiểm tra đầu vào: ${"X".repeat(350)}`;
+	const syncPayload = buildLeadPayload({
+		lead: {
+			name: "Lê Hoàng Nam",
+			phone: "0912345678",
+			email: "nam@example.com",
+			birthDate: "2004-08-20",
+			course: "ielts-pre",
+			studyMode: "group-online",
+			note: "Mục tiêu 6.5",
+		},
+		placement: longPlacement,
+		elapsedMs: 48_000,
+	});
+	assert.equal(syncPayload.source, "placement-test");
+	assert.equal(syncPayload.birthDate, "2004-08-20");
+	assert.equal(syncPayload.course, "ielts-pre");
+	assert.equal(syncPayload.studyMode, "group-online");
+	assert.equal(syncPayload.note, "Mục tiêu 6.5");
+	assert.equal(syncPayload.elapsedMs, 48_000);
+	assert.equal(syncPayload.placement.length, LEAD_PLACEMENT_MAX);
+});
+
+test("leadErrorMessage ánh xạ đúng lỗi 400, 429, 503 và lỗi mạng sang tiếng Việt (#534)", () => {
+	const err400 = leadErrorMessage(400, {
+		code: "LEAD_INVALID",
+		fields: ["email", "phone"],
+	});
+	assert.equal(err400.kind, "field");
+	assert.deepEqual(err400.fields, ["email", "phone"]);
+
+	const err429 = leadErrorMessage(429, { code: "LEAD_RATE_LIMITED" });
+	assert.equal(err429.kind, "rate_limit");
+	assert.match(err429.message, /quá nhiều lượt đăng ký/i);
+
+	const err503 = leadErrorMessage(503, { code: "LEAD_INTAKE_DISABLED" });
+	assert.equal(err503.kind, "busy");
+	assert.match(err503.message, /Hệ thống đang bận/i);
+
+	const errNet = leadErrorMessage(0, null);
+	assert.equal(errNet.kind, "busy");
+	assert.match(errNet.message, /Zalo cô Mỹ/);
 });

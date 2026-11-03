@@ -1,7 +1,17 @@
-import type { CreatedResponse } from "@teacher-os/api/contracts";
+import type {
+	AssignmentQuestion,
+	CreatedResponse,
+	LibraryExerciseSkill,
+	LibraryExerciseView,
+} from "@teacher-os/api/contracts";
 import {
 	ASSIGNMENT_TEST_PRESETS,
 	assignmentQuestionSchema,
+	LIBRARY_EXERCISE_SKILLS,
+	libraryExerciseCreateSchema,
+	libraryExerciseUpdateSchema,
+	studyPackCreateSchema,
+	studyPackUpdateSchema,
 } from "@teacher-os/api/contracts";
 import {
 	normalizeMediaType,
@@ -30,6 +40,12 @@ import {
 	libraryTest,
 	libraryTestPart,
 } from "@teacher-os/db/schema/library-test";
+import {
+	classStudyPack,
+	libraryExercise,
+	studyPack,
+	studyPackItem,
+} from "@teacher-os/db/schema/study-pack";
 import { and, asc, desc, eq, inArray, isNull, like, or } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
@@ -38,6 +54,12 @@ import type { Db } from "../app";
 import { mediaObjectResponse } from "../lib/media-response";
 import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
 import { type AdminEnv, createRequireAdmin } from "../lib/require-admin";
+import {
+	buildStudyPackItemInsertStatements,
+	loadStudyPackDetailFromRow,
+	loadStudyPackSummaries,
+	validateStudyPackItems,
+} from "../lib/study-pack-clone";
 import type { SessionUser } from "../session";
 
 /**
@@ -185,12 +207,14 @@ function parseGroups(
  * xử lý từng câu; chấp nhận vì dữ liệu hỏng chỉ đến từ ghi ngoài luồng
  * (upsert schema đã chặn từ lúc lưu) và hướng chặn publish vẫn đúng.
  */
-function parseQuestions(raw: string): LibraryPartInput["questions"] {
+function parseQuestions(raw: string): AssignmentQuestion[] {
 	const parsed = assignmentQuestionSchema
 		.array()
 		.max(40)
 		.safeParse(parseJsonArray(raw));
-	return parsed.success ? parsed.data : [];
+	return parsed.success
+		? parsed.data.map((q) => ({ ...q, opts: q.opts ?? null }))
+		: [];
 }
 
 /** Row part → input cho validatePartForReady/validateTestReady. */
@@ -271,6 +295,27 @@ function headerFields(row: LibraryRow) {
 /** Slot chuẩn theo skill — part ngoài preset bị chặn ở PUT/DELETE. */
 function presetParts(skill: LibrarySkill): string[] {
 	return ASSIGNMENT_TEST_PRESETS[skill].slots.map((slot) => slot.part);
+}
+
+function toLibraryExerciseView(
+	row: typeof libraryExercise.$inferSelect,
+): LibraryExerciseView {
+	return {
+		id: row.id,
+		skill: row.skill as LibraryExerciseSkill,
+		part: row.part,
+		type: row.type,
+		title: row.title,
+		band: row.band,
+		intro: row.intro,
+		passage: row.passage,
+		questions: parseQuestions(row.questions),
+		optionBank: parseStringArray(row.optionBank),
+		note: row.note,
+		status: row.status === "ready" ? "ready" : "draft",
+		createdAt: row.createdAt.toISOString(),
+		updatedAt: row.updatedAt.toISOString(),
+	};
 }
 
 export function adminLibraryRoutes(deps: AdminLibraryDeps) {
@@ -846,6 +891,285 @@ export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 		}
 		inBackground("delete audio object", () => store.delete(oldKey));
 		return c.json({ ok: true });
+	});
+
+	// ---- /exercises — bài tập thư viện hệ thống cho bộ đề (#533) ----
+	router.get("/exercises", async (c) => {
+		const conditions = [];
+		const skill = c.req.query("skill");
+		if (skill !== undefined) {
+			if (!(LIBRARY_EXERCISE_SKILLS as readonly string[]).includes(skill)) {
+				return c.json({ error: "invalid skill" }, 400);
+			}
+			conditions.push(eq(libraryExercise.skill, skill));
+		}
+		const status = c.req.query("status");
+		if (status !== undefined) {
+			if (status !== "draft" && status !== "ready") {
+				return c.json({ error: "invalid status" }, 400);
+			}
+			conditions.push(eq(libraryExercise.status, status));
+		}
+		const rows = await withDb()
+			.select()
+			.from(libraryExercise)
+			.where(conditions.length > 0 ? and(...conditions) : undefined)
+			.orderBy(
+				desc(libraryExercise.updatedAt),
+				desc(libraryExercise.createdAt),
+				asc(libraryExercise.id),
+			);
+		return c.json({ exercises: rows.map(toLibraryExerciseView) });
+	});
+
+	router.post("/exercises", async (c) => {
+		const body = await readBody(c, libraryExerciseCreateSchema);
+		if (!body.ok) return body.response;
+		const session = await deps.getSessionUser(c.req.raw.headers);
+		if (!session) return c.json({ error: "unauthorized" }, 401);
+
+		const id = crypto.randomUUID();
+		const now = new Date();
+		await withDb()
+			.insert(libraryExercise)
+			.values({
+				id,
+				skill: body.data.skill,
+				part: body.data.part,
+				type: body.data.type,
+				title: body.data.title,
+				band: body.data.band,
+				intro: body.data.intro,
+				passage: body.data.passage,
+				questions: JSON.stringify(body.data.questions),
+				optionBank: JSON.stringify(body.data.optionBank),
+				note: body.data.note,
+				status: body.data.status,
+				createdBy: session.userId,
+				createdAt: now,
+				updatedAt: now,
+			});
+		const [created] = await withDb()
+			.select()
+			.from(libraryExercise)
+			.where(eq(libraryExercise.id, id));
+		if (!created) return c.json({ error: "exercise creation failed" }, 500);
+		return c.json({ exercise: toLibraryExerciseView(created) }, 201);
+	});
+
+	router.put("/exercises/:id", async (c) => {
+		const id = c.req.param("id");
+		const body = await readBody(c, libraryExerciseUpdateSchema);
+		if (!body.ok) return body.response;
+
+		const [existing] = await withDb()
+			.select({ id: libraryExercise.id, status: libraryExercise.status })
+			.from(libraryExercise)
+			.where(eq(libraryExercise.id, id));
+		if (!existing) {
+			return c.json({ error: "exercise not found" }, 404);
+		}
+		if (existing.status === "ready" && body.data.status === "draft") {
+			const [refItem] = await withDb()
+				.select({ id: studyPackItem.id })
+				.from(studyPackItem)
+				.where(
+					and(
+						eq(studyPackItem.sourceKind, "library_exercise"),
+						eq(studyPackItem.sourceId, id),
+					),
+				)
+				.limit(1);
+			if (refItem) {
+				return c.json({ error: "exercise is referenced by a study pack" }, 409);
+			}
+		}
+		await withDb()
+			.update(libraryExercise)
+			.set({
+				skill: body.data.skill,
+				part: body.data.part,
+				type: body.data.type,
+				title: body.data.title,
+				band: body.data.band,
+				intro: body.data.intro,
+				passage: body.data.passage,
+				questions: JSON.stringify(body.data.questions),
+				optionBank: JSON.stringify(body.data.optionBank),
+				note: body.data.note,
+				status: body.data.status,
+				updatedAt: new Date(),
+			})
+			.where(eq(libraryExercise.id, id));
+		const [updated] = await withDb()
+			.select()
+			.from(libraryExercise)
+			.where(eq(libraryExercise.id, id));
+		if (!updated) return c.json({ error: "exercise not found" }, 404);
+		return c.json({ exercise: toLibraryExerciseView(updated) }, 200);
+	});
+
+	router.delete("/exercises/:id", async (c) => {
+		const id = c.req.param("id");
+		const [existing] = await withDb()
+			.select({ id: libraryExercise.id })
+			.from(libraryExercise)
+			.where(eq(libraryExercise.id, id));
+		if (!existing) {
+			return c.json({ error: "exercise not found" }, 404);
+		}
+		const [refItem] = await withDb()
+			.select({ id: studyPackItem.id })
+			.from(studyPackItem)
+			.where(
+				and(
+					eq(studyPackItem.sourceKind, "library_exercise"),
+					eq(studyPackItem.sourceId, id),
+				),
+			)
+			.limit(1);
+		if (refItem) {
+			return c.json({ error: "exercise is referenced by a study pack" }, 409);
+		}
+		await withDb().delete(libraryExercise).where(eq(libraryExercise.id, id));
+		return c.json({ ok: true }, 200);
+	});
+
+	// ---- /packs — bộ đề thư viện hệ thống (org_id IS NULL, #533) ----
+	router.get("/packs", async (c) => {
+		const rows = await withDb()
+			.select()
+			.from(studyPack)
+			.where(isNull(studyPack.orgId))
+			.orderBy(
+				desc(studyPack.updatedAt),
+				desc(studyPack.createdAt),
+				asc(studyPack.id),
+			);
+		const packs = await loadStudyPackSummaries(withDb(), rows);
+		return c.json({ packs });
+	});
+
+	router.get("/packs/:id", async (c) => {
+		const id = c.req.param("id");
+		const [row] = await withDb()
+			.select()
+			.from(studyPack)
+			.where(and(eq(studyPack.id, id), isNull(studyPack.orgId)));
+		if (!row) {
+			return c.json({ error: "study pack not found" }, 404);
+		}
+		const pack = await loadStudyPackDetailFromRow(withDb(), row);
+		return c.json({ pack });
+	});
+
+	router.post("/packs", async (c) => {
+		const body = await readBody(c, studyPackCreateSchema);
+		if (!body.ok) return body.response;
+		const session = await deps.getSessionUser(c.req.raw.headers);
+		if (!session) return c.json({ error: "unauthorized" }, 401);
+
+		const valid = await validateStudyPackItems(withDb(), null, body.data.items);
+		if (!valid.ok) {
+			return c.json({ error: valid.error }, valid.status);
+		}
+
+		const packId = crypto.randomUUID();
+		const now = new Date();
+		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
+			withDb().insert(studyPack).values({
+				id: packId,
+				orgId: null,
+				title: body.data.title,
+				description: body.data.description,
+				status: body.data.status,
+				sourcePackId: null,
+				createdBy: session.userId,
+				createdAt: now,
+				updatedAt: now,
+			}),
+			...buildStudyPackItemInsertStatements(withDb(), packId, body.data.items),
+		];
+		await withDb().batch(statements);
+
+		const [created] = await withDb()
+			.select()
+			.from(studyPack)
+			.where(eq(studyPack.id, packId));
+		if (!created) return c.json({ error: "study pack creation failed" }, 500);
+		const pack = await loadStudyPackDetailFromRow(withDb(), created);
+		return c.json({ pack }, 201);
+	});
+
+	router.put("/packs/:id", async (c) => {
+		const id = c.req.param("id");
+		const body = await readBody(c, studyPackUpdateSchema);
+		if (!body.ok) return body.response;
+
+		const [existing] = await withDb()
+			.select()
+			.from(studyPack)
+			.where(and(eq(studyPack.id, id), isNull(studyPack.orgId)));
+		if (!existing) {
+			return c.json({ error: "study pack not found" }, 404);
+		}
+
+		const valid = await validateStudyPackItems(withDb(), null, body.data.items);
+		if (!valid.ok) {
+			return c.json({ error: valid.error }, valid.status);
+		}
+
+		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
+			withDb()
+				.update(studyPack)
+				.set({
+					title: body.data.title,
+					description: body.data.description,
+					status: body.data.status,
+					updatedAt: new Date(),
+				})
+				.where(and(eq(studyPack.id, id), isNull(studyPack.orgId))),
+			withDb().delete(studyPackItem).where(eq(studyPackItem.packId, id)),
+			...buildStudyPackItemInsertStatements(withDb(), id, body.data.items),
+		];
+		await withDb().batch(statements);
+
+		const [updated] = await withDb()
+			.select()
+			.from(studyPack)
+			.where(and(eq(studyPack.id, id), isNull(studyPack.orgId)));
+		if (!updated) return c.json({ error: "study pack not found" }, 404);
+		const pack = await loadStudyPackDetailFromRow(withDb(), updated);
+		return c.json({ pack }, 200);
+	});
+
+	router.delete("/packs/:id", async (c) => {
+		const id = c.req.param("id");
+		const [existing] = await withDb()
+			.select({ id: studyPack.id })
+			.from(studyPack)
+			.where(and(eq(studyPack.id, id), isNull(studyPack.orgId)));
+		if (!existing) {
+			return c.json({ error: "study pack not found" }, 404);
+		}
+		const [referenced] = await withDb()
+			.select({ id: classStudyPack.id })
+			.from(classStudyPack)
+			.where(eq(classStudyPack.packId, id))
+			.limit(1);
+		if (referenced) {
+			return c.json(
+				{ error: "study pack is referenced by class assignments" },
+				409,
+			);
+		}
+		await withDb().batch([
+			withDb().delete(studyPackItem).where(eq(studyPackItem.packId, id)),
+			withDb()
+				.delete(studyPack)
+				.where(and(eq(studyPack.id, id), isNull(studyPack.orgId))),
+		]);
+		return c.json({ ok: true }, 200);
 	});
 
 	return router;

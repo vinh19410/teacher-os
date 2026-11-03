@@ -66,9 +66,10 @@ giấy trên nền trắng (shadcn neutral), hành động chính = mực đậm
 
 ## Quy tắc component
 
-- **Selection = nền chìm:** tab/chip đang chọn `bg-muted text-foreground` (trong segmented:
-  item chọn `bg-background shadow-sm` trên container `bg-muted rounded-md`); nav item active
-  dùng nền `bg-sidebar-accent` của shell `sidebar-07`.
+- **Selection:** trong segmented (`Tabs`), item chọn `bg-background shadow-sm` trên container `bg-muted rounded-md`;
+  chip lựa chọn độc lập (`ChipMulti`, band chip onboarding) khi chọn dùng nền đặc `border-primary bg-primary text-primary-foreground`;
+  thẻ/hàng lựa chọn (`OptionButton`, `LearningGoalsStep`, `EnrollStudentModal` `role="option"`) khi chọn dùng `border-primary bg-muted text-foreground ring-1 ring-primary` kèm chỉ báo check (`<Check aria-hidden="true" />`);
+  nav item active dùng nền `bg-sidebar-accent` của shell `sidebar-07`.
 - **Nút chính = mực:** `Button primary` = `bg-primary text-primary-foreground` (mực), hover
     đậm nhạt theo token. `secondary` = `bg-secondary`/outline. `danger` = `bg-destructive`
     (đỏ, chỉ phá hủy).
@@ -80,8 +81,8 @@ giấy trên nền trắng (shadcn neutral), hành động chính = mực đậm
 - **Badge/TuitionBadge v2:** Badge theo variant shadcn (`default`/`secondary`/`outline`/
   `destructive`) với chấm màu `bg-current`; trạng thái học phí tô bằng `--success`/`--warn`/
   `--destructive` qua `tuitionDot`, chữ muted. Hết mono 10px uppercase.
-- **Chip lọc (`ChipFilter`/`ChipMulti`):** `rounded-md border border-input bg-transparent`,
-  chọn = `bg-muted`; badge đếm `font-mono text-[10px]` (`aria-hidden` để accessible name chỉ
+- **Chip lọc (`ChipFilter`) và chip chọn nhiều (`ChipMulti`):** `ChipMulti` chưa chọn dùng `rounded-md border border-input bg-background text-foreground dark:bg-input/30`,
+  đã chọn dùng `border-primary bg-primary text-primary-foreground`; `ChipFilter` giữ badge đếm `font-mono text-[10px]` (`aria-hidden` để accessible name chỉ
   là label); chip 0 kết quả vẫn full contrast, vẫn bấm được; nhóm chip liên quan phải có
   `role="group"` + `aria-label`.
 - **Bộ lọc hai cấp (skill → part):** khi "Tất cả", nhóm part theo skill với nhãn muted;
@@ -126,7 +127,7 @@ giấy trên nền trắng (shadcn neutral), hành động chính = mực đậm
   `--destructive` cho hành động phá hủy/quá hạn — **trừ cặp verdict của màn soi bài**
   (`--verdict-correct`/`--verdict-wrong`, xem Tokens); đỏ verdict không thay cho
   `--destructive`.
-- Không dùng `--accent` (xám hover) làm nền chip selection — selection là `bg-muted`.
+- Không dùng `--accent` (xám hover) hay `border-transparent` + `bg-muted`/`bg-secondary` đơn độc làm trạng thái chọn (trên nền sáng `oklch(0.97)` chỉ đạt ~1.06:1) — chip chọn độc lập dùng `border-primary bg-primary text-primary-foreground`, thẻ/hàng chọn dùng `bg-muted` kèm `border-primary ring-1 ring-primary` + icon check.
 - Không hard-code hex — trừ nền trắng QR và SVG logo (whitelist phase-07 sweep).
 - Không render bức tường chip phẳng trộn nhiều taxonomy — luôn nhóm có nhãn.
 - Không điều hướng URL trên mỗi phím gõ (debounce ~300ms rồi mới đẩy query lên URL).
@@ -146,7 +147,8 @@ có chủ đích (dữ liệu thật > hình dáng design), không phải sót q
 - **Header giữ kicker `loại · lịch · hình thức`, không có `lead`**: học phí chuyển hiển thị ở tab
   Học viên (design đặt học phí trong bảng Students; app cần thấy phí cả khi chưa có học viên).
 - **"Add session" = nút primary "Sắp xếp buổi"** mở modal Quản lý buổi: kernel không có action
-  add-session theo ngày riêng; thêm buổi = thêm bài vào module giáo trình (#221).
+  add-session theo ngày riêng; thêm buổi = thêm bài vào module giáo trình (#221). Khi lớp chưa gắn
+  giáo trình, nút vẫn bấm được và modal hiển thị lý do kèm nút "Mở tab Giáo trình" (#521).
 - **Nhãn nút giữ tiếng Việt**: "Điều chỉnh" (Edit session), "Chấm bài" (Grade), "Điểm danh →" /
   "Sửa điểm danh →" (Take/Edit attendance →). Link attendance chỉ hiện trên card **đã qua ngày hoặc
   đã học** — design hiển thị trên mọi card, nhưng buổi tương lai mở modal chỉ được view rỗng nên
@@ -164,6 +166,7 @@ có chủ đích (dữ liệu thật > hình dáng design), không phải sót q
   gán/gỡ template.
 - **Card buổi học render đủ N buổi**, không cắt 6 như design: số buổi thật là dữ liệu chấm điểm
   danh, cắt làm sai đếm.
+- **Nhãn tab đầu tiên Việt hóa thành "Buổi học & luyện tập" và ngày mở lớp định dạng `Từ dd/mm/yyyy` (#520)**: đồng nhất tiếng Việt cho dải 5 tab của trang chi tiết lớp (giữ nguyên `id: "sessions-practice"` trên URL) và format `cls.startDate` qua `fmtDue` trên thẻ stat học viên.
 
 ## Lệch có chủ đích so với design v2 — trang soạn đề admin (Quiz Builder) (#424)
 

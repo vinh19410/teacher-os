@@ -2,6 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { fmtDue } from "@/components/assignments/assignment-status";
 import { ClassRosterTab } from "@/components/class-detail/class-roster-tab";
 import { ClassSessionsManageModal } from "@/components/class-detail/class-sessions-manage-modal";
 import { ClassSessionsSection } from "@/components/class-detail/class-sessions-section";
@@ -11,6 +12,7 @@ import type {
 	OccurrenceEditPayload,
 } from "@/components/class-detail/session-actions-modal";
 import { ClassAssignmentsTab } from "@/components/classes/class-assignments-tab";
+import { ClassStudyPackSection } from "@/components/classes/class-study-pack-section";
 import { EditClassFeeModal } from "@/components/modals/edit-class-fee-modal";
 import { EnrollStudentModal } from "@/components/modals/enroll-student-modal";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -154,6 +156,9 @@ function ClassDetailRoute() {
 	const assignmentsFocus = search.tab === "assignments";
 	const [tab, setTab] = useState<string>(activeTab);
 	const [manageOpen, setManageOpen] = useState(false);
+	const [practiceMode, setPracticeMode] = useState<"sessions" | "study-pack">(
+		"sessions",
+	);
 	const [assignmentsView, setAssignmentsView] = useState<
 		"list" | "assign" | "success"
 	>("list");
@@ -164,6 +169,7 @@ function ClassDetailRoute() {
 		setTab(nextTab);
 		if (nextTab !== "sessions-practice") {
 			setAssignmentsView("list");
+			setPracticeMode("sessions");
 		}
 	};
 	const sy = useClassCurriculum(classId);
@@ -225,6 +231,7 @@ function ClassDetailRoute() {
 								size="sm"
 								onClick={() => {
 									setTab("sessions-practice");
+									setPracticeMode("sessions");
 									setAssignmentsView("assign");
 								}}
 							>
@@ -233,9 +240,11 @@ function ClassDetailRoute() {
 						)}
 						<Button
 							size="sm"
-							disabled={!sy}
 							onClick={() => {
-								setTab("sessions-practice");
+								if (sy) {
+									setTab("sessions-practice");
+									setAssignmentsView("list");
+								}
 								setManageOpen(true);
 							}}
 						>
@@ -253,7 +262,7 @@ function ClassDetailRoute() {
 							? `học viên · ${cls.invitedStudentIds.length} chờ xác nhận`
 							: "học viên"
 					}
-					sub={`Từ ${cls.startDate}`}
+					sub={cls.startDate.trim() ? `Từ ${fmtDue(cls.startDate)}` : undefined}
 				/>
 				<StatCard
 					num={`${cls.sessionsDone}/${cls.sessionsTotal}`}
@@ -273,7 +282,7 @@ function ClassDetailRoute() {
 
 			<Tabs
 				tabs={[
-					{ id: "sessions-practice", label: "Sessions & practice" },
+					{ id: "sessions-practice", label: "Buổi học & luyện tập" },
 					{ id: "roster", label: "Học viên" },
 					{ id: "curriculum", label: "Giáo trình" },
 					{ id: "vocab", label: "Từ vựng" },
@@ -284,38 +293,81 @@ function ClassDetailRoute() {
 			/>
 
 			{tab === "vocab" && <VocabDeckList classId={classId} />}
-			{tab === "sessions-practice" &&
-				(assignmentsView !== "list" ? (
-					<ClassAssignmentsTab
-						key={classId}
-						classGroup={cls}
-						view={assignmentsView}
-						onViewChange={setAssignmentsView}
-					/>
-				) : (
-					<div className="grid gap-6 xl:grid-cols-2 xl:items-start">
-						<ClassSessionsSection
-							cls={cls}
-							lessons={data.lessons.filter((l) => l.classId === classId)}
-							legacyLessons={classLessons}
-							syllabus={sy}
-							studentById={studentById}
-							run={run}
-							onComplete={handleCompleteOccurrence}
-							onCancelOccurrence={handleCancelOccurrence}
-							onSaveEdit={handleSaveOccurrenceEdit}
-							isPending={isPending}
-							busy={busy}
+			{tab === "sessions-practice" && (
+				<div className="space-y-4">
+					<fieldset
+						aria-label="Chế độ luyện tập"
+						className="inline-flex rounded-md bg-muted p-1"
+					>
+						<button
+							type="button"
+							aria-pressed={practiceMode === "sessions"}
+							onClick={() => setPracticeMode("sessions")}
+							className={cn(
+								"rounded-sm px-3 py-1.5 font-medium text-sm transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+								practiceMode === "sessions"
+									? "bg-background text-foreground shadow-sm"
+									: "text-muted-foreground hover:text-foreground",
+							)}
+						>
+							{"Buổi học & bài giao"}
+						</button>
+						<button
+							type="button"
+							aria-pressed={practiceMode === "study-pack"}
+							onClick={() => {
+								setAssignmentsView("list");
+								setPracticeMode("study-pack");
+							}}
+							className={cn(
+								"rounded-sm px-3 py-1.5 font-medium text-sm transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+								practiceMode === "study-pack"
+									? "bg-background text-foreground shadow-sm"
+									: "text-muted-foreground hover:text-foreground",
+							)}
+						>
+							Bộ đề tự học
+						</button>
+					</fieldset>
+
+					{practiceMode === "study-pack" ? (
+						<ClassStudyPackSection
+							key={`study-pack-${cls.id}`}
+							classId={cls.id}
 						/>
+					) : assignmentsView !== "list" ? (
 						<ClassAssignmentsTab
-							key={`assign-${classId}`}
+							key={classId}
 							classGroup={cls}
-							view="list"
+							view={assignmentsView}
 							onViewChange={setAssignmentsView}
-							assignmentsFocus={assignmentsFocus}
 						/>
-					</div>
-				))}
+					) : (
+						<div className="grid gap-6 xl:grid-cols-2 xl:items-start">
+							<ClassSessionsSection
+								cls={cls}
+								lessons={data.lessons.filter((l) => l.classId === classId)}
+								legacyLessons={classLessons}
+								syllabus={sy}
+								studentById={studentById}
+								run={run}
+								onComplete={handleCompleteOccurrence}
+								onCancelOccurrence={handleCancelOccurrence}
+								onSaveEdit={handleSaveOccurrenceEdit}
+								isPending={isPending}
+								busy={busy}
+							/>
+							<ClassAssignmentsTab
+								key={`assign-${classId}`}
+								classGroup={cls}
+								view="list"
+								onViewChange={setAssignmentsView}
+								assignmentsFocus={assignmentsFocus}
+							/>
+						</div>
+					)}
+				</div>
+			)}
 
 			{tab === "roster" && (
 				<div className="space-y-4">
@@ -395,8 +447,13 @@ function ClassDetailRoute() {
 			)}
 
 			<ClassSessionsManageModal
+				key={`manage-sessions-${cls.id}`}
 				open={manageOpen}
 				onClose={() => setManageOpen(false)}
+				onOpenCurriculum={() => {
+					setManageOpen(false);
+					handleTabChange("curriculum");
+				}}
 				cls={cls}
 				run={run}
 				isPending={isPending}

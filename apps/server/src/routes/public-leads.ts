@@ -5,18 +5,18 @@ import {
 } from "@teacher-os/api/lead-contracts";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import type { Mailer } from "@teacher-os/auth/mail/mailer";
-import { lead } from "@teacher-os/db/schema/lead";
-import { and, count, desc, eq, gte } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { Db } from "../app";
 import { notifyNewLead } from "../lib/lead-notify";
 
 /**
- * POST /public/leads (plan #506 phase 2, D4–D7): intake công khai cho form
- * đăng ký trên msmy.io.vn. Mount NGOÀI /api/* như /public/pay — bootstrap
- * middleware và Better Auth không chạy; "auth" là tổ hợp Origin allowlist +
- * chống spam, org đích luôn lấy từ env (không tin client).
+ * POST /public/leads (plan #506 phase 2, D4–D7; #534): intake công khai cho
+ * form đăng ký và cổng bài kiểm tra đầu vào trên msmy.io.vn. Mount NGOÀI
+ * /api/* như /public/pay — bootstrap middleware và Better Auth không chạy;
+ * "auth" là tổ hợp Origin allowlist + chống spam, org đích luôn lấy từ env
+ * (không tin client).
  *
  * Hợp đồng fail-closed: thiếu LEAD_ORG_ID ⇒ 503 LEAD_INTAKE_DISABLED (như
  * getBankHub); Origin không thuộc LEAD_ORIGINS ⇒ 403; bot dính honeypot /
@@ -93,7 +93,7 @@ export function publicLeadRoutes(deps: PublicLeadRouteDeps) {
 		c.header("Cache-Control", "no-store");
 
 		// (a) fail-closed: chưa cấu hình org đích ⇒ tắt intake.
-		const leadOrgId = deps.leadOrgId ?? "";
+		const leadOrgId = deps.leadOrgId?.trim() ?? "";
 		if (leadOrgId.length === 0) {
 			return c.json(
 				{ error: "LEAD_INTAKE_DISABLED", code: "LEAD_INTAKE_DISABLED" },
@@ -166,7 +166,6 @@ export function publicLeadRoutes(deps: PublicLeadRouteDeps) {
 		}
 
 		const db = deps.getDb();
-		const now = Date.now();
 
 		// (f) Băm IP — CF-Connecting-IP ở Workers; vắng (node/e2e) ⇒ "unknown"
 		// (mọi test gọi không header rơi vào cùng bucket, có header riêng thì
@@ -174,125 +173,176 @@ export function publicLeadRoutes(deps: PublicLeadRouteDeps) {
 		const ip = c.req.header("CF-Connecting-IP") ?? "unknown";
 		const ipHash = deps.leadIpSecret ? await hashIp(deps.leadIpSecret, ip) : "";
 
-		// (g) Tần suất theo IP: ≥ 3 lead trong 10 phút ⇒ 429.
-		if (ipHash.length > 0) {
-			const [ipRow] = await db
-				.select({ n: count() })
-				.from(lead)
-				.where(
-					and(
-						eq(lead.ipHash, ipHash),
-						gte(lead.updatedAt, new Date(now - LEAD_IP_WINDOW_MS)),
-					),
-				);
-			if ((ipRow?.n ?? 0) >= LEAD_IP_MAX) {
-				c.header("Retry-After", "600");
-				return c.json(
-					{ error: "LEAD_RATE_LIMITED", code: "LEAD_RATE_LIMITED" },
-					429,
-				);
-			}
-		}
-
-		// (h) Trần ngày (00:00 giờ VN ⇒ mốc UTC) — count trên org, mọi IP.
+		// (#524) Toàn bộ kiểm tra giới hạn IP (g), trần ngày (h) và dedupe SĐT 24h (i)
+		// được đưa vào câu lệnh INSERT...SELECT...WHERE và UPDATE...WHERE nguyên tử
+		// để các request song song không vượt ngưỡng hay gửi email trùng.
+		const now = Date.now();
+		const ipWindowStartMs = now - LEAD_IP_WINDOW_MS;
 		const dayStartMs = Date.parse(`${vietnamTodayISO()}T00:00:00+07:00`);
-		const [dayRow] = await db
-			.select({ n: count() })
-			.from(lead)
-			.where(
-				and(
-					eq(lead.orgId, leadOrgId),
-					gte(lead.createdAt, new Date(dayStartMs)),
-				),
-			);
-		if ((dayRow?.n ?? 0) >= LEAD_DAILY_CAP) {
-			c.header("Retry-After", "600");
-			return c.json({ error: "LEAD_DAILY_CAP", code: "LEAD_DAILY_CAP" }, 429);
-		}
+		const dedupeWindowStartMs = now - LEAD_DEDUPE_WINDOW_MS;
+		const skipIpCheck = ipHash.length === 0 ? 1 : 0;
+		const id = crypto.randomUUID();
+		const source = submit.source ?? "profile";
+		const birthDate = submit.birthDate ?? "";
+		const course = submit.course ?? "";
+		const studyMode = submit.studyMode ?? "";
+		const studyDays = submit.studyDays ?? "";
+		const timeSlot = submit.timeSlot ?? "";
+		const note = submit.note ?? "";
+		const placement = submit.placement ?? "";
 
-		// (i) Dedupe SĐT 24 giờ kể từ lúc tạo: cập nhật lead cũ (giữ status + teacherNote,
-		// submitCount + 1) thay vì tạo dòng mới (D7).
-		const [existing] = await db
-			.select()
-			.from(lead)
-			.where(
-				and(
-					eq(lead.orgId, leadOrgId),
-					eq(lead.phone, submit.phone),
-					gte(lead.createdAt, new Date(now - LEAD_DEDUPE_WINDOW_MS)),
-				),
+		const inserted = (await db.all(sql`
+			INSERT INTO lead (
+				id, org_id, name, phone, email, birth_date, course, study_mode,
+				study_days, time_slot, note, placement, teacher_note, source,
+				status, ip_hash, submit_count, created_at, updated_at, status_changed_at
 			)
-			.orderBy(desc(lead.createdAt))
-			.limit(1);
+			SELECT
+				${id},
+				${leadOrgId},
+				${submit.name},
+				${submit.phone},
+				${submit.email ?? ""},
+				${birthDate},
+				${course},
+				${studyMode},
+				${studyDays},
+				${timeSlot},
+				${note},
+				${placement},
+				'',
+				${source},
+				'new',
+				${ipHash},
+				1,
+				${now},
+				${now},
+				NULL
+			WHERE
+				(${skipIpCheck} = 1 OR (
+					SELECT count(*) FROM lead
+					WHERE ip_hash = ${ipHash} AND updated_at >= ${ipWindowStartMs}
+				) < ${LEAD_IP_MAX})
+				AND (
+					SELECT count(*) FROM lead
+					WHERE org_id = ${leadOrgId} AND created_at >= ${dayStartMs}
+				) < ${LEAD_DAILY_CAP}
+				AND NOT EXISTS (
+					SELECT 1 FROM lead
+					WHERE org_id = ${leadOrgId}
+						AND phone = ${submit.phone}
+						AND created_at >= ${dedupeWindowStartMs}
+				)
+			RETURNING id
+		`)) as Array<{ id: string }>;
 
-		if (existing) {
-			if (existing.submitCount >= LEAD_DEDUPE_MAX_SUBMITS) {
-				c.header("Retry-After", "600");
+		if (inserted.length === 0) {
+			// Không insert được: hoặc đã có dòng dedupe SĐT trong 24h (cần update
+			// nguyên tử), hoặc đã chạm ngưỡng IP / trần ngày.
+			// Giữ nguyên ip_hash gốc của dòng khi dedupe update để IP khác không xóa
+			// được vết rate-limit của IP tạo ban đầu; loại trừ chính dòng đang sửa
+			// khỏi đếm IP (l2.id != lead.id) để lần gửi thứ 3 của cùng IP vẫn tự cập
+			// nhật được; không chặn dedupe update bằng LEAD_DAILY_CAP vì không tạo
+			// dòng lead mới.
+			const updated = (await db.all(sql`
+				UPDATE lead
+				SET
+					name = CASE WHEN lead.name = '' THEN ${submit.name} ELSE lead.name END,
+					email = CASE WHEN lead.email = '' THEN ${submit.email ?? ""} ELSE lead.email END,
+					birth_date = CASE WHEN ${birthDate} = '' THEN lead.birth_date ELSE ${birthDate} END,
+					course = CASE WHEN ${course} = '' THEN lead.course ELSE ${course} END,
+					study_mode = CASE WHEN ${studyMode} = '' THEN lead.study_mode ELSE ${studyMode} END,
+					study_days = CASE WHEN ${studyDays} = '' THEN lead.study_days ELSE ${studyDays} END,
+					time_slot = CASE WHEN ${timeSlot} = '' THEN lead.time_slot ELSE ${timeSlot} END,
+					note = CASE WHEN ${note} = '' THEN lead.note ELSE ${note} END,
+					placement = CASE WHEN ${placement} = '' THEN lead.placement ELSE ${placement} END,
+					ip_hash = CASE WHEN lead.ip_hash = '' THEN ${ipHash} ELSE lead.ip_hash END,
+					submit_count = lead.submit_count + 1,
+					updated_at = max(lead.updated_at, ${now})
+				WHERE lead.id = (
+					SELECT id FROM lead
+					WHERE org_id = ${leadOrgId}
+						AND phone = ${submit.phone}
+						AND created_at >= ${dedupeWindowStartMs}
+					ORDER BY created_at DESC, id DESC
+					LIMIT 1
+				)
+					AND lead.submit_count < ${LEAD_DEDUPE_MAX_SUBMITS}
+					AND (${skipIpCheck} = 1 OR (
+						SELECT count(*) FROM lead AS l2
+						WHERE l2.ip_hash = ${ipHash}
+							AND l2.updated_at >= ${ipWindowStartMs}
+							AND l2.id != lead.id
+					) < ${LEAD_IP_MAX})
+				RETURNING id, submit_count
+			`)) as Array<{ id: string; submit_count: number }>;
+
+			const updatedRow = updated[0];
+			if (updatedRow) {
+				// Dedupe KHÔNG gửi email lại (D13) — giáo viên đã nhận bản đầu.
 				return c.json(
-					{ error: "LEAD_RATE_LIMITED", code: "LEAD_RATE_LIMITED" },
-					429,
+					{
+						id: updatedRow.id,
+						submitCount: Number(updatedRow.submit_count),
+					},
+					201,
 				);
 			}
-			// Tên/email là định danh giáo viên đang thấy: người gửi lại không ghi
-			// đè được, chỉ bổ sung khi lead cũ để trống.
-			await db
-				.update(lead)
-				.set({
-					name: existing.name || submit.name,
-					email: existing.email || (submit.email ?? ""),
-					birthDate: submit.birthDate ?? "",
-					course: submit.course ?? "",
-					studyMode: submit.studyMode ?? "",
-					studyDays: submit.studyDays ?? "",
-					timeSlot: submit.timeSlot ?? "",
-					note: submit.note ?? "",
-					placement: submit.placement ?? "",
-					ipHash,
-					submitCount: existing.submitCount + 1,
-					updatedAt: new Date(),
-				})
-				.where(eq(lead.id, existing.id));
-			// Dedupe KHÔNG gửi email lại (D13) — giáo viên đã nhận bản đầu.
+
+			// Cả INSERT lẫn UPDATE đều trả 0 dòng: phân loại mã lỗi 429 theo đúng thứ tự
+			// ưu tiên (IP rate limit -> daily cap cho SĐT mới -> dedupe rate limit).
+			const [countsRow] = (await db.all(sql`
+				SELECT
+					CASE
+						WHEN ${skipIpCheck} = 1 THEN 0
+						ELSE (
+							SELECT count(*) FROM lead
+							WHERE ip_hash = ${ipHash} AND updated_at >= ${ipWindowStartMs}
+						)
+					END AS ip_count,
+					(
+						SELECT count(*) FROM lead
+						WHERE org_id = ${leadOrgId} AND created_at >= ${dayStartMs}
+					) AS day_count,
+					EXISTS (
+						SELECT 1 FROM lead
+						WHERE org_id = ${leadOrgId}
+							AND phone = ${submit.phone}
+							AND created_at >= ${dedupeWindowStartMs}
+					) AS has_dedupe
+			`)) as Array<{
+				ip_count: number;
+				day_count: number;
+				has_dedupe: number;
+			}>;
+
+			c.header("Retry-After", "600");
+			const ipCount = Number(countsRow?.ip_count ?? 0);
+			const dayCount = Number(countsRow?.day_count ?? 0);
+			const hasDedupe = Number(countsRow?.has_dedupe ?? 0) === 1;
+			if (!hasDedupe && ipCount < LEAD_IP_MAX && dayCount >= LEAD_DAILY_CAP) {
+				return c.json({ error: "LEAD_DAILY_CAP", code: "LEAD_DAILY_CAP" }, 429);
+			}
 			return c.json(
-				{ id: existing.id, submitCount: existing.submitCount + 1 },
-				201,
+				{ error: "LEAD_RATE_LIMITED", code: "LEAD_RATE_LIMITED" },
+				429,
 			);
 		}
-
-		const id = crypto.randomUUID();
-		await db.insert(lead).values({
-			id,
-			orgId: leadOrgId,
-			name: submit.name,
-			phone: submit.phone,
-			email: submit.email ?? "",
-			birthDate: submit.birthDate ?? "",
-			course: submit.course ?? "",
-			studyMode: submit.studyMode ?? "",
-			studyDays: submit.studyDays ?? "",
-			timeSlot: submit.timeSlot ?? "",
-			note: submit.note ?? "",
-			placement: submit.placement ?? "",
-			status: "new",
-			ipHash,
-			submitCount: 1,
-		});
-
 		// (D13) Email báo lead mới — chỉ lần tạo đầu, chạy nền, lỗi nuốt.
 		const row: LeadRow = {
 			id,
 			name: submit.name,
 			phone: submit.phone,
 			email: submit.email ?? "",
-			birthDate: submit.birthDate ?? "",
-			course: submit.course ?? "",
-			studyMode: submit.studyMode ?? "",
-			studyDays: submit.studyDays ?? "",
-			timeSlot: submit.timeSlot ?? "",
-			note: submit.note ?? "",
-			placement: submit.placement ?? "",
+			birthDate,
+			course,
+			studyMode,
+			studyDays,
+			timeSlot,
+			note,
+			placement,
 			teacherNote: "",
-			source: "profile",
+			source,
 			status: "new",
 			submitCount: 1,
 			createdAt: new Date(now).toISOString(),

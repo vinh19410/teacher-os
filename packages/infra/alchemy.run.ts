@@ -6,6 +6,7 @@ import * as Effect from "effect/Effect";
 import {
 	resolveAssumeEmailVerified,
 	resolveDomainTopology,
+	resolveLeadOrigins,
 	resolveTeacherEmails,
 } from "./src/topology.ts";
 
@@ -120,25 +121,20 @@ const aiEnabledConfig = Config.string("AI_ENABLED").pipe(
 	Config.withDefault("false"),
 );
 
-// Lead intake (#506): LEAD_ORG_ID KHÔNG có default theo deploy — rỗng (không
-// set) ⇒ /public/leads trả 503 LEAD_INTAKE_DISABLED (fail-closed, dev không
-// cần cấu hình gì).
-const leadOrgIdConfig = Config.string("LEAD_ORG_ID").pipe(
-	Config.withDefault(""),
-);
+// Lead intake (#506, #524): LEAD_ORG_ID KHÔNG có default theo deploy — rỗng
+// (không set hoặc chỉ khoảng trắng) ⇒ /public/leads trả 503
+// LEAD_INTAKE_DISABLED (fail-closed, dev không cần cấu hình gì).
+const leadOrgId = (process.env.LEAD_ORG_ID ?? "").trim();
 
-// Lead intake (#506 D5): origin form profile — topology mặc định prod msmy
-// (cả www), dev mặc định port profile local; deploy KHÔNG topology (workers.dev)
-// bắt buộc set như CORS_ORIGIN.
-const leadOriginsConfig = topology
-	? Config.string("LEAD_ORIGINS").pipe(
-			Config.withDefault("https://msmy.io.vn,https://www.msmy.io.vn"),
-		)
-	: isDevCommand
-		? Config.string("LEAD_ORIGINS").pipe(
-				Config.withDefault("http://localhost:8005"),
-			)
-		: Config.string("LEAD_ORIGINS");
+// Lead intake (#506 D5, #524, #536): origin form profile — topology mặc định
+// theo stage (`topology.profileOrigins`: prod msmy + www, staging
+// profile.<domain>), dev mặc định port profile local; rỗng/khoảng trắng/dấu
+// phẩy từ `${{ vars.LEAD_ORIGINS }}` chưa set đều rơi về mặc định qua
+// resolveLeadOrigins.
+const leadOrigins = resolveLeadOrigins(process.env.LEAD_ORIGINS, {
+	topology,
+	isDev: isDevCommand,
+});
 
 const adminOriginsConfig = topology
 	? Config.string("ADMIN_ORIGINS").pipe(
@@ -205,9 +201,9 @@ export const server = Cloudflare.Worker("server", {
 		ADMIN_ORIGINS: adminOriginsConfig,
 		ADMIN_EMAILS: adminEmailsConfig,
 		TEACHER_EMAILS: teacherEmails,
-		// Lead intake (#506): org đích + origin profile cho /public/leads.
-		LEAD_ORG_ID: leadOrgIdConfig,
-		LEAD_ORIGINS: leadOriginsConfig,
+		// Lead intake (#506, #524): org đích + origin profile cho /public/leads.
+		LEAD_ORG_ID: leadOrgId,
+		LEAD_ORIGINS: leadOrigins,
 		BETTER_AUTH_SECRET: Config.redacted("BETTER_AUTH_SECRET"),
 		BETTER_AUTH_URL: topology ? topology.apiOrigin : Cloudflare.Worker.URL,
 		COOKIE_DOMAIN: topology ? topology.cookieDomain : "",
@@ -368,12 +364,41 @@ export default Alchemy.Stack(
 			},
 		});
 
+		// Plan #536: trang hồ sơ giảng viên cô Mỹ — StaticSite tại msmy.io.vn (+ www)
+		// trên prod, profile.<domain> trên staging, dev port 8005.
+		const profileWorker = yield* Cloudflare.Website.StaticSite("profile", {
+			cwd: "../../apps/profile",
+			command: "pnpm build",
+			outdir: "dist",
+			env: {
+				LEAD_API_URL: topology
+					? topology.apiOrigin
+					: serverWorker.url.as<string>(),
+			},
+			assets: {
+				htmlHandling: "auto-trailing-slash",
+				notFoundHandling: "none",
+			},
+			...(topology && {
+				domain: {
+					name: topology.profileHost,
+					aliases: topology.profileAliases,
+				},
+				workersDev: false,
+			}),
+			dev: {
+				command: "pnpm dev:bare",
+				url: "http://localhost:8005",
+			},
+		});
+
 		return {
 			web: webWorker.url,
 			server: serverWorker.url,
 			landing: landingWorker.url,
 			student: studentWorker.url,
 			admin: adminWorker.url,
+			profile: profileWorker.url,
 		};
 	}),
 );

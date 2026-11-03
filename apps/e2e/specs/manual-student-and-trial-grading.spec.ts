@@ -60,9 +60,16 @@ test("manual student creation + instant activation unlocks invoice & assignment,
 	await enrollDialog.getByLabel(/Họ tên học viên/).fill(STUDENT_NAME);
 	await enrollDialog.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(enrollDialog).toBeHidden();
+	await expect(
+		page
+			.locator("[data-sonner-toast]")
+			.filter({ hasText: `Đã thêm ${STUDENT_NAME} vào lớp` }),
+	).toBeVisible();
 
 	// 5. Xác nhận học viên xuất hiện ngay trong roster lớp với trạng thái "Đang học"
-	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
+	await expect(
+		page.locator("tbody tr", { hasText: STUDENT_NAME }),
+	).toBeVisible();
 	await expect(page.getByText("Đang học")).toBeVisible();
 
 	// 6. Điều hướng tới /tuition → + Tạo hóa đơn (học viên đã được tự chọn nhờ enrollment active)
@@ -84,11 +91,11 @@ test("manual student creation + instant activation unlocks invoice & assignment,
 		STUDENT_NAME,
 	);
 
-	// 7. Quay lại lớp → tab Sessions & practice → Giao bài tập cho học viên vừa kích hoạt
+	// 7. Quay lại lớp → tab Buổi học & luyện tập → Giao bài tập cho học viên vừa kích hoạt
 	await page.goto("/classes");
 	await page.getByText(CLASS_NAME).click();
 	await page
-		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
 	await page.getByRole("button", { name: "Giao bài tập" }).first().click();
 	await page.getByRole("button", { name: new RegExp(PROMPT_TITLE) }).click();

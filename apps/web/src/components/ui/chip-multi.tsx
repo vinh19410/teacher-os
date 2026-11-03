@@ -36,25 +36,28 @@ export function ChipMulti<T extends string | number>({
 
 	return (
 		<div className={cn("flex flex-wrap gap-2", className)}>
-			{options.map((option) => (
-				<button
-					type="button"
-					key={String(option.value)}
-					aria-pressed={value.includes(option.value)}
-					disabled={disabled}
-					onClick={() => toggle(option)}
-					className={cn(
-						"inline-flex items-center rounded-md border bg-background px-3 py-1.5 font-medium text-xs outline-none transition-[color,box-shadow] dark:bg-input/30",
-						"focus-visible:ring-[3px] focus-visible:ring-ring/50",
-						"disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60",
-						value.includes(option.value)
-							? "border-transparent bg-secondary text-secondary-foreground"
-							: "hover:bg-accent hover:text-accent-foreground",
-					)}
-				>
-					{option.label}
-				</button>
-			))}
+			{options.map((option) => {
+				const selected = value.includes(option.value);
+				return (
+					<button
+						type="button"
+						key={String(option.value)}
+						aria-pressed={selected}
+						disabled={disabled}
+						onClick={() => toggle(option)}
+						className={cn(
+							"inline-flex items-center rounded-md border px-3 py-1.5 font-medium text-xs outline-none transition-[color,background-color,border-color,box-shadow]",
+							"focus-visible:ring-[3px] focus-visible:ring-ring/50",
+							"disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60",
+							selected
+								? "border-primary bg-primary text-primary-foreground"
+								: "border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:hover:bg-input/50",
+						)}
+					>
+						{option.label}
+					</button>
+				);
+			})}
 		</div>
 	);
 }

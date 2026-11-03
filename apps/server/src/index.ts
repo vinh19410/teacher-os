@@ -95,7 +95,7 @@ const getAuth = (): Auth => {
 	return auth;
 };
 
-export default buildApp({
+const app = buildApp({
 	getDb: () => (db ??= createDb() as unknown as Db),
 	corsOrigin: parseCORSOrigins(env.CORS_ORIGIN),
 	getSessionUser: (headers) =>
@@ -165,3 +165,5 @@ export default buildApp({
 	appOrigin: parseCORSOrigins(env.CORS_ORIGIN)[0],
 	runInBackground: (promise) => waitUntil(promise),
 });
+
+export default app;

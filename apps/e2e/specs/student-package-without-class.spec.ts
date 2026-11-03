@@ -62,7 +62,9 @@ test("học viên chưa lớp: 'Chưa có lớp' → enroll lớp 'Đã mời' �
 	await enrollDialog.getByRole("option", { name: STUDENT_NAME }).click();
 	await enrollDialog.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(enrollDialog).toBeHidden();
-	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
+	await expect(
+		page.locator("tbody tr", { hasText: STUDENT_NAME }),
+	).toBeVisible();
 	await expect(page.getByText("Đã mời")).toBeVisible();
 
 	// 8. Activate student via "Kích hoạt"

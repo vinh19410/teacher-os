@@ -91,3 +91,58 @@ export function monthWindowVietnamMs(now: Date = new Date()): {
 		endMs: Date.parse(`${nextYm}-01T00:00:00+07:00`),
 	};
 }
+
+/**
+ * Chuyển ngày ISO `yyyy-mm-dd` và giờ `HH:MM` theo múi giờ Việt Nam (UTC+7)
+ * sang epoch ms.
+ */
+export function vietnamDateTimeMs(dateISO: string, timeHHMM: string): number {
+	return Date.parse(`${dateISO}T${timeHHMM}:00+07:00`);
+}
+
+/**
+ * Độ lệch mili-giây của giờ `HH:MM` (giờ Việt Nam UTC+7, không có DST) so với
+ * mốc `00:00:00Z` của cùng ngày `yyyy-mm-dd`. Dùng cho câu lệnh SQL `UPDATE`
+ * tính lại `release_at` / `due_at`:
+ * `cast(strftime('%s', date) as integer) * 1000 + vietnamWallClockOffsetMs(timeHHMM)`.
+ */
+export function vietnamWallClockOffsetMs(timeHHMM: string): number {
+	const [hhRaw, mmRaw] = timeHHMM.split(":");
+	const hh = Number.parseInt(hhRaw ?? "0", 10);
+	const mm = Number.parseInt(mmRaw ?? "0", 10);
+	return (hh * 60 + mm - 7 * 60) * 60 * 1000;
+}
+
+/**
+ * Định dạng một thời điểm bất kỳ sang `HH:MM` theo múi giờ `Asia/Ho_Chi_Minh`.
+ */
+export function formatVietnamTimeHHMM(
+	dateOrIso: Date | string | number,
+): string {
+	const d =
+		dateOrIso instanceof Date ? dateOrIso : new Date(dateOrIso as string);
+	if (Number.isNaN(d.getTime())) return "";
+	const parts = new Intl.DateTimeFormat("en-GB", {
+		timeZone: "Asia/Ho_Chi_Minh",
+		hour: "2-digit",
+		minute: "2-digit",
+		hour12: false,
+	}).formatToParts(d);
+	const hh = parts.find((p) => p.type === "hour")?.value ?? "00";
+	const mm = parts.find((p) => p.type === "minute")?.value ?? "00";
+	return `${hh}:${mm}`;
+}
+
+/**
+ * Số ngày tính cả 2 đầu mút từ `startISO` đến `endISO` (`yyyy-mm-dd`).
+ * Trả `< 1` nếu `endISO < startISO` hoặc ngày không hợp lệ.
+ */
+export function daysBetweenInclusiveISO(
+	startISO: string,
+	endISO: string,
+): number {
+	const startMs = Date.parse(`${startISO}T00:00:00Z`);
+	const endMs = Date.parse(`${endISO}T00:00:00Z`);
+	if (Number.isNaN(startMs) || Number.isNaN(endMs)) return 0;
+	return Math.round((endMs - startMs) / (24 * 60 * 60 * 1000)) + 1;
+}

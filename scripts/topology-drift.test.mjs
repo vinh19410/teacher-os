@@ -133,3 +133,86 @@ test("workflow LANDING_ORIGIN matches each stage apex", () => {
 	)?.[1];
 	assert.equal(staging, "https://staging.teacheros.io.vn");
 });
+
+test("deploy workflows pass LEAD_ORG_ID and LEAD_ORIGINS to alchemy deploy and alchemy.run.ts wires resolveLeadOrigins (#524)", () => {
+	for (const workflow of [
+		"../.github/workflows/deploy.yml",
+		"../.github/workflows/deploy-staging.yml",
+	]) {
+		const content = read(workflow);
+		const deployStep = content
+			.split("- name: Deploy to Cloudflare")[1]
+			?.split("- name:")[0];
+		assert.ok(deployStep, `Deploy to Cloudflare step found in ${workflow}`);
+		assert.match(
+			deployStep,
+			/^\s*LEAD_ORG_ID:\s*\$\{\{\s*vars\.LEAD_ORG_ID\s*\}\}\s*$/m,
+			`${workflow} Deploy step must pass LEAD_ORG_ID from vars.LEAD_ORG_ID`,
+		);
+		assert.match(
+			deployStep,
+			/^\s*LEAD_ORIGINS:\s*\$\{\{\s*vars\.LEAD_ORIGINS\s*\}\}\s*$/m,
+			`${workflow} Deploy step must pass LEAD_ORIGINS from vars.LEAD_ORIGINS`,
+		);
+	}
+
+	const run = read("../packages/infra/alchemy.run.ts");
+	assert.match(
+		run,
+		/resolveLeadOrigins\(/,
+		"packages/infra/alchemy.run.ts must normalize LEAD_ORIGINS via resolveLeadOrigins",
+	);
+});
+
+test("workflow PROFILE_ORIGIN and profile smoke check match resolveDomainTopology (#536)", async () => {
+	const { DEFAULT_DEV_LEAD_ORIGINS, resolveDomainTopology } = await import(
+		"../packages/infra/src/topology.ts"
+	);
+
+	const prodYaml = read("../.github/workflows/deploy.yml");
+	const prodAppDomain = prodYaml.match(/^\s*APP_DOMAIN:\s*(\S+)\s*$/m)?.[1];
+	const prodProfileOrigin = prodYaml.match(
+		/^\s*PROFILE_ORIGIN:\s*(\S+)\s*$/m,
+	)?.[1];
+	assert.ok(prodAppDomain, "APP_DOMAIN found in deploy.yml");
+	const prodTopology = resolveDomainTopology(prodAppDomain);
+	assert.equal(prodProfileOrigin, `https://${prodTopology.profileHost}`);
+	assert.equal(prodProfileOrigin, prodTopology.profileOrigins[0]);
+	assert.deepEqual(prodTopology.profileOrigins, [
+		"https://msmy.io.vn",
+		"https://www.msmy.io.vn",
+	]);
+	assert.match(prodYaml, /- name: Smoke check profile\b/);
+
+	const stagingYaml = read("../.github/workflows/deploy-staging.yml");
+	const stagingAppDomain = stagingYaml.match(
+		/^\s*APP_DOMAIN:\s*(\S+)\s*$/m,
+	)?.[1];
+	const stagingProfileOrigin = stagingYaml.match(
+		/^\s*PROFILE_ORIGIN:\s*(\S+)\s*$/m,
+	)?.[1];
+	assert.ok(stagingAppDomain, "APP_DOMAIN found in deploy-staging.yml");
+	const stagingTopology = resolveDomainTopology(stagingAppDomain);
+	assert.equal(stagingProfileOrigin, `https://${stagingTopology.profileHost}`);
+	assert.deepEqual(stagingTopology.profileOrigins, [
+		"https://profile.staging.teacheros.io.vn",
+	]);
+	assert.doesNotMatch(stagingTopology.profileOrigins.join(","), /msmy\.io\.vn/);
+	assert.match(stagingYaml, /- name: Smoke check profile\b/);
+
+	const profileServe = read("../apps/profile/serve.mjs");
+	const profilePort = profileServe.match(
+		/const port = Number\(process\.env\.PORT\) \|\| (\d+);/,
+	)?.[1];
+	assert.equal(profilePort, "8005");
+	assert.equal(DEFAULT_DEV_LEAD_ORIGINS, `http://localhost:${profilePort}`);
+
+	const run = read("../packages/infra/alchemy.run.ts");
+	const profileBlock = run.split('StaticSite("profile"')[1];
+	assert.ok(profileBlock, 'StaticSite("profile") found in alchemy.run.ts');
+	assert.match(
+		profileBlock,
+		new RegExp(`url:\\s*"http://localhost:${profilePort}"`),
+		"profileWorker dev.url in alchemy.run.ts must match apps/profile/serve.mjs port",
+	);
+});
