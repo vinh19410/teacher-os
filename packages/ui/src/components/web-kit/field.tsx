@@ -117,8 +117,17 @@ export function Select({
 	children,
 	...props
 }: SelectHTMLAttributes<HTMLSelectElement>) {
+	// Chevron native vẽ bằng `.select-chevron` (#542); `pr-9` giữ chỗ cho mũi
+	// tên — twMerge giữ cả `px-3` và `pr-9`, `pr-9` thắng phần phải nhờ thứ tự
+	// emit CSS của Tailwind (`pr` emit sau `px`); caller vẫn override được.
+	// Lưu ý: caller truyền `px-*`/`p-*` trong className sẽ xoá `pr-9` (twMerge)
+	// và chevron đè chữ — hiện không có callsite nào làm vậy.
 	return (
-		<select id={id} className={cn(inputCls, className)} {...props}>
+		<select
+			id={id}
+			className={cn(inputCls, "select-chevron pr-9", className)}
+			{...props}
+		>
 			{children}
 		</select>
 	);

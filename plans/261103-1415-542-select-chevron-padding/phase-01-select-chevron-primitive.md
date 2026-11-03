@@ -8,16 +8,16 @@ Xem [plan.md](plan.md). Đọc `DESIGN.md` và `REVIEW.md` trước khi sửa.
 
 - Sửa: `packages/ui/src/components/web-kit/field.tsx` (`Select`)
 - Sửa: `packages/ui/src/styles/globals.css` (class `select-chevron`, biến light/dark)
-- Sửa: `apps/web/src/routes/_auth/leads/index.tsx`, `apps/web/src/components/modals/invoice-payment-modal.tsx` (dùng `Select`; giữ `aria-label`, `id`, `value`, `onChange`; ở invoice-payment giữ class nhỏ `px-2 py-1 text-xs` qua `className`)
+- Sửa: `apps/web/src/routes/_auth/leads/index.tsx` (dùng `Select`); `apps/web/src/components/modals/invoice-payment-modal.tsx` (giữ `<select>` thô + class chung `select-chevron pr-9` — chuyển sang `Select` sẽ vỡ control compact vì caller `px-2` xoá `pr-9` qua twMerge và `inputCls` kéo `h-9 w-full`); thêm cả 3 select thô placement-test (`bands-editor.tsx`, `clip-card.tsx`, `question-card.tsx`) chuyển sang `Select`
 - Sửa: `apps/student/src/components/practice/practice-filters.tsx` (bỏ `ChevronDown` overlay, dùng class chung)
 - Test: `apps/web/src/components/ui/field.test.tsx` (mở rộng)
 
 ## Steps
 
 1. Quan sát lỗi bằng boot e2e (port 8100/8101…) ở `/leads` và một modal có `Select`; ghi lại padding hiện tại.
-2. Thêm `.select-chevron` trong `globals.css`: `appearance: none`, `background-repeat: no-repeat`, `background-position: right 0.75rem center`, `background-size: 1rem`, `padding-right: 2.25rem`, `background-image` SVG chevron-down lấy màu từ biến; override biến trong `.dark`.
+2. Thêm `.select-chevron` trong `globals.css`: `appearance: none` (kèm `-webkit-appearance` cho Safari cũ), `background-repeat: no-repeat`, `background-position: right 0.75rem center`, `background-size: 1rem`, `background-image` SVG chevron-down nhúng cứng màu (biến CSS không vào được `url()`); override trong `.dark .select-chevron`; fallback `appearance: auto` khi `forced-colors: active` để giữ affordance dropdown. Padding phải do `pr-9` ở Select primitive đảm nhiệm, không nằm trong class.
 3. `Select` thêm class `select-chevron` vào `cn(inputCls, ...)`.
-4. Chuyển 2 select thô sang `Select`; bỏ overlay ở student.
+4. Chuyển `#lead-status` và 3 select placement-test sang `Select`; invoice-payment giữ `<select>` thô với class chung; bỏ overlay ở student.
 5. Test: `Select` có class `select-chevron` và vẫn nhận `className`, `defaultValue`, `disabled`.
 6. Verify 3 viewport (1440×900, 768×1024, 375×812), light/dark, keyboard focus; kiểm `option` dài và `min-w` hẹp. Chạy `pnpm design:compare` và đính screenshot vào PR.
 
