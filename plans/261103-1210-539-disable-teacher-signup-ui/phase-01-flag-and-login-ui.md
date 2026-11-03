@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Cờ VITE_TEACHER_SIGNUP_ENABLED và giao diện /login"
-status: pending
+status: done
 priority: P2
 effort: "2h"
 dependencies: []
