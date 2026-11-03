@@ -11,6 +11,11 @@ Quy ước khi cập nhật:
 ---
 
 
+## 2026-11-03
+
+### Fixed
+- Bỏ ký tự `+` thừa trong nhãn nút **"Thêm học viên"** ở trang Học viên (`apps/web/src/routes/_auth/students/index.tsx`): trước đây nút render icon `Plus` kèm chữ `+ Thêm học viên` nên hiển thị "+ + Thêm học viên" ở cả nút header lẫn empty state; nay giữ icon `Plus`, nhãn thuần **"Thêm học viên"** như nút **"Mời học viên"** bên cạnh. Nút **"+ Thêm học viên vào lớp"** ở chi tiết lớp (không có icon) giữ nguyên (#544).
+
 ## 2026-11-01
 
 ### Added

@@ -58,16 +58,14 @@ describe("students list", () => {
 		expect(screen.getByRole("tab", { name: "Học viên (2)" })).toBeTruthy();
 	});
 
-	it("supports both manual student creation (+ Thêm học viên) and email invitation (Mời học viên)", async () => {
+	it("supports both manual student creation (Thêm học viên) and email invitation (Mời học viên)", async () => {
 		const server = startServer();
 		renderWithKernel(<StudentsRoute />);
 		await screen.findByText("Học viên Một");
 		expect(screen.getByRole("button", { name: /Mời học viên/ })).toBeTruthy();
-		expect(
-			screen.getByRole("button", { name: /\+ Thêm học viên/ }),
-		).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Thêm học viên" })).toBeTruthy();
 
-		fireEvent.click(screen.getByRole("button", { name: /\+ Thêm học viên/ }));
+		fireEvent.click(screen.getByRole("button", { name: "Thêm học viên" }));
 		const dialog = await screen.findByRole("dialog");
 		fireEvent.change(within(dialog).getByLabelText(/Họ tên học viên/), {
 			target: { value: "Nguyễn Văn Mới" },
