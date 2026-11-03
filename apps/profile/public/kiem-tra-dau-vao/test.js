@@ -500,7 +500,7 @@ function renderIntroStep(root, test, state, rerender) {
 		createEl(
 			"p",
 			"muted-copy",
-			"Bài kiểm tra giúp xác định mức CEFR hiện tại của bạn (A1 – B2+) và gợi ý lộ trình học phù hợp nhất cùng cô Đỗ Thị Thục Mỹ. Bạn chỉ cần để lại họ tên, email và số điện thoại trước khi bắt đầu để nhận kết quả CEFR và lộ trình học cá nhân hóa.",
+			"Bài kiểm tra giúp xác định mức CEFR hiện tại của bạn (A1 – B2+) và gợi ý lộ trình học phù hợp nhất cùng cô Đỗ Thục Mỹ. Bạn chỉ cần để lại họ tên, email và số điện thoại trước khi bắt đầu để nhận kết quả CEFR và lộ trình học cá nhân hóa.",
 		),
 	);
 
