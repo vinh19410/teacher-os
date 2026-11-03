@@ -22,7 +22,7 @@ jobs:
     # local run is preserved while wall-clock time drops ~4x. The reusable-
     # workflow result seen by deploy.yml is red unless every shard passes.
     name: e2e (shard ${{ matrix.shard }}/4)
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 40
     strategy:
       fail-fast: false
