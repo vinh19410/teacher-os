@@ -3,7 +3,7 @@ import type { HistoryListResponse } from "@teacher-os/api/contracts";
 import * as schema from "@teacher-os/db/schema/index";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
-import { beforeAll, describe, expect, test } from "vitest";
+import { beforeAll, describe, expect, test, vi } from "vitest";
 import { buildApp, type Db, type ServerApp } from "../app";
 import type { SessionUser } from "../session";
 
@@ -420,10 +420,19 @@ describe("student history (#378 phase 11)", () => {
 		expect(invalid.status).toBe(400);
 		const garbage = await studentGet("/api/student/history/month?ym=abc");
 		expect(garbage.status).toBe(400);
-		// Không truyền ym → trả về tháng hiện tại ( VN 2026-10-21).
-		const current = await studentGet("/api/student/history/month");
-		const body = (await current.json()) as MonthBody;
-		expect(body.ym).toBe("2026-10");
+		// Không truyền ym → tháng hiện tại giờ VN. 17:30 UTC ngày 31/10 đã là
+		// 00:30 VN ngày 01/11, nên phép tính theo UTC sẽ ra sai tháng.
+		vi.useFakeTimers({
+			toFake: ["Date"],
+			now: Date.parse("2026-10-31T17:30:00Z"),
+		});
+		try {
+			const current = await studentGet("/api/student/history/month");
+			const body = (await current.json()) as MonthBody;
+			expect(body.ym).toBe("2026-11");
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 
 	test("week theo monday: chuẩn hóa Thứ Hai, đếm đúng skill theo ngày", async () => {

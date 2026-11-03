@@ -1,0 +1,397 @@
+{
+	"bands": [
+		{
+			"min": 0,
+			"max": 8,
+			"cefr": "A1",
+			"course": "ielts-foundation"
+		},
+		{
+			"min": 9,
+			"max": 15,
+			"cefr": "A2",
+			"course": "ielts-first-step"
+		},
+		{
+			"min": 16,
+			"max": 22,
+			"cefr": "B1",
+			"course": "ielts-pre"
+		},
+		{
+			"min": 23,
+			"max": 30,
+			"cefr": "B2+",
+			"course": "ielts-advanced"
+		}
+	],
+	"parts": [
+		{
+			"id": "vocab-grammar",
+			"title": "Vocab + Grammar",
+			"questions": [
+				{
+					"id": "vg-01",
+					"kind": "grammar",
+					"level": "A1",
+					"prompt": "My younger brother usually ______ to school by bicycle, but today he is taking the bus because of the rain.",
+					"options": ["go", "goes", "going", "went"],
+					"answer": 1
+				},
+				{
+					"id": "vg-02",
+					"kind": "vocab",
+					"level": "A1",
+					"prompt": "Could you please speak a little more ______? I am still learning English and cannot catch every word.",
+					"options": ["slowly", "heavily", "brightly", "narrowly"],
+					"answer": 0
+				},
+				{
+					"id": "vg-03",
+					"kind": "grammar",
+					"level": "A1",
+					"prompt": "There aren't ______ empty seats left in the front row of the lecture hall.",
+					"options": ["much", "some", "any", "a"],
+					"answer": 2
+				},
+				{
+					"id": "vg-04",
+					"kind": "vocab",
+					"level": "A2",
+					"prompt": "Students who want to borrow reference books for the weekend must ______ them to the library desk by Monday morning.",
+					"options": ["return", "remind", "repair", "replace"],
+					"answer": 0
+				},
+				{
+					"id": "vg-05",
+					"kind": "grammar",
+					"level": "A2",
+					"prompt": "While we ______ for the train at the central station last night, the power suddenly went out.",
+					"options": ["wait", "have waited", "are waiting", "were waiting"],
+					"answer": 3
+				},
+				{
+					"id": "vg-06",
+					"kind": "vocab",
+					"level": "A2",
+					"prompt": "The community center offers a wide ______ of evening workshops, including photography, pottery, and public speaking.",
+					"options": ["range", "border", "height", "piece"],
+					"answer": 0
+				},
+				{
+					"id": "vg-07",
+					"kind": "grammar",
+					"level": "B1",
+					"prompt": "The new training program has made a ______ improvement in how clearly our interns structure their weekly reports.",
+					"options": ["notice", "noticeable", "noticeably", "noticing"],
+					"answer": 1
+				},
+				{
+					"id": "vg-08",
+					"kind": "grammar",
+					"level": "B1",
+					"prompt": "The quality of the vegetables sold at these weekend farmers' markets ______ significantly from season to season.",
+					"options": ["vary", "varying", "varies", "have varied"],
+					"answer": 2
+				},
+				{
+					"id": "vg-09",
+					"kind": "vocab",
+					"level": "B1",
+					"prompt": "To finish the group project on schedule, every team member needs to ______ a concerted effort over the next two weeks.",
+					"options": ["do", "make", "take", "create"],
+					"answer": 1
+				},
+				{
+					"id": "vg-10",
+					"kind": "vocab",
+					"level": "B1",
+					"prompt": "Because of severe weather along the coast, the organizers decided to ______ the outdoor charity run until next Sunday.",
+					"options": ["put off", "turn down", "look after", "bring up"],
+					"answer": 0
+				},
+				{
+					"id": "vg-11",
+					"kind": "grammar",
+					"level": "B2",
+					"prompt": "Had the municipal council invested in flood drainage ten years ago, the downtown district ______ such severe disruption last month.",
+					"options": [
+						"will not suffer",
+						"did not suffer",
+						"would not suffer",
+						"would not have suffered"
+					],
+					"answer": 3
+				},
+				{
+					"id": "vg-12",
+					"kind": "vocab",
+					"level": "B2",
+					"prompt": "Although the two researchers used different survey methods, they arrived at remarkably similar conclusions that ______ the original hypothesis.",
+					"options": ["reinforce", "exaggerate", "postpone", "scatter"],
+					"answer": 0
+				},
+				{
+					"id": "vg-13",
+					"kind": "grammar",
+					"level": "B2",
+					"prompt": "The environmental policy, the long-term effects of ______ are still being debated by economists, will take effect in January.",
+					"options": ["that", "what", "which", "whom"],
+					"answer": 2
+				},
+				{
+					"id": "vg-14",
+					"kind": "grammar",
+					"level": "C1",
+					"prompt": "Seldom ______ such a rapid shift in commuter behavior without a corresponding change in public transit fares.",
+					"options": [
+						"urban planners have witnessed",
+						"have urban planners witnessed",
+						"witnessed urban planners",
+						"urban planners witnessed"
+					],
+					"answer": 1
+				},
+				{
+					"id": "vg-15",
+					"kind": "vocab",
+					"level": "C1",
+					"prompt": "While the committee praised the proposal's ambition, several members questioned whether its financial projections were truly ______ in a slowing economy.",
+					"options": ["feasible", "arbitrary", "obsolete", "superficial"],
+					"answer": 0
+				}
+			]
+		},
+		{
+			"id": "listening",
+			"title": "Listening",
+			"clips": [
+				{
+					"id": "clip-1",
+					"audioId": null,
+					"maxPlays": 2,
+					"level": "A2",
+					"title": "Đoạn nghe 1 (A2) – Thông báo tại thư viện cộng đồng",
+					"questions": [
+						{
+							"id": "l-01",
+							"level": "A2",
+							"prompt": "Why is the second floor of the library closed this week?",
+							"options": [
+								"New bookshelves are being installed.",
+								"The air-conditioning system is being repaired.",
+								"A children's art exhibition is being set up.",
+								"The study tables are being repainted."
+							],
+							"answer": 1
+						},
+						{
+							"id": "l-02",
+							"level": "A2",
+							"prompt": "Where can visitors use quiet study desks during the renovation?",
+							"options": [
+								"In the ground-floor café",
+								"In the basement archive room",
+								"In Room 104 next to the garden entrance",
+								"In the main reception lobby"
+							],
+							"answer": 2
+						},
+						{
+							"id": "l-03",
+							"level": "A2",
+							"prompt": "What time does the library close on Saturday?",
+							"options": [
+								"At 4:30 p.m.",
+								"At 5:00 p.m.",
+								"At 6:00 p.m.",
+								"At 8:00 p.m."
+							],
+							"answer": 1
+						}
+					]
+				},
+				{
+					"id": "clip-2",
+					"audioId": null,
+					"maxPlays": 2,
+					"level": "B1",
+					"title": "Đoạn nghe 2 (B1) – Hội thoại tư vấn khóa kỹ năng thuyết trình",
+					"questions": [
+						{
+							"id": "l-04",
+							"level": "B1",
+							"prompt": "Why does the man prefer the Thursday evening class over the Tuesday class?",
+							"options": [
+								"It is taught by a different instructor.",
+								"It is held closer to his apartment.",
+								"He has a regular team meeting on Tuesday evenings.",
+								"The Thursday class has a lower tuition fee."
+							],
+							"answer": 2
+						},
+						{
+							"id": "l-05",
+							"level": "B1",
+							"prompt": "What is the maximum number of participants in each workshop group?",
+							"options": [
+								"8 participants",
+								"12 participants",
+								"15 participants",
+								"20 participants"
+							],
+							"answer": 1
+						},
+						{
+							"id": "l-06",
+							"level": "B1",
+							"prompt": "What must participants complete before attending the first session?",
+							"options": [
+								"A short two-minute self-introduction audio clip",
+								"A written grammar test on the website",
+								"A five-page reading assignment on body language",
+								"A payment for printed textbooks at the front desk"
+							],
+							"answer": 0
+						}
+					]
+				},
+				{
+					"id": "clip-3",
+					"audioId": null,
+					"maxPlays": 2,
+					"level": "B1",
+					"title": "Đoạn nghe 3 (B1) – Hướng dẫn chuyến khảo sát khu bảo tồn đất ngập nước",
+					"questions": [
+						{
+							"id": "l-07",
+							"level": "B1",
+							"prompt": "What change has been made to the morning schedule?",
+							"options": [
+								"The boat tour has been cancelled due to high wind.",
+								"The group will visit the water-testing laboratory before the boardwalk trail.",
+								"Lunch will be served an hour earlier at the visitor center.",
+								"The bird-watching session has been moved to the afternoon."
+							],
+							"answer": 1
+						},
+						{
+							"id": "l-08",
+							"level": "B1",
+							"prompt": "Which item does the guide remind participants NOT to bring onto the wooden trail?",
+							"options": [
+								"Binoculars",
+								"Reusable water bottles",
+								"Camera tripods",
+								"Waterproof notebooks"
+							],
+							"answer": 2
+						},
+						{
+							"id": "l-09",
+							"level": "B1",
+							"prompt": "Where should participants meet at 3:15 p.m. for the return bus?",
+							"options": [
+								"At the north parking lot by the ticket booth",
+								"At the wooden bridge near the reed marsh",
+								"Inside the laboratory lecture room",
+								"At the east gate next to the bicycle shelter"
+							],
+							"answer": 3
+						}
+					]
+				},
+				{
+					"id": "clip-4",
+					"audioId": null,
+					"maxPlays": 2,
+					"level": "B2",
+					"title": "Đoạn nghe 4 (B2) – Thảo luận học thuật về dự án khảo sát không gian xanh đô thị",
+					"questions": [
+						{
+							"id": "l-10",
+							"level": "B2",
+							"prompt": "What limitation did the students find in their initial questionnaire data?",
+							"options": [
+								"Too few questionnaires were returned by local residents.",
+								"Most responses came from retired residents visiting parks on weekday mornings.",
+								"Several questions about cycling lanes were accidentally left out.",
+								"The online survey link stopped working after the first three days."
+							],
+							"answer": 1
+						},
+						{
+							"id": "l-11",
+							"level": "B2",
+							"prompt": "What does the tutor suggest the students do next to balance their sample?",
+							"options": [
+								"Conduct short interviews near commuter train exits between 5 p.m. and 7 p.m.",
+								"Send printed questionnaires to local primary schools.",
+								"Replace the survey with automated pedestrian counters at park gates.",
+								"Extend the survey deadline by another four weeks."
+							],
+							"answer": 0
+						},
+						{
+							"id": "l-12",
+							"level": "B2",
+							"prompt": "Which section of the report do the students agree to revise first?",
+							"options": [
+								"The historical overview of city parks",
+								"The budget comparison between districts",
+								"The methodology section explaining sampling bias",
+								"The appendix of maps and photographs"
+							],
+							"answer": 2
+						}
+					]
+				},
+				{
+					"id": "clip-5",
+					"audioId": null,
+					"maxPlays": 2,
+					"level": "C1",
+					"title": "Đoạn nghe 5 (C1) – Bài giảng về kiến trúc lựa chọn và hình thành thói quen bền vững",
+					"questions": [
+						{
+							"id": "l-13",
+							"level": "C1",
+							"prompt": "According to the lecturer, why do information campaigns alone rarely produce lasting behavioral change?",
+							"options": [
+								"People generally distrust statistics published by public agencies.",
+								"High awareness does not automatically overcome the friction of daily routines.",
+								"Most campaigns focus too heavily on financial penalties rather than rewards.",
+								"Media coverage tends to fade before citizens understand the core message."
+							],
+							"answer": 1
+						},
+						{
+							"id": "l-14",
+							"level": "C1",
+							"prompt": "What did the cafeteria study demonstrate about changing the default option?",
+							"options": [
+								"Diners complained when low-carbon meals were listed at the top of the menu.",
+								"Price discounts were twice as effective as changing menu layout.",
+								"Placing plant-based dishes as the standard daily special increased their selection without restricting choice.",
+								"Calorie labels had a stronger effect on staff than on students."
+							],
+							"answer": 2
+						},
+						{
+							"id": "l-15",
+							"level": "C1",
+							"prompt": "What caution does the lecturer raise at the end of the talk?",
+							"options": [
+								"Default nudges can lose effectiveness if users perceive them as manipulative or opaque.",
+								"Behavioral interventions are too expensive for small municipalities to test.",
+								"Laboratory experiments on habit formation cannot be replicated in workplaces.",
+								"Digital reminders always cause fatigue within the first week."
+							],
+							"answer": 0
+						}
+					]
+				}
+			]
+		}
+	]
+}

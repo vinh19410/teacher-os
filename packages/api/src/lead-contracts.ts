@@ -2,9 +2,9 @@ import { z } from "zod";
 import { vietnamTodayISO } from "./vietnam-date";
 
 /**
- * Lead intake từ form đăng ký trên msmy.io.vn (#506). Lead KHÔNG phải
- * student (D1): chưa có portal identity, lifecycle riêng
- * new → contacted → enrolled | dropped.
+ * Lead intake từ form đăng ký và trang kiểm tra đầu vào trên msmy.io.vn
+ * (#506, #534). Lead KHÔNG phải student (D1): chưa có portal identity,
+ * lifecycle riêng new → contacted → enrolled | dropped.
  */
 
 export const LEAD_NAME_MIN = 2;
@@ -133,6 +133,10 @@ export const LEAD_STATUS_LABELS: Readonly<Record<LeadStatus, string>> = {
 	dropped: "Bỏ",
 };
 
+/** Nguồn thu nhận lead (#534): form trang chủ (`profile`) hoặc cổng bài test đầu vào (`placement-test`). */
+export const LEAD_SOURCES = ["profile", "placement-test"] as const;
+export type LeadSource = (typeof LEAD_SOURCES)[number];
+
 /** Mã lỗi chuẩn của routes lead. */
 export const LEAD_ERROR_CODES = [
 	"LEAD_INTAKE_DISABLED",
@@ -206,10 +210,20 @@ export const leadSubmitSchema = z
 		timeSlot: z.enum(LEAD_TIME_SLOTS).optional(),
 		note: z.string().max(LEAD_NOTE_MAX).optional(),
 		placement: z.string().max(LEAD_PLACEMENT_MAX).optional(),
+		source: z.enum(LEAD_SOURCES).optional(),
 		website: z.string().max(LEAD_NAME_MAX).optional(),
 		elapsedMs: z.number().int().min(0),
 	})
-	.strict();
+	.strict()
+	.superRefine((value, ctx) => {
+		if (value.source === "placement-test" && !value.email) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["email"],
+				message: "Email là bắt buộc",
+			});
+		}
+	});
 export type LeadSubmit = z.infer<typeof leadSubmitSchema>;
 
 /** Query `GET /api/leads`. */

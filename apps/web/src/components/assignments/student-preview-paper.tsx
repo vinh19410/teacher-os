@@ -7,6 +7,7 @@ import { RichTextBody } from "@teacher-os/ui/components/assignments/rich-text-bo
 import { Tag } from "@/components/ui/tag";
 import { isValidPin } from "@/lib/image-pin";
 import {
+	isAutoSkill,
 	isBankableType,
 	kindOf,
 	partOf,
@@ -44,7 +45,7 @@ export function StudentPreviewPaper(props: {
 	const skill = skillOf(skillId);
 	const part = partOf(skillId, partId);
 	const type = typeOf(skillId, partId, typeId);
-	const isAuto = skillId === "reading" || skillId === "listening";
+	const isAuto = isAutoSkill(skillId);
 	// FR6: bankable matching types show the structured bank; an empty bank
 	// (legacy prompts) falls back to the intro text AND warns — never silent.
 	// Đề trộn dạng: bank hiện khi type đề HOẶC bất kỳ câu bankable (#286).
@@ -96,6 +97,13 @@ export function StudentPreviewPaper(props: {
 						className="mt-3 text-sm leading-[1.55]"
 					/>
 				))}
+			{(skillId === "grammar" || skillId === "vocabulary") &&
+				!isEmptyRichText(props.passage ?? "") && (
+					<RichTextBody
+						text={props.passage ?? ""}
+						className="mt-3 text-sm leading-[1.55]"
+					/>
+				)}
 			{diagramImageUrl &&
 				(pinnedItems.length > 0 ? (
 					<PinOverlay

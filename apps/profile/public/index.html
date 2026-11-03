@@ -4,13 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cô Mỹ Dạy Tiếng Anh | Hồ Sơ Giảng Viên, Quy Trình 365 Ngày &amp; Lộ Trình Khóa Học</title>
-  <meta name="description" content="Trang tổng hợp Hồ sơ Năng lực Giảng viên Cô Đỗ Thị Thục Mỹ (Ms. Thuc My), Quy trình kèm cặp IELTS 365 ngày, 5 tài liệu PDF chính thức và đăng ký kiểm tra đầu vào 1-1.">
+  <meta name="description" content="Trang tổng hợp Hồ sơ Năng lực Giảng viên Cô Đỗ Thục Mỹ (Ms. Thuc My), Quy trình kèm cặp IELTS 365 ngày, 5 tài liệu PDF chính thức và đăng ký kiểm tra đầu vào 1-1.">
   <meta name="theme-color" content="#163828">
   <meta name="lead-api" content="https://api.teacheros.io.vn">
+  <link rel="canonical" href="https://msmy.io.vn/">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="vi_VN">
   <meta property="og:title" content="Cô Mỹ Dạy Tiếng Anh | Hồ Sơ Giảng Viên &amp; Lộ Trình IELTS 365 Ngày">
-  <meta property="og:description" content="Hồ sơ năng lực Cô Đỗ Thị Thục Mỹ, quy trình kèm cặp IELTS 365 ngày và đăng ký kiểm tra đầu vào 1-1 miễn phí.">
+  <meta property="og:description" content="Hồ sơ năng lực Cô Đỗ Thục Mỹ, quy trình kèm cặp IELTS 365 ngày và đăng ký kiểm tra đầu vào 1-1 miễn phí.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23163828'/><text x='32' y='43' font-family='Georgia,serif' font-size='32' font-weight='bold' fill='%23F4C44E' text-anchor='middle'>M</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1673,89 +1674,52 @@
       align-items: start;
     }
 
-    .quiz-questions-list {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-5);
-    }
-
-    .quiz-q-card {
-      background: var(--paper-warm);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      padding: var(--space-4);
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-3);
-    }
-
-    .quiz-q-title {
-      font-size: 15.5px;
-      font-weight: 800;
-      color: var(--brand);
-      line-height: 1.4;
-    }
-
-    .quiz-options {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .quiz-opt-label {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 10px 12px;
-      min-height: 44px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--line-strong);
-      background: #FFFFFF;
-      font-size: 14px;
-      color: var(--ink);
-      cursor: pointer;
-      transition: background-color var(--dur-state) var(--ease-out), border-color var(--dur-state) var(--ease-out);
-    }
-
-    .quiz-opt-label:hover {
-      background: var(--gold-soft);
-      border-color: var(--gold-border);
-    }
-
-    .quiz-opt-label input[type="radio"] {
-      margin-top: 3px;
-      width: 18px;
-      height: 18px;
-      accent-color: var(--brand);
-      flex-shrink: 0;
-    }
-
-    .quiz-result-panel {
-      background: var(--brand);
-      color: #FFFFFF;
-      border-radius: var(--radius);
-      padding: var(--space-5);
-      border-top: 5px solid var(--gold);
-      position: sticky;
-      top: 90px;
+    .quiz-intro-main {
       display: flex;
       flex-direction: column;
       gap: var(--space-4);
     }
 
-    .quiz-result-panel h3 {
-      color: #FFFFFF;
-      font-size: var(--step-2);
+    .quiz-intro-points {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-4);
     }
 
-    .quiz-score-badge {
-      background: rgba(244, 196, 78, 0.18);
-      border: 1px solid var(--gold);
-      color: var(--gold);
-      padding: 12px 16px;
-      border-radius: var(--radius-sm);
-      font-size: 18px;
-      font-weight: 800;
+    .quiz-intro-point {
+      background: var(--paper-warm);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: var(--space-4);
+    }
+
+    .quiz-intro-point strong {
+      display: block;
+      color: var(--brand);
+      font-size: 15.5px;
+      margin-bottom: 6px;
+    }
+
+    .quiz-intro-point p {
+      font-size: 14px;
+      color: var(--ink-2);
+      line-height: 1.5;
+    }
+
+    .quiz-intro-aside {
+      background: var(--brand);
+      color: #FFFFFF;
+      border-radius: var(--radius);
+      padding: var(--space-5);
+      border-top: 5px solid var(--gold);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+
+    .quiz-intro-aside h3 {
+      color: #FFFFFF;
+      font-size: var(--step-2);
     }
 
     /* ==================== FLOATING BOTTOM CTA BAR ==================== */
@@ -1849,6 +1813,7 @@
       .evidence-gallery-grid,
       .workflow-grid,
       .cefr-detail-panel,
+      .quiz-intro-points,
       .form-grid {
         grid-template-columns: 1fr;
       }
@@ -1909,14 +1874,14 @@
       <nav aria-label="Điều hướng chính">
         <ul class="nav-links">
           <li><a href="#bo-ho-so-pdf">Bộ 5 File PDF</a></li>
-          <li><a href="#lam-test-mien-phi">Làm Test Miễn Phí</a></li>
+          <li><a href="kiem-tra-dau-vao/">Làm Test Miễn Phí</a></li>
           <li><a href="#ho-so-giang-vien">Hồ Sơ Cô Mỹ</a></li>
           <li><a href="#lo-trinh-khoa-hoc">3 Khóa Học</a></li>
         </ul>
       </nav>
 
       <div class="nav-actions">
-        <a href="#lam-test-mien-phi" class="btn btn-gold btn-sm">📝 Làm Test Miễn Phí</a>
+        <a href="kiem-tra-dau-vao/" class="btn btn-gold btn-sm">📝 Làm Test Miễn Phí</a>
         <a href="#dang-ky-tu-van" class="btn btn-primary btn-sm">🎓 Đăng Ký Khóa Học</a>
       </div>
     </div>
@@ -1935,12 +1900,12 @@
               Học Hiểu Bản Chất Từ Gốc. <span>Đồng Hành 365 Ngày</span> Đến Khi Đạt Aim IELTS.
             </h1>
             <p class="hero-lead">
-              Tổng hợp trọn bộ Hồ sơ Năng lực Giảng viên của Cô Đỗ Thị Thục Mỹ (Ms. Thục Mỹ), minh chứng văn bằng quốc tế, quy trình kèm cặp khép kín 5 bước và 3 lộ trình cá nhân hóa từ A1 đến IELTS 7.5+ và Tiếng Anh Doanh Nghiệp.
+              Tổng hợp trọn bộ Hồ sơ Năng lực Giảng viên của Cô Đỗ Thục Mỹ (Ms. Thục Mỹ), minh chứng văn bằng quốc tế, quy trình kèm cặp khép kín 5 bước và 3 lộ trình cá nhân hóa từ A1 đến IELTS 7.5+ và Tiếng Anh Doanh Nghiệp.
             </p>
 
             <div class="hero-cta-row">
               <a href="#dang-ky-tu-van" class="btn btn-gold">🎓 Đăng Ký Khóa Học Ngay</a>
-              <a href="#lam-test-mien-phi" class="btn btn-outline" style="background: #FFFFFF; color: var(--brand); border-color: #FFFFFF;">📝 Làm Bài Test Trình Độ Miễn Phí (2 Phút)</a>
+              <a href="kiem-tra-dau-vao/" class="btn btn-outline" style="background: #FFFFFF; color: var(--brand); border-color: #FFFFFF;">📝 Làm Bài Kiểm Tra Đầu Vào Miễn Phí</a>
               <a href="#bo-ho-so-pdf" class="btn btn-ghost-dark">📂 Xem &amp; Tải 5 File PDF</a>
             </div>
 
@@ -1966,7 +1931,7 @@
 
           <div class="hero-visual-col">
             <div class="hero-main-photo">
-              <img src="assets/teacher-profile/images/co-my-portrait-white.jpg" alt="Chân dung Cô Đỗ Thị Thục Mỹ">
+              <img src="assets/teacher-profile/images/co-my-portrait-white.jpg" alt="Chân dung Cô Đỗ Thục Mỹ">
             </div>
             <div class="hero-side-stack">
               <div class="hero-sub-photo">
@@ -2036,7 +2001,7 @@
             </div>
             <div class="pdf-card-body">
               <div class="pdf-doc-code">FILE 01 • HỒ SƠ NĂNG LỰC GIẢNG VIÊN (BẢN MINH HỌA ĐẦY ĐỦ)</div>
-              <h3 class="pdf-title">Hồ Sơ Giảng Viên Cô Đỗ Thị Thục Mỹ (Bản Tiếng Việt 6 Trang)</h3>
+              <h3 class="pdf-title">Hồ Sơ Giảng Viên Cô Đỗ Thục Mỹ (Bản Tiếng Việt 6 Trang)</h3>
               <p class="pdf-desc">
                 Tài liệu giới thiệu toàn diện về nền tảng học vấn, kinh nghiệm giảng dạy tại ĐH HUFLIT, Vinschool, FPT Software HCM, văn bằng quốc tế và kết quả học viên thực tế.
               </p>
@@ -2046,7 +2011,7 @@
               </ul>
             </div>
             <div class="pdf-actions">
-              <button type="button" class="btn btn-gold btn-sm" data-open-pdf="assets/teacher-profile/pdf/02-Ho-So-Giang-Vien-Co-Thuc-My-VN.pdf" data-pdf-title="Hồ Sơ Giảng Viên Cô Đỗ Thị Thục Mỹ (Bản Tiếng Việt)">
+              <button type="button" class="btn btn-gold btn-sm" data-open-pdf="assets/teacher-profile/pdf/02-Ho-So-Giang-Vien-Co-Thuc-My-VN.pdf" data-pdf-title="Hồ Sơ Giảng Viên Cô Đỗ Thục Mỹ (Bản Tiếng Việt)">
                 Xem Ngay Trên Trang
               </button>
               <a href="assets/teacher-profile/pdf/02-Ho-So-Giang-Vien-Co-Thuc-My-VN.pdf" download class="btn btn-ghost-dark btn-sm">
@@ -2193,155 +2158,63 @@
         <div class="section-header">
           <div>
             <span class="kicker-pill">Bài Kiểm Tra Chẩn Đoán Trình Độ Online (Miễn Phí 100%)</span>
-            <h2>Làm Bài Test Nhanh 2 Phút &amp; <span class="serif-italic">Nhận Kết Quả Xếp Lớp CEFR</span></h2>
+            <h2>Bài Kiểm Tra Đầu Vào &amp; <span class="serif-italic">Xếp Lớp CEFR Chính Xác</span></h2>
             <p>
-              Hoàn thành 5 câu hỏi chẩn đoán tư duy ngôn ngữ bên dưới để biết ngay trình độ CEFR hiện tại của bạn, phát hiện lỗ hổng đang khiến bạn kẹt band và nhận gợi ý lộ trình học phù hợp nhất.
+              Đánh giá toàn diện năng lực Ngữ pháp – Từ vựng học thuật và Nghe hiểu (Listening) qua bộ câu hỏi tiêu chuẩn để biết ngay trình độ CEFR hiện tại (A1 – B2+) và nhận gợi ý lộ trình học phù hợp nhất.
             </p>
           </div>
-          <a href="#dang-ky-tu-van" class="btn btn-gold">
-            🎓 Đăng Ký Khóa Học &amp; Đặt Lịch Test Nói 1-1
+          <a href="kiem-tra-dau-vao/" class="btn btn-gold">
+            📝 Bắt Đầu Làm Bài
           </a>
         </div>
 
         <div class="quiz-shell">
-          <form id="placementQuizForm" class="quiz-questions-list">
-            <!-- Q1 -->
-            <div class="quiz-q-card">
-              <div class="quiz-q-title">
-                Câu 1 (Ngữ pháp 8 Từ loại chức năng): Chọn từ đúng để hoàn thành câu học thuật sau:
-                <br><em style="color: var(--ink-2); font-weight: 600;">“Regular practice of shadowing has a __________ impact on spoken fluency.”</em>
+          <div class="quiz-intro-main">
+            <div class="quiz-intro-points">
+              <div class="quiz-intro-point">
+                <strong>1. Phần 1: Vocab + Grammar</strong>
+                <p>Hệ thống câu hỏi ngữ pháp bản chất và từ vựng học thuật trải từ mức A1 đến C1, giúp phát hiện chính xác lỗ hổng tư duy câu.</p>
               </div>
-              <div class="quiz-options">
-                <label class="quiz-opt-label">
-                  <input type="radio" name="q1" value="wrong1">
-                  <span>A. signify (Động từ)</span>
-                </label>
-                <label class="quiz-opt-label">
-                  <input type="radio" name="q1" value="correct" checked>
-                  <span>B. significant (Tính từ đứng trước danh từ “impact”)</span>
-                </label>
-                <label class="quiz-opt-label">
-                  <input type="radio" name="q1" value="wrong2">
-                  <span>C. significantly (Trạng từ)</span>
-                </label>
+              <div class="quiz-intro-point">
+                <strong>2. Phần 2: Listening</strong>
+                <p>Các đoạn âm thanh thực tế độ khó tăng dần (A2 – C1) kèm câu hỏi trắc nghiệm. Vui lòng chuẩn bị tai nghe hoặc loa rõ ràng.</p>
               </div>
-            </div>
-
-            <!-- Q2 -->
-            <div class="quiz-q-card">
-              <div class="quiz-q-title">
-                Câu 2 (Kỹ thuật đọc bắt Danh từ chính • Head-Noun): Đâu là Danh từ chính làm chủ ngữ quyết định chia động từ trong cụm sau?
-                <br><em style="color: var(--ink-2); font-weight: 600;">“The rapid expansion of multinational technology corporations in developing countries...”</em>
+              <div class="quiz-intro-point">
+                <strong>3. Thời lượng ~25–30 phút • Tự lưu tiến độ</strong>
+                <p>Không giới hạn giờ làm bài. Toàn bộ câu trả lời đang chọn được lưu tự động trên trình duyệt nếu bạn vô tình tải lại trang.</p>
               </div>
-              <div class="quiz-options">
-                <label class="quiz-opt-label">
-                  <input type="radio" name="q2" value="correct">
-                  <span>A. expansion (Danh từ chính đứng trước giới từ “of” → Chia động từ số ít)</span>
-                </label>
-                <label class="quiz-opt-label">
-                  <input type="radio" name="q2" value="wrong1">
-                  <span>B. corporations (Danh từ phụ nằm trong cụm giới từ)</span>
-                </label>
-                <label class="quiz-opt-label">
-                  <input type="radio" name="q2" value="wrong2">
-                  <span>C. countries (Danh từ đứng cuối cụm)</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- Q3 -->
-            <div class="quiz-q-card">
-              <div class="quiz-q-title">
-                Câu 3 (Từ vựng Collocation chuẩn IELTS 6.5–7.5+): Để diễn đạt ý “nỗ lực hết sức để đạt mục tiêu nghề nghiệp”, cụm Collocation nào tự nhiên nhất?
-              </div>
-              <div class="quiz-options">
-                <label class="quiz-opt-label">
-                  <input type="radio" name="q3" value="wrong1">
-                  <span>A. do a big effort to get career goals</span>
-                </label>
-                <label class="quiz-opt-label">
-                  <input type="radio" name="q3" value="correct">
-                  <span>B. make a concerted effort to achieve career goals</span>
-                </label>
-                <label class="quiz-opt-label">
-                  <input type="radio" name="q3" value="wrong2">
-                  <span>C. create a strong try for job targets</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- Q4 -->
-            <div class="quiz-q-card">
-              <div class="quiz-q-title">
-                Câu 4 (Phát âm IPA &amp; Âm lướt Schwa /ə/): Trong từ “photographer” (/fəˈtɒɡ.rə.fər/), trọng âm chính rơi vào âm tiết thứ mấy?
-              </div>
-              <div class="quiz-options">
-                <label class="quiz-opt-label">
-                  <input type="radio" name="q4" value="wrong1">
-                  <span>A. Âm tiết thứ 1 (pho-)</span>
-                </label>
-                <label class="quiz-opt-label">
-                  <input type="radio" name="q4" value="correct">
-                  <span>B. Âm tiết thứ 2 (-tog-), còn các âm tiết không nhấn giảm về âm lướt Schwa /ə/</span>
-                </label>
-                <label class="quiz-opt-label">
-                  <input type="radio" name="q4" value="wrong2">
-                  <span>C. Âm tiết thứ 3 (-ra-)</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- Q5 -->
-            <div class="quiz-q-card">
-              <div class="quiz-q-title">
-                Câu 5 (Khảo sát tình trạng thực tế của bạn): Khó khăn lớn nhất bạn đang gặp phải với tiếng Anh hiện nay là gì?
-              </div>
-              <div class="quiz-options">
-                <label class="quiz-opt-label">
-                  <input type="radio" name="q5" value="Lộ trình 01: Lấy Gốc & Xây Nền Bản Chất (Foundation → IELTS 4.5-5.0)">
-                  <span>A. Mất gốc ngữ pháp, phát âm chưa chuẩn, nghe không bắt được từ</span>
-                </label>
-                <label class="quiz-opt-label">
-                  <input type="radio" name="q5" value="Lộ trình 02: IELTS Học Thuật Thực Chiến (Mục tiêu IELTS 6.0 - 7.5+)" checked>
-                  <span>B. Đang cần bằng IELTS 6.0–7.5+ nhưng bí ý Writing và phản xạ Speaking còn chậm</span>
-                </label>
-                <label class="quiz-opt-label">
-                  <input type="radio" name="q5" value="Lộ trình 03: Tiếng Anh Giao Tiếp Công Sở & Phỏng Vấn Global Company">
-                  <span>C. Đọc hiểu tài liệu được nhưng hay dịch ngầm trong đầu, ngại nói khi họp hoặc phỏng vấn Global</span>
-                </label>
+              <div class="quiz-intro-point">
+                <strong>4. Không cần tạo tài khoản</strong>
+                <p>Chỉ cần để lại họ tên, email và số điện thoại Zalo trước khi vào đề để nhận ngay điểm từng phần, mức CEFR ước tính và khóa học gợi ý sau khi nộp bài.</p>
               </div>
             </div>
 
             <div style="display: flex; flex-wrap: wrap; gap: 12px;">
-              <button type="submit" class="btn btn-primary">
-                ✨ Chấm Điểm Bài Test &amp; Xem Lộ Trình Đề Xuất Ngay
-              </button>
+              <a href="kiem-tra-dau-vao/" class="btn btn-primary">
+                📝 Bắt Đầu Làm Bài Kiểm Tra
+              </a>
               <a href="#dang-ky-tu-van" class="btn btn-outline">
                 Đặt Lịch Test Nói 1-1 Qua Google Meet Cùng Cô Mỹ
               </a>
             </div>
-          </form>
+          </div>
 
-          <!-- Right: Live Grading & Course Recommendation Panel -->
-          <aside class="quiz-result-panel" id="quizResultPanel" aria-live="polite">
-            <span class="meta-badge" style="align-self: flex-start;">Kết Quả Chẩn Đoán Nhanh</span>
-            <h3 id="quizResultHeadline">Bấm “Chấm Điểm Bài Test” Để Xem Đánh Giá Của Bạn</h3>
-            <div class="quiz-score-badge" id="quizScoreBadge">
-              Trạng thái: Sẵn sàng chấm điểm (5 câu hỏi)
-            </div>
-            <p id="quizResultAnalysis" style="color: var(--brand-tint); font-size: 14.5px; line-height: 1.55;">
-              Sau khi bạn bấm nút chấm điểm, hệ thống sẽ phân tích kết quả 4 câu học thuật + tình trạng thực tế của bạn để gợi ý chính xác lộ trình học và tạo phiếu đăng ký gửi cô Thục Mỹ.
+          <aside class="quiz-intro-aside">
+            <span class="meta-badge" style="align-self: flex-start;">Quyền Lợi Học Viên</span>
+            <h3>Chấm Điểm Tự Động &amp; Tặng Buổi Khám Bệnh Tiếng Anh 1-1</h3>
+            <p style="color: var(--brand-tint); font-size: 14.5px; line-height: 1.55;">
+              Sau khi hoàn thành bài kiểm tra trên trang riêng, kết quả điểm số từng phần và khóa học gợi ý sẽ được tự động đính kèm vào biểu mẫu đăng ký bên dưới.
             </p>
             <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); border-radius: var(--radius-sm); padding: 14px; font-size: 13.8px; color: var(--brand-tint);">
               <strong style="color: var(--gold); display: block; margin-bottom: 4px;">🎁 Quyền lợi đi kèm sau khi làm Test trên web:</strong>
               Bạn được tặng thêm <strong>01 buổi Khám Bệnh Tiếng Anh 1-1 (30 phút qua Google Meet)</strong> trực tiếp cùng cô Thục Mỹ để kiểm tra kỹ năng Nói (Speaking) &amp; nhận Thời khóa biểu Thứ 2 – Chủ Nhật!
             </div>
             <div style="display: flex; flex-direction: column; gap: 10px;">
-              <button type="button" class="btn btn-gold" id="applyQuizToFormBtn">
-                🎓 Đăng Ký Khóa Học Theo Kết Quả Test Này
-              </button>
+              <a href="kiem-tra-dau-vao/" class="btn btn-gold">
+                📝 Mở Trang Kiểm Tra Đầu Vào Ngay
+              </a>
               <a href="https://zalo.me/0929060994" target="_blank" rel="noopener" class="btn btn-ghost-dark">
-                💬 Nhắn Kết Quả Qua Zalo Cô Mỹ: 0929.060.994
+                💬 Nhắn Zalo Cô Mỹ: 0929.060.994
               </a>
             </div>
           </aside>
@@ -2356,7 +2229,7 @@
           <div>
             <h2>6 Bảo Chứng Chuyên Môn &amp; <span class="serif-italic">Minh Chứng Hình Ảnh Thật</span></h2>
             <p>
-              Mọi thông tin về học vấn, chứng chỉ quốc tế, danh hiệu giảng dạy và hoạt động đứng lớp của cô Đỗ Thị Thục Mỹ đều đi kèm hình ảnh văn bằng và tư liệu thực tế.
+              Mọi thông tin về học vấn, chứng chỉ quốc tế, danh hiệu giảng dạy và hoạt động đứng lớp của cô Đỗ Thục Mỹ đều đi kèm hình ảnh văn bằng và tư liệu thực tế.
             </p>
           </div>
           <div class="tab-group" role="tablist" aria-label="Bộ lọc hình ảnh minh chứng">
@@ -2456,7 +2329,7 @@
               </button>
               <div class="evidence-caption">
                 <strong>Top 5 Giáo Viên Truyền Cảm Hứng IMAP</strong>
-                <span>Bảng vinh danh chính thức cô Đỗ Thị Thục Mỹ tại hệ thống Ms Hoa Giao Tiếp (IMAP Việt Nam).</span>
+                <span>Bảng vinh danh chính thức cô Đỗ Thục Mỹ tại hệ thống Ms Hoa Giao Tiếp (IMAP Việt Nam).</span>
               </div>
             </div>
 
@@ -2716,7 +2589,7 @@
               <button type="button" class="btn btn-primary" data-select-course="ielts-foundation">
                 🎓 Đăng Ký Khóa Học Foundation
               </button>
-              <a href="#lam-test-mien-phi" class="btn btn-outline btn-sm">
+              <a href="kiem-tra-dau-vao/" class="btn btn-outline btn-sm">
                 📝 Làm Bài Test Xếp Lớp Miễn Phí
               </a>
             </div>
@@ -2741,7 +2614,7 @@
               <button type="button" class="btn btn-gold" data-select-course="ielts-advanced">
                 🎓 Đăng Ký Khóa IELTS 6.0–7.5+ Ngay
               </button>
-              <a href="#lam-test-mien-phi" class="btn btn-ghost-dark btn-sm">
+              <a href="kiem-tra-dau-vao/" class="btn btn-ghost-dark btn-sm">
                 📝 Làm Bài Test Xếp Lớp Miễn Phí
               </a>
             </div>
@@ -2766,7 +2639,7 @@
               <button type="button" class="btn btn-primary" data-select-course="comm-1">
                 🎓 Đăng Ký Khóa Tiếng Anh Công Sở
               </button>
-              <a href="#lam-test-mien-phi" class="btn btn-outline btn-sm">
+              <a href="kiem-tra-dau-vao/" class="btn btn-outline btn-sm">
                 📝 Làm Bài Test Xếp Lớp Miễn Phí
               </a>
             </div>
@@ -2830,7 +2703,7 @@
                 <strong>Mẫu 1 • Tin Nhắn Gửi Trọn Bộ Hồ Sơ &amp; Lộ Trình Cho Học Viên</strong>
                 <span>Sao chép đầy đủ tóm tắt bảo chứng chuyên môn của cô Mỹ, quy trình 5 bước 365 ngày và lời mời kiểm tra đầu vào 1-1.</span>
                 <div>
-                  <button type="button" class="btn btn-gold btn-sm" data-copy-snippet="Chào bạn, gửi bạn thông tin tổng hợp Hồ sơ Năng lực Giảng viên của Cô Đỗ Thị Thục Mỹ (The English Corner) và Quy trình Đào tạo 365 Ngày nhé:&#10;&#10;1️⃣ BẢO CHỨNG CHUYÊN MÔN CÔ THỤC MỸ:&#10;• Cử nhân ĐH Quốc Tế Hồng Bàng (HIU) | Giảng viên Thỉnh giảng ĐH HUFLIT TP.HCM&#10;• 8+ năm kinh nghiệm thực chiến (3+ năm dạy Online cho 500+ sinh viên &amp; người đi làm)&#10;• Chứng nhận Quốc tế: University of London (UK), IDP IELTS Australia &amp; ALAP (UK)&#10;• Giải Nhì Dạy Tốt &amp; Top 2 GV Truyền cảm hứng Vinschool | Top 5 GV Truyền cảm hứng IMAP Việt Nam&#10;• Đào tạo tiếng Anh doanh nghiệp tại FPT Software TP.HCM &amp; Aroma&#10;&#10;2️⃣ ĐẶC QUYỀN KÈM CẶP KHÉP KÍN 365 NGÀY:&#10;• Trước giờ học: Học 20-25 Collocations/ngày trên App Knowt có Team theo dõi nhắc bài&#10;• Trong giờ học: Lớp 1-1 hoặc Bàn tròn 4-6 bạn ấm áp như Talkshow + Gửi Video Record ngay sau 15 PHÚT kết thúc lớp&#10;• Sau giờ học: Đích thân cô Mỹ chấm Writing &amp; Speaking theo 4 tiêu chí Giám khảo&#10;• Đồng hành 365 ngày: Tài trợ 100% phí App luyện Speaking Forecast theo Quý &amp; ưu tiên chấm bài không giới hạn tới ngày thi!&#10;&#10;🎁 Hiện lớp đang dành tặng 05 suất 【KHÁM BỆNH TIẾNG ANH 1-1 MIỄN PHÍ】 cùng cô Mỹ để đánh giá 4 kỹ năng và thiết kế Thời khóa biểu Thứ 2 - Chủ Nhật riêng cho bạn. Bạn nhắn mục tiêu hiện tại để cô xếp lịch nhé!">
+                  <button type="button" class="btn btn-gold btn-sm" data-copy-snippet="Chào bạn, gửi bạn thông tin tổng hợp Hồ sơ Năng lực Giảng viên của Cô Đỗ Thục Mỹ (The English Corner) và Quy trình Đào tạo 365 Ngày nhé:&#10;&#10;1️⃣ BẢO CHỨNG CHUYÊN MÔN CÔ THỤC MỸ:&#10;• Cử nhân ĐH Quốc Tế Hồng Bàng (HIU) | Giảng viên Thỉnh giảng ĐH HUFLIT TP.HCM&#10;• 8+ năm kinh nghiệm thực chiến (3+ năm dạy Online cho 500+ sinh viên &amp; người đi làm)&#10;• Chứng nhận Quốc tế: University of London (UK), IDP IELTS Australia &amp; ALAP (UK)&#10;• Giải Nhì Dạy Tốt &amp; Top 2 GV Truyền cảm hứng Vinschool | Top 5 GV Truyền cảm hứng IMAP Việt Nam&#10;• Đào tạo tiếng Anh doanh nghiệp tại FPT Software TP.HCM &amp; Aroma&#10;&#10;2️⃣ ĐẶC QUYỀN KÈM CẶP KHÉP KÍN 365 NGÀY:&#10;• Trước giờ học: Học 20-25 Collocations/ngày trên App Knowt có Team theo dõi nhắc bài&#10;• Trong giờ học: Lớp 1-1 hoặc Bàn tròn 4-6 bạn ấm áp như Talkshow + Gửi Video Record ngay sau 15 PHÚT kết thúc lớp&#10;• Sau giờ học: Đích thân cô Mỹ chấm Writing &amp; Speaking theo 4 tiêu chí Giám khảo&#10;• Đồng hành 365 ngày: Tài trợ 100% phí App luyện Speaking Forecast theo Quý &amp; ưu tiên chấm bài không giới hạn tới ngày thi!&#10;&#10;🎁 Hiện lớp đang dành tặng 05 suất 【KHÁM BỆNH TIẾNG ANH 1-1 MIỄN PHÍ】 cùng cô Mỹ để đánh giá 4 kỹ năng và thiết kế Thời khóa biểu Thứ 2 - Chủ Nhật riêng cho bạn. Bạn nhắn mục tiêu hiện tại để cô xếp lịch nhé!">
                     Copy Kịch Bản Tư Vấn Đầy Đủ
                   </button>
                 </div>
@@ -3025,7 +2898,7 @@
       <div>
         <strong>Cô Mỹ Dạy Tiếng Anh | The English Corner (@theenglishcorner.vn)</strong>
         <div style="margin-top: 4px; color: var(--brand-muted);">
-          Giảng viên Đỗ Thị Thục Mỹ • Cử nhân ĐH Quốc Tế Hồng Bàng (HIU) • GV Thỉnh giảng ĐH HUFLIT • Chứng nhận University of London, IDP IELTS &amp; ALAP (UK)
+          Giảng viên Đỗ Thục Mỹ • Cử nhân ĐH Quốc Tế Hồng Bàng (HIU) • GV Thỉnh giảng ĐH HUFLIT • Chứng nhận University of London, IDP IELTS &amp; ALAP (UK)
         </div>
       </div>
       <div>
@@ -3066,7 +2939,7 @@
         🎁 <span>Ưu đãi trong tháng:</span> Tặng bài Test Chẩn đoán Trình độ &amp; Buổi Khám Bệnh Tiếng Anh 1-1 Miễn Phí cùng Cô Thục Mỹ!
       </div>
       <div class="floating-cta-btns">
-        <a href="#lam-test-mien-phi" class="btn btn-gold btn-sm">📝 Làm Test Miễn Phí</a>
+        <a href="kiem-tra-dau-vao/" class="btn btn-gold btn-sm">📝 Làm Test Miễn Phí</a>
         <a href="#dang-ky-tu-van" class="btn btn-primary btn-sm" style="border-color: var(--gold);">🎓 Đăng Ký Khóa Học</a>
         <a href="https://zalo.me/0929060994" target="_blank" rel="noopener" class="btn btn-ghost-dark btn-sm">💬 Zalo: 0929.060.994</a>
       </div>
@@ -3223,7 +3096,7 @@
       copyAllLinksBtn.addEventListener('click', () => {
         const summary = [
           '🌟 TRỌN BỘ HỒ SƠ GIẢNG VIÊN & LỘ TRÌNH ĐÀO TẠO CÔ ĐỖ THỊ THỤC MỸ (THE ENGLISH CORNER)',
-          '• Giảng viên: Cô Đỗ Thị Thục Mỹ (Cử nhân ĐH Quốc Tế Hồng Bàng HIU | GV Thỉnh giảng ĐH HUFLIT TP.HCM)',
+          '• Giảng viên: Cô Đỗ Thục Mỹ (Cử nhân ĐH Quốc Tế Hồng Bàng HIU | GV Thỉnh giảng ĐH HUFLIT TP.HCM)',
           '• Chứng nhận Quốc tế: University of London (UK), IDP IELTS Australia & ALAP (UK)',
           '• Giải thưởng: Giải Nhì Dạy Tốt & Top 2 GV Truyền cảm hứng Vinschool | Top 5 GV Truyền cảm hứng IMAP',
           '• Bộ 5 File PDF đính kèm:',
@@ -3486,6 +3359,9 @@
             quizPlacementBanner.removeAttribute('hidden');
           }
           if (typeof draft.examEnglish === 'string') examEnglishInput.value = draft.examEnglish;
+          if (draft.name || draft.phone || draft.quizPlacement) {
+            formRenderedAt = Math.min(formRenderedAt, Date.now() - 3500);
+          }
         } catch (err) {
           // Ignore corrupt draft
         }
@@ -3500,9 +3376,53 @@
       }
 
       restoreDraft();
+
+      (function applyPlacementQueryHandoff() {
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const rawKetqua = params.get('ketqua');
+          const rawKhoa = params.get('khoa');
+          if (rawKetqua === null && rawKhoa === null) return;
+
+          let changed = false;
+          if (typeof rawKetqua === 'string') {
+            const cleanKetqua = rawKetqua.replace(/[\r\n]+/g, ' ').trim().slice(0, 300);
+            if (cleanKetqua && quizPlacementInput && quizPlacementBanner) {
+              quizPlacementInput.value = cleanKetqua;
+              quizPlacementBanner.textContent = 'Đã đính kèm: ' + cleanKetqua;
+              quizPlacementBanner.removeAttribute('hidden');
+              formRenderedAt = Math.min(formRenderedAt, Date.now() - 3500);
+              changed = true;
+            }
+          }
+          if (typeof rawKhoa === 'string' && courseTrackSelect) {
+            const cleanKhoa = rawKhoa.trim();
+            if (
+              cleanKhoa.length > 0 &&
+              Array.from(courseTrackSelect.options).some((opt) => opt.value === cleanKhoa)
+            ) {
+              courseTrackSelect.value = cleanKhoa;
+              changed = true;
+            }
+          }
+          if (changed) {
+            saveDraft();
+          }
+          params.delete('ketqua');
+          params.delete('khoa');
+          const remainingSearch = params.toString();
+          const cleanUrl =
+            window.location.pathname +
+            (remainingSearch ? '?' + remainingSearch : '') +
+            window.location.hash;
+          window.history.replaceState(null, '', cleanUrl);
+        } catch (err) {
+          // Ignore URL handoff errors
+        }
+      })();
+
       consultForm.addEventListener('input', saveDraft);
       consultForm.addEventListener('change', saveDraft);
-
       function buildFallbackZaloMessage() {
         const courseLabel = getSelectedOptionLabel(courseTrackSelect) || 'Chưa chọn (tư vấn 1-1)';
         const modeLabel = getSelectedOptionLabel(studyModeSelect) || 'Chưa chọn';
@@ -3676,68 +3596,6 @@
         copyTextToClipboard(generatedMsgPre.textContent, 'Đã sao chép lại nội dung phiếu đăng ký!');
       });
 
-      // 9. Interactive Placement Quiz Grading
-      const placementQuizForm = document.getElementById('placementQuizForm');
-      const quizResultHeadline = document.getElementById('quizResultHeadline');
-      const quizScoreBadge = document.getElementById('quizScoreBadge');
-      const quizResultAnalysis = document.getElementById('quizResultAnalysis');
-      const applyQuizToFormBtn = document.getElementById('applyQuizToFormBtn');
-      let lastRecommendedCourse = 'Lộ trình 02: IELTS Học Thuật Thực Chiến (Mục tiêu IELTS 6.0 - 7.5+)';
-      let lastQuizSummaryNote = '';
-
-      if (placementQuizForm) {
-        placementQuizForm.addEventListener('submit', (e) => {
-          e.preventDefault();
-          const fd = new FormData(placementQuizForm);
-          let score = 0;
-          ['q1', 'q2', 'q3', 'q4'].forEach((k) => {
-            if (fd.get(k) === 'correct') score++;
-          });
-          const goalTrack = fd.get('q5') || lastRecommendedCourse;
-          lastRecommendedCourse = goalTrack;
-
-          let levelLabel = 'CEFR A1 – A2 (Foundation)';
-          let analysisText = 'Bạn đang cần củng cố lại gốc Ngữ pháp 8 Từ loại chức năng, khẩu hình 44 âm IPA và kỹ thuật bắt Danh từ chính (Head-Noun) trước khi luyện đề nâng cao.';
-          if (score === 4) {
-            levelLabel = 'CEFR B2 (Nền tảng Học thuật Tốt • Sẵn sàng bứt phá 6.5–7.5+)';
-            analysisText = 'Tuyệt vời! Bạn nắm rất chắc bản chất từ loại, kỹ thuật bắt Head-Noun và Collocations. Bạn hoàn toàn đủ nền tảng để vào thẳng lộ trình IELTS Thực chiến hoặc Tiếng Anh Công sở Phỏng vấn Global.';
-          } else if (score >= 2) {
-            levelLabel = 'CEFR B1 (Nền tảng Trung cấp • Tương đương IELTS 4.5–5.0+)';
-            analysisText = 'Bạn đã có gốc cơ bản nhưng vẫn còn nhầm lẫn ở kỹ thuật phân tích cụm danh từ dài hoặc Collocations học thuật. Lộ trình kết hợp chuẩn hóa Process Writing 5 bước và phản xạ A.R.E sẽ giúp bạn bứt phá nhanh nhất.';
-          }
-
-          quizResultHeadline.textContent = 'Trình độ dự kiến: ' + levelLabel;
-          quizScoreBadge.textContent = 'Điểm bài Test nhanh: ' + score + '/4 câu học thuật chính xác';
-          quizResultAnalysis.textContent = analysisText + ' Khóa học đề xuất: ' + goalTrack + '.';
-          lastQuizSummaryNote = 'Kết quả Test Online: ' + score + '/4 câu (' + levelLabel + ')';
-          showToast('Đã chấm điểm bài Test! Xem kết quả và lộ trình đề xuất ở khung bên cạnh.');
-        });
-      }
-
-      if (applyQuizToFormBtn) {
-        applyQuizToFormBtn.addEventListener('click', () => {
-          if (consultForm && consultForm.hasAttribute('hidden')) {
-            leadSuccessBox.setAttribute('hidden', '');
-            consultForm.removeAttribute('hidden');
-          }
-          if (courseTrackSelect && lastRecommendedCourse) {
-            courseTrackSelect.value = COURSE_TRACK_MAP[lastRecommendedCourse] || lastRecommendedCourse || 'undecided';
-          }
-          if (quizPlacementInput && lastQuizSummaryNote) {
-            quizPlacementInput.value = lastQuizSummaryNote;
-            quizPlacementBanner.textContent = 'Đã đính kèm: ' + lastQuizSummaryNote;
-            quizPlacementBanner.removeAttribute('hidden');
-          }
-          saveDraft();
-          const formSection = document.getElementById('dang-ky-tu-van');
-          if (formSection) {
-            formSection.scrollIntoView({ behavior: 'smooth' });
-          }
-          setTimeout(() => {
-            if (studentName) studentName.focus();
-          }, 450);
-        });
-      }
     })();
   </script>
 </body>

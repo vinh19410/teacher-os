@@ -49,6 +49,13 @@ test("has meta[name=lead-api] and replaceLeadApiMeta replaces content", () => {
 	assert.equal(replaceLeadApiMeta(html, ""), html);
 });
 
+test("has canonical link pointing to https://msmy.io.vn/ (#536)", () => {
+	assert.match(
+		html,
+		/<link\s+rel="canonical"\s+href="https:\/\/msmy\.io\.vn\/"\s*\/?>/,
+	);
+});
+
 test("consultForm has exactly 2 required inputs (name and phone)", () => {
 	const formMatch = html.match(/<form id="consultForm"[\s\S]*?<\/form>/);
 	assert.ok(formMatch, "consultForm must exist");
@@ -86,4 +93,22 @@ test("every course option is inside an optgroup or is empty/undecided", () => {
 	].map((m) => m[1]);
 	assert.deepEqual(topLevelValues, ["", "undecided"]);
 	assert.ok(!/Tạo Phiếu Đăng Ký &amp; Copy Gửi Zalo/.test(html));
+});
+
+test("placement test CTAs point to kiem-tra-dau-vao/ and legacy 5-question quiz is removed", () => {
+	assert.ok(!/id="placementQuizForm"/.test(html));
+	assert.ok(!/id="quizResultPanel"/.test(html));
+	assert.equal(
+		(html.match(/href="#lam-test-mien-phi"/g) ?? []).length,
+		0,
+		"no CTA should point to #lam-test-mien-phi",
+	);
+	const newCtaLinks = html.match(/href="kiem-tra-dau-vao\/"/g) ?? [];
+	assert.ok(
+		newCtaLinks.length >= 7,
+		`expected at least 7 links to kiem-tra-dau-vao/, found ${newCtaLinks.length}`,
+	);
+	assert.match(html, /<section\s+id="lam-test-mien-phi"/);
+	assert.ok(!/2 Phút/.test(html));
+	assert.ok(!/5 câu hỏi/.test(html));
 });

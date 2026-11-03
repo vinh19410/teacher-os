@@ -43,7 +43,9 @@ async function setupOrgWithEnrollment(page: Page): Promise<string> {
 	await option.click();
 	await enrollDialog.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(enrollDialog).toBeHidden();
-	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
+	await expect(
+		page.locator("tbody tr", { hasText: STUDENT_NAME }),
+	).toBeVisible();
 
 	// Activate student so they can receive invoices
 	await page.getByRole("button", { name: "Kích hoạt" }).click();
@@ -231,7 +233,9 @@ test("tuition → picker hóa đơn loại trừ học viên chưa kích hoạt 
 	await option2.click();
 	await enrollDialog2.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(enrollDialog2).toBeHidden();
-	await expect(page.getByText(INVITED_STUDENT)).toBeVisible();
+	await expect(
+		page.locator("tbody tr", { hasText: INVITED_STUDENT }),
+	).toBeVisible();
 	// Học viên này đang ở trạng thái 'Đã mời'
 	await expect(page.getByText("Đã mời")).toBeVisible();
 

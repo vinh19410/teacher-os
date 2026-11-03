@@ -49,6 +49,13 @@ export const TEACHER_NAV: NavGroup[] = [
 			{ key: "students", label: "Học viên", icon: Users, href: "/students" },
 			// #506: lead từ form đăng ký trên msmy.io.vn — màn Đăng ký mới.
 			{ key: "leads", label: "Đăng ký mới", icon: Inbox, href: "/leads" },
+			// #515: màn sửa và phát hành bộ đề kiểm tra đầu vào (/kiem-tra-dau-vao/).
+			{
+				key: "placement-test",
+				label: "Bài test đầu vào",
+				icon: ClipboardList,
+				href: "/placement-test",
+			},
 			{
 				key: "schedule",
 				label: "Lịch dạy",
@@ -113,11 +120,14 @@ export const TEACHER_NAV: NavGroup[] = [
 const FINANCE_NAV_KEY_MAP: Record<string, true> = {
 	tuition: true,
 	debts: true,
+	leads: true,
+	"placement-test": true,
 };
 
 /**
- * TOS-17 (#451): ẩn mục "Doanh thu" và "Công nợ" trên Sidebar và ⌘K khi thành
- * viên hiện tại không có quyền tài chính (`ta`, `class_teacher`).
+ * TOS-17 (#451, #515, #524): ẩn các mục thuộc quyền tài chính / chủ trung tâm
+ * ("Doanh thu", "Công nợ", "Đăng ký mới", "Bài test đầu vào") trên Sidebar và
+ * ⌘K khi thành viên hiện tại không có quyền tài chính (`ta`, `class_teacher`).
  */
 export function teacherNavForViewer(canAccessFinance: boolean): NavGroup[] {
 	if (canAccessFinance) return TEACHER_NAV;
@@ -173,6 +183,7 @@ const ACTIVE_KEY_BY_PREFIX: Record<string, string> = {
 	"/classes": "classes",
 	"/students": "students",
 	"/leads": "leads",
+	"/placement-test": "placement-test",
 	"/schedule": "schedule",
 	"/syllabus": "syllabus",
 	"/notifications": "notifications",

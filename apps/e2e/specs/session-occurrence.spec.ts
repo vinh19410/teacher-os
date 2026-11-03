@@ -1,6 +1,6 @@
 /**
  * Occurrence identity flows (issue #98): a future occurrence can be CANCELLED
- * outright from the Sessions & practice tab, and the settled state survives a reload.
+ * outright from the Buổi học & luyện tập tab, and the settled state survives a reload.
  * Topic-on-occurrence-k renders the edited topic on ITS row right away and
  * after reload — the mis-fan regression that motivated option 3 of #93.
  *
@@ -45,7 +45,9 @@ test("hủy buổi tương lai từ modal Điều chỉnh → persist sau reload
 	await enrollDialog1.getByRole("option", { name: STUDENT_NAME }).click();
 	await enrollDialog1.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(enrollDialog1).toBeHidden();
-	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
+	await expect(
+		page.locator("tbody tr", { hasText: STUDENT_NAME }),
+	).toBeVisible();
 	await page.getByRole("button", { name: "Kích hoạt" }).click();
 	const confirmModal1 = page
 		.getByRole("dialog")
@@ -55,7 +57,7 @@ test("hủy buổi tương lai từ modal Điều chỉnh → persist sau reload
 	await expect(confirmModal1).toBeHidden();
 	await expect(page.getByText("Đang học")).toBeVisible();
 	await page
-		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
 	// Fully-upcoming class: every row offers Điều chỉnh; nothing settled yet.
 	const adjustButtons = page.getByRole("button", { name: "Điều chỉnh" });
@@ -84,7 +86,7 @@ test("hủy buổi tương lai từ modal Điều chỉnh → persist sau reload
 	// Persisted server-side across a full reload.
 	await page.reload();
 	await page
-		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
 	await expect(page.getByText("Đã hủy", { exact: true })).toHaveCount(1);
 });
@@ -112,7 +114,9 @@ test("edit topic trên occurrence k hiển thị đúng row k (ngay + sau reload
 	await enrollDialog2.getByRole("option", { name: "Phạm Topic E2E" }).click();
 	await enrollDialog2.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(enrollDialog2).toBeHidden();
-	await expect(page.getByText("Phạm Topic E2E")).toBeVisible();
+	await expect(
+		page.locator("tbody tr", { hasText: "Phạm Topic E2E" }),
+	).toBeVisible();
 	await page.getByRole("button", { name: "Kích hoạt" }).click();
 	const confirmModal2 = page
 		.getByRole("dialog")
@@ -123,7 +127,7 @@ test("edit topic trên occurrence k hiển thị đúng row k (ngay + sau reload
 	await expect(page.getByText("Đang học")).toBeVisible();
 
 	await page
-		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
 
 	// Edit occurrence #3 (0-based row index 2) with a distinctive topic.
@@ -148,7 +152,7 @@ test("edit topic trên occurrence k hiển thị đúng row k (ngay + sau reload
 	// Reload persistence: the topic lives on THIS occurrence only.
 	await page.reload();
 	await page
-		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
 	await expect(
 		page

@@ -76,6 +76,7 @@ const getAuth = (): Auth => {
 			// admin; so khớp lowercase diễn ra trong createAuth ở mỗi request).
 			adminOrigins: parseCORSOrigins(env.ADMIN_ORIGINS),
 			adminEmails: parseCORSOrigins(env.ADMIN_EMAILS),
+			teacherEmails: parseCORSOrigins(env.TEACHER_EMAILS ?? ""),
 			secret: env.BETTER_AUTH_SECRET,
 			baseURL: env.BETTER_AUTH_URL,
 			...(env.COOKIE_DOMAIN ? { cookieDomain: env.COOKIE_DOMAIN } : {}),
@@ -94,7 +95,7 @@ const getAuth = (): Auth => {
 	return auth;
 };
 
-export default buildApp({
+const app = buildApp({
 	getDb: () => (db ??= createDb() as unknown as Db),
 	corsOrigin: parseCORSOrigins(env.CORS_ORIGIN),
 	getSessionUser: (headers) =>
@@ -130,6 +131,7 @@ export default buildApp({
 	...createAiProviders(env),
 	// Plan #413: cổng admin — allowlist email + origin console cho CSRF.
 	adminEmails: parseCORSOrigins(env.ADMIN_EMAILS),
+	teacherEmails: parseCORSOrigins(env.TEACHER_EMAILS ?? ""),
 	adminOrigins: parseCORSOrigins(env.ADMIN_ORIGINS),
 	// Thiếu bất kỳ secret Bank Hub nào (#320) → undefined → route ngân hàng
 	// trả 503 BANKHUB_DISABLED; local/dev không cần cấu hình gì.
@@ -163,3 +165,5 @@ export default buildApp({
 	appOrigin: parseCORSOrigins(env.CORS_ORIGIN)[0],
 	runInBackground: (promise) => waitUntil(promise),
 });
+
+export default app;

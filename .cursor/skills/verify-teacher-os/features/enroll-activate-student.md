@@ -24,7 +24,7 @@ Preconditions:
 - **Open class roster.** From `/classes`, click the class title (`h3` with the class name). Choose tab `Học viên`.
 - **Add student.** Click `+ Thêm học viên vào lớp`. In the dialog, click option named with the student name, then button `Lưu`. Dialog hides; the student name is visible on the roster.
 - **Activate.** Click button `Kích hoạt`. A dialog containing `Kích hoạt học viên?` appears. Click `Kích hoạt` inside that dialog. Dialog hides; text `Đang học` is visible.
-- **Proof.** Reload the class roster. Capture screenshot + ARIA under `evidence/enroll-activate/`. Student still shows as active. On tab `Sessions & practice`, upcoming session badges appear (for a default 12-buổi class, twelve `Sắp tới` badges) — this is the side effect of activation, not of class creation alone.
+- **Proof.** Reload the class roster. Capture screenshot + ARIA under `evidence/enroll-activate/`. Student still shows as active. On tab `Buổi học & luyện tập`, upcoming session badges appear (for a default 12-buổi class, twelve `Sắp tới` badges) — this is the side effect of activation, not of class creation alone.
 
 ## Gotchas
 

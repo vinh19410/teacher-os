@@ -350,6 +350,24 @@ describe("POST /public/leads (#506 phase 2)", () => {
 		expect(text).not.toContain("2008-05-14");
 	});
 
+	test("notifyNewLead chỉ gửi email cho thành viên có canAccessFinance (teacher/owner/admin), bỏ qua ta và class_teacher (#524)", async () => {
+		await db.insert(schema.user).values([
+			{ id: "u-ta", name: "TA", email: "ta@test.local", role: "teacher" },
+			{ id: "u-ct", name: "CT", email: "ct@test.local", role: "teacher" },
+			{ id: "u-ow", name: "Owner", email: "owner@test.local", role: "teacher" },
+		]);
+		await db.insert(schema.membership).values([
+			{ id: "m-ta", orgId: "org-1", userId: "u-ta", role: "ta" },
+			{ id: "m-ct", orgId: "org-1", userId: "u-ct", role: "class_teacher" },
+			{ id: "m-ow", orgId: "org-1", userId: "u-ow", role: "owner" },
+		]);
+
+		const res = await submit(app(), validBody("0909555666"));
+		expect(res.status).toBe(201);
+		const recipients = sent.map((m) => m.to).sort();
+		expect(recipients).toEqual(["lan@test.local", "owner@test.local"]);
+	});
+
 	test("dedupe update và honeypot không gửi email; mailer lỗi vẫn 201 + ghi DB", async () => {
 		const instance = app();
 		await submit(instance, validBody("0909123456"));
@@ -361,5 +379,235 @@ describe("POST /public/leads (#506 phase 2)", () => {
 		expect(res.status).toBe(201);
 		const rows = await leadRows();
 		expect(rows.some((row) => row.phone === "0911222333")).toBe(true);
+	});
+
+	test(`request song song cùng IP (10 request đồng thời, SĐT khác nhau) chỉ cho phép đúng ${LEAD_IP_MAX} lead và ${LEAD_IP_MAX} email (#524)`, async () => {
+		const instance = app();
+		const responses = await Promise.all(
+			Array.from({ length: 10 }, (_, i) =>
+				submit(instance, validBody(`090910000${i}`), {
+					"CF-Connecting-IP": "198.51.100.77",
+				}),
+			),
+		);
+		const created = responses.filter((res) => res.status === 201);
+		const limited = responses.filter((res) => res.status === 429);
+		expect(created).toHaveLength(LEAD_IP_MAX);
+		expect(limited).toHaveLength(10 - LEAD_IP_MAX);
+		for (const res of limited) {
+			const body = (await res.json()) as { code: string };
+			expect(body.code).toBe("LEAD_RATE_LIMITED");
+		}
+		expect(await leadRows()).toHaveLength(LEAD_IP_MAX);
+		expect(sent).toHaveLength(LEAD_IP_MAX);
+	});
+
+	test(`request song song cùng SĐT (8 request đồng thời từ các IP khác nhau) chỉ tạo 1 dòng lead, gửi 1 email, tăng submitCount tới ${LEAD_DEDUPE_MAX_SUBMITS} và chặn 3 request còn lại bằng 429 (#524)`, async () => {
+		const instance = app();
+		const responses = await Promise.all(
+			Array.from({ length: 8 }, (_, i) =>
+				submit(instance, validBody("0909888777"), {
+					"CF-Connecting-IP": `10.20.0.${i + 1}`,
+				}),
+			),
+		);
+		const created = responses.filter((res) => res.status === 201);
+		const limited = responses.filter((res) => res.status === 429);
+		expect(created).toHaveLength(LEAD_DEDUPE_MAX_SUBMITS);
+		expect(limited).toHaveLength(8 - LEAD_DEDUPE_MAX_SUBMITS);
+
+		const submitCounts = await Promise.all(
+			created.map(async (res) => {
+				const body = (await res.json()) as { submitCount: number };
+				return body.submitCount;
+			}),
+		);
+		expect([...submitCounts].sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5]);
+
+		const rows = await leadRows();
+		expect(rows).toHaveLength(1);
+		expect(rows[0]!.submitCount).toBe(LEAD_DEDUPE_MAX_SUBMITS);
+		expect(sent).toHaveLength(1);
+	});
+
+	test(`request song song sát trần ngày (seed ${LEAD_DAILY_CAP - 2} dòng, bắn 6 request đồng thời) chỉ nhận thêm đúng 2 dòng và trả 429 LEAD_DAILY_CAP cho 4 request còn lại (#524)`, async () => {
+		const now = new Date();
+		await db.insert(schema.lead).values(
+			Array.from({ length: LEAD_DAILY_CAP - 2 }, (_, i) => ({
+				id: `seed-cap-${i}`,
+				orgId: "org-1",
+				name: `Seed ${i}`,
+				phone: `09010000${String(i).padStart(2, "0")}`,
+				createdAt: now,
+				updatedAt: now,
+			})),
+		);
+		const instance = app();
+		const responses = await Promise.all(
+			Array.from({ length: 6 }, (_, i) =>
+				submit(instance, validBody(`090930000${i}`), {
+					"CF-Connecting-IP": `10.30.0.${i + 1}`,
+				}),
+			),
+		);
+		const created = responses.filter((res) => res.status === 201);
+		const limited = responses.filter((res) => res.status === 429);
+		expect(created).toHaveLength(2);
+		expect(limited).toHaveLength(4);
+		for (const res of limited) {
+			const body = (await res.json()) as { code: string };
+			expect(body.code).toBe("LEAD_DAILY_CAP");
+		}
+		expect(await leadRows()).toHaveLength(LEAD_DAILY_CAP);
+		expect(sent).toHaveLength(2);
+
+		// Khi org đã chạm trần ngày (100 dòng), gửi lại cùng SĐT đã có trong 24h (dedupe UPDATE)
+		// vẫn được cập nhật 201 vì không tạo thêm dòng lead mới.
+		const dedupeAtCap = await submit(
+			instance,
+			{ ...validBody("0901000000"), note: "Cập nhật khi đã chạm trần ngày" },
+			{ "CF-Connecting-IP": "10.30.0.99" },
+		);
+		expect(dedupeAtCap.status).toBe(201);
+		expect(await leadRows()).toHaveLength(LEAD_DAILY_CAP);
+	});
+
+	test("dedupe UPDATE từ IP khác không xóa ip_hash của IP tạo ban đầu để lách LEAD_IP_MAX, và lead thứ 3 của cùng IP vẫn tự cập nhật dedupe được (#524)", async () => {
+		const instance = app();
+		for (let i = 1; i <= LEAD_IP_MAX; i++) {
+			const res = await submit(instance, validBody(`090920000${i}`), {
+				"CF-Connecting-IP": "198.51.100.90",
+			});
+			expect(res.status).toBe(201);
+		}
+
+		// Cùng IP gửi lại SĐT thứ 3 (chỉ update dòng của chính nó, không tạo dòng thứ 4) ⇒ vẫn 201.
+		const selfUpdate = await submit(instance, validBody("0909200003"), {
+			"CF-Connecting-IP": "198.51.100.90",
+		});
+		expect(selfUpdate.status).toBe(201);
+
+		// IP khác cập nhật SĐT thứ 1 ⇒ 201, nhưng KHÔNG được xóa ip_hash gốc của 198.51.100.90.
+		const otherIpUpdate = await submit(instance, validBody("0909200001"), {
+			"CF-Connecting-IP": "198.51.100.91",
+		});
+		expect(otherIpUpdate.status).toBe(201);
+
+		// IP ban đầu (198.51.100.90) thử tạo SĐT thứ 4 mới ⇒ vẫn phải bị 429 LEAD_RATE_LIMITED.
+		const fourthPhone = await submit(instance, validBody("0909200004"), {
+			"CF-Connecting-IP": "198.51.100.90",
+		});
+		expect(fourthPhone.status).toBe(429);
+	});
+
+	test("source=placement-test: bắt buộc email (thiếu ⇒ 400 LEAD_INVALID fields=['email']), lưu source=placement-test, gửi lần 2 gắn placement và giữ nguyên trường tuỳ chọn đã có (#534)", async () => {
+		const instance = app();
+
+		// 1. Thiếu email hoặc email rỗng khi source=placement-test ⇒ 400 LEAD_INVALID
+		for (const badBody of [
+			{ ...validBody("0909444555"), source: "placement-test" },
+			{ ...validBody("0909444555"), source: "placement-test", email: "   " },
+		]) {
+			const badRes = await submit(instance, badBody);
+			expect(badRes.status).toBe(400);
+			const payload = (await badRes.json()) as {
+				code: string;
+				fields: string[];
+			};
+			expect(payload.code).toBe("LEAD_INVALID");
+			expect(payload.fields).toContain("email");
+		}
+		expect(await leadRows()).toHaveLength(0);
+		expect(sent).toHaveLength(0);
+
+		// 2. Hợp lệ ở bước gate ⇒ 201, source = "placement-test", gửi 1 email
+		const gateRes = await submit(instance, {
+			name: "Lê Hoàng Nam",
+			phone: "0909444555",
+			email: "nam.le@example.com",
+			birthDate: "2004-08-20",
+			course: "ielts-pre",
+			studyMode: "group-online",
+			note: "Mục tiêu 6.5",
+			source: "placement-test",
+			elapsedMs: LEAD_MIN_ELAPSED_MS + 500,
+		});
+		expect(gateRes.status).toBe(201);
+		const gateJson = (await gateRes.json()) as {
+			id: string;
+			submitCount: number;
+		};
+		expect(gateJson.submitCount).toBe(1);
+		expect(sent).toHaveLength(1);
+
+		let rows = await leadRows();
+		expect(rows).toHaveLength(1);
+		expect(rows[0]!.source).toBe("placement-test");
+		expect(rows[0]!.email).toBe("nam.le@example.com");
+		expect(rows[0]!.placement).toBe("");
+
+		// 3. Nộp bài đồng bộ điểm (cùng SĐT, kèm placement, ngay cả khi bỏ trống trường tuỳ chọn) ⇒ cập nhật cùng dòng, giữ trường cũ, không gửi email thứ 2
+		const syncRes = await submit(instance, {
+			name: "Lê Hoàng Nam",
+			phone: "0909444555",
+			email: "nam.le@example.com",
+			placement:
+				"Kiểm tra đầu vào: 19/30 (Vocab + Grammar 12/15, Listening 7/15) – CEFR B1",
+			source: "placement-test",
+			elapsedMs: LEAD_MIN_ELAPSED_MS + 1000,
+		});
+		expect(syncRes.status).toBe(201);
+		const syncJson = (await syncRes.json()) as {
+			id: string;
+			submitCount: number;
+		};
+		expect(syncJson.id).toBe(gateJson.id);
+		expect(syncJson.submitCount).toBe(2);
+		expect(sent).toHaveLength(1);
+
+		rows = await leadRows();
+		expect(rows).toHaveLength(1);
+		expect(rows[0]!.source).toBe("placement-test");
+		expect(rows[0]!.placement).toBe(
+			"Kiểm tra đầu vào: 19/30 (Vocab + Grammar 12/15, Listening 7/15) – CEFR B1",
+		);
+		expect(rows[0]!.birthDate).toBe("2004-08-20");
+		expect(rows[0]!.course).toBe("ielts-pre");
+		expect(rows[0]!.studyMode).toBe("group-online");
+		expect(rows[0]!.note).toBe("Mục tiêu 6.5");
+		expect(rows[0]!.submitCount).toBe(2);
+
+		// 4. Lead tạo từ form trang chủ (profile) sau đó làm bài test (placement-test) ⇒ giữ nguyên source="profile" và giữ studyDays/timeSlot cũ
+		const profileFirst = await submit(
+			instance,
+			{
+				...validBody("0909777888"),
+				studyDays: "tf",
+				timeSlot: "1815",
+			},
+			{ "CF-Connecting-IP": "198.51.100.120" },
+		);
+		expect(profileFirst.status).toBe(201);
+
+		const testLater = await submit(
+			instance,
+			{
+				name: "Nguyễn Thu Hà",
+				phone: "0909777888",
+				email: "ha.test@example.com",
+				placement: "Kiểm tra đầu vào: 24/30 – CEFR B2+",
+				source: "placement-test",
+				elapsedMs: LEAD_MIN_ELAPSED_MS + 500,
+			},
+			{ "CF-Connecting-IP": "198.51.100.120" },
+		);
+		expect(testLater.status).toBe(201);
+
+		const profileRow = (await leadRows()).find((r) => r.phone === "0909777888");
+		expect(profileRow?.source).toBe("profile");
+		expect(profileRow?.email).toBe("ha.test@example.com");
+		expect(profileRow?.studyDays).toBe("tf");
+		expect(profileRow?.timeSlot).toBe("1815");
+		expect(profileRow?.placement).toBe("Kiểm tra đầu vào: 24/30 – CEFR B2+");
 	});
 });

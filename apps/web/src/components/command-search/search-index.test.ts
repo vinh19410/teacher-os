@@ -194,6 +194,7 @@ describe("buildSearchIndex", () => {
 		const labels = nav?.items.map((item) => item.label) ?? [];
 		expect(labels).not.toContain("Doanh thu");
 		expect(labels).not.toContain("Công nợ");
+		expect(labels).not.toContain("Đăng ký mới");
 		expect(labels).toContain("Tổng quan");
 		expect(labels).toContain("Hồ sơ");
 	});

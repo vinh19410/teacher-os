@@ -30,22 +30,26 @@ import {
 } from "./assignment-presets";
 
 describe("assignment presets catalog (#218 v5)", () => {
-	test("catalog shape: 4 skills, 12 parts, 37 types total with breakdown per skill", () => {
-		expect(SKILLS).toHaveLength(4);
+	test("catalog shape: 6 skills, 14 parts, 43 types total with breakdown per skill", () => {
+		expect(SKILLS).toHaveLength(6);
 		expect(SKILLS.map((s) => s.id)).toEqual(ASSIGNMENT_SKILLS);
 
 		const writing = skillOf("writing");
 		const reading = skillOf("reading");
 		const listening = skillOf("listening");
 		const speaking = skillOf("speaking");
+		const grammar = skillOf("grammar");
+		const vocabulary = skillOf("vocabulary");
 
 		expect(writing.parts).toHaveLength(2);
 		expect(reading.parts).toHaveLength(3);
 		expect(listening.parts).toHaveLength(4);
 		expect(speaking.parts).toHaveLength(3);
+		expect(grammar.parts).toHaveLength(1);
+		expect(vocabulary.parts).toHaveLength(1);
 
 		const totalParts = SKILLS.reduce((sum, s) => sum + s.parts.length, 0);
-		expect(totalParts).toBe(12);
+		expect(totalParts).toBe(14);
 
 		const writingTypes = writing.parts.reduce(
 			(sum, p) => sum + p.types.length,
@@ -63,15 +67,30 @@ describe("assignment presets catalog (#218 v5)", () => {
 			(sum, p) => sum + p.types.length,
 			0,
 		);
+		const grammarTypes = grammar.parts.reduce(
+			(sum, p) => sum + p.types.length,
+			0,
+		);
+		const vocabularyTypes = vocabulary.parts.reduce(
+			(sum, p) => sum + p.types.length,
+			0,
+		);
 
 		expect(writingTypes).toBe(8); // task1 (4) + task2 (4)
 		expect(readingTypes).toBe(14); // p1 (5) + p2 (5) + p3 (4) — #269
 		expect(listeningTypes).toBe(8); // s1 (2) + s2 (2) + s3 (2) + s4 (2)
 		expect(speakingTypes).toBe(7); // part1 (2) + part2 (3) + part3 (2)
+		expect(grammarTypes).toBe(3); // g1 (3)
+		expect(vocabularyTypes).toBe(3); // v1 (3)
 
 		const totalTypes =
-			writingTypes + readingTypes + listeningTypes + speakingTypes;
-		expect(totalTypes).toBe(37);
+			writingTypes +
+			readingTypes +
+			listeningTypes +
+			speakingTypes +
+			grammarTypes +
+			vocabularyTypes;
+		expect(totalTypes).toBe(43);
 	});
 
 	test("catalog ids match ASSIGNMENT_PART_TYPES whitelist from @teacher-os/api/contracts", () => {
@@ -111,6 +130,9 @@ describe("assignment presets catalog (#218 v5)", () => {
 		expect(kindOf("flowchart")).toBe("text");
 		expect(kindOf("sentend")).toBe("letter");
 		expect(kindOf("features")).toBe("letter");
+		expect(kindOf("match")).toBe("letter");
+		expect(kindOf("gap")).toBe("text");
+		expect(kindOf("transform")).toBe("text");
 		expect(kindOf("unknown")).toBe("text");
 	});
 
@@ -118,7 +140,7 @@ describe("assignment presets catalog (#218 v5)", () => {
 		const allTypeIds = Object.values(ASSIGNMENT_PART_TYPES).flatMap((config) =>
 			Object.values(config.types).flat(),
 		);
-		expect(allTypeIds.length).toBe(37);
+		expect(allTypeIds.length).toBe(43);
 		for (const typeId of allTypeIds) {
 			// Both sides fall back to text for types without an explicit entry.
 			const serverKind = answerKindByType[typeId] ?? "text";
@@ -171,6 +193,8 @@ describe("assignment presets catalog (#218 v5)", () => {
 		expect(qStartOf("writing", "task1")).toBe(1);
 		expect(qStartOf("writing", "task2")).toBe(1);
 		expect(qStartOf("speaking", "part1")).toBe(1);
+		expect(qStartOf("grammar", "g1")).toBe(1);
+		expect(qStartOf("vocabulary", "v1")).toBe(1);
 	});
 
 	test("answerChoices returns choice lists for choice kinds and null for text", () => {
@@ -248,11 +272,12 @@ describe("assignment presets catalog (#218 v5)", () => {
 				),
 			);
 			expect([...BANKABLE_PAIRS].sort()).toEqual([...fromContracts].sort());
-			expect(BANKABLE_PAIRS.size).toBe(6);
+			expect(BANKABLE_PAIRS.size).toBe(7);
 			// Spot-check the red-team #1 trap: writing task1 shares the `map`
 			// type id but must never be bankable.
 			expect(BANKABLE_PAIRS.has("writing:map")).toBe(false);
 			expect(BANKABLE_PAIRS.has("listening:map")).toBe(true);
+			expect(BANKABLE_PAIRS.has("vocabulary:match")).toBe(true);
 		});
 
 		describe("image pin helpers (phase-04 FR2)", () => {
@@ -288,6 +313,8 @@ describe("assignment presets catalog (#218 v5)", () => {
 			expect(isBankableType("reading", "features")).toBe(true);
 			expect(isBankableType("listening", "match2")).toBe(true);
 			expect(isBankableType("listening", "map")).toBe(true);
+			expect(isBankableType("vocabulary", "match")).toBe(true);
+			expect(isBankableType("grammar", "mcq")).toBe(false);
 			expect(isBankableType("writing", "map")).toBe(false);
 			expect(isBankableType("writing", "discuss")).toBe(false);
 			expect(isBankableType("reading", "tfng")).toBe(false);

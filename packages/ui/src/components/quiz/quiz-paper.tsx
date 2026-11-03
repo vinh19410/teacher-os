@@ -46,6 +46,8 @@ const SKILL_LABELS: Record<string, string> = {
 	listening: "Listening",
 	writing: "Writing",
 	speaking: "Speaking",
+	grammar: "Grammar",
+	vocabulary: "Vocabulary",
 };
 
 export function QuizPaper({
@@ -75,7 +77,11 @@ export function QuizPaper({
 	const reviewMode = mode === "review";
 	const skill = detail.skill;
 	const typeId = detail.type;
-	const isAuto = skill === "reading" || skill === "listening";
+	const isAuto =
+		skill === "reading" ||
+		skill === "listening" ||
+		skill === "grammar" ||
+		skill === "vocabulary";
 	const questions: QuizPartQuestion[] = parts.flatMap((part) => part.questions);
 	// Đề Writing prompt-only (#304): essay bind key `0` của map `answers` —
 	// cùng namespace với câu hỏi thật nên chỉ render khi đề RỖNG câu (fail
@@ -181,7 +187,7 @@ export function QuizPaper({
 				</p>
 			)}
 
-			{skill === "reading" &&
+			{(skill === "reading" || skill === "grammar" || skill === "vocabulary") &&
 				!hidePassage &&
 				!isEmptyRichText(detail.passage) && (
 					<RichTextBody

@@ -23,6 +23,7 @@ import { githubWebhookRoutes } from "./routes/github-webhooks";
 import { kernelRoutes } from "./routes/kernel";
 import { publicLeadRoutes } from "./routes/public-leads";
 import { publicPayRoutes } from "./routes/public-pay";
+import { publicPlacementTestRoutes } from "./routes/public-placement-test";
 import { readinessRoute } from "./routes/readiness";
 import { studentRoutes } from "./routes/student";
 import { studentClassmatesRoutes } from "./routes/student-classmates";
@@ -43,6 +44,7 @@ export type {
 // `.`, `./app`, `./session`).
 export {
 	enforceDeclaredSize,
+	type MediaByteRange,
 	MediaSizeMismatchError,
 	type MediaStore,
 	type StoredMedia,
@@ -84,6 +86,10 @@ export interface AppDeps {
 	 * khớp lowercase trong requireAdmin). Rỗng = không ai là admin.
 	 */
 	adminEmails?: string[];
+	/**
+	 * Allowlist email giáo viên (binding TEACHER_EMAILS). Rỗng = không giới hạn.
+	 */
+	teacherEmails?: string[];
 	/**
 	 * Plan #413: origin của console admin dùng cho CSRF /api/admin — cố ý
 	 * tách khỏi `corsOrigin` (gồm cả origin teacher/student). Rỗng → mọi
@@ -223,6 +229,32 @@ function bootstrapMiddleware(deps: AppDeps) {
 				403,
 			);
 		}
+		// Single-org (#513, #524): khi TEACHER_EMAILS khác rỗng, chỉ email trong
+		// allowlist và đã xác thực mới được truy cập kernel và bootstrap org.
+		if ((deps.teacherEmails ?? []).length > 0) {
+			const email = session.email?.trim().toLowerCase() ?? "";
+			const allow = (deps.teacherEmails ?? []).some(
+				(e) => e.trim().toLowerCase() === email,
+			);
+			if (!email || !allow) {
+				return c.json(
+					{
+						error: ACCOUNT_ERROR_CODES.TEACHER_NOT_ALLOWED,
+						code: ACCOUNT_ERROR_CODES.TEACHER_NOT_ALLOWED,
+					},
+					403,
+				);
+			}
+			if (session.emailVerified !== true) {
+				return c.json(
+					{
+						error: ACCOUNT_ERROR_CODES.TEACHER_EMAIL_UNVERIFIED,
+						code: ACCOUNT_ERROR_CODES.TEACHER_EMAIL_UNVERIFIED,
+					},
+					403,
+				);
+			}
+		}
 		const db = deps.getDb();
 		const readMemberships = () =>
 			db
@@ -274,6 +306,11 @@ export function buildApp(deps: AppDeps) {
 	});
 	// Media giáo viên (chấm bài) — cùng lý do override CORP như route học viên ở trên.
 	app.use("/api/grading/:attemptId/media", async (c, next) => {
+		await next();
+		c.res.headers.set("Cross-Origin-Resource-Policy", "same-site");
+	});
+	// Audio nháp của đề kiểm tra đầu vào (#515): CORP same-site như media chấm bài.
+	app.use("/api/placement-test/audio/:id", async (c, next) => {
 		await next();
 		c.res.headers.set("Cross-Origin-Resource-Policy", "same-site");
 	});
@@ -332,7 +369,9 @@ export function buildApp(deps: AppDeps) {
 	app.use("/*", async (c, next) => {
 		if (
 			c.req.path === "/public/leads" ||
-			c.req.path.startsWith("/public/leads/")
+			c.req.path.startsWith("/public/leads/") ||
+			c.req.path === "/public/placement-test" ||
+			c.req.path.startsWith("/public/placement-test/")
 		) {
 			return next();
 		}
@@ -360,6 +399,8 @@ export function buildApp(deps: AppDeps) {
 	// riêng + chống spam tự gắn trong router (public-leads.ts); global cors
 	// bỏ qua path này (middleware ở trên).
 	app.route("/public/leads", publicLeadRoutes(deps));
+	// Bộ đề kiểm tra đầu vào công khai (#515): CORS theo leadOrigins, audio hỗ trợ Range.
+	app.route("/public/placement-test", publicPlacementTestRoutes(deps));
 	// Readiness probe: mounted outside /api/* so the bootstrap middleware and
 	// Better Auth never run — it answers purely from the D1 schema catalog.
 	app.get("/readyz", readinessRoute(deps));

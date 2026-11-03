@@ -106,8 +106,10 @@ import { holidayRoutes, isRollbackableConstraintError } from "./holidays";
 import { leadRoutes } from "./leads";
 import { notificationLogRoutes } from "./notification-logs";
 import { paymentTransactionRoutes } from "./payment-transactions";
+import { placementTestRoutes } from "./placement-test";
 import { commentBankRoutes, notifRoutes, reportRoutes } from "./reporting";
 import { loadInvoices, loadSnapshot } from "./snapshot";
+import { studyPackRoutes } from "./study-pack";
 import { syllabusRoutes } from "./syllabus";
 import { vocabLibraryRoutes } from "./vocab-library";
 import { vocabTeacherRoutes } from "./vocab-teacher";
@@ -122,6 +124,8 @@ type KernelContext = Context<Env>;
 export function kernelRoutes(deps: {
 	getDb(): Db;
 	getMediaStore?(): MediaStore | undefined;
+	getLibraryAudioStore?(): MediaStore | undefined;
+	leadOrgId?: string;
 	corsOrigin?: string | string[];
 	corsOrigins?: string | string[];
 	/** #454 phase 3: thông báo qua queue — route phát sau khi ghi thành công. */
@@ -762,6 +766,7 @@ export function kernelRoutes(deps: {
 				and(
 					eq(classAssignment.classId, classId),
 					eq(classAssignment.orgId, ctx.orgId),
+					isNull(classAssignment.classStudyPackId),
 				),
 			);
 		if (existing.length >= 200) {
@@ -2111,6 +2116,7 @@ export function kernelRoutes(deps: {
 	// Mounted after the Origin/content-type middleware above, so the
 	// sub-router's POSTs are CSRF-guarded exactly like the kernel writes.
 	kernel.route("/", syllabusRoutes(deps));
+	kernel.route("/", studyPackRoutes(deps));
 	kernel.route("/assignments", assignmentRoutes(deps));
 	kernel.route("/reports", reportRoutes(deps));
 	kernel.route("/notifs", notifRoutes(deps));
@@ -2122,6 +2128,8 @@ export function kernelRoutes(deps: {
 	kernel.route("/notification-logs", notificationLogRoutes(deps));
 	// #506 phase 3: quản lý lead đăng ký — GET/PATCH /api/leads.
 	kernel.route("/leads", leadRoutes(deps));
+	// #515 phase 2: soạn và phát hành bộ đề kiểm tra đầu vào — /api/placement-test.
+	kernel.route("/placement-test", placementTestRoutes(deps));
 	// TOS-6 (#439): bộ đếm 3 thẻ "Việc cần làm hôm nay" — GET /api/dashboard/reminders.
 	kernel.route("/dashboard", dashboardReminderRoutes(deps));
 	// TOS-7 (#440): danh sách ca điểm danh theo ngày — GET /api/attendance/daily.

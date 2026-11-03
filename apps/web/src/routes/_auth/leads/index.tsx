@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
 import { DataTable } from "@/components/ui/data-table";
-import { inputCls } from "@/components/ui/field";
+import { inputCls, Select } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { PageHead } from "@/components/ui/page-head";
 import { isHttpError } from "@/lib/kernel-load-state";
@@ -33,6 +33,7 @@ import {
 	leadsQueryOptions,
 	patchLead,
 } from "@/lib/repos/leads";
+import { useFinanceRouteGuard } from "@/lib/use-finance-route-guard";
 
 /**
  * Màn Đăng ký mới (#506 phase 4) — lead từ form đăng ký trên msmy.io.vn.
@@ -144,6 +145,7 @@ function Field({
 }
 
 function LeadsRoute() {
+	const canAccessFinance = useFinanceRouteGuard();
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
 	const searchParams = useSearch({ from: "/_auth/leads/" });
@@ -164,7 +166,10 @@ function LeadsRoute() {
 		...(statusFilter !== "all" ? { status: statusFilter } : {}),
 		...(page >= 2 ? { page } : {}),
 	};
-	const { data, error, isPending } = useQuery(leadsQueryOptions(queryParams));
+	const { data, error, isPending } = useQuery({
+		...leadsQueryOptions(queryParams),
+		enabled: canAccessFinance,
+	});
 
 	useEffect(() => {
 		if (isHttpError(error) && error.status === 401) {
@@ -188,6 +193,10 @@ function LeadsRoute() {
 			await queryClient.invalidateQueries({ queryKey: leadsAllQueryKey });
 		},
 		onError: async (err) => {
+			if (isHttpError(err) && err.status === 401) {
+				reauth();
+				return;
+			}
 			if (isHttpError(err) && err.status === 404) {
 				toast.error("Đăng ký không còn tồn tại hoặc thuộc tổ chức khác.");
 				await queryClient.invalidateQueries({ queryKey: leadsAllQueryKey });
@@ -248,6 +257,8 @@ function LeadsRoute() {
 		LEAD_STATUS_FILTERS.find((f) => f.id === statusFilter)?.label ?? "Tất cả";
 
 	const detailRow = rows.find((row) => row.id === detailId) ?? null;
+
+	if (!canAccessFinance) return null;
 
 	if (isPending) {
 		return (
@@ -546,18 +557,17 @@ function LeadDetailModal({
 					>
 						Trạng thái
 					</label>
-					<select
+					<Select
 						id="lead-status"
 						value={status}
 						onChange={(e) => setStatus(e.target.value as LeadStatus)}
-						className={inputCls}
 					>
 						{LEAD_STATUSES.map((value) => (
 							<option key={value} value={value}>
 								{LEAD_STATUS_LABELS[value]}
 							</option>
 						))}
-					</select>
+					</Select>
 				</div>
 				<div className="flex flex-col gap-1.5">
 					<label

@@ -17,6 +17,7 @@ export const VALID_EXACT_ROUTES: Record<string, true> = {
 	"/assignments": true,
 	"/assignments/new": true,
 	"/assignments/preview": true,
+	"/assignments/packs": true,
 	"/assignments/tests/new": true,
 	"/assignments/tests/preview": true,
 	"/grading": true,
@@ -26,6 +27,8 @@ export const VALID_EXACT_ROUTES: Record<string, true> = {
 	"/notifications": true,
 	// Đăng ký mới (#506) — lead từ form msmy.io.vn.
 	"/leads": true,
+	// Bài test đầu vào (#515) — màn sửa và phát hành đề /kiem-tra-dau-vao/.
+	"/placement-test": true,
 	"/syllabus": true,
 	"/vocab": true,
 };
@@ -54,7 +57,7 @@ export const VALID_DYNAMIC_PREFIXES = [
  * Static file extensions that should be treated as static assets.
  */
 const STATIC_ASSET_EXT_REGEX =
-	/\.(?:js|mjs|cjs|css|png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf|eot|otf|json|webmanifest|map|txt|xml|wasm)$/i;
+	/\.(?:js|mjs|cjs|css|png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf|eot|otf|json|webmanifest|map|txt|xml|wasm|mp3)$/i;
 
 /**
  * Public files served from the root.

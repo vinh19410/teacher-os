@@ -407,6 +407,27 @@
       "when": 1793331410798,
       "tag": "0057_exotic_vulture",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "6",
+      "when": 1793452308708,
+      "tag": "0058_simple_lady_deathstrike",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "6",
+      "when": 1793488686192,
+      "tag": "0059_self_study_plan",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "6",
+      "when": 1793530000000,
+      "tag": "0060_study_pack",
+      "breakpoints": true
     }
   ]
 }

@@ -663,7 +663,7 @@ export interface KernelCommandBusDeps {
 	 * on the teacher app (plan #260); the host swaps the UI for the blocked
 	 * view. Optional so ad-hoc test buses can omit it.
 	 */
-	onRoleBlocked?(): void;
+	onRoleBlocked?(reason?: string): void;
 }
 
 export interface KernelCommandBus {
@@ -678,15 +678,18 @@ export interface KernelCommandBus {
 }
 
 /**
- * Only the exact account-role code triggers the blocked exit — never a bare
- * 403 (e.g. the legacy "no membership after bootstrap"). Shared with the
- * QueryCache read path (query-client.ts) so both gates stay in lockstep.
+ * Only the exact account-role / teacher-allowlist codes trigger the blocked
+ * exit — never a bare 403 (e.g. the legacy "no membership after bootstrap").
+ * Shared with the QueryCache read path (query-client.ts) so both gates stay in
+ * lockstep.
  */
-export function isStudentRoleRejected(error: unknown): boolean {
+export function isStudentRoleRejected(error: unknown): error is HttpError {
 	return (
 		isHttpError(error) &&
 		error.status === 403 &&
-		error.reason === ACCOUNT_ERROR_CODES.STUDENT_ON_TEACHER_APP
+		(error.reason === ACCOUNT_ERROR_CODES.STUDENT_ON_TEACHER_APP ||
+			error.reason === ACCOUNT_ERROR_CODES.TEACHER_NOT_ALLOWED ||
+			error.reason === ACCOUNT_ERROR_CODES.TEACHER_EMAIL_UNVERIFIED)
 	);
 }
 
@@ -727,7 +730,7 @@ export function createKernelCommandBus(
 			}
 			// A student-role session is likewise beyond retry (plan #260).
 			if (isStudentRoleRejected(error)) {
-				deps.onRoleBlocked?.();
+				deps.onRoleBlocked?.(error.reason);
 			}
 			const classified = classifyWriteFailure(error);
 			return classified.kind === "definite-failure"
@@ -750,7 +753,7 @@ export function createKernelCommandBus(
 					return { kind: "committed", id, updated, skipped, duplicates };
 				}
 				if (isStudentRoleRejected(error)) {
-					deps.onRoleBlocked?.();
+					deps.onRoleBlocked?.(error.reason);
 					return { kind: "committed", id, updated, skipped, duplicates };
 				}
 			}
@@ -782,7 +785,7 @@ export function createKernelCommandBus(
 						deps.onAuthLost();
 					}
 					if (isStudentRoleRejected(error)) {
-						deps.onRoleBlocked?.();
+						deps.onRoleBlocked?.(error.reason);
 					}
 					return false;
 				}

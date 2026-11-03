@@ -173,9 +173,15 @@ export function PromptComposer({
 					/>
 				</Field>
 			)}
-			{value.skill === "reading" && (
+			{(value.skill === "reading" ||
+				value.skill === "grammar" ||
+				value.skill === "vocabulary") && (
 				<Field
-					label="Đoạn đọc"
+					label={
+						value.skill === "reading"
+							? "Đoạn đọc"
+							: "Đoạn đọc / Ngữ cảnh (không bắt buộc)"
+					}
 					help={part.help}
 					error={showErrors ? errors.passage : undefined}
 				>
@@ -187,7 +193,9 @@ export function PromptComposer({
 					/>
 				</Field>
 			)}
-			{value.skill === "reading" && (
+			{(value.skill === "reading" ||
+				value.skill === "grammar" ||
+				value.skill === "vocabulary") && (
 				<span className="-mt-3 text-right text-muted-foreground text-xs">
 					{wordCount(htmlToPlainText(value.passage))} từ
 				</span>

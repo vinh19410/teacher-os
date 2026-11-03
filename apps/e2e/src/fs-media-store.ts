@@ -31,19 +31,27 @@ export function createFsMediaStore(dir: string): MediaStore {
 			}
 			await writeFile(metaFor(key), JSON.stringify({ contentType, size }));
 		},
-		async get(key) {
+		async get(key, range) {
 			let meta: { contentType: string; size: number };
 			try {
 				meta = JSON.parse(await readFile(metaFor(key), "utf8"));
 			} catch {
 				return null;
 			}
+			const streamOpts =
+				range && range.length > 0
+					? {
+							start: range.offset,
+							end: range.offset + range.length - 1,
+						}
+					: undefined;
 			return {
 				body: Readable.toWeb(
-					createReadStream(pathFor(key)),
+					createReadStream(pathFor(key), streamOpts),
 				) as unknown as ReadableStream<Uint8Array>,
 				contentType: meta.contentType,
 				size: meta.size,
+				...(streamOpts && range ? { range } : {}),
 			};
 		},
 		async delete(key) {

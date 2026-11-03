@@ -101,6 +101,9 @@ describe("applySecurityHeaders (issue #203)", () => {
 		expect(headers.get("content-security-policy")).toContain(
 			"script-src 'self'",
 		);
+		expect(headers.get("content-security-policy")).toContain(
+			"media-src 'self' blob:",
+		);
 	});
 });
 

@@ -81,7 +81,8 @@ export function StudentsRoute() {
 							Mời học viên
 						</Button>
 						<Button variant="primary" onClick={() => setAddModalOpen(true)}>
-							<Plus className="h-4 w-4" />+ Thêm học viên
+							<Plus className="h-4 w-4" />
+							Thêm học viên
 						</Button>
 					</div>
 				}
@@ -127,7 +128,8 @@ export function StudentsRoute() {
 					</p>
 					<div className="mt-4 flex justify-center">
 						<Button variant="primary" onClick={() => setAddModalOpen(true)}>
-							<Plus className="h-4 w-4" />+ Thêm học viên
+							<Plus className="h-4 w-4" />
+							Thêm học viên
 						</Button>
 					</div>
 				</Card>

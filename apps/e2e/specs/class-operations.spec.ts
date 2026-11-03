@@ -25,8 +25,8 @@ import { API_ORIGIN, WEB_ORIGIN } from "./origins";
  * - Lesson blocks on /schedule carry the class name (issue #162) → .first().
  * - In ClassSessionModal, each student has a row with role="group"; the
  *   "Điểm danh" button only exists once the session date has arrived.
- * - Tab "Sessions & practice" (Issue #89) renders "Đã học"/"Sắp tới" badges on the timeline;
- *   the exact-count asserts below only run while standing on "Sessions & practice".
+ * - Tab "Buổi học & luyện tập" (Issue #89, #520) renders "Đã học"/"Sắp tới" badges on the timeline;
+ *   the exact-count asserts below only run while standing on "Buổi học & luyện tập".
  */
 test("login → tạo lớp có lịch → thấy buổi → buổi tương lai không điểm danh được → reload giữ data", async ({
 	page,
@@ -64,7 +64,9 @@ test("login → tạo lớp có lịch → thấy buổi → buổi tương lai 
 	await enrollDialog1.getByRole("option", { name: STUDENT_NAME }).click();
 	await enrollDialog1.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(enrollDialog1).toBeHidden();
-	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
+	await expect(
+		page.locator("tbody tr", { hasText: STUDENT_NAME }),
+	).toBeVisible();
 	await page.getByRole("button", { name: "Kích hoạt" }).click();
 	const confirmModal1 = page
 		.getByRole("dialog")
@@ -74,9 +76,9 @@ test("login → tạo lớp có lịch → thấy buổi → buổi tương lai 
 	await expect(confirmModal1).toBeHidden();
 	await expect(page.getByText("Đang học")).toBeVisible();
 
-	// 4. See the generated sessions: "Sessions & practice" tab → 12 "Sắp tới".
+	// 4. See the generated sessions: "Buổi học & luyện tập" tab → 12 "Sắp tới".
 	await page
-		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
 	await expect(page.getByText("Sắp tới", { exact: true })).toHaveCount(12);
 	// Issue #91: the class starts tomorrow → the VN date gate keeps every
@@ -125,14 +127,14 @@ test("login → tạo lớp có lịch → thấy buổi → buổi tương lai 
 	await expect(
 		page.locator("button.lesson-block", { hasText: CLASS_NAME }).first(),
 	).not.toHaveClass(/opacity-60/);
-	// Badge counts live on the class "Sessions & practice" tab, never on /schedule.
+	// Badge counts live on the class "Buổi học & luyện tập" tab, never on /schedule.
 	await openClassScheduleTab(page, CLASS_NAME);
 	await expect(page.getByText("đã điểm danh")).toHaveCount(0);
 	await expect(page.getByText("Sắp tới", { exact: true })).toHaveCount(12);
 });
 
 /**
- * Issue #91: in-place attendance on the "Sessions & practice" tab.
+ * Issue #91: in-place attendance on the "Buổi học & luyện tập" tab.
  *
  * The create-class UI never offers a start date ≤ today, so the class is
  * seeded through POST /api/classes directly (schema has no future-only
@@ -147,7 +149,7 @@ test("login → tạo lớp có lịch → thấy buổi → buổi tương lai 
  * - One weekly slot starting today: after the first check-in the next head
  *   is 7 days out → future → badge, 0 buttons.
  */
-test("điểm danh tại chỗ trên tab Sessions & practice (lớp start hôm nay)", async ({
+test("điểm danh tại chỗ trên tab Buổi học & luyện tập (lớp start hôm nay)", async ({
 	page,
 }) => {
 	const CLASS_NAME = `E2E Attendance CTA ${Date.now()}`;
@@ -187,7 +189,7 @@ test("điểm danh tại chỗ trên tab Sessions & practice (lớp start hôm n
 	await page.getByText(CLASS_NAME).click();
 
 	// Lessons appear only after a student joins the class. Add the student on
-	// the roster tab — the name would match all 12 rows of "Sessions & practice".
+	// the roster tab — the name would match all 12 rows of "Buổi học & luyện tập".
 	await seedStudent({ teacherEmail: teacherEmail2, name: STUDENT_NAME });
 	await page.reload();
 	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
@@ -196,7 +198,9 @@ test("điểm danh tại chỗ trên tab Sessions & practice (lớp start hôm n
 	await enrollDialog2.getByRole("option", { name: STUDENT_NAME }).click();
 	await enrollDialog2.getByRole("button", { name: "Lưu", exact: true }).click();
 	await expect(enrollDialog2).toBeHidden();
-	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
+	await expect(
+		page.locator("tbody tr", { hasText: STUDENT_NAME }),
+	).toBeVisible();
 	await page.getByRole("button", { name: "Kích hoạt" }).click();
 	const confirmModal2 = page
 		.getByRole("dialog")
@@ -208,7 +212,7 @@ test("điểm danh tại chỗ trên tab Sessions & practice (lớp start hôm n
 
 	// 1:1 class → sequential head today renders a one-click button.
 	await page
-		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
 	const checkInButton = page.getByRole("button", { name: "Điểm danh" });
 	await expect(checkInButton).toHaveCount(1);
@@ -222,7 +226,7 @@ test("điểm danh tại chỗ trên tab Sessions & practice (lớp start hôm n
 	// future → no CTA left on the tab.
 	await page.reload();
 	await page
-		.getByRole("tab", { name: "Sessions & practice", exact: true })
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
 	await expect(page.getByText("1/1 đã điểm danh")).toHaveCount(1);
 	await expect(page.getByRole("button", { name: "Điểm danh" })).toHaveCount(0);

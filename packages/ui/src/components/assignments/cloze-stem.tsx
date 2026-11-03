@@ -136,7 +136,16 @@ export function ClozeStemText({
 		}
 		// A hand-typed tablecomp stem: fall through to the marker layout.
 	}
-	if (countBlanks(stem) === 0) return <>{stem}</>;
+	if (countBlanks(stem) === 0) {
+		if (interactive) {
+			return (
+				<>
+					{stem} {blankInput({ widthCh, number, value, onChange, verdict })}
+				</>
+			);
+		}
+		return <>{stem}</>;
+	}
 	const [before, after] = splitStemByMarker(stem);
 	return (
 		<>

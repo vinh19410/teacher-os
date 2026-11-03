@@ -58,6 +58,10 @@ export interface CreateAuthInput {
 	 * parse; so khớp lowercase). Rỗng = không ai đăng ký được role admin.
 	 */
 	adminEmails?: string[];
+	/**
+	 * Allowlist email giáo viên (binding TEACHER_EMAILS). Rỗng = không giới hạn.
+	 */
+	teacherEmails?: string[];
 	secret: string;
 	/** API origin; authBaseURL() appends the /api/auth mount path. */
 	baseURL: string;
@@ -172,6 +176,10 @@ export function createAuth(input: CreateAuthInput) {
 			google: {
 				clientId: input.googleClientId,
 				clientSecret: input.googleClientSecret,
+				// Luôn hiện màn chọn tài khoản Google: sau khi bị chặn role
+				// mismatch, người dùng phải chọn được Gmail khác thay vì bị
+				// Google tự dùng lại phiên đang đăng nhập.
+				prompt: "select_account",
 			},
 		},
 		emailAndPassword: {
@@ -309,6 +317,30 @@ export function createAuth(input: CreateAuthInput) {
 									message:
 										"Email này không được cấp quyền quản trị. Vui lòng dùng cổng học viên hoặc liên hệ quản trị viên.",
 									code: "ADMIN_SIGNUP_FORBIDDEN",
+								});
+							}
+						}
+						// Single-org (#513, #524): khi TEACHER_EMAILS khác rỗng, chỉ email
+						// trong allowlist mới đăng ký được tài khoản giáo viên; đồng thời
+						// không cho phép đăng ký email trong TEACHER_EMAILS từ cổng khác
+						// (student/admin) để tránh làm nhiễm role='student' gây khóa tài khoản.
+						if ((input.teacherEmails ?? []).length > 0) {
+							const email = user.email?.trim().toLowerCase() ?? "";
+							const allow = (input.teacherEmails ?? []).some(
+								(e) => e.trim().toLowerCase() === email,
+							);
+							if (appRole === "teacher" && (!email || !allow)) {
+								throw new APIError("FORBIDDEN", {
+									message:
+										"Ứng dụng giáo viên hiện chỉ dành cho chủ tài khoản. Học viên vui lòng dùng cổng học viên.",
+									code: "TEACHER_SIGNUP_FORBIDDEN",
+								});
+							}
+							if (appRole !== "teacher" && email && allow) {
+								throw new APIError("FORBIDDEN", {
+									message:
+										"Email này thuộc tài khoản giáo viên. Vui lòng đăng nhập tại ứng dụng giáo viên.",
+									code: "TEACHER_SIGNUP_FORBIDDEN",
 								});
 							}
 						}

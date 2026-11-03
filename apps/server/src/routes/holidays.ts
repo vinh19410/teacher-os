@@ -162,7 +162,7 @@ async function loadClassLessons(
  * với mọi lớp; scope classes chỉ với các lớp trong organization_holiday_class.
  * Trả classId → (date → tên kỳ nghỉ); duyệt theo createdAt ASC, id — kỳ
  * khai báo trước thắng khi hai kỳ chồng ngày (red-team I2). */
-async function loadExistingHolidayDates(
+export async function loadExistingHolidayDates(
 	db: Db,
 	orgId: string,
 	classIds: string[],
@@ -181,18 +181,19 @@ async function loadExistingHolidayDates(
 		.where(eq(organizationHoliday.orgId, orgId))
 		.orderBy(asc(organizationHoliday.createdAt), asc(organizationHoliday.id));
 	if (orgHolidays.length === 0) return datesByClass;
-	const scopedRows = await db
-		.select({
-			holidayId: organizationHolidayClass.holidayId,
-			classId: organizationHolidayClass.classId,
-		})
-		.from(organizationHolidayClass)
-		.where(
-			inArray(
-				organizationHolidayClass.holidayId,
-				orgHolidays.map((row) => row.id),
-			),
-		);
+	const holidayIds = orgHolidays.map((row) => row.id);
+	const scopedRows: Array<{ holidayId: string; classId: string }> = [];
+	for (let i = 0; i < holidayIds.length; i += D1_IN_ARRAY_CHUNK) {
+		const slice = holidayIds.slice(i, i + D1_IN_ARRAY_CHUNK);
+		const chunk = await db
+			.select({
+				holidayId: organizationHolidayClass.holidayId,
+				classId: organizationHolidayClass.classId,
+			})
+			.from(organizationHolidayClass)
+			.where(inArray(organizationHolidayClass.holidayId, slice));
+		scopedRows.push(...chunk);
+	}
 	const scopedByHoliday = new Map<string, string[]>();
 	for (const row of scopedRows) {
 		const list = scopedByHoliday.get(row.holidayId);

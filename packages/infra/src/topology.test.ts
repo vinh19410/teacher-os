@@ -1,8 +1,12 @@
 import { describe, expect, it, test } from "vitest";
 import {
+	DEFAULT_DEV_LEAD_ORIGINS,
 	PROD_APP_DOMAIN,
+	PROD_PROFILE_DOMAIN,
 	resolveAssumeEmailVerified,
 	resolveDomainTopology,
+	resolveLeadOrigins,
+	resolveTeacherEmails,
 } from "./topology";
 
 describe("resolveDomainTopology", () => {
@@ -24,6 +28,9 @@ describe("resolveDomainTopology", () => {
 			appAliases: [],
 			landingHost: "teacher-os.edu.vn",
 			landingAliases: ["www.teacher-os.edu.vn"],
+			profileHost: "profile.teacher-os.edu.vn",
+			profileAliases: [],
+			profileOrigins: ["https://profile.teacher-os.edu.vn"],
 		});
 	});
 
@@ -39,6 +46,29 @@ describe("resolveDomainTopology", () => {
 		expect(topology.landingHost).toBe("staging.teacheros.io.vn");
 		expect(topology.landingAliases).toEqual(["www.staging.teacheros.io.vn"]);
 		expect(topology.appAliases).toEqual([]);
+	});
+
+	it("derives msmy.io.vn profile host, www alias, and origins only for PROD_APP_DOMAIN (#536)", () => {
+		const prod = resolveDomainTopology(PROD_APP_DOMAIN);
+		expect(prod.profileHost).toBe(PROD_PROFILE_DOMAIN);
+		expect(prod.profileAliases).toEqual([`www.${PROD_PROFILE_DOMAIN}`]);
+		expect(prod.profileOrigins).toEqual([
+			"https://msmy.io.vn",
+			"https://www.msmy.io.vn",
+		]);
+
+		for (const nonProd of [
+			"staging.teacheros.io.vn",
+			"preview.teacheros.io.vn",
+			"teacher-os.edu.vn",
+		]) {
+			const t = resolveDomainTopology(nonProd);
+			expect(t.profileHost).toBe(`profile.${nonProd}`);
+			expect(t.profileAliases).toEqual([]);
+			expect(t.profileOrigins).toEqual([`https://profile.${nonProd}`]);
+			expect(t.profileHost).not.toContain("msmy.io.vn");
+			expect(t.profileOrigins.join(",")).not.toContain("msmy.io.vn");
+		}
 	});
 
 	it("scopes staging into its own auth cookie namespace (issue #125: staging nests inside the prod cookie zone)", () => {
@@ -142,5 +172,70 @@ describe("resolveAssumeEmailVerified", () => {
 			true,
 		);
 		expect(resolveAssumeEmailVerified(undefined, PROD_APP_DOMAIN)).toBe(false);
+	});
+});
+
+describe("resolveTeacherEmails (#513)", () => {
+	test("throws when empty or comma-only on the prod domain", () => {
+		expect(() => resolveTeacherEmails("", PROD_APP_DOMAIN)).toThrow(
+			/TEACHER_EMAILS must be set/,
+		);
+		expect(() => resolveTeacherEmails(undefined, PROD_APP_DOMAIN)).toThrow(
+			/TEACHER_EMAILS must be set/,
+		);
+		expect(() => resolveTeacherEmails(" , , ", PROD_APP_DOMAIN)).toThrow(
+			/TEACHER_EMAILS must be set/,
+		);
+	});
+
+	test("returns the value when set on the prod domain", () => {
+		expect(resolveTeacherEmails("a@x.vn", PROD_APP_DOMAIN)).toBe("a@x.vn");
+	});
+
+	test("returns empty string on staging when unset or empty", () => {
+		expect(resolveTeacherEmails("", "staging.teacheros.io.vn")).toBe("");
+		expect(resolveTeacherEmails(undefined, "staging.teacheros.io.vn")).toBe("");
+	});
+});
+
+describe("resolveLeadOrigins (#524, #536)", () => {
+	test("falls back to topology.profileOrigins when topology is provided and raw is unset, empty, whitespace, or comma-only", () => {
+		const prodTopology = resolveDomainTopology(PROD_APP_DOMAIN);
+		const stagingTopology = resolveDomainTopology("staging.teacheros.io.vn");
+		for (const raw of [undefined, "", "   ", " , , "]) {
+			expect(
+				resolveLeadOrigins(raw, { topology: prodTopology, isDev: false }),
+			).toBe("https://msmy.io.vn,https://www.msmy.io.vn");
+			expect(
+				resolveLeadOrigins(raw, { topology: stagingTopology, isDev: false }),
+			).toBe("https://profile.staging.teacheros.io.vn");
+		}
+	});
+
+	test("trims and joins explicit origins when provided under topology", () => {
+		const stagingTopology = resolveDomainTopology("staging.teacheros.io.vn");
+		expect(
+			resolveLeadOrigins(
+				" https://profile.staging.teacheros.io.vn , https://msmy.io.vn , ",
+				{ topology: stagingTopology, isDev: false },
+			),
+		).toBe("https://profile.staging.teacheros.io.vn,https://msmy.io.vn");
+	});
+
+	test("falls back to DEFAULT_DEV_LEAD_ORIGINS when topology is undefined and isDev is true", () => {
+		for (const raw of [undefined, "", " , "]) {
+			expect(
+				resolveLeadOrigins(raw, { topology: undefined, isDev: true }),
+			).toBe(DEFAULT_DEV_LEAD_ORIGINS);
+		}
+	});
+
+	test("throws when deploying without APP_DOMAIN and LEAD_ORIGINS is empty", () => {
+		expect(() =>
+			resolveLeadOrigins(undefined, { topology: undefined, isDev: false }),
+		).toThrow(/LEAD_ORIGINS must be set/);
+		expect(() =>
+			resolveLeadOrigins(" , ", { topology: undefined, isDev: false }),
+		).toThrow(/LEAD_ORIGINS must be set/);
 	});
 });

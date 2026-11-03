@@ -160,17 +160,56 @@ function RerenderableClassDetail() {
 }
 
 describe("class detail tabs", () => {
-	it("offers Sessions & practice, roster, curriculum, vocab and notes — sessions & assignments merged (#391)", async () => {
+	it("offers Buổi học & luyện tập, roster, curriculum, vocab and notes — sessions & assignments merged (#391, #520)", async () => {
 		startKernelServer(twoClasses());
 		renderWithKernel(<ClassDetail />);
 		const tabs = await screen.findAllByRole("tab");
 		expect(tabs.map((t) => t.textContent)).toEqual([
-			"Sessions & practice",
+			"Buổi học & luyện tập",
 			"Học viên",
 			"Giáo trình",
 			"Từ vựng",
 			"Ghi chú",
 		]);
+		expect(screen.getByText("Từ 01/08")).toBeTruthy();
+	});
+
+	it("formats ISO startDate as dd/mm/yyyy in the student stat card subtitle and omits empty startDate (#520)", async () => {
+		startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-1",
+						name: "IELTS Writing",
+						startDate: "2026-11-03",
+					}),
+					classRow({
+						id: "cl-2",
+						name: "IELTS Speaking",
+						startDate: "",
+					}),
+				],
+			}),
+		);
+		renderWithKernel(<RerenderableClassDetail />);
+		expect(await screen.findByText("Từ 03/11/2026")).toBeTruthy();
+		expect(screen.queryByText("Từ 2026-11-03")).toBeNull();
+
+		routerState.params = { classId: "cl-2" };
+		fireEvent.click(screen.getByTestId("rerender"));
+		await screen.findByRole("heading", { name: "IELTS Speaking" });
+		expect(screen.queryByText("Từ")).toBeNull();
+		expect(screen.queryByText(/^Từ \d/)).toBeNull();
+	});
+
+	it("selects Buổi học & luyện tập when opened with legacy ?tab=assignments (#391, #520)", async () => {
+		routerState.search = { tab: "assignments" };
+		startKernelServer(twoClasses());
+		renderWithKernel(<ClassDetail />);
+		const tab = await screen.findByRole("tab", {
+			name: "Buổi học & luyện tập",
+		});
+		expect(tab.getAttribute("aria-selected")).toBe("true");
 	});
 });
 
@@ -227,7 +266,7 @@ describe("class detail → Buổi học tab", () => {
 
 	async function openSessionsTab() {
 		fireEvent.click(
-			await screen.findByRole("tab", { name: "Sessions & practice" }),
+			await screen.findByRole("tab", { name: "Buổi học & luyện tập" }),
 		);
 	}
 
@@ -337,6 +376,72 @@ describe("class detail → Buổi học tab", () => {
 			within(dialog).getByRole("option", { name: "Template A · 0 buổi" }),
 		).toBeTruthy();
 	});
+
+	it("opens the manage sessions modal with an empty-state explanation and switches to the Giáo trình tab when the class has no syllabus (#521)", async () => {
+		startKernelServer(
+			snapshotFixture({
+				classes: [classRow({ id: "cl-1", syllabusId: null })],
+				syllabi: [syllabusRow({ id: "sy-t", name: "Template A" })],
+			}),
+		);
+		renderWithKernel(<ClassDetail />);
+		const manageBtn = (await screen.findByRole("button", {
+			name: "Sắp xếp buổi",
+		})) as HTMLButtonElement;
+		expect(manageBtn.disabled).toBe(false);
+
+		// Opening and dismissing the modal from another tab preserves that tab.
+		fireEvent.click(screen.getByRole("tab", { name: "Học viên" }));
+		fireEvent.click(manageBtn);
+		const dismissedDialog = screen.getByRole("dialog", {
+			name: "Quản lý buổi của lớp",
+		});
+		fireEvent.click(
+			within(dismissedDialog).getByRole("button", { name: "Đóng" }),
+		);
+		expect(
+			screen.queryByRole("dialog", { name: "Quản lý buổi của lớp" }),
+		).toBeNull();
+		expect(
+			screen
+				.getByRole("tab", { name: "Học viên" })
+				.getAttribute("aria-selected"),
+		).toBe("true");
+
+		// Enter assign view on Buổi học & luyện tập to verify switching to curriculum resets assignmentsView.
+		fireEvent.click(screen.getByRole("tab", { name: "Buổi học & luyện tập" }));
+		const assignBtns = screen.getAllByRole("button", { name: "Giao bài tập" });
+		expect(assignBtns).toHaveLength(2);
+		fireEvent.click(assignBtns[0]);
+		expect(screen.getByText("Chọn một đề")).toBeTruthy();
+		expect(
+			screen.getAllByRole("button", { name: "Giao bài tập" }),
+		).toHaveLength(1);
+
+		fireEvent.click(manageBtn);
+		const dialog = screen.getByRole("dialog", {
+			name: "Quản lý buổi của lớp",
+		});
+		expect(
+			within(dialog).getByText("Gắn giáo trình cho lớp để sắp xếp buổi."),
+		).toBeTruthy();
+
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Mở tab Giáo trình" }),
+		);
+		expect(
+			screen.queryByRole("dialog", { name: "Quản lý buổi của lớp" }),
+		).toBeNull();
+		expect(
+			screen
+				.getByRole("tab", { name: "Giáo trình" })
+				.getAttribute("aria-selected"),
+		).toBe("true");
+		expect(
+			screen.getByRole("button", { name: "Nhập từ template" }),
+		).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Giao bài tập" })).toBeTruthy();
+	});
 });
 
 describe("class screen → lesson kind stays with the syllabus", () => {
@@ -357,7 +462,7 @@ describe("class screen → lesson kind stays with the syllabus", () => {
 		);
 		renderWithKernel(<ClassDetail />);
 		fireEvent.click(
-			await screen.findByRole("tab", { name: "Sessions & practice" }),
+			await screen.findByRole("tab", { name: "Buổi học & luyện tập" }),
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Sắp xếp buổi" }));
 		fireEvent.click(screen.getByRole("button", { name: "+ Thêm buổi học" }));

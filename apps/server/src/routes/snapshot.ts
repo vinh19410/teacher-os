@@ -43,7 +43,7 @@ import {
 	vocabSuggestion,
 	vocabWord,
 } from "@teacher-os/db/schema/vocab";
-import { and, asc, desc, eq, notLike } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, notLike } from "drizzle-orm";
 import type { Db } from "../app";
 import { toQuizAttemptGrade } from "../lib/quiz-grade";
 import { loadCommentBank, loadNotifs, loadReports } from "./reporting/loaders";
@@ -330,6 +330,7 @@ export async function loadSnapshot(
 				and(
 					eq(assignmentPrompt.orgId, orgId),
 					notLike(assignmentPrompt.id, "demo-prompt:%"),
+					isNull(assignmentPrompt.libraryRef),
 				),
 			)
 			.orderBy(asc(assignmentPrompt.createdAt), asc(assignmentPrompt.id)),
@@ -434,16 +435,36 @@ export async function loadSnapshot(
 	const classAssignmentRows = await db
 		.select()
 		.from(classAssignment)
-		.where(eq(classAssignment.orgId, orgId))
+		.where(
+			and(
+				eq(classAssignment.orgId, orgId),
+				isNull(classAssignment.classStudyPackId),
+			),
+		)
 		.orderBy(desc(classAssignment.createdAt), desc(classAssignment.id));
 	const classAssignmentTargetRows = await db
-		.select()
+		.select({
+			id: classAssignmentTarget.id,
+			orgId: classAssignmentTarget.orgId,
+			assignmentId: classAssignmentTarget.assignmentId,
+			studentId: classAssignmentTarget.studentId,
+			submittedAt: classAssignmentTarget.submittedAt,
+		})
 		.from(classAssignmentTarget)
+		.innerJoin(
+			classAssignment,
+			and(
+				eq(classAssignment.id, classAssignmentTarget.assignmentId),
+				eq(classAssignment.orgId, orgId),
+				isNull(classAssignment.classStudyPackId),
+			),
+		)
 		.where(eq(classAssignmentTarget.orgId, orgId));
 	// Trạng thái chấm theo target: chỉ attempt đã nộp của LUỢT GIAO, chỉ 5
 	// cột nhẹ (không kéo essay/answers/snapshot đề). Phase 10 (#378): attempt
 	// `mode='practice'` không gắn target và không được lọt bảng điểm lớp —
 	// không lọc sẽ sinh key "null:<studentId>" rác trong attemptByTarget.
+	// #533: loại trừ bài bộ đề tự học (`isNull(classAssignment.classStudyPackId)`) ở tầng SQL.
 	const submittedAttemptRows = await db
 		.select({
 			id: quizAttempt.id,
@@ -453,6 +474,14 @@ export async function loadSnapshot(
 			gradedAt: quizAttempt.gradedAt,
 		})
 		.from(quizAttempt)
+		.innerJoin(
+			classAssignment,
+			and(
+				eq(classAssignment.id, quizAttempt.assignmentId),
+				eq(classAssignment.orgId, orgId),
+				isNull(classAssignment.classStudyPackId),
+			),
+		)
 		.where(
 			and(
 				eq(quizAttempt.orgId, orgId),
