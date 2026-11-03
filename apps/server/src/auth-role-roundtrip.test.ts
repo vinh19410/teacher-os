@@ -219,7 +219,11 @@ describe("account role separation round-trip", () => {
 			});
 			expect(res.status).toBe(200);
 			const body = (await res.json()) as { url?: string };
-			const state = new URL(body.url ?? "").searchParams.get("state");
+			const authorize = new URL(body.url ?? "");
+			// Chọn lại tài khoản Google luôn được offer: sau khi bị chặn role
+			// mismatch, người dùng phải chọn được Gmail khác (issue #545).
+			expect(authorize.searchParams.get("prompt")).toBe("select_account");
+			const state = authorize.searchParams.get("state");
 			expect(state).toBeTruthy();
 			const row = await raw.execute({
 				sql: "SELECT value FROM verification WHERE identifier = ?",
