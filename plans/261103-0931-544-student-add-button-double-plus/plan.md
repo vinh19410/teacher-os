@@ -1,7 +1,7 @@
 ---
 title: "#544: Nút Thêm học viên dư dấu +"
 description: "Bỏ ký tự + thừa trong nhãn nút Thêm học viên ở trang Học viên, giữ icon Plus, cập nhật test."
-status: pending
+status: completed
 priority: P3
 effort: 0.5h
 issue: 544
