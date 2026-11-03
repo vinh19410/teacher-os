@@ -33,6 +33,7 @@ echo $! >"${VERIFY_INSTANCE_DIR}/api.pid"
 
 env VITE_SERVER_URL="${VERIFY_API_URL}" \
 	VITE_AI_ENABLED=true \
+	VITE_TEACHER_SIGNUP_ENABLED=true \
 	pnpm --filter web exec vite --port "${E2E_WEB_PORT}" --strictPort \
 	>"${VERIFY_INSTANCE_DIR}/web.log" 2>&1 &
 echo $! >"${VERIFY_INSTANCE_DIR}/web.pid"

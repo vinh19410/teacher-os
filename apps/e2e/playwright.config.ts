@@ -73,6 +73,7 @@ export default defineConfig({
 			env: {
 				VITE_SERVER_URL: `http://localhost:${apiPort}`,
 				VITE_AI_ENABLED: "true",
+				VITE_TEACHER_SIGNUP_ENABLED: "true",
 				E2E_API_PORT: String(apiPort),
 				E2E_WEB_PORT: String(webPort),
 			},
