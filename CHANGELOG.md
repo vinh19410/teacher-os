@@ -11,6 +11,11 @@ Quy ước khi cập nhật:
 ---
 
 
+## 2026-11-03
+
+### Fixed
+- Sửa bố cục chân side menu giáo viên: nút **"Đăng xuất"** rơi xuống hàng riêng thay vì nằm cuối hàng user (`packages/ui/src/components/app-shell/user-footer.tsx`): wrapper footer đổi thành flex row (`relative flex items-center gap-1`), control hồ sơ thêm `min-w-0 flex-1` để tên/email truncate đúng, chevron menu thêm `shrink-0` khỏi bị nén; ở rail thu gọn desktop (56px) avatar + nút đăng xuất xếp dọc (`lg:flex-col`, `lg:w-full`), drawer mobile (<1024px) giữ hàng ngang. Không đổi hành vi, a11y name hay testid (`sidebar-user-email`, `sidebar-avatar`); student không dùng `trailing` giữ nguyên bố cục (#540).
+
 ## 2026-11-01
 
 ### Added
