@@ -119,78 +119,31 @@ test("staging deploy workflow deploys only from the staging branch", () => {
 	);
 });
 
-test("e2e workflow exists and matches the e2e contract", () => {
-	const e2ePath = join(repoRoot, ".github/workflows/e2e.yml");
-	assert.equal(existsSync(e2ePath), true, "missing .github/workflows/e2e.yml");
-
-	const yaml = readFileSync(e2ePath, "utf8");
-
-	assert.match(yaml, /pull_request:/, "must trigger on pull_request");
-	assert.doesNotMatch(
-		yaml,
-		/pull_request_target/,
-		"must never use pull_request_target (fork PR escalation)",
-	);
-	assert.match(
-		yaml,
-		/^\s*workflow_call:/m,
-		"must be callable so deploy.yml can gate prod on it",
-	);
-	assert.match(yaml, /\bmain\b/, "must include main");
-	assert.doesNotMatch(
-		yaml,
-		/\bdevelop\b/,
-		"must not trigger on develop (runs on main only)",
-	);
-	assert.match(yaml, /contents:\s*read/, "must keep read-only permissions");
-	assert.match(yaml, /playwright install/, "must install playwright browsers");
-	assert.match(
-		yaml,
-		/^\s*- run: pnpm --filter e2e e2e --shard=\$\{\{ matrix\.shard \}\}\/(\d+)\s*$/m,
-		"must run the e2e package as its own sharded step",
-	);
-	const shardList = yaml.match(/shard:\s*\[([^\]]*)\]/);
-	assert.ok(shardList, "e2e job must declare a shard matrix");
-	const shardTotal = yaml.match(/--shard=\$\{\{ matrix\.shard \}\}\/(\d+)/);
+test("e2e does not run on GitHub Actions (it runs locally before ak-ship)", () => {
 	assert.equal(
-		shardList[1].split(",").length,
-		Number(shardTotal?.[1]),
-		"shard matrix size must equal the --shard total (a mismatch silently skips specs)",
-	);
-	assert.match(
-		yaml,
-		/fail-fast:\s*false/,
-		"must run every shard to completion so one failure shows the full picture",
-	);
-	// Blocks secrets.X and secrets['X'] anywhere — including indirect forms
-	// like ${{ fromJSON(secrets.X) }} that a ${{-anchored regex would miss.
-	assert.doesNotMatch(
-		yaml,
-		/\bsecrets\s*[.[]/,
-		"must not require GitHub secrets",
+		existsSync(join(repoRoot, ".github/workflows/e2e.yml")),
+		false,
+		"e2e.yml must stay removed: the E2E suite runs locally, not in CI",
 	);
 });
 
-test("prod deploy is blocked unless quality and e2e both pass", () => {
+test("prod deploy is gated on quality only (e2e runs locally before shipping)", () => {
 	const deployPath = join(repoRoot, ".github/workflows/deploy.yml");
 	const yaml = readFileSync(deployPath, "utf8");
 
-	const e2eJob = yaml.match(/^ {2}e2e:\n((?: {4}.*\n|\s*\n)+)/m);
-	assert.ok(e2eJob, "deploy.yml must declare an e2e job");
-	assert.match(
-		e2eJob[1],
-		/^ {4}uses: \.\/\.github\/workflows\/e2e\.yml\s*$/m,
-		"e2e job must reuse e2e.yml (one definition of the suite)",
+	assert.doesNotMatch(
+		yaml,
+		/^ {2}e2e:/m,
+		"deploy.yml must not declare an e2e job (e2e runs locally before ak-ship)",
 	);
 	assert.doesNotMatch(
-		e2eJob[1],
-		/^ {4}secrets:/m,
-		"e2e job must not receive prod secrets",
+		yaml,
+		/workflows\/e2e\.yml/,
+		"deploy.yml must not call the reusable e2e workflow",
 	);
 
 	const needs = yaml.match(/^ {2}deploy:\n {4}needs: \[([^\]]*)\]/m);
 	assert.ok(needs, "deploy job must declare needs");
 	const deps = needs[1].split(",").map((d) => d.trim());
-	assert.ok(deps.includes("quality"), "deploy must need quality");
-	assert.ok(deps.includes("e2e"), "deploy must need e2e");
+	assert.deepEqual(deps, ["quality"], "deploy must need exactly quality");
 });
