@@ -868,13 +868,21 @@ setInterval(() => {}, 10000);
 			);
 			for (const p of pids) {
 				if (Number.isInteger(p) && p > 0)
-					assert.throws(() => process.kill(p, 0), /ESRCH/, `pid ${p} phải chết`);
+					assert.throws(
+						() => process.kill(p, 0),
+						/ESRCH/,
+						`pid ${p} phải chết`,
+					);
 			}
 		} finally {
 			// test fail giữa chừng → không để lại server giả chiếm port
 			spawnSync("bash", [FETCH_DESIGN, "stop"], {
 				cwd: tmp,
-				env: { ...process.env, DESIGN_PORT: String(port), DESIGN_CACHE_DIR: cache },
+				env: {
+					...process.env,
+					DESIGN_PORT: String(port),
+					DESIGN_CACHE_DIR: cache,
+				},
 				encoding: "utf8",
 				timeout: 20_000,
 			});
