@@ -1,7 +1,7 @@
 ---
 title: "Google OAuth luôn cho chọn lại tài khoản (cổng học viên bị kẹt Gmail giáo viên)"
 description: "Thêm prompt=select_account cho đăng nhập Google để người dùng chọn Gmail khác sau khi bị chặn role mismatch."
-status: pending
+status: completed
 priority: P2
 effort: 1.5h
 issue: 545
