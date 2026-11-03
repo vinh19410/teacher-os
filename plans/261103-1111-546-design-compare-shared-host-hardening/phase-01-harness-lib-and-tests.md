@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Phase 1: Harness Library & TDD Suite"
-status: todo
+status: completed
 priority: P1
 effort: "1.5h"
 dependencies: []
@@ -69,8 +69,8 @@ Plan này được viết theo hợp đồng bàn giao `--advice` + `--tdd`: m�
 - **Verify:** `pnpm test:design-compare && pnpm exec biome check package.json scripts/design-compare/harness-lib.mjs scripts/design-compare.test.mjs` thoát mã `0` và in `# fail 0`.
 
 ## Todo
-- [ ] Task 1.1: Đăng ký `test:design-compare` trong `package.json` và viết bộ test TDD Red `scripts/design-compare.test.mjs`
-- [ ] Task 1.2: Hiện thực `scripts/design-compare/harness-lib.mjs` đạt TDD Green + `biome check`
+- [x] Task 1.1: Đăng ký `test:design-compare` trong `package.json` và viết bộ test TDD Red `scripts/design-compare.test.mjs`
+- [x] Task 1.2: Hiện thực `scripts/design-compare/harness-lib.mjs` đạt TDD Green + `biome check`
 
 ## Verification
 - `pnpm test:design-compare` thoát mã `0` (`# fail 0`).

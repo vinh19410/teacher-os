@@ -4,56 +4,52 @@
  *
  * Dùng:
  *   node scripts/design-compare/capture.mjs [--screens all|id1,id2]
- *        [--side design|app|both] [--label old|new] [--keep-design]
+ *        [--side design|app|both] [--label old|new] [--keep-design] [--force]
  *
  * - Tự boot stack e2e trên free port mỗi run (#397 — không đụng worktree AI
  *   song song / dev stack; boot:api xoá local.db mỗi lần → luôn chạy seed
  *   mới), chạy apps/e2e/scripts/design-seed.ts để tạo dữ liệu.
  * - Design v2 chạy qua scripts/design-compare/fetch-design.sh
- *   (DESIGN_PORT env, mặc định :8200 khi chạy riêng; capture chọn free port).
+ *   (DESIGN_PORT env; capture chọn free port sát lúc boot + retry khi port
+ *   bận — #546). DESIGN_NO_REUSE=1: không bao giờ dùng ké server design của
+ *   phiên khác; fetch-design.sh chỉ trả exit 0 khi chính mình spawn.
  * - Ảnh raw ghi vào scripts/design-compare/.state/raw/<label>/ (git-ignored);
  *   ảnh ghép side-by-side ghi vào
  *   plans/261020-1446-378-redesign-design-v2/screenshots/<id>/<viewport>-<theme>.png
  *   với cột Design v2 | App cũ (nếu có raw "old") | App mới.
+ *   --force ép chụp lại raw (xoá cache) và ghi đè compose; không force thì
+ *   compose ghi đè khi raw mới hơn outFile (mtimeMs) — #546.
+ * - Ảnh trắng/rỗng bị pixel sanity check (pngjs) chặn + xoá ngay (#546);
+ *   SIGTERM/timeout dọn sạch process group con (SIGTERM → SIGKILL) (#546).
  */
-import { spawn, spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { spawn } from "node:child_process";
+import { existsSync, readFileSync, rmSync } from "node:fs";
+import { chmod, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+	assertNonBlankPngFile,
+	buildChildEnv,
+	createLogCollector,
+	ensurePrivateDir,
+	killProcessGroup,
+	killProcessGroupSync,
+	loadPngJs,
+	parseCliArgs,
+	probeFreePort,
+	redactLog,
+	shouldCompose,
+	spawnAsync,
+	verifyDesignV2Server,
+} from "./harness-lib.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "../..");
 const requireE2E = createRequire(path.join(ROOT, "apps/e2e/package.json"));
 const { chromium } = requireE2E("@playwright/test");
-
-// #397: port cố định 8100/8101/8103 bị các worktree AI song song (mỗi issue
-// một worktree, cùng override E2E_*_PORT) và dev stack chiếm — signup khi đó
-// đi vào API của worktree KHÁC, seed đọc local.db của worktree mình →
-// "no org yet" vĩnh viễn dù kernel 200 (diagnostics của fix đã bắt live:
-// request sent +649ms -> response 200 +656ms rồi poll rỗng 21.75s). Chọn
-// free port mỗi run để harness miễn nhiễm xung đột.
-const freePort = () =>
-	new Promise((resolve, reject) => {
-		const srv = net.createServer();
-		srv.listen(0, "127.0.0.1", () => {
-			const { port } = srv.address();
-			srv.close(() => resolve(port));
-		});
-		srv.on("error", reject);
-	});
-const [API_PORT, WEB_PORT, STUDENT_PORT, DESIGN_PORT] = await Promise.all([
-	freePort(),
-	freePort(),
-	freePort(),
-	freePort(),
-]);
-const WEB = `http://localhost:${WEB_PORT}`;
-const STUDENT = `http://localhost:${STUDENT_PORT}`;
-const DESIGN = `http://localhost:${DESIGN_PORT}`;
-const API = `http://localhost:${API_PORT}`;
+const { PNG } = loadPngJs(ROOT);
 
 const PLAN_DIR = path.join(ROOT, "plans/261020-1446-378-redesign-design-v2");
 const SHOTS = path.join(PLAN_DIR, "screenshots");
@@ -63,15 +59,8 @@ const SEED_FILE = path.join(STATE, "design-seed.json");
 const VERDICT = path.join(PLAN_DIR, "screenshots", "verdict.md");
 
 // ── args ─────────────────────────────────────────────────────────────────
-const arg = (name, dflt) => {
-	const i = process.argv.indexOf(`--${name}`);
-	return i >= 0 ? process.argv[i + 1] : dflt;
-};
-const hasFlag = (name) => process.argv.includes(`--${name}`);
-const screensArg = arg("screens", "all");
-const side = arg("side", "both");
-const label = arg("label", "new");
-const keepDesign = hasFlag("keep-design");
+const cli = parseCliArgs(process.argv.slice(2));
+const { screens: screensArg, side, label, keepDesign, force } = cli;
 
 const cfg = JSON.parse(await readFile(path.join(HERE, "screens.json"), "utf8"));
 let seed = null;
@@ -97,59 +86,70 @@ if (screens.length === 0) {
 	process.exit(2);
 }
 
-// ── process helpers ──────────────────────────────────────────────────────
+// ── process tracking + shutdown (#546) ───────────────────────────────────
 const children = [];
 const childNames = new Map();
+const activeChildren = new Map(); // spawnAsync payload đang chạy (seed/fetch-design)
 const outputTail = new Map();
-// #397: log api chứa URL verify-email/reset mang ?token=… (redactResetToken
-// phía server chỉ cover reset-password + pay). Redact tại điểm collect, trên
-// buffer ĐÃ NỐI (token có thể cắt ngang biên chunk) — phủ cả dump của waitUrl
-// lẫn dump seed-fail.
-const TOKEN_RE = /([?&]token=)[^\s&"']+/gi;
-const redactLog = (s) => s.replace(TOKEN_RE, "$1[redacted]");
-function start(name, cmd, opts = {}) {
-	const child = spawn(cmd, {
+const failedShots = new Set(); // `${sc.id}/${vpName}-${theme}` key chính xác
+const failures = [];
+const done = [];
+let browser = null;
+let childWatchdogTimer = null;
+let designPort = null;
+// #546 red-team: port ĐÃ THỬ boot design-v2 (kể cả fail giữa chừng — SIGTERM
+// trong window boot, verifyDesignV2Server throw, spawnAsync timeout) để
+// shutdown/backstop luôn đọc được `.pid-$PORT` dù `designPort` chưa gán.
+const designAttemptPorts = new Set();
+let designFetched = false;
+let shuttingDown = null;
+
+// #397: log api chứa URL verify-email/reset mang ?token=… (#546: thêm
+// reset-password/pay/GitHub token). Redact tại điểm collect + dump.
+function dumpLogs() {
+	return [...outputTail.entries()]
+		.map(([n, b]) => `## ${n}\n${redactLog(b)}`)
+		.join("\n");
+}
+
+function start(name, cmd, args, opts = {}) {
+	const child = spawn(cmd, args, {
 		cwd: ROOT,
-		// #397 (smoke run): SIGTERM cho wrapper pnpm chỉ giết pnpm — node cháu
-		// (vite/boot:api) sống thành orphan, chiếm 8100/8101/8103 khiến lần chạy
-		// sau EADDRINUSE chết im lặng và waitUrl chạm vào stack CŨ (DB không
-		// wipe). detached + kill cả process group đảm bảo dọn sạch cả cây.
+		// #397/#546: SIGTERM cho wrapper pnpm chỉ giết pnpm — node cháu (vite/
+		// boot:api) sống thành orphan. detached + kill cả process group đảm
+		// bảo dọn sạch cả cây (shutdown → killProcessGroup).
 		detached: process.platform !== "win32",
-		env: {
-			...process.env,
-			E2E_API_PORT: String(API_PORT),
-			E2E_WEB_PORT: String(WEB_PORT),
-			E2E_STUDENT_PORT: String(STUDENT_PORT),
-			VITE_SERVER_URL: API,
-			...opts.env,
-		},
-		shell: true,
+		env: buildChildEnv(process.env, {
+			apiPort: API_PORT,
+			webPort: WEB_PORT,
+			studentPort: STUDENT_PORT,
+			extraEnv: opts.env,
+		}),
 		stdio: ["ignore", "pipe", "pipe"],
-		...opts.spawn,
 	});
 	children.push(child);
 	childNames.set(child, name);
-	// Redact trên RAW buffer có carry-over đuôi (review #397 F4): nếu redact
-	// trên buf ĐÃ redact rồi slice, token cắt ngang biên slice mất tiền tố
-	// `token=` → đuôi token lọt log. rawTail giữ ~100 ký tự raw cuối để nối
-	// với chunk kế trước khi redact.
-	let rawTail = "";
-	let buf = "";
-	const collect = (d) => {
-		const raw = rawTail + d;
-		rawTail = raw.slice(-100);
-		// Pass 2 sau slice: slice(-4000) có thể cắt token giữa chừng — pass 2
-		// redact nút prefix còn lại trong buf.
-		buf = redactLog(redactLog(raw).slice(-4000));
-		outputTail.set(name, buf);
+	const collect = createLogCollector();
+	const onData = (d) => {
+		outputTail.set(name, collect(String(d)));
 	};
-	child.stdout.on("data", collect);
-	child.stderr.on("data", collect);
+	child.stdout.on("data", onData);
+	child.stderr.on("data", onData);
 	return child;
 }
-async function waitUrl(url, { timeoutMs = 150_000, name = url } = {}) {
+
+const childAlive = (c) => c.exitCode === null && c.signalCode === null;
+
+async function waitUrl(url, { timeoutMs = 150_000, name = url, child } = {}) {
 	const t0 = Date.now();
 	for (;;) {
+		// #546: child chết giữa lúc chờ (EADDRINUSE/crash) phải fail NGAY,
+		// không nhặt nhầm HTTP 200 của server phiên khác cùng port.
+		if (child && !childAlive(child)) {
+			throw new Error(
+				`${name} đã chết giữa lúc chờ (exit=${child.exitCode} signal=${child.signalCode})\n--- log ---\n${dumpLogs()}`,
+			);
+		}
 		try {
 			const res = await fetch(url);
 			if (res.ok || res.status === 304) return;
@@ -158,52 +158,142 @@ async function waitUrl(url, { timeoutMs = 150_000, name = url } = {}) {
 		}
 		if (Date.now() - t0 > timeoutMs) {
 			throw new Error(
-				`timeout chờ ${name} (${url})\n--- log ---\n${[...outputTail.entries()]
-					.map(([n, b]) => `## ${n}\n${b}`)
-					.join("\n")}`,
+				`timeout chờ ${name} (${url})\n--- log ---\n${dumpLogs()}`,
 			);
 		}
-		const { promise, resolve } = Promise.withResolvers();
-		setTimeout(resolve, 500);
-		await promise;
+		await new Promise((resolve) => setTimeout(resolve, 500));
 	}
 }
-function cleanup() {
-	for (const c of children) {
-		try {
-			// Âm pid = cả process group (xem detached ở start()); fallback pid dương
-			// cho trường hợp group đã tan hoặc Windows.
-			if (c.pid != null && process.platform !== "win32")
-				process.kill(-c.pid, "SIGTERM");
-			else c.kill("SIGTERM");
-		} catch {
-			/* gone */
-		}
-	}
-	if (!keepDesign) {
-		spawnSync("bash", [path.join(HERE, "fetch-design.sh"), "stop"], {
-			cwd: ROOT,
-			env: { ...process.env, DESIGN_PORT: String(DESIGN_PORT) },
-		});
-	}
-}
-process.on("exit", cleanup);
-process.on("SIGINT", () => process.exit(130));
-// Runner AI/timeout thường kill bằng SIGTERM hoặc đóng terminal (SIGHUP) —
-// 'exit' handler không chạy khi đó, các process group con thành orphan (#397:
-// chính kiểu orphan này dồn RAM/CPU gây máy quá tải). exit() để 'exit' chạy.
-process.on("SIGTERM", () => process.exit(143));
-process.on("SIGHUP", () => process.exit(129));
 
-// #402: dev server (api/web/student) chết giữa capture phải fail-loud NGAY
-// với log tail đầy đủ thay vì cascade connection-refused im lặng trên nửa
-// còn lại của run. KHÔNG restart ở đây: ảnh design phải deterministic
-// (quyết định kongming) — chết = hủy run, xem log, chạy lại.
-let childWatchdogTimer = null;
-function childAlive(c) {
-	return c.exitCode === null && c.signalCode === null;
+/** Backstop đồng bộ cho handler 'exit' — CHỈ kill đồng bộ, không async. */
+function syncBackstopCleanup() {
+	for (const c of [...children, ...activeChildren.values()]) {
+		if (!childAlive(c)) continue;
+		if (c.pid != null && process.platform !== "win32")
+			killProcessGroupSync(c.pid);
+		else c.kill("SIGKILL");
+	}
+	stopDesignSyncBackstop();
 }
+
+// #546: chốt đồng bộ chống rò rỉ design-v2 khi thoát qua process.exit đồng bộ
+// (uncaughtException khi shutdown async kịp chạy). Chỉ kill khi /proc xác nhận
+// cmdline là vite của port mình; /proc không có (macOS) → skip, không đoán.
+function stopDesignSyncBackstop() {
+	if (keepDesign || designAttemptPorts.size === 0) return;
+	// fetch-design.sh honor DESIGN_CACHE_DIR — backstop phải đọc đúng chỗ.
+	const cacheDir =
+		process.env.DESIGN_CACHE_DIR || path.join(ROOT, ".cache/design-v2");
+	for (const port of designAttemptPorts) {
+		const pidFile = path.join(cacheDir, `.pid-${port}`);
+		let pgidText = "";
+		try {
+			pgidText = readFileSync(pidFile, "utf8").trim();
+		} catch {
+			continue;
+		}
+		const pgid = Number(pgidText);
+		const pidAlive = (p) => {
+			try {
+				process.kill(p, 0);
+				return true;
+			} catch {
+				return false;
+			}
+		};
+		if (!Number.isInteger(pgid) || pgid <= 1 || !pidAlive(pgid)) {
+			rmSync(pidFile, { force: true });
+			continue;
+		}
+		if (process.platform === "linux") {
+			let cmdline = "";
+			try {
+				cmdline = readFileSync(`/proc/${pgid}/cmdline`, "utf8").replaceAll(
+					"\0",
+					" ",
+				);
+			} catch {
+				cmdline = "";
+			}
+			if (!cmdline.includes("vite") || !cmdline.includes(String(port)))
+				continue;
+		} else {
+			continue;
+		}
+		killProcessGroupSync(pgid);
+		rmSync(pidFile, { force: true });
+	}
+}
+
+/** Idempotent shutdown: một promise duy nhất cho mọi đường (signal,
+ * uncaught/unhandled, main().catch, kết thúc bình thường); deadline cứng 5s;
+ * song song từ t=0: browser.close (trần 2s) ∥ SIGTERM→SIGKILL groups ∥ design stop. */
+function shutdown(exitCode) {
+	if (shuttingDown) return shuttingDown;
+	shuttingDown = (async () => {
+		stopChildWatchdog();
+		// children (api/web/student) + activeChildren (design-seed.ts,
+		// fetch-design.sh đang chạy) — cả hai đều kill theo process group.
+		const killChildren = Promise.allSettled(
+			[...children, ...activeChildren.values()]
+				.filter(childAlive)
+				.map((c) =>
+					c.pid != null && process.platform !== "win32"
+						? killProcessGroup(c.pid, { graceMs: 2_000 })
+						: Promise.resolve(c.kill("SIGTERM")),
+				),
+		);
+		const closeBrowser = browser
+			? Promise.race([
+					browser.close().catch(() => {}),
+					new Promise((resolve) => setTimeout(resolve, 2_000)),
+				])
+			: Promise.resolve();
+		// #546 red-team: dừng MỌI port đã thử boot (kể cả port fail giữa chừng
+		// — SIGTERM trong window boot, verifyDesignV2Server throw, timeout) —
+		// stop tự xác minh danh tính + xoá pidfile, idempotent nên an toàn.
+		const stopDesign =
+			designAttemptPorts.size > 0 && !keepDesign
+				? (async () => {
+						for (const port of designAttemptPorts) {
+							await spawnAsync(
+								"bash",
+								[path.join(HERE, "fetch-design.sh"), "stop"],
+								{
+									cwd: ROOT,
+									env: { ...process.env, DESIGN_PORT: String(port) },
+									timeoutMs: 10_000,
+								},
+							).catch(() => {});
+						}
+					})()
+				: Promise.resolve();
+		await Promise.race([
+			Promise.allSettled([killChildren, closeBrowser, stopDesign]),
+			new Promise((resolve) => setTimeout(resolve, 5_000)),
+		]);
+		process.exit(exitCode);
+	})();
+	return shuttingDown;
+}
+
+process.on("exit", syncBackstopCleanup);
+process.on("SIGINT", () => void shutdown(130));
+process.on("SIGTERM", () => void shutdown(143));
+process.on("SIGHUP", () => void shutdown(129));
+process.on("uncaughtException", (err) => {
+	console.error(redactLog(String(err?.stack ?? err)));
+	void shutdown(1);
+});
+process.on("unhandledRejection", (err) => {
+	console.error(redactLog(String(err?.stack ?? err)));
+	void shutdown(1);
+});
+
+// #402: canh children trong suốt vùng boot/warm/seed/capture — bật ngay sau
+// khi từng service qua waitUrl (#546), không đợi tới vùng capture.
 function startChildWatchdog() {
+	if (childWatchdogTimer) return;
 	childWatchdogTimer = setInterval(() => {
 		const dead = children.find((c) => !childAlive(c));
 		if (!dead) return;
@@ -212,20 +302,15 @@ function startChildWatchdog() {
 		console.error(
 			`[harness] ${name} CHẾT giữa run (exit=${dead.exitCode} signal=${dead.signalCode}) — hủy phần còn lại, xem log tail dưới đây rồi chạy lại.`,
 		);
-		for (const [n, b] of outputTail)
-			console.error(`--- tail ${n} ---\n${redactLog(b)}`);
-		process.exit(1); // handler 'exit' chạy cleanup (kill process group + design)
+		console.error(dumpLogs());
+		void shutdown(1); // handler 'exit' chạy syncBackstopCleanup
 	}, 3000);
 }
 function stopChildWatchdog() {
-	if (childWatchdogTimer) {
-		clearInterval(childWatchdogTimer);
-		childWatchdogTimer = null;
-	}
+	clearInterval(childWatchdogTimer);
+	childWatchdogTimer = null;
 }
 
-// ── servers ──────────────────────────────────────────────────────────────
-const browser = await chromium.launch();
 // HTTP 200 của vite dev ≠ sẵn sàng cho browser: lần load đầu kích hoạt
 // dep-optimization và React có thể không mount trong ~30s. Warm bằng cách
 // chờ selector thật của trang auth trước khi seed/chụp.
@@ -239,84 +324,66 @@ async function warm(url, selector) {
 	}
 }
 
-const needApp = side === "app" || side === "both";
-if (needApp) {
-	console.log("[harness] boot api…");
-	start("api", "pnpm --filter e2e run boot:api", {
-		env: { E2E_HOSTNAME: "127.0.0.1" },
+// ── boot helpers (#546) ──────────────────────────────────────────────────
+/** true khi có listener trên [::1]:port — chặn Happy-Eyeballs hijack khi
+ * localhost phân giải IPv6 (probe đơn giản, theo khuyến nghị kongming). */
+function ipv6LoopbackListening(port) {
+	return new Promise((resolve) => {
+		const s = net.connect({ host: "::1", port });
+		const done = (v) => {
+			s.destroy();
+			resolve(v);
+		};
+		s.setTimeout(500, () => done(false));
+		s.on("error", () => done(false));
+		s.on("connect", () => done(true));
 	});
-	await waitUrl(`${API}/readyz`, { name: "api" });
-	console.log("[harness] boot web…");
-	start("web", `pnpm --filter web exec vite --port ${WEB_PORT} --strictPort`);
-	await waitUrl(`${WEB}/`, { name: "web" });
-	console.log("[harness] boot student…");
-	start(
-		"student",
-		`pnpm --filter student exec vite --port ${STUDENT_PORT} --strictPort`,
-	);
-	await waitUrl(`${STUDENT}/login`, { name: "student" });
-	await warm(`${WEB}/login`, "#su-name");
-	// #397: chưa có session nên /dashboard redirect về /login?returnUrl —
-	// warm được shared graph (router, auth client, auth gate). Chunk riêng của
-	// dashboard vẫn lạnh; vòng kernel-wait của design-seed phủ phần đó.
-	await warm(`${WEB}/dashboard`, "#su-name");
-	await warm(`${STUDENT}/login`, "#tab-signup");
+}
 
-	console.log("[harness] seed dữ liệu so sánh…");
-	const seeded = spawnSync(
-		"pnpm",
-		["--filter", "e2e", "exec", "tsx", "scripts/design-seed.ts"],
-		{
-			cwd: ROOT,
-			env: {
-				...process.env,
-				E2E_API_PORT: String(API_PORT),
-				E2E_WEB_PORT: String(WEB_PORT),
-				E2E_STUDENT_PORT: String(STUDENT_PORT),
+/** Boot design-v2 trên port trống: retry CHỈ khi fetch-design.sh trả exit 3
+ * (port bận — kể cả design-v2 của phiên khác nhờ DESIGN_NO_REUSE=1); các lỗi
+ * khác (clone/auth) fail ngay. Trả port đã verify chữ ký. */
+async function bootDesignServer() {
+	const tried = new Set();
+	for (let attempt = 1; attempt <= 3; attempt++) {
+		const port = await probeFreePort({ excludePorts: tried });
+		tried.add(port);
+		designAttemptPorts.add(port);
+		console.log(`[harness] design v2 port ${port} (lần ${attempt})…`);
+		const r = await spawnAsync(
+			"bash",
+			[path.join(HERE, "fetch-design.sh"), "run"],
+			{
+				cwd: ROOT,
+				env: {
+					...process.env,
+					DESIGN_PORT: String(port),
+					DESIGN_NO_REUSE: "1",
+				},
+				timeoutMs: 300_000,
+				onChild: (c) => activeChildren.set("fetch-design", c),
 			},
-			encoding: "utf8",
-			// #397 review: worst-case seed = 60s waitForURL + 120s kernel wait +
-			// ~22s DB busy-retry + thân seed (~44s khoẻ) → 300s cũ có thể SIGTERM
-			// giữa chừng đúng trên máy đang tải mà issue nhắm tới.
-			timeout: 420_000,
-		},
-	);
-	if (seeded.status !== 0) {
-		console.error(
-			`[harness] seed thất bại:\n${redactLog(String(seeded.stdout))}\n${redactLog(String(seeded.stderr))}\n--- log stack (api/web/student) ---\n${[
-				...outputTail.entries(),
-			]
-				.map(([n, b]) => `## ${n}\n${b}`)
-				.join("\n")}`,
 		);
-		process.exit(1);
-	}
-	seed = JSON.parse(await readFile(SEED_FILE, "utf8"));
-	console.log("[harness] seed xong");
-}
-if (side === "design" || side === "both") {
-	console.log("[harness] design v2…");
-	const r = spawnSync("bash", [path.join(HERE, "fetch-design.sh"), "run"], {
-		cwd: ROOT,
-		env: { ...process.env, DESIGN_PORT: String(DESIGN_PORT) },
-		encoding: "utf8",
-		timeout: 300_000,
-	});
-	if (r.status !== 0) {
-		console.error(
-			`[harness] design v2 không chạy được:\n${r.stdout}\n${r.stderr}`,
+		activeChildren.delete("fetch-design");
+		if (r.code === 0) {
+			const sig = await verifyDesignV2Server(`http://127.0.0.1:${port}`);
+			if (!sig.ok) {
+				throw new Error(
+					`design v2 không có chữ ký mong đợi trên :${port}: ${sig.reason}`,
+				);
+			}
+			designFetched = true;
+			return port;
+		}
+		if (r.code === 3) continue; // port bận → thử port khác
+		throw new Error(
+			`design v2 không chạy được (code=${r.code}):\n${redactLog(r.log)}`,
 		);
-		process.exit(1);
 	}
-	await waitUrl(`${DESIGN}/`, { name: "design v2" });
+	throw new Error("hết 3 lần thử không cấp được port trống cho design v2");
 }
 
-// ── capture ──────────────────────────────────────────────────────────────
-await mkdir(RAW, { recursive: true });
-await mkdir(SHOTS, { recursive: true });
-const failures = [];
-const done = [];
-
+// ── capture helpers ──────────────────────────────────────────────────────
 async function newPage(browser, { url, theme, viewport, storageState }) {
 	const ctx = await browser.newContext({
 		viewport: { width: viewport[0], height: viewport[1] },
@@ -372,17 +439,20 @@ async function runSteps(page, steps) {
 
 async function shoot(page, file) {
 	await page.screenshot({ path: file, fullPage: true });
+	// #546: pixel sanity check — ảnh trắng/rỗng (kể cả viền/badge góc nhỏ) bị
+	// xoá khỏi .state/raw rồi throw, không được tính là success.
+	await assertNonBlankPngFile(file, PNG);
 }
 
-// Ghép các PNG thành một ảnh ngang với nhãn cột.
-async function compose(outFile, columns) {
+// Ghép các PNG thành một ảnh ngang với nhãn cột — tái sử dụng browser chính
+// (ctx.close() trong finally, KHÔNG browser.close() — #546 red-team).
+async function compose(browser, outFile, columns) {
 	const cols = columns.filter(Boolean);
 	if (cols.length === 0) return;
-	const browser = await chromium.launch();
+	let ctx;
 	try {
-		const page = await browser.newPage({
-			viewport: { width: 1400, height: 900 },
-		});
+		ctx = await browser.newContext({ viewport: { width: 1400, height: 900 } });
+		const page = await ctx.newPage();
 		const imgs = await Promise.all(
 			cols.map(async (c) => ({
 				...c,
@@ -405,15 +475,133 @@ ${imgs
 		await page.waitForTimeout(300);
 		await page.screenshot({ path: outFile, fullPage: true });
 	} finally {
-		await browser.close();
+		if (ctx) await ctx.close().catch(() => {});
 	}
 }
 
-// #402: canh children trong suốt vùng capture (app + design + compose) —
-// chỉ khi needApp vì side=design không có app server nào để canh.
-if (needApp) startChildWatchdog();
+// ── main pipeline ────────────────────────────────────────────────────────
+let API_PORT;
+let WEB_PORT;
+let STUDENT_PORT;
+let WEB;
+let STUDENT;
+let API;
+let DESIGN;
 
-try {
+async function main() {
+	// #546: .state chứa storageState cookie phiên — mode 0o700 kể cả khi dir
+	// đã tồn tại từ lần chạy cũ.
+	ensurePrivateDir(STATE);
+	// Chromium KHÔNG tự xử lý tín hiệu: shutdown() là chủ duy nhất (#546).
+	browser = await chromium.launch({
+		handleSIGINT: false,
+		handleSIGTERM: false,
+		handleSIGHUP: false,
+	});
+
+	const needApp = side === "app" || side === "both";
+	if (needApp) {
+		API_PORT = await probeFreePort();
+		WEB_PORT = await probeFreePort({ excludePorts: new Set([API_PORT]) });
+		STUDENT_PORT = await probeFreePort({
+			excludePorts: new Set([API_PORT, WEB_PORT]),
+		});
+		API = `http://localhost:${API_PORT}`;
+		WEB = `http://localhost:${WEB_PORT}`;
+		STUDENT = `http://localhost:${STUDENT_PORT}`;
+		console.log("[harness] boot api…");
+		const apiChild = start(
+			"api",
+			"pnpm",
+			["--filter", "e2e", "run", "boot:api"],
+			{
+				env: { E2E_HOSTNAME: "127.0.0.1" },
+			},
+		);
+		await waitUrl(`${API}/readyz`, { name: "api", child: apiChild });
+		startChildWatchdog();
+		// localhost phân giải ::1 trước 127.0.0.1 trên một số máy — listener
+		// lạ trên [::1]:API_PORT sẽ hijack cả auth flow (Happy-Eyeballs).
+		if (await ipv6LoopbackListening(API_PORT)) {
+			throw new Error(
+				`api :${API_PORT} cũng bị nghe trên [::1] (localhost dual-stack) — dừng để tránh hijack`,
+			);
+		}
+		console.log("[harness] boot web…");
+		const webChild = start("web", "pnpm", [
+			"--filter",
+			"web",
+			"exec",
+			"vite",
+			"--host",
+			"127.0.0.1",
+			"--port",
+			String(WEB_PORT),
+			"--strictPort",
+		]);
+		await waitUrl(`${WEB}/`, { name: "web", child: webChild });
+		startChildWatchdog();
+		console.log("[harness] boot student…");
+		const studentChild = start("student", "pnpm", [
+			"--filter",
+			"student",
+			"exec",
+			"vite",
+			"--host",
+			"127.0.0.1",
+			"--port",
+			String(STUDENT_PORT),
+			"--strictPort",
+		]);
+		await waitUrl(`${STUDENT}/login`, { name: "student", child: studentChild });
+		startChildWatchdog();
+		await warm(`${WEB}/login`, "#su-name");
+		// #397: chưa có session nên /dashboard redirect về /login?returnUrl —
+		// warm được shared graph (router, auth client, auth gate). Chunk riêng của
+		// dashboard vẫn lạnh; vòng kernel-wait của design-seed phủ phần đó.
+		await warm(`${WEB}/dashboard`, "#su-name");
+		await warm(`${STUDENT}/login`, "#tab-signup");
+
+		console.log("[harness] seed dữ liệu so sánh…");
+		const seeded = await spawnAsync(
+			"pnpm",
+			["--filter", "e2e", "exec", "tsx", "scripts/design-seed.ts"],
+			{
+				cwd: ROOT,
+				env: buildChildEnv(process.env, {
+					apiPort: API_PORT,
+					webPort: WEB_PORT,
+					studentPort: STUDENT_PORT,
+				}),
+				// #397 review: worst-case seed = 60s waitForURL + 120s kernel wait +
+				// ~22s DB busy-retry + thân seed (~44s khoẻ) → 300s cũ có thể SIGTERM
+				// giữa chừng đúng trên máy đang tải mà issue nhắm tới.
+				timeoutMs: 420_000,
+				onChild: (c) => activeChildren.set("design-seed", c),
+			},
+		);
+		activeChildren.delete("design-seed");
+		if (seeded.code !== 0) {
+			console.error(
+				`[harness] seed thất bại (code=${seeded.code} signal=${seeded.signal}):\n${redactLog(
+					seeded.log,
+				)}\n--- log stack (api/web/student) ---\n${dumpLogs()}`,
+			);
+			return 1;
+		}
+		seed = JSON.parse(await readFile(SEED_FILE, "utf8"));
+		console.log("[harness] seed xong");
+	}
+	if (side === "design" || side === "both") {
+		console.log("[harness] design v2…");
+		designPort = await bootDesignServer();
+		DESIGN = `http://127.0.0.1:${designPort}`;
+	}
+
+	// ── capture ──
+	await mkdir(RAW, { recursive: true });
+	await mkdir(SHOTS, { recursive: true });
+
 	// ── app side ──
 	if (needApp) {
 		// Teacher: đăng nhập một lần (desktop/light) rồi dùng lại storageState.
@@ -430,6 +618,7 @@ try {
 			await page.getByRole("button", { name: "Sign in" }).click();
 			await page.waitForURL(/\/dashboard/, { timeout: 30_000 });
 			await ctx.storageState({ path: teacherAuth });
+			await chmod(teacherAuth, 0o600); // #546: cookie phiên sống — mode 0600
 			await ctx.close();
 		}
 		const studentAuth = path.join(STATE, "student.json");
@@ -447,6 +636,7 @@ try {
 				timeout: 30_000,
 			});
 			await ctx.storageState({ path: studentAuth });
+			await chmod(studentAuth, 0o600);
 			await ctx.close();
 		}
 
@@ -492,90 +682,86 @@ try {
 						sc.id,
 						`${vpName}-${theme}.png`,
 					);
-					if (!existsSync(rawFile)) {
-						console.log(`[harness] app ${label} ${sc.id}/${vpName}-${theme}…`);
+					// #546: --force bỏ qua cache raw — xoá TRƯỚC khi navigate để
+					// lỗi giữa chừng không để lại raw stale cho lần ghép sau.
+					if (force) await rm(rawFile, { force: true });
+					if (!force && existsSync(rawFile)) continue;
+					console.log(`[harness] app ${label} ${sc.id}/${vpName}-${theme}…`);
+					try {
+						if (sc.auth === "teacher") {
+							await tPage.goto(`${WEB}${fill(sc.app)}`, { waitUntil: "load" });
+						} else if (sc.auth === "student") {
+							await sPage.goto(`${STUDENT}${fill(sc.app)}`, {
+								waitUntil: "load",
+							});
+						} else {
+							await aPage.goto(`${WEB}${fill(sc.app)}`, { waitUntil: "load" });
+						}
+						await settle(
+							sc.auth === "student"
+								? sPage
+								: sc.auth === "teacher"
+									? tPage
+									: aPage,
+						);
+						const stepPage =
+							sc.auth === "student"
+								? sPage
+								: sc.auth === "teacher"
+									? tPage
+									: aPage;
+						// #403: màn khai báo nonMutating phải zero POST check-in —
+						// đo bằng máy thay vì tin rằng không có click lạc (ràng buộc
+						// cốt lõi của issue: 6 viewport phải cùng trạng thái seed).
+						let checkInPosts = 0;
+						const onCheckIn = (req) => {
+							if (req.method() === "POST" && /\/check-in(\?|$)/.test(req.url()))
+								checkInPosts++;
+						};
+						if (sc.nonMutating) stepPage.on("request", onCheckIn);
 						try {
-							if (sc.auth === "teacher") {
-								await tPage.goto(`${WEB}${fill(sc.app)}`, {
-									waitUntil: "load",
-								});
-							} else if (sc.auth === "student") {
-								await sPage.goto(`${STUDENT}${fill(sc.app)}`, {
-									waitUntil: "load",
-								});
-							} else {
-								await aPage.goto(`${WEB}${fill(sc.app)}`, {
-									waitUntil: "load",
-								});
-							}
-							await settle(
-								sc.auth === "student"
-									? sPage
-									: sc.auth === "teacher"
-										? tPage
-										: aPage,
-							);
-							const stepPage =
+							await runSteps(stepPage, sc.appSteps);
+							if (sc.nonMutating && checkInPosts > 0)
+								throw new Error(
+									`non-mutating screen bị POST /check-in ×${checkInPosts}`,
+								);
+						} finally {
+							if (sc.nonMutating) stepPage.off("request", onCheckIn);
+						}
+						await shoot(stepPage, rawFile);
+						done.push(`${sc.id}/${vpName}-${theme} (app)`);
+					} catch (err) {
+						failedShots.add(`${sc.id}/${vpName}-${theme}`);
+						failures.push(
+							`app ${sc.id}/${vpName}-${theme}: ${redactLog(String(err).split("\n")[0])}`,
+						);
+						try {
+							const dbg =
 								sc.auth === "student"
 									? sPage
 									: sc.auth === "teacher"
 										? tPage
 										: aPage;
-							// #403: màn khai báo nonMutating phải zero POST check-in —
-							// đo bằng máy thay vì tin rằng không có click lạc (ràng buộc
-							// cốt lõi của issue: 6 viewport phải cùng trạng thái seed).
-							let checkInPosts = 0;
-							const onCheckIn = (req) => {
-								if (
-									req.method() === "POST" &&
-									/\/check-in(\?|$)/.test(req.url())
-								)
-									checkInPosts++;
-							};
-							if (sc.nonMutating) stepPage.on("request", onCheckIn);
-							try {
-								await runSteps(stepPage, sc.appSteps);
-								if (sc.nonMutating && checkInPosts > 0)
-									throw new Error(
-										`non-mutating screen bị POST /check-in ×${checkInPosts}`,
-									);
-							} finally {
-								if (sc.nonMutating) stepPage.off("request", onCheckIn);
-							}
-							await shoot(stepPage, rawFile);
-							done.push(`${sc.id}/${vpName}-${theme} (app)`);
-						} catch (err) {
-							failures.push(
-								`app ${sc.id}/${vpName}-${theme}: ${String(err).split("\n")[0]}`,
+							await mkdir(path.join(STATE, "debug"), { recursive: true });
+							await dbg.screenshot({
+								path: path.join(
+									STATE,
+									"debug",
+									`${sc.id}-${vpName}-${theme}.png`,
+								),
+								fullPage: true,
+							});
+							console.log(
+								`[harness] debug ${sc.id}: url=${redactLog(dbg.url())} buttons=`,
+								(
+									await dbg
+										.locator("button >> visible=true")
+										.allTextContents()
+										.catch(() => [])
+								).slice(0, 20),
 							);
-							try {
-								const dbg =
-									sc.auth === "student"
-										? sPage
-										: sc.auth === "teacher"
-											? tPage
-											: aPage;
-								await mkdir(path.join(STATE, "debug"), { recursive: true });
-								await dbg.screenshot({
-									path: path.join(
-										STATE,
-										"debug",
-										`${sc.id}-${vpName}-${theme}.png`,
-									),
-									fullPage: true,
-								});
-								console.log(
-									`[harness] debug ${sc.id}: url=${dbg.url()} buttons=`,
-									(
-										await dbg
-											.locator("button >> visible=true")
-											.allTextContents()
-											.catch(() => [])
-									).slice(0, 20),
-								);
-							} catch {
-								/* debug dump thất bại — bỏ qua */
-							}
+						} catch {
+							/* debug dump thất bại — bỏ qua */
 						}
 					}
 				}
@@ -604,7 +790,8 @@ try {
 						sc.id,
 						`${vpName}-${theme}.png`,
 					);
-					if (existsSync(rawFile)) continue;
+					if (force) await rm(rawFile, { force: true });
+					if (!force && existsSync(rawFile)) continue;
 					console.log(`[harness] design ${sc.id}/${vpName}-${theme}…`);
 					try {
 						// Làm mới SPA về trạng thái đăng nhập + portal đúng cho màn.
@@ -636,8 +823,9 @@ try {
 						await shoot(page, rawFile);
 						done.push(`${sc.id}/${vpName}-${theme} (design)`);
 					} catch (err) {
+						failedShots.add(`${sc.id}/${vpName}-${theme}`);
 						failures.push(
-							`design ${sc.id}/${vpName}-${theme}: ${String(err).split("\n")[0]}`,
+							`design ${sc.id}/${vpName}-${theme}: ${redactLog(String(err).split("\n")[0])}`,
 						);
 					}
 				}
@@ -651,10 +839,9 @@ try {
 		for (const sc of screens) {
 			for (const [vpName] of Object.entries(cfg.viewports)) {
 				for (const theme of cfg.themes) {
+					const cellKey = `${sc.id}/${vpName}-${theme}`;
 					const outDir = path.join(SHOTS, sc.id);
 					const outFile = path.join(outDir, `${vpName}-${theme}.png`);
-					if (existsSync(outFile)) continue;
-					console.log(`[harness] ghép ${sc.id}/${vpName}-${theme}…`);
 					const designFile = path.join(
 						RAW,
 						"design",
@@ -669,10 +856,35 @@ try {
 					);
 					const newFile = path.join(
 						RAW,
-						"new",
+						label,
 						sc.id,
 						`${vpName}-${theme}.png`,
 					);
+					// #546 red-team: cell thiếu raw bắt buộc (app hoặc design) hoặc
+					// thuộc failedShots → ghi lỗi, KHÔNG ghép cột thiếu. Key so khớp
+					// chính xác (tránh trùng prefix t-syllabus / t-syllabus-detail);
+					// check failedShots TRƯỚC để cell chụp lỗi không bị đếm lỗi 2 lần.
+					if (failedShots.has(cellKey)) continue;
+					const missing = [];
+					if (!existsSync(newFile)) missing.push(newFile);
+					if (
+						sc.design &&
+						!sc.design.skipViewports?.includes(vpName) &&
+						!existsSync(designFile)
+					)
+						missing.push(designFile);
+					if (missing.length > 0) {
+						failures.push(
+							`ghép ${cellKey}: thiếu raw bắt buộc ${missing.join(", ")}`,
+						);
+						continue;
+					}
+					const candidateFiles = [designFile, oldFile, newFile].filter((f) =>
+						existsSync(f),
+					);
+					if (candidateFiles.length === 0) continue;
+					if (!shouldCompose(outFile, candidateFiles, { force })) continue;
+					console.log(`[harness] ghép ${cellKey}…`);
 					const cols = [];
 					if (sc.design !== null && existsSync(designFile))
 						cols.push({ title: "Design v2", file: designFile });
@@ -682,61 +894,52 @@ try {
 						cols.push({ title: "App mới", file: newFile });
 					if (cols.length === 0) continue;
 					await mkdir(outDir, { recursive: true });
-					await compose(outFile, cols);
-					done.push(`${sc.id}/${vpName}-${theme} (ghép)`);
+					await compose(browser, outFile, cols);
+					done.push(`${cellKey} (ghép)`);
 				}
 			}
 		}
 	}
-} catch (err) {
-	// #402: uncaught ở đây thường là server đã chết (page.goto
-	// ERR_CONNECTION_REFUSED thoát nhanh hơn interval 3s của watchdog).
-	// Child nào đã chết → dump log tail (redact) rồi exit 1 thay vì crash
-	// khô khan không ngữ cảnh. Không có child chết → lỗi harness thật, rethrow.
-	stopChildWatchdog();
-	const dead = children.find((c) => !childAlive(c));
-	if (dead) {
-		const name = childNames.get(dead) ?? "unknown";
-		console.error(
-			`[harness] ${name} CHẾT giữa run (exit=${dead.exitCode} signal=${dead.signalCode}) — hủy phần còn lại, xem log tail dưới đây rồi chạy lại.`,
+
+	// ── verdict scaffold ──
+	if (!existsSync(VERDICT)) {
+		const rows = cfg.screens
+			.flatMap((s) =>
+				Object.keys(cfg.viewports).flatMap((vp) =>
+					cfg.themes.map((th) => `| ${s.id} | ${vp}×${th} | TODO | |`),
+				),
+			)
+			.join("\n");
+		await mkdir(path.dirname(VERDICT), { recursive: true });
+		await writeFile(
+			VERDICT,
+			`# Verdict đối chiếu design v2 ↔ app\n\nMỗi dòng: PASS khi ảnh ghép thỏa checklist cấu trúc (phase 1) ở tổ hợp đó. FAIL phải có ghi chú nguyên nhân.\n\n| Màn | viewport×theme | Trạng thái | Ghi chú |\n|---|---|---|---|\n${rows}\n`,
 		);
-		for (const [n, b] of outputTail)
-			console.error(`--- tail ${n} ---\n${redactLog(b)}`);
-		process.exit(1);
 	}
-	throw err;
-} finally {
-	// ĐẦU tiên: ngừng watchdog trước mọi việc khác để child chết đúng khoảnh
-	// khắc shutdown không bắn exit(1) giữa browser.close() (#402 red-team).
-	stopChildWatchdog();
-	await browser.close();
+
+	console.log(`[harness] xong: ${done.length} ảnh, ${failures.length} lỗi`);
+	if (failures.length) {
+		await writeFile(
+			path.join(STATE, "errors.log"),
+			`${failures.map((f) => redactLog(f)).join("\n")}\n`,
+		);
+		console.log(`[harness] lỗi ghi ở ${path.join(STATE, "errors.log")}:`);
+		for (const f of failures.slice(0, 20)) console.log(`  - ${f}`);
+	} else {
+		// #403: errors.log stale của run fail trước không được FAIL run sạch sau.
+		await rm(path.join(STATE, "errors.log"), { force: true });
+	}
+	return failures.length ? 1 : 0;
 }
 
-// ── verdict scaffold ─────────────────────────────────────────────────────
-if (!existsSync(VERDICT)) {
-	const rows = cfg.screens
-		.flatMap((s) =>
-			Object.keys(cfg.viewports).flatMap((vp) =>
-				cfg.themes.map((th) => `| ${s.id} | ${vp}×${th} | TODO | |`),
-			),
-		)
-		.join("\n");
-	await mkdir(path.dirname(VERDICT), { recursive: true });
-	await writeFile(
-		VERDICT,
-		`# Verdict đối chiếu design v2 ↔ app\n\nMỗi dòng: PASS khi ảnh ghép thỏa checklist cấu trúc (phase 1) ở tổ hợp đó. FAIL phải có ghi chú nguyên nhân.\n\n| Màn | viewport×theme | Trạng thái | Ghi chú |\n|---|---|---|---|\n${rows}\n`,
-	);
-}
-
-console.log(`[harness] xong: ${done.length} ảnh, ${failures.length} lỗi`);
-if (failures.length) {
-	await writeFile(path.join(STATE, "errors.log"), `${failures.join("\n")}\n`);
-	console.log(`[harness] lỗi ghi ở ${path.join(STATE, "errors.log")}:`);
-	for (const f of failures.slice(0, 20)) console.log(`  - ${f}`);
-} else {
-	// #403: errors.log stale của run fail trước không được FAIL run sạch sau.
-	await rm(path.join(STATE, "errors.log"), { force: true });
-}
-// child spawn (api/web/student/design) giữ event loop sống mãi — thoát tường minh;
-// listener 'exit' ở trên chạy cleanup (SIGTERM + stop design).
-process.exit(failures.length ? 1 : 0);
+main().then(
+	(code) => {
+		// child spawn (api/web/student/design) giữ event loop sống mãi — thoát
+		// tường minh qua shutdown (SIGTERM → SIGKILL groups + design stop).
+		void shutdown(code ?? 0);
+	},
+	(err) => {
+		console.error(redactLog(String(err?.stack ?? err)));
+		void shutdown(1);
+	},
+);

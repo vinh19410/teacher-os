@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Phase 2: Fetch-Design & Capture Integration + Smoke Verification"
-status: todo
+status: completed
 priority: P1
 effort: "1.5h"
 dependencies: [1]

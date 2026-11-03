@@ -1,7 +1,7 @@
 ---
 title: "#546: Harden design-compare harness for shared multi-agent hosts"
 description: "Sửa 5 điểm gãy của harness design:compare trên máy nhiều session song song: thiếu VITE_TEACHER_SIGNUP_ENABLED, tin nhầm listener lạ, skip compose khi ảnh stale, bỏ lọt PNG trắng/rỗng, và sót tiến trình mồ côi khi fail/timeout."
-status: pending
+status: completed
 priority: P1
 effort: 3h
 issue: 546
@@ -106,6 +106,25 @@ Sửa toàn diện 5 nguyên nhân khiến `pnpm run design:compare` thất bạ
 - **GO** cho `ak-fix --auto --advice` rồi `ak-ship beta --advice`.
 - Rủi ro cao nhất: rewrite lifecycle `capture.mjs` (Task 2.3) — yêu cầu shutdown idempotent một promise, không async trong `'exit'`, smoke SIGTERM chạy trước khi tuyên bố xong, deadline cứng ~5s cho shutdown. Đã áp vào Task 2.3 bước 5.
 - Tinh chỉnh đã áp: (1) `[::1]:API_PORT` rút gọn thành 1 probe trước/sau boot, bỏ nếu >20 dòng; (2) `DESIGN_NO_REUSE`/exit-3 giữ ở mức tối thiểu — gộp test port bận còn 1 ca (nội dung lạ + chữ ký đúng) + 1 ca stale-pid; (3) `redactLog` mở rộng giữ nguyên, test table-driven; (4) `ensurePrivateDir` chmod cả thư mục đã tồn tại, không walk đệ quy.
+
+### Implementation notes (ak-fix, 2026-11-03)
+- `minNonDominantRatio` mặc định **0.01** (plan ghi 0.005): đo thực tế trên 8 ảnh committed của repo, min nonDominant = 4.358% → ngưỡng 1% vẫn còn margin 4.3x và chặn được viền 2px (0.72%) + badge devtools (0.12–0.64%).
+- `PORT="${DESIGN_PORT-8200}"` (plan ghi `:-`): `DESIGN_PORT=""` tường minh phải exit 2 fail-loud, không lặng lẽ boot port 8200 — chính hành vi này đã sinh orphan design-v2 thật trong lần thử test đầu.
+- Test tích hợp `fetch-design.sh` **bắt buộc spawn bất đồng bộ**: `spawnSync` trong process test block event loop → fake HTTP server cùng process không trả lời được curl → timeout giả. Đúng lớp lỗi mà #546 sửa trong `capture.mjs` — dùng làm regression lesson.
+- SIGTERM smoke lần đầu bắn ra leak `design-seed.ts` (tsx) — implementation ban đầu thiếu `activeChildren` trong kill list của `shutdown()`/backstop (plan đã ghi đúng); vá xong smoke cho 0 orphan.
+
+### Code review fixes (ak-code-review --pending --advice, 2026-11-03)
+- **Important (đã sửa):** leak design-v2 trên các đường fail khi `designPort` chưa gán (SIGTERM trong window boot, `verifyDesignV2Server` throw, timeout) → thêm `designAttemptPorts` (module scope, ghi nhận trước khi spawn); `shutdown()` và backstop dừng/kiểm tra **mọi** port đã thử qua `.pid-$PORT` + xác minh danh tính; backstop honor `DESIGN_CACHE_DIR`.
+- Minor đã sửa: dedupe lỗi cell (check `failedShots` trước missing-raw); test run/stop lifecycle qua fake `pnpm` + hook `DESIGN_V2_SHA` (chỉ test); test `killProcessGroup` no-op với pgid đã reap; `--label` lowercase-only; `--max-filesize 256KiB` cho curl chữ ký; identity check siết `*vite*"--port $PORT"*`; `stop_by_pgid` ở nhánh vite-chết-sớm.
+- Deviation đã ghi: vòng chờ readiness `fetch-design.sh` là ~100s (plan ghi 60s) — vô hại vì `spawnAsync` timeout 300s vẫn chặn tổng.
+- Chấp nhận (plan-sanctioned "không đoán"): leader chết (OOM) nhưng member sống sót trong group → stop bỏ qua (không có cmdline để xác minh); `[::1]:API_PORT` probe giữ nguyên (single probe, kongming-approved).
+
+### Verification evidence (Task 2.4)
+- Unit + integration: `pnpm test:design-compare` → **23/23 pass** (22 test + 1 lifecycle run/stop).
+- Smoke bình thường (`--screens login-teacher --force`): exit **0**, `18 ảnh, 0 lỗi`, mtime compose tăng (1793703290 → 1793711105), `.dev-38561.log` chỉ có `Local: http://127.0.0.1:38561/` (không 0.0.0.0), cache dir mode 0700, log 0600, `.pid-38561` tự xoá sau stop.
+- Smoke blank-PNG (chạy giữa máy tải cao do phiên agent khác): ảnh tablet-light trắng 99.99% / tablet-dark đồng màu 100% bị `assertNonBlankPngFile` xoá + fail-loud exit 1 kèm tỷ lệ pixel, cell ghép tương ứng báo thiếu raw — **Goal #4 hoạt động thật** (harness cũ đã báo "0 lỗi"); rate blank ~1 ảnh/run trên máy đang tải → caller chạy lại (nhất quán #402 "chết = hủy run").
+- Smoke SIGTERM: exit **143**, `pgrep` scoped bracket → **0 orphan** (sau vá `activeChildren`).
+- `pnpm exec biome check .` không lỗi (104 warning/15 info là tồn tại sẵn của repo); `pnpm check-types` 8/8 task pass; full `pnpm test` exit 0.
 
 ## Success Criteria
 
