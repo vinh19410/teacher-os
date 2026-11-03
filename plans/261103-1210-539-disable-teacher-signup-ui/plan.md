@@ -1,7 +1,7 @@
 ---
 title: "#539: Tắt đăng ký tài khoản ở giao diện auth giáo viên"
 description: "Ẩn tab 'Create account', form đăng ký và link 'Create an account' ở /login của apps/web bằng cờ build-time VITE_TEACHER_SIGNUP_ENABLED (mặc định tắt), giữ e2e chạy bình thường bằng cách bật cờ trong dev server của e2e."
-status: pending
+status: done
 priority: P2
 effort: 3h
 issue: 539

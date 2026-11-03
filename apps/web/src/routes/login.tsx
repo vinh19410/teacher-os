@@ -8,6 +8,7 @@ import Loader from "@/components/loader";
 import SignInForm from "@/components/sign-in-form";
 import SignUpForm from "@/components/sign-up-form";
 import { authClient } from "@/lib/auth-client";
+import { TEACHER_SIGNUP_ENABLED } from "@/lib/features";
 
 const TAB_STORAGE_KEY = "teacher-os-auth-tab";
 
@@ -34,6 +35,9 @@ function RouteComponent() {
 	const navigate = Route.useNavigate();
 	const { returnUrl, error, error_description } = Route.useSearch();
 	const [mode, setMode] = useState<AuthMode>(() => {
+		// Single-org (#539): khi cờ tắt, chỉ còn đăng nhập — bỏ qua cả lựa chọn
+		// "signup" cũ trong localStorage để không kẹt ở chế độ không tồn tại.
+		if (!TEACHER_SIGNUP_ENABLED) return "signin";
 		try {
 			const stored = localStorage.getItem(TAB_STORAGE_KEY);
 			return stored === "signin" || stored === "signup" ? stored : "signup";
@@ -82,7 +86,9 @@ function RouteComponent() {
 				</p>
 			</div>
 
-			<AuthTabs mode={mode} onChange={changeMode} disabled={anySubmitting} />
+			{TEACHER_SIGNUP_ENABLED && (
+				<AuthTabs mode={mode} onChange={changeMode} disabled={anySubmitting} />
+			)}
 
 			<div
 				aria-hidden="true"
@@ -99,22 +105,28 @@ function RouteComponent() {
 				hidden={mode !== "signin"}
 				onSubmittingChange={setAnySubmitting}
 			/>
-			<SignUpForm
-				hidden={mode !== "signup"}
-				onSubmittingChange={setAnySubmitting}
-			/>
+			{TEACHER_SIGNUP_ENABLED && (
+				<SignUpForm
+					hidden={mode !== "signup"}
+					onSubmittingChange={setAnySubmitting}
+				/>
+			)}
 
-			<p className="text-center text-muted-foreground text-sm">
-				{mode === "signin" ? "New to Teacher OS?" : "Already have an account?"}{" "}
-				<button
-					type="button"
-					disabled={anySubmitting}
-					onClick={() => changeMode(mode === "signin" ? "signup" : "signin")}
-					className="font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
-				>
-					{mode === "signin" ? "Create an account" : "Sign in"}
-				</button>
-			</p>
+			{TEACHER_SIGNUP_ENABLED && (
+				<p className="text-center text-muted-foreground text-sm">
+					{mode === "signin"
+						? "New to Teacher OS?"
+						: "Already have an account?"}{" "}
+					<button
+						type="button"
+						disabled={anySubmitting}
+						onClick={() => changeMode(mode === "signin" ? "signup" : "signin")}
+						className="font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
+					>
+						{mode === "signin" ? "Create an account" : "Sign in"}
+					</button>
+				</p>
+			)}
 		</WebAuthShell>
 	);
 }

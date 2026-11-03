@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Giữ e2e xanh, test cờ và ghi chú vận hành"
-status: pending
+status: done
 priority: P2
 effort: "1h"
 dependencies: [1]
@@ -22,7 +22,7 @@ E2E vẫn đăng ký giáo viên qua giao diện được; có test khoá hành 
 
 ## Steps
 
-1. Thêm biến vào hai nơi khởi dựng web dev server của e2e; xác nhận không còn nơi thứ ba (`grep -rn VITE_AI_ENABLED apps/e2e .github`) — nếu có thì thêm tương ứng.
+1. Thêm biến vào **ba** nơi khởi dựng web dev server của e2e/verify: `apps/e2e/playwright.config.ts`, `apps/e2e/devserver-watchdog.mjs`, `.cursor/skills/verify-teacher-os/scripts/launch.sh` (đều cạnh `VITE_AI_ENABLED`); `packages/infra/alchemy.run.ts` (prod build) **không đặt** biến — deploy không set là tắt. Danh sách chốt bằng `grep -rn VITE_AI_ENABLED .` (loại `node_modules`/`dist`, gồm cả gitignored).
 2. Viết test: (a) cờ tắt → không có tab/form đăng ký/link, có form đăng nhập, `localStorage` = `signup` vẫn ra đăng nhập; (b) cờ bật → có tab và form đăng ký, mặc định signup.
 3. Thêm dòng vào `AGENTS.md`.
 
