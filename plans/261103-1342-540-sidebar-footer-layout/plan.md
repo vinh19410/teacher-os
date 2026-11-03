@@ -1,7 +1,7 @@
 ---
 title: "#540: Sửa bố cục chân side menu (nút đăng xuất rơi xuống hàng riêng)"
 description: "Đặt nút trailing (Đăng xuất) cùng hàng với avatar/tên/email trong UserFooter của packages/ui, giữ rail thu gọn và drawer mobile không vỡ."
-status: pending
+status: completed
 priority: P2
 effort: 1h
 issue: 540

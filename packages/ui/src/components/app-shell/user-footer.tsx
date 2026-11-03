@@ -36,9 +36,11 @@ function InitialsAvatar({ initials }: { initials: string }) {
 }
 
 /**
- * Dòng user cuối sidebar (design Shell): avatar + tên + email; web render
- * thành link hồ sơ, student bấm mở menu tài khoản (Đăng xuất). Ở rail thu
- * gọn (desktop) chỉ còn avatar — email giữ sr-only để SR/e2e vẫn đọc được.
+ * Dòng user cuối sidebar (design Shell): một hàng `avatar | tên + email |
+ * trailing` (flex); web render thành link hồ sơ + nút đăng xuất trailing,
+ * student bấm mở menu tài khoản (Đăng xuất). `trailing` nên có `shrink-0`
+ * để giữ hàng khi tên/email dài. Ở rail thu gọn (desktop) xếp
+ * dọc: avatar rồi trailing — email giữ sr-only để SR/e2e vẫn đọc được.
  */
 export function UserFooter({
 	user,
@@ -68,7 +70,7 @@ export function UserFooter({
 	}, [open]);
 
 	const rowClass =
-		"flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
+		"flex min-w-0 flex-1 items-center gap-2 rounded-md p-2 text-left text-sm transition-colors hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
 
 	const control =
 		user.href !== undefined ? (
@@ -76,7 +78,7 @@ export function UserFooter({
 				href={user.href}
 				aria-label={user.label}
 				title={user.title ?? user.label}
-				className={rowClass}
+				className={cn(rowClass, collapsed && "lg:w-full")}
 			>
 				{user.avatar ?? <InitialsAvatar initials={user.initials} />}
 				<TextBlock user={user} collapsed={collapsed} />
@@ -92,7 +94,7 @@ export function UserFooter({
 				aria-expanded={hasMenu ? open : undefined}
 				aria-haspopup={hasMenu ? "menu" : undefined}
 				title={user.title ?? user.label}
-				className={rowClass}
+				className={cn(rowClass, collapsed && "lg:w-full")}
 			>
 				{user.avatar ?? <InitialsAvatar initials={user.initials} />}
 				<TextBlock user={user} collapsed={collapsed} withChevron={hasMenu} />
@@ -100,7 +102,13 @@ export function UserFooter({
 		);
 
 	return (
-		<div ref={wrapRef} className="relative">
+		<div
+			ref={wrapRef}
+			className={cn(
+				"relative flex items-center gap-1",
+				collapsed && "lg:flex-col",
+			)}
+		>
 			{control}
 			{user.trailing}
 			{open && user.menu && (
@@ -154,7 +162,7 @@ function TextBlock({
 				<ChevronsUpDown
 					aria-hidden="true"
 					className={cn(
-						"size-4 text-muted-foreground",
+						"size-4 shrink-0 text-muted-foreground",
 						collapsed && "lg:hidden",
 					)}
 				/>
