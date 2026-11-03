@@ -320,12 +320,36 @@
 	}
 }
 
-/* RichTextEditor (Tiptap): editable area + placeholder on first paragraph.
-   Shared by every app rendering the editor (web, admin) — keep one copy.
-   Layered under `components` so per-callsite utilities passed through the
-   editor's `contentClassName` (e.g. `[&_.ProseMirror]:min-h-22`) win the
-   cascade — unlayered, this block beat every utility (#438). */
+/* Chevron cho <select> native (#542): pseudo-element không hỗ trợ trên select
+   (replaced element) nên vẽ bằng background-image data-URI (lucide chevron-down).
+   Biến CSS không vào được trong url(), nên màu nhúng cứng — xấp xỉ
+   --muted-foreground (light oklch(0.525) ≈ #6a6a6a, dark oklch(0.708) ≈ #a1a1a1).
+   Padding phải do utility pr-9 đảm nhiệm ở callsite (xem Select primitive),
+   class này chỉ đứng trong @layer components để utility của caller thắng (#438). */
 @layer components {
+	.select-chevron {
+		-webkit-appearance: none;
+		appearance: none;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236a6a6a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+		background-position: right 0.75rem center;
+		background-repeat: no-repeat;
+		background-size: 1rem;
+	}
+	/* forced-colors ẩn background-image; trả lại mũi tên native để giữ affordance. */
+	@media (forced-colors: active) {
+		.select-chevron {
+			appearance: auto;
+		}
+	}
+	.dark .select-chevron {
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a1a1a1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+	}
+
+	/* RichTextEditor (Tiptap): editable area + placeholder on first paragraph.
+	   Shared by every app rendering the editor (web, admin) — keep one copy.
+	   Layered under `components` so per-callsite utilities passed through the
+	   editor's `contentClassName` (e.g. `[&_.ProseMirror]:min-h-22`) win the
+	   cascade — unlayered, this block beat every utility (#438). */
 	.ProseMirror {
 		min-height: 5rem;
 		outline: none;
