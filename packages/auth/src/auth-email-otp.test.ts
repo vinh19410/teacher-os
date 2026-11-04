@@ -291,8 +291,7 @@ describe("Email OTP authentication in packages/auth (#578)", () => {
 		// Victim logs in via OTP
 		const sendRes = await sendOtp(ctx, STUDENT_ORIGIN, email);
 		expect(sendRes.status).toBe(200);
-		const otp =
-			ctx.send.mock.calls[0][0].text.match(/\b\d{6}\b/)?.[0] ?? "";
+		const otp = ctx.send.mock.calls[0][0].text.match(/\b\d{6}\b/)?.[0] ?? "";
 		expect(otp).toBeTruthy();
 
 		const signInRes = await signInOtp(ctx, STUDENT_ORIGIN, email, otp);
