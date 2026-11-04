@@ -105,3 +105,79 @@ describe("PromptComposer showExplanation (#571)", () => {
 		expect(writingHtml).not.toContain("Giải thích câu");
 	});
 });
+
+describe("PromptComposer writing type selection (#577)", () => {
+	it("không chọn sẵn dạng đề nào khi type rỗng và hiển thị lỗi khi showErrors=true", () => {
+		const htmlNoErrors = renderToStaticMarkup(
+			<PromptComposer
+				value={{
+					skill: "writing",
+					part: "task2",
+					type: "",
+					band: "7.0",
+					...emptyComposer("writing", ""),
+					title: "Writing Task 2",
+				}}
+				showErrors={false}
+				status="ready"
+				errors={{ type: "Chọn dạng đề trước khi lưu sẵn sàng giao." }}
+				onFieldChange={vi.fn()}
+			/>,
+		);
+		expect(htmlNoErrors).toContain("Discuss both views");
+		expect(htmlNoErrors).toContain("Opinion");
+		expect(htmlNoErrors).toContain("Advantages");
+		expect(htmlNoErrors).toContain("Problem / Solution");
+		expect(htmlNoErrors).not.toMatch(
+			/aria-pressed="true"[^>]*>Discuss both views/,
+		);
+		expect(htmlNoErrors).not.toMatch(/aria-pressed="true"[^>]*>Opinion/);
+		expect(htmlNoErrors).not.toMatch(/aria-pressed="true"[^>]*>Advantages/);
+		expect(htmlNoErrors).not.toMatch(
+			/aria-pressed="true"[^>]*>Problem \/ Solution/,
+		);
+		expect(htmlNoErrors).not.toContain(
+			"Chọn dạng đề trước khi lưu sẵn sàng giao.",
+		);
+
+		const htmlWithErrors = renderToStaticMarkup(
+			<PromptComposer
+				value={{
+					skill: "writing",
+					part: "task2",
+					type: "",
+					band: "7.0",
+					...emptyComposer("writing", ""),
+					title: "Writing Task 2",
+				}}
+				showErrors={true}
+				status="ready"
+				errors={{ type: "Chọn dạng đề trước khi lưu sẵn sàng giao." }}
+				onFieldChange={vi.fn()}
+			/>,
+		);
+		expect(htmlWithErrors).toContain(
+			"Chọn dạng đề trước khi lưu sẵn sàng giao.",
+		);
+	});
+
+	it("kích hoạt chip khi type được chọn", () => {
+		const html = renderToStaticMarkup(
+			<PromptComposer
+				value={{
+					skill: "writing",
+					part: "task2",
+					type: "discuss",
+					band: "7.0",
+					...emptyComposer("writing", "discuss"),
+					title: "Writing Task 2",
+				}}
+				showErrors={false}
+				status="ready"
+				onFieldChange={vi.fn()}
+			/>,
+		);
+		expect(html).toMatch(/aria-pressed="true"[^>]*>Discuss both views/);
+		expect(html).toMatch(/aria-pressed="false"[^>]*>Opinion/);
+	});
+});

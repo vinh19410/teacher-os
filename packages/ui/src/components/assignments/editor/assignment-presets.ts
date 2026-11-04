@@ -374,6 +374,15 @@ export function typeOf(
 	const part = partOf(skillId, partId);
 	return part.types.find((type) => type.id === typeId) ?? part.types[0];
 }
+export function selectedTypeOf(
+	skillId: string,
+	partId: string,
+	typeId: string,
+): AssignmentTypePreset | null {
+	if (!typeId) return null;
+	const part = partOf(skillId, partId);
+	return part.types.find((type) => type.id === typeId) ?? null;
+}
 export function kindOf(typeId: string): AnswerKind {
 	return KIND[typeId] ?? "text";
 }

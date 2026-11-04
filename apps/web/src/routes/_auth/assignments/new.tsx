@@ -64,9 +64,9 @@ function freshComposer(): ComposerValue {
 	return {
 		skill: "writing",
 		part: "task2",
-		type: "discuss",
+		type: "",
 		band: "7.0",
-		...emptyComposer("writing", "discuss"),
+		...emptyComposer("writing", ""),
 	};
 }
 function countAnswers(value: ComposerValue) {
@@ -96,6 +96,11 @@ export function actionCopyFor(value: ComposerValue, status: "draft" | "ready") {
 		return {
 			title: "Đặt tên đề rồi lưu vào ngân hàng.",
 			sub: "Chưa giao lớp.",
+		};
+	if (status === "ready" && !value.type.trim())
+		return {
+			title: "Chưa chọn dạng đề",
+			sub: "Chọn dạng đề trước khi lưu sẵn sàng giao.",
 		};
 	if (
 		value.skill === "listening" &&
@@ -274,6 +279,8 @@ export function NewAssignmentRoute() {
 	}, [value, status, saved]);
 	const fieldErrors: Record<string, string | undefined> = {};
 	if (!value.title.trim()) fieldErrors.title = "Nhập tiêu đề bài tập.";
+	if (status === "ready" && !value.type.trim())
+		fieldErrors.type = "Chọn dạng đề trước khi lưu sẵn sàng giao.";
 	if (value.skill === "writing" && isEmptyRichText(value.prompt))
 		fieldErrors.prompt = "Dán hoặc soạn đề trước khi lưu.";
 	if (value.skill === "reading" && isEmptyRichText(value.passage))
@@ -310,6 +317,7 @@ export function NewAssignmentRoute() {
 	if (pinIssue && !stemIssue) fieldErrors.questions = pinIssue;
 	const canSave =
 		hasCoreContent(value) &&
+		!(status === "ready" && !value.type.trim()) &&
 		!(
 			value.skill === "listening" &&
 			status === "ready" &&

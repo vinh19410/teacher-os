@@ -173,6 +173,7 @@ export function assignmentRoutes(deps: {
 				skill: assignmentPrompt.skill,
 				part: assignmentPrompt.part,
 				type: assignmentPrompt.type,
+				status: assignmentPrompt.status,
 			})
 			.from(assignmentPrompt)
 			.where(
@@ -188,7 +189,18 @@ export function assignmentRoutes(deps: {
 		const partTypes =
 			ASSIGNMENT_PART_TYPES[row.skill as AssignmentSkill]?.types[row.part] ??
 			[];
-		if (body.data.type !== undefined && !partTypes.includes(body.data.type)) {
+		const effectiveStatus = body.data.status ?? row.status;
+		const effectiveType =
+			body.data.type !== undefined ? body.data.type : row.type;
+		if (effectiveStatus === "ready") {
+			if (!effectiveType || !partTypes.includes(effectiveType)) {
+				return c.json({ error: "invalid type" }, 400);
+			}
+		} else if (row.skill === "writing") {
+			if (effectiveType && !partTypes.includes(effectiveType)) {
+				return c.json({ error: "invalid type" }, 400);
+			}
+		} else if (!effectiveType || !partTypes.includes(effectiveType)) {
 			return c.json({ error: "invalid type" }, 400);
 		}
 		// Per-question type (#286) — mirror rule của create: type câu phải thuộc

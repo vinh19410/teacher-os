@@ -287,4 +287,31 @@ describe("AssignmentsRoute — merged created-assignments page (#267)", () => {
 		const html = renderToStaticMarkup(<AssignmentsRoute />);
 		expect(html).toContain("+ Tạo bài tập");
 	});
+
+	it("renders 'Chưa chọn dạng' tag for draft prompts without a type (#577)", () => {
+		mockStoreData = {
+			assignmentPrompts: [
+				{
+					id: "ap-no-type",
+					skill: "writing",
+					part: "task2",
+					type: "",
+					task: "task2",
+					genre: "",
+					title: "Writing Draft Chưa Chọn Dạng",
+					band: "7.0",
+					source: "",
+					prompt: "Essay prompt",
+					questions: [],
+					note: "",
+					status: "draft",
+					createdAt: "2026-09-18T12:00:00.000Z",
+				},
+			],
+			classAssignments: [],
+		};
+		const html = renderToStaticMarkup(<AssignmentsRoute />);
+		expect(html).toContain("Chưa chọn dạng");
+		expect(html).not.toContain("Discuss both views");
+	});
 });

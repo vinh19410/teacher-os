@@ -5075,6 +5075,40 @@ describe("assignment prompt bank (issue #202)", () => {
 		expect(row?.status).toBe("draft");
 		expect(row?.note).toBe("cần duyệt");
 	});
+	test("POST draft prompt with type empty string succeeds and persists empty type (#577)", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				...validBody,
+				title: "Nháp Writing chưa chọn type",
+				status: "draft",
+				type: "",
+			},
+		});
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		const row = (await t.kernel(orgA)).assignmentPrompts.find(
+			(r) => r.id === id,
+		);
+		expect(row?.status).toBe("draft");
+		expect(row?.type).toBe("");
+		expect(row?.genre).toBe("");
+	});
+
+	test("POST ready prompt with type empty string returns 400 (#577)", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				...validBody,
+				title: "Writing ready thiếu type",
+				status: "ready",
+				type: "",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
 
 	test("POST rejects invalid bodies with 400", async () => {
 		for (const body of [

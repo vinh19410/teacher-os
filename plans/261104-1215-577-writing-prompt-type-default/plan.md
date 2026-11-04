@@ -1,7 +1,7 @@
 ---
 title: "fix(assignments): Không tự chọn sẵn dạng đề Writing và chặn lưu ready khi thiếu type (#577)"
 description: "Sửa lỗi dạng đề Writing tự chọn sẵn Discuss both views; nới lỏng contract cho phép draft mang type rỗng, chặn ready thiếu type ở cả create/update/PATCH, và cập nhật UI PromptComposer không chọn sẵn dạng đề cho Writing."
-status: pending
+status: completed
 priority: P2
 effort: 3h
 issue: 577
@@ -49,17 +49,17 @@ flowchart TD
 
 | # | Phase | Trạng thái |
 |---|---|---|
-| 1 | [Contract & Server Validation](phase-01-contract-and-server.md) | pending |
-| 2 | [UI Presets, Composer & Routes](phase-02-ui-presets-and-composer.md) | pending |
-| 3 | [Automated Testing & End-to-End Verification](phase-03-tests-and-verification.md) | pending |
+| 1 | [Contract & Server Validation](phase-01-contract-and-server.md) | completed |
+| 2 | [UI Presets, Composer & Routes](phase-02-ui-presets-and-composer.md) | completed |
+| 3 | [Automated Testing & End-to-End Verification](phase-03-tests-and-verification.md) | completed |
 
 ## Acceptance Criteria
 
-- [ ] `freshComposer()` khởi tạo với `type: ""` cho Writing.
-- [ ] Chuyển sang Writing hoặc chuyển part trong Writing không tự động chọn `types[0]`.
-- [ ] ChipFilter không kích hoạt chip nào khi `value.type === ""`.
-- [ ] Khi `status === "ready"` và `value.type === ""`, `canSave === false`, nút Lưu bị khóa, hiển thị thông báo lỗi yêu cầu chọn dạng đề.
-- [ ] Khi `status === "draft"` và `value.type === ""`, có thể lưu nháp vào server qua `POST /api/assignments/prompts`.
-- [ ] `PATCH /api/assignments/prompts/:id` chuyển status từ draft sang ready khi `type === ""` bị từ chối với lỗi 400.
-- [ ] Màn hình danh sách `/assignments` hiển thị tag "Chưa chọn dạng" cho đề draft chưa có type.
-- [ ] `pnpm check`, `pnpm check-types` và toàn bộ test suites liên quan đều pass 100%.
+- [x] `freshComposer()` khởi tạo với `type: ""` cho Writing.
+- [x] Chuyển sang Writing hoặc chuyển part trong Writing không tự động chọn `types[0]`.
+- [x] ChipFilter không kích hoạt chip nào khi `value.type === ""`.
+- [x] Khi `status === "ready"` và `value.type === ""`, `canSave === false`, nút Lưu bị khóa, hiển thị thông báo lỗi yêu cầu chọn dạng đề.
+- [x] Khi `status === "draft"` và `value.type === ""`, có thể lưu nháp vào server qua `POST /api/assignments/prompts`.
+- [x] `PATCH /api/assignments/prompts/:id` chuyển status từ draft sang ready khi `type === ""` bị từ chối với lỗi 400.
+- [x] Màn hình danh sách `/assignments` hiển thị tag "Chưa chọn dạng" cho đề draft chưa có type.
+- [x] `pnpm check`, `pnpm check-types` và toàn bộ test suites liên quan đều pass 100%.
