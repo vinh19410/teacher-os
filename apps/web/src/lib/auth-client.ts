@@ -122,8 +122,7 @@ export async function getCachedSession({
 	return inFlightSessionPromise;
 }
 
-export const authClient = {
-	...rawAuthClient,
+const overrides = {
 	getCachedSession,
 	clearSessionCache,
 	signOut: async (...args: Parameters<typeof rawAuthClient.signOut>) => {
@@ -135,3 +134,12 @@ export const authClient = {
 		return rawAuthClient.updateUser(...args);
 	},
 };
+
+export const authClient = new Proxy(rawAuthClient, {
+	get(target, prop, receiver) {
+		if (prop in overrides) {
+			return overrides[prop as keyof typeof overrides];
+		}
+		return Reflect.get(target, prop, receiver);
+	},
+}) as typeof rawAuthClient & typeof overrides;
