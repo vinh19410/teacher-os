@@ -24,6 +24,74 @@ export function isGradableSkill(skill: string): skill is GradableSkill {
 	return (GRADABLE_SKILLS as readonly string[]).includes(skill);
 }
 
+export const AUTO_GRADABLE_SKILLS = [
+	"reading",
+	"listening",
+	"grammar",
+	"vocabulary",
+] as const;
+export type AutoGradableSkill = (typeof AUTO_GRADABLE_SKILLS)[number];
+
+export function isAutoGradableSkill(skill: string): skill is AutoGradableSkill {
+	return (AUTO_GRADABLE_SKILLS as readonly string[]).includes(skill);
+}
+
+export interface PromptGradableSource {
+	skill?: string | null;
+	part?: string | null;
+	prompt?: string | null;
+	writingPart?: string | null;
+	writingPrompt?: string | null;
+	writing?: { part: string; prompt: string } | null;
+	hasWriting?: boolean;
+}
+
+export interface EssayTaskDescriptor {
+	skill: "writing";
+	part: string;
+	prompt: string;
+	hybrid: boolean;
+}
+
+/**
+ * Phân giải phần Writing của đề (#574): trả descriptor Writing cho cả đề
+ * Writing thuần (`hybrid: false`) lẫn đề tự chấm có gắn phần Writing
+ * (`hybrid: true`). Đề khác trả `null`.
+ */
+export function essayTaskOf(
+	source: PromptGradableSource,
+): EssayTaskDescriptor | null {
+	const skill = source.skill ?? "";
+	if (skill === "writing") {
+		return {
+			skill: "writing",
+			part: source.part ?? "",
+			prompt: source.prompt ?? "",
+			hybrid: false,
+		};
+	}
+	if (isAutoGradableSkill(skill)) {
+		const wPart = (source.writing?.part ?? source.writingPart ?? "").trim();
+		if (wPart.length > 0) {
+			return {
+				skill: "writing",
+				part: wPart,
+				prompt: source.writing?.prompt ?? source.writingPrompt ?? "",
+				hybrid: true,
+			};
+		}
+	}
+	return null;
+}
+
+/** Đề có phần cần giáo viên / AI chấm tay (Writing, Speaking, hoặc đề tự chấm kèm Writing). */
+export function hasGradableTask(source: PromptGradableSource): boolean {
+	const skill = source.skill ?? "";
+	if (isGradableSkill(skill)) return true;
+	if (essayTaskOf(source) !== null) return true;
+	return isAutoGradableSkill(skill) && source.hasWriting === true;
+}
+
 export function criteriaForSkill(skill: GradableSkill): readonly string[] {
 	return skill === "writing" ? WRITING_CRITERIA : SPEAKING_CRITERIA;
 }

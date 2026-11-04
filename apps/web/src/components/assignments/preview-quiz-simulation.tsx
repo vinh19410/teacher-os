@@ -24,6 +24,8 @@ export function PreviewQuizSimulation({
 	answers,
 	grade,
 	onAnswer,
+	essay = "",
+	onEssayChange,
 	onSubmit,
 	onReset,
 }: {
@@ -31,6 +33,8 @@ export function PreviewQuizSimulation({
 	answers: Record<number, string>;
 	grade: QuizGrade | null;
 	onAnswer: (q: number, value: string) => void;
+	essay?: string;
+	onEssayChange?: (value: string) => void;
 	onSubmit: () => void;
 	onReset: () => void;
 }) {
@@ -58,6 +62,7 @@ export function PreviewQuizSimulation({
 			key: question.answer,
 			alts: question.alts,
 			answer: answers[q]?.trim() ? (answers[q] as string) : null,
+			...(question.explanation ? { explanation: question.explanation } : {}),
 		}));
 		const review = Object.fromEntries(
 			perQuestion.map((info, q): [number, QuizReviewInfo] => [
@@ -95,6 +100,8 @@ export function PreviewQuizSimulation({
 					currentQuestion={currentQuestion}
 					mode="review"
 					review={review}
+					writingSection={sim.writing ?? null}
+					essay={essay}
 				/>
 				<QuizNavigator
 					parts={parts}
@@ -121,6 +128,9 @@ export function PreviewQuizSimulation({
 				answers={answers}
 				onAnswer={onAnswer}
 				currentQuestion={currentQuestion}
+				writingSection={sim.writing ?? null}
+				essay={essay}
+				onEssayChange={onEssayChange}
 			/>
 			<div className="flex items-center justify-between gap-3">
 				<span className="text-muted-foreground text-xs">

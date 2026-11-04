@@ -4,6 +4,7 @@ import type {
 	StudentClass,
 } from "@teacher-os/api/contracts";
 import { formatSchedule } from "@teacher-os/api/format-schedule";
+import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { TeacherAvatar } from "@/components/class/teacher-avatar";
 import { deriveAssignmentStatus } from "@/lib/assignment-status";
 import { cn } from "@/lib/cn";
@@ -17,6 +18,8 @@ export interface ClassCardProps {
 	accepting?: boolean;
 	/** Bài tập của riêng lớp này (trang Lớp học) — vắng mặt thì ẩn bảng. */
 	assignments?: StudentAssignment[];
+	todayISO?: string;
+	nowMs?: number;
 }
 
 export function ClassCard({
@@ -24,6 +27,8 @@ export function ClassCard({
 	onAccept,
 	accepting = false,
 	assignments,
+	todayISO,
+	nowMs,
 }: ClassCardProps) {
 	const isInvited = cls.enrollmentStatus === "invited";
 
@@ -101,7 +106,7 @@ export function ClassCard({
 							type="button"
 							disabled={accepting || !onAccept}
 							onClick={() => onAccept?.(cls.enrollmentId)}
-							className="mt-3 flex h-10 w-full items-center justify-center rounded-lg bg-primary font-medium text-bg text-sm tracking-[0.02em] transition-colors duration-150 hover:bg-primary hover:text-primary-foreground focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:scale-[0.99] disabled:pointer-events-none disabled:opacity-40"
+							className="mt-3 flex h-10 w-full items-center justify-center rounded-lg bg-primary font-medium text-primary-foreground text-sm tracking-[0.02em] transition-colors duration-150 hover:bg-primary/90 focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:scale-[0.99] disabled:pointer-events-none disabled:opacity-40"
 						>
 							{accepting ? "Đang xử lý…" : "Tham gia lớp"}
 						</button>
@@ -118,7 +123,11 @@ export function ClassCard({
 			</div>
 
 			{assignments !== undefined && assignments.length > 0 && (
-				<ClassCardAssignments assignments={assignments} />
+				<ClassCardAssignments
+					assignments={assignments}
+					todayISO={todayISO}
+					nowMs={nowMs}
+				/>
 			)}
 		</div>
 	);
@@ -128,9 +137,16 @@ export function ClassCard({
  * hàng dẫn về take/review screen. Chỉ vẽ khi caller truyền dữ liệu. */
 function ClassCardAssignments({
 	assignments,
+	todayISO,
+	nowMs,
 }: {
 	assignments: StudentAssignment[];
+	todayISO?: string;
+	nowMs?: number;
 }) {
+	const effectiveNowMs = nowMs ?? Date.now();
+	const effectiveTodayISO =
+		todayISO ?? vietnamTodayISO(new Date(effectiveNowMs));
 	return (
 		<div className="mt-4">
 			<h4 className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.15em]">
@@ -138,7 +154,11 @@ function ClassCardAssignments({
 			</h4>
 			<div className="mt-2 overflow-hidden rounded-md rounded-md border border-input bg-transparent">
 				{assignments.map((assignment) => {
-					const derived = deriveAssignmentStatus(assignment);
+					const derived = deriveAssignmentStatus(
+						assignment,
+						effectiveTodayISO,
+						effectiveNowMs,
+					);
 					const row = (
 						<div
 							key={assignment.id}

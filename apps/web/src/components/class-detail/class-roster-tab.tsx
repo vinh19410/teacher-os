@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { ResendInviteButton } from "@/components/students/pending-invite-callout";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -146,45 +147,62 @@ export function ClassRosterTab({
 									debt={rosterDebt.get(s.id)}
 									isInvited={isInvited}
 								/>,
-								isInvited && en ? (
+								(isInvited && en) ||
+								(Boolean(s.email) && s.portalLinked === false) ? (
 									// biome-ignore lint/a11y/noStaticElementInteractions: wrapper chỉ stopPropagation để nút bấm không kích hoạt điều hướng của row
 									<div
-										className="flex items-center gap-2"
+										className="flex flex-wrap items-center gap-2"
 										onClick={(e) => e.stopPropagation()}
 										onKeyDown={(e) => {
 											if (e.key === " " || e.key === "Enter")
 												e.stopPropagation();
 										}}
 									>
-										<Button
-											size="sm"
-											variant="secondary"
-											disabled={busy}
-											onClick={() =>
-												setConfirmAction({
-													type: "activate",
-													enrollmentId: en.id,
-													studentName: s.name,
-												})
-											}
-										>
-											Kích hoạt
-										</Button>
-										<Button
-											size="sm"
-											variant="secondary"
-											className="text-danger hover:text-danger"
-											disabled={busy}
-											onClick={() =>
-												setConfirmAction({
-													type: "delete",
-													enrollmentId: en.id,
-													studentName: s.name,
-												})
-											}
-										>
-											Hủy lời mời
-										</Button>
+										{Boolean(s.email) &&
+											(isInvited || s.portalLinked === false) && (
+												<ResendInviteButton
+													target={{
+														kind: "student",
+														studentId: s.id,
+														...(isInvited && en ? { enrollmentId: en.id } : {}),
+														recipientLabel: s.email,
+													}}
+													compact
+												/>
+											)}
+										{isInvited && en && (
+											<>
+												<Button
+													size="sm"
+													variant="secondary"
+													disabled={busy}
+													onClick={() =>
+														setConfirmAction({
+															type: "activate",
+															enrollmentId: en.id,
+															studentName: s.name,
+														})
+													}
+												>
+													Kích hoạt
+												</Button>
+												<Button
+													size="sm"
+													variant="secondary"
+													className="text-danger hover:text-danger"
+													disabled={busy}
+													onClick={() =>
+														setConfirmAction({
+															type: "delete",
+															enrollmentId: en.id,
+															studentName: s.name,
+														})
+													}
+												>
+													Hủy lời mời
+												</Button>
+											</>
+										)}
 									</div>
 								) : (
 									<span key="act" />

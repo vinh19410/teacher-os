@@ -1506,4 +1506,66 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 			.where(eq(schema.aiGradingDraft.attemptId, readingAttempt));
 		expect(readingDraft ?? null).toBeNull();
 	});
+
+	test("quiz detail returns dueAt when set, and dueAt: null when legacy/untimed (#587)", async () => {
+		const timedDueAt = new Date("2026-11-20T10:00:00.000Z");
+		await libsql.insert(schema.classAssignment).values([
+			{
+				id: "ca-timed",
+				orgId: "org-1",
+				classId: "class-1",
+				promptId: "prompt-quiz-2",
+				title: "Timed Quiz",
+				due: "2026-11-20",
+				dueAt: timedDueAt,
+			},
+			{
+				id: "ca-untimed",
+				orgId: "org-1",
+				classId: "class-1",
+				promptId: "prompt-quiz-2",
+				title: "Untimed Quiz",
+				due: "2026-11-20",
+				dueAt: null,
+			},
+		]);
+		await libsql.insert(schema.classAssignmentTarget).values([
+			{
+				id: "cat-ca-timed",
+				orgId: "org-1",
+				assignmentId: "ca-timed",
+				studentId: "student-1",
+				submittedAt: null,
+			},
+			{
+				id: "cat-ca-untimed",
+				orgId: "org-1",
+				assignmentId: "ca-untimed",
+				studentId: "student-1",
+				submittedAt: null,
+			},
+		]);
+
+		const timedRes = await app.request(
+			"/api/student/assignments/ca-timed/quiz",
+			{
+				headers: OWNER,
+			},
+		);
+		expect(timedRes.status).toBe(200);
+		const timedBody = (await timedRes.json()) as StudentQuizDetail;
+		expect(timedBody.due).toBe("2026-11-20");
+		expect(timedBody.dueAt).toBe(timedDueAt.toISOString());
+
+		const untimedRes = await app.request(
+			"/api/student/assignments/ca-untimed/quiz",
+			{
+				headers: OWNER,
+			},
+		);
+		expect(untimedRes.status).toBe(200);
+		const untimedBody = (await untimedRes.json()) as StudentQuizDetail;
+		expect(untimedBody.due).toBe("2026-11-20");
+		expect(untimedBody.dueAt).toBeNull();
+	});
 });

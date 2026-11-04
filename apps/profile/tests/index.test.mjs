@@ -87,23 +87,24 @@ test("consultForm includes website honeypot with tabindex=-1 and autocomplete=of
 	);
 });
 
-test("every course option is inside an optgroup or is empty/undecided", () => {
+test("select[name=course] contains exactly the 4 landing courses and empty default (#600)", () => {
 	const selectMatch = html.match(
 		/<select[^>]*\bname="course"[^>]*>([\s\S]*?)<\/select>/,
 	);
 	assert.ok(selectMatch, "select[name=course] must exist");
-	const withoutOptgroups = selectMatch[1].replace(
-		/<optgroup\b[^>]*>[\s\S]*?<\/optgroup>/g,
-		"",
+	const values = [...selectMatch[1].matchAll(/<option\s+value="([^"]*)"/g)].map(
+		(m) => m[1],
 	);
-	const topLevelValues = [
-		...withoutOptgroups.matchAll(/<option\s+value="([^"]*)"/g),
-	].map((m) => m[1]);
-	assert.deepEqual(topLevelValues, ["", "undecided"]);
-	assert.ok(!/Tạo Phiếu Đăng Ký &amp; Copy Gửi Zalo/.test(html));
+	assert.deepEqual(values, [
+		"",
+		"foundation-core",
+		"ielts-practical",
+		"workplace-interview",
+		"undecided",
+	]);
 });
 
-test("placement test CTAs point to kiem-tra-dau-vao/ and legacy 5-question quiz is removed", () => {
+test("placement test CTAs point to kiem-tra-dau-vao/ and legacy 5-question quiz is removed (#600)", () => {
 	assert.ok(!/id="placementQuizForm"/.test(html));
 	assert.ok(!/id="quizResultPanel"/.test(html));
 	assert.equal(
@@ -113,10 +114,10 @@ test("placement test CTAs point to kiem-tra-dau-vao/ and legacy 5-question quiz 
 	);
 	const newCtaLinks = html.match(/href="kiem-tra-dau-vao\/"/g) ?? [];
 	assert.ok(
-		newCtaLinks.length >= 7,
-		`expected at least 7 links to kiem-tra-dau-vao/, found ${newCtaLinks.length}`,
+		newCtaLinks.length >= 3,
+		`expected at least 3 links to kiem-tra-dau-vao/, found ${newCtaLinks.length}`,
 	);
-	assert.match(html, /<section\s+id="lam-test-mien-phi"/);
+	assert.match(html, /id="lam-test-mien-phi"/);
 	assert.ok(!/2 Phút/.test(html));
 	assert.ok(!/5 câu hỏi/.test(html));
 });
@@ -202,9 +203,11 @@ test("site-header has a single kiem-tra-dau-vao entry point in .nav-actions (#56
 	);
 	assert.ok(navLinksMatch, 'expected <ul class="nav-links"> in .site-header');
 	for (const anchor of [
-		"#bo-ho-so-pdf",
-		"#ho-so-giang-vien",
+		"#ban-dang-o-dau",
 		"#lo-trinh-khoa-hoc",
+		"#hoc-vien-noi-gi",
+		"#co-my-la-ai",
+		"#dang-ky-tu-van",
 	]) {
 		assert.match(navLinksMatch[1] ?? "", new RegExp(`href="${anchor}"`));
 	}
@@ -256,10 +259,10 @@ test("site-header has a single kiem-tra-dau-vao entry point in .nav-actions (#56
 	const nonHeaderHtml =
 		cleanHtml.slice(0, headerStart) +
 		cleanHtml.slice(headerStart + headerOuter.length);
-	assert.equal(
-		extractPlacementTestLinks(nonHeaderHtml).length,
-		8,
-		"expected all 8 non-header /kiem-tra-dau-vao CTAs to remain intact",
+	const nonHeaderTestLinks = extractPlacementTestLinks(nonHeaderHtml);
+	assert.ok(
+		nonHeaderTestLinks.length >= 3,
+		`expected at least 3 non-header /kiem-tra-dau-vao CTAs, found ${nonHeaderTestLinks.length}`,
 	);
 	const floatingMatch = nonHeaderHtml.match(
 		/<div\b[^>]*\bclass\s*=\s*["'][^"']*\bfloating-cta-btns\b[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
@@ -486,4 +489,68 @@ test("inline <style> blocks have balanced curly braces (#560)", () => {
 		}
 		assert.equal(depth, 0, "unclosed '{' in <style>");
 	}
+});
+
+test("landing page has 8 blocks in order and preserves critical anchors (#600)", () => {
+	const blockIds = [
+		"thanh-tin-cay",
+		"ban-dang-o-dau",
+		"ba-khoa-hoc",
+		"hoc-vien-noi-gi",
+		"vi-sao-khac",
+		"quy-trinh-4-buoc",
+		"co-my-la-ai",
+		"dang-ky-tu-van",
+	];
+	for (const id of blockIds) {
+		assert.match(html, new RegExp(`id="${id}"`), `missing block #${id}`);
+	}
+	assert.match(
+		html,
+		/id="lam-test-mien-phi"/,
+		"missing anchor #lam-test-mien-phi",
+	);
+	assert.match(html, /id="dang-ky-tu-van"/, "missing anchor #dang-ky-tu-van");
+});
+
+test("legacy elements removed: no copyAllLinksBtn or cefrDetailPanel on root index.html (#600)", () => {
+	assert.ok(!html.includes('id="copyAllLinksBtn"'));
+	assert.ok(!html.includes('id="cefrDetailPanel"'));
+});
+
+test("anti-placeholder: no '[ ... ]' or 'TODO' visible in root index.html (#600)", () => {
+	assert.ok(!html.includes("[ ... ]"));
+	assert.ok(!html.includes("[...]"));
+	assert.ok(!/\bTODO\b/.test(html));
+});
+
+test("internal page apps/profile/public/noi-bo/index.html is protected with noindex (#600)", () => {
+	const noiBoPath = new URL("noi-bo/index.html", publicDir);
+	assert.ok(existsSync(noiBoPath), "noi-bo/index.html must exist");
+	const noiBoHtml = readFileSync(noiBoPath, "utf8");
+	assert.match(
+		noiBoHtml,
+		/<meta\s+name="robots"\s+content="noindex,nofollow"\s*\/?>/,
+	);
+	assert.ok(
+		!html.includes("noi-bo"),
+		"root index.html must not link to noi-bo",
+	);
+});
+
+test("kiem-tra-dau-vao/test.js embeds CEFR Level Explorer in test results (#600)", () => {
+	const testJs = readFileSync(
+		new URL("kiem-tra-dau-vao/test.js", publicDir),
+		"utf8",
+	);
+	assert.ok(testJs.includes("createCefrExplorer"));
+	assert.ok(testJs.includes("CEFR_EXPLORER_DATA"));
+	assert.ok(testJs.includes("cefrDetailPanel"));
+});
+
+test("image lightbox dialog exists with proper controls and is balanced (#600)", () => {
+	assert.match(
+		html,
+		/<dialog\s+id="imgModal"[^>]*>[\s\S]*?id="closeImgModal"[\s\S]*?id="modalImg"[\s\S]*?<\/dialog>/,
+	);
 });

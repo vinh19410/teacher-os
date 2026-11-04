@@ -47,7 +47,7 @@ function SuggestionCard({
 					data-testid={`vocab-suggestion-accept-${item.id}`}
 					aria-label={`Bắt đầu học ${item.title}`}
 					onClick={() => onAccept(item)}
-					className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 font-medium text-bg text-xs transition-colors duration-150 hover:bg-primary hover:text-primary-foreground focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:opacity-40"
+					className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground text-xs transition-colors duration-150 hover:bg-primary/90 focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:opacity-40"
 				>
 					Bắt đầu học
 				</button>

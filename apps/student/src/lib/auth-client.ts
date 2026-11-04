@@ -1,4 +1,5 @@
 import { env } from "@teacher-os/env/web";
+import { emailOTPClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 
 function getProcessEnv(): Record<string, string | undefined> | undefined {
@@ -41,4 +42,5 @@ export function getServerUrl(url: string) {
 
 export const authClient = createAuthClient({
 	baseURL: new URL("/api/auth", getServerUrl(env.VITE_SERVER_URL)).toString(),
+	plugins: [emailOTPClient()],
 });

@@ -11,15 +11,31 @@
  * when the body was JSON with that exact string — garbage/non-JSON bodies
  * leave it undefined so classification stays status-code-based.
  */
+export interface HttpErrorOptions {
+	reason?: string;
+	code?: string;
+	existingStudentId?: string;
+	existingStudentName?: string;
+	portalLinked?: boolean;
+}
+
 export class HttpError extends Error {
 	readonly status: number;
 	readonly reason?: string;
+	readonly code?: string;
+	readonly existingStudentId?: string;
+	readonly existingStudentName?: string;
+	readonly portalLinked?: boolean;
 
-	constructor(status: number, message: string, options?: { reason?: string }) {
+	constructor(status: number, message: string, options?: HttpErrorOptions) {
 		super(message);
 		this.name = "HttpError";
 		this.status = status;
 		this.reason = options?.reason;
+		this.code = options?.code;
+		this.existingStudentId = options?.existingStudentId;
+		this.existingStudentName = options?.existingStudentName;
+		this.portalLinked = options?.portalLinked;
 	}
 }
 

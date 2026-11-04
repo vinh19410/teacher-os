@@ -7,6 +7,8 @@ import { useMemo } from "react";
 // web's `rich-text-legacy` (kept private per surface: the web adapter also
 // feeds the Tiptap editor, this copy only picks the render branch here).
 const HTML_TAG_RE = /<\/?[a-z][^>]*>/i;
+const PAIRED_OR_VOID_TAG_RE = /<\/[a-z][a-z0-9]*\s*>|<(?:br|hr|img)\b[^>]*>/i;
+const HTML_ENTITY_RE = /&(?:amp|lt|gt|quot|#39);/i;
 
 /**
  * The single rendering sink for rich text content.
@@ -28,7 +30,10 @@ export function RichTextBody({
 	legacyWhitespace?: "pre-line" | "pre-wrap";
 }) {
 	const isHtml = useMemo(() => {
-		if (!HTML_TAG_RE.test(text)) return false;
+		if (HTML_ENTITY_RE.test(text)) return true;
+		if (!HTML_TAG_RE.test(text) || !PAIRED_OR_VOID_TAG_RE.test(text)) {
+			return false;
+		}
 		if (typeof DOMParser === "undefined") return true;
 		// Regex pre-check passed; confirm with a real parse so text like "a<b>c"
 		// that happens to contain a closing angle bracket is not misdetected.

@@ -1,11 +1,24 @@
 import { Link } from "@tanstack/react-router";
-import { formatBand, isGradableSkill } from "@teacher-os/api/lib/ielts-band";
+import {
+	formatBand,
+	hasGradableTask,
+	isGradableSkill,
+} from "@teacher-os/api/lib/ielts-band";
+import { isEmptyRichText } from "@teacher-os/api/rich-text";
 import { parseStartDateStrict } from "@teacher-os/api/skeleton";
-import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
+import {
+	addDaysISO,
+	formatVietnamTimeHHMM,
+	formatViWeekdayDate,
+	parseTimeHHMM,
+	vietnamDateTimeMs,
+	vietnamTodayISO,
+} from "@teacher-os/api/vietnam-date";
 import { RichTextBody } from "@teacher-os/ui/components/assignments/rich-text-body";
 import { BookOpen, ChevronDown, Headphones, Mic, PenLine } from "lucide-react";
 import { type ComponentType, useMemo, useState } from "react";
 import {
+	isAutoSkill,
 	partOf,
 	type SkillId,
 	skillOf,
@@ -13,6 +26,7 @@ import {
 } from "@/components/assignments/assignment-presets";
 import {
 	fmtDue,
+	fmtDueDisplay,
 	fmtWhen,
 	rollupStatus,
 	studentSubmissionStatus,
@@ -23,6 +37,10 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
+import {
+	DatePickerInput,
+	TimeInput24h,
+} from "@/components/ui/date-picker-input";
 import { Section } from "@/components/ui/section";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Tag } from "@/components/ui/tag";
@@ -45,6 +63,8 @@ const PICKER_SKILL_OPTIONS = [
 	"Reading",
 	"Listening",
 	"Speaking",
+	"Grammar",
+	"Vocabulary",
 ];
 
 /** Icon kỹ năng cho header accordion bài đã giao (#391, design SKILL_ICON);
@@ -55,6 +75,8 @@ const SKILL_ICON: Record<string, ComponentType<{ className?: string }>> = {
 	reading: BookOpen,
 	listening: Headphones,
 	speaking: Mic,
+	grammar: BookOpen,
+	vocabulary: BookOpen,
 };
 
 /** Nút "Chấm bài" (Link, không phải button thật) — outline `size=sm` của
@@ -111,7 +133,9 @@ export function ClassAssignmentsTab({
 }: ClassAssignmentsTabProps) {
 	const { data, studentById } = useData();
 	const submit = useKernelFormSubmit();
-	const todayVN = vietnamTodayISO();
+	const [validationNowMs, setValidationNowMs] = useState(() => Date.now());
+	const effectiveNowMs = Math.max(Date.now(), validationNowMs);
+	const todayVN = vietnamTodayISO(new Date(effectiveNowMs));
 
 	// Class assignments for this specific class
 	const classAssignments = useMemo(() => {
@@ -159,6 +183,10 @@ export function ClassAssignmentsTab({
 	const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
 	const [skillFilter, setSkillFilter] = useState<"all" | SkillId>("all");
 	const [due, setDue] = useState<string>(() => addDaysISO(todayVN, 7));
+	const [dueTime, setDueTime] = useState<string>("23:59");
+	const [dueDateInvalid, setDueDateInvalid] = useState(false);
+	const [dueTimeInvalid, setDueTimeInvalid] = useState(false);
+	const [formResetKey, setFormResetKey] = useState(0);
 	const [note, setNote] = useState("");
 	const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>(() =>
 		classGroup.studentIds.slice(0, 100),
@@ -167,6 +195,7 @@ export function ClassAssignmentsTab({
 	const [lastAssigned, setLastAssigned] = useState<{
 		promptTitle: string;
 		due: string;
+		dueAt: string;
 		studentIds: string[];
 	} | null>(null);
 
@@ -204,14 +233,37 @@ export function ClassAssignmentsTab({
 
 	// Validation
 	const promptOk = Boolean(selectedPrompt);
-	const dueValidDate = Boolean(due && parseStartDateStrict(due) !== null);
-	const dueNotPast = dueValidDate && due >= todayVN;
-	const dueOk = dueValidDate && dueNotPast;
+	const dueValidDate =
+		!dueDateInvalid && Boolean(due && parseStartDateStrict(due) !== null);
+	const dueTimeValid =
+		!dueTimeInvalid && Boolean(dueTime && parseTimeHHMM(dueTime) !== null);
+	const dueAtMs =
+		dueValidDate && dueTimeValid ? vietnamDateTimeMs(due, dueTime) : Number.NaN;
+	const dueAtPreviewIso = Number.isFinite(dueAtMs)
+		? new Date(dueAtMs).toISOString()
+		: null;
+	const dueDateNotPast = dueValidDate && due >= todayVN;
+	const dueTimeNotPast =
+		dueDateNotPast &&
+		(due > todayVN ||
+			dueTime === "23:59" ||
+			(Number.isFinite(dueAtMs) && dueAtMs > effectiveNowMs));
+	const dueOk =
+		dueValidDate && dueTimeValid && dueDateNotPast && dueTimeNotPast;
+	const dueErrorMsg =
+		dueDateInvalid || (hasAttemptedSubmit && !due)
+			? "Ngày không hợp lệ — nhập theo định dạng dd/mm/yyyy (ví dụ 06/11/2026)."
+			: dueTimeInvalid || (hasAttemptedSubmit && !dueTime)
+				? "Giờ không hợp lệ — nhập theo định dạng 24h HH:mm (ví dụ 23:59)."
+				: dueValidDate && !dueDateNotPast
+					? "Chọn hạn nộp từ hôm nay trở đi."
+					: dueDateNotPast && dueTimeValid && !dueTimeNotPast
+						? "Giờ hạn nộp hôm nay phải sau thời điểm hiện tại."
+						: null;
 	const studentsOk =
 		selectedStudentIds.length > 0 && selectedStudentIds.length <= 100;
 	const isReassign = promptOk && previousAssignment !== null;
 	const canSubmit = promptOk && dueOk && studentsOk;
-
 	// Toggle all students
 	function handleToggleAllStudents() {
 		if (selectedStudentIds.length === enrolledStudents.length) {
@@ -235,6 +287,8 @@ export function ClassAssignmentsTab({
 		else if (opt === "Reading") setSkillFilter("reading");
 		else if (opt === "Listening") setSkillFilter("listening");
 		else if (opt === "Speaking") setSkillFilter("speaking");
+		else if (opt === "Grammar") setSkillFilter("grammar");
+		else if (opt === "Vocabulary") setSkillFilter("vocabulary");
 		else setSkillFilter("all");
 	}
 
@@ -247,7 +301,11 @@ export function ClassAssignmentsTab({
 					? "Listening"
 					: skillFilter === "speaking"
 						? "Speaking"
-						: "Tất cả";
+						: skillFilter === "grammar"
+							? "Grammar"
+							: skillFilter === "vocabulary"
+								? "Vocabulary"
+								: "Tất cả";
 	// Action bar copy
 	const actionState = useMemo(() => {
 		if (!promptOk) {
@@ -263,28 +321,60 @@ export function ClassAssignmentsTab({
 			};
 		}
 		if (!dueOk) {
+			if (dueDateNotPast && dueTimeValid && !dueTimeNotPast) {
+				return {
+					title: "Giờ hạn nộp đã qua",
+					sub: "Chọn giờ sau thời điểm hiện tại hoặc chuyển sang ngày khác.",
+				};
+			}
 			return {
-				title: "Thiếu hạn nộp",
+				title: "Thiếu hoặc sai hạn nộp",
 				sub: `Hạn phải từ hôm nay (${fmtDue(todayVN)}) trở đi.`,
 			};
 		}
 		return {
 			title: `Giao cho ${selectedStudentIds.length} học viên`,
-			sub: `${selectedPrompt?.title} · hạn ${fmtDue(due)}`,
+			sub: `${selectedPrompt?.title} · hạn ${fmtDueDisplay(due, dueAtPreviewIso)}`,
 		};
 	}, [
 		promptOk,
 		studentsOk,
 		dueOk,
+		dueDateNotPast,
+		dueTimeValid,
+		dueTimeNotPast,
 		todayVN,
 		selectedStudentIds.length,
 		selectedPrompt,
 		due,
+		dueAtPreviewIso,
 	]);
+
+	function handleDueChange(nextIso: string) {
+		if (submit.error) submit.reset();
+		setValidationNowMs(Date.now());
+		setDue(nextIso);
+	}
+
+	function handleDueTimeChange(nextTime: string) {
+		if (submit.error) submit.reset();
+		setValidationNowMs(Date.now());
+		setDueTime(nextTime);
+	}
 
 	async function handleSubmit() {
 		setHasAttemptedSubmit(true);
-		if (!canSubmit || !selectedPrompt) return;
+		const clickNowMs = Date.now();
+		setValidationNowMs(clickNowMs);
+		const clickTodayVN = vietnamTodayISO(new Date(clickNowMs));
+		const clickDateOk = dueValidDate && due >= clickTodayVN;
+		const clickTimeOk =
+			clickDateOk &&
+			dueTimeValid &&
+			(due > clickTodayVN ||
+				dueTime === "23:59" ||
+				(Number.isFinite(dueAtMs) && dueAtMs > clickNowMs));
+		if (!promptOk || !studentsOk || !clickTimeOk || !selectedPrompt) return;
 
 		const result = await submit.run({
 			type: "assign-class-prompt",
@@ -292,6 +382,7 @@ export function ClassAssignmentsTab({
 				classId: classGroup.id,
 				promptId: selectedPrompt.id,
 				due,
+				dueTime,
 				note: note.trim(),
 				studentIds: selectedStudentIds,
 			},
@@ -301,6 +392,7 @@ export function ClassAssignmentsTab({
 			setLastAssigned({
 				promptTitle: selectedPrompt.title,
 				due,
+				dueAt: new Date(dueAtMs).toISOString(),
 				studentIds: selectedStudentIds,
 			});
 			onViewChange("success");
@@ -308,9 +400,17 @@ export function ClassAssignmentsTab({
 	}
 
 	function handleResetToAssign() {
+		const freshNowMs = Date.now();
+		const freshTodayVN = vietnamTodayISO(new Date(freshNowMs));
+		submit.reset();
+		setValidationNowMs(freshNowMs);
 		setSelectedPromptId(null);
 		setSkillFilter("all");
-		setDue(addDaysISO(todayVN, 7));
+		setDue(addDaysISO(freshTodayVN, 7));
+		setDueTime("23:59");
+		setDueDateInvalid(false);
+		setDueTimeInvalid(false);
+		setFormResetKey((k) => k + 1);
 		setNote("");
 		setSelectedStudentIds(enrolledStudents.map((s) => s.id).slice(0, 100));
 		setHasAttemptedSubmit(false);
@@ -370,7 +470,7 @@ export function ClassAssignmentsTab({
 					<li className="flex items-center justify-between gap-4">
 						<span className="text-muted-foreground text-sm">Hạn nộp</span>
 						<strong className="text-foreground text-sm">
-							{fmtDue(lastAssigned.due)}
+							{fmtDueDisplay(lastAssigned.due, lastAssigned.dueAt)}
 						</strong>
 					</li>
 					<li className="flex items-center justify-between gap-4">
@@ -448,6 +548,7 @@ export function ClassAssignmentsTab({
 							<SectionLabel>Đề sẵn sàng</SectionLabel>
 							<Link
 								to="/assignments/new"
+								search={{ classId: classGroup.id }}
 								className="font-medium text-muted-foreground text-xs hover:text-foreground"
 							>
 								Thêm đề mới
@@ -503,6 +604,7 @@ export function ClassAssignmentsTab({
 											</div>
 											<div className="flex flex-wrap items-center gap-2 text-xs">
 												<Tag>{skill.name}</Tag>
+												{p.writing != null && <Tag>+ Writing</Tag>}
 												{isAlreadyAssigned ? (
 													<StatusTag tone="used">Đã giao lớp này</StatusTag>
 												) : (
@@ -541,28 +643,89 @@ export function ClassAssignmentsTab({
 								</h2>
 							</div>
 
-							{/* Due Date */}
-							<div className="flex flex-col gap-1.5">
-								<label
-									htmlFor="assignment-due-input"
-									className="font-medium text-foreground text-xs"
-								>
-									Hạn nộp <span className="text-danger">*</span>
-								</label>
-								<input
-									id="assignment-due-input"
-									type="date"
-									required
-									min={todayVN}
-									value={due}
-									onChange={(e) => setDue(e.target.value)}
-									className="w-full rounded-md border border-border bg-muted px-3 py-2 text-foreground text-sm focus:border-primary focus:outline-none"
-								/>
-								{hasAttemptedSubmit && !dueOk && (
-									<p className="font-medium text-danger text-xs">
-										Chọn hạn nộp từ hôm nay trở đi.
+							{/* Due Date & Time (#572) */}
+							<div className="flex flex-col gap-2">
+								<div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
+									<div className="flex flex-col gap-1.5">
+										<label
+											htmlFor="assignment-due-input"
+											className="font-medium text-foreground text-xs"
+										>
+											Ngày hạn nộp <span className="text-danger">*</span>
+										</label>
+										<DatePickerInput
+											key={`due-date-${formResetKey}`}
+											id="assignment-due-input"
+											required
+											minDateISO={todayVN}
+											todayISO={todayVN}
+											value={due}
+											onChange={handleDueChange}
+											onInvalidChange={setDueDateInvalid}
+											aria-invalid={
+												dueDateInvalid ||
+												(dueValidDate && !dueDateNotPast) ||
+												(hasAttemptedSubmit && !dueValidDate)
+											}
+											aria-describedby={
+												dueErrorMsg || dueOk
+													? "assignment-due-feedback"
+													: undefined
+											}
+										/>
+									</div>
+									<div className="flex flex-col gap-1.5">
+										<label
+											htmlFor="assignment-due-time-input"
+											className="font-medium text-foreground text-xs"
+										>
+											Giờ hạn nộp <span className="text-danger">*</span>
+										</label>
+										<TimeInput24h
+											key={`due-time-${formResetKey}`}
+											id="assignment-due-time-input"
+											required
+											value={dueTime}
+											minTimeHHMM={
+												due === todayVN
+													? formatVietnamTimeHHMM(effectiveNowMs)
+													: undefined
+											}
+											onChange={handleDueTimeChange}
+											onInvalidChange={setDueTimeInvalid}
+											aria-invalid={
+												dueTimeInvalid ||
+												(dueDateNotPast && dueTimeValid && !dueTimeNotPast) ||
+												(hasAttemptedSubmit && !dueTimeValid)
+											}
+											aria-describedby={
+												dueErrorMsg || dueOk
+													? "assignment-due-feedback"
+													: undefined
+											}
+										/>
+									</div>
+								</div>
+								{dueErrorMsg ? (
+									<p
+										id="assignment-due-feedback"
+										className="font-medium text-danger text-xs"
+									>
+										{dueErrorMsg}
 									</p>
-								)}
+								) : dueOk ? (
+									<p
+										id="assignment-due-feedback"
+										data-testid="assignment-due-preview"
+										className="text-muted-foreground text-xs"
+									>
+										Đã hiểu:{" "}
+										<strong className="font-medium text-foreground">
+											{formatViWeekdayDate(due)} lúc {dueTime}
+										</strong>{" "}
+										(giờ Việt Nam)
+									</p>
+								) : null}
 							</div>
 
 							{/* Message / Note */}
@@ -579,7 +742,7 @@ export function ClassAssignmentsTab({
 									value={note}
 									onChange={(e) => setNote(e.target.value)}
 									placeholder="Ví dụ: nộp trước buổi T5, lập dàn ý 4 đoạn."
-									className="w-full rounded-md border border-border bg-muted px-3 py-2 text-foreground text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+									className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-base text-foreground shadow-xs outline-none transition-[color,box-shadow] placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
 								/>
 							</div>
 
@@ -644,8 +807,12 @@ export function ClassAssignmentsTab({
 							{/* Reassign Warning Note */}
 							{isReassign && previousAssignment && (
 								<div className="rounded-md border border-warn/40 bg-warn-soft p-3 text-muted-foreground text-xs leading-relaxed">
-									Đề này đã giao lớp này, hạn {fmtDue(previousAssignment.due)}.
-									Giao lại sẽ thêm lượt mới cho học viên đã chọn.
+									Đề này đã giao lớp này, hạn{" "}
+									{fmtDueDisplay(
+										previousAssignment.due,
+										previousAssignment.dueAt,
+									)}
+									. Giao lại sẽ thêm lượt mới cho học viên đã chọn.
 								</div>
 							)}
 						</Card>
@@ -659,22 +826,55 @@ export function ClassAssignmentsTab({
 								{selectedPrompt ? selectedPrompt.title : "Chọn một đề"}
 							</p>
 							<p className="mt-1.5 text-muted-foreground text-xs">
-								{selectedPrompt && previewPart
-									? `${previewPart.spec} · hạn ${fmtDue(due)}`
-									: `hạn ${fmtDue(due)}`}
+								{(() => {
+									const duePreviewText =
+										dueValidDate && dueTimeValid
+											? fmtDueDisplay(due, dueAtPreviewIso)
+											: "—";
+									return selectedPrompt && previewPart
+										? `${previewPart.spec} · hạn ${duePreviewText}`
+										: `hạn ${duePreviewText}`;
+								})()}
 							</p>
 							{selectedPrompt ? (
-								// This surface showed the raw string with pre-wrap —
-								// legacy plain rows keep that exact whitespace behavior.
-								<RichTextBody
-									text={
-										selectedPrompt.skill === "reading"
-											? (selectedPrompt.passage ?? selectedPrompt.prompt)
-											: selectedPrompt.prompt
-									}
-									legacyWhitespace="pre-wrap"
-									className="mt-3 text-foreground text-sm leading-[1.55]"
-								/>
+								<>
+									{isAutoSkill(selectedPrompt.skill ?? "writing") && (
+										<p className="mt-3 font-medium text-foreground text-xs">
+											Phần 1 · {(selectedPrompt.questions ?? []).length} câu hỏi
+											trắc nghiệm
+										</p>
+									)}
+									{!isEmptyRichText(
+										isAutoSkill(selectedPrompt.skill ?? "writing")
+											? (selectedPrompt.passage ?? "")
+											: selectedPrompt.prompt,
+									) && (
+										<RichTextBody
+											text={
+												isAutoSkill(selectedPrompt.skill ?? "writing")
+													? (selectedPrompt.passage ?? "")
+													: selectedPrompt.prompt
+											}
+											legacyWhitespace="pre-wrap"
+											className="mt-2 text-foreground text-sm leading-[1.55]"
+										/>
+									)}
+									{selectedPrompt.writing != null && (
+										<div className="mt-3 border-border border-t pt-2.5 text-sm">
+											<p className="font-medium text-foreground text-xs">
+												Phần 2 · Writing (
+												{selectedPrompt.writing.part === "task1"
+													? "Task 1"
+													: "Task 2"}
+												)
+											</p>
+											<RichTextBody
+												text={selectedPrompt.writing.prompt}
+												className="mt-1 text-foreground text-sm leading-[1.55]"
+											/>
+										</div>
+									)}
+								</>
 							) : (
 								<p className="mt-3 text-foreground text-sm leading-[1.55]">
 									Đề sẽ hiện khi bạn chọn từ ngân hàng.
@@ -683,6 +883,7 @@ export function ClassAssignmentsTab({
 							{selectedPrompt && previewType && (
 								<div className="mt-3 flex flex-wrap gap-2">
 									{previewSkill && <Tag>{previewSkill.name}</Tag>}
+									{selectedPrompt.writing != null && <Tag>+ Writing</Tag>}
 									{previewPart && <Tag>{previewPart.label}</Tag>}
 									<Tag>{previewType.label}</Tag>
 									<Tag>{`Band ${selectedPrompt.band}`}</Tag>
@@ -711,6 +912,14 @@ export function ClassAssignmentsTab({
 
 						{/* Right: Buttons + Submit Notice */}
 						<div className="flex items-center gap-3">
+							{submit.error && (
+								<p
+									role="alert"
+									className="font-medium text-destructive text-xs"
+								>
+									{submit.error}
+								</p>
+							)}
 							{submit.notice && (
 								<KernelSubmitNotice
 									notice={submit.notice}
@@ -787,14 +996,17 @@ export function ClassAssignmentsTab({
 			) : (
 				<div id="assigned-list" className="flex flex-col gap-2">
 					{classAssignments.map((ca) => {
-						const rollup = rollupStatus(ca, todayVN);
+						const rollup = rollupStatus(ca, todayVN, effectiveNowMs);
 						const doneCount = ca.targets.filter(
 							(t) => t.submittedAt !== null,
 						).length;
-						const skill =
-							data.assignmentPrompts?.find((p) => p.id === ca.promptId)
-								?.skill ?? "";
-						const gradable = isGradableSkill(skill);
+						const promptRow = data.assignmentPrompts?.find(
+							(p) => p.id === ca.promptId,
+						);
+						const skill = promptRow?.skill ?? "";
+						const gradable = promptRow
+							? hasGradableTask(promptRow)
+							: isGradableSkill(skill);
 						const SkillIcon = SKILL_ICON[skill] ?? BookOpen;
 						const open = (userOpenIds ?? defaultOpenIds).has(ca.id);
 						const pctDone =
@@ -822,7 +1034,7 @@ export function ClassAssignmentsTab({
 											{ca.title}
 										</span>
 										<span className="block text-muted-foreground text-xs">
-											Hạn {fmtDue(ca.due)} ·{" "}
+											Hạn {fmtDueDisplay(ca.due, ca.dueAt)} ·{" "}
 											<span
 												className={cn(
 													"tabular-nums",
@@ -835,6 +1047,7 @@ export function ClassAssignmentsTab({
 											</span>
 										</span>
 									</span>
+									{promptRow?.writing != null && <Tag>+ Writing</Tag>}
 									<StatusTag tone={rollup.tone}>{rollup.label}</StatusTag>
 									<span className="hidden w-24 sm:block">
 										<span className="block h-1.5 overflow-hidden rounded-full bg-muted">
@@ -862,6 +1075,7 @@ export function ClassAssignmentsTab({
 												target,
 												ca.due,
 												todayVN,
+												{ dueAt: ca.dueAt, nowMs: effectiveNowMs },
 											);
 											return (
 												<div

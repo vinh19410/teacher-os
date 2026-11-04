@@ -1,4 +1,7 @@
+import type { AssignmentWritingSection } from "@teacher-os/api/contracts";
+import { ASSIGNMENT_BANDS } from "@teacher-os/api/contracts";
 import { htmlToPlainText } from "@teacher-os/api/rich-text";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
 import { Field, Input, Textarea } from "@/components/ui/field";
@@ -9,6 +12,7 @@ import {
 	partOf,
 	type QuestionItem,
 	SKILLS,
+	selectedTypeOf,
 	skillOf,
 	typeOf,
 	wordCount,
@@ -34,6 +38,8 @@ export interface ComposerValue {
 	optionBank: string[];
 	note: string;
 	items: QuestionItem[];
+	/** #574: phần Writing đi kèm cho đề tự chấm. */
+	writing?: AssignmentWritingSection | null;
 }
 
 export function PromptComposer({
@@ -60,9 +66,17 @@ export function PromptComposer({
 }) {
 	const skill = skillOf(value.skill);
 	const part = partOf(value.skill, value.part);
-	const type = typeOf(value.skill, value.part, value.type);
+	const selectedType = selectedTypeOf(value.skill, value.part, value.type);
 	const isAuto = isAutoSkill(value.skill);
 	const isCue = value.skill === "speaking" && value.part === "part2";
+	const writingSpec = skillOf("writing");
+	const activeWriting = value.writing ?? null;
+	const activeWritingPart = activeWriting
+		? partOf("writing", activeWriting.part)
+		: null;
+	const activeWritingType = activeWriting
+		? typeOf("writing", activeWriting.part, activeWriting.type)
+		: null;
 	return (
 		<Card variant="white" className="flex flex-col gap-4">
 			<div>
@@ -97,7 +111,7 @@ export function PromptComposer({
 								onFieldChange({
 									skill: next.id,
 									part: next.parts[0].id,
-									type: next.parts[0].types[0].id,
+									type: next.id === "writing" ? "" : next.parts[0].types[0].id,
 								});
 							}}
 						/>
@@ -117,28 +131,43 @@ export function PromptComposer({
 								// default type, so a stray click could otherwise reset the
 								// type (review #2).
 								if (next.id === value.part) return;
-								onFieldChange({ part: next.id, type: next.types[0].id });
+								onFieldChange({
+									part: next.id,
+									type: value.skill === "writing" ? "" : next.types[0].id,
+								});
 							}}
 						/>
 					</div>
 				</>
 			)}
-			<div className="flex flex-col gap-1.5">
+			<div
+				id="assignment-field-type"
+				tabIndex={-1}
+				className="flex scroll-mt-24 scroll-mb-28 flex-col gap-1.5 outline-none"
+			>
 				<span className="text-muted-foreground text-xs">{skill.typeLabel}</span>
 				<ChipFilter
 					options={part.types.map((entry) => entry.label)}
-					value={type.label}
-					onChange={(label) =>
-						onFieldChange({
-							type:
-								part.types.find((entry) => entry.label === label)?.id ??
-								part.types[0].id,
-						})
-					}
+					value={selectedType?.label ?? ""}
+					onChange={(label) => {
+						const chosen = part.types.find((entry) => entry.label === label);
+						if (chosen) {
+							onFieldChange({ type: chosen.id });
+						}
+					}}
 				/>
+				{showErrors && errors.type && (
+					<p className="text-destructive text-xs">{errors.type}</p>
+				)}
 			</div>
-			<Field label="Tiêu đề" error={showErrors ? errors.title : undefined}>
+			<Field
+				label="Tiêu đề"
+				error={showErrors ? errors.title : undefined}
+				htmlFor="assignment-field-title"
+			>
 				<Input
+					id="assignment-field-title"
+					className="scroll-mt-24 scroll-mb-28"
 					value={value.title}
 					onChange={(event) => onFieldChange({ title: event.target.value })}
 				/>
@@ -147,7 +176,7 @@ export function PromptComposer({
 				<div className="flex flex-col gap-1.5">
 					<span className="text-muted-foreground text-xs">Band mục tiêu</span>
 					<ChipFilter
-						options={["6.0", "6.5", "7.0", "7.5"]}
+						options={[...ASSIGNMENT_BANDS]}
 						value={value.band}
 						onChange={(band) => onFieldChange({ band })}
 					/>
@@ -160,38 +189,45 @@ export function PromptComposer({
 				</Field>
 			</div>
 			{value.skill === "writing" && (
-				<Field
-					label="Nội dung đề"
-					help={part.help}
-					error={showErrors ? errors.prompt : undefined}
-				>
-					<RichTextEditor
-						value={value.prompt}
-						onChange={(prompt) => onFieldChange({ prompt })}
-						placeholder="Dán hoặc soạn đề bài…"
-						contentClassName="[&_.ProseMirror]:min-h-42"
-					/>
-				</Field>
+				<div id="assignment-field-prompt" className="scroll-mt-24 scroll-mb-28">
+					<Field
+						label="Nội dung đề"
+						help={part.help}
+						error={showErrors ? errors.prompt : undefined}
+					>
+						<RichTextEditor
+							value={value.prompt}
+							onChange={(prompt) => onFieldChange({ prompt })}
+							placeholder="Dán hoặc soạn đề bài…"
+							contentClassName="[&_.ProseMirror]:min-h-42"
+						/>
+					</Field>
+				</div>
 			)}
 			{(value.skill === "reading" ||
 				value.skill === "grammar" ||
 				value.skill === "vocabulary") && (
-				<Field
-					label={
-						value.skill === "reading"
-							? "Đoạn đọc"
-							: "Đoạn đọc / Ngữ cảnh (không bắt buộc)"
-					}
-					help={part.help}
-					error={showErrors ? errors.passage : undefined}
+				<div
+					id="assignment-field-passage"
+					className="scroll-mt-24 scroll-mb-28"
 				>
-					<RichTextEditor
-						value={value.passage}
-						onChange={(passage) => onFieldChange({ passage })}
-						placeholder="Dán đoạn đọc vào đây…"
-						contentClassName="[&_.ProseMirror]:min-h-52"
-					/>
-				</Field>
+					<Field
+						label={
+							value.skill === "reading"
+								? "Đoạn đọc"
+								: "Đoạn đọc / Ngữ cảnh (không bắt buộc)"
+						}
+						help={part.help}
+						error={showErrors ? errors.passage : undefined}
+					>
+						<RichTextEditor
+							value={value.passage}
+							onChange={(passage) => onFieldChange({ passage })}
+							placeholder="Dán đoạn đọc vào đây…"
+							contentClassName="[&_.ProseMirror]:min-h-52"
+						/>
+					</Field>
+				</div>
 			)}
 			{(value.skill === "reading" ||
 				value.skill === "grammar" ||
@@ -201,7 +237,10 @@ export function PromptComposer({
 				</span>
 			)}
 			{value.skill === "listening" && (
-				<div className="rounded-md rounded-md bg-muted p-3">
+				<div
+					id="assignment-field-audio"
+					className="scroll-mt-24 scroll-mb-28 rounded-md rounded-md bg-muted p-3"
+				>
 					<p className="font-medium text-muted-foreground text-xs">File nghe</p>
 					<div className="mt-2 flex flex-wrap items-center gap-2">
 						<label className="inline-flex cursor-pointer rounded-md rounded-md border border-input bg-transparent px-3 py-2 font-medium text-xs transition-colors hover:text-primary">
@@ -243,25 +282,151 @@ export function PromptComposer({
 				</div>
 			)}
 			{isAuto && (
-				<QuestionKeyEditor
-					skill={value.skill}
-					partId={value.part}
-					typeId={value.type}
-					intro={value.intro}
-					items={value.items}
-					showErrors={showErrors}
-					status={status}
-					imageUrl={value.imageUrl}
-					optionBank={value.optionBank}
-					imageUrlError={showErrors ? errors.imageUrl : undefined}
-					optionBankError={showErrors ? errors.optionBank : undefined}
-					questionsError={showErrors ? errors.questions : undefined}
-					onIntroChange={(intro) => onFieldChange({ intro })}
-					onImageUrlChange={(imageUrl) => onFieldChange({ imageUrl })}
-					onItemsChange={(items) => onFieldChange({ items })}
-					onBankChange={(optionBank) => onFieldChange({ optionBank })}
-				/>
+				<div
+					id="assignment-field-questions"
+					tabIndex={-1}
+					className="scroll-mt-24 scroll-mb-28 outline-none"
+				>
+					<QuestionKeyEditor
+						skill={value.skill}
+						partId={value.part}
+						typeId={value.type}
+						intro={value.intro}
+						items={value.items}
+						showErrors={showErrors}
+						status={status}
+						imageUrl={value.imageUrl}
+						optionBank={value.optionBank}
+						imageUrlError={showErrors ? errors.imageUrl : undefined}
+						optionBankError={showErrors ? errors.optionBank : undefined}
+						questionsError={showErrors ? errors.questions : undefined}
+						onIntroChange={(intro) => onFieldChange({ intro })}
+						onImageUrlChange={(imageUrl) => onFieldChange({ imageUrl })}
+						onItemsChange={(items) => onFieldChange({ items })}
+						onBankChange={(optionBank) => onFieldChange({ optionBank })}
+						imageId="assignment-field-image"
+						showExplanation
+					/>
+				</div>
 			)}
+			{isAuto &&
+				!lockPart &&
+				(activeWriting && activeWritingPart && activeWritingType ? (
+					<div
+						className="flex flex-col gap-3 rounded-lg border border-border bg-muted/20 p-4"
+						data-testid="composer-writing-section"
+					>
+						<div className="flex items-center justify-between gap-2">
+							<div>
+								<p className="font-semibold text-foreground text-sm">
+									Phần Writing đi kèm
+								</p>
+								<p className="text-muted-foreground text-xs">
+									Học viên viết bài tự luận sau khi làm câu hỏi trắc nghiệm.
+								</p>
+							</div>
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								onClick={() => onFieldChange({ writing: null })}
+							>
+								Bỏ phần Writing
+							</Button>
+						</div>
+						<div className="flex flex-col gap-1.5">
+							<span className="text-muted-foreground text-xs">
+								{writingSpec.partLabel}
+							</span>
+							<ChipFilter
+								ariaLabel={`${writingSpec.partLabel} Writing`}
+								options={writingSpec.parts.map((entry) => entry.label)}
+								value={activeWritingPart.label}
+								onChange={(label) => {
+									const next =
+										writingSpec.parts.find((entry) => entry.label === label) ??
+										writingSpec.parts[0];
+									if (next.id === activeWriting.part) return;
+									onFieldChange({
+										writing: {
+											part: next.id,
+											type: next.types[0].id,
+											prompt: activeWriting.prompt,
+										},
+									});
+								}}
+							/>
+						</div>
+						<div className="flex flex-col gap-1.5">
+							<span className="text-muted-foreground text-xs">
+								{writingSpec.typeLabel}
+							</span>
+							<ChipFilter
+								ariaLabel={`${writingSpec.typeLabel} Writing`}
+								options={activeWritingPart.types.map((entry) => entry.label)}
+								value={activeWritingType.label}
+								onChange={(label) =>
+									onFieldChange({
+										writing: {
+											...activeWriting,
+											type:
+												activeWritingPart.types.find(
+													(entry) => entry.label === label,
+												)?.id ?? activeWritingPart.types[0].id,
+										},
+									})
+								}
+							/>
+						</div>
+						<div
+							id="assignment-field-writing-prompt"
+							className="scroll-mt-24 scroll-mb-28"
+						>
+							<Field
+								label="Đề bài phần Writing"
+								help={activeWritingPart.help}
+								error={showErrors ? errors.writingPrompt : undefined}
+							>
+								<RichTextEditor
+									value={activeWriting.prompt}
+									onChange={(prompt) =>
+										onFieldChange({
+											writing: { ...activeWriting, prompt },
+										})
+									}
+									placeholder="Dán hoặc soạn đề Writing…"
+									contentClassName="[&_.ProseMirror]:min-h-36"
+								/>
+							</Field>
+						</div>
+						<span className="-mt-2 text-right text-muted-foreground text-xs">
+							{wordCount(htmlToPlainText(activeWriting.prompt))} từ
+						</span>
+					</div>
+				) : (
+					<div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border border-dashed bg-muted/30 px-4 py-3">
+						<div>
+							<p className="font-medium text-foreground text-sm">
+								Gộp thêm phần Writing (tuỳ chọn)
+							</p>
+							<p className="text-muted-foreground text-xs">
+								Giao trắc nghiệm và tự luận Writing trong cùng một bài tập.
+							</p>
+						</div>
+						<Button
+							type="button"
+							variant="secondary"
+							size="sm"
+							onClick={() =>
+								onFieldChange({
+									writing: { part: "task2", type: "discuss", prompt: "" },
+								})
+							}
+						>
+							Thêm phần Writing
+						</Button>
+					</div>
+				))}
 			{value.skill === "listening" && (
 				<Field
 					label="Transcript (chỉ giáo viên)"
@@ -281,8 +446,11 @@ export function PromptComposer({
 						<Field
 							label="Chủ đề cue card"
 							error={showErrors ? errors.cueTopic : undefined}
+							htmlFor="assignment-field-cueTopic"
 						>
 							<Input
+								id="assignment-field-cueTopic"
+								className="scroll-mt-24 scroll-mb-28"
 								value={value.cueTopic}
 								onChange={(event) =>
 									onFieldChange({ cueTopic: event.target.value })
@@ -299,18 +467,23 @@ export function PromptComposer({
 						</Field>
 					</>
 				) : (
-					<Field
-						label="Câu hỏi giám khảo"
-						help={part.help}
-						error={showErrors ? errors.prompt : undefined}
+					<div
+						id="assignment-field-prompt"
+						className="scroll-mt-24 scroll-mb-28"
 					>
-						<RichTextEditor
-							value={value.prompt}
-							onChange={(prompt) => onFieldChange({ prompt })}
-							placeholder="Soạn câu hỏi giám khảo…"
-							contentClassName="[&_.ProseMirror]:min-h-42"
-						/>
-					</Field>
+						<Field
+							label="Câu hỏi giám khảo"
+							help={part.help}
+							error={showErrors ? errors.prompt : undefined}
+						>
+							<RichTextEditor
+								value={value.prompt}
+								onChange={(prompt) => onFieldChange({ prompt })}
+								placeholder="Soạn câu hỏi giám khảo…"
+								contentClassName="[&_.ProseMirror]:min-h-42"
+							/>
+						</Field>
+					</div>
 				))}
 			<Field label="Hướng dẫn thêm (không bắt buộc)">
 				<RichTextEditor

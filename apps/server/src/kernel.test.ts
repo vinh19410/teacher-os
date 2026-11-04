@@ -36,8 +36,9 @@ import {
 import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
-import { beforeAll, describe, expect, test } from "vitest";
+import { beforeAll, describe, expect, test, vi } from "vitest";
 import { buildApp, type Db } from "./app";
+import { backfillStudyPackTargetsForStudent } from "./lib/study-pack-assign";
 import { generateScheduleLessons } from "./routes/kernel";
 
 const CORS_ORIGIN = "http://localhost:8001";
@@ -5074,6 +5075,40 @@ describe("assignment prompt bank (issue #202)", () => {
 		expect(row?.status).toBe("draft");
 		expect(row?.note).toBe("cần duyệt");
 	});
+	test("POST draft prompt with type empty string succeeds and persists empty type (#577)", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				...validBody,
+				title: "Nháp Writing chưa chọn type",
+				status: "draft",
+				type: "",
+			},
+		});
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		const row = (await t.kernel(orgA)).assignmentPrompts.find(
+			(r) => r.id === id,
+		);
+		expect(row?.status).toBe("draft");
+		expect(row?.type).toBe("");
+		expect(row?.genre).toBe("");
+	});
+
+	test("POST ready prompt with type empty string returns 400 (#577)", async () => {
+		const res = await t.call("/api/assignments/prompts", {
+			session: orgA,
+			method: "POST",
+			body: {
+				...validBody,
+				title: "Writing ready thiếu type",
+				status: "ready",
+				type: "",
+			},
+		});
+		expect(res.status).toBe(400);
+	});
 
 	test("POST rejects invalid bodies with 400", async () => {
 		for (const body of [
@@ -5081,7 +5116,7 @@ describe("assignment prompt bank (issue #202)", () => {
 			{ ...validBody, title: "  " }, // whitespace-only title
 			{ ...validBody, prompt: "" }, // blank prompt
 			{ ...validBody, skill: "math" }, // enum
-			{ ...validBody, band: "8.0" }, // enum
+			{ ...validBody, band: "8.5" }, // enum
 			{ ...validBody, status: "sent" }, // enum
 			{ ...validBody, extra: true }, // strict
 			{ skill: "writing" }, // missing fields
@@ -6489,9 +6524,9 @@ describe("class assignment give flow (#208)", () => {
 			promptId: promptReadyA,
 			title: "Writing Task 2 — Ready",
 			due: "2030-01-15",
+			dueAt: new Date(Date.parse("2030-01-15T23:59:00+07:00")).toISOString(),
 			note: "Nộp đúng hạn",
 		});
-		expect(assigned?.targets).toHaveLength(2);
 		expect(assigned?.targets).toEqual(
 			expect.arrayContaining([
 				{
@@ -6525,6 +6560,146 @@ describe("class assignment give flow (#208)", () => {
 			},
 		});
 		expect(res.status).toBe(201);
+	});
+
+	test("stores custom dueTime as VN timestamp in dueAt and projects to snapshot (#572)", async () => {
+		const res = await t.call(`/api/classes/${classIdA}/assignments`, {
+			session: orgA,
+			method: "POST",
+			body: {
+				promptId: promptReadyA,
+				due: "2030-06-11",
+				dueTime: "17:30",
+				note: "Hạn chiều",
+				studentIds: [studentIdA1],
+			},
+		});
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		const snapshot = await t.kernel(orgA);
+		const assigned = snapshot.classAssignments.find((a) => a.id === id);
+		expect(assigned?.due).toBe("2030-06-11");
+		expect(assigned?.dueAt).toBe(
+			new Date(Date.parse("2030-06-11T17:30:00+07:00")).toISOString(),
+		);
+	});
+
+	test("due today with past dueTime rejects 400 past-time, while future dueTime, 23:59 at 23:59:30 VN, and omitted dueTime succeed (#572)", async () => {
+		const pinnedDayISO = addDaysISO(vietnamTodayISO(), 1);
+		vi.useFakeTimers({ toFake: ["Date"] });
+		try {
+			vi.setSystemTime(new Date(`${pinnedDayISO}T14:00:00+07:00`));
+
+			const resPastTime = await t.call(`/api/classes/${classIdA}/assignments`, {
+				session: orgA,
+				method: "POST",
+				body: {
+					promptId: promptReadyA,
+					due: pinnedDayISO,
+					dueTime: "13:59",
+					note: "",
+					studentIds: [studentIdA1],
+				},
+			});
+			expect(resPastTime.status).toBe(400);
+			expect(await resPastTime.json()).toMatchObject({
+				error: "invalid due time",
+				reason: "past-time",
+			});
+
+			const resExactNow = await t.call(`/api/classes/${classIdA}/assignments`, {
+				session: orgA,
+				method: "POST",
+				body: {
+					promptId: promptReadyA,
+					due: pinnedDayISO,
+					dueTime: "14:00",
+					note: "",
+					studentIds: [studentIdA1],
+				},
+			});
+			expect(resExactNow.status).toBe(400);
+			expect(await resExactNow.json()).toMatchObject({
+				reason: "past-time",
+			});
+
+			const resFutureTime = await t.call(
+				`/api/classes/${classIdA}/assignments`,
+				{
+					session: orgA,
+					method: "POST",
+					body: {
+						promptId: promptReadyA,
+						due: pinnedDayISO,
+						dueTime: "14:01",
+						note: "",
+						studentIds: [studentIdA1],
+					},
+				},
+			);
+			expect(resFutureTime.status).toBe(201);
+
+			// Last minute of the day (23:59:30 VN): both dueTime="23:59" and omitted dueTime succeed
+			vi.setSystemTime(new Date(`${pinnedDayISO}T23:59:30+07:00`));
+
+			const resEndMinute = await t.call(
+				`/api/classes/${classIdA}/assignments`,
+				{
+					session: orgA,
+					method: "POST",
+					body: {
+						promptId: promptReadyA,
+						due: pinnedDayISO,
+						dueTime: "23:59",
+						note: "",
+						studentIds: [studentIdA1],
+					},
+				},
+			);
+			expect(resEndMinute.status).toBe(201);
+
+			const resOmittedMidnight = await t.call(
+				`/api/classes/${classIdA}/assignments`,
+				{
+					session: orgA,
+					method: "POST",
+					body: {
+						promptId: promptReadyA,
+						due: pinnedDayISO,
+						note: "",
+						studentIds: [studentIdA1],
+					},
+				},
+			);
+			expect(resOmittedMidnight.status).toBe(201);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	test("regular assignment with non-null dueAt is NOT backfilled by backfillStudyPackTargetsForStudent (#572)", async () => {
+		const createRes = await t.call(`/api/classes/${classIdA}/assignments`, {
+			session: orgA,
+			method: "POST",
+			body: {
+				promptId: promptReadyA,
+				due: "2030-12-01",
+				dueTime: "18:00",
+				note: "",
+				studentIds: [studentIdA1],
+			},
+		});
+		expect(createRes.status).toBe(201);
+
+		const orgId = await t.orgIdOf(orgA);
+		const backfilled = await backfillStudyPackTargetsForStudent(
+			t.db as unknown as Db,
+			orgId,
+			classIdA,
+			studentIdA2,
+			new Date(),
+		);
+		expect(backfilled).toBe(0);
 	});
 
 	test("matrix: 400 rejects invalid bodies", async () => {

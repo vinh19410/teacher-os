@@ -40,7 +40,7 @@ function StatusTag({ entry }: { entry: HistoryEntry }) {
 function canReview(entry: HistoryEntry): boolean {
 	return (
 		entry.status === "graded" &&
-		entry.skill === "writing" &&
+		(entry.skill === "writing" || entry.hasWriting === true) &&
 		entry.attemptId !== null
 	);
 }

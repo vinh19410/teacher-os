@@ -108,10 +108,12 @@ function TodoBanner({
 	className,
 	assignments,
 	todayISO,
+	nowMs,
 }: {
 	className: string;
 	assignments: StudentAssignment[];
 	todayISO: string;
+	nowMs: number;
 }) {
 	const todo = assignments
 		.filter(
@@ -122,8 +124,8 @@ function TodoBanner({
 		)
 		.sort(
 			(a, b) =>
-				deriveAssignmentStatus(a, todayISO).sortOrder -
-				deriveAssignmentStatus(b, todayISO).sortOrder,
+				deriveAssignmentStatus(a, todayISO, nowMs).sortOrder -
+				deriveAssignmentStatus(b, todayISO, nowMs).sortOrder,
 		);
 	const first = todo[0];
 	if (!first) return null;
@@ -249,6 +251,7 @@ export function ClassDetailView({
 				className={cls.name}
 				assignments={detail.assignments}
 				todayISO={todayISO}
+				nowMs={now.getTime()}
 			/>
 
 			<header className="mb-4 flex flex-wrap items-end justify-between gap-4">
@@ -348,6 +351,7 @@ export function ClassDetailView({
 					<ClassAssignmentTable
 						assignments={detail.assignments}
 						todayISO={todayISO}
+						nowMs={now.getTime()}
 					/>
 				)}
 				{tab === "syllabus" && <SyllabusTab detail={detail} />}

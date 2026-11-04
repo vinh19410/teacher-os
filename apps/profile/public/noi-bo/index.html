@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Tài liệu nội bộ — Kịch bản tư vấn học viên | Cô Thục Mỹ</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #f59e0b;
+      --accent-hover: #d97706;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #10b981;
+      --font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 24px 16px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    header {
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-radius: 9999px;
+      background: #7c2d12;
+      color: #fed7aa;
+      margin-bottom: 8px;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    .lead {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+    .warning-box {
+      background: rgba(245, 158, 11, 0.1);
+      border-left: 4px solid var(--accent);
+      padding: 12px 16px;
+      margin-bottom: 24px;
+      border-radius: 4px;
+      font-size: 13.5px;
+      color: #fde68a;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .card h2 {
+      font-size: 17px;
+      margin-bottom: 6px;
+      color: #fff;
+    }
+    .card p.desc {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+    .snippet-box {
+      background: #090d16;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      padding: 14px;
+      font-family: inherit;
+      font-size: 13.5px;
+      white-space: pre-wrap;
+      color: #e2e8f0;
+      max-height: 260px;
+      overflow-y: auto;
+      margin-bottom: 12px;
+      user-select: all;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .btn-gold {
+      background: var(--accent);
+      color: #0f172a;
+    }
+    .btn-gold:hover {
+      background: var(--accent-hover);
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+    .contact-card {
+      background: #1e293b;
+      border: 1px dashed var(--card-border);
+      border-radius: 8px;
+      padding: 18px;
+      margin-top: 32px;
+    }
+    .contact-card h3 {
+      font-size: 15px;
+      margin-bottom: 10px;
+      color: #fff;
+    }
+    .contact-list {
+      list-style: none;
+      font-size: 14px;
+    }
+    .contact-list li {
+      margin-bottom: 6px;
+      color: var(--text-muted);
+    }
+    .contact-list strong {
+      color: #f1f5f9;
+    }
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #10b981;
+      color: #064e3b;
+      font-weight: 600;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-size: 14px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 1000;
+    }
+    #toast.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <span class="badge">Nội bộ tư vấn viên</span>
+      <h1>Kịch Bản Tư Vấn &amp; Chăm Sóc Học Viên</h1>
+      <p class="lead">Bộ tài liệu và kịch bản chat mẫu của Cô Đỗ Thục Mỹ (The English Corner) dành cho tư vấn viên.</p>
+    </header>
+
+    <div class="warning-box">
+      🔒 <strong>Lưu ý bảo mật:</strong> Trang này chỉ lưu hành nội bộ. Không gửi liên kết trang này cho học viên hoặc chia sẻ công khai.
+    </div>
+
+    <!-- Mẫu 1 -->
+    <div class="card">
+      <h2>Mẫu 1 • Tin Nhắn Gửi Trọn Bộ Hồ Sơ &amp; Lộ Trình</h2>
+      <p class="desc">Dùng khi học viên hỏi thông tin tổng quan, cần biết bằng cấp, phương pháp và quy trình kèm cặp 365 ngày.</p>
+      <div class="snippet-box" id="snippet1">Chào bạn, gửi bạn thông tin tổng hợp Hồ sơ Năng lực Giảng viên của Cô Đỗ Thục Mỹ (The English Corner) và Quy trình Đào tạo 365 Ngày nhé:
+
+1️⃣ BẢO CHỨNG CHUYÊN MÔN CÔ THỤC MỸ:
+• Cử nhân ĐH Quốc Tế Hồng Bàng (HIU) | Giảng viên Thỉnh giảng ĐH HUFLIT TP.HCM
+• 8+ năm kinh nghiệm thực chiến (3+ năm dạy Online cho 500+ sinh viên &amp; người đi làm)
+• Chứng nhận Quốc tế: University of London (UK), IDP IELTS Australia &amp; ALAP (UK)
+• Giải Nhì Dạy Tốt &amp; Top 2 GV Truyền cảm hứng Vinschool | Top 5 GV Truyền cảm hứng IMAP Việt Nam
+• Đào tạo tiếng Anh doanh nghiệp tại FPT Software TP.HCM &amp; Aroma
+
+2️⃣ ĐẶC QUYỀN KÈM CẶP KHÉP KÍN 365 NGÀY:
+• Trước giờ học: Học 20-25 Collocations/ngày trên App Knowt có Team theo dõi nhắc bài
+• Trong giờ học: Lớp 1-1 hoặc Bàn tròn 4-6 bạn ấm áp như Talkshow + Gửi Video Record ngay sau 15 PHÚT kết thúc lớp
+• Sau giờ học: Đích thân cô Mỹ chấm Writing &amp; Speaking theo 4 tiêu chí Giám khảo
+• Đồng hành 365 ngày: Tài trợ 100% phí App luyện Speaking Forecast theo Quý &amp; ưu tiên chấm bài không giới hạn tới ngày thi!
+
+🎁 Hiện lớp đang dành tặng 05 suất 【KHÁM BỆNH TIẾNG ANH 1-1 MIỄN PHÍ】 cùng cô Mỹ để đánh giá 4 kỹ năng và thiết kế Thời khóa biểu Thứ 2 - Chủ Nhật riêng cho bạn. Bạn nhắn mục tiêu hiện tại để cô xếp lịch nhé!</div>
+      <button type="button" class="btn btn-gold" data-copy-target="snippet1">
+        📋 Copy Kịch Bản Mẫu 1
+      </button>
+    </div>
+
+    <!-- Mẫu 2 -->
+    <div class="card">
+      <h2>Mẫu 2 • Lời Mời Test Đầu Vào 1-1</h2>
+      <p class="desc">Dùng để mời học viên đặt lịch kiểm tra trình độ 4 kỹ năng trực tiếp cùng cô Mỹ qua Google Meet.</p>
+      <div class="snippet-box" id="snippet2">🎁 MỜI BẠN THAM GIA BUỔI "KHÁM BỆNH TIẾNG ANH 1-1" CÙNG CÔ THỤC MỸ:
+• Thời lượng: 30 phút trực tiếp 1-1 qua Google Meet cùng cô Mỹ
+• Nội dung: Đánh giá khẩu hình phát âm IPA, bắt lỗi ngữ pháp/dịch ngầm, quy đổi trình độ theo khung CEFR (A1-C1) và tính chính xác số giờ học cần thiết
+• Quà tặng sau buổi test: Bảng Kế hoạch Học tập Cá nhân hóa (Thứ 2 - Chủ Nhật) khớp với lịch đi làm/đi học của bạn.
+👉 Bạn cho cô xin Tên + SĐT Zalo + Khung giờ rảnh trong tuần để cô xếp lịch nhé!</div>
+      <button type="button" class="btn btn-primary" data-copy-target="snippet2">
+        📋 Copy Lời Mời Mẫu 2
+      </button>
+    </div>
+
+    <!-- Mẫu 3 -->
+    <div class="card">
+      <h2>Mẫu 3 • Tóm Tắt Bộ 5 File Hồ Sơ &amp; Tài Liệu PDF</h2>
+      <p class="desc">Dùng gửi nhanh qua Zalo danh mục tài liệu hồ sơ của cô Mỹ cho phụ huynh hoặc học viên cần hồ sơ minh chứng.</p>
+      <div class="snippet-box" id="snippet3">🌟 TRỌN BỘ HỒ SƠ GIẢNG VIÊN &amp; LỘ TRÌNH ĐÀO TẠO CÔ ĐỖ THỊ THỤC MỸ (THE ENGLISH CORNER)
+• Giảng viên: Cô Đỗ Thục Mỹ (Cử nhân ĐH Quốc Tế Hồng Bàng HIU | GV Thỉnh giảng ĐH HUFLIT TP.HCM)
+• Chứng nhận Quốc tế: University of London (UK), IDP IELTS Australia &amp; ALAP (UK)
+• Giải thưởng: Giải Nhì Dạy Tốt &amp; Top 2 GV Truyền cảm hứng Vinschool | Top 5 GV Truyền cảm hứng IMAP
+• Bộ File PDF đính kèm:
+  1. Hồ Sơ Năng Lực Giảng Viên Cô Thục Mỹ (6 Trang Tiếng Việt Minh Họa)
+  2. Quy Trình Đào Tạo 5 Bước &amp; Lộ Trình IELTS 365 Ngày (6 Trang)
+  3. Bộ 4 Bảng Tóm Tắt Bảo Chứng, Phương Pháp &amp; 3 Lộ Trình Học
+  4. Ms. Thuc My Master Teacher Profile (6 Pages English)
+  5. Ms. Thuc My 1-Page Executive CV (English)
+📞 Zalo Tư vấn &amp; Đặt lịch Khám bệnh Tiếng Anh 1-1: 0929.060.994</div>
+      <button type="button" class="btn btn-gold" data-copy-target="snippet3">
+        📋 Copy Danh Mục Mẫu 3
+      </button>
+    </div>
+
+    <!-- Contact Info -->
+    <div class="contact-card">
+      <h3>Thông Tin Liên Hệ Nhanh Của Lớp</h3>
+      <ul class="contact-list">
+        <li>📞 <strong>Hotline / Zalo:</strong> 0929.060.994 (Cô Thục Mỹ)</li>
+        <li>✉️ <strong>Email học thuật:</strong> mydt13@gmail.com</li>
+        <li>🌐 <strong>Fanpage:</strong> Cô Mỹ Dạy Tiếng Anh (@theenglishcorner.vn)</li>
+        <li>📍 <strong>Lớp học:</strong> Online Google Meet &amp; Offline Vinhomes Grand Park (TP. Thủ Đức)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div id="toast" role="status" aria-live="polite">Đã sao chép vào bộ nhớ tạm!</div>
+
+  <script>
+    (() => {
+      const toast = document.getElementById('toast');
+      let timer = null;
+
+      function showToast(msg) {
+        if (!toast) return;
+        toast.textContent = msg || 'Đã sao chép vào bộ nhớ tạm!';
+        toast.classList.add('show');
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          toast.classList.remove('show');
+        }, 2200);
+      }
+
+      function copyText(text) {
+        if (!text) return;
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(text).then(
+            () => { showToast('Đã sao chép vào bộ nhớ tạm!'); },
+            () => { fallbackCopy(text); }
+          );
+        } else {
+          fallbackCopy(text);
+        }
+      }
+
+      function fallbackCopy(text) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        ta.style.top = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        try {
+          const ok = document.execCommand('copy');
+          if (ok) showToast('Đã sao chép vào bộ nhớ tạm!');
+          else showToast('Vui lòng chọn văn bản và copy thủ công.');
+        } catch (_e) {
+          showToast('Vui lòng chọn văn bản và copy thủ công.');
+        }
+        document.body.removeChild(ta);
+      }
+
+      document.querySelectorAll('[data-copy-target]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const targetId = btn.getAttribute('data-copy-target');
+          const el = document.getElementById(targetId);
+          if (el) {
+            copyText(el.innerText || el.textContent);
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

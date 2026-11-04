@@ -1,0 +1,1 @@
+ALTER TABLE `student` ADD `current_level` text;

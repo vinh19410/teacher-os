@@ -57,6 +57,7 @@ describe("ForgotPasswordForm", () => {
 	it("sends the reset request, shows the neutral notice and locks the button with a countdown", async () => {
 		requestPasswordReset.mockResolvedValue({ error: null });
 		const { container } = render(<ForgotPasswordForm />);
+		expect(container.querySelector("form")?.className).toContain("grid gap-4");
 
 		submitEmail(container, "  teacher@school.edu ");
 

@@ -8,6 +8,7 @@ import {
 	type StudentOverview,
 } from "@teacher-os/api/contracts";
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
+import { createLogMailer } from "@teacher-os/auth/mail/mailer";
 import * as schema from "@teacher-os/db/schema/index";
 import { count, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
@@ -294,6 +295,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 				return null;
 			},
 			authHandler: () => new Response("auth OK"),
+			mailer: createLogMailer(),
 		});
 	});
 
@@ -314,6 +316,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 				email: "minh@gmail.com",
 				orgId: "org-1",
 				examInterest: null,
+				currentLevel: null,
 				targetScore: null,
 				learningGoals: null,
 				learningGoalsNote: null,
@@ -874,11 +877,11 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 		test("happy path: valid payload provisions/updates student and returns 200", async () => {
 			const payload = {
 				examInterest: "ielts",
+				currentLevel: "intermediate",
 				targetScore: "6.5",
 				learningGoals: ["study-abroad", "career"],
 				dailyStudyHours: "1-2",
 			};
-
 			const res = await app.request("/api/student/onboarding", {
 				method: "POST",
 				headers: {
@@ -892,6 +895,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 			expect(res.status).toBe(200);
 			const body = (await res.json()) as StudentMe;
 			expect(body.student.examInterest).toBe("ielts");
+			expect(body.student.currentLevel).toBe("intermediate");
 			expect(body.student.targetScore).toBe("6.5");
 			expect(body.student.learningGoals).toEqual(["study-abroad", "career"]);
 			expect(body.student.dailyStudyHours).toBe("1-2");
@@ -910,6 +914,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 				.where(eq(schema.student.email, "newportal@test.local"));
 			expect(row).toBeDefined();
 			expect(row?.examInterest).toBe("ielts");
+			expect(row?.currentLevel).toBe("intermediate");
 			expect(row?.targetScore).toBe("6.5");
 			expect(row?.learningGoals).toBe(
 				JSON.stringify(["study-abroad", "career"]),
@@ -926,6 +931,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 			expect(meRes.status).toBe(200);
 			const me = (await meRes.json()) as StudentMe;
 			expect(me.student.examInterest).toBe("ielts");
+			expect(me.student.currentLevel).toBe("intermediate");
 			expect(me.student.targetScore).toBe("6.5");
 			expect(me.student.learningGoals).toEqual(["study-abroad", "career"]);
 			expect(me.student.dailyStudyHours).toBe("1-2");
@@ -935,12 +941,12 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 		test("idempotent overwrite: successive POST updates answers and refreshes timestamp", async () => {
 			const payload2 = {
 				examInterest: "toeic",
+				currentLevel: "advanced",
 				targetScore: "850",
 				learningGoals: ["communication"],
 				learningGoalsNote: "Need TOEIC for graduation",
 				dailyStudyHours: "3-plus",
 			};
-
 			const res = await app.request("/api/student/onboarding", {
 				method: "POST",
 				headers: {
@@ -954,6 +960,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 			expect(res.status).toBe(200);
 			const body = (await res.json()) as StudentMe;
 			expect(body.student.examInterest).toBe("toeic");
+			expect(body.student.currentLevel).toBe("advanced");
 			expect(body.student.targetScore).toBe("850");
 			expect(body.student.learningGoals).toEqual(["communication"]);
 			expect(body.student.learningGoalsNote).toBe("Need TOEIC for graduation");
@@ -965,6 +972,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 				.from(schema.student)
 				.where(eq(schema.student.email, "newportal@test.local"));
 			expect(row?.examInterest).toBe("toeic");
+			expect(row?.currentLevel).toBe("advanced");
 			expect(row?.targetScore).toBe("850");
 			expect(row?.learningGoalsNote).toBe("Need TOEIC for graduation");
 		});
@@ -979,6 +987,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 					"Content-Type": "application/json",
 				},
 				body: JSON.stringify({
+					currentLevel: "intermediate",
 					targetScore: "6.5",
 					learningGoals: ["career"],
 					dailyStudyHours: "1-2",
@@ -989,7 +998,48 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 				error: "invalid body",
 			});
 
-			// (ii) examInterest: "ielts" with invalid targetScore: "999"
+			// (ii) missing currentLevel
+			const resMissingLevel = await app.request("/api/student/onboarding", {
+				method: "POST",
+				headers: {
+					"x-test-user": "provisioning-user",
+					Origin: "http://localhost:8003",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					examInterest: "ielts",
+					targetScore: "6.5",
+					learningGoals: ["career"],
+					dailyStudyHours: "1-2",
+				}),
+			});
+			expect(resMissingLevel.status).toBe(400);
+			expect((await resMissingLevel.json()) as { error: string }).toEqual({
+				error: "invalid body",
+			});
+
+			// (iii) invalid currentLevel: "expert"
+			const resInvalidLevel = await app.request("/api/student/onboarding", {
+				method: "POST",
+				headers: {
+					"x-test-user": "provisioning-user",
+					Origin: "http://localhost:8003",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					examInterest: "ielts",
+					currentLevel: "expert",
+					targetScore: "6.5",
+					learningGoals: ["career"],
+					dailyStudyHours: "1-2",
+				}),
+			});
+			expect(resInvalidLevel.status).toBe(400);
+			expect((await resInvalidLevel.json()) as { error: string }).toEqual({
+				error: "invalid body",
+			});
+
+			// (iv) examInterest: "ielts" with invalid targetScore: "999"
 			const res2 = await app.request("/api/student/onboarding", {
 				method: "POST",
 				headers: {
@@ -999,6 +1049,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 				},
 				body: JSON.stringify({
 					examInterest: "ielts",
+					currentLevel: "intermediate",
 					targetScore: "999",
 					learningGoals: ["career"],
 					dailyStudyHours: "1-2",
@@ -1009,7 +1060,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 				error: "invalid body",
 			});
 
-			// (iii) empty learningGoals: []
+			// (v) empty learningGoals: []
 			const res3 = await app.request("/api/student/onboarding", {
 				method: "POST",
 				headers: {
@@ -1019,6 +1070,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 				},
 				body: JSON.stringify({
 					examInterest: "ielts",
+					currentLevel: "intermediate",
 					targetScore: "6.5",
 					learningGoals: [],
 					dailyStudyHours: "1-2",
@@ -1030,14 +1082,35 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 			});
 		});
 
+		test("saves 'unsure' currentLevel without converting to null", async () => {
+			const res = await app.request("/api/student/onboarding", {
+				method: "POST",
+				headers: {
+					"x-test-user": "provisioning-user",
+					Origin: "http://localhost:8003",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					examInterest: "ielts",
+					currentLevel: "unsure",
+					targetScore: "6.5",
+					learningGoals: ["study-abroad"],
+					dailyStudyHours: "1-2",
+				}),
+			});
+			expect(res.status).toBe(200);
+			const body = (await res.json()) as StudentMe;
+			expect(body.student.currentLevel).toBe("unsure");
+		});
+
 		test("CSRF guard: bad origin 403, text/plain 415, oversized body 413", async () => {
 			const validPayload = {
 				examInterest: "ielts",
+				currentLevel: "basic",
 				targetScore: "6.5",
 				learningGoals: ["study-abroad"],
 				dailyStudyHours: "1-2",
 			};
-
 			// (i) Disallowed origin
 			const resOrigin = await app.request("/api/student/onboarding", {
 				method: "POST",
@@ -1095,6 +1168,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 				},
 				body: JSON.stringify({
 					examInterest: "ielts",
+					currentLevel: "basic",
 					targetScore: "6.5",
 					learningGoals: ["study-abroad"],
 					dailyStudyHours: "1-2",
@@ -1115,6 +1189,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 				},
 				body: JSON.stringify({
 					examInterest: "ielts",
+					currentLevel: "basic",
 					targetScore: "6.5",
 					learningGoals: ["study-abroad"],
 					dailyStudyHours: "1-2",
@@ -1128,6 +1203,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 				.update(schema.student)
 				.set({
 					learningGoals: "not-json-corrupt-string",
+					currentLevel: "corrupt-level-string",
 					dailyStudyHours: "bogus-value",
 				})
 				.where(eq(schema.student.id, "student-1"));
@@ -1139,6 +1215,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 			const me = (await res.json()) as StudentMe;
 			expect(me.student.learningGoals).toBeNull();
 			expect(me.student.dailyStudyHours).toBeNull();
+			expect(me.student.currentLevel).toBeNull();
 		});
 	});
 
@@ -1812,6 +1889,57 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 			};
 			const enr = snap.enrollments.find((e) => e.id === enrollmentId);
 			expect(enr?.status).toBe("active");
+		});
+
+		test("#570: GET /api/students reports portalLinked false before onboarding and true after onboarding; 409 includes portalLinked", async () => {
+			const createRes = await app.request("/api/students", {
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({
+					name: "Lan Portal Check",
+					email: "lan-portal-570@test.local",
+				}),
+			});
+			expect(createRes.status).toBe(201);
+			const created: Record<string, unknown> = await createRes.json();
+			expect(created.inviteEmailSent).toBe(true);
+			const createdId = String(created.id);
+
+			const listBefore = (await (
+				await app.request("/api/students", {
+					headers: { "x-test-user": "teacher" },
+				})
+			).json()) as Array<{ id: string; portalLinked?: boolean }>;
+			expect(listBefore.find((s) => s.id === createdId)?.portalLinked).toBe(
+				false,
+			);
+
+			const dupeBefore = await app.request("/api/students", {
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({
+					name: "Lan Dup",
+					email: "lan-portal-570@test.local",
+				}),
+			});
+			expect(dupeBefore.status).toBe(409);
+			const dupeBody: Record<string, unknown> = await dupeBefore.json();
+			expect(dupeBody.existingStudentId).toBe(createdId);
+			expect(dupeBody.portalLinked).toBe(false);
+
+			await libsql
+				.update(schema.student)
+				.set({ onboardingCompletedAt: new Date() })
+				.where(eq(schema.student.id, createdId));
+
+			const listAfter = (await (
+				await app.request("/api/students", {
+					headers: { "x-test-user": "teacher" },
+				})
+			).json()) as Array<{ id: string; portalLinked?: boolean }>;
+			expect(listAfter.find((s) => s.id === createdId)?.portalLinked).toBe(
+				true,
+			);
 		});
 	});
 });

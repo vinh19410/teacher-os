@@ -1,5 +1,12 @@
 import { expect, test } from "@playwright/test";
-import { fillRichEditor, signUpViaUi } from "./helpers";
+import {
+	fillRichEditor,
+	orgIdForTeacherEmail,
+	signUpViaUi,
+	verifyStudentEmailFromMailLog,
+} from "./helpers";
+import { seedQuizFixture } from "./helpers-quiz";
+import { STUDENT_ORIGIN } from "./origins";
 
 /**
  * Issue #202 — bank-first assignment prompt creation: compose → save to the
@@ -575,4 +582,165 @@ test("bulk key paste maps by question number and reports per-line errors (FR7)",
 	await expect(page.getByText(/Dòng 5: .*không đọc được/)).toBeVisible();
 	// Keys landed on the right rows: 1 TRUE, 2 TRUE, 3 FALSE.
 	await expect(page.getByText("1 TRUE · 2 TRUE · 3 FALSE")).toBeVisible();
+});
+
+test("author answer explanation, preserve through preview and test-builder update, and deliver to student review (#571)", async ({
+	page,
+	browser,
+}) => {
+	test.setTimeout(180_000);
+	const TITLE = `QC-571 Explanation ${Date.now()}`;
+	const INITIAL_EXPLANATION = "Đoạn 1 nói rõ thông tin này sai.";
+	const UPDATED_EXPLANATION = "Đoạn 1 nói rõ thông tin này sai (bản cập nhật).";
+	const studentEmail = `student-571-${Date.now()}@test.local`;
+
+	const teacherEmail = await signUpViaUi(page);
+	await page.goto("/assignments/new");
+
+	await page.getByRole("button", { name: "Reading", exact: true }).click();
+	await page.getByLabel("Tiêu đề").fill(TITLE);
+	await fillRichEditor(
+		page,
+		"Đoạn đọc",
+		"Stepwells are underground reservoirs found across western India.",
+	);
+	await page
+		.getByLabel("Nội dung câu hỏi phía học viên")
+		.first()
+		.fill("Stepwells were built above ground.");
+	await page.getByRole("button", { name: "Câu 1: FALSE", exact: true }).click();
+
+	// Gõ từng phím thật (có chữ 'n' và 't') để khóa chống lỗi phím tắt đáp án lật FALSE -> NOT GIVEN / TRUE.
+	const explanationEditor = page.getByLabel("Giải thích câu 1", {
+		exact: true,
+	});
+	await explanationEditor.click();
+	await explanationEditor.pressSequentially(INITIAL_EXPLANATION);
+	await expect(
+		page.getByRole("button", { name: "Câu 1: FALSE", exact: true }),
+	).toHaveAttribute("aria-pressed", "true");
+
+	// Xem trước -> Làm thử & Soi bài: ẩn ở take, hiện ở review, giữ nguyên khi quay lại.
+	await page.getByRole("button", { name: "Xem trước" }).click();
+	await expect(page).toHaveURL(/\/assignments\/preview$/);
+	await page.getByRole("tab", { name: "Làm thử & Soi bài" }).click();
+	await expect(page.getByText(INITIAL_EXPLANATION)).toHaveCount(0);
+	await page.getByRole("button", { name: /Nộp bài/ }).click();
+	await page.getByText("Giải thích", { exact: true }).click();
+	await expect(page.getByText(INITIAL_EXPLANATION)).toBeVisible();
+
+	await page.getByRole("button", { name: "Quay lại soạn đề" }).click();
+	await expect(page).toHaveURL(/\/assignments\/new$/);
+	await expect(
+		page.getByLabel("Giải thích câu 1", { exact: true }),
+	).toContainText(INITIAL_EXPLANATION);
+
+	await page.getByRole("button", { name: "Lưu vào ngân hàng" }).first().click();
+	await expect(
+		page.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),
+	).toBeVisible();
+
+	// Full-Test Builder: gán vào Passage 1 -> Chỉnh sửa -> sửa giải thích -> Cập nhật đề.
+	await page.goto("/assignments/tests/new");
+	await page.getByRole("button", { name: "Chọn từ ngân hàng" }).first().click();
+	await page
+		.getByRole("dialog")
+		.getByRole("button", { name: new RegExp(TITLE) })
+		.click();
+	await page.getByRole("button", { name: "Chỉnh sửa" }).click();
+	await expect(
+		page.getByLabel("Giải thích câu 1", { exact: true }),
+	).toContainText(INITIAL_EXPLANATION);
+	await fillRichEditor(page, "Giải thích câu 1", UPDATED_EXPLANATION);
+	await page.getByRole("button", { name: "Cập nhật đề" }).click();
+	await expect(page.getByRole("button", { name: "Cập nhật đề" })).toBeHidden();
+
+	// Seed lớp + học viên active trong cùng org của giáo viên rồi giao đề vừa cập nhật.
+	const orgId = await orgIdForTeacherEmail(teacherEmail);
+	const fixture = await seedQuizFixture({
+		orgName: "Org 571",
+		orgId,
+		className: "Lớp Reading 571",
+		studentName: "Học viên 571",
+		studentEmail,
+		prompts: [],
+	});
+	await page.goto(`/classes/${fixture.classId}`);
+	await page
+		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
+		.click();
+	await page.getByRole("button", { name: "Giao bài tập" }).first().click();
+	await page.getByRole("button", { name: new RegExp(TITLE) }).click();
+	await page.getByRole("button", { name: "Giao bài tập" }).last().click();
+	await expect(
+		page.getByRole("heading", { name: "Đã giao bài tập" }),
+	).toBeVisible();
+
+	// Browser context riêng cho học viên tránh đụng cookie localhost với giáo viên.
+	const studentCtx = await browser.newContext();
+	try {
+		const studentPage = await studentCtx.newPage();
+		const quizPayloadPromises: Promise<string>[] = [];
+		studentPage.on("response", (res) => {
+			if (
+				res.request().method() === "GET" &&
+				/\/api\/student\/assignments\/[^/]+\/quiz$/.test(res.url())
+			) {
+				quizPayloadPromises.push(res.text().catch(() => ""));
+			}
+		});
+
+		await studentPage.goto(`${STUDENT_ORIGIN}/login`);
+		await studentPage.locator("#tab-signup").click();
+		await studentPage.locator("#signup-name").fill("Học viên 571");
+		await studentPage.locator("#signup-email").fill(studentEmail);
+		await studentPage.locator("#signup-password").fill("password-8chars");
+		await studentPage.locator("#panel-signup button[type='submit']").click();
+		await expect(studentPage.getByText("Email chưa được xác thực")).toBeVisible(
+			{ timeout: 15_000 },
+		);
+		await verifyStudentEmailFromMailLog(studentPage, studentEmail);
+		await expect(studentPage).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`), {
+			timeout: 30_000,
+		});
+
+		await studentPage.getByRole("link", { name: `Làm bài: ${TITLE}` }).click();
+		const startDialog = studentPage.getByRole("alertdialog", {
+			name: "Bắt đầu làm bài",
+		});
+		const progress = studentPage.getByTestId("navigator-progress");
+		await expect(progress.or(startDialog)).toBeVisible();
+		if (await startDialog.isVisible()) {
+			await startDialog.getByRole("button", { name: "Bắt đầu" }).click();
+		}
+		await expect(progress).toBeVisible();
+
+		// Không lộ giải thích trên DOM hoặc wire payload khi đang làm bài (in_progress).
+		await expect(studentPage.getByText(UPDATED_EXPLANATION)).toHaveCount(0);
+		const quizPayloads = await Promise.all(quizPayloadPromises);
+		expect(quizPayloads.length).toBeGreaterThan(0);
+		for (const raw of quizPayloads) {
+			expect(raw).not.toContain("explanation");
+			expect(raw).not.toContain("Đoạn 1 nói rõ");
+		}
+
+		await studentPage
+			.locator('[data-question="0"] label', { hasText: "FALSE" })
+			.click();
+		await expect(studentPage.getByTestId("save-state")).toHaveAttribute(
+			"data-state",
+			"saved",
+		);
+		await studentPage.getByRole("button", { name: "Nộp bài" }).click();
+		await expect(studentPage).toHaveURL(/\/learn\/quizzes\/attempt\//);
+
+		await studentPage
+			.getByRole("link", { name: "Xem chi tiết bài làm" })
+			.click();
+		await expect(studentPage).toHaveURL(/\/detail$/);
+		await studentPage.getByText("Giải thích", { exact: true }).click();
+		await expect(studentPage.getByText(UPDATED_EXPLANATION)).toBeVisible();
+	} finally {
+		await studentCtx.close();
+	}
 });

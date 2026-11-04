@@ -1,5 +1,9 @@
+// @vitest-environment jsdom
+
+import { assignmentPromptUpdateSchema } from "@teacher-os/api/contracts";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 const submitFixture = {
 	saving: false,
@@ -17,6 +21,11 @@ vi.mock("@tanstack/react-router", () => ({
 vi.mock("@/lib/use-kernel-form-submit", () => ({
 	useKernelFormSubmit: () => submitFixture,
 }));
+
+afterEach(() => {
+	cleanup();
+	submitFixture.run.mockReset();
+});
 
 const questions = (count: number) =>
 	Array.from({ length: count }, (_, index) => ({
@@ -62,11 +71,18 @@ const promptP3 = {
 	title: "Passage 3 — Memory",
 	questions: questions(14),
 };
+const promptEdit = {
+	...promptP1,
+	id: "prompt-edit",
+	questions: questions(2).map((q, index) =>
+		index === 0 ? { ...q, explanation: "<p>Giải thích gốc câu 1</p>" } : q,
+	),
+};
 
 vi.mock("@/lib/data-store", () => ({
 	useData: () => ({
 		data: {
-			assignmentPrompts: [promptP1, promptP2, promptP3],
+			assignmentPrompts: [promptP1, promptP2, promptP3, promptEdit],
 			assignmentTests: [
 				{
 					id: "at-x",
@@ -257,4 +273,51 @@ describe("TestBuilderShell preset extensibility (phase-06 Task 6.3)", () => {
 		expect(timeInput).not.toBeNull();
 		expect(timeInput?.[1]).toBe("");
 	});
+});
+
+describe("TestBuilderShell — Chỉnh sửa & Cập nhật đề bảo toàn explanation (#571)", () => {
+	it("bấm Chỉnh sửa nạp explanation vào composer và Cập nhật đề gửi PATCH không kèm skill/part", async () => {
+		submitFixture.run.mockResolvedValue({
+			kind: "refreshed",
+			id: "prompt-edit",
+		});
+		const smallEditTest: KernelAssignmentTestRow = {
+			...editTest,
+			parts: [
+				{
+					testId: "at-1",
+					promptId: "prompt-edit",
+					part: "p1",
+					position: 0,
+					qStartOverride: null,
+				},
+			],
+		};
+		render(<TestBuilderShell mode="edit" test={smallEditTest} />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Chỉnh sửa" }));
+		expect(screen.getByText("Giải thích câu 1")).toBeTruthy();
+
+		fireEvent.click(screen.getByRole("button", { name: "Cập nhật đề" }));
+		expect(submitFixture.run).toHaveBeenCalledTimes(1);
+		const action = submitFixture.run.mock.calls[0]?.[0] as {
+			type: string;
+			promptId: string;
+			payload: Record<string, unknown>;
+		};
+		expect(action.type).toBe("update-assignment-prompt");
+		expect(action.promptId).toBe("prompt-edit");
+		expect("skill" in action.payload).toBe(false);
+		expect("part" in action.payload).toBe(false);
+		expect(assignmentPromptUpdateSchema.safeParse(action.payload).success).toBe(
+			true,
+		);
+		const patchedQuestions = action.payload.questions as Array<{
+			explanation?: string;
+		}>;
+		expect(patchedQuestions[0]?.explanation).toBe(
+			"<p>Giải thích gốc câu 1</p>",
+		);
+		expect("explanation" in (patchedQuestions[1] ?? {})).toBe(false);
+	}, 20_000);
 });

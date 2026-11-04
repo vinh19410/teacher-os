@@ -48,6 +48,10 @@ export const assignmentPrompt = sqliteTable(
 		optionBank: text("option_bank").notNull().default("[]"),
 		note: text("note").notNull().default(""),
 		status: text("status").notNull().default("draft"), // "draft" | "ready"
+		/** #574: phần Writing đính kèm tuỳ chọn trên đề tự chấm (`writing_part IS NOT NULL` = đề gộp). */
+		writingPart: text("writing_part"),
+		writingType: text("writing_type"),
+		writingPrompt: text("writing_prompt").notNull().default(""),
 		libraryRef: text("library_ref"),
 		createdAt: integer("created_at", { mode: "timestamp_ms" })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)

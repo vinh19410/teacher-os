@@ -151,6 +151,34 @@ describe("PreviewQuizSimulation — take view", () => {
 		expect(screen.getByTestId("attempt-correct").textContent).toBe("1");
 		expect(screen.queryByTestId("attempt-wrong")?.textContent).toBe("0");
 	});
+
+	it("hiển thị explanation riêng từng câu ở review mode sau khi nộp, ẩn hoàn toàn ở take mode (#571)", () => {
+		const draftWithExplanation: PreviewDraft = {
+			...mcqDraft(),
+			note: "Note chung fallback",
+			items: [
+				{
+					stem: "Where is the Eiffel Tower?",
+					opts: ["London", "Rome", "Paris", "Madrid"],
+					answer: "C",
+					alts: "",
+					explanation: "<p>Giải thích riêng: Tháp Eiffel ở Paris.</p>",
+				},
+			],
+		};
+		openSimHarness(simOf(draftWithExplanation, "fixture-mcq-exp"));
+		expect(document.body.innerHTML).not.toContain(
+			"Giải thích riêng: Tháp Eiffel ở Paris.",
+		);
+		fireEvent.click(screen.getByRole("radio", { name: "C Paris" }));
+		fireEvent.click(screen.getByRole("button", { name: /Nộp bài/ }));
+		const disclosure = screen.getByTestId("quiz-review-explanation");
+		expect(disclosure.getAttribute("data-source")).toBe("question");
+		expect(disclosure.textContent).toContain(
+			"Giải thích riêng: Tháp Eiffel ở Paris.",
+		);
+		expect(disclosure.textContent).not.toContain("Note chung fallback");
+	});
 });
 
 describe("PreviewQuizSimulation — composed state", () => {

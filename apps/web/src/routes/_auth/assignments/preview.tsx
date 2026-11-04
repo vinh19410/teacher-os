@@ -49,6 +49,7 @@ function previewDraftFromPrompt(p: AssignmentPrompt): PreviewDraft {
 		imageUrl: p.imageUrl,
 		optionBank: p.optionBank,
 		items: p.questions,
+		writing: p.writing ?? null,
 	};
 }
 
@@ -201,6 +202,8 @@ export function PreviewAssignmentRoute() {
 						answers={quiz.answers}
 						grade={quiz.grade}
 						onAnswer={quiz.onAnswer}
+						essay={quiz.essay}
+						onEssayChange={quiz.onEssayChange}
 						onSubmit={quiz.submit}
 						onReset={quiz.reset}
 					/>
@@ -223,6 +226,7 @@ export function PreviewAssignmentRoute() {
 						imageUrl={draft.imageUrl}
 						optionBank={draft.optionBank}
 						items={draft.items}
+						writing={draft.writing ?? null}
 					/>
 				)}
 

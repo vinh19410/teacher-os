@@ -191,6 +191,7 @@ export function testsRoutes(deps: { getDb(): Db }) {
 						id: assignmentPrompt.id,
 						skill: assignmentPrompt.skill,
 						part: assignmentPrompt.part,
+						writingPart: assignmentPrompt.writingPart,
 					})
 					.from(assignmentPrompt)
 					.where(
@@ -208,6 +209,11 @@ export function testsRoutes(deps: { getDb(): Db }) {
 				return c.json({ error: "prompt skill mismatch" }, 400);
 			if (prompt.part !== item.part)
 				return c.json({ error: "prompt part mismatch" }, 400);
+			if (prompt.writingPart !== null)
+				return c.json(
+					{ error: "hybrid prompt cannot be attached to test" },
+					400,
+				);
 		}
 
 		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [

@@ -15,8 +15,8 @@ import {
 	kindOf,
 	partOf,
 	qStartOf,
+	selectedTypeOf,
 	skillOf,
-	typeOf,
 	wordCount,
 } from "./assignment-presets";
 
@@ -28,10 +28,10 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 	const navigate = useNavigate();
 	const skillId = prompt.skill ?? "writing";
 	const partId = prompt.part ?? prompt.task ?? "task2";
-	const typeId = prompt.type ?? prompt.genre ?? "discuss";
+	const typeId = prompt.type ?? prompt.genre ?? "";
 	const skill = skillOf(skillId);
 	const part = partOf(skillId, partId);
-	const type = typeOf(skillId, partId, typeId);
+	const type = selectedTypeOf(skillId, partId, typeId);
 	const trimmedTitle = prompt.title.trim() || "Chưa đặt tên đề";
 	const isAuto = isAutoSkill(skillId);
 	const isSpeakingPart2 = skillId === "speaking" && partId === "part2";
@@ -142,6 +142,20 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 					))}
 				</div>
 			)}
+			{isAuto && prompt.writing != null && (
+				<div className="mt-4 flex flex-col gap-1.5 border-border border-t pt-3">
+					<p className="font-semibold text-foreground text-xs">
+						Phần 2 · Writing (
+						{prompt.writing.part === "task1" ? "Task 1" : "Task 2"})
+					</p>
+					{!isEmptyRichText(prompt.writing.prompt) && (
+						<RichTextBody
+							text={prompt.writing.prompt}
+							className="text-foreground text-sm leading-[1.55]"
+						/>
+					)}
+				</div>
+			)}
 
 			{isSpeakingPart2 && (
 				<div className="mt-3 text-sm">
@@ -171,10 +185,11 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 			<div className="mt-3 flex flex-wrap gap-2">
 				<Tag>{skill.name}</Tag>
 				<Tag>{part.label}</Tag>
-				<Tag>{type.label}</Tag>
+				<Tag>{type?.label ?? "Chưa chọn dạng"}</Tag>
 				<Tag>{`Band ${prompt.band}`}</Tag>
 				{prompt.source.trim() && <Tag>{prompt.source.trim()}</Tag>}
 				{isAuto && <Tag>Chấm tự động</Tag>}
+				{isAuto && prompt.writing != null && <Tag>+ Writing</Tag>}
 				{!isEmptyRichText(prompt.note ?? "") && <Tag>Có hướng dẫn thêm</Tag>}
 			</div>
 

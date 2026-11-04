@@ -1,8 +1,104 @@
 import { expect, test } from "@playwright/test";
-import { signUpViaUi, verifyStudentEmailFromMailLog } from "./helpers";
+import {
+	readVerificationEmails,
+	signUpViaUi,
+	verifyStudentEmailFromMailLog,
+} from "./helpers";
 import { STUDENT_ORIGIN } from "./origins";
 
 test.describe("Student Org Invitation & Multi-Org Switcher", () => {
+	test("#570: invite to a bouncing mailbox shows 502 error and NO ghost pending row", async ({
+		browser,
+	}) => {
+		const bounceEmail = `student.invite.bounce.${Date.now()}@bounce.test`;
+		const teacherContext = await browser.newContext();
+		const teacherPage = await teacherContext.newPage();
+
+		try {
+			await signUpViaUi(teacherPage, { name: "Teacher Bounce" });
+			await teacherPage.goto("/students");
+			await teacherPage.getByRole("button", { name: "Mời học viên" }).click();
+			await teacherPage.locator("input[type='email']").fill(bounceEmail);
+			await teacherPage.getByRole("button", { name: "Gửi lời mời" }).click();
+
+			// Modal stays open and shows the 502 error (recordingMailer throws for @bounce.test)
+			await expect(
+				teacherPage.getByRole("heading", {
+					name: "Mời học viên vào tổ chức",
+				}),
+			).toBeVisible();
+			await expect(
+				teacherPage.getByText(
+					/Không gửi được email lời mời|Không thể gửi lời mời/,
+					{ exact: false },
+				),
+			).toBeVisible({ timeout: 15_000 });
+			// No phantom pending row in the tab (case-insensitive e-mail match)
+			await teacherPage.getByRole("button", { name: "Hủy" }).click();
+			await expect(
+				teacherPage.getByRole("heading", {
+					name: "Mời học viên vào tổ chức",
+				}),
+			).not.toBeVisible({ timeout: 10_000 });
+			await teacherPage.getByRole("tab", { name: /Lời mời đang chờ/ }).click();
+			await expect(
+				teacherPage.getByText(bounceEmail, { exact: false }),
+			).toHaveCount(0, { timeout: 10_000 });
+		} finally {
+			await teacherContext.close();
+		}
+	});
+
+	test("#570: resend from modal and pending tab uses fresh idempotencyKey each time", async ({
+		browser,
+	}) => {
+		const studentEmail = `student.invite.resend.${Date.now()}-${Math.random().toString(36).slice(2, 6)}@test.local`;
+		const teacherContext = await browser.newContext();
+		const teacherPage = await teacherContext.newPage();
+
+		try {
+			await signUpViaUi(teacherPage, { name: "Teacher Resend" });
+			await teacherPage.goto("/students");
+			await teacherPage.getByRole("button", { name: "Mời học viên" }).click();
+			await teacherPage.locator("input[type='email']").fill(studentEmail);
+			await teacherPage.getByRole("button", { name: "Gửi lời mời" }).click();
+			await expect(
+				teacherPage.getByRole("heading", { name: "Mời học viên vào tổ chức" }),
+			).not.toBeVisible({ timeout: 10_000 });
+
+			const readKeys = async () =>
+				(await readVerificationEmails())
+					.map((e) => (e.idempotencyKey ? String(e.idempotencyKey) : ""))
+					.filter((k) => k.startsWith("student_invite:"));
+
+			const keysBefore = await readKeys();
+			expect(keysBefore.length).toBeGreaterThanOrEqual(1);
+
+			// Re-invite the same email -> modal shows Chờ xác nhận with Gửi lại lời mời
+			await teacherPage.getByRole("button", { name: "Mời học viên" }).click();
+			await teacherPage.locator("input[type='email']").fill(studentEmail);
+			await teacherPage.getByRole("button", { name: "Gửi lời mời" }).click();
+			await expect(
+				teacherPage.getByText("Chờ xác nhận", { exact: false }).first(),
+			).toBeVisible({ timeout: 15_000 });
+
+			const resendButton = teacherPage
+				.getByRole("button", { name: /Gửi lại lời mời/ })
+				.first();
+			await expect(resendButton).toBeVisible();
+			await resendButton.click();
+			await expect(teacherPage.getByText(/Đã gửi lại lời mời tới/)).toBeVisible(
+				{ timeout: 15_000 },
+			);
+
+			const keysAfter = await readKeys();
+			expect(keysAfter.length).toBe(keysBefore.length + 1);
+			expect(new Set(keysAfter).size).toBe(keysAfter.length);
+		} finally {
+			await teacherContext.close();
+		}
+	});
+
 	test("Teacher invites student -> Student receives notification in bell -> Student accepts invite -> Org is active", async ({
 		browser,
 	}) => {
@@ -112,6 +208,8 @@ test.describe("Student Org Invitation & Multi-Org Switcher", () => {
 
 			// Complete onboarding wizard
 			await studentPage.getByRole("button", { name: /IELTS/ }).click();
+			await studentPage.getByRole("button", { name: "Tiếp tục" }).click();
+			await studentPage.getByRole("button", { name: /4.5 – 5.5/ }).click();
 			await studentPage.getByRole("button", { name: "Tiếp tục" }).click();
 			await studentPage.getByRole("button", { name: "Band 6.5" }).click();
 			await studentPage.getByRole("button", { name: "Tiếp tục" }).click();

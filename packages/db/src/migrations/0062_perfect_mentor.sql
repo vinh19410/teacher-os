@@ -1,0 +1,1 @@
+ALTER TABLE `student` ADD `last_invite_email_at` integer;

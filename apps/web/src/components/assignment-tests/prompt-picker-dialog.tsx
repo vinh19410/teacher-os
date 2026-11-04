@@ -1,4 +1,4 @@
-import { typeOf } from "@/components/assignments/assignment-presets";
+import { selectedTypeOf } from "@/components/assignments/assignment-presets";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
 import type { AssignmentPrompt } from "@/lib/mock-data";
@@ -36,11 +36,9 @@ export function PromptPickerDialog({
 					</p>
 				) : (
 					prompts.map((prompt) => {
-						const typeLabel = typeOf(
-							skill,
-							part,
-							prompt.type ?? prompt.genre,
-						).label;
+						const typeLabel =
+							selectedTypeOf(skill, part, prompt.type ?? prompt.genre)?.label ??
+							"Chưa chọn dạng";
 						return (
 							<button
 								key={prompt.id}

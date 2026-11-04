@@ -1,4 +1,5 @@
 import { isEmptyRichText } from "@teacher-os/api/rich-text";
+import { emptyItem } from "@/components/assignments/assignment-presets";
 import type { ComposerValue } from "@/components/assignments/prompt-composer";
 import { isValidPin } from "@/lib/image-pin";
 
@@ -90,6 +91,7 @@ function composerValueShape(value: unknown): value is ComposerValue {
 			alts: unknown;
 			opts?: unknown;
 			pin?: unknown;
+			explanation?: unknown;
 		};
 		if (
 			typeof item.stem !== "string" ||
@@ -101,7 +103,8 @@ function composerValueShape(value: unknown): value is ComposerValue {
 			(item.opts == null ||
 				(Array.isArray(item.opts) &&
 					item.opts.every((option) => typeof option === "string"))) &&
-			(item.pin == null || isValidPin(item.pin))
+			(item.pin == null || isValidPin(item.pin)) &&
+			(item.explanation === undefined || typeof item.explanation === "string")
 		);
 	});
 }
@@ -243,7 +246,14 @@ function composerDraftHasContent(value: ComposerValue): boolean {
 	)
 		return true;
 	if ((value.optionBank ?? []).some((row) => row.trim())) return true;
+	const blank = emptyItem(value.type);
 	return value.items.some(
-		(item) => item.stem.trim() || item.answer.trim() || item.pin != null,
+		(item) =>
+			item.stem.trim() ||
+			item.answer.trim() ||
+			item.alts.trim() ||
+			Boolean(item.explanation && !isEmptyRichText(item.explanation)) ||
+			item.pin != null ||
+			JSON.stringify(item.opts ?? blank.opts) !== JSON.stringify(blank.opts),
 	);
 }

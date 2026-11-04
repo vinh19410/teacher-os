@@ -189,4 +189,67 @@ describe("assignment test draft store — schemaVersion 2 (Task 3.6)", () => {
 			true,
 		);
 	});
+
+	test("slotDrafts giữ explanation hợp lệ, từ chối explanation null/số, và nhận diện explanation-only (#571)", () => {
+		const emptyMeta = {
+			title: "",
+			description: "",
+			skill: "reading",
+			timeLimitSeconds: 3600,
+			collection: "",
+			testGroup: "",
+		};
+		const explanationOnlySlot = composerValue({
+			title: "",
+			source: "",
+			passage: "",
+			intro: "",
+			items: [
+				{
+					stem: "",
+					answer: "",
+					opts: null,
+					alts: "",
+					explanation: "<p>Nháp giải thích</p>",
+				},
+			],
+		});
+		expect(testDraftHasContent(emptyMeta, { p1: explanationOnlySlot })).toBe(
+			true,
+		);
+		expect(
+			testDraftHasContent(emptyMeta, {
+				p1: {
+					...explanationOnlySlot,
+					items: [
+						{
+							stem: "",
+							answer: "",
+							opts: null,
+							alts: "",
+							explanation: "<p></p>",
+						},
+					],
+				},
+			}),
+		).toBe(false);
+
+		const store = fakeStorage();
+		saveAssignmentTestDraft(
+			testDraft({ slotDrafts: { p1: explanationOnlySlot } }),
+			store,
+		);
+		expect(
+			readAssignmentTestDraft(store)?.slotDrafts.p1?.items[0]?.explanation,
+		).toBe("<p>Nháp giải thích</p>");
+
+		for (const badExplanation of [123, null]) {
+			const slot = composerValue();
+			const corrupt = testDraft({ slotDrafts: { p1: slot } });
+			(slot.items[0] as unknown as Record<string, unknown>).explanation =
+				badExplanation;
+			store.setItem(ASSIGNMENT_TEST_DRAFT_KEY, JSON.stringify(corrupt));
+			expect(readAssignmentTestDraft(store)).toBeNull();
+		}
+	});
 });

@@ -1,4 +1,5 @@
 import {
+	ASSIGNMENT_BANDS,
 	ASSIGNMENT_PART_TYPES,
 	ASSIGNMENT_TEST_PRESETS,
 	assignmentQuestionSchema,
@@ -75,7 +76,7 @@ export interface PartFormValue {
 	note: string;
 }
 
-export const BAND_OPTIONS = ["6.0", "6.5", "7.0", "7.5"] as const;
+export const BAND_OPTIONS = ASSIGNMENT_BANDS;
 
 /** Dạng bài hợp lệ của slot theo catalog skill. */
 export function slotTypes(

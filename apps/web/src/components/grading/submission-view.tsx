@@ -33,6 +33,19 @@ export function SubmissionView({
 	const imageUrl = sub.prompt.imageUrl.trim();
 	return (
 		<div className="flex flex-col gap-6">
+			{sub.objective && (
+				<div
+					data-testid="hybrid-objective-score"
+					className="flex items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-3.5 py-2.5 text-sm"
+				>
+					<span className="text-muted-foreground">
+						Phần trắc nghiệm (chấm tự động)
+					</span>
+					<strong className="font-semibold text-foreground tabular-nums">
+						{sub.objective.correctCount}/{sub.objective.totalCount} câu đúng
+					</strong>
+				</div>
+			)}
 			<section aria-label="Đề bài">
 				<SectionLabel>Đề bài</SectionLabel>
 				<div className="flex flex-col gap-3">

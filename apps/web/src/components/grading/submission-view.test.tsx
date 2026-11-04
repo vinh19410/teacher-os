@@ -169,4 +169,30 @@ describe("SubmissionView (#319)", () => {
 		);
 		expect(markup).toContain("Bài này được nộp khi chưa có file bài nói.");
 	});
+
+	test("Hybrid assignment (#574): renders read-only objective MCQ score when objective is present", () => {
+		const withObjective = renderToStaticMarkup(
+			<SubmissionView
+				submission={buildSubmission({
+					skill: "writing",
+					part: "task2",
+					essay: "Hybrid essay content",
+					objective: { correctCount: 8, totalCount: 10 },
+				})}
+			/>,
+		);
+		expect(withObjective).toContain('data-testid="hybrid-objective-score"');
+		expect(withObjective).toContain("8/10");
+
+		const pureWriting = renderToStaticMarkup(
+			<SubmissionView
+				submission={buildSubmission({
+					skill: "writing",
+					part: "task2",
+					essay: "Pure essay content",
+				})}
+			/>,
+		);
+		expect(pureWriting).not.toContain('data-testid="hybrid-objective-score"');
+	});
 });

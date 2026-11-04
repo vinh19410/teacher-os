@@ -282,6 +282,38 @@ describe("assignment draft store — localStorage autosave (FR6)", () => {
 		expect(readAssignmentDraft()).toBeNull();
 		expect(() => clearAssignmentDraft()).not.toThrow();
 	});
+
+	test("round-trips valid string explanation and rejects null or non-string explanation (#571)", () => {
+		const store = fakeStorage();
+		saveAssignmentDraft(
+			draft({
+				value: composerValue({
+					items: [
+						{
+							stem: "First",
+							answer: "TRUE",
+							opts: null,
+							alts: "",
+							explanation: "<p>Vì vậy</p>",
+						},
+					],
+				}),
+			}),
+			store,
+		);
+		expect(readAssignmentDraft(store)?.value.items[0]?.explanation).toBe(
+			"<p>Vì vậy</p>",
+		);
+
+		for (const badExplanation of [123, null]) {
+			const corrupt = draft();
+			(
+				corrupt.value.items[0] as unknown as Record<string, unknown>
+			).explanation = badExplanation;
+			store.setItem(ASSIGNMENT_DRAFT_KEY, JSON.stringify(corrupt));
+			expect(readAssignmentDraft(store)).toBeNull();
+		}
+	});
 });
 
 describe("composerDraftHasContent — autosave skip gate (FR6)", () => {
@@ -333,5 +365,38 @@ describe("composerDraftHasContent — autosave skip gate (FR6)", () => {
 				}),
 			),
 		).toBe(true);
+	});
+
+	test("explanation-only item triggers autosave unless empty markup (#571)", () => {
+		expect(
+			composerDraftHasContent(
+				composerValue({
+					title: "",
+					passage: "",
+					intro: "",
+					items: [
+						{
+							...emptyItem("tfng"),
+							explanation: "<p>Giải thích nháp</p>",
+						},
+					],
+				}),
+			),
+		).toBe(true);
+		expect(
+			composerDraftHasContent(
+				composerValue({
+					title: "",
+					passage: "",
+					intro: "",
+					items: [
+						{
+							...emptyItem("tfng"),
+							explanation: "<p><br></p>",
+						},
+					],
+				}),
+			),
+		).toBe(false);
 	});
 });

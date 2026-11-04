@@ -105,7 +105,9 @@ export function VocabCoursesCatalogView({
 					data-testid="vocab-courses-empty"
 					className="rounded-md rounded-xl border bg-card p-6 text-center text-muted-foreground text-sm shadow-sm"
 				>
-					Không tìm thấy khóa học từ vựng phù hợp.
+					{courses.length === 0
+						? "Thư viện khóa học từ vựng hiện chưa có nội dung."
+						: "Không tìm thấy khóa học từ vựng phù hợp."}
 				</div>
 			) : (
 				<div className="grid grid-cols-1 gap-4 md:grid-cols-2">

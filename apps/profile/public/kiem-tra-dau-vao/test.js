@@ -1597,6 +1597,9 @@ function renderResultStep(root, test, state, rerender) {
 	);
 	card.appendChild(recBox);
 
+	const cefrExplorer = createCefrExplorer(result.band.cefr);
+	card.appendChild(cefrExplorer);
+
 	const actions = createEl("div", "btn-row");
 	const registerParams = new URLSearchParams({
 		ketqua: summaryText,
@@ -1669,4 +1672,155 @@ async function init() {
 
 if (typeof window !== "undefined" && typeof document !== "undefined") {
 	init();
+}
+
+const CEFR_EXPLORER_DATA = {
+	a1: {
+		code: "A1 – A2",
+		name: "Giai đoạn Xây nền Bản chất (Foundation)",
+		band: "0.0 → 4.0+",
+		bandSub: "Chuẩn hóa gốc ngữ pháp & phát âm",
+		hours: "150 – 250 Giờ",
+		vocab: "Tích lũy 1.500 – 2.500 từ vựng cốt lõi",
+		outcome:
+			"Nắm vững 8 Từ loại chức năng, chuẩn hóa 44 âm IPA & âm lướt Schwa /ə/, tự viết chuẩn xác câu đơn và câu ghép.",
+	},
+	b1: {
+		code: "CEFR B1",
+		name: "Giai đoạn Bước đệm Học thuật (Pre-IELTS)",
+		band: "4.5 → 5.0+",
+		bandSub: "Phát triển phản xạ & đọc hiểu câu dài",
+		hours: "350 – 400 Giờ",
+		vocab: "Tích lũy 3.000 – 3.500 từ & Collocations",
+		outcome:
+			"Làm chủ kỹ thuật đọc bắt Danh từ chính (Head-Noun), nghe bắt từ khóa MHKL 30p/ngày và phản xạ Speaking 3 nhịp A.R.E tự nhiên.",
+	},
+	b2: {
+		code: "CEFR B2",
+		name: "Giai đoạn Tăng tốc Thực chiến (IELTS Intensive)",
+		band: "5.5 → 6.5",
+		bandSub: "Làm chủ 4 kỹ năng học thuật chuẩn Giám khảo",
+		hours: "500 – 600 Giờ",
+		vocab: "Tích lũy 4.500+ Collocations học thuật",
+		outcome:
+			"Thành thạo Process Writing 5 bước (Task 1 & 2), xử lý trọn bộ đề Forecast Speaking theo Quý và nâng cấp cấu trúc câu học thuật.",
+	},
+	c1: {
+		code: "CEFR C1",
+		name: "Giai đoạn Bứt phá Toàn diện (Advanced Mastery)",
+		band: "7.0 → 8.0+",
+		bandSub: "Tư duy phản biện & bản ngữ hóa ngôn ngữ",
+		hours: "750 – 900+ Giờ",
+		vocab: "Tích lũy 7.000+ từ vựng & Idiomatic expressions",
+		outcome:
+			"Làm chủ Stylistic Writing, kiểm soát ngữ điệu và phát âm tự nhiên (Connected Speech), phản xạ tranh luận sắc bén.",
+	},
+};
+
+function createCefrExplorer(currentCefr) {
+	const box = createEl("div", "cefr-interactive-box");
+	box.id = "cefrExplorerBox";
+	box.appendChild(
+		createEl(
+			"h3",
+			"",
+			"📊 Bảng Định Lượng Giờ Học & Quy Đổi Trình Độ CEFR (0 → 7.5+ IELTS)",
+		),
+	);
+	box.appendChild(
+		createEl(
+			"p",
+			"muted-copy",
+			"Chọn từng cấp độ để xem mục tiêu band, thời lượng giờ học ước tính và năng lực đầu ra tương ứng.",
+		),
+	);
+
+	let activeKey = "a1";
+	if (currentCefr) {
+		const norm = currentCefr.toLowerCase();
+		if (norm.includes("b1")) activeKey = "b1";
+		else if (norm.includes("b2")) activeKey = "b2";
+		else if (norm.includes("c1") || norm.includes("c2")) activeKey = "c1";
+		else if (norm.includes("a1") || norm.includes("a2")) activeKey = "a1";
+	}
+
+	const selectorRow = createEl("div", "cefr-selector-row");
+	selectorRow.setAttribute("role", "tablist");
+	selectorRow.setAttribute("aria-label", "Chọn cấp độ CEFR");
+
+	const detailPanel = createEl("div", "cefr-detail-panel");
+	detailPanel.id = "cefrDetailPanel";
+	detailPanel.setAttribute("aria-live", "polite");
+
+	const cell1 = createEl("div", "cefr-stat-cell");
+	cell1.appendChild(createEl("span", "cefr-stat-label", "Khung Tham Chiếu"));
+	const valCode = createEl("span", "cefr-stat-value", "");
+	valCode.id = "cefrCode";
+	const subName = createEl("span", "cefr-stat-sub", "");
+	subName.id = "cefrName";
+	cell1.append(valCode, subName);
+
+	const cell2 = createEl("div", "cefr-stat-cell");
+	cell2.appendChild(createEl("span", "cefr-stat-label", "Mục Tiêu Band IELTS"));
+	const valBand = createEl("span", "cefr-stat-value", "");
+	valBand.id = "cefrBand";
+	const subBand = createEl("span", "cefr-stat-sub", "");
+	subBand.id = "cefrBandSub";
+	cell2.append(valBand, subBand);
+
+	const cell3 = createEl("div", "cefr-stat-cell");
+	cell3.appendChild(createEl("span", "cefr-stat-label", "Định Lượng Giờ Học"));
+	const valHours = createEl("span", "cefr-stat-value", "");
+	valHours.id = "cefrHours";
+	const subVocab = createEl("span", "cefr-stat-sub", "");
+	subVocab.id = "cefrVocab";
+	cell3.append(valHours, subVocab);
+
+	const cell4 = createEl("div", "cefr-stat-cell");
+	cell4.appendChild(createEl("span", "cefr-stat-label", "Năng Lực Đầu Ra"));
+	const subOutcome = createEl("span", "cefr-stat-sub", "");
+	subOutcome.id = "cefrOutcome";
+	subOutcome.style.fontWeight = "600";
+	cell4.appendChild(subOutcome);
+
+	detailPanel.append(cell1, cell2, cell3, cell4);
+
+	function updatePanel(key) {
+		const d = CEFR_EXPLORER_DATA[key];
+		if (!d) return;
+		valCode.textContent = d.code;
+		subName.textContent = d.name;
+		valBand.textContent = d.band;
+		subBand.textContent = d.bandSub;
+		valHours.textContent = d.hours;
+		subVocab.textContent = d.vocab;
+		subOutcome.textContent = d.outcome;
+		selectorRow.querySelectorAll(".cefr-tab-btn").forEach((btn) => {
+			btn.setAttribute(
+				"aria-selected",
+				String(btn.getAttribute("data-cefr-btn") === key),
+			);
+		});
+	}
+
+	const tabKeys = [
+		{ key: "a1", label: "A1 – A2 (Mất gốc → 4.0+)" },
+		{ key: "b1", label: "B1 (Pre-IELTS → 4.5–5.0+)" },
+		{ key: "b2", label: "B2 (Intensive → 5.5–6.5)" },
+		{ key: "c1", label: "C1 (Advanced → 7.0–7.5+)" },
+	];
+
+	for (const tab of tabKeys) {
+		const btn = createEl("button", "cefr-tab-btn", tab.label);
+		btn.type = "button";
+		btn.setAttribute("role", "tab");
+		btn.setAttribute("data-cefr-btn", tab.key);
+		btn.setAttribute("aria-selected", String(tab.key === activeKey));
+		btn.addEventListener("click", () => updatePanel(tab.key));
+		selectorRow.appendChild(btn);
+	}
+
+	updatePanel(activeKey);
+	box.append(selectorRow, detailPanel);
+	return box;
 }

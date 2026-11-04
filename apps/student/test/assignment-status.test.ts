@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
 	calculateIeltsBand,
 	deriveAssignmentStatus,
+	formatQuizDueText,
 } from "@/lib/assignment-status";
 
 describe("calculateIeltsBand rounding rules", () => {
@@ -369,5 +370,114 @@ describe("deriveAssignmentStatus with dueAt (#526)", () => {
 		expect(derived.isLate).toBe(true);
 		expect(derived.statusLabel).toBe("Điểm: 7 · Nộp trễ");
 		expect(derived.dueText).toBe("Hạn: 17:00 02/11");
+	});
+
+	it("keeps legacy dueAt=null submissions as non-late and derives dueDateISO from dueAt when dueAt is present (#572)", () => {
+		const legacySubmitted = {
+			id: "legacy-1",
+			title: "Legacy Reading",
+			source: "class_assignment",
+			classId: "c1",
+			className: "IELTS 6.5",
+			due: "2026-11-01",
+			dueAt: null,
+			submittedAt: "2026-11-03T10:00:00.000Z",
+			scores: { task: 6.5, coherence: 6.5, lexical: 6.5, grammar: 6.5 },
+			skill: "reading",
+		} as StudentAssignment;
+		const legacyDerived = deriveAssignmentStatus(legacySubmitted, today);
+		expect(legacyDerived.isLate).toBe(false);
+		expect(legacyDerived.statusLabel).toBe("Điểm: 6.5");
+
+		const shiftedAsg = {
+			id: "shifted-1",
+			title: "Shifted Assignment",
+			source: "class_assignment",
+			classId: "c1",
+			className: "IELTS 6.5",
+			due: "2027-11-15", // stale due column
+			dueAt: "2026-11-02T10:00:00.000Z", // 17:00 02/11 VN
+			submittedAt: null,
+			scores: null,
+		} as StudentAssignment;
+		const shiftedDerived = deriveAssignmentStatus(
+			shiftedAsg,
+			"2026-11-02",
+			Date.parse("2026-11-02T10:01:00.000Z"),
+		);
+		expect(shiftedDerived.status).toBe("overdue");
+		expect(shiftedDerived.dueText).toContain("17:00 02/11");
+	});
+});
+
+describe("deriveAssignmentStatus — hybrid assignment (#574)", () => {
+	it("marks submitted auto-skill assignment with hasWriting=true as awaiting teacher grading", () => {
+		const hybridSubmitted: StudentAssignment = {
+			id: "hyb-1",
+			title: "Grammar + Task 2",
+			source: "class_assignment",
+			classId: "c1",
+			className: "IELTS 6.5",
+			due: "2026-11-10",
+			submittedAt: "2026-11-04T08:00:00.000Z",
+			scores: null,
+			skill: "grammar",
+			hasWriting: true,
+			gradedAt: null,
+		};
+		const derived = deriveAssignmentStatus(hybridSubmitted, "2026-11-04");
+		expect(derived.status).toBe("submitted");
+		expect(derived.statusLabel).toBe("Đã nộp — Đang chờ giáo viên chấm");
+
+		const hybridGraded: StudentAssignment = {
+			...hybridSubmitted,
+			scores: { task: 6.5, coherence: 6.5, lexical: 6.5, grammar: 6.5 },
+			gradedAt: "2026-11-04T09:00:00.000Z",
+		};
+		const graded = deriveAssignmentStatus(hybridGraded, "2026-11-04");
+		expect(graded.status).toBe("graded");
+		expect(graded.statusLabel).toBe("Điểm: 6.5");
+	});
+});
+
+describe("formatQuizDueText (#587)", () => {
+	it("returns empty string when due is empty and dueAt is null or omitted", () => {
+		expect(formatQuizDueText({ due: "", dueAt: null })).toBe("");
+		expect(formatQuizDueText({ due: "" })).toBe("");
+		expect(formatQuizDueText({})).toBe("");
+	});
+
+	it("returns formatted day/month when due is present and dueAt is null", () => {
+		expect(formatQuizDueText({ due: "2026-11-15", dueAt: null })).toBe(
+			"Hạn: 15/11",
+		);
+		expect(formatQuizDueText({ due: "2026-09-05" })).toBe("Hạn: 05/09");
+	});
+
+	it("returns formatted time and day/month in Vietnam timezone when valid dueAt is present", () => {
+		// 10:00 UTC = 17:00 VN (+7)
+		expect(
+			formatQuizDueText({
+				due: "2026-11-15",
+				dueAt: "2026-11-15T10:00:00.000Z",
+			}),
+		).toBe("Hạn: 17:00 15/11");
+	});
+
+	it("avoids chimera date by using date from dueAt when dueAt is present", () => {
+		// 17:30 UTC Nov 10 = 00:30 VN Nov 11
+		expect(
+			formatQuizDueText({
+				due: "2026-11-10",
+				dueAt: "2026-11-10T17:30:00.000Z",
+			}),
+		).toBe("Hạn: 00:30 11/11");
+	});
+
+	it("returns empty string for invalid date formats or junk text", () => {
+		expect(formatQuizDueText({ due: "invalid-date", dueAt: null })).toBe("");
+		expect(
+			formatQuizDueText({ due: "not-a-date", dueAt: "invalid-timestamp" }),
+		).toBe("");
 	});
 });

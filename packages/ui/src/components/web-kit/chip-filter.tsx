@@ -32,25 +32,31 @@ export function ChipFilter({
 		>
 			{options.map((opt) => {
 				const count = counts?.[opt];
+				const selected = opt === value;
 				return (
 					<button
 						type="button"
 						key={opt}
-						aria-pressed={opt === value}
+						aria-pressed={selected}
 						onClick={() => onChange(opt)}
 						className={cn(
-							"inline-flex items-center rounded-md border bg-background px-3 py-1.5 font-medium text-xs outline-none transition-[color,box-shadow] dark:bg-input/30",
+							"inline-flex items-center rounded-md border px-3 py-1.5 font-medium text-xs outline-none transition-[color,background-color,border-color,box-shadow]",
 							"focus-visible:ring-[3px] focus-visible:ring-ring/50",
-							opt === value
-								? "border-transparent bg-secondary text-secondary-foreground"
-								: "hover:bg-accent hover:text-accent-foreground",
+							selected
+								? "border-primary bg-primary text-primary-foreground"
+								: "border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:hover:bg-input/50",
 						)}
 					>
 						{opt}
 						{typeof count === "number" && (
 							<span
 								aria-hidden="true"
-								className="ml-1.5 text-muted-foreground tabular-nums"
+								className={cn(
+									"ml-1.5 tabular-nums",
+									selected
+										? "text-primary-foreground/80"
+										: "text-muted-foreground",
+								)}
 							>
 								{count}
 							</span>

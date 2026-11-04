@@ -62,6 +62,9 @@ export function mapStudents(snapshot: KernelSnapshot): Student[] {
 			phone: row.phone,
 			zalo: row.zalo,
 			email: row.email,
+			...(row.portalLinked !== undefined
+				? { portalLinked: row.portalLinked }
+				: {}),
 			hasPackage: pkg != null,
 			parent: { name: row.parentName, phone: row.parentPhone },
 			targetBand: "—",

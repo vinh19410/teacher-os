@@ -12,9 +12,13 @@ import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, test, vi } from "vitest";
 import type { Db } from "../../app";
-import { deliverNotifications } from "./deliver";
+import { deliverNotifications, renderHtml } from "./deliver";
 import { emitNotifications } from "./emit";
 import { enqueueNotifications } from "./enqueue";
+import {
+	buildOrgInvitationEmail,
+	buildStudentPortalInviteEmail,
+} from "./invite-email";
 import { holidayCreatedEvents, tuitionReminderEvent } from "./templates";
 
 const MIGRATIONS_DIR = new URL(
@@ -574,5 +578,39 @@ describe("templates builder", () => {
 		expect(body.reply_to).toBe("owner@academy.vn");
 		expect(body.from).toBe('"Academy qua Teacher OS" <noreply@teacheros.vn>');
 		vi.unstubAllGlobals();
+	});
+
+	test("invite-email builders escape HTML, dùng nhãn Mở cổng học viên và chặn scheme lạ (#570)", () => {
+		const orgMail = buildOrgInvitationEmail({
+			orgName: 'Alpha <script>"Academy"</script>',
+			inviterName: "Cô Mỹ",
+			studentOrigin: "https://student.staging.teacheros.io.vn/",
+		});
+		expect(orgMail.subject).toContain("Lời mời tham gia");
+		expect(orgMail.html).toContain("Mở cổng học viên");
+		expect(orgMail.html).toContain(
+			'href="https://student.staging.teacheros.io.vn/login"',
+		);
+		expect(orgMail.html).not.toContain("<script>");
+		expect(orgMail.html).toContain("&lt;script&gt;&quot;Academy&quot;");
+
+		const portalMail = buildStudentPortalInviteEmail({
+			orgName: "Alpha Academy",
+			studentName: "Minh",
+			className: "IELTS 6.5",
+			studentOrigin: "javascript:alert(1)",
+		});
+		expect(portalMail.subject).toBe(
+			"Lời mời tham gia lớp IELTS 6.5 tại Alpha Academy",
+		);
+		expect(portalMail.html).not.toContain("javascript:");
+		expect(portalMail.html).not.toContain("<a ");
+
+		const attrEscape = renderHtml(
+			"Kiểm tra link",
+			'https://student.test/login?next=" onclick="alert(1)',
+			"Mở cổng học viên",
+		);
+		expect(attrEscape).toContain("&quot; onclick=&quot;alert(1)");
 	});
 });

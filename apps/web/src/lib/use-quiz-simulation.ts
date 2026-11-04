@@ -8,6 +8,8 @@ export interface QuizSimulationApi {
 	/** Kết quả chấm client-side — null = đang ở take (chưa nộp). */
 	grade: QuizGrade | null;
 	onAnswer: (q: number, value: string) => void;
+	essay: string;
+	onEssayChange: (value: string) => void;
 	submit: () => void;
 	reset: () => void;
 }
@@ -26,12 +28,14 @@ export function useQuizSimulation(
 ): QuizSimulationApi {
 	const [answers, setAnswers] = useState<Record<number, string>>({});
 	const [grade, setGrade] = useState<QuizGrade | null>(null);
+	const [essay, setEssay] = useState("");
 	const simKey = sim?.simKey ?? "";
 	const [lastKey, setLastKey] = useState(simKey);
 	if (lastKey !== simKey) {
 		setLastKey(simKey);
 		setAnswers({});
 		setGrade(null);
+		setEssay("");
 	}
 	const onAnswer = useCallback((q: number, value: string) => {
 		setAnswers((prev) => ({ ...prev, [q]: value }));
@@ -45,6 +49,15 @@ export function useQuizSimulation(
 	const reset = useCallback(() => {
 		setAnswers({});
 		setGrade(null);
+		setEssay("");
 	}, []);
-	return { answers, grade, onAnswer, submit, reset };
+	return {
+		answers,
+		grade,
+		onAnswer,
+		essay,
+		onEssayChange: setEssay,
+		submit,
+		reset,
+	};
 }

@@ -266,4 +266,34 @@ describe("studentAssignmentRows (#317)", () => {
 		expect(row?.gradingStatus).toBeNull();
 		expect(row?.scores).toBeNull();
 	});
+
+	test("propagates dueAt and sorts same-day assignments by parsed dueAt ms before null legacy rows (#572)", () => {
+		const data = makeData({
+			classAssignments: [
+				classAssignment({
+					id: "ca-legacy",
+					due: "2026-11-06",
+					dueAt: null,
+				}),
+				classAssignment({
+					id: "ca-evening",
+					due: "2026-11-06",
+					dueAt: "2026-11-06T17:00:00+07:00", // 10:00Z
+				}),
+				classAssignment({
+					id: "ca-morning",
+					due: "2026-11-06",
+					dueAt: "2026-11-06T02:00:00.000Z", // 09:00 VN
+				}),
+			],
+		});
+		const rows = studentAssignmentRows(data, "s-1");
+		expect(rows.map((r) => r.id)).toEqual([
+			"ca-morning",
+			"ca-evening",
+			"ca-legacy",
+		]);
+		expect(rows[0]?.dueAt).toBe("2026-11-06T02:00:00.000Z");
+		expect(rows[2]?.dueAt).toBeNull();
+	});
 });
