@@ -185,4 +185,47 @@ describe("QuizTakeView — hybrid MCQ + Writing dual-store runtime (#574)", () =
 		expect(localStorage.getItem("quiz-attempt:att-hyb-1:essay")).toBeNull();
 		expect(localStorage.getItem("quiz-attempt:att-hyb-1")).toBeNull();
 	});
+
+	it("renders due date in header for assignment with due date and dueAt (#587)", () => {
+		mockDetail = {
+			...mockDetail,
+			due: "2026-11-15",
+			dueAt: "2026-11-15T10:00:00.000Z", // 17:00 VN
+		};
+		const qc = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		render(
+			<QueryClientProvider client={qc}>
+				<QuizTakeView
+					source={{ kind: "assignment", id: "ca-hyb-1" }}
+					serverAnswers={{}}
+					serverEssay=""
+				/>
+			</QueryClientProvider>,
+		);
+		const dueElem = screen.getByTestId("quiz-runtime-due");
+		expect(dueElem.textContent).toBe("Hạn: 17:00 15/11");
+	});
+
+	it("hides due date in header for practice or untimed assignment (#587)", () => {
+		mockDetail = {
+			...mockDetail,
+			due: "",
+			dueAt: null,
+		};
+		const qc = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		render(
+			<QueryClientProvider client={qc}>
+				<QuizTakeView
+					source={{ kind: "assignment", id: "ca-hyb-1" }}
+					serverAnswers={{}}
+					serverEssay=""
+				/>
+			</QueryClientProvider>,
+		);
+		expect(screen.queryByTestId("quiz-runtime-due")).toBeNull();
+	});
 });

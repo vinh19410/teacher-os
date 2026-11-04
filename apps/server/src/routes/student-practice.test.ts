@@ -540,6 +540,7 @@ describe("student practice (#378 phase 10)", () => {
 			const detail = (await fresh.json()) as Record<string, unknown>;
 			expect(detail.title).toBe("Writing Mock 1");
 			expect(detail.due).toBe("");
+			expect(detail.dueAt).toBeNull();
 			expect(detail.skill).toBe("writing");
 			expect(detail.questions).toEqual([]);
 

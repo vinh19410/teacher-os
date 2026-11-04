@@ -1,7 +1,7 @@
 ---
 title: "feat(student): hiện hạn nộp trên trang làm bài (#587)"
 description: "Hiển thị hạn nộp (ngày và giờ theo múi giờ Việt Nam) trên header trang làm bài của học viên, ẩn hoàn toàn với bài tự luyện"
-status: pending
+status: completed
 priority: P3
 effort: "45m"
 issue: 587
@@ -75,19 +75,19 @@ Kế hoạch này thực hiện theo quy chuẩn handover `--advice` và quy tr�
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: Contracts & Server Payload](./phase-01-contracts-and-server-payload.md) | pending |
-| 2 | [Phase 2: Client Helper & UI Header Integration](./phase-02-client-helper-and-ui-header.md) | pending |
-| 3 | [Phase 3: Verification & Quality Gate](./phase-03-verification-and-quality-gate.md) | pending |
+| 1 | [Phase 1: Contracts & Server Payload](./phase-01-contracts-and-server-payload.md) | completed |
+| 2 | [Phase 2: Client Helper & UI Header Integration](./phase-02-client-helper-and-ui-header.md) | completed |
+| 3 | [Phase 3: Verification & Quality Gate](./phase-03-verification-and-quality-gate.md) | completed |
 
 ## Acceptance Criteria
 
-- [ ] `studentQuizDetailSchema` parse thành công payload có `dueAt` (ISO string), `dueAt: null`, hoặc thiếu `dueAt`.
-- [ ] Endpoint `GET /api/student/assignments/:assignmentId/quiz` trả về `dueAt: string | null` khớp với `class_assignment.dueAt`.
-- [ ] Endpoint `GET /api/student/practice/:testId/quiz` trả về `due: ""` và `dueAt: null`.
-- [ ] Trang làm bài học viên hiển thị hạn nộp dạng `"Hạn: HH:mm dd/mm"` khi có giờ, hoặc `"Hạn: dd/mm"` khi chỉ có ngày.
-- [ ] Bài tự luyện (practice) hoặc bài tập không có hạn nộp thì header không hiển thị dòng hạn nộp, không để lại khoảng trống thừa hay layout shift.
-- [ ] Hiển thị co giãn tốt trên màn hình hẹp (375px và 320px), không làm tràn tiêu đề và không đẩy lệch nút "Thoát" hay "Nộp bài".
-- [ ] Toàn bộ unit tests mới và cũ đều pass; `pnpm check-types` và `pnpm check` pass 100%.
+- [x] `studentQuizDetailSchema` parse thành công payload có `dueAt` (ISO string), `dueAt: null`, hoặc thiếu `dueAt`.
+- [x] Endpoint `GET /api/student/assignments/:assignmentId/quiz` trả về `dueAt: string | null` khớp với `class_assignment.dueAt`.
+- [x] Endpoint `GET /api/student/practice/:testId/quiz` trả về `due: ""` và `dueAt: null`.
+- [x] Trang làm bài học viên hiển thị hạn nộp dạng `"Hạn: HH:mm dd/mm"` khi có giờ, hoặc `"Hạn: dd/mm"` khi chỉ có ngày.
+- [x] Bài tự luyện (practice) hoặc bài tập không có hạn nộp thì header không hiển thị dòng hạn nộp, không để lại khoảng trống thừa hay layout shift.
+- [x] Hiển thị co giãn tốt trên màn hình hẹp (375px và 320px), không làm tràn tiêu đề và không đẩy lệch nút "Thoát" hay "Nộp bài".
+- [x] Toàn bộ unit tests mới và cũ đều pass; `pnpm check-types` và `pnpm check` pass 100%.
 
 ## Red Team Review
 
