@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { composeFrom, createLogMailer, createResendMailer } from "./mailer";
+import { otpEmailTemplate } from "./otp-email-template";
 import { resetPasswordEmailTemplate } from "./reset-password-email-template";
 import { verificationEmailTemplate } from "./verification-email-template";
 
@@ -62,6 +63,29 @@ describe("resetPasswordEmailTemplate", () => {
 		});
 		expect(html).not.toContain("<script>alert(1)</script>");
 		expect(html).toContain("&lt;script&gt;");
+	});
+});
+
+describe("otpEmailTemplate", () => {
+	test("generates valid HTML containing OTP and 5-minute expiration notice", () => {
+		const { html, text } = otpEmailTemplate({ otp: "849201" });
+
+		expect(html).toContain('lang="vi"');
+		expect(html).toContain('color-scheme" content="light dark"');
+		expect(html).toContain("Mã xác thực đăng nhập");
+		expect(html).toContain("TeacherOS");
+		expect(html).toContain("5 phút");
+		expect(html).toContain("849201");
+		expect(html.length).toBeLessThan(15_000);
+
+		expect(text).toContain("849201");
+		expect(text).toContain("5 phút");
+	});
+
+	test("escapes markup in otp if somehow passed unsafe string", () => {
+		const { html } = otpEmailTemplate({ otp: "<script>123</script>" });
+		expect(html).not.toContain("<script>123</script>");
+		expect(html).toContain("&lt;script&gt;123&lt;/script&gt;");
 	});
 });
 

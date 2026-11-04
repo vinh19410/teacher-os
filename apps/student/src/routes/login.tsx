@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { StudentAuthShell } from "@/components/auth/auth-shell";
 import { type AuthMode, AuthTabs } from "@/components/auth/auth-tabs";
 import { GoogleOAuthButton } from "@/components/auth/google-oauth-button";
+import { OtpSignInForm } from "@/components/auth/otp-sign-in-form";
 import { SignInForm } from "@/components/auth/sign-in-form";
 import { SignUpForm } from "@/components/auth/sign-up-form";
 import Loader from "@/components/loader";
@@ -33,9 +34,13 @@ function RouteComponent() {
 	const [mode, setMode] = useState<AuthMode>(() => {
 		try {
 			const saved = localStorage.getItem(TAB_STORAGE_KEY);
-			return saved === "signup" ? "signup" : "signin";
+			return saved === "signup"
+				? "signup"
+				: saved === "signin"
+					? "signin"
+					: "otp";
 		} catch {
-			return "signin";
+			return "otp";
 		}
 	});
 	const [anySubmitting, setAnySubmitting] = useState(false);
@@ -76,12 +81,18 @@ function RouteComponent() {
 		<StudentAuthShell formLabel="Đăng nhập tài khoản">
 			<div className="grid gap-2 text-center">
 				<h1 className="font-bold text-2xl">
-					{mode === "signin" ? "Chào mừng trở lại" : "Tạo tài khoản học viên"}
+					{mode === "otp"
+						? "Cổng thông tin học viên"
+						: mode === "signin"
+							? "Đăng nhập bằng mật khẩu"
+							: "Tạo tài khoản học viên"}
 				</h1>
 				<p className="text-balance text-muted-foreground text-sm">
-					{mode === "signin"
-						? "Đăng nhập để xem lịch học và bài tập của bạn."
-						: "Đăng ký tài khoản học viên nhanh chóng."}
+					{mode === "otp"
+						? "Đăng nhập nhanh bằng mã gửi qua email của bạn."
+						: mode === "signin"
+							? "Đăng nhập để xem lịch học và bài tập của bạn."
+							: "Đăng ký tài khoản học viên nhanh chóng."}
 				</p>
 			</div>
 
@@ -98,6 +109,13 @@ function RouteComponent() {
 
 			<GoogleOAuthButton />
 
+			<div id="panel-otp" hidden={mode !== "otp"}>
+				<OtpSignInForm
+					onSubmittingChange={setAnySubmitting}
+					onSwitchToPassword={() => changeMode("signin")}
+				/>
+			</div>
+
 			<SignInForm
 				hidden={mode !== "signin"}
 				onSubmittingChange={setAnySubmitting}
@@ -107,17 +125,32 @@ function RouteComponent() {
 				onSubmittingChange={setAnySubmitting}
 			/>
 
-			<p className="text-center text-muted-foreground text-sm">
-				{mode === "signin" ? "Chưa có tài khoản?" : "Đã có tài khoản?"}{" "}
-				<button
-					type="button"
-					disabled={anySubmitting}
-					onClick={() => changeMode(mode === "signin" ? "signup" : "signin")}
-					className="font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
-				>
-					{mode === "signin" ? "Tạo tài khoản" : "Đăng nhập"}
-				</button>
-			</p>
+			{mode === "signin" && (
+				<p className="text-center text-muted-foreground text-sm">
+					Chưa có tài khoản?{" "}
+					<button
+						type="button"
+						disabled={anySubmitting}
+						onClick={() => changeMode("otp")}
+						className="font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
+					>
+						Đăng nhập bằng mã email
+					</button>
+				</p>
+			)}
+			{mode === "signup" && (
+				<p className="text-center text-muted-foreground text-sm">
+					Đã có tài khoản?{" "}
+					<button
+						type="button"
+						disabled={anySubmitting}
+						onClick={() => changeMode("otp")}
+						className="font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
+					>
+						Đăng nhập
+					</button>
+				</p>
+			)}
 		</StudentAuthShell>
 	);
 }
