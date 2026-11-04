@@ -1,7 +1,7 @@
 ---
 title: "Đăng nhập cổng học viên bằng mã qua email (Email OTP)"
 description: "Thêm phương thức đăng nhập bằng mã OTP qua email cho cổng học viên TeacherOS bằng Better-Auth emailOTP plugin, tự động tạo và khớp hồ sơ học viên, bảo vệ giới hạn tần suất gửi thư và cách ly role."
-status: in_progress
+status: completed
 priority: P1
 effort: M
 issue: 578
@@ -71,23 +71,23 @@ Theo tư vấn từ `@kongming`:
 
 | # | Phase | File | Status |
 |---|-------|------|--------|
-| 1 | Cấu hình Better-Auth Email OTP & Bảo mật Role | [phase-01-backend-email-otp.md](./phase-01-backend-email-otp.md) | in_progress |
-| 2 | Tích hợp Server & Tự động khớp hồ sơ học viên | [phase-02-server-student-integration.md](./phase-02-server-student-integration.md) | pending |
-| 3 | Giao diện đăng nhập OTP tại cổng học viên | [phase-03-student-login-ui.md](./phase-03-student-login-ui.md) | pending |
-| 4 | Kiểm thử toàn diện & Quality Gates | [phase-04-verification-gates.md](./phase-04-verification-gates.md) | pending |
+| 1 | Cấu hình Better-Auth Email OTP & Bảo mật Role | [phase-01-backend-email-otp.md](./phase-01-backend-email-otp.md) | completed |
+| 2 | Tích hợp Server & Tự động khớp hồ sơ học viên | [phase-02-server-student-integration.md](./phase-02-server-student-integration.md) | completed |
+| 3 | Giao diện đăng nhập OTP tại cổng học viên | [phase-03-student-login-ui.md](./phase-03-student-login-ui.md) | completed |
+| 4 | Kiểm thử toàn diện & Quality Gates | [phase-04-verification-gates.md](./phase-04-verification-gates.md) | completed |
 
 ## Acceptance Criteria
 
-- [ ] Plugin `emailOTP` được tích hợp vào `packages/auth/src/index.ts` với `expiresIn: 300`, `storeOTP: "hashed"`, template email tiếng Việt.
-- [ ] Chặn gửi OTP từ student origin đến các email giáo viên/admin hoặc tài khoản có role khác `student`.
-- [ ] Khóa các endpoint OTP chỉ cho phép từ origin thuộc `studentOrigins`.
-- [ ] Vô hiệu hóa các endpoint reset password OTP của Better-Auth để bảo toàn cơ chế reset mật khẩu cryptographic token hiện có.
-- [ ] Backend có cơ chế cooldown 60 giây an toàn giữa các lần gửi mã OTP bằng bản ghi cooldown độc lập, không làm mất mã đã gửi.
-- [ ] Học viên mới đăng nhập bằng OTP thành công được tạo tài khoản có `role = 'student'` và `emailVerified = true`.
-- [ ] `createStudentGuard` tự động nhận diện tài khoản vừa đăng nhập bằng OTP và khớp với hồ sơ học viên đã được mời theo email.
-- [ ] Giao diện cổng học viên (`apps/student`) hiển thị luồng nhập email -> nhập mã OTP làm mặc định, có nút gửi lại mã đếm ngược 60s, có liên kết phụ "Đăng nhập bằng mật khẩu", giữ nút "Đăng nhập bằng Google".
-- [ ] Bộ test suites trong `packages/auth`, `apps/server`, và `apps/student` chạy xanh 100%, không hồi quy các test role hiện có.
-- [ ] `pnpm check` và `pnpm check-types` đạt chuẩn chất lượng.
+- [x] Plugin `emailOTP` được tích hợp vào `packages/auth/src/index.ts` với `expiresIn: 300`, `storeOTP: "hashed"`, template email tiếng Việt.
+- [x] Chặn gửi OTP từ student origin đến các email giáo viên/admin hoặc tài khoản có role khác `student`.
+- [x] Khóa các endpoint OTP chỉ cho phép từ origin thuộc `studentOrigins`.
+- [x] Vô hiệu hóa các endpoint reset password OTP của Better-Auth để bảo toàn cơ chế reset mật khẩu cryptographic token hiện có.
+- [x] Backend có cơ chế cooldown 60 giây an toàn giữa các lần gửi mã OTP bằng bản ghi cooldown độc lập, không làm mất mã đã gửi.
+- [x] Học viên mới đăng nhập bằng OTP thành công được tạo tài khoản có `role = 'student'` và `emailVerified = true`.
+- [x] `createStudentGuard` tự động nhận diện tài khoản vừa đăng nhập bằng OTP và khớp với hồ sơ học viên đã được mời theo email.
+- [x] Giao diện cổng học viên (`apps/student`) hiển thị luồng nhập email -> nhập mã OTP làm mặc định, có nút gửi lại mã đếm ngược 60s, có liên kết phụ "Đăng nhập bằng mật khẩu", giữ nút "Đăng nhập bằng Google".
+- [x] Bộ test suites trong `packages/auth`, `apps/server`, và `apps/student` chạy xanh 100%, không hồi quy các test role hiện có.
+- [x] `pnpm check` và `pnpm check-types` đạt chuẩn chất lượng.
 
 ## Red Team Review
 
