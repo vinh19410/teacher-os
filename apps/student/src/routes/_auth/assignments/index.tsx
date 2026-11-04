@@ -28,12 +28,15 @@ export const Route = createFileRoute("/_auth/assignments/")({
 	component: StudentAssignmentsPage,
 });
 
-function StudentAssignmentsPage() {
+export function StudentAssignmentsPage() {
 	const { session } = Route.useRouteContext();
 	const sessionEmail = session?.data?.user?.email;
 	const { status } = Route.useSearch();
 	const navigate = useNavigate();
-	const overviewQuery = useStudentOverview();
+	const overviewQuery = useStudentOverview({
+		refetchOnMount: "always",
+		refetchOnWindowFocus: "always",
+	});
 	const activeTab: FilterTab = status ?? "all";
 
 	return (
@@ -43,7 +46,7 @@ function StudentAssignmentsPage() {
 					return <Loader />;
 				}
 
-				if (overviewQuery.error) {
+				if (overviewQuery.error && !overviewQuery.data) {
 					const err = overviewQuery.error;
 					const code = isHttpError(err) ? err.code : undefined;
 					return (
