@@ -33,6 +33,7 @@ import {
 	SpeakingGuideCard,
 	SpeakingSubmissionPanel,
 } from "@/components/quiz/speaking-submission-panel";
+import { formatQuizDueText } from "@/lib/assignment-status";
 import { isHttpError, reauth } from "@/lib/query-client";
 import {
 	type QuizAttemptStore,
@@ -219,6 +220,11 @@ export function QuizTakeView({
 		() => parts.flatMap((part) => part.questions),
 		[parts],
 	);
+	const dueText = useMemo(
+		() =>
+			detail ? formatQuizDueText({ due: detail.due, dueAt: detail.dueAt }) : "",
+		[detail],
+	);
 	// Trước khi store tồn tại (resume chưa confirm), UI đọc server answers —
 	// string index vẫn tra cứu được theo key số ở runtime.
 	const answers = store ? snapshot.answers : serverAnswers;
@@ -379,6 +385,7 @@ export function QuizTakeView({
 			<div className="flex min-h-svh flex-col bg-muted/30">
 				<QuizRuntimeHeader
 					title={detail.title}
+					dueText={dueText}
 					saveState={null}
 					onSubmitClick={null}
 				/>
@@ -480,6 +487,7 @@ export function QuizTakeView({
 		<div className="flex min-h-svh flex-col bg-muted/30">
 			<QuizRuntimeHeader
 				title={detail.title}
+				dueText={dueText}
 				// Speaking không autosave gì — file lưu ngay khi tải lên.
 				saveState={store && !isSpeaking ? combinedSaveState : null}
 				onSubmitClick={handleSubmitClick}

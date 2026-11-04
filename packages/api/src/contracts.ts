@@ -2684,6 +2684,8 @@ export const studentQuizDetailSchema = z
 		assignmentId: z.string(),
 		title: z.string(),
 		due: z.string(),
+		/** ISO datetime hạn nộp (UTC, tính từ giờ VN lúc giao); null/undefined trên dữ liệu cũ hoặc bài tự luyện (#572, #587). */
+		dueAt: z.string().nullable().optional(),
 		skill: z.string(),
 		part: z.string(),
 		type: z.string(),

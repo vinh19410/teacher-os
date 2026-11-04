@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
 	calculateIeltsBand,
 	deriveAssignmentStatus,
+	formatQuizDueText,
 } from "@/lib/assignment-status";
 
 describe("calculateIeltsBand rounding rules", () => {
@@ -436,5 +437,47 @@ describe("deriveAssignmentStatus — hybrid assignment (#574)", () => {
 		const graded = deriveAssignmentStatus(hybridGraded, "2026-11-04");
 		expect(graded.status).toBe("graded");
 		expect(graded.statusLabel).toBe("Điểm: 6.5");
+	});
+});
+
+describe("formatQuizDueText (#587)", () => {
+	it("returns empty string when due is empty and dueAt is null or omitted", () => {
+		expect(formatQuizDueText({ due: "", dueAt: null })).toBe("");
+		expect(formatQuizDueText({ due: "" })).toBe("");
+		expect(formatQuizDueText({})).toBe("");
+	});
+
+	it("returns formatted day/month when due is present and dueAt is null", () => {
+		expect(formatQuizDueText({ due: "2026-11-15", dueAt: null })).toBe(
+			"Hạn: 15/11",
+		);
+		expect(formatQuizDueText({ due: "2026-09-05" })).toBe("Hạn: 05/09");
+	});
+
+	it("returns formatted time and day/month in Vietnam timezone when valid dueAt is present", () => {
+		// 10:00 UTC = 17:00 VN (+7)
+		expect(
+			formatQuizDueText({
+				due: "2026-11-15",
+				dueAt: "2026-11-15T10:00:00.000Z",
+			}),
+		).toBe("Hạn: 17:00 15/11");
+	});
+
+	it("avoids chimera date by using date from dueAt when dueAt is present", () => {
+		// 17:30 UTC Nov 10 = 00:30 VN Nov 11
+		expect(
+			formatQuizDueText({
+				due: "2026-11-10",
+				dueAt: "2026-11-10T17:30:00.000Z",
+			}),
+		).toBe("Hạn: 00:30 11/11");
+	});
+
+	it("returns empty string for invalid date formats or junk text", () => {
+		expect(formatQuizDueText({ due: "invalid-date", dueAt: null })).toBe("");
+		expect(
+			formatQuizDueText({ due: "not-a-date", dueAt: "invalid-timestamp" }),
+		).toBe("");
 	});
 });

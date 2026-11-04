@@ -1331,6 +1331,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			.select({
 				title: classAssignment.title,
 				due: classAssignment.due,
+				dueAt: classAssignment.dueAt,
 				promptId: classAssignment.promptId,
 			})
 			.from(classAssignment)
@@ -1388,6 +1389,10 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			assignmentId,
 			title: row.title,
 			due: row.due,
+			dueAt:
+				row.dueAt instanceof Date && Number.isFinite(row.dueAt.getTime())
+					? row.dueAt.toISOString()
+					: null,
 			skill: prompt.skill,
 			part: prompt.part,
 			type: prompt.type,

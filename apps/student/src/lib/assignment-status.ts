@@ -87,6 +87,35 @@ function formatDayMonth(iso: string): string {
 	return `${dd}/${mm}`;
 }
 
+/**
+ * Định dạng hạn nộp trên header trang làm bài thi/bài tập (#587).
+ * Trả về rỗng nếu không có hạn (bài tự luyện, bài không đặt hạn, hoặc dữ liệu không hợp lệ).
+ * Khi có `dueAt` hợp lệ (ISO datetime): trả về "Hạn: HH:mm dd/mm" (theo giờ VN).
+ * Khi chỉ có `due` (ISO yyyy-mm-dd): trả về "Hạn: dd/mm".
+ */
+export function formatQuizDueText(input: {
+	due?: string | null;
+	dueAt?: string | null;
+}): string {
+	const deadline = evaluateAssignmentDeadline({
+		due: input.due ?? "",
+		dueAt: input.dueAt,
+	});
+	if (deadline.hasDueAt && deadline.dueAtMs !== null) {
+		const parsed = parseISODate(deadline.dueDateISO);
+		if (!parsed) return "";
+		const time = formatVietnamTimeHHMM(deadline.dueAtMs);
+		const date = formatDayMonth(deadline.dueDateISO);
+		return `Hạn: ${time} ${date}`;
+	}
+	if (deadline.dueDateISO) {
+		const parsed = parseISODate(deadline.dueDateISO);
+		if (!parsed) return "";
+		return `Hạn: ${formatDayMonth(deadline.dueDateISO)}`;
+	}
+	return "";
+}
+
 export function deriveAssignmentStatus(
 	assignment: StudentAssignment,
 	todayISO?: string,

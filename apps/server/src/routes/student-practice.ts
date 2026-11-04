@@ -154,6 +154,7 @@ function toPracticeQuizDetail(
 		title: loaded.test.title,
 		// Practice không có hạn nộp.
 		due: "",
+		dueAt: null,
 		skill: loaded.test.skill,
 		part: loaded.parts[0]?.part ?? "",
 		...effectiveDefaults,
