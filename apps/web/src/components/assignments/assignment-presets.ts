@@ -44,9 +44,9 @@ export function bandFromClassLevel(
 		if (band) return band;
 	}
 
-	// 3. Nếu không có từ khóa "band/ielts", tránh số nhà, số phòng (3+ chữ số)
-	if (/\b\d{3,}\b/.test(level)) return null;
-
+	// 3. Nếu không có từ khóa "band/ielts", tránh số nhà, số phòng (3+ chữ số) hoặc số khối lớp ("Lớp 6", "Grade 7", "Khối 8")
+	if (/\b\d{3,}\b/.test(level) || /\b(?:lớp|grade|khối)\s*\d+\b/i.test(level))
+		return null;
 	// 4. Số đơn lẻ có word boundary và trong dải điểm hợp lệ (ví dụ: "5.5", "6.0")
 	const standaloneMatch = level.match(/\b([5-8](?:\.[05])?)\+?\b(?!\d)/);
 	if (standaloneMatch) {

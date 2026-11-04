@@ -37,12 +37,15 @@ describe("bandFromClassLevel", () => {
 		expect(bandFromClassLevel("K15 - Band 5.5")).toBe("5.5");
 	});
 
-	test("rejects non-IELTS classes or classes with TOEIC scores", () => {
+	test("rejects non-IELTS classes or classes with TOEIC scores, grade numbers, or room numbers", () => {
 		expect(bandFromClassLevel("TOEIC 550")).toBeNull();
 		expect(bandFromClassLevel("TOEIC 600–700")).toBeNull();
 		expect(bandFromClassLevel("Luyện thi TOEIC 650")).toBeNull();
 		expect(bandFromClassLevel("Band 6.5", "communication")).toBeNull();
 		expect(bandFromClassLevel("Phòng 602")).toBeNull();
+		expect(bandFromClassLevel("Lớp 6")).toBeNull();
+		expect(bandFromClassLevel("Grade 7")).toBeNull();
+		expect(bandFromClassLevel("Khối 8")).toBeNull();
 	});
 
 	test("returns null for out-of-range, non-band, or empty levels", () => {
