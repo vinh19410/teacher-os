@@ -106,7 +106,7 @@ export function ClassCard({
 							type="button"
 							disabled={accepting || !onAccept}
 							onClick={() => onAccept?.(cls.enrollmentId)}
-							className="mt-3 flex h-10 w-full items-center justify-center rounded-lg bg-primary font-medium text-bg text-sm tracking-[0.02em] transition-colors duration-150 hover:bg-primary hover:text-primary-foreground focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:scale-[0.99] disabled:pointer-events-none disabled:opacity-40"
+							className="mt-3 flex h-10 w-full items-center justify-center rounded-lg bg-primary font-medium text-primary-foreground text-sm tracking-[0.02em] transition-colors duration-150 hover:bg-primary/90 focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:scale-[0.99] disabled:pointer-events-none disabled:opacity-40"
 						>
 							{accepting ? "Đang xử lý…" : "Tham gia lớp"}
 						</button>
