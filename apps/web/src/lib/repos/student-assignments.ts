@@ -15,6 +15,8 @@ export interface StudentAssignmentRow {
 	/** Class row: ISO yyyy-mm-dd. Grading row có thể "" hoặc định dạng legacy
 	 * (vd "20/08") — bảng `assignment` không có contract ISO. */
 	due: string;
+	/** Class row: ISO datetime hạn nộp (null trên dữ liệu cũ); grading row: null. */
+	dueAt: string | null;
 	/** class row: từ target.submittedAt; grading row: null. */
 	submittedAt: string | null;
 	/** grading row: "graded" | "late" | "not-submitted"; class row: null. */
@@ -64,6 +66,7 @@ export function studentAssignmentRows(
 				typeLabel,
 				className,
 				due: ca.due,
+				dueAt: ca.dueAt ?? null,
 				submittedAt: target.submittedAt,
 				gradingStatus: null,
 				scores: null,
@@ -81,6 +84,7 @@ export function studentAssignmentRows(
 			typeLabel: a.type === "" ? null : a.type,
 			className: "",
 			due: a.due,
+			dueAt: null,
 			submittedAt: null,
 			gradingStatus: a.status,
 			scores: a.scores,
@@ -94,6 +98,11 @@ export function studentAssignmentRows(
 		if (dx === null) return 1;
 		if (dy === null) return -1;
 		if (dx !== dy) return dx < dy ? -1 : 1;
+		const rawTx = x.dueAt ? Date.parse(x.dueAt) : Number.POSITIVE_INFINITY;
+		const rawTy = y.dueAt ? Date.parse(y.dueAt) : Number.POSITIVE_INFINITY;
+		const tx = Number.isNaN(rawTx) ? Number.POSITIVE_INFINITY : rawTx;
+		const ty = Number.isNaN(rawTy) ? Number.POSITIVE_INFINITY : rawTy;
+		if (tx !== ty) return tx < ty ? -1 : 1;
 		return x.key.localeCompare(y.key);
 	});
 }

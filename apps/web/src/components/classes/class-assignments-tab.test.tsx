@@ -1,5 +1,7 @@
+// @vitest-environment jsdom
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import type {
 	AssignmentPrompt,
@@ -222,7 +224,7 @@ vi.mock("@/lib/data-store", () => ({
 
 const mockSubmit = {
 	saving: false,
-	error: undefined,
+	error: undefined as string | undefined,
 	notice: undefined,
 	submitBlocked: false,
 	run: vi.fn(),
@@ -235,6 +237,28 @@ vi.mock("@/lib/use-kernel-form-submit", () => ({
 }));
 
 import { ClassAssignmentsTab } from "./class-assignments-tab";
+
+beforeAll(() => {
+	if (typeof globalThis.ResizeObserver === "undefined") {
+		globalThis.ResizeObserver = class ResizeObserver {
+			observe() {}
+			unobserve() {}
+			disconnect() {}
+		};
+	}
+});
+
+afterEach(() => {
+	cleanup();
+	currentDataFixture = {
+		classAssignments: testAssignments,
+		assignmentPrompts: testPrompts,
+		students: testStudents,
+	};
+	mockSubmit.error = undefined;
+	mockSubmit.run.mockReset();
+	mockSubmit.reset.mockReset();
+});
 
 describe("ClassAssignmentsTab (#208)", () => {
 	it("renders view list with cards and rollup tags (Đã nộp hết, Quá hạn, Đang mở)", () => {
@@ -399,5 +423,149 @@ describe("ClassAssignmentsTab (#208)", () => {
 		const expanded = html.match(/aria-expanded="true"/g)?.length ?? 0;
 		expect(items).toBeGreaterThan(0);
 		expect(expanded).toBe(items);
+	});
+
+	it("renders dd/mm/yyyy DatePickerInput + 24h TimeInput24h, live Vietnamese confirmation, and immediate invalid/past-time errors (#572)", () => {
+		render(
+			<ClassAssignmentsTab
+				classGroup={testClass}
+				view="assign"
+				onViewChange={vi.fn()}
+			/>,
+		);
+
+		const dueInput = document.getElementById(
+			"assignment-due-input",
+		) as HTMLInputElement;
+		const timeInput = document.getElementById(
+			"assignment-due-time-input",
+		) as HTMLInputElement;
+		expect(dueInput).toBeTruthy();
+		expect(dueInput.type).toBe("text");
+		expect(dueInput.value).toMatch(/^\d{2}\/\d{2}\/\d{4}$/);
+		expect(timeInput).toBeTruthy();
+		expect(timeInput.value).toBe("23:59");
+
+		const preview = screen.getByTestId("assignment-due-preview");
+		expect(preview.textContent).toContain("Đã hiểu:");
+		expect(preview.textContent).toContain("(giờ Việt Nam)");
+
+		// Type valid future date & 1-digit hour -> preview updates immediately
+		fireEvent.focus(dueInput);
+		fireEvent.change(dueInput, { target: { value: "06/11/2030" } });
+		fireEvent.focus(timeInput);
+		fireEvent.change(timeInput, { target: { value: "9:05" } });
+		expect(screen.getByTestId("assignment-due-preview").textContent).toContain(
+			"Thứ Tư, 06/11/2030 lúc 09:05",
+		);
+
+		// Type impossible calendar date -> preview hides immediately and error shows without clicking submit
+		fireEvent.change(dueInput, { target: { value: "31/02/2030" } });
+		expect(screen.queryByTestId("assignment-due-preview")).toBeNull();
+		expect(
+			screen.getByText(/Ngày không hợp lệ — nhập theo định dạng dd\/mm\/yyyy/),
+		).toBeTruthy();
+	});
+
+	it("formats HH:mm dd/mm/yyyy in assigned list when dueAt is present (#572)", () => {
+		currentDataFixture = {
+			classAssignments: [
+				{
+					id: "ca-timed",
+					classId: "cl-1",
+					promptId: "p-ready",
+					title: "Writing Timed",
+					due: "2030-11-06",
+					dueAt: new Date(
+						Date.parse("2030-11-06T17:30:00+07:00"),
+					).toISOString(),
+					note: "",
+					createdAt: "2026-11-04T10:00:00.000Z",
+					targets: [{ studentId: "st-1", submittedAt: null }],
+				},
+			],
+			assignmentPrompts: testPrompts,
+			students: testStudents,
+		};
+
+		const html = renderToStaticMarkup(
+			<ClassAssignmentsTab
+				classGroup={testClass}
+				view="list"
+				onViewChange={vi.fn()}
+			/>,
+		);
+		expect(html).toContain("Hạn 17:30 06/11/2030");
+	});
+
+	it("blocks past-time today immediately, re-checks Date.now() at submit click, and renders/resets submit.error (#572)", () => {
+		vi.useFakeTimers({ toFake: ["Date"] });
+		try {
+			vi.setSystemTime(new Date("2026-11-06T14:00:00+07:00"));
+			mockSubmit.error = "Không thể giao bài do giờ hạn nộp đã qua.";
+
+			const { rerender } = render(
+				<ClassAssignmentsTab
+					classGroup={testClass}
+					view="assign"
+					onViewChange={vi.fn()}
+				/>,
+			);
+
+			// Select a ready prompt so actionState reaches due checks
+			fireEvent.click(
+				screen.getByRole("button", { name: /Writing Task 2 — Opinion/ }),
+			);
+
+			// submit.error renders in alert region
+			expect(screen.getByRole("alert").textContent).toContain(
+				"Không thể giao bài",
+			);
+
+			const dueInput = document.getElementById(
+				"assignment-due-input",
+			) as HTMLInputElement;
+			const timeInput = document.getElementById(
+				"assignment-due-time-input",
+			) as HTMLInputElement;
+
+			// Changing due date resets stale submit.error
+			fireEvent.focus(dueInput);
+			fireEvent.change(dueInput, { target: { value: "06/11/2026" } });
+			expect(mockSubmit.reset).toHaveBeenCalled();
+			mockSubmit.error = undefined;
+
+			// Past time today (13:59 at 14:00 VN) shows immediate inline + action bar error
+			fireEvent.focus(timeInput);
+			fireEvent.change(timeInput, { target: { value: "13:59" } });
+			expect(screen.queryByTestId("assignment-due-preview")).toBeNull();
+			expect(
+				screen.getByText("Giờ hạn nộp hôm nay phải sau thời điểm hiện tại."),
+			).toBeTruthy();
+			expect(screen.getByText("Giờ hạn nộp đã qua")).toBeTruthy();
+
+			// Pick 14:01 (valid at 14:00), then advance clock to 14:02 without re-render before clicking submit
+			fireEvent.change(timeInput, { target: { value: "14:01" } });
+			rerender(
+				<ClassAssignmentsTab
+					classGroup={testClass}
+					view="assign"
+					onViewChange={vi.fn()}
+				/>,
+			);
+			expect(screen.getByTestId("assignment-due-preview")).toBeTruthy();
+
+			vi.setSystemTime(new Date("2026-11-06T14:02:00+07:00"));
+			const submitBtns = screen.getAllByRole("button", {
+				name: "Giao bài tập",
+			});
+			fireEvent.click(submitBtns[submitBtns.length - 1] as HTMLButtonElement);
+			expect(mockSubmit.run).not.toHaveBeenCalled();
+			expect(
+				screen.getByText("Giờ hạn nộp hôm nay phải sau thời điểm hiện tại."),
+			).toBeTruthy();
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 });

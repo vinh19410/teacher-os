@@ -1,16 +1,26 @@
 import { Link } from "@tanstack/react-router";
 import type { StudentAssignment } from "@teacher-os/api/contracts";
-import { deriveAssignmentStatus } from "@/lib/assignment-status";
+import {
+	type DerivedAssignmentStatus,
+	deriveAssignmentStatus,
+} from "@/lib/assignment-status";
 
 export function AssignmentRow({
 	assignment,
+	derived: precomputedDerived,
+	todayISO,
+	nowMs,
 	showClassName = true,
 }: {
 	assignment: StudentAssignment;
+	derived?: DerivedAssignmentStatus;
+	todayISO?: string;
+	nowMs?: number;
 	/** Ẩn tên lớp khi row đã nằm trong trang của chính lớp đó. */
 	showClassName?: boolean;
 }) {
-	const derived = deriveAssignmentStatus(assignment);
+	const derived =
+		precomputedDerived ?? deriveAssignmentStatus(assignment, todayISO, nowMs);
 
 	const rowContent = (
 		<div className="flex flex-col gap-2 rounded-md rounded-md border border-input bg-transparent p-4 transition-colors sm:flex-row sm:items-center sm:justify-between">

@@ -4,6 +4,7 @@ import type {
 	StudentClass,
 } from "@teacher-os/api/contracts";
 import { formatSchedule } from "@teacher-os/api/format-schedule";
+import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { TeacherAvatar } from "@/components/class/teacher-avatar";
 import { deriveAssignmentStatus } from "@/lib/assignment-status";
 import { cn } from "@/lib/cn";
@@ -17,6 +18,8 @@ export interface ClassCardProps {
 	accepting?: boolean;
 	/** Bài tập của riêng lớp này (trang Lớp học) — vắng mặt thì ẩn bảng. */
 	assignments?: StudentAssignment[];
+	todayISO?: string;
+	nowMs?: number;
 }
 
 export function ClassCard({
@@ -24,6 +27,8 @@ export function ClassCard({
 	onAccept,
 	accepting = false,
 	assignments,
+	todayISO,
+	nowMs,
 }: ClassCardProps) {
 	const isInvited = cls.enrollmentStatus === "invited";
 
@@ -118,7 +123,11 @@ export function ClassCard({
 			</div>
 
 			{assignments !== undefined && assignments.length > 0 && (
-				<ClassCardAssignments assignments={assignments} />
+				<ClassCardAssignments
+					assignments={assignments}
+					todayISO={todayISO}
+					nowMs={nowMs}
+				/>
 			)}
 		</div>
 	);
@@ -128,9 +137,16 @@ export function ClassCard({
  * hàng dẫn về take/review screen. Chỉ vẽ khi caller truyền dữ liệu. */
 function ClassCardAssignments({
 	assignments,
+	todayISO,
+	nowMs,
 }: {
 	assignments: StudentAssignment[];
+	todayISO?: string;
+	nowMs?: number;
 }) {
+	const effectiveNowMs = nowMs ?? Date.now();
+	const effectiveTodayISO =
+		todayISO ?? vietnamTodayISO(new Date(effectiveNowMs));
 	return (
 		<div className="mt-4">
 			<h4 className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.15em]">
@@ -138,7 +154,11 @@ function ClassCardAssignments({
 			</h4>
 			<div className="mt-2 overflow-hidden rounded-md rounded-md border border-input bg-transparent">
 				{assignments.map((assignment) => {
-					const derived = deriveAssignmentStatus(assignment);
+					const derived = deriveAssignmentStatus(
+						assignment,
+						effectiveTodayISO,
+						effectiveNowMs,
+					);
 					const row = (
 						<div
 							key={assignment.id}

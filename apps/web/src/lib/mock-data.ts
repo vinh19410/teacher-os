@@ -112,6 +112,7 @@ export interface ClassAssignment {
 	promptId: string;
 	title: string;
 	due: string;
+	dueAt?: string | null;
 	note: string;
 	createdAt: string;
 	targets: Array<{

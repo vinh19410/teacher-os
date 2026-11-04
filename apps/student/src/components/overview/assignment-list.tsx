@@ -1,4 +1,5 @@
 import type { StudentAssignment } from "@teacher-os/api/contracts";
+import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { useMemo, useState } from "react";
 import { AssignmentRow } from "@/components/overview/assignment-row";
 import { OverviewEmptyState } from "@/components/overview/empty-state";
@@ -30,6 +31,8 @@ export function AssignmentList({
 	onTabChange,
 	hideHeading = false,
 	className = "mt-10",
+	todayISO,
+	nowMs,
 }: {
 	assignments: StudentAssignment[];
 	showClassName?: boolean;
@@ -37,13 +40,18 @@ export function AssignmentList({
 	onTabChange?: (tab: FilterTab) => void;
 	hideHeading?: boolean;
 	className?: string;
+	todayISO?: string;
+	nowMs?: number;
 }) {
 	const [internalTab, setInternalTab] = useState<FilterTab>("all");
 	const activeTab = controlledTab ?? internalTab;
 	const categorized = useMemo(() => {
+		const effectiveNowMs = nowMs ?? Date.now();
+		const effectiveTodayISO =
+			todayISO ?? vietnamTodayISO(new Date(effectiveNowMs));
 		const listWithStatus = assignments.map((a) => ({
 			assignment: a,
-			derived: deriveAssignmentStatus(a),
+			derived: deriveAssignmentStatus(a, effectiveTodayISO, effectiveNowMs),
 		}));
 
 		// Sort: by sortOrder ascending (overdue 0 -> due-soon 1 -> not-submitted 2 -> submitted 3 -> graded 4)
@@ -64,7 +72,7 @@ export function AssignmentList({
 		}
 
 		return { list: listWithStatus, counts };
-	}, [assignments]);
+	}, [assignments, todayISO, nowMs]);
 
 	const filtered = useMemo(() => {
 		if (activeTab === "all") return categorized.list;
@@ -152,10 +160,11 @@ export function AssignmentList({
 					/>
 				) : (
 					<div className="space-y-2.5">
-						{filtered.map(({ assignment }) => (
+						{filtered.map(({ assignment, derived }) => (
 							<AssignmentRow
 								key={assignment.id}
 								assignment={assignment}
+								derived={derived}
 								showClassName={showClassName}
 							/>
 						))}
