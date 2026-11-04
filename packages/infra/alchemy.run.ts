@@ -374,6 +374,9 @@ export default Alchemy.Stack(
 				LEAD_API_URL: topology
 					? topology.apiOrigin
 					: serverWorker.url.as<string>(),
+				STUDENT_PORTAL_URL: topology
+					? topology.studentOrigin
+					: studentWorker.url.as<string>(),
 			},
 			assets: {
 				htmlHandling: "auto-trailing-slash",

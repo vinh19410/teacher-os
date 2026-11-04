@@ -215,4 +215,28 @@ test("workflow PROFILE_ORIGIN and profile smoke check match resolveDomainTopolog
 		new RegExp(`url:\\s*"http://localhost:${profilePort}"`),
 		"profileWorker dev.url in alchemy.run.ts must match apps/profile/serve.mjs port",
 	);
+	assert.match(
+		profileBlock,
+		/STUDENT_PORTAL_URL:\s*topology\s*\?\s*topology\.studentOrigin\s*:\s*studentWorker\.url\.as<string>\(\)/,
+		'StaticSite("profile") in alchemy.run.ts must wire STUDENT_PORTAL_URL from topology.studentOrigin / studentWorker.url (#560)',
+	);
+
+	const studentVite = read("../apps/student/vite.config.ts");
+	const studentPort = studentVite.match(/port:\s*(\d+)/)?.[1];
+	assert.equal(studentPort, "8003");
+	const defaultStudentPortalPort = profileServe.match(
+		/process\.env\.STUDENT_PORTAL_URL\s*\?\?\s*"http:\/\/localhost:(\d+)"/,
+	)?.[1];
+	assert.equal(
+		defaultStudentPortalPort,
+		studentPort,
+		"apps/profile/serve.mjs default STUDENT_PORTAL_URL port must match apps/student/vite.config.ts (#560)",
+	);
+
+	const playwrightCfg = read("../apps/e2e/playwright.config.ts");
+	assert.match(
+		playwrightCfg,
+		/STUDENT_PORTAL_URL:\s*`http:\/\/localhost:\$\{studentPort\}`/,
+		"apps/e2e/playwright.config.ts must pass STUDENT_PORTAL_URL using studentPort (#560)",
+	);
 });

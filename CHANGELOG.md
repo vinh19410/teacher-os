@@ -13,6 +13,9 @@ Quy ước khi cập nhật:
 
 ## 2026-11-04
 
+### Added
+- Thêm nút **"Gốc học viên"** (`#studentPortalLink`, `rel="noopener"`) trên thanh header của `apps/profile` (`apps/profile/public/index.html`) dẫn thẳng tới cổng học viên `apps/student` theo từng môi trường: HTML tĩnh mặc định trỏ `https://student.teacheros.io.vn`, `replaceStudentPortalHref` trong `apps/profile/serve.mjs` và `apps/profile/build.mjs` kiểm tra URI scheme `http:`/`https:` fail-closed rồi thay `href` từ biến `STUDENT_PORTAL_URL` (chỉ áp dụng cho `index.html` gốc, dev mặc định `http://localhost:8003`, E2E truyền `http://localhost:${studentPort}` trong `apps/e2e/playwright.config.ts`, deploy truyền `topology.studentOrigin` / `studentWorker.url` từ `packages/infra/alchemy.run.ts`), kèm CSS header responsive cho `1440×900`, `768×1024`, `375×812`, `320×812` và khoá chống lệch trong `scripts/topology-drift.test.mjs` (#560).
+
 ### Removed
 - Gỡ bỏ khối tuỳ chọn **"Đã làm test examenglish? (nhập kết quả nếu có)"** khỏi form đăng ký khoá học tại `apps/profile/public/index.html`: xoá phần tử `<details id="examEnglishDetails">` (2 liên kết ExamEnglish và ô nhập kết quả tự do `#examEnglishInput`), các rule CSS `.examenglish-*` và khoá `examEnglish` trong nháp `localStorage`; `getCombinedPlacement()` giữ nguyên tên hàm ở cả 3 điểm gọi và chỉ trả về giá trị từ `quizPlacementInput` đã `.trim().slice(0, 300)`, kèm test biên dịch `node:vm` chặn `SyntaxError` cho `<script>` inline (#559).
 

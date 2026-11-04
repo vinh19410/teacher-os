@@ -184,12 +184,17 @@
       border-bottom: 1px solid var(--line);
     }
 
+    .site-header .container {
+      max-width: 1360px;
+      padding-inline: clamp(16px, 2.5vw, 32px);
+    }
+
     .nav-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
       min-height: 70px;
-      gap: var(--space-4);
+      gap: var(--space-3);
     }
 
     .brand-link {
@@ -199,8 +204,8 @@
       text-decoration: none;
       color: var(--brand);
       min-height: 44px;
+      flex-shrink: 0;
     }
-
     .brand-monogram {
       width: 42px;
       height: 42px;
@@ -246,12 +251,13 @@
       display: inline-flex;
       align-items: center;
       min-height: 44px;
-      padding-inline: var(--space-3);
+      padding-inline: var(--space-2);
       text-decoration: none;
       font-size: 14px;
       font-weight: 700;
       color: var(--ink-2);
       border-radius: var(--radius-sm);
+      white-space: nowrap;
       transition: background-color var(--dur-state) var(--ease-out), color var(--dur-state) var(--ease-out);
     }
 
@@ -263,7 +269,12 @@
     .nav-actions {
       display: flex;
       align-items: center;
-      gap: var(--space-3);
+      gap: var(--space-2);
+    }
+
+    .nav-actions .btn-sm {
+      padding: 8px 12px;
+      font-size: 13.5px;
     }
 
     /* ==================== BUTTONS ==================== */
@@ -1739,6 +1750,12 @@
     }
 
     /* ==================== RESPONSIVE BREAKPOINTS ==================== */
+    @media (max-width: 1320px) {
+      .nav-links {
+        display: none;
+      }
+    }
+
     @media (max-width: 1024px) {
       .hero-frame {
         grid-template-columns: 1fr;
@@ -1765,11 +1782,22 @@
       }
     }
 
+    @media (max-width: 860px) {
+      .brand-subtitle {
+        display: none;
+      }
+    }
+
     @media (max-width: 768px) {
       .nav-links,
       .brand-subtitle,
       .floating-cta-text {
         display: none;
+      }
+      .nav-bar {
+        flex-wrap: wrap;
+        row-gap: var(--space-2);
+        padding-block: var(--space-2);
       }
       .btn {
         white-space: normal;
@@ -1829,6 +1857,20 @@
         margin-bottom: 4px;
       }
     }
+
+    @media (max-width: 640px) {
+      .nav-actions {
+        flex: 1 1 100%;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+      }
+      .nav-actions .btn {
+        flex: 1 1 calc(50% - var(--space-2));
+        min-width: 0;
+        padding: 8px 10px;
+        font-size: 13px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1854,6 +1896,7 @@
       </nav>
 
       <div class="nav-actions">
+        <a href="https://student.teacheros.io.vn" id="studentPortalLink" class="btn btn-outline btn-sm" rel="noopener">Gốc học viên</a>
         <a href="kiem-tra-dau-vao/" class="btn btn-gold btn-sm">📝 Làm Test Miễn Phí</a>
         <a href="#dang-ky-tu-van" class="btn btn-primary btn-sm">🎓 Đăng Ký Khóa Học</a>
       </div>
