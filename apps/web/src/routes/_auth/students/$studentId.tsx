@@ -12,6 +12,7 @@ import {
 } from "@/components/assignments/assignment-status";
 import { StatusTag } from "@/components/assignments/status-tag";
 import { CreateReportModal } from "@/components/modals/create-report-modal";
+import { ResendInviteButton } from "@/components/students/pending-invite-callout";
 import { InvoiceStatusCell } from "@/components/tuition/invoice-status-cell";
 import { StudentTuitionSummary } from "@/components/tuition/student-tuition-summary";
 import { Avatar } from "@/components/ui/avatar";
@@ -155,10 +156,15 @@ function StudentDetailRoute() {
 								? `${student.phone} · Zalo: ${student.zalo || student.phone}`
 								: "Chưa có SĐT"}
 						</span>
-						<span>
+						<span className="inline-flex flex-wrap items-center gap-1.5">
 							{student.email
 								? `Email: ${student.email}`
 								: "Chưa có email (chưa liên kết Portal)"}
+							{Boolean(student.email) && student.portalLinked === false && (
+								<Badge variant="warn" dot className="px-1.5 py-0 text-[10px]">
+									Chờ xác nhận
+								</Badge>
+							)}
 						</span>
 						<span>
 							Mục tiêu: Band {student.targetBand} ({student.skills.join(", ")})
@@ -185,6 +191,15 @@ function StudentDetailRoute() {
 				}
 				action={
 					<>
+						{Boolean(student.email) && student.portalLinked === false && (
+							<ResendInviteButton
+								target={{
+									kind: "student",
+									studentId: student.id,
+									recipientLabel: student.email,
+								}}
+							/>
+						)}
 						<Button
 							variant="outline"
 							size="sm"

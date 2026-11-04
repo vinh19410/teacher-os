@@ -30,7 +30,7 @@ Chuẩn bị đầy đủ nền tảng dữ liệu và hợp đồng dùng chung
 
 ## Requirements
 
-- [ ] **`packages/auth/src/mail/mailer.ts`:**
+- [x] **`packages/auth/src/mail/mailer.ts`:**
   - Hàm `sanitizeHeaderValue(value: string, maxLen = 200)`: xóa mọi ký tự `[\r\n\0]` và cắt tối đa `maxLen` ký tự.
   - Sửa `composeFrom(from: string, fromName?: string)`:
     - Nếu không có `fromName` (hoặc sau khi trim/sanitize rỗng) → trả `sanitizeHeaderValue(from, 320)`.
@@ -40,8 +40,8 @@ Chuẩn bị đầy đủ nền tảng dữ liệu và hợp đồng dùng chung
     - Dùng `AbortSignal.timeout(input.timeoutMs ?? 10_000)` cho mỗi lượt `postMail`.
     - Sanitize `subject` và `replyTo` qua `sanitizeHeaderValue`; gắn header `"Idempotency-Key": sanitizeHeaderValue(input.idempotencyKey, 255)` khi có `input.idempotencyKey`.
     - Ở nhánh retry `429`/`5xx`: nếu header `Retry-After` chỉ định `retrySeconds > 2` thì **không** sleep/retry (ném lỗi ngay để không giữ kết nối đồng bộ quá lâu); ngược lại giới hạn `sleepMs = Math.min(rawSleepMs, 2_000)`.
-- [ ] **Schema & Migration (`packages/db`):** Thêm cột `lastInviteEmailAt: integer("last_invite_email_at", { mode: "timestamp_ms" })` vào `packages/db/src/schema/student.ts` và sinh migration SQLite/D1 forward-only `0062_*.sql`.
-- [ ] **Contracts (`packages/api/src/contracts.ts`):**
+- [x] **Schema & Migration (`packages/db`):** Thêm cột `lastInviteEmailAt: integer("last_invite_email_at", { mode: "timestamp_ms" })` vào `packages/db/src/schema/student.ts` và sinh migration SQLite/D1 forward-only `0062_*.sql`.
+- [x] **Contracts (`packages/api/src/contracts.ts`):**
   - Mở rộng `STUDENT_INVITATION_ERROR_CODES` thêm:
     - `EMAIL_SEND_FAILED: "INVITATION_EMAIL_FAILED"`
     - `EMAIL_UNAVAILABLE: "INVITATION_EMAIL_UNAVAILABLE"`
@@ -50,7 +50,7 @@ Chuẩn bị đầy đủ nền tảng dữ liệu và hợp đồng dùng chung
   - Mở rộng `KernelStudentRow` thêm `portalLinked?: boolean`.
   - Mở rộng `StudentCreateResponse` (`packages/api/src/contracts.ts:56-62`) thêm `inviteEmailSent?: boolean`.
   - Thêm `resendStudentInviteSchema = z.object({ enrollmentId: z.string().trim().min(1).optional() })` và `StudentInviteResendResponse = { ok: true; id: string; updatedAt: string | number | Date }`.
-- [ ] **Notifications & Invite Email Builder (`apps/server/src/lib/notifications/`):**
+- [x] **Notifications & Invite Email Builder (`apps/server/src/lib/notifications/`):**
   - Trong `deliver.ts`: cập nhật `escapeHtml` escape cả `'` (`&#39;`), cập nhật `renderHtml(body: string, linkUrl: string, ctaLabel = "Mở xem")` chỉ render thẻ `<a href="...">` khi `linkUrl` bắt đầu bằng `http://`, `https://` hoặc `/` (escape đầy đủ `escapeHtml(linkUrl)` và `escapeHtml(ctaLabel)`), truyền `idempotencyKey: row.id` khi `deliverNotifications` gọi `mailer.send`, và export `renderHtml` + `renderText`.
   - Tạo `org-mail-sender.ts` chứa `resolveOrgMailSender(db, orgId)` và tái sử dụng trong `enqueue.ts`.
   - Tạo `invite-email.ts` chứa `buildOrgInvitationEmail({ orgName, inviterName, studentOrigin })` và `buildStudentPortalInviteEmail({ orgName, studentName, className, studentOrigin })` (dùng `ctaLabel = "Mở cổng học viên"`, chỉ truyền `linkUrl` khi `studentOrigin` bắt đầu bằng `http://` hoặc `https://`).
@@ -107,10 +107,10 @@ Chuẩn bị đầy đủ nền tảng dữ liệu và hợp đồng dùng chung
 
 ## Todo
 
-- [ ] Task 1.1: Viết test Đỏ cho `composeFrom`, `Idempotency-Key` và trần `Retry-After` trong `mail.test.ts`
-- [ ] Task 1.2: Cập nhật `packages/auth/src/mail/mailer.ts` để vượt qua test xanh
-- [ ] Task 1.3: Thêm cột `lastInviteEmailAt` vào schema `student` và sinh migration D1
-- [ ] Task 1.4: Cập nhật contracts, `deliver.ts`, `org-mail-sender.ts` và `invite-email.ts`
+- [x] Task 1.1: Viết test Đỏ cho `composeFrom`, `Idempotency-Key` và trần `Retry-After` trong `mail.test.ts`
+- [x] Task 1.2: Cập nhật `packages/auth/src/mail/mailer.ts` để vượt qua test xanh
+- [x] Task 1.3: Thêm cột `lastInviteEmailAt` vào schema `student` và sinh migration D1
+- [x] Task 1.4: Cập nhật contracts, `deliver.ts`, `org-mail-sender.ts` và `invite-email.ts`
 
 ## Success Criteria
 

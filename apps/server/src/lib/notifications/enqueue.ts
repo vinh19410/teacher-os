@@ -1,10 +1,8 @@
-import { user } from "@teacher-os/db/schema/auth";
-import { membership } from "@teacher-os/db/schema/membership";
 import { notificationRecord } from "@teacher-os/db/schema/notification-record";
-import { organization } from "@teacher-os/db/schema/organization";
 import { student } from "@teacher-os/db/schema/student";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { Db } from "../../app";
+import { resolveOrgMailSender } from "./org-mail-sender";
 import { eventGroupOf, type NotificationEvent } from "./templates";
 
 /** Giới hạn biến D1: mỗi INSERT tối đa số dòng này. */
@@ -38,29 +36,7 @@ export async function enqueueNotifications(
 			emailByStudent.set(s.id, s.email);
 		}
 	}
-	const [org] = await db
-		.select({ name: organization.name })
-		.from(organization)
-		.where(eq(organization.id, orgId))
-		.limit(1);
-	const senderName = org?.name ?? "";
-
-	// Email chủ org: membership teacher/owner sớm nhất → user.email.
-	const [owner] = await db
-		.select({ email: user.email })
-		.from(membership)
-		.innerJoin(user, eq(user.id, membership.userId))
-		.where(
-			and(
-				eq(membership.orgId, orgId),
-				inArray(membership.role, ["teacher", "owner"]),
-			),
-		)
-		.orderBy(asc(membership.createdAt))
-		.limit(1);
-	const replyToEmail =
-		owner && owner.email.trim().length > 0 ? owner.email.trim() : null;
-
+	const { senderName, replyToEmail } = await resolveOrgMailSender(db, orgId);
 	const now = new Date();
 	// Học viên không thuộc org → bỏ qua hoàn toàn (không tạo bản ghi).
 	const rows = events

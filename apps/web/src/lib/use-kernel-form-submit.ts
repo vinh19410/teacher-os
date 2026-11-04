@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { useData } from "@/lib/data-store";
+import { type HttpError, isHttpError } from "@/lib/kernel-load-state";
 import type { KernelAction } from "./data-actions";
 import type { KernelCommandResult } from "./repos/kernel";
 
@@ -19,6 +20,7 @@ export function useKernelFormSubmit() {
 	const { dispatch, refresh } = useData();
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | undefined>();
+	const [failureError, setFailureError] = useState<HttpError | undefined>();
 	const [notice, setNotice] = useState<KernelFormNotice | undefined>();
 	// A committed/unknown outcome must not offer a blind replay: the write may
 	// already be saved server-side, so only a successful reconcile clears it.
@@ -32,15 +34,18 @@ export function useKernelFormSubmit() {
 				const result = await dispatch(action);
 				if (result.kind === "refreshed") {
 					setError(undefined);
+					setFailureError(undefined);
 					return result;
 				}
 				if (result.kind === "definite-failure") {
+					setFailureError(isHttpError(result.error) ? result.error : undefined);
 					setError(
 						"Không lưu được — dữ liệu chưa được ghi lên máy chủ. Vui lòng kiểm tra và thử lại.",
 					);
 					return result;
 				}
 				setError(undefined);
+				setFailureError(undefined);
 				setNotice(
 					result.kind === "committed"
 						? { kind: "committed" }
@@ -62,6 +67,7 @@ export function useKernelFormSubmit() {
 			if (applied) {
 				setNotice(undefined);
 				setError(undefined);
+				setFailureError(undefined);
 				return true;
 			}
 			setNotice({ kind: "reconcile-failed" });
@@ -76,12 +82,14 @@ export function useKernelFormSubmit() {
 	 * stale error/notice from target A never gates target B's submit. */
 	const reset = useCallback(() => {
 		setError(undefined);
+		setFailureError(undefined);
 		setNotice(undefined);
 	}, []);
 
 	return {
 		saving,
 		error,
+		failureError,
 		setError,
 		notice,
 		submitBlocked,

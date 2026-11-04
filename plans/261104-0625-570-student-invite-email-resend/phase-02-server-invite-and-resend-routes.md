@@ -29,18 +29,18 @@ Nâng cấp tầng API server (`apps/server`) theo TDD:
 
 ## Requirements
 
-- [ ] **Bảo vệ getter `deps.mailer` và phân quyền role `ta`:**
+- [x] **Bảo vệ getter `deps.mailer` và phân quyền role `ta`:**
   - Trong `apps/server/src/app.ts`, truyền `kernelRoutes(deps)` trực tiếp (không `{ ...deps }` để không gọi sớm `get mailer()`).
   - Trong `apps/server/src/lib/notifications/emit.ts`, export `resolveMailer(deps: { mailer?: Mailer }): Mailer | undefined` bọc `try { return deps.mailer; } catch (err) { const msg = err instanceof Error ? err.message : String(err); console.error("[mail] mailer unavailable:", sanitizeDeliveryError(msg).rawError); return undefined; }` và dùng trong cả `notificationDepsFrom` lẫn `kernel.ts`.
   - Trên các route ghi lời mời (`POST /students/invite`, `DELETE /students/invitations/:id`, `POST /students/invitations/:id/resend`, `POST /students/:id/resend-invite`), kiểm tra nếu `ctx.role === "ta"` thì trả `403` `{ error: "Trợ giảng không có quyền quản lý lời mời học viên", code: "FORBIDDEN" }` (khi `ctx.role` là `undefined` trong test harness cũ hoặc `"teacher"`/`"owner"`/`"admin"`/`"class_teacher"` thì cho phép).
-- [ ] **`POST /api/students/invite`:**
+- [x] **`POST /api/students/invite`:**
   - Kiểm tra `existingStudent` trong `ctx.orgId` có `sql\`${student.id} NOT LIKE 'demo-student:%'\`` → nếu có, trả `409` `{ error: "Học viên này đã ở trong tổ chức của bạn", code: ALREADY_IN_ORG, existingStudentId: existingStudent.id, existingStudentName: existingStudent.name, portalLinked: existingStudent.onboardingCompletedAt != null }`.
   - Kiểm tra `existingInvite` (`status = 'pending'`) → nếu có, trả `409` `{ error: "Lời mời đang chờ học viên phản hồi", code: INVITATION_ALREADY_PENDING, invitationId: existingInvite.id, updatedAt: existingInvite.updatedAt }`.
   - Chống lách luật hủy-mời-lại: nếu `cooldownMs > 0`, kiểm tra dòng `student_invitation` gần nhất của `(ctx.orgId, normalizedEmail)` (mọi `status`) có `updatedAt > new Date(nowMs - cooldownMs)` → nếu có, trả `429 RESEND_COOLDOWN` kèm header `Retry-After` và `retryAfterSeconds`.
   - Kiểm tra `const mailer = resolveMailer(deps)` **trước** khi ghi DB: nếu `!mailer`, trả `503` `{ error: "Hệ thống gửi email chưa sẵn sàng. Vui lòng thử lại sau.", code: EMAIL_UNAVAILABLE }`.
   - Chèn `student_invitation` (`status = 'pending'`) trong `try/catch`: nếu đụng unique race, truy vấn lại `existingStudent` / `existingInvite` để trả `409` có cấu trúc thay vì `500`.
   - Gọi `await mailer.send({ ..., idempotencyKey: \`student_invite:${id}\`, timeoutMs: 5_000 })`. Nếu ném lỗi: log lỗi đã che qua `sanitizeDeliveryError`, chạy `const deleted = await db.delete(studentInvitation).where(and(eq(studentInvitation.id, id), eq(studentInvitation.status, "pending"))).returning({ id: studentInvitation.id })`. Nếu `deleted.length === 0` và dòng đã chuyển sang `'accepted'` (học viên vừa bấm chấp nhận giữa chừng), trả `201` dòng hiện tại; ngược lại trả `502` `{ error: "Không gửi được email lời mời. Vui lòng kiểm tra địa chỉ email hoặc thử lại sau.", code: EMAIL_SEND_FAILED }`.
-- [ ] **`POST /api/students/invitations/:id/resend`:**
+- [x] **`POST /api/students/invitations/:id/resend`:**
   - Kiểm tra `const mailer = resolveMailer(deps)` trước tiên → thiếu thì trả `503 EMAIL_UNAVAILABLE`.
   - `SELECT` dòng `existing` theo `(id, ctx.orgId)`. Nếu không có hoặc `existing.status !== "pending"` → trả `404 INVITATION_NOT_FOUND`.
   - Tính `previousUpdatedAt = existing.updatedAt` (kiểu `Date`). Nếu `cooldownMs > 0` và `previousUpdatedAt.getTime() > nowMs - cooldownMs`, trả ngay `429 RESEND_COOLDOWN` kèm `Retry-After` và `retryAfterSeconds`.
@@ -63,7 +63,7 @@ Nâng cấp tầng API server (`apps/server`) theo TDD:
   - Gọi `await mailer.send({ ..., idempotencyKey: \`student_invite:${id}:resend:${crypto.randomUUID()}\`, timeoutMs: 5_000 })`.
   - Nếu `mailer.send` ném lỗi: hoàn tác `await db.update(studentInvitation).set({ updatedAt: previousUpdatedAt }).where(and(eq(studentInvitation.id, id), eq(studentInvitation.status, "pending"), eq(studentInvitation.updatedAt, now)))` và trả `502 EMAIL_SEND_FAILED`.
   - Thành công: trả `200` `{ ok: true, id, updatedAt: now }`.
-- [ ] **`POST /api/students/:id/resend-invite`:**
+- [x] **`POST /api/students/:id/resend-invite`:**
   - Đọc body qua `resendStudentInviteSchema` (chấp nhận `{}` hoặc `{ enrollmentId }`).
   - Kiểm tra `const mailer = resolveMailer(deps)` → thiếu trả `503 EMAIL_UNAVAILABLE`.
   - `SELECT` học viên theo `(id, ctx.orgId)` loại trừ `demo-student:%`. Không thấy → `404`; `email.trim() === ""` → `400`.
@@ -75,7 +75,7 @@ Nâng cấp tầng API server (`apps/server`) theo TDD:
     - **Nếu có `invitedEnrollment`:** Đảm bảo tồn tại đúng 1 dòng `notification_record` có `idempotencyKey = \`class_enrolled:${invitedEnrollment.id}\`` (gọi `enqueueNotifications(db, ctx.orgId, [classEnrolledEvent(...)])` — nếu đã có sẽ tự bỏ qua không tạo dòng thứ hai, sau đó `SELECT` dòng đó). Gửi đồng bộ qua `mailer.send` với nội dung lời mời lớp, `timeoutMs: 5_000` và `idempotencyKey: \`class_enrolled:${invitedEnrollment.id}:resend:${resendToken}\``. Thành công → cập nhật dòng `notification_record` đó `status = sql\`CASE WHEN ${notificationRecord.readAt} IS NULL THEN 'sent' ELSE 'read' END\``, `sentAt = now`, `lastError = null`; thất bại → cập nhật dòng đó `status = 'failed'`, `lastError = sanitizeDeliveryError(msg).failedError`, hoàn tác `student.lastInviteEmailAt` về `previousLastInviteAt` (`WHERE id = :id AND last_invite_email_at = :now`) và trả `502 EMAIL_SEND_FAILED`.
     - **Nếu không có `invitedEnrollment`:** Lấy tên lớp `active` mới nhất (nếu có) để đưa vào `buildStudentPortalInviteEmail`, gọi `await mailer.send` đồng bộ với `timeoutMs: 5_000` và `idempotencyKey: \`student_portal_invite:${studentRow.id}:resend:${resendToken}\``; nếu lỗi thì hoàn tác `student.lastInviteEmailAt` về `previousLastInviteAt` và trả `502 EMAIL_SEND_FAILED`.
   - Thành công: trả `200` `{ ok: true, id: studentRow.id, updatedAt: now }`.
-- [ ] **`POST /api/students`:**
+- [x] **`POST /api/students`:**
   - Ở cả hai điểm trả `409 ALREADY_IN_ORG`, trả thêm `existingStudentId: row.id` và `portalLinked: row.onboardingCompletedAt != null`.
   - Khi `normalizedEmail === ""`: giữ nguyên hành vi cũ (không gửi email lời mời; nếu `cls && enrollmentId && !input.activateNow` vẫn gọi `notify(classEnrolledEvent)` để tạo thông báo `in_app`).
   - Khi `normalizedEmail !== ""`:
@@ -121,8 +121,8 @@ Nâng cấp tầng API server (`apps/server`) theo TDD:
 
 ## Todo
 
-- [ ] Task 2.1: Viết bộ test Đỏ cho route mời, xóa bù trừ, getter mailer, role `ta`, cooldown và gửi lại
-- [ ] Task 2.2: Triển khai `app.ts`, `emit.ts`, `snapshot.ts`, `kernel.ts`, `boot.ts` và `helpers.ts`
+- [x] Task 2.1: Viết bộ test Đỏ cho route mời, xóa bù trừ, getter mailer, role `ta`, cooldown và gửi lại
+- [x] Task 2.2: Triển khai `app.ts`, `emit.ts`, `snapshot.ts`, `kernel.ts`, `boot.ts` và `helpers.ts`
 
 ## Success Criteria
 

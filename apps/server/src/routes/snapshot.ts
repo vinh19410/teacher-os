@@ -581,6 +581,7 @@ export async function loadSnapshot(
 			zalo: row.zalo,
 			parentName: row.parentName,
 			parentPhone: row.parentPhone,
+			portalLinked: row.onboardingCompletedAt != null,
 		})),
 		classes: classRows.map((row) => ({
 			id: row.id,

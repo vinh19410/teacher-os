@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AddStudentModal } from "@/components/modals/add-student-modal";
 import { InviteStudentModal } from "@/components/modals/invite-student-modal";
 import { PendingInvitationsList } from "@/components/students/pending-invitations-list";
+import { ResendInviteButton } from "@/components/students/pending-invite-callout";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -161,14 +162,22 @@ export function StudentsRoute() {
 												<span>
 													{s.phone || s.email || "Chưa có SĐT / Email"}
 												</span>
-												{!s.email && (
+												{!s.email ? (
 													<Badge
 														variant="muted"
 														className="px-1.5 py-0 text-[10px]"
 													>
 														Chưa liên kết Portal
 													</Badge>
-												)}
+												) : s.portalLinked === false ? (
+													<Badge
+														variant="warn"
+														dot
+														className="px-1.5 py-0 text-[10px]"
+													>
+														Chờ xác nhận
+													</Badge>
+												) : null}
 											</div>
 										</div>
 									</div>,
@@ -198,10 +207,25 @@ export function StudentsRoute() {
 											</span>
 										)}
 									</div>,
-									<div key="tags" className="flex flex-wrap gap-1">
-										{s.tags.map((t) => (
-											<Tag key={t}>{t}</Tag>
-										))}
+									<div
+										key="tags"
+										className="flex flex-wrap items-center justify-between gap-2"
+									>
+										<div className="flex flex-wrap gap-1">
+											{s.tags.map((t) => (
+												<Tag key={t}>{t}</Tag>
+											))}
+										</div>
+										{Boolean(s.email) && s.portalLinked === false && (
+											<ResendInviteButton
+												target={{
+													kind: "student",
+													studentId: s.id,
+													recipientLabel: s.email,
+												}}
+												compact
+											/>
+										)}
 									</div>,
 								],
 							};
