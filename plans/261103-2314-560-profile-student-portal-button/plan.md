@@ -1,7 +1,7 @@
 ---
 title: "#560: Nút \"Gốc học viên\" ở trang profile dẫn tới student portal"
 description: "Thêm nút \"Gốc học viên\" trên header apps/profile, trỏ tới origin của apps/student theo từng môi trường (prod/staging/dev)."
-status: in-progress
+status: completed
 priority: P3
 effort: 2h
 issue: 560

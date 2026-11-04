@@ -68,6 +68,10 @@ export const studyPack = sqliteTable(
 	(table) => [
 		index("study_pack_org_idx").on(table.orgId),
 		index("study_pack_status_idx").on(table.status),
+		uniqueIndex("study_pack_org_source_pack_uq").on(
+			table.orgId,
+			table.sourcePackId,
+		),
 	],
 );
 

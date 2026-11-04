@@ -21,6 +21,7 @@ import {
 	loadClassStudyPacks,
 } from "../lib/study-pack-assign";
 import {
+	buildPackItemTupleKey,
 	buildStudyPackItemInsertStatements,
 	D1_PACK_ITEM_INSERT_CHUNK,
 	loadStudyPackDetailFromRow,
@@ -182,6 +183,22 @@ export function studyPackRoutes(deps: { getDb(): Db }) {
 			return c.json({ error: valid.error }, valid.status);
 		}
 
+		const existingItemRows = await db
+			.select({
+				id: studyPackItem.id,
+				dayIndex: studyPackItem.dayIndex,
+				sourceKind: studyPackItem.sourceKind,
+				sourceId: studyPackItem.sourceId,
+			})
+			.from(studyPackItem)
+			.where(eq(studyPackItem.packId, id));
+		const existingIdByTuple = new Map(
+			existingItemRows.map((row) => [
+				buildPackItemTupleKey(row.dayIndex, row.sourceKind, row.sourceId),
+				row.id,
+			]),
+		);
+
 		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
 			db
 				.update(studyPack)
@@ -193,7 +210,12 @@ export function studyPackRoutes(deps: { getDb(): Db }) {
 				})
 				.where(and(eq(studyPack.id, id), eq(studyPack.orgId, ctx.orgId))),
 			db.delete(studyPackItem).where(eq(studyPackItem.packId, id)),
-			...buildStudyPackItemInsertStatements(db, id, body.data.items),
+			...buildStudyPackItemInsertStatements(
+				db,
+				id,
+				body.data.items,
+				existingIdByTuple,
+			),
 		];
 		await db.batch(statements);
 
@@ -323,7 +345,24 @@ export function studyPackRoutes(deps: { getDb(): Db }) {
 			const chunk = clonedItemValues.slice(i, i + D1_PACK_ITEM_INSERT_CHUNK);
 			statements.push(db.insert(studyPackItem).values(chunk));
 		}
-		await db.batch(statements);
+		try {
+			await db.batch(statements);
+		} catch (err) {
+			const [racedClone] = await db
+				.select()
+				.from(studyPack)
+				.where(
+					and(
+						eq(studyPack.orgId, ctx.orgId),
+						eq(studyPack.sourcePackId, sourcePack.id),
+					),
+				);
+			if (racedClone) {
+				const pack = await loadStudyPackDetailFromRow(db, racedClone);
+				return c.json({ pack }, 201);
+			}
+			throw err;
+		}
 
 		const [created] = await db
 			.select()
