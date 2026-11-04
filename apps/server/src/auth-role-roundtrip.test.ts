@@ -227,7 +227,8 @@ describe("account role separation round-trip", () => {
 			expect(state).toBeTruthy();
 			const row = await raw.execute({
 				sql: "SELECT value FROM verification WHERE identifier = ?",
-				args: [state],
+				// better-auth ≥1.7 lưu OAuth state dưới khóa có tiền tố `auth-state:`.
+				args: [`auth-state:${state}`],
 			});
 			const value = row.rows[0]?.value as string;
 			return JSON.parse(value) as Record<string, unknown>;
