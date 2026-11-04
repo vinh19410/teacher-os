@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Phase 1: Dynamic Student Vocab CTA & Empty-State Honesty"
-status: pending
+status: completed
 priority: P1
 effort: 1.5h
 dependencies: []
@@ -102,10 +102,10 @@ Thay toàn bộ chuỗi số lượng khóa/bài cố định trên Student Port
 
 ## Todo
 
-- [ ] Task 1.1: Viết failing tests (TDD Red) trong `vocab-course-catalog.test.tsx` (kèm mock `Navigate`, HTTP `500` và catalog rỗng)
-- [ ] Task 1.2: Cài đặt `deriveVocabLibrarySummary` và `VocabCoursesCta` nhận prop `summary`
-- [ ] Task 1.3: Nối `useVocabLibraryCourses()` song song trên `/practice/vocabulary`, `/practice/vocabulary/courses` và `/` (TDD Green)
-- [ ] Task 1.4: Bổ sung khẳng định text động vào `apps/e2e/specs/vocab-library-clone.spec.ts`
+- [x] Task 1.1: Viết failing tests (TDD Red) trong `vocab-course-catalog.test.tsx` (kèm mock `Navigate`, HTTP `500` và catalog rỗng)
+- [x] Task 1.2: Cài đặt `deriveVocabLibrarySummary` và `VocabCoursesCta` nhận prop `summary`
+- [x] Task 1.3: Nối `useVocabLibraryCourses()` song song trên `/practice/vocabulary`, `/practice/vocabulary/courses` và `/` (TDD Green)
+- [x] Task 1.4: Bổ sung khẳng định text động vào `apps/e2e/specs/vocab-library-clone.spec.ts`
 
 ## Verification
 

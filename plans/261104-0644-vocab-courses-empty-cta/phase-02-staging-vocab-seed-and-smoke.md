@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Phase 2: Staging-Only Vocab Library Seed & CI Guards"
-status: pending
+status: completed
 priority: P1
 effort: 1.5h
 dependencies: [1]
@@ -122,10 +122,10 @@ Tự động hóa việc nạp và kiểm chứng 1-1 (tập ID + SHA-256 toàn 
 
 ## Todo
 
-- [ ] Task 2.1: Thêm `tsx` + `check-types` vào `@teacher-os/db` và viết failing tests (TDD Red) trong `vocab-library.test.ts` + `ci-workflow.test.mjs`
-- [ ] Task 2.2: Cài đặt `resolveStagingD1DatabaseId`, `assertNonProdD1Database`, `verifyContentParity`, `ensureVocabLibrarySeeded` và CLI `runSeedCli`
-- [ ] Task 2.3: Thêm bước seed vào `deploy-staging.yml` sau `/readyz` và cập nhật `README-seed-vocab-library.md`
-- [ ] Task 2.4: Chạy toàn bộ cổng kiểm chứng local (`biome`, `check-types`, `pnpm test`, Playwright E2E)
+- [x] Task 2.1: Thêm `tsx` + `check-types` vào `@teacher-os/db` và viết failing tests (TDD Red) trong `vocab-library.test.ts` + `ci-workflow.test.mjs`
+- [x] Task 2.2: Cài đặt `resolveStagingD1DatabaseId`, `assertNonProdD1Database`, `verifyContentParity`, `ensureVocabLibrarySeeded` và CLI `runSeedCli`
+- [x] Task 2.3: Thêm bước seed vào `deploy-staging.yml` sau `/readyz` và cập nhật `README-seed-vocab-library.md`
+- [x] Task 2.4: Chạy toàn bộ cổng kiểm chứng local (`biome`, `check-types`, `pnpm test`, Playwright E2E)
 
 ## Verification
 

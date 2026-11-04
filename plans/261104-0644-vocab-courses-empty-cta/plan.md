@@ -1,7 +1,7 @@
 ---
 title: "Fix empty vocab library CTA and automate staging D1 seed (#573)"
 description: "Derive student vocabulary course/lesson counts dynamically from the library API (hiding empty-library CTAs and removing misleading empty/search copy) and automate fail-closed staging-only D1 seeding in deploy-staging.yml while keeping production license-gated."
-status: pending
+status: completed
 priority: P1
 effort: 3h
 issue: 573
@@ -84,16 +84,16 @@ flowchart TD
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: Dynamic Student Vocab CTA & Empty-State Honesty](./phase-01-student-vocab-cta-and-empty-state.md) | pending |
-| 2 | [Phase 2: Staging-Only Vocab Library Seed & CI Guards](./phase-02-staging-vocab-seed-and-smoke.md) | pending |
+| 1 | [Phase 1: Dynamic Student Vocab CTA & Empty-State Honesty](./phase-01-student-vocab-cta-and-empty-state.md) | completed |
+| 2 | [Phase 2: Staging-Only Vocab Library Seed & CI Guards](./phase-02-staging-vocab-seed-and-smoke.md) | completed |
 
 ## Success Criteria
 
-- [ ] Khi `GET /api/student/vocab/library/courses` trả `{"courses":[]}`, đang tải, lỗi mạng, hoặc tổng `deckCount === 0`: `VocabCoursesCta` không render (`null`), `vocab-decks-empty` không nhắc tới `"bên dưới"`, `StudentVocabEntrySection` trên `/` không nhắc tới `"khóa học từ vựng"`, và `/practice/vocabulary/courses` khi không có filter hiện thông báo thư viện chưa có nội dung thay vì báo lỗi bộ lọc.
-- [ ] Khi thư viện có dữ liệu (ví dụ `20` khóa, `968` bài): `VocabCoursesCta` hiển thị `"Thư viện từ vựng · 20 khóa · 968 bài"` lấy trực tiếp từ API mà không gây waterfall hay giật bố cục; `StudentVocabEntrySection` hiển thị đúng số khóa động.
-- [ ] `pnpm --filter @teacher-os/db exec tsx scripts/seed-vocab-library.ts --d1 --d1-stage staging --if-needed --verify` hoạt động với `tsx` đã khóa trong `pnpm-lock.yaml`, giải mã staging D1 UUID fail-closed (chặn cứng `prod` và xung đột `D1_DATABASE_ID`), mask/redact UUID & token, bỏ qua upsert khi cả tập ID lẫn SHA-256 nội dung khớp CSV, và nạp đủ `20/968/10160` khi DB trống hoặc đổi nội dung.
-- [ ] `.github/workflows/deploy-staging.yml` chạy seed + `--verify` sau `/readyz` (không tạo dòng `student` rác và không gãy trên staging trắng `0` org); `.github/workflows/deploy.yml` và `packages/infra/alchemy.run.ts` không nạp thư viện lên Production và được khóa bởi `scripts/ci-workflow.test.mjs`.
-- [ ] Toàn bộ local gates xanh: `pnpm exec biome check .`, `pnpm check-types`, `pnpm test`, `node --test scripts/ci-workflow.test.mjs scripts/topology-drift.test.mjs`, và Playwright E2E `vocab-library-clone.spec.ts` (kèm kiểm tra 3 viewport).
+- [x] Khi `GET /api/student/vocab/library/courses` trả `{"courses":[]}`, đang tải, lỗi mạng, hoặc tổng `deckCount === 0`: `VocabCoursesCta` không render (`null`), `vocab-decks-empty` không nhắc tới `"bên dưới"`, `StudentVocabEntrySection` trên `/` không nhắc tới `"khóa học từ vựng"`, và `/practice/vocabulary/courses` khi không có filter hiện thông báo thư viện chưa có nội dung thay vì báo lỗi bộ lọc.
+- [x] Khi thư viện có dữ liệu (ví dụ `20` khóa, `968` bài): `VocabCoursesCta` hiển thị `"Thư viện từ vựng · 20 khóa · 968 bài"` lấy trực tiếp từ API mà không gây waterfall hay giật bố cục; `StudentVocabEntrySection` hiển thị đúng số khóa động.
+- [x] `pnpm --filter @teacher-os/db exec tsx scripts/seed-vocab-library.ts --d1 --d1-stage staging --if-needed --verify` hoạt động với `tsx` đã khóa trong `pnpm-lock.yaml`, giải mã staging D1 UUID fail-closed (chặn cứng `prod` và xung đột `D1_DATABASE_ID`), mask/redact UUID & token, bỏ qua upsert khi cả tập ID lẫn SHA-256 nội dung khớp CSV, và nạp đủ `20/968/10160` khi DB trống hoặc đổi nội dung.
+- [x] `.github/workflows/deploy-staging.yml` chạy seed + `--verify` sau `/readyz` (không tạo dòng `student` rác và không gãy trên staging trắng `0` org); `.github/workflows/deploy.yml` và `packages/infra/alchemy.run.ts` không nạp thư viện lên Production và được khóa bởi `scripts/ci-workflow.test.mjs`.
+- [x] Toàn bộ local gates xanh: `pnpm exec biome check .`, `pnpm check-types`, `pnpm test`, `node --test scripts/ci-workflow.test.mjs scripts/topology-drift.test.mjs`, và Playwright E2E `vocab-library-clone.spec.ts` (kèm kiểm tra 3 viewport).
 
 ## Red Team Review
 
