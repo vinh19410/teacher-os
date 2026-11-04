@@ -12,6 +12,10 @@ import { StatCard } from "@/components/overview/stat-card";
 import { StudentErrorView } from "@/components/overview/student-error-view";
 import { TuitionList } from "@/components/overview/tuition-list";
 import { UpcomingSessions } from "@/components/overview/upcoming-sessions";
+import {
+	deriveVocabLibrarySummary,
+	type VocabLibrarySummary,
+} from "@/components/vocab/vocab-courses-cta";
 import { deriveAssignmentStatus } from "@/lib/assignment-status";
 import { isHttpError } from "@/lib/query-client";
 import {
@@ -20,8 +24,7 @@ import {
 	useStudentMe,
 	useStudentOverview,
 } from "@/lib/repos/student";
-import { useVocabOverview } from "@/lib/repos/vocab";
-
+import { useVocabLibraryCourses, useVocabOverview } from "@/lib/repos/vocab";
 export const Route = createFileRoute("/_auth/")({
 	component: StudentOverviewPage,
 });
@@ -201,10 +204,28 @@ function StudentTuitionSection() {
 	return <TuitionList invoices={invoices.data} />;
 }
 
-function StudentVocabEntrySection() {
+export function deriveStudentHomeVocabSubtitle(
+	deckCount: number,
+	summary: VocabLibrarySummary | null,
+): string {
+	if (summary) {
+		return deckCount > 0
+			? `${deckCount} bộ từ đang học · ${summary.courseCount} khóa học từ vựng có sẵn`
+			: `Khám phá ${summary.courseCount} khóa học từ vựng theo 5 cấp độ trí nhớ`;
+	}
+	return deckCount > 0
+		? `${deckCount} bộ từ đang học`
+		: "Ôn tập từ vựng theo 5 cấp độ trí nhớ";
+}
+
+export function StudentVocabEntrySection() {
 	const vocab = useVocabOverview();
+	const libraryCourses = useVocabLibraryCourses();
 	const dueCount = vocab.data?.dueCount ?? 0;
 	const deckCount = vocab.data?.decks.length ?? 0;
+	const librarySummary = libraryCourses.isSuccess
+		? deriveVocabLibrarySummary(libraryCourses.data.courses)
+		: null;
 
 	return (
 		<section className="mt-10">
@@ -217,9 +238,7 @@ function StudentVocabEntrySection() {
 						Từ vựng của tôi
 					</h2>
 					<p className="mt-1 text-muted-foreground text-sm">
-						{deckCount > 0
-							? `${deckCount} bộ từ đang học · 20 khóa học từ vựng có sẵn`
-							: "Khám phá 20 khóa học từ vựng theo 5 cấp độ trí nhớ"}
+						{deriveStudentHomeVocabSubtitle(deckCount, librarySummary)}
 					</p>
 				</div>
 				<div className="flex items-center gap-3">

@@ -3,8 +3,12 @@ import type {
 	StudentQuizQuestion,
 } from "@teacher-os/api/contracts";
 import { inferQuestionTypes } from "@teacher-os/api/lib/infer-question-types";
+import { isEmptyRichText } from "@teacher-os/api/rich-text";
 import type { QuizPaperDetail } from "@teacher-os/ui/components/quiz/quiz-paper";
-import type { QuestionItem } from "@/components/assignments/assignment-presets";
+import {
+	isAutoSkill,
+	type QuestionItem,
+} from "@/components/assignments/assignment-presets";
 import type { PreviewDraft } from "@/lib/assignment-preview-draft";
 import { isValidPin } from "@/lib/image-pin";
 
@@ -60,7 +64,7 @@ export function buildQuizSim(
 	simKey: string = draftSimKey(draft),
 ): QuizSimulation | null {
 	const skillId = draft.skill ?? "writing";
-	if (skillId !== "reading" && skillId !== "listening") return null;
+	if (!isAutoSkill(skillId)) return null;
 	const typeId = draft.type ?? draft.genre ?? "discuss";
 	// Normalize mirror `parseQuizQuestions` (server): default `alts`/`answer`
 	// rỗng, lọc opts non-string, pin invalid về null, bỏ item thiếu stem —
@@ -115,5 +119,9 @@ function normalizeQuestion(item: QuestionItem): AssignmentQuestion {
 		alts: typeof item.alts === "string" ? item.alts : "",
 		type: typeof item.type === "string" && item.type !== "" ? item.type : null,
 		pin: isValidPin(item.pin) ? item.pin : null,
+		...(typeof item.explanation === "string" &&
+		!isEmptyRichText(item.explanation)
+			? { explanation: item.explanation }
+			: {}),
 	};
 }

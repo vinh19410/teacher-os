@@ -58,6 +58,7 @@ export function PreviewQuizSimulation({
 			key: question.answer,
 			alts: question.alts,
 			answer: answers[q]?.trim() ? (answers[q] as string) : null,
+			...(question.explanation ? { explanation: question.explanation } : {}),
 		}));
 		const review = Object.fromEntries(
 			perQuestion.map((info, q): [number, QuizReviewInfo] => [

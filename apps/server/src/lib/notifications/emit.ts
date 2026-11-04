@@ -1,6 +1,6 @@
 import type { Mailer } from "@teacher-os/auth/mail/mailer";
 import type { Db } from "../../app";
-import { deliverNotifications } from "./deliver";
+import { deliverNotifications, sanitizeDeliveryError } from "./deliver";
 import { enqueueNotifications } from "./enqueue";
 import type { NotificationEvent } from "./templates";
 
@@ -21,6 +21,23 @@ export interface NotificationDeps {
 }
 
 /**
+ * Đọc an toàn `deps.mailer` — trong `index.ts`, `mailer` là getter có thể throw
+ * khi `MAILER_IMPL=resend` nhưng thiếu `RESEND_API_KEY` (#570).
+ */
+export function resolveMailer(deps: { mailer?: Mailer }): Mailer | undefined {
+	try {
+		return deps.mailer;
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		console.error(
+			"[notifications] mailer unavailable:",
+			sanitizeDeliveryError(message).rawError,
+		);
+		return undefined;
+	}
+}
+
+/**
  * Chọn đúng các dep thông báo từ AppDeps/route-deps (#454, #463): dùng ở mọi
  * callsite `emitNotifications` để `studentOrigin` và `retryDelaysMs` không bị
  * bỏ sót khi route tự dựng object deps.
@@ -34,7 +51,7 @@ export function notificationDepsFrom(deps: {
 }): NotificationDeps {
 	return {
 		db: deps.getDb(),
-		mailer: deps.mailer,
+		mailer: resolveMailer(deps),
 		runInBackground: deps.runInBackground,
 		studentOrigin: deps.studentOrigin,
 		retryDelaysMs: deps.notificationRetryDelaysMs,

@@ -854,7 +854,7 @@ a per-stage operation.
 
 - **Deploy order bắt buộc:** Chạy `db:migrate:deploy` (migration `0037`) **TRƯỚC** khi deploy worker (`snapshot` giáo viên và các route `/api/kernel/vocab-library/*`, `/api/student/vocab/*` đọc các bảng `vocab_library_*` cùng 2 cột `vocab_deck.source_library_deck_id` và `vocab_word.audio_url`).
 - **Release train:** `vocabSessionCardSchema` thêm trường `hasAudio` với `.strict()` → `apps/server` và `apps/student` **BẮT BUỘC deploy cùng một bước** (`pnpm alchemy deploy`); không promote riêng lẻ từng gói.
-- **Seed dữ liệu thư viện (20 khóa / 968 bài / 10.160 từ):** Xem hướng dẫn chi tiết và **Gate Giấy phép PROD** tại [`packages/db/scripts/README-seed-vocab-library.md`](../packages/db/scripts/README-seed-vocab-library.md). Chỉ chạy `--d1` trên PROD sau khi đã smoke `--d1 --verify` trên Staging và chủ sở hữu dự án đã xác nhận quyền sử dụng nội dung (Open Question 1).
+- **Seed dữ liệu thư viện (20 khóa / 968 bài / 10.160 từ):** Xem hướng dẫn chi tiết và **Gate Giấy phép PROD** tại [`packages/db/scripts/README-seed-vocab-library.md`](../packages/db/scripts/README-seed-vocab-library.md). Trên **Staging**, `.github/workflows/deploy-staging.yml` tự động nạp và kiểm chứng (`--d1 --d1-stage staging --if-needed --verify`) sau bước `/readyz` trên mỗi lần deploy. Trên **Production**, việc nạp dữ liệu bị chặn cơ học (`assertNonProdD1Database` và `scripts/ci-workflow.test.mjs`) cho tới khi chủ sở hữu dự án xác nhận quyền sử dụng nội dung bằng văn bản (Open Question 1).
 
 ## Independent vocab hub & suggestions (migration 0038) — issue #363
 

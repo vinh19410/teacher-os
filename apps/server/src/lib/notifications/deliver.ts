@@ -66,23 +66,36 @@ interface QueuedRow {
 /** Origin cổng học viên dùng cho link tuyệt đối trong thư — inject từ AppDeps
  * (env STUDENT_ORIGINS là chuỗi thô, parse ở index.ts; test node truyền thủ công). */
 
-function renderText(body: string, linkUrl: string): string {
+export function renderText(body: string, linkUrl: string): string {
 	return linkUrl ? `${body}\n\n${linkUrl}` : body;
 }
 
-/** Escape entities cho plain-text body khi nhúng vào HTML email (CR M2). */
+/** Escape entities cho plain-text body và thuộc tính HTML khi nhúng vào email (CR M2, #570). */
 export function escapeHtml(value: string): string {
 	return value
 		.replaceAll("&", "&amp;")
 		.replaceAll("<", "&lt;")
 		.replaceAll(">", "&gt;")
-		.replaceAll('"', "&quot;");
+		.replaceAll('"', "&quot;")
+		.replaceAll("'", "&#39;");
 }
 
-function renderHtml(body: string, linkUrl: string): string {
-	const escapedLink = linkUrl.replaceAll("&", "&amp;");
-	const linkHtml = linkUrl
-		? `<p style="margin:24px 0"><a href="${escapedLink}" style="display:inline-block;background:#2563eb;color:#ffffff;padding:10px 20px;border-radius:8px;text-decoration:none">Mở xem</a></p>`
+function isSafeLinkUrl(linkUrl: string): boolean {
+	return (
+		linkUrl.startsWith("https://") ||
+		linkUrl.startsWith("http://") ||
+		(linkUrl.startsWith("/") && !linkUrl.startsWith("//"))
+	);
+}
+
+export function renderHtml(
+	body: string,
+	linkUrl: string,
+	ctaLabel = "Mở xem",
+): string {
+	const safeUrl = linkUrl && isSafeLinkUrl(linkUrl) ? escapeHtml(linkUrl) : "";
+	const linkHtml = safeUrl
+		? `<p style="margin:24px 0"><a href="${safeUrl}" style="display:inline-block;background:#2563eb;color:#ffffff;padding:10px 20px;border-radius:8px;text-decoration:none">${escapeHtml(ctaLabel)}</a></p>`
 		: "";
 	return [
 		'<!DOCTYPE html><html lang="vi"><body style="margin:0;font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:#f8fafc">',
@@ -170,6 +183,7 @@ export async function deliverNotifications(
 					subject: row.title,
 					html: renderHtml(row.body, linkUrl),
 					text: renderText(row.body, linkUrl),
+					idempotencyKey: row.id,
 					...(row.replyToEmail ? { replyTo: row.replyToEmail } : {}),
 					...(row.senderName
 						? { fromName: `${row.senderName} qua Teacher OS` }

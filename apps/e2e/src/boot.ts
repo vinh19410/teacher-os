@@ -60,11 +60,12 @@ const recordingMailer: Mailer = {
 			/https?:\/\/[^\s]*\/api\/auth\/reset-password\/[^\s?]+\?[^\s]+/,
 		);
 		const base = {
-			// Plan TOS-21 (#454): lưu TOÀN BỘ thư để E2E kiểm header mới.
+			// Plan TOS-21 (#454) + #570: lưu TOÀN BỘ thư và khóa idempotency để E2E kiểm chứng.
 			to: input.to,
 			subject: input.subject,
 			replyTo: input.replyTo ?? null,
 			fromName: input.fromName ?? null,
+			idempotencyKey: input.idempotencyKey ?? null,
 		};
 		const at = new Date().toISOString();
 		if (
@@ -196,6 +197,8 @@ const app = buildApp({
 	studentOrigin: STUDENT_ORIGIN,
 	// Plan TOS-22 (#463): không chờ 2s/5s giữa các lượt retry trong E2E.
 	notificationRetryDelaysMs: [0, 0],
+	// #570: tắt chờ 60s khi gửi lại lời mời học viên trong E2E.
+	inviteResendCooldownMs: 0,
 	// Plan TOS-33 (#481): không chờ 1s/2s giữa 3 lượt retry chấm bài trong E2E.
 	aiRetryDelaysMs: [0, 0],
 	// Lead intake (#506): org đích cố định + origin profile e2e (port 8105);

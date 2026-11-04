@@ -371,6 +371,7 @@ function RichTextToolbar({ editor }: { editor: Editor }) {
 													onKeyDown={(e) => {
 														if (e.key === "Enter") {
 															e.preventDefault();
+															e.stopPropagation();
 															applyLink();
 														}
 													}}

@@ -8,6 +8,7 @@ import {
 	type StudentOverview,
 } from "@teacher-os/api/contracts";
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
+import { createLogMailer } from "@teacher-os/auth/mail/mailer";
 import * as schema from "@teacher-os/db/schema/index";
 import { count, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
@@ -294,6 +295,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 				return null;
 			},
 			authHandler: () => new Response("auth OK"),
+			mailer: createLogMailer(),
 		});
 	});
 
@@ -1812,6 +1814,57 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 			};
 			const enr = snap.enrollments.find((e) => e.id === enrollmentId);
 			expect(enr?.status).toBe("active");
+		});
+
+		test("#570: GET /api/students reports portalLinked false before onboarding and true after onboarding; 409 includes portalLinked", async () => {
+			const createRes = await app.request("/api/students", {
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({
+					name: "Lan Portal Check",
+					email: "lan-portal-570@test.local",
+				}),
+			});
+			expect(createRes.status).toBe(201);
+			const created: Record<string, unknown> = await createRes.json();
+			expect(created.inviteEmailSent).toBe(true);
+			const createdId = String(created.id);
+
+			const listBefore = (await (
+				await app.request("/api/students", {
+					headers: { "x-test-user": "teacher" },
+				})
+			).json()) as Array<{ id: string; portalLinked?: boolean }>;
+			expect(listBefore.find((s) => s.id === createdId)?.portalLinked).toBe(
+				false,
+			);
+
+			const dupeBefore = await app.request("/api/students", {
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({
+					name: "Lan Dup",
+					email: "lan-portal-570@test.local",
+				}),
+			});
+			expect(dupeBefore.status).toBe(409);
+			const dupeBody: Record<string, unknown> = await dupeBefore.json();
+			expect(dupeBody.existingStudentId).toBe(createdId);
+			expect(dupeBody.portalLinked).toBe(false);
+
+			await libsql
+				.update(schema.student)
+				.set({ onboardingCompletedAt: new Date() })
+				.where(eq(schema.student.id, createdId));
+
+			const listAfter = (await (
+				await app.request("/api/students", {
+					headers: { "x-test-user": "teacher" },
+				})
+			).json()) as Array<{ id: string; portalLinked?: boolean }>;
+			expect(listAfter.find((s) => s.id === createdId)?.portalLinked).toBe(
+				true,
+			);
 		});
 	});
 });

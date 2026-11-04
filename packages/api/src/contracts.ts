@@ -59,6 +59,8 @@ export interface StudentCreateResponse {
 	id: string;
 	enrollmentId?: string;
 	activated?: boolean;
+	/** #570: true nếu email lời mời đã gửi thành công; false nếu gửi lỗi/thiếu mailer; undefined khi không nhập email. */
+	inviteEmailSent?: boolean;
 }
 
 export const enrollStudentSchema = z.object({
@@ -1446,6 +1448,8 @@ export interface KernelStudentRow {
 	zalo: string;
 	parentName: string;
 	parentPhone: string;
+	/** #570: true khi học viên đã hoàn tất onboarding trên cổng học viên; false khi chưa xác nhận tham gia. */
+	portalLinked?: boolean;
 }
 
 export interface KernelClassRow {
@@ -2693,6 +2697,10 @@ export const STUDENT_INVITATION_ERROR_CODES = {
 	ALREADY_IN_ORG: "STUDENT_ALREADY_IN_ORG",
 	INVITATION_ALREADY_PENDING: "INVITATION_ALREADY_PENDING",
 	INVITATION_NOT_FOUND: "INVITATION_NOT_FOUND",
+	EMAIL_SEND_FAILED: "INVITATION_EMAIL_FAILED",
+	EMAIL_UNAVAILABLE: "INVITATION_EMAIL_UNAVAILABLE",
+	RESEND_COOLDOWN: "INVITATION_RESEND_COOLDOWN",
+	ALREADY_JOINED: "STUDENT_ALREADY_JOINED",
 } as const;
 export type StudentInvitationErrorCode =
 	(typeof STUDENT_INVITATION_ERROR_CODES)[keyof typeof STUDENT_INVITATION_ERROR_CODES];
@@ -2701,6 +2709,19 @@ export const studentInviteSchema = z.object({
 	email: z.string().trim().email("Email không hợp lệ"),
 });
 export type StudentInviteInput = z.infer<typeof studentInviteSchema>;
+
+export const resendStudentInviteSchema = z.object({
+	enrollmentId: z.string().trim().min(1).optional(),
+});
+export type ResendStudentInviteInput = z.infer<
+	typeof resendStudentInviteSchema
+>;
+
+export interface StudentInviteResendResponse {
+	ok: true;
+	id: string;
+	updatedAt: string | number | Date;
+}
 
 export interface StudentInvitationItem {
 	id: string;
@@ -2713,7 +2734,6 @@ export interface StudentInvitationItem {
 	createdAt: string | number | Date;
 	updatedAt?: string | number | Date;
 }
-
 export interface StudentOrgItem {
 	id: string;
 	name: string;

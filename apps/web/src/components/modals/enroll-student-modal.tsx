@@ -1,6 +1,8 @@
+import { STUDENT_INVITATION_ERROR_CODES } from "@teacher-os/api/contracts";
 import { Check } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { PendingInviteCallout } from "@/components/students/pending-invite-callout";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
@@ -40,10 +42,20 @@ export function EnrollStudentModal({
 	const [parentPhone, setParentPhone] = useState("");
 	const [nameError, setNameError] = useState<string | undefined>();
 	const [emailError, setEmailError] = useState<string | undefined>();
-	const { saving, error, notice, submitBlocked, run, reconcile, reset } =
-		useKernelFormSubmit();
-	const committedToastMessageRef = useRef<string | null>(null);
-
+	const {
+		saving,
+		error,
+		failureError,
+		notice,
+		submitBlocked,
+		run,
+		reconcile,
+		reset,
+	} = useKernelFormSubmit();
+	const committedToastMessageRef = useRef<{
+		message: string;
+		inviteEmailSent?: boolean;
+	} | null>(null);
 	const eligibleStudents = (() => {
 		if (!classId) return [];
 		const cls = data.classes.find((c) => c.id === classId);
@@ -112,8 +124,10 @@ export function EnrollStudentModal({
 				setFilter("");
 				onClose();
 			} else if (result?.kind === "committed") {
-				committedToastMessageRef.current = successMessage;
+				committedToastMessageRef.current = { message: successMessage };
 			}
+			// #570 review H-1: nhánh "Chọn học viên có sẵn" kết thúc ở đây — không
+			// được rơi xuống nhánh tạo học viên mới (tránh ghi trùng học viên).
 			return;
 		}
 
@@ -149,7 +163,13 @@ export function EnrollStudentModal({
 			},
 		});
 		if (result?.kind === "refreshed") {
-			toast.success(successMessage);
+			if (trimmedEmail && result.inviteEmailSent === false) {
+				toast.warning(
+					`Đã thêm ${trimmedName} vào lớp nhưng chưa gửi được email lời mời — bạn có thể bấm Gửi lại lời mời.`,
+				);
+			} else {
+				toast.success(successMessage);
+			}
 			setName("");
 			setPhone("");
 			setEmail("");
@@ -157,16 +177,25 @@ export function EnrollStudentModal({
 			setParentPhone("");
 			onClose();
 		} else if (result?.kind === "committed") {
-			committedToastMessageRef.current = successMessage;
+			committedToastMessageRef.current = {
+				message: successMessage,
+				inviteEmailSent: trimmedEmail ? result.inviteEmailSent : undefined,
+			};
 		}
 	}
 
 	async function reconcileAndFinish() {
-		const pendingToastMessage = committedToastMessageRef.current;
+		const pendingToast = committedToastMessageRef.current;
 		if (await reconcile()) {
 			committedToastMessageRef.current = null;
-			if (pendingToastMessage) {
-				toast.success(pendingToastMessage);
+			if (pendingToast) {
+				if (pendingToast.inviteEmailSent === false) {
+					toast.warning(
+						`${pendingToast.message} — chưa gửi được email lời mời, bạn có thể bấm Gửi lại lời mời.`,
+					);
+				} else {
+					toast.success(pendingToast.message);
+				}
 			}
 			setSelectedStudentId("");
 			setFilter("");
@@ -179,6 +208,25 @@ export function EnrollStudentModal({
 		}
 	}
 
+	const trimmedCurrentEmail = email.trim().toLowerCase();
+	const unjoinedConflict =
+		mode === "create" &&
+		failureError?.code === STUDENT_INVITATION_ERROR_CODES.ALREADY_IN_ORG &&
+		failureError.portalLinked === false &&
+		failureError.existingStudentId
+			? {
+					studentId: failureError.existingStudentId,
+					studentName: failureError.existingStudentName,
+				}
+			: null;
+	const joinedConflictError =
+		mode === "create" &&
+		failureError?.code === STUDENT_INVITATION_ERROR_CODES.ALREADY_IN_ORG &&
+		failureError.portalLinked === true
+			? failureError.existingStudentName
+				? `Email này đã tham gia cổng học viên (${failureError.existingStudentName}).`
+				: "Email này đã tham gia cổng học viên."
+			: undefined;
 	return (
 		<Modal
 			open={open}
@@ -360,10 +408,23 @@ export function EnrollStudentModal({
 					<span>Kích hoạt trạng thái Đang học ngay</span>
 				</label>
 				<div className="flex flex-col gap-2 empty:hidden">
-					{error && (
-						<p role="alert" className="text-danger text-xs">
-							{error}
-						</p>
+					{unjoinedConflict && trimmedCurrentEmail ? (
+						<PendingInviteCallout
+							target={{
+								kind: "student",
+								studentId: unjoinedConflict.studentId,
+								recipientLabel: trimmedCurrentEmail,
+							}}
+							studentName={unjoinedConflict.studentName}
+							email={trimmedCurrentEmail}
+							onResent={onClose}
+						/>
+					) : (
+						(joinedConflictError ?? error) && (
+							<p role="alert" className="text-danger text-xs">
+								{joinedConflictError ?? error}
+							</p>
+						)
 					)}
 					{notice && (
 						<KernelSubmitNotice
