@@ -24,12 +24,15 @@ const SAVE_STATE_CLASSES: Record<QuizSaveState, string> = {
  */
 export function QuizRuntimeHeader({
 	title,
+	dueText,
 	saveState,
 	onSubmitClick,
 	submitDisabled,
 	children,
 }: {
 	title: string;
+	/** Hạn nộp đã định dạng, ví dụ "Hạn: 17:00 15/11" (#587). Rỗng/null = giấu hoàn toàn. */
+	dueText?: string | null;
 	/** null = chưa có attempt (start gate) — không hiện save-state. */
 	saveState: QuizSaveState | null;
 	/** null = giấu nút Nộp bài. */
@@ -43,9 +46,19 @@ export function QuizRuntimeHeader({
 				<Link to="/" className={cn(buttonVariants({ variant: "ghost" }))}>
 					Thoát
 				</Link>
-				<h1 className="truncate font-semibold text-[15px] tracking-tight">
-					{title}
-				</h1>
+				<div className="flex min-w-0 flex-col justify-center">
+					<h1 className="truncate font-semibold text-[15px] tracking-tight">
+						{title}
+					</h1>
+					{dueText ? (
+						<span
+							data-testid="quiz-runtime-due"
+							className="shrink-0 whitespace-nowrap font-mono text-[11px] text-muted-foreground tabular-nums"
+						>
+							{dueText}
+						</span>
+					) : null}
+				</div>
 			</div>
 			<div className="flex flex-none items-center gap-3">
 				{saveState !== null && (

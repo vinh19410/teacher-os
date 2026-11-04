@@ -200,6 +200,59 @@ describe("QuizRuntimeHeader — save-state element (RT#7)", () => {
 		expect(html).not.toContain("text-bg");
 		expect(html).toContain("text-primary-foreground");
 	});
+
+	it("hiển thị hạn nộp khi có dueText và giấu khi dueText rỗng/null (#587)", () => {
+		const withDue = renderToStaticMarkup(
+			<QuizRuntimeHeader
+				title="Reading Test 5"
+				dueText="Hạn: 17:00 15/11"
+				saveState="saved"
+				onSubmitClick={() => undefined}
+			/>,
+		);
+		expect(withDue).toContain('data-testid="quiz-runtime-due"');
+		expect(withDue).toContain("Hạn: 17:00 15/11");
+		expect(withDue).toContain("font-mono text-[11px] text-muted-foreground");
+
+		const withoutDue = renderToStaticMarkup(
+			<QuizRuntimeHeader
+				title="Reading Test 5"
+				dueText=""
+				saveState="saved"
+				onSubmitClick={() => undefined}
+			/>,
+		);
+		expect(withoutDue).not.toContain('data-testid="quiz-runtime-due"');
+
+		const nullDue = renderToStaticMarkup(
+			<QuizRuntimeHeader
+				title="Practice Test"
+				dueText={null}
+				saveState={null}
+				onSubmitClick={null}
+			/>,
+		);
+		expect(nullDue).not.toContain('data-testid="quiz-runtime-due"');
+	});
+
+	it("bảo vệ layout trên mobile khi tiêu đề bài thi dài: tiêu đề truncate, hạn nộp whitespace-nowrap shrink-0 (#587)", () => {
+		const longTitle =
+			"IELTS Academic Reading Test 2026 - Comprehensive Diagnostic Practice Assignment for Advanced Students";
+		const html = renderToStaticMarkup(
+			<QuizRuntimeHeader
+				title={longTitle}
+				dueText="Hạn: 17:00 15/11"
+				saveState="saved"
+				onSubmitClick={() => undefined}
+			/>,
+		);
+		expect(html).toContain("truncate");
+		expect(html).toContain("min-w-0");
+		expect(html).toContain("whitespace-nowrap");
+		expect(html).toContain("shrink-0");
+		expect(html).toContain("Thoát");
+		expect(html).toContain("Nộp bài");
+	});
 });
 
 describe("QuizLifecycleDialogs — copy vòng đời (Selfomy parity)", () => {
