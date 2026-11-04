@@ -23,7 +23,18 @@ import {
 	quizAttempt,
 	vocabReviewLog,
 } from "@teacher-os/db/schema/index";
-import { and, count, desc, eq, gte, inArray, lt, sql } from "drizzle-orm";
+import {
+	and,
+	count,
+	desc,
+	eq,
+	gte,
+	inArray,
+	isNotNull,
+	lt,
+	or,
+	sql,
+} from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import type { Db } from "../app";
 import { visibleAssignmentFilter } from "../lib/assignment-visibility";
@@ -146,10 +157,17 @@ function entryGradeOf(row: AttemptSourceRow): EntryGrade {
 
 function attemptToEntry(row: AttemptSourceRow): HistoryEntry {
 	const grade = entryGradeOf(row);
+	// HISTORY_SKILLS giữ 5 dòng (#533, không có "grammar") — bài gộp Grammar + Writing
+	// chuẩn hoá về "writing" để hiện trên /history, heatmap tháng và dòng Writing bảng tuần.
+	const historySkill: HistorySkill = (
+		HISTORY_SKILLS as readonly string[]
+	).includes(row.skill)
+		? (row.skill as HistorySkill)
+		: "writing";
 	return {
 		id: row.id,
 		kind: row.mode === "practice" ? "practice" : "assignment",
-		skill: row.skill as HistorySkill,
+		skill: historySkill,
 		title: row.title,
 		date: vietnamDateKeyOf(row.submittedAt),
 		submittedAt: row.submittedAt.toISOString(),
@@ -287,7 +305,10 @@ async function attemptRows(
 				eq(quizAttempt.orgId, orgId),
 				eq(quizAttempt.studentId, studentId),
 				eq(quizAttempt.mode, "assignment"),
-				inArray(assignmentPrompt.skill, [...HISTORY_SKILLS]),
+				or(
+					inArray(assignmentPrompt.skill, [...HISTORY_SKILLS]),
+					isNotNull(assignmentPrompt.writingPart),
+				),
 				visibleAssignmentFilter(new Date()),
 				submittedRange,
 			),
@@ -510,7 +531,11 @@ export function studentHistoryRoutes(deps: HistoryRouteDeps) {
 		const filtered =
 			rawSkill === undefined || rawSkill === ""
 				? merged.entries
-				: merged.entries.filter((entry) => entry.skill === rawSkill);
+				: merged.entries.filter(
+						(entry) =>
+							entry.skill === rawSkill ||
+							(rawSkill === "writing" && entry.hasWriting === true),
+					);
 		const total = filtered.length;
 		const pages = Math.max(1, Math.ceil(total / HISTORY_PAGE_SIZE));
 		const response: HistoryListResponse = {

@@ -38,7 +38,6 @@ import {
 	type QuizAttemptStore,
 	type QuizSaveState,
 	quizAttemptEssayMirrorKey,
-	quizAttemptMirrorKey,
 	useQuizAttemptSnapshot,
 	useQuizAttemptStore,
 } from "@/lib/quiz-attempt-store";
@@ -465,25 +464,13 @@ export function QuizTakeView({
 	) : isWriting ? (
 		<QuizEssayFooter text={essayText} minWords={minWords} />
 	) : (
-		<>
-			{hasHybridWriting && (
-				<div className="border-border border-t bg-background/95 px-4 py-1.5 font-mono text-muted-foreground text-xs">
-					<div className="mx-auto flex w-full max-w-[720px] items-center justify-between">
-						<span>Phần 2 · Writing</span>
-						<span data-testid="hybrid-essay-word-count">
-							{wordCount} từ
-							{minWords !== null ? ` · tối thiểu ${minWords}` : ""}
-						</span>
-					</div>
-				</div>
-			)}
-			<QuizNavigator
-				parts={parts}
-				answers={answers}
-				current={currentQuestion}
-				onSelect={handleSelectQuestion}
-			/>
-		</>
+		<QuizNavigator
+			parts={parts}
+			answers={answers}
+			current={currentQuestion}
+			onSelect={handleSelectQuestion}
+			writingProgress={hasHybridWriting ? { wordCount, minWords } : null}
+		/>
 	);
 	// Reading có passage → split-pane: bài đọc trái, bài làm phải, cuộn độc
 	// lập; skill khác / passage rỗng giữ 1 cột như cũ.

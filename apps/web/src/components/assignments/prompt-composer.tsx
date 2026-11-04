@@ -305,6 +305,7 @@ export function PromptComposer({
 								{writingSpec.partLabel}
 							</span>
 							<ChipFilter
+								ariaLabel={`${writingSpec.partLabel} Writing`}
 								options={writingSpec.parts.map((entry) => entry.label)}
 								value={activeWritingPart.label}
 								onChange={(label) => {
@@ -327,6 +328,7 @@ export function PromptComposer({
 								{writingSpec.typeLabel}
 							</span>
 							<ChipFilter
+								ariaLabel={`${writingSpec.typeLabel} Writing`}
 								options={activeWritingPart.types.map((entry) => entry.label)}
 								value={activeWritingType.label}
 								onChange={(label) =>

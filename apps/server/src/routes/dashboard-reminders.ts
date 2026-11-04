@@ -2,6 +2,7 @@ import {
 	type DashboardReminders,
 	dashboardRemindersResponseSchema,
 } from "@teacher-os/api/contracts";
+import { essayTaskOf } from "@teacher-os/api/lib/ielts-band";
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { canAccessFinance } from "@teacher-os/auth/role";
 import {
@@ -222,7 +223,7 @@ export async function computeReminders(
 	]);
 	const gradingSkills = [
 		...assignmentRows.map((row) => ({
-			skill: row.writingPart !== null ? "writing" : row.skill,
+			skill: essayTaskOf(row) !== null ? "writing" : row.skill,
 		})),
 		...practiceRows,
 	];

@@ -323,6 +323,15 @@ test("hybrid Grammar + Writing assignment: author, preview, assign, student take
 	).toBeVisible();
 	await expect(studentPage.getByTestId("grade-band")).toHaveText("6.5");
 
+	// 8. Student opens /history -> Grammar + Writing entry appears with combined score + "Xem nhận xét" (both All & Writing tabs)
+	await studentPage.goto(`${STUDENT_ORIGIN}/history`);
+	await expect(studentPage.getByText("1/2 · Band 6.5")).toBeVisible();
+	await expect(
+		studentPage.getByRole("button", { name: "Xem nhận xét" }),
+	).toBeVisible();
+	await studentPage.getByRole("tab", { name: "Writing" }).click();
+	await expect(studentPage.getByText("1/2 · Band 6.5")).toBeVisible();
+
 	// Mechanical file existence verification of viewport screenshots
 	expect(
 		existsSync(resolve(REPORT_DIR, "574-author-desktop-1440-light.png")),

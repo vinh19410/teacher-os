@@ -746,5 +746,133 @@ describe("hybrid multi-skill assignment (trắc nghiệm + Writing, #574)", () =
 			status: "graded",
 			hasWriting: true,
 		});
+		// Student history ?skill=writing ALSO includes hybrid Vocabulary + Writing entry
+		const histWritingTab = (await (
+			await studentCall("/api/student/history?skill=writing")
+		).json()) as {
+			entries: Array<{ attemptId: string | null }>;
+		};
+		expect(histWritingTab.entries.some((e) => e.attemptId === att1)).toBe(true);
+	});
+
+	test("Grammar + Writing hybrid assignment appears in /history, /history/month, and /history/week under writing (#574)", async () => {
+		const grammarPart = ASSIGNMENT_PART_TYPES.grammar.parts[0] ?? "topic";
+		const grammarType =
+			ASSIGNMENT_PART_TYPES.grammar.types[grammarPart]?.[0] ?? "mcq";
+		const createRes = await teacherCall("/api/assignments/prompts", "POST", {
+			skill: "grammar",
+			part: grammarPart,
+			type: grammarType,
+			title: "Grammar + Writing History Check",
+			band: "6.5",
+			source: "",
+			prompt: "",
+			passage: "",
+			intro: "",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			imageUrl: "",
+			questions: [
+				{
+					stem: "She ___ coffee.",
+					opts: ["drink", "drinks"],
+					answer: "B",
+					alts: "",
+				},
+			],
+			optionBank: [],
+			note: "",
+			status: "ready",
+			writing: {
+				part: "task1",
+				type: "chart",
+				prompt: "<p>Summarise the chart.</p>",
+			},
+		});
+		expect(createRes.status).toBe(201);
+		const { id: gPromptId } = (await createRes.json()) as { id: string };
+
+		const assignRes = await teacherCall(
+			"/api/classes/cls-1/assignments",
+			"POST",
+			{
+				promptId: gPromptId,
+				due: "2099-12-20",
+				note: "",
+				studentIds: ["st-1"],
+			},
+		);
+		expect(assignRes.status).toBe(201);
+		const { id: gCaId } = (await assignRes.json()) as { id: string };
+
+		const startRes = await studentCall(
+			`/api/student/assignments/${gCaId}/quiz/start`,
+			"POST",
+			{},
+		);
+		const { attemptId: gAtt } = (await startRes.json()) as {
+			attemptId: string;
+		};
+		await studentCall(`/api/student/attempts/${gAtt}/answer`, "PATCH", {
+			q: 0,
+			value: "B",
+		});
+		await studentCall(`/api/student/attempts/${gAtt}/essay`, "PATCH", {
+			text: "The chart illustrates urban growth over two decades.",
+		});
+		expect(
+			(await studentCall(`/api/student/attempts/${gAtt}/submit`, "POST", {}))
+				.status,
+		).toBe(200);
+		await drainBackground();
+
+		const sub = (await (
+			await teacherCall(`/api/grading/${gAtt}`)
+		).json()) as TeacherSubmission;
+		expect(
+			(
+				await teacherCall(`/api/grading/${gAtt}/grade`, "POST", {
+					scores: { task: 7, coherence: 7, lexical: 7, grammar: 7 },
+					feedback: "Accurate chart summary.",
+					version: sub.aiDraft?.version ?? 1,
+				})
+			).status,
+		).toBe(200);
+
+		const histAll = (await (
+			await studentCall("/api/student/history")
+		).json()) as {
+			entries: Array<{
+				attemptId: string | null;
+				skill: string;
+				score: string | null;
+				status: string;
+				hasWriting?: boolean;
+			}>;
+		};
+		const gEntry = histAll.entries.find((e) => e.attemptId === gAtt);
+		expect(gEntry).toMatchObject({
+			skill: "writing",
+			score: "1/1 · Band 7.0",
+			status: "graded",
+			hasWriting: true,
+		});
+
+		const histWriting = (await (
+			await studentCall("/api/student/history?skill=writing")
+		).json()) as { entries: Array<{ attemptId: string | null }> };
+		expect(histWriting.entries.some((e) => e.attemptId === gAtt)).toBe(true);
+
+		const histWeek = await studentCall("/api/student/history/week");
+		expect(histWeek.status).toBe(200);
+		const weekJson = (await histWeek.json()) as {
+			rows: Array<{ skill: string; days: number[] }>;
+		};
+		const writingRow = weekJson.rows.find((r) => r.skill === "writing");
+		expect(
+			writingRow?.days.reduce((sum, n) => sum + n, 0) ?? 0,
+		).toBeGreaterThanOrEqual(1);
 	});
 });

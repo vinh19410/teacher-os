@@ -22,8 +22,8 @@ import {
 } from "@teacher-os/api/lib/essay-annotations";
 import { essayToPlain, plainToRaw } from "@teacher-os/api/lib/essay-plain";
 import {
+	essayTaskOf,
 	type GradableSkill,
-	isAutoGradableSkill,
 	isGradableSkill,
 } from "@teacher-os/api/lib/ielts-band";
 import { canPublishGrade, canReviewGrade } from "@teacher-os/auth/role";
@@ -273,8 +273,7 @@ export async function loadGradingQueue(
 
 	const items: GradingQueueItem[] = [];
 	for (const row of assignmentRows) {
-		const hybridWriting =
-			row.writingPart !== null && isAutoGradableSkill(row.skill);
+		const hybridWriting = essayTaskOf(row)?.hybrid === true;
 		const effectiveSkill = hybridWriting ? "writing" : row.skill;
 		if (!isGradableSkill(effectiveSkill)) continue;
 		items.push({
@@ -612,11 +611,8 @@ export function gradingRoutes(deps: {
 						.limit(1)
 				)[0];
 
-		const hybridWriting = Boolean(
-			!practice &&
-				header?.writingPart &&
-				isAutoGradableSkill(header.skill ?? ""),
-		);
+		const hybridWriting =
+			!practice && header !== undefined && essayTaskOf(header)?.hybrid === true;
 		const row: GradableAttemptRow = {
 			id: base.id,
 			status: base.status,
