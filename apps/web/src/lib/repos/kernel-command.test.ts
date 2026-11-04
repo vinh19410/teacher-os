@@ -55,6 +55,41 @@ describe("kernelCommand create-assignment-prompt (#218)", () => {
 		expect(request.path).toBe("/api/assignments/prompts");
 		expect(request.body).toEqual(payload);
 	});
+
+	test("forwards optional hybrid writing section on auto-gradable prompt (#574)", () => {
+		const payload: AssignmentPromptCreate = {
+			skill: "grammar",
+			part: "tenses",
+			type: "mcq",
+			title: "Grammar + Writing",
+			band: "6.5",
+			source: "",
+			prompt: "",
+			passage: "",
+			intro: "",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			imageUrl: "",
+			questions: [
+				{ stem: "She ___ home.", opts: ["go", "goes"], answer: "B", alts: "" },
+			],
+			optionBank: [],
+			note: "",
+			status: "ready",
+			writing: {
+				part: "task2",
+				type: "discuss",
+				prompt: "<p>Discuss remote work.</p>",
+			},
+		};
+		const request = kernelCommand({
+			type: "create-assignment-prompt",
+			payload: { ...payload },
+		});
+		expect(request.body).toEqual(payload);
+	});
 });
 
 describe("kernelCommand delete-syllabus (#211)", () => {

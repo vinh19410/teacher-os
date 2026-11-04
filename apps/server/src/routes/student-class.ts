@@ -161,6 +161,7 @@ export async function loadClassAssignmentItems(
 			// TOS-30 #478: skill của đề — cổng học viên phân biệt nhãn chờ
 			// chấm giáo viên (Writing/Speaking) với bài tự chấm.
 			skill: assignmentPrompt.skill,
+			writingPart: assignmentPrompt.writingPart,
 			// TOS-30 #478: điểm/bài đã "Chốt trả bài" — phân biệt đã chấm với
 			// đang chờ (scores luôn null trước PR #482 nên nhãn chờ chấm dính
 			// mãi cả sau publish).
@@ -172,11 +173,17 @@ export async function loadClassAssignmentItems(
 		.from(classAssignmentTarget)
 		.innerJoin(
 			classAssignment,
-			eq(classAssignmentTarget.assignmentId, classAssignment.id),
+			and(
+				eq(classAssignment.id, classAssignmentTarget.assignmentId),
+				eq(classAssignment.orgId, orgId),
+			),
 		)
 		.innerJoin(
 			assignmentPrompt,
-			eq(assignmentPrompt.id, classAssignment.promptId),
+			and(
+				eq(assignmentPrompt.id, classAssignment.promptId),
+				eq(assignmentPrompt.orgId, orgId),
+			),
 		)
 		.leftJoin(classTable, eq(classAssignment.classId, classTable.id))
 		.leftJoin(
@@ -221,6 +228,7 @@ export async function loadClassAssignmentItems(
 			scores: parsedScores.success ? parsedScores.data : null,
 			skill: row.skill,
 			gradedAt: row.gradedAt ? row.gradedAt.toISOString() : null,
+			...(row.writingPart !== null ? { hasWriting: true } : {}),
 		};
 	});
 }
