@@ -24,6 +24,8 @@ import {
 	type StudentOrgItem,
 	type StudentOverview,
 	type StudentQuizDetail,
+	type StudentScheduleLesson,
+	type StudentScheduleResponse,
 	studentOnboardingPayloadSchema,
 	TOEIC_TARGET_SCORES,
 } from "@teacher-os/api/contracts";
@@ -727,6 +729,9 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	// TOS-21 D7: inbox học viên cần studentCtx (org + student id).
 	router.use("/inbox", requireStudent);
 	router.use("/inbox/*", requireStudent);
+	// #584: Lịch học của học viên gộp mọi lớp đang học trong org
+	router.use("/schedule", requireStudent);
+	router.use("/schedule/*", requireStudent);
 
 	// In-app inbox học viên (plan TOS-21 D7): 50 dòng mới nhất của chính học
 	// viên trong org đang chọn; không trả recipient_email/reply_to_email/last_error.
@@ -1093,6 +1098,138 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			lessons: orderStudentLessons(lessons),
 			assignments,
 		};
+		return c.json(response);
+	});
+
+	/**
+	 * GET /api/student/schedule (#584)
+	 *
+	 * Lịch học gộp của tất cả các lớp mà học viên đang tham gia (enrollment active)
+	 * trong tổ chức đang chọn. Lessons được sắp xếp theo trình tự thời gian (buổi có ngày
+	 * sắp xếp toàn cục date/time asc, buổi legacy giữ thứ tự heuristic theo lớp).
+	 */
+	router.get("/schedule", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const db = deps.getDb();
+
+		const classRows = await db
+			.select(studentClassColumns)
+			.from(enrollment)
+			.innerJoin(classTable, eq(enrollment.classId, classTable.id))
+			.where(
+				and(
+					eq(enrollment.orgId, orgId),
+					eq(enrollment.studentId, s.id),
+					eq(enrollment.status, "active"),
+				),
+			)
+			.orderBy(asc(classTable.name), asc(classTable.id));
+
+		if (classRows.length === 0) {
+			const emptyResponse: StudentScheduleResponse = {
+				classes: [],
+				lessons: [],
+			};
+			return c.json(emptyResponse);
+		}
+
+		const now = new Date();
+		const [teacher, ...nextSessions] = await Promise.all([
+			loadOrgTeacher(db, orgId),
+			...classRows.map((r) => loadNextSession(db, orgId, r.id, now)),
+		]);
+
+		const classes = classRows.map((row, index) =>
+			toStudentClass(row, nextSessions[index] ?? null, teacher),
+		);
+
+		const lessonRows = await db
+			.select({
+				id: lesson.id,
+				classId: lesson.classId,
+				className: classTable.name,
+				enrollmentId: lesson.enrollmentId,
+				date: lesson.date,
+				day: lesson.day,
+				time: lesson.time,
+				dur: lesson.dur,
+				status: lesson.status,
+				topic: lesson.topic,
+			})
+			.from(lesson)
+			.innerJoin(enrollment, eq(lesson.enrollmentId, enrollment.id))
+			.innerJoin(classTable, eq(lesson.classId, classTable.id))
+			.where(
+				and(
+					eq(lesson.orgId, orgId),
+					eq(enrollment.studentId, s.id),
+					eq(enrollment.status, "active"),
+				),
+			)
+			.orderBy(
+				asc(lesson.date),
+				asc(lesson.day),
+				asc(lesson.time),
+				asc(lesson.id),
+			);
+
+		// Gom bài học theo từng lớp để giữ đúng heuristic orderStudentLessons cho lớp legacy
+		const lessonsByClass = new Map<string, typeof lessonRows>();
+		for (const row of lessonRows) {
+			const list = lessonsByClass.get(row.classId) ?? [];
+			list.push(row);
+			lessonsByClass.set(row.classId, list);
+		}
+
+		const datedLessons: StudentScheduleLesson[] = [];
+		const undatedLessons: StudentScheduleLesson[] = [];
+
+		for (const classRow of classRows) {
+			const rawClassLessons = lessonsByClass.get(classRow.id) ?? [];
+			if (rawClassLessons.length === 0) continue;
+
+			const ordered = orderStudentLessons(
+				rawClassLessons.map((l) => ({
+					id: l.id,
+					date: l.date,
+					day: l.day,
+					time: l.time,
+					dur: l.dur,
+					status: l.status,
+					topic: l.topic,
+				})),
+			);
+
+			for (const lessonItem of ordered) {
+				const scheduleLesson: StudentScheduleLesson = {
+					...lessonItem,
+					classId: classRow.id,
+					className: classRow.name,
+				};
+				if (scheduleLesson.date != null) {
+					datedLessons.push(scheduleLesson);
+				} else {
+					undatedLessons.push(scheduleLesson);
+				}
+			}
+		}
+
+		// Sắp xếp các buổi có ngày theo thời gian toàn cục
+		datedLessons.sort((a, b) => {
+			const dateCmp = (a.date ?? "").localeCompare(b.date ?? "");
+			if (dateCmp !== 0) return dateCmp;
+			const timeCmp = a.time.localeCompare(b.time);
+			if (timeCmp !== 0) return timeCmp;
+			const classCmp = a.classId.localeCompare(b.classId);
+			if (classCmp !== 0) return classCmp;
+			return a.id.localeCompare(b.id);
+		});
+
+		const response: StudentScheduleResponse = {
+			classes,
+			lessons: [...datedLessons, ...undatedLessons],
+		};
+
 		return c.json(response);
 	});
 

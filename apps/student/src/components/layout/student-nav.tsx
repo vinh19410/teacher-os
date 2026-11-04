@@ -6,6 +6,7 @@ import type {
 } from "@teacher-os/ui/components/app-shell/nav-group";
 import {
 	BookOpenCheck,
+	CalendarDays,
 	ClipboardList,
 	History,
 	LayoutDashboard,
@@ -58,6 +59,12 @@ export const STUDENT_NAV: NavGroup[] = [
 			{ key: "overview", label: "Tổng quan", icon: LayoutDashboard, href: "/" },
 			{ key: "classes", label: "Lớp học", icon: School, href: "/classes" },
 			{
+				key: "schedule",
+				label: "Lịch học",
+				icon: CalendarDays,
+				href: "/schedule",
+			},
+			{
 				key: "assignments",
 				label: "Bài tập",
 				icon: ClipboardList,
@@ -93,8 +100,9 @@ export function StudentShellLink({
 	);
 }
 
-const ACTIVE_KEY_BY_PREFIX: Record<string, string> = {
+export const ACTIVE_KEY_BY_PREFIX: Record<string, string> = {
 	"/classes": "classes",
+	"/schedule": "schedule",
 	"/assignments": "assignments",
 	"/practice": "practice",
 	"/history": "history",
@@ -115,6 +123,7 @@ export function useStudentActiveKey(): string {
 export const STUDENT_PAGE_LABEL: Record<string, string> = {
 	overview: "Tổng quan",
 	classes: "Lớp học",
+	schedule: "Lịch học",
 	assignments: "Bài tập",
 	practice: "Luyện tập",
 	history: "Lịch sử",
