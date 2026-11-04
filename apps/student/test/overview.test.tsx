@@ -2,7 +2,10 @@ import type {
 	StudentAssignment,
 	StudentClass,
 } from "@teacher-os/api/contracts";
-import { STUDENT_ERROR_CODES } from "@teacher-os/api/contracts";
+import {
+	ACCOUNT_ERROR_CODES,
+	STUDENT_ERROR_CODES,
+} from "@teacher-os/api/contracts";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
@@ -349,6 +352,52 @@ describe("StudentErrorView", () => {
 		);
 		expect(html).toContain("Thông tin tài khoản chưa rõ ràng");
 		expect(html).toContain("Đăng xuất");
+	});
+
+	it("renders TEACHER_ON_STUDENT_PORTAL state with link to teacher portal and sign out button", () => {
+		const html = renderToStaticMarkup(
+			<StudentErrorView
+				code={ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL}
+				teacherPortalUrl="https://app.teacheros.io.vn"
+			/>,
+		);
+		expect(html).toContain("Đây là tài khoản giáo viên");
+		expect(html).toContain("Tài khoản này thuộc hệ thống giáo viên");
+		expect(html).toContain("Chuyển sang cổng giáo viên");
+		expect(html).toContain('href="https://app.teacheros.io.vn"');
+		expect(html).toContain("Đăng xuất");
+	});
+
+	it("renders TEACHER_ON_STUDENT_PORTAL state safely without link when portal URL is unresolved", () => {
+		const html = renderToStaticMarkup(
+			<StudentErrorView code={ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL} />,
+		);
+		expect(html).toContain("Đây là tài khoản giáo viên");
+		expect(html).toContain("Tài khoản này thuộc hệ thống giáo viên");
+		expect(html).not.toContain("Chuyển sang cổng giáo viên");
+		expect(html).toContain("Đăng xuất");
+	});
+
+	it("resolves teacher portal url from global window if available", () => {
+		vi.stubGlobal("window", {
+			location: {
+				hostname: "student.staging.teacheros.io.vn",
+				protocol: "https:",
+				port: "",
+			},
+		});
+		try {
+			const html = renderToStaticMarkup(
+				<StudentErrorView
+					code={ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL}
+				/>,
+			);
+			expect(html).toContain("Chuyển sang cổng giáo viên");
+			expect(html).toContain('href="https://app.staging.teacheros.io.vn"');
+			expect(html).toContain("Đăng xuất");
+		} finally {
+			vi.unstubAllGlobals();
+		}
 	});
 });
 

@@ -5,6 +5,7 @@ import {
 import {
 	AlertCircle,
 	Check,
+	ExternalLink,
 	Loader2,
 	LogOut,
 	MailCheck,
@@ -14,19 +15,27 @@ import {
 import { useState } from "react";
 import { NoticeInfo } from "@/components/auth/notices";
 import { authClient } from "@/lib/auth-client";
+import { getTeacherPortalUrl } from "@/lib/teacher-portal-url";
 
 interface StudentErrorViewProps {
 	code?: string;
 	userEmail?: string;
+	teacherPortalUrl?: string;
 }
 
-export function StudentErrorView({ code, userEmail }: StudentErrorViewProps) {
+export function StudentErrorView({
+	code,
+	userEmail,
+	teacherPortalUrl: customTeacherPortalUrl,
+}: StudentErrorViewProps) {
 	const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">(
 		"idle",
 	);
 	const [resendError, setResendError] = useState<string | null>(null);
+	const [isSigningOut, setIsSigningOut] = useState(false);
 
 	const handleSignOut = async () => {
+		setIsSigningOut(true);
 		try {
 			await authClient.signOut();
 		} catch {
@@ -76,6 +85,9 @@ export function StudentErrorView({ code, userEmail }: StudentErrorViewProps) {
 	let icon = <AlertCircle className="size-8 text-muted-foreground" />;
 
 	const isEmailUnverified = code === STUDENT_ERROR_CODES.EMAIL_UNVERIFIED;
+	const isTeacherOnStudentPortal =
+		code === ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL;
+	let teacherPortalUrl: string | undefined;
 
 	// Nút resend thành công giữ viền outline; nhãn "Đã gửi" đổi sang chữ
 	// thường (không còn màu hot) theo ngôn ngữ v2.
@@ -83,11 +95,12 @@ export function StudentErrorView({ code, userEmail }: StudentErrorViewProps) {
 		resendStatus === "sent" ? "text-muted-foreground" : "text-primary"
 	}`;
 
-	if (code === ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL) {
+	if (isTeacherOnStudentPortal) {
 		title = "Đây là tài khoản giáo viên";
 		description =
-			"Tài khoản này thuộc hệ thống giáo viên, không đăng nhập được cổng học viên. Vui lòng đăng xuất và dùng tài khoản học viên.";
+			"Tài khoản này thuộc hệ thống giáo viên, không đăng nhập được cổng học viên. Bạn có thể chuyển sang cổng giáo viên hoặc đăng xuất để đăng nhập bằng tài khoản học viên.";
 		icon = <ShieldAlert className="size-8 text-destructive" />;
+		teacherPortalUrl = customTeacherPortalUrl ?? getTeacherPortalUrl();
 	} else if (code === STUDENT_ERROR_CODES.NOT_LINKED) {
 		title = "Tài khoản chưa được liên kết";
 		description = `Email ${userEmail ? `(${userEmail})` : ""} hiện chưa tham gia lớp học nào. Nếu giáo viên đã gửi lời mời, vui lòng bấm vào biểu tượng Chuông thông báo ở góc trên để chấp nhận tham gia lớp.`;
@@ -124,7 +137,35 @@ export function StudentErrorView({ code, userEmail }: StudentErrorViewProps) {
 				)}
 
 				<div className="mt-6 flex flex-col items-center gap-3">
-					{isEmailUnverified ? (
+					{isTeacherOnStudentPortal ? (
+						<div className="flex flex-wrap items-center justify-center gap-3">
+							{teacherPortalUrl && (
+								<a
+									href={teacherPortalUrl}
+									className="inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground text-sm shadow-xs outline-none transition-all hover:bg-primary/90 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+								>
+									<ExternalLink aria-hidden="true" className="h-4 w-4" />
+									<span>Chuyển sang cổng giáo viên</span>
+								</a>
+							)}
+							<button
+								type="button"
+								disabled={isSigningOut}
+								onClick={handleSignOut}
+								className="inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md border bg-background px-4 py-2 font-medium text-sm shadow-xs outline-none transition-all hover:bg-accent hover:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
+							>
+								{isSigningOut ? (
+									<Loader2
+										aria-hidden="true"
+										className="h-4 w-4 animate-spin"
+									/>
+								) : (
+									<LogOut aria-hidden="true" className="h-4 w-4" />
+								)}
+								<span>{isSigningOut ? "Đang đăng xuất…" : "Đăng xuất"}</span>
+							</button>
+						</div>
+					) : isEmailUnverified ? (
 						<>
 							<div className="flex flex-wrap items-center justify-center gap-3">
 								{userEmail && (
@@ -165,21 +206,34 @@ export function StudentErrorView({ code, userEmail }: StudentErrorViewProps) {
 
 							<button
 								type="button"
+								disabled={isSigningOut}
 								onClick={handleSignOut}
-								className="mt-1 flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+								className="mt-1 flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
 							>
-								<LogOut className="h-3.5 w-3.5" />
-								<span>Đăng xuất</span>
+								{isSigningOut ? (
+									<Loader2
+										aria-hidden="true"
+										className="h-3.5 w-3.5 animate-spin"
+									/>
+								) : (
+									<LogOut aria-hidden="true" className="h-3.5 w-3.5" />
+								)}
+								<span>{isSigningOut ? "Đang đăng xuất…" : "Đăng xuất"}</span>
 							</button>
 						</>
 					) : (
 						<button
 							type="button"
+							disabled={isSigningOut}
 							onClick={handleSignOut}
 							className="inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md border bg-background px-4 py-2 font-medium text-sm shadow-xs outline-none transition-all hover:bg-accent hover:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
 						>
-							<LogOut className="h-4 w-4" />
-							<span>Đăng xuất</span>
+							{isSigningOut ? (
+								<Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+							) : (
+								<LogOut aria-hidden="true" className="h-4 w-4" />
+							)}
+							<span>{isSigningOut ? "Đang đăng xuất…" : "Đăng xuất"}</span>
 						</button>
 					)}
 				</div>
