@@ -799,7 +799,7 @@ const assignmentPromptBaseSchema = z
 	.object({
 		skill: z.enum(ASSIGNMENT_SKILLS),
 		part: z.string().trim().min(1).max(20),
-		type: z.string().trim().min(1).max(20),
+		type: z.string().trim().max(20),
 		title: z.string().trim().min(1).max(200),
 		band: z.enum(["6.0", "6.5", "7.0", "7.5"]),
 		source: z.string().trim().max(200),
@@ -843,11 +843,27 @@ export const assignmentPromptCreateSchema =
 			ctx.addIssue({ code: "custom", path: ["part"], message: "invalid part" });
 			return;
 		}
-		if (!(config.types[value.part] ?? []).includes(value.type)) {
+		const partTypes = config.types[value.part] ?? [];
+		if (value.status === "ready") {
+			if (!value.type || !partTypes.includes(value.type)) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["type"],
+					message: "invalid type",
+				});
+			}
+		} else if (value.skill === "writing") {
+			if (value.type && !partTypes.includes(value.type)) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["type"],
+					message: "invalid type",
+				});
+			}
+		} else if (!value.type || !partTypes.includes(value.type)) {
 			ctx.addIssue({ code: "custom", path: ["type"], message: "invalid type" });
 		}
 		// Đề trộn dạng: type riêng của câu phải thuộc catalog type của part.
-		const partTypes = config.types[value.part] ?? [];
 		for (const [index, question] of value.questions.entries()) {
 			if (question.type && !partTypes.includes(question.type)) {
 				ctx.addIssue({

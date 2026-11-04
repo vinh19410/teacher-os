@@ -15,8 +15,8 @@ import {
 	kindOf,
 	partOf,
 	type QuestionItem,
+	selectedTypeOf,
 	skillOf,
-	typeOf,
 	wordCount,
 } from "./assignment-presets";
 
@@ -45,10 +45,10 @@ export function StudentPreviewPaper(props: {
 }) {
 	const skillId = props.skill ?? "writing";
 	const partId = props.part ?? props.task ?? "task2";
-	const typeId = props.type ?? props.genre ?? "discuss";
+	const typeId = props.type ?? props.genre ?? "";
 	const skill = skillOf(skillId);
 	const part = partOf(skillId, partId);
-	const type = typeOf(skillId, partId, typeId);
+	const type = selectedTypeOf(skillId, partId, typeId);
 	const isAuto = isAutoSkill(skillId);
 	// FR6: bankable matching types show the structured bank; an empty bank
 	// (legacy prompts) falls back to the intro text AND warns — never silent.
@@ -206,7 +206,7 @@ export function StudentPreviewPaper(props: {
 			<div className="mt-3 flex flex-wrap gap-2">
 				<Tag>{skill.name}</Tag>
 				<Tag>{part.label}</Tag>
-				<Tag>{type.label}</Tag>
+				<Tag>{type?.label ?? "Chưa chọn dạng"}</Tag>
 				<Tag>{`Band ${props.band}`}</Tag>
 				{props.source.trim() && <Tag>{props.source.trim()}</Tag>}
 				{isAuto && <Tag>Chấm tự động</Tag>}

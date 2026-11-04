@@ -50,7 +50,12 @@ export function structuralChangeKind(
 	if (patch.skill !== undefined && patch.skill !== current.skill)
 		return "skill";
 	if (patch.part !== undefined && patch.part !== current.part) return "part";
-	if (patch.type !== undefined && patch.type !== current.type) return "type";
+	if (
+		patch.type !== undefined &&
+		patch.type !== current.type &&
+		current.type !== ""
+	)
+		return "type";
 	return null;
 }
 

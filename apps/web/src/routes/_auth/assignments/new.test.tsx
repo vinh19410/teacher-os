@@ -248,6 +248,17 @@ describe("NewAssignmentRoute (#218 v5)", () => {
 			expect(res.sub).toContain("500 ký tự");
 		});
 
+		it("9b. Missing type in ready mode blocks save (#577)", () => {
+			const res = actionCopyFor({ ...baseValue, type: "" }, "ready");
+			expect(res.title).toBe("Chưa chọn dạng đề");
+			expect(res.sub).toContain("Chọn dạng đề trước khi lưu");
+		});
+
+		it("9c. Missing type in draft mode is allowed (#577)", () => {
+			const res = actionCopyFor({ ...baseValue, type: "" }, "draft");
+			expect(res.title).toBe("Lưu bản nháp");
+		});
+
 		it("10. Bankable ready without a bank blocks save with the panel message (phase-02)", () => {
 			const res = actionCopyFor(
 				{
@@ -338,6 +349,38 @@ describe("NewAssignmentRoute (#218 v5)", () => {
 		};
 		const html = renderToStaticMarkup(<NewAssignmentRoute />);
 		expect(html).toContain("Thiếu ảnh hoặc ghim nhãn");
+		const submit = html.match(
+			/<button[^>]*type="submit"[^>]*>[^<]*Lưu vào ngân hàng/,
+		);
+		expect(submit?.[0]).toMatch(/\sdisabled=/);
+		draftFixture.value = null;
+	});
+	it("blocks save for a restored draft missing type when in ready status (#577)", () => {
+		draftFixture.value = {
+			task: "task2",
+			genre: "",
+			skill: "writing",
+			part: "task2",
+			type: "",
+			title: "Writing Essay without Type",
+			band: "7.0",
+			source: "Cam 18",
+			prompt: "<p>Prompt content</p>",
+			passage: "",
+			intro: "",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			imageUrl: "",
+			optionBank: [],
+			items: [],
+			note: "",
+			status: "ready",
+		};
+		const html = renderToStaticMarkup(<NewAssignmentRoute />);
+		expect(html).toContain("Chưa chọn dạng đề");
+		expect(html).toContain("Chọn dạng đề trước khi lưu sẵn sàng giao.");
 		const submit = html.match(
 			/<button[^>]*type="submit"[^>]*>[^<]*Lưu vào ngân hàng/,
 		);

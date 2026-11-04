@@ -82,6 +82,26 @@ describe("structuralChangeKind (FR5 confirm gate)", () => {
 			}),
 		).toBe("skill");
 	});
+	test("returns null when selecting type for the first time from empty type (#577)", () => {
+		const emptyTypeWriting = composer({
+			skill: "writing",
+			part: "task2",
+			type: "",
+			prompt: "<p>Essay prompt</p>",
+		});
+		expect(
+			structuralChangeKind(emptyTypeWriting, { type: "discuss" }),
+		).toBeNull();
+		const typedWriting = composer({
+			skill: "writing",
+			part: "task2",
+			type: "discuss",
+			prompt: "<p>Essay prompt</p>",
+		});
+		expect(structuralChangeKind(typedWriting, { type: "opinion" })).toBe(
+			"type",
+		);
+	});
 });
 
 describe("hasAuthoringContent (FR5 confirm gate)", () => {

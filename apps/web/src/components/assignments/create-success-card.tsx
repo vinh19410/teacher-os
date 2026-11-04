@@ -4,8 +4,8 @@ import {
 	isAutoSkill,
 	partOf,
 	type QuestionItem,
+	selectedTypeOf,
 	skillOf,
-	typeOf,
 } from "./assignment-presets";
 
 export function CreateSuccessCard({
@@ -13,7 +13,7 @@ export function CreateSuccessCard({
 	status,
 	skill = "writing",
 	part = "task2",
-	type = "discuss",
+	type = "",
 	band,
 	source,
 	audioName = "",
@@ -33,7 +33,7 @@ export function CreateSuccessCard({
 }) {
 	const skillPreset = skillOf(skill);
 	const partPreset = partOf(skill, part);
-	const typePreset = typeOf(skill, part, type);
+	const typePreset = selectedTypeOf(skill, part, type);
 	const auto = isAutoSkill(skill);
 	const locked = questions.filter((item) => item.answer.trim()).length;
 	return (
@@ -58,7 +58,10 @@ export function CreateSuccessCard({
 			<ul className="flex flex-col gap-2">
 				{[
 					["Kỹ năng", skillPreset.name],
-					["Phần thi", `${partPreset.label} · ${typePreset.label}`],
+					[
+						"Phần thi",
+						`${partPreset.label} · ${typePreset?.label ?? "Chưa chọn dạng"}`,
+					],
 					["Band mục tiêu", band],
 					[
 						"Chi tiết",
@@ -66,7 +69,7 @@ export function CreateSuccessCard({
 							? audioName || "Chưa đính file"
 							: auto
 								? `${questions.length} câu`
-								: typePreset.label,
+								: (typePreset?.label ?? "Chưa chọn dạng"),
 					],
 					...(auto
 						? [

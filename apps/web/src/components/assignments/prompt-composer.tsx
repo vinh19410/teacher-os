@@ -11,6 +11,7 @@ import {
 	partOf,
 	type QuestionItem,
 	SKILLS,
+	selectedTypeOf,
 	skillOf,
 	typeOf,
 	wordCount,
@@ -64,7 +65,7 @@ export function PromptComposer({
 }) {
 	const skill = skillOf(value.skill);
 	const part = partOf(value.skill, value.part);
-	const type = typeOf(value.skill, value.part, value.type);
+	const selectedType = selectedTypeOf(value.skill, value.part, value.type);
 	const isAuto = isAutoSkill(value.skill);
 	const isCue = value.skill === "speaking" && value.part === "part2";
 	const writingSpec = skillOf("writing");
@@ -109,7 +110,7 @@ export function PromptComposer({
 								onFieldChange({
 									skill: next.id,
 									part: next.parts[0].id,
-									type: next.parts[0].types[0].id,
+									type: next.id === "writing" ? "" : next.parts[0].types[0].id,
 								});
 							}}
 						/>
@@ -129,7 +130,10 @@ export function PromptComposer({
 								// default type, so a stray click could otherwise reset the
 								// type (review #2).
 								if (next.id === value.part) return;
-								onFieldChange({ part: next.id, type: next.types[0].id });
+								onFieldChange({
+									part: next.id,
+									type: value.skill === "writing" ? "" : next.types[0].id,
+								});
 							}}
 						/>
 					</div>
@@ -139,15 +143,17 @@ export function PromptComposer({
 				<span className="text-muted-foreground text-xs">{skill.typeLabel}</span>
 				<ChipFilter
 					options={part.types.map((entry) => entry.label)}
-					value={type.label}
-					onChange={(label) =>
-						onFieldChange({
-							type:
-								part.types.find((entry) => entry.label === label)?.id ??
-								part.types[0].id,
-						})
-					}
+					value={selectedType?.label ?? ""}
+					onChange={(label) => {
+						const chosen = part.types.find((entry) => entry.label === label);
+						if (chosen) {
+							onFieldChange({ type: chosen.id });
+						}
+					}}
 				/>
+				{showErrors && errors.type && (
+					<p className="text-destructive text-xs">{errors.type}</p>
+				)}
 			</div>
 			<Field label="Tiêu đề" error={showErrors ? errors.title : undefined}>
 				<Input

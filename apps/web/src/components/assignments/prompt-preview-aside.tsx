@@ -15,8 +15,8 @@ import {
 	kindOf,
 	partOf,
 	qStartOf,
+	selectedTypeOf,
 	skillOf,
-	typeOf,
 	wordCount,
 } from "./assignment-presets";
 
@@ -28,10 +28,10 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 	const navigate = useNavigate();
 	const skillId = prompt.skill ?? "writing";
 	const partId = prompt.part ?? prompt.task ?? "task2";
-	const typeId = prompt.type ?? prompt.genre ?? "discuss";
+	const typeId = prompt.type ?? prompt.genre ?? "";
 	const skill = skillOf(skillId);
 	const part = partOf(skillId, partId);
-	const type = typeOf(skillId, partId, typeId);
+	const type = selectedTypeOf(skillId, partId, typeId);
 	const trimmedTitle = prompt.title.trim() || "Chưa đặt tên đề";
 	const isAuto = isAutoSkill(skillId);
 	const isSpeakingPart2 = skillId === "speaking" && partId === "part2";
@@ -185,7 +185,7 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 			<div className="mt-3 flex flex-wrap gap-2">
 				<Tag>{skill.name}</Tag>
 				<Tag>{part.label}</Tag>
-				<Tag>{type.label}</Tag>
+				<Tag>{type?.label ?? "Chưa chọn dạng"}</Tag>
 				<Tag>{`Band ${prompt.band}`}</Tag>
 				{prompt.source.trim() && <Tag>{prompt.source.trim()}</Tag>}
 				{isAuto && <Tag>Chấm tự động</Tag>}

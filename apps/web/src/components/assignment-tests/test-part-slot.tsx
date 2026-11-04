@@ -1,4 +1,4 @@
-import { typeOf } from "@/components/assignments/assignment-presets";
+import { selectedTypeOf } from "@/components/assignments/assignment-presets";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -75,7 +75,9 @@ export function TestPartSlot({
 			</Card>
 		);
 	}
-	const typeLabel = typeOf(skill, part, prompt.type ?? prompt.genre).label;
+	const typeLabel =
+		selectedTypeOf(skill, part, prompt.type ?? prompt.genre)?.label ??
+		"Chưa chọn dạng";
 	const last = qStart + count - 1;
 	return (
 		<Card variant="white" className="flex flex-col gap-2 py-4">
