@@ -77,6 +77,7 @@ describe("SignInForm", () => {
 		const buttonMatch = html.match(/<button[^>]*>Đăng nhập<\/button>/);
 		expect(buttonMatch?.[0]).toBeDefined();
 		expect(buttonMatch?.[0]).not.toMatch(/\sdisabled=/);
+		expect(html).toMatch(/<form[^>]*class="[^"]*grid gap-4[^"]*"/);
 	});
 
 	it("links to the forgot-password page next to the password field", () => {
@@ -97,5 +98,6 @@ describe("SignUpForm", () => {
 		const buttonMatch = html.match(/<button[^>]*>Tạo tài khoản<\/button>/);
 		expect(buttonMatch?.[0]).toBeDefined();
 		expect(buttonMatch?.[0]).not.toMatch(/\sdisabled=/);
+		expect(html).toMatch(/<form[^>]*class="[^"]*grid gap-4[^"]*"/);
 	});
 });

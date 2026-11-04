@@ -91,7 +91,7 @@ export default function SignUpForm({
 				event.stopPropagation();
 				form.handleSubmit();
 			}}
-			className="fade-in slide-in-from-bottom-1 animate-in duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)] motion-reduce:animate-none"
+			className="grid gap-4 fade-in slide-in-from-bottom-1 animate-in duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)] motion-reduce:animate-none"
 		>
 			{accountCreated && (
 				<NoticeOk title="Account created">Opening your workspace…</NoticeOk>

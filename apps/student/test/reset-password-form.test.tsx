@@ -51,6 +51,7 @@ describe("ResetPasswordForm", () => {
 		const buttonMatch = html.match(/<button[^>]*>Đổi mật khẩu<\/button>/);
 		expect(buttonMatch?.[0]).toBeDefined();
 		expect(buttonMatch?.[0]).not.toMatch(/\sdisabled=/);
+		expect(html).toMatch(/<form[^>]*class="[^"]*grid gap-4[^"]*"/);
 	});
 
 	it("never renders the token into the markup", () => {

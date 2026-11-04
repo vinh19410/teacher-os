@@ -28,5 +28,6 @@ describe("SignUpForm (issue #165)", () => {
 		expect(html).toContain('id="su-name"');
 		expect(html).toContain('id="su-email"');
 		expect(html).toContain('id="su-password"');
+		expect(html).toMatch(/<form[^>]*class="[^"]*grid gap-4[^"]*"/);
 	});
 });

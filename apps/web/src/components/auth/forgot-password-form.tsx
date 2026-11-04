@@ -67,6 +67,7 @@ export default function ForgotPasswordForm() {
 				event.stopPropagation();
 				form.handleSubmit();
 			}}
+			className="grid gap-4"
 		>
 			{sent && <NoticeInfo>{SENT_NOTICE}</NoticeInfo>}
 

@@ -32,6 +32,7 @@ describe("SignInForm (issue #165)", () => {
 		expect(button?.[0]).toBeDefined();
 		// disabled:… utility classes are legal; the attribute is not
 		expect(button?.[0]).not.toMatch(/\sdisabled=/);
+		expect(html).toMatch(/<form[^>]*class="[^"]*grid gap-4[^"]*"/);
 	});
 
 	it("keeps the sign-in panel markup intact with required accessible inputs (Issue #118)", () => {
