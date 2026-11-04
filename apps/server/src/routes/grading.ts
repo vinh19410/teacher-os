@@ -23,6 +23,7 @@ import {
 import { essayToPlain, plainToRaw } from "@teacher-os/api/lib/essay-plain";
 import {
 	type GradableSkill,
+	isAutoGradableSkill,
 	isGradableSkill,
 } from "@teacher-os/api/lib/ielts-band";
 import { canPublishGrade, canReviewGrade } from "@teacher-os/auth/role";
@@ -37,7 +38,17 @@ import {
 	quizAttemptAnnotation,
 	student,
 } from "@teacher-os/db/schema/index";
-import { and, asc, desc, eq, inArray, ne, sql } from "drizzle-orm";
+import {
+	and,
+	asc,
+	desc,
+	eq,
+	inArray,
+	isNotNull,
+	ne,
+	or,
+	sql,
+} from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import type { ZodType } from "zod";
 import type { Db, KernelCtx } from "../app";
@@ -61,6 +72,7 @@ import {
 	toPlainAnnotation,
 } from "../lib/quiz-annotation";
 import { parseGradeScores, toQuizAttemptGrade } from "../lib/quiz-grade";
+import { parseQuizQuestions } from "./student";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type GradingContext = Context<Env>;
@@ -137,6 +149,7 @@ export async function loadGradingQueue(
 				studentName: student.name,
 				skill: assignmentPrompt.skill,
 				part: assignmentPrompt.part,
+				writingPart: assignmentPrompt.writingPart,
 			})
 			.from(quizAttempt)
 			.leftJoin(aiGradingDraft, eq(aiGradingDraft.attemptId, quizAttempt.id))
@@ -170,7 +183,10 @@ export async function loadGradingQueue(
 					eq(quizAttempt.orgId, orgId),
 					eq(quizAttempt.status, "submitted"),
 					eq(quizAttempt.mode, "assignment"),
-					inArray(assignmentPrompt.skill, ["writing", "speaking"]),
+					or(
+						inArray(assignmentPrompt.skill, ["writing", "speaking"]),
+						isNotNull(assignmentPrompt.writingPart),
+					),
 				),
 			)
 			.orderBy(
@@ -257,7 +273,10 @@ export async function loadGradingQueue(
 
 	const items: GradingQueueItem[] = [];
 	for (const row of assignmentRows) {
-		if (!isGradableSkill(row.skill)) continue;
+		const hybridWriting =
+			row.writingPart !== null && isAutoGradableSkill(row.skill);
+		const effectiveSkill = hybridWriting ? "writing" : row.skill;
+		if (!isGradableSkill(effectiveSkill)) continue;
 		items.push({
 			attemptId: row.id,
 			mode: "assignment",
@@ -266,8 +285,8 @@ export async function loadGradingQueue(
 			title: row.title,
 			due: row.due,
 			student: { id: row.studentId, name: row.studentName },
-			skill: row.skill,
-			part: row.part ?? "",
+			skill: effectiveSkill,
+			part: hybridWriting ? (row.writingPart ?? "") : (row.part ?? ""),
 			submittedAt: row.submittedAt ? row.submittedAt.toISOString() : "",
 			grade: toQuizAttemptGrade(row),
 			aiStatus: toAiStatus(row.aiStatus),
@@ -340,6 +359,7 @@ type GradableAttemptRow = {
 	cueTopic: string;
 	cuePoints: string;
 	note: string;
+	objective?: { correctCount: number; totalCount: number };
 };
 
 /**
@@ -464,6 +484,8 @@ export function gradingRoutes(deps: {
 				testId: quizAttempt.testId,
 				assignmentId: quizAttempt.assignmentId,
 				essay: quizAttempt.essay,
+				questionsSnapshot: quizAttempt.questionsSnapshot,
+				correctCount: quizAttempt.correctCount,
 				mediaKey: quizAttempt.mediaKey,
 				mediaName: quizAttempt.mediaName,
 				mediaType: quizAttempt.mediaType,
@@ -502,6 +524,8 @@ export function gradingRoutes(deps: {
 			cueTopic: string | null;
 			cuePoints: string | null;
 			note: string | null;
+			writingPart?: string | null;
+			writingPrompt?: string | null;
 		};
 		// Tự luyện: title/skill từ assignment_test, prompt fields từ prompt của
 		// part ĐẦU (position thấp nhất). Đề đã xoá (test_id set null) →
@@ -559,6 +583,8 @@ export function gradingRoutes(deps: {
 							cueTopic: assignmentPrompt.cueTopic,
 							cuePoints: assignmentPrompt.cuePoints,
 							note: assignmentPrompt.note,
+							writingPart: assignmentPrompt.writingPart,
+							writingPrompt: assignmentPrompt.writingPrompt,
 						})
 						.from(classAssignment)
 						.innerJoin(
@@ -586,6 +612,11 @@ export function gradingRoutes(deps: {
 						.limit(1)
 				)[0];
 
+		const hybridWriting = Boolean(
+			!practice &&
+				header?.writingPart &&
+				isAutoGradableSkill(header.skill ?? ""),
+		);
 		const row: GradableAttemptRow = {
 			id: base.id,
 			status: base.status,
@@ -610,14 +641,25 @@ export function gradingRoutes(deps: {
 			className: practice ? "Luyện tập" : (header?.className ?? ""),
 			studentId: base.studentId,
 			studentName: base.studentName,
-			skill: header?.skill ?? "",
-			part: header?.part ?? "",
+			skill: hybridWriting ? "writing" : (header?.skill ?? ""),
+			part: hybridWriting ? (header?.writingPart ?? "") : (header?.part ?? ""),
 			// Cột prompt có thể rỗng ở dữ liệu cũ — bọc `?? ""` cho từng field.
-			prompt: header?.prompt ?? "",
-			imageUrl: header?.imageUrl ?? "",
+			prompt: hybridWriting
+				? (header?.writingPrompt ?? "")
+				: (header?.prompt ?? ""),
+			imageUrl: hybridWriting ? "" : (header?.imageUrl ?? ""),
 			cueTopic: header?.cueTopic ?? "",
 			cuePoints: header?.cuePoints ?? "",
 			note: header?.note ?? "",
+			...(hybridWriting
+				? {
+						objective: {
+							correctCount: base.correctCount ?? 0,
+							totalCount: parseQuizQuestions(base.questionsSnapshot, base.id)
+								.length,
+						},
+					}
+				: {}),
 		};
 		if (!isGradableSkill(row.skill)) return { error: 400 };
 		return { row, skill: row.skill };
@@ -674,6 +716,7 @@ export function gradingRoutes(deps: {
 			// Bài tự luyện (phase 10): CHỈ thêm key khi practice — bundle cũ
 			// (strict) không vỡ với bài nộp lượt giao.
 			...(row.practice ? { practice: true as const } : {}),
+			...(row.objective ? { objective: row.objective } : {}),
 		};
 	}
 

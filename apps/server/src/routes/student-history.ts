@@ -27,6 +27,7 @@ import { and, count, desc, eq, gte, inArray, lt, sql } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import type { Db } from "../app";
 import { visibleAssignmentFilter } from "../lib/assignment-visibility";
+import { toQuizAttemptGrade } from "../lib/quiz-grade";
 import {
 	createStudentGuard,
 	parseQuizQuestions,
@@ -55,6 +56,7 @@ type AttemptSourceRow = {
 	gradeScores: Record<string, number> | null;
 	gradedAt: Date | null;
 	questionsSnapshot: string;
+	writingPart: string | null;
 };
 
 /** Nhóm vocab theo ngày — n thẻ đã ôn + tổng phút trong ngày. */
@@ -108,8 +110,28 @@ function attemptMinutes(row: AttemptSourceRow): number {
  * (practiceScoreLabel) và summary route: đã chấm → "Band x.x", tự chấm →
  * "đúng/tổng" từ snapshot, Writing/Speaking chưa chấm → chờ chấm. */
 function entryGradeOf(row: AttemptSourceRow): EntryGrade {
-	if (row.gradeScores && row.gradedAt) {
-		const band = formatBand(ieltsOverallBand(Object.values(row.gradeScores)));
+	const graded = toQuizAttemptGrade({
+		gradeScores: row.gradeScores,
+		gradeFeedback: "",
+		gradedAt: row.gradedAt,
+	});
+	if (row.writingPart !== null) {
+		const total = parseQuizQuestions(row.questionsSnapshot, row.id).length;
+		const objScore =
+			row.correctCount !== null && total > 0
+				? `${row.correctCount}/${total}`
+				: null;
+		if (graded) {
+			const band = formatBand(graded.band);
+			return {
+				score: objScore ? `${objScore} · Band ${band}` : `Band ${band}`,
+				status: "graded",
+			};
+		}
+		return { score: objScore, status: "awaiting" };
+	}
+	if (graded) {
+		const band = formatBand(graded.band);
 		return { score: `Band ${band}`, status: "graded" };
 	}
 	if (row.skill === "writing" || row.skill === "speaking") {
@@ -135,6 +157,7 @@ function attemptToEntry(row: AttemptSourceRow): HistoryEntry {
 		score: grade.score,
 		status: grade.status,
 		attemptId: row.id,
+		...(row.writingPart !== null ? { hasWriting: true } : {}),
 	};
 }
 
@@ -215,6 +238,7 @@ async function attemptRows(
 			...baseColumns,
 			skill: assignmentTest.skill,
 			title: assignmentTest.title,
+			writingPart: sql<string | null>`NULL`,
 		})
 		.from(quizAttempt)
 		.innerJoin(
@@ -241,6 +265,7 @@ async function attemptRows(
 			...baseColumns,
 			skill: assignmentPrompt.skill,
 			title: classAssignment.title,
+			writingPart: assignmentPrompt.writingPart,
 		})
 		.from(quizAttempt)
 		.innerJoin(
@@ -282,6 +307,7 @@ async function attemptRows(
 			gradeScores: row.gradeScores,
 			gradedAt: row.gradedAt,
 			questionsSnapshot: row.questionsSnapshot,
+			writingPart: row.writingPart,
 		}));
 }
 

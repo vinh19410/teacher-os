@@ -28,6 +28,7 @@ import {
 } from "@teacher-os/api/contracts";
 import { essayToPlain } from "@teacher-os/api/lib/essay-plain";
 import { gradeQuiz } from "@teacher-os/api/lib/grade-quiz";
+import { essayTaskOf, hasGradableTask } from "@teacher-os/api/lib/ielts-band";
 import { inferQuestionTypes } from "@teacher-os/api/lib/infer-question-types";
 import {
 	isAllowedQuizMediaType,
@@ -836,6 +837,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				assignmentId: classAssignment.id,
 				availableAt: classAssignment.availableAt,
 				skill: assignmentPrompt.skill,
+				writingPart: assignmentPrompt.writingPart,
+				writingPrompt: assignmentPrompt.writingPrompt,
 				testSkill: assignmentTest.skill,
 				mediaKey: quizAttempt.mediaKey,
 				mediaName: quizAttempt.mediaName,
@@ -870,7 +873,12 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		if (row.mode === "practice") {
 			// Đề gốc bị xoá (test_id set null) → skill rỗng: caller gate speaking
 			// theo skill nên attempt rơi về luồng tự chấm an toàn.
-			return { ...row, skill: row.testSkill ?? "" };
+			return {
+				...row,
+				skill: row.testSkill ?? "",
+				writingPart: null,
+				writingPrompt: "",
+			};
 		}
 		if (
 			!row.assignmentId ||
@@ -1265,6 +1273,15 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				type: effectiveTypes[index] ?? prompt.type,
 				pin: question.pin ?? null,
 			})),
+			...(prompt.writingPart !== null
+				? {
+						writing: {
+							part: prompt.writingPart,
+							type: prompt.writingType ?? "",
+							prompt: prompt.writingPrompt,
+						},
+					}
+				: {}),
 			attempt: attempt
 				? {
 						id: attempt.id,
@@ -1490,7 +1507,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		if (attempt.status === "submitted") {
 			return c.json({ error: "attempt already submitted" }, 409);
 		}
-		if (attempt.skill !== "writing") {
+		if (essayTaskOf(attempt) === null) {
 			return c.json({ error: "essay not allowed" }, 400);
 		}
 
@@ -1786,10 +1803,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		// CHỈ flip thắng mới kích hoạt — double-submit không dựng draft lần 2
 		// (pipeline còn tự chống bằng ON CONFLICT DO NOTHING). `header.skill`
 		// đã normalize (practice → skill của đề tự luyện).
-		if (
-			flipped.length > 0 &&
-			(header?.skill === "writing" || header?.skill === "speaking")
-		) {
+		if (flipped.length > 0 && header !== undefined && hasGradableTask(header)) {
 			void scheduleAiGrading(deps, attemptId);
 		}
 
@@ -1945,6 +1959,9 @@ export function studentRoutes(deps: StudentRouteDeps) {
 						type: assignmentPrompt.type,
 						skill: assignmentPrompt.skill,
 						part: assignmentPrompt.part,
+						writingPart: assignmentPrompt.writingPart,
+						writingType: assignmentPrompt.writingType,
+						writingPrompt: assignmentPrompt.writingPrompt,
 					})
 					.from(classAssignment)
 					.innerJoin(
@@ -1981,6 +1998,17 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			promptType: header[0]?.type ?? "",
 			skill: header[0]?.skill ?? "",
 			part: header[0]?.part ?? "",
+			writing:
+				attempt.mode !== "practice" &&
+				header[0] &&
+				"writingPart" in header[0] &&
+				header[0].writingPart
+					? {
+							part: header[0].writingPart,
+							type: header[0].writingType ?? "",
+							prompt: header[0].writingPrompt ?? "",
+						}
+					: null,
 		};
 	};
 
@@ -2056,8 +2084,10 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				? c.json({ error: "attempt not found" }, 404)
 				: c.json({ error: "attempt not yet submitted" }, 409);
 		}
-		const { attempt, questions, answers, grade, title, skill, part } = loaded;
-		const essayView = skill === "writing" ? essayToPlain(attempt.essay) : null;
+		const { attempt, questions, answers, grade, title, skill, part, writing } =
+			loaded;
+		const essayTask = essayTaskOf({ skill, part, writing });
+		const essayView = essayTask ? essayToPlain(attempt.essay) : null;
 		const summary: QuizAttemptSummary = {
 			id: attempt.id,
 			// Tự luyện không có lượt giao — chuỗi rỗng; client dùng cặp
@@ -2096,11 +2126,11 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const teacherGrade = toQuizAttemptGrade(attempt);
 		if (!teacherGrade) return c.json(summary);
 		summary.grade = teacherGrade;
-		summary.part = part;
-		// Highlight + ghi chú (#332): CHỈ thêm khi đã chấm + Writing + có
+		summary.part = essayTask ? essayTask.part : part;
+		// Highlight + ghi chú (#332): CHỈ thêm khi đã chấm + có phần Writing + có
 		// ít nhất 1 highlight — học viên không thấy highlight dở dang;
 		// bundle cũ (strict) chỉ lỗi parse ở đúng attempt này.
-		if (skill === "writing" && essayView) {
+		if (essayTask && essayView) {
 			const rawAnnotations = await loadEssayAnnotations(
 				deps.getDb(),
 				attempt.id,
@@ -2140,6 +2170,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			note,
 			promptType,
 			skill,
+			part,
+			writing,
 		} = loaded;
 		const effectiveTypes = inferQuestionTypes(questions, promptType);
 		// #358: snapshot cũ (start trước khi parser forward explanation) không
@@ -2152,6 +2184,10 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					questions,
 					await loadCurrentQuestionsForAttempt(attempt, orgId),
 				);
+		const detailEssayTask = essayTaskOf({ skill, part, writing });
+		const detailEssayView = detailEssayTask
+			? essayToPlain(attempt.essay)
+			: null;
 		const detail: QuizAttemptDetail = {
 			id: attempt.id,
 			// Tự luyện không có lượt giao — chuỗi rỗng; cặp practice/testId bên
@@ -2167,9 +2203,10 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			submittedAt: attempt.submittedAt ? attempt.submittedAt.toISOString() : "",
 			note,
 			// Bài Writing lộ ở review-detail (#304); đề khác luôn null.
-			essay: skill === "writing" ? essayToPlain(attempt.essay).text : null,
+			essay: detailEssayView ? detailEssayView.text : null,
 			skill,
 			media: skill === "speaking" ? toQuizAttemptMedia(attempt) : null,
+			...(writing ? { writing } : {}),
 			questions: reviewQuestions.map((question, index) => {
 				const given = answers[String(index)];
 				return {
@@ -2193,6 +2230,22 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		if (attempt.mode === "practice") {
 			detail.practice = true;
 			if (attempt.testId) detail.testId = attempt.testId;
+		}
+		const teacherGrade = toQuizAttemptGrade(attempt);
+		if (teacherGrade) {
+			detail.grade = teacherGrade;
+			detail.part = detailEssayTask ? detailEssayTask.part : part;
+			if (detailEssayTask && detailEssayView) {
+				const rawAnnotations = await loadEssayAnnotations(
+					deps.getDb(),
+					attempt.id,
+					orgId,
+				);
+				const annotations = rawAnnotations
+					.map((a) => toPlainAnnotation(detailEssayView, a))
+					.filter((a): a is EssayAnnotation => a !== null);
+				if (annotations.length > 0) detail.annotations = annotations;
+			}
 		}
 		return c.json(detail);
 	});

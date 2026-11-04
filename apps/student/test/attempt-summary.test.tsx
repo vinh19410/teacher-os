@@ -716,3 +716,64 @@ describe("AttemptGradeCard — scrollable + className (#336)", () => {
 		expect(html).toContain("min-w-0");
 	});
 });
+
+describe("AttemptSummaryBody — hybrid MCQ + Writing result (#574)", () => {
+	const hybridBase: QuizAttemptSummary = {
+		id: "att-hybrid",
+		assignmentId: "ca-hybrid",
+		title: "Grammar + Writing Homework",
+		status: "submitted",
+		skill: "grammar",
+		correctCount: 2,
+		wrongCount: 1,
+		skippedCount: 0,
+		totalCount: 3,
+		startedAt: "2026-11-04T08:00:00.000Z",
+		submittedAt: "2026-11-04T08:15:00.000Z",
+		items: [
+			{ verdict: "correct", key: "A", answer: "A" },
+			{ verdict: "correct", key: "B", answer: "B" },
+			{ verdict: "wrong", key: "C", answer: "D" },
+		],
+		essay: "Technology changes modern classrooms significantly.",
+	};
+
+	it("renders BOTH MCQ score card/compact list AND essay frame + awaiting-grade before teacher grades", () => {
+		const html = renderToStaticMarkup(
+			<AttemptSummaryBody summary={hybridBase} attemptId="att-hybrid" />,
+		);
+		expect(html).toContain('data-testid="awaiting-grade"');
+		expect(html).toContain("Bảng đáp án");
+		expect(html).toContain("Xem giải thích chi tiết");
+		expect(html).toContain('data-testid="essay-frame"');
+		expect(html).toContain(
+			"Technology changes modern classrooms significantly.",
+		);
+		expect(html).toContain("Giáo viên sẽ chấm bài viết của bạn.");
+	});
+
+	it("renders BOTH MCQ score card AND 2-column writing grade + highlights once teacher grades", () => {
+		const graded: QuizAttemptSummary = {
+			...hybridBase,
+			part: "task2",
+			grade: {
+				scores: { task: 6.5, coherence: 6.5, lexical: 6.5, grammar: 6.5 },
+				band: 6.5,
+				feedback: "Clear argument structure.",
+				gradedAt: "2026-11-04T09:00:00.000Z",
+			},
+			annotations: [
+				{ id: "ann-1", start: 0, end: 10, note: "Strong topic word" },
+			],
+		};
+		const html = renderToStaticMarkup(
+			<AttemptSummaryBody summary={graded} attemptId="att-hybrid" />,
+		);
+		expect(html).not.toContain('data-testid="awaiting-grade"');
+		expect(html).toContain("Bảng đáp án");
+		expect(html).toContain('data-testid="writing-result-split"');
+		expect(html).toContain("Task Response");
+		expect(html).toContain("Clear argument structure.");
+		expect(html).toContain("Strong topic word");
+	});
+});

@@ -536,7 +536,8 @@ export function TestBuilderShell({
 			.filter(
 				(prompt) =>
 					(prompt.skill ?? "writing") === header.skill &&
-					(prompt.part ?? prompt.task) === pickerPart,
+					(prompt.part ?? prompt.task) === pickerPart &&
+					prompt.writing == null,
 			)
 			.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 	}, [pickerPart, data.assignmentPrompts, header.skill]);
@@ -866,5 +867,6 @@ function composerToPromptPayload(
 		optionBank: value.optionBank,
 		note: value.note.trim(),
 		status,
+		writing: null,
 	};
 }

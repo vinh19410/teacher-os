@@ -71,6 +71,16 @@ function composerValueShape(value: unknown): value is ComposerValue {
 			v.optionBank.some((row) => typeof row !== "string"))
 	)
 		return false;
+	if (v.writing !== undefined && v.writing !== null) {
+		if (typeof v.writing !== "object") return false;
+		const w = v.writing as Record<string, unknown>;
+		if (
+			typeof w.part !== "string" ||
+			typeof w.type !== "string" ||
+			typeof w.prompt !== "string"
+		)
+			return false;
+	}
 	if (!Array.isArray(v.items)) return false;
 	return v.items.every((rawItem) => {
 		if (!rawItem || typeof rawItem !== "object") return false;
@@ -203,6 +213,7 @@ export function composerDraftHasContent(value: ComposerValue): boolean {
 		!isEmptyRichText(value.note)
 	)
 		return true;
+	if (value.writing && !isEmptyRichText(value.writing.prompt)) return true;
 	// `?? []`: pre-phase-02 drafts may legitimately lack the field at runtime.
 	if ((value.optionBank ?? []).some((row) => row.trim())) return true;
 	const blank = emptyItem(value.type);

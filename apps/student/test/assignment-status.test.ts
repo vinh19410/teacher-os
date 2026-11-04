@@ -371,3 +371,33 @@ describe("deriveAssignmentStatus with dueAt (#526)", () => {
 		expect(derived.dueText).toBe("Hạn: 17:00 02/11");
 	});
 });
+
+describe("deriveAssignmentStatus — hybrid assignment (#574)", () => {
+	it("marks submitted auto-skill assignment with hasWriting=true as awaiting teacher grading", () => {
+		const hybridSubmitted: StudentAssignment = {
+			id: "hyb-1",
+			title: "Grammar + Task 2",
+			source: "class_assignment",
+			classId: "c1",
+			className: "IELTS 6.5",
+			due: "2026-11-10",
+			submittedAt: "2026-11-04T08:00:00.000Z",
+			scores: null,
+			skill: "grammar",
+			hasWriting: true,
+			gradedAt: null,
+		};
+		const derived = deriveAssignmentStatus(hybridSubmitted, "2026-11-04");
+		expect(derived.status).toBe("submitted");
+		expect(derived.statusLabel).toBe("Đã nộp — Đang chờ giáo viên chấm");
+
+		const hybridGraded: StudentAssignment = {
+			...hybridSubmitted,
+			scores: { task: 6.5, coherence: 6.5, lexical: 6.5, grammar: 6.5 },
+			gradedAt: "2026-11-04T09:00:00.000Z",
+		};
+		const graded = deriveAssignmentStatus(hybridGraded, "2026-11-04");
+		expect(graded.status).toBe("graded");
+		expect(graded.statusLabel).toBe("Điểm: 6.5");
+	});
+});

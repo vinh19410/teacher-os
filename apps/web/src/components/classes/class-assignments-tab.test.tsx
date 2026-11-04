@@ -401,3 +401,74 @@ describe("ClassAssignmentsTab (#208)", () => {
 		expect(expanded).toBe(items);
 	});
 });
+
+describe("ClassAssignmentsTab — hybrid assignment & Grammar/Vocabulary filters (#574)", () => {
+	it("shows + Writing tag and enables Chấm bài link on submitted hybrid prompt targets, plus Grammar/Vocabulary chips in assign view", () => {
+		const hybridPrompt = {
+			id: "pr-hybrid-1",
+			skill: "grammar",
+			part: "tenses",
+			type: "mcq",
+			task: "task2",
+			genre: "",
+			title: "Grammar + Writing Homework",
+			band: "6.5",
+			source: "",
+			prompt: "",
+			note: "",
+			status: "ready" as const,
+			writing: {
+				part: "task2",
+				type: "discuss",
+				prompt: "<p>Discuss technology.</p>",
+			},
+			createdAt: "2026-11-04T00:00:00.000Z",
+		};
+		const caHybrid: ClassAssignment = {
+			id: "ca-hyb-1",
+			classId: testClass.id,
+			promptId: "pr-hybrid-1",
+			title: "Grammar + Writing Homework",
+			due: "2026-11-10",
+			note: "",
+			createdAt: "2026-11-04T01:00:00.000Z",
+			targets: [
+				{
+					studentId: "st-1",
+					submittedAt: "2026-11-04T02:00:00.000Z",
+					attemptId: "att-hyb-99",
+					gradedAt: null,
+					band: null,
+				},
+			],
+		};
+		currentDataFixture = {
+			classAssignments: [caHybrid],
+			assignmentPrompts: [...testPrompts, hybridPrompt],
+			students: testStudents,
+		};
+
+		const listHtml = renderToStaticMarkup(
+			<ClassAssignmentsTab
+				classGroup={testClass}
+				view="list"
+				onViewChange={vi.fn()}
+				assignmentsFocus
+			/>,
+		);
+		expect(listHtml).toContain("+ Writing");
+		expect(listHtml).toContain('href="/grading/att-hyb-99"');
+		expect(listHtml).toContain("Chấm bài");
+
+		const assignHtml = renderToStaticMarkup(
+			<ClassAssignmentsTab
+				classGroup={testClass}
+				view="assign"
+				onViewChange={vi.fn()}
+			/>,
+		);
+		expect(assignHtml).toContain("Grammar");
+		expect(assignHtml).toContain("Vocabulary");
+		expect(assignHtml).toContain("+ Writing");
+	});
+});

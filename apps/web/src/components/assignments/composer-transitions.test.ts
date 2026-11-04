@@ -578,3 +578,37 @@ describe("imagePinIssue — web mirror of the image gates (phase-04 FR2)", () =>
 		).toBeNull();
 	});
 });
+
+describe("hybrid writing section transitions (#574)", () => {
+	test("switching between two auto skills preserves writing; switching to writing/speaking clears it", () => {
+		const withWriting = composer({
+			skill: "grammar",
+			part: "tenses",
+			type: "mcq",
+			writing: {
+				part: "task2",
+				type: "discuss",
+				prompt: "<p>Discuss online learning.</p>",
+			},
+		});
+		expect(hasAuthoringContent(withWriting)).toBe(true);
+
+		const toVocab = applyComposerFieldChange(withWriting, {
+			skill: "vocabulary",
+			part: "topic",
+			type: "mcq",
+		});
+		expect(toVocab.writing).toEqual({
+			part: "task2",
+			type: "discuss",
+			prompt: "<p>Discuss online learning.</p>",
+		});
+
+		const toWriting = applyComposerFieldChange(withWriting, {
+			skill: "writing",
+			part: "task2",
+			type: "discuss",
+		});
+		expect(toWriting.writing).toBeNull();
+	});
+});

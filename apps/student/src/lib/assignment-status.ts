@@ -2,7 +2,7 @@ import type {
 	StudentAssignment,
 	StudentAssignmentScores,
 } from "@teacher-os/api/contracts";
-import { isGradableSkill } from "@teacher-os/api/lib/ielts-band";
+import { hasGradableTask } from "@teacher-os/api/lib/ielts-band";
 import {
 	formatVietnamTimeHHMM,
 	vietnamDateKeyOf,
@@ -143,7 +143,10 @@ export function deriveAssignmentStatus(
 	if (assignment.submittedAt) {
 		// TOS-30 #478: chỉ Writing/Speaking chờ giáo viên chấm tay — bài tự
 		// chấm (Reading/Listening) đã có điểm ngay khi nộp, giữ "Đã nộp".
-		const needsTeacherGrading = isGradableSkill(assignment.skill ?? "");
+		const needsTeacherGrading = hasGradableTask({
+			skill: assignment.skill ?? "",
+			hasWriting: assignment.hasWriting,
+		});
 		return {
 			status: "submitted",
 			statusLabel: isLate

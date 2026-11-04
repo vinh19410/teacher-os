@@ -1,4 +1,6 @@
+import type { AssignmentWritingSection } from "@teacher-os/api/contracts";
 import { htmlToPlainText } from "@teacher-os/api/rich-text";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
 import { Field, Input, Textarea } from "@/components/ui/field";
@@ -34,6 +36,8 @@ export interface ComposerValue {
 	optionBank: string[];
 	note: string;
 	items: QuestionItem[];
+	/** #574: phần Writing đi kèm cho đề tự chấm. */
+	writing?: AssignmentWritingSection | null;
 }
 
 export function PromptComposer({
@@ -63,6 +67,14 @@ export function PromptComposer({
 	const type = typeOf(value.skill, value.part, value.type);
 	const isAuto = isAutoSkill(value.skill);
 	const isCue = value.skill === "speaking" && value.part === "part2";
+	const writingSpec = skillOf("writing");
+	const activeWriting = value.writing ?? null;
+	const activeWritingPart = activeWriting
+		? partOf("writing", activeWriting.part)
+		: null;
+	const activeWritingType = activeWriting
+		? typeOf("writing", activeWriting.part, activeWriting.type)
+		: null;
 	return (
 		<Card variant="white" className="flex flex-col gap-4">
 			<div>
@@ -262,6 +274,117 @@ export function PromptComposer({
 					onBankChange={(optionBank) => onFieldChange({ optionBank })}
 				/>
 			)}
+			{isAuto &&
+				!lockPart &&
+				(activeWriting && activeWritingPart && activeWritingType ? (
+					<div
+						className="flex flex-col gap-3 rounded-lg border border-border bg-muted/20 p-4"
+						data-testid="composer-writing-section"
+					>
+						<div className="flex items-center justify-between gap-2">
+							<div>
+								<p className="font-semibold text-foreground text-sm">
+									Phần Writing đi kèm
+								</p>
+								<p className="text-muted-foreground text-xs">
+									Học viên viết bài tự luận sau khi làm câu hỏi trắc nghiệm.
+								</p>
+							</div>
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								onClick={() => onFieldChange({ writing: null })}
+							>
+								Bỏ phần Writing
+							</Button>
+						</div>
+						<div className="flex flex-col gap-1.5">
+							<span className="text-muted-foreground text-xs">
+								{writingSpec.partLabel}
+							</span>
+							<ChipFilter
+								options={writingSpec.parts.map((entry) => entry.label)}
+								value={activeWritingPart.label}
+								onChange={(label) => {
+									const next =
+										writingSpec.parts.find((entry) => entry.label === label) ??
+										writingSpec.parts[0];
+									if (next.id === activeWriting.part) return;
+									onFieldChange({
+										writing: {
+											part: next.id,
+											type: next.types[0].id,
+											prompt: activeWriting.prompt,
+										},
+									});
+								}}
+							/>
+						</div>
+						<div className="flex flex-col gap-1.5">
+							<span className="text-muted-foreground text-xs">
+								{writingSpec.typeLabel}
+							</span>
+							<ChipFilter
+								options={activeWritingPart.types.map((entry) => entry.label)}
+								value={activeWritingType.label}
+								onChange={(label) =>
+									onFieldChange({
+										writing: {
+											...activeWriting,
+											type:
+												activeWritingPart.types.find(
+													(entry) => entry.label === label,
+												)?.id ?? activeWritingPart.types[0].id,
+										},
+									})
+								}
+							/>
+						</div>
+						<Field
+							label="Đề bài phần Writing"
+							help={activeWritingPart.help}
+							error={showErrors ? errors.writingPrompt : undefined}
+						>
+							<RichTextEditor
+								value={activeWriting.prompt}
+								onChange={(prompt) =>
+									onFieldChange({
+										writing: { ...activeWriting, prompt },
+									})
+								}
+								placeholder="Dán hoặc soạn đề Writing…"
+								contentClassName="[&_.ProseMirror]:min-h-36"
+							/>
+						</Field>
+						<span className="-mt-2 text-right text-muted-foreground text-xs">
+							{wordCount(htmlToPlainText(activeWriting.prompt))} từ
+						</span>
+					</div>
+				) : (
+					<div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border border-dashed bg-muted/30 px-4 py-3">
+						<div>
+							<p className="font-medium text-foreground text-sm">
+								Gộp thêm phần Writing (tuỳ chọn)
+							</p>
+							<p className="text-muted-foreground text-xs">
+								Giao trắc nghiệm và tự luận Writing trong cùng một bài tập.
+							</p>
+						</div>
+						<Button
+							type="button"
+							variant="secondary"
+							size="sm"
+							onClick={() =>
+								onFieldChange({
+									writing: { part: "task2", type: "discuss", prompt: "" },
+								})
+							}
+						>
+							Thêm phần Writing
+						</Button>
+					</div>
+				))}
 			{value.skill === "listening" && (
 				<Field
 					label="Transcript (chỉ giáo viên)"

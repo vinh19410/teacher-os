@@ -681,6 +681,9 @@ export async function loadSnapshot(
 				optionBank,
 				note,
 				status,
+				writingPart,
+				writingType,
+				writingPrompt,
 				createdAt,
 			}) => ({
 				id,
@@ -708,6 +711,13 @@ export async function loadSnapshot(
 				optionBank: parseOptionBank(optionBank, id),
 				note,
 				status,
+				writing: writingPart
+					? {
+							part: writingPart,
+							type: writingType ?? "",
+							prompt: writingPrompt ?? "",
+						}
+					: null,
 				createdAt: createdAt.toISOString(),
 			}),
 		),

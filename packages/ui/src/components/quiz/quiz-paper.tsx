@@ -6,6 +6,7 @@ import {
 	type QuizVerdict,
 	quizTypeDisplay,
 	type StudentQuizDetail,
+	WRITING_MIN_WORDS,
 } from "@teacher-os/api/contracts";
 import { splitQuizIntro } from "@teacher-os/api/lib/quiz-intro-sections";
 import type {
@@ -59,6 +60,9 @@ export function QuizPaper({
 	mode = "take",
 	review,
 	hidePassage = false,
+	writingSection = null,
+	essay,
+	onEssayChange,
 }: {
 	detail: QuizPaperDetail;
 	parts: QuizPart[];
@@ -73,6 +77,10 @@ export function QuizPaper({
 	review?: Record<number, QuizReviewInfo>;
 	/** Split-pane reading: passage đã render ở pane trái — paper không lặp. */
 	hidePassage?: boolean;
+	/** #574: phần Writing đính kèm của đề tự chấm (không đụng key 0 của answers). */
+	writingSection?: { part: string; type: string; prompt: string } | null;
+	essay?: string;
+	onEssayChange?: (value: string) => void;
 }) {
 	const reviewMode = mode === "review";
 	const skill = detail.skill;
@@ -352,12 +360,47 @@ export function QuizPaper({
 				})}
 			</div>
 
-			{questions.length === 0 && !isWritingEssay && !isSpeaking && (
-				<p className="text-muted-foreground text-sm" role="note">
-					Đề này không có câu hỏi tự chấm — liên hệ giáo viên để biết thêm hướng
-					dẫn nộp bài.
-				</p>
+			{isAuto && writingSection != null && (
+				<section
+					aria-labelledby="hybrid-writing-heading"
+					className="mt-8 flex flex-col gap-3 border-border border-t pt-6"
+					data-testid="hybrid-writing-section"
+				>
+					<header className="flex flex-col gap-0.5">
+						<h2 id="hybrid-writing-heading" className="font-semibold">
+							Phần 2 · Writing (
+							{writingSection.part === "task1" ? "Task 1" : "Task 2"})
+						</h2>
+						{WRITING_MIN_WORDS[writingSection.part] !== undefined && (
+							<p className="font-mono text-muted-foreground text-xs">
+								Tối thiểu {WRITING_MIN_WORDS[writingSection.part]} từ
+							</p>
+						)}
+					</header>
+					{!isEmptyRichText(writingSection.prompt) && (
+						<RichTextBody
+							text={writingSection.prompt}
+							className="text-sm leading-[1.55]"
+						/>
+					)}
+					<QuizEssayInput
+						value={essay ?? ""}
+						onChange={(value) => onEssayChange?.(value)}
+						readOnly={reviewMode}
+						maxLength={QUIZ_ESSAY_MAX}
+					/>
+				</section>
 			)}
+
+			{questions.length === 0 &&
+				!isWritingEssay &&
+				!isSpeaking &&
+				writingSection == null && (
+					<p className="text-muted-foreground text-sm" role="note">
+						Đề này không có câu hỏi tự chấm — liên hệ giáo viên để biết thêm
+						hướng dẫn nộp bài.
+					</p>
+				)}
 		</article>
 	);
 }

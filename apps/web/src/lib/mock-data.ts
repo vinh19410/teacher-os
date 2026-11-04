@@ -1,6 +1,7 @@
 import type {
 	AssignmentQuestion,
 	AssignmentSkill,
+	AssignmentWritingSection,
 	AttendanceStatus,
 	ClassType,
 	KernelAssignmentTestRow,
@@ -98,6 +99,8 @@ export interface AssignmentPrompt {
 	optionBank?: string[];
 	note: string;
 	status: "draft" | "ready";
+	/** #574: phần Writing đính kèm của đề tự chấm (null = đề đơn kỹ năng). */
+	writing?: AssignmentWritingSection | null;
 	/** ISO datetime (#208) — bank sort mới nhất trước + meta `Thêm {date}`. */
 	createdAt: string;
 }

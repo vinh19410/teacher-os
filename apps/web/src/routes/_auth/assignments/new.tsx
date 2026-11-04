@@ -12,6 +12,7 @@ import {
 	applyComposerFieldChange,
 	clozeStemIssue,
 	hasAuthoringContent,
+	hasPrimaryAuthoringContent,
 	imagePinIssue,
 	optionBankIssue,
 	structuralChangeKind,
@@ -64,6 +65,7 @@ function freshComposer(): ComposerValue {
 		type: "discuss",
 		band: "7.0",
 		...emptyComposer("writing", "discuss"),
+		writing: null,
 	};
 }
 function countAnswers(value: ComposerValue) {
@@ -72,6 +74,12 @@ function countAnswers(value: ComposerValue) {
 function hasCoreContent(value: ComposerValue) {
 	if (!value.title.trim()) return false;
 	if (value.skill === "writing") return !isEmptyRichText(value.prompt);
+	if (
+		isAutoSkill(value.skill) &&
+		value.writing != null &&
+		isEmptyRichText(value.writing.prompt)
+	)
+		return false;
 	if (value.skill === "reading")
 		return (
 			!isEmptyRichText(value.passage) &&
@@ -140,6 +148,11 @@ export function actionCopyFor(value: ComposerValue, status: "draft" | "ready") {
 			title: "Thiếu đáp án chấm tự động",
 			sub: "Khóa đáp án đúng cho mọi câu trước khi lưu sẵn sàng giao.",
 		};
+	if (auto && value.writing != null && isEmptyRichText(value.writing.prompt))
+		return {
+			title: "Thiếu đề phần Writing",
+			sub: "Nhập nội dung đề cho phần Writing đi kèm hoặc bỏ phần Writing.",
+		};
 	if (!hasCoreContent(value))
 		return {
 			title: "Thiếu nội dung đề",
@@ -189,6 +202,7 @@ export function previewDraftFrom(
 		items: value.items,
 		note: value.note,
 		status,
+		writing: value.writing ?? null,
 	};
 }
 
@@ -233,6 +247,12 @@ export function NewAssignmentRoute() {
 					imageUrl: restored.imageUrl ?? "",
 					optionBank: restored.optionBank ?? [],
 					items: restored.items ?? [],
+					writing: restored.writing
+						? {
+								...restored.writing,
+								prompt: restoreRich(restored.writing.prompt),
+							}
+						: null,
 				}
 			: bannerDraft
 				? {
@@ -243,6 +263,12 @@ export function NewAssignmentRoute() {
 						intro: restoreRich(bannerDraft.value.intro),
 						transcript: restoreRich(bannerDraft.value.transcript),
 						note: restoreRich(bannerDraft.value.note),
+						writing: bannerDraft.value.writing
+							? {
+									...bannerDraft.value.writing,
+									prompt: restoreRich(bannerDraft.value.writing.prompt),
+								}
+							: null,
 					}
 				: freshComposer(),
 	);
@@ -272,6 +298,12 @@ export function NewAssignmentRoute() {
 	if (!value.title.trim()) fieldErrors.title = "Nhập tiêu đề bài tập.";
 	if (value.skill === "writing" && isEmptyRichText(value.prompt))
 		fieldErrors.prompt = "Dán hoặc soạn đề trước khi lưu.";
+	if (
+		isAutoSkill(value.skill) &&
+		value.writing != null &&
+		isEmptyRichText(value.writing.prompt)
+	)
+		fieldErrors.writingPrompt = "Dán hoặc soạn đề phần Writing trước khi lưu.";
 	if (value.skill === "reading" && isEmptyRichText(value.passage))
 		fieldErrors.passage = "Nhập đoạn đọc.";
 	if (
@@ -335,8 +367,15 @@ export function NewAssignmentRoute() {
 		// StrictMode double-fires updaters, so a confirm inside one would fire
 		// twice (red-team #8). The updater stays pure.
 		const change = structuralChangeKind(value, patch);
-		if (change && hasAuthoringContent(value)) {
-			// A skill change wipes the whole composer (emptyComposer — including
+		const losesContent =
+			change === "skill"
+				? isAutoSkill(value.skill) &&
+					patch.skill !== undefined &&
+					isAutoSkill(patch.skill)
+					? hasPrimaryAuthoringContent(value)
+					: hasAuthoringContent(value)
+				: change !== null && hasPrimaryAuthoringContent(value);
+		if (change && losesContent) {
 			// title); a part/type change only wipes the type-specific fields.
 			const message =
 				change === "skill"
@@ -399,6 +438,15 @@ export function NewAssignmentRoute() {
 				optionBank: value.optionBank,
 				note: value.note.trim(),
 				status,
+				...(value.writing
+					? {
+							writing: {
+								part: value.writing.part,
+								type: value.writing.type,
+								prompt: value.writing.prompt.trim(),
+							},
+						}
+					: {}),
 			},
 		});
 		// The write may be saved on refreshed/committed and may-or-may-not on

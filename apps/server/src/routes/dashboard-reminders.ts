@@ -159,7 +159,10 @@ export async function computeReminders(
 	const overdueCutoff = new Date(now.getTime() - OVERDUE_GRADING_MS);
 	const [assignmentRows, practiceRows] = await Promise.all([
 		db
-			.select({ skill: assignmentPrompt.skill })
+			.select({
+				skill: assignmentPrompt.skill,
+				writingPart: assignmentPrompt.writingPart,
+			})
 			.from(quizAttempt)
 			.innerJoin(
 				classAssignment,
@@ -170,14 +173,20 @@ export async function computeReminders(
 			)
 			.innerJoin(
 				assignmentPrompt,
-				eq(assignmentPrompt.id, classAssignment.promptId),
+				and(
+					eq(assignmentPrompt.id, classAssignment.promptId),
+					eq(assignmentPrompt.orgId, orgId),
+				),
 			)
 			.where(
 				and(
 					eq(quizAttempt.orgId, orgId),
 					eq(quizAttempt.status, "submitted"),
 					eq(quizAttempt.mode, "assignment"),
-					inArray(assignmentPrompt.skill, ["writing", "speaking"]),
+					or(
+						inArray(assignmentPrompt.skill, ["writing", "speaking"]),
+						isNotNull(assignmentPrompt.writingPart),
+					),
 					isNull(quizAttempt.gradeScores),
 					lt(quizAttempt.submittedAt, overdueCutoff),
 					visibleAssignmentFilter(now),
@@ -211,7 +220,12 @@ export async function computeReminders(
 						),
 					),
 	]);
-	const gradingSkills = [...assignmentRows, ...practiceRows];
+	const gradingSkills = [
+		...assignmentRows.map((row) => ({
+			skill: row.writingPart !== null ? "writing" : row.skill,
+		})),
+		...practiceRows,
+	];
 
 	let tuition: DashboardReminders["tuition"];
 	if (scope.kind === "org" && scope.finance !== false) {
