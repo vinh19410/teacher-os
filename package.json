@@ -22,7 +22,7 @@
 		"destroy": "turbo run destroy -F @teacher-os/infra --",
 		"check": "biome check .",
 		"check:fix": "biome check --write .",
-		"test": "turbo run test && pnpm test:ci-workflow && pnpm test:topology-drift && pnpm test:devserver-watchdog && pnpm test:design-compare",
+		"test": "turbo run test --concurrency=1 && pnpm test:ci-workflow && pnpm test:topology-drift && pnpm test:devserver-watchdog && pnpm test:design-compare",
 		"test:ci-workflow": "node --test scripts/ci-workflow.test.mjs",
 		"test:topology-drift": "node --test scripts/topology-drift.test.mjs",
 		"test:devserver-watchdog": "node --test scripts/devserver-watchdog.test.mjs",

@@ -20,7 +20,7 @@
 # - CORS_ORIGIN must NOT be set here — with APP_DOMAIN present it defaults to
 #   the derived https://app.staging.teacheros.io.vn and an explicit disagreeing
 #   value fails the whole run by design.
-# - ci-workflow.test.mjs forbids secrets.* in ci.yml; staging
+# - ci-workflow.test.mjs forbids secrets in ci.yml/quality.yml; staging
 #   credentials live in the GitHub environment "staging" (same secret names as
 #   production) and stay out of the PR pipeline.
 # - The deploy smoke covers auth (issue #125): /readyz alone shipped green
@@ -58,24 +58,9 @@ env:
 
 jobs:
   quality:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    env:
-      VITE_SERVER_URL: http://localhost:8000
-    steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-        with:
-          version: 10.33.1
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm exec biome check .
-      - run: pnpm test
-      - run: pnpm check-types
-      - run: pnpm build
+    uses: ./.github/workflows/quality.yml
+    with:
+      turbo-cache: false
 
   deploy:
     needs: [quality]
@@ -84,14 +69,7 @@ jobs:
     environment: staging
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-        with:
-          version: 10.33.1
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup-workspace
       - name: Deploy to Cloudflare (stage staging)
         working-directory: packages/infra
         env:

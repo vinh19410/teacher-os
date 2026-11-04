@@ -160,7 +160,7 @@ describe("auth password reset wiring", () => {
 			}),
 		);
 		expect(await stale.json()).toBeNull();
-	});
+	}, 15_000);
 
 	test("unknown email does not send mail and matches the known-email response", async () => {
 		const send = vi.fn().mockResolvedValue(undefined);

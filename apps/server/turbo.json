@@ -1,0 +1,15 @@
+{
+	"$schema": "https://turbo.build/schema.json",
+	"extends": ["//"],
+	"tasks": {
+		"test": {
+			"inputs": [
+				"$TURBO_DEFAULT$",
+				".env*",
+				"../../apps/profile/public/**",
+				"../../apps/web/public/placement-seed/**",
+				"../../apps/e2e/fixtures/exam-import/**"
+			]
+		}
+	}
+}

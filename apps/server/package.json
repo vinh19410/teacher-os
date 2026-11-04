@@ -13,6 +13,7 @@
 		"build": "tsdown",
 		"check-types": "tsc -b",
 		"test": "vitest run",
+		"test:ledger": "vitest run src/lib/payments/ledger-invariants.test.ts",
 		"compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server"
 	},
 	"dependencies": {
