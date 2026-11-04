@@ -257,4 +257,45 @@ describe("ClassStudyPackSection", () => {
 		expect(await screen.findByText("Đã huỷ")).toBeTruthy();
 		expect(screen.queryByRole("button", { name: "Huỷ bộ đề" })).toBeNull();
 	});
+
+	it("displays cancelled error message and refreshes packs when assign fails with 409 'study pack was cancelled' (#554)", async () => {
+		mockFetchClassStudyPacks.mockResolvedValue({
+			packs: [],
+			holidays: [],
+		});
+		mockFetchStudyPacks.mockResolvedValue({
+			packs: [sampleReadyPack],
+		});
+		mockAssignStudyPackToClass.mockRejectedValueOnce(
+			Object.assign(new Error("study pack was cancelled"), {
+				status: 409,
+				studyPackErrorCode: "study pack was cancelled",
+			}),
+		);
+
+		render(<ClassStudyPackSection classId="cl-1" />);
+
+		await screen.findByText("Chưa gán bộ đề tự học nào cho lớp này");
+		fireEvent.click(screen.getByRole("button", { name: "Gán bộ đề" }));
+
+		const dialog = screen.getByRole("dialog");
+		fireEvent.change(within(dialog).getByLabelText(/Ngày bắt đầu/), {
+			target: { value: "2026-11-01" },
+		});
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Xác nhận gán bộ đề" }),
+		);
+
+		expect(
+			await within(dialog).findByText(
+				"Bộ đề này vừa bị huỷ. Vui lòng kiểm tra lại danh sách.",
+			),
+		).toBeTruthy();
+		expect(
+			within(dialog).queryByText("Bộ đề này đang chạy trên lớp với lịch khác."),
+		).toBeNull();
+		await waitFor(() =>
+			expect(mockFetchClassStudyPacks).toHaveBeenCalledTimes(2),
+		);
+	});
 });

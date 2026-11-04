@@ -10,6 +10,7 @@ import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, test, vi } from "vitest";
 import { buildApp, type Db, type ServerApp } from "../app";
+import { assignStudyPackToClass } from "../lib/study-pack-assign";
 import type { SessionUser } from "../session";
 
 /**
@@ -1250,6 +1251,7 @@ describe("admin library exercises & study packs (#533)", () => {
 
 	beforeAll(async () => {
 		const client = createClient({ url: "file::memory:" });
+		await client.execute("PRAGMA foreign_keys = ON");
 		const libsql = drizzle(client, { schema });
 		await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
 		db = libsql as unknown as Db;
@@ -1475,5 +1477,180 @@ describe("admin library exercises & study packs (#533)", () => {
 		);
 		const delExRes = await delEx({ user: "admin" });
 		expect(delExRes.status).toBe(200);
+	});
+
+	test("PUT /api/admin/library/packs/:id preserves item IDs, prevents duplicate assignments on reuse, and enforces 404 when revoked to draft (#554)", async () => {
+		const postEx = makeRequest(app, "POST", "/api/admin/library/exercises");
+		const ex1Res = await postEx({
+			user: "admin",
+			body: {
+				skill: "grammar",
+				part: "g1",
+				type: "mcq",
+				title: "Admin Reuse Ex 1",
+				questions: [
+					{
+						stem: "Q1 ____",
+						opts: ["A", "B", "C", "D"],
+						answer: "A",
+						alts: "",
+					},
+				],
+				status: "ready",
+			},
+		});
+		const ex2Res = await postEx({
+			user: "admin",
+			body: {
+				skill: "grammar",
+				part: "g1",
+				type: "mcq",
+				title: "Admin Reuse Ex 2",
+				questions: [
+					{
+						stem: "Q2 ____",
+						opts: ["A", "B", "C", "D"],
+						answer: "B",
+						alts: "",
+					},
+				],
+				status: "ready",
+			},
+		});
+		const ex1Data: { exercise: { id: string } } = await ex1Res.json();
+		const ex2Data: { exercise: { id: string } } = await ex2Res.json();
+		const { exercise: ex1 } = ex1Data;
+		const { exercise: ex2 } = ex2Data;
+
+		const postPack = makeRequest(app, "POST", "/api/admin/library/packs");
+		const createdRes = await postPack({
+			user: "admin",
+			body: {
+				title: "Sys Pack Reuse",
+				description: "v1",
+				status: "ready",
+				items: [
+					{
+						dayIndex: 1,
+						sourceKind: "library_exercise",
+						sourceId: ex1.id,
+						note: "v1",
+					},
+				],
+			},
+		});
+		expect(createdRes.status).toBe(201);
+		const createdData: {
+			pack: { id: string; items: Array<{ id: string }> };
+		} = await createdRes.json();
+		const { pack: createdPack } = createdData;
+		const item1IdBefore = createdPack.items[0]?.id;
+
+		await db.insert(schema.organization).values({
+			id: "org-admin-pack-test",
+			name: "Org Admin Pack Test",
+		});
+		await db.insert(schema.classTable).values({
+			id: "cls-admin-pack-test",
+			orgId: "org-admin-pack-test",
+			name: "Class Admin Pack",
+			level: "6.5",
+			type: "ielts",
+			skills: '["reading"]',
+			mode: "Online",
+			schedule: '{"days":[1],"start":"18:00","end":"20:00"}',
+			sessionsTotal: 8,
+			sessionsDone: 0,
+			status: "active",
+			startDate: "2026-12-01",
+			notes: "",
+		});
+
+		const assign1 = await assignStudyPackToClass(db, {
+			orgId: "org-admin-pack-test",
+			classId: "cls-admin-pack-test",
+			packId: createdPack.id,
+			startDate: "2026-12-01",
+			releaseTime: "06:00",
+			dueTime: "17:00",
+		});
+		expect(assign1.ok).toBe(true);
+
+		const putPack = makeRequest(
+			app,
+			"PUT",
+			`/api/admin/library/packs/${createdPack.id}`,
+		);
+		const updatedRes = await putPack({
+			user: "admin",
+			body: {
+				title: "Sys Pack Reuse v2",
+				description: "v2",
+				status: "ready",
+				items: [
+					{
+						dayIndex: 1,
+						sourceKind: "library_exercise",
+						sourceId: ex1.id,
+						note: "v2 kept",
+					},
+					{
+						dayIndex: 2,
+						sourceKind: "library_exercise",
+						sourceId: ex2.id,
+						note: "v2 added",
+					},
+				],
+			},
+		});
+		expect(updatedRes.status).toBe(200);
+		const updatedData: {
+			pack: { items: Array<{ id: string }> };
+		} = await updatedRes.json();
+		const { pack: updatedPack } = updatedData;
+		expect(updatedPack.items[0]?.id).toBe(item1IdBefore);
+		expect(updatedPack.items[1]?.id).not.toBe(item1IdBefore);
+
+		const assign2 = await assignStudyPackToClass(db, {
+			orgId: "org-admin-pack-test",
+			classId: "cls-admin-pack-test",
+			packId: createdPack.id,
+			startDate: "2026-12-01",
+			releaseTime: "06:00",
+			dueTime: "17:00",
+		});
+		expect(assign2).toMatchObject({ ok: true, reused: true });
+
+		const classAssignments = await db
+			.select({ id: schema.classAssignment.id })
+			.from(schema.classAssignment)
+			.where(eq(schema.classAssignment.classId, "cls-admin-pack-test"));
+		expect(classAssignments).toHaveLength(1);
+
+		// Revoke system pack to draft -> must immediately return 404 even with existing active class_study_pack
+		const revokeRes = await putPack({
+			user: "admin",
+			body: {
+				title: "Sys Pack Revoked",
+				description: "draft",
+				status: "draft",
+				items: [],
+			},
+		});
+		expect(revokeRes.status).toBe(200);
+
+		const assignAfterRevoke = await assignStudyPackToClass(db, {
+			orgId: "org-admin-pack-test",
+			classId: "cls-admin-pack-test",
+			packId: createdPack.id,
+			startDate: "2026-12-01",
+			releaseTime: "06:00",
+			dueTime: "17:00",
+		});
+		expect(assignAfterRevoke).toEqual({
+			ok: false,
+			status: 404,
+			error: "study pack not found",
+		});
 	});
 });

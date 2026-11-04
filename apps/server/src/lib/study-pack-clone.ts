@@ -890,17 +890,29 @@ export async function loadStudyPackDetailFromRow(
 	};
 }
 
+export function buildPackItemTupleKey(
+	dayIndex: number,
+	sourceKind: string,
+	sourceId: string,
+): string {
+	return `${dayIndex}:${sourceKind}:${sourceId}`;
+}
+
 export function buildStudyPackItemInsertStatements(
 	db: Db,
 	packId: string,
 	items: readonly StudyPackItemInput[],
+	existingIdByTuple?: ReadonlyMap<string, string>,
 ): BatchItem<"sqlite">[] {
 	const nextPositionByDay = new Map<number, number>();
 	const values: Array<typeof studyPackItem.$inferInsert> = items.map((item) => {
 		const position = nextPositionByDay.get(item.dayIndex) ?? 0;
 		nextPositionByDay.set(item.dayIndex, position + 1);
+		const preservedId = existingIdByTuple?.get(
+			buildPackItemTupleKey(item.dayIndex, item.sourceKind, item.sourceId),
+		);
 		return {
-			id: crypto.randomUUID(),
+			id: preservedId ?? crypto.randomUUID(),
 			packId,
 			dayIndex: item.dayIndex,
 			position,
