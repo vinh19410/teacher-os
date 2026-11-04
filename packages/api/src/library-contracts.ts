@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
 	ASSIGNMENT_ANSWER_CHOICES,
+	ASSIGNMENT_BANDS,
 	ASSIGNMENT_OPTION_BANK_MAX,
 	ASSIGNMENT_PART_TYPES,
 	ASSIGNMENT_TEST_PRESETS,
@@ -144,7 +145,7 @@ export const libraryPartUpsertSchema = z
 		part: z.string().trim().min(1).max(20),
 		type: z.string().trim().min(1).max(20),
 		title: z.string().trim().min(1).max(200),
-		band: z.enum(["6.0", "6.5", "7.0", "7.5"]),
+		band: z.enum(ASSIGNMENT_BANDS),
 		source: z.string().trim().max(200),
 		intro: richTextField(2000),
 		passage: richTextField(20000),

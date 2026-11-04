@@ -11,8 +11,12 @@ const submitFixture = {
 	reset: vi.fn(),
 };
 
+const searchFixture = { current: {} as { classId?: string } };
 vi.mock("@tanstack/react-router", () => ({
-	createFileRoute: () => (options: unknown) => options,
+	createFileRoute: () => (options: Record<string, unknown>) => ({
+		...options,
+		useSearch: () => searchFixture.current,
+	}),
 	useNavigate: () => vi.fn(),
 	Link: (props: { to: string; children?: React.ReactNode }) => (
 		<a href={props.to}>{props.children}</a>
@@ -26,13 +30,20 @@ vi.mock("@/lib/assignment-preview-draft", () => ({
 	takePreviewDraft: () => draftFixture.value,
 	savePreviewDraft: vi.fn(),
 }));
+const dataFixture = {
+	data: {
+		assignmentPrompts: [] as unknown[],
+		classAssignments: [] as unknown[],
+		classes: [] as {
+			id: string;
+			name: string;
+			level: string;
+			type: string;
+		}[],
+	},
+};
 vi.mock("@/lib/data-store", () => ({
-	useData: () => ({
-		data: {
-			assignmentPrompts: [],
-			classAssignments: [],
-		},
-	}),
+	useData: () => dataFixture,
 }));
 
 import type { ComposerValue } from "@/components/assignments/prompt-composer";
@@ -42,6 +53,7 @@ import {
 	missingRequirementsFor,
 	NewAssignmentRoute,
 	previewDraftFrom,
+	Route,
 } from "./new";
 
 describe("NewAssignmentRoute (#218 v5)", () => {
@@ -848,5 +860,133 @@ describe("hybrid writing section validation & preview handoff (#574)", () => {
 			type: "discuss",
 			prompt: "<p>Write 250 words about cities.</p>",
 		});
+	});
+});
+
+describe("NewAssignmentRoute — class-based default band (#585)", () => {
+	it("validates search param classId correctly via Route.validateSearch", () => {
+		const routeOptions: unknown = Route;
+		expect(
+			routeOptions &&
+				typeof routeOptions === "object" &&
+				"validateSearch" in routeOptions &&
+				typeof routeOptions.validateSearch === "function",
+		).toBe(true);
+		if (
+			routeOptions &&
+			typeof routeOptions === "object" &&
+			"validateSearch" in routeOptions &&
+			typeof routeOptions.validateSearch === "function"
+		) {
+			const validate = routeOptions.validateSearch;
+			expect(validate({ classId: "cls-55" })).toEqual({ classId: "cls-55" });
+			expect(validate({ classId: 12345 })).toEqual({ classId: undefined });
+			expect(validate({})).toEqual({ classId: undefined });
+			expect(validate({ other: "param" })).toEqual({ classId: undefined });
+		}
+	});
+
+	it("defaults band to 5.5 when classId references an IELTS Band 5.5 class", () => {
+		dataFixture.data.classes = [
+			{
+				id: "cls-55",
+				name: "IELTS Foundation 5.5",
+				level: "Band 5.5",
+				type: "ielts",
+			},
+		];
+		searchFixture.current = { classId: "cls-55" };
+
+		const html = renderToStaticMarkup(<NewAssignmentRoute />);
+		expect(html).toMatch(/<button[^>]*aria-pressed="true"[^>]*>5\.5<\/button>/);
+		expect(html).toMatch(
+			/<button[^>]*aria-pressed="false"[^>]*>7\.0<\/button>/,
+		);
+	});
+
+	it("defaults band to 6.0 when class has range 'IELTS 5.0–6.0'", () => {
+		dataFixture.data.classes = [
+			{
+				id: "cls-range",
+				name: "IELTS Prep",
+				level: "IELTS 5.0–6.0",
+				type: "ielts",
+			},
+		];
+		searchFixture.current = { classId: "cls-range" };
+
+		const html = renderToStaticMarkup(<NewAssignmentRoute />);
+		expect(html).toMatch(/<button[^>]*aria-pressed="true"[^>]*>6\.0<\/button>/);
+	});
+
+	it("falls back to 7.0 when class is a TOEIC class (e.g. TOEIC 550)", () => {
+		dataFixture.data.classes = [
+			{
+				id: "cls-toeic",
+				name: "TOEIC 550 Căn Bản",
+				level: "TOEIC 550",
+				type: "communication",
+			},
+		];
+		searchFixture.current = { classId: "cls-toeic" };
+
+		const html = renderToStaticMarkup(<NewAssignmentRoute />);
+		expect(html).toMatch(/<button[^>]*aria-pressed="true"[^>]*>7\.0<\/button>/);
+	});
+
+	it("falls back to 7.0 when classId is unknown or omitted", () => {
+		dataFixture.data.classes = [
+			{ id: "cls-55", name: "IELTS 5.5", level: "Band 5.5", type: "ielts" },
+		];
+		searchFixture.current = { classId: "nonexistent" };
+		const htmlUnknown = renderToStaticMarkup(<NewAssignmentRoute />);
+		expect(htmlUnknown).toMatch(
+			/<button[^>]*aria-pressed="true"[^>]*>7\.0<\/button>/,
+		);
+
+		searchFixture.current = {};
+		const htmlNoClass = renderToStaticMarkup(<NewAssignmentRoute />);
+		expect(htmlNoClass).toMatch(
+			/<button[^>]*aria-pressed="true"[^>]*>7\.0<\/button>/,
+		);
+	});
+
+	it("restored preview draft with band 6.5 takes precedence over class band 5.5", () => {
+		dataFixture.data.classes = [
+			{ id: "cls-55", name: "IELTS 5.5", level: "Band 5.5", type: "ielts" },
+		];
+		searchFixture.current = { classId: "cls-55" };
+		draftFixture.value = {
+			task: "task2",
+			genre: "discuss",
+			title: "Restored Draft",
+			status: "ready",
+			skill: "writing",
+			part: "task2",
+			type: "discuss",
+			band: "6.5",
+			source: "Cam 15",
+			prompt: "<p>Prompt</p>",
+			passage: "",
+			intro: "",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			imageUrl: "",
+			optionBank: [],
+			note: "",
+			items: [],
+			writing: null,
+		};
+
+		const html = renderToStaticMarkup(<NewAssignmentRoute />);
+		expect(html).toMatch(/<button[^>]*aria-pressed="true"[^>]*>6\.5<\/button>/);
+		expect(html).toMatch(
+			/<button[^>]*aria-pressed="false"[^>]*>5\.5<\/button>/,
+		);
+		draftFixture.value = null;
+		searchFixture.current = {};
+		dataFixture.data.classes = [];
 	});
 });

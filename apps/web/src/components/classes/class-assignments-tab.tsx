@@ -548,6 +548,7 @@ export function ClassAssignmentsTab({
 							<SectionLabel>Đề sẵn sàng</SectionLabel>
 							<Link
 								to="/assignments/new"
+								search={{ classId: classGroup.id }}
 								className="font-medium text-muted-foreground text-xs hover:text-foreground"
 							>
 								Thêm đề mới

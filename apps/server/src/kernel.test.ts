@@ -5116,7 +5116,7 @@ describe("assignment prompt bank (issue #202)", () => {
 			{ ...validBody, title: "  " }, // whitespace-only title
 			{ ...validBody, prompt: "" }, // blank prompt
 			{ ...validBody, skill: "math" }, // enum
-			{ ...validBody, band: "8.0" }, // enum
+			{ ...validBody, band: "8.5" }, // enum
 			{ ...validBody, status: "sent" }, // enum
 			{ ...validBody, extra: true }, // strict
 			{ skill: "writing" }, // missing fields

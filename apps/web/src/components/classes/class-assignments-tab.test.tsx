@@ -204,15 +204,21 @@ vi.mock("@tanstack/react-router", () => ({
 		to: string;
 		children?: React.ReactNode;
 		params?: Record<string, string>;
+		search?: Record<string, string>;
 		className?: string;
-	}) => (
-		<a
-			href={props.to.replace("$attemptId", props.params?.attemptId ?? "")}
-			className={props.className}
-		>
-			{props.children}
-		</a>
-	),
+	}) => {
+		const searchStr = props.search
+			? `?${new URLSearchParams(props.search).toString()}`
+			: "";
+		return (
+			<a
+				href={`${props.to.replace("$attemptId", props.params?.attemptId ?? "")}${searchStr}`}
+				className={props.className}
+			>
+				{props.children}
+			</a>
+		);
+	},
 }));
 
 vi.mock("@/lib/data-store", () => ({
@@ -638,5 +644,16 @@ describe("ClassAssignmentsTab — hybrid assignment & Grammar/Vocabulary filters
 		expect(assignHtml).toContain("Grammar");
 		expect(assignHtml).toContain("Vocabulary");
 		expect(assignHtml).toContain("+ Writing");
+	});
+
+	it("carries classId in search params on 'Thêm đề mới' link (#585)", () => {
+		const assignHtml = renderToStaticMarkup(
+			<ClassAssignmentsTab
+				classGroup={testClass}
+				view="assign"
+				onViewChange={vi.fn()}
+			/>,
+		);
+		expect(assignHtml).toContain('href="/assignments/new?classId=cl-1"');
 	});
 });

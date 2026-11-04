@@ -1,4 +1,5 @@
 import type { AssignmentWritingSection } from "@teacher-os/api/contracts";
+import { ASSIGNMENT_BANDS } from "@teacher-os/api/contracts";
 import { htmlToPlainText } from "@teacher-os/api/rich-text";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -175,7 +176,7 @@ export function PromptComposer({
 				<div className="flex flex-col gap-1.5">
 					<span className="text-muted-foreground text-xs">Band mục tiêu</span>
 					<ChipFilter
-						options={["6.0", "6.5", "7.0", "7.5"]}
+						options={[...ASSIGNMENT_BANDS]}
 						value={value.band}
 						onChange={(band) => onFieldChange({ band })}
 					/>
