@@ -2,11 +2,17 @@ import {
 	ASSIGNMENT_ANSWER_CHOICES,
 	ASSIGNMENT_OPTION_BANK_MAX,
 } from "@teacher-os/api/contracts";
-import { isEmptyRichText } from "@teacher-os/api/rich-text";
+import {
+	collapseWhitespace,
+	htmlToPlainText,
+	isEmptyRichText,
+} from "@teacher-os/api/rich-text";
 import { countBlanks } from "@teacher-os/ui/lib/cloze";
 import {
 	QUESTION_ALTS_MAX,
 	QUESTION_ANSWER_MAX,
+	QUESTION_EXPLANATION_MAX,
+	QUESTION_EXPLANATION_RAW_MAX,
 	QUESTION_MAX_COUNT,
 	QUESTION_STEM_MAX,
 } from "./answer-key-grid";
@@ -58,7 +64,11 @@ export function structuralChangeKind(
 export function hasPrimaryAuthoringContent(value: ComposerValue): boolean {
 	if (
 		value.items.some(
-			(item) => item.stem.trim() || item.answer.trim() || item.pin != null,
+			(item) =>
+				item.stem.trim() ||
+				item.answer.trim() ||
+				item.pin != null ||
+				Boolean(item.explanation && !isEmptyRichText(item.explanation)),
 		)
 	)
 		return true;
@@ -242,6 +252,17 @@ export function clozeRowIssue(
 		return `Đáp án câu ${number} vượt quá ${QUESTION_ANSWER_MAX} ký tự.`;
 	if (item.alts.length > QUESTION_ALTS_MAX)
 		return `Danh sách nhận thêm của câu ${number} vượt quá ${QUESTION_ALTS_MAX} ký tự.`;
+	if (typeof item.explanation === "string") {
+		if (
+			collapseWhitespace(htmlToPlainText(item.explanation)).length >
+			QUESTION_EXPLANATION_MAX
+		) {
+			return `Giải thích câu ${number} vượt quá ${QUESTION_EXPLANATION_MAX} ký tự.`;
+		}
+		if (item.explanation.trim().length > QUESTION_EXPLANATION_RAW_MAX) {
+			return `Giải thích câu ${number} vượt quá ${QUESTION_EXPLANATION_RAW_MAX} ký tự tính cả định dạng.`;
+		}
+	}
 	return null;
 }
 

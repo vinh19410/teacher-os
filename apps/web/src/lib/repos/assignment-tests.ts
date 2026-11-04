@@ -6,6 +6,7 @@ import {
 	type KernelAssignmentTestRow,
 	type KernelSnapshot,
 } from "@teacher-os/api/contracts";
+import { isEmptyRichText } from "@teacher-os/api/rich-text";
 import type { ComposerValue } from "@/components/assignments/prompt-composer";
 import type { AssignmentPrompt } from "@/lib/mock-data";
 import { normalizeLegacyRichText } from "@/lib/rich-text-legacy";
@@ -101,7 +102,7 @@ export function composerFromPrompt(prompt: AssignmentPrompt): ComposerValue {
 		title: prompt.title,
 		band: prompt.band,
 		source: prompt.source,
-		prompt: normalizeLegacyRichText(prompt.prompt),
+		prompt: normalizeLegacyRichText(prompt.prompt ?? ""),
 		passage: normalizeLegacyRichText(prompt.passage ?? ""),
 		intro: normalizeLegacyRichText(prompt.intro ?? ""),
 		transcript: normalizeLegacyRichText(prompt.transcript ?? ""),
@@ -110,7 +111,7 @@ export function composerFromPrompt(prompt: AssignmentPrompt): ComposerValue {
 		audioName: prompt.audioName ?? "",
 		imageUrl: prompt.imageUrl ?? "",
 		optionBank: prompt.optionBank ?? [],
-		note: normalizeLegacyRichText(prompt.note),
+		note: normalizeLegacyRichText(prompt.note ?? ""),
 		items: (prompt.questions ?? []).map((question) => ({
 			stem: question.stem,
 			opts: question.opts ?? null,
@@ -120,6 +121,14 @@ export function composerFromPrompt(prompt: AssignmentPrompt): ComposerValue {
 			// test-builder không xoá type đã soạn của đề trộn dạng.
 			type: question.type ?? null,
 			pin: question.pin ?? null,
+			...(typeof question.explanation === "string" &&
+			!isEmptyRichText(question.explanation)
+				? { explanation: normalizeLegacyRichText(question.explanation) }
+				: {}),
+			...(typeof question.answerSet === "string" &&
+			question.answerSet.trim().length > 0
+				? { answerSet: question.answerSet }
+				: {}),
 		})),
 	};
 }

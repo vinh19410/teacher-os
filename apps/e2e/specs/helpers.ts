@@ -57,6 +57,8 @@ export interface VerificationEmailEntry {
 	fromName?: string | null;
 	// Plan TOS-22 (#463): recordingMailer đánh dấu failed: true cho thư thông báo tới @bounce.test.
 	failed?: boolean;
+	// #570: khóa chống gửi trùng của thư mời / gửi lại lời mời.
+	idempotencyKey?: string | null;
 }
 
 export async function readVerificationEmails(): Promise<

@@ -13,7 +13,7 @@ const setupActionPath = join(
 );
 const deployPath = join(repoRoot, ".github/workflows/deploy.yml");
 const stagingPath = join(repoRoot, ".github/workflows/deploy-staging.yml");
-
+const alchemyPath = join(repoRoot, "packages/infra/alchemy.run.ts");
 function stripInlineCommentOutsideQuotes(line) {
 	let quote = null;
 	for (let i = 0; i < line.length; i++) {
@@ -576,6 +576,56 @@ test("staging deploy workflow deploys only from staging and gates deploy on unca
 		/uses:\s*\.\/\.github\/actions\/setup-workspace/,
 		"staging deploy job must use setup-workspace composite action",
 	);
+	assert.doesNotMatch(
+		code,
+		/\bnpx\s+-y\b/,
+		"deploy-staging.yml must never run unpinned npx -y with Cloudflare secrets",
+	);
+
+	const steps = splitJobSteps(deployJob);
+	const deployIdx = steps.findIndex((s) =>
+		/name:\s*Deploy to Cloudflare \(stage staging\)/.test(s),
+	);
+	const readyzIdx = steps.findIndex((s) =>
+		/name:\s*Smoke check API readiness \(\/readyz\)/.test(s),
+	);
+	const seedIdx = steps.findIndex((s) =>
+		/name:\s*Seed built-in vocab library \(staging only\)/.test(s),
+	);
+	const authIdx = steps.findIndex((s) =>
+		/name:\s*Smoke check auth \(sign-up/.test(s),
+	);
+	assert.ok(
+		deployIdx >= 0 &&
+			readyzIdx > deployIdx &&
+			seedIdx > readyzIdx &&
+			authIdx > seedIdx,
+		"staging vocab seed step must run after /readyz and before auth smoke",
+	);
+	const seedStep = steps[seedIdx];
+	assert.match(
+		seedStep,
+		/timeout-minutes:\s*\d+/,
+		"staging vocab seed step must declare timeout-minutes",
+	);
+	assert.match(
+		seedStep,
+		/pnpm --filter @teacher-os\/db exec tsx scripts\/seed-vocab-library\.ts --d1 --d1-stage staging --if-needed --verify/,
+		"staging vocab seed step must run locked tsx seed-vocab-library with --d1-stage staging --if-needed --verify",
+	);
+	assert.doesNotMatch(
+		seedStep,
+		/D1_DATABASE_ID/,
+		"staging vocab seed step must resolve staging DB fail-closed via --d1-stage staging without D1_DATABASE_ID",
+	);
+	const seedEnvKeys = [...seedStep.matchAll(/^ {10}([A-Z0-9_]+):/gm)].map(
+		(m) => m[1],
+	);
+	assert.deepEqual(
+		seedEnvKeys.sort(),
+		["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN"],
+		"staging vocab seed step must follow least-privilege and receive only CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN",
+	);
 });
 
 test("e2e does not run on GitHub Actions (it runs locally before ak-ship)", () => {
@@ -653,5 +703,25 @@ test("prod deploy is gated on uncached quality only (e2e runs locally before shi
 		deployJob,
 		/uses:\s*\.\/\.github\/actions\/setup-workspace/,
 		"prod deploy job must use setup-workspace composite action",
+	);
+	assert.doesNotMatch(
+		code,
+		/\bnpx\s+-y\b/,
+		"deploy.yml must never run unpinned npx -y with production secrets",
+	);
+	assert.doesNotMatch(
+		code,
+		/seed-vocab-library|seedVocabLibrary|vocab_library/,
+		"deploy.yml must never seed built-in vocab library while production license gate is closed (#573)",
+	);
+
+	const alchemyRaw = readFileSync(alchemyPath, "utf8");
+	const alchemyCode = alchemyRaw
+		.replace(/\/\*[\s\S]*?\*\//g, "")
+		.replace(/^\s*\/\/.*$/gm, "");
+	assert.doesNotMatch(
+		alchemyCode,
+		/\bimportFiles\b/,
+		"packages/infra/alchemy.run.ts must not use D1 importFiles (would bypass production license gate)",
 	);
 });

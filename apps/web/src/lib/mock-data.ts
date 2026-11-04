@@ -22,6 +22,8 @@ export interface Student {
 	zalo: string;
 	/** Email học viên — danh tính đăng nhập tương lai (cùng phone); "" với row legacy. */
 	email: string;
+	/** #570: true = đã hoàn tất tham gia cổng học viên; false = chờ xác nhận; undefined = snapshot cũ (deploy skew). */
+	portalLinked?: boolean;
 	/** false = chưa có gói (tạo không lớp — D2): pkg là ZERO_PKG, view render "Chưa có gói". */
 	hasPackage: boolean;
 	parent: { name: string; phone: string };

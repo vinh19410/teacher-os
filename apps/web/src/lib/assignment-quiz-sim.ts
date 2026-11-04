@@ -4,6 +4,7 @@ import type {
 	StudentQuizQuestion,
 } from "@teacher-os/api/contracts";
 import { inferQuestionTypes } from "@teacher-os/api/lib/infer-question-types";
+import { isEmptyRichText } from "@teacher-os/api/rich-text";
 import type { QuizPaperDetail } from "@teacher-os/ui/components/quiz/quiz-paper";
 import {
 	isAutoSkill,
@@ -129,5 +130,9 @@ function normalizeQuestion(item: QuestionItem): AssignmentQuestion {
 		alts: typeof item.alts === "string" ? item.alts : "",
 		type: typeof item.type === "string" && item.type !== "" ? item.type : null,
 		pin: isValidPin(item.pin) ? item.pin : null,
+		...(typeof item.explanation === "string" &&
+		!isEmptyRichText(item.explanation)
+			? { explanation: item.explanation }
+			: {}),
 	};
 }

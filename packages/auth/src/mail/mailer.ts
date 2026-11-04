@@ -7,12 +7,29 @@ export interface MailInput {
 	replyTo?: string;
 	/** Tên người gửi hiển thị ("Tên org qua Teacher OS") — vắng mặt thì from là địa chỉ trần. */
 	fromName?: string;
+	/** Khóa chống gửi trùng Resend (header Idempotency-Key, #570) — mỗi lượt gửi lại truyền khóa mới. */
+	idempotencyKey?: string;
+	/** Timeout mỗi lượt gọi Resend (mặc định 10_000ms; đường đồng bộ truyền 5_000ms). */
+	timeoutMs?: number;
+}
+
+function sanitizeHeaderValue(value: string, maxLen = 200): string {
+	return value
+		.replaceAll("\r", "")
+		.replaceAll("\n", "")
+		.replaceAll("\0", "")
+		.trim()
+		.slice(0, maxLen);
 }
 
 export function composeFrom(from: string, fromName?: string): string {
-	if (!fromName) return from;
-	const escaped = fromName.replaceAll('"', '\\"');
-	return `"${escaped}" <${from}>`;
+	const cleanedFrom = sanitizeHeaderValue(from, 320);
+	const cleanedName = fromName ? sanitizeHeaderValue(fromName, 200) : "";
+	if (!cleanedName) return cleanedFrom;
+	const angleMatch = cleanedFrom.match(/<([^<>]+)>/);
+	const bareAddress = sanitizeHeaderValue(angleMatch?.[1] ?? cleanedFrom, 254);
+	const escaped = cleanedName.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
+	return `"${escaped}" <${bareAddress}>`;
 }
 
 export interface Mailer {
@@ -42,18 +59,25 @@ export function createResendMailer({
 	from: string;
 }): Mailer {
 	async function postMail(input: MailInput): Promise<Response> {
+		const idempotencyKey = input.idempotencyKey
+			? sanitizeHeaderValue(input.idempotencyKey, 255)
+			: "";
+		const replyTo = input.replyTo
+			? sanitizeHeaderValue(input.replyTo, 254)
+			: "";
 		return fetch("https://api.resend.com/emails", {
 			method: "POST",
-			signal: AbortSignal.timeout(10_000),
+			signal: AbortSignal.timeout(input.timeoutMs ?? 10_000),
 			headers: {
 				Authorization: `Bearer ${apiKey}`,
 				"Content-Type": "application/json",
+				...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
 			},
 			body: JSON.stringify({
 				from: composeFrom(from, input.fromName),
-				...(input.replyTo ? { reply_to: input.replyTo } : {}),
-				to: [input.to],
-				subject: input.subject,
+				...(replyTo ? { reply_to: replyTo } : {}),
+				to: [sanitizeHeaderValue(input.to, 254)],
+				subject: sanitizeHeaderValue(input.subject, 250),
 				html: input.html,
 				text: input.text,
 			}),
@@ -68,12 +92,17 @@ export function createResendMailer({
 				const retrySeconds = retryAfterHeader
 					? Number(retryAfterHeader)
 					: Number.NaN;
-				const sleepMs =
-					!Number.isNaN(retrySeconds) && retrySeconds > 0
-						? retrySeconds * 1000
-						: 500;
-				await new Promise((resolve) => setTimeout(resolve, sleepMs));
-				res = await postMail(input);
+				if (Number.isNaN(retrySeconds) || retrySeconds <= 2) {
+					const rawSleepMs =
+						!Number.isNaN(retrySeconds) && retrySeconds > 0
+							? retrySeconds * 1000
+							: 500;
+					const sleepMs = Math.min(rawSleepMs, 2_000);
+					const { promise, resolve } = Promise.withResolvers<void>();
+					setTimeout(resolve, sleepMs);
+					await promise;
+					res = await postMail(input);
+				}
 			}
 
 			if (!res.ok) {

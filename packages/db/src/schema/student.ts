@@ -48,6 +48,10 @@ export const student = sqliteTable(
 		onboardingCompletedAt: integer("onboarding_completed_at", {
 			mode: "timestamp_ms",
 		}),
+		/** Thời điểm gửi email mời tham gia cổng học viên gần nhất (#570) — dùng cho CAS cooldown 60s khi gửi lại. */
+		lastInviteEmailAt: integer("last_invite_email_at", {
+			mode: "timestamp_ms",
+		}),
 		createdAt: integer("created_at", { mode: "timestamp_ms" })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 			.notNull(),

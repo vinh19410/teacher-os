@@ -1,11 +1,14 @@
 import { STUDENT_INVITATION_ERROR_CODES } from "@teacher-os/api/contracts";
 import { type FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
+import {
+	PendingInviteCallout,
+	type ResendInviteTarget,
+} from "@/components/students/pending-invite-callout";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { useInviteStudent } from "@/lib/repos/invitations";
-
 export interface InviteStudentModalProps {
 	open: boolean;
 	onClose: () => void;
@@ -16,12 +19,18 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export function InviteStudentModal({ open, onClose }: InviteStudentModalProps) {
 	const [email, setEmail] = useState("");
 	const [error, setError] = useState<string | null>(null);
+	const [pendingInvite, setPendingInvite] = useState<{
+		target: ResendInviteTarget;
+		studentName?: string;
+		email: string;
+	} | null>(null);
 	const inviteMutation = useInviteStudent();
 
 	useEffect(() => {
 		if (open) {
 			setEmail("");
 			setError(null);
+			setPendingInvite(null);
 		}
 	}, [open]);
 
@@ -31,10 +40,12 @@ export function InviteStudentModal({ open, onClose }: InviteStudentModalProps) {
 
 		if (!trimmedEmail || !EMAIL_REGEX.test(trimmedEmail)) {
 			setError("Email không đúng định dạng.");
+			setPendingInvite(null);
 			return;
 		}
 
 		setError(null);
+		setPendingInvite(null);
 
 		try {
 			await inviteMutation.mutateAsync(trimmedEmail);
@@ -42,22 +53,62 @@ export function InviteStudentModal({ open, onClose }: InviteStudentModalProps) {
 			setEmail("");
 			onClose();
 		} catch (err: unknown) {
-			const errorObj = err as { code?: string; message?: string };
-			if (errorObj.code === STUDENT_INVITATION_ERROR_CODES.ALREADY_IN_ORG) {
-				setError("Email này đã là học viên trong tổ chức của bạn.");
+			const record =
+				err && typeof err === "object" ? (err as Record<string, unknown>) : {};
+			const code = typeof record.code === "string" ? record.code : undefined;
+			const message =
+				typeof record.message === "string" ? record.message : undefined;
+			if (code === STUDENT_INVITATION_ERROR_CODES.ALREADY_IN_ORG) {
+				const existingStudentId =
+					typeof record.existingStudentId === "string"
+						? record.existingStudentId
+						: undefined;
+				const existingStudentName =
+					typeof record.existingStudentName === "string"
+						? record.existingStudentName
+						: undefined;
+				const portalLinked = record.portalLinked === true;
+				if (!portalLinked && existingStudentId) {
+					setPendingInvite({
+						target: {
+							kind: "student",
+							studentId: existingStudentId,
+							recipientLabel: trimmedEmail,
+						},
+						studentName: existingStudentName,
+						email: trimmedEmail,
+					});
+				} else {
+					setError(
+						existingStudentName
+							? `Email này đã tham gia cổng học viên (${existingStudentName}).`
+							: "Email này đã tham gia cổng học viên.",
+					);
+				}
 			} else if (
-				errorObj.code ===
-				STUDENT_INVITATION_ERROR_CODES.INVITATION_ALREADY_PENDING
+				code === STUDENT_INVITATION_ERROR_CODES.INVITATION_ALREADY_PENDING
 			) {
-				setError("Đã có lời mời đang chờ gửi tới email này.");
+				const invitationId =
+					typeof record.invitationId === "string"
+						? record.invitationId
+						: undefined;
+				if (invitationId) {
+					setPendingInvite({
+						target: {
+							kind: "invitation",
+							invitationId,
+							email: trimmedEmail,
+						},
+						email: trimmedEmail,
+					});
+				} else {
+					setError("Đã có lời mời đang chờ gửi tới email này.");
+				}
 			} else {
-				setError(
-					errorObj.message || "Không thể gửi lời mời. Vui lòng thử lại sau.",
-				);
+				setError(message || "Không thể gửi lời mời. Vui lòng thử lại sau.");
 			}
 		}
 	};
-
 	return (
 		<Modal
 			open={open}
@@ -97,11 +148,20 @@ export function InviteStudentModal({ open, onClose }: InviteStudentModalProps) {
 						onChange={(e) => {
 							setEmail(e.target.value);
 							if (error) setError(null);
+							if (pendingInvite) setPendingInvite(null);
 						}}
 						disabled={inviteMutation.isPending}
 						autoFocus
 					/>
 				</Field>
+				{pendingInvite && (
+					<PendingInviteCallout
+						target={pendingInvite.target}
+						studentName={pendingInvite.studentName}
+						email={pendingInvite.email}
+						onResent={onClose}
+					/>
+				)}
 			</form>
 		</Modal>
 	);

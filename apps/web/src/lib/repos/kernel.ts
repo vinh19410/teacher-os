@@ -12,6 +12,7 @@ import {
 import type { CurriculumTarget, KernelAction } from "@/lib/data-actions";
 import {
 	HttpError,
+	type HttpErrorOptions,
 	isHttpError,
 	MalformedSnapshotError,
 } from "@/lib/kernel-load-state";
@@ -391,8 +392,8 @@ export interface KernelCommandPayload {
 	updated?: number;
 	skipped?: number;
 	duplicates?: string[];
+	inviteEmailSent?: boolean;
 }
-
 export type KernelCommandResult =
 	| ({ kind: "refreshed"; id?: string } & KernelCommandPayload)
 	| ({ kind: "committed"; id?: string } & KernelCommandPayload)
@@ -432,6 +433,7 @@ export interface KernelWriteEnvelope {
 	updated?: number;
 	skipped?: number;
 	duplicates?: string[];
+	inviteEmailSent?: boolean;
 }
 
 function parseWriteEnvelope(json: unknown): KernelWriteEnvelope {
@@ -449,27 +451,41 @@ function parseWriteEnvelope(json: unknown): KernelWriteEnvelope {
 	) {
 		envelope.duplicates = record.duplicates;
 	}
+	if (typeof record.inviteEmailSent === "boolean") {
+		envelope.inviteEmailSent = record.inviteEmailSent;
+	}
 	return envelope;
 }
 
 /**
- * Extract the machine reason from an error body — `body.error ?? body.reason`
- * (the kernel 403s use `error`, legacy write failures use `reason`; mirrors
- * the portal's `code = body.code ?? body.error` precedent). Silently skips
- * non-JSON/garbage.
+ * Extract the machine reason and structured conflict fields from an error body
+ * (`body.error ?? body.reason`, plus #570 duplicate-student fields).
+ * Silently skips non-JSON/garbage.
  */
-async function parseErrorReason(res: Response): Promise<string | undefined> {
+async function parseErrorOptions(res: Response): Promise<HttpErrorOptions> {
 	try {
 		const json: unknown = await res.json();
 		if (typeof json === "object" && json !== null && !Array.isArray(json)) {
 			const record = json as Record<string, unknown>;
 			const candidate = record.error ?? record.reason;
-			if (typeof candidate === "string") return candidate;
+			const options: HttpErrorOptions = {};
+			if (typeof candidate === "string") options.reason = candidate;
+			if (typeof record.code === "string") options.code = record.code;
+			if (typeof record.existingStudentId === "string") {
+				options.existingStudentId = record.existingStudentId;
+			}
+			if (typeof record.existingStudentName === "string") {
+				options.existingStudentName = record.existingStudentName;
+			}
+			if (typeof record.portalLinked === "boolean") {
+				options.portalLinked = record.portalLinked;
+			}
+			return options;
 		}
 	} catch {
 		// Body-rác/không-JSON: reason stays undefined; status still classifies.
 	}
-	return undefined;
+	return {};
 }
 
 /**
@@ -498,13 +514,11 @@ export async function postKernelCommand(
 		signal: AbortSignal.timeout(15000),
 	});
 	if (!res.ok) {
-		const reason = await parseErrorReason(res);
+		const details = await parseErrorOptions(res);
 		throw new HttpError(
 			res.status,
 			`${method} ${req.path} failed: ${res.status}`,
-			{
-				reason,
-			},
+			details,
 		);
 	}
 	let json: unknown;
@@ -608,10 +622,12 @@ export async function fetchKernelSnapshot(
 		// Parse the body (plan #260): the account-role 403 carries
 		// `error: ACCOUNT_STUDENT_ROLE` and QueryCache.onError must see it —
 		// the machine code rides on `reason`; the message stays descriptive.
-		const reason = await parseErrorReason(res);
-		throw new HttpError(res.status, `GET /api/kernel failed: ${res.status}`, {
-			reason,
-		});
+		const details = await parseErrorOptions(res);
+		throw new HttpError(
+			res.status,
+			`GET /api/kernel failed: ${res.status}`,
+			details,
+		);
 	}
 	let json: unknown;
 	try {
@@ -742,23 +758,30 @@ export function createKernelCommandBus(
 					}
 				: { kind: "outcome-unknown", error };
 		}
-		const { id, updated, skipped, duplicates } = envelope;
+		const { id, updated, skipped, duplicates, inviteEmailSent } = envelope;
+		const payload: { id?: string } & KernelCommandPayload = {
+			id,
+			updated,
+			skipped,
+			duplicates,
+			...(inviteEmailSent !== undefined ? { inviteEmailSent } : {}),
+		};
 		for (let attempt = 1; attempt <= REFRESH_ATTEMPTS; attempt++) {
 			try {
 				await deps.refetch();
-				return { kind: "refreshed", id, updated, skipped, duplicates };
+				return { kind: "refreshed", ...payload };
 			} catch (error) {
 				if (isHttpError(error) && error.status === 401) {
 					deps.onAuthLost();
-					return { kind: "committed", id, updated, skipped, duplicates };
+					return { kind: "committed", ...payload };
 				}
 				if (isStudentRoleRejected(error)) {
 					deps.onRoleBlocked?.(error.reason);
-					return { kind: "committed", id, updated, skipped, duplicates };
+					return { kind: "committed", ...payload };
 				}
 			}
 		}
-		return { kind: "committed", id, updated, skipped, duplicates };
+		return { kind: "committed", ...payload };
 	}
 
 	return {

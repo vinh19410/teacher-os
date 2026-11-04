@@ -261,4 +261,47 @@ describe("EnrollStudentModal", () => {
 		await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
 		expect(toast.success).not.toHaveBeenCalled();
 	});
+
+	it("#570 H-1: typing a name in create tab then switching to existing mode sends exactly one enroll write, no duplicate add-student", async () => {
+		const server = startKernelServer(
+			snapshotFixture({
+				classes: [classRow({ id: "cl-1" })],
+				students: [studentRow({ id: "st-2", name: "Học viên Hai" })],
+			}),
+		);
+		const onClose = vi.fn();
+		renderWithKernel(
+			<EnrollStudentModal open onClose={onClose} classId="cl-1" />,
+		);
+		const dialog = await screen.findByRole("dialog");
+
+		// Bắt đầu ở tab "Tạo học viên mới" và gõ tên + email
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Tạo học viên mới" }),
+		);
+		fireEvent.change(within(dialog).getByLabelText(/Họ tên học viên/), {
+			target: { value: "Bé An" },
+		});
+		fireEvent.change(within(dialog).getByLabelText("Email"), {
+			target: { value: "be-an@example.com" },
+		});
+
+		// Chuyển sang tab "Chọn học viên có sẵn" rồi ghi danh học viên có sẵn
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Chọn học viên có sẵn" }),
+		);
+		fireEvent.click(
+			within(dialog).getByRole("option", { name: /Học viên Hai/ }),
+		);
+		fireEvent.click(within(dialog).getByRole("button", { name: "Lưu" }));
+
+		await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+
+		// Chỉ đúng 1 write: POST enroll — KHÔNG rơi xuống tạo học viên mới
+		expect(
+			server.writes.filter((w) => w.path === "/api/classes/cl-1/enroll"),
+		).toHaveLength(1);
+		expect(server.writes.some((w) => w.path === "/api/students")).toBe(false);
+		expect(toast.success).toHaveBeenCalledTimes(1);
+	});
 });

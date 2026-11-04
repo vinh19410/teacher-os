@@ -17,7 +17,7 @@ import {
 	startKernelServer,
 	studentRow,
 } from "@/test/kernel-harness";
-import { resetRouterState } from "@/test/router-mock";
+import { resetRouterState, routerState } from "@/test/router-mock";
 
 vi.mock("@tanstack/react-router", async () =>
 	(await import("@/test/router-mock")).routerMock(),
@@ -132,5 +132,57 @@ describe("students list header and filters", () => {
 				.getAllByRole("button")
 				.map((b) => b.textContent),
 		).toEqual(["Tất cả", "Sắp hết buổi", "Nợ học phí", "Viết", "Nói"]);
+	});
+
+	it("#570: renders Chờ xác nhận badge and Gửi lại lời mời action when student has email and portalLinked=false", async () => {
+		vi.unstubAllGlobals();
+		const server = startKernelServer(
+			snapshotFixture({
+				students: [
+					studentRow({
+						id: "st-pending",
+						name: "Lê Chờ Xác Nhận",
+						email: "pending@example.com",
+						portalLinked: false,
+					}),
+					studentRow({
+						id: "st-joined",
+						name: "Phạm Đã Vào",
+						email: "joined@example.com",
+						portalLinked: true,
+					}),
+				],
+			}),
+			(req) => {
+				if (req.path === "/api/students/invitations") {
+					return { status: 200, body: [] };
+				}
+				if (
+					req.method === "POST" &&
+					req.path === "/api/students/st-pending/resend-invite"
+				) {
+					return {
+						status: 200,
+						body: { ok: true, id: "st-pending", updatedAt: Date.now() },
+					};
+				}
+				return undefined;
+			},
+		);
+		renderWithKernel(<StudentsRoute />);
+		await screen.findByText("Lê Chờ Xác Nhận");
+		expect(screen.getAllByText("Chờ xác nhận")).toHaveLength(1);
+		const resendBtn = screen.getByRole("button", { name: /Gửi lại lời mời/ });
+		fireEvent.click(resendBtn);
+		await waitFor(() => {
+			expect(
+				server.writes.some(
+					(r) =>
+						r.method === "POST" &&
+						r.path === "/api/students/st-pending/resend-invite",
+				),
+			).toBe(true);
+		});
+		expect(routerState.navigate).not.toHaveBeenCalled();
 	});
 });
