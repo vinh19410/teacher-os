@@ -1,20 +1,51 @@
 {
 	"$schema": "https://turbo.build/schema.json",
 	"ui": "tui",
+	"globalDependencies": ["package.json"],
 	"tasks": {
+		"transit": {
+			"dependsOn": ["^transit"]
+		},
 		"build": {
 			"dependsOn": ["^build"],
 			"inputs": ["$TURBO_DEFAULT$", ".env*"],
-			"outputs": ["dist/**"]
+			"outputs": ["dist/**"],
+			"env": [
+				"VITE_SERVER_URL",
+				"VITE_AI_ENABLED",
+				"VITE_TEACHER_SIGNUP_ENABLED",
+				"LEAD_API_URL"
+			]
 		},
 		"lint": {
 			"dependsOn": ["^lint"]
 		},
 		"check-types": {
-			"dependsOn": ["^check-types"]
+			"dependsOn": ["^check-types"],
+			"env": [
+				"VITE_SERVER_URL",
+				"VITE_AI_ENABLED",
+				"VITE_TEACHER_SIGNUP_ENABLED",
+				"LEAD_API_URL"
+			]
 		},
 		"test": {
-			"dependsOn": ["^test"]
+			"dependsOn": ["transit"],
+			"inputs": ["$TURBO_DEFAULT$", ".env*"],
+			"env": [
+				"VITE_SERVER_URL",
+				"VITE_AI_ENABLED",
+				"VITE_TEACHER_SIGNUP_ENABLED",
+				"VITEST_SKIP_SLOW",
+				"VERIFY_DEPTH"
+			],
+			"passThroughEnv": ["CI"]
+		},
+		"test:ledger": {
+			"dependsOn": ["transit"],
+			"inputs": ["$TURBO_DEFAULT$", ".env*"],
+			"env": ["VITE_SERVER_URL", "VITEST_SKIP_SLOW", "VERIFY_DEPTH"],
+			"passThroughEnv": ["CI"]
 		},
 		"e2e": {
 			"cache": false,

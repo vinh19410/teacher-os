@@ -196,12 +196,14 @@ GitHub — record only "staging D1 exists, rehearsal OK"). Destroy with
 
 `.github/workflows/deploy.yml` deploys stage `prod` automatically on every
 push to `main` (i.e. merging `develop` into `main` is the release trigger).
-The workflow reproduces this runbook's gates in order: the same quality steps
-as CI and the full Playwright E2E suite (the reusable `e2e.yml`, credential-free)
-must both pass — a red E2E blocks the release — then `APP_DOMAIN=<domain> pnpm alchemy deploy --stage prod` (secrets
+The workflow reproduces this runbook's gates in order: the reusable 4-job quality workflow (`.github/workflows/quality.yml`, run with `turbo-cache: false`)
+must pass, then `APP_DOMAIN=<domain> pnpm alchemy deploy --stage prod` (secrets
 come from GitHub repo secrets mirroring the inventory above — same names, no
 values in Git), then a `/readyz` smoke that must return `200 {"ok":true}`
-within ~10 minutes or the run is marked failed. Deploys are serialized
+within ~10 minutes or the run is marked failed. The full Playwright E2E suite
+is not part of this workflow: run it locally before shipping (`ak-ship
+official` / `staging`); a red local E2E is the release blocker, not CI.
+Deploys are serialized
 (`cancel-in-progress: false`) so forward-only D1 migrations never race.
 
 Scope of automation: code + bindings + migrations only. The operator gates
@@ -224,7 +226,7 @@ checks `https://app.staging.teacheros.io.vn`. The GitHub environment
 `staging` allows deployments from the `staging` branch (and `develop` for
 manual runs). Manual `workflow_dispatch` remains for migration rehearsal.
 Either way the workflow runs the
-same quality gates as CI, then
+same reusable `quality.yml` gates (`turbo-cache: false`) as CI, then
 `APP_DOMAIN=staging.teacheros.io.vn pnpm alchemy deploy --stage staging --yes`
 with credentials from the GitHub `staging` environment (same secret names as
 production), serialized like prod (`cancel-in-progress: false`) so

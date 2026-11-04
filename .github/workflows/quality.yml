@@ -1,0 +1,138 @@
+# Reusable quality gate shared by ci.yml, deploy.yml, and deploy-staging.yml.
+#
+# Security & concurrency invariants (enforced by scripts/ci-workflow.test.mjs):
+# - Never accepts or reads GitHub secrets; callers never pass secrets.
+# - Top-level permissions stay read-only (contents: read).
+# - No top-level concurrency block here: ci.yml cancels stale PR/branch runs,
+#   whereas deploy*.yml must never cancel in-flight D1 migration runs.
+name: Quality
+
+on:
+  workflow_call:
+    inputs:
+      turbo-cache:
+        description: Restore/save .turbo cache (true on ci.yml, false on deploy*.yml)
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  VITE_SERVER_URL: http://localhost:8000
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-workspace
+      - name: Restore Turbo cache (checks, read-only)
+        if: inputs.turbo-cache && github.event_name != 'push'
+        uses: actions/cache/restore@v6
+        with:
+          path: .turbo
+          key: turbo-checks-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            turbo-checks-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+      - name: Cache Turbo (checks)
+        if: inputs.turbo-cache && github.event_name == 'push'
+        uses: actions/cache@v6
+        with:
+          path: .turbo
+          key: turbo-checks-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            turbo-checks-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+      - run: pnpm exec biome check .
+      - run: pnpm check-types
+      - run: pnpm build
+      - name: Prune stale Turbo cache entries
+        if: inputs.turbo-cache && github.event_name == 'push'
+        run: if [ -d .turbo/cache ]; then find .turbo/cache -type f -mtime +7 -delete; fi
+
+  test-web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-workspace
+      - name: Restore Turbo cache (test-web, read-only)
+        if: inputs.turbo-cache && github.event_name != 'push'
+        uses: actions/cache/restore@v6
+        with:
+          path: .turbo
+          key: turbo-test-web-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            turbo-test-web-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+      - name: Cache Turbo (test-web)
+        if: inputs.turbo-cache && github.event_name == 'push'
+        uses: actions/cache@v6
+        with:
+          path: .turbo
+          key: turbo-test-web-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            turbo-test-web-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+      - run: pnpm exec turbo run test --filter=web
+      - name: Prune stale Turbo cache entries
+        if: inputs.turbo-cache && github.event_name == 'push'
+        run: if [ -d .turbo/cache ]; then find .turbo/cache -type f -mtime +7 -delete; fi
+
+  test-server:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-workspace
+      - name: Restore Turbo cache (test-server, read-only)
+        if: inputs.turbo-cache && github.event_name != 'push'
+        uses: actions/cache/restore@v6
+        with:
+          path: .turbo
+          key: turbo-test-server-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            turbo-test-server-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+      - name: Cache Turbo (test-server)
+        if: inputs.turbo-cache && github.event_name == 'push'
+        uses: actions/cache@v6
+        with:
+          path: .turbo
+          key: turbo-test-server-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            turbo-test-server-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+      - run: pnpm exec turbo run test --filter=server
+        env:
+          VITEST_SKIP_SLOW: "1"
+      - name: Prune stale Turbo cache entries
+        if: inputs.turbo-cache && github.event_name == 'push'
+        run: if [ -d .turbo/cache ]; then find .turbo/cache -type f -mtime +7 -delete; fi
+
+  test-workspace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-workspace
+      - name: Restore Turbo cache (test-workspace, read-only)
+        if: inputs.turbo-cache && github.event_name != 'push'
+        uses: actions/cache/restore@v6
+        with:
+          path: .turbo
+          key: turbo-test-workspace-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            turbo-test-workspace-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+      - name: Cache Turbo (test-workspace)
+        if: inputs.turbo-cache && github.event_name == 'push'
+        uses: actions/cache@v6
+        with:
+          path: .turbo
+          key: turbo-test-workspace-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            turbo-test-workspace-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+      - run: pnpm exec turbo run test --concurrency=2 --filter=!web --filter=!server
+      - run: pnpm exec turbo run test:ledger --filter=server
+      - run: pnpm test:ci-workflow && pnpm test:topology-drift && pnpm test:devserver-watchdog && pnpm test:design-compare
+      - name: Prune stale Turbo cache entries
+        if: inputs.turbo-cache && github.event_name == 'push'
+        run: if [ -d .turbo/cache ]; then find .turbo/cache -type f -mtime +7 -delete; fi
