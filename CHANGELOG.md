@@ -11,6 +11,11 @@ Quy ước khi cập nhật:
 ---
 
 
+## 2026-11-04
+
+### Removed
+- Gỡ bỏ khối tuỳ chọn **"Đã làm test examenglish? (nhập kết quả nếu có)"** khỏi form đăng ký khoá học tại `apps/profile/public/index.html`: xoá phần tử `<details id="examEnglishDetails">` (2 liên kết ExamEnglish và ô nhập kết quả tự do `#examEnglishInput`), các rule CSS `.examenglish-*` và khoá `examEnglish` trong nháp `localStorage`; `getCombinedPlacement()` giữ nguyên tên hàm ở cả 3 điểm gọi và chỉ trả về giá trị từ `quizPlacementInput` đã `.trim().slice(0, 300)`, kèm test biên dịch `node:vm` chặn `SyntaxError` cho `<script>` inline (#559).
+
 ## 2026-11-03
 
 ### Fixed
