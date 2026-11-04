@@ -1,5 +1,6 @@
 import type {
 	AssignmentQuestion,
+	AssignmentWritingSection,
 	StudentQuizQuestion,
 } from "@teacher-os/api/contracts";
 import { inferQuestionTypes } from "@teacher-os/api/lib/infer-question-types";
@@ -26,6 +27,8 @@ export interface QuizSimulation {
 	/** Identity của đề đang simulate (bank `prompt.id` | draft fingerprint) —
 	 * route reset state khi key này đổi. */
 	simKey: string;
+	/** #574: phần Writing đi kèm cho đề gộp. */
+	writing?: AssignmentWritingSection | null;
 }
 
 /**
@@ -41,6 +44,7 @@ export function draftSimKey(draft: PreviewDraft): string {
 		draft.task,
 		draft.genre,
 		draft.items ?? null,
+		draft.writing ?? null,
 	]);
 }
 
@@ -100,7 +104,14 @@ export function buildQuizSim(
 		imageUrl: draft.imageUrl ?? "",
 		optionBank: draft.optionBank ?? [],
 	};
-	return { detail, takeQuestions, fullQuestions, note: draft.note, simKey };
+	return {
+		detail,
+		takeQuestions,
+		fullQuestions,
+		note: draft.note,
+		simKey,
+		writing: draft.writing ?? null,
+	};
 }
 
 /** Item soạn/draft có thể thiếu field ở runtime (JSON cũ) — ép về contract

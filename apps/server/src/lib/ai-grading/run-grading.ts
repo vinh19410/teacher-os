@@ -6,9 +6,11 @@ import {
 import { essayToPlain } from "@teacher-os/api/lib/essay-plain";
 import {
 	criteriaForSkill,
+	essayTaskOf,
 	type GradableSkill,
 	isGradableSkill,
 } from "@teacher-os/api/lib/ielts-band";
+import { htmlToPlainText } from "@teacher-os/api/rich-text";
 import {
 	aiGradingDraft,
 	assignmentPrompt,
@@ -91,6 +93,7 @@ interface AttemptForGrading {
 	prompt: string;
 	essay: string;
 	mediaKey: string | null;
+	hybrid?: boolean;
 }
 
 /**
@@ -121,6 +124,8 @@ async function loadAttemptForGrading(
 		skill: string | null;
 		part: string | null;
 		prompt: string | null;
+		writingPart?: string | null;
+		writingPrompt?: string | null;
 	};
 	const practice = base.mode === "practice";
 	const [header]: PromptHeader[] = practice
@@ -156,6 +161,8 @@ async function loadAttemptForGrading(
 					skill: assignmentPrompt.skill,
 					part: assignmentPrompt.part,
 					prompt: assignmentPrompt.prompt,
+					writingPart: assignmentPrompt.writingPart,
+					writingPrompt: assignmentPrompt.writingPrompt,
 				})
 				.from(classAssignment)
 				.innerJoin(
@@ -174,6 +181,20 @@ async function loadAttemptForGrading(
 				)
 				.limit(1);
 
+	const essayTask = header ? essayTaskOf(header) : null;
+	if (essayTask) {
+		return {
+			orgId: base.orgId,
+			skill: "writing",
+			part: essayTask.part,
+			prompt: essayTask.hybrid
+				? htmlToPlainText(essayTask.prompt)
+				: essayTask.prompt,
+			essay: base.essay,
+			mediaKey: base.mediaKey,
+			hybrid: essayTask.hybrid,
+		};
+	}
 	const skill = header?.skill ?? "";
 	if (!isGradableSkill(skill)) return null;
 	return {
@@ -359,6 +380,18 @@ export async function runAiGrading(
 			return;
 		}
 		transcript = text;
+	}
+	// #574: Bài gộp có phần Writing bỏ trống → chuyển thẳng manual_pending (0 Credit),
+	// không reserve/settle ví và không gọi LLM. Đề Writing thuần giữ nguyên hành vi cũ.
+	if (
+		attempt.hybrid === true &&
+		essayToPlain(attempt.essay).text.trim().length === 0
+	) {
+		await casDraftFromProcessing(db, attemptId, {
+			status: "manual_pending",
+			errorCode: null,
+		});
+		return;
 	}
 
 	let quickMode = false;

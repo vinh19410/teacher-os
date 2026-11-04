@@ -1,7 +1,11 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import type { QuizAttemptDetail, QuizVerdict } from "@teacher-os/api/contracts";
 import { buildQuizParts } from "@teacher-os/api/lib/quiz-parts";
+import { countWords } from "@teacher-os/api/lib/word-count";
+import { isEmptyRichText } from "@teacher-os/api/rich-text";
+import { RichTextBody } from "@teacher-os/ui/components/assignments/rich-text-body";
 import { buttonVariants } from "@teacher-os/ui/components/button";
+import { EssayWithHighlights } from "@teacher-os/ui/components/quiz/essay-with-highlights";
 import { QuizNavigator } from "@teacher-os/ui/components/quiz/quiz-navigator";
 import { QuizPaper } from "@teacher-os/ui/components/quiz/quiz-paper";
 import { scrollToQuestion } from "@teacher-os/ui/components/quiz/quiz-question-item";
@@ -11,6 +15,7 @@ import {
 } from "@teacher-os/ui/components/quiz/quiz-reading-layout";
 import { useEffect, useMemo, useState } from "react";
 import Loader from "@/components/loader";
+import { AttemptGradeCard } from "@/components/quiz/attempt-grade-card";
 import { AttemptReviewError } from "@/components/quiz/attempt-review-error";
 import { cn } from "@/lib/cn";
 import { isHttpError, studentQueryClient } from "@/lib/query-client";
@@ -105,8 +110,11 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 	// inject key "0" để nhánh Writing của QuizPaper review hiện đúng bài đã
 	// nộp thay vì textarea trống khi học viên mở thẳng URL .../detail.
 	const reviewAnswers = useMemo(
-		() => (attempt.essay != null ? { ...answers, 0: attempt.essay } : answers),
-		[answers, attempt.essay],
+		() =>
+			attempt.questions.length === 0 && attempt.essay != null
+				? { ...answers, 0: attempt.essay }
+				: answers,
+		[answers, attempt.essay, attempt.questions.length],
 	);
 	const review = useMemo(
 		() =>
@@ -161,6 +169,57 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 		quizQuery.data.passage,
 	);
 
+	const hybridWriting = attempt.writing ?? quizQuery.data.writing ?? null;
+	const showHybridWritingReview =
+		hybridWriting !== null ||
+		(attempt.questions.length > 0 && attempt.essay != null);
+	const hybridEssay = attempt.essay ?? "";
+	const hybridGrade = attempt.grade ?? null;
+	const hybridReviewSection = showHybridWritingReview ? (
+		<section
+			aria-labelledby="detail-hybrid-writing-heading"
+			className="mt-8 flex flex-col gap-3 border-border border-t pt-6"
+			data-testid="detail-hybrid-writing-section"
+		>
+			<h2 id="detail-hybrid-writing-heading" className="font-semibold">
+				Phần 2 · Writing
+				{hybridWriting
+					? ` (${hybridWriting.part === "task1" ? "Task 1" : "Task 2"})`
+					: ""}
+			</h2>
+			{hybridWriting && !isEmptyRichText(hybridWriting.prompt) && (
+				<RichTextBody
+					text={hybridWriting.prompt}
+					className="text-sm leading-[1.55]"
+				/>
+			)}
+			<p className="font-mono text-muted-foreground text-sm">
+				{countWords(hybridEssay)} từ
+			</p>
+			<div className="whitespace-pre-wrap border-border border-l-2 pl-5 text-lg leading-[1.9]">
+				{hybridEssay.trim() === "" ? (
+					<span className="text-muted-foreground">Bạn đã nộp bài trống.</span>
+				) : (
+					<EssayWithHighlights
+						essay={hybridEssay}
+						annotations={attempt.annotations ?? []}
+						inlineNotes
+					/>
+				)}
+			</div>
+			{hybridGrade ? (
+				<AttemptGradeCard
+					grade={hybridGrade}
+					skill="writing"
+					part={attempt.part ?? hybridWriting?.part ?? ""}
+				/>
+			) : (
+				<p className="text-muted-foreground text-sm">
+					Giáo viên sẽ chấm bài viết của bạn.
+				</p>
+			)}
+		</section>
+	) : null;
 	return (
 		<div className="flex min-h-svh flex-col bg-muted/30">
 			<header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-border border-b bg-background/95 px-4 backdrop-blur">
@@ -197,6 +256,7 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 							review={review}
 							hidePassage
 						/>
+						{hybridReviewSection}
 					</div>
 				</QuizReadingSplitLayout>
 			) : (
@@ -211,6 +271,7 @@ function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 							mode="review"
 							review={review}
 						/>
+						{hybridReviewSection}
 					</main>
 					{navigator}
 				</>

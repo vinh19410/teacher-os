@@ -35,7 +35,9 @@ import {
 } from "@/components/quiz/speaking-submission-panel";
 import { isHttpError, reauth } from "@/lib/query-client";
 import {
-	quizAttemptMirrorKey,
+	type QuizAttemptStore,
+	type QuizSaveState,
+	quizAttemptEssayMirrorKey,
 	useQuizAttemptSnapshot,
 	useQuizAttemptStore,
 } from "@/lib/quiz-attempt-store";
@@ -98,9 +100,11 @@ export function QuizTakeError({ error }: { error: unknown }) {
 export function QuizTakeView({
 	source,
 	serverAnswers,
+	serverEssay = "",
 }: {
 	source: QuizTakeSource;
 	serverAnswers: Record<string, string>;
+	serverEssay?: string;
 }) {
 	const queryClient = useQueryClient();
 	const navigate = useNavigate();
@@ -127,7 +131,11 @@ export function QuizTakeView({
 	});
 
 	const startMutation = useStartQuizAttempt(source);
-	const serverHasAnswers = Object.keys(serverAnswers).length > 0;
+	const hybridWriting = detail?.writing ?? null;
+	const hasHybridWriting = hybridWriting !== null;
+	const serverHasAnswers =
+		Object.keys(serverAnswers).length > 0 ||
+		(hasHybridWriting && serverEssay.trim().length > 0);
 	// Dialog resume chỉ khi vào lại attempt đang làm ĐÃ có answers trên server
 	// (Selfomy parity); start mới thì vào thẳng paper.
 	const needsResumeDialog =
@@ -151,6 +159,9 @@ export function QuizTakeView({
 			)?.label ?? null)
 		: null;
 
+	const storeRef = useRef<QuizAttemptStore | null>(null);
+	const essayStoreRef = useRef<QuizAttemptStore | null>(null);
+
 	const store = useQuizAttemptStore({
 		attemptId: storeActive ? attemptId : null,
 		serverAnswers,
@@ -159,18 +170,42 @@ export function QuizTakeView({
 			: (q, value, opts) => patchQuizAnswer(attemptId ?? "", q, value, opts),
 		valueMax: isWriting ? QUIZ_ESSAY_MAX : undefined,
 		onAuthError: () => {
+			essayStoreRef.current?.halt("auth");
 			setAuthBanner(true);
 			// reauth() giữ URL hiện tại làm returnUrl — quay lại đúng take screen.
 			reauth();
 		},
 		onAlreadySubmitted: () => {
+			essayStoreRef.current?.halt("submitted");
 			if (attemptId) window.location.assign(attemptSummaryHref(attemptId));
 		},
 	});
 	const snapshot = useQuizAttemptSnapshot(store);
-	const storeRef = useRef(store);
 	storeRef.current = store;
 
+	const initialEssayAnswers = useMemo((): Record<string, string> => {
+		const out: Record<string, string> = {};
+		if (serverEssay) out["0"] = serverEssay;
+		return out;
+	}, [serverEssay]);
+	const essayStore = useQuizAttemptStore({
+		attemptId: storeActive && hasHybridWriting ? attemptId : null,
+		serverAnswers: initialEssayAnswers,
+		mirrorKey: attemptId ? quizAttemptEssayMirrorKey(attemptId) : undefined,
+		send: (_q, value, opts) => patchQuizEssay(attemptId ?? "", value, opts),
+		valueMax: QUIZ_ESSAY_MAX,
+		onAuthError: () => {
+			storeRef.current?.halt("auth");
+			setAuthBanner(true);
+			reauth();
+		},
+		onAlreadySubmitted: () => {
+			storeRef.current?.halt("submitted");
+			if (attemptId) window.location.assign(attemptSummaryHref(attemptId));
+		},
+	});
+	const essaySnapshot = useQuizAttemptSnapshot(essayStore);
+	essayStoreRef.current = essayStore;
 	const parts = useMemo(
 		() =>
 			buildQuizParts(
@@ -190,28 +225,43 @@ export function QuizTakeView({
 	const unansweredCount = allQuestions.filter(
 		({ q }) => !isAnsweredValue(answers[q]),
 	).length;
-	// Đếm từ Writing (#304): essay đi qua store với key `0` như mọi answers.
-	const essayText = answers[0] ?? "";
+	// Đếm từ Writing (#304) hoặc phần Writing của bài gộp (#574).
+	const hybridEssayText = essayStore
+		? (essaySnapshot.answers[0] ?? "")
+		: serverEssay;
+	const essayText = isWriting ? (answers[0] ?? "") : hybridEssayText;
 	const wordCount = countWords(essayText);
 	const minWords = isWriting
 		? (WRITING_MIN_WORDS[detail?.part ?? ""] ?? null)
-		: null;
+		: hasHybridWriting
+			? (WRITING_MIN_WORDS[hybridWriting.part] ?? null)
+			: null;
 	// Guard nộp Writing: bài trống hoặc thiếu từ chỉ CẢNH BÁO qua dialog,
 	// học viên vẫn xác nhận nộp được (user chốt) — khác logic unansweredCount.
 	const essayEmpty = essayText.trim() === "";
 	const essayGuardOpen =
-		isWriting && (essayEmpty || (minWords !== null && wordCount < minWords));
+		(isWriting || hasHybridWriting) &&
+		(essayEmpty || (minWords !== null && wordCount < minWords));
 
 	const submitMutation = useMutation({
 		// Drain-before-submit (RT#7): cancel debounce + flush pending + await
-		// mọi PATCH in-flight TRƯỚC khi POST submit.
+		// mọi PATCH in-flight TRƯỚC khi POST submit (cả 2 store với bài gộp).
 		mutationFn: async (): Promise<{ attemptId: string }> => {
 			const current = storeRef.current;
-			if (current === null) throw new Error("No active attempt to submit");
-			await current.drain();
+			const currentEssay = essayStoreRef.current;
+			if (current === null || (hasHybridWriting && currentEssay === null)) {
+				throw new Error("No active attempt to submit");
+			}
+			await Promise.all([
+				current.drain(),
+				...(hasHybridWriting && currentEssay ? [currentEssay.drain()] : []),
+			]);
 			// Autosave đã halt (401 đang reauth / 409 đang redirect) — POST
 			// submit lúc này chỉ đua với redirect (code-review F5).
-			if (current.getHalted() !== null) {
+			if (
+				current.getHalted() !== null ||
+				(currentEssay?.getHalted() ?? null) !== null
+			) {
 				throw new QuizSubmitSkippedError();
 			}
 			await submitQuizAttempt(current.attemptId);
@@ -219,6 +269,7 @@ export function QuizTakeView({
 		},
 		onSuccess: ({ attemptId: submittedId }) => {
 			storeRef.current?.finalize();
+			essayStoreRef.current?.finalize();
 			void queryClient.invalidateQueries({ queryKey: ["student"] });
 			window.location.assign(attemptSummaryHref(submittedId));
 		},
@@ -252,6 +303,9 @@ export function QuizTakeView({
 	const handleAnswer = (q: number, value: string) => {
 		store?.setAnswer(q, value);
 	};
+	const handleEssayChange = (value: string) => {
+		essayStore?.setAnswer(0, value);
+	};
 	const handleSelectQuestion = (q: number) => {
 		setCurrentQuestion(q);
 		scrollToQuestion(q);
@@ -279,8 +333,11 @@ export function QuizTakeView({
 	}, [source, queryClient]);
 
 	useEffect(() => {
-		if (store === null) return;
-		const flushKeepalive = () => store.flush({ keepalive: true });
+		if (store === null && essayStore === null) return;
+		const flushKeepalive = () => {
+			store?.flush({ keepalive: true });
+			essayStore?.flush({ keepalive: true });
+		};
 		const onVisibilityChange = () => {
 			if (document.visibilityState === "hidden") flushKeepalive();
 		};
@@ -290,20 +347,20 @@ export function QuizTakeView({
 			window.removeEventListener("pagehide", flushKeepalive);
 			document.removeEventListener("visibilitychange", onVisibilityChange);
 		};
-	}, [store]);
+	}, [store, essayStore]);
 
 	// beforeunload guard khi còn thay đổi chưa flush (RT#14).
 	useEffect(() => {
-		if (store === null) return;
+		if (store === null && essayStore === null) return;
 		const handler = (event: BeforeUnloadEvent) => {
-			if (store.isDirty()) {
+			if (store?.isDirty() || essayStore?.isDirty()) {
 				event.preventDefault();
 				event.returnValue = "";
 			}
 		};
 		window.addEventListener("beforeunload", handler);
 		return () => window.removeEventListener("beforeunload", handler);
-	}, [store]);
+	}, [store, essayStore]);
 
 	// Attempt đã submitted (refetch phát hiện tab khác nộp) → summary.
 	useEffect(() => {
@@ -348,7 +405,8 @@ export function QuizTakeView({
 								</>
 							) : (
 								<>
-									{allQuestions.length} câu hỏi · Band {detail.band}
+									{allQuestions.length} câu hỏi
+									{hasHybridWriting ? " + Bài viết" : ""} · Band {detail.band}
 								</>
 							)}
 						</p>
@@ -383,10 +441,21 @@ export function QuizTakeView({
 		);
 	}
 
+	const anyHalted = snapshot.halted !== null || essaySnapshot.halted !== null;
+	const combinedSaveState: QuizSaveState =
+		snapshot.saveState === "error" ||
+		(hasHybridWriting && essaySnapshot.saveState === "error")
+			? "error"
+			: snapshot.saveState === "saving" ||
+					(hasHybridWriting && essaySnapshot.saveState === "saving")
+				? "saving"
+				: "saved";
 	const submitDisabled =
 		submitMutation.isPending ||
-		snapshot.halted !== null ||
+		anyHalted ||
 		!storeActive ||
+		store === null ||
+		(hasHybridWriting && essayStore === null) ||
 		(isSpeaking && (media === null || mediaUploading));
 	// Writing thay navigator số câu bằng footer đếm từ (#304) — giữ testid
 	// navigator-progress nên helper e2e openPaper dùng chung được.
@@ -400,6 +469,7 @@ export function QuizTakeView({
 			answers={answers}
 			current={currentQuestion}
 			onSelect={handleSelectQuestion}
+			writingProgress={hasHybridWriting ? { wordCount, minWords } : null}
 		/>
 	);
 	// Reading có passage → split-pane: bài đọc trái, bài làm phải, cuộn độc
@@ -411,7 +481,7 @@ export function QuizTakeView({
 			<QuizRuntimeHeader
 				title={detail.title}
 				// Speaking không autosave gì — file lưu ngay khi tải lên.
-				saveState={store && !isSpeaking ? snapshot.saveState : null}
+				saveState={store && !isSpeaking ? combinedSaveState : null}
 				onSubmitClick={handleSubmitClick}
 				submitDisabled={submitDisabled}
 			/>
@@ -435,6 +505,9 @@ export function QuizTakeView({
 							onAnswer={handleAnswer}
 							currentQuestion={currentQuestion}
 							hidePassage
+							writingSection={hybridWriting}
+							essay={hybridEssayText}
+							onEssayChange={handleEssayChange}
 						/>
 					</div>
 				</QuizReadingSplitLayout>
@@ -447,6 +520,9 @@ export function QuizTakeView({
 							answers={answers}
 							onAnswer={handleAnswer}
 							currentQuestion={currentQuestion}
+							writingSection={hybridWriting}
+							essay={hybridEssayText}
+							onEssayChange={handleEssayChange}
 						/>
 						{isSpeaking && attemptId && (
 							<div className="mt-6 flex flex-col gap-4">
@@ -505,18 +581,26 @@ export function QuizTakeView({
 				// Copy riêng cho Writing (#304): nộp trống / thiếu từ là cảnh báo,
 				// học viên vẫn xác nhận nộp được.
 				title={
-					isWriting
-						? essayEmpty
-							? "Bạn chưa viết bài"
-							: "Bài viết chưa đủ số từ"
-						: undefined
+					unansweredCount > 0 && essayGuardOpen
+						? "Còn câu chưa trả lời và bài viết chưa hoàn chỉnh"
+						: essayGuardOpen
+							? essayEmpty
+								? "Bạn chưa viết bài"
+								: "Bài viết chưa đủ số từ"
+							: undefined
 				}
 				description={
-					isWriting
-						? essayEmpty
-							? "Bài viết đang trống. Bạn có muốn nộp bài không? Sau khi nộp, bạn không thể sửa bài viết."
-							: `Bài viết có ${wordCount}/${minWords ?? 0} từ. Bài thi IELTS thiếu từ sẽ bị trừ điểm. Bạn có muốn nộp bài không? Sau khi nộp, bạn không thể sửa bài viết.`
-						: undefined
+					unansweredCount > 0 && essayGuardOpen
+						? `Bạn còn ${unansweredCount} câu trắc nghiệm chưa trả lời và ${
+								essayEmpty
+									? "phần Writing đang để trống"
+									: `bài viết có ${wordCount}/${minWords ?? 0} từ`
+							}. Bạn có muốn nộp bài ngay không?`
+						: essayGuardOpen
+							? essayEmpty
+								? "Bài viết đang trống. Bạn có muốn nộp bài không? Sau khi nộp, bạn không thể sửa bài viết."
+								: `Bài viết có ${wordCount}/${minWords ?? 0} từ. Bài thi IELTS thiếu từ sẽ bị trừ điểm. Bạn có muốn nộp bài không? Sau khi nộp, bạn không thể sửa bài viết.`
+							: undefined
 				}
 				onConfirm={() => {
 					setGuardOpen(false);

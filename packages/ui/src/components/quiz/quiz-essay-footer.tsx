@@ -7,6 +7,28 @@ import { useMemo, useRef } from "react";
  * `QuizNavigator` (helper e2e `openPaper` chờ `navigator-progress`), thay
  * navigator số câu bằng đếm từ kèm mục tiêu IELTS.
  */
+/**
+ * Chuỗi thông báo tiến độ từ cho trình đọc màn hình (RT red-team F): chỉ phát
+ * tại các mốc chẵn 50 từ hoặc chạm ngưỡng `minWords`, không đọc mỗi lần gõ phím.
+ */
+export function formatEssayWordMilestone(
+	wordCount: number,
+	minWords: number | null,
+): string | null {
+	const belowMin = minWords !== null && wordCount < minWords;
+	if (minWords === null) {
+		return wordCount % 50 === 0 && wordCount > 0
+			? `Đã viết ${wordCount} từ`
+			: null;
+	}
+	if (belowMin) {
+		return wordCount > 0 && wordCount % 50 === 0
+			? `${wordCount} từ — chưa đạt tối thiểu ${minWords} từ`
+			: null;
+	}
+	return wordCount === minWords ? `Đã đạt tối thiểu ${minWords} từ` : null;
+}
+
 export function QuizEssayFooter({
 	text,
 	minWords,
@@ -21,19 +43,10 @@ export function QuizEssayFooter({
 	// RT red-team F: KHÔNG announce số từ mỗi keystroke — SR sẽ bị cắt ngang
 	// hàng trăm lần trong một bài 250+ từ. Vùng role="status" riêng chỉ đổi
 	// nội dung tại mốc (đạt/tụt dưới mục tiêu, mỗi 50 từ).
-	const announce = useMemo(() => {
-		if (minWords === null) {
-			return wordCount % 50 === 0 && wordCount > 0
-				? `Đã viết ${wordCount} từ`
-				: null;
-		}
-		if (belowMin) {
-			return wordCount > 0 && wordCount % 50 === 0
-				? `${wordCount} từ — chưa đạt tối thiểu ${minWords} từ`
-				: null;
-		}
-		return wordCount === minWords ? `Đã đạt tối thiểu ${minWords} từ` : null;
-	}, [wordCount, minWords, belowMin]);
+	const announce = useMemo(
+		() => formatEssayWordMilestone(wordCount, minWords),
+		[wordCount, minWords],
+	);
 	const announceRef = useRef<string>("");
 	if (announce !== null) announceRef.current = announce;
 

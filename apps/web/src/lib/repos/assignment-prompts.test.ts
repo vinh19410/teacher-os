@@ -38,6 +38,7 @@ describe("mapAssignmentPrompts (#202)", () => {
 				optionBank: [],
 				note: "",
 				status: "ready",
+				writing: null,
 				createdAt: "2026-09-18T10:00:00.000Z",
 			},
 		]);
@@ -116,5 +117,54 @@ describe("mapAssignmentPrompts (#202)", () => {
 		const [withBank, legacy] = mapAssignmentPrompts(snapshot);
 		expect(withBank?.optionBank).toEqual(["Brunel", "Darwin"]);
 		expect(legacy?.optionBank).toEqual([]);
+	});
+
+	test("writing section projects through; absent writing maps to null (#574)", () => {
+		const snapshot = {
+			assignmentPrompts: [
+				{
+					id: "ap-hyb",
+					task: "task2",
+					genre: "",
+					skill: "grammar",
+					part: "tenses",
+					type: "mcq",
+					title: "Grammar + Writing",
+					band: "6.5",
+					source: "",
+					prompt: "",
+					note: "",
+					status: "ready",
+					writing: {
+						part: "task2",
+						type: "discuss",
+						prompt: "<p>Write 250 words.</p>",
+					},
+					createdAt: "2026-11-04T00:00:00.000Z",
+				},
+				{
+					id: "ap-pure",
+					task: "task2",
+					genre: "",
+					skill: "grammar",
+					part: "tenses",
+					type: "mcq",
+					title: "Pure Grammar",
+					band: "6.5",
+					source: "",
+					prompt: "",
+					note: "",
+					status: "ready",
+					createdAt: "2026-11-04T00:00:00.000Z",
+				},
+			],
+		} as unknown as KernelSnapshot;
+		const [hyb, pure] = mapAssignmentPrompts(snapshot);
+		expect(hyb?.writing).toEqual({
+			part: "task2",
+			type: "discuss",
+			prompt: "<p>Write 250 words.</p>",
+		});
+		expect(pure?.writing).toBeNull();
 	});
 });
