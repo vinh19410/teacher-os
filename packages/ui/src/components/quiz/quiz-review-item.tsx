@@ -1,4 +1,5 @@
 import type { QuizVerdict } from "@teacher-os/api/contracts";
+import { isEmptyRichText } from "@teacher-os/api/rich-text";
 import { RichTextBody } from "@teacher-os/ui/components/assignments/rich-text-body";
 import {
 	VERDICT_CHIP_CLASSES,
@@ -29,9 +30,10 @@ export function quizReviewExplanation(
 	info: Pick<QuizReviewInfo, "note" | "explanation">,
 ): string | null {
 	const explanation = info.explanation?.trim() ?? "";
-	if (explanation.length > 0) return explanation;
+	if (explanation.length > 0 && !isEmptyRichText(explanation))
+		return explanation;
 	const note = info.note.trim();
-	return note.length > 0 ? note : null;
+	return note.length > 0 && !isEmptyRichText(note) ? note : null;
 }
 
 /**
@@ -113,7 +115,11 @@ export function QuizReviewItem({ info }: { info: QuizReviewInfo }) {
 				<details
 					className="mt-1.5"
 					data-testid="quiz-review-explanation"
-					data-source={info.explanation?.trim() ? "question" : "note"}
+					data-source={
+						info.explanation && !isEmptyRichText(info.explanation)
+							? "question"
+							: "note"
+					}
 				>
 					<summary className="cursor-pointer select-none rounded-sm font-medium text-primary focus-visible:outline-2 focus-visible:outline-hot">
 						Giải thích
