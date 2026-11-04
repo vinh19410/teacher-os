@@ -71,10 +71,15 @@ Học viên vào trang thấy ngay một nút chính "Làm test xếp lớp mi�
 - **Lead đang bay**: người dùng mở trang cũ rồi submit sau khi deploy vẫn gửi mã cũ, hợp lệ vì enum cũ được giữ.
 - **File lớn một khối**: viết lại 3.9k dòng dễ lệch CSS, nên làm theo từng khối và chạy test sau mỗi khối.
 
-## Câu hỏi chưa chốt
+## Quyết định đã chốt (2026-11-04)
 
-1. Tên mã khóa mới (`foundation-core`, `ielts-practical`, `workplace-interview`) có ổn, hay cô Mỹ muốn mã khác?
-2. Trang nội bộ cho tư vấn viên đặt tĩnh có noindex như trên, hay muốn nằm sau đăng nhập trong `apps/web`?
-3. Học phí: hiển thị khoảng giá hay "từ X đồng" cho từng khóa? Khi nào có số?
-4. Chính sách khi chưa đạt mục tiêu và điều kiện của "cam kết đầu ra" là gì?
-5. Có nên giữ bản cũ của trang tại một đường dẫn lưu trữ, hay chỉ dựa vào git?
+1. Tên mã khóa mới `foundation-core`, `ielts-practical`, `workplace-interview` được giữ nguyên.
+2. Trang nội bộ cho tư vấn viên là trang tĩnh trong `apps/profile/public/noi-bo/`, ai có link đều truy cập được, có `noindex`.
+3. Không giữ bản lưu trữ của trang cũ; chỉ dựa vào lịch sử git.
+
+## Câu hỏi còn mở
+
+1. Học phí từng khóa (khoảng giá hay "từ X đồng") và thời điểm có số. Đến lúc đó trang hiển thị "Nhắn Zalo để nhận báo giá".
+2. Chính sách khi chưa đạt mục tiêu và điều kiện của "cam kết đầu ra". Đến lúc đó câu hỏi đáp tương ứng không hiển thị nội dung bảo hành.
+
+Hai câu này không chặn phase 1-3; chỉ chặn việc đăng prod ở phase 4.

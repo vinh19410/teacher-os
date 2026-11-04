@@ -25,4 +25,4 @@ Handoff yêu cầu đưa 4 thứ ra khỏi trang chính nhưng không mất chú
 - Chạy lại `profile-placement-test` e2e để chắc luồng kết quả không vỡ
 
 ## Risk / Rollback
-Trang nội bộ công khai về mặt kỹ thuật (không auth). Chấp nhận vì chỉ là kịch bản chat; nếu cô Mỹ muốn riêng tư thì chuyển sang `apps/web` (câu hỏi 2).
+Trang nội bộ công khai về mặt kỹ thuật (không auth). Đã chốt chấp nhận vì chỉ là kịch bản chat.
