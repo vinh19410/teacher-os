@@ -355,7 +355,21 @@ test.describe("Student Portal Onboarding Wizard", () => {
 		await assertButtonContrastAcrossThemesAndViewports(page, continueBtn);
 		await continueBtn.click();
 
-		// Bước 2: Band 6.5
+		// Bước 2: Trình độ hiện tại (4.5 – 5.5)
+		const levelBtn = page.getByRole("button", { name: /4.5 – 5.5/ });
+		const beginnerBtn = page.getByRole("button", { name: /Mới bắt đầu/ });
+		await levelBtn.click();
+		await expect(levelBtn).toHaveAttribute("aria-pressed", "true");
+		await expect(beginnerBtn).toHaveAttribute("aria-pressed", "false");
+		await assertSelectionDistinctionAcrossThemesAndViewports(
+			page,
+			levelBtn,
+			beginnerBtn,
+			"card-border",
+		);
+		await page.getByRole("button", { name: "Tiếp tục" }).click();
+
+		// Bước 3: Band 6.5
 		const band65Btn = page.getByRole("button", { name: "Band 6.5" });
 		const band60Btn = page.getByRole("button", { name: "Band 6.0" });
 		await band65Btn.click();
@@ -420,7 +434,7 @@ test.describe("Student Portal Onboarding Wizard", () => {
 		await client.execute("PRAGMA busy_timeout = 5000;");
 		try {
 			const res = await client.execute({
-				sql: `SELECT exam_interest, target_score, learning_goals, learning_goals_note,
+				sql: `SELECT exam_interest, current_level, target_score, learning_goals, learning_goals_note,
 				             daily_study_hours, onboarding_completed_at
 				      FROM student WHERE lower(trim(email)) = lower(?)`,
 				args: [email],
@@ -428,6 +442,7 @@ test.describe("Student Portal Onboarding Wizard", () => {
 			const row = res.rows[0];
 			expect(row).toBeDefined();
 			expect(row?.exam_interest).toBe("ielts");
+			expect(row?.current_level).toBe("intermediate");
 			expect(row?.target_score).toBe("6.5");
 			const parsedGoals = JSON.parse(
 				String(row?.learning_goals ?? "[]"),

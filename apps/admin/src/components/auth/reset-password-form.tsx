@@ -103,6 +103,7 @@ export function ResetPasswordForm({
 				event.stopPropagation();
 				void form.handleSubmit();
 			}}
+			className="grid gap-4"
 		>
 			<form.Field name="newPassword">
 				{(field) => {

@@ -37,7 +37,12 @@ vi.mock("@/lib/data-store", () => ({
 
 import type { ComposerValue } from "@/components/assignments/prompt-composer";
 import type { PreviewDraft } from "@/lib/assignment-preview-draft";
-import { actionCopyFor, NewAssignmentRoute, previewDraftFrom } from "./new";
+import {
+	actionCopyFor,
+	missingRequirementsFor,
+	NewAssignmentRoute,
+	previewDraftFrom,
+} from "./new";
 
 describe("NewAssignmentRoute (#218 v5)", () => {
 	it("renders design v5 structure with 4 skills and a blank form", () => {
@@ -66,7 +71,7 @@ describe("NewAssignmentRoute (#218 v5)", () => {
 			/<button[^>]*type="submit"[^>]*>[^<]*Lưu vào ngân hàng/,
 		);
 		expect(submit?.[0]).toBeDefined();
-		expect(submit?.[0]).toMatch(/\sdisabled=/);
+		expect(submit?.[0]).not.toMatch(/\sdisabled=/);
 	});
 
 	it("surfaces the server error from the submit hook", () => {
@@ -352,7 +357,7 @@ describe("NewAssignmentRoute (#218 v5)", () => {
 		const submit = html.match(
 			/<button[^>]*type="submit"[^>]*>[^<]*Lưu vào ngân hàng/,
 		);
-		expect(submit?.[0]).toMatch(/\sdisabled=/);
+		expect(submit?.[0]).not.toMatch(/\sdisabled=/);
 		draftFixture.value = null;
 	});
 	it("blocks save for a restored draft missing type when in ready status (#577)", () => {
@@ -384,8 +389,234 @@ describe("NewAssignmentRoute (#218 v5)", () => {
 		const submit = html.match(
 			/<button[^>]*type="submit"[^>]*>[^<]*Lưu vào ngân hàng/,
 		);
-		expect(submit?.[0]).toMatch(/\sdisabled=/);
+		expect(submit?.[0]).not.toMatch(/\sdisabled=/);
 		draftFixture.value = null;
+	});
+
+	describe("missingRequirementsFor (#581)", () => {
+		const blankWritingReady: ComposerValue = {
+			skill: "writing",
+			part: "task2",
+			type: "",
+			title: "",
+			band: "7.0",
+			source: "",
+			prompt: "",
+			passage: "",
+			intro: "",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			imageUrl: "",
+			optionBank: [],
+			items: [],
+			note: "",
+		};
+
+		it("returns type, title, prompt in DOM order for blank writing in ready status", () => {
+			const missing = missingRequirementsFor(blankWritingReady, "ready");
+			expect(missing.map((m) => m.id)).toEqual(["type", "title", "prompt"]);
+			expect(missing[0].fieldId).toBe("assignment-field-type");
+			expect(missing[1].fieldId).toBe("assignment-field-title");
+			expect(missing[2].fieldId).toBe("assignment-field-prompt");
+		});
+
+		it("does not require type when status is draft", () => {
+			const missing = missingRequirementsFor(blankWritingReady, "draft");
+			expect(missing.map((m) => m.id)).toEqual(["title", "prompt"]);
+		});
+
+		it("requires passage and items for reading", () => {
+			const readingDraft: ComposerValue = {
+				...blankWritingReady,
+				skill: "reading",
+				part: "p1",
+				type: "tfng",
+				title: "Reading Test",
+			};
+			const missing = missingRequirementsFor(readingDraft, "draft");
+			expect(missing.map((m) => m.id)).toEqual([
+				"passage",
+				"reading-questions",
+			]);
+			expect(missing[0].fieldId).toBe("assignment-field-passage");
+			expect(missing[1].fieldId).toBe("assignment-field-questions");
+		});
+
+		it("detects invalid imageUrl in reading even for draft", () => {
+			const readingWithBadImg: ComposerValue = {
+				...blankWritingReady,
+				skill: "reading",
+				part: "p1",
+				type: "diagram",
+				title: "Reading Test",
+				passage: "<p>Passage</p>",
+				imageUrl: "http://insecure.com/test.png",
+				items: [{ stem: "Q1", answer: "", opts: null, alts: "" }],
+			};
+			const missing = missingRequirementsFor(readingWithBadImg, "draft");
+			expect(missing.map((m) => m.id)).toEqual(["imageUrl"]);
+			expect(missing[0].fieldId).toBe("assignment-field-image");
+		});
+
+		it("ignores stale imageUrl on non-image types to avoid dead-end validation (#581)", () => {
+			const readingTfngWithStaleImg: ComposerValue = {
+				...blankWritingReady,
+				skill: "reading",
+				part: "p1",
+				type: "tfng",
+				title: "Reading Test",
+				passage: "<p>Passage</p>",
+				imageUrl: "http://insecure.com/old.png",
+				items: [{ stem: "Q1", answer: "", opts: null, alts: "" }],
+			};
+			const missing = missingRequirementsFor(readingTfngWithStaleImg, "draft");
+			expect(missing.some((m) => m.id === "imageUrl")).toBe(false);
+		});
+
+		it("requires audio file for listening in ready status", () => {
+			const listeningReady: ComposerValue = {
+				...blankWritingReady,
+				skill: "listening",
+				part: "s1",
+				type: "form",
+				title: "Listening Test",
+				items: [{ stem: "Q1", answer: "A", opts: null, alts: "" }],
+			};
+			const missing = missingRequirementsFor(listeningReady, "ready");
+			expect(missing.map((m) => m.id)).toEqual(["audioName"]);
+			expect(missing[0].fieldId).toBe("assignment-field-audio");
+		});
+
+		it("requires answer keys for all items in auto skills when ready", () => {
+			const readingReady: ComposerValue = {
+				...blankWritingReady,
+				skill: "reading",
+				part: "p1",
+				type: "tfng",
+				title: "Reading Test",
+				passage: "<p>Passage text</p>",
+				items: [
+					{ stem: "Q1", answer: "TRUE", opts: null, alts: "" },
+					{ stem: "Q2", answer: "", opts: null, alts: "" },
+				],
+			};
+			const missing = missingRequirementsFor(readingReady, "ready");
+			expect(missing.map((m) => m.id)).toEqual(["answers"]);
+			expect(missing[0].fieldId).toBe("assignment-field-questions");
+		});
+
+		it("requires cueTopic for speaking part 2", () => {
+			const speakingPart2: ComposerValue = {
+				...blankWritingReady,
+				skill: "speaking",
+				part: "part2",
+				type: "cue",
+				title: "Speaking Test",
+				cueTopic: "",
+			};
+			const missing = missingRequirementsFor(speakingPart2, "draft");
+			expect(missing.map((m) => m.id)).toEqual(["cueTopic"]);
+			expect(missing[0].fieldId).toBe("assignment-field-cueTopic");
+		});
+
+		it("returns empty list when all requirements are met", () => {
+			const completeWriting: ComposerValue = {
+				...blankWritingReady,
+				type: "discuss",
+				title: "Complete Essay",
+				prompt: "<p>Some prompt</p>",
+			};
+			const missing = missingRequirementsFor(completeWriting, "ready");
+			expect(missing).toEqual([]);
+		});
+
+		it("validates parity across multiple skills and drafts", () => {
+			const testCases: Array<{
+				desc: string;
+				value: ComposerValue;
+				status: "draft" | "ready";
+				expectedValid: boolean;
+			}> = [
+				{
+					desc: "valid speaking part 1 ready",
+					value: {
+						...blankWritingReady,
+						skill: "speaking",
+						part: "part1",
+						type: "interview",
+						title: "Part 1 Interview",
+						prompt: "Speak about hobbies",
+					},
+					status: "ready",
+					expectedValid: true,
+				},
+				{
+					desc: "speaking part 2 missing cueTopic is invalid",
+					value: {
+						...blankWritingReady,
+						skill: "speaking",
+						part: "part2",
+						type: "cue",
+						title: "Part 2 Cue",
+						cueTopic: "",
+					},
+					status: "ready",
+					expectedValid: false,
+				},
+				{
+					desc: "valid listening ready with audio and keys",
+					value: {
+						...blankWritingReady,
+						skill: "listening",
+						part: "s1",
+						type: "form",
+						title: "Listening Section 1",
+						audioName: "section1.mp3",
+						items: [{ stem: "Q1", answer: "A", opts: null, alts: "" }],
+					},
+					status: "ready",
+					expectedValid: true,
+				},
+				{
+					desc: "listening ready missing audio is invalid",
+					value: {
+						...blankWritingReady,
+						skill: "listening",
+						part: "s1",
+						type: "form",
+						title: "Listening Section 1",
+						audioName: "",
+						items: [{ stem: "Q1", answer: "A", opts: null, alts: "" }],
+					},
+					status: "ready",
+					expectedValid: false,
+				},
+				{
+					desc: "listening draft missing audio is valid",
+					value: {
+						...blankWritingReady,
+						skill: "listening",
+						part: "s1",
+						type: "form",
+						title: "Listening Draft",
+						audioName: "",
+						items: [{ stem: "Q1", answer: "", opts: null, alts: "" }],
+					},
+					status: "draft",
+					expectedValid: true,
+				},
+			];
+
+			for (const tc of testCases) {
+				const missing = missingRequirementsFor(tc.value, tc.status);
+				expect(
+					missing.length === 0,
+					`Failed parity for: ${tc.desc} (${tc.status}) - missing: ${JSON.stringify(missing)}`,
+				).toBe(tc.expectedValid);
+			}
+		});
 	});
 });
 

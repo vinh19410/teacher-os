@@ -4,6 +4,7 @@ import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { toast } from "sonner";
 import { StudentShell } from "@/components/layout/student-shell";
 import Loader from "@/components/loader";
+import { getCurrentLevelLabel } from "@/components/onboarding/onboarding-steps";
 import { AssignmentList } from "@/components/overview/assignment-list";
 import { ClassCard } from "@/components/overview/class-card";
 import { OverviewEmptyState } from "@/components/overview/empty-state";
@@ -108,9 +109,23 @@ function StudentOverviewPage() {
 			/>
 
 			{/* Dải stat 4 cột (design-v2 Dashboard): chỉ hiển thị số liệu CÓ dữ
-			 * liệu thật — band mục tiêu từ onboarding, việc cần làm, số lớp đang
-			 * học. Band hiện tại / chuyên cần chưa có nguồn → ẨN thay vì bịa. */}
+			 * liệu thật — trình độ hiện tại, band mục tiêu từ onboarding, việc cần làm,
+			 * số lớp đang học. Chuyên cần chưa có nguồn → ẨN thay vì bịa. */}
 			<div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+				{me.student.currentLevel && me.student.currentLevel !== "unsure" ? (
+					<StatCard
+						label="Trình độ hiện tại"
+						value={getCurrentLevelLabel(
+							me.student.currentLevel,
+							me.student.examInterest,
+						)}
+						sub={
+							me.student.examInterest === "toeic"
+								? "Điểm TOEIC tự đánh giá"
+								: "Band IELTS tự đánh giá"
+						}
+					/>
+				) : null}
 				{me.student.targetScore ? (
 					<StatCard
 						label="Band mục tiêu"
