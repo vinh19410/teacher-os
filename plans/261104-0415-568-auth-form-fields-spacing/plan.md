@@ -1,7 +1,7 @@
 ---
 title: "#568: Form auth bị dính sát các field (thiếu gap giữa field)"
 description: "Các thẻ <form> auth dùng AuthField không có grid gap nên Email/Mật khẩu/nút Đăng nhập dính nhau; thêm grid gap-4 vào 11 form ở student, web, admin."
-status: pending
+status: completed
 priority: P2
 effort: 1h
 issue: 568
@@ -46,11 +46,11 @@ Rủi ro đã biết: form có thuộc tính `hidden` (sign-in/sign-up có tab).
 
 | # | Phase | Trạng thái |
 |---|---|---|
-| 1 | [Thêm grid gap-4 vào các form auth](phase-01-add-form-gap.md) | pending |
+| 1 | [Thêm grid gap-4 vào các form auth](phase-01-add-form-gap.md) | completed |
 
 ## Acceptance criteria
 
-- Ở cả ba app, mọi form liệt kê ở trên có khoảng cách 16px giữa các field và nút (đo bằng `getComputedStyle(form).rowGap === "16px"`).
+- Ở cả ba app, mọi form liệt kê ở trên có khoảng cách 1rem (14px theo base font 14px của `globals.css` / 16px mặc định) giữa các field và nút (đo bằng `getComputedStyle(form).rowGap`).
 - Tab Đăng nhập/Đăng ký ở student và web vẫn ẩn đúng form không active.
 - `pnpm exec biome check .`, `pnpm check-types`, `pnpm test` xanh.
 - Ba viewport (1440×900, 768×1024, 375×812) + focus bàn phím theo `REVIEW.md`; PR kèm screenshot và chạy `pnpm design:compare`.

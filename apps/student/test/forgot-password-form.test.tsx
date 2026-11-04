@@ -28,7 +28,8 @@ describe("ForgotPasswordForm", () => {
 		);
 		expect(buttonMatch?.[0]).toBeDefined();
 		expect(buttonMatch?.[0]).not.toMatch(/\sdisabled=/);
-		expect(html).toMatch(/<form[^>]*class="[^"]*grid gap-4[^"]*"/);
+		expect(html).toMatch(/<form[^>]*class="[^"]*\bgrid\b[^"]*"/);
+		expect(html).toMatch(/<form[^>]*class="[^"]*\bgap-4\b[^"]*"/);
 		expect(html).not.toContain("mt-[22px]");
 	});
 
