@@ -374,7 +374,7 @@ export function UnmatchedTransactions({
 										<div className="flex flex-wrap items-center justify-end gap-2">
 											<select
 												aria-label="Chọn hóa đơn để gán"
-												className="rounded-md border border-border bg-muted px-2 py-1 text-xs"
+												className="select-chevron rounded-md border border-border bg-muted py-1 pr-9 pl-2 text-xs"
 												value={targets[tx.id] ?? ""}
 												onChange={(e) =>
 													setTargets((prev) => ({

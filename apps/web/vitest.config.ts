@@ -16,6 +16,11 @@ const rootPkg = JSON.parse(
 	),
 ) as { version?: string };
 
+const isCi =
+	Boolean(process.env.CI) &&
+	process.env.CI !== "0" &&
+	process.env.CI !== "false";
+
 export default defineConfig({
 	define: {
 		__APP_VERSION__: JSON.stringify(rootPkg.version ?? "0.0.0"),
@@ -25,5 +30,6 @@ export default defineConfig({
 	},
 	test: {
 		environment: "node",
+		maxWorkers: isCi ? 2 : undefined,
 	},
 });

@@ -10,7 +10,7 @@ import {
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { inputCls } from "@/components/ui/field";
+import { inputCls, Select } from "@/components/ui/field";
 import type { UploadedPlacementAudio } from "@/lib/repos/placement-test";
 import { ClipAudioField } from "./clip-audio-field";
 import { QuestionCard } from "./question-card";
@@ -134,38 +134,46 @@ export function ClipCard({
 					/>
 				</label>
 
-				<label className="block font-medium text-muted-foreground text-xs">
+				<label
+					className="block font-medium text-muted-foreground text-xs"
+					htmlFor={`clip-level-${clip.id}`}
+				>
 					Cấp độ
-					<select
+					<Select
+						id={`clip-level-${clip.id}`}
 						aria-label={`Cấp độ đoạn nghe ${clipIndex + 1}`}
 						value={clip.level}
 						onChange={(e) => onUpdateClip({ level: e.target.value })}
-						className={`${inputCls} mt-1 w-full`}
+						className="mt-1 w-full"
 					>
 						{PLACEMENT_LEVELS.map((lvl) => (
 							<option key={lvl} value={lvl}>
 								{lvl}
 							</option>
 						))}
-					</select>
+					</Select>
 				</label>
 
-				<label className="block font-medium text-muted-foreground text-xs">
+				<label
+					className="block font-medium text-muted-foreground text-xs"
+					htmlFor={`clip-max-plays-${clip.id}`}
+				>
 					Số lần nghe tối đa
-					<select
+					<Select
+						id={`clip-max-plays-${clip.id}`}
 						aria-label={`Số lần nghe đoạn ${clipIndex + 1}`}
 						value={clip.maxPlays}
 						onChange={(e) =>
 							onUpdateClip({ maxPlays: Number(e.target.value) || 2 })
 						}
-						className={`${inputCls} mt-1 w-full`}
+						className="mt-1 w-full"
 					>
 						{[1, 2, 3, 4, 5].map((n) => (
 							<option key={n} value={n}>
 								{n} lần
 							</option>
 						))}
-					</select>
+					</Select>
 				</label>
 			</div>
 

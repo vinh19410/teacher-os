@@ -48,6 +48,16 @@ async function applySingleMigration(client: Client, fileName: string) {
 	}
 }
 
+async function applyMigrationsAfter(client: Client, afterFileName: string) {
+	for (const fileName of migrationFiles()) {
+		if (fileName <= afterFileName) continue;
+		const sql = readFileSync(`${MIGRATIONS_DIR}/${fileName}`, "utf8");
+		for (const statement of statements(sql)) {
+			await client.execute(statement);
+		}
+	}
+}
+
 describe("0060_study_pack.sql migration & /readyz (#533)", () => {
 	test("nâng cấp từ 0059 sang 0060 không mất class_assignment & quiz_attempt, dọn sạch #526 và pass /readyz", async () => {
 		const client = createClient({ url: "file::memory:" });
@@ -219,6 +229,43 @@ describe("0060_study_pack.sql migration & /readyz (#533)", () => {
 		expect(notifs.rows).toHaveLength(1);
 		expect(notifs.rows[0]?.id).toBe("notif-keep");
 
+		await applyMigrationsAfter(client, "0060_study_pack.sql");
+
+		const cloneUqIdx = await client.execute(
+			"SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'study_pack_org_source_pack_uq'",
+		);
+		expect(cloneUqIdx.rows).toHaveLength(1);
+
+		// System packs (org_id = NULL, source_pack_id = NULL) and custom org packs (source_pack_id = NULL) never collide
+		await client.execute({
+			sql: "INSERT INTO study_pack (id, org_id, title, status, source_pack_id) VALUES (?, ?, ?, ?, ?)",
+			args: ["sys-1", null, "Sys 1", "ready", null],
+		});
+		await client.execute({
+			sql: "INSERT INTO study_pack (id, org_id, title, status, source_pack_id) VALUES (?, ?, ?, ?, ?)",
+			args: ["sys-2", null, "Sys 2", "ready", null],
+		});
+		await client.execute({
+			sql: "INSERT INTO study_pack (id, org_id, title, status, source_pack_id) VALUES (?, ?, ?, ?, ?)",
+			args: ["org-custom-1", "org-1", "Custom 1", "ready", null],
+		});
+		await client.execute({
+			sql: "INSERT INTO study_pack (id, org_id, title, status, source_pack_id) VALUES (?, ?, ?, ?, ?)",
+			args: ["org-custom-2", "org-1", "Custom 2", "ready", null],
+		});
+
+		// Duplicate clone of same (org_id, source_pack_id) must be rejected by UNIQUE constraint
+		await client.execute({
+			sql: "INSERT INTO study_pack (id, org_id, title, status, source_pack_id) VALUES (?, ?, ?, ?, ?)",
+			args: ["org-clone-1", "org-1", "Clone 1", "ready", "sys-1"],
+		});
+		await expect(
+			client.execute({
+				sql: "INSERT INTO study_pack (id, org_id, title, status, source_pack_id) VALUES (?, ?, ?, ?, ?)",
+				args: ["org-clone-2", "org-1", "Clone 2", "ready", "sys-1"],
+			}),
+		).rejects.toThrow(/UNIQUE/i);
+
 		const libsql = drizzle(client, { schema });
 		const app = buildApp({
 			getDb: () => libsql as unknown as Db,
@@ -231,6 +278,27 @@ describe("0060_study_pack.sql migration & /readyz (#533)", () => {
 		});
 		expect(readyRes.status).toBe(200);
 		expect(await readyRes.json()).toEqual({ ok: true });
+	});
+
+	test("mọi entry từ 0058 trở đi trong _journal.json đều có snapshot tương ứng và chuỗi prevId nối liền (#554)", () => {
+		const journal = JSON.parse(
+			readFileSync(`${MIGRATIONS_DIR}/meta/_journal.json`, "utf8"),
+		) as { entries: Array<{ idx: number; tag: string }> };
+		const recentEntries = journal.entries.filter((entry) => entry.idx >= 58);
+		expect(recentEntries.length).toBeGreaterThanOrEqual(3);
+
+		let prevSnapshotId: string | null = null;
+		for (const entry of recentEntries) {
+			const prefix = entry.tag.slice(0, 4);
+			const snap = JSON.parse(
+				readFileSync(`${MIGRATIONS_DIR}/meta/${prefix}_snapshot.json`, "utf8"),
+			) as { id: string; prevId: string };
+			expect(snap.id.length).toBeGreaterThan(0);
+			if (prevSnapshotId !== null) {
+				expect(snap.prevId).toBe(prevSnapshotId);
+			}
+			prevSnapshotId = snap.id;
+		}
 	});
 });
 

@@ -184,12 +184,17 @@
       border-bottom: 1px solid var(--line);
     }
 
+    .site-header .container {
+      max-width: 1360px;
+      padding-inline: clamp(16px, 2.5vw, 32px);
+    }
+
     .nav-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
       min-height: 70px;
-      gap: var(--space-4);
+      gap: var(--space-3);
     }
 
     .brand-link {
@@ -199,8 +204,8 @@
       text-decoration: none;
       color: var(--brand);
       min-height: 44px;
+      flex-shrink: 0;
     }
-
     .brand-monogram {
       width: 42px;
       height: 42px;
@@ -246,12 +251,13 @@
       display: inline-flex;
       align-items: center;
       min-height: 44px;
-      padding-inline: var(--space-3);
+      padding-inline: var(--space-2);
       text-decoration: none;
       font-size: 14px;
       font-weight: 700;
       color: var(--ink-2);
       border-radius: var(--radius-sm);
+      white-space: nowrap;
       transition: background-color var(--dur-state) var(--ease-out), color var(--dur-state) var(--ease-out);
     }
 
@@ -263,7 +269,12 @@
     .nav-actions {
       display: flex;
       align-items: center;
-      gap: var(--space-3);
+      gap: var(--space-2);
+    }
+
+    .nav-actions .btn-sm {
+      padding: 8px 12px;
+      font-size: 13.5px;
     }
 
     /* ==================== BUTTONS ==================== */
@@ -1442,33 +1453,6 @@
       font-weight: 700;
     }
 
-    .examenglish-details {
-      border: 1px dashed var(--line-strong);
-      border-radius: var(--radius-sm);
-      padding: 12px 14px;
-      background: var(--paper-warm);
-    }
-
-    .examenglish-details summary {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--brand);
-      cursor: pointer;
-    }
-
-    .examenglish-body {
-      margin-top: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .examenglish-body a {
-      color: var(--brand);
-      text-decoration: underline;
-      font-weight: 600;
-    }
-
     .quiz-applied-banner {
       font-size: 13px;
       font-weight: 600;
@@ -1766,6 +1750,12 @@
     }
 
     /* ==================== RESPONSIVE BREAKPOINTS ==================== */
+    @media (max-width: 1320px) {
+      .nav-links {
+        display: none;
+      }
+    }
+
     @media (max-width: 1024px) {
       .hero-frame {
         grid-template-columns: 1fr;
@@ -1792,11 +1782,22 @@
       }
     }
 
+    @media (max-width: 860px) {
+      .brand-subtitle {
+        display: none;
+      }
+    }
+
     @media (max-width: 768px) {
       .nav-links,
       .brand-subtitle,
       .floating-cta-text {
         display: none;
+      }
+      .nav-bar {
+        flex-wrap: wrap;
+        row-gap: var(--space-2);
+        padding-block: var(--space-2);
       }
       .btn {
         white-space: normal;
@@ -1856,6 +1857,20 @@
         margin-bottom: 4px;
       }
     }
+
+    @media (max-width: 640px) {
+      .nav-actions {
+        flex: 1 1 100%;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+      }
+      .nav-actions .btn {
+        flex: 1 1 calc(50% - var(--space-2));
+        min-width: 0;
+        padding: 8px 10px;
+        font-size: 13px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1874,13 +1889,13 @@
       <nav aria-label="Điều hướng chính">
         <ul class="nav-links">
           <li><a href="#bo-ho-so-pdf">Bộ 5 File PDF</a></li>
-          <li><a href="kiem-tra-dau-vao/">Làm Test Miễn Phí</a></li>
           <li><a href="#ho-so-giang-vien">Hồ Sơ Cô Mỹ</a></li>
           <li><a href="#lo-trinh-khoa-hoc">3 Khóa Học</a></li>
         </ul>
       </nav>
 
       <div class="nav-actions">
+        <a href="https://student.teacheros.io.vn" id="studentPortalLink" class="btn btn-outline btn-sm" rel="noopener">Gốc học viên</a>
         <a href="kiem-tra-dau-vao/" class="btn btn-gold btn-sm">📝 Làm Test Miễn Phí</a>
         <a href="#dang-ky-tu-van" class="btn btn-primary btn-sm">🎓 Đăng Ký Khóa Học</a>
       </div>
@@ -2831,20 +2846,6 @@
 
                 <input type="hidden" id="quizPlacementInput" name="placement" value="">
                 <div class="field full-span quiz-applied-banner" id="quizPlacementBanner" hidden></div>
-
-                <details class="field full-span examenglish-details" id="examEnglishDetails">
-                  <summary>Đã làm test examenglish? (nhập kết quả nếu có)</summary>
-                  <div class="examenglish-body">
-                    <span class="field-help">
-                      Nếu bạn đã làm bài test trên ExamEnglish
-                      (<a href="https://www.examenglish.com/leveltest/grammar_level_test.htm" target="_blank" rel="noopener">Grammar &amp; Vocabulary</a> •
-                      <a href="https://www.examenglish.com/leveltest/listening_level_test.htm" target="_blank" rel="noopener">Listening</a>),
-                      hãy ghi lại kết quả CEFR của bạn:
-                    </span>
-                    <label for="examEnglishInput">Kết quả ExamEnglish</label>
-                    <input type="text" id="examEnglishInput" class="input-control" maxlength="200" placeholder="Ví dụ: Grammar B1, Listening A2">
-                  </div>
-                </details>
               </div>
 
               <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px;">
@@ -3217,7 +3218,6 @@
       const targetNoteInput = document.getElementById('targetNote');
       const quizPlacementInput = document.getElementById('quizPlacementInput');
       const quizPlacementBanner = document.getElementById('quizPlacementBanner');
-      const examEnglishInput = document.getElementById('examEnglishInput');
       const websiteField = document.getElementById('websiteField');
       const submitLeadBtn = document.getElementById('submitLeadBtn');
       const fieldName = document.getElementById('fieldName');
@@ -3302,11 +3302,7 @@
       }
 
       function getCombinedPlacement() {
-        const parts = [
-          quizPlacementInput ? quizPlacementInput.value.trim() : '',
-          examEnglishInput ? examEnglishInput.value.trim() : ''
-        ].filter(Boolean);
-        return parts.join(' | ').slice(0, 300);
+        return quizPlacementInput ? quizPlacementInput.value.trim().slice(0, 300) : '';
       }
 
       function saveDraft() {
@@ -3321,8 +3317,7 @@
             studyDays: getCheckedRadioValue('studyDays'),
             timeSlot: getCheckedRadioValue('timeSlot'),
             note: targetNoteInput.value,
-            quizPlacement: quizPlacementInput.value,
-            examEnglish: examEnglishInput.value
+            quizPlacement: quizPlacementInput.value
           };
           localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
         } catch (err) {
@@ -3358,7 +3353,6 @@
             quizPlacementBanner.textContent = 'Đã đính kèm: ' + draft.quizPlacement;
             quizPlacementBanner.removeAttribute('hidden');
           }
-          if (typeof draft.examEnglish === 'string') examEnglishInput.value = draft.examEnglish;
           if (draft.name || draft.phone || draft.quizPlacement) {
             formRenderedAt = Math.min(formRenderedAt, Date.now() - 3500);
           }

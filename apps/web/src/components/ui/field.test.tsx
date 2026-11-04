@@ -138,3 +138,37 @@ describe("Field accessibility", () => {
 		expect(html).not.toContain("gap-1");
 	});
 });
+
+describe("Select chevron (#542)", () => {
+	it("renders native select with chevron class and reserved right padding", () => {
+		const html = renderToStaticMarkup(
+			<Select defaultValue="Online">
+				<option value="Online">Online</option>
+			</Select>,
+		);
+
+		expect(html).toContain("<select");
+		expect(html).toContain("select-chevron");
+		expect(html).toContain("pr-9");
+	});
+
+	it("keeps caller className and native props (defaultValue, disabled)", () => {
+		const html = renderToStaticMarkup(
+			<Select
+				className="h-8 min-w-[220px]"
+				defaultValue="A2"
+				disabled
+				aria-label="Cấp độ"
+			>
+				<option value="A2">A2</option>
+			</Select>,
+		);
+
+		// twMerge: caller class giữ nguyên, pr-9 không bị px-3 hoặc caller xoá.
+		expect(html).toContain("h-8 min-w-[220px]");
+		expect(html).toContain("pr-9");
+		expect(html).toContain("select-chevron");
+		expect(html).toContain("disabled");
+		expect(html).toContain('aria-label="Cấp độ"');
+	});
+});

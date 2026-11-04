@@ -9,7 +9,7 @@ import {
 } from "@teacher-os/api/placement-test-contracts";
 import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { inputCls } from "@/components/ui/field";
+import { inputCls, Select } from "@/components/ui/field";
 
 const OPTION_LETTERS = ["A", "B", "C", "D"] as const;
 
@@ -66,9 +66,13 @@ export function QuestionCard({
 
 				<div className="flex flex-wrap items-center gap-2">
 					{showKindSelector && "kind" in question && (
-						<label className="flex items-center gap-1.5 text-muted-foreground text-xs">
+						<label
+							className="flex items-center gap-1.5 text-muted-foreground text-xs"
+							htmlFor={`question-kind-${question.id}`}
+						>
 							<span>Phân loại</span>
-							<select
+							<Select
+								id={`question-kind-${question.id}`}
 								aria-label={`Phân loại câu ${displayNumber}`}
 								value={question.kind}
 								onChange={(e) =>
@@ -76,28 +80,32 @@ export function QuestionCard({
 										kind: e.target.value as PlacementQuestionKind,
 									})
 								}
-								className={`${inputCls} h-8 w-auto py-1 text-xs`}
+								className="h-8 w-auto py-1 text-xs"
 							>
 								<option value="grammar">Ngữ pháp</option>
 								<option value="vocab">Từ vựng</option>
-							</select>
+							</Select>
 						</label>
 					)}
 
-					<label className="flex items-center gap-1.5 text-muted-foreground text-xs">
+					<label
+						className="flex items-center gap-1.5 text-muted-foreground text-xs"
+						htmlFor={`question-level-${question.id}`}
+					>
 						<span>Cấp độ</span>
-						<select
+						<Select
+							id={`question-level-${question.id}`}
 							aria-label={`Cấp độ câu ${displayNumber}`}
 							value={question.level}
 							onChange={(e) => onChange({ level: e.target.value })}
-							className={`${inputCls} h-8 w-auto py-1 text-xs`}
+							className="h-8 w-auto py-1 text-xs"
 						>
 							{PLACEMENT_LEVELS.map((lvl) => (
 								<option key={lvl} value={lvl}>
 									{lvl}
 								</option>
 							))}
-						</select>
+						</Select>
 					</label>
 
 					<Button

@@ -42,6 +42,7 @@ describe("study-pack-assign (schedule, assign, cancel, backfill)", () => {
 
 	beforeAll(async () => {
 		const client = createClient({ url: "file::memory:" });
+		await client.execute("PRAGMA foreign_keys = ON");
 		const libsql = drizzle(client, { schema });
 		await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
 		db = libsql as unknown as Db;
@@ -406,5 +407,213 @@ describe("study-pack-assign (schedule, assign, cancel, backfill)", () => {
 			expect(reassigned.reused).toBe(false);
 			expect(reassigned.classPackId).not.toBe(first.classPackId);
 		}
+	});
+
+	test("interleaved cancelClassStudyPack during fresh and reused assignStudyPackToClass cleans up all unattempted rows, handles D1 FK errors, and returns 409 (#554)", async () => {
+		await db.insert(classTable).values([
+			{
+				id: "cls-race-fresh",
+				orgId: "org-assign-1",
+				name: "IELTS Race Fresh",
+				level: "6.5",
+				type: "ielts",
+				skills: '["reading"]',
+				mode: "Online",
+				schedule: '{"days":[1,3],"start":"18:00","end":"20:00"}',
+				sessionsTotal: 10,
+				sessionsDone: 0,
+				status: "active",
+				startDate: "2026-11-20",
+				notes: "",
+			},
+			{
+				id: "cls-race-reuse",
+				orgId: "org-assign-1",
+				name: "IELTS Race Reuse",
+				level: "6.5",
+				type: "ielts",
+				skills: '["reading"]',
+				mode: "Online",
+				schedule: '{"days":[2,4],"start":"18:00","end":"20:00"}',
+				sessionsTotal: 10,
+				sessionsDone: 0,
+				status: "active",
+				startDate: "2026-11-20",
+				notes: "",
+			},
+		]);
+		await db.insert(student).values({
+			id: "stu-race-2",
+			orgId: "org-assign-1",
+			name: "Học viên Race 2",
+			email: "race2@student.local",
+			phone: "0909999999",
+		});
+		await db.insert(enrollment).values([
+			{
+				id: "enr-race-fresh-1",
+				orgId: "org-assign-1",
+				classId: "cls-race-fresh",
+				studentId: "stu-assign-1",
+				status: "active",
+			},
+			{
+				id: "enr-race-reuse-1",
+				orgId: "org-assign-1",
+				classId: "cls-race-reuse",
+				studentId: "stu-assign-1",
+				status: "active",
+			},
+		]);
+
+		// 1) Fresh (!reused) assign cancelled right before assignment batch runs:
+		// startDate = 2026-11-20, releaseTime = 06:00, cancelNow = 2026-11-20 10:00 VN
+		// Day 1 has available_at = 06:00 <= cancelNow, Day 2..3 have available_at > cancelNow.
+		// Both Day 1 and Day 2..3 MUST be cleaned up because this fresh pack never completed activation!
+		const cancelNow = new Date(vietnamDateTimeMs("2026-11-20", "10:00"));
+		let freshHookFired = false;
+		const freshRacedDb = new Proxy(db, {
+			get(target, prop, receiver) {
+				if (prop === "batch") {
+					return async (...args: Parameters<Db["batch"]>) => {
+						if (!freshHookFired) {
+							freshHookFired = true;
+							const [createdPack] = await db
+								.select({ id: schema.classStudyPack.id })
+								.from(schema.classStudyPack)
+								.where(eq(schema.classStudyPack.classId, "cls-race-fresh"));
+							if (createdPack) {
+								await cancelClassStudyPack(
+									db,
+									"org-assign-1",
+									"cls-race-fresh",
+									createdPack.id,
+									cancelNow,
+								);
+							}
+						}
+						return Reflect.apply(target.batch, target, args);
+					};
+				}
+				return Reflect.get(target, prop, receiver);
+			},
+		});
+
+		const freshResult = await assignStudyPackToClass(freshRacedDb, {
+			orgId: "org-assign-1",
+			classId: "cls-race-fresh",
+			packId: "pack-assign-3d",
+			startDate: "2026-11-20",
+			releaseTime: "06:00",
+			dueTime: "17:00",
+			now: cancelNow,
+		});
+		expect(freshHookFired).toBe(true);
+		expect(freshResult).toEqual({
+			ok: false,
+			status: 409,
+			error: "study pack was cancelled",
+		});
+		const leakedFreshAssignments = await db
+			.select({ id: classAssignment.id })
+			.from(classAssignment)
+			.where(eq(classAssignment.classId, "cls-race-fresh"));
+		expect(leakedFreshAssignments).toHaveLength(0);
+
+		// 2) Reused target backfill racing with cancelClassStudyPack under PRAGMA foreign_keys = ON:
+		const initialReuse = await assignStudyPackToClass(db, {
+			orgId: "org-assign-1",
+			classId: "cls-race-reuse",
+			packId: "pack-assign-3d",
+			startDate: "2026-11-25",
+			releaseTime: "06:00",
+			dueTime: "17:00",
+			now: cancelNow,
+		});
+		expect(initialReuse.ok).toBe(true);
+		if (!initialReuse.ok) return;
+
+		await db.insert(enrollment).values({
+			id: "enr-race-reuse-2",
+			orgId: "org-assign-1",
+			classId: "cls-race-reuse",
+			studentId: "stu-race-2",
+			status: "active",
+		});
+
+		let fkHookFired = false;
+		const fkRacedDb = new Proxy(db, {
+			get(target, prop, receiver) {
+				if (prop === "batch") {
+					return async (...args: Parameters<Db["batch"]>) => {
+						if (!fkHookFired) {
+							fkHookFired = true;
+							await cancelClassStudyPack(
+								db,
+								"org-assign-1",
+								"cls-race-reuse",
+								initialReuse.classPackId,
+								cancelNow,
+							);
+						}
+						return Reflect.apply(target.batch, target, args);
+					};
+				}
+				return Reflect.get(target, prop, receiver);
+			},
+		});
+
+		const reusedRaceResult = await assignStudyPackToClass(fkRacedDb, {
+			orgId: "org-assign-1",
+			classId: "cls-race-reuse",
+			packId: "pack-assign-3d",
+			startDate: "2026-11-25",
+			releaseTime: "06:00",
+			dueTime: "17:00",
+			now: cancelNow,
+		});
+		expect(fkHookFired).toBe(true);
+		expect(reusedRaceResult).toEqual({
+			ok: false,
+			status: 409,
+			error: "study pack was cancelled",
+		});
+
+		// 3) Self-healing cancelClassStudyPack retry uses original cancelledAt (not later retry now)
+		await db.insert(classAssignment).values({
+			id: "ca_leaked_after_cancel",
+			orgId: "org-assign-1",
+			classId: "cls-race-reuse",
+			promptId: "pr-assign-g1",
+			title: "Leaked Day 1",
+			due: "2026-11-25",
+			note: "",
+			availableAt: new Date(vietnamDateTimeMs("2026-11-25", "06:00")),
+			dueAt: new Date(vietnamDateTimeMs("2026-11-25", "17:00")),
+			classStudyPackId: initialReuse.classPackId,
+		});
+		const retryNowAfterOpen = new Date(
+			vietnamDateTimeMs("2026-11-25", "06:30"),
+		);
+		const retryCancel = await cancelClassStudyPack(
+			db,
+			"org-assign-1",
+			"cls-race-reuse",
+			initialReuse.classPackId,
+			retryNowAfterOpen,
+		);
+		expect(retryCancel).toEqual({ ok: true });
+
+		const [packAfterRetry] = await db
+			.select()
+			.from(schema.classStudyPack)
+			.where(eq(schema.classStudyPack.id, initialReuse.classPackId));
+		expect(packAfterRetry?.cancelledAt?.getTime()).toBe(cancelNow.getTime());
+
+		const remainingLeaked = await db
+			.select({ id: classAssignment.id })
+			.from(classAssignment)
+			.where(eq(classAssignment.id, "ca_leaked_after_cancel"));
+		expect(remainingLeaked).toHaveLength(0);
 	});
 });
