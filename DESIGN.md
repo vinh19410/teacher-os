@@ -81,8 +81,8 @@ giấy trên nền trắng (shadcn neutral), hành động chính = mực đậm
 - **Badge/TuitionBadge v2:** Badge theo variant shadcn (`default`/`secondary`/`outline`/
   `destructive`) với chấm màu `bg-current`; trạng thái học phí tô bằng `--success`/`--warn`/
   `--destructive` qua `tuitionDot`, chữ muted. Hết mono 10px uppercase.
-- **Chip lọc (`ChipFilter`) và chip chọn nhiều (`ChipMulti`):** `ChipMulti` chưa chọn dùng `rounded-md border border-input bg-background text-foreground dark:bg-input/30`,
-  đã chọn dùng `border-primary bg-primary text-primary-foreground`; `ChipFilter` giữ badge đếm `font-mono text-[10px]` (`aria-hidden` để accessible name chỉ
+- **Chip lọc (`ChipFilter`) và chip chọn nhiều (`ChipMulti`):** chưa chọn dùng `rounded-md border border-input bg-background text-foreground hover:bg-accent dark:bg-input/30 dark:hover:bg-input/50`,
+  đã chọn dùng `border-primary bg-primary text-primary-foreground`; `ChipFilter` giữ badge đếm `tabular-nums` (`text-primary-foreground/80` khi chọn, `text-muted-foreground` khi chưa chọn, `aria-hidden` để accessible name chỉ
   là label); chip 0 kết quả vẫn full contrast, vẫn bấm được; nhóm chip liên quan phải có
   `role="group"` + `aria-label`.
 - **Bộ lọc hai cấp (skill → part):** khi "Tất cả", nhóm part theo skill với nhãn muted;

@@ -6,9 +6,8 @@
  * học nên cả hai bar đều được căn GIỮA slot thay vì xếp cạnh nhau (mặc định
  * recharts đặt 2 series cạnh nhau trong cùng category). Animation tắt hoàn
  * toàn theo DESIGN.md (không entrance choreography); selection toggle =
- * chip secondary (pattern ChipFilter v2); `role="img"`
- * + aria-label CHỈ bọc khối chart, không bọc toggle (nút focusable bên trong
- * role="img" vi phạm ARIA).
+ * pattern ChipFilter; `role="img"` + aria-label CHỈ bọc khối chart, không
+ * bọc toggle (nút focusable bên trong role="img" vi phạm ARIA).
  */
 import { useEffect } from "react";
 import {
@@ -158,11 +157,11 @@ export function RevenueChart({
 							data-testid={`revenue-period-${p.value}`}
 							onClick={() => onPeriodChange(p.value)}
 							className={cn(
-								"inline-flex items-center rounded-md border bg-background px-3 py-1.5 font-medium text-xs outline-none transition-[color,box-shadow] dark:bg-input/30",
-								"focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+								"inline-flex items-center rounded-md border px-3 py-1.5 font-medium text-xs outline-none transition-[color,background-color,border-color,box-shadow]",
+								"focus-visible:ring-[3px] focus-visible:ring-ring/50",
 								p.value === period
-									? "border-transparent bg-secondary text-secondary-foreground"
-									: "hover:bg-accent hover:text-accent-foreground",
+									? "border-primary bg-primary text-primary-foreground"
+									: "border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:hover:bg-input/50",
 							)}
 						>
 							{p.label}
