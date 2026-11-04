@@ -791,6 +791,18 @@ export const studentWritingSectionSchema = z
 	.strict();
 export type StudentWritingSection = z.infer<typeof studentWritingSectionSchema>;
 
+export const ASSIGNMENT_BANDS = [
+	"5.0",
+	"5.5",
+	"6.0",
+	"6.5",
+	"7.0",
+	"7.5",
+	"8.0",
+] as const;
+export type AssignmentBand = (typeof ASSIGNMENT_BANDS)[number];
+export const DEFAULT_ASSIGNMENT_BAND: AssignmentBand = "7.0";
+
 /**
  * Ngân hàng đề IELTS 4 kỹ năng. `status` luôn tường minh trên wire:
  * ready = hiện khi giao từ trang Lớp học, draft = bản nháp riêng tư.
@@ -801,7 +813,7 @@ const assignmentPromptBaseSchema = z
 		part: z.string().trim().min(1).max(20),
 		type: z.string().trim().max(20),
 		title: z.string().trim().min(1).max(200),
-		band: z.enum(["6.0", "6.5", "7.0", "7.5"]),
+		band: z.enum(ASSIGNMENT_BANDS),
 		source: z.string().trim().max(200),
 		// Rich text (HTML string) — the meaningful cap is measured on the
 		// plain text without markup; raw cap guards transport. intro/transcript/
@@ -4423,7 +4435,7 @@ const libraryExerciseBaseSchema = z
 		part: z.string().trim().min(1).max(20),
 		type: z.string().trim().min(1).max(20),
 		title: z.string().trim().min(1).max(200),
-		band: z.enum(["6.0", "6.5", "7.0", "7.5"]).default("7.0"),
+		band: z.enum(ASSIGNMENT_BANDS).default(DEFAULT_ASSIGNMENT_BAND),
 		intro: richTextField(2000).default(""),
 		passage: richTextField(20000).default(""),
 		questions: z.array(assignmentQuestionSchema).max(40).default([]),

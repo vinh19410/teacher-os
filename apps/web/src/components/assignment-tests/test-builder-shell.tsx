@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import {
 	ASSIGNMENT_TEST_PRESETS,
+	type AssignmentBand,
 	type AssignmentSkill,
 	isAssignmentImageUrl,
 	type KernelAssignmentTestRow,
@@ -876,7 +877,7 @@ function composerToPromptPayload(
 		part: value.part,
 		type: value.type,
 		title: value.title.trim(),
-		band: value.band as "6.0" | "6.5" | "7.0" | "7.5",
+		band: value.band as AssignmentBand,
 		source: value.source.trim(),
 		prompt: value.prompt.trim(),
 		passage: value.passage.trim(),

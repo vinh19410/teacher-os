@@ -1,8 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { isAssignmentImageUrl } from "@teacher-os/api/contracts";
-import { isEmptyRichText } from "@teacher-os/api/rich-text";
-import { type FormEvent, useEffect, useState } from "react";
 import {
+	ASSIGNMENT_BANDS,
+	type AssignmentBand,
+	DEFAULT_ASSIGNMENT_BAND,
+	isAssignmentImageUrl,
+} from "@teacher-os/api/contracts";
+import { isEmptyRichText } from "@teacher-os/api/rich-text";
+import { type FormEvent, useEffect, useRef, useState } from "react";
+import {
+	bandFromClassLevel,
 	emptyComposer,
 	isAutoSkill,
 	isImageBased,
@@ -47,6 +53,9 @@ import {
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 
 export const Route = createFileRoute("/_auth/assignments/new")({
+	validateSearch: (search: Record<string, unknown>): { classId?: string } => ({
+		classId: typeof search.classId === "string" ? search.classId : undefined,
+	}),
 	component: NewAssignmentRoute,
 });
 
@@ -61,12 +70,14 @@ interface SavedPrompt {
 	audioName: string;
 	questions: QuestionItem[];
 }
-function freshComposer(): ComposerValue {
+function freshComposer(
+	initialBand: AssignmentBand = DEFAULT_ASSIGNMENT_BAND,
+): ComposerValue {
 	return {
 		skill: "writing",
 		part: "task2",
 		type: "",
-		band: "7.0",
+		band: initialBand,
 		...emptyComposer("writing", ""),
 		writing: null,
 	};
@@ -395,7 +406,16 @@ const STRUCTURAL_LABELS = {
 export function NewAssignmentRoute() {
 	const navigate = useNavigate();
 	const submit = useKernelFormSubmit();
+	const { classId } = Route.useSearch?.() ?? {};
 	const { data } = useData();
+	const targetClass = classId
+		? data.classes?.find((c) => c.id === classId)
+		: null;
+	const classBand = targetClass
+		? bandFromClassLevel(targetClass.level, targetClass.type)
+		: null;
+	const resolvedDefaultBand = classBand ?? DEFAULT_ASSIGNMENT_BAND;
+	const userChangedBandRef = useRef(false);
 	// Restore precedence (FR6): the destructive preview-draft take wins over
 	// the autosave banner — the teacher deliberately handed off to /preview.
 	const [restored] = useState(() => takePreviewDraft());
@@ -411,7 +431,7 @@ export function NewAssignmentRoute() {
 	const [value, setValue] = useState<ComposerValue>(() =>
 		restored
 			? {
-					...freshComposer(),
+					...freshComposer(resolvedDefaultBand),
 					...restored,
 					skill: restored.skill ?? "writing",
 					part: restored.part ?? restored.task,
@@ -436,7 +456,7 @@ export function NewAssignmentRoute() {
 				}
 			: bannerDraft
 				? {
-						...freshComposer(),
+						...freshComposer(resolvedDefaultBand),
 						...bannerDraft.value,
 						prompt: restoreRich(bannerDraft.value.prompt),
 						passage: restoreRich(bannerDraft.value.passage),
@@ -451,7 +471,7 @@ export function NewAssignmentRoute() {
 							: null,
 						items: normalizeDraftItems(bannerDraft.value.items ?? []),
 					}
-				: freshComposer(),
+				: freshComposer(resolvedDefaultBand),
 	);
 	const [status, setStatus] = useState<"draft" | "ready">(
 		restored?.status ?? bannerDraft?.status ?? "ready",
@@ -462,6 +482,21 @@ export function NewAssignmentRoute() {
 	// Debounced autosave (FR6): skip the success card (the draft was cleared
 	// on purpose) and skip an untouched composer (an empty draft must never
 	// resurrect the restore banner).
+	useEffect(() => {
+		if (!classBand) return;
+		if (userChangedBandRef.current) return;
+		if (restored || bannerDraft) return;
+		setValue((current) => {
+			if (
+				current.band === DEFAULT_ASSIGNMENT_BAND &&
+				current.band !== classBand
+			) {
+				return { ...current, band: classBand };
+			}
+			return current;
+		});
+	}, [classBand, restored, bannerDraft]);
+
 	useEffect(() => {
 		if (saved) return;
 		if (!composerDraftHasContent(value)) return;
@@ -523,6 +558,9 @@ export function NewAssignmentRoute() {
 	const canSave = missingRequirements.length === 0;
 	const actionCopy = actionCopyFor(value, status);
 	function handleFieldChange(patch: Partial<ComposerValue>) {
+		if (patch.band !== undefined) {
+			userChangedBandRef.current = true;
+		}
 		// Confirm decision happens HERE, outside the state updater — React
 		// StrictMode double-fires updaters, so a confirm inside one would fire
 		// twice (red-team #8). The updater stays pure.
@@ -555,13 +593,14 @@ export function NewAssignmentRoute() {
 	function discardDraftBanner() {
 		clearAssignmentDraft();
 		setBannerOpen(false);
-		setValue(freshComposer());
+		setValue(freshComposer(resolvedDefaultBand));
 		setStatus("ready");
 	}
 	function resetAll() {
 		clearAssignmentDraft();
 		setBannerOpen(false);
-		setValue(freshComposer());
+		userChangedBandRef.current = false;
+		setValue(freshComposer(resolvedDefaultBand));
 		setStatus("ready");
 		setShowErrors(false);
 		setSaved(null);
@@ -616,7 +655,9 @@ export function NewAssignmentRoute() {
 				part: value.part,
 				type: value.type,
 				title: value.title.trim(),
-				band: value.band as "6.0" | "6.5" | "7.0" | "7.5",
+				band: (ASSIGNMENT_BANDS as readonly string[]).includes(value.band)
+					? (value.band as AssignmentBand)
+					: DEFAULT_ASSIGNMENT_BAND,
 				source: value.source.trim(),
 				prompt: value.prompt.trim(),
 				passage: value.passage.trim(),

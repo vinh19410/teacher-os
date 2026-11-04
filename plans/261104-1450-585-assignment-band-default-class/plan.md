@@ -1,7 +1,7 @@
 ---
 title: "feat(assignments): band của bài mặc định theo lớp thay vì 7.0"
 description: "Mở rộng danh sách band trong contract từ 5.0 đến 8.0 (step 0.5), truyền classId từ tab bài tập của lớp vào form /assignments/new và trích xuất band của lớp làm mặc định, fallback 7.0 khi không có lớp."
-status: pending
+status: completed
 priority: P3
 effort: 1h30m
 issue: 585
@@ -59,23 +59,23 @@ flowchart TD
 
 | # | Phase | Trạng thái | Ước lượng |
 |---|---|---|---|
-| 1 | [API Contracts và Admin Library Alignment](phase-01-contracts-and-admin-alignment.md) | pending | 25m |
-| 2 | [Class Context, Level Parsing và Form Default](phase-02-class-context-and-composer-default.md) | pending | 35m |
-| 3 | [Integration, Regression Verification và Quality Gates](phase-03-integration-and-verification.md) | pending | 30m |
+| 1 | [API Contracts và Admin Library Alignment](phase-01-contracts-and-admin-alignment.md) | completed | 25m |
+| 2 | [Class Context, Level Parsing và Form Default](phase-02-class-context-and-composer-default.md) | completed | 35m |
+| 3 | [Integration, Regression Verification và Quality Gates](phase-03-integration-and-verification.md) | completed | 30m |
 
 ## Acceptance Criteria
-- [ ] `packages/api/src/contracts.ts` xuất `ASSIGNMENT_BANDS`, `AssignmentBand`, `DEFAULT_ASSIGNMENT_BAND`.
-- [ ] Schema `assignmentPromptBaseSchema`, `libraryExerciseBaseSchema`, và `libraryPartUpsertSchema` validate theo `ASSIGNMENT_BANDS`.
-- [ ] `apps/server/src/kernel.test.ts` cập nhật test rejection từ band "8.0" sang "8.5".
-- [ ] `apps/admin/src/components/library/part-form.tsx` dùng `ASSIGNMENT_BANDS` cho `BAND_OPTIONS`.
-- [ ] Helper `bandFromClassLevel` trích xuất chính xác band từ các chuỗi: `"Band 5.5"` -> `"5.5"`, `"IELTS 5.5"` -> `"5.5"`, `"5.5"` -> `"5.5"`, `"Band 7.5+"` -> `"7.5"`, `"Band 5.0"` -> `"5.0"`, `"IELTS 5.0–6.0"` -> `"6.0"`, `"TOEIC 550"` -> `null`, `"Unknown"` -> `null`, `""` -> `null`.
-- [ ] Route `/_auth/assignments/new` khai báo `validateSearch` nhận `{ classId?: string }`.
-- [ ] Link "Thêm đề mới" trên tab bài tập lớp học truyền search param `classId`.
-- [ ] Khi vào `/assignments/new?classId=<id-lớp-5.5>`, form khởi tạo với chip band 5.5 được chọn.
-- [ ] Khi reset form hoặc chọn "Tạo bài khác", band giữ nguyên theo lớp ban đầu (nếu có context lớp).
-- [ ] Khi vào `/assignments/new` không có classId hoặc classId không hợp lệ, form fallback về band 7.0 không lỗi.
-- [ ] Đề nháp đã lưu trước đó vẫn khôi phục chính xác, không bị đè bởi class default. Khi dismiss draft, form reset về band lớp.
-- [ ] Toàn bộ unit tests tại `packages/api`, `apps/server`, `apps/admin`, `apps/web` đều pass; `pnpm check`, `pnpm check-types` pass sạch sẽ.
+- [x] `packages/api/src/contracts.ts` xuất `ASSIGNMENT_BANDS`, `AssignmentBand`, `DEFAULT_ASSIGNMENT_BAND`.
+- [x] Schema `assignmentPromptBaseSchema`, `libraryExerciseBaseSchema`, và `libraryPartUpsertSchema` validate theo `ASSIGNMENT_BANDS`.
+- [x] `apps/server/src/kernel.test.ts` cập nhật test rejection từ band "8.0" sang "8.5".
+- [x] `apps/admin/src/components/library/part-form.tsx` dùng `ASSIGNMENT_BANDS` cho `BAND_OPTIONS`.
+- [x] Helper `bandFromClassLevel` trích xuất chính xác band từ các chuỗi: `"Band 5.5"` -> `"5.5"`, `"IELTS 5.5"` -> `"5.5"`, `"5.5"` -> `"5.5"`, `"Band 7.5+"` -> `"7.5"`, `"Band 5.0"` -> `"5.0"`, `"IELTS 5.0–6.0"` -> `"6.0"`, `"TOEIC 550"` -> `null`, `"Unknown"` -> `null`, `""` -> `null`.
+- [x] Route `/_auth/assignments/new` khai báo `validateSearch` nhận `{ classId?: string }`.
+- [x] Link "Thêm đề mới" trên tab bài tập lớp học truyền search param `classId`.
+- [x] Khi vào `/assignments/new?classId=<id-lớp-5.5>`, form khởi tạo với chip band 5.5 được chọn.
+- [x] Khi reset form hoặc chọn "Tạo bài khác", band giữ nguyên theo lớp ban đầu (nếu có context lớp).
+- [x] Khi vào `/assignments/new` không có classId hoặc classId không hợp lệ, form fallback về band 7.0 không lỗi.
+- [x] Đề nháp đã lưu trước đó vẫn khôi phục chính xác, không bị đè bởi class default. Khi dismiss draft, form reset về band lớp.
+- [x] Toàn bộ unit tests tại `packages/api`, `apps/server`, `apps/admin`, `apps/web` đều pass; `pnpm check`, `pnpm check-types` pass sạch sẽ.
 
 ## Red Team Review
 Reviewers: Assumption Destroyer, Failure Mode Analyst, Security Adversary.
