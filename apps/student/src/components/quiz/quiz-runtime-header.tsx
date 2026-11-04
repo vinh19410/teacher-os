@@ -67,7 +67,7 @@ export function QuizRuntimeHeader({
 					<Button
 						onClick={onSubmitClick}
 						disabled={submitDisabled}
-						className="rounded-lg bg-primary text-bg hover:bg-primary hover:text-primary-foreground"
+						className="rounded-lg"
 					>
 						Nộp bài
 					</Button>

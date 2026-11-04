@@ -76,6 +76,10 @@ describe("Student VocabSuggestionList & suggestion repo (#363)", () => {
 			"Ôn trước thứ 7 nhé",
 		);
 		expect(screen.queryByTestId("vocab-suggestion-note-sug-2")).toBeNull();
+		const acceptBtn = screen.getByTestId("vocab-suggestion-accept-sug-1");
+		expect(acceptBtn.classList.contains("text-bg")).toBe(false);
+		expect(acceptBtn.classList.contains("text-primary-foreground")).toBe(true);
+		expect(acceptBtn.classList.contains("hover:bg-primary/90")).toBe(true);
 
 		fireEvent.click(screen.getByTestId("vocab-suggestion-accept-sug-1"));
 		expect(onAccept).toHaveBeenCalledWith(suggestions[0]);

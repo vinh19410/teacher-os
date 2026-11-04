@@ -1,4 +1,6 @@
 import {
+	CURRENT_LEVEL_OPTIONS,
+	type CurrentLevelOption,
 	DAILY_STUDY_HOUR_OPTIONS,
 	type DailyStudyHourOption,
 	EXAM_INTERESTS,
@@ -12,6 +14,7 @@ import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
+	CurrentLevelStep,
 	ExamInterestStep,
 	LearningGoalsStep,
 	OnboardingSummary,
@@ -29,25 +32,30 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 	const [step, setStep] = useState(0);
 	const [answers, setAnswers] = useState<{
 		examInterest: ExamInterest | null;
+		currentLevel: CurrentLevelOption | null;
 		targetScore: string | null;
 		learningGoals: LearningGoalOption[];
 		learningGoalsNote: string;
 		dailyStudyHours: DailyStudyHourOption | null;
 	}>({
 		examInterest: null,
+		currentLevel: null,
 		targetScore: null,
 		learningGoals: [],
 		learningGoalsNote: "",
 		dailyStudyHours: null,
 	});
-
 	const submitMutation = useSubmitOnboarding();
 
-	const isStep0Valid =
+	const isExamStepValid =
 		answers.examInterest !== null &&
 		EXAM_INTERESTS.includes(answers.examInterest);
 
-	const isStep1Valid =
+	const isLevelStepValid =
+		answers.currentLevel !== null &&
+		CURRENT_LEVEL_OPTIONS.includes(answers.currentLevel);
+
+	const isTargetStepValid =
 		answers.targetScore !== null &&
 		answers.examInterest !== null &&
 		(answers.examInterest === "ielts"
@@ -56,24 +64,26 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 					answers.targetScore,
 				));
 
-	const isStep2Valid =
+	const isGoalsStepValid =
 		answers.learningGoals.length >= 1 &&
 		answers.learningGoalsNote.length <= 200;
 
-	const isStep3Valid =
+	const isHoursStepValid =
 		answers.dailyStudyHours !== null &&
 		DAILY_STUDY_HOUR_OPTIONS.includes(answers.dailyStudyHours);
 
 	const isCurrentStepValid = (() => {
 		switch (step) {
 			case 0:
-				return isStep0Valid;
+				return isExamStepValid;
 			case 1:
-				return isStep1Valid;
+				return isLevelStepValid;
 			case 2:
-				return isStep2Valid;
+				return isTargetStepValid;
 			case 3:
-				return isStep3Valid;
+				return isGoalsStepValid;
+			case 4:
+				return isHoursStepValid;
 			default:
 				return true;
 		}
@@ -82,6 +92,7 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 	const handleSubmit = async () => {
 		if (
 			!answers.examInterest ||
+			!answers.currentLevel ||
 			!answers.targetScore ||
 			answers.learningGoals.length === 0 ||
 			!answers.dailyStudyHours
@@ -92,6 +103,7 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 
 		const payload: StudentOnboardingPayload = {
 			examInterest: answers.examInterest,
+			currentLevel: answers.currentLevel,
 			targetScore: answers.targetScore,
 			learningGoals: answers.learningGoals,
 			learningGoalsNote: answers.learningGoalsNote.trim() || undefined,
@@ -108,15 +120,15 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 	};
 
 	return (
-		<div className="mx-auto w-full max-w-[560px] space-y-6 rounded-lg rounded-xl border bg-card p-6 shadow-sm sm:p-8">
+		<div className="mx-auto w-full max-w-[560px] space-y-6 rounded-xl border bg-card p-6 shadow-sm sm:p-8">
 			{/* Progress Indicator */}
 			<div className="space-y-2">
 				<div className="flex items-center justify-between font-mono text-[11px] text-muted-foreground uppercase tracking-[0.18em]">
 					<span>Thiết lập mục tiêu học tập</span>
-					<span>Bước {Math.min(step + 1, 4)}/4</span>
+					<span>Bước {Math.min(step + 1, 5)}/5</span>
 				</div>
 				<div className="flex gap-1.5">
-					{[0, 1, 2, 3].map((idx) => (
+					{[0, 1, 2, 3, 4].map((idx) => (
 						<div
 							key={idx}
 							className={cn(
@@ -137,14 +149,28 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 							setAnswers((prev) => ({
 								...prev,
 								examInterest: v,
-								// Reset target score if exam changed
+								// Reset target score and level if exam changed
 								targetScore: prev.examInterest === v ? prev.targetScore : null,
+								currentLevel:
+									prev.examInterest === v ? prev.currentLevel : null,
+							}))
+						}
+					/>
+				)}
+				{step === 1 && answers.examInterest && (
+					<CurrentLevelStep
+						examInterest={answers.examInterest}
+						value={answers.currentLevel}
+						onSelect={(v) =>
+							setAnswers((prev) => ({
+								...prev,
+								currentLevel: v,
 							}))
 						}
 					/>
 				)}
 
-				{step === 1 && answers.examInterest && (
+				{step === 2 && answers.examInterest && (
 					<TargetScoreStep
 						examInterest={answers.examInterest}
 						value={answers.targetScore}
@@ -157,7 +183,7 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 					/>
 				)}
 
-				{step === 2 && (
+				{step === 3 && (
 					<LearningGoalsStep
 						value={answers.learningGoals}
 						onToggle={(g) =>
@@ -178,7 +204,7 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 					/>
 				)}
 
-				{step === 3 && (
+				{step === 4 && (
 					<StudyHoursStep
 						value={answers.dailyStudyHours}
 						onSelect={(v) =>
@@ -190,17 +216,22 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 					/>
 				)}
 
-				{step === 4 && answers.examInterest && answers.targetScore && (
-					<OnboardingSummary
-						answers={{
-							examInterest: answers.examInterest,
-							targetScore: answers.targetScore,
-							learningGoals: answers.learningGoals,
-							learningGoalsNote: answers.learningGoalsNote.trim() || undefined,
-							dailyStudyHours: answers.dailyStudyHours ?? "1-2",
-						}}
-					/>
-				)}
+				{step === 5 &&
+					answers.examInterest &&
+					answers.currentLevel &&
+					answers.targetScore && (
+						<OnboardingSummary
+							answers={{
+								examInterest: answers.examInterest,
+								currentLevel: answers.currentLevel,
+								targetScore: answers.targetScore,
+								learningGoals: answers.learningGoals,
+								learningGoalsNote:
+									answers.learningGoalsNote.trim() || undefined,
+								dailyStudyHours: answers.dailyStudyHours ?? "1-2",
+							}}
+						/>
+					)}
 			</div>
 
 			{/* Action Footer */}
@@ -209,7 +240,7 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 					<button
 						type="button"
 						onClick={() => setStep((s) => s - 1)}
-						className="inline-flex items-center gap-1.5 rounded-lg rounded-md border border-input bg-transparent px-3.5 py-2 font-medium text-foreground text-sm transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+						className="inline-flex items-center gap-1.5 rounded-md border border-input bg-transparent px-3.5 py-2 font-medium text-foreground text-sm transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 					>
 						<ArrowLeft className="h-4 w-4" />
 						<span>Quay lại</span>
@@ -218,7 +249,7 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 					<div />
 				)}
 
-				{step < 4 ? (
+				{step < 5 ? (
 					<button
 						type="button"
 						disabled={!isCurrentStepValid}

@@ -43,11 +43,13 @@ vi.mock("@tanstack/react-router", () => ({
 	),
 }));
 
+import { getCurrentLevelLabel } from "@/components/onboarding/onboarding-steps";
 import { AssignmentList } from "@/components/overview/assignment-list";
 import { AssignmentRow } from "@/components/overview/assignment-row";
 import { ClassCard } from "@/components/overview/class-card";
 import { OverviewEmptyState } from "@/components/overview/empty-state";
 import { GreetingHeader } from "@/components/overview/greeting-header";
+import { StatCard } from "@/components/overview/stat-card";
 import { StudentErrorView } from "@/components/overview/student-error-view";
 
 describe("ClassCard", () => {
@@ -143,6 +145,8 @@ describe("ClassCard", () => {
 		const html = renderToStaticMarkup(<ClassCard cls={cls} />);
 		expect(html).toContain("Chờ kích hoạt");
 		expect(html).toContain("Tham gia lớp");
+		expect(html).toContain("text-primary-foreground");
+		expect(html).not.toContain("text-bg");
 		expect(html).toContain("Giáo viên đã mời bạn vào lớp");
 		// Chưa kích hoạt thì không hiển thị tiến độ khóa học
 		expect(html).not.toContain("Tiến độ khóa học");
@@ -412,5 +416,37 @@ describe("OverviewEmptyState", () => {
 		);
 		expect(html).toContain("Chưa có dữ liệu");
 		expect(html).toContain("Chi tiết mô tả");
+	});
+});
+describe("Dashboard currentLevel StatCard", () => {
+	it("renders StatCard for currentLevel when provided and not unsure", () => {
+		const html = renderToStaticMarkup(
+			<StatCard
+				label="Trình độ hiện tại"
+				value={getCurrentLevelLabel("intermediate", "ielts")}
+				sub="Band IELTS tự đánh giá"
+			/>,
+		);
+		expect(html).toContain("Trình độ hiện tại");
+		expect(html).toContain("4.5 – 5.5");
+		expect(html).toContain("Band IELTS tự đánh giá");
+	});
+
+	it("formats TOEIC level label properly", () => {
+		const html = renderToStaticMarkup(
+			<StatCard
+				label="Trình độ hiện tại"
+				value={getCurrentLevelLabel("basic", "toeic")}
+				sub="Điểm TOEIC tự đánh giá"
+			/>,
+		);
+		expect(html).toContain("Trình độ hiện tại");
+		expect(html).toContain("Dưới 350");
+		expect(html).toContain("Điểm TOEIC tự đánh giá");
+	});
+
+	it("returns empty string for null/undefined level", () => {
+		expect(getCurrentLevelLabel(null)).toBe("");
+		expect(getCurrentLevelLabel(undefined)).toBe("");
 	});
 });

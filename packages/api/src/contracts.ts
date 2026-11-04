@@ -1955,9 +1955,20 @@ export const DAILY_STUDY_HOUR_OPTIONS = [
 ] as const;
 export type DailyStudyHourOption = (typeof DAILY_STUDY_HOUR_OPTIONS)[number];
 
-/** Payload POST /api/student/onboarding — wizard 4 bước (D4/D7: đầy đủ, không skip). */
+export const CURRENT_LEVEL_OPTIONS = [
+	"beginner",
+	"basic",
+	"intermediate",
+	"upper-intermediate",
+	"advanced",
+	"unsure",
+] as const;
+export type CurrentLevelOption = (typeof CURRENT_LEVEL_OPTIONS)[number];
+
+/** Payload POST /api/student/onboarding — wizard 5 bước (đầy đủ, không skip). */
 const onboardingPayloadBase = z.object({
 	examInterest: z.enum(EXAM_INTERESTS),
+	currentLevel: z.enum(CURRENT_LEVEL_OPTIONS),
 	/** Chuỗi hiển thị; hợp lệ phải nằm trong mảng tương ứng examInterest (superRefine). */
 	targetScore: z.string().min(1),
 	learningGoals: z
@@ -1995,6 +2006,7 @@ export const studentMeSchema = z.object({
 		email: z.string(),
 		orgId: z.string(),
 		examInterest: z.string().nullable().catch(null),
+		currentLevel: z.string().nullable().catch(null),
 		targetScore: z.string().nullable().catch(null),
 		learningGoals: z
 			.array(z.enum(LEARNING_GOAL_OPTIONS))

@@ -209,6 +209,8 @@ test.describe("Student Org Invitation & Multi-Org Switcher", () => {
 			// Complete onboarding wizard
 			await studentPage.getByRole("button", { name: /IELTS/ }).click();
 			await studentPage.getByRole("button", { name: "Tiếp tục" }).click();
+			await studentPage.getByRole("button", { name: /4.5 – 5.5/ }).click();
+			await studentPage.getByRole("button", { name: "Tiếp tục" }).click();
 			await studentPage.getByRole("button", { name: "Band 6.5" }).click();
 			await studentPage.getByRole("button", { name: "Tiếp tục" }).click();
 			await studentPage.getByRole("button", { name: "Du học" }).click();
