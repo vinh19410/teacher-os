@@ -91,7 +91,11 @@ export function StudyPacksRoute() {
 	const eligiblePrompts = useMemo(() => {
 		return (data.assignmentPrompts ?? []).filter((prompt) => {
 			const skill = prompt.skill ?? "writing";
-			return prompt.status === "ready" && ALLOWED_SKILLS.has(skill);
+			return (
+				prompt.status === "ready" &&
+				ALLOWED_SKILLS.has(skill) &&
+				prompt.writing == null
+			);
 		});
 	}, [data.assignmentPrompts]);
 

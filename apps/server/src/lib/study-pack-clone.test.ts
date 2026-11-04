@@ -7,7 +7,7 @@ import {
 } from "@teacher-os/db/schema/library-test";
 import { organization } from "@teacher-os/db/schema/organization";
 import { libraryExercise } from "@teacher-os/db/schema/study-pack";
-import { eq } from "drizzle-orm";
+import { eq, getTableColumns } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, test } from "vitest";
@@ -219,7 +219,11 @@ describe("study-pack-clone (validateStudyPackItems & materializePrompts)", () =>
 	});
 
 	test("D1 chunk constants stay within 100-bind safety ceiling", () => {
-		expect(D1_PROMPT_CLONE_INSERT_CHUNK).toBe(4);
+		expect(D1_PROMPT_CLONE_INSERT_CHUNK).toBe(3);
+		expect(
+			Object.keys(getTableColumns(assignmentPrompt)).length *
+				D1_PROMPT_CLONE_INSERT_CHUNK,
+		).toBeLessThanOrEqual(100);
 		expect(D1_PACK_ITEM_INSERT_CHUNK).toBe(10);
 	});
 

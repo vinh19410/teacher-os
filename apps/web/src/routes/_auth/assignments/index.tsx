@@ -499,6 +499,7 @@ export function AssignmentsRoute() {
 												</h3>
 												<div className="flex flex-wrap items-center gap-2 text-xs">
 													<Tag>{t?.label ?? "Chưa chọn dạng"}</Tag>
+													{prompt.writing != null && <Tag>+ Writing</Tag>}
 													{prompt.source.trim() && (
 														<span className="truncate text-muted-foreground">
 															{prompt.source.trim()}

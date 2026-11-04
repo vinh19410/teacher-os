@@ -228,6 +228,17 @@ describe("QuizReviewItem — giải thích riêng từng câu (#358)", () => {
 			),
 		).toBeNull();
 	});
+	it("câu không có giải thích và đề không có note: chỉ hiện Đáp án, không rác giao diện (#579)", () => {
+		const html = renderToStaticMarkup(
+			<QuizReviewItem
+				info={reviewInfo({ explanation: undefined, note: "" })}
+			/>,
+		);
+		expect(html).toContain("Đáp án:");
+		expect(html).not.toContain("quiz-review-explanation");
+		expect(html).not.toContain("Giải thích");
+		expect(html).not.toContain("Chưa có giải thích");
+	});
 });
 
 describe("QuizPaper mode=review — paper read-only từ đáp án học viên", () => {

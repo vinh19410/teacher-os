@@ -741,6 +741,57 @@ export const assignmentQuestionSchema = z
 	.strict();
 
 /**
+ * Phần Writing đính kèm tuỳ chọn trên đề tự chấm (#574): giáo viên gộp trắc
+ * nghiệm + Writing trong một đề. Tách write schema (ràng buộc catalog +
+ * richTextField) với wire read schema (`studentWritingSectionSchema`) để client
+ * không bao giờ vỡ `.strict()` / DOMParser khi đọc lại dữ liệu đã lưu.
+ */
+export const assignmentWritingSectionSchema = z
+	.object({
+		part: z.string().trim().min(1).max(20),
+		type: z.string().trim().min(1).max(20),
+		prompt: richTextField(5000),
+	})
+	.strict()
+	.superRefine((writing, ctx) => {
+		const wConfig = ASSIGNMENT_PART_TYPES.writing;
+		if (!wConfig.parts.includes(writing.part)) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["part"],
+				message: "invalid writing part",
+			});
+			return;
+		}
+		if (!(wConfig.types[writing.part] ?? []).includes(writing.type)) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["type"],
+				message: "invalid writing type",
+			});
+		}
+		if (isEmptyRichText(writing.prompt)) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["prompt"],
+				message: "writing prompt required",
+			});
+		}
+	});
+export type AssignmentWritingSection = z.infer<
+	typeof assignmentWritingSectionSchema
+>;
+
+export const studentWritingSectionSchema = z
+	.object({
+		part: z.string(),
+		type: z.string(),
+		prompt: z.string(),
+	})
+	.strict();
+export type StudentWritingSection = z.infer<typeof studentWritingSectionSchema>;
+
+/**
  * Ngân hàng đề IELTS 4 kỹ năng. `status` luôn tường minh trên wire:
  * ready = hiện khi giao từ trang Lớp học, draft = bản nháp riêng tư.
  */
@@ -778,6 +829,10 @@ const assignmentPromptBaseSchema = z
 			.default([]),
 		note: richTextField(2000),
 		status: z.enum(["draft", "ready"]),
+		/** #574: phần Writing tuỳ chọn cho đề tự chấm — optional (không default)
+		 * để AssignmentPromptCreate giữ tương thích ngược và PATCH phân biệt
+		 * `undefined` (không chạm) với `null` (gỡ phần Writing). */
+		writing: assignmentWritingSectionSchema.nullable().optional(),
 	})
 	.strict();
 
@@ -828,6 +883,12 @@ export const assignmentPromptCreateSchema =
 				code: "custom",
 				path: ["questions"],
 				message: "questions only apply to reading or listening",
+			});
+		if (!auto && value.writing != null)
+			ctx.addIssue({
+				code: "custom",
+				path: ["writing"],
+				message: "writing section only applies to auto-graded skills",
 			});
 		if (value.skill === "writing" && isEmptyRichText(value.prompt))
 			ctx.addIssue({
@@ -1683,6 +1744,8 @@ export interface KernelAssignmentPromptRow {
 	optionBank: string[];
 	note: string;
 	status: "draft" | "ready" | string;
+	/** #574: phần Writing đính kèm cho đề gộp (null = đề đơn kỹ năng). */
+	writing?: AssignmentWritingSection | null;
 	/** ISO datetime string — snapshot convention (bank sort + `Thêm {date}`). */
 	createdAt: string;
 }
@@ -1999,6 +2062,8 @@ export const studentAssignmentSchema = z.object({
 	 * Optional: server cũ không gửi. */
 	gradedAt: z.string().nullable().optional(),
 	dueAt: z.string().nullable().optional(),
+	/** #574: đề tự chấm có kèm phần Writing chờ giáo viên chấm. */
+	hasWriting: z.boolean().optional(),
 });
 export type StudentAssignment = z.infer<typeof studentAssignmentSchema>;
 
@@ -2185,6 +2250,8 @@ export const historyEntrySchema = z
 		status: z.enum(["auto", "graded", "awaiting"]),
 		/** Attempt nguồn để mở xem lại (Writing đã chấm) — vocab luôn null. */
 		attemptId: z.string().nullable(),
+		/** #574: bài gộp có phần Writing để mở xem lại nhận xét ở tab kỹ năng chính. */
+		hasWriting: z.boolean().optional(),
 	})
 	.strict();
 export type HistoryEntry = z.infer<typeof historyEntrySchema>;
@@ -2441,6 +2508,14 @@ export const teacherSubmissionSchema = z
 		 * cũ; `null` = bài chấm tay cũ không có draft. Học viên không bao giờ
 		 * nhận shape này (BR-001). */
 		aiDraft: aiGradingDraftViewSchema.nullable().optional(),
+		/** #574: kết quả phần trắc nghiệm tự chấm của bài gộp (chỉ gửi khi bài gộp). */
+		objective: z
+			.object({
+				correctCount: z.number().int().min(0),
+				totalCount: z.number().int().min(0),
+			})
+			.strict()
+			.optional(),
 	})
 	.strict();
 export type TeacherSubmission = z.infer<typeof teacherSubmissionSchema>;
@@ -2588,6 +2663,8 @@ export const studentQuizDetailSchema = z
 		 * đề tự chấm vẫn giữ kín note tới sau khi nộp (RT#6). */
 		note: z.string().optional(),
 		questions: z.array(studentQuizQuestionSchema),
+		/** #574: đề phần Writing đính kèm của bài gộp (chỉ gửi khi có). */
+		writing: studentWritingSectionSchema.optional(),
 		attempt: z
 			.object({
 				id: z.string(),
@@ -2686,6 +2763,7 @@ export const quizAttemptDetailSchema = quizAttemptSummarySchema
 	.omit({ items: true })
 	.extend({
 		note: z.string(),
+		writing: studentWritingSectionSchema.optional(),
 		questions: z.array(
 			studentQuizQuestionSchema
 				.extend({

@@ -20,6 +20,9 @@ export const QUIZ_DRAIN_MAX_WAVES = 2;
 /** localStorage key của mirror: `quiz-attempt:{attemptId}` (RT#11/#14). */
 export const quizAttemptMirrorKey = (attemptId: string): string =>
 	`quiz-attempt:${attemptId}`;
+/** #574: mirror riêng cho bài luận trên đề gộp (tách khỏi key 0 của answers). */
+export const quizAttemptEssayMirrorKey = (attemptId: string): string =>
+	`quiz-attempt:${attemptId}:essay`;
 
 export type QuizSaveState = "saving" | "saved" | "error";
 
@@ -59,6 +62,8 @@ interface QuizAttemptStoreOptions {
 	 * `QUIZ_ANSWER_VALUE_MAX` (500); đề Writing dùng `QUIZ_ESSAY_MAX`
 	 * (#304). Bất biến theo attempt vì 1 attempt gắn 1 skill. */
 	valueMax?: number;
+	/** #574: ghi đè key localStorage khi chạy song song store thứ hai (essay). */
+	mirrorKey?: string;
 	debounceMs?: number;
 	storage?: MirrorStorage;
 	now?: () => number;
@@ -92,6 +97,7 @@ export interface QuizAttemptStore {
 	/** Lý do dừng hiện tại (null = còn chạy) — submit gate dùng để bỏ POST
 	 * * khi autosave đã halt 401/409 (code-review F5). */
 	getHalted(): QuizAttemptHaltReason | null;
+	halt(reason: QuizAttemptHaltReason): void;
 	finalize(): void;
 	dispose(): void;
 }
@@ -119,7 +125,7 @@ export function createQuizAttemptStore(
 		now = Date.now,
 	} = options;
 
-	const mirrorKey = quizAttemptMirrorKey(attemptId);
+	const mirrorKey = options.mirrorKey ?? quizAttemptMirrorKey(attemptId);
 	const answers = new Map<number, string>();
 	const pending = new Map<number, string>();
 	const inflight = new Set<Promise<void>>();
@@ -134,6 +140,9 @@ export function createQuizAttemptStore(
 	let saveState: QuizSaveState = "saved";
 	/** Có PATCH lỗi trong wave hiện tại — sticky cho tới wave flush kế tiếp. */
 	let waveFailed = false;
+	let mirrorRaw: string | null = null;
+	let disposing = false;
+	let finalFlushDone = false;
 	let timer: ReturnType<typeof setTimeout> | null = null;
 	let snapshot: QuizAttemptSnapshot = {
 		revision: 0,
@@ -153,8 +162,9 @@ export function createQuizAttemptStore(
 	};
 
 	const readMirror = (): Record<string, string> => {
-		const raw = storage?.getItem(mirrorKey);
+		const raw = storage?.getItem(mirrorKey) ?? null;
 		if (!raw) return {};
+		mirrorRaw = raw;
 		try {
 			const parsed = JSON.parse(raw) as Partial<MirrorPayload> | null;
 			if (parsed === null || typeof parsed !== "object") return {};
@@ -175,7 +185,9 @@ export function createQuizAttemptStore(
 			),
 		};
 		try {
-			storage.setItem(mirrorKey, JSON.stringify(payload));
+			const nextRaw = JSON.stringify(payload);
+			storage.setItem(mirrorKey, nextRaw);
+			mirrorRaw = nextRaw;
 		} catch {
 			// Quota/private-mode: mirror là best-effort, không break UI.
 		}
@@ -184,6 +196,18 @@ export function createQuizAttemptStore(
 	const clearMirror = (): void => {
 		try {
 			storage?.removeItem(mirrorKey);
+		} catch {
+			// Storage hỏng hiếm gặp — clear mirror là best-effort.
+		}
+	};
+
+	const clearMirrorIfOwned = (): void => {
+		try {
+			if (!storage) return;
+			if (mirrorRaw === null || storage.getItem(mirrorKey) === mirrorRaw) {
+				storage.removeItem(mirrorKey);
+				mirrorRaw = null;
+			}
 		} catch {
 			// Storage hỏng hiếm gặp — clear mirror là best-effort.
 		}
@@ -261,7 +285,7 @@ export function createQuizAttemptStore(
 					// nhất học viên gõ; debounce làm backoff cho lần retry.
 					if (answers.get(q) === value) {
 						pending.set(q, value);
-						schedule();
+						if (!disposing) schedule();
 					}
 					return;
 				}
@@ -283,8 +307,27 @@ export function createQuizAttemptStore(
 				emit();
 				// q vừa settle mà học viên đã gõ tiếp (key từng bị skip) →
 				// dispatch NGAY bản mới nhất, không đợi debounce.
-				if (halted === null && skippedQs.has(q) && pending.has(q)) {
+				if (
+					!disposing &&
+					halted === null &&
+					skippedQs.has(q) &&
+					pending.has(q)
+				) {
 					flushPending();
+				}
+				if (disposing && inflight.size === 0) {
+					if (pending.size > 0 && halted === null && !finalFlushDone) {
+						finalFlushDone = true;
+						flushPending({ keepalive: true });
+					} else {
+						if (pending.size === 0 && halted === null) {
+							clearMirrorIfOwned();
+						}
+						if (halted === null) {
+							halted = "finalized";
+							emit();
+						}
+					}
 				}
 			});
 		}
@@ -371,6 +414,7 @@ export function createQuizAttemptStore(
 			return snapshot;
 		},
 		setAnswer(q, value) {
+			if (disposing) return;
 			// Cap bằng contract server (schema max của route đang dùng — 500
 			// cho /answer, QUIZ_ESSAY_MAX cho /essay #304) — paste dài không
 			// tạo PATCH 400 cứ lặp mãi (code-review F2).
@@ -394,20 +438,40 @@ export function createQuizAttemptStore(
 		flush,
 		drain,
 		getHalted: () => halted,
+		halt(reason) {
+			if (halted !== null) return;
+			cancelTimer();
+			halted = reason;
+			if (reason === "submitted" || reason === "finalized") {
+				pending.clear();
+				skippedQs.clear();
+				clearMirror();
+			}
+			emit();
+		},
 		/** Sau submit thành công: dừng hẳn + xoá mirror (attempt đã đóng). */
 		finalize() {
 			cancelTimer();
 			pending.clear();
+			skippedQs.clear();
 			halted = "finalized";
 			clearMirror();
 			emit();
 		},
-		/** Unmount/org-switch: best-effort flush, sau đó reset mirror (RT#14). */
+		/** Unmount/org-switch: best-effort keepalive flush, giữ mirror nếu còn bay/lỗi. */
 		dispose() {
 			cancelTimer();
-			flushPending();
-			halted = "finalized";
-			clearMirror();
+			if (halted === "auth") return;
+			if (halted !== null) {
+				clearMirrorIfOwned();
+				return;
+			}
+			disposing = true;
+			flushPending({ keepalive: true });
+			if (pending.size === 0 && inflight.size === 0) {
+				clearMirrorIfOwned();
+				halted = "finalized";
+			}
 		},
 	};
 
@@ -424,6 +488,7 @@ export interface UseQuizAttemptStoreOptions {
 	/** Forward xuống store (#304) — đọc một lúc tạo store, bất biến theo
 	 * attemptId (deps chỉ `[attemptId]`). */
 	valueMax?: number;
+	mirrorKey?: string;
 }
 
 /**
@@ -453,6 +518,7 @@ export function useQuizAttemptStore(
 			onAuthError: () => current.onAuthError?.(),
 			onAlreadySubmitted: () => current.onAlreadySubmitted?.(),
 			valueMax: current.valueMax,
+			mirrorKey: current.mirrorKey,
 		});
 		setStore(created);
 		return () => {

@@ -862,3 +862,90 @@ describe("QuizPaper — part nhóm thư viện (#433)", () => {
 		expect(html).not.toContain('value="x"');
 	});
 });
+
+describe("QuizPaper — hybrid auto skill + Writing section (#574)", () => {
+	const questions: StudentQuizQuestion[] = [
+		{
+			stem: "She ___ every morning.",
+			opts: ["run", "runs", "running", "ran"],
+			pin: null,
+			type: "mcq",
+		},
+		{
+			stem: "They ___ yesterday.",
+			opts: ["leave", "leaves", "left", "leaving"],
+			pin: null,
+			type: "mcq",
+		},
+	];
+
+	it("renders both MCQ answers[0] and Phần 2 · Writing without colliding key 0", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields({
+					skill: "grammar",
+					type: "mcq",
+					intro: "",
+					passage: "",
+				})}
+				parts={buildQuizParts(questions, "mcq")}
+				answers={{ 0: "B", 1: "C" }}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+				writingSection={{
+					part: "task2",
+					type: "discuss",
+					prompt: "<p>Write about technology in classrooms.</p>",
+				}}
+				essay="My hybrid essay draft"
+				onEssayChange={() => undefined}
+			/>,
+		);
+		expect(html).toContain('checked="" value="B"');
+		expect(html).toContain('data-testid="hybrid-writing-section"');
+		expect(html).toContain("Phần 2 · Writing (Task 2)");
+		expect(html).toContain("Tối thiểu 250 từ");
+		expect(html).toContain("Write about technology in classrooms.");
+		expect(html).toContain("My hybrid essay draft");
+		expect(html).toContain('maxLength="10000"');
+		expect(html).not.toContain('aria-readonly="true"');
+	});
+
+	it("locks QuizEssayInput with readOnly in review mode while keeping question 1 verdict", () => {
+		const review: Record<number, QuizReviewInfo> = {
+			0: {
+				verdict: "correct",
+				key: "B",
+				alts: "",
+				answer: "B",
+				note: "",
+			},
+		};
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields({
+					skill: "grammar",
+					type: "mcq",
+					intro: "",
+					passage: "",
+				})}
+				parts={buildQuizParts(questions, "mcq")}
+				answers={{ 0: "B", 1: "A" }}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+				mode="review"
+				review={review}
+				writingSection={{
+					part: "task1",
+					type: "chart",
+					prompt: "<p>Summarize the chart.</p>",
+				}}
+				essay="Submitted Task 1 essay"
+			/>,
+		);
+		expect(html).toContain("Phần 2 · Writing (Task 1)");
+		expect(html).toContain("Tối thiểu 150 từ");
+		expect(html).toContain("Submitted Task 1 essay");
+		expect(html).toContain('aria-readonly="true"');
+	});
+});

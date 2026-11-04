@@ -142,6 +142,20 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 					))}
 				</div>
 			)}
+			{isAuto && prompt.writing != null && (
+				<div className="mt-4 flex flex-col gap-1.5 border-border border-t pt-3">
+					<p className="font-semibold text-foreground text-xs">
+						Phần 2 · Writing (
+						{prompt.writing.part === "task1" ? "Task 1" : "Task 2"})
+					</p>
+					{!isEmptyRichText(prompt.writing.prompt) && (
+						<RichTextBody
+							text={prompt.writing.prompt}
+							className="text-foreground text-sm leading-[1.55]"
+						/>
+					)}
+				</div>
+			)}
 
 			{isSpeakingPart2 && (
 				<div className="mt-3 text-sm">
@@ -175,6 +189,7 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 				<Tag>{`Band ${prompt.band}`}</Tag>
 				{prompt.source.trim() && <Tag>{prompt.source.trim()}</Tag>}
 				{isAuto && <Tag>Chấm tự động</Tag>}
+				{isAuto && prompt.writing != null && <Tag>+ Writing</Tag>}
 				{!isEmptyRichText(prompt.note ?? "") && <Tag>Có hướng dẫn thêm</Tag>}
 			</div>
 
