@@ -126,6 +126,29 @@ describe("POST /public/leads (#506 phase 2)", () => {
 		expect(JSON.stringify(rows)).not.toContain("203.0.113.10");
 	});
 
+	test("201 với các mã khóa mới (foundation-core, ielts-practical, workplace-interview)", async () => {
+		const instance = app();
+		const newCourses = [
+			"foundation-core",
+			"ielts-practical",
+			"workplace-interview",
+		] as const;
+		for (let i = 0; i < newCourses.length; i++) {
+			const course = newCourses[i];
+			if (!course) continue;
+			const res = await submit(instance, {
+				name: `Học viên ${course}`,
+				phone: `090912345${i}`,
+				elapsedMs: LEAD_MIN_ELAPSED_MS + 500,
+				course,
+			});
+			expect(res.status, `status for ${course}`).toBe(201);
+		}
+		const rows = await leadRows();
+		expect(rows).toHaveLength(3);
+		expect(rows.map((r) => r.course).sort()).toEqual([...newCourses].sort());
+	});
+
 	test("503 LEAD_INTAKE_DISABLED khi thiếu leadOrgId (fail-closed D4)", async () => {
 		const res = await submit(
 			app({ leadOrgId: undefined }),

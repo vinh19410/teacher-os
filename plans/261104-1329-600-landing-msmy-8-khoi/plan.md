@@ -1,11 +1,11 @@
 ---
 title: "Rút gọn landing msmy.io.vn thành 8 khối, 1 CTA chính"
 description: "Dựng lại apps/profile/public/index.html theo handoff nội dung mới: hero một CTA, 3 khóa có đầu ra, form 3 ô, hỏi đáp, chuyển phần tư vấn nội bộ ra khỏi trang chính."
-status: pending
+status: completed
 priority: P2
 effort: 10h
 issue: 600
-branch: develop
+branch: feat/600-landing-msmy-8-khoi
 tags: [profile, landing, content, api-contract]
 blockedBy: []
 blocks: []
@@ -41,10 +41,10 @@ Học viên vào trang thấy ngay một nút chính "Làm test xếp lớp mi�
 
 | # | Phase | Trạng thái | Phụ thuộc |
 |---|---|---|---|
-| 1 | [Hợp đồng khóa học](phase-01-course-contract.md) | pending | - |
-| 2 | [Dựng lại landing 8 khối](phase-02-landing-rebuild.md) | pending | 1 |
-| 3 | [Chuyển nội dung ra khỏi trang chính](phase-03-relocate-content.md) | pending | 2 |
-| 4 | [Test, docs và cổng đăng prod](phase-04-verify-and-release-gate.md) | pending | 1-3 |
+| 1 | [Hợp đồng khóa học](phase-01-course-contract.md) | completed | - |
+| 2 | [Dựng lại landing 8 khối](phase-02-landing-rebuild.md) | completed | 1 |
+| 3 | [Chuyển nội dung ra khỏi trang chính](phase-03-relocate-content.md) | completed | 2 |
+| 4 | [Test, docs và cổng đăng prod](phase-04-verify-and-release-gate.md) | completed | 1-3 |
 
 ## Acceptance criteria
 
@@ -83,3 +83,21 @@ Học viên vào trang thấy ngay một nút chính "Làm test xếp lớp mi�
 2. Chính sách khi chưa đạt mục tiêu và điều kiện của "cam kết đầu ra". Đến lúc đó câu hỏi đáp tương ứng không hiển thị nội dung bảo hành.
 
 Hai câu này không chặn phase 1-3; chỉ chặn việc đăng prod ở phase 4.
+## Validation & Red-Team Review Log (2026-11-04)
+
+### Verification Results
+- Claims checked: 14 (file paths, symbols, contracts, drift tests, anchors)
+- Verified: 14 | Failed: 0 | Unverified: 0
+- Lenses applied: Security Adversary, Contract Drift Analyst, Failure Mode Analyst.
+
+### Kongming Advisory Synthesis & Resolutions
+1. **Bổ sung `lead-gate.js` vào Phase 1:** Đồng bộ `PLACEMENT_COURSE_GROUPS` 15 khóa (thêm nhóm `target` chứa 3 mã mới) khớp 100% với `LEAD_COURSE_GROUPS` để bảo vệ test drift `lead-catalog-drift.test.ts`.
+2. **Cập nhật drift test cho Landing Form 3 khóa:** Cập nhật assertion cho `select[name=course]` trên `index.html` nhận tập 4 mã (`foundation-core`, `ielts-practical`, `workplace-interview`, `undecided`) trong khi `lead-gate.js` giữ trọn vẹn 15 mã.
+3. **Mapper tham số `?khoa=` cho kết quả test:** Thêm mapper ánh xạ mã cũ sang mã mới (`ielts-foundation`/`ielts-first-step` -> `foundation-core`, `ielts-pre`/`ielts-advanced` -> `ielts-practical`) để học viên hoàn thành test không bị mất khóa gợi ý.
+4. **Bảo vệ trang `noi-bo`:** Meta `noindex, nofollow`, kiểm tra zero-link từ public surface, fallback cho clipboard copy, không đưa dữ liệu nhạy cảm vào kịch bản.
+5. **Bảo vệ anchor:** Đảm bảo `#lam-test-mien-phi` và `#dang-ky-tu-van` còn tồn tại.
+6. **Cổng release:** Test chống placeholder `[ ... ]` hoặc `TODO` trên trang chủ; hiển thị "Nhắn Zalo để nhận báo giá".
+
+### Whole-Plan Consistency Sweep
+- Toàn bộ 4 phase file và `plan.md` đã được đồng bộ hóa theo các quyết định trên.
+- Không còn mâu thuẫn hoặc câu hỏi chặn implementation.

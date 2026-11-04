@@ -43,6 +43,15 @@ export const PLACEMENT_COURSE_GROUPS = [
 		],
 	},
 	{
+		key: "target",
+		label: "Khóa theo mục tiêu",
+		options: [
+			{ value: "foundation-core", label: "Xây Nền Từ Gốc" },
+			{ value: "ielts-practical", label: "IELTS Thực Chiến (5.5–7.5+)" },
+			{ value: "workplace-interview", label: "Tiếng Anh Công Sở & Phỏng Vấn" },
+		],
+	},
+	{
 		key: "other",
 		label: "Khác",
 		options: [{ value: "undecided", label: "Chưa rõ – cần test 1-1" }],
