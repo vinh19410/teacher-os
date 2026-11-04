@@ -13,6 +13,7 @@ import {
 	SKILLS,
 	selectedTypeOf,
 	skillOf,
+	typeOf,
 	wordCount,
 } from "./assignment-presets";
 import { QuestionKeyEditor } from "./question-key-editor";
