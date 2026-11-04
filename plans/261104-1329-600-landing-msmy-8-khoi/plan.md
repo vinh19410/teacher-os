@@ -1,11 +1,11 @@
 ---
 title: "Rút gọn landing msmy.io.vn thành 8 khối, 1 CTA chính"
 description: "Dựng lại apps/profile/public/index.html theo handoff nội dung mới: hero một CTA, 3 khóa có đầu ra, form 3 ô, hỏi đáp, chuyển phần tư vấn nội bộ ra khỏi trang chính."
-status: pending
+status: completed
 priority: P2
 effort: 10h
 issue: 600
-branch: develop
+branch: feat/600-landing-msmy-8-khoi
 tags: [profile, landing, content, api-contract]
 blockedBy: []
 blocks: []
@@ -41,10 +41,10 @@ Học viên vào trang thấy ngay một nút chính "Làm test xếp lớp mi�
 
 | # | Phase | Trạng thái | Phụ thuộc |
 |---|---|---|---|
-| 1 | [Hợp đồng khóa học](phase-01-course-contract.md) | pending | - |
-| 2 | [Dựng lại landing 8 khối](phase-02-landing-rebuild.md) | pending | 1 |
-| 3 | [Chuyển nội dung ra khỏi trang chính](phase-03-relocate-content.md) | pending | 2 |
-| 4 | [Test, docs và cổng đăng prod](phase-04-verify-and-release-gate.md) | pending | 1-3 |
+| 1 | [Hợp đồng khóa học](phase-01-course-contract.md) | completed | - |
+| 2 | [Dựng lại landing 8 khối](phase-02-landing-rebuild.md) | completed | 1 |
+| 3 | [Chuyển nội dung ra khỏi trang chính](phase-03-relocate-content.md) | completed | 2 |
+| 4 | [Test, docs và cổng đăng prod](phase-04-verify-and-release-gate.md) | completed | 1-3 |
 
 ## Acceptance criteria
 

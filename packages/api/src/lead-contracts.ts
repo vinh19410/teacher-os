@@ -30,6 +30,9 @@ export const LEAD_COURSES = [
 	"comm-3",
 	"comm-4",
 	"comm-5",
+	"foundation-core",
+	"ielts-practical",
+	"workplace-interview",
 	"undecided",
 ] as const;
 export type LeadCourse = (typeof LEAD_COURSES)[number];
@@ -46,6 +49,9 @@ export const LEAD_COURSE_LABELS: Readonly<Record<LeadCourse, string>> = {
 	"comm-3": "Giao tiếp 3",
 	"comm-4": "Giao tiếp 4",
 	"comm-5": "Giao tiếp 5",
+	"foundation-core": "Xây Nền Từ Gốc",
+	"ielts-practical": "IELTS Thực Chiến (5.5–7.5+)",
+	"workplace-interview": "Tiếng Anh Công Sở & Phỏng Vấn",
 	undecided: "Chưa rõ – cần test 1-1",
 };
 
@@ -65,6 +71,10 @@ export const LEAD_COURSE_GROUPS = {
 	comm: {
 		label: "Giao tiếp định hướng IELTS",
 		codes: ["comm-1", "comm-2", "comm-3", "comm-4", "comm-5"],
+	},
+	target: {
+		label: "Khóa theo mục tiêu",
+		codes: ["foundation-core", "ielts-practical", "workplace-interview"],
 	},
 	other: { label: "Khác", codes: ["undecided"] },
 } as const satisfies Readonly<
