@@ -1,7 +1,7 @@
 ---
 title: "#558: Tối ưu thời gian run CI trên workflow deploy"
 description: "Rút job quality (~8 phút) xuống ≤ ~4 phút bằng reusable workflow 4 job song song, turbo cache có kiểm soát, phân tách test theo tải 2 vCPU và bỏ build trùng; không bỏ bước nào của gate."
-status: in-progress
+status: completed
 priority: P2
 effort: 5h
 issue: 558
