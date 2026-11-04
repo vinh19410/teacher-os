@@ -735,7 +735,7 @@ test("author answer explanation, preserve through preview and test-builder updat
 		await expect(studentPage).toHaveURL(/\/learn\/quizzes\/attempt\//);
 
 		await studentPage
-			.getByRole("link", { name: "Xem giải thích chi tiết" })
+			.getByRole("link", { name: "Xem chi tiết bài làm" })
 			.click();
 		await expect(studentPage).toHaveURL(/\/detail$/);
 		await studentPage.getByText("Giải thích", { exact: true }).click();

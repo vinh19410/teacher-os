@@ -216,7 +216,7 @@ export function AttemptSummaryBody({
 							params={{ attemptId }}
 							className={cn(buttonVariants(), "mt-5")}
 						>
-							Xem giải thích chi tiết
+							Xem chi tiết bài làm
 						</Link>
 					}
 				/>
