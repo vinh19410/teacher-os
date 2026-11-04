@@ -1,7 +1,7 @@
 ---
 title: "fix(assignments): ô hạn nộp chuẩn dd/mm/yyyy kèm lịch, chọn giờ 24h và tính quá hạn giờ VN (#572)"
 description: "Thay <input type='date'> phụ thuộc locale ở form giao bài bằng DatePickerInput (dd/mm/yyyy + lịch tháng) và TimeInput24h (HH:mm), mở rộng contract dueTime -> lưu dueAt (UTC+7), đồng bộ tính quá hạn/nộp trễ giữa web và student."
-status: in-progress
+status: completed
 priority: P1
 effort: "4h"
 issue: 572
