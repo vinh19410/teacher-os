@@ -12,6 +12,7 @@ vi.mock("@/lib/auth-client", () => ({
 }));
 
 import {
+	CurrentLevelStep,
 	ExamInterestStep,
 	LearningGoalsStep,
 	OnboardingSummary,
@@ -32,6 +33,24 @@ describe("OnboardingStep Components", () => {
 		expect(html).toContain("IELTS");
 		expect(html).toContain("TOEIC");
 		expect(html).not.toContain("Bỏ qua");
+	});
+	it("CurrentLevelStep: renders IELTS or TOEIC level options appropriately", () => {
+		const ieltsHtml = renderToStaticMarkup(
+			<CurrentLevelStep
+				examInterest="ielts"
+				value="intermediate"
+				onSelect={vi.fn()}
+			/>,
+		);
+		expect(ieltsHtml).toContain("Trình độ hiện tại của bạn?");
+		expect(ieltsHtml).toContain("4.5 – 5.5");
+		expect(ieltsHtml).toContain("Mới bắt đầu");
+
+		const toeicHtml = renderToStaticMarkup(
+			<CurrentLevelStep examInterest="toeic" value={null} onSelect={vi.fn()} />,
+		);
+		expect(toeicHtml).toContain("350 – 550");
+		expect(toeicHtml).toContain("Dưới 350");
 	});
 
 	it("TargetScoreStep: renders IELTS bands or TOEIC scores appropriately", () => {
@@ -73,6 +92,7 @@ describe("OnboardingStep Components", () => {
 	it("OnboardingSummary: renders complete selection summary", () => {
 		const answers: StudentOnboardingPayload = {
 			examInterest: "ielts",
+			currentLevel: "intermediate",
 			targetScore: "6.5",
 			learningGoals: ["study-abroad", "communication"],
 			learningGoalsNote: "Cần nộp trước tháng 12",
@@ -81,13 +101,15 @@ describe("OnboardingStep Components", () => {
 		const html = renderToStaticMarkup(<OnboardingSummary answers={answers} />);
 		expect(html).toContain("IELTS");
 		expect(html).toContain("Band 6.5");
+		expect(html).toContain("Trình độ hiện tại");
+		expect(html).toContain("4.5 – 5.5");
 		expect(html).toContain("Du học");
 		expect(html).toContain("Giao tiếp tự tin");
 		expect(html).toContain("Cần nộp trước tháng 12");
 		expect(html).toContain("1–2 giờ");
 	});
 
-	it("OnboardingWizard: renders initial step 1/4 without Hoàn thành button", () => {
+	it("OnboardingWizard: renders initial step 1/5 without Hoàn thành button", () => {
 		const queryClient = new QueryClient();
 		const html = renderToStaticMarkup(
 			<QueryClientProvider client={queryClient}>
@@ -95,7 +117,7 @@ describe("OnboardingStep Components", () => {
 			</QueryClientProvider>,
 		);
 		expect(html).toContain("Bạn đang quan tâm chứng chỉ nào?");
-		expect(html).toContain("Bước 1/4");
+		expect(html).toContain("Bước 1/5");
 		expect(html).not.toContain("Hoàn thành");
 	});
 
@@ -126,7 +148,7 @@ describe("OnboardingStep Components", () => {
 			expect(btn.classList.contains("hover:bg-primary")).toBe(false);
 		};
 
-		// Step 1/4: disabled -> select IELTS -> enabled -> advance
+		// Step 1/5: disabled -> select IELTS -> enabled -> advance
 		const continueStep1 = screen.getByRole<HTMLButtonElement>("button", {
 			name: "Tiếp tục",
 		});
@@ -135,39 +157,84 @@ describe("OnboardingStep Components", () => {
 		assertEnabledPrimaryCta(continueStep1);
 		fireEvent.click(continueStep1);
 
-		// Step 2/4: disabled -> select Band 6.5 -> enabled -> advance
+		// Step 2/5: disabled -> select 4.5 – 5.5 -> enabled -> advance
 		const continueStep2 = screen.getByRole<HTMLButtonElement>("button", {
 			name: "Tiếp tục",
 		});
 		assertDisabledContinue(continueStep2);
-		fireEvent.click(screen.getByRole("button", { name: "Band 6.5" }));
+		fireEvent.click(screen.getByRole("button", { name: /4.5 – 5.5/ }));
 		assertEnabledPrimaryCta(continueStep2);
 		fireEvent.click(continueStep2);
 
-		// Step 3/4: disabled -> select Du học -> enabled -> advance
+		// Step 3/5: disabled -> select Band 6.5 -> enabled -> advance
 		const continueStep3 = screen.getByRole<HTMLButtonElement>("button", {
 			name: "Tiếp tục",
 		});
 		assertDisabledContinue(continueStep3);
-		fireEvent.click(screen.getByRole("button", { name: "Du học" }));
+		fireEvent.click(screen.getByRole("button", { name: "Band 6.5" }));
 		assertEnabledPrimaryCta(continueStep3);
 		fireEvent.click(continueStep3);
 
-		// Step 4/4: disabled -> select 1–2 giờ -> enabled -> advance
+		// Step 4/5: disabled -> select Du học -> enabled -> advance
 		const continueStep4 = screen.getByRole<HTMLButtonElement>("button", {
 			name: "Tiếp tục",
 		});
 		assertDisabledContinue(continueStep4);
-		fireEvent.click(screen.getByRole("button", { name: "1–2 giờ" }));
+		fireEvent.click(screen.getByRole("button", { name: "Du học" }));
 		assertEnabledPrimaryCta(continueStep4);
 		fireEvent.click(continueStep4);
 
-		// Step 5 (confirmation): Hoàn thành button uses primary-foreground contrast
+		// Step 5/5: disabled -> select 1–2 giờ -> enabled -> advance
+		const continueStep5 = screen.getByRole<HTMLButtonElement>("button", {
+			name: "Tiếp tục",
+		});
+		assertDisabledContinue(continueStep5);
+		fireEvent.click(screen.getByRole("button", { name: "1–2 giờ" }));
+		assertEnabledPrimaryCta(continueStep5);
+		fireEvent.click(continueStep5);
+
+		// Step 6 (confirmation): Hoàn thành button uses primary-foreground contrast
 		const finishBtn = screen.getByRole<HTMLButtonElement>("button", {
 			name: "Hoàn thành",
 		});
 		assertEnabledPrimaryCta(finishBtn);
 	});
+	it("OnboardingWizard: resets currentLevel and targetScore when examInterest changes", () => {
+		const queryClient = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		render(
+			<QueryClientProvider client={queryClient}>
+				<OnboardingWizard onCompleted={vi.fn()} />
+			</QueryClientProvider>,
+		);
+
+		// Step 0: Select IELTS -> advance to Step 1
+		fireEvent.click(screen.getByRole("button", { name: /IELTS/i }));
+		fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+
+		// Step 1: Select 4.5 – 5.5 -> advance to Step 2
+		fireEvent.click(screen.getByRole("button", { name: /4.5 – 5.5/ }));
+		fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+
+		// Step 2: Select Band 6.5
+		fireEvent.click(screen.getByRole("button", { name: "Band 6.5" }));
+
+		// Go back to Step 1, then Step 0
+		fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+		fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
+
+		// Change to TOEIC
+		fireEvent.click(screen.getByRole("button", { name: /TOEIC/i }));
+		fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
+
+		// On Step 1 (TOEIC), currentLevel should be reset (no button selected, continue disabled)
+		const continueBtn = screen.getByRole<HTMLButtonElement>("button", {
+			name: "Tiếp tục",
+		});
+		expect(continueBtn.disabled).toBe(true);
+	});
+
 
 	it("Onboarding steps: selected cards and band chips expose aria-pressed and high-contrast selection classes without border-transparent", () => {
 		const { unmount: unmountExam } = render(

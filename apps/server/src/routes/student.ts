@@ -1,6 +1,7 @@
 import {
 	ACCOUNT_ERROR_CODES,
 	type AssignmentQuestion,
+	CURRENT_LEVEL_OPTIONS,
 	DAILY_STUDY_HOUR_OPTIONS,
 	type EssayAnnotation,
 	EXAM_INTERESTS,
@@ -348,6 +349,7 @@ function buildStudentMe(
 			email: s.email,
 			orgId: s.orgId,
 			examInterest,
+			currentLevel: parseEnum(s.currentLevel ?? null, CURRENT_LEVEL_OPTIONS),
 			targetScore: parseTargetScore(examInterest, s.targetScore ?? null),
 			learningGoals: parseLearningGoals(s.learningGoals ?? null),
 			learningGoalsNote: s.learningGoalsNote ?? null,
@@ -1111,6 +1113,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 
 		const {
 			examInterest,
+			currentLevel,
 			targetScore,
 			learningGoals,
 			learningGoalsNote,
@@ -1120,6 +1123,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			.update(student)
 			.set({
 				examInterest,
+				currentLevel,
 				targetScore,
 				learningGoals: JSON.stringify([...learningGoals]),
 				learningGoalsNote: learningGoalsNote?.length ? learningGoalsNote : null,
