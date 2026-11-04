@@ -113,6 +113,7 @@ function ProfileForm({ user }: { user: ProfileUser }) {
 				return;
 			}
 			toast.success("Đã cập nhật tên hiển thị");
+			authClient.clearSessionCache?.();
 			// Sidebar/dashboard read the session through the _auth route context —
 			// invalidate re-runs its beforeLoad so they pick up the new name live.
 			await router.invalidate();

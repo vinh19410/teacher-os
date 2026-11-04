@@ -1,7 +1,7 @@
 ---
 title: "#575: Bấm Chấm bài trên menu đổi URL nhưng nội dung không đổi, phải F5"
 description: "Khắc phục triệt để hiện tượng đứng hình khi điều hướng tới /grading do _auth.beforeLoad gọi authClient.getSession() không cache và không timeout qua mạng trên từng lần hover/click, bổ sung in-memory session cache (TTL 10s) kèm timeout 5s, deduplication, đồng bộ profile update, dọn cache khi signOut/reauth, và cấu hình defaultPendingMs: 200ms."
-status: in-progress
+status: completed
 priority: P1
 effort: 2h
 issue: 575
@@ -69,16 +69,16 @@ flowchart TD
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: In-memory session cache, deduplication và timeout an toàn](./phase-01-session-cache-and-timeout.md) | Pending |
-| 2 | [Phase 2: Áp dụng vào _auth route, pending timer và kiểm chứng bộ test điều hướng](./phase-02-navigation-tests-and-error-boundaries.md) | Pending |
+| 1 | [Phase 1: In-memory session cache, deduplication và timeout an toàn](./phase-01-session-cache-and-timeout.md) | Completed |
+| 2 | [Phase 2: Áp dụng vào _auth route, pending timer và kiểm chứng bộ test điều hướng](./phase-02-navigation-tests-and-error-boundaries.md) | Completed |
 
 ## Success Criteria
 
-- [ ] `getCachedSession()` trong `apps/web/src/lib/auth-client.ts` trả kết quả từ cache khi gọi liên tiếp trong vòng 10 giây, deduplicate các promise đang bay đồng thời, áp dụng `AbortSignal.timeout(5000)` khi gửi fetch thật, và có hàm `clearSessionCache()` hoạt động chuẩn xác khi `signOut`, `reauth()`, hoặc `updateUser`.
-- [ ] `apps/web/src/routes/_auth/route.tsx` dùng `getCachedSession()` bọc trong try/catch fallback an toàn, loại bỏ hoàn toàn các lượt fetch mạng lặp thừa khi hover/click menu chuyển trang bên trong ứng dụng.
-- [ ] `apps/web/src/main.tsx` cấu hình `defaultPendingMs: 200`.
-- [ ] Test suite vitest kiểm chứng `getCachedSession` và điều hướng chạy xanh 100%.
-- [ ] `pnpm check`, `pnpm check-types`, `pnpm --filter web test` đạt 100% pass, không có regression.
+- [x] `getCachedSession()` trong `apps/web/src/lib/auth-client.ts` trả kết quả từ cache khi gọi liên tiếp trong vòng 10 giây, deduplicate các promise đang bay đồng thời, áp dụng `AbortSignal.timeout(5000)` khi gửi fetch thật, và có hàm `clearSessionCache()` hoạt động chuẩn xác khi `signOut`, `reauth()`, hoặc `updateUser`.
+- [x] `apps/web/src/routes/_auth/route.tsx` dùng `getCachedSession()` bọc trong try/catch fallback an toàn, loại bỏ hoàn toàn các lượt fetch mạng lặp thừa khi hover/click menu chuyển trang bên trong ứng dụng.
+- [x] `apps/web/src/main.tsx` cấu hình `defaultPendingMs: 200`.
+- [x] Test suite vitest kiểm chứng `getCachedSession` và điều hướng chạy xanh 100%.
+- [x] `pnpm check`, `pnpm check-types`, `pnpm --filter web test` đạt 100% pass, không có regression.
 
 ## Red Team Review
 

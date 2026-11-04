@@ -44,6 +44,7 @@ export function AvatarSection({ user }: { user: ProfileUser }) {
 				return;
 			}
 			toast.success("Đã cập nhật ảnh đại diện");
+			authClient.clearSessionCache?.();
 			await router.invalidate();
 		} catch (err) {
 			toast.error(
