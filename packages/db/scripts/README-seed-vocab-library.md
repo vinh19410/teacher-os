@@ -32,7 +32,7 @@ Tài liệu hướng dẫn nạp dữ liệu thư viện từ vựng dùng chung
    ```
 3. **Chạy seed kèm verify** (CLI tự kiểm tra bảng `organization` và `vocab_library_course` tồn tại trước khi ghi):
    ```bash
-   npx -y tsx packages/db/scripts/seed-vocab-library.ts --file "$SQLITE_FILE" --verify
+   pnpm --filter @teacher-os/db exec tsx scripts/seed-vocab-library.ts --file "$SQLITE_FILE" --verify
    ```
    Kết quả kỳ vọng: `Summary: course 20/20, deck 968/968, word 10160/10160` và exit code `0`.
 
@@ -50,14 +50,14 @@ Tài liệu hướng dẫn nạp dữ liệu thư viện từ vựng dùng chung
 1. **Thứ tự deploy bắt buộc:**
    - Apply migrations `0037`..`0040` (`db:migrate:deploy`) **TRƯỚC** khi deploy worker, sau đó re-seed `seed-vocab-library.ts --d1 --verify` để đổ cột `vocab_library_deck.description` (#369).
    - Deploy `apps/server` và `apps/student` **cùng một release train** (do `vocabSessionCardSchema` / `vocabStudentLibraryDeckSchema` dùng `.strict()` và thêm trường `hasAudio`, `description`).
-2. **Smoke test trên Staging trước (BẮT BUỘC):**
-   Không bao giờ commit `D1_DATABASE_ID` hay `CLOUDFLARE_API_TOKEN` vào repo. Truyền qua biến môi trường của operator:
-   ```bash
-   CLOUDFLARE_ACCOUNT_ID="<account-id>" \
-   D1_DATABASE_ID="<staging-d1-database-id>" \
-   CLOUDFLARE_API_TOKEN="<api-token>" \
-     npx -y tsx packages/db/scripts/seed-vocab-library.ts --d1 --verify
-   ```
+2. **Tự động trên Staging (`.github/workflows/deploy-staging.yml` — #573):**
+   - Bước `Seed built-in vocab library (staging only)` chạy ngay sau `/readyz` trên mỗi lần deploy nhánh `staging`:
+     ```bash
+     CLOUDFLARE_ACCOUNT_ID="<account-id>" \
+     CLOUDFLARE_API_TOKEN="<api-token>" \
+       pnpm --filter @teacher-os/db exec tsx scripts/seed-vocab-library.ts --d1 --d1-stage staging --if-needed --verify
+     ```
+   - `--d1-stage staging` tự tra cứu đúng 1 DB khớp `^teacher-os-database-staging-[a-z2-7]{16}$` (fail-closed nếu `!= 1` kết quả hoặc trộn với `D1_DATABASE_ID`); `--if-needed` đối chiếu cả tập ID lẫn SHA-256 toàn bộ cột của 3 bảng trước khi bỏ qua upsert.
 3. **Tính chất không nguyên tử (Non-atomic per-chunk) trên D1 REST:**
    D1 REST `/query` thực thi từng statement một (mỗi chunk ≤ 48KB là 1 câu `INSERT ... ON CONFLICT(id) DO UPDATE`). Nếu mạng hoặc token đứt giữa chừng, dữ liệu mới vào một phần; chỉ cần **chạy lại nguyên lệnh trên** cho tới khi `--verify` in `OK` ở cả 3 bảng và trả về exit code `0`.
-4. **Production:** Chỉ thực hiện sau khi **Gate Giấy phép** ở đầu tài liệu đã được mở và bước Staging `--verify` đã xanh.
+4. **Production (`deploy.yml` / `teacher-os-database-prod-*`):** **Bị chặn cơ học** ở cả `assertNonProdD1Database` trong script lẫn `scripts/ci-workflow.test.mjs` cho tới khi **Gate Giấy phép** ở đầu tài liệu được chủ dự án mở bằng văn bản.

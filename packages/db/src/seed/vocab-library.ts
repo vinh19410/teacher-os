@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Client } from "@libsql/client";
@@ -9,6 +10,14 @@ export const EXPECTED_COUNTS = {
 	word: 10160,
 } as const;
 
+export const STAGING_D1_NAME_PREFIX = "teacher-os-database-staging-";
+export const STAGING_D1_NAME_REGEX =
+	/^teacher-os-database-staging-[a-z2-7]{16}$/;
+export const PROD_D1_NAME_REGEX =
+	/^teacher-os-database-(?:prod|production|main|pilot)-/i;
+const D1_UUID_REGEX =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export type LibraryTableName =
 	| "vocab_library_course"
 	| "vocab_library_deck"
@@ -17,6 +26,7 @@ export type LibraryTableName =
 export interface SqlRunner {
 	run(statements: string[]): Promise<void>;
 	queryIds?(table: LibraryTableName): Promise<string[]>;
+	queryRows?(sql: string): Promise<Array<Record<string, unknown>>>;
 }
 
 export interface VocabLibraryCourseSeedRow {
@@ -362,6 +372,10 @@ export function createLibsqlRunner(client: Client): SqlRunner {
 			const res = await client.execute(`SELECT id FROM ${table}`);
 			return res.rows.map((r) => String(r.id));
 		},
+		async queryRows(sql: string): Promise<Array<Record<string, unknown>>> {
+			const res = await client.execute(sql);
+			return res.rows.map((r) => ({ ...(r as Record<string, unknown>) }));
+		},
 	};
 }
 
@@ -459,5 +473,327 @@ export async function verifyCounts(
 	return {
 		ok: course.match && deck.match && word.match,
 		tables: { course, deck, word },
+	};
+}
+
+function compareCodeUnitId(a: { id: string }, b: { id: string }): number {
+	if (a.id < b.id) return -1;
+	if (a.id > b.id) return 1;
+	return 0;
+}
+
+function toNullableString(value: unknown): string | null {
+	if (value === null || value === undefined) return null;
+	return String(value);
+}
+
+const WORD_PARITY_PAGE_SIZE = 4000;
+
+export async function verifyContentParity(
+	runnerOrClient: SqlRunner | Client,
+	options?: {
+		dataDir?: string;
+		data?: ParsedVocabLibraryData;
+	},
+): Promise<boolean> {
+	const runner = resolveRunner(runnerOrClient);
+	if (!runner.queryRows) {
+		throw new Error(
+			"SqlRunner does not implement queryRows(sql) required for verifyContentParity",
+		);
+	}
+	const data = options?.data ?? loadVocabLibraryCsvData(options?.dataDir);
+
+	const expectedHash = createHash("sha256");
+	for (const c of [...data.courses].sort(compareCodeUnitId)) {
+		expectedHash.update(
+			`${JSON.stringify(["course", c.id, c.name, c.description, c.target, c.sortOrder])}\n`,
+		);
+	}
+	for (const d of [...data.decks].sort(compareCodeUnitId)) {
+		expectedHash.update(
+			`${JSON.stringify(["deck", d.id, d.courseId, d.title, d.description, d.imageUrl, d.sortOrder])}\n`,
+		);
+	}
+	for (const w of [...data.words].sort(compareCodeUnitId)) {
+		expectedHash.update(
+			`${JSON.stringify(["word", w.id, w.deckId, w.word, w.ipa, w.pos, w.translation, w.sentenceVi, w.sentenceEn, w.pictureUrl, w.audioUrl, w.sortOrder])}\n`,
+		);
+	}
+
+	const actualHash = createHash("sha256");
+	const [courseRows, deckRows] = await Promise.all([
+		runner.queryRows(
+			"SELECT id, name, description, target, sort_order FROM vocab_library_course ORDER BY id ASC;",
+		),
+		runner.queryRows(
+			"SELECT id, course_id, title, description, image_url, sort_order FROM vocab_library_deck ORDER BY id ASC;",
+		),
+	]);
+
+	for (const r of courseRows) {
+		actualHash.update(
+			`${JSON.stringify([
+				"course",
+				String(r.id),
+				String(r.name),
+				toNullableString(r.description),
+				toNullableString(r.target),
+				Number(r.sort_order),
+			])}\n`,
+		);
+	}
+	for (const r of deckRows) {
+		actualHash.update(
+			`${JSON.stringify([
+				"deck",
+				String(r.id),
+				String(r.course_id),
+				String(r.title),
+				toNullableString(r.description),
+				toNullableString(r.image_url),
+				Number(r.sort_order),
+			])}\n`,
+		);
+	}
+
+	for (let offset = 0; ; offset += WORD_PARITY_PAGE_SIZE) {
+		const wordRows = await runner.queryRows(
+			`SELECT id, deck_id, word, ipa, pos, translation, sentence_vi, sentence_en, picture_url, audio_url, sort_order FROM vocab_library_word ORDER BY id ASC LIMIT ${WORD_PARITY_PAGE_SIZE} OFFSET ${offset};`,
+		);
+		for (const r of wordRows) {
+			actualHash.update(
+				`${JSON.stringify([
+					"word",
+					String(r.id),
+					String(r.deck_id),
+					String(r.word),
+					toNullableString(r.ipa),
+					toNullableString(r.pos),
+					String(r.translation),
+					toNullableString(r.sentence_vi),
+					toNullableString(r.sentence_en),
+					toNullableString(r.picture_url),
+					toNullableString(r.audio_url),
+					Number(r.sort_order),
+				])}\n`,
+			);
+		}
+		if (wordRows.length < WORD_PARITY_PAGE_SIZE) {
+			break;
+		}
+	}
+
+	return expectedHash.digest("hex") === actualHash.digest("hex");
+}
+
+interface CloudflareD1ListResponse {
+	success?: boolean;
+	errors?: Array<{ message?: string }>;
+	result?: Array<{ uuid?: string; name?: string }>;
+	result_info?: {
+		page?: number;
+		per_page?: number;
+		count?: number;
+		total_count?: number;
+		total_pages?: number;
+	};
+}
+
+interface CloudflareD1GetResponse {
+	success?: boolean;
+	errors?: Array<{ message?: string }>;
+	result?: { uuid?: string; name?: string };
+}
+
+async function fetchGetWithRetry(
+	fetchFn: typeof fetch,
+	url: string,
+	apiToken: string,
+	timeoutMs: number,
+): Promise<Response> {
+	for (let attempt = 0; ; attempt++) {
+		const res = await fetchFn(url, {
+			method: "GET",
+			headers: {
+				authorization: `Bearer ${apiToken}`,
+			},
+			signal: AbortSignal.timeout(timeoutMs),
+		});
+		if ((res.status === 429 || res.status >= 500) && attempt === 0) {
+			continue;
+		}
+		return res;
+	}
+}
+
+export async function resolveStagingD1DatabaseId(options: {
+	stage: string;
+	accountId: string;
+	apiToken: string;
+	fetchImpl?: typeof fetch;
+	timeoutMs?: number;
+}): Promise<string> {
+	if (options.stage !== "staging") {
+		throw new Error(
+			`Unsupported --d1-stage "${options.stage}": automatic D1 lookup is restricted to "staging" (production is blocked by license gate).`,
+		);
+	}
+	const fetchFn = options.fetchImpl ?? fetch;
+	const timeoutMs = options.timeoutMs ?? 20_000;
+	const url = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(options.accountId)}/d1/database?name=${encodeURIComponent(STAGING_D1_NAME_PREFIX)}&per_page=100`;
+
+	const res = await fetchGetWithRetry(
+		fetchFn,
+		url,
+		options.apiToken,
+		timeoutMs,
+	);
+	const raw = await res.text();
+	let payload: CloudflareD1ListResponse = {};
+	try {
+		payload = JSON.parse(raw) as CloudflareD1ListResponse;
+	} catch {
+		throw new Error(`D1 list databases failed (${res.status}): invalid JSON`);
+	}
+	if (!res.ok || payload.success !== true) {
+		const errMsg =
+			payload.errors?.map((e) => e.message ?? "error").join("; ") ??
+			`HTTP ${res.status}`;
+		throw new Error(`D1 list databases failed (${res.status}): ${errMsg}`);
+	}
+
+	const resultList = Array.isArray(payload.result) ? payload.result : [];
+	const totalPages = payload.result_info?.total_pages;
+	const totalCount = payload.result_info?.total_count;
+	if (
+		(typeof totalPages === "number" && totalPages > 1) ||
+		(typeof totalCount === "number" && totalCount > resultList.length)
+	) {
+		throw new Error(
+			"D1 list databases truncated by pagination; refusing partial staging lookup.",
+		);
+	}
+
+	const matches = resultList.filter(
+		(
+			db,
+		): db is {
+			uuid: string;
+			name: string;
+		} =>
+			typeof db.uuid === "string" &&
+			D1_UUID_REGEX.test(db.uuid) &&
+			typeof db.name === "string" &&
+			STAGING_D1_NAME_REGEX.test(db.name),
+	);
+	const [match] = matches;
+	if (matches.length !== 1 || !match) {
+		throw new Error(
+			`Expected exactly 1 staging D1 database matching ${STAGING_D1_NAME_REGEX}, found ${matches.length}.`,
+		);
+	}
+	return match.uuid;
+}
+
+export async function assertNonProdD1Database(options: {
+	accountId: string;
+	databaseId: string;
+	apiToken: string;
+	fetchImpl?: typeof fetch;
+	timeoutMs?: number;
+}): Promise<void> {
+	const fetchFn = options.fetchImpl ?? fetch;
+	const timeoutMs = options.timeoutMs ?? 20_000;
+	const url = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(options.accountId)}/d1/database/${encodeURIComponent(options.databaseId)}`;
+
+	const res = await fetchGetWithRetry(
+		fetchFn,
+		url,
+		options.apiToken,
+		timeoutMs,
+	);
+	const raw = await res.text();
+	let payload: CloudflareD1GetResponse = {};
+	try {
+		payload = JSON.parse(raw) as CloudflareD1GetResponse;
+	} catch {
+		throw new Error(`D1 get database failed (${res.status}): invalid JSON`);
+	}
+	if (!res.ok || payload.success !== true || !payload.result?.name) {
+		const errMsg =
+			payload.errors?.map((e) => e.message ?? "error").join("; ") ??
+			`HTTP ${res.status}`;
+		throw new Error(`D1 get database failed (${res.status}): ${errMsg}`);
+	}
+	if (PROD_D1_NAME_REGEX.test(payload.result.name)) {
+		throw new Error(
+			`Target D1 database "${payload.result.name}" is blocked by license gate: seeding production D1 requires written project-owner sign-off.`,
+		);
+	}
+}
+
+export interface EnsureVocabLibrarySeedResult {
+	seeded: boolean;
+	statementsExecuted: number;
+	counts: {
+		course: number;
+		deck: number;
+		word: number;
+	};
+	verification?: VerifyCountsResult;
+}
+
+export async function ensureVocabLibrarySeeded(
+	runnerOrClient: SqlRunner | Client,
+	options?: {
+		dataDir?: string;
+		data?: ParsedVocabLibraryData;
+		prune?: boolean;
+		ifNeeded?: boolean;
+		verify?: boolean;
+		maxChunkBytes?: number;
+	},
+): Promise<EnsureVocabLibrarySeedResult> {
+	const runner = resolveRunner(runnerOrClient);
+	const data = options?.data ?? loadVocabLibraryCsvData(options?.dataDir);
+	const expectedCounts = {
+		course: data.courses.length,
+		deck: data.decks.length,
+		word: data.words.length,
+	};
+
+	if (options?.ifNeeded && !options?.prune) {
+		if (!runner.queryRows) {
+			throw new Error(
+				"SqlRunner does not implement queryRows(sql) required for --if-needed verifyContentParity",
+			);
+		}
+		const precheck = await verifyCounts(runner, { data });
+		if (precheck.ok && (await verifyContentParity(runner, { data }))) {
+			return {
+				seeded: false,
+				statementsExecuted: 0,
+				counts: expectedCounts,
+				verification: precheck,
+			};
+		}
+	}
+
+	const seedRes = await seedVocabLibrary(runner, {
+		data,
+		prune: options?.prune,
+		maxChunkBytes: options?.maxChunkBytes,
+	});
+	const verification =
+		options?.verify || options?.ifNeeded
+			? await verifyCounts(runner, { data })
+			: undefined;
+
+	return {
+		seeded: true,
+		statementsExecuted: seedRes.statementsExecuted,
+		counts: expectedCounts,
+		verification,
 	};
 }

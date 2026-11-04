@@ -58,7 +58,10 @@ import {
 	groupOptions,
 	partsSetPayload,
 } from "@/lib/repos/assignment-tests";
-import { normalizeLegacyRichText } from "@/lib/rich-text-legacy";
+import {
+	normalizeDraftItems,
+	normalizeLegacyRichText,
+} from "@/lib/rich-text-legacy";
 import { computeTestRanges } from "@/lib/test-ranges";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 
@@ -140,7 +143,24 @@ export function TestBuilderShell({
 	);
 	const [slotDrafts, setSlotDrafts] = useState<
 		Record<string, ComposerValue | null>
-	>(() => (bannerDraft ? bannerDraft.slotDrafts : {}));
+	>(() => {
+		if (!bannerDraft) return {};
+		const normalized: Record<string, ComposerValue | null> = {};
+		for (const [partKey, slot] of Object.entries(bannerDraft.slotDrafts)) {
+			normalized[partKey] = slot
+				? {
+						...slot,
+						prompt: normalizeLegacyRichText(slot.prompt),
+						passage: normalizeLegacyRichText(slot.passage),
+						intro: normalizeLegacyRichText(slot.intro),
+						transcript: normalizeLegacyRichText(slot.transcript),
+						note: normalizeLegacyRichText(slot.note),
+						items: normalizeDraftItems(slot.items),
+					}
+				: null;
+		}
+		return normalized;
+	});
 	const [composer, setComposer] = useState<OpenComposer | null>(null);
 	const [pickerPart, setPickerPart] = useState<string | null>(null);
 	const [showHeaderErrors, setShowHeaderErrors] = useState(false);
@@ -328,6 +348,7 @@ export function TestBuilderShell({
 						intro: normalizeLegacyRichText(draft.intro),
 						transcript: normalizeLegacyRichText(draft.transcript),
 						note: normalizeLegacyRichText(draft.note),
+						items: normalizeDraftItems(draft.items),
 					}
 				: {
 						skill: header.skill,
@@ -393,10 +414,12 @@ export function TestBuilderShell({
 		setShowComposerErrors(true);
 		const payload = composerToPromptPayload(composer.value, composer.status);
 		if (composer.promptId) {
+			// assignmentPromptUpdateSchema omits skill/part and is .strict().
+			const { skill: _skill, part: _part, ...updatePayload } = payload;
 			const result = await submit.run({
 				type: "update-assignment-prompt",
 				promptId: composer.promptId,
-				payload,
+				payload: updatePayload,
 			});
 			if (result?.kind === "refreshed") closeComposer();
 			return;
@@ -830,7 +853,7 @@ function composerSaveAllowed(
 			: value.skill === "reading"
 				? !isEmptyRichText(value.passage) &&
 					value.items.some((item) => item.stem.trim())
-				: value.skill === "listening"
+				: isAutoSkill(value.skill)
 					? value.items.some((item) => item.stem.trim())
 					: value.part === "part2"
 						? !!value.cueTopic.trim()
@@ -848,7 +871,7 @@ function composerToPromptPayload(
 	status: "draft" | "ready",
 ) {
 	return {
-		skill: value.skill as "writing" | "reading" | "listening" | "speaking",
+		skill: value.skill as AssignmentSkill,
 		part: value.part,
 		type: value.type,
 		title: value.title.trim(),

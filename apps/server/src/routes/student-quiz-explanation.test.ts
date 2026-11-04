@@ -1,6 +1,7 @@
 import { createClient } from "@libsql/client";
 import type {
 	AssignmentQuestion,
+	KernelSnapshot,
 	QuizAttemptDetail,
 } from "@teacher-os/api/contracts";
 import { quizAttemptDetailSchema } from "@teacher-os/api/contracts";
@@ -438,5 +439,210 @@ describe("student review detail — giải thích đáp án (#358)", () => {
 		const body = (await res.json()) as QuizAttemptDetail;
 		expect(body.questions[0]?.explanation).toBe(EXPLANATION_Q1);
 		expect(body.questions[3]?.explanation).toBe(EXPLANATION_P2);
+	});
+});
+
+describe("teacher prompt create/PATCH -> student quiz take & detail round-trip (#571)", () => {
+	const WEB_ORIGIN = "http://localhost:8001";
+	const teacherHeaders = {
+		"x-test-user": "teacher",
+		Origin: WEB_ORIGIN,
+		"Content-Type": "application/json",
+	};
+	const studentHeaders = {
+		"x-test-user": "student-571",
+		Origin: STUDENT_ORIGIN,
+		"Content-Type": "application/json",
+	};
+
+	test("POST /prompts lưu explanation, PATCH /prompts/:id cập nhật + hiện ở /kernel, ẩn ở /quiz đang làm và trả về ở /attempts/:id/detail sau nộp", async () => {
+		const client = createClient({ url: "file::memory:" });
+		const db = drizzle(client, { schema });
+		await migrate(db, { migrationsFolder: MIGRATIONS_DIR });
+		const libsql = db as unknown as Db;
+		const now = new Date();
+		await libsql.insert(schema.user).values({
+			id: "teacher-571",
+			name: "Cô Mỹ",
+			email: "comy@academy.vn",
+			emailVerified: true,
+			role: "teacher",
+			createdAt: now,
+			updatedAt: now,
+		});
+
+		const app = buildApp({
+			getDb: () => libsql,
+			corsOrigin: [WEB_ORIGIN, STUDENT_ORIGIN],
+			getSessionUser: async (headers: Headers): Promise<SessionUser | null> => {
+				const who = headers.get("x-test-user");
+				if (who === "teacher") {
+					return {
+						userId: "teacher-571",
+						userName: "Cô Mỹ",
+						email: "comy@academy.vn",
+						emailVerified: true,
+						role: "teacher",
+					};
+				}
+				if (who === "student-571") {
+					return {
+						userId: "u-student-571",
+						userName: "Minh 571",
+						email: "minh-571@gmail.com",
+						emailVerified: true,
+						role: "student",
+					};
+				}
+				return null;
+			},
+			authHandler: () => new Response("auth OK"),
+		});
+
+		// 1. Giáo viên tạo đề Reading có explanation qua endpoint thật của composer.
+		const createRes = await app.request("/api/assignments/prompts", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				skill: "reading",
+				part: "p1",
+				type: "tfng",
+				title: "Reading TFNG #571",
+				band: "7.0",
+				source: "Cambridge 18",
+				prompt: "",
+				passage: "<p>Stepwells are underground reservoirs.</p>",
+				intro: "<p>TRUE / FALSE / NOT GIVEN</p>",
+				transcript: "",
+				cueTopic: "",
+				cuePoints: "",
+				audioName: "",
+				imageUrl: "",
+				optionBank: [],
+				note: "",
+				status: "ready",
+				questions: [
+					{
+						stem: "Stepwells were built above ground.",
+						opts: null,
+						answer: "FALSE",
+						alts: "",
+						pin: null,
+						explanation: "<p>Đoạn 1 dòng 4 chứng minh FALSE.</p>",
+					},
+				],
+			}),
+		});
+		expect(createRes.status).toBe(201);
+		const { id: promptId } = (await createRes.json()) as { id: string };
+
+		// 2. Giáo viên bấm Cập nhật đề (PATCH không có skill/part) sửa explanation.
+		const patchRes = await app.request(`/api/assignments/prompts/${promptId}`, {
+			method: "PATCH",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				questions: [
+					{
+						stem: "Stepwells were built above ground.",
+						opts: null,
+						answer: "FALSE",
+						alts: "",
+						pin: null,
+						explanation: "<p>Đoạn 1 dòng 5 chứng minh FALSE (đã cập nhật).</p>",
+					},
+				],
+			}),
+		});
+		expect(patchRes.status).toBe(200);
+
+		const kernelRes = await app.request("/api/kernel", {
+			headers: { "x-test-user": "teacher" },
+		});
+		expect(kernelRes.status).toBe(200);
+		const snapshot = (await kernelRes.json()) as KernelSnapshot;
+		const savedPrompt = snapshot.assignmentPrompts.find(
+			(p) => p.id === promptId,
+		);
+		expect(savedPrompt?.questions[0]?.explanation).toBe(
+			"<p>Đoạn 1 dòng 5 chứng minh FALSE (đã cập nhật).</p>",
+		);
+
+		// 3. Tạo lớp + học viên active trong cùng org rồi giao đề.
+		const classRes = await app.request("/api/classes", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				name: "IELTS Reading #571",
+				type: "ielts",
+				skills: ["Reading"],
+				schedule: { days: [1, 3], start: "18:30", end: "20:00" },
+				sessionsTotal: 8,
+				tuitionFee: 3000000,
+				startDate: "2029-01-08",
+			}),
+		});
+		expect(classRes.status).toBe(201);
+		const { id: classId } = (await classRes.json()) as { id: string };
+
+		const stRes = await app.request("/api/students", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				name: "Minh 571",
+				email: "minh-571@gmail.com",
+				classId,
+				activateNow: true,
+			}),
+		});
+		expect(stRes.status).toBe(201);
+		const { id: studentId } = (await stRes.json()) as { id: string };
+
+		const assignRes = await app.request(`/api/classes/${classId}/assignments`, {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				promptId,
+				due: "2099-12-31",
+				note: "Làm bài đọc",
+				studentIds: [studentId],
+			}),
+		});
+		expect(assignRes.status).toBe(201);
+		const { id: assignmentId } = (await assignRes.json()) as { id: string };
+
+		// 4. Học viên bắt đầu làm bài: GET /quiz KHÔNG lộ explanation.
+		const startRes = await app.request(
+			`/api/student/assignments/${assignmentId}/quiz/start`,
+			{ method: "POST", headers: studentHeaders, body: "{}" },
+		);
+		expect(startRes.status).toBe(201);
+		const { attemptId } = (await startRes.json()) as { attemptId: string };
+
+		const takeRes = await app.request(
+			`/api/student/assignments/${assignmentId}/quiz`,
+			{ headers: { "x-test-user": "student-571" } },
+		);
+		expect(takeRes.status).toBe(200);
+		const takeText = await takeRes.text();
+		expect(takeText).not.toContain("explanation");
+		expect(takeText).not.toContain("chứng minh FALSE");
+
+		// 5. Học viên nộp bài: GET /attempts/:attemptId/detail trả đúng explanation.
+		const submitRes = await app.request(
+			`/api/student/attempts/${attemptId}/submit`,
+			{ method: "POST", headers: studentHeaders, body: "{}" },
+		);
+		expect(submitRes.status).toBe(200);
+
+		const detailRes = await app.request(
+			`/api/student/attempts/${attemptId}/detail`,
+			{ headers: { "x-test-user": "student-571" } },
+		);
+		expect(detailRes.status).toBe(200);
+		const detail = (await detailRes.json()) as QuizAttemptDetail;
+		expect(quizAttemptDetailSchema.safeParse(detail).success).toBe(true);
+		expect(detail.questions[0]?.explanation).toBe(
+			"<p>Đoạn 1 dòng 5 chứng minh FALSE (đã cập nhật).</p>",
+		);
 	});
 });

@@ -39,7 +39,10 @@ import {
 	takePreviewDraft,
 } from "@/lib/assignment-preview-draft";
 import { useData } from "@/lib/data-store";
-import { normalizeLegacyRichText } from "@/lib/rich-text-legacy";
+import {
+	normalizeDraftItems,
+	normalizeLegacyRichText,
+} from "@/lib/rich-text-legacy";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 
 export const Route = createFileRoute("/_auth/assignments/new")({
@@ -232,7 +235,7 @@ export function NewAssignmentRoute() {
 					audioName: restored.audioName ?? "",
 					imageUrl: restored.imageUrl ?? "",
 					optionBank: restored.optionBank ?? [],
-					items: restored.items ?? [],
+					items: normalizeDraftItems(restored.items ?? []),
 				}
 			: bannerDraft
 				? {
@@ -243,6 +246,7 @@ export function NewAssignmentRoute() {
 						intro: restoreRich(bannerDraft.value.intro),
 						transcript: restoreRich(bannerDraft.value.transcript),
 						note: restoreRich(bannerDraft.value.note),
+						items: normalizeDraftItems(bannerDraft.value.items ?? []),
 					}
 				: freshComposer(),
 	);

@@ -115,6 +115,12 @@ jobs:
           done
           echo "::error::/readyz did not return 200 {\"ok\":true} within 10 minutes of deploy"
           exit 1
+      - name: Seed built-in vocab library (staging only)
+        timeout-minutes: 5
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: pnpm --filter @teacher-os/db exec tsx scripts/seed-vocab-library.ts --d1 --d1-stage staging --if-needed --verify
       - name: Smoke check auth (sign-up → get-session)
         # Issue #125: /readyz cannot see auth breakage (cookie config, CORS,
         # secret, D1 session store). Request shape follows

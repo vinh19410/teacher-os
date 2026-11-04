@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { VocabOverview } from "@teacher-os/api/contracts";
 import {
 	act,
 	cleanup,
@@ -10,10 +11,18 @@ import {
 } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	deriveStudentHomeVocabSubtitle,
+	StudentVocabEntrySection,
+} from "@/routes/_auth/index";
 import { VocabCourseLessonsView } from "@/routes/_auth/practice/vocabulary/courses/$courseId";
 import { VocabCoursesCatalogView } from "@/routes/_auth/practice/vocabulary/courses/index";
+import { VocabOverviewContent } from "@/routes/_auth/practice/vocabulary/index";
 import { VocabCourseSwitcherDialog } from "./vocab-course-switcher-dialog";
-import { VocabCoursesCta } from "./vocab-courses-cta";
+import {
+	deriveVocabLibrarySummary,
+	VocabCoursesCta,
+} from "./vocab-courses-cta";
 import {
 	deriveLessonStatus,
 	deriveLessonSubtitle,
@@ -23,6 +32,7 @@ import {
 
 vi.mock("@tanstack/react-router", () => ({
 	createFileRoute: () => () => ({}),
+	Navigate: () => null,
 	useNavigate: () => vi.fn(),
 	Link: ({
 		children,
@@ -266,10 +276,296 @@ describe("Student Vocab Courses & MochiVocab Lessons UI (#369)", () => {
 		expect(onClose).toHaveBeenCalledTimes(1);
 	});
 
-	it("VocabCoursesCta renders dashboard link to /practice/vocabulary/courses", () => {
-		render(<VocabCoursesCta />);
+	it("deriveVocabLibrarySummary and VocabCoursesCta reflect API counts and hide when library is empty (#573)", () => {
+		expect(deriveVocabLibrarySummary(undefined)).toBeNull();
+		expect(deriveVocabLibrarySummary(null)).toBeNull();
+		expect(deriveVocabLibrarySummary([])).toBeNull();
+		expect(
+			deriveVocabLibrarySummary([{ deckCount: 0 }, { deckCount: 0 }]),
+		).toBeNull();
+		expect(
+			deriveVocabLibrarySummary([{ deckCount: 50 }, { deckCount: 40 }]),
+		).toEqual({
+			courseCount: 2,
+			lessonCount: 90,
+		});
+
+		const { rerender } = render(<VocabCoursesCta summary={null} />);
+		expect(screen.queryByTestId("vocab-courses-cta")).toBeNull();
+
+		rerender(<VocabCoursesCta summary={{ courseCount: 2, lessonCount: 90 }} />);
 		const cta = screen.getByTestId("vocab-courses-cta");
 		expect(cta.getAttribute("href")).toBe("/practice/vocabulary/courses");
+		expect(cta.textContent).toContain("Thư viện từ vựng · 2 khóa · 90 bài");
+	});
+
+	it("VocabOverviewContent removes dangling CTA reference when library is empty and restores it when courses exist (#573)", () => {
+		const emptyOverview: VocabOverview = {
+			dueCount: 0,
+			nextDueAt: null,
+			upcomingCount: 0,
+			learnedCount: 0,
+			matureCount: 0,
+			levelDistribution: [0, 0, 0, 0, 0],
+			streak: 0,
+			retention: null,
+			forecast: [0, 0, 0, 0, 0, 0, 0],
+			decks: [],
+			suggestions: [],
+		};
+
+		const { rerender } = render(
+			<VocabOverviewContent
+				data={emptyOverview}
+				librarySummary={null}
+				busySuggestionId={null}
+				suggestionError={null}
+				onAcceptSuggestion={vi.fn()}
+				onDismissSuggestion={vi.fn()}
+				onExpired={vi.fn()}
+			/>,
+		);
+		expect(screen.queryByTestId("vocab-courses-cta")).toBeNull();
+		const emptyCopyWhenHidden =
+			screen.getByTestId("vocab-decks-empty").textContent ?? "";
+		expect(emptyCopyWhenHidden).toContain(
+			"Đợi giáo viên giao bộ từ cho lớp của bạn.",
+		);
+		expect(emptyCopyWhenHidden).not.toContain("bên dưới");
+
+		rerender(
+			<VocabOverviewContent
+				data={emptyOverview}
+				librarySummary={{ courseCount: 2, lessonCount: 90 }}
+				busySuggestionId={null}
+				suggestionError={null}
+				onAcceptSuggestion={vi.fn()}
+				onDismissSuggestion={vi.fn()}
+				onExpired={vi.fn()}
+			/>,
+		);
+		expect(screen.getByTestId("vocab-courses-cta").textContent).toContain(
+			"Thư viện từ vựng · 2 khóa · 90 bài",
+		);
+		expect(screen.getByTestId("vocab-decks-empty").textContent).toContain(
+			"Mở mục Khóa học từ vựng bên dưới",
+		);
+	});
+
+	it("VocabCoursesCatalogView distinguishes empty library from filter mismatch (#573)", async () => {
+		const emptyFetchMock = vi.fn(async () => {
+			return new Response(JSON.stringify({ courses: [] }), {
+				status: 200,
+				headers: { "Content-Type": "application/json" },
+			});
+		});
+		vi.stubGlobal("fetch", emptyFetchMock);
+
+		const { unmount } = renderWithQueryClient(<VocabCoursesCatalogView />);
+		await waitFor(() => {
+			expect(screen.queryByTestId("vocab-courses-loading")).toBeNull();
+		});
+		expect(screen.getByTestId("vocab-courses-empty").textContent).toBe(
+			"Thư viện khóa học từ vựng hiện chưa có nội dung.",
+		);
+		unmount();
+
+		const seededFetchMock = vi.fn(async () => {
+			return new Response(
+				JSON.stringify({
+					courses: [
+						{
+							id: "libcourse-1",
+							name: "1000 Từ Cơ Bản",
+							description: "Nền tảng tiếng Anh giao tiếp",
+							target: "Mất gốc",
+							deckCount: 50,
+							wordCount: 1000,
+							reviewWordCount: 0,
+							learnedWordCount: 0,
+							dueWordCount: 0,
+							sortOrder: 0,
+						},
+					],
+				}),
+				{ status: 200, headers: { "Content-Type": "application/json" } },
+			);
+		});
+		vi.stubGlobal("fetch", seededFetchMock);
+
+		renderWithQueryClient(<VocabCoursesCatalogView />);
+		await waitFor(() => {
+			expect(screen.getByTestId("vocab-course-card-libcourse-1")).toBeDefined();
+		});
+		fireEvent.change(screen.getByTestId("vocab-course-search"), {
+			target: { value: "ZZZZ-NO-MATCH" },
+		});
+		await act(async () => {
+			const { promise, resolve } = Promise.withResolvers<void>();
+			setTimeout(resolve, 350);
+			await promise;
+		});
+		expect(screen.getByTestId("vocab-courses-empty").textContent).toBe(
+			"Không tìm thấy khóa học từ vựng phù hợp.",
+		);
+	});
+
+	it("StudentVocabEntrySection uses dynamic course count and hides unavailable courses on empty or HTTP 500 (#573)", async () => {
+		expect(deriveStudentHomeVocabSubtitle(0, null)).toBe(
+			"Ôn tập từ vựng theo 5 cấp độ trí nhớ",
+		);
+		expect(deriveStudentHomeVocabSubtitle(3, null)).toBe("3 bộ từ đang học");
+		expect(
+			deriveStudentHomeVocabSubtitle(0, { courseCount: 20, lessonCount: 968 }),
+		).toBe("Khám phá 20 khóa học từ vựng theo 5 cấp độ trí nhớ");
+		expect(
+			deriveStudentHomeVocabSubtitle(3, { courseCount: 20, lessonCount: 968 }),
+		).toBe("3 bộ từ đang học · 20 khóa học từ vựng có sẵn");
+
+		const overviewWithOneDeck: VocabOverview = {
+			dueCount: 2,
+			nextDueAt: null,
+			upcomingCount: 0,
+			learnedCount: 10,
+			matureCount: 1,
+			levelDistribution: [3, 4, 2, 0, 1],
+			streak: 5,
+			retention: 90,
+			forecast: [2, 1, 0, 0, 0, 0, 0],
+			decks: [
+				{
+					deckId: "deck-1",
+					title: "Unit 1",
+					className: "IELTS A1",
+					source: "class",
+					total: 20,
+					newCount: 10,
+					dueCount: 2,
+				},
+			],
+			suggestions: [],
+		};
+
+		// 1. Seeded library (2 courses)
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (input: RequestInfo | URL) => {
+				const url = String(input);
+				if (url.endsWith("/api/student/vocab/overview")) {
+					return new Response(JSON.stringify(overviewWithOneDeck), {
+						status: 200,
+						headers: { "Content-Type": "application/json" },
+					});
+				}
+				if (url.endsWith("/api/student/vocab/library/courses")) {
+					return new Response(
+						JSON.stringify({
+							courses: [
+								{
+									id: "libcourse-1",
+									name: "Course 1",
+									description: null,
+									target: null,
+									deckCount: 12,
+									wordCount: 120,
+									reviewWordCount: 0,
+									learnedWordCount: 0,
+									dueWordCount: 0,
+									sortOrder: 0,
+								},
+								{
+									id: "libcourse-2",
+									name: "Course 2",
+									description: null,
+									target: null,
+									deckCount: 8,
+									wordCount: 80,
+									reviewWordCount: 0,
+									learnedWordCount: 0,
+									dueWordCount: 0,
+									sortOrder: 1,
+								},
+							],
+						}),
+						{ status: 200, headers: { "Content-Type": "application/json" } },
+					);
+				}
+				return new Response("not found", { status: 404 });
+			}),
+		);
+
+		const { unmount: unmountSeeded, container: seededContainer } =
+			renderWithQueryClient(<StudentVocabEntrySection />);
+		await waitFor(() => {
+			expect(seededContainer.textContent).toContain(
+				"1 bộ từ đang học · 2 khóa học từ vựng có sẵn",
+			);
+		});
+		unmountSeeded();
+
+		// 2. Empty library ({ courses: [] }) — deckCount=1 proves query settled beyond Frame 0
+		const emptyLibraryFetch = vi.fn(async (input: RequestInfo | URL) => {
+			const url = String(input);
+			if (url.endsWith("/api/student/vocab/overview")) {
+				return new Response(JSON.stringify(overviewWithOneDeck), {
+					status: 200,
+					headers: { "Content-Type": "application/json" },
+				});
+			}
+			if (url.endsWith("/api/student/vocab/library/courses")) {
+				return new Response(JSON.stringify({ courses: [] }), {
+					status: 200,
+					headers: { "Content-Type": "application/json" },
+				});
+			}
+			return new Response("not found", { status: 404 });
+		});
+		vi.stubGlobal("fetch", emptyLibraryFetch);
+
+		const { unmount: unmountEmpty, container: emptyContainer } =
+			renderWithQueryClient(<StudentVocabEntrySection />);
+		await waitFor(() => {
+			expect(emptyContainer.textContent).toContain("1 bộ từ đang học");
+			expect(emptyLibraryFetch).toHaveBeenCalledTimes(2);
+		});
+		await act(async () => {
+			await Promise.resolve();
+		});
+		expect(emptyContainer.textContent).not.toContain("khóa học từ vựng");
+		expect(emptyContainer.textContent).not.toContain("20 khóa");
+		unmountEmpty();
+
+		// 3. HTTP 500 error on /api/student/vocab/library/courses
+		const errorLibraryFetch = vi.fn(async (input: RequestInfo | URL) => {
+			const url = String(input);
+			if (url.endsWith("/api/student/vocab/overview")) {
+				return new Response(JSON.stringify(overviewWithOneDeck), {
+					status: 200,
+					headers: { "Content-Type": "application/json" },
+				});
+			}
+			if (url.endsWith("/api/student/vocab/library/courses")) {
+				return new Response(JSON.stringify({ error: "internal error" }), {
+					status: 500,
+					headers: { "Content-Type": "application/json" },
+				});
+			}
+			return new Response("not found", { status: 404 });
+		});
+		vi.stubGlobal("fetch", errorLibraryFetch);
+
+		const { unmount: unmountError, container: errorContainer } =
+			renderWithQueryClient(<StudentVocabEntrySection />);
+		await waitFor(() => {
+			expect(errorContainer.textContent).toContain("1 bộ từ đang học");
+			expect(errorLibraryFetch).toHaveBeenCalledTimes(2);
+		});
+		await act(async () => {
+			await Promise.resolve();
+		});
+		expect(errorContainer.textContent).not.toContain("khóa học từ vựng");
+		expect(errorContainer.textContent).not.toContain("20 khóa");
+		unmountError();
 	});
 
 	it("VocabCoursesCatalogView and VocabCourseLessonsView render catalog, debounce search (300ms), auto-scroll once to start-here, and switch courses via ribbon dialog", async () => {

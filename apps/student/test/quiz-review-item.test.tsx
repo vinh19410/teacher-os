@@ -208,6 +208,26 @@ describe("QuizReviewItem — giải thích riêng từng câu (#358)", () => {
 		expect(quizReviewExplanation(reviewInfo({ note: " n " }))).toBe("n");
 		expect(quizReviewExplanation(reviewInfo({ note: " " }))).toBeNull();
 	});
+
+	it("explanation chỉ chứa markup rỗng (<p></p> / <p><br></p>) → fallback note hoặc ẩn disclosure (#571)", () => {
+		const withNote = renderToStaticMarkup(
+			<QuizReviewItem
+				info={reviewInfo({ explanation: "<p>   </p>", note: "Ghi chú chung" })}
+			/>,
+		);
+		expect(withNote).toContain('data-source="note"');
+		expect(withNote).toContain("Ghi chú chung");
+		expect(
+			quizReviewExplanation(
+				reviewInfo({ explanation: "<p>   </p>", note: "Ghi chú chung" }),
+			),
+		).toBe("Ghi chú chung");
+		expect(
+			quizReviewExplanation(
+				reviewInfo({ explanation: "<p><br></p>", note: "<p></p>" }),
+			),
+		).toBeNull();
+	});
 });
 
 describe("QuizPaper mode=review — paper read-only từ đáp án học viên", () => {

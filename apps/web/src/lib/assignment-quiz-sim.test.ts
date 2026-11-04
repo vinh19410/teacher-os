@@ -46,6 +46,38 @@ describe("buildQuizSim — gating khớp isAuto của tab 'Đề bài'", () => {
 		expect(sim?.fullQuestions).toHaveLength(2);
 	});
 
+	it("grammar và vocabulary (isAutoSkill) cũng dựng được simulation, giữ explanation ở fullQuestions và strip khỏi takeQuestions (#571)", () => {
+		const withExplanation: QuestionItem[] = [
+			{
+				stem: "Choose the correct tense.",
+				opts: ["go", "went", "gone", "going"],
+				answer: "B",
+				alts: "",
+				explanation: "<p>CANARY-GRAMMAR-EXPLANATION</p>",
+			},
+			{
+				stem: "Second item.",
+				opts: ["a", "b", "c", "d"],
+				answer: "A",
+				alts: "",
+				explanation: "<p>   </p>",
+			},
+		];
+		for (const skill of ["grammar", "vocabulary"] as const) {
+			const sim = buildQuizSim(
+				draft({ skill, part: "g1", type: "mcq", items: withExplanation }),
+			);
+			expect(sim).not.toBeNull();
+			expect(sim?.fullQuestions[0]?.explanation).toBe(
+				"<p>CANARY-GRAMMAR-EXPLANATION</p>",
+			);
+			expect("explanation" in (sim?.fullQuestions[1] ?? {})).toBe(false);
+			const takeJson = JSON.stringify(sim?.takeQuestions);
+			expect(takeJson).not.toContain("explanation");
+			expect(takeJson).not.toContain("CANARY-GRAMMAR-EXPLANATION");
+		}
+	});
+
 	it("writing (kể cả skill thiếu → fallback writing) → null", () => {
 		expect(buildQuizSim(draft({ skill: "writing", items }))).toBeNull();
 		// Công thức `skill ?? "writing"` — KHÔNG fallback task/genre.

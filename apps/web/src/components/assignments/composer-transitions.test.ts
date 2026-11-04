@@ -116,6 +116,39 @@ describe("hasAuthoringContent (FR5 confirm gate)", () => {
 		expect(hasAuthoringContent(composer())).toBe(false);
 	});
 
+	test("item explanation counts as authored content unless empty markup (#571)", () => {
+		expect(
+			hasAuthoringContent(
+				composer({
+					items: [
+						{
+							stem: "",
+							answer: "",
+							opts: null,
+							alts: "",
+							explanation: "<p>Gợi ý</p>",
+						},
+					],
+				}),
+			),
+		).toBe(true);
+		expect(
+			hasAuthoringContent(
+				composer({
+					items: [
+						{
+							stem: "",
+							answer: "",
+							opts: null,
+							alts: "",
+							explanation: "<p>   </p>",
+						},
+					],
+				}),
+			),
+		).toBe(false);
+	});
+
 	test("a filled option bank row is authored content (phase-02 FR3)", () => {
 		expect(
 			hasAuthoringContent(composer({ optionBank: ["", "Người thuyền"] })),
@@ -510,6 +543,41 @@ describe("clozeStemIssue — web mirror of the marker + caps rules (phase-03 FR7
 			"ready",
 		);
 		expect(issue).toContain("Câu 27");
+	});
+
+	test("flags over-cap explanation (plain > 2000 or raw > 5000) in both draft and ready (#571)", () => {
+		const overPlain = composer({
+			items: [
+				{
+					stem: "One ____",
+					answer: "a",
+					opts: null,
+					alts: "",
+					explanation: `<p>${"x".repeat(2001)}</p>`,
+				},
+			],
+		});
+		expect(clozeStemIssue(overPlain, "draft")).toBe(
+			"Giải thích câu 1 vượt quá 2000 ký tự.",
+		);
+		expect(clozeStemIssue(overPlain, "ready")).toBe(
+			"Giải thích câu 1 vượt quá 2000 ký tự.",
+		);
+
+		const overRaw = composer({
+			items: [
+				{
+					stem: "One ____",
+					answer: "a",
+					opts: null,
+					alts: "",
+					explanation: `<p>${"<span>x</span>".repeat(400)}</p>`,
+				},
+			],
+		});
+		expect(clozeStemIssue(overRaw, "ready")).toBe(
+			"Giải thích câu 1 vượt quá 5000 ký tự tính cả định dạng.",
+		);
 	});
 });
 
