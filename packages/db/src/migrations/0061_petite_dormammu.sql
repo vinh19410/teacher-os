@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `study_pack_org_source_pack_uq` ON `study_pack` (`org_id`,`source_pack_id`);
