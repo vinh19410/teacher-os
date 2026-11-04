@@ -235,7 +235,6 @@ describe("OnboardingStep Components", () => {
 		expect(continueBtn.disabled).toBe(true);
 	});
 
-
 	it("Onboarding steps: selected cards and band chips expose aria-pressed and high-contrast selection classes without border-transparent", () => {
 		const { unmount: unmountExam } = render(
 			<ExamInterestStep value="ielts" onSelect={vi.fn()} />,

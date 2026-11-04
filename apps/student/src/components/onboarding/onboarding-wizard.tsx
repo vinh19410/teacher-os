@@ -151,7 +151,8 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 								examInterest: v,
 								// Reset target score and level if exam changed
 								targetScore: prev.examInterest === v ? prev.targetScore : null,
-								currentLevel: prev.examInterest === v ? prev.currentLevel : null,
+								currentLevel:
+									prev.examInterest === v ? prev.currentLevel : null,
 							}))
 						}
 					/>
