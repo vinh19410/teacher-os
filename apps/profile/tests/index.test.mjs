@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
+import vm from "node:vm";
 import { replaceLeadApiMeta } from "../serve.mjs";
 
 const publicDir = new URL("../public/", import.meta.url);
@@ -111,4 +112,27 @@ test("placement test CTAs point to kiem-tra-dau-vao/ and legacy 5-question quiz 
 	assert.match(html, /<section\s+id="lam-test-mien-phi"/);
 	assert.ok(!/2 Phút/.test(html));
 	assert.ok(!/5 câu hỏi/.test(html));
+});
+
+test("inline classic JS <script> blocks compile without SyntaxError (#559)", () => {
+	const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
+	let compiledCount = 0;
+	for (const match of html.matchAll(scriptRegex)) {
+		const attrs = match[1] ?? "";
+		if (/\bsrc\s*=/i.test(attrs)) continue;
+		const typeMatch = attrs.match(
+			/\btype\s*=\s*(?:["']([^"']*)["']|([^\s>"']+))/i,
+		);
+		const mime = (typeMatch?.[1] ?? typeMatch?.[2] ?? "").trim().toLowerCase();
+		if (
+			mime &&
+			mime !== "text/javascript" &&
+			mime !== "application/javascript"
+		) {
+			continue;
+		}
+		assert.doesNotThrow(() => new vm.Script(match[2] ?? ""));
+		compiledCount += 1;
+	}
+	assert.ok(compiledCount >= 1, "expected at least 1 inline JS <script>");
 });
