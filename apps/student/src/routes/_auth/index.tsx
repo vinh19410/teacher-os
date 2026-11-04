@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { STUDENT_ERROR_CODES } from "@teacher-os/api/contracts";
-import { useMemo } from "react";
+import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { toast } from "sonner";
 import { StudentShell } from "@/components/layout/student-shell";
 import Loader from "@/components/loader";
@@ -45,12 +45,13 @@ function StudentOverviewPage() {
 		});
 	};
 
-	const dueSoonCount = useMemo(() => {
-		if (!overviewQuery.data?.assignments) return 0;
-		return overviewQuery.data.assignments.filter(
-			(a) => deriveAssignmentStatus(a).status === "due-soon",
-		).length;
-	}, [overviewQuery.data?.assignments]);
+	const nowMs = Date.now();
+	const todayISO = vietnamTodayISO(new Date(nowMs));
+	const dueSoonCount = overviewQuery.data?.assignments
+		? overviewQuery.data.assignments.filter(
+				(a) => deriveAssignmentStatus(a, todayISO, nowMs).status === "due-soon",
+			).length
+		: 0;
 
 	if (isLoading) {
 		return <Loader />;
@@ -164,6 +165,8 @@ function StudentOverviewPage() {
 											acceptEnrollmentMutation.isPending &&
 											acceptEnrollmentMutation.variables === cls.enrollmentId
 										}
+										todayISO={todayISO}
+										nowMs={nowMs}
 									/>
 								))}
 							</div>
@@ -178,7 +181,11 @@ function StudentOverviewPage() {
 			{/* Bài tập */}
 			<StudentVocabEntrySection />
 
-			<AssignmentList assignments={overview.assignments} />
+			<AssignmentList
+				assignments={overview.assignments}
+				todayISO={todayISO}
+				nowMs={nowMs}
+			/>
 		</StudentShell>
 	);
 }

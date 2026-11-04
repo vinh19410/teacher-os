@@ -81,17 +81,17 @@ flowchart TD
 
 | # | Phase | Status | Effort | Dependencies |
 |---|-------|--------|--------|--------------|
-| 1 | [Phase 1: Helpers giờ VN, contract dueTime & server lưu/xuất dueAt](./phase-01-start.md) | Pending | 1.25h | — |
-| 2 | [Phase 2: DatePickerInput, TimeInput24h & đồng bộ hạn nộp Web/Student](./phase-02-ui-date-time-picker-and-status.md) | Pending | 1.75h | Phase 1 |
-| 3 | [Phase 3: Kiểm chứng E2E locale en-US, 3 viewport, screenshots & cổng CI](./phase-03-e2e-viewports-and-gates.md) | Pending | 1.0h | Phase 1, 2 |
+| 1 | [Phase 1: Helpers giờ VN, contract dueTime & server lưu/xuất dueAt](./phase-01-start.md) | Completed | 1.25h | — |
+| 2 | [Phase 2: DatePickerInput, TimeInput24h & đồng bộ hạn nộp Web/Student](./phase-02-ui-date-time-picker-and-status.md) | Completed | 1.75h | Phase 1 |
+| 3 | [Phase 3: Kiểm chứng E2E locale en-US, 3 viewport, screenshots & cổng CI](./phase-03-e2e-viewports-and-gates.md) | Completed | 1.0h | Phase 1, 2 |
 
 ## Success Criteria
 
-- [ ] Gõ `"06/11/2027"` hoặc `"09112027"` vào ô hạn nộp trên trình duyệt cấu hình locale `en-US` luôn hiểu đúng ngày 06 tháng 11 và ngày 09 tháng 11 (không bị đảo sang tháng 6, không nhảy con trỏ thành `10/09`), đồng thời hiển thị dòng xác nhận rõ ràng `"Đã hiểu: ..., dd/mm/yyyy lúc HH:mm (giờ Việt Nam)"` (ẩn ngay lập tức nếu người dùng xóa trắng hoặc sửa thành chuỗi chưa hợp lệ).
-- [ ] Nút `"Chọn ngày"` mở popover lịch tháng (`T2..CN`, đồng bộ tháng theo năm/tháng đang nhập), khóa các ngày trước hôm nay (giờ VN), cho phép chọn ngày cập nhật ô nhập, và đóng bằng `Escape` trả focus về nút mở lịch mà không submit form ngoài.
-- [ ] Ô giờ nộp 24h (`HH:mm`, mặc định `"23:59"`) cho phép gõ hoặc chọn nhanh mốc giờ (`role="group"`), hiển thị lỗi ngay khi chọn giờ đã qua của ngày hôm nay, kiểm tra lại `Date.now()` lúc bấm submit, hiển thị `submit.error` nếu server trả `400` (`reason: "past-time"`), đồng thời vẫn cho phép giao hạn `"23:59"` hôm nay ở phút `23:59` VN và giữ tương thích `201` cho payload cũ không gửi `dueTime`.
-- [ ] Cả `apps/web` (danh sách bài đã giao của lớp + tab Bài tập của chi tiết học viên) và `apps/student` (trang tổng quan + chi tiết lớp) dùng chung `evaluateAssignmentDeadline` với cùng `nowMs` trên mỗi lượt render, thống nhất tuyệt đối tại biên `dueAt - 1ms`, `dueAt`, `dueAt + 1ms` và bảo toàn 100% hành vi dữ liệu cũ `dueAt: null`.
-- [ ] Không phát sinh lỗi tràn ngang hay cắt chữ ở `1440×900`, `768×1024`, `375×812` và `320×812` (cả light và dark theme kích hoạt qua `localStorage.theme = "dark"` + `html.dark`); `pnpm check`, `pnpm check-types`, `pnpm test`, E2E `class-assign.spec.ts` + `notifications-ac-001.spec.ts`, và `pnpm design:compare` đều thoát `0` với working tree sạch.
+- [x] Gõ `"06/11/2027"` hoặc `"09112027"` vào ô hạn nộp trên trình duyệt cấu hình locale `en-US` luôn hiểu đúng ngày 06 tháng 11 và ngày 09 tháng 11 (không bị đảo sang tháng 6, không nhảy con trỏ thành `10/09`), đồng thời hiển thị dòng xác nhận rõ ràng `"Đã hiểu: ..., dd/mm/yyyy lúc HH:mm (giờ Việt Nam)"` (ẩn ngay lập tức nếu người dùng xóa trắng hoặc sửa thành chuỗi chưa hợp lệ).
+- [x] Nút `"Chọn ngày"` mở popover lịch tháng (`T2..CN`, đồng bộ tháng theo năm/tháng đang nhập), khóa các ngày trước hôm nay (giờ VN), cho phép chọn ngày cập nhật ô nhập, và đóng bằng `Escape` trả focus về nút mở lịch mà không submit form ngoài.
+- [x] Ô giờ nộp 24h (`HH:mm`, mặc định `"23:59"`) cho phép gõ hoặc chọn nhanh mốc giờ (`role="group"`), hiển thị lỗi ngay khi chọn giờ đã qua của ngày hôm nay, kiểm tra lại `Date.now()` lúc bấm submit, hiển thị `submit.error` nếu server trả `400` (`reason: "past-time"`), đồng thời vẫn cho phép giao hạn `"23:59"` hôm nay ở phút `23:59` VN và giữ tương thích `201` cho payload cũ không gửi `dueTime`.
+- [x] Cả `apps/web` (danh sách bài đã giao của lớp + tab Bài tập của chi tiết học viên) và `apps/student` (trang tổng quan + chi tiết lớp) dùng chung `evaluateAssignmentDeadline` với cùng `nowMs` trên mỗi lượt render, thống nhất tuyệt đối tại biên `dueAt - 1ms`, `dueAt`, `dueAt + 1ms` và bảo toàn 100% hành vi dữ liệu cũ `dueAt: null`.
+- [x] Không phát sinh lỗi tràn ngang hay cắt chữ ở `1440×900`, `768×1024`, `375×812` và `320×812` (cả light và dark theme kích hoạt qua `localStorage.theme = "dark"` + `html.dark`); `pnpm check`, `pnpm check-types`, `pnpm test`, E2E `class-assign.spec.ts` + `notifications-ac-001.spec.ts`, và `pnpm design:compare` đều thoát `0` với working tree sạch.
 
 ## Red Team Review
 

@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Phase 3: Kiểm chứng E2E locale en-US, 3 viewport, screenshots & cổng CI"
-status: pending
+status: done
 priority: P1
 effort: "1.0h"
 dependencies: [1, 2]

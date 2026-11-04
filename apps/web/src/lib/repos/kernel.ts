@@ -187,6 +187,9 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				body: {
 					promptId: action.payload.promptId,
 					due: action.payload.due,
+					...(action.payload.dueTime
+						? { dueTime: action.payload.dueTime }
+						: {}),
 					note: action.payload.note,
 					studentIds: action.payload.studentIds,
 				},

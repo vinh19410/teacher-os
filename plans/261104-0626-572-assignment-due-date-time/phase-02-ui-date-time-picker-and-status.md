@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Phase 2: DatePickerInput, TimeInput24h & đồng bộ hạn nộp Web/Student"
-status: pending
+status: done
 priority: P1
 effort: "1.75h"
 dependencies: [1]

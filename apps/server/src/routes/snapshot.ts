@@ -719,6 +719,7 @@ export async function loadSnapshot(
 			promptId: row.promptId,
 			title: row.title,
 			due: row.due,
+			dueAt: row.dueAt ? row.dueAt.toISOString() : null,
 			note: row.note,
 			createdAt: row.createdAt.toISOString(),
 			targets: targetsByAssignment.get(row.id) ?? [],
