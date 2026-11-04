@@ -7,6 +7,7 @@ import type {
 	InvoiceTransactionItem,
 	OccurrenceMutationResponse,
 	StudentCreateResponse,
+	StudentInviteResendResponse,
 } from "@teacher-os/api/contracts";
 import {
 	classAssignmentCreateSchema,
@@ -22,7 +23,9 @@ import {
 	lessonActionSchema,
 	lessonEditSchema,
 	lessonStatusForAttendance,
+	MAX_EMAIL_ATTEMPTS,
 	occurrenceEditSchema,
+	resendStudentInviteSchema,
 	STUDENT_INVITATION_ERROR_CODES,
 	sessionAttendanceSaveSchema,
 	studentCreateSchema,
@@ -37,8 +40,10 @@ import {
 	parseStartDateStrict,
 } from "@teacher-os/api/skeleton";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
+import { canPublishGrade } from "@teacher-os/auth/role";
 
 import { assignmentPrompt } from "@teacher-os/db/schema/assignment-prompt";
+import { user as authUser } from "@teacher-os/db/schema/auth";
 import { classTable } from "@teacher-os/db/schema/class";
 import {
 	classAssignment,
@@ -48,6 +53,7 @@ import {
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
+import { notificationRecord } from "@teacher-os/db/schema/notification-record";
 import {
 	holidaySessionCancel,
 	holidaySessionShift,
@@ -67,12 +73,23 @@ import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
 import type { AiGrader } from "../lib/ai-grading/grader";
 import type { MediaStore } from "../lib/media-store";
-import { deliverNotifications } from "../lib/notifications/deliver";
+import {
+	deliverNotifications,
+	renderHtml,
+	renderText,
+	sanitizeDeliveryError,
+} from "../lib/notifications/deliver";
 import {
 	emitNotifications,
 	notificationDepsFrom,
+	resolveMailer,
 } from "../lib/notifications/emit";
 import { enqueueNotifications } from "../lib/notifications/enqueue";
+import {
+	buildOrgInvitationEmail,
+	buildStudentPortalInviteEmail,
+} from "../lib/notifications/invite-email";
+import { resolveOrgMailSender } from "../lib/notifications/org-mail-sender";
 import {
 	assignmentPublishedEvents,
 	classEnrolledEvent,
@@ -135,6 +152,8 @@ export function kernelRoutes(deps: {
 	studentOrigin?: Parameters<typeof emitNotifications>[0]["studentOrigin"];
 	/** #463: khoảng chờ giữa các lượt retry email thông báo (test/E2E truyền [0, 0]). */
 	notificationRetryDelaysMs?: number[];
+	/** #570: cooldown (ms) giữa các lượt gửi lại email lời mời (mặc định 60_000; E2E truyền 0). */
+	inviteResendCooldownMs?: number;
 	/** TOS-33 (#481): grader + vòng retry cho "Thử chấm lại AI" — cùng DI
 	 * nguồn buildApp với submit route. */
 	getAiGrader?(): AiGrader | undefined;
@@ -181,6 +200,115 @@ export function kernelRoutes(deps: {
 
 	function unauthorized(c: KernelContext) {
 		return c.json({ error: "unauthorized" }, 401);
+	}
+	const DEFAULT_INVITE_COOLDOWN_MS = 60_000;
+	const SYNC_INVITE_MAIL_TIMEOUT_MS = 5_000;
+
+	function canManageStudentInvites(role: string | undefined): boolean {
+		return role === undefined ? true : canPublishGrade(role);
+	}
+
+	function forbiddenInviteRole(c: KernelContext) {
+		return c.json(
+			{
+				error: "Trợ giảng không có quyền quản lý lời mời học viên",
+				code: "FORBIDDEN",
+			},
+			403,
+		);
+	}
+
+	function cooldownResponse(
+		c: KernelContext,
+		previousAtMs: number,
+		nowMs: number,
+		cooldownMs: number,
+	) {
+		const retryAfterSeconds = Math.max(
+			1,
+			Math.ceil((previousAtMs + cooldownMs - nowMs) / 1000),
+		);
+		c.header("Retry-After", String(retryAfterSeconds));
+		return c.json(
+			{
+				error: `Vui lòng đợi ${retryAfterSeconds} giây trước khi gửi lại lời mời.`,
+				code: STUDENT_INVITATION_ERROR_CODES.RESEND_COOLDOWN,
+				retryAfterSeconds,
+			},
+			429,
+		);
+	}
+
+	async function loadInviterDisplayName(
+		db: Db,
+		userId: string,
+	): Promise<string> {
+		const [row] = await db
+			.select({ name: authUser.name })
+			.from(authUser)
+			.where(eq(authUser.id, userId))
+			.limit(1);
+		return row?.name?.trim() ?? "";
+	}
+
+	async function deliverSingleClassInviteSync(input: {
+		db: Db;
+		recordId: string;
+		idempotencyKey: string;
+		now: Date;
+	}): Promise<boolean> {
+		const mailer = resolveMailer(deps);
+		if (!mailer) return false;
+		const [row] = await input.db
+			.select()
+			.from(notificationRecord)
+			.where(eq(notificationRecord.id, input.recordId))
+			.limit(1);
+		if (!row?.recipientEmail) return false;
+		const studentOrigin = (deps.studentOrigin ?? "").trim().replace(/\/+$/, "");
+		const linkUrl = row.linkPath
+			? `${studentOrigin}${row.linkPath}`
+			: studentOrigin;
+		try {
+			await mailer.send({
+				to: row.recipientEmail,
+				subject: row.title,
+				html: renderHtml(row.body, linkUrl),
+				text: renderText(row.body, linkUrl),
+				idempotencyKey: input.idempotencyKey,
+				timeoutMs: SYNC_INVITE_MAIL_TIMEOUT_MS,
+				...(row.replyToEmail ? { replyTo: row.replyToEmail } : {}),
+				...(row.senderName
+					? { fromName: `${row.senderName} qua Teacher OS` }
+					: {}),
+			});
+			await input.db
+				.update(notificationRecord)
+				.set({
+					status: sql`CASE WHEN ${notificationRecord.readAt} IS NULL THEN 'sent' ELSE 'read' END`,
+					sentAt: input.now,
+					lastError: null,
+				})
+				.where(eq(notificationRecord.id, row.id));
+			return true;
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			const { rawError, failedError } = sanitizeDeliveryError(message);
+			console.error("[invite] class invite email failed:", rawError);
+			try {
+				await input.db
+					.update(notificationRecord)
+					.set({
+						retryCount: MAX_EMAIL_ATTEMPTS,
+						status: "failed",
+						lastError: failedError,
+					})
+					.where(eq(notificationRecord.id, row.id));
+			} catch (dbErr) {
+				console.error("[invite] failed to persist notification failure", dbErr);
+			}
+			return false;
+		}
 	}
 
 	/**
@@ -338,7 +466,11 @@ export function kernelRoutes(deps: {
 		async function findExistingByEmail() {
 			if (normalizedEmail === "") return undefined;
 			const [row] = await db
-				.select({ id: student.id, name: student.name })
+				.select({
+					id: student.id,
+					name: student.name,
+					onboardingCompletedAt: student.onboardingCompletedAt,
+				})
 				.from(student)
 				.where(
 					and(
@@ -357,7 +489,9 @@ export function kernelRoutes(deps: {
 				{
 					error: `Email này đã được dùng cho học viên ${existingStudent.name}`,
 					code: STUDENT_INVITATION_ERROR_CODES.ALREADY_IN_ORG,
+					existingStudentId: existingStudent.id,
 					existingStudentName: existingStudent.name,
+					portalLinked: existingStudent.onboardingCompletedAt != null,
 				},
 				409,
 			);
@@ -414,12 +548,56 @@ export function kernelRoutes(deps: {
 					{
 						error: `Email này đã được dùng cho học viên ${raced.name}`,
 						code: STUDENT_INVITATION_ERROR_CODES.ALREADY_IN_ORG,
+						existingStudentId: raced.id,
 						existingStudentName: raced.name,
+						portalLinked: raced.onboardingCompletedAt != null,
 					},
 					409,
 				);
 			}
 			throw cause;
+		}
+
+		async function sendDirectPortalInviteBestEffort(
+			className?: string,
+		): Promise<boolean | undefined> {
+			if (normalizedEmail === "") return undefined;
+			const mailer = resolveMailer(deps);
+			if (!mailer) return false;
+			try {
+				const { senderName, replyToEmail } = await resolveOrgMailSender(
+					db,
+					ctx.orgId,
+				);
+				const built = buildStudentPortalInviteEmail({
+					orgName: senderName,
+					studentName: input.name,
+					className,
+					studentOrigin: deps.studentOrigin,
+				});
+				await mailer.send({
+					to: normalizedEmail,
+					subject: built.subject,
+					html: built.html,
+					text: built.text,
+					idempotencyKey: `student_portal_invite:${studentId}:initial`,
+					timeoutMs: SYNC_INVITE_MAIL_TIMEOUT_MS,
+					...(replyToEmail ? { replyTo: replyToEmail } : {}),
+					...(senderName ? { fromName: `${senderName} qua Teacher OS` } : {}),
+				});
+				await db
+					.update(student)
+					.set({ lastInviteEmailAt: now })
+					.where(eq(student.id, studentId));
+				return true;
+			} catch (error) {
+				const msg = error instanceof Error ? error.message : String(error);
+				console.error(
+					"[invite] portal invite on student create failed:",
+					sanitizeDeliveryError(msg).rawError,
+				);
+				return false;
+			}
 		}
 
 		if (cls && enrollmentId) {
@@ -428,99 +606,286 @@ export function kernelRoutes(deps: {
 				if (!act.ok) {
 					return c.json({ error: "enrollment activation failed" }, 500);
 				}
+				const inviteEmailSent = await sendDirectPortalInviteBestEffort(
+					cls.name,
+				);
 				return c.json(
 					{
 						id: studentId,
 						enrollmentId,
 						activated: true,
+						...(inviteEmailSent !== undefined ? { inviteEmailSent } : {}),
 					} satisfies StudentCreateResponse,
 					201,
 				);
 			}
-			await notify(ctx.orgId, [
+			if (normalizedEmail === "") {
+				await notify(ctx.orgId, [
+					classEnrolledEvent({
+						enrollmentId,
+						studentId,
+						className: cls.name,
+					}),
+				]);
+				return c.json(
+					{
+						id: studentId,
+						enrollmentId,
+						activated: false,
+					} satisfies StudentCreateResponse,
+					201,
+				);
+			}
+			const { createdIds } = await enqueueNotifications(db, ctx.orgId, [
 				classEnrolledEvent({
 					enrollmentId,
 					studentId,
 					className: cls.name,
 				}),
 			]);
+			const createdRecordId = createdIds[0];
+			const inviteEmailSent = createdRecordId
+				? await deliverSingleClassInviteSync({
+						db,
+						recordId: createdRecordId,
+						idempotencyKey: createdRecordId,
+						now,
+					})
+				: false;
+			if (inviteEmailSent) {
+				await db
+					.update(student)
+					.set({ lastInviteEmailAt: now })
+					.where(eq(student.id, studentId));
+			}
 			return c.json(
 				{
 					id: studentId,
 					enrollmentId,
 					activated: false,
+					inviteEmailSent,
 				} satisfies StudentCreateResponse,
 				201,
 			);
 		}
 
-		return c.json({ id: studentId } satisfies StudentCreateResponse, 201);
+		const inviteEmailSent = await sendDirectPortalInviteBestEffort();
+		return c.json(
+			{
+				id: studentId,
+				...(inviteEmailSent !== undefined ? { inviteEmailSent } : {}),
+			} satisfies StudentCreateResponse,
+			201,
+		);
 	});
 
 	kernel.post("/students/invite", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
+		if (!canManageStudentInvites(ctx.role)) return forbiddenInviteRole(c);
 		const body = await readBody(c, studentInviteSchema);
 		if (!body.ok) return body.response;
 		const normalizedEmail = body.data.email.trim().toLowerCase();
 		const db = deps.getDb();
+		const cooldownMs =
+			deps.inviteResendCooldownMs ?? DEFAULT_INVITE_COOLDOWN_MS;
 
-		// Check if already student in this org
-		const [existingStudent] = await db
-			.select({ id: student.id })
-			.from(student)
-			.where(
-				and(
-					eq(student.orgId, ctx.orgId),
-					sql`lower(trim(${student.email})) = ${normalizedEmail}`,
-				),
-			)
-			.limit(1);
+		async function findOrgStudentByEmail() {
+			const [row] = await db
+				.select({
+					id: student.id,
+					name: student.name,
+					onboardingCompletedAt: student.onboardingCompletedAt,
+				})
+				.from(student)
+				.where(
+					and(
+						eq(student.orgId, ctx.orgId),
+						sql`lower(trim(${student.email})) = ${normalizedEmail}`,
+						sql`${student.id} NOT LIKE 'demo-student:%'`,
+					),
+				)
+				.limit(1);
+			return row;
+		}
 
+		async function findPendingInviteByEmail() {
+			const [row] = await db
+				.select({
+					id: studentInvitation.id,
+					updatedAt: studentInvitation.updatedAt,
+				})
+				.from(studentInvitation)
+				.where(
+					and(
+						eq(studentInvitation.orgId, ctx.orgId),
+						sql`lower(trim(${studentInvitation.email})) = ${normalizedEmail}`,
+						eq(studentInvitation.status, "pending"),
+					),
+				)
+				.limit(1);
+			return row;
+		}
+
+		const existingStudent = await findOrgStudentByEmail();
 		if (existingStudent) {
 			return c.json(
 				{
 					error: "Học viên này đã ở trong tổ chức của bạn",
 					code: STUDENT_INVITATION_ERROR_CODES.ALREADY_IN_ORG,
+					existingStudentId: existingStudent.id,
+					existingStudentName: existingStudent.name,
+					portalLinked: existingStudent.onboardingCompletedAt != null,
 				},
 				409,
 			);
 		}
 
-		// Check if pending invite already exists in this org
-		const [existingInvite] = await db
-			.select({ id: studentInvitation.id })
-			.from(studentInvitation)
-			.where(
-				and(
-					eq(studentInvitation.orgId, ctx.orgId),
-					sql`lower(trim(${studentInvitation.email})) = ${normalizedEmail}`,
-					eq(studentInvitation.status, "pending"),
-				),
-			)
-			.limit(1);
-
+		const existingInvite = await findPendingInviteByEmail();
 		if (existingInvite) {
 			return c.json(
 				{
 					error: "Lời mời đang chờ học viên phản hồi",
 					code: STUDENT_INVITATION_ERROR_CODES.INVITATION_ALREADY_PENDING,
+					invitationId: existingInvite.id,
+					updatedAt: existingInvite.updatedAt,
 				},
 				409,
 			);
 		}
 
-		const id = crypto.randomUUID();
 		const now = new Date();
-		await db.insert(studentInvitation).values({
-			id,
-			orgId: ctx.orgId,
-			inviterUserId: ctx.userId,
-			email: normalizedEmail,
-			status: "pending",
-			createdAt: now,
-			updatedAt: now,
-		});
+		const nowMs = now.getTime();
+		if (cooldownMs > 0) {
+			const [recentCanceled] = await db
+				.select({ createdAt: studentInvitation.createdAt })
+				.from(studentInvitation)
+				.where(
+					and(
+						eq(studentInvitation.orgId, ctx.orgId),
+						sql`lower(trim(${studentInvitation.email})) = ${normalizedEmail}`,
+						eq(studentInvitation.status, "canceled"),
+					),
+				)
+				.orderBy(desc(studentInvitation.createdAt))
+				.limit(1);
+			if (
+				recentCanceled &&
+				recentCanceled.createdAt.getTime() > nowMs - cooldownMs
+			) {
+				return cooldownResponse(
+					c,
+					recentCanceled.createdAt.getTime(),
+					nowMs,
+					cooldownMs,
+				);
+			}
+		}
+
+		const mailer = resolveMailer(deps);
+		if (!mailer) {
+			return c.json(
+				{
+					error: "Hệ thống gửi email chưa sẵn sàng. Vui lòng thử lại sau.",
+					code: STUDENT_INVITATION_ERROR_CODES.EMAIL_UNAVAILABLE,
+				},
+				503,
+			);
+		}
+
+		const id = crypto.randomUUID();
+		try {
+			await db.insert(studentInvitation).values({
+				id,
+				orgId: ctx.orgId,
+				inviterUserId: ctx.userId,
+				email: normalizedEmail,
+				status: "pending",
+				createdAt: now,
+				updatedAt: now,
+			});
+		} catch (cause) {
+			const racedStudent = await findOrgStudentByEmail();
+			if (racedStudent) {
+				return c.json(
+					{
+						error: "Học viên này đã ở trong tổ chức của bạn",
+						code: STUDENT_INVITATION_ERROR_CODES.ALREADY_IN_ORG,
+						existingStudentId: racedStudent.id,
+						existingStudentName: racedStudent.name,
+						portalLinked: racedStudent.onboardingCompletedAt != null,
+					},
+					409,
+				);
+			}
+			const racedInvite = await findPendingInviteByEmail();
+			if (racedInvite) {
+				return c.json(
+					{
+						error: "Lời mời đang chờ học viên phản hồi",
+						code: STUDENT_INVITATION_ERROR_CODES.INVITATION_ALREADY_PENDING,
+						invitationId: racedInvite.id,
+						updatedAt: racedInvite.updatedAt,
+					},
+					409,
+				);
+			}
+			throw cause;
+		}
+
+		try {
+			const [{ senderName, replyToEmail }, inviterName] = await Promise.all([
+				resolveOrgMailSender(db, ctx.orgId),
+				loadInviterDisplayName(db, ctx.userId),
+			]);
+			const built = buildOrgInvitationEmail({
+				orgName: senderName,
+				inviterName,
+				studentOrigin: deps.studentOrigin,
+			});
+			await mailer.send({
+				to: normalizedEmail,
+				subject: built.subject,
+				html: built.html,
+				text: built.text,
+				idempotencyKey: `student_invite:${id}`,
+				timeoutMs: SYNC_INVITE_MAIL_TIMEOUT_MS,
+				...(replyToEmail ? { replyTo: replyToEmail } : {}),
+				...(senderName ? { fromName: `${senderName} qua Teacher OS` } : {}),
+			});
+		} catch (error) {
+			const msg = error instanceof Error ? error.message : String(error);
+			console.error(
+				"[invite] failed to send org invitation email:",
+				sanitizeDeliveryError(msg).rawError,
+			);
+			const deleted = await db
+				.delete(studentInvitation)
+				.where(
+					and(
+						eq(studentInvitation.id, id),
+						eq(studentInvitation.status, "pending"),
+					),
+				)
+				.returning({ id: studentInvitation.id });
+			if (deleted.length === 0) {
+				const [settled] = await db
+					.select()
+					.from(studentInvitation)
+					.where(eq(studentInvitation.id, id));
+				if (settled && settled.status === "accepted") {
+					return c.json(settled, 201);
+				}
+			}
+			return c.json(
+				{
+					error:
+						"Không gửi được email lời mời. Vui lòng kiểm tra địa chỉ email hoặc thử lại sau.",
+					code: STUDENT_INVITATION_ERROR_CODES.EMAIL_SEND_FAILED,
+				},
+				502,
+			);
+		}
 
 		const [created] = await db
 			.select()
@@ -543,9 +908,431 @@ export function kernelRoutes(deps: {
 		return c.json(rows);
 	});
 
+	kernel.post("/students/invitations/:id/resend", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		if (!canManageStudentInvites(ctx.role)) return forbiddenInviteRole(c);
+		const mailer = resolveMailer(deps);
+		if (!mailer) {
+			return c.json(
+				{
+					error: "Hệ thống gửi email chưa sẵn sàng. Vui lòng thử lại sau.",
+					code: STUDENT_INVITATION_ERROR_CODES.EMAIL_UNAVAILABLE,
+				},
+				503,
+			);
+		}
+
+		const id = c.req.param("id");
+		const db = deps.getDb();
+		const cooldownMs =
+			deps.inviteResendCooldownMs ?? DEFAULT_INVITE_COOLDOWN_MS;
+
+		const [existing] = await db
+			.select()
+			.from(studentInvitation)
+			.where(
+				and(
+					eq(studentInvitation.id, id),
+					eq(studentInvitation.orgId, ctx.orgId),
+				),
+			)
+			.limit(1);
+
+		if (existing?.status !== "pending") {
+			return c.json(
+				{
+					error: "Lời mời không tồn tại hoặc đã được xử lý",
+					code: STUDENT_INVITATION_ERROR_CODES.INVITATION_NOT_FOUND,
+				},
+				404,
+			);
+		}
+
+		const now = new Date();
+		const nowMs = now.getTime();
+		const previousUpdatedAt = existing.updatedAt;
+		if (cooldownMs > 0 && previousUpdatedAt.getTime() > nowMs - cooldownMs) {
+			return cooldownResponse(
+				c,
+				previousUpdatedAt.getTime(),
+				nowMs,
+				cooldownMs,
+			);
+		}
+
+		const claimed = await db
+			.update(studentInvitation)
+			.set({ updatedAt: now })
+			.where(
+				and(
+					eq(studentInvitation.id, id),
+					eq(studentInvitation.orgId, ctx.orgId),
+					eq(studentInvitation.status, "pending"),
+					eq(studentInvitation.updatedAt, previousUpdatedAt),
+				),
+			)
+			.returning({ id: studentInvitation.id });
+
+		if (claimed.length === 0) {
+			const [reloaded] = await db
+				.select()
+				.from(studentInvitation)
+				.where(
+					and(
+						eq(studentInvitation.id, id),
+						eq(studentInvitation.orgId, ctx.orgId),
+					),
+				)
+				.limit(1);
+			if (reloaded?.status !== "pending") {
+				return c.json(
+					{
+						error: "Lời mời không tồn tại hoặc đã được xử lý",
+						code: STUDENT_INVITATION_ERROR_CODES.INVITATION_NOT_FOUND,
+					},
+					404,
+				);
+			}
+			return cooldownResponse(
+				c,
+				reloaded.updatedAt.getTime(),
+				nowMs,
+				Math.max(cooldownMs, 1_000),
+			);
+		}
+
+		try {
+			const [{ senderName, replyToEmail }, inviterName] = await Promise.all([
+				resolveOrgMailSender(db, ctx.orgId),
+				loadInviterDisplayName(db, ctx.userId),
+			]);
+			const built = buildOrgInvitationEmail({
+				orgName: senderName,
+				inviterName,
+				studentOrigin: deps.studentOrigin,
+			});
+			const resendToken = crypto.randomUUID();
+			await mailer.send({
+				to: existing.email.trim().toLowerCase(),
+				subject: built.subject,
+				html: built.html,
+				text: built.text,
+				idempotencyKey: `student_invite:${id}:resend:${resendToken}`,
+				timeoutMs: SYNC_INVITE_MAIL_TIMEOUT_MS,
+				...(replyToEmail ? { replyTo: replyToEmail } : {}),
+				...(senderName ? { fromName: `${senderName} qua Teacher OS` } : {}),
+			});
+		} catch (error) {
+			const msg = error instanceof Error ? error.message : String(error);
+			console.error(
+				"[invite] failed to resend org invitation email:",
+				sanitizeDeliveryError(msg).rawError,
+			);
+			await db
+				.update(studentInvitation)
+				.set({ updatedAt: previousUpdatedAt })
+				.where(
+					and(
+						eq(studentInvitation.id, id),
+						eq(studentInvitation.status, "pending"),
+						eq(studentInvitation.updatedAt, now),
+					),
+				);
+			return c.json(
+				{
+					error:
+						"Không gửi được email lời mời. Vui lòng kiểm tra địa chỉ email hoặc thử lại sau.",
+					code: STUDENT_INVITATION_ERROR_CODES.EMAIL_SEND_FAILED,
+				},
+				502,
+			);
+		}
+
+		return c.json({
+			ok: true,
+			id,
+			updatedAt: now,
+		} satisfies StudentInviteResendResponse);
+	});
+
+	kernel.post("/students/:id/resend-invite", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		if (!canManageStudentInvites(ctx.role)) return forbiddenInviteRole(c);
+		const body = await readBody(c, resendStudentInviteSchema);
+		if (!body.ok) return body.response;
+		const mailer = resolveMailer(deps);
+		if (!mailer) {
+			return c.json(
+				{
+					error: "Hệ thống gửi email chưa sẵn sàng. Vui lòng thử lại sau.",
+					code: STUDENT_INVITATION_ERROR_CODES.EMAIL_UNAVAILABLE,
+				},
+				503,
+			);
+		}
+
+		const studentId = c.req.param("id");
+		const db = deps.getDb();
+		const cooldownMs =
+			deps.inviteResendCooldownMs ?? DEFAULT_INVITE_COOLDOWN_MS;
+
+		const [studentRow] = await db
+			.select()
+			.from(student)
+			.where(
+				and(
+					eq(student.id, studentId),
+					eq(student.orgId, ctx.orgId),
+					sql`${student.id} NOT LIKE 'demo-student:%'`,
+				),
+			)
+			.limit(1);
+
+		if (!studentRow) {
+			return c.json(
+				{
+					error: "Không tìm thấy học viên",
+					code: STUDENT_INVITATION_ERROR_CODES.INVITATION_NOT_FOUND,
+				},
+				404,
+			);
+		}
+
+		const recipientEmail = studentRow.email.trim().toLowerCase();
+		if (!recipientEmail) {
+			return c.json({ error: "Học viên chưa có địa chỉ email" }, 400);
+		}
+
+		const requestedEnrollmentId = body.data.enrollmentId?.trim() ?? "";
+		let invitedEnrollment:
+			| { id: string; classId: string; className: string }
+			| undefined;
+		if (requestedEnrollmentId !== "") {
+			const [matched] = await db
+				.select({
+					id: enrollment.id,
+					classId: enrollment.classId,
+					className: classTable.name,
+				})
+				.from(enrollment)
+				.innerJoin(classTable, eq(enrollment.classId, classTable.id))
+				.where(
+					and(
+						eq(enrollment.id, requestedEnrollmentId),
+						eq(enrollment.studentId, studentRow.id),
+						eq(enrollment.orgId, ctx.orgId),
+						eq(enrollment.status, "invited"),
+					),
+				)
+				.limit(1);
+			if (!matched) {
+				return c.json(
+					{
+						error: "Lời mời vào lớp không tồn tại hoặc đã được xử lý",
+						code: STUDENT_INVITATION_ERROR_CODES.INVITATION_NOT_FOUND,
+					},
+					404,
+				);
+			}
+			invitedEnrollment = matched;
+		} else {
+			const [latestInvited] = await db
+				.select({
+					id: enrollment.id,
+					classId: enrollment.classId,
+					className: classTable.name,
+				})
+				.from(enrollment)
+				.innerJoin(classTable, eq(enrollment.classId, classTable.id))
+				.where(
+					and(
+						eq(enrollment.studentId, studentRow.id),
+						eq(enrollment.orgId, ctx.orgId),
+						eq(enrollment.status, "invited"),
+					),
+				)
+				.orderBy(desc(enrollment.createdAt), desc(enrollment.id))
+				.limit(1);
+			invitedEnrollment = latestInvited;
+		}
+
+		if (studentRow.onboardingCompletedAt != null && !invitedEnrollment) {
+			return c.json(
+				{
+					error: "Học viên này đã tham gia cổng học viên",
+					code: STUDENT_INVITATION_ERROR_CODES.ALREADY_JOINED,
+				},
+				409,
+			);
+		}
+
+		const now = new Date();
+		const nowMs = now.getTime();
+		const previousLastInviteAt = studentRow.lastInviteEmailAt;
+		if (
+			cooldownMs > 0 &&
+			previousLastInviteAt &&
+			previousLastInviteAt.getTime() > nowMs - cooldownMs
+		) {
+			return cooldownResponse(
+				c,
+				previousLastInviteAt.getTime(),
+				nowMs,
+				cooldownMs,
+			);
+		}
+
+		const claimed = await db
+			.update(student)
+			.set({ lastInviteEmailAt: now })
+			.where(
+				and(
+					eq(student.id, studentRow.id),
+					eq(student.orgId, ctx.orgId),
+					previousLastInviteAt
+						? eq(student.lastInviteEmailAt, previousLastInviteAt)
+						: isNull(student.lastInviteEmailAt),
+				),
+			)
+			.returning({ id: student.id });
+
+		if (claimed.length === 0) {
+			const [reloaded] = await db
+				.select({ lastInviteEmailAt: student.lastInviteEmailAt })
+				.from(student)
+				.where(and(eq(student.id, studentRow.id), eq(student.orgId, ctx.orgId)))
+				.limit(1);
+			const refMs = reloaded?.lastInviteEmailAt?.getTime() ?? nowMs;
+			return cooldownResponse(c, refMs, nowMs, Math.max(cooldownMs, 1_000));
+		}
+
+		const resendToken = crypto.randomUUID();
+		if (invitedEnrollment) {
+			const baseKey = `class_enrolled:${invitedEnrollment.id}`;
+			await enqueueNotifications(db, ctx.orgId, [
+				classEnrolledEvent({
+					enrollmentId: invitedEnrollment.id,
+					studentId: studentRow.id,
+					className: invitedEnrollment.className,
+				}),
+			]);
+			const [recordRow] = await db
+				.select({ id: notificationRecord.id })
+				.from(notificationRecord)
+				.where(
+					and(
+						eq(notificationRecord.orgId, ctx.orgId),
+						eq(notificationRecord.idempotencyKey, baseKey),
+					),
+				)
+				.limit(1);
+
+			const ok = recordRow
+				? await deliverSingleClassInviteSync({
+						db,
+						recordId: recordRow.id,
+						idempotencyKey: `${baseKey}:resend:${resendToken}`,
+						now,
+					})
+				: false;
+			if (!ok) {
+				await db
+					.update(student)
+					.set({ lastInviteEmailAt: previousLastInviteAt })
+					.where(
+						and(
+							eq(student.id, studentRow.id),
+							eq(student.lastInviteEmailAt, now),
+						),
+					);
+				return c.json(
+					{
+						error:
+							"Không gửi được email lời mời. Vui lòng kiểm tra địa chỉ email hoặc thử lại sau.",
+						code: STUDENT_INVITATION_ERROR_CODES.EMAIL_SEND_FAILED,
+					},
+					502,
+				);
+			}
+			return c.json({
+				ok: true,
+				id: studentRow.id,
+				updatedAt: now,
+			} satisfies StudentInviteResendResponse);
+		}
+
+		try {
+			const [activeClass] = await db
+				.select({ className: classTable.name })
+				.from(enrollment)
+				.innerJoin(classTable, eq(enrollment.classId, classTable.id))
+				.where(
+					and(
+						eq(enrollment.studentId, studentRow.id),
+						eq(enrollment.orgId, ctx.orgId),
+						eq(enrollment.status, "active"),
+					),
+				)
+				.orderBy(desc(enrollment.createdAt), desc(enrollment.id))
+				.limit(1);
+			const { senderName, replyToEmail } = await resolveOrgMailSender(
+				db,
+				ctx.orgId,
+			);
+			const built = buildStudentPortalInviteEmail({
+				orgName: senderName,
+				studentName: studentRow.name,
+				className: activeClass?.className,
+				studentOrigin: deps.studentOrigin,
+			});
+			await mailer.send({
+				to: recipientEmail,
+				subject: built.subject,
+				html: built.html,
+				text: built.text,
+				idempotencyKey: `student_portal_invite:${studentRow.id}:resend:${resendToken}`,
+				timeoutMs: SYNC_INVITE_MAIL_TIMEOUT_MS,
+				...(replyToEmail ? { replyTo: replyToEmail } : {}),
+				...(senderName ? { fromName: `${senderName} qua Teacher OS` } : {}),
+			});
+		} catch (error) {
+			const msg = error instanceof Error ? error.message : String(error);
+			console.error(
+				"[invite] failed to resend student portal invite:",
+				sanitizeDeliveryError(msg).rawError,
+			);
+			await db
+				.update(student)
+				.set({ lastInviteEmailAt: previousLastInviteAt })
+				.where(
+					and(
+						eq(student.id, studentRow.id),
+						eq(student.lastInviteEmailAt, now),
+					),
+				);
+			return c.json(
+				{
+					error:
+						"Không gửi được email lời mời. Vui lòng kiểm tra địa chỉ email hoặc thử lại sau.",
+					code: STUDENT_INVITATION_ERROR_CODES.EMAIL_SEND_FAILED,
+				},
+				502,
+			);
+		}
+
+		return c.json({
+			ok: true,
+			id: studentRow.id,
+			updatedAt: now,
+		} satisfies StudentInviteResendResponse);
+	});
+
 	kernel.delete("/students/invitations/:id", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
+		if (!canManageStudentInvites(ctx.role)) return forbiddenInviteRole(c);
 		const id = c.req.param("id");
 		const db = deps.getDb();
 

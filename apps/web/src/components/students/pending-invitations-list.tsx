@@ -1,5 +1,6 @@
 import { Mail, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
+import { ResendInviteButton } from "@/components/students/pending-invite-callout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -117,7 +118,15 @@ export function PendingInvitationsList({
 									</Badge>
 								</div>
 
-								<div>
+								<div className="flex flex-wrap items-center justify-end gap-2">
+									<ResendInviteButton
+										target={{
+											kind: "invitation",
+											invitationId: inv.id,
+											email: inv.email,
+										}}
+										compact
+									/>
 									<Button
 										variant="danger"
 										size="sm"
