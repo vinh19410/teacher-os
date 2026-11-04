@@ -52,6 +52,7 @@ env:
   PARENT_DOMAIN: teacheros.io.vn
   API_READY_URL: https://api.staging.teacheros.io.vn/readyz
   APP_ORIGIN: https://app.staging.teacheros.io.vn
+  STUDENT_ORIGIN: https://student.staging.teacheros.io.vn
   LANDING_ORIGIN: https://staging.teacheros.io.vn
   API_BASE_URL: https://api.staging.teacheros.io.vn
   PROFILE_ORIGIN: https://profile.staging.teacheros.io.vn
@@ -120,6 +121,11 @@ jobs:
         # apps/server/src/auth-roundtrip.test.ts. One throwaway account per
         # deploy; credentials are generated per run and never echoed.
         #
+        # Signs up through the student portal origin: when TEACHER_EMAILS is
+        # set, the teacher origin rejects every email outside the allowlist
+        # with 403 TEACHER_SIGNUP_FORBIDDEN, so a random smoke email can only
+        # register as a student. Auth wiring and cookies are the same for both.
+        #
         # The jar is POISONED before sign-up with a prod-shaped parent-domain
         # session cookie (round-2 repro): any browser that ever held a session
         # on the prod zone carries `__Secure-better-auth.session_token;
@@ -150,7 +156,7 @@ jobs:
               -o /tmp/smoke-signup.json -w '%{http_code}' \
               -X POST "$API_BASE_URL/api/auth/sign-up/email" \
               -H "Content-Type: application/json" \
-              -H "Origin: $APP_ORIGIN" \
+              -H "Origin: $STUDENT_ORIGIN" \
               -d "{\"name\":\"Deploy Smoke\",\"email\":\"$email\",\"password\":\"$pass\"}"
           }
           code=$(attempt_signup "") || fail "sign-up smoke request failed"

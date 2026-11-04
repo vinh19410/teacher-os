@@ -232,9 +232,10 @@ with credentials from the GitHub `staging` environment (same secret names as
 production), serialized like prod (`cancel-in-progress: false`) so
 forward-only migrations never race. Its post-deploy smoke is broader than
 prod's because staging is the QC target: `/readyz` polling, an auth
-round-trip (throwaway sign-up → `get-session` with a cookie jar poisoned by a
-prod-shaped parent-domain session cookie — the exact shape that broke QC
-sign-in before issue #125), and a check that the removed PWA service
+round-trip (throwaway student-portal sign-up → `get-session` with a cookie jar
+poisoned by a prod-shaped parent-domain session cookie — the exact shape that
+broke QC sign-in before issue #125; it uses the portal origin because
+`TEACHER_EMAILS` rejects a random email on the teacher origin), and a check that the removed PWA service
 worker's stubs (`/sw.js`, `/registerSW.js`) are served as JavaScript with
 network-first cache headers. Throwaway smoke accounts are accepted junk rows
 in the staging D1; prod deliberately gets no signup smoke. The manual
