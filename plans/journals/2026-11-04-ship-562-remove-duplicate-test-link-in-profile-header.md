@@ -6,8 +6,6 @@ summary: "Bỏ liên kết Làm Test Miễn Phí trùng lặp trong .nav-links c
 
 # Ship 562 remove duplicate test link in profile header
 
-# Ship 562 remove duplicate test link in profile header
-
 ## What happened
 Hoàn tất điều tra nguyên nhân gốc, kiểm định kế hoạch Red-Team (RT-1..RT-5), triển khai TDD red→green, kiểm chứng trình duyệt thực tế 4 mốc viewport và review độc lập (`LocalCodeReviewer`: `0 Critical / 1 Important / 2 Minor — resolved 3/3`) cho issue #562:
 - Xoá dòng `<li><a href="kiem-tra-dau-vao/">Làm Test Miễn Phí</a></li>` trùng lặp bên trong `<ul class="nav-links">` của `<header class="site-header">` tại `apps/profile/public/index.html`, giữ nguyên 3 mục điều hướng nội trang (`#bo-ho-so-pdf`, `#ho-so-giang-vien`, `#lo-trinh-khoa-hoc`) và nút CTA vàng `📝 Làm Test Miễn Phí` trong `.nav-actions`.
@@ -19,7 +17,5 @@ Giữ nút CTA vàng trong `.nav-actions` (hiển thị cả trên mobile `≤76
 
 ## Next steps
 Mở PR vào `develop` (`/ak-ship beta --advice`), thực thi `/ak-review-pr --fix --reply --advice`, chờ CI `develop` xanh, chạy cổng đánh giá hậu PR bắt buộc của Kongming và merge PR (`--ship`).
-
-> Historical work record — not durable authority. Prefer docs/specs/ADRs for current decisions.
 
 > Historical work record — not durable authority. Prefer docs/specs/ADRs for current decisions.
