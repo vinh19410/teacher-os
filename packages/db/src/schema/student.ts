@@ -31,6 +31,9 @@ export const student = sqliteTable(
 		/** Chứng chỉ học viên quan tâm ("ielts" | "toeic") — enum EXAM_INTERESTS ở packages/api.
 		 * Ghi bởi: học viên hoàn thành wizard onboarding — POST /api/student/onboarding (bước 1). */
 		examInterest: text("exam_interest"),
+		/** Trình độ hiện tại tự khai ("beginner" | "basic" | "intermediate" | "upper-intermediate" | "advanced" | "unsure").
+		 * Ghi bởi: POST /api/student/onboarding (bước 2). Null với học viên cũ chưa có dữ liệu. */
+		currentLevel: text("current_level"),
 		/** Band/điểm mục tiêu (chuỗi hiển thị, vd "6.5" IELTS hoặc "750" TOEIC).
 		 * Ghi bởi: POST /api/student/onboarding (bước 2, ràng buộc theo examInterest). */
 		targetScore: text("target_score"),

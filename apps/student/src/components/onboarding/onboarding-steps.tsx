@@ -1,4 +1,6 @@
 import {
+	CURRENT_LEVEL_OPTIONS,
+	type CurrentLevelOption,
 	DAILY_STUDY_HOUR_OPTIONS,
 	type DailyStudyHourOption,
 	EXAM_INTERESTS,
@@ -18,6 +20,40 @@ export const EXAM_LABELS: Record<ExamInterest, string> = {
 	ielts: "IELTS",
 	toeic: "TOEIC",
 };
+export const CURRENT_LEVEL_LABELS: Record<
+	ExamInterest,
+	Record<CurrentLevelOption, { label: string; sub?: string }>
+> = {
+	ielts: {
+		beginner: { label: "Mới bắt đầu", sub: "Mất gốc hoặc chưa học IELTS" },
+		basic: { label: "Dưới 4.5", sub: "Trình độ cơ bản" },
+		intermediate: { label: "4.5 – 5.5", sub: "Giao tiếp và xử lý đề cơ bản" },
+		"upper-intermediate": { label: "6.0 – 6.5", sub: "Đã có nền tảng vững" },
+		advanced: { label: "7.0 trở lên", sub: "Thành thạo" },
+		unsure: { label: "Chưa rõ", sub: "Chưa từng thi hoặc tự đánh giá" },
+	},
+	toeic: {
+		beginner: { label: "Mới bắt đầu", sub: "Mất gốc hoặc chưa học TOEIC" },
+		basic: { label: "Dưới 350", sub: "Trình độ cơ bản" },
+		intermediate: { label: "350 – 550", sub: "Nắm được ngữ pháp nền" },
+		"upper-intermediate": { label: "550 – 750", sub: "Khả năng nghe đọc tốt" },
+		advanced: { label: "750 trở lên", sub: "Thành thạo trong công việc" },
+		unsure: { label: "Chưa rõ", sub: "Chưa từng thi hoặc tự đánh giá" },
+	},
+};
+
+export function getCurrentLevelLabel(
+	level: string | null | undefined,
+	examInterest?: string | null,
+): string {
+	if (!level) return "";
+	const examKey = (
+		examInterest === "toeic" ? "toeic" : "ielts"
+	) as ExamInterest;
+	const levelKey = level as CurrentLevelOption;
+	const item = CURRENT_LEVEL_LABELS[examKey]?.[levelKey];
+	return item ? item.label : level;
+}
 
 export const GOAL_LABELS: Record<LearningGoalOption, string> = {
 	"study-abroad": "Du học",
@@ -115,6 +151,67 @@ export function ExamInterestStep({
 						onClick={() => onSelect(interest)}
 					/>
 				))}
+			</div>
+		</div>
+	);
+}
+export function CurrentLevelStep({
+	examInterest,
+	value,
+	onSelect,
+}: {
+	examInterest: ExamInterest;
+	value: CurrentLevelOption | null;
+	onSelect: (v: CurrentLevelOption) => void;
+}) {
+	const labels = CURRENT_LEVEL_LABELS[examInterest];
+
+	return (
+		<div className="space-y-4">
+			<div>
+				<h2 className="font-semibold text-foreground text-lg">
+					Trình độ hiện tại của bạn?
+				</h2>
+				<p className="mt-1 text-muted-foreground text-xs">
+					Ước lượng trình độ của bạn trước khi bắt đầu luyện thi{" "}
+					{EXAM_LABELS[examInterest]}.
+				</p>
+			</div>
+			<div className="grid grid-cols-1 gap-2.5 pt-2 sm:grid-cols-2">
+				{CURRENT_LEVEL_OPTIONS.map((opt) => {
+					const info = labels[opt];
+					const selected = value === opt;
+					return (
+						<button
+							key={opt}
+							type="button"
+							aria-pressed={selected}
+							onClick={() => onSelect(opt)}
+							className={cn(
+								"min-w-0 rounded-lg border p-3.5 text-left transition-[color,background-color,border-color,box-shadow] focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+								selected
+									? "border-primary bg-primary font-medium text-primary-foreground"
+									: "border-input bg-transparent text-foreground hover:bg-accent",
+							)}
+						>
+							<div className="break-words font-medium text-sm">
+								{info.label}
+							</div>
+							{info.sub ? (
+								<div
+									className={cn(
+										"mt-0.5 break-words text-xs",
+										selected
+											? "text-primary-foreground/80"
+											: "text-muted-foreground",
+									)}
+								>
+									{info.sub}
+								</div>
+							) : null}
+						</button>
+					);
+				})}
 			</div>
 		</div>
 	);
@@ -304,11 +401,17 @@ export function OnboardingSummary({
 					tiêu.
 				</p>
 			</div>
-			<div className="divide-y divide-line rounded-lg rounded-xl border bg-card text-sm shadow-sm">
+			<div className="divide-y divide-line rounded-xl border bg-card text-sm shadow-sm">
 				<div className="flex items-center justify-between p-3.5">
 					<span className="text-muted-foreground">Chứng chỉ quan tâm</span>
 					<span className="font-medium text-foreground">
 						{EXAM_LABELS[answers.examInterest]}
+					</span>
+				</div>
+				<div className="flex items-center justify-between p-3.5">
+					<span className="text-muted-foreground">Trình độ hiện tại</span>
+					<span className="font-medium text-foreground">
+						{getCurrentLevelLabel(answers.currentLevel, answers.examInterest)}
 					</span>
 				</div>
 				<div className="flex items-center justify-between p-3.5">
