@@ -1,7 +1,7 @@
 ---
 title: "#570: Mời học viên bằng email không gửi thư và không gửi lại được lời mời"
 description: "Sửa lỗi composeFrom lồng ngoặc nhọn làm hỏng Resend trên staging/prod, gửi email đồng bộ khi tạo lời mời tổ chức, bổ sung gửi lại lời mời có khóa idempotency mới + cooldown chống spam, và hiện trạng thái Chờ xác nhận kèm nút Gửi lại khi email đã có hồ sơ nhưng chưa tham gia cổng học viên."
-status: in-progress
+status: completed
 priority: P1
 effort: 4h
 issue: 570

@@ -38,11 +38,11 @@ Hoàn thiện trải nghiệm giáo viên trên `apps/web` và chứng minh toà
 
 ## Requirements
 
-- [ ] **An toàn deploy skew & bảo toàn test hiện hữu:**
+- [x] **An toàn deploy skew & bảo toàn test hiện hữu:**
   - `Student.portalLinked?: boolean` là optional; chỉ hiển thị trạng thái `"Chờ xác nhận"` / nút `"Gửi lại lời mời"` cho học viên khi `Boolean(s.email) && s.portalLinked === false` (nếu `portalLinked` là `undefined` từ snapshot cũ hoặc test fixture cũ thì ẩn trạng thái chờ).
   - Trong `apps/web/src/lib/repos/kernel.ts`, chỉ gắn `inviteEmailSent` vào object trả về của `runOne` khi `envelope.inviteEmailSent !== undefined`, và giữ nguyên nhánh `definite-failure` trả `{ kind: "definite-failure", status: error.status, error }` (chi tiết `code`, `existingStudentId`, `existingStudentName`, `portalLinked` nằm trên instance `HttpError`) để `kernel.test.ts` pass tuyệt đối.
   - Sau khi `add-student` thành công ở `AddStudentModal` / `EnrollStudentModal` (hoặc khi `useResendInvitation` nhận `404`), gọi `queryClient.invalidateQueries({ queryKey: pendingInvitationsQueryKey })` để danh sách `"Lời mời đang chờ"` luôn đồng bộ.
-- [ ] **Quy chuẩn UI/A11y (`DESIGN.md` & `REVIEW.md`):**
+- [x] **Quy chuẩn UI/A11y (`DESIGN.md` & `REVIEW.md`):**
   - Trong `AddStudentModal` và `EnrollStudentModal`, khi hiển thị `PendingInviteCallout` cho lỗi `409 STUDENT_ALREADY_IN_ORG` (`portalLinked === false`), **ẩn** thẻ `<p role="alert" className="text-danger">` mặc định của `useKernelFormSubmit` để không vi phạm quy tắc màu `--destructive` của `DESIGN.md`.
   - Trong `EnrollStudentModal`, lưu cả `{ message, inviteEmailSent }` trong `committedToastMessageRef` để nhánh `reconcileAndFinish` cũng hiển thị `toast.warning` trung thực nếu `inviteEmailSent === false`.
   - Trong `ClassRosterTab`, giữ nguyên `<Badge variant="warn">Đã mời</Badge>` hiện có cho `isInvited` (không thêm chữ `"Chờ xác nhận"` thứ hai gây đụng strict-mode với KPI `"1 chờ xác nhận"` trên `$classId.tsx:262`), và hiển thị nút `"Gửi lại lời mời"` trong cột `"Thao tác"` khi `Boolean(s.email) && (isInvited || s.portalLinked === false)`.
@@ -111,9 +111,9 @@ Hoàn thiện trải nghiệm giáo viên trên `apps/web` và chứng minh toà
 
 ## Todo
 
-- [ ] Task 3.1: Viết test Đỏ (`jsdom`) cho repos và UI mời / gửi lại lời mời trên `apps/web`
-- [ ] Task 3.2: Triển khai repos, `PendingInviteCallout` và các màn hình `apps/web`
-- [ ] Task 3.3: Kiểm chứng E2E Playwright, chụp ảnh 3 viewport sáng/tối và chạy scoped `design:compare` + full gates
+- [x] Task 3.1: Viết test Đỏ (`jsdom`) cho repos và UI mời / gửi lại lời mời trên `apps/web`
+- [x] Task 3.2: Triển khai repos, `PendingInviteCallout` và các màn hình `apps/web`
+- [x] Task 3.3: Kiểm chứng E2E Playwright, chụp ảnh 3 viewport sáng/tối và chạy scoped `design:compare` + full gates
 
 ## Success Criteria
 
