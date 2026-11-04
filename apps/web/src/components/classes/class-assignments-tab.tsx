@@ -4,9 +4,9 @@ import {
 	hasGradableTask,
 	isGradableSkill,
 } from "@teacher-os/api/lib/ielts-band";
+import { isEmptyRichText } from "@teacher-os/api/rich-text";
 import { parseStartDateStrict } from "@teacher-os/api/skeleton";
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
-import { isEmptyRichText } from "@teacher-os/api/rich-text";
 import { RichTextBody } from "@teacher-os/ui/components/assignments/rich-text-body";
 import { BookOpen, ChevronDown, Headphones, Mic, PenLine } from "lucide-react";
 import { type ComponentType, useMemo, useState } from "react";

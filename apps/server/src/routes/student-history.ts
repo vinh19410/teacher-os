@@ -9,7 +9,7 @@ import {
 	type HistoryWeekResponse,
 	type HistoryWeekRow,
 } from "@teacher-os/api/contracts";
-import { formatBand, ieltsOverallBand } from "@teacher-os/api/lib/ielts-band";
+import { formatBand } from "@teacher-os/api/lib/ielts-band";
 import {
 	addDaysISO,
 	mondayOfISO,

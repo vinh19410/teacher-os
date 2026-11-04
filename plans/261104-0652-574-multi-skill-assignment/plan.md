@@ -1,7 +1,7 @@
 ---
 title: "Cho phép gộp nhiều kỹ năng (trắc nghiệm + Writing) trong một bài tập (#574)"
 description: "Bổ sung phần Writing tuỳ chọn (writing_part, writing_type, writing_prompt) trên assignment_prompt tự chấm để giáo viên soạn và giao một bài gồm cả trắc nghiệm (tự chấm) lẫn Writing (chấm tay/AI) trên cùng một lượt làm quiz_attempt."
-status: in-progress
+status: completed
 priority: P1
 effort: "12h"
 issue: 574
