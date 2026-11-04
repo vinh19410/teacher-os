@@ -1,4 +1,9 @@
-import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
+import {
+	evaluateAssignmentDeadline,
+	formatVietnamTimeHHMM,
+	vietnamDateKeyOf,
+	vietnamTodayISO,
+} from "@teacher-os/api/vietnam-date";
 
 export type StatusTone =
 	| "ok"
@@ -36,6 +41,21 @@ export function fmtDue(iso: string): string {
 	const parts = iso.trim().split("-");
 	if (parts.length !== 3) return iso;
 	return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
+/**
+ * Hiển thị hạn nộp: khi có `dueAt` hợp lệ thì hiển thị `"HH:mm dd/mm/yyyy"`
+ * theo múi giờ Việt Nam (cả giờ lẫn ngày lấy từ `dueAt`); ngược lại hiển thị
+ * `fmtDue(due)` (`dd/mm/yyyy`).
+ */
+export function fmtDueDisplay(due: string, dueAt?: string | null): string {
+	const rawDueAtMs = dueAt ? Date.parse(dueAt) : Number.NaN;
+	if (Number.isFinite(rawDueAtMs)) {
+		const timeStr = formatVietnamTimeHHMM(rawDueAtMs);
+		const dateISO = vietnamDateKeyOf(new Date(rawDueAtMs));
+		return `${timeStr} ${fmtDue(dateISO)}`;
+	}
+	return fmtDue(due);
 }
 
 /** Format ISO datetime string or yyyy-mm-dd → dd/mm/yyyy in Vietnam timezone. */
@@ -107,8 +127,13 @@ export function extractDateISO(submittedAt: string): string {
  * Guard 0-target → Đang mở (red-team F2).
  */
 export function rollupStatus(
-	assignment: { due: string; targets: Array<{ submittedAt: string | null }> },
+	assignment: {
+		due: string;
+		dueAt?: string | null;
+		targets: Array<{ submittedAt: string | null }>;
+	},
 	todayISO: string,
+	nowMs?: number,
 ): RollupResult {
 	if (assignment.targets.length === 0) {
 		return { label: "Đang mở", tone: "neutral" };
@@ -119,32 +144,46 @@ export function rollupStatus(
 	if (submittedCount === assignment.targets.length) {
 		return { label: "Đã nộp hết", tone: "ok" };
 	}
-	if (assignment.due < todayISO) {
+	const deadline = evaluateAssignmentDeadline({
+		due: assignment.due,
+		dueAt: assignment.dueAt,
+		submittedAt: null,
+		todayISO,
+		nowMs,
+	});
+	if (deadline.isOverdue) {
 		return { label: "Quá hạn", tone: "danger" };
 	}
 	return { label: "Đang mở", tone: "neutral" };
 }
 
 /**
- * Trạng thái nộp cấp học viên (v2):
- * - submitted && date(submittedAt) > due → Đã nộp · trễ hạn (warn)
- * - submitted → Đã nộp (ok)
- * - !submitted && due < today → Chưa nộp · quá hạn (danger)
- * - còn lại → Chưa nộp (neutral)
+ * Trạng thái nộp cấp học viên (v2, #572):
+ * - Khi `dueAt` khác null: so sánh chính xác theo mili-giây (`submittedMs > dueAtMs` → trễ hạn;
+ *   chưa nộp `nowMs >= dueAtMs` → quá hạn).
+ * - Khi `dueAt` null (dữ liệu cũ): giữ nguyên so ngày theo múi giờ Việt Nam.
  */
 export function studentSubmissionStatus(
 	target: { submittedAt: string | null },
 	due: string,
 	todayISO: string,
+	options?: { dueAt?: string | null; nowMs?: number },
 ): StudentSubmissionResult {
+	const deadline = evaluateAssignmentDeadline({
+		due,
+		dueAt: options?.dueAt,
+		submittedAt: target.submittedAt,
+		todayISO,
+		nowMs: options?.nowMs,
+		legacyDateLate: true,
+	});
 	if (target.submittedAt !== null) {
-		const submitDate = extractDateISO(target.submittedAt);
-		if (submitDate > due) {
+		if (deadline.isLate) {
 			return { label: "Đã nộp · trễ hạn", tone: "warn" };
 		}
 		return { label: "Đã nộp", tone: "ok" };
 	}
-	if (due < todayISO) {
+	if (deadline.isOverdue) {
 		return { label: "Chưa nộp · quá hạn", tone: "danger" };
 	}
 	return { label: "Chưa nộp", tone: "neutral" };

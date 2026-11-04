@@ -1,4 +1,7 @@
-import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
+import {
+	ASSIGNMENT_IMAGE_SRC_PATTERN,
+	type AssignmentWritingSection,
+} from "@teacher-os/api/contracts";
 import { htmlToPlainText, isEmptyRichText } from "@teacher-os/api/rich-text";
 import { ClozeStemText } from "@teacher-os/ui/components/assignments/cloze-stem";
 import { OptionBankList } from "@teacher-os/ui/components/assignments/option-bank-list";
@@ -38,6 +41,7 @@ export function StudentPreviewPaper(props: {
 	items?: QuestionItem[];
 	task?: string;
 	genre?: string;
+	writing?: AssignmentWritingSection | null;
 }) {
 	const skillId = props.skill ?? "writing";
 	const partId = props.part ?? props.task ?? "task2";
@@ -153,6 +157,24 @@ export function StudentPreviewPaper(props: {
 					))}
 				</div>
 			)}
+			{isAuto && props.writing != null && (
+				<div className="mt-4 flex flex-col gap-1.5 border-border border-t pt-4">
+					<p className="font-semibold text-foreground text-sm">
+						Phần 2 · Writing (
+						{props.writing.part === "task1" ? "Task 1" : "Task 2"})
+					</p>
+					{isEmptyRichText(props.writing.prompt) ? (
+						<div className="text-muted-foreground text-sm leading-[1.55]">
+							Đề phần Writing sẽ hiện ở đây khi bạn soạn.
+						</div>
+					) : (
+						<RichTextBody
+							text={props.writing.prompt}
+							className="text-sm leading-[1.55]"
+						/>
+					)}
+				</div>
+			)}
 			{skillId === "speaking" && partId === "part2" && (
 				<div className="mt-3 text-sm">
 					<p>Describe {props.cueTopic || "the topic"}.</p>
@@ -188,6 +210,7 @@ export function StudentPreviewPaper(props: {
 				<Tag>{`Band ${props.band}`}</Tag>
 				{props.source.trim() && <Tag>{props.source.trim()}</Tag>}
 				{isAuto && <Tag>Chấm tự động</Tag>}
+				{isAuto && props.writing != null && <Tag>+ Writing</Tag>}
 				{!isEmptyRichText(props.note) && <Tag>Có hướng dẫn thêm</Tag>}
 				<Tag>{props.status === "draft" ? "Bản nháp" : "Sẵn sàng giao"}</Tag>
 			</div>

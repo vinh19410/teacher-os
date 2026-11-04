@@ -2,10 +2,10 @@ import type {
 	StudentAssignment,
 	StudentAssignmentScores,
 } from "@teacher-os/api/contracts";
-import { isGradableSkill } from "@teacher-os/api/lib/ielts-band";
+import { hasGradableTask } from "@teacher-os/api/lib/ielts-band";
 import {
+	evaluateAssignmentDeadline,
 	formatVietnamTimeHHMM,
-	vietnamDateKeyOf,
 	vietnamTodayISO,
 } from "@teacher-os/api/vietnam-date";
 
@@ -89,27 +89,26 @@ function formatDayMonth(iso: string): string {
 
 export function deriveAssignmentStatus(
 	assignment: StudentAssignment,
-	todayISO: string = vietnamTodayISO(),
+	todayISO?: string,
 	nowMs: number = Date.now(),
 ): DerivedAssignmentStatus {
+	const resolvedTodayISO = todayISO ?? vietnamTodayISO(new Date(nowMs));
 	const bandScore = calculateIeltsBand(assignment.scores);
-	const rawDueAtMs = assignment.dueAt
-		? Date.parse(assignment.dueAt)
-		: Number.NaN;
-	const hasDueAt = Number.isFinite(rawDueAtMs);
-	const dueDateISO =
-		assignment.due || (hasDueAt ? vietnamDateKeyOf(new Date(rawDueAtMs)) : "");
-	const dueLabelBase = hasDueAt
-		? `${formatVietnamTimeHHMM(rawDueAtMs)} ${formatDayMonth(dueDateISO)}`
-		: dueDateISO
-			? formatDayMonth(dueDateISO)
-			: "";
-	const submittedMs = assignment.submittedAt
-		? Date.parse(assignment.submittedAt)
-		: Number.NaN;
-	const isLate =
-		hasDueAt && Number.isFinite(submittedMs) ? submittedMs > rawDueAtMs : false;
-
+	const deadline = evaluateAssignmentDeadline({
+		due: assignment.due,
+		dueAt: assignment.dueAt,
+		submittedAt: assignment.submittedAt,
+		todayISO: resolvedTodayISO,
+		nowMs,
+		legacyDateLate: false,
+	});
+	const { hasDueAt, dueAtMs, dueDateISO, isLate, isOverdue } = deadline;
+	const dueLabelBase =
+		hasDueAt && dueAtMs !== null
+			? `${formatVietnamTimeHHMM(dueAtMs)} ${formatDayMonth(dueDateISO)}`
+			: dueDateISO
+				? formatDayMonth(dueDateISO)
+				: "";
 	// Graded takes precedence if scores exist
 	if (bandScore != null) {
 		return {
@@ -143,7 +142,10 @@ export function deriveAssignmentStatus(
 	if (assignment.submittedAt) {
 		// TOS-30 #478: chỉ Writing/Speaking chờ giáo viên chấm tay — bài tự
 		// chấm (Reading/Listening) đã có điểm ngay khi nộp, giữ "Đã nộp".
-		const needsTeacherGrading = isGradableSkill(assignment.skill ?? "");
+		const needsTeacherGrading = hasGradableTask({
+			skill: assignment.skill ?? "",
+			hasWriting: assignment.hasWriting,
+		});
 		return {
 			status: "submitted",
 			statusLabel: isLate
@@ -165,8 +167,8 @@ export function deriveAssignmentStatus(
 
 	// Not submitted — evaluate dueAt first when present (#526)
 	if (hasDueAt) {
-		const diff = dueDateISO ? daysDiff(todayISO, dueDateISO) : 0;
-		if (nowMs >= rawDueAtMs) {
+		const diff = dueDateISO ? daysDiff(resolvedTodayISO, dueDateISO) : 0;
+		if (isOverdue) {
 			const suffix =
 				diff != null && diff < 0 ? `quá ${Math.abs(diff)} ngày` : "quá hạn";
 			return {
@@ -217,7 +219,7 @@ export function deriveAssignmentStatus(
 		};
 	}
 
-	const diff = daysDiff(todayISO, assignment.due);
+	const diff = daysDiff(resolvedTodayISO, assignment.due);
 	if (diff == null) {
 		// Due is free-text / unparseable -> default to not-submitted, NEVER overdue
 		return {

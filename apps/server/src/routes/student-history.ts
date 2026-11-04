@@ -9,7 +9,7 @@ import {
 	type HistoryWeekResponse,
 	type HistoryWeekRow,
 } from "@teacher-os/api/contracts";
-import { formatBand, ieltsOverallBand } from "@teacher-os/api/lib/ielts-band";
+import { formatBand } from "@teacher-os/api/lib/ielts-band";
 import {
 	addDaysISO,
 	mondayOfISO,
@@ -23,10 +23,22 @@ import {
 	quizAttempt,
 	vocabReviewLog,
 } from "@teacher-os/db/schema/index";
-import { and, count, desc, eq, gte, inArray, lt, sql } from "drizzle-orm";
+import {
+	and,
+	count,
+	desc,
+	eq,
+	gte,
+	inArray,
+	isNotNull,
+	lt,
+	or,
+	sql,
+} from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import type { Db } from "../app";
 import { visibleAssignmentFilter } from "../lib/assignment-visibility";
+import { toQuizAttemptGrade } from "../lib/quiz-grade";
 import {
 	createStudentGuard,
 	parseQuizQuestions,
@@ -55,6 +67,7 @@ type AttemptSourceRow = {
 	gradeScores: Record<string, number> | null;
 	gradedAt: Date | null;
 	questionsSnapshot: string;
+	writingPart: string | null;
 };
 
 /** Nhóm vocab theo ngày — n thẻ đã ôn + tổng phút trong ngày. */
@@ -108,8 +121,28 @@ function attemptMinutes(row: AttemptSourceRow): number {
  * (practiceScoreLabel) và summary route: đã chấm → "Band x.x", tự chấm →
  * "đúng/tổng" từ snapshot, Writing/Speaking chưa chấm → chờ chấm. */
 function entryGradeOf(row: AttemptSourceRow): EntryGrade {
-	if (row.gradeScores && row.gradedAt) {
-		const band = formatBand(ieltsOverallBand(Object.values(row.gradeScores)));
+	const graded = toQuizAttemptGrade({
+		gradeScores: row.gradeScores,
+		gradeFeedback: "",
+		gradedAt: row.gradedAt,
+	});
+	if (row.writingPart !== null) {
+		const total = parseQuizQuestions(row.questionsSnapshot, row.id).length;
+		const objScore =
+			row.correctCount !== null && total > 0
+				? `${row.correctCount}/${total}`
+				: null;
+		if (graded) {
+			const band = formatBand(graded.band);
+			return {
+				score: objScore ? `${objScore} · Band ${band}` : `Band ${band}`,
+				status: "graded",
+			};
+		}
+		return { score: objScore, status: "awaiting" };
+	}
+	if (graded) {
+		const band = formatBand(graded.band);
 		return { score: `Band ${band}`, status: "graded" };
 	}
 	if (row.skill === "writing" || row.skill === "speaking") {
@@ -124,10 +157,17 @@ function entryGradeOf(row: AttemptSourceRow): EntryGrade {
 
 function attemptToEntry(row: AttemptSourceRow): HistoryEntry {
 	const grade = entryGradeOf(row);
+	// HISTORY_SKILLS giữ 5 dòng (#533, không có "grammar") — bài gộp Grammar + Writing
+	// chuẩn hoá về "writing" để hiện trên /history, heatmap tháng và dòng Writing bảng tuần.
+	const historySkill: HistorySkill = (
+		HISTORY_SKILLS as readonly string[]
+	).includes(row.skill)
+		? (row.skill as HistorySkill)
+		: "writing";
 	return {
 		id: row.id,
 		kind: row.mode === "practice" ? "practice" : "assignment",
-		skill: row.skill as HistorySkill,
+		skill: historySkill,
 		title: row.title,
 		date: vietnamDateKeyOf(row.submittedAt),
 		submittedAt: row.submittedAt.toISOString(),
@@ -135,6 +175,7 @@ function attemptToEntry(row: AttemptSourceRow): HistoryEntry {
 		score: grade.score,
 		status: grade.status,
 		attemptId: row.id,
+		...(row.writingPart !== null ? { hasWriting: true } : {}),
 	};
 }
 
@@ -215,6 +256,7 @@ async function attemptRows(
 			...baseColumns,
 			skill: assignmentTest.skill,
 			title: assignmentTest.title,
+			writingPart: sql<string | null>`NULL`,
 		})
 		.from(quizAttempt)
 		.innerJoin(
@@ -241,6 +283,7 @@ async function attemptRows(
 			...baseColumns,
 			skill: assignmentPrompt.skill,
 			title: classAssignment.title,
+			writingPart: assignmentPrompt.writingPart,
 		})
 		.from(quizAttempt)
 		.innerJoin(
@@ -262,7 +305,10 @@ async function attemptRows(
 				eq(quizAttempt.orgId, orgId),
 				eq(quizAttempt.studentId, studentId),
 				eq(quizAttempt.mode, "assignment"),
-				inArray(assignmentPrompt.skill, [...HISTORY_SKILLS]),
+				or(
+					inArray(assignmentPrompt.skill, [...HISTORY_SKILLS]),
+					isNotNull(assignmentPrompt.writingPart),
+				),
 				visibleAssignmentFilter(new Date()),
 				submittedRange,
 			),
@@ -282,6 +328,7 @@ async function attemptRows(
 			gradeScores: row.gradeScores,
 			gradedAt: row.gradedAt,
 			questionsSnapshot: row.questionsSnapshot,
+			writingPart: row.writingPart,
 		}));
 }
 
@@ -484,7 +531,11 @@ export function studentHistoryRoutes(deps: HistoryRouteDeps) {
 		const filtered =
 			rawSkill === undefined || rawSkill === ""
 				? merged.entries
-				: merged.entries.filter((entry) => entry.skill === rawSkill);
+				: merged.entries.filter(
+						(entry) =>
+							entry.skill === rawSkill ||
+							(rawSkill === "writing" && entry.hasWriting === true),
+					);
 		const total = filtered.length;
 		const pages = Math.max(1, Math.ceil(total / HISTORY_PAGE_SIZE));
 		const response: HistoryListResponse = {

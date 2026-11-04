@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
 	fmtDate,
 	fmtDue,
+	fmtDueDisplay,
 	fmtWhen,
 	promptStatus,
 	rollupStatus,
@@ -27,6 +28,15 @@ describe("assignment-status (#208)", () => {
 			// 2026-09-11 14:14:00 UTC is 21:14 in VN (UTC+7)
 			expect(fmtWhen("2026-09-11T14:14:00.000Z")).toBe("11/09/2026 · 21:14");
 			expect(fmtWhen("")).toBe("");
+		});
+
+		test("fmtDueDisplay formats HH:mm dd/mm/yyyy in VN timezone from dueAt when present (#572)", () => {
+			// 2026-11-06T10:30:00.000Z = 17:30 on 06/11/2026 in Asia/Ho_Chi_Minh
+			expect(fmtDueDisplay("2027-01-01", "2026-11-06T10:30:00.000Z")).toBe(
+				"17:30 06/11/2026",
+			);
+			expect(fmtDueDisplay("2026-11-06", null)).toBe("06/11/2026");
+			expect(fmtDueDisplay("2026-11-06", undefined)).toBe("06/11/2026");
 		});
 	});
 
@@ -85,6 +95,27 @@ describe("assignment-status (#208)", () => {
 			);
 			expect(res).toEqual({ label: "Đang mở", tone: "neutral" });
 		});
+
+		test("evaluates exact ms boundary on dueAt (dueAt - 1ms -> Đang mở, dueAt -> Quá hạn) (#572)", () => {
+			const dueAt = "2026-09-18T10:00:00.000Z"; // 17:00 VN on todayISO
+			const dueAtMs = Date.parse(dueAt);
+
+			expect(
+				rollupStatus(
+					{ due: todayISO, dueAt, targets: [{ submittedAt: null }] },
+					todayISO,
+					dueAtMs - 1,
+				),
+			).toEqual({ label: "Đang mở", tone: "neutral" });
+
+			expect(
+				rollupStatus(
+					{ due: todayISO, dueAt, targets: [{ submittedAt: null }] },
+					todayISO,
+					dueAtMs,
+				),
+			).toEqual({ label: "Quá hạn", tone: "danger" });
+		});
 	});
 
 	describe("studentSubmissionStatus", () => {
@@ -132,6 +163,43 @@ describe("assignment-status (#208)", () => {
 				todayISO,
 			);
 			expect(res).toEqual({ label: "Chưa nộp", tone: "neutral" });
+		});
+
+		test("evaluates exact ms boundary on dueAt for late and overdue (#572)", () => {
+			const dueAt = "2026-09-18T10:00:00.000Z"; // 17:00 VN on todayISO
+			const dueAtMs = Date.parse(dueAt);
+
+			expect(
+				studentSubmissionStatus({ submittedAt: null }, todayISO, todayISO, {
+					dueAt,
+					nowMs: dueAtMs - 1,
+				}),
+			).toEqual({ label: "Chưa nộp", tone: "neutral" });
+
+			expect(
+				studentSubmissionStatus({ submittedAt: null }, todayISO, todayISO, {
+					dueAt,
+					nowMs: dueAtMs,
+				}),
+			).toEqual({ label: "Chưa nộp · quá hạn", tone: "danger" });
+
+			expect(
+				studentSubmissionStatus(
+					{ submittedAt: new Date(dueAtMs).toISOString() },
+					todayISO,
+					todayISO,
+					{ dueAt, nowMs: dueAtMs + 10_000 },
+				),
+			).toEqual({ label: "Đã nộp", tone: "ok" });
+
+			expect(
+				studentSubmissionStatus(
+					{ submittedAt: new Date(dueAtMs + 1).toISOString() },
+					todayISO,
+					todayISO,
+					{ dueAt, nowMs: dueAtMs + 10_000 },
+				),
+			).toEqual({ label: "Đã nộp · trễ hạn", tone: "warn" });
 		});
 	});
 

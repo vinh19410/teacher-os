@@ -39,7 +39,10 @@ import {
 	isoToLessonWeekday,
 	parseStartDateStrict,
 } from "@teacher-os/api/skeleton";
-import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
+import {
+	vietnamDateTimeMs,
+	vietnamTodayISO,
+} from "@teacher-os/api/vietnam-date";
 import { canPublishGrade } from "@teacher-os/auth/role";
 
 import { assignmentPrompt } from "@teacher-os/db/schema/assignment-prompt";
@@ -159,6 +162,7 @@ export function kernelRoutes(deps: {
 	getAiGrader?(): AiGrader | undefined;
 	aiRetryDelaysMs?: number[];
 	aiGradingTimeoutMs?: number;
+	now?: () => Date;
 }) {
 	const kernel = new Hono<Env>();
 	const allowedOrigins = Array.isArray(deps.corsOrigins)
@@ -1526,9 +1530,24 @@ export function kernelRoutes(deps: {
 		if (prompt.status !== "ready") {
 			return c.json({ error: "prompt not ready" }, 400);
 		}
-		if (!parseStartDateStrict(input.due) || input.due < vietnamTodayISO()) {
+		const now = deps.now ? deps.now() : new Date();
+		const todayVN = vietnamTodayISO(now);
+		if (!parseStartDateStrict(input.due) || input.due < todayVN) {
 			return c.json({ error: "invalid due date", reason: "invalid-date" }, 400);
 		}
+		const effectiveDueTime = input.dueTime ?? "23:59";
+		const dueAtMs = vietnamDateTimeMs(input.due, effectiveDueTime);
+		if (Number.isNaN(dueAtMs)) {
+			return c.json({ error: "invalid due date", reason: "invalid-date" }, 400);
+		}
+		if (
+			input.dueTime !== undefined &&
+			!(input.due === todayVN && input.dueTime === "23:59") &&
+			dueAtMs <= now.getTime()
+		) {
+			return c.json({ error: "invalid due time", reason: "past-time" }, 400);
+		}
+		const dueAtDate = new Date(dueAtMs);
 		if (new Set(input.studentIds).size !== input.studentIds.length) {
 			return c.json({ error: "duplicate student ids" }, 400);
 		}
@@ -1569,6 +1588,7 @@ export function kernelRoutes(deps: {
 				promptId: prompt.id,
 				title: prompt.title,
 				due: input.due,
+				dueAt: dueAtDate,
 				note: input.note,
 			}),
 			...input.studentIds.map((studentId) =>
@@ -1588,6 +1608,7 @@ export function kernelRoutes(deps: {
 				classAssignmentId: assignmentId,
 				title: prompt.title,
 				due: input.due,
+				dueAt: dueAtDate.toISOString(),
 				studentIds: input.studentIds,
 			}),
 		);

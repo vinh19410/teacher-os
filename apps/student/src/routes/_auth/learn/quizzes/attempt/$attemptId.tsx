@@ -36,6 +36,10 @@ import {
 import { cn } from "@/lib/cn";
 import { isHttpError, studentQueryClient } from "@/lib/query-client";
 import {
+	quizAttemptEssayMirrorKey,
+	quizAttemptMirrorKey,
+} from "@/lib/quiz-attempt-store";
+import {
 	attemptSummaryQueryOptions,
 	useAttemptSummary,
 } from "@/lib/repos/quiz";
@@ -47,6 +51,12 @@ export const Route = createFileRoute("/_auth/learn/quizzes/attempt/$attemptId")(
 				await studentQueryClient.ensureQueryData(
 					attemptSummaryQueryOptions(attemptId),
 				);
+				try {
+					localStorage.removeItem(quizAttemptMirrorKey(attemptId));
+					localStorage.removeItem(quizAttemptEssayMirrorKey(attemptId));
+				} catch {
+					// Storage hỏng/blocked — không chặn render kết quả.
+				}
 			} catch (error) {
 				// 409 = attempt còn in_progress (RT#6) — không render partial. Body
 				// 409 không mang assignmentId nên không dựng được URL take screen;
@@ -128,7 +138,9 @@ export function AttemptSummaryBody({
 			{/* TOS-30 #478: CHỈ Writing/Speaking chờ giáo viên chấm tay — quiz
 				Reading/Listening tự chấm không bao giờ có `grade` nhưng cũng
 				không bao giờ chờ ai, không được dính nhãn chờ. */}
-			{(summary.skill === "writing" || summary.skill === "speaking") &&
+			{(summary.skill === "writing" ||
+				summary.skill === "speaking" ||
+				essay !== null) &&
 				grade === null && (
 					<p
 						className="font-medium text-foreground text-sm"
@@ -189,6 +201,33 @@ export function AttemptSummaryBody({
 		);
 	}
 
+	const hasQuizSection = summary.totalCount > 0 || essay === null;
+	const quizSection = hasQuizSection ? (
+		<>
+			<div className="mt-4">
+				<AttemptScoreCard
+					correctCount={summary.correctCount}
+					wrongCount={summary.wrongCount}
+					skippedCount={summary.skippedCount}
+					totalCount={summary.totalCount}
+					action={
+						<Link
+							to="/learn/quizzes/attempt/$attemptId/detail"
+							params={{ attemptId }}
+							className={cn(buttonVariants(), "mt-5")}
+						>
+							Xem giải thích chi tiết
+						</Link>
+					}
+				/>
+			</div>
+			<h2 className="mt-6 mb-2 font-extrabold text-foreground tracking-[-0.02em]">
+				Bảng đáp án
+			</h2>
+			<AttemptCompactList items={summary.items} />
+		</>
+	) : null;
+
 	if (essay !== null) {
 		const wordCount = countWords(essay);
 		// Ghi chú giáo viên hiện inline ngay sau highlight (#336): server CHỈ
@@ -214,8 +253,6 @@ export function AttemptSummaryBody({
 				>
 					{wordCount} từ
 				</p>
-				{/* Khối bài viết kiểu design `Results`: cột trái có border-l,
-				 * chữ lớn giãn dòng, không card. */}
 				<div className="mt-2 whitespace-pre-wrap border-border border-l-2 pl-5 text-lg leading-[1.9]">
 					{emptyEssay ? (
 						<span className="text-muted-foreground">Bạn đã nộp bài trống.</span>
@@ -229,12 +266,11 @@ export function AttemptSummaryBody({
 				</div>
 			</section>
 		);
-		// split ≡ grade != null trong nhánh này (Speaking đã early-return,
-		// essay != null) — guard `grade` để TS thu hẹp kiểu.
 		if (split && grade) {
 			return (
 				<>
 					{submittedLine}
+					{quizSection}
 					<div
 						className="app:grid app:grid-cols-[1.3fr_1fr] app:items-start app:gap-8"
 						data-testid="writing-result-split"
@@ -254,6 +290,7 @@ export function AttemptSummaryBody({
 		return (
 			<>
 				{submittedLine}
+				{quizSection}
 				{essayFrame}
 				{grade ? (
 					<AttemptGradeCard grade={grade} skill="writing" part={part} />
@@ -269,27 +306,7 @@ export function AttemptSummaryBody({
 	return (
 		<>
 			{submittedLine}
-			<div className="mt-4">
-				<AttemptScoreCard
-					correctCount={summary.correctCount}
-					wrongCount={summary.wrongCount}
-					skippedCount={summary.skippedCount}
-					totalCount={summary.totalCount}
-					action={
-						<Link
-							to="/learn/quizzes/attempt/$attemptId/detail"
-							params={{ attemptId }}
-							className={cn(buttonVariants(), "mt-5")}
-						>
-							Xem giải thích chi tiết
-						</Link>
-					}
-				/>
-			</div>
-			<h2 className="mt-6 mb-2 font-extrabold text-foreground tracking-[-0.02em]">
-				Bảng đáp án
-			</h2>
-			<AttemptCompactList items={summary.items} />
+			{quizSection}
 		</>
 	);
 }

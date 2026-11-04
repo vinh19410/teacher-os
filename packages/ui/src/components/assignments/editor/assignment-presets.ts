@@ -421,6 +421,7 @@ export function emptyComposer(skillId: string, typeId: string) {
 		optionBank: [],
 		note: "",
 		items: isAutoSkill(skillId) ? [emptyItem(typeId)] : [],
+		writing: null,
 	};
 }
 // Single source of truth #304: teacher preview và student footer đếm từ

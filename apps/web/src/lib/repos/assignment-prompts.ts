@@ -28,6 +28,7 @@ export function mapAssignmentPrompts(
 		optionBank: row.optionBank ?? [],
 		note: row.note,
 		status: row.status === "ready" ? "ready" : "draft",
+		writing: row.writing ?? null,
 		createdAt: row.createdAt,
 	}));
 }

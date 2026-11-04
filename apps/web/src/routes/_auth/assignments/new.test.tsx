@@ -526,3 +526,53 @@ describe("previewDraftFrom — preview payload parity (phase-01 FR6 bug fix)", (
 		expect(draft.items).toEqual([]);
 	});
 });
+
+describe("hybrid writing section validation & preview handoff (#574)", () => {
+	it("blocks save with clear copy when writing section is enabled with empty prompt, and preserves writing in previewDraftFrom", () => {
+		const hybridIncomplete: ComposerValue = {
+			skill: "grammar",
+			part: "tenses",
+			type: "mcq",
+			title: "Grammar + Writing",
+			band: "6.5",
+			source: "",
+			prompt: "",
+			passage: "",
+			intro: "",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			imageUrl: "",
+			optionBank: [],
+			note: "",
+			items: [
+				{ stem: "She ___ home.", answer: "B", opts: ["go", "goes"], alts: "" },
+			],
+			writing: { part: "task2", type: "discuss", prompt: "<p>   </p>" },
+		};
+		expect(actionCopyFor(hybridIncomplete, "ready").title).toBe(
+			"Thiếu đề phần Writing",
+		);
+		expect(actionCopyFor(hybridIncomplete, "draft").title).toBe(
+			"Thiếu đề phần Writing",
+		);
+
+		const hybridComplete: ComposerValue = {
+			...hybridIncomplete,
+			writing: {
+				part: "task2",
+				type: "discuss",
+				prompt: "<p>Write 250 words about cities.</p>",
+			},
+		};
+		expect(actionCopyFor(hybridComplete, "ready").title).toBe(
+			"Sẵn sàng lưu vào ngân hàng",
+		);
+		expect(previewDraftFrom(hybridComplete, "ready").writing).toEqual({
+			part: "task2",
+			type: "discuss",
+			prompt: "<p>Write 250 words about cities.</p>",
+		});
+	});
+});

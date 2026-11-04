@@ -682,6 +682,9 @@ export async function loadSnapshot(
 				optionBank,
 				note,
 				status,
+				writingPart,
+				writingType,
+				writingPrompt,
 				createdAt,
 			}) => ({
 				id,
@@ -709,6 +712,13 @@ export async function loadSnapshot(
 				optionBank: parseOptionBank(optionBank, id),
 				note,
 				status,
+				writing: writingPart
+					? {
+							part: writingPart,
+							type: writingType ?? "",
+							prompt: writingPrompt ?? "",
+						}
+					: null,
 				createdAt: createdAt.toISOString(),
 			}),
 		),
@@ -720,6 +730,7 @@ export async function loadSnapshot(
 			promptId: row.promptId,
 			title: row.title,
 			due: row.due,
+			dueAt: row.dueAt ? row.dueAt.toISOString() : null,
 			note: row.note,
 			createdAt: row.createdAt.toISOString(),
 			targets: targetsByAssignment.get(row.id) ?? [],
