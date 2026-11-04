@@ -129,7 +129,7 @@ describe("AttemptScoreCard — điểm RAW + counters + CTA", () => {
 					params={{ attemptId: summary.id }}
 					className={cn(buttonVariants(), "mt-5")}
 				>
-					Xem giải thích chi tiết
+					Xem chi tiết bài làm
 				</Link>
 			}
 		/>,
@@ -150,8 +150,8 @@ describe("AttemptScoreCard — điểm RAW + counters + CTA", () => {
 		expect(html).toMatch(/data-testid="attempt-skipped"[^>]*>2</);
 	});
 
-	it("CTA 'Xem giải thích chi tiết' trỏ thẳng route detail của attempt", () => {
-		expect(html).toContain("Xem giải thích chi tiết");
+	it("CTA 'Xem chi tiết bài làm' trỏ thẳng route detail của attempt", () => {
+		expect(html).toContain("Xem chi tiết bài làm");
 		expect(html).toContain('href="/learn/quizzes/attempt/att-1/detail"');
 		// Variant default (không phải secondary) + spacing mt-5 giữ nguyên.
 		const cta = html.match(
@@ -201,6 +201,15 @@ describe("AttemptCompactList — n → đáp án học viên → Đáp án đún
 		expect(html).toContain("text-verdict-correct");
 	});
 });
+describe("AttemptSummaryBody — CTA nhãn 'Xem chi tiết bài làm' (#579)", () => {
+	it("CTA chính trên AttemptScoreCard mang nhãn 'Xem chi tiết bài làm'", () => {
+		const html = renderToStaticMarkup(
+			<AttemptSummaryBody summary={summary} attemptId={summary.id} />,
+		);
+		expect(html).toContain("Xem chi tiết bài làm");
+		expect(html).not.toContain("Xem giải thích chi tiết");
+	});
+});
 
 describe("AttemptSummaryBody — nhánh Writing (#304)", () => {
 	const writingSummary: QuizAttemptSummary = {
@@ -224,7 +233,7 @@ describe("AttemptSummaryBody — nhánh Writing (#304)", () => {
 		expect(html).toContain("The graph shows a clear upward trend.");
 		expect(html).toContain("7 từ");
 		expect(html).toContain("Giáo viên sẽ chấm bài viết của bạn.");
-		expect(html).not.toContain("Xem giải thích chi tiết");
+		expect(html).not.toContain("Xem chi tiết bài làm");
 		expect(html).not.toContain("Bảng đáp án");
 		expect(html).not.toContain("attempt-correct-count");
 	});
@@ -249,7 +258,7 @@ describe("AttemptSummaryBody — nhánh Writing (#304)", () => {
 				/>,
 			);
 			expect(html).toContain("attempt-correct-count");
-			expect(html).toContain("Xem giải thích chi tiết");
+			expect(html).toContain("Xem chi tiết bài làm");
 			expect(html).toContain("Bảng đáp án");
 			expect(html).not.toContain("Bài viết của bạn");
 		}
@@ -305,7 +314,7 @@ describe("AttemptSummaryBody — Speaking hiện bài nói thay score card (#305
 		expect(html).toContain("820 KB");
 		expect(html).toContain("Nghe lại bài nói");
 		expect(html).toContain("Giáo viên sẽ chấm bài nói của bạn.");
-		expect(html).not.toContain("Xem giải thích chi tiết");
+		expect(html).not.toContain("Xem chi tiết bài làm");
 		expect(html).not.toContain("Bảng đáp án");
 	});
 
@@ -327,7 +336,7 @@ describe("AttemptSummaryBody — Speaking hiện bài nói thay score card (#305
 				attemptId="att-1"
 			/>,
 		);
-		expect(html).toContain("Xem giải thích chi tiết");
+		expect(html).toContain("Xem chi tiết bài làm");
 		expect(html).not.toContain("Bài nói của bạn");
 	});
 
@@ -335,7 +344,7 @@ describe("AttemptSummaryBody — Speaking hiện bài nói thay score card (#305
 		const html = renderToStaticMarkup(
 			<AttemptSummaryBody summary={summary} attemptId="att-1" />,
 		);
-		expect(html).toContain("Xem giải thích chi tiết");
+		expect(html).toContain("Xem chi tiết bài làm");
 	});
 });
 
@@ -744,7 +753,7 @@ describe("AttemptSummaryBody — hybrid MCQ + Writing result (#574)", () => {
 		);
 		expect(html).toContain('data-testid="awaiting-grade"');
 		expect(html).toContain("Bảng đáp án");
-		expect(html).toContain("Xem giải thích chi tiết");
+		expect(html).toContain("Xem chi tiết bài làm");
 		expect(html).toContain('data-testid="essay-frame"');
 		expect(html).toContain(
 			"Technology changes modern classrooms significantly.",

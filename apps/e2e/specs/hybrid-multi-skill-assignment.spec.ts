@@ -308,9 +308,7 @@ test("hybrid Grammar + Writing assignment: author, preview, assign, student take
 		"cần viết đủ 250 từ",
 	);
 
-	await studentPage
-		.getByRole("link", { name: "Xem giải thích chi tiết" })
-		.click();
+	await studentPage.getByRole("link", { name: "Xem chi tiết bài làm" }).click();
 	await expect(studentPage).toHaveURL(/\/detail$/);
 	// Q1 answer B ("drinks") was NOT overwritten by essay at index 0!
 	await expect(
