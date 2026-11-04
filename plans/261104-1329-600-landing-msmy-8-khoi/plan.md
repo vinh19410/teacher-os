@@ -83,3 +83,21 @@ Học viên vào trang thấy ngay một nút chính "Làm test xếp lớp mi�
 2. Chính sách khi chưa đạt mục tiêu và điều kiện của "cam kết đầu ra". Đến lúc đó câu hỏi đáp tương ứng không hiển thị nội dung bảo hành.
 
 Hai câu này không chặn phase 1-3; chỉ chặn việc đăng prod ở phase 4.
+## Validation & Red-Team Review Log (2026-11-04)
+
+### Verification Results
+- Claims checked: 14 (file paths, symbols, contracts, drift tests, anchors)
+- Verified: 14 | Failed: 0 | Unverified: 0
+- Lenses applied: Security Adversary, Contract Drift Analyst, Failure Mode Analyst.
+
+### Kongming Advisory Synthesis & Resolutions
+1. **Bổ sung `lead-gate.js` vào Phase 1:** Đồng bộ `PLACEMENT_COURSE_GROUPS` 15 khóa (thêm nhóm `target` chứa 3 mã mới) khớp 100% với `LEAD_COURSE_GROUPS` để bảo vệ test drift `lead-catalog-drift.test.ts`.
+2. **Cập nhật drift test cho Landing Form 3 khóa:** Cập nhật assertion cho `select[name=course]` trên `index.html` nhận tập 4 mã (`foundation-core`, `ielts-practical`, `workplace-interview`, `undecided`) trong khi `lead-gate.js` giữ trọn vẹn 15 mã.
+3. **Mapper tham số `?khoa=` cho kết quả test:** Thêm mapper ánh xạ mã cũ sang mã mới (`ielts-foundation`/`ielts-first-step` -> `foundation-core`, `ielts-pre`/`ielts-advanced` -> `ielts-practical`) để học viên hoàn thành test không bị mất khóa gợi ý.
+4. **Bảo vệ trang `noi-bo`:** Meta `noindex, nofollow`, kiểm tra zero-link từ public surface, fallback cho clipboard copy, không đưa dữ liệu nhạy cảm vào kịch bản.
+5. **Bảo vệ anchor:** Đảm bảo `#lam-test-mien-phi` và `#dang-ky-tu-van` còn tồn tại.
+6. **Cổng release:** Test chống placeholder `[ ... ]` hoặc `TODO` trên trang chủ; hiển thị "Nhắn Zalo để nhận báo giá".
+
+### Whole-Plan Consistency Sweep
+- Toàn bộ 4 phase file và `plan.md` đã được đồng bộ hóa theo các quyết định trên.
+- Không còn mâu thuẫn hoặc câu hỏi chặn implementation.

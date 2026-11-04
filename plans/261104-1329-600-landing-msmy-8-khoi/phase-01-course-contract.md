@@ -10,14 +10,16 @@ Form mới hỏi "Khóa bạn quan tâm" theo 3 khóa của handoff. Server ch�
 
 ## Files
 - Sửa: `packages/api/src/lead-contracts.ts` (`LEAD_COURSES`, `LEAD_COURSE_LABELS`, `LEAD_COURSE_GROUPS`)
-- Sửa nếu có: test contract trong `packages/api/src` và `apps/server/src/routes/public-leads.test.ts`
+- Sửa: `apps/profile/public/kiem-tra-dau-vao/lead-gate.js` (`PLACEMENT_COURSE_GROUPS` đồng bộ với `LEAD_COURSE_GROUPS`)
+- Sửa: `apps/server/src/lead-catalog-drift.test.ts` (cập nhật assertion cho nhóm và select landing)
 - Đọc: `apps/web/src/routes/_auth/leads/index.tsx` (bộ lọc khóa nếu dùng `LEAD_COURSE_GROUPS`)
-
 ## Steps
-1. Đọc `LEAD_COURSE_GROUPS` và chỗ nào dùng nó (web, test drift của profile).
-2. Thêm 3 mã vào enum, nhãn tiếng Việt, và nhóm riêng "Khóa theo mục tiêu" (hoặc gộp vào nhóm hợp lý, theo kết quả bước 1).
-3. Thêm test: lead với từng mã mới được nhận (201), mã lạ bị từ chối (400), lead cũ vẫn hợp lệ.
-4. Xác nhận trang `/leads` hiển thị nhãn mới thay vì mã thô.
+1. Đọc `LEAD_COURSE_GROUPS` và chỗ nào dùng nó (web, lead-gate.js, test drift của profile).
+2. Thêm 3 mã vào `LEAD_COURSES`, nhãn tiếng Việt trong `LEAD_COURSE_LABELS`, và nhóm mới `target: { label: "Khóa theo mục tiêu", codes: [...] }` trong `LEAD_COURSE_GROUPS` (trước nhóm `other`).
+3. Đồng bộ `PLACEMENT_COURSE_GROUPS` trong `apps/profile/public/kiem-tra-dau-vao/lead-gate.js` khớp chính xác với `LEAD_COURSE_GROUPS`.
+4. Thêm test: lead với từng mã mới được nhận (201), mã lạ bị từ chối (400), lead cũ vẫn hợp lệ.
+5. Cập nhật `apps/server/src/lead-catalog-drift.test.ts` để kiểm tra nhóm mới và tính tương thích của danh mục.
+6. Xác nhận trang `/leads` hiển thị nhãn mới thay vì mã thô.
 
 ## Validation
 - `pnpm --filter @teacher-os/api test` (hoặc tên package thực tế trong `packages/api/package.json`) và `pnpm --filter server test -- public-leads`
