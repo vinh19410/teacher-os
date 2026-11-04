@@ -328,11 +328,18 @@ export function useStudentMe() {
 	});
 }
 
-export function useStudentOverview() {
+export interface UseStudentOverviewOptions {
+	refetchOnMount?: boolean | "always";
+	refetchOnWindowFocus?: boolean | "always";
+	staleTime?: number;
+}
+
+export function useStudentOverview(options?: UseStudentOverviewOptions) {
 	return useQuery({
 		queryKey: ["student", "overview"],
 		queryFn: fetchStudentOverview,
 		staleTime: 60_000,
+		...options,
 	});
 }
 
