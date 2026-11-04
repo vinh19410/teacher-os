@@ -264,4 +264,56 @@ describe("Email OTP authentication in packages/auth (#578)", () => {
 		);
 		expect(resetRes.status).toBeGreaterThanOrEqual(400);
 	});
+
+	test("pre-hijack protection: unverified user with credential password has credential revoked upon OTP login", async () => {
+		const ctx = await setup();
+		const email = "unverified-hijack@example.com";
+		const now = Date.now();
+
+		// Attacker registered account with password, but never verified email
+		await ctx.raw.execute({
+			sql: "INSERT INTO user (id, name, email, email_verified, created_at, updated_at, role) VALUES (?, ?, ?, ?, ?, ?, ?)",
+			args: ["u-hijack", "Victim", email, 0, now, now, "student"],
+		});
+		await ctx.raw.execute({
+			sql: "INSERT INTO account (id, account_id, provider_id, user_id, password, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+			args: [
+				"acc-hijack",
+				email,
+				"credential",
+				"u-hijack",
+				"attacker-password-hash",
+				now,
+				now,
+			],
+		});
+
+		// Victim logs in via OTP
+		const sendRes = await sendOtp(ctx, STUDENT_ORIGIN, email);
+		expect(sendRes.status).toBe(200);
+		const otp =
+			ctx.send.mock.calls[0][0].text.match(/\b\d{6}\b/)?.[0] ?? "";
+		expect(otp).toBeTruthy();
+
+		const signInRes = await signInOtp(ctx, STUDENT_ORIGIN, email, otp);
+		expect(signInRes.status).toBe(200);
+
+		// Account credential created by attacker must be revoked!
+		const accountRows = (
+			await ctx.raw.execute({
+				sql: "SELECT * FROM account WHERE user_id = ?",
+				args: ["u-hijack"],
+			})
+		).rows;
+		expect(accountRows.length).toBe(0);
+
+		// User email_verified is now true
+		const userRow = (
+			await ctx.raw.execute({
+				sql: "SELECT email_verified FROM user WHERE id = ?",
+				args: ["u-hijack"],
+			})
+		).rows[0];
+		expect(userRow.email_verified).toBe(1);
+	});
 });
