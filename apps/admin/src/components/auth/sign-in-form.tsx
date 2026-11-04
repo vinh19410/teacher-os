@@ -77,7 +77,7 @@ export function SignInForm({
 				event.stopPropagation();
 				void form.handleSubmit();
 			}}
-			className="fade-in slide-in-from-bottom-1 animate-in duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)] motion-reduce:animate-none"
+			className="fade-in slide-in-from-bottom-1 grid animate-in gap-4 duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)] motion-reduce:animate-none"
 		>
 			{signedIn && (
 				<NoticeOk title="Đăng nhập thành công">Đang mở cổng quản trị…</NoticeOk>
