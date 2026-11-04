@@ -1,7 +1,7 @@
 ---
 title: "fix(study-pack): follow-up từ review release #553"
 description: "Bổ sung snapshot 0060, khóa unique (org_id, source_pack_id) khi clone bộ đề, giữ ID study_pack_item khi sửa và đóng băng danh sách bài giao ở nhánh reused/raced, chặn race hủy/gán bộ đề dưới FK ON, kèm ghi chú rollback trong runbook."
-status: pending
+status: completed
 priority: P1
 effort: "4h"
 tags: [study-pack, db, migration, concurrency, runbook]

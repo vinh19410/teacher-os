@@ -109,10 +109,10 @@ Chặn triệt để lỗi nhân đôi `class_assignment` và `class_assignment_
 
 ## Todo
 
-- [ ] Task 2.1 — Viết test TDD (Red) cho "sửa rồi reuse", race hủy/gán với FK ON, và UI 409
-- [ ] Task 2.2 — Bảo toàn `study_pack_item.id` trong `PUT /study-packs/:id` và `PUT /api/admin/library/packs/:id`
-- [ ] Task 2.3 — Đóng băng `class_assignment` ở nhánh `reused`/`raced` và khóa nguyên tử race hủy/gán
-- [ ] Task 2.4 — Cập nhật xử lý lỗi `409 "study pack was cancelled"` trong `ClassStudyPackSection` (Green)
+- [x] Task 2.1 — Viết test TDD (Red) cho "sửa rồi reuse", race hủy/gán với FK ON, và UI 409
+- [x] Task 2.2 — Bảo toàn `study_pack_item.id` trong `PUT /study-packs/:id` và `PUT /api/admin/library/packs/:id`
+- [x] Task 2.3 — Đóng băng `class_assignment` ở nhánh `reused`/`raced` và khóa nguyên tử race hủy/gán
+- [x] Task 2.4 — Cập nhật xử lý lỗi `409 "study pack was cancelled"` trong `ClassStudyPackSection` (Green)
 
 ## Success Criteria
 

@@ -77,9 +77,9 @@ Khôi phục `packages/db/src/migrations/meta/0060_snapshot.json` khớp chính 
 
 ## Todo
 
-- [ ] Task 1.1 — Tạo `0060_snapshot.json` và xác minh chuỗi snapshot
-- [ ] Task 1.2 — Viết test TDD (Red) cho `study_pack_org_source_pack_uq` và đua song song clone
-- [ ] Task 1.3 — Khai báo index, sinh migration `0061` và xử lý xung đột clone (Green)
+- [x] Task 1.1 — Tạo `0060_snapshot.json` và xác minh chuỗi snapshot
+- [x] Task 1.2 — Viết test TDD (Red) cho `study_pack_org_source_pack_uq` và đua song song clone
+- [x] Task 1.3 — Khai báo index, sinh migration `0061` và xử lý xung đột clone (Green)
 
 ## Success Criteria
 

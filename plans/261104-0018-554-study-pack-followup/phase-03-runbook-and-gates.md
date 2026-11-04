@@ -58,8 +58,8 @@ Cập nhật `docs/production-release-runbook.md` với hướng dẫn kiểm tr
 
 ## Todo
 
-- [ ] Task 3.1 — Bổ sung mục hướng dẫn deploy & rollback Study Pack (`0060`–`0061`) vào runbook
-- [ ] Task 3.2 — Chạy cổng kiểm chứng toàn diện của repository
+- [x] Task 3.1 — Bổ sung mục hướng dẫn deploy & rollback Study Pack (`0060`–`0061`) vào runbook
+- [x] Task 3.2 — Chạy cổng kiểm chứng toàn diện của repository
 
 ## Success Criteria
 
