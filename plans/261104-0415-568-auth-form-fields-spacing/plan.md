@@ -58,3 +58,34 @@ Rủi ro đã biết: form có thuộc tính `hidden` (sign-in/sign-up có tab).
 ## Phụ thuộc / lưu ý
 
 - Không phụ thuộc issue khác.
+
+## Validation Log
+
+### Verification Results
+- Claims checked: 11 files và các vị trí thẻ `<form>`
+- Verified: 11 | Failed: 0 | Unverified: 0
+- Tier: Light (1 phase)
+- Codebase facts:
+  - `apps/admin/src/routes/register.tsx:83`: `<form className="grid gap-4">` là precedent chuẩn.
+  - `apps/student/src/components/auth/otp-sign-in-form.tsx:195`: cũng đã dùng `grid gap-4`.
+  - Cả 11 form auth còn lại đều thiếu layout gap trên thẻ `<form>`.
+
+## Red Team Review
+
+### Persona Analysis
+1. **Security Adversary:**
+   - *Finding:* Việc thêm class `grid gap-4` chỉ thay đổi styling CSS, không ảnh hưởng đến submit event handler, token CSRF, payload password hay validation schema.
+   - *Verdict:* Safe.
+2. **Assumption Destroyer / Failure Mode:**
+   - *Finding:* Tab Đăng nhập / Đăng ký ở student và web dùng thuộc tính HTML `hidden={hidden}` trên `<form>`. Nếu Tailwind class `grid` ghi đè `display: none` của UA stylesheet, tab bị ẩn có thể bị hiện đè lên tab đang active.
+   - *Evidence & Mitigation:* Tailwind CSS v4 preflight định nghĩa `[hidden]:where(:not([hidden="until-found"])) { display: none !important; }`. Đã kiểm chứng `otp-sign-in-form.tsx` đã dùng `grid` kết hợp animate-in mà không bị xung đột. Task 1.5 bao gồm test thực tế trên trình duyệt để đảm bảo form ẩn vẫn có `display: none`.
+   - *Verdict:* Accept with mitigation verified.
+3. **Scope Critic:**
+   - *Finding:* Khối `<p>` quay lại đăng nhập trong forgot-password-form ở student và admin có `mt-[22px]`. Khi thẻ form có `grid gap-4` (16px), margin này sẽ cộng dồn thành 38px.
+   - *Resolution:* Loại bỏ `mt-[22px]` để thống nhất gap 16px như các form khác.
+   - *Verdict:* Accept.
+
+### Whole-Plan Consistency Sweep
+- Danh sách 11 file khớp 100% giữa issue #568, plan.md và phase-01-add-form-gap.md.
+- Các câu lệnh kiểm tra và pass condition đều cơ học và nhất quán.
+- Không còn mâu thuẫn hay quyết định chưa được giải quyết.
