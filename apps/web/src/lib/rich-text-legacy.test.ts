@@ -41,10 +41,14 @@ describe("normalizeLegacyRichText", () => {
 });
 
 describe("normalizeLegacyRichText & normalizeDraftItems (#571)", () => {
-	it("escapes plain-text angle-bracket inequalities like 'a<b và c>d' and stays idempotent on second pass", () => {
+	it("escapes plain-text angle-bracket inequalities (both multiline and single-line) and stays idempotent on second pass", () => {
 		const first = normalizeLegacyRichText("Ta có a<b và c>d\nSuy ra B");
 		expect(first).toBe("Ta có a&lt;b và c&gt;d<br>Suy ra B");
 		expect(normalizeLegacyRichText(first)).toBe(first);
+
+		const singleLine = normalizeLegacyRichText("Ta có a<b và c>d & e");
+		expect(singleLine).toBe("Ta có a&lt;b và c&gt;d &amp; e");
+		expect(normalizeLegacyRichText(singleLine)).toBe(singleLine);
 		expect(normalizeLegacyRichText("<p></p>")).toBe("<p></p>");
 	});
 

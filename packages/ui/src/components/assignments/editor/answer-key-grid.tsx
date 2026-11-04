@@ -10,7 +10,7 @@ import { Field, Input, Select } from "@teacher-os/ui/components/web-kit/field";
 import { RichTextEditor } from "@teacher-os/ui/components/web-kit/rich-text-editor";
 import { countBlanks } from "@teacher-os/ui/lib/cloze";
 import { cn } from "@teacher-os/ui/lib/utils";
-import { Fragment, useState } from "react";
+import { Fragment, memo, useCallback, useRef, useState } from "react";
 import {
 	answerChoices,
 	emptyItem,
@@ -143,6 +143,30 @@ function rowIsEmpty(item: QuestionItem): boolean {
 	if (item.explanation && !isEmptyRichText(item.explanation)) return false;
 	return (item.opts ?? []).every((option) => !option.trim());
 }
+
+const ExplanationRowField = memo(function ExplanationRowField({
+	index,
+	number,
+	value,
+	onExplanationChange,
+}: {
+	index: number;
+	number: number;
+	value: string;
+	onExplanationChange: (index: number, value: string) => void;
+}) {
+	return (
+		<div className="sm:col-span-4">
+			<Field label={`Giải thích câu ${number}`}>
+				<RichTextEditor
+					value={value}
+					onChange={(nextValue) => onExplanationChange(index, nextValue)}
+					contentClassName="[&_.ProseMirror]:min-h-16"
+				/>
+			</Field>
+		</div>
+	);
+});
 
 export function AnswerKeyGrid({
 	typeId,
@@ -305,9 +329,12 @@ export function AnswerKeyGrid({
 	};
 	/** #424 Task 1.1 — giải thích rich text; plain text rỗng thì xóa key
 	 * (không lưu chuỗi rỗng lên wire schema). */
-	const updateExplanation = (index: number, value: string) => {
-		onItemsChange(
-			items.map((item, itemIndex) => {
+	const latestRef = useRef({ items, onItemsChange });
+	latestRef.current = { items, onItemsChange };
+	const updateExplanation = useCallback((index: number, value: string) => {
+		const { items: currentItems, onItemsChange: emit } = latestRef.current;
+		emit(
+			currentItems.map((item, itemIndex) => {
 				if (itemIndex !== index) return item;
 				if (htmlToPlainText(value).trim() === "") {
 					const next = { ...item };
@@ -317,7 +344,7 @@ export function AnswerKeyGrid({
 				return { ...item, explanation: value };
 			}),
 		);
-	};
+	}, []);
 	const focusRow = (index: number) => {
 		if (typeof document === "undefined") return;
 		// Scope theo wrapper của chính grid (review RF-F1): data-qindex trùng
@@ -356,7 +383,8 @@ export function AnswerKeyGrid({
 		// 1–8) tuyệt đối không kích hoạt phím tắt đổi đáp án. `closest` phủ cả
 		// node con bên trong ProseMirror và môi trường jsdom thiếu isContentEditable.
 		const editingRichText = Boolean(
-			target.isContentEditable || target.closest?.('[contenteditable="true"]'),
+			target.isContentEditable ||
+				target.closest?.('[contenteditable="true"], [role="toolbar"]'),
 		);
 		if (event.key === "Enter" && !editingRichText) {
 			event.preventDefault();
@@ -702,15 +730,12 @@ export function AnswerKeyGrid({
 										</div>
 									)}
 									{showExplanation && (
-										<div className="sm:col-span-4">
-											<Field label={`Giải thích câu ${number}`}>
-												<RichTextEditor
-													value={item.explanation ?? ""}
-													onChange={(value) => updateExplanation(index, value)}
-													contentClassName="[&_.ProseMirror]:min-h-16"
-												/>
-											</Field>
-										</div>
+										<ExplanationRowField
+											index={index}
+											number={number}
+											value={item.explanation ?? ""}
+											onExplanationChange={updateExplanation}
+										/>
 									)}
 								</fieldset>
 							)}

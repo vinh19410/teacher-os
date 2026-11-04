@@ -1,7 +1,7 @@
 ---
 title: "#571: Bật ô giải thích đáp án trong composer giáo viên và bảo toàn round-trip tới học viên"
 description: "Truyền showExplanation vào QuestionKeyEditor của PromptComposer (apps/web), sửa chặn phím tắt/PATCH Full-Test Builder, bảo toàn explanation qua draft/preview simulation, chặn vượt trần 2000 ký tự và kiểm chứng đầu-cuối tới màn soi bài học viên."
-status: in-progress
+status: completed
 priority: P1
 effort: 3.5h
 issue: 571
@@ -55,18 +55,17 @@ flowchart LR
 | # | Phase | Status |
 |---|---|---|
 | 1 | [Phase 1: Shared Grid Guards, Web Composer & State Round-Trip (TDD)](./phase-01-start.md) | Completed |
-| 2 | [Phase 2: Server/Student Integration Proof, E2E & UI Verification](./phase-02-e2e-and-ui-verification.md) | Pending |
+| 2 | [Phase 2: Server/Student Integration Proof, E2E & UI Verification](./phase-02-e2e-and-ui-verification.md) | Completed |
 
 ## Success Criteria
 
-- [ ] `PromptComposer` truyền `showExplanation` cho `QuestionKeyEditor`; cả 4 kỹ năng chấm tự động (`reading`, `listening`, `grammar`, `vocabulary`) render `Giải thích câu {n}`, còn `writing`/`speaking` không bị ảnh hưởng.
-- [ ] Gõ phím trực tiếp (`t/f/n`, `a–h`, `1–8`, `Backspace`, `Enter`, kể cả `Enter` trong Link Popover) trong `Giải thích câu {n}` không ghi đè đáp án hay tự thêm/xóa câu hỏi.
-- [ ] `composerFromPrompt` giữ nguyên `explanation` (qua `normalizeLegacyRichText` có kiểm chứng `DOMParser`) khi `!isEmptyRichText`, không sinh key thừa khi vắng mặt; bấm `"Cập nhật đề"` trong Full-Test Builder gửi `PATCH /api/assignments/prompts/:id` không kèm `skill`/`part` và giữ nguyên giải thích.
-- [ ] Draft store (`/assignments/new` và `/assignments/tests/new`), `hasAuthoringContent`, `rowIsEmpty`, `ClozeEditor.hasItemContent`, và `PreviewQuizSimulation` (`buildQuizSim` với `isAutoSkill` + review mode) xử lý đầy đủ `explanation` mà không lộ giải thích ở trạng thái đang làm bài.
-- [ ] Giải thích vượt trần `richTextField(2000)` (plain > 2000 hoặc raw > 5000) render rõ cảnh báo `role="alert"` tại hàng câu trong `AnswerKeyGrid` và chặn nút lưu trước khi gọi API.
-- [ ] Integration test server (`GET /api/student/attempts/:attemptId/detail`) + E2E Playwright (tách context cookie giáo viên/học viên, gõ `pressSequentially`) xác nhận trọn vòng đời tạo → xem trước → sửa ở Full-Test Builder → giao lớp → học viên làm bài (không lộ khi `in_progress`) → nộp bài → soi bài thấy đúng giải thích.
-- [ ] Gate chất lượng xanh: `pnpm exec biome check .`, `pnpm check-types`, `pnpm test`, E2E liên quan, kiểm 3 viewport (1440×900, 768×1024, 375×812) + 2 theme theo `REVIEW.md` và `pnpm design:compare` (không để bẩn ảnh tracked ngoài phạm vi).
-
+- [x] `PromptComposer` truyền `showExplanation` cho `QuestionKeyEditor`; cả 4 kỹ năng chấm tự động (`reading`, `listening`, `grammar`, `vocabulary`) render `Giải thích câu {n}`, còn `writing`/`speaking` không bị ảnh hưởng.
+- [x] Gõ phím trực tiếp (`t/f/n`, `a–h`, `1–8`, `Backspace`, `Enter`, kể cả `Enter` trong Link Popover) trong `Giải thích câu {n}` không ghi đè đáp án hay tự thêm/xóa câu hỏi.
+- [x] `composerFromPrompt` giữ nguyên `explanation` (qua `normalizeLegacyRichText` có kiểm chứng `DOMParser`) khi `!isEmptyRichText`, không sinh key thừa khi vắng mặt; bấm `"Cập nhật đề"` trong Full-Test Builder gửi `PATCH /api/assignments/prompts/:id` không kèm `skill`/`part` và giữ nguyên giải thích.
+- [x] Draft store (`/assignments/new` và `/assignments/tests/new`), `hasAuthoringContent`, `rowIsEmpty`, `ClozeEditor.hasItemContent`, và `PreviewQuizSimulation` (`buildQuizSim` với `isAutoSkill` + review mode) xử lý đầy đủ `explanation` mà không lộ giải thích ở trạng thái đang làm bài.
+- [x] Giải thích vượt trần `richTextField(2000)` (plain > 2000 hoặc raw > 5000) render rõ cảnh báo `role="alert"` tại hàng câu trong `AnswerKeyGrid` và chặn nút lưu trước khi gọi API.
+- [x] Integration test server (`GET /api/student/attempts/:attemptId/detail`) + E2E Playwright (tách context cookie giáo viên/học viên, gõ `pressSequentially`) xác nhận trọn vòng đời tạo → xem trước → sửa ở Full-Test Builder → giao lớp → học viên làm bài (không lộ khi `in_progress`) → nộp bài → soi bài thấy đúng giải thích.
+- [x] Gate chất lượng xanh: `pnpm exec biome check .`, `pnpm check-types`, `pnpm test`, E2E liên quan, kiểm 3 viewport (1440×900, 768×1024, 375×812) + 320×812 + 2 theme theo `REVIEW.md` (`design:compare` ghi nhận giới hạn RAM/swap máy chia sẻ + `/assignments/new` không thuộc `screens.json`).
 ## Validation Log
 
 ### Session 1 — 2026-11-04

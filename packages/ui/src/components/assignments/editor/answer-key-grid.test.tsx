@@ -955,6 +955,29 @@ describe("AnswerKeyGrid — bảo vệ bàn phím và trần explanation (#571)"
 		portalEnter.preventDefault();
 		fieldset.dispatchEvent(portalEnter);
 		expect(onAddQuestion).not.toHaveBeenCalled();
+
+		// Nhấn Enter hoặc phím tắt trên thanh công cụ RichTextToolbar không được thêm câu hay đổi đáp án
+		const boldBtn = container.querySelector(
+			'fieldset[aria-label="Câu 1"] [role="toolbar"] button',
+		);
+		if (!boldBtn) throw new Error("missing toolbar button");
+		const toolbarEnter = new KeyboardEvent("keydown", {
+			key: "Enter",
+			bubbles: true,
+			cancelable: true,
+		});
+		boldBtn.dispatchEvent(toolbarEnter);
+		expect(toolbarEnter.defaultPrevented).toBe(false);
+		expect(onAddQuestion).not.toHaveBeenCalled();
+
+		const toolbarN = new KeyboardEvent("keydown", {
+			key: "n",
+			bubbles: true,
+			cancelable: true,
+		});
+		boldBtn.dispatchEvent(toolbarN);
+		expect(toolbarN.defaultPrevented).toBe(false);
+		expect(onItemsChange).not.toHaveBeenCalled();
 	});
 
 	it("Backspace trên hàng chỉ có explanation không xóa hàng", () => {

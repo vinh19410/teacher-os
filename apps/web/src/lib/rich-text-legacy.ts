@@ -12,9 +12,11 @@ import type { QuestionItem } from "@/components/assignments/assignment-presets";
 
 const HTML_TAG_RE = /<\/?[a-z][^>]*>/i;
 const PAIRED_OR_VOID_TAG_RE = /<\/[a-z][a-z0-9]*\s*>|<(?:br|hr|img)\b[^>]*>/i;
+const HTML_ENTITY_RE = /&(?:amp|lt|gt|quot|#39);/i;
 
-/** Quick heuristic: does this string already contain real HTML markup? */
+/** Quick heuristic: does this string already contain real HTML markup or entities? */
 export function looksLikeHtml(text: string): boolean {
+	if (HTML_ENTITY_RE.test(text)) return true;
 	if (!HTML_TAG_RE.test(text) || !PAIRED_OR_VOID_TAG_RE.test(text)) {
 		return false;
 	}
