@@ -144,6 +144,130 @@ test("inline classic JS <script> blocks compile without SyntaxError (#559)", () 
 	assert.ok(compiledCount >= 1, "expected at least 1 inline JS <script>");
 });
 
+function extractPlacementTestLinks(fragment) {
+	const links = [];
+	const anchorRegex = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
+	for (const match of fragment.matchAll(anchorRegex)) {
+		const attrs = match[1] ?? "";
+		const body = match[2] ?? "";
+		const hrefMatch = attrs.match(
+			/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>"']+))/i,
+		);
+		const rawHref = (
+			hrefMatch?.[1] ??
+			hrefMatch?.[2] ??
+			hrefMatch?.[3] ??
+			""
+		).trim();
+		if (!rawHref) continue;
+		try {
+			const parsed = new URL(rawHref, "https://msmy.io.vn/");
+			if (
+				parsed.origin === "https://msmy.io.vn" &&
+				parsed.pathname.replace(/\/+$/, "") === "/kiem-tra-dau-vao"
+			) {
+				links.push({ attrs, body, index: match.index ?? 0, rawHref });
+			}
+		} catch {
+			// Ignore non-URL schemes if any appear
+		}
+	}
+	return links;
+}
+
+test("site-header has a single kiem-tra-dau-vao entry point in .nav-actions (#562)", () => {
+	const cleanHtml = html.replace(/<!--[\s\S]*?-->/g, "");
+	const headerMatch = cleanHtml.match(
+		/<header\b[^>]*\bclass\s*=\s*["'][^"']*\bsite-header\b[^"']*["'][^>]*>([\s\S]*?)<\/header>/i,
+	);
+	assert.ok(headerMatch, 'expected <header class="site-header">');
+	const headerOuter = headerMatch[0];
+	const headerInner = headerMatch[1] ?? "";
+
+	for (const tag of ["header", "nav", "ul", "li", "div", "a", "span"]) {
+		const openCount = (headerOuter.match(new RegExp(`<${tag}\\b`, "gi")) ?? [])
+			.length;
+		const closeCount = (
+			headerOuter.match(new RegExp(`</${tag}\\s*>`, "gi")) ?? []
+		).length;
+		assert.equal(
+			openCount,
+			closeCount,
+			`unbalanced <${tag}> tags inside .site-header`,
+		);
+	}
+
+	const navLinksMatch = headerInner.match(
+		/<ul\b[^>]*\bclass\s*=\s*["'][^"']*\bnav-links\b[^"']*["'][^>]*>([\s\S]*?)<\/ul>/i,
+	);
+	assert.ok(navLinksMatch, 'expected <ul class="nav-links"> in .site-header');
+	for (const anchor of [
+		"#bo-ho-so-pdf",
+		"#ho-so-giang-vien",
+		"#lo-trinh-khoa-hoc",
+	]) {
+		assert.match(navLinksMatch[1] ?? "", new RegExp(`href="${anchor}"`));
+	}
+
+	const headerTestLinks = extractPlacementTestLinks(headerInner);
+	assert.equal(
+		headerTestLinks.length,
+		1,
+		`expected exactly 1 /kiem-tra-dau-vao link in .site-header, found ${headerTestLinks.length}`,
+	);
+	assert.equal(
+		extractPlacementTestLinks(navLinksMatch[1] ?? "").length,
+		0,
+		"expected 0 /kiem-tra-dau-vao links in .nav-links",
+	);
+
+	const navActionsOpen = headerInner.match(
+		/<div\b[^>]*\bclass\s*=\s*["'][^"']*\bnav-actions\b[^"']*["'][^>]*>/i,
+	);
+	assert.ok(
+		navActionsOpen,
+		'expected <div class="nav-actions"> in .site-header',
+	);
+	const navActionsStart = navActionsOpen.index ?? 0;
+	let divDepth = 0;
+	let navActionsEnd = -1;
+	for (const divTag of headerInner
+		.slice(navActionsStart)
+		.matchAll(/<\/?div\b[^>]*>/gi)) {
+		divDepth += divTag[0].startsWith("</") ? -1 : 1;
+		if (divDepth === 0) {
+			navActionsEnd = navActionsStart + (divTag.index ?? 0) + divTag[0].length;
+			break;
+		}
+	}
+	assert.ok(
+		navActionsEnd > navActionsStart,
+		"expected balanced closing </div> for .nav-actions",
+	);
+	assert.ok(
+		headerTestLinks[0].index > navActionsStart &&
+			headerTestLinks[0].index < navActionsEnd,
+		"expected header placement test CTA to reside within .nav-actions bounds",
+	);
+	assert.match(headerTestLinks[0].attrs, /\bbtn-gold\b/);
+	assert.match(headerTestLinks[0].body, /Làm Test Miễn Phí/);
+
+	const headerStart = headerMatch.index ?? 0;
+	const nonHeaderHtml =
+		cleanHtml.slice(0, headerStart) +
+		cleanHtml.slice(headerStart + headerOuter.length);
+	assert.equal(
+		extractPlacementTestLinks(nonHeaderHtml).length,
+		8,
+		"expected all 8 non-header /kiem-tra-dau-vao CTAs to remain intact",
+	);
+	const floatingMatch = nonHeaderHtml.match(
+		/<div\b[^>]*\bclass\s*=\s*["'][^"']*\bfloating-cta-btns\b[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
+	);
+	assert.ok(floatingMatch, "expected .floating-cta-btns outside header");
+	assert.equal(extractPlacementTestLinks(floatingMatch[1] ?? "").length, 1);
+});
+
 test("header has exactly one #studentPortalLink in .nav-actions with default prod href and rel=noopener (#560)", () => {
 	const allPortalIds = html.match(/\bid="studentPortalLink"/g) ?? [];
 	assert.equal(allPortalIds.length, 1);
