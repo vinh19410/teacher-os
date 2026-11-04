@@ -1442,33 +1442,6 @@
       font-weight: 700;
     }
 
-    .examenglish-details {
-      border: 1px dashed var(--line-strong);
-      border-radius: var(--radius-sm);
-      padding: 12px 14px;
-      background: var(--paper-warm);
-    }
-
-    .examenglish-details summary {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--brand);
-      cursor: pointer;
-    }
-
-    .examenglish-body {
-      margin-top: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .examenglish-body a {
-      color: var(--brand);
-      text-decoration: underline;
-      font-weight: 600;
-    }
-
     .quiz-applied-banner {
       font-size: 13px;
       font-weight: 600;
@@ -2831,20 +2804,6 @@
 
                 <input type="hidden" id="quizPlacementInput" name="placement" value="">
                 <div class="field full-span quiz-applied-banner" id="quizPlacementBanner" hidden></div>
-
-                <details class="field full-span examenglish-details" id="examEnglishDetails">
-                  <summary>Đã làm test examenglish? (nhập kết quả nếu có)</summary>
-                  <div class="examenglish-body">
-                    <span class="field-help">
-                      Nếu bạn đã làm bài test trên ExamEnglish
-                      (<a href="https://www.examenglish.com/leveltest/grammar_level_test.htm" target="_blank" rel="noopener">Grammar &amp; Vocabulary</a> •
-                      <a href="https://www.examenglish.com/leveltest/listening_level_test.htm" target="_blank" rel="noopener">Listening</a>),
-                      hãy ghi lại kết quả CEFR của bạn:
-                    </span>
-                    <label for="examEnglishInput">Kết quả ExamEnglish</label>
-                    <input type="text" id="examEnglishInput" class="input-control" maxlength="200" placeholder="Ví dụ: Grammar B1, Listening A2">
-                  </div>
-                </details>
               </div>
 
               <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px;">
@@ -3217,7 +3176,6 @@
       const targetNoteInput = document.getElementById('targetNote');
       const quizPlacementInput = document.getElementById('quizPlacementInput');
       const quizPlacementBanner = document.getElementById('quizPlacementBanner');
-      const examEnglishInput = document.getElementById('examEnglishInput');
       const websiteField = document.getElementById('websiteField');
       const submitLeadBtn = document.getElementById('submitLeadBtn');
       const fieldName = document.getElementById('fieldName');
@@ -3302,11 +3260,7 @@
       }
 
       function getCombinedPlacement() {
-        const parts = [
-          quizPlacementInput ? quizPlacementInput.value.trim() : '',
-          examEnglishInput ? examEnglishInput.value.trim() : ''
-        ].filter(Boolean);
-        return parts.join(' | ').slice(0, 300);
+        return quizPlacementInput ? quizPlacementInput.value.trim().slice(0, 300) : '';
       }
 
       function saveDraft() {
@@ -3321,8 +3275,7 @@
             studyDays: getCheckedRadioValue('studyDays'),
             timeSlot: getCheckedRadioValue('timeSlot'),
             note: targetNoteInput.value,
-            quizPlacement: quizPlacementInput.value,
-            examEnglish: examEnglishInput.value
+            quizPlacement: quizPlacementInput.value
           };
           localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
         } catch (err) {
@@ -3358,7 +3311,6 @@
             quizPlacementBanner.textContent = 'Đã đính kèm: ' + draft.quizPlacement;
             quizPlacementBanner.removeAttribute('hidden');
           }
-          if (typeof draft.examEnglish === 'string') examEnglishInput.value = draft.examEnglish;
           if (draft.name || draft.phone || draft.quizPlacement) {
             formRenderedAt = Math.min(formRenderedAt, Date.now() - 3500);
           }
