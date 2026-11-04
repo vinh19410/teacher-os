@@ -105,3 +105,46 @@ describe("PromptComposer showExplanation (#571)", () => {
 		expect(writingHtml).not.toContain("Giải thích câu");
 	});
 });
+
+describe("PromptComposer — optional Writing section on auto skills (#574)", () => {
+	it("shows 'Thêm phần Writing' on auto skills when !lockPart, hides on writing/speaking and when lockPart=true", () => {
+		const autoHtml = renderToStaticMarkup(
+			<PromptComposer
+				value={readingComposer()}
+				showErrors={false}
+				status="ready"
+				onFieldChange={vi.fn()}
+			/>,
+		);
+		expect(autoHtml).toContain("Thêm phần Writing");
+
+		const lockedHtml = renderToStaticMarkup(
+			<PromptComposer
+				value={readingComposer()}
+				showErrors={false}
+				status="ready"
+				lockPart
+				onFieldChange={vi.fn()}
+			/>,
+		);
+		expect(lockedHtml).not.toContain("Thêm phần Writing");
+
+		const withWritingHtml = renderToStaticMarkup(
+			<PromptComposer
+				value={{
+					...readingComposer(),
+					writing: {
+						part: "task2",
+						type: "discuss",
+						prompt: "<p>Write about urbanization.</p>",
+					},
+				}}
+				showErrors={false}
+				status="ready"
+				onFieldChange={vi.fn()}
+			/>,
+		);
+		expect(withWritingHtml).toContain("Phần Writing đi kèm");
+		expect(withWritingHtml).toContain("Bỏ phần Writing");
+	});
+});

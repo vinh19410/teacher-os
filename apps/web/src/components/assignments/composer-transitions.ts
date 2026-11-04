@@ -61,7 +61,7 @@ export function structuralChangeKind(
  * teacher into a dialog). A typed option-bank row is authored content too —
  * losing it on a type change must be confirmed (phase-02 FR3).
  */
-export function hasAuthoringContent(value: ComposerValue): boolean {
+export function hasPrimaryAuthoringContent(value: ComposerValue): boolean {
 	if (
 		value.items.some(
 			(item) =>
@@ -85,6 +85,11 @@ export function hasAuthoringContent(value: ComposerValue): boolean {
 	);
 }
 
+export function hasAuthoringContent(value: ComposerValue): boolean {
+	if (hasPrimaryAuthoringContent(value)) return true;
+	return Boolean(value.writing && !isEmptyRichText(value.writing.prompt));
+}
+
 /**
  * Apply a field patch exactly like the pre-grid editor did, plus the FR5
  * carry-over rule: `transcript` survives part/type changes within one skill;
@@ -102,10 +107,15 @@ export function applyComposerFieldChange(
 	patch: Partial<ComposerValue>,
 ): ComposerValue {
 	if (patch.skill !== undefined && patch.skill !== current.skill) {
+		const keepWriting =
+			isAutoSkill(current.skill) && isAutoSkill(patch.skill)
+				? (current.writing ?? null)
+				: null;
 		return {
 			...current,
 			...patch,
 			...emptyComposer(patch.skill, patch.type ?? current.type),
+			writing: keepWriting,
 		};
 	}
 	const partChanged = patch.part !== undefined && patch.part !== current.part;

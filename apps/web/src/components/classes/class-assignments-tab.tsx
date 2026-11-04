@@ -1,5 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { formatBand, isGradableSkill } from "@teacher-os/api/lib/ielts-band";
+import {
+	formatBand,
+	hasGradableTask,
+	isGradableSkill,
+} from "@teacher-os/api/lib/ielts-band";
+import { isEmptyRichText } from "@teacher-os/api/rich-text";
 import { parseStartDateStrict } from "@teacher-os/api/skeleton";
 import {
 	addDaysISO,
@@ -13,6 +18,7 @@ import { RichTextBody } from "@teacher-os/ui/components/assignments/rich-text-bo
 import { BookOpen, ChevronDown, Headphones, Mic, PenLine } from "lucide-react";
 import { type ComponentType, useMemo, useState } from "react";
 import {
+	isAutoSkill,
 	partOf,
 	type SkillId,
 	skillOf,
@@ -57,6 +63,8 @@ const PICKER_SKILL_OPTIONS = [
 	"Reading",
 	"Listening",
 	"Speaking",
+	"Grammar",
+	"Vocabulary",
 ];
 
 /** Icon kỹ năng cho header accordion bài đã giao (#391, design SKILL_ICON);
@@ -67,6 +75,8 @@ const SKILL_ICON: Record<string, ComponentType<{ className?: string }>> = {
 	reading: BookOpen,
 	listening: Headphones,
 	speaking: Mic,
+	grammar: BookOpen,
+	vocabulary: BookOpen,
 };
 
 /** Nút "Chấm bài" (Link, không phải button thật) — outline `size=sm` của
@@ -277,6 +287,8 @@ export function ClassAssignmentsTab({
 		else if (opt === "Reading") setSkillFilter("reading");
 		else if (opt === "Listening") setSkillFilter("listening");
 		else if (opt === "Speaking") setSkillFilter("speaking");
+		else if (opt === "Grammar") setSkillFilter("grammar");
+		else if (opt === "Vocabulary") setSkillFilter("vocabulary");
 		else setSkillFilter("all");
 	}
 
@@ -289,7 +301,11 @@ export function ClassAssignmentsTab({
 					? "Listening"
 					: skillFilter === "speaking"
 						? "Speaking"
-						: "Tất cả";
+						: skillFilter === "grammar"
+							? "Grammar"
+							: skillFilter === "vocabulary"
+								? "Vocabulary"
+								: "Tất cả";
 	// Action bar copy
 	const actionState = useMemo(() => {
 		if (!promptOk) {
@@ -587,6 +603,7 @@ export function ClassAssignmentsTab({
 											</div>
 											<div className="flex flex-wrap items-center gap-2 text-xs">
 												<Tag>{skill.name}</Tag>
+												{p.writing != null && <Tag>+ Writing</Tag>}
 												{isAlreadyAssigned ? (
 													<StatusTag tone="used">Đã giao lớp này</StatusTag>
 												) : (
@@ -819,17 +836,44 @@ export function ClassAssignmentsTab({
 								})()}
 							</p>
 							{selectedPrompt ? (
-								// This surface showed the raw string with pre-wrap —
-								// legacy plain rows keep that exact whitespace behavior.
-								<RichTextBody
-									text={
-										selectedPrompt.skill === "reading"
-											? (selectedPrompt.passage ?? selectedPrompt.prompt)
-											: selectedPrompt.prompt
-									}
-									legacyWhitespace="pre-wrap"
-									className="mt-3 text-foreground text-sm leading-[1.55]"
-								/>
+								<>
+									{isAutoSkill(selectedPrompt.skill ?? "writing") && (
+										<p className="mt-3 font-medium text-foreground text-xs">
+											Phần 1 · {(selectedPrompt.questions ?? []).length} câu hỏi
+											trắc nghiệm
+										</p>
+									)}
+									{!isEmptyRichText(
+										isAutoSkill(selectedPrompt.skill ?? "writing")
+											? (selectedPrompt.passage ?? "")
+											: selectedPrompt.prompt,
+									) && (
+										<RichTextBody
+											text={
+												isAutoSkill(selectedPrompt.skill ?? "writing")
+													? (selectedPrompt.passage ?? "")
+													: selectedPrompt.prompt
+											}
+											legacyWhitespace="pre-wrap"
+											className="mt-2 text-foreground text-sm leading-[1.55]"
+										/>
+									)}
+									{selectedPrompt.writing != null && (
+										<div className="mt-3 border-border border-t pt-2.5 text-sm">
+											<p className="font-medium text-foreground text-xs">
+												Phần 2 · Writing (
+												{selectedPrompt.writing.part === "task1"
+													? "Task 1"
+													: "Task 2"}
+												)
+											</p>
+											<RichTextBody
+												text={selectedPrompt.writing.prompt}
+												className="mt-1 text-foreground text-sm leading-[1.55]"
+											/>
+										</div>
+									)}
+								</>
 							) : (
 								<p className="mt-3 text-foreground text-sm leading-[1.55]">
 									Đề sẽ hiện khi bạn chọn từ ngân hàng.
@@ -838,6 +882,7 @@ export function ClassAssignmentsTab({
 							{selectedPrompt && previewType && (
 								<div className="mt-3 flex flex-wrap gap-2">
 									{previewSkill && <Tag>{previewSkill.name}</Tag>}
+									{selectedPrompt.writing != null && <Tag>+ Writing</Tag>}
 									{previewPart && <Tag>{previewPart.label}</Tag>}
 									<Tag>{previewType.label}</Tag>
 									<Tag>{`Band ${selectedPrompt.band}`}</Tag>
@@ -954,10 +999,13 @@ export function ClassAssignmentsTab({
 						const doneCount = ca.targets.filter(
 							(t) => t.submittedAt !== null,
 						).length;
-						const skill =
-							data.assignmentPrompts?.find((p) => p.id === ca.promptId)
-								?.skill ?? "";
-						const gradable = isGradableSkill(skill);
+						const promptRow = data.assignmentPrompts?.find(
+							(p) => p.id === ca.promptId,
+						);
+						const skill = promptRow?.skill ?? "";
+						const gradable = promptRow
+							? hasGradableTask(promptRow)
+							: isGradableSkill(skill);
 						const SkillIcon = SKILL_ICON[skill] ?? BookOpen;
 						const open = (userOpenIds ?? defaultOpenIds).has(ca.id);
 						const pctDone =
@@ -998,6 +1046,7 @@ export function ClassAssignmentsTab({
 											</span>
 										</span>
 									</span>
+									{promptRow?.writing != null && <Tag>+ Writing</Tag>}
 									<StatusTag tone={rollup.tone}>{rollup.label}</StatusTag>
 									<span className="hidden w-24 sm:block">
 										<span className="block h-1.5 overflow-hidden rounded-full bg-muted">

@@ -292,3 +292,34 @@ describe("StudentPreviewPaper — per-question type (mixed prompts)", () => {
 		expect(html).toContain("chế tác / vật liệu");
 	});
 });
+
+describe("StudentPreviewPaper — hybrid writing section (#574)", () => {
+	it("renders both auto-graded questions and Phần 2 · Writing block", () => {
+		const html = renderToStaticMarkup(
+			<StudentPreviewPaper
+				{...base({
+					skill: "grammar",
+					part: "tenses",
+					type: "mcq",
+					passage: "",
+					items: [
+						{
+							stem: "She ___ coffee.",
+							opts: ["drink", "drinks"],
+							answer: "B",
+							alts: "",
+						},
+					],
+					writing: {
+						part: "task2",
+						type: "discuss",
+						prompt: "<p>Discuss remote education.</p>",
+					},
+				})}
+			/>,
+		);
+		expect(html).toContain("She ___ coffee.");
+		expect(html).toContain("Phần 2 · Writing");
+		expect(html).toContain("Discuss remote education.");
+	});
+});
