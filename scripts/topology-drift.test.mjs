@@ -134,6 +134,26 @@ test("workflow LANDING_ORIGIN matches each stage apex", () => {
 	assert.equal(staging, "https://staging.teacheros.io.vn");
 });
 
+test("staging auth smoke signs up through the student portal origin so the TEACHER_EMAILS allowlist cannot reject it", async () => {
+	const { resolveDomainTopology } = await import(
+		"../packages/infra/src/topology.ts"
+	);
+	const yaml = read("../.github/workflows/deploy-staging.yml");
+	const appDomain = yaml.match(/^\s*APP_DOMAIN:\s*(\S+)\s*$/m)?.[1];
+	assert.ok(appDomain, "APP_DOMAIN found in deploy-staging.yml");
+	assert.equal(
+		yaml.match(/^\s*STUDENT_ORIGIN:\s*(\S+)\s*$/m)?.[1],
+		resolveDomainTopology(appDomain).studentOrigin,
+	);
+
+	const smoke = yaml
+		.split("- name: Smoke check auth (sign-up")[1]
+		?.split("- name:")[0];
+	assert.ok(smoke, "auth smoke step found in deploy-staging.yml");
+	assert.match(smoke, /-H "Origin: \$STUDENT_ORIGIN"/);
+	assert.doesNotMatch(smoke, /-H "Origin: \$APP_ORIGIN"/);
+});
+
 test("deploy workflows pass LEAD_ORG_ID and LEAD_ORIGINS to alchemy deploy and alchemy.run.ts wires resolveLeadOrigins (#524)", () => {
 	for (const workflow of [
 		"../.github/workflows/deploy.yml",
