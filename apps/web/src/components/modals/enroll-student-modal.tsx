@@ -126,6 +126,9 @@ export function EnrollStudentModal({
 			} else if (result?.kind === "committed") {
 				committedToastMessageRef.current = { message: successMessage };
 			}
+			// #570 review H-1: nhánh "Chọn học viên có sẵn" kết thúc ở đây — không
+			// được rơi xuống nhánh tạo học viên mới (tránh ghi trùng học viên).
+			return;
 		}
 
 		const trimmedName = name.trim();

@@ -143,10 +143,7 @@ export function PendingInviteCallout({
 				: `Email ${email} đã có hồ sơ học viên nhưng chưa hoàn tất tham gia trên Student Portal.`;
 
 	return (
-		<div
-			aria-live="polite"
-			className="flex flex-col gap-2.5 rounded-md border border-border bg-muted/60 p-3 text-sm"
-		>
+		<div className="flex flex-col gap-2.5 rounded-md border border-border bg-muted/60 p-3 text-sm">
 			<div className="flex flex-wrap items-center justify-between gap-2">
 				<Badge variant="warn" dot>
 					Chờ xác nhận

@@ -9,7 +9,6 @@ import type {
 	StudentInviteResendResponse,
 } from "@teacher-os/api/contracts";
 import { getApiBaseUrl } from "./api-base-url";
-import { kernelQueryKey } from "./kernel";
 
 export const pendingInvitationsQueryKey = ["students", "invitations"] as const;
 
@@ -129,6 +128,8 @@ export async function resendStudentInvitation(
 			},
 			credentials: "include",
 			body: "{}",
+			// #570: gửi email đồng bộ tối đa ~12s server-side — không treo nút "Đang gửi..." vô hạn.
+			signal: AbortSignal.timeout(15_000),
 		},
 	);
 	if (!res.ok) {
@@ -155,6 +156,8 @@ export async function resendStudentProfileInvite(
 			body: JSON.stringify(
 				input.enrollmentId ? { enrollmentId: input.enrollmentId } : {},
 			),
+			// #570: gửi email đồng bộ tối đa ~12s server-side — không treo nút "Đang gửi..." vô hạn.
+			signal: AbortSignal.timeout(15_000),
 		},
 	);
 	if (!res.ok) {
@@ -234,9 +237,6 @@ export function useResendStudentInvite(baseUrl: string = getApiBaseUrl()) {
 		mutationFn: (input: { studentId: string; enrollmentId?: string }) =>
 			resendStudentProfileInvite(input, baseUrl),
 		onSuccess: () => {
-			void queryClient.invalidateQueries({
-				queryKey: kernelQueryKey,
-			});
 			void queryClient.invalidateQueries({
 				queryKey: pendingInvitationsQueryKey,
 			});
