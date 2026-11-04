@@ -98,6 +98,178 @@ function hasCoreContent(value: ComposerValue) {
 		? !!value.cueTopic.trim()
 		: !isEmptyRichText(value.prompt);
 }
+export type MissingRequirement = {
+	id: string;
+	label: string;
+	fieldId?: string;
+};
+
+export function missingRequirementsFor(
+	value: ComposerValue,
+	status: "draft" | "ready",
+): MissingRequirement[] {
+	const missing: MissingRequirement[] = [];
+
+	// 1. Dạng đề (chỉ bắt buộc khi status === "ready")
+	if (status === "ready" && !value.type.trim()) {
+		missing.push({
+			id: "type",
+			label: "Chọn dạng đề trước khi lưu sẵn sàng giao.",
+			fieldId: "assignment-field-type",
+		});
+	}
+
+	// 2. Tiêu đề bài tập
+	if (!value.title.trim()) {
+		missing.push({
+			id: "title",
+			label: "Nhập tiêu đề bài tập.",
+			fieldId: "assignment-field-title",
+		});
+	}
+
+	// 3. Nội dung đề / bài đọc / cueTopic
+	if (value.skill === "writing") {
+		if (isEmptyRichText(value.prompt)) {
+			missing.push({
+				id: "prompt",
+				label: "Dán hoặc soạn đề trước khi lưu.",
+				fieldId: "assignment-field-prompt",
+			});
+		}
+	} else if (value.skill === "reading") {
+		if (isEmptyRichText(value.passage)) {
+			missing.push({
+				id: "passage",
+				label: "Nhập đoạn đọc.",
+				fieldId: "assignment-field-passage",
+			});
+		}
+		if (!value.items.some((item) => item.stem.trim())) {
+			missing.push({
+				id: "reading-questions",
+				label: "Thêm ít nhất 1 câu hỏi có nội dung.",
+				fieldId: "assignment-field-questions",
+			});
+		}
+	} else if (
+		value.skill === "listening" ||
+		value.skill === "grammar" ||
+		value.skill === "vocabulary"
+	) {
+		if (!value.items.some((item) => item.stem.trim().length > 0)) {
+			missing.push({
+				id: "auto-questions",
+				label: "Thêm ít nhất 1 câu hỏi có nội dung.",
+				fieldId: "assignment-field-questions",
+			});
+		}
+	} else if (value.skill === "speaking") {
+		if (value.part === "part2") {
+			if (!value.cueTopic.trim()) {
+				missing.push({
+					id: "cueTopic",
+					label: "Nhập chủ đề cue card.",
+					fieldId: "assignment-field-cueTopic",
+				});
+			}
+		} else if (isEmptyRichText(value.prompt)) {
+			missing.push({
+				id: "prompt",
+				label: "Dán hoặc soạn đề trước khi lưu.",
+				fieldId: "assignment-field-prompt",
+			});
+		}
+	}
+
+	// Phần Writing đi kèm trong bài gộp (isAutoSkill)
+	if (
+		isAutoSkill(value.skill) &&
+		value.writing != null &&
+		isEmptyRichText(value.writing.prompt)
+	) {
+		missing.push({
+			id: "writingPrompt",
+			label: "Dán hoặc soạn đề phần Writing trước khi lưu.",
+			fieldId: "assignment-field-writing-prompt",
+		});
+	}
+
+	// 4. File nghe
+	if (
+		value.skill === "listening" &&
+		status === "ready" &&
+		!value.audioName.trim()
+	) {
+		missing.push({
+			id: "audioName",
+			label: "Đính file nghe (MP3 hoặc WAV).",
+			fieldId: "assignment-field-audio",
+		});
+	}
+
+	// 5. Ảnh minh họa
+	if (isImageBased(value.skill, value.type)) {
+		const trimmedImageUrl = value.imageUrl.trim();
+		if (trimmedImageUrl && !isAssignmentImageUrl(trimmedImageUrl)) {
+			missing.push({
+				id: "imageUrl",
+				label: "Chỉ nhận link ảnh https (tối đa 500 ký tự).",
+				fieldId: "assignment-field-image",
+			});
+		} else if (status === "ready" && !trimmedImageUrl) {
+			missing.push({
+				id: "imageUrl",
+				label: "Dán link ảnh (https) trước khi lưu.",
+				fieldId: "assignment-field-image",
+			});
+		}
+	}
+
+	// 6. Ngân hàng từ / Lỗi cú pháp câu hỏi / Ghim nhãn ảnh
+	const bankIssue = optionBankIssue(value, status);
+	if (bankIssue) {
+		missing.push({
+			id: "optionBank",
+			label: bankIssue,
+			fieldId: "assignment-field-questions",
+		});
+	}
+
+	const stemIssue = clozeStemIssue(value, status);
+	if (stemIssue) {
+		missing.push({
+			id: "questions-stem",
+			label: stemIssue,
+			fieldId: "assignment-field-questions",
+		});
+	}
+
+	const pinIssue = value.imageUrl.trim() ? imagePinIssue(value, status) : null;
+	if (pinIssue && !stemIssue) {
+		missing.push({
+			id: "questions-pin",
+			label: pinIssue,
+			fieldId: "assignment-field-questions",
+		});
+	}
+
+	// 7. Đáp án chấm tự động
+	if (
+		isAutoSkill(value.skill) &&
+		status === "ready" &&
+		countAnswers(value) !== value.items.length
+	) {
+		missing.push({
+			id: "answers",
+			label: "Khóa đáp án đúng cho mọi câu trước khi lưu sẵn sàng giao.",
+			fieldId: "assignment-field-questions",
+		});
+	}
+
+	return missing;
+}
+
 export function actionCopyFor(value: ComposerValue, status: "draft" | "ready") {
 	const auto = isAutoSkill(value.skill);
 	if (!value.title.trim())
@@ -347,32 +519,8 @@ export function NewAssignmentRoute() {
 	// Phase-04 FR2 mirror — image-based pairs gate ready on image + pins.
 	const pinIssue = imagePinIssue(value, status);
 	if (pinIssue && !stemIssue) fieldErrors.questions = pinIssue;
-	const canSave =
-		hasCoreContent(value) &&
-		!(status === "ready" && !value.type.trim()) &&
-		!(
-			value.skill === "listening" &&
-			status === "ready" &&
-			!value.audioName.trim()
-		) &&
-		!(
-			isImageBased(value.skill, value.type) &&
-			status === "ready" &&
-			!value.imageUrl.trim()
-		) &&
-		!(
-			value.skill === "reading" &&
-			value.imageUrl.trim() &&
-			!isAssignmentImageUrl(value.imageUrl)
-		) &&
-		!bankIssue &&
-		!stemIssue &&
-		!pinIssue &&
-		!(
-			isAutoSkill(value.skill) &&
-			status === "ready" &&
-			countAnswers(value) !== value.items.length
-		);
+	const missingRequirements = missingRequirementsFor(value, status);
+	const canSave = missingRequirements.length === 0;
 	const actionCopy = actionCopyFor(value, status);
 	function handleFieldChange(patch: Partial<ComposerValue>) {
 		// Confirm decision happens HERE, outside the state updater — React
@@ -419,10 +567,42 @@ export function NewAssignmentRoute() {
 		setSaved(null);
 		submit.reset();
 	}
+	function focusField(fieldId: string) {
+		if (typeof document === "undefined") return;
+		const target = document.getElementById(fieldId);
+		if (!target) return;
+
+		const tag = target.tagName.toUpperCase();
+		const isNativeControl =
+			tag === "INPUT" ||
+			tag === "TEXTAREA" ||
+			tag === "SELECT" ||
+			tag === "BUTTON" ||
+			target.isContentEditable;
+
+		const focusable = isNativeControl
+			? target
+			: (target.querySelector<HTMLElement>(
+					"[contenteditable='true'], .ProseMirror, input:not([type='hidden']), textarea, select, button",
+				) ?? (target.hasAttribute("tabindex") ? target : null));
+
+		const scrollTarget = focusable ?? target;
+		scrollTarget.scrollIntoView?.({ behavior: "smooth", block: "center" });
+		focusable?.focus({ preventScroll: true });
+	}
+
 	async function handleSubmit(event: FormEvent) {
 		event.preventDefault();
+		if (submit.saving) return;
 		setShowErrors(true);
-		if (!canSave) return;
+		const missing = missingRequirementsFor(value, status);
+		if (missing.length > 0) {
+			const firstWithField = missing.find((m) => m.fieldId);
+			if (firstWithField?.fieldId) {
+				focusField(firstWithField.fieldId);
+			}
+			return;
+		}
 		const result = await submit.run({
 			type: "create-assignment-prompt",
 			payload: {
@@ -562,7 +742,38 @@ export function NewAssignmentRoute() {
 						status={status}
 						onFieldChange={handleFieldChange}
 					/>
-					<div className="sticky bottom-0 mt-5 border-border border-t bg-background/90 py-3 backdrop-blur">
+					<div className="sticky bottom-0 z-20 mt-5 border-border border-t bg-background/95 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-sm backdrop-blur">
+						{showErrors && !canSave && (
+							<div
+								role="alert"
+								data-testid="assignment-save-missing-alert"
+								className="mb-2.5 max-h-36 overflow-y-auto rounded-md border border-destructive/30 bg-destructive/10 p-2.5 text-destructive text-xs"
+							>
+								<p className="font-semibold">
+									Cần hoàn thiện trước khi lưu ({missingRequirements.length}{" "}
+									mục):
+								</p>
+								<ul className="mt-1 list-inside list-disc space-y-0.5">
+									{missingRequirements.map((req) => (
+										<li key={req.id}>
+											{req.fieldId ? (
+												<button
+													type="button"
+													className="text-left underline hover:opacity-80"
+													onClick={() => {
+														if (req.fieldId) focusField(req.fieldId);
+													}}
+												>
+													{req.label}
+												</button>
+											) : (
+												req.label
+											)}
+										</li>
+									))}
+								</ul>
+							</div>
+						)}
 						{submit.notice && (
 							<KernelSubmitNotice
 								notice={submit.notice}
@@ -599,6 +810,7 @@ export function NewAssignmentRoute() {
 								<Button
 									type="button"
 									variant="secondary"
+									disabled={submit.saving}
 									onClick={() => {
 										savePreviewDraft(previewDraftFrom(value, status));
 										navigate({ to: "/assignments/preview" });
@@ -614,7 +826,7 @@ export function NewAssignmentRoute() {
 								>
 									Hủy
 								</Button>
-								<Button type="submit" disabled={!canSave || submit.saving}>
+								<Button type="submit" disabled={submit.saving}>
 									{submit.saving
 										? "Đang lưu…"
 										: status === "draft"

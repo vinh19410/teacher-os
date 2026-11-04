@@ -139,7 +139,11 @@ export function PromptComposer({
 					</div>
 				</>
 			)}
-			<div className="flex flex-col gap-1.5">
+			<div
+				id="assignment-field-type"
+				tabIndex={-1}
+				className="flex scroll-mt-24 scroll-mb-28 flex-col gap-1.5 outline-none"
+			>
 				<span className="text-muted-foreground text-xs">{skill.typeLabel}</span>
 				<ChipFilter
 					options={part.types.map((entry) => entry.label)}
@@ -155,8 +159,14 @@ export function PromptComposer({
 					<p className="text-destructive text-xs">{errors.type}</p>
 				)}
 			</div>
-			<Field label="Tiêu đề" error={showErrors ? errors.title : undefined}>
+			<Field
+				label="Tiêu đề"
+				error={showErrors ? errors.title : undefined}
+				htmlFor="assignment-field-title"
+			>
 				<Input
+					id="assignment-field-title"
+					className="scroll-mt-24 scroll-mb-28"
 					value={value.title}
 					onChange={(event) => onFieldChange({ title: event.target.value })}
 				/>
@@ -178,38 +188,45 @@ export function PromptComposer({
 				</Field>
 			</div>
 			{value.skill === "writing" && (
-				<Field
-					label="Nội dung đề"
-					help={part.help}
-					error={showErrors ? errors.prompt : undefined}
-				>
-					<RichTextEditor
-						value={value.prompt}
-						onChange={(prompt) => onFieldChange({ prompt })}
-						placeholder="Dán hoặc soạn đề bài…"
-						contentClassName="[&_.ProseMirror]:min-h-42"
-					/>
-				</Field>
+				<div id="assignment-field-prompt" className="scroll-mt-24 scroll-mb-28">
+					<Field
+						label="Nội dung đề"
+						help={part.help}
+						error={showErrors ? errors.prompt : undefined}
+					>
+						<RichTextEditor
+							value={value.prompt}
+							onChange={(prompt) => onFieldChange({ prompt })}
+							placeholder="Dán hoặc soạn đề bài…"
+							contentClassName="[&_.ProseMirror]:min-h-42"
+						/>
+					</Field>
+				</div>
 			)}
 			{(value.skill === "reading" ||
 				value.skill === "grammar" ||
 				value.skill === "vocabulary") && (
-				<Field
-					label={
-						value.skill === "reading"
-							? "Đoạn đọc"
-							: "Đoạn đọc / Ngữ cảnh (không bắt buộc)"
-					}
-					help={part.help}
-					error={showErrors ? errors.passage : undefined}
+				<div
+					id="assignment-field-passage"
+					className="scroll-mt-24 scroll-mb-28"
 				>
-					<RichTextEditor
-						value={value.passage}
-						onChange={(passage) => onFieldChange({ passage })}
-						placeholder="Dán đoạn đọc vào đây…"
-						contentClassName="[&_.ProseMirror]:min-h-52"
-					/>
-				</Field>
+					<Field
+						label={
+							value.skill === "reading"
+								? "Đoạn đọc"
+								: "Đoạn đọc / Ngữ cảnh (không bắt buộc)"
+						}
+						help={part.help}
+						error={showErrors ? errors.passage : undefined}
+					>
+						<RichTextEditor
+							value={value.passage}
+							onChange={(passage) => onFieldChange({ passage })}
+							placeholder="Dán đoạn đọc vào đây…"
+							contentClassName="[&_.ProseMirror]:min-h-52"
+						/>
+					</Field>
+				</div>
 			)}
 			{(value.skill === "reading" ||
 				value.skill === "grammar" ||
@@ -219,7 +236,10 @@ export function PromptComposer({
 				</span>
 			)}
 			{value.skill === "listening" && (
-				<div className="rounded-md rounded-md bg-muted p-3">
+				<div
+					id="assignment-field-audio"
+					className="scroll-mt-24 scroll-mb-28 rounded-md rounded-md bg-muted p-3"
+				>
 					<p className="font-medium text-muted-foreground text-xs">File nghe</p>
 					<div className="mt-2 flex flex-wrap items-center gap-2">
 						<label className="inline-flex cursor-pointer rounded-md rounded-md border border-input bg-transparent px-3 py-2 font-medium text-xs transition-colors hover:text-primary">
@@ -261,25 +281,32 @@ export function PromptComposer({
 				</div>
 			)}
 			{isAuto && (
-				<QuestionKeyEditor
-					skill={value.skill}
-					partId={value.part}
-					typeId={value.type}
-					intro={value.intro}
-					items={value.items}
-					showErrors={showErrors}
-					status={status}
-					imageUrl={value.imageUrl}
-					optionBank={value.optionBank}
-					imageUrlError={showErrors ? errors.imageUrl : undefined}
-					optionBankError={showErrors ? errors.optionBank : undefined}
-					questionsError={showErrors ? errors.questions : undefined}
-					onIntroChange={(intro) => onFieldChange({ intro })}
-					onImageUrlChange={(imageUrl) => onFieldChange({ imageUrl })}
-					onItemsChange={(items) => onFieldChange({ items })}
-					onBankChange={(optionBank) => onFieldChange({ optionBank })}
-					showExplanation
-				/>
+				<div
+					id="assignment-field-questions"
+					tabIndex={-1}
+					className="scroll-mt-24 scroll-mb-28 outline-none"
+				>
+					<QuestionKeyEditor
+						skill={value.skill}
+						partId={value.part}
+						typeId={value.type}
+						intro={value.intro}
+						items={value.items}
+						showErrors={showErrors}
+						status={status}
+						imageUrl={value.imageUrl}
+						optionBank={value.optionBank}
+						imageUrlError={showErrors ? errors.imageUrl : undefined}
+						optionBankError={showErrors ? errors.optionBank : undefined}
+						questionsError={showErrors ? errors.questions : undefined}
+						onIntroChange={(intro) => onFieldChange({ intro })}
+						onImageUrlChange={(imageUrl) => onFieldChange({ imageUrl })}
+						onItemsChange={(items) => onFieldChange({ items })}
+						onBankChange={(optionBank) => onFieldChange({ optionBank })}
+						imageId="assignment-field-image"
+						showExplanation
+					/>
+				</div>
 			)}
 			{isAuto &&
 				!lockPart &&
@@ -350,22 +377,27 @@ export function PromptComposer({
 								}
 							/>
 						</div>
-						<Field
-							label="Đề bài phần Writing"
-							help={activeWritingPart.help}
-							error={showErrors ? errors.writingPrompt : undefined}
+						<div
+							id="assignment-field-writing-prompt"
+							className="scroll-mt-24 scroll-mb-28"
 						>
-							<RichTextEditor
-								value={activeWriting.prompt}
-								onChange={(prompt) =>
-									onFieldChange({
-										writing: { ...activeWriting, prompt },
-									})
-								}
-								placeholder="Dán hoặc soạn đề Writing…"
-								contentClassName="[&_.ProseMirror]:min-h-36"
-							/>
-						</Field>
+							<Field
+								label="Đề bài phần Writing"
+								help={activeWritingPart.help}
+								error={showErrors ? errors.writingPrompt : undefined}
+							>
+								<RichTextEditor
+									value={activeWriting.prompt}
+									onChange={(prompt) =>
+										onFieldChange({
+											writing: { ...activeWriting, prompt },
+										})
+									}
+									placeholder="Dán hoặc soạn đề Writing…"
+									contentClassName="[&_.ProseMirror]:min-h-36"
+								/>
+							</Field>
+						</div>
 						<span className="-mt-2 text-right text-muted-foreground text-xs">
 							{wordCount(htmlToPlainText(activeWriting.prompt))} từ
 						</span>
@@ -413,8 +445,11 @@ export function PromptComposer({
 						<Field
 							label="Chủ đề cue card"
 							error={showErrors ? errors.cueTopic : undefined}
+							htmlFor="assignment-field-cueTopic"
 						>
 							<Input
+								id="assignment-field-cueTopic"
+								className="scroll-mt-24 scroll-mb-28"
 								value={value.cueTopic}
 								onChange={(event) =>
 									onFieldChange({ cueTopic: event.target.value })
@@ -431,18 +466,23 @@ export function PromptComposer({
 						</Field>
 					</>
 				) : (
-					<Field
-						label="Câu hỏi giám khảo"
-						help={part.help}
-						error={showErrors ? errors.prompt : undefined}
+					<div
+						id="assignment-field-prompt"
+						className="scroll-mt-24 scroll-mb-28"
 					>
-						<RichTextEditor
-							value={value.prompt}
-							onChange={(prompt) => onFieldChange({ prompt })}
-							placeholder="Soạn câu hỏi giám khảo…"
-							contentClassName="[&_.ProseMirror]:min-h-42"
-						/>
-					</Field>
+						<Field
+							label="Câu hỏi giám khảo"
+							help={part.help}
+							error={showErrors ? errors.prompt : undefined}
+						>
+							<RichTextEditor
+								value={value.prompt}
+								onChange={(prompt) => onFieldChange({ prompt })}
+								placeholder="Soạn câu hỏi giám khảo…"
+								contentClassName="[&_.ProseMirror]:min-h-42"
+							/>
+						</Field>
+					</div>
 				))}
 			<Field label="Hướng dẫn thêm (không bắt buộc)">
 				<RichTextEditor

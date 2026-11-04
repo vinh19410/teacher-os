@@ -52,6 +52,7 @@ export function QuestionKeyEditor({
 	collapsibleRows = false,
 	openRow = null,
 	onOpenRowChange,
+	imageId,
 }: {
 	skill: string;
 	partId: string;
@@ -85,7 +86,9 @@ export function QuestionKeyEditor({
 	collapsibleRows?: boolean;
 	openRow?: number | null;
 	onOpenRowChange?: (index: number | null) => void;
+	imageId?: string;
 }) {
+	const actualImageId = imageId ?? `assignment-field-image-${partId}`;
 	const qStart = qStartOverride ?? qStartOf(skill, partId);
 	// Bank là prompt-level nhưng editor hiện khi type đề HOẶC bất kỳ câu
 	// bankable (đề trộn dạng) — không thì cụm bankable không có chỗ nhập bank
@@ -231,8 +234,11 @@ export function QuestionKeyEditor({
 							}
 							help="Chỉ nhận link ảnh https. Học viên thấy ảnh này khi làm đề."
 							error={imageUrlError}
+							htmlFor={actualImageId}
 						>
 							<Input
+								id={actualImageId}
+								className="scroll-mt-24 scroll-mb-28"
 								value={imageUrl}
 								placeholder="https://…"
 								maxLength={500}
