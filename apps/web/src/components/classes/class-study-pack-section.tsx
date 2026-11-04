@@ -190,7 +190,19 @@ export function ClassStudyPackSection({ classId }: { classId: string }) {
 		} catch (err) {
 			const status =
 				err && typeof err === "object" && "status" in err ? err.status : null;
-			if (status === 409) {
+			const errorCode =
+				err && typeof err === "object" && "studyPackErrorCode" in err
+					? err.studyPackErrorCode
+					: null;
+			if (status === 409 && errorCode === "study pack was cancelled") {
+				setFormError("Bộ đề này vừa bị huỷ. Vui lòng kiểm tra lại danh sách.");
+				fetchClassStudyPacks(classId)
+					.then((fresh) => {
+						setAssignedPacks(fresh.packs);
+						setHolidays(fresh.holidays);
+					})
+					.catch(() => {});
+			} else if (status === 409) {
 				setFormError("Bộ đề này đang chạy trên lớp với lịch khác.");
 			} else {
 				setFormError("Không thể gán bộ đề. Vui lòng kiểm tra lại.");

@@ -55,6 +55,7 @@ import { mediaObjectResponse } from "../lib/media-response";
 import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
 import { type AdminEnv, createRequireAdmin } from "../lib/require-admin";
 import {
+	buildPackItemTupleKey,
 	buildStudyPackItemInsertStatements,
 	loadStudyPackDetailFromRow,
 	loadStudyPackSummaries,
@@ -1119,6 +1120,22 @@ export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 			return c.json({ error: valid.error }, valid.status);
 		}
 
+		const existingItemRows = await withDb()
+			.select({
+				id: studyPackItem.id,
+				dayIndex: studyPackItem.dayIndex,
+				sourceKind: studyPackItem.sourceKind,
+				sourceId: studyPackItem.sourceId,
+			})
+			.from(studyPackItem)
+			.where(eq(studyPackItem.packId, id));
+		const existingIdByTuple = new Map(
+			existingItemRows.map((row) => [
+				buildPackItemTupleKey(row.dayIndex, row.sourceKind, row.sourceId),
+				row.id,
+			]),
+		);
+
 		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
 			withDb()
 				.update(studyPack)
@@ -1130,7 +1147,12 @@ export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 				})
 				.where(and(eq(studyPack.id, id), isNull(studyPack.orgId))),
 			withDb().delete(studyPackItem).where(eq(studyPackItem.packId, id)),
-			...buildStudyPackItemInsertStatements(withDb(), id, body.data.items),
+			...buildStudyPackItemInsertStatements(
+				withDb(),
+				id,
+				body.data.items,
+				existingIdByTuple,
+			),
 		];
 		await withDb().batch(statements);
 

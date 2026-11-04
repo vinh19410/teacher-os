@@ -933,3 +933,28 @@ certificates issue thành công (giống `app.`/`student.`), và session cookie
 zone (`Domain=.<domain>`) hoạt động: đăng nhập admin rồi gọi
 `https://api.<domain>/api/admin/me` phải 200; một session teacher/student
 gọi cùng endpoint phải 403 `ACCOUNT_NOT_ADMIN`.
+
+## Bộ đề tự học theo lịch (migrations 0060–0061) — issue #533/#554
+
+- **Pre-flight bắt buộc TRƯỚC khi merge/push `0061` lên `staging` hoặc `main` (`study_pack_org_source_pack_uq`):** Vì `.github/workflows/deploy-staging.yml` và `.github/workflows/deploy.yml` tự động chạy `alchemy deploy` áp migration ngay khi push, bắt buộc chạy truy vấn đọc trên D1 trước khi promote:
+  ```sql
+  SELECT org_id, source_pack_id, COUNT(*) AS cnt
+  FROM study_pack
+  WHERE source_pack_id IS NOT NULL
+  GROUP BY org_id, source_pack_id
+  HAVING COUNT(*) > 1;
+  ```
+  Kết quả phải trả `0` dòng. Nếu phát hiện cặp `(org_id, source_pack_id)` trùng (đặc biệt khi bản dư đã từng gán vào lớp nên bị `class_study_pack.pack_id` khóa `ON DELETE restrict`), giữ lại 1 bản chính và tách liên kết các bản dư bằng lệnh không xóa lịch sử lớp học:
+  ```sql
+  UPDATE study_pack SET source_pack_id = NULL WHERE id = '<id-ban-clone-du>';
+  ```
+- **Tính chất forward-only của `0060_study_pack.sql` — KHÔNG revert riêng Worker về trước `#533` (`0060`):**
+  1. *Lộ sớm bài chưa đến giờ mở cho học viên:* Worker trước `0060` không có `visibleAssignmentFilter(now)` (`available_at IS NULL OR available_at <= now` tại `apps/server/src/lib/assignment-visibility.ts`) cũng như kiểm tra `available_at` trong `loadOwnedAttemptWithSkill` (`apps/server/src/routes/student.ts`). Nếu code cũ đọc vào dữ liệu `0060`, mọi dòng `class_assignment` tạo sẵn có `available_at > now` sẽ hiển thị và cho phép làm/nộp bài sớm trên cổng học viên.
+  2. *Rò rỉ vào snapshot giáo viên & trần 200 bài:* Code cũ không lọc `class_study_pack_id IS NULL` trong `loadSnapshot` (`apps/server/src/routes/snapshot.ts`) và `POST /api/classes/:id/assignments` (`apps/server/src/routes/kernel.ts`), cũng không lọc `library_ref IS NULL` trên `assignment_prompt`, khiến toàn bộ bài tự học tràn vào danh sách bài tập thủ công của lớp và ngân hàng đề.
+  3. *Đổ `/readyz` (`503`):* `0060_study_pack.sql` đã `DROP COLUMN plan_item_id` và `DROP TABLE self_study_plan*` đồng thời thêm 4 bảng mới và 3 cột mới. Probe trong `apps/server/src/routes/readiness.ts` kiểm tra đủ `REQUIRED_OBJECTS` của bundle và khớp tổng cột `REQUIRED_COLUMN_TOTAL`, nên hạ riêng Worker về trước `0060` sẽ làm `/readyz` trả `503 {"ok":false}`.
+- **Tương thích ngược của `0061` (`study_pack_org_source_pack_uq`):**
+  - Migration `0061` chỉ thêm 1 unique index mới, không đổi bảng hay cột. Vì `PROBE_QUERY` trong `apps/server/src/routes/readiness.ts` lọc `name IN (SELECT value FROM json_each(REQUIRED_OBJECTS))` theo danh sách của chính bundle đang chạy, việc lùi Worker từ bản `#554` (`0061`) về bản `#533` (`0060`) vẫn giữ `/readyz` trả `200 {"ok":true}`.
+  - **Tuyệt đối KHÔNG chạy `DROP INDEX study_pack_org_source_pack_uq` trên D1** khi lùi Worker về `0060`: sổ cái migration của D1 đã đánh dấu `0061` hoàn tất, nếu xóa index tay thì lần deploy kế tiếp không chạy lại `0061` và sẽ đánh trượt `/readyz` (`503`).
+- **Hướng xử lý sự cố / Rollback an toàn:**
+  - Ưu tiên **forward-fix** trên nhánh `>= 0060` (hoặc hủy các `class_study_pack` đang chạy qua UI/API để thu hồi các bài chưa đến giờ mở).
+  - Nếu khẩn cấp bắt buộc khôi phục toàn bộ hệ thống về trước `#533` (`0060`), phải khôi phục đồng bộ D1 bằng **D1 Time Travel** về đúng bookmark trước khi chạy `0060` cùng lúc với việc hạ Worker và các bundle frontend.
