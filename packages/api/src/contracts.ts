@@ -2091,6 +2091,20 @@ export const studentClassLessonSchema = z.object({
 });
 export type StudentClassLesson = z.infer<typeof studentClassLessonSchema>;
 
+export const studentScheduleLessonSchema = studentClassLessonSchema.extend({
+	classId: z.string(),
+	className: z.string(),
+});
+export type StudentScheduleLesson = z.infer<typeof studentScheduleLessonSchema>;
+
+export const studentScheduleResponseSchema = z.object({
+	classes: z.array(studentClassSchema),
+	lessons: z.array(studentScheduleLessonSchema),
+});
+export type StudentScheduleResponse = z.infer<
+	typeof studentScheduleResponseSchema
+>;
+
 export const studentClassDetailSchema = z.object({
 	class: studentClassSchema.extend({ startDate: z.string() }),
 	lessons: z.array(studentClassLessonSchema),

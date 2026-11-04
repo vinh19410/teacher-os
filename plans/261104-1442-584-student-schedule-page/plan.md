@@ -1,7 +1,7 @@
 ---
 title: "feat(student): thêm trang lịch học riêng ở cổng học viên"
 description: "Thêm trang lịch học (/schedule) gộp các buổi của mọi lớp học viên đang tham gia, endpoint GET /api/student/schedule, mục menu tương ứng trên student nav theo DESIGN.md."
-status: in_progress
+status: completed
 priority: P3
 effort: 3h
 issue: 584
@@ -90,17 +90,17 @@ flowchart TD
 
 | # | Phase | Trạng thái | Ước lượng |
 |---|---|---|---|
-| 1 | [API Contracts và Backend Endpoint](phase-01-api-contracts-and-endpoint.md) | pending | 45m |
-| 2 | [Student Nav và Data Repository](phase-02-student-nav-and-repos.md) | pending | 30m |
-| 3 | [Giao diện Trang Lịch học và Tests](phase-03-schedule-page-and-views.md) | pending | 60m |
+| 1 | [API Contracts và Backend Endpoint](phase-01-api-contracts-and-endpoint.md) | completed | 45m |
+| 2 | [Student Nav và Data Repository](phase-02-student-nav-and-repos.md) | completed | 30m |
+| 3 | [Giao diện Trang Lịch học và Tests](phase-03-schedule-page-and-views.md) | completed | 60m |
 
 ## Acceptance Criteria
 
-- [ ] `studentScheduleLessonSchema` và `studentScheduleResponseSchema` được xuất từ `@teacher-os/api/contracts`.
-- [ ] Endpoint `GET /api/student/schedule` trả về danh sách lớp và toàn bộ buổi học của học viên trong org hiện tại.
-- [ ] Bảo mật: IDOR guard chặn triệt để học viên khác hoặc org khác, loại trừ enrollment `invited`, chỉ lấy bài học theo `enrollmentId`.
-- [ ] Kiểm thử server trong `apps/server/src/routes/student-schedule.test.ts` kiểm tra đủ 6 trường hợp: 401 khi chưa login, 200 rỗng khi không có lớp, bảo vệ IDOR org/student, loại trừ invited, và sắp xếp theo thời gian.
-- [ ] Thanh menu học viên hiển thị mục "Lịch học" với icon `CalendarDays` dẫn đến `/schedule`, active key và breadcrumb label hiển thị đúng "Lịch học".
-- [ ] Trang `/schedule` có route `_auth/schedule.tsx` bọc trong `StudentPageGate`, xử lý đầy đủ trạng thái loading/error.
-- [ ] Component `StudentScheduleView` hiển thị lịch định kỳ của từng lớp, danh sách buổi học gộp có tabs Sắp tới / Đã học / Tất cả, lọc theo lớp, và empty state khi không có dữ liệu.
-- [ ] Toàn bộ test suites pass, `pnpm check` và `pnpm check-types` pass không có lỗi.
+- [x] `studentScheduleLessonSchema` và `studentScheduleResponseSchema` được xuất từ `@teacher-os/api/contracts`.
+- [x] Endpoint `GET /api/student/schedule` trả về danh sách lớp và toàn bộ buổi học của học viên trong org hiện tại.
+- [x] Bảo mật: IDOR guard chặn triệt để học viên khác hoặc org khác, loại trừ enrollment `invited`, chỉ lấy bài học theo `enrollmentId`.
+- [x] Kiểm thử server trong `apps/server/src/routes/student-schedule.test.ts` kiểm tra đủ 6 trường hợp: 401 khi chưa login, 200 rỗng khi không có lớp, bảo vệ IDOR org/student, loại trừ invited, và sắp xếp theo thời gian.
+- [x] Thanh menu học viên hiển thị mục "Lịch học" với icon `CalendarDays` dẫn đến `/schedule`, active key và breadcrumb label hiển thị đúng "Lịch học".
+- [x] Trang `/schedule` có route `_auth/schedule.tsx` bọc trong `StudentPageGate`, xử lý đầy đủ trạng thái loading/error.
+- [x] Component `StudentScheduleView` hiển thị lịch định kỳ của từng lớp, danh sách buổi học gộp có tabs Sắp tới / Đã học / Tất cả, lọc theo lớp, và empty state khi không có dữ liệu.
+- [x] Toàn bộ test suites pass, `pnpm check` và `pnpm check-types` pass không có lỗi.
