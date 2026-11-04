@@ -188,6 +188,18 @@ describe("QuizRuntimeHeader — save-state element (RT#7)", () => {
 		expect(noSubmit).not.toContain("Nộp bài");
 		expect(noSubmit).toContain('href="/"');
 	});
+
+	it("nút Nộp bài dùng màu chữ tương phản cao text-primary-foreground và không dùng text-bg (#586)", () => {
+		const html = renderToStaticMarkup(
+			<QuizRuntimeHeader
+				title="T"
+				saveState="saved"
+				onSubmitClick={() => undefined}
+			/>,
+		);
+		expect(html).not.toContain("text-bg");
+		expect(html).toContain("text-primary-foreground");
+	});
 });
 
 describe("QuizLifecycleDialogs — copy vòng đời (Selfomy parity)", () => {

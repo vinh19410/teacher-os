@@ -145,6 +145,8 @@ describe("ClassCard", () => {
 		const html = renderToStaticMarkup(<ClassCard cls={cls} />);
 		expect(html).toContain("Chờ kích hoạt");
 		expect(html).toContain("Tham gia lớp");
+		expect(html).toContain("text-primary-foreground");
+		expect(html).not.toContain("text-bg");
 		expect(html).toContain("Giáo viên đã mời bạn vào lớp");
 		// Chưa kích hoạt thì không hiển thị tiến độ khóa học
 		expect(html).not.toContain("Tiến độ khóa học");
