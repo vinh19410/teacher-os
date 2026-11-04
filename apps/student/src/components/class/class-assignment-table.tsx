@@ -13,18 +13,20 @@ import { deriveAssignmentStatus } from "@/lib/assignment-status";
 export function ClassAssignmentTable({
 	assignments,
 	todayISO,
+	nowMs,
 }: {
 	assignments: StudentAssignment[];
 	todayISO?: string;
+	nowMs?: number;
 }) {
 	const rows = useMemo(() => {
 		const list = assignments.map((assignment) => ({
 			assignment,
-			derived: deriveAssignmentStatus(assignment, todayISO),
+			derived: deriveAssignmentStatus(assignment, todayISO, nowMs),
 		}));
 		list.sort((a, b) => a.derived.sortOrder - b.derived.sortOrder);
 		return list;
-	}, [assignments, todayISO]);
+	}, [assignments, todayISO, nowMs]);
 
 	if (rows.length === 0) {
 		return (

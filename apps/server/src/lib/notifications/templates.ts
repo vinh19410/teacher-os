@@ -3,6 +3,11 @@ import {
 	type NotificationEventGroup,
 	type NotificationEventType,
 } from "@teacher-os/api/contracts";
+import {
+	formatViDateDisplay,
+	formatVietnamTimeHHMM,
+	vietnamDateKeyOf,
+} from "@teacher-os/api/vietnam-date";
 
 /** 1 sự kiện phát ra từ route nghiệp vụ, chưa resolve người nhận (D4). */
 export interface NotificationEvent {
@@ -77,14 +82,19 @@ export function assignmentPublishedEvents(input: {
 	classAssignmentId: string;
 	title: string;
 	due: string;
+	dueAt?: string | null;
 	studentIds: string[];
 }): NotificationEvent[] {
+	const rawDueAtMs = input.dueAt ? Date.parse(input.dueAt) : Number.NaN;
+	const dueLabel = Number.isFinite(rawDueAtMs)
+		? `${formatVietnamTimeHHMM(rawDueAtMs)} ${formatViDateDisplay(vietnamDateKeyOf(new Date(rawDueAtMs)))}`
+		: formatViDateDisplay(input.due);
 	return input.studentIds.map((studentId) => ({
 		studentId,
 		eventType: "assignment_published",
 		idempotencyKey: `assignment_published:${input.classAssignmentId}:${studentId}`,
 		title: "Bài tập mới",
-		body: `Có bài tập mới: ${input.title}, hạn nộp ${input.due}.`,
+		body: `Có bài tập mới: ${input.title}, hạn nộp ${dueLabel}.`,
 		// Cổng học viên xem bài qua /learn/quizzes/$assignmentId (CR I1 —
 		// không có route /assignments/$id trên portal).
 		linkPath: `/learn/quizzes/${input.classAssignmentId}`,

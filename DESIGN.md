@@ -92,6 +92,7 @@ giấy trên nền trắng (shadcn neutral), hành động chính = mực đậm
   màu chữ).
 - **Modal:** overlay `bg-black/50`, panel `rounded-lg border bg-card`, tiêu đề semibold,
   nút đóng ✕ muted hover `bg-accent`.
+- **Chọn ngày & giờ (`DatePickerInput` / `TimeInput24h`):** `@teacher-os/ui/components/date-picker-input` dùng `<input type="text" inputMode="numeric">` cố định `dd/mm/yyyy` và `HH:mm` 24h (không dùng `<input type="date"|"time">` gốc để tránh đảo `mm/dd` hoặc 12h AM/PM theo locale trình duyệt và nhảy con trỏ khi gõ), kèm popover lịch tháng `@base-ui/react/popover` (`T2..CN`, `z-[110]`, ngày tháng kế `text-muted-foreground` ≥ 4.5:1) và nhóm `<fieldset>` gợi ý mốc giờ.
 - **Shell:** layout dùng chung `sidebar-07` (shadcn) — sidebar `--sidebar` dark inset, content
   tràn sáng; search toàn cục ⌘K (Command palette, `cmdk`) mở từ header.
 - **Minh họa:** 3 SVG nét vẽ trong `@teacher-os/ui/components/illustrations` (TeacherDesk —

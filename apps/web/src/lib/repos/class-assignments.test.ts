@@ -30,6 +30,7 @@ describe("mapClassAssignments (#208)", () => {
 				promptId: "p-1",
 				title: "Writing Task 2 — Opinion",
 				due: "2026-09-25",
+				dueAt: null,
 				note: "Làm cẩn thận",
 				createdAt: "2026-09-18T10:00:00.000Z",
 				targets: [
@@ -106,5 +107,27 @@ describe("mapClassAssignments (#208)", () => {
 		const mapped = mapClassAssignments(snapshot);
 		expect(mapped).toHaveLength(1);
 		expect(mapped[0]?.targets).toEqual([]);
+	});
+
+	test("projects non-null dueAt ISO timestamp onto ClassAssignment (#572)", () => {
+		const snapshot = {
+			classAssignments: [
+				{
+					id: "ca-timed",
+					classId: "c-1",
+					promptId: "p-1",
+					title: "Listening Part 1",
+					due: "2026-11-06",
+					dueAt: "2026-11-06T10:30:00.000Z",
+					note: "",
+					createdAt: "2026-11-01T10:00:00.000Z",
+					targets: [],
+				},
+			],
+		} as unknown as KernelSnapshot;
+
+		expect(mapClassAssignments(snapshot)[0]?.dueAt).toBe(
+			"2026-11-06T10:30:00.000Z",
+		);
 	});
 });

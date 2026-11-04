@@ -370,6 +370,43 @@ describe("deriveAssignmentStatus with dueAt (#526)", () => {
 		expect(derived.statusLabel).toBe("Điểm: 7 · Nộp trễ");
 		expect(derived.dueText).toBe("Hạn: 17:00 02/11");
 	});
+
+	it("keeps legacy dueAt=null submissions as non-late and derives dueDateISO from dueAt when dueAt is present (#572)", () => {
+		const legacySubmitted = {
+			id: "legacy-1",
+			title: "Legacy Reading",
+			source: "class_assignment",
+			classId: "c1",
+			className: "IELTS 6.5",
+			due: "2026-11-01",
+			dueAt: null,
+			submittedAt: "2026-11-03T10:00:00.000Z",
+			scores: { task: 6.5, coherence: 6.5, lexical: 6.5, grammar: 6.5 },
+			skill: "reading",
+		} as StudentAssignment;
+		const legacyDerived = deriveAssignmentStatus(legacySubmitted, today);
+		expect(legacyDerived.isLate).toBe(false);
+		expect(legacyDerived.statusLabel).toBe("Điểm: 6.5");
+
+		const shiftedAsg = {
+			id: "shifted-1",
+			title: "Shifted Assignment",
+			source: "class_assignment",
+			classId: "c1",
+			className: "IELTS 6.5",
+			due: "2027-11-15", // stale due column
+			dueAt: "2026-11-02T10:00:00.000Z", // 17:00 02/11 VN
+			submittedAt: null,
+			scores: null,
+		} as StudentAssignment;
+		const shiftedDerived = deriveAssignmentStatus(
+			shiftedAsg,
+			"2026-11-02",
+			Date.parse("2026-11-02T10:01:00.000Z"),
+		);
+		expect(shiftedDerived.status).toBe("overdue");
+		expect(shiftedDerived.dueText).toContain("17:00 02/11");
+	});
 });
 
 describe("deriveAssignmentStatus — hybrid assignment (#574)", () => {

@@ -44,8 +44,21 @@ describe("notification template builders (phase 3 #454)", () => {
 			expect(e.linkPath).toBe("/learn/quizzes/ca-1");
 			expect(e.refId).toBe("ca-1");
 			expect(e.body).toContain("Writing Task 2");
-			expect(e.body).toContain("2026-11-01");
+			expect(e.body).toContain("01/11/2026");
+			expect(e.body).not.toContain("2026-11-01");
 		}
+	});
+
+	test("assignmentPublishedEvents — định dạng giờ + ngày VN từ dueAt khi có (#572)", () => {
+		const events = assignmentPublishedEvents({
+			classAssignmentId: "ca-2",
+			title: "Reading Part 1",
+			due: "2026-11-06",
+			dueAt: new Date(Date.parse("2026-11-06T17:30:00+07:00")).toISOString(),
+			studentIds: ["s-1"],
+		});
+		expect(events).toHaveLength(1);
+		expect(events[0]?.body).toContain("17:30 06/11/2026");
 	});
 
 	test("gradeReturnedEvent — khóa canonical theo attempt", () => {

@@ -445,4 +445,39 @@ describe("computeCourseMonths & ClassAssignmentTable", () => {
 		expect(tableHtml).toContain('aria-label="Xem lại kết quả: Submitted Task"');
 		expect(tableHtml).not.toContain("Xem lại kết quả: Graded Essay");
 	});
+
+	it("evaluates dueAt against forwarded nowMs in ClassAssignmentTable (#572)", () => {
+		const timedAssignments = [
+			{
+				id: "a-timed",
+				title: "Timed Reading",
+				source: "class_assignment" as const,
+				classId: "class-9",
+				className: "IELTS Detail",
+				due: "2026-11-06",
+				dueAt: new Date(Date.parse("2026-11-06T17:00:00+07:00")).toISOString(),
+				submittedAt: null,
+				scores: null,
+			},
+		];
+
+		const beforeDeadlineHtml = renderToStaticMarkup(
+			<ClassAssignmentTable
+				assignments={timedAssignments}
+				todayISO="2026-11-06"
+				nowMs={Date.parse("2026-11-06T16:00:00+07:00")}
+			/>,
+		);
+		expect(beforeDeadlineHtml).toContain("Sắp đến hạn");
+		expect(beforeDeadlineHtml).not.toContain("Quá hạn");
+
+		const afterDeadlineHtml = renderToStaticMarkup(
+			<ClassAssignmentTable
+				assignments={timedAssignments}
+				todayISO="2026-11-06"
+				nowMs={Date.parse("2026-11-06T18:00:00+07:00")}
+			/>,
+		);
+		expect(afterDeadlineHtml).toContain("Quá hạn");
+	});
 });

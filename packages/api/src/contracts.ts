@@ -1197,15 +1197,16 @@ export type AssignmentTestPartsSet = z.infer<
 >;
 
 /**
- * Giao đề ngân hàng cho lớp (#208). `due` là ISO yyyy-mm-dd (so được với
- * hôm nay — precedent `invoice.due`, khác `assignment.due` display dd/mm);
- * min-today theo ngày VN KHÔNG nằm ở contract — route tự kiểm sau
- * `parseStartDateStrict` (red-team F6). studentIds ≤ 100/lượt (red-team F11).
+ * Giao đề ngân hàng cho lớp (#208, #572). `due` là ISO yyyy-mm-dd; `dueTime`
+ * tùy chọn là giờ 24h `HH:MM` theo múi giờ Việt Nam (mặc định `"23:59"` khi
+ * vắng mặt để tương thích ngược với caller cũ). Kiểm tra ngày/giờ quá khứ theo
+ * giờ VN nằm ở route sau `parseStartDateStrict`. studentIds ≤ 100/lượt.
  */
 export const classAssignmentCreateSchema = z
 	.object({
 		promptId: z.string().trim().min(1).max(100),
 		due: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+		dueTime: z.string().regex(TIME_REGEX).optional(),
 		note: z.string().trim().max(2000).default(""),
 		studentIds: z.array(z.string().trim().min(1)).min(1).max(100),
 	})
@@ -1741,6 +1742,8 @@ export interface KernelClassAssignmentRow {
 	promptId: string;
 	title: string;
 	due: string;
+	/** ISO datetime hạn nộp (UTC, tính từ giờ VN lúc giao); null trên dữ liệu cũ trước #572. */
+	dueAt?: string | null;
 	note: string;
 	createdAt: string;
 	targets: Array<{
