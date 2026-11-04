@@ -852,3 +852,137 @@ describe("AnswerKeyGrid — row anchor id luôn render (kongming F2)", () => {
 		expect(html).toContain('id="group-p1-1-q1"');
 	});
 });
+
+describe("AnswerKeyGrid — bảo vệ bàn phím và trần explanation (#571)", () => {
+	it("render cảnh báo role=alert tại hàng câu khi explanation vượt 2000 ký tự plain hoặc 5000 ký tự raw, kể cả draft", () => {
+		const overPlain = renderGrid({
+			showExplanation: true,
+			showErrors: true,
+			requireFilled: false,
+			items: [
+				{
+					stem: "S1",
+					answer: "",
+					opts: null,
+					alts: "",
+					explanation: `<p>${"a".repeat(2001)}</p>`,
+				},
+			],
+		});
+		expect(overPlain).toContain('role="alert"');
+		expect(overPlain).toContain("Giải thích vượt quá 2000 ký tự.");
+
+		const overRaw = renderGrid({
+			showExplanation: true,
+			showErrors: true,
+			items: [
+				{
+					stem: "S1",
+					answer: "FALSE",
+					opts: null,
+					alts: "",
+					explanation: `<p>${"<span>a</span>".repeat(400)}</p>`,
+				},
+			],
+		});
+		expect(overRaw).toContain('role="alert"');
+		expect(overRaw).toContain(
+			"Giải thích vượt quá 5000 ký tự tính cả định dạng.",
+		);
+
+		const atLimit = renderGrid({
+			showExplanation: true,
+			showErrors: true,
+			items: [
+				{
+					stem: "S1",
+					answer: "FALSE",
+					opts: null,
+					alts: "",
+					explanation: `<p>${"a".repeat(2000)}</p>`,
+				},
+			],
+		});
+		expect(atLimit).not.toContain("Giải thích vượt quá");
+	});
+
+	it("gõ phím tắt đáp án (t/f/n) bên trong contenteditable giải thích hoặc Enter đã defaultPrevented không đổi đáp án hay thêm câu", () => {
+		const onItemsChange = vi.fn();
+		const onAddQuestion = vi.fn(() => true);
+		const { container } = render(
+			<AnswerKeyGrid
+				typeId="tfng"
+				skill="reading"
+				partId="p1"
+				items={[{ stem: "S1", answer: "FALSE", opts: null, alts: "" }]}
+				showErrors={false}
+				showExplanation
+				onItemsChange={onItemsChange}
+				onAddQuestion={onAddQuestion}
+			/>,
+		);
+		const editor = container.querySelector(
+			'fieldset[aria-label="Câu 1"] [contenteditable="true"]',
+		);
+		if (!editor) throw new Error("missing explanation contenteditable");
+
+		const evN = new KeyboardEvent("keydown", {
+			key: "n",
+			bubbles: true,
+			cancelable: true,
+		});
+		editor.dispatchEvent(evN);
+		expect(evN.defaultPrevented).toBe(false);
+		expect(onItemsChange).not.toHaveBeenCalled();
+
+		const evT = new KeyboardEvent("keydown", {
+			key: "t",
+			bubbles: true,
+			cancelable: true,
+		});
+		editor.dispatchEvent(evT);
+		expect(evT.defaultPrevented).toBe(false);
+		expect(onItemsChange).not.toHaveBeenCalled();
+
+		// Mô phỏng Enter từ input Link Popover (đã preventDefault trước khi bubble)
+		const fieldset = container.querySelector('fieldset[aria-label="Câu 1"]');
+		if (!fieldset) throw new Error("missing fieldset Câu 1");
+		const portalEnter = new KeyboardEvent("keydown", {
+			key: "Enter",
+			bubbles: true,
+			cancelable: true,
+		});
+		portalEnter.preventDefault();
+		fieldset.dispatchEvent(portalEnter);
+		expect(onAddQuestion).not.toHaveBeenCalled();
+	});
+
+	it("Backspace trên hàng chỉ có explanation không xóa hàng", () => {
+		const onItemsChange = vi.fn();
+		const { container } = render(
+			<AnswerKeyGrid
+				typeId="tfng"
+				skill="reading"
+				partId="p1"
+				items={[
+					{ stem: "S1", answer: "TRUE", opts: null, alts: "" },
+					{
+						stem: "",
+						answer: "",
+						opts: null,
+						alts: "",
+						explanation: "<p>Vì đoạn 2</p>",
+					},
+				]}
+				showErrors={false}
+				showExplanation
+				onItemsChange={onItemsChange}
+				onAddQuestion={vi.fn(() => false)}
+			/>,
+		);
+		const row2 = container.querySelector('fieldset[aria-label="Câu 2"]');
+		if (!row2) throw new Error("missing fieldset Câu 2");
+		fireEvent.keyDown(row2, { key: "Backspace" });
+		expect(onItemsChange).not.toHaveBeenCalled();
+	});
+});

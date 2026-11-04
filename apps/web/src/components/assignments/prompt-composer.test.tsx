@@ -57,3 +57,51 @@ describe("PromptComposer lockPart (phase-03 Task 3.2)", () => {
 		expect(html).toContain("True / False / NG");
 	});
 });
+
+describe("PromptComposer showExplanation (#571)", () => {
+	it("render ô Giải thích câu 1 cho kỹ năng chấm tự động (reading, grammar) và ẩn ở writing", () => {
+		const readingHtml = renderToStaticMarkup(
+			<PromptComposer
+				value={readingComposer()}
+				showErrors={false}
+				status="ready"
+				onFieldChange={vi.fn()}
+			/>,
+		);
+		expect(readingHtml).toContain("Giải thích câu 1");
+
+		const grammarHtml = renderToStaticMarkup(
+			<PromptComposer
+				value={{
+					skill: "grammar",
+					part: "g1",
+					type: "mcq",
+					band: "6.5",
+					...emptyComposer("grammar", "mcq"),
+					title: "Grammar MCQ",
+				}}
+				showErrors={false}
+				status="ready"
+				onFieldChange={vi.fn()}
+			/>,
+		);
+		expect(grammarHtml).toContain("Giải thích câu 1");
+
+		const writingHtml = renderToStaticMarkup(
+			<PromptComposer
+				value={{
+					skill: "writing",
+					part: "task2",
+					type: "discuss",
+					band: "7.0",
+					...emptyComposer("writing", "discuss"),
+					title: "Writing Task 2",
+				}}
+				showErrors={false}
+				status="ready"
+				onFieldChange={vi.fn()}
+			/>,
+		);
+		expect(writingHtml).not.toContain("Giải thích câu");
+	});
+});

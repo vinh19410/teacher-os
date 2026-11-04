@@ -323,6 +323,63 @@ describe("builder view-model helpers (full-test builder phase-3)", () => {
 		expect(legacy.part).toBe("task2");
 		expect(legacy.type).toBe("discuss");
 	});
+
+	test("composerFromPrompt giữ explanation HTML, chuẩn hóa plain text từ AI import và bỏ qua explanation rỗng (#571)", () => {
+		const prompt: AssignmentPrompt = {
+			id: "p-exp",
+			skill: "reading",
+			part: "p1",
+			type: "tfng",
+			task: "p1",
+			genre: "tfng",
+			title: "Passage 1",
+			band: "7.0",
+			source: "",
+			prompt: "",
+			passage: "Body",
+			note: "",
+			status: "ready",
+			createdAt: "2026-11-04T00:00:00Z",
+			questions: [
+				{
+					stem: "Q1",
+					opts: null,
+					answer: "TRUE",
+					alts: "",
+					pin: null,
+					explanation: "<p>Đoạn 1 nêu rõ</p>",
+				},
+				{
+					stem: "Q2",
+					opts: null,
+					answer: "FALSE",
+					alts: "",
+					pin: null,
+					explanation: "Dòng 1\nDòng 2",
+				},
+				{
+					stem: "Q3",
+					opts: null,
+					answer: "NOT GIVEN",
+					alts: "",
+					pin: null,
+					explanation: "<p>   </p>",
+				},
+				{
+					stem: "Q4",
+					opts: null,
+					answer: "TRUE",
+					alts: "",
+					pin: null,
+				},
+			],
+		};
+		const value = composerFromPrompt(prompt);
+		expect(value.items[0]?.explanation).toBe("<p>Đoạn 1 nêu rõ</p>");
+		expect(value.items[1]?.explanation).toBe("Dòng 1<br>Dòng 2");
+		expect("explanation" in (value.items[2] ?? {})).toBe(false);
+		expect("explanation" in (value.items[3] ?? {})).toBe(false);
+	});
 });
 
 describe("answer-key apply helpers (full-test builder phase-5)", () => {

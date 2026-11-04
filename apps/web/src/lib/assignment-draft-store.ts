@@ -91,7 +91,8 @@ function composerValueShape(value: unknown): value is ComposerValue {
 			// `pin` (phase-04 FR1) is nullish-or-a-0–100 point — the same guard
 			// as the snapshot read path; a corrupted draft must be dropped, not
 			// handed to the pin editor as garbage.
-			(item.pin == null || isValidPin(item.pin))
+			(item.pin == null || isValidPin(item.pin)) &&
+			(item.explanation === undefined || typeof item.explanation === "string")
 		);
 	});
 }
@@ -102,6 +103,7 @@ interface QuestionItemShape {
 	alts: string;
 	opts?: null | string[];
 	pin?: null | { x: number; y: number };
+	explanation?: unknown;
 }
 
 function draftShape(value: unknown): value is StoredAssignmentDraft {
@@ -211,7 +213,7 @@ export function composerDraftHasContent(value: ComposerValue): boolean {
 			item.stem.trim() ||
 			item.answer.trim() ||
 			item.alts.trim() ||
-			// A placed pin is composed work too — losing it on a reload would
+			Boolean(item.explanation && !isEmptyRichText(item.explanation)) ||
 			// re-place every label by hand (phase-04 FR3).
 			item.pin != null ||
 			JSON.stringify(item.opts ?? blank.opts) !== JSON.stringify(blank.opts),

@@ -54,7 +54,7 @@ flowchart LR
 
 | # | Phase | Status |
 |---|---|---|
-| 1 | [Phase 1: Shared Grid Guards, Web Composer & State Round-Trip (TDD)](./phase-01-start.md) | Pending |
+| 1 | [Phase 1: Shared Grid Guards, Web Composer & State Round-Trip (TDD)](./phase-01-start.md) | Completed |
 | 2 | [Phase 2: Server/Student Integration Proof, E2E & UI Verification](./phase-02-e2e-and-ui-verification.md) | Pending |
 
 ## Success Criteria

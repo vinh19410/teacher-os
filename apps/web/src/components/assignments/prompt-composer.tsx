@@ -260,6 +260,7 @@ export function PromptComposer({
 					onImageUrlChange={(imageUrl) => onFieldChange({ imageUrl })}
 					onItemsChange={(items) => onFieldChange({ items })}
 					onBankChange={(optionBank) => onFieldChange({ optionBank })}
+					showExplanation
 				/>
 			)}
 			{value.skill === "listening" && (

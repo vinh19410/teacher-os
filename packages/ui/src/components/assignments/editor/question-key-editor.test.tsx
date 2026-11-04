@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 import { emptyItem } from "./assignment-presets";
+import { hasItemContent } from "./cloze-editor";
 import { BulkKeyPastePanel, QuestionKeyEditor } from "./question-key-editor";
 
 describe("QuestionKeyEditor (#218 v5)", () => {
@@ -466,5 +467,28 @@ describe("QuestionKeyEditor — view + qStartOverride (#424 phase-01)", () => {
 		);
 		expect(html).toContain('aria-label="Câu 4"');
 		expect(html).toContain('aria-label="Câu 5"');
+	});
+});
+
+describe("ClozeEditor.hasItemContent — bảo vệ explanation (#571)", () => {
+	it("coi câu chỉ có explanation HTML thực là có nội dung, bỏ qua <p></p> rỗng", () => {
+		expect(
+			hasItemContent({
+				stem: "",
+				opts: null,
+				answer: "",
+				alts: "",
+				explanation: "<p>Có giải thích</p>",
+			}),
+		).toBe(true);
+		expect(
+			hasItemContent({
+				stem: "",
+				opts: null,
+				answer: "",
+				alts: "",
+				explanation: "<p>   </p>",
+			}),
+		).toBe(false);
 	});
 });

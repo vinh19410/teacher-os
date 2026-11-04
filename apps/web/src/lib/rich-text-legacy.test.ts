@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { looksLikeHtml, normalizeLegacyRichText } from "./rich-text-legacy";
+import {
+	looksLikeHtml,
+	normalizeDraftItems,
+	normalizeLegacyRichText,
+} from "./rich-text-legacy";
 
 describe("looksLikeHtml", () => {
 	it("detects real tags", () => {
@@ -33,5 +37,42 @@ describe("normalizeLegacyRichText", () => {
 
 	it("passes empty strings through", () => {
 		expect(normalizeLegacyRichText("")).toBe("");
+	});
+});
+
+describe("normalizeLegacyRichText & normalizeDraftItems (#571)", () => {
+	it("escapes plain-text angle-bracket inequalities like 'a<b và c>d' and stays idempotent on second pass", () => {
+		const first = normalizeLegacyRichText("Ta có a<b và c>d\nSuy ra B");
+		expect(first).toBe("Ta có a&lt;b và c&gt;d<br>Suy ra B");
+		expect(normalizeLegacyRichText(first)).toBe(first);
+		expect(normalizeLegacyRichText("<p></p>")).toBe("<p></p>");
+	});
+
+	it("normalizeDraftItems normalizes non-empty explanation and omits empty or <p></p> explanation keys", () => {
+		const items = normalizeDraftItems([
+			{
+				stem: "Q1",
+				opts: null,
+				answer: "TRUE",
+				alts: "",
+				explanation: "Dòng 1\nDòng 2",
+			},
+			{
+				stem: "Q2",
+				opts: null,
+				answer: "FALSE",
+				alts: "",
+				explanation: "<p>   </p>",
+			},
+			{
+				stem: "Q3",
+				opts: null,
+				answer: "NOT GIVEN",
+				alts: "",
+			},
+		]);
+		expect(items[0]?.explanation).toBe("Dòng 1<br>Dòng 2");
+		expect("explanation" in (items[1] ?? {})).toBe(false);
+		expect("explanation" in (items[2] ?? {})).toBe(false);
 	});
 });

@@ -1,6 +1,10 @@
 import { ASSIGNMENT_ANSWER_CHOICES } from "@teacher-os/api/contracts";
 import { inferQuestionTypes } from "@teacher-os/api/lib/infer-question-types";
-import { htmlToPlainText } from "@teacher-os/api/rich-text";
+import {
+	collapseWhitespace,
+	htmlToPlainText,
+	isEmptyRichText,
+} from "@teacher-os/api/rich-text";
 import { Button } from "@teacher-os/ui/components/web-kit/button";
 import { Field, Input, Select } from "@teacher-os/ui/components/web-kit/field";
 import { RichTextEditor } from "@teacher-os/ui/components/web-kit/rich-text-editor";
@@ -36,6 +40,9 @@ export const QUESTION_ANSWER_MAX = 200;
 export const QUESTION_ALTS_MAX = 500;
 /** `opts: z.array(z.string().max(500))` in `assignmentPromptCreateSchema`. */
 export const QUESTION_OPTION_MAX = 500;
+/** `explanation: richTextField(2000)` in `assignmentQuestionSchema`. */
+export const QUESTION_EXPLANATION_MAX = 2000;
+export const QUESTION_EXPLANATION_RAW_MAX = 5000;
 /** `questions.max(40)` in `assignmentPromptCreateSchema`. */
 export const QUESTION_MAX_COUNT = 40;
 
@@ -118,11 +125,22 @@ export function questionRowError(
 		errors.alts = `Danh sách nhận thêm vượt quá ${QUESTION_ALTS_MAX} ký tự.`;
 	if ((item.opts ?? []).some((option) => option.length > QUESTION_OPTION_MAX))
 		errors.opts = `Lựa chọn vượt quá ${QUESTION_OPTION_MAX} ký tự.`;
+	if (typeof item.explanation === "string") {
+		if (
+			collapseWhitespace(htmlToPlainText(item.explanation)).length >
+			QUESTION_EXPLANATION_MAX
+		) {
+			errors.explanation = `Giải thích vượt quá ${QUESTION_EXPLANATION_MAX} ký tự.`;
+		} else if (item.explanation.trim().length > QUESTION_EXPLANATION_RAW_MAX) {
+			errors.explanation = `Giải thích vượt quá ${QUESTION_EXPLANATION_RAW_MAX} ký tự tính cả định dạng.`;
+		}
+	}
 	return errors;
 }
 
 function rowIsEmpty(item: QuestionItem): boolean {
 	if (item.stem.trim() || item.answer.trim() || item.alts.trim()) return false;
+	if (item.explanation && !isEmptyRichText(item.explanation)) return false;
 	return (item.opts ?? []).every((option) => !option.trim());
 }
 
@@ -328,10 +346,18 @@ export function AnswerKeyGrid({
 		index: number,
 	) => {
 		const target = event.target as HTMLElement;
+		// Portal children (vd <input> của Link Popover trong RichTextEditor) nằm
+		// ngoài DOM của fieldset nhưng vẫn bubble qua cây React; hoặc handler con
+		// đã xử lý phím rồi.
+		if (!event.currentTarget.contains(target) || event.defaultPrevented) return;
 		const typing = target.tagName === "INPUT" || target.tagName === "TEXTAREA";
-		// #424 Task 1.1 — ô giải thích là contenteditable: Enter phải xuống
-		// dòng trong ProseMirror, Backspace phải xóa chữ — không thêm/xóa câu.
-		const editingRichText = target.isContentEditable;
+		// #424 Task 1.1 / #571 — ô giải thích là contenteditable (.ProseMirror):
+		// Enter phải xuống dòng, Backspace phải xóa chữ, và gõ chữ (t/f/n, a–h,
+		// 1–8) tuyệt đối không kích hoạt phím tắt đổi đáp án. `closest` phủ cả
+		// node con bên trong ProseMirror và môi trường jsdom thiếu isContentEditable.
+		const editingRichText = Boolean(
+			target.isContentEditable || target.closest?.('[contenteditable="true"]'),
+		);
 		if (event.key === "Enter" && !editingRichText) {
 			event.preventDefault();
 			if (onAddQuestion()) focusRowAfterAdd(index + 1);
@@ -348,8 +374,14 @@ export function AnswerKeyGrid({
 			focusRow(Math.min(index, items.length - 2));
 			return;
 		}
-		if (typing || event.metaKey || event.ctrlKey || event.altKey) return;
-		// Phím tắt đáp án theo kind CỦA CÂU đang focus.
+		if (
+			typing ||
+			editingRichText ||
+			event.metaKey ||
+			event.ctrlKey ||
+			event.altKey
+		)
+			return;
 		const rowItem = items[index];
 		const rowKind = kindOf(rowTypeOf(rowItem));
 		const choices = rowChoicesOf(rowItem);
@@ -397,7 +429,9 @@ export function AnswerKeyGrid({
 				);
 				const rowVisible = showErrors || blurred.has(index);
 				const errorEntries = rowVisible
-					? (["stem", "answer", "opts", "pin", "alts"] as const).filter(
+					? (
+							["stem", "answer", "opts", "pin", "alts", "explanation"] as const
+						).filter(
 							(key) =>
 								rowErrors[key] &&
 								// Phase-04: a missing pin is fixed on the IMAGE, not in

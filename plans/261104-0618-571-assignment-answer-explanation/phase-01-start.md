@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Phase 1: Shared Grid Guards, Web Composer & State Round-Trip (TDD)"
-status: pending
+status: completed
 priority: P1
 effort: "2h"
 dependencies: []
