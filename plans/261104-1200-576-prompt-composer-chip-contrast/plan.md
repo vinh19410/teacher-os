@@ -1,7 +1,7 @@
 ---
 title: "fix(ui): tăng độ tương phản trạng thái đang chọn trong ChipFilter và prompt-composer (#576)"
 description: "Tăng tương phản trạng thái đang chọn cho ChipFilter theo token DESIGN.md (border-primary bg-primary text-primary-foreground), xử lý count badge và dark mode, đồng bộ revenue-chart toggle, kèm TDD unit tests và kiểm chứng hiển thị đa viewport."
-status: pending
+status: completed
 priority: P2
 effort: "1h"
 tags: [ui, contrast, chip-filter, prompt-composer, accessibility, design-v2]
@@ -51,19 +51,18 @@ Kế hoạch này thực hiện theo quy chuẩn handover `--advice` và quy tr�
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: TDD ChipFilter Contrast Fix & Verification](./phase-01-chip-filter-contrast-and-prompt-composer.md) | pending |
+| 1 | [Phase 1: TDD ChipFilter Contrast Fix & Verification](./phase-01-chip-filter-contrast-and-prompt-composer.md) | completed |
 
 ## Success Criteria
 
-- [ ] Unit tests tại `apps/web/src/components/ui/chip-filter.test.tsx` pass 100%, kiểm chứng đầy đủ class `border-primary`, `bg-primary`, `text-primary-foreground`, loại bỏ `bg-secondary` và `border-transparent` trên chip đang chọn.
-- [ ] Badge đếm `counts` sử dụng `text-primary-foreground/80` khi chọn và `text-muted-foreground` khi chưa chọn, giữ `aria-hidden="true"`.
-- [ ] Dark mode hiển thị đúng khối sáng trên nền tối, không bị `dark:bg-input/30` ghi đè trạng thái đã chọn.
-- [ ] `prompt-composer.test.tsx` và các test hiện có tiếp tục pass.
-- [ ] `pnpm check` (biome) và `pnpm check-types` pass không có lỗi.
-- [ ] Visual inspection ở 3 viewport (`1440×900`, `768×1024`, `375×812`) cả light/dark theme hiển thị sắc nét.
+- [x] Unit tests tại `apps/web/src/components/ui/chip-filter.test.tsx` pass 100%, kiểm chứng đầy đủ class `border-primary`, `bg-primary`, `text-primary-foreground`, loại bỏ `bg-secondary` và `border-transparent` trên chip đang chọn.
+- [x] Badge đếm `counts` sử dụng `text-primary-foreground/80` khi chọn và `text-muted-foreground` khi chưa chọn, giữ `aria-hidden="true"`.
+- [x] Dark mode hiển thị đúng khối sáng trên nền tối, không bị `dark:bg-input/30` ghi đè trạng thái đã chọn.
+- [x] `prompt-composer.test.tsx` và các test hiện có tiếp tục pass.
+- [x] `pnpm check` (biome) và `pnpm check-types` pass không có lỗi.
+- [x] Visual inspection ở 3 viewport (`1440×900`, `768×1024`, `375×812`) cả light/dark theme hiển thị sắc nét.
 
 ## Red Team Review
-
 ### Session — 2026-11-04
 **Reviewers:** Security Adversary + Assumption Destroyer (Kongming Advisory Supervised)
 **Findings:** 6 (6 accepted, 0 rejected)

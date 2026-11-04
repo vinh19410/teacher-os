@@ -1,7 +1,7 @@
 # Phase 1: TDD ChipFilter Contrast Fix & Verification
 
 Author: AgentKit Handover Contract (`--advice`)
-Status: pending
+Status: completed
 Priority: P2
 
 ## Goal
