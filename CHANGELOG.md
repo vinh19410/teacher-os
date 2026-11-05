@@ -27,6 +27,7 @@ Quy ước khi cập nhật:
 
 ### CI/Infra
 - Cập nhật bộ e2e theo hành vi mới của cổng học viên và form tạo bài tập: bấm tab "Mật khẩu" trước khi đăng nhập bằng mật khẩu (#578), chọn dạng đề Writing trước khi lưu sẵn sàng giao (#577), kiểm tra cảnh báo thiếu trường thay vì nút lưu bị khóa (#581), cập nhật CTA landing mới (#600); thêm helper dùng chung `selectWritingTask2` và `expectReadySaveBlocked`. Full e2e: 259 passed, 0 failed, 1 skipped (OAuth Google).
+- Bổ sung công cụ di chuyển và kiểm tra an toàn state store Cloudflare (#634): thêm module `packages/infra/src/state-copy.ts` và CLI `scripts/state-copy.ts` hỗ trợ 3 chế độ `count`, `copy`, `verify` (chỉ đọc nguồn, chỉ chọn lọc stack `teacher-os`, copy output, xác thực hash SHA-256 không log secret, không bao giờ xóa); thêm workflow `.github/workflows/state-migrate.yml` chạy thủ công `workflow_dispatch` với concurrency group serialize với deploy; bổ sung input `dry_run` cho `deploy.yml` (deploy production) để xem trước kế hoạch deploy mà không áp dụng; cập nhật runbook.
 ## 2026-11-04
 
 ### Added

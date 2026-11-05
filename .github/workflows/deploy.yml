@@ -18,7 +18,12 @@ name: Deploy Production
 on:
   push:
     branches: [main]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Print the Alchemy plan only: apply nothing, skip smoke"
+        type: boolean
+        default: false
 
 concurrency:
   group: deploy-production
@@ -70,11 +75,12 @@ jobs:
           # Lead intake & placement test (#506, #515, #524): truyền từ GitHub Environment production.
           LEAD_ORG_ID: ${{ vars.LEAD_ORG_ID }}
           LEAD_ORIGINS: ${{ vars.LEAD_ORIGINS }}
-        run: pnpm alchemy deploy --stage prod --yes
+        run: pnpm alchemy deploy --stage prod ${{ inputs.dry_run && '--dry-run' || '--yes' }}
         # --yes auto-approves the plan: without it Alchemy exits code 0 in a
         # non-interactive terminal WITHOUT applying anything ("Non-interactive
         # terminal detected"), which made a no-op deploy look green.
       - name: Smoke check API readiness (/readyz)
+        if: ${{ !inputs.dry_run }}
         # First deploy of a custom domain may wait on DNS/cert provisioning;
         # poll up to ~10 minutes before declaring the release failed.
         run: |
@@ -91,6 +97,7 @@ jobs:
           echo "::error::/readyz did not return 200 {\"ok\":true} within 10 minutes of deploy"
           exit 1
       - name: Smoke check auth stubs (/sw.js, /registerSW.js)
+        if: ${{ !inputs.dry_run }}
         # Issue #125: the removed PWA SW's self-heal chain depends on these
         # files being served as real JavaScript with cache headers that keep
         # the SW update check on the network. Prod deliberately gets no
@@ -124,6 +131,7 @@ jobs:
           [ -n "$ok" ] || fail "stub smoke failed after 3 attempts: /sw.js + /registerSW.js not correctly served"
           echo "stub smoke OK: /sw.js + /registerSW.js served as JS with network-first cache headers"
       - name: Smoke check landing apex (/)
+        if: ${{ !inputs.dry_run }}
         # Apex handover (web → landing StaticSite): the first attach of the
         # custom domain may wait on DNS/cert provisioning; poll up to ~10
         # minutes like /readyz.
@@ -144,6 +152,7 @@ jobs:
           echo "::error::landing apex did not serve HTML within 10 minutes of deploy"
           exit 1
       - name: Smoke check profile
+        if: ${{ !inputs.dry_run }}
         # Plan #536: teacher profile StaticSite (msmy.io.vn + www). Poll up to
         # ~10 minutes like landing; verify both HTML pages have the stage's
         # lead-api meta, www alias responds 200 HTML, and /kiem-tra-dau-vao
