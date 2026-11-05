@@ -41,9 +41,9 @@ import {
 } from "@/lib/quiz-attempt-store";
 import {
 	attemptSummaryQueryOptions,
+	isAttemptAwaitingGrade,
 	useAttemptSummary,
 } from "@/lib/repos/quiz";
-
 export const Route = createFileRoute("/_auth/learn/quizzes/attempt/$attemptId")(
 	{
 		loader: async ({ params: { attemptId } }) => {
@@ -135,20 +135,15 @@ export function AttemptSummaryBody({
 				)}
 				.
 			</p>
-			{/* TOS-30 #478: CHỈ Writing/Speaking chờ giáo viên chấm tay — quiz
-				Reading/Listening tự chấm không bao giờ có `grade` nhưng cũng
-				không bao giờ chờ ai, không được dính nhãn chờ. */}
-			{(summary.skill === "writing" ||
-				summary.skill === "speaking" ||
-				essay !== null) &&
-				grade === null && (
-					<p
-						className="font-medium text-foreground text-sm"
-						data-testid="awaiting-grade"
-					>
-						Đã nộp — Đang chờ giáo viên chấm
-					</p>
-				)}
+			{/* TOS-30 #478, #618: CHỈ Writing/Speaking/Hybrid chờ giáo viên chấm tay. */}
+			{isAttemptAwaitingGrade(summary) && (
+				<p
+					className="font-medium text-foreground text-sm"
+					data-testid="awaiting-grade"
+				>
+					Đã nộp — Đang chờ giáo viên chấm
+				</p>
+			)}
 		</div>
 	);
 

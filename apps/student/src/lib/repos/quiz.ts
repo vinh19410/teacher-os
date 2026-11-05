@@ -1,4 +1,4 @@
-import type { QueryClient } from "@tanstack/react-query";
+import type { Query, QueryClient } from "@tanstack/react-query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	QUIZ_MEDIA_TYPES,
@@ -198,12 +198,61 @@ export async function fetchAttemptSummary(
 		(raw) => quizAttemptSummarySchema.parse(raw),
 	);
 }
+export const AWAITING_GRADE_POLL_INTERVAL_MS = 15_000;
+export const AWAITING_GRADE_MAX_POLL_COUNT = 40; // 40 * 15s = 10 phút poll liên tục khi tab mở
+export const AWAITING_GRADE_STALE_TIME_MS = 15_000;
+export const DEFAULT_ATTEMPT_STALE_TIME_MS = 60_000;
+
+/**
+ * Xác định bài nộp có đang chờ giáo viên chấm điểm tay (Writing/Speaking/Hybrid) hay không (#618).
+ * Loại trừ: bài đã có `grade`, và bài trắc nghiệm thuần tự động tính điểm (Reading/Listening).
+ */
+export function isAttemptAwaitingGrade(
+	attempt?:
+		| (Pick<QuizAttemptSummary, "grade" | "skill" | "essay"> & {
+				writing?: unknown;
+				media?: unknown;
+				practice?: boolean;
+		  })
+		| null,
+): boolean {
+	if (!attempt || attempt.grade != null) {
+		return false;
+	}
+	return (
+		attempt.skill === "writing" ||
+		attempt.skill === "speaking" ||
+		attempt.essay != null ||
+		Boolean(attempt.writing) ||
+		Boolean(attempt.media)
+	);
+}
+
+function awaitingGradeQueryOptions<
+	T extends QuizAttemptSummary | QuizAttemptDetail,
+>() {
+	return {
+		staleTime: (query: Query<T>) =>
+			isAttemptAwaitingGrade(query.state.data)
+				? AWAITING_GRADE_STALE_TIME_MS
+				: DEFAULT_ATTEMPT_STALE_TIME_MS,
+		refetchInterval: (query: Query<T>) => {
+			if (!isAttemptAwaitingGrade(query.state.data)) return false;
+			if (query.state.dataUpdateCount > AWAITING_GRADE_MAX_POLL_COUNT) {
+				return false;
+			}
+			return AWAITING_GRADE_POLL_INTERVAL_MS;
+		},
+		refetchOnWindowFocus: (query: Query<T>) =>
+			isAttemptAwaitingGrade(query.state.data) ? ("always" as const) : false,
+	};
+}
 
 export function attemptSummaryQueryOptions(attemptId: string) {
 	return {
 		queryKey: ["student", "attempt", attemptId] as const,
 		queryFn: () => fetchAttemptSummary(attemptId),
-		staleTime: 60_000,
+		...awaitingGradeQueryOptions<QuizAttemptSummary>(),
 	};
 }
 
@@ -230,7 +279,7 @@ export function attemptDetailQueryOptions(attemptId: string) {
 	return {
 		queryKey: ["student", "attempt", attemptId, "detail"] as const,
 		queryFn: () => fetchAttemptDetail(attemptId),
-		staleTime: 60_000,
+		...awaitingGradeQueryOptions<QuizAttemptDetail>(),
 	};
 }
 
