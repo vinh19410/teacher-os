@@ -476,10 +476,10 @@ test("ci workflow triggers on main and develop and delegates to reusable quality
 
 	const qualityCaller = extractJobBlock(code, "quality");
 	assert.ok(qualityCaller, "ci.yml must declare quality caller job");
-	assert.doesNotMatch(
-		qualityCaller,
-		/^ {4}if:/m,
-		"ci.yml quality job must not declare job-level if:",
+	assert.deepEqual(
+		[...qualityCaller.matchAll(/^ {4}if:(.*)$/gm)].map((m) => m[1].trim()),
+		["github.event_name != 'pull_request' || github.head_ref != 'develop'"],
+		"ci.yml quality job may skip only pull_request runs from develop (push runs must always execute)",
 	);
 	assert.match(
 		qualityCaller,
