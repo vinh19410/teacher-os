@@ -1,8 +1,9 @@
+import * as Cloudflare from "@alchemy.run/cloudflare";
 import * as Alchemy from "alchemy";
-import * as Cloudflare from "alchemy/Cloudflare";
 import { config } from "dotenv";
 import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
+import { prepareFlatMigrations } from "./src/flat-migrations";
 import {
 	resolveAssumeEmailVerified,
 	resolveDomainTopology,
@@ -58,18 +59,18 @@ if (topology && process.env.CORS_ORIGIN) {
 }
 
 const corsOriginConfig = topology
-	? Config.string("CORS_ORIGIN").pipe(
+	? Config.String("CORS_ORIGIN").pipe(
 			Config.withDefault(
 				`${topology.appOrigin},${topology.studentOrigin},${topology.adminOrigin}`,
 			),
 		)
 	: isDevCommand
-		? Config.string("CORS_ORIGIN").pipe(
+		? Config.String("CORS_ORIGIN").pipe(
 				Config.withDefault(
 					"http://localhost:8001,http://localhost:8003,http://localhost:8004",
 				),
 			)
-		: Config.string("CORS_ORIGIN");
+		: Config.String("CORS_ORIGIN");
 
 // An explicit STUDENT_ORIGINS that misses the portal origin (topology mode)
 // silently classifies every portal sign-up as teacher and locks students out
@@ -92,14 +93,14 @@ if (topology && studentOriginsEnv !== undefined) {
 }
 
 const studentOriginsConfig = topology
-	? Config.string("STUDENT_ORIGINS").pipe(
+	? Config.String("STUDENT_ORIGINS").pipe(
 			Config.withDefault(topology.studentOrigin),
 		)
 	: isDevCommand
-		? Config.string("STUDENT_ORIGINS").pipe(
+		? Config.String("STUDENT_ORIGINS").pipe(
 				Config.withDefault("http://localhost:8003"),
 			)
-		: Config.string("STUDENT_ORIGINS");
+		: Config.String("STUDENT_ORIGINS");
 
 // Plan #413: ADMIN_ORIGINS mặc định theo topology (admin.<APP_DOMAIN>) —
 // explicit thiếu origin admin ở topology mode fail loud, cùng pattern
@@ -117,7 +118,7 @@ if (topology && adminOriginsEnv !== undefined) {
 	}
 }
 
-const aiEnabledConfig = Config.string("AI_ENABLED").pipe(
+const aiEnabledConfig = Config.String("AI_ENABLED").pipe(
 	Config.withDefault("false"),
 );
 
@@ -137,19 +138,19 @@ const leadOrigins = resolveLeadOrigins(process.env.LEAD_ORIGINS, {
 });
 
 const adminOriginsConfig = topology
-	? Config.string("ADMIN_ORIGINS").pipe(
+	? Config.String("ADMIN_ORIGINS").pipe(
 			Config.withDefault(topology.adminOrigin),
 		)
 	: isDevCommand
-		? Config.string("ADMIN_ORIGINS").pipe(
+		? Config.String("ADMIN_ORIGINS").pipe(
 				Config.withDefault("http://localhost:8004"),
 			)
-		: Config.string("ADMIN_ORIGINS");
+		: Config.String("ADMIN_ORIGINS");
 
 // Plan #413: ADMIN_EMAILS KHÔNG có default — rỗng (không set) = không ai là
 // admin, không ai đăng ký được account admin. Danh sách email phân tách dấu
 // phẩy; server so khớp lowercase mỗi request.
-const adminEmailsConfig = Config.string("ADMIN_EMAILS").pipe(
+const adminEmailsConfig = Config.String("ADMIN_EMAILS").pipe(
 	Config.withDefault(""),
 );
 
@@ -167,8 +168,15 @@ const assumeEmailVerified = resolveAssumeEmailVerified(
 	process.env.APP_DOMAIN,
 );
 
+// Alchemy's default date moves with each release. Pinning it keeps runtime
+// behavior changes out of Alchemy upgrades, so bumping it stays its own decision.
+const WORKER_COMPATIBILITY_DATE = "2026-03-17";
+
 export const db = Cloudflare.D1.Database("database", {
-	migrationsDir: "../../packages/db/src/migrations",
+	migrations: prepareFlatMigrations(
+		"../../packages/db/src/migrations",
+		".alchemy/d1-migrations",
+	),
 });
 
 // Private bucket for student speaking submissions (audio/video). No public
@@ -184,6 +192,7 @@ export const libraryAudio = Cloudflare.R2.Bucket("library-audio", {});
 export const server = Cloudflare.Worker("server", {
 	main: "../../apps/server/src/index.ts",
 	compatibility: {
+		date: WORKER_COMPATIBILITY_DATE,
 		flags: ["nodejs_compat"],
 	},
 	...(topology && { domain: topology.apiHost, workersDev: false }),
@@ -204,7 +213,7 @@ export const server = Cloudflare.Worker("server", {
 		// Lead intake (#506, #524): org đích + origin profile cho /public/leads.
 		LEAD_ORG_ID: leadOrgId,
 		LEAD_ORIGINS: leadOrigins,
-		BETTER_AUTH_SECRET: Config.redacted("BETTER_AUTH_SECRET"),
+		BETTER_AUTH_SECRET: Config.Redacted("BETTER_AUTH_SECRET"),
 		BETTER_AUTH_URL: topology ? topology.apiOrigin : Cloudflare.Worker.URL,
 		COOKIE_DOMAIN: topology ? topology.cookieDomain : "",
 		// Issue #125: stage-scoped auth cookie namespace (empty = default
@@ -212,42 +221,42 @@ export const server = Cloudflare.Worker("server", {
 		BETTER_AUTH_COOKIE_PREFIX: topology
 			? (topology.authCookiePrefix ?? "")
 			: "",
-		GOOGLE_CLIENT_ID: Config.string("GOOGLE_CLIENT_ID"),
-		GOOGLE_CLIENT_SECRET: Config.redacted("GOOGLE_CLIENT_SECRET"),
+		GOOGLE_CLIENT_ID: Config.String("GOOGLE_CLIENT_ID"),
+		GOOGLE_CLIENT_SECRET: Config.Redacted("GOOGLE_CLIENT_SECRET"),
 		AUTH_ASSUME_EMAIL_VERIFIED: assumeEmailVerified ? "true" : "",
-		MAILER_IMPL: Config.string("MAILER_IMPL").pipe(Config.withDefault("log")),
-		MAIL_FROM: Config.string("MAIL_FROM").pipe(
+		MAILER_IMPL: Config.String("MAILER_IMPL").pipe(Config.withDefault("log")),
+		MAIL_FROM: Config.String("MAIL_FROM").pipe(
 			Config.withDefault('"Cô Mỹ Dạy Tiếng Anh" <onboarding@resend.dev>'),
 		),
 		// plain string vì redacted không combine được với withDefault
-		RESEND_API_KEY: Config.string("RESEND_API_KEY").pipe(
+		RESEND_API_KEY: Config.String("RESEND_API_KEY").pipe(
 			Config.withDefault(""),
 		),
 		// SePay Bank Hub (#320): blank secret ⇒ getBankHub() trả undefined ⇒
 		// các route ngân hàng trả 503 BANKHUB_DISABLED (dev không cần cấu hình).
 		// Same pattern as RESEND_API_KEY — redacted conflicts with withDefault.
-		SEPAY_BANKHUB_CLIENT_ID: Config.string("SEPAY_BANKHUB_CLIENT_ID").pipe(
+		SEPAY_BANKHUB_CLIENT_ID: Config.String("SEPAY_BANKHUB_CLIENT_ID").pipe(
 			Config.withDefault(""),
 		),
-		SEPAY_BANKHUB_CLIENT_SECRET: Config.string(
+		SEPAY_BANKHUB_CLIENT_SECRET: Config.String(
 			"SEPAY_BANKHUB_CLIENT_SECRET",
 		).pipe(Config.withDefault("")),
-		SEPAY_BANKHUB_IPN_API_KEY: Config.string("SEPAY_BANKHUB_IPN_API_KEY").pipe(
+		SEPAY_BANKHUB_IPN_API_KEY: Config.String("SEPAY_BANKHUB_IPN_API_KEY").pipe(
 			Config.withDefault(""),
 		),
-		SEPAY_BANKHUB_WEBHOOK_SECRET: Config.string(
+		SEPAY_BANKHUB_WEBHOOK_SECRET: Config.String(
 			"SEPAY_BANKHUB_WEBHOOK_SECRET",
 		).pipe(Config.withDefault("")),
 		// Production deploys MUST set the production host; sandbox is the
 		// documented default so a forgotten value fails safe (sandbox keys are
 		// useless against it and no real money moves).
-		SEPAY_BANKHUB_BASE_URL: Config.string("SEPAY_BANKHUB_BASE_URL").pipe(
+		SEPAY_BANKHUB_BASE_URL: Config.String("SEPAY_BANKHUB_BASE_URL").pipe(
 			Config.withDefault("https://bankhub-api-sandbox.sepay.vn"),
 		),
 		// Webhook GitHub (#421): blank secret ⇒ /webhooks/github trả 503
 		// GITHUB_WEBHOOK_DISABLED (dev không cần cấu hình). Same pattern as
 		// RESEND_API_KEY — redacted conflicts with withDefault.
-		GITHUB_WEBHOOK_SECRET: Config.string("GITHUB_WEBHOOK_SECRET").pipe(
+		GITHUB_WEBHOOK_SECRET: Config.String("GITHUB_WEBHOOK_SECRET").pipe(
 			Config.withDefault(""),
 		),
 	},
@@ -269,6 +278,7 @@ export default Alchemy.Stack(
 		const serverWorker = yield* server;
 		const aiEnabled = yield* aiEnabledConfig;
 		const webWorker = yield* Cloudflare.Website.Vite("web", {
+			compatibility: { date: WORKER_COMPATIBILITY_DATE },
 			rootDir: "../../apps/web",
 			main: "src/worker.ts",
 			assets: {
@@ -295,6 +305,7 @@ export default Alchemy.Stack(
 		});
 
 		const landingWorker = yield* Cloudflare.Website.StaticSite("landing", {
+			compatibility: { date: WORKER_COMPATIBILITY_DATE },
 			cwd: "../../apps/landing",
 			command: "pnpm build",
 			outdir: "dist",
@@ -316,6 +327,7 @@ export default Alchemy.Stack(
 		});
 
 		const studentWorker = yield* Cloudflare.Website.Vite("student", {
+			compatibility: { date: WORKER_COMPATIBILITY_DATE },
 			rootDir: "../../apps/student",
 			main: "src/worker.ts",
 			assets: {
@@ -341,6 +353,7 @@ export default Alchemy.Stack(
 
 		// Plan #413 phase 5: cổng quản trị — dev 8004, domain topology.adminHost.
 		const adminWorker = yield* Cloudflare.Website.Vite("admin", {
+			compatibility: { date: WORKER_COMPATIBILITY_DATE },
 			rootDir: "../../apps/admin",
 			main: "src/worker.ts",
 			assets: {
@@ -367,6 +380,7 @@ export default Alchemy.Stack(
 		// Plan #536: trang hồ sơ giảng viên cô Mỹ — StaticSite tại msmy.io.vn (+ www)
 		// trên prod, profile.<domain> trên staging, dev port 8005.
 		const profileWorker = yield* Cloudflare.Website.StaticSite("profile", {
+			compatibility: { date: WORKER_COMPATIBILITY_DATE },
 			cwd: "../../apps/profile",
 			command: "pnpm build",
 			outdir: "dist",

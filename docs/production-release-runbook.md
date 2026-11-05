@@ -242,6 +242,34 @@ in the staging D1; prod deliberately gets no signup smoke. The manual
 "Provision staging" procedure below remains the path for first provisioning
 or destroy/recreate.
 
+To preview a deploy without applying it, run the workflow manually from
+`develop` with `dry_run` enabled: it prints the Alchemy plan and skips seed and
+smoke steps. Check that the plan does not replace or delete the D1 database, R2
+buckets or custom domains before deploying.
+
+Alchemy state lives in the account-level `alchemy-state-store` Worker, which
+every project on this Cloudflare account shares. A project on a different
+Alchemy version can change the store's schema version and fail this project's
+deploy with `expected vN, observed vM`. Never answer that error by rerunning a
+deploy on an older Alchemy version: with `--yes`, it tries to redeploy the shared
+store to its own version.
+
+Alchemy refuses a directory containing `meta/_journal.json`, so
+`packages/infra/src/flat-migrations.ts` copies only the `.sql` files into
+`packages/infra/.alchemy/d1-migrations` on each run. Do not run `drizzle-kit up`:
+it renames every migration, which no longer matches the recorded history.
+
+An existing stage keeps using the `d1_migrations` table recorded in its Alchemy
+state; `__alchemy_migrations` is only the default for a new stage. The first
+deploy on `2.0.0-beta.85` rebuilds `d1_migrations` with a `hash` column, checks
+every recorded name against the local files, and stops on a mismatch without
+applying migrations. The plan shows `database: update` for this deploy, which is
+expected. Older Alchemy versions cannot write to the rebuilt table, so roll back
+by reverting code while staying on `beta.85` or later. Note the UTC time before
+that first deploy of each stage, so D1 Time Travel can restore to it if the
+rebuild fails partway. If it does, the rows remain in
+`d1_migrations_alchemy_upgrade`.
+
 ## Deploy (production)
 
 ```bash
