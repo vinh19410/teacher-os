@@ -179,6 +179,7 @@ test("admin sign-in ở web origin bị từ chối — kernel không bao giờ 
 
 test("admin sign-in ở cổng học viên bị từ chối", async ({ page }) => {
 	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.locator("#tab-signin").click();
 	await page.locator("#signin-email").fill("admin@e2e.local");
 	await page.locator("#signin-password").fill(ADMIN_PASSWORD);
 	const [signIn] = await Promise.all([

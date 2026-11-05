@@ -3,6 +3,7 @@ import {
 	adminOpenNewTestPage,
 	ensureAdminAccount,
 	fillRichEditor,
+	selectWritingTask2,
 	signUpViaUi,
 } from "./helpers";
 
@@ -20,6 +21,7 @@ test("bold formatting persists through save and renders in the preview", async (
 
 	await signUpViaUi(page);
 	await page.goto("/assignments/new");
+	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill(TITLE);
 	await fillRichEditor(
 		page,
@@ -62,6 +64,7 @@ test("XSS payload in rich text is stored but never executes at render", async ({
 
 	await signUpViaUi(page);
 	await page.goto("/assignments/new");
+	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill(TITLE);
 
 	// fill() cannot inject HTML — dispatch a real paste event carrying HTML in
@@ -111,6 +114,7 @@ test("multi-line prompt keeps its line breaks through the editor round trip", as
 
 	await signUpViaUi(page);
 	await page.goto("/assignments/new");
+	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill(TITLE);
 	await fillRichEditor(page, "Nội dung đề", "Dòng thứ nhất");
 	await page.keyboard.press("Enter");
@@ -137,6 +141,7 @@ test("full-option toolbar structures persist and render for students", async ({
 
 	await signUpViaUi(page);
 	await page.goto("/assignments/new");
+	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill(TITLE);
 	await fillRichEditor(page, "Nội dung đề", "Phần giảng dạy chính");
 
@@ -193,6 +198,7 @@ test("link popover persists an allowlisted href and renders for students", async
 
 	await signUpViaUi(page);
 	await page.goto("/assignments/new");
+	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill(TITLE);
 	await fillRichEditor(page, "Nội dung đề", "Tài liệu đọc thêm");
 
@@ -236,6 +242,7 @@ test("empty-selection link applies as a stored mark at the caret and traps focus
 }) => {
 	await signUpViaUi(page);
 	await page.goto("/assignments/new");
+	await selectWritingTask2(page);
 	await fillRichEditor(page, "Nội dung đề", "Mở đầu");
 
 	const promptEditor = page.getByLabel("Nội dung đề");

@@ -106,9 +106,16 @@ test("hybrid Grammar + Writing assignment: author, preview, assign, student take
 		teacherPage.getByTestId("composer-writing-section"),
 	).toBeVisible();
 	await expect(teacherPage.getByText("Thiếu đề phần Writing")).toBeVisible();
+	await teacherPage
+		.getByRole("button", { name: "Lưu vào ngân hàng" })
+		.first()
+		.click();
 	await expect(
-		teacherPage.getByRole("button", { name: "Lưu vào ngân hàng" }).first(),
-	).toBeDisabled();
+		teacherPage.getByTestId("assignment-save-missing-alert"),
+	).toBeVisible();
+	await expect(
+		teacherPage.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),
+	).toBeHidden();
 
 	await fillRichEditor(
 		teacherPage,

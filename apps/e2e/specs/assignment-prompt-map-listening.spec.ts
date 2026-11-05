@@ -53,10 +53,12 @@ test("create a ready listening map with bank, pins and audio; round-trip through
 	await page.getByLabel("Mục A", { exact: true }).fill("Reception");
 	await page.getByLabel("Mục B", { exact: true }).fill("Coffee area");
 
-	// Ready is blocked until the audio and the image + pins exist.
+	// Ready save is rejected until the audio and the image + pins exist.
+	await page.getByRole("button", { name: "Lưu vào ngân hàng" }).first().click();
+	await expect(page.getByTestId("assignment-save-missing-alert")).toBeVisible();
 	await expect(
-		page.getByRole("button", { name: "Lưu vào ngân hàng" }).first(),
-	).toBeDisabled();
+		page.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),
+	).toBeHidden();
 	await expect(page.getByText("Thiếu file nghe")).toBeVisible();
 
 	await page
@@ -72,9 +74,11 @@ test("create a ready listening map with bank, pins and audio; round-trip through
 		mimeType: "audio/mpeg",
 		buffer: Buffer.from("fake-audio"),
 	});
+	await page.getByRole("button", { name: "Lưu vào ngân hàng" }).first().click();
+	await expect(page.getByTestId("assignment-save-missing-alert")).toBeVisible();
 	await expect(
-		page.getByRole("button", { name: "Lưu vào ngân hàng" }).first(),
-	).toBeDisabled();
+		page.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),
+	).toBeHidden();
 
 	// Pin both questions, then the save opens.
 	await pinSurface.click({ position: { x: 40, y: 30 } });

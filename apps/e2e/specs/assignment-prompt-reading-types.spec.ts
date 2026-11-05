@@ -1,6 +1,6 @@
 import { createClient } from "@libsql/client";
 import { expect, test } from "@playwright/test";
-import { fillRichEditor, signUpViaUi } from "./helpers";
+import { expectReadySaveBlocked, fillRichEditor, signUpViaUi } from "./helpers";
 
 /**
  * Issue #269 — the new reading question types compose end to end: summary
@@ -127,9 +127,7 @@ test("create a ready diagram prompt with an https image URL", async ({
 	await page.getByLabel("Đáp án chấm tự động").first().fill("piston");
 
 	// Ready is blocked until the diagram carries its image URL.
-	await expect(
-		page.getByRole("button", { name: "Lưu vào ngân hàng" }).first(),
-	).toBeDisabled();
+	await expectReadySaveBlocked(page);
 	await expect(page.getByText("Thiếu ảnh hoặc ghim nhãn")).toBeVisible();
 
 	await page.getByLabel("Ảnh biểu đồ (URL)").fill(IMAGE_URL);
@@ -180,9 +178,7 @@ test("create a ready diagram prompt with an https image URL", async ({
 	await page.getByLabel("Ảnh biểu đồ (URL)").fill(IMAGE_URL);
 	// Ready also demands a pin on every question (phase-04 FR2) — the save
 	// stays blocked until the image is labeled again.
-	await expect(
-		page.getByRole("button", { name: "Lưu vào ngân hàng" }).first(),
-	).toBeDisabled();
+	await expectReadySaveBlocked(page);
 	await page
 		.getByRole("application", { name: "Ảnh đề — bấm để đặt ghim nhãn" })
 		.click({ position: { x: 60, y: 40 } });
@@ -393,9 +389,7 @@ test("deleting a middle bank row resets the keys at or after that position", asy
 	await expect(
 		page.getByText("Thiếu đáp án chấm tự động").first(),
 	).toBeVisible();
-	await expect(
-		page.getByRole("button", { name: "Lưu vào ngân hàng" }).first(),
-	).toBeDisabled();
+	await expectReadySaveBlocked(page);
 
 	// Re-key the shifted label, then the prompt saves ready again.
 	await page.getByRole("button", { name: "Câu 28: B" }).click();

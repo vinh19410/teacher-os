@@ -180,7 +180,7 @@ test.describe("profile placement test (/kiem-tra-dau-vao/)", () => {
 		await page.goto(PROFILE_ORIGIN);
 		await page
 			.getByRole("link", {
-				name: /Làm Bài Kiểm Tra Đầu Vào Miễn Phí/,
+				name: /Làm test xếp lớp miễn phí/,
 			})
 			.click();
 		await expect(page).toHaveURL(/\/kiem-tra-dau-vao\/$/);

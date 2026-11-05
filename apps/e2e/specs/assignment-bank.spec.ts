@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { fillRichEditor, signUpViaUi } from "./helpers";
+import { fillRichEditor, selectWritingTask2, signUpViaUi } from "./helpers";
 
 /**
  * Issue #208 / #267 — Trang Bài tập (gộp bank): filters (skill + part),
@@ -13,6 +13,7 @@ test("bank lists prompts with filters, search, and preview", async ({
 
 	// Seed: 1 ready Task 2 prompt + 1 draft Task 1 prompt via /assignments/new.
 	await page.goto("/assignments/new");
+	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill("QC-208 Bank Discuss");
 	await fillRichEditor(
 		page,

@@ -297,6 +297,29 @@ export async function fillRichEditor(
 	await editor.fill(text);
 }
 
+/** Writing prompts need an explicit writing type and a genre (dạng đề)
+ * before a ready save; nothing is preselected on /assignments/new. */
+export async function selectWritingTask2(
+	page: Page,
+	genre = "Discuss both views",
+): Promise<void> {
+	await page.getByRole("button", { name: "Task 2 · 250 từ" }).first().click();
+	await page.getByRole("button", { name: genre }).click();
+}
+
+/** The ready save button is always enabled; clicking it with missing fields
+ * must surface the blockers alert and neither save nor leave the form. */
+export async function expectReadySaveBlocked(page: Page): Promise<void> {
+	const save = page.getByRole("button", { name: "Lưu vào ngân hàng" }).first();
+	await expect(save).toBeEnabled();
+	await save.click();
+	await expect(page.getByTestId("assignment-save-missing-alert")).toBeVisible();
+	await expect(
+		page.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),
+	).toBeHidden();
+	await expect(page).toHaveURL(/\/assignments\/new$/);
+}
+
 /** Kích hoạt enrollment qua API seam (/api/enrollments/:id/accept).
  * Mang theo session cookie và Origin header. */
 export async function acceptEnrollment(
