@@ -17,6 +17,9 @@ permissions:
 
 jobs:
   quality:
+    # A PR from develop already gets checks from the push run on the same SHA;
+    # deploy.yml re-runs quality on main before shipping.
+    if: github.event_name != 'pull_request' || github.head_ref != 'develop'
     uses: ./.github/workflows/quality.yml
     with:
       turbo-cache: true
