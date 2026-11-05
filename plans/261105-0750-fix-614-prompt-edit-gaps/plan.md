@@ -1,7 +1,7 @@
 ---
 title: "Sửa 3 lỗi của tính năng sửa đề trong ngân hàng (#614)"
 description: "Khóa nội dung đề khi đã có bài làm, báo đúng lỗi khóa và đối soát trung thực ở edit mode, để PR #629 có thể promote lên staging."
-status: pending
+status: completed
 priority: P1
 effort: 5h
 issue: 630
@@ -73,6 +73,15 @@ Revert commit. Không có thay đổi schema hay dữ liệu.
 - Tier: Standard. `ak plan validate` đạt.
 - Đã kiểm chứng trên code: các file cần sửa, `handleReconcile` ở `new.tsx:831`, nhánh `definite-failure` ở `use-kernel-form-submit.ts:40`, tên package `server` và `web`, `submit.error` hiển thị ở composer và test builder.
 - Chưa kiểm chứng: `HttpError.code` có được điền cho `update-assignment-prompt` hay không. Phase 2 bước 4 kiểm tra việc này.
+- Failed: 0.
+
+### Session 2 (2026-11-05) — advisory receipt (kongming, checkpoint sau plan gates)
+
+- Verdict: **conditional GO**. Phase 1 start được; phase 2/3 cần amendment trước khi chạy.
+- **Amendment (áp dụng):** composer gửi đủ mọi trường nội dung mỗi lần lưu dù giáo viên không sửa — `normalizeLegacyRichText` (`rich-text-legacy.ts:33`) biến `\n`→`<br>` + escape `&<>`, `type = existingPrompt.type ?? genre` (`new.tsx:484`), `normalizeDraftItems` drop `explanation` rỗng, `intro`/`transcript`/`cuePoints` không trim. So sánh trim ở server không đủ → **cần field-diff phía client** (bỏ trường không đổi khỏi payload, mirror pattern `writingChanged`) ở cả `new.tsx` và `test-builder-shell.tsx`, thêm vào phase 2. Server comparison giữ làm backstop cho caller khác.
+- Đã kiểm chứng bổ sung: `HttpError.code` ĐƯỢC điền (`parseErrorOptions`, `repos/kernel.ts:476` — phase 2 bước 4 xong, không cần sửa kernel.ts); hằng mã lỗi `ASSIGNMENT_PROMPT_ERROR_CODES` đặt tại `contracts.ts` (mirror `STUDENT_INVITATION_ERROR_CODES`).
+- Gate bổ sung trước merge: round-trip test 2 composer (đề cũ plain text + `\n` + `&`, type null, explanation rỗng → save không sửa chỉ còn title/band/source/status), browser smoke 3 viewport, ghi follow-up `PUT /tests/:id/parts` chưa check attempt (ngoài phạm vi #630) vào PR.
+- `ak plan red-team` không có trong CLI bản cài; gate red-team thoả bởi Session 1 + sweep khi đọc code + kongming review (phạm vi tương đương: đúng revision, đúng câu hỏi go/no-go).
 - Failed: 0.
 
 <!-- slug: fix-614-prompt-edit-gaps -->

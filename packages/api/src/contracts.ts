@@ -1147,6 +1147,19 @@ export type AssignmentPromptUpdate = z.infer<
 >;
 
 /**
+ * Mã 409 khóa nội dung của PATCH /assignments/prompts/:id (#630). Server trả
+ * kèm `code` trong body lỗi; web tra ánh xạ thông báo theo mã này.
+ */
+export const ASSIGNMENT_PROMPT_ERROR_CODES = {
+	/** Đề đã có quiz_attempt — trường nội dung không được đổi. */
+	CONTENT_LOCKED: "PROMPT_CONTENT_LOCKED",
+	/** Phần Writing bị khóa vì đề đã giao / nằm trong bộ đề, study pack. */
+	WRITING_SECTION_LOCKED: "WRITING_SECTION_LOCKED",
+} as const;
+export type AssignmentPromptErrorCode =
+	(typeof ASSIGNMENT_PROMPT_ERROR_CODES)[keyof typeof ASSIGNMENT_PROMPT_ERROR_CODES];
+
+/**
  * Full test CRUD (design "IELTS Full Test Builder"). `timeLimitSeconds`
  * null = không giới hạn (Writing/Speaking); cap 3*3600 = full IELTS timed
  * paper. Parts KHÔNG nằm ở create — dùng PUT parts riêng (replace-all).

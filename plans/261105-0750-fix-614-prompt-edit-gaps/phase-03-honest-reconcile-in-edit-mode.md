@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Đối soát trung thực ở edit mode"
-status: pending
+status: done
 priority: P1
 effort: "1.5h"
 dependencies: []
@@ -28,8 +28,8 @@ Trong edit mode, `handleReconcile` tìm đề theo `id`. Đề này luôn tồn 
    - PATCH thực ra đã ghi, refresh trả dữ liệu mới → hiện màn hình thành công.
    - PATCH chưa ghi, refresh trả dữ liệu cũ → không hiện thành công, có thông báo lỗi, form giữ nguyên và lưu lại được.
    - Refresh thất bại → giữ hành vi `reconcile-failed` hiện tại.
-2. Lấy dòng đề mới nhất sau `submit.reconcile()` thay vì `data` trong closure. Đọc snapshot mới từ query `['kernel']` qua `useQueryClient().getQueryData` và cùng mapper `data-provider.tsx` đang dùng. Nếu cách này kéo theo thay đổi lớn, dùng `useRef` theo dõi `data` và xác minh ref đã cập nhật khi refresh resolve.
-3. So sánh dòng mới với giá trị đã gửi: `title`, `type`, `band`, `source`, `prompt`, `passage`, `intro`, `transcript`, `cueTopic`, `cuePoints`, `audioName`, `imageUrl`, `note`, `questions`, `optionBank`, `status`, và phần writing. Dùng cùng cách `trim()` như lúc tạo payload.
+2. Lấy dòng đề mới nhất sau `submit.reconcile()` thay vì `data` trong closure. Đọc snapshot mới qua `useQueryClient().getQueryData(kernelQueryKey)` với `kernelQueryKey` export sẵn ở `repos/kernel.ts:656` (không dùng literal `["kernel"]`), tìm dòng theo id đã submit.
+3. So sánh dòng mới với **payload đã gửi capture vào ref lúc bấm lưu** (không so với `value` hiện tại): `title`, `type`, `band`, `source`, `prompt`, `passage`, `intro`, `transcript`, `cueTopic`, `cuePoints`, `audioName`, `imageUrl`, `note`, `questions`, `optionBank`, `status`, và phần writing. Dùng cùng cách `trim()` như lúc tạo payload.
 4. Không khớp: `submit.setError` với thông báo "Đã tải lại dữ liệu nhưng thay đổi của bạn chưa được lưu. Vui lòng lưu lại.", không gọi `setSaved`.
 5. Không đổi hành vi đối soát của luồng tạo mới.
 
