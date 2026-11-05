@@ -11,7 +11,9 @@ const submitFixture = {
 	reset: vi.fn(),
 };
 
-const searchFixture = { current: {} as { classId?: string } };
+const searchFixture = {
+	current: {} as { classId?: string; promptId?: string },
+};
 vi.mock("@tanstack/react-router", () => ({
 	createFileRoute: () => (options: Record<string, unknown>) => ({
 		...options,
@@ -51,6 +53,7 @@ import type { PreviewDraft } from "@/lib/assignment-preview-draft";
 import {
 	actionCopyFor,
 	missingRequirementsFor,
+	NewAssignmentPage,
 	NewAssignmentRoute,
 	previewDraftFrom,
 	Route,
@@ -988,5 +991,81 @@ describe("NewAssignmentRoute — class-based default band (#585)", () => {
 		draftFixture.value = null;
 		searchFixture.current = {};
 		dataFixture.data.classes = [];
+	});
+});
+
+describe("NewAssignmentRoute — edit mode via promptId (#614)", () => {
+	const samplePrompt = {
+		id: "prompt-writing-1",
+		skill: "writing",
+		part: "task2",
+		type: "discuss",
+		task: "task2",
+		genre: "discuss",
+		title: "Essay Discuss Both Views",
+		band: "7.5",
+		source: "Cambridge 17",
+		prompt:
+			"<p>Some people think that universities should provide graduates with the knowledge and skills needed in the workplace.</p>",
+		passage: "",
+		intro: "",
+		transcript: "",
+		cueTopic: "",
+		cuePoints: "",
+		audioName: "",
+		imageUrl: "",
+		optionBank: [],
+		questions: [],
+		note: "Remember 250 words minimum.",
+		status: "ready",
+		createdAt: "2026-11-01T00:00:00.000Z",
+	};
+
+	it("renders edit mode with prompt data, locked skill/part, and Save Changes button", () => {
+		dataFixture.data.assignmentPrompts = [samplePrompt];
+		searchFixture.current = { promptId: "prompt-writing-1" };
+
+		const html = renderToStaticMarkup(<NewAssignmentRoute />);
+		expect(html).toContain("Chỉnh sửa đề bài");
+		expect(html).toContain("Chỉnh sửa");
+		expect(html).toContain("Essay Discuss Both Views");
+		expect(html).toContain("Cambridge 17");
+		expect(html).toMatch(/<button[^>]*aria-pressed="true"[^>]*>7\.5<\/button>/);
+		expect(html).toContain("Lưu thay đổi");
+		expect(html).not.toContain("Thêm đề vào ngân hàng");
+
+		// Skill & part are static chips, not interactive ChipFilter options
+		expect(html).toContain("Writing Academic");
+		expect(html).toContain("Task 2 · 250 từ");
+
+		// Clean up
+		searchFixture.current = {};
+		dataFixture.data.assignmentPrompts = [];
+	});
+
+	it("renders not found card when promptId is not in the store", () => {
+		dataFixture.data.assignmentPrompts = [];
+		searchFixture.current = { promptId: "non-existent-id" };
+
+		const html = renderToStaticMarkup(<NewAssignmentRoute />);
+		expect(html).toContain("Không tìm thấy đề này.");
+		expect(html).toContain("Quay lại danh sách");
+		expect(html).not.toContain("Lưu vào ngân hàng");
+		expect(html).not.toContain("Lưu thay đổi");
+
+		// Clean up
+		searchFixture.current = {};
+	});
+
+	it("NewAssignmentPage remounts Route with promptId as key", () => {
+		dataFixture.data.assignmentPrompts = [samplePrompt];
+		searchFixture.current = { promptId: "prompt-writing-1" };
+
+		const html = renderToStaticMarkup(<NewAssignmentPage />);
+		expect(html).toContain("Chỉnh sửa đề bài");
+		expect(html).toContain("Essay Discuss Both Views");
+
+		searchFixture.current = {};
+		dataFixture.data.assignmentPrompts = [];
 	});
 });

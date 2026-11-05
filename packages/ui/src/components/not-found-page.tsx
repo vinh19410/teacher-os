@@ -13,12 +13,12 @@ export function NotFoundPage({ homeHref, homeLabel }: NotFoundPageProps) {
 				<a
 					href="/"
 					className="inline-flex items-center gap-2 font-medium transition-opacity hover:opacity-90"
-					aria-label="Teacher OS - Trang chủ"
+					aria-label="Cô Mỹ Dạy Tiếng Anh - Trang chủ"
 				>
 					<span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-						TS
+						CM
 					</span>
-					Teacher OS
+					Cô Mỹ Dạy Tiếng Anh
 				</a>
 			</header>
 
@@ -58,7 +58,7 @@ export function NotFoundPage({ homeHref, homeLabel }: NotFoundPageProps) {
 
 			{/* Footer */}
 			<footer className="border-t py-4 text-center text-muted-foreground text-xs">
-				© 2022 Teacher OS · Quản lý lớp gia sư 1:1
+				© 2022 Cô Mỹ Dạy Tiếng Anh · Quản lý lớp gia sư 1:1
 			</footer>
 		</div>
 	);

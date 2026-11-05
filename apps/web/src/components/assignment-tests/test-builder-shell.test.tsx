@@ -298,6 +298,9 @@ describe("TestBuilderShell — Chỉnh sửa & Cập nhật đề bảo toàn ex
 		fireEvent.click(screen.getByRole("button", { name: "Chỉnh sửa" }));
 		expect(screen.getByText("Giải thích câu 1")).toBeTruthy();
 
+		// #630 field-diff: chỉ câu hỏi THẬT SỰ đổi mới nằm trên PATCH —
+		// đổi đáp án câu 1 (TRUE → FALSE) qua lưới đáp án.
+		fireEvent.click(screen.getByRole("button", { name: "Câu 1: FALSE" }));
 		fireEvent.click(screen.getByRole("button", { name: "Cập nhật đề" }));
 		expect(submitFixture.run).toHaveBeenCalledTimes(1);
 		const action = submitFixture.run.mock.calls[0]?.[0] as {
@@ -319,5 +322,66 @@ describe("TestBuilderShell — Chỉnh sửa & Cập nhật đề bảo toàn ex
 			"<p>Giải thích gốc câu 1</p>",
 		);
 		expect("explanation" in (patchedQuestions[1] ?? {})).toBe(false);
+		// Các field khóa nội dung khác không đổi → omitted khỏi PATCH (#630).
+		for (const key of [
+			"type",
+			"prompt",
+			"passage",
+			"intro",
+			"transcript",
+			"cueTopic",
+			"cuePoints",
+			"audioName",
+			"imageUrl",
+			"optionBank",
+			"note",
+			"writing",
+		]) {
+			expect(key in action.payload).toBe(false);
+		}
+	}, 20_000);
+
+	it("#630: Cập nhật đề KHÔNG sửa gì → PATCH chỉ còn title/band/source/status, writing omitted", async () => {
+		submitFixture.run.mockResolvedValue({
+			kind: "refreshed",
+			id: "prompt-edit",
+		});
+		const smallEditTest: KernelAssignmentTestRow = {
+			...editTest,
+			parts: [
+				{
+					testId: "at-1",
+					promptId: "prompt-edit",
+					part: "p1",
+					position: 0,
+					qStartOverride: null,
+				},
+			],
+		};
+		render(<TestBuilderShell mode="edit" test={smallEditTest} />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Chỉnh sửa" }));
+		fireEvent.click(screen.getByRole("button", { name: "Cập nhật đề" }));
+
+		expect(submitFixture.run).toHaveBeenCalledTimes(1);
+		const action = submitFixture.run.mock.calls[0]?.[0] as {
+			type: string;
+			promptId: string;
+			payload: Record<string, unknown>;
+		};
+		expect(action.type).toBe("update-assignment-prompt");
+		expect(action.promptId).toBe("prompt-edit");
+		expect(Object.keys(action.payload).sort()).toEqual([
+			"band",
+			"source",
+			"status",
+			"title",
+		]);
+		// prompt-edit không có phần writing → writing phải omitted, không
+		// bao giờ gửi `writing: null` vô điều kiện như trước.
+		expect("writing" in action.payload).toBe(false);
+		expect(assignmentPromptUpdateSchema.safeParse(action.payload).success).toBe(
+			true,
+		);
 	}, 20_000);
 });

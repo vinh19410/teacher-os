@@ -1,8 +1,28 @@
+import { ASSIGNMENT_PROMPT_ERROR_CODES } from "@teacher-os/api/contracts";
 import { useCallback, useState } from "react";
 import { useData } from "@/lib/data-store";
 import { type HttpError, isHttpError } from "@/lib/kernel-load-state";
 import type { KernelAction } from "./data-actions";
 import type { KernelCommandResult } from "./repos/kernel";
+
+const GENERIC_FAILURE_MESSAGE =
+	"Không lưu được — dữ liệu chưa được ghi lên máy chủ. Vui lòng kiểm tra và thử lại.";
+
+/** Dedicated copy for 409 lock rejections: the write was refused because the
+ * target is locked, so the generic "try again" message would mislead the
+ * teacher about what happened and what to do next. Anything else keeps the
+ * generic message. */
+function lockFailureMessage(error: unknown): string {
+	if (!isHttpError(error)) return GENERIC_FAILURE_MESSAGE;
+	switch (error.code) {
+		case ASSIGNMENT_PROMPT_ERROR_CODES.CONTENT_LOCKED:
+			return "Đề đã có học viên làm bài nên không sửa được nội dung. Bạn vẫn có thể đổi tiêu đề, band, nguồn và trạng thái. Muốn đổi nội dung, hãy tạo đề mới.";
+		case ASSIGNMENT_PROMPT_ERROR_CODES.WRITING_SECTION_LOCKED:
+			return "Đề đã được giao hoặc đang dùng trong bộ đề nên không sửa được phần Writing. Hãy trả phần này về như cũ để lưu các thay đổi khác.";
+		default:
+			return GENERIC_FAILURE_MESSAGE;
+	}
+}
 
 export type KernelFormNotice =
 	| { kind: "committed" } // saved server-side, snapshot refresh failed
@@ -16,7 +36,19 @@ export type KernelFormNotice =
  * while a submit is already pending (double-submit guard) and resolve the
  * result / `true` when the caller may close and reset.
  */
-export function useKernelFormSubmit() {
+export interface KernelFormSubmitState {
+	saving: boolean;
+	error: string | undefined;
+	failureError: HttpError | undefined;
+	setError: (error: string | undefined) => void;
+	notice: KernelFormNotice | undefined;
+	submitBlocked: boolean;
+	run: (action: KernelAction) => Promise<KernelCommandResult | null>;
+	reconcile: () => Promise<boolean>;
+	reset: () => void;
+}
+
+export function useKernelFormSubmit(): KernelFormSubmitState {
 	const { dispatch, refresh } = useData();
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | undefined>();
@@ -39,9 +71,7 @@ export function useKernelFormSubmit() {
 				}
 				if (result.kind === "definite-failure") {
 					setFailureError(isHttpError(result.error) ? result.error : undefined);
-					setError(
-						"Không lưu được — dữ liệu chưa được ghi lên máy chủ. Vui lòng kiểm tra và thử lại.",
-					);
+					setError(lockFailureMessage(result.error));
 					return result;
 				}
 				setError(undefined);

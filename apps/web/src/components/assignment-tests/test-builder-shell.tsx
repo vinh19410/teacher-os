@@ -3,6 +3,7 @@ import {
 	ASSIGNMENT_TEST_PRESETS,
 	type AssignmentBand,
 	type AssignmentSkill,
+	type AssignmentWritingSection,
 	isAssignmentImageUrl,
 	type KernelAssignmentTestRow,
 } from "@teacher-os/api/contracts";
@@ -24,6 +25,7 @@ import {
 	isImageBased,
 	kindOf,
 	partOf,
+	type QuestionItem,
 } from "@/components/assignments/assignment-presets";
 import {
 	applyComposerFieldChange,
@@ -50,6 +52,7 @@ import {
 	testDraftHasContent,
 } from "@/lib/assignment-test-draft-store";
 import { saveTestPreviewDraft } from "@/lib/assignment-test-preview-draft";
+import { canonicalJson } from "@/lib/canonical-json";
 import { useData } from "@/lib/data-store";
 import type { AssignmentPrompt } from "@/lib/mock-data";
 import {
@@ -77,6 +80,10 @@ interface OpenComposer {
 	/** null = soạn mới; id = chỉnh prompt đã gán (PATCH). */
 	promptId: string | null;
 	value: ComposerValue;
+	/** #630: giá trị composer NGAY LÚC MỞ cho prompt đã có — chuẩn so sánh
+	 * field-diff khi Cập nhật đề (field không đổi thì không gửi). null =
+	 * soạn mới (create gửi đầy đủ như cũ). */
+	baseline: ComposerValue | null;
 	status: "draft" | "ready";
 }
 
@@ -337,6 +344,7 @@ export function TestBuilderShell({
 		setComposer({
 			part,
 			promptId: null,
+			baseline: null,
 			value: draft
 				? {
 						...draft,
@@ -366,10 +374,14 @@ export function TestBuilderShell({
 		const promptId = assigned[part];
 		const prompt = promptId ? promptById.get(promptId) : undefined;
 		if (!prompt) return;
+		// Baseline = composer value lúc mở — field-diff so với đây khi
+		// Cập nhật đề (#630), không phải so với từng cú nhập.
+		const restored = composerFromPrompt(prompt);
 		setComposer({
 			part,
 			promptId,
-			value: composerFromPrompt(prompt),
+			value: restored,
+			baseline: restored,
 			status: prompt.status,
 		});
 	}
@@ -413,18 +425,22 @@ export function TestBuilderShell({
 			return;
 		}
 		setShowComposerErrors(true);
-		const payload = composerToPromptPayload(composer.value, composer.status);
 		if (composer.promptId) {
-			// assignmentPromptUpdateSchema omits skill/part and is .strict().
-			const { skill: _skill, part: _part, ...updatePayload } = payload;
+			// assignmentPromptUpdateSchema omits skill/part and is .strict();
+			// field-diff (#630) đã bỏ field khóa nội dung không đổi.
 			const result = await submit.run({
 				type: "update-assignment-prompt",
 				promptId: composer.promptId,
-				payload: updatePayload,
+				payload: composerUpdatePromptPayload(
+					composer.value,
+					composer.status,
+					composer.baseline,
+				),
 			});
 			if (result?.kind === "refreshed") closeComposer();
 			return;
 		}
+		const payload = composerToPromptPayload(composer.value, composer.status);
 		const result = await submit.run({
 			type: "create-assignment-prompt",
 			payload,
@@ -867,11 +883,35 @@ function composerSaveAllowed(
 	return true;
 }
 
-/** Composer → create/update prompt payload (same mapping as new.tsx). */
+/** Full composer→prompt wire shape; UPDATE gửi `Partial<>` qua field-diff
+ * (#630). skill/part chỉ tồn tại trên create — update schema không nhận. */
+interface ComposerPromptPayload {
+	skill: AssignmentSkill;
+	part: string;
+	type: string;
+	title: string;
+	band: AssignmentBand;
+	source: string;
+	prompt: string;
+	passage: string;
+	intro: string;
+	transcript: string;
+	cueTopic: string;
+	cuePoints: string;
+	audioName: string;
+	imageUrl: string;
+	questions: QuestionItem[];
+	optionBank: string[];
+	note: string;
+	status: "draft" | "ready";
+	writing: AssignmentWritingSection | null;
+}
+
+/** Composer → create prompt payload (same mapping as new.tsx). */
 function composerToPromptPayload(
 	value: ComposerValue,
 	status: "draft" | "ready",
-) {
+): ComposerPromptPayload {
 	return {
 		skill: value.skill as AssignmentSkill,
 		part: value.part,
@@ -891,6 +931,80 @@ function composerToPromptPayload(
 		optionBank: value.optionBank,
 		note: value.note.trim(),
 		status,
-		writing: null,
+		writing: null as AssignmentWritingSection | null,
 	};
+}
+
+/** Composer → PATCH payload cho Cập nhật đề (#630). `baseline` là giá trị
+ * composer NGAY LÚC MỞ cho prompt đã có: field khóa nội dung chỉ nằm trên
+ * wire nếu giá trị submit THẬT SỰ khác baseline (text so trim,
+ * questions/optionBank so JSON) — resave đề cũ không gửi lại nội dung, tránh
+ * 409 PROMPT_CONTENT_LOCKED. skill/part không bao giờ nằm trên PATCH.
+ * Writing mirror new.tsx (#614): chỉ gửi khi đổi so với phần writing trong
+ * baseline — composer của builder không soạn writing nên thường omitted. */
+function composerUpdatePromptPayload(
+	value: ComposerValue,
+	status: "draft" | "ready",
+	baseline: ComposerValue | null,
+): Partial<ComposerPromptPayload> {
+	const full = composerToPromptPayload(value, status);
+	if (!baseline) {
+		const { skill: _skill, part: _part, ...fallback } = full;
+		return fallback;
+	}
+	const sameText = (next: string, base: string) => next.trim() === base.trim();
+	// Canonical JSON (S-2 review #631): so câu/bank không phụ thuộc thứ tự key
+	// — một chiều bị normalize trong tương lai không tái gửi nội dung không
+	// đổi lên đề bị khóa.
+	const sameJson = (next: unknown, base: unknown) =>
+		canonicalJson(next) === canonicalJson(base);
+	const payload: Partial<typeof full> = {
+		title: full.title,
+		band: full.band,
+		source: full.source,
+		status: full.status,
+	};
+	if (!sameText(value.type, baseline.type)) payload.type = full.type;
+	if (!sameText(value.prompt, baseline.prompt)) payload.prompt = full.prompt;
+	if (!sameText(value.passage, baseline.passage))
+		payload.passage = full.passage;
+	if (!sameText(value.intro, baseline.intro)) payload.intro = full.intro;
+	if (!sameText(value.transcript, baseline.transcript))
+		payload.transcript = full.transcript;
+	if (!sameText(value.cueTopic, baseline.cueTopic))
+		payload.cueTopic = full.cueTopic;
+	if (!sameText(value.cuePoints, baseline.cuePoints))
+		payload.cuePoints = full.cuePoints;
+	if (!sameText(value.audioName, baseline.audioName))
+		payload.audioName = full.audioName;
+	if (!sameText(value.imageUrl, baseline.imageUrl))
+		payload.imageUrl = full.imageUrl;
+	if (!sameText(value.note, baseline.note)) payload.note = full.note;
+	if (!sameJson(value.items, baseline.items))
+		payload.questions = full.questions;
+	if (!sameJson(value.optionBank, baseline.optionBank))
+		payload.optionBank = full.optionBank;
+
+	const curW = baseline.writing
+		? {
+				part: baseline.writing.part,
+				type: baseline.writing.type ?? "",
+				prompt: baseline.writing.prompt.trim(),
+			}
+		: null;
+	const nextW = value.writing
+		? {
+				part: value.writing.part,
+				type: value.writing.type,
+				prompt: value.writing.prompt.trim(),
+			}
+		: null;
+	const writingChanged =
+		curW === null || nextW === null
+			? curW !== nextW
+			: curW.part !== nextW.part ||
+				curW.type !== nextW.type ||
+				curW.prompt !== nextW.prompt;
+	if (writingChanged) payload.writing = nextW;
+	return payload;
 }

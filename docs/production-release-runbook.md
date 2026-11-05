@@ -1,7 +1,7 @@
 # Production release and support runbook
 
 Operator procedure for deploying, verifying, rolling back, and supporting
-Teacher OS on Cloudflare Workers + D1. This runbook contains **no secret
+Cô Mỹ Dạy Tiếng Anh (Teacher OS) on Cloudflare Workers + D1. This runbook contains **no secret
 values** — only secret names, owners, and rotation paths.
 
 ## Topology — single source of truth
@@ -615,7 +615,7 @@ Cột `enrollment.status` là forward-only; không xóa cột hay sửa file mig
 | Variable | Purpose | Default / Example | Notes |
 | --- | --- | --- | --- |
 | `MAILER_IMPL` | Implementation driver (`log` or `resend`) | `log` (dev/test) | Prod **bắt buộc** đặt `resend`. Server boot guard sẽ in log cảnh báo đỏ nếu không phải `resend`. |
-| `MAIL_FROM` | Sender display name & email | `TeacherOS <onboarding@resend.dev>` | Prod đặt `TeacherOS <no-reply@<domain>>` (domain đã xác thực trên Resend). |
+| `MAIL_FROM` | Sender display name & email | `"Cô Mỹ Dạy Tiếng Anh" <onboarding@resend.dev>` | Prod đặt `"Cô Mỹ Dạy Tiếng Anh" <no-reply@<domain>>` (domain đã xác thực trên Resend). |
 | `RESEND_API_KEY` | Resend HTTP API token (`re_...`) | empty string | Secret operator — cấu hình qua CI/CD secrets hoặc Alchemy environment, **không commit vào code**. Boot sẽ throw ngay nếu `MAILER_IMPL=resend` mà key rỗng. |
 
 ### Production procedure
@@ -630,7 +630,7 @@ Cột `enrollment.status` là forward-only; không xóa cột hay sửa file mig
      ```bash
      gh secret set RESEND_API_KEY --env production
      gh variable set MAILER_IMPL --env production --body "resend"
-     gh variable set MAIL_FROM --env production --body 'TeacherOS <no-reply@teacheros.io.vn>'
+     gh variable set MAIL_FROM --env production --body '"Cô Mỹ Dạy Tiếng Anh" <no-reply@teacheros.io.vn>'
      ```
    - `MAIL_FROM` phải đủ cặp `< >`; thiếu `>` thì Resend từ chối địa chỉ người gửi.
    - Staging làm tương tự với `--env staging`; để trống thì worker staging chạy log-only.
@@ -806,7 +806,7 @@ a per-stage operation.
 ### Checklist trước khi bật production
 
 1. Xin credential đối tác từ SePay: `client_id`/`client_secret` (merchant
-   TeacherOS) và API key cho IPN. SePay cấu hình URL IPN phía họ:
+   Cô Mỹ Dạy Tiếng Anh, trước đây đăng ký là TeacherOS) và API key cho IPN. SePay cấu hình URL IPN phía họ:
    `https://api.<domain>/webhooks/sepay/bankhub/ipn`.
 2. Set 5 binding env cho stage đó (tên biến trong Secret inventory ở trên,
    KHÔNG bao giờ giá trị): 4 secret + `SEPAY_BANKHUB_BASE_URL=https://bankhub-api.sepay.vn`
@@ -885,7 +885,7 @@ a per-stage operation.
 
 ## Admin console go-live (plan #413)
 
-Cổng quản trị Teacher OS (`apps/admin`) chạy trên origin riêng
+Cổng quản trị Cô Mỹ Dạy Tiếng Anh (`apps/admin`) chạy trên origin riêng
 `https://admin.<domain>` (staging: `admin.staging.teacheros.io.vn`; dev cục
 bộ: 8004, E2E: 8104) và API của nó nằm ở `/api/admin` trên Worker API,
 ngoài kernel tree.

@@ -1,6 +1,6 @@
 # Sổ nợ kỹ thuật
 
-Danh sách nợ kỹ thuật đang mở của Teacher OS, kèm bằng chứng trong repo và những thông tin cần chủ dự án quyết định.
+Danh sách nợ kỹ thuật đang mở của Cô Mỹ Dạy Tiếng Anh (Teacher OS), kèm bằng chứng trong repo và những thông tin cần chủ dự án quyết định.
 
 **Cập nhật lần cuối:** 2026-11-04, trên `develop` @ `00c1ae64`.
 

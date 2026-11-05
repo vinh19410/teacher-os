@@ -2,7 +2,7 @@
 
 ## Mục đích
 
-Đưa Teacher OS từ nền tảng dữ liệu đã persist sang vận hành lớp thật qua pilot có kiểm soát. Roadmap này là nguồn trạng thái hiện tại cho người và AI collaborator; mỗi mốc được mirror 1:1 thành GitHub milestone (kèm issue tổng + issue con) trong repo `vinh19410/teacher-os`. Chi tiết tư vấn, kế hoạch thực thi và bằng chứng lịch sử ở `plans/`.
+Đưa Cô Mỹ Dạy Tiếng Anh (Teacher OS) từ nền tảng dữ liệu đã persist sang vận hành lớp thật qua pilot có kiểm soát. Roadmap này là nguồn trạng thái hiện tại cho người và AI collaborator; mỗi mốc được mirror 1:1 thành GitHub milestone (kèm issue tổng + issue con) trong repo `vinh19410/teacher-os`. Chi tiết tư vấn, kế hoạch thực thi và bằng chứng lịch sử ở `plans/`.
 
 ## Nguyên tắc tổ chức
 
@@ -122,7 +122,7 @@ Console quản trị độc lập (`apps/admin`, origin riêng `admin.<domain>` 
 
 ## Định hướng quý sau (đề xuất, chưa có milestone GitHub)
 
-Quyết định 2026-10-25: (1) mở rộng được cho trung tâm nhiều nhân sự; (2) đưa AI vào roadmap. Nguồn đối chiếu: [so sánh feature Selfomy One vs Teacher OS](../plans/reports/research-261025-2315-selfomy-vs-teacher-os-feature-gap.md). Mục này chưa mirror thành milestone; khi chốt phạm vi từng giai đoạn thì tạo milestone + issue và chuyển thành mốc có DOD.
+Quyết định 2026-10-25: (1) mở rộng được cho trung tâm nhiều nhân sự; (2) đưa AI vào roadmap. Nguồn đối chiếu: [so sánh feature Selfomy One vs Cô Mỹ Dạy Tiếng Anh (Teacher OS)](../plans/reports/research-261025-2315-selfomy-vs-teacher-os-feature-gap.md). Mục này chưa mirror thành milestone; khi chốt phạm vi từng giai đoạn thì tạo milestone + issue và chuyển thành mốc có DOD.
 
 - **Giai đoạn A — AI trợ giảng:** nhập đề bằng AI, tạo bài tập bằng AI, chấm Writing/Speaking bằng AI, trợ giảng chat. Nhà cung cấp LLM chưa chọn (nên có lớp trừu tượng nhà cung cấp). **A0 (gói subscription/credit theo org) hoãn** tới khi qua cổng thương mại hoá; trong chế độ single-org hiện tại, AI dùng cho chủ app và không tính tiền theo gói. Khi mở thương mại hoá, chi phí AI do hệ thống trả và tính vào gói subscription của giáo viên (đo lượng dùng AI theo org, hạn mức theo gói; gói đề xuất 200–500 nghìn đồng/tháng: Cơ bản 200.000 đ/70 credit, Chuyên nghiệp 350.000 đ/130 credit, Nâng cao 500.000 đ/200 credit; chi tiết tại [báo cáo tư vấn AI](../plans/reports/advise-261025-2328-ai-model-selection-cost-and-pricing.md)).
 - **Giai đoạn B — Vận hành lớp mở rộng:** phòng thi ảo và đề thử công khai cho khách vãng lai, dashboard bài chờ chấm/lớp chưa điểm danh, màn điểm danh theo ngày, lịch tháng/ngày + lịch nghỉ, công nợ theo học viên, thông báo gửi thật.

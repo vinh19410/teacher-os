@@ -212,7 +212,7 @@ describe("notifications service (#454 phase 2)", () => {
 		expect(sentInput.to).toBe("stu5@example.com");
 		expect(sentInput.subject).toBe("Bài đã có điểm");
 		expect(sentInput.replyTo).toBe("owner5@academy.vn");
-		expect(sentInput.fromName).toBe("Academy Five qua Teacher OS");
+		expect(sentInput.fromName).toBe("Academy Five qua Cô Mỹ Dạy Tiếng Anh");
 	});
 
 	test("studentOrigin inject → link tuyệt đối trong thư (regression: env là chuỗi thô)", async () => {
@@ -570,13 +570,15 @@ describe("templates builder", () => {
 			html: "<p>Nhắc học phí</p>",
 			text: "Nhắc học phí",
 			replyTo: "owner@academy.vn",
-			fromName: "Academy qua Teacher OS",
+			fromName: "Academy qua Cô Mỹ Dạy Tiếng Anh",
 		});
 		const fetchArgs = fetchMock.mock.calls.at(0);
 		if (!fetchArgs) throw new Error("fetch was not called");
 		const body = JSON.parse(String(fetchArgs[1].body));
 		expect(body.reply_to).toBe("owner@academy.vn");
-		expect(body.from).toBe('"Academy qua Teacher OS" <noreply@teacheros.vn>');
+		expect(body.from).toBe(
+			'"Academy qua Cô Mỹ Dạy Tiếng Anh" <noreply@teacheros.vn>',
+		);
 		vi.unstubAllGlobals();
 	});
 

@@ -185,4 +185,74 @@ describe("students list header and filters", () => {
 		});
 		expect(routerState.navigate).not.toHaveBeenCalled();
 	});
+
+	it("#616: unifies pending count and includes unlinked portal student in Lời mời đang chờ tab", async () => {
+		vi.unstubAllGlobals();
+		const server = startKernelServer(
+			snapshotFixture({
+				students: [
+					studentRow({
+						id: "st-unlinked",
+						name: "Học Viên Chờ Cổng",
+						email: "chocong@example.com",
+						portalLinked: false,
+					}),
+					studentRow({
+						id: "st-active",
+						name: "Học Viên Đang Học",
+						email: "danghoc@example.com",
+						portalLinked: true,
+					}),
+				],
+			}),
+			(req) => {
+				if (req.path === "/api/students/invitations") {
+					return { status: 200, body: [] };
+				}
+				if (
+					req.method === "POST" &&
+					req.path === "/api/students/st-unlinked/resend-invite"
+				) {
+					return {
+						status: 200,
+						body: { ok: true, id: "st-unlinked", updatedAt: Date.now() },
+					};
+				}
+				return undefined;
+			},
+		);
+		renderWithKernel(<StudentsRoute />);
+		await screen.findByText("Học Viên Đang Học");
+
+		// Kicker does NOT count unlinked student into "đang học", counts them in "lời mời đang chờ"
+		expect(
+			screen.getByText("1 học viên đang học · 1 lời mời đang chờ"),
+		).toBeTruthy();
+
+		// Tabs: "Học viên (2)" retains full org roster, "Lời mời đang chờ (1)" reflects pending
+		expect(screen.getByRole("tab", { name: "Học viên (2)" })).toBeTruthy();
+		const invitesTab = screen.getByRole("tab", {
+			name: "Lời mời đang chờ (1)",
+		});
+		expect(invitesTab).toBeTruthy();
+
+		// Click "Lời mời đang chờ (1)" tab -> renders pending student row with resend button
+		fireEvent.click(invitesTab);
+		expect(await screen.findByText("Học Viên Chờ Cổng")).toBeTruthy();
+		expect(screen.getByText("chocong@example.com")).toBeTruthy();
+		expect(screen.getAllByText("Chờ xác nhận")).toHaveLength(1);
+		expect(screen.queryByText("Chưa có lời mời nào đang chờ")).toBeNull();
+
+		const resendBtn = screen.getByRole("button", { name: /Gửi lại lời mời/ });
+		fireEvent.click(resendBtn);
+		await waitFor(() => {
+			expect(
+				server.writes.some(
+					(r) =>
+						r.method === "POST" &&
+						r.path === "/api/students/st-unlinked/resend-invite",
+				),
+			).toBe(true);
+		});
+	});
 });

@@ -217,7 +217,7 @@ export const server = Cloudflare.Worker("server", {
 		AUTH_ASSUME_EMAIL_VERIFIED: assumeEmailVerified ? "true" : "",
 		MAILER_IMPL: Config.string("MAILER_IMPL").pipe(Config.withDefault("log")),
 		MAIL_FROM: Config.string("MAIL_FROM").pipe(
-			Config.withDefault("TeacherOS <onboarding@resend.dev>"),
+			Config.withDefault('"Cô Mỹ Dạy Tiếng Anh" <onboarding@resend.dev>'),
 		),
 		// plain string vì redacted không combine được với withDefault
 		RESEND_API_KEY: Config.string("RESEND_API_KEY").pipe(

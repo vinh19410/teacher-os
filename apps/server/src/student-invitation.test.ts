@@ -460,7 +460,7 @@ describe("student invitation & multi-org API endpoints", () => {
 		expect(sentEmails.length).toBe(countBefore + 1);
 		const lastMail = sentEmails.at(-1);
 		expect(lastMail?.to).toBe("charlie@test.local");
-		expect(lastMail?.fromName).toBe("Alpha Academy qua Teacher OS");
+		expect(lastMail?.fromName).toBe("Alpha Academy qua Cô Mỹ Dạy Tiếng Anh");
 		expect(lastMail?.replyTo).toBe("teacher.alpha@test.local");
 		expect(lastMail?.html).toContain("http://localhost:8003/login");
 		expect(lastMail?.idempotencyKey).toBe(`student_invite:${created.id}`);

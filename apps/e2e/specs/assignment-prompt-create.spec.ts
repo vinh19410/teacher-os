@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test";
 import {
+	expectReadySaveBlocked,
 	fillRichEditor,
 	orgIdForTeacherEmail,
+	selectWritingTask2,
 	signUpViaUi,
 	verifyStudentEmailFromMailLog,
 } from "./helpers";
@@ -21,12 +23,26 @@ test("create a ready prompt, list it, and survive reload", async ({ page }) => {
 	await page.getByRole("button", { name: "+ Tạo bài tập" }).click();
 	await expect(page).toHaveURL(/\/assignments\/new$/);
 
-	// Design v3 + form-trống (29eee03): blank form blocks ready save.
+	// Blank form: the save button stays enabled, but clicking it only surfaces
+	// the missing-field alert and saves nothing.
 	await expect(page.getByRole("heading", { name: TITLE })).toBeHidden();
+	const blankSave = page.getByRole("button", { name: "Lưu vào ngân hàng" });
+	await expect(blankSave).toBeEnabled();
+	await blankSave.click();
+	const missingAlert = page.getByTestId("assignment-save-missing-alert");
+	await expect(missingAlert).toBeVisible();
+	await expect(missingAlert).toContainText("Cần hoàn thiện trước khi lưu");
+	await expect(missingAlert).toContainText(
+		"Chọn dạng đề trước khi lưu sẵn sàng giao",
+	);
+	await expect(missingAlert).toContainText("Nhập tiêu đề bài tập");
 	await expect(
-		page.getByRole("button", { name: "Lưu vào ngân hàng" }),
-	).toBeDisabled();
+		page.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),
+	).toBeHidden();
+	await expect(page).toHaveURL(/\/assignments\/new$/);
 
+	// Writing needs an explicit writing type; nothing is preselected.
+	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill(TITLE);
 	await fillRichEditor(
 		page,
@@ -80,6 +96,7 @@ test("preview as a student, return to the form without losing it, then save read
 
 	await signUpViaUi(page);
 	await page.goto("/assignments/new");
+	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill(TITLE);
 	await fillRichEditor(
 		page,
@@ -134,11 +151,17 @@ test("create a ready reading prompt with answer key, survive reload", async ({
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await expect(page.getByText("Reading Academic")).toBeVisible();
 
-	// The form starts blank: ready save is blocked until core content exists.
+	// The form starts blank: clicking save shows the missing-field alert and
+	// saves nothing until core content exists.
 	const submitBtn = page
 		.getByRole("button", { name: "Lưu vào ngân hàng" })
 		.first();
-	await expect(submitBtn).toBeDisabled();
+	await expect(submitBtn).toBeEnabled();
+	await submitBtn.click();
+	await expect(page.getByTestId("assignment-save-missing-alert")).toBeVisible();
+	await expect(
+		page.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),
+	).toBeHidden();
 
 	await page.getByLabel("Tiêu đề").fill(TITLE);
 	await fillRichEditor(
@@ -196,10 +219,8 @@ test("create a listening draft without audio; ready is blocked", async ({
 
 	// Ready mode is blocked because audio is missing
 	await page.getByRole("button", { name: "Sẵn sàng giao" }).click();
-	await expect(
-		page.getByRole("button", { name: "Lưu vào ngân hàng" }).first(),
-	).toBeDisabled();
-	await expect(page.getByText("Thiếu file nghe")).toBeVisible();
+	await expectReadySaveBlocked(page);
+	await expect(page.getByText("Thiếu file nghe").first()).toBeVisible();
 
 	// Attach an audio file through the real file input (no sample content —
 	// the form ships blank since commit 29eee03).
@@ -211,10 +232,10 @@ test("create a listening draft without audio; ready is blocked", async ({
 
 	// Audio alone is not enough: the blank question still blocks ready —
 	// the answer-key gate outranks the core-content copy.
+	await expectReadySaveBlocked(page);
 	await expect(
-		page.getByRole("button", { name: "Lưu vào ngân hàng" }).first(),
-	).toBeDisabled();
-	await expect(page.getByText("Thiếu đáp án chấm tự động")).toBeVisible();
+		page.getByText("Thiếu đáp án chấm tự động").first(),
+	).toBeVisible();
 
 	await page
 		.getByLabel("Nội dung câu hỏi phía học viên")
@@ -227,10 +248,10 @@ test("create a listening draft without audio; ready is blocked", async ({
 
 	// Clear the answer: ready blocks again
 	await page.getByLabel("Đáp án chấm tự động").first().fill("");
+	await expectReadySaveBlocked(page);
 	await expect(
-		page.getByRole("button", { name: "Lưu vào ngân hàng" }).first(),
-	).toBeDisabled();
-	await expect(page.getByText("Thiếu đáp án chấm tự động")).toBeVisible();
+		page.getByText("Thiếu đáp án chấm tự động").first(),
+	).toBeVisible();
 
 	// Restore answer and remove audio
 	await page.getByLabel("Đáp án chấm tự động").first().fill("Clarke");

@@ -14,7 +14,7 @@ describe("verificationEmailTemplate", () => {
 		expect(html).toContain('lang="vi"');
 		expect(html).toContain('color-scheme" content="light dark"');
 		expect(html).toContain("Xác thực email");
-		expect(html).toContain("TeacherOS");
+		expect(html).toContain("Cô Mỹ Dạy Tiếng Anh");
 		expect(html).toContain("hiệu lực trong 1 giờ");
 		expect(html).toContain('role="presentation"');
 
@@ -44,7 +44,7 @@ describe("resetPasswordEmailTemplate", () => {
 		expect(html).toContain('lang="vi"');
 		expect(html).toContain('color-scheme" content="light dark"');
 		expect(html).toContain("Đặt lại mật khẩu");
-		expect(html).toContain("TeacherOS");
+		expect(html).toContain("Cô Mỹ Dạy Tiếng Anh");
 		expect(html).toContain("1 giờ");
 		expect(html).toContain('role="presentation"');
 
@@ -73,7 +73,7 @@ describe("otpEmailTemplate", () => {
 		expect(html).toContain('lang="vi"');
 		expect(html).toContain('color-scheme" content="light dark"');
 		expect(html).toContain("Mã xác thực đăng nhập");
-		expect(html).toContain("TeacherOS");
+		expect(html).toContain("Cô Mỹ Dạy Tiếng Anh");
 		expect(html).toContain("5 phút");
 		expect(html).toContain("849201");
 		expect(html.length).toBeLessThan(15_000);
@@ -106,7 +106,7 @@ describe("createResendMailer", () => {
 
 		const mailer = createResendMailer({
 			apiKey: "test-api-key",
-			from: "TeacherOS <onboarding@resend.dev>",
+			from: '"Cô Mỹ Dạy Tiếng Anh" <onboarding@resend.dev>',
 		});
 
 		await mailer.send({
@@ -127,7 +127,7 @@ describe("createResendMailer", () => {
 		expect(init.signal).toBeDefined();
 		const body = JSON.parse(init.body as string);
 		expect(body).toEqual({
-			from: "TeacherOS <onboarding@resend.dev>",
+			from: '"Cô Mỹ Dạy Tiếng Anh" <onboarding@resend.dev>',
 			to: ["student@example.com"],
 			subject: "Verify Email",
 			html: "<p>Hello</p>",
@@ -153,7 +153,7 @@ describe("createResendMailer", () => {
 
 		const mailer = createResendMailer({
 			apiKey: "test-api-key",
-			from: "TeacherOS <onboarding@resend.dev>",
+			from: '"Cô Mỹ Dạy Tiếng Anh" <onboarding@resend.dev>',
 		});
 
 		await mailer.send({
@@ -176,7 +176,7 @@ describe("createResendMailer", () => {
 
 		const mailer = createResendMailer({
 			apiKey: "test-api-key",
-			from: "TeacherOS <onboarding@resend.dev>",
+			from: '"Cô Mỹ Dạy Tiếng Anh" <onboarding@resend.dev>',
 		});
 
 		await expect(
@@ -201,7 +201,7 @@ describe("createResendMailer", () => {
 
 		const mailer = createResendMailer({
 			apiKey: "test-api-key",
-			from: "TeacherOS <onboarding@resend.dev>",
+			from: '"Cô Mỹ Dạy Tiếng Anh" <onboarding@resend.dev>',
 		});
 
 		await expect(
@@ -262,13 +262,13 @@ describe("replyTo + fromName (plan TOS-21 D5)", () => {
 			html: "<p>Bài tập mới</p>",
 			text: "Bài tập mới",
 			replyTo: "teacher@example.com",
-			fromName: 'Trung tâm "ABC" qua Teacher OS',
+			fromName: 'Trung tâm "ABC" qua Cô Mỹ Dạy Tiếng Anh',
 		});
 
 		expect(fetchMock).toHaveBeenCalledTimes(1);
 		const body = JSON.parse(String(fetchMock.mock.calls[0][1].body));
 		expect(body.from).toBe(
-			'"Trung tâm \\"ABC\\" qua Teacher OS" <noreply@teacheros.vn>',
+			'"Trung tâm \\"ABC\\" qua Cô Mỹ Dạy Tiếng Anh" <noreply@teacheros.vn>',
 		);
 		expect(body.reply_to).toBe("teacher@example.com");
 	});
@@ -306,14 +306,14 @@ describe("replyTo + fromName (plan TOS-21 D5)", () => {
 			html: "<p>Hello</p>",
 			text: "Hello",
 			replyTo: "teacher@example.com",
-			fromName: "Academy qua Teacher OS",
+			fromName: "Academy qua Cô Mỹ Dạy Tiếng Anh",
 		});
 		expect(infoSpy).toHaveBeenCalledWith(
 			"[mail:log] to=%s subject=%s replyTo=%s fromName=%s\n%s",
 			"student@example.com",
 			"Hello",
 			"teacher@example.com",
-			"Academy qua Teacher OS",
+			"Academy qua Cô Mỹ Dạy Tiếng Anh",
 			"Hello",
 		);
 		infoSpy.mockRestore();
@@ -322,10 +322,12 @@ describe("replyTo + fromName (plan TOS-21 D5)", () => {
 	test("composeFrom tách địa chỉ trần từ Display <addr> và lọc ký tự điều khiển (#570)", () => {
 		expect(
 			composeFrom(
-				"TeacherOS <no-reply@teacheros.io.vn>",
-				"Alpha Academy qua Teacher OS",
+				'"Cô Mỹ Dạy Tiếng Anh" <no-reply@teacheros.io.vn>',
+				"Alpha Academy qua Cô Mỹ Dạy Tiếng Anh",
 			),
-		).toBe('"Alpha Academy qua Teacher OS" <no-reply@teacheros.io.vn>');
+		).toBe(
+			'"Alpha Academy qua Cô Mỹ Dạy Tiếng Anh" <no-reply@teacheros.io.vn>',
+		);
 		expect(
 			composeFrom("no-reply@teacheros.io.vn", "Evil\\\r\nBcc: x@y.z"),
 		).toBe('"Evil\\\\Bcc: x@y.z" <no-reply@teacheros.io.vn>');
@@ -349,7 +351,7 @@ describe("replyTo + fromName (plan TOS-21 D5)", () => {
 
 		const mailer = createResendMailer({
 			apiKey: "test-api-key",
-			from: "TeacherOS <no-reply@teacheros.io.vn>",
+			from: '"Cô Mỹ Dạy Tiếng Anh" <no-reply@teacheros.io.vn>',
 		});
 
 		await mailer.send({
@@ -357,7 +359,7 @@ describe("replyTo + fromName (plan TOS-21 D5)", () => {
 			subject: "Lời mời\r\nInjected",
 			html: "<p>Hello</p>",
 			text: "Hello",
-			fromName: "Alpha Academy qua Teacher OS",
+			fromName: "Alpha Academy qua Cô Mỹ Dạy Tiếng Anh",
 			idempotencyKey: "student_invite:inv-1",
 			timeoutMs: 5_000,
 		});
@@ -371,7 +373,7 @@ describe("replyTo + fromName (plan TOS-21 D5)", () => {
 		});
 		const firstBody = JSON.parse(String(firstInit.body));
 		expect(firstBody.from).toBe(
-			'"Alpha Academy qua Teacher OS" <no-reply@teacheros.io.vn>',
+			'"Alpha Academy qua Cô Mỹ Dạy Tiếng Anh" <no-reply@teacheros.io.vn>',
 		);
 		expect(firstBody.subject).toBe("Lời mờiInjected");
 

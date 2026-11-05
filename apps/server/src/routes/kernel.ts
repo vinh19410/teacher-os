@@ -75,6 +75,7 @@ import { type Context, Hono } from "hono";
 import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
 import type { AiGrader } from "../lib/ai-grading/grader";
+import { formatSenderName } from "../lib/brand";
 import type { MediaStore } from "../lib/media-store";
 import {
 	deliverNotifications,
@@ -283,7 +284,7 @@ export function kernelRoutes(deps: {
 				timeoutMs: SYNC_INVITE_MAIL_TIMEOUT_MS,
 				...(row.replyToEmail ? { replyTo: row.replyToEmail } : {}),
 				...(row.senderName
-					? { fromName: `${row.senderName} qua Teacher OS` }
+					? { fromName: formatSenderName(row.senderName) }
 					: {}),
 			});
 			await input.db
@@ -587,7 +588,7 @@ export function kernelRoutes(deps: {
 					idempotencyKey: `student_portal_invite:${studentId}:initial`,
 					timeoutMs: SYNC_INVITE_MAIL_TIMEOUT_MS,
 					...(replyToEmail ? { replyTo: replyToEmail } : {}),
-					...(senderName ? { fromName: `${senderName} qua Teacher OS` } : {}),
+					...(senderName ? { fromName: formatSenderName(senderName) } : {}),
 				});
 				await db
 					.update(student)
@@ -855,7 +856,7 @@ export function kernelRoutes(deps: {
 				idempotencyKey: `student_invite:${id}`,
 				timeoutMs: SYNC_INVITE_MAIL_TIMEOUT_MS,
 				...(replyToEmail ? { replyTo: replyToEmail } : {}),
-				...(senderName ? { fromName: `${senderName} qua Teacher OS` } : {}),
+				...(senderName ? { fromName: formatSenderName(senderName) } : {}),
 			});
 		} catch (error) {
 			const msg = error instanceof Error ? error.message : String(error);
@@ -1025,7 +1026,7 @@ export function kernelRoutes(deps: {
 				idempotencyKey: `student_invite:${id}:resend:${resendToken}`,
 				timeoutMs: SYNC_INVITE_MAIL_TIMEOUT_MS,
 				...(replyToEmail ? { replyTo: replyToEmail } : {}),
-				...(senderName ? { fromName: `${senderName} qua Teacher OS` } : {}),
+				...(senderName ? { fromName: formatSenderName(senderName) } : {}),
 			});
 		} catch (error) {
 			const msg = error instanceof Error ? error.message : String(error);
@@ -1299,7 +1300,7 @@ export function kernelRoutes(deps: {
 				idempotencyKey: `student_portal_invite:${studentRow.id}:resend:${resendToken}`,
 				timeoutMs: SYNC_INVITE_MAIL_TIMEOUT_MS,
 				...(replyToEmail ? { replyTo: replyToEmail } : {}),
-				...(senderName ? { fromName: `${senderName} qua Teacher OS` } : {}),
+				...(senderName ? { fromName: formatSenderName(senderName) } : {}),
 			});
 		} catch (error) {
 			const msg = error instanceof Error ? error.message : String(error);

@@ -1,19 +1,56 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const submitFixture = {
 	saving: false,
 	error: undefined as string | undefined,
-	notice: undefined,
+	notice: undefined as
+		| { kind: "committed" | "unknown" | "reconcile-failed" }
+		| undefined,
 	submitBlocked: false,
 	run: vi.fn(),
 	reconcile: vi.fn(),
 	reset: vi.fn(),
+	setError: (message: string | undefined) => {
+		submitFixture.error = message;
+	},
 };
+const searchFixture = {
+	current: {} as { classId?: string; promptId?: string },
+};
+// Real QueryClient (no hook mock): NewAssignmentRoute reads the kernel
+// snapshot through QueryClientContext, so reconcile tests seed this client
+// with setQueryData(kernelQueryKey, …).
+let reconcileClient: QueryClient;
 
+function renderRoute() {
+	const view = render(
+		<QueryClientProvider client={reconcileClient}>
+			<NewAssignmentRoute />
+		</QueryClientProvider>,
+	);
+	const rerenderRoute = () =>
+		view.rerender(
+			<QueryClientProvider client={reconcileClient}>
+				<NewAssignmentRoute />
+			</QueryClientProvider>,
+		);
+	return { ...view, rerenderRoute };
+}
 vi.mock("@tanstack/react-router", () => ({
-	createFileRoute: () => (options: unknown) => options,
+	createFileRoute: () => (options: Record<string, unknown>) => ({
+		...options,
+		useSearch: () => searchFixture.current,
+	}),
 	useNavigate: () => vi.fn(),
 	Link: (props: { to: string; children?: React.ReactNode }) => (
 		<a href={props.to}>{props.children}</a>
@@ -27,31 +64,43 @@ vi.mock("@/lib/assignment-preview-draft", () => ({
 	takePreviewDraft: () => draftFixture.value,
 	savePreviewDraft: vi.fn(),
 }));
+const dataFixture = {
+	data: {
+		assignmentPrompts: [] as unknown[],
+		classAssignments: [] as unknown[],
+	},
+};
 vi.mock("@/lib/data-store", () => ({
-	useData: () => ({
-		data: {
-			assignmentPrompts: [],
-			classAssignments: [],
-		},
-	}),
+	useData: () => dataFixture,
 }));
 
 import type { PreviewDraft } from "@/lib/assignment-preview-draft";
+import { kernelQueryKey } from "@/lib/repos/kernel";
 import { NewAssignmentRoute } from "./new";
 
+// Module scope: reset chạy cho MỌI describe trong file — hook scoped trong
+// một describe không chạm các describe khác (số lần run tích chéo test).
+beforeEach(() => {
+	reconcileClient = new QueryClient();
+	submitFixture.run.mockReset();
+	submitFixture.reconcile.mockReset();
+	submitFixture.saving = false;
+	submitFixture.error = undefined;
+	submitFixture.notice = undefined;
+	submitFixture.submitBlocked = false;
+	draftFixture.value = null;
+	searchFixture.current = {};
+	dataFixture.data.assignmentPrompts = [];
+	window.HTMLElement.prototype.scrollIntoView = vi.fn();
+});
+
+afterEach(() => {
+	cleanup();
+});
+
 describe("NewAssignmentRoute — Submit & Validation Feedback (#581)", () => {
-	beforeEach(() => {
-		submitFixture.run.mockReset();
-		draftFixture.value = null;
-		window.HTMLElement.prototype.scrollIntoView = vi.fn();
-	});
-
-	afterEach(() => {
-		cleanup();
-	});
-
 	it("keeps Save button enabled and shows missing requirements alert when clicked on blank form", () => {
-		render(<NewAssignmentRoute />);
+		renderRoute();
 
 		const saveButton = screen.getByRole("button", {
 			name: "Lưu vào ngân hàng",
@@ -85,7 +134,7 @@ describe("NewAssignmentRoute — Submit & Validation Feedback (#581)", () => {
 	});
 
 	it("allows clicking a requirement in the alert to focus the corresponding field", () => {
-		render(<NewAssignmentRoute />);
+		renderRoute();
 
 		const saveButton = screen.getByRole("button", {
 			name: "Lưu vào ngân hàng",
@@ -133,7 +182,7 @@ describe("NewAssignmentRoute — Submit & Validation Feedback (#581)", () => {
 			writing: null,
 		};
 
-		render(<NewAssignmentRoute />);
+		renderRoute();
 
 		const saveButton = screen.getByRole("button", {
 			name: "Lưu vào ngân hàng",
@@ -155,5 +204,312 @@ describe("NewAssignmentRoute — Submit & Validation Feedback (#581)", () => {
 				}),
 			}),
 		);
+	});
+
+	it("submits update-assignment-prompt with omitted writing when writing is unchanged in edit mode (#614)", async () => {
+		const samplePrompt = {
+			id: "prompt-reading-1",
+			skill: "reading",
+			part: "p1",
+			type: "tfng",
+			task: "p1",
+			genre: "tfng",
+			title: "Reading Passage 1",
+			band: "7.0",
+			source: "Cambridge 16",
+			prompt: "",
+			passage: "<p>Passage text here</p>",
+			intro: "",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			imageUrl: "",
+			optionBank: [],
+			questions: [
+				{ stem: "Statement 1", opts: null, answer: "TRUE", alts: "" },
+			],
+			note: "",
+			status: "ready",
+			writing: {
+				part: "task2",
+				type: "opinion",
+				prompt: "<p>Writing prompt</p>",
+			},
+			createdAt: "2026-11-01T00:00:00.000Z",
+		};
+		dataFixture.data.assignmentPrompts = [samplePrompt];
+		searchFixture.current = { promptId: "prompt-reading-1" };
+
+		renderRoute();
+
+		const saveButton = screen.getByRole("button", {
+			name: "Lưu thay đổi",
+		});
+		expect(saveButton).toBeDefined();
+		expect((saveButton as HTMLButtonElement).disabled).toBe(false);
+
+		fireEvent.click(saveButton);
+
+		expect(submitFixture.run).toHaveBeenCalledTimes(1);
+		const callArg = submitFixture.run.mock.calls[0][0];
+		expect(callArg.type).toBe("update-assignment-prompt");
+		expect(callArg.promptId).toBe("prompt-reading-1");
+		// #630 field-diff: untouched resave sends ONLY the always-editable
+		// fields — no locked content key (incl. writing, #614) can trip a
+		// false PROMPT_CONTENT_LOCKED on an old prompt.
+		expect(callArg.payload).toEqual({
+			title: "Reading Passage 1",
+			band: "7.0",
+			source: "Cambridge 16",
+			status: "ready",
+		});
+	});
+});
+
+describe("NewAssignmentRoute — field-diff edit payload + honest reconcile (#630)", () => {
+	const editablePrompt = {
+		id: "prompt-clean-1",
+		skill: "reading",
+		part: "p1",
+		task: "p1",
+		type: "tfng",
+		genre: "tfng",
+		title: "Clean Reading",
+		band: "7.0",
+		source: "Cam 18",
+		prompt: "",
+		passage: "<p>Passage</p>",
+		intro: "",
+		transcript: "",
+		cueTopic: "",
+		cuePoints: "",
+		audioName: "",
+		imageUrl: "",
+		optionBank: [],
+		// Shape snapshot parseQuestions thật (S-1 review #631): luôn có
+		// type/pin null — composer kế thừa qua items nên payload và
+		// snapshot đối xứng 2 đầu.
+		questions: [
+			{
+				stem: "S1",
+				opts: null,
+				answer: "TRUE",
+				alts: "",
+				type: null,
+				pin: null,
+			},
+		],
+		note: "",
+		status: "ready",
+		writing: null,
+		createdAt: "2026-11-01T00:00:00.000Z",
+	};
+
+	function openEditMode(prompt: Record<string, unknown>) {
+		dataFixture.data.assignmentPrompts = [prompt];
+		searchFixture.current = { promptId: prompt.id as string };
+	}
+
+	it("edit resave with NO edits sends only title/band/source/status", () => {
+		openEditMode({ ...editablePrompt });
+		submitFixture.run.mockResolvedValue(undefined);
+
+		renderRoute();
+		fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+
+		expect(submitFixture.run.mock.calls).toHaveLength(1);
+		const action = submitFixture.run.mock.calls[0][0] as {
+			payload: Record<string, unknown>;
+		};
+		expect(Object.keys(action.payload).sort()).toEqual([
+			"band",
+			"source",
+			"status",
+			"title",
+		]);
+	});
+
+	it("old-style prompt (plain \\n, &, null type, empty explanation) resaves without locked fields", () => {
+		openEditMode({
+			...editablePrompt,
+			id: "prompt-legacy-1",
+			title: "Legacy Reading",
+			band: "6.5",
+			source: "",
+			type: null,
+			genre: "tfng",
+			prompt: "Read the text.\nAnswer A & B.",
+			passage: "Old passage text",
+			intro: null,
+			transcript: null,
+			cuePoints: null,
+			imageUrl: null,
+			optionBank: null,
+			note: null,
+			questions: [
+				{ stem: "S1", opts: null, answer: "TRUE", alts: "", explanation: "" },
+			],
+		});
+		submitFixture.run.mockResolvedValue(undefined);
+
+		renderRoute();
+		fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+
+		expect(submitFixture.run).toHaveBeenCalledTimes(1);
+		const action = submitFixture.run.mock.calls[0][0] as {
+			payload: Record<string, unknown>;
+		};
+		// Locked content fields must be absent — resave of a legacy prompt
+		// never re-sends re-normalized bytes that would 409.
+		for (const key of [
+			"type",
+			"prompt",
+			"passage",
+			"intro",
+			"transcript",
+			"cueTopic",
+			"cuePoints",
+			"audioName",
+			"imageUrl",
+			"questions",
+			"optionBank",
+			"note",
+			"writing",
+		]) {
+			expect(key in action.payload).toBe(false);
+		}
+	});
+
+	it("reconcile shows success only when the fresh snapshot contains the submitted payload", async () => {
+		openEditMode({ ...editablePrompt });
+		submitFixture.run.mockResolvedValue(undefined);
+		submitFixture.notice = { kind: "committed" };
+		submitFixture.reconcile.mockResolvedValue(true);
+		reconcileClient.setQueryData(kernelQueryKey, {
+			assignmentPrompts: [{ ...editablePrompt }],
+		});
+
+		renderRoute();
+		fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+		fireEvent.click(screen.getByRole("button", { name: "Tải lại" }));
+
+		expect(await screen.findByText("Đã cập nhật bài tập")).toBeTruthy();
+		expect(submitFixture.error).toBeUndefined();
+	});
+
+	it("reconcile keeps the draft and warns when the snapshot is stale", async () => {
+		openEditMode({ ...editablePrompt });
+		submitFixture.run.mockResolvedValue(undefined);
+		submitFixture.notice = { kind: "committed" };
+		submitFixture.reconcile.mockResolvedValue(true);
+		// Server chưa persist (row vẫn là dữ liệu cũ) → không được "Đã cập nhật".
+		reconcileClient.setQueryData(kernelQueryKey, {
+			assignmentPrompts: [{ ...editablePrompt, title: "Đã bị server đổi" }],
+		});
+		const { rerenderRoute } = renderRoute();
+
+		fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+		fireEvent.click(screen.getByRole("button", { name: "Tải lại" }));
+		await waitFor(() =>
+			expect(submitFixture.error).toBe(
+				"Đã tải lại dữ liệu nhưng thay đổi của bạn chưa được lưu. Vui lòng lưu lại.",
+			),
+		);
+		rerenderRoute();
+
+		expect(screen.getByRole("alert")).toBeTruthy();
+		expect(screen.queryByText("Đã cập nhật bài tập")).toBeNull();
+		const saveButton = screen.getByRole("button", { name: "Lưu thay đổi" });
+		expect((saveButton as HTMLButtonElement).disabled).toBe(false);
+	});
+
+	it("reconcile refresh failure keeps the notice state untouched", async () => {
+		openEditMode({ ...editablePrompt });
+		submitFixture.run.mockResolvedValue(undefined);
+		submitFixture.notice = { kind: "committed" };
+		submitFixture.reconcile.mockResolvedValue(false);
+
+		renderRoute();
+		fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+		fireEvent.click(screen.getByRole("button", { name: "Tải lại" }));
+
+		await waitFor(() => expect(submitFixture.reconcile).toHaveBeenCalled());
+		expect(submitFixture.error).toBeUndefined();
+		expect(screen.queryByText("Đã cập nhật bài tập")).toBeNull();
+	});
+
+	it("reconcile passes when the snapshot is the zod-normalized form of the sent questions", async () => {
+		openEditMode({ ...editablePrompt });
+		submitFixture.run.mockResolvedValue(undefined);
+		submitFixture.notice = { kind: "committed" };
+		submitFixture.reconcile.mockResolvedValue(true);
+		// Server ghi bản zod (trim stem, key order theo schema) — payload gửi
+		// đi giữ giá trị raw lúc gõ. Reconcile phải chuẩn hoá trước khi so.
+		// Shape snapshot khớp parseQuestions thật (snapshot.ts): luôn có
+		// opts/type/pin (null khi không có), alts "" — S-1 review #631.
+		reconcileClient.setQueryData(kernelQueryKey, {
+			assignmentPrompts: [
+				{
+					...editablePrompt,
+					questions: [
+						{
+							stem: "S1 with spaces",
+							opts: null,
+							answer: "TRUE",
+							alts: "",
+							type: null,
+							pin: null,
+						},
+					],
+				},
+			],
+		});
+
+		renderRoute();
+		fireEvent.change(screen.getByLabelText("Nội dung câu hỏi phía học viên"), {
+			target: { value: "  S1 with spaces  " },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+		fireEvent.click(screen.getByRole("button", { name: "Tải lại" }));
+
+		expect(await screen.findByText("Đã cập nhật bài tập")).toBeTruthy();
+		expect(submitFixture.error).toBeUndefined();
+	});
+
+	it("save blocked by a pending notice does not clobber the captured payload", async () => {
+		openEditMode({ ...editablePrompt });
+		submitFixture.run.mockResolvedValue(undefined);
+		submitFixture.reconcile.mockResolvedValue(true);
+		const { rerenderRoute } = renderRoute();
+
+		// Save #1: đổi title → dispatch thật, payload "Đã lưu A" được gửi.
+		fireEvent.change(screen.getByLabelText("Tiêu đề"), {
+			target: { value: "Đã lưu A" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+		expect(submitFixture.run).toHaveBeenCalledTimes(1);
+
+		// Hook sang trạng thái notice (committed) — lượt Save sau bị chặn.
+		submitFixture.notice = { kind: "committed" };
+		submitFixture.submitBlocked = true;
+		rerenderRoute();
+
+		// Save #2 KHÔNG được dispatch — payload "Bị chặn B" chưa bao giờ gửi,
+		// không được ghi đè lên ref reconcile.
+		fireEvent.change(screen.getByLabelText("Tiêu đề"), {
+			target: { value: "Bị chặn B" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+		expect(submitFixture.run).toHaveBeenCalledTimes(1);
+
+		// Reconcile: snapshot chứa đúng payload của save #1 → thành công.
+		reconcileClient.setQueryData(kernelQueryKey, {
+			assignmentPrompts: [{ ...editablePrompt, title: "Đã lưu A" }],
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Tải lại" }));
+
+		expect(await screen.findByText("Đã cập nhật bài tập")).toBeTruthy();
+		expect(submitFixture.error).toBeUndefined();
 	});
 });

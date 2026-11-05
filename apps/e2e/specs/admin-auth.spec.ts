@@ -61,7 +61,7 @@ test("admin đăng nhập vào được shell quản trị với nav Thư viện
 }) => {
 	await ensureAdminAccount(request);
 	await adminSignInViaUi(page);
-	await expect(page.getByText("Teacher OS · Quản trị")).toBeVisible();
+	await expect(page.getByText("Cô Mỹ Dạy Tiếng Anh · Quản trị")).toBeVisible();
 	const sidebar = page.getByRole("complementary", {
 		name: "Điều hướng quản trị",
 	});
@@ -179,6 +179,7 @@ test("admin sign-in ở web origin bị từ chối — kernel không bao giờ 
 
 test("admin sign-in ở cổng học viên bị từ chối", async ({ page }) => {
 	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.locator("#tab-signin").click();
 	await page.locator("#signin-email").fill("admin@e2e.local");
 	await page.locator("#signin-password").fill(ADMIN_PASSWORD);
 	const [signIn] = await Promise.all([

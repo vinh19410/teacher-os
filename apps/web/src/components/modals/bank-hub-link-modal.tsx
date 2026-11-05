@@ -154,8 +154,8 @@ export function BankHubLinkModal({
 						</div>
 					)}
 					<p className="text-muted-foreground text-xs">
-						Cửa sổ liên kết do SePay Bank Hub vận hành. TeacherOS không lưu mật
-						khẩu ngân hàng của bạn.
+						Cửa sổ liên kết do SePay Bank Hub vận hành. Cô Mỹ Dạy Tiếng Anh
+						không lưu mật khẩu ngân hàng của bạn.
 					</p>
 				</div>
 			}

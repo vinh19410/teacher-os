@@ -5,7 +5,7 @@ export interface MailInput {
 	text: string;
 	/** Header Reply-To (email chủ tổ chức, plan TOS-21 D5) — vắng mặt thì không gửi header. */
 	replyTo?: string;
-	/** Tên người gửi hiển thị ("Tên org qua Teacher OS") — vắng mặt thì from là địa chỉ trần. */
+	/** Tên người gửi hiển thị ("Tên org qua Cô Mỹ Dạy Tiếng Anh") — vắng mặt thì from là địa chỉ trần. */
 	fromName?: string;
 	/** Khóa chống gửi trùng Resend (header Idempotency-Key, #570) — mỗi lượt gửi lại truyền khóa mới. */
 	idempotencyKey?: string;
@@ -25,11 +25,27 @@ function sanitizeHeaderValue(value: string, maxLen = 200): string {
 export function composeFrom(from: string, fromName?: string): string {
 	const cleanedFrom = sanitizeHeaderValue(from, 320);
 	const cleanedName = fromName ? sanitizeHeaderValue(fromName, 200) : "";
-	if (!cleanedName) return cleanedFrom;
-	const angleMatch = cleanedFrom.match(/<([^<>]+)>/);
-	const bareAddress = sanitizeHeaderValue(angleMatch?.[1] ?? cleanedFrom, 254);
-	const escaped = cleanedName.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
-	return `"${escaped}" <${bareAddress}>`;
+	const angleMatch = cleanedFrom.match(/^(.*?)\s*<([^<>]+)>$/);
+	if (angleMatch) {
+		const embeddedName = angleMatch[1]?.trim() ?? "";
+		const bareAddress = sanitizeHeaderValue(angleMatch[2] ?? "", 254);
+		const nameToUse = cleanedName || embeddedName;
+		if (!nameToUse) return bareAddress;
+		const unquoted =
+			nameToUse.startsWith('"') &&
+			nameToUse.endsWith('"') &&
+			nameToUse.length >= 2
+				? nameToUse.slice(1, -1)
+				: nameToUse;
+		const escaped = unquoted.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
+		return `"${escaped}" <${bareAddress}>`;
+	}
+	if (cleanedName) {
+		const bareAddress = sanitizeHeaderValue(cleanedFrom, 254);
+		const escaped = cleanedName.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
+		return `"${escaped}" <${bareAddress}>`;
+	}
+	return cleanedFrom;
 }
 
 export interface Mailer {
