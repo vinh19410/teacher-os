@@ -28,7 +28,12 @@ export default defineConfig({
 	// #402: fail-loud khi hạ tầng dev server bất ổn giữa run (marker/heartbeat
 	// của devserver-watchdog hoặc probe cuối 3 service).
 	globalTeardown: "./global-teardown.ts",
-	timeout: 120_000,
+	// Fail-fast: suite khỏe mất khoảng 9 phút và test lâu nhất khoảng 10 giây,
+	// nên run hỏng phải dừng sớm thay vì treo hàng giờ. Máy chậm hoặc cần chạy
+	// hết để xem mọi lỗi thì override bằng --global-timeout / --max-failures=0.
+	globalTimeout: 30 * 60_000,
+	maxFailures: 10,
+	timeout: 60_000,
 	expect: {
 		// Flow-critical waits (URL changes, modal close after refetch) can
 		// outrun the 5s default on a cold CI vite dev server.
@@ -39,6 +44,8 @@ export default defineConfig({
 	reporter: [["list"], ["html", { open: "never" }]],
 	use: {
 		baseURL: `http://localhost:${webPort}`,
+		actionTimeout: 15_000,
+		navigationTimeout: 30_000,
 		// Pin Vietnam time so "start tomorrow" in the UI and the VN-today date
 		// gate of the attendance CTA (issue #91) can never drift apart when
 		// the runner sits in another timezone.
@@ -124,7 +131,8 @@ export default defineConfig({
 		},
 		{
 			// #402: giám sát 4 service trên — vite web/student/admin chết giữa run
-			// được restart (tối đa 1 lần/vite), api chết → marker fail-loud.
+			// được restart (tối đa 1 lần/vite), api chết → marker fail-loud và
+			// SIGINT tới runner (E2E_RUNNER_PID) để dừng run ngay.
 			// KHÔNG có `url` (playwright spawn xong không chờ) và đặt CUỐI mảng:
 			// plugin setup chạy tuần tự nên watchdog chỉ poll khi 4 service đã
 			// available.
@@ -137,6 +145,7 @@ export default defineConfig({
 				E2E_WEB_PORT: String(webPort),
 				E2E_STUDENT_PORT: String(studentPort),
 				E2E_ADMIN_PORT: String(adminPort),
+				E2E_RUNNER_PID: String(process.pid),
 			},
 		},
 	],
