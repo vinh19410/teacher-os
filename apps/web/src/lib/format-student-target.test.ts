@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+	EMPTY_BAND_TOKEN,
 	EMPTY_STUDENT_TARGET_LABEL,
 	formatStudentTarget,
+	formatTargetBand,
 } from "./format-student-target";
 
 describe("formatStudentTarget", () => {
@@ -155,5 +157,66 @@ describe("formatStudentTarget", () => {
 		expect(formatStudentTarget({})).toBe(EMPTY_STUDENT_TARGET_LABEL);
 		expect(formatStudentTarget(undefined)).toBe(EMPTY_STUDENT_TARGET_LABEL);
 		expect(formatStudentTarget(null)).toBe(EMPTY_STUDENT_TARGET_LABEL);
+	});
+
+	it("avoids duplicate Band prefix when targetBand already has Band prefix", () => {
+		expect(
+			formatStudentTarget({
+				targetBand: "Band 6.5",
+				skills: ["Writing"],
+			}),
+		).toBe("Mục tiêu: Band 6.5 (Writing)");
+	});
+});
+
+describe("formatTargetBand (#625)", () => {
+	it("renders formatted band for valid string input", () => {
+		expect(formatTargetBand("6.5")).toBe("Band 6.5");
+		expect(formatTargetBand(" 7.0 ")).toBe("Band 7.0");
+	});
+
+	it("renders formatted band for numeric input", () => {
+		expect(formatTargetBand(7)).toBe("Band 7");
+		expect(formatTargetBand(6.5)).toBe("Band 6.5");
+	});
+
+	it("strips case-insensitive Band prefix without duplicating", () => {
+		expect(formatTargetBand("Band 6.5")).toBe("Band 6.5");
+		expect(formatTargetBand("band 7")).toBe("Band 7");
+		expect(formatTargetBand("BAND 8.0")).toBe("Band 8.0");
+	});
+
+	it("returns em-dash token when targetBand is em-dash sentinel", () => {
+		expect(formatTargetBand(EMPTY_BAND_TOKEN)).toBe(EMPTY_BAND_TOKEN);
+		expect(formatTargetBand("—")).toBe("—");
+		expect(formatTargetBand("  —  ")).toBe("—");
+	});
+
+	it("returns em-dash token when targetBand has Band prefix with em-dash", () => {
+		expect(formatTargetBand("Band —")).toBe(EMPTY_BAND_TOKEN);
+		expect(formatTargetBand("Band—")).toBe(EMPTY_BAND_TOKEN);
+		expect(formatTargetBand("band   —")).toBe(EMPTY_BAND_TOKEN);
+	});
+
+	it("returns em-dash token when targetBand is bare Band word", () => {
+		expect(formatTargetBand("Band")).toBe(EMPTY_BAND_TOKEN);
+		expect(formatTargetBand("band")).toBe(EMPTY_BAND_TOKEN);
+		expect(formatTargetBand("  BAND  ")).toBe(EMPTY_BAND_TOKEN);
+	});
+
+	it("returns em-dash token when targetBand is empty or whitespace", () => {
+		expect(formatTargetBand("")).toBe(EMPTY_BAND_TOKEN);
+		expect(formatTargetBand("   ")).toBe(EMPTY_BAND_TOKEN);
+	});
+
+	it("returns em-dash token defensively for non-finite numbers", () => {
+		expect(formatTargetBand(Number.NaN)).toBe(EMPTY_BAND_TOKEN);
+		expect(formatTargetBand(Number.POSITIVE_INFINITY)).toBe(EMPTY_BAND_TOKEN);
+	});
+
+	it("returns em-dash token when targetBand is null or undefined", () => {
+		expect(formatTargetBand(null)).toBe(EMPTY_BAND_TOKEN);
+		expect(formatTargetBand(undefined)).toBe(EMPTY_BAND_TOKEN);
+		expect(formatTargetBand()).toBe(EMPTY_BAND_TOKEN);
 	});
 });
