@@ -1,6 +1,6 @@
 ---
 title: "Phase 2: Hợp nhất số đếm tại route /students và kiểm chứng hồi quy"
-status: pending
+status: completed
 ---
 
 # Phase 2: Hợp nhất số đếm tại route /students và kiểm chứng hồi quy

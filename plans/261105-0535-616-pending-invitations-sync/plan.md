@@ -1,7 +1,7 @@
 ---
 title: "#616: Thống nhất định nghĩa đang chờ và đang học giữa hồ sơ học viên và lời mời"
 description: "Khắc phục lỗi tab Lời mời đang chờ trống dù học viên có nhãn Chờ xác nhận bằng cách hợp nhất số đếm và danh sách học viên portalLinked=false vào tab Lời mời đang chờ, đồng thời loại họ khỏi số học viên đang học ở đầu trang."
-status: in_progress
+status: completed
 priority: P2
 effort: 2h
 issue: 616
@@ -73,15 +73,15 @@ flowchart TD
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: Helper kiểm tra và nâng cấp PendingInvitationsList](./phase-01-pure-helper-and-component-tests.md) | In Progress |
-| 2 | [Phase 2: Hợp nhất số đếm tại route /students và kiểm chứng hồi quy](./phase-02-web-ui-unification-and-route-tests.md) | Pending |
+| 1 | [Phase 1: Helper kiểm tra và nâng cấp PendingInvitationsList](./phase-01-pure-helper-and-component-tests.md) | Completed |
+| 2 | [Phase 2: Hợp nhất số đếm tại route /students và kiểm chứng hồi quy](./phase-02-web-ui-unification-and-route-tests.md) | Completed |
 
 ## Success Criteria
 
-- [ ] Kicker đầu trang `/students` hiển thị `${activeStudentsCount} học viên đang học · ${totalPendingCount} lời mời đang chờ`, không tính học viên có email chưa liên kết cổng vào số đang học.
-- [ ] Tab "Lời mời đang chờ" hiển thị đúng số tổng `totalPendingCount`, và khi chuyển sang tab sẽ thấy đầy đủ danh sách học viên chờ xác nhận kèm nút "Gửi lại lời mời".
-- [ ] Empty state của tab "Lời mời đang chờ" chỉ hiển thị khi cả học viên chờ xác nhận lẫn lời mời từ API đều bằng 0.
-- [ ] Toàn bộ test suite web (`pnpm --filter web test`), kiểm tra kiểu (`pnpm check-types`), và lint (`pnpm check`) pass 100%.
+- [x] Kicker đầu trang `/students` hiển thị `${activeStudentsCount} học viên đang học · ${totalPendingCount} lời mời đang chờ`, không tính học viên có email chưa liên kết cổng vào số đang học.
+- [x] Tab "Lời mời đang chờ" hiển thị đúng số tổng `totalPendingCount`, và khi chuyển sang tab sẽ thấy đầy đủ danh sách học viên chờ xác nhận kèm nút "Gửi lại lời mời".
+- [x] Empty state của tab "Lời mời đang chờ" chỉ hiển thị khi cả học viên chờ xác nhận lẫn lời mời từ API đều bằng 0.
+- [x] Toàn bộ test suite web (`pnpm --filter web test`), kiểm tra kiểu (`pnpm check-types`), và lint (`pnpm check`) pass 100%.
 
 ## Red Team Review
 

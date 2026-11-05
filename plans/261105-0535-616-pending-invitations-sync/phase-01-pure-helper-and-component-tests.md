@@ -1,6 +1,6 @@
 ---
 title: "Phase 1: Helper kiểm tra và nâng cấp PendingInvitationsList"
-status: in_progress
+status: completed
 ---
 
 # Phase 1: Helper kiểm tra và nâng cấp PendingInvitationsList
