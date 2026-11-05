@@ -18,6 +18,7 @@
 		"@effect/platform-node": "4.1.2",
 		"@teacher-os/config": "workspace:*",
 		"@alchemy.run/cloudflare": "2.0.0-beta.85",
+		"@alchemy.run/sql": "2.0.0-beta.85",
 		"alchemy": "2.0.0-beta.85",
 		"effect": "4.1.2",
 		"typescript": "catalog:",

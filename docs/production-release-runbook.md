@@ -254,12 +254,21 @@ deploy with `expected vN, observed vM`. Never answer that error by rerunning a
 deploy on an older Alchemy version: with `--yes`, it tries to redeploy the shared
 store to its own version.
 
-Alchemy `2.0.0-beta.85` tracks D1 migrations in `__alchemy_migrations`. The first
-deploy of each stage copies the history from `d1_migrations`, checks every name
-against the local migration files, and stops on a mismatch without applying
-anything. `d1_migrations` then stays frozen, so once a new migration has been
-applied, an older Alchemy version would no longer see it. Roll back by reverting
-code while staying on `beta.85` or later.
+Alchemy refuses a directory containing `meta/_journal.json`, so
+`packages/infra/src/flat-migrations.ts` copies only the `.sql` files into
+`packages/infra/.alchemy/d1-migrations` on each run. Do not run `drizzle-kit up`:
+it renames every migration, which no longer matches the recorded history.
+
+An existing stage keeps using the `d1_migrations` table recorded in its Alchemy
+state; `__alchemy_migrations` is only the default for a new stage. The first
+deploy on `2.0.0-beta.85` rebuilds `d1_migrations` with a `hash` column, checks
+every recorded name against the local files, and stops on a mismatch without
+applying migrations. The plan shows `database: update` for this deploy, which is
+expected. Older Alchemy versions cannot write to the rebuilt table, so roll back
+by reverting code while staying on `beta.85` or later. Note the UTC time before
+that first deploy of each stage, so D1 Time Travel can restore to it if the
+rebuild fails partway. If it does, the rows remain in
+`d1_migrations_alchemy_upgrade`.
 
 ## Deploy (production)
 

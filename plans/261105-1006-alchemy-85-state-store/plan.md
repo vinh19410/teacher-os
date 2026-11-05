@@ -34,18 +34,19 @@ Phase 2 chỉ bắt đầu sau khi phase 1 deploy staging thành công.
 
 ## Success Criteria
 
-- [ ] Dry-run staging không thay thế hay xóa D1, R2 và custom domain.
+- [ ] Dry-run staging không thay thế hay xóa D1, R2 và custom domain; `database: update` ở lần đầu là bình thường.
 - [ ] `Deploy Staging` xanh gồm cả smoke; D1 giữ nguyên dữ liệu và không chạy lại migration.
 - [ ] Sau phase 2, dry-run trên store riêng không tạo mới resource nào.
 
 ## Risks
 
-- **Migration một chiều.** Lần deploy đầu chuyển lịch sử sang `__alchemy_migrations`; rollback về bản cũ khó sau khi có migration mới.
+- **Rebuild bảng migration một chiều.** Lần deploy đầu thêm cột `hash` vào `d1_migrations`, nên `beta.72` không ghi được vào bảng này nữa. Ghi lại giờ UTC trước deploy để dùng D1 Time Travel nếu cần.
+- **Module registry.** `beta.85` thêm `new_module_registry` cho Worker. Smoke staging và QA cần phủ các đường chính.
 - **Store mới trống.** Đổi store khi chưa chuyển state sẽ khiến Alchemy coi resource đang chạy như chưa tồn tại.
 - **Project khác trên `beta.84`.** Deploy của chúng với `--yes` có thể đưa store dùng chung về v7, làm teacher-os fail lần nữa cho tới khi xong phase 2.
 
 ## Rollback
 
-Trước khi có migration mới: revert PR. Không rerun deploy `beta.72` trên store v8.
+Sau khi đã deploy `beta.85`: revert code nhưng giữ Alchemy từ `beta.85` trở lên. Không chạy deploy `beta.72` trên store v8.
 
 <!-- slug: alchemy-85-state-store -->

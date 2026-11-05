@@ -23,7 +23,9 @@ dependencies: []
 1. Nâng `alchemy`, thêm `@alchemy.run/cloudflare`, nâng `effect` và `@effect/platform-*`.
 2. Đổi `Config.string`/`redacted` thành `Config.String`/`Redacted`, `migrationsDir` thành `migrations`.
 3. Ghim `@cloudflare/workers-types` để `drizzle-orm` không tách peer variant.
-4. Thêm input `dry_run` vào `deploy-staging.yml`.
+4. Thêm input `dry_run` vào `deploy-staging.yml` kèm test pin biểu thức.
+4a. Trỏ `migrations` vào thư mục phẳng chỉ chứa `.sql`, vì Alchemy từ chối `meta/_journal.json` mà dry-run không phát hiện.
+4b. Ghim compatibility date của 6 Worker ở `2026-03-17`.
 5. Merge vào `develop`, chạy dry-run và đọc kế hoạch.
 6. Promote lên `staging` nếu kế hoạch an toàn.
 

@@ -3,6 +3,7 @@ import * as Alchemy from "alchemy";
 import { config } from "dotenv";
 import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
+import { prepareFlatMigrations } from "./src/flat-migrations";
 import {
 	resolveAssumeEmailVerified,
 	resolveDomainTopology,
@@ -167,8 +168,15 @@ const assumeEmailVerified = resolveAssumeEmailVerified(
 	process.env.APP_DOMAIN,
 );
 
+// Alchemy's default date moves with each release. Pinning it keeps runtime
+// behavior changes out of Alchemy upgrades, so bumping it stays its own decision.
+const WORKER_COMPATIBILITY_DATE = "2026-03-17";
+
 export const db = Cloudflare.D1.Database("database", {
-	migrations: "../../packages/db/src/migrations",
+	migrations: prepareFlatMigrations(
+		"../../packages/db/src/migrations",
+		".alchemy/d1-migrations",
+	),
 });
 
 // Private bucket for student speaking submissions (audio/video). No public
@@ -184,6 +192,7 @@ export const libraryAudio = Cloudflare.R2.Bucket("library-audio", {});
 export const server = Cloudflare.Worker("server", {
 	main: "../../apps/server/src/index.ts",
 	compatibility: {
+		date: WORKER_COMPATIBILITY_DATE,
 		flags: ["nodejs_compat"],
 	},
 	...(topology && { domain: topology.apiHost, workersDev: false }),
@@ -269,6 +278,7 @@ export default Alchemy.Stack(
 		const serverWorker = yield* server;
 		const aiEnabled = yield* aiEnabledConfig;
 		const webWorker = yield* Cloudflare.Website.Vite("web", {
+			compatibility: { date: WORKER_COMPATIBILITY_DATE },
 			rootDir: "../../apps/web",
 			main: "src/worker.ts",
 			assets: {
@@ -295,6 +305,7 @@ export default Alchemy.Stack(
 		});
 
 		const landingWorker = yield* Cloudflare.Website.StaticSite("landing", {
+			compatibility: { date: WORKER_COMPATIBILITY_DATE },
 			cwd: "../../apps/landing",
 			command: "pnpm build",
 			outdir: "dist",
@@ -316,6 +327,7 @@ export default Alchemy.Stack(
 		});
 
 		const studentWorker = yield* Cloudflare.Website.Vite("student", {
+			compatibility: { date: WORKER_COMPATIBILITY_DATE },
 			rootDir: "../../apps/student",
 			main: "src/worker.ts",
 			assets: {
@@ -341,6 +353,7 @@ export default Alchemy.Stack(
 
 		// Plan #413 phase 5: cổng quản trị — dev 8004, domain topology.adminHost.
 		const adminWorker = yield* Cloudflare.Website.Vite("admin", {
+			compatibility: { date: WORKER_COMPATIBILITY_DATE },
 			rootDir: "../../apps/admin",
 			main: "src/worker.ts",
 			assets: {
@@ -367,6 +380,7 @@ export default Alchemy.Stack(
 		// Plan #536: trang hồ sơ giảng viên cô Mỹ — StaticSite tại msmy.io.vn (+ www)
 		// trên prod, profile.<domain> trên staging, dev port 8005.
 		const profileWorker = yield* Cloudflare.Website.StaticSite("profile", {
+			compatibility: { date: WORKER_COMPATIBILITY_DATE },
 			cwd: "../../apps/profile",
 			command: "pnpm build",
 			outdir: "dist",
