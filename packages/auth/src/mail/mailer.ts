@@ -32,7 +32,9 @@ export function composeFrom(from: string, fromName?: string): string {
 		const nameToUse = cleanedName || embeddedName;
 		if (!nameToUse) return bareAddress;
 		const unquoted =
-			nameToUse.startsWith('"') && nameToUse.endsWith('"') && nameToUse.length >= 2
+			nameToUse.startsWith('"') &&
+			nameToUse.endsWith('"') &&
+			nameToUse.length >= 2
 				? nameToUse.slice(1, -1)
 				: nameToUse;
 		const escaped = unquoted.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
