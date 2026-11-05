@@ -66,11 +66,11 @@ export function GradeForm({
 		Object.fromEntries(keys.map((key) => [key, initial?.scores[key] ?? null])),
 	);
 	const [feedback, setFeedback] = useState(initial?.feedback ?? "");
+	const isSaving = saving || Boolean(savingDraft);
 
 	const complete = keys.every((key) => scores[key] !== null);
 	const values = complete ? keys.map((key) => scores[key] as number) : [];
 	const overallText = complete ? formatBand(ieltsOverallBand(values)) : "—";
-
 	// Band tổng sống lên PageHead qua callback — route là nơi render con số.
 	useEffect(() => {
 		onOverallChange?.(overallText);
@@ -78,10 +78,12 @@ export function GradeForm({
 
 	return (
 		<form
+			data-testid="grade-form"
+			aria-busy={isSaving}
 			className="flex flex-col gap-4"
 			onSubmit={(event) => {
 				event.preventDefault();
-				if (!complete || saving || !canPublish) return;
+				if (!complete || isSaving || !canPublish) return;
 				onSave({
 					scores: Object.fromEntries(
 						keys.map((key) => [key, scores[key] as number]),
@@ -95,18 +97,23 @@ export function GradeForm({
 					<BandSlider
 						id={`grade-${key}`}
 						value={scores[key]}
-						onChange={(band) => setScores((prev) => ({ ...prev, [key]: band }))}
+						disabled={isSaving}
+						onChange={(band) => {
+							if (!isSaving) setScores((prev) => ({ ...prev, [key]: band }));
+						}}
 					/>
 				</Field>
 			))}
-
 			<Field label="Nhận xét cho học viên">
 				<Textarea
 					id="grade-feedback"
 					maxLength={QUIZ_FEEDBACK_MAX}
 					placeholder="Tuỳ chọn…"
 					value={feedback}
-					onChange={(event) => setFeedback(event.target.value)}
+					disabled={isSaving}
+					onChange={(event) => {
+						if (!isSaving) setFeedback(event.target.value);
+					}}
 				/>
 			</Field>
 			<p className="text-muted-foreground text-xs">
@@ -135,10 +142,10 @@ export function GradeForm({
 						type="button"
 						variant="outline"
 						className="w-full"
-						disabled={!complete || savingDraft || saving}
+						disabled={!complete || isSaving}
 						data-testid="save-draft"
 						onClick={() => {
-							if (!complete || savingDraft || saving) return;
+							if (!complete || isSaving) return;
 							onSaveDraft?.({
 								scores: Object.fromEntries(
 									keys.map((key) => [key, scores[key] as number]),
@@ -154,7 +161,7 @@ export function GradeForm({
 					type="submit"
 					className="w-full"
 					data-testid="publish-grade"
-					disabled={!complete || saving || !canPublish}
+					disabled={!complete || isSaving || !canPublish}
 					title={!canPublish ? PUBLISH_GRADE_FORBIDDEN_TOOLTIP : undefined}
 				>
 					{saving ? "Đang lưu…" : draftMode ? "Chốt trả bài" : "Lưu điểm"}
