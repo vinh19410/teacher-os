@@ -11,6 +11,8 @@ Quy ước khi cập nhật:
 ---
 
 ## 2026-11-05
+### Fixed
+- Thống nhất định nghĩa đang chờ và đang học tại trang Học viên (#616): loại bỏ học viên có email chưa liên kết cổng (`portalLinked === false`) khỏi số "học viên đang học" ở kicker đầu trang, gộp họ vào tab "Lời mời đang chờ" với badge "Chờ xác nhận" và nút "Gửi lại lời mời" (hoạt động song song với lời mời tổ chức trong bảng `student_invitation`), cập nhật nhãn tab "Lời mời đang chờ (N)" theo tổng số sau khi deduplicate email; bảo toàn ranh giới hồ sơ đầy đủ trên tab "Học viên".
 
 ### Changed
 - Đổi tên thương hiệu hiển thị thành Cô Mỹ Dạy Tiếng Anh (#611): cập nhật toàn bộ tên hiển thị từ "Teacher OS" / "TeacherOS" thành "Cô Mỹ Dạy Tiếng Anh" ở UI (web, admin, student), email templates & subjects (`packages/auth`), server notifications (`apps/server`), landing page (`apps/landing`) và smoke check deploy (`deploy.yml`, `deploy-staging.yml`); giữ nguyên toàn bộ định danh hạ tầng (`@teacher-os/*`, domain `teacheros.io.vn`, Cloudflare Worker bindings, D1 schemas, cookie prefixes).
@@ -18,7 +20,6 @@ Quy ước khi cập nhật:
 
 ### CI/Infra
 - Cập nhật bộ e2e theo hành vi mới của cổng học viên và form tạo bài tập: bấm tab "Mật khẩu" trước khi đăng nhập bằng mật khẩu (#578), chọn dạng đề Writing trước khi lưu sẵn sàng giao (#577), kiểm tra cảnh báo thiếu trường thay vì nút lưu bị khóa (#581), cập nhật CTA landing mới (#600); thêm helper dùng chung `selectWritingTask2` và `expectReadySaveBlocked`. Full e2e: 259 passed, 0 failed, 1 skipped (OAuth Google).
-
 ## 2026-11-04
 
 ### Added

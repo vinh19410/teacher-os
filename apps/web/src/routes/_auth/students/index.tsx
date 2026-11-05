@@ -19,8 +19,11 @@ import { useData } from "@/lib/data-store";
 import { classMeta } from "@/lib/mock-data";
 import { classesByStudent } from "@/lib/repos/enrollments";
 import { usePendingInvitations } from "@/lib/repos/invitations";
+import {
+	filterUniquePendingInvites,
+	isPendingPortalStudent,
+} from "@/lib/repos/students";
 import { useStudents } from "@/lib/repos/use-students";
-
 export const Route = createFileRoute("/_auth/students/")({
 	component: StudentsRoute,
 });
@@ -44,13 +47,23 @@ export function StudentsRoute() {
 	);
 	const [inviteModalOpen, setInviteModalOpen] = useState(false);
 	const [addModalOpen, setAddModalOpen] = useState(false);
-	const pendingInvites = (invitations ?? []).filter(
-		(inv) => inv.status === "pending",
+	const pendingStudents = students.filter(isPendingPortalStudent);
+	const pendingStudentEmails = new Set(
+		pendingStudents
+			.map((s) => (s.email ?? "").trim().toLowerCase())
+			.filter(Boolean),
 	);
+	const pendingInvites = filterUniquePendingInvites(
+		invitations,
+		pendingStudentEmails,
+	);
+	const totalPendingCount = pendingStudents.length + pendingInvites.length;
+	const activeStudentsCount = students.filter(
+		(s) => !isPendingPortalStudent(s),
+	).length;
 	const unpaidStudentIds = new Set(
 		data.invoices.filter((i) => i.status !== "paid").map((i) => i.sid),
 	);
-
 	const attentionCount = students.filter(
 		(s) =>
 			s.tags.includes("nợ học phí") ||
@@ -69,7 +82,7 @@ export function StudentsRoute() {
 	return (
 		<div>
 			<PageHead
-				kicker={`${students.length} học viên đang học · ${pendingInvites.length} lời mời đang chờ`}
+				kicker={`${activeStudentsCount} học viên đang học · ${totalPendingCount} lời mời đang chờ`}
 				title="Học viên"
 				lead={`${attentionCount} cần chú ý (nợ học phí / sắp hết gói)`}
 				action={
@@ -99,8 +112,8 @@ export function StudentsRoute() {
 						{
 							id: "invitations",
 							label:
-								pendingInvites.length > 0
-									? `Lời mời đang chờ (${pendingInvites.length})`
+								totalPendingCount > 0
+									? `Lời mời đang chờ (${totalPendingCount})`
 									: "Lời mời đang chờ",
 						},
 					]}
@@ -115,6 +128,7 @@ export function StudentsRoute() {
 			{activeTab === "invitations" ? (
 				<PendingInvitationsList
 					onInviteClick={() => setInviteModalOpen(true)}
+					pendingStudents={pendingStudents}
 				/>
 			) : students.length === 0 ? (
 				<Card
@@ -169,7 +183,7 @@ export function StudentsRoute() {
 													>
 														Chưa liên kết Portal
 													</Badge>
-												) : s.portalLinked === false ? (
+												) : isPendingPortalStudent(s) ? (
 													<Badge
 														variant="warn"
 														dot
@@ -216,7 +230,7 @@ export function StudentsRoute() {
 												<Tag key={t}>{t}</Tag>
 											))}
 										</div>
-										{Boolean(s.email) && s.portalLinked === false && (
+										{isPendingPortalStudent(s) && (
 											<ResendInviteButton
 												target={{
 													kind: "student",
