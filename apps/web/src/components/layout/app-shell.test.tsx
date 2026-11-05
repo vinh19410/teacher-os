@@ -88,7 +88,7 @@ function renderSharedShell(
 			nav={NAV}
 			activeKey="classes"
 			onSelect={onSelect}
-			crumbs={["Teacher/OS", "Lớp học"]}
+			crumbs={["Cô Mỹ Dạy Tiếng Anh", "Lớp học"]}
 			linkComponent={StubLink}
 			navLabel="Điều hướng học viên"
 			{...overrides}
@@ -212,7 +212,7 @@ describe("Web AppShell v2", () => {
 		const breadcrumb = await screen.findByRole("navigation", {
 			name: "Breadcrumb",
 		});
-		expect(breadcrumb.textContent).toContain("Teacher/OS");
+		expect(breadcrumb.textContent).toContain("Cô Mỹ Dạy Tiếng Anh");
 		expect(breadcrumb.textContent).toContain("Hồ sơ");
 	});
 

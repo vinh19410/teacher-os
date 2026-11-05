@@ -1,3 +1,5 @@
+import { BRAND_NAME } from "./brand";
+
 function escapeHtml(str: string): string {
 	return str
 		.replace(/&/g, "&amp;")
@@ -21,7 +23,7 @@ export function resetPasswordEmailTemplate(input: { url: string }): {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="light dark">
 <meta name="supported-color-schemes" content="light dark">
-<title>Đặt lại mật khẩu TeacherOS</title>
+<title>Đặt lại mật khẩu ${BRAND_NAME}</title>
 <style>
 @media (prefers-color-scheme: dark) {
   .bg-body { background-color: #0f172a !important; }
@@ -37,7 +39,7 @@ export function resetPasswordEmailTemplate(input: { url: string }): {
 </head>
 <body style="margin:0; padding:0; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; background-color:#f1f5f9;">
 <div style="display:none; max-height:0px; overflow:hidden; font-size:1px; line-height:1px; color:#fff; opacity:0;">
-Nhấn nút bên dưới để đặt lại mật khẩu TeacherOS. Liên kết có hiệu lực trong 1 giờ.${preheaderFiller}
+Nhấn nút bên dưới để đặt lại mật khẩu ${BRAND_NAME}. Liên kết có hiệu lực trong 1 giờ.${preheaderFiller}
 </div>
 <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" class="bg-body" style="background-color:#f1f5f9; width:100%; margin:0; padding:24px 0;">
   <tr>
@@ -45,14 +47,14 @@ Nhấn nút bên dưới để đặt lại mật khẩu TeacherOS. Liên kết 
       <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" class="bg-card" style="max-width:600px; background-color:#ffffff; border-radius:12px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; text-align:left; border:1px solid #e2e8f0; overflow:hidden;">
         <tr>
           <td style="padding:32px 32px 16px 32px;">
-            <div style="font-size:20px; font-weight:700; color:#4f46e5; letter-spacing:-0.5px;">TeacherOS</div>
+            <div style="font-size:20px; font-weight:700; color:#4f46e5; letter-spacing:-0.5px;">${BRAND_NAME}</div>
           </td>
         </tr>
         <tr>
           <td style="padding:0 32px 24px 32px;">
             <h1 class="text-main" style="margin:0 0 16px 0; font-size:24px; line-height:32px; font-weight:700; color:#0f172a;">Đặt lại mật khẩu của bạn</h1>
             <p class="text-main" style="margin:0 0 16px 0; font-size:16px; line-height:24px; color:#334155;">
-              Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản TeacherOS của bạn. Nhấn nút bên dưới để chọn mật khẩu mới.
+              Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản ${BRAND_NAME} của bạn. Nhấn nút bên dưới để chọn mật khẩu mới.
             </p>
             <p class="text-muted" style="margin:0 0 24px 0; font-size:14px; line-height:20px; color:#64748b;">
               Liên kết có hiệu lực trong 1 giờ. Nếu bạn không yêu cầu đặt lại mật khẩu, bạn có thể bỏ qua email này, mật khẩu hiện tại vẫn giữ nguyên.
@@ -75,10 +77,10 @@ Nhấn nút bên dưới để đặt lại mật khẩu TeacherOS. Liên kết 
         <tr>
           <td style="padding:24px 32px 32px 32px; border-top:1px solid #e2e8f0;">
             <p class="text-muted" style="margin:0 0 8px 0; font-size:12px; line-height:18px; color:#94a3b8;">
-              Bạn nhận được email này vì có người yêu cầu đặt lại mật khẩu cho địa chỉ email của bạn trên TeacherOS.
+              Bạn nhận được email này vì có người yêu cầu đặt lại mật khẩu cho địa chỉ email của bạn trên ${BRAND_NAME}.
             </p>
             <p class="text-muted" style="margin:0; font-size:12px; line-height:18px; color:#94a3b8;">
-              &copy; 2022 TeacherOS. Mọi quyền được bảo lưu.
+              &copy; 2022 ${BRAND_NAME}. Mọi quyền được bảo lưu.
             </p>
           </td>
         </tr>
@@ -89,7 +91,7 @@ Nhấn nút bên dưới để đặt lại mật khẩu TeacherOS. Liên kết 
 </body>
 </html>`;
 
-	const text = `Xin chào,\n\nChúng tôi nhận được yêu cầu đặt lại mật khẩu TeacherOS của bạn. Đặt mật khẩu mới tại liên kết sau (hiệu lực 1 giờ):\n\n${input.url}\n\nNếu bạn không yêu cầu, hãy bỏ qua email này, mật khẩu hiện tại vẫn giữ nguyên.`;
+	const text = `Xin chào,\n\nChúng tôi nhận được yêu cầu đặt lại mật khẩu ${BRAND_NAME} của bạn. Đặt mật khẩu mới tại liên kết sau (hiệu lực 1 giờ):\n\n${input.url}\n\nNếu bạn không yêu cầu, hãy bỏ qua email này, mật khẩu hiện tại vẫn giữ nguyên.`;
 
 	return { html, text };
 }

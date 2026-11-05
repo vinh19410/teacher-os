@@ -6,6 +6,7 @@ import type { Mailer } from "@teacher-os/auth/mail/mailer";
 import { notificationRecord } from "@teacher-os/db/schema/notification-record";
 import { and, eq, inArray, lt, sql } from "drizzle-orm";
 import type { Db } from "../../app";
+import { BRAND_NAME, formatSenderName } from "../brand";
 
 /** last_error cắt 500 ký tự; message lỗi Resend không chứa API key (chỉ header Bearer). */
 const LAST_ERROR_MAX = 500;
@@ -98,11 +99,11 @@ export function renderHtml(
 		? `<p style="margin:24px 0"><a href="${safeUrl}" style="display:inline-block;background:#2563eb;color:#ffffff;padding:10px 20px;border-radius:8px;text-decoration:none">${escapeHtml(ctaLabel)}</a></p>`
 		: "";
 	return [
-		'<!DOCTYPE html><html lang="vi"><body style="margin:0;font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:#f8fafc">',
+		'<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"></head><body style="margin:0;font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:#f8fafc">',
 		'<div style="max-width:560px;margin:0 auto;padding:24px;background:#ffffff;border-radius:12px">',
 		`<p style="font-size:15px;line-height:1.6;color:#0f172a">${escapeHtml(body)}</p>`,
 		linkHtml,
-		'<p style="font-size:12px;color:#64748b;margin-top:24px">Email tự động từ Teacher OS.</p>',
+		`<p style="font-size:12px;color:#64748b;margin-top:24px">Email tự động từ ${BRAND_NAME}.</p>`,
 		"</div></body></html>",
 	].join("");
 }
@@ -186,7 +187,7 @@ export async function deliverNotifications(
 					idempotencyKey: row.id,
 					...(row.replyToEmail ? { replyTo: row.replyToEmail } : {}),
 					...(row.senderName
-						? { fromName: `${row.senderName} qua Teacher OS` }
+						? { fromName: formatSenderName(row.senderName) }
 						: {}),
 				});
 				await db

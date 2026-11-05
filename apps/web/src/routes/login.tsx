@@ -115,7 +115,7 @@ function RouteComponent() {
 			{TEACHER_SIGNUP_ENABLED && (
 				<p className="text-center text-muted-foreground text-sm">
 					{mode === "signin"
-						? "New to Teacher OS?"
+						? "New to Cô Mỹ Dạy Tiếng Anh?"
 						: "Already have an account?"}{" "}
 					<button
 						type="button"

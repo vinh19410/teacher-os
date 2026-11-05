@@ -57,7 +57,7 @@ const ROUTE_CRUMBS: Record<string, string[]> = {
 	"/_auth/profile": ["Hồ sơ"],
 };
 
-const ORG_NAME = "Teacher/OS";
+const ORG_NAME = "Cô Mỹ Dạy Tiếng Anh";
 
 export function AppShell() {
 	const { session } = useRouteContext({ from: "/_auth" });

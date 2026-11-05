@@ -14,11 +14,11 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 	head: () => ({
 		meta: [
 			{
-				title: "Teacher OS · Học viên",
+				title: "Cô Mỹ Dạy Tiếng Anh · Học viên",
 			},
 			{
 				name: "description",
-				content: "Teacher OS — Cổng thông tin học viên.",
+				content: "Cô Mỹ Dạy Tiếng Anh — Cổng thông tin học viên.",
 			},
 		],
 		links: [

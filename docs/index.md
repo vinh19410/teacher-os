@@ -1,4 +1,4 @@
-# Teacher OS Docs
+# Cô Mỹ Dạy Tiếng Anh (Teacher OS) Docs
 
 Start here if you need the current project contract or the owning code paths.
 

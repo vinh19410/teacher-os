@@ -16,12 +16,12 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 	head: () => ({
 		meta: [
 			{
-				title: "Teacher OS · Quản lý lớp gia sư 1:1",
+				title: "Cô Mỹ Dạy Tiếng Anh · Quản lý lớp gia sư 1:1",
 			},
 			{
 				name: "description",
 				content:
-					"Teacher OS — quản lý lớp gia sư 1:1: học viên, lịch dạy, học phí, bài tập.",
+					"Cô Mỹ Dạy Tiếng Anh — quản lý lớp gia sư 1:1: học viên, lịch dạy, học phí, bài tập.",
 			},
 		],
 		links: [

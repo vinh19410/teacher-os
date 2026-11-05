@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: "Docs, rà soát và xác minh"
-status: pending
+status: completed
 dependencies: [1, 2, 3]
 ---
 

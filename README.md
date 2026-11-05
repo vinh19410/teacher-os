@@ -1,4 +1,6 @@
-# teacher-os
+# Cô Mỹ Dạy Tiếng Anh (teacher-os)
+
+> **Tên thương hiệu hiển thị:** Cô Mỹ Dạy Tiếng Anh (trước đây là Teacher OS). Định danh kỹ thuật, tên repo và packages giữ nguyên `@teacher-os/*`.
 
 This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Router, Hono, and more.
 

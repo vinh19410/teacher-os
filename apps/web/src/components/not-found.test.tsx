@@ -3,11 +3,9 @@ import { describe, expect, it } from "vitest";
 import { NotFoundPage } from "./not-found";
 
 describe("NotFoundPage component", () => {
-	it("renders the branded TeacherOS header with logo and home link", () => {
+	it("renders the branded Cô Mỹ Dạy Tiếng Anh header with logo and home link", () => {
 		const html = renderToStaticMarkup(<NotFoundPage />);
-		// Redesign #349: the boxed logo svg became the mono TEACHER/OS wordmark.
-		expect(html).toContain("Teacher");
-		expect(html).toContain("OS");
+		expect(html).toContain("Cô Mỹ Dạy Tiếng Anh");
 		expect(html).not.toContain("<svg");
 		expect(html).toContain('href="/"');
 	});
@@ -30,6 +28,6 @@ describe("NotFoundPage component", () => {
 
 	it("renders copyright footer", () => {
 		const html = renderToStaticMarkup(<NotFoundPage />);
-		expect(html).toContain("© 2022 Teacher OS");
+		expect(html).toContain("© 2022 Cô Mỹ Dạy Tiếng Anh");
 	});
 });

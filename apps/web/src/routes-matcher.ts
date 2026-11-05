@@ -1,5 +1,5 @@
 /**
- * Known exact application routes defined in TeacherOS.
+ * Known exact application routes defined in web app.
  */
 export const VALID_EXACT_ROUTES: Record<string, true> = {
 	"/": true,
@@ -34,7 +34,7 @@ export const VALID_EXACT_ROUTES: Record<string, true> = {
 };
 
 /**
- * Known dynamic route prefixes in TeacherOS.
+ * Known dynamic route prefixes in web app.
  */
 export const VALID_DYNAMIC_PREFIXES = [
 	"/assignments/",
@@ -124,7 +124,7 @@ export function isStaticAssetPath(pathname: string): boolean {
 }
 
 /**
- * Checks if the given path is a valid TeacherOS client-side route.
+ * Checks if the given path is a valid client-side route.
  */
 export function isValidAppRoute(pathname: string): boolean {
 	if (isDotFilePath(pathname)) {

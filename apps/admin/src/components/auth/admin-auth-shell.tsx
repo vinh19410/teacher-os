@@ -8,7 +8,7 @@ import type { ReactNode } from "react";
 // Quote cột phải cho cổng quản trị (pattern Login design v2).
 const ADMIN_AUTH_QUOTE: AuthQuote = {
 	text: "Kho đề, bài nghe và kết quả chấm — quản tập trung trong một nơi duy nhất.",
-	author: "Teacher OS · Cổng quản trị",
+	author: "Cô Mỹ Dạy Tiếng Anh · Cổng quản trị",
 };
 
 /** Khung auth admin: AuthSplitLayout với quote + minh họa TeacherDesk cố
@@ -23,7 +23,7 @@ export function AdminAuthShell({
 	return (
 		<AuthSplitLayout
 			formLabel={formLabel}
-			brandLabel="Teacher OS · Quản trị"
+			brandLabel="Cô Mỹ Dạy Tiếng Anh · Quản trị"
 			quote={ADMIN_AUTH_QUOTE}
 			illustration={
 				<TeacherDesk decorative className="w-full max-w-lg self-center" />

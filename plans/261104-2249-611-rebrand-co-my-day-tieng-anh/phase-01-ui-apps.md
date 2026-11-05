@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "UI web, admin, student"
-status: pending
+status: completed
 dependencies: []
 ---
 
@@ -9,17 +9,18 @@ dependencies: []
 
 ## Context
 
-Tên hiển thị trong 3 app React và `index.html` của từng app. `packages/ui` nhận tên qua `brandLabel`, nên không cần sửa package này.
+Tên hiển thị trong 3 app React và `index.html` của từng app, cộng với `packages/ui` (trang not-found-page).
 
 ## Files được sửa
 
 - `apps/web/index.html`, `apps/web/src/routes/__root.tsx`, `apps/web/src/components/auth/auth-shell.tsx`, `apps/web/src/routes/login.tsx`, `apps/web/src/routes/verify-email.tsx`
+- `apps/web/src/components/layout/app-shell.tsx` (`ORG_NAME = "Teacher/OS"` → `"Cô Mỹ Dạy Tiếng Anh"`) và `app-shell.test.tsx`
 - `apps/web/src/routes/_auth/reports.tsx` (chỉ comment, thay bằng tên trung tính "ứng dụng")
 - `apps/admin/index.html`, `apps/admin/src/routes/__root.tsx`, `apps/admin/src/routes/login.tsx`, `apps/admin/src/components/layout/admin-shell.tsx`, `apps/admin/src/components/auth/admin-auth-shell.tsx`
 - `apps/student/index.html`, `apps/student/src/routes/__root.tsx`, `apps/student/src/components/auth/auth-shell.tsx`
+- `packages/ui/src/components/not-found-page.tsx` (tên hiển thị, monogram "CM", footer copyright)
 - `apps/web/src/components/modals/bank-hub-link-modal.tsx:157` (`TeacherOS không lưu mật…`), `apps/web/src/routes-matcher.ts` (chỉ comment)
-- Test/e2e khóa chuỗi: `apps/web/src/routes/login-signup-gate.test.tsx`, `apps/web/src/components/not-found.test.tsx`, `apps/e2e/specs/admin-auth.spec.ts`, `apps/e2e/specs/404-branded-status.spec.ts`
-
+- Test/e2e khóa chuỗi: `apps/web/src/routes/login-signup-gate.test.tsx`, `apps/web/src/components/not-found.test.tsx`, `apps/e2e/specs/admin-auth.spec.ts`, `apps/e2e/specs/404-branded-status.spec.ts`, `apps/web/src/components/layout/app-shell.test.tsx`
 ## Bước
 
 1. Liệt kê lại: `grep -rnE "Teacher ?OS" apps/web apps/admin apps/student -I --exclude-dir=node_modules`.
