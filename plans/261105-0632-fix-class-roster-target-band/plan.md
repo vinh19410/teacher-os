@@ -1,7 +1,7 @@
 ---
 title: "fix(classes): bảng danh sách lớp hiện Band — với học viên chưa có mục tiêu (#625)"
 description: "Trích xuất helper nội bộ normalizeTargetBand và export formatTargetBand trong format-student-target.ts để chuẩn hóa hiển thị cột Band mục tiêu trên bảng danh sách lớp (class-roster-tab.tsx), hiển thị '—' trần cho học viên chưa đặt mục tiêu thay vì 'Band —'."
-status: in_progress
+status: completed
 priority: P2
 effort: 30m
 issue: 625

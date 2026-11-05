@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import type { RosterDebt } from "@/lib/tuition-from-kernel";
 
-import { RosterTuitionCell } from "./class-roster-tab";
+import { RosterTargetBandCell, RosterTuitionCell } from "./class-roster-tab";
 
 function debt(partial: Partial<RosterDebt>): RosterDebt {
 	return { outstanding: 0, invoiceCount: 1, status: "unpaid", ...partial };
@@ -95,5 +95,42 @@ describe("RosterTuitionCell (#322)", () => {
 		expect(html).toContain("Quá hạn");
 		expect(html).toContain("còn 800.000đ");
 		expect(html).toContain("text-danger");
+	});
+});
+
+describe("RosterTargetBandCell (#625)", () => {
+	it("học viên có mục tiêu hợp lệ hiển thị Band {band}", () => {
+		const html = renderToStaticMarkup(
+			<RosterTargetBandCell targetBand="6.5" />,
+		);
+		expect(html).toContain("Band 6.5");
+		expect(html).not.toContain("—");
+	});
+
+	it("học viên chưa đặt mục tiêu (sentinel '—') hiển thị '—' trần, không hiện 'Band —'", () => {
+		const html = renderToStaticMarkup(<RosterTargetBandCell targetBand="—" />);
+		expect(html).toContain("—");
+		expect(html).not.toContain("Band —");
+		expect(html).not.toContain("Band");
+	});
+
+	it("học viên có targetBand rỗng hiển thị '—' trần", () => {
+		const html = renderToStaticMarkup(<RosterTargetBandCell targetBand="" />);
+		expect(html).toContain("—");
+		expect(html).not.toContain("Band");
+	});
+
+	it("học viên có targetBand null hoặc undefined hiển thị '—' trần", () => {
+		const htmlNull = renderToStaticMarkup(
+			<RosterTargetBandCell targetBand={null} />,
+		);
+		expect(htmlNull).toContain("—");
+		expect(htmlNull).not.toContain("Band");
+
+		const htmlUndef = renderToStaticMarkup(
+			<RosterTargetBandCell targetBand={undefined} />,
+		);
+		expect(htmlUndef).toContain("—");
+		expect(htmlUndef).not.toContain("Band");
 	});
 });

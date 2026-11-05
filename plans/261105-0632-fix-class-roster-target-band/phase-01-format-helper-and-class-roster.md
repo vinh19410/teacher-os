@@ -1,6 +1,6 @@
 ---
 title: "Phase 1: Format Helper, Class Roster Integration & Tests"
-status: in_progress
+status: completed
 priority: P1
 effort: 30m
 ---
