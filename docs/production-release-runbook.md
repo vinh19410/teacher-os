@@ -242,6 +242,25 @@ in the staging D1; prod deliberately gets no signup smoke. The manual
 "Provision staging" procedure below remains the path for first provisioning
 or destroy/recreate.
 
+To preview a deploy without applying it, run the workflow manually from
+`develop` with `dry_run` enabled: it prints the Alchemy plan and skips seed and
+smoke steps. Check that the plan does not replace or delete the D1 database, R2
+buckets or custom domains before deploying.
+
+Alchemy state lives in the account-level `alchemy-state-store` Worker, which
+every project on this Cloudflare account shares. A project on a different
+Alchemy version can change the store's schema version and fail this project's
+deploy with `expected vN, observed vM`. Never answer that error by rerunning a
+deploy on an older Alchemy version: with `--yes`, it tries to redeploy the shared
+store to its own version.
+
+Alchemy `2.0.0-beta.85` tracks D1 migrations in `__alchemy_migrations`. The first
+deploy of each stage copies the history from `d1_migrations`, checks every name
+against the local migration files, and stops on a mismatch without applying
+anything. `d1_migrations` then stays frozen, so once a new migration has been
+applied, an older Alchemy version would no longer see it. Roll back by reverting
+code while staying on `beta.85` or later.
+
 ## Deploy (production)
 
 ```bash
