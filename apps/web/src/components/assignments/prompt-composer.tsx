@@ -48,6 +48,7 @@ export function PromptComposer({
 	showErrors,
 	status,
 	lockPart = false,
+	allowWriting,
 	onFieldChange,
 }: {
 	value: ComposerValue;
@@ -62,6 +63,7 @@ export function PromptComposer({
 	 * thay bằng chip tĩnh; `/assignments/new` giữ nguyên hành vi (false).
 	 */
 	lockPart?: boolean;
+	allowWriting?: boolean;
 	onFieldChange: (patch: Partial<ComposerValue>) => void;
 }) {
 	const skill = skillOf(value.skill);
@@ -310,7 +312,7 @@ export function PromptComposer({
 				</div>
 			)}
 			{isAuto &&
-				!lockPart &&
+				(allowWriting ?? !lockPart) &&
 				(activeWriting && activeWritingPart && activeWritingType ? (
 					<div
 						className="flex flex-col gap-3 rounded-lg border border-border bg-muted/20 p-4"

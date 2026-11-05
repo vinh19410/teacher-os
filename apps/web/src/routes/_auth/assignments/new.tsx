@@ -30,6 +30,7 @@ import {
 } from "@/components/assignments/prompt-composer";
 import { KernelSubmitNotice } from "@/components/modals/kernel-submit-notice";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
 import { PageHead } from "@/components/ui/page-head";
 import {
@@ -46,17 +47,29 @@ import {
 	takePreviewDraft,
 } from "@/lib/assignment-preview-draft";
 import { useData } from "@/lib/data-store";
+import type { KernelCommandResult } from "@/lib/repos/kernel";
 import {
 	normalizeDraftItems,
 	normalizeLegacyRichText,
 } from "@/lib/rich-text-legacy";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 
+export function NewAssignmentPage() {
+	const { promptId } = Route.useSearch?.() ?? {};
+	return <NewAssignmentRoute key={promptId ?? "new"} />;
+}
+
 export const Route = createFileRoute("/_auth/assignments/new")({
-	validateSearch: (search: Record<string, unknown>): { classId?: string } => ({
+	validateSearch: (
+		search: Record<string, unknown>,
+	): { classId?: string; promptId?: string } => ({
 		classId: typeof search.classId === "string" ? search.classId : undefined,
+		promptId:
+			typeof search.promptId === "string" && search.promptId.length > 0
+				? search.promptId
+				: undefined,
 	}),
-	component: NewAssignmentRoute,
+	component: NewAssignmentPage,
 });
 
 interface SavedPrompt {
@@ -406,8 +419,12 @@ const STRUCTURAL_LABELS = {
 export function NewAssignmentRoute() {
 	const navigate = useNavigate();
 	const submit = useKernelFormSubmit();
-	const { classId } = Route.useSearch?.() ?? {};
+	const { classId, promptId } = Route.useSearch?.() ?? {};
 	const { data } = useData();
+	const existingPrompt = promptId
+		? (data.assignmentPrompts?.find((p) => p.id === promptId) ?? null)
+		: null;
+	const isEditing = Boolean(promptId && existingPrompt);
 	const targetClass = classId
 		? data.classes?.find((c) => c.id === classId)
 		: null;
@@ -418,9 +435,14 @@ export function NewAssignmentRoute() {
 	const userChangedBandRef = useRef(false);
 	// Restore precedence (FR6): the destructive preview-draft take wins over
 	// the autosave banner — the teacher deliberately handed off to /preview.
-	const [restored] = useState(() => takePreviewDraft());
+	const [rawRestored] = useState(() => takePreviewDraft());
+	const restored =
+		rawRestored &&
+		(promptId ? rawRestored.promptId === promptId : !rawRestored.promptId)
+			? rawRestored
+			: null;
 	const [bannerDraft] = useState<StoredAssignmentDraft | null>(() =>
-		restored ? null : readAssignmentDraft(),
+		restored || promptId ? null : readAssignmentDraft(),
 	);
 	// Legacy adapter (plan decision 9): stored values may be plain text with
 	// \n — loading them raw into the editor would collapse the newlines and
@@ -428,61 +450,104 @@ export function NewAssignmentRoute() {
 	// converts to <br> only when the string has no markup yet.
 	const restoreRich = (text: string | undefined) =>
 		normalizeLegacyRichText(text ?? "");
-	const [value, setValue] = useState<ComposerValue>(() =>
-		restored
-			? {
-					...freshComposer(resolvedDefaultBand),
-					...restored,
-					skill: restored.skill ?? "writing",
-					part: restored.part ?? restored.task,
-					type: restored.type ?? restored.genre,
-					prompt: restoreRich(restored.prompt),
-					passage: restoreRich(restored.passage),
-					intro: restoreRich(restored.intro),
-					transcript: restoreRich(restored.transcript),
-					note: restoreRich(restored.note),
-					cueTopic: restored.cueTopic ?? "",
-					cuePoints: restored.cuePoints ?? "",
-					audioName: restored.audioName ?? "",
-					imageUrl: restored.imageUrl ?? "",
-					optionBank: restored.optionBank ?? [],
-					items: normalizeDraftItems(restored.items ?? []),
-					writing: restored.writing
-						? {
-								...restored.writing,
-								prompt: restoreRich(restored.writing.prompt),
-							}
-						: null,
-				}
-			: bannerDraft
-				? {
-						...freshComposer(resolvedDefaultBand),
-						...bannerDraft.value,
-						prompt: restoreRich(bannerDraft.value.prompt),
-						passage: restoreRich(bannerDraft.value.passage),
-						intro: restoreRich(bannerDraft.value.intro),
-						transcript: restoreRich(bannerDraft.value.transcript),
-						note: restoreRich(bannerDraft.value.note),
-						writing: bannerDraft.value.writing
-							? {
-									...bannerDraft.value.writing,
-									prompt: restoreRich(bannerDraft.value.writing.prompt),
-								}
-							: null,
-						items: normalizeDraftItems(bannerDraft.value.items ?? []),
-					}
-				: freshComposer(resolvedDefaultBand),
-	);
+	const [value, setValue] = useState<ComposerValue>(() => {
+		if (restored) {
+			return {
+				...freshComposer(resolvedDefaultBand),
+				...restored,
+				skill: restored.skill ?? "writing",
+				part: restored.part ?? restored.task,
+				type: restored.type ?? restored.genre,
+				prompt: restoreRich(restored.prompt),
+				passage: restoreRich(restored.passage),
+				intro: restoreRich(restored.intro),
+				transcript: restoreRich(restored.transcript),
+				note: restoreRich(restored.note),
+				cueTopic: restored.cueTopic ?? "",
+				cuePoints: restored.cuePoints ?? "",
+				audioName: restored.audioName ?? "",
+				imageUrl: restored.imageUrl ?? "",
+				optionBank: restored.optionBank ?? [],
+				items: normalizeDraftItems(restored.items ?? []),
+				writing: restored.writing
+					? {
+							...restored.writing,
+							prompt: restoreRich(restored.writing.prompt),
+						}
+					: null,
+			};
+		}
+		if (existingPrompt) {
+			const skill = existingPrompt.skill ?? "writing";
+			const part = existingPrompt.part ?? existingPrompt.task ?? "task2";
+			const type = existingPrompt.type ?? existingPrompt.genre ?? "";
+			return {
+				...freshComposer(resolvedDefaultBand),
+				skill,
+				part,
+				type,
+				title: existingPrompt.title ?? "",
+				band: (ASSIGNMENT_BANDS as readonly string[]).includes(
+					existingPrompt.band,
+				)
+					? (existingPrompt.band as AssignmentBand)
+					: resolvedDefaultBand,
+				source: existingPrompt.source ?? "",
+				prompt: restoreRich(existingPrompt.prompt),
+				passage: restoreRich(existingPrompt.passage),
+				intro: restoreRich(existingPrompt.intro),
+				transcript: restoreRich(existingPrompt.transcript),
+				note: restoreRich(existingPrompt.note),
+				cueTopic: existingPrompt.cueTopic ?? "",
+				cuePoints: existingPrompt.cuePoints ?? "",
+				audioName: existingPrompt.audioName ?? "",
+				imageUrl: existingPrompt.imageUrl ?? "",
+				optionBank: existingPrompt.optionBank ?? [],
+				items: normalizeDraftItems(existingPrompt.questions ?? []),
+				writing: existingPrompt.writing
+					? {
+							...existingPrompt.writing,
+							prompt: restoreRich(existingPrompt.writing.prompt),
+						}
+					: null,
+			};
+		}
+		if (bannerDraft) {
+			return {
+				...freshComposer(resolvedDefaultBand),
+				...bannerDraft.value,
+				prompt: restoreRich(bannerDraft.value.prompt),
+				passage: restoreRich(bannerDraft.value.passage),
+				intro: restoreRich(bannerDraft.value.intro),
+				transcript: restoreRich(bannerDraft.value.transcript),
+				note: restoreRich(bannerDraft.value.note),
+				writing: bannerDraft.value.writing
+					? {
+							...bannerDraft.value.writing,
+							prompt: restoreRich(bannerDraft.value.writing.prompt),
+						}
+					: null,
+				items: normalizeDraftItems(bannerDraft.value.items ?? []),
+			};
+		}
+		return freshComposer(resolvedDefaultBand);
+	});
 	const [status, setStatus] = useState<"draft" | "ready">(
-		restored?.status ?? bannerDraft?.status ?? "ready",
+		restored?.status ??
+			existingPrompt?.status ??
+			bannerDraft?.status ??
+			"ready",
 	);
-	const [bannerOpen, setBannerOpen] = useState(() => bannerDraft !== null);
+	const [bannerOpen, setBannerOpen] = useState(
+		() => !promptId && bannerDraft !== null,
+	);
 	const [showErrors, setShowErrors] = useState(false);
 	const [saved, setSaved] = useState<SavedPrompt | null>(null);
 	// Debounced autosave (FR6): skip the success card (the draft was cleared
 	// on purpose) and skip an untouched composer (an empty draft must never
 	// resurrect the restore banner).
 	useEffect(() => {
+		if (isEditing) return;
 		if (!classBand) return;
 		if (userChangedBandRef.current) return;
 		if (restored || bannerDraft) return;
@@ -495,10 +560,10 @@ export function NewAssignmentRoute() {
 			}
 			return current;
 		});
-	}, [classBand, restored, bannerDraft]);
+	}, [classBand, restored, bannerDraft, isEditing]);
 
 	useEffect(() => {
-		if (saved) return;
+		if (saved || isEditing) return;
 		if (!composerDraftHasContent(value)) return;
 		const timer = setTimeout(() => {
 			saveAssignmentDraft({
@@ -509,7 +574,7 @@ export function NewAssignmentRoute() {
 			});
 		}, 1000);
 		return () => clearTimeout(timer);
-	}, [value, status, saved]);
+	}, [value, status, saved, isEditing]);
 	const fieldErrors: Record<string, string | undefined> = {};
 	if (!value.title.trim()) fieldErrors.title = "Nhập tiêu đề bài tập.";
 	if (status === "ready" && !value.type.trim())
@@ -597,11 +662,15 @@ export function NewAssignmentRoute() {
 		setStatus("ready");
 	}
 	function resetAll() {
-		clearAssignmentDraft();
+		if (!isEditing) {
+			clearAssignmentDraft();
+			userChangedBandRef.current = false;
+			setValue(freshComposer(resolvedDefaultBand));
+			setStatus("ready");
+		} else {
+			navigate({ to: "/assignments/new" });
+		}
 		setBannerOpen(false);
-		userChangedBandRef.current = false;
-		setValue(freshComposer(resolvedDefaultBand));
-		setStatus("ready");
 		setShowErrors(false);
 		setSaved(null);
 		submit.reset();
@@ -642,53 +711,108 @@ export function NewAssignmentRoute() {
 			}
 			return;
 		}
-		const result = await submit.run({
-			type: "create-assignment-prompt",
-			payload: {
-				skill: value.skill as
-					| "writing"
-					| "reading"
-					| "listening"
-					| "speaking"
-					| "grammar"
-					| "vocabulary",
-				part: value.part,
-				type: value.type,
-				title: value.title.trim(),
-				band: (ASSIGNMENT_BANDS as readonly string[]).includes(value.band)
-					? (value.band as AssignmentBand)
-					: DEFAULT_ASSIGNMENT_BAND,
-				source: value.source.trim(),
-				prompt: value.prompt.trim(),
-				passage: value.passage.trim(),
-				intro: value.intro,
-				transcript: value.transcript,
-				cueTopic: value.cueTopic.trim(),
-				cuePoints: value.cuePoints,
-				audioName: value.audioName.trim(),
-				imageUrl: value.imageUrl.trim(),
-				questions: value.items,
-				optionBank: value.optionBank,
-				note: value.note.trim(),
-				status,
-				...(value.writing
-					? {
-							writing: {
-								part: value.writing.part,
-								type: value.writing.type,
-								prompt: value.writing.prompt.trim(),
-							},
-						}
-					: {}),
-			},
-		});
+		let result: KernelCommandResult | null;
+		if (isEditing && existingPrompt) {
+			const curW = existingPrompt.writing
+				? {
+						part: existingPrompt.writing.part,
+						type: existingPrompt.writing.type ?? "",
+						prompt: restoreRich(existingPrompt.writing.prompt).trim(),
+					}
+				: null;
+			const nextW = value.writing
+				? {
+						part: value.writing.part,
+						type: value.writing.type,
+						prompt: value.writing.prompt.trim(),
+					}
+				: null;
+			const writingChanged =
+				curW === null || nextW === null
+					? curW !== nextW
+					: curW.part !== nextW.part ||
+						curW.type !== nextW.type ||
+						curW.prompt !== nextW.prompt;
+
+			result = await submit.run({
+				type: "update-assignment-prompt",
+				promptId: existingPrompt.id,
+				payload: {
+					type: value.type,
+					title: value.title.trim(),
+					band: (ASSIGNMENT_BANDS as readonly string[]).includes(value.band)
+						? (value.band as AssignmentBand)
+						: DEFAULT_ASSIGNMENT_BAND,
+					source: value.source.trim(),
+					prompt: value.prompt.trim(),
+					passage: value.passage.trim(),
+					intro: value.intro,
+					transcript: value.transcript,
+					cueTopic: value.cueTopic.trim(),
+					cuePoints: value.cuePoints,
+					audioName: value.audioName.trim(),
+					imageUrl: value.imageUrl.trim(),
+					questions: value.items,
+					optionBank: value.optionBank,
+					note: value.note.trim(),
+					status,
+					...(writingChanged
+						? {
+								writing: nextW,
+							}
+						: {}),
+				},
+			});
+		} else {
+			result = await submit.run({
+				type: "create-assignment-prompt",
+				payload: {
+					skill: value.skill as
+						| "writing"
+						| "reading"
+						| "listening"
+						| "speaking"
+						| "grammar"
+						| "vocabulary",
+					part: value.part,
+					type: value.type,
+					title: value.title.trim(),
+					band: (ASSIGNMENT_BANDS as readonly string[]).includes(value.band)
+						? (value.band as AssignmentBand)
+						: DEFAULT_ASSIGNMENT_BAND,
+					source: value.source.trim(),
+					prompt: value.prompt.trim(),
+					passage: value.passage.trim(),
+					intro: value.intro,
+					transcript: value.transcript,
+					cueTopic: value.cueTopic.trim(),
+					cuePoints: value.cuePoints,
+					audioName: value.audioName.trim(),
+					imageUrl: value.imageUrl.trim(),
+					questions: value.items,
+					optionBank: value.optionBank,
+					note: value.note.trim(),
+					status,
+					...(value.writing
+						? {
+								writing: {
+									part: value.writing.part,
+									type: value.writing.type,
+									prompt: value.writing.prompt.trim(),
+								},
+							}
+						: {}),
+				},
+			});
+		}
 		// The write may be saved on refreshed/committed and may-or-may-not on
 		// outcome-unknown — the draft must not resurrect in any of those. A
 		// definite-failure (4xx) provably did NOT save: keep the draft.
 		if (
-			result?.kind === "refreshed" ||
-			result?.kind === "committed" ||
-			result?.kind === "outcome-unknown"
+			!isEditing &&
+			(result?.kind === "refreshed" ||
+				result?.kind === "committed" ||
+				result?.kind === "outcome-unknown")
 		)
 			clearAssignmentDraft();
 		if (result?.kind === "refreshed")
@@ -707,14 +831,20 @@ export function NewAssignmentRoute() {
 	async function handleReconcile() {
 		const applied = await submit.reconcile();
 		if (!applied) return;
-		clearAssignmentDraft();
-		const row = data.assignmentPrompts.find(
-			(prompt) =>
-				prompt.title === value.title.trim() && prompt.skill === value.skill,
-		);
+		if (!isEditing) clearAssignmentDraft();
+		const row =
+			isEditing && existingPrompt
+				? data.assignmentPrompts.find((p) => p.id === existingPrompt.id)
+				: data.assignmentPrompts.find(
+						(prompt) =>
+							prompt.title === value.title.trim() &&
+							prompt.skill === value.skill,
+					);
 		if (!row) {
 			submit.setError(
-				"Đã tải lại dữ liệu nhưng chưa xác nhận được đề mới trong ngân hàng.",
+				isEditing
+					? "Đã tải lại dữ liệu nhưng chưa xác nhận được thay đổi của đề trong ngân hàng."
+					: "Đã tải lại dữ liệu nhưng chưa xác nhận được đề mới trong ngân hàng.",
 			);
 			return;
 		}
@@ -730,6 +860,32 @@ export function NewAssignmentRoute() {
 			questions: row.questions ?? [],
 		});
 	}
+	if (promptId && !existingPrompt) {
+		return (
+			<div>
+				<PageHead
+					title="Chỉnh sửa đề bài"
+					lead="Không tìm thấy đề bài được yêu cầu trong ngân hàng đề."
+				/>
+				<Card variant="white" className="mx-auto max-w-xl p-8 text-center">
+					<h2 className="font-semibold text-lg">Không tìm thấy đề này.</h2>
+					<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
+						Đề có thể đã bị xóa khỏi ngân hàng. Quay lại danh sách để chọn đề
+						khác.
+					</p>
+					<div className="mt-6 flex justify-center">
+						<Button
+							variant="secondary"
+							onClick={() => navigate({ to: "/assignments" })}
+						>
+							Quay lại danh sách
+						</Button>
+					</div>
+				</Card>
+			</div>
+		);
+	}
+
 	return (
 		<div>
 			<nav
@@ -743,11 +899,15 @@ export function NewAssignmentRoute() {
 					Bài tập
 				</Link>
 				<span aria-hidden="true">›</span>
-				<span>Tạo mới</span>
+				<span>{isEditing ? "Chỉnh sửa" : "Tạo mới"}</span>
 			</nav>
 			<PageHead
-				title="Thêm đề vào ngân hàng"
-				lead="Soạn đề Writing, Reading, Listening hoặc Speaking theo phần thi IELTS. Reading và Listening khóa đáp án để chấm tự động. Đề lưu ngân hàng; giao lớp ở trang Lớp học."
+				title={isEditing ? "Chỉnh sửa đề bài" : "Thêm đề vào ngân hàng"}
+				lead={
+					isEditing
+						? "Sửa nội dung đề Writing, Reading, Listening hoặc Speaking. Lưu thay đổi vào ngân hàng đề."
+						: "Soạn đề Writing, Reading, Listening hoặc Speaking theo phần thi IELTS. Reading và Listening khóa đáp án để chấm tự động. Đề lưu ngân hàng; giao lớp ở trang Lớp học."
+				}
 			/>
 			{bannerOpen && !saved && (
 				<div
@@ -773,7 +933,11 @@ export function NewAssignmentRoute() {
 				</div>
 			)}
 			{saved ? (
-				<CreateSuccessCard {...saved} onCreateAnother={resetAll} />
+				<CreateSuccessCard
+					{...saved}
+					isEditing={isEditing}
+					onCreateAnother={resetAll}
+				/>
 			) : (
 				<form onSubmit={handleSubmit} noValidate>
 					<PromptComposer
@@ -781,6 +945,8 @@ export function NewAssignmentRoute() {
 						errors={fieldErrors}
 						showErrors={showErrors}
 						status={status}
+						lockPart={isEditing}
+						allowWriting={true}
 						onFieldChange={handleFieldChange}
 					/>
 					<div className="sticky bottom-0 z-20 mt-5 border-border border-t bg-background/95 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-sm backdrop-blur">
@@ -853,7 +1019,13 @@ export function NewAssignmentRoute() {
 									variant="secondary"
 									disabled={submit.saving}
 									onClick={() => {
-										savePreviewDraft(previewDraftFrom(value, status));
+										savePreviewDraft({
+											...previewDraftFrom(value, status),
+											promptId:
+												isEditing && existingPrompt
+													? existingPrompt.id
+													: undefined,
+										});
 										navigate({ to: "/assignments/preview" });
 									}}
 								>
@@ -862,7 +1034,11 @@ export function NewAssignmentRoute() {
 								<Button
 									type="button"
 									variant="secondary"
-									onClick={resetAll}
+									onClick={
+										isEditing
+											? () => navigate({ to: "/assignments" })
+											: resetAll
+									}
 									disabled={submit.saving}
 								>
 									Hủy
@@ -872,7 +1048,9 @@ export function NewAssignmentRoute() {
 										? "Đang lưu…"
 										: status === "draft"
 											? "Lưu bản nháp"
-											: "Lưu vào ngân hàng"}
+											: isEditing
+												? "Lưu thay đổi"
+												: "Lưu vào ngân hàng"}
 								</Button>
 							</div>
 						</div>
