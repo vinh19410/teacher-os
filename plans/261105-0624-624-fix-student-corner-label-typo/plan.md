@@ -1,7 +1,7 @@
 ---
 title: "Sửa nhãn nút \"Gốc học viên\" thành \"Góc học viên\" trên trang profile"
 description: "Sửa lỗi chính tả nhãn nút #studentPortalLink trên header apps/profile, kèm test khoá nhãn và tài liệu mô tả nút."
-status: pending
+status: completed
 priority: P2
 effort: 15m
 issue: 624
@@ -44,11 +44,11 @@ Nhãn `"Gốc học viên"` được thêm ở #560 và giữ đúng nguyên vă
 
 ## Success Criteria
 
-- [ ] Trang `apps/profile` hiển thị "Góc học viên" trên header.
-- [ ] `grep -rn "Gốc học viên" apps packages docs` không còn kết quả.
-- [ ] `pnpm --filter profile test` xanh, gồm assertion nhãn mới.
-- [ ] `pnpm exec biome check .` xanh.
-- [ ] Header không vỡ ở `1440×900`, `768×1024`, `375×812`, `320×812`, có ảnh chụp kèm PR.
+- [x] Trang `apps/profile` hiển thị "Góc học viên" trên header.
+- [x] `grep -rn "Gốc học viên" apps packages docs` không còn kết quả.
+- [x] `pnpm --filter profile test` xanh, gồm assertion nhãn mới.
+- [x] `pnpm exec biome check .` xanh.
+- [x] Header không vỡ ở `1440×900`, `768×1024`, `375×812`, `320×812`, có ảnh chụp kèm PR.
 
 ## Rủi ro
 
