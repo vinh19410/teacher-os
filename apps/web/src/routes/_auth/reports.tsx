@@ -35,7 +35,7 @@ const STATUS_LABEL: Record<string, string> = {
 export function ReportsRoute() {
 	const { data } = useData();
 	const [modalOpen, setModalOpen] = useState(false);
-	// Issue #172: Teacher OS currently does not have a connected Zalo OA channel.
+	// Issue #172: Ứng dụng hiện chưa có kênh Zalo OA kết nối.
 	// When unconnected, the CTA / claim "Gửi qua Zalo OA" is hidden to prevent
 	// fake integration promises; the UI honestly reports the report count and
 	// connection status badge.

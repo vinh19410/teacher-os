@@ -1,6 +1,6 @@
 # Project Overview PDR
 
-Teacher OS is a teacher-first operations app for managing classes, students, syllabi, lessons, invoices, assignments, reports, notifications, and feedback. The durable contract is class-centric: a teacher signs in, gets an org-scoped workspace, and the UI reads and writes the kernel through server-owned APIs instead of local mock state.
+Cô Mỹ Dạy Tiếng Anh (trước đây là Teacher OS) is a teacher-first operations app for managing classes, students, syllabi, lessons, invoices, assignments, reports, notifications, and feedback. The durable contract is class-centric: a teacher signs in, gets an org-scoped workspace, and the UI reads and writes the kernel through server-owned APIs instead of local mock state.
 
 ## Who this serves
 

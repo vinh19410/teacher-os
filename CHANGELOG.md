@@ -10,6 +10,11 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-11-05
+
+### Changed
+- Đổi tên thương hiệu hiển thị thành Cô Mỹ Dạy Tiếng Anh (#611): cập nhật toàn bộ tên hiển thị từ "Teacher OS" / "TeacherOS" thành "Cô Mỹ Dạy Tiếng Anh" ở UI (web, admin, student), email templates & subjects (`packages/auth`), server notifications (`apps/server`), landing page (`apps/landing`) và smoke check deploy (`deploy.yml`, `deploy-staging.yml`); giữ nguyên toàn bộ định danh hạ tầng (`@teacher-os/*`, domain `teacheros.io.vn`, Cloudflare Worker bindings, D1 schemas, cookie prefixes).
+
 
 ## 2026-11-04
 

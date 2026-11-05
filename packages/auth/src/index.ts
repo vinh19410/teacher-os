@@ -8,6 +8,7 @@ import {
 	validateUpdateUserImage,
 	validateUpdateUserName,
 } from "./avatar-policy";
+import { BRAND_NAME } from "./mail/brand";
 import type { Mailer } from "./mail/mailer";
 import { otpEmailTemplate } from "./mail/otp-email-template";
 import { resetPasswordEmailTemplate } from "./mail/reset-password-email-template";
@@ -282,7 +283,7 @@ export function createAuth(input: CreateAuthInput) {
 				try {
 					await input.mailer.send({
 						to: user.email,
-						subject: "Đặt lại mật khẩu TeacherOS của bạn",
+						subject: `Đặt lại mật khẩu ${BRAND_NAME} của bạn`,
 						html,
 						text,
 					});
@@ -307,7 +308,7 @@ export function createAuth(input: CreateAuthInput) {
 				try {
 					await input.mailer.send({
 						to: user.email,
-						subject: "Xác thực email TeacherOS của bạn",
+						subject: `Xác thực email ${BRAND_NAME} của bạn`,
 						html,
 						text,
 					});
@@ -581,7 +582,7 @@ export function createAuth(input: CreateAuthInput) {
 					const { html, text } = otpEmailTemplate({ otp });
 					const sendPromise = input.mailer.send({
 						to: normalizedEmail,
-						subject: "Mã xác thực đăng nhập TeacherOS của bạn",
+						subject: `Mã xác thực đăng nhập ${BRAND_NAME} của bạn`,
 						html,
 						text,
 					});

@@ -61,7 +61,7 @@ test("admin đăng nhập vào được shell quản trị với nav Thư viện
 }) => {
 	await ensureAdminAccount(request);
 	await adminSignInViaUi(page);
-	await expect(page.getByText("Teacher OS · Quản trị")).toBeVisible();
+	await expect(page.getByText("Cô Mỹ Dạy Tiếng Anh · Quản trị")).toBeVisible();
 	const sidebar = page.getByRole("complementary", {
 		name: "Điều hướng quản trị",
 	});

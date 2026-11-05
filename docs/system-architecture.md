@@ -1,6 +1,6 @@
 # System Architecture
 
-Teacher OS is a monorepo: a React teacher web app, a React student portal, a Hono server, and shared packages for API contracts, persistence, and deployment wiring. The runtime contract is snapshot-driven: the browser reads a kernel snapshot, sends POST commands, and refreshes the snapshot after each write. Browser E2E coverage lives in [apps/e2e/playwright.config.ts](../apps/e2e/playwright.config.ts), which boots the real server app under Node against a fresh local D1 database so these flows run without Cloudflare credentials.
+Cô Mỹ Dạy Tiếng Anh (teacher-os) is a monorepo: a React teacher web app, a React student portal, a Hono server, and shared packages for API contracts, persistence, and deployment wiring. The runtime contract is snapshot-driven: the browser reads a kernel snapshot, sends POST commands, and refreshes the snapshot after each write. Browser E2E coverage lives in [apps/e2e/playwright.config.ts](../apps/e2e/playwright.config.ts), which boots the real server app under Node against a fresh local D1 database so these flows run without Cloudflare credentials.
 
 ## Current request flow
 

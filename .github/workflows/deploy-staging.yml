@@ -228,7 +228,7 @@ jobs:
               -w '%{http_code}' "$LANDING_ORIGIN/" || true)
             if [ "$code" = "200" ] \
               && grep -qi '^content-type: text/html' /tmp/landing-headers.txt \
-              && grep -q 'Teacher OS' /tmp/landing.html; then
+              && grep -q 'Cô Mỹ Dạy Tiếng Anh' /tmp/landing.html; then
               echo "landing apex OK after attempt $attempt"
               exit 0
             fi

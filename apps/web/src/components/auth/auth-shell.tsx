@@ -23,7 +23,7 @@ export function WebAuthShell({
 	return (
 		<AuthSplitLayout
 			formLabel={formLabel}
-			brandLabel="Teacher OS"
+			brandLabel="Cô Mỹ Dạy Tiếng Anh"
 			quote={WEB_AUTH_QUOTE}
 			illustration={
 				<TeacherDesk decorative className="w-full max-w-lg self-center" />

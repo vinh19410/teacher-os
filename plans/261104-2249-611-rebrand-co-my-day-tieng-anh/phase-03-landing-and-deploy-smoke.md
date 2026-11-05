@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Landing và smoke check deploy"
-status: pending
+status: completed
 dependencies: []
 ---
 

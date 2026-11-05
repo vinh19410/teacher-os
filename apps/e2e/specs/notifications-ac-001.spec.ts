@@ -237,7 +237,7 @@ test("AC-001 thông báo email + in-app: hóa đơn, giao bài, đã xem, filter
 	const invoiceMail = mailsTo(invoiceMails, student1Email).find(
 		(e) => e.subject === "Hóa đơn học phí",
 	);
-	expect(invoiceMail?.fromName).toBe(`${orgName} qua Teacher OS`);
+	expect(invoiceMail?.fromName).toBe(`${orgName} qua Cô Mỹ Dạy Tiếng Anh`);
 	expect(invoiceMail?.replyTo).toBe(teacherEmail);
 
 	// --- Bước 2: giao bài → mỗi học viên 1 dòng "Giao bài" ---

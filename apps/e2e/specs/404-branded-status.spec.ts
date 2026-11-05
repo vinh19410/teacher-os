@@ -17,7 +17,7 @@ test.describe("Issue #113: Branded 404 UI and HTTP 404 status", () => {
 
 		// Branded header
 		await expect(page.locator("header")).toBeVisible();
-		await expect(page.getByText("Teacher OS").first()).toBeVisible();
+		await expect(page.getByText("Cô Mỹ Dạy Tiếng Anh").first()).toBeVisible();
 
 		// Branded 404 content
 		await expect(

@@ -1,3 +1,4 @@
+import { BRAND_NAME } from "../brand";
 import { renderHtml, renderText } from "./deliver";
 
 function cleanInlineText(value: string, maxLen = 160): string {
@@ -32,11 +33,11 @@ export function buildOrgInvitationEmail(input: {
 	inviterName?: string;
 	studentOrigin?: string;
 }): BuiltInviteEmail {
-	const orgLabel = cleanInlineText(input.orgName) || "Teacher OS";
+	const orgLabel = cleanInlineText(input.orgName) || BRAND_NAME;
 	const inviter = cleanInlineText(input.inviterName ?? "");
-	const subject = `Lời mời tham gia ${orgLabel} trên Teacher OS`;
+	const subject = `Lời mời tham gia ${orgLabel} trên ${BRAND_NAME}`;
 	const inviterClause = inviter ? `Giáo viên ${inviter}` : orgLabel;
-	const body = `${inviterClause} đã mời bạn tham gia ${orgLabel} trên Teacher OS. Vui lòng mở cổng học viên, đăng nhập hoặc tạo tài khoản bằng đúng địa chỉ email này, sau đó bấm biểu tượng chuông thông báo để chấp nhận lời mời.`;
+	const body = `${inviterClause} đã mời bạn tham gia ${orgLabel} trên ${BRAND_NAME}. Vui lòng mở cổng học viên, đăng nhập hoặc tạo tài khoản bằng đúng địa chỉ email này, sau đó bấm biểu tượng chuông thông báo để chấp nhận lời mời.`;
 	const portalUrl = normalizePortalUrl(input.studentOrigin);
 	return {
 		subject,
@@ -55,7 +56,7 @@ export function buildStudentPortalInviteEmail(input: {
 	className?: string;
 	studentOrigin?: string;
 }): BuiltInviteEmail {
-	const orgLabel = cleanInlineText(input.orgName) || "Teacher OS";
+	const orgLabel = cleanInlineText(input.orgName) || BRAND_NAME;
 	const studentName = cleanInlineText(input.studentName ?? "");
 	const className = cleanInlineText(input.className ?? "");
 	const greeting = studentName ? `Chào ${studentName}, ` : "";

@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Email, tên người gửi, MAIL_FROM"
-status: pending
+status: completed
 dependencies: []
 ---
 
@@ -9,24 +9,27 @@ dependencies: []
 
 ## Context
 
-Server dựng `fromName` bằng literal ở 5 chỗ trong `kernel.ts` và 1 chỗ trong `deliver.ts`. Template mail của `packages/auth` lặp tên ở tiêu đề, tiêu đề thẻ, nội dung và footer. Hai nơi không dùng chung package nên mỗi nơi có một hằng số riêng.
+Server dựng `fromName` ở các endpoint thông báo trong `kernel.ts` và `deliver.ts`. Template mail của `packages/auth` lặp tên ở tiêu đề, tiêu đề thẻ, nội dung, footer, và Better-Auth config tiêu đề email subject.
 
 ## Files được sửa
 
-- Mới: `apps/server/src/lib/brand.ts` xuất `BRAND_NAME = "Cô Mỹ Dạy Tiếng Anh"`; mới: `packages/auth/src/mail/brand.ts` xuất cùng hằng số.
-- `apps/server/src/routes/kernel.ts` (dòng 286, 590, 858, 1028, 1302), `apps/server/src/lib/notifications/deliver.ts` (dòng 105, 189), `apps/server/src/lib/notifications/invite-email.ts` (dòng 35, 37, 39, 58), `apps/server/src/routes/grading.ts:774` (`source: "Teacher OS Demo"` → `${BRAND_NAME} Demo`; kiểm xem giá trị này có được lưu DB và đọc ngược lại không trước khi đổi).
+- Mới: `apps/server/src/lib/brand.ts` xuất `BRAND_NAME = "Cô Mỹ Dạy Tiếng Anh"` và helper `formatSenderName(senderName?: string | null): string` (tránh tạo chuỗi trùng lặp nếu senderName đã là BRAND_NAME); mới: `packages/auth/src/mail/brand.ts` xuất cùng hằng số.
+- `apps/server/src/routes/kernel.ts` (dùng helper `formatSenderName`), `apps/server/src/lib/notifications/deliver.ts` (thêm `<meta charset="utf-8">` và dùng `formatSenderName`), `apps/server/src/lib/notifications/invite-email.ts` (thay fallback orgLabel và nội dung lời mời), `apps/server/src/routes/grading.ts:774` (`source: "Teacher OS Demo"` → `${BRAND_NAME} Demo`).
 - `packages/auth/src/mail/{reset-password,verification,otp}-email-template.ts`
-- `packages/infra/alchemy.run.ts:220` và `packages/infra/.env.example:54` (mặc định `MAIL_FROM`)
+- `packages/auth/src/index.ts` (dòng 285, 310, 584: cập nhật subject email Better-Auth sang BRAND_NAME)
+- `packages/auth/src/mail/mailer.ts` (`composeFrom`: đảm bảo display name có dấu được bọc quote `"${name}" <${email}>` đúng chuẩn RFC 5322 khi caller không truyền fromName riêng)
+- `packages/infra/alchemy.run.ts:220` và `packages/infra/.env.example:54` (mặc định `MAIL_FROM` = `"Cô Mỹ Dạy Tiếng Anh" <onboarding@resend.dev>`)
 - Test: `apps/server/src/lib/notifications/notifications.test.ts`, `apps/server/src/student-invitation.test.ts`, `packages/auth/src/mail/mail.test.ts`, `apps/e2e/specs/notifications-ac-001.spec.ts`
 
 ## Bước
 
-1. Tạo hai file `brand.ts`, rồi thay literal bằng hằng số ở các file trên.
-2. Template mail: thay mọi `Teacher OS` / `TeacherOS` bằng `BRAND_NAME`; footer `&copy; 2022 TeacherOS` đổi tên và giữ năm hiện có (không tự ý đổi năm).
-3. Đổi mặc định `MAIL_FROM` thành `Cô Mỹ Dạy Tiếng Anh <onboarding@resend.dev>` ở hai file infra. Không đổi địa chỉ email/domain.
-4. Cập nhật 4 file test cho khớp.
-5. Với `grading.ts`, chỉ đổi khi giá trị `source` không dùng để lọc/so khớp; nếu có, giữ nguyên và ghi vào báo cáo.
-
+1. Tạo hai file `brand.ts` với chuỗi NFC chuẩn, triển khai `formatSenderName`.
+2. Thay literal bằng hằng số và helper ở các file server & mail.
+3. Template mail: thay mọi `Teacher OS` / `TeacherOS` bằng `BRAND_NAME`; footer `&copy; 2022 TeacherOS` đổi tên và giữ năm hiện có (không tự ý đổi năm).
+4. `packages/auth/src/index.ts`: đổi subject email thành `Cô Mỹ Dạy Tiếng Anh`.
+5. `composeFrom`: chuẩn hóa quote display name cho RFC 5322.
+6. Đổi mặc định `MAIL_FROM` thành `"Cô Mỹ Dạy Tiếng Anh" <onboarding@resend.dev>` ở hai file infra. Không đổi địa chỉ email/domain.
+7. Cập nhật các file test cho khớp.
 ## Kiểm chứng
 
 - `pnpm --filter server test`, `pnpm --filter @teacher-os/auth test`: xanh, gồm `mail.test.ts` kiểm chuỗi mới.

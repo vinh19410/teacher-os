@@ -1,7 +1,7 @@
 ---
 title: "Đổi tên thương hiệu Teacher OS thành Cô Mỹ Dạy Tiếng Anh"
 description: "Thay tên hiển thị Teacher OS / TeacherOS bằng Cô Mỹ Dạy Tiếng Anh ở UI, email, landing, smoke check deploy và docs; giữ nguyên mọi định danh hạ tầng."
-status: pending
+status: completed
 priority: P2
 effort: 5h
 issue: 611
@@ -46,10 +46,10 @@ Mọi chỗ người dùng nhìn thấy hoặc nhận được (tab title, heade
 
 | # | Phase | Trạng thái | Phụ thuộc |
 |---|---|---|---|
-| 1 | [UI web, admin, student](phase-01-ui-apps.md) | pending | - |
-| 2 | [Email, tên người gửi, MAIL_FROM](phase-02-email-and-sender.md) | pending | - |
-| 3 | [Landing và smoke check deploy](phase-03-landing-and-deploy-smoke.md) | pending | - |
-| 4 | [Docs, rà soát và xác minh](phase-04-docs-and-verify.md) | pending | 1-3 |
+| 1 | [UI web, admin, student](phase-01-ui-apps.md) | completed | - |
+| 2 | [Email, tên người gửi, MAIL_FROM](phase-02-email-and-sender.md) | completed | - |
+| 3 | [Landing và smoke check deploy](phase-03-landing-and-deploy-smoke.md) | completed | - |
+| 4 | [Docs, rà soát và xác minh](phase-04-docs-and-verify.md) | completed | 1-3 |
 
 Phase 1-3 sở hữu file tách biệt nên làm song song được; phase 3 phải đổi landing và hai workflow trong cùng một commit.
 
@@ -83,3 +83,30 @@ Phase 1-3 sở hữu file tách biệt nên làm song song được; phase 3 ph�
 1. Có đổi domain `teacheros.io.vn` sang tên mới không? Mặc định plan này: **không** (cần kế hoạch DNS, OAuth redirect, cookie, CORS riêng).
 2. Landing `apps/landing` hiện bán Teacher OS như SaaS cho gia sư IELTS. Giữ định vị đó với tên mới, hay chuyển thành trang giới thiệu của cô Mỹ? Mặc định: chỉ thay tên.
 3. Tên người gửi mail dùng có dấu `Cô Mỹ Dạy Tiếng Anh` hay không dấu? Mặc định: có dấu, xác minh trên staging.
+
+## Red Team Review
+
+### Adversarial Reviewers
+- **Security Adversary:** RFC 5322 compliance for multi-word UTF-8 display name in `composeFrom`, missing `<meta charset="utf-8">` in notifications, and sanitization boundaries.
+- **Assumption Destroyer:** Missed `const ORG_NAME = "Teacher/OS"` in `apps/web/src/components/layout/app-shell.tsx`, hardcoded strings in `packages/ui/src/components/not-found-page.tsx`, and omitted auth email subject lines in `packages/auth/src/index.ts`.
+- **Failure Mode Analyst:** Unicode NFC/NFD normalization risk in deploy smoke check `grep` between workflow YAML and landing HTML, and test suite scope.
+
+### Findings & Dispositions
+1. **Accept:** Add `apps/web/src/components/layout/app-shell.tsx` and `app-shell.test.tsx` to Phase 1 (`ORG_NAME = "Teacher/OS"` → `"Cô Mỹ Dạy Tiếng Anh"`).
+2. **Accept:** Add `packages/ui/src/components/not-found-page.tsx` to Phase 1 (wordmark, monogram "CM", copyright).
+3. **Accept:** Add Better-Auth email subject lines in `packages/auth/src/index.ts` to Phase 2.
+4. **Accept:** Update `composeFrom` in `packages/auth/src/mail/mailer.ts` to quote multi-word display names (`"${name}" <${email}>`) for RFC 5322 compliance.
+5. **Accept:** Add `formatSenderName` helper in `apps/server/src/lib/brand.ts` to prevent duplicate `"Cô Mỹ Dạy Tiếng Anh qua Cô Mỹ Dạy Tiếng Anh"`.
+6. **Accept:** Enforce UTF-8 NFC normalization across all touched files.
+
+### Whole-Plan Consistency Sweep
+- Phase 1 & 2 files updated with exact file lists, test updates, and contracts.
+- Consistent `BRAND_NAME = "Cô Mỹ Dạy Tiếng Anh"` (NFC encoded) across all layers.
+- Invariants preserved: no changes to `@teacher-os/*`, domain `teacheros.io.vn`, worker/D1 bindings, or cookie prefixes.
+
+## Validation Log
+
+### Verification Results
+- Claims checked: 28 claims verified across apps/web, apps/admin, apps/student, apps/server, packages/auth, packages/ui, landing, and deploy workflows.
+- Verified: 28 | Failed: 0 | Unverified: 0
+- Kongming advisory checkpoint: GO with conditions (sweep verification, NFC check, `formatSenderName` helper, RFC 5322 quoting in `composeFrom`).

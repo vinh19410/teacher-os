@@ -58,6 +58,7 @@ import {
 	releaseUnsettledOccasions,
 } from "../lib/ai-grading/release-stale";
 import { scheduleAiGrading } from "../lib/ai-grading/run-grading";
+import { BRAND_NAME } from "../lib/brand";
 import { mediaObjectResponse, toQuizAttemptMedia } from "../lib/media-response";
 import type { MediaStore } from "../lib/media-store";
 import {
@@ -771,7 +772,7 @@ export function gradingRoutes(deps: {
 					type: "opinion",
 					title: "[Mẫu dùng thử] IELTS Writing Task 2 — AI in Education",
 					band: "6.5",
-					source: "Teacher OS Demo",
+					source: `${BRAND_NAME} Demo`,
 					prompt:
 						"<p>Some people believe that artificial intelligence will soon replace teachers in the classroom. To what extent do you agree or disagree?</p>",
 					intro: "",
