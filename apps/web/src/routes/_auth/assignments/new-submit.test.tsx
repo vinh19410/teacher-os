@@ -287,7 +287,19 @@ describe("NewAssignmentRoute — field-diff edit payload + honest reconcile (#63
 		audioName: "",
 		imageUrl: "",
 		optionBank: [],
-		questions: [{ stem: "S1", opts: null, answer: "TRUE", alts: "" }],
+		// Shape snapshot parseQuestions thật (S-1 review #631): luôn có
+		// type/pin null — composer kế thừa qua items nên payload và
+		// snapshot đối xứng 2 đầu.
+		questions: [
+			{
+				stem: "S1",
+				opts: null,
+				answer: "TRUE",
+				alts: "",
+				type: null,
+				pin: null,
+			},
+		],
 		note: "",
 		status: "ready",
 		writing: null,
@@ -434,17 +446,20 @@ describe("NewAssignmentRoute — field-diff edit payload + honest reconcile (#63
 		submitFixture.reconcile.mockResolvedValue(true);
 		// Server ghi bản zod (trim stem, key order theo schema) — payload gửi
 		// đi giữ giá trị raw lúc gõ. Reconcile phải chuẩn hoá trước khi so.
+		// Shape snapshot khớp parseQuestions thật (snapshot.ts): luôn có
+		// opts/type/pin (null khi không có), alts "" — S-1 review #631.
 		reconcileClient.setQueryData(kernelQueryKey, {
 			assignmentPrompts: [
 				{
 					...editablePrompt,
 					questions: [
 						{
-							alts: "",
-							answer: "TRUE",
-							explanation: undefined,
-							opts: null,
 							stem: "S1 with spaces",
+							opts: null,
+							answer: "TRUE",
+							alts: "",
+							type: null,
+							pin: null,
 						},
 					],
 				},

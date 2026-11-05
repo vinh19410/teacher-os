@@ -52,6 +52,7 @@ import {
 	testDraftHasContent,
 } from "@/lib/assignment-test-draft-store";
 import { saveTestPreviewDraft } from "@/lib/assignment-test-preview-draft";
+import { canonicalJson } from "@/lib/canonical-json";
 import { useData } from "@/lib/data-store";
 import type { AssignmentPrompt } from "@/lib/mock-data";
 import {
@@ -952,8 +953,11 @@ function composerUpdatePromptPayload(
 		return fallback;
 	}
 	const sameText = (next: string, base: string) => next.trim() === base.trim();
+	// Canonical JSON (S-2 review #631): so câu/bank không phụ thuộc thứ tự key
+	// — một chiều bị normalize trong tương lai không tái gửi nội dung không
+	// đổi lên đề bị khóa.
 	const sameJson = (next: unknown, base: unknown) =>
-		JSON.stringify(next ?? null) === JSON.stringify(base ?? null);
+		canonicalJson(next) === canonicalJson(base);
 	const payload: Partial<typeof full> = {
 		title: full.title,
 		band: full.band,

@@ -53,6 +53,7 @@ import {
 	savePreviewDraft,
 	takePreviewDraft,
 } from "@/lib/assignment-preview-draft";
+import { canonicalJson } from "@/lib/canonical-json";
 import { useData } from "@/lib/data-store";
 import type { AssignmentPrompt } from "@/lib/mock-data";
 import type { KernelCommandResult } from "@/lib/repos/kernel";
@@ -475,24 +476,6 @@ function trimmedNotEqual(next: string | null | undefined, base: string) {
 	return (next ?? "").trim() !== base.trim();
 }
 
-/** Canonical JSON: key order không ảnh hưởng (snapshot đọc từ DB giữ thứ tự
- * key của lần ghi — writer khác zod có thể khác schema order) và key mang
- * giá trị undefined bị bỏ (zod .optional() đi kèm undefined). Dùng cho so
- * sánh cấu trúc questions/optionBank giữa payload, baseline và snapshot. */
-function canonicalJson(value: unknown): string {
-	if (Array.isArray(value))
-		return `[${value.map((item) => canonicalJson(item)).join(",")}]`;
-	if (value !== null && typeof value === "object") {
-		const entries = Object.entries(value as Record<string, unknown>)
-			.filter(([, item]) => item !== undefined)
-			.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
-		return `{${entries
-			.map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`)
-			.join(",")}}`;
-	}
-	return JSON.stringify(value ?? null);
-}
-
 /** One edit-mode submission, captured at submit time so reconcile can prove
  * the server actually persisted THIS payload (#630 phase 3). */
 interface EditSubmission {
@@ -809,6 +792,11 @@ export function NewAssignmentRoute() {
 		} else {
 			navigate({ to: "/assignments/new" });
 		}
+		// Ref baseline/payload của phiên edit cũ không được rò vào phiên mới
+		// (S-3 review #631): reconcile phải chứng minh payload của lần submit
+		// HIỆN tại, không phải của phiên trước.
+		editBaselineRef.current = null;
+		lastSubmittedRef.current = null;
 		setBannerOpen(false);
 		setShowErrors(false);
 		setSaved(null);
