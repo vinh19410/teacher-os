@@ -1,6 +1,11 @@
 import { mkdirSync } from "node:fs";
 import { expect, test } from "@playwright/test";
-import { fillRichEditor, seedStudent, signUpViaUi } from "./helpers";
+import {
+	fillRichEditor,
+	seedStudent,
+	selectWritingTask2,
+	signUpViaUi,
+} from "./helpers";
 import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 
 /**
@@ -53,6 +58,7 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 	await expect(page.getByText("Đang học")).toBeVisible();
 	// 5. Create 1 ready prompt and 1 draft prompt in the bank
 	await page.goto("/assignments/new");
+	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill(PROMPT_TITLE);
 	await fillRichEditor(
 		page,
@@ -225,6 +231,7 @@ test("#572 (en-US locale): dd/mm/yyyy typing without segment jump, calendar popo
 
 		// Create 1 ready prompt
 		await page.goto("/assignments/new");
+		await selectWritingTask2(page);
 		await page.getByLabel("Tiêu đề").fill(PROMPT_TITLE);
 		await fillRichEditor(
 			page,

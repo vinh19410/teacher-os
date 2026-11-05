@@ -40,6 +40,7 @@ let attemptId = "";
 /** Sign in portal student (fresh context mỗi lần — localStorage portal). */
 async function signIn(page: Page): Promise<void> {
 	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.locator("#tab-signin").click();
 	await page.locator("#signin-email").fill(studentEmail);
 	await page.locator("#signin-password").fill(PASSWORD);
 	await page.locator("#panel-signin button[type='submit']").click();

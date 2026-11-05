@@ -1,5 +1,10 @@
 import { expect, test } from "@playwright/test";
-import { fillRichEditor, isoInDaysFromTodayVN, signUpViaUi } from "./helpers";
+import {
+	fillRichEditor,
+	isoInDaysFromTodayVN,
+	selectWritingTask2,
+	signUpViaUi,
+} from "./helpers";
 
 /**
  * Issue #508 — Hành trình giáo viên mới (0 tài khoản Student Portal):
@@ -21,6 +26,7 @@ test("manual student creation + instant activation unlocks invoice & assignment,
 
 	// 2. Tạo 1 đề Writing trạng thái ready trong ngân hàng đề
 	await page.goto("/assignments/new");
+	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill(PROMPT_TITLE);
 	await fillRichEditor(
 		page,

@@ -5,6 +5,7 @@ import {
 	orgIdForTeacherEmail,
 	readVerificationEmails,
 	seedStudent,
+	selectWritingTask2,
 	signUpViaUi,
 	type VerificationEmailEntry,
 	verifyStudentEmailFromMailLog,
@@ -147,6 +148,7 @@ async function setupClassWithTwoStudents(page: Page): Promise<string> {
  * (pattern class-assign.spec). */
 async function assignPromptToClass(page: Page) {
 	await page.goto("/assignments/new");
+	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill(PROMPT_TITLE);
 	const editor = page.getByLabel("Nội dung đề", { exact: true });
 	await editor.click();
