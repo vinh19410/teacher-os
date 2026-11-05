@@ -7,7 +7,8 @@
 		"test": "vitest run",
 		"dev": "alchemy dev",
 		"deploy": "alchemy deploy",
-		"destroy": "alchemy destroy"
+		"destroy": "alchemy destroy",
+		"state:copy": "node --experimental-strip-types scripts/state-copy.ts"
 	},
 	"dependencies": {
 		"dotenv": "catalog:",

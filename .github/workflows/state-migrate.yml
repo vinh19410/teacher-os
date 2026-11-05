@@ -1,0 +1,92 @@
+# Cloudflare state store migration helper for teacher-os.
+#
+# Design and safety constraints (see plans/261105-1006-alchemy-85-state-store/):
+# - Runs only via manual workflow_dispatch; never triggers automatically on push.
+# - Mode defaults to read-only `count` to inspect state without side effects.
+# - Mode `copy` enforces explicit confirmation by typing the exact stage name in `confirm_copy`.
+# - Uses the matching GitHub Environment (`staging` or `production`).
+# - Serializes against deploy runs by sharing the exact same concurrency group:
+#   `deploy-staging` or `deploy-production` with cancel-in-progress: false.
+# - State contains secrets in memory; state is NEVER uploaded as an Actions artifact.
+name: State Store Migrate
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: "Target stage to migrate"
+        type: choice
+        options:
+          - staging
+          - prod
+        required: true
+      mode:
+        description: "Operation mode: count (read-only), bootstrap (provision new store), copy (safe copy), verify (SHA-256 parity)"
+        type: choice
+        options:
+          - count
+          - bootstrap
+          - copy
+          - verify
+        default: count
+        required: true
+      confirm_copy:
+        description: "Type the exact stage name (staging or prod) to confirm when mode=copy"
+        type: string
+        required: false
+        default: ""
+      overwrite:
+        description: "Allow overwriting differing records in destination (mode=copy only)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-${{ inputs.stage == 'prod' && 'production' || 'staging' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: ${{ inputs.stage == 'prod' && 'production' || 'staging' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Confirm safety gate for copy mode
+        env:
+          MIGRATE_MODE: ${{ inputs.mode }}
+          STAGE: ${{ inputs.stage }}
+          CONFIRM_COPY: ${{ inputs.confirm_copy }}
+        run: |
+          if [ "$MIGRATE_MODE" = "copy" ]; then
+            if [ "$CONFIRM_COPY" != "$STAGE" ]; then
+              echo "::error::Mode 'copy' requires typing the exact stage name in confirm_copy (expected '$STAGE', received '$CONFIRM_COPY')"
+              exit 1
+            fi
+            echo "Confirmation matches stage '$STAGE'. Proceeding with copy."
+          fi
+
+      - name: Run state store operation
+        working-directory: packages/infra
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          MIGRATE_MODE: ${{ inputs.mode }}
+          STAGE: ${{ inputs.stage }}
+          OVERWRITE: ${{ inputs.overwrite }}
+        run: |
+          if [ "$MIGRATE_MODE" = "bootstrap" ]; then
+            echo "Bootstrapping new Cloudflare state store: teacher-os-state..."
+            pnpm exec alchemy state bootstrap --backend cloudflare --name teacher-os-state
+          else
+            echo "Running state-copy with mode=$MIGRATE_MODE for stage=$STAGE..."
+            EXTRA_ARGS=""
+            if [ "$OVERWRITE" = "true" ]; then
+              EXTRA_ARGS="--overwrite"
+            fi
+            pnpm run state:copy --mode "$MIGRATE_MODE" --stage "$STAGE" --source-name alchemy-state-store --dest-name teacher-os-state $EXTRA_ARGS
+          fi

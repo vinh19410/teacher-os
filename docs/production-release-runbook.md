@@ -242,10 +242,14 @@ in the staging D1; prod deliberately gets no signup smoke. The manual
 "Provision staging" procedure below remains the path for first provisioning
 or destroy/recreate.
 
-To preview a deploy without applying it, run the workflow manually from
-`develop` with `dry_run` enabled: it prints the Alchemy plan and skips seed and
+To preview a staging deploy without applying it, run `Deploy Staging` manually from
+`develop` or `staging` with `dry_run` enabled: it prints the Alchemy plan and skips seed and
 smoke steps. Check that the plan does not replace or delete the D1 database, R2
 buckets or custom domains before deploying.
+
+Similarly, to preview a production deploy without applying it, run `Deploy Production` (`deploy.yml`)
+manually via `workflow_dispatch` with `dry_run` enabled: it gates on uncached quality, prints the
+Alchemy plan, and skips smoke checks.
 
 Alchemy state lives in the account-level `alchemy-state-store` Worker, which
 every project on this Cloudflare account shares. A project on a different
@@ -269,6 +273,19 @@ by reverting code while staying on `beta.85` or later. Note the UTC time before
 that first deploy of each stage, so D1 Time Travel can restore to it if the
 rebuild fails partway. If it does, the rows remain in
 `d1_migrations_alchemy_upgrade`.
+
+### State store separation procedure (`teacher-os-state`)
+
+To insulate `teacher-os` from other projects on the same Cloudflare account, state is being migrated
+from `alchemy-state-store` to dedicated worker `teacher-os-state`:
+
+1. **Tools:** `.github/workflows/state-migrate.yml` and `packages/infra/scripts/state-copy.ts`.
+2. **Safety Rule:** Do NOT change `workerName` in `packages/infra/alchemy.run.ts` until:
+   - New store `teacher-os-state` is bootstrapped via `state-migrate.yml` (mode: `bootstrap`).
+   - State is copied for both `staging` and `prod` via `state-migrate.yml` (mode: `copy`).
+   - Parity verification confirms 100% SHA-256 match for both stages (`state-migrate.yml` mode: `verify`).
+   - A parity check gate is included in deploy workflows.
+   - Dry-run on both staging and production shows 0 create, 0 replace, 0 delete.
 
 ## Deploy (production)
 

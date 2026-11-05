@@ -731,6 +731,26 @@ test("prod deploy is gated on uncached quality only (e2e runs locally before shi
 		/seed-vocab-library|seedVocabLibrary|vocab_library/,
 		"deploy.yml must never seed built-in vocab library while production license gate is closed (#573)",
 	);
+	assert.match(
+		code,
+		/pnpm alchemy deploy --stage prod \$\{\{ inputs\.dry_run && '--dry-run' \|\| '--yes' \}\}/,
+		"a prod push has no dry_run input and must keep applying with --yes",
+	);
+	const postDeploySteps = code
+		.slice(code.indexOf("- name: Deploy to Cloudflare"))
+		.split(/^\s*- name: /m)
+		.slice(2);
+	assert.ok(
+		postDeploySteps.length > 0,
+		"expected steps after the deploy step in deploy.yml",
+	);
+	for (const step of postDeploySteps) {
+		assert.match(
+			step,
+			/^.*\n\s*if: \$\{\{ !inputs\.dry_run \}\}/,
+			`step after deploy must skip on dry-run in deploy.yml: ${step.split("\n")[0]}`,
+		);
+	}
 
 	const alchemyRaw = readFileSync(alchemyPath, "utf8");
 	const alchemyCode = alchemyRaw
@@ -740,5 +760,45 @@ test("prod deploy is gated on uncached quality only (e2e runs locally before shi
 		alchemyCode,
 		/\bimportFiles\b/,
 		"packages/infra/alchemy.run.ts must not use D1 importFiles (would bypass production license gate)",
+	);
+});
+
+test("state-migrate.yml triggers only on manual workflow_dispatch with read permissions and serialized concurrency", () => {
+	const raw = readFileSync(
+		join(repoRoot, ".github/workflows/state-migrate.yml"),
+		"utf8",
+	);
+	const code = stripComments(raw);
+
+	assert.doesNotMatch(
+		code,
+		/\bpush:/,
+		"state-migrate.yml must never trigger automatically on push",
+	);
+	assert.doesNotMatch(
+		code,
+		/\bpull_request:/,
+		"state-migrate.yml must never trigger on pull_request",
+	);
+	assert.match(
+		code,
+		/\bworkflow_dispatch:/,
+		"state-migrate.yml must trigger only on workflow_dispatch",
+	);
+	assertReadOnlyWorkflowPermissions(code, "state-migrate.yml");
+	assert.match(
+		code,
+		/group:\s*deploy-\$\{\{\s*inputs\.stage\s*==\s*'prod'\s*&&\s*'production'\s*\|\|\s*'staging'\s*\}\}/,
+		"state-migrate.yml must share the exact deploy concurrency group for stage serialization",
+	);
+	assert.match(
+		code,
+		/cancel-in-progress:\s*false/,
+		"state-migrate.yml must never cancel in-progress migrations",
+	);
+	assert.doesNotMatch(
+		code,
+		/actions\/upload-artifact/,
+		"state-migrate.yml must never upload state as an artifact (contains plaintext secrets in memory)",
 	);
 });
