@@ -15,6 +15,9 @@ import { mkdir, writeFile } from "node:fs/promises";
 //   restart, marker fail-loud.
 // - Watchdog tự crash → crash marker; heartbeat mỗi poll để global-teardown
 //   phát hiện watchdog chết mà không kịp ghi marker.
+// - Ghi marker xong → SIGINT tới playwright runner (E2E_RUNNER_PID) để dừng run
+//   ngay: test còn lại chạy trên hạ tầng đã hỏng chỉ tốn thời gian chờ timeout.
+//   SIGINT là dừng có trật tự nên global-teardown vẫn chạy và báo nguyên nhân.
 //
 // Entry playwright: { name: "dev-watchdog", command: "node devserver-watchdog.mjs" }
 // — không url: playwright spawn xong không chờ readiness. Marker/log ghi vào
@@ -95,6 +98,25 @@ export function createWatchdogState({ kind, name, restart, now = Date.now }) {
 	return state;
 }
 
+/**
+ * Hàm dừng run chỉ gửi đúng 1 SIGINT: playwright coi SIGINT thứ 2 là force-exit
+ * và bỏ qua global-teardown. Không có PID hợp lệ (watchdog chạy ngoài playwright)
+ * → không làm gì, global-teardown vẫn fail run ở cuối.
+ */
+export function createRunAborter({ runnerPid, kill = process.kill }) {
+	const pid = Number(runnerPid);
+	let sent = false;
+	return () => {
+		if (sent || !Number.isInteger(pid) || pid <= 1) return;
+		sent = true;
+		try {
+			kill(pid, "SIGINT");
+		} catch {
+			/* runner đã thoát */
+		}
+	};
+}
+
 const stripControlChars = (s) =>
 	Array.from(s)
 		.filter((ch) => {
@@ -114,6 +136,9 @@ async function main() {
 	/** name → { machine, tail, child } */
 	const tracked = new Map();
 	const markerWritten = new Set();
+	const abortRun = createRunAborter({
+		runnerPid: process.env.E2E_RUNNER_PID,
+	});
 
 	const writeFailMarker = async (svc, reason) => {
 		if (markerWritten.has(svc.name)) return;
@@ -132,6 +157,7 @@ async function main() {
 			`${JSON.stringify(payload, null, "\t")}\n`,
 		);
 		console.error(`${svc.name}: ${payload.reason}`);
+		abortRun();
 	};
 
 	const restartService = (svc) => {
@@ -220,7 +246,7 @@ async function main() {
 						await writeFailMarker(svc, reason);
 						if (svc.kind === "vite")
 							console.error(
-								`web bất ổn (${reason}) — ngừng restart, global-teardown sẽ fail run.`,
+								`${svc.name} bất ổn (${reason}) — ngừng restart, dừng run và để global-teardown báo lỗi.`,
 							);
 					}
 				}
@@ -267,6 +293,7 @@ async function main() {
 		} catch {
 			/* hết đường — chấp nhận */
 		}
+		abortRun();
 		process.exit(1);
 	};
 	// Chống chết im (SecH3/FailH3/AssumpF4): mọi uncaught → crash marker.
