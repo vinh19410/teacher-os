@@ -1,12 +1,19 @@
+// Đọc thẳng context thay vì useQueryClient(): không có provider (test host
+// bare-render) thì undefined — reconcile rơi vào nhánh "chưa xác nhận được
+// lưu" an toàn thay vì crash. App luôn có provider (main.tsx).
+import { QueryClientContext } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
 	ASSIGNMENT_BANDS,
 	type AssignmentBand,
+	assignmentPromptUpdateSchema,
 	DEFAULT_ASSIGNMENT_BAND,
 	isAssignmentImageUrl,
+	type KernelAssignmentPromptRow,
+	type KernelSnapshot,
 } from "@teacher-os/api/contracts";
 import { isEmptyRichText } from "@teacher-os/api/rich-text";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, useContext, useEffect, useRef, useState } from "react";
 import {
 	bandFromClassLevel,
 	emptyComposer,
@@ -46,8 +53,11 @@ import {
 	savePreviewDraft,
 	takePreviewDraft,
 } from "@/lib/assignment-preview-draft";
+import { canonicalJson } from "@/lib/canonical-json";
 import { useData } from "@/lib/data-store";
+import type { AssignmentPrompt } from "@/lib/mock-data";
 import type { KernelCommandResult } from "@/lib/repos/kernel";
+import { kernelQueryKey } from "@/lib/repos/kernel";
 import {
 	normalizeDraftItems,
 	normalizeLegacyRichText,
@@ -416,15 +426,127 @@ const STRUCTURAL_LABELS = {
 	type: "dạng đề",
 } as const;
 
+/**
+ * Server-state baseline for edit-mode field diff (#630): locked content
+ * fields (type/prompt/intro/passage/transcript/cueTopic/cuePoints/audioName/
+ * imageUrl/note/questions/optionBank/writing) are only sent when the
+ * submitted value differs from what the prompt already stores. Resaving an
+ * untouched old prompt must not re-send its content — the server answers 409
+ * PROMPT_CONTENT_LOCKED when a locked field changes on an attempted prompt.
+ * The baseline uses the SAME normalization as the payload: restoreRich for
+ * rich fields, type resolution `type ?? genre ?? ""`, items through
+ * normalizeDraftItems; compare-time trims both sides.
+ */
+interface EditBaseline {
+	type: string;
+	prompt: string;
+	passage: string;
+	intro: string;
+	transcript: string;
+	cueTopic: string;
+	cuePoints: string;
+	audioName: string;
+	imageUrl: string;
+	note: string;
+	questions: QuestionItem[];
+	optionBank: string[];
+}
+
+function captureEditBaseline(prompt: AssignmentPrompt): EditBaseline {
+	const restore = (text: string | undefined) =>
+		normalizeLegacyRichText(text ?? "");
+	return {
+		type: prompt.type ?? prompt.genre ?? "",
+		prompt: restore(prompt.prompt),
+		passage: restore(prompt.passage),
+		intro: restore(prompt.intro),
+		transcript: restore(prompt.transcript),
+		cueTopic: prompt.cueTopic ?? "",
+		cuePoints: prompt.cuePoints ?? "",
+		audioName: prompt.audioName ?? "",
+		imageUrl: prompt.imageUrl ?? "",
+		note: restore(prompt.note),
+		questions: normalizeDraftItems(prompt.questions ?? []),
+		optionBank: prompt.optionBank ?? [],
+	};
+}
+
+/** Trim-both-sides text compare (null/undefined collapses to ""). */
+function trimmedNotEqual(next: string | null | undefined, base: string) {
+	return (next ?? "").trim() !== base.trim();
+}
+
+/** One edit-mode submission, captured at submit time so reconcile can prove
+ * the server actually persisted THIS payload (#630 phase 3). */
+interface EditSubmission {
+	promptId: string;
+	payload: Record<string, unknown>;
+}
+
+/** Does the fresh snapshot row really contain what we PATCHed? Mirrors the
+ * server-side normalization: text trims with null↔"" equivalence,
+ * questions/optionBank compare structurally, writing section compares
+ * part/type/trim(prompt). Only fields present in the payload are checked —
+ * omitted fields were intentionally not sent. */
+function editSubmissionPersisted(
+	row: KernelAssignmentPromptRow,
+	payload: Record<string, unknown>,
+): boolean {
+	for (const [key, sent] of Object.entries(payload)) {
+		if (key === "writing") {
+			const next = sent as {
+				part: string;
+				type: string;
+				prompt: string;
+			} | null;
+			const current = row.writing ?? null;
+			if (next === null) {
+				if (current !== null) return false;
+				continue;
+			}
+			if (
+				current === null ||
+				current.part !== next.part ||
+				(current.type ?? "") !== next.type ||
+				(current.prompt ?? "").trim() !== next.prompt.trim()
+			)
+				return false;
+			continue;
+		}
+		const stored = (row as unknown as Record<string, unknown>)[key];
+		if (key === "questions" || key === "optionBank") {
+			if (canonicalJson(sent) !== canonicalJson(stored)) return false;
+			continue;
+		}
+		if (
+			typeof sent === "string"
+				? trimmedNotEqual(sent, typeof stored === "string" ? stored : "")
+				: sent !== (stored ?? "")
+		)
+			return false;
+	}
+	return true;
+}
+
 export function NewAssignmentRoute() {
 	const navigate = useNavigate();
 	const submit = useKernelFormSubmit();
+	const queryClient = useContext(QueryClientContext);
 	const { classId, promptId } = Route.useSearch?.() ?? {};
 	const { data } = useData();
 	const existingPrompt = promptId
 		? (data.assignmentPrompts?.find((p) => p.id === promptId) ?? null)
 		: null;
 	const isEditing = Boolean(promptId && existingPrompt);
+	// Field-diff baseline (#630): pinned to the server state at mount — a
+	// background refresh must not move it mid-session.
+	const editBaselineRef = useRef<EditBaseline | null>(null);
+	if (isEditing && existingPrompt && editBaselineRef.current === null) {
+		editBaselineRef.current = captureEditBaseline(existingPrompt);
+	}
+	// Exact edit payload captured at submit time — reconcile (phase 3) proves
+	// the fresh snapshot actually contains it before showing "Đã cập nhật".
+	const lastSubmittedRef = useRef<EditSubmission | null>(null);
 	const targetClass = classId
 		? data.classes?.find((c) => c.id === classId)
 		: null;
@@ -670,6 +792,11 @@ export function NewAssignmentRoute() {
 		} else {
 			navigate({ to: "/assignments/new" });
 		}
+		// Ref baseline/payload của phiên edit cũ không được rò vào phiên mới
+		// (S-3 review #631): reconcile phải chứng minh payload của lần submit
+		// HIỆN tại, không phải của phiên trước.
+		editBaselineRef.current = null;
+		lastSubmittedRef.current = null;
 		setBannerOpen(false);
 		setShowErrors(false);
 		setSaved(null);
@@ -702,6 +829,10 @@ export function NewAssignmentRoute() {
 	async function handleSubmit(event: FormEvent) {
 		event.preventDefault();
 		if (submit.saving) return;
+		// Notice (committed/unknown) chưa clear: run() sẽ no-op và payload của
+		// lượt bấm này không được gửi — không được ghi đè lastSubmittedRef
+		// (reconcile phải chứng minh đúng payload thật sự đã submit, #630).
+		if (submit.submitBlocked) return;
 		setShowErrors(true);
 		const missing = missingRequirementsFor(value, status);
 		if (missing.length > 0) {
@@ -734,34 +865,64 @@ export function NewAssignmentRoute() {
 						curW.type !== nextW.type ||
 						curW.prompt !== nextW.prompt;
 
+			// Field diff (#630): locked content fields ride the payload only
+			// when they actually differ from the mount-time baseline. title/
+			// band/source/status stay unconditional (always editable).
+			const baseline =
+				editBaselineRef.current ?? captureEditBaseline(existingPrompt);
+			editBaselineRef.current = baseline;
+			const payload: Record<string, unknown> = {
+				title: value.title.trim(),
+				band: (ASSIGNMENT_BANDS as readonly string[]).includes(value.band)
+					? (value.band as AssignmentBand)
+					: DEFAULT_ASSIGNMENT_BAND,
+				source: value.source.trim(),
+				status,
+			};
+			if (trimmedNotEqual(value.type, baseline.type)) payload.type = value.type;
+			if (trimmedNotEqual(value.prompt, baseline.prompt))
+				payload.prompt = value.prompt.trim();
+			if (trimmedNotEqual(value.passage, baseline.passage))
+				payload.passage = value.passage.trim();
+			if (trimmedNotEqual(value.intro, baseline.intro))
+				payload.intro = value.intro;
+			if (trimmedNotEqual(value.transcript, baseline.transcript))
+				payload.transcript = value.transcript;
+			if (trimmedNotEqual(value.cueTopic, baseline.cueTopic))
+				payload.cueTopic = value.cueTopic.trim();
+			if (trimmedNotEqual(value.cuePoints, baseline.cuePoints))
+				payload.cuePoints = value.cuePoints;
+			if (trimmedNotEqual(value.audioName, baseline.audioName))
+				payload.audioName = value.audioName.trim();
+			if (trimmedNotEqual(value.imageUrl, baseline.imageUrl))
+				payload.imageUrl = value.imageUrl.trim();
+			if (trimmedNotEqual(value.note, baseline.note))
+				payload.note = value.note.trim();
+			if (canonicalJson(value.items) !== canonicalJson(baseline.questions))
+				payload.questions = value.items;
+			if (
+				canonicalJson(value.optionBank) !== canonicalJson(baseline.optionBank)
+			)
+				payload.optionBank = value.optionBank;
+			if (writingChanged) payload.writing = nextW;
+
+			// Capture payload cho reconcile (phase 3) TRƯỚC run: đầu hàm đã
+			// early-return khi submitBlocked nên lượt bấm bị chặn không bao
+			// giờ chạm ref. Payload chuẩn hoá qua cùng schema server dùng lúc
+			// ghi (trim câu/đáp án, fill alts mặc định) để đối chiếu snapshot
+			// sau reconcile không lệch do chuẩn hoá (#630 I-1).
+			const parsed = assignmentPromptUpdateSchema.safeParse(payload);
+			lastSubmittedRef.current = {
+				promptId: existingPrompt.id,
+				payload: (parsed.success ? parsed.data : payload) as Record<
+					string,
+					unknown
+				>,
+			};
 			result = await submit.run({
 				type: "update-assignment-prompt",
 				promptId: existingPrompt.id,
-				payload: {
-					type: value.type,
-					title: value.title.trim(),
-					band: (ASSIGNMENT_BANDS as readonly string[]).includes(value.band)
-						? (value.band as AssignmentBand)
-						: DEFAULT_ASSIGNMENT_BAND,
-					source: value.source.trim(),
-					prompt: value.prompt.trim(),
-					passage: value.passage.trim(),
-					intro: value.intro,
-					transcript: value.transcript,
-					cueTopic: value.cueTopic.trim(),
-					cuePoints: value.cuePoints,
-					audioName: value.audioName.trim(),
-					imageUrl: value.imageUrl.trim(),
-					questions: value.items,
-					optionBank: value.optionBank,
-					note: value.note.trim(),
-					status,
-					...(writingChanged
-						? {
-								writing: nextW,
-							}
-						: {}),
-				},
+				payload,
 			});
 		} else {
 			result = await submit.run({
@@ -831,26 +992,54 @@ export function NewAssignmentRoute() {
 	async function handleReconcile() {
 		const applied = await submit.reconcile();
 		if (!applied) return;
-		if (!isEditing) clearAssignmentDraft();
-		const row =
-			isEditing && existingPrompt
-				? data.assignmentPrompts.find((p) => p.id === existingPrompt.id)
-				: data.assignmentPrompts.find(
-						(prompt) =>
-							prompt.title === value.title.trim() &&
-							prompt.skill === value.skill,
-					);
-		if (!row) {
+		if (!isEditing) {
+			clearAssignmentDraft();
+			const row = data.assignmentPrompts.find(
+				(prompt) =>
+					prompt.title === value.title.trim() && prompt.skill === value.skill,
+			);
+			if (!row) {
+				submit.setError(
+					"Đã tải lại dữ liệu nhưng chưa xác nhận được đề mới trong ngân hàng.",
+				);
+				return;
+			}
+			setSaved({
+				title: row.title,
+				status: row.status,
+				skill: row.skill ?? "writing",
+				part: row.part ?? row.task,
+				type: row.type ?? row.genre,
+				band: row.band,
+				source: row.source,
+				audioName: row.audioName ?? "",
+				questions: row.questions ?? [],
+			});
+			return;
+		}
+		// Edit mode (#630): "Đã cập nhật" chỉ khi snapshot mới thực sự chứa
+		// đúng payload đã submit — snapshot stale (ghi chưa xuống server)
+		// phải giữ form và báo teacher lưu lại, không flip sang màn thành công.
+		const submitted = lastSubmittedRef.current;
+		const snapshot = queryClient?.getQueryData(kernelQueryKey) as
+			| KernelSnapshot
+			| undefined;
+		const row = submitted
+			? snapshot?.assignmentPrompts.find((p) => p.id === submitted.promptId)
+			: undefined;
+		if (
+			!submitted ||
+			!row ||
+			!editSubmissionPersisted(row, submitted.payload)
+		) {
 			submit.setError(
-				isEditing
-					? "Đã tải lại dữ liệu nhưng chưa xác nhận được thay đổi của đề trong ngân hàng."
-					: "Đã tải lại dữ liệu nhưng chưa xác nhận được đề mới trong ngân hàng.",
+				"Đã tải lại dữ liệu nhưng thay đổi của bạn chưa được lưu. Vui lòng lưu lại.",
 			);
 			return;
 		}
 		setSaved({
 			title: row.title,
-			status: row.status,
+			status: row.status === "ready" ? "ready" : "draft",
 			skill: row.skill ?? "writing",
 			part: row.part ?? row.task,
 			type: row.type ?? row.genre,
