@@ -299,13 +299,32 @@ export function TestBuilderShell({
 		setComposer(null);
 	}
 
-	async function persistParts(nextAssigned: Record<string, string | null>) {
+	async function persistParts(
+		nextAssigned: Record<string, string | null>,
+		rollback: {
+			part: string;
+			promptId: string | null;
+			override?: number | null;
+		},
+	) {
 		if (mode !== "edit" || !test) return;
-		await submit.run({
+		const result = await submit.run({
 			type: "set-assignment-test-parts",
 			testId: test.id,
 			parts: partsSetPayload(header.skill, nextAssigned, overrides),
 		});
+		if (result === null || result.kind === "definite-failure") {
+			setAssigned((current) => ({
+				...current,
+				[rollback.part]: rollback.promptId,
+			}));
+			if (rollback.override !== undefined) {
+				setOverrides((current) => ({
+					...current,
+					[rollback.part]: rollback.override ?? null,
+				}));
+			}
+		}
 	}
 
 	/** Phase-05 Apply: PATCH questions của 1 part (giữ stem/opts/pin, chỉ
@@ -322,20 +341,31 @@ export function TestBuilderShell({
 	function handleAssign(part: string, promptId: string) {
 		setPickerPart(null);
 		setSavedNotice(null);
+		const prevPromptId = assigned[part] ?? null;
 		const next = { ...assigned, [part]: promptId };
 		setAssigned(next);
 		// Part đã vào test từ ngân hàng — bản nháp slot (nếu có) hết tác dụng.
 		setSlotDrafts((current) => ({ ...current, [part]: null }));
-		if (mode === "edit") void persistParts(next);
+		if (mode === "edit") {
+			void persistParts(next, { part, promptId: prevPromptId });
+		}
 	}
 
 	function handleRemoveSlot(part: string) {
 		setSavedNotice(null);
 		// Chỉ gỡ khỏi test — prompt vẫn nằm nguyên trong ngân hàng.
+		const prevPromptId = assigned[part] ?? null;
+		const prevOverride = overrides[part] ?? null;
 		const next = { ...assigned, [part]: null };
 		setAssigned(next);
 		setOverrides((current) => ({ ...current, [part]: null }));
-		if (mode === "edit") void persistParts(next);
+		if (mode === "edit") {
+			void persistParts(next, {
+				part,
+				promptId: prevPromptId,
+				override: prevOverride,
+			});
+		}
 	}
 
 	function openComposeNew(part: string) {

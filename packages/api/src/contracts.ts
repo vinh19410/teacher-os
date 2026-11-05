@@ -1160,6 +1160,17 @@ export type AssignmentPromptErrorCode =
 	(typeof ASSIGNMENT_PROMPT_ERROR_CODES)[keyof typeof ASSIGNMENT_PROMPT_ERROR_CODES];
 
 /**
+ * Mã 409 khóa parts của PUT /assignments/tests/:id/parts (#633). Server trả
+ * kèm `code` trong body lỗi; web tra ánh xạ thông báo theo mã này.
+ */
+export const ASSIGNMENT_TEST_ERROR_CODES = {
+	/** Bộ đề đã có học viên làm bài (quiz_attempt) — không được thay đổi hoặc gỡ part. */
+	PARTS_LOCKED: "TEST_PARTS_LOCKED",
+} as const;
+export type AssignmentTestErrorCode =
+	(typeof ASSIGNMENT_TEST_ERROR_CODES)[keyof typeof ASSIGNMENT_TEST_ERROR_CODES];
+
+/**
  * Full test CRUD (design "IELTS Full Test Builder"). `timeLimitSeconds`
  * null = không giới hạn (Writing/Speaking); cap 3*3600 = full IELTS timed
  * paper. Parts KHÔNG nằm ở create — dùng PUT parts riêng (replace-all).

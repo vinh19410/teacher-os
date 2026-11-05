@@ -1,4 +1,7 @@
-import { ASSIGNMENT_PROMPT_ERROR_CODES } from "@teacher-os/api/contracts";
+import {
+	ASSIGNMENT_PROMPT_ERROR_CODES,
+	ASSIGNMENT_TEST_ERROR_CODES,
+} from "@teacher-os/api/contracts";
 import { useCallback, useState } from "react";
 import { useData } from "@/lib/data-store";
 import { type HttpError, isHttpError } from "@/lib/kernel-load-state";
@@ -19,6 +22,8 @@ function lockFailureMessage(error: unknown): string {
 			return "Đề đã có học viên làm bài nên không sửa được nội dung. Bạn vẫn có thể đổi tiêu đề, band, nguồn và trạng thái. Muốn đổi nội dung, hãy tạo đề mới.";
 		case ASSIGNMENT_PROMPT_ERROR_CODES.WRITING_SECTION_LOCKED:
 			return "Đề đã được giao hoặc đang dùng trong bộ đề nên không sửa được phần Writing. Hãy trả phần này về như cũ để lưu các thay đổi khác.";
+		case ASSIGNMENT_TEST_ERROR_CODES.PARTS_LOCKED:
+			return "Bộ đề đã có học viên làm bài nên không thể thay đổi hoặc gỡ part. Bạn vẫn có thể đổi tên, thời gian và trạng thái bộ đề. Muốn thay đổi đề, hãy tạo bộ đề mới.";
 		default:
 			return GENERIC_FAILURE_MESSAGE;
 	}
