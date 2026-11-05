@@ -27,6 +27,7 @@ import { Tag } from "@/components/ui/tag";
 import { useData } from "@/lib/data-store";
 import { PARENT_REPORTS_ENABLED } from "@/lib/features";
 import { invoiceCode, invoiceType } from "@/lib/format-invoice";
+import { formatStudentTarget } from "@/lib/format-student-target";
 import { averageBand, classMeta, fmtVND } from "@/lib/mock-data";
 import { classesByStudent } from "@/lib/repos/enrollments";
 import {
@@ -173,9 +174,7 @@ function StudentDetailRoute() {
 								</Badge>
 							)}
 						</span>
-						<span>
-							Mục tiêu: Band {student.targetBand} ({student.skills.join(", ")})
-						</span>
+						<span>{formatStudentTarget(student)}</span>
 						{student.examDate && <span>Thi: {student.examDate}</span>}
 					</span>
 				}
