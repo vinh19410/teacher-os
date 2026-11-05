@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Sửa nhãn và cập nhật test, docs"
-status: pending
+status: completed
 priority: P2
 effort: "15m"
 dependencies: []

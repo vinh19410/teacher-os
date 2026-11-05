@@ -291,7 +291,7 @@ test("header has exactly one #studentPortalLink in .nav-actions with default pro
 		attrs,
 		/\bclass="[^"]*\bbtn\b[^"]*\bbtn-outline\b[^"]*\bbtn-sm\b[^"]*"/,
 	);
-	assert.equal(label, "Gốc học viên");
+	assert.equal(label, "Góc học viên");
 
 	const testPageHtml = readFileSync(
 		new URL("kiem-tra-dau-vao/index.html", publicDir),
@@ -317,19 +317,19 @@ test("replaceStudentPortalHref replaces href safely, preserves attributes, escap
 	);
 	assert.match(
 		stagingHtml,
-		/<a\b[^>]*\bhref="https:\/\/student\.staging\.teacheros\.io\.vn"[^>]*\bid="studentPortalLink"[^>]*\bclass="btn btn-outline btn-sm"[^>]*\brel="noopener"[^>]*>Gốc học viên<\/a>/,
+		/<a\b[^>]*\bhref="https:\/\/student\.staging\.teacheros\.io\.vn"[^>]*\bid="studentPortalLink"[^>]*\bclass="btn btn-outline btn-sm"[^>]*\brel="noopener"[^>]*>Góc học viên<\/a>/,
 	);
 
 	// Attribute-order tolerance: id before href + extra target attribute
 	const reorderedSample =
-		'<div class="nav-actions"><a id="studentPortalLink" class="btn btn-outline btn-sm" target="_self" href="https://student.teacheros.io.vn" rel="noopener">Gốc học viên</a></div>';
+		'<div class="nav-actions"><a id="studentPortalLink" class="btn btn-outline btn-sm" target="_self" href="https://student.teacheros.io.vn" rel="noopener">Góc học viên</a></div>';
 	const reorderedReplaced = replaceStudentPortalHref(
 		reorderedSample,
 		"http://localhost:8003",
 	);
 	assert.equal(
 		reorderedReplaced,
-		'<div class="nav-actions"><a id="studentPortalLink" class="btn btn-outline btn-sm" target="_self" href="http://localhost:8003" rel="noopener">Gốc học viên</a></div>',
+		'<div class="nav-actions"><a id="studentPortalLink" class="btn btn-outline btn-sm" target="_self" href="http://localhost:8003" rel="noopener">Góc học viên</a></div>',
 	);
 
 	// Quote escaping + String.prototype.replace $-pattern immunity
@@ -337,7 +337,7 @@ test("replaceStudentPortalHref replaces href safely, preserves attributes, escap
 	const specialReplaced = replaceStudentPortalHref(reorderedSample, specialUrl);
 	assert.equal(
 		specialReplaced,
-		'<div class="nav-actions"><a id="studentPortalLink" class="btn btn-outline btn-sm" target="_self" href="https://student.example.com/path?a=&quot;1&quot;&amp;b=$$&amp;c=$&amp;&amp;d=$`&amp;e=$\'" rel="noopener">Gốc học viên</a></div>',
+		'<div class="nav-actions"><a id="studentPortalLink" class="btn btn-outline btn-sm" target="_self" href="https://student.example.com/path?a=&quot;1&quot;&amp;b=$$&amp;c=$&amp;&amp;d=$`&amp;e=$\'" rel="noopener">Góc học viên</a></div>',
 	);
 	assert.ok(
 		!specialReplaced.includes('a="1"'),

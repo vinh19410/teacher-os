@@ -12,6 +12,7 @@ Quy ước khi cập nhật:
 
 ## 2026-11-05
 ### Fixed
+- Sửa lỗi chính tả nhãn nút `#studentPortalLink` trên header của `apps/profile` (`apps/profile/public/index.html`) từ "Gốc học viên" thành "Góc học viên" (#624).
 - Thống nhất định nghĩa đang chờ và đang học tại trang Học viên (#616): loại bỏ học viên có email chưa liên kết cổng (`portalLinked === false`) khỏi số "học viên đang học" ở kicker đầu trang, gộp họ vào tab "Lời mời đang chờ" với badge "Chờ xác nhận" và nút "Gửi lại lời mời" (hoạt động song song với lời mời tổ chức trong bảng `student_invitation`), cập nhật nhãn tab "Lời mời đang chờ (N)" theo tổng số sau khi deduplicate email; bảo toàn ranh giới hồ sơ đầy đủ trên tab "Học viên".
 
 ### Changed
