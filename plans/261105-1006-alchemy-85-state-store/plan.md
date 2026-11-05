@@ -22,10 +22,14 @@ Deploy staging của PR #629 fail vì `alchemy-state-store` dùng chung trong t�
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Nâng lên beta.85, vẫn dùng store hiện tại](./phase-01-upgrade-to-beta-85.md) | Completed |
-| 2 | [Tách state store riêng](./phase-02-separate-state-store.md) | Blocked: chờ quyết định |
+| 1 | [Nâng lên beta.85, vẫn dùng store hiện tại](./phase-01-upgrade-to-beta-85.md) | Completed (PR #635) |
+| 2 | [Tách state store riêng](./phase-02-separate-state-store.md) | In progress (PR1: migration toolset & dry-run) |
 
-Phase 2 chỉ bắt đầu sau khi phase 1 deploy staging thành công.
+Phase 2 được chia thành 4 bước an toàn:
+- **Bước 1 (PR1 - hiện tại):** Xây dựng công cụ chuyển đổi an toàn (`src/state-copy.ts`, CLI `scripts/state-copy.ts`, unit test, workflow `state-migrate.yml`, và input `dry_run` cho `deploy.yml`). Không đổi `workerName` tại thời điểm này để tránh rủi ro recreate/delete cloud resources.
+- **Bước 2 (Vận hành CI):** Promote develop lên main (để prod chạy beta.85 và GitHub nhận diện `workflow_dispatch`), cấp quyền Secrets Store Edit cho token CI, bootstrap store `teacher-os-state` và copy/verify state trên CI.
+- **Bước 3 (PR2):** Thêm parity gate vào các workflow deploy, đổi `workerName` sang `teacher-os-state`, dry-run kiểm tra 0 create/replace/delete, rồi deploy.
+- **Bước 4 (PR3):** Dọn dẹp parity gate và workflow di chuyển sau thời gian ổn định.
 
 ## Non-goals
 

@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Tách state store riêng"
-status: pending
+status: in-progress
 priority: P1
 effort: "4h"
 dependencies: [1]
@@ -14,10 +14,12 @@ dependencies: [1]
 teacher-os dùng store riêng qua `Cloudflare.state({ workerName })`, với toàn bộ state hiện có được chuyển sang trước khi đổi cấu hình.
 
 ## Files to Create / Modify
-
-- Modify: `packages/infra/alchemy.run.ts`, các workflow deploy, `docs/production-release-runbook.md`
-- Create: script chuyển state một lần, chỉ copy stack `teacher-os`
-
+- Create: `packages/infra/src/state-copy.ts` (logic copy an toàn, chỉ đọc nguồn, chỉ stack `teacher-os`, copy output, verify hash, không delete)
+- Create: `packages/infra/src/state-copy.test.ts` (unit tests với fake StateService)
+- Create: `packages/infra/scripts/state-copy.ts` (CLI wrapper)
+- Create: `.github/workflows/state-migrate.yml` (workflow_dispatch có xác nhận cho copy)
+- Modify: `.github/workflows/deploy.yml` (thêm input `dry_run`), `scripts/ci-workflow.test.mjs`, `docs/production-release-runbook.md`
+- Pending (PR2 sau khi verify CI): `packages/infra/alchemy.run.ts` (đổi `workerName: "teacher-os-state"` kèm parity gate)
 ## Phát hiện từ source beta.85
 
 - `alchemy state migrate` tồn tại, nhưng trong source chỉ `BucketState` cài đặt `migrate`; Cloudflare state store thì không.
@@ -26,11 +28,24 @@ teacher-os dùng store riêng qua `Cloudflare.state({ workerName })`, với toà
 
 ## Tasks & Steps
 
-1. Viết script copy dùng `Alchemist.State.store`, chỉ đọc store nguồn và chỉ ghi stack `teacher-os` vào store đích.
-2. Bootstrap store mới trong CI, vì credential chỉ có trên GitHub.
-3. Copy state của mọi stage sang store mới. Store cũ giữ nguyên để rollback.
-4. Đổi `workerName`, chạy dry-run staging và production.
-5. Chỉ deploy khi dry-run không tạo mới hay thay thế resource nào.
+### PR1: Bộ công cụ di chuyển an toàn và dry-run cho prod (Hiện tại)
+1. Viết `packages/infra/src/state-copy.ts`:
+   - Chỉ đọc từ nguồn (`list`, `get`, `getOutput`, `getReplacedResources`).
+   - Tuyệt đối không gọi `delete` hay `deleteStack`.
+   - Stack cố định `teacher-os`. Stage nhận `staging` hoặc `prod`.
+   - 3 chế độ: `count`, `copy`, `verify` (so sánh số lượng và hash SHA-256, không log plaintext secret).
+   - Dừng lại nếu nguồn có `replacedResources` hoặc nếu đích đã có data khác nguồn (trừ khi có `--overwrite`).
+2. Viết unit test `packages/infra/src/state-copy.test.ts` kiểm thử toàn bộ các nhánh: copy đúng stack, bỏ qua stack lạ, copy output, phát hiện replaced resources, verify hash khớp, không có thao tác xóa.
+3. Tạo CLI wrapper `packages/infra/scripts/state-copy.ts`.
+4. Thêm input `dry_run` vào `.github/workflows/deploy.yml` và cập nhật `scripts/ci-workflow.test.mjs`.
+5. Tạo workflow `.github/workflows/state-migrate.yml` (chỉ chạy bằng `workflow_dispatch`, mode mặc định `count`, có input xác nhận cho `copy`, dùng concurrency group trùng với deploy).
+6. Cập nhật `docs/production-release-runbook.md`.
+
+### Các bước tiếp theo (Vận hành & PR2)
+7. Promote `develop -> main` (để prod lên `beta.85` và GitHub Actions kích hoạt `state-migrate.yml` từ default branch).
+8. Cấp quyền Secrets Store Edit cho token Cloudflare của cả `staging` và `production`.
+9. Dispatch workflow `state-migrate.yml`: bootstrap -> count -> copy -> verify cho staging, sau đó tương tự cho prod.
+10. PR2: Đổi `workerName: "teacher-os-state"` trong `alchemy.run.ts:275`, thêm parity gate vào workflow deploy, chạy dry-run trên CI xác nhận 0 create/replace/delete, rồi merge và deploy.
 
 ## Verification
 
