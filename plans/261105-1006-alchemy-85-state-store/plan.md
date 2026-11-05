@@ -4,6 +4,7 @@ description: "Gỡ lỗi deploy do state store dùng chung đã lên v8, rồi t
 status: in-progress
 priority: P1
 effort: 1d
+issue: 634
 branch: vinh19410/alchemy-85-upgrade
 tags: [infra, bugfix]
 blockedBy: []
