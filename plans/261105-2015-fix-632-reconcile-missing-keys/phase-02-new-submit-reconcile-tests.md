@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Bổ sung Integration Test cho đối soát edit mode"
-status: ready
+status: done
 priority: P1
 effort: "25m"
 dependencies: ["phase-01-canonical-json-and-unit-tests.md"]

@@ -1,7 +1,7 @@
 ---
 title: "fix(assignments): đối soát edit mode báo nhầm chưa lưu với câu hỏi thiếu type hoặc pin"
 description: "Chuẩn hóa canonicalJson để bỏ qua cả key null lẫn undefined khi so sánh cấu trúc câu hỏi, giúp đối soát edit mode và field-diff baseline hoạt động chính xác khi câu hỏi thiếu type hoặc pin."
-status: ready
+status: completed
 priority: P1
 effort: 1h
 issue: 632
@@ -37,19 +37,19 @@ Nguyên nhân: `canonicalJson` trong `apps/web/src/lib/canonical-json.ts` chỉ 
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Chuẩn hóa canonicalJson và viết Unit Test](./phase-01-canonical-json-and-unit-tests.md) | Ready |
-| 2 | [Bổ sung Integration Test cho đối soát edit mode](./phase-02-new-submit-reconcile-tests.md) | Ready |
-| 3 | [Kiểm thử hồi quy toàn diện và Quality Gates](./phase-03-verify-quality-gates.md) | Ready |
+| 1 | [Chuẩn hóa canonicalJson và viết Unit Test](./phase-01-canonical-json-and-unit-tests.md) | Done |
+| 2 | [Bổ sung Integration Test cho đối soát edit mode](./phase-02-new-submit-reconcile-tests.md) | Done |
+| 3 | [Kiểm thử hồi quy toàn diện và Quality Gates](./phase-03-verify-quality-gates.md) | Done |
 
 Phase 2 phụ thuộc Phase 1. Phase 3 chạy sau khi hoàn thành Phase 1 & 2.
 
 ## Success Criteria
 
-- [ ] Đối soát báo thành công ("Đã cập nhật bài tập") khi server đã lưu câu hỏi thiếu `type` hoặc `pin`.
-- [ ] Đối soát vẫn báo chưa lưu và giữ form khi snapshot thực sự khác payload (khác stem, answer, opts, type, pin).
-- [ ] Baseline diff trong edit mode không gửi thừa `questions` trong PATCH khi câu hỏi không đổi nội dung nhưng lệch null/undefined.
-- [ ] Có bộ unit test đầy đủ cho `canonicalJson` bao phủ các trường hợp biên.
-- [ ] Toàn bộ quality gates đạt: `pnpm check`, `pnpm check-types`, các test liên quan pass 100%.
+- [x] Đối soát báo thành công ("Đã cập nhật bài tập") khi server đã lưu câu hỏi thiếu `type` hoặc `pin`.
+- [x] Đối soát vẫn báo chưa lưu và giữ form khi snapshot thực sự khác payload (khác stem, answer, opts, type, pin).
+- [x] Baseline diff trong edit mode không gửi thừa `questions` trong PATCH khi câu hỏi không đổi nội dung nhưng lệch null/undefined.
+- [x] Có bộ unit test đầy đủ cho `canonicalJson` bao phủ các trường hợp biên.
+- [x] Toàn bộ quality gates đạt: `pnpm check`, `pnpm check-types`, các test liên quan pass 100%.
 
 ## Risks
 

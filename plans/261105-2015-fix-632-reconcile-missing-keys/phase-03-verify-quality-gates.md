@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Kiểm thử hồi quy toàn diện và Quality Gates"
-status: ready
+status: done
 priority: P1
 effort: "15m"
 dependencies: ["phase-01-canonical-json-and-unit-tests.md", "phase-02-new-submit-reconcile-tests.md"]

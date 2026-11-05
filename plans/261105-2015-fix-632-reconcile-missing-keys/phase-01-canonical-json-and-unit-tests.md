@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Chuẩn hóa canonicalJson và viết Unit Test"
-status: ready
+status: done
 priority: P1
 effort: "20m"
 dependencies: []

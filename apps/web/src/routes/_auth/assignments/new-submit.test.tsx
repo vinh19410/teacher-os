@@ -512,4 +512,128 @@ describe("NewAssignmentRoute — field-diff edit payload + honest reconcile (#63
 		expect(await screen.findByText("Đã cập nhật bài tập")).toBeTruthy();
 		expect(submitFixture.error).toBeUndefined();
 	});
+
+	it("reconcile passes when sent question payload omits type or pin but snapshot returns them as null (#632)", async () => {
+		openEditMode({
+			...editablePrompt,
+			questions: [
+				{
+					stem: "S1 legacy",
+					opts: null,
+					answer: "TRUE",
+					alts: "",
+				},
+			],
+		});
+		submitFixture.run.mockResolvedValue(undefined);
+		submitFixture.notice = { kind: "committed" };
+		submitFixture.reconcile.mockResolvedValue(true);
+
+		reconcileClient.setQueryData(kernelQueryKey, {
+			assignmentPrompts: [
+				{
+					...editablePrompt,
+					questions: [
+						{
+							stem: "S1 updated",
+							opts: null,
+							answer: "TRUE",
+							alts: "",
+							type: null,
+							pin: null,
+						},
+					],
+				},
+			],
+		});
+
+		renderRoute();
+		fireEvent.change(screen.getByLabelText("Nội dung câu hỏi phía học viên"), {
+			target: { value: "S1 updated" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+		fireEvent.click(screen.getByRole("button", { name: "Tải lại" }));
+
+		expect(await screen.findByText("Đã cập nhật bài tập")).toBeTruthy();
+		expect(submitFixture.error).toBeUndefined();
+	});
+
+	it("reconcile fails and warns when sent questions truly differ from snapshot (#632)", async () => {
+		openEditMode({
+			...editablePrompt,
+			questions: [
+				{
+					stem: "S1 legacy",
+					opts: null,
+					answer: "TRUE",
+					alts: "",
+				},
+			],
+		});
+		submitFixture.run.mockResolvedValue(undefined);
+		submitFixture.notice = { kind: "committed" };
+		submitFixture.reconcile.mockResolvedValue(true);
+
+		reconcileClient.setQueryData(kernelQueryKey, {
+			assignmentPrompts: [
+				{
+					...editablePrompt,
+					questions: [
+						{
+							stem: "S1 different on server",
+							opts: null,
+							answer: "TRUE",
+							alts: "",
+							type: null,
+							pin: null,
+						},
+					],
+				},
+			],
+		});
+
+		const { rerenderRoute } = renderRoute();
+		fireEvent.change(screen.getByLabelText("Nội dung câu hỏi phía học viên"), {
+			target: { value: "S1 updated" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+		fireEvent.click(screen.getByRole("button", { name: "Tải lại" }));
+
+		await waitFor(() =>
+			expect(submitFixture.error).toBe(
+				"Đã tải lại dữ liệu nhưng thay đổi của bạn chưa được lưu. Vui lòng lưu lại.",
+			),
+		);
+		rerenderRoute();
+
+		expect(screen.getByRole("alert")).toBeTruthy();
+		expect(screen.queryByText("Đã cập nhật bài tập")).toBeNull();
+	});
+
+	it("does not re-send questions when questions only differ by null or missing keys (#632)", () => {
+		openEditMode({
+			...editablePrompt,
+			questions: [
+				{
+					stem: "S1",
+					opts: null,
+					answer: "TRUE",
+					alts: "",
+				},
+			],
+		});
+		submitFixture.run.mockResolvedValue(undefined);
+
+		renderRoute();
+		fireEvent.change(screen.getByLabelText("Tiêu đề"), {
+			target: { value: "Clean Title Updated" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+
+		expect(submitFixture.run).toHaveBeenCalledTimes(1);
+		const action = submitFixture.run.mock.calls[0][0] as {
+			payload: Record<string, unknown>;
+		};
+		expect("questions" in action.payload).toBe(false);
+	});
 });

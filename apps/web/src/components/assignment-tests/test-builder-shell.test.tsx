@@ -384,4 +384,35 @@ describe("TestBuilderShell — Chỉnh sửa & Cập nhật đề bảo toàn ex
 			true,
 		);
 	}, 20_000);
+
+	it("Cập nhật đề KHÔNG sửa gì khi câu hỏi chỉ lệch null/undefined (#632)", async () => {
+		submitFixture.run.mockResolvedValue({
+			kind: "refreshed",
+			id: "prompt-edit",
+		});
+		const smallEditTest: KernelAssignmentTestRow = {
+			...editTest,
+			parts: [
+				{
+					testId: "at-1",
+					promptId: "prompt-edit",
+					part: "p1",
+					position: 0,
+					qStartOverride: null,
+				},
+			],
+		};
+		render(<TestBuilderShell mode="edit" test={smallEditTest} />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Chỉnh sửa" }));
+		fireEvent.click(screen.getByRole("button", { name: "Cập nhật đề" }));
+
+		expect(submitFixture.run).toHaveBeenCalledTimes(1);
+		const action = submitFixture.run.mock.calls[0]?.[0] as {
+			type: string;
+			promptId: string;
+			payload: Record<string, unknown>;
+		};
+		expect("questions" in action.payload).toBe(false);
+	}, 20_000);
 });
