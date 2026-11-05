@@ -211,10 +211,18 @@ describe("PreviewAssignmentRoute — bank mode ?id= (#282)", () => {
 		expect(html).toContain("Isambard Kingdom Brunel");
 		expect(html).toContain("27 The first boat");
 		expect(html).toContain("Quay lại danh sách");
+		expect(html).toContain("Chỉnh sửa");
 		expect(html).not.toContain("Quay lại soạn đề");
 		expect(html).not.toContain("Chưa có bản nháp nào để xem trước.");
 	});
 
+	it("renders Chỉnh sửa in breadcrumb when preview draft carries promptId (#614)", () => {
+		stubStorageWith(JSON.stringify({ ...draft, promptId: "prompt-123" }));
+		const html = renderToStaticMarkup(<PreviewAssignmentRoute />);
+		expect(html).toContain("Chỉnh sửa");
+		expect(html).not.toContain("Tạo mới");
+		expect(html).toContain("Quay lại soạn đề");
+	});
 	it("?id= wins over a stale composer draft in sessionStorage", () => {
 		mockSearch = { id: "p-bank-1" };
 		stubStorageWith(JSON.stringify(draft));

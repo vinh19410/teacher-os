@@ -210,15 +210,28 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 				.
 			</div>
 
-			<Button
-				variant="secondary"
-				className="mt-3 w-full"
-				onClick={() =>
-					navigate({ to: "/assignments/preview", search: { id: prompt.id } })
-				}
-			>
-				Xem trước
-			</Button>
+			<div className="mt-3 flex gap-2">
+				<Button
+					variant="secondary"
+					className="flex-1"
+					onClick={() =>
+						navigate({ to: "/assignments/preview", search: { id: prompt.id } })
+					}
+				>
+					Xem trước
+				</Button>
+				<Button
+					className="flex-1"
+					onClick={() =>
+						navigate({
+							to: "/assignments/new",
+							search: { promptId: prompt.id },
+						})
+					}
+				>
+					Chỉnh sửa
+				</Button>
+			</div>
 		</aside>
 	);
 }

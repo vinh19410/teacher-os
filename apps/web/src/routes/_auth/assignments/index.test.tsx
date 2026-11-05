@@ -166,6 +166,8 @@ describe("AssignmentsRoute — merged created-assignments page (#267)", () => {
 		expect(html).toContain("Question stem one");
 		expect(html).not.toContain("SECRET_ANSWER_FALSE");
 		expect(html).toContain("Chấm tự động");
+		expect(html).toContain("Xem trước");
+		expect(html).toContain("Chỉnh sửa");
 	});
 
 	it("renders the diagram thumbnail in the bank preview aside (#269)", () => {

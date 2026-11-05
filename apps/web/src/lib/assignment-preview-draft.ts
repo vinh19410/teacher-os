@@ -26,6 +26,7 @@ export interface PreviewDraft {
 	optionBank?: string[];
 	items?: QuestionItem[];
 	writing?: AssignmentWritingSection | null;
+	promptId?: string;
 }
 function isPreviewDraft(value: unknown): value is PreviewDraft {
 	if (!value || typeof value !== "object") return false;
@@ -41,7 +42,8 @@ function isPreviewDraft(value: unknown): value is PreviewDraft {
 			(typeof v.writing === "object" &&
 				typeof (v.writing as Record<string, unknown>).part === "string" &&
 				typeof (v.writing as Record<string, unknown>).type === "string" &&
-				typeof (v.writing as Record<string, unknown>).prompt === "string"))
+				typeof (v.writing as Record<string, unknown>).prompt === "string")) &&
+		(v.promptId === undefined || typeof v.promptId === "string")
 	);
 }
 function storage(): Storage | null {

@@ -57,6 +57,13 @@ describe("assignment-preview-draft (#213)", () => {
 		expect(readPreviewDraft()).toBeNull();
 	});
 
+	test("preserves promptId when present (#614)", () => {
+		stubWindowWithSessionStorage();
+		const withPromptId = { ...valid, promptId: "prompt-123" };
+		savePreviewDraft(withPromptId);
+		expect(readPreviewDraft()).toEqual(withPromptId);
+	});
+
 	test("malformed JSON returns null and take cleans the junk key", () => {
 		stubWindowWithSessionStorage();
 		window.sessionStorage.setItem(PREVIEW_DRAFT_KEY, "{oops");
