@@ -6,6 +6,11 @@ allowBuilds:
   sharp: true
   msgpackr-extract: true
   workerd: true
+# A second workers-types version from @alchemy.run/cloudflare splits drizzle-orm
+# into two peer variants, and their table types stop matching across packages.
+overrides:
+  "@cloudflare/workers-types": 5.20260815.1
+
 catalog:
   dotenv: ^17.4.2
   zod: ^4.4.3

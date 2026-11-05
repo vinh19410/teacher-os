@@ -527,6 +527,23 @@ test("staging deploy workflow deploys only from staging and gates deploy on unca
 		/\bpaths(?:-ignore)?:/,
 		"deploy-staging.yml must never filter paths (every staging push runs full gates)",
 	);
+	assert.match(
+		code,
+		/pnpm alchemy deploy --stage staging \$\{\{ inputs\.dry_run && '--dry-run' \|\| '--yes' \}\}/,
+		"a push has no dry_run input and must keep applying with --yes",
+	);
+	const postDeploySteps = code
+		.slice(code.indexOf("- name: Deploy to Cloudflare"))
+		.split(/^\s*- name: /m)
+		.slice(2);
+	assert.ok(postDeploySteps.length > 0, "expected steps after the deploy step");
+	for (const step of postDeploySteps) {
+		assert.match(
+			step,
+			/^.*\n\s*if: \$\{\{ !inputs\.dry_run \}\}/,
+			`step after deploy must skip on dry-run: ${step.split("\n")[0]}`,
+		);
+	}
 	assertReadOnlyWorkflowPermissions(code, "deploy-staging.yml");
 	assert.match(
 		code,

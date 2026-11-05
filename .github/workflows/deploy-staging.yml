@@ -32,7 +32,12 @@ name: Deploy Staging
 on:
   push:
     branches: [staging]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Print the Alchemy plan only: apply nothing, skip seed and smoke"
+        type: boolean
+        default: false
 
 concurrency:
   group: deploy-staging
@@ -95,11 +100,12 @@ jobs:
           AI_ENABLED: ${{ vars.AI_ENABLED }}
           # Staging không gửi mail: mọi tài khoản coi như đã xác minh email.
           AUTH_ASSUME_EMAIL_VERIFIED: "true"
-        run: pnpm alchemy deploy --stage staging --yes
+        run: pnpm alchemy deploy --stage staging ${{ inputs.dry_run && '--dry-run' || '--yes' }}
         # --yes auto-approves the plan: without it Alchemy exits code 0 in a
         # non-interactive terminal WITHOUT applying anything ("Non-interactive
         # terminal detected"), which made a no-op deploy look green.
       - name: Smoke check API readiness (/readyz)
+        if: ${{ !inputs.dry_run }}
         # First deploy of a custom domain may wait on DNS/cert provisioning;
         # poll up to ~10 minutes before declaring the deploy failed.
         run: |
@@ -116,12 +122,14 @@ jobs:
           echo "::error::/readyz did not return 200 {\"ok\":true} within 10 minutes of deploy"
           exit 1
       - name: Seed built-in vocab library (staging only)
+        if: ${{ !inputs.dry_run }}
         timeout-minutes: 5
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: pnpm --filter @teacher-os/db exec tsx scripts/seed-vocab-library.ts --d1 --d1-stage staging --if-needed --verify
       - name: Smoke check auth (sign-up → get-session)
+        if: ${{ !inputs.dry_run }}
         # Issue #125: /readyz cannot see auth breakage (cookie config, CORS,
         # secret, D1 session store). Request shape follows
         # apps/server/src/auth-roundtrip.test.ts. One throwaway account per
@@ -186,6 +194,7 @@ jobs:
             || fail "get-session did not return a user from the poisoned jar (a foreign prod-zone cookie is shadowing the namespaced session — issue #125 regression)"
           echo "auth smoke OK: sign-up set a namespaced cookie and get-session resolved the user despite the poisoned jar"
       - name: Smoke check auth stubs (/sw.js, /registerSW.js)
+        if: ${{ !inputs.dry_run }}
         # Issue #125: the removed PWA SW's self-heal chain depends on these
         # files being served as real JavaScript with cache headers that keep
         # the SW update check on the network — the SPA fallback would return
@@ -218,6 +227,7 @@ jobs:
           [ -n "$ok" ] || fail "stub smoke failed after 3 attempts: /sw.js + /registerSW.js not correctly served"
           echo "stub smoke OK: /sw.js + /registerSW.js served as JS with network-first cache headers"
       - name: Smoke check landing apex (/)
+        if: ${{ !inputs.dry_run }}
         # Apex handover (web → landing StaticSite): the first attach of the
         # custom domain may wait on DNS/cert provisioning; poll up to ~10
         # minutes like /readyz.
@@ -238,6 +248,7 @@ jobs:
           echo "::error::landing apex did not serve HTML within 10 minutes of deploy"
           exit 1
       - name: Smoke check profile
+        if: ${{ !inputs.dry_run }}
         # Plan #536: teacher profile StaticSite on staging
         # (profile.staging.teacheros.io.vn). Poll up to ~10 minutes like
         # landing; verify both HTML pages have the staging lead-api meta and
