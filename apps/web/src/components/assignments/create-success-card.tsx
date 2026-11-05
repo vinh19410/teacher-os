@@ -18,6 +18,7 @@ export function CreateSuccessCard({
 	source,
 	audioName = "",
 	questions = [],
+	isEditing = false,
 	onCreateAnother,
 }: {
 	title: string;
@@ -29,6 +30,7 @@ export function CreateSuccessCard({
 	source: string;
 	audioName?: string;
 	questions?: QuestionItem[];
+	isEditing?: boolean;
 	onCreateAnother: () => void;
 }) {
 	const skillPreset = skillOf(skill);
@@ -50,10 +52,16 @@ export function CreateSuccessCard({
 				✓
 			</div>
 			<h2 className="font-semibold text-[22px] tracking-tight">
-				{status === "draft" ? "Đã lưu bản nháp" : "Đã thêm vào ngân hàng"}
+				{status === "draft"
+					? "Đã lưu bản nháp"
+					: isEditing
+						? "Đã cập nhật bài tập"
+						: "Đã thêm vào ngân hàng"}
 			</h2>
 			<p className="text-muted-foreground">
-				“{title}” chưa được giao lớp. Giao bài tập ở trang Lớp học khi cần.
+				{isEditing
+					? "Các thay đổi đã được cập nhật vào ngân hàng đề."
+					: `“${title}” chưa được giao lớp. Giao bài tập ở trang Lớp học khi cần.`}
 			</p>
 			<ul className="flex flex-col gap-2">
 				{[
@@ -81,7 +89,7 @@ export function CreateSuccessCard({
 						: []),
 					["Nguồn", source.trim() || "Không ghi nguồn"],
 					["Trạng thái", status === "draft" ? "Bản nháp" : "Sẵn sàng giao"],
-					["Giao lớp", "Chưa giao"],
+					...(isEditing ? [] : [["Giao lớp", "Chưa giao"]]),
 				].map(([key, value]) => (
 					<li
 						key={key}
@@ -94,7 +102,7 @@ export function CreateSuccessCard({
 			</ul>
 			<div className="flex flex-wrap gap-3 pt-2">
 				<Button variant="secondary" onClick={onCreateAnother}>
-					Tạo đề khác
+					{isEditing ? "Tạo bài tập mới" : "Tạo đề khác"}
 				</Button>
 				<Link
 					to="/assignments"

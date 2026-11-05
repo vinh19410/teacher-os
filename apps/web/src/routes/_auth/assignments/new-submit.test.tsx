@@ -11,9 +11,14 @@ const submitFixture = {
 	reconcile: vi.fn(),
 	reset: vi.fn(),
 };
-
+const searchFixture = {
+	current: {} as { classId?: string; promptId?: string },
+};
 vi.mock("@tanstack/react-router", () => ({
-	createFileRoute: () => (options: unknown) => options,
+	createFileRoute: () => (options: Record<string, unknown>) => ({
+		...options,
+		useSearch: () => searchFixture.current,
+	}),
 	useNavigate: () => vi.fn(),
 	Link: (props: { to: string; children?: React.ReactNode }) => (
 		<a href={props.to}>{props.children}</a>
@@ -27,13 +32,14 @@ vi.mock("@/lib/assignment-preview-draft", () => ({
 	takePreviewDraft: () => draftFixture.value,
 	savePreviewDraft: vi.fn(),
 }));
+const dataFixture = {
+	data: {
+		assignmentPrompts: [] as unknown[],
+		classAssignments: [] as unknown[],
+	},
+};
 vi.mock("@/lib/data-store", () => ({
-	useData: () => ({
-		data: {
-			assignmentPrompts: [],
-			classAssignments: [],
-		},
-	}),
+	useData: () => dataFixture,
 }));
 
 import type { PreviewDraft } from "@/lib/assignment-preview-draft";
@@ -155,5 +161,69 @@ describe("NewAssignmentRoute — Submit & Validation Feedback (#581)", () => {
 				}),
 			}),
 		);
+	});
+
+	it("submits update-assignment-prompt with omitted writing when writing is unchanged in edit mode (#614)", async () => {
+		const samplePrompt = {
+			id: "prompt-reading-1",
+			skill: "reading",
+			part: "p1",
+			type: "tfng",
+			task: "p1",
+			genre: "tfng",
+			title: "Reading Passage 1",
+			band: "7.0",
+			source: "Cambridge 16",
+			prompt: "",
+			passage: "<p>Passage text here</p>",
+			intro: "",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			imageUrl: "",
+			optionBank: [],
+			questions: [
+				{ stem: "Statement 1", opts: null, answer: "TRUE", alts: "" },
+			],
+			note: "",
+			status: "ready",
+			writing: {
+				part: "task2",
+				type: "opinion",
+				prompt: "<p>Writing prompt</p>",
+			},
+			createdAt: "2026-11-01T00:00:00.000Z",
+		};
+		dataFixture.data.assignmentPrompts = [samplePrompt];
+		searchFixture.current = { promptId: "prompt-reading-1" };
+
+		render(<NewAssignmentRoute />);
+
+		const saveButton = screen.getByRole("button", {
+			name: "Lưu thay đổi",
+		});
+		expect(saveButton).toBeDefined();
+		expect((saveButton as HTMLButtonElement).disabled).toBe(false);
+
+		fireEvent.click(saveButton);
+
+		expect(submitFixture.run).toHaveBeenCalledTimes(1);
+		const callArg = submitFixture.run.mock.calls[0][0];
+		expect(callArg.type).toBe("update-assignment-prompt");
+		expect(callArg.promptId).toBe("prompt-reading-1");
+		expect(callArg.payload).toMatchObject({
+			title: "Reading Passage 1",
+			type: "tfng",
+			status: "ready",
+		});
+		// writing was not touched, so writing is omitted from payload to prevent 409
+		expect(callArg.payload.writing).toBeUndefined();
+		// skill and part are omitted per update schema
+		expect(callArg.payload.skill).toBeUndefined();
+		expect(callArg.payload.part).toBeUndefined();
+
+		searchFixture.current = {};
+		dataFixture.data.assignmentPrompts = [];
 	});
 });

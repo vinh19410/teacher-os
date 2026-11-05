@@ -4,7 +4,11 @@
  */
 import type { KernelSnapshot } from "@teacher-os/api/contracts";
 import { describe, expect, test } from "vitest";
-import { mapStudents } from "./students";
+import {
+	filterUniquePendingInvites,
+	isPendingPortalStudent,
+	mapStudents,
+} from "./students";
 
 const snapshot: KernelSnapshot = {
 	assignmentPrompts: [],
@@ -373,5 +377,72 @@ describe("mapStudents parked package (issue #104)", () => {
 			start: "28/08",
 			expiry: "",
 		});
+	});
+});
+
+describe("isPendingPortalStudent (issue #616)", () => {
+	test("returns true when student has email and portalLinked is false", () => {
+		expect(
+			isPendingPortalStudent({
+				email: "student@example.com",
+				portalLinked: false,
+			}),
+		).toBe(true);
+	});
+
+	test("returns false when student has no email or empty string", () => {
+		expect(isPendingPortalStudent({ email: "", portalLinked: false })).toBe(
+			false,
+		);
+		expect(isPendingPortalStudent({ email: "   ", portalLinked: false })).toBe(
+			false,
+		);
+		expect(isPendingPortalStudent({ email: null, portalLinked: false })).toBe(
+			false,
+		);
+		expect(isPendingPortalStudent({ portalLinked: false })).toBe(false);
+	});
+
+	test("returns false when portalLinked is true", () => {
+		expect(
+			isPendingPortalStudent({
+				email: "student@example.com",
+				portalLinked: true,
+			}),
+		).toBe(false);
+	});
+
+	test("returns false when portalLinked is undefined (deploy skew safety)", () => {
+		expect(
+			isPendingPortalStudent({
+				email: "student@example.com",
+				portalLinked: undefined,
+			}),
+		).toBe(false);
+	});
+});
+
+describe("filterUniquePendingInvites (issue #616)", () => {
+	test("filters out non-pending invitations and invitations matching student emails case-insensitively", () => {
+		const invitations = [
+			{ id: "1", email: "pending1@test.local", status: "pending" },
+			{ id: "2", email: "accepted@test.local", status: "accepted" },
+			{ id: "3", email: "DUPE@test.local", status: "pending" },
+			{ id: "4", email: "pending2@test.local", status: "pending" },
+		];
+		const pendingStudentEmails = new Set(["dupe@test.local"]);
+
+		const result = filterUniquePendingInvites(
+			invitations,
+			pendingStudentEmails,
+		);
+		expect(result).toEqual([
+			{ id: "1", email: "pending1@test.local", status: "pending" },
+			{ id: "4", email: "pending2@test.local", status: "pending" },
+		]);
+	});
+
+	test("handles undefined invitations safely", () => {
+		expect(filterUniquePendingInvites(undefined, new Set())).toEqual([]);
 	});
 });
