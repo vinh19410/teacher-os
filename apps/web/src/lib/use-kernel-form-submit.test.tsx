@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
-import { ASSIGNMENT_PROMPT_ERROR_CODES } from "@teacher-os/api/contracts";
+import {
+	ASSIGNMENT_PROMPT_ERROR_CODES,
+	ASSIGNMENT_TEST_ERROR_CODES,
+} from "@teacher-os/api/contracts";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -26,6 +29,8 @@ const CONTENT_LOCKED_MESSAGE =
 	"Đề đã có học viên làm bài nên không sửa được nội dung. Bạn vẫn có thể đổi tiêu đề, band, nguồn và trạng thái. Muốn đổi nội dung, hãy tạo đề mới.";
 const WRITING_LOCKED_MESSAGE =
 	"Đề đã được giao hoặc đang dùng trong bộ đề nên không sửa được phần Writing. Hãy trả phần này về như cũ để lưu các thay đổi khác.";
+const TEST_PARTS_LOCKED_MESSAGE =
+	"Bộ đề đã có học viên làm bài nên không thể thay đổi hoặc gỡ part. Bạn vẫn có thể đổi tên, thời gian và trạng thái bộ đề. Muốn thay đổi đề, hãy tạo bộ đề mới.";
 
 const latest: { current: KernelFormSubmitState | null } = { current: null };
 
@@ -91,6 +96,25 @@ describe("useKernelFormSubmit — 409 lock messages (#630)", () => {
 			WRITING_LOCKED_MESSAGE,
 		);
 		expect(latest.current?.failureError?.code).toBe("WRITING_SECTION_LOCKED");
+	});
+
+	it("shows the dedicated test-parts-lock message for TEST_PARTS_LOCKED (#633)", async () => {
+		dataFixture.dispatch.mockResolvedValue({
+			kind: "definite-failure",
+			status: 409,
+			error: new HttpError(409, "locked", {
+				code: ASSIGNMENT_TEST_ERROR_CODES.PARTS_LOCKED,
+			}),
+		});
+		const { run } = renderHarness();
+
+		await run();
+
+		expect(screen.getByTestId("error").textContent).toBe(
+			TEST_PARTS_LOCKED_MESSAGE,
+		);
+		expect(latest.current?.error).toBe(TEST_PARTS_LOCKED_MESSAGE);
+		expect(latest.current?.failureError?.code).toBe("TEST_PARTS_LOCKED");
 	});
 
 	it("keeps the generic message for a non-Http definite failure", async () => {

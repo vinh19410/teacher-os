@@ -1,7 +1,7 @@
 ---
 title: "Khóa thay đổi part của test đã có bài làm (#633)"
 description: "Khóa PUT /api/assignments/tests/:id/parts trả 409 TEST_PARTS_LOCKED khi test có quiz_attempt, web hiển thị thông báo riêng và rollback state tránh lệch UI."
-status: in_progress
+status: completed
 priority: P1
 effort: 3h
 issue: 633
@@ -50,19 +50,19 @@ Mục tiêu của kế hoạch này là đóng lỗ hổng trên bằng cách t�
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Khóa thay đổi part ở server](./phase-01-lock-test-parts-on-server.md) | Pending |
-| 2 | [Thông báo lỗi và rollback state ở web](./phase-02-surface-lock-errors-and-rollback-on-web.md) | Pending |
-| 3 | [Kiểm thử tổng thể và Quality Gates](./phase-03-verify-quality-gates.md) | Pending |
+| 1 | [Khóa thay đổi part ở server](./phase-01-lock-test-parts-on-server.md) | Done |
+| 2 | [Thông báo lỗi và rollback state ở web](./phase-02-surface-lock-errors-and-rollback-on-web.md) | Done |
+| 3 | [Kiểm thử tổng thể và Quality Gates](./phase-03-verify-quality-gates.md) | Done |
 
 ## Success Criteria
 
-- [ ] `PUT /api/assignments/tests/:id/parts` từ chối với 409 `TEST_PARTS_LOCKED` khi test có `quiz_attempt` và có thay đổi part (thêm/gỡ/đổi prompt/đổi override).
-- [ ] Test chưa có bài làm vẫn thay đổi, gỡ hoặc thêm part bình thường (HTTP 200).
-- [ ] Gửi lại danh sách part giống hệt trên test đã có bài làm trả về 200 và không làm xáo trộn part rows trong DB.
-- [ ] Attempt của tổ chức (org) khác không gây khóa test của tổ chức hiện tại.
-- [ ] Web hiển thị câu thông báo lỗi cụ thể cho mã `TEST_PARTS_LOCKED` thay vì thông báo chung.
-- [ ] Giao diện TestBuilderShell khôi phục lại slot/override cũ khi hành động gán/gỡ bị server từ chối.
-- [ ] Mọi kiểm tra tự động `pnpm check`, `pnpm check-types`, `pnpm test` đều vượt qua không có lỗi.
+- [x] `PUT /api/assignments/tests/:id/parts` từ chối với 409 `TEST_PARTS_LOCKED` khi test có `quiz_attempt` và có thay đổi part (thêm/gỡ/đổi prompt/đổi override).
+- [x] Test chưa có bài làm vẫn thay đổi, gỡ hoặc thêm part bình thường (HTTP 200).
+- [x] Gửi lại danh sách part giống hệt trên test đã có bài làm trả về 200 và không làm xáo trộn part rows trong DB.
+- [x] Attempt của tổ chức (org) khác không gây khóa test của tổ chức hiện tại.
+- [x] Web hiển thị câu thông báo lỗi cụ thể cho mã `TEST_PARTS_LOCKED` thay vì thông báo chung.
+- [x] Giao diện TestBuilderShell khôi phục lại slot/override cũ khi hành động gán/gỡ bị server từ chối.
+- [x] Mọi kiểm tra tự động `pnpm check`, `pnpm check-types`, `pnpm test` đều vượt qua không có lỗi.
 
 ## Risks
 

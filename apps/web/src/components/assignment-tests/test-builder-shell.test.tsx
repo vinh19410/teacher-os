@@ -1,7 +1,14 @@
 // @vitest-environment jsdom
 
 import { assignmentPromptUpdateSchema } from "@teacher-os/api/contracts";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+	act,
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -415,4 +422,65 @@ describe("TestBuilderShell — Chỉnh sửa & Cập nhật đề bảo toàn ex
 		};
 		expect("questions" in action.payload).toBe(false);
 	}, 20_000);
+});
+
+describe("TestBuilderShell — rollback state khi persistParts thất bại (#633)", () => {
+	it("gỡ part bị từ chối 409 definite-failure → slot hoàn nguyên về prompt cũ", async () => {
+		submitFixture.run.mockResolvedValue({
+			kind: "definite-failure",
+			status: 409,
+		});
+		render(<TestBuilderShell mode="edit" test={editTest} />);
+
+		expect(screen.getByText("Passage 1 — Stepwells")).toBeDefined();
+
+		const removeBtn = screen.getByRole("button", { name: "Gỡ khỏi test" });
+		fireEvent.click(removeBtn);
+
+		expect(submitFixture.run).toHaveBeenCalledTimes(1);
+		await waitFor(() => {
+			// Do rollback, "Passage 1 — Stepwells" vẫn tồn tại trong outline
+			expect(screen.getByText("Passage 1 — Stepwells")).toBeDefined();
+		});
+	});
+
+	it("gán part bị từ chối 409 definite-failure → slot hoàn nguyên về trống", async () => {
+		submitFixture.run.mockResolvedValue({
+			kind: "definite-failure",
+			status: 409,
+		});
+		render(<TestBuilderShell mode="edit" test={editTest} />);
+
+		const pickButtons = screen.getAllByRole("button", {
+			name: "Chọn từ ngân hàng",
+		});
+		const firstPick = pickButtons[0];
+		if (!firstPick) throw new Error("pick button not found");
+		fireEvent.click(firstPick);
+		const promptOption = screen.getByText("Passage 2 — Glass");
+		fireEvent.click(promptOption);
+
+		expect(submitFixture.run).toHaveBeenCalledTimes(1);
+		await waitFor(() => {
+			// Do rollback, Passage 2 vẫn là slot trống với nút Chọn từ ngân hàng
+			expect(
+				screen.getAllByRole("button", { name: "Chọn từ ngân hàng" }).length,
+			).toBe(2);
+		});
+	});
+
+	it("gỡ part trả outcome-unknown → KHÔNG rollback state (chờ reconcile)", async () => {
+		submitFixture.run.mockResolvedValue({
+			kind: "outcome-unknown",
+		});
+		render(<TestBuilderShell mode="edit" test={editTest} />);
+
+		const removeBtn = screen.getByRole("button", { name: "Gỡ khỏi test" });
+		fireEvent.click(removeBtn);
+
+		expect(submitFixture.run).toHaveBeenCalledTimes(1);
+		await act(async () => {});
+		// Không rollback → slot 1 trở thành trống
+		expect(screen.queryByText("Passage 1 — Stepwells")).toBeNull();
+	});
 });

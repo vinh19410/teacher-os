@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Kiểm thử tổng thể và Quality Gates"
-status: pending
+status: done
 priority: P1
 effort: "0.5h"
 dependencies: [1, 2]

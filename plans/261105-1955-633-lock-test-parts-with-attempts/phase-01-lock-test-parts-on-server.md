@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Khóa thay đổi part ở server"
-status: pending
+status: done
 priority: P1
 effort: "1.5h"
 dependencies: []
