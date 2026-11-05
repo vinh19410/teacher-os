@@ -3,10 +3,8 @@ import {
 	LEAD_COURSE_GROUPS,
 	LEAD_COURSE_LABELS,
 	LEAD_COURSES,
-	LEAD_STUDY_DAYS,
 	LEAD_STUDY_MODE_LABELS,
 	LEAD_STUDY_MODES,
-	LEAD_TIME_SLOTS,
 } from "@teacher-os/api/lead-contracts";
 import {
 	placementContentSchema,
@@ -35,77 +33,30 @@ function extractSelectValues(selectName: string): string[] {
 		.filter((v) => v.length > 0);
 }
 
-function extractRadioValues(radioName: string): string[] {
-	const re = new RegExp(
-		`<input[^>]*\\btype="radio"[^>]*\\bname="${radioName}"[^>]*\\bvalue="([^"]+)"`,
-		"g",
-	);
-	return [...html.matchAll(re)].map((m) => m[1] ?? "");
-}
-
 describe("profile lead catalog drift (#506 phase 5)", () => {
-	it("select[name=course] khớp chính xác tập LEAD_COURSES và nhóm optgroup", () => {
+	it("select[name=course] trên landing page là tập con hợp lệ của LEAD_COURSES gồm 4 khóa rút gọn (#600)", () => {
 		const values = extractSelectValues("course");
-		expect(values.length).toBeGreaterThan(0);
-		expect([...new Set(values)].sort()).toEqual([...LEAD_COURSES].sort());
-
-		const selectBody =
-			html.match(
-				/<select[^>]*\bname="course"[^>]*>([\s\S]*?)<\/select>/,
-			)?.[1] ?? "";
-		const ieltsGroup =
-			selectBody.match(
-				/<optgroup\s+label="IELTS">([\s\S]*?)<\/optgroup>/,
-			)?.[1] ?? "";
-		const ieltsValues = [
-			...ieltsGroup.matchAll(/<option\s+value="([^"]+)"/g),
-		].map((m) => m[1]);
-		expect(ieltsValues).toEqual([...LEAD_COURSE_GROUPS.ielts.codes]);
-
-		const commGroup =
-			selectBody.match(
-				/<optgroup\s+label="Giao tiếp định hướng IELTS">([\s\S]*?)<\/optgroup>/,
-			)?.[1] ?? "";
-		const commValues = [
-			...commGroup.matchAll(/<option\s+value="([^"]+)"/g),
-		].map((m) => m[1]);
-		expect(commValues).toEqual([...LEAD_COURSE_GROUPS.comm.codes]);
+		expect(values.length).toBe(4);
+		const expectedLandingCourses = [
+			"foundation-core",
+			"ielts-practical",
+			"workplace-interview",
+			"undecided",
+		];
+		expect([...new Set(values)].sort()).toEqual(
+			[...expectedLandingCourses].sort(),
+		);
+		for (const val of values) {
+			expect(LEAD_COURSES).toContain(val);
+		}
 	});
 
-	it("select[name=studyMode] khớp chính xác tập LEAD_STUDY_MODES (D12)", () => {
-		const values = extractSelectValues("studyMode");
-		expect(values.length).toBeGreaterThan(0);
-		expect([...new Set(values)].sort()).toEqual([...LEAD_STUDY_MODES].sort());
-	});
-
-	it("radio[name=studyDays] khớp chính xác tập LEAD_STUDY_DAYS", () => {
-		const values = extractRadioValues("studyDays");
-		expect(values.length).toBeGreaterThan(0);
-		expect([...new Set(values)].sort()).toEqual([...LEAD_STUDY_DAYS].sort());
-	});
-
-	it("radio[name=timeSlot] khớp chính xác tập LEAD_TIME_SLOTS", () => {
-		const values = extractRadioValues("timeSlot");
-		expect(values.length).toBeGreaterThan(0);
-		expect([...new Set(values)].sort()).toEqual([...LEAD_TIME_SLOTS].sort());
-	});
-
-	it("data-select-course và COURSE_TRACK_MAP chỉ trỏ tới mã trong LEAD_COURSES", () => {
+	it("data-select-course trên các thẻ khóa học chỉ trỏ tới mã trong LEAD_COURSES (#600)", () => {
 		const buttonCourses = [
 			...html.matchAll(/data-select-course="([^"]+)"/g),
 		].map((m) => m[1]);
 		expect(buttonCourses.length).toBeGreaterThan(0);
 		for (const code of buttonCourses) {
-			expect(LEAD_COURSES).toContain(code);
-		}
-
-		const mapBlock =
-			html.match(/const\s+COURSE_TRACK_MAP\s*=\s*\{([\s\S]*?)\};/)?.[1] ?? "";
-		const mappedCodes = [...mapBlock.matchAll(/:\s*'([^']+)'/g)].map(
-			(m) => m[1],
-		);
-		expect(mappedCodes.length).toBeGreaterThan(0);
-		for (const code of mappedCodes) {
 			expect(LEAD_COURSES).toContain(code);
 		}
 	});

@@ -12,7 +12,7 @@ export interface AuthQuote {
 interface AuthSplitLayoutProps {
 	/** Nội dung cột trái: tiêu đề, tabs, form auth. */
 	children: ReactNode;
-	/** Nhãn thương hiệu cạnh logo-block (vd "Teacher OS"). */
+	/** Nhãn thương hiệu cạnh logo-block (vd "Cô Mỹ Dạy Tiếng Anh"). */
 	brandLabel: string;
 	/** aria-label cho section cột form — mỗi route giữ nhãn riêng cho e2e. */
 	formLabel: string;

@@ -104,6 +104,7 @@ function captureJsonGets(page: Page, urlPart: string): CapturedJson[] {
 /** Sign in through the portal login form (fresh context → sign-in tab). */
 async function signIn(page: Page): Promise<void> {
 	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.locator("#tab-signin").click();
 	await page.locator("#signin-email").fill(studentEmail);
 	await page.locator("#signin-password").fill(PASSWORD);
 	await page.locator("#panel-signin button[type='submit']").click();
@@ -559,7 +560,7 @@ test.describe("Student quiz take & review", () => {
 
 		// Detail: verdict chips + Đáp án + Giải thích (note reveal). The
 		// review-mode navigator line lives on this screen, not the summary.
-		await page.getByRole("link", { name: "Xem giải thích chi tiết" }).click();
+		await page.getByRole("link", { name: "Xem chi tiết bài làm" }).click();
 		await expect(page).toHaveURL(/\/detail$/);
 		await expect(page.getByTestId("navigator-progress")).toHaveText(
 			"Đúng 1 câu · Sai 1 · Bỏ qua 3",
@@ -816,7 +817,7 @@ test.describe("Student quiz take & review", () => {
 		await expect(page.getByTestId("attempt-correct-count")).toHaveText("4");
 
 		// Review screen giữ nguyên cấu trúc cụm đã làm + split-pane như take.
-		await page.getByRole("link", { name: "Xem giải thích chi tiết" }).click();
+		await page.getByRole("link", { name: "Xem chi tiết bài làm" }).click();
 		await expect(page).toHaveURL(/\/detail$/);
 		await expect(
 			page.locator(
@@ -934,7 +935,7 @@ test.describe("Student quiz take & review", () => {
 			"saved",
 		);
 		await page.getByRole("button", { name: "Nộp bài" }).click();
-		await page.getByRole("link", { name: "Xem giải thích chi tiết" }).click();
+		await page.getByRole("link", { name: "Xem chi tiết bài làm" }).click();
 		await expect(page).toHaveURL(/\/detail$/);
 		await expect(
 			page.locator('section[aria-label="Questions 1–2"]'),
@@ -1005,7 +1006,7 @@ test.describe("Student quiz take & review", () => {
 		await expect(page.getByText(draft)).toBeVisible();
 		await expect(page.getByTestId("essay-summary-count")).toContainText("7 từ");
 		await expect(
-			page.getByRole("link", { name: "Xem giải thích chi tiết" }),
+			page.getByRole("link", { name: "Xem chi tiết bài làm" }),
 		).toHaveCount(0);
 	});
 
@@ -1064,7 +1065,7 @@ test.describe("Student quiz take & review", () => {
 		await expect(page).toHaveURL(/\/learn\/quizzes\/attempt\//);
 		await expect(page.getByTestId("attempt-correct-count")).toHaveText("4");
 
-		await page.getByRole("link", { name: "Xem giải thích chi tiết" }).click();
+		await page.getByRole("link", { name: "Xem chi tiết bài làm" }).click();
 		await expect(page).toHaveURL(/\/detail$/);
 		const reviewQ1 = page.locator('[data-question="0"]');
 		await expect(reviewQ1.getByTestId("quiz-review-item")).toHaveAttribute(
@@ -1155,7 +1156,7 @@ test.describe("Student quiz take & review", () => {
 			page.getByText("Giáo viên sẽ chấm bài nói của bạn."),
 		).toBeVisible();
 		await expect(
-			page.getByRole("link", { name: "Xem giải thích chi tiết" }),
+			page.getByRole("link", { name: "Xem chi tiết bài làm" }),
 		).toHaveCount(0);
 		await page.getByRole("button", { name: "Nghe lại bài nói" }).click();
 		await expect(page.locator('audio[src^="blob:"]')).toBeAttached();

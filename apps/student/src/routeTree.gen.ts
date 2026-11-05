@@ -17,6 +17,7 @@ import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as AuthIndexRouteImport } from './routes/_auth/index'
 import { Route as AuthHistoryRouteImport } from './routes/_auth/history'
 import { Route as AuthOnboardingRouteImport } from './routes/_auth/onboarding'
+import { Route as AuthScheduleRouteImport } from './routes/_auth/schedule'
 import { Route as AuthAssignmentsIndexRouteImport } from './routes/_auth/assignments/index'
 import { Route as AuthClassesIndexRouteImport } from './routes/_auth/classes/index'
 import { Route as AuthClassesClassIdRouteImport } from './routes/_auth/classes/$classId'
@@ -73,6 +74,11 @@ const AuthHistoryRoute = AuthHistoryRouteImport.update({
 const AuthOnboardingRoute = AuthOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
+const AuthScheduleRoute = AuthScheduleRouteImport.update({
+  id: '/schedule',
+  path: '/schedule',
   getParentRoute: () => AuthRouteRoute,
 } as any)
 const AuthAssignmentsIndexRoute = AuthAssignmentsIndexRouteImport.update({
@@ -183,6 +189,7 @@ export interface FileRoutesByFullPath {
   '/verify-email': typeof VerifyEmailRoute
   '/history': typeof AuthHistoryRoute
   '/onboarding': typeof AuthOnboardingRoute
+  '/schedule': typeof AuthScheduleRoute
   '/classes/$classId': typeof AuthClassesClassIdRoute
   '/practice/$skill': typeof AuthPracticeSkillRoute
   '/tuition/$invoiceId': typeof AuthTuitionInvoiceIdRoute
@@ -209,6 +216,7 @@ export interface FileRoutesByTo {
   '/verify-email': typeof VerifyEmailRoute
   '/history': typeof AuthHistoryRoute
   '/onboarding': typeof AuthOnboardingRoute
+  '/schedule': typeof AuthScheduleRoute
   '/': typeof AuthIndexRoute
   '/classes/$classId': typeof AuthClassesClassIdRoute
   '/practice/$skill': typeof AuthPracticeSkillRoute
@@ -238,6 +246,7 @@ export interface FileRoutesById {
   '/verify-email': typeof VerifyEmailRoute
   '/_auth/history': typeof AuthHistoryRoute
   '/_auth/onboarding': typeof AuthOnboardingRoute
+  '/_auth/schedule': typeof AuthScheduleRoute
   '/_auth/': typeof AuthIndexRoute
   '/_auth/classes/$classId': typeof AuthClassesClassIdRoute
   '/_auth/practice/$skill': typeof AuthPracticeSkillRoute
@@ -268,6 +277,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/history'
     | '/onboarding'
+    | '/schedule'
     | '/classes/$classId'
     | '/practice/$skill'
     | '/tuition/$invoiceId'
@@ -294,6 +304,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/history'
     | '/onboarding'
+    | '/schedule'
     | '/'
     | '/classes/$classId'
     | '/practice/$skill'
@@ -322,6 +333,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/_auth/history'
     | '/_auth/onboarding'
+    | '/_auth/schedule'
     | '/_auth/'
     | '/_auth/classes/$classId'
     | '/_auth/practice/$skill'
@@ -407,6 +419,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof AuthOnboardingRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
+    '/_auth/schedule': {
+      id: '/_auth/schedule'
+      path: '/schedule'
+      fullPath: '/schedule'
+      preLoaderRoute: typeof AuthScheduleRouteImport
       parentRoute: typeof AuthRouteRoute
     }
     '/_auth/assignments/': {
@@ -571,6 +590,7 @@ const AuthLearnQuizzesAttemptAttemptIdRouteWithChildren =
 interface AuthRouteRouteChildren {
   AuthHistoryRoute: typeof AuthHistoryRoute
   AuthOnboardingRoute: typeof AuthOnboardingRoute
+  AuthScheduleRoute: typeof AuthScheduleRoute
   AuthIndexRoute: typeof AuthIndexRoute
   AuthClassesClassIdRoute: typeof AuthClassesClassIdRoute
   AuthPracticeSkillRoute: typeof AuthPracticeSkillRoute
@@ -593,6 +613,7 @@ interface AuthRouteRouteChildren {
 const AuthRouteRouteChildren: AuthRouteRouteChildren = {
   AuthHistoryRoute: AuthHistoryRoute,
   AuthOnboardingRoute: AuthOnboardingRoute,
+  AuthScheduleRoute: AuthScheduleRoute,
   AuthIndexRoute: AuthIndexRoute,
   AuthClassesClassIdRoute: AuthClassesClassIdRoute,
   AuthPracticeSkillRoute: AuthPracticeSkillRoute,

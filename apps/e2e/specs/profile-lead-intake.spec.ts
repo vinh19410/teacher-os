@@ -169,7 +169,7 @@ test.describe("profile lead intake", () => {
 		expect(JSON.stringify(leadEmails[0])).not.toContain(phone);
 	});
 
-	test("AC-002: gửi lại cùng SĐT trong 24 giờ từ form profile ⇒ 1 dòng, submitCount tăng, lưu Hình thức lớp, không email thêm", async ({
+	test("AC-002: gửi lại cùng SĐT trong 24 giờ từ form profile ⇒ 1 dòng, submitCount tăng, lưu Khóa học mới, không email thêm (#600)", async ({
 		page,
 	}) => {
 		const teacherEmail = await signUpLeadTeacher(page);
@@ -179,18 +179,16 @@ test.describe("profile lead intake", () => {
 		const form = page.locator("#consultForm");
 		await form.locator("#studentName").fill(HANOI_STUDENT.name);
 		await form.locator("#studentPhone").fill(phone);
-		await form.locator("#courseTrack").selectOption("ielts-foundation");
-		await form.locator("#studyMode").selectOption("group-online");
+		await form.locator("#courseTrack").selectOption("foundation-core");
 		await page.waitForTimeout(3100);
 		await form.getByRole("button", { name: "Đăng Ký Khóa Học" }).click();
 		await expect(page.locator("#leadSuccessBox")).toBeVisible();
 
-		// Gửi lại lần 2 cùng SĐT, đổi khóa sang comm-2.
+		// Gửi lại lần 2 cùng SĐT, đổi khóa sang ielts-practical.
 		await page.getByRole("button", { name: "Gửi đăng ký khác" }).click();
 		await form.locator("#studentName").fill(HANOI_STUDENT.name);
 		await form.locator("#studentPhone").fill(phone);
-		await form.locator("#courseTrack").selectOption("comm-2");
-		await form.locator("#studyMode").selectOption("group-online");
+		await form.locator("#courseTrack").selectOption("ielts-practical");
 		await page.waitForTimeout(3100);
 		await form.getByRole("button", { name: "Đăng Ký Khóa Học" }).click();
 		await expect(page.locator("#leadSuccessBox")).toBeVisible();
@@ -200,8 +198,7 @@ test.describe("profile lead intake", () => {
 		const leadRow = table.locator("tr", { hasText: phone });
 		await expect(leadRow).toHaveCount(1);
 		await expect(leadRow).toContainText(/2 lần gửi/);
-		await expect(leadRow).toContainText("Giao tiếp 2");
-		await expect(leadRow).toContainText("Bàn tròn 4–6 bạn, Google Meet");
+		await expect(leadRow).toContainText("IELTS Thực Chiến (5.5–7.5+)");
 
 		// Chỉ 1 email — dedupe không báo lại.
 		expect(await leadEmailsFor(teacherEmail)).toHaveLength(1);
@@ -269,7 +266,7 @@ test.describe("profile lead intake", () => {
 		const form = page.locator("#consultForm");
 		await form.locator("#studentName").fill(HANOI_STUDENT.name);
 		await form.locator("#studentPhone").fill("0909888777");
-		await form.locator("#targetNote").fill("Cần IELTS 6.5 trong 6 tháng");
+		await form.locator("#courseTrack").selectOption("ielts-practical");
 		await form.getByRole("button", { name: "Đăng Ký Khóa Học" }).click();
 
 		const fallbackBox = page.locator("#generatedMsgBox");
@@ -279,13 +276,11 @@ test.describe("profile lead intake", () => {
 		);
 		await expect(page.locator("#generatedMsgPre")).toContainText("0909888777");
 		await expect(page.locator("#generatedMsgPre")).toContainText(
-			"Cần IELTS 6.5 trong 6 tháng",
+			"IELTS Thực Chiến",
 		);
 		// Dữ liệu trên form vẫn giữ nguyên.
 		await expect(form.locator("#studentName")).toHaveValue(HANOI_STUDENT.name);
 		await expect(form.locator("#studentPhone")).toHaveValue("0909888777");
-		await expect(form.locator("#targetNote")).toHaveValue(
-			"Cần IELTS 6.5 trong 6 tháng",
-		);
+		await expect(form.locator("#courseTrack")).toHaveValue("ielts-practical");
 	});
 });

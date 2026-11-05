@@ -1,4 +1,4 @@
-# Teacher OS Docs
+# Cô Mỹ Dạy Tiếng Anh (Teacher OS) Docs
 
 Start here if you need the current project contract or the owning code paths.
 
@@ -10,3 +10,4 @@ Start here if you need the current project contract or the owning code paths.
 - [System Architecture](./system-architecture.md) - current runtime shape and request flow
 - [Codebase Summary](./codebase-summary.md) - navigation map to the main source owners
 - [Production Release Runbook](./production-release-runbook.md) - operator procedure for production deploys, verification, rollback, and support
+- [Tech Debt Register](./tech-debt.md) - open technical debt with evidence, priorities, and owner decisions needed

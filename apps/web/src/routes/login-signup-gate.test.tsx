@@ -66,7 +66,7 @@ describe("/login khi cờ đăng ký TẮT (mặc định single-org)", () => {
 		expect(screen.queryByText("Create account")).toBeNull();
 		expect(screen.queryByText("Create an account")).toBeNull();
 		expect(screen.queryByText("Create your account")).toBeNull();
-		expect(screen.queryByText("New to Teacher OS?")).toBeNull();
+		expect(screen.queryByText("New to Cô Mỹ Dạy Tiếng Anh?")).toBeNull();
 	});
 
 	it("localStorage cũ giá trị signup vẫn rơi về màn đăng nhập", () => {

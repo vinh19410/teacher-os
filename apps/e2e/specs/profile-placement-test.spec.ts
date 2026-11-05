@@ -180,7 +180,7 @@ test.describe("profile placement test (/kiem-tra-dau-vao/)", () => {
 		await page.goto(PROFILE_ORIGIN);
 		await page
 			.getByRole("link", {
-				name: /Làm Bài Kiểm Tra Đầu Vào Miễn Phí/,
+				name: /Làm test xếp lớp miễn phí/,
 			})
 			.click();
 		await expect(page).toHaveURL(/\/kiem-tra-dau-vao\/$/);
@@ -380,7 +380,7 @@ test.describe("profile placement test (/kiem-tra-dau-vao/)", () => {
 		const banner = page.locator("#quizPlacementBanner");
 		await expect(banner).toBeVisible();
 		await expect(banner).toHaveText(`Đã đính kèm: ${expectedSummary}`);
-		await expect(page.locator("#courseTrack")).toHaveValue("ielts-pre");
+		await expect(page.locator("#courseTrack")).toHaveValue("ielts-practical");
 		await expect(page.locator("#studentName")).toHaveValue("Trần Minh Quân");
 		await expect(page.locator("#studentPhone")).toHaveValue(phone);
 
@@ -399,7 +399,7 @@ test.describe("profile placement test (/kiem-tra-dau-vao/)", () => {
 			expect(rowRes.rows.length).toBe(1);
 			expect(rowRes.rows[0]?.source).toBe("placement-test");
 			expect(rowRes.rows[0]?.email).toBe(email);
-			expect(rowRes.rows[0]?.course).toBe("ielts-pre");
+			expect(rowRes.rows[0]?.course).toBe("ielts-practical");
 			expect(rowRes.rows[0]?.study_mode).toBe("group-online");
 			expect(rowRes.rows[0]?.note).toBe("Cần lộ trình B1-B2");
 			expect(rowRes.rows[0]?.placement).toBe(expectedSummary);

@@ -166,6 +166,8 @@ describe("AssignmentsRoute — merged created-assignments page (#267)", () => {
 		expect(html).toContain("Question stem one");
 		expect(html).not.toContain("SECRET_ANSWER_FALSE");
 		expect(html).toContain("Chấm tự động");
+		expect(html).toContain("Xem trước");
+		expect(html).toContain("Chỉnh sửa");
 	});
 
 	it("renders the diagram thumbnail in the bank preview aside (#269)", () => {
@@ -286,5 +288,32 @@ describe("AssignmentsRoute — merged created-assignments page (#267)", () => {
 		};
 		const html = renderToStaticMarkup(<AssignmentsRoute />);
 		expect(html).toContain("+ Tạo bài tập");
+	});
+
+	it("renders 'Chưa chọn dạng' tag for draft prompts without a type (#577)", () => {
+		mockStoreData = {
+			assignmentPrompts: [
+				{
+					id: "ap-no-type",
+					skill: "writing",
+					part: "task2",
+					type: "",
+					task: "task2",
+					genre: "",
+					title: "Writing Draft Chưa Chọn Dạng",
+					band: "7.0",
+					source: "",
+					prompt: "Essay prompt",
+					questions: [],
+					note: "",
+					status: "draft",
+					createdAt: "2026-09-18T12:00:00.000Z",
+				},
+			],
+			classAssignments: [],
+		};
+		const html = renderToStaticMarkup(<AssignmentsRoute />);
+		expect(html).toContain("Chưa chọn dạng");
+		expect(html).not.toContain("Discuss both views");
 	});
 });

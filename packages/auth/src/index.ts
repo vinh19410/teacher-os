@@ -2,12 +2,15 @@ import * as schema from "@teacher-os/db/schema/auth";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware, getOAuthState } from "better-auth/api";
+import { emailOTP } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
 import {
 	validateUpdateUserImage,
 	validateUpdateUserName,
 } from "./avatar-policy";
+import { BRAND_NAME } from "./mail/brand";
 import type { Mailer } from "./mail/mailer";
+import { otpEmailTemplate } from "./mail/otp-email-template";
 import { resetPasswordEmailTemplate } from "./mail/reset-password-email-template";
 import { verificationEmailTemplate } from "./mail/verification-email-template";
 import {
@@ -124,6 +127,76 @@ export function createAuth(input: CreateAuthInput) {
 		return rows[0]?.role ?? null;
 	}
 
+	async function getUserByEmail(
+		email: string,
+	): Promise<{ id: string; role: string | null } | null> {
+		const db = input.db as unknown as {
+			select: (fields: { id: unknown; role: unknown }) => {
+				from: (table: unknown) => {
+					where: (
+						condition: unknown,
+					) => Promise<Array<{ id: string; role?: string | null }>>;
+				};
+			};
+		};
+		const rows = await db
+			.select({ id: schema.user.id, role: schema.user.role })
+			.from(schema.user)
+			.where(eq(schema.user.email, email.trim().toLowerCase()));
+		const row = rows[0];
+		if (!row) return null;
+		return { id: row.id, role: row.role ?? null };
+	}
+
+	async function checkAndUpdateCooldown(email: string): Promise<boolean> {
+		const identifier = `otp-cooldown:${email.trim().toLowerCase()}`;
+		const db = input.db as unknown as {
+			select: (fields: { createdAt: unknown }) => {
+				from: (table: unknown) => {
+					where: (condition: unknown) => Promise<Array<{ createdAt: Date }>>;
+				};
+			};
+			delete: (table: unknown) => {
+				where: (condition: unknown) => Promise<unknown>;
+			};
+			insert: (table: unknown) => {
+				values: (value: unknown) => Promise<unknown>;
+			};
+		};
+		const existing = await db
+			.select({ createdAt: schema.verification.createdAt })
+			.from(schema.verification)
+			.where(eq(schema.verification.identifier, identifier));
+		const now = Date.now();
+		if (existing.length > 0 && existing[0]?.createdAt) {
+			const age = now - new Date(existing[0].createdAt).getTime();
+			if (age < 60_000) {
+				return true;
+			}
+		}
+		try {
+			await db
+				.delete(schema.verification)
+				.where(eq(schema.verification.identifier, identifier));
+		} catch {
+			// ignore transient delete error
+		}
+		const nowDate = new Date(now);
+		try {
+			await db.insert(schema.verification).values({
+				id: crypto.randomUUID(),
+				identifier,
+				value: "cooldown",
+				expiresAt: new Date(now + 60_000),
+				createdAt: nowDate,
+				updatedAt: nowDate,
+			});
+		} catch {
+			// ignore transient insert error
+		}
+		return false;
+	}
+
 	/**
 	 * Origin của callbackURL trên link xác thực email (#299): bấm link trong mail
 	 * là GET navigation không có Origin header. callbackURL đã qua originCheck
@@ -210,7 +283,7 @@ export function createAuth(input: CreateAuthInput) {
 				try {
 					await input.mailer.send({
 						to: user.email,
-						subject: "Đặt lại mật khẩu TeacherOS của bạn",
+						subject: `Đặt lại mật khẩu ${BRAND_NAME} của bạn`,
 						html,
 						text,
 					});
@@ -235,7 +308,7 @@ export function createAuth(input: CreateAuthInput) {
 				try {
 					await input.mailer.send({
 						to: user.email,
-						subject: "Xác thực email TeacherOS của bạn",
+						subject: `Xác thực email ${BRAND_NAME} của bạn`,
 						html,
 						text,
 					});
@@ -288,6 +361,67 @@ export function createAuth(input: CreateAuthInput) {
 							},
 						},
 					};
+				}
+				// Issue #578: Email OTP security & cooldown
+				const BLOCKED_EMAIL_OTP_PATHS = [
+					"/email-otp/request-password-reset",
+					"/email-otp/reset-password",
+					"/forget-password/email-otp",
+					"/email-otp/change-email",
+					"/email-otp/request-email-change",
+					"/email-otp/verify-email",
+					"/email-otp/check-verification-otp",
+				];
+				if (BLOCKED_EMAIL_OTP_PATHS.includes(ctx.path)) {
+					throw new APIError("BAD_REQUEST", {
+						message: "Endpoint này không khả dụng.",
+					});
+				}
+				if (
+					ctx.path === "/email-otp/send-verification-otp" ||
+					ctx.path === "/sign-in/email-otp"
+				) {
+					const origin = ctx.headers?.get("origin") ?? null;
+					const appRole = resolveRequestApp({
+						origin,
+						studentOrigins: input.studentOrigins,
+						teacherOrigins,
+						adminOrigins: input.adminOrigins ?? [],
+					});
+					if (appRole !== "student") {
+						throw new APIError("FORBIDDEN", {
+							message: ROLE_MISMATCH_TEACHER_ON_PORTAL_MESSAGE,
+							code: "ROLE_MISMATCH",
+						});
+					}
+
+					const body = (ctx.body ?? {}) as Record<string, unknown>;
+					const email =
+						typeof body.email === "string"
+							? body.email.trim().toLowerCase()
+							: "";
+
+					if (ctx.path === "/email-otp/send-verification-otp") {
+						if (email) {
+							const inCooldown = await checkAndUpdateCooldown(email);
+							if (inCooldown) {
+								return new Response(JSON.stringify({ success: true }), {
+									status: 200,
+									headers: { "content-type": "application/json" },
+								});
+							}
+						}
+					} else if (ctx.path === "/sign-in/email-otp") {
+						if (email) {
+							const existing = await getUserByEmail(email);
+							if (existing && existing.role !== "student") {
+								throw new APIError("FORBIDDEN", {
+									message: ROLE_MISMATCH_TEACHER_ON_PORTAL_MESSAGE,
+									code: "ROLE_MISMATCH",
+								});
+							}
+						}
+					}
 				}
 				if (ctx.path !== "/update-user") return;
 				const body = (ctx.body ?? {}) as Record<string, unknown>;
@@ -344,7 +478,23 @@ export function createAuth(input: CreateAuthInput) {
 								});
 							}
 						}
-						return { data: { ...user, role: appRole } };
+						// Issue #578: Default name for OTP sign-ups and avatar check
+						let userName = user.name?.trim() ?? "";
+						if (!userName && user.email) {
+							userName = user.email.split("@")[0] || "Học viên";
+						}
+						let userImage = user.image;
+						if (userImage && validateUpdateUserImage(userImage)) {
+							userImage = undefined;
+						}
+						return {
+							data: {
+								...user,
+								name: userName,
+								image: userImage,
+								role: appRole,
+							},
+						};
 					},
 				},
 			},
@@ -411,6 +561,39 @@ export function createAuth(input: CreateAuthInput) {
 			// default `better-auth` namespace (prod/local, byte-identical).
 			...(cookiePrefix && { cookiePrefix }),
 		},
+		plugins: [
+			emailOTP({
+				expiresIn: 300,
+				storeOTP: "hashed",
+				sendVerificationOTP: async ({ email, otp, type }) => {
+					if (type !== "sign-in") return;
+					const normalizedEmail = email.trim().toLowerCase();
+					const isTeacher = (input.teacherEmails ?? []).some(
+						(e) => e.trim().toLowerCase() === normalizedEmail,
+					);
+					const isAdmin = (input.adminEmails ?? []).some(
+						(e) => e.trim().toLowerCase() === normalizedEmail,
+					);
+					if (isTeacher || isAdmin) return;
+
+					const existing = await getUserByEmail(normalizedEmail);
+					if (existing && existing.role !== "student") return;
+
+					const { html, text } = otpEmailTemplate({ otp });
+					const sendPromise = input.mailer.send({
+						to: normalizedEmail,
+						subject: `Mã xác thực đăng nhập ${BRAND_NAME} của bạn`,
+						html,
+						text,
+					});
+					if (input.runInBackground) {
+						input.runInBackground(sendPromise);
+					} else {
+						await sendPromise;
+					}
+				},
+			}),
+		],
 	});
 }
 

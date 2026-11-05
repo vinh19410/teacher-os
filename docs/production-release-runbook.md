@@ -1,7 +1,7 @@
 # Production release and support runbook
 
 Operator procedure for deploying, verifying, rolling back, and supporting
-Teacher OS on Cloudflare Workers + D1. This runbook contains **no secret
+Cô Mỹ Dạy Tiếng Anh (Teacher OS) on Cloudflare Workers + D1. This runbook contains **no secret
 values** — only secret names, owners, and rotation paths.
 
 ## Topology — single source of truth
@@ -33,6 +33,7 @@ environment — never editing this runbook.
 | Auth cookie namespace | default `better-auth` on prod; `teacheros-staging` on any other member of the prod cookie zone (staging) | `BETTER_AUTH_COOKIE_PREFIX` binding → `resolveDomainTopology().authCookiePrefix` in `packages/infra/src/topology.ts`, validated by `authCookiePrefix()` in `packages/auth/src/topology.ts` |
 | `VITE_SERVER_URL` (web build) | `https://api.<domain>` | derived from `APP_DOMAIN`; server worker URL otherwise |
 | `LEAD_API_URL` (profile build) | `https://api.<domain>` | derived from `APP_DOMAIN` (`topology.apiOrigin`); server worker URL otherwise (#536) |
+| `STUDENT_PORTAL_URL` (profile build) | `https://student.<domain>` | derived from `APP_DOMAIN` (`topology.studentOrigin`); `studentWorker.url` otherwise, dev default `http://localhost:8003` (#560) |
 
 First deploy with this topology: custom domain apex (`teacheros.io.vn`) and `www` detach from the web Worker and attach to the landing Worker (`apps/landing`) in the same apply. Staging is deployed first (`staging.teacheros.io.vn`); certificates already exist in the Cloudflare zone.
 With `APP_DOMAIN` unset (local dev only), the stack keeps its generated
@@ -118,7 +119,7 @@ Vận hành:
   4. Kiểm tra API công khai và HTTP `Range` trước khi deploy profile:
      - `curl -i https://api.teacheros.io.vn/public/placement-test -H "Origin: https://msmy.io.vn"` trả `200` kèm `Access-Control-Allow-Origin: https://msmy.io.vn` và `Cache-Control: no-cache`.
      - `curl -i -H "Range: bytes=0-99" https://api.teacheros.io.vn<src-của-clip-1>` trả `206 Partial Content` kèm `Content-Range: bytes 0-99/<size>`.
-  5. Đưa `apps/profile` lên production qua `deploy.yml` (#536): resource `Cloudflare.Website.StaticSite("profile")` trong `packages/infra/alchemy.run.ts` tự chạy `LEAD_API_URL=<apiOrigin> pnpm build` (thay `<meta name="lead-api">` ở cả `dist/index.html` lẫn `dist/kiem-tra-dau-vao/index.html`) và gắn custom domain `msmy.io.vn` + alias `www.msmy.io.vn`, sau đó bước `Smoke check profile` kiểm chứng tự động. **Cảnh báo thứ tự 2 đợt:** nếu cần promote riêng `server` lên `main` ở đợt 1 (trước khi cô Mỹ phát hành bộ đề ở bước 3–4 và trước khi dọn bản ghi DNS A/AAAA/CNAME cũ trên zone `msmy.io.vn`), phải promote từ SHA `7d331c05b305fbe7fd16b98fb0942e5ab93a68cb` (trước commit merge `#536`); chỉ promote `develop` HEAD chứa `profileWorker` ở đợt 2.
+  5. Đưa `apps/profile` lên production qua `deploy.yml` (#536, #560): resource `Cloudflare.Website.StaticSite("profile")` trong `packages/infra/alchemy.run.ts` tự chạy `LEAD_API_URL=<apiOrigin> STUDENT_PORTAL_URL=<studentOrigin> pnpm build` (thay `<meta name="lead-api">` ở cả `dist/index.html` lẫn `dist/kiem-tra-dau-vao/index.html`, và thay `href` của `#studentPortalLink` trên `dist/index.html`) rồi gắn custom domain `msmy.io.vn` + alias `www.msmy.io.vn`, sau đó bước `Smoke check profile` kiểm chứng tự động. **Cảnh báo thứ tự 2 đợt:** nếu cần promote riêng `server` lên `main` ở đợt 1 (trước khi cô Mỹ phát hành bộ đề ở bước 3–4 và trước khi dọn bản ghi DNS A/AAAA/CNAME cũ trên zone `msmy.io.vn`), phải promote từ SHA `7d331c05b305fbe7fd16b98fb0942e5ab93a68cb` (trước commit merge `#536`); chỉ promote `develop` HEAD chứa `profileWorker` ở đợt 2.
   6. Smoke test trên Safari iOS (`https://msmy.io.vn/kiem-tra-dau-vao/`): bấm bắt đầu, điền form thông tin cá nhân (tạo lead `source = placement-test`), nghe thử audio, hoàn thành bài test và xác nhận dòng lead trên `/leads` đã được cập nhật `placement` kèm điểm CEFR (#534).
 - **Tùy chọn — WAF rate limiting** trên zone teacheros.io.vn cho path
   `/public/leads` khi có spam thật (lớp 3 của plan; Turnstile chỉ bật khi cần).
@@ -195,8 +196,8 @@ GitHub — record only "staging D1 exists, rehearsal OK"). Destroy with
 
 `.github/workflows/deploy.yml` deploys stage `prod` automatically on every
 push to `main` (i.e. merging `develop` into `main` is the release trigger).
-The workflow reproduces this runbook's gates in order: the same quality steps
-as CI must pass, then `APP_DOMAIN=<domain> pnpm alchemy deploy --stage prod` (secrets
+The workflow reproduces this runbook's gates in order: the reusable 4-job quality workflow (`.github/workflows/quality.yml`, run with `turbo-cache: false`)
+must pass, then `APP_DOMAIN=<domain> pnpm alchemy deploy --stage prod` (secrets
 come from GitHub repo secrets mirroring the inventory above — same names, no
 values in Git), then a `/readyz` smoke that must return `200 {"ok":true}`
 within ~10 minutes or the run is marked failed. The full Playwright E2E suite
@@ -225,15 +226,16 @@ checks `https://app.staging.teacheros.io.vn`. The GitHub environment
 `staging` allows deployments from the `staging` branch (and `develop` for
 manual runs). Manual `workflow_dispatch` remains for migration rehearsal.
 Either way the workflow runs the
-same quality gates as CI, then
+same reusable `quality.yml` gates (`turbo-cache: false`) as CI, then
 `APP_DOMAIN=staging.teacheros.io.vn pnpm alchemy deploy --stage staging --yes`
 with credentials from the GitHub `staging` environment (same secret names as
 production), serialized like prod (`cancel-in-progress: false`) so
 forward-only migrations never race. Its post-deploy smoke is broader than
 prod's because staging is the QC target: `/readyz` polling, an auth
-round-trip (throwaway sign-up → `get-session` with a cookie jar poisoned by a
-prod-shaped parent-domain session cookie — the exact shape that broke QC
-sign-in before issue #125), and a check that the removed PWA service
+round-trip (throwaway student-portal sign-up → `get-session` with a cookie jar
+poisoned by a prod-shaped parent-domain session cookie — the exact shape that
+broke QC sign-in before issue #125; it uses the portal origin because
+`TEACHER_EMAILS` rejects a random email on the teacher origin), and a check that the removed PWA service
 worker's stubs (`/sw.js`, `/registerSW.js`) are served as JavaScript with
 network-first cache headers. Throwaway smoke accounts are accepted junk rows
 in the staging D1; prod deliberately gets no signup smoke. The manual
@@ -613,7 +615,7 @@ Cột `enrollment.status` là forward-only; không xóa cột hay sửa file mig
 | Variable | Purpose | Default / Example | Notes |
 | --- | --- | --- | --- |
 | `MAILER_IMPL` | Implementation driver (`log` or `resend`) | `log` (dev/test) | Prod **bắt buộc** đặt `resend`. Server boot guard sẽ in log cảnh báo đỏ nếu không phải `resend`. |
-| `MAIL_FROM` | Sender display name & email | `TeacherOS <onboarding@resend.dev>` | Prod đặt `TeacherOS <no-reply@<domain>>` (domain đã xác thực trên Resend). |
+| `MAIL_FROM` | Sender display name & email | `"Cô Mỹ Dạy Tiếng Anh" <onboarding@resend.dev>` | Prod đặt `"Cô Mỹ Dạy Tiếng Anh" <no-reply@<domain>>` (domain đã xác thực trên Resend). |
 | `RESEND_API_KEY` | Resend HTTP API token (`re_...`) | empty string | Secret operator — cấu hình qua CI/CD secrets hoặc Alchemy environment, **không commit vào code**. Boot sẽ throw ngay nếu `MAILER_IMPL=resend` mà key rỗng. |
 
 ### Production procedure
@@ -628,7 +630,7 @@ Cột `enrollment.status` là forward-only; không xóa cột hay sửa file mig
      ```bash
      gh secret set RESEND_API_KEY --env production
      gh variable set MAILER_IMPL --env production --body "resend"
-     gh variable set MAIL_FROM --env production --body 'TeacherOS <no-reply@teacheros.io.vn>'
+     gh variable set MAIL_FROM --env production --body '"Cô Mỹ Dạy Tiếng Anh" <no-reply@teacheros.io.vn>'
      ```
    - `MAIL_FROM` phải đủ cặp `< >`; thiếu `>` thì Resend từ chối địa chỉ người gửi.
    - Staging làm tương tự với `--env staging`; để trống thì worker staging chạy log-only.
@@ -804,7 +806,7 @@ a per-stage operation.
 ### Checklist trước khi bật production
 
 1. Xin credential đối tác từ SePay: `client_id`/`client_secret` (merchant
-   TeacherOS) và API key cho IPN. SePay cấu hình URL IPN phía họ:
+   Cô Mỹ Dạy Tiếng Anh, trước đây đăng ký là TeacherOS) và API key cho IPN. SePay cấu hình URL IPN phía họ:
    `https://api.<domain>/webhooks/sepay/bankhub/ipn`.
 2. Set 5 binding env cho stage đó (tên biến trong Secret inventory ở trên,
    KHÔNG bao giờ giá trị): 4 secret + `SEPAY_BANKHUB_BASE_URL=https://bankhub-api.sepay.vn`
@@ -852,7 +854,7 @@ a per-stage operation.
 
 - **Deploy order bắt buộc:** Chạy `db:migrate:deploy` (migration `0037`) **TRƯỚC** khi deploy worker (`snapshot` giáo viên và các route `/api/kernel/vocab-library/*`, `/api/student/vocab/*` đọc các bảng `vocab_library_*` cùng 2 cột `vocab_deck.source_library_deck_id` và `vocab_word.audio_url`).
 - **Release train:** `vocabSessionCardSchema` thêm trường `hasAudio` với `.strict()` → `apps/server` và `apps/student` **BẮT BUỘC deploy cùng một bước** (`pnpm alchemy deploy`); không promote riêng lẻ từng gói.
-- **Seed dữ liệu thư viện (20 khóa / 968 bài / 10.160 từ):** Xem hướng dẫn chi tiết và **Gate Giấy phép PROD** tại [`packages/db/scripts/README-seed-vocab-library.md`](../packages/db/scripts/README-seed-vocab-library.md). Chỉ chạy `--d1` trên PROD sau khi đã smoke `--d1 --verify` trên Staging và chủ sở hữu dự án đã xác nhận quyền sử dụng nội dung (Open Question 1).
+- **Seed dữ liệu thư viện (20 khóa / 968 bài / 10.160 từ):** Xem hướng dẫn chi tiết và **Gate Giấy phép PROD** tại [`packages/db/scripts/README-seed-vocab-library.md`](../packages/db/scripts/README-seed-vocab-library.md). Trên **Staging**, `.github/workflows/deploy-staging.yml` tự động nạp và kiểm chứng (`--d1 --d1-stage staging --if-needed --verify`) sau bước `/readyz` trên mỗi lần deploy. Trên **Production**, việc nạp dữ liệu bị chặn cơ học (`assertNonProdD1Database` và `scripts/ci-workflow.test.mjs`) cho tới khi chủ sở hữu dự án xác nhận quyền sử dụng nội dung bằng văn bản (Open Question 1).
 
 ## Independent vocab hub & suggestions (migration 0038) — issue #363
 
@@ -883,7 +885,7 @@ a per-stage operation.
 
 ## Admin console go-live (plan #413)
 
-Cổng quản trị Teacher OS (`apps/admin`) chạy trên origin riêng
+Cổng quản trị Cô Mỹ Dạy Tiếng Anh (`apps/admin`) chạy trên origin riêng
 `https://admin.<domain>` (staging: `admin.staging.teacheros.io.vn`; dev cục
 bộ: 8004, E2E: 8104) và API của nó nằm ở `/api/admin` trên Worker API,
 ngoài kernel tree.
@@ -933,3 +935,28 @@ certificates issue thành công (giống `app.`/`student.`), và session cookie
 zone (`Domain=.<domain>`) hoạt động: đăng nhập admin rồi gọi
 `https://api.<domain>/api/admin/me` phải 200; một session teacher/student
 gọi cùng endpoint phải 403 `ACCOUNT_NOT_ADMIN`.
+
+## Bộ đề tự học theo lịch (migrations 0060–0061) — issue #533/#554
+
+- **Pre-flight bắt buộc TRƯỚC khi merge/push `0061` lên `staging` hoặc `main` (`study_pack_org_source_pack_uq`):** Vì `.github/workflows/deploy-staging.yml` và `.github/workflows/deploy.yml` tự động chạy `alchemy deploy` áp migration ngay khi push, bắt buộc chạy truy vấn đọc trên D1 trước khi promote:
+  ```sql
+  SELECT org_id, source_pack_id, COUNT(*) AS cnt
+  FROM study_pack
+  WHERE source_pack_id IS NOT NULL
+  GROUP BY org_id, source_pack_id
+  HAVING COUNT(*) > 1;
+  ```
+  Kết quả phải trả `0` dòng. Nếu phát hiện cặp `(org_id, source_pack_id)` trùng (đặc biệt khi bản dư đã từng gán vào lớp nên bị `class_study_pack.pack_id` khóa `ON DELETE restrict`), giữ lại 1 bản chính và tách liên kết các bản dư bằng lệnh không xóa lịch sử lớp học:
+  ```sql
+  UPDATE study_pack SET source_pack_id = NULL WHERE id = '<id-ban-clone-du>';
+  ```
+- **Tính chất forward-only của `0060_study_pack.sql` — KHÔNG revert riêng Worker về trước `#533` (`0060`):**
+  1. *Lộ sớm bài chưa đến giờ mở cho học viên:* Worker trước `0060` không có `visibleAssignmentFilter(now)` (`available_at IS NULL OR available_at <= now` tại `apps/server/src/lib/assignment-visibility.ts`) cũng như kiểm tra `available_at` trong `loadOwnedAttemptWithSkill` (`apps/server/src/routes/student.ts`). Nếu code cũ đọc vào dữ liệu `0060`, mọi dòng `class_assignment` tạo sẵn có `available_at > now` sẽ hiển thị và cho phép làm/nộp bài sớm trên cổng học viên.
+  2. *Rò rỉ vào snapshot giáo viên & trần 200 bài:* Code cũ không lọc `class_study_pack_id IS NULL` trong `loadSnapshot` (`apps/server/src/routes/snapshot.ts`) và `POST /api/classes/:id/assignments` (`apps/server/src/routes/kernel.ts`), cũng không lọc `library_ref IS NULL` trên `assignment_prompt`, khiến toàn bộ bài tự học tràn vào danh sách bài tập thủ công của lớp và ngân hàng đề.
+  3. *Đổ `/readyz` (`503`):* `0060_study_pack.sql` đã `DROP COLUMN plan_item_id` và `DROP TABLE self_study_plan*` đồng thời thêm 4 bảng mới và 3 cột mới. Probe trong `apps/server/src/routes/readiness.ts` kiểm tra đủ `REQUIRED_OBJECTS` của bundle và khớp tổng cột `REQUIRED_COLUMN_TOTAL`, nên hạ riêng Worker về trước `0060` sẽ làm `/readyz` trả `503 {"ok":false}`.
+- **Tương thích ngược của `0061` (`study_pack_org_source_pack_uq`):**
+  - Migration `0061` chỉ thêm 1 unique index mới, không đổi bảng hay cột. Vì `PROBE_QUERY` trong `apps/server/src/routes/readiness.ts` lọc `name IN (SELECT value FROM json_each(REQUIRED_OBJECTS))` theo danh sách của chính bundle đang chạy, việc lùi Worker từ bản `#554` (`0061`) về bản `#533` (`0060`) vẫn giữ `/readyz` trả `200 {"ok":true}`.
+  - **Tuyệt đối KHÔNG chạy `DROP INDEX study_pack_org_source_pack_uq` trên D1** khi lùi Worker về `0060`: sổ cái migration của D1 đã đánh dấu `0061` hoàn tất, nếu xóa index tay thì lần deploy kế tiếp không chạy lại `0061` và sẽ đánh trượt `/readyz` (`503`).
+- **Hướng xử lý sự cố / Rollback an toàn:**
+  - Ưu tiên **forward-fix** trên nhánh `>= 0060` (hoặc hủy các `class_study_pack` đang chạy qua UI/API để thu hồi các bài chưa đến giờ mở).
+  - Nếu khẩn cấp bắt buộc khôi phục toàn bộ hệ thống về trước `#533` (`0060`), phải khôi phục đồng bộ D1 bằng **D1 Time Travel** về đúng bookmark trước khi chạy `0060` cùng lúc với việc hạ Worker và các bundle frontend.

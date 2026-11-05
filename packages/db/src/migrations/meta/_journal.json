@@ -428,6 +428,34 @@
       "when": 1793530000000,
       "tag": "0060_study_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "6",
+      "when": 1793753295241,
+      "tag": "0061_petite_dormammu",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "6",
+      "when": 1793775207804,
+      "tag": "0062_perfect_mentor",
+      "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "6",
+      "when": 1793788004450,
+      "tag": "0063_green_ghost_rider",
+      "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "6",
+      "when": 1793801957655,
+      "tag": "0064_jittery_bushwacker",
+      "breakpoints": true
     }
   ]
 }

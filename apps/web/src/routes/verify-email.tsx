@@ -24,7 +24,7 @@ function RouteComponent() {
 			<div className="grid gap-2 text-center">
 				<h1 className="font-bold text-2xl">Verify your email</h1>
 				<p className="text-balance text-muted-foreground text-sm">
-					Confirming your email address for Teacher OS.
+					Confirming your email address for Cô Mỹ Dạy Tiếng Anh.
 				</p>
 			</div>
 

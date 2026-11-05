@@ -18,7 +18,7 @@ import {
 	studyPack,
 	studyPackItem,
 } from "@teacher-os/db/schema/study-pack";
-import { and, asc, desc, eq, gt, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import type { Db } from "../app";
 import { loadExistingHolidayDates } from "../routes/holidays";
@@ -122,6 +122,7 @@ export interface AssignStudyPackParams {
 	releaseTime: string;
 	dueTime: string;
 	createdBy?: string | null;
+	now?: Date;
 }
 
 export type AssignStudyPackResult =
@@ -136,11 +137,66 @@ export type AssignStudyPackResult =
 			error: string;
 	  };
 
+function buildCleanupCancelledPackStatements(
+	db: Db,
+	orgId: string,
+	classId: string,
+	classPackId: string,
+	cutoff: Date | null,
+): [BatchItem<"sqlite">, BatchItem<"sqlite">] {
+	if (cutoff !== null) {
+		const cutoffMs = cutoff.getTime();
+		return [
+			db
+				.delete(classAssignmentTarget)
+				.where(
+					and(
+						eq(classAssignmentTarget.orgId, orgId),
+						sql`${classAssignmentTarget.assignmentId} IN (SELECT ca.id FROM ${classAssignment} ca WHERE ca.org_id = ${orgId} AND ca.class_id = ${classId} AND ca.class_study_pack_id = ${classPackId} AND ca.available_at > ${cutoffMs} AND NOT EXISTS (SELECT 1 FROM ${quizAttempt} qa WHERE qa.org_id = ${orgId} AND qa.assignment_id = ca.id))`,
+					),
+				),
+			db
+				.delete(classAssignment)
+				.where(
+					and(
+						eq(classAssignment.orgId, orgId),
+						eq(classAssignment.classId, classId),
+						eq(classAssignment.classStudyPackId, classPackId),
+						gt(classAssignment.availableAt, cutoff),
+						sql`NOT EXISTS (SELECT 1 FROM ${quizAttempt} qa WHERE qa.org_id = ${orgId} AND qa.assignment_id = ${classAssignment.id})`,
+					),
+				),
+		];
+	}
+
+	return [
+		db
+			.delete(classAssignmentTarget)
+			.where(
+				and(
+					eq(classAssignmentTarget.orgId, orgId),
+					sql`${classAssignmentTarget.assignmentId} IN (SELECT ca.id FROM ${classAssignment} ca WHERE ca.org_id = ${orgId} AND ca.class_id = ${classId} AND ca.class_study_pack_id = ${classPackId} AND NOT EXISTS (SELECT 1 FROM ${quizAttempt} qa WHERE qa.org_id = ${orgId} AND qa.assignment_id = ca.id))`,
+				),
+			),
+		db
+			.delete(classAssignment)
+			.where(
+				and(
+					eq(classAssignment.orgId, orgId),
+					eq(classAssignment.classId, classId),
+					eq(classAssignment.classStudyPackId, classPackId),
+					sql`NOT EXISTS (SELECT 1 FROM ${quizAttempt} qa WHERE qa.org_id = ${orgId} AND qa.assignment_id = ${classAssignment.id})`,
+				),
+			),
+	];
+}
+
 export async function assignStudyPackToClass(
 	db: Db,
 	params: AssignStudyPackParams,
 ): Promise<AssignStudyPackResult> {
 	const { orgId, classId, packId, startDate, releaseTime, dueTime } = params;
+	const now = params.now ?? new Date();
 
 	const [cls] = await db
 		.select({ id: classTable.id })
@@ -161,22 +217,6 @@ export async function assignStudyPackToClass(
 	) {
 		return { ok: false, status: 404, error: "study pack not found" };
 	}
-	if (pack.status !== "ready") {
-		return { ok: false, status: 422, error: "study pack is not ready" };
-	}
-
-	const itemRows = await db
-		.select()
-		.from(studyPackItem)
-		.where(eq(studyPackItem.packId, pack.id))
-		.orderBy(
-			asc(studyPackItem.dayIndex),
-			asc(studyPackItem.position),
-			asc(studyPackItem.id),
-		);
-	if (itemRows.length === 0) {
-		return { ok: false, status: 422, error: "study pack has no items" };
-	}
 
 	const [existingActive] = await db
 		.select()
@@ -192,6 +232,7 @@ export async function assignStudyPackToClass(
 
 	let classPackId: string;
 	let reused = false;
+	let createdFresh = false;
 
 	if (existingActive) {
 		if (
@@ -212,20 +253,20 @@ export async function assignStudyPackToClass(
 		classPackId = crypto.randomUUID();
 	}
 
-	const materialized = await materializePrompts(db, orgId, itemRows);
-	if (!materialized.ok) {
-		return materialized;
-	}
-
-	const holidaysByClass = await loadExistingHolidayDates(db, orgId, [classId]);
-	const classHolidayMap =
-		holidaysByClass.get(classId) ?? new Map<string, string>();
-	const maxDayIndex = Math.max(...itemRows.map((item) => item.dayIndex));
-	const schedule = computeStudyPackSchedule(
-		startDate,
-		maxDayIndex,
-		classHolidayMap,
-	);
+	const loadExistingPackAssignments = (targetClassPackId: string) =>
+		db
+			.select({
+				id: classAssignment.id,
+				dueAt: classAssignment.dueAt,
+			})
+			.from(classAssignment)
+			.where(
+				and(
+					eq(classAssignment.orgId, orgId),
+					eq(classAssignment.classId, classId),
+					eq(classAssignment.classStudyPackId, targetClassPackId),
+				),
+			);
 
 	const activeEnrollments = await db
 		.select({ studentId: enrollment.studentId })
@@ -241,94 +282,157 @@ export async function assignStudyPackToClass(
 		...new Set(activeEnrollments.map((row) => row.studentId)),
 	];
 
-	if (!reused) {
-		const inserted = await db
-			.insert(classStudyPack)
-			.values({
-				id: classPackId,
-				orgId,
-				classId,
-				packId: pack.id,
-				title: pack.title,
-				startDate,
-				releaseTime,
-				dueTime,
-				status: "active",
-				createdBy: params.createdBy ?? null,
-			})
-			.onConflictDoNothing()
-			.returning({ id: classStudyPack.id });
-
-		if (inserted.length === 0) {
-			const [raced] = await db
-				.select()
-				.from(classStudyPack)
-				.where(
-					and(
-						eq(classStudyPack.orgId, orgId),
-						eq(classStudyPack.classId, classId),
-						eq(classStudyPack.packId, packId),
-						eq(classStudyPack.status, "active"),
-					),
-				);
-			if (
-				raced &&
-				raced.startDate === startDate &&
-				raced.releaseTime === releaseTime &&
-				raced.dueTime === dueTime
-			) {
-				classPackId = raced.id;
-				reused = true;
-			} else {
-				return {
-					ok: false,
-					status: 409,
-					error: "study pack already active on class",
-				};
-			}
-		}
-	}
+	let existingAssignments = reused
+		? await loadExistingPackAssignments(classPackId)
+		: [];
 
 	const assignmentValues: Array<typeof classAssignment.$inferInsert> = [];
 	const targetValues: Array<typeof classAssignmentTarget.$inferInsert> = [];
 
-	for (const item of itemRows) {
-		const key = studyPackSourceKey(item.sourceKind, item.sourceId);
-		const promptId = materialized.promptIdBySourceKey.get(key);
-		const meta = materialized.metadataByKey.get(key);
-		if (!promptId || !meta) {
-			return {
-				ok: false,
-				status: 422,
-				error: "missing materialized prompt for study pack item",
-			};
+	if (!reused || existingAssignments.length === 0) {
+		if (pack.status !== "ready") {
+			return { ok: false, status: 422, error: "study pack is not ready" };
 		}
-		const dateISO = schedule.dateByDayIndex.get(item.dayIndex) ?? startDate;
-		const availableAt = new Date(vietnamDateTimeMs(dateISO, releaseTime));
-		const dueAt = new Date(vietnamDateTimeMs(dateISO, dueTime));
-		const assignmentId = buildPackAssignmentId(classPackId, item.id);
 
-		assignmentValues.push({
-			id: assignmentId,
-			orgId,
-			classId,
-			promptId,
-			title: meta.title,
-			due: dateISO,
-			note: item.note,
-			dueAt,
-			availableAt,
-			classStudyPackId: classPackId,
-		});
+		const itemRows = await db
+			.select()
+			.from(studyPackItem)
+			.where(eq(studyPackItem.packId, pack.id))
+			.orderBy(
+				asc(studyPackItem.dayIndex),
+				asc(studyPackItem.position),
+				asc(studyPackItem.id),
+			);
+		if (itemRows.length === 0) {
+			return { ok: false, status: 422, error: "study pack has no items" };
+		}
 
-		for (const studentId of activeStudentIds) {
-			targetValues.push({
-				id: buildPackTargetId(assignmentId, studentId),
-				orgId,
-				assignmentId,
-				studentId,
-				submittedAt: null,
-			});
+		const materialized = await materializePrompts(db, orgId, itemRows);
+		if (!materialized.ok) {
+			return materialized;
+		}
+
+		if (!reused) {
+			const inserted = await db
+				.insert(classStudyPack)
+				.values({
+					id: classPackId,
+					orgId,
+					classId,
+					packId: pack.id,
+					title: pack.title,
+					startDate,
+					releaseTime,
+					dueTime,
+					status: "active",
+					createdBy: params.createdBy ?? null,
+				})
+				.onConflictDoNothing()
+				.returning({ id: classStudyPack.id });
+
+			if (inserted.length > 0) {
+				createdFresh = true;
+			} else {
+				const [raced] = await db
+					.select()
+					.from(classStudyPack)
+					.where(
+						and(
+							eq(classStudyPack.orgId, orgId),
+							eq(classStudyPack.classId, classId),
+							eq(classStudyPack.packId, packId),
+							eq(classStudyPack.status, "active"),
+						),
+					);
+				if (
+					raced &&
+					raced.startDate === startDate &&
+					raced.releaseTime === releaseTime &&
+					raced.dueTime === dueTime
+				) {
+					classPackId = raced.id;
+					reused = true;
+					existingAssignments = await loadExistingPackAssignments(classPackId);
+				} else {
+					return {
+						ok: false,
+						status: 409,
+						error: "study pack already active on class",
+					};
+				}
+			}
+		}
+
+		if (existingAssignments.length === 0) {
+			const holidaysByClass = await loadExistingHolidayDates(db, orgId, [
+				classId,
+			]);
+			const classHolidayMap =
+				holidaysByClass.get(classId) ?? new Map<string, string>();
+			const maxDayIndex = Math.max(...itemRows.map((item) => item.dayIndex));
+			const schedule = computeStudyPackSchedule(
+				startDate,
+				maxDayIndex,
+				classHolidayMap,
+			);
+
+			for (const item of itemRows) {
+				const key = studyPackSourceKey(item.sourceKind, item.sourceId);
+				const promptId = materialized.promptIdBySourceKey.get(key);
+				const meta = materialized.metadataByKey.get(key);
+				if (!promptId || !meta) {
+					return {
+						ok: false,
+						status: 422,
+						error: "missing materialized prompt for study pack item",
+					};
+				}
+				const dateISO = schedule.dateByDayIndex.get(item.dayIndex) ?? startDate;
+				const availableAt = new Date(vietnamDateTimeMs(dateISO, releaseTime));
+				const dueAt = new Date(vietnamDateTimeMs(dateISO, dueTime));
+				const assignmentId = buildPackAssignmentId(classPackId, item.id);
+
+				assignmentValues.push({
+					id: assignmentId,
+					orgId,
+					classId,
+					promptId,
+					title: meta.title,
+					due: dateISO,
+					note: item.note,
+					dueAt,
+					availableAt,
+					classStudyPackId: classPackId,
+				});
+
+				for (const studentId of activeStudentIds) {
+					targetValues.push({
+						id: buildPackTargetId(assignmentId, studentId),
+						orgId,
+						assignmentId,
+						studentId,
+						submittedAt: null,
+					});
+				}
+			}
+		}
+	}
+
+	if (existingAssignments.length > 0) {
+		const nowMs = now.getTime();
+		for (const assignment of existingAssignments) {
+			if (assignment.dueAt !== null && assignment.dueAt.getTime() <= nowMs) {
+				continue;
+			}
+			for (const studentId of activeStudentIds) {
+				targetValues.push({
+					id: buildPackTargetId(assignment.id, studentId),
+					orgId,
+					assignmentId: assignment.id,
+					studentId,
+					submittedAt: null,
+				});
+			}
 		}
 	}
 
@@ -350,7 +454,53 @@ export async function assignStudyPackToClass(
 		);
 	}
 
-	await executeBatchedStatements(db, statements);
+	const checkCancelledAndCleanup = async () => {
+		const [latestPack] = await db
+			.select({
+				status: classStudyPack.status,
+				cancelledAt: classStudyPack.cancelledAt,
+			})
+			.from(classStudyPack)
+			.where(
+				and(
+					eq(classStudyPack.id, classPackId),
+					eq(classStudyPack.orgId, orgId),
+					eq(classStudyPack.classId, classId),
+				),
+			);
+		if (!latestPack || latestPack.status === "cancelled") {
+			const cleanupCutoff =
+				createdFresh || assignmentValues.length > 0
+					? null
+					: (latestPack?.cancelledAt ?? now);
+			await db.batch(
+				buildCleanupCancelledPackStatements(
+					db,
+					orgId,
+					classId,
+					classPackId,
+					cleanupCutoff,
+				),
+			);
+			return {
+				ok: false as const,
+				status: 409 as const,
+				error: "study pack was cancelled",
+			};
+		}
+		return null;
+	};
+
+	try {
+		await executeBatchedStatements(db, statements);
+	} catch (batchErr) {
+		const cancelled = await checkCancelledAndCleanup();
+		if (cancelled) return cancelled;
+		throw batchErr;
+	}
+
+	const cancelledAfterBatch = await checkCancelledAndCleanup();
+	if (cancelledAfterBatch) return cancelledAfterBatch;
 
 	return {
 		ok: true,
@@ -388,95 +538,30 @@ export async function cancelClassStudyPack(
 	if (!packRow) {
 		return { ok: false, status: 404, error: "class study pack not found" };
 	}
-	if (packRow.status === "cancelled") {
-		return { ok: true };
-	}
-
-	const assignments = await db
-		.select({
-			id: classAssignment.id,
-			availableAt: classAssignment.availableAt,
+	const effectiveCutoff = packRow.cancelledAt ?? now;
+	const [deleteTargets, deleteAssignments] =
+		buildCleanupCancelledPackStatements(
+			db,
+			orgId,
+			classId,
+			classPackId,
+			effectiveCutoff,
+		);
+	const updatePack = db
+		.update(classStudyPack)
+		.set({
+			status: "cancelled",
+			cancelledAt: sql`COALESCE(${classStudyPack.cancelledAt}, ${now.getTime()})`,
 		})
-		.from(classAssignment)
 		.where(
 			and(
-				eq(classAssignment.orgId, orgId),
-				eq(classAssignment.classId, classId),
-				eq(classAssignment.classStudyPackId, classPackId),
+				eq(classStudyPack.id, classPackId),
+				eq(classStudyPack.orgId, orgId),
+				eq(classStudyPack.classId, classId),
 			),
 		);
 
-	const unreleasedIds = assignments
-		.filter(
-			(row) =>
-				row.availableAt !== null && row.availableAt.getTime() > now.getTime(),
-		)
-		.map((row) => row.id);
-
-	const attemptedIds = new Set<string>();
-	for (let i = 0; i < unreleasedIds.length; i += D1_IN_ARRAY_CHUNK) {
-		const slice = unreleasedIds.slice(i, i + D1_IN_ARRAY_CHUNK);
-		const rows = await db
-			.select({ assignmentId: quizAttempt.assignmentId })
-			.from(quizAttempt)
-			.where(
-				and(
-					eq(quizAttempt.orgId, orgId),
-					inArray(quizAttempt.assignmentId, slice),
-				),
-			);
-		for (const row of rows) {
-			if (row.assignmentId) attemptedIds.add(row.assignmentId);
-		}
-	}
-
-	const deletableIds = unreleasedIds.filter((id) => !attemptedIds.has(id));
-	const statements: BatchItem<"sqlite">[] = [];
-
-	for (let i = 0; i < deletableIds.length; i += D1_IN_ARRAY_CHUNK) {
-		const slice = deletableIds.slice(i, i + D1_IN_ARRAY_CHUNK);
-		statements.push(
-			db
-				.delete(classAssignmentTarget)
-				.where(
-					and(
-						eq(classAssignmentTarget.orgId, orgId),
-						inArray(classAssignmentTarget.assignmentId, slice),
-					),
-				),
-		);
-	}
-	for (let i = 0; i < deletableIds.length; i += D1_IN_ARRAY_CHUNK) {
-		const slice = deletableIds.slice(i, i + D1_IN_ARRAY_CHUNK);
-		statements.push(
-			db
-				.delete(classAssignment)
-				.where(
-					and(
-						eq(classAssignment.orgId, orgId),
-						inArray(classAssignment.id, slice),
-					),
-				),
-		);
-	}
-
-	statements.push(
-		db
-			.update(classStudyPack)
-			.set({
-				status: "cancelled",
-				cancelledAt: now,
-			})
-			.where(
-				and(
-					eq(classStudyPack.id, classPackId),
-					eq(classStudyPack.orgId, orgId),
-					eq(classStudyPack.classId, classId),
-				),
-			),
-	);
-
-	await executeBatchedStatements(db, statements);
+	await db.batch([updatePack, deleteTargets, deleteAssignments]);
 	return { ok: true };
 }
 

@@ -81,6 +81,7 @@ describe("study pack routes & student scheduled visibility (#533)", () => {
 
 	beforeAll(async () => {
 		const client = createClient({ url: "file::memory:" });
+		await client.execute("PRAGMA foreign_keys = ON");
 		const libsql = drizzle(client, { schema });
 		await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
 		db = libsql as unknown as Db;
@@ -651,5 +652,275 @@ describe("study pack routes & student scheduled visibility (#533)", () => {
 			},
 		);
 		expect(deleteReferencedPackRes.status).toBe(409);
+	});
+
+	test("concurrent POST /api/study-packs/:id/clone creates at most one clone row (#554)", async () => {
+		await db.insert(schema.studyPack).values({
+			id: "sys-pack-concurrent",
+			orgId: null,
+			title: "Bộ đề hệ thống đua song song",
+			description: "Kiểm tra unique (org_id, source_pack_id)",
+			status: "ready",
+		});
+		await db.insert(schema.studyPackItem).values([
+			{
+				id: "sys-conc-item-1",
+				packId: "sys-pack-concurrent",
+				dayIndex: 1,
+				position: 0,
+				sourceKind: "library_exercise",
+				sourceId: "lex-vocab-1",
+				note: "Ngày 1",
+			},
+			{
+				id: "sys-conc-item-2",
+				packId: "sys-pack-concurrent",
+				dayIndex: 2,
+				position: 0,
+				sourceKind: "library_exercise",
+				sourceId: "lex-vocab-1",
+				note: "Ngày 2",
+			},
+		]);
+
+		const fireClone = () =>
+			app.request("/api/study-packs/sys-pack-concurrent/clone", {
+				method: "POST",
+				headers: teacherHeaders("teacher-1"),
+				body: "{}",
+			});
+
+		const [resA, resB] = await Promise.all([fireClone(), fireClone()]);
+		expect(resA.status).toBe(201);
+		expect(resB.status).toBe(201);
+		const bodyA = (await resA.json()) as { pack: StudyPackDetailView };
+		const bodyB = (await resB.json()) as { pack: StudyPackDetailView };
+		expect(bodyA.pack.id).toBe(bodyB.pack.id);
+		expect(bodyA.pack.items).toHaveLength(2);
+		expect(bodyB.pack.items).toHaveLength(2);
+
+		const clonedRows = await db
+			.select({ id: schema.studyPack.id })
+			.from(schema.studyPack)
+			.where(
+				and(
+					eq(schema.studyPack.orgId, "org-1"),
+					eq(schema.studyPack.sourcePackId, "sys-pack-concurrent"),
+				),
+			);
+		expect(clonedRows).toHaveLength(1);
+	});
+
+	test("editing an assigned study pack preserves kept item IDs and re-assigning same schedule does not duplicate class_assignment rows (#554)", async () => {
+		await db.insert(schema.classTable).values({
+			id: "class-reuse-edit",
+			orgId: "org-1",
+			name: "IELTS Reuse Edit",
+			level: "6.5",
+			type: "ielts",
+			skills: '["reading","listening"]',
+			mode: "Online",
+			schedule: '{"days":[2,4],"start":"18:00","end":"20:00"}',
+			sessionsTotal: 12,
+			sessionsDone: 0,
+			status: "active",
+			startDate: "2026-10-01",
+			notes: "",
+		});
+		await db.insert(schema.student).values({
+			id: "stu-reuse-new",
+			orgId: "org-1",
+			name: "Phúc",
+			email: "phuc@student.local",
+			phone: "0903333333",
+		});
+		await db.insert(schema.enrollment).values({
+			id: "enr-reuse-1",
+			orgId: "org-1",
+			classId: "class-reuse-edit",
+			studentId: "stu-1",
+			status: "active",
+		});
+		await db.insert(schema.assignmentPrompt).values([
+			{
+				id: "pr-grammar-2",
+				orgId: "org-1",
+				task: "task2",
+				genre: "",
+				skill: "grammar",
+				part: "g1",
+				type: "mcq",
+				title: "Grammar Day 2 Original",
+				band: "6.5",
+				source: "",
+				prompt: "",
+				questions: JSON.stringify([
+					{
+						stem: "They ____ already left.",
+						opts: ["have", "has", "is", "was"],
+						answer: "A",
+						alts: "",
+					},
+				]),
+				status: "ready",
+			},
+			{
+				id: "pr-grammar-3",
+				orgId: "org-1",
+				task: "task2",
+				genre: "",
+				skill: "grammar",
+				part: "g1",
+				type: "mcq",
+				title: "Grammar Day 2 Replacement",
+				band: "6.5",
+				source: "",
+				prompt: "",
+				questions: JSON.stringify([
+					{
+						stem: "She ____ to school.",
+						opts: ["walks", "walk", "walking", "walked"],
+						answer: "A",
+						alts: "",
+					},
+				]),
+				status: "ready",
+			},
+		]);
+
+		const createRes = await app.request("/api/study-packs", {
+			method: "POST",
+			headers: teacherHeaders("teacher-1"),
+			body: JSON.stringify({
+				title: "Bộ đề trước khi sửa",
+				description: "2 ngày",
+				status: "ready",
+				items: [
+					{
+						dayIndex: 1,
+						sourceKind: "org_prompt",
+						sourceId: "pr-grammar-1",
+						note: "Ghi chú cũ ngày 1",
+					},
+					{
+						dayIndex: 20,
+						sourceKind: "org_prompt",
+						sourceId: "pr-grammar-2",
+						note: "Ghi chú cũ ngày 20",
+					},
+				],
+			}),
+		});
+		expect(createRes.status).toBe(201);
+		const created = (await createRes.json()) as { pack: StudyPackDetailView };
+		const originalDay1ItemId = created.pack.items[0]?.id;
+		expect(originalDay1ItemId).toBeTruthy();
+
+		// Start yesterday so Day 1 is already past-due (00:00..00:01 yesterday) while Day 20 is in the future!
+		const yesterdayMs =
+			vietnamDateTimeMs(vietnamTodayISO(), "12:00") - 86_400_000;
+		const yesterdayISO = new Date(yesterdayMs + 7 * 3600_000)
+			.toISOString()
+			.slice(0, 10);
+
+		const firstAssignRes = await app.request(
+			"/api/classes/class-reuse-edit/study-packs",
+			{
+				method: "POST",
+				headers: teacherHeaders("teacher-1"),
+				body: JSON.stringify({
+					packId: created.pack.id,
+					startDate: yesterdayISO,
+					releaseTime: "00:00",
+					dueTime: "00:01",
+				}),
+			},
+		);
+		expect(firstAssignRes.status).toBe(201);
+
+		// Teacher edits pack: keeps Day 1 (pr-grammar-1), replaces Day 20 with pr-grammar-3, adds Day 21 (lex-vocab-1)
+		const putRes = await app.request(`/api/study-packs/${created.pack.id}`, {
+			method: "PUT",
+			headers: teacherHeaders("teacher-1"),
+			body: JSON.stringify({
+				title: "Bộ đề sau khi sửa",
+				description: "Đã đổi bài",
+				status: "ready",
+				items: [
+					{
+						dayIndex: 1,
+						sourceKind: "org_prompt",
+						sourceId: "pr-grammar-1",
+						note: "Ghi chú mới ngày 1",
+					},
+					{
+						dayIndex: 20,
+						sourceKind: "org_prompt",
+						sourceId: "pr-grammar-3",
+						note: "Đổi sang đề 3",
+					},
+					{
+						dayIndex: 21,
+						sourceKind: "library_exercise",
+						sourceId: "lex-vocab-1",
+						note: "Thêm ngày 21",
+					},
+				],
+			}),
+		});
+		expect(putRes.status).toBe(200);
+		const updated = (await putRes.json()) as { pack: StudyPackDetailView };
+		expect(updated.pack.items[0]?.id).toBe(originalDay1ItemId);
+		expect(updated.pack.items[0]?.note).toBe("Ghi chú mới ngày 1");
+
+		// Switch pack to draft temporarily and enroll a late student
+		const draftPutRes = await app.request(
+			`/api/study-packs/${created.pack.id}`,
+			{
+				method: "PUT",
+				headers: teacherHeaders("teacher-1"),
+				body: JSON.stringify({
+					title: "Bộ đề tạm chuyển draft",
+					description: "Đang sửa",
+					status: "draft",
+					items: [],
+				}),
+			},
+		);
+		expect(draftPutRes.status).toBe(200);
+
+		await db.insert(schema.enrollment).values({
+			id: "enr-reuse-new",
+			orgId: "org-1",
+			classId: "class-reuse-edit",
+			studentId: "stu-reuse-new",
+			status: "active",
+		});
+
+		// Re-assigning with the SAME schedule returns 200 (reused), does NOT duplicate assignments,
+		// and backfills stu-reuse-new ONLY into upcoming Day 20 (NOT past-due Day 1)!
+		const reuseRes = await app.request(
+			"/api/classes/class-reuse-edit/study-packs",
+			{
+				method: "POST",
+				headers: teacherHeaders("teacher-1"),
+				body: JSON.stringify({
+					packId: created.pack.id,
+					startDate: yesterdayISO,
+					releaseTime: "00:00",
+					dueTime: "00:01",
+				}),
+			},
+		);
+		expect(reuseRes.status).toBe(200);
+		const reuseBody = (await reuseRes.json()) as ClassStudyPacksResponse;
+		expect(reuseBody.packs).toHaveLength(1);
+		const activePack = reuseBody.packs[0];
+		expect(activePack?.assignments).toHaveLength(2);
+		expect(activePack?.assignments.map((a) => a.promptId)).toEqual([
+			"pr-grammar-1",
+			"pr-grammar-2",
+		]);
+		expect(activePack?.assignments.map((a) => a.targetsTotal)).toEqual([1, 2]);
 	});
 });

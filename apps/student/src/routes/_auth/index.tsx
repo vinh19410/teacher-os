@@ -1,9 +1,10 @@
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { STUDENT_ERROR_CODES } from "@teacher-os/api/contracts";
-import { useMemo } from "react";
+import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { toast } from "sonner";
 import { StudentShell } from "@/components/layout/student-shell";
 import Loader from "@/components/loader";
+import { getCurrentLevelLabel } from "@/components/onboarding/onboarding-steps";
 import { AssignmentList } from "@/components/overview/assignment-list";
 import { ClassCard } from "@/components/overview/class-card";
 import { OverviewEmptyState } from "@/components/overview/empty-state";
@@ -12,6 +13,10 @@ import { StatCard } from "@/components/overview/stat-card";
 import { StudentErrorView } from "@/components/overview/student-error-view";
 import { TuitionList } from "@/components/overview/tuition-list";
 import { UpcomingSessions } from "@/components/overview/upcoming-sessions";
+import {
+	deriveVocabLibrarySummary,
+	type VocabLibrarySummary,
+} from "@/components/vocab/vocab-courses-cta";
 import { deriveAssignmentStatus } from "@/lib/assignment-status";
 import { isHttpError } from "@/lib/query-client";
 import {
@@ -20,8 +25,7 @@ import {
 	useStudentMe,
 	useStudentOverview,
 } from "@/lib/repos/student";
-import { useVocabOverview } from "@/lib/repos/vocab";
-
+import { useVocabLibraryCourses, useVocabOverview } from "@/lib/repos/vocab";
 export const Route = createFileRoute("/_auth/")({
 	component: StudentOverviewPage,
 });
@@ -45,12 +49,13 @@ function StudentOverviewPage() {
 		});
 	};
 
-	const dueSoonCount = useMemo(() => {
-		if (!overviewQuery.data?.assignments) return 0;
-		return overviewQuery.data.assignments.filter(
-			(a) => deriveAssignmentStatus(a).status === "due-soon",
-		).length;
-	}, [overviewQuery.data?.assignments]);
+	const nowMs = Date.now();
+	const todayISO = vietnamTodayISO(new Date(nowMs));
+	const dueSoonCount = overviewQuery.data?.assignments
+		? overviewQuery.data.assignments.filter(
+				(a) => deriveAssignmentStatus(a, todayISO, nowMs).status === "due-soon",
+			).length
+		: 0;
 
 	if (isLoading) {
 		return <Loader />;
@@ -104,9 +109,23 @@ function StudentOverviewPage() {
 			/>
 
 			{/* Dải stat 4 cột (design-v2 Dashboard): chỉ hiển thị số liệu CÓ dữ
-			 * liệu thật — band mục tiêu từ onboarding, việc cần làm, số lớp đang
-			 * học. Band hiện tại / chuyên cần chưa có nguồn → ẨN thay vì bịa. */}
+			 * liệu thật — trình độ hiện tại, band mục tiêu từ onboarding, việc cần làm,
+			 * số lớp đang học. Chuyên cần chưa có nguồn → ẨN thay vì bịa. */}
 			<div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+				{me.student.currentLevel && me.student.currentLevel !== "unsure" ? (
+					<StatCard
+						label="Trình độ hiện tại"
+						value={getCurrentLevelLabel(
+							me.student.currentLevel,
+							me.student.examInterest,
+						)}
+						sub={
+							me.student.examInterest === "toeic"
+								? "Điểm TOEIC tự đánh giá"
+								: "Band IELTS tự đánh giá"
+						}
+					/>
+				) : null}
 				{me.student.targetScore ? (
 					<StatCard
 						label="Band mục tiêu"
@@ -164,6 +183,8 @@ function StudentOverviewPage() {
 											acceptEnrollmentMutation.isPending &&
 											acceptEnrollmentMutation.variables === cls.enrollmentId
 										}
+										todayISO={todayISO}
+										nowMs={nowMs}
 									/>
 								))}
 							</div>
@@ -178,7 +199,11 @@ function StudentOverviewPage() {
 			{/* Bài tập */}
 			<StudentVocabEntrySection />
 
-			<AssignmentList assignments={overview.assignments} />
+			<AssignmentList
+				assignments={overview.assignments}
+				todayISO={todayISO}
+				nowMs={nowMs}
+			/>
 		</StudentShell>
 	);
 }
@@ -194,10 +219,28 @@ function StudentTuitionSection() {
 	return <TuitionList invoices={invoices.data} />;
 }
 
-function StudentVocabEntrySection() {
+export function deriveStudentHomeVocabSubtitle(
+	deckCount: number,
+	summary: VocabLibrarySummary | null,
+): string {
+	if (summary) {
+		return deckCount > 0
+			? `${deckCount} bộ từ đang học · ${summary.courseCount} khóa học từ vựng có sẵn`
+			: `Khám phá ${summary.courseCount} khóa học từ vựng theo 5 cấp độ trí nhớ`;
+	}
+	return deckCount > 0
+		? `${deckCount} bộ từ đang học`
+		: "Ôn tập từ vựng theo 5 cấp độ trí nhớ";
+}
+
+export function StudentVocabEntrySection() {
 	const vocab = useVocabOverview();
+	const libraryCourses = useVocabLibraryCourses();
 	const dueCount = vocab.data?.dueCount ?? 0;
 	const deckCount = vocab.data?.decks.length ?? 0;
+	const librarySummary = libraryCourses.isSuccess
+		? deriveVocabLibrarySummary(libraryCourses.data.courses)
+		: null;
 
 	return (
 		<section className="mt-10">
@@ -210,9 +253,7 @@ function StudentVocabEntrySection() {
 						Từ vựng của tôi
 					</h2>
 					<p className="mt-1 text-muted-foreground text-sm">
-						{deckCount > 0
-							? `${deckCount} bộ từ đang học · 20 khóa học từ vựng có sẵn`
-							: "Khám phá 20 khóa học từ vựng theo 5 cấp độ trí nhớ"}
+						{deriveStudentHomeVocabSubtitle(deckCount, librarySummary)}
 					</p>
 				</div>
 				<div className="flex items-center gap-3">

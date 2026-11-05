@@ -8,10 +8,12 @@ import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { useState } from "react";
 import {
 	fmtDue,
+	fmtDueDisplay,
 	studentSubmissionStatus,
 } from "@/components/assignments/assignment-status";
 import { StatusTag } from "@/components/assignments/status-tag";
 import { CreateReportModal } from "@/components/modals/create-report-modal";
+import { ResendInviteButton } from "@/components/students/pending-invite-callout";
 import { InvoiceStatusCell } from "@/components/tuition/invoice-status-cell";
 import { StudentTuitionSummary } from "@/components/tuition/student-tuition-summary";
 import { Avatar } from "@/components/ui/avatar";
@@ -75,12 +77,17 @@ const STATUS_VARIANT: Record<
 
 /** #317 — cells tab Bài tập theo nhánh kind: class row (flow #208) plain text
  * + StatusTag; grading row giữ hành vi cũ (link trang chấm, Band, text). */
-function assignmentRowCells(row: StudentAssignmentRow, todayVN: string) {
+function assignmentRowCells(
+	row: StudentAssignmentRow,
+	todayVN: string,
+	nowMs: number,
+) {
 	if (row.kind === "class") {
 		const status = studentSubmissionStatus(
 			{ submittedAt: row.submittedAt },
 			row.due,
 			todayVN,
+			{ dueAt: row.dueAt, nowMs },
 		);
 		return [
 			<div className="flex flex-col gap-0.5">
@@ -90,7 +97,7 @@ function assignmentRowCells(row: StudentAssignmentRow, todayVN: string) {
 				)}
 			</div>,
 			row.typeLabel ?? "—",
-			fmtDue(row.due),
+			fmtDueDisplay(row.due, row.dueAt),
 			"—",
 			<StatusTag tone={status.tone}>{status.label}</StatusTag>,
 		];
@@ -136,7 +143,8 @@ function StudentDetailRoute() {
 	const lessons = data.lessons.filter((l) => l.sid === studentId);
 	const invoices = data.invoices.filter((i) => i.sid === studentId);
 	const assignments = studentAssignmentRows(data, studentId);
-	const todayVN = vietnamTodayISO();
+	const nowMs = Date.now();
+	const todayVN = vietnamTodayISO(new Date(nowMs));
 	const studentClasses = classesByStudent(data, studentId);
 
 	return (
@@ -155,10 +163,15 @@ function StudentDetailRoute() {
 								? `${student.phone} · Zalo: ${student.zalo || student.phone}`
 								: "Chưa có SĐT"}
 						</span>
-						<span>
+						<span className="inline-flex flex-wrap items-center gap-1.5">
 							{student.email
 								? `Email: ${student.email}`
 								: "Chưa có email (chưa liên kết Portal)"}
+							{Boolean(student.email) && student.portalLinked === false && (
+								<Badge variant="warn" dot className="px-1.5 py-0 text-[10px]">
+									Chờ xác nhận
+								</Badge>
+							)}
 						</span>
 						<span>
 							Mục tiêu: Band {student.targetBand} ({student.skills.join(", ")})
@@ -185,6 +198,15 @@ function StudentDetailRoute() {
 				}
 				action={
 					<>
+						{Boolean(student.email) && student.portalLinked === false && (
+							<ResendInviteButton
+								target={{
+									kind: "student",
+									studentId: student.id,
+									recipientLabel: student.email,
+								}}
+							/>
+						)}
 						<Button
 							variant="outline"
 							size="sm"
@@ -346,7 +368,7 @@ function StudentDetailRoute() {
 						headers={["Bài tập", "Loại", "Hạn", "Band", "Trạng thái"]}
 						rows={assignments.map((row) => ({
 							onClick: undefined,
-							cells: assignmentRowCells(row, todayVN),
+							cells: assignmentRowCells(row, todayVN, nowMs),
 						}))}
 					/>
 				</Card>

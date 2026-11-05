@@ -439,4 +439,61 @@ describe("PATCH /assignments/prompts/:id (full-test builder phase-2)", () => {
 		});
 		expect(noop.status).toBe(200);
 	});
+
+	test("PATCH validates type according to effective status (#577)", async () => {
+		const draftPromptId = await createPrompt(t, orgA, {
+			skill: "writing",
+			part: "task2",
+			type: "",
+			status: "draft",
+			title: "Writing Draft No Type",
+			prompt: "Essay prompt",
+			passage: "",
+			questions: [],
+		});
+
+		// 1. Chuyển sang ready khi type vẫn rỗng -> 400
+		const resReadyEmpty = await t.call(
+			`/api/assignments/prompts/${draftPromptId}`,
+			{
+				session: orgA,
+				method: "PATCH",
+				body: { status: "ready" },
+			},
+		);
+		expect(resReadyEmpty.status).toBe(400);
+
+		// 2. Chuyển sang ready kèm type hợp lệ -> 200
+		const resReadyValid = await t.call(
+			`/api/assignments/prompts/${draftPromptId}`,
+			{
+				session: orgA,
+				method: "PATCH",
+				body: { status: "ready", type: "opinion" },
+			},
+		);
+		expect(resReadyValid.status).toBe(200);
+
+		// 3. Đang ở ready mà gửi type rỗng -> 400
+		const resReadyClearType = await t.call(
+			`/api/assignments/prompts/${draftPromptId}`,
+			{
+				session: orgA,
+				method: "PATCH",
+				body: { type: "" },
+			},
+		);
+		expect(resReadyClearType.status).toBe(400);
+
+		// 4. Gửi type rác ngoài catalog -> 400
+		const resInvalidType = await t.call(
+			`/api/assignments/prompts/${draftPromptId}`,
+			{
+				session: orgA,
+				method: "PATCH",
+				body: { type: "unknown_type" },
+			},
+		);
+		expect(resInvalidType.status).toBe(400);
+	});
 });

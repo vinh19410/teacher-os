@@ -8,10 +8,18 @@ import {
 	assignmentPromptCreateSchema,
 	assignmentPromptUpdateSchema,
 } from "@teacher-os/api/contracts";
+import { isAutoGradableSkill } from "@teacher-os/api/lib/ielts-band";
 import { assignment } from "@teacher-os/db/schema/assignment";
 import { assignmentPrompt } from "@teacher-os/db/schema/assignment-prompt";
+import {
+	assignmentTest,
+	assignmentTestPart,
+} from "@teacher-os/db/schema/assignment-test";
+import { classAssignment } from "@teacher-os/db/schema/class-assignment";
+import { studyPack, studyPackItem } from "@teacher-os/db/schema/study-pack";
 import { and, eq } from "drizzle-orm";
 import { type Context, Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import type { z } from "zod";
 import type { Db, KernelCtx } from "../../app";
 import {
@@ -44,6 +52,12 @@ export function assignmentRoutes(deps: {
 	notificationRetryDelaysMs?: number[];
 }) {
 	const routes = new Hono<Env>();
+	routes.use("*", async (c, next) => {
+		if (c.req.method === "POST" || c.req.method === "PATCH") {
+			return bodyLimit({ maxSize: 256 * 1024 })(c, next);
+		}
+		return next();
+	});
 
 	function unauthorized(c: AssignmentContext) {
 		return c.json({ error: "unauthorized" }, 401);
@@ -55,6 +69,16 @@ export function assignmentRoutes(deps: {
 	): Promise<
 		{ ok: true; data: z.infer<S> } | { ok: false; response: Response }
 	> {
+		const contentType = c.req.header("Content-Type") ?? "";
+		if (!contentType.toLowerCase().startsWith("application/json")) {
+			return {
+				ok: false,
+				response: c.json(
+					{ error: "content-type must be application/json" },
+					415,
+				),
+			};
+		}
 		let raw: unknown;
 		try {
 			raw = await c.req.json();
@@ -111,6 +135,9 @@ export function assignmentRoutes(deps: {
 				optionBank: JSON.stringify(body.data.optionBank),
 				note: body.data.note,
 				status: body.data.status,
+				writingPart: body.data.writing?.part ?? null,
+				writingType: body.data.writing?.type ?? null,
+				writingPrompt: body.data.writing?.prompt ?? "",
 			})
 			.returning({ id: assignmentPrompt.id });
 		if (!created) return c.json({ error: "prompt write conflict" }, 500);
@@ -173,6 +200,10 @@ export function assignmentRoutes(deps: {
 				skill: assignmentPrompt.skill,
 				part: assignmentPrompt.part,
 				type: assignmentPrompt.type,
+				status: assignmentPrompt.status,
+				writingPart: assignmentPrompt.writingPart,
+				writingType: assignmentPrompt.writingType,
+				writingPrompt: assignmentPrompt.writingPrompt,
 			})
 			.from(assignmentPrompt)
 			.where(
@@ -188,7 +219,18 @@ export function assignmentRoutes(deps: {
 		const partTypes =
 			ASSIGNMENT_PART_TYPES[row.skill as AssignmentSkill]?.types[row.part] ??
 			[];
-		if (body.data.type !== undefined && !partTypes.includes(body.data.type)) {
+		const effectiveStatus = body.data.status ?? row.status;
+		const effectiveType =
+			body.data.type !== undefined ? body.data.type : row.type;
+		if (effectiveStatus === "ready") {
+			if (!effectiveType || !partTypes.includes(effectiveType)) {
+				return c.json({ error: "invalid type" }, 400);
+			}
+		} else if (row.skill === "writing") {
+			if (effectiveType && !partTypes.includes(effectiveType)) {
+				return c.json({ error: "invalid type" }, 400);
+			}
+		} else if (!effectiveType || !partTypes.includes(effectiveType)) {
 			return c.json({ error: "invalid type" }, 400);
 		}
 		// Per-question type (#286) — mirror rule của create: type câu phải thuộc
@@ -227,6 +269,84 @@ export function assignmentRoutes(deps: {
 				400,
 			);
 
+		if (body.data.writing !== undefined) {
+			if (body.data.writing !== null && !isAutoGradableSkill(row.skill)) {
+				return c.json(
+					{ error: "writing section only applies to auto-graded skills" },
+					400,
+				);
+			}
+			const nextW = body.data.writing;
+			const curW = row.writingPart
+				? {
+						part: row.writingPart,
+						type: row.writingType ?? "",
+						prompt: row.writingPrompt ?? "",
+					}
+				: null;
+			const writingChanged =
+				nextW === null || curW === null
+					? nextW !== curW
+					: nextW.part !== curW.part ||
+						nextW.type !== curW.type ||
+						nextW.prompt !== curW.prompt;
+			if (writingChanged) {
+				const [assigned, inTest, inPack] = await Promise.all([
+					db
+						.select({ id: classAssignment.id })
+						.from(classAssignment)
+						.where(
+							and(
+								eq(classAssignment.promptId, promptId),
+								eq(classAssignment.orgId, ctx.orgId),
+							),
+						)
+						.limit(1),
+					nextW !== null
+						? db
+								.select({ id: assignmentTestPart.id })
+								.from(assignmentTestPart)
+								.innerJoin(
+									assignmentTest,
+									and(
+										eq(assignmentTest.id, assignmentTestPart.testId),
+										eq(assignmentTest.orgId, ctx.orgId),
+									),
+								)
+								.where(eq(assignmentTestPart.promptId, promptId))
+								.limit(1)
+						: Promise.resolve([]),
+					nextW !== null
+						? db
+								.select({ id: studyPackItem.id })
+								.from(studyPackItem)
+								.innerJoin(
+									studyPack,
+									and(
+										eq(studyPack.id, studyPackItem.packId),
+										eq(studyPack.orgId, ctx.orgId),
+									),
+								)
+								.where(
+									and(
+										eq(studyPackItem.sourceKind, "org_prompt"),
+										eq(studyPackItem.sourceId, promptId),
+									),
+								)
+								.limit(1)
+						: Promise.resolve([]),
+				]);
+				if (assigned.length > 0 || inTest.length > 0 || inPack.length > 0) {
+					return c.json(
+						{
+							error: "writing section locked",
+							code: "WRITING_SECTION_LOCKED",
+						},
+						409,
+					);
+				}
+			}
+		}
 		// Explicit map — a missing entry here silently drops the field.
 		const updates: Partial<typeof assignmentPrompt.$inferInsert> = {};
 		if (body.data.type !== undefined) updates.type = body.data.type;
@@ -252,6 +372,17 @@ export function assignmentRoutes(deps: {
 			updates.optionBank = JSON.stringify(body.data.optionBank);
 		if (body.data.type !== undefined)
 			updates.genre = row.skill === "writing" ? body.data.type : "";
+		if (body.data.writing !== undefined) {
+			if (body.data.writing === null) {
+				updates.writingPart = null;
+				updates.writingType = null;
+				updates.writingPrompt = "";
+			} else {
+				updates.writingPart = body.data.writing.part;
+				updates.writingType = body.data.writing.type;
+				updates.writingPrompt = body.data.writing.prompt;
+			}
+		}
 
 		if (Object.keys(updates).length === 0)
 			return c.json({ id: promptId } satisfies CreatedResponse);

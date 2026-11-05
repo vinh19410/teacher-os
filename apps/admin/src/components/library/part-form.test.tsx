@@ -169,7 +169,15 @@ describe("slotTypes / emptyPartValue", () => {
 			opts: null,
 			pin: null,
 		});
-		expect(BAND_OPTIONS).toEqual(["6.0", "6.5", "7.0", "7.5"]);
+		expect(BAND_OPTIONS).toEqual([
+			"5.0",
+			"5.5",
+			"6.0",
+			"6.5",
+			"7.0",
+			"7.5",
+			"8.0",
+		]);
 	});
 });
 

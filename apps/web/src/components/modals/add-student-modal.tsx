@@ -1,4 +1,7 @@
+import { STUDENT_INVITATION_ERROR_CODES } from "@teacher-os/api/contracts";
 import { type FormEvent, useEffect, useState } from "react";
+import { toast } from "sonner";
+import { PendingInviteCallout } from "@/components/students/pending-invite-callout";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
@@ -30,9 +33,16 @@ export function AddStudentModal({
 	const [nameError, setNameError] = useState<string | undefined>();
 	const [emailError, setEmailError] = useState<string | undefined>();
 
-	const { saving, error, notice, submitBlocked, run, reconcile, reset } =
-		useKernelFormSubmit();
-
+	const {
+		saving,
+		error,
+		failureError,
+		notice,
+		submitBlocked,
+		run,
+		reconcile,
+		reset,
+	} = useKernelFormSubmit();
 	useEffect(() => {
 		if (open) {
 			setName("");
@@ -87,6 +97,11 @@ export function AddStudentModal({
 		});
 
 		if (result?.kind === "refreshed") {
+			if (trimmedEmail && result.inviteEmailSent === false) {
+				toast.warning(
+					"Đã lưu hồ sơ học viên nhưng chưa gửi được email lời mời — bạn có thể bấm Gửi lại lời mời trong danh sách học viên.",
+				);
+			}
 			onClose();
 		}
 	}
@@ -96,6 +111,24 @@ export function AddStudentModal({
 			onClose();
 		}
 	}
+
+	const trimmedCurrentEmail = email.trim().toLowerCase();
+	const unjoinedConflict =
+		failureError?.code === STUDENT_INVITATION_ERROR_CODES.ALREADY_IN_ORG &&
+		failureError.portalLinked === false &&
+		failureError.existingStudentId
+			? {
+					studentId: failureError.existingStudentId,
+					studentName: failureError.existingStudentName,
+				}
+			: null;
+	const joinedConflictError =
+		failureError?.code === STUDENT_INVITATION_ERROR_CODES.ALREADY_IN_ORG &&
+		failureError.portalLinked === true
+			? failureError.existingStudentName
+				? `Email này đã tham gia cổng học viên (${failureError.existingStudentName}).`
+				: "Email này đã tham gia cổng học viên."
+			: undefined;
 
 	const effectiveClassId = (defaultClassId ?? classId).trim();
 
@@ -203,10 +236,23 @@ export function AddStudentModal({
 				)}
 
 				<div className="flex flex-col gap-2 empty:hidden">
-					{error && (
-						<p role="alert" className="text-danger text-xs">
-							{error}
-						</p>
+					{unjoinedConflict && trimmedCurrentEmail ? (
+						<PendingInviteCallout
+							target={{
+								kind: "student",
+								studentId: unjoinedConflict.studentId,
+								recipientLabel: trimmedCurrentEmail,
+							}}
+							studentName={unjoinedConflict.studentName}
+							email={trimmedCurrentEmail}
+							onResent={onClose}
+						/>
+					) : (
+						(joinedConflictError ?? error) && (
+							<p role="alert" className="text-danger text-xs">
+								{joinedConflictError ?? error}
+							</p>
+						)
 					)}
 					{notice && (
 						<KernelSubmitNotice

@@ -1,6 +1,7 @@
 import type {
 	AssignmentQuestion,
 	AssignmentSkill,
+	AssignmentWritingSection,
 	AttendanceStatus,
 	ClassType,
 	KernelAssignmentTestRow,
@@ -21,6 +22,8 @@ export interface Student {
 	zalo: string;
 	/** Email học viên — danh tính đăng nhập tương lai (cùng phone); "" với row legacy. */
 	email: string;
+	/** #570: true = đã hoàn tất tham gia cổng học viên; false = chờ xác nhận; undefined = snapshot cũ (deploy skew). */
+	portalLinked?: boolean;
 	/** false = chưa có gói (tạo không lớp — D2): pkg là ZERO_PKG, view render "Chưa có gói". */
 	hasPackage: boolean;
 	parent: { name: string; phone: string };
@@ -98,6 +101,8 @@ export interface AssignmentPrompt {
 	optionBank?: string[];
 	note: string;
 	status: "draft" | "ready";
+	/** #574: phần Writing đính kèm của đề tự chấm (null = đề đơn kỹ năng). */
+	writing?: AssignmentWritingSection | null;
 	/** ISO datetime (#208) — bank sort mới nhất trước + meta `Thêm {date}`. */
 	createdAt: string;
 }
@@ -110,6 +115,7 @@ export interface ClassAssignment {
 	promptId: string;
 	title: string;
 	due: string;
+	dueAt?: string | null;
 	note: string;
 	createdAt: string;
 	targets: Array<{

@@ -555,3 +555,59 @@ describe("assignmentPromptCreateSchema — grammar & vocabulary (#533)", () => {
 		).toBe(false);
 	});
 });
+
+describe("assignmentPromptCreateSchema — prompt type requirement by status (#577)", () => {
+	it("cho phép đề Writing draft có type rỗng", () => {
+		const res = assignmentPromptCreateSchema.safeParse({
+			...writingReady,
+			status: "draft",
+			type: "",
+		});
+		expect(res.success).toBe(true);
+	});
+
+	it("từ chối đề Writing ready khi type rỗng", () => {
+		const res = assignmentPromptCreateSchema.safeParse({
+			...writingReady,
+			status: "ready",
+			type: "",
+		});
+		expect(res.success).toBe(false);
+		if (!res.success) {
+			expect(
+				res.error.issues.some((issue) => issue.path.includes("type")),
+			).toBe(true);
+		}
+	});
+
+	it("từ chối đề Writing draft có type ngoài catalog", () => {
+		const res = assignmentPromptCreateSchema.safeParse({
+			...writingReady,
+			status: "draft",
+			type: "invalid_type",
+		});
+		expect(res.success).toBe(false);
+	});
+
+	it("chấp nhận đề Writing ready có type hợp lệ", () => {
+		const res = assignmentPromptCreateSchema.safeParse({
+			...writingReady,
+			status: "ready",
+			type: "discuss",
+		});
+		expect(res.success).toBe(true);
+	});
+
+	it("từ chối đề Reading draft khi type rỗng (chỉ Writing được phép để trống)", () => {
+		const res = assignmentPromptCreateSchema.safeParse({
+			...writingReady,
+			skill: "reading",
+			part: "p1",
+			type: "",
+			status: "draft",
+			passage: "<p>Passage content</p>",
+			questions: [{ stem: "Q1", answer: "", alts: "", opts: null }],
+		});
+		expect(res.success).toBe(false);
+	});
+});

@@ -258,6 +258,11 @@ describe("GradeForm (#319)", () => {
 		expect(screen.getByRole("alert").textContent).toBe(
 			"Không lưu được điểm. Thử lại.",
 		);
+		expect(
+			(document.getElementById("grade-feedback") as HTMLTextAreaElement)
+				.disabled,
+		).toBe(false);
+		expect(sliderFor("task").disabled).toBe(false);
 	});
 
 	test("saving=true đổi nhãn nút và giữ disable", () => {
@@ -308,5 +313,95 @@ describe("GradeForm (#319)", () => {
 		expect(onSaveDraft).toHaveBeenCalledTimes(1);
 		fireEvent.click(publishBtn);
 		expect(onSave).not.toHaveBeenCalled();
+	});
+
+	test("saving=true khóa inputs (feedback textarea, sliders) và bật aria-busy trên form (#615)", () => {
+		render(
+			<GradeForm
+				skill="writing"
+				part="task2"
+				initial={{
+					scores: { task: 6, coherence: 6.5, lexical: 6, grammar: 6 },
+					band: 6.5,
+					feedback: "Ban đầu",
+					gradedAt: "",
+				}}
+				saving={true}
+				error={null}
+				savedAt={null}
+				onSave={() => {}}
+			/>,
+		);
+		const feedback = document.getElementById(
+			"grade-feedback",
+		) as HTMLTextAreaElement;
+		expect(feedback.disabled).toBe(true);
+		for (const key of ["task", "coherence", "lexical", "grammar"]) {
+			expect(sliderFor(key).disabled).toBe(true);
+		}
+		const form = screen.getByTestId("grade-form");
+		expect(form.getAttribute("aria-busy")).toBe("true");
+	});
+
+	test("savingDraft=true khóa inputs và disable nút Chốt trả bài khi draft mode (#615)", () => {
+		render(
+			<GradeForm
+				skill="writing"
+				part="task2"
+				initial={{
+					scores: { task: 6, coherence: 6.5, lexical: 6, grammar: 6 },
+					band: 6.5,
+					feedback: "Ban đầu",
+					gradedAt: "",
+				}}
+				saving={false}
+				draftMode={true}
+				savingDraft={true}
+				canPublish={true}
+				error={null}
+				savedAt={null}
+				onSave={() => {}}
+				onSaveDraft={() => {}}
+			/>,
+		);
+		const feedback = document.getElementById(
+			"grade-feedback",
+		) as HTMLTextAreaElement;
+		expect(feedback.disabled).toBe(true);
+		for (const key of ["task", "coherence", "lexical", "grammar"]) {
+			expect(sliderFor(key).disabled).toBe(true);
+		}
+		const publishBtn = screen.getByTestId("publish-grade") as HTMLButtonElement;
+		expect(publishBtn.disabled).toBe(true);
+		const form = screen.getByTestId("grade-form");
+		expect(form.getAttribute("aria-busy")).toBe("true");
+	});
+
+	test("khi saving=true, onChange trên slider và textarea không làm đổi state (#615)", () => {
+		render(
+			<GradeForm
+				skill="writing"
+				part="task2"
+				initial={{
+					scores: { task: 6, coherence: 6.5, lexical: 6, grammar: 6 },
+					band: 6.5,
+					feedback: "Ban đầu",
+					gradedAt: "",
+				}}
+				saving={true}
+				error={null}
+				savedAt={null}
+				onSave={() => {}}
+			/>,
+		);
+		const feedback = document.getElementById(
+			"grade-feedback",
+		) as HTMLTextAreaElement;
+		fireEvent.change(feedback, { target: { value: "Gõ lén lúc đang lưu" } });
+		expect(feedback.value).toBe("Ban đầu");
+
+		const slider = sliderFor("task");
+		fireEvent.change(slider, { target: { value: "8" } });
+		expect(slider.value).toBe("6");
 	});
 });

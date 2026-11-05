@@ -130,6 +130,11 @@ export interface AppDeps {
 	 */
 	notificationRetryDelaysMs?: number[];
 	/**
+	 * #570: khoảng chờ chống spam (ms) giữa các lần gửi lại email lời mời học viên.
+	 * Production mặc định 60_000 (60s); E2E truyền 0 để kiểm thử không cần sleep.
+	 */
+	inviteResendCooldownMs?: number;
+	/**
 	 * TOS-33 (#481) D3: khoảng chờ (ms) giữa các lượt gọi grader trong vòng
 	 * "Thử chấm lại AI" / reserve đầu. Production bỏ trống ([1s, 2s]);
 	 * test/E2E truyền [0, 0].
@@ -446,13 +451,7 @@ export function buildApp(deps: AppDeps) {
 	app.route("/api", examImportRoutes(deps));
 	app.route("/api", creditRoutes(deps));
 	// TOS-33 (#481): grader + retry delays xuống routes chấm (ai-retry).
-	app.route(
-		"/api",
-		kernelRoutes({
-			...deps,
-			aiRetryDelaysMs: deps.aiRetryDelaysMs,
-		}),
-	);
+	app.route("/api", kernelRoutes(deps));
 
 	return app;
 }

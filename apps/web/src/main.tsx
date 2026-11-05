@@ -11,6 +11,7 @@ import { routeTree } from "./routeTree.gen";
 const router = createRouter({
 	routeTree,
 	defaultPreload: "intent",
+	defaultPendingMs: 200,
 	scrollRestoration: true,
 	defaultPendingComponent: () => <Loader />,
 	defaultNotFoundComponent: NotFoundPage,

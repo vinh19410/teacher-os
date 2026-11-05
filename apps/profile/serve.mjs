@@ -38,9 +38,53 @@ export function replaceLeadApiMeta(html, leadApiUrl) {
 	);
 }
 
+const STUDENT_PORTAL_TAG_RE = /<a\b[^>]*\bid="studentPortalLink"[^>]*>/g;
+
+function normalizeStudentPortalUrl(studentPortalUrl) {
+	const trimmed = String(studentPortalUrl ?? "").trim();
+	if (!trimmed) return "";
+
+	let parsed;
+	try {
+		parsed = new URL(trimmed);
+	} catch {
+		throw new Error(`Invalid STUDENT_PORTAL_URL: ${trimmed}`);
+	}
+	if (
+		(parsed.protocol !== "https:" && parsed.protocol !== "http:") ||
+		parsed.username ||
+		parsed.password
+	) {
+		throw new Error(
+			`Invalid STUDENT_PORTAL_URL (must be http/https without credentials): ${trimmed}`,
+		);
+	}
+	return trimmed;
+}
+
+export function replaceStudentPortalHref(html, studentPortalUrl) {
+	const trimmed = normalizeStudentPortalUrl(studentPortalUrl);
+	if (!trimmed) return html;
+
+	const matches = html.match(STUDENT_PORTAL_TAG_RE) ?? [];
+	if (matches.length !== 1 || !/\bhref="[^"]*"/.test(matches[0])) {
+		throw new Error(
+			`Expected exactly one <a id="studentPortalLink" href="..."> in HTML (found ${matches.length})`,
+		);
+	}
+
+	const escapedHref = `href="${escapeAttr(trimmed)}"`;
+	return html.replace(STUDENT_PORTAL_TAG_RE, (tag) =>
+		tag.replace(/\bhref="[^"]*"/, () => escapedHref),
+	);
+}
+
 export function createProfileServer(
 	leadApiUrl = process.env.LEAD_API_URL || "http://localhost:8000",
+	// Use ?? (not ||) so explicit STUDENT_PORTAL_URL="" preserves the HTML prod default (#560).
+	studentPortalUrl = process.env.STUDENT_PORTAL_URL ?? "http://localhost:8003",
 ) {
+	const validatedStudentPortalUrl = normalizeStudentPortalUrl(studentPortalUrl);
 	return createServer(async (req, res) => {
 		let url;
 		let decodedPath;
@@ -91,9 +135,14 @@ export function createProfileServer(
 				return;
 			}
 
-			if (file === rootIndexFile || file === testIndexFile) {
+			const isRootIndex = file.toLowerCase() === rootIndexFile.toLowerCase();
+			const isTestIndex = file.toLowerCase() === testIndexFile.toLowerCase();
+			if (isRootIndex || isTestIndex) {
 				const raw = await readFile(file, "utf8");
-				const rendered = replaceLeadApiMeta(raw, leadApiUrl);
+				const withLeadApi = replaceLeadApiMeta(raw, leadApiUrl);
+				const rendered = isRootIndex
+					? replaceStudentPortalHref(withLeadApi, validatedStudentPortalUrl)
+					: withLeadApi;
 				const buf = Buffer.from(rendered, "utf8");
 				res.writeHead(200, {
 					"content-type": types[".html"],

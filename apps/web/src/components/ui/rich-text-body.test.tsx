@@ -107,4 +107,20 @@ describe("RichTextBody", () => {
 			"whitespace-pre-wrap",
 		);
 	});
+
+	it("decodes single-line escaped entities via sanitizeRichText and preserves unescaped 'a<b và c>d' plain text (#571)", () => {
+		const escaped = render(<RichTextBody text="Ta có a&lt;b và c&gt;d" />);
+		expect(escaped.container.textContent).toBe("Ta có a<b và c>d");
+		cleanup();
+
+		const plainInequality = render(
+			<RichTextBody text={"Ta có a<b và c>d\nSuy ra B"} />,
+		);
+		expect(plainInequality.container.querySelector("div")?.className).toContain(
+			"whitespace-pre-line",
+		);
+		expect(plainInequality.container.textContent).toContain(
+			"Ta có a<b và c>d\nSuy ra B",
+		);
+	});
 });

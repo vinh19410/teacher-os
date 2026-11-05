@@ -1,3 +1,4 @@
+import type { AssignmentWritingSection } from "@teacher-os/api/contracts";
 import type { QuestionItem } from "@/components/assignments/assignment-presets";
 
 export const PREVIEW_DRAFT_KEY = "teacher-os:assignment-preview-draft";
@@ -24,6 +25,8 @@ export interface PreviewDraft {
 	 * `transcript` does; dropping it here would silently wipe the panel. */
 	optionBank?: string[];
 	items?: QuestionItem[];
+	writing?: AssignmentWritingSection | null;
+	promptId?: string;
 }
 function isPreviewDraft(value: unknown): value is PreviewDraft {
 	if (!value || typeof value !== "object") return false;
@@ -34,7 +37,13 @@ function isPreviewDraft(value: unknown): value is PreviewDraft {
 		typeof v.source === "string" &&
 		typeof v.prompt === "string" &&
 		typeof v.note === "string" &&
-		(v.status === "draft" || v.status === "ready")
+		(v.status === "draft" || v.status === "ready") &&
+		(v.writing == null ||
+			(typeof v.writing === "object" &&
+				typeof (v.writing as Record<string, unknown>).part === "string" &&
+				typeof (v.writing as Record<string, unknown>).type === "string" &&
+				typeof (v.writing as Record<string, unknown>).prompt === "string")) &&
+		(v.promptId === undefined || typeof v.promptId === "string")
 	);
 }
 function storage(): Storage | null {

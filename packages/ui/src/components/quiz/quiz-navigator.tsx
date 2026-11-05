@@ -4,12 +4,14 @@ import {
 	isAnsweredValue,
 	type QuizPart,
 } from "@teacher-os/api/lib/quiz-parts";
+import { formatEssayWordMilestone } from "@teacher-os/ui/components/quiz/quiz-essay-footer";
 import {
 	VERDICT_BADGE_CLASSES,
 	VERDICT_SOLID_CLASSES,
 	VerdictIcon,
 } from "@teacher-os/ui/components/quiz/quiz-verdict";
 import { cn } from "@teacher-os/ui/lib/utils";
+import { useMemo, useRef } from "react";
 
 const VERDICT_ARIA_LABELS: Record<QuizVerdict, string> = {
 	correct: "đúng",
@@ -30,6 +32,7 @@ export function QuizNavigator({
 	onSelect,
 	mode = "take",
 	verdicts,
+	writingProgress = null,
 }: {
 	parts: QuizPart[];
 	/** Answers học viên keyed theo `q` — quyết định fill của nút số câu. */
@@ -41,6 +44,11 @@ export function QuizNavigator({
 	mode?: "take" | "review";
 	/** Verdict theo `q` (0-based) từ detail payload — bắt buộc khi review. */
 	verdicts?: Record<number, QuizVerdict>;
+	/** Tiến độ đếm từ phần Writing của bài gộp (#574) — dính cùng khối sticky. */
+	writingProgress?: {
+		wordCount: number;
+		minWords: number | null;
+	} | null;
 }) {
 	const reviewMode = mode === "review";
 	const allQuestions = parts.flatMap((part) => part.questions);
@@ -48,9 +56,44 @@ export function QuizNavigator({
 	const verdictCount = (verdict: QuizVerdict): number =>
 		allQuestions.filter((question) => verdicts?.[question.q] === verdict)
 			.length;
+	const writingWordCount = writingProgress?.wordCount ?? 0;
+	const writingMinWords = writingProgress?.minWords ?? null;
+	const belowWritingMin =
+		writingMinWords !== null && writingWordCount < writingMinWords;
+	const writingAnnounce = useMemo(
+		() =>
+			writingProgress != null
+				? formatEssayWordMilestone(writingWordCount, writingMinWords)
+				: null,
+		[writingProgress, writingWordCount, writingMinWords],
+	);
+	const writingAnnounceRef = useRef<string>("");
+	if (writingAnnounce !== null) writingAnnounceRef.current = writingAnnounce;
 
 	return (
 		<footer className="sticky bottom-0 z-20 max-h-[30svh] overflow-y-auto border-border border-t bg-background/95 backdrop-blur lg:max-h-none lg:overflow-visible">
+			{!reviewMode && writingProgress != null && (
+				<div className="border-border border-b px-4 py-1.5 font-mono text-muted-foreground text-xs">
+					<div className="mx-auto flex w-full max-w-[720px] items-center justify-between gap-2">
+						<span>Phần 2 · Writing</span>
+						<span data-testid="hybrid-essay-word-count">
+							<span
+								className={cn(
+									"font-medium",
+									belowWritingMin ? "text-primary" : "text-foreground",
+								)}
+							>
+								{writingWordCount}
+							</span>
+							{" từ"}
+							{writingMinWords !== null && ` · tối thiểu ${writingMinWords}`}
+						</span>
+					</div>
+					<span role="status" className="sr-only">
+						{writingAnnounceRef.current}
+					</span>
+				</div>
+			)}
 			<div className="w-full px-4 py-3">
 				<p
 					role="status"

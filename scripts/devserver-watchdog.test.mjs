@@ -249,6 +249,38 @@ test("state machine: http status ≥ deadStatus tính là chết (readyz 503 = a
 	assert.equal(st2.restarts, 0);
 });
 
+test("createRunAborter: gửi đúng 1 SIGINT tới runner dù được gọi nhiều lần", () => {
+	const calls = [];
+	const abort = watchdog.createRunAborter({
+		runnerPid: "4242",
+		kill: (pid, signal) => calls.push([pid, signal]),
+	});
+	abort();
+	abort();
+	assert.deepEqual(calls, [[4242, "SIGINT"]]);
+});
+
+test("createRunAborter: PID thiếu hoặc không an toàn thì không gửi signal", () => {
+	for (const runnerPid of [undefined, "", "abc", "0", "1", "-5", "12.5"]) {
+		const calls = [];
+		watchdog.createRunAborter({
+			runnerPid,
+			kill: (pid, signal) => calls.push([pid, signal]),
+		})();
+		assert.deepEqual(calls, [], `không được kill với ${runnerPid}`);
+	}
+});
+
+test("createRunAborter: runner đã thoát (ESRCH) không làm watchdog crash", () => {
+	const abort = watchdog.createRunAborter({
+		runnerPid: "4242",
+		kill: () => {
+			throw Object.assign(new Error("kill ESRCH"), { code: "ESRCH" });
+		},
+	});
+	assert.doesNotThrow(abort);
+});
+
 test("redact: token cắt ngang biên chunk vẫn bị che (rawTail carry-over)", () => {
 	const redact = services.createRedactor();
 	const secret = "s3cr3tTOKENvalue9";

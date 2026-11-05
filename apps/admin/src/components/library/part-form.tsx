@@ -1,4 +1,5 @@
 import {
+	ASSIGNMENT_BANDS,
 	ASSIGNMENT_PART_TYPES,
 	ASSIGNMENT_TEST_PRESETS,
 	assignmentQuestionSchema,
@@ -75,7 +76,7 @@ export interface PartFormValue {
 	note: string;
 }
 
-export const BAND_OPTIONS = ["6.0", "6.5", "7.0", "7.5"] as const;
+export const BAND_OPTIONS = ASSIGNMENT_BANDS;
 
 /** Dạng bài hợp lệ của slot theo catalog skill. */
 export function slotTypes(
@@ -461,6 +462,7 @@ export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
 		// no-op, không retry — kongming wave-5). Layout effect chạy ngay sau
 		// commit nên `hidden` đã được gỡ.
 		const pendingScrollId = useRef<string | null>(null);
+		// biome-ignore lint/correctness/useExhaustiveDependencies: scroll sau khi view commit
 		useLayoutEffect(() => {
 			const id = pendingScrollId.current;
 			if (id === null) return;
@@ -489,7 +491,6 @@ export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
 
 		// Vị trí soạn hiện hành (tab/nhóm/hàng) báo lên trang — cây điều
 		// hướng tô aria-current đúng và trang giữ view-state qua remount.
-		// biome-ignore lint/correctness/useExhaustiveDependencies: báo mỗi lần view đổi; onActivePositionChange ổn định qua ref ở trang
 		useEffect(() => {
 			onActivePositionChange?.({
 				group: view.openGroup,

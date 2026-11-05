@@ -4,8 +4,8 @@ import {
 	isAutoSkill,
 	partOf,
 	type QuestionItem,
+	selectedTypeOf,
 	skillOf,
-	typeOf,
 } from "./assignment-presets";
 
 export function CreateSuccessCard({
@@ -13,11 +13,12 @@ export function CreateSuccessCard({
 	status,
 	skill = "writing",
 	part = "task2",
-	type = "discuss",
+	type = "",
 	band,
 	source,
 	audioName = "",
 	questions = [],
+	isEditing = false,
 	onCreateAnother,
 }: {
 	title: string;
@@ -29,11 +30,12 @@ export function CreateSuccessCard({
 	source: string;
 	audioName?: string;
 	questions?: QuestionItem[];
+	isEditing?: boolean;
 	onCreateAnother: () => void;
 }) {
 	const skillPreset = skillOf(skill);
 	const partPreset = partOf(skill, part);
-	const typePreset = typeOf(skill, part, type);
+	const typePreset = selectedTypeOf(skill, part, type);
 	const auto = isAutoSkill(skill);
 	const locked = questions.filter((item) => item.answer.trim()).length;
 	return (
@@ -50,15 +52,24 @@ export function CreateSuccessCard({
 				✓
 			</div>
 			<h2 className="font-semibold text-[22px] tracking-tight">
-				{status === "draft" ? "Đã lưu bản nháp" : "Đã thêm vào ngân hàng"}
+				{status === "draft"
+					? "Đã lưu bản nháp"
+					: isEditing
+						? "Đã cập nhật bài tập"
+						: "Đã thêm vào ngân hàng"}
 			</h2>
 			<p className="text-muted-foreground">
-				“{title}” chưa được giao lớp. Giao bài tập ở trang Lớp học khi cần.
+				{isEditing
+					? "Các thay đổi đã được cập nhật vào ngân hàng đề."
+					: `“${title}” chưa được giao lớp. Giao bài tập ở trang Lớp học khi cần.`}
 			</p>
 			<ul className="flex flex-col gap-2">
 				{[
 					["Kỹ năng", skillPreset.name],
-					["Phần thi", `${partPreset.label} · ${typePreset.label}`],
+					[
+						"Phần thi",
+						`${partPreset.label} · ${typePreset?.label ?? "Chưa chọn dạng"}`,
+					],
 					["Band mục tiêu", band],
 					[
 						"Chi tiết",
@@ -66,7 +77,7 @@ export function CreateSuccessCard({
 							? audioName || "Chưa đính file"
 							: auto
 								? `${questions.length} câu`
-								: typePreset.label,
+								: (typePreset?.label ?? "Chưa chọn dạng"),
 					],
 					...(auto
 						? [
@@ -78,7 +89,7 @@ export function CreateSuccessCard({
 						: []),
 					["Nguồn", source.trim() || "Không ghi nguồn"],
 					["Trạng thái", status === "draft" ? "Bản nháp" : "Sẵn sàng giao"],
-					["Giao lớp", "Chưa giao"],
+					...(isEditing ? [] : [["Giao lớp", "Chưa giao"]]),
 				].map(([key, value]) => (
 					<li
 						key={key}
@@ -91,7 +102,7 @@ export function CreateSuccessCard({
 			</ul>
 			<div className="flex flex-wrap gap-3 pt-2">
 				<Button variant="secondary" onClick={onCreateAnother}>
-					Tạo đề khác
+					{isEditing ? "Tạo bài tập mới" : "Tạo đề khác"}
 				</Button>
 				<Link
 					to="/assignments"

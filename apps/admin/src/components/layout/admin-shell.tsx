@@ -35,7 +35,9 @@ export function AdminShell() {
 					<span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
 						<BookOpenText aria-hidden="true" className="size-4" />
 					</span>
-					Teacher OS · Quản trị
+					<span className="truncate" title="Cô Mỹ Dạy Tiếng Anh · Quản trị">
+						Cô Mỹ Dạy Tiếng Anh · Quản trị
+					</span>
 				</div>
 				<nav className="flex flex-row gap-1 md:grid">
 					{NAV_ITEMS.map((item) => (

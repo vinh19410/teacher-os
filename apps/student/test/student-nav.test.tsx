@@ -19,6 +19,7 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 
 import {
+	ACTIVE_KEY_BY_PREFIX,
 	STUDENT_NAV,
 	STUDENT_PAGE_LABEL,
 	StudentShellLink,
@@ -35,12 +36,12 @@ describe("STUDENT_NAV v2", () => {
 		);
 		expect(ITEM_BY_HREF["/"]?.label).toBe("Tổng quan");
 		expect(ITEM_BY_HREF["/classes"]?.label).toBe("Lớp học");
+		expect(ITEM_BY_HREF["/schedule"]?.label).toBe("Lịch học");
 		expect(ITEM_BY_HREF["/assignments"]?.label).toBe("Bài tập");
 		expect(ITEM_BY_HREF["/vocab"]).toBeUndefined();
 		expect(ITEM_BY_HREF["/tuition"]?.label).toBe("Học phí");
-		// Phase 10: "Luyện tập" đã bật (5 skill con, không Dictation);
-		// "Lịch sử" nằm trong list nhưng enabled=false tới phase 11.
-		expect(STUDENT_NAV[0].items).toHaveLength(6);
+		// #584: "Lịch học" đã có route riêng /schedule gộp các buổi của mọi lớp.
+		expect(STUDENT_NAV[0].items).toHaveLength(7);
 		const practice = ITEM_BY_HREF["/practice"];
 		expect(practice?.label).toBe("Luyện tập");
 		expect(practice?.children?.map((child) => child.href)).toEqual([
@@ -76,6 +77,7 @@ describe("STUDENT_NAV v2", () => {
 			expect(STUDENT_PAGE_LABEL[item.key]).toBe(item.label);
 		}
 		expect(STUDENT_PAGE_LABEL.vocab).toBeUndefined();
+		expect(ACTIVE_KEY_BY_PREFIX["/schedule"]).toBe("schedule");
 	});
 });
 

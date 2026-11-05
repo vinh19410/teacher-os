@@ -5,6 +5,7 @@ import {
 	orgIdForTeacherEmail,
 	readVerificationEmails,
 	seedStudent,
+	selectWritingTask2,
 	signUpViaUi,
 	type VerificationEmailEntry,
 	verifyStudentEmailFromMailLog,
@@ -147,6 +148,7 @@ async function setupClassWithTwoStudents(page: Page): Promise<string> {
  * (pattern class-assign.spec). */
 async function assignPromptToClass(page: Page) {
 	await page.goto("/assignments/new");
+	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill(PROMPT_TITLE);
 	const editor = page.getByLabel("Nội dung đề", { exact: true });
 	await editor.click();
@@ -237,7 +239,7 @@ test("AC-001 thông báo email + in-app: hóa đơn, giao bài, đã xem, filter
 	const invoiceMail = mailsTo(invoiceMails, student1Email).find(
 		(e) => e.subject === "Hóa đơn học phí",
 	);
-	expect(invoiceMail?.fromName).toBe(`${orgName} qua Teacher OS`);
+	expect(invoiceMail?.fromName).toBe(`${orgName} qua Cô Mỹ Dạy Tiếng Anh`);
 	expect(invoiceMail?.replyTo).toBe(teacherEmail);
 
 	// --- Bước 2: giao bài → mỗi học viên 1 dòng "Giao bài" ---

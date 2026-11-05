@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AddStudentModal } from "@/components/modals/add-student-modal";
 import { InviteStudentModal } from "@/components/modals/invite-student-modal";
 import { PendingInvitationsList } from "@/components/students/pending-invitations-list";
+import { ResendInviteButton } from "@/components/students/pending-invite-callout";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,8 +19,11 @@ import { useData } from "@/lib/data-store";
 import { classMeta } from "@/lib/mock-data";
 import { classesByStudent } from "@/lib/repos/enrollments";
 import { usePendingInvitations } from "@/lib/repos/invitations";
+import {
+	filterUniquePendingInvites,
+	isPendingPortalStudent,
+} from "@/lib/repos/students";
 import { useStudents } from "@/lib/repos/use-students";
-
 export const Route = createFileRoute("/_auth/students/")({
 	component: StudentsRoute,
 });
@@ -43,13 +47,23 @@ export function StudentsRoute() {
 	);
 	const [inviteModalOpen, setInviteModalOpen] = useState(false);
 	const [addModalOpen, setAddModalOpen] = useState(false);
-	const pendingInvites = (invitations ?? []).filter(
-		(inv) => inv.status === "pending",
+	const pendingStudents = students.filter(isPendingPortalStudent);
+	const pendingStudentEmails = new Set(
+		pendingStudents
+			.map((s) => (s.email ?? "").trim().toLowerCase())
+			.filter(Boolean),
 	);
+	const pendingInvites = filterUniquePendingInvites(
+		invitations,
+		pendingStudentEmails,
+	);
+	const totalPendingCount = pendingStudents.length + pendingInvites.length;
+	const activeStudentsCount = students.filter(
+		(s) => !isPendingPortalStudent(s),
+	).length;
 	const unpaidStudentIds = new Set(
 		data.invoices.filter((i) => i.status !== "paid").map((i) => i.sid),
 	);
-
 	const attentionCount = students.filter(
 		(s) =>
 			s.tags.includes("nợ học phí") ||
@@ -68,7 +82,7 @@ export function StudentsRoute() {
 	return (
 		<div>
 			<PageHead
-				kicker={`${students.length} học viên đang học · ${pendingInvites.length} lời mời đang chờ`}
+				kicker={`${activeStudentsCount} học viên đang học · ${totalPendingCount} lời mời đang chờ`}
 				title="Học viên"
 				lead={`${attentionCount} cần chú ý (nợ học phí / sắp hết gói)`}
 				action={
@@ -98,8 +112,8 @@ export function StudentsRoute() {
 						{
 							id: "invitations",
 							label:
-								pendingInvites.length > 0
-									? `Lời mời đang chờ (${pendingInvites.length})`
+								totalPendingCount > 0
+									? `Lời mời đang chờ (${totalPendingCount})`
 									: "Lời mời đang chờ",
 						},
 					]}
@@ -114,6 +128,7 @@ export function StudentsRoute() {
 			{activeTab === "invitations" ? (
 				<PendingInvitationsList
 					onInviteClick={() => setInviteModalOpen(true)}
+					pendingStudents={pendingStudents}
 				/>
 			) : students.length === 0 ? (
 				<Card
@@ -161,14 +176,22 @@ export function StudentsRoute() {
 												<span>
 													{s.phone || s.email || "Chưa có SĐT / Email"}
 												</span>
-												{!s.email && (
+												{!s.email ? (
 													<Badge
 														variant="muted"
 														className="px-1.5 py-0 text-[10px]"
 													>
 														Chưa liên kết Portal
 													</Badge>
-												)}
+												) : isPendingPortalStudent(s) ? (
+													<Badge
+														variant="warn"
+														dot
+														className="px-1.5 py-0 text-[10px]"
+													>
+														Chờ xác nhận
+													</Badge>
+												) : null}
 											</div>
 										</div>
 									</div>,
@@ -198,10 +221,25 @@ export function StudentsRoute() {
 											</span>
 										)}
 									</div>,
-									<div key="tags" className="flex flex-wrap gap-1">
-										{s.tags.map((t) => (
-											<Tag key={t}>{t}</Tag>
-										))}
+									<div
+										key="tags"
+										className="flex flex-wrap items-center justify-between gap-2"
+									>
+										<div className="flex flex-wrap gap-1">
+											{s.tags.map((t) => (
+												<Tag key={t}>{t}</Tag>
+											))}
+										</div>
+										{isPendingPortalStudent(s) && (
+											<ResendInviteButton
+												target={{
+													kind: "student",
+													studentId: s.id,
+													recipientLabel: s.email,
+												}}
+												compact
+											/>
+										)}
 									</div>,
 								],
 							};

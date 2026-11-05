@@ -208,6 +208,37 @@ describe("QuizReviewItem — giải thích riêng từng câu (#358)", () => {
 		expect(quizReviewExplanation(reviewInfo({ note: " n " }))).toBe("n");
 		expect(quizReviewExplanation(reviewInfo({ note: " " }))).toBeNull();
 	});
+
+	it("explanation chỉ chứa markup rỗng (<p></p> / <p><br></p>) → fallback note hoặc ẩn disclosure (#571)", () => {
+		const withNote = renderToStaticMarkup(
+			<QuizReviewItem
+				info={reviewInfo({ explanation: "<p>   </p>", note: "Ghi chú chung" })}
+			/>,
+		);
+		expect(withNote).toContain('data-source="note"');
+		expect(withNote).toContain("Ghi chú chung");
+		expect(
+			quizReviewExplanation(
+				reviewInfo({ explanation: "<p>   </p>", note: "Ghi chú chung" }),
+			),
+		).toBe("Ghi chú chung");
+		expect(
+			quizReviewExplanation(
+				reviewInfo({ explanation: "<p><br></p>", note: "<p></p>" }),
+			),
+		).toBeNull();
+	});
+	it("câu không có giải thích và đề không có note: chỉ hiện Đáp án, không rác giao diện (#579)", () => {
+		const html = renderToStaticMarkup(
+			<QuizReviewItem
+				info={reviewInfo({ explanation: undefined, note: "" })}
+			/>,
+		);
+		expect(html).toContain("Đáp án:");
+		expect(html).not.toContain("quiz-review-explanation");
+		expect(html).not.toContain("Giải thích");
+		expect(html).not.toContain("Chưa có giải thích");
+	});
 });
 
 describe("QuizPaper mode=review — paper read-only từ đáp án học viên", () => {

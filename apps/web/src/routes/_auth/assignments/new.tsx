@@ -1,8 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { isAssignmentImageUrl } from "@teacher-os/api/contracts";
-import { isEmptyRichText } from "@teacher-os/api/rich-text";
-import { type FormEvent, useEffect, useState } from "react";
 import {
+	ASSIGNMENT_BANDS,
+	type AssignmentBand,
+	DEFAULT_ASSIGNMENT_BAND,
+	isAssignmentImageUrl,
+} from "@teacher-os/api/contracts";
+import { isEmptyRichText } from "@teacher-os/api/rich-text";
+import { type FormEvent, useEffect, useRef, useState } from "react";
+import {
+	bandFromClassLevel,
 	emptyComposer,
 	isAutoSkill,
 	isImageBased,
@@ -12,6 +18,7 @@ import {
 	applyComposerFieldChange,
 	clozeStemIssue,
 	hasAuthoringContent,
+	hasPrimaryAuthoringContent,
 	imagePinIssue,
 	optionBankIssue,
 	structuralChangeKind,
@@ -23,6 +30,7 @@ import {
 } from "@/components/assignments/prompt-composer";
 import { KernelSubmitNotice } from "@/components/modals/kernel-submit-notice";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
 import { PageHead } from "@/components/ui/page-head";
 import {
@@ -39,11 +47,29 @@ import {
 	takePreviewDraft,
 } from "@/lib/assignment-preview-draft";
 import { useData } from "@/lib/data-store";
-import { normalizeLegacyRichText } from "@/lib/rich-text-legacy";
+import type { KernelCommandResult } from "@/lib/repos/kernel";
+import {
+	normalizeDraftItems,
+	normalizeLegacyRichText,
+} from "@/lib/rich-text-legacy";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 
+export function NewAssignmentPage() {
+	const { promptId } = Route.useSearch?.() ?? {};
+	return <NewAssignmentRoute key={promptId ?? "new"} />;
+}
+
 export const Route = createFileRoute("/_auth/assignments/new")({
-	component: NewAssignmentRoute,
+	validateSearch: (
+		search: Record<string, unknown>,
+	): { classId?: string; promptId?: string } => ({
+		classId: typeof search.classId === "string" ? search.classId : undefined,
+		promptId:
+			typeof search.promptId === "string" && search.promptId.length > 0
+				? search.promptId
+				: undefined,
+	}),
+	component: NewAssignmentPage,
 });
 
 interface SavedPrompt {
@@ -57,13 +83,16 @@ interface SavedPrompt {
 	audioName: string;
 	questions: QuestionItem[];
 }
-function freshComposer(): ComposerValue {
+function freshComposer(
+	initialBand: AssignmentBand = DEFAULT_ASSIGNMENT_BAND,
+): ComposerValue {
 	return {
 		skill: "writing",
 		part: "task2",
-		type: "discuss",
-		band: "7.0",
-		...emptyComposer("writing", "discuss"),
+		type: "",
+		band: initialBand,
+		...emptyComposer("writing", ""),
+		writing: null,
 	};
 }
 function countAnswers(value: ComposerValue) {
@@ -72,6 +101,12 @@ function countAnswers(value: ComposerValue) {
 function hasCoreContent(value: ComposerValue) {
 	if (!value.title.trim()) return false;
 	if (value.skill === "writing") return !isEmptyRichText(value.prompt);
+	if (
+		isAutoSkill(value.skill) &&
+		value.writing != null &&
+		isEmptyRichText(value.writing.prompt)
+	)
+		return false;
 	if (value.skill === "reading")
 		return (
 			!isEmptyRichText(value.passage) &&
@@ -87,12 +122,189 @@ function hasCoreContent(value: ComposerValue) {
 		? !!value.cueTopic.trim()
 		: !isEmptyRichText(value.prompt);
 }
+export type MissingRequirement = {
+	id: string;
+	label: string;
+	fieldId?: string;
+};
+
+export function missingRequirementsFor(
+	value: ComposerValue,
+	status: "draft" | "ready",
+): MissingRequirement[] {
+	const missing: MissingRequirement[] = [];
+
+	// 1. Dạng đề (chỉ bắt buộc khi status === "ready")
+	if (status === "ready" && !value.type.trim()) {
+		missing.push({
+			id: "type",
+			label: "Chọn dạng đề trước khi lưu sẵn sàng giao.",
+			fieldId: "assignment-field-type",
+		});
+	}
+
+	// 2. Tiêu đề bài tập
+	if (!value.title.trim()) {
+		missing.push({
+			id: "title",
+			label: "Nhập tiêu đề bài tập.",
+			fieldId: "assignment-field-title",
+		});
+	}
+
+	// 3. Nội dung đề / bài đọc / cueTopic
+	if (value.skill === "writing") {
+		if (isEmptyRichText(value.prompt)) {
+			missing.push({
+				id: "prompt",
+				label: "Dán hoặc soạn đề trước khi lưu.",
+				fieldId: "assignment-field-prompt",
+			});
+		}
+	} else if (value.skill === "reading") {
+		if (isEmptyRichText(value.passage)) {
+			missing.push({
+				id: "passage",
+				label: "Nhập đoạn đọc.",
+				fieldId: "assignment-field-passage",
+			});
+		}
+		if (!value.items.some((item) => item.stem.trim())) {
+			missing.push({
+				id: "reading-questions",
+				label: "Thêm ít nhất 1 câu hỏi có nội dung.",
+				fieldId: "assignment-field-questions",
+			});
+		}
+	} else if (
+		value.skill === "listening" ||
+		value.skill === "grammar" ||
+		value.skill === "vocabulary"
+	) {
+		if (!value.items.some((item) => item.stem.trim().length > 0)) {
+			missing.push({
+				id: "auto-questions",
+				label: "Thêm ít nhất 1 câu hỏi có nội dung.",
+				fieldId: "assignment-field-questions",
+			});
+		}
+	} else if (value.skill === "speaking") {
+		if (value.part === "part2") {
+			if (!value.cueTopic.trim()) {
+				missing.push({
+					id: "cueTopic",
+					label: "Nhập chủ đề cue card.",
+					fieldId: "assignment-field-cueTopic",
+				});
+			}
+		} else if (isEmptyRichText(value.prompt)) {
+			missing.push({
+				id: "prompt",
+				label: "Dán hoặc soạn đề trước khi lưu.",
+				fieldId: "assignment-field-prompt",
+			});
+		}
+	}
+
+	// Phần Writing đi kèm trong bài gộp (isAutoSkill)
+	if (
+		isAutoSkill(value.skill) &&
+		value.writing != null &&
+		isEmptyRichText(value.writing.prompt)
+	) {
+		missing.push({
+			id: "writingPrompt",
+			label: "Dán hoặc soạn đề phần Writing trước khi lưu.",
+			fieldId: "assignment-field-writing-prompt",
+		});
+	}
+
+	// 4. File nghe
+	if (
+		value.skill === "listening" &&
+		status === "ready" &&
+		!value.audioName.trim()
+	) {
+		missing.push({
+			id: "audioName",
+			label: "Đính file nghe (MP3 hoặc WAV).",
+			fieldId: "assignment-field-audio",
+		});
+	}
+
+	// 5. Ảnh minh họa
+	if (isImageBased(value.skill, value.type)) {
+		const trimmedImageUrl = value.imageUrl.trim();
+		if (trimmedImageUrl && !isAssignmentImageUrl(trimmedImageUrl)) {
+			missing.push({
+				id: "imageUrl",
+				label: "Chỉ nhận link ảnh https (tối đa 500 ký tự).",
+				fieldId: "assignment-field-image",
+			});
+		} else if (status === "ready" && !trimmedImageUrl) {
+			missing.push({
+				id: "imageUrl",
+				label: "Dán link ảnh (https) trước khi lưu.",
+				fieldId: "assignment-field-image",
+			});
+		}
+	}
+
+	// 6. Ngân hàng từ / Lỗi cú pháp câu hỏi / Ghim nhãn ảnh
+	const bankIssue = optionBankIssue(value, status);
+	if (bankIssue) {
+		missing.push({
+			id: "optionBank",
+			label: bankIssue,
+			fieldId: "assignment-field-questions",
+		});
+	}
+
+	const stemIssue = clozeStemIssue(value, status);
+	if (stemIssue) {
+		missing.push({
+			id: "questions-stem",
+			label: stemIssue,
+			fieldId: "assignment-field-questions",
+		});
+	}
+
+	const pinIssue = value.imageUrl.trim() ? imagePinIssue(value, status) : null;
+	if (pinIssue && !stemIssue) {
+		missing.push({
+			id: "questions-pin",
+			label: pinIssue,
+			fieldId: "assignment-field-questions",
+		});
+	}
+
+	// 7. Đáp án chấm tự động
+	if (
+		isAutoSkill(value.skill) &&
+		status === "ready" &&
+		countAnswers(value) !== value.items.length
+	) {
+		missing.push({
+			id: "answers",
+			label: "Khóa đáp án đúng cho mọi câu trước khi lưu sẵn sàng giao.",
+			fieldId: "assignment-field-questions",
+		});
+	}
+
+	return missing;
+}
+
 export function actionCopyFor(value: ComposerValue, status: "draft" | "ready") {
 	const auto = isAutoSkill(value.skill);
 	if (!value.title.trim())
 		return {
 			title: "Đặt tên đề rồi lưu vào ngân hàng.",
 			sub: "Chưa giao lớp.",
+		};
+	if (status === "ready" && !value.type.trim())
+		return {
+			title: "Chưa chọn dạng đề",
+			sub: "Chọn dạng đề trước khi lưu sẵn sàng giao.",
 		};
 	if (
 		value.skill === "listening" &&
@@ -139,6 +351,11 @@ export function actionCopyFor(value: ComposerValue, status: "draft" | "ready") {
 		return {
 			title: "Thiếu đáp án chấm tự động",
 			sub: "Khóa đáp án đúng cho mọi câu trước khi lưu sẵn sàng giao.",
+		};
+	if (auto && value.writing != null && isEmptyRichText(value.writing.prompt))
+		return {
+			title: "Thiếu đề phần Writing",
+			sub: "Nhập nội dung đề cho phần Writing đi kèm hoặc bỏ phần Writing.",
 		};
 	if (!hasCoreContent(value))
 		return {
@@ -189,6 +406,7 @@ export function previewDraftFrom(
 		items: value.items,
 		note: value.note,
 		status,
+		writing: value.writing ?? null,
 	};
 }
 
@@ -201,12 +419,30 @@ const STRUCTURAL_LABELS = {
 export function NewAssignmentRoute() {
 	const navigate = useNavigate();
 	const submit = useKernelFormSubmit();
+	const { classId, promptId } = Route.useSearch?.() ?? {};
 	const { data } = useData();
+	const existingPrompt = promptId
+		? (data.assignmentPrompts?.find((p) => p.id === promptId) ?? null)
+		: null;
+	const isEditing = Boolean(promptId && existingPrompt);
+	const targetClass = classId
+		? data.classes?.find((c) => c.id === classId)
+		: null;
+	const classBand = targetClass
+		? bandFromClassLevel(targetClass.level, targetClass.type)
+		: null;
+	const resolvedDefaultBand = classBand ?? DEFAULT_ASSIGNMENT_BAND;
+	const userChangedBandRef = useRef(false);
 	// Restore precedence (FR6): the destructive preview-draft take wins over
 	// the autosave banner — the teacher deliberately handed off to /preview.
-	const [restored] = useState(() => takePreviewDraft());
+	const [rawRestored] = useState(() => takePreviewDraft());
+	const restored =
+		rawRestored &&
+		(promptId ? rawRestored.promptId === promptId : !rawRestored.promptId)
+			? rawRestored
+			: null;
 	const [bannerDraft] = useState<StoredAssignmentDraft | null>(() =>
-		restored ? null : readAssignmentDraft(),
+		restored || promptId ? null : readAssignmentDraft(),
 	);
 	// Legacy adapter (plan decision 9): stored values may be plain text with
 	// \n — loading them raw into the editor would collapse the newlines and
@@ -214,49 +450,120 @@ export function NewAssignmentRoute() {
 	// converts to <br> only when the string has no markup yet.
 	const restoreRich = (text: string | undefined) =>
 		normalizeLegacyRichText(text ?? "");
-	const [value, setValue] = useState<ComposerValue>(() =>
-		restored
-			? {
-					...freshComposer(),
-					...restored,
-					skill: restored.skill ?? "writing",
-					part: restored.part ?? restored.task,
-					type: restored.type ?? restored.genre,
-					prompt: restoreRich(restored.prompt),
-					passage: restoreRich(restored.passage),
-					intro: restoreRich(restored.intro),
-					transcript: restoreRich(restored.transcript),
-					note: restoreRich(restored.note),
-					cueTopic: restored.cueTopic ?? "",
-					cuePoints: restored.cuePoints ?? "",
-					audioName: restored.audioName ?? "",
-					imageUrl: restored.imageUrl ?? "",
-					optionBank: restored.optionBank ?? [],
-					items: restored.items ?? [],
-				}
-			: bannerDraft
-				? {
-						...freshComposer(),
-						...bannerDraft.value,
-						prompt: restoreRich(bannerDraft.value.prompt),
-						passage: restoreRich(bannerDraft.value.passage),
-						intro: restoreRich(bannerDraft.value.intro),
-						transcript: restoreRich(bannerDraft.value.transcript),
-						note: restoreRich(bannerDraft.value.note),
-					}
-				: freshComposer(),
-	);
+	const [value, setValue] = useState<ComposerValue>(() => {
+		if (restored) {
+			return {
+				...freshComposer(resolvedDefaultBand),
+				...restored,
+				skill: restored.skill ?? "writing",
+				part: restored.part ?? restored.task,
+				type: restored.type ?? restored.genre,
+				prompt: restoreRich(restored.prompt),
+				passage: restoreRich(restored.passage),
+				intro: restoreRich(restored.intro),
+				transcript: restoreRich(restored.transcript),
+				note: restoreRich(restored.note),
+				cueTopic: restored.cueTopic ?? "",
+				cuePoints: restored.cuePoints ?? "",
+				audioName: restored.audioName ?? "",
+				imageUrl: restored.imageUrl ?? "",
+				optionBank: restored.optionBank ?? [],
+				items: normalizeDraftItems(restored.items ?? []),
+				writing: restored.writing
+					? {
+							...restored.writing,
+							prompt: restoreRich(restored.writing.prompt),
+						}
+					: null,
+			};
+		}
+		if (existingPrompt) {
+			const skill = existingPrompt.skill ?? "writing";
+			const part = existingPrompt.part ?? existingPrompt.task ?? "task2";
+			const type = existingPrompt.type ?? existingPrompt.genre ?? "";
+			return {
+				...freshComposer(resolvedDefaultBand),
+				skill,
+				part,
+				type,
+				title: existingPrompt.title ?? "",
+				band: (ASSIGNMENT_BANDS as readonly string[]).includes(
+					existingPrompt.band,
+				)
+					? (existingPrompt.band as AssignmentBand)
+					: resolvedDefaultBand,
+				source: existingPrompt.source ?? "",
+				prompt: restoreRich(existingPrompt.prompt),
+				passage: restoreRich(existingPrompt.passage),
+				intro: restoreRich(existingPrompt.intro),
+				transcript: restoreRich(existingPrompt.transcript),
+				note: restoreRich(existingPrompt.note),
+				cueTopic: existingPrompt.cueTopic ?? "",
+				cuePoints: existingPrompt.cuePoints ?? "",
+				audioName: existingPrompt.audioName ?? "",
+				imageUrl: existingPrompt.imageUrl ?? "",
+				optionBank: existingPrompt.optionBank ?? [],
+				items: normalizeDraftItems(existingPrompt.questions ?? []),
+				writing: existingPrompt.writing
+					? {
+							...existingPrompt.writing,
+							prompt: restoreRich(existingPrompt.writing.prompt),
+						}
+					: null,
+			};
+		}
+		if (bannerDraft) {
+			return {
+				...freshComposer(resolvedDefaultBand),
+				...bannerDraft.value,
+				prompt: restoreRich(bannerDraft.value.prompt),
+				passage: restoreRich(bannerDraft.value.passage),
+				intro: restoreRich(bannerDraft.value.intro),
+				transcript: restoreRich(bannerDraft.value.transcript),
+				note: restoreRich(bannerDraft.value.note),
+				writing: bannerDraft.value.writing
+					? {
+							...bannerDraft.value.writing,
+							prompt: restoreRich(bannerDraft.value.writing.prompt),
+						}
+					: null,
+				items: normalizeDraftItems(bannerDraft.value.items ?? []),
+			};
+		}
+		return freshComposer(resolvedDefaultBand);
+	});
 	const [status, setStatus] = useState<"draft" | "ready">(
-		restored?.status ?? bannerDraft?.status ?? "ready",
+		restored?.status ??
+			existingPrompt?.status ??
+			bannerDraft?.status ??
+			"ready",
 	);
-	const [bannerOpen, setBannerOpen] = useState(() => bannerDraft !== null);
+	const [bannerOpen, setBannerOpen] = useState(
+		() => !promptId && bannerDraft !== null,
+	);
 	const [showErrors, setShowErrors] = useState(false);
 	const [saved, setSaved] = useState<SavedPrompt | null>(null);
 	// Debounced autosave (FR6): skip the success card (the draft was cleared
 	// on purpose) and skip an untouched composer (an empty draft must never
 	// resurrect the restore banner).
 	useEffect(() => {
-		if (saved) return;
+		if (isEditing) return;
+		if (!classBand) return;
+		if (userChangedBandRef.current) return;
+		if (restored || bannerDraft) return;
+		setValue((current) => {
+			if (
+				current.band === DEFAULT_ASSIGNMENT_BAND &&
+				current.band !== classBand
+			) {
+				return { ...current, band: classBand };
+			}
+			return current;
+		});
+	}, [classBand, restored, bannerDraft, isEditing]);
+
+	useEffect(() => {
+		if (saved || isEditing) return;
 		if (!composerDraftHasContent(value)) return;
 		const timer = setTimeout(() => {
 			saveAssignmentDraft({
@@ -267,11 +574,19 @@ export function NewAssignmentRoute() {
 			});
 		}, 1000);
 		return () => clearTimeout(timer);
-	}, [value, status, saved]);
+	}, [value, status, saved, isEditing]);
 	const fieldErrors: Record<string, string | undefined> = {};
 	if (!value.title.trim()) fieldErrors.title = "Nhập tiêu đề bài tập.";
+	if (status === "ready" && !value.type.trim())
+		fieldErrors.type = "Chọn dạng đề trước khi lưu sẵn sàng giao.";
 	if (value.skill === "writing" && isEmptyRichText(value.prompt))
 		fieldErrors.prompt = "Dán hoặc soạn đề trước khi lưu.";
+	if (
+		isAutoSkill(value.skill) &&
+		value.writing != null &&
+		isEmptyRichText(value.writing.prompt)
+	)
+		fieldErrors.writingPrompt = "Dán hoặc soạn đề phần Writing trước khi lưu.";
 	if (value.skill === "reading" && isEmptyRichText(value.passage))
 		fieldErrors.passage = "Nhập đoạn đọc.";
 	if (
@@ -304,39 +619,26 @@ export function NewAssignmentRoute() {
 	// Phase-04 FR2 mirror — image-based pairs gate ready on image + pins.
 	const pinIssue = imagePinIssue(value, status);
 	if (pinIssue && !stemIssue) fieldErrors.questions = pinIssue;
-	const canSave =
-		hasCoreContent(value) &&
-		!(
-			value.skill === "listening" &&
-			status === "ready" &&
-			!value.audioName.trim()
-		) &&
-		!(
-			isImageBased(value.skill, value.type) &&
-			status === "ready" &&
-			!value.imageUrl.trim()
-		) &&
-		!(
-			value.skill === "reading" &&
-			value.imageUrl.trim() &&
-			!isAssignmentImageUrl(value.imageUrl)
-		) &&
-		!bankIssue &&
-		!stemIssue &&
-		!pinIssue &&
-		!(
-			isAutoSkill(value.skill) &&
-			status === "ready" &&
-			countAnswers(value) !== value.items.length
-		);
+	const missingRequirements = missingRequirementsFor(value, status);
+	const canSave = missingRequirements.length === 0;
 	const actionCopy = actionCopyFor(value, status);
 	function handleFieldChange(patch: Partial<ComposerValue>) {
+		if (patch.band !== undefined) {
+			userChangedBandRef.current = true;
+		}
 		// Confirm decision happens HERE, outside the state updater — React
 		// StrictMode double-fires updaters, so a confirm inside one would fire
 		// twice (red-team #8). The updater stays pure.
 		const change = structuralChangeKind(value, patch);
-		if (change && hasAuthoringContent(value)) {
-			// A skill change wipes the whole composer (emptyComposer — including
+		const losesContent =
+			change === "skill"
+				? isAutoSkill(value.skill) &&
+					patch.skill !== undefined &&
+					isAutoSkill(patch.skill)
+					? hasPrimaryAuthoringContent(value)
+					: hasAuthoringContent(value)
+				: change !== null && hasPrimaryAuthoringContent(value);
+		if (change && losesContent) {
 			// title); a part/type change only wipes the type-specific fields.
 			const message =
 				change === "skill"
@@ -356,58 +658,161 @@ export function NewAssignmentRoute() {
 	function discardDraftBanner() {
 		clearAssignmentDraft();
 		setBannerOpen(false);
-		setValue(freshComposer());
+		setValue(freshComposer(resolvedDefaultBand));
 		setStatus("ready");
 	}
 	function resetAll() {
-		clearAssignmentDraft();
+		if (!isEditing) {
+			clearAssignmentDraft();
+			userChangedBandRef.current = false;
+			setValue(freshComposer(resolvedDefaultBand));
+			setStatus("ready");
+		} else {
+			navigate({ to: "/assignments/new" });
+		}
 		setBannerOpen(false);
-		setValue(freshComposer());
-		setStatus("ready");
 		setShowErrors(false);
 		setSaved(null);
 		submit.reset();
 	}
+	function focusField(fieldId: string) {
+		if (typeof document === "undefined") return;
+		const target = document.getElementById(fieldId);
+		if (!target) return;
+
+		const tag = target.tagName.toUpperCase();
+		const isNativeControl =
+			tag === "INPUT" ||
+			tag === "TEXTAREA" ||
+			tag === "SELECT" ||
+			tag === "BUTTON" ||
+			target.isContentEditable;
+
+		const focusable = isNativeControl
+			? target
+			: (target.querySelector<HTMLElement>(
+					"[contenteditable='true'], .ProseMirror, input:not([type='hidden']), textarea, select, button",
+				) ?? (target.hasAttribute("tabindex") ? target : null));
+
+		const scrollTarget = focusable ?? target;
+		scrollTarget.scrollIntoView?.({ behavior: "smooth", block: "center" });
+		focusable?.focus({ preventScroll: true });
+	}
+
 	async function handleSubmit(event: FormEvent) {
 		event.preventDefault();
+		if (submit.saving) return;
 		setShowErrors(true);
-		if (!canSave) return;
-		const result = await submit.run({
-			type: "create-assignment-prompt",
-			payload: {
-				skill: value.skill as
-					| "writing"
-					| "reading"
-					| "listening"
-					| "speaking"
-					| "grammar"
-					| "vocabulary",
-				part: value.part,
-				type: value.type,
-				title: value.title.trim(),
-				band: value.band as "6.0" | "6.5" | "7.0" | "7.5",
-				source: value.source.trim(),
-				prompt: value.prompt.trim(),
-				passage: value.passage.trim(),
-				intro: value.intro,
-				transcript: value.transcript,
-				cueTopic: value.cueTopic.trim(),
-				cuePoints: value.cuePoints,
-				audioName: value.audioName.trim(),
-				imageUrl: value.imageUrl.trim(),
-				questions: value.items,
-				optionBank: value.optionBank,
-				note: value.note.trim(),
-				status,
-			},
-		});
+		const missing = missingRequirementsFor(value, status);
+		if (missing.length > 0) {
+			const firstWithField = missing.find((m) => m.fieldId);
+			if (firstWithField?.fieldId) {
+				focusField(firstWithField.fieldId);
+			}
+			return;
+		}
+		let result: KernelCommandResult | null;
+		if (isEditing && existingPrompt) {
+			const curW = existingPrompt.writing
+				? {
+						part: existingPrompt.writing.part,
+						type: existingPrompt.writing.type ?? "",
+						prompt: restoreRich(existingPrompt.writing.prompt).trim(),
+					}
+				: null;
+			const nextW = value.writing
+				? {
+						part: value.writing.part,
+						type: value.writing.type,
+						prompt: value.writing.prompt.trim(),
+					}
+				: null;
+			const writingChanged =
+				curW === null || nextW === null
+					? curW !== nextW
+					: curW.part !== nextW.part ||
+						curW.type !== nextW.type ||
+						curW.prompt !== nextW.prompt;
+
+			result = await submit.run({
+				type: "update-assignment-prompt",
+				promptId: existingPrompt.id,
+				payload: {
+					type: value.type,
+					title: value.title.trim(),
+					band: (ASSIGNMENT_BANDS as readonly string[]).includes(value.band)
+						? (value.band as AssignmentBand)
+						: DEFAULT_ASSIGNMENT_BAND,
+					source: value.source.trim(),
+					prompt: value.prompt.trim(),
+					passage: value.passage.trim(),
+					intro: value.intro,
+					transcript: value.transcript,
+					cueTopic: value.cueTopic.trim(),
+					cuePoints: value.cuePoints,
+					audioName: value.audioName.trim(),
+					imageUrl: value.imageUrl.trim(),
+					questions: value.items,
+					optionBank: value.optionBank,
+					note: value.note.trim(),
+					status,
+					...(writingChanged
+						? {
+								writing: nextW,
+							}
+						: {}),
+				},
+			});
+		} else {
+			result = await submit.run({
+				type: "create-assignment-prompt",
+				payload: {
+					skill: value.skill as
+						| "writing"
+						| "reading"
+						| "listening"
+						| "speaking"
+						| "grammar"
+						| "vocabulary",
+					part: value.part,
+					type: value.type,
+					title: value.title.trim(),
+					band: (ASSIGNMENT_BANDS as readonly string[]).includes(value.band)
+						? (value.band as AssignmentBand)
+						: DEFAULT_ASSIGNMENT_BAND,
+					source: value.source.trim(),
+					prompt: value.prompt.trim(),
+					passage: value.passage.trim(),
+					intro: value.intro,
+					transcript: value.transcript,
+					cueTopic: value.cueTopic.trim(),
+					cuePoints: value.cuePoints,
+					audioName: value.audioName.trim(),
+					imageUrl: value.imageUrl.trim(),
+					questions: value.items,
+					optionBank: value.optionBank,
+					note: value.note.trim(),
+					status,
+					...(value.writing
+						? {
+								writing: {
+									part: value.writing.part,
+									type: value.writing.type,
+									prompt: value.writing.prompt.trim(),
+								},
+							}
+						: {}),
+				},
+			});
+		}
 		// The write may be saved on refreshed/committed and may-or-may-not on
 		// outcome-unknown — the draft must not resurrect in any of those. A
 		// definite-failure (4xx) provably did NOT save: keep the draft.
 		if (
-			result?.kind === "refreshed" ||
-			result?.kind === "committed" ||
-			result?.kind === "outcome-unknown"
+			!isEditing &&
+			(result?.kind === "refreshed" ||
+				result?.kind === "committed" ||
+				result?.kind === "outcome-unknown")
 		)
 			clearAssignmentDraft();
 		if (result?.kind === "refreshed")
@@ -426,14 +831,20 @@ export function NewAssignmentRoute() {
 	async function handleReconcile() {
 		const applied = await submit.reconcile();
 		if (!applied) return;
-		clearAssignmentDraft();
-		const row = data.assignmentPrompts.find(
-			(prompt) =>
-				prompt.title === value.title.trim() && prompt.skill === value.skill,
-		);
+		if (!isEditing) clearAssignmentDraft();
+		const row =
+			isEditing && existingPrompt
+				? data.assignmentPrompts.find((p) => p.id === existingPrompt.id)
+				: data.assignmentPrompts.find(
+						(prompt) =>
+							prompt.title === value.title.trim() &&
+							prompt.skill === value.skill,
+					);
 		if (!row) {
 			submit.setError(
-				"Đã tải lại dữ liệu nhưng chưa xác nhận được đề mới trong ngân hàng.",
+				isEditing
+					? "Đã tải lại dữ liệu nhưng chưa xác nhận được thay đổi của đề trong ngân hàng."
+					: "Đã tải lại dữ liệu nhưng chưa xác nhận được đề mới trong ngân hàng.",
 			);
 			return;
 		}
@@ -449,6 +860,32 @@ export function NewAssignmentRoute() {
 			questions: row.questions ?? [],
 		});
 	}
+	if (promptId && !existingPrompt) {
+		return (
+			<div>
+				<PageHead
+					title="Chỉnh sửa đề bài"
+					lead="Không tìm thấy đề bài được yêu cầu trong ngân hàng đề."
+				/>
+				<Card variant="white" className="mx-auto max-w-xl p-8 text-center">
+					<h2 className="font-semibold text-lg">Không tìm thấy đề này.</h2>
+					<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
+						Đề có thể đã bị xóa khỏi ngân hàng. Quay lại danh sách để chọn đề
+						khác.
+					</p>
+					<div className="mt-6 flex justify-center">
+						<Button
+							variant="secondary"
+							onClick={() => navigate({ to: "/assignments" })}
+						>
+							Quay lại danh sách
+						</Button>
+					</div>
+				</Card>
+			</div>
+		);
+	}
+
 	return (
 		<div>
 			<nav
@@ -462,11 +899,15 @@ export function NewAssignmentRoute() {
 					Bài tập
 				</Link>
 				<span aria-hidden="true">›</span>
-				<span>Tạo mới</span>
+				<span>{isEditing ? "Chỉnh sửa" : "Tạo mới"}</span>
 			</nav>
 			<PageHead
-				title="Thêm đề vào ngân hàng"
-				lead="Soạn đề Writing, Reading, Listening hoặc Speaking theo phần thi IELTS. Reading và Listening khóa đáp án để chấm tự động. Đề lưu ngân hàng; giao lớp ở trang Lớp học."
+				title={isEditing ? "Chỉnh sửa đề bài" : "Thêm đề vào ngân hàng"}
+				lead={
+					isEditing
+						? "Sửa nội dung đề Writing, Reading, Listening hoặc Speaking. Lưu thay đổi vào ngân hàng đề."
+						: "Soạn đề Writing, Reading, Listening hoặc Speaking theo phần thi IELTS. Reading và Listening khóa đáp án để chấm tự động. Đề lưu ngân hàng; giao lớp ở trang Lớp học."
+				}
 			/>
 			{bannerOpen && !saved && (
 				<div
@@ -492,7 +933,11 @@ export function NewAssignmentRoute() {
 				</div>
 			)}
 			{saved ? (
-				<CreateSuccessCard {...saved} onCreateAnother={resetAll} />
+				<CreateSuccessCard
+					{...saved}
+					isEditing={isEditing}
+					onCreateAnother={resetAll}
+				/>
 			) : (
 				<form onSubmit={handleSubmit} noValidate>
 					<PromptComposer
@@ -500,9 +945,42 @@ export function NewAssignmentRoute() {
 						errors={fieldErrors}
 						showErrors={showErrors}
 						status={status}
+						lockPart={isEditing}
+						allowWriting={true}
 						onFieldChange={handleFieldChange}
 					/>
-					<div className="sticky bottom-0 mt-5 border-border border-t bg-background/90 py-3 backdrop-blur">
+					<div className="sticky bottom-0 z-20 mt-5 border-border border-t bg-background/95 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-sm backdrop-blur">
+						{showErrors && !canSave && (
+							<div
+								role="alert"
+								data-testid="assignment-save-missing-alert"
+								className="mb-2.5 max-h-36 overflow-y-auto rounded-md border border-destructive/30 bg-destructive/10 p-2.5 text-destructive text-xs"
+							>
+								<p className="font-semibold">
+									Cần hoàn thiện trước khi lưu ({missingRequirements.length}{" "}
+									mục):
+								</p>
+								<ul className="mt-1 list-inside list-disc space-y-0.5">
+									{missingRequirements.map((req) => (
+										<li key={req.id}>
+											{req.fieldId ? (
+												<button
+													type="button"
+													className="text-left underline hover:opacity-80"
+													onClick={() => {
+														if (req.fieldId) focusField(req.fieldId);
+													}}
+												>
+													{req.label}
+												</button>
+											) : (
+												req.label
+											)}
+										</li>
+									))}
+								</ul>
+							</div>
+						)}
 						{submit.notice && (
 							<KernelSubmitNotice
 								notice={submit.notice}
@@ -539,8 +1017,15 @@ export function NewAssignmentRoute() {
 								<Button
 									type="button"
 									variant="secondary"
+									disabled={submit.saving}
 									onClick={() => {
-										savePreviewDraft(previewDraftFrom(value, status));
+										savePreviewDraft({
+											...previewDraftFrom(value, status),
+											promptId:
+												isEditing && existingPrompt
+													? existingPrompt.id
+													: undefined,
+										});
 										navigate({ to: "/assignments/preview" });
 									}}
 								>
@@ -549,17 +1034,23 @@ export function NewAssignmentRoute() {
 								<Button
 									type="button"
 									variant="secondary"
-									onClick={resetAll}
+									onClick={
+										isEditing
+											? () => navigate({ to: "/assignments" })
+											: resetAll
+									}
 									disabled={submit.saving}
 								>
 									Hủy
 								</Button>
-								<Button type="submit" disabled={!canSave || submit.saving}>
+								<Button type="submit" disabled={submit.saving}>
 									{submit.saving
 										? "Đang lưu…"
 										: status === "draft"
 											? "Lưu bản nháp"
-											: "Lưu vào ngân hàng"}
+											: isEditing
+												? "Lưu thay đổi"
+												: "Lưu vào ngân hàng"}
 								</Button>
 							</div>
 						</div>

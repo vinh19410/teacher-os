@@ -1,10 +1,15 @@
 import type {
 	AssignmentQuestion,
+	AssignmentWritingSection,
 	StudentQuizQuestion,
 } from "@teacher-os/api/contracts";
 import { inferQuestionTypes } from "@teacher-os/api/lib/infer-question-types";
+import { isEmptyRichText } from "@teacher-os/api/rich-text";
 import type { QuizPaperDetail } from "@teacher-os/ui/components/quiz/quiz-paper";
-import type { QuestionItem } from "@/components/assignments/assignment-presets";
+import {
+	isAutoSkill,
+	type QuestionItem,
+} from "@/components/assignments/assignment-presets";
 import type { PreviewDraft } from "@/lib/assignment-preview-draft";
 import { isValidPin } from "@/lib/image-pin";
 
@@ -22,6 +27,8 @@ export interface QuizSimulation {
 	/** Identity của đề đang simulate (bank `prompt.id` | draft fingerprint) —
 	 * route reset state khi key này đổi. */
 	simKey: string;
+	/** #574: phần Writing đi kèm cho đề gộp. */
+	writing?: AssignmentWritingSection | null;
 }
 
 /**
@@ -37,6 +44,7 @@ export function draftSimKey(draft: PreviewDraft): string {
 		draft.task,
 		draft.genre,
 		draft.items ?? null,
+		draft.writing ?? null,
 	]);
 }
 
@@ -60,7 +68,7 @@ export function buildQuizSim(
 	simKey: string = draftSimKey(draft),
 ): QuizSimulation | null {
 	const skillId = draft.skill ?? "writing";
-	if (skillId !== "reading" && skillId !== "listening") return null;
+	if (!isAutoSkill(skillId)) return null;
 	const typeId = draft.type ?? draft.genre ?? "discuss";
 	// Normalize mirror `parseQuizQuestions` (server): default `alts`/`answer`
 	// rỗng, lọc opts non-string, pin invalid về null, bỏ item thiếu stem —
@@ -96,7 +104,14 @@ export function buildQuizSim(
 		imageUrl: draft.imageUrl ?? "",
 		optionBank: draft.optionBank ?? [],
 	};
-	return { detail, takeQuestions, fullQuestions, note: draft.note, simKey };
+	return {
+		detail,
+		takeQuestions,
+		fullQuestions,
+		note: draft.note,
+		simKey,
+		writing: draft.writing ?? null,
+	};
 }
 
 /** Item soạn/draft có thể thiếu field ở runtime (JSON cũ) — ép về contract
@@ -115,5 +130,9 @@ function normalizeQuestion(item: QuestionItem): AssignmentQuestion {
 		alts: typeof item.alts === "string" ? item.alts : "",
 		type: typeof item.type === "string" && item.type !== "" ? item.type : null,
 		pin: isValidPin(item.pin) ? item.pin : null,
+		...(typeof item.explanation === "string" &&
+		!isEmptyRichText(item.explanation)
+			? { explanation: item.explanation }
+			: {}),
 	};
 }

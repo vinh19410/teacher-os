@@ -62,6 +62,9 @@ export function mapStudents(snapshot: KernelSnapshot): Student[] {
 			phone: row.phone,
 			zalo: row.zalo,
 			email: row.email,
+			...(row.portalLinked !== undefined
+				? { portalLinked: row.portalLinked }
+				: {}),
 			hasPackage: pkg != null,
 			parent: { name: row.parentName, phone: row.parentPhone },
 			targetBand: "—",
@@ -84,4 +87,29 @@ export function mapStudents(snapshot: KernelSnapshot): Student[] {
 			atRisk: false,
 		};
 	});
+}
+
+/**
+ * #616: Kiểm tra học viên có email nhưng chưa hoàn tất liên kết Student Portal (portalLinked === false).
+ * Học viên không có email hoặc đã liên kết (portalLinked === true) hoặc deploy skew (undefined) -> false.
+ */
+export function isPendingPortalStudent(student: {
+	email?: string | null;
+	portalLinked?: boolean;
+}): boolean {
+	return Boolean(student.email?.trim()) && student.portalLinked === false;
+}
+
+/**
+ * #616: Lọc các lời mời tổ chức đang chờ (status === "pending") và loại bỏ email
+ * đã tồn tại trong danh sách học viên chờ xác nhận để tránh trùng lặp.
+ */
+export function filterUniquePendingInvites<
+	T extends { email?: string | null; status?: string },
+>(invitations: T[] | undefined, pendingStudentEmails: Set<string>): T[] {
+	return (invitations ?? []).filter(
+		(inv) =>
+			inv.status === "pending" &&
+			!pendingStudentEmails.has((inv.email ?? "").trim().toLowerCase()),
+	);
 }

@@ -82,6 +82,26 @@ describe("structuralChangeKind (FR5 confirm gate)", () => {
 			}),
 		).toBe("skill");
 	});
+	test("returns null when selecting type for the first time from empty type (#577)", () => {
+		const emptyTypeWriting = composer({
+			skill: "writing",
+			part: "task2",
+			type: "",
+			prompt: "<p>Essay prompt</p>",
+		});
+		expect(
+			structuralChangeKind(emptyTypeWriting, { type: "discuss" }),
+		).toBeNull();
+		const typedWriting = composer({
+			skill: "writing",
+			part: "task2",
+			type: "discuss",
+			prompt: "<p>Essay prompt</p>",
+		});
+		expect(structuralChangeKind(typedWriting, { type: "opinion" })).toBe(
+			"type",
+		);
+	});
 });
 
 describe("hasAuthoringContent (FR5 confirm gate)", () => {
@@ -114,6 +134,39 @@ describe("hasAuthoringContent (FR5 confirm gate)", () => {
 			hasAuthoringContent(composer({ cuePoints: "You should say…" })),
 		).toBe(true);
 		expect(hasAuthoringContent(composer())).toBe(false);
+	});
+
+	test("item explanation counts as authored content unless empty markup (#571)", () => {
+		expect(
+			hasAuthoringContent(
+				composer({
+					items: [
+						{
+							stem: "",
+							answer: "",
+							opts: null,
+							alts: "",
+							explanation: "<p>Gợi ý</p>",
+						},
+					],
+				}),
+			),
+		).toBe(true);
+		expect(
+			hasAuthoringContent(
+				composer({
+					items: [
+						{
+							stem: "",
+							answer: "",
+							opts: null,
+							alts: "",
+							explanation: "<p>   </p>",
+						},
+					],
+				}),
+			),
+		).toBe(false);
 	});
 
 	test("a filled option bank row is authored content (phase-02 FR3)", () => {
@@ -511,6 +564,41 @@ describe("clozeStemIssue — web mirror of the marker + caps rules (phase-03 FR7
 		);
 		expect(issue).toContain("Câu 27");
 	});
+
+	test("flags over-cap explanation (plain > 2000 or raw > 5000) in both draft and ready (#571)", () => {
+		const overPlain = composer({
+			items: [
+				{
+					stem: "One ____",
+					answer: "a",
+					opts: null,
+					alts: "",
+					explanation: `<p>${"x".repeat(2001)}</p>`,
+				},
+			],
+		});
+		expect(clozeStemIssue(overPlain, "draft")).toBe(
+			"Giải thích câu 1 vượt quá 2000 ký tự.",
+		);
+		expect(clozeStemIssue(overPlain, "ready")).toBe(
+			"Giải thích câu 1 vượt quá 2000 ký tự.",
+		);
+
+		const overRaw = composer({
+			items: [
+				{
+					stem: "One ____",
+					answer: "a",
+					opts: null,
+					alts: "",
+					explanation: `<p>${"<span>x</span>".repeat(400)}</p>`,
+				},
+			],
+		});
+		expect(clozeStemIssue(overRaw, "ready")).toBe(
+			"Giải thích câu 1 vượt quá 5000 ký tự tính cả định dạng.",
+		);
+	});
 });
 
 describe("imagePinIssue — web mirror of the image gates (phase-04 FR2)", () => {
@@ -576,5 +664,39 @@ describe("imagePinIssue — web mirror of the image gates (phase-04 FR2)", () =>
 				"ready",
 			),
 		).toBeNull();
+	});
+});
+
+describe("hybrid writing section transitions (#574)", () => {
+	test("switching between two auto skills preserves writing; switching to writing/speaking clears it", () => {
+		const withWriting = composer({
+			skill: "grammar",
+			part: "tenses",
+			type: "mcq",
+			writing: {
+				part: "task2",
+				type: "discuss",
+				prompt: "<p>Discuss online learning.</p>",
+			},
+		});
+		expect(hasAuthoringContent(withWriting)).toBe(true);
+
+		const toVocab = applyComposerFieldChange(withWriting, {
+			skill: "vocabulary",
+			part: "topic",
+			type: "mcq",
+		});
+		expect(toVocab.writing).toEqual({
+			part: "task2",
+			type: "discuss",
+			prompt: "<p>Discuss online learning.</p>",
+		});
+
+		const toWriting = applyComposerFieldChange(withWriting, {
+			skill: "writing",
+			part: "task2",
+			type: "discuss",
+		});
+		expect(toWriting.writing).toBeNull();
 	});
 });

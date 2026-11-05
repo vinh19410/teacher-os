@@ -55,7 +55,7 @@ function RouteComponent() {
 			<div className="grid gap-2 text-center">
 				<h1 className="font-bold text-2xl">Đăng nhập quản trị</h1>
 				<p className="text-balance text-muted-foreground text-sm">
-					Dành cho tài khoản quản trị Teacher OS.
+					Dành cho tài khoản quản trị Cô Mỹ Dạy Tiếng Anh.
 				</p>
 			</div>
 

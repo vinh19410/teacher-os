@@ -2,7 +2,10 @@ import type {
 	StudentAssignment,
 	StudentClass,
 } from "@teacher-os/api/contracts";
-import { STUDENT_ERROR_CODES } from "@teacher-os/api/contracts";
+import {
+	ACCOUNT_ERROR_CODES,
+	STUDENT_ERROR_CODES,
+} from "@teacher-os/api/contracts";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
@@ -40,11 +43,13 @@ vi.mock("@tanstack/react-router", () => ({
 	),
 }));
 
+import { getCurrentLevelLabel } from "@/components/onboarding/onboarding-steps";
 import { AssignmentList } from "@/components/overview/assignment-list";
 import { AssignmentRow } from "@/components/overview/assignment-row";
 import { ClassCard } from "@/components/overview/class-card";
 import { OverviewEmptyState } from "@/components/overview/empty-state";
 import { GreetingHeader } from "@/components/overview/greeting-header";
+import { StatCard } from "@/components/overview/stat-card";
 import { StudentErrorView } from "@/components/overview/student-error-view";
 
 describe("ClassCard", () => {
@@ -140,6 +145,8 @@ describe("ClassCard", () => {
 		const html = renderToStaticMarkup(<ClassCard cls={cls} />);
 		expect(html).toContain("Chờ kích hoạt");
 		expect(html).toContain("Tham gia lớp");
+		expect(html).toContain("text-primary-foreground");
+		expect(html).not.toContain("text-bg");
 		expect(html).toContain("Giáo viên đã mời bạn vào lớp");
 		// Chưa kích hoạt thì không hiển thị tiến độ khóa học
 		expect(html).not.toContain("Tiến độ khóa học");
@@ -350,6 +357,52 @@ describe("StudentErrorView", () => {
 		expect(html).toContain("Thông tin tài khoản chưa rõ ràng");
 		expect(html).toContain("Đăng xuất");
 	});
+
+	it("renders TEACHER_ON_STUDENT_PORTAL state with link to teacher portal and sign out button", () => {
+		const html = renderToStaticMarkup(
+			<StudentErrorView
+				code={ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL}
+				teacherPortalUrl="https://app.teacheros.io.vn"
+			/>,
+		);
+		expect(html).toContain("Đây là tài khoản giáo viên");
+		expect(html).toContain("Tài khoản này thuộc hệ thống giáo viên");
+		expect(html).toContain("Chuyển sang cổng giáo viên");
+		expect(html).toContain('href="https://app.teacheros.io.vn"');
+		expect(html).toContain("Đăng xuất");
+	});
+
+	it("renders TEACHER_ON_STUDENT_PORTAL state safely without link when portal URL is unresolved", () => {
+		const html = renderToStaticMarkup(
+			<StudentErrorView code={ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL} />,
+		);
+		expect(html).toContain("Đây là tài khoản giáo viên");
+		expect(html).toContain("Tài khoản này thuộc hệ thống giáo viên");
+		expect(html).not.toContain("Chuyển sang cổng giáo viên");
+		expect(html).toContain("Đăng xuất");
+	});
+
+	it("resolves teacher portal url from global window if available", () => {
+		vi.stubGlobal("window", {
+			location: {
+				hostname: "student.staging.teacheros.io.vn",
+				protocol: "https:",
+				port: "",
+			},
+		});
+		try {
+			const html = renderToStaticMarkup(
+				<StudentErrorView
+					code={ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL}
+				/>,
+			);
+			expect(html).toContain("Chuyển sang cổng giáo viên");
+			expect(html).toContain('href="https://app.staging.teacheros.io.vn"');
+			expect(html).toContain("Đăng xuất");
+		} finally {
+			vi.unstubAllGlobals();
+		}
+	});
 });
 
 describe("OverviewEmptyState", () => {
@@ -363,5 +416,37 @@ describe("OverviewEmptyState", () => {
 		);
 		expect(html).toContain("Chưa có dữ liệu");
 		expect(html).toContain("Chi tiết mô tả");
+	});
+});
+describe("Dashboard currentLevel StatCard", () => {
+	it("renders StatCard for currentLevel when provided and not unsure", () => {
+		const html = renderToStaticMarkup(
+			<StatCard
+				label="Trình độ hiện tại"
+				value={getCurrentLevelLabel("intermediate", "ielts")}
+				sub="Band IELTS tự đánh giá"
+			/>,
+		);
+		expect(html).toContain("Trình độ hiện tại");
+		expect(html).toContain("4.5 – 5.5");
+		expect(html).toContain("Band IELTS tự đánh giá");
+	});
+
+	it("formats TOEIC level label properly", () => {
+		const html = renderToStaticMarkup(
+			<StatCard
+				label="Trình độ hiện tại"
+				value={getCurrentLevelLabel("basic", "toeic")}
+				sub="Điểm TOEIC tự đánh giá"
+			/>,
+		);
+		expect(html).toContain("Trình độ hiện tại");
+		expect(html).toContain("Dưới 350");
+		expect(html).toContain("Điểm TOEIC tự đánh giá");
+	});
+
+	it("returns empty string for null/undefined level", () => {
+		expect(getCurrentLevelLabel(null)).toBe("");
+		expect(getCurrentLevelLabel(undefined)).toBe("");
 	});
 });

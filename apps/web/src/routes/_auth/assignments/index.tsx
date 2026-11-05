@@ -9,7 +9,7 @@ import {
 	partOf,
 	SKILLS,
 	type SkillId,
-	typeOf,
+	selectedTypeOf,
 } from "@/components/assignments/assignment-presets";
 import {
 	fmtDate,
@@ -66,11 +66,11 @@ function promptSkillPartType(prompt: AssignmentPrompt) {
 
 function promptMatchesQuery(prompt: AssignmentPrompt, q: string) {
 	const { skill, part, type } = promptSkillPartType(prompt);
-	const t = typeOf(skill, part, type);
+	const t = selectedTypeOf(skill, part, type);
 	return (
 		prompt.title.toLowerCase().includes(q) ||
 		prompt.source.toLowerCase().includes(q) ||
-		t.label.toLowerCase().includes(q)
+		Boolean(t && t.label.toLowerCase().includes(q))
 	);
 }
 
@@ -463,7 +463,7 @@ export function AssignmentsRoute() {
 										part: pPart,
 										type: pType,
 									} = promptSkillPartType(prompt);
-									const t = typeOf(pSkill, pPart, pType);
+									const t = selectedTypeOf(pSkill, pPart, pType);
 									const part = partOf(pSkill, pPart);
 									const used = usedClassesByPromptId.get(prompt.id)?.size ?? 0;
 									const statusInfo = promptStatus(prompt.status, used);
@@ -498,7 +498,8 @@ export function AssignmentsRoute() {
 													{prompt.title}
 												</h3>
 												<div className="flex flex-wrap items-center gap-2 text-xs">
-													<Tag>{t.label}</Tag>
+													<Tag>{t?.label ?? "Chưa chọn dạng"}</Tag>
+													{prompt.writing != null && <Tag>+ Writing</Tag>}
 													{prompt.source.trim() && (
 														<span className="truncate text-muted-foreground">
 															{prompt.source.trim()}

@@ -1,26 +1,42 @@
 import { Mail, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
+import { ResendInviteButton } from "@/components/students/pending-invite-callout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	useCancelInvitation,
 	usePendingInvitations,
 } from "@/lib/repos/invitations";
+import { filterUniquePendingInvites } from "@/lib/repos/students";
 
 export interface PendingInvitationsListProps {
 	onInviteClick?: () => void;
+	pendingStudents?: Array<{
+		id: string;
+		name: string;
+		email: string;
+	}>;
 }
 
 export function PendingInvitationsList({
 	onInviteClick,
+	pendingStudents = [],
 }: PendingInvitationsListProps) {
 	const { data: invitations, isLoading, error } = usePendingInvitations();
 	const cancelMutation = useCancelInvitation();
 
-	const pendingInvites = (invitations ?? []).filter(
-		(inv) => inv.status === "pending",
+	const pendingStudentEmails = new Set(
+		pendingStudents
+			.map((s) => (s.email ?? "").trim().toLowerCase())
+			.filter(Boolean),
 	);
 
+	const pendingInvites = filterUniquePendingInvites(
+		invitations,
+		pendingStudentEmails,
+	);
+
+	const totalPendingCount = pendingStudents.length + pendingInvites.length;
 	const handleCancel = async (id: string, email: string) => {
 		try {
 			await cancelMutation.mutateAsync(id);
@@ -31,7 +47,7 @@ export function PendingInvitationsList({
 		}
 	};
 
-	if (isLoading) {
+	if (isLoading && pendingStudents.length === 0) {
 		return (
 			<div className="flex min-h-[200px] items-center justify-center p-8 text-muted-foreground text-sm">
 				Đang tải danh sách lời mời...
@@ -39,7 +55,7 @@ export function PendingInvitationsList({
 		);
 	}
 
-	if (error) {
+	if (error && pendingStudents.length === 0) {
 		return (
 			<div className="flex min-h-[200px] flex-col items-center justify-center gap-2 p-8 text-center text-danger text-sm">
 				<p>Không thể tải danh sách lời mời.</p>
@@ -47,7 +63,7 @@ export function PendingInvitationsList({
 		);
 	}
 
-	if (pendingInvites.length === 0) {
+	if (totalPendingCount === 0) {
 		return (
 			<div className="flex min-h-[260px] flex-col items-center justify-center gap-3 rounded-[var(--radius-lg)] border border-border border-dashed bg-muted/30 p-8 text-center">
 				<div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
@@ -86,6 +102,36 @@ export function PendingInvitationsList({
 					<span>Thao tác</span>
 				</div>
 				<ul className="divide-y divide-line">
+					{pendingStudents.map((s) => (
+						<li
+							key={`student-${s.id}`}
+							className="grid grid-cols-[1fr_auto_auto] items-center gap-4 px-4 py-3 hover:bg-muted-raised/40"
+						>
+							<div className="flex flex-col">
+								<span className="font-medium text-foreground text-sm">
+									{s.name || s.email}
+								</span>
+								<span className="text-muted-foreground text-xs">{s.email}</span>
+							</div>
+
+							<div>
+								<Badge variant="warn" dot>
+									Chờ xác nhận
+								</Badge>
+							</div>
+
+							<div className="flex flex-wrap items-center justify-end gap-2">
+								<ResendInviteButton
+									target={{
+										kind: "student",
+										studentId: s.id,
+										recipientLabel: s.email,
+									}}
+									compact
+								/>
+							</div>
+						</li>
+					))}
 					{pendingInvites.map((inv) => {
 						const dateFormatted = new Date(inv.createdAt).toLocaleDateString(
 							"vi-VN",
@@ -117,7 +163,15 @@ export function PendingInvitationsList({
 									</Badge>
 								</div>
 
-								<div>
+								<div className="flex flex-wrap items-center justify-end gap-2">
+									<ResendInviteButton
+										target={{
+											kind: "invitation",
+											invitationId: inv.id,
+											email: inv.email,
+										}}
+										compact
+									/>
 									<Button
 										variant="danger"
 										size="sm"

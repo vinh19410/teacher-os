@@ -344,6 +344,9 @@ test.describe
 			await expect(page.getByTestId("vocab-overview-page")).toBeVisible();
 			await expect(page.getByTestId("vocab-decks-empty")).toBeVisible();
 			await expect(page.getByTestId("vocab-courses-cta")).toBeVisible();
+			await expect(page.getByTestId("vocab-courses-cta")).toContainText(
+				`Thư viện từ vựng · ${EXPECTED_COUNTS.course} khóa · ${EXPECTED_COUNTS.deck} bài`,
+			);
 			await page.getByTestId("vocab-courses-cta").click();
 			await expect(page).toHaveURL(/\/practice\/vocabulary\/courses$/);
 			await expect(page.getByTestId("vocab-courses-section")).toBeVisible();

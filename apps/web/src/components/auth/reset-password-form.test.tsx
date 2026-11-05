@@ -63,6 +63,7 @@ describe("ResetPasswordForm", () => {
 	it("updates the password with the token only and offers a sign-in link", async () => {
 		resetPassword.mockResolvedValue({ error: null });
 		const { container } = render(<ResetPasswordForm token="tok-123" />);
+		expect(container.querySelector("form")?.className).toContain("grid gap-4");
 
 		submitPasswords(container, "new-password-1", "new-password-1");
 

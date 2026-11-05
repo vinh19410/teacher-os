@@ -22,11 +22,13 @@ import {
 	type StudentOnboardingPayload,
 	type StudentOrgItem,
 	type StudentOverview,
+	type StudentScheduleResponse,
 	startPracticeResponseSchema,
 	studentClassDetailSchema,
 	studentInboxResponseSchema,
 	studentMeSchema,
 	studentOverviewSchema,
+	studentScheduleResponseSchema,
 } from "@teacher-os/api/contracts";
 import { env } from "@teacher-os/env/web";
 import { HttpError } from "@/lib/query-client";
@@ -148,6 +150,34 @@ export async function fetchStudentOverview(): Promise<StudentOverview> {
 
 	const data = (await res.json()) as unknown;
 	return studentOverviewSchema.parse(data);
+}
+
+export async function fetchStudentSchedule(): Promise<StudentScheduleResponse> {
+	const res = await fetch(`${getApiBaseUrl()}/api/student/schedule`, {
+		method: "GET",
+		headers: getStudentHeaders(),
+		credentials: "include",
+	});
+
+	if (!res.ok) {
+		let code: string | undefined;
+		try {
+			const body = (await res.json()) as { code?: string; error?: string };
+			code = body.code ?? body.error;
+		} catch {
+			// Non-JSON body
+		}
+		throw new HttpError(
+			res.status,
+			`Request failed with status ${res.status}`,
+			{
+				code,
+			},
+		);
+	}
+
+	const data = (await res.json()) as unknown;
+	return studentScheduleResponseSchema.parse(data);
 }
 
 export async function fetchStudentClassDetail(
@@ -328,11 +358,34 @@ export function useStudentMe() {
 	});
 }
 
-export function useStudentOverview() {
+export interface UseStudentOverviewOptions {
+	refetchOnMount?: boolean | "always";
+	refetchOnWindowFocus?: boolean | "always";
+	staleTime?: number;
+}
+
+export function useStudentOverview(options?: UseStudentOverviewOptions) {
 	return useQuery({
 		queryKey: ["student", "overview"],
 		queryFn: fetchStudentOverview,
 		staleTime: 60_000,
+		...options,
+	});
+}
+
+export interface UseStudentScheduleOptions {
+	refetchOnMount?: boolean | "always";
+	refetchOnWindowFocus?: boolean | "always";
+	staleTime?: number;
+}
+
+export function useStudentSchedule(options?: UseStudentScheduleOptions) {
+	const activeOrgId = getActiveStudentOrgId();
+	return useQuery({
+		queryKey: ["student", "schedule", activeOrgId],
+		queryFn: fetchStudentSchedule,
+		staleTime: 60_000,
+		...options,
 	});
 }
 

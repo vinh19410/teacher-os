@@ -5,6 +5,7 @@ import {
 	QUIZ_AUTOSAVE_DEBOUNCE_MS,
 	QUIZ_DRAIN_MAX_WAVES,
 	type QuizAnswerSender,
+	quizAttemptEssayMirrorKey,
 	quizAttemptMirrorKey,
 } from "@/lib/quiz-attempt-store";
 
@@ -261,11 +262,13 @@ describe("QuizAttemptStore — flush/finalize/dispose", () => {
 		expect(mirrorOf(h)).toBeNull();
 	});
 
-	it("dispose flush best-effort pending rồi xoá mirror", () => {
+	it("dispose flush best-effort pending với keepalive rồi xoá mirror khi thành công", async () => {
 		const h = makeStore();
 		h.store.setAnswer(0, "bye");
 		h.store.dispose();
-		expect(h.send).toHaveBeenCalledWith(0, "bye", undefined);
+		expect(h.send).toHaveBeenCalledWith(0, "bye", { keepalive: true });
+		await Promise.resolve();
+		await Promise.resolve();
 		expect(mirrorOf(h)).toBeNull();
 	});
 });
@@ -378,5 +381,150 @@ describe("QuizAttemptStore — code-review fixes (F1/F2/F3/F5)", () => {
 		h.store.setAnswer(0, "a");
 		await h.store.drain();
 		expect(h.store.getHalted()).toBe("auth");
+	});
+});
+
+describe("QuizAttemptStore — dual store, dispose safety & remount (#574)", () => {
+	it("quizAttemptEssayMirrorKey separates essay mirror from MCQ mirror on shared storage", () => {
+		const storage = memoryStorage();
+		const attemptId = "att-hybrid-1";
+		expect(quizAttemptEssayMirrorKey(attemptId)).toBe(
+			"quiz-attempt:att-hybrid-1:essay",
+		);
+		const answerStore = createQuizAttemptStore({
+			attemptId,
+			serverAnswers: {},
+			send: () => Promise.resolve(),
+			storage,
+		});
+		const essayStore = createQuizAttemptStore({
+			attemptId,
+			mirrorKey: quizAttemptEssayMirrorKey(attemptId),
+			valueMax: 10000,
+			serverAnswers: {},
+			send: () => Promise.resolve(),
+			storage,
+		});
+
+		answerStore.setAnswer(0, "B");
+		essayStore.setAnswer(0, "e".repeat(2500));
+
+		expect(answerStore.getAnswer(0)).toBe("B");
+		expect(essayStore.getAnswer(0)).toHaveLength(2500);
+		expect(
+			JSON.parse(storage.getItem(quizAttemptMirrorKey(attemptId)) ?? "{}")
+				.answers["0"],
+		).toBe("B");
+		expect(
+			JSON.parse(storage.getItem(quizAttemptEssayMirrorKey(attemptId)) ?? "{}")
+				.answers["0"],
+		).toHaveLength(2500);
+	});
+
+	it("dispose during in-flight send preserves mirror, sends exactly one final keepalive flush, and keeps mirror on failure", async () => {
+		const storage = memoryStorage();
+		const attemptId = "att-dispose-inflight";
+		const gates: Array<ReturnType<typeof deferred>> = [];
+		const send = vi.fn(() => {
+			const g = deferred();
+			gates.push(g);
+			return g.promise;
+		});
+		const essayStore = createQuizAttemptStore({
+			attemptId,
+			mirrorKey: quizAttemptEssayMirrorKey(attemptId),
+			valueMax: 10000,
+			serverAnswers: {},
+			send,
+			storage,
+		});
+
+		essayStore.setAnswer(0, "paragraph 1");
+		await vi.advanceTimersByTimeAsync(QUIZ_AUTOSAVE_DEBOUNCE_MS);
+		expect(send).toHaveBeenCalledTimes(1);
+
+		// User types paragraph 2 while paragraph 1 is in flight, then navigates away (dispose)
+		essayStore.setAnswer(0, "paragraph 1 + paragraph 2");
+		essayStore.dispose();
+
+		// Mirror MUST survive while paragraph 1 is still in flight
+		expect(
+			storage.getItem(quizAttemptEssayMirrorKey(attemptId)),
+		).not.toBeNull();
+
+		// Settle paragraph 1 -> exactly 1 final keepalive flush fires for paragraph 2
+		gates[0].resolve();
+		await Promise.resolve();
+		await Promise.resolve();
+		expect(send).toHaveBeenCalledTimes(2);
+		expect(send).toHaveBeenLastCalledWith(0, "paragraph 1 + paragraph 2", {
+			keepalive: true,
+		});
+
+		// Simulate network drop on final keepalive send -> mirror MUST remain in localStorage!
+		gates[1].reject(statusError(503));
+		await Promise.resolve();
+		await Promise.resolve();
+		expect(
+			storage.getItem(quizAttemptEssayMirrorKey(attemptId)),
+		).not.toBeNull();
+		expect(essayStore.getHalted()).toBe("finalized");
+	});
+
+	it("StrictMode remount race: old store settling never deletes newer store's mirror", async () => {
+		const attemptId = "att-remount";
+		const initialRaw = JSON.stringify({
+			t: 100,
+			answers: { "0": "draft v1" },
+		});
+		const storage = memoryStorage({
+			[quizAttemptEssayMirrorKey(attemptId)]: initialRaw,
+		});
+		const gate1 = deferred();
+		const store1 = createQuizAttemptStore({
+			attemptId,
+			mirrorKey: quizAttemptEssayMirrorKey(attemptId),
+			serverAnswers: {},
+			send: () => gate1.promise,
+			storage,
+			now: () => 200,
+		});
+		// StrictMode unmounts store1 immediately (flushes draft v1 in flight)
+		store1.dispose();
+		expect(storage.getItem(quizAttemptEssayMirrorKey(attemptId))).toBe(
+			initialRaw,
+		);
+
+		// Mount #2 reconciles draft v1 and user types draft v2 BEFORE store1's send settles
+		const store2 = createQuizAttemptStore({
+			attemptId,
+			mirrorKey: quizAttemptEssayMirrorKey(attemptId),
+			serverAnswers: {},
+			send: () => Promise.resolve(),
+			storage,
+			now: () => 300,
+		});
+		expect(store2.getAnswer(0)).toBe("draft v1");
+		store2.setAnswer(0, "draft v2");
+
+		// Now store1's send settles -> MUST NOT delete store2's newer mirror!
+		gate1.resolve();
+		await Promise.resolve();
+		await Promise.resolve();
+		const survived = JSON.parse(
+			storage.getItem(quizAttemptEssayMirrorKey(attemptId)) ?? "{}",
+		);
+		expect(survived.answers["0"]).toBe("draft v2");
+	});
+
+	it("halt('auth') preserves mirror and subsequent dispose() does not wipe auth-halted mirror", () => {
+		const h = makeStore();
+		h.store.setAnswer(0, "keep-across-reauth");
+		h.store.halt("auth");
+		expect(h.store.getHalted()).toBe("auth");
+		expect(mirrorOf(h)).not.toBeNull();
+
+		h.store.dispose();
+		expect(mirrorOf(h)).not.toBeNull();
 	});
 });

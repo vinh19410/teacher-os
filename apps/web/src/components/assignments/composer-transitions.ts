@@ -2,11 +2,17 @@ import {
 	ASSIGNMENT_ANSWER_CHOICES,
 	ASSIGNMENT_OPTION_BANK_MAX,
 } from "@teacher-os/api/contracts";
-import { isEmptyRichText } from "@teacher-os/api/rich-text";
+import {
+	collapseWhitespace,
+	htmlToPlainText,
+	isEmptyRichText,
+} from "@teacher-os/api/rich-text";
 import { countBlanks } from "@teacher-os/ui/lib/cloze";
 import {
 	QUESTION_ALTS_MAX,
 	QUESTION_ANSWER_MAX,
+	QUESTION_EXPLANATION_MAX,
+	QUESTION_EXPLANATION_RAW_MAX,
 	QUESTION_MAX_COUNT,
 	QUESTION_STEM_MAX,
 } from "./answer-key-grid";
@@ -44,7 +50,12 @@ export function structuralChangeKind(
 	if (patch.skill !== undefined && patch.skill !== current.skill)
 		return "skill";
 	if (patch.part !== undefined && patch.part !== current.part) return "part";
-	if (patch.type !== undefined && patch.type !== current.type) return "type";
+	if (
+		patch.type !== undefined &&
+		patch.type !== current.type &&
+		current.type !== ""
+	)
+		return "type";
 	return null;
 }
 
@@ -55,10 +66,14 @@ export function structuralChangeKind(
  * teacher into a dialog). A typed option-bank row is authored content too —
  * losing it on a type change must be confirmed (phase-02 FR3).
  */
-export function hasAuthoringContent(value: ComposerValue): boolean {
+export function hasPrimaryAuthoringContent(value: ComposerValue): boolean {
 	if (
 		value.items.some(
-			(item) => item.stem.trim() || item.answer.trim() || item.pin != null,
+			(item) =>
+				item.stem.trim() ||
+				item.answer.trim() ||
+				item.pin != null ||
+				Boolean(item.explanation && !isEmptyRichText(item.explanation)),
 		)
 	)
 		return true;
@@ -73,6 +88,11 @@ export function hasAuthoringContent(value: ComposerValue): boolean {
 			value.cueTopic.trim() ||
 			value.cuePoints.trim(),
 	);
+}
+
+export function hasAuthoringContent(value: ComposerValue): boolean {
+	if (hasPrimaryAuthoringContent(value)) return true;
+	return Boolean(value.writing && !isEmptyRichText(value.writing.prompt));
 }
 
 /**
@@ -92,10 +112,15 @@ export function applyComposerFieldChange(
 	patch: Partial<ComposerValue>,
 ): ComposerValue {
 	if (patch.skill !== undefined && patch.skill !== current.skill) {
+		const keepWriting =
+			isAutoSkill(current.skill) && isAutoSkill(patch.skill)
+				? (current.writing ?? null)
+				: null;
 		return {
 			...current,
 			...patch,
 			...emptyComposer(patch.skill, patch.type ?? current.type),
+			writing: keepWriting,
 		};
 	}
 	const partChanged = patch.part !== undefined && patch.part !== current.part;
@@ -232,6 +257,17 @@ export function clozeRowIssue(
 		return `Đáp án câu ${number} vượt quá ${QUESTION_ANSWER_MAX} ký tự.`;
 	if (item.alts.length > QUESTION_ALTS_MAX)
 		return `Danh sách nhận thêm của câu ${number} vượt quá ${QUESTION_ALTS_MAX} ký tự.`;
+	if (typeof item.explanation === "string") {
+		if (
+			collapseWhitespace(htmlToPlainText(item.explanation)).length >
+			QUESTION_EXPLANATION_MAX
+		) {
+			return `Giải thích câu ${number} vượt quá ${QUESTION_EXPLANATION_MAX} ký tự.`;
+		}
+		if (item.explanation.trim().length > QUESTION_EXPLANATION_RAW_MAX) {
+			return `Giải thích câu ${number} vượt quá ${QUESTION_EXPLANATION_RAW_MAX} ký tự tính cả định dạng.`;
+		}
+	}
 	return null;
 }
 

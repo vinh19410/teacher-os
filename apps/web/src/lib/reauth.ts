@@ -25,6 +25,7 @@ if (typeof window !== "undefined") {
 export function reauth(): void {
 	if (started) return;
 	started = true;
+	authClient.clearSessionCache?.();
 	void authClient.signOut().catch(() => undefined);
 	const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
 	const returnUrl = validateReturnUrl(current);

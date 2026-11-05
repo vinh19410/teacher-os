@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { createLogMailer, createResendMailer } from "./mailer";
+import { composeFrom, createLogMailer, createResendMailer } from "./mailer";
+import { otpEmailTemplate } from "./otp-email-template";
 import { resetPasswordEmailTemplate } from "./reset-password-email-template";
 import { verificationEmailTemplate } from "./verification-email-template";
 
@@ -13,7 +14,7 @@ describe("verificationEmailTemplate", () => {
 		expect(html).toContain('lang="vi"');
 		expect(html).toContain('color-scheme" content="light dark"');
 		expect(html).toContain("Xác thực email");
-		expect(html).toContain("TeacherOS");
+		expect(html).toContain("Cô Mỹ Dạy Tiếng Anh");
 		expect(html).toContain("hiệu lực trong 1 giờ");
 		expect(html).toContain('role="presentation"');
 
@@ -43,7 +44,7 @@ describe("resetPasswordEmailTemplate", () => {
 		expect(html).toContain('lang="vi"');
 		expect(html).toContain('color-scheme" content="light dark"');
 		expect(html).toContain("Đặt lại mật khẩu");
-		expect(html).toContain("TeacherOS");
+		expect(html).toContain("Cô Mỹ Dạy Tiếng Anh");
 		expect(html).toContain("1 giờ");
 		expect(html).toContain('role="presentation"');
 
@@ -65,6 +66,29 @@ describe("resetPasswordEmailTemplate", () => {
 	});
 });
 
+describe("otpEmailTemplate", () => {
+	test("generates valid HTML containing OTP and 5-minute expiration notice", () => {
+		const { html, text } = otpEmailTemplate({ otp: "849201" });
+
+		expect(html).toContain('lang="vi"');
+		expect(html).toContain('color-scheme" content="light dark"');
+		expect(html).toContain("Mã xác thực đăng nhập");
+		expect(html).toContain("Cô Mỹ Dạy Tiếng Anh");
+		expect(html).toContain("5 phút");
+		expect(html).toContain("849201");
+		expect(html.length).toBeLessThan(15_000);
+
+		expect(text).toContain("849201");
+		expect(text).toContain("5 phút");
+	});
+
+	test("escapes markup in otp if somehow passed unsafe string", () => {
+		const { html } = otpEmailTemplate({ otp: "<script>123</script>" });
+		expect(html).not.toContain("<script>123</script>");
+		expect(html).toContain("&lt;script&gt;123&lt;/script&gt;");
+	});
+});
+
 describe("createResendMailer", () => {
 	afterEach(() => {
 		vi.unstubAllGlobals();
@@ -82,7 +106,7 @@ describe("createResendMailer", () => {
 
 		const mailer = createResendMailer({
 			apiKey: "test-api-key",
-			from: "TeacherOS <onboarding@resend.dev>",
+			from: '"Cô Mỹ Dạy Tiếng Anh" <onboarding@resend.dev>',
 		});
 
 		await mailer.send({
@@ -103,7 +127,7 @@ describe("createResendMailer", () => {
 		expect(init.signal).toBeDefined();
 		const body = JSON.parse(init.body as string);
 		expect(body).toEqual({
-			from: "TeacherOS <onboarding@resend.dev>",
+			from: '"Cô Mỹ Dạy Tiếng Anh" <onboarding@resend.dev>',
 			to: ["student@example.com"],
 			subject: "Verify Email",
 			html: "<p>Hello</p>",
@@ -129,7 +153,7 @@ describe("createResendMailer", () => {
 
 		const mailer = createResendMailer({
 			apiKey: "test-api-key",
-			from: "TeacherOS <onboarding@resend.dev>",
+			from: '"Cô Mỹ Dạy Tiếng Anh" <onboarding@resend.dev>',
 		});
 
 		await mailer.send({
@@ -152,7 +176,7 @@ describe("createResendMailer", () => {
 
 		const mailer = createResendMailer({
 			apiKey: "test-api-key",
-			from: "TeacherOS <onboarding@resend.dev>",
+			from: '"Cô Mỹ Dạy Tiếng Anh" <onboarding@resend.dev>',
 		});
 
 		await expect(
@@ -177,7 +201,7 @@ describe("createResendMailer", () => {
 
 		const mailer = createResendMailer({
 			apiKey: "test-api-key",
-			from: "TeacherOS <onboarding@resend.dev>",
+			from: '"Cô Mỹ Dạy Tiếng Anh" <onboarding@resend.dev>',
 		});
 
 		await expect(
@@ -238,13 +262,13 @@ describe("replyTo + fromName (plan TOS-21 D5)", () => {
 			html: "<p>Bài tập mới</p>",
 			text: "Bài tập mới",
 			replyTo: "teacher@example.com",
-			fromName: 'Trung tâm "ABC" qua Teacher OS',
+			fromName: 'Trung tâm "ABC" qua Cô Mỹ Dạy Tiếng Anh',
 		});
 
 		expect(fetchMock).toHaveBeenCalledTimes(1);
 		const body = JSON.parse(String(fetchMock.mock.calls[0][1].body));
 		expect(body.from).toBe(
-			'"Trung tâm \\"ABC\\" qua Teacher OS" <noreply@teacheros.vn>',
+			'"Trung tâm \\"ABC\\" qua Cô Mỹ Dạy Tiếng Anh" <noreply@teacheros.vn>',
 		);
 		expect(body.reply_to).toBe("teacher@example.com");
 	});
@@ -282,16 +306,87 @@ describe("replyTo + fromName (plan TOS-21 D5)", () => {
 			html: "<p>Hello</p>",
 			text: "Hello",
 			replyTo: "teacher@example.com",
-			fromName: "Academy qua Teacher OS",
+			fromName: "Academy qua Cô Mỹ Dạy Tiếng Anh",
 		});
 		expect(infoSpy).toHaveBeenCalledWith(
 			"[mail:log] to=%s subject=%s replyTo=%s fromName=%s\n%s",
 			"student@example.com",
 			"Hello",
 			"teacher@example.com",
-			"Academy qua Teacher OS",
+			"Academy qua Cô Mỹ Dạy Tiếng Anh",
 			"Hello",
 		);
 		infoSpy.mockRestore();
+	});
+
+	test("composeFrom tách địa chỉ trần từ Display <addr> và lọc ký tự điều khiển (#570)", () => {
+		expect(
+			composeFrom(
+				'"Cô Mỹ Dạy Tiếng Anh" <no-reply@teacheros.io.vn>',
+				"Alpha Academy qua Cô Mỹ Dạy Tiếng Anh",
+			),
+		).toBe(
+			'"Alpha Academy qua Cô Mỹ Dạy Tiếng Anh" <no-reply@teacheros.io.vn>',
+		);
+		expect(
+			composeFrom("no-reply@teacheros.io.vn", "Evil\\\r\nBcc: x@y.z"),
+		).toBe('"Evil\\\\Bcc: x@y.z" <no-reply@teacheros.io.vn>');
+	});
+
+	test("createResendMailer gắn Idempotency-Key và không treo khi Retry-After > 2s (#570)", async () => {
+		const fetchMock = vi
+			.fn()
+			.mockResolvedValueOnce({
+				ok: true,
+				status: 200,
+				text: async () => JSON.stringify({ id: "email-idem-1" }),
+			})
+			.mockResolvedValueOnce({
+				ok: false,
+				status: 429,
+				headers: new Headers({ "Retry-After": "60" }),
+				text: async () => "rate limited",
+			});
+		vi.stubGlobal("fetch", fetchMock);
+
+		const mailer = createResendMailer({
+			apiKey: "test-api-key",
+			from: '"Cô Mỹ Dạy Tiếng Anh" <no-reply@teacheros.io.vn>',
+		});
+
+		await mailer.send({
+			to: "student@example.com",
+			subject: "Lời mời\r\nInjected",
+			html: "<p>Hello</p>",
+			text: "Hello",
+			fromName: "Alpha Academy qua Cô Mỹ Dạy Tiếng Anh",
+			idempotencyKey: "student_invite:inv-1",
+			timeoutMs: 5_000,
+		});
+
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+		const [, firstInit] = fetchMock.mock.calls[0];
+		expect(firstInit.headers).toEqual({
+			Authorization: "Bearer test-api-key",
+			"Content-Type": "application/json",
+			"Idempotency-Key": "student_invite:inv-1",
+		});
+		const firstBody = JSON.parse(String(firstInit.body));
+		expect(firstBody.from).toBe(
+			'"Alpha Academy qua Cô Mỹ Dạy Tiếng Anh" <no-reply@teacheros.io.vn>',
+		);
+		expect(firstBody.subject).toBe("Lời mờiInjected");
+
+		await expect(
+			mailer.send({
+				to: "student@example.com",
+				subject: "Retry cap",
+				html: "<p>Hi</p>",
+				text: "Hi",
+				idempotencyKey: "student_invite:inv-2",
+				timeoutMs: 5_000,
+			}),
+		).rejects.toThrow("resend send failed: 429 rate limited");
+		expect(fetchMock).toHaveBeenCalledTimes(2);
 	});
 });

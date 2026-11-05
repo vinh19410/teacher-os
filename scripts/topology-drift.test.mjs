@@ -134,6 +134,26 @@ test("workflow LANDING_ORIGIN matches each stage apex", () => {
 	assert.equal(staging, "https://staging.teacheros.io.vn");
 });
 
+test("staging auth smoke signs up through the student portal origin so the TEACHER_EMAILS allowlist cannot reject it", async () => {
+	const { resolveDomainTopology } = await import(
+		"../packages/infra/src/topology.ts"
+	);
+	const yaml = read("../.github/workflows/deploy-staging.yml");
+	const appDomain = yaml.match(/^\s*APP_DOMAIN:\s*(\S+)\s*$/m)?.[1];
+	assert.ok(appDomain, "APP_DOMAIN found in deploy-staging.yml");
+	assert.equal(
+		yaml.match(/^\s*STUDENT_ORIGIN:\s*(\S+)\s*$/m)?.[1],
+		resolveDomainTopology(appDomain).studentOrigin,
+	);
+
+	const smoke = yaml
+		.split("- name: Smoke check auth (sign-up")[1]
+		?.split("- name:")[0];
+	assert.ok(smoke, "auth smoke step found in deploy-staging.yml");
+	assert.match(smoke, /-H "Origin: \$STUDENT_ORIGIN"/);
+	assert.doesNotMatch(smoke, /-H "Origin: \$APP_ORIGIN"/);
+});
+
 test("deploy workflows pass LEAD_ORG_ID and LEAD_ORIGINS to alchemy deploy and alchemy.run.ts wires resolveLeadOrigins (#524)", () => {
 	for (const workflow of [
 		"../.github/workflows/deploy.yml",
@@ -214,5 +234,29 @@ test("workflow PROFILE_ORIGIN and profile smoke check match resolveDomainTopolog
 		profileBlock,
 		new RegExp(`url:\\s*"http://localhost:${profilePort}"`),
 		"profileWorker dev.url in alchemy.run.ts must match apps/profile/serve.mjs port",
+	);
+	assert.match(
+		profileBlock,
+		/STUDENT_PORTAL_URL:\s*topology\s*\?\s*topology\.studentOrigin\s*:\s*studentWorker\.url\.as<string>\(\)/,
+		'StaticSite("profile") in alchemy.run.ts must wire STUDENT_PORTAL_URL from topology.studentOrigin / studentWorker.url (#560)',
+	);
+
+	const studentVite = read("../apps/student/vite.config.ts");
+	const studentPort = studentVite.match(/port:\s*(\d+)/)?.[1];
+	assert.equal(studentPort, "8003");
+	const defaultStudentPortalPort = profileServe.match(
+		/process\.env\.STUDENT_PORTAL_URL\s*\?\?\s*"http:\/\/localhost:(\d+)"/,
+	)?.[1];
+	assert.equal(
+		defaultStudentPortalPort,
+		studentPort,
+		"apps/profile/serve.mjs default STUDENT_PORTAL_URL port must match apps/student/vite.config.ts (#560)",
+	);
+
+	const playwrightCfg = read("../apps/e2e/playwright.config.ts");
+	assert.match(
+		playwrightCfg,
+		/STUDENT_PORTAL_URL:\s*`http:\/\/localhost:\$\{studentPort\}`/,
+		"apps/e2e/playwright.config.ts must pass STUDENT_PORTAL_URL using studentPort (#560)",
 	);
 });

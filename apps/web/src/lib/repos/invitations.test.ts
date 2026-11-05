@@ -3,6 +3,8 @@ import { getApiBaseUrl } from "./api-base-url";
 import {
 	cancelStudentInvitation,
 	fetchPendingInvitations,
+	resendStudentInvitation,
+	resendStudentProfileInvite,
 	sendStudentInvitation,
 } from "./invitations";
 
@@ -147,5 +149,96 @@ describe("invitations repo", () => {
 			}),
 		);
 		expect(result).toEqual({ ok: true });
+	});
+
+	it("sendStudentInvitation preserves structured 409 conflict fields (#570)", async () => {
+		const fetchMock = vi.fn().mockResolvedValue({
+			ok: false,
+			status: 409,
+			json: async () => ({
+				error: "Học viên này đã ở trong tổ chức của bạn",
+				code: "STUDENT_ALREADY_IN_ORG",
+				existingStudentId: "stu-88",
+				existingStudentName: "Nguyễn Minh",
+				portalLinked: false,
+			}),
+		});
+		globalThis.fetch = fetchMock;
+
+		await expect(
+			sendStudentInvitation("minh@test.local", "http://localhost:8000"),
+		).rejects.toMatchObject({
+			status: 409,
+			code: "STUDENT_ALREADY_IN_ORG",
+			existingStudentId: "stu-88",
+			existingStudentName: "Nguyễn Minh",
+			portalLinked: false,
+		});
+	});
+
+	it("resendStudentInvitation sends POST to /api/students/invitations/:id/resend with JSON body and surfaces retryAfterSeconds on 429 (#570)", async () => {
+		const fetchMock = vi
+			.fn()
+			.mockResolvedValueOnce({
+				ok: true,
+				status: 200,
+				json: async () => ({ ok: true, id: "inv-123", updatedAt: 1700000000 }),
+			})
+			.mockResolvedValueOnce({
+				ok: false,
+				status: 429,
+				json: async () => ({
+					error: "Vui lòng đợi 45 giây",
+					code: "INVITATION_RESEND_COOLDOWN",
+					retryAfterSeconds: 45,
+				}),
+			});
+		globalThis.fetch = fetchMock;
+
+		const ok = await resendStudentInvitation(
+			"inv-123",
+			"http://localhost:8000",
+		);
+		expect(ok.id).toBe("inv-123");
+		expect(fetchMock).toHaveBeenCalledWith(
+			"http://localhost:8000/api/students/invitations/inv-123/resend",
+			expect.objectContaining({
+				method: "POST",
+				credentials: "include",
+				headers: { "Content-Type": "application/json" },
+				body: "{}",
+			}),
+		);
+
+		await expect(
+			resendStudentInvitation("inv-123", "http://localhost:8000"),
+		).rejects.toMatchObject({
+			status: 429,
+			code: "INVITATION_RESEND_COOLDOWN",
+			retryAfterSeconds: 45,
+		});
+	});
+
+	it("resendStudentProfileInvite sends POST to /api/students/:id/resend-invite with optional enrollmentId (#570)", async () => {
+		const fetchMock = vi.fn().mockResolvedValue({
+			ok: true,
+			status: 200,
+			json: async () => ({ ok: true, id: "stu-1", updatedAt: 1700000000 }),
+		});
+		globalThis.fetch = fetchMock;
+
+		await resendStudentProfileInvite(
+			{ studentId: "stu-1", enrollmentId: "enr-9" },
+			"http://localhost:8000",
+		);
+		expect(fetchMock).toHaveBeenCalledWith(
+			"http://localhost:8000/api/students/stu-1/resend-invite",
+			expect.objectContaining({
+				method: "POST",
+				credentials: "include",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ enrollmentId: "enr-9" }),
+			}),
+		);
 	});
 });

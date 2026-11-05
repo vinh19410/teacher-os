@@ -5,7 +5,10 @@ import {
 	QuizTakeView,
 } from "@/components/quiz/quiz-take-view";
 import { isHttpError, studentQueryClient } from "@/lib/query-client";
-import { quizAttemptMirrorKey } from "@/lib/quiz-attempt-store";
+import {
+	quizAttemptEssayMirrorKey,
+	quizAttemptMirrorKey,
+} from "@/lib/quiz-attempt-store";
 import type { QuizTakeSource } from "@/lib/repos/quiz";
 import { quizDetailQueryOptions } from "@/lib/repos/quiz";
 
@@ -21,6 +24,7 @@ export const Route = createFileRoute("/_auth/learn/quizzes/$assignmentId")({
 			// (code-review F6: orphan key sau cross-tab submit).
 			try {
 				localStorage.removeItem(quizAttemptMirrorKey(detail.attempt.id));
+				localStorage.removeItem(quizAttemptEssayMirrorKey(detail.attempt.id));
 			} catch {
 				// Storage hỏng/blocked — redirect vẫn ưu tiên.
 			}
@@ -37,6 +41,7 @@ export const Route = createFileRoute("/_auth/learn/quizzes/$assignmentId")({
 						? { "0": detail.attempt.essay }
 						: {}
 					: (detail.attempt?.answers ?? {}),
+			serverEssay: detail.writing ? (detail.attempt?.essay ?? "") : "",
 		};
 	},
 	component: TakeAssignmentPage,
@@ -46,11 +51,12 @@ export const Route = createFileRoute("/_auth/learn/quizzes/$assignmentId")({
 /** Route luồng giao bài — body dùng chung QuizTakeView với route tự luyện. */
 function TakeAssignmentPage() {
 	const { assignmentId } = Route.useParams();
-	const { serverAnswers } = Route.useLoaderData();
+	const { serverAnswers, serverEssay } = Route.useLoaderData();
 	return (
 		<QuizTakeView
 			source={{ kind: "assignment", id: assignmentId }}
 			serverAnswers={serverAnswers}
+			serverEssay={serverEssay}
 		/>
 	);
 }

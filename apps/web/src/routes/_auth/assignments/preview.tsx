@@ -49,6 +49,7 @@ function previewDraftFromPrompt(p: AssignmentPrompt): PreviewDraft {
 		imageUrl: p.imageUrl,
 		optionBank: p.optionBank,
 		items: p.questions,
+		writing: p.writing ?? null,
 	};
 }
 
@@ -147,10 +148,17 @@ export function PreviewAssignmentRoute() {
 						<span aria-hidden="true">›</span>
 						<button
 							type="button"
-							onClick={() => navigate({ to: "/assignments/new" })}
+							onClick={() =>
+								navigate({
+									to: "/assignments/new",
+									search: draft.promptId
+										? { promptId: draft.promptId }
+										: undefined,
+								})
+							}
 							className="underline-offset-[3px] transition-colors hover:text-primary hover:underline"
 						>
-							Tạo mới
+							{draft.promptId ? "Chỉnh sửa" : "Tạo mới"}
 						</button>
 					</>
 				)}
@@ -167,16 +175,35 @@ export function PreviewAssignmentRoute() {
 					}
 				/>
 				{bankPrompt ? (
-					<Button
-						variant="secondary"
-						onClick={() => navigate({ to: "/assignments" })}
-					>
-						Quay lại danh sách
-					</Button>
+					<div className="flex items-center gap-2">
+						<Button
+							variant="secondary"
+							onClick={() => navigate({ to: "/assignments" })}
+						>
+							Quay lại danh sách
+						</Button>
+						<Button
+							onClick={() =>
+								navigate({
+									to: "/assignments/new",
+									search: { promptId: bankPrompt.id },
+								})
+							}
+						>
+							Chỉnh sửa
+						</Button>
+					</div>
 				) : (
 					<Button
 						variant="secondary"
-						onClick={() => navigate({ to: "/assignments/new" })}
+						onClick={() =>
+							navigate({
+								to: "/assignments/new",
+								search: draft.promptId
+									? { promptId: draft.promptId }
+									: undefined,
+							})
+						}
 					>
 						Quay lại soạn đề
 					</Button>
@@ -201,6 +228,8 @@ export function PreviewAssignmentRoute() {
 						answers={quiz.answers}
 						grade={quiz.grade}
 						onAnswer={quiz.onAnswer}
+						essay={quiz.essay}
+						onEssayChange={quiz.onEssayChange}
 						onSubmit={quiz.submit}
 						onReset={quiz.reset}
 					/>
@@ -223,6 +252,7 @@ export function PreviewAssignmentRoute() {
 						imageUrl={draft.imageUrl}
 						optionBank={draft.optionBank}
 						items={draft.items}
+						writing={draft.writing ?? null}
 					/>
 				)}
 

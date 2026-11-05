@@ -23,6 +23,7 @@ import {
 	partOf,
 	qStartOf,
 	SKILLS,
+	selectedTypeOf,
 	skillOf,
 	TYPE_HINTS,
 	typeOf,
@@ -351,6 +352,14 @@ describe("assignment presets catalog (#218 v5)", () => {
 		expect(typeOf("writing", "task1", "unknown_type").id).toBe("chart");
 		expect(kindOf("unknown_type")).toBe("text");
 		expect(qStartOf("unknown_skill", "unknown_part")).toBe(1);
+	});
+	test("selectedTypeOf returns null when typeId is empty or unknown (#577)", () => {
+		expect(selectedTypeOf("writing", "task2", "")).toBeNull();
+		expect(selectedTypeOf("writing", "task2", "unknown_type")).toBeNull();
+		expect(selectedTypeOf("writing", "task2", "discuss")?.label).toBe(
+			"Discuss both views",
+		);
+		expect(selectedTypeOf("writing", "task1", "chart")?.id).toBe("chart");
 	});
 
 	test("wordCount counts whitespace-separated words", () => {

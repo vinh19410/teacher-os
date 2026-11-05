@@ -12,9 +12,13 @@ import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, test, vi } from "vitest";
 import type { Db } from "../../app";
-import { deliverNotifications } from "./deliver";
+import { deliverNotifications, renderHtml } from "./deliver";
 import { emitNotifications } from "./emit";
 import { enqueueNotifications } from "./enqueue";
+import {
+	buildOrgInvitationEmail,
+	buildStudentPortalInviteEmail,
+} from "./invite-email";
 import { holidayCreatedEvents, tuitionReminderEvent } from "./templates";
 
 const MIGRATIONS_DIR = new URL(
@@ -208,7 +212,7 @@ describe("notifications service (#454 phase 2)", () => {
 		expect(sentInput.to).toBe("stu5@example.com");
 		expect(sentInput.subject).toBe("Bài đã có điểm");
 		expect(sentInput.replyTo).toBe("owner5@academy.vn");
-		expect(sentInput.fromName).toBe("Academy Five qua Teacher OS");
+		expect(sentInput.fromName).toBe("Academy Five qua Cô Mỹ Dạy Tiếng Anh");
 	});
 
 	test("studentOrigin inject → link tuyệt đối trong thư (regression: env là chuỗi thô)", async () => {
@@ -566,13 +570,49 @@ describe("templates builder", () => {
 			html: "<p>Nhắc học phí</p>",
 			text: "Nhắc học phí",
 			replyTo: "owner@academy.vn",
-			fromName: "Academy qua Teacher OS",
+			fromName: "Academy qua Cô Mỹ Dạy Tiếng Anh",
 		});
 		const fetchArgs = fetchMock.mock.calls.at(0);
 		if (!fetchArgs) throw new Error("fetch was not called");
 		const body = JSON.parse(String(fetchArgs[1].body));
 		expect(body.reply_to).toBe("owner@academy.vn");
-		expect(body.from).toBe('"Academy qua Teacher OS" <noreply@teacheros.vn>');
+		expect(body.from).toBe(
+			'"Academy qua Cô Mỹ Dạy Tiếng Anh" <noreply@teacheros.vn>',
+		);
 		vi.unstubAllGlobals();
+	});
+
+	test("invite-email builders escape HTML, dùng nhãn Mở cổng học viên và chặn scheme lạ (#570)", () => {
+		const orgMail = buildOrgInvitationEmail({
+			orgName: 'Alpha <script>"Academy"</script>',
+			inviterName: "Cô Mỹ",
+			studentOrigin: "https://student.staging.teacheros.io.vn/",
+		});
+		expect(orgMail.subject).toContain("Lời mời tham gia");
+		expect(orgMail.html).toContain("Mở cổng học viên");
+		expect(orgMail.html).toContain(
+			'href="https://student.staging.teacheros.io.vn/login"',
+		);
+		expect(orgMail.html).not.toContain("<script>");
+		expect(orgMail.html).toContain("&lt;script&gt;&quot;Academy&quot;");
+
+		const portalMail = buildStudentPortalInviteEmail({
+			orgName: "Alpha Academy",
+			studentName: "Minh",
+			className: "IELTS 6.5",
+			studentOrigin: "javascript:alert(1)",
+		});
+		expect(portalMail.subject).toBe(
+			"Lời mời tham gia lớp IELTS 6.5 tại Alpha Academy",
+		);
+		expect(portalMail.html).not.toContain("javascript:");
+		expect(portalMail.html).not.toContain("<a ");
+
+		const attrEscape = renderHtml(
+			"Kiểm tra link",
+			'https://student.test/login?next=" onclick="alert(1)',
+			"Mở cổng học viên",
+		);
+		expect(attrEscape).toContain("&quot; onclick=&quot;alert(1)");
 	});
 });

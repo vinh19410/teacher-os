@@ -1,3 +1,4 @@
+import { isEmptyRichText } from "@teacher-os/api/rich-text";
 import { Button } from "@teacher-os/ui/components/web-kit/button";
 import { Input, Textarea } from "@teacher-os/ui/components/web-kit/field";
 import {
@@ -36,6 +37,7 @@ const TRANSCRIPT_TYPES = new Set(["form", "notes", "sent4", "flow"]);
 /** An item that applying would overwrite (any authored content). */
 export function hasItemContent(item: QuestionItem): boolean {
 	if (item.stem.trim() || item.answer.trim() || item.alts.trim()) return true;
+	if (item.explanation && !isEmptyRichText(item.explanation)) return true;
 	return (item.opts ?? []).some((option) => option.trim());
 }
 

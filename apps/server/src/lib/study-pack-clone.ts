@@ -27,8 +27,8 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import type { Db } from "../app";
 
-/** 22 columns × 4 rows = 88 binds <= 100 D1 bind limit. */
-export const D1_PROMPT_CLONE_INSERT_CHUNK = 4;
+/** 27 columns on assignment_prompt × 3 rows = 81 binds <= 100 D1 bind limit (#574). */
+export const D1_PROMPT_CLONE_INSERT_CHUNK = 3;
 /** 7 columns × 10 rows = 70 binds <= 100 D1 bind limit. */
 export const D1_PACK_ITEM_INSERT_CHUNK = 10;
 /** Standard D1 inArray chunk limit (#366 RT-F2). */
@@ -414,6 +414,7 @@ export async function validateStudyPackItems(
 				part: string;
 				type: string;
 				status: string;
+				writingPart: string | null;
 			}
 		>();
 		for (let i = 0; i < orgPromptIds.length; i += D1_IN_ARRAY_CHUNK) {
@@ -426,6 +427,7 @@ export async function validateStudyPackItems(
 					part: assignmentPrompt.part,
 					type: assignmentPrompt.type,
 					status: assignmentPrompt.status,
+					writingPart: assignmentPrompt.writingPart,
 				})
 				.from(assignmentPrompt)
 				.where(
@@ -460,6 +462,13 @@ export async function validateStudyPackItems(
 					ok: false,
 					status: 422,
 					error: `skill ${row.skill} is not supported in study packs`,
+				};
+			}
+			if (row.writingPart !== null) {
+				return {
+					ok: false,
+					status: 422,
+					error: "hybrid prompt cannot be used in study packs",
 				};
 			}
 			metadataByKey.set(studyPackSourceKey("org_prompt", row.id), {
@@ -890,17 +899,29 @@ export async function loadStudyPackDetailFromRow(
 	};
 }
 
+export function buildPackItemTupleKey(
+	dayIndex: number,
+	sourceKind: string,
+	sourceId: string,
+): string {
+	return `${dayIndex}:${sourceKind}:${sourceId}`;
+}
+
 export function buildStudyPackItemInsertStatements(
 	db: Db,
 	packId: string,
 	items: readonly StudyPackItemInput[],
+	existingIdByTuple?: ReadonlyMap<string, string>,
 ): BatchItem<"sqlite">[] {
 	const nextPositionByDay = new Map<number, number>();
 	const values: Array<typeof studyPackItem.$inferInsert> = items.map((item) => {
 		const position = nextPositionByDay.get(item.dayIndex) ?? 0;
 		nextPositionByDay.set(item.dayIndex, position + 1);
+		const preservedId = existingIdByTuple?.get(
+			buildPackItemTupleKey(item.dayIndex, item.sourceKind, item.sourceId),
+		);
 		return {
-			id: crypto.randomUUID(),
+			id: preservedId ?? crypto.randomUUID(),
 			packId,
 			dayIndex: item.dayIndex,
 			position,

@@ -68,6 +68,7 @@ export type KernelAction =
 				classId: string;
 				promptId: string;
 				due: string;
+				dueTime?: string;
 				note?: string;
 				studentIds: string[];
 			};

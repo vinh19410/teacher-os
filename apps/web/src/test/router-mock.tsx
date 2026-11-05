@@ -84,6 +84,12 @@ export function routerMock() {
 		useRouter: () => ({ invalidate: vi.fn(), navigate: routerState.navigate }),
 		notFound: () => new Error("not-found"),
 		redirect: (opts: unknown) => opts,
+		isRedirect: (opts: unknown) =>
+			Boolean(
+				opts &&
+					typeof opts === "object" &&
+					("to" in opts || "isRedirect" in opts),
+			),
 		Link,
 	};
 }

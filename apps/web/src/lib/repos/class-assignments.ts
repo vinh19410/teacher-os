@@ -12,6 +12,7 @@ export function mapClassAssignments(
 		promptId: row.promptId,
 		title: row.title,
 		due: row.due,
+		dueAt: row.dueAt ?? null,
 		note: row.note,
 		createdAt: row.createdAt,
 		targets: row.targets.map((target) => ({
