@@ -16,12 +16,14 @@ export function BandSlider({
 	value,
 	onChange,
 	className,
+	disabled,
 	...aria
 }: {
 	id?: string;
 	value: number | null;
 	onChange(value: number): void;
 	className?: string;
+	disabled?: boolean;
 	"aria-describedby"?: string;
 	"aria-invalid"?: boolean;
 }) {
@@ -40,9 +42,14 @@ export function BandSlider({
 					aria-valuetext={unset ? "Chưa chấm" : label}
 					// Test hook: jsdom assertions đọc attribute này thay vì so màu.
 					data-unset={unset || undefined}
-					onChange={(event) => onChange(Number(event.currentTarget.value))}
+					disabled={disabled}
+					onChange={(event) => {
+						if (!disabled) onChange(Number(event.currentTarget.value));
+					}}
 					onPointerUp={(event) => {
-						if (value === null) onChange(Number(event.currentTarget.value));
+						if (value === null && !disabled) {
+							onChange(Number(event.currentTarget.value));
+						}
 					}}
 					className={cn(
 						// accent-color để CSS base (input[type=range] → var(--primary))
@@ -50,6 +57,7 @@ export function BandSlider({
 						// không ghim màu ở đây.
 						"h-8 w-full cursor-pointer rounded-full transition-opacity duration-150 ease-[cubic-bezier(0.28,0,0.22,1)] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
 						unset && "opacity-40",
+						disabled && "cursor-not-allowed opacity-50",
 						className,
 					)}
 					{...aria}

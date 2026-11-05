@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type {
+	AiGradingDraftView,
 	GradingQueueItem,
 	TeacherSubmission,
 } from "@teacher-os/api/contracts";
@@ -451,6 +452,81 @@ describe("GradingRoute (/grading/$attemptId) — practice submission support (#3
 		expect(
 			screen.getByTestId("conflict-preserved-draft").textContent,
 		).toContain("Nhận xét đang gõ dở");
+	});
+
+	it("issue #615: trong lúc lưu nháp (in-flight pending), inputs bị khóa và sau khi resolve, form remount với dữ liệu server", async () => {
+		mockParams.attemptId = "att-prac-1";
+		const { promise, resolve: resolveSave } =
+			Promise.withResolvers<AiGradingDraftView>();
+		vi.spyOn(gradingRepo, "saveDraft").mockImplementation(() => promise);
+
+		const client = new QueryClient({
+			defaultOptions: {
+				queries: { retry: false, staleTime: Number.POSITIVE_INFINITY },
+			},
+		});
+		client.setQueryData(gradingQueryKey("att-prac-1"), {
+			...PRACTICE_SUBMISSION,
+			aiDraft: {
+				status: "ai_drafted",
+				aiScores: { task: 6.5, coherence: 7, lexical: 6, grammar: 6.5 },
+				aiFeedback: "AI feedback",
+				reviewedScores: null,
+				reviewedFeedback: "",
+				gradingMode: "standard",
+				version: 1,
+				errorCode: null,
+				publishedAt: null,
+			},
+		});
+		render(
+			<QueryClientProvider client={client}>
+				<GradingRoute />
+			</QueryClientProvider>,
+		);
+
+		const feedback = document.getElementById(
+			"grade-feedback",
+		) as HTMLTextAreaElement;
+		const draftBtn = screen.getByTestId("save-draft") as HTMLButtonElement;
+
+		fireEvent.change(feedback, {
+			target: { value: "Nhận xét ban đầu" },
+		});
+		fireEvent.click(draftBtn);
+
+		// Trong lúc request đang pending, inputs bị khóa
+		await vi.waitFor(() => {
+			expect(feedback.disabled).toBe(true);
+			expect(draftBtn.disabled).toBe(true);
+			expect(screen.getByTestId("grade-form").getAttribute("aria-busy")).toBe(
+				"true",
+			);
+		});
+
+		// Resolve mutation với version mới
+		const updatedDraft: AiGradingDraftView = {
+			status: "teacher_reviewing",
+			aiScores: { task: 6.5, coherence: 7, lexical: 6, grammar: 6.5 },
+			aiFeedback: "AI feedback",
+			reviewedScores: { task: 6.5, coherence: 7, lexical: 6, grammar: 6.5 },
+			reviewedFeedback: "Nhận xét ban đầu",
+			gradingMode: "standard",
+			version: 2,
+			errorCode: null,
+			publishedAt: null,
+		};
+		resolveSave(updatedDraft);
+
+		// Form remount với version 2, hiện grade-saved và feedback đã lưu
+		await vi.waitFor(() => {
+			expect(screen.getByTestId("grade-saved")).toBeTruthy();
+			const remountedFeedback = document.getElementById(
+				"grade-feedback",
+			) as HTMLTextAreaElement;
+			expect(remountedFeedback.disabled).toBe(false);
+			expect(remountedFeedback.value).toBe("Nhận xét ban đầu");
+		});
 	});
 });
 
