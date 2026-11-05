@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Nâng lên beta.85, vẫn dùng store hiện tại"
-status: in-progress
+status: completed
 priority: P1
 effort: "3h"
 dependencies: []
@@ -34,3 +34,9 @@ dependencies: []
 - `pnpm exec biome check .`, `pnpm check-types`, `pnpm test`.
 - Dry-run không có replace hoặc delete cho D1, R2, custom domain.
 - `Deploy Staging` xanh; số migration đã áp dụng không đổi.
+
+## Kết quả
+
+- Dry-run [run 42016736180](https://github.com/vinh19410/teacher-os/actions/runs/42016736180): 9 update, không có create, replace, delete; R2 `noop`.
+- Deploy staging [run 42017463081](https://github.com/vinh19410/teacher-os/actions/runs/42017463081) xanh gồm cả smoke. Mốc Time Travel: `2026-11-05T11:15:08Z`.
+- Chưa kiểm tra trực tiếp số dòng `d1_migrations` vì máy local không có credential.

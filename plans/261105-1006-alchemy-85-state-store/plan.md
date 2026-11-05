@@ -22,8 +22,8 @@ Deploy staging của PR #629 fail vì `alchemy-state-store` dùng chung trong t�
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Nâng lên beta.85, vẫn dùng store hiện tại](./phase-01-upgrade-to-beta-85.md) | In progress |
-| 2 | [Tách state store riêng](./phase-02-separate-state-store.md) | Pending |
+| 1 | [Nâng lên beta.85, vẫn dùng store hiện tại](./phase-01-upgrade-to-beta-85.md) | Completed |
+| 2 | [Tách state store riêng](./phase-02-separate-state-store.md) | Blocked: chờ quyết định |
 
 Phase 2 chỉ bắt đầu sau khi phase 1 deploy staging thành công.
 
