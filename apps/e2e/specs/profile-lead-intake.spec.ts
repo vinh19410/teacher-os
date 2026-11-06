@@ -1,6 +1,6 @@
 import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
-import { readVerificationEmails, signUpViaUi } from "./helpers";
+import { readVerificationEmails, signUpViaApi } from "./helpers";
 import { API_ORIGIN, PROFILE_ORIGIN } from "./origins";
 
 /**
@@ -31,7 +31,7 @@ function openDb() {
  * cùng trick seedOrgMember, để /leads thấy lead của LEAD_ORG_ID. Email
  * duy nhất mỗi test vì sign-up trùng email bị better-auth từ chối. */
 async function signUpLeadTeacher(page: Page): Promise<string> {
-	const email = await signUpViaUi(page, { name: "Cô Mỹ E2E" });
+	const email = await signUpViaApi(page, { name: "Cô Mỹ E2E" });
 	const client = openDb();
 	try {
 		const user = await client.execute({

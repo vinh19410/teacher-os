@@ -5,7 +5,7 @@ import {
 	isoInDaysFromTodayVN,
 	orgIdForTeacherEmail,
 	seedStudent,
-	signUpViaUi,
+	signUpViaApi,
 } from "./helpers";
 import { API_ORIGIN } from "./origins";
 
@@ -100,7 +100,7 @@ test("AC-004: dòng thời gian hóa đơn & giao dịch (QR Bank-Hub + thu th�
 	page,
 	request,
 }) => {
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 	const orgId = await orgIdForTeacherEmail(teacherEmail);
 	const bankAccountXid = `xid-${orgId.slice(0, 12)}`;
 

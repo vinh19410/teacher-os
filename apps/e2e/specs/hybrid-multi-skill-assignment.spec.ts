@@ -4,7 +4,7 @@ import { expect, type Page, test } from "@playwright/test";
 import {
 	fillRichEditor,
 	orgIdForTeacherEmail,
-	signUpViaUi,
+	signUpViaApi,
 	verifyStudentEmailFromMailLog,
 } from "./helpers";
 import { seedQuizFixture } from "./helpers-quiz";
@@ -58,7 +58,7 @@ test("hybrid Grammar + Writing assignment: author, preview, assign, student take
 	// 1. Teacher signs up via real UI and seeds a class + enrolled student
 	const teacherContext = await browser.newContext({ baseURL: WEB_ORIGIN });
 	const teacherPage = await teacherContext.newPage();
-	const teacherEmail = await signUpViaUi(teacherPage, { name: "Cô Mỹ" });
+	const teacherEmail = await signUpViaApi(teacherPage, { name: "Cô Mỹ" });
 	const orgId = await orgIdForTeacherEmail(teacherEmail);
 
 	const fixture = await seedQuizFixture({

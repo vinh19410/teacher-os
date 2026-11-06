@@ -4,7 +4,7 @@ import {
 	ensureAdminAccount,
 	fillRichEditor,
 	selectWritingTask2,
-	signUpViaUi,
+	signUpViaApi,
 } from "./helpers";
 
 /**
@@ -19,7 +19,7 @@ test("bold formatting persists through save and renders in the preview", async (
 }) => {
 	const TITLE = "QC-280 Rich Bold Persist";
 
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill(TITLE);
@@ -62,7 +62,7 @@ test("XSS payload in rich text is stored but never executes at render", async ({
 }) => {
 	const TITLE = "QC-280 Rich XSS Neutralize";
 
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill(TITLE);
@@ -112,7 +112,7 @@ test("multi-line prompt keeps its line breaks through the editor round trip", as
 }) => {
 	const TITLE = "QC-280 Rich Newlines";
 
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill(TITLE);
@@ -139,7 +139,7 @@ test("full-option toolbar structures persist and render for students", async ({
 }) => {
 	const TITLE = "QC-436 Rich Full Option";
 
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill(TITLE);
@@ -196,7 +196,7 @@ test("link popover persists an allowlisted href and renders for students", async
 }) => {
 	const TITLE = "QC-438 Rich Link Popover";
 
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill(TITLE);
@@ -240,7 +240,7 @@ test("link popover persists an allowlisted href and renders for students", async
 test("empty-selection link applies as a stored mark at the caret and traps focus", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 	await selectWritingTask2(page);
 	await fillRichEditor(page, "Nội dung đề", "Mở đầu");
@@ -288,7 +288,7 @@ test("callsite min-height utilities override the layered ProseMirror base", asyn
 	page,
 	request,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 
 	// test-header-form "Mô tả" carries min-h-22 = 5.5rem = 77px @14px root.
 	await page.goto("/assignments/tests/new");

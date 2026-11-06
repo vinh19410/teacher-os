@@ -1,7 +1,14 @@
 // @vitest-environment jsdom
 
 import { assignmentPromptUpdateSchema } from "@teacher-os/api/contracts";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+	act,
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -298,6 +305,9 @@ describe("TestBuilderShell — Chỉnh sửa & Cập nhật đề bảo toàn ex
 		fireEvent.click(screen.getByRole("button", { name: "Chỉnh sửa" }));
 		expect(screen.getByText("Giải thích câu 1")).toBeTruthy();
 
+		// #630 field-diff: chỉ câu hỏi THẬT SỰ đổi mới nằm trên PATCH —
+		// đổi đáp án câu 1 (TRUE → FALSE) qua lưới đáp án.
+		fireEvent.click(screen.getByRole("button", { name: "Câu 1: FALSE" }));
 		fireEvent.click(screen.getByRole("button", { name: "Cập nhật đề" }));
 		expect(submitFixture.run).toHaveBeenCalledTimes(1);
 		const action = submitFixture.run.mock.calls[0]?.[0] as {
@@ -319,5 +329,158 @@ describe("TestBuilderShell — Chỉnh sửa & Cập nhật đề bảo toàn ex
 			"<p>Giải thích gốc câu 1</p>",
 		);
 		expect("explanation" in (patchedQuestions[1] ?? {})).toBe(false);
+		// Các field khóa nội dung khác không đổi → omitted khỏi PATCH (#630).
+		for (const key of [
+			"type",
+			"prompt",
+			"passage",
+			"intro",
+			"transcript",
+			"cueTopic",
+			"cuePoints",
+			"audioName",
+			"imageUrl",
+			"optionBank",
+			"note",
+			"writing",
+		]) {
+			expect(key in action.payload).toBe(false);
+		}
 	}, 20_000);
+
+	it("#630: Cập nhật đề KHÔNG sửa gì → PATCH chỉ còn title/band/source/status, writing omitted", async () => {
+		submitFixture.run.mockResolvedValue({
+			kind: "refreshed",
+			id: "prompt-edit",
+		});
+		const smallEditTest: KernelAssignmentTestRow = {
+			...editTest,
+			parts: [
+				{
+					testId: "at-1",
+					promptId: "prompt-edit",
+					part: "p1",
+					position: 0,
+					qStartOverride: null,
+				},
+			],
+		};
+		render(<TestBuilderShell mode="edit" test={smallEditTest} />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Chỉnh sửa" }));
+		fireEvent.click(screen.getByRole("button", { name: "Cập nhật đề" }));
+
+		expect(submitFixture.run).toHaveBeenCalledTimes(1);
+		const action = submitFixture.run.mock.calls[0]?.[0] as {
+			type: string;
+			promptId: string;
+			payload: Record<string, unknown>;
+		};
+		expect(action.type).toBe("update-assignment-prompt");
+		expect(action.promptId).toBe("prompt-edit");
+		expect(Object.keys(action.payload).sort()).toEqual([
+			"band",
+			"source",
+			"status",
+			"title",
+		]);
+		// prompt-edit không có phần writing → writing phải omitted, không
+		// bao giờ gửi `writing: null` vô điều kiện như trước.
+		expect("writing" in action.payload).toBe(false);
+		expect(assignmentPromptUpdateSchema.safeParse(action.payload).success).toBe(
+			true,
+		);
+	}, 20_000);
+
+	it("Cập nhật đề KHÔNG sửa gì khi câu hỏi chỉ lệch null/undefined (#632)", async () => {
+		submitFixture.run.mockResolvedValue({
+			kind: "refreshed",
+			id: "prompt-edit",
+		});
+		const smallEditTest: KernelAssignmentTestRow = {
+			...editTest,
+			parts: [
+				{
+					testId: "at-1",
+					promptId: "prompt-edit",
+					part: "p1",
+					position: 0,
+					qStartOverride: null,
+				},
+			],
+		};
+		render(<TestBuilderShell mode="edit" test={smallEditTest} />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Chỉnh sửa" }));
+		fireEvent.click(screen.getByRole("button", { name: "Cập nhật đề" }));
+
+		expect(submitFixture.run).toHaveBeenCalledTimes(1);
+		const action = submitFixture.run.mock.calls[0]?.[0] as {
+			type: string;
+			promptId: string;
+			payload: Record<string, unknown>;
+		};
+		expect("questions" in action.payload).toBe(false);
+	}, 20_000);
+});
+
+describe("TestBuilderShell — rollback state khi persistParts thất bại (#633)", () => {
+	it("gỡ part bị từ chối 409 definite-failure → slot hoàn nguyên về prompt cũ", async () => {
+		submitFixture.run.mockResolvedValue({
+			kind: "definite-failure",
+			status: 409,
+		});
+		render(<TestBuilderShell mode="edit" test={editTest} />);
+
+		expect(screen.getByText("Passage 1 — Stepwells")).toBeDefined();
+
+		const removeBtn = screen.getByRole("button", { name: "Gỡ khỏi test" });
+		fireEvent.click(removeBtn);
+
+		expect(submitFixture.run).toHaveBeenCalledTimes(1);
+		await waitFor(() => {
+			// Do rollback, "Passage 1 — Stepwells" vẫn tồn tại trong outline
+			expect(screen.getByText("Passage 1 — Stepwells")).toBeDefined();
+		});
+	});
+
+	it("gán part bị từ chối 409 definite-failure → slot hoàn nguyên về trống", async () => {
+		submitFixture.run.mockResolvedValue({
+			kind: "definite-failure",
+			status: 409,
+		});
+		render(<TestBuilderShell mode="edit" test={editTest} />);
+
+		const pickButtons = screen.getAllByRole("button", {
+			name: "Chọn từ ngân hàng",
+		});
+		const firstPick = pickButtons[0];
+		if (!firstPick) throw new Error("pick button not found");
+		fireEvent.click(firstPick);
+		const promptOption = screen.getByText("Passage 2 — Glass");
+		fireEvent.click(promptOption);
+
+		expect(submitFixture.run).toHaveBeenCalledTimes(1);
+		await waitFor(() => {
+			// Do rollback, Passage 2 vẫn là slot trống với nút Chọn từ ngân hàng
+			expect(
+				screen.getAllByRole("button", { name: "Chọn từ ngân hàng" }).length,
+			).toBe(2);
+		});
+	});
+
+	it("gỡ part trả outcome-unknown → KHÔNG rollback state (chờ reconcile)", async () => {
+		submitFixture.run.mockResolvedValue({
+			kind: "outcome-unknown",
+		});
+		render(<TestBuilderShell mode="edit" test={editTest} />);
+
+		const removeBtn = screen.getByRole("button", { name: "Gỡ khỏi test" });
+		fireEvent.click(removeBtn);
+
+		expect(submitFixture.run).toHaveBeenCalledTimes(1);
+		await act(async () => {});
+		// Không rollback → slot 1 trở thành trống
+		expect(screen.queryByText("Passage 1 — Stepwells")).toBeNull();
+	});
 });

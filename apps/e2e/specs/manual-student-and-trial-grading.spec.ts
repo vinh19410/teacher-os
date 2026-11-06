@@ -3,7 +3,7 @@ import {
 	fillRichEditor,
 	isoInDaysFromTodayVN,
 	selectWritingTask2,
-	signUpViaUi,
+	signUpViaApi,
 } from "./helpers";
 
 /**
@@ -22,7 +22,7 @@ test("manual student creation + instant activation unlocks invoice & assignment,
 	const PROMPT_TITLE = "E2E 508 Writing Task 2 Ready";
 
 	// 1. Đăng ký giáo viên mới (org hoàn toàn rỗng, 0 học viên)
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 
 	// 2. Tạo 1 đề Writing trạng thái ready trong ngân hàng đề
 	await page.goto("/assignments/new");

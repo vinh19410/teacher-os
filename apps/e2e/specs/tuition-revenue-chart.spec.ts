@@ -1,6 +1,6 @@
 import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
-import { seedStudent, signUpViaUi } from "./helpers";
+import { seedStudent, signUpViaApi } from "./helpers";
 
 /**
  * Biểu đồ doanh thu trên /tuition (#343, plan phase 3). Menu đổi tên
@@ -117,7 +117,7 @@ function chartSection(page: Page) {
 test("doanh thu: chart 2 tháng theo created_at + toggle Quý đổi URL (?ky=quarter)", async ({
 	page,
 }) => {
-	teacherEmail = await signUpViaUi(page, { password: PASSWORD });
+	teacherEmail = await signUpViaApi(page, { password: PASSWORD });
 	await seedStudent({ teacherEmail, name: STUDENT_NAME });
 	const orgId = await orgIdOfTeacher();
 	const studentId = await studentIdOf(orgId, STUDENT_NAME);
@@ -198,7 +198,7 @@ test("doanh thu: chart 2 tháng theo created_at + toggle Quý đổi URL (?ky=qu
 test("doanh thu: ?ky=lạ không crash — rơi về cửa sổ tháng mặc định", async ({
 	page,
 }) => {
-	teacherEmail = await signUpViaUi(page, { password: PASSWORD });
+	teacherEmail = await signUpViaApi(page, { password: PASSWORD });
 	// Org trống — chart hiện empty-state, trang vẫn chạy (#343 non-throw).
 	await page.goto("/tuition?ky=abc");
 	await expect(

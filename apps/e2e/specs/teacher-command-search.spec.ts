@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { seedStudent, signUpViaUi } from "./helpers";
+import { seedStudent, signUpViaApi } from "./helpers";
 
 /**
  * Command palette ⌘K trên topbar (phase 8 redesign) — tính năng mới thay ô
@@ -19,7 +19,7 @@ const STUDENT_NAME = "Nguyễn Minh CmdK";
 let currentTeacherEmail = "";
 
 test.beforeEach(async ({ page }) => {
-	currentTeacherEmail = await signUpViaUi(page);
+	currentTeacherEmail = await signUpViaApi(page);
 });
 
 test("trigger 'Tìm kiếm… ⌘K' trên header mở palette", async ({ page }) => {

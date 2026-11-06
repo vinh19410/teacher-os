@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { signUpViaApi } from "./helpers";
 
 /**
  * AC-002 nhập đề bằng AI (TOS-25 #471): tải lại cùng tệp đã bóc tách thành
@@ -15,7 +15,7 @@ test("AC-002: tải lại cùng tệp → banner trùng (0 Credit), mở lại b
 	page,
 }) => {
 	await page.setViewportSize({ width: 1440, height: 900 });
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 
 	// Lần 1: vào màn Nhập đề AI và bóc tách tệp mẫu (30 Cr → 25 Cr).
 	await page.goto("/assignments/tests/new");

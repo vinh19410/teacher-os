@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { signUpViaApi } from "./helpers";
 
 /**
  * Issue #221 — class-scoped lesson management: the curriculum card is
@@ -102,7 +102,7 @@ async function createClassAndImportTemplate(page: Page, className: string) {
 test("manage modal reorders lessons and the schedule table follows (#221)", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await createTemplateWithModules(page, "E2E 221 Template");
 	await createClassAndImportTemplate(page, "E2E 221 Lớp");
 

@@ -1,7 +1,7 @@
 import { type BrowserContext, expect, type Page, test } from "@playwright/test";
 import {
 	orgIdForTeacherEmail,
-	signUpViaUi,
+	signUpViaApi,
 	verifyStudentEmailFromMailLog,
 } from "./helpers";
 import {
@@ -93,7 +93,7 @@ test.beforeAll(async ({ browser }) => {
 	test.setTimeout(120_000);
 	teacherContext = await browser.newContext({ baseURL: WEB_ORIGIN });
 	teacherPage = await teacherContext.newPage();
-	const teacherEmail = await signUpViaUi(teacherPage, {
+	const teacherEmail = await signUpViaApi(teacherPage, {
 		name: "Cô Ghi Chú",
 	});
 

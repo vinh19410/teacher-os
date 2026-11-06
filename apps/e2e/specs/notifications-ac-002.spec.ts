@@ -3,7 +3,7 @@ import { expect, type Page, test } from "@playwright/test";
 import {
 	readVerificationEmails,
 	seedStudent,
-	signUpViaUi,
+	signUpViaApi,
 	type VerificationEmailEntry,
 	verifyStudentEmailFromMailLog,
 } from "./helpers";
@@ -95,7 +95,7 @@ test("AC-002 gửi email thất bại đủ 3 lần → Lỗi gửi (failed) kè
 		viewport: { width: 1440, height: 900 },
 	});
 	const teacher = await teacherContext.newPage();
-	const teacherEmail = await signUpViaUi(teacher);
+	const teacherEmail = await signUpViaApi(teacher);
 	const bounceEmail = `tos22.bounce.${Date.now()}@bounce.test`;
 
 	await seedStudent({

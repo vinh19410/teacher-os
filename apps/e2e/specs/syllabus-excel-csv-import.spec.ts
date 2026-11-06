@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { signUpViaApi } from "./helpers";
 
 // Hai định dạng = hai code path parse khác nhau (papaparse vs
 // read-excel-file) — CSV không exercise read-excel-file chút nào.
@@ -12,7 +12,7 @@ for (const [format, fixture] of [
 	test(`tạo syllabus bằng upload ${format}: preview rồi thấy đủ modules/buổi trên trang chi tiết`, async ({
 		page,
 	}) => {
-		await signUpViaUi(page);
+		await signUpViaApi(page);
 		await page.goto("/syllabus");
 		await page.getByRole("button", { name: "+ Tạo syllabus" }).click();
 		const dialog = page.getByRole("dialog");
@@ -72,7 +72,7 @@ for (const [format, fixture] of [
 test("import file 4 cột v3 legacy vẫn tạo syllabus không lỗi (regression #154)", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/syllabus");
 	await page.getByRole("button", { name: "+ Tạo syllabus" }).click();
 	const dialog = page.getByRole("dialog");
@@ -98,7 +98,7 @@ test("import file 4 cột v3 legacy vẫn tạo syllabus không lỗi (regressio
 test("đóng popup tạo syllabus rồi mở lại giữ nguyên dữ liệu đã nhập", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/syllabus");
 	await page.getByRole("button", { name: "+ Tạo syllabus" }).click();
 	const dialog = page.getByRole("dialog");
@@ -146,7 +146,7 @@ test("đóng popup tạo syllabus rồi mở lại giữ nguyên dữ liệu đ�
 test("nút gỡ file (X) hoạt động ở cả nhánh preview OK lẫn nhánh lỗi", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/syllabus");
 	await page.getByRole("button", { name: "+ Tạo syllabus" }).click();
 	const dialog = page.getByRole("dialog");

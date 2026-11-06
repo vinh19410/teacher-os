@@ -201,8 +201,10 @@ must pass, then `APP_DOMAIN=<domain> pnpm alchemy deploy --stage prod` (secrets
 come from GitHub repo secrets mirroring the inventory above — same names, no
 values in Git), then a `/readyz` smoke that must return `200 {"ok":true}`
 within ~10 minutes or the run is marked failed. The full Playwright E2E suite
-is not part of this workflow: run it locally before shipping (`ak-ship
-official` / `staging`); a red local E2E is the release blocker, not CI.
+also gates this workflow: the `e2e` job runs it in 6 shards with
+`--fully-parallel`, and `deploy` needs both `quality` and `e2e`. Staging and PRs
+do not run it. Still run it locally before shipping (`ak-ship official`) so a
+red suite is caught before the merge, not at the release gate.
 Deploys are serialized
 (`cancel-in-progress: false`) so forward-only D1 migrations never race.
 
@@ -241,6 +243,51 @@ network-first cache headers. Throwaway smoke accounts are accepted junk rows
 in the staging D1; prod deliberately gets no signup smoke. The manual
 "Provision staging" procedure below remains the path for first provisioning
 or destroy/recreate.
+
+To preview a staging deploy without applying it, run `Deploy Staging` manually from
+`develop` or `staging` with `dry_run` enabled: it prints the Alchemy plan and skips seed and
+smoke steps. Check that the plan does not replace or delete the D1 database, R2
+buckets or custom domains before deploying.
+
+Similarly, to preview a production deploy without applying it, run `Deploy Production` (`deploy.yml`)
+manually via `workflow_dispatch` with `dry_run` enabled: it gates on uncached quality, prints the
+Alchemy plan, and skips smoke checks.
+
+Alchemy state lives in the account-level `alchemy-state-store` Worker, which
+every project on this Cloudflare account shares. A project on a different
+Alchemy version can change the store's schema version and fail this project's
+deploy with `expected vN, observed vM`. Never answer that error by rerunning a
+deploy on an older Alchemy version: with `--yes`, it tries to redeploy the shared
+store to its own version.
+
+Alchemy refuses a directory containing `meta/_journal.json`, so
+`packages/infra/src/flat-migrations.ts` copies only the `.sql` files into
+`packages/infra/.alchemy/d1-migrations` on each run. Do not run `drizzle-kit up`:
+it renames every migration, which no longer matches the recorded history.
+
+An existing stage keeps using the `d1_migrations` table recorded in its Alchemy
+state; `__alchemy_migrations` is only the default for a new stage. The first
+deploy on `2.0.0-beta.85` rebuilds `d1_migrations` with a `hash` column, checks
+every recorded name against the local files, and stops on a mismatch without
+applying migrations. The plan shows `database: update` for this deploy, which is
+expected. Older Alchemy versions cannot write to the rebuilt table, so roll back
+by reverting code while staying on `beta.85` or later. Note the UTC time before
+that first deploy of each stage, so D1 Time Travel can restore to it if the
+rebuild fails partway. If it does, the rows remain in
+`d1_migrations_alchemy_upgrade`.
+
+### State store separation procedure (`teacher-os-state`)
+
+To insulate `teacher-os` from other projects on the same Cloudflare account, state is being migrated
+from `alchemy-state-store` to dedicated worker `teacher-os-state`:
+
+1. **Tools:** `.github/workflows/state-migrate.yml` and `packages/infra/scripts/state-copy.ts`.
+2. **Safety Rule:** Do NOT change `workerName` in `packages/infra/alchemy.run.ts` until:
+   - New store `teacher-os-state` is bootstrapped via `state-migrate.yml` (mode: `bootstrap`).
+   - State is copied for both `staging` and `prod` via `state-migrate.yml` (mode: `copy`).
+   - Parity verification confirms 100% SHA-256 match for both stages (`state-migrate.yml` mode: `verify`).
+   - A parity check gate is included in deploy workflows.
+   - Dry-run on both staging and production shows 0 create, 0 replace, 0 delete.
 
 ## Deploy (production)
 

@@ -43,6 +43,7 @@ interface TestApp {
 	insertUser(name: string): Promise<TestSession>;
 	call(path: string, options?: CallOptions): Promise<Response>;
 	kernel(session: TestSession): Promise<KernelSnapshot>;
+	db: Db;
 }
 
 async function createTestApp(): Promise<TestApp> {
@@ -115,7 +116,7 @@ async function createTestApp(): Promise<TestApp> {
 		return (await res.json()) as KernelSnapshot;
 	}
 
-	return { insertUser, call, kernel };
+	return { insertUser, call, kernel, db };
 }
 
 /** Full prompt-bank body (create schema là .strict()) với override. */
@@ -157,12 +158,54 @@ async function createPrompt(
 	const { id } = (await res.json()) as { id: string };
 	return id;
 }
+async function getOrgId(t: TestApp, session: TestSession): Promise<string> {
+	const [membershipRow] = await t.db
+		.select({ orgId: schema.membership.orgId })
+		.from(schema.membership)
+		.where(eq(schema.membership.userId, session.userId));
+	if (!membershipRow) throw new Error("membership not found");
+	return membershipRow.orgId;
+}
+
+async function createStudent(t: TestApp, orgId: string): Promise<string> {
+	const studentId = crypto.randomUUID();
+	await t.db.insert(schema.student).values({
+		id: studentId,
+		orgId,
+		name: "Học viên Test",
+	});
+	return studentId;
+}
+
+async function createPracticeAttempt(
+	t: TestApp,
+	options: {
+		orgId: string;
+		testId: string;
+		studentId: string;
+		status?: "in_progress" | "submitted";
+	},
+): Promise<string> {
+	const attemptId = crypto.randomUUID();
+	await t.db.insert(schema.quizAttempt).values({
+		id: attemptId,
+		orgId: options.orgId,
+		studentId: options.studentId,
+		testId: options.testId,
+		mode: "practice",
+		status: options.status ?? "submitted",
+		questionsSnapshot: "[]",
+		answers: "{}",
+	});
+	return attemptId;
+}
 
 describe("assignment tests routes (full-test builder)", () => {
 	let t: TestApp;
 	let orgA: TestSession;
 	let orgB: TestSession;
 	let readingP1: string;
+	let readingP1Alt: string;
 	let readingP2: string;
 	let writingTask2: string;
 
@@ -176,6 +219,9 @@ describe("assignment tests routes (full-test builder)", () => {
 			await t.kernel(session);
 		}
 		readingP1 = await createPrompt(t, orgA, {});
+		readingP1Alt = await createPrompt(t, orgA, {
+			title: "Reading Passage 1 Alt",
+		});
 		readingP2 = await createPrompt(t, orgA, {
 			part: "p2",
 			type: "headings",
@@ -342,6 +388,359 @@ describe("assignment tests routes (full-test builder)", () => {
 			body: [],
 		});
 		expect(put.status).toBe(401);
+	});
+	describe("PUT /api/assignments/tests/:id/parts — test parts lock theo quiz_attempt (#633)", () => {
+		let testId: string;
+		let orgAId: string;
+		let studentAId: string;
+		let initialPartRows: Array<{
+			id: string;
+			part: string;
+			promptId: string;
+			qStartOverride: number | null;
+		}>;
+
+		beforeAll(async () => {
+			orgAId = await getOrgId(t, orgA);
+			studentAId = await createStudent(t, orgAId);
+		});
+
+		test("đổi prompt khi có attempt submitted → 409 TEST_PARTS_LOCKED, DB không đổi", async () => {
+			const post = await t.call("/api/assignments/tests", {
+				session: orgA,
+				method: "POST",
+				body: {
+					title: "Test đã có attempt",
+					skill: "reading",
+					timeLimitSeconds: null,
+				},
+			});
+			expect(post.status).toBe(201);
+			const postJson = (await post.json()) as { id: string };
+			testId = postJson.id;
+
+			// Gán part ban đầu: p1 -> readingP1
+			const putInitial = await t.call(
+				`/api/assignments/tests/${testId}/parts`,
+				{
+					session: orgA,
+					method: "PUT",
+					body: [{ part: "p1", promptId: readingP1 }],
+				},
+			);
+			expect(putInitial.status).toBe(200);
+
+			initialPartRows = await t.db
+				.select({
+					id: schema.assignmentTestPart.id,
+					part: schema.assignmentTestPart.part,
+					promptId: schema.assignmentTestPart.promptId,
+					qStartOverride: schema.assignmentTestPart.qStartOverride,
+				})
+				.from(schema.assignmentTestPart)
+				.where(eq(schema.assignmentTestPart.testId, testId))
+				.orderBy(schema.assignmentTestPart.part);
+			expect(initialPartRows.length).toBe(1);
+
+			// Tạo attempt submitted
+			await createPracticeAttempt(t, {
+				orgId: orgAId,
+				studentId: studentAId,
+				testId,
+				status: "submitted",
+			});
+
+			// Đổi p1 -> readingP2: phải bị 409 TEST_PARTS_LOCKED
+			const putChange = await t.call(`/api/assignments/tests/${testId}/parts`, {
+				session: orgA,
+				method: "PUT",
+				body: [{ part: "p1", promptId: readingP1Alt }],
+			});
+			expect(putChange.status).toBe(409);
+			expect(await putChange.json()).toMatchObject({
+				error: "test parts locked",
+				code: "TEST_PARTS_LOCKED",
+			});
+
+			// Kiểm tra DB giữ nguyên bản ghi cũ (cùng id)
+			const currentPartRows = await t.db
+				.select({
+					id: schema.assignmentTestPart.id,
+					part: schema.assignmentTestPart.part,
+					promptId: schema.assignmentTestPart.promptId,
+					qStartOverride: schema.assignmentTestPart.qStartOverride,
+				})
+				.from(schema.assignmentTestPart)
+				.where(eq(schema.assignmentTestPart.testId, testId))
+				.orderBy(schema.assignmentTestPart.part);
+			expect(currentPartRows).toEqual(initialPartRows);
+		});
+
+		test("đổi prompt khi có attempt in_progress → 409 TEST_PARTS_LOCKED", async () => {
+			const post = await t.call("/api/assignments/tests", {
+				session: orgA,
+				method: "POST",
+				body: {
+					title: "Test attempt in_progress",
+					skill: "reading",
+					timeLimitSeconds: null,
+				},
+			});
+			const tid = ((await post.json()) as { id: string }).id;
+
+			await t.call(`/api/assignments/tests/${tid}/parts`, {
+				session: orgA,
+				method: "PUT",
+				body: [{ part: "p1", promptId: readingP1 }],
+			});
+
+			await createPracticeAttempt(t, {
+				orgId: orgAId,
+				studentId: studentAId,
+				testId: tid,
+				status: "in_progress",
+			});
+
+			const res = await t.call(`/api/assignments/tests/${tid}/parts`, {
+				session: orgA,
+				method: "PUT",
+				body: [{ part: "p1", promptId: readingP1Alt }],
+			});
+			expect(res.status).toBe(409);
+			expect(await res.json()).toMatchObject({
+				code: "TEST_PARTS_LOCKED",
+			});
+		});
+
+		test("gỡ part khi có attempt → 409 TEST_PARTS_LOCKED", async () => {
+			// testId đã có attempt: gửi rỗng [] để gỡ part
+			const res = await t.call(`/api/assignments/tests/${testId}/parts`, {
+				session: orgA,
+				method: "PUT",
+				body: [],
+			});
+			expect(res.status).toBe(409);
+			expect(await res.json()).toMatchObject({
+				code: "TEST_PARTS_LOCKED",
+			});
+		});
+
+		test("thêm part khi có attempt → 409 TEST_PARTS_LOCKED", async () => {
+			// testId đang có 1 part (p1): thêm p2
+			const res = await t.call(`/api/assignments/tests/${testId}/parts`, {
+				session: orgA,
+				method: "PUT",
+				body: [
+					{ part: "p1", promptId: readingP1 },
+					{ part: "p2", promptId: readingP2 },
+				],
+			});
+			expect(res.status).toBe(409);
+			expect(await res.json()).toMatchObject({
+				code: "TEST_PARTS_LOCKED",
+			});
+		});
+
+		test("đổi qStartOverride khi có attempt → 409 TEST_PARTS_LOCKED", async () => {
+			// testId đang có p1 với qStartOverride = null: đổi thành 15
+			const res = await t.call(`/api/assignments/tests/${testId}/parts`, {
+				session: orgA,
+				method: "PUT",
+				body: [{ part: "p1", promptId: readingP1, qStartOverride: 15 }],
+			});
+			expect(res.status).toBe(409);
+			expect(await res.json()).toMatchObject({
+				code: "TEST_PARTS_LOCKED",
+			});
+		});
+
+		test("gửi lại danh sách part giống hệt khi có attempt → 200 idempotent không đổi row ID", async () => {
+			// Tạo test 2 parts
+			const post = await t.call("/api/assignments/tests", {
+				session: orgA,
+				method: "POST",
+				body: {
+					title: "Test 2 parts idempotent",
+					skill: "reading",
+					timeLimitSeconds: null,
+				},
+			});
+			const postJson = (await post.json()) as { id: string };
+			const tid = postJson.id;
+
+			await t.call(`/api/assignments/tests/${tid}/parts`, {
+				session: orgA,
+				method: "PUT",
+				body: [
+					{ part: "p1", promptId: readingP1 },
+					{ part: "p2", promptId: readingP2, qStartOverride: 14 },
+				],
+			});
+
+			const beforeRows = await t.db
+				.select({
+					id: schema.assignmentTestPart.id,
+					part: schema.assignmentTestPart.part,
+					promptId: schema.assignmentTestPart.promptId,
+					qStartOverride: schema.assignmentTestPart.qStartOverride,
+				})
+				.from(schema.assignmentTestPart)
+				.where(eq(schema.assignmentTestPart.testId, tid))
+				.orderBy(schema.assignmentTestPart.part);
+			expect(beforeRows.length).toBe(2);
+
+			await createPracticeAttempt(t, {
+				orgId: orgAId,
+				studentId: studentAId,
+				testId: tid,
+			});
+
+			// Gửi lại giống hệt nhưng đảo thứ tự mảng và qStartOverride: undefined thay vì null
+			const putSame = await t.call(`/api/assignments/tests/${tid}/parts`, {
+				session: orgA,
+				method: "PUT",
+				body: [
+					{ part: "p2", promptId: readingP2, qStartOverride: 14 },
+					{ part: "p1", promptId: readingP1 }, // qStartOverride undefined
+				],
+			});
+			expect(putSame.status).toBe(200);
+
+			const afterRows = await t.db
+				.select({
+					id: schema.assignmentTestPart.id,
+					part: schema.assignmentTestPart.part,
+					promptId: schema.assignmentTestPart.promptId,
+					qStartOverride: schema.assignmentTestPart.qStartOverride,
+				})
+				.from(schema.assignmentTestPart)
+				.where(eq(schema.assignmentTestPart.testId, tid))
+				.orderBy(schema.assignmentTestPart.part);
+			expect(afterRows).toEqual(beforeRows);
+		});
+
+		test("test chưa có bài làm vẫn đổi part bình thường (200)", async () => {
+			const post = await t.call("/api/assignments/tests", {
+				session: orgA,
+				method: "POST",
+				body: {
+					title: "Test chưa có attempt",
+					skill: "reading",
+					timeLimitSeconds: null,
+				},
+			});
+			const postJson = (await post.json()) as { id: string };
+			const tid = postJson.id;
+
+			const put1 = await t.call(`/api/assignments/tests/${tid}/parts`, {
+				session: orgA,
+				method: "PUT",
+				body: [{ part: "p1", promptId: readingP1 }],
+			});
+			expect(put1.status).toBe(200);
+
+			const put2 = await t.call(`/api/assignments/tests/${tid}/parts`, {
+				session: orgA,
+				method: "PUT",
+				body: [{ part: "p1", promptId: readingP1Alt }],
+			});
+			expect(put2.status).toBe(200);
+		});
+
+		test("org khác có attempt trùng testId không gây khóa test của org hiện tại", async () => {
+			const post = await t.call("/api/assignments/tests", {
+				session: orgA,
+				method: "POST",
+				body: {
+					title: "Test org isolation",
+					skill: "reading",
+					timeLimitSeconds: null,
+				},
+			});
+			const postJson = (await post.json()) as { id: string };
+			const tid = postJson.id;
+
+			await t.call(`/api/assignments/tests/${tid}/parts`, {
+				session: orgA,
+				method: "PUT",
+				body: [{ part: "p1", promptId: readingP1 }],
+			});
+
+			const orgBId = await getOrgId(t, orgB);
+			const studentBId = await createStudent(t, orgBId);
+			// Tạo attempt thuộc orgB gắn với tid này
+			await createPracticeAttempt(t, {
+				orgId: orgBId,
+				studentId: studentBId,
+				testId: tid,
+			});
+
+			// orgA đổi part vẫn thành công vì attempt không thuộc orgA
+			const res = await t.call(`/api/assignments/tests/${tid}/parts`, {
+				session: orgA,
+				method: "PUT",
+				body: [{ part: "p1", promptId: readingP1Alt }],
+			});
+			expect(res.status).toBe(200);
+		});
+
+		test("hồi quy: gỡ part trên test có attempt bị từ chối 409 và PATCH đổi nội dung prompt đó vẫn bị 409 PROMPT_CONTENT_LOCKED (#630 + #633)", async () => {
+			const promptToLock = await createPrompt(t, orgA, {
+				title: "Prompt trong test có attempt",
+				passage: "Nội dung ban đầu",
+			});
+			const post = await t.call("/api/assignments/tests", {
+				session: orgA,
+				method: "POST",
+				body: {
+					title: "Test chứa prompt cần khóa",
+					skill: "reading",
+					timeLimitSeconds: null,
+				},
+			});
+			const postJson = (await post.json()) as { id: string };
+			const tid = postJson.id;
+
+			const put = await t.call(`/api/assignments/tests/${tid}/parts`, {
+				session: orgA,
+				method: "PUT",
+				body: [{ part: "p1", promptId: promptToLock }],
+			});
+			expect(put.status).toBe(200);
+
+			await createPracticeAttempt(t, {
+				orgId: orgAId,
+				studentId: studentAId,
+				testId: tid,
+			});
+
+			// Cố tình gỡ part ra khỏi test
+			const putRemove = await t.call(`/api/assignments/tests/${tid}/parts`, {
+				session: orgA,
+				method: "PUT",
+				body: [],
+			});
+			expect(putRemove.status).toBe(409);
+			expect(await putRemove.json()).toMatchObject({
+				code: "TEST_PARTS_LOCKED",
+			});
+
+			// Thử đổi nội dung prompt đã gắn test đó: vẫn phải bị 409 PROMPT_CONTENT_LOCKED
+			const patchPrompt = await t.call(
+				`/api/assignments/prompts/${promptToLock}`,
+				{
+					session: orgA,
+					method: "PATCH",
+					body: {
+						passage: "Cố tình sửa nội dung sau khi gỡ part thất bại",
+					},
+				},
+			);
+			expect(patchPrompt.status).toBe(409);
+			expect(await patchPrompt.json()).toMatchObject({
+				code: "PROMPT_CONTENT_LOCKED",
+			});
+		});
 	});
 });
 

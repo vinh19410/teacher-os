@@ -5,7 +5,7 @@ import {
 	isoInDaysFromTodayVN,
 	orgIdForTeacherEmail,
 	seedStudent,
-	signUpViaUi,
+	signUpViaApi,
 } from "./helpers";
 
 /**
@@ -66,7 +66,7 @@ async function createInvoiceViaModal(
 test("AC-001: Sổ công nợ học viên — 3 thẻ KPI, lọc URL, tìm kiếm debounce, 3 viewport và <= 2 giây (#449)", async ({
 	page,
 }) => {
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 	const orgId = await orgIdForTeacherEmail(teacherEmail);
 
 	const stuA = await seedStudent({

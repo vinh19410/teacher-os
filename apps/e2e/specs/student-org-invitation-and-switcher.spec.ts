@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import {
 	readVerificationEmails,
-	signUpViaUi,
+	signUpViaApi,
 	verifyStudentEmailFromMailLog,
 } from "./helpers";
 import { STUDENT_ORIGIN } from "./origins";
@@ -15,7 +15,7 @@ test.describe("Student Org Invitation & Multi-Org Switcher", () => {
 		const teacherPage = await teacherContext.newPage();
 
 		try {
-			await signUpViaUi(teacherPage, { name: "Teacher Bounce" });
+			await signUpViaApi(teacherPage, { name: "Teacher Bounce" });
 			await teacherPage.goto("/students");
 			await teacherPage.getByRole("button", { name: "Mời học viên" }).click();
 			await teacherPage.locator("input[type='email']").fill(bounceEmail);
@@ -57,7 +57,7 @@ test.describe("Student Org Invitation & Multi-Org Switcher", () => {
 		const teacherPage = await teacherContext.newPage();
 
 		try {
-			await signUpViaUi(teacherPage, { name: "Teacher Resend" });
+			await signUpViaApi(teacherPage, { name: "Teacher Resend" });
 			await teacherPage.goto("/students");
 			await teacherPage.getByRole("button", { name: "Mời học viên" }).click();
 			await teacherPage.locator("input[type='email']").fill(studentEmail);
@@ -110,7 +110,7 @@ test.describe("Student Org Invitation & Multi-Org Switcher", () => {
 		const teacherPage = await teacherContext.newPage();
 
 		try {
-			await signUpViaUi(teacherPage, { name: "Teacher Alpha" });
+			await signUpViaApi(teacherPage, { name: "Teacher Alpha" });
 
 			// Go to students page
 			await teacherPage.goto("/students");

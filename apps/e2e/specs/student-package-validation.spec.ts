@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { seedStudent, signUpViaUi } from "./helpers";
+import { seedStudent, signUpViaApi } from "./helpers";
 
 /**
  * E2E scenarios for student package and enrollment validation:
@@ -13,7 +13,7 @@ test("class detail → enroll học viên có sẵn KHÔNG có input gói, chọ
 	const CLASS_NAME = "E2E 240 Lớp enroll";
 	const STUDENT_NAME = "QC-240 Enrollable";
 
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 
 	// Tạo học viên trước bằng helper seed
 	await seedStudent({ teacherEmail, name: STUDENT_NAME });
@@ -65,7 +65,7 @@ test("enroll học viên vào lớp → kích hoạt derive gói từ lớp, det
 	const STUDENT_NAME = "QC-240 Student Derive";
 	const STUDENT_EMAIL = "derive@e2e.test";
 
-	const teacherEmail2 = await signUpViaUi(page);
+	const teacherEmail2 = await signUpViaApi(page);
 
 	// Seed học viên vào org của teacher 2
 	await seedStudent({

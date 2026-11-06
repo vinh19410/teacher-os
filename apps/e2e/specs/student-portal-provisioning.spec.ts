@@ -1,6 +1,6 @@
 import { createClient } from "@libsql/client";
 import { expect, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { signUpViaApi } from "./helpers";
 
 /**
  * Regression guard for D1 / D7 (Red-team #8):
@@ -14,7 +14,7 @@ test("teacher signup trên web app không bao giờ tự sinh student row trong 
 	const email = `teacher.guard.${Date.now()}@e2e.test`;
 
 	// 1. Sign up through web UI
-	await signUpViaUi(page, { email });
+	await signUpViaApi(page, { email });
 
 	// 2. Query local.db directly
 	const client = createClient({

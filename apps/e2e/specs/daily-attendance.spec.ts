@@ -1,6 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { expect, type Page, test } from "@playwright/test";
-import { signUpViaUi, vietnamTodayISO } from "./helpers";
+import { signUpViaApi, vietnamTodayISO } from "./helpers";
 import { seedDatedClass } from "./helpers-dated-class";
 import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 
@@ -14,7 +14,7 @@ import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 const TODAY = vietnamTodayISO();
 
 async function seedTodayClasses(page: Page) {
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 	const mainClassId = await seedDatedClass(page, {
 		name: "IELTS 6.5A Hôm Nay",
 		startDate: TODAY,
@@ -295,7 +295,7 @@ test.describe("AC-003 mark all present (TOS-8)", () => {
 	test("điền nhanh giữ lựa chọn có sẵn; chỉnh Nam vắng có phép rồi lưu đúng qua API", async ({
 		page,
 	}) => {
-		const teacherEmail = await signUpViaUi(page);
+		const teacherEmail = await signUpViaApi(page);
 		const classId = await seedDatedClass(page, {
 			name: "TOS-8 AC-003",
 			startDate: TODAY,
@@ -374,7 +374,7 @@ test.describe("AC-003 mark all present (TOS-8)", () => {
 	test("lưu khi thiếu 2 người: modal ghi đúng 2, quay lại chỉnh không PUT, gán rồi lưu đủ sĩ số", async ({
 		page,
 	}) => {
-		const teacherEmail = await signUpViaUi(page);
+		const teacherEmail = await signUpViaApi(page);
 		await seedDatedClass(page, {
 			name: "TOS-8 Modal Xác Nhận",
 			startDate: TODAY,
@@ -441,7 +441,7 @@ test.describe("AC-003 mark all present (TOS-8)", () => {
 		page,
 	}) => {
 		test.setTimeout(180_000);
-		const teacherEmail = await signUpViaUi(page);
+		const teacherEmail = await signUpViaApi(page);
 		const classes: Array<{ name: string; students: string[] }> = [
 			{ name: "TOS-8 NFR 1", students: ["An Nguyễn", "Bình Trần", "Cường Lê"] },
 			{
@@ -543,7 +543,7 @@ test.describe("AC-003 mark all present (TOS-8)", () => {
 		).pathname;
 		mkdirSync(screenshotsDir, { recursive: true });
 
-		const teacherEmail = await signUpViaUi(page);
+		const teacherEmail = await signUpViaApi(page);
 		await seedDatedClass(page, {
 			name: "TOS-8 Viewport",
 			startDate: TODAY,

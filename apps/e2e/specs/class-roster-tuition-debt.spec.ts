@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { isoInDaysFromTodayVN, seedStudent, signUpViaUi } from "./helpers";
+import { isoInDaysFromTodayVN, seedStudent, signUpViaApi } from "./helpers";
 
 /**
  * Issues #216 + #322 + #340 — class-detail roster "Học phí" cell follows the
@@ -15,7 +15,7 @@ const STUDENT_NAME = "QC Roster E2E";
 const CLASS_NAME = "E2E Roster Nợ học phí";
 
 async function setupOrgWithEnrollment(page: Page): Promise<void> {
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 	await seedStudent({ teacherEmail, name: STUDENT_NAME });
 	// Scheduled class (defaults: T2+T4).
 	await page.getByText("Lớp học", { exact: true }).first().click();

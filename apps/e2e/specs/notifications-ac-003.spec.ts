@@ -4,7 +4,7 @@ import { expect, type Page, test } from "@playwright/test";
 import {
 	readVerificationEmails,
 	seedStudent,
-	signUpViaUi,
+	signUpViaApi,
 	type VerificationEmailEntry,
 	verifyStudentEmailFromMailLog,
 } from "./helpers";
@@ -134,7 +134,7 @@ test("AC-003 nút Gửi lại và Gửi lại tất cả mục lỗi đặt lạ
 		viewport: { width: 1440, height: 900 },
 	});
 	const teacher = await teacherContext.newPage();
-	const teacherEmail = await signUpViaUi(teacher);
+	const teacherEmail = await signUpViaApi(teacher);
 	const ts = Date.now();
 	const okEmail = `tos23.ok.${ts}@test.local`;
 	const bounceEmail1 = `tos23.one.${ts}@bounce.test`;

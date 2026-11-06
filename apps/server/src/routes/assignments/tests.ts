@@ -1,5 +1,6 @@
 import type { CreatedResponse } from "@teacher-os/api/contracts";
 import {
+	ASSIGNMENT_TEST_ERROR_CODES,
 	ASSIGNMENT_TEST_PRESETS,
 	type AssignmentSkill,
 	assignmentTestCreateSchema,
@@ -11,6 +12,7 @@ import {
 	assignmentTest,
 	assignmentTestPart,
 } from "@teacher-os/db/schema/assignment-test";
+import { quizAttempt } from "@teacher-os/db/schema/quiz-attempt";
 import { and, eq, inArray } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
@@ -214,6 +216,68 @@ export function testsRoutes(deps: { getDb(): Db }) {
 					{ error: "hybrid prompt cannot be attached to test" },
 					400,
 				);
+		}
+
+		// So khớp part hiện tại với payload mới: map part -> { promptId, qStartOverride }
+		const existingParts = await db
+			.select({
+				part: assignmentTestPart.part,
+				promptId: assignmentTestPart.promptId,
+				qStartOverride: assignmentTestPart.qStartOverride,
+			})
+			.from(assignmentTestPart)
+			.where(eq(assignmentTestPart.testId, testId));
+
+		const existingMap = new Map(
+			existingParts.map((p) => [
+				p.part,
+				{ promptId: p.promptId, qStartOverride: p.qStartOverride ?? null },
+			]),
+		);
+		const incomingMap = new Map(
+			body.data.map((p) => [
+				p.part,
+				{ promptId: p.promptId, qStartOverride: p.qStartOverride ?? null },
+			]),
+		);
+
+		let partsChanged = existingMap.size !== incomingMap.size;
+		if (!partsChanged) {
+			for (const [part, incoming] of incomingMap) {
+				const existing = existingMap.get(part);
+				if (
+					!existing ||
+					existing.promptId !== incoming.promptId ||
+					existing.qStartOverride !== incoming.qStartOverride
+				) {
+					partsChanged = true;
+					break;
+				}
+			}
+		}
+
+		if (!partsChanged) {
+			// Idempotent: gửi lại danh sách part giống hệt thì giữ nguyên các row hiện có
+			return c.json({ id: testId } satisfies CreatedResponse);
+		}
+
+		// Nếu có thay đổi part (thêm/gỡ/đổi prompt/đổi override), kiểm tra attempt
+		const [attempt] = await db
+			.select({ id: quizAttempt.id })
+			.from(quizAttempt)
+			.where(
+				and(eq(quizAttempt.orgId, ctx.orgId), eq(quizAttempt.testId, testId)),
+			)
+			.limit(1);
+
+		if (attempt) {
+			return c.json(
+				{
+					error: "test parts locked",
+					code: ASSIGNMENT_TEST_ERROR_CODES.PARTS_LOCKED,
+				},
+				409,
+			);
 		}
 
 		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [

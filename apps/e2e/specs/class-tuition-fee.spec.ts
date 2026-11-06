@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { signUpViaApi } from "./helpers";
 
 test.describe("class tuition fee (issue #227)", () => {
 	test("creates class with tuition fee, edits fee, and clears fee", async ({
@@ -7,7 +7,7 @@ test.describe("class tuition fee (issue #227)", () => {
 	}) => {
 		const CLASS_NAME = "IELTS Fee Lifecycle Class";
 
-		await signUpViaUi(page);
+		await signUpViaApi(page);
 
 		// Navigate to classes list
 		await page.getByText("Lớp học", { exact: true }).first().click();
@@ -78,7 +78,7 @@ test.describe("class tuition fee (issue #227)", () => {
 	}) => {
 		const CLASS_NAME = "IELTS No Fee Class";
 
-		await signUpViaUi(page);
+		await signUpViaApi(page);
 
 		await page.getByText("Lớp học", { exact: true }).first().click();
 		await expect(page).toHaveURL(/\/classes$/);
@@ -112,7 +112,7 @@ test.describe("class tuition fee (issue #227)", () => {
 	}) => {
 		const CLASS_NAME = "IELTS Validate Fee Class";
 
-		await signUpViaUi(page);
+		await signUpViaApi(page);
 
 		await page.getByText("Lớp học", { exact: true }).first().click();
 		await expect(page).toHaveURL(/\/classes$/);

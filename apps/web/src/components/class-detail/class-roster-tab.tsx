@@ -13,6 +13,7 @@ import {
 	INVOICE_STATUS_LABEL,
 	INVOICE_STATUS_VARIANT,
 } from "@/lib/format-invoice";
+import { formatTargetBand } from "@/lib/format-student-target";
 import type { ClassGroup, KernelHydratedData, Student } from "@/lib/mock-data";
 import type { RosterDebt } from "@/lib/tuition-from-kernel";
 import type { DirectKernelAction } from "@/lib/use-direct-kernel-action";
@@ -66,6 +67,21 @@ export function RosterTuitionCell({
 				{formatRemainingVND(debt.outstanding)}
 			</span>
 		</span>
+	);
+}
+
+/**
+ * Ô "Band mục tiêu" của tab Học viên (#391, #625):
+ * Hiện band mục tiêu đã được chuẩn hóa (ví dụ "Band 6.5").
+ * Khi học viên chưa đặt mục tiêu (targetBand là "—" hoặc rỗng), hiện "—" trần.
+ */
+export function RosterTargetBandCell({
+	targetBand,
+}: {
+	targetBand?: string | number | null;
+}) {
+	return (
+		<span className="text-sm tabular-nums">{formatTargetBand(targetBand)}</span>
 	);
 }
 
@@ -139,9 +155,8 @@ export function ClassRosterTab({
 								// #391: "Current band" của design không có data (Student
 								// chỉ có targetBand) → hiện band mục tiêu, không bịa band
 								// hiện tại.
-								<span key="b" className="text-sm tabular-nums">
-									Band {s.targetBand}
-								</span>,
+								// #625: Hiện "—" trần khi học viên chưa đặt mục tiêu (targetBand là "—" hoặc rỗng)
+								<RosterTargetBandCell key="b" targetBand={s.targetBand} />,
 								<RosterTuitionCell
 									key="fee"
 									debt={rosterDebt.get(s.id)}

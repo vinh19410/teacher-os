@@ -12,7 +12,7 @@
  * - after cancelling, aggregate badge flips to "Đã hủy" and persists reload.
  */
 import { expect, test } from "@playwright/test";
-import { seedStudent, signUpViaUi, vietnamTodayISO } from "./helpers";
+import { seedStudent, signUpViaApi, vietnamTodayISO } from "./helpers";
 import { seedDatedClass } from "./helpers-dated-class";
 
 test("hủy buổi tương lai từ modal Điều chỉnh → persist sau reload", async ({
@@ -21,7 +21,7 @@ test("hủy buổi tương lai từ modal Điều chỉnh → persist sau reload
 	const CLASS_NAME = `E2E Occurrence Cancel ${Date.now()}`;
 	const STUDENT_NAME = "Lê Hủy Tươnglai E2E";
 
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 
 	// Tue+Fri starting today ⇒ two distinct slots; 4 occurrences each week
 	// family kept small: total 8 (4 Tue + 4 Fri).
@@ -96,7 +96,7 @@ test("edit topic trên occurrence k hiển thị đúng row k (ngay + sau reload
 }) => {
 	const CLASS_NAME = `E2E Occurrence Topic ${Date.now()}`;
 
-	const teacherEmail2 = await signUpViaUi(page);
+	const teacherEmail2 = await signUpViaApi(page);
 	await seedDatedClass(page, {
 		name: CLASS_NAME,
 		schedule: { days: [1] }, // one weekly slot → k indexes cleanly

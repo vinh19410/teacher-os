@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { seedStudent, signUpViaUi } from "./helpers";
+import { seedStudent, signUpViaApi } from "./helpers";
 
 const REVIEW_VIEWPORTS = [
 	{ width: 1440, height: 900 },
@@ -177,7 +177,7 @@ test("class detail → picker enroll học viên có sẵn → roster + KPI tăn
 	const STUDENT_NAME = "QC-122 E2E";
 
 	// 1. Sign-up teacher
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 
 	// 2. Seed student in DB
 	await seedStudent({ teacherEmail, name: STUDENT_NAME });
@@ -294,7 +294,7 @@ test("class detail → hủy lời mời → row biến mất khỏi roster, có
 	const CLASS_NAME = "E2E Lớp Hủy Lời Mời";
 	const STUDENT_NAME = "QC-Cancel E2E";
 
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 
 	// 1. Tạo học viên trước bằng seed
 	await seedStudent({ teacherEmail, name: STUDENT_NAME });

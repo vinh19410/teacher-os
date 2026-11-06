@@ -31,6 +31,35 @@ export async function signUpViaUi(
 	return email;
 }
 
+/** Sign up through the API and land on /dashboard. Same outcome as
+ * `signUpViaUi` (fresh teacher session, org bootstrapped by the first
+ * authenticated GET /api/kernel) without the per-test cost of loading and
+ * hydrating the sign-up page. `page.request` shares the context cookie jar,
+ * so the browser is already signed in when it navigates. The real sign-up
+ * form stays covered by `signup-ui-smoke.spec.ts`. */
+export async function signUpViaApi(
+	page: Page,
+	opts: { name?: string; email?: string; password?: string } = {},
+): Promise<string> {
+	const email =
+		opts.email ??
+		`e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@test.local`;
+	const res = await page.request.post(`${API_ORIGIN}/api/auth/sign-up/email`, {
+		data: {
+			name: opts.name ?? "E2E Teacher",
+			email,
+			password: opts.password ?? "password-8chars",
+		},
+		headers: { "Content-Type": "application/json", Origin: WEB_ORIGIN },
+	});
+	if (res.status() !== 200) {
+		throw new Error(`sign-up failed (${res.status()}): ${await res.text()}`);
+	}
+	await page.goto("/dashboard");
+	await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
+	return email;
+}
+
 async function withBusyRetry<T>(fn: () => Promise<T>, retries = 5): Promise<T> {
 	for (let i = 0; i < retries; i++) {
 		try {

@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { signUpViaApi } from "./helpers";
 import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 
 const API = API_ORIGIN;
@@ -26,7 +26,7 @@ test("syllabus editor: mũi tên đổi thứ tự module rồi xóa module", as
 	page,
 }) => {
 	const name = `E2E Reorder ${Date.now()}`;
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 
 	const syllabus = await apiPost(page, "/api/syllabus-templates", {
 		name,

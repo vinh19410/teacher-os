@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { seedStudent, signUpViaUi } from "./helpers";
+import { seedStudent, signUpViaApi } from "./helpers";
 
 /**
  * Hợp đồng tìm kiếm toàn cục sau phase 8: ô inline trên topbar đã thay bằng
@@ -19,7 +19,7 @@ const CLASS_NAME = "E2E Tìm Lớp";
 const STUDENT_NAME = "Nguyễn Minh E2E";
 let currentTeacherEmail = "";
 test.beforeEach(async ({ page }) => {
-	currentTeacherEmail = await signUpViaUi(page);
+	currentTeacherEmail = await signUpViaApi(page);
 	// Fresh-org proof: query không khớp gì phải ra empty state trước khi tạo
 	// dữ liệu — chứng tỏ không có row rác nào đáp ứng query bên dưới.
 	// Trigger visible = CommandSearch đã mount (listener ⌘K đăng ký cùng mount);

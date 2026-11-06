@@ -6,7 +6,7 @@ import {
 	orgIdForTeacherEmail,
 	seedOrgMember,
 	seedStudent,
-	signUpViaUi,
+	signUpViaApi,
 } from "./helpers";
 import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 
@@ -60,7 +60,7 @@ const screenshotsDir = new URL(
 test("AC-003 Scenario 1: nợ 2.500.000 — nhập 0 hoặc 3.000.000 hiện lỗi inline và khóa nút Lưu, sửa 2.500.000 bật nút (#451)", async ({
 	page,
 }) => {
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 	const orgId = await orgIdForTeacherEmail(teacherEmail);
 
 	const stuA = await seedStudent({
@@ -181,7 +181,7 @@ test("AC-003 Scenario 1: nợ 2.500.000 — nhập 0 hoặc 3.000.000 hiện l�
 test("AC-003 Scenario 2: thành viên role ta và class_teacher bị chặn 403 ở API tài chính và điều hướng về /dashboard (#451)", async ({
 	page,
 }) => {
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 	const orgId = await orgIdForTeacherEmail(teacherEmail);
 
 	const stuA = await seedStudent({

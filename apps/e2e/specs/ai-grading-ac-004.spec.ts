@@ -8,7 +8,7 @@ import {
 import {
 	orgIdForTeacherEmail,
 	seedOrgMember,
-	signUpViaUi,
+	signUpViaApi,
 	verifyStudentEmailFromMailLog,
 } from "./helpers";
 import { seedQuizFixture } from "./helpers-quiz";
@@ -116,7 +116,7 @@ test.beforeAll(async ({ browser }) => {
 	test.setTimeout(120_000);
 	teacherContext = await browser.newContext({ baseURL: WEB_ORIGIN });
 	teacherPage = await teacherContext.newPage();
-	teacherEmail = await signUpViaUi(teacherPage, {
+	teacherEmail = await signUpViaApi(teacherPage, {
 		name: "Cô Giáo AC004",
 	});
 	const orgId = await orgIdForTeacherEmail(teacherEmail);

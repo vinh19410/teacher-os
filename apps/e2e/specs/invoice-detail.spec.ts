@@ -1,6 +1,6 @@
 import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
-import { seedStudent, signUpViaUi } from "./helpers";
+import { seedStudent, signUpViaApi } from "./helpers";
 import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 
 /**
@@ -138,7 +138,7 @@ test.describe("Invoice detail page (#345)", () => {
 		request,
 	}) => {
 		teacherEmail = `lan.detail.${Date.now()}@e2e.local`;
-		await signUpViaUi(page, { email: teacherEmail, password: PASSWORD });
+		await signUpViaApi(page, { email: teacherEmail, password: PASSWORD });
 		await teacherSignIn(page);
 
 		await page.goto(`${WEB_ORIGIN}/profile`);

@@ -3,7 +3,7 @@ import {
 	addDaysISO,
 	gotoWeek,
 	mondayWeekStartISO,
-	signUpViaUi,
+	signUpViaApi,
 	vietnamTodayISO,
 } from "./helpers";
 import { seedDatedClass } from "./helpers-dated-class";
@@ -79,7 +79,7 @@ test("AC-002 (1440×900): ngày bù nhảy qua kỳ nghỉ đã khai báo → (*
 	page,
 }) => {
 	await page.setViewportSize({ width: 1440, height: 900 });
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 
 	// Lớp chính T3 & T7: 4 buổi s0 (T3), s0+4 (T7), s0+7 (T3), s0+11 (T7);
 	// ngày bù tự nhiên cho buổi s0+7 là M = s0+14 (T3 đầu tiên sau buổi cuối
@@ -168,7 +168,7 @@ test("AC-002 (1440×900): ngày bù nhảy qua kỳ nghỉ đã khai báo → (*
 });
 
 async function seedClassWithAttendanceToday(page: Page): Promise<string> {
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 	const dowMon0 = (new Date(`${TODAY}T00:00:00Z`).getUTCDay() + 6) % 7;
 	await seedDatedClass(page, {
 		name: "Giao tiếp 1",

@@ -2,7 +2,7 @@ import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
 import {
 	seedStudent,
-	signUpViaUi,
+	signUpViaApi,
 	verifyStudentEmailFromMailLog,
 } from "./helpers";
 import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
@@ -152,7 +152,7 @@ test.describe("Tuition bank transfer (#320)", () => {
 		page,
 	}) => {
 		teacherEmail = `lan.teacher.${Date.now()}@e2e.local`;
-		await signUpViaUi(page, { email: teacherEmail, password: PASSWORD });
+		await signUpViaApi(page, { email: teacherEmail, password: PASSWORD });
 		await teacherSignIn(page);
 
 		// #338: panel bank link dời từ trang riêng /payments vào trang Hồ sơ.

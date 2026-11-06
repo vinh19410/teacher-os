@@ -2,9 +2,10 @@
 #
 # Design constraints (see docs/production-release-runbook.md):
 # - Deploy job runs only after the same quality gates as CI pass on this ref,
-#   so a bypassed/failing CI can never ship. The full Playwright E2E suite is
-#   deliberately NOT run here: it runs locally before the release is shipped
-#   (ak-ship official/staging), so no E2E job gates this workflow.
+#   so a bypassed/failing CI can never ship. The full Playwright E2E suite also
+#   gates production (and only production): it is split across 6 runners with
+#   --fully-parallel so the wall-clock stays low. Staging and PR pipelines do
+#   not run it.
 # - Concurrency serializes deploys without cancelling a run in progress:
 #   alchemy applies forward-only D1 migrations, and two overlapping deploys
 #   would race the migration ledger.
@@ -18,7 +19,12 @@ name: Deploy Production
 on:
   push:
     branches: [main]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Print the Alchemy plan only: apply nothing, skip smoke"
+        type: boolean
+        default: false
 
 concurrency:
   group: deploy-production
@@ -43,8 +49,39 @@ jobs:
     with:
       turbo-cache: false
 
+  e2e:
+    # Each shard boots its own api/vite stack and fresh libsql DB (boot:api
+    # wipes it), so shards never share state. --fully-parallel lets Playwright
+    # balance by test instead of by spec file; specs whose tests depend on each
+    # other must stay in a serial describe so they land on one shard together.
+    # No secrets: the stack is local and talks to nothing in production.
+    name: e2e (shard ${{ matrix.shard }}/6)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-workspace
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-1.62.1-ubuntu-latest
+      - run: pnpm --filter e2e exec playwright install --with-deps chromium
+      - run: pnpm --filter e2e e2e --fully-parallel --shard=${{ matrix.shard }}/6
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report-shard-${{ matrix.shard }}
+          path: |
+            apps/e2e/playwright-report/
+            apps/e2e/test-results/
+          retention-days: 7
+
   deploy:
-    needs: [quality]
+    needs: [quality, e2e]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: production
@@ -70,11 +107,12 @@ jobs:
           # Lead intake & placement test (#506, #515, #524): truyền từ GitHub Environment production.
           LEAD_ORG_ID: ${{ vars.LEAD_ORG_ID }}
           LEAD_ORIGINS: ${{ vars.LEAD_ORIGINS }}
-        run: pnpm alchemy deploy --stage prod --yes
+        run: pnpm alchemy deploy --stage prod ${{ inputs.dry_run && '--dry-run' || '--yes' }}
         # --yes auto-approves the plan: without it Alchemy exits code 0 in a
         # non-interactive terminal WITHOUT applying anything ("Non-interactive
         # terminal detected"), which made a no-op deploy look green.
       - name: Smoke check API readiness (/readyz)
+        if: ${{ !inputs.dry_run }}
         # First deploy of a custom domain may wait on DNS/cert provisioning;
         # poll up to ~10 minutes before declaring the release failed.
         run: |
@@ -91,6 +129,7 @@ jobs:
           echo "::error::/readyz did not return 200 {\"ok\":true} within 10 minutes of deploy"
           exit 1
       - name: Smoke check auth stubs (/sw.js, /registerSW.js)
+        if: ${{ !inputs.dry_run }}
         # Issue #125: the removed PWA SW's self-heal chain depends on these
         # files being served as real JavaScript with cache headers that keep
         # the SW update check on the network. Prod deliberately gets no
@@ -124,6 +163,7 @@ jobs:
           [ -n "$ok" ] || fail "stub smoke failed after 3 attempts: /sw.js + /registerSW.js not correctly served"
           echo "stub smoke OK: /sw.js + /registerSW.js served as JS with network-first cache headers"
       - name: Smoke check landing apex (/)
+        if: ${{ !inputs.dry_run }}
         # Apex handover (web → landing StaticSite): the first attach of the
         # custom domain may wait on DNS/cert provisioning; poll up to ~10
         # minutes like /readyz.
@@ -144,6 +184,7 @@ jobs:
           echo "::error::landing apex did not serve HTML within 10 minutes of deploy"
           exit 1
       - name: Smoke check profile
+        if: ${{ !inputs.dry_run }}
         # Plan #536: teacher profile StaticSite (msmy.io.vn + www). Poll up to
         # ~10 minutes like landing; verify both HTML pages have the stage's
         # lead-api meta, www alias responds 200 HTML, and /kiem-tra-dau-vao

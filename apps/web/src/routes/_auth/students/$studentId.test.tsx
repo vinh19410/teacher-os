@@ -65,4 +65,15 @@ describe("student detail", () => {
 			"not-found",
 		);
 	});
+
+	it("renders 'Chưa đặt mục tiêu' when student has no targetBand or skills", async () => {
+		routerState.params = { studentId: "st-1" };
+		renderWithKernel(<StudentDetail />);
+		expect(
+			await screen.findByRole("heading", { level: 1, name: "Học viên Một" }),
+		).toBeTruthy();
+		expect(screen.getByText("Chưa đặt mục tiêu")).toBeTruthy();
+		expect(screen.queryByText(/Band —/)).toBeNull();
+		expect(screen.queryByText(/\(\)/)).toBeNull();
+	});
 });

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { seedStudent, signUpViaUi } from "./helpers";
+import { seedStudent, signUpViaApi } from "./helpers";
 
 /**
  * Regression guard for issue #111 (QC P1): a student row on /students must
@@ -12,7 +12,7 @@ import { seedStudent, signUpViaUi } from "./helpers";
  */
 test("student row click opens the detail page", async ({ page }) => {
 	const STUDENT_NAME = "QC-111 Học viên hồi quy";
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 	await seedStudent({ teacherEmail, name: STUDENT_NAME });
 
 	await page.goto("/students");
@@ -34,7 +34,7 @@ test("student row click opens the detail page", async ({ page }) => {
 test("unknown student id renders the friendly not-found card", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 
 	await page.goto("/students/e2e-fake-id");
 	await expect(page.getByText("Không tìm thấy học viên")).toBeVisible();

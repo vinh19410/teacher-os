@@ -3,7 +3,7 @@ import { expect, type Page, test } from "@playwright/test";
 import {
 	isoInDaysFromTodayVN,
 	orgIdForTeacherEmail,
-	signUpViaUi,
+	signUpViaApi,
 } from "./helpers";
 import { seedQuizFixture, seedSubmittedEssay } from "./helpers-quiz";
 import { API_ORIGIN, WEB_ORIGIN } from "./origins";
@@ -60,7 +60,7 @@ async function seedOverdueInvoice(opts: {
 /** Teacher + dữ liệu seed cho đủ 3 thẻ: 1 ca hôm nay upcoming, 1 bài writing
  * nộp 25h trước (chưa chấm), 1 hoá đơn quá hạn. */
 async function seedRemindersOrg(page: Page): Promise<string> {
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 	const orgId = await orgIdForTeacherEmail(teacherEmail);
 	const seeded = await seedQuizFixture({
 		orgName: `TOS-6 reminders ${Date.now()}`,

@@ -1,6 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { expect, type Page, test } from "@playwright/test";
-import { addDaysISO, signUpViaUi, vietnamTodayISO } from "./helpers";
+import { addDaysISO, signUpViaApi, vietnamTodayISO } from "./helpers";
 import { seedDatedClass } from "./helpers-dated-class";
 
 /**
@@ -13,7 +13,7 @@ import { seedDatedClass } from "./helpers-dated-class";
 
 const TODAY = vietnamTodayISO();
 async function seedTwoDistinctColorClasses(page: Page) {
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 	await seedDatedClass(page, {
 		name: "IELTS 6.5A Sáng",
 		startDate: TODAY,
@@ -155,7 +155,7 @@ test("AC-004: đổi view Tháng/Tuần/Ngày ≤ 2s, màu theo lớp, tạo s�
 test("AC-004 mục 2: hộp thoại Lịch nghỉ chung — tên 1 ký tự hoặc 35 ngày khóa nút xác nhận, hợp lệ thì mở khóa", async ({
 	page,
 }) => {
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 	// Cần ít nhất 1 buổi trong khoảng nghỉ để preview.shifts.length > 0 khi hợp lệ.
 	await seedDatedClass(page, {
 		name: "IELTS Kiểm tra Nghỉ",
@@ -200,7 +200,7 @@ test("AC-004: thẻ kỳ nghỉ hiển thị trong cả 3 view Tháng/Tuần/Ng�
 	page,
 }) => {
 	await page.setViewportSize({ width: 1440, height: 900 });
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 	// Lớp có buổi đúng hôm nay → holiday 1 ngày TODAY trúng buổi, apply thành công.
 	await seedDatedClass(page, {
 		name: "IELTS Kỳ nghỉ",

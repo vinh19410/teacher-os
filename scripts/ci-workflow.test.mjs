@@ -476,10 +476,10 @@ test("ci workflow triggers on main and develop and delegates to reusable quality
 
 	const qualityCaller = extractJobBlock(code, "quality");
 	assert.ok(qualityCaller, "ci.yml must declare quality caller job");
-	assert.doesNotMatch(
-		qualityCaller,
-		/^ {4}if:/m,
-		"ci.yml quality job must not declare job-level if:",
+	assert.deepEqual(
+		[...qualityCaller.matchAll(/^ {4}if:(.*)$/gm)].map((m) => m[1].trim()),
+		["github.event_name != 'pull_request' || github.head_ref != 'develop'"],
+		"ci.yml quality job may skip only pull_request runs from develop (push runs must always execute)",
 	);
 	assert.match(
 		qualityCaller,
@@ -527,6 +527,23 @@ test("staging deploy workflow deploys only from staging and gates deploy on unca
 		/\bpaths(?:-ignore)?:/,
 		"deploy-staging.yml must never filter paths (every staging push runs full gates)",
 	);
+	assert.match(
+		code,
+		/pnpm alchemy deploy --stage staging \$\{\{ inputs\.dry_run && '--dry-run' \|\| '--yes' \}\}/,
+		"a push has no dry_run input and must keep applying with --yes",
+	);
+	const postDeploySteps = code
+		.slice(code.indexOf("- name: Deploy to Cloudflare"))
+		.split(/^\s*- name: /m)
+		.slice(2);
+	assert.ok(postDeploySteps.length > 0, "expected steps after the deploy step");
+	for (const step of postDeploySteps) {
+		assert.match(
+			step,
+			/^.*\n\s*if: \$\{\{ !inputs\.dry_run \}\}/,
+			`step after deploy must skip on dry-run: ${step.split("\n")[0]}`,
+		);
+	}
 	assertReadOnlyWorkflowPermissions(code, "deploy-staging.yml");
 	assert.match(
 		code,
@@ -628,27 +645,65 @@ test("staging deploy workflow deploys only from staging and gates deploy on unca
 	);
 });
 
-test("e2e does not run on GitHub Actions (it runs locally before ak-ship)", () => {
+test("e2e has no standalone workflow and runs only inside the prod deploy", () => {
 	assert.equal(
 		existsSync(join(repoRoot, ".github/workflows/e2e.yml")),
 		false,
-		"e2e.yml must stay removed: the E2E suite runs locally, not in CI",
+		"e2e.yml must stay removed: e2e is a job of deploy.yml, not a reusable workflow",
 	);
+	for (const path of [
+		".github/workflows/ci.yml",
+		".github/workflows/quality.yml",
+		".github/workflows/deploy-staging.yml",
+	]) {
+		assert.doesNotMatch(
+			stripComments(readFileSync(join(repoRoot, path), "utf8")),
+			/playwright|--shard|apps\/e2e|filter e2e/i,
+			`${path} must not run the e2e suite (production deploy only)`,
+		);
+	}
 });
 
-test("prod deploy is gated on uncached quality only (e2e runs locally before shipping)", () => {
+test("prod deploy is gated on uncached quality and the 6-shard fully-parallel e2e", () => {
 	const raw = readFileSync(deployPath, "utf8");
 	const code = stripComments(raw);
 
+	const e2eJob = extractJobBlock(code, "e2e");
+	assert.ok(e2eJob, "deploy.yml must declare an e2e job");
 	assert.doesNotMatch(
-		code,
-		/^ {2}e2e:/m,
-		"deploy.yml must not declare an e2e job (e2e runs locally before ak-ship)",
+		e2eJob,
+		/^ {4}if:/m,
+		"e2e job must never declare job-level if: (a skipped job satisfies needs)",
+	);
+	assert.doesNotMatch(
+		e2eJob,
+		/secrets\./,
+		"e2e job must never receive prod secrets (stack is local)",
+	);
+	assert.match(
+		e2eJob,
+		/shard:\s*\[1, 2, 3, 4, 5, 6\]/,
+		"e2e must be split into exactly 6 shards",
+	);
+	assert.match(
+		e2eJob,
+		/fail-fast:\s*false/,
+		"e2e shards must not cancel each other so every failure is visible",
+	);
+	assert.match(
+		e2eJob,
+		/e2e\s+--fully-parallel\s+--shard=\$\{\{ matrix\.shard \}\}\/6/,
+		"e2e must run with --fully-parallel and --shard=<n>/6",
+	);
+	assert.match(
+		e2eJob,
+		/uses:\s*\.\/\.github\/actions\/setup-workspace/,
+		"e2e job must use setup-workspace composite action",
 	);
 	assert.doesNotMatch(
 		code,
 		/workflows\/e2e\.yml/,
-		"deploy.yml must not call the reusable e2e workflow",
+		"deploy.yml must not call a reusable e2e workflow",
 	);
 	assert.doesNotMatch(
 		code,
@@ -691,8 +746,8 @@ test("prod deploy is gated on uncached quality only (e2e runs locally before shi
 	assert.ok(needs, "prod deploy job must declare needs");
 	assert.deepEqual(
 		needs[1].split(",").map((d) => d.trim()),
-		["quality"],
-		"prod deploy must need exactly quality",
+		["quality", "e2e"],
+		"prod deploy must need exactly quality and e2e",
 	);
 	assert.doesNotMatch(
 		deployJob,
@@ -714,6 +769,26 @@ test("prod deploy is gated on uncached quality only (e2e runs locally before shi
 		/seed-vocab-library|seedVocabLibrary|vocab_library/,
 		"deploy.yml must never seed built-in vocab library while production license gate is closed (#573)",
 	);
+	assert.match(
+		code,
+		/pnpm alchemy deploy --stage prod \$\{\{ inputs\.dry_run && '--dry-run' \|\| '--yes' \}\}/,
+		"a prod push has no dry_run input and must keep applying with --yes",
+	);
+	const postDeploySteps = code
+		.slice(code.indexOf("- name: Deploy to Cloudflare"))
+		.split(/^\s*- name: /m)
+		.slice(2);
+	assert.ok(
+		postDeploySteps.length > 0,
+		"expected steps after the deploy step in deploy.yml",
+	);
+	for (const step of postDeploySteps) {
+		assert.match(
+			step,
+			/^.*\n\s*if: \$\{\{ !inputs\.dry_run \}\}/,
+			`step after deploy must skip on dry-run in deploy.yml: ${step.split("\n")[0]}`,
+		);
+	}
 
 	const alchemyRaw = readFileSync(alchemyPath, "utf8");
 	const alchemyCode = alchemyRaw
@@ -723,5 +798,45 @@ test("prod deploy is gated on uncached quality only (e2e runs locally before shi
 		alchemyCode,
 		/\bimportFiles\b/,
 		"packages/infra/alchemy.run.ts must not use D1 importFiles (would bypass production license gate)",
+	);
+});
+
+test("state-migrate.yml triggers only on manual workflow_dispatch with read permissions and serialized concurrency", () => {
+	const raw = readFileSync(
+		join(repoRoot, ".github/workflows/state-migrate.yml"),
+		"utf8",
+	);
+	const code = stripComments(raw);
+
+	assert.doesNotMatch(
+		code,
+		/\bpush:/,
+		"state-migrate.yml must never trigger automatically on push",
+	);
+	assert.doesNotMatch(
+		code,
+		/\bpull_request:/,
+		"state-migrate.yml must never trigger on pull_request",
+	);
+	assert.match(
+		code,
+		/\bworkflow_dispatch:/,
+		"state-migrate.yml must trigger only on workflow_dispatch",
+	);
+	assertReadOnlyWorkflowPermissions(code, "state-migrate.yml");
+	assert.match(
+		code,
+		/group:\s*deploy-\$\{\{\s*inputs\.stage\s*==\s*'prod'\s*&&\s*'production'\s*\|\|\s*'staging'\s*\}\}/,
+		"state-migrate.yml must share the exact deploy concurrency group for stage serialization",
+	);
+	assert.match(
+		code,
+		/cancel-in-progress:\s*false/,
+		"state-migrate.yml must never cancel in-progress migrations",
+	);
+	assert.doesNotMatch(
+		code,
+		/actions\/upload-artifact/,
+		"state-migrate.yml must never upload state as an artifact (contains plaintext secrets in memory)",
 	);
 });

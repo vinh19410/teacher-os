@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { readVerificationEmails, signUpViaUi } from "./helpers";
+import { readVerificationEmails, signUpViaApi } from "./helpers";
 import { STUDENT_ORIGIN } from "./origins";
 
 const OLD_PASSWORD = "password-8chars";
@@ -58,7 +58,7 @@ async function studentSignIn(
 
 test.describe("Password reset via email", () => {
 	test("teacher resets password through the emailed link", async ({ page }) => {
-		const email = await signUpViaUi(page, { password: OLD_PASSWORD });
+		const email = await signUpViaApi(page, { password: OLD_PASSWORD });
 
 		await page.context().clearCookies();
 		await page.goto("/login");
@@ -163,7 +163,7 @@ test.describe("Password reset via email", () => {
 	test("unknown email gets the same success copy and no mail", async ({
 		page,
 	}) => {
-		const email = await signUpViaUi(page, { password: OLD_PASSWORD });
+		const email = await signUpViaApi(page, { password: OLD_PASSWORD });
 		const unknown = `nobody-${Date.now()}@test.local`;
 
 		await page.context().clearCookies();
@@ -201,7 +201,7 @@ test.describe("Password reset via email", () => {
 	test("reset page rejects an invalid token even when signed in", async ({
 		page,
 	}) => {
-		await signUpViaUi(page, { password: OLD_PASSWORD });
+		await signUpViaApi(page, { password: OLD_PASSWORD });
 		// A re-pasted stale link still carries ?token=…: the page strips it from
 		// the URL (F14) and offers the form — it does not show the dead-link view.
 		await page.goto("/reset-password?token=dead-token");

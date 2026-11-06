@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { signUpViaApi } from "./helpers";
 
 /** Tạo syllabus template rỗng (không import file) qua popup và chờ tới
  * trang detail. Trả về id template trên URL /syllabus/:id — không phải id
@@ -21,7 +21,7 @@ async function createSyllabusTemplate(page: Page, name: string) {
 test("ghi đè sau xác nhận thay cây, hủy giữ nguyên dữ liệu hiện tại", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await createSyllabusTemplate(page, "E2E Overwrite Detail");
 
 	// Cây thủ công ban đầu: 1 module không buổi học.
@@ -80,7 +80,7 @@ test("ghi đè sau xác nhận thay cây, hủy giữ nguyên dữ liệu hiện
 test("bản copy của lớp không có nút import ghi đè (chỉ template)", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	const templateId = await createSyllabusTemplate(
 		page,
 		"E2E Template Copy Guard",

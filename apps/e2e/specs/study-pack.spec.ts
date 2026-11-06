@@ -3,7 +3,7 @@ import {
 	acceptAllClassEnrollments,
 	fillRichEditor,
 	seedStudent,
-	signUpViaUi,
+	signUpViaApi,
 	verifyStudentEmailFromMailLog,
 	vietnamTodayISO,
 } from "./helpers";
@@ -76,7 +76,7 @@ test("study pack end-to-end: create grammar & reading prompts -> build 2-day pac
 	const PACK_TITLE = `Bộ đề 2 ngày ${runToken}`;
 
 	// 1. Teacher signs up & seeds 2 students in the org
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 	await seedStudent({
 		teacherEmail,
 		name: STUDENT_1_NAME,

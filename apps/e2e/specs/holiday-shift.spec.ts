@@ -3,7 +3,7 @@ import {
 	addDaysISO,
 	gotoWeek,
 	mondayWeekStartISO,
-	signUpViaUi,
+	signUpViaApi,
 	vietnamTodayISO,
 } from "./helpers";
 import { seedDatedClass } from "./helpers-dated-class";
@@ -70,7 +70,7 @@ test("AC-001 (1440×900): tạo lịch nghỉ chung, xem trước, dời buổi 
 	page,
 }) => {
 	await page.setViewportSize({ width: 1440, height: 900 });
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 
 	const f1 = firstUpcomingFridayISO(TODAY);
 	// Lớp T6 (days: [4], 4 buổi: f1, f2=f1+7, f3=f1+14, f4=f1+21) -> bù f5=f1+28
@@ -204,7 +204,7 @@ for (const viewport of [
 			width: viewport.width,
 			height: viewport.height,
 		});
-		const teacherEmail = await signUpViaUi(page);
+		const teacherEmail = await signUpViaApi(page);
 
 		const f1 = firstUpcomingFridayISO(TODAY);
 		const f2 = addDaysISO(f1, 7);

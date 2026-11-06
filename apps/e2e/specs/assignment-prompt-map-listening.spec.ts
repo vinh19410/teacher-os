@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { fillRichEditor, signUpViaUi } from "./helpers";
+import { fillRichEditor, signUpViaApi } from "./helpers";
 
 /**
  * Phase-04 (image pins): the listening `map` pair is image-gated AND
@@ -22,7 +22,7 @@ test("create a ready listening map with bank, pins and audio; round-trip through
 		}),
 	);
 
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 
 	await page.getByRole("button", { name: "Listening", exact: true }).click();
@@ -103,7 +103,7 @@ test("create a ready listening map with bank, pins and audio; round-trip through
 test("writing task1 map is never image/pin-gated (skill-qualified)", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 
 	await page.getByRole("button", { name: "Writing", exact: true }).click();

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { seedStudent, signUpViaUi } from "./helpers";
+import { seedStudent, signUpViaApi } from "./helpers";
 
 /**
  * Scenario for D2 & Issue #253:
@@ -16,7 +16,7 @@ test("học viên chưa lớp: 'Chưa có lớp' → enroll lớp 'Đã mời' �
 	const CLASS_NAME = "E2E Class for No-Class Student";
 
 	// 1. Sign-up teacher
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 
 	// 2. Seed student without class
 	await seedStudent({ teacherEmail, name: STUDENT_NAME, email: STUDENT_EMAIL });

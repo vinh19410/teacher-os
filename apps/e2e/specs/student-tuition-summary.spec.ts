@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { isoInDaysFromTodayVN, seedStudent, signUpViaUi } from "./helpers";
+import { isoInDaysFromTodayVN, seedStudent, signUpViaApi } from "./helpers";
 
 /**
  * Issue #347 — student-profile tuition tab gains a per-class summary:
@@ -89,7 +89,7 @@ async function enrollAndActivate(page: Page, className: string): Promise<void> {
 test("two enrolled classes sum into the tuition summary and survive reload (#347)", async ({
 	page,
 }) => {
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 	const seeded = await seedStudent({ teacherEmail, name: STUDENT_NAME });
 
 	// Class A: 10.000.000đ, class B: 6.000.000đ — student enrolled + active
@@ -168,7 +168,7 @@ test("tuition summary screenshots at 3 viewports", async ({ page }) => {
 		"../../../plans/261008-1427-student-tuition-summary/screenshots/",
 		import.meta.url,
 	).pathname;
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 	const seeded = await seedStudent({ teacherEmail, name: STUDENT_NAME });
 
 	await createClassWithFee(page, CLASS_A, "10000000");

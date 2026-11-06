@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { signUpViaApi } from "./helpers";
 
 /**
  * Collapsible sidebar e2e (issue #97, shell v2) — desktop toggle to a 64px
@@ -31,7 +31,7 @@ test("desktop: toggle co rail còn 56px (4rem ở root 14px) và mở lại đú
 	page,
 }) => {
 	await page.setViewportSize(DESKTOP);
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await expectSidebarWidth(page, 224);
 
 	const toggle = page.getByTestId("sidebar-toggle");
@@ -59,7 +59,7 @@ test("persistence: reload giữ trạng thái collapsed/expanded qua localStorag
 	page,
 }) => {
 	await page.setViewportSize(DESKTOP);
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 
 	await page.getByTestId("sidebar-toggle").click();
 	await expectSidebarWidth(page, 56);
@@ -88,7 +88,7 @@ test("mobile <1024px với collapsed=true: drawer vẫn full-label 252px", async
 		([key]) => window.localStorage.setItem(key as string, "true"),
 		[SIDEBAR_COLLAPSED_KEY],
 	);
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 
 	// Shell v2: drawer ẩn dưới lg — phải mở bằng nút menu trước.
 	await page.locator("button[aria-label='Open navigation']").click();
@@ -110,7 +110,7 @@ test("điều hướng từ rail: click icon Học viên tới /students và tes
 	page,
 }) => {
 	await page.setViewportSize(DESKTOP);
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.getByTestId("sidebar-toggle").click();
 	await expectSidebarWidth(page, 56);
 

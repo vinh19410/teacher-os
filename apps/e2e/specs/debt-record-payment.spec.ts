@@ -5,7 +5,7 @@ import {
 	isoInDaysFromTodayVN,
 	orgIdForTeacherEmail,
 	seedStudent,
-	signUpViaUi,
+	signUpViaApi,
 } from "./helpers";
 
 /**
@@ -98,7 +98,7 @@ const screenshotsDir = new URL(
 test("AC-002: thu một phần 2.000.000 rồi thu đủ 2.500.000 — trạng thái và KPI cập nhật ngay (#450)", async ({
 	page,
 }) => {
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 	const orgId = await orgIdForTeacherEmail(teacherEmail);
 
 	const stuA = await seedStudent({

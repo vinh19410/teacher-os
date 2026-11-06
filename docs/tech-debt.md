@@ -104,10 +104,10 @@ SELECT provider_id, account_id, count(*) FROM account GROUP BY 1, 2 HAVING count
 - **Mức độ thực tế:** code có guard `ownedAttempt` (`apps/server/src/routes/student.ts:809`), nên đây là thiếu test bảo vệ, chưa phải lỗ hổng đã xác nhận.
 - **Hướng xử lý:** soát toàn bộ test server rồi thêm test GET và DELETE bằng tài khoản học viên khác.
 
-### TD-06: E2E không chạy trên CI
+### TD-06: E2E chỉ chạy trên CI ở deploy production
 
-- **Bằng chứng:** `AGENTS.md` ghi rõ đã gỡ `e2e.yml`, deploy chỉ gate bằng quality. Đây là quyết định có chủ đích nên mục này chỉ ghi nhận rủi ro, không tự đảo ngược.
-- **Rủi ro:** nếu bỏ sót bước chạy local, lỗi có thể lên staging hoặc prod mà không có lưới chặn nào.
+- **Bằng chứng:** `.github/workflows/deploy.yml` có job `e2e` (6 shard, `--fully-parallel`) và `deploy` phụ thuộc nó. `ci.yml`, `quality.yml` và `deploy-staging.yml` không chạy e2e.
+- **Rủi ro:** lỗi e2e chỉ lộ ra ở bước release lên prod, không có lưới ở PR hay staging; spec mới có test phụ thuộc thứ tự phải nằm trong describe serial, nếu không sẽ vỡ khi bị chia shard.
 
 ### TD-07: File nguồn quá lớn
 
