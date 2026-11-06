@@ -201,8 +201,10 @@ must pass, then `APP_DOMAIN=<domain> pnpm alchemy deploy --stage prod` (secrets
 come from GitHub repo secrets mirroring the inventory above — same names, no
 values in Git), then a `/readyz` smoke that must return `200 {"ok":true}`
 within ~10 minutes or the run is marked failed. The full Playwright E2E suite
-is not part of this workflow: run it locally before shipping (`ak-ship
-official` / `staging`); a red local E2E is the release blocker, not CI.
+also gates this workflow: the `e2e` job runs it in 6 shards with
+`--fully-parallel`, and `deploy` needs both `quality` and `e2e`. Staging and PRs
+do not run it. Still run it locally before shipping (`ak-ship official`) so a
+red suite is caught before the merge, not at the release gate.
 Deploys are serialized
 (`cancel-in-progress: false`) so forward-only D1 migrations never race.
 
