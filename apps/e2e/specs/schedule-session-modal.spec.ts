@@ -9,7 +9,7 @@ import {
 	gotoWeek,
 	mondayWeekStartISO,
 	seedStudent,
-	signUpViaUi,
+	signUpViaApi,
 	vietnamTodayISO,
 	vnWeekdayMon0,
 } from "./helpers";
@@ -40,7 +40,7 @@ async function addStudent(page: Page, name: string, teacherEmail?: string) {
 
 async function seedTwoStudentClass(page: Page, className: string) {
 	const startDate = vietnamTodayISO();
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 	await seedDatedClass(page, {
 		name: className,
 		schedule: {

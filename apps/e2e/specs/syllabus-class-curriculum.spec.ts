@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { signUpViaApi } from "./helpers";
 import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 
 const API = API_ORIGIN;
@@ -86,7 +86,7 @@ test("A: tạo lớp kèm template qua TemplatePicker — tab Giáo trình thấ
 	page,
 }) => {
 	const stamp = Date.now();
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await seedTemplate(page, `E2E 394 Template ${stamp}`);
 
 	await page.goto("/classes");
@@ -125,7 +125,7 @@ test("B: gán sau — lớp trống nhập từ template; nhập lần hai bằn
 	page,
 }) => {
 	const stamp = Date.now();
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	const templateId = await seedTemplate(page, `E2E 394 Assign ${stamp}`);
 
 	await page.goto("/classes");
@@ -218,7 +218,7 @@ test("B: gán sau — lớp trống nhập từ template; nhập lần hai bằn
 
 test("C: sửa buổi trên bản copy không đổi template gốc", async ({ page }) => {
 	const stamp = Date.now();
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	const templateId = await seedTemplate(page, `E2E 394 Copy ${stamp}`);
 
 	// Tạo lớp kèm template bằng API cho nhanh — focus của test là edit copy.
@@ -266,7 +266,7 @@ test("D: gỡ giáo trình — tab trở về trạng thái trống, template c�
 	page,
 }) => {
 	const stamp = Date.now();
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	const templateId = await seedTemplate(page, `E2E 394 Remove ${stamp}`);
 
 	await page.goto("/classes");
@@ -309,7 +309,7 @@ test("E: id bản copy không mở được như template — 404 branded", asyn
 	page,
 }) => {
 	const stamp = Date.now();
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	const templateId = await seedTemplate(page, `E2E 394 Guard ${stamp}`);
 
 	// Import bằng API vào một lớp tạo nhanh.

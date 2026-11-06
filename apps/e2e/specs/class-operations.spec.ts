@@ -4,7 +4,7 @@ import {
 	gotoWeek,
 	openClassScheduleTab,
 	seedStudent,
-	signUpViaUi,
+	signUpViaApi,
 	vietnamTodayISO,
 	vnWeekdayMon0,
 } from "./helpers";
@@ -35,7 +35,7 @@ test("login → tạo lớp có lịch → thấy buổi → buổi tương lai 
 	const STUDENT_NAME = "Nguyễn Văn E2E";
 
 	// 1. Sign-up (org bootstrap happens on the first GET /api/kernel).
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 
 	// 2. Create a scheduled class (T2+T4, Writing; keep defaults:
 	// 19:00–20:30, 12 buổi, start tomorrow).
@@ -142,7 +142,7 @@ test("login → tạo lớp có lịch → thấy buổi → buổi tương lai 
  * - API is API_ORIGIN (mặc định :8000) while Playwright's baseURL is the Vite
  *   origin :8001 — a relative page.request.post would 404.
  * - CSRF demands the Vite Origin header plus the session cookie that
- *   page.request carries after signUpViaUi.
+ *   page.request carries after signUpViaApi.
  * - The ['kernel'] query cache is staleTime: Infinity — only a reload (never
  *   a goto-heal) makes the SPA refetch the seeded class.
  * - Lessons are generated when a STUDENT is added, not at class creation.
@@ -155,7 +155,7 @@ test("điểm danh tại chỗ trên tab Buổi học & luyện tập (lớp sta
 	const CLASS_NAME = `E2E Attendance CTA ${Date.now()}`;
 	const STUDENT_NAME = "Trần Atten E2E";
 
-	const teacherEmail2 = await signUpViaUi(page);
+	const teacherEmail2 = await signUpViaApi(page);
 
 	const startDate = vietnamTodayISO();
 	const response = await page.request.post(`${API_ORIGIN}/api/classes`, {

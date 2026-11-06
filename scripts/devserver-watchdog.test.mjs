@@ -91,6 +91,26 @@ test("buildRestartCommand/buildSpawnOptions: pnpm trực tiếp, không shell, k
 	assert.equal(opts.env?.VITE_SERVER_URL, "http://localhost:8100");
 });
 
+test("resolveViteMode/buildServices: preview là mặc định của e2e, dev chỉ khi opt-in", () => {
+	assert.equal(services.resolveViteMode({}), "preview");
+	assert.equal(services.resolveViteMode({ E2E_VITE_MODE: "dev" }), "dev");
+	assert.equal(services.resolveViteMode({ E2E_VITE_MODE: "x" }), "preview");
+	const preview = Object.fromEntries(
+		services.buildServices(PORTS, { mode: "preview" }).map((s) => [s.name, s]),
+	);
+	assert.deepEqual(services.buildRestartCommand(preview.student), [
+		"pnpm",
+		"--filter",
+		"student",
+		"exec",
+		"vite",
+		"preview",
+		"--port",
+		"8103",
+		"--strictPort",
+	]);
+});
+
 test("parsePorts: hợp lệ → số; sai/thiếu → throw message rõ", () => {
 	assert.deepEqual(
 		services.parsePorts({

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { signUpViaApi } from "./helpers";
 
 /**
  * AC-003 nhập đề bằng AI (TOS-26 #472):
@@ -17,7 +17,7 @@ test("AC-003: chỉnh sửa tay 0 Credit, khóa xuất bản tới khi xác nh�
 	page,
 }) => {
 	await page.setViewportSize({ width: 1440, height: 900 });
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 
 	await page.goto("/assignments/tests/import");
 	const badge = page.getByTestId("credit-cost-badge");

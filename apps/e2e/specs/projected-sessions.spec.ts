@@ -13,7 +13,7 @@
  * constant — 12 weekly Mondays, 04/01 … 22/03/2027.
  */
 import { expect, test } from "@playwright/test";
-import { gotoWeek, seedStudent, signUpViaUi } from "./helpers";
+import { gotoWeek, seedStudent, signUpViaApi } from "./helpers";
 import { seedDatedClass } from "./helpers-dated-class";
 
 const START = "2027-01-04"; // Monday
@@ -27,7 +27,7 @@ test("lớp có lịch chưa có học viên → buổi dự kiến đúng tuầ
 	const CLASS_NAME = `E2E Projected ${Date.now()}`;
 	const STUDENT_NAME = "Trần Dự Kiến E2E";
 
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 	await seedDatedClass(page, {
 		name: CLASS_NAME,
 		schedule: { days: [0], start: "19:00", end: "20:30" },

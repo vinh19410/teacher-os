@@ -30,6 +30,7 @@ import {
 	buildSpawnOptions,
 	createRedactor,
 	parsePorts,
+	resolveViteMode,
 } from "./devserver-services.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -128,7 +129,9 @@ const stripControlChars = (s) =>
 async function main() {
 	const ports = parsePorts(process.env);
 	await mkdir(TEST_RESULTS, { recursive: true });
-	const services = buildServices(ports);
+	const services = buildServices(ports, {
+		mode: resolveViteMode(process.env),
+	});
 	const runStartedAt = new Date().toISOString();
 	const originalLogNote =
 		"log process gốc (lần chết đầu) xem stderr trong output reporter playwright (stderr webServer được forward mặc định); log dưới đây thuộc restart-child do watchdog spawn.";

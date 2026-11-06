@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { signUpViaApi } from "./helpers";
 import { API_ORIGIN, PROFILE_ORIGIN, WEB_ORIGIN } from "./origins";
 
 const LEAD_ORG_ID = "e2e-lead-org";
@@ -34,7 +34,7 @@ async function ensurePlacementPublished(page: Page) {
 		client.close();
 	}
 
-	const email = await signUpViaUi(page, { name: "Cô Mỹ Seed E2E" });
+	const email = await signUpViaApi(page, { name: "Cô Mỹ Seed E2E" });
 	const db = openDb();
 	try {
 		const user = await db.execute({

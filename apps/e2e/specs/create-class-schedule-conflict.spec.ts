@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { signUpViaApi } from "./helpers";
 
 /**
  * Issue #315: modal Tạo lớp cảnh báo realtime (không chặn) khi lịch chọn
@@ -17,7 +17,7 @@ test("create-class warns on schedule conflict without blocking (issue #315)", as
 }) => {
 	const CLASS_NAME = "E2E CONFLICT Foundation";
 
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.getByText("Lớp học", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/classes$/);
 

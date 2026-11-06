@@ -1,6 +1,6 @@
 /** Test-seeding helper for dated classes (#98). Wraps the POST /api/classes
  * CSRF contract so specs stay declarative: cookies ride on the page's request
- * context after signUpViaUi, and the Origin must equal the Vite dev origin
+ * context after signUpViaApi, and the Origin must equal the Vite dev origin
  * (:8001) or the kernel middleware answers 403. Reload (never goto) afterwards
  * — the ['kernel'] cache is staleTime: Infinity. Returns nothing; callers
  * navigate themselves. */

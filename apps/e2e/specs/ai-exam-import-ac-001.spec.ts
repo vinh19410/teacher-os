@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { signUpViaApi } from "./helpers";
 
 /**
  * AC-001 nhập đề bằng AI (TOS-24 #470): teacher mở builder → CTA "Nhập đề
@@ -13,7 +13,7 @@ import { signUpViaUi } from "./helpers";
 test("nhập đề bằng AI: trừ 5 Credit, bóc tách 2 trang, cần rà soát đúng 1 câu", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 
 	// Vào trang import qua CTA trên builder đề test. PageHead action slot là
 	// Link (pattern điều hướng của repo) nên role đúng là `link`, không phải

@@ -33,6 +33,32 @@ export function parsePorts(env) {
  */
 
 /**
+ * Chế độ phục vụ web/student/admin trong e2e. `preview` (mặc định) chạy bản
+ * build production bằng `vite preview`: bỏ chi phí transform theo yêu cầu của
+ * vite dev (phần lớn thời gian mỗi lần tải trang trên máy chậm). Đặt
+ * `E2E_VITE_MODE=dev` để quay về dev server khi cần HMR hoặc debug source.
+ * @param {Record<string, string | undefined>} env
+ * @returns {"dev" | "preview"}
+ */
+export function resolveViteMode(env) {
+	return env.E2E_VITE_MODE === "dev" ? "dev" : "preview";
+}
+
+/** Argv `pnpm` chạy một app vite ở port cố định (không shell, xem SecM4). */
+function viteArgs(app, port, mode) {
+	return [
+		"--filter",
+		app,
+		"exec",
+		"vite",
+		...(mode === "preview" ? ["preview"] : []),
+		"--port",
+		String(port),
+		"--strictPort",
+	];
+}
+
+/**
  * Định nghĩa 4 service được giám sát. pollUrl khớp CHÍNH XÁC url readiness
  * của entry webServer trong playwright.config.ts; deadStatus khớp semantics
  * playwright (available chỉ khi status < 404, `coreBundle.js:8514-8524`) —
@@ -42,7 +68,7 @@ export function parsePorts(env) {
  * AGENTS.md).
  * @returns {DevServerService[]}
  */
-export function buildServices(ports) {
+export function buildServices(ports, { mode = "dev" } = {}) {
 	return [
 		{
 			name: "api",
@@ -55,45 +81,21 @@ export function buildServices(ports) {
 			kind: "vite",
 			pollUrl: `http://localhost:${ports.web}/`,
 			deadStatus: 404,
-			restartArgs: [
-				"--filter",
-				"web",
-				"exec",
-				"vite",
-				"--port",
-				String(ports.web),
-				"--strictPort",
-			],
+			restartArgs: viteArgs("web", ports.web, mode),
 		},
 		{
 			name: "student",
 			kind: "vite",
 			pollUrl: `http://localhost:${ports.student}/login`,
 			deadStatus: 404,
-			restartArgs: [
-				"--filter",
-				"student",
-				"exec",
-				"vite",
-				"--port",
-				String(ports.student),
-				"--strictPort",
-			],
+			restartArgs: viteArgs("student", ports.student, mode),
 		},
 		{
 			name: "admin",
 			kind: "vite",
 			pollUrl: `http://localhost:${ports.admin}/login`,
 			deadStatus: 404,
-			restartArgs: [
-				"--filter",
-				"admin",
-				"exec",
-				"vite",
-				"--port",
-				String(ports.admin),
-				"--strictPort",
-			],
+			restartArgs: viteArgs("admin", ports.admin, mode),
 		},
 	];
 }

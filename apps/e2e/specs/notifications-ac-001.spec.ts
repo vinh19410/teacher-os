@@ -6,7 +6,7 @@ import {
 	readVerificationEmails,
 	seedStudent,
 	selectWritingTask2,
-	signUpViaUi,
+	signUpViaApi,
 	type VerificationEmailEntry,
 	verifyStudentEmailFromMailLog,
 } from "./helpers";
@@ -199,7 +199,7 @@ test("AC-001 thông báo email + in-app: hóa đơn, giao bài, đã xem, filter
 	// --- Org: GV thật (UI signup) + 2 học viên seed DB có email ---
 	const teacherContext = await browser.newContext();
 	const teacher = await teacherContext.newPage();
-	const teacherEmail = await signUpViaUi(teacher);
+	const teacherEmail = await signUpViaApi(teacher);
 	const student1Email = `tos21.s1.${Date.now()}@e2e.test`;
 	const student2Email = `tos21.s2.${Date.now()}@e2e.test`;
 	await seedStudent({

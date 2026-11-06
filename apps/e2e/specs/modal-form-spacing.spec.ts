@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { signUpViaApi } from "./helpers";
 
 const REPORT_DIR = path.resolve(
 	process.cwd(),
@@ -23,7 +23,7 @@ const VIEWPORTS = [
 test("Modal 'Tạo syllabus mới' spacing và DOM measurements trên 3 viewports (issue #416)", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 
 	await page.goto("/syllabus");
 	await page.getByRole("button", { name: "+ Tạo syllabus" }).click();
@@ -164,7 +164,7 @@ test("Modal 'Tạo syllabus mới' spacing và DOM measurements trên 3 viewport
 test("Modal 'Tạo lớp mới' TemplatePicker 'Lớp trống' không bị khoảng hở kép (issue #416)", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 
 	await page.goto("/classes");
 	await page.getByRole("button", { name: "+ Tạo lớp" }).click();
@@ -214,7 +214,7 @@ test("Modal 'Tạo lớp mới' TemplatePicker 'Lớp trống' không bị kho�
 test("Modal 'Mời học viên' (form đã bỏ class trùng) nhận đúng gap-4 = 14px từ Modal body", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 
 	await page.goto("/students");
 	await page.getByRole("button", { name: "Mời học viên" }).click();

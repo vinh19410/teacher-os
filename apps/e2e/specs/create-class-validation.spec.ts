@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { signUpViaApi } from "./helpers";
 
 /**
  * Issue #105 [QC][P1]: create-class must reject end-before-start times and
@@ -17,7 +17,7 @@ test("create-class blocks end ≤ start and sessions 0 (issue #105)", async ({
 }) => {
 	const CLASS_NAME = "E2E QC-TEST-CLASS";
 
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 
 	await page.getByText("Lớp học", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/classes$/);

@@ -4,7 +4,7 @@ import {
 	fillRichEditor,
 	orgIdForTeacherEmail,
 	selectWritingTask2,
-	signUpViaUi,
+	signUpViaApi,
 	verifyStudentEmailFromMailLog,
 } from "./helpers";
 import { seedQuizFixture } from "./helpers-quiz";
@@ -18,7 +18,7 @@ import { STUDENT_ORIGIN } from "./origins";
 test("create a ready prompt, list it, and survive reload", async ({ page }) => {
 	const TITLE = "QC-202 Discuss both views";
 
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments");
 	await page.getByRole("button", { name: "+ Tạo bài tập" }).click();
 	await expect(page).toHaveURL(/\/assignments\/new$/);
@@ -68,7 +68,7 @@ test("create a ready prompt, list it, and survive reload", async ({ page }) => {
 });
 
 test("create a draft prompt with the draft tag", async ({ page }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 
 	await page.getByRole("button", { name: "Bản nháp" }).first().click();
@@ -94,7 +94,7 @@ test("preview as a student, return to the form without losing it, then save read
 }) => {
 	const TITLE = "QC-202 Preview Flow";
 
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill(TITLE);
@@ -144,7 +144,7 @@ test("create a ready reading prompt with answer key, survive reload", async ({
 }) => {
 	const TITLE = "QC-218 Reading TFNG";
 
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 
 	// Select Reading skill
@@ -210,7 +210,7 @@ test("create a listening draft without audio; ready is blocked", async ({
 }) => {
 	const TITLE = "QC-218 Listening Draft";
 
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 
 	// Select Listening skill
@@ -289,7 +289,7 @@ test("author a 3-question tfng set with grid clicks only (FR1)", async ({
 }) => {
 	const TITLE = "QC-271 Grid TFNG";
 
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
@@ -340,7 +340,7 @@ test("author a 3-question tfng set with grid clicks only (FR1)", async ({
 test("grid keyboard shortcuts: letter keys pick chips, Enter adds, Backspace removes (FR3)", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
@@ -382,7 +382,7 @@ test("refresh mid-edit restores the autosave draft; Hủy clears it for good (FR
 }) => {
 	const TITLE = "QC-271 Draft Restore";
 
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
@@ -439,7 +439,7 @@ test("preview draft beats the autosave restore banner (FR6 precedence)", async (
 }) => {
 	const TITLE = "QC-271 Preview Beats Banner";
 
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 
 	// Listening so the transcript round trip is exercised (FR6 bug fix).
@@ -476,7 +476,7 @@ test("preview draft beats the autosave restore banner (FR6 precedence)", async (
 test("type change with authored content confirms; same-skill keeps transcript (FR5)", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 
 	await page.getByRole("button", { name: "Listening", exact: true }).click();
@@ -539,7 +539,7 @@ test("type change with authored content confirms; same-skill keeps transcript (F
 test("skill change with authored content confirms and resets on accept (FR5)", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
@@ -582,7 +582,7 @@ test("skill change with authored content confirms and resets on accept (FR5)", a
 test("bulk key paste maps by question number and reports per-line errors (FR7)", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
@@ -615,7 +615,7 @@ test("author answer explanation, preserve through preview and test-builder updat
 	const UPDATED_EXPLANATION = "Đoạn 1 nói rõ thông tin này sai (bản cập nhật).";
 	const studentEmail = `student-571-${Date.now()}@test.local`;
 
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 	await page.goto("/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();

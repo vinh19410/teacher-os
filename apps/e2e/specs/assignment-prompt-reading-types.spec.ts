@@ -1,6 +1,10 @@
 import { createClient } from "@libsql/client";
 import { expect, test } from "@playwright/test";
-import { expectReadySaveBlocked, fillRichEditor, signUpViaUi } from "./helpers";
+import {
+	expectReadySaveBlocked,
+	fillRichEditor,
+	signUpViaApi,
+} from "./helpers";
 
 /**
  * Issue #269 — the new reading question types compose end to end: summary
@@ -19,7 +23,7 @@ test("create a ready summary prompt and leak-check the preview", async ({
 	const ANSWER_ONE = "zephyr-9";
 	const ANSWER_TWO = "quartz-7";
 
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
@@ -99,7 +103,7 @@ test("create a ready diagram prompt with an https image URL", async ({
 			body: svgImage(200, 100),
 		}),
 	);
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
@@ -208,7 +212,7 @@ test("create a ready features prompt with a 5-item bank and round-trip it throug
 		"Audubon the illustrator",
 	];
 
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
@@ -288,7 +292,7 @@ test("sentend blocks a second question from keying an already-used label", async
 }) => {
 	const TITLE = "QC-271 Sentend distinct";
 
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
@@ -341,7 +345,7 @@ test("deleting a middle bank row resets the keys at or after that position", asy
 }) => {
 	const TITLE = "QC-271 Bank row delete";
 
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
@@ -403,7 +407,7 @@ test("a legacy prompt without a bank previews with the intro fallback and a miss
 	page,
 }) => {
 	const TITLE = "QC-271 Legacy headings";
-	const email = await signUpViaUi(page);
+	const email = await signUpViaApi(page);
 
 	// Seed a pre-phase-02 row directly: no option_bank value → column default
 	// "[]", bank stored in the intro free text (the old authoring habit).
@@ -458,7 +462,7 @@ test("summary composes via click-to-blank: 4 clicked words become 4 keyed questi
 	// the preview leak-check can rely on their absence.
 	const WORDS = ["raised", "dams", "store", "dry"];
 
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
@@ -531,7 +535,7 @@ test("tablecomp composes via the grid: 2×3 table with 2 blanks previews as labe
 }) => {
 	const TITLE = "QC-273 Table grid";
 
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
@@ -605,7 +609,7 @@ test("cloze apply is blocked above the caps: over 40 blanks and a 500-char segme
 }) => {
 	const TITLE = "QC-273 Cloze caps";
 
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();

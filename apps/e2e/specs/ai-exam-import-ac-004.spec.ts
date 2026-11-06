@@ -4,7 +4,7 @@ import {
 	EXAM_IMPORT_ERROR_MESSAGES,
 } from "../../../packages/api/src/contracts";
 import { buildExamPdf } from "../../server/src/lib/exam-import/make-pdf";
-import { signUpViaUi } from "./helpers";
+import { signUpViaApi } from "./helpers";
 
 /**
  * AC-004 nhập đề bằng AI (TOS-27 #473):
@@ -18,7 +18,7 @@ import { signUpViaUi } from "./helpers";
 test("AC-004 scenario 1: chặn tệp 21 trang, có mật khẩu và > 15 MB ngay tại dropzone (E-003), không gọi POST", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 
 	let postImportCalls = 0;
 	page.on("request", (req) => {
@@ -80,7 +80,7 @@ test("AC-004 scenario 1: chặn tệp 21 trang, có mật khẩu và > 15 MB nga
 test("AC-004 scenario 2: AI lỗi khi bóc tách → hoàn đủ 5 Credit, hiện E-004 + nút Thử bóc tách lại AI, ví không đổi sau reload", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 
 	await page.goto("/assignments/tests/import");
 	const badge = page.getByTestId("credit-cost-badge");

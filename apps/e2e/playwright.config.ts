@@ -1,7 +1,7 @@
 import { defineConfig } from "@playwright/test";
 // Nguồn sự thật chung url/command dev server (plan 402) — entry gốc và
 // devserver-watchdog.mjs (restart) phải dùng CÙNG định nghĩa để không drift.
-import { buildServices } from "./devserver-services.mjs";
+import { buildServices, resolveViteMode } from "./devserver-services.mjs";
 
 // Port override cho chạy song song với dev server chiếm 8000/8001 — mặc định
 // giữ nguyên như CI; boot:api cùng đọc env này (fail-loud semantics không đổi).
@@ -10,19 +10,32 @@ const webPort = Number(process.env.E2E_WEB_PORT ?? 8001);
 const studentPort = Number(process.env.E2E_STUDENT_PORT ?? 8003);
 const adminPort = Number(process.env.E2E_ADMIN_PORT ?? 8104);
 const profilePort = Number(process.env.E2E_PROFILE_PORT ?? 8105);
+const viteMode = resolveViteMode(process.env);
 const requireService = (name: string) => {
-	const svc = buildServices({
-		api: apiPort,
-		web: webPort,
-		student: studentPort,
-		admin: adminPort,
-	}).find((s) => s.name === name);
+	const svc = buildServices(
+		{
+			api: apiPort,
+			web: webPort,
+			student: studentPort,
+			admin: adminPort,
+		},
+		{ mode: viteMode },
+	).find((s) => s.name === name);
 	if (!svc) throw new Error(`devserver-services thiếu service ${name}`);
 	return svc;
 };
 const webSvc = requireService("web");
 const studentSvc = requireService("student");
 const adminSvc = requireService("admin");
+// Preview chạy bản build nên phải build trước (VITE_* được nhúng lúc build, lấy
+// từ env của chính webServer entry). Watchdog restart chỉ cần preview vì bản
+// build đã có sẵn.
+const viteCommand = (app: string, svc: { restartArgs?: string[] }) => {
+	const serve = ["pnpm", ...(svc.restartArgs ?? [])].join(" ");
+	return viteMode === "preview"
+		? `pnpm --filter ${app} exec vite build && ${serve}`
+		: serve;
+};
 export default defineConfig({
 	testDir: "./specs",
 	// #402: fail-loud khi hạ tầng dev server bất ổn giữa run (marker/heartbeat
@@ -75,7 +88,7 @@ export default defineConfig({
 			},
 		},
 		{
-			command: ["pnpm", ...(webSvc.restartArgs ?? [])].join(" "),
+			command: viteCommand("web", webSvc),
 			url: webSvc.pollUrl,
 			env: {
 				VITE_SERVER_URL: `http://localhost:${apiPort}`,
@@ -90,7 +103,7 @@ export default defineConfig({
 			stderr: "pipe",
 		},
 		{
-			command: ["pnpm", ...(studentSvc.restartArgs ?? [])].join(" "),
+			command: viteCommand("student", studentSvc),
 			url: studentSvc.pollUrl,
 			env: {
 				VITE_SERVER_URL: `http://localhost:${apiPort}`,
@@ -104,7 +117,7 @@ export default defineConfig({
 		{
 			// Plan #413 phase 5: cổng quản trị (4th vite — xem memory note
 			// rolldown abort trong AGENTS.md).
-			command: ["pnpm", ...(adminSvc.restartArgs ?? [])].join(" "),
+			command: viteCommand("admin", adminSvc),
 			url: adminSvc.pollUrl,
 			env: {
 				VITE_SERVER_URL: `http://localhost:${apiPort}`,

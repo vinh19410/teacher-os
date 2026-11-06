@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { fillRichEditor, selectWritingTask2, signUpViaUi } from "./helpers";
+import { fillRichEditor, selectWritingTask2, signUpViaApi } from "./helpers";
 
 /**
  * Issue #208 / #267 — Trang Bài tập (gộp bank): filters (skill + part),
@@ -9,7 +9,7 @@ import { fillRichEditor, selectWritingTask2, signUpViaUi } from "./helpers";
 test("bank lists prompts with filters, search, and preview", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 
 	// Seed: 1 ready Task 2 prompt + 1 draft Task 1 prompt via /assignments/new.
 	await page.goto("/assignments/new");

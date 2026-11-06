@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { fillRichEditor, signUpViaUi } from "./helpers";
+import { fillRichEditor, signUpViaApi } from "./helpers";
 
 /**
  * Design "IELTS Full Test Builder" (phase-06 Task 6.1) — the whole
@@ -146,7 +146,7 @@ test("build a 3-part/40-question reading test end-to-end", async ({ page }) => {
 		void dialog.accept();
 	});
 
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 
 	// --- Seed the two bank parts (D1 was wiped by boot.ts). ---
 	await composeReadingPart(page, {

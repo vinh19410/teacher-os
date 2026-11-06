@@ -4,7 +4,7 @@ import {
 	fillRichEditor,
 	seedStudent,
 	selectWritingTask2,
-	signUpViaUi,
+	signUpViaApi,
 } from "./helpers";
 import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 
@@ -22,7 +22,7 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 	const PROMPT_TITLE = "QC-208 Prompt Ready";
 
 	// 1. Sign-up & seed student
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 	await seedStudent({ teacherEmail, name: STUDENT_NAME });
 	// 3. Create class
 	await page.getByText("Lớp học", { exact: true }).first().click();
@@ -195,7 +195,7 @@ test("#572 (en-US locale): dd/mm/yyyy typing without segment jump, calendar popo
 	const page = await context.newPage();
 
 	try {
-		const teacherEmail = await signUpViaUi(page);
+		const teacherEmail = await signUpViaApi(page);
 		await seedStudent({ teacherEmail, name: STUDENT_NAME });
 
 		// Create class & activate student

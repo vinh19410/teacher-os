@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { signUpViaUi } from "./helpers";
+import { signUpViaApi } from "./helpers";
 
 /** Tạo syllabus template rỗng (không import file) qua popup và chờ tới
  * trang detail. Trả về id template trên URL /syllabus/:id — không phải id
@@ -21,7 +21,7 @@ async function createSyllabusTemplate(page: Page, name: string) {
 test("đánh dấu buổi thi qua modal ở màn hình syllabus: badge + nền tint xám, đổi loại cập nhật nhãn", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await createSyllabusTemplate(page, "E2E Buổi Thi Mark");
 
 	// Thêm 1 buổi thường (không chọn loại) → không badge, không tint.
@@ -86,7 +86,7 @@ test("đánh dấu buổi thi qua modal ở màn hình syllabus: badge + nền t
 test("import v4 qua ghi đè ở detail: preview badge, sau ghi đè highlight hiện", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await createSyllabusTemplate(page, "E2E Buổi Thi Overwrite");
 
 	// Thêm cây thủ công rồi ghi đè bằng file v4.
@@ -120,7 +120,7 @@ test("import v4 qua ghi đè ở detail: preview badge, sau ghi đè highlight h
 test("màn hình lớp không có select Loại; sửa buổi thi từ lớp giữ nguyên kind (guard #154)", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	const templateId = await createSyllabusTemplate(page, "E2E Buổi Thi Guard");
 	// Template có 1 buổi thi: import v4 (Buổi 3 = Thi giữa kỳ).
 	await page.getByRole("button", { name: "Nhập từ Excel/CSV" }).click();

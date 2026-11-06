@@ -1,7 +1,7 @@
 import { Buffer } from "node:buffer";
 import { expect, test } from "@playwright/test";
 import { seedGoogleAccount } from "../src/account-seed";
-import { signUpViaUi } from "./helpers";
+import { signUpViaApi } from "./helpers";
 import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 
 /**
@@ -16,7 +16,7 @@ import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 test("đổi tên hiển thị cập nhật sidebar ngay không cần reload", async ({
 	page,
 }) => {
-	const email = await signUpViaUi(page);
+	const email = await signUpViaApi(page);
 	await page.goto("/profile");
 	await expect(page.getByRole("heading", { name: "Hồ sơ" })).toBeVisible();
 
@@ -39,7 +39,7 @@ test("đổi tên hiển thị cập nhật sidebar ngay không cần reload", a
 test("upload avatar nén về data URL JPEG ≤64KB và hiện ở cả sidebar", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/profile");
 
 	// Draw a detailed ≥400px image in the browser — a tiny buffer would make
@@ -87,7 +87,7 @@ test("upload avatar nén về data URL JPEG ≤64KB và hiện ở cả sidebar"
 test("user đã seed account google hiển thị badge Đã kết nối qua listAccounts thật", async ({
 	page,
 }) => {
-	const email = await signUpViaUi(page);
+	const email = await signUpViaApi(page);
 	await page.goto("/profile");
 	// Not connected yet → the connect button renders.
 	await expect(
@@ -105,7 +105,7 @@ test("user đã seed account google hiển thị badge Đã kết nối qua list
 test("guard server /update-user thật: tên quá ngắn nhận 400 tiếng Việt", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	// POST straight to the auth endpoint with the browser session cookie —
 	// this exercises the REAL server hook (the UI form would validate first),
 	// so a silent wire-up regression of the validation guard fails here.
@@ -121,7 +121,7 @@ test("guard server /update-user thật: tên quá ngắn nhận 400 tiếng Vi�
 test("error-param branch từ OAuth callback hiện toast lỗi và tự clear URL", async ({
 	page,
 }) => {
-	await signUpViaUi(page);
+	await signUpViaApi(page);
 	await page.goto("/profile");
 	// A cancelled/denied consent lands back with ?error=<code> appended by
 	// better-auth; the route must toast (Vietnamese, mapped) and scrub the URL
@@ -144,7 +144,7 @@ test("nút Kết nối Google mở redirect sang Google khi cấu hình OAuth th
 		!process.env.E2E_GOOGLE_OAUTH,
 		"boot shim dùng Google creds dummy — round-trip thật thuộc manual checklist",
 	);
-	const email = await signUpViaUi(page);
+	const email = await signUpViaApi(page);
 	await page.goto("/profile");
 	await page.getByRole("button", { name: "Kết nối Google" }).click();
 	await page.waitForURL(/accounts\.google\.com/, { timeout: 30_000 });

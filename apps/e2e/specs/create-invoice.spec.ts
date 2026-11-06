@@ -1,5 +1,5 @@
 import { expect, type Page, type Request, test } from "@playwright/test";
-import { isoInDaysFromTodayVN, seedStudent, signUpViaUi } from "./helpers";
+import { isoInDaysFromTodayVN, seedStudent, signUpViaApi } from "./helpers";
 
 /**
  * QC scenario for issue #61: the "Tạo hóa đơn" modal used to be a no-op —
@@ -15,7 +15,7 @@ const STUDENT_NAME = "QC-61 E2E";
 const CLASS_NAME = "E2E 61 Lớp hóa đơn";
 
 async function setupOrgWithEnrollment(page: Page): Promise<string> {
-	const teacherEmail = await signUpViaUi(page);
+	const teacherEmail = await signUpViaApi(page);
 	await seedStudent({ teacherEmail, name: STUDENT_NAME });
 	// Scheduled class (defaults: T2+T4, 12 buổi).
 	await page.getByText("Lớp học", { exact: true }).first().click();
