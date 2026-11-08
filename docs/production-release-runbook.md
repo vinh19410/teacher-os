@@ -244,7 +244,7 @@ in the staging D1; prod deliberately gets no signup smoke. The manual
 or destroy/recreate.
 
 To preview a staging deploy without applying it, run `Deploy Staging` manually from
-`develop` or `staging` with `dry_run` enabled: it prints the Alchemy plan and skips seed and
+`develop` with `dry_run` enabled: it prints the Alchemy plan and skips seed and
 smoke steps. Check that the plan does not replace or delete the D1 database, R2
 buckets or custom domains before deploying.
 
@@ -984,7 +984,7 @@ gọi cùng endpoint phải 403 `ACCOUNT_NOT_ADMIN`.
 
 ## Bộ đề tự học theo lịch (migrations 0060–0061) — issue #533/#554
 
-- **Pre-flight bắt buộc TRƯỚC khi merge/push `0061` lên `staging` hoặc `main` (`study_pack_org_source_pack_uq`):** Vì `.github/workflows/deploy-staging.yml` và `.github/workflows/deploy.yml` tự động chạy `alchemy deploy` áp migration ngay khi push, bắt buộc chạy truy vấn đọc trên D1 trước khi promote:
+- **Pre-flight bắt buộc TRƯỚC khi merge `0061` vào `develop` (tự deploy staging) hoặc `main` (prod) (`study_pack_org_source_pack_uq`):** Vì `.github/workflows/deploy-staging.yml` và `.github/workflows/deploy.yml` tự động chạy `alchemy deploy` áp migration ngay khi push/merge, bắt buộc chạy truy vấn đọc trên D1 trước khi promote:
   ```sql
   SELECT org_id, source_pack_id, COUNT(*) AS cnt
   FROM study_pack
