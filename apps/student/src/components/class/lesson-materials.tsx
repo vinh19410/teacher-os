@@ -86,7 +86,7 @@ function MaterialRow({
 						</p>
 					)}
 				</div>
-				<div className="flex basis-full gap-2 pl-11 sm:basis-auto sm:flex-none sm:pl-0">
+				<div className="flex basis-full gap-2 pl-11 sm:flex-none sm:basis-auto sm:pl-0">
 					{material.kind === "link" && material.url ? (
 						<a
 							href={material.url}

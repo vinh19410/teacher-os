@@ -455,7 +455,13 @@ export function lessonMaterialFileUrl(
 	materialId: string,
 	download = false,
 ): string {
-	return `${lessonMaterialsPath(classId, date)}/${encodeURIComponent(materialId)}/file${download ? "?download=1" : ""}`;
+	const params = new URLSearchParams();
+	if (download) params.set("download", "1");
+	// Thẻ media và link tải không gửi được header x-student-org-id.
+	const orgId = getActiveStudentOrgId();
+	if (orgId) params.set("org", orgId);
+	const query = params.toString();
+	return `${lessonMaterialsPath(classId, date)}/${encodeURIComponent(materialId)}/file${query ? `?${query}` : ""}`;
 }
 
 export async function fetchLessonMaterials(

@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { StudentLessonMaterialView } from "@teacher-os/api/material-contracts";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { lessonMaterialFileUrl } from "@/lib/repos/student";
 import { formatFileSize, LessonMaterials } from "./lesson-materials";
 
 afterEach(() => {
@@ -111,6 +112,21 @@ describe("LessonMaterials", () => {
 		expect(container.querySelector("audio")?.getAttribute("src")).toContain(
 			"/sessions/2026-11-20/materials/m3/file",
 		);
+	});
+
+	it("gắn org đang chọn vào URL file vì thẻ media không gửi được header", () => {
+		localStorage.setItem("active_student_org_id", "org-2");
+		try {
+			expect(lessonMaterialFileUrl("c1", "2026-11-20", "m1", true)).toMatch(
+				/\/file\?download=1&org=org-2$/,
+			);
+			expect(lessonMaterialFileUrl("c1", "2026-11-20", "m1")).toMatch(
+				/\/file\?org=org-2$/,
+			);
+		} finally {
+			localStorage.removeItem("active_student_org_id");
+		}
+		expect(lessonMaterialFileUrl("c1", "2026-11-20", "m1")).toMatch(/\/file$/);
 	});
 
 	it("hiện empty khi buổi chưa có tài liệu", async () => {
