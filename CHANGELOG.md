@@ -10,6 +10,11 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-11-08
+
+### CI/Infra
+- Staging tự deploy khi push/merge vào `develop` thay vì nhánh `staging`: `deploy-staging.yml` trigger `push.branches: [develop]`, bỏ bước `git push origin develop:staging`; nhánh `staging` không còn kích hoạt deploy.
+
 ## 2026-11-05
 
 ### Fixed

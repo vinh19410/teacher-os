@@ -498,7 +498,7 @@ test("ci workflow triggers on main and develop and delegates to reusable quality
 	);
 });
 
-test("staging deploy workflow deploys only from staging and gates deploy on uncached quality", () => {
+test("staging deploy workflow deploys only from develop and gates deploy on uncached quality", () => {
 	assert.equal(
 		existsSync(stagingPath),
 		true,
@@ -509,13 +509,13 @@ test("staging deploy workflow deploys only from staging and gates deploy on unca
 
 	assert.match(
 		code,
-		/^\s*push:\s*\n\s*branches:\s*\[staging\]\s*$/m,
-		"push trigger must cover exactly the dedicated staging branch (QA environment)",
+		/^\s*push:\s*\n\s*branches:\s*\[develop\]\s*$/m,
+		"push trigger must cover exactly the develop branch (staging follows develop)",
 	);
 	assert.doesNotMatch(
 		code,
-		/branches:\s*\[[^\]]*\b(develop|main)\b/,
-		"must not deploy staging on develop/main pushes (develop auto-deploy disabled 2026-09-22)",
+		/branches:\s*\[[^\]]*\b(main|staging)\b/,
+		"staging deploy must not trigger on main (prod) or the retired staging branch",
 	);
 	assert.match(
 		code,

@@ -162,7 +162,7 @@ migration/recovery rehearsal — and serves QC on its own subdomain:
 `https://api.staging.teacheros.io.vn` (API). After first provisioning (or
 destroy/recreate), the automated staging deploy (see "Automated staging
 deploy (CI/CD)" below) keeps the stage current on every push to the
-`staging` branch;
+`develop` branch;
 run this procedure manually only for first provisioning or
 destroy/recreate.
 
@@ -220,13 +220,12 @@ operator `.env` and the GitHub repo secret of the same name.
 ## Automated staging deploy (CI/CD)
 
 `.github/workflows/deploy-staging.yml` is the sibling workflow for stage
-`staging`. Since 2026-09-22 merging into `develop` no longer deploys staging.
-Instead, staging deploys on every push to the dedicated `staging` branch —
-the QA environment. To hand a build to QA, fast-forward `staging` to the
-`develop` commit under test (`git push origin develop:staging`); QA then
-checks `https://app.staging.teacheros.io.vn`. The GitHub environment
-`staging` allows deployments from the `staging` branch (and `develop` for
-manual runs). Manual `workflow_dispatch` remains for migration rehearsal.
+`staging`. Staging deploys on every push to `develop` (merging a PR into
+`develop` counts), so QA checks the latest develop at
+`https://app.staging.teacheros.io.vn` with no promote step. The old `staging`
+branch no longer triggers a deploy. The GitHub environment `staging` must
+allow deployments from the `develop` branch. Manual `workflow_dispatch`
+remains for migration rehearsal.
 Either way the workflow runs the
 same reusable `quality.yml` gates (`turbo-cache: false`) as CI, then
 `APP_DOMAIN=staging.teacheros.io.vn pnpm alchemy deploy --stage staging --yes`
@@ -245,7 +244,7 @@ in the staging D1; prod deliberately gets no signup smoke. The manual
 or destroy/recreate.
 
 To preview a staging deploy without applying it, run `Deploy Staging` manually from
-`develop` or `staging` with `dry_run` enabled: it prints the Alchemy plan and skips seed and
+`develop` with `dry_run` enabled: it prints the Alchemy plan and skips seed and
 smoke steps. Check that the plan does not replace or delete the D1 database, R2
 buckets or custom domains before deploying.
 
@@ -985,7 +984,7 @@ gọi cùng endpoint phải 403 `ACCOUNT_NOT_ADMIN`.
 
 ## Bộ đề tự học theo lịch (migrations 0060–0061) — issue #533/#554
 
-- **Pre-flight bắt buộc TRƯỚC khi merge/push `0061` lên `staging` hoặc `main` (`study_pack_org_source_pack_uq`):** Vì `.github/workflows/deploy-staging.yml` và `.github/workflows/deploy.yml` tự động chạy `alchemy deploy` áp migration ngay khi push, bắt buộc chạy truy vấn đọc trên D1 trước khi promote:
+- **Pre-flight bắt buộc TRƯỚC khi merge `0061` vào `develop` (tự deploy staging) hoặc `main` (prod) (`study_pack_org_source_pack_uq`):** Vì `.github/workflows/deploy-staging.yml` và `.github/workflows/deploy.yml` tự động chạy `alchemy deploy` áp migration ngay khi push/merge, bắt buộc chạy truy vấn đọc trên D1 trước khi promote:
   ```sql
   SELECT org_id, source_pack_id, COUNT(*) AS cnt
   FROM study_pack
