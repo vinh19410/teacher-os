@@ -353,6 +353,7 @@ function buildStudentMe(
 			examInterest,
 			currentLevel: parseEnum(s.currentLevel ?? null, CURRENT_LEVEL_OPTIONS),
 			targetScore: parseTargetScore(examInterest, s.targetScore ?? null),
+			entryScore: s.entryScore ?? null,
 			learningGoals: parseLearningGoals(s.learningGoals ?? null),
 			learningGoalsNote: s.learningGoalsNote ?? null,
 			dailyStudyHours: parseEnum(
@@ -1255,6 +1256,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			learningGoals,
 			learningGoalsNote,
 			dailyStudyHours,
+			entryScore,
 		} = parsed.data;
 		await db
 			.update(student)
@@ -1265,6 +1267,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				learningGoals: JSON.stringify([...learningGoals]),
 				learningGoalsNote: learningGoalsNote?.length ? learningGoalsNote : null,
 				dailyStudyHours,
+				// Bỏ trống không xoá điểm giáo viên đã nhập trước đó.
+				...(entryScore ? { entryScore } : {}),
 				onboardingCompletedAt: new Date(),
 			})
 			.where(eq(student.id, s.id));

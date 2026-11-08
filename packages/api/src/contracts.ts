@@ -19,6 +19,17 @@ export * from "./event-contracts";
  */
 export const PHONE_DIGITS_REGEX = /^[0-9]{1,20}$/;
 
+/** Điểm đầu vào — text tự do (vd "7.0 IELTS", "800 TOEIC", "B2"); rỗng/vắng = chưa có. */
+export const ENTRY_SCORE_MAX_LENGTH = 50;
+export const entryScoreSchema = z
+	.string()
+	.trim()
+	.max(
+		ENTRY_SCORE_MAX_LENGTH,
+		`Điểm đầu vào tối đa ${ENTRY_SCORE_MAX_LENGTH} ký tự`,
+	)
+	.optional();
+
 export const studentCreateSchema = z
 	.object({
 		name: z
@@ -49,6 +60,7 @@ export const studentCreateSchema = z
 				message: "Số điện thoại phụ huynh chỉ gồm chữ số (tối đa 20 số)",
 			})
 			.default(""),
+		entryScore: entryScoreSchema,
 		classId: z.string().trim().optional(),
 		activateNow: z.boolean().default(true),
 	})
@@ -1561,6 +1573,8 @@ export interface KernelStudentRow {
 	zalo: string;
 	parentName: string;
 	parentPhone: string;
+	/** Điểm đầu vào tự do ("" khi chưa có). Optional để chịu deploy skew. */
+	entryScore?: string;
 	/** #570: true khi học viên đã hoàn tất onboarding trên cổng học viên; false khi chưa xác nhận tham gia. */
 	portalLinked?: boolean;
 }
@@ -2001,6 +2015,7 @@ const onboardingPayloadBase = z.object({
 		.refine((goals) => new Set(goals).size === goals.length),
 	learningGoalsNote: z.string().trim().max(200).optional(),
 	dailyStudyHours: z.enum(DAILY_STUDY_HOUR_OPTIONS),
+	entryScore: entryScoreSchema,
 });
 export const studentOnboardingPayloadSchema = onboardingPayloadBase.superRefine(
 	(value, ctx) => {
@@ -2032,6 +2047,7 @@ export const studentMeSchema = z.object({
 		examInterest: z.string().nullable().catch(null),
 		currentLevel: z.string().nullable().catch(null),
 		targetScore: z.string().nullable().catch(null),
+		entryScore: z.string().nullable().catch(null),
 		learningGoals: z
 			.array(z.enum(LEARNING_GOAL_OPTIONS))
 			.nullable()

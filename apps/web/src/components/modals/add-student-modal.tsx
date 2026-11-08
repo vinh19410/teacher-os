@@ -1,4 +1,7 @@
-import { STUDENT_INVITATION_ERROR_CODES } from "@teacher-os/api/contracts";
+import {
+	ENTRY_SCORE_MAX_LENGTH,
+	STUDENT_INVITATION_ERROR_CODES,
+} from "@teacher-os/api/contracts";
 import { type FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { PendingInviteCallout } from "@/components/students/pending-invite-callout";
@@ -28,6 +31,7 @@ export function AddStudentModal({
 	const [email, setEmail] = useState("");
 	const [parentName, setParentName] = useState("");
 	const [parentPhone, setParentPhone] = useState("");
+	const [entryScore, setEntryScore] = useState("");
 	const [classId, setClassId] = useState(defaultClassId ?? "");
 	const [activateNow, setActivateNow] = useState(true);
 	const [nameError, setNameError] = useState<string | undefined>();
@@ -50,6 +54,7 @@ export function AddStudentModal({
 			setEmail("");
 			setParentName("");
 			setParentPhone("");
+			setEntryScore("");
 			setClassId(defaultClassId ?? "");
 			setActivateNow(true);
 			setNameError(undefined);
@@ -91,6 +96,7 @@ export function AddStudentModal({
 				email: trimmedEmail,
 				parentName: parentName.trim(),
 				parentPhone,
+				...(entryScore.trim() ? { entryScore: entryScore.trim() } : {}),
 				...(selectedClassId ? { classId: selectedClassId } : {}),
 				activateNow,
 			},
@@ -204,6 +210,16 @@ export function AddStudentModal({
 						/>
 					</Field>
 				</div>
+
+				<Field label="Điểm đầu vào (tùy chọn)">
+					<Input
+						value={entryScore}
+						onChange={(e) => setEntryScore(e.target.value)}
+						maxLength={ENTRY_SCORE_MAX_LENGTH}
+						placeholder="VD: 7.0 IELTS, 800 TOEIC, B2"
+						disabled={saving}
+					/>
+				</Field>
 
 				{!defaultClassId && data.classes.length > 0 && (
 					<Field label="Ghi danh vào lớp (tùy chọn)">

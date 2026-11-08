@@ -27,6 +27,8 @@ export interface Student {
 	/** false = chưa có gói (tạo không lớp — D2): pkg là ZERO_PKG, view render "Chưa có gói". */
 	hasPackage: boolean;
 	parent: { name: string; phone: string };
+	/** Điểm đầu vào tự do ("" = chưa có). */
+	entryScore?: string;
 	targetBand: string;
 	skills: string[];
 	examDate: string;

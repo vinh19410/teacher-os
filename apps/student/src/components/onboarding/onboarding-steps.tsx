@@ -3,6 +3,7 @@ import {
 	type CurrentLevelOption,
 	DAILY_STUDY_HOUR_OPTIONS,
 	type DailyStudyHourOption,
+	ENTRY_SCORE_MAX_LENGTH,
 	EXAM_INTERESTS,
 	type ExamInterest,
 	IELTS_TARGET_BANDS,
@@ -11,6 +12,7 @@ import {
 	type StudentOnboardingPayload,
 	TOEIC_TARGET_SCORES,
 } from "@teacher-os/api/contracts";
+import { Input } from "@teacher-os/ui/components/input";
 import { Textarea } from "@teacher-os/ui/components/textarea";
 import { Check } from "lucide-react";
 import type * as React from "react";
@@ -159,10 +161,14 @@ export function CurrentLevelStep({
 	examInterest,
 	value,
 	onSelect,
+	entryScore,
+	onEntryScoreChange,
 }: {
 	examInterest: ExamInterest;
 	value: CurrentLevelOption | null;
 	onSelect: (v: CurrentLevelOption) => void;
+	entryScore: string;
+	onEntryScoreChange: (v: string) => void;
 }) {
 	const labels = CURRENT_LEVEL_LABELS[examInterest];
 
@@ -212,6 +218,24 @@ export function CurrentLevelStep({
 						</button>
 					);
 				})}
+			</div>
+			<div className="pt-2">
+				<label
+					htmlFor="entry-score"
+					className="mb-1.5 block font-mono text-[11px] text-muted-foreground uppercase tracking-[0.18em]"
+				>
+					Điểm đầu vào (tùy chọn)
+				</label>
+				<Input
+					id="entry-score"
+					value={entryScore}
+					onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+						onEntryScoreChange(e.target.value)
+					}
+					maxLength={ENTRY_SCORE_MAX_LENGTH}
+					placeholder="VD: 7.0 IELTS, 800 TOEIC, B2"
+					autoComplete="off"
+				/>
 			</div>
 		</div>
 	);
@@ -414,6 +438,14 @@ export function OnboardingSummary({
 						{getCurrentLevelLabel(answers.currentLevel, answers.examInterest)}
 					</span>
 				</div>
+				{answers.entryScore ? (
+					<div className="flex items-center justify-between p-3.5">
+						<span className="text-muted-foreground">Điểm đầu vào</span>
+						<span className="font-medium text-foreground">
+							{answers.entryScore}
+						</span>
+					</div>
+				) : null}
 				<div className="flex items-center justify-between p-3.5">
 					<span className="text-muted-foreground">Điểm mục tiêu</span>
 					<span className="font-medium text-foreground">{targetDisplay}</span>
