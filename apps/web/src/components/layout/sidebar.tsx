@@ -13,6 +13,7 @@ import {
 	ClipboardList,
 	Inbox,
 	LayoutDashboard,
+	Library,
 	PenLine,
 	ReceiptText,
 	School,
@@ -67,6 +68,13 @@ export const TEACHER_NAV: NavGroup[] = [
 				label: "Syllabus",
 				icon: BookMarked,
 				href: "/syllabus",
+			},
+			// Ngân hàng tài liệu chung của org — gắn vào buổi học ở trang lớp.
+			{
+				key: "materials",
+				label: "Tài liệu",
+				icon: Library,
+				href: "/materials",
 			},
 			// TOS-21 (#454): nhật ký gửi thông báo Email & In-app — màn [5].
 			{
@@ -186,6 +194,7 @@ const ACTIVE_KEY_BY_PREFIX: Record<string, string> = {
 	"/placement-test": "placement-test",
 	"/schedule": "schedule",
 	"/syllabus": "syllabus",
+	"/materials": "materials",
 	"/notifications": "notifications",
 	"/assignments": "assignments",
 	"/grading": "grading",
