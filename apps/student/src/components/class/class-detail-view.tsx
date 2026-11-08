@@ -341,6 +341,7 @@ export function ClassDetailView({
 					<section>
 						<h2 className="sr-only">Buổi học</h2>
 						<ClassLessonList
+							classId={cls.id}
 							lessons={detail.lessons}
 							todayISO={todayISO}
 							now={now}

@@ -29,6 +29,7 @@ describe("ClassLessonList — TOS-11 holiday", () => {
 	test("buổi holiday hiển thị 'Nghỉ lễ — Đã dời lịch', không phải 'Buổi tới'", () => {
 		render(
 			<ClassLessonList
+				classId="c1"
 				lessons={[
 					lesson({ id: "l-holiday", status: "holiday", date: "2026-11-20" }),
 					lesson({ id: "l-makeup", status: "upcoming", date: "2026-12-11" }),
@@ -47,6 +48,7 @@ describe("ClassLessonList — TOS-11 holiday", () => {
 	test("buổi bù (upcoming) là 'Buổi tới' — holiday không chặn highlight", () => {
 		render(
 			<ClassLessonList
+				classId="c1"
 				lessons={[
 					lesson({ id: "l-holiday", status: "holiday", date: "2026-11-20" }),
 					lesson({ id: "l-makeup", status: "upcoming", date: "2026-12-11" }),
@@ -69,7 +71,12 @@ describe("ClassLessonList — TOS-11 holiday", () => {
 		});
 		expect(vietnamSessionEndMs("2026-10-20", "19:00", 90)).not.toBeNull();
 		const { container } = render(
-			<ClassLessonList lessons={[holidayPast]} todayISO={TODAY} now={NOW} />,
+			<ClassLessonList
+				classId="c1"
+				lessons={[holidayPast]}
+				todayISO={TODAY}
+				now={NOW}
+			/>,
 		);
 		expect(container.textContent).toContain("Nghỉ lễ — Đã dời lịch");
 		expect(container.textContent).not.toContain("Đã kết thúc");
