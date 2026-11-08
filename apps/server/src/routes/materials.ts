@@ -375,6 +375,7 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		c: MaterialContext,
 		db: Db,
 		orgId: string,
+		options: { requireLesson?: boolean } = {},
 	): Promise<
 		| { ok: true; classId: string; date: string }
 		| { ok: false; response: Response }
@@ -390,6 +391,7 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 			.limit(1);
 		if (!cls)
 			return { ok: false, response: materialError(c, 404, "CLASS_NOT_FOUND") };
+		if (options.requireLesson === false) return { ok: true, classId, date };
 		const [session] = await db
 			.select({ id: lesson.id })
 			.from(lesson)
@@ -603,15 +605,22 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 						: folderId === MATERIAL_ROOT_FOLDER
 							? isNull(material.folderId)
 							: eq(material.folderId, folderId),
-					// instr thay LIKE: ký tự %/_ người dùng gõ không thành wildcard.
-					q === ""
-						? undefined
-						: sql`(instr(lower(${material.title}), lower(${q})) > 0 or instr(lower(${material.description}), lower(${q})) > 0 or instr(lower(coalesce(${material.originalName}, '')), lower(${q})) > 0)`,
 				),
 			)
 			.orderBy(desc(material.updatedAt), asc(material.id));
+		// Lọc ở tầng JS: lower() của SQLite chỉ hạ chữ ASCII nên "Đề" không khớp
+		// "đề". Kho tài liệu theo org đủ nhỏ để lọc sau truy vấn.
+		const needle = q.toLocaleLowerCase("vi");
+		const matched =
+			needle === ""
+				? rows
+				: rows.filter(({ row }) =>
+						[row.title, row.description, row.originalName ?? ""].some((v) =>
+							v.toLocaleLowerCase("vi").includes(needle),
+						),
+					);
 		return c.json({
-			items: rows.map((r) => toMaterialView(r.row, r.usageCount)),
+			items: matched.map((r) => toMaterialView(r.row, r.usageCount)),
 		});
 	});
 
@@ -674,6 +683,10 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 			return c.json({ material: toMaterialView(row, 0) }, 201);
 		} catch (error) {
 			upload.discard();
+			// Thư mục bị xoá trong lúc đang stream file → lỗi nghiệp vụ, không phải 500.
+			if (folderId !== null && !(await folderExists(db, ctx.orgId, folderId))) {
+				return materialError(c, 404, "FOLDER_NOT_FOUND");
+			}
 			console.error("[materials] material insert failed", { error });
 			return c.json({ error: "upload failed" }, 500);
 		}
@@ -809,17 +822,26 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		if (!(await loadMaterial(db, ctx.orgId, materialId))) {
 			return materialError(c, 404, "MATERIAL_NOT_FOUND");
 		}
-		const inserted = await db
-			.insert(lessonMaterial)
-			.values({
-				orgId: ctx.orgId,
-				classId,
-				date,
-				materialId,
-				position: nextPosition(classId, date),
-			})
-			.onConflictDoNothing()
-			.returning({ materialId: lessonMaterial.materialId });
+		let inserted: { materialId: string }[];
+		try {
+			inserted = await db
+				.insert(lessonMaterial)
+				.values({
+					orgId: ctx.orgId,
+					classId,
+					date,
+					materialId,
+					position: nextPosition(classId, date),
+				})
+				.onConflictDoNothing()
+				.returning({ materialId: lessonMaterial.materialId });
+		} catch (error) {
+			// Tài liệu bị xoá giữa lúc kiểm và lúc ghi → FK lỗi, trả 404 nghiệp vụ.
+			if (!(await loadMaterial(db, ctx.orgId, materialId))) {
+				return materialError(c, 404, "MATERIAL_NOT_FOUND");
+			}
+			throw error;
+		}
 		if (inserted.length === 0) return materialError(c, 409, "ALREADY_ATTACHED");
 		const items = await loadSessionMaterials(db, ctx.orgId, classId, date);
 		const item = items.find((i) => i.id === materialId);
@@ -859,6 +881,9 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 			]);
 		} catch (error) {
 			upload.discard();
+			if (folderId !== null && !(await folderExists(db, ctx.orgId, folderId))) {
+				return materialError(c, 404, "FOLDER_NOT_FOUND");
+			}
 			console.error("[materials] session upload insert failed", { error });
 			return c.json({ error: "upload failed" }, 500);
 		}
@@ -873,7 +898,11 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		async (c) => {
 			const ctx = c.get("kernelCtx");
 			const db = deps.getDb();
-			const session = await resolveSession(c, db, ctx.orgId);
+			// Gỡ không cần còn dòng lesson: liên kết có thể còn sót sau khi buổi
+			// bị xoá, và giáo viên vẫn phải gỡ được để xoá tài liệu.
+			const session = await resolveSession(c, db, ctx.orgId, {
+				requireLesson: false,
+			});
 			if (!session.ok) return session.response;
 			const removed = await db
 				.delete(lessonMaterial)

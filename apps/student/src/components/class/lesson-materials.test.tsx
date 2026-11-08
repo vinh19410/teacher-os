@@ -95,12 +95,14 @@ describe("LessonMaterials", () => {
 		expect(screen.getByText("Đọc trước")).toBeTruthy();
 		expect(screen.getAllByText("2.5 MB").length).toBeGreaterThan(0);
 
-		const [file, link] = screen.getAllByTestId("lesson-material");
+		const [file, link, audio] = screen.getAllByTestId("lesson-material");
 		const download = file?.querySelector("a[href*='download=1']");
 		expect(download).toBeTruthy();
-		expect(file?.querySelector("a[target='_blank']")?.getAttribute("rel")).toBe(
-			"noopener noreferrer",
-		);
+		// File luôn tải về nên không có nút "Mở" trùng lặp; media thì có.
+		expect(file?.querySelector("a[target='_blank']")).toBeNull();
+		expect(
+			audio?.querySelector("a[target='_blank']")?.getAttribute("rel"),
+		).toBe("noopener noreferrer");
 		const ext = link?.querySelector("a");
 		expect(ext?.getAttribute("href")).toBe("https://example.com/doc");
 		expect(ext?.getAttribute("target")).toBe("_blank");

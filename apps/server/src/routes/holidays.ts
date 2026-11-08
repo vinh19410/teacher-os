@@ -15,6 +15,7 @@ import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { classTable } from "@teacher-os/db/schema/class";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { lesson } from "@teacher-os/db/schema/lesson";
+import { lessonMaterial } from "@teacher-os/db/schema/material";
 import { notif } from "@teacher-os/db/schema/notif";
 import {
 	holidaySessionCancel,
@@ -822,7 +823,18 @@ export function holidayRoutes(deps: {
 				),
 		];
 		for (const { shift } of shiftCounts) {
+			// Buổi bù bị xoá thì tài liệu đã gắn vào ngày đó cũng phải đi theo,
+			// nếu không liên kết mồ côi sẽ khoá tài liệu không xoá được.
 			undoStatements.push(
+				db
+					.delete(lessonMaterial)
+					.where(
+						and(
+							eq(lessonMaterial.orgId, ctx.orgId),
+							eq(lessonMaterial.classId, shift.classId),
+							eq(lessonMaterial.date, shift.makeupDate),
+						),
+					),
 				db
 					.delete(lesson)
 					.where(

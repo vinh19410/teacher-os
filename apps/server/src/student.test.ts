@@ -463,6 +463,16 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 				expect(body.student.orgId).toBe(orgId);
 			}
 
+			// An org the session has no student record in never grants access.
+			const foreign = await app.request("/api/student/me?org=org-not-mine", {
+				headers: { "x-test-user": "ambiguous" },
+			});
+			expect(foreign.status).toBe(200);
+			const foreignBody = (await foreign.json()) as {
+				student: { orgId: string };
+			};
+			expect(["org-1", "org-2"]).toContain(foreignBody.student.orgId);
+
 			// Header wins over the query fallback.
 			const both = await app.request("/api/student/me?org=org-2", {
 				headers: { "x-test-user": "ambiguous", "x-student-org-id": "org-1" },

@@ -902,4 +902,47 @@ describe("material bank and session materials", () => {
 		expect(moved.items.map((i) => i.id)).toEqual([link.id]);
 		expect((await get(sessionPath("class-2"))).status).toBe(404);
 	});
+
+	test("search matches Vietnamese text regardless of case", async () => {
+		await createLink("Đề cương ôn tập");
+		await createLink("BÀI TẬP ngữ pháp");
+		const search = async (q: string) =>
+			(
+				(await (
+					await get(`/api/materials?q=${encodeURIComponent(q)}`)
+				).json()) as { items: MaterialView[] }
+			).items.map((i) => i.title);
+		expect(await search("đề")).toContain("Đề cương ôn tập");
+		expect(await search("ĐỀ CƯƠNG")).toContain("Đề cương ôn tập");
+		expect(await search("bài tập")).toContain("BÀI TẬP ngữ pháp");
+		expect(await search("không-có-chuỗi-này")).toEqual([]);
+	});
+
+	test("a link left behind by a deleted session can still be detached, freeing the material", async () => {
+		const link = await createLink("Orphaned link");
+		const orphanDate = "2026-11-24";
+		await db.insert(schema.lesson).values({
+			orgId: "org-1",
+			id: "l-orphan",
+			classId: "class-1",
+			enrollmentId: "enr-1",
+			day: 2,
+			time: "18:00",
+			dur: 120,
+			date: orphanDate,
+		});
+		await json(sessionPath("class-1", orphanDate), "POST", {
+			materialId: link.id,
+		});
+		await db.delete(schema.lesson).where(eq(schema.lesson.id, "l-orphan"));
+
+		expect((await get(sessionPath("class-1", orphanDate))).status).toBe(404);
+		expect((await del(`/api/materials/${link.id}`)).status).toBe(409);
+
+		const detach = await del(
+			`${sessionPath("class-1", orphanDate)}/${link.id}`,
+		);
+		expect(detach.status).toBe(200);
+		expect((await del(`/api/materials/${link.id}`)).status).toBe(200);
+	});
 });

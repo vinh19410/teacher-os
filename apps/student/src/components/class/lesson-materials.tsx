@@ -100,15 +100,19 @@ function MaterialRow({
 						</a>
 					) : (
 						<>
-							<a
-								href={fileUrl}
-								target="_blank"
-								rel="noopener noreferrer"
-								className={ACTION_CLASS}
-							>
-								<ExternalLink aria-hidden="true" />
-								Mở<span className="sr-only"> {material.title}</span>
-							</a>
+							{/* Tài liệu loại file luôn được server trả dạng attachment nên "Mở" sẽ
+							    chỉ tải về như "Tải"; chỉ media mới mở được trong tab. */}
+							{material.kind === "media" && (
+								<a
+									href={fileUrl}
+									target="_blank"
+									rel="noopener noreferrer"
+									className={ACTION_CLASS}
+								>
+									<ExternalLink aria-hidden="true" />
+									Mở<span className="sr-only"> {material.title}</span>
+								</a>
+							)}
 							<a href={downloadUrl} className={ACTION_CLASS}>
 								<Download aria-hidden="true" />
 								Tải<span className="sr-only"> {material.title}</span>
