@@ -40,10 +40,7 @@ export async function materialFileResponse(
 	const total = row.sizeBytes ?? 0;
 	const rangeHeader = request.rangeHeader?.trim();
 	let range: { start: number; end: number } | null = null;
-	if (
-		rangeHeader?.startsWith("bytes=") &&
-		!rangeHeader.includes(",")
-	) {
+	if (rangeHeader?.startsWith("bytes=") && !rangeHeader.includes(",")) {
 		range = parseByteRange(rangeHeader, total);
 		if (!range) {
 			return new Response("Range Not Satisfiable", {
