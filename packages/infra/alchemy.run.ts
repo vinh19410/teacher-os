@@ -189,6 +189,12 @@ export const media = Cloudflare.R2.Bucket("media", {});
 // server Worker đọc/ghi qua /api/admin/library/.../audio.
 export const libraryAudio = Cloudflare.R2.Bucket("library-audio", {});
 
+// Ngân hàng tài liệu của org (file, audio/video) gắn vào buổi học — private
+// như bucket media, KHÔNG forceDestroy: object là tài liệu giảng dạy của
+// giáo viên, key `<orgId>/<materialId>`, chỉ server Worker đọc/ghi qua
+// /api/materials và /api/student/.../materials (kiểm enrollment).
+export const materials = Cloudflare.R2.Bucket("materials", {});
+
 export const server = Cloudflare.Worker("server", {
 	main: "../../apps/server/src/index.ts",
 	compatibility: {
@@ -200,6 +206,7 @@ export const server = Cloudflare.Worker("server", {
 		DB: db,
 		MEDIA: media,
 		LIBRARY_AUDIO: libraryAudio,
+		MATERIALS: materials,
 		// TOS-24 (#470): Workers AI cho bóc tách đề — binding `ai` không cần
 		// cấu hình thêm; dev local đi qua proxy Cloudflare của alchemy, e2e
 		// không dùng workerd nên inject fake extractor qua boot.ts.
