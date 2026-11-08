@@ -40,14 +40,24 @@ describe("OnboardingStep Components", () => {
 				examInterest="ielts"
 				value="intermediate"
 				onSelect={vi.fn()}
+				entryScore="7.0 IELTS"
+				onEntryScoreChange={vi.fn()}
 			/>,
 		);
 		expect(ieltsHtml).toContain("Trình độ hiện tại của bạn?");
 		expect(ieltsHtml).toContain("4.5 – 5.5");
 		expect(ieltsHtml).toContain("Mới bắt đầu");
+		expect(ieltsHtml).toContain("Điểm đầu vào (tùy chọn)");
+		expect(ieltsHtml).toContain("7.0 IELTS");
 
 		const toeicHtml = renderToStaticMarkup(
-			<CurrentLevelStep examInterest="toeic" value={null} onSelect={vi.fn()} />,
+			<CurrentLevelStep
+				examInterest="toeic"
+				value={null}
+				onSelect={vi.fn()}
+				entryScore=""
+				onEntryScoreChange={vi.fn()}
+			/>,
 		);
 		expect(toeicHtml).toContain("350 – 550");
 		expect(toeicHtml).toContain("Dưới 350");

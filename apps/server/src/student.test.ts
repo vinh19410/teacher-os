@@ -318,6 +318,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 				examInterest: null,
 				currentLevel: null,
 				targetScore: null,
+				entryScore: null,
 				learningGoals: null,
 				learningGoalsNote: null,
 				dailyStudyHours: null,
@@ -922,6 +923,35 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 			expect(row?.learningGoalsNote).toBeNull();
 			expect(row?.dailyStudyHours).toBe("1-2");
 			expect(row?.onboardingCompletedAt).not.toBeNull();
+		});
+
+		test("entryScore is trimmed, persisted, and not wiped by a later submit without it", async () => {
+			const post = (extra: Record<string, unknown>) =>
+				app.request("/api/student/onboarding", {
+					method: "POST",
+					headers: {
+						"x-test-user": "provisioning-user",
+						Origin: "http://localhost:8003",
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						examInterest: "ielts",
+						currentLevel: "intermediate",
+						targetScore: "6.5",
+						learningGoals: ["study-abroad", "career"],
+						dailyStudyHours: "1-2",
+						...extra,
+					}),
+				});
+			const first = await post({ entryScore: "  B2  " });
+			expect(first.status).toBe(200);
+			expect(((await first.json()) as StudentMe).student.entryScore).toBe("B2");
+			const second = await post({});
+			expect(((await second.json()) as StudentMe).student.entryScore).toBe(
+				"B2",
+			);
+			const tooLong = await post({ entryScore: "x".repeat(51) });
+			expect(tooLong.status).toBe(400);
 		});
 
 		test("GET /me round-trip reflects persisted onboarding fields", async () => {

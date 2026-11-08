@@ -1,0 +1,1 @@
+ALTER TABLE `student` ADD `entry_score` text;

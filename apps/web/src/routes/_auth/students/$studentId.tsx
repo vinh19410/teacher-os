@@ -273,6 +273,12 @@ function StudentDetailRoute() {
 						)}
 					</Card>
 					<Card variant="white">
+						<div className="mb-3 text-muted-foreground text-sm">
+							Điểm đầu vào
+						</div>
+						<p className="mb-5 font-medium text-sm">
+							{student.entryScore || "Chưa có"}
+						</p>
 						<div className="mb-3 text-muted-foreground text-sm">Phụ huynh</div>
 						<div className="flex flex-col gap-4">
 							<div className="flex items-center justify-between">

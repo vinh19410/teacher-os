@@ -1,4 +1,7 @@
-import { STUDENT_INVITATION_ERROR_CODES } from "@teacher-os/api/contracts";
+import {
+	ENTRY_SCORE_MAX_LENGTH,
+	STUDENT_INVITATION_ERROR_CODES,
+} from "@teacher-os/api/contracts";
 import { Check } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -40,6 +43,7 @@ export function EnrollStudentModal({
 	const [email, setEmail] = useState("");
 	const [parentName, setParentName] = useState("");
 	const [parentPhone, setParentPhone] = useState("");
+	const [entryScore, setEntryScore] = useState("");
 	const [nameError, setNameError] = useState<string | undefined>();
 	const [emailError, setEmailError] = useState<string | undefined>();
 	const {
@@ -84,6 +88,7 @@ export function EnrollStudentModal({
 			setEmail("");
 			setParentName("");
 			setParentPhone("");
+			setEntryScore("");
 			setNameError(undefined);
 			setEmailError(undefined);
 			committedToastMessageRef.current = null;
@@ -158,6 +163,7 @@ export function EnrollStudentModal({
 				email: trimmedEmail,
 				parentName: parentName.trim(),
 				parentPhone,
+				...(entryScore.trim() ? { entryScore: entryScore.trim() } : {}),
 				classId,
 				activateNow,
 			},
@@ -175,6 +181,7 @@ export function EnrollStudentModal({
 			setEmail("");
 			setParentName("");
 			setParentPhone("");
+			setEntryScore("");
 			onClose();
 		} else if (result?.kind === "committed") {
 			committedToastMessageRef.current = {
@@ -204,6 +211,7 @@ export function EnrollStudentModal({
 			setEmail("");
 			setParentName("");
 			setParentPhone("");
+			setEntryScore("");
 			onClose();
 		}
 	}
@@ -394,6 +402,15 @@ export function EnrollStudentModal({
 								/>
 							</Field>
 						</div>
+						<Field label="Điểm đầu vào (tùy chọn)">
+							<Input
+								value={entryScore}
+								onChange={(e) => setEntryScore(e.target.value)}
+								maxLength={ENTRY_SCORE_MAX_LENGTH}
+								placeholder="VD: 7.0 IELTS, 800 TOEIC, B2"
+								disabled={saving}
+							/>
+						</Field>
 					</>
 				)}
 

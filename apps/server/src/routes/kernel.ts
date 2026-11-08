@@ -515,6 +515,7 @@ export function kernelRoutes(deps: {
 				zalo: input.phone,
 				parentName: input.parentName,
 				parentPhone: input.parentPhone,
+				entryScore: input.entryScore || null,
 				createdAt: now,
 			}),
 		];
