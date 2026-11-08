@@ -610,13 +610,14 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 			.orderBy(desc(material.updatedAt), asc(material.id));
 		// Lọc ở tầng JS: lower() của SQLite chỉ hạ chữ ASCII nên "Đề" không khớp
 		// "đề". Kho tài liệu theo org đủ nhỏ để lọc sau truy vấn.
-		const needle = q.toLocaleLowerCase("vi");
+		const fold = (v: string) => v.normalize("NFC").toLocaleLowerCase("vi");
+		const needle = fold(q);
 		const matched =
 			needle === ""
 				? rows
 				: rows.filter(({ row }) =>
 						[row.title, row.description, row.originalName ?? ""].some((v) =>
-							v.toLocaleLowerCase("vi").includes(needle),
+							fold(v).includes(needle),
 						),
 					);
 		return c.json({
@@ -683,11 +684,11 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 			return c.json({ material: toMaterialView(row, 0) }, 201);
 		} catch (error) {
 			upload.discard();
+			console.error("[materials] material insert failed", { error });
 			// Thư mục bị xoá trong lúc đang stream file → lỗi nghiệp vụ, không phải 500.
 			if (folderId !== null && !(await folderExists(db, ctx.orgId, folderId))) {
 				return materialError(c, 404, "FOLDER_NOT_FOUND");
 			}
-			console.error("[materials] material insert failed", { error });
 			return c.json({ error: "upload failed" }, 500);
 		}
 	});
@@ -881,10 +882,10 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 			]);
 		} catch (error) {
 			upload.discard();
+			console.error("[materials] session upload insert failed", { error });
 			if (folderId !== null && !(await folderExists(db, ctx.orgId, folderId))) {
 				return materialError(c, 404, "FOLDER_NOT_FOUND");
 			}
-			console.error("[materials] session upload insert failed", { error });
 			return c.json({ error: "upload failed" }, 500);
 		}
 		const items = await loadSessionMaterials(db, ctx.orgId, classId, date);
