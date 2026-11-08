@@ -1,0 +1,895 @@
+import { sanitizeMediaFileName } from "@teacher-os/api/lib/quiz-media";
+import {
+	checkMaterialUpload,
+	isMaterialKind,
+	type LessonMaterialView,
+	lessonMaterialAttachSchema,
+	MATERIAL_FOLDER_MAX_DEPTH,
+	MATERIAL_ROOT_FOLDER,
+	MATERIAL_SEARCH_MAX,
+	type MaterialErrorCode,
+	type MaterialFolderView,
+	type MaterialKind,
+	type MaterialView,
+	materialFolderCreateSchema,
+	materialFolderUpdateSchema,
+	materialLinkCreateSchema,
+	materialUpdateSchema,
+} from "@teacher-os/api/material-contracts";
+import { parseStartDateStrict } from "@teacher-os/api/skeleton";
+import { canPublishGrade, canReviewGrade } from "@teacher-os/auth/role";
+import { classTable } from "@teacher-os/db/schema/class";
+import { lesson } from "@teacher-os/db/schema/lesson";
+import {
+	lessonMaterial,
+	material,
+	materialFolder,
+} from "@teacher-os/db/schema/material";
+import { and, asc, desc, eq, isNull, ne, sql } from "drizzle-orm";
+import { type Context, Hono } from "hono";
+import type { z } from "zod";
+import type { Db, KernelCtx } from "../app";
+import { materialFileResponse } from "../lib/material-file-response";
+import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
+
+type Env = { Variables: { kernelCtx: KernelCtx } };
+type MaterialContext = Context<Env>;
+type MaterialRow = typeof material.$inferSelect;
+type FolderRow = typeof materialFolder.$inferSelect;
+
+export interface MaterialRouteDeps {
+	getDb(): Db;
+	/** Xem `AppDeps.getMaterialsStore` — vắng mặt → route file trả 503. */
+	getMaterialsStore?(): MediaStore | undefined;
+	/** Xem `AppDeps.runInBackground`. */
+	runInBackground?(promise: Promise<unknown>): void;
+}
+
+type ErrorStatus = 400 | 404 | 409 | 413 | 415 | 500 | 503;
+
+function materialError(
+	c: MaterialContext,
+	status: ErrorStatus,
+	code: MaterialErrorCode,
+	extra: Record<string, unknown> = {},
+): Response {
+	return c.json({ error: code, code, ...extra }, status);
+}
+
+/** Số buổi đang gắn tài liệu — cột tính, dùng chung cho list/detail. */
+const usageCountColumn = sql<number>`(select count(*) from ${lessonMaterial} where ${lessonMaterial.materialId} = ${material.id})`;
+
+export function toMaterialView(
+	row: MaterialRow,
+	usageCount: number,
+): MaterialView {
+	return {
+		id: row.id,
+		folderId: row.folderId,
+		title: row.title,
+		description: row.description,
+		kind: (isMaterialKind(row.kind) ? row.kind : "file") as MaterialKind,
+		url: row.url,
+		mimeType: row.mimeType,
+		sizeBytes: row.sizeBytes,
+		originalName: row.originalName,
+		usageCount: Number(usageCount),
+		createdAt: row.createdAt.toISOString(),
+		updatedAt: row.updatedAt.toISOString(),
+	};
+}
+
+function toFolderView(row: FolderRow): MaterialFolderView {
+	return {
+		id: row.id,
+		parentId: row.parentId,
+		name: row.name,
+		createdAt: row.createdAt.toISOString(),
+	};
+}
+
+/** Cấp của thư mục (gốc = 1). Dữ liệu hỏng có vòng → coi như quá sâu. */
+function folderDepth(byId: Map<string, FolderRow>, id: string): number {
+	let depth = 0;
+	let current: string | null = id;
+	const seen = new Set<string>();
+	while (current !== null) {
+		if (seen.has(current)) return Number.POSITIVE_INFINITY;
+		seen.add(current);
+		const row = byId.get(current);
+		if (!row) break;
+		depth += 1;
+		current = row.parentId;
+	}
+	return depth;
+}
+
+/** Id của thư mục và mọi thư mục con cháu, kèm chiều cao cây con (lá = 1). */
+function subtree(
+	folders: FolderRow[],
+	rootId: string,
+): { ids: Set<string>; height: number } {
+	const children = new Map<string, string[]>();
+	for (const f of folders) {
+		if (f.parentId === null) continue;
+		const list = children.get(f.parentId) ?? [];
+		list.push(f.id);
+		children.set(f.parentId, list);
+	}
+	const ids = new Set<string>();
+	let height = 0;
+	const walk = (id: string, level: number) => {
+		if (ids.has(id)) return;
+		ids.add(id);
+		height = Math.max(height, level);
+		for (const child of children.get(id) ?? []) walk(child, level + 1);
+	};
+	walk(rootId, 1);
+	return { ids, height };
+}
+
+/**
+ * Ngân hàng tài liệu của org + tài liệu theo buổi học, mount trong kernel
+ * (`/api`). Đọc: mọi vai trò được rà bài (`canReviewGrade`, gồm trợ giảng);
+ * ghi: vai trò được chốt bài (`canPublishGrade`). Mọi truy vấn lọc theo
+ * `orgId` của phiên — id của org khác trả 404.
+ *
+ * File tải lên là raw body (PUT, header Content-Type/Content-Length/
+ * X-File-Name) stream thẳng vào kho với key `<orgId>/<materialId>`; ghi DB
+ * lỗi thì dọn object vừa ghi. Xoá tài liệu: xoá row trước (FK chặn khi còn
+ * buổi tham chiếu), xoá object sau — object lỗi xoá chỉ để lại file mồ côi
+ * trong bucket private, không bao giờ để row trỏ object đã mất.
+ */
+export function materialRoutes(deps: MaterialRouteDeps) {
+	const routes = new Hono<Env>();
+
+	const inBackground = (label: string, fn: () => Promise<unknown>) => {
+		const task = fn().catch((error) => {
+			console.error(`[materials] ${label} failed`, { error });
+		});
+		deps.runInBackground?.(task);
+	};
+
+	const gate = async (c: MaterialContext, next: () => Promise<void>) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return c.json({ error: "unauthorized" }, 401);
+		const isRead = c.req.method === "GET" || c.req.method === "HEAD";
+		const allowed = isRead
+			? canReviewGrade(ctx.role)
+			: canPublishGrade(ctx.role);
+		if (!allowed) return c.json({ error: "forbidden", code: "FORBIDDEN" }, 403);
+		return next();
+	};
+	routes.use("/materials", gate);
+	routes.use("/materials/*", gate);
+	routes.use("/classes/:classId/sessions/:date/materials", gate);
+	routes.use("/classes/:classId/sessions/:date/materials/*", gate);
+
+	async function readBody<S extends z.ZodType>(
+		c: MaterialContext,
+		schema: S,
+	): Promise<
+		{ ok: true; data: z.infer<S> } | { ok: false; response: Response }
+	> {
+		const contentType = c.req.header("Content-Type") ?? "";
+		if (!contentType.toLowerCase().startsWith("application/json")) {
+			return {
+				ok: false,
+				response: c.json(
+					{ error: "content-type must be application/json" },
+					415,
+				),
+			};
+		}
+		let raw: unknown;
+		try {
+			raw = await c.req.json();
+		} catch {
+			return { ok: false, response: c.json({ error: "invalid json" }, 400) };
+		}
+		const parsed = schema.safeParse(raw);
+		if (!parsed.success) {
+			return { ok: false, response: c.json({ error: "invalid body" }, 400) };
+		}
+		return { ok: true, data: parsed.data };
+	}
+
+	async function loadFolders(db: Db, orgId: string): Promise<FolderRow[]> {
+		return db
+			.select()
+			.from(materialFolder)
+			.where(eq(materialFolder.orgId, orgId))
+			.orderBy(asc(materialFolder.name), asc(materialFolder.id));
+	}
+
+	async function folderExists(
+		db: Db,
+		orgId: string,
+		id: string,
+	): Promise<boolean> {
+		const [row] = await db
+			.select({ id: materialFolder.id })
+			.from(materialFolder)
+			.where(and(eq(materialFolder.id, id), eq(materialFolder.orgId, orgId)))
+			.limit(1);
+		return row !== undefined;
+	}
+
+	async function nameTaken(
+		db: Db,
+		orgId: string,
+		parentId: string | null,
+		name: string,
+		exceptId?: string,
+	): Promise<boolean> {
+		const [row] = await db
+			.select({ id: materialFolder.id })
+			.from(materialFolder)
+			.where(
+				and(
+					eq(materialFolder.orgId, orgId),
+					parentId === null
+						? isNull(materialFolder.parentId)
+						: eq(materialFolder.parentId, parentId),
+					eq(materialFolder.name, name),
+					exceptId === undefined ? undefined : ne(materialFolder.id, exceptId),
+				),
+			)
+			.limit(1);
+		return row !== undefined;
+	}
+
+	async function loadMaterial(
+		db: Db,
+		orgId: string,
+		id: string,
+	): Promise<{ row: MaterialRow; usageCount: number } | null> {
+		const [found] = await db
+			.select({ row: material, usageCount: usageCountColumn })
+			.from(material)
+			.where(and(eq(material.id, id), eq(material.orgId, orgId)))
+			.limit(1);
+		return found
+			? { row: found.row, usageCount: Number(found.usageCount) }
+			: null;
+	}
+
+	async function usageCount(db: Db, materialId: string): Promise<number> {
+		const [row] = await db
+			.select({ n: sql<number>`count(*)` })
+			.from(lessonMaterial)
+			.where(eq(lessonMaterial.materialId, materialId));
+		return Number(row?.n ?? 0);
+	}
+
+	/** `folderId` từ body/query: phải thuộc org. */
+	async function checkFolder(
+		c: MaterialContext,
+		db: Db,
+		orgId: string,
+		folderId: string | null,
+	): Promise<Response | null> {
+		if (folderId === null) return null;
+		if (!(await folderExists(db, orgId, folderId))) {
+			return materialError(c, 404, "FOLDER_NOT_FOUND");
+		}
+		return null;
+	}
+
+	/**
+	 * Đọc + kiểm header upload rồi stream body vào kho. Thành công trả các
+	 * cột file của row `material` (chưa ghi DB) và `discard` để dọn object
+	 * khi bước ghi DB sau đó lỗi.
+	 */
+	async function storeUpload(
+		c: MaterialContext,
+		store: MediaStore,
+		orgId: string,
+	): Promise<
+		| {
+				ok: true;
+				values: Pick<
+					MaterialRow,
+					| "id"
+					| "kind"
+					| "objectKey"
+					| "mimeType"
+					| "sizeBytes"
+					| "originalName"
+					| "title"
+				>;
+				discard: () => void;
+		  }
+		| { ok: false; response: Response }
+	> {
+		const lengthHeader = c.req.header("Content-Length");
+		const size =
+			lengthHeader !== undefined && /^\d+$/.test(lengthHeader)
+				? Number(lengthHeader)
+				: Number.NaN;
+		const check = checkMaterialUpload({
+			mimeType: c.req.header("Content-Type") ?? "",
+			size,
+		});
+		if (!check.ok) {
+			if (check.reason === "type") {
+				return {
+					ok: false,
+					response: materialError(c, 415, "UNSUPPORTED_FILE_TYPE"),
+				};
+			}
+			if (check.reason === "size") {
+				return {
+					ok: false,
+					response: materialError(c, 413, "FILE_TOO_LARGE", {
+						maxBytes: check.maxBytes,
+					}),
+				};
+			}
+			return { ok: false, response: materialError(c, 400, "INVALID_FILE") };
+		}
+		let name: string | null = null;
+		try {
+			name = sanitizeMediaFileName(
+				decodeURIComponent(c.req.header("X-File-Name") ?? ""),
+			);
+		} catch {
+			name = null;
+		}
+		const body = c.req.raw.body;
+		if (!name || body === null) {
+			return { ok: false, response: materialError(c, 400, "INVALID_FILE") };
+		}
+
+		const id = crypto.randomUUID();
+		const objectKey = `${orgId}/${id}`;
+		const discard = () =>
+			inBackground("discard material object", () => store.delete(objectKey));
+		try {
+			await store.put(objectKey, body, { contentType: check.mimeType, size });
+		} catch (error) {
+			discard();
+			if (error instanceof MediaSizeMismatchError) {
+				return { ok: false, response: materialError(c, 400, "INVALID_FILE") };
+			}
+			console.error("[materials] upload failed", { error });
+			return { ok: false, response: c.json({ error: "upload failed" }, 500) };
+		}
+		return {
+			ok: true,
+			values: {
+				id,
+				kind: check.kind,
+				objectKey,
+				mimeType: check.mimeType,
+				sizeBytes: size,
+				originalName: name,
+				title: name,
+			},
+			discard,
+		};
+	}
+
+	/** Lớp thuộc org + ngày là một buổi có thật (có dòng lesson). */
+	async function resolveSession(
+		c: MaterialContext,
+		db: Db,
+		orgId: string,
+	): Promise<
+		| { ok: true; classId: string; date: string }
+		| { ok: false; response: Response }
+	> {
+		const classId = c.req.param("classId") ?? "";
+		const date = parseStartDateStrict(c.req.param("date") ?? "");
+		if (!date)
+			return { ok: false, response: c.json({ error: "invalid date" }, 400) };
+		const [cls] = await db
+			.select({ id: classTable.id })
+			.from(classTable)
+			.where(and(eq(classTable.id, classId), eq(classTable.orgId, orgId)))
+			.limit(1);
+		if (!cls)
+			return { ok: false, response: materialError(c, 404, "CLASS_NOT_FOUND") };
+		const [session] = await db
+			.select({ id: lesson.id })
+			.from(lesson)
+			.where(
+				and(
+					eq(lesson.orgId, orgId),
+					eq(lesson.classId, classId),
+					eq(lesson.date, date),
+				),
+			)
+			.limit(1);
+		if (!session)
+			return {
+				ok: false,
+				response: materialError(c, 404, "SESSION_NOT_FOUND"),
+			};
+		return { ok: true, classId, date };
+	}
+
+	async function loadSessionMaterials(
+		db: Db,
+		orgId: string,
+		classId: string,
+		date: string,
+	): Promise<LessonMaterialView[]> {
+		const rows = await db
+			.select({
+				row: material,
+				usageCount: usageCountColumn,
+				position: lessonMaterial.position,
+				attachedAt: lessonMaterial.createdAt,
+			})
+			.from(lessonMaterial)
+			.innerJoin(
+				material,
+				and(
+					eq(material.id, lessonMaterial.materialId),
+					eq(material.orgId, orgId),
+				),
+			)
+			.where(
+				and(
+					eq(lessonMaterial.orgId, orgId),
+					eq(lessonMaterial.classId, classId),
+					eq(lessonMaterial.date, date),
+				),
+			)
+			.orderBy(
+				asc(lessonMaterial.position),
+				asc(lessonMaterial.createdAt),
+				asc(material.id),
+			);
+		return rows.map((r) => ({
+			...toMaterialView(r.row, r.usageCount),
+			position: r.position,
+			attachedAt: r.attachedAt.toISOString(),
+		}));
+	}
+
+	/** Vị trí kế tiếp trong buổi — tính trong chính câu INSERT. */
+	const nextPosition = (classId: string, date: string) =>
+		sql<number>`(select coalesce(max(${lessonMaterial.position}), -1) + 1 from ${lessonMaterial} where ${lessonMaterial.classId} = ${classId} and ${lessonMaterial.date} = ${date})`;
+
+	// ---- Thư mục ----
+
+	routes.get("/materials/folders", async (c) => {
+		const ctx = c.get("kernelCtx");
+		const folders = await loadFolders(deps.getDb(), ctx.orgId);
+		return c.json({ folders: folders.map(toFolderView) });
+	});
+
+	routes.post("/materials/folders", async (c) => {
+		const ctx = c.get("kernelCtx");
+		const body = await readBody(c, materialFolderCreateSchema);
+		if (!body.ok) return body.response;
+		const db = deps.getDb();
+		const { name, parentId } = body.data;
+		if (parentId !== null) {
+			const folders = await loadFolders(db, ctx.orgId);
+			const byId = new Map(folders.map((f) => [f.id, f]));
+			if (!byId.has(parentId)) return materialError(c, 404, "FOLDER_NOT_FOUND");
+			if (folderDepth(byId, parentId) + 1 > MATERIAL_FOLDER_MAX_DEPTH) {
+				return materialError(c, 400, "FOLDER_TOO_DEEP");
+			}
+		}
+		if (await nameTaken(db, ctx.orgId, parentId, name)) {
+			return materialError(c, 409, "FOLDER_NAME_TAKEN");
+		}
+		const id = crypto.randomUUID();
+		try {
+			const [row] = await db
+				.insert(materialFolder)
+				.values({ id, orgId: ctx.orgId, parentId, name })
+				.returning();
+			if (!row) throw new Error("folder insert returned no row");
+			return c.json({ folder: toFolderView(row) }, 201);
+		} catch (error) {
+			// Đua với request tạo cùng tên: đọc lại trạng thái thay vì parse lỗi.
+			if (await nameTaken(db, ctx.orgId, parentId, name)) {
+				return materialError(c, 409, "FOLDER_NAME_TAKEN");
+			}
+			throw error;
+		}
+	});
+
+	routes.patch("/materials/folders/:id", async (c) => {
+		const ctx = c.get("kernelCtx");
+		const body = await readBody(c, materialFolderUpdateSchema);
+		if (!body.ok) return body.response;
+		const db = deps.getDb();
+		const id = c.req.param("id");
+		const folders = await loadFolders(db, ctx.orgId);
+		const byId = new Map(folders.map((f) => [f.id, f]));
+		const current = byId.get(id);
+		if (!current) return materialError(c, 404, "FOLDER_NOT_FOUND");
+
+		const nextName = body.data.name ?? current.name;
+		const nextParent =
+			body.data.parentId === undefined ? current.parentId : body.data.parentId;
+		if (nextParent !== null && nextParent !== current.parentId) {
+			if (!byId.has(nextParent))
+				return materialError(c, 404, "FOLDER_NOT_FOUND");
+			const tree = subtree(folders, id);
+			if (tree.ids.has(nextParent))
+				return materialError(c, 400, "FOLDER_CYCLE");
+			if (
+				folderDepth(byId, nextParent) + tree.height >
+				MATERIAL_FOLDER_MAX_DEPTH
+			) {
+				return materialError(c, 400, "FOLDER_TOO_DEEP");
+			}
+		}
+		if (await nameTaken(db, ctx.orgId, nextParent, nextName, id)) {
+			return materialError(c, 409, "FOLDER_NAME_TAKEN");
+		}
+		try {
+			const [row] = await db
+				.update(materialFolder)
+				.set({ name: nextName, parentId: nextParent })
+				.where(
+					and(eq(materialFolder.id, id), eq(materialFolder.orgId, ctx.orgId)),
+				)
+				.returning();
+			if (!row) return materialError(c, 404, "FOLDER_NOT_FOUND");
+			return c.json({ folder: toFolderView(row) });
+		} catch (error) {
+			if (await nameTaken(db, ctx.orgId, nextParent, nextName, id)) {
+				return materialError(c, 409, "FOLDER_NAME_TAKEN");
+			}
+			throw error;
+		}
+	});
+
+	routes.delete("/materials/folders/:id", async (c) => {
+		const ctx = c.get("kernelCtx");
+		const db = deps.getDb();
+		const id = c.req.param("id");
+		if (!(await folderExists(db, ctx.orgId, id))) {
+			return materialError(c, 404, "FOLDER_NOT_FOUND");
+		}
+		const isEmpty = async () => {
+			const [child] = await db
+				.select({ id: materialFolder.id })
+				.from(materialFolder)
+				.where(eq(materialFolder.parentId, id))
+				.limit(1);
+			const [item] = await db
+				.select({ id: material.id })
+				.from(material)
+				.where(eq(material.folderId, id))
+				.limit(1);
+			return child === undefined && item === undefined;
+		};
+		if (!(await isEmpty())) return materialError(c, 409, "FOLDER_NOT_EMPTY");
+		try {
+			await db
+				.delete(materialFolder)
+				.where(
+					and(eq(materialFolder.id, id), eq(materialFolder.orgId, ctx.orgId)),
+				);
+		} catch (error) {
+			// FK chặn khi có mục mới chen vào giữa lúc kiểm và lúc xoá.
+			if (!(await isEmpty())) return materialError(c, 409, "FOLDER_NOT_EMPTY");
+			throw error;
+		}
+		return c.json({ ok: true });
+	});
+
+	// ---- Tài liệu ----
+
+	routes.get("/materials", async (c) => {
+		const ctx = c.get("kernelCtx");
+		const q = (c.req.query("q") ?? "").trim();
+		if (q.length > MATERIAL_SEARCH_MAX)
+			return c.json({ error: "invalid q" }, 400);
+		const kind = c.req.query("kind");
+		if (kind !== undefined && !isMaterialKind(kind)) {
+			return c.json({ error: "invalid kind" }, 400);
+		}
+		const folderId = c.req.query("folderId");
+		const rows = await deps
+			.getDb()
+			.select({ row: material, usageCount: usageCountColumn })
+			.from(material)
+			.where(
+				and(
+					eq(material.orgId, ctx.orgId),
+					kind === undefined ? undefined : eq(material.kind, kind),
+					folderId === undefined || folderId === ""
+						? undefined
+						: folderId === MATERIAL_ROOT_FOLDER
+							? isNull(material.folderId)
+							: eq(material.folderId, folderId),
+					// instr thay LIKE: ký tự %/_ người dùng gõ không thành wildcard.
+					q === ""
+						? undefined
+						: sql`(instr(lower(${material.title}), lower(${q})) > 0 or instr(lower(${material.description}), lower(${q})) > 0 or instr(lower(coalesce(${material.originalName}, '')), lower(${q})) > 0)`,
+				),
+			)
+			.orderBy(desc(material.updatedAt), asc(material.id));
+		return c.json({
+			items: rows.map((r) => toMaterialView(r.row, r.usageCount)),
+		});
+	});
+
+	routes.get("/materials/:id", async (c) => {
+		const ctx = c.get("kernelCtx");
+		const found = await loadMaterial(
+			deps.getDb(),
+			ctx.orgId,
+			c.req.param("id"),
+		);
+		if (!found) return materialError(c, 404, "MATERIAL_NOT_FOUND");
+		return c.json({ material: toMaterialView(found.row, found.usageCount) });
+	});
+
+	routes.post("/materials/links", async (c) => {
+		const ctx = c.get("kernelCtx");
+		const body = await readBody(c, materialLinkCreateSchema);
+		if (!body.ok) return body.response;
+		const db = deps.getDb();
+		const folderError = await checkFolder(c, db, ctx.orgId, body.data.folderId);
+		if (folderError) return folderError;
+		const [row] = await db
+			.insert(material)
+			.values({
+				id: crypto.randomUUID(),
+				orgId: ctx.orgId,
+				folderId: body.data.folderId,
+				title: body.data.title,
+				description: body.data.description,
+				kind: "link",
+				url: body.data.url,
+				createdBy: ctx.userId,
+			})
+			.returning();
+		if (!row) throw new Error("material insert returned no row");
+		return c.json({ material: toMaterialView(row, 0) }, 201);
+	});
+
+	routes.put("/materials/files", async (c) => {
+		const ctx = c.get("kernelCtx");
+		const store = deps.getMaterialsStore?.();
+		if (!store) return materialError(c, 503, "MATERIALS_DISABLED");
+		const db = deps.getDb();
+		const folderId = c.req.query("folderId") || null;
+		const folderError = await checkFolder(c, db, ctx.orgId, folderId);
+		if (folderError) return folderError;
+		const upload = await storeUpload(c, store, ctx.orgId);
+		if (!upload.ok) return upload.response;
+		try {
+			const [row] = await db
+				.insert(material)
+				.values({
+					...upload.values,
+					orgId: ctx.orgId,
+					folderId,
+					createdBy: ctx.userId,
+				})
+				.returning();
+			if (!row) throw new Error("material insert returned no row");
+			return c.json({ material: toMaterialView(row, 0) }, 201);
+		} catch (error) {
+			upload.discard();
+			console.error("[materials] material insert failed", { error });
+			return c.json({ error: "upload failed" }, 500);
+		}
+	});
+
+	routes.patch("/materials/:id", async (c) => {
+		const ctx = c.get("kernelCtx");
+		const body = await readBody(c, materialUpdateSchema);
+		if (!body.ok) return body.response;
+		const db = deps.getDb();
+		const id = c.req.param("id");
+		if (body.data.folderId !== undefined) {
+			const folderError = await checkFolder(
+				c,
+				db,
+				ctx.orgId,
+				body.data.folderId,
+			);
+			if (folderError) return folderError;
+		}
+		const [row] = await db
+			.update(material)
+			.set({
+				...(body.data.title !== undefined ? { title: body.data.title } : {}),
+				...(body.data.description !== undefined
+					? { description: body.data.description }
+					: {}),
+				...(body.data.folderId !== undefined
+					? { folderId: body.data.folderId }
+					: {}),
+				updatedAt: new Date(),
+			})
+			.where(and(eq(material.id, id), eq(material.orgId, ctx.orgId)))
+			.returning({ id: material.id });
+		if (!row) return materialError(c, 404, "MATERIAL_NOT_FOUND");
+		const found = await loadMaterial(db, ctx.orgId, id);
+		if (!found) return materialError(c, 404, "MATERIAL_NOT_FOUND");
+		return c.json({ material: toMaterialView(found.row, found.usageCount) });
+	});
+
+	routes.delete("/materials/:id", async (c) => {
+		const ctx = c.get("kernelCtx");
+		const db = deps.getDb();
+		const id = c.req.param("id");
+		const found = await loadMaterial(db, ctx.orgId, id);
+		if (!found) return materialError(c, 404, "MATERIAL_NOT_FOUND");
+		const inUse = () =>
+			materialError(c, 409, "MATERIAL_IN_USE", {
+				sessionCount: found.usageCount,
+			});
+		if (found.usageCount > 0) return inUse();
+		const objectKey = found.row.objectKey;
+		// File cần kho để xoá object — thiếu binding thì không xoá row, tránh
+		// object mồ côi không ai dọn.
+		const store = objectKey === null ? undefined : deps.getMaterialsStore?.();
+		if (objectKey !== null && !store)
+			return materialError(c, 503, "MATERIALS_DISABLED");
+		try {
+			await db
+				.delete(material)
+				.where(and(eq(material.id, id), eq(material.orgId, ctx.orgId)));
+		} catch (error) {
+			// FK NO ACTION chặn khi một buổi vừa gắn tài liệu giữa lúc kiểm và xoá.
+			const count = await usageCount(db, id);
+			if (count > 0) {
+				return materialError(c, 409, "MATERIAL_IN_USE", {
+					sessionCount: count,
+				});
+			}
+			throw error;
+		}
+		if (objectKey !== null && store) {
+			try {
+				await store.delete(objectKey);
+			} catch (error) {
+				console.error("[materials] object delete failed after row delete", {
+					materialId: id,
+					error,
+				});
+			}
+		}
+		return c.json({ ok: true });
+	});
+
+	routes.get("/materials/:id/file", async (c) => {
+		const ctx = c.get("kernelCtx");
+		const store = deps.getMaterialsStore?.();
+		if (!store) return materialError(c, 503, "MATERIALS_DISABLED");
+		const found = await loadMaterial(
+			deps.getDb(),
+			ctx.orgId,
+			c.req.param("id"),
+		);
+		if (!found || found.row.objectKey === null) {
+			return materialError(c, 404, "MATERIAL_NOT_FOUND");
+		}
+		const response = await materialFileResponse(
+			store,
+			{ ...found.row, objectKey: found.row.objectKey },
+			{
+				rangeHeader: c.req.header("Range"),
+				download: c.req.query("download") === "1",
+			},
+		);
+		return response ?? materialError(c, 404, "MATERIAL_NOT_FOUND");
+	});
+
+	// ---- Tài liệu của buổi học (classId + date) ----
+
+	routes.get("/classes/:classId/sessions/:date/materials", async (c) => {
+		const ctx = c.get("kernelCtx");
+		const db = deps.getDb();
+		const session = await resolveSession(c, db, ctx.orgId);
+		if (!session.ok) return session.response;
+		const items = await loadSessionMaterials(
+			db,
+			ctx.orgId,
+			session.classId,
+			session.date,
+		);
+		return c.json({ items });
+	});
+
+	routes.post("/classes/:classId/sessions/:date/materials", async (c) => {
+		const ctx = c.get("kernelCtx");
+		const body = await readBody(c, lessonMaterialAttachSchema);
+		if (!body.ok) return body.response;
+		const db = deps.getDb();
+		const session = await resolveSession(c, db, ctx.orgId);
+		if (!session.ok) return session.response;
+		const { classId, date } = session;
+		const { materialId } = body.data;
+		if (!(await loadMaterial(db, ctx.orgId, materialId))) {
+			return materialError(c, 404, "MATERIAL_NOT_FOUND");
+		}
+		const inserted = await db
+			.insert(lessonMaterial)
+			.values({
+				orgId: ctx.orgId,
+				classId,
+				date,
+				materialId,
+				position: nextPosition(classId, date),
+			})
+			.onConflictDoNothing()
+			.returning({ materialId: lessonMaterial.materialId });
+		if (inserted.length === 0) return materialError(c, 409, "ALREADY_ATTACHED");
+		const items = await loadSessionMaterials(db, ctx.orgId, classId, date);
+		const item = items.find((i) => i.id === materialId);
+		if (!item) throw new Error("attached material missing after insert");
+		return c.json({ item }, 201);
+	});
+
+	routes.put("/classes/:classId/sessions/:date/materials/files", async (c) => {
+		const ctx = c.get("kernelCtx");
+		const store = deps.getMaterialsStore?.();
+		if (!store) return materialError(c, 503, "MATERIALS_DISABLED");
+		const db = deps.getDb();
+		const session = await resolveSession(c, db, ctx.orgId);
+		if (!session.ok) return session.response;
+		const { classId, date } = session;
+		const folderId = c.req.query("folderId") || null;
+		const folderError = await checkFolder(c, db, ctx.orgId, folderId);
+		if (folderError) return folderError;
+		const upload = await storeUpload(c, store, ctx.orgId);
+		if (!upload.ok) return upload.response;
+		try {
+			// Một batch nguyên tử: tạo tài liệu trong ngân hàng + gắn vào buổi.
+			await db.batch([
+				db.insert(material).values({
+					...upload.values,
+					orgId: ctx.orgId,
+					folderId,
+					createdBy: ctx.userId,
+				}),
+				db.insert(lessonMaterial).values({
+					orgId: ctx.orgId,
+					classId,
+					date,
+					materialId: upload.values.id,
+					position: nextPosition(classId, date),
+				}),
+			]);
+		} catch (error) {
+			upload.discard();
+			console.error("[materials] session upload insert failed", { error });
+			return c.json({ error: "upload failed" }, 500);
+		}
+		const items = await loadSessionMaterials(db, ctx.orgId, classId, date);
+		const item = items.find((i) => i.id === upload.values.id);
+		if (!item) throw new Error("uploaded material missing after insert");
+		return c.json({ item }, 201);
+	});
+
+	routes.delete(
+		"/classes/:classId/sessions/:date/materials/:materialId",
+		async (c) => {
+			const ctx = c.get("kernelCtx");
+			const db = deps.getDb();
+			const session = await resolveSession(c, db, ctx.orgId);
+			if (!session.ok) return session.response;
+			const removed = await db
+				.delete(lessonMaterial)
+				.where(
+					and(
+						eq(lessonMaterial.orgId, ctx.orgId),
+						eq(lessonMaterial.classId, session.classId),
+						eq(lessonMaterial.date, session.date),
+						eq(lessonMaterial.materialId, c.req.param("materialId")),
+					),
+				)
+				.returning({ materialId: lessonMaterial.materialId });
+			if (removed.length === 0) return materialError(c, 404, "NOT_ATTACHED");
+			return c.json({ ok: true });
+		},
+	);
+
+	return routes;
+}
