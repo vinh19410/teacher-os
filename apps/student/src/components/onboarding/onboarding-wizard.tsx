@@ -26,9 +26,14 @@ import { useSubmitOnboarding } from "@/lib/repos/student";
 
 export interface OnboardingWizardProps {
 	onCompleted: () => void;
+	/** Điểm đầu vào đã có (giáo viên nhập trước) — điền sẵn để học viên thấy và sửa có chủ đích. */
+	initialEntryScore?: string | null;
 }
 
-export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
+export function OnboardingWizard({
+	onCompleted,
+	initialEntryScore,
+}: OnboardingWizardProps) {
 	const [step, setStep] = useState(0);
 	const [answers, setAnswers] = useState<{
 		examInterest: ExamInterest | null;
@@ -42,7 +47,7 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 		examInterest: null,
 		currentLevel: null,
 		targetScore: null,
-		entryScore: "",
+		entryScore: initialEntryScore ?? "",
 		learningGoals: [],
 		learningGoalsNote: "",
 		dailyStudyHours: null,

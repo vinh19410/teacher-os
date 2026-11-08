@@ -84,6 +84,30 @@ describe("EnrollStudentModal", () => {
 		);
 	});
 
+	it("sends a trimmed entryScore when the teacher fills it in create mode", async () => {
+		const server = startKernelServer(
+			snapshotFixture({
+				classes: [classRow({ id: "cl-1" })],
+				students: [],
+			}),
+		);
+		const onClose = vi.fn();
+		renderWithKernel(
+			<EnrollStudentModal open onClose={onClose} classId="cl-1" />,
+		);
+		const dialog = await screen.findByRole("dialog");
+		fireEvent.change(within(dialog).getByLabelText(/Họ tên học viên/), {
+			target: { value: "Lê Hà" },
+		});
+		fireEvent.change(within(dialog).getByLabelText(/Điểm đầu vào/), {
+			target: { value: "  7.0 IELTS " },
+		});
+		fireEvent.click(within(dialog).getByRole("button", { name: "Lưu" }));
+
+		await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+		expect(server.writes[0]?.body).toMatchObject({ entryScore: "7.0 IELTS" });
+	});
+
 	it("sends activateNow=true in existing mode when teacher checks the activation box", async () => {
 		const server = startKernelServer(
 			snapshotFixture({

@@ -1267,7 +1267,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				learningGoals: JSON.stringify([...learningGoals]),
 				learningGoalsNote: learningGoalsNote?.length ? learningGoalsNote : null,
 				dailyStudyHours,
-				// Bỏ trống không xoá điểm giáo viên đã nhập trước đó.
+				// Wizard điền sẵn giá trị hiện có; bỏ trống không xoá điểm đã lưu.
 				...(entryScore ? { entryScore } : {}),
 				onboardingCompletedAt: new Date(),
 			})
