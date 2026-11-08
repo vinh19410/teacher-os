@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, Clock } from "lucide-react";
+import { ChevronDown, ChevronRight, Clock, Paperclip } from "lucide-react";
 import { type KeyboardEvent, useState } from "react";
 import { AttendanceSummary } from "@/components/class-detail/attendance-summary";
 import {
@@ -7,6 +7,7 @@ import {
 	SessionActionsModal,
 } from "@/components/class-detail/session-actions-modal";
 import { SessionAttendanceModal } from "@/components/class-detail/session-attendance-modal";
+import { SessionMaterialsModal } from "@/components/class-detail/session-materials-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
@@ -85,6 +86,7 @@ export function ClassSessionsSection({
 	// Identity-keyed (N4): a numeric index would dangle once a successful
 	// moveDate reorders the chronology under an open dialog.
 	const [actionsDateISO, setActionsDateISO] = useState<string | null>(null);
+	const [materialsDateISO, setMaterialsDateISO] = useState<string | null>(null);
 
 	const sessions = buildClassSessions({
 		schedule: cls.schedule,
@@ -130,6 +132,7 @@ export function ClassSessionsSection({
 						}))}
 					/>
 				</div>
+				<LegacyMaterialsNote />
 			</Section>
 		);
 	}
@@ -153,6 +156,10 @@ export function ClassSessionsSection({
 	const modalSession = sessions.find((s) => s.index === modalIndex) ?? null;
 	const actionsSession =
 		sessions.find((s) => s.dateISO === actionsDateISO) ?? null;
+	// Tài liệu gắn theo (lớp, ngày) — chỉ buổi đã có dòng lesson mang `date`
+	// (v2). Lớp legacy (date NULL) và buổi dự kiến chưa có buổi thật để gắn.
+	const supportsMaterials =
+		!isProjected && sessions.every((s) => s.mode === "v2");
 
 	return (
 		<>
@@ -333,6 +340,19 @@ export function ClassSessionsSection({
 										Điều chỉnh
 									</Button>
 								)}
+								{supportsMaterials && (
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										aria-label={`Tài liệu buổi ${formatSessionDate(s.dateISO)}`}
+										onClick={() => setMaterialsDateISO(s.dateISO)}
+										onKeyDown={stopActionKeyPropagation}
+									>
+										<Paperclip aria-hidden="true" />
+										Tài liệu
+									</Button>
+								)}
 								{hasDetails && isExpanded && (
 									<div className="w-full border-border border-t pt-2 text-muted-foreground text-xs">
 										<div className="pl-9">
@@ -349,6 +369,7 @@ export function ClassSessionsSection({
 						);
 					})}
 				</ol>
+				{!isProjected && !supportsMaterials && <LegacyMaterialsNote />}
 			</Section>
 			<SessionAttendanceModal
 				session={modalSession}
@@ -367,6 +388,25 @@ export function ClassSessionsSection({
 				onCancelOccurrence={onCancelOccurrence}
 				onSaveEdit={onSaveEdit}
 			/>
+			{materialsDateISO !== null && (
+				<SessionMaterialsModal
+					key={materialsDateISO}
+					classId={cls.id}
+					dateISO={materialsDateISO}
+					sessionLabel={formatSessionDate(materialsDateISO)}
+					onClose={() => setMaterialsDateISO(null)}
+				/>
+			)}
 		</>
+	);
+}
+
+/** Lớp legacy (buổi chưa gắn ngày) chưa hỗ trợ tài liệu theo buổi. */
+function LegacyMaterialsNote() {
+	return (
+		<p className="mt-3 text-muted-foreground text-xs">
+			Tài liệu theo buổi chỉ dùng được cho lớp có lịch theo ngày — lớp này còn
+			dữ liệu buổi kiểu cũ.
+		</p>
 	);
 }
