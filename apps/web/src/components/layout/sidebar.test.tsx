@@ -159,6 +159,7 @@ describe("TEACHER_NAV v2", () => {
 		expect(ITEM_BY_HREF["/assignments"]?.label).toBe("Bài tập");
 		expect(ITEM_BY_HREF["/grading"]?.label).toBe("Chấm bài");
 		expect(ITEM_BY_HREF["/vocab"]?.label).toBe("Từ vựng");
+		expect(ITEM_BY_HREF["/materials"]?.label).toBe("Tài liệu");
 		expect(ITEM_BY_HREF["/profile"]?.label).toBe("Hồ sơ");
 	});
 
@@ -194,6 +195,7 @@ describe("teacherActiveKey", () => {
 		expect(teacherActiveKey("/classes/abc")).toBe("classes");
 		expect(teacherActiveKey("/students/u-1")).toBe("students");
 		expect(teacherActiveKey("/assignments/new")).toBe("assignments");
+		expect(teacherActiveKey("/materials")).toBe("materials");
 	});
 
 	it("maps /grading and /grading/$attemptId to grading and returns empty for unauthenticated routes", () => {

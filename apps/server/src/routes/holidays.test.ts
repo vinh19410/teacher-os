@@ -1187,6 +1187,45 @@ describe("TOS-13 Phase 2: apply mode cancel + DELETE hoàn tác + activation D7 
 		).toBe(true);
 	});
 
+	test("DELETE kỳ nghỉ shift: liên kết tài liệu đã gắn vào buổi bù bị dọn cùng buổi bù", async () => {
+		const app = createApp();
+		const planHash = await previewHash(app, draft());
+		const applyRes = await apply(app, { ...draft(), planHash });
+		const { holidayId } = (await applyRes.json()) as { holidayId: string };
+
+		const makeupRows = await db
+			.select({ classId: schema.lesson.classId, orgId: schema.lesson.orgId })
+			.from(schema.lesson)
+			.where(eq(schema.lesson.date, F9));
+		const makeup = makeupRows[0];
+		if (!makeup) throw new Error("expected a makeup lesson");
+		await db.insert(schema.material).values({
+			id: "mat-holiday",
+			orgId: makeup.orgId,
+			kind: "link",
+			url: "https://example.com/doc",
+			title: "Tài liệu buổi bù",
+			createdBy: "teacher-1",
+		});
+		await db.insert(schema.lessonMaterial).values({
+			orgId: makeup.orgId,
+			classId: makeup.classId,
+			date: F9,
+			materialId: "mat-holiday",
+		});
+
+		const delRes = await deleteHolidayReq(app, holidayId);
+		expect(delRes.status).toBe(200);
+
+		expect(await db.select().from(schema.lessonMaterial)).toHaveLength(0);
+		expect(
+			await db
+				.select({ id: schema.material.id })
+				.from(schema.material)
+				.where(eq(schema.material.id, "mat-holiday")),
+		).toHaveLength(1);
+	});
+
 	test("DELETE kỳ nghỉ cancel tương lai: chỉ khôi phục buổi trong holiday_session_cancel, buổi GV hủy tay cùng ngày ở lớp khác giữ cancelled", async () => {
 		const app = createApp();
 		// GV hủy tay lớp B tại F3 trước khi tạo kỳ nghỉ cancel cho riêng lớp A.

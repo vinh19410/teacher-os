@@ -14,6 +14,7 @@ export * from "./invoice";
 export * from "./lead";
 export * from "./lesson";
 export * from "./library-test";
+export * from "./material";
 export * from "./membership";
 export * from "./notif";
 export * from "./notification-record";

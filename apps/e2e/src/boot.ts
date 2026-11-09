@@ -158,6 +158,11 @@ const LIBRARY_AUDIO_DIR = mkdtempSync(
 );
 const libraryAudioStore = createFsMediaStore(LIBRARY_AUDIO_DIR);
 
+// Ngân hàng tài liệu (bucket `materials` ở production) — thư mục tạm riêng,
+// cùng adapter FS.
+const MATERIALS_DIR = mkdtempSync(join(tmpdir(), "teacher-os-e2e-materials-"));
+const materialsStore = createFsMediaStore(MATERIALS_DIR);
+
 // File đề gốc nhập AI (TOS-24 #470) — thư mục tạm RIÊNG, cùng bucket-logic
 // MEDIA của production; extractor là fake (đề cố định, pageCount 2) nên
 // E2E không đụng Workers AI.
@@ -178,6 +183,7 @@ const app = buildApp({
 	authHandler: (req) => auth.handler(req),
 	getMediaStore: () => mediaStore,
 	getLibraryAudioStore: () => libraryAudioStore,
+	getMaterialsStore: () => materialsStore,
 	// TOS-24 (#470) + TOS-27 (#473): file đề nhập AI (FS thay R2) + extractor
 	// fake (tên tệp chứa `ai-fail` ném lỗi để E2E AC-004 kiểm hoàn trả Credit).
 	getExamImportStore: () => examImportStore,
@@ -286,6 +292,7 @@ const shutdown = () =>
 		rmSync(MEDIA_DIR, { recursive: true, force: true });
 		rmSync(LIBRARY_AUDIO_DIR, { recursive: true, force: true });
 		rmSync(EXAM_IMPORT_DIR, { recursive: true, force: true });
+		rmSync(MATERIALS_DIR, { recursive: true, force: true });
 		process.exit(0);
 	});
 process.on("SIGTERM", shutdown);

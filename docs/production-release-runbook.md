@@ -944,6 +944,7 @@ ngoài kernel tree.
 | `ADMIN_EMAILS` | danh sách email phân tách dấu phẩy | **KHÔNG có default** — rỗng (không set) = không ai là admin và không ai đăng ký được account admin; so khớp lowercase trong `requireAdmin` ở MỖI request (gỡ email khỏi danh sách là mất quyền ngay) |
 | `TEACHER_EMAILS` | danh sách email phân tách dấu phẩy | **Bắt buộc trên production** (`resolveTeacherEmails` ném lỗi khi deploy nếu rỗng); ở môi trường khác rỗng = không giới hạn. Kiểm lowercase mỗi request ở kernel (`bootstrapMiddleware`) và ở hook sign-up (`TEACHER_SIGNUP_FORBIDDEN`, #513) |
 | `LIBRARY_AUDIO` | R2 bucket `library-audio` | Private bucket tạo trong `alchemy.run.ts`; thiếu binding → route audio trả 503 `LIBRARY_AUDIO_DISABLED` |
+| `MATERIALS` | R2 bucket `materials` | Private bucket tạo trong `alchemy.run.ts` (kho tài liệu/học liệu theo buổi học); thiếu binding → route file trả 503 `MATERIALS_DISABLED` |
 
 ### Quy trình cấp admin đầu tiên
 

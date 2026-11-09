@@ -56,6 +56,7 @@ import { classSession } from "@teacher-os/db/schema/class-session";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
+import { lessonMaterial } from "@teacher-os/db/schema/material";
 import { notificationRecord } from "@teacher-os/db/schema/notification-record";
 import {
 	holidaySessionCancel,
@@ -127,6 +128,7 @@ import { eventRoutes } from "./events";
 import { gradingRoutes } from "./grading";
 import { holidayRoutes, isRollbackableConstraintError } from "./holidays";
 import { leadRoutes } from "./leads";
+import { materialRoutes } from "./materials";
 import { notificationLogRoutes } from "./notification-logs";
 import { paymentTransactionRoutes } from "./payment-transactions";
 import { placementTestRoutes } from "./placement-test";
@@ -148,6 +150,7 @@ export function kernelRoutes(deps: {
 	getDb(): Db;
 	getMediaStore?(): MediaStore | undefined;
 	getLibraryAudioStore?(): MediaStore | undefined;
+	getMaterialsStore?(): MediaStore | undefined;
 	leadOrgId?: string;
 	corsOrigin?: string | string[];
 	corsOrigins?: string | string[];
@@ -2212,6 +2215,15 @@ export function kernelRoutes(deps: {
 			if (moveDateISO && moveDateISO !== dateISO) {
 				// C2: dời lesson, class_session và kéo `holiday_session_shift.makeupDate` trong
 				// CÙNG một db.batch nguyên tử để không bao giờ lệch trạng thái.
+				// Tài liệu buổi học (`lesson_material`) gắn theo ngày nên dời
+				// theo, nhưng CHỈ khi bucket thật sự đã dời (ngày gốc hết dòng
+				// lesson, ngày đích có dòng) — thua race thì giữ nguyên. Liên
+				// kết mồ côi ở ngày đích (bucket đích trống đã kiểm ở trên)
+				// bị dọn trước để không đụng khoá chính.
+				const bucketMoved = and(
+					sql`not exists (select 1 from ${lesson} where ${lesson.orgId} = ${ctx.orgId} and ${lesson.classId} = ${classId} and ${lesson.date} = ${dateISO})`,
+					sql`exists (select 1 from ${lesson} where ${lesson.orgId} = ${ctx.orgId} and ${lesson.classId} = ${classId} and ${lesson.date} = ${moveDateISO})`,
+				);
 				try {
 					const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
 						occurrenceUpdate(db, classId, dateISO, ctx.orgId, set, false),
@@ -2223,6 +2235,27 @@ export function kernelRoutes(deps: {
 									eq(holidaySessionShift.orgId, ctx.orgId),
 									eq(holidaySessionShift.classId, classId),
 									eq(holidaySessionShift.makeupDate, dateISO),
+								),
+							),
+						db
+							.delete(lessonMaterial)
+							.where(
+								and(
+									eq(lessonMaterial.orgId, ctx.orgId),
+									eq(lessonMaterial.classId, classId),
+									eq(lessonMaterial.date, moveDateISO),
+									bucketMoved,
+								),
+							),
+						db
+							.update(lessonMaterial)
+							.set({ date: moveDateISO })
+							.where(
+								and(
+									eq(lessonMaterial.orgId, ctx.orgId),
+									eq(lessonMaterial.classId, classId),
+									eq(lessonMaterial.date, dateISO),
+									bucketMoved,
 								),
 							),
 						...(existingClassSession.length > 0
@@ -2611,6 +2644,17 @@ export function kernelRoutes(deps: {
 					),
 				),
 		];
+		deleteStatements.push(
+			db
+				.delete(lessonMaterial)
+				.where(
+					and(
+						eq(lessonMaterial.orgId, ctx.orgId),
+						eq(lessonMaterial.classId, classId),
+						eq(lessonMaterial.date, dateISO),
+					),
+				),
+		);
 
 		if (lessonRows.length > 0) {
 			deleteStatements.push(
@@ -3345,6 +3389,7 @@ export function kernelRoutes(deps: {
 	// sub-router's POSTs are CSRF-guarded exactly like the kernel writes.
 	kernel.route("/", syllabusRoutes(deps));
 	kernel.route("/", studyPackRoutes(deps));
+	kernel.route("/", materialRoutes(deps));
 	kernel.route("/assignments", assignmentRoutes(deps));
 	kernel.route("/reports", reportRoutes(deps));
 	kernel.route("/notifs", notifRoutes(deps));
