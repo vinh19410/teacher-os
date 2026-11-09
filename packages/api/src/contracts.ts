@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { KernelEventRow } from "./event-contracts";
+import type { SyllabusBankMaterialRef } from "./material-contracts";
 import { isBandStep } from "./lib/ielts-band";
 import { CLOZE_MARKER_SOURCE } from "./lib/infer-question-types";
 import { isEmptyRichText, richTextField } from "./rich-text";
@@ -1643,6 +1644,8 @@ export interface KernelSyllabusLessonRow {
 	title: string;
 	objectives: string;
 	materials: string;
+	/** Tài liệu ngân hàng gắn trên bài (#655) — vắng mặt với snapshot cũ. */
+	bankMaterials?: SyllabusBankMaterialRef[];
 	/** Loại buổi (issue #154): "lesson" | "midterm" | "final"; `| string` cho forward-compat. */
 	kind: "lesson" | "midterm" | "final" | string;
 	status: "done" | "current" | "upcoming" | string;
