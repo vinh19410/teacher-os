@@ -2582,6 +2582,24 @@ export function kernelRoutes(deps: {
 		try {
 			await db.batch(statements);
 		} catch (err) {
+			// #655: tài liệu bị xoá giữa lúc validate và lúc batch → FK lỗi.
+			// Re-check rồi trả đúng nghĩa nghiệp vụ thay vì 409 date-occupied
+			// (isRollbackableConstraintError match cả FOREIGN KEY).
+			const message = err instanceof Error ? err.message : String(err);
+			if (/FOREIGN KEY/i.test(message) && materialIds.length > 0) {
+				const existing = await findExistingMaterialIds(
+					db,
+					kernelCtx.orgId,
+					materialIds,
+				);
+				const missing = materialIds.find((id) => !existing.has(id));
+				if (missing !== undefined) {
+					return c.json(
+						{ error: "material-not-found", materialId: missing },
+						422,
+					);
+				}
+			}
 			if (isRollbackableConstraintError(err)) {
 				return c.json(
 					{ error: "date already has a session", reason: "date-occupied" },

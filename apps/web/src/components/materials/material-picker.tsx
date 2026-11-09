@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { MATERIAL_LINKS_MAX } from "@teacher-os/api/contracts";
 import {
 	MATERIAL_ROOT_FOLDER,
 	type MaterialView,
@@ -61,12 +62,16 @@ export function MaterialBankBrowser({
 	selectedIds,
 	pendingId,
 	disabled,
+	maxSelected,
 	onPick,
 }: {
 	selectedIds: ReadonlySet<string>;
 	/** Id đang gắn dở (để dòng đó hiện "Đang gắn…"). */
 	pendingId: string | undefined;
 	disabled: boolean;
+	/** Trần số tài liệu được gắn (form tạo buổi/bài #655) — vắng mặt là
+	 * không trần (modal gắn tài liệu của buổi có sẵn). */
+	maxSelected?: number;
 	onPick: (ref: SyllabusBankMaterialRef) => void;
 }) {
 	const folderSelectId = useId();
@@ -74,6 +79,7 @@ export function MaterialBankBrowser({
 	const [folderId, setFolderId] = useState(ALL_FOLDERS);
 	const [query, setQuery] = useState("");
 	const [debounced, setDebounced] = useState("");
+	const atCap = maxSelected !== undefined && selectedIds.size >= maxSelected;
 	useEffect(() => {
 		const timer = setTimeout(() => setDebounced(query.trim()), 300);
 		return () => clearTimeout(timer);
@@ -157,7 +163,7 @@ export function MaterialBankBrowser({
 									<Button
 										variant={attached ? "ghost" : "outline"}
 										size="sm"
-										disabled={attached || disabled}
+										disabled={attached || disabled || atCap}
 										aria-label={
 											attached ? `Đã gắn ${item.title}` : `Gắn ${item.title}`
 										}
@@ -203,6 +209,10 @@ export function MaterialPicker({
 	const [browsing, setBrowsing] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const fileInput = useRef<HTMLInputElement>(null);
+
+	// Trần contract (`materialIds` max MATERIAL_LINKS_MAX) — chặn trước ở
+	// picker thay để server 422 với thông báo chung (#655 review N3).
+	const atCap = selected.length >= MATERIAL_LINKS_MAX;
 
 	const handleError = (err: unknown) => {
 		if (isHttpError(err) && err.status === 401) {
@@ -276,7 +286,7 @@ export function MaterialPicker({
 				<Button
 					variant="outline"
 					size="sm"
-					disabled={disabled}
+					disabled={disabled || atCap}
 					aria-busy={upload.isPending}
 					onClick={() => fileInput.current?.click()}
 				>
@@ -295,6 +305,9 @@ export function MaterialPicker({
 			</div>
 			<p className="text-muted-foreground text-xs">
 				{`${UPLOAD_HELP} File tải lên được lưu vào ngân hàng tài liệu (Chưa xếp thư mục).`}
+				{atCap
+					? ` Tối đa ${MATERIAL_LINKS_MAX} tài liệu cho một buổi/bài — gỡ bớt để chọn thêm.`
+					: ""}
 			</p>
 			{error && (
 				<p role="alert" className="text-destructive text-sm">
@@ -320,6 +333,7 @@ export function MaterialPicker({
 						selectedIds={new Set(selected.map((m) => m.id))}
 						pendingId={undefined}
 						disabled={disabled || upload.isPending}
+						maxSelected={MATERIAL_LINKS_MAX}
 						onPick={onPick}
 					/>
 				</Modal>

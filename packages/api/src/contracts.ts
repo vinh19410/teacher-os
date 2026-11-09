@@ -1,8 +1,8 @@
 import { z } from "zod";
 import type { KernelEventRow } from "./event-contracts";
-import type { SyllabusBankMaterialRef } from "./material-contracts";
 import { isBandStep } from "./lib/ielts-band";
 import { CLOZE_MARKER_SOURCE } from "./lib/infer-question-types";
+import type { SyllabusBankMaterialRef } from "./material-contracts";
 import { isEmptyRichText, richTextField } from "./rich-text";
 
 export * from "./event-contracts";
@@ -251,6 +251,10 @@ export const moduleUpsertSchema = z.object({
 });
 export type ModuleUpsert = z.infer<typeof moduleUpsertSchema>;
 
+/** Trần số tài liệu ngân hàng gắn trên một bài học/buổi khi tạo (#655) —
+ * server (2 schema) và picker web dùng chung một nguồn. */
+export const MATERIAL_LINKS_MAX = 20;
+
 export const lessonUpsertSchema = z.object({
 	title: z.string().min(1),
 	objectives: z.string().default(""),
@@ -264,7 +268,7 @@ export const lessonUpsertSchema = z.object({
 	status: z.enum(["done", "current", "upcoming"]).optional(),
 	// Issue #655: tài liệu ngân hàng gắn trên bài học — optional, vắng mặt
 	// = giữ nguyên links hiện có (route edit) / rỗng (route add).
-	materialIds: z.array(z.string().min(1)).max(20).optional(),
+	materialIds: z.array(z.string().min(1)).max(MATERIAL_LINKS_MAX).optional(),
 });
 export type LessonUpsert = z.infer<typeof lessonUpsertSchema>;
 
@@ -1757,7 +1761,7 @@ export const addManualSessionSchema = z.object({
 		}),
 	// Issue #655: tài liệu ngân hàng gắn ngay lúc tạo buổi manual — server
 	// validate org + tồn tại rồi insert `lesson_material` cùng batch.
-	materialIds: z.array(z.string().min(1)).max(20).default([]),
+	materialIds: z.array(z.string().min(1)).max(MATERIAL_LINKS_MAX).default([]),
 });
 export type AddManualSessionInput = z.infer<typeof addManualSessionSchema>;
 

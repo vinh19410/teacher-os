@@ -9,6 +9,7 @@ import {
 } from "@teacher-os/api/contracts";
 import { syllabusLessonMaterial } from "@teacher-os/db/schema/material";
 import { syllabusLesson, syllabusModule } from "@teacher-os/db/schema/syllabus";
+import type { BatchItem } from "drizzle-orm/batch";
 import { and, eq, inArray, max } from "drizzle-orm";
 import type { Context, Hono } from "hono";
 import type { z } from "zod";
@@ -83,6 +84,34 @@ export function mountContentRoutes(
 			};
 		}
 		return { ok: true, ids };
+	}
+
+	/** Batch có ghi links `syllabus_lesson_material` (#655): tài liệu bị xoá
+	 * giữa lúc validate và lúc batch làm FK NO ACTION lỗi — re-check rồi trả
+	 * 422 nghiệp vụ thay vì 500 (pattern attach route `materials.ts`). */
+	async function writeLessonBatchWithMaterialGuard(
+		c: SyllabusContext,
+		db: Db,
+		orgId: string,
+		materialIds: string[],
+		statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]],
+	): Promise<Response | null> {
+		try {
+			await db.batch(statements);
+			return null;
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+			if (!/FOREIGN KEY/i.test(message)) throw err;
+			const existing = await findExistingMaterialIds(db, orgId, materialIds);
+			const missing = materialIds.find((id) => !existing.has(id));
+			if (missing !== undefined) {
+				return c.json(
+					{ error: "material-not-found", materialId: missing },
+					422,
+				);
+			}
+			throw err;
+		}
 	}
 
 	router.post(`${basePath}/modules`, async (c) => {
@@ -306,17 +335,24 @@ export function mountContentRoutes(
 		}
 		// #655: bài học + links tài liệu ngân hàng trong cùng một batch nguyên
 		// tử — position 0..n-1 theo thứ tự gửi lên.
-		await db.batch([
-			db.insert(syllabusLesson).values(lessonValues),
-			...materials.ids.map((materialId, position) =>
-				db.insert(syllabusLessonMaterial).values({
-					orgId: ctx.orgId,
-					syllabusLessonId: lessonId,
-					materialId,
-					position,
-				}),
-			),
-		]);
+		const guard = await writeLessonBatchWithMaterialGuard(
+			c,
+			db,
+			ctx.orgId,
+			materials.ids,
+			[
+				db.insert(syllabusLesson).values(lessonValues),
+				...materials.ids.map((materialId, position) =>
+					db.insert(syllabusLessonMaterial).values({
+						orgId: ctx.orgId,
+						syllabusLessonId: lessonId,
+						materialId,
+						position,
+					}),
+				),
+			],
+		);
+		if (guard) return guard;
 		return c.json({ id: lessonId } satisfies CreatedResponse, 201);
 	});
 
@@ -440,25 +476,32 @@ export function mountContentRoutes(
 			input.materialIds,
 		);
 		if (!materials.ok) return materials.response;
-		await db.batch([
-			lessonUpdate,
-			db
-				.delete(syllabusLessonMaterial)
-				.where(
-					and(
-						eq(syllabusLessonMaterial.orgId, ctx.orgId),
-						eq(syllabusLessonMaterial.syllabusLessonId, lid),
+		const guard = await writeLessonBatchWithMaterialGuard(
+			c,
+			db,
+			ctx.orgId,
+			materials.ids,
+			[
+				lessonUpdate,
+				db
+					.delete(syllabusLessonMaterial)
+					.where(
+						and(
+							eq(syllabusLessonMaterial.orgId, ctx.orgId),
+							eq(syllabusLessonMaterial.syllabusLessonId, lid),
+						),
 					),
+				...materials.ids.map((materialId, position) =>
+					db.insert(syllabusLessonMaterial).values({
+						orgId: ctx.orgId,
+						syllabusLessonId: lid,
+						materialId,
+						position,
+					}),
 				),
-			...materials.ids.map((materialId, position) =>
-				db.insert(syllabusLessonMaterial).values({
-					orgId: ctx.orgId,
-					syllabusLessonId: lid,
-					materialId,
-					position,
-				}),
-			),
-		]);
+			],
+		);
+		if (guard) return guard;
 		return c.json({ ok: true });
 	});
 
