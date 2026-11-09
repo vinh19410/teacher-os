@@ -5,7 +5,7 @@ import {
 	user as authUser,
 } from "@teacher-os/db/schema/auth";
 import * as schema from "@teacher-os/db/schema/index";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { describe, expect, test } from "vitest";
@@ -756,4 +756,167 @@ describe("Manual Class Sessions API (Issue #649)", () => {
 			topic: "After Move",
 		});
 	});
+
+	test("13. POST /classes/:id/sessions với materialIds → đúng N dòng lesson_material (#655)", async () => {
+		const t = await setupTestApp();
+		const teacher = await t.insertUser("Teacher Materials 1");
+
+		const { id: classId } = await createManualClass(t, teacher.token);
+		const orgId = await orgIdOf(t);
+
+		await t.db.insert(schema.material).values([
+			{
+				id: "mat-1",
+				orgId,
+				title: "Đề 1",
+				kind: "link",
+				url: "https://a.example/1",
+				createdBy: "t",
+			},
+			{
+				id: "mat-2",
+				orgId,
+				title: "Đề 2",
+				kind: "link",
+				url: "https://a.example/2",
+				createdBy: "t",
+			},
+		]);
+
+		const addRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/sessions`,
+			{
+				body: {
+					date: "2026-11-10",
+					time: "19:00",
+					dur: 90,
+					topic: "Buổi có tài liệu",
+					materialIds: ["mat-2", "mat-1", "mat-2"],
+				},
+			},
+		);
+		expect(addRes.status).toBe(201);
+
+		const links = await t.db
+			.select()
+			.from(schema.lessonMaterial)
+			.where(
+				and(
+					eq(schema.lessonMaterial.classId, classId),
+					eq(schema.lessonMaterial.date, "2026-11-10"),
+				),
+			)
+			.orderBy(schema.lessonMaterial.position);
+		// Dedupe giữ thứ tự; position i theo mảng gửi lên; cùng batch với
+		// class_session nên buổi + links tồn tại song song.
+		expect(links.map((l) => [l.materialId, l.position])).toEqual([
+			["mat-2", 0],
+			["mat-1", 1],
+		]);
+		expect(links.every((l) => l.orgId === orgId)).toBe(true);
+		const [cs] = await t.db
+			.select()
+			.from(schema.classSession)
+			.where(eq(schema.classSession.classId, classId));
+		expect(cs?.date).toBe("2026-11-10");
+	});
+
+	test("14. POST /classes/:id/sessions với id lạ → 422, không dở dang dữ liệu (#655)", async () => {
+		const t = await setupTestApp();
+		const teacher = await t.insertUser("Teacher Materials 2");
+
+		const { id: classId } = await createManualClass(t, teacher.token);
+		const orgId = await orgIdOf(t);
+		await t.db.insert(schema.material).values({
+			id: "mat-1",
+			orgId,
+			title: "Đề 1",
+			kind: "link",
+			url: "https://a.example/1",
+			createdBy: "t",
+		});
+
+		const addRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/sessions`,
+			{
+				body: {
+					date: "2026-11-10",
+					time: "19:00",
+					dur: 90,
+					topic: "Buổi hỏng",
+					materialIds: ["mat-1", "mat-ghost"],
+				},
+			},
+		);
+		expect(addRes.status).toBe(422);
+		expect(await addRes.json()).toEqual({
+			error: "material-not-found",
+			materialId: "mat-ghost",
+		});
+
+		// Chặn TRƯỚC batch: không có class_session/links dở dang nào.
+		expect(
+			await t.db
+				.select()
+				.from(schema.classSession)
+				.where(eq(schema.classSession.classId, classId)),
+		).toHaveLength(0);
+		expect(await t.db.select().from(schema.lessonMaterial)).toHaveLength(0);
+
+		// Ngày vẫn trống — tạo lại được.
+		const retry = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/sessions`,
+			{
+				body: {
+					date: "2026-11-10",
+					time: "19:00",
+					dur: 90,
+					topic: "Buổi lại",
+					materialIds: ["mat-1"],
+				},
+			},
+		);
+		expect(retry.status).toBe(201);
+	});
 });
+
+/** Đủ seam cho helpers #655: API call + truy vấn db trực tiếp. */
+interface ManualSessionsTestApp {
+	db: Db;
+	call(
+		token: string,
+		path: string,
+		options?: { method?: string; body?: unknown },
+	): Response | Promise<Response>;
+}
+
+/** Tạo lớp manual qua API (org bootstrap tại request đầu tiên). */
+async function createManualClass(
+	t: ManualSessionsTestApp,
+	token: string,
+): Promise<{ id: string }> {
+	const createClassRes = await t.call(token, "/api/classes", {
+		body: {
+			name: "IELTS Manual Materials",
+			type: "ielts",
+			skills: ["Writing"],
+			templateId: "",
+			schedulingMode: "manual",
+			schedule: { days: [1, 3], start: "19:00", end: "20:30" },
+			sessionsTotal: 12,
+			startDate: "2026-11-10",
+		},
+	});
+	expect(createClassRes.status).toBe(201);
+	return (await createClassRes.json()) as { id: string };
+}
+
+/** Org id bootstrap bởi middleware khi request API đầu tiên. */
+async function orgIdOf(t: ManualSessionsTestApp): Promise<string> {
+	const [org] = await t.db.select().from(schema.organization);
+	if (!org) throw new Error("org chưa được bootstrap");
+	return org.id;
+}

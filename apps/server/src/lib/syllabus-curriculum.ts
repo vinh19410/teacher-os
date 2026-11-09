@@ -1,5 +1,9 @@
 import { classTable } from "@teacher-os/db/schema/class";
 import {
+	material,
+	syllabusLessonMaterial,
+} from "@teacher-os/db/schema/material";
+import {
 	syllabus,
 	syllabusLesson,
 	syllabusModule,
@@ -120,6 +124,11 @@ export const MAX_IMPORT_NODES = 500;
  * UUIDs; every lesson status resets to `upcoming` (status is per-class
  * progress, not template content); positions are preserved. Callers own
  * the org + template checks and the class pointer statement.
+ *
+ * #655: `links` là các dòng `syllabus_lesson_material` của template — copy
+ * remap `syllabusLessonId` qua map `lessonIds`, giữ nguyên `materialId`
+ * (ngân hàng là tài nguyên org dùng chung) và `position`. Link trỏ bài học
+ * ngoài cây (dữ liệu mồ côi) bị bỏ qua thay vì nổ batch.
  */
 export function buildImportBatch(
 	db: Db,
@@ -127,6 +136,11 @@ export function buildImportBatch(
 		template: typeof syllabus.$inferSelect;
 		modules: (typeof syllabusModule.$inferSelect)[];
 		lessons: (typeof syllabusLesson.$inferSelect)[];
+		links?: {
+			syllabusLessonId: string;
+			materialId: string;
+			position: number;
+		}[];
 		classId: string;
 		orgId: string;
 	},
@@ -183,6 +197,19 @@ export function buildImportBatch(
 				createdAt: l.createdAt,
 			}),
 		),
+		...(input.links ?? []).flatMap((link) => {
+			const lessonId = lessonIds.get(link.syllabusLessonId);
+			// Link mồ côi (bài học đã bị xoá khỏi cây) không copy.
+			if (lessonId === undefined) return [];
+			return [
+				db.insert(syllabusLessonMaterial).values({
+					orgId,
+					syllabusLessonId: lessonId,
+					materialId: link.materialId,
+					position: link.position,
+				}),
+			];
+		}),
 	];
 	return { copyId, statements };
 }
@@ -218,5 +245,45 @@ export async function selectTemplateTree(
 				)
 				.orderBy(asc(syllabusLesson.position))
 		: [];
-	return { modules, lessons };
+	// #655: đọc thêm links tài liệu ngân hàng của template — buildImportBatch
+	// copy kèm remap lessonId. Template không có links → mảng rỗng, hành vi
+	// import giữ nguyên như cũ.
+	const links = lessons.length
+		? await db
+				.select({
+					syllabusLessonId: syllabusLessonMaterial.syllabusLessonId,
+					materialId: syllabusLessonMaterial.materialId,
+					position: syllabusLessonMaterial.position,
+				})
+				.from(syllabusLessonMaterial)
+				.where(
+					and(
+						eq(syllabusLessonMaterial.orgId, orgId),
+						inArray(
+							syllabusLessonMaterial.syllabusLessonId,
+							lessons.map((l) => l.id),
+						),
+					),
+				)
+				.orderBy(asc(syllabusLessonMaterial.position))
+		: [];
+	return { modules, lessons, links };
+}
+
+/**
+ * Id tài liệu ngân hàng tồn tại trong org, trong tập ids gửi lên (#655).
+ * Caller tự trả 422 `material-not-found` với id đầu tiên thiếu — một câu
+ * select duy nhất cho cả list, không query per-id.
+ */
+export async function findExistingMaterialIds(
+	db: Db,
+	orgId: string,
+	ids: string[],
+): Promise<Set<string>> {
+	if (ids.length === 0) return new Set();
+	const rows = await db
+		.select({ id: material.id })
+		.from(material)
+		.where(and(eq(material.orgId, orgId), inArray(material.id, ids)));
+	return new Set(rows.map((row) => row.id));
 }

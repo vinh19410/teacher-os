@@ -112,6 +112,7 @@ import { recordManualPayment } from "../lib/payments/record-manual-payment";
 import { requireFinanceRole } from "../lib/require-finance-role";
 import {
 	buildImportBatch,
+	findExistingMaterialIds,
 	findSyllabus,
 	MAX_IMPORT_NODES,
 	selectTemplateTree,
@@ -1651,6 +1652,11 @@ export function kernelRoutes(deps: {
 					template: typeof syllabus.$inferSelect;
 					modules: (typeof syllabusModule.$inferSelect)[];
 					lessons: (typeof syllabusLesson.$inferSelect)[];
+					links: {
+						syllabusLessonId: string;
+						materialId: string;
+						position: number;
+					}[];
 			  }
 			| undefined;
 		if (input.templateId !== "") {
@@ -2464,6 +2470,25 @@ export function kernelRoutes(deps: {
 			);
 		}
 
+		// #655: tài liệu ngân hàng gắn ngay lúc tạo buổi — validate org-scoped
+		// TRƯỚC batch (id lạ không được để batch nổ giữa chừng), dedupe giữ
+		// thứ tự để không đâm PK (classId, date, materialId).
+		const materialIds = [...new Set(body.data.materialIds)];
+		if (materialIds.length > 0) {
+			const existing = await findExistingMaterialIds(
+				db,
+				kernelCtx.orgId,
+				materialIds,
+			);
+			const missing = materialIds.find((id) => !existing.has(id));
+			if (missing !== undefined) {
+				return c.json(
+					{ error: "material-not-found", materialId: missing },
+					422,
+				);
+			}
+		}
+
 		const newId = crypto.randomUUID();
 		const activeEnrollments = await db
 			.select({ id: enrollment.id, studentId: enrollment.studentId })
@@ -2505,6 +2530,20 @@ export function kernelRoutes(deps: {
 					status: "upcoming",
 					topic: body.data.topic.trim(),
 					zoom: body.data.zoom.trim(),
+				}),
+			);
+		}
+
+		// #655: links tài liệu vào CÙNG batch với class_session + lesson —
+		// position i theo thứ tự gửi lên; batch nổ thì cả buổi biến mất.
+		for (const [position, materialId] of materialIds.entries()) {
+			statements.push(
+				db.insert(lessonMaterial).values({
+					orgId: kernelCtx.orgId,
+					classId,
+					date: dateISO,
+					materialId,
+					position,
 				}),
 			);
 		}
