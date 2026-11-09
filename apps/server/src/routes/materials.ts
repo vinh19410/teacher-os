@@ -24,6 +24,7 @@ import {
 	lessonMaterial,
 	material,
 	materialFolder,
+	syllabusLessonMaterial,
 } from "@teacher-os/db/schema/material";
 import { and, asc, desc, eq, isNull, ne, sql } from "drizzle-orm";
 import { type Context, Hono } from "hono";
@@ -31,6 +32,7 @@ import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
 import { materialFileResponse } from "../lib/material-file-response";
 import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
+import { resolveCurriculumMaterials } from "../lib/session-curriculum-materials";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type MaterialContext = Context<Env>;
@@ -254,12 +256,27 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 			: null;
 	}
 
-	async function usageCount(db: Db, materialId: string): Promise<number> {
-		const [row] = await db
+	/**
+	 * Mức sử dụng của tài liệu trên CẢ hai bảng link (#655): `lesson_material`
+	 * (buổi học thật) + `syllabus_lesson_material` (bài học giáo trình). Lỗi
+	 * 409 xoá tài liệu đang dùng nêu cả hai số.
+	 */
+	async function materialUsage(
+		db: Db,
+		materialId: string,
+	): Promise<{ sessionCount: number; syllabusCount: number }> {
+		const [sessionRow] = await db
 			.select({ n: sql<number>`count(*)` })
 			.from(lessonMaterial)
 			.where(eq(lessonMaterial.materialId, materialId));
-		return Number(row?.n ?? 0);
+		const [syllabusRow] = await db
+			.select({ n: sql<number>`count(*)` })
+			.from(syllabusLessonMaterial)
+			.where(eq(syllabusLessonMaterial.materialId, materialId));
+		return {
+			sessionCount: Number(sessionRow?.n ?? 0),
+			syllabusCount: Number(syllabusRow?.n ?? 0),
+		};
 	}
 
 	/** `folderId` từ body/query: phải thuộc org. */
@@ -734,11 +751,15 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		const id = c.req.param("id");
 		const found = await loadMaterial(db, ctx.orgId, id);
 		if (!found) return materialError(c, 404, "MATERIAL_NOT_FOUND");
-		const inUse = () =>
+		// #655: đếm mức dùng trên cả hai bảng — buổi học thật lẫn bài học giáo
+		// trình; 409 nêu cả hai số (`sessionCount` giữ nguyên nghĩa cũ).
+		const inUse = (usage: { sessionCount: number; syllabusCount: number }) =>
 			materialError(c, 409, "MATERIAL_IN_USE", {
-				sessionCount: found.usageCount,
+				sessionCount: usage.sessionCount,
+				syllabusCount: usage.syllabusCount,
 			});
-		if (found.usageCount > 0) return inUse();
+		const usage = await materialUsage(db, id);
+		if (usage.sessionCount > 0 || usage.syllabusCount > 0) return inUse(usage);
 		const objectKey = found.row.objectKey;
 		// File cần kho để xoá object — thiếu binding thì không xoá row, tránh
 		// object mồ côi không ai dọn.
@@ -750,12 +771,11 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 				.delete(material)
 				.where(and(eq(material.id, id), eq(material.orgId, ctx.orgId)));
 		} catch (error) {
-			// FK NO ACTION chặn khi một buổi vừa gắn tài liệu giữa lúc kiểm và xoá.
-			const count = await usageCount(db, id);
-			if (count > 0) {
-				return materialError(c, 409, "MATERIAL_IN_USE", {
-					sessionCount: count,
-				});
+			// FK NO ACTION chặn khi một buổi/bài học vừa gắn tài liệu giữa lúc
+			// kiểm và xoá.
+			const recount = await materialUsage(db, id);
+			if (recount.sessionCount > 0 || recount.syllabusCount > 0) {
+				return inUse(recount);
 			}
 			throw error;
 		}
@@ -808,7 +828,18 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 			session.classId,
 			session.date,
 		);
-		return c.json({ items });
+		// #655: tài liệu suy từ giáo trình của lớp (buổi N ↔ bài N) — dedupe
+		// theo materialId với tài liệu direct của buổi, direct ưu tiên.
+		const directIds = new Set(items.map((item) => item.id));
+		const curriculumMaterials = (
+			await resolveCurriculumMaterials(
+				db,
+				ctx.orgId,
+				session.classId,
+				session.date,
+			)
+		).filter((ref) => !directIds.has(ref.id));
+		return c.json({ items, curriculumMaterials });
 	});
 
 	routes.post("/classes/:classId/sessions/:date/materials", async (c) => {
