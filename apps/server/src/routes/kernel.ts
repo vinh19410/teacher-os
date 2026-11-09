@@ -1682,7 +1682,8 @@ export function kernelRoutes(deps: {
 				...input.schedule,
 				days: [...new Set(input.schedule.days)].sort((a, b) => a - b),
 			}),
-			sessionsTotal: input.sessionsTotal,
+			sessionsTotal:
+				input.schedulingMode === "manual" ? 0 : input.sessionsTotal,
 			sessionsDone: 0,
 			status: "active",
 			startDate: input.startDate,
@@ -2438,17 +2439,6 @@ export function kernelRoutes(deps: {
 				),
 			);
 
-		const classSessionsCount = await db
-			.select({ count: sql<number>`count(*)` })
-			.from(classSession)
-			.where(
-				and(
-					eq(classSession.orgId, kernelCtx.orgId),
-					eq(classSession.classId, classId),
-				),
-			);
-		const totalSessions = (classSessionsCount[0]?.count ?? 0) + 1;
-
 		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
 			db.insert(classSession).values({
 				id: newId,
@@ -2486,7 +2476,7 @@ export function kernelRoutes(deps: {
 			db
 				.update(classTable)
 				.set({
-					sessionsTotal: totalSessions,
+					sessionsTotal: sql`(SELECT count(*) FROM class_session WHERE class_id = ${classId} AND org_id = ${kernelCtx.orgId})`,
 					schedulingMode: "manual",
 				})
 				.where(
@@ -2501,7 +2491,9 @@ export function kernelRoutes(deps: {
 			statements.push(
 				db
 					.update(sessionPackage)
-					.set({ total: totalSessions })
+					.set({
+						total: sql`(SELECT count(*) FROM class_session WHERE class_id = ${classId} AND org_id = ${kernelCtx.orgId})`,
+					})
 					.where(
 						and(
 							eq(sessionPackage.orgId, kernelCtx.orgId),
@@ -2604,18 +2596,6 @@ export function kernelRoutes(deps: {
 			);
 		}
 
-		const classSessionsCount = await db
-			.select({ count: sql<number>`count(*)` })
-			.from(classSession)
-			.where(
-				and(
-					eq(classSession.orgId, ctx.orgId),
-					eq(classSession.classId, classId),
-					ne(classSession.date, dateISO),
-				),
-			);
-		const remainingSessions = classSessionsCount[0]?.count ?? 0;
-
 		const deleteStatements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
 			db
 				.delete(classSession)
@@ -2645,7 +2625,9 @@ export function kernelRoutes(deps: {
 		deleteStatements.push(
 			db
 				.update(classTable)
-				.set({ sessionsTotal: remainingSessions })
+				.set({
+					sessionsTotal: sql`(SELECT count(*) FROM class_session WHERE class_id = ${classId} AND org_id = ${ctx.orgId})`,
+				})
 				.where(
 					and(eq(classTable.orgId, ctx.orgId), eq(classTable.id, classId)),
 				),
@@ -2665,7 +2647,9 @@ export function kernelRoutes(deps: {
 			deleteStatements.push(
 				db
 					.update(sessionPackage)
-					.set({ total: remainingSessions })
+					.set({
+						total: sql`(SELECT count(*) FROM class_session WHERE class_id = ${classId} AND org_id = ${ctx.orgId})`,
+					})
 					.where(
 						and(
 							eq(sessionPackage.orgId, ctx.orgId),

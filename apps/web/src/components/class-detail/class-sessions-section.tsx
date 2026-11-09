@@ -98,20 +98,23 @@ export function ClassSessionsSection({
 	// moveDate reorders the chronology under an open dialog.
 	const [actionsDateISO, setActionsDateISO] = useState<string | null>(null);
 
+	const isManual =
+		cls.schedulingMode === "manual" ||
+		(classSessions?.length ?? 0) > 0 ||
+		(!syllabus && cls.sessionsTotal === 0);
+
 	const sessions = buildClassSessions({
 		schedule: cls.schedule,
 		startDate: cls.startDate,
 		lessons,
 		sessionsTotal: cls.sessionsTotal,
+		schedulingMode: cls.schedulingMode,
 		hasSyllabus: Boolean(syllabus),
 		classSessions,
 	});
-	// Projection mode: zero real rows AND zero class sessions means every displayed
+	// Projection mode: zero real rows for an auto-scheduled class means every displayed
 	// session is a schedule projection (display-only).
-	const isProjected =
-		lessons.length === 0 &&
-		(classSessions?.length ?? 0) === 0 &&
-		sessions !== null;
+	const isProjected = !isManual && lessons.length === 0 && sessions !== null;
 
 	if (sessions === null) {
 		return (
@@ -252,7 +255,7 @@ export function ClassSessionsSection({
 						const hasAdjust =
 							!isProjected &&
 							(sessionRowTargets(s).length > 0 ||
-								(classSessions?.length ?? 0) > 0 ||
+								isManual ||
 								s.topic !== undefined);
 
 						return (

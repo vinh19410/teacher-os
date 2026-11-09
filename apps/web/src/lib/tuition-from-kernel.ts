@@ -275,7 +275,9 @@ export function rosterDebtByStudent(
  * Students without a package (`hasPackage === false`) are never ending soon.
  */
 export function packagesEndingSoon(students: Student[]): number {
-	return students.filter((s) => s.hasPackage && s.pkg.remaining <= 4).length;
+	return students.filter(
+		(s) => s.hasPackage && s.pkg.total > 0 && s.pkg.remaining <= 4,
+	).length;
 }
 
 /** Một dòng trong bảng học phí theo lớp của hồ sơ học viên (#347). */

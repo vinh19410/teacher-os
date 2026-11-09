@@ -345,5 +345,5 @@ export function initials(name: string): string {
 		: (parts[parts.length - 2][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 export function isAlmostOut(s: Student): boolean {
-	return s.pkg.remaining <= 3;
+	return s.hasPackage && s.pkg.total > 0 && s.pkg.remaining <= 3;
 }

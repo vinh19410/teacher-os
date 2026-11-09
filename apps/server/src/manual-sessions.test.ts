@@ -127,6 +127,11 @@ describe("Manual Class Sessions API (Issue #649)", () => {
 		expect(createClassRes.status).toBe(201);
 		const { id: classId } = (await createClassRes.json()) as { id: string };
 
+		const snapBefore = await t.kernel(teacher.token);
+		const clsBefore = snapBefore.classes.find((c) => c.id === classId);
+		expect(clsBefore?.sessionsTotal).toBe(0);
+		expect(clsBefore?.schedulingMode).toBe("manual");
+
 		// Add manual session
 		const addRes = await t.call(
 			teacher.token,

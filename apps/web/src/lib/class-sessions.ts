@@ -197,12 +197,17 @@ export function buildClassSessions(input: {
 	startDate: string;
 	lessons: ClassSessionLesson[];
 	sessionsTotal?: number;
+	schedulingMode?: "auto" | "manual" | string;
 	hasSyllabus?: boolean;
 	classSessions?: ClassSessionItem[];
 }): ClassSession[] | null {
-	// Issue #649: When class has NO syllabus (hasSyllabus === false),
+	// Issue #649: When class is manual (schedulingMode === "manual" or has manual classSessions),
 	// never project 12 empty sessions. Return [] if empty, or render manual sessions.
-	if (input.hasSyllabus === false) {
+	const isManual =
+		input.schedulingMode === "manual" ||
+		(input.classSessions && input.classSessions.length > 0) ||
+		(input.hasSyllabus === false && input.schedulingMode !== "auto");
+	if (isManual) {
 		const classSessionsList = input.classSessions ?? [];
 		if (classSessionsList.length === 0 && input.lessons.length === 0) {
 			return [];
