@@ -887,6 +887,196 @@ describe("material bank and session materials", () => {
 		expect((await get(studentPath, "teacher-1")).status).toBe(403);
 	});
 
+	test("students: đọc buổi có cả direct + tài liệu từ giáo trình, trùng id chỉ 1 lần (#655)", async () => {
+		// Lớp riêng có giáo trình copy — tách khỏi class-1/class-2 của các
+		// test khác để không làm lệch mapping buổi N ↔ bài N của chúng.
+		await db.insert(schema.classTable).values({
+			id: "class-cur",
+			orgId: "org-1",
+			name: "IELTS GT",
+			level: "6.5",
+			type: "ielts",
+			skills: '["reading"]',
+			mode: "Online",
+			schedule: '{"days":[1],"start":"18:00","end":"20:00"}',
+			sessionsTotal: 4,
+			sessionsDone: 0,
+			status: "active",
+			startDate: "2026-11-01",
+			notes: "",
+		});
+		await db.insert(schema.enrollment).values({
+			id: "enr-cur",
+			orgId: "org-1",
+			classId: "class-cur",
+			studentId: "stu-1",
+			status: "active",
+		});
+		// Hai buổi dạy: buổi 1 (2026-11-03) trống, buổi 2 (SESSION_DATE)
+		// ánh xạ bài 2 của giáo trình.
+		const lessonBase = { orgId: "org-1", day: 2, time: "18:00", dur: 120 };
+		await db.insert(schema.lesson).values([
+			{
+				...lessonBase,
+				id: "l-cur-1",
+				classId: "class-cur",
+				enrollmentId: "enr-cur",
+				date: "2026-11-03",
+			},
+			{
+				...lessonBase,
+				id: "l-cur-2",
+				classId: "class-cur",
+				enrollmentId: "enr-cur",
+				date: SESSION_DATE,
+			},
+		]);
+		// Copy giáo trình của class-cur: 1 module, 2 bài — buổi N ↔ bài N.
+		await db.insert(schema.syllabus).values({
+			id: "cur-copy",
+			orgId: "org-1",
+			name: "Giáo trình GT",
+			level: "6.5",
+			type: "ielts",
+			skills: '["reading"]',
+			description: "",
+			totalLessons: 2,
+			classId: "class-cur",
+		});
+		await db.insert(schema.syllabusModule).values({
+			id: "cur-m1",
+			orgId: "org-1",
+			syllabusId: "cur-copy",
+			title: "M1",
+			position: 0,
+		});
+		await db.insert(schema.syllabusLesson).values([
+			{
+				id: "cur-ls1",
+				orgId: "org-1",
+				moduleId: "cur-m1",
+				title: "Bài 1",
+				position: 0,
+			},
+			{
+				id: "cur-ls2",
+				orgId: "org-1",
+				moduleId: "cur-m1",
+				title: "Bài 2",
+				position: 1,
+			},
+		]);
+		// Ngân hàng: 1 file (thử tải file tài liệu giáo trình) + 2 link, một
+		// link cũng được gắn direct để kiểm dedupe (direct ưu tiên).
+		// Cast có tên: JSON từ test server tự quan sát qua assertions dưới.
+		const uploadBody = (await (
+			await upload("/api/materials/files", {
+				name: "GT Worksheet.pdf",
+				bytes: new Uint8Array([5, 6]),
+			})
+		).json()) as { material: MaterialView };
+		const bankFile = uploadBody.material;
+		const bankLink = await createLink("GT link");
+		const dup = await createLink("Trùng direct");
+		await db.insert(schema.syllabusLessonMaterial).values([
+			{
+				orgId: "org-1",
+				syllabusLessonId: "cur-ls2",
+				materialId: bankFile.id,
+				position: 0,
+			},
+			{
+				orgId: "org-1",
+				syllabusLessonId: "cur-ls2",
+				materialId: bankLink.id,
+				position: 1,
+			},
+			{
+				orgId: "org-1",
+				syllabusLessonId: "cur-ls2",
+				materialId: dup.id,
+				position: 2,
+			},
+		]);
+		// Direct của buổi SESSION_DATE.
+		const directLink = await createLink("Direct link");
+		const curSessionPath = `/api/classes/class-cur/sessions/${SESSION_DATE}/materials`;
+		await json(curSessionPath, "POST", { materialId: dup.id });
+		await json(curSessionPath, "POST", { materialId: directLink.id });
+
+		const curPath = `/api/student/classes/class-cur/sessions/${SESSION_DATE}/materials`;
+		const res = await get(curPath, "student-1");
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as {
+			items: StudentLessonMaterialView[];
+			curriculumMaterials: StudentLessonMaterialView[];
+		};
+		// Direct trước theo position.
+		expect(body.items.map((i) => i.id)).toEqual([dup.id, directLink.id]);
+		// Curriculum sau theo link position, đã dedupe (dup chỉ nằm ở direct).
+		expect(body.curriculumMaterials.map((i) => i.id)).toEqual([
+			bankFile.id,
+			bankLink.id,
+		]);
+		// Hợp danh sách: mỗi materialId đúng 1 lần.
+		const allIds = [...body.items, ...body.curriculumMaterials].map(
+			(i) => i.id,
+		);
+		expect(new Set(allIds).size).toBe(allIds.length);
+
+		// Projection nghiêm StudentLessonMaterialView — không lộ teacher-only.
+		const raw = JSON.stringify(body);
+		expect(raw).not.toContain("objectKey");
+		expect(raw).not.toContain("createdBy");
+		expect(raw).not.toContain("org-1/");
+		expect(raw).not.toContain("t-1");
+
+		// File tài liệu giáo trình tải được qua endpoint file của buổi.
+		const download = await get(`${curPath}/${bankFile.id}/file`, "student-1");
+		expect(download.status).toBe(200);
+		expect(new Uint8Array(await download.arrayBuffer())).toEqual(
+			new Uint8Array([5, 6]),
+		);
+		// Link giáo trình không có file (như link direct).
+		expect(
+			(await get(`${curPath}/${bankLink.id}/file`, "student-1")).status,
+		).toBe(404);
+		// Tài liệu ngân hàng thuộc BÀI KHÁC (không ánh xạ buổi này) vẫn 404.
+		const otherLessonBank = await createLink("Thuộc bài 1");
+		await db.insert(schema.syllabusLessonMaterial).values({
+			orgId: "org-1",
+			syllabusLessonId: "cur-ls1",
+			materialId: otherLessonBank.id,
+			position: 0,
+		});
+		expect(
+			(await get(`${curPath}/${otherLessonBank.id}/file`, "student-1")).status,
+		).toBe(404);
+
+		// Buổi trống (không direct, bài ánh xạ không có links mới) → rỗng.
+		const emptyRes = await get(
+			"/api/student/classes/class-cur/sessions/2026-11-03/materials",
+			"student-1",
+		);
+		expect(emptyRes.status).toBe(200);
+		const emptyBody = (await emptyRes.json()) as {
+			items: StudentLessonMaterialView[];
+			curriculumMaterials: StudentLessonMaterialView[];
+		};
+		expect(emptyBody.items).toEqual([]);
+		// Bài 1 có otherLessonBank nhưng buổi 2026-11-03 ánh xạ bài 1 → có
+		// đúng tài liệu của bài 1, không xuyên sang bài 2.
+		expect(emptyBody.curriculumMaterials.map((i) => i.id)).toEqual([
+			otherLessonBank.id,
+		]);
+
+		// Học viên lớp khác vẫn bị chặn cả list lẫn file.
+		expect((await get(curPath, "student-2")).status).toBe(404);
+		expect(
+			(await get(`${curPath}/${bankFile.id}/file`, "student-2")).status,
+		).toBe(404);
+	});
+
 	test("moving a session date carries its materials along", async () => {
 		const link = await createLink("Moves with session");
 		await json(sessionPath("class-2"), "POST", { materialId: link.id });
@@ -966,7 +1156,9 @@ describe("material delete guard + curriculumMaterials (#655)", () => {
 		await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
 		db = libsql as unknown as Db;
 
-		await db.insert(schema.organization).values({ id: "org-1", name: "Academy" });
+		await db
+			.insert(schema.organization)
+			.values({ id: "org-1", name: "Academy" });
 		await db.insert(schema.user).values({
 			id: "t-1",
 			name: "Cô Lan",
@@ -1074,16 +1266,66 @@ describe("material delete guard + curriculumMaterials (#655)", () => {
 			},
 		]);
 		await db.insert(schema.material).values([
-			{ id: "mat-1", orgId: "org-1", title: "Đề buổi 1", kind: "link", url: "https://a.example/1", createdBy: "t-1" },
-			{ id: "mat-2", orgId: "org-1", title: "Đề buổi 2", kind: "link", url: "https://a.example/2", createdBy: "t-1" },
-			{ id: "mat-3", orgId: "org-1", title: "Đề buổi 2 thêm", kind: "link", url: "https://a.example/3", createdBy: "t-1" },
-			{ id: "mat-direct", orgId: "org-1", title: "Tài liệu direct", kind: "link", url: "https://a.example/d", createdBy: "t-1" },
-			{ id: "mat-free", orgId: "org-1", title: "Tài liệu rảnh", kind: "link", url: "https://a.example/f", createdBy: "t-1" },
+			{
+				id: "mat-1",
+				orgId: "org-1",
+				title: "Đề buổi 1",
+				kind: "link",
+				url: "https://a.example/1",
+				createdBy: "t-1",
+			},
+			{
+				id: "mat-2",
+				orgId: "org-1",
+				title: "Đề buổi 2",
+				kind: "link",
+				url: "https://a.example/2",
+				createdBy: "t-1",
+			},
+			{
+				id: "mat-3",
+				orgId: "org-1",
+				title: "Đề buổi 2 thêm",
+				kind: "link",
+				url: "https://a.example/3",
+				createdBy: "t-1",
+			},
+			{
+				id: "mat-direct",
+				orgId: "org-1",
+				title: "Tài liệu direct",
+				kind: "link",
+				url: "https://a.example/d",
+				createdBy: "t-1",
+			},
+			{
+				id: "mat-free",
+				orgId: "org-1",
+				title: "Tài liệu rảnh",
+				kind: "link",
+				url: "https://a.example/f",
+				createdBy: "t-1",
+			},
 		]);
 		await db.insert(schema.syllabusLessonMaterial).values([
-			{ orgId: "org-1", syllabusLessonId: "ls-1", materialId: "mat-1", position: 0 },
-			{ orgId: "org-1", syllabusLessonId: "ls-2", materialId: "mat-2", position: 0 },
-			{ orgId: "org-1", syllabusLessonId: "ls-2", materialId: "mat-3", position: 1 },
+			{
+				orgId: "org-1",
+				syllabusLessonId: "ls-1",
+				materialId: "mat-1",
+				position: 0,
+			},
+			{
+				orgId: "org-1",
+				syllabusLessonId: "ls-2",
+				materialId: "mat-2",
+				position: 0,
+			},
+			{
+				orgId: "org-1",
+				syllabusLessonId: "ls-2",
+				materialId: "mat-3",
+				position: 1,
+			},
 		]);
 
 		app = buildApp({

@@ -12,6 +12,7 @@ import { type Context, Hono } from "hono";
 import type { Db } from "../app";
 import { materialFileResponse } from "../lib/material-file-response";
 import type { MediaStore } from "../lib/media-store";
+import { resolveCurriculumMaterials } from "../lib/session-curriculum-materials";
 import {
 	createStudentGuard,
 	type StudentEnv,
@@ -109,7 +110,23 @@ export function studentMaterialRoutes(deps: StudentMaterialRouteDeps) {
 			...row,
 			kind: isMaterialKind(row.kind) ? row.kind : "file",
 		}));
-		return c.json({ items });
+		// #655: thêm tài liệu ngân hàng gắn qua giáo trình (buổi N ↔ bài N).
+		// Shape mirror route teacher GET cùng path: `items` giữ nguyên nghĩa
+		// tài liệu direct (backward-compat), nguồn giáo trình ở field riêng
+		// `curriculumMaterials` — projection của helper đã là
+		// `StudentLessonMaterialView` (SyllabusBankMaterialRef), dedupe theo
+		// materialId với direct, direct ưu tiên. UI học viên tự hợp thành một
+		// danh sách (direct theo position trước, curriculum theo position sau).
+		const directIds = new Set(items.map((item) => item.id));
+		const curriculumMaterials = (
+			await resolveCurriculumMaterials(
+				deps.getDb(),
+				session.orgId,
+				session.classId,
+				session.date,
+			)
+		).filter((ref) => !directIds.has(ref.id));
+		return c.json({ items, curriculumMaterials });
 	});
 
 	router.get(`${SESSION_PATH}/:materialId/file`, async (c) => {
@@ -148,12 +165,51 @@ export function studentMaterialRoutes(deps: StudentMaterialRouteDeps) {
 				),
 			)
 			.limit(1);
-		if (!row || row.objectKey === null) {
+		if (row && row.objectKey !== null) {
+			const response = await materialFileResponse(
+				store,
+				{ ...row, objectKey: row.objectKey },
+				{
+					rangeHeader: c.req.header("Range"),
+					download: c.req.query("download") === "1",
+				},
+			);
+			return response ?? c.json({ error: "material not found" }, 404);
+		}
+		// #655: tài liệu gắn qua giáo trình của lớp không có dòng
+		// lessonMaterial — học viên của buổi vẫn mở/tải được file. materialId
+		// phải thuộc bài giáo trình ánh xạ buổi này (authorization như trên
+		// không đổi), projection trả file không thêm trường teacher-only.
+		const materialId = c.req.param("materialId");
+		const curriculum = await resolveCurriculumMaterials(
+			deps.getDb(),
+			session.orgId,
+			session.classId,
+			session.date,
+		);
+		if (!curriculum.some((ref) => ref.id === materialId)) {
+			return c.json({ error: "material not found" }, 404);
+		}
+		const [bank] = await deps
+			.getDb()
+			.select({
+				objectKey: material.objectKey,
+				mimeType: material.mimeType,
+				sizeBytes: material.sizeBytes,
+				originalName: material.originalName,
+				kind: material.kind,
+			})
+			.from(material)
+			.where(
+				and(eq(material.id, materialId), eq(material.orgId, session.orgId)),
+			)
+			.limit(1);
+		if (!bank || bank.objectKey === null) {
 			return c.json({ error: "material not found" }, 404);
 		}
 		const response = await materialFileResponse(
 			store,
-			{ ...row, objectKey: row.objectKey },
+			{ ...bank, objectKey: bank.objectKey },
 			{
 				rangeHeader: c.req.header("Range"),
 				download: c.req.query("download") === "1",
