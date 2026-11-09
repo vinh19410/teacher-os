@@ -26,13 +26,14 @@ async function seedBankLink(page: Page, title: string) {
 }
 
 /** Mở picker "Chọn từ ngân hàng tài liệu" từ dialog đang mở và gắn một tài
- * liệu theo tiêu đề, rồi bấm Quay lại. */
+ * liệu theo tiêu đề, rồi bấm Đóng (footer modal picker). */
 async function pickFromBank(page: Page, title: string) {
 	const picker = page.getByRole("dialog", {
 		name: "Chọn từ ngân hàng tài liệu",
 	});
 	await picker.getByRole("button", { name: `Gắn ${title}` }).click();
-	await picker.getByRole("button", { name: "Quay lại" }).click();
+	await picker.getByRole("button", { name: "Đóng" }).click();
+	await expect(picker).toBeHidden();
 }
 
 test("lớp manual: tạo buổi học kèm tài liệu từ ngân hàng", async ({
@@ -52,7 +53,9 @@ test("lớp manual: tạo buổi học kèm tài liệu từ ngân hàng", async
 	});
 
 	await page.goto(`/classes/${classId}`);
-	await page.getByRole("button", { name: "+ Thêm buổi học" }).click();
+	// Trang manual có 2 nút cùng tên (PageHead + CTA empty state) — cả hai
+	// mở cùng modal, chọn nút đầu (PageHead).
+	await page.getByRole("button", { name: "+ Thêm buổi học" }).first().click();
 	const dialog = page.getByRole("dialog", { name: "Thêm buổi học" });
 	await expect(dialog).toBeVisible();
 	await dialog.getByLabel(/Chủ đề buổi học/).fill(TOPIC);
@@ -118,8 +121,9 @@ test("syllabus: thêm buổi học trong template có tài liệu, lớp tạo t
 	await dialog.getByRole("button", { name: "Thêm buổi" }).click();
 	await expect(dialog).toBeHidden();
 
-	// Cây giáo trình hiển thị link vừa gắn.
-	await expect(page.getByText(TITLE).first()).toBeVisible();
+	// Bài vừa thêm hiện trong cây giáo trình (badge đếm tài liệu đã có unit
+	// test; assertion mạnh thật sự là kế thừa ở lớp bên dưới).
+	await expect(page.getByText("Passive voice").first()).toBeVisible();
 
 	// Tạo lớp từ template → buổi 1 ứng bài 1 kế thừa tài liệu.
 	const classId = await seedDatedClass(page, {
