@@ -174,7 +174,11 @@ export function createStudentGuard(deps: StudentRouteDeps) {
 			}
 		}
 
-		const requestedOrgId = c.req.header("x-student-org-id");
+		// Thẻ <audio>/<video> và link tải không gửi được header, nên cho phép
+		// `?org=` làm phương án dự phòng; giá trị vẫn chỉ khớp với các hồ sơ
+		// học viên của chính phiên đăng nhập này (rows).
+		const requestedOrgId =
+			c.req.header("x-student-org-id") ?? c.req.query("org");
 		let matchedStudent = rows[0];
 
 		if (requestedOrgId) {

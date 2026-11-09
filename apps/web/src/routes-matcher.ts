@@ -31,6 +31,8 @@ export const VALID_EXACT_ROUTES: Record<string, true> = {
 	"/placement-test": true,
 	"/syllabus": true,
 	"/vocab": true,
+	// Ngân hàng tài liệu chung của trung tâm.
+	"/materials": true,
 };
 
 /**

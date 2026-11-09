@@ -447,6 +447,46 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 		}
 	});
 
+	test("multi-org student can pick the org via ?org= when headers cannot be sent", async () => {
+		await libsql
+			.update(schema.student)
+			.set({ email: "trung@test.local" })
+			.where(eq(schema.student.id, "student-amb-2"));
+
+		try {
+			for (const orgId of ["org-1", "org-2"]) {
+				const res = await app.request(`/api/student/me?org=${orgId}`, {
+					headers: { "x-test-user": "ambiguous" },
+				});
+				expect(res.status).toBe(200);
+				const body = (await res.json()) as { student: { orgId: string } };
+				expect(body.student.orgId).toBe(orgId);
+			}
+
+			// An org the session has no student record in never grants access.
+			const foreign = await app.request("/api/student/me?org=org-not-mine", {
+				headers: { "x-test-user": "ambiguous" },
+			});
+			expect(foreign.status).toBe(200);
+			const foreignBody = (await foreign.json()) as {
+				student: { orgId: string };
+			};
+			expect(["org-1", "org-2"]).toContain(foreignBody.student.orgId);
+
+			// Header wins over the query fallback.
+			const both = await app.request("/api/student/me?org=org-2", {
+				headers: { "x-test-user": "ambiguous", "x-student-org-id": "org-1" },
+			});
+			const bothBody = (await both.json()) as { student: { orgId: string } };
+			expect(bothBody.student.orgId).toBe("org-1");
+		} finally {
+			await libsql
+				.update(schema.student)
+				.set({ email: "" })
+				.where(eq(schema.student.id, "student-amb-2"));
+		}
+	});
+
 	// (d) email matches but emailVerified = false -> 403 STUDENT_EMAIL_UNVERIFIED
 	test("(d) unverified email returns 403 STUDENT_EMAIL_UNVERIFIED", async () => {
 		const res = await app.request("/api/student/me", {
