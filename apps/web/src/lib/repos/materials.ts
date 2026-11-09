@@ -10,7 +10,6 @@
  */
 import {
 	checkMaterialUpload,
-	type LessonMaterialListResponse,
 	type LessonMaterialView,
 	MATERIAL_ERROR_CODES,
 	type MaterialErrorCode,
@@ -24,6 +23,7 @@ import {
 	type MaterialUpdateInput,
 	type MaterialView,
 	resolveMaterialMimeType,
+	type SyllabusBankMaterialRef,
 } from "@teacher-os/api/material-contracts";
 import { HttpError } from "@/lib/kernel-load-state";
 import { getApiBaseUrl } from "./api-base-url";
@@ -370,16 +370,26 @@ function sessionPath(classId: string, date: string): string {
 	return `/api/classes/${encodeURIComponent(classId)}/sessions/${encodeURIComponent(date)}/materials`;
 }
 
+/**
+ * Response materials của một buổi: `items` là tài liệu đính kèm trực tiếp;
+ * `curriculumMaterials` là tài liệu giáo trình copy xuống theo buổi N ↔ bài N
+ * (#655) — chỉ đọc, thêm/gỡ ở giáo trình của lớp. Vắng mặt với API cũ.
+ */
+export interface SessionMaterialsResponse {
+	items: LessonMaterialView[];
+	curriculumMaterials?: SyllabusBankMaterialRef[];
+}
+
 export async function fetchSessionMaterials(
 	classId: string,
 	date: string,
 	signal?: AbortSignal,
-): Promise<LessonMaterialView[]> {
-	const body = await request<LessonMaterialListResponse>(
+): Promise<SessionMaterialsResponse> {
+	const body = await request<SessionMaterialsResponse>(
 		sessionPath(classId, date),
 		{ signal },
 	);
-	return body.items;
+	return body;
 }
 
 export async function attachSessionMaterial(

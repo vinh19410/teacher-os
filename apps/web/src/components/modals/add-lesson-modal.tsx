@@ -1,4 +1,6 @@
+import type { SyllabusBankMaterialRef } from "@teacher-os/api/material-contracts";
 import { type FormEvent, useState } from "react";
+import { MaterialPicker } from "@/components/materials/material-picker";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
@@ -27,6 +29,10 @@ export function AddLessonModal({
 	const [title, setTitle] = useState("");
 	const [objectives, setObjectives] = useState("");
 	const [materials, setMaterials] = useState("");
+	// Tài liệu ngân hàng chọn cho bài mới (#655) — chỉ materialIds đi lên payload.
+	const [bankMaterials, setBankMaterials] = useState<SyllabusBankMaterialRef[]>(
+		[],
+	);
 	const [kind, setKind] = useState<SyllabusLessonKind>("lesson");
 	const [status, setStatus] = useState<SyllabusLessonStatus>("upcoming");
 	const { saving, error, setError, notice, submitBlocked, run, reconcile } =
@@ -36,6 +42,7 @@ export function AddLessonModal({
 		setTitle("");
 		setObjectives("");
 		setMaterials("");
+		setBankMaterials([]);
 		setKind("lesson");
 		setStatus("upcoming");
 	}
@@ -60,6 +67,11 @@ export function AddLessonModal({
 				// default "lesson" (mirror showStatus, issue #154).
 				...(showKind ? { kind } : {}),
 				...(showStatus ? { status } : {}),
+				// #655: chỉ gửi materialIds khi khác rỗng — thiếu key, server
+				// default [] trên bài mới (nhất quán với add-manual-session).
+				...(bankMaterials.length > 0
+					? { materialIds: bankMaterials.map((m) => m.id) }
+					: {}),
 			},
 		});
 		if (result?.kind === "refreshed") {
@@ -104,6 +116,26 @@ export function AddLessonModal({
 						placeholder="VD: Cam 15 Test 1 Task 1"
 					/>
 				</Field>
+				{/* biome-ignore lint/a11y/useSemanticElements: role="group" + aria-label đặt tên nhóm tài liệu theo pattern ChipFilter cho SR/e2e */}
+				<div
+					role="group"
+					aria-label="Tài liệu ngân hàng"
+					className="grid gap-2"
+				>
+					<p className="font-medium text-sm leading-none">Tài liệu ngân hàng</p>
+					<MaterialPicker
+						selected={bankMaterials}
+						onPick={(ref) =>
+							setBankMaterials((prev) =>
+								prev.some((m) => m.id === ref.id) ? prev : [...prev, ref],
+							)
+						}
+						onRemove={(id) =>
+							setBankMaterials((prev) => prev.filter((m) => m.id !== id))
+						}
+						disabled={saving}
+					/>
+				</div>
 				{showKind && (
 					<Field label="Loại buổi học">
 						<Select

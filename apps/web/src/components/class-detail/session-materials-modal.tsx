@@ -1,42 +1,36 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { MATERIAL_ROOT_FOLDER } from "@teacher-os/api/material-contracts";
 import { ArrowLeft, Library, Unlink, Upload } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { UPLOAD_HELP } from "@/components/materials/material-dialogs";
 import {
 	MaterialItem,
 	MaterialOpenActions,
 } from "@/components/materials/material-item";
+import { MaterialBankBrowser } from "@/components/materials/material-picker";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Field, Input, Select } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { isHttpError } from "@/lib/kernel-load-state";
-import { flattenFolderTree } from "@/lib/material-folders";
 import { reauth } from "@/lib/reauth";
 import {
 	attachSessionMaterial,
 	detachSessionMaterial,
-	fetchMaterialFolders,
-	fetchMaterials,
 	fetchSessionMaterials,
-	type MaterialListParams,
 	materialErrorMessage,
-	materialFoldersQueryKey,
-	materialListQueryKey,
 	materialsAllQueryKey,
 	prepareMaterialUpload,
 	sessionMaterialsQueryKey,
 	uploadSessionMaterial,
 } from "@/lib/repos/materials";
 
-const ALL_FOLDERS = "";
-
 /**
  * Tài liệu của một buổi học (lớp + ngày): liệt kê tài liệu đã gắn, gỡ, chọn
  * thêm từ ngân hàng (duyệt thư mục + tìm kiếm) hoặc tải file mới — file tải
- * lên luôn nằm trong ngân hàng, buổi học chỉ tham chiếu. Parent chỉ mount
- * khi mở nên không có query nào chạy cho các buổi đang đóng.
+ * lên luôn nằm trong ngân hàng, buổi học chỉ tham chiếu. Kèm danh sách chỉ
+ * đọc "Từ giáo trình" (#655): tài liệu copy theo buổi N ↔ bài N, thêm/gỡ ở
+ * giáo trình của lớp. Parent chỉ mount khi mở nên không có query nào chạy
+ * cho các buổi đang đóng.
  */
 export function SessionMaterialsModal({
 	classId,
@@ -57,7 +51,10 @@ export function SessionMaterialsModal({
 		queryKey: sessionKey,
 		queryFn: ({ signal }) => fetchSessionMaterials(classId, dateISO, signal),
 	});
-	const attachedIds = new Set((sessionQuery.data ?? []).map((m) => m.id));
+	const items = sessionQuery.data?.items ?? [];
+	// Tài liệu giáo trình của buổi — server resolve theo vị trí buổi N ↔ bài N.
+	const curriculum = sessionQuery.data?.curriculumMaterials ?? [];
+	const attachedIds = new Set(items.map((m) => m.id));
 
 	const handleError = async (err: unknown) => {
 		if (isHttpError(err) && err.status === 401) {
@@ -110,8 +107,6 @@ export function SessionMaterialsModal({
 		upload.mutate({ file, mimeType: prep.mimeType });
 	}
 
-	const items = sessionQuery.data ?? [];
-
 	return (
 		<Modal
 			open
@@ -147,11 +142,11 @@ export function SessionMaterialsModal({
 				</p>
 			)}
 			{view === "pick" ? (
-				<MaterialPicker
-					attachedIds={attachedIds}
-					attachingId={attach.isPending ? attach.variables : undefined}
+				<MaterialBankBrowser
+					selectedIds={attachedIds}
+					pendingId={attach.isPending ? attach.variables : undefined}
 					disabled={busy}
-					onAttach={(id) => attach.mutate(id)}
+					onPick={(ref) => attach.mutate(ref.id)}
 				/>
 			) : (
 				<>
@@ -205,7 +200,7 @@ export function SessionMaterialsModal({
 								Thử lại
 							</Button>
 						</div>
-					) : items.length === 0 ? (
+					) : items.length === 0 && curriculum.length === 0 ? (
 						<p
 							className="rounded-lg border border-dashed p-4 text-center text-muted-foreground text-sm"
 							data-testid="session-materials-empty"
@@ -214,153 +209,58 @@ export function SessionMaterialsModal({
 							mới.
 						</p>
 					) : (
-						<ul className="grid gap-2" aria-label="Tài liệu đã gắn">
-							{items.map((item) => (
-								<MaterialItem
-									key={item.id}
-									item={item}
-									actions={
-										<>
-											<MaterialOpenActions item={item} />
-											<Button
-												variant="ghost"
-												size="sm"
-												disabled={busy}
-												aria-label={`Gỡ ${item.title}`}
-												onClick={() => detach.mutate(item.id)}
-											>
-												<Unlink aria-hidden="true" />
-												<span className="max-sm:sr-only">Gỡ</span>
-											</Button>
-										</>
-									}
-								/>
-							))}
-						</ul>
+						<>
+							{items.length > 0 && (
+								<ul className="grid gap-2" aria-label="Tài liệu đã gắn">
+									{items.map((item) => (
+										<MaterialItem
+											key={item.id}
+											item={item}
+											actions={
+												<>
+													<MaterialOpenActions item={item} />
+													<Button
+														variant="ghost"
+														size="sm"
+														disabled={busy}
+														aria-label={`Gỡ ${item.title}`}
+														onClick={() => detach.mutate(item.id)}
+													>
+														<Unlink aria-hidden="true" />
+														<span className="max-sm:sr-only">Gỡ</span>
+													</Button>
+												</>
+											}
+										/>
+									))}
+								</ul>
+							)}
+							{curriculum.length > 0 && (
+								<div className="grid gap-2">
+									<p className="text-muted-foreground text-xs">
+										Copy theo bài của buổi — thêm/gỡ ở giáo trình của lớp.
+									</p>
+									<ul
+										className="grid gap-2"
+										aria-label="Tài liệu từ giáo trình"
+										data-testid="session-curriculum-materials"
+									>
+										{curriculum.map((item) => (
+											<MaterialItem
+												key={item.id}
+												item={item}
+												actions={
+													<Badge variant="secondary">Từ giáo trình</Badge>
+												}
+											/>
+										))}
+									</ul>
+								</div>
+							)}
+						</>
 					)}
 				</>
 			)}
 		</Modal>
-	);
-}
-
-function MaterialPicker({
-	attachedIds,
-	attachingId,
-	disabled,
-	onAttach,
-}: {
-	attachedIds: ReadonlySet<string>;
-	attachingId: string | undefined;
-	disabled: boolean;
-	onAttach: (materialId: string) => void;
-}) {
-	const folderSelectId = useId();
-	const searchId = useId();
-	const [folderId, setFolderId] = useState(ALL_FOLDERS);
-	const [query, setQuery] = useState("");
-	const [debounced, setDebounced] = useState("");
-	useEffect(() => {
-		const timer = setTimeout(() => setDebounced(query.trim()), 300);
-		return () => clearTimeout(timer);
-	}, [query]);
-
-	const foldersQuery = useQuery({
-		queryKey: materialFoldersQueryKey,
-		queryFn: ({ signal }) => fetchMaterialFolders(signal),
-	});
-	const params: MaterialListParams = {
-		...(debounced ? { q: debounced } : {}),
-		...(folderId !== ALL_FOLDERS ? { folderId } : {}),
-	};
-	const listQuery = useQuery({
-		queryKey: materialListQueryKey(params),
-		queryFn: ({ signal }) => fetchMaterials(params, signal),
-	});
-	const rows = flattenFolderTree(foldersQuery.data ?? []);
-	const items = listQuery.data ?? [];
-
-	return (
-		<>
-			<div className="grid gap-3 sm:grid-cols-2">
-				<Field label="Thư mục" htmlFor={folderSelectId}>
-					<Select
-						id={folderSelectId}
-						value={folderId}
-						onChange={(e) => setFolderId(e.target.value)}
-					>
-						<option value={ALL_FOLDERS}>Tất cả thư mục</option>
-						<option value={MATERIAL_ROOT_FOLDER}>Chưa xếp thư mục</option>
-						{rows.map(({ folder, depth }) => (
-							<option key={folder.id} value={folder.id}>
-								{`${"  ".repeat(depth)}${depth > 0 ? "└ " : ""}${folder.name}`}
-							</option>
-						))}
-					</Select>
-				</Field>
-				<Field label="Tìm kiếm" htmlFor={searchId}>
-					<Input
-						id={searchId}
-						type="search"
-						value={query}
-						onChange={(e) => setQuery(e.target.value)}
-						placeholder="Tiêu đề, mô tả…"
-					/>
-				</Field>
-			</div>
-			{listQuery.isPending ? (
-				<p className="text-muted-foreground text-sm">Đang tải tài liệu…</p>
-			) : listQuery.isError ? (
-				<div role="alert" className="text-sm">
-					<p>{materialErrorMessage(listQuery.error)}</p>
-					<Button
-						variant="link"
-						size="sm"
-						className="px-0"
-						onClick={() => void listQuery.refetch()}
-					>
-						Thử lại
-					</Button>
-				</div>
-			) : items.length === 0 ? (
-				<p className="rounded-lg border border-dashed p-4 text-center text-muted-foreground text-sm">
-					{debounced || folderId !== ALL_FOLDERS
-						? "Không có tài liệu phù hợp."
-						: "Ngân hàng chưa có tài liệu. Dùng “Tải lên mới” hoặc thêm ở trang Tài liệu."}
-				</p>
-			) : (
-				<ul
-					className="grid max-h-[50vh] gap-2 overflow-y-auto"
-					aria-label="Tài liệu trong ngân hàng"
-				>
-					{items.map((item) => {
-						const attached = attachedIds.has(item.id);
-						return (
-							<MaterialItem
-								key={item.id}
-								item={item}
-								actions={
-									<Button
-										variant={attached ? "ghost" : "outline"}
-										size="sm"
-										disabled={attached || disabled}
-										aria-label={
-											attached ? `Đã gắn ${item.title}` : `Gắn ${item.title}`
-										}
-										onClick={() => onAttach(item.id)}
-									>
-										{attached
-											? "Đã gắn"
-											: attachingId === item.id
-												? "Đang gắn…"
-												: "Gắn"}
-									</Button>
-								}
-							/>
-						);
-					})}
-				</ul>
-			)}
-		</>
 	);
 }

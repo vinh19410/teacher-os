@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, screen } from "@testing-library/react";
+import {
+	cleanup,
+	fireEvent,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	AddClassSessionModal,
@@ -12,6 +18,7 @@ import {
 	snapshotFixture,
 	startKernelServer,
 } from "@/test/kernel-harness";
+import { startMaterialsBankServer } from "@/test/materials-harness";
 
 const testClass: ClassGroup = {
 	id: "cls-1",
@@ -141,5 +148,97 @@ describe("AddClassSessionModal", () => {
 
 		fireEvent.click(submitBtn);
 		expect(screen.getByText("Lớp đã có buổi học vào ngày này.")).toBeTruthy();
+	});
+
+	/** Mở form, chọn 1 tài liệu từ ngân hàng qua picker. */
+	async function openWithPickedMaterial() {
+		const server = startMaterialsBankServer();
+		renderWithKernel(
+			<AddClassSessionModal
+				open
+				onClose={vi.fn()}
+				cls={testClass}
+				existingDateISOs={[]}
+			/>,
+		);
+		const dialog = await screen.findByRole("dialog", {
+			name: "Thêm buổi học thủ công",
+		});
+		fireEvent.click(
+			await within(dialog).findByRole("button", { name: "Chọn từ ngân hàng" }),
+		);
+		const pickerDialog = await screen.findByRole("dialog", {
+			name: "Chọn từ ngân hàng tài liệu",
+		});
+		fireEvent.click(
+			await within(pickerDialog).findByRole("button", {
+				name: "Gắn Reading pack",
+			}),
+		);
+		// Chip đã chọn hiện trong form chính (list "Tài liệu đã chọn" — tránh
+		// trùng tiêu đề trong danh sách duyệt đang mở lồng nhau).
+		const chips = await within(dialog).findByRole("list", {
+			name: "Tài liệu đã chọn",
+		});
+		expect(within(chips).getByText("Reading pack")).toBeTruthy();
+		fireEvent.change(within(dialog).getByLabelText(/Chủ đề buổi học/), {
+			target: { value: "With materials" },
+		});
+		return { server, dialog };
+	}
+
+	it("sends materialIds of picked bank materials in the session payload", async () => {
+		const { server, dialog } = await openWithPickedMaterial();
+
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Thêm buổi học" }),
+		);
+		await waitFor(() =>
+			expect(
+				server.writes.find(
+					(req) =>
+						req.method === "POST" && req.path === "/api/classes/cls-1/sessions",
+				),
+			).toBeTruthy(),
+		);
+		const write = server.writes.find(
+			(req) =>
+				req.method === "POST" && req.path === "/api/classes/cls-1/sessions",
+		);
+		expect(write?.body).toMatchObject({
+			topic: "With materials",
+			materialIds: ["mat-1"],
+		});
+	});
+
+	it("drops the materialIds key after the chip is removed", async () => {
+		const { server, dialog } = await openWithPickedMaterial();
+
+		// Gỡ chip: payload không còn materialIds (server default []).
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Gỡ Reading pack" }),
+		);
+		await waitFor(() =>
+			expect(
+				within(dialog).queryByRole("list", { name: "Tài liệu đã chọn" }),
+			).toBeNull(),
+		);
+
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Thêm buổi học" }),
+		);
+		await waitFor(() =>
+			expect(
+				server.writes.find(
+					(req) =>
+						req.method === "POST" && req.path === "/api/classes/cls-1/sessions",
+				),
+			).toBeTruthy(),
+		);
+		const write = server.writes.find(
+			(req) =>
+				req.method === "POST" && req.path === "/api/classes/cls-1/sessions",
+		);
+		expect(write?.body).not.toHaveProperty("materialIds");
 	});
 });
