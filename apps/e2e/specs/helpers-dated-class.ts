@@ -15,6 +15,7 @@ export async function seedDatedClass(
 		schedule?: { days?: number[]; start?: string; end?: string };
 		startDate: string;
 		sessionsTotal?: number;
+		schedulingMode?: "auto" | "manual";
 		students?: { teacherEmail?: string; names: string[] };
 	},
 ): Promise<string> {
@@ -33,6 +34,7 @@ export async function seedDatedClass(
 			},
 			sessionsTotal: opts.sessionsTotal ?? 4,
 			startDate: opts.startDate,
+			schedulingMode: opts.schedulingMode ?? "auto",
 		},
 		headers: {
 			Origin: WEB_ORIGIN,

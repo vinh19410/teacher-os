@@ -21,6 +21,7 @@ import {
 	classAssignment,
 	classAssignmentTarget,
 } from "@teacher-os/db/schema/class-assignment";
+import { classSession } from "@teacher-os/db/schema/class-session";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
@@ -252,6 +253,7 @@ export async function loadSnapshot(
 		holidayShiftRows,
 		holidayCancelRows,
 		eventRows,
+		classSessionRows,
 	] = await Promise.all([
 		db
 			.select()
@@ -427,6 +429,11 @@ export async function loadSnapshot(
 			.from(holidaySessionCancel)
 			.where(eq(holidaySessionCancel.orgId, orgId)),
 		loadEvents(db, orgId),
+		db
+			.select()
+			.from(classSession)
+			.where(eq(classSession.orgId, orgId))
+			.orderBy(asc(classSession.date)),
 	]);
 
 	// #208: headers BEFORE targets, strictly sequential — a write landing
@@ -598,6 +605,7 @@ export async function loadSnapshot(
 			status: row.status,
 			startDate: row.startDate,
 			tuitionFee: row.tuitionFee ?? null,
+			schedulingMode: row.schedulingMode ?? "auto",
 			notes: row.notes,
 		})),
 		enrollments: enrollmentRows.map((row) => ({
@@ -645,6 +653,15 @@ export async function loadSnapshot(
 			attendance: (row.attendance ?? null) as KernelLessonRow["attendance"],
 			attendanceNote: (row.attendanceNote ??
 				null) as KernelLessonRow["attendanceNote"],
+			topic: row.topic,
+			zoom: row.zoom,
+		})),
+		classSessions: classSessionRows.map((row) => ({
+			id: row.id,
+			classId: row.classId,
+			date: row.date,
+			time: row.time,
+			dur: row.dur,
 			topic: row.topic,
 			zoom: row.zoom,
 		})),

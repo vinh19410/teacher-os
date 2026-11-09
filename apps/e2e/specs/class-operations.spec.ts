@@ -8,6 +8,7 @@ import {
 	vietnamTodayISO,
 	vnWeekdayMon0,
 } from "./helpers";
+import { seedDatedClass } from "./helpers-dated-class";
 import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 
 /**
@@ -37,23 +38,19 @@ test("login → tạo lớp có lịch → thấy buổi → buổi tương lai 
 	// 1. Sign-up (org bootstrap happens on the first GET /api/kernel).
 	const teacherEmail = await signUpViaApi(page);
 
-	// 2. Create a scheduled class (T2+T4, Writing; keep defaults:
-	// 19:00–20:30, 12 buổi, start tomorrow).
+	// 2. Create a scheduled auto class (T2+T4, Writing, 19:00–20:30, 12 buổi, start tomorrow).
 	await page.getByText("Lớp học", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/classes$/);
-	await page.getByRole("button", { name: "+ Tạo lớp" }).click();
-	const dialog = page.getByRole("dialog");
-	await expect(dialog.getByText("Tạo lớp mới")).toBeVisible();
-	await dialog.getByLabel("Tên lớp *").fill(CLASS_NAME);
-	await dialog.getByRole("button", { name: "Writing", exact: true }).click();
-	await dialog.getByRole("button", { name: "T2", exact: true }).click();
-	await dialog.getByRole("button", { name: "T4", exact: true }).click();
-	await dialog.getByRole("button", { name: "Tạo lớp", exact: true }).click();
-	// The modal only closes after the kernel refresh applies.
-	await expect(dialog).toBeHidden();
+	await seedDatedClass(page, {
+		name: CLASS_NAME,
+		schedule: { days: [0, 2], start: "19:00", end: "20:30" },
+		startDate: addDaysISO(vietnamTodayISO(), 1),
+		sessionsTotal: 12,
+		schedulingMode: "auto",
+	});
+	await page.reload();
 	await expect(page.getByText(CLASS_NAME)).toBeVisible();
 	await expect(page.getByText("0/12 buổi")).toBeVisible();
-
 	// 3. Open the class and add a student — THIS generates the lessons.
 	await page.getByText(CLASS_NAME).click();
 	await seedStudent({ teacherEmail, name: STUDENT_NAME });

@@ -470,6 +470,13 @@
       "when": 1794161469565,
       "tag": "0066_class_materials",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "6",
+      "when": 1794210991512,
+      "tag": "0067_funny_virginia_dare",
+      "breakpoints": true
     }
   ]
 }

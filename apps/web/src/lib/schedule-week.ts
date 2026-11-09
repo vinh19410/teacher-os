@@ -16,12 +16,14 @@
 
 import {
 	findClassOccurrence,
+	lessonWeekdayFromISO,
 	type OccurrenceSidState,
 	projectClassSessions,
 	sessionStatus,
 } from "@/lib/class-sessions";
 import type {
 	ClassGroup,
+	ClassSessionItem,
 	Lesson,
 	LessonStatus,
 	LessonType,
@@ -183,17 +185,43 @@ export interface ProjectedWeekBlock {
  * Projected (display-only) blocks for the viewed week from every class that
  * has zero lesson rows. Classes with any real row are skipped entirely — the
  * projection never mixes with persisted rows.
+ *
+ * Issue #649: manual classes (`schedulingMode: "manual"`) skip the schedule
+ * skeleton projection — their real occurrences come from `classSessions`
+ * (optional 4th arg) and fall on the teacher-chosen dates, not the weekday
+ * skeleton. Without that arg a manual class simply renders no projected
+ * block (its sessions still show on the class tab).
  */
 export function selectProjectedWeekBlocks(
 	classes: readonly ClassGroup[],
 	lessons: readonly Lesson[],
 	dates: readonly string[],
+	classSessions: readonly ClassSessionItem[] = [],
 ): ProjectedWeekBlock[] {
 	const classIdsWithRows = new Set(lessons.map((l) => l.classId));
 	const dateSet = new Set(dates);
 	const blocks: ProjectedWeekBlock[] = [];
 	for (const cls of classes) {
 		if (classIdsWithRows.has(cls.id)) continue;
+		if (cls.schedulingMode === "manual") {
+			// Manual class: real occurrences only — from class_session rows.
+			const byDate = new Map<string, ClassSessionItem>();
+			for (const cs of classSessions) {
+				if (cs.classId === cls.id) byDate.set(cs.date, cs);
+			}
+			for (const dateISO of dates) {
+				const cs = byDate.get(dateISO);
+				if (!cs) continue;
+				blocks.push({
+					classId: cls.id,
+					className: cls.name,
+					day: lessonWeekdayFromISO(cs.date),
+					time: cs.time,
+					dateISO: cs.date,
+				});
+			}
+			continue;
+		}
 		const sessions = projectClassSessions({
 			schedule: cls.schedule,
 			startDate: cls.startDate,
@@ -254,6 +282,7 @@ export function buildWeekModel(
 	data: {
 		classes: ClassGroup[];
 		lessons: Lesson[];
+		classSessions?: ClassSessionItem[];
 	},
 	dates: readonly string[],
 ): WeekModel {
@@ -269,6 +298,7 @@ export function buildWeekModel(
 		data.classes,
 		data.lessons,
 		dates,
+		data.classSessions ?? [],
 	);
 	return { columns, projected, slotCount: weekSlotCount(columns, projected) };
 }

@@ -26,7 +26,13 @@ import {
 import { cn } from "@/lib/cn";
 import type { KernelAction } from "@/lib/data-actions";
 import { lessonDayLabel } from "@/lib/format-schedule";
-import type { ClassGroup, Lesson, Student, Syllabus } from "@/lib/mock-data";
+import type {
+	ClassGroup,
+	ClassSessionItem,
+	Lesson,
+	Student,
+	Syllabus,
+} from "@/lib/mock-data";
 import type { KernelCommandResult } from "@/lib/repos/kernel";
 import { todayISOVietnam } from "@/lib/week-grid";
 
@@ -56,6 +62,9 @@ export function ClassSessionsSection({
 	onSaveEdit,
 	isPending,
 	busy,
+	classSessions,
+	onAddSession,
+	onDeleteOccurrence,
 }: {
 	cls: ClassGroup;
 	/** Class-scoped rows (`classId`), not the student-scoped `classLessons`. */
@@ -76,6 +85,9 @@ export function ClassSessionsSection({
 		dateISO: string,
 		payload: OccurrenceEditPayload,
 	) => Promise<OccurrenceActionResult>;
+	classSessions?: ClassSessionItem[];
+	onAddSession?: () => void;
+	onDeleteOccurrence?: (dateISO: string) => Promise<OccurrenceActionResult>;
 	isPending: (key: string) => boolean;
 	busy: boolean;
 }) {
@@ -88,16 +100,24 @@ export function ClassSessionsSection({
 	const [actionsDateISO, setActionsDateISO] = useState<string | null>(null);
 	const [materialsDateISO, setMaterialsDateISO] = useState<string | null>(null);
 
+	// Issue #649: manual = lớp tạo không template (`schedulingMode: "manual"`)
+	// hoặc đã có buổi thủ công. `sessionsTotal === 0` không phải tín hiệu —
+	// deploy skew (server cũ) không gửi schedulingMode và lớp auto legacy
+	// phải giữ nguyên projection #121.
+	const isManual =
+		cls.schedulingMode === "manual" || (classSessions?.length ?? 0) > 0;
+
 	const sessions = buildClassSessions({
 		schedule: cls.schedule,
 		startDate: cls.startDate,
 		lessons,
 		sessionsTotal: cls.sessionsTotal,
+		manual: isManual,
+		classSessions,
 	});
-	// Projection mode: zero real rows means every displayed session is a
-	// schedule projection — display-only, rendered with the muted "Dự kiến"
-	// badge instead of the attendance states driven by row data.
-	const isProjected = lessons.length === 0 && sessions !== null;
+	// Projection mode: zero real rows for an auto-scheduled class means every displayed
+	// session is a schedule projection (display-only).
+	const isProjected = !isManual && lessons.length === 0 && sessions !== null;
 
 	if (sessions === null) {
 		return (
@@ -136,6 +156,35 @@ export function ClassSessionsSection({
 			</Section>
 		);
 	}
+	if (sessions !== null && sessions.length === 0) {
+		return (
+			<Section
+				title="Sessions"
+				action={
+					onAddSession ? (
+						<Button variant="outline" size="sm" onClick={onAddSession}>
+							+ Thêm buổi
+						</Button>
+					) : undefined
+				}
+			>
+				<div className="rounded-lg border border-border border-dashed p-8 text-center">
+					<p className="font-semibold text-sm">Chưa có buổi học nào</p>
+					<p className="mt-1 text-muted-foreground text-xs">
+						Lớp chưa có giáo trình mẫu. Bạn có thể thêm buổi học thủ công để bắt
+						đầu giảng dạy.
+					</p>
+					{onAddSession && (
+						<div className="mt-4 flex justify-center">
+							<Button size="sm" onClick={onAddSession}>
+								+ Thêm buổi học
+							</Button>
+						</div>
+					)}
+				</div>
+			</Section>
+		);
+	}
 
 	const toggleDetails = (index: number) => {
 		setExpandedDetails((prev) => {
@@ -163,7 +212,17 @@ export function ClassSessionsSection({
 
 	return (
 		<>
-			<Section title="Sessions" count={sessions.length}>
+			<Section
+				title="Sessions"
+				count={sessions.length}
+				action={
+					!syllabus && onAddSession ? (
+						<Button variant="outline" size="sm" onClick={onAddSession}>
+							+ Thêm buổi
+						</Button>
+					) : undefined
+				}
+			>
 				<ol className="grid gap-2">
 					{sessions.map((s) => {
 						const attendees = sessionStudents(s);
@@ -201,7 +260,11 @@ export function ClassSessionsSection({
 							status !== "holiday" &&
 							s.dateISO <= todayISO &&
 							attendees.length > 0;
-						const hasAdjust = !isProjected && sessionRowTargets(s).length > 0;
+						const hasAdjust =
+							!isProjected &&
+							(sessionRowTargets(s).length > 0 ||
+								isManual ||
+								s.topic !== undefined);
 
 						return (
 							<li
@@ -390,6 +453,7 @@ export function ClassSessionsSection({
 				onComplete={onComplete}
 				onCancelOccurrence={onCancelOccurrence}
 				onSaveEdit={onSaveEdit}
+				onDeleteOccurrence={onDeleteOccurrence}
 			/>
 			{materialsDateISO !== null && (
 				<SessionMaterialsModal

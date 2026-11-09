@@ -52,6 +52,22 @@ export type KernelAction =
 	  }
 	| { type: "session-check-in"; classId: string; date: string }
 	| { type: "session-cancel"; classId: string; date: string }
+	| {
+			type: "add-manual-session";
+			classId: string;
+			payload: {
+				date: string;
+				time: string;
+				dur: number;
+				topic: string;
+				zoom?: string;
+			};
+	  }
+	| {
+			type: "delete-session-occurrence";
+			classId: string;
+			date: string;
+	  }
 	| { type: "mark-invoice-paid"; invoiceId: string; method: string }
 	| { type: "grade-assignment"; assignmentId: string; scores: Scores }
 	| { type: "add-comment-bank"; text: string; operationId: string }
@@ -129,6 +145,7 @@ export type KernelAction =
 				sessionsTotal: number;
 				startDate: string;
 				tuitionFee?: number | null;
+				schedulingMode?: "auto" | "manual";
 			};
 	  }
 	| {

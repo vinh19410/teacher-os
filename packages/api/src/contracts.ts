@@ -122,6 +122,7 @@ export const classCreateSchema = z
 		/** Học phí mỗi học viên (VND) cho toàn khóa; null/undefined = chưa thiết lập, sửa được sau khi tạo. */
 		tuitionFee: z.number().int().min(1).nullish(),
 		startDate: z.string().default(""),
+		schedulingMode: z.enum(["auto", "manual"]).default("auto"),
 	})
 	.superRefine((input, ctx) => {
 		// Issue #105: creation rejects end <= start. Legacy stored rows with
@@ -1600,6 +1601,7 @@ export interface KernelClassRow {
 	/** Học phí mỗi học viên (VND) cho toàn khóa; null = chưa thiết lập. */
 	tuitionFee: number | null;
 	notes: string;
+	schedulingMode?: "auto" | "manual" | string;
 }
 
 export const ENROLLMENT_STATUSES = ["invited", "active"] as const;
@@ -1722,6 +1724,33 @@ export interface KernelLessonRow {
 	topic: string;
 	zoom: string;
 }
+
+export interface KernelClassSessionRow {
+	id: string;
+	classId: string;
+	date: string;
+	time: string;
+	dur: number;
+	topic: string;
+	zoom: string;
+}
+
+export const addManualSessionSchema = z.object({
+	date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
+	time: z
+		.string()
+		.regex(TIME_REGEX, "Giờ học phải theo định dạng HH:mm (00:00–23:59)"),
+	dur: z.number().int().min(15).max(360).default(90),
+	topic: z.string().min(1, "Chủ đề không được để trống").max(500),
+	zoom: z
+		.string()
+		.max(2000)
+		.default("")
+		.refine((val) => val === "" || val.startsWith("https://"), {
+			message: "Link Zoom phải là URL https:// hoặc để trống",
+		}),
+});
+export type AddManualSessionInput = z.infer<typeof addManualSessionSchema>;
 
 export interface KernelInvoiceRow {
 	id: string;
@@ -1889,6 +1918,7 @@ export interface KernelSnapshot {
 	enrollments: KernelEnrollmentRow[];
 	packages: KernelPackageRow[];
 	lessons: KernelLessonRow[];
+	classSessions?: KernelClassSessionRow[];
 	/** TOS-14 (#447): optional như vocabSuggestions — server cũ trong lúc deploy
 	 * skew không gửi events, web dùng `?? []` vẫn chạy. */
 	events?: KernelEventRow[];

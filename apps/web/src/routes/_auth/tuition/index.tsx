@@ -184,7 +184,7 @@ export function TuitionRoute() {
 								<span
 									key="r"
 									className={
-										s.hasPackage && s.pkg.remaining <= 3
+										s.hasPackage && s.pkg.total > 0 && s.pkg.remaining <= 3
 											? "font-mono font-semibold text-destructive"
 											: "font-mono font-semibold"
 									}
@@ -193,9 +193,13 @@ export function TuitionRoute() {
 								</span>,
 								<Progress
 									key="p"
-									value={s.hasPackage ? (s.pkg.done / s.pkg.total) * 100 : 0}
+									value={
+										s.hasPackage && s.pkg.total > 0
+											? (s.pkg.done / s.pkg.total) * 100
+											: 0
+									}
 									variant={
-										!s.hasPackage
+										!s.hasPackage || s.pkg.total === 0
 											? "default"
 											: s.pkg.remaining <= 2
 												? "low"
@@ -210,6 +214,10 @@ export function TuitionRoute() {
 								!s.hasPackage ? (
 									<Badge key="b" variant="muted">
 										Chưa có gói
+									</Badge>
+								) : s.pkg.total === 0 ? (
+									<Badge key="b" variant="muted">
+										Chưa xếp buổi
 									</Badge>
 								) : s.pkg.remaining <= 2 ? (
 									<Badge key="b" variant="danger">

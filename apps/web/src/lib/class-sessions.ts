@@ -42,7 +42,12 @@ import {
 	skeletonOf,
 } from "@teacher-os/api/skeleton";
 import { addMinutes, parseSchedule } from "@/lib/format-schedule";
-import type { ClassGroup, Lesson, Syllabus } from "@/lib/mock-data";
+import type {
+	ClassGroup,
+	ClassSessionItem,
+	Lesson,
+	Syllabus,
+} from "@/lib/mock-data";
 import { formatDayMonth } from "@/lib/week-grid";
 
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -74,6 +79,10 @@ export interface ClassSession {
 	/** All lesson rows of this occurrence's bucket/slot, every enrollment. */
 	rows: ClassSessionLesson[];
 	/** Absent on legacy construction — set to "v2" by the dated read path. */
+	/** Manual topic authored for this occurrence (independent of syllabus). */
+	topic?: string;
+	/** Manual zoom link authored for this occurrence (independent of syllabus). */
+	zoom?: string;
 	mode?: "v2";
 }
 
@@ -188,7 +197,66 @@ export function buildClassSessions(input: {
 	startDate: string;
 	lessons: ClassSessionLesson[];
 	sessionsTotal?: number;
+	/**
+	 * Issue #649: explicit manual-scheduling gate — computed by the caller
+	 * (`cls.schedulingMode === "manual" || classSessions.length > 0`).
+	 * Never derived from `!syllabus` here: legacy auto classes can lack a
+	 * syllabus and must keep the #121 projection; an old server (deploy
+	 * skew) omits `schedulingMode` entirely and must not flip to manual.
+	 */
+	manual?: boolean;
+	classSessions?: ClassSessionItem[];
 }): ClassSession[] | null {
+	if (input.manual) {
+		const classSessionsList = input.classSessions ?? [];
+		if (classSessionsList.length === 0 && input.lessons.length === 0) {
+			return [];
+		}
+
+		if (classSessionsList.length > 0) {
+			const byDateLessons = new Map<string, ClassSessionLesson[]>();
+			for (const row of input.lessons) {
+				if (!row.date) continue;
+				const list = byDateLessons.get(row.date) ?? [];
+				list.push(row);
+				byDateLessons.set(row.date, list);
+			}
+
+			const sorted = [...classSessionsList].sort((a, b) =>
+				a.date.localeCompare(b.date),
+			);
+			const weekdayOrdinal = new Map<number, number>();
+
+			return sorted.map((cs, i) => {
+				const day = lessonWeekdayFromISO(cs.date);
+				const slotIndex = (weekdayOrdinal.get(day) ?? 0) + 1;
+				weekdayOrdinal.set(day, slotIndex);
+				const rows = byDateLessons.get(cs.date) ?? [];
+				return {
+					index: i + 1,
+					slotIndex,
+					dateISO: cs.date,
+					day,
+					time: cs.time,
+					dur: cs.dur,
+					topic: cs.topic,
+					zoom: cs.zoom,
+					rows: rows.map((r) => ({
+						id: r.id,
+						sid: r.sid,
+						day: r.day,
+						time: r.time,
+						dur: r.dur,
+						topic: r.topic || cs.topic,
+						status: r.status,
+						date: r.date,
+						zoom: r.zoom || cs.zoom,
+					})),
+					mode: "v2" as const,
+				};
+			});
+		}
+	}
 	if (
 		input.lessons.length === 0 &&
 		typeof input.sessionsTotal === "number" &&
@@ -287,7 +355,8 @@ export function buildClassSessions(input: {
 	return sessions.length === total ? sessions : null;
 }
 
-function lessonWeekdayFromISO(dateISO: string): number {
+/** Monday-first 1-7 from a `yyyy-mm-dd` string (UTC-anchored). */
+export function lessonWeekdayFromISO(dateISO: string): number {
 	const weekday = new Date(`${dateISO}T00:00:00Z`).getUTCDay();
 	return weekday === 0 ? 7 : weekday;
 }
@@ -448,6 +517,7 @@ export function sessionTopic(
 	syLessons: ReadonlyArray<{ title: string }>,
 ): string | null {
 	if (session.mode === "v2") {
+		if (session.topic) return session.topic;
 		// Identity read (fixes the mis-fan that option 3 targets): the topic
 		// authored on THIS occurrence wins. Multi-authored buckets collapse
 		// to the id-min non-empty winner — a declared lossy pick (plan #98

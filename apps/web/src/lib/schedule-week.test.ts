@@ -360,6 +360,55 @@ describe("selectProjectedWeekBlocks (issue #121)", () => {
 			selectProjectedWeekBlocks([legacy], [], mondayWeek("2026-08-31")),
 		).toEqual([]);
 	});
+
+	test("manual class (#649): no skeleton projection — real block from classSessions on its own date", () => {
+		const manual: ClassGroup = {
+			...QC_CLASS,
+			id: "cls-manual",
+			schedulingMode: "manual",
+			sessionsTotal: 1,
+		};
+		// 2026-09-02 is a Wednesday — OFF the Mon-only schedule skeleton. A
+		// skeleton projection would mint a Monday block; the manual class must
+		// render its real class_session date instead.
+		const classSessions = [
+			{
+				id: "cs-1",
+				classId: "cls-manual",
+				date: "2026-09-02",
+				time: "19:00",
+				dur: 90,
+				topic: "Manual only",
+				zoom: "",
+			},
+		];
+		// Week of Mon 07/09 does NOT contain 02/09 → no manual block, and the
+		// skeleton never mints one for a manual class.
+		expect(
+			selectProjectedWeekBlocks(
+				[manual],
+				[],
+				mondayWeek("2026-09-07"),
+				classSessions,
+			),
+		).toEqual([]);
+		// Wednesday 02/09 (the real class_session date) → exactly that block.
+		expect(
+			selectProjectedWeekBlocks([manual], [], ["2026-09-02"], classSessions),
+		).toEqual([
+			{
+				classId: "cls-manual",
+				className: "QC-CTA-CLASS",
+				day: 3,
+				time: "19:00",
+				dateISO: "2026-09-02",
+			},
+		]);
+		// Without classSessions arg (deploy skew) → nothing at all, no skeleton mint.
+		expect(
+			selectProjectedWeekBlocks([manual], [], mondayWeek("2026-08-31")),
+		).toEqual([]);
+	});
 });
 
 describe("weekSlotCount (AC8 — rendered-week distinct slots)", () => {

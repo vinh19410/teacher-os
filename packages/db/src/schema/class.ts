@@ -26,6 +26,8 @@ export const classTable = sqliteTable(
 		sessionsDone: integer("sessions_done").notNull().default(0),
 		status: text("status").notNull().default("active"),
 		startDate: text("start_date").notNull().default(""),
+		/** "auto" (default, schedule generator) | "manual" (manual session creation, issue #649). */
+		schedulingMode: text("scheduling_mode").notNull().default("auto"),
 		/** Học phí mỗi học viên (VND) cho toàn khóa; null = chưa thiết lập.
 		 * User-action ghi: tạo lớp (POST /api/classes), sửa học phí lớp (POST /api/classes/:id/tuition-fee).
 		 * Per-student theo yêu cầu — KHÔNG phải tổng học phí cả lớp; không derive từ invoice (persist-vs-derive carve-out). */

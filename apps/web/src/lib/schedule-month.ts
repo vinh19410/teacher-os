@@ -10,7 +10,12 @@
  * source of session grouping/rollup truth.
  */
 
-import type { ClassGroup, Lesson, LessonStatus } from "@/lib/mock-data";
+import type {
+	ClassGroup,
+	ClassSessionItem,
+	Lesson,
+	LessonStatus,
+} from "@/lib/mock-data";
 import {
 	distinctStudentsBySid,
 	resolveWeekColumnEntries,
@@ -39,6 +44,8 @@ export interface ScheduleEventLike {
 export interface MonthSourceData {
 	classes: ClassGroup[];
 	lessons: Lesson[];
+	/** Issue #649: buổi thủ công của lớp manual — optional (deploy skew). */
+	classSessions?: readonly ClassSessionItem[];
 	/** Org events (TOS-14). Optional — snapshots without events still build. */
 	events?: readonly ScheduleEventLike[];
 	/** Org holidays (TOS-14b/#453). Optional — snapshots without holidays
@@ -231,6 +238,7 @@ export function buildMonthCells(
 				projectedClasses,
 				[],
 				[date],
+				data.classSessions ?? [],
 			)) {
 				items.push({
 					kind: "lesson",

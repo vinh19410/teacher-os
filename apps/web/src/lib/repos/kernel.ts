@@ -145,6 +145,17 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				path: `/api/classes/${action.classId}/sessions/${action.date}/cancel`,
 				body: {},
 			};
+		case "add-manual-session":
+			return {
+				path: `/api/classes/${action.classId}/sessions`,
+				body: action.payload,
+			};
+		case "delete-session-occurrence":
+			return {
+				path: `/api/classes/${action.classId}/sessions/${action.date}`,
+				method: "DELETE",
+				body: undefined,
+			};
 		case "mark-invoice-paid":
 			return {
 				path: `/api/invoices/${action.invoiceId}/mark-paid`,
@@ -372,6 +383,7 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 		holidayShifts: snapshot.holidayShifts ?? [],
 		holidayCancels: snapshot.holidayCancels ?? [],
 		events: snapshot.events ?? [],
+		classSessions: snapshot.classSessions ?? [],
 		viewer: snapshot.viewer ?? { role: "teacher", canAccessFinance: true },
 	};
 }
@@ -565,6 +577,7 @@ const OPTIONAL_SNAPSHOT_COLLECTION_KEYS = [
 	// TOS-14 (#447): events — optional để deploy skew (web mới + server cũ)
 	// không làm trắng workspace, precedent vocabSuggestions #363 RT-F8.
 	"events",
+	"classSessions",
 ] as const satisfies ReadonlyArray<keyof KernelSnapshot>;
 
 // Compile-time completeness: every KernelSnapshot collection must appear in
