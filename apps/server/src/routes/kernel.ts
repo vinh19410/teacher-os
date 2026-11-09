@@ -2235,7 +2235,10 @@ export function kernelRoutes(deps: {
 							: []),
 					];
 					const [updatedRows] = await db.batch(
-						statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]],
+						statements as unknown as [
+							BatchItem<"sqlite">,
+							...BatchItem<"sqlite">[],
+						],
 					);
 					rows = updatedRows as Array<{ id: string }>;
 				} catch (shiftCause) {

@@ -33,38 +33,40 @@ test("Issue #649: Chụp screenshots 3 viewports light & dark cho tính năng th
 	await expect(page.getByText(CLASS_NAME)).toBeVisible();
 	await expect(page.getByText("Chưa có buổi học nào")).toBeVisible();
 
-	// 1. Chụp Empty State ở 3 viewport (light)
+	// 1. Chụp Empty State ở 3 viewport (light & dark)
 	for (const vp of VIEWPORTS) {
 		await page.setViewportSize({ width: vp.width, height: vp.height });
-		await page.waitForTimeout(300);
+		await page.waitForTimeout(200);
 		await page.screenshot({
 			path: resolve(REPORT_DIR, `649-empty-state-${vp.name}-light.png`),
 			fullPage: true,
 		});
+
+		await page.evaluate(() => document.documentElement.classList.add("dark"));
+		await page.waitForTimeout(200);
+		await page.screenshot({
+			path: resolve(REPORT_DIR, `649-empty-state-${vp.name}-dark.png`),
+			fullPage: true,
+		});
+		await page.evaluate(() =>
+			document.documentElement.classList.remove("dark"),
+		);
 	}
 
-	// 2. Chụp Empty State desktop ở dark mode
-	await page.setViewportSize({ width: 1440, height: 900 });
-	await page.evaluate(() => document.documentElement.classList.add("dark"));
-	await page.waitForTimeout(300);
-	await page.screenshot({
-		path: resolve(REPORT_DIR, "649-empty-state-desktop-1440x900-dark.png"),
-		fullPage: true,
-	});
-	await page.evaluate(() => document.documentElement.classList.remove("dark"));
-
-	// 3. Mở modal "+ Thêm buổi học" và chụp
+	// 2. Mở modal "+ Thêm buổi học" và chụp ở 3 viewports
 	await page.getByRole("button", { name: "+ Thêm buổi học" }).first().click();
 	const addModal = page.getByRole("dialog", {
 		name: "Thêm buổi học thủ công",
 	});
 	await expect(addModal).toBeVisible();
-	await page.screenshot({
-		path: resolve(
-			REPORT_DIR,
-			"649-add-session-modal-desktop-1440x900-light.png",
-		),
-	});
+
+	for (const vp of VIEWPORTS) {
+		await page.setViewportSize({ width: vp.width, height: vp.height });
+		await page.waitForTimeout(200);
+		await page.screenshot({
+			path: resolve(REPORT_DIR, `649-add-session-modal-${vp.name}-light.png`),
+		});
+	}
 
 	// Điền chủ đề và submit
 	await addModal
@@ -73,19 +75,21 @@ test("Issue #649: Chụp screenshots 3 viewports light & dark cho tính năng th
 	await addModal.getByRole("button", { name: "Thêm buổi học" }).click();
 	await expect(addModal).toBeHidden();
 
-	// 4. Chụp danh sách buổi học populated (desktop light)
+	// 3. Chụp danh sách buổi học populated (3 viewports light)
 	await expect(
 		page.getByText("IELTS Writing Task 1: Line Chart"),
 	).toBeVisible();
-	await page.screenshot({
-		path: resolve(
-			REPORT_DIR,
-			"649-populated-sessions-desktop-1440x900-light.png",
-		),
-		fullPage: true,
-	});
 
-	// 5. Mở modal Điều chỉnh buổi (có nút Xóa buổi học) và chụp
+	for (const vp of VIEWPORTS) {
+		await page.setViewportSize({ width: vp.width, height: vp.height });
+		await page.waitForTimeout(200);
+		await page.screenshot({
+			path: resolve(REPORT_DIR, `649-populated-sessions-${vp.name}-light.png`),
+			fullPage: true,
+		});
+	}
+
+	// 4. Mở modal Điều chỉnh buổi (có nút Xóa buổi học) và chụp ở 3 viewports
 	await page.getByRole("button", { name: "Điều chỉnh" }).click();
 	const adjustModal = page.getByRole("dialog", {
 		name: /Điều chỉnh buổi/,
@@ -94,10 +98,12 @@ test("Issue #649: Chụp screenshots 3 viewports light & dark cho tính năng th
 	await expect(
 		adjustModal.getByRole("button", { name: "Xóa buổi học" }),
 	).toBeVisible();
-	await page.screenshot({
-		path: resolve(
-			REPORT_DIR,
-			"649-adjust-modal-delete-desktop-1440x900-light.png",
-		),
-	});
+
+	for (const vp of VIEWPORTS) {
+		await page.setViewportSize({ width: vp.width, height: vp.height });
+		await page.waitForTimeout(200);
+		await page.screenshot({
+			path: resolve(REPORT_DIR, `649-adjust-modal-delete-${vp.name}-light.png`),
+		});
+	}
 });
