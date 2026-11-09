@@ -3,6 +3,7 @@ import { AddLessonModal } from "@/components/modals/add-lesson-modal";
 import { AddModuleModal } from "@/components/modals/add-module-modal";
 import { EditLessonModal } from "@/components/modals/edit-lesson-modal";
 import { EditModuleModal } from "@/components/modals/edit-module-modal";
+import { LessonBankMaterialsBadge } from "@/components/syllabus/lesson-bank-materials-badge";
 import {
 	LessonStatusBadge,
 	lessonDotClassFor,
@@ -133,6 +134,9 @@ export function ClassSessionsManageModal({
 													<div className="font-medium text-sm">{l.title}</div>
 													<div className="mt-0.5 text-[11px] text-muted-foreground">
 														{l.materials}
+														<LessonBankMaterialsBadge
+															count={l.bankMaterials?.length ?? 0}
+														/>
 													</div>
 												</div>
 												<div className="flex flex-wrap items-center gap-2 max-app:col-start-2 max-app:pt-1">

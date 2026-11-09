@@ -4,7 +4,11 @@
  * stay independent of the env-validated runtime. Selection lives in
  * repos/use-syllabus.ts; writes stay on the Wave 0 command bus.
  */
-import type { KernelSnapshot } from "@teacher-os/api/contracts";
+import type {
+	KernelSnapshot,
+	KernelSyllabusLessonRow,
+} from "@teacher-os/api/contracts";
+import type { SyllabusBankMaterialRef } from "@teacher-os/api/material-contracts";
 import type {
 	ClassCurriculum,
 	Syllabus,
@@ -26,6 +30,14 @@ function normalizeKind(value: unknown): SyllabusLessonKind {
 	const kind = value as SyllabusLessonKind;
 	return LESSON_KINDS.includes(kind) ? kind : "lesson";
 }
+
+/**
+ * #655 — bài học trên snapshot có thể kèm tài liệu ngân hàng; snapshot cũ
+ * (hoặc server chưa trả) → undefined, khớp field optional của SyllabusLesson.
+ */
+type LessonRowWithBankMaterials = KernelSyllabusLessonRow & {
+	bankMaterials?: SyllabusBankMaterialRef[];
+};
 
 /**
  * Map kernel syllabus rows to the display shape. `totalLessons` always
@@ -55,14 +67,17 @@ export function mapSyllabi(snapshot: KernelSnapshot): Syllabus[] {
 				id: mod.id,
 				title: mod.title,
 				description: mod.description || undefined,
-				lessons: mod.lessons.map((lesson) => ({
-					id: lesson.id,
-					title: lesson.title,
-					objectives: lesson.objectives || "—",
-					materials: lesson.materials || "—",
-					kind: normalizeKind(lesson.kind),
-					status: lesson.status as "done" | "current" | "upcoming",
-				})),
+				lessons: (mod.lessons as LessonRowWithBankMaterials[]).map(
+					(lesson) => ({
+						id: lesson.id,
+						title: lesson.title,
+						objectives: lesson.objectives || "—",
+						materials: lesson.materials || "—",
+						bankMaterials: lesson.bankMaterials,
+						kind: normalizeKind(lesson.kind),
+						status: lesson.status as "done" | "current" | "upcoming",
+					}),
+				),
 			})),
 		};
 	});
