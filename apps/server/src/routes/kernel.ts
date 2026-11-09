@@ -1669,6 +1669,13 @@ export function kernelRoutes(deps: {
 		const imported = template
 			? buildImportBatch(db, { ...template, classId, orgId: ctx.orgId })
 			: undefined;
+		// Issue #649: chế độ lớp được server suy ra — client không thể gắn
+		// "manual" cho một lớp có template (trạng thái không được định nghĩa).
+		// Lớp không template luôn là manual với 0 buổi khởi tạo; templateId
+		// rỗng + schedulingMode không gửi (client cũ) cũng là manual.
+		const schedulingMode =
+			input.templateId !== "" ? "auto" : (input.schedulingMode ?? "manual");
+
 		const classInsert = db.insert(classTable).values({
 			id: classId,
 			orgId: ctx.orgId,
@@ -1682,12 +1689,11 @@ export function kernelRoutes(deps: {
 				...input.schedule,
 				days: [...new Set(input.schedule.days)].sort((a, b) => a - b),
 			}),
-			sessionsTotal:
-				input.schedulingMode === "manual" ? 0 : input.sessionsTotal,
+			sessionsTotal: schedulingMode === "manual" ? 0 : input.sessionsTotal,
 			sessionsDone: 0,
 			status: "active",
 			startDate: input.startDate,
-			schedulingMode: input.schedulingMode ?? "auto",
+			schedulingMode,
 			tuitionFee: input.tuitionFee ?? null,
 			notes: "",
 		});
@@ -2207,7 +2213,7 @@ export function kernelRoutes(deps: {
 				// C2: dời lesson, class_session và kéo `holiday_session_shift.makeupDate` trong
 				// CÙNG một db.batch nguyên tử để không bao giờ lệch trạng thái.
 				try {
-					const statements = [
+					const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
 						occurrenceUpdate(db, classId, dateISO, ctx.orgId, set, false),
 						db
 							.update(holidaySessionShift)
@@ -2234,12 +2240,7 @@ export function kernelRoutes(deps: {
 								]
 							: []),
 					];
-					const [updatedRows] = await db.batch(
-						statements as unknown as [
-							BatchItem<"sqlite">,
-							...BatchItem<"sqlite">[],
-						],
-					);
+					const [updatedRows] = await db.batch(statements);
 					rows = updatedRows as Array<{ id: string }>;
 				} catch (shiftCause) {
 					if (isRollbackableConstraintError(shiftCause)) {

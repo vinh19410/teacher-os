@@ -445,6 +445,12 @@ describe("Manual Class Sessions API (Issue #649)", () => {
 		expect((await addRes.json()) as { reason: string }).toMatchObject({
 			reason: "class-has-syllabus",
 		});
+
+		// Server suy ra mode: client gửi manual + template → vẫn auto.
+		const snap = await t.kernel(teacher.token);
+		const cls = snap.classes.find((c) => c.id === classId);
+		expect(cls?.schedulingMode).toBe("auto");
+		expect(cls?.sessionsTotal).toBe(12);
 	});
 
 	test("7. DELETE /classes/:id/sessions/:date removes upcoming session and decrements total", async () => {

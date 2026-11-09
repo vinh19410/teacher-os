@@ -197,17 +197,17 @@ export function buildClassSessions(input: {
 	startDate: string;
 	lessons: ClassSessionLesson[];
 	sessionsTotal?: number;
-	schedulingMode?: "auto" | "manual" | string;
-	hasSyllabus?: boolean;
+	/**
+	 * Issue #649: explicit manual-scheduling gate — computed by the caller
+	 * (`cls.schedulingMode === "manual" || classSessions.length > 0`).
+	 * Never derived from `!syllabus` here: legacy auto classes can lack a
+	 * syllabus and must keep the #121 projection; an old server (deploy
+	 * skew) omits `schedulingMode` entirely and must not flip to manual.
+	 */
+	manual?: boolean;
 	classSessions?: ClassSessionItem[];
 }): ClassSession[] | null {
-	// Issue #649: When class is manual (schedulingMode === "manual" or has manual classSessions),
-	// never project 12 empty sessions. Return [] if empty, or render manual sessions.
-	const isManual =
-		input.schedulingMode === "manual" ||
-		(input.classSessions && input.classSessions.length > 0) ||
-		(input.hasSyllabus === false && input.schedulingMode !== "auto");
-	if (isManual) {
+	if (input.manual) {
 		const classSessionsList = input.classSessions ?? [];
 		if (classSessionsList.length === 0 && input.lessons.length === 0) {
 			return [];
@@ -355,7 +355,8 @@ export function buildClassSessions(input: {
 	return sessions.length === total ? sessions : null;
 }
 
-function lessonWeekdayFromISO(dateISO: string): number {
+/** Monday-first 1-7 from a `yyyy-mm-dd` string (UTC-anchored). */
+export function lessonWeekdayFromISO(dateISO: string): number {
 	const weekday = new Date(`${dateISO}T00:00:00Z`).getUTCDay();
 	return weekday === 0 ? 7 : weekday;
 }

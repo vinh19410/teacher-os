@@ -829,24 +829,24 @@ describe("sessionLessonInfo", () => {
 });
 
 describe("buildClassSessions for manual class (Issue #649)", () => {
-	test("returns [] (empty list) when hasSyllabus is false and there are 0 lessons", () => {
+	test("returns [] (empty list) when manual and there are 0 lessons", () => {
 		const sessions = buildClassSessions({
 			schedule: SCHEDULE,
 			startDate: "2026-08-25",
 			lessons: [],
 			sessionsTotal: 12,
-			hasSyllabus: false,
+			manual: true,
 		});
 		expect(sessions).toEqual([]);
 	});
 
-	test("builds sessions from classSessions when hasSyllabus is false", () => {
+	test("builds sessions from classSessions when manual", () => {
 		const sessions = buildClassSessions({
 			schedule: SCHEDULE,
 			startDate: "2026-08-25",
 			lessons: [],
 			sessionsTotal: 12,
-			hasSyllabus: false,
+			manual: true,
 			classSessions: [
 				{
 					id: "cs-1",
@@ -881,5 +881,23 @@ describe("buildClassSessions for manual class (Issue #649)", () => {
 		if (!first || !second) throw new Error("expected 2 sessions");
 		expect(sessionTopic(first, [])).toBe("Manual Speaking Task");
 		expect(sessionTopic(second, [])).toBe("Manual Writing Task");
+	});
+
+	test("deploy skew + legacy: auto class WITHOUT syllabus still projects sessionsTotal sessions (#121 regression guard)", () => {
+		// Web mới + server cũ (deploy skew): schedulingMode không được gửi →
+		// caller không tính được isManual → manual không truyền. Lớp auto
+		// legacy không syllabus PHẢI giữ nguyên projection #121.
+		const sessions = buildClassSessions({
+			schedule: SCHEDULE,
+			startDate: "2026-08-25", // Tuesday
+			lessons: [],
+			sessionsTotal: 12,
+		});
+		expect(sessions).toHaveLength(12);
+		expect(sessions?.[0]).toMatchObject({
+			dateISO: "2026-08-25",
+			time: "19:00",
+			dur: 90,
+		});
 	});
 });

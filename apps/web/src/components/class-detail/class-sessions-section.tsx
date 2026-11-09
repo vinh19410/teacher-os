@@ -98,18 +98,19 @@ export function ClassSessionsSection({
 	// moveDate reorders the chronology under an open dialog.
 	const [actionsDateISO, setActionsDateISO] = useState<string | null>(null);
 
+	// Issue #649: manual = lớp tạo không template (`schedulingMode: "manual"`)
+	// hoặc đã có buổi thủ công. `sessionsTotal === 0` không phải tín hiệu —
+	// deploy skew (server cũ) không gửi schedulingMode và lớp auto legacy
+	// phải giữ nguyên projection #121.
 	const isManual =
-		cls.schedulingMode === "manual" ||
-		(classSessions?.length ?? 0) > 0 ||
-		(!syllabus && cls.sessionsTotal === 0);
+		cls.schedulingMode === "manual" || (classSessions?.length ?? 0) > 0;
 
 	const sessions = buildClassSessions({
 		schedule: cls.schedule,
 		startDate: cls.startDate,
 		lessons,
 		sessionsTotal: cls.sessionsTotal,
-		schedulingMode: cls.schedulingMode,
-		hasSyllabus: Boolean(syllabus),
+		manual: isManual,
 		classSessions,
 	});
 	// Projection mode: zero real rows for an auto-scheduled class means every displayed

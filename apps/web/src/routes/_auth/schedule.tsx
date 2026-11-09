@@ -82,7 +82,13 @@ export function ScheduleRoute() {
 		[view, date],
 	);
 	const weekModel = useMemo(
-		() => (view === "week" ? buildWeekModel(data, week.dates) : null),
+		() =>
+			view === "week"
+				? buildWeekModel(
+						{ ...data, classSessions: data.classSessions ?? [] },
+						week.dates,
+					)
+				: null,
 		[view, data, week.dates],
 	);
 
