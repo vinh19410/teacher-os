@@ -14,6 +14,7 @@ import type {
 	KernelVocabDeckRow,
 	KernelVocabSuggestionRow,
 } from "@teacher-os/api/contracts";
+import type { SyllabusBankMaterialRef } from "@teacher-os/api/material-contracts";
 
 export interface Student {
 	id: string;
@@ -229,6 +230,8 @@ export interface SyllabusLesson {
 	title: string;
 	objectives: string;
 	materials: string;
+	/** Tài liệu ngân hàng gắn trên bài (#655) — vắng mặt với snapshot cũ. */
+	bankMaterials?: SyllabusBankMaterialRef[];
 	kind: SyllabusLessonKind;
 	status: SyllabusLessonStatus;
 }

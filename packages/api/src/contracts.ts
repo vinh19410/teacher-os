@@ -261,6 +261,9 @@ export const lessonUpsertSchema = z.object({
 	// Optional: form thêm/sửa buổi học mở từ màn hình syllabus không gửi status.
 	// Route edit preserve giá trị existing; route add default "upcoming" khi vắng.
 	status: z.enum(["done", "current", "upcoming"]).optional(),
+	// Issue #655: tài liệu ngân hàng gắn trên bài học — optional, vắng mặt
+	// = giữ nguyên links hiện có (route edit) / rỗng (route add).
+	materialIds: z.array(z.string().min(1)).max(20).optional(),
 });
 export type LessonUpsert = z.infer<typeof lessonUpsertSchema>;
 
@@ -1749,6 +1752,9 @@ export const addManualSessionSchema = z.object({
 		.refine((val) => val === "" || val.startsWith("https://"), {
 			message: "Link Zoom phải là URL https:// hoặc để trống",
 		}),
+	// Issue #655: tài liệu ngân hàng gắn ngay lúc tạo buổi manual — server
+	// validate org + tồn tại rồi insert `lesson_material` cùng batch.
+	materialIds: z.array(z.string().min(1)).max(20).default([]),
 });
 export type AddManualSessionInput = z.infer<typeof addManualSessionSchema>;
 
