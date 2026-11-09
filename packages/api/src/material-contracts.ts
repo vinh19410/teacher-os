@@ -286,6 +286,13 @@ export interface StudentLessonMaterialView {
 	position: number;
 }
 
+/**
+ * Tham chiếu tài liệu ngân hàng gắn trên một bài học giáo trình (issue #655,
+ * template hoặc bản copy của lớp) — cùng projection an toàn như view học
+ * viên: không objectKey, không createdBy, không usageCount.
+ */
+export type SyllabusBankMaterialRef = StudentLessonMaterialView;
+
 export interface MaterialFolderListResponse {
 	folders: MaterialFolderView[];
 }

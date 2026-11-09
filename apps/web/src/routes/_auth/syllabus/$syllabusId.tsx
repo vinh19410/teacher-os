@@ -10,6 +10,7 @@ import { AddModuleModal } from "@/components/modals/add-module-modal";
 import { EditLessonModal } from "@/components/modals/edit-lesson-modal";
 import { EditModuleModal } from "@/components/modals/edit-module-modal";
 import { SyllabusImportPreview } from "@/components/syllabus/import-preview";
+import { LessonBankMaterialsBadge } from "@/components/syllabus/lesson-bank-materials-badge";
 import {
 	isTestSessionKind,
 	LessonKindBadge,
@@ -300,6 +301,9 @@ function SyllabusDetail({
 											</div>
 											<div className="mt-0.5 text-[11px] text-muted-foreground">
 												{l.materials}
+												<LessonBankMaterialsBadge
+													count={l.bankMaterials?.length ?? 0}
+												/>
 											</div>
 											<div className="mt-[3px] text-muted-foreground text-xs leading-[1.4]">
 												Mục tiêu: {l.objectives}

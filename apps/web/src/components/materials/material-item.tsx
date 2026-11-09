@@ -27,8 +27,25 @@ const KIND_ICONS: Record<MaterialKind, typeof FileText> = {
 	media: PlayCircle,
 };
 
+/**
+ * Projection tối thiểu để render một dòng tài liệu — dùng được cho cả
+ * `MaterialView` (ngân hàng/buổi) lẫn `SyllabusBankMaterialRef` (#655):
+ * không cột teacher-only (objectKey, người tạo, thư mục, số buổi dùng).
+ */
+export type MaterialRowItem = Pick<
+	MaterialView,
+	| "id"
+	| "title"
+	| "description"
+	| "kind"
+	| "url"
+	| "mimeType"
+	| "sizeBytes"
+	| "originalName"
+>;
+
 /** Dòng phụ: định dạng · dung lượng (file) hoặc tên miền (link). */
-export function materialMeta(item: MaterialView): string {
+export function materialMeta(item: MaterialRowItem): string {
 	if (item.kind === "link") {
 		try {
 			return item.url ? new URL(item.url).hostname : "Liên kết";
@@ -47,7 +64,7 @@ export function materialMeta(item: MaterialView): string {
  * tài liệu (server luôn trả attachment) chỉ có Tải xuống. Accessible name
  * kèm tiêu đề để phân biệt giữa nhiều dòng.
  */
-export function MaterialOpenActions({ item }: { item: MaterialView }) {
+export function MaterialOpenActions({ item }: { item: MaterialRowItem }) {
 	const linkCls = buttonVariants({ variant: "ghost", size: "sm" });
 	if (item.kind === "link") {
 		return item.url ? (
@@ -96,7 +113,7 @@ export function MaterialItem({
 	actions,
 	className,
 }: {
-	item: MaterialView;
+	item: MaterialRowItem;
 	/** Dòng phụ thêm (thư mục, số buổi dùng…). */
 	detail?: ReactNode;
 	actions?: ReactNode;

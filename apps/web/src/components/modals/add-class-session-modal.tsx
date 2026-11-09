@@ -1,4 +1,6 @@
+import type { SyllabusBankMaterialRef } from "@teacher-os/api/material-contracts";
 import { type FormEvent, useEffect, useRef, useState } from "react";
+import { MaterialPicker } from "@/components/materials/material-picker";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
@@ -88,6 +90,11 @@ export function AddClassSessionModal({
 	const [dur, setDur] = useState("90");
 	const [topic, setTopic] = useState("");
 	const [zoom, setZoom] = useState("");
+	// Tài liệu ngân hàng chọn cho buổi mới (#655) — projection an toàn, chỉ
+	// materialIds đi lên payload.
+	const [bankMaterials, setBankMaterials] = useState<SyllabusBankMaterialRef[]>(
+		[],
+	);
 	const { saving, error, setError, notice, submitBlocked, run, reconcile } =
 		useKernelFormSubmit();
 
@@ -104,6 +111,7 @@ export function AddClassSessionModal({
 			setDur(String(suggestion.dur));
 			setTopic("");
 			setZoom("");
+			setBankMaterials([]);
 			setError(undefined);
 		}
 		wasOpenRef.current = open;
@@ -112,6 +120,7 @@ export function AddClassSessionModal({
 	function resetForm() {
 		setTopic("");
 		setZoom("");
+		setBankMaterials([]);
 		setError(undefined);
 	}
 
@@ -151,6 +160,10 @@ export function AddClassSessionModal({
 				dur: durNum,
 				topic: topic.trim(),
 				zoom: zoom.trim(),
+				// Chỉ gửi khi có chọn — thiếu key, server default [] (#655).
+				...(bankMaterials.length > 0
+					? { materialIds: bankMaterials.map((m) => m.id) }
+					: {}),
 			},
 		});
 
@@ -226,6 +239,27 @@ export function AddClassSessionModal({
 						disabled={saving}
 					/>
 				</Field>
+
+				{/* biome-ignore lint/a11y/useSemanticElements: role="group" + aria-label đặt tên nhóm tài liệu theo pattern ChipFilter cho SR/e2e */}
+				<div
+					role="group"
+					aria-label="Tài liệu ngân hàng"
+					className="grid gap-2"
+				>
+					<p className="font-medium text-sm leading-none">Tài liệu</p>
+					<MaterialPicker
+						selected={bankMaterials}
+						onPick={(ref) =>
+							setBankMaterials((prev) =>
+								prev.some((m) => m.id === ref.id) ? prev : [...prev, ref],
+							)
+						}
+						onRemove={(id) =>
+							setBankMaterials((prev) => prev.filter((m) => m.id !== id))
+						}
+						disabled={saving}
+					/>
+				</div>
 
 				{notice && (
 					<KernelSubmitNotice

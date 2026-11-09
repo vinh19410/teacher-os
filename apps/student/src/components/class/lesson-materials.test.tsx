@@ -116,6 +116,25 @@ describe("LessonMaterials", () => {
 		);
 	});
 
+	it("hợp direct + tài liệu từ giáo trình thành một danh sách thường (#655)", async () => {
+		stubFetch(200, {
+			items: [item({ id: "d1", title: "Đề direct" })],
+			curriculumMaterials: [
+				item({ id: "c1", title: "Đề từ giáo trình", url: null }),
+			],
+		});
+		renderMaterials();
+		await waitFor(() =>
+			expect(screen.getAllByTestId("lesson-material")).toHaveLength(2),
+		);
+		// Direct trước, giáo trình sau — hiển thị như tài liệu thường, không
+		// phân biệt nguồn.
+		const rows = screen.getAllByTestId("lesson-material");
+		expect(rows[0]?.textContent).toContain("Đề direct");
+		expect(rows[1]?.textContent).toContain("Đề từ giáo trình");
+		expect(rows[1]?.querySelector("a[href*='download=1']")).toBeTruthy();
+	});
+
 	it("gắn org đang chọn vào URL file vì thẻ media không gửi được header", () => {
 		localStorage.setItem("active_student_org_id", "org-2");
 		try {

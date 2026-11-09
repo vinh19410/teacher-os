@@ -11,6 +11,7 @@ import {
 } from "drizzle-orm/sqlite-core";
 import { classTable } from "./class";
 import { organization } from "./organization";
+import { syllabusLesson } from "./syllabus";
 
 /**
  * Thư mục của ngân hàng tài liệu, dùng chung cho mọi giáo viên trong org.
@@ -122,5 +123,42 @@ export const lessonMaterial = sqliteTable(
 		}),
 		index("lesson_material_material_idx").on(table.materialId),
 		index("lesson_material_org_idx").on(table.orgId),
+	],
+);
+
+/**
+ * Tài liệu ngân hàng gắn vào một bài học giáo trình (template dùng chung hoặc
+ * bản copy của lớp, issue #655). Bài học là slot không có ngày nên không dùng
+ * `lesson_material` (bảng đó định danh theo (classId, date)); hiển thị ở buổi
+ * dạy được resolve theo vị trí buổi N ↔ bài N, cùng mapping với topic. Copy
+ * template → lớp copy cả links (remap `syllabusLessonId`, giữ `materialId` —
+ * ngân hàng là tài nguyên org dùng chung). FK tới `material` là NO ACTION để
+ * tài liệu đang dùng không xoá được; FK bài học cascade dọn link khi xoá
+ * bài/module/syllabus.
+ */
+export const syllabusLessonMaterial = sqliteTable(
+	"syllabus_lesson_material",
+	{
+		orgId: text("org_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		syllabusLessonId: text("syllabus_lesson_id")
+			.notNull()
+			.references(() => syllabusLesson.id, { onDelete: "cascade" }),
+		materialId: text("material_id")
+			.notNull()
+			.references(() => material.id, { onDelete: "no action" }),
+		position: integer("position").notNull().default(0),
+		createdAt: integer("created_at", { mode: "timestamp_ms" })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+			.notNull(),
+	},
+	(table) => [
+		primaryKey({
+			name: "syllabus_lesson_material_pk",
+			columns: [table.syllabusLessonId, table.materialId],
+		}),
+		index("syllabus_lesson_material_material_idx").on(table.materialId),
+		index("syllabus_lesson_material_org_idx").on(table.orgId),
 	],
 );

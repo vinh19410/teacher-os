@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { KernelEventRow } from "./event-contracts";
 import { isBandStep } from "./lib/ielts-band";
 import { CLOZE_MARKER_SOURCE } from "./lib/infer-question-types";
+import type { SyllabusBankMaterialRef } from "./material-contracts";
 import { isEmptyRichText, richTextField } from "./rich-text";
 
 export * from "./event-contracts";
@@ -250,6 +251,10 @@ export const moduleUpsertSchema = z.object({
 });
 export type ModuleUpsert = z.infer<typeof moduleUpsertSchema>;
 
+/** Trần số tài liệu ngân hàng gắn trên một bài học/buổi khi tạo (#655) —
+ * server (2 schema) và picker web dùng chung một nguồn. */
+export const MATERIAL_LINKS_MAX = 20;
+
 export const lessonUpsertSchema = z.object({
 	title: z.string().min(1),
 	objectives: z.string().default(""),
@@ -261,6 +266,9 @@ export const lessonUpsertSchema = z.object({
 	// Optional: form thêm/sửa buổi học mở từ màn hình syllabus không gửi status.
 	// Route edit preserve giá trị existing; route add default "upcoming" khi vắng.
 	status: z.enum(["done", "current", "upcoming"]).optional(),
+	// Issue #655: tài liệu ngân hàng gắn trên bài học — optional, vắng mặt
+	// = giữ nguyên links hiện có (route edit) / rỗng (route add).
+	materialIds: z.array(z.string().min(1)).max(MATERIAL_LINKS_MAX).optional(),
 });
 export type LessonUpsert = z.infer<typeof lessonUpsertSchema>;
 
@@ -1640,6 +1648,8 @@ export interface KernelSyllabusLessonRow {
 	title: string;
 	objectives: string;
 	materials: string;
+	/** Tài liệu ngân hàng gắn trên bài (#655) — vắng mặt với snapshot cũ. */
+	bankMaterials?: SyllabusBankMaterialRef[];
 	/** Loại buổi (issue #154): "lesson" | "midterm" | "final"; `| string` cho forward-compat. */
 	kind: "lesson" | "midterm" | "final" | string;
 	status: "done" | "current" | "upcoming" | string;
@@ -1749,6 +1759,9 @@ export const addManualSessionSchema = z.object({
 		.refine((val) => val === "" || val.startsWith("https://"), {
 			message: "Link Zoom phải là URL https:// hoặc để trống",
 		}),
+	// Issue #655: tài liệu ngân hàng gắn ngay lúc tạo buổi manual — server
+	// validate org + tồn tại rồi insert `lesson_material` cùng batch.
+	materialIds: z.array(z.string().min(1)).max(MATERIAL_LINKS_MAX).default([]),
 });
 export type AddManualSessionInput = z.infer<typeof addManualSessionSchema>;
 

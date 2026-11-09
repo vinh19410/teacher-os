@@ -10,7 +10,6 @@
  */
 import {
 	checkMaterialUpload,
-	type LessonMaterialListResponse,
 	type LessonMaterialView,
 	MATERIAL_ERROR_CODES,
 	type MaterialErrorCode,
@@ -24,6 +23,7 @@ import {
 	type MaterialUpdateInput,
 	type MaterialView,
 	resolveMaterialMimeType,
+	type SyllabusBankMaterialRef,
 } from "@teacher-os/api/material-contracts";
 import { HttpError } from "@/lib/kernel-load-state";
 import { getApiBaseUrl } from "./api-base-url";
@@ -32,13 +32,19 @@ export class MaterialRequestError extends HttpError {
 	readonly materialCode: MaterialErrorCode | null;
 	/** `MATERIAL_IN_USE`: số buổi đang gắn tài liệu. */
 	readonly sessionCount?: number;
+	/** `MATERIAL_IN_USE`: số bài giáo trình đang gắn tài liệu (#655). */
+	readonly syllabusCount?: number;
 	/** `FILE_TOO_LARGE`: trần dung lượng server áp. */
 	readonly maxBytes?: number;
 
 	constructor(
 		status: number,
 		materialCode: MaterialErrorCode | null,
-		extra: { sessionCount?: number; maxBytes?: number } = {},
+		extra: {
+			sessionCount?: number;
+			syllabusCount?: number;
+			maxBytes?: number;
+		} = {},
 	) {
 		super(status, `Material request failed: ${status} ${materialCode ?? ""}`, {
 			code: materialCode ?? undefined,
@@ -46,6 +52,7 @@ export class MaterialRequestError extends HttpError {
 		this.name = "MaterialRequestError";
 		this.materialCode = materialCode;
 		this.sessionCount = extra.sessionCount;
+		this.syllabusCount = extra.syllabusCount;
 		this.maxBytes = extra.maxBytes;
 	}
 }
@@ -77,9 +84,15 @@ async function toMaterialError(res: Response): Promise<MaterialRequestError> {
 	const code = isMaterialErrorCode(record.code) ? record.code : null;
 	const sessionCount =
 		typeof record.sessionCount === "number" ? record.sessionCount : undefined;
+	const syllabusCount =
+		typeof record.syllabusCount === "number" ? record.syllabusCount : undefined;
 	const maxBytes =
 		typeof record.maxBytes === "number" ? record.maxBytes : undefined;
-	return new MaterialRequestError(res.status, code, { sessionCount, maxBytes });
+	return new MaterialRequestError(res.status, code, {
+		sessionCount,
+		syllabusCount,
+		maxBytes,
+	});
 }
 
 async function request<T>(
@@ -140,9 +153,23 @@ export function materialErrorMessage(error: unknown): string {
 		case "FOLDER_CYCLE":
 			return "Không thể chuyển thư mục vào chính nó hoặc thư mục con của nó.";
 		case "MATERIAL_IN_USE": {
-			const count = isMaterialRequestError(error) ? error.sessionCount : 0;
-			return count && count > 0
-				? `Tài liệu đang được dùng ở ${count} buổi học. Hãy gỡ khỏi các buổi đó trước khi xóa.`
+			// #655: tài liệu có thể bị chặn vì đang gắn trên bài giáo trình
+			// (syllabus_lesson_material) chứ không chỉ buổi học — nêu đúng
+			// nguồn để teacher biết chỗ gỡ.
+			const sessions = isMaterialRequestError(error)
+				? (error.sessionCount ?? 0)
+				: 0;
+			const syllabus = isMaterialRequestError(error)
+				? (error.syllabusCount ?? 0)
+				: 0;
+			if (sessions > 0 && syllabus > 0) {
+				return `Tài liệu đang được dùng ở ${sessions} buổi học và ${syllabus} bài trong giáo trình. Hãy gỡ khỏi các buổi và bài đó trước khi xóa.`;
+			}
+			if (syllabus > 0) {
+				return `Tài liệu đang được gắn trên ${syllabus} bài trong giáo trình. Hãy gỡ ở giáo trình (template hoặc lớp) trước khi xóa.`;
+			}
+			return sessions > 0
+				? `Tài liệu đang được dùng ở ${sessions} buổi học. Hãy gỡ khỏi các buổi đó trước khi xóa.`
 				: "Tài liệu đang được dùng ở buổi học. Hãy gỡ khỏi các buổi đó trước khi xóa.";
 		}
 		case "CLASS_NOT_FOUND":
@@ -370,16 +397,26 @@ function sessionPath(classId: string, date: string): string {
 	return `/api/classes/${encodeURIComponent(classId)}/sessions/${encodeURIComponent(date)}/materials`;
 }
 
+/**
+ * Response materials của một buổi: `items` là tài liệu đính kèm trực tiếp;
+ * `curriculumMaterials` là tài liệu giáo trình copy xuống theo buổi N ↔ bài N
+ * (#655) — chỉ đọc, thêm/gỡ ở giáo trình của lớp. Vắng mặt với API cũ.
+ */
+export interface SessionMaterialsResponse {
+	items: LessonMaterialView[];
+	curriculumMaterials?: SyllabusBankMaterialRef[];
+}
+
 export async function fetchSessionMaterials(
 	classId: string,
 	date: string,
 	signal?: AbortSignal,
-): Promise<LessonMaterialView[]> {
-	const body = await request<LessonMaterialListResponse>(
+): Promise<SessionMaterialsResponse> {
+	const body = await request<SessionMaterialsResponse>(
 		sessionPath(classId, date),
 		{ signal },
 	);
-	return body.items;
+	return body;
 }
 
 export async function attachSessionMaterial(

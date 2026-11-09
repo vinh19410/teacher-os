@@ -487,8 +487,19 @@ export async function fetchLessonMaterials(
 			{ code },
 		);
 	}
-	const data = (await res.json()) as StudentLessonMaterialListResponse;
-	return Array.isArray(data.items) ? data.items : [];
+	const data = (await res.json()) as StudentLessonMaterialListResponse & {
+		/** #655: tài liệu ngân hàng gắn qua giáo trình của lớp (đã dedupe). */
+		curriculumMaterials?: StudentLessonMaterialView[];
+	};
+	// #655: danh sách hợp cho UI — tài liệu direct (theo position) trước, tài
+	// liệu từ giáo trình (theo position) sau; server đã dedupe theo
+	// materialId, direct ưu tiên. Học viên thấy như một danh sách tài liệu
+	// thường, không phân biệt nguồn.
+	const direct = Array.isArray(data.items) ? data.items : [];
+	const curriculum = Array.isArray(data.curriculumMaterials)
+		? data.curriculumMaterials
+		: [];
+	return [...direct, ...curriculum];
 }
 
 /** Tài liệu của buổi học — chỉ bật khi học viên mở mục tài liệu của buổi. */
