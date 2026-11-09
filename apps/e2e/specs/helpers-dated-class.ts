@@ -16,6 +16,8 @@ export async function seedDatedClass(
 		startDate: string;
 		sessionsTotal?: number;
 		schedulingMode?: "auto" | "manual";
+		/** Tạo lớp từ template giáo trình (#655) — vắng mặt là lớp trống. */
+		templateId?: string;
 		students?: { teacherEmail?: string; names: string[] };
 	},
 ): Promise<string> {
@@ -26,7 +28,7 @@ export async function seedDatedClass(
 			level: "",
 			skills: ["Writing"],
 			mode: "Online",
-			templateId: "",
+			templateId: opts.templateId ?? "",
 			schedule: {
 				days: opts.schedule?.days ?? [vnWeekdayMon0(opts.startDate)],
 				start: opts.schedule?.start ?? "19:00",
