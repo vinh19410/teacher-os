@@ -7,6 +7,7 @@ import {
 	reorderLessonsSchema,
 	reorderModulesSchema,
 } from "@teacher-os/api/contracts";
+import { syllabusLessonMaterial } from "@teacher-os/db/schema/material";
 import { syllabusLesson, syllabusModule } from "@teacher-os/db/schema/syllabus";
 import { and, eq, inArray, max } from "drizzle-orm";
 import type { Context, Hono } from "hono";
@@ -14,6 +15,7 @@ import type { z } from "zod";
 
 import type { Db, KernelCtx } from "../app";
 import {
+	findExistingMaterialIds,
 	findModule,
 	hasDuplicateIds,
 	MAX_IMPORT_NODES,
@@ -55,6 +57,33 @@ export function mountContentRoutes(
 ) {
 	const { basePath, resolve, deps, readBody, unauthorized } = opts;
 	const { getDb } = deps;
+
+	/**
+	 * #655: dedupe + validate materialIds org-scoped (một câu select inArray
+	 * duy nhất). Id lạ → 422 `{error:"material-not-found", materialId}` — id
+	 * đầu tiên trong thứ tự gửi lên. Vắng mặt (undefined) coi như rỗng.
+	 */
+	async function resolveMaterialIds(
+		c: SyllabusContext,
+		db: Db,
+		orgId: string,
+		materialIds: string[] | undefined,
+	): Promise<{ ok: true; ids: string[] } | { ok: false; response: Response }> {
+		const ids = [...new Set(materialIds ?? [])];
+		if (ids.length === 0) return { ok: true, ids };
+		const existing = await findExistingMaterialIds(db, orgId, ids);
+		const missing = ids.find((id) => !existing.has(id));
+		if (missing !== undefined) {
+			return {
+				ok: false,
+				response: c.json(
+					{ error: "material-not-found", materialId: missing },
+					422,
+				),
+			};
+		}
+		return { ok: true, ids };
+	}
 
 	router.post(`${basePath}/modules`, async (c) => {
 		const ctx = c.get("kernelCtx");
@@ -251,8 +280,16 @@ export function mountContentRoutes(
 				),
 			);
 
+		const materials = await resolveMaterialIds(
+			c,
+			db,
+			ctx.orgId,
+			input.materialIds,
+		);
+		if (!materials.ok) return materials.response;
+
 		const lessonId = crypto.randomUUID();
-		await db.insert(syllabusLesson).values({
+		const lessonValues = {
 			id: lessonId,
 			orgId: ctx.orgId,
 			moduleId: mid,
@@ -262,7 +299,24 @@ export function mountContentRoutes(
 			kind: input.kind ?? "lesson",
 			status: input.status ?? "upcoming",
 			position: (last?.max ?? -1) + 1,
-		});
+		};
+		if (materials.ids.length === 0) {
+			await db.insert(syllabusLesson).values(lessonValues);
+			return c.json({ id: lessonId } satisfies CreatedResponse, 201);
+		}
+		// #655: bài học + links tài liệu ngân hàng trong cùng một batch nguyên
+		// tử — position 0..n-1 theo thứ tự gửi lên.
+		await db.batch([
+			db.insert(syllabusLesson).values(lessonValues),
+			...materials.ids.map((materialId, position) =>
+				db.insert(syllabusLessonMaterial).values({
+					orgId: ctx.orgId,
+					syllabusLessonId: lessonId,
+					materialId,
+					position,
+				}),
+			),
+		]);
 		return c.json({ id: lessonId } satisfies CreatedResponse, 201);
 	});
 
@@ -359,7 +413,7 @@ export function mountContentRoutes(
 			return c.json({ error: "lesson not found" }, 404);
 		}
 
-		await db
+		const lessonUpdate = db
 			.update(syllabusLesson)
 			.set({
 				title: input.title,
@@ -372,6 +426,39 @@ export function mountContentRoutes(
 			.where(
 				and(eq(syllabusLesson.id, lid), eq(syllabusLesson.orgId, ctx.orgId)),
 			);
+
+		// #655: body CÓ materialIds → replace-all links (delete theo lessonId +
+		// insert lại, cùng batch với update bài học); VẮNG → không đụng links.
+		if (input.materialIds === undefined) {
+			await lessonUpdate;
+			return c.json({ ok: true });
+		}
+		const materials = await resolveMaterialIds(
+			c,
+			db,
+			ctx.orgId,
+			input.materialIds,
+		);
+		if (!materials.ok) return materials.response;
+		await db.batch([
+			lessonUpdate,
+			db
+				.delete(syllabusLessonMaterial)
+				.where(
+					and(
+						eq(syllabusLessonMaterial.orgId, ctx.orgId),
+						eq(syllabusLessonMaterial.syllabusLessonId, lid),
+					),
+				),
+			...materials.ids.map((materialId, position) =>
+				db.insert(syllabusLessonMaterial).values({
+					orgId: ctx.orgId,
+					syllabusLessonId: lid,
+					materialId,
+					position,
+				}),
+			),
+		]);
 		return c.json({ ok: true });
 	});
 
