@@ -32,7 +32,9 @@ async function pickFromBank(page: Page, title: string) {
 		name: "Chọn từ ngân hàng tài liệu",
 	});
 	await picker.getByRole("button", { name: `Gắn ${title}` }).click();
-	await picker.getByRole("button", { name: "Đóng" }).click();
+	// Modal có 2 nút "Đóng" (X aria-label góc trên + nút footer) — lấy X
+	// theo aria-label để khỏi strict-mode violation.
+	await picker.getByLabel("Đóng").click();
 	await expect(picker).toBeHidden();
 }
 
