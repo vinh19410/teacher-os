@@ -208,6 +208,17 @@ export interface ClassGroup {
 	startDate: string;
 	tuitionFee: number | null;
 	notes: string;
+	schedulingMode?: "auto" | "manual" | string;
+}
+
+export interface ClassSessionItem {
+	id: string;
+	classId: string;
+	date: string;
+	time: string;
+	dur: number;
+	topic: string;
+	zoom: string;
 }
 
 export type SyllabusLessonStatus = "done" | "current" | "upcoming";
@@ -262,6 +273,7 @@ export interface MockData {
 	/** TOS-17 (#451): quyền tài chính của thành viên hiện tại; mặc định cho phép
 	 * trong fixture cũ khi không truyền. */
 	viewer?: KernelViewer;
+	classSessions?: ClassSessionItem[];
 }
 
 export type KernelHydratedData = Pick<
@@ -297,6 +309,7 @@ export type KernelHydratedData = Pick<
 	events: KernelEventRow[];
 	/** TOS-17 (#451): ngữ cảnh quyền tài chính của thành viên hiện tại. */
 	viewer?: KernelViewer;
+	classSessions?: ClassSessionItem[];
 };
 
 export const dayNames = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];

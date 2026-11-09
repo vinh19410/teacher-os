@@ -52,6 +52,7 @@ export interface SessionActionsModalProps {
 		dateISO: string,
 		payload: OccurrenceEditPayload,
 	) => Promise<OccurrenceActionResult>;
+	onDeleteOccurrence?: (dateISO: string) => Promise<OccurrenceActionResult>;
 }
 
 function bucketHead(
@@ -67,20 +68,30 @@ export function SessionActionsModal({
 	onComplete,
 	onCancelOccurrence,
 	onSaveEdit,
+	onDeleteOccurrence,
 }: SessionActionsModalProps) {
 	const [pending, setPending] = useState(false);
-	const [confirming, setConfirming] = useState<"complete" | "cancel" | null>(
-		null,
-	);
+	const [confirming, setConfirming] = useState<
+		"complete" | "cancel" | "delete" | null
+	>(null);
 	const [notice, setNotice] = useState<string | null>(null);
 	const [formError, setFormError] = useState<string | null>(null);
 
 	// Prefill (C4): initializers run once per mounted key (parent sets key).
 	const head = bucketHead(session?.rows ?? []);
-	const [topic, setTopic] = useState(head?.topic ?? "");
-	const [zoom, setZoom] = useState(head?.zoom ?? "");
-	const [time, setTime] = useState(head?.time ?? "");
-	const [durText, setDurText] = useState(head ? String(head.dur) : "");
+	const baseTopic = originalTopic(head) || (session?.topic ?? "");
+	const baseTime = head?.time ?? session?.time ?? "";
+	const baseDur = head
+		? String(head.dur)
+		: session?.dur
+			? String(session.dur)
+			: "";
+	const baseZoom = head?.zoom ?? session?.zoom ?? "";
+
+	const [topic, setTopic] = useState(baseTopic);
+	const [zoom, setZoom] = useState(baseZoom);
+	const [time, setTime] = useState(baseTime);
+	const [durText, setDurText] = useState(baseDur);
 	const [moveDate, setMoveDate] = useState("");
 
 	if (session === null) {
@@ -121,6 +132,8 @@ export function SessionActionsModal({
 					return "Ngày đích đã có buổi khác.";
 				case "not-found":
 					return "Buổi không còn tồn tại.";
+				case "cannot-delete-completed":
+					return "Không thể xóa buổi học đã điểm danh hoặc hoàn thành.";
 				default:
 					return "Không lưu được — dữ liệu chưa được ghi lên máy chủ.";
 			}
@@ -133,11 +146,10 @@ export function SessionActionsModal({
 
 	const editPayload = (): OccurrenceEditPayload => {
 		const payload: OccurrenceEditPayload = {};
-		if (topic !== originalTopic(head)) payload.topic = topic;
-		if (time !== (head?.time ?? "")) payload.time = time;
-		if (durText !== "" && durText !== String(head?.dur ?? ""))
-			payload.dur = Number(durText); // empty text never mints dur:0 -> 400 noise
-		if (zoom !== (head?.zoom ?? "")) payload.zoom = zoom;
+		if (topic !== baseTopic) payload.topic = topic;
+		if (time !== baseTime) payload.time = time;
+		if (durText !== "" && durText !== baseDur) payload.dur = Number(durText); // empty text never mints dur:0 -> 400 noise
+		if (zoom !== baseZoom) payload.zoom = zoom;
 		if (moveDate !== "" && moveDate !== session.dateISO)
 			payload.moveDate = moveDate;
 		return payload;
@@ -177,7 +189,9 @@ export function SessionActionsModal({
 						</ul>
 					) : (
 						<p className="text-muted-foreground text-xs">
-							Cả lớp đã chốt cho buổi này.
+							{session.rows.length === 0
+								? "Chưa có học viên nào trong lớp."
+								: "Cả lớp đã chốt cho buổi này."}
 						</p>
 					)}
 					<div className="flex flex-wrap gap-2 pt-1">
@@ -200,6 +214,22 @@ export function SessionActionsModal({
 						>
 							Hủy buổi
 						</Button>
+						{onDeleteOccurrence && (
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								className="border-danger/30 text-danger hover:bg-danger/10 hover:text-danger"
+								disabled={
+									pending ||
+									moveDate !== "" ||
+									session.rows.some((r) => r.status === "completed")
+								}
+								onClick={() => setConfirming("delete")}
+							>
+								Xóa buổi học
+							</Button>
+						)}
 					</div>
 					{!eligible && targets.length > 0 && (
 						<p className="text-muted-foreground text-xs">
@@ -214,7 +244,9 @@ export function SessionActionsModal({
 							<p className="font-medium text-sm">
 								{confirming === "complete"
 									? `Xác nhận hoàn thành cho ${targetNames.length} học viên?`
-									: `Xác nhận hủy buổi — ${targetNames.length} học viên sẽ bị hủy:`}
+									: confirming === "cancel"
+										? `Xác nhận hủy buổi — ${targetNames.length} học viên sẽ bị hủy:`
+										: "Xác nhận xóa hoàn toàn buổi học này khỏi lớp?"}
 							</p>
 							<ul className="list-decimal pl-5 text-xs">
 								{targetNames.map((n, i) => (
@@ -225,19 +257,26 @@ export function SessionActionsModal({
 							<div className="flex gap-2">
 								<Button
 									type="button"
-									variant={confirming === "cancel" ? "danger" : "primary"}
+									variant={confirming === "complete" ? "primary" : "danger"}
 									size="sm"
 									disabled={pending}
 									onClick={() => {
 										const date = session.dateISO;
+										const actionType = confirming;
 										void runAction(() =>
-											confirming === "complete"
+											actionType === "complete"
 												? onComplete(date)
-												: onCancelOccurrence(date),
+												: actionType === "cancel"
+													? onCancelOccurrence(date)
+													: onDeleteOccurrence
+														? onDeleteOccurrence(date)
+														: Promise.resolve({ ok: false }),
 										).then((result) => {
+											if (result.ok && actionType === "delete") {
+												onClose();
+												return;
+											}
 											if (!result.ok) {
-												// Success copy is the ROUTE's single toast; failures that
-												// need in-modal context surface here.
 												setNotice(summarize(result));
 											}
 										});

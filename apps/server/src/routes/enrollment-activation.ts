@@ -9,6 +9,7 @@ import {
 } from "@teacher-os/api/skeleton";
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { classTable } from "@teacher-os/db/schema/class";
+import { classSession } from "@teacher-os/db/schema/class-session";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { lesson } from "@teacher-os/db/schema/lesson";
 import {
@@ -21,6 +22,7 @@ import { sessionPackage } from "@teacher-os/db/schema/session-package";
 import { and, eq, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import type { Db } from "../app";
+import { isManualClass } from "../lib/class-mode";
 import { backfillStudyPackTargetsForStudent } from "../lib/study-pack-assign";
 import { isRollbackableConstraintError } from "./holidays";
 
@@ -316,6 +318,8 @@ export async function activateEnrollment(
 			startDate: classTable.startDate,
 			mode: classTable.mode,
 			tuitionFee: classTable.tuitionFee,
+			syllabusId: classTable.syllabusId,
+			schedulingMode: classTable.schedulingMode,
 		})
 		.from(classTable)
 		.where(
@@ -358,10 +362,28 @@ export async function activateEnrollment(
 		return { ok: false, error: "enrollment" };
 	}
 
+	const isManual = await isManualClass(
+		db,
+		orgId,
+		cls.id,
+		cls.syllabusId,
+		cls.schedulingMode,
+	);
+
+	const classSessionRows = isManual
+		? await db
+				.select()
+				.from(classSession)
+				.where(
+					and(eq(classSession.orgId, orgId), eq(classSession.classId, cls.id)),
+				)
+				.orderBy(classSession.date)
+		: [];
+
 	const packageValues = {
 		orgId,
 		studentId: existingEnrollment.studentId,
-		total: cls.sessionsTotal,
+		total: isManual ? classSessionRows.length : cls.sessionsTotal,
 		price: cls.tuitionFee ?? 0,
 		mode: cls.mode,
 		start: formatDayMonth(new Date()),
@@ -370,14 +392,28 @@ export async function activateEnrollment(
 		enrollmentId,
 	};
 
-	const generated = generateScheduleLessons({
-		schedule: cls.schedule,
-		startDate: cls.startDate,
-		sessionsTotal: cls.sessionsTotal,
-		orgId,
-		classId: cls.id,
-		enrollmentId,
-	});
+	const generated: GeneratorRow[] = isManual
+		? classSessionRows.map((cs) => ({
+				orgId,
+				classId: cls.id,
+				enrollmentId,
+				day: isoToLessonWeekday(cs.date),
+				time: cs.time,
+				dur: cs.dur,
+				date: cs.date,
+				type: "1:1",
+				status: "upcoming" as const,
+				topic: cs.topic,
+				zoom: cs.zoom,
+			}))
+		: generateScheduleLessons({
+				schedule: cls.schedule,
+				startDate: cls.startDate,
+				sessionsTotal: cls.sessionsTotal,
+				orgId,
+				classId: cls.id,
+				enrollmentId,
+			});
 	const parsedSchedule = parseStoredSchedule(cls.schedule);
 
 	// D6 (I2b/I3/I6): dựng batch từ state đã đọc (shifts + rows đã áp

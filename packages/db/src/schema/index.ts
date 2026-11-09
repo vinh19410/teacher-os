@@ -5,6 +5,7 @@ export * from "./assignment-test";
 export * from "./auth";
 export * from "./class";
 export * from "./class-assignment";
+export * from "./class-session";
 export * from "./comment-bank";
 export * from "./credit-wallet";
 export * from "./enrollment";

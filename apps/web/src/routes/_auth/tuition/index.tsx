@@ -193,7 +193,11 @@ export function TuitionRoute() {
 								</span>,
 								<Progress
 									key="p"
-									value={s.hasPackage ? (s.pkg.done / s.pkg.total) * 100 : 0}
+									value={
+										s.hasPackage && s.pkg.total > 0
+											? (s.pkg.done / s.pkg.total) * 100
+											: 0
+									}
 									variant={
 										!s.hasPackage
 											? "default"

@@ -377,7 +377,7 @@ describe("class detail → Buổi học tab", () => {
 		).toBeTruthy();
 	});
 
-	it("opens the manage sessions modal with an empty-state explanation and switches to the Giáo trình tab when the class has no syllabus (#521)", async () => {
+	it("shows + Thêm buổi học button when class has no syllabus and opens manual session modal (Issue #649)", async () => {
 		startKernelServer(
 			snapshotFixture({
 				classes: [classRow({ id: "cl-1", syllabusId: null })],
@@ -385,62 +385,115 @@ describe("class detail → Buổi học tab", () => {
 			}),
 		);
 		renderWithKernel(<ClassDetail />);
+		const addSessionBtns = (await screen.findAllByRole("button", {
+			name: "+ Thêm buổi học",
+		})) as HTMLButtonElement[];
+		expect(addSessionBtns.length).toBeGreaterThanOrEqual(1);
+
+		fireEvent.click(addSessionBtns[0]);
+		const dialog = screen.getByRole("dialog", {
+			name: "Thêm buổi học thủ công",
+		});
+		expect(dialog).toBeTruthy();
+		expect(within(dialog).getByLabelText(/Chủ đề buổi học/)).toBeTruthy();
+
+		fireEvent.click(within(dialog).getByRole("button", { name: "Hủy" }));
+		expect(
+			screen.queryByRole("dialog", { name: "Thêm buổi học thủ công" }),
+		).toBeNull();
+
+		// Giáo trình tab still accessible
+		fireEvent.click(screen.getByRole("tab", { name: "Giáo trình" }));
+		expect(
+			screen.getByRole("button", { name: "Nhập từ template" }),
+		).toBeTruthy();
+	});
+
+	it("shows Sắp xếp buổi button when class has a syllabus", async () => {
+		startKernelServer(attachedCopy());
+		renderWithKernel(<ClassDetail />);
 		const manageBtn = (await screen.findByRole("button", {
 			name: "Sắp xếp buổi",
 		})) as HTMLButtonElement;
 		expect(manageBtn.disabled).toBe(false);
 
-		// Opening and dismissing the modal from another tab preserves that tab.
-		fireEvent.click(screen.getByRole("tab", { name: "Học viên" }));
 		fireEvent.click(manageBtn);
-		const dismissedDialog = screen.getByRole("dialog", {
-			name: "Quản lý buổi của lớp",
-		});
-		fireEvent.click(
-			within(dismissedDialog).getByRole("button", { name: "Đóng" }),
-		);
 		expect(
-			screen.queryByRole("dialog", { name: "Quản lý buổi của lớp" }),
-		).toBeNull();
-		expect(
-			screen
-				.getByRole("tab", { name: "Học viên" })
-				.getAttribute("aria-selected"),
-		).toBe("true");
-
-		// Enter assign view on Buổi học & luyện tập to verify switching to curriculum resets assignmentsView.
-		fireEvent.click(screen.getByRole("tab", { name: "Buổi học & luyện tập" }));
-		const assignBtns = screen.getAllByRole("button", { name: "Giao bài tập" });
-		expect(assignBtns).toHaveLength(2);
-		fireEvent.click(assignBtns[0]);
-		expect(screen.getByText("Chọn một đề")).toBeTruthy();
-		expect(
-			screen.getAllByRole("button", { name: "Giao bài tập" }),
-		).toHaveLength(1);
-
-		fireEvent.click(manageBtn);
-		const dialog = screen.getByRole("dialog", {
-			name: "Quản lý buổi của lớp",
-		});
-		expect(
-			within(dialog).getByText("Gắn giáo trình cho lớp để sắp xếp buổi."),
+			screen.getByRole("dialog", { name: "Quản lý buổi của lớp" }),
 		).toBeTruthy();
+	});
 
-		fireEvent.click(
-			within(dialog).getByRole("button", { name: "Mở tab Giáo trình" }),
+	it("renders manual session for class with 0 students and allows deletion (Issue #649)", async () => {
+		const server = startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-1",
+						syllabusId: null,
+						schedulingMode: "manual",
+						sessionsTotal: 1,
+					}),
+				],
+				classSessions: [
+					{
+						id: "cs-1",
+						classId: "cl-1",
+						date: "2026-11-12",
+						time: "19:00",
+						dur: 90,
+						topic: "Task 1 Line Chart",
+						zoom: "",
+					},
+				],
+			}),
 		);
+		renderWithKernel(<ClassDetail />);
+		await openSessionsTab();
+
+		expect(await screen.findByText("Task 1 Line Chart")).toBeTruthy();
+		const adjustBtn = await screen.findByRole("button", { name: "Điều chỉnh" });
+		fireEvent.click(adjustBtn);
+
+		const dialog = await screen.findByRole("dialog", {
+			name: /Điều chỉnh buổi/,
+		});
+		expect(dialog).toBeTruthy();
 		expect(
-			screen.queryByRole("dialog", { name: "Quản lý buổi của lớp" }),
-		).toBeNull();
-		expect(
-			screen
-				.getByRole("tab", { name: "Giáo trình" })
-				.getAttribute("aria-selected"),
-		).toBe("true");
-		expect(
-			screen.getByRole("button", { name: "Nhập từ template" }),
+			within(dialog).getByText("Chưa có học viên nào trong lớp."),
 		).toBeTruthy();
-		expect(screen.getByRole("button", { name: "Giao bài tập" })).toBeTruthy();
+		const topicInput = within(dialog).getByLabelText(
+			/Chủ đề/,
+		) as HTMLInputElement;
+		expect(topicInput.value).toBe("Task 1 Line Chart");
+
+		fireEvent.change(topicInput, { target: { value: "Updated Line Chart" } });
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Lưu thay đổi" }),
+		);
+
+		await waitFor(() => {
+			expect(server.writes).toContainEqual({
+				method: "POST",
+				path: "/api/classes/cl-1/sessions/2026-11-12/edit",
+				body: { topic: "Updated Line Chart" },
+			});
+		});
+
+		const deleteBtn = within(dialog).getByRole("button", {
+			name: "Xóa buổi học",
+		});
+		fireEvent.click(deleteBtn);
+
+		const confirmBtn = within(dialog).getByRole("button", { name: "Xác nhận" });
+		fireEvent.click(confirmBtn);
+
+		await waitFor(() => {
+			expect(server.writes).toContainEqual({
+				method: "DELETE",
+				path: "/api/classes/cl-1/sessions/2026-11-12",
+				body: null,
+			});
+		});
 	});
 });
 

@@ -218,6 +218,7 @@ export function AddClassModal({
 				skills: classType === "ielts" ? skills : [],
 				mode,
 				templateId,
+				schedulingMode: templateId.trim() !== "" ? "auto" : "manual",
 				schedule: { days, start: startTime, end: endTime },
 				sessionsTotal: parsedTotal,
 				startDate: startDate.trim(),
