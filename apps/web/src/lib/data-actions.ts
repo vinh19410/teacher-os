@@ -61,6 +61,9 @@ export type KernelAction =
 				dur: number;
 				topic: string;
 				zoom?: string;
+				/** #655 — tài liệu ngân hàng gắn ngay khi tạo buổi; chỉ gửi khi
+				 * khác rỗng (server default [] khi thiếu key). */
+				materialIds?: string[];
 			};
 	  }
 	| {
@@ -209,6 +212,9 @@ export type KernelAction =
 				// tự default (add) và preserve (edit).
 				kind?: SyllabusLesson["kind"];
 				status?: SyllabusLesson["status"];
+				/** #655 — tài liệu ngân hàng của bài; chỉ gửi khi khác rỗng
+				 * (thiếu key = không gắn gì trên bài mới). */
+				materialIds?: string[];
 			};
 	  }
 	| {
@@ -222,6 +228,9 @@ export type KernelAction =
 				materials: string;
 				kind?: SyllabusLesson["kind"];
 				status?: SyllabusLesson["status"];
+				/** #655 — chỉ gửi khi người dùng TỤCH VÀO lựa chọn tài liệu;
+				 * thiếu key = server giữ nguyên links hiện có của bài. */
+				materialIds?: string[];
 			};
 	  }
 	| {

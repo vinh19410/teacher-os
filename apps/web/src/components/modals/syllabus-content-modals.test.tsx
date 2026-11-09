@@ -15,6 +15,7 @@ import {
 	startKernelServer,
 	syllabusRow,
 } from "@/test/kernel-harness";
+import { startMaterialsBankServer } from "@/test/materials-harness";
 import { AddLessonModal } from "./add-lesson-modal";
 import { AddModuleModal } from "./add-module-modal";
 import { AddSyllabusModal } from "./add-syllabus-modal";
@@ -53,6 +54,51 @@ function type(dialog: HTMLElement, label: RegExp | string, value: string) {
 		target: { value },
 	});
 }
+
+/**
+ * Bài học có kèm tài liệu ngân hàng (#655). Tham chiếu biến (không literal
+ * ngay tại chỗ) nên field thừa `bankMaterials` không dính excess-property
+ * check của KernelSyllabusLessonRow — server sẽ trả field này khi bật.
+ */
+const lessonWithBank = {
+	id: "l-1",
+	title: "Line chart",
+	objectives: "Mô tả xu hướng",
+	materials: "Cam 15",
+	kind: "midterm",
+	status: "current",
+	bankMaterials: [
+		{
+			id: "mat-1",
+			title: "Reading pack",
+			description: "Bài đọc kèm bài học",
+			kind: "file" as const,
+			url: null,
+			mimeType: "application/pdf",
+			sizeBytes: 1024,
+			originalName: "reading.pdf",
+			position: 0,
+		},
+	],
+};
+
+const syllabusWithBank = () =>
+	snapshotFixture({
+		syllabi: [
+			syllabusRow({
+				id: "sy-1",
+				name: "IELTS Writing 7.0",
+				modules: [
+					{
+						id: "m-1",
+						title: "Module 1",
+						description: "Nền tảng",
+						lessons: [lessonWithBank],
+					},
+				],
+			}),
+		],
+	});
 
 afterEach(() => {
 	cleanup();
@@ -207,6 +253,60 @@ describe("AddLessonModal", () => {
 		await waitFor(() => expect(server.writes).toHaveLength(1));
 		expect(server.writes[0].body).not.toHaveProperty("kind");
 	});
+
+	it("sends materialIds of picked bank materials (#655)", async () => {
+		const server = startMaterialsBankServer();
+		renderWithKernel(
+			<AddLessonModal
+				open
+				onClose={() => {}}
+				target={{ kind: "template", syllabusId: "sy-1" }}
+				moduleId="m-1"
+			/>,
+		);
+		const dialog = await screen.findByRole("dialog");
+		type(dialog, /Tên buổi học/, "Bar chart");
+		fireEvent.click(
+			await within(dialog).findByRole("button", { name: "Chọn từ ngân hàng" }),
+		);
+		const pickerDialog = await screen.findByRole("dialog", {
+			name: "Chọn từ ngân hàng tài liệu",
+		});
+		fireEvent.click(
+			await within(pickerDialog).findByRole("button", {
+				name: "Gắn Reading pack",
+			}),
+		);
+		const chips = await within(dialog).findByRole("list", {
+			name: "Tài liệu đã chọn",
+		});
+		expect(within(chips).getByText("Reading pack")).toBeTruthy();
+
+		fireEvent.click(within(dialog).getByRole("button", { name: "Thêm buổi" }));
+		const write = await waitFor(() => {
+			const found = server.writes.find(
+				(req) =>
+					req.method === "POST" &&
+					req.path === "/api/syllabus-templates/sy-1/modules/m-1/lessons",
+			);
+			expect(found).toBeTruthy();
+			return found;
+		});
+		expect(write?.path).toBe(
+			"/api/syllabus-templates/sy-1/modules/m-1/lessons",
+		);
+		expect(write?.body).toMatchObject({
+			title: "Bar chart",
+			materialIds: ["mat-1"],
+		});
+	});
+
+	it("omits materialIds when nothing is picked (#655)", async () => {
+		const { server, dialog } = await addLesson(false);
+		fireEvent.click(within(dialog).getByRole("button", { name: "Thêm buổi" }));
+		await waitFor(() => expect(server.writes).toHaveLength(1));
+		expect(server.writes[0].body).not.toHaveProperty("materialIds");
+	});
 });
 
 describe("EditLessonModal", () => {
@@ -268,5 +368,71 @@ describe("EditLessonModal", () => {
 		await waitFor(() => expect(server.writes).toHaveLength(1));
 		expect(server.writes[0].body).not.toHaveProperty("kind");
 		expect(server.writes[0].body).not.toHaveProperty("status");
+	});
+
+	it("preloads bank material chips from lesson.bankMaterials (#655)", async () => {
+		startKernelServer(syllabusWithBank());
+		renderWithKernel(
+			<EditLessonModal
+				open
+				onClose={() => {}}
+				target={{ kind: "template", syllabusId: "sy-1" }}
+				moduleId="m-1"
+				lessonId="l-1"
+			/>,
+		);
+		const dialog = await screen.findByRole("dialog");
+		const chips = await within(dialog).findByRole("list", {
+			name: "Tài liệu đã chọn",
+		});
+		expect(within(chips).getByText("Reading pack")).toBeTruthy();
+	});
+
+	it("omits materialIds until the user touches the selection (#655)", async () => {
+		const server = startKernelServer(syllabusWithBank());
+		renderWithKernel(
+			<EditLessonModal
+				open
+				onClose={() => {}}
+				target={{ kind: "template", syllabusId: "sy-1" }}
+				moduleId="m-1"
+				lessonId="l-1"
+			/>,
+		);
+		const dialog = await screen.findByRole("dialog");
+		// Chỉ lưu text — không đụng chips: server giữ nguyên links hiện có.
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Lưu thay đổi" }),
+		);
+		await waitFor(() => expect(server.writes).toHaveLength(1));
+		expect(server.writes[0].body).not.toHaveProperty("materialIds");
+	});
+
+	it("sends the replacement materialIds once a chip is removed (#655)", async () => {
+		const server = startKernelServer(syllabusWithBank());
+		renderWithKernel(
+			<EditLessonModal
+				open
+				onClose={() => {}}
+				target={{ kind: "template", syllabusId: "sy-1" }}
+				moduleId="m-1"
+				lessonId="l-1"
+			/>,
+		);
+		const dialog = await screen.findByRole("dialog");
+		fireEvent.click(
+			await within(dialog).findByRole("button", { name: "Gỡ Reading pack" }),
+		);
+		await waitFor(() =>
+			expect(
+				within(dialog).queryByRole("list", { name: "Tài liệu đã chọn" }),
+			).toBeNull(),
+		);
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Lưu thay đổi" }),
+		);
+		await waitFor(() => expect(server.writes).toHaveLength(1));
+		// Touched → thay thế toàn bộ: gỡ hết = mảng rỗng.
+		expect(server.writes[0].body).toMatchObject({ materialIds: [] });
 	});
 });

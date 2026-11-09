@@ -1,4 +1,6 @@
+import type { SyllabusBankMaterialRef } from "@teacher-os/api/material-contracts";
 import { type FormEvent, useState } from "react";
+import { MaterialPicker } from "@/components/materials/material-picker";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
@@ -34,6 +36,13 @@ export function EditLessonModal({
 	const [title, setTitle] = useState("");
 	const [objectives, setObjectives] = useState("");
 	const [materials, setMaterials] = useState("");
+	// Tài liệu ngân hàng của bài (#655): preload từ lesson.bankMaterials;
+	// chỉ gửi materialIds khi người dùng TỤCH VÀO lựa chọn — không touched
+	// thì OMIT key để server giữ nguyên links hiện có.
+	const [bankMaterials, setBankMaterials] = useState<SyllabusBankMaterialRef[]>(
+		[],
+	);
+	const [materialsTouched, setMaterialsTouched] = useState(false);
 	const [kind, setKind] = useState<SyllabusLessonKind>("lesson");
 	const [status, setStatus] = useState<SyllabusLessonStatus>("upcoming");
 	const { saving, error, setError, notice, submitBlocked, run, reconcile } =
@@ -44,6 +53,8 @@ export function EditLessonModal({
 		setTitle(lesson.title);
 		setObjectives(lesson.objectives === "—" ? "" : lesson.objectives);
 		setMaterials(lesson.materials === "—" ? "" : lesson.materials);
+		setBankMaterials(lesson.bankMaterials ?? []);
+		setMaterialsTouched(false);
 		setKind(lesson.kind);
 		setStatus(lesson.status);
 		setLoadedFor(lessonId);
@@ -72,6 +83,11 @@ export function EditLessonModal({
 				// Không showStatus → không gửi key status: server + reducer sẽ
 				// giữ nguyên trạng thái hiện tại của buổi học.
 				...(showStatus ? { status } : {}),
+				// #655: không touched → OMIT materialIds, server giữ nguyên
+				// links; touched → gửi thay thế toàn bộ theo lựa chọn hiện tại.
+				...(materialsTouched
+					? { materialIds: bankMaterials.map((m) => m.id) }
+					: {}),
 			},
 		});
 		if (result?.kind === "refreshed") {
@@ -106,6 +122,28 @@ export function EditLessonModal({
 						onChange={(e) => setMaterials(e.target.value)}
 					/>
 				</Field>
+				{/* biome-ignore lint/a11y/useSemanticElements: role="group" + aria-label đặt tên nhóm tài liệu theo pattern ChipFilter cho SR/e2e */}
+				<div
+					role="group"
+					aria-label="Tài liệu ngân hàng"
+					className="grid gap-2"
+				>
+					<p className="font-medium text-sm leading-none">Tài liệu ngân hàng</p>
+					<MaterialPicker
+						selected={bankMaterials}
+						onPick={(ref) => {
+							setMaterialsTouched(true);
+							setBankMaterials((prev) =>
+								prev.some((m) => m.id === ref.id) ? prev : [...prev, ref],
+							);
+						}}
+						onRemove={(id) => {
+							setMaterialsTouched(true);
+							setBankMaterials((prev) => prev.filter((m) => m.id !== id));
+						}}
+						disabled={saving}
+					/>
+				</div>
 				{showKind && (
 					<Field label="Loại buổi học">
 						<Select
