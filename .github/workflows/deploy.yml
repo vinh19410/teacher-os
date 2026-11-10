@@ -56,7 +56,7 @@ jobs:
     # other must stay in a serial describe so they land on one shard together.
     # No secrets: the stack is local and talks to nothing in production.
     name: e2e (shard ${{ matrix.shard }}/6)
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 40
     strategy:
       fail-fast: false
@@ -82,7 +82,7 @@ jobs:
 
   deploy:
     needs: [quality, e2e]
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: production
     steps:
