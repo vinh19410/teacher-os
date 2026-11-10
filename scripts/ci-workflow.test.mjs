@@ -886,7 +886,7 @@ test("audit-663.yml triggers only on manual workflow_dispatch, is read-only, and
 		/apply/,
 		"audit-663.yml must never pass the write flag or any write mode to the audit script",
 	);
-	// Pin exact command line (invariant chỉtrail, khớp style test lân cận):
+	// Pin exact command line (invariant chỉ dẫn, khớp style test lân cận):
 	// step chạy đúng script audit ở chế độ đọc, không thêm lệnh nào khác.
 	assert.match(
 		code,

@@ -416,7 +416,11 @@ const D1_UUID_REGEX =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const STAGING_D1_NAME_PREFIX = "teacher-os-database-staging-";
-const PROD_D1_NAME_PREFIX = "teacher-os-database-prod-";
+/** Prod list bằng prefix RỘNG rồi lọc regex: tên prod thật trong account có
+ * thể là `production-`/`main-`/`pilot-` (PROD_D1_NAME_REGEX), không chắc là
+ * literal `prod-` — Incident lần chạy đầu (#663): prefix `prod-` bắt phải
+ * một DB `prod-*` rỗng không có schema trong khi DB prod thật tên khác. */
+const PROD_D1_LIST_PREFIX = "teacher-os-database-";
 
 /** Copy pattern `redactSensitive` từ `packages/db/scripts/seed-vocab-library.ts:121`
  * (không import ngược từ scripts — dependency direction src ← scripts). */
@@ -506,14 +510,14 @@ export async function resolveD1DatabaseId(options: {
 	apiToken: string;
 	fetchImpl?: typeof fetch;
 	timeoutMs?: number;
-}): Promise<string> {
+}): Promise<{ id: string; name: string }> {
 	if (options.stage !== "staging" && options.stage !== "prod") {
 		throw new Error(
 			`Unsupported --d1-stage "${options.stage}": audit lookup is restricted to "staging" or "prod" (fail-closed).`,
 		);
 	}
 	const prefix =
-		options.stage === "staging" ? STAGING_D1_NAME_PREFIX : PROD_D1_NAME_PREFIX;
+		options.stage === "staging" ? STAGING_D1_NAME_PREFIX : PROD_D1_LIST_PREFIX;
 	const stageRegex =
 		options.stage === "staging" ? STAGING_D1_NAME_REGEX : PROD_D1_NAME_REGEX;
 	const fetchFn = options.fetchImpl ?? fetch;
@@ -559,16 +563,116 @@ export async function resolveD1DatabaseId(options: {
 	const matches = accumulated.filter(
 		(entry) => D1_UUID_REGEX.test(entry.uuid) && stageRegex.test(entry.name),
 	);
-	const match = matches[0];
-	if (matches.length !== 1 || !match) {
+	let candidates = matches;
+	let lastProbeError: string | undefined;
+	if (candidates.length > 1) {
+		// Nhiều tên trùng regex (VD: DB `prod-*` rỗng + DB `production-*`
+		// thật): probe read-only sqlite_master — chỉ giữ DB có schema audit.
+		// Không phân biệt được (0 hoặc >1 có schema) → fail-closed kèm tên.
+		const withSchema: Array<{ uuid: string; name: string }> = [];
+		for (const candidate of candidates) {
+			const probe = await hasAuditSchema({
+				accountId: options.accountId,
+				databaseId: candidate.uuid,
+				apiToken: options.apiToken,
+				fetchImpl: fetchFn,
+				timeoutMs,
+			});
+			if (probe.probeError) {
+				lastProbeError = probe.probeError;
+			}
+			if (probe.hasSchema) {
+				withSchema.push(candidate);
+			}
+		}
+		if (withSchema.length >= 1) {
+			candidates = withSchema;
+		}
+	}
+	const match = candidates[0];
+	if (candidates.length !== 1 || !match) {
+		const seenNames = accumulated
+			.map((entry) => entry.name)
+			.filter((name) => name.startsWith("teacher-os-database-"));
+		const probeNote = lastProbeError
+			? ` Last schema-probe error: ${lastProbeError}`
+			: "";
 		throw new Error(
 			redactSensitive(
-				`Expected exactly 1 ${options.stage} D1 database matching prefix "${prefix}", found ${matches.length}.`,
+				`Expected exactly 1 ${options.stage} D1 database matching ${stageRegex}, found ${candidates.length} candidate(s)${candidates.length !== matches.length ? ` (từ ${matches.length} tên trùng regex, đã loại các DB không có schema audit)` : ""}.${seenNames.length > 0 ? ` Candidate names under "teacher-os-database-": ${seenNames.join(", ")}.` : " No teacher-os-database-* names were returned by the API."}${probeNote}`,
 				[options.apiToken],
 			),
 		);
 	}
-	return match.uuid;
+	// Ứng viên cuối cũng phải có schema audit — bắt sớm trường hợp token trỏ
+	// nhầm account/stage (incident #663: resolve được DB `prod-*` trống rồi
+	// chết ở câu audit với "no such table"). Phân biệt rõ probe-error với
+	// DB-trống để không chẩn đoán sai.
+	const finalProbe = await hasAuditSchema({
+		accountId: options.accountId,
+		databaseId: match.uuid,
+		apiToken: options.apiToken,
+		fetchImpl: fetchFn,
+		timeoutMs,
+	});
+	if (finalProbe.probeError) {
+		throw new Error(
+			redactSensitive(
+				`Could not verify ${options.stage} D1 database "${match.name}" schema — probe failed: ${finalProbe.probeError}. Retry once before diagnosing further.`,
+				[options.apiToken],
+			),
+		);
+	}
+	if (!finalProbe.hasSchema) {
+		throw new Error(
+			redactSensitive(
+				`Resolved ${options.stage} D1 database "${match.name}" schema is missing tables required by the audit: has [${finalProbe.presentTables.join(", ") || "none of the audit tables"}], missing [${finalProbe.missingTables.join(", ")}]. Most likely cause: this stage was last deployed before migration 0066_class_materials (2026-11-08, materials domain #663) landed, so the audit population is structurally zero and the audit becomes meaningful only after the next deploy of this stage. If this stage IS deployed post-2026-11-08, verify CLOUDFLARE_ACCOUNT_ID against the GitHub Environment "${options.stage === "prod" ? "production" : "staging"}".`,
+				[options.apiToken],
+			),
+		);
+	}
+	return { id: match.uuid, name: match.name };
+}
+
+/** Probe read-only: DB có đủ 2 bảng audit không. Lỗi probe (403/timeout/HTTP)
+ * KHÔNG được nuốt thành "DB trống" — trả `probeError` để message cuối phân
+ * biệt `probe-error` với `schema-thiếu` (tránh chẩn đoán sai lệch account). */
+async function hasAuditSchema(options: {
+	accountId: string;
+	databaseId: string;
+	apiToken: string;
+	fetchImpl?: typeof fetch;
+	timeoutMs?: number;
+}): Promise<{
+	hasSchema: boolean;
+	presentTables: string[];
+	missingTables: string[];
+	probeError?: string;
+}> {
+	const required = ["lesson_material", "holiday_session_shift"];
+	try {
+		const rows = await d1Query({
+			accountId: options.accountId,
+			databaseId: options.databaseId,
+			apiToken: options.apiToken,
+			sql: "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('lesson_material','holiday_session_shift')",
+			fetchImpl: options.fetchImpl,
+			timeoutMs: options.timeoutMs,
+		});
+		const present = new Set(rows.map((row) => String(row.name)));
+		return {
+			hasSchema: required.every((table) => present.has(table)),
+			presentTables: required.filter((table) => present.has(table)),
+			missingTables: required.filter((table) => !present.has(table)),
+		};
+	} catch (error) {
+		return {
+			hasSchema: false,
+			presentTables: [],
+			missingTables: [...required],
+			probeError: error instanceof Error ? error.message : String(error),
+		};
+	}
 }
 
 /** 1 câu SQL qua D1 REST `/query`; retry 1 lần trên 429/5xx (mọi statement
