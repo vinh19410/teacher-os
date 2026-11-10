@@ -1,3 +1,4 @@
+import type { KernelHolidayShiftRow } from "@teacher-os/api/contracts";
 import { ChevronDown, ChevronRight, Clock, Paperclip } from "lucide-react";
 import { type KeyboardEvent, useState } from "react";
 import { AttendanceSummary } from "@/components/class-detail/attendance-summary";
@@ -33,6 +34,7 @@ import type {
 	Student,
 	Syllabus,
 } from "@/lib/mock-data";
+import { makeupDateForShift } from "@/lib/repos/holidays";
 import type { KernelCommandResult } from "@/lib/repos/kernel";
 import { todayISOVietnam } from "@/lib/week-grid";
 
@@ -63,6 +65,7 @@ export function ClassSessionsSection({
 	isPending,
 	busy,
 	classSessions,
+	holidayShifts = [],
 	onAddSession,
 	onDeleteOccurrence,
 }: {
@@ -86,6 +89,9 @@ export function ClassSessionsSection({
 		payload: OccurrenceEditPayload,
 	) => Promise<OccurrenceActionResult>;
 	classSessions?: ClassSessionItem[];
+	/** #665: shift gốc→bù của org (snapshot) — derive badge «Đã dời» cho
+	 * bucket manual 0 lesson; optional để caller cũ/test không truyền vẫn chạy. */
+	holidayShifts?: KernelHolidayShiftRow[];
 	onAddSession?: () => void;
 	onDeleteOccurrence?: (dateISO: string) => Promise<OccurrenceActionResult>;
 	isPending: (key: string) => boolean;
@@ -265,6 +271,13 @@ export function ClassSessionsSection({
 							(sessionRowTargets(s).length > 0 ||
 								isManual ||
 								s.topic !== undefined);
+						// #665: bucket manual 0 lesson tại ngày gốc đã dời lịch lễ —
+						// không có lesson row nào để mark `holiday` nên
+						// `sessionStatus` luôn "upcoming". Derive riêng từ
+						// `holidayShifts`, KHÔNG mở rộng `sessionStatus`.
+						const shiftedAway =
+							s.rows.length === 0 &&
+							makeupDateForShift({ holidayShifts }, cls.id, s.dateISO) !== null;
 
 						return (
 							<li
@@ -373,6 +386,10 @@ export function ClassSessionsSection({
 										Đã hủy
 									</span>
 								) : status === "holiday" ? (
+									<span className="inline-flex shrink-0 items-center rounded-md border border-warn/50 bg-warn-soft px-1.5 py-0.5 font-medium text-warn text-xs">
+										Nghỉ lễ — Đã dời lịch
+									</span>
+								) : shiftedAway ? (
 									<span className="inline-flex shrink-0 items-center rounded-md border border-warn/50 bg-warn-soft px-1.5 py-0.5 font-medium text-warn text-xs">
 										Nghỉ lễ — Đã dời lịch
 									</span>
