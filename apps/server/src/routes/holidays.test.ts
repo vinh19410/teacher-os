@@ -1310,10 +1310,11 @@ describe("TOS-13 Phase 2: apply mode cancel + DELETE hoàn tác + activation D7 
 			expect(await lessonMaterialsAt(F9)).toHaveLength(0);
 		});
 
-		test("apply shift: mồ côi ở makeupDate bị dọn, kể cả không trùng materialId (scenario C)", async () => {
+		test("apply shift: dòng trùng materialId ở makeupDate bị dọn, mồ côi không trùng được GIỮ (scenario C — #658)", async () => {
 			await seedMaterial("mat-shift", "cls-a", F3);
-			// Mồ côi tồn đọng ở ngày bù (makeupDate thường không có dòng lesson):
-			// một bản trùng materialId và một bản khác hẳn.
+			// Từ #658, tài liệu ở ngày chỉ có buổi manual `class_session` là dữ
+			// liệu thật → chỉ dọn dòng TRÙNG materialId (đỡ PK với move), giữ
+			// mồ côi không trùng ở makeupDate.
 			await seedMaterial("mat-shift", "cls-a", F9);
 			await seedMaterial("mat-orphan", "cls-a", F9);
 
@@ -1321,8 +1322,10 @@ describe("TOS-13 Phase 2: apply mode cancel + DELETE hoàn tác + activation D7 
 
 			expect(await lessonMaterialsAt(F3)).toHaveLength(0);
 			const makeup = await lessonMaterialsAt(F9);
-			expect(makeup).toHaveLength(1);
-			expect(makeup[0]?.materialId).toBe("mat-shift");
+			expect(makeup.map((r) => r.materialId).sort()).toEqual([
+				"mat-orphan",
+				"mat-shift",
+			]);
 		});
 
 		test("DELETE hoàn tác: trùng materialId giữ bản ngày gốc, bản ngày bù mất (scenario B — test xanh)", async () => {

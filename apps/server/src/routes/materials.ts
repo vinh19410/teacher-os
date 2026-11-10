@@ -19,6 +19,7 @@ import {
 import { parseStartDateStrict } from "@teacher-os/api/skeleton";
 import { canPublishGrade, canReviewGrade } from "@teacher-os/auth/role";
 import { classTable } from "@teacher-os/db/schema/class";
+import { classSession } from "@teacher-os/db/schema/class-session";
 import { lesson } from "@teacher-os/db/schema/lesson";
 import {
 	lessonMaterial,
@@ -387,21 +388,12 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		};
 	}
 
-	/** #645: biểu thức guard CASE dùng chung cho POST attach + PUT upload —
-	 * biến `date` thành NULL khi bucket đã all-holiday (race apply shift chen
-	 * ngang sau resolveSession) để NOT NULL violation fail statement/batch.
-	 * Bucket-semantics giống `isHolidayBucket` (khớp web `allHoliday`). */
-	function holidayBucketDateGuard(
-		orgId: string,
-		classId: string,
-		date: string,
-	) {
-		return sql`CASE WHEN EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${classId} AND ${lesson.date} = ${date} AND ${lesson.status} = 'holiday') AND NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${classId} AND ${lesson.date} = ${date} AND ${lesson.status} != 'holiday') THEN NULL ELSE ${date} END`;
-	}
-
 	/** #645: buổi `holiday` là cả-bucket đều holiday (khớp `allHoliday` của web
 	 * `class-sessions.ts`) — ngày trộn holiday + non-holiday vẫn thao tác được.
-	 * Mồ côi trên ngày KHÔNG còn dòng lesson không bị chặn (bucket rỗng). */
+	 * Buổi manual `class_session` (mà #658 coi là buổi thật cho các route này)
+	 * cũng là non-holiday presence: ngày có lesson holiday + buổi manual vẫn
+	 * attach/upload/detach qua buổi manual được. Mồ côi trên ngày KHÔNG còn
+	 * session nào không bị chặn (bucket rỗng). */
 	async function isHolidayBucket(
 		db: Db,
 		orgId: string,
@@ -422,10 +414,36 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 				),
 			);
 		if (!bucket) return false;
-		return bucket.holidayCount > 0 && bucket.otherCount === 0;
+		if (bucket.holidayCount === 0 || bucket.otherCount > 0) return false;
+		// #658: class_session (buổi manual) tại cùng ngày chặn việc coi bucket
+		// là all-holiday — tài liệu vẫn thao tác được qua buổi manual.
+		const [cs] = await db
+			.select({ id: classSession.id })
+			.from(classSession)
+			.where(
+				and(
+					eq(classSession.orgId, orgId),
+					eq(classSession.classId, classId),
+					eq(classSession.date, date),
+				),
+			)
+			.limit(1);
+		return !cs;
 	}
 
-	/** Lớp thuộc org + ngày là một buổi có thật (có dòng lesson). */
+	/** #645: biểu thức guard CASE dùng chung cho POST attach + PUT upload —
+	 * biến `date` thành NULL khi bucket đã all-holiday (race apply shift chen
+	 * ngang sau resolveSession) để NOT NULL violation fail statement/batch.
+	 * Bucket-semantics giống `isHolidayBucket` (kể cả #658 class_session). */
+	function holidayBucketDateGuard(
+		orgId: string,
+		classId: string,
+		date: string,
+	) {
+		return sql`CASE WHEN EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${classId} AND ${lesson.date} = ${date} AND ${lesson.status} = 'holiday') AND NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${classId} AND ${lesson.date} = ${date} AND ${lesson.status} != 'holiday') AND NOT EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.orgId} = ${orgId} AND ${classSession.classId} = ${classId} AND ${classSession.date} = ${date}) THEN NULL ELSE ${date} END`;
+	}
+
+	/** Lớp thuộc org + ngày là một buổi có thật (có dòng `lesson` hoặc `class_session` — #658: buổi manual lớp 0 học viên chỉ có `class_session`). */
 	async function resolveSession(
 		c: MaterialContext,
 		db: Db,
@@ -466,7 +484,21 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 				),
 			)
 			.limit(1);
-		if (!session)
+		if (session) return { ok: true, classId, date };
+		// #658: buổi manual của lớp chưa có học viên active chỉ có dòng
+		// class_session (kernel không insert lesson khi 0 enrollment).
+		const [csSession] = await db
+			.select({ id: classSession.id })
+			.from(classSession)
+			.where(
+				and(
+					eq(classSession.orgId, orgId),
+					eq(classSession.classId, classId),
+					eq(classSession.date, date),
+				),
+			)
+			.limit(1);
+		if (!csSession)
 			return {
 				ok: false,
 				response: materialError(c, 404, "SESSION_NOT_FOUND"),

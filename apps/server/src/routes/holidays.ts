@@ -368,19 +368,32 @@ function shiftStatements(
 				),
 		),
 		// #645: tài liệu gắn theo (classId, date) phải theo buổi sang ngày bù.
-		// Dọn TOÀN BỘ liên kết ở ngày bù trước khi dời — pattern `moveDate`
-		// (kernel.ts): guard đảm bảo makeupDate chưa có dòng lesson nên mọi
-		// dòng ở đó đều là mồ côi (kể cả mồ côi không trùng materialId),
-		// DELETE trước UPDATE để không đụng khoá chính.
-		db
-			.delete(lessonMaterial)
-			.where(
-				and(
-					eq(lessonMaterial.orgId, orgId),
-					eq(lessonMaterial.classId, shift.classId),
-					eq(lessonMaterial.date, shift.makeupDate),
+		// Dọn TRƯỚC khi dời các dòng trùng materialId (giữ bản sẽ bị move) để
+		// UPDATE không đụng khoá chính (classId, date, materialId) — pattern
+		// cleanup-trùng giống undo. KHÔNG xoá các dòng khác ở makeupDate: từ
+		// #658, ngày chỉ có buổi manual `class_session` là buổi thật nên
+		// tài liệu ở đó không phải mồ côi (kém nữa cũng phải giữ để không
+		// mất dữ liệu user khi shift trùng ngày makeup với buổi manual).
+		db.delete(lessonMaterial).where(
+			and(
+				eq(lessonMaterial.orgId, orgId),
+				eq(lessonMaterial.classId, shift.classId),
+				eq(lessonMaterial.date, shift.makeupDate),
+				inArray(
+					lessonMaterial.materialId,
+					db
+						.select({ mid: lessonMaterial.materialId })
+						.from(lessonMaterial)
+						.where(
+							and(
+								eq(lessonMaterial.orgId, orgId),
+								eq(lessonMaterial.classId, shift.classId),
+								eq(lessonMaterial.date, shift.originalDate),
+							),
+						),
 				),
 			),
+		),
 		db
 			.update(lessonMaterial)
 			.set({ date: shift.makeupDate })
