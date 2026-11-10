@@ -147,34 +147,33 @@ test("B: gán sau — lớp trống nhập từ template; nhập lần hai bằn
 	await expect(dialog).toBeHidden();
 
 	await openClassFromList(page, `E2E 394 Trống ${stamp}`);
-	// #391, #520: tab "Buổi học" đã gộp vào "Buổi học & luyện tập"; empty state
-	// giáo trình nằm ở tab "Giáo trình".
-	const manageBtn = page.getByRole("button", {
-		name: "Sắp xếp buổi",
-		exact: true,
-	});
-	await expect(manageBtn).toBeEnabled();
-	await manageBtn.focus();
-	await expect(manageBtn).toBeFocused();
-	await page.keyboard.press("Enter");
-	const emptyManageDialog = page.getByRole("dialog", {
-		name: "Quản lý buổi của lớp",
-	});
+	// #649: lớp trống (không template) là lớp manual — page head đổi
+	// "Sắp xếp buổi" thành "+ Thêm buổi học" và tab "Buổi học & luyện tập"
+	// hiện empty state thay vì 12 buổi chiếu trước. Modal "Quản lý buổi"
+	// (empty CTA của #521) không còn lối vào khi lớp chưa có giáo trình.
 	await expect(
-		emptyManageDialog.getByText("Gắn giáo trình cho lớp để sắp xếp buổi."),
-	).toBeVisible();
-	const openCurriculumBtn = emptyManageDialog.getByRole("button", {
-		name: "Mở tab Giáo trình",
-		exact: true,
+		page.getByRole("button", { name: "Sắp xếp buổi", exact: true }),
+	).toHaveCount(0);
+	await expect(page.getByText("Chưa có buổi học nào")).toBeVisible();
+	// Nút đầu tiên là page head; nút thứ hai là CTA của empty state.
+	const addSessionBtn = page
+		.getByRole("button", { name: "+ Thêm buổi học", exact: true })
+		.first();
+	await expect(addSessionBtn).toBeEnabled();
+	await addSessionBtn.focus();
+	await expect(addSessionBtn).toBeFocused();
+	await page.keyboard.press("Enter");
+	const addSessionDialog = page.getByRole("dialog", {
+		name: "Thêm buổi học thủ công",
 	});
+	await expect(addSessionDialog).toBeVisible();
 	for (const vp of [
 		{ width: 1440, height: 900 },
 		{ width: 768, height: 1024 },
 		{ width: 375, height: 812 },
 	]) {
 		await page.setViewportSize(vp);
-		await expect(emptyManageDialog).toBeVisible();
-		await expect(openCurriculumBtn).toBeVisible();
+		await expect(addSessionDialog).toBeVisible();
 		const overflow = await page.evaluate(
 			() =>
 				document.documentElement.scrollWidth >
@@ -183,15 +182,19 @@ test("B: gán sau — lớp trống nhập từ template; nhập lần hai bằn
 		expect(overflow, `Overflow at ${vp.width}x${vp.height}`).toBe(false);
 	}
 	await page.setViewportSize({ width: 1280, height: 720 });
-	await openCurriculumBtn.focus();
-	await expect(openCurriculumBtn).toBeFocused();
-	await page.keyboard.press("Enter");
-	await expect(emptyManageDialog).toBeHidden();
+	// Base Modal đóng bằng Escape.
+	await page.keyboard.press("Escape");
+	await expect(addSessionDialog).toBeHidden();
+
+	// Gán sau: empty state giáo trình nằm ở tab "Giáo trình".
+	const curriculumTab = page.getByRole("tab", {
+		name: "Giáo trình",
+		exact: true,
+	});
+	await curriculumTab.click();
+	await expect(curriculumTab).toHaveAttribute("aria-selected", "true");
 	await expect(
-		page.getByRole("tab", { name: "Giáo trình", exact: true }),
-	).toHaveAttribute("aria-selected", "true");
-	await expect(
-		page.getByText("Lớp chưa có giáo trình", { exact: false }),
+		page.getByText("Lớp chưa có giáo trình. Nhập", { exact: false }),
 	).toBeVisible();
 	await page.getByRole("button", { name: "Nhập từ template" }).click();
 	const importDialog = page.getByRole("dialog");
@@ -201,6 +204,10 @@ test("B: gán sau — lớp trống nhập từ template; nhập lần hai bằn
 	await importDialog.getByRole("button", { name: "Nhập giáo trình" }).click();
 	await expect(importDialog).toBeHidden();
 	await expect(page.getByText(`E2E 394 Assign ${stamp}`)).toBeVisible();
+	// Có giáo trình rồi thì page head quay lại "Sắp xếp buổi".
+	await expect(
+		page.getByRole("button", { name: "Sắp xếp buổi", exact: true }),
+	).toBeEnabled();
 
 	// Nhập lần hai qua API trực tiếp → 409.
 	const classUrl = page.url();

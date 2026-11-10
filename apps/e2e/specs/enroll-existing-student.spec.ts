@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import { seedStudent, signUpViaApi } from "./helpers";
+import { seedEmptySyllabusTemplate } from "./helpers-dated-class";
 
 const REVIEW_VIEWPORTS = [
 	{ width: 1440, height: 900 },
@@ -179,12 +180,18 @@ test("class detail → picker enroll học viên có sẵn → roster + KPI tăn
 	// 1. Sign-up teacher
 	const teacherEmail = await signUpViaApi(page);
 
-	// 2. Seed student in DB
+	// 2. Seed student in DB, plus an empty syllabus template: since #649 a
+	// template-less class is manual (0 buổi, no lesson series), so the class
+	// must pick a template to stay auto-scheduled with 12 buổi.
 	await seedStudent({ teacherEmail, name: STUDENT_NAME });
+	const templateLabel = await seedEmptySyllabusTemplate(
+		page,
+		"E2E 122 Template",
+	);
 	await page.goto("/students");
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 
-	// 3. Create a scheduled class (defaults: T2+T4, 12 buổi).
+	// 3. Create a scheduled class (T2+T4, empty template → auto, 12 buổi).
 	await page.getByText("Lớp học", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/classes$/);
 	await page.getByRole("button", { name: "+ Tạo lớp" }).click();
@@ -210,6 +217,10 @@ test("class detail → picker enroll học viên có sẵn → roster + KPI tăn
 		kind: "chip",
 		unselectedSelector: 'button[aria-pressed="false"]',
 	});
+	await classDialog
+		.getByLabel("Template giáo trình")
+		.selectOption({ label: templateLabel });
+	await expect(classDialog.getByLabel("Tổng số buổi")).toHaveValue("12");
 	await classDialog
 		.getByRole("button", { name: "Tạo lớp", exact: true })
 		.click();
