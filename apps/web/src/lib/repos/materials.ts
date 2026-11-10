@@ -193,7 +193,10 @@ export function materialErrorMessage(error: unknown): string {
 		case "MATERIALS_DISABLED":
 			return "Kho file tài liệu đang tạm ngưng. Liên kết vẫn dùng được; thử tải file lại sau.";
 		case "SESSION_HOLIDAY":
-			return "Buổi này là buổi nghỉ lễ đã dời lịch — không gắn hoặc gỡ tài liệu được.";
+			// #662: code dùng cho cả bucket holiday thuần (#645) lẫn bucket
+			// đã-shift còn buổi manual — case sau detach chủ ý còn 200 nên
+			// copy không được khẳng định "không gỡ được".
+			return "Buổi này là buổi nghỉ lễ đã dời lịch — không gắn tài liệu được.";
 		default:
 			break;
 	}
