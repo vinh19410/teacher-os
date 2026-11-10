@@ -13,6 +13,7 @@ Quy ước khi cập nhật:
 ## 2026-11-10
 
 ### Added
+- Tooling audit + dọn một lần cho `lesson_material` mồ côi từ activation/attach trước fix #659/#662 (#663): script `packages/db/scripts/audit-663-orphan-materials.ts` chạy được trên libsql local (`--file`) lẫn Cloudflare D1 thật (`--d1 --d1-stage staging|prod`, resolve database fail-closed, phân loại status-aware `manual_total`/`cleanup_eligible` kèm breakdown); cleanup `--apply` ngoài workflow (confirm-gate + dump backup, plan single-use chống replay); workflow `audit-663.yml` workflow_dispatch read-only chạy audit D1 thật qua GitHub Environment, serialize với deploy, có test gate cơ học trong `scripts/ci-workflow.test.mjs`. Log CI chỉ in số tổng hợp (repo public).
 - Lớp manual: badge warn «Nghỉ lễ — Đã dời lịch» trên bucket 0 lesson tại ngày gốc đã bị dời lịch lễ (#665) — tab Buổi học của lớp manual giờ nhận diện được buổi đã dời sang ngày bù ngay cả khi chưa có học viên (không có lesson row nào được đánh `holiday`), thay vì hiển thị «Sắp tới» như buổi dạy thật. Bucket có lesson `holiday` giữ nguyên badge cũ, lớp auto giữ «Dự kiến». Dữ liệu lấy từ `holidayShifts` có sẵn trong kernel snapshot, không thêm API mới.
 
 ## 2026-11-08

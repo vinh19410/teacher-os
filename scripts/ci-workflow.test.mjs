@@ -840,3 +840,69 @@ test("state-migrate.yml triggers only on manual workflow_dispatch with read perm
 		"state-migrate.yml must never upload state as an artifact (contains plaintext secrets in memory)",
 	);
 });
+
+test("audit-663.yml triggers only on manual workflow_dispatch, is read-only, and shares deploy serialization", () => {
+	const raw = readFileSync(
+		join(repoRoot, ".github/workflows/audit-663.yml"),
+		"utf8",
+	);
+	const code = stripComments(raw);
+
+	assert.doesNotMatch(
+		code,
+		/\bpush:/,
+		"audit-663.yml must never trigger automatically on push",
+	);
+	assert.doesNotMatch(
+		code,
+		/\bpull_request:/,
+		"audit-663.yml must never trigger on pull_request",
+	);
+	assert.match(
+		code,
+		/\bworkflow_dispatch:/,
+		"audit-663.yml must trigger only on workflow_dispatch",
+	);
+	assertReadOnlyWorkflowPermissions(code, "audit-663.yml");
+	assert.match(
+		code,
+		/group:\s*deploy-\$\{\{\s*inputs\.stage\s*==\s*'prod'\s*&&\s*'production'\s*\|\|\s*'staging'\s*\}\}/,
+		"audit-663.yml must share the exact deploy concurrency group for stage serialization",
+	);
+	assert.match(
+		code,
+		/cancel-in-progress:\s*false/,
+		"audit-663.yml must never cancel in-progress audit runs",
+	);
+	assert.match(
+		code,
+		/environment:\s*\$\{\{\s*inputs\.stage\s*==\s*'prod'\s*&&\s*'production'\s*\|\|\s*'staging'\s*\}\}/,
+		"audit-663.yml must map stage to the matching GitHub Environment",
+	);
+	// Read-only tuyệt đối: không được xuất hiện cờ ghi của script audit ở bất
+	// kỳ đâu trong cấu hình thực thi (comments đã strip).
+	assert.doesNotMatch(
+		code,
+		/apply/,
+		"audit-663.yml must never pass the write flag or any write mode to the audit script",
+	);
+	// Pin exact command line (invariant chỉtrail, khớp style test lân cận):
+	// step chạy đúng script audit ở chế độ đọc, không thêm lệnh nào khác.
+	assert.match(
+		code,
+		/pnpm exec tsx scripts\/audit-663-orphan-materials\.ts --d1 --d1-stage "\$\{\{ inputs\.stage \}\}"/,
+		"audit-663.yml must run exactly the read-only audit command (no extra commands in the run step)",
+	);
+	assert.doesNotMatch(
+		code,
+		/actions\/upload-artifact/,
+		"audit-663.yml must never upload audit output as an artifact",
+	);
+	// Chỉ đúng 2 secrets Cloudflare được tham chiếu — không secret nào khác.
+	const secretRefs = [...new Set(code.match(/secrets\.[A-Z_]+/g) ?? [])];
+	assert.deepEqual(
+		secretRefs.sort(),
+		["secrets.CLOUDFLARE_ACCOUNT_ID", "secrets.CLOUDFLARE_API_TOKEN"],
+		"audit-663.yml may only reference the two Cloudflare environment secrets",
+	);
+});
