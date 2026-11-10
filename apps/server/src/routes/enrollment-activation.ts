@@ -12,6 +12,7 @@ import { classTable } from "@teacher-os/db/schema/class";
 import { classSession } from "@teacher-os/db/schema/class-session";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { lesson } from "@teacher-os/db/schema/lesson";
+import { lessonMaterial } from "@teacher-os/db/schema/material";
 import {
 	holidaySessionCancel,
 	holidaySessionShift,
@@ -19,7 +20,7 @@ import {
 	organizationHolidayClass,
 } from "@teacher-os/db/schema/organization-holiday";
 import { sessionPackage } from "@teacher-os/db/schema/session-package";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import type { Db } from "../app";
 import { isManualClass } from "../lib/class-mode";
@@ -553,6 +554,54 @@ export async function activateEnrollment(
 					classId: cls.id,
 					...shift,
 				}),
+			);
+			// #659: activation tự sinh shift (nhánh I6 — lớp manual chưa từng có
+			// shift/lesson lúc apply) phải kéo tài liệu đã gắn vào ngày gốc theo
+			// buổi bù, pattern `shiftStatements` của holidays.ts (#645): dọn
+			// TRƯỚC các dòng trùng materialId ở makeupDate để UPDATE move không
+			// đụng khoá chính (classId, date, materialId); KHÔNG xoá dòng khác ở
+			// makeupDate — #658: ngày có buổi manual `class_session` là dữ liệu
+			// thật. Khi trùng materialId, bản move thắng bản đích (nhất quán
+			// scenario C #645) — nội dung tài liệu (bảng material) không mất,
+			// chỉ liên kết ngày bù được thay bằng bản cùng materialId từ ngày
+			// gốc. Hai câu này nằm trong cùng batch nguyên tử: guard CASE của
+			// lesson insert làm toàn batch rollback khi trạng thái lệch. Thứ tự
+			// per-shift là load-bearing: shift chuỗi (makeup kỳ trước trúng kỳ
+			// sau) cần thấy ghi của câu trước — test chuỗi trong describe #659
+			// của holidays.test.ts bẫy đúng case gom-sai gây PK conflict.
+			statements.push(
+				db.delete(lessonMaterial).where(
+					and(
+						eq(lessonMaterial.orgId, orgId),
+						eq(lessonMaterial.classId, cls.id),
+						eq(lessonMaterial.date, shift.makeupDate),
+						inArray(
+							lessonMaterial.materialId,
+							db
+								.select({ mid: lessonMaterial.materialId })
+								.from(lessonMaterial)
+								.where(
+									and(
+										eq(lessonMaterial.orgId, orgId),
+										eq(lessonMaterial.classId, cls.id),
+										eq(lessonMaterial.date, shift.originalDate),
+									),
+								),
+						),
+					),
+				),
+			);
+			statements.push(
+				db
+					.update(lessonMaterial)
+					.set({ date: shift.makeupDate })
+					.where(
+						and(
+							eq(lessonMaterial.orgId, orgId),
+							eq(lessonMaterial.classId, cls.id),
+							eq(lessonMaterial.date, shift.originalDate),
+						),
+					),
 			);
 		}
 		for (const cancel of newCancels) {
