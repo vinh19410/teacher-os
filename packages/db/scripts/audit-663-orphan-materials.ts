@@ -188,14 +188,14 @@ async function createRunner(args: CliArgs): Promise<{
 			"--d1 requires CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN env vars.",
 		);
 	}
-	const databaseId = await resolveD1DatabaseId({
+	const { id: databaseId, name: databaseName } = await resolveD1DatabaseId({
 		stage: args.d1Stage ?? "",
 		accountId,
 		apiToken,
 	});
 	return {
 		runner: createD1AuditRunner({ accountId, databaseId, apiToken }),
-		label: `d1:${args.d1Stage} (database id redacted)`,
+		label: `d1:${args.d1Stage} (db: ${databaseName})`,
 	};
 }
 

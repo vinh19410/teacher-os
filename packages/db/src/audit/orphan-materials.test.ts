@@ -444,25 +444,45 @@ function d1ListResponse(
 const D1_BASE = { accountId: "acc", apiToken: "tok" } as const;
 
 describe("resolveD1DatabaseId", () => {
-	it("staging đúng 1 match → trả uuid; stage lạ → throw fail-closed", async () => {
-		const fetchImpl = (async () =>
-			jsonResponse(
-				d1ListResponse(["teacher-os-database-staging-abcdefghijklmnop"]),
-			)) as typeof fetch;
-		const id = await resolveD1DatabaseId({
+	const SCHEMA_QUERY_ROWS = [
+		{ name: "lesson_material" },
+		{ name: "holiday_session_shift" },
+	];
+	/** Fake fetch: list request trả `listBody`, request `/query` (probe schema)
+	 * trả `queryRows`. */
+	function fakeD1Fetch(
+		listBody: unknown,
+		queryRows: unknown[] = SCHEMA_QUERY_ROWS,
+	): typeof fetch {
+		return (async (url: RequestInfo | URL) => {
+			if (String(url).includes("/query")) {
+				return jsonResponse({
+					success: true,
+					result: [{ results: queryRows }],
+				});
+			}
+			return jsonResponse(listBody);
+		}) as typeof fetch;
+	}
+
+	it("staging đúng 1 match → trả id+name; stage lạ → throw fail-closed", async () => {
+		const fetchImpl = fakeD1Fetch(
+			d1ListResponse(["teacher-os-database-staging-abcdefghijklmnop"]),
+		);
+		const resolved = await resolveD1DatabaseId({
 			...D1_BASE,
 			stage: "staging",
 			fetchImpl,
 		});
-		expect(id).toBe(d1Uuid(0));
+		expect(resolved.id).toBe(d1Uuid(0));
+		expect(resolved.name).toBe("teacher-os-database-staging-abcdefghijklmnop");
 		await expect(
 			resolveD1DatabaseId({ ...D1_BASE, stage: "dev", fetchImpl }),
 		).rejects.toThrow(/staging|prod/);
 	});
 
 	it("0 match hoặc >1 match → throw exactly-1", async () => {
-		const fetchNone = (async () =>
-			jsonResponse(d1ListResponse([]))) as typeof fetch;
+		const fetchNone = fakeD1Fetch(d1ListResponse([]));
 		await expect(
 			resolveD1DatabaseId({
 				...D1_BASE,
@@ -470,13 +490,12 @@ describe("resolveD1DatabaseId", () => {
 				fetchImpl: fetchNone,
 			}),
 		).rejects.toThrow(/exactly 1/i);
-		const fetchTwo = (async () =>
-			jsonResponse(
-				d1ListResponse([
-					"teacher-os-database-staging-abcdefghijklmnop",
-					"teacher-os-database-staging-qrstuv232456wxyz",
-				]),
-			)) as typeof fetch;
+		const fetchTwo = fakeD1Fetch(
+			d1ListResponse([
+				"teacher-os-database-staging-abcdefghijklmnop",
+				"teacher-os-database-staging-qrstuv232456wxyz",
+			]),
+		);
 		await expect(
 			resolveD1DatabaseId({
 				...D1_BASE,
@@ -490,10 +509,6 @@ describe("resolveD1DatabaseId", () => {
 		// Incident #663: list prefix `prod-` bắt nhầm DB `prod-*` rỗng trong khi
 		// prod thật tên `production-*`. Prefix rộng + regex trả về 2 ứng viên →
 		// probe sqlite_master phải chọn DB có schema audit.
-		const schemaRows = [
-			{ name: "lesson_material" },
-			{ name: "holiday_session_shift" },
-		];
 		const names = [
 			"teacher-os-database-prod-empty1",
 			"teacher-os-database-production-realdb",
@@ -504,42 +519,41 @@ describe("resolveD1DatabaseId", () => {
 				const isRealDb = String(url).includes("000000000001");
 				return jsonResponse({
 					success: true,
-					result: [{ results: isRealDb ? schemaRows : [] }],
+					result: [{ results: isRealDb ? SCHEMA_QUERY_ROWS : [] }],
 				});
 			}
 			return jsonResponse(d1ListResponse(names));
 		}) as typeof fetch;
-		const id = await resolveD1DatabaseId({
+		const resolved = await resolveD1DatabaseId({
 			...D1_BASE,
 			stage: "prod",
 			fetchImpl,
 		});
-		expect(id).toBe(d1Uuid(1));
+		expect(resolved.id).toBe(d1Uuid(1));
+		expect(resolved.name).toBe("teacher-os-database-production-realdb");
 	});
 
 	it("prod 2 ứng viên đều có schema → throw exactly-1 kèm tên", async () => {
-		const schemaRows = [
-			{ name: "lesson_material" },
-			{ name: "holiday_session_shift" },
-		];
 		const names = [
 			"teacher-os-database-prod-one1aaaa",
 			"teacher-os-database-production-two2bb",
 		];
-		const fetchImpl = (async (url: RequestInfo | URL) => {
-			if (String(url).includes("/query")) {
-				return jsonResponse({
-					success: true,
-					result: [{ results: schemaRows }],
-				});
-			}
-			return jsonResponse(d1ListResponse(names));
-		}) as typeof fetch;
+		const fetchImpl = fakeD1Fetch(d1ListResponse(names));
 		await expect(
 			resolveD1DatabaseId({ ...D1_BASE, stage: "prod", fetchImpl }),
 		).rejects.toThrow(
 			/exactly 1.*teacher-os-database-prod-one1aaaa.*teacher-os-database-production-two2bb/s,
 		);
+	});
+
+	it("exactly-1 nhưng DB không có schema audit → throw gợi ý lệch account/stage (incident #663)", async () => {
+		const fetchImpl = fakeD1Fetch(
+			d1ListResponse(["teacher-os-database-prod-empty1"]),
+			[],
+		);
+		await expect(
+			resolveD1DatabaseId({ ...D1_BASE, stage: "prod", fetchImpl }),
+		).rejects.toThrow(/no audit tables.*CLOUDFLARE_ACCOUNT_ID/s);
 	});
 
 	it("phân trang 2 page gộp đủ trước khi lọc exactly-1", async () => {
@@ -556,16 +570,22 @@ describe("resolveD1DatabaseId", () => {
 		];
 		let call = 0;
 		const fetchPaged = (async (url: RequestInfo | URL) => {
+			if (String(url).includes("/query")) {
+				return jsonResponse({
+					success: true,
+					result: [{ results: SCHEMA_QUERY_ROWS }],
+				});
+			}
 			const pageIndex = String(url).includes("page=2") ? 1 : 0;
 			call += 1;
 			return jsonResponse(pages[pageIndex]);
 		}) as typeof fetch;
-		const id = await resolveD1DatabaseId({
+		const resolved = await resolveD1DatabaseId({
 			...D1_BASE,
 			stage: "prod",
 			fetchImpl: fetchPaged,
 		});
-		expect(id).toBe(d1Uuid(100));
+		expect(resolved.id).toBe(d1Uuid(100));
 		expect(call).toBe(2);
 	});
 });

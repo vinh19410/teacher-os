@@ -510,7 +510,7 @@ export async function resolveD1DatabaseId(options: {
 	apiToken: string;
 	fetchImpl?: typeof fetch;
 	timeoutMs?: number;
-}): Promise<string> {
+}): Promise<{ id: string; name: string }> {
 	if (options.stage !== "staging" && options.stage !== "prod") {
 		throw new Error(
 			`Unsupported --d1-stage "${options.stage}": audit lookup is restricted to "staging" or "prod" (fail-closed).`,
@@ -570,20 +570,16 @@ export async function resolveD1DatabaseId(options: {
 		// Không phân biệt được (0 hoặc >1 có schema) → fail-closed kèm tên.
 		const withSchema: Array<{ uuid: string; name: string }> = [];
 		for (const candidate of candidates) {
-			try {
-				const rows = await d1Query({
+			if (
+				await hasAuditSchema({
 					accountId: options.accountId,
 					databaseId: candidate.uuid,
 					apiToken: options.apiToken,
-					sql: "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('lesson_material','holiday_session_shift')",
 					fetchImpl: fetchFn,
 					timeoutMs,
-				});
-				if (rows.length >= 2) {
-					withSchema.push(candidate);
-				}
-			} catch {
-				// probe lỗi (quyền/HTTP) → không chọn candidate này.
+				})
+			) {
+				withSchema.push(candidate);
 			}
 		}
 		if (withSchema.length >= 1) {
@@ -602,7 +598,49 @@ export async function resolveD1DatabaseId(options: {
 			),
 		);
 	}
-	return match.uuid;
+	// Ứng viên cuối cũng phải có schema audit — bắt sớm trường hợp token trỏ
+	// nhầm account/stage (incident #663: resolve được DB `prod-*` trống rồi
+	// chết ở câu audit với "no such table"). Probe fail coi như không có schema.
+	if (
+		!(await hasAuditSchema({
+			accountId: options.accountId,
+			databaseId: match.uuid,
+			apiToken: options.apiToken,
+			fetchImpl: fetchFn,
+			timeoutMs,
+		}))
+	) {
+		throw new Error(
+			redactSensitive(
+				`Resolved ${options.stage} D1 database "${match.name}" has no audit tables (lesson_material, holiday_session_shift) — the token/account likely points at a different account or stage than the deployed ${options.stage} environment. Verify CLOUDFLARE_ACCOUNT_ID against the GitHub Environment "${options.stage === "prod" ? "production" : "staging"}".`,
+				[options.apiToken],
+			),
+		);
+	}
+	return { id: match.uuid, name: match.name };
+}
+
+/** Probe read-only: DB có đủ 2 bảng audit không. */
+async function hasAuditSchema(options: {
+	accountId: string;
+	databaseId: string;
+	apiToken: string;
+	fetchImpl?: typeof fetch;
+	timeoutMs?: number;
+}): Promise<boolean> {
+	try {
+		const rows = await d1Query({
+			accountId: options.accountId,
+			databaseId: options.databaseId,
+			apiToken: options.apiToken,
+			sql: "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('lesson_material','holiday_session_shift')",
+			fetchImpl: options.fetchImpl,
+			timeoutMs: options.timeoutMs,
+		});
+		return rows.length >= 2;
+	} catch {
+		return false;
+	}
 }
 
 /** 1 câu SQL qua D1 REST `/query`; retry 1 lần trên 429/5xx (mọi statement
