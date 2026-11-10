@@ -416,7 +416,11 @@ const D1_UUID_REGEX =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const STAGING_D1_NAME_PREFIX = "teacher-os-database-staging-";
-const PROD_D1_NAME_PREFIX = "teacher-os-database-prod-";
+/** Prod list bằng prefix RỘNG rồi lọc regex: tên prod thật trong account có
+ * thể là `production-`/`main-`/`pilot-` (PROD_D1_NAME_REGEX), không chắc là
+ * literal `prod-` — Incident lần chạy đầu (#663): prefix `prod-` bắt phải
+ * một DB `prod-*` rỗng không có schema trong khi DB prod thật tên khác. */
+const PROD_D1_LIST_PREFIX = "teacher-os-database-";
 
 /** Copy pattern `redactSensitive` từ `packages/db/scripts/seed-vocab-library.ts:121`
  * (không import ngược từ scripts — dependency direction src ← scripts). */
@@ -513,7 +517,7 @@ export async function resolveD1DatabaseId(options: {
 		);
 	}
 	const prefix =
-		options.stage === "staging" ? STAGING_D1_NAME_PREFIX : PROD_D1_NAME_PREFIX;
+		options.stage === "staging" ? STAGING_D1_NAME_PREFIX : PROD_D1_LIST_PREFIX;
 	const stageRegex =
 		options.stage === "staging" ? STAGING_D1_NAME_REGEX : PROD_D1_NAME_REGEX;
 	const fetchFn = options.fetchImpl ?? fetch;
@@ -559,11 +563,41 @@ export async function resolveD1DatabaseId(options: {
 	const matches = accumulated.filter(
 		(entry) => D1_UUID_REGEX.test(entry.uuid) && stageRegex.test(entry.name),
 	);
-	const match = matches[0];
-	if (matches.length !== 1 || !match) {
+	let candidates = matches;
+	if (candidates.length > 1) {
+		// Nhiều tên trùng regex (VD: DB `prod-*` rỗng + DB `production-*`
+		// thật): probe read-only sqlite_master — chỉ giữ DB có schema audit.
+		// Không phân biệt được (0 hoặc >1 có schema) → fail-closed kèm tên.
+		const withSchema: Array<{ uuid: string; name: string }> = [];
+		for (const candidate of candidates) {
+			try {
+				const rows = await d1Query({
+					accountId: options.accountId,
+					databaseId: candidate.uuid,
+					apiToken: options.apiToken,
+					sql: "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('lesson_material','holiday_session_shift')",
+					fetchImpl: fetchFn,
+					timeoutMs,
+				});
+				if (rows.length >= 2) {
+					withSchema.push(candidate);
+				}
+			} catch {
+				// probe lỗi (quyền/HTTP) → không chọn candidate này.
+			}
+		}
+		if (withSchema.length >= 1) {
+			candidates = withSchema;
+		}
+	}
+	const match = candidates[0];
+	if (candidates.length !== 1 || !match) {
+		const seenNames = accumulated
+			.map((entry) => entry.name)
+			.filter((name) => name.startsWith("teacher-os-database-"));
 		throw new Error(
 			redactSensitive(
-				`Expected exactly 1 ${options.stage} D1 database matching prefix "${prefix}", found ${matches.length}.`,
+				`Expected exactly 1 ${options.stage} D1 database matching ${stageRegex}, found ${candidates.length} candidate(s)${candidates.length !== matches.length ? ` (từ ${matches.length} tên trùng regex, đã loại các DB không có schema audit)` : ""}.${seenNames.length > 0 ? ` Candidate names under "teacher-os-database-": ${seenNames.join(", ")}.` : " No teacher-os-database-* names were returned by the API."}`,
 				[options.apiToken],
 			),
 		);

@@ -486,28 +486,60 @@ describe("resolveD1DatabaseId", () => {
 		).rejects.toThrow(/exactly 1/i);
 	});
 
-	it("prod match prefix teacher-os-database-prod-; chỉ staging → throw", async () => {
-		const fetchProd = (async () =>
-			jsonResponse(
-				d1ListResponse(["teacher-os-database-prod-pilot1"]),
-			)) as typeof fetch;
+	it("prod match regex production-* dù có DB prod-* rỗng: probe schema chọn đúng DB thật (#663 incident)", async () => {
+		// Incident #663: list prefix `prod-` bắt nhầm DB `prod-*` rỗng trong khi
+		// prod thật tên `production-*`. Prefix rộng + regex trả về 2 ứng viên →
+		// probe sqlite_master phải chọn DB có schema audit.
+		const schemaRows = [
+			{ name: "lesson_material" },
+			{ name: "holiday_session_shift" },
+		];
+		const names = [
+			"teacher-os-database-prod-empty1",
+			"teacher-os-database-production-realdb",
+		];
+		const fetchImpl = (async (url: RequestInfo | URL) => {
+			if (String(url).includes("/query")) {
+				// probe: DB thứ nhất (uuid ...000) rỗng, thứ hai (...001) có schema.
+				const isRealDb = String(url).includes("000000000001");
+				return jsonResponse({
+					success: true,
+					result: [{ results: isRealDb ? schemaRows : [] }],
+				});
+			}
+			return jsonResponse(d1ListResponse(names));
+		}) as typeof fetch;
 		const id = await resolveD1DatabaseId({
 			...D1_BASE,
 			stage: "prod",
-			fetchImpl: fetchProd,
+			fetchImpl,
 		});
-		expect(id).toBe(d1Uuid(0));
-		const fetchStagingOnly = (async () =>
-			jsonResponse(
-				d1ListResponse(["teacher-os-database-staging-abcd2324"]),
-			)) as typeof fetch;
+		expect(id).toBe(d1Uuid(1));
+	});
+
+	it("prod 2 ứng viên đều có schema → throw exactly-1 kèm tên", async () => {
+		const schemaRows = [
+			{ name: "lesson_material" },
+			{ name: "holiday_session_shift" },
+		];
+		const names = [
+			"teacher-os-database-prod-one1aaaa",
+			"teacher-os-database-production-two2bb",
+		];
+		const fetchImpl = (async (url: RequestInfo | URL) => {
+			if (String(url).includes("/query")) {
+				return jsonResponse({
+					success: true,
+					result: [{ results: schemaRows }],
+				});
+			}
+			return jsonResponse(d1ListResponse(names));
+		}) as typeof fetch;
 		await expect(
-			resolveD1DatabaseId({
-				...D1_BASE,
-				stage: "prod",
-				fetchImpl: fetchStagingOnly,
-			}),
-		).rejects.toThrow(/exactly 1/i);
+			resolveD1DatabaseId({ ...D1_BASE, stage: "prod", fetchImpl }),
+		).rejects.toThrow(
+			/exactly 1.*teacher-os-database-prod-one1aaaa.*teacher-os-database-production-two2bb/s,
+		);
 	});
 
 	it("phân trang 2 page gộp đủ trước khi lọc exactly-1", async () => {
