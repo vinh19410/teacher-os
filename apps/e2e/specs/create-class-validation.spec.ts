@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { signUpViaApi } from "./helpers";
+import { seedEmptySyllabusTemplate } from "./helpers-dated-class";
 
 /**
  * Issue #105 [QC][P1]: create-class must reject end-before-start times and
@@ -9,6 +10,9 @@ import { signUpViaApi } from "./helpers";
  * Load-bearing facts (verified against the DOM):
  * - Field injects label→input association, so getByLabel targets each input.
  * - Default form state is 19:00–20:30 and 12 buổi, start tomorrow.
+ * - Since #649 "Tổng số buổi" only renders once a template is picked (a
+ *   template-less class is manual with 0 buổi), so the spec picks an EMPTY
+ *   template: the class is auto-scheduled and the total stays user-editable.
  * - The modal stays open with a role="alert" error when validation blocks;
  *   it only closes after the kernel refresh applies a successful create.
  */
@@ -18,6 +22,11 @@ test("create-class blocks end ≤ start and sessions 0 (issue #105)", async ({
 	const CLASS_NAME = "E2E QC-TEST-CLASS";
 
 	await signUpViaApi(page);
+	const templateLabel = await seedEmptySyllabusTemplate(
+		page,
+		"E2E QC-TEST-TEMPLATE",
+	);
+	await page.reload();
 
 	await page.getByText("Lớp học", { exact: true }).first().click();
 	await expect(page).toHaveURL(/\/classes$/);
@@ -27,6 +36,11 @@ test("create-class blocks end ≤ start and sessions 0 (issue #105)", async ({
 	await dialog.getByLabel("Tên lớp *").fill(CLASS_NAME);
 	await dialog.getByRole("button", { name: "Writing", exact: true }).click();
 	await dialog.getByRole("button", { name: "T2", exact: true }).click();
+	await dialog
+		.getByLabel("Template giáo trình")
+		.selectOption({ label: templateLabel });
+	await expect(dialog.getByLabel("Tổng số buổi")).toHaveValue("12");
+	await expect(dialog.getByLabel("Tổng số buổi")).toBeEnabled();
 
 	// QC repro 1: end BEFORE start (21:00 → 08:00) must be blocked.
 	await dialog.getByLabel("Giờ bắt đầu").fill("21:00");

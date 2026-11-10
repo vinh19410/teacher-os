@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { seedStudent, signUpViaApi } from "./helpers";
+import { seedEmptySyllabusTemplate } from "./helpers-dated-class";
 
 /**
  * E2E scenarios for student package and enrollment validation:
@@ -74,6 +75,13 @@ test("enroll học viên vào lớp → kích hoạt derive gói từ lớp, det
 		email: STUDENT_EMAIL,
 		phone: "0908888999",
 	});
+	// Từ #649 lớp không template là manual (0 buổi) — gói derive sẽ là 0
+	// buổi. Chọn template rỗng để lớp auto-scheduled, giữ 12 buổi nhập tay.
+	const templateLabel = await seedEmptySyllabusTemplate(
+		page,
+		"E2E 240 Template Derive",
+	);
+	await page.reload();
 
 	// Tạo lớp có Học phí = 500.000đ và 12 buổi
 	await page.getByText("Lớp học", { exact: true }).first().click();
@@ -85,6 +93,10 @@ test("enroll học viên vào lớp → kích hoạt derive gói từ lớp, det
 		.getByRole("button", { name: "Writing", exact: true })
 		.click();
 	await classDialog.getByRole("button", { name: "T2", exact: true }).click();
+	await classDialog
+		.getByLabel("Template giáo trình")
+		.selectOption({ label: templateLabel });
+	await expect(classDialog.getByLabel("Tổng số buổi")).toHaveValue("12");
 	await classDialog.getByLabel("Học phí / học viên (VND)").fill("500000");
 	await classDialog
 		.getByRole("button", { name: "Tạo lớp", exact: true })

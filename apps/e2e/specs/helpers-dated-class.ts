@@ -93,3 +93,36 @@ export async function seedDatedClass(
 
 	return classId;
 }
+
+/** Seeds an EMPTY IELTS Writing syllabus template (no modules/lessons) and
+ * returns the label its <option> carries in the create-class TemplatePicker.
+ * Since #649 a class created without a template is manual (0 buổi, "Tổng số
+ * buổi" field hidden); picking this template makes the class auto-scheduled
+ * while "Tổng số buổi" stays editable, because an empty syllabus has no
+ * sessions to auto-fill (skills are locked to Writing — IELTS templates need
+ * at least one skill). Reload or goto afterwards so the ['kernel'] snapshot
+ * (staleTime: Infinity) picks the template up. */
+export async function seedEmptySyllabusTemplate(
+	page: Page,
+	name: string,
+): Promise<string> {
+	const response = await page.request.post(
+		`${API_ORIGIN}/api/syllabus-templates`,
+		{
+			data: {
+				name,
+				type: "ielts",
+				level: "Band 7.0",
+				skills: ["Writing"],
+				description: "",
+			},
+			headers: { Origin: WEB_ORIGIN, "Content-Type": "application/json" },
+		},
+	);
+	if (response.status() !== 201) {
+		throw new Error(
+			`seedEmptySyllabusTemplate failed (${response.status()}): ${await response.text()}`,
+		);
+	}
+	return `${name} · 0 buổi`;
+}

@@ -65,15 +65,26 @@ async function createTemplateWithModules(page: Page, name: string) {
 	await expect(addDialog2).toBeHidden();
 }
 
-async function createClassAndImportTemplate(page: Page, className: string) {
-	await page.getByText("Lớp học", { exact: true }).first().click();
-	await expect(page).toHaveURL(/\/classes$/);
+/** Since #649 a class created without a template is manual (0 buổi, no
+ * schedule projection) and importing a curriculum later does not turn it into
+ * an auto-scheduled class — so the class is created FROM the template, the
+ * flow that keeps "buổi N ↔ bài N" session rows on the schedule. */
+async function createClassFromTemplate(
+	page: Page,
+	className: string,
+	templateName: string,
+) {
+	// Full load so the ['kernel'] snapshot carries the freshly built template.
+	await page.goto("/classes");
 	await page.getByRole("button", { name: "+ Tạo lớp" }).click();
 	const classDialog = page.getByRole("dialog");
 	await classDialog.getByLabel("Tên lớp *").fill(className);
+	// Template has 3 lessons + skill Writing: picking it fills skills and
+	// locks "Tổng số buổi" at 3.
 	await classDialog
-		.getByRole("button", { name: "Writing", exact: true })
-		.click();
+		.getByLabel("Template giáo trình")
+		.selectOption({ label: `${templateName} · 3 buổi` });
+	await expect(classDialog.getByLabel("Tổng số buổi")).toHaveValue("3");
 	await classDialog.getByRole("button", { name: "T2", exact: true }).click();
 	await classDialog
 		.getByRole("button", { name: "Tạo lớp", exact: true })
@@ -81,22 +92,18 @@ async function createClassAndImportTemplate(page: Page, className: string) {
 	await expect(classDialog).toBeHidden();
 
 	// Creation stays on the /classes list (same flow as class-operations.spec)
-	// — open the class detail before importing the template.
+	// — open the class detail.
 	await expect(page.getByText(className)).toBeVisible();
 	await page.getByText(className).click();
 	await expect(page).toHaveURL(/\/classes\/.+/);
 
-	// Curriculum import lives on the "Giáo trình" tab (#391).
+	// Curriculum lives on the "Giáo trình" tab (#391): the class carries its
+	// own copy of the template.
 	await page.getByRole("tab", { name: "Giáo trình", exact: true }).click();
-
-	// Import the template into the class (single "Nhập giáo trình" submit).
-	await page.getByRole("button", { name: "Nhập từ template" }).click();
-	const importDialog = page.getByRole("dialog");
+	await expect(page.getByText(templateName)).toBeVisible();
 	await expect(
-		importDialog.getByRole("heading", { name: "Nhập giáo trình từ template" }),
+		page.getByRole("button", { name: "Gỡ giáo trình", exact: true }),
 	).toBeVisible();
-	await importDialog.getByRole("button", { name: "Nhập giáo trình" }).click();
-	await expect(importDialog).toBeHidden();
 }
 
 test("manage modal reorders lessons and the schedule table follows (#221)", async ({
@@ -104,7 +111,7 @@ test("manage modal reorders lessons and the schedule table follows (#221)", asyn
 }) => {
 	await signUpViaApi(page);
 	await createTemplateWithModules(page, "E2E 221 Template");
-	await createClassAndImportTemplate(page, "E2E 221 Lớp");
+	await createClassFromTemplate(page, "E2E 221 Lớp", "E2E 221 Template");
 
 	// Curriculum card is assignment-only: no progress, no expandable tree.
 	await page
