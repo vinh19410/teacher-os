@@ -564,21 +564,24 @@ export async function resolveD1DatabaseId(options: {
 		(entry) => D1_UUID_REGEX.test(entry.uuid) && stageRegex.test(entry.name),
 	);
 	let candidates = matches;
+	let lastProbeError: string | undefined;
 	if (candidates.length > 1) {
 		// Nhiều tên trùng regex (VD: DB `prod-*` rỗng + DB `production-*`
 		// thật): probe read-only sqlite_master — chỉ giữ DB có schema audit.
 		// Không phân biệt được (0 hoặc >1 có schema) → fail-closed kèm tên.
 		const withSchema: Array<{ uuid: string; name: string }> = [];
 		for (const candidate of candidates) {
-			if (
-				await hasAuditSchema({
-					accountId: options.accountId,
-					databaseId: candidate.uuid,
-					apiToken: options.apiToken,
-					fetchImpl: fetchFn,
-					timeoutMs,
-				})
-			) {
+			const probe = await hasAuditSchema({
+				accountId: options.accountId,
+				databaseId: candidate.uuid,
+				apiToken: options.apiToken,
+				fetchImpl: fetchFn,
+				timeoutMs,
+			});
+			if (probe.probeError) {
+				lastProbeError = probe.probeError;
+			}
+			if (probe.hasSchema) {
 				withSchema.push(candidate);
 			}
 		}
@@ -591,25 +594,36 @@ export async function resolveD1DatabaseId(options: {
 		const seenNames = accumulated
 			.map((entry) => entry.name)
 			.filter((name) => name.startsWith("teacher-os-database-"));
+		const probeNote = lastProbeError
+			? ` Last schema-probe error: ${lastProbeError}`
+			: "";
 		throw new Error(
 			redactSensitive(
-				`Expected exactly 1 ${options.stage} D1 database matching ${stageRegex}, found ${candidates.length} candidate(s)${candidates.length !== matches.length ? ` (từ ${matches.length} tên trùng regex, đã loại các DB không có schema audit)` : ""}.${seenNames.length > 0 ? ` Candidate names under "teacher-os-database-": ${seenNames.join(", ")}.` : " No teacher-os-database-* names were returned by the API."}`,
+				`Expected exactly 1 ${options.stage} D1 database matching ${stageRegex}, found ${candidates.length} candidate(s)${candidates.length !== matches.length ? ` (từ ${matches.length} tên trùng regex, đã loại các DB không có schema audit)` : ""}.${seenNames.length > 0 ? ` Candidate names under "teacher-os-database-": ${seenNames.join(", ")}.` : " No teacher-os-database-* names were returned by the API."}${probeNote}`,
 				[options.apiToken],
 			),
 		);
 	}
 	// Ứng viên cuối cũng phải có schema audit — bắt sớm trường hợp token trỏ
 	// nhầm account/stage (incident #663: resolve được DB `prod-*` trống rồi
-	// chết ở câu audit với "no such table"). Probe fail coi như không có schema.
-	if (
-		!(await hasAuditSchema({
-			accountId: options.accountId,
-			databaseId: match.uuid,
-			apiToken: options.apiToken,
-			fetchImpl: fetchFn,
-			timeoutMs,
-		}))
-	) {
+	// chết ở câu audit với "no such table"). Phân biệt rõ probe-error với
+	// DB-trống để không chẩn đoán sai.
+	const finalProbe = await hasAuditSchema({
+		accountId: options.accountId,
+		databaseId: match.uuid,
+		apiToken: options.apiToken,
+		fetchImpl: fetchFn,
+		timeoutMs,
+	});
+	if (finalProbe.probeError) {
+		throw new Error(
+			redactSensitive(
+				`Could not verify ${options.stage} D1 database "${match.name}" schema — probe failed: ${finalProbe.probeError}. Retry once before diagnosing further.`,
+				[options.apiToken],
+			),
+		);
+	}
+	if (!finalProbe.hasSchema) {
 		throw new Error(
 			redactSensitive(
 				`Resolved ${options.stage} D1 database "${match.name}" has no audit tables (lesson_material, holiday_session_shift) — the token/account likely points at a different account or stage than the deployed ${options.stage} environment. Verify CLOUDFLARE_ACCOUNT_ID against the GitHub Environment "${options.stage === "prod" ? "production" : "staging"}".`,
@@ -620,14 +634,16 @@ export async function resolveD1DatabaseId(options: {
 	return { id: match.uuid, name: match.name };
 }
 
-/** Probe read-only: DB có đủ 2 bảng audit không. */
+/** Probe read-only: DB có đủ 2 bảng audit không. Lỗi probe (403/timeout/HTTP)
+ * KHÔNG được nuốt thành "DB trống" — trả `probeError` để message cuối phân
+ * biệt `probe-error` với `no-audit-tables` (tránh chẩn đoán sai lệch account). */
 async function hasAuditSchema(options: {
 	accountId: string;
 	databaseId: string;
 	apiToken: string;
 	fetchImpl?: typeof fetch;
 	timeoutMs?: number;
-}): Promise<boolean> {
+}): Promise<{ hasSchema: boolean; probeError?: string }> {
 	try {
 		const rows = await d1Query({
 			accountId: options.accountId,
@@ -637,9 +653,12 @@ async function hasAuditSchema(options: {
 			fetchImpl: options.fetchImpl,
 			timeoutMs: options.timeoutMs,
 		});
-		return rows.length >= 2;
-	} catch {
-		return false;
+		return { hasSchema: rows.length >= 2 };
+	} catch (error) {
+		return {
+			hasSchema: false,
+			probeError: error instanceof Error ? error.message : String(error),
+		};
 	}
 }
 

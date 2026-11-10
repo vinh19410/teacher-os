@@ -556,6 +556,18 @@ describe("resolveD1DatabaseId", () => {
 		).rejects.toThrow(/no audit tables.*CLOUDFLARE_ACCOUNT_ID/s);
 	});
 
+	it("probe lỗi transient (500) → throw probe-failed, KHÔNG ngụy trang thành DB trống", async () => {
+		const fetchImpl = (async (url: RequestInfo | URL) => {
+			if (String(url).includes("/query")) {
+				return new Response("boom", { status: 500 });
+			}
+			return jsonResponse(d1ListResponse(["teacher-os-database-prod-empty1"]));
+		}) as typeof fetch;
+		await expect(
+			resolveD1DatabaseId({ ...D1_BASE, stage: "prod", fetchImpl }),
+		).rejects.toThrow(/probe failed:.*500/s);
+	});
+
 	it("phân trang 2 page gộp đủ trước khi lọc exactly-1", async () => {
 		const pages = [
 			d1ListResponse(["teacher-os-database-staging-abcdefghijklmnop"], {
