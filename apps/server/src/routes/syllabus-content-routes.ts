@@ -9,8 +9,8 @@ import {
 } from "@teacher-os/api/contracts";
 import { syllabusLessonMaterial } from "@teacher-os/db/schema/material";
 import { syllabusLesson, syllabusModule } from "@teacher-os/db/schema/syllabus";
-import type { BatchItem } from "drizzle-orm/batch";
 import { and, eq, inArray, max } from "drizzle-orm";
+import type { BatchItem } from "drizzle-orm/batch";
 import type { Context, Hono } from "hono";
 import type { z } from "zod";
 

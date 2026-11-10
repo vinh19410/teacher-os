@@ -10,9 +10,9 @@
  * tài liệu. Spec này kiểm phần delta trên app giáo viên.
  */
 import { expect, type Page, test } from "@playwright/test";
-import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 import { signUpViaApi, vietnamTodayISO } from "./helpers";
 import { seedDatedClass } from "./helpers-dated-class";
+import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 
 /** Tạo liên kết trong ngân hàng (thư mục gốc) và trả lại tiêu đề. */
 async function seedBankLink(page: Page, title: string) {
@@ -20,7 +20,9 @@ async function seedBankLink(page: Page, title: string) {
 	await page.getByRole("button", { name: "Thêm liên kết" }).first().click();
 	const dialog = page.getByRole("dialog", { name: "Thêm liên kết" });
 	await dialog.getByLabel("Tiêu đề").fill(title);
-	await dialog.getByLabel("Đường dẫn").fill("https://learnenglish.britishcouncil.org/");
+	await dialog
+		.getByLabel("Đường dẫn")
+		.fill("https://learnenglish.britishcouncil.org/");
 	await dialog.getByRole("button", { name: "Thêm liên kết" }).click();
 	await expect(dialog).toBeHidden();
 }
@@ -38,9 +40,7 @@ async function pickFromBank(page: Page, title: string) {
 	await expect(picker).toBeHidden();
 }
 
-test("lớp manual: tạo buổi học kèm tài liệu từ ngân hàng", async ({
-	page,
-}) => {
+test("lớp manual: tạo buổi học kèm tài liệu từ ngân hàng", async ({ page }) => {
 	const stamp = Date.now();
 	const TITLE = `Đề mẫu buổi mới ${stamp}`;
 	const TOPIC = `Buổi ${stamp}`;
@@ -142,7 +142,9 @@ test("syllabus: thêm buổi học trong template có tài liệu, lớp tạo t
 	const row = page.getByTestId("session-row").first();
 	await row.getByRole("button", { name: /^Tài liệu buổi/ }).click();
 	const materials = page.getByRole("dialog", { name: /^Tài liệu buổi/ });
-	const item = materials.getByTestId("material-item").filter({ hasText: TITLE });
+	const item = materials
+		.getByTestId("material-item")
+		.filter({ hasText: TITLE });
 	await expect(item).toBeVisible();
 	await expect(item.getByText("Từ giáo trình")).toBeVisible();
 });

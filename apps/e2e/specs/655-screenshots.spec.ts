@@ -10,9 +10,9 @@
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, type Page, test } from "@playwright/test";
-import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 import { signUpViaApi, vietnamTodayISO } from "./helpers";
 import { seedDatedClass } from "./helpers-dated-class";
+import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 
 const REPORT_DIR = fileURLToPath(
 	new URL("../../../plans/reports", import.meta.url),
@@ -47,10 +47,7 @@ async function pickFromBank(page: Page, title: string) {
 	await expect(picker).toBeHidden();
 }
 
-async function shoot(
-	page: Page,
-	base: string,
-) {
+async function shoot(page: Page, base: string) {
 	for (const vp of VIEWPORTS) {
 		await page.setViewportSize({ width: vp.width, height: vp.height });
 		await page.waitForTimeout(200);
@@ -66,9 +63,7 @@ async function shoot(
 		path: resolve(REPORT_DIR, `${base}-desktop-1440x900-dark.png`),
 		fullPage: true,
 	});
-	await page.evaluate(() =>
-		document.documentElement.classList.remove("dark"),
-	);
+	await page.evaluate(() => document.documentElement.classList.remove("dark"));
 }
 
 test("Issue #655: screenshots 3 viewports cho pick tài liệu khi tạo buổi học", async ({
