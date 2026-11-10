@@ -1451,6 +1451,233 @@ describe("material bank and session materials", () => {
 		expect((await del(`${basePath}/${link.id}`)).status).toBe(200);
 		expect((await del(`${basePath}/${link.id}`)).status).toBe(404);
 	});
+
+	describe("#662: chặn attach vào ngày đã shift (path 2)", () => {
+		const D = "2026-12-01"; // ngày gốc đã shift
+		const DM = "2026-12-08"; // ngày bù
+
+		/** Class manual độc lập theo 3 cờ tổ hợp: lesson holiday, class_session,
+		 * shift row. Mỗi case dùng classId riêng để matrix không đụng nhau. */
+		async function seedShiftedManualBucket(
+			classId: string,
+			opts: {
+				holidayLesson: boolean;
+				classSession: boolean;
+				shiftRow: boolean;
+			},
+		) {
+			await db.insert(schema.classTable).values({
+				orgId: "org-1",
+				id: classId,
+				name: `Manual ${classId}`,
+				level: "6.5",
+				type: "ielts",
+				skills: '["reading"]',
+				mode: "Online",
+				schedule: '{"days":[2],"start":"18:00","end":"20:00"}',
+				sessionsTotal: 4,
+				sessionsDone: 0,
+				status: "active",
+				startDate: "2026-11-01",
+				notes: "",
+			});
+			await db.insert(schema.student).values({
+				id: `stu-${classId}`,
+				orgId: "org-1",
+				name: `HV ${classId}`,
+			});
+			await db.insert(schema.enrollment).values({
+				id: `enr-${classId}`,
+				orgId: "org-1",
+				classId,
+				studentId: `stu-${classId}`,
+				status: "active",
+			});
+			if (opts.holidayLesson) {
+				await db.insert(schema.lesson).values({
+					id: `l-hol-${classId}`,
+					orgId: "org-1",
+					classId,
+					enrollmentId: `enr-${classId}`,
+					day: 2,
+					time: "18:00",
+					dur: 120,
+					date: D,
+					status: "holiday",
+				});
+			}
+			if (opts.classSession) {
+				await db.insert(schema.classSession).values({
+					id: `cs-${classId}`,
+					orgId: "org-1",
+					classId,
+					date: D,
+					time: "18:00",
+					dur: 120,
+					topic: "Buổi manual",
+					zoom: "",
+				});
+			}
+			if (opts.shiftRow) {
+				await db.insert(schema.organizationHoliday).values({
+					id: `hol-${classId}`,
+					orgId: "org-1",
+					name: `Nghỉ ${classId}`,
+					fromDate: D,
+					toDate: D,
+					scope: "org",
+					mode: "shift",
+					notify: false,
+					createdByUserId: "t-1",
+				});
+				await db.insert(schema.holidaySessionShift).values({
+					id: `shift-${classId}`,
+					orgId: "org-1",
+					holidayId: `hol-${classId}`,
+					classId,
+					originalDate: D,
+					makeupDate: DM,
+				});
+			}
+		}
+
+		async function seedBankLink662(id: string) {
+			await db
+				.insert(schema.material)
+				.values({
+					id,
+					orgId: "org-1",
+					kind: "link",
+					url: `https://example.com/${id}`,
+					title: id,
+					createdBy: "t-1",
+				})
+				.onConflictDoNothing();
+		}
+
+		test("attach vào bucket all-holiday + class_session + shift row → 409 (T8)", async () => {
+			await seedShiftedManualBucket("cls-662a", {
+				holidayLesson: true,
+				classSession: true,
+				shiftRow: true,
+			});
+			await seedBankLink662("mat-662a");
+			const res = await json(sessionPath("cls-662a", D), "POST", {
+				materialId: "mat-662a",
+			});
+			expect(res.status).toBe(409);
+			expect(((await res.json()) as { code: string }).code).toBe(
+				"SESSION_HOLIDAY",
+			);
+		});
+
+		test("upload vào bucket 3-điều-kiện → 409 (T9)", async () => {
+			await seedShiftedManualBucket("cls-662b", {
+				holidayLesson: true,
+				classSession: true,
+				shiftRow: true,
+			});
+			const res = await upload(`${sessionPath("cls-662b", D)}/files`);
+			expect(res.status).toBe(409);
+			expect(((await res.json()) as { code: string }).code).toBe(
+				"SESSION_HOLIDAY",
+			);
+		});
+
+		test("detach cùng trạng thái vẫn 200 — predicate không áp detach (T10)", async () => {
+			await seedShiftedManualBucket("cls-662c", {
+				holidayLesson: true,
+				classSession: true,
+				shiftRow: true,
+			});
+			await seedBankLink662("mat-662c");
+			await db.insert(schema.lessonMaterial).values({
+				orgId: "org-1",
+				classId: "cls-662c",
+				date: D,
+				materialId: "mat-662c",
+			});
+			const res = await del(`${sessionPath("cls-662c", D)}/mat-662c`);
+			expect(res.status).toBe(200);
+		});
+
+		test("bucket rỗng (0 lesson) + class_session + shift row: attach vẫn 201 — cửa sổ path-1 (T11)", async () => {
+			await seedShiftedManualBucket("cls-662d", {
+				holidayLesson: false,
+				classSession: true,
+				shiftRow: true,
+			});
+			await seedBankLink662("mat-662d");
+			const res = await json(sessionPath("cls-662d", D), "POST", {
+				materialId: "mat-662d",
+			});
+			expect(res.status).toBe(201);
+		});
+
+		test("matrix 2³: 409 chỉ khi holiday∧cs∧shift; (1,0,·) 409 hiện có; (0,0,·) 404 (T12)", async () => {
+			const combos = [
+				{
+					holidayLesson: true,
+					classSession: false,
+					shiftRow: false,
+					expect: 409,
+				},
+				{
+					holidayLesson: true,
+					classSession: false,
+					shiftRow: true,
+					expect: 409,
+				},
+				{
+					holidayLesson: true,
+					classSession: true,
+					shiftRow: true,
+					expect: 409,
+				},
+				{
+					holidayLesson: true,
+					classSession: true,
+					shiftRow: false,
+					expect: 201,
+				},
+				{
+					holidayLesson: false,
+					classSession: true,
+					shiftRow: false,
+					expect: 201,
+				},
+				{
+					holidayLesson: false,
+					classSession: true,
+					shiftRow: true,
+					expect: 201,
+				},
+				{
+					holidayLesson: false,
+					classSession: false,
+					shiftRow: false,
+					expect: 404,
+				},
+				{
+					holidayLesson: false,
+					classSession: false,
+					shiftRow: true,
+					expect: 404,
+				},
+			];
+			let i = 0;
+			for (const combo of combos) {
+				i += 1;
+				const classId = `cls-662m${i}`;
+				await seedShiftedManualBucket(classId, combo);
+				await seedBankLink662(`mat-${classId}`);
+				const res = await json(sessionPath(classId, D), "POST", {
+					materialId: `mat-${classId}`,
+				});
+				expect(res.status, `combo ${JSON.stringify(combo)}`).toBe(combo.expect);
+			}
+		});
+	});
 });
 
 /**

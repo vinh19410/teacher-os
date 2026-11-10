@@ -416,6 +416,10 @@ export async function activateEnrollment(
 				enrollmentId,
 			});
 	const parsedSchedule = parseStoredSchedule(cls.schedule);
+	// #662: shift có thực sự được áp lên generated rows hay không — schedule
+	// legacy (`parsedSchedule` null) thì không, và loop move material non-I6
+	// phải bỏ để không yank tài liệu khỏi buổi thật còn ở ngày gốc.
+	let scheduleShifted = false;
 
 	// D6 (I2b/I3/I6): dựng batch từ state đã đọc (shifts + rows đã áp
 	// shift); mọi insert lesson mang guard CASE đếm `holiday_session_shift`
@@ -450,6 +454,9 @@ export async function activateEnrollment(
 				dur: scheduleDurationMinutes(parsedSchedule),
 			}));
 			rows = applyShiftsToRows(rows, effective);
+			// #662: shift đã thực sự áp lên rows — cho phép loop move non-I6
+			// dưới đây chạy (schedule legacy null thì cờ giữ false, không move).
+			scheduleShifted = true;
 
 			// TOS-13 D7: dòng sinh ra rơi vào ngày trong `holiday_session_cancel`
 			// của lớp → `cancelled` (không sinh buổi bù).
@@ -546,6 +553,43 @@ export async function activateEnrollment(
 				...packageValues,
 			}),
 		];
+		/** Cặp statement dọn-trùng + move `lesson_material` cho một shift —
+		 * dùng chung I6 (newShifts, #659) và non-I6 (shifts có sẵn, #662). */
+		const materialMoveStatements = (shift: {
+			originalDate: string;
+			makeupDate: string;
+		}): [BatchItem<"sqlite">, BatchItem<"sqlite">] => [
+			db.delete(lessonMaterial).where(
+				and(
+					eq(lessonMaterial.orgId, orgId),
+					eq(lessonMaterial.classId, cls.id),
+					eq(lessonMaterial.date, shift.makeupDate),
+					inArray(
+						lessonMaterial.materialId,
+						db
+							.select({ mid: lessonMaterial.materialId })
+							.from(lessonMaterial)
+							.where(
+								and(
+									eq(lessonMaterial.orgId, orgId),
+									eq(lessonMaterial.classId, cls.id),
+									eq(lessonMaterial.date, shift.originalDate),
+								),
+							),
+					),
+				),
+			),
+			db
+				.update(lessonMaterial)
+				.set({ date: shift.makeupDate })
+				.where(
+					and(
+						eq(lessonMaterial.orgId, orgId),
+						eq(lessonMaterial.classId, cls.id),
+						eq(lessonMaterial.date, shift.originalDate),
+					),
+				),
+		];
 		for (const shift of newShifts) {
 			statements.push(
 				db.insert(holidaySessionShift).values({
@@ -569,40 +613,27 @@ export async function activateEnrollment(
 			// per-shift là load-bearing: shift chuỗi (makeup kỳ trước trúng kỳ
 			// sau) cần thấy ghi của câu trước — test chuỗi trong describe #659
 			// của holidays.test.ts bẫy đúng case gom-sai gây PK conflict.
-			statements.push(
-				db.delete(lessonMaterial).where(
-					and(
-						eq(lessonMaterial.orgId, orgId),
-						eq(lessonMaterial.classId, cls.id),
-						eq(lessonMaterial.date, shift.makeupDate),
-						inArray(
-							lessonMaterial.materialId,
-							db
-								.select({ mid: lessonMaterial.materialId })
-								.from(lessonMaterial)
-								.where(
-									and(
-										eq(lessonMaterial.orgId, orgId),
-										eq(lessonMaterial.classId, cls.id),
-										eq(lessonMaterial.date, shift.originalDate),
-									),
-								),
-						),
-					),
-				),
-			);
-			statements.push(
-				db
-					.update(lessonMaterial)
-					.set({ date: shift.makeupDate })
-					.where(
-						and(
-							eq(lessonMaterial.orgId, orgId),
-							eq(lessonMaterial.classId, cls.id),
-							eq(lessonMaterial.date, shift.originalDate),
-						),
-					),
-			);
+			statements.push(...materialMoveStatements(shift));
+		}
+		// #662: non-I6 (shift row có sẵn — re-activation sau xóa enrollment,
+		// attach-sau-shift) move material theo shift đã có. Sau activation
+		// ngày gốc không còn buổi thật nào: `classSessionRows` không filter
+		// date nên mọi generated row tại `originalDate` đều bị
+		// `applyShiftsToRows` dịch sang ngày bù — move khớp ý đồ teacher
+		// (reversal #658, xem plan #662 decision 2). Gate `scheduleShifted`:
+		// schedule legacy (`parseStoredSchedule` null) thì shift KHÔNG được áp
+		// lên rows — lesson thật `upcoming` ở lại ngày gốc, move sẽ yank tài
+		// liệu khỏi buổi thật nên phải bỏ. Thứ tự `createdAt ASC` của
+		// `shifts` khớp thứ tự `applyShiftsToRows` — shift chuỗi đi đúng đích
+		// cuối. Loop nằm trong vòng retry (statements dựng lại mỗi attempt).
+		// Makeup trúng `holiday_session_cancel` vẫn là đích move — chủ ý,
+		// mirror #645; test T7 describe #662 bẫy. Orphan legacy (link ở ngày
+		// gốc không còn session nào) cũng được move — chấp nhận có chủ ý
+		// (decision 8, nhất quán pattern không-gate của #659).
+		if (scheduleShifted) {
+			for (const shift of shifts) {
+				statements.push(...materialMoveStatements(shift));
+			}
 		}
 		for (const cancel of newCancels) {
 			statements.push(

@@ -27,6 +27,7 @@ import {
 	materialFolder,
 	syllabusLessonMaterial,
 } from "@teacher-os/db/schema/material";
+import { holidaySessionShift } from "@teacher-os/db/schema/organization-holiday";
 import { and, asc, desc, eq, isNull, ne, sql } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import type { z } from "zod";
@@ -431,16 +432,79 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		return !cs;
 	}
 
-	/** #645: biểu thức guard CASE dùng chung cho POST attach + PUT upload —
-	 * biến `date` thành NULL khi bucket đã all-holiday (race apply shift chen
-	 * ngang sau resolveSession) để NOT NULL violation fail statement/batch.
-	 * Bucket-semantics giống `isHolidayBucket` (kể cả #658 class_session). */
+	/** #662: bucket đã-shift còn có buổi manual — all-holiday + `class_session`
+	 * cùng ngày + shift row (`original_date` = ngày đó). Attach/upload vào đây
+	 * là tạo mồ côi: buổi thật duy nhất của ngày nằm ở `makeup_date`. Chỉ áp
+	 * cho attach/upload — KHÔNG thay `isHolidayBucket` dùng chung (detach phải
+	 * gỡ được legacy path-2; `resolveSession` phục vụ cả detach). Bucket-
+	 * semantics giờ ở 6 bề mặt: hàm này, `isHolidayBucket` ngay trên,
+	 * `holidayBucketDateGuard` (2 call site), nhánh `rejectHoliday` của
+	 * `resolveSession`, và web twin `isHolidayBucket`
+	 * (`apps/web/src/lib/class-sessions.ts`) — drift giữa các bề mặt là bug
+	 * lặng; đổi một cái phải đối chiếu cả 6. */
+	async function isShiftedHolidayBucket(
+		db: Db,
+		orgId: string,
+		classId: string,
+		date: string,
+	): Promise<boolean> {
+		const [bucket] = await db
+			.select({
+				holidayCount: sql<number>`count(*) filter (where ${lesson.status} = 'holiday')`,
+				otherCount: sql<number>`count(*) filter (where ${lesson.status} != 'holiday')`,
+			})
+			.from(lesson)
+			.where(
+				and(
+					eq(lesson.orgId, orgId),
+					eq(lesson.classId, classId),
+					eq(lesson.date, date),
+				),
+			);
+		if (!bucket || bucket.holidayCount === 0 || bucket.otherCount > 0) {
+			return false;
+		}
+		const [cs] = await db
+			.select({ id: classSession.id })
+			.from(classSession)
+			.where(
+				and(
+					eq(classSession.orgId, orgId),
+					eq(classSession.classId, classId),
+					eq(classSession.date, date),
+				),
+			)
+			.limit(1);
+		// All-holiday thuần (không class_session) → `isHolidayBucket` đã chặn.
+		if (!cs) return false;
+		const [shift] = await db
+			.select({ id: holidaySessionShift.id })
+			.from(holidaySessionShift)
+			.where(
+				and(
+					eq(holidaySessionShift.orgId, orgId),
+					eq(holidaySessionShift.classId, classId),
+					eq(holidaySessionShift.originalDate, date),
+				),
+			)
+			.limit(1);
+		return Boolean(shift);
+	}
+
+	/** #645 (+ #662): biểu thức guard CASE dùng chung cho POST attach + PUT
+	 * upload — biến `date` thành NULL khi bucket đã all-holiday (race apply
+	 * shift chen ngang sau resolveSession) HOẶC bucket đã-shift còn buổi
+	 * manual (#662: all-holiday + class_session + shift row — race activation
+	 * chen ngang sau resolveSession) để NOT NULL violation fail
+	 * statement/batch. Bucket-semantics giống `isHolidayBucket` (kể cả #658
+	 * class_session) cộng nhánh #662 — drift với `isShiftedHolidayBucket` là
+	 * bug lặng. */
 	function holidayBucketDateGuard(
 		orgId: string,
 		classId: string,
 		date: string,
 	) {
-		return sql`CASE WHEN EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${classId} AND ${lesson.date} = ${date} AND ${lesson.status} = 'holiday') AND NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${classId} AND ${lesson.date} = ${date} AND ${lesson.status} != 'holiday') AND NOT EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.orgId} = ${orgId} AND ${classSession.classId} = ${classId} AND ${classSession.date} = ${date}) THEN NULL ELSE ${date} END`;
+		return sql`CASE WHEN (EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${classId} AND ${lesson.date} = ${date} AND ${lesson.status} = 'holiday') AND NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${classId} AND ${lesson.date} = ${date} AND ${lesson.status} != 'holiday') AND NOT EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.orgId} = ${orgId} AND ${classSession.classId} = ${classId} AND ${classSession.date} = ${date})) OR (EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${classId} AND ${lesson.date} = ${date} AND ${lesson.status} = 'holiday') AND NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${classId} AND ${lesson.date} = ${date} AND ${lesson.status} != 'holiday') AND EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.orgId} = ${orgId} AND ${classSession.classId} = ${classId} AND ${classSession.date} = ${date}) AND EXISTS (SELECT 1 FROM ${holidaySessionShift} WHERE ${holidaySessionShift.orgId} = ${orgId} AND ${holidaySessionShift.classId} = ${classId} AND ${holidaySessionShift.originalDate} = ${date})) THEN NULL ELSE ${date} END`;
 	}
 
 	/** Lớp thuộc org + ngày là một buổi có thật (có dòng `lesson` hoặc `class_session` — #658: buổi manual lớp 0 học viên chỉ có `class_session`). */
@@ -931,6 +995,14 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		if (!session.ok) return session.response;
 		const { classId, date } = session;
 		const { materialId } = body.data;
+		// #662: bucket đã-shift còn buổi manual — attach tại đây là tạo mồ côi
+		// (buổi thật duy nhất của ngày nằm ở makeup_date). Check trong route
+		// body, KHÔNG trong `resolveSession` (detach dùng chung và phải gỡ được
+		// legacy path-2). Đặt trước insert để không đụng shift-row race của
+		// `holidayBucketDateGuard` (nhánh OR #662 trong guard xử lý race).
+		if (await isShiftedHolidayBucket(db, ctx.orgId, classId, date)) {
+			return materialError(c, 409, "SESSION_HOLIDAY");
+		}
 		if (!(await loadMaterial(db, ctx.orgId, materialId))) {
 			return materialError(c, 404, "MATERIAL_NOT_FOUND");
 		}
@@ -953,8 +1025,13 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 				.onConflictDoNothing()
 				.returning({ materialId: lessonMaterial.materialId });
 		} catch (error) {
-			// Thua race holiday guard: map về lỗi nghiệp vụ thay vì 500.
-			if (await isHolidayBucket(db, ctx.orgId, classId, date)) {
+			// Thua race holiday guard: map về lỗi nghiệp vụ thay vì 500. #662:
+			// guard CASE có nhánh OR mới nên fallback phải check cả predicate
+			// đã-shift — nếu không, lỗi rơi xuống 404 material/folder gây nhiễu.
+			if (
+				(await isHolidayBucket(db, ctx.orgId, classId, date)) ||
+				(await isShiftedHolidayBucket(db, ctx.orgId, classId, date))
+			) {
 				return materialError(c, 409, "SESSION_HOLIDAY");
 			}
 			// Tài liệu bị xoá giữa lúc kiểm và lúc ghi → FK lỗi, trả 404 nghiệp vụ.
@@ -980,6 +1057,11 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		});
 		if (!session.ok) return session.response;
 		const { classId, date } = session;
+		// #662: cùng predicate attach — check trong route body, KHÔNG trong
+		// `resolveSession`; race do nhánh OR #662 của `holidayBucketDateGuard`.
+		if (await isShiftedHolidayBucket(db, ctx.orgId, classId, date)) {
+			return materialError(c, 409, "SESSION_HOLIDAY");
+		}
 		const folderId = c.req.query("folderId") || null;
 		const folderError = await checkFolder(c, db, ctx.orgId, folderId);
 		if (folderError) return folderError;
@@ -1008,8 +1090,13 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		} catch (error) {
 			upload.discard();
 			console.error("[materials] session upload insert failed", { error });
-			// Thua race holiday guard: map về lỗi nghiệp vụ thay vì 500.
-			if (await isHolidayBucket(db, ctx.orgId, classId, date)) {
+			// Thua race holiday guard: map về lỗi nghiệp vụ thay vì 500. #662:
+			// guard CASE có nhánh OR mới nên fallback phải check cả predicate
+			// đã-shift — nếu không, lỗi rơi xuống 404 material/folder gây nhiễu.
+			if (
+				(await isHolidayBucket(db, ctx.orgId, classId, date)) ||
+				(await isShiftedHolidayBucket(db, ctx.orgId, classId, date))
+			) {
 				return materialError(c, 409, "SESSION_HOLIDAY");
 			}
 			if (folderId !== null && !(await folderExists(db, ctx.orgId, folderId))) {
