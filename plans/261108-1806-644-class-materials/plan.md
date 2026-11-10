@@ -1,6 +1,6 @@
 # Plan: Ngân hàng tài liệu chung và tài liệu theo buổi học (#644)
 
-Trạng thái: đang thực hiện. Issue: #644.
+Trạng thái: hoàn thành (completed). Issue: #644.
 
 ## Kết quả
 Giáo viên quản lý ngân hàng tài liệu chung theo org (thư mục lồng nhau; file, link ngoài, audio/video), gắn tài liệu vào buổi học (lớp + ngày) bằng cách chọn từ ngân hàng hoặc upload mới (upload luôn vào ngân hàng). Học sinh đúng lớp xem chỉ đọc.
