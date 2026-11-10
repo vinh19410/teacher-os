@@ -265,7 +265,7 @@ export async function main(argv: readonly string[]): Promise<number> {
 		console.log(line);
 	}
 	if (!post.summary.reconcileOk) {
-		console.log("post: lệch bất invariant phân loại — exit 2.");
+		console.log("post: lệch bất biến phân loại — exit 2.");
 		return 2;
 	}
 	if (post.summary.cleanupEligible > 0) {

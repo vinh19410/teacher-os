@@ -25,6 +25,6 @@ Lưu tại transcript `history://KongmingInvestigateGate` (agent job `KongmingIn
 
 ## Advisory receipts — cập nhật 2026-11-10
 
-- Advisory round-2 (blocker "⟺ manual"): NHẬN — 3 điều chỉnh (JOIN class/scheduling_mode, lm.created_at, mệnh đề một chiều) đã nạp vào plan.md:25 + phase-01. Đã tự verify `kernel.ts:2427-2450`.
+- Advisory round-2 (blocker "⟺ manual") — nguồn: watchdog advisory kèm phiên, KHÔNG phải kongming: NHẬN — 3 điều chỉnh (JOIN class/scheduling_mode, lm.created_at, mệnh đề một chiều) đã nạp vào plan.md:25 + phase-01. Đã tự verify `kernel.ts:2427-2450`.
 - Checkpoint "after plan gates": spawn `KongmingPlanGate` THẤT BẠI hạ tầng — Cursor USAGE_PRICING_REQUIRED: Claude Opus 5.5 hết weekly usage. Theo advisory-supervision.md: lỗi counsel là non-fatal → record miss, tiếp tục dưới authoritative gates (validate exit 0; red-team 20 findings adjudicated; user đã quyết tooling+try_then_local). Hai receipt trước (investigation GO + round-2 blocker, round-2 đã đọc plan post-red-team) phủ phần lớn scope checkpoint này.
 - Checkpoint "post-PR review gate" (sau merge #668, CI xanh): spawn `KongmingPostPR` THẤT BẠI hạ tầng lần 2 — cùng lỗi Cursor USAGE_PRICING_REQUIRED (Claude Opus 5.5 hết weekly usage). Non-fatal theo advisory-supervision.md → record miss; assessment + next steps đã được bù bằng review self-PR đăng trên #668 (3 vòng reviewer độc lập) và comment hướng dẫn operator trên issue #663.
