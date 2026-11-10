@@ -39,7 +39,7 @@ Apply holiday shift di chuyển toàn bộ `lesson_material` từ `originalDate`
 - Steps:
   1. Scenario A (dời ngược): apply holiday với shift có tài liệu ở ngày gốc (Task 1.1), attach thêm 1 tài liệu khác vào `makeupDate` sau apply, rồi `deleteHolidayReq(app, holidayId)`. Assert sau undo: originalDate có đủ 2 tài liệu, makeupDate = 0.
   2. Scenario B (RT-Failure F3: rule trùng materialId KHÔNG quan sát được ở trạng thái đỏ — delete-all và cleanup+move-back cho kết quả giống nhau trên originalDate khi trùng; chỉ có ý nghĩa sau khi Task 1.3 đã implement) → chuyển thành test xanh trong Task 1.4, KHÔNG đưa vào red phase.
-  2b. Scenario C (cleanup-orphan chạy TRƯỚC move — không PK-violate, kongming: thêm mồ côi KHÔNG trùng): TRƯỚC apply, insert 2 mồ côi ở `makeupDate` — `materialId = M` (sẽ trùng với tài liệu M ở originalDate) và `materialId = X` (không trùng, mô phỏng mồ côi cũ). Apply. Assert: cả 2 mồ côi ở makeupDate bị xoá (DELETE-all, đúng pattern moveDate — mồ côi X không được kéo vào buổi bù), dòng M đã dời từ originalDate sang makeupDate. Trạng thái đỏ (apply không move): M kẹt ở originalDate, X còn sống ở makeupDate → assertion fail.
+  2b. Scenario C (cleanup-trùng chạy TRƯỚC move — không PK-violate): TRƯỚC apply, insert 2 dòng ở `makeupDate` — `materialId = M` (sẽ trùng với tài liệu M ở originalDate) và `materialId = X` (không trùng). Apply. Assert: dòng trùng M ở makeupDate bị xoá, dòng M đã dời từ originalDate sang makeupDate; dòng X được GIỮ (từ #658, tài liệu ở ngày có buổi manual `class_session` không phải mồ côi — DELETE-all sẽ mất dữ liệu thật). Trạng thái đỏ (apply không move): M kẹt ở originalDate → assertion fail.
   3. Cập nhật test cũ :1190 "DELETE kỳ nghỉ shift: liên kết tài liệu đã gắn vào buổi bù bị dọn cùng buổi bù": đổi assertion — sau DELETE holiday, `lessonMaterial` ở makeupDate = 0 nhưng dòng tài liệu quay về originalDate (=1) và `schema.material` vẫn còn. Đổi tên test theo hành vi mới (ví dụ "…dời ngược về buổi gốc").
   4. Chạy test — phải FAIL (đỏ).
 - Success criteria: các test mới + test cũ sửa chạy ra assertion failure đúng ở assert undo.
@@ -50,7 +50,7 @@ Apply holiday shift di chuyển toàn bộ `lesson_material` từ `originalDate`
 - Goal: trong cùng batch guard, dọn mồ côi trùng materialId ở makeupDate rồi dời toàn bộ `lesson_material` originalDate → makeupDate.
 - Target files: `apps/server/src/routes/holidays.ts`, hàm `shiftStatements` (:312-370), mảng trả về.
 - Steps:
-  1. Thêm statement 1 (cleanup-orphan, đặt TRƯỚC statement move — thứ tự chạy theo thứ tự mảng): `DELETE FROM lesson_material WHERE orgId = orgId AND classId = shift.classId AND date = shift.makeupDate` — xoá TOÀN BỘ dòng ở makeupDate, KHÔNG subquery (kongming plan-gate: pattern `moveDate` thật `kernel.ts:2246-2255` xoá cả ngày đích; guard apply đảm bảo makeupDate có 0 dòng lesson nên mọi dòng ở đó đều mồ côi — bao gồm cả mồ côi không trùng, tránh kéo mồ côi cũ vào buổi bù hiển thị cho học sinh).
+  1. Thêm statement 1 (cleanup-trùng, đặt TRƯỚC statement move — thứ tự chạy theo thứ tự mảng): DELETE dòng ở `makeupDate` có `materialId` TRÙNG với originalDate (subquery `inArray` như undo) — UPDATE move không đụng PK `(classId, date, materialId)`. ~~DELETE-all~~ superseded sau merge #658: ngày chỉ có buổi manual `class_session` là buổi thật → tài liệu ở makeupDate không chắc chắn là mồ côi, DELETE-all sẽ mất dữ liệu thật khi makeupDate trùng buổi manual.
   2. Thêm statement 2 (move, pattern `bucketMoved` của `kernel.ts:2229-2265`):
      ```ts
      db.update(lessonMaterial).set({ date: shift.makeupDate }).where(and(
@@ -60,7 +60,7 @@ Apply holiday shift di chuyển toàn bộ `lesson_material` từ `originalDate`
      ))
      ```
      Không cần điều kiện `bucketMoved` thêm: guard CASE ở INSERT đầu batch đã làm cả batch fail khi trạng thái lệch (lưu ý nói đúng — kongming: shift guard chỉ kiểm `count(upcoming) = N`, không có zero-check non-upcoming như cancel guard :383, nhưng planner đã lọc ngày trộn khi lập preview `holiday-plan.ts:176-188` nên khe hở chỉ còn race hiếm).
-  3. Comment tiếng Việt theo hiện trạng, nêu rõ pattern `moveDate` (DELETE-all ngày đích + move) và không cần `bucketMoved`.
+  3. Comment tiếng Việt theo hiện trạng: cleanup-trùng materialId + move (KHÔNG DELETE-all — #658 làm ngày có buổi manual `class_session` thành buổi thật, tài liệu ở đó không phải mồ côi); không cần `bucketMoved` vì guard CASE fail batch khi lệch.
 - Success criteria: `shiftStatements` trả về 5 statement; test Task 1.1 xanh.
 - Verify: lệnh test Task 1.1 exit 0 và test apply mới pass.
 

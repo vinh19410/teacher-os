@@ -104,7 +104,7 @@ Rejected findings: không có finding bị loại vì thiếu evidence; 4 báo c
 - **A (Task 2.3 rewrite):** bỏ INSERT…SELECT — dùng guard INSERT-CASE trên NOT NULL `lessonMaterial.date` (mẫu `shiftStatements` :318-327); `.onConflictDoNothing()` làm 0-dòng mơ hồ; re-check holiday trong catch map race NOT NULL → 409 (PUT tránh 500 "upload failed").
 - **B (Task 2.2.2):** guard đổi sang bucket-semantics `EXISTS holiday AND NOT EXISTS non-holiday` khớp web `allHoliday` (`class-sessions.ts:461-476`); thêm test ngày trộn attach 201.
 - **C:** test command quoting `'$classId.sessions'`.
-- **Task 1.3:** cleanup-orphan = DELETE-all makeupDate (không subquery) — pattern moveDate thật `kernel.ts:2246-2255`; guard makeupDate 0 dòng lesson → mọi dòng ở đó là mồ côi; Scenario C thêm mồ côi không trùng X.
+- **Task 1.3:** ~~cleanup-orphan = DELETE-all makeupDate~~ **superseded sau merge #658** (dac66d91): ngày chỉ có buổi manual `class_session` là buổi thật cho materials → tài liệu ở makeupDate không còn chắc chắn là mồ côi; cleanup thu hẹp về **dòng trùng materialId only** (requirement gốc issue #658-era, chuẩn hoá với undo). Scenario C đảo assertion: mồ côi không trùng X được GIỮ.
 - **Stop conditions khi implement:** UNIQUE/PK violation trong test xanh (dễ ngỡ 409 MAKEUP_TOUCHED hợp lệ qua `isRollbackableConstraintError`); test holiday/materials khác plan-nêu bị đỏ; `check-types` đòi `as any`/ép kiểu `BatchItem`.
 
 <!-- slug: holiday-shift-materials-645 -->
