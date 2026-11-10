@@ -19,6 +19,7 @@ import {
 import { parseStartDateStrict } from "@teacher-os/api/skeleton";
 import { canPublishGrade, canReviewGrade } from "@teacher-os/auth/role";
 import { classTable } from "@teacher-os/db/schema/class";
+import { classSession } from "@teacher-os/db/schema/class-session";
 import { lesson } from "@teacher-os/db/schema/lesson";
 import {
 	lessonMaterial,
@@ -387,7 +388,7 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		};
 	}
 
-	/** Lớp thuộc org + ngày là một buổi có thật (có dòng lesson). */
+	/** Lớp thuộc org + ngày là một buổi có thật (có dòng `lesson` hoặc `class_session` — #658: buổi manual lớp 0 học viên chỉ có `class_session`). */
 	async function resolveSession(
 		c: MaterialContext,
 		db: Db,
@@ -420,7 +421,21 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 				),
 			)
 			.limit(1);
-		if (!session)
+		if (session) return { ok: true, classId, date };
+		// #658: buổi manual của lớp chưa có học viên active chỉ có dòng
+		// class_session (kernel không insert lesson khi 0 enrollment).
+		const [csSession] = await db
+			.select({ id: classSession.id })
+			.from(classSession)
+			.where(
+				and(
+					eq(classSession.orgId, orgId),
+					eq(classSession.classId, classId),
+					eq(classSession.date, date),
+				),
+			)
+			.limit(1);
+		if (!csSession)
 			return {
 				ok: false,
 				response: materialError(c, 404, "SESSION_NOT_FOUND"),

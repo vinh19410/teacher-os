@@ -1135,6 +1135,187 @@ describe("material bank and session materials", () => {
 		expect(detach.status).toBe(200);
 		expect((await del(`/api/materials/${link.id}`)).status).toBe(200);
 	});
+
+	test("lớp manual 0 học viên: dời buổi kéo tài liệu theo (#658)", async () => {
+		await db.insert(schema.classTable).values({
+			orgId: "org-1",
+			id: "class-manual-2",
+			name: "Manual Move",
+			level: "6.5",
+			type: "ielts",
+			skills: '["reading"]',
+			mode: "Online",
+			schedule: '{"days":[1],"start":"18:00","end":"20:00"}',
+			sessionsTotal: 4,
+			sessionsDone: 0,
+			status: "active",
+			startDate: "2026-11-01",
+			notes: "",
+		});
+		// Trạng thái kernel tạo cho lớp manual 0 học viên: chỉ có class_session.
+		await db.insert(schema.classSession).values({
+			id: "cs-manual-2",
+			orgId: "org-1",
+			classId: "class-manual-2",
+			date: "2026-11-20",
+			time: "18:00",
+			dur: 120,
+			topic: "Buổi dời",
+			zoom: "",
+		});
+		const link = await createLink("Tài liệu buổi dời");
+		const beforePath = sessionPath("class-manual-2", "2026-11-20");
+		expect(
+			(await json(beforePath, "POST", { materialId: link.id })).status,
+		).toBe(201);
+
+		// Link mồ côi sẵn ở ngày đích (materialId KHÁC nguồn — dạng #659):
+		// move không được xoá tài liệu không liên quan (kongming checkpoint
+		// review PR: double-submit/bucketMoved không được biến delete đích
+		// thành xoá tài liệu vừa dời).
+		const orphanAtDest = await createLink("Mồ côi tại đích");
+		await db.insert(schema.lessonMaterial).values({
+			orgId: "org-1",
+			classId: "class-manual-2",
+			date: "2026-11-21",
+			materialId: orphanAtDest.id,
+		});
+
+		// Dời buổi manual qua route occurrence edit (pattern test "moving a
+		// session date carries its materials along").
+		const move = await json(
+			"/api/classes/class-manual-2/sessions/2026-11-20/edit",
+			"POST",
+			{ moveDate: "2026-11-21" },
+		);
+		expect(move.status).toBe(200);
+
+		const movedPath = sessionPath("class-manual-2", "2026-11-21");
+		const moved = (await (await get(movedPath)).json()) as {
+			items: LessonMaterialView[];
+		};
+		// Tài liệu nguồn dời sang đích; link mồ côi có sẵn ở đích giữ nguyên.
+		expect(moved.items.map((i) => i.id).sort()).toEqual(
+			[link.id, orphanAtDest.id].sort(),
+		);
+		expect((await get(beforePath)).status).toBe(404);
+		// Dòng link KHÔNG còn ở ngày cũ — gỡ ở ngày cũ phải 404 (chứng minh
+		// lesson_material đã dời theo buổi, không mồ côi lại chỗ cũ).
+		expect((await del(`${beforePath}/${link.id}`)).status).toBe(404);
+		// Gỡ khỏi buổi mới (đúng 409-in-use giờ đã gỡ được) rồi xoá ngân hàng:
+		// không còn 409 sai.
+		expect((await del(`${movedPath}/${link.id}`)).status).toBe(200);
+		expect((await del(`/api/materials/${link.id}`)).status).toBe(200);
+	});
+
+	test("lớp manual 0 học viên: buổi chỉ có class_session — GET/attach/upload/detach không 404 (#658)", async () => {
+		await db.insert(schema.classTable).values({
+			orgId: "org-1",
+			id: "class-manual",
+			name: "Manual 0 HV",
+			level: "6.5",
+			type: "ielts",
+			skills: '["reading"]',
+			mode: "Online",
+			schedule: '{"days":[1],"start":"18:00","end":"20:00"}',
+			sessionsTotal: 4,
+			sessionsDone: 0,
+			status: "active",
+			startDate: "2026-11-01",
+			notes: "",
+		});
+		// Trạng thái kernel tạo cho lớp manual 0 học viên (route add manual
+		// session POST /classes/:id/sessions): luôn có class_session, lesson
+		// chỉ sinh cho enrollment active.
+		await db.insert(schema.classSession).values({
+			id: "cs-manual",
+			orgId: "org-1",
+			classId: "class-manual",
+			date: "2026-11-15",
+			time: "18:00",
+			dur: 120,
+			topic: "Buổi manual",
+			zoom: "",
+		});
+
+		// Negative control: ngày KHÔNG có lesson lẫn class_session vẫn 404 —
+		// resolve không được nới lỏng thành "lớp thuộc org là buổi tồn tại".
+		expect((await get(sessionPath("class-manual", "2026-11-16"))).status).toBe(
+			404,
+		);
+		const emptyAttach = await json(
+			sessionPath("class-manual", "2026-11-16"),
+			"POST",
+			{ materialId: "mat-any" },
+		);
+		expect(emptyAttach.status).toBe(404);
+		expect(await emptyAttach.json()).toMatchObject({
+			code: "SESSION_NOT_FOUND",
+		});
+		// PUT upload dùng chung resolver — negative control phủ đủ 3 route.
+		const emptyUpload = await upload(
+			`${sessionPath("class-manual", "2026-11-16")}/files`,
+			{ name: "Empty.pdf" },
+		);
+		expect(emptyUpload.status).toBe(404);
+
+		const link = await createLink("Tài liệu buổi manual");
+		const basePath = sessionPath("class-manual", "2026-11-15");
+
+		const listed = await get(basePath);
+		expect(listed.status).toBe(200);
+		const emptyList = (await listed.json()) as {
+			items: LessonMaterialView[];
+			curriculumMaterials: unknown[];
+		};
+		expect(emptyList.items).toEqual([]);
+		// Không có dòng lesson nên phần suy #655 phải rỗng, không nổ.
+		expect(emptyList.curriculumMaterials).toEqual([]);
+
+		expect((await json(basePath, "POST", { materialId: link.id })).status).toBe(
+			201,
+		);
+		const after = (await (await get(basePath)).json()) as {
+			items: LessonMaterialView[];
+		};
+		expect(after.items.map((i) => i.id)).toEqual([link.id]);
+
+		const uploaded = await upload(`${basePath}/files`, {
+			name: "Manual.pdf",
+		});
+		expect(uploaded.status).toBe(201);
+
+		// Bất biến #658: tài liệu gắn TRƯỚC khi có học viên phải hiện ra cho
+		// học viên đầu tiên sau activation — mô phỏng output của activation
+		// (enrollment active + lesson sinh từ class_session, cùng date).
+		await db.insert(schema.enrollment).values({
+			id: "enr-manual",
+			orgId: "org-1",
+			classId: "class-manual",
+			studentId: "stu-1",
+			status: "active",
+		});
+		await db.insert(schema.lesson).values({
+			id: "l-manual",
+			orgId: "org-1",
+			classId: "class-manual",
+			enrollmentId: "enr-manual",
+			day: 2,
+			time: "18:00",
+			dur: 120,
+			date: "2026-11-15",
+		});
+		const studentView = (await (
+			await get(
+				"/api/student/classes/class-manual/sessions/2026-11-15/materials",
+				"student-1",
+			)
+		).json()) as { items: StudentLessonMaterialView[] };
+		expect(studentView.items.map((i) => i.id)).toContain(link.id);
+
+		expect((await del(`${basePath}/${link.id}`)).status).toBe(200);
+		expect((await del(`${basePath}/${link.id}`)).status).toBe(404);
+	});
 });
 
 /**
