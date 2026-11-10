@@ -2223,16 +2223,39 @@ export function kernelRoutes(deps: {
 				// CÙNG một db.batch nguyên tử để không bao giờ lệch trạng thái.
 				// Tài liệu buổi học (`lesson_material`) gắn theo ngày nên dời
 				// theo, nhưng CHỈ khi bucket thật sự đã dời (ngày gốc hết dòng
-				// lesson, ngày đích có dòng) — thua race thì giữ nguyên. Liên
-				// kết mồ côi ở ngày đích (bucket đích trống đã kiểm ở trên)
-				// bị dọn trước để không đụng khoá chính.
+				// lesson, ngày đích có dòng lesson hoặc class_session — #658:
+				// buổi manual 0 học viên không có dòng lesson) — thua race thì
+				// giữ nguyên. Liên kết mồ côi ở ngày đích (bucket đích trống đã
+				// kiểm ở trên) bị dọn trước để không đụng khoá chính.
 				const bucketMoved = and(
 					sql`not exists (select 1 from ${lesson} where ${lesson.orgId} = ${ctx.orgId} and ${lesson.classId} = ${classId} and ${lesson.date} = ${dateISO})`,
-					sql`exists (select 1 from ${lesson} where ${lesson.orgId} = ${ctx.orgId} and ${lesson.classId} = ${classId} and ${lesson.date} = ${moveDateISO})`,
+					or(
+						sql`exists (select 1 from ${lesson} where ${lesson.orgId} = ${ctx.orgId} and ${lesson.classId} = ${classId} and ${lesson.date} = ${moveDateISO})`,
+						sql`exists (select 1 from ${classSession} where ${classSession.orgId} = ${ctx.orgId} and ${classSession.classId} = ${classId} and ${classSession.date} = ${moveDateISO})`,
+					),
 				);
 				try {
 					const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
 						occurrenceUpdate(db, classId, dateISO, ctx.orgId, set, false),
+						// #658: class_session phải dời TRƯỚC các câu lessonMaterial —
+						// `bucketMoved` nhìn thấy class_session ở đích qua subquery
+						// đánh giá từng câu trong batch (buổi manual 0 học viên
+						// không có dòng lesson để báo hiệu đích). Phần tử [0] giữ
+						// nguyên — `updatedRows` lấy từ kết quả phần tử đầu.
+						...(existingClassSession.length > 0
+							? [
+									db
+										.update(classSession)
+										.set(csSet)
+										.where(
+											and(
+												eq(classSession.orgId, ctx.orgId),
+												eq(classSession.classId, classId),
+												eq(classSession.date, dateISO),
+											),
+										),
+								]
+							: []),
 						db
 							.update(holidaySessionShift)
 							.set({ makeupDate: moveDateISO })
@@ -2264,20 +2287,6 @@ export function kernelRoutes(deps: {
 									bucketMoved,
 								),
 							),
-						...(existingClassSession.length > 0
-							? [
-									db
-										.update(classSession)
-										.set(csSet)
-										.where(
-											and(
-												eq(classSession.orgId, ctx.orgId),
-												eq(classSession.classId, classId),
-												eq(classSession.date, dateISO),
-											),
-										),
-								]
-							: []),
 					];
 					const [updatedRows] = await db.batch(statements);
 					rows = updatedRows as Array<{ id: string }>;
