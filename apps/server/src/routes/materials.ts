@@ -387,12 +387,50 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		};
 	}
 
+	/** #645: biểu thức guard CASE dùng chung cho POST attach + PUT upload —
+	 * biến `date` thành NULL khi bucket đã all-holiday (race apply shift chen
+	 * ngang sau resolveSession) để NOT NULL violation fail statement/batch.
+	 * Bucket-semantics giống `isHolidayBucket` (khớp web `allHoliday`). */
+	function holidayBucketDateGuard(
+		orgId: string,
+		classId: string,
+		date: string,
+	) {
+		return sql`CASE WHEN EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${classId} AND ${lesson.date} = ${date} AND ${lesson.status} = 'holiday') AND NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${classId} AND ${lesson.date} = ${date} AND ${lesson.status} != 'holiday') THEN NULL ELSE ${date} END`;
+	}
+
+	/** #645: buổi `holiday` là cả-bucket đều holiday (khớp `allHoliday` của web
+	 * `class-sessions.ts`) — ngày trộn holiday + non-holiday vẫn thao tác được.
+	 * Mồ côi trên ngày KHÔNG còn dòng lesson không bị chặn (bucket rỗng). */
+	async function isHolidayBucket(
+		db: Db,
+		orgId: string,
+		classId: string,
+		date: string,
+	): Promise<boolean> {
+		const [bucket] = await db
+			.select({
+				holidayCount: sql<number>`count(*) filter (where ${lesson.status} = 'holiday')`,
+				otherCount: sql<number>`count(*) filter (where ${lesson.status} != 'holiday')`,
+			})
+			.from(lesson)
+			.where(
+				and(
+					eq(lesson.orgId, orgId),
+					eq(lesson.classId, classId),
+					eq(lesson.date, date),
+				),
+			);
+		if (!bucket) return false;
+		return bucket.holidayCount > 0 && bucket.otherCount === 0;
+	}
+
 	/** Lớp thuộc org + ngày là một buổi có thật (có dòng lesson). */
 	async function resolveSession(
 		c: MaterialContext,
 		db: Db,
 		orgId: string,
-		options: { requireLesson?: boolean } = {},
+		options: { requireLesson?: boolean; rejectHoliday?: boolean } = {},
 	): Promise<
 		| { ok: true; classId: string; date: string }
 		| { ok: false; response: Response }
@@ -408,6 +446,14 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 			.limit(1);
 		if (!cls)
 			return { ok: false, response: materialError(c, 404, "CLASS_NOT_FOUND") };
+		// #645: chặn mutating vào buổi holiday CHỈ khi route yêu cầu — GET list
+		// không chặn để modal đang mở trên buổi vừa bị apply shift vẫn render.
+		if (
+			options.rejectHoliday === true &&
+			(await isHolidayBucket(db, orgId, classId, date))
+		) {
+			return { ok: false, response: materialError(c, 409, "SESSION_HOLIDAY") };
+		}
 		if (options.requireLesson === false) return { ok: true, classId, date };
 		const [session] = await db
 			.select({ id: lesson.id })
@@ -847,13 +893,20 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		const body = await readBody(c, lessonMaterialAttachSchema);
 		if (!body.ok) return body.response;
 		const db = deps.getDb();
-		const session = await resolveSession(c, db, ctx.orgId);
+		const session = await resolveSession(c, db, ctx.orgId, {
+			rejectHoliday: true,
+		});
 		if (!session.ok) return session.response;
 		const { classId, date } = session;
 		const { materialId } = body.data;
 		if (!(await loadMaterial(db, ctx.orgId, materialId))) {
 			return materialError(c, 404, "MATERIAL_NOT_FOUND");
 		}
+		// #645: guard CASE trên cột NOT NULL `date` chặn race giữa resolveSession
+		// và insert — apply shift chen ngang biến buổi thành holiday ngay trước
+		// lúc ghi thì NOT NULL violation làm statement fail (mẫu `shiftStatements`
+		// của holidays.ts; lỗi NOT NULL không bị `onConflictDoNothing` nuốt).
+		const holidayGuard = holidayBucketDateGuard(ctx.orgId, classId, date);
 		let inserted: { materialId: string }[];
 		try {
 			inserted = await db
@@ -861,13 +914,17 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 				.values({
 					orgId: ctx.orgId,
 					classId,
-					date,
+					date: holidayGuard,
 					materialId,
 					position: nextPosition(classId, date),
 				})
 				.onConflictDoNothing()
 				.returning({ materialId: lessonMaterial.materialId });
 		} catch (error) {
+			// Thua race holiday guard: map về lỗi nghiệp vụ thay vì 500.
+			if (await isHolidayBucket(db, ctx.orgId, classId, date)) {
+				return materialError(c, 409, "SESSION_HOLIDAY");
+			}
 			// Tài liệu bị xoá giữa lúc kiểm và lúc ghi → FK lỗi, trả 404 nghiệp vụ.
 			if (!(await loadMaterial(db, ctx.orgId, materialId))) {
 				return materialError(c, 404, "MATERIAL_NOT_FOUND");
@@ -886,7 +943,9 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		const store = deps.getMaterialsStore?.();
 		if (!store) return materialError(c, 503, "MATERIALS_DISABLED");
 		const db = deps.getDb();
-		const session = await resolveSession(c, db, ctx.orgId);
+		const session = await resolveSession(c, db, ctx.orgId, {
+			rejectHoliday: true,
+		});
 		if (!session.ok) return session.response;
 		const { classId, date } = session;
 		const folderId = c.req.query("folderId") || null;
@@ -906,7 +965,10 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 				db.insert(lessonMaterial).values({
 					orgId: ctx.orgId,
 					classId,
-					date,
+					// #645: guard CASE chặn race — apply shift chen ngang giữa
+					// resolveSession và insert thì NOT NULL violation làm cả
+					// batch rollback (material bank + link cùng biến mất).
+					date: holidayBucketDateGuard(ctx.orgId, classId, date),
 					materialId: upload.values.id,
 					position: nextPosition(classId, date),
 				}),
@@ -914,6 +976,10 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		} catch (error) {
 			upload.discard();
 			console.error("[materials] session upload insert failed", { error });
+			// Thua race holiday guard: map về lỗi nghiệp vụ thay vì 500.
+			if (await isHolidayBucket(db, ctx.orgId, classId, date)) {
+				return materialError(c, 409, "SESSION_HOLIDAY");
+			}
 			if (folderId !== null && !(await folderExists(db, ctx.orgId, folderId))) {
 				return materialError(c, 404, "FOLDER_NOT_FOUND");
 			}
@@ -931,9 +997,12 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 			const ctx = c.get("kernelCtx");
 			const db = deps.getDb();
 			// Gỡ không cần còn dòng lesson: liên kết có thể còn sót sau khi buổi
-			// bị xoá, và giáo viên vẫn phải gỡ được để xoá tài liệu.
+			// bị xoá, và giáo viên vẫn phải gỡ được để xoá tài liệu. #645: nhưng
+			// buổi holiday (cả bucket holiday) không gỡ được — tài liệu đang
+			// dời theo shift, không phải liên kết mồ côi.
 			const session = await resolveSession(c, db, ctx.orgId, {
 				requireLesson: false,
+				rejectHoliday: true,
 			});
 			if (!session.ok) return session.response;
 			const removed = await db

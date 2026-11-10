@@ -237,6 +237,7 @@ export const MATERIAL_ERROR_CODES = [
 	"FILE_TOO_LARGE",
 	"UNSUPPORTED_FILE_TYPE",
 	"MATERIALS_DISABLED",
+	"SESSION_HOLIDAY",
 ] as const;
 export type MaterialErrorCode = (typeof MATERIAL_ERROR_CODES)[number];
 

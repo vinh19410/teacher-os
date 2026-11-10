@@ -343,22 +343,26 @@ export function ClassSessionsSection({
 												→
 											</button>
 										)}
-									{supportsMaterials && (
-										<button
-											type="button"
-											aria-label={`Tài liệu buổi ${formatSessionDate(s.dateISO)}`}
-											onClick={() => setMaterialsDateISO(s.dateISO)}
-											className={cn(
-												"mt-0.5 inline-flex items-center gap-1 font-medium text-xs underline-offset-4 hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
-												(status === "completed" || dateArrived) &&
-													isGroupSession &&
-													"ml-3",
-											)}
-										>
-											<Paperclip aria-hidden="true" className="size-3.5" />
-											Tài liệu
-										</button>
-									)}
+									{
+										// Buổi holiday vô hình với học sinh (TOS-11) — không mở
+										// modal tài liệu (#645): server cũng chặn attach 409.
+										supportsMaterials && status !== "holiday" && (
+											<button
+												type="button"
+												aria-label={`Tài liệu buổi ${formatSessionDate(s.dateISO)}`}
+												onClick={() => setMaterialsDateISO(s.dateISO)}
+												className={cn(
+													"mt-0.5 inline-flex items-center gap-1 font-medium text-xs underline-offset-4 hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+													(status === "completed" || dateArrived) &&
+														isGroupSession &&
+														"ml-3",
+												)}
+											>
+												<Paperclip aria-hidden="true" className="size-3.5" />
+												Tài liệu
+											</button>
+										)
+									}
 								</div>
 								{isProjected ? (
 									<span className="shrink-0 text-muted-foreground text-xs">
