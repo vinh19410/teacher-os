@@ -590,3 +590,141 @@ describe("session materials", () => {
 		).toBeTruthy();
 	});
 });
+
+describe("manual 0-lesson bucket với holiday shift — badge Đã dời (#665)", () => {
+	/** Lớp manual 2 buổi (hôm nay + tuần sau), không enrollment → bucket 0 lesson. */
+	function manualShiftedClass(
+		overrides: Partial<Parameters<typeof snapshotFixture>[0]> = {},
+	) {
+		return snapshotFixture({
+			classes: [
+				classRow({
+					id: "cl-1",
+					name: "IELTS Writing",
+					schedulingMode: "manual",
+					// days 0-6 Mon-first (parseStoredSchedule) — [0] = Thứ 2.
+					schedule: '{"days":[0],"start":"19:00","end":"20:30"}',
+					startDate: TODAY,
+					sessionsTotal: 2,
+					syllabusId: "sy-c",
+				}),
+			],
+			syllabi: [
+				syllabusRow({
+					id: "sy-c",
+					name: "Writing (bản lớp)",
+					classId: "cl-1",
+					sourceTemplateId: "sy-t",
+				}),
+			],
+			classSessions: [
+				{
+					id: "cs-1",
+					classId: "cl-1",
+					date: TODAY,
+					time: "19:00",
+					dur: 90,
+					topic: "",
+					zoom: "",
+				},
+				{
+					id: "cs-2",
+					classId: "cl-1",
+					date: NEXT_WEEK,
+					time: "19:00",
+					dur: 90,
+					topic: "",
+					zoom: "",
+				},
+			],
+			students: [],
+			enrollments: [],
+			lessons: [],
+			holidayShifts: [
+				{ classId: "cl-1", originalDate: TODAY, makeupDate: "2026-12-21" },
+			],
+			...overrides,
+		});
+	}
+
+	it("hiển thị badge Đã dời cho bucket 0 lesson có shift trùng ngày, vắng «Sắp tới»", async () => {
+		server = startKernelServer(manualShiftedClass());
+		await openSessionsTab();
+		const row = sessionRow("12/10");
+		expect(within(row).getByText("Nghỉ lễ — Đã dời lịch")).toBeTruthy();
+		expect(within(row).queryByText("Sắp tới")).toBeNull();
+		// Bucket không shift giữ nguyên hành vi «Sắp tới».
+		expect(within(sessionRow("19/10")).getByText("Sắp tới")).toBeTruthy();
+	});
+
+	it("giữ badge cũ qua status holiday khi bucket có lesson row holiday", async () => {
+		server = startKernelServer(
+			manualShiftedClass({
+				students: [studentRow({ id: "st-1", name: "Học viên 1" })],
+				enrollments: [
+					enrollmentRow({ id: "en-1", classId: "cl-1", studentId: "st-1" }),
+				],
+				lessons: [
+					lessonRow({
+						id: "les-hol",
+						enrollmentId: "en-1",
+						day: 1,
+						date: TODAY,
+						status: "holiday",
+					}),
+				],
+			}),
+		);
+		await openSessionsTab();
+		// Đúng 1 badge — không double-badge với nhánh flagged mới.
+		expect(
+			within(sessionRow("12/10")).getAllByText("Nghỉ lễ — Đã dời lịch"),
+		).toHaveLength(1);
+	});
+
+	it("lớp auto giữ «Dự kiến» — flag không lộ qua projection", async () => {
+		server = startKernelServer(
+			manualShiftedClass({
+				classes: [
+					classRow({
+						id: "cl-1",
+						name: "IELTS Writing",
+						// days 0-6 Mon-first — [0] = Thứ 2, khớp startDate thứ Hai.
+						schedule: '{"days":[0],"start":"19:00","end":"20:30"}',
+						startDate: TODAY,
+						sessionsTotal: 2,
+					}),
+				],
+				classSessions: undefined,
+			}),
+		);
+		await openSessionsTab();
+		const row = sessionRow("12/10");
+		expect(within(row).getByText("Dự kiến")).toBeTruthy();
+		expect(within(row).queryByText("Nghỉ lễ — Đã dời lịch")).toBeNull();
+	});
+
+	it("shift của lớp khác không badge chéo (filter classId)", async () => {
+		server = startKernelServer(
+			manualShiftedClass({
+				holidayShifts: [
+					{ classId: "cl-2", originalDate: TODAY, makeupDate: "2026-12-21" },
+				],
+			}),
+		);
+		await openSessionsTab();
+		const row = sessionRow("12/10");
+		expect(within(row).getByText("Sắp tới")).toBeTruthy();
+		expect(within(row).queryByText("Nghỉ lễ — Đã dời lịch")).toBeNull();
+	});
+
+	it("thiếu holidayShifts (deploy skew server cũ) giữ «Sắp tới»", async () => {
+		server = startKernelServer(
+			manualShiftedClass({ holidayShifts: undefined }),
+		);
+		await openSessionsTab();
+		const row = sessionRow("12/10");
+		expect(within(row).getByText("Sắp tới")).toBeTruthy();
+		expect(within(row).queryByText("Nghỉ lễ — Đã dời lịch")).toBeNull();
+	});
+});

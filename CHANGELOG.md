@@ -10,6 +10,11 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-11-10
+
+### Added
+- Lớp manual: badge warn «Nghỉ lễ — Đã dời lịch» trên bucket 0 lesson tại ngày gốc đã bị dời lịch lễ (#665) — tab Buổi học của lớp manual giờ nhận diện được buổi đã dời sang ngày bù ngay cả khi chưa có học viên (không có lesson row nào được đánh `holiday`), thay vì hiển thị «Sắp tới» như buổi dạy thật. Bucket có lesson `holiday` giữ nguyên badge cũ, lớp auto giữ «Dự kiến». Dữ liệu lấy từ `holidayShifts` có sẵn trong kernel snapshot, không thêm API mới.
+
 ## 2026-11-08
 
 ### CI/Infra

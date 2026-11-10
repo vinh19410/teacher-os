@@ -363,6 +363,7 @@ function ClassDetailRoute() {
 								classSessions={(data.classSessions ?? []).filter(
 									(cs) => cs.classId === classId,
 								)}
+								holidayShifts={data.holidayShifts}
 								studentById={studentById}
 								run={run}
 								onComplete={handleCompleteOccurrence}
