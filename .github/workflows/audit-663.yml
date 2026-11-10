@@ -1,0 +1,46 @@
+# Issue #663 audit một lần: đếm `lesson_material` mồ côi do activation/attach
+# áp holiday shift trước fix #659/#662 — đọc trực tiếp D1 thật (staging/prod).
+#
+# Ràng buộc an toàn (test gate: scripts/ci-workflow.test.mjs):
+# - Chỉ chạy bằng workflow_dispatch; không trigger tự động.
+# - Read-only tuyệt đối: script ở chế độ audit chỉ SELECT, không truyền cờ
+#   ghi; làm sạch mọi ghi dữ liệu phải đi đường operator cục bộ khác.
+# - Dùng đúng GitHub Environment staging/production (secrets Cloudflare).
+# - Serialize với deploy qua cùng concurrency group (tránh query giữa lúc
+#   deploy chạy migration).
+# - Repo PUBLIC: chế độ audit chỉ in số liệu tổng hợp, không in ID dòng.
+name: Issue 663 Orphan Materials Audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: "Target stage to audit"
+        type: choice
+        options:
+          - staging
+          - prod
+        required: true
+
+concurrency:
+  group: deploy-${{ inputs.stage == 'prod' && 'production' || 'staging' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: ${{ inputs.stage == 'prod' && 'production' || 'staging' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-workspace
+      - name: Run orphan-materials audit (read-only)
+        working-directory: packages/db
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          pnpm exec tsx scripts/audit-663-orphan-materials.ts --d1 --d1-stage "${{ inputs.stage }}"

@@ -15,6 +15,7 @@ import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { classTable } from "@teacher-os/db/schema/class";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { lesson } from "@teacher-os/db/schema/lesson";
+import { lessonMaterial } from "@teacher-os/db/schema/material";
 import { notif } from "@teacher-os/db/schema/notif";
 import {
 	holidaySessionCancel,
@@ -307,7 +308,7 @@ async function buildPlan(
  * `originalDate` thành NULL khi trạng thái lệch (buổi vừa bị điểm danh /
  * ngày bù đã có dòng / makeup đã bị chiếm) — cột NOT NULL làm TOÀN batch
  * rollback, vì D1 không rollback UPDATE-khớp-0-dòng. Buổi bù sinh bằng một
- * câu INSERT…SELECT từ các dòng `holiday` vừa tạo (~3 câu/shift, I5). */
+ * câu INSERT…SELECT từ các dòng `holiday` vừa tạo (~5 câu/shift, I5). */
 function shiftStatements(
 	db: Db,
 	orgId: string,
@@ -366,6 +367,43 @@ function shiftStatements(
 					),
 				),
 		),
+		// #645: tài liệu gắn theo (classId, date) phải theo buổi sang ngày bù.
+		// Dọn TRƯỚC khi dời các dòng trùng materialId (giữ bản sẽ bị move) để
+		// UPDATE không đụng khoá chính (classId, date, materialId) — pattern
+		// cleanup-trùng giống undo. KHÔNG xoá các dòng khác ở makeupDate: từ
+		// #658, ngày chỉ có buổi manual `class_session` là buổi thật nên
+		// tài liệu ở đó không phải mồ côi (kém nữa cũng phải giữ để không
+		// mất dữ liệu user khi shift trùng ngày makeup với buổi manual).
+		db.delete(lessonMaterial).where(
+			and(
+				eq(lessonMaterial.orgId, orgId),
+				eq(lessonMaterial.classId, shift.classId),
+				eq(lessonMaterial.date, shift.makeupDate),
+				inArray(
+					lessonMaterial.materialId,
+					db
+						.select({ mid: lessonMaterial.materialId })
+						.from(lessonMaterial)
+						.where(
+							and(
+								eq(lessonMaterial.orgId, orgId),
+								eq(lessonMaterial.classId, shift.classId),
+								eq(lessonMaterial.date, shift.originalDate),
+							),
+						),
+				),
+			),
+		),
+		db
+			.update(lessonMaterial)
+			.set({ date: shift.makeupDate })
+			.where(
+				and(
+					eq(lessonMaterial.orgId, orgId),
+					eq(lessonMaterial.classId, shift.classId),
+					eq(lessonMaterial.date, shift.originalDate),
+				),
+			),
 	];
 }
 
@@ -822,7 +860,42 @@ export function holidayRoutes(deps: {
 				),
 		];
 		for (const { shift } of shiftCounts) {
+			// #645: hoàn tác shift không xoá sạch tài liệu ở ngày bù mà DỜI
+			// NGƯỢC toàn bộ về ngày gốc. Bản trùng materialId với ngày gốc bị
+			// xoá (giữ bản ngày gốc) để UPDATE move-back không đụng khoá chính
+			// (classId, date, materialId). Dữ liệu ở makeupDate lúc undo là
+			// dữ liệu hợp lệ (khác apply, nơi makeupDate chỉ chứa mồ côi).
 			undoStatements.push(
+				db.delete(lessonMaterial).where(
+					and(
+						eq(lessonMaterial.orgId, ctx.orgId),
+						eq(lessonMaterial.classId, shift.classId),
+						eq(lessonMaterial.date, shift.makeupDate),
+						inArray(
+							lessonMaterial.materialId,
+							db
+								.select({ mid: lessonMaterial.materialId })
+								.from(lessonMaterial)
+								.where(
+									and(
+										eq(lessonMaterial.orgId, ctx.orgId),
+										eq(lessonMaterial.classId, shift.classId),
+										eq(lessonMaterial.date, shift.originalDate),
+									),
+								),
+						),
+					),
+				),
+				db
+					.update(lessonMaterial)
+					.set({ date: shift.originalDate })
+					.where(
+						and(
+							eq(lessonMaterial.orgId, ctx.orgId),
+							eq(lessonMaterial.classId, shift.classId),
+							eq(lessonMaterial.date, shift.makeupDate),
+						),
+					),
 				db
 					.delete(lesson)
 					.where(

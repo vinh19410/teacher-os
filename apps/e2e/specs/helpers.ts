@@ -55,7 +55,14 @@ export async function signUpViaApi(
 	if (res.status() !== 200) {
 		throw new Error(`sign-up failed (${res.status()}): ${await res.text()}`);
 	}
+	// Chờ phản hồi bootstrap /api/kernel: URL đổi sang /dashboard trước khi app
+	// nạp xong, và một goto kế tiếp của spec sẽ bị net::ERR_ABORTED cắt ngang.
+	const kernelLoaded = page.waitForResponse(
+		(r) => r.url().includes("/api/kernel") && r.ok(),
+		{ timeout: 30_000 },
+	);
 	await page.goto("/dashboard");
+	await kernelLoaded;
 	await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
 	return email;
 }

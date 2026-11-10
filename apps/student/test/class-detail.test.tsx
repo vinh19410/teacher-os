@@ -94,7 +94,12 @@ describe("ClassLessonList", () => {
 		const legacy = [lesson({ id: "a", day: 1 }), lesson({ id: "b", day: 4 })];
 		expect(findNextLessonId(legacy, TODAY, NOW)).toBeNull();
 		const html = renderToStaticMarkup(
-			<ClassLessonList lessons={legacy} todayISO={TODAY} now={NOW} />,
+			<ClassLessonList
+				classId="c1"
+				lessons={legacy}
+				todayISO={TODAY}
+				now={NOW}
+			/>,
 		);
 		expect(html).not.toContain("Buổi tới");
 		expect(html).toContain("Thứ Hai");
@@ -113,7 +118,12 @@ describe("ClassLessonList", () => {
 	it("renders Vietnamese status labels, duration, topic and one highlighted next lesson", () => {
 		const withFuture = [...lessons, lesson({ id: "l6", date: "2099-03-20" })];
 		const html = renderToStaticMarkup(
-			<ClassLessonList lessons={withFuture} todayISO={TODAY} now={NOW} />,
+			<ClassLessonList
+				classId="c1"
+				lessons={withFuture}
+				todayISO={TODAY}
+				now={NOW}
+			/>,
 		);
 		for (const label of ["Đã học", "Vắng", "Sắp tới", "Đã huỷ"]) {
 			expect(html).toContain(label);
@@ -133,6 +143,7 @@ describe("ClassLessonList", () => {
 	it("labels a past-upcoming lesson as ended and never as Buổi tới", () => {
 		const html = renderToStaticMarkup(
 			<ClassLessonList
+				classId="c1"
 				lessons={[
 					lesson({ id: "c1", date: "2099-03-09", status: "completed" }),
 					// 08:00 + 90' kết thúc 09:30, đã qua ở 12:00 giờ VN.
@@ -158,7 +169,7 @@ describe("ClassLessonList", () => {
 
 	it("shows an empty state when the class has no lessons", () => {
 		const html = renderToStaticMarkup(
-			<ClassLessonList lessons={[]} todayISO={TODAY} now={NOW} />,
+			<ClassLessonList classId="c1" lessons={[]} todayISO={TODAY} now={NOW} />,
 		);
 		expect(html).toContain("Giáo viên chưa xếp lịch buổi học cho lớp này.");
 	});

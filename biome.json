@@ -33,6 +33,7 @@
 			"!**/test-results",
 			"!**/.mail-preview",
 			"!**/.cache/design-v2",
+			"!**/scripts/design-compare/.state",
 			"!**/apps/landing/public",
 			"!**/apps/profile/public/index.html",
 			"!**/packages/api/src/srs/vectors",

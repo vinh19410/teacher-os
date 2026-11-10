@@ -386,3 +386,345 @@ describe("class notes", () => {
 		]);
 	});
 });
+
+describe("session materials", () => {
+	const BANK = [
+		{
+			id: "m-1",
+			folderId: null,
+			title: "Đề Writing Task 1",
+			description: "",
+			kind: "file",
+			url: null,
+			mimeType: "application/pdf",
+			sizeBytes: 2048,
+			originalName: "de.pdf",
+			usageCount: 1,
+			createdAt: "2026-10-01T00:00:00.000Z",
+			updatedAt: "2026-10-01T00:00:00.000Z",
+		},
+		{
+			id: "m-2",
+			folderId: null,
+			title: "Bài đọc BBC",
+			description: "",
+			kind: "link",
+			url: "https://www.bbc.co.uk/learning",
+			mimeType: null,
+			sizeBytes: null,
+			originalName: null,
+			usageCount: 0,
+			createdAt: "2026-10-01T00:00:00.000Z",
+			updatedAt: "2026-10-01T00:00:00.000Z",
+		},
+	];
+	const SESSION_PATH = `/api/classes/cl-1/sessions/${NEXT_WEEK}/materials`;
+
+	/** Stateful fake of the material routes: `attached` holds the session's ids. */
+	function materialsHandler(attached: string[]): WriteHandler {
+		return (req) => {
+			const path = req.path.split("?")[0];
+			if (req.method === "GET" && path === SESSION_PATH) {
+				return {
+					status: 200,
+					body: {
+						items: BANK.filter((m) => attached.includes(m.id)).map(
+							(m, position) => ({
+								...m,
+								position,
+								attachedAt: "2026-10-02T00:00:00.000Z",
+							}),
+						),
+					},
+				};
+			}
+			if (req.method === "GET" && path === "/api/materials/folders") {
+				return { status: 200, body: { folders: [] } };
+			}
+			if (req.method === "GET" && path === "/api/materials") {
+				return { status: 200, body: { items: BANK } };
+			}
+			if (req.method === "POST" && path === SESSION_PATH) {
+				const { materialId } = req.body as { materialId: string };
+				attached.push(materialId);
+				return {
+					status: 201,
+					body: { item: { ...BANK.find((m) => m.id === materialId) } },
+				};
+			}
+			if (req.method === "DELETE" && path.startsWith(`${SESSION_PATH}/`)) {
+				const id = path.slice(SESSION_PATH.length + 1);
+				attached.splice(attached.indexOf(id), 1);
+				return { status: 200, body: { ok: true } };
+			}
+			return undefined;
+		};
+	}
+
+	async function openMaterials(dateLabel: string) {
+		fireEvent.click(
+			within(sessionRow(dateLabel)).getByRole("button", {
+				name: /^Tài liệu buổi/,
+			}),
+		);
+		return screen.findByRole("dialog", { name: /^Tài liệu buổi/ });
+	}
+
+	it("lists the attached materials of a dated session and detaches one", async () => {
+		server = startKernelServer(
+			mondayClass(["st-1"]),
+			materialsHandler(["m-1"]),
+		);
+		await openSessionsTab();
+		const dialog = await openMaterials("19/10");
+		expect(await within(dialog).findByText("Đề Writing Task 1")).toBeTruthy();
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Gỡ Đề Writing Task 1" }),
+		);
+		await waitFor(() =>
+			expect(toast.success).toHaveBeenCalledWith(
+				"Đã gỡ tài liệu khỏi buổi học.",
+			),
+		);
+		expect(
+			server.writes.some(
+				(w) => w.method === "DELETE" && w.path === `${SESSION_PATH}/m-1`,
+			),
+		).toBe(true);
+		expect(
+			await within(dialog).findByTestId("session-materials-empty"),
+		).toBeTruthy();
+	});
+
+	it("attaches from the bank and disables materials already attached", async () => {
+		server = startKernelServer(
+			mondayClass(["st-1"]),
+			materialsHandler(["m-1"]),
+		);
+		await openSessionsTab();
+		const dialog = await openMaterials("19/10");
+		await within(dialog).findByText("Đề Writing Task 1");
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Chọn từ ngân hàng" }),
+		);
+		const picker = await screen.findByRole("dialog", {
+			name: "Chọn từ ngân hàng tài liệu",
+		});
+		const attached = await within(picker).findByRole("button", {
+			name: "Đã gắn Đề Writing Task 1",
+		});
+		expect((attached as HTMLButtonElement).disabled).toBe(true);
+		fireEvent.click(
+			within(picker).getByRole("button", { name: "Gắn Bài đọc BBC" }),
+		);
+		await waitFor(() =>
+			expect(toast.success).toHaveBeenCalledWith(
+				"Đã gắn tài liệu vào buổi học.",
+			),
+		);
+		expect(
+			server.writes.find((w) => w.method === "POST" && w.path === SESSION_PATH)
+				?.body,
+		).toEqual({ materialId: "m-2" });
+		expect(
+			await within(picker).findByRole("button", {
+				name: "Đã gắn Bài đọc BBC",
+			}),
+		).toBeTruthy();
+	});
+
+	it("blocks an unsupported session upload before sending anything", async () => {
+		server = startKernelServer(mondayClass(["st-1"]), materialsHandler([]));
+		await openSessionsTab();
+		const dialog = await openMaterials("19/10");
+		await within(dialog).findByTestId("session-materials-empty");
+		fireEvent.change(
+			within(dialog).getByLabelText("Chọn file tải lên cho buổi học"),
+			{
+				target: {
+					files: [
+						new File(["x"], "virus.exe", { type: "application/x-msdownload" }),
+					],
+				},
+			},
+		);
+		expect((await within(dialog).findByRole("alert")).textContent).toMatch(
+			/Định dạng chưa hỗ trợ/,
+		);
+		expect(server.writes.some((w) => w.method === "PUT")).toBe(false);
+	});
+
+	it("hides session materials for a legacy class without dated sessions", async () => {
+		const snapshot = mondayClass(["st-1"]);
+		snapshot.lessons = snapshot.lessons.map((l) => ({ ...l, date: null }));
+		server = startKernelServer(snapshot);
+		await openSessionsTab();
+		expect(
+			screen.queryAllByRole("button", { name: /^Tài liệu buổi/ }),
+		).toHaveLength(0);
+		expect(
+			screen.getByText(
+				/Tài liệu theo buổi chỉ dùng được cho lớp có lịch theo ngày/,
+			),
+		).toBeTruthy();
+	});
+
+	it("hides the materials button on a holiday session row (#645)", async () => {
+		const snapshot = mondayClass(["st-1"]);
+		snapshot.lessons = snapshot.lessons.map((l) =>
+			l.date === TODAY ? { ...l, status: "holiday" as const } : l,
+		);
+		server = startKernelServer(snapshot);
+		await openSessionsTab();
+		// Buổi holiday vô hình với học sinh — không mở được modal tài liệu.
+		expect(
+			within(sessionRow("12/10")).queryByRole("button", {
+				name: /^Tài liệu buổi/,
+			}),
+		).toBeNull();
+		// Row thường giữ nguyên nút.
+		expect(
+			within(sessionRow("19/10")).getByRole("button", {
+				name: /^Tài liệu buổi/,
+			}),
+		).toBeTruthy();
+	});
+});
+
+describe("manual 0-lesson bucket với holiday shift — badge Đã dời (#665)", () => {
+	/** Lớp manual 2 buổi (hôm nay + tuần sau), không enrollment → bucket 0 lesson. */
+	function manualShiftedClass(
+		overrides: Partial<Parameters<typeof snapshotFixture>[0]> = {},
+	) {
+		return snapshotFixture({
+			classes: [
+				classRow({
+					id: "cl-1",
+					name: "IELTS Writing",
+					schedulingMode: "manual",
+					// days 0-6 Mon-first (parseStoredSchedule) — [0] = Thứ 2.
+					schedule: '{"days":[0],"start":"19:00","end":"20:30"}',
+					startDate: TODAY,
+					sessionsTotal: 2,
+					syllabusId: "sy-c",
+				}),
+			],
+			syllabi: [
+				syllabusRow({
+					id: "sy-c",
+					name: "Writing (bản lớp)",
+					classId: "cl-1",
+					sourceTemplateId: "sy-t",
+				}),
+			],
+			classSessions: [
+				{
+					id: "cs-1",
+					classId: "cl-1",
+					date: TODAY,
+					time: "19:00",
+					dur: 90,
+					topic: "",
+					zoom: "",
+				},
+				{
+					id: "cs-2",
+					classId: "cl-1",
+					date: NEXT_WEEK,
+					time: "19:00",
+					dur: 90,
+					topic: "",
+					zoom: "",
+				},
+			],
+			students: [],
+			enrollments: [],
+			lessons: [],
+			holidayShifts: [
+				{ classId: "cl-1", originalDate: TODAY, makeupDate: "2026-12-21" },
+			],
+			...overrides,
+		});
+	}
+
+	it("hiển thị badge Đã dời cho bucket 0 lesson có shift trùng ngày, vắng «Sắp tới»", async () => {
+		server = startKernelServer(manualShiftedClass());
+		await openSessionsTab();
+		const row = sessionRow("12/10");
+		expect(within(row).getByText("Nghỉ lễ — Đã dời lịch")).toBeTruthy();
+		expect(within(row).queryByText("Sắp tới")).toBeNull();
+		// Bucket không shift giữ nguyên hành vi «Sắp tới».
+		expect(within(sessionRow("19/10")).getByText("Sắp tới")).toBeTruthy();
+	});
+
+	it("giữ badge cũ qua status holiday khi bucket có lesson row holiday", async () => {
+		server = startKernelServer(
+			manualShiftedClass({
+				students: [studentRow({ id: "st-1", name: "Học viên 1" })],
+				enrollments: [
+					enrollmentRow({ id: "en-1", classId: "cl-1", studentId: "st-1" }),
+				],
+				lessons: [
+					lessonRow({
+						id: "les-hol",
+						enrollmentId: "en-1",
+						day: 1,
+						date: TODAY,
+						status: "holiday",
+					}),
+				],
+			}),
+		);
+		await openSessionsTab();
+		// Đúng 1 badge — không double-badge với nhánh flagged mới.
+		expect(
+			within(sessionRow("12/10")).getAllByText("Nghỉ lễ — Đã dời lịch"),
+		).toHaveLength(1);
+	});
+
+	it("lớp auto giữ «Dự kiến» — flag không lộ qua projection", async () => {
+		server = startKernelServer(
+			manualShiftedClass({
+				classes: [
+					classRow({
+						id: "cl-1",
+						name: "IELTS Writing",
+						// days 0-6 Mon-first — [0] = Thứ 2, khớp startDate thứ Hai.
+						schedule: '{"days":[0],"start":"19:00","end":"20:30"}',
+						startDate: TODAY,
+						sessionsTotal: 2,
+					}),
+				],
+				classSessions: undefined,
+			}),
+		);
+		await openSessionsTab();
+		const row = sessionRow("12/10");
+		expect(within(row).getByText("Dự kiến")).toBeTruthy();
+		expect(within(row).queryByText("Nghỉ lễ — Đã dời lịch")).toBeNull();
+	});
+
+	it("shift của lớp khác không badge chéo (filter classId)", async () => {
+		server = startKernelServer(
+			manualShiftedClass({
+				holidayShifts: [
+					{ classId: "cl-2", originalDate: TODAY, makeupDate: "2026-12-21" },
+				],
+			}),
+		);
+		await openSessionsTab();
+		const row = sessionRow("12/10");
+		expect(within(row).getByText("Sắp tới")).toBeTruthy();
+		expect(within(row).queryByText("Nghỉ lễ — Đã dời lịch")).toBeNull();
+	});
+
+	it("thiếu holidayShifts (deploy skew server cũ) giữ «Sắp tới»", async () => {
+		server = startKernelServer(
+			manualShiftedClass({ holidayShifts: undefined }),
+		);
+		await openSessionsTab();
+		const row = sessionRow("12/10");
+		expect(within(row).getByText("Sắp tới")).toBeTruthy();
+		expect(within(row).queryByText("Nghỉ lễ — Đã dời lịch")).toBeNull();
+	});
+});

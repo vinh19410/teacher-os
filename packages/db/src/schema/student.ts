@@ -37,6 +37,9 @@ export const student = sqliteTable(
 		/** Band/điểm mục tiêu (chuỗi hiển thị, vd "6.5" IELTS hoặc "750" TOEIC).
 		 * Ghi bởi: POST /api/student/onboarding (bước 2, ràng buộc theo examInterest). */
 		targetScore: text("target_score"),
+		/** Điểm đầu vào — chuỗi tự do, tối đa 50 ký tự (vd "7.0 IELTS", "800 TOEIC", "B2"); null = chưa có.
+		 * Ghi bởi: giáo viên khi tạo học viên (POST /api/students) hoặc học viên ở wizard onboarding. */
+		entryScore: text("entry_score"),
 		/** Mục tiêu học tiếng Anh — JSON array string của keys LEARNING_GOAL_OPTIONS.
 		 * Ghi bởi: POST /api/student/onboarding (bước 3, multi-select). */
 		learningGoals: text("learning_goals"),

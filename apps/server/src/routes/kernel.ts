@@ -10,6 +10,7 @@ import type {
 	StudentInviteResendResponse,
 } from "@teacher-os/api/contracts";
 import {
+	addManualSessionSchema,
 	classAssignmentCreateSchema,
 	classCreateSchema,
 	classNotesSchema,
@@ -44,7 +45,6 @@ import {
 	vietnamTodayISO,
 } from "@teacher-os/api/vietnam-date";
 import { canPublishGrade } from "@teacher-os/auth/role";
-
 import { assignmentPrompt } from "@teacher-os/db/schema/assignment-prompt";
 import { user as authUser } from "@teacher-os/db/schema/auth";
 import { classTable } from "@teacher-os/db/schema/class";
@@ -52,16 +52,18 @@ import {
 	classAssignment,
 	classAssignmentTarget,
 } from "@teacher-os/db/schema/class-assignment";
-
+import { classSession } from "@teacher-os/db/schema/class-session";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
+import { lessonMaterial } from "@teacher-os/db/schema/material";
 import { notificationRecord } from "@teacher-os/db/schema/notification-record";
 import {
 	holidaySessionCancel,
 	holidaySessionShift,
 } from "@teacher-os/db/schema/organization-holiday";
 import { paymentTransaction } from "@teacher-os/db/schema/payment-transaction";
+import { sessionPackage } from "@teacher-os/db/schema/session-package";
 import { student } from "@teacher-os/db/schema/student";
 import { studentInvitation } from "@teacher-os/db/schema/student-invitation";
 import type {
@@ -76,6 +78,7 @@ import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
 import type { AiGrader } from "../lib/ai-grading/grader";
 import { formatSenderName } from "../lib/brand";
+import { isManualClass } from "../lib/class-mode";
 import type { MediaStore } from "../lib/media-store";
 import {
 	deliverNotifications,
@@ -109,6 +112,7 @@ import { recordManualPayment } from "../lib/payments/record-manual-payment";
 import { requireFinanceRole } from "../lib/require-finance-role";
 import {
 	buildImportBatch,
+	findExistingMaterialIds,
 	findSyllabus,
 	MAX_IMPORT_NODES,
 	selectTemplateTree,
@@ -125,6 +129,7 @@ import { eventRoutes } from "./events";
 import { gradingRoutes } from "./grading";
 import { holidayRoutes, isRollbackableConstraintError } from "./holidays";
 import { leadRoutes } from "./leads";
+import { materialRoutes } from "./materials";
 import { notificationLogRoutes } from "./notification-logs";
 import { paymentTransactionRoutes } from "./payment-transactions";
 import { placementTestRoutes } from "./placement-test";
@@ -146,6 +151,7 @@ export function kernelRoutes(deps: {
 	getDb(): Db;
 	getMediaStore?(): MediaStore | undefined;
 	getLibraryAudioStore?(): MediaStore | undefined;
+	getMaterialsStore?(): MediaStore | undefined;
 	leadOrgId?: string;
 	corsOrigin?: string | string[];
 	corsOrigins?: string | string[];
@@ -403,6 +409,7 @@ export function kernelRoutes(deps: {
 				syllabusId: classTable.syllabusId,
 				mode: classTable.mode,
 				tuitionFee: classTable.tuitionFee,
+				schedulingMode: classTable.schedulingMode,
 			})
 			.from(classTable)
 			.where(and(eq(classTable.id, classId), eq(classTable.orgId, orgId)));
@@ -515,6 +522,7 @@ export function kernelRoutes(deps: {
 				zalo: input.phone,
 				parentName: input.parentName,
 				parentPhone: input.parentPhone,
+				entryScore: input.entryScore || null,
 				createdAt: now,
 			}),
 		];
@@ -1644,6 +1652,11 @@ export function kernelRoutes(deps: {
 					template: typeof syllabus.$inferSelect;
 					modules: (typeof syllabusModule.$inferSelect)[];
 					lessons: (typeof syllabusLesson.$inferSelect)[];
+					links: {
+						syllabusLessonId: string;
+						materialId: string;
+						position: number;
+					}[];
 			  }
 			| undefined;
 		if (input.templateId !== "") {
@@ -1665,6 +1678,13 @@ export function kernelRoutes(deps: {
 		const imported = template
 			? buildImportBatch(db, { ...template, classId, orgId: ctx.orgId })
 			: undefined;
+		// Issue #649: chế độ lớp được server suy ra — client không thể gắn
+		// "manual" cho một lớp có template (trạng thái không được định nghĩa).
+		// Lớp không template luôn là manual với 0 buổi khởi tạo; templateId
+		// rỗng + schedulingMode không gửi (client cũ) cũng là manual.
+		const schedulingMode =
+			input.templateId !== "" ? "auto" : (input.schedulingMode ?? "manual");
+
 		const classInsert = db.insert(classTable).values({
 			id: classId,
 			orgId: ctx.orgId,
@@ -1678,10 +1698,11 @@ export function kernelRoutes(deps: {
 				...input.schedule,
 				days: [...new Set(input.schedule.days)].sort((a, b) => a - b),
 			}),
-			sessionsTotal: input.sessionsTotal,
+			sessionsTotal: schedulingMode === "manual" ? 0 : input.sessionsTotal,
 			sessionsDone: 0,
 			status: "active",
 			startDate: input.startDate,
+			schedulingMode,
 			tuitionFee: input.tuitionFee ?? null,
 			notes: "",
 		});
@@ -2107,7 +2128,18 @@ export function kernelRoutes(deps: {
 		// the destination bucket must be empty unless it IS this bucket.
 		if (moveDateISO && moveDateISO !== dateISO) {
 			const dest = await bucketCounts(db, classId, moveDateISO, ctx.orgId);
-			if (dest.total > 0) {
+			const destCs = await db
+				.select({ id: classSession.id })
+				.from(classSession)
+				.where(
+					and(
+						eq(classSession.orgId, ctx.orgId),
+						eq(classSession.classId, classId),
+						eq(classSession.date, moveDateISO),
+					),
+				)
+				.limit(1);
+			if (dest.total > 0 || destCs.length > 0) {
 				return c.json(
 					{ error: "destination date occupied", reason: "date-occupied" },
 					409,
@@ -2126,9 +2158,21 @@ export function kernelRoutes(deps: {
 		}
 
 		const before = await bucketCounts(db, classId, dateISO, ctx.orgId);
+		const existingClassSession = await db
+			.select()
+			.from(classSession)
+			.where(
+				and(
+					eq(classSession.orgId, ctx.orgId),
+					eq(classSession.classId, classId),
+					eq(classSession.date, dateISO),
+				),
+			)
+			.limit(1);
+
 		// Identity addressing an EMPTY bucket is a stale client (moved/deleted
 		// under another tab) — never a silent success (#98 review F2).
-		if (before.total === 0) {
+		if (before.total === 0 && existingClassSession.length === 0) {
 			return c.json(
 				{ error: "occurrence not found", reason: "not-found" },
 				404,
@@ -2165,14 +2209,54 @@ export function kernelRoutes(deps: {
 				409,
 			);
 		}
+		const csSet: Partial<typeof classSession.$inferInsert> = {};
+		if (body.data.topic !== undefined) csSet.topic = body.data.topic;
+		if (body.data.time !== undefined) csSet.time = body.data.time;
+		if (body.data.dur !== undefined) csSet.dur = body.data.dur;
+		if (body.data.zoom !== undefined) csSet.zoom = body.data.zoom;
+		if (moveDateISO) csSet.date = moveDateISO;
+
 		try {
 			let rows: Array<{ id: string }>;
 			if (moveDateISO && moveDateISO !== dateISO) {
-				// C2: dời lesson và kéo `holiday_session_shift.makeupDate` trong
+				// C2: dời lesson, class_session và kéo `holiday_session_shift.makeupDate` trong
 				// CÙNG một db.batch nguyên tử để không bao giờ lệch trạng thái.
+				// Tài liệu buổi học (`lesson_material`) gắn theo ngày nên dời
+				// theo, nhưng CHỈ khi bucket thật sự đã dời (ngày gốc hết dòng
+				// lesson, ngày đích có dòng lesson hoặc class_session — #658:
+				// buổi manual 0 học viên không có dòng lesson) — thua race thì
+				// giữ nguyên. Câu dọn đích phía dưới chỉ xoá materialId trùng
+				// ngày gốc (tránh đụng khoá chính), không xoá link mồ côi khác
+				// ở đích.
+				const bucketMoved = and(
+					sql`not exists (select 1 from ${lesson} where ${lesson.orgId} = ${ctx.orgId} and ${lesson.classId} = ${classId} and ${lesson.date} = ${dateISO})`,
+					or(
+						sql`exists (select 1 from ${lesson} where ${lesson.orgId} = ${ctx.orgId} and ${lesson.classId} = ${classId} and ${lesson.date} = ${moveDateISO})`,
+						sql`exists (select 1 from ${classSession} where ${classSession.orgId} = ${ctx.orgId} and ${classSession.classId} = ${classId} and ${classSession.date} = ${moveDateISO})`,
+					),
+				);
 				try {
-					const [updatedRows] = await db.batch([
+					const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
 						occurrenceUpdate(db, classId, dateISO, ctx.orgId, set, false),
+						// #658: class_session phải dời TRƯỚC các câu lessonMaterial —
+						// `bucketMoved` nhìn thấy class_session ở đích qua subquery
+						// đánh giá từng câu trong batch (buổi manual 0 học viên
+						// không có dòng lesson để báo hiệu đích). Phần tử [0] giữ
+						// nguyên — `updatedRows` lấy từ kết quả phần tử đầu.
+						...(existingClassSession.length > 0
+							? [
+									db
+										.update(classSession)
+										.set(csSet)
+										.where(
+											and(
+												eq(classSession.orgId, ctx.orgId),
+												eq(classSession.classId, classId),
+												eq(classSession.date, dateISO),
+											),
+										),
+								]
+							: []),
 						db
 							.update(holidaySessionShift)
 							.set({ makeupDate: moveDateISO })
@@ -2183,8 +2267,38 @@ export function kernelRoutes(deps: {
 									eq(holidaySessionShift.makeupDate, dateISO),
 								),
 							),
-					]);
-					rows = updatedRows;
+						// #658: dọn đích CHỈ ở mức cần tránh đụng khoá chính
+						// `lesson_material_pk (classId, date, materialId)` — xoá dòng
+						// đích có materialId TRÙNG với ngày gốc. Không gate theo
+						// `bucketMoved`: double-submit dời cùng D→X — batch sau
+						// khớp 0 dòng ở gốc nhưng `bucketMoved` vẫn đúng (X đã có
+						// class_session do batch trước) và sẽ xoá mất tài liệu vừa
+						// dời. MaterialId khác nguồn (link mồ côi ở đích) được giữ
+						// nguyên — move không được xoá tài liệu không liên quan.
+						db
+							.delete(lessonMaterial)
+							.where(
+								and(
+									eq(lessonMaterial.orgId, ctx.orgId),
+									eq(lessonMaterial.classId, classId),
+									eq(lessonMaterial.date, moveDateISO),
+									sql`${lessonMaterial.materialId} in (select material_id from ${lessonMaterial} where ${lessonMaterial.orgId} = ${ctx.orgId} and ${lessonMaterial.classId} = ${classId} and ${lessonMaterial.date} = ${dateISO})`,
+								),
+							),
+						db
+							.update(lessonMaterial)
+							.set({ date: moveDateISO })
+							.where(
+								and(
+									eq(lessonMaterial.orgId, ctx.orgId),
+									eq(lessonMaterial.classId, classId),
+									eq(lessonMaterial.date, dateISO),
+									bucketMoved,
+								),
+							),
+					];
+					const [updatedRows] = await db.batch(statements);
+					rows = updatedRows as Array<{ id: string }>;
 				} catch (shiftCause) {
 					if (isRollbackableConstraintError(shiftCause)) {
 						return c.json(
@@ -2198,19 +2312,53 @@ export function kernelRoutes(deps: {
 					throw shiftCause;
 				}
 			} else {
-				rows = await occurrenceUpdate(
-					db,
-					classId,
-					dateISO,
-					ctx.orgId,
-					set,
-					false,
-				);
+				if (existingClassSession.length > 0 && before.total > 0) {
+					const [updatedRows] = await db.batch([
+						occurrenceUpdate(db, classId, dateISO, ctx.orgId, set, false),
+						db
+							.update(classSession)
+							.set(csSet)
+							.where(
+								and(
+									eq(classSession.orgId, ctx.orgId),
+									eq(classSession.classId, classId),
+									eq(classSession.date, dateISO),
+								),
+							),
+					]);
+					rows = updatedRows;
+				} else if (existingClassSession.length > 0) {
+					await db
+						.update(classSession)
+						.set(csSet)
+						.where(
+							and(
+								eq(classSession.orgId, ctx.orgId),
+								eq(classSession.classId, classId),
+								eq(classSession.date, dateISO),
+							),
+						);
+					rows = [];
+				} else {
+					rows = await occurrenceUpdate(
+						db,
+						classId,
+						dateISO,
+						ctx.orgId,
+						set,
+						false,
+					);
+				}
 			}
 			// Unique-index race backstop (never parse SQLite error strings —
 			// re-check state instead): if the destination shows occupancy now,
 			// a concurrent move won and this write lost cleanly.
-			if (moveDateISO && rows.length === 0 && moveDateISO !== dateISO) {
+			if (
+				moveDateISO &&
+				rows.length === 0 &&
+				existingClassSession.length === 0 &&
+				moveDateISO !== dateISO
+			) {
 				const after = await bucketCounts(db, classId, moveDateISO, ctx.orgId);
 				if (after.total > 0) {
 					return c.json(
@@ -2231,13 +2379,30 @@ export function kernelRoutes(deps: {
 				);
 			}
 			return c.json({
-				updated: rows.length,
+				updated: Math.max(rows.length, existingClassSession.length),
 				skipped: Math.max(0, before.total - rows.length),
 			} satisfies OccurrenceMutationResponse);
 		} catch (cause) {
+			if (isRollbackableConstraintError(cause)) {
+				return c.json(
+					{ error: "destination date occupied", reason: "date-occupied" },
+					409,
+				);
+			}
 			if (moveDateISO && moveDateISO !== dateISO) {
 				const after = await bucketCounts(db, classId, moveDateISO, ctx.orgId);
-				if (after.total > 0) {
+				const afterCs = await db
+					.select({ id: classSession.id })
+					.from(classSession)
+					.where(
+						and(
+							eq(classSession.orgId, ctx.orgId),
+							eq(classSession.classId, classId),
+							eq(classSession.date, moveDateISO),
+						),
+					)
+					.limit(1);
+				if (after.total > 0 || afterCs.length > 0) {
 					return c.json(
 						{ error: "destination date occupied", reason: "date-occupied" },
 						409,
@@ -2246,6 +2411,379 @@ export function kernelRoutes(deps: {
 			}
 			throw new Error("occurrence edit failed", { cause });
 		}
+	});
+	kernel.post("/classes/:id/sessions", async (c) => {
+		const kernelCtx = c.get("kernelCtx");
+		if (!kernelCtx) return unauthorized(c);
+		const classId = c.req.param("id") ?? "";
+		const db = deps.getDb();
+		const cls = await findClass(db, classId, kernelCtx.orgId);
+		if (!cls) {
+			return c.json({ error: "class not found", reason: "not-found" }, 404);
+		}
+		if (cls.syllabusId) {
+			return c.json(
+				{
+					error: "cannot add manual session to class with syllabus",
+					reason: "class-has-syllabus",
+				},
+				409,
+			);
+		}
+		const manual = await isManualClass(
+			db,
+			kernelCtx.orgId,
+			classId,
+			cls.syllabusId,
+			cls.schedulingMode,
+		);
+		if (!manual) {
+			const [hasLessons] = await db
+				.select({ id: lesson.id })
+				.from(lesson)
+				.where(
+					and(eq(lesson.orgId, kernelCtx.orgId), eq(lesson.classId, classId)),
+				)
+				.limit(1);
+			if (hasLessons) {
+				return c.json(
+					{
+						error: "class is not in manual sessions mode",
+						reason: "not-manual-class",
+					},
+					409,
+				);
+			}
+		}
+		const body = await readBody(c, addManualSessionSchema);
+		if (!body.ok) return body.response;
+
+		const dateISO = parseStartDateStrict(body.data.date);
+		if (!dateISO) {
+			return invalidDateResponse(c);
+		}
+
+		const destLessons = await bucketCounts(
+			db,
+			classId,
+			dateISO,
+			kernelCtx.orgId,
+		);
+		const destClassSessions = await db
+			.select({ id: classSession.id })
+			.from(classSession)
+			.where(
+				and(
+					eq(classSession.orgId, kernelCtx.orgId),
+					eq(classSession.classId, classId),
+					eq(classSession.date, dateISO),
+				),
+			)
+			.limit(1);
+
+		if (destLessons.total > 0 || destClassSessions.length > 0) {
+			return c.json(
+				{ error: "date already has a session", reason: "date-occupied" },
+				409,
+			);
+		}
+
+		// #655: tài liệu ngân hàng gắn ngay lúc tạo buổi — validate org-scoped
+		// TRƯỚC batch (id lạ không được để batch nổ giữa chừng), dedupe giữ
+		// thứ tự để không đâm PK (classId, date, materialId).
+		const materialIds = [...new Set(body.data.materialIds)];
+		if (materialIds.length > 0) {
+			const existing = await findExistingMaterialIds(
+				db,
+				kernelCtx.orgId,
+				materialIds,
+			);
+			const missing = materialIds.find((id) => !existing.has(id));
+			if (missing !== undefined) {
+				return c.json(
+					{ error: "material-not-found", materialId: missing },
+					422,
+				);
+			}
+		}
+
+		const newId = crypto.randomUUID();
+		const activeEnrollments = await db
+			.select({ id: enrollment.id, studentId: enrollment.studentId })
+			.from(enrollment)
+			.where(
+				and(
+					eq(enrollment.orgId, kernelCtx.orgId),
+					eq(enrollment.classId, classId),
+					eq(enrollment.status, "active"),
+				),
+			);
+
+		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
+			db.insert(classSession).values({
+				id: newId,
+				orgId: kernelCtx.orgId,
+				classId,
+				date: dateISO,
+				time: body.data.time,
+				dur: body.data.dur,
+				topic: body.data.topic.trim(),
+				zoom: body.data.zoom.trim(),
+			}),
+		];
+
+		const day = isoToLessonWeekday(dateISO);
+		for (const enr of activeEnrollments) {
+			statements.push(
+				db.insert(lesson).values({
+					id: crypto.randomUUID(),
+					orgId: kernelCtx.orgId,
+					classId,
+					enrollmentId: enr.id,
+					day,
+					time: body.data.time,
+					dur: body.data.dur,
+					date: dateISO,
+					type: "1:1",
+					status: "upcoming",
+					topic: body.data.topic.trim(),
+					zoom: body.data.zoom.trim(),
+				}),
+			);
+		}
+
+		// #655: links tài liệu vào CÙNG batch với class_session + lesson —
+		// position i theo thứ tự gửi lên; batch nổ thì cả buổi biến mất.
+		for (const [position, materialId] of materialIds.entries()) {
+			statements.push(
+				db.insert(lessonMaterial).values({
+					orgId: kernelCtx.orgId,
+					classId,
+					date: dateISO,
+					materialId,
+					position,
+				}),
+			);
+		}
+
+		statements.push(
+			db
+				.update(classTable)
+				.set({
+					sessionsTotal: sql`(SELECT count(*) FROM class_session WHERE class_id = ${classId} AND org_id = ${kernelCtx.orgId})`,
+					schedulingMode: "manual",
+				})
+				.where(
+					and(
+						eq(classTable.orgId, kernelCtx.orgId),
+						eq(classTable.id, classId),
+					),
+				),
+		);
+
+		for (const enr of activeEnrollments) {
+			statements.push(
+				db
+					.update(sessionPackage)
+					.set({
+						total: sql`(SELECT count(*) FROM class_session WHERE class_id = ${classId} AND org_id = ${kernelCtx.orgId})`,
+					})
+					.where(
+						and(
+							eq(sessionPackage.orgId, kernelCtx.orgId),
+							eq(sessionPackage.enrollmentId, enr.id),
+						),
+					),
+			);
+		}
+
+		try {
+			await db.batch(statements);
+		} catch (err) {
+			// #655: tài liệu bị xoá giữa lúc validate và lúc batch → FK lỗi.
+			// Re-check rồi trả đúng nghĩa nghiệp vụ thay vì 409 date-occupied
+			// (isRollbackableConstraintError match cả FOREIGN KEY).
+			const message = err instanceof Error ? err.message : String(err);
+			if (/FOREIGN KEY/i.test(message) && materialIds.length > 0) {
+				const existing = await findExistingMaterialIds(
+					db,
+					kernelCtx.orgId,
+					materialIds,
+				);
+				const missing = materialIds.find((id) => !existing.has(id));
+				if (missing !== undefined) {
+					return c.json(
+						{ error: "material-not-found", materialId: missing },
+						422,
+					);
+				}
+			}
+			if (isRollbackableConstraintError(err)) {
+				return c.json(
+					{ error: "date already has a session", reason: "date-occupied" },
+					409,
+				);
+			}
+			throw err;
+		}
+		return c.json({ ok: true, id: newId, date: dateISO }, 201);
+	});
+
+	kernel.delete("/classes/:id/sessions/:date", async (c) => {
+		const parsed = await parseOccurrenceContext(c);
+		if (!parsed.ok) return parsed.response;
+		const { ctx, db, classId, dateISO } = parsed;
+
+		const cls = await findClass(db, classId, ctx.orgId);
+		if (!cls) {
+			return c.json({ error: "class not found", reason: "not-found" }, 404);
+		}
+		if (cls.syllabusId) {
+			return c.json(
+				{
+					error: "cannot delete session from class with syllabus",
+					reason: "class-has-syllabus",
+				},
+				409,
+			);
+		}
+		const manual = await isManualClass(
+			db,
+			ctx.orgId,
+			classId,
+			cls.syllabusId,
+			cls.schedulingMode,
+		);
+		if (!manual) {
+			return c.json(
+				{
+					error: "class is not in manual sessions mode",
+					reason: "not-manual-class",
+				},
+				409,
+			);
+		}
+		const [existingSession] = await db
+			.select({ id: classSession.id })
+			.from(classSession)
+			.where(
+				and(
+					eq(classSession.orgId, ctx.orgId),
+					eq(classSession.classId, classId),
+					eq(classSession.date, dateISO),
+				),
+			)
+			.limit(1);
+
+		const lessonRows = await db
+			.select({
+				id: lesson.id,
+				status: lesson.status,
+				attendance: lesson.attendance,
+			})
+			.from(lesson)
+			.where(
+				and(
+					eq(lesson.orgId, ctx.orgId),
+					eq(lesson.classId, classId),
+					eq(lesson.date, dateISO),
+				),
+			);
+		if (!existingSession && lessonRows.length === 0) {
+			return c.json(
+				{ error: "occurrence not found", reason: "not-found" },
+				404,
+			);
+		}
+
+		if (
+			lessonRows.some((l) => l.status === "completed" || l.attendance !== null)
+		) {
+			return c.json(
+				{
+					error: "cannot delete completed session",
+					reason: "cannot-delete-completed",
+				},
+				409,
+			);
+		}
+
+		const deleteStatements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
+			db
+				.delete(classSession)
+				.where(
+					and(
+						eq(classSession.orgId, ctx.orgId),
+						eq(classSession.classId, classId),
+						eq(classSession.date, dateISO),
+					),
+				),
+		];
+		deleteStatements.push(
+			db
+				.delete(lessonMaterial)
+				.where(
+					and(
+						eq(lessonMaterial.orgId, ctx.orgId),
+						eq(lessonMaterial.classId, classId),
+						eq(lessonMaterial.date, dateISO),
+					),
+				),
+		);
+
+		if (lessonRows.length > 0) {
+			deleteStatements.push(
+				db
+					.delete(lesson)
+					.where(
+						and(
+							eq(lesson.orgId, ctx.orgId),
+							eq(lesson.classId, classId),
+							eq(lesson.date, dateISO),
+						),
+					),
+			);
+		}
+
+		deleteStatements.push(
+			db
+				.update(classTable)
+				.set({
+					sessionsTotal: sql`(SELECT count(*) FROM class_session WHERE class_id = ${classId} AND org_id = ${ctx.orgId})`,
+				})
+				.where(
+					and(eq(classTable.orgId, ctx.orgId), eq(classTable.id, classId)),
+				),
+		);
+
+		const activeEnrollments = await db
+			.select({ id: enrollment.id })
+			.from(enrollment)
+			.where(
+				and(
+					eq(enrollment.orgId, ctx.orgId),
+					eq(enrollment.classId, classId),
+					eq(enrollment.status, "active"),
+				),
+			);
+		for (const enr of activeEnrollments) {
+			deleteStatements.push(
+				db
+					.update(sessionPackage)
+					.set({
+						total: sql`(SELECT count(*) FROM class_session WHERE class_id = ${classId} AND org_id = ${ctx.orgId})`,
+					})
+					.where(
+						and(
+							eq(sessionPackage.orgId, ctx.orgId),
+							eq(sessionPackage.enrollmentId, enr.id),
+						),
+					),
+			);
+		}
+
+		await db.batch(deleteStatements);
+		return c.json({ ok: true, deleted: true, date: dateISO });
 	});
 
 	async function occurrenceStatusAction(
@@ -2926,6 +3464,7 @@ export function kernelRoutes(deps: {
 	// sub-router's POSTs are CSRF-guarded exactly like the kernel writes.
 	kernel.route("/", syllabusRoutes(deps));
 	kernel.route("/", studyPackRoutes(deps));
+	kernel.route("/", materialRoutes(deps));
 	kernel.route("/assignments", assignmentRoutes(deps));
 	kernel.route("/reports", reportRoutes(deps));
 	kernel.route("/notifs", notifRoutes(deps));

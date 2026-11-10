@@ -26,14 +26,20 @@ import { useSubmitOnboarding } from "@/lib/repos/student";
 
 export interface OnboardingWizardProps {
 	onCompleted: () => void;
+	/** Điểm đầu vào đã có (giáo viên nhập trước) — điền sẵn để học viên thấy và sửa có chủ đích. */
+	initialEntryScore?: string | null;
 }
 
-export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
+export function OnboardingWizard({
+	onCompleted,
+	initialEntryScore,
+}: OnboardingWizardProps) {
 	const [step, setStep] = useState(0);
 	const [answers, setAnswers] = useState<{
 		examInterest: ExamInterest | null;
 		currentLevel: CurrentLevelOption | null;
 		targetScore: string | null;
+		entryScore: string;
 		learningGoals: LearningGoalOption[];
 		learningGoalsNote: string;
 		dailyStudyHours: DailyStudyHourOption | null;
@@ -41,6 +47,7 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 		examInterest: null,
 		currentLevel: null,
 		targetScore: null,
+		entryScore: initialEntryScore ?? "",
 		learningGoals: [],
 		learningGoalsNote: "",
 		dailyStudyHours: null,
@@ -108,6 +115,7 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 			learningGoals: answers.learningGoals,
 			learningGoalsNote: answers.learningGoalsNote.trim() || undefined,
 			dailyStudyHours: answers.dailyStudyHours,
+			entryScore: answers.entryScore.trim() || undefined,
 		};
 
 		try {
@@ -166,6 +174,10 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 								...prev,
 								currentLevel: v,
 							}))
+						}
+						entryScore={answers.entryScore}
+						onEntryScoreChange={(entryScore) =>
+							setAnswers((prev) => ({ ...prev, entryScore }))
 						}
 					/>
 				)}
@@ -229,6 +241,7 @@ export function OnboardingWizard({ onCompleted }: OnboardingWizardProps) {
 								learningGoalsNote:
 									answers.learningGoalsNote.trim() || undefined,
 								dailyStudyHours: answers.dailyStudyHours ?? "1-2",
+								entryScore: answers.entryScore.trim() || undefined,
 							}}
 						/>
 					)}

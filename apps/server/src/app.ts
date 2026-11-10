@@ -28,6 +28,7 @@ import { readinessRoute } from "./routes/readiness";
 import { studentRoutes } from "./routes/student";
 import { studentClassmatesRoutes } from "./routes/student-classmates";
 import { studentHistoryRoutes } from "./routes/student-history";
+import { studentMaterialRoutes } from "./routes/student-materials";
 import { studentPracticeRoutes } from "./routes/student-practice";
 import type { SessionUser } from "./session";
 
@@ -81,6 +82,12 @@ export interface AppDeps {
 	 * LIBRARY_AUDIO_DISABLED, cùng hợp đồng với `getMediaStore`.
 	 */
 	getLibraryAudioStore?(): MediaStore | undefined;
+	/**
+	 * Kho file của ngân hàng tài liệu (bucket `materials`) — R2 ở production,
+	 * đĩa ở e2e. Vắng mặt → route upload/tải file tài liệu trả 503
+	 * MATERIALS_DISABLED; link và metadata vẫn hoạt động.
+	 */
+	getMaterialsStore?(): MediaStore | undefined;
 	/**
 	 * Plan #413: allowlist email admin (binding ADMIN_EMAILS đã parse; so
 	 * khớp lowercase trong requireAdmin). Rỗng = không ai là admin.
@@ -319,6 +326,17 @@ export function buildApp(deps: AppDeps) {
 		await next();
 		c.res.headers.set("Cross-Origin-Resource-Policy", "same-site");
 	});
+	// File tài liệu (giáo viên + học viên): CORP same-site để app web/cổng
+	// học viên phát được `<audio>`/`<video>` trỏ thẳng tới API.
+	for (const path of [
+		"/api/materials/:id/file",
+		"/api/student/classes/:classId/sessions/:date/materials/:materialId/file",
+	]) {
+		app.use(path, async (c, next) => {
+			await next();
+			c.res.headers.set("Cross-Origin-Resource-Policy", "same-site");
+		});
+	}
 	app.use(
 		"/*",
 		secureHeaders({
@@ -420,6 +438,9 @@ export function buildApp(deps: AppDeps) {
 	// Lịch sử học tập (#378 phase 11): month/week/list — cùng mount point,
 	// guard tự gắn trong router như practice.
 	app.route("/api/student", studentHistoryRoutes(deps));
+	// Tài liệu buổi học (chỉ đọc): cùng mount point, guard học viên + kiểm
+	// enrollment tự gắn trong router.
+	app.route("/api/student", studentMaterialRoutes(deps));
 	// Plan #413 phase 3: router thật của thư viện đề — requireAdmin +
 	// CSRF Origin(adminOrigins) tự gắn trong router; bootstrapMiddleware vẫn
 	// bypass /api/admin nên không session teacher nào bootstrap org qua

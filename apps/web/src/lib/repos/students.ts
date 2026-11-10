@@ -67,6 +67,7 @@ export function mapStudents(snapshot: KernelSnapshot): Student[] {
 				: {}),
 			hasPackage: pkg != null,
 			parent: { name: row.parentName, phone: row.parentPhone },
+			entryScore: row.entryScore ?? "",
 			targetBand: "—",
 			skills: [],
 			examDate: "",

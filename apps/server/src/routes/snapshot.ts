@@ -9,6 +9,10 @@ import {
 	type KernelLessonRow,
 	type KernelSnapshot,
 } from "@teacher-os/api/contracts";
+import {
+	isMaterialKind,
+	type SyllabusBankMaterialRef,
+} from "@teacher-os/api/material-contracts";
 import { canAccessFinance } from "@teacher-os/auth/role";
 import { assignment } from "@teacher-os/db/schema/assignment";
 import { assignmentPrompt } from "@teacher-os/db/schema/assignment-prompt";
@@ -21,9 +25,14 @@ import {
 	classAssignment,
 	classAssignmentTarget,
 } from "@teacher-os/db/schema/class-assignment";
+import { classSession } from "@teacher-os/db/schema/class-session";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
+import {
+	material,
+	syllabusLessonMaterial,
+} from "@teacher-os/db/schema/material";
 import { orgEvent } from "@teacher-os/db/schema/org-event";
 import {
 	holidaySessionCancel,
@@ -252,6 +261,8 @@ export async function loadSnapshot(
 		holidayShiftRows,
 		holidayCancelRows,
 		eventRows,
+		classSessionRows,
+		bankMaterialLinkRows,
 	] = await Promise.all([
 		db
 			.select()
@@ -427,6 +438,40 @@ export async function loadSnapshot(
 			.from(holidaySessionCancel)
 			.where(eq(holidaySessionCancel.orgId, orgId)),
 		loadEvents(db, orgId),
+		db
+			.select()
+			.from(classSession)
+			.where(eq(classSession.orgId, orgId))
+			.orderBy(asc(classSession.date)),
+		// #655: links tài liệu ngân hàng trên bài học giáo trình — đọc một lần
+		// cho cả template lẫn copy của lớp, projection teacher-safe.
+		db
+			.select({
+				syllabusLessonId: syllabusLessonMaterial.syllabusLessonId,
+				position: syllabusLessonMaterial.position,
+				id: material.id,
+				title: material.title,
+				description: material.description,
+				kind: material.kind,
+				url: material.url,
+				mimeType: material.mimeType,
+				sizeBytes: material.sizeBytes,
+				originalName: material.originalName,
+			})
+			.from(syllabusLessonMaterial)
+			.innerJoin(
+				material,
+				and(
+					eq(material.id, syllabusLessonMaterial.materialId),
+					eq(material.orgId, orgId),
+				),
+			)
+			.where(eq(syllabusLessonMaterial.orgId, orgId))
+			.orderBy(
+				asc(syllabusLessonMaterial.syllabusLessonId),
+				asc(syllabusLessonMaterial.position),
+				asc(syllabusLessonMaterial.createdAt),
+			),
 	]);
 
 	// #208: headers BEFORE targets, strictly sequential — a write landing
@@ -541,10 +586,35 @@ export async function loadSnapshot(
 		partsByTest.set(part.testId, list);
 	}
 
-	const lessonsByModule = new Map<
-		string,
-		KernelSnapshot["syllabi"][number]["modules"][number]["lessons"]
-	>();
+	/**
+	 * #655: lesson của tree view kèm `bankMaterials` — payload thêm field,
+	 * type snapshot chưa khai báo (KernelSyllabusLessonRow không có) nên dựng
+	 * type cục bộ mở rộng; field optional trên wire nên snapshot cũ phía web
+	 * vẫn parse được.
+	 */
+	type SnapshotSyllabusLesson =
+		KernelSnapshot["syllabi"][number]["modules"][number]["lessons"][number] & {
+			bankMaterials: SyllabusBankMaterialRef[];
+		};
+	const bankMaterialsByLesson = new Map<string, SyllabusBankMaterialRef[]>();
+	for (const row of bankMaterialLinkRows) {
+		const list = bankMaterialsByLesson.get(row.syllabusLessonId) ?? [];
+		list.push({
+			id: row.id,
+			title: row.title,
+			description: row.description,
+			kind: (isMaterialKind(row.kind)
+				? row.kind
+				: "file") as SyllabusBankMaterialRef["kind"],
+			url: row.url,
+			mimeType: row.mimeType,
+			sizeBytes: row.sizeBytes,
+			originalName: row.originalName,
+			position: row.position,
+		});
+		bankMaterialsByLesson.set(row.syllabusLessonId, list);
+	}
+	const lessonsByModule = new Map<string, SnapshotSyllabusLesson[]>();
 	for (const lesson of lessonRows) {
 		const list = lessonsByModule.get(lesson.moduleId) ?? [];
 		list.push({
@@ -554,6 +624,7 @@ export async function loadSnapshot(
 			materials: lesson.materials,
 			kind: lesson.kind,
 			status: lesson.status,
+			bankMaterials: bankMaterialsByLesson.get(lesson.id) ?? [],
 		});
 		lessonsByModule.set(lesson.moduleId, list);
 	}
@@ -581,6 +652,7 @@ export async function loadSnapshot(
 			zalo: row.zalo,
 			parentName: row.parentName,
 			parentPhone: row.parentPhone,
+			entryScore: row.entryScore ?? "",
 			portalLinked: row.onboardingCompletedAt != null,
 		})),
 		classes: classRows.map((row) => ({
@@ -597,6 +669,7 @@ export async function loadSnapshot(
 			status: row.status,
 			startDate: row.startDate,
 			tuitionFee: row.tuitionFee ?? null,
+			schedulingMode: row.schedulingMode ?? "auto",
 			notes: row.notes,
 		})),
 		enrollments: enrollmentRows.map((row) => ({
@@ -644,6 +717,15 @@ export async function loadSnapshot(
 			attendance: (row.attendance ?? null) as KernelLessonRow["attendance"],
 			attendanceNote: (row.attendanceNote ??
 				null) as KernelLessonRow["attendanceNote"],
+			topic: row.topic,
+			zoom: row.zoom,
+		})),
+		classSessions: classSessionRows.map((row) => ({
+			id: row.id,
+			classId: row.classId,
+			date: row.date,
+			time: row.time,
+			dur: row.dur,
 			topic: row.topic,
 			zoom: row.zoom,
 		})),

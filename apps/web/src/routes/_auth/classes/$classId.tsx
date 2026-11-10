@@ -13,6 +13,7 @@ import type {
 } from "@/components/class-detail/session-actions-modal";
 import { ClassAssignmentsTab } from "@/components/classes/class-assignments-tab";
 import { ClassStudyPackSection } from "@/components/classes/class-study-pack-section";
+import { AddClassSessionModal } from "@/components/modals/add-class-session-modal";
 import { EditClassFeeModal } from "@/components/modals/edit-class-fee-modal";
 import { EnrollStudentModal } from "@/components/modals/enroll-student-modal";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -141,6 +142,11 @@ function ClassDetailRoute() {
 			{ type: "session-edit", classId, date: dateISO, payload },
 			payload.moveDate !== undefined ? "Đã dời buổi." : "Đã cập nhật buổi.",
 		);
+	const handleDeleteOccurrence = (dateISO: string) =>
+		runOccurrenceWrite(
+			{ type: "delete-session-occurrence", classId, date: dateISO },
+			"Đã xóa buổi học.",
+		);
 	const { classById } = useClasses();
 	const { studentById, data } = useData();
 	const { run, isPending, busy } = useDirectKernelAction();
@@ -156,6 +162,7 @@ function ClassDetailRoute() {
 	const assignmentsFocus = search.tab === "assignments";
 	const [tab, setTab] = useState<string>(activeTab);
 	const [manageOpen, setManageOpen] = useState(false);
+	const [addSessionOpen, setAddSessionOpen] = useState(false);
 	const [practiceMode, setPracticeMode] = useState<"sessions" | "study-pack">(
 		"sessions",
 	);
@@ -238,18 +245,22 @@ function ClassDetailRoute() {
 								Giao bài tập
 							</Button>
 						)}
-						<Button
-							size="sm"
-							onClick={() => {
-								if (sy) {
+						{sy ? (
+							<Button
+								size="sm"
+								onClick={() => {
 									setTab("sessions-practice");
 									setAssignmentsView("list");
-								}
-								setManageOpen(true);
-							}}
-						>
-							Sắp xếp buổi
-						</Button>
+									setManageOpen(true);
+								}}
+							>
+								Sắp xếp buổi
+							</Button>
+						) : (
+							<Button size="sm" onClick={() => setAddSessionOpen(true)}>
+								+ Thêm buổi học
+							</Button>
+						)}
 					</>
 				}
 			/>
@@ -349,11 +360,17 @@ function ClassDetailRoute() {
 								lessons={data.lessons.filter((l) => l.classId === classId)}
 								legacyLessons={classLessons}
 								syllabus={sy}
+								classSessions={(data.classSessions ?? []).filter(
+									(cs) => cs.classId === classId,
+								)}
+								holidayShifts={data.holidayShifts}
 								studentById={studentById}
 								run={run}
 								onComplete={handleCompleteOccurrence}
 								onCancelOccurrence={handleCancelOccurrence}
 								onSaveEdit={handleSaveOccurrenceEdit}
+								onDeleteOccurrence={handleDeleteOccurrence}
+								onAddSession={() => setAddSessionOpen(true)}
 								isPending={isPending}
 								busy={busy}
 							/>
@@ -458,6 +475,15 @@ function ClassDetailRoute() {
 				run={run}
 				isPending={isPending}
 				busy={busy}
+			/>
+			<AddClassSessionModal
+				key={`add-session-${cls.id}`}
+				open={addSessionOpen}
+				onClose={() => setAddSessionOpen(false)}
+				cls={cls}
+				existingDateISOs={(data.classSessions ?? [])
+					.filter((cs) => cs.classId === classId)
+					.map((cs) => cs.date)}
 			/>
 			<EnrollStudentModal
 				key={`enroll-student-${cls.id}`}

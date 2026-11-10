@@ -7,5 +7,10 @@
 		"outDir": "dist",
 		"composite": true
 	},
-	"include": ["src/schema/**/*.ts", "src/seed/**/*.ts", "scripts/**/*.ts"]
+	"include": [
+		"src/schema/**/*.ts",
+		"src/seed/**/*.ts",
+		"src/audit/**/*.ts",
+		"scripts/**/*.ts"
+	]
 }

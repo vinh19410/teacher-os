@@ -318,6 +318,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 				examInterest: null,
 				currentLevel: null,
 				targetScore: null,
+				entryScore: null,
 				learningGoals: null,
 				learningGoalsNote: null,
 				dailyStudyHours: null,
@@ -438,6 +439,46 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 			expect(resOrg1.status).toBe(200);
 			const body1 = (await resOrg1.json()) as { student: { orgId: string } };
 			expect(body1.student.orgId).toBe("org-1");
+		} finally {
+			await libsql
+				.update(schema.student)
+				.set({ email: "" })
+				.where(eq(schema.student.id, "student-amb-2"));
+		}
+	});
+
+	test("multi-org student can pick the org via ?org= when headers cannot be sent", async () => {
+		await libsql
+			.update(schema.student)
+			.set({ email: "trung@test.local" })
+			.where(eq(schema.student.id, "student-amb-2"));
+
+		try {
+			for (const orgId of ["org-1", "org-2"]) {
+				const res = await app.request(`/api/student/me?org=${orgId}`, {
+					headers: { "x-test-user": "ambiguous" },
+				});
+				expect(res.status).toBe(200);
+				const body = (await res.json()) as { student: { orgId: string } };
+				expect(body.student.orgId).toBe(orgId);
+			}
+
+			// An org the session has no student record in never grants access.
+			const foreign = await app.request("/api/student/me?org=org-not-mine", {
+				headers: { "x-test-user": "ambiguous" },
+			});
+			expect(foreign.status).toBe(200);
+			const foreignBody = (await foreign.json()) as {
+				student: { orgId: string };
+			};
+			expect(["org-1", "org-2"]).toContain(foreignBody.student.orgId);
+
+			// Header wins over the query fallback.
+			const both = await app.request("/api/student/me?org=org-2", {
+				headers: { "x-test-user": "ambiguous", "x-student-org-id": "org-1" },
+			});
+			const bothBody = (await both.json()) as { student: { orgId: string } };
+			expect(bothBody.student.orgId).toBe("org-1");
 		} finally {
 			await libsql
 				.update(schema.student)
@@ -922,6 +963,35 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 			expect(row?.learningGoalsNote).toBeNull();
 			expect(row?.dailyStudyHours).toBe("1-2");
 			expect(row?.onboardingCompletedAt).not.toBeNull();
+		});
+
+		test("entryScore is trimmed, persisted, and not wiped by a later submit without it", async () => {
+			const post = (extra: Record<string, unknown>) =>
+				app.request("/api/student/onboarding", {
+					method: "POST",
+					headers: {
+						"x-test-user": "provisioning-user",
+						Origin: "http://localhost:8003",
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						examInterest: "ielts",
+						currentLevel: "intermediate",
+						targetScore: "6.5",
+						learningGoals: ["study-abroad", "career"],
+						dailyStudyHours: "1-2",
+						...extra,
+					}),
+				});
+			const first = await post({ entryScore: "  B2  " });
+			expect(first.status).toBe(200);
+			expect(((await first.json()) as StudentMe).student.entryScore).toBe("B2");
+			const second = await post({});
+			expect(((await second.json()) as StudentMe).student.entryScore).toBe(
+				"B2",
+			);
+			const tooLong = await post({ entryScore: "x".repeat(51) });
+			expect(tooLong.status).toBe(400);
 		});
 
 		test("GET /me round-trip reflects persisted onboarding fields", async () => {

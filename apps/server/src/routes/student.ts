@@ -174,7 +174,11 @@ export function createStudentGuard(deps: StudentRouteDeps) {
 			}
 		}
 
-		const requestedOrgId = c.req.header("x-student-org-id");
+		// Thẻ <audio>/<video> và link tải không gửi được header, nên cho phép
+		// `?org=` làm phương án dự phòng; giá trị vẫn chỉ khớp với các hồ sơ
+		// học viên của chính phiên đăng nhập này (rows).
+		const requestedOrgId =
+			c.req.header("x-student-org-id") ?? c.req.query("org");
 		let matchedStudent = rows[0];
 
 		if (requestedOrgId) {
@@ -353,6 +357,7 @@ function buildStudentMe(
 			examInterest,
 			currentLevel: parseEnum(s.currentLevel ?? null, CURRENT_LEVEL_OPTIONS),
 			targetScore: parseTargetScore(examInterest, s.targetScore ?? null),
+			entryScore: s.entryScore ?? null,
 			learningGoals: parseLearningGoals(s.learningGoals ?? null),
 			learningGoalsNote: s.learningGoalsNote ?? null,
 			dailyStudyHours: parseEnum(
@@ -1255,6 +1260,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			learningGoals,
 			learningGoalsNote,
 			dailyStudyHours,
+			entryScore,
 		} = parsed.data;
 		await db
 			.update(student)
@@ -1265,6 +1271,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				learningGoals: JSON.stringify([...learningGoals]),
 				learningGoalsNote: learningGoalsNote?.length ? learningGoalsNote : null,
 				dailyStudyHours,
+				// Wizard điền sẵn giá trị hiện có; bỏ trống không xoá điểm đã lưu.
+				...(entryScore ? { entryScore } : {}),
 				onboardingCompletedAt: new Date(),
 			})
 			.where(eq(student.id, s.id));

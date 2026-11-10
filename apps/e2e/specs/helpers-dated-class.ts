@@ -15,6 +15,9 @@ export async function seedDatedClass(
 		schedule?: { days?: number[]; start?: string; end?: string };
 		startDate: string;
 		sessionsTotal?: number;
+		schedulingMode?: "auto" | "manual";
+		/** Tạo lớp từ template giáo trình (#655) — vắng mặt là lớp trống. */
+		templateId?: string;
 		students?: { teacherEmail?: string; names: string[] };
 	},
 ): Promise<string> {
@@ -25,7 +28,7 @@ export async function seedDatedClass(
 			level: "",
 			skills: ["Writing"],
 			mode: "Online",
-			templateId: "",
+			templateId: opts.templateId ?? "",
 			schedule: {
 				days: opts.schedule?.days ?? [vnWeekdayMon0(opts.startDate)],
 				start: opts.schedule?.start ?? "19:00",
@@ -33,6 +36,7 @@ export async function seedDatedClass(
 			},
 			sessionsTotal: opts.sessionsTotal ?? 4,
 			startDate: opts.startDate,
+			schedulingMode: opts.schedulingMode ?? "auto",
 		},
 		headers: {
 			Origin: WEB_ORIGIN,
@@ -88,4 +92,37 @@ export async function seedDatedClass(
 	}
 
 	return classId;
+}
+
+/** Seeds an EMPTY IELTS Writing syllabus template (no modules/lessons) and
+ * returns the label its <option> carries in the create-class TemplatePicker.
+ * Since #649 a class created without a template is manual (0 buổi, "Tổng số
+ * buổi" field hidden); picking this template makes the class auto-scheduled
+ * while "Tổng số buổi" stays editable, because an empty syllabus has no
+ * sessions to auto-fill (skills are locked to Writing — IELTS templates need
+ * at least one skill). Reload or goto afterwards so the ['kernel'] snapshot
+ * (staleTime: Infinity) picks the template up. */
+export async function seedEmptySyllabusTemplate(
+	page: Page,
+	name: string,
+): Promise<string> {
+	const response = await page.request.post(
+		`${API_ORIGIN}/api/syllabus-templates`,
+		{
+			data: {
+				name,
+				type: "ielts",
+				level: "Band 7.0",
+				skills: ["Writing"],
+				description: "",
+			},
+			headers: { Origin: WEB_ORIGIN, "Content-Type": "application/json" },
+		},
+	);
+	if (response.status() !== 201) {
+		throw new Error(
+			`seedEmptySyllabusTemplate failed (${response.status()}): ${await response.text()}`,
+		);
+	}
+	return `${name} · 0 buổi`;
 }

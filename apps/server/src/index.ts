@@ -29,6 +29,7 @@ let db: Db | undefined;
 let auth: Auth | undefined;
 let mediaStore: MediaStore | undefined;
 let libraryAudioStore: MediaStore | undefined;
+let materialsStore: MediaStore | undefined;
 let bankHub: BankHubContext | undefined;
 // TOS-24 (#470): kho file đề nhập AI dùng chung bucket MEDIA — memoized
 // riêng để không tạo adapter mới mỗi request (same pattern mediaStore).
@@ -119,6 +120,13 @@ const app = buildApp({
 		if (!env.LIBRARY_AUDIO) return undefined;
 		libraryAudioStore ??= createR2MediaStore(env.LIBRARY_AUDIO);
 		return libraryAudioStore;
+	},
+	// Ngân hàng tài liệu — binding MATERIALS thiếu → undefined → route file
+	// tài liệu trả 503 MATERIALS_DISABLED.
+	getMaterialsStore: () => {
+		if (!env.MATERIALS) return undefined;
+		materialsStore ??= createR2MediaStore(env.MATERIALS);
+		return materialsStore;
 	},
 	// TOS-24 (#470): file đề gốc nhập AI dùng chung bucket MEDIA (prefix
 	// `exam-imports/<orgId>/` do route tự ghép). Binding MEDIA thiếu →

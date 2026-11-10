@@ -92,3 +92,6 @@ raw-data/
 # Design v2 compare harness (local only — private repo clone + dev server)
 .cache/design-v2/
 scripts/design-compare/.state/
+
+# Audit #663 cleanup dump (backup trước khi ghi; chứa internal id — KHÔNG commit)
+audit-663-apply-dump-*.json

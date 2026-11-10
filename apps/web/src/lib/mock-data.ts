@@ -14,6 +14,7 @@ import type {
 	KernelVocabDeckRow,
 	KernelVocabSuggestionRow,
 } from "@teacher-os/api/contracts";
+import type { SyllabusBankMaterialRef } from "@teacher-os/api/material-contracts";
 
 export interface Student {
 	id: string;
@@ -27,6 +28,8 @@ export interface Student {
 	/** false = chưa có gói (tạo không lớp — D2): pkg là ZERO_PKG, view render "Chưa có gói". */
 	hasPackage: boolean;
 	parent: { name: string; phone: string };
+	/** Điểm đầu vào tự do ("" = chưa có). */
+	entryScore?: string;
 	targetBand: string;
 	skills: string[];
 	examDate: string;
@@ -206,6 +209,17 @@ export interface ClassGroup {
 	startDate: string;
 	tuitionFee: number | null;
 	notes: string;
+	schedulingMode?: "auto" | "manual" | string;
+}
+
+export interface ClassSessionItem {
+	id: string;
+	classId: string;
+	date: string;
+	time: string;
+	dur: number;
+	topic: string;
+	zoom: string;
 }
 
 export type SyllabusLessonStatus = "done" | "current" | "upcoming";
@@ -216,6 +230,8 @@ export interface SyllabusLesson {
 	title: string;
 	objectives: string;
 	materials: string;
+	/** Tài liệu ngân hàng gắn trên bài (#655) — vắng mặt với snapshot cũ. */
+	bankMaterials?: SyllabusBankMaterialRef[];
 	kind: SyllabusLessonKind;
 	status: SyllabusLessonStatus;
 }
@@ -260,6 +276,7 @@ export interface MockData {
 	/** TOS-17 (#451): quyền tài chính của thành viên hiện tại; mặc định cho phép
 	 * trong fixture cũ khi không truyền. */
 	viewer?: KernelViewer;
+	classSessions?: ClassSessionItem[];
 }
 
 export type KernelHydratedData = Pick<
@@ -295,6 +312,7 @@ export type KernelHydratedData = Pick<
 	events: KernelEventRow[];
 	/** TOS-17 (#451): ngữ cảnh quyền tài chính của thành viên hiện tại. */
 	viewer?: KernelViewer;
+	classSessions?: ClassSessionItem[];
 };
 
 export const dayNames = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
@@ -330,5 +348,5 @@ export function initials(name: string): string {
 		: (parts[parts.length - 2][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 export function isAlmostOut(s: Student): boolean {
-	return s.pkg.remaining <= 3;
+	return s.hasPackage && s.pkg.total > 0 && s.pkg.remaining <= 3;
 }

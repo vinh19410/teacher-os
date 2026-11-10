@@ -631,7 +631,9 @@ async function main() {
 			await page.click("#tab-signin");
 			await page.fill("#signin-email", seed.studentEmail);
 			await page.fill("#signin-password", seed.studentPassword);
-			await page.getByRole("button", { name: "Đăng nhập" }).click();
+			await page
+				.getByRole("button", { name: "Đăng nhập", exact: true }) // #651: substring khớp thêm "Đăng nhập bằng mã email"
+				.click();
 			await page.waitForURL(new RegExp(`^${STUDENT}/(\\?.*)?$`), {
 				timeout: 30_000,
 			});

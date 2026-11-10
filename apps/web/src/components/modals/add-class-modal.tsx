@@ -218,6 +218,7 @@ export function AddClassModal({
 				skills: classType === "ielts" ? skills : [],
 				mode,
 				templateId,
+				schedulingMode: templateId.trim() !== "" ? "auto" : "manual",
 				schedule: { days, start: startTime, end: endTime },
 				sessionsTotal: parsedTotal,
 				startDate: startDate.trim(),
@@ -348,16 +349,23 @@ export function AddClassModal({
 					</div>
 				)}
 				<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
-					<Field label="Tổng số buổi">
-						<Input
-							type="number"
-							min={1}
-							max={52}
-							value={total}
-							onChange={(e) => setTotal(e.target.value)}
-							disabled={sessionsLocked}
-						/>
-					</Field>
+					{templateId.trim() !== "" ? (
+						<Field label="Tổng số buổi">
+							<Input
+								type="number"
+								min={1}
+								max={52}
+								value={total}
+								onChange={(e) => setTotal(e.target.value)}
+								disabled={sessionsLocked}
+							/>
+						</Field>
+					) : (
+						<p className="self-center rounded-md bg-muted p-3 text-muted-foreground text-xs">
+							Lớp sẽ bắt đầu với 0 buổi — thêm buổi học thủ công ở tab "Buổi học
+							&amp; luyện tập" sau khi tạo lớp.
+						</p>
+					)}
 					<Field label="Học phí / học viên (VND)">
 						<CurrencyInput
 							placeholder="Không bắt buộc"

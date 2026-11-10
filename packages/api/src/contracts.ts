@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { KernelEventRow } from "./event-contracts";
 import { isBandStep } from "./lib/ielts-band";
 import { CLOZE_MARKER_SOURCE } from "./lib/infer-question-types";
+import type { SyllabusBankMaterialRef } from "./material-contracts";
 import { isEmptyRichText, richTextField } from "./rich-text";
 
 export * from "./event-contracts";
@@ -18,6 +19,17 @@ export * from "./event-contracts";
  * Client only sends studentId.
  */
 export const PHONE_DIGITS_REGEX = /^[0-9]{1,20}$/;
+
+/** Điểm đầu vào — text tự do (vd "7.0 IELTS", "800 TOEIC", "B2"); rỗng/vắng = chưa có. */
+export const ENTRY_SCORE_MAX_LENGTH = 50;
+export const entryScoreSchema = z
+	.string()
+	.trim()
+	.max(
+		ENTRY_SCORE_MAX_LENGTH,
+		`Điểm đầu vào tối đa ${ENTRY_SCORE_MAX_LENGTH} ký tự`,
+	)
+	.optional();
 
 export const studentCreateSchema = z
 	.object({
@@ -49,6 +61,7 @@ export const studentCreateSchema = z
 				message: "Số điện thoại phụ huynh chỉ gồm chữ số (tối đa 20 số)",
 			})
 			.default(""),
+		entryScore: entryScoreSchema,
 		classId: z.string().trim().optional(),
 		activateNow: z.boolean().default(true),
 	})
@@ -110,6 +123,7 @@ export const classCreateSchema = z
 		/** Học phí mỗi học viên (VND) cho toàn khóa; null/undefined = chưa thiết lập, sửa được sau khi tạo. */
 		tuitionFee: z.number().int().min(1).nullish(),
 		startDate: z.string().default(""),
+		schedulingMode: z.enum(["auto", "manual"]).default("auto"),
 	})
 	.superRefine((input, ctx) => {
 		// Issue #105: creation rejects end <= start. Legacy stored rows with
@@ -237,6 +251,10 @@ export const moduleUpsertSchema = z.object({
 });
 export type ModuleUpsert = z.infer<typeof moduleUpsertSchema>;
 
+/** Trần số tài liệu ngân hàng gắn trên một bài học/buổi khi tạo (#655) —
+ * server (2 schema) và picker web dùng chung một nguồn. */
+export const MATERIAL_LINKS_MAX = 20;
+
 export const lessonUpsertSchema = z.object({
 	title: z.string().min(1),
 	objectives: z.string().default(""),
@@ -248,6 +266,9 @@ export const lessonUpsertSchema = z.object({
 	// Optional: form thêm/sửa buổi học mở từ màn hình syllabus không gửi status.
 	// Route edit preserve giá trị existing; route add default "upcoming" khi vắng.
 	status: z.enum(["done", "current", "upcoming"]).optional(),
+	// Issue #655: tài liệu ngân hàng gắn trên bài học — optional, vắng mặt
+	// = giữ nguyên links hiện có (route edit) / rỗng (route add).
+	materialIds: z.array(z.string().min(1)).max(MATERIAL_LINKS_MAX).optional(),
 });
 export type LessonUpsert = z.infer<typeof lessonUpsertSchema>;
 
@@ -1561,6 +1582,8 @@ export interface KernelStudentRow {
 	zalo: string;
 	parentName: string;
 	parentPhone: string;
+	/** Điểm đầu vào tự do ("" khi chưa có). Optional để chịu deploy skew. */
+	entryScore?: string;
 	/** #570: true khi học viên đã hoàn tất onboarding trên cổng học viên; false khi chưa xác nhận tham gia. */
 	portalLinked?: boolean;
 }
@@ -1586,6 +1609,7 @@ export interface KernelClassRow {
 	/** Học phí mỗi học viên (VND) cho toàn khóa; null = chưa thiết lập. */
 	tuitionFee: number | null;
 	notes: string;
+	schedulingMode?: "auto" | "manual" | string;
 }
 
 export const ENROLLMENT_STATUSES = ["invited", "active"] as const;
@@ -1624,6 +1648,8 @@ export interface KernelSyllabusLessonRow {
 	title: string;
 	objectives: string;
 	materials: string;
+	/** Tài liệu ngân hàng gắn trên bài (#655) — vắng mặt với snapshot cũ. */
+	bankMaterials?: SyllabusBankMaterialRef[];
 	/** Loại buổi (issue #154): "lesson" | "midterm" | "final"; `| string` cho forward-compat. */
 	kind: "lesson" | "midterm" | "final" | string;
 	status: "done" | "current" | "upcoming" | string;
@@ -1708,6 +1734,36 @@ export interface KernelLessonRow {
 	topic: string;
 	zoom: string;
 }
+
+export interface KernelClassSessionRow {
+	id: string;
+	classId: string;
+	date: string;
+	time: string;
+	dur: number;
+	topic: string;
+	zoom: string;
+}
+
+export const addManualSessionSchema = z.object({
+	date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
+	time: z
+		.string()
+		.regex(TIME_REGEX, "Giờ học phải theo định dạng HH:mm (00:00–23:59)"),
+	dur: z.number().int().min(15).max(360).default(90),
+	topic: z.string().min(1, "Chủ đề không được để trống").max(500),
+	zoom: z
+		.string()
+		.max(2000)
+		.default("")
+		.refine((val) => val === "" || val.startsWith("https://"), {
+			message: "Link Zoom phải là URL https:// hoặc để trống",
+		}),
+	// Issue #655: tài liệu ngân hàng gắn ngay lúc tạo buổi manual — server
+	// validate org + tồn tại rồi insert `lesson_material` cùng batch.
+	materialIds: z.array(z.string().min(1)).max(MATERIAL_LINKS_MAX).default([]),
+});
+export type AddManualSessionInput = z.infer<typeof addManualSessionSchema>;
 
 export interface KernelInvoiceRow {
 	id: string;
@@ -1875,6 +1931,7 @@ export interface KernelSnapshot {
 	enrollments: KernelEnrollmentRow[];
 	packages: KernelPackageRow[];
 	lessons: KernelLessonRow[];
+	classSessions?: KernelClassSessionRow[];
 	/** TOS-14 (#447): optional như vocabSuggestions — server cũ trong lúc deploy
 	 * skew không gửi events, web dùng `?? []` vẫn chạy. */
 	events?: KernelEventRow[];
@@ -2001,6 +2058,7 @@ const onboardingPayloadBase = z.object({
 		.refine((goals) => new Set(goals).size === goals.length),
 	learningGoalsNote: z.string().trim().max(200).optional(),
 	dailyStudyHours: z.enum(DAILY_STUDY_HOUR_OPTIONS),
+	entryScore: entryScoreSchema,
 });
 export const studentOnboardingPayloadSchema = onboardingPayloadBase.superRefine(
 	(value, ctx) => {
@@ -2032,6 +2090,7 @@ export const studentMeSchema = z.object({
 		examInterest: z.string().nullable().catch(null),
 		currentLevel: z.string().nullable().catch(null),
 		targetScore: z.string().nullable().catch(null),
+		entryScore: z.string().nullable().catch(null),
 		learningGoals: z
 			.array(z.enum(LEARNING_GOAL_OPTIONS))
 			.nullable()

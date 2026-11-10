@@ -51,7 +51,7 @@ Tài liệu hướng dẫn nạp dữ liệu thư viện từ vựng dùng chung
    - Apply migrations `0037`..`0040` (`db:migrate:deploy`) **TRƯỚC** khi deploy worker, sau đó re-seed `seed-vocab-library.ts --d1 --verify` để đổ cột `vocab_library_deck.description` (#369).
    - Deploy `apps/server` và `apps/student` **cùng một release train** (do `vocabSessionCardSchema` / `vocabStudentLibraryDeckSchema` dùng `.strict()` và thêm trường `hasAudio`, `description`).
 2. **Tự động trên Staging (`.github/workflows/deploy-staging.yml` — #573):**
-   - Bước `Seed built-in vocab library (staging only)` chạy ngay sau `/readyz` trên mỗi lần deploy nhánh `staging`:
+   - Bước `Seed built-in vocab library (staging only)` chạy ngay sau `/readyz` trên mỗi lần deploy staging (push vào nhánh `develop`):
      ```bash
      CLOUDFLARE_ACCOUNT_ID="<account-id>" \
      CLOUDFLARE_API_TOKEN="<api-token>" \

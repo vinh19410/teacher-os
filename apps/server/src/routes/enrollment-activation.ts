@@ -9,8 +9,10 @@ import {
 } from "@teacher-os/api/skeleton";
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { classTable } from "@teacher-os/db/schema/class";
+import { classSession } from "@teacher-os/db/schema/class-session";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { lesson } from "@teacher-os/db/schema/lesson";
+import { lessonMaterial } from "@teacher-os/db/schema/material";
 import {
 	holidaySessionCancel,
 	holidaySessionShift,
@@ -18,9 +20,10 @@ import {
 	organizationHolidayClass,
 } from "@teacher-os/db/schema/organization-holiday";
 import { sessionPackage } from "@teacher-os/db/schema/session-package";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import type { Db } from "../app";
+import { isManualClass } from "../lib/class-mode";
 import { backfillStudyPackTargetsForStudent } from "../lib/study-pack-assign";
 import { isRollbackableConstraintError } from "./holidays";
 
@@ -316,6 +319,8 @@ export async function activateEnrollment(
 			startDate: classTable.startDate,
 			mode: classTable.mode,
 			tuitionFee: classTable.tuitionFee,
+			syllabusId: classTable.syllabusId,
+			schedulingMode: classTable.schedulingMode,
 		})
 		.from(classTable)
 		.where(
@@ -358,10 +363,28 @@ export async function activateEnrollment(
 		return { ok: false, error: "enrollment" };
 	}
 
+	const isManual = await isManualClass(
+		db,
+		orgId,
+		cls.id,
+		cls.syllabusId,
+		cls.schedulingMode,
+	);
+
+	const classSessionRows = isManual
+		? await db
+				.select()
+				.from(classSession)
+				.where(
+					and(eq(classSession.orgId, orgId), eq(classSession.classId, cls.id)),
+				)
+				.orderBy(classSession.date)
+		: [];
+
 	const packageValues = {
 		orgId,
 		studentId: existingEnrollment.studentId,
-		total: cls.sessionsTotal,
+		total: isManual ? classSessionRows.length : cls.sessionsTotal,
 		price: cls.tuitionFee ?? 0,
 		mode: cls.mode,
 		start: formatDayMonth(new Date()),
@@ -370,15 +393,33 @@ export async function activateEnrollment(
 		enrollmentId,
 	};
 
-	const generated = generateScheduleLessons({
-		schedule: cls.schedule,
-		startDate: cls.startDate,
-		sessionsTotal: cls.sessionsTotal,
-		orgId,
-		classId: cls.id,
-		enrollmentId,
-	});
+	const generated: GeneratorRow[] = isManual
+		? classSessionRows.map((cs) => ({
+				orgId,
+				classId: cls.id,
+				enrollmentId,
+				day: isoToLessonWeekday(cs.date),
+				time: cs.time,
+				dur: cs.dur,
+				date: cs.date,
+				type: "1:1",
+				status: "upcoming" as const,
+				topic: cs.topic,
+				zoom: cs.zoom,
+			}))
+		: generateScheduleLessons({
+				schedule: cls.schedule,
+				startDate: cls.startDate,
+				sessionsTotal: cls.sessionsTotal,
+				orgId,
+				classId: cls.id,
+				enrollmentId,
+			});
 	const parsedSchedule = parseStoredSchedule(cls.schedule);
+	// #662: shift có thực sự được áp lên generated rows hay không — schedule
+	// legacy (`parsedSchedule` null) thì không, và loop move material non-I6
+	// phải bỏ để không yank tài liệu khỏi buổi thật còn ở ngày gốc.
+	let scheduleShifted = false;
 
 	// D6 (I2b/I3/I6): dựng batch từ state đã đọc (shifts + rows đã áp
 	// shift); mọi insert lesson mang guard CASE đếm `holiday_session_shift`
@@ -413,6 +454,9 @@ export async function activateEnrollment(
 				dur: scheduleDurationMinutes(parsedSchedule),
 			}));
 			rows = applyShiftsToRows(rows, effective);
+			// #662: shift đã thực sự áp lên rows — cho phép loop move non-I6
+			// dưới đây chạy (schedule legacy null thì cờ giữ false, không move).
+			scheduleShifted = true;
 
 			// TOS-13 D7: dòng sinh ra rơi vào ngày trong `holiday_session_cancel`
 			// của lớp → `cancelled` (không sinh buổi bù).
@@ -509,6 +553,43 @@ export async function activateEnrollment(
 				...packageValues,
 			}),
 		];
+		/** Cặp statement dọn-trùng + move `lesson_material` cho một shift —
+		 * dùng chung I6 (newShifts, #659) và non-I6 (shifts có sẵn, #662). */
+		const materialMoveStatements = (shift: {
+			originalDate: string;
+			makeupDate: string;
+		}): [BatchItem<"sqlite">, BatchItem<"sqlite">] => [
+			db.delete(lessonMaterial).where(
+				and(
+					eq(lessonMaterial.orgId, orgId),
+					eq(lessonMaterial.classId, cls.id),
+					eq(lessonMaterial.date, shift.makeupDate),
+					inArray(
+						lessonMaterial.materialId,
+						db
+							.select({ mid: lessonMaterial.materialId })
+							.from(lessonMaterial)
+							.where(
+								and(
+									eq(lessonMaterial.orgId, orgId),
+									eq(lessonMaterial.classId, cls.id),
+									eq(lessonMaterial.date, shift.originalDate),
+								),
+							),
+					),
+				),
+			),
+			db
+				.update(lessonMaterial)
+				.set({ date: shift.makeupDate })
+				.where(
+					and(
+						eq(lessonMaterial.orgId, orgId),
+						eq(lessonMaterial.classId, cls.id),
+						eq(lessonMaterial.date, shift.originalDate),
+					),
+				),
+		];
 		for (const shift of newShifts) {
 			statements.push(
 				db.insert(holidaySessionShift).values({
@@ -518,6 +599,41 @@ export async function activateEnrollment(
 					...shift,
 				}),
 			);
+			// #659: activation tự sinh shift (nhánh I6 — lớp manual chưa từng có
+			// shift/lesson lúc apply) phải kéo tài liệu đã gắn vào ngày gốc theo
+			// buổi bù, pattern `shiftStatements` của holidays.ts (#645): dọn
+			// TRƯỚC các dòng trùng materialId ở makeupDate để UPDATE move không
+			// đụng khoá chính (classId, date, materialId); KHÔNG xoá dòng khác ở
+			// makeupDate — #658: ngày có buổi manual `class_session` là dữ liệu
+			// thật. Khi trùng materialId, bản move thắng bản đích (nhất quán
+			// scenario C #645) — nội dung tài liệu (bảng material) không mất,
+			// chỉ liên kết ngày bù được thay bằng bản cùng materialId từ ngày
+			// gốc. Hai câu này nằm trong cùng batch nguyên tử: guard CASE của
+			// lesson insert làm toàn batch rollback khi trạng thái lệch. Thứ tự
+			// per-shift là load-bearing: shift chuỗi (makeup kỳ trước trúng kỳ
+			// sau) cần thấy ghi của câu trước — test chuỗi trong describe #659
+			// của holidays.test.ts bẫy đúng case gom-sai gây PK conflict.
+			statements.push(...materialMoveStatements(shift));
+		}
+		// #662: non-I6 (shift row có sẵn — re-activation sau xóa enrollment,
+		// attach-sau-shift) move material theo shift đã có. Sau activation
+		// ngày gốc không còn buổi thật nào: `classSessionRows` không filter
+		// date nên mọi generated row tại `originalDate` đều bị
+		// `applyShiftsToRows` dịch sang ngày bù — move khớp ý đồ teacher
+		// (reversal #658, xem plan #662 decision 2). Gate `scheduleShifted`:
+		// schedule legacy (`parseStoredSchedule` null) thì shift KHÔNG được áp
+		// lên rows — lesson thật `upcoming` ở lại ngày gốc, move sẽ yank tài
+		// liệu khỏi buổi thật nên phải bỏ. Thứ tự `createdAt ASC` của
+		// `shifts` khớp thứ tự `applyShiftsToRows` — shift chuỗi đi đúng đích
+		// cuối. Loop nằm trong vòng retry (statements dựng lại mỗi attempt).
+		// Makeup trúng `holiday_session_cancel` vẫn là đích move — chủ ý,
+		// mirror #645; test T7 describe #662 bẫy. Orphan legacy (link ở ngày
+		// gốc không còn session nào) cũng được move — chấp nhận có chủ ý
+		// (decision 8, nhất quán pattern không-gate của #659).
+		if (scheduleShifted) {
+			for (const shift of shifts) {
+				statements.push(...materialMoveStatements(shift));
+			}
 		}
 		for (const cancel of newCancels) {
 			statements.push(

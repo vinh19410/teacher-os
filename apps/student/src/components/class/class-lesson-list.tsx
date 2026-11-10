@@ -1,6 +1,7 @@
 import type { StudentClassLesson } from "@teacher-os/api/contracts";
 import { vietnamSessionEndMs } from "@teacher-os/api/vietnam-date";
 import { Check, CircleDashed, Clock, X } from "lucide-react";
+import { LessonMaterialsDisclosure } from "@/components/class/lesson-materials";
 import { OverviewEmptyState } from "@/components/overview/empty-state";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
@@ -84,10 +85,12 @@ export function findNextLessonId(
 }
 
 export function ClassLessonList({
+	classId,
 	lessons,
 	todayISO,
 	now,
 }: {
+	classId: string;
 	lessons: StudentClassLesson[];
 	todayISO: string;
 	now: Date;
@@ -198,6 +201,14 @@ export function ClassLessonList({
 										{status.label}
 									</Badge>
 								)}
+								{lesson.date != null &&
+									lesson.status !== "holiday" &&
+									lesson.status !== "cancelled" && (
+										<LessonMaterialsDisclosure
+											classId={classId}
+											date={lesson.date}
+										/>
+									)}
 							</div>
 						</li>
 					);

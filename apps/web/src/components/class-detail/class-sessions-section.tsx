@@ -1,4 +1,5 @@
-import { ChevronDown, ChevronRight, Clock } from "lucide-react";
+import type { KernelHolidayShiftRow } from "@teacher-os/api/contracts";
+import { ChevronDown, ChevronRight, Clock, Paperclip } from "lucide-react";
 import { type KeyboardEvent, useState } from "react";
 import { AttendanceSummary } from "@/components/class-detail/attendance-summary";
 import {
@@ -7,6 +8,7 @@ import {
 	SessionActionsModal,
 } from "@/components/class-detail/session-actions-modal";
 import { SessionAttendanceModal } from "@/components/class-detail/session-attendance-modal";
+import { SessionMaterialsModal } from "@/components/class-detail/session-materials-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
@@ -25,7 +27,14 @@ import {
 import { cn } from "@/lib/cn";
 import type { KernelAction } from "@/lib/data-actions";
 import { lessonDayLabel } from "@/lib/format-schedule";
-import type { ClassGroup, Lesson, Student, Syllabus } from "@/lib/mock-data";
+import type {
+	ClassGroup,
+	ClassSessionItem,
+	Lesson,
+	Student,
+	Syllabus,
+} from "@/lib/mock-data";
+import { makeupDateForShift } from "@/lib/repos/holidays";
 import type { KernelCommandResult } from "@/lib/repos/kernel";
 import { todayISOVietnam } from "@/lib/week-grid";
 
@@ -55,6 +64,10 @@ export function ClassSessionsSection({
 	onSaveEdit,
 	isPending,
 	busy,
+	classSessions,
+	holidayShifts = [],
+	onAddSession,
+	onDeleteOccurrence,
 }: {
 	cls: ClassGroup;
 	/** Class-scoped rows (`classId`), not the student-scoped `classLessons`. */
@@ -75,6 +88,12 @@ export function ClassSessionsSection({
 		dateISO: string,
 		payload: OccurrenceEditPayload,
 	) => Promise<OccurrenceActionResult>;
+	classSessions?: ClassSessionItem[];
+	/** #665: shift gốc→bù của org (snapshot) — derive badge «Đã dời» cho
+	 * bucket manual 0 lesson; optional để caller cũ/test không truyền vẫn chạy. */
+	holidayShifts?: KernelHolidayShiftRow[];
+	onAddSession?: () => void;
+	onDeleteOccurrence?: (dateISO: string) => Promise<OccurrenceActionResult>;
 	isPending: (key: string) => boolean;
 	busy: boolean;
 }) {
@@ -85,17 +104,26 @@ export function ClassSessionsSection({
 	// Identity-keyed (N4): a numeric index would dangle once a successful
 	// moveDate reorders the chronology under an open dialog.
 	const [actionsDateISO, setActionsDateISO] = useState<string | null>(null);
+	const [materialsDateISO, setMaterialsDateISO] = useState<string | null>(null);
+
+	// Issue #649: manual = lớp tạo không template (`schedulingMode: "manual"`)
+	// hoặc đã có buổi thủ công. `sessionsTotal === 0` không phải tín hiệu —
+	// deploy skew (server cũ) không gửi schedulingMode và lớp auto legacy
+	// phải giữ nguyên projection #121.
+	const isManual =
+		cls.schedulingMode === "manual" || (classSessions?.length ?? 0) > 0;
 
 	const sessions = buildClassSessions({
 		schedule: cls.schedule,
 		startDate: cls.startDate,
 		lessons,
 		sessionsTotal: cls.sessionsTotal,
+		manual: isManual,
+		classSessions,
 	});
-	// Projection mode: zero real rows means every displayed session is a
-	// schedule projection — display-only, rendered with the muted "Dự kiến"
-	// badge instead of the attendance states driven by row data.
-	const isProjected = lessons.length === 0 && sessions !== null;
+	// Projection mode: zero real rows for an auto-scheduled class means every displayed
+	// session is a schedule projection (display-only).
+	const isProjected = !isManual && lessons.length === 0 && sessions !== null;
 
 	if (sessions === null) {
 		return (
@@ -130,6 +158,36 @@ export function ClassSessionsSection({
 						}))}
 					/>
 				</div>
+				<LegacyMaterialsNote />
+			</Section>
+		);
+	}
+	if (sessions !== null && sessions.length === 0) {
+		return (
+			<Section
+				title="Sessions"
+				action={
+					onAddSession ? (
+						<Button variant="outline" size="sm" onClick={onAddSession}>
+							+ Thêm buổi
+						</Button>
+					) : undefined
+				}
+			>
+				<div className="rounded-lg border border-border border-dashed p-8 text-center">
+					<p className="font-semibold text-sm">Chưa có buổi học nào</p>
+					<p className="mt-1 text-muted-foreground text-xs">
+						Lớp chưa có giáo trình mẫu. Bạn có thể thêm buổi học thủ công để bắt
+						đầu giảng dạy.
+					</p>
+					{onAddSession && (
+						<div className="mt-4 flex justify-center">
+							<Button size="sm" onClick={onAddSession}>
+								+ Thêm buổi học
+							</Button>
+						</div>
+					)}
+				</div>
 			</Section>
 		);
 	}
@@ -153,10 +211,24 @@ export function ClassSessionsSection({
 	const modalSession = sessions.find((s) => s.index === modalIndex) ?? null;
 	const actionsSession =
 		sessions.find((s) => s.dateISO === actionsDateISO) ?? null;
+	// Tài liệu gắn theo (lớp, ngày) — chỉ buổi đã có dòng lesson mang `date`
+	// (v2). Lớp legacy (date NULL) và buổi dự kiến chưa có buổi thật để gắn.
+	const supportsMaterials =
+		!isProjected && sessions.every((s) => s.mode === "v2");
 
 	return (
 		<>
-			<Section title="Sessions" count={sessions.length}>
+			<Section
+				title="Sessions"
+				count={sessions.length}
+				action={
+					!syllabus && onAddSession ? (
+						<Button variant="outline" size="sm" onClick={onAddSession}>
+							+ Thêm buổi
+						</Button>
+					) : undefined
+				}
+			>
 				<ol className="grid gap-2">
 					{sessions.map((s) => {
 						const attendees = sessionStudents(s);
@@ -194,7 +266,18 @@ export function ClassSessionsSection({
 							status !== "holiday" &&
 							s.dateISO <= todayISO &&
 							attendees.length > 0;
-						const hasAdjust = !isProjected && sessionRowTargets(s).length > 0;
+						const hasAdjust =
+							!isProjected &&
+							(sessionRowTargets(s).length > 0 ||
+								isManual ||
+								s.topic !== undefined);
+						// #665: bucket manual 0 lesson tại ngày gốc đã dời lịch lễ —
+						// không có lesson row nào để mark `holiday` nên
+						// `sessionStatus` luôn "upcoming". Derive riêng từ
+						// `holidayShifts`, KHÔNG mở rộng `sessionStatus`.
+						const shiftedAway =
+							s.rows.length === 0 &&
+							makeupDateForShift({ holidayShifts }, cls.id, s.dateISO) !== null;
 
 						return (
 							<li
@@ -273,6 +356,26 @@ export function ClassSessionsSection({
 												→
 											</button>
 										)}
+									{
+										// Buổi holiday vô hình với học sinh (TOS-11) — không mở
+										// modal tài liệu (#645): server cũng chặn attach 409.
+										supportsMaterials && status !== "holiday" && (
+											<button
+												type="button"
+												aria-label={`Tài liệu buổi ${formatSessionDate(s.dateISO)}`}
+												onClick={() => setMaterialsDateISO(s.dateISO)}
+												className={cn(
+													"mt-0.5 inline-flex items-center gap-1 font-medium text-xs underline-offset-4 hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+													(status === "completed" || dateArrived) &&
+														isGroupSession &&
+														"ml-3",
+												)}
+											>
+												<Paperclip aria-hidden="true" className="size-3.5" />
+												Tài liệu
+											</button>
+										)
+									}
 								</div>
 								{isProjected ? (
 									<span className="shrink-0 text-muted-foreground text-xs">
@@ -283,6 +386,10 @@ export function ClassSessionsSection({
 										Đã hủy
 									</span>
 								) : status === "holiday" ? (
+									<span className="inline-flex shrink-0 items-center rounded-md border border-warn/50 bg-warn-soft px-1.5 py-0.5 font-medium text-warn text-xs">
+										Nghỉ lễ — Đã dời lịch
+									</span>
+								) : shiftedAway ? (
 									<span className="inline-flex shrink-0 items-center rounded-md border border-warn/50 bg-warn-soft px-1.5 py-0.5 font-medium text-warn text-xs">
 										Nghỉ lễ — Đã dời lịch
 									</span>
@@ -349,6 +456,7 @@ export function ClassSessionsSection({
 						);
 					})}
 				</ol>
+				{!isProjected && !supportsMaterials && <LegacyMaterialsNote />}
 			</Section>
 			<SessionAttendanceModal
 				session={modalSession}
@@ -366,7 +474,27 @@ export function ClassSessionsSection({
 				onComplete={onComplete}
 				onCancelOccurrence={onCancelOccurrence}
 				onSaveEdit={onSaveEdit}
+				onDeleteOccurrence={onDeleteOccurrence}
 			/>
+			{materialsDateISO !== null && (
+				<SessionMaterialsModal
+					key={materialsDateISO}
+					classId={cls.id}
+					dateISO={materialsDateISO}
+					sessionLabel={formatSessionDate(materialsDateISO)}
+					onClose={() => setMaterialsDateISO(null)}
+				/>
+			)}
 		</>
+	);
+}
+
+/** Lớp legacy (buổi chưa gắn ngày) chưa hỗ trợ tài liệu theo buổi. */
+function LegacyMaterialsNote() {
+	return (
+		<p className="mt-3 text-muted-foreground text-xs">
+			Tài liệu theo buổi chỉ dùng được cho lớp có lịch theo ngày — lớp này còn
+			dữ liệu buổi kiểu cũ.
+		</p>
 	);
 }

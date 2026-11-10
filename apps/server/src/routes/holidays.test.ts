@@ -58,6 +58,39 @@ function nextDowISO(fromISO: string, utcDay: number): string {
 	return d;
 }
 
+async function seedMaterial(
+	id: string,
+	classId: string,
+	date: string,
+	position = 0,
+) {
+	await db
+		.insert(schema.material)
+		.values({
+			id,
+			orgId: "org-1",
+			kind: "link",
+			url: `https://example.com/${id}`,
+			title: `Tài liệu ${id}`,
+			createdBy: "teacher-1",
+		})
+		.onConflictDoNothing();
+	await db.insert(schema.lessonMaterial).values({
+		orgId: "org-1",
+		classId,
+		date,
+		materialId: id,
+		position,
+	});
+}
+
+async function lessonMaterialsAt(date: string) {
+	return db
+		.select({ materialId: schema.lessonMaterial.materialId })
+		.from(schema.lessonMaterial)
+		.where(eq(schema.lessonMaterial.date, date));
+}
+
 let db: Db;
 
 beforeEach(async () => {
@@ -669,6 +702,502 @@ describe("Kích hoạt enrollment sau khi áp kỳ nghỉ (D6)", () => {
 	});
 });
 
+describe("#659: activation I6 lớp manual kéo lesson_material theo shift", () => {
+	const F10 = addDaysISO(F1, 63); // makeup của shift chuỗi thứ 2
+
+	/** Lớp manual với 8 buổi class_session (F1..F1+49) như production —
+	 * đủ để planner I6 chọn makeup = F9 (makeup quét từ
+	 * maxTeachingDate + 1 theo thứ của lớp). */
+	async function seedManualClassWith8Sessions(
+		classId: string,
+		csPrefix: string,
+	) {
+		await db.insert(schema.classTable).values({
+			id: classId,
+			orgId: "org-1",
+			name: `Lớp ${classId}`,
+			schedule: SCHEDULE_A,
+			sessionsTotal: 8,
+			startDate: F1,
+			status: "active",
+			schedulingMode: "manual",
+		});
+		await db.insert(schema.classSession).values(
+			[0, 7, 14, 21, 28, 35, 42, 49].map((offset, i) => ({
+				id: `${csPrefix}-${i}`,
+				orgId: "org-1",
+				classId,
+				date: addDaysISO(F1, offset),
+				time: "19:00",
+				dur: 90,
+			})),
+		);
+	}
+
+	async function seedOrgShiftHoliday(
+		id: string,
+		date: string,
+		created: number,
+	) {
+		await db.insert(schema.organizationHoliday).values({
+			id,
+			orgId: "org-1",
+			name: `Nghỉ lễ ${id}`,
+			fromDate: date,
+			toDate: date,
+			scope: "org",
+			mode: "shift",
+			notify: false,
+			createdByUserId: "t-1",
+			createdAt: new Date(created),
+		});
+	}
+
+	test("I6 lớp manual: activation tự sinh shift kéo lesson_material sang buổi bù", async () => {
+		await seedManualClassWith8Sessions("cls-manual", "csm-a");
+		await seedMaterial("mat-659", "cls-manual", F3);
+		await seedOrgShiftHoliday("hol-659", F3, 1000);
+		await db.insert(schema.enrollment).values({
+			id: "enr-659",
+			orgId: "org-1",
+			classId: "cls-manual",
+			studentId: "s-1",
+			status: "invited",
+		});
+
+		const activation = await activateEnrollment(db, "org-1", "enr-659");
+		expect(activation).toEqual({ ok: true });
+
+		// Tài liệu theo buổi bù, ngày gốc rỗng.
+		expect(await lessonMaterialsAt(F3)).toHaveLength(0);
+		const makeup = await lessonMaterialsAt(F9);
+		expect(makeup.map((r) => r.materialId)).toEqual(["mat-659"]);
+
+		// Lesson: gốc holiday ở F3, bù upcoming ở F9.
+		const rows = await db
+			.select({ date: schema.lesson.date, status: schema.lesson.status })
+			.from(schema.lesson)
+			.where(eq(schema.lesson.enrollmentId, "enr-659"));
+		expect(rows.find((row) => row.date === F3)?.status).toBe("holiday");
+		const at9 = rows.filter((row) => row.date === F9);
+		expect(at9).toHaveLength(1);
+		expect(at9[0]?.status).toBe("upcoming");
+	});
+
+	test("I6 lớp manual: DELETE hoàn tác dời tài liệu ngược về ngày gốc", async () => {
+		await seedManualClassWith8Sessions("cls-manual-undo", "csm-b");
+		await seedMaterial("mat-659u", "cls-manual-undo", F3);
+		await seedOrgShiftHoliday("hol-659u", F3, 1000);
+		await db.insert(schema.enrollment).values({
+			id: "enr-659u",
+			orgId: "org-1",
+			classId: "cls-manual-undo",
+			studentId: "s-1",
+			status: "invited",
+		});
+		const activation = await activateEnrollment(db, "org-1", "enr-659u");
+		expect(activation).toEqual({ ok: true });
+
+		// Assertion trung gian: tài liệu ĐÃ theo buổi bù trước khi hoàn tác —
+		// dòng này là thứ fail ở pha đỏ (chưa fix thì tài liệu còn ở F3).
+		const beforeUndo = await lessonMaterialsAt(F9);
+		expect(beforeUndo.map((r) => r.materialId)).toEqual(["mat-659u"]);
+
+		const app = createApp();
+		const delRes = await deleteHolidayReq(app, "hol-659u");
+		expect(delRes.status).toBe(200);
+
+		expect(await lessonMaterialsAt(F9)).toHaveLength(0);
+		const original = await lessonMaterialsAt(F3);
+		expect(original.map((r) => r.materialId)).toEqual(["mat-659u"]);
+	});
+
+	test("I6 lớp manual: dòng trùng materialId ở makeupDate bị dọn, bản move thắng", async () => {
+		await seedManualClassWith8Sessions("cls-manual-dup", "csm-c");
+		await seedMaterial("mat-659d", "cls-manual-dup", F3);
+		// materialId TRÙNG đã có sẵn ở ngày bù trước activation — cleanup-trùng
+		// phải xoá bản này (đỡ khoá chính cho move), giữ đúng 1 bản sau move.
+		await seedMaterial("mat-659d", "cls-manual-dup", F9);
+		await seedOrgShiftHoliday("hol-659d", F3, 1000);
+		await db.insert(schema.enrollment).values({
+			id: "enr-659d",
+			orgId: "org-1",
+			classId: "cls-manual-dup",
+			studentId: "s-1",
+			status: "invited",
+		});
+
+		const activation = await activateEnrollment(db, "org-1", "enr-659d");
+		expect(activation).toEqual({ ok: true });
+
+		expect(await lessonMaterialsAt(F3)).toHaveLength(0);
+		const makeup = await lessonMaterialsAt(F9);
+		expect(makeup.map((r) => r.materialId)).toEqual(["mat-659d"]);
+	});
+
+	test("non-I6 (shift có sẵn): activation kéo lesson_material theo shift (#662)", async () => {
+		await db.insert(schema.classTable).values({
+			id: "cls-manual-pin",
+			orgId: "org-1",
+			name: "Lớp pin",
+			schedule: SCHEDULE_A,
+			sessionsTotal: 8,
+			startDate: F1,
+			status: "active",
+			schedulingMode: "manual",
+		});
+		await db.insert(schema.classSession).values({
+			id: "csm-pin-0",
+			orgId: "org-1",
+			classId: "cls-manual-pin",
+			date: F3,
+			time: "19:00",
+			dur: 90,
+		});
+		await seedMaterial("mat-659p", "cls-manual-pin", F3);
+		await seedOrgShiftHoliday("hol-659p", F3, 1000);
+		await db.insert(schema.holidaySessionShift).values({
+			id: "shift-659p",
+			orgId: "org-1",
+			holidayId: "hol-659p",
+			classId: "cls-manual-pin",
+			originalDate: F3,
+			makeupDate: F9,
+			createdAt: new Date(1000),
+		});
+		await db.insert(schema.enrollment).values({
+			id: "enr-659p",
+			orgId: "org-1",
+			classId: "cls-manual-pin",
+			studentId: "s-1",
+			status: "invited",
+		});
+
+		const activation = await activateEnrollment(db, "org-1", "enr-659p");
+		expect(activation).toEqual({ ok: true });
+
+		// Shift áp lên rows (F3 holiday + F9 upcoming) và tài liệu THEO shift:
+		// sau activation ngày gốc không còn buổi thật nào — classSessionRows
+		// không filter date nên mọi generated row tại D đều bị applyShiftsToRows
+		// dịch sang ngày bù; move khớp ý đồ teacher (reversal #658, #662).
+		const rows = await db
+			.select({ date: schema.lesson.date, status: schema.lesson.status })
+			.from(schema.lesson)
+			.where(eq(schema.lesson.enrollmentId, "enr-659p"));
+		expect(rows.find((row) => row.date === F3)?.status).toBe("holiday");
+		expect(rows.find((row) => row.date === F9)?.status).toBe("upcoming");
+		expect(await lessonMaterialsAt(F3)).toHaveLength(0);
+		expect(
+			await lessonMaterialsAt(F9).then((rows) => rows.map((r) => r.materialId)),
+		).toEqual(["mat-659p"]);
+	});
+
+	test("I6 chuỗi 2 kỳ nghỉ (F3→F9→F10): material đi đúng đích cuối, đúng 1 bản", async () => {
+		await seedManualClassWith8Sessions("cls-manual-chain", "csm-e");
+		await seedMaterial("mat-659e", "cls-manual-chain", F3);
+		// Dup tại ĐÍCH CUỐI của chuỗi: cleanup của shift 2 (F9→F10) phải thấy
+		// bản vừa move từ F3 sang F9 — thứ tự gom sai sẽ để bản này sống và
+		// UPDATE cuối đụng khoá chính (classId, date, materialId) → 500.
+		await seedMaterial("mat-659e", "cls-manual-chain", F10);
+		await seedOrgShiftHoliday("hol-chain1", F3, 1000);
+		await seedOrgShiftHoliday("hol-chain2", F9, 2000);
+		await db.insert(schema.enrollment).values({
+			id: "enr-659e",
+			orgId: "org-1",
+			classId: "cls-manual-chain",
+			studentId: "s-1",
+			status: "invited",
+		});
+
+		const activation = await activateEnrollment(db, "org-1", "enr-659e");
+		expect(activation).toEqual({ ok: true });
+
+		expect(await lessonMaterialsAt(F3)).toHaveLength(0);
+		expect(await lessonMaterialsAt(F9)).toHaveLength(0);
+		const final = await lessonMaterialsAt(F10);
+		expect(final.map((r) => r.materialId)).toEqual(["mat-659e"]);
+	});
+});
+
+describe("#662: activation non-I6 kéo lesson_material theo shift có sẵn", () => {
+	const F10 = addDaysISO(F1, 63); // makeup của shift chuỗi thứ 2
+	const F2 = addDaysISO(F1, 7); // buổi giữa để seed lesson tồn tại
+
+	/** Lớp manual với 8 buổi class_session (F1..F1+49) như production. */
+	async function seedManualClassWith8Sessions662(
+		classId: string,
+		csPrefix: string,
+		schedule = SCHEDULE_A,
+	) {
+		await db.insert(schema.classTable).values({
+			id: classId,
+			orgId: "org-1",
+			name: `Lớp ${classId}`,
+			schedule,
+			sessionsTotal: 8,
+			startDate: F1,
+			status: "active",
+			schedulingMode: "manual",
+		});
+		await db.insert(schema.classSession).values(
+			[0, 7, 14, 21, 28, 35, 42, 49].map((offset, i) => ({
+				id: `${csPrefix}-${i}`,
+				orgId: "org-1",
+				classId,
+				date: addDaysISO(F1, offset),
+				time: "19:00",
+				dur: 90,
+			})),
+		);
+	}
+
+	async function seedOrgShiftHoliday662(
+		id: string,
+		date: string,
+		created: number,
+	) {
+		await db.insert(schema.organizationHoliday).values({
+			id,
+			orgId: "org-1",
+			name: `Nghỉ lễ ${id}`,
+			fromDate: date,
+			toDate: date,
+			scope: "org",
+			mode: "shift",
+			notify: false,
+			createdByUserId: "t-1",
+			createdAt: new Date(created),
+		});
+	}
+
+	async function seedShiftRow662(
+		id: string,
+		holidayId: string,
+		classId: string,
+		originalDate: string,
+		makeupDate: string,
+		created: number,
+	) {
+		await db.insert(schema.holidaySessionShift).values({
+			id,
+			orgId: "org-1",
+			holidayId,
+			classId,
+			originalDate,
+			makeupDate,
+			createdAt: new Date(created),
+		});
+	}
+
+	async function seedInvitedEnrollment662(id: string, classId: string) {
+		await db.insert(schema.enrollment).values({
+			id,
+			orgId: "org-1",
+			classId,
+			studentId: "s-1",
+			status: "invited",
+		});
+	}
+
+	test("non-I6 (re-activation sau xóa enrollment): material theo shift sang ngày bù (#662 T1)", async () => {
+		await seedManualClassWith8Sessions662("cls-662", "csm-662");
+		await seedMaterial("mat-662", "cls-662", F3);
+		await seedOrgShiftHoliday662("hol-662", F3, 1000);
+		await seedShiftRow662("shift-662", "hol-662", "cls-662", F3, F9, 1000);
+		await seedInvitedEnrollment662("enr-662", "cls-662");
+
+		const activation = await activateEnrollment(db, "org-1", "enr-662");
+		expect(activation).toEqual({ ok: true });
+
+		expect(await lessonMaterialsAt(F3)).toHaveLength(0);
+		const moved = await lessonMaterialsAt(F9);
+		expect(moved.map((r) => r.materialId)).toEqual(["mat-662"]);
+
+		const rows = await db
+			.select({ date: schema.lesson.date, status: schema.lesson.status })
+			.from(schema.lesson)
+			.where(eq(schema.lesson.enrollmentId, "enr-662"));
+		expect(rows.find((row) => row.date === F3)?.status).toBe("holiday");
+		const at9 = rows.filter((row) => row.date === F9);
+		expect(at9).toHaveLength(1);
+		expect(at9[0]?.status).toBe("upcoming");
+	});
+
+	test("non-I6 chuỗi 2 shift (F3→F9→F10): material đất đích cuối (#662 T2)", async () => {
+		await seedManualClassWith8Sessions662("cls-662c", "csm-662c");
+		await seedMaterial("mat-662c", "cls-662c", F3);
+		await seedOrgShiftHoliday662("hol-662c1", F3, 1000);
+		await seedOrgShiftHoliday662("hol-662c2", F9, 2000);
+		await seedShiftRow662("shift-662c1", "hol-662c1", "cls-662c", F3, F9, 1000);
+		await seedShiftRow662(
+			"shift-662c2",
+			"hol-662c2",
+			"cls-662c",
+			F9,
+			F10,
+			2000,
+		);
+		await seedInvitedEnrollment662("enr-662c", "cls-662c");
+
+		const activation = await activateEnrollment(db, "org-1", "enr-662c");
+		expect(activation).toEqual({ ok: true });
+
+		expect(await lessonMaterialsAt(F3)).toHaveLength(0);
+		expect(await lessonMaterialsAt(F9)).toHaveLength(0);
+		const final = await lessonMaterialsAt(F10);
+		expect(final.map((r) => r.materialId)).toEqual(["mat-662c"]);
+	});
+
+	test("non-I6 với existing lessons: move vẫn chạy, không rơi nhánh I6 (#662 T3)", async () => {
+		await seedManualClassWith8Sessions662("cls-662e", "csm-662e");
+		await seedMaterial("mat-662e", "cls-662e", F3);
+		await seedOrgShiftHoliday662("hol-662e", F3, 1000);
+		await seedShiftRow662("shift-662e", "hol-662e", "cls-662e", F3, F9, 1000);
+		await db.insert(schema.enrollment).values({
+			id: "enr-other-662",
+			orgId: "org-1",
+			classId: "cls-662e",
+			studentId: "s-2",
+			status: "active",
+		});
+		await db.insert(schema.lesson).values({
+			id: "les-other-662",
+			orgId: "org-1",
+			classId: "cls-662e",
+			enrollmentId: "enr-other-662",
+			day: isoToLessonWeekday(F2),
+			time: "19:00",
+			dur: 90,
+			date: F2,
+			type: "1:1",
+			status: "upcoming",
+		});
+		await seedInvitedEnrollment662("enr-662e", "cls-662e");
+
+		const activation = await activateEnrollment(db, "org-1", "enr-662e");
+		expect(activation).toEqual({ ok: true });
+
+		expect(await lessonMaterialsAt(F3)).toHaveLength(0);
+		const moved = await lessonMaterialsAt(F9);
+		expect(moved.map((r) => r.materialId)).toEqual(["mat-662e"]);
+	});
+
+	test("non-I6 schedule legacy (parsedSchedule null): KHÔNG move, material ở lại ngày gốc (#662 T4)", async () => {
+		await db.insert(schema.classTable).values({
+			id: "cls-662n",
+			orgId: "org-1",
+			name: "Lớp legacy",
+			schedule: "[]",
+			sessionsTotal: 8,
+			startDate: F1,
+			status: "active",
+			schedulingMode: "manual",
+		});
+		await db.insert(schema.classSession).values({
+			id: "csm-662n-0",
+			orgId: "org-1",
+			classId: "cls-662n",
+			date: F3,
+			time: "19:00",
+			dur: 90,
+		});
+		await seedMaterial("mat-662n", "cls-662n", F3);
+		await seedOrgShiftHoliday662("hol-662n", F3, 1000);
+		await seedShiftRow662("shift-662n", "hol-662n", "cls-662n", F3, F9, 1000);
+		await seedInvitedEnrollment662("enr-662n", "cls-662n");
+
+		const activation = await activateEnrollment(db, "org-1", "enr-662n");
+		expect(activation).toEqual({ ok: true });
+
+		// parsedSchedule null → applyShiftsToRows không chạy → lesson thật
+		// upcoming ở lại F3; move khi đó sẽ rút tài liệu khỏi buổi thật (yank).
+		const rows = await db
+			.select({ date: schema.lesson.date, status: schema.lesson.status })
+			.from(schema.lesson)
+			.where(eq(schema.lesson.enrollmentId, "enr-662n"));
+		expect(rows.find((row) => row.date === F3)?.status).toBe("upcoming");
+		const kept = await lessonMaterialsAt(F3);
+		expect(kept.map((r) => r.materialId)).toEqual(["mat-662n"]);
+		expect(await lessonMaterialsAt(F9)).toHaveLength(0);
+	});
+
+	test("non-I6: DELETE hoàn tác dời tài liệu ngược về ngày gốc (#662 T5)", async () => {
+		await seedManualClassWith8Sessions662("cls-662u", "csm-662u");
+		await seedMaterial("mat-662u", "cls-662u", F3);
+		await seedOrgShiftHoliday662("hol-662u", F3, 1000);
+		await seedShiftRow662("shift-662u", "hol-662u", "cls-662u", F3, F9, 1000);
+		await seedInvitedEnrollment662("enr-662u", "cls-662u");
+		const activation = await activateEnrollment(db, "org-1", "enr-662u");
+		expect(activation).toEqual({ ok: true });
+
+		// Assertion trung gian: tài liệu ĐÃ theo buổi bù trước khi hoàn tác —
+		// dòng này là thứ fail ở pha đỏ (chưa fix thì tài liệu còn ở F3).
+		const beforeUndo = await lessonMaterialsAt(F9);
+		expect(beforeUndo.map((r) => r.materialId)).toEqual(["mat-662u"]);
+
+		const app = createApp();
+		const delRes = await deleteHolidayReq(app, "hol-662u");
+		expect(delRes.status).toBe(200);
+
+		expect(await lessonMaterialsAt(F9)).toHaveLength(0);
+		const original = await lessonMaterialsAt(F3);
+		expect(original.map((r) => r.materialId)).toEqual(["mat-662u"]);
+	});
+
+	test("non-I6 lớp nhóm (auto-schedule): move class-level chạy như thường (#662 T6)", async () => {
+		await db
+			.insert(schema.student)
+			.values({ id: "s-662", orgId: "org-1", name: "Bình" });
+		await seedMaterial("mat-662g", "cls-a", F3);
+		await seedOrgShiftHoliday662("hol-662g", F3, 1000);
+		await seedShiftRow662("shift-662g", "hol-662g", "cls-a", F3, F9, 1000);
+		await db.insert(schema.enrollment).values({
+			id: "enr-662g",
+			orgId: "org-1",
+			classId: "cls-a",
+			studentId: "s-662",
+			status: "invited",
+		});
+
+		const activation = await activateEnrollment(db, "org-1", "enr-662g");
+		expect(activation).toEqual({ ok: true });
+
+		expect(await lessonMaterialsAt(F3)).toHaveLength(0);
+		const moved = await lessonMaterialsAt(F9);
+		expect(moved.map((r) => r.materialId)).toEqual(["mat-662g"]);
+	});
+
+	test("non-I6 makeup trúng cancel: material vẫn đất ngày bù — đích cuối chủ ý (#662 T7)", async () => {
+		await seedManualClassWith8Sessions662("cls-662x", "csm-662x");
+		await seedMaterial("mat-662x", "cls-662x", F3);
+		await seedOrgShiftHoliday662("hol-662x", F3, 1000);
+		await seedShiftRow662("shift-662x", "hol-662x", "cls-662x", F3, F9, 1000);
+		await db.insert(schema.holidaySessionCancel).values({
+			id: "cancel-662x",
+			orgId: "org-1",
+			holidayId: "hol-662x",
+			classId: "cls-662x",
+			date: F9,
+		});
+		await seedInvitedEnrollment662("enr-662x", "cls-662x");
+
+		const activation = await activateEnrollment(db, "org-1", "enr-662x");
+		expect(activation).toEqual({ ok: true });
+
+		// Đích cuối là ngày bù kể cả khi ngày bù trúng cancel: move mirror
+		// hành vi apply shift #645. Ai "sửa" loop bỏ qua makeup-cancelled sẽ
+		// bẫy test này — convention chủ ý, không phải ngộ nhận.
+		expect(await lessonMaterialsAt(F3)).toHaveLength(0);
+		const moved = await lessonMaterialsAt(F9);
+		expect(moved.map((r) => r.materialId)).toEqual(["mat-662x"]);
+		const rows = await db
+			.select({ date: schema.lesson.date, status: schema.lesson.status })
+			.from(schema.lesson)
+			.where(eq(schema.lesson.enrollmentId, "enr-662x"));
+		expect(rows.find((row) => row.date === F9)?.status).toBe("cancelled");
+	});
+});
+
 describe("Điểm danh ngày nghỉ (phase 4 đặm màu)", () => {
 	test("/attendance/daily ngày nghỉ không còn ca của lớp đã dời", async () => {
 		const app = createApp();
@@ -1185,6 +1714,131 @@ describe("TOS-13 Phase 2: apply mode cancel + DELETE hoàn tác + activation D7 
 				n.text.includes("Đã xóa kỳ nghỉ «Nghỉ lễ giữa khóa»: khôi phục 2 buổi"),
 			),
 		).toBe(true);
+	});
+
+	test("DELETE kỳ nghỉ shift: tài liệu buổi gốc và buổi bù dời ngược về buổi gốc (#645)", async () => {
+		const app = createApp();
+		const planHash = await previewHash(app, draft());
+		const applyRes = await apply(app, { ...draft(), planHash });
+		const { holidayId } = (await applyRes.json()) as { holidayId: string };
+
+		const makeupRows = await db
+			.select({ classId: schema.lesson.classId, orgId: schema.lesson.orgId })
+			.from(schema.lesson)
+			.where(eq(schema.lesson.date, F9));
+		const makeup = makeupRows[0];
+		if (!makeup) throw new Error("expected a makeup lesson");
+		await db.insert(schema.material).values({
+			id: "mat-holiday",
+			orgId: makeup.orgId,
+			kind: "link",
+			url: "https://example.com/doc",
+			title: "Tài liệu buổi bù",
+			createdBy: "teacher-1",
+		});
+		await db.insert(schema.lessonMaterial).values({
+			orgId: makeup.orgId,
+			classId: makeup.classId,
+			date: F9,
+			materialId: "mat-holiday",
+		});
+
+		const delRes = await deleteHolidayReq(app, holidayId);
+		expect(delRes.status).toBe(200);
+
+		// #645: tài liệu gắn vào buổi bù dời NGƯỢC về ngày gốc, không bị xóa.
+		const afterUndo = await db
+			.select({
+				date: schema.lessonMaterial.date,
+				materialId: schema.lessonMaterial.materialId,
+			})
+			.from(schema.lessonMaterial);
+		expect(afterUndo).toHaveLength(1);
+		expect(afterUndo[0]).toEqual({
+			date: F3,
+			materialId: "mat-holiday",
+		});
+		expect(
+			await db
+				.select({ id: schema.material.id })
+				.from(schema.material)
+				.where(eq(schema.material.id, "mat-holiday")),
+		).toHaveLength(1);
+	});
+
+	describe("#645: holiday shift dời lesson_material sang buổi bù", () => {
+		async function applyShiftHoliday() {
+			const app = createApp();
+			const planHash = await previewHash(app, draft());
+			const applyRes = await apply(app, { ...draft(), planHash });
+			expect(applyRes.status).toBe(200);
+			const { holidayId } = (await applyRes.json()) as {
+				holidayId: string;
+			};
+			return { app, holidayId };
+		}
+
+		test("apply shift: tài liệu buổi gốc dời sang buổi bù, originalDate rỗng", async () => {
+			await seedMaterial("mat-shift", "cls-a", F3, 2);
+
+			await applyShiftHoliday();
+
+			expect(await lessonMaterialsAt(F3)).toHaveLength(0);
+			const makeup = await lessonMaterialsAt(F9);
+			expect(makeup).toHaveLength(1);
+			expect(makeup[0]?.materialId).toBe("mat-shift");
+		});
+
+		test("DELETE hoàn tác: mọi tài liệu dời ngược về originalDate (scenario A)", async () => {
+			await seedMaterial("mat-shift", "cls-a", F3);
+			const { app, holidayId } = await applyShiftHoliday();
+			// Tài liệu gắn mới vào buổi bù sau apply cũng phải quay về ngày gốc.
+			await seedMaterial("mat-extra", "cls-a", F9);
+
+			const delRes = await deleteHolidayReq(app, holidayId);
+			expect(delRes.status).toBe(200);
+
+			const original = await lessonMaterialsAt(F3);
+			expect(original.map((r) => r.materialId).sort()).toEqual([
+				"mat-extra",
+				"mat-shift",
+			]);
+			expect(await lessonMaterialsAt(F9)).toHaveLength(0);
+		});
+
+		test("apply shift: dòng trùng materialId ở makeupDate bị dọn, mồ côi không trùng được GIỮ (scenario C — #658)", async () => {
+			await seedMaterial("mat-shift", "cls-a", F3);
+			// Từ #658, tài liệu ở ngày chỉ có buổi manual `class_session` là dữ
+			// liệu thật → chỉ dọn dòng TRÙNG materialId (đỡ PK với move), giữ
+			// mồ côi không trùng ở makeupDate.
+			await seedMaterial("mat-shift", "cls-a", F9);
+			await seedMaterial("mat-orphan", "cls-a", F9);
+
+			await applyShiftHoliday();
+
+			expect(await lessonMaterialsAt(F3)).toHaveLength(0);
+			const makeup = await lessonMaterialsAt(F9);
+			expect(makeup.map((r) => r.materialId).sort()).toEqual([
+				"mat-orphan",
+				"mat-shift",
+			]);
+		});
+
+		test("DELETE hoàn tác: trùng materialId giữ bản ngày gốc, bản ngày bù mất (scenario B — test xanh)", async () => {
+			await seedMaterial("mat-shift", "cls-a", F3);
+			const { app, holidayId } = await applyShiftHoliday();
+			// Sau apply M nằm ở F9; mô phỏng M xuất hiện lại ở ngày gốc
+			// (collision tồn đọng) rồi hoàn tác.
+			await seedMaterial("mat-shift", "cls-a", F3, 9);
+
+			const delRes = await deleteHolidayReq(app, holidayId);
+			expect(delRes.status).toBe(200);
+
+			const original = await lessonMaterialsAt(F3);
+			expect(original).toHaveLength(1);
+			expect(original[0]?.materialId).toBe("mat-shift");
+			expect(await lessonMaterialsAt(F9)).toHaveLength(0);
+		});
 	});
 
 	test("DELETE kỳ nghỉ cancel tương lai: chỉ khôi phục buổi trong holiday_session_cancel, buổi GV hủy tay cùng ngày ở lớp khác giữ cancelled", async () => {

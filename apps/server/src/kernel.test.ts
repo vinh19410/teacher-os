@@ -4992,6 +4992,38 @@ describe("student package minimums (issue #115)", () => {
 		expect(res.status).toBe(201);
 	});
 
+	test("POST /api/students stores entryScore, exposes it in the snapshot, and rejects values over 50 chars", async () => {
+		const res = await t.call("/api/students", {
+			session,
+			method: "POST",
+			body: { name: "HV điểm đầu vào", entryScore: "  7.0 IELTS  " },
+		});
+		expect(res.status).toBe(201);
+		const { id } = (await res.json()) as { id: string };
+		const snapshot = await t.kernel(session);
+		expect(snapshot.students.find((s) => s.id === id)?.entryScore).toBe(
+			"7.0 IELTS",
+		);
+
+		const blank = await t.call("/api/students", {
+			session,
+			method: "POST",
+			body: { name: "HV không điểm" },
+		});
+		const { id: blankId } = (await blank.json()) as { id: string };
+		expect(
+			(await t.kernel(session)).students.find((s) => s.id === blankId)
+				?.entryScore,
+		).toBe("");
+
+		const tooLong = await t.call("/api/students", {
+			session,
+			method: "POST",
+			body: { name: "HV quá dài", entryScore: "x".repeat(51) },
+		});
+		expect(tooLong.status).toBe(400);
+	});
+
 	test("GET /api/students route remains active and returns 200", async () => {
 		const res = await t.call("/api/students", {
 			session,

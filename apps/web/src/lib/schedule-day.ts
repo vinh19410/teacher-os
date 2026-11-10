@@ -11,6 +11,7 @@
 import { addMinutes } from "@/lib/format-schedule";
 import type {
 	ClassGroup,
+	ClassSessionItem,
 	Lesson,
 	LessonStatus,
 	LessonType,
@@ -27,6 +28,8 @@ import { isoDayNumber } from "@/lib/week-grid";
 export interface DaySourceData {
 	classes: ClassGroup[];
 	lessons: Lesson[];
+	/** Issue #649: buổi thủ công của lớp manual — optional (deploy skew). */
+	classSessions?: readonly ClassSessionItem[];
 	/** Org events (TOS-14). Optional — snapshots without events still build. */
 	events?: readonly ScheduleEventLike[];
 	/** Org holidays (TOS-14b/#453). Optional — snapshots without holidays
@@ -113,9 +116,12 @@ export function buildDayAgenda(
 		rows: entry.rows,
 	}));
 
-	for (const block of selectProjectedWeekBlocks(data.classes, data.lessons, [
-		dateISO,
-	])) {
+	for (const block of selectProjectedWeekBlocks(
+		data.classes,
+		data.lessons,
+		[dateISO],
+		data.classSessions ?? [],
+	)) {
 		items.push({
 			kind: "lesson",
 			id: `p:${block.classId}:${block.dateISO}`,

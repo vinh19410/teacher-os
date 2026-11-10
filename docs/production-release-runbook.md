@@ -162,7 +162,7 @@ migration/recovery rehearsal — and serves QC on its own subdomain:
 `https://api.staging.teacheros.io.vn` (API). After first provisioning (or
 destroy/recreate), the automated staging deploy (see "Automated staging
 deploy (CI/CD)" below) keeps the stage current on every push to the
-`staging` branch;
+`develop` branch;
 run this procedure manually only for first provisioning or
 destroy/recreate.
 
@@ -220,13 +220,12 @@ operator `.env` and the GitHub repo secret of the same name.
 ## Automated staging deploy (CI/CD)
 
 `.github/workflows/deploy-staging.yml` is the sibling workflow for stage
-`staging`. Since 2026-09-22 merging into `develop` no longer deploys staging.
-Instead, staging deploys on every push to the dedicated `staging` branch —
-the QA environment. To hand a build to QA, fast-forward `staging` to the
-`develop` commit under test (`git push origin develop:staging`); QA then
-checks `https://app.staging.teacheros.io.vn`. The GitHub environment
-`staging` allows deployments from the `staging` branch (and `develop` for
-manual runs). Manual `workflow_dispatch` remains for migration rehearsal.
+`staging`. Staging deploys on every push to `develop` (merging a PR into
+`develop` counts), so QA checks the latest develop at
+`https://app.staging.teacheros.io.vn` with no promote step. The old `staging`
+branch no longer triggers a deploy. The GitHub environment `staging` must
+allow deployments from the `develop` branch. Manual `workflow_dispatch`
+remains for migration rehearsal.
 Either way the workflow runs the
 same reusable `quality.yml` gates (`turbo-cache: false`) as CI, then
 `APP_DOMAIN=staging.teacheros.io.vn pnpm alchemy deploy --stage staging --yes`
@@ -245,7 +244,7 @@ in the staging D1; prod deliberately gets no signup smoke. The manual
 or destroy/recreate.
 
 To preview a staging deploy without applying it, run `Deploy Staging` manually from
-`develop` or `staging` with `dry_run` enabled: it prints the Alchemy plan and skips seed and
+`develop` with `dry_run` enabled: it prints the Alchemy plan and skips seed and
 smoke steps. Check that the plan does not replace or delete the D1 database, R2
 buckets or custom domains before deploying.
 
@@ -945,6 +944,7 @@ ngoài kernel tree.
 | `ADMIN_EMAILS` | danh sách email phân tách dấu phẩy | **KHÔNG có default** — rỗng (không set) = không ai là admin và không ai đăng ký được account admin; so khớp lowercase trong `requireAdmin` ở MỖI request (gỡ email khỏi danh sách là mất quyền ngay) |
 | `TEACHER_EMAILS` | danh sách email phân tách dấu phẩy | **Bắt buộc trên production** (`resolveTeacherEmails` ném lỗi khi deploy nếu rỗng); ở môi trường khác rỗng = không giới hạn. Kiểm lowercase mỗi request ở kernel (`bootstrapMiddleware`) và ở hook sign-up (`TEACHER_SIGNUP_FORBIDDEN`, #513) |
 | `LIBRARY_AUDIO` | R2 bucket `library-audio` | Private bucket tạo trong `alchemy.run.ts`; thiếu binding → route audio trả 503 `LIBRARY_AUDIO_DISABLED` |
+| `MATERIALS` | R2 bucket `materials` | Private bucket tạo trong `alchemy.run.ts` (kho tài liệu/học liệu theo buổi học); thiếu binding → route file trả 503 `MATERIALS_DISABLED` |
 
 ### Quy trình cấp admin đầu tiên
 
@@ -985,7 +985,7 @@ gọi cùng endpoint phải 403 `ACCOUNT_NOT_ADMIN`.
 
 ## Bộ đề tự học theo lịch (migrations 0060–0061) — issue #533/#554
 
-- **Pre-flight bắt buộc TRƯỚC khi merge/push `0061` lên `staging` hoặc `main` (`study_pack_org_source_pack_uq`):** Vì `.github/workflows/deploy-staging.yml` và `.github/workflows/deploy.yml` tự động chạy `alchemy deploy` áp migration ngay khi push, bắt buộc chạy truy vấn đọc trên D1 trước khi promote:
+- **Pre-flight bắt buộc TRƯỚC khi merge `0061` vào `develop` (tự deploy staging) hoặc `main` (prod) (`study_pack_org_source_pack_uq`):** Vì `.github/workflows/deploy-staging.yml` và `.github/workflows/deploy.yml` tự động chạy `alchemy deploy` áp migration ngay khi push/merge, bắt buộc chạy truy vấn đọc trên D1 trước khi promote:
   ```sql
   SELECT org_id, source_pack_id, COUNT(*) AS cnt
   FROM study_pack
@@ -1007,3 +1007,10 @@ gọi cùng endpoint phải 403 `ACCOUNT_NOT_ADMIN`.
 - **Hướng xử lý sự cố / Rollback an toàn:**
   - Ưu tiên **forward-fix** trên nhánh `>= 0060` (hoặc hủy các `class_study_pack` đang chạy qua UI/API để thu hồi các bài chưa đến giờ mở).
   - Nếu khẩn cấp bắt buộc khôi phục toàn bộ hệ thống về trước `#533` (`0060`), phải khôi phục đồng bộ D1 bằng **D1 Time Travel** về đúng bookmark trước khi chạy `0060` cùng lúc với việc hạ Worker và các bundle frontend.
+
+## Ngân hàng tài liệu & buổi học thủ công (migrations 0065–0068) — issue #644/#649/#655/#663
+
+- **Additive-only:** `0065` thêm cột nullable `student.entry_score`; `0066` tạo `material_folder`, `material`, `lesson_material`; `0067` tạo `class_session` và thêm `class.scheduling_mode` (`DEFAULT 'auto' NOT NULL`); `0068` tạo `syllabus_lesson_material`. Không đổi/xóa cột hay bảng cũ — nguồn sự thật là các file trong `packages/db/src/migrations/`.
+- **Binding bắt buộc:** R2 bucket `materials` (binding `MATERIALS`, xem bảng binding ở "Admin console go-live") được tạo cùng deploy; khi `dry_run` kiểm plan không replace/delete bucket này.
+- **Rollback:** không `DROP` tay các bảng/cột trên D1 khi lùi Worker (sổ cái `d1_migrations` đã ghi nhận, deploy sau sẽ không chạy lại). Ưu tiên forward-fix; Worker cũ không đọc `class_session`/`lesson_material` nên buổi thủ công và tài liệu theo buổi sẽ không hiển thị cho tới khi deploy lại bản mới.
+- **Audit `lesson_material` mồ côi do holiday shift trước fix #659/#662:** chạy tay workflow `.github/workflows/audit-663.yml` (`workflow_dispatch`, chọn `staging`/`prod`; read-only, chỉ in số tổng hợp). Cleanup (`--apply`) không nằm trong workflow — chạy cục bộ theo hướng dẫn ở đầu `packages/db/scripts/audit-663-orphan-materials.ts`, và trên prod chỉ khi owner đã duyệt số liệu audit.

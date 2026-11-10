@@ -71,5 +71,6 @@ export function mapClasses(snapshot: KernelSnapshot): ClassGroup[] {
 		startDate: row.startDate,
 		tuitionFee: row.tuitionFee ?? null,
 		notes: row.notes,
+		schedulingMode: row.schedulingMode ?? "auto",
 	}));
 }
