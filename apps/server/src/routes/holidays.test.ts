@@ -1187,7 +1187,7 @@ describe("TOS-13 Phase 2: apply mode cancel + DELETE hoàn tác + activation D7 
 		).toBe(true);
 	});
 
-	test("DELETE kỳ nghỉ shift: liên kết tài liệu đã gắn vào buổi bù bị dọn cùng buổi bù", async () => {
+	test("DELETE kỳ nghỉ shift: tài liệu buổi gốc và buổi bù dời ngược về buổi gốc (#645)", async () => {
 		const app = createApp();
 		const planHash = await previewHash(app, draft());
 		const applyRes = await apply(app, { ...draft(), planHash });
@@ -1217,13 +1217,132 @@ describe("TOS-13 Phase 2: apply mode cancel + DELETE hoàn tác + activation D7 
 		const delRes = await deleteHolidayReq(app, holidayId);
 		expect(delRes.status).toBe(200);
 
-		expect(await db.select().from(schema.lessonMaterial)).toHaveLength(0);
+		// #645: tài liệu gắn vào buổi bù dời NGƯỢC về ngày gốc, không bị xóa.
+		const afterUndo = await db
+			.select({
+				date: schema.lessonMaterial.date,
+				materialId: schema.lessonMaterial.materialId,
+			})
+			.from(schema.lessonMaterial);
+		expect(afterUndo).toHaveLength(1);
+		expect(afterUndo[0]).toEqual({
+			date: F3,
+			materialId: "mat-holiday",
+		});
 		expect(
 			await db
 				.select({ id: schema.material.id })
 				.from(schema.material)
 				.where(eq(schema.material.id, "mat-holiday")),
 		).toHaveLength(1);
+	});
+
+	describe("#645: holiday shift dời lesson_material sang buổi bù", () => {
+		async function seedMaterial(
+			id: string,
+			classId: string,
+			date: string,
+			position = 0,
+		) {
+			await db
+				.insert(schema.material)
+				.values({
+					id,
+					orgId: "org-1",
+					kind: "link",
+					url: `https://example.com/${id}`,
+					title: `Tài liệu ${id}`,
+					createdBy: "teacher-1",
+				})
+				.onConflictDoNothing();
+			await db.insert(schema.lessonMaterial).values({
+				orgId: "org-1",
+				classId,
+				date,
+				materialId: id,
+				position,
+			});
+		}
+
+		async function lessonMaterialsAt(date: string) {
+			return db
+				.select({ materialId: schema.lessonMaterial.materialId })
+				.from(schema.lessonMaterial)
+				.where(eq(schema.lessonMaterial.date, date));
+		}
+
+		async function applyShiftHoliday() {
+			const app = createApp();
+			const planHash = await previewHash(app, draft());
+			const applyRes = await apply(app, { ...draft(), planHash });
+			expect(applyRes.status).toBe(200);
+			const { holidayId } = (await applyRes.json()) as {
+				holidayId: string;
+			};
+			return { app, holidayId };
+		}
+
+		test("apply shift: tài liệu buổi gốc dời sang buổi bù, originalDate rỗng", async () => {
+			await seedMaterial("mat-shift", "cls-a", F3, 2);
+
+			await applyShiftHoliday();
+
+			expect(await lessonMaterialsAt(F3)).toHaveLength(0);
+			const makeup = await lessonMaterialsAt(F9);
+			expect(makeup).toHaveLength(1);
+			expect(makeup[0]?.materialId).toBe("mat-shift");
+		});
+
+		test("DELETE hoàn tác: mọi tài liệu dời ngược về originalDate (scenario A)", async () => {
+			await seedMaterial("mat-shift", "cls-a", F3);
+			const { app, holidayId } = await applyShiftHoliday();
+			// Tài liệu gắn mới vào buổi bù sau apply cũng phải quay về ngày gốc.
+			await seedMaterial("mat-extra", "cls-a", F9);
+
+			const delRes = await deleteHolidayReq(app, holidayId);
+			expect(delRes.status).toBe(200);
+
+			const original = await lessonMaterialsAt(F3);
+			expect(original.map((r) => r.materialId).sort()).toEqual([
+				"mat-extra",
+				"mat-shift",
+			]);
+			expect(await lessonMaterialsAt(F9)).toHaveLength(0);
+		});
+
+		test("apply shift: dòng trùng materialId ở makeupDate bị dọn, mồ côi không trùng được GIỮ (scenario C — #658)", async () => {
+			await seedMaterial("mat-shift", "cls-a", F3);
+			// Từ #658, tài liệu ở ngày chỉ có buổi manual `class_session` là dữ
+			// liệu thật → chỉ dọn dòng TRÙNG materialId (đỡ PK với move), giữ
+			// mồ côi không trùng ở makeupDate.
+			await seedMaterial("mat-shift", "cls-a", F9);
+			await seedMaterial("mat-orphan", "cls-a", F9);
+
+			await applyShiftHoliday();
+
+			expect(await lessonMaterialsAt(F3)).toHaveLength(0);
+			const makeup = await lessonMaterialsAt(F9);
+			expect(makeup.map((r) => r.materialId).sort()).toEqual([
+				"mat-orphan",
+				"mat-shift",
+			]);
+		});
+
+		test("DELETE hoàn tác: trùng materialId giữ bản ngày gốc, bản ngày bù mất (scenario B — test xanh)", async () => {
+			await seedMaterial("mat-shift", "cls-a", F3);
+			const { app, holidayId } = await applyShiftHoliday();
+			// Sau apply M nằm ở F9; mô phỏng M xuất hiện lại ở ngày gốc
+			// (collision tồn đọng) rồi hoàn tác.
+			await seedMaterial("mat-shift", "cls-a", F3, 9);
+
+			const delRes = await deleteHolidayReq(app, holidayId);
+			expect(delRes.status).toBe(200);
+
+			const original = await lessonMaterialsAt(F3);
+			expect(original).toHaveLength(1);
+			expect(original[0]?.materialId).toBe("mat-shift");
+			expect(await lessonMaterialsAt(F9)).toHaveLength(0);
+		});
 	});
 
 	test("DELETE kỳ nghỉ cancel tương lai: chỉ khôi phục buổi trong holiday_session_cancel, buổi GV hủy tay cùng ngày ở lớp khác giữ cancelled", async () => {

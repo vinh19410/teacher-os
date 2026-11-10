@@ -1136,6 +1136,141 @@ describe("material bank and session materials", () => {
 		expect((await del(`/api/materials/${link.id}`)).status).toBe(200);
 	});
 
+	describe("#645: chặn attach/upload/detach vào buổi holiday", () => {
+		const HOLIDAY_DATE = "2026-11-17";
+		const MIXED_DATE = "2026-11-19";
+
+		// Buổi holiday có dòng lesson; ngày trộn 1 dòng holiday + 1 dòng
+		// non-holiday (semantics bucket khớp web `allHoliday`).
+		const lessonBase = { orgId: "org-1", day: 3, time: "18:00", dur: 120 };
+		const ensureHolidayLessons = async () => {
+			await db
+				.insert(schema.lesson)
+				.values([
+					{
+						...lessonBase,
+						id: "l-hol",
+						classId: "class-1",
+						enrollmentId: "enr-1",
+						date: HOLIDAY_DATE,
+						status: "holiday",
+					},
+					{
+						...lessonBase,
+						id: "l-mixed-hol",
+						classId: "class-1",
+						enrollmentId: "enr-1",
+						date: MIXED_DATE,
+						status: "holiday",
+					},
+					{
+						...lessonBase,
+						id: "l-mixed-up",
+						classId: "class-1",
+						enrollmentId: "enr-1",
+						date: MIXED_DATE,
+						status: "upcoming",
+					},
+				])
+				.onConflictDoNothing();
+		};
+
+		const seedBankMaterial = async (id: string) => {
+			await db
+				.insert(schema.material)
+				.values({
+					id,
+					orgId: "org-1",
+					kind: "link",
+					url: `https://example.com/${id}`,
+					title: id,
+					createdBy: "t-1",
+				})
+				.onConflictDoNothing();
+		};
+
+		test("POST attach vào buổi holiday trả 409 SESSION_HOLIDAY", async () => {
+			await ensureHolidayLessons();
+			await seedBankMaterial("mat-hol");
+			const res = await json(sessionPath("class-1", HOLIDAY_DATE), "POST", {
+				materialId: "mat-hol",
+			});
+			expect(res.status).toBe(409);
+			expect(((await res.json()) as { code: string }).code).toBe(
+				"SESSION_HOLIDAY",
+			);
+		});
+
+		test("PUT upload file vào buổi holiday trả 409 SESSION_HOLIDAY", async () => {
+			await ensureHolidayLessons();
+			const res = await upload(`${sessionPath("class-1", HOLIDAY_DATE)}/files`);
+			expect(res.status).toBe(409);
+			expect(((await res.json()) as { code: string }).code).toBe(
+				"SESSION_HOLIDAY",
+			);
+		});
+
+		test("DELETE detach trên buổi holiday trả 409 SESSION_HOLIDAY", async () => {
+			await ensureHolidayLessons();
+			await seedBankMaterial("mat-hol");
+			await db
+				.insert(schema.lessonMaterial)
+				.values({
+					orgId: "org-1",
+					classId: "class-1",
+					date: HOLIDAY_DATE,
+					materialId: "mat-hol",
+				})
+				.onConflictDoNothing();
+			const res = await del(`${sessionPath("class-1", HOLIDAY_DATE)}/mat-hol`);
+			expect(res.status).toBe(409);
+			expect(((await res.json()) as { code: string }).code).toBe(
+				"SESSION_HOLIDAY",
+			);
+		});
+
+		test("GET list materials trên buổi holiday vẫn 200 (modal render được)", async () => {
+			await ensureHolidayLessons();
+			const res = await get(sessionPath("class-1", HOLIDAY_DATE));
+			expect(res.status).toBe(200);
+			const body = (await res.json()) as { items: unknown[] };
+			expect(Array.isArray(body.items)).toBe(true);
+		});
+
+		test("ngày trộn holiday + non-holiday: attach vẫn 201 (bucket semantics khớp web)", async () => {
+			await ensureHolidayLessons();
+			await seedBankMaterial("mat-mixed");
+			const res = await json(sessionPath("class-1", MIXED_DATE), "POST", {
+				materialId: "mat-mixed",
+			});
+			expect(res.status).toBe(201);
+		});
+
+		test("ngày có lesson holiday + buổi manual class_session: attach qua manual vẫn 201 (#658)", async () => {
+			// HOLIDAY_DATE có 1 dòng lesson holiday; thêm buổi manual
+			// class_session cùng ngày (#658: buổi thật cho materials).
+			await ensureHolidayLessons();
+			await db
+				.insert(schema.classSession)
+				.values({
+					id: "cs-hol-manual",
+					orgId: "org-1",
+					classId: "class-1",
+					date: HOLIDAY_DATE,
+					time: "18:00",
+					dur: 120,
+					topic: "Buổi bù manual",
+					zoom: "",
+				})
+				.onConflictDoNothing();
+			await seedBankMaterial("mat-manual");
+			const res = await json(sessionPath("class-1", HOLIDAY_DATE), "POST", {
+				materialId: "mat-manual",
+			});
+			expect(res.status).toBe(201);
+		});
+	});
+
 	test("lớp manual 0 học viên: dời buổi kéo tài liệu theo (#658)", async () => {
 		await db.insert(schema.classTable).values({
 			orgId: "org-1",

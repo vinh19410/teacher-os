@@ -568,4 +568,25 @@ describe("session materials", () => {
 			),
 		).toBeTruthy();
 	});
+
+	it("hides the materials button on a holiday session row (#645)", async () => {
+		const snapshot = mondayClass(["st-1"]);
+		snapshot.lessons = snapshot.lessons.map((l) =>
+			l.date === TODAY ? { ...l, status: "holiday" as const } : l,
+		);
+		server = startKernelServer(snapshot);
+		await openSessionsTab();
+		// Buổi holiday vô hình với học sinh — không mở được modal tài liệu.
+		expect(
+			within(sessionRow("12/10")).queryByRole("button", {
+				name: /^Tài liệu buổi/,
+			}),
+		).toBeNull();
+		// Row thường giữ nguyên nút.
+		expect(
+			within(sessionRow("19/10")).getByRole("button", {
+				name: /^Tài liệu buổi/,
+			}),
+		).toBeTruthy();
+	});
 });

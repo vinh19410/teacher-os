@@ -192,6 +192,8 @@ export function materialErrorMessage(error: unknown): string {
 			return "Định dạng chưa hỗ trợ. Chỉ nhận PDF, ảnh PNG/JPG/WEBP, DOCX/PPTX/XLSX, MP3/M4A/MP4.";
 		case "MATERIALS_DISABLED":
 			return "Kho file tài liệu đang tạm ngưng. Liên kết vẫn dùng được; thử tải file lại sau.";
+		case "SESSION_HOLIDAY":
+			return "Buổi này là buổi nghỉ lễ đã dời lịch — không gắn hoặc gỡ tài liệu được.";
 		default:
 			break;
 	}
