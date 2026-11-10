@@ -3,9 +3,11 @@
 # Design constraints (see docs/production-release-runbook.md):
 # - Deploy job runs only after the same quality gates as CI pass on this ref,
 #   so a bypassed/failing CI can never ship. The full Playwright E2E suite also
-#   gates production (and only production): it is split across 6 runners with
-#   --fully-parallel so the wall-clock stays low. Staging and PR pipelines do
-#   not run it.
+#   gates production (and only production): it is split across 6 shards with
+#   --fully-parallel. Shards run one-at-a-time (max-parallel: 1): the
+#   self-hosted fleet is a single machine and shards bind fixed local ports
+#   (8000/8001/8003, see apps/e2e/playwright.config.ts). Staging and PR
+#   pipelines do not run it.
 # - Concurrency serializes deploys without cancelling a run in progress:
 #   alchemy applies forward-only D1 migrations, and two overlapping deploys
 #   would race the migration ledger.
@@ -60,15 +62,19 @@ jobs:
     timeout-minutes: 40
     strategy:
       fail-fast: false
+      # Serializes shards even if more runners are ever registered on the
+      # same machine: each shard binds fixed ports 8000/8001/8003 and
+      # reuseExistingServer is fail-loud, so two concurrent shards collide.
+      max-parallel: 1
       matrix:
         shard: [1, 2, 3, 4, 5, 6]
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-workspace
-      - uses: actions/cache@v6
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-1.62.1-ubuntu-latest
+      # Persistent self-hosted runner (Linux/X64): browsers survive between
+      # runs, so no actions/cache — its Linux-only path (~/.cache/ms-playwright)
+      # would silently miss on any other OS. install is idempotent (no-op when
+      # browsers exist); --with-deps self-heals system deps on a rebuilt runner.
       - run: pnpm --filter e2e exec playwright install --with-deps chromium
       - run: pnpm --filter e2e e2e --fully-parallel --shard=${{ matrix.shard }}/6
       - uses: actions/upload-artifact@v7
