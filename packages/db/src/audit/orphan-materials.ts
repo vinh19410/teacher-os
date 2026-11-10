@@ -626,7 +626,7 @@ export async function resolveD1DatabaseId(options: {
 	if (!finalProbe.hasSchema) {
 		throw new Error(
 			redactSensitive(
-				`Resolved ${options.stage} D1 database "${match.name}" has no audit tables (lesson_material, holiday_session_shift) — the token/account likely points at a different account or stage than the deployed ${options.stage} environment. Verify CLOUDFLARE_ACCOUNT_ID against the GitHub Environment "${options.stage === "prod" ? "production" : "staging"}".`,
+				`Resolved ${options.stage} D1 database "${match.name}" schema is missing tables required by the audit: has [${finalProbe.presentTables.join(", ") || "none of the audit tables"}], missing [${finalProbe.missingTables.join(", ")}]. Most likely cause: this stage was last deployed before migration 0066_class_materials (2026-11-08, materials domain #663) landed, so the audit population is structurally zero and the audit becomes meaningful only after the next deploy of this stage. If this stage IS deployed post-2026-11-08, verify CLOUDFLARE_ACCOUNT_ID against the GitHub Environment "${options.stage === "prod" ? "production" : "staging"}".`,
 				[options.apiToken],
 			),
 		);
@@ -636,14 +636,20 @@ export async function resolveD1DatabaseId(options: {
 
 /** Probe read-only: DB có đủ 2 bảng audit không. Lỗi probe (403/timeout/HTTP)
  * KHÔNG được nuốt thành "DB trống" — trả `probeError` để message cuối phân
- * biệt `probe-error` với `no-audit-tables` (tránh chẩn đoán sai lệch account). */
+ * biệt `probe-error` với `schema-thiếu` (tránh chẩn đoán sai lệch account). */
 async function hasAuditSchema(options: {
 	accountId: string;
 	databaseId: string;
 	apiToken: string;
 	fetchImpl?: typeof fetch;
 	timeoutMs?: number;
-}): Promise<{ hasSchema: boolean; probeError?: string }> {
+}): Promise<{
+	hasSchema: boolean;
+	presentTables: string[];
+	missingTables: string[];
+	probeError?: string;
+}> {
+	const required = ["lesson_material", "holiday_session_shift"];
 	try {
 		const rows = await d1Query({
 			accountId: options.accountId,
@@ -653,10 +659,17 @@ async function hasAuditSchema(options: {
 			fetchImpl: options.fetchImpl,
 			timeoutMs: options.timeoutMs,
 		});
-		return { hasSchema: rows.length >= 2 };
+		const present = new Set(rows.map((row) => String(row.name)));
+		return {
+			hasSchema: required.every((table) => present.has(table)),
+			presentTables: required.filter((table) => present.has(table)),
+			missingTables: required.filter((table) => !present.has(table)),
+		};
 	} catch (error) {
 		return {
 			hasSchema: false,
+			presentTables: [],
+			missingTables: [...required],
 			probeError: error instanceof Error ? error.message : String(error),
 		};
 	}

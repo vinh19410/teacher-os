@@ -553,7 +553,7 @@ describe("resolveD1DatabaseId", () => {
 		);
 		await expect(
 			resolveD1DatabaseId({ ...D1_BASE, stage: "prod", fetchImpl }),
-		).rejects.toThrow(/no audit tables.*CLOUDFLARE_ACCOUNT_ID/s);
+		).rejects.toThrow(/missing \[lesson_material.*0066_class_materials/s);
 	});
 
 	it("probe lỗi transient (500) → throw probe-failed, KHÔNG ngụy trang thành DB trống", async () => {
