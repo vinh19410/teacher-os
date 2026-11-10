@@ -1007,3 +1007,10 @@ gọi cùng endpoint phải 403 `ACCOUNT_NOT_ADMIN`.
 - **Hướng xử lý sự cố / Rollback an toàn:**
   - Ưu tiên **forward-fix** trên nhánh `>= 0060` (hoặc hủy các `class_study_pack` đang chạy qua UI/API để thu hồi các bài chưa đến giờ mở).
   - Nếu khẩn cấp bắt buộc khôi phục toàn bộ hệ thống về trước `#533` (`0060`), phải khôi phục đồng bộ D1 bằng **D1 Time Travel** về đúng bookmark trước khi chạy `0060` cùng lúc với việc hạ Worker và các bundle frontend.
+
+## Ngân hàng tài liệu & buổi học thủ công (migrations 0065–0068) — issue #644/#649/#655/#663
+
+- **Additive-only:** `0065` thêm cột nullable `student.entry_score`; `0066` tạo `material_folder`, `material`, `lesson_material`; `0067` tạo `class_session` và thêm `class.scheduling_mode` (`DEFAULT 'auto' NOT NULL`); `0068` tạo `syllabus_lesson_material`. Không đổi/xóa cột hay bảng cũ — nguồn sự thật là các file trong `packages/db/src/migrations/`.
+- **Binding bắt buộc:** R2 bucket `materials` (binding `MATERIALS`, xem bảng binding ở "Admin console go-live") được tạo cùng deploy; khi `dry_run` kiểm plan không replace/delete bucket này.
+- **Rollback:** không `DROP` tay các bảng/cột trên D1 khi lùi Worker (sổ cái `d1_migrations` đã ghi nhận, deploy sau sẽ không chạy lại). Ưu tiên forward-fix; Worker cũ không đọc `class_session`/`lesson_material` nên buổi thủ công và tài liệu theo buổi sẽ không hiển thị cho tới khi deploy lại bản mới.
+- **Audit `lesson_material` mồ côi do holiday shift trước fix #659/#662:** chạy tay workflow `.github/workflows/audit-663.yml` (`workflow_dispatch`, chọn `staging`/`prod`; read-only, chỉ in số tổng hợp). Cleanup (`--apply`) không nằm trong workflow — chạy cục bộ theo hướng dẫn ở đầu `packages/db/scripts/audit-663-orphan-materials.ts`, và trên prod chỉ khi owner đã duyệt số liệu audit.

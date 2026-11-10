@@ -16,7 +16,25 @@ Quy ước khi cập nhật:
 - Tooling audit + dọn một lần cho `lesson_material` mồ côi từ activation/attach trước fix #659/#662 (#663): script `packages/db/scripts/audit-663-orphan-materials.ts` chạy được trên libsql local (`--file`) lẫn Cloudflare D1 thật (`--d1 --d1-stage staging|prod`, resolve database fail-closed, phân loại status-aware `manual_total`/`cleanup_eligible` kèm breakdown); cleanup `--apply` ngoài workflow (confirm-gate + dump backup, plan single-use chống replay); workflow `audit-663.yml` workflow_dispatch read-only chạy audit D1 thật qua GitHub Environment, serialize với deploy, có test gate cơ học trong `scripts/ci-workflow.test.mjs`. Log CI chỉ in số tổng hợp (repo public).
 - Lớp manual: badge warn «Nghỉ lễ — Đã dời lịch» trên bucket 0 lesson tại ngày gốc đã bị dời lịch lễ (#665) — tab Buổi học của lớp manual giờ nhận diện được buổi đã dời sang ngày bù ngay cả khi chưa có học viên (không có lesson row nào được đánh `holiday`), thay vì hiển thị «Sắp tới» như buổi dạy thật. Bucket có lesson `holiday` giữ nguyên badge cũ, lớp auto giữ «Dự kiến». Dữ liệu lấy từ `holidayShifts` có sẵn trong kernel snapshot, không thêm API mới.
 
+### Fixed
+- Tài liệu buổi học của lớp manual chưa có học viên không còn 404 (#658): buổi chỉ có dòng `class_session` được coi là buổi thật khi xem/gắn/upload tài liệu; dời buổi kéo `lesson_material` theo thay vì làm tài liệu "biến mất".
+- Holiday shift dời `lesson_material` từ buổi gốc sang buổi bù và dời ngược khi xóa kỳ nghỉ (#645); gắn/upload/gỡ tài liệu vào buổi toàn-holiday trả 409 `SESSION_HOLIDAY`, web ẩn nút "Tài liệu" trên buổi nghỉ.
+- Kích hoạt học viên vào lớp manual có holiday shift kéo `lesson_material` theo ngày bù, cả khi tạo lại lesson sau xóa enrollment; chặn gắn tài liệu vào ngày gốc đã bị dời (#659, #662).
+
+## 2026-11-09
+
+### Added
+- Ngân hàng tài liệu chung theo org (#644): thư mục lồng nhau, file / link ngoài / audio-video, trang `/materials` cho giáo viên; gắn tài liệu vào từng buổi học (chọn từ ngân hàng hoặc upload), học viên xem chỉ đọc trong tab Hành trình học. Migration `0066_class_materials`, bucket R2 private `materials` (binding `MATERIALS`; thiếu binding thì route file trả 503 `MATERIALS_DISABLED`). Giới hạn 25 MB tài liệu, 100 MB audio/video.
+- Lớp chưa có giáo trình (#649): ẩn 12 buổi chiếu trước rỗng, thêm empty state và modal «Thêm buổi học» thủ công (prefill ngày/giờ theo lịch tuần), xóa buổi chưa điểm danh. Bảng `class_session` (migration `0067`) là nguồn buổi cấp lớp, tự sinh `lesson` cho học viên active và khi kích hoạt học viên mới.
+- Chọn tài liệu (ngân hàng hoặc upload) ngay khi tạo buổi manual và bài trong giáo trình (#655); tài liệu của bài giáo trình hiện ở buổi thật tương ứng của lớp (mục "Từ giáo trình", chỉ đọc). Bảng `syllabus_lesson_material` (migration `0068`), tối đa 20 tài liệu mỗi buổi.
+
+### CI/Infra
+- `design:compare` sửa locator đăng nhập học viên khớp 2 nút (#654).
+
 ## 2026-11-08
+
+### Added
+- Điểm đầu vào nhập tự do cho học viên (#641): giáo viên nhập ở modal thêm học viên / ghi danh, học viên khai ở bước trình độ của onboarding, hiển thị ở hồ sơ. Cột `student.entry_score` (migration `0065`).
 
 ### CI/Infra
 - Staging tự deploy khi push/merge vào `develop` thay vì nhánh `staging`: `deploy-staging.yml` trigger `push.branches: [develop]`, bỏ bước `git push origin develop:staging`; nhánh `staging` không còn kích hoạt deploy.
