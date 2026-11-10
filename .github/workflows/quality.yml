@@ -24,7 +24,7 @@ env:
 
 jobs:
   checks:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
@@ -53,7 +53,7 @@ jobs:
         run: if [ -d .turbo/cache ]; then find .turbo/cache -type f -mtime +7 -delete; fi
 
   test-web:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
@@ -80,7 +80,7 @@ jobs:
         run: if [ -d .turbo/cache ]; then find .turbo/cache -type f -mtime +7 -delete; fi
 
   test-server:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
@@ -109,7 +109,7 @@ jobs:
         run: if [ -d .turbo/cache ]; then find .turbo/cache -type f -mtime +7 -delete; fi
 
   test-workspace:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
