@@ -1169,6 +1169,18 @@ describe("material bank and session materials", () => {
 			(await json(beforePath, "POST", { materialId: link.id })).status,
 		).toBe(201);
 
+		// Link mồ côi sẵn ở ngày đích (materialId KHÁC nguồn — dạng #659):
+		// move không được xoá tài liệu không liên quan (kongming checkpoint
+		// review PR: double-submit/bucketMoved không được biến delete đích
+		// thành xoá tài liệu vừa dời).
+		const orphanAtDest = await createLink("Mồ côi tại đích");
+		await db.insert(schema.lessonMaterial).values({
+			orgId: "org-1",
+			classId: "class-manual-2",
+			date: "2026-11-21",
+			materialId: orphanAtDest.id,
+		});
+
 		// Dời buổi manual qua route occurrence edit (pattern test "moving a
 		// session date carries its materials along").
 		const move = await json(
@@ -1182,7 +1194,10 @@ describe("material bank and session materials", () => {
 		const moved = (await (await get(movedPath)).json()) as {
 			items: LessonMaterialView[];
 		};
-		expect(moved.items.map((i) => i.id)).toEqual([link.id]);
+		// Tài liệu nguồn dời sang đích; link mồ côi có sẵn ở đích giữ nguyên.
+		expect(moved.items.map((i) => i.id).sort()).toEqual(
+			[link.id, orphanAtDest.id].sort(),
+		);
 		expect((await get(beforePath)).status).toBe(404);
 		// Dòng link KHÔNG còn ở ngày cũ — gỡ ở ngày cũ phải 404 (chứng minh
 		// lesson_material đã dời theo buổi, không mồ côi lại chỗ cũ).

@@ -2225,8 +2225,9 @@ export function kernelRoutes(deps: {
 				// theo, nhưng CHỈ khi bucket thật sự đã dời (ngày gốc hết dòng
 				// lesson, ngày đích có dòng lesson hoặc class_session — #658:
 				// buổi manual 0 học viên không có dòng lesson) — thua race thì
-				// giữ nguyên. Liên kết mồ côi ở ngày đích (bucket đích trống đã
-				// kiểm ở trên) bị dọn trước để không đụng khoá chính.
+				// giữ nguyên. Câu dọn đích phía dưới chỉ xoá materialId trùng
+				// ngày gốc (tránh đụng khoá chính), không xoá link mồ côi khác
+				// ở đích.
 				const bucketMoved = and(
 					sql`not exists (select 1 from ${lesson} where ${lesson.orgId} = ${ctx.orgId} and ${lesson.classId} = ${classId} and ${lesson.date} = ${dateISO})`,
 					or(
@@ -2266,6 +2267,14 @@ export function kernelRoutes(deps: {
 									eq(holidaySessionShift.makeupDate, dateISO),
 								),
 							),
+						// #658: dọn đích CHỈ ở mức cần tránh đụng khoá chính
+						// `lesson_material_pk (classId, date, materialId)` — xoá dòng
+						// đích có materialId TRÙNG với ngày gốc. Không gate theo
+						// `bucketMoved`: double-submit dời cùng D→X — batch sau
+						// khớp 0 dòng ở gốc nhưng `bucketMoved` vẫn đúng (X đã có
+						// class_session do batch trước) và sẽ xoá mất tài liệu vừa
+						// dời. MaterialId khác nguồn (link mồ côi ở đích) được giữ
+						// nguyên — move không được xoá tài liệu không liên quan.
 						db
 							.delete(lessonMaterial)
 							.where(
@@ -2273,7 +2282,7 @@ export function kernelRoutes(deps: {
 									eq(lessonMaterial.orgId, ctx.orgId),
 									eq(lessonMaterial.classId, classId),
 									eq(lessonMaterial.date, moveDateISO),
-									bucketMoved,
+									sql`${lessonMaterial.materialId} in (select material_id from ${lessonMaterial} where ${lessonMaterial.orgId} = ${ctx.orgId} and ${lessonMaterial.classId} = ${classId} and ${lessonMaterial.date} = ${dateISO})`,
 								),
 							),
 						db
