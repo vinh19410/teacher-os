@@ -37,7 +37,7 @@ afterEach(() => {
 });
 
 describe("prepareMaterialUpload", () => {
-	it("accepts allowlisted files and resolves the MIME from the extension", () => {
+	it("accepts allowlisted files and resolves MIME from extension/browser aliases", () => {
 		expect(prepareMaterialUpload(fileOf("de-thi.pdf", "", 1000))).toEqual({
 			ok: true,
 			mimeType: "application/pdf",
@@ -45,12 +45,36 @@ describe("prepareMaterialUpload", () => {
 		expect(
 			prepareMaterialUpload(fileOf("nghe.m4a", "audio/x-m4a", 1000)),
 		).toEqual({ ok: true, mimeType: "audio/mp4" });
+		expect(
+			prepareMaterialUpload(
+				fileOf("bai-giang.mp4", "application/octet-stream", 1000),
+			),
+		).toEqual({ ok: true, mimeType: "video/mp4" });
+		expect(
+			prepareMaterialUpload(fileOf("nghe-win.m4a", "video/mp4", 1000)),
+		).toEqual({ ok: true, mimeType: "audio/mp4" });
+		expect(
+			prepareMaterialUpload(
+				fileOf("giao-an.docx", "application/x-zip-compressed", 1000),
+			),
+		).toEqual({
+			ok: true,
+			mimeType:
+				"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+		});
 	});
 
-	it("rejects unsupported types before anything is sent", () => {
-		const prep = prepareMaterialUpload(fileOf("trang.html", "text/html", 10));
-		expect(prep.ok).toBe(false);
-		if (!prep.ok) expect(prep.message).toMatch(/Định dạng chưa hỗ trợ/);
+	it("rejects unsupported types, spoofed browser types, unknown extensions, and dotfiles before sending", () => {
+		for (const bad of [
+			fileOf("trang.html", "text/html", 10),
+			fileOf("spoof.mp3", "text/html", 100),
+			fileOf("a.bin", "application/pdf", 100),
+			fileOf("..pdf", "application/pdf", 100),
+		]) {
+			const prep = prepareMaterialUpload(bad);
+			expect(prep.ok).toBe(false);
+			if (!prep.ok) expect(prep.message).toMatch(/Định dạng chưa hỗ trợ/);
+		}
 	});
 
 	it("rejects empty and oversized files with the per-kind cap", () => {

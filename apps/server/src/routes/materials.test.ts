@@ -123,8 +123,41 @@ function createMemoryStore() {
 	return { store, objects, failures };
 }
 
-function bytesOf(length: number, fill = 7): Uint8Array {
-	return new Uint8Array(length).fill(fill);
+function pdfFixture(tail: readonly number[] = []): Uint8Array {
+	const head = [0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34];
+	const out = new Uint8Array(head.length + tail.length);
+	out.set(head, 0);
+	out.set(tail, head.length);
+	return out;
+}
+
+function zipFixture(): Uint8Array {
+	const out = new Uint8Array(31);
+	out.set([0x50, 0x4b, 0x03, 0x04, 20, 0, 0, 0, 0, 0]);
+	out[26] = 1;
+	out[30] = 0x61;
+	return out;
+}
+
+function mp3Id3Fixture(): Uint8Array {
+	return new Uint8Array([0x49, 0x44, 0x33, 4, 0, 0, 0, 0, 0, 10]);
+}
+
+function mp4Fixture(): Uint8Array {
+	return new Uint8Array([
+		0, 0, 0, 16, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d, 0, 0, 0, 0,
+	]);
+}
+
+function defaultFixtureFor(mimeType: string): Uint8Array {
+	if (mimeType.startsWith("application/vnd.openxmlformats-officedocument.")) {
+		return zipFixture();
+	}
+	if (mimeType === "audio/mpeg") return mp3Id3Fixture();
+	if (mimeType === "audio/mp4" || mimeType === "video/mp4") {
+		return mp4Fixture();
+	}
+	return pdfFixture();
 }
 
 describe("material bank and session materials", () => {
@@ -327,13 +360,14 @@ describe("material bank and session materials", () => {
 			target?: ServerApp;
 		} = {},
 	) {
-		const bytes = options.bytes ?? bytesOf(8);
+		const mimeType = options.type ?? PDF;
+		const bytes = options.bytes ?? defaultFixtureFor(mimeType);
 		return (options.target ?? app).request(path, {
 			method: "PUT",
 			headers: {
 				"x-test-user": options.user ?? "teacher-1",
 				Origin: TEACHER_ORIGIN,
-				"Content-Type": options.type ?? PDF,
+				"Content-Type": mimeType,
 				"Content-Length": options.length ?? String(bytes.byteLength),
 				"X-File-Name": encodeURIComponent(options.name ?? "Unit 1.pdf"),
 			},
@@ -855,7 +889,7 @@ describe("material bank and session materials", () => {
 			(await upload("/api/materials/files", { target: appNoStore })).status,
 		).toBe(503);
 
-		const bytes = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+		const bytes = mp3Id3Fixture();
 		const res = await upload("/api/materials/files", {
 			bytes,
 			type: "audio/mpeg",
@@ -908,7 +942,7 @@ describe("material bank and session materials", () => {
 			"allow-scripts",
 		);
 		expect(new Uint8Array(await partial.arrayBuffer())).toEqual(
-			new Uint8Array([3, 4, 5]),
+			new Uint8Array([0x33, 4, 0]),
 		);
 		const unsatisfiable = await get(
 			`/api/materials/${created.id}/file`,
@@ -1125,7 +1159,7 @@ describe("material bank and session materials", () => {
 			(await (
 				await upload("/api/materials/files", {
 					name: "Worksheet.pdf",
-					bytes: new Uint8Array([9, 8, 7]),
+					bytes: pdfFixture([9, 8, 7]),
 				})
 			).json()) as { material: MaterialView }
 		).material;
@@ -1172,7 +1206,7 @@ describe("material bank and session materials", () => {
 			"default-src 'none'; frame-ancestors 'none'; sandbox",
 		);
 		expect(new Uint8Array(await download.arrayBuffer())).toEqual(
-			new Uint8Array([9, 8, 7]),
+			pdfFixture([9, 8, 7]),
 		);
 		// Material not attached to this session, or a link: 404.
 		expect(
@@ -1285,7 +1319,7 @@ describe("material bank and session materials", () => {
 		const uploadBody = (await (
 			await upload("/api/materials/files", {
 				name: "GT Worksheet.pdf",
-				bytes: new Uint8Array([5, 6]),
+				bytes: pdfFixture([5, 6]),
 			})
 		).json()) as { material: MaterialView };
 		const bankFile = uploadBody.material;
@@ -1348,7 +1382,7 @@ describe("material bank and session materials", () => {
 		const download = await get(`${curPath}/${bankFile.id}/file`, "student-1");
 		expect(download.status).toBe(200);
 		expect(new Uint8Array(await download.arrayBuffer())).toEqual(
-			new Uint8Array([5, 6]),
+			pdfFixture([5, 6]),
 		);
 		// Link giáo trình không có file (như link direct).
 		expect(
@@ -1990,6 +2024,274 @@ describe("material bank and session materials", () => {
 				expect(res.status, `combo ${JSON.stringify(combo)}`).toBe(combo.expect);
 			}
 		});
+	});
+
+	test("upload validates filename extension against Content-Type and verifies magic bytes before storing (#676)", async () => {
+		const before = memory.objects.size;
+		const htmlBytes = new TextEncoder().encode(
+			"<!doctype html><html><script>alert(1)</script></html>",
+		);
+
+		// 1. Extension mismatch: Content-Type audio/mpeg + X-File-Name payload.html -> 415, body canceled, 0 stored
+		let extRejectCanceled = false;
+		const extRejectStream = new ReadableStream<Uint8Array>({
+			start(controller) {
+				controller.enqueue(htmlBytes);
+				controller.close();
+			},
+			cancel() {
+				extRejectCanceled = true;
+			},
+		});
+		const extReject = await app.request("/api/materials/files", {
+			method: "PUT",
+			headers: {
+				"x-test-user": "teacher-1",
+				Origin: TEACHER_ORIGIN,
+				"Content-Type": "audio/mpeg",
+				"Content-Length": String(htmlBytes.byteLength),
+				"X-File-Name": encodeURIComponent("payload.html"),
+			},
+			body: extRejectStream,
+			duplex: "half",
+		} as RequestInit);
+		expect(extReject.status).toBe(415);
+		await expect(extReject.json()).resolves.toMatchObject({
+			code: "UNSUPPORTED_FILE_TYPE",
+		});
+		expect(extRejectCanceled).toBe(true);
+		expect(memory.objects.size).toBe(before);
+
+		// 2. Cross-allowed mismatch: audio/mpeg + lesson.pdf (with valid PDF bytes) -> 415
+		const crossMismatch = await upload("/api/materials/files", {
+			type: "audio/mpeg",
+			name: "lesson.pdf",
+			bytes: pdfFixture(),
+		});
+		expect(crossMismatch.status).toBe(415);
+		await expect(crossMismatch.json()).resolves.toMatchObject({
+			code: "UNSUPPORTED_FILE_TYPE",
+		});
+
+		// 3. Matching extension (.mp3 / .mp4) with spoofed HTML, UTF-16LE BOM HTML, ID3<html>, and <!--ftyp--> polyglots -> 415
+		let magicRejectCanceled = false;
+		const magicRejectStream = new ReadableStream<Uint8Array>(
+			{
+				pull(controller) {
+					controller.enqueue(htmlBytes);
+				},
+				cancel() {
+					magicRejectCanceled = true;
+				},
+			},
+			{ highWaterMark: 0 },
+		);
+		const spoofMp3 = await app.request("/api/materials/files", {
+			method: "PUT",
+			headers: {
+				"x-test-user": "teacher-1",
+				Origin: TEACHER_ORIGIN,
+				"Content-Type": "audio/mpeg",
+				"Content-Length": String(htmlBytes.byteLength * 10),
+				"X-File-Name": encodeURIComponent("spoof.mp3"),
+			},
+			body: magicRejectStream,
+			duplex: "half",
+		} as RequestInit);
+		expect(spoofMp3.status).toBe(415);
+		await expect(spoofMp3.json()).resolves.toMatchObject({
+			code: "UNSUPPORTED_FILE_TYPE",
+		});
+		expect(magicRejectCanceled).toBe(true);
+
+		const utf16BomHtml = new Uint8Array([
+			0xff, 0xfe, 0x20, 0x00, 0x3c, 0x00, 0x68, 0x00, 0x74, 0x00, 0x6d, 0x00,
+		]);
+		expect(
+			(
+				await upload("/api/materials/files", {
+					type: "audio/mpeg",
+					name: "utf16-bom.mp3",
+					bytes: utf16BomHtml,
+				})
+			).status,
+		).toBe(415);
+		expect(
+			(
+				await upload("/api/materials/files", {
+					type: "audio/mpeg",
+					name: "id3-html.mp3",
+					bytes: new TextEncoder().encode("ID3<html><script>alert(1)</script>"),
+				})
+			).status,
+		).toBe(415);
+		expect(
+			(
+				await upload("/api/materials/files", {
+					type: "video/mp4",
+					name: "comment-polyglot.mp4",
+					bytes: new TextEncoder().encode(
+						"<!--ftyp--><html><script>alert(1)</script></html>",
+					),
+				})
+			).status,
+		).toBe(415);
+
+		// 4. Session upload route also enforces magic bytes and writes neither object nor lesson_material
+		const sessionBefore = (
+			await db
+				.select()
+				.from(schema.lessonMaterial)
+				.where(
+					and(
+						eq(schema.lessonMaterial.classId, "class-1"),
+						eq(schema.lessonMaterial.date, SESSION_DATE),
+					),
+				)
+		).length;
+		const spoofSessionPdf = await upload(`${sessionPath()}/files`, {
+			type: "application/pdf",
+			name: "fake.pdf",
+			bytes: htmlBytes,
+		});
+		expect(spoofSessionPdf.status).toBe(415);
+		await expect(spoofSessionPdf.json()).resolves.toMatchObject({
+			code: "UNSUPPORTED_FILE_TYPE",
+		});
+		const sessionAfter = (
+			await db
+				.select()
+				.from(schema.lessonMaterial)
+				.where(
+					and(
+						eq(schema.lessonMaterial.classId, "class-1"),
+						eq(schema.lessonMaterial.date, SESSION_DATE),
+					),
+				)
+		).length;
+		expect(sessionAfter).toBe(sessionBefore);
+		expect(memory.objects.size).toBe(before);
+
+		// 5. Lying Content-Length (both <=64B Slowloris hang attempt and >64B through store.put) -> 400 INVALID_FILE
+		const slowlorisGate = Promise.withResolvers<void>();
+		let sent11 = false;
+		const slowlorisBody = new ReadableStream<Uint8Array>({
+			async pull(controller) {
+				if (!sent11) {
+					sent11 = true;
+					controller.enqueue(pdfFixture([1, 2, 3])); // 11 bytes (> declared 10)
+					return;
+				}
+				await slowlorisGate.promise;
+				controller.close();
+			},
+			cancel() {
+				slowlorisGate.resolve();
+			},
+		});
+		const slowlorisRes = await app.request("/api/materials/files", {
+			method: "PUT",
+			headers: {
+				"x-test-user": "teacher-1",
+				Origin: TEACHER_ORIGIN,
+				"Content-Type": PDF,
+				"Content-Length": "10",
+				"X-File-Name": encodeURIComponent("slow.pdf"),
+			},
+			body: slowlorisBody,
+			duplex: "half",
+		} as RequestInit);
+		expect(slowlorisRes.status).toBe(400);
+		await expect(slowlorisRes.json()).resolves.toMatchObject({
+			code: "INVALID_FILE",
+		});
+
+		const valid150Pdf = pdfFixture(new Array<number>(142).fill(0x20));
+		const shortPostPeek = await upload("/api/materials/files", {
+			type: PDF,
+			name: "short-large.pdf",
+			bytes: valid150Pdf,
+			length: "300",
+		});
+		expect(shortPostPeek.status).toBe(400);
+		const longPostPeek = await upload("/api/materials/files", {
+			type: PDF,
+			name: "long-large.pdf",
+			bytes: valid150Pdf,
+			length: "100",
+		});
+		expect(longPostPeek.status).toBe(400);
+		await settle();
+		expect(memory.objects.size).toBe(before);
+
+		// 6. Positive formats (.jpeg, .png, .webp, .m4a, raw MPEG Layer III .mp3) & 1-byte chunked stream -> 201
+		for (const validCase of [
+			{
+				name: "photo.jpeg",
+				type: "image/jpeg",
+				bytes: new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]),
+			},
+			{
+				name: "diagram.png",
+				type: "image/png",
+				bytes: new Uint8Array([
+					0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0,
+				]),
+			},
+			{
+				name: "poster.webp",
+				type: "image/webp",
+				bytes: new TextEncoder().encode("RIFF$\x00\x00\x00WEBPVP8 "),
+			},
+			{
+				name: "voice.m4a",
+				type: "audio/mp4",
+				bytes: mp4Fixture(),
+			},
+			{
+				name: "frame.mp3",
+				type: "audio/mpeg",
+				bytes: new Uint8Array([0xff, 0xfb, 0x90, 0x64, 0x00, 0x01]),
+			},
+		]) {
+			const okRes = await upload("/api/materials/files", validCase);
+			expect(okRes.status, validCase.name).toBe(201);
+		}
+
+		const chunkedPdf = pdfFixture(
+			Array.from({ length: 112 }, (_, idx) => idx & 0xff),
+		);
+		let offset = 0;
+		const oneByteStream = new ReadableStream<Uint8Array>({
+			pull(controller) {
+				if (offset >= chunkedPdf.byteLength) {
+					controller.close();
+					return;
+				}
+				controller.enqueue(chunkedPdf.subarray(offset, offset + 1));
+				offset += 1;
+			},
+		});
+		const chunkedRes = await app.request("/api/materials/files", {
+			method: "PUT",
+			headers: {
+				"x-test-user": "teacher-1",
+				Origin: TEACHER_ORIGIN,
+				"Content-Type": PDF,
+				"Content-Length": String(chunkedPdf.byteLength),
+				"X-File-Name": encodeURIComponent("chunked.pdf"),
+			},
+			body: oneByteStream,
+			duplex: "half",
+		} as RequestInit);
+		expect(chunkedRes.status).toBe(201);
+		const chunkedBody = (await chunkedRes.json()) as { material: MaterialView };
+		const downloadedChunked = await get(
+			`/api/materials/${chunkedBody.material.id}/file`,
+		);
+		expect(new Uint8Array(await downloadedChunked.arrayBuffer())).toEqual(
+			chunkedPdf,
+		);
 	});
 });
 
