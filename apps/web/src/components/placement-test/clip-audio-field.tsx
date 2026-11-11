@@ -1,3 +1,4 @@
+import { resolveLibraryAudioMimeType } from "@teacher-os/api/lib/quiz-media";
 import { LIBRARY_AUDIO_MIME } from "@teacher-os/api/library-contracts";
 import {
 	PLACEMENT_AUDIO_MAX_BYTES,
@@ -9,12 +10,62 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
 	fetchAudioBlobUrl,
+	isPlacementHttpError,
 	type UploadedPlacementAudio,
 	uploadAudio,
 } from "@/lib/repos/placement-test";
 
-const ACCEPT_AUDIO = Object.keys(LIBRARY_AUDIO_MIME).join(",");
+const ACCEPT_AUDIO = [
+	...Object.keys(LIBRARY_AUDIO_MIME),
+	".mp3",
+	".m4a",
+	".aac",
+	".wav",
+	".wave",
+	".ogg",
+	".oga",
+	".opus",
+	".webm",
+	".weba",
+].join(",");
 
+export function preparePlacementAudioFile(
+	file: File,
+): { ok: true; mimeType: string } | { ok: false; message: string } {
+	const mimeType = resolveLibraryAudioMimeType(file.name, file.type);
+	if (!mimeType) {
+		return {
+			ok: false,
+			message: "Định dạng file âm thanh không được hỗ trợ.",
+		};
+	}
+	if (file.size <= 0) {
+		return { ok: false, message: "File âm thanh rỗng." };
+	}
+	if (file.size > PLACEMENT_AUDIO_MAX_BYTES) {
+		return {
+			ok: false,
+			message: "Dung lượng file âm thanh không được vượt quá 20 MB.",
+		};
+	}
+	return { ok: true, mimeType };
+}
+
+export function placementAudioErrorMessage(error: unknown): string {
+	if (isPlacementHttpError(error)) {
+		if (error.code === "UNSUPPORTED_AUDIO_TYPE" || error.status === 415) {
+			return "Định dạng file âm thanh không được hỗ trợ.";
+		}
+		if (error.code === "AUDIO_TOO_LARGE" || error.status === 413) {
+			return "Dung lượng file âm thanh không được vượt quá 20 MB.";
+		}
+		if (error.code === "INVALID_AUDIO" || error.status === 400) {
+			return "File âm thanh không hợp lệ.";
+		}
+		return error.message;
+	}
+	return error instanceof Error ? error.message : "Tải audio lên thất bại.";
+}
 function formatBytes(bytes: number): string {
 	if (bytes < 1024) return `${bytes} B`;
 	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -64,13 +115,9 @@ export function ClipAudioField({
 		e.target.value = "";
 		if (!file) return;
 
-		const mime = file.type || "audio/mpeg";
-		if (!Object.hasOwn(LIBRARY_AUDIO_MIME, mime)) {
-			toast.error("Định dạng file âm thanh không được hỗ trợ.");
-			return;
-		}
-		if (file.size <= 0 || file.size > PLACEMENT_AUDIO_MAX_BYTES) {
-			toast.error("Dung lượng file âm thanh không được vượt quá 20 MB.");
+		const prepared = preparePlacementAudioFile(file);
+		if (!prepared.ok) {
+			toast.error(prepared.message);
 			return;
 		}
 
@@ -80,15 +127,13 @@ export function ClipAudioField({
 			const uploaded = await uploadAudio({
 				file,
 				fileName: file.name,
-				type: mime,
+				type: prepared.mimeType,
 				onProgress: (fraction) => setProgress(Math.round(fraction * 100)),
 			});
 			onUploaded(uploaded);
 			toast.success(`Đã tải lên audio "${uploaded.name}"`);
 		} catch (error) {
-			toast.error(
-				error instanceof Error ? error.message : "Tải audio lên thất bại.",
-			);
+			toast.error(placementAudioErrorMessage(error));
 		} finally {
 			setUploading(false);
 			setProgress(null);

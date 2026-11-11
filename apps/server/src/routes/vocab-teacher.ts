@@ -12,7 +12,14 @@ import {
 	vocabWordRemoveSchema,
 	vocabWordUpsertSchema,
 } from "@teacher-os/api/contracts";
-import { normalizeMediaType } from "@teacher-os/api/lib/quiz-media";
+import {
+	libraryAudioExtensionMatches,
+	matchesLibraryAudioMagic,
+	normalizeMediaType,
+	QUIZ_MEDIA_MAGIC_PEEK_BYTES,
+	sanitizeMediaFileName,
+} from "@teacher-os/api/lib/quiz-media";
+import { LIBRARY_AUDIO_MIME } from "@teacher-os/api/library-contracts";
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import {
 	classTable,
@@ -23,13 +30,14 @@ import {
 	vocabSuggestion,
 	vocabWord,
 } from "@teacher-os/db/schema/index";
-import { and, asc, eq, gte, sql } from "drizzle-orm";
+import { and, asc, eq, gte, isNull, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
 import { mediaObjectResponse } from "../lib/media-response";
 import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
+import { type PeekedStream, peekStream } from "../lib/peek-stream";
 import {
 	loadStudentAccessibleDecks,
 	loadWordsAndCardsForAccessibleDecks,
@@ -37,18 +45,6 @@ import {
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type VocabTeacherContext = Context<Env>;
-
-const ALLOWED_AUDIO_MIMES: Record<string, true> = {
-	"audio/mpeg": true,
-	"audio/mp3": true,
-	"audio/mp4": true,
-	"audio/x-m4a": true,
-	"audio/aac": true,
-	"audio/wav": true,
-	"audio/x-wav": true,
-	"audio/webm": true,
-	"audio/ogg": true,
-};
 
 /**
  * Teacher vocabulary CRUD & audio upload sub-router (#359).
@@ -750,7 +746,11 @@ export function vocabTeacherRoutes(deps: {
 
 	/**
 	 * PUT /words/:wordId/audio — uploads word pronunciation audio to MediaStore
-	 * and sets server-generated key `vocab/{orgId}/{wordId}/{uuid}` (red-team F3).
+	 * and sets server-generated key `vocab/{orgId}/{wordId}/{uuid}` (red-team
+	 * F3). #681: bắt buộc `X-File-Name`, chuẩn hoá `audio/mp3` → `audio/mpeg`,
+	 * đối chiếu đuôi file với Content-Type và kiểm chữ ký magic-byte 64 byte
+	 * đầu trước khi ghi kho; CAS theo key cũ — thua CAS/DB lỗi đều dọn object
+	 * mới, không rò rỉ object mồ côi.
 	 */
 	routes.put("/words/:wordId/audio", async (c) => {
 		const ctx = c.get("kernelCtx");
@@ -767,20 +767,47 @@ export function vocabTeacherRoutes(deps: {
 				? Number(lengthHeader)
 				: Number.NaN;
 		if (!Number.isSafeInteger(size)) {
+			await c.req.raw.body?.cancel().catch(() => undefined);
 			return c.json({ error: "length required" }, 411);
 		}
 		if (size === 0) {
+			await c.req.raw.body?.cancel().catch(() => undefined);
 			return c.json({ error: "empty file" }, 400);
 		}
 		if (size > QUIZ_MEDIA_MAX_BYTES) {
+			await c.req.raw.body?.cancel().catch(() => undefined);
 			return c.json({ error: "payload too large" }, 413);
 		}
 
-		const contentType = normalizeMediaType(c.req.header("Content-Type") ?? "");
-		if (
-			!contentType.startsWith("audio/") ||
-			!Object.hasOwn(ALLOWED_AUDIO_MIMES, contentType)
-		) {
+		const rawType = normalizeMediaType(c.req.header("Content-Type") ?? "");
+		const contentType = rawType === "audio/mp3" ? "audio/mpeg" : rawType;
+		if (!Object.hasOwn(LIBRARY_AUDIO_MIME, contentType)) {
+			await c.req.raw.body?.cancel().catch(() => undefined);
+			return c.json(
+				{
+					error: "unsupported audio type",
+					code: VOCAB_ERROR_CODES.INVALID_AUDIO,
+				},
+				415,
+			);
+		}
+		let name: string | null = null;
+		try {
+			name = sanitizeMediaFileName(
+				decodeURIComponent(c.req.header("X-File-Name") ?? ""),
+			);
+		} catch {
+			name = null;
+		}
+		if (name === null) {
+			await c.req.raw.body?.cancel().catch(() => undefined);
+			return c.json(
+				{ error: "invalid file name", code: VOCAB_ERROR_CODES.INVALID_AUDIO },
+				400,
+			);
+		}
+		if (!libraryAudioExtensionMatches(name, contentType)) {
+			await c.req.raw.body?.cancel().catch(() => undefined);
 			return c.json(
 				{
 					error: "unsupported audio type",
@@ -802,6 +829,7 @@ export function vocabTeacherRoutes(deps: {
 			.limit(1);
 
 		if (!wordRow) {
+			await c.req.raw.body?.cancel().catch(() => undefined);
 			return c.json(
 				{ error: "word not found", code: VOCAB_ERROR_CODES.WORD_NOT_FOUND },
 				404,
@@ -813,27 +841,103 @@ export function vocabTeacherRoutes(deps: {
 			return c.json({ error: "empty file" }, 400);
 		}
 
-		const newKey = `vocab/${ctx.orgId}/${wordId}/${crypto.randomUUID()}`;
+		// #681: đọc sớm tối đa 64 byte đầu (không đệm RAM) kiểm chữ ký nhị
+		// phân chống polyglot trước khi ghi kho.
+		let peeked: PeekedStream;
 		try {
-			await store.put(newKey, body, { contentType, size });
+			peeked = await peekStream(
+				body,
+				Math.min(QUIZ_MEDIA_MAGIC_PEEK_BYTES, size + 1),
+			);
 		} catch (error) {
+			console.error("[vocab-teacher] audio upload stream failed", { error });
+			return c.json({ error: "upload failed" }, 500);
+		}
+		if (
+			(peeked.ended && peeked.readBytes !== size) ||
+			peeked.readBytes > size
+		) {
+			await peeked.abort("size mismatch");
+			return c.json(
+				{ error: "size mismatch", code: VOCAB_ERROR_CODES.INVALID_AUDIO },
+				400,
+			);
+		}
+		if (!matchesLibraryAudioMagic(contentType, peeked.head, size)) {
+			await peeked.abort("unsupported audio type");
+			return c.json(
+				{
+					error: "unsupported audio type",
+					code: VOCAB_ERROR_CODES.INVALID_AUDIO,
+				},
+				415,
+			);
+		}
+
+		const oldKey = wordRow.audioKey;
+		const newKey = `vocab/${ctx.orgId}/${wordId}/${crypto.randomUUID()}`;
+		const discardNew = async () => {
 			await store.delete(newKey).catch(() => undefined);
+		};
+		try {
+			await store.put(newKey, peeked.stream, { contentType, size });
+		} catch (error) {
+			await peeked.abort("store error");
+			await discardNew();
 			if (error instanceof MediaSizeMismatchError) {
-				return c.json({ error: "size mismatch" }, 400);
+				return c.json(
+					{ error: "size mismatch", code: VOCAB_ERROR_CODES.INVALID_AUDIO },
+					400,
+				);
 			}
 			throw error;
 		}
 
-		await db
-			.update(vocabWord)
-			.set({
-				audioKey: newKey,
-				updatedAt: new Date(),
-			})
-			.where(eq(vocabWord.id, wordId));
+		// CAS theo key cũ: 0 dòng cập nhật nghĩa là word đã bị xoá giữa chừng
+		// hoặc audio vừa bị tab khác thay — dọn object mới, không rò rỉ.
+		let updated: { id: string }[];
+		try {
+			updated = await db
+				.update(vocabWord)
+				.set({
+					audioKey: newKey,
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(vocabWord.id, wordId),
+						oldKey === null
+							? isNull(vocabWord.audioKey)
+							: eq(vocabWord.audioKey, oldKey),
+					),
+				)
+				.returning({ id: vocabWord.id });
+		} catch (error) {
+			await discardNew();
+			throw error;
+		}
+		if (updated.length === 0) {
+			await discardNew();
+			const [reread] = await db
+				.select({ id: vocabWord.id })
+				.from(vocabWord)
+				.innerJoin(vocabDeck, eq(vocabWord.deckId, vocabDeck.id))
+				.where(and(eq(vocabWord.id, wordId), eq(vocabDeck.orgId, ctx.orgId)))
+				.limit(1);
+			if (!reread) {
+				return c.json(
+					{ error: "word not found", code: VOCAB_ERROR_CODES.WORD_NOT_FOUND },
+					404,
+				);
+			}
+			return c.json(
+				{ error: "audio changed", code: VOCAB_ERROR_CODES.INVALID_AUDIO },
+				409,
+			);
+		}
 
-		if (wordRow.audioKey) {
-			await store.delete(wordRow.audioKey).catch(() => undefined);
+		if (oldKey) {
+			await store.delete(oldKey).catch(() => undefined);
 		}
 
 		return c.json({ id: wordId, audioKey: newKey });

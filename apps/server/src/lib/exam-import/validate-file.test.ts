@@ -1,17 +1,47 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "vitest";
+import { jpegBytes, pngBytes } from "../../lib/test-media-fixtures";
 import { buildExamPdf } from "./make-pdf";
 import { inspectExamFile } from "./validate-file";
 
-describe("inspectExamFile (TOS-27 D1)", () => {
-	test("ảnh PNG/JPEG tính 1 trang — không parse", async () => {
+describe("inspectExamFile (TOS-27 D1 + #681)", () => {
+	test("ảnh PNG/JPEG thật tính 1 trang — không parse (#681)", async () => {
+		await expect(
+			inspectExamFile(pngBytes(64).buffer as ArrayBuffer, "image/png"),
+		).resolves.toEqual({ ok: true, pageCount: 1 });
+		await expect(
+			inspectExamFile(jpegBytes(64).buffer as ArrayBuffer, "image/jpeg"),
+		).resolves.toEqual({ ok: true, pageCount: 1 });
+	});
+
+	test("ảnh PNG/JPEG rỗng, giả mạo HTML hoặc MIME lạ → fail-closed reason type (#681)", async () => {
 		await expect(
 			inspectExamFile(new ArrayBuffer(8), "image/png"),
-		).resolves.toEqual({ ok: true, pageCount: 1 });
+		).resolves.toEqual({ ok: false, reason: "type" });
 		await expect(
 			inspectExamFile(new ArrayBuffer(8), "image/jpeg"),
-		).resolves.toEqual({ ok: true, pageCount: 1 });
+		).resolves.toEqual({ ok: false, reason: "type" });
+		const html = new TextEncoder().encode(
+			"<!doctype html><html><script>alert(1)</script></html>",
+		);
+		await expect(
+			inspectExamFile(html.buffer as ArrayBuffer, "image/png"),
+		).resolves.toEqual({ ok: false, reason: "type" });
+		await expect(
+			inspectExamFile(
+				new Uint8Array([
+					0xff,
+					0xd8,
+					0xff,
+					...new TextEncoder().encode("<html><script>alert(1)</script>"),
+				]).buffer as ArrayBuffer,
+				"image/jpeg",
+			),
+		).resolves.toEqual({ ok: false, reason: "type" });
+		await expect(
+			inspectExamFile(pngBytes(64).buffer as ArrayBuffer, "text/html"),
+		).resolves.toEqual({ ok: false, reason: "type" });
 	});
 
 	test("PDF hợp lệ 1 trang → ok pageCount 1 và KHÔNG detach ArrayBuffer gốc", async () => {

@@ -15,6 +15,7 @@ import {
 	normalizeMediaType,
 	sanitizeMediaFileName,
 } from "@teacher-os/api/lib/quiz-media";
+import { materialExtensionMatches } from "@teacher-os/api/material-contracts";
 import { canImportExam } from "@teacher-os/auth/role";
 import { examImportJob } from "@teacher-os/db/schema/exam-import-job";
 import { and, eq } from "drizzle-orm";
@@ -126,6 +127,46 @@ function importFailureOrJob(
  * `completed` + settle. Mọi lỗi sau reserve → release + `failed_refunded`
  * + 502 (Credit không bao giờ kẹt).
  */
+/**
+ * #681: đọc body stream giới hạn cứng `declaredSize` byte. Trả `null` khi
+ * body vắng mặt, kết thúc sớm trước `declaredSize`, hoặc vượt ngưỡng (ngắt
+ * reader ngay tại byte vượt — không đệm phần thừa vào RAM).
+ */
+async function readBoundedExamBody(
+	body: ReadableStream<Uint8Array> | null,
+	declaredSize: number,
+): Promise<ArrayBuffer | null> {
+	if (body === null) return null;
+	const reader = body.getReader();
+	try {
+		const out = new Uint8Array(declaredSize);
+		let received = 0;
+		while (received < declaredSize) {
+			const step = await reader.read();
+			if (step.done) return null;
+			const value = step.value;
+			if (received + value.byteLength > declaredSize) {
+				// Body dài hơn khai báo — ngắt kết nối ngay, không đọc tiếp.
+				await reader.cancel("size mismatch").catch(() => undefined);
+				return null;
+			}
+			out.set(value, received);
+			received += value.byteLength;
+		}
+		const tail = await reader.read();
+		if (!tail.done) {
+			await reader.cancel("size mismatch").catch(() => undefined);
+			return null;
+		}
+		return out.buffer;
+	} catch (error) {
+		await reader.cancel(error).catch(() => undefined);
+		throw error;
+	} finally {
+		reader.releaseLock();
+	}
+}
+
 export function examImportRoutes(deps: ExamImportRouteDeps) {
 	const router = new Hono<Env>();
 	const allowedOrigins = Array.isArray(deps.corsOrigins)
@@ -225,12 +266,27 @@ export function examImportRoutes(deps: ExamImportRouteDeps) {
 			);
 		}
 
-		const data = await c.req.raw.arrayBuffer();
-		// Byte thật phải khớp khai báo và trong ngưỡng (file dối Content-Length).
-		if (
-			data.byteLength !== declaredSize ||
-			data.byteLength > EXAM_IMPORT_LIMITS.maxBytes
-		) {
+		// #681: đối chiếu đuôi file với Content-Type trước khi đọc body —
+		// `payload.html` mang `image/png` hay `wrong.pdf` mang `image/jpeg`
+		// bị chặn ngay, không đốt CPU băm SHA-256 hay bandwidth 15 MB.
+		if (!materialExtensionMatches(fileName, mimeType)) {
+			await c.req.raw.body?.cancel().catch(() => undefined);
+			return c.json(
+				{
+					error: "unsupported file type",
+					code: EXAM_IMPORT_ERROR_CODES.INVALID_FILE,
+					reason: "type",
+				} satisfies ExamImportError,
+				400,
+			);
+		}
+
+		// #681: đọc stream giới hạn cứng `declaredSize` (đã kiểm > 0 và
+		// <= EXAM_IMPORT_LIMITS.maxBytes) thay vì `arrayBuffer()` — body dài
+		// hơn khai báo bị ngắt ngay tại byte `declaredSize + 1`, chống OOM
+		// 128 MB trên Worker khi khai gian Content-Length.
+		const data = await readBoundedExamBody(c.req.raw.body, declaredSize);
+		if (data === null) {
 			return c.json(
 				{
 					error: "invalid file size",
@@ -241,11 +297,9 @@ export function examImportRoutes(deps: ExamImportRouteDeps) {
 			);
 		}
 
-		const fingerprint = await sha256Hex(data);
-
-		// Kiểm sâu tệp (plan TOS-27 D1) TRƯỚC khi lưu R2 / tạo job / giữ
-		// Credit: sai số trang / PDF có mật khẩu / hỏng → 400 E-003, ví
-		// không bị đụng tới.
+		// Kiểm sâu tệp (plan TOS-27 D1 + #681) TRƯỚC khi SHA-256/lưu R2/tạo
+		// job/giữ Credit: sai chữ ký magic-byte/PDF có mật khẩu/hỏng → 400
+		// E-003, ví không bị đụng tới và payload rác không bị băm toàn phần.
 		const inspection = await inspectExamFile(data, mimeType);
 		if (!inspection.ok) {
 			return c.json(
@@ -257,6 +311,8 @@ export function examImportRoutes(deps: ExamImportRouteDeps) {
 				400,
 			);
 		}
+
+		const fingerprint = await sha256Hex(data);
 
 		// Dọn lười job `processing` treo (plan TOS-27 D3) trước khi tạo job.
 		await releaseStaleImports(db, orgId);

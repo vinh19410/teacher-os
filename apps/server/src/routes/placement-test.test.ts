@@ -19,6 +19,7 @@ import {
 	type MediaStore,
 	type ServerApp,
 } from "../app";
+import { mp3Bytes, mp3Id3Bytes } from "../lib/test-media-fixtures";
 
 const CORS_ORIGIN = "http://localhost:8001";
 const PROFILE_ORIGIN = "http://localhost:8005";
@@ -212,9 +213,9 @@ describe("placement-test teacher routes (#515 phase 2)", () => {
 
 	async function uploadSampleAudio(
 		userHeader = "teacher-1",
-		content = "ID3-mp3-data",
+		content = "seed-audio",
 	) {
-		const bytes = new TextEncoder().encode(content);
+		const bytes = mp3Id3Bytes(content);
 		const res = await app.request("/api/placement-test/audio", {
 			method: "PUT",
 			headers: {
@@ -409,7 +410,9 @@ describe("placement-test teacher routes (#515 phase 2)", () => {
 		expect(ownAudioRes.headers.get("cross-origin-resource-policy")).toBe(
 			"same-site",
 		);
-		expect(await ownAudioRes.text()).toBe("secret-org1-mp3");
+		expect(new Uint8Array(await ownAudioRes.arrayBuffer())).toEqual(
+			mp3Id3Bytes("secret-org1-mp3"),
+		);
 
 		const otherOrgRead = await app.request(
 			`/api/placement-test/audio/${audioId}`,
@@ -529,5 +532,79 @@ describe("placement-test teacher routes (#515 phase 2)", () => {
 			.where(eq(schema.placementTestAudio.orgId, "org-1"));
 		const remainingIds = remainingRows.map((r) => r.id).sort();
 		expect(remainingIds).toEqual([publishedAudioId, recentOrphanId].sort());
+	});
+
+	test("upload validates filename extension and magic bytes before storing (#681)", async () => {
+		const htmlBytes = new TextEncoder().encode(
+			"<!doctype html><html><script>alert(1)</script></html>",
+		);
+		const cases: Array<{
+			name: string;
+			type: string;
+			bytes: Uint8Array;
+			status: number;
+			length?: string;
+		}> = [
+			{
+				name: "payload.html",
+				type: "audio/mpeg",
+				bytes: htmlBytes,
+				status: 415,
+			},
+			{
+				name: "spoof.mp3",
+				type: "audio/mpeg",
+				bytes: htmlBytes,
+				status: 415,
+			},
+			{
+				name: "id3-html.mp3",
+				type: "audio/mpeg",
+				bytes: new TextEncoder().encode(
+					"ID3\x04<html><script>alert(1)</script>",
+				),
+				status: 415,
+			},
+			{
+				name: "utf16.mp3",
+				type: "audio/mpeg",
+				bytes: new Uint8Array([0xff, 0xfe, 0x20, 0x00, 0x3c, 0x00, 0x68, 0x00]),
+				status: 415,
+			},
+			{
+				name: "big.mp3",
+				type: "audio/mpeg",
+				bytes: mp3Bytes(150, 2),
+				status: 400,
+				length: "300",
+			},
+		];
+
+		const before = await db
+			.select({ id: schema.placementTestAudio.id })
+			.from(schema.placementTestAudio);
+		for (const item of cases) {
+			const res = await app.request("/api/placement-test/audio", {
+				method: "PUT",
+				headers: {
+					"x-test-user": "teacher-1",
+					origin: CORS_ORIGIN,
+					"content-type": item.type,
+					"content-length": String(item.length ?? item.bytes.byteLength),
+					"x-file-name": encodeURIComponent(item.name),
+				},
+				body: item.bytes,
+			});
+			expect(res.status, item.name).toBe(item.status);
+			await expect(res.json()).resolves.toMatchObject(
+				item.status === 415
+					? { code: "UNSUPPORTED_AUDIO_TYPE" }
+					: { code: "INVALID_AUDIO" },
+			);
+		}
+		const after = await db
+			.select({ id: schema.placementTestAudio.id })
+			.from(schema.placementTestAudio);
+		expect(after.map((row) => row.id)).toEqual(before.map((row) => row.id));
 	});
 });

@@ -40,8 +40,11 @@ describe("resolveQuizMediaType — chuẩn hoá MIME bài nói Speaking (#305)",
 		expect(resolveQuizMediaType("noext", "")).toBeNull();
 	});
 
-	it("MIME lạ nhưng đuôi hợp lệ thì tên file thắng (server vẫn kiểm lại)", () => {
-		expect(resolveQuizMediaType("answer.mp3", "text/html")).toBe("audio/mpeg");
+	it("chặn MIME nguy hiểm/lệch đuôi, dotfile và chuẩn hoá .m4a + video/mp4 (#681)", () => {
+		expect(resolveQuizMediaType("answer.mp3", "text/html")).toBeNull();
+		expect(resolveQuizMediaType("payload.html", "audio/mpeg")).toBeNull();
+		expect(resolveQuizMediaType(".mp3", "audio/mpeg")).toBeNull();
+		expect(resolveQuizMediaType("voice.m4a", "video/mp4")).toBe("audio/mp4");
 	});
 });
 
