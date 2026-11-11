@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import {
 	startPracticeResponseSchema,
@@ -13,10 +14,9 @@ import type { SessionUser } from "../session";
 
 const CORS_ORIGINS = ["http://localhost:8003"];
 const STUDENT_ORIGIN = "http://localhost:8003";
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 const READING_QUESTIONS_P1 = [
 	{ stem: "P1-Q1", opts: null, answer: "TRUE", alts: "", pin: null },

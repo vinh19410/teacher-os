@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { LIBRARY_AUDIO_MAX_BYTES } from "@teacher-os/api/library-contracts";
 import * as schema from "@teacher-os/db/schema/index";
@@ -28,10 +29,9 @@ import type { SessionUser } from "../session";
 
 const ADMIN_ORIGIN = "http://localhost:8004";
 const ADMIN_EMAILS = ["root@test.local"];
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 const ADMIN_SESSION: SessionUser = {
 	userId: "u-admin",

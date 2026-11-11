@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { NOTIFICATION_ERROR_CODES } from "@teacher-os/api/contracts";
 import type { Mailer } from "@teacher-os/auth/mail/mailer";
@@ -21,10 +22,9 @@ import {
 } from "./invite-email";
 import { holidayCreatedEvents, tuitionReminderEvent } from "./templates";
 
-const MIGRATIONS_DIR = new URL(
-	"../../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 function fakeMailer(impl: Mailer["send"] = async () => {}): Mailer {
 	return { send: impl };

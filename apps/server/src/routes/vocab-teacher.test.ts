@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import {
 	type KernelSnapshot,
@@ -15,10 +16,9 @@ import type { MediaStore, StoredMedia } from "../lib/media-store";
 import type { SessionUser } from "../session";
 
 const TEACHER_ORIGIN = "http://localhost:8001";
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 interface MemoryMediaStore extends MediaStore {
 	objects: Map<string, { bytes: Uint8Array; contentType: string }>;

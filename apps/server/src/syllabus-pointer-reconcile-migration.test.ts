@@ -8,14 +8,15 @@
  * Kernel tests migrate an empty database, so they cannot catch reconcile
  * bugs — same pattern as syllabus-template-migration.test.ts (0009).
  */
+
 import { readdirSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { type Client, createClient } from "@libsql/client";
 import { describe, expect, test } from "vitest";
 
-const MIGRATIONS_DIR = new URL(
-	"../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 function migrationFiles(): string[] {
 	return readdirSync(MIGRATIONS_DIR)

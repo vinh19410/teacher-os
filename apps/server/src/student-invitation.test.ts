@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import {
 	STUDENT_INVITATION_ERROR_CODES,
@@ -15,10 +16,9 @@ import { beforeAll, describe, expect, test } from "vitest";
 import { buildApp, type Db, type ServerApp } from "./app";
 import type { SessionUser } from "./session";
 
-const MIGRATIONS_DIR = new URL(
-	"../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 describe("student invitation & multi-org API endpoints", () => {
 	let app: ServerApp;

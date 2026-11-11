@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import {
 	type NotificationLogResponse,
@@ -17,10 +18,9 @@ import { buildApp, type Db, type KernelCtx } from "../app";
 import { kernelRoutes } from "./kernel";
 import { notificationLogRoutes } from "./notification-logs";
 
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 type TestEnv = { Variables: { kernelCtx: KernelCtx } };
 

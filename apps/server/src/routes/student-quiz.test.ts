@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import {
 	QUIZ_ANSWER_VALUE_MAX,
@@ -15,10 +16,9 @@ import type { SessionUser } from "../session";
 
 const CORS_ORIGINS = ["http://localhost:8003"];
 const STUDENT_ORIGIN = "http://localhost:8003";
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 /** Answer key lives ONLY here + in the DB — never in a take payload assert. */
 const QUIZ_QUESTIONS = [

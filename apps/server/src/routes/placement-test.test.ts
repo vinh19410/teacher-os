@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import type {
 	PlacementContent,
@@ -21,10 +22,9 @@ import {
 
 const CORS_ORIGIN = "http://localhost:8001";
 const PROFILE_ORIGIN = "http://localhost:8005";
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 interface MemoryMediaStore {
 	store: MediaStore;
 	objects: Map<string, { bytes: Uint8Array; contentType: string }>;

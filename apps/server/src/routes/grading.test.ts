@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import type {
 	AiGradingDraftView,
@@ -26,10 +27,9 @@ import { loadClassAssignmentItems } from "./student-class";
 
 const CORS_ORIGINS = ["http://localhost:8001", "http://localhost:8003"];
 const TEACHER_ORIGIN = "http://localhost:8001";
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 const TEACHER = { "x-test-user": "teacher-1" };
 
 function createMemoryMediaStore() {

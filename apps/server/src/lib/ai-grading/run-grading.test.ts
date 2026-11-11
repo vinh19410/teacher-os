@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import {
 	AI_GRADING_ERROR_CODES,
@@ -37,10 +38,9 @@ import {
 // SQLite THẬT in-memory + migration thật (0054 ai_grading_draft) — chứng
 // minh CAS UPDATE + ON CONFLICT DO NOTHING nguyên tử trên SQL thật
 // (precedent wallet.test.ts).
-const MIGRATIONS_DIR = new URL(
-	"../../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 const ORG = "org-ag";
 let db: Db;

@@ -5,14 +5,15 @@
  * bộ migration lên DB trống, xác nhận: chỉ có DDL tạo mới, FK cascade,
  * unique (testId, part), audio nullable, và default JSON '[]'.
  */
+
 import { readdirSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { type Client, createClient } from "@libsql/client";
 import { describe, expect, test } from "vitest";
 
-const MIGRATIONS_DIR = new URL(
-	"../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 function migrationFiles(): string[] {
 	return readdirSync(MIGRATIONS_DIR)

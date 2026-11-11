@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "vitest";
 import { buildExamPdf } from "./make-pdf";
 import { inspectExamFile } from "./validate-file";
@@ -38,10 +39,12 @@ describe("inspectExamFile (TOS-27 D1)", () => {
 
 	test("PDF có mật khẩu (fixture mã hoá thật) → reason password", async () => {
 		const bytes = readFileSync(
-			new URL(
-				"../../../../e2e/fixtures/exam-import/protected.pdf",
-				import.meta.url,
-			).pathname,
+			fileURLToPath(
+				new URL(
+					"../../../../e2e/fixtures/exam-import/protected.pdf",
+					import.meta.url,
+				).href,
+			),
 		);
 		await expect(
 			inspectExamFile(

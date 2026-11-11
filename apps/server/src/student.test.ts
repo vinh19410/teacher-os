@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import {
 	STUDENT_ERROR_CODES,
@@ -20,10 +21,9 @@ import type { SessionUser } from "./session";
 import * as studentProvisioning from "./student-provisioning";
 
 const CORS_ORIGINS = ["http://localhost:8001", "http://localhost:8003"];
-const MIGRATIONS_DIR = new URL(
-	"../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 describe("student portal server bridge & api (/api/student/*)", () => {
 	let app: ServerApp;
