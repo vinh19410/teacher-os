@@ -5,14 +5,15 @@
  * DROP TABLE quiz_attempt sinh ra bởi drizzle-kit có thể cascade xoá toàn
  * bộ highlight chấm bài; migration phải backup + restore thủ công.
  */
+
 import { readdirSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { type Client, createClient } from "@libsql/client";
 import { describe, expect, test } from "vitest";
 
-const MIGRATIONS_DIR = new URL(
-	"../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 function statements(sql: string): string[] {
 	return sql

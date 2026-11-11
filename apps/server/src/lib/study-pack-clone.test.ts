@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { assignmentPrompt } from "@teacher-os/db/schema/assignment-prompt";
 import * as schema from "@teacher-os/db/schema/index";
@@ -19,10 +20,9 @@ import {
 	validateStudyPackItems,
 } from "./study-pack-clone";
 
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 describe("study-pack-clone (validateStudyPackItems & materializePrompts)", () => {
 	let db: Db;

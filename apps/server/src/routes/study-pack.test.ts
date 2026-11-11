@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import type {
 	ClassStudyPacksResponse,
@@ -20,10 +21,9 @@ import { loadSnapshot } from "./snapshot";
 const TEACHER_ORIGIN = "http://localhost:8001";
 const STUDENT_ORIGIN = "http://localhost:8003";
 const CORS_ORIGINS = [TEACHER_ORIGIN, STUDENT_ORIGIN];
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 const sessionFor = async (headers: Headers): Promise<SessionUser | null> => {
 	const userKey = headers.get("x-test-user");

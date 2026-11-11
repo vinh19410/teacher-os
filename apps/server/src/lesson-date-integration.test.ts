@@ -3,6 +3,7 @@
  * dates at accept time (originally enrollment time), snapshot projects them, and legacy fixtures stay
  * undated. Runs against the real handler chain like kernel.test.ts.
  */
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import type { KernelSnapshot } from "@teacher-os/api/contracts";
 import {
@@ -17,10 +18,9 @@ import { beforeAll, describe, expect, test } from "vitest";
 import { buildApp, type Db } from "./app";
 
 const CORS_ORIGIN = "http://localhost:8001";
-const MIGRATIONS_DIR = new URL(
-	"../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 async function createTestApp() {
 	const client = createClient({ url: "file::memory:" });

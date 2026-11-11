@@ -1,7 +1,7 @@
 ---
 title: "#656: Use fileURLToPath for import.meta.url paths in server test suite"
 description: "Thay toàn bộ 91 điểm giải mã đường dẫn hệ điều hành bằng .pathname trên URL(import.meta.url) ở 88 file test của apps/server sang fileURLToPath từ node:url, bổ sung bài test canh cổng AST hồi quy non-ASCII và xác minh toàn bộ server suite xanh trong thư mục tiếng Việt."
-status: pending
+status: completed
 priority: P1
 effort: "1h"
 issue: 656
@@ -76,15 +76,15 @@ flowchart TD
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: TDD Red Non-ASCII Path Guard for Server Tests](./phase-01-start.md) | Pending |
-| 2 | [Phase 2: Migrate 88 Server Test Files to fileURLToPath & Verify Non-ASCII Suite](./phase-02-migrate-and-verify.md) | Pending |
+| 1 | [Phase 1: TDD Red Non-ASCII Path Guard for Server Tests](./phase-01-start.md) | Completed |
+| 2 | [Phase 2: Migrate 88 Server Test Files to fileURLToPath & Verify Non-ASCII Suite](./phase-02-migrate-and-verify.md) | Completed |
 
 ## Success Criteria
 
-- [ ] Bước TDD Red (Phase 1): `apps/server/src/non-ascii-path-guard.test.ts` phân tích AST bằng `ts.createSourceFile` (không bị nhiễu bởi comment hay string literal trong chính Test 1), kiểm thử runtime `fileURLToPath` vs `.pathname` với `migrate()` trên thư mục tạm tiếng Việt pass, và bài kiểm quét tĩnh báo đỏ chính xác `OFFENDING_COUNT=88` file `.test.ts` chưa chuyển đổi trong `apps/server/src`.
-- [ ] Bước TDD Green (Phase 2): Toàn bộ `88` file `.test.ts` (`91` vị trí) trong `apps/server/src` chuyển sang `fileURLToPath` từ `"node:url"`, giữ nguyên `leadGateUrl.href` (`lead-catalog-drift.test.ts:85-89`) và HTTP URL `.pathname` (`bank-hub-client.test.ts:487,533,569`); `non-ascii-path-guard.test.ts` pass xanh hoàn toàn (`0` vi phạm trên toàn bộ `202` file `.ts` của `apps/server/src`).
-- [ ] Toàn bộ `107` file test của `apps/server` (`VITEST_SKIP_SLOW=0 pnpm --dir "$VN_DIR/apps/server" test` sau khi `pnpm install --offline --frozen-lockfile --dir "$VN_DIR"` để `@teacher-os/*` trỏ thật vào cây tiếng Việt) pass `100%` (`Test Files  107 passed (107)`), và thư mục tạm `mktemp -d` được dọn sạch tự động qua `trap ... EXIT`.
-- [ ] Cổng chất lượng toàn repo xanh (`pnpm check`, `pnpm check-types`, `pnpm test`), `CHANGELOG.md` cập nhật mục `#656`, và kiểm tra allowlist Git NUL-delimited (`-z -uall`) xác nhận đúng `89` file `.test.ts` trong `apps/server/src` + `CHANGELOG.md` + `plans/` (`0` file code sản phẩm hay migration bị chạm).
+- [x] Bước TDD Red (Phase 1): `apps/server/src/non-ascii-path-guard.test.ts` phân tích AST bằng `ts.createSourceFile` (không bị nhiễu bởi comment hay string literal trong chính Test 1), kiểm thử runtime `fileURLToPath` vs `.pathname` với `migrate()` trên thư mục tạm tiếng Việt pass, và bài kiểm quét tĩnh báo đỏ chính xác `OFFENDING_COUNT=88` file `.test.ts` chưa chuyển đổi trong `apps/server/src`.
+- [x] Bước TDD Green (Phase 2): Toàn bộ `88` file `.test.ts` (`91` vị trí) trong `apps/server/src` chuyển sang `fileURLToPath(new URL(..., import.meta.url).href)` từ `"node:url"`, giữ nguyên `leadGateUrl.href` (`lead-catalog-drift.test.ts:85-89`) và HTTP URL `.pathname` (`bank-hub-client.test.ts:487,533,569`); `non-ascii-path-guard.test.ts` pass xanh hoàn toàn (`0` vi phạm trên toàn bộ `202` file `.ts` của `apps/server/src`).
+- [x] Toàn bộ `107` file test của `apps/server` (`VITEST_SKIP_SLOW=0 CI=1 pnpm --dir "$VN_DIR/apps/server" exec vitest run` sau khi `pnpm install --offline --frozen-lockfile --dir "$VN_DIR"` để `@teacher-os/*` trỏ thật vào cây tiếng Việt) pass `100%` (`Test Files  107 passed (107)`, `1394 passed | 1 expected fail`), và thư mục tạm `mktemp -d` được dọn sạch tự động qua `trap ... EXIT`.
+- [x] Cổng chất lượng toàn repo xanh (`pnpm check`, `pnpm check-types`, `pnpm test`), `CHANGELOG.md` cập nhật mục `#656`, và kiểm tra allowlist Git NUL-delimited (`-z -uall`) xác nhận đúng `89` file `.test.ts` trong `apps/server/src` + `CHANGELOG.md` + `plans/` (`0` file code sản phẩm hay migration bị chạm).
 
 ## Validation Log
 
@@ -128,5 +128,14 @@ flowchart TD
 - Decision deltas checked: `8` (toàn bộ `8` findings đã áp đồng nhất trên cả `3` file)
 - Reconciled stale references: `8`
 - Unresolved contradictions: `0`
+
+### Implementation notes (`ak-fix --advice`, 2026-11-11)
+- Phase 1 đạt TDD Red trọn vẹn: sau khi bỏ từ khóa `export` khỏi helper nội bộ trong `non-ascii-path-guard.test.ts` (`lint/suspicious/noExportsInTest`), `vitest run` bắt chính xác `1 failed | 2 passed (3)` với `OFFENDING_COUNT=88`.
+- Phase 2 chuyển toàn bộ `91` vị trí ở `88` file `.test.ts` sang `fileURLToPath(new URL(..., import.meta.url).href)` theo đúng tiền lệ `packages/infra/src/flat-migrations.test.ts:13` để tương thích đồng thời `@cloudflare/workers-types` và `node:url` dưới `tsc -b` (`12/12` package `check-types` pass).
+- Đặt `CI=1` khi chạy toàn bộ `107` file test của `apps/server` trong bản sao workspace tiếng Việt tạm thời để `vitest.config.ts` giới hạn `maxWorkers: 2` trên máy chia sẻ 4 core: đạt `Test Files  107 passed (107)` (`1394 passed | 1 expected fail`), `ALLOWLIST_OK 89`, và toàn bộ `pnpm check`, `pnpm check-types`, `pnpm test` đều xanh.
+
+### Code review fixes (`ak-code-review --pending --advice`, 2026-11-11)
+- Verdict từ reviewer độc lập `LocalCodeReview656`: **Approved** (`0 Critical / 0 Important / 3 Minor`).
+- Đã xử lý trọn vẹn `3/3` Minor: (1) mở rộng AST guard bắt thêm `new globalThis.URL(...)`, type assertion wrappers (`as` / `satisfies` / `!`), computed property destructuring `{ ["pathname"]: ... }` và quản lý biến theo phạm vi khối lexical (tránh báo giả khi biến nội bộ che bóng biến ngoài); (2) bọc `client?.close()` trong `try/finally` riêng trước `rmSync(vnRoot)` ở Test 2; (3) bỏ dòng tiêu đề/footer trùng trong 2 file journal và đồng bộ `status: completed` + `[x]` trên `plan.md` và 2 file phase.
 
 <!-- slug: 656-migrations-dir-non-ascii-path -->

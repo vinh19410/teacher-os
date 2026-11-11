@@ -7,14 +7,15 @@
  * Rollback hướng ngược (revert code, cột thừa) không cần test — cột thừa
  * không ảnh hưởng reader cũ.
  */
+
 import { readdirSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { type Client, createClient } from "@libsql/client";
 import { describe, expect, test } from "vitest";
 
-const MIGRATIONS_DIR = new URL(
-	"../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 function migrationFiles(): string[] {
 	return readdirSync(MIGRATIONS_DIR)

@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Phase 1: TDD Red Non-ASCII Path Guard for Server Tests"
-status: pending
+status: completed
 priority: P1
 effort: "20m"
 dependencies: []
@@ -66,7 +66,7 @@ Plan này được viết theo hợp đồng bàn giao `--advice` + `--tdd` cho 
 
 ## Todo
 
-- [ ] Task 1.1: Tạo `apps/server/src/non-ascii-path-guard.test.ts` (AST scanner + runtime repro) và xác minh trạng thái TDD Red (`OFFENDING_COUNT=88`)
+- [x] Task 1.1: Tạo `apps/server/src/non-ascii-path-guard.test.ts` (AST scanner + runtime repro) và xác minh trạng thái TDD Red (`OFFENDING_COUNT=88`)
 
 ## Verification
 

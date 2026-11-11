@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import {
 	CREDIT_COSTS,
@@ -51,10 +52,9 @@ import { sha256Hex } from "../lib/exam-import/fingerprint";
 import { buildExamPdf } from "../lib/exam-import/make-pdf";
 import type { SessionUser } from "../session";
 
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 // 1 trang — nội dung không ảnh hưởng extractor giả, chỉ cần parse được.
 const PDF_BYTES = new Uint8Array(buildExamPdf(1));
@@ -482,10 +482,12 @@ describe("exam imports + ví Credit (TOS-24 #470)", () => {
 		// phải dùng file encrypt chuẩn để unpdf ném PasswordException.
 		const bytes = new Uint8Array(
 			readFileSync(
-				new URL(
-					"../../../e2e/fixtures/exam-import/protected.pdf",
-					import.meta.url,
-				).pathname,
+				fileURLToPath(
+					new URL(
+						"../../../e2e/fixtures/exam-import/protected.pdf",
+						import.meta.url,
+					).href,
+				),
 			),
 		);
 		const res = await app.request("/api/exam-imports", {

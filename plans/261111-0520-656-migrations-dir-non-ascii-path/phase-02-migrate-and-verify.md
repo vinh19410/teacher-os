@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Phase 2: Migrate 88 Server Test Files to fileURLToPath & Verify Non-ASCII Suite"
-status: pending
+status: completed
 priority: P1
 effort: "40m"
 dependencies: [1]
@@ -164,9 +164,9 @@ Plan này được viết theo hợp đồng bàn giao `--advice` + `--tdd` cho 
 
 ## Todo
 
-- [ ] Task 2.1: Chuyển đổi 88 file `.test.ts` sang `fileURLToPath` và xác minh TDD Green trên `non-ascii-path-guard.test.ts`
-- [ ] Task 2.2: Chạy toàn bộ `apps/server` test suite (`107` file) trong bản sao workspace tiếng Việt cài đặt độc lập
-- [ ] Task 2.3: Cập nhật `CHANGELOG.md`, kiểm tra allowlist Git NUL-delimited chặt và chạy toàn bộ cổng chất lượng repo
+- [x] Task 2.1: Chuyển đổi 88 file `.test.ts` sang `fileURLToPath` và xác minh TDD Green trên `non-ascii-path-guard.test.ts`
+- [x] Task 2.2: Chạy toàn bộ `apps/server` test suite (`107` file) trong bản sao workspace tiếng Việt cài đặt độc lập
+- [x] Task 2.3: Cập nhật `CHANGELOG.md`, kiểm tra allowlist Git NUL-delimited chặt và chạy toàn bộ cổng chất lượng repo
 
 ## Verification
 

@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { examImportJob } from "@teacher-os/db/schema/exam-import-job";
 import * as schema from "@teacher-os/db/schema/index";
@@ -7,10 +8,9 @@ import { beforeAll, beforeEach, describe, expect, test } from "vitest";
 import type { Db } from "../../app";
 import { findCompletedImportByFingerprint } from "./dedupe";
 
-const MIGRATIONS_DIR = new URL(
-	"../../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 const FINGERPRINT = "a".repeat(64);
 const OTHER_FINGERPRINT = "b".repeat(64);

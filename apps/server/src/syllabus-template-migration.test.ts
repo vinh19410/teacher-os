@@ -9,14 +9,15 @@
  * Kernel tests migrate an empty database, so they cannot catch backfill
  * bugs — same reason comment-bank 0006 has this pattern.
  */
+
 import { readdirSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { type Client, createClient } from "@libsql/client";
 import { describe, expect, test } from "vitest";
 
-const MIGRATIONS_DIR = new URL(
-	"../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 function migrationFiles(): string[] {
 	return readdirSync(MIGRATIONS_DIR)

@@ -7,6 +7,7 @@
  * user row, expiry checked) plus test-only user/session inserts.
  */
 
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import type { KernelSnapshot } from "@teacher-os/api/contracts";
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
@@ -42,10 +43,9 @@ import { backfillStudyPackTargetsForStudent } from "./lib/study-pack-assign";
 import { generateScheduleLessons } from "./routes/kernel";
 
 const CORS_ORIGIN = "http://localhost:8001";
-const MIGRATIONS_DIR = new URL(
-	"../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 interface TestSession {
 	userId: string;

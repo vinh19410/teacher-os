@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import {
 	type DailyAttendanceResponse,
@@ -14,10 +15,9 @@ import { computeDailyAttendance } from "./daily-attendance";
 import { computeReminders } from "./dashboard-reminders";
 
 const CORS_ORIGIN = "http://localhost:8001";
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 const TEACHER = {
 	"x-test-user": "teacher-1",

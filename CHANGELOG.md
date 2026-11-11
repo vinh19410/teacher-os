@@ -14,6 +14,7 @@ Quy ước khi cập nhật:
 
 ### Fixed
 - Nút «Phát» / «Mở» của tài liệu audio/video phát được lại trực tiếp trong tab mới (#647): phản hồi file media `inline` giờ dùng CSP riêng cho phép `media-src 'self'` + `sandbox allow-same-origin` (không `allow-scripts`) sau khi chuẩn hoá MIME qua `normalizeMediaType` + allowlist `MATERIAL_MIME`, ép `application/octet-stream` khi MIME hỏng, và kèm `Cross-Origin-Opener-Policy: same-origin` + `Referrer-Policy: no-referrer`.
+- Server test suite không còn đỏ ảo khi chạy trong thư mục chứa ký tự tiếng Việt / non-ASCII (#656): chuyển toàn bộ `91` vị trí lấy đường dẫn hệ điều hành bằng `new URL(..., import.meta.url).pathname` ở `88` file `.test.ts` của `apps/server` sang `fileURLToPath` từ `node:url` (giữ nguyên `.href` cho dynamic ESM `import()` và HTTP URL `.pathname`), đồng thời bổ sung bài test canh cổng AST + runtime `apps/server/src/non-ascii-path-guard.test.ts`.
 
 ### Changed
 - Trần dung lượng upload audio/video của tài liệu hạ từ 100 MiB xuống 95 MB (`95 MiB`) để nằm dưới giới hạn request body 100 MB của Cloudflare Free/Pro edge — client chặn ngay trước khi gặp trang 413 HTML thiếu CORS (#647); bổ sung E2E `material-upload-student.spec.ts` phủ upload `PUT` raw body + preflight CORS + tên file Unicode và học viên đa-org mở/phát/tải tài liệu buổi học qua `?org=`.

@@ -1,13 +1,16 @@
 import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "vitest";
 import { countPdfPages, sha256Hex } from "./fingerprint";
 
 // Fixture PDF 2 trang tự sinh (không dùng tài liệu bản quyền) — verify
 // heuristic đếm trang đúng trên file thật của e2e.
-const FIXTURE_PATH = new URL(
-	"../../../../../apps/e2e/fixtures/exam-import/cambridge-sample.pdf",
-	import.meta.url,
-).pathname;
+const FIXTURE_PATH = fileURLToPath(
+	new URL(
+		"../../../../../apps/e2e/fixtures/exam-import/cambridge-sample.pdf",
+		import.meta.url,
+	).href,
+);
 
 describe("exam-import fingerprint (TOS-24 #470)", () => {
 	test("countPdfPages đếm đúng 2 trang của fixture, /Pages không bị đếm nhầm", async () => {

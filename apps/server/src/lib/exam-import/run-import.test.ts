@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import {
 	type ExtractedExam,
@@ -30,10 +31,9 @@ import {
 	runImport,
 } from "./run-import";
 
-const MIGRATIONS_DIR = new URL(
-	"../../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 const EXAM: ExtractedExam = extractedExamSchema.parse({
 	title: "Đề test",
