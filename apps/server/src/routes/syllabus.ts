@@ -118,16 +118,18 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 					sql`(${sessionPackage.id} IS NULL OR ${sessionPackage.total} = 0)`,
 				),
 			);
+		let healed = 0;
 		for (const row of stuck) {
-			await materializeScheduleForEnrollment(db, {
+			const materialized = await materializeScheduleForEnrollment(db, {
 				orgId,
 				enrollmentId: row.id,
 				studentId: row.studentId,
 				classId,
 				mode: "backfill",
 			});
+			if (materialized.ok) healed += 1;
 		}
-		return stuck.length;
+		return healed;
 	}
 
 	//
@@ -392,19 +394,35 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 					);
 					const existingCount = existingTree.lessons.length;
 					if (existingCount >= 1 && existingCount <= 52) {
-						await db
-							.update(classTable)
-							.set({
-								syllabusId: existing.id,
-								sessionsTotal: existingCount,
-								schedulingMode: sql`CASE WHEN EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.classId} = ${classId} AND ${classSession.orgId} = ${ctx.orgId}) THEN ${classTable.schedulingMode} ELSE 'auto' END`,
-							})
-							.where(
-								and(
-									eq(classTable.id, classId),
-									eq(classTable.orgId, ctx.orgId),
-								),
-							);
+						try {
+							await db
+								.update(classTable)
+								.set({
+									syllabusId: existing.id,
+									sessionsTotal: existingCount,
+									schedulingMode: sql`CASE WHEN EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.classId} = ${classId} AND ${classSession.orgId} = ${ctx.orgId}) THEN ${classTable.schedulingMode} ELSE 'auto' END`,
+								})
+								.where(
+									and(
+										eq(classTable.id, classId),
+										eq(classTable.orgId, ctx.orgId),
+									),
+								);
+						} catch (healErr: unknown) {
+							// FK race với `curriculum/remove` đồng thời (syllabus vừa bị
+							// xóa giữa lúc đọc và lúc UPDATE): rollback-able → trả đúng
+							// nghĩa 409 thay vì 500; client retry tự đi lại nhánh hợp lệ.
+							if (isRollbackableConstraintError(healErr)) {
+								return c.json(
+									{
+										error: "Lớp đã có giáo trình",
+										code: "CURRICULUM_ALREADY_EXISTS",
+									},
+									409,
+								);
+							}
+							throw healErr;
+						}
 						await backfillStuckEnrollments(db, ctx.orgId, classId);
 						return c.json({ id: existing.id } satisfies CreatedResponse, 201);
 					}

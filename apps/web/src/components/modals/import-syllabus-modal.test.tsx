@@ -166,7 +166,7 @@ describe("ImportSyllabusModal", () => {
 	});
 
 	it("clears alert error on reopen without wiping reconcile notice / submitBlocked (#670)", async () => {
-		function Harness({ onWriteFail }: { onWriteFail: boolean }) {
+		function Harness() {
 			const [open, setOpen] = useState(true);
 			return (
 				<div>
@@ -176,7 +176,7 @@ describe("ImportSyllabusModal", () => {
 					<ImportSyllabusModal
 						open={open}
 						onClose={() => setOpen(false)}
-						classId={onWriteFail ? "cl-1" : "cl-1"}
+						classId="cl-1"
 					/>
 				</div>
 			);
@@ -198,7 +198,7 @@ describe("ImportSyllabusModal", () => {
 			srv.snapshotReply = () => ({ status: 503, body: {} });
 			return undefined;
 		});
-		renderWithKernel(<Harness onWriteFail />);
+		renderWithKernel(<Harness />);
 		let dialog = await screen.findByRole("dialog");
 		fireEvent.click(
 			within(dialog).getByRole("button", { name: "Nhập giáo trình" }),
