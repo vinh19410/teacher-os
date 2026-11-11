@@ -139,8 +139,8 @@ Xây dựng theo quy trình TDD (RED trước, GREEN sau) cơ chế đồng bộ
 
 ## Verification
 
-- [ ] `pnpm --filter server exec vitest run src/manual-sessions.test.ts` pass toàn bộ (14 test cũ + 6 test #670).
-- [ ] `pnpm --filter server test` và `pnpm --filter server check-types` exit `0`.
+- [x] `pnpm --filter server exec vitest run src/manual-sessions.test.ts` pass toàn bộ (14 test cũ + 6 test #670).
+- [x] `pnpm --filter server test` và `pnpm --filter server check-types` exit `0`.
 
 ## Failure Protocol
 If any Verify step does not meet its stated pass condition, STOP this phase.

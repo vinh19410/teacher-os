@@ -105,9 +105,9 @@ dependencies: [1]
 
 ## Verification
 
-- [ ] `pnpm --filter web test` pass 100% (bao gồm `$classId.test.tsx`, `$classId.sessions.test.tsx`, `import-syllabus-modal.test.tsx`, `schedule-week.test.ts`).
-- [ ] `pnpm --filter web check-types` exit `0`.
-- [ ] Không còn tham chiếu `onOpenCurriculum` hoặc `"Gắn giáo trình cho lớp để sắp xếp buổi"` trong `apps/web/src`.
+- [x] `pnpm --filter web test` pass 100% (bao gồm `$classId.test.tsx`, `$classId.sessions.test.tsx`, `import-syllabus-modal.test.tsx`, `schedule-week.test.ts`).
+- [x] `pnpm --filter web check-types` exit `0`.
+- [x] Không còn tham chiếu `onOpenCurriculum` hoặc `"Gắn giáo trình cho lớp để sắp xếp buổi"` trong `apps/web/src`.
 
 ## Failure Protocol
 If any Verify step does not meet its stated pass condition, STOP this phase.

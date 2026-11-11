@@ -147,9 +147,12 @@ có chủ đích (dữ liệu thật > hình dáng design), không phải sót q
   riêng), còn "late" không có dữ liệu nên không dựng (lệch có chủ đích duy nhất là bỏ late).
 - **Header giữ kicker `loại · lịch · hình thức`, không có `lead`**: học phí chuyển hiển thị ở tab
   Học viên (design đặt học phí trong bảng Students; app cần thấy phí cả khi chưa có học viên).
-- **"Add session" = nút primary "Sắp xếp buổi"** mở modal Quản lý buổi: kernel không có action
-  add-session theo ngày riêng; thêm buổi = thêm bài vào module giáo trình (#221). Khi lớp chưa gắn
-  giáo trình, nút vẫn bấm được và modal hiển thị lý do kèm nút "Mở tab Giáo trình" (#521).
+- **Nút hành động chính trên header lớp (`Sắp xếp buổi` / `+ Thêm buổi học`)**: khi lớp đã gắn bản sao
+  giáo trình (`sy` tồn tại) thì hiển thị **"Sắp xếp buổi"** mở modal Quản lý buổi (#221); khi lớp chưa gắn
+  giáo trình và đang ở chế độ thủ công hoặc chưa phát sinh dòng `lesson` thật (`isManual || lessons.length === 0`)
+  thì hiển thị **"+ Thêm buổi học"** mở modal thêm buổi thủ công (#649); khi lớp `auto` đã có dòng `lesson`
+  thật nhưng không gắn giáo trình thì ẩn cả hai nút để tránh dẫn vào thao tác `409`, đồng thời gỡ bỏ nhánh
+  empty state cũ của #521 trong `ClassSessionsManageModal` (#670).
 - **Nhãn nút giữ tiếng Việt**: "Điều chỉnh" (Edit session), "Chấm bài" (Grade), "Điểm danh →" /
   "Sửa điểm danh →" (Take/Edit attendance →). Link attendance chỉ hiện trên card **đã qua ngày hoặc
   đã học** — design hiển thị trên mọi card, nhưng buổi tương lai mở modal chỉ được view rỗng nên

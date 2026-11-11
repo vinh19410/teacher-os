@@ -1,7 +1,7 @@
 ---
 title: "fix(classes): đồng bộ chuyển đổi chế độ lớp manual/auto khi nhập hoặc gỡ giáo trình (#670)"
 description: "Chuyển lớp manual (0 buổi thủ công) sang auto + sinh bù buổi cho học viên active khi nhập giáo trình, trả về manual (kèm reset gói học phí 0 buổi) khi gỡ giáo trình lúc chưa có buổi thật, khóa race song phương với thêm/xóa buổi thủ công và kích hoạt học viên, đồng bộ nguồn sự thật syllabus.classId + isManual trên Web và xóa dead code ClassSessionsManageModal."
-status: pending
+status: completed
 priority: P1
 effort: "4h"
 issue: 670

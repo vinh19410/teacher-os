@@ -66,10 +66,10 @@ import { paymentTransaction } from "@teacher-os/db/schema/payment-transaction";
 import { sessionPackage } from "@teacher-os/db/schema/session-package";
 import { student } from "@teacher-os/db/schema/student";
 import { studentInvitation } from "@teacher-os/db/schema/student-invitation";
-import type {
+import {
 	syllabus,
-	syllabusLesson,
-	syllabusModule,
+	type syllabusLesson,
+	type syllabusModule,
 } from "@teacher-os/db/schema/syllabus";
 import { and, desc, eq, inArray, isNull, lte, ne, or, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
@@ -112,6 +112,7 @@ import { recordManualPayment } from "../lib/payments/record-manual-payment";
 import { requireFinanceRole } from "../lib/require-finance-role";
 import {
 	buildImportBatch,
+	findClassCurriculum,
 	findExistingMaterialIds,
 	findSyllabus,
 	MAX_IMPORT_NODES,
@@ -2421,7 +2422,7 @@ export function kernelRoutes(deps: {
 		if (!cls) {
 			return c.json({ error: "class not found", reason: "not-found" }, 404);
 		}
-		if (cls.syllabusId) {
+		if (await findClassCurriculum(db, classId, kernelCtx.orgId)) {
 			return c.json(
 				{
 					error: "cannot add manual session to class with syllabus",
@@ -2571,7 +2572,7 @@ export function kernelRoutes(deps: {
 				.update(classTable)
 				.set({
 					sessionsTotal: sql`(SELECT count(*) FROM class_session WHERE class_id = ${classId} AND org_id = ${kernelCtx.orgId})`,
-					schedulingMode: "manual",
+					schedulingMode: sql`CASE WHEN EXISTS (SELECT 1 FROM ${syllabus} WHERE ${syllabus.classId} = ${classId} AND ${syllabus.orgId} = ${kernelCtx.orgId}) THEN NULL ELSE 'manual' END`,
 				})
 				.where(
 					and(
@@ -2619,6 +2620,15 @@ export function kernelRoutes(deps: {
 				}
 			}
 			if (isRollbackableConstraintError(err)) {
+				if (await findClassCurriculum(db, classId, kernelCtx.orgId)) {
+					return c.json(
+						{
+							error: "cannot add manual session to class with syllabus",
+							reason: "class-has-syllabus",
+						},
+						409,
+					);
+				}
 				return c.json(
 					{ error: "date already has a session", reason: "date-occupied" },
 					409,
@@ -2638,7 +2648,7 @@ export function kernelRoutes(deps: {
 		if (!cls) {
 			return c.json({ error: "class not found", reason: "not-found" }, 404);
 		}
-		if (cls.syllabusId) {
+		if (await findClassCurriculum(db, classId, ctx.orgId)) {
 			return c.json(
 				{
 					error: "cannot delete session from class with syllabus",
@@ -2750,6 +2760,7 @@ export function kernelRoutes(deps: {
 				.update(classTable)
 				.set({
 					sessionsTotal: sql`(SELECT count(*) FROM class_session WHERE class_id = ${classId} AND org_id = ${ctx.orgId})`,
+					schedulingMode: sql`CASE WHEN EXISTS (SELECT 1 FROM ${syllabus} WHERE ${syllabus.classId} = ${classId} AND ${syllabus.orgId} = ${ctx.orgId}) THEN NULL ELSE ${classTable.schedulingMode} END`,
 				})
 				.where(
 					and(eq(classTable.orgId, ctx.orgId), eq(classTable.id, classId)),
@@ -2782,7 +2793,23 @@ export function kernelRoutes(deps: {
 			);
 		}
 
-		await db.batch(deleteStatements);
+		try {
+			await db.batch(deleteStatements);
+		} catch (err) {
+			if (
+				isRollbackableConstraintError(err) &&
+				(await findClassCurriculum(db, classId, ctx.orgId))
+			) {
+				return c.json(
+					{
+						error: "cannot delete session from class with syllabus",
+						reason: "class-has-syllabus",
+					},
+					409,
+				);
+			}
+			throw err;
+		}
 		return c.json({ ok: true, deleted: true, date: dateISO });
 	});
 

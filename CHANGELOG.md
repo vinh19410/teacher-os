@@ -13,6 +13,7 @@ Quy ước khi cập nhật:
 ## 2026-11-11
 
 ### Fixed
+- Đồng bộ vòng đời chế độ lớp `manual ↔ auto` giữa Server và Web khi nhập hoặc gỡ giáo trình lớp (#670): `POST /api/classes/:id/curriculum/import` chặn `409` (`reason: "has-manual-sessions"`) khi lớp đã có `class_session` (kèm khóa race song phương với `POST`/`DELETE /classes/:id/sessions`), chặn `422` cho template `0` bài trên lớp `manual` hoặc `> 52` bài, chuyển nguyên tử lớp sang `schedulingMode = "auto"` kèm `sessionsTotal` theo số bài và sinh bù lịch học (áp đầy đủ nghỉ lễ) + `session_package.total` cho học viên `active` chưa có `lesson` (hỗ trợ tự hồi phục idempotent); `POST /api/classes/:id/curriculum/remove` trả lớp `0 lesson` về `manual`/`0` buổi kèm reset `session_package.total = 0`; Web đồng bộ `isManual` và `splitSyllabi` trên chi tiết lớp + `/schedule`, ẩn nút thêm buổi bất hợp lệ khi lớp `auto` đã có `lesson` vừa gỡ giáo trình, ánh xạ thông báo lỗi tiếng Việt theo mã `code` trong `ImportSyllabusModal`, và xóa nhánh dead code `!sy` / `onOpenCurriculum` khỏi `ClassSessionsManageModal`.
 - Nút «Phát» / «Mở» của tài liệu audio/video phát được lại trực tiếp trong tab mới (#647): phản hồi file media `inline` giờ dùng CSP riêng cho phép `media-src 'self'` + `sandbox allow-same-origin` (không `allow-scripts`) sau khi chuẩn hoá MIME qua `normalizeMediaType` + allowlist `MATERIAL_MIME`, ép `application/octet-stream` khi MIME hỏng, và kèm `Cross-Origin-Opener-Policy: same-origin` + `Referrer-Policy: no-referrer`.
 
 ### Changed
