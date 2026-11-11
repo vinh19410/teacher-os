@@ -49,6 +49,20 @@ const SESSIONS: Record<string, SessionUser> = {
 		emailVerified: true,
 		role: "teacher",
 	},
+	"ct-1": {
+		userId: "ct-1",
+		userName: "GV phụ trách lớp",
+		email: "ct@test.local",
+		emailVerified: true,
+		role: "teacher",
+	},
+	"susp-1": {
+		userId: "susp-1",
+		userName: "Tạm ngưng",
+		email: "susp@test.local",
+		emailVerified: true,
+		role: "teacher",
+	},
 	"teacher-2": {
 		userId: "t-2",
 		userName: "Thầy Nam",
@@ -142,11 +156,30 @@ describe("material bank and session materials", () => {
 				email: "ta@test.local",
 				role: "teacher",
 			},
+			{
+				id: "ct-1",
+				name: "GV phụ trách lớp",
+				email: "ct@test.local",
+				role: "teacher",
+			},
+			{
+				id: "susp-1",
+				name: "Tạm ngưng",
+				email: "susp@test.local",
+				role: "teacher",
+			},
 			{ id: "t-2", name: "Thầy Nam", email: "nam@test.local", role: "teacher" },
 		]);
 		await db.insert(schema.membership).values([
 			{ id: "mem-1", orgId: "org-1", userId: "t-1", role: "teacher" },
 			{ id: "mem-ta", orgId: "org-1", userId: "ta-1", role: "ta" },
+			{ id: "mem-ct", orgId: "org-1", userId: "ct-1", role: "class_teacher" },
+			{
+				id: "mem-susp",
+				orgId: "org-1",
+				userId: "susp-1",
+				role: "suspended",
+			},
 			{ id: "mem-2", orgId: "org-2", userId: "t-2", role: "teacher" },
 		]);
 		await db.insert(schema.student).values([
@@ -345,6 +378,98 @@ describe("material bank and session materials", () => {
 		expect(
 			(await upload("/api/materials/files", { user: "ta-1" })).status,
 		).toBe(403);
+
+		// Unknown/revoked membership role hits materialRoutes gate directly (403 FORBIDDEN, not STUDENT_ON_TEACHER_APP).
+		const suspList = await get("/api/materials", "susp-1");
+		expect(suspList.status).toBe(403);
+		const suspBody: { code?: string } = await suspList.json();
+		expect(suspBody.code).toBe("FORBIDDEN");
+		expect((await get(sessionPath(), "susp-1")).status).toBe(403);
+
+		// class_teacher can write folders and materials; ta gets 403 FORBIDDEN across all remaining write endpoints.
+		const ctFolderRes = await createFolder("CT Folder", null, "ct-1");
+		expect(ctFolderRes.status).toBe(201);
+		const ctFolderBody: { folder: MaterialFolderView } =
+			await ctFolderRes.json();
+		const ctFolder = ctFolderBody.folder;
+		const ctMat = await createLink("CT Material", ctFolder.id);
+		const attachRes = await json(
+			sessionPath(),
+			"POST",
+			{ materialId: ctMat.id },
+			"ct-1",
+		);
+		expect(attachRes.status).toBe(201);
+
+		expect(
+			(
+				await json(
+					`/api/materials/folders/${ctFolder.id}`,
+					"PATCH",
+					{ name: "Nope" },
+					"ta-1",
+				)
+			).status,
+		).toBe(403);
+		expect(
+			(await del(`/api/materials/folders/${ctFolder.id}`, "ta-1")).status,
+		).toBe(403);
+		expect(
+			(
+				await json(
+					`/api/materials/${ctMat.id}`,
+					"PATCH",
+					{ title: "Nope" },
+					"ta-1",
+				)
+			).status,
+		).toBe(403);
+		expect((await del(`/api/materials/${ctMat.id}`, "ta-1")).status).toBe(403);
+		expect(
+			(await json(sessionPath(), "POST", { materialId: ctMat.id }, "ta-1"))
+				.status,
+		).toBe(403);
+		expect(
+			(await upload(`${sessionPath()}/files`, { user: "ta-1" })).status,
+		).toBe(403);
+		expect((await del(`${sessionPath()}/${ctMat.id}`, "ta-1")).status).toBe(
+			403,
+		);
+
+		// Cross-org parentId injection is rejected on both POST and PATCH.
+		expect(
+			(await createFolder("Cross-org child", ctFolder.id, "teacher-2")).status,
+		).toBe(404);
+		const org2RootRes = await createFolder("Org2 Root", null, "teacher-2");
+		const org2RootBody: { folder: MaterialFolderView } =
+			await org2RootRes.json();
+		expect(
+			(
+				await json(
+					`/api/materials/folders/${org2RootBody.folder.id}`,
+					"PATCH",
+					{ parentId: ctFolder.id },
+					"teacher-2",
+				)
+			).status,
+		).toBe(404);
+
+		// Clean up seeded test rows so later tests start with clean bank state.
+		expect((await del(`${sessionPath()}/${ctMat.id}`, "ct-1")).status).toBe(
+			200,
+		);
+		expect((await del(`/api/materials/${ctMat.id}`, "ct-1")).status).toBe(200);
+		expect(
+			(await del(`/api/materials/folders/${ctFolder.id}`, "ct-1")).status,
+		).toBe(200);
+		expect(
+			(
+				await del(
+					`/api/materials/folders/${org2RootBody.folder.id}`,
+					"teacher-2",
+				)
+			).status,
+		).toBe(200);
 	});
 
 	test("folder CRUD: unique names per parent, rename, move, delete only when empty", async () => {
@@ -456,6 +581,163 @@ describe("material bank and session materials", () => {
 		expect(okMove.status).toBe(200);
 	});
 
+	test("concurrent folder moves, renames, and creates enforce cycle, depth, and partial-update invariants atomically (#646)", async () => {
+		const makeFolder = async (name: string, parentId: string | null = null) => {
+			const res = await createFolder(name, parentId);
+			expect(res.status).toBe(201);
+			const body: { folder: MaterialFolderView } = await res.json();
+			return body.folder;
+		};
+
+		// 1. Concurrent cross-move A -> B and B -> A: exactly one 200 and one 400 FOLDER_CYCLE.
+		const raceA = await makeFolder("Race A");
+		const raceB = await makeFolder("Race B");
+		const [mAB, mBA] = await Promise.all([
+			json(`/api/materials/folders/${raceA.id}`, "PATCH", {
+				parentId: raceB.id,
+			}),
+			json(`/api/materials/folders/${raceB.id}`, "PATCH", {
+				parentId: raceA.id,
+			}),
+		]);
+		expect([mAB.status, mBA.status].sort()).toEqual([200, 400]);
+		const cycleLoser = mAB.status === 400 ? mAB : mBA;
+		const cycleBody: { code?: string } = await cycleLoser.json();
+		expect(cycleBody.code).toBe("FOLDER_CYCLE");
+		const listAfterRace: { folders: MaterialFolderView[] } = await (
+			await get("/api/materials/folders")
+		).json();
+		const rowA = listAfterRace.folders.find((f) => f.id === raceA.id);
+		const rowB = listAfterRace.folders.find((f) => f.id === raceB.id);
+		expect(
+			(rowA?.parentId === null && rowB?.parentId === raceA.id) ||
+				(rowB?.parentId === null && rowA?.parentId === raceB.id),
+		).toBe(true);
+
+		// 2a. Concurrent pure rename + pure move on the same folder preserves BOTH updates.
+		const parentP = await makeFolder("Parent P");
+		const child = await makeFolder("Child Orig", parentP.id);
+		const [renRes, movRes] = await Promise.all([
+			json(`/api/materials/folders/${child.id}`, "PATCH", {
+				name: "Child Renamed",
+			}),
+			json(`/api/materials/folders/${child.id}`, "PATCH", { parentId: null }),
+		]);
+		expect([renRes.status, movRes.status]).toEqual([200, 200]);
+		const listAfterPartial: { folders: MaterialFolderView[] } = await (
+			await get("/api/materials/folders")
+		).json();
+		const updatedChild = listAfterPartial.folders.find(
+			(f) => f.id === child.id,
+		);
+		expect(updatedChild?.name).toBe("Child Renamed");
+		expect(updatedChild?.parentId).toBeNull();
+
+		// 2b. Concurrent moves of same-named folders into the same parent return [200, 409 FOLDER_NAME_TAKEN], never 500.
+		const src1 = await makeFolder("Clash Src 1");
+		const src2 = await makeFolder("Clash Src 2");
+		const dest = await makeFolder("Clash Dest");
+		const clash1 = await makeFolder("Same Name", src1.id);
+		const clash2 = await makeFolder("Same Name", src2.id);
+		const [c1Res, c2Res] = await Promise.all([
+			json(`/api/materials/folders/${clash1.id}`, "PATCH", {
+				parentId: dest.id,
+			}),
+			json(`/api/materials/folders/${clash2.id}`, "PATCH", {
+				parentId: dest.id,
+			}),
+		]);
+		expect([c1Res.status, c2Res.status].sort()).toEqual([200, 409]);
+		const clashLoser = c1Res.status === 409 ? c1Res : c2Res;
+		const clashBody: { code?: string } = await clashLoser.json();
+		expect(clashBody.code).toBe("FOLDER_NAME_TAKEN");
+
+		// 3a. Concurrent PATCH depth-cap race (4 + 5 individually valid, combined = 6 > 5).
+		const r0 = await makeFolder("DepthRace R0");
+		const l1 = await makeFolder("DepthRace L1");
+		const l2 = await makeFolder("DepthRace L2", l1.id);
+		await makeFolder("DepthRace L3", l2.id);
+		const s1 = await makeFolder("DepthRace S1");
+		const s2 = await makeFolder("DepthRace S2", s1.id);
+		await makeFolder("DepthRace S3", s2.id);
+		const [dMove1, dMove2] = await Promise.all([
+			json(`/api/materials/folders/${l1.id}`, "PATCH", { parentId: r0.id }),
+			json(`/api/materials/folders/${s1.id}`, "PATCH", { parentId: l2.id }),
+		]);
+		expect([dMove1.status, dMove2.status].sort()).toEqual([200, 400]);
+		const depthLoser = dMove1.status === 400 ? dMove1 : dMove2;
+		const depthLoserBody: { code?: string } = await depthLoser.json();
+		expect(depthLoserBody.code).toBe("FOLDER_TOO_DEEP");
+
+		// 3b. Concurrent PATCH + POST depth-cap race (combined = 6 > 5).
+		const d0 = await makeFolder("PostRace D0");
+		const d1 = await makeFolder("PostRace D1");
+		const d2 = await makeFolder("PostRace D2", d1.id);
+		const d3 = await makeFolder("PostRace D3", d2.id);
+		const d4 = await makeFolder("PostRace D4", d3.id);
+		const [pMove, pCreate] = await Promise.all([
+			json(`/api/materials/folders/${d1.id}`, "PATCH", { parentId: d0.id }),
+			createFolder("PostRace D5", d4.id),
+		]);
+		const pStatuses = [pMove.status, pCreate.status];
+		expect(pStatuses.includes(400)).toBe(true);
+		expect(pStatuses.some((s) => s === 200 || s === 201)).toBe(true);
+		const postRaceLoser = pMove.status === 400 ? pMove : pCreate;
+		const postRaceBody: { code?: string } = await postRaceLoser.json();
+		expect(postRaceBody.code).toBe("FOLDER_TOO_DEEP");
+		const listAfterDepthRaces: { folders: MaterialFolderView[] } = await (
+			await get("/api/materials/folders")
+		).json();
+		const byIdAfterDepth = new Map(
+			listAfterDepthRaces.folders.map((f) => [f.id, f]),
+		);
+		for (const folder of listAfterDepthRaces.folders) {
+			let depth = 0;
+			let cur: string | null = folder.id;
+			while (cur !== null) {
+				depth += 1;
+				cur = byIdAfterDepth.get(cur)?.parentId ?? null;
+			}
+			expect(depth).toBeLessThanOrEqual(5);
+		}
+
+		// 4. Legacy cyclic rows: POST child / re-confirming cycle -> 400 FOLDER_CYCLE; moving under valid root breaks cycle -> 200.
+		const validRoot = await makeFolder("Recovery Root");
+		await db.insert(schema.materialFolder).values([
+			{ id: "cyc-x", orgId: "org-1", parentId: null, name: "Cycle X" },
+			{ id: "cyc-y", orgId: "org-1", parentId: "cyc-x", name: "Cycle Y" },
+		]);
+		await db
+			.update(schema.materialFolder)
+			.set({ parentId: "cyc-y" })
+			.where(eq(schema.materialFolder.id, "cyc-x"));
+
+		const postOnCycle = await createFolder("Under Cycle", "cyc-x");
+		expect(postOnCycle.status).toBe(400);
+		const postOnCycleBody: { code?: string } = await postOnCycle.json();
+		expect(postOnCycleBody.code).toBe("FOLDER_CYCLE");
+
+		const reconfirmCycle = await json("/api/materials/folders/cyc-x", "PATCH", {
+			parentId: "cyc-y",
+		});
+		expect(reconfirmCycle.status).toBe(400);
+		const reconfirmBody: { code?: string } = await reconfirmCycle.json();
+		expect(reconfirmBody.code).toBe("FOLDER_CYCLE");
+
+		const breakCycle = await json("/api/materials/folders/cyc-x", "PATCH", {
+			parentId: validRoot.id,
+		});
+		expect(breakCycle.status).toBe(200);
+		const listAfterRecovery: { folders: MaterialFolderView[] } = await (
+			await get("/api/materials/folders")
+		).json();
+		expect(
+			listAfterRecovery.folders.find((f) => f.id === "cyc-x")?.parentId,
+		).toBe(validRoot.id);
+		expect(
+			listAfterRecovery.folders.find((f) => f.id === "cyc-y")?.parentId,
+		).toBe("cyc-x");
+	});
 	test("link create validates url and fields; list filters by q, kind, folder", async () => {
 		for (const url of [
 			"javascript:alert(1)",

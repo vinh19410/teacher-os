@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-router";
 import {
 	isMaterialKind,
+	MATERIAL_FOLDER_MAX_DEPTH,
 	MATERIAL_KINDS,
 	MATERIAL_ROOT_FOLDER,
 	MATERIAL_SEARCH_MAX,
@@ -51,6 +52,7 @@ import {
 	fetchMaterials,
 	materialFoldersQueryKey,
 	materialListQueryKey,
+	useCanWriteMaterials,
 } from "@/lib/repos/materials";
 
 /**
@@ -127,6 +129,11 @@ function MaterialsRoute() {
 	const [query, setQuery] = useState(() => searchParams.q ?? "");
 	const lastEmittedQuery = useRef(query);
 	const [dialog, setDialog] = useState<DialogState>(null);
+	const canWrite = useCanWriteMaterials();
+
+	useEffect(() => {
+		if (!canWrite) setDialog(null);
+	}, [canWrite]);
 
 	const foldersQuery = useQuery({
 		queryKey: materialFoldersQueryKey,
@@ -213,20 +220,22 @@ function MaterialsRoute() {
 				title="Tài liệu"
 				lead="Ngân hàng tài liệu dùng chung của trung tâm: file, liên kết, audio/video. Gắn vào buổi học từ trang lớp."
 				action={
-					<>
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={() => setDialog({ type: "link" })}
-						>
-							<Link2 aria-hidden="true" />
-							Thêm liên kết
-						</Button>
-						<Button size="sm" onClick={() => setDialog({ type: "upload" })}>
-							<Upload aria-hidden="true" />
-							Tải file lên
-						</Button>
-					</>
+					canWrite ? (
+						<>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => setDialog({ type: "link" })}
+							>
+								<Link2 aria-hidden="true" />
+								Thêm liên kết
+							</Button>
+							<Button size="sm" onClick={() => setDialog({ type: "upload" })}>
+								<Upload aria-hidden="true" />
+								Tải file lên
+							</Button>
+						</>
+					) : undefined
 				}
 			/>
 
@@ -239,6 +248,7 @@ function MaterialsRoute() {
 					selectedFolder={selectedFolder}
 					onSelect={selectFolder}
 					onDialog={setDialog}
+					canWrite={canWrite}
 				/>
 
 				<div className="flex min-w-0 flex-col gap-4">
@@ -350,24 +360,27 @@ function MaterialsRoute() {
 									Chưa có tài liệu nào
 								</h2>
 								<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
-									Ngân hàng tài liệu chứa file, liên kết và audio/video dùng
-									chung cho mọi lớp. Thêm tài liệu đầu tiên để gắn vào buổi học.
+									{canWrite
+										? "Ngân hàng tài liệu chứa file, liên kết và audio/video dùng chung cho mọi lớp. Thêm tài liệu đầu tiên để gắn vào buổi học."
+										: "Ngân hàng tài liệu của trung tâm hiện chưa có học liệu nào."}
 								</p>
-								<div className="mt-4 flex flex-wrap justify-center gap-2">
-									<Button
-										variant="outline"
-										size="sm"
-										onClick={() => setDialog({ type: "link" })}
-									>
-										Thêm liên kết
-									</Button>
-									<Button
-										size="sm"
-										onClick={() => setDialog({ type: "upload" })}
-									>
-										Tải file lên
-									</Button>
-								</div>
+								{canWrite && (
+									<div className="mt-4 flex flex-wrap justify-center gap-2">
+										<Button
+											variant="outline"
+											size="sm"
+											onClick={() => setDialog({ type: "link" })}
+										>
+											Thêm liên kết
+										</Button>
+										<Button
+											size="sm"
+											onClick={() => setDialog({ type: "upload" })}
+										>
+											Tải file lên
+										</Button>
+									</div>
+								)}
 							</Card>
 						)
 					) : (
@@ -401,29 +414,33 @@ function MaterialsRoute() {
 										actions={
 											<>
 												<MaterialOpenActions item={item} />
-												<Button
-													variant="ghost"
-													size="sm"
-													aria-label={`Sửa ${item.title}`}
-													onClick={() => setDialog({ type: "edit", item })}
-												>
-													<Pencil aria-hidden="true" />
-													<span className="max-sm:sr-only">Sửa</span>
-												</Button>
-												<Button
-													variant="ghost"
-													size="sm"
-													aria-label={`Xóa ${item.title}`}
-													onClick={() =>
-														setDialog({
-															type: "delete",
-															target: { type: "material", item },
-														})
-													}
-												>
-													<Trash2 aria-hidden="true" />
-													<span className="max-sm:sr-only">Xóa</span>
-												</Button>
+												{canWrite && (
+													<>
+														<Button
+															variant="ghost"
+															size="sm"
+															aria-label={`Sửa ${item.title}`}
+															onClick={() => setDialog({ type: "edit", item })}
+														>
+															<Pencil aria-hidden="true" />
+															<span className="max-sm:sr-only">Sửa</span>
+														</Button>
+														<Button
+															variant="ghost"
+															size="sm"
+															aria-label={`Xóa ${item.title}`}
+															onClick={() =>
+																setDialog({
+																	type: "delete",
+																	target: { type: "material", item },
+																})
+															}
+														>
+															<Trash2 aria-hidden="true" />
+															<span className="max-sm:sr-only">Xóa</span>
+														</Button>
+													</>
+												)}
 											</>
 										}
 									/>
@@ -434,7 +451,7 @@ function MaterialsRoute() {
 				</div>
 			</div>
 
-			{dialog?.type === "folder" && (
+			{canWrite && dialog?.type === "folder" && (
 				<FolderDialog
 					mode={dialog.mode}
 					folders={folders}
@@ -444,28 +461,28 @@ function MaterialsRoute() {
 					}}
 				/>
 			)}
-			{dialog?.type === "link" && (
+			{canWrite && dialog?.type === "link" && (
 				<LinkDialog
 					folders={folders}
 					defaultFolderId={defaultFolderId}
 					onClose={() => setDialog(null)}
 				/>
 			)}
-			{dialog?.type === "upload" && (
+			{canWrite && dialog?.type === "upload" && (
 				<UploadDialog
 					folders={folders}
 					defaultFolderId={defaultFolderId}
 					onClose={() => setDialog(null)}
 				/>
 			)}
-			{dialog?.type === "edit" && (
+			{canWrite && dialog?.type === "edit" && (
 				<EditMaterialDialog
 					item={dialog.item}
 					folders={folders}
 					onClose={() => setDialog(null)}
 				/>
 			)}
-			{dialog?.type === "delete" && (
+			{canWrite && dialog?.type === "delete" && (
 				<DeleteDialog
 					target={dialog.target}
 					onClose={() => setDialog(null)}
@@ -491,6 +508,7 @@ function FolderPanel({
 	selectedFolder,
 	onSelect,
 	onDialog,
+	canWrite,
 }: {
 	folders: readonly MaterialFolderView[];
 	status: "pending" | "error" | "success";
@@ -499,6 +517,7 @@ function FolderPanel({
 	selectedFolder: MaterialFolderView | null;
 	onSelect: (folderId: string | undefined) => void;
 	onDialog: (dialog: DialogState) => void;
+	canWrite: boolean;
 }) {
 	const rows = flattenFolderTree(folders);
 	const itemCls = (active: boolean) =>
@@ -512,19 +531,24 @@ function FolderPanel({
 		<Card className="flex min-w-0 flex-col gap-3 p-4">
 			<div className="flex items-center justify-between gap-2">
 				<h2 className="font-medium text-sm">Thư mục</h2>
-				<Button
-					variant="outline"
-					size="sm"
-					onClick={() =>
-						onDialog({
-							type: "folder",
-							mode: { type: "create", parentId: selectedFolder?.id ?? null },
-						})
-					}
-				>
-					<FolderPlus aria-hidden="true" />
-					Thư mục mới
-				</Button>
+				{canWrite && (
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() =>
+							onDialog({
+								type: "folder",
+								mode: {
+									type: "create",
+									parentId: selectedFolder?.id ?? null,
+								},
+							})
+						}
+					>
+						<FolderPlus aria-hidden="true" />
+						Thư mục mới
+					</Button>
+				)}
 			</div>
 			<nav aria-label="Thư mục tài liệu">
 				<ul className="flex flex-col gap-0.5">
@@ -552,21 +576,24 @@ function FolderPanel({
 							Chưa xếp thư mục
 						</button>
 					</li>
-					{rows.map(({ folder, depth }) => (
-						<li key={folder.id}>
-							<button
-								type="button"
-								className={itemCls(selected === folder.id)}
-								// Thụt lề theo cấp — tối đa 5 cấp nên không tràn panel.
-								style={{ paddingLeft: `${0.5 + depth * 0.875}rem` }}
-								aria-current={selected === folder.id ? "true" : undefined}
-								onClick={() => onSelect(folder.id)}
-							>
-								<Folder aria-hidden="true" className="size-4 shrink-0" />
-								<span className="truncate">{folder.name}</span>
-							</button>
-						</li>
-					))}
+					{rows.map(({ folder, depth }) => {
+						const clampedDepth = Math.min(depth, MATERIAL_FOLDER_MAX_DEPTH - 1);
+						return (
+							<li key={folder.id}>
+								<button
+									type="button"
+									className={itemCls(selected === folder.id)}
+									// Thụt lề theo cấp — kẹp tối đa MATERIAL_FOLDER_MAX_DEPTH - 1 để không tràn panel.
+									style={{ paddingLeft: `${0.5 + clampedDepth * 0.875}rem` }}
+									aria-current={selected === folder.id ? "true" : undefined}
+									onClick={() => onSelect(folder.id)}
+								>
+									<Folder aria-hidden="true" className="size-4 shrink-0" />
+									<span className="truncate">{folder.name}</span>
+								</button>
+							</li>
+						);
+					})}
 				</ul>
 			</nav>
 			{status === "pending" && (
@@ -582,10 +609,12 @@ function FolderPanel({
 			)}
 			{status === "success" && folders.length === 0 && (
 				<p className="text-muted-foreground text-xs">
-					Chưa có thư mục. Tạo thư mục để sắp xếp tài liệu theo khóa, kỹ năng…
+					{canWrite
+						? "Chưa có thư mục. Tạo thư mục để sắp xếp tài liệu theo khóa, kỹ năng…"
+						: "Chưa có thư mục."}
 				</p>
 			)}
-			{selectedFolder && (
+			{canWrite && selectedFolder && (
 				<fieldset
 					aria-label={`Thao tác thư mục ${selectedFolder.name}`}
 					className="flex flex-wrap gap-1 border-t pt-3"

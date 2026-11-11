@@ -10,8 +10,11 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MaterialPicker } from "@/components/materials/material-picker";
-import { renderWithKernel } from "@/test/kernel-harness";
-import { startMaterialsBankServer } from "@/test/materials-harness";
+import { renderWithKernel, snapshotFixture } from "@/test/kernel-harness";
+import {
+	bankMaterialRow,
+	startMaterialsBankServer,
+} from "@/test/materials-harness";
 
 const selectedRef: SyllabusBankMaterialRef = {
 	id: "mat-2",
@@ -141,5 +144,61 @@ describe("MaterialPicker", () => {
 			).toBeNull(),
 		);
 		expect(screen.getByText("Listening drill")).toBeTruthy();
+	});
+
+	it("hides bank file upload for ta while keeping bank browser and chip selection (#646)", async () => {
+		const onPick = vi.fn();
+		const onRemove = vi.fn();
+		startMaterialsBankServer(
+			[bankMaterialRow],
+			snapshotFixture({ viewer: { role: "ta", canAccessFinance: false } }),
+		);
+		renderWithKernel(
+			<MaterialPicker
+				selected={[selectedRef]}
+				onPick={onPick}
+				onRemove={onRemove}
+			/>,
+		);
+
+		expect(
+			await screen.findByRole("button", { name: "Chọn từ ngân hàng" }),
+		).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Tải file lên" })).toBeNull();
+		expect(
+			screen.queryByLabelText("Chọn file tải lên ngân hàng tài liệu"),
+		).toBeNull();
+
+		fireEvent.click(screen.getByRole("button", { name: "Gỡ Listening drill" }));
+		expect(onRemove).toHaveBeenCalledWith("mat-2");
+
+		fireEvent.click(screen.getByRole("button", { name: "Chọn từ ngân hàng" }));
+		const dialog = await screen.findByRole("dialog", {
+			name: "Chọn từ ngân hàng tài liệu",
+		});
+		fireEvent.click(
+			await within(dialog).findByRole("button", { name: "Gắn Reading pack" }),
+		);
+		await waitFor(() => expect(onPick).toHaveBeenCalledTimes(1));
+
+		cleanup();
+		startMaterialsBankServer(
+			[],
+			snapshotFixture({ viewer: { role: "ta", canAccessFinance: false } }),
+		);
+		renderWithKernel(
+			<MaterialPicker selected={[]} onPick={onPick} onRemove={onRemove} />,
+		);
+		fireEvent.click(
+			await screen.findByRole("button", { name: "Chọn từ ngân hàng" }),
+		);
+		const emptyDialog = await screen.findByRole("dialog", {
+			name: "Chọn từ ngân hàng tài liệu",
+		});
+		expect(
+			await within(emptyDialog).findByText(
+				"Ngân hàng tài liệu của trung tâm hiện chưa có học liệu nào.",
+			),
+		).toBeTruthy();
 	});
 });

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Library, Unlink, Upload } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { UPLOAD_HELP } from "@/components/materials/material-dialogs";
 import {
@@ -22,6 +22,7 @@ import {
 	prepareMaterialUpload,
 	sessionMaterialsQueryKey,
 	uploadSessionMaterial,
+	useCanWriteMaterials,
 } from "@/lib/repos/materials";
 
 /**
@@ -46,6 +47,15 @@ export function SessionMaterialsModal({
 	const [view, setView] = useState<"list" | "pick">("list");
 	const [error, setError] = useState<string | null>(null);
 	const queryClient = useQueryClient();
+	const canWrite = useCanWriteMaterials();
+	const activeView = canWrite ? view : "list";
+
+	useEffect(() => {
+		if (!canWrite) {
+			setView("list");
+			setError(null);
+		}
+	}, [canWrite]);
 	const sessionKey = sessionMaterialsQueryKey(classId, dateISO);
 	const sessionQuery = useQuery({
 		queryKey: sessionKey,
@@ -112,12 +122,12 @@ export function SessionMaterialsModal({
 			open
 			onClose={onClose}
 			title={
-				view === "list"
+				activeView === "list"
 					? `Tài liệu buổi ${sessionLabel}`
 					: "Chọn từ ngân hàng tài liệu"
 			}
 			footer={
-				view === "pick" ? (
+				activeView === "pick" ? (
 					<Button
 						variant="outline"
 						size="sm"
@@ -141,7 +151,7 @@ export function SessionMaterialsModal({
 					{error}
 				</p>
 			)}
-			{view === "pick" ? (
+			{activeView === "pick" ? (
 				<MaterialBankBrowser
 					selectedIds={attachedIds}
 					pendingId={attach.isPending ? attach.variables : undefined}
@@ -150,42 +160,46 @@ export function SessionMaterialsModal({
 				/>
 			) : (
 				<>
-					<div className="flex flex-wrap gap-2">
-						<Button
-							variant="outline"
-							size="sm"
-							disabled={busy}
-							onClick={() => {
-								setError(null);
-								setView("pick");
-							}}
-						>
-							<Library aria-hidden="true" />
-							Chọn từ ngân hàng
-						</Button>
-						<Button
-							variant="outline"
-							size="sm"
-							disabled={busy}
-							aria-busy={upload.isPending}
-							onClick={() => fileInput.current?.click()}
-						>
-							<Upload aria-hidden="true" />
-							{upload.isPending ? "Đang tải lên…" : "Tải lên mới"}
-						</Button>
-						<input
-							ref={fileInput}
-							type="file"
-							className="sr-only"
-							tabIndex={-1}
-							aria-label="Chọn file tải lên cho buổi học"
-							accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.pptx,.xlsx,.mp3,.m4a,.mp4"
-							onChange={(e) => pickFile(e.target.files?.[0])}
-						/>
-					</div>
-					<p className="text-muted-foreground text-xs">
-						{`${UPLOAD_HELP} File tải lên được lưu vào ngân hàng tài liệu (Chưa xếp thư mục).`}
-					</p>
+					{canWrite && (
+						<>
+							<div className="flex flex-wrap gap-2">
+								<Button
+									variant="outline"
+									size="sm"
+									disabled={busy}
+									onClick={() => {
+										setError(null);
+										setView("pick");
+									}}
+								>
+									<Library aria-hidden="true" />
+									Chọn từ ngân hàng
+								</Button>
+								<Button
+									variant="outline"
+									size="sm"
+									disabled={busy}
+									aria-busy={upload.isPending}
+									onClick={() => fileInput.current?.click()}
+								>
+									<Upload aria-hidden="true" />
+									{upload.isPending ? "Đang tải lên…" : "Tải lên mới"}
+								</Button>
+								<input
+									ref={fileInput}
+									type="file"
+									className="sr-only"
+									tabIndex={-1}
+									aria-label="Chọn file tải lên cho buổi học"
+									accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.pptx,.xlsx,.mp3,.m4a,.mp4"
+									onChange={(e) => pickFile(e.target.files?.[0])}
+								/>
+							</div>
+							<p className="text-muted-foreground text-xs">
+								{`${UPLOAD_HELP} File tải lên được lưu vào ngân hàng tài liệu (Chưa xếp thư mục).`}
+							</p>
+						</>
+					)}
 					{sessionQuery.isPending ? (
 						<p className="text-muted-foreground text-sm">Đang tải tài liệu…</p>
 					) : sessionQuery.isError ? (
@@ -205,8 +219,9 @@ export function SessionMaterialsModal({
 							className="rounded-lg border border-dashed p-4 text-center text-muted-foreground text-sm"
 							data-testid="session-materials-empty"
 						>
-							Chưa có tài liệu nào cho buổi này. Chọn từ ngân hàng hoặc tải file
-							mới.
+							{canWrite
+								? "Chưa có tài liệu nào cho buổi này. Chọn từ ngân hàng hoặc tải file mới."
+								: "Chưa có tài liệu nào cho buổi này."}
 						</p>
 					) : (
 						<>
@@ -219,16 +234,18 @@ export function SessionMaterialsModal({
 											actions={
 												<>
 													<MaterialOpenActions item={item} />
-													<Button
-														variant="ghost"
-														size="sm"
-														disabled={busy}
-														aria-label={`Gỡ ${item.title}`}
-														onClick={() => detach.mutate(item.id)}
-													>
-														<Unlink aria-hidden="true" />
-														<span className="max-sm:sr-only">Gỡ</span>
-													</Button>
+													{canWrite && (
+														<Button
+															variant="ghost"
+															size="sm"
+															disabled={busy}
+															aria-label={`Gỡ ${item.title}`}
+															onClick={() => detach.mutate(item.id)}
+														>
+															<Unlink aria-hidden="true" />
+															<span className="max-sm:sr-only">Gỡ</span>
+														</Button>
+													)}
 												</>
 											}
 										/>
