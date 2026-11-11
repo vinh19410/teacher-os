@@ -15,6 +15,14 @@ Quy ước khi cập nhật:
 ### Fixed
 - Chặn nguyên tử race chu trình & vượt trần 5 cấp của thư mục tài liệu bằng SQL `WITH RECURSIVE` trực tiếp trong `POST`/`PATCH /api/materials/folders`, cập nhật từng phần `name`/`parentId` khi `PATCH` để đua đổi tên và di chuyển không ghi đè nhau, đồng thời phục hồi hiển thị an toàn các thành phần chu trình từ gốc chu trình ở `flattenFolderTree` và đồng bộ `effectiveParentId` trong `FolderDialog` (#646).
 - Tách riêng `canReadMaterials`/`canWriteMaterials` trong `@teacher-os/auth/role` khỏi quyền chấm bài (`canReviewGrade`/`canPublishGrade`) và ẩn toàn bộ nút/hộp thoại ghi tài liệu cho vai trò trợ giảng (`ta`) trên `/materials`, `SessionMaterialsModal`, và `MaterialPicker` (#646).
+- Nút «Phát» / «Mở» của tài liệu audio/video phát được lại trực tiếp trong tab mới (#647): phản hồi file media `inline` giờ dùng CSP riêng cho phép `media-src 'self'` + `sandbox allow-same-origin` (không `allow-scripts`) sau khi chuẩn hoá MIME qua `normalizeMediaType` + allowlist `MATERIAL_MIME`, ép `application/octet-stream` khi MIME hỏng, và kèm `Cross-Origin-Opener-Policy: same-origin` + `Referrer-Policy: no-referrer`.
+
+### Changed
+- Trần dung lượng upload audio/video của tài liệu hạ từ 100 MiB xuống 95 MB (`95 MiB`) để nằm dưới giới hạn request body 100 MB của Cloudflare Free/Pro edge — client chặn ngay trước khi gặp trang 413 HTML thiếu CORS (#647); bổ sung E2E `material-upload-student.spec.ts` phủ upload `PUT` raw body + preflight CORS + tên file Unicode và học viên đa-org mở/phát/tải tài liệu buổi học qua `?org=`.
+
+### CI/Infra
+- `design:compare` loại bỏ phụ thuộc Vite dev ở bước xác thực email và khởi tạo bài làm học viên trong `design-seed.ts` (#652): đóng nguyên tử `studentPage` sau `sign-up/email`, xác thực qua `studentCtx.request.get(verifyUrl, { maxRedirects: 0 })` kèm kiểm tra `302`/`Location`/cookie và `GET /api/auth/get-session` (`emailVerified === true`), chuyển khởi tạo 4 attempt sang `studentCtx.request.post(.../quiz/start)`; bổ sung helper thuần `apps/e2e/src/design-seed-nav.ts` (`withNavRetry`, `clampTimeoutMs`, `redactCapabilityUrl`, `assertVerifiedEmailRedirect`) với trần `SEED_DEADLINE` 390s, che capability token không gắn `Error.cause`, và ép quyền `0o700`/`0o600` cho `.state`.
+- `design:compare` sửa lỗi deterministic ảnh design-side màn `pay` bị pixel check đánh giá trắng/rỗng ở `desktop-light` và `tablet-light` (#653): đổi `pay.design.hash` trong `scripts/design-compare/screens.json` từ `#/pay/p7Hq2x` (hóa đơn đã trả đủ làm card trắng chỉ chiếm <1% pixel trên nền sáng) sang `#/pay/zz3Kpr` (`TOS9B4C7` còn dư nợ có mã QR, đồng bộ với `t-invoice` và `seed.payToken`), cập nhật bảng ánh xạ gốc cùng 6 ảnh đối chiếu `screenshots/pay/*.png` mà giữ nguyên độ chặt của `inspectPngBuffer`.
 
 ## 2026-11-10
 

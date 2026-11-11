@@ -71,7 +71,9 @@ describe("checkMaterialUpload", () => {
 		).toEqual({ ok: false, reason: "empty" });
 	});
 
-	test("caps documents at 25MB and media at 100MB", () => {
+	test("caps documents at 25MB and media at 95MB (below 100MB Cloudflare edge limit)", () => {
+		expect(MATERIAL_MEDIA_MAX_BYTES).toBe(95 * 1024 * 1024);
+		expect(MATERIAL_MEDIA_MAX_BYTES).toBeLessThan(100_000_000);
 		expect(
 			checkMaterialUpload({
 				mimeType: "application/pdf",
@@ -90,6 +92,16 @@ describe("checkMaterialUpload", () => {
 				size: MATERIAL_DOC_MAX_BYTES + 1,
 			}).ok,
 		).toBe(true);
+		expect(
+			checkMaterialUpload({
+				mimeType: "video/mp4",
+				size: 96 * 1024 * 1024,
+			}),
+		).toEqual({
+			ok: false,
+			reason: "size",
+			maxBytes: 95 * 1024 * 1024,
+		});
 		expect(
 			checkMaterialUpload({
 				mimeType: "video/mp4",

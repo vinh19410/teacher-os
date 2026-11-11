@@ -204,6 +204,9 @@ export function materialErrorMessage(error: unknown): string {
 		default:
 			break;
 	}
+	// Phủ phản hồi 413 có CORS nhưng không kèm JSON FILE_TOO_LARGE (trần 95 MiB
+	// ở prepareMaterialUpload đã chặn trước nhánh 413 thiếu CORS của Cloudflare edge).
+	if (error.status === 413) return "File quá lớn so với giới hạn cho phép.";
 	if (error.status === 403) return "Bạn không có quyền thực hiện thao tác này.";
 	if (error.status === 400)
 		return "Dữ liệu không hợp lệ. Kiểm tra lại rồi thử lại.";

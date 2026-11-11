@@ -34,7 +34,7 @@ Design điều hướng bằng hash + state: harness phải bấm "Login" trư�
 |---|---|---|---|
 | login-teacher | `Login` (`App.tsx`) | web `/login` | 5 |
 | login-reset | `Login` mode reset | web `/forgot-password` | 5 |
-| pay | `#/pay/p7Hq2x` | web `/pay/$token` (seed) | 5 |
+| pay | `#/pay/zz3Kpr` | web `/pay/$token` (seed) | 5 |
 | t-dashboard | `#/dashboard` | web `/dashboard` | 6 |
 | t-classes | `#/classes` | web `/classes` | 6 |
 | t-class-detail | `#/classes/c2` (3 tab) | web `/classes/$classId` | 6 |

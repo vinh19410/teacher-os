@@ -345,7 +345,7 @@ export function LinkDialog({
 
 /** Dòng hướng dẫn định dạng + giới hạn (khớp `MATERIAL_MIME`). */
 export const UPLOAD_HELP =
-	"PDF, PNG/JPG/WEBP, DOCX/PPTX/XLSX tối đa 25 MB; MP3/M4A/MP4 tối đa 100 MB.";
+	"PDF, PNG/JPG/WEBP, DOCX/PPTX/XLSX tối đa 25 MB; MP3/M4A/MP4 tối đa 95 MB.";
 
 export function UploadDialog({
 	folders,

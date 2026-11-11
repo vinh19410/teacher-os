@@ -878,6 +878,17 @@ describe("material bank and session materials", () => {
 		expect(full.headers.get("X-Content-Type-Options")).toBe("nosniff");
 		expect(full.headers.get("Content-Disposition")).toMatch(/^inline;/);
 		expect(full.headers.get("Cross-Origin-Resource-Policy")).toBe("same-site");
+		expect(full.headers.get("Cross-Origin-Opener-Policy")).toBe("same-origin");
+		expect(full.headers.get("Referrer-Policy")).toBe("no-referrer");
+		expect(full.headers.get("Content-Security-Policy")).toContain(
+			"media-src 'self'",
+		);
+		expect(full.headers.get("Content-Security-Policy")).toContain(
+			"sandbox allow-same-origin",
+		);
+		expect(full.headers.get("Content-Security-Policy")).not.toContain(
+			"allow-scripts",
+		);
 		expect(new Uint8Array(await full.arrayBuffer())).toEqual(bytes);
 
 		const partial = await get(
@@ -889,6 +900,13 @@ describe("material bank and session materials", () => {
 		);
 		expect(partial.status).toBe(206);
 		expect(partial.headers.get("Content-Range")).toBe("bytes 2-4/10");
+		expect(partial.headers.get("Content-Disposition")).toMatch(/^inline;/);
+		expect(partial.headers.get("Content-Security-Policy")).toContain(
+			"media-src 'self'",
+		);
+		expect(partial.headers.get("Content-Security-Policy")).not.toContain(
+			"allow-scripts",
+		);
 		expect(new Uint8Array(await partial.arrayBuffer())).toEqual(
 			new Uint8Array([3, 4, 5]),
 		);
@@ -901,6 +919,9 @@ describe("material bank and session materials", () => {
 
 		const download = await get(`/api/materials/${created.id}/file?download=1`);
 		expect(download.headers.get("Content-Disposition")).toMatch(/^attachment;/);
+		expect(download.headers.get("Content-Security-Policy")).toBe(
+			"default-src 'none'; frame-ancestors 'none'; sandbox",
+		);
 
 		const pdf = await upload("/api/materials/files", { name: "Unit 2.pdf" });
 		const pdfMaterial = ((await pdf.json()) as { material: MaterialView })
@@ -908,6 +929,9 @@ describe("material bank and session materials", () => {
 		expect(pdfMaterial.kind).toBe("file");
 		const pdfFile = await get(`/api/materials/${pdfMaterial.id}/file`);
 		expect(pdfFile.headers.get("Content-Disposition")).toMatch(/^attachment;/);
+		expect(pdfFile.headers.get("Content-Security-Policy")).toBe(
+			"default-src 'none'; frame-ancestors 'none'; sandbox",
+		);
 	});
 
 	test("org isolation: another org sees 404 on every id-addressed route", async () => {
@@ -1139,6 +1163,13 @@ describe("material bank and session materials", () => {
 		expect(download.status).toBe(200);
 		expect(download.headers.get("Cross-Origin-Resource-Policy")).toBe(
 			"same-site",
+		);
+		expect(download.headers.get("Cross-Origin-Opener-Policy")).toBe(
+			"same-origin",
+		);
+		expect(download.headers.get("Referrer-Policy")).toBe("no-referrer");
+		expect(download.headers.get("Content-Security-Policy")).toBe(
+			"default-src 'none'; frame-ancestors 'none'; sandbox",
 		);
 		expect(new Uint8Array(await download.arrayBuffer())).toEqual(
 			new Uint8Array([9, 8, 7]),
