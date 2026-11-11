@@ -1,11 +1,12 @@
 import { useQueryClient } from "@tanstack/react-query";
 import type { ShellTeam } from "@teacher-os/ui/components/app-shell/team-switcher";
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import {
 	getActiveStudentOrgId,
 	setActiveStudentOrgId,
 	useStudentOrgs,
 } from "@/lib/repos/student";
+import { subscribeActiveStudentOrg } from "@/lib/student-org-storage";
 
 /**
  * Dữ liệu TeamSwitcher học viên — giữ nguyên logic `useStudentOrgs` của
@@ -14,20 +15,29 @@ import {
  */
 export function useStudentTeam(): ShellTeam | null {
 	const queryClient = useQueryClient();
-	const { data: orgs, isLoading } = useStudentOrgs();
+	const { data: orgs, isLoading, isFetching, isError } = useStudentOrgs();
 
-	const activeOrgId = getActiveStudentOrgId();
+	const activeOrgId = useSyncExternalStore(
+		subscribeActiveStudentOrg,
+		getActiveStudentOrgId,
+		getActiveStudentOrgId,
+	);
 	const currentOrg =
 		orgs?.find((o) => o.id === activeOrgId) ??
 		orgs?.find((o) => o.isCurrent) ??
 		orgs?.[0];
 
-	// Keep localStorage synced with current active org if unset
+	// Keep localStorage synced when unset or pointing to a stale/removed org (#675)
 	useEffect(() => {
-		if (currentOrg && !activeOrgId) {
-			setActiveStudentOrgId(currentOrg.id);
+		if (!currentOrg || isFetching || isError || activeOrgId === currentOrg.id) {
+			return;
 		}
-	}, [currentOrg, activeOrgId]);
+		const hadStaleOrg = activeOrgId !== null;
+		setActiveStudentOrgId(currentOrg.id);
+		if (hadStaleOrg) {
+			void queryClient.invalidateQueries({ queryKey: ["student"] });
+		}
+	}, [currentOrg, isFetching, isError, activeOrgId, queryClient]);
 
 	if (isLoading || !orgs || orgs.length === 0 || !currentOrg) {
 		return null;

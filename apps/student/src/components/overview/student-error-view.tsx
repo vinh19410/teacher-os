@@ -15,6 +15,7 @@ import {
 import { useState } from "react";
 import { NoticeInfo } from "@/components/auth/notices";
 import { authClient } from "@/lib/auth-client";
+import { syncActiveStudentUser } from "@/lib/student-org-storage";
 import { getTeacherPortalUrl } from "@/lib/teacher-portal-url";
 
 interface StudentErrorViewProps {
@@ -41,6 +42,7 @@ export function StudentErrorView({
 		} catch {
 			// Best-effort sign-out
 		} finally {
+			syncActiveStudentUser(null);
 			window.location.assign("/login");
 		}
 	};
@@ -116,6 +118,11 @@ export function StudentErrorView({
 		description =
 			"Hệ thống ghi nhận nhiều hơn một hồ sơ học viên trùng với email của bạn. Vui lòng liên hệ trung tâm để được chuẩn hóa danh tính.";
 		icon = <ShieldAlert className="size-8 text-destructive" />;
+	} else if (code === STUDENT_ERROR_CODES.ORG_MISMATCH) {
+		title = "Tổ chức học tập không còn hợp lệ";
+		description =
+			"Tổ chức bạn đang chọn không khớp với hồ sơ hiện tại. Vui lòng tải lại trang để chuyển sang tổ chức hợp lệ.";
+		icon = <AlertCircle className="size-8 text-primary" />;
 	}
 
 	return (

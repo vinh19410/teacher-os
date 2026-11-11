@@ -25,7 +25,6 @@ function StudentTuitionDetailRoute() {
 	const payment = useQuery({
 		queryKey: ["student", "invoice-payment", invoiceId, reload],
 		queryFn: () => fetchStudentInvoicePayment(invoiceId),
-		retry: false,
 	});
 
 	useEffect(() => {

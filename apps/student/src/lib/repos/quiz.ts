@@ -10,13 +10,22 @@ import {
 	quizAttemptMediaSchema,
 	quizAttemptSummarySchema,
 	quizSubmitResultSchema,
+	STUDENT_ERROR_CODES,
 	type StudentQuizDetail,
 	studentQuizDetailSchema,
 } from "@teacher-os/api/contracts";
 import { normalizeMediaType } from "@teacher-os/api/lib/quiz-media";
 import { z } from "zod";
-import { HttpError } from "@/lib/query-client";
+import {
+	HttpError,
+	healStudentOrgMismatch,
+	studentQueryClient,
+} from "@/lib/query-client";
 import { getApiBaseUrl, getStudentHeaders } from "@/lib/repos/student";
+import {
+	clearActiveStudentOrgId,
+	getActiveStudentOrgId,
+} from "@/lib/student-org-storage";
 
 /** POST start trả về đúng `{ attemptId }` (201 mới / 200 resume). */
 const quizStartResultSchema = z.object({ attemptId: z.string().min(1) });
@@ -62,22 +71,61 @@ async function request<T>(
 	init: RequestInit & { keepalive?: boolean },
 	parse: (raw: unknown) => T,
 ): Promise<T> {
-	const res = await fetch(`${getApiBaseUrl()}${path}`, {
+	const method = (init.method ?? "GET").toUpperCase();
+	const extraHeaders: Record<string, string> =
+		init.body === undefined ? {} : { "Content-Type": "application/json" };
+	const headers = getStudentHeaders(extraHeaders);
+	const sentOrgId = headers["x-student-org-id"];
+	let res = await fetch(`${getApiBaseUrl()}${path}`, {
 		credentials: "include",
 		...init,
-		headers: getStudentHeaders(
-			init.body === undefined ? {} : { "Content-Type": "application/json" },
-		),
+		headers,
 	});
 	if (!res.ok) {
-		const { code } = await parseErrorBody(res);
-		throw new HttpError(
-			res.status,
-			`Request failed with status ${res.status}`,
-			{
-				code,
-			},
-		);
+		let { code } = await parseErrorBody(res);
+		if (res.status === 403 && code === STUDENT_ERROR_CODES.ORG_MISMATCH) {
+			if ((method === "GET" || method === "HEAD") && sentOrgId) {
+				if (getActiveStudentOrgId() === sentOrgId) {
+					clearActiveStudentOrgId();
+					void studentQueryClient.invalidateQueries({
+						queryKey: ["student", "orgs"],
+						exact: true,
+					});
+				}
+				res = await fetch(`${getApiBaseUrl()}${path}`, {
+					credentials: "include",
+					...init,
+					headers: getStudentHeaders(extraHeaders, null),
+				});
+				if (!res.ok) {
+					({ code } = await parseErrorBody(res));
+					throw new HttpError(
+						res.status,
+						`Request failed with status ${res.status}`,
+						{ code },
+					);
+				}
+			} else {
+				healStudentOrgMismatch();
+				throw new HttpError(
+					res.status,
+					`Request failed with status ${res.status}`,
+					{
+						code,
+						sentOrgId,
+					},
+				);
+			}
+		} else {
+			throw new HttpError(
+				res.status,
+				`Request failed with status ${res.status}`,
+				{
+					code,
+					sentOrgId,
+				},
+			);
+		}
 	}
 	if (res.status === 204) return undefined as T;
 	return parse(await res.json());
@@ -315,6 +363,7 @@ export function uploadQuizMedia(
 			"Content-Type": type,
 			"X-File-Name": encodeURIComponent(file.name),
 		});
+		const sentOrgId = headers["x-student-org-id"];
 		for (const [name, value] of Object.entries(headers)) {
 			xhr.setRequestHeader(name, value);
 		}
@@ -344,9 +393,14 @@ export function uploadQuizMedia(
 				return;
 			}
 			const record = (body ?? {}) as { code?: string; error?: string };
+			const code = record.code ?? record.error;
+			if (xhr.status === 403 && code === STUDENT_ERROR_CODES.ORG_MISMATCH) {
+				healStudentOrgMismatch();
+			}
 			reject(
 				new HttpError(xhr.status, `Upload failed with status ${xhr.status}`, {
-					code: record.code ?? record.error,
+					code,
+					sentOrgId,
 				}),
 			);
 		};
@@ -382,24 +436,53 @@ export async function fetchQuizMediaObjectUrl(
 	attemptId: string,
 	signal?: AbortSignal,
 ): Promise<string> {
-	const res = await fetch(
-		`${getApiBaseUrl()}/api/student/attempts/${encodeURIComponent(attemptId)}/media`,
-		{
-			method: "GET",
-			credentials: "include",
-			headers: getStudentHeaders({ Accept: "*/*" }),
-			signal,
-		},
-	);
+	const url = `${getApiBaseUrl()}/api/student/attempts/${encodeURIComponent(attemptId)}/media`;
+	const headers = getStudentHeaders({ Accept: "*/*" });
+	const sentOrgId = headers["x-student-org-id"];
+	let res = await fetch(url, {
+		method: "GET",
+		credentials: "include",
+		headers,
+		signal,
+	});
 	if (!res.ok) {
-		const { code } = await parseErrorBody(res);
-		throw new HttpError(
-			res.status,
-			`Request failed with status ${res.status}`,
-			{
-				code,
-			},
-		);
+		let { code } = await parseErrorBody(res);
+		if (
+			res.status === 403 &&
+			code === STUDENT_ERROR_CODES.ORG_MISMATCH &&
+			sentOrgId
+		) {
+			if (getActiveStudentOrgId() === sentOrgId) {
+				clearActiveStudentOrgId();
+				void studentQueryClient.invalidateQueries({
+					queryKey: ["student", "orgs"],
+					exact: true,
+				});
+			}
+			res = await fetch(url, {
+				method: "GET",
+				credentials: "include",
+				headers: getStudentHeaders({ Accept: "*/*" }, null),
+				signal,
+			});
+			if (!res.ok) {
+				({ code } = await parseErrorBody(res));
+				throw new HttpError(
+					res.status,
+					`Request failed with status ${res.status}`,
+					{ code },
+				);
+			}
+		} else {
+			throw new HttpError(
+				res.status,
+				`Request failed with status ${res.status}`,
+				{
+					code,
+					sentOrgId,
+				},
+			);
+		}
 	}
 	const type = normalizeMediaType(res.headers.get("Content-Type") ?? "");
 	if (!Object.hasOwn(QUIZ_MEDIA_TYPES, type)) {
