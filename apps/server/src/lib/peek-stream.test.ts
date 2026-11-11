@@ -133,6 +133,32 @@ describe("peekStream", () => {
 		expect(infiniteEmpty.locked).toBe(false);
 	});
 
+	test("abort() cancels the open source with the given reason even when replay stream is locked (#681)", async () => {
+		let cancelReason: unknown = null;
+		const body = new ReadableStream<Uint8Array>({
+			start(controller) {
+				controller.enqueue(sequenceBytes(150));
+				// KHÔNG close — nguồn phải còn mở để `abort()` thật sự huỷ được
+				// (stream tự đóng trước đó sẽ làm `reader.cancel` rút gọn).
+			},
+			cancel(reason) {
+				cancelReason = reason;
+			},
+		});
+		const peeked = await peekStream(body, 64);
+		// Mô phỏng store `pipeThrough` đã khoá replay stream.
+		const lockedReader = peeked.stream.getReader();
+		expect(peeked.stream.locked).toBe(true);
+
+		await expect(peeked.abort("store error")).resolves.toBeUndefined();
+		expect(cancelReason).toBe("store error");
+		expect(body.locked).toBe(false);
+		// Idempotent — gọi lần 2 không ném, không đổi reason đã ghi.
+		await expect(peeked.abort("again")).resolves.toBeUndefined();
+		expect(cancelReason).toBe("store error");
+		void lockedReader;
+	});
+
 	test("survives concurrent pull() and cancel() race without Controller is already closed", async () => {
 		const prefix = sequenceBytes(64);
 		let sentPrefix = false;

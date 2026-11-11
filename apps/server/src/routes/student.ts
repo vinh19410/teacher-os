@@ -35,7 +35,10 @@ import { essayTaskOf, hasGradableTask } from "@teacher-os/api/lib/ielts-band";
 import { inferQuestionTypes } from "@teacher-os/api/lib/infer-question-types";
 import {
 	isAllowedQuizMediaType,
+	matchesQuizMediaMagic,
 	normalizeMediaType,
+	QUIZ_MEDIA_MAGIC_PEEK_BYTES,
+	quizMediaExtensionMatches,
 	sanitizeMediaFileName,
 } from "@teacher-os/api/lib/quiz-media";
 import {
@@ -70,6 +73,7 @@ import {
 	ensurePaymentRefs,
 	loadPaymentInstructions,
 } from "../lib/payment-instructions";
+import { type PeekedStream, peekStream } from "../lib/peek-stream";
 import {
 	loadEssayAnnotations,
 	toPlainAnnotation,
@@ -1718,10 +1722,13 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		if (size > QUIZ_MEDIA_MAX_BYTES) {
 			return c.json({ error: "payload too large" }, 413);
 		}
-		const contentType = normalizeMediaType(c.req.header("Content-Type") ?? "");
-		if (!isAllowedQuizMediaType(contentType)) {
+		const contentTypeRaw = normalizeMediaType(
+			c.req.header("Content-Type") ?? "",
+		);
+		if (!isAllowedQuizMediaType(contentTypeRaw)) {
 			return c.json({ error: "unsupported media type" }, 415);
 		}
+		let contentType: string = contentTypeRaw;
 		let name: string | null = null;
 		try {
 			name = sanitizeMediaFileName(
@@ -1732,6 +1739,15 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		}
 		if (name === null) {
 			return c.json({ error: "invalid file name" }, 400);
+		}
+		// #681: client cũ (SPA đã cache) vẫn có thể gửi `.m4a` với MIME
+		// `video/mp4` — chuẩn hoá về `audio/mp4` trước khi kiểm đuôi file.
+		if (contentType === "video/mp4" && name.toLowerCase().endsWith(".m4a")) {
+			contentType = "audio/mp4";
+		}
+		if (!quizMediaExtensionMatches(name, contentType)) {
+			await c.req.raw.body?.cancel().catch(() => undefined);
+			return c.json({ error: "unsupported media type" }, 415);
 		}
 
 		const attempt = await loadOwnedAttemptWithSkill(attemptId, s.id, orgId);
@@ -1753,9 +1769,34 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const newKey = `quiz-media/${orgId}/${attemptId}/${crypto.randomUUID()}`;
 		const discardNew = () =>
 			inBackground("discard new object", () => store.delete(newKey));
+		// #681: đọc sớm tối đa 64 byte đầu (không đệm RAM) để kiểm chữ ký
+		// nhị phân chống polyglot trước khi ghi kho; phát lại nguyên vẹn qua
+		// `peeked.stream` với backpressure pull-based.
+		let peeked: PeekedStream;
 		try {
-			await store.put(newKey, body, { contentType, size });
+			peeked = await peekStream(
+				body,
+				Math.min(QUIZ_MEDIA_MAGIC_PEEK_BYTES, size + 1),
+			);
 		} catch (error) {
+			console.error("[student] speaking media stream failed", { error });
+			return c.json({ error: "upload failed" }, 500);
+		}
+		if (
+			(peeked.ended && peeked.readBytes !== size) ||
+			peeked.readBytes > size
+		) {
+			await peeked.abort("size mismatch");
+			return c.json({ error: "size mismatch" }, 400);
+		}
+		if (!matchesQuizMediaMagic(contentType, peeked.head, size)) {
+			await peeked.abort("unsupported media type");
+			return c.json({ error: "unsupported media type" }, 415);
+		}
+		try {
+			await store.put(newKey, peeked.stream, { contentType, size });
+		} catch (error) {
+			await peeked.abort("store error");
 			discardNew();
 			if (error instanceof MediaSizeMismatchError) {
 				return c.json({ error: "size mismatch" }, 400);

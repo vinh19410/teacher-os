@@ -1,4 +1,7 @@
-import { formatMediaSize } from "@teacher-os/api/lib/quiz-media";
+import {
+	formatMediaSize,
+	resolveLibraryAudioMimeType,
+} from "@teacher-os/api/lib/quiz-media";
 import {
 	LIBRARY_AUDIO_MAX_BYTES,
 	LIBRARY_AUDIO_MIME,
@@ -35,9 +38,13 @@ type AudioUploadState =
 
 /** Thông báo từ chối file theo allowlist MIME + trần 50MB của contract. */
 export function audioRejectMessage(file: File): string {
-	const type = file.type.toLowerCase();
-	if (!(type in LIBRARY_AUDIO_MIME)) {
-		return `Định dạng ${type || "không xác định"} không hỗ trợ — dùng MP3, M4A, WAV, AAC, OGG hoặc WEBM.`;
+	const resolved = resolveLibraryAudioMimeType(file.name, file.type);
+	if (!resolved) {
+		const shown = file.type.toLowerCase() || "không xác định";
+		return `Định dạng ${shown} không hỗ trợ — dùng MP3, M4A, WAV, AAC, OGG hoặc WEBM.`;
+	}
+	if (file.size <= 0) {
+		return "File âm thanh rỗng — hãy chọn file hợp lệ.";
 	}
 	if (file.size > LIBRARY_AUDIO_MAX_BYTES) {
 		return `File lớn hơn ${formatMediaSize(LIBRARY_AUDIO_MAX_BYTES)} — hãy nén audio trước khi tải lên.`;
@@ -67,11 +74,23 @@ export function AudioUploader({
 	const dragDepth = useRef(0);
 	const [state, setState] = useState<AudioUploadState>({ kind: "idle" });
 
-	const accept = Object.keys(LIBRARY_AUDIO_MIME).join(",");
+	const accept = [
+		...Object.keys(LIBRARY_AUDIO_MIME),
+		".mp3",
+		".m4a",
+		".aac",
+		".wav",
+		".wave",
+		".ogg",
+		".oga",
+		".opus",
+		".webm",
+		".weba",
+	].join(",");
 
 	const startUpload = (file: File) => {
-		const type = file.type.toLowerCase();
-		if (!(type in LIBRARY_AUDIO_MIME) || file.size > LIBRARY_AUDIO_MAX_BYTES) {
+		const resolved = resolveLibraryAudioMimeType(file.name, file.type);
+		if (!resolved || file.size <= 0 || file.size > LIBRARY_AUDIO_MAX_BYTES) {
 			setState({ kind: "error", message: audioRejectMessage(file) });
 			return;
 		}
@@ -82,7 +101,7 @@ export function AudioUploader({
 			testId,
 			slot,
 			file,
-			type,
+			type: resolved,
 			signal: controller.signal,
 			onProgress: (progress) => {
 				setState((previous) =>

@@ -17,6 +17,7 @@ import {
 	type MediaStore,
 	type ServerApp,
 } from "../app";
+import { mp3Bytes, mp4Bytes, wavBytes } from "../lib/test-media-fixtures";
 import type { SessionUser } from "../session";
 
 /**
@@ -110,8 +111,8 @@ function createMemoryMediaStore() {
 	return { store, objects, hooks };
 }
 
-function bytesOf(length: number, fill: number): Uint8Array {
-	return new Uint8Array(length).fill(fill);
+function audioPutBytes(length: number, fill: number): Uint8Array {
+	return mp3Bytes(length, fill);
 }
 
 function authHeaders(
@@ -158,7 +159,7 @@ async function audioPut(
 	return app.request(path, {
 		method: "PUT",
 		headers,
-		body: (options.bytes ?? bytesOf(4, 1)) as unknown as BodyInit,
+		body: (options.bytes ?? audioPutBytes(4, 1)) as unknown as BodyInit,
 	});
 }
 
@@ -228,7 +229,7 @@ describe("admin library audio", () => {
 			audioSize: 4,
 		});
 		memory.objects.set("library/lt-a/s1/old", {
-			bytes: bytesOf(4, 9),
+			bytes: audioPutBytes(4, 9),
 			contentType: "audio/mpeg",
 		});
 	});
@@ -243,13 +244,13 @@ describe("admin library audio", () => {
 		const keysBefore = new Set(memory.objects.keys());
 		for (const user of DENIED_USERS) {
 			const res = await audioPut(app, AUDIO_PATH, {
-				bytes: bytesOf(4, 1),
+				bytes: audioPutBytes(4, 1),
 				user,
 			});
 			expect(res.status, `user=${user}`).toBe(403);
 		}
 		const anonymous = await audioPut(app, AUDIO_PATH, {
-			bytes: bytesOf(4, 1),
+			bytes: audioPutBytes(4, 1),
 			user: null,
 		});
 		expect(anonymous.status).toBe(401);
@@ -265,7 +266,7 @@ describe("admin library audio", () => {
 
 	test("PUT audio admin → 200, key đúng format library/<testId>/<part>/<uuid>, row cập nhật", async () => {
 		const res = await audioPut(app, AUDIO_PATH, {
-			bytes: bytesOf(6, 7),
+			bytes: mp4Bytes(16, 7),
 			type: "audio/mp4",
 			name: encodeURIComponent("section one.m4a"),
 		});
@@ -276,7 +277,7 @@ describe("admin library audio", () => {
 		expect(payload.audio).toMatchObject({
 			name: "section one.m4a",
 			type: "audio/mp4",
-			size: 6,
+			size: 64,
 		});
 		expect(payload.audio.uploadedAt).toBeTruthy();
 
@@ -289,9 +290,9 @@ describe("admin library audio", () => {
 		expect(row?.audioKey).toMatch(/^library\/lt-a\/s1\/[0-9a-f-]{36}$/);
 		expect(row?.audioName).toBe("section one.m4a");
 		expect(row?.audioContentType).toBe("audio/mp4");
-		expect(row?.audioSize).toBe(6);
+		expect(row?.audioSize).toBe(64);
 		expect(memory.objects.get(row?.audioKey ?? "")?.bytes).toEqual(
-			bytesOf(6, 7),
+			mp4Bytes(16, 7),
 		);
 
 		// Dọn key vừa upload để các test sau sạch.
@@ -310,14 +311,14 @@ describe("admin library audio", () => {
 				and(eq(libraryTestPart.testId, "lt-a"), eq(libraryTestPart.part, "s1")),
 			);
 		memory.objects.set("library/lt-a/s1/old", {
-			bytes: bytesOf(4, 9),
+			bytes: audioPutBytes(4, 9),
 			contentType: "audio/mpeg",
 		});
 	});
 
 	test("CSRF: PUT audio raw vẫn cần Origin admin", async () => {
 		const res = await audioPut(app, AUDIO_PATH, {
-			bytes: bytesOf(4, 1),
+			bytes: audioPutBytes(4, 1),
 			origin: "http://localhost:8001",
 		});
 		expect(res.status).toBe(403);
@@ -327,7 +328,7 @@ describe("admin library audio", () => {
 		const reading = await audioPut(
 			app,
 			"/api/admin/library/tests/lt-read/parts/p1/audio",
-			{ bytes: bytesOf(4, 1) },
+			{ bytes: audioPutBytes(4, 1) },
 		);
 		expect(reading.status).toBe(400);
 		const readingCode = (await reading.json()) as { code?: string };
@@ -337,7 +338,7 @@ describe("admin library audio", () => {
 		const wrongSlot = await audioPut(
 			app,
 			"/api/admin/library/tests/lt-a/parts/p1/audio",
-			{ bytes: bytesOf(4, 1) },
+			{ bytes: audioPutBytes(4, 1) },
 		);
 		expect(wrongSlot.status).toBe(404);
 		const wrongSlotCode = (await wrongSlot.json()) as { code?: string };
@@ -347,14 +348,14 @@ describe("admin library audio", () => {
 		const noTest = await audioPut(
 			app,
 			"/api/admin/library/tests/nope/parts/s1/audio",
-			{ bytes: bytesOf(4, 1) },
+			{ bytes: audioPutBytes(4, 1) },
 		);
 		expect(noTest.status).toBe(404);
 	});
 
 	test("thiếu/sai Content-Length → 400; MIME lạ → 415; tên file xấu → 400", async () => {
 		const noLength = await audioPut(app, AUDIO_PATH, {
-			bytes: bytesOf(4, 1),
+			bytes: audioPutBytes(4, 1),
 			length: null,
 		});
 		expect(noLength.status).toBe(400);
@@ -369,7 +370,7 @@ describe("admin library audio", () => {
 		expect(zero.status).toBe(400);
 
 		const badMime = await audioPut(app, AUDIO_PATH, {
-			bytes: bytesOf(4, 1),
+			bytes: audioPutBytes(4, 1),
 			type: "video/mp4",
 		});
 		expect(badMime.status).toBe(415);
@@ -377,13 +378,13 @@ describe("admin library audio", () => {
 		expect(badMimeCode.code).toBe("UNSUPPORTED_AUDIO_TYPE");
 
 		const noName = await audioPut(app, AUDIO_PATH, {
-			bytes: bytesOf(4, 1),
+			bytes: audioPutBytes(4, 1),
 			name: null,
 		});
 		expect(noName.status).toBe(400);
 
 		const emptyName = await audioPut(app, AUDIO_PATH, {
-			bytes: bytesOf(4, 1),
+			bytes: audioPutBytes(4, 1),
 			name: encodeURIComponent("   "),
 		});
 		expect(emptyName.status).toBe(400);
@@ -392,7 +393,7 @@ describe("admin library audio", () => {
 	test("quá cap 50MB → 413 AUDIO_TOO_LARGE và KHÔNG để lại object", async () => {
 		const keysBefore = new Set(memory.objects.keys());
 		const res = await audioPut(app, AUDIO_PATH, {
-			bytes: bytesOf(8, 1),
+			bytes: audioPutBytes(8, 1),
 			length: String(LIBRARY_AUDIO_MAX_BYTES + 1),
 		});
 		expect(res.status).toBe(413);
@@ -404,7 +405,7 @@ describe("admin library audio", () => {
 
 	test("Content-Length lệch byte thật → 400, object mới bị dọn, row + object cũ nguyên", async () => {
 		const res = await audioPut(app, AUDIO_PATH, {
-			bytes: bytesOf(5, 1),
+			bytes: audioPutBytes(5, 1),
 			length: "10",
 		});
 		expect(res.status).toBe(400);
@@ -430,7 +431,7 @@ describe("admin library audio", () => {
 		memory.hooks.afterPut = async () => {
 			throw new Error("db down");
 		};
-		const res = await audioPut(app, AUDIO_PATH, { bytes: bytesOf(6, 3) });
+		const res = await audioPut(app, AUDIO_PATH, { bytes: audioPutBytes(6, 3) });
 		expect(res.status).toBe(500);
 		await settle();
 		// Object mới (nếu store kịp set trước khi hook ném) phải được dọn;
@@ -461,7 +462,7 @@ describe("admin library audio", () => {
 					),
 				);
 		};
-		const res = await audioPut(app, AUDIO_PATH, { bytes: bytesOf(6, 4) });
+		const res = await audioPut(app, AUDIO_PATH, { bytes: audioPutBytes(6, 4) });
 		expect(res.status).toBe(409);
 		await settle();
 		const newKeys = [...memory.objects.keys()].filter(
@@ -486,7 +487,7 @@ describe("admin library audio", () => {
 	});
 
 	test("upload thay thế thành công → sau settle() key cũ biến mất, row trỏ key mới", async () => {
-		const res = await audioPut(app, AUDIO_PATH, { bytes: bytesOf(5, 5) });
+		const res = await audioPut(app, AUDIO_PATH, { bytes: audioPutBytes(5, 5) });
 		expect(res.status).toBe(200);
 		const payload = (await res.json()) as { audio: { size: number } };
 		expect(payload.audio.size).toBe(5);
@@ -508,7 +509,7 @@ describe("admin library audio", () => {
 			app,
 			"/api/admin/library/tests/lt-a/parts/s3/audio",
 			{
-				bytes: bytesOf(3, 2),
+				bytes: wavBytes(2048, 2),
 				name: encodeURIComponent("s3.wav"),
 				type: "audio/wav",
 			},
@@ -534,7 +535,9 @@ describe("admin library audio", () => {
 		expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
 		expect(res.headers.get("Content-Security-Policy")).toContain("sandbox");
 		expect(res.headers.get("Cache-Control")).toBe("private, no-store");
-		expect(new Uint8Array(await res.arrayBuffer())).toEqual(bytesOf(5, 5));
+		expect(new Uint8Array(await res.arrayBuffer())).toEqual(
+			audioPutBytes(5, 5),
+		);
 
 		const noAudio = await app.request(
 			"/api/admin/library/tests/lt-a/parts/s2/audio",
@@ -613,7 +616,7 @@ describe("admin library audio", () => {
 				audioSize: 2,
 			});
 			memory.objects.set(`library/lt-purge/${slot}/k`, {
-				bytes: bytesOf(2, 1),
+				bytes: audioPutBytes(2, 1),
 				contentType: "audio/mpeg",
 			});
 		}
@@ -627,9 +630,97 @@ describe("admin library audio", () => {
 		expect(memory.objects.has("library/lt-purge/s2/k")).toBe(false);
 	});
 
+	test("upload validates filename extension and magic bytes before storing (#681)", async () => {
+		// DELETE-audio test phía trên đã xoá row s1 — seed lại key cũ như
+		// beforeAll để kiểm tra nhánh từ chối KHÔNG đụng row.
+		await db
+			.update(libraryTestPart)
+			.set({
+				audioKey: "library/lt-a/s1/old",
+				audioName: "old.mp3",
+				audioContentType: "audio/mpeg",
+				audioSize: 16,
+			})
+			.where(
+				and(eq(libraryTestPart.testId, "lt-a"), eq(libraryTestPart.part, "s1")),
+			);
+		memory.objects.set("library/lt-a/s1/old", {
+			bytes: mp3Bytes(16, 9),
+			contentType: "audio/mpeg",
+		});
+		const before = memory.objects.size;
+		const htmlBytes = new TextEncoder().encode(
+			"<!doctype html><html><script>alert(1)</script></html>",
+		);
+
+		const polyglotCases: Array<[string, string, Uint8Array]> = [
+			["payload.html", "audio/mpeg", htmlBytes],
+			["section.mp3", "audio/mpeg", htmlBytes],
+			[
+				"id3-html.mp3",
+				"audio/mpeg",
+				new TextEncoder().encode("ID3\x04<html><script>alert(1)</script>"),
+			],
+			[
+				"utf16.mp3",
+				"audio/mpeg",
+				new Uint8Array([0xff, 0xfe, 0x20, 0x00, 0x3c, 0x00, 0x68, 0x00]),
+			],
+			[
+				"badwav.wav",
+				"audio/wav",
+				new TextEncoder().encode("RIFF<a  WAVEfmt ><script>alert(1)</script>"),
+			],
+			["badm4a.m4a", "audio/mp4", htmlBytes],
+		];
+		for (const [name, type, bytes] of polyglotCases) {
+			const res = await audioPut(app, AUDIO_PATH, {
+				bytes,
+				name: encodeURIComponent(name),
+				type,
+			});
+			expect(res.status, name).toBe(415);
+			await expect(res.json()).resolves.toMatchObject({
+				code: "UNSUPPORTED_AUDIO_TYPE",
+			});
+			expect(memory.objects.size, name).toBe(before);
+			const [row] = await db
+				.select()
+				.from(libraryTestPart)
+				.where(
+					and(
+						eq(libraryTestPart.testId, "lt-a"),
+						eq(libraryTestPart.part, "s1"),
+					),
+				);
+			expect(row?.audioKey, name).toBe("library/lt-a/s1/old");
+		}
+
+		// Lying Content-Length > 64B through store.put -> 400 INVALID_AUDIO
+		const valid150 = mp3Bytes(150, 2);
+		expect(
+			(
+				await audioPut(app, AUDIO_PATH, {
+					bytes: valid150,
+					length: "300",
+				})
+			).status,
+		).toBe(400);
+		expect(
+			(
+				await audioPut(app, AUDIO_PATH, {
+					bytes: valid150,
+					length: "100",
+				})
+			).status,
+		).toBe(400);
+		await settle();
+		expect(memory.objects.size).toBe(before);
+	});
+
 	test("store vắng mặt → PUT/GET/DELETE audio → 503 LIBRARY_AUDIO_DISABLED", async () => {
 		const put = await audioPut(appNoStore, AUDIO_PATH, {
-			bytes: bytesOf(4, 1),
+			bytes: audioPutBytes(4, 1),
 		});
 		expect(put.status).toBe(503);
 		const disabled = (await put.json()) as { code?: string };

@@ -14,7 +14,10 @@ import {
 	studyPackUpdateSchema,
 } from "@teacher-os/api/contracts";
 import {
+	libraryAudioExtensionMatches,
+	matchesLibraryAudioMagic,
 	normalizeMediaType,
+	QUIZ_MEDIA_MAGIC_PEEK_BYTES,
 	sanitizeMediaFileName,
 } from "@teacher-os/api/lib/quiz-media";
 import {
@@ -53,6 +56,7 @@ import type { z } from "zod";
 import type { Db } from "../app";
 import { mediaObjectResponse } from "../lib/media-response";
 import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
+import { type PeekedStream, peekStream } from "../lib/peek-stream";
 import { type AdminEnv, createRequireAdmin } from "../lib/require-admin";
 import {
 	buildPackItemTupleKey,
@@ -723,31 +727,24 @@ export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 	router.put("/tests/:id/parts/:part/audio", async (c) => {
 		const store = deps.getLibraryAudioStore?.();
 		if (!store) return libraryError(c, 503, LIBRARY_AUDIO_DISABLED);
-		const testId = c.req.param("id");
-		const test = await loadTestRow(testId);
-		if (!test) return libraryError(c, 404, "TEST_NOT_FOUND");
-		if (test.skill !== "listening") {
-			// Đề reading không có audio; writing/speaking không thuộc thư viện.
-			return libraryError(c, 400, "INVALID_AUDIO");
-		}
-		const part = c.req.param("part");
-		if (!presetParts("listening").includes(part)) {
-			return libraryError(c, 404, "PART_NOT_FOUND");
-		}
-
+		// #681: lọc header/đuôi rẻ TRƯỚC khi đụng D1 — request rác không tốn
+		// truy vấn `loadTestRow`.
 		const lengthHeader = c.req.header("Content-Length");
 		const size =
 			lengthHeader !== undefined && /^\d+$/.test(lengthHeader)
 				? Number(lengthHeader)
 				: Number.NaN;
 		if (!(size > 0)) {
+			await c.req.raw.body?.cancel().catch(() => undefined);
 			return libraryError(c, 400, "INVALID_AUDIO");
 		}
 		if (size > LIBRARY_AUDIO_MAX_BYTES) {
+			await c.req.raw.body?.cancel().catch(() => undefined);
 			return libraryError(c, 413, "AUDIO_TOO_LARGE");
 		}
 		const contentType = normalizeMediaType(c.req.header("Content-Type") ?? "");
 		if (!Object.hasOwn(LIBRARY_AUDIO_MIME, contentType)) {
+			await c.req.raw.body?.cancel().catch(() => undefined);
 			return libraryError(c, 415, "UNSUPPORTED_AUDIO_TYPE");
 		}
 		let name: string | null = null;
@@ -760,9 +757,57 @@ export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 		}
 		// Tên bắt buộc: đề listening ready cần audioName; upload vô danh tạo
 		// trạng thái không bao giờ ready được.
-		if (!name) return libraryError(c, 400, "INVALID_AUDIO");
+		if (!name) {
+			await c.req.raw.body?.cancel().catch(() => undefined);
+			return libraryError(c, 400, "INVALID_AUDIO");
+		}
+		if (!libraryAudioExtensionMatches(name, contentType)) {
+			await c.req.raw.body?.cancel().catch(() => undefined);
+			return libraryError(c, 415, "UNSUPPORTED_AUDIO_TYPE");
+		}
 		const requestBody = c.req.raw.body;
 		if (requestBody === null) return libraryError(c, 400, "INVALID_AUDIO");
+
+		const testId = c.req.param("id");
+		const test = await loadTestRow(testId);
+		if (!test) {
+			await requestBody.cancel().catch(() => undefined);
+			return libraryError(c, 404, "TEST_NOT_FOUND");
+		}
+		if (test.skill !== "listening") {
+			// Đề reading không có audio; writing/speaking không thuộc thư viện.
+			await requestBody.cancel().catch(() => undefined);
+			return libraryError(c, 400, "INVALID_AUDIO");
+		}
+		const part = c.req.param("part");
+		if (!presetParts("listening").includes(part)) {
+			await requestBody.cancel().catch(() => undefined);
+			return libraryError(c, 404, "PART_NOT_FOUND");
+		}
+
+		// #681: đọc sớm tối đa 64 byte đầu (không đệm RAM) kiểm chữ ký nhị
+		// phân chống polyglot trước khi ghi kho.
+		let peeked: PeekedStream;
+		try {
+			peeked = await peekStream(
+				requestBody,
+				Math.min(QUIZ_MEDIA_MAGIC_PEEK_BYTES, size + 1),
+			);
+		} catch (error) {
+			console.error("[admin-library] audio upload stream failed", { error });
+			return c.json({ error: "audio upload failed" }, 500);
+		}
+		if (
+			(peeked.ended && peeked.readBytes !== size) ||
+			peeked.readBytes > size
+		) {
+			await peeked.abort("size mismatch");
+			return libraryError(c, 400, "INVALID_AUDIO");
+		}
+		if (!matchesLibraryAudioMagic(contentType, peeked.head, size)) {
+			await peeked.abort("unsupported audio type");
+			return libraryError(c, 415, "UNSUPPORTED_AUDIO_TYPE");
+		}
 
 		// CAS theo key cũ: đọc TRƯỚC khi ghi object mới (D1 không có
 		// transaction — thua CAS thì huỷ object mới, không đụng key cũ).
@@ -772,8 +817,9 @@ export function adminLibraryRoutes(deps: AdminLibraryDeps) {
 		const discardNew = () =>
 			inBackground("discard new audio object", () => store.delete(newKey));
 		try {
-			await store.put(newKey, requestBody, { contentType, size });
+			await store.put(newKey, peeked.stream, { contentType, size });
 		} catch (error) {
+			await peeked.abort("store error");
 			discardNew();
 			if (error instanceof MediaSizeMismatchError) {
 				return libraryError(c, 400, "INVALID_AUDIO");

@@ -14,6 +14,12 @@ export interface PeekedStream {
 	/** `true` nếu nguồn đã đóng (`done: true`) ngay trong vòng peek đầu. */
 	ended: boolean;
 	stream: ReadableStream<Uint8Array>;
+	/**
+	 * Huỷ reader gốc bất kể `stream` đã bị khoá bởi `pipeThrough` ở store
+	 * (khi đó `stream.cancel()` ném `TypeError` bị nuốt); idempotent, không
+	 * ném (#681).
+	 */
+	abort(reason?: unknown): Promise<void>;
 }
 
 export async function peekStream(
@@ -130,20 +136,29 @@ export async function peekStream(
 				}
 			},
 			async cancel(reason) {
-				cancelled = true;
-				chunks.length = 0;
-				try {
-					if (!sourceDone) {
-						sourceDone = true;
-						await reader.cancel(reason);
-					}
-				} finally {
-					releaseReader(true);
-				}
+				await abort(reason);
 			},
 		},
 		{ highWaterMark: 0 },
 	);
 
-	return { head, readBytes, ended: sourceDone, stream };
+	/**
+	 * Huỷ reader gốc bất kể `stream` đã bị khoá bởi `pipeThrough` ở store
+	 * (khi đó `stream.cancel()` ném `TypeError` bị nuốt) — an toàn để gọi
+	 * lặp lại (#681).
+	 */
+	const abort = async (reason?: unknown): Promise<void> => {
+		cancelled = true;
+		chunks.length = 0;
+		try {
+			if (!sourceDone) {
+				sourceDone = true;
+				await reader.cancel(reason).catch(() => undefined);
+			}
+		} finally {
+			releaseReader(true);
+		}
+	};
+
+	return { head, readBytes, ended: sourceDone, stream, abort };
 }

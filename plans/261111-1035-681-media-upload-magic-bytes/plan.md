@@ -1,7 +1,7 @@
 ---
 title: "Bảo mật upload media & đề thi (#681): đối chiếu extension ↔ MIME & kiểm tra magic-byte trên Speaking, Library, Placement, Vocab và Exam-imports"
 description: "Mở rộng hợp đồng xác thực 3 lớp (tên/đuôi file ↔ Content-Type ↔ chữ ký magic-byte 64 byte đầu luồng) sang toàn bộ 5 bề mặt upload nhị phân còn lại mà không đệm RAM và không chặn nhầm bản thu thật trên iOS/Android/Windows/macOS/Linux."
-status: pending
+status: completed
 priority: P1
 effort: 4h
 issue: 681
@@ -96,17 +96,17 @@ flowchart TD
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: Hợp đồng magic-byte/extension dùng chung tại `@teacher-os/api` & đồng bộ client uploaders (TDD)](./phase-01-start.md) | Pending |
-| 2 | [Phase 2: Server 5 upload routes, magic-byte streaming & test fixtures (TDD)](./phase-02-server-5-upload-routes-magic-byte-streaming-test-fixtures-tdd.md) | Pending |
-| 3 | [Phase 3: E2E negative & smoke verification, architecture docs & changelog](./phase-03-e2e-smokenegative-verification-architecture-docs-changelog.md) | Pending |
+| 1 | [Phase 1: Hợp đồng magic-byte/extension dùng chung tại `@teacher-os/api` & đồng bộ client uploaders (TDD)](./phase-01-start.md) | Done |
+| 2 | [Phase 2: Server 5 upload routes, magic-byte streaming & test fixtures (TDD)](./phase-02-server-5-upload-routes-magic-byte-streaming-test-fixtures-tdd.md) | Done |
+| 3 | [Phase 3: E2E negative & smoke verification, architecture docs & changelog](./phase-03-e2e-smokenegative-verification-architecture-docs-changelog.md) | Done |
 
 ## Success Criteria
 
-- [ ] `matchesQuizMediaMagic(mimeType, head, totalSize?)` và `matchesLibraryAudioMagic(mimeType, head, totalSize?)` nhận đúng mẫu thật của đủ 12 MIME trong `QUIZ_MEDIA_TYPES` và chặn triệt để mọi vector polyglot (`<html>`, UTF-16LE BOM `FF FE`, `ID3<html>`, `ID3\x04<html>`, `RIFF<!--WAVE<html>`, `RIFF<a  WAVEfmt ><script>`, `OggS<html>`, `OggS\x00\x02<html>`, `\x1a\x45\xdf\xa3<html><!--webm-->`, `<!--ftyp--><html>`, `<!--mdat--><html>`, `\x00\x00\x00\x08wide<!--mdat--><html>`, `\x00\x00\x00\x08free<html>`, `ftyp` ảnh `heic`/`avif`, và `qt  ` trên `audio/*`).
-- [ ] `validateQuizMediaFiles` giữ nguyên `reason: "name"` cho tên file > 200 ký tự; `resolveQuizMediaType` và `resolveLibraryAudioMimeType` nhận đầy đủ alias Windows/Linux/macOS/Android (`.aac` `audio/vnd.dlna.adts`, `.opus` `audio/opus`/`audio/x-opus+ogg`, `.m4a` `video/mp4` → `audio/mp4`, `.webm` `video/webm` → `audio/webm` cho audio), từ chối `("answer.mp3", "text/html") -> null` & `("payload.html", "audio/mpeg") -> null`, và được gắn đồng bộ vào `audio-uploader.tsx`, `clip-audio-field.tsx`, `vocab-deck-editor.tsx` + `vocab-word-row.tsx`.
-- [ ] Cả 4 route streaming (`student.ts`, `admin-library.ts`, `placement-test.ts`, `vocab-teacher.ts`) lọc header/đuôi rẻ trước, bọc `peekStream` trong `try/catch`, dùng `peeked.abort()` giải phóng khoá reader sạch, thực thi CAS/cleanup không để lại object mồ côi khi lỗi/đua tranh, trả `415` khi lệch đuôi/magic và `400` khi lệch `Content-Length` (`<= 64B` lẫn `> 64B`).
-- [ ] `POST /api/exam-imports` kiểm `materialExtensionMatches` trước khi đọc body, đọc luồng giới hạn cứng theo `declaredSize` chống OOM, và `inspectExamFile` kiểm `matchesMaterialMagic` + marker JPEG `0xc0..0xfe` fail-closed cho cả PDF, PNG, JPEG (`400 INVALID_FILE` `reason: "type"`, 0 job, 0 object R2, ví nguyên vẹn).
-- [ ] Spec E2E âm mới `apps/e2e/specs/media-upload-magic-bytes.spec.ts` cùng toàn bộ E2E dương liên quan (`student-quiz-take-review`, `teacher-grade-submission`, `admin-library-listening`, `placement-test-editor`, `profile-placement-test`, `vocab-srs`, `ai-exam-import-ac-001`, `ai-exam-import-ac-004`) và 3 cổng local (`pnpm exec biome check .`, `pnpm check-types`, `pnpm test`) đều xanh 0 lỗi; `docs/system-architecture.md` và `CHANGELOG.md` được cập nhật đầy đủ.
+- [x] `matchesQuizMediaMagic(mimeType, head, totalSize?)` và `matchesLibraryAudioMagic(mimeType, head, totalSize?)` nhận đúng mẫu thật của đủ 12 MIME trong `QUIZ_MEDIA_TYPES` và chặn triệt để mọi vector polyglot (`<html>`, UTF-16LE BOM `FF FE`, `ID3<html>`, `ID3\x04<html>`, `RIFF<!--WAVE<html>`, `RIFF<a  WAVEfmt ><script>`, `OggS<html>`, `OggS\x00\x02<html>`, `\x1a\x45\xdf\xa3<html><!--webm-->`, `<!--ftyp--><html>`, `<!--mdat--><html>`, `\x00\x00\x00\x08wide<!--mdat--><html>`, `\x00\x00\x00\x08free<html>`, `ftyp` ảnh `heic`/`avif`, và `qt  ` trên `audio/*`).
+- [x] `validateQuizMediaFiles` giữ nguyên `reason: "name"` cho tên file > 200 ký tự; `resolveQuizMediaType` và `resolveLibraryAudioMimeType` nhận đầy đủ alias Windows/Linux/macOS/Android (`.aac` `audio/vnd.dlna.adts`, `.opus` `audio/opus`/`audio/x-opus+ogg`, `.m4a` `video/mp4` → `audio/mp4`, `.webm` `video/webm` → `audio/webm` cho audio), từ chối `("answer.mp3", "text/html") -> null` & `("payload.html", "audio/mpeg") -> null`, và được gắn đồng bộ vào `audio-uploader.tsx`, `clip-audio-field.tsx`, `vocab-deck-editor.tsx` + `vocab-word-row.tsx`.
+- [x] Cả 4 route streaming (`student.ts`, `admin-library.ts`, `placement-test.ts`, `vocab-teacher.ts`) lọc header/đuôi rẻ trước, bọc `peekStream` trong `try/catch`, dùng `peeked.abort()` giải phóng khoá reader sạch, thực thi CAS/cleanup không để lại object mồ côi khi lỗi/đua tranh, trả `415` khi lệch đuôi/magic và `400` khi lệch `Content-Length` (`<= 64B` lẫn `> 64B`).
+- [x] `POST /api/exam-imports` kiểm `materialExtensionMatches` trước khi đọc body, đọc luồng giới hạn cứng theo `declaredSize` chống OOM, và `inspectExamFile` kiểm `matchesMaterialMagic` + marker JPEG `0xc0..0xfe` fail-closed cho cả PDF, PNG, JPEG (`400 INVALID_FILE` `reason: "type"`, 0 job, 0 object R2, ví nguyên vẹn).
+- [x] Spec E2E âm mới `apps/e2e/specs/media-upload-magic-bytes.spec.ts` cùng toàn bộ E2E dương liên quan (`student-quiz-take-review`, `teacher-grade-submission`, `admin-library-listening`, `placement-test-editor`, `profile-placement-test`, `vocab-srs`, `ai-exam-import-ac-001`, `ai-exam-import-ac-004`) và 3 cổng local (`pnpm exec biome check .`, `pnpm check-types`, `pnpm test`) đều xanh 0 lỗi; `docs/system-architecture.md` và `CHANGELOG.md` được cập nhật đầy đủ.
 
 ## Red Team Review
 

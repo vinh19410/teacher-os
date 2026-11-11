@@ -51,12 +51,15 @@ const MEDIA_ACCEPT = [
 	".m4a",
 	".aac",
 	".wav",
+	".wave",
 	".webm",
 	".weba",
 	".ogg",
 	".oga",
+	".opus",
 	".mp4",
 	".mov",
+	".qt",
 ].join(",");
 
 function MediaKindIcon({ type }: { type: string }) {
