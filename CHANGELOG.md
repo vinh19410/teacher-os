@@ -10,6 +10,11 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-11-11
+
+### CI/Infra
+- `design:compare` loại bỏ phụ thuộc Vite dev ở bước xác thực email và khởi tạo bài làm học viên trong `design-seed.ts` (#652): đóng nguyên tử `studentPage` sau `sign-up/email`, xác thực qua `studentCtx.request.get(verifyUrl, { maxRedirects: 0 })` kèm kiểm tra `302`/`Location`/cookie và `GET /api/auth/get-session` (`emailVerified === true`), chuyển khởi tạo 4 attempt sang `studentCtx.request.post(.../quiz/start)`; bổ sung helper thuần `apps/e2e/src/design-seed-nav.ts` (`withNavRetry`, `clampTimeoutMs`, `redactCapabilityUrl`, `assertVerifiedEmailRedirect`) với trần `SEED_DEADLINE` 390s, che capability token không gắn `Error.cause`, và ép quyền `0o700`/`0o600` cho `.state`.
+
 ## 2026-11-10
 
 ### Added

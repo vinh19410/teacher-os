@@ -104,8 +104,8 @@ failure evidence to the user. Never continue by self-reasoning.
 
 ## Todo
 
-- [ ] Task 1.1: Viết bộ unit test RED `apps/e2e/src/design-seed-nav.test.ts`
-- [ ] Task 1.2: Cài đặt `apps/e2e/src/design-seed-nav.ts` và pass GREEN + `check-types`
+- [x] Task 1.1: Viết bộ unit test RED `apps/e2e/src/design-seed-nav.test.ts`
+- [x] Task 1.2: Cài đặt `apps/e2e/src/design-seed-nav.ts` và pass GREEN + `check-types`
 
 ## Success Criteria
 

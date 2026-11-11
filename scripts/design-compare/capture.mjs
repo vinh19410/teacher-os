@@ -573,9 +573,9 @@ async function main() {
 					webPort: WEB_PORT,
 					studentPort: STUDENT_PORT,
 				}),
-				// #397 review: worst-case seed = 60s waitForURL + 120s kernel wait +
-				// ~22s DB busy-retry + thân seed (~44s khoẻ) → 300s cũ có thể SIGTERM
-				// giữa chừng đúng trên máy đang tải mà issue nhắm tới.
+				// #397/#652: giữ khoảng đệm 30s trên SEED_DEADLINE (390_000ms) của
+				// design-seed.ts để các bước điều hướng/xác thực của seed kịp fail-loud
+				// với timeline đã redact trước khi harness gửi SIGTERM ở 420_000ms.
 				timeoutMs: 420_000,
 				onChild: (c) => activeChildren.set("design-seed", c),
 			},
@@ -590,7 +590,9 @@ async function main() {
 			return 1;
 		}
 		seed = JSON.parse(await readFile(SEED_FILE, "utf8"));
-		console.log("[harness] seed xong");
+		console.log(
+			`[harness] seed xong (${seed.seedDurationMs ?? "?"}ms, verify=${seed.verifyDurationMs ?? "?"}ms, quizzes=${seed.quizzesDurationMs ?? "?"}ms, retries=${seed.navRetryCount ?? 0})`,
+		);
 	}
 	if (side === "design" || side === "both") {
 		console.log("[harness] design v2…");
