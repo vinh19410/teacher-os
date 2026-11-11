@@ -1,7 +1,10 @@
 /**
  * Luồng file thật + media của ngân hàng tài liệu và cổng học viên đa-org
- * (#647, nguồn: hậu kiểm độc lập #644):
+ * (#647, #676, nguồn: hậu kiểm độc lập #644):
  *
+ * - E1b (#676): chặn upload giả mạo đuôi (`payload.html` + `audio/mpeg`) và
+ *   giả mạo magic-byte (`spoof.mp3` chứa HTML) trả 415 `UNSUPPORTED_FILE_TYPE`,
+ *   không bẩn ngân hàng; `UploadDialog` chặn gửi mạng khi bấm «Tải lên».
  * - E1: upload MP3 thật vào ngân hàng bằng PUT raw body với `X-File-Name`
  *   Unicode, tải về đủ byte.
  * - E2: hợp đồng preflight CORS cho `PUT /api/materials/files` (origin hợp lệ
@@ -12,6 +15,7 @@
  *   `Referrer-Policy: no-referrer`).
  * - E3: seed học viên Org A (trước) + lớp 1 buổi; upload PDF thẳng vào buổi
  *   và gắn thêm MP3 từ ngân hàng.
+ *   E3b (#676): route tài liệu buổi học cũng chặn 415 với đuôi/magic giả mạo.
  * - E5: học viên đa-org — mặc định rơi vào org mới nhất (Org B); không có
  *   `?org=` → 404; sau khi đổi sang Org A, `src`/`href` mang `?org=`, audio
  *   nạp được, popup «Mở» phát được và «Tải» về đúng tên + byte.
@@ -109,6 +113,42 @@ test("#647: upload thật + CORS preflight + «Phát» media + học viên đa-o
 		"https://evil.example",
 	);
 
+	// ---- E1b (#676): chặn giả mạo extension + magic-byte trên ngân hàng & UI ----
+	const htmlPayload = Buffer.from("<!doctype html><script>alert(1)</script>");
+	const bankExtSpoof = await page.request.fetch(
+		`${API_ORIGIN}/api/materials/files`,
+		{
+			method: "PUT",
+			headers: {
+				Origin: WEB_ORIGIN,
+				"Content-Type": "audio/mpeg",
+				"X-File-Name": encodeURIComponent("payload.html"),
+			},
+			data: htmlPayload,
+		},
+	);
+	expect(bankExtSpoof.status()).toBe(415);
+	await expect(bankExtSpoof.json()).resolves.toMatchObject({
+		code: "UNSUPPORTED_FILE_TYPE",
+	});
+
+	const bankMagicSpoof = await page.request.fetch(
+		`${API_ORIGIN}/api/materials/files`,
+		{
+			method: "PUT",
+			headers: {
+				Origin: WEB_ORIGIN,
+				"Content-Type": "audio/mpeg",
+				"X-File-Name": encodeURIComponent("spoof.mp3"),
+			},
+			data: htmlPayload,
+		},
+	);
+	expect(bankMagicSpoof.status()).toBe(415);
+	await expect(bankMagicSpoof.json()).resolves.toMatchObject({
+		code: "UNSUPPORTED_FILE_TYPE",
+	});
+
 	// ---- E1: upload ngân hàng PUT raw body + Unicode X-File-Name ----
 	await page.goto("/materials");
 	await expect(page.getByTestId("materials-empty")).toBeVisible();
@@ -116,11 +156,37 @@ test("#647: upload thật + CORS preflight + «Phát» media + học viên đa-o
 	// → strict mode bắt buộc .first() (red-team #2).
 	await page.getByRole("button", { name: "Tải file lên" }).first().click();
 	const uploadDialog = page.getByRole("dialog", { name: "Tải file lên" });
+
+	let blockedPutCount = 0;
+	const countPutRequest = (req: { method(): string; url(): string }) => {
+		if (req.method() === "PUT" && req.url().includes("/api/materials/files")) {
+			blockedPutCount += 1;
+		}
+	};
+	page.on("request", countPutRequest);
+	try {
+		await uploadDialog.getByLabel("File").setInputFiles({
+			name: "spoof.mp3",
+			mimeType: "text/html",
+			buffer: htmlPayload,
+		});
+		await expect(uploadDialog.getByRole("alert")).toHaveText(
+			/Định dạng chưa hỗ trợ/,
+		);
+		await uploadDialog
+			.getByRole("button", { name: "Tải lên", exact: true })
+			.click();
+		expect(blockedPutCount).toBe(0);
+	} finally {
+		page.off("request", countPutRequest);
+	}
+
 	await uploadDialog.getByLabel("File").setInputFiles({
 		name: MP3_NAME,
 		mimeType: "audio/mpeg",
 		buffer: SPEAKING_SAMPLE,
 	});
+	await expect(uploadDialog.getByRole("alert")).toHaveCount(0);
 	const uploadResponsePromise = page.waitForResponse(
 		(r) =>
 			r.url().includes("/api/materials/files") &&
@@ -243,8 +309,40 @@ test("#647: upload thật + CORS preflight + «Phát» media + học viên đa-o
 		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
 	const sessionRow = page.locator("[data-testid='session-row']").first();
+	// ---- E3b (#676): route tài liệu buổi học chặn giả mạo đuôi + magic-byte ----
+	const sessionFilesUrl = `${API_ORIGIN}/api/classes/${classAId}/sessions/${sessionDate}/materials/files`;
+	const sessionExtSpoof = await page.request.fetch(sessionFilesUrl, {
+		method: "PUT",
+		headers: {
+			Origin: WEB_ORIGIN,
+			"Content-Type": "audio/mpeg",
+			"X-File-Name": encodeURIComponent("payload.html"),
+		},
+		data: htmlPayload,
+	});
+	expect(sessionExtSpoof.status()).toBe(415);
+	await expect(sessionExtSpoof.json()).resolves.toMatchObject({
+		code: "UNSUPPORTED_FILE_TYPE",
+	});
+	const sessionMagicSpoof = await page.request.fetch(sessionFilesUrl, {
+		method: "PUT",
+		headers: {
+			Origin: WEB_ORIGIN,
+			"Content-Type": "audio/mpeg",
+			"X-File-Name": encodeURIComponent("spoof.mp3"),
+		},
+		data: htmlPayload,
+	});
+	expect(sessionMagicSpoof.status()).toBe(415);
+	await expect(sessionMagicSpoof.json()).resolves.toMatchObject({
+		code: "UNSUPPORTED_FILE_TYPE",
+	});
+
 	await sessionRow.getByRole("button", { name: /^Tài liệu buổi/ }).click();
 	const sessionDialog = page.getByRole("dialog", { name: /^Tài liệu buổi/ });
+	await expect(
+		sessionDialog.getByTestId("session-materials-empty"),
+	).toBeVisible();
 	const sessionUploadPromise = page.waitForResponse(
 		(r) =>
 			r.request().method() === "PUT" &&

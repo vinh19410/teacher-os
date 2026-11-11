@@ -5,12 +5,15 @@ import {
 	type LessonMaterialView,
 	lessonMaterialAttachSchema,
 	MATERIAL_FOLDER_MAX_DEPTH,
+	MATERIAL_MAGIC_PEEK_BYTES,
 	MATERIAL_ROOT_FOLDER,
 	MATERIAL_SEARCH_MAX,
 	type MaterialErrorCode,
 	type MaterialFolderView,
 	type MaterialKind,
 	type MaterialView,
+	matchesMaterialMagic,
+	materialExtensionMatches,
 	materialFolderCreateSchema,
 	materialFolderUpdateSchema,
 	materialLinkCreateSchema,
@@ -34,6 +37,7 @@ import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
 import { materialFileResponse } from "../lib/material-file-response";
 import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
+import { type PeekedStream, peekStream } from "../lib/peek-stream";
 import { resolveCurriculumMaterials } from "../lib/session-curriculum-materials";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
@@ -331,6 +335,7 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 			size,
 		});
 		if (!check.ok) {
+			await c.req.raw.body?.cancel().catch(() => undefined);
 			if (check.reason === "type") {
 				return {
 					ok: false,
@@ -357,7 +362,40 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		}
 		const body = c.req.raw.body;
 		if (!name || body === null) {
+			await body?.cancel().catch(() => undefined);
 			return { ok: false, response: materialError(c, 400, "INVALID_FILE") };
+		}
+		if (!materialExtensionMatches(name, check.mimeType)) {
+			await body.cancel().catch(() => undefined);
+			return {
+				ok: false,
+				response: materialError(c, 415, "UNSUPPORTED_FILE_TYPE"),
+			};
+		}
+
+		let peeked: PeekedStream;
+		try {
+			peeked = await peekStream(
+				body,
+				Math.min(MATERIAL_MAGIC_PEEK_BYTES, size + 1),
+			);
+		} catch (error) {
+			console.error("[materials] upload stream failed", { error });
+			return { ok: false, response: c.json({ error: "upload failed" }, 500) };
+		}
+		if (
+			(peeked.ended && peeked.readBytes !== size) ||
+			peeked.readBytes > size
+		) {
+			await peeked.stream.cancel().catch(() => undefined);
+			return { ok: false, response: materialError(c, 400, "INVALID_FILE") };
+		}
+		if (!matchesMaterialMagic(check.mimeType, peeked.head)) {
+			await peeked.stream.cancel().catch(() => undefined);
+			return {
+				ok: false,
+				response: materialError(c, 415, "UNSUPPORTED_FILE_TYPE"),
+			};
 		}
 
 		const id = crypto.randomUUID();
@@ -365,8 +403,12 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		const discard = () =>
 			inBackground("discard material object", () => store.delete(objectKey));
 		try {
-			await store.put(objectKey, body, { contentType: check.mimeType, size });
+			await store.put(objectKey, peeked.stream, {
+				contentType: check.mimeType,
+				size,
+			});
 		} catch (error) {
+			await peeked.stream.cancel().catch(() => undefined);
 			discard();
 			if (error instanceof MediaSizeMismatchError) {
 				return { ok: false, response: materialError(c, 400, "INVALID_FILE") };
