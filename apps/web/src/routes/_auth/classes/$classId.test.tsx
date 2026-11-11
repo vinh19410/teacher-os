@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	classRow,
 	enrollmentRow,
+	lessonRow,
 	renderWithKernel,
 	snapshotFixture,
 	startKernelServer,
@@ -494,6 +495,129 @@ describe("class detail → Buổi học tab", () => {
 				body: null,
 			});
 		});
+	});
+
+	it("projects syllabus sessions even when legacy row has schedulingMode='manual' and sessionsTotal=0 (#670)", async () => {
+		startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-1",
+						syllabusId: "sy-c",
+						schedulingMode: "manual",
+						sessionsTotal: 0,
+						schedule: '{"days":[0],"start":"19:00","end":"20:30"}',
+						startDate: "2026-11-16",
+					}),
+				],
+				syllabi: [
+					syllabusRow({
+						id: "sy-c",
+						classId: "cl-1",
+						totalLessons: 3,
+						modules: [
+							{
+								id: "m-1",
+								title: "Module 1",
+								description: "",
+								lessons: [
+									{
+										id: "sl-1",
+										title: "Buổi A1",
+										objectives: "",
+										materials: "",
+										kind: "lesson",
+										status: "upcoming",
+									},
+									{
+										id: "sl-2",
+										title: "Thi giữa kỳ A",
+										objectives: "",
+										materials: "",
+										kind: "midterm",
+										status: "upcoming",
+									},
+									{
+										id: "sl-3",
+										title: "Buổi B1",
+										objectives: "",
+										materials: "",
+										kind: "lesson",
+										status: "upcoming",
+									},
+								],
+							},
+						],
+					}),
+				],
+			}),
+		);
+		renderWithKernel(<ClassDetail />);
+
+		expect(
+			await screen.findByRole("button", { name: "Sắp xếp buổi" }),
+		).toBeTruthy();
+		expect(
+			screen.queryByRole("button", { name: "+ Thêm buổi học" }),
+		).toBeNull();
+
+		expect(screen.queryByText("Chưa có buổi học nào")).toBeNull();
+		const rows = await screen.findAllByTestId("session-row");
+		expect(rows).toHaveLength(3);
+		expect(await screen.findByText("Buổi A1")).toBeTruthy();
+		expect(screen.getByText("Thi giữa kỳ A")).toBeTruthy();
+		expect(screen.getByText("Buổi B1")).toBeTruthy();
+	});
+
+	it("hides both Sắp xếp buổi and + Thêm buổi học when auto class has real lessons after removing curriculum (#670)", async () => {
+		startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-1",
+						syllabusId: null,
+						schedulingMode: "auto",
+						sessionsTotal: 2,
+						schedule: '{"days":[0],"start":"19:00","end":"20:30"}',
+						startDate: "2026-11-16",
+					}),
+				],
+				students: [studentRow({ id: "st-1", name: "Học viên Một" })],
+				enrollments: [
+					enrollmentRow({ id: "en-1", classId: "cl-1", studentId: "st-1" }),
+				],
+				lessons: [
+					lessonRow({
+						id: "l-1",
+						classId: "cl-1",
+						enrollmentId: "en-1",
+						day: 1,
+						date: "2026-11-16",
+						time: "19:00",
+						dur: 90,
+						topic: "Bài 1",
+					}),
+					lessonRow({
+						id: "l-2",
+						classId: "cl-1",
+						enrollmentId: "en-1",
+						day: 1,
+						date: "2026-11-23",
+						time: "19:00",
+						dur: 90,
+						topic: "Bài 2",
+					}),
+				],
+			}),
+		);
+		renderWithKernel(<ClassDetail />);
+
+		expect(await screen.findByText("Bài 1")).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Sắp xếp buổi" })).toBeNull();
+		expect(
+			screen.queryByRole("button", { name: "+ Thêm buổi học" }),
+		).toBeNull();
+		expect(screen.queryByRole("button", { name: "+ Thêm buổi" })).toBeNull();
 	});
 });
 

@@ -111,13 +111,21 @@ export function ClassSessionsSection({
 	// deploy skew (server cũ) không gửi schedulingMode và lớp auto legacy
 	// phải giữ nguyên projection #121.
 	const isManual =
-		cls.schedulingMode === "manual" || (classSessions?.length ?? 0) > 0;
+		(classSessions?.length ?? 0) > 0 ||
+		(!syllabus && cls.schedulingMode === "manual");
+	const syllabusLessonCount = syllabus
+		? syllabus.modules.reduce((sum, m) => sum + m.lessons.length, 0)
+		: 0;
+	const effectiveSessionsTotal =
+		!isManual && cls.sessionsTotal === 0 && syllabusLessonCount > 0
+			? syllabusLessonCount
+			: cls.sessionsTotal;
 
 	const sessions = buildClassSessions({
 		schedule: cls.schedule,
 		startDate: cls.startDate,
 		lessons,
-		sessionsTotal: cls.sessionsTotal,
+		sessionsTotal: effectiveSessionsTotal,
 		manual: isManual,
 		classSessions,
 	});
@@ -222,7 +230,7 @@ export function ClassSessionsSection({
 				title="Sessions"
 				count={sessions.length}
 				action={
-					!syllabus && onAddSession ? (
+					!syllabus && (isManual || lessons.length === 0) && onAddSession ? (
 						<Button variant="outline" size="sm" onClick={onAddSession}>
 							+ Thêm buổi
 						</Button>

@@ -225,7 +225,7 @@ Nguồn design: `teacheros-design-v2@7a53fc0` `TeacherClass.tsx`. Raw app:
 | Khối | Design v2 | App sau #391 | Verdict |
 |---|---|---|---|
 | Back link | Ghost `← Classes` | Ghost `← Lớp học` (buttonVariants ghost sm + ArrowLeft) | PASS |
-| Header | kicker `type · lịch · phòng`, 2 action | kicker `IELTS · T3 & T5 & T7 · 18:00–19:30 · Online`; "Giao bài tập" outline + "Sắp xếp buổi" primary | PASS (nhãn tiếng Việt, "Add session" = "Sắp xếp buổi" — lệch có chủ đích) |
+| Header | kicker `type · lịch · phòng`, 2 action | kicker `IELTS · T3 & T5 & T7 · 18:00–19:30 · Online`; "Giao bài tập" outline (lớp seed `auto` đã có 10 dòng `lesson` nhưng không gắn giáo trình nên ẩn cả "Sắp xếp buổi" lẫn "+ Thêm buổi học" theo #670) | PASS (khớp hợp đồng hiển thị nút hành động theo trạng thái giáo trình/buổi thật tại `DESIGN.md`) |
 | Hàng stat | 4 thẻ | 4 thẻ: học viên (sub từ ngày) / buổi đã học x/y (sub % giáo trình) / bài trong syllabus / bài chờ nộp (sub "Trên N bài đã giao") | PASS (thẻ 3 = "Bài trong syllabus" thay Attendance rate — không có data tổng tin được) |
 | Tabs | 3 tab, "Sessions & practice" mặc định | 5 tab: Sessions & practice (mặc định) · Học viên · Giáo trình · Từ vựng · Ghi chú | PASS (giữ thêm Từ vựng/Ghi chú — tính năng thật ngoài phạm vi design) |
 | Sessions | `Section` card, `li` per buổi, số ô, thanh điểm danh, "Take/Edit attendance →", Edit | `Section` "Sessions (5)": card `li[data-testid=session-row]`, ô số `bg-primary` khi đã học, link "Điểm danh →"/"Sửa điểm danh →", thanh "n/N đã điểm danh", "Điều chỉnh" | PASS (thanh 3 phân đoạn đã/vắng/chưa — bỏ late, không có data; buổi quá khứ chưa có data amber) |

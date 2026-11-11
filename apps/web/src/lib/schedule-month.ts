@@ -15,6 +15,7 @@ import type {
 	ClassSessionItem,
 	Lesson,
 	LessonStatus,
+	Syllabus,
 } from "@/lib/mock-data";
 import {
 	distinctStudentsBySid,
@@ -46,6 +47,7 @@ export interface MonthSourceData {
 	lessons: Lesson[];
 	/** Issue #649: buổi thủ công của lớp manual — optional (deploy skew). */
 	classSessions?: readonly ClassSessionItem[];
+	syllabi?: readonly Syllabus[];
 	/** Org events (TOS-14). Optional — snapshots without events still build. */
 	events?: readonly ScheduleEventLike[];
 	/** Org holidays (TOS-14b/#453). Optional — snapshots without holidays
@@ -239,6 +241,7 @@ export function buildMonthCells(
 				[],
 				[date],
 				data.classSessions ?? [],
+				data.syllabi,
 			)) {
 				items.push({
 					kind: "lesson",

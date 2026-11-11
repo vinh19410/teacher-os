@@ -1,10 +1,14 @@
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { expect, type Page, test } from "@playwright/test";
 import { signUpViaApi } from "./helpers";
 import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 
 const API = API_ORIGIN;
 const ORIGIN = WEB_ORIGIN;
-
+const REPORT_DIR = fileURLToPath(
+	new URL("../../../plans/reports", import.meta.url),
+);
 /**
  * Issue #394 — luồng chính của refactor Template vs Giáo trình của lớp:
  * tạo lớp kèm template, gán sau, sửa bản copy không đổi template, gỡ,
@@ -208,6 +212,63 @@ test("B: gán sau — lớp trống nhập từ template; nhập lần hai bằn
 	await expect(
 		page.getByRole("button", { name: "Sắp xếp buổi", exact: true }),
 	).toBeEnabled();
+	// #670: StatCard cập nhật sang 0/3 buổi đã học & 3 bài trong syllabus;
+	// tab "Buổi học & luyện tập" chiếu ngay đủ 3 buổi dự kiến theo giáo trình.
+	const doneStatCard = page.locator("div.rounded-xl", {
+		has: page.getByText("buổi đã học", { exact: true }),
+	});
+	await expect(doneStatCard.getByText("0/3", { exact: true })).toBeVisible();
+	const syllabusStatCard = page.locator("div.rounded-xl", {
+		has: page.getByText("bài trong syllabus", { exact: true }),
+	});
+	await expect(syllabusStatCard.getByText("3", { exact: true })).toBeVisible();
+
+	const sessionsTab = page.getByRole("tab", {
+		name: "Buổi học & luyện tập",
+		exact: true,
+	});
+	await sessionsTab.click();
+	await expect(sessionsTab).toHaveAttribute("aria-selected", "true");
+	await expect(page.getByText("Chưa có buổi học nào")).toHaveCount(0);
+	await expect(
+		page.getByRole("button", { name: "+ Thêm buổi học", exact: true }),
+	).toHaveCount(0);
+	await expect(
+		page.getByRole("button", { name: "+ Thêm buổi", exact: true }),
+	).toHaveCount(0);
+	const sessionRows = page.getByTestId("session-row");
+	await expect(sessionRows).toHaveCount(3);
+	await expect(page.getByText("Buổi A1")).toBeVisible();
+	await expect(page.getByText("Thi giữa kỳ A")).toBeVisible();
+	await expect(page.getByText("Buổi B1")).toBeVisible();
+
+	for (const vp of [
+		{ name: "desktop-1440x900", width: 1440, height: 900 },
+		{ name: "tablet-768x1024", width: 768, height: 1024 },
+		{ name: "mobile-375x812", width: 375, height: 812 },
+	]) {
+		await page.setViewportSize({ width: vp.width, height: vp.height });
+		await expect(sessionRows).toHaveCount(3);
+		const overflow = await page.evaluate(
+			() =>
+				document.documentElement.scrollWidth >
+				document.documentElement.clientWidth,
+		);
+		expect(overflow, `Overflow at ${vp.width}x${vp.height}`).toBe(false);
+		await page.screenshot({
+			path: resolve(REPORT_DIR, `670-projected-sessions-${vp.name}-light.png`),
+			fullPage: true,
+		});
+		await page.evaluate(() => document.documentElement.classList.add("dark"));
+		await page.screenshot({
+			path: resolve(REPORT_DIR, `670-projected-sessions-${vp.name}-dark.png`),
+			fullPage: true,
+		});
+		await page.evaluate(() =>
+			document.documentElement.classList.remove("dark"),
+		);
+	}
+	await page.setViewportSize({ width: 1280, height: 720 });
 
 	// Nhập lần hai qua API trực tiếp → 409.
 	const classUrl = page.url();

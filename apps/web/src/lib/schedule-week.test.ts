@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import type { ClassGroup, Lesson } from "@/lib/mock-data";
+import type { ClassGroup, Lesson, Syllabus } from "@/lib/mock-data";
 import {
 	distinctStudentsBySid,
 	findSessionRows,
@@ -407,6 +407,111 @@ describe("selectProjectedWeekBlocks (issue #121)", () => {
 		// Without classSessions arg (deploy skew) → nothing at all, no skeleton mint.
 		expect(
 			selectProjectedWeekBlocks([manual], [], mondayWeek("2026-08-31")),
+		).toEqual([]);
+	});
+
+	test("class with attached curriculum in syllabi projects sessions even if schedulingMode='manual' and sessionsTotal=0 (#670)", () => {
+		const stuckClass: ClassGroup = {
+			...QC_CLASS,
+			id: "cls-stuck",
+			schedulingMode: "manual",
+			sessionsTotal: 0,
+			syllabusId: "sy-copy",
+		};
+		const syllabi: Syllabus[] = [
+			{
+				id: "sy-copy",
+				name: "Copy 3 bài",
+				level: "7.0",
+				type: "ielts",
+				classId: "cls-stuck",
+				sourceTemplateId: "sy-tpl",
+				skills: ["Writing"],
+				totalLessons: 3,
+				description: "",
+				modules: [
+					{
+						id: "m-1",
+						title: "M1",
+						lessons: [
+							{
+								id: "l-1",
+								title: "B1",
+								objectives: "—",
+								materials: "—",
+								kind: "lesson",
+								status: "upcoming",
+							},
+							{
+								id: "l-2",
+								title: "B2",
+								objectives: "—",
+								materials: "—",
+								kind: "lesson",
+								status: "upcoming",
+							},
+							{
+								id: "l-3",
+								title: "B3",
+								objectives: "—",
+								materials: "—",
+								kind: "lesson",
+								status: "upcoming",
+							},
+						],
+					},
+				],
+			},
+		];
+		expect(
+			selectProjectedWeekBlocks(
+				[stuckClass],
+				[],
+				mondayWeek("2026-08-31"),
+				[],
+				syllabi,
+			),
+		).toEqual([
+			{
+				classId: "cls-stuck",
+				className: "QC-CTA-CLASS",
+				day: 1,
+				time: "19:00",
+				dateISO: "2026-08-31",
+			},
+		]);
+	});
+
+	test("manual class with stale template pointer (classId: null in syllabi) stays manual and does not project (#670)", () => {
+		const manualWithStalePtr: ClassGroup = {
+			...QC_CLASS,
+			id: "cls-stale",
+			schedulingMode: "manual",
+			sessionsTotal: 12,
+			syllabusId: "sy-tpl",
+		};
+		const syllabi: Syllabus[] = [
+			{
+				id: "sy-tpl",
+				name: "Shared Template",
+				level: "7.0",
+				type: "ielts",
+				classId: null,
+				sourceTemplateId: null,
+				skills: ["Writing"],
+				totalLessons: 3,
+				description: "",
+				modules: [],
+			},
+		];
+		expect(
+			selectProjectedWeekBlocks(
+				[manualWithStalePtr],
+				[],
+				mondayWeek("2026-08-31"),
+				[],
+				syllabi,
+			),
 		).toEqual([]);
 	});
 });
