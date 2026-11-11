@@ -35,13 +35,31 @@ describe("flattenFolderTree", () => {
 		]);
 	});
 
-	it("keeps folders whose parent is missing as roots and survives cycles", () => {
+	it("keeps folders whose parent is missing as roots and renders cyclic components from cycle root (#646)", () => {
 		const rows = flattenFolderTree([
 			folder("a", "A", "ghost"),
 			folder("x", "X", "y"),
 			folder("y", "Y", "x"),
+			folder("z", "Z", "x"),
 		]);
-		expect(rows.map((r) => r.folder.id)).toEqual(["a"]);
+		expect(rows.map((r) => [r.folder.id, r.depth])).toEqual([
+			["a", 0],
+			["x", 0],
+			["y", 1],
+			["z", 1],
+		]);
+
+		// Child "b" ("B" < "X") hanging off cycle x <-> y stays under x (depth 1), never detached to depth 0.
+		const childBeforeParent = flattenFolderTree([
+			folder("x", "X", "y"),
+			folder("y", "Y", "x"),
+			folder("b", "B", "x"),
+		]);
+		expect(childBeforeParent.map((r) => [r.folder.id, r.depth])).toEqual([
+			["x", 0],
+			["b", 1],
+			["y", 1],
+		]);
 	});
 });
 

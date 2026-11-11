@@ -1,4 +1,7 @@
-import type { MaterialFolderView } from "@teacher-os/api/material-contracts";
+import {
+	MATERIAL_FOLDER_MAX_DEPTH,
+	type MaterialFolderView,
+} from "@teacher-os/api/material-contracts";
 import { Select } from "@/components/ui/field";
 import { flattenFolderTree } from "@/lib/material-folders";
 
@@ -39,11 +42,14 @@ export function FolderSelect({
 			}
 		>
 			<option value={NO_FOLDER_VALUE}>{rootLabel}</option>
-			{rows.map(({ folder, depth }) => (
-				<option key={folder.id} value={folder.id}>
-					{`${"  ".repeat(depth)}${depth > 0 ? "└ " : ""}${folder.name}`}
-				</option>
-			))}
+			{rows.map(({ folder, depth }) => {
+				const clampedDepth = Math.min(depth, MATERIAL_FOLDER_MAX_DEPTH - 1);
+				return (
+					<option key={folder.id} value={folder.id}>
+						{`${"\u00a0\u00a0".repeat(clampedDepth)}${clampedDepth > 0 ? "└ " : ""}${folder.name}`}
+					</option>
+				);
+			})}
 		</Select>
 	);
 }

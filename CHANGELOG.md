@@ -13,6 +13,8 @@ Quy ước khi cập nhật:
 ## 2026-11-11
 
 ### Fixed
+- Chặn nguyên tử race chu trình & vượt trần 5 cấp của thư mục tài liệu bằng SQL `WITH RECURSIVE` trực tiếp trong `POST`/`PATCH /api/materials/folders`, cập nhật từng phần `name`/`parentId` khi `PATCH` để đua đổi tên và di chuyển không ghi đè nhau, đồng thời phục hồi hiển thị an toàn các thành phần chu trình từ gốc chu trình ở `flattenFolderTree` và đồng bộ `effectiveParentId` trong `FolderDialog` (#646).
+- Tách riêng `canReadMaterials`/`canWriteMaterials` trong `@teacher-os/auth/role` khỏi quyền chấm bài (`canReviewGrade`/`canPublishGrade`) và ẩn toàn bộ nút/hộp thoại ghi tài liệu cho vai trò trợ giảng (`ta`) trên `/materials`, `SessionMaterialsModal`, và `MaterialPicker` (#646).
 - Nút «Phát» / «Mở» của tài liệu audio/video phát được lại trực tiếp trong tab mới (#647): phản hồi file media `inline` giờ dùng CSP riêng cho phép `media-src 'self'` + `sandbox allow-same-origin` (không `allow-scripts`) sau khi chuẩn hoá MIME qua `normalizeMediaType` + allowlist `MATERIAL_MIME`, ép `application/octet-stream` khi MIME hỏng, và kèm `Cross-Origin-Opener-Policy: same-origin` + `Referrer-Policy: no-referrer`.
 
 ### Changed
