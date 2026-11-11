@@ -327,7 +327,9 @@ export function buildApp(deps: AppDeps) {
 		c.res.headers.set("Cross-Origin-Resource-Policy", "same-site");
 	});
 	// File tài liệu (giáo viên + học viên): CORP same-site để app web/cổng
-	// học viên phát được `<audio>`/`<video>` trỏ thẳng tới API.
+	// học viên phát được `<audio>`/`<video>` trỏ thẳng tới API; `Referrer-Policy:
+	// no-referrer` tránh rò rỉ `?org=`/ID qua Referer khi tab media điều hướng
+	// tiếp (#647). Ghi SAU `next()` vì `secureHeaders` ghi đè header cuối cùng.
 	for (const path of [
 		"/api/materials/:id/file",
 		"/api/student/classes/:classId/sessions/:date/materials/:materialId/file",
@@ -335,6 +337,7 @@ export function buildApp(deps: AppDeps) {
 		app.use(path, async (c, next) => {
 			await next();
 			c.res.headers.set("Cross-Origin-Resource-Policy", "same-site");
+			c.res.headers.set("Referrer-Policy", "no-referrer");
 		});
 	}
 	app.use(

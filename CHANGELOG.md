@@ -12,6 +12,12 @@ Quy ước khi cập nhật:
 
 ## 2026-11-11
 
+### Fixed
+- Nút «Phát» / «Mở» của tài liệu audio/video phát được lại trực tiếp trong tab mới (#647): phản hồi file media `inline` giờ dùng CSP riêng cho phép `media-src 'self'` + `sandbox allow-same-origin` (không `allow-scripts`) sau khi chuẩn hoá MIME qua `normalizeMediaType` + allowlist `MATERIAL_MIME`, ép `application/octet-stream` khi MIME hỏng, và kèm `Cross-Origin-Opener-Policy: same-origin` + `Referrer-Policy: no-referrer`.
+
+### Changed
+- Trần dung lượng upload audio/video của tài liệu hạ từ 100 MiB xuống 95 MB (`95 MiB`) để nằm dưới giới hạn request body 100 MB của Cloudflare Free/Pro edge — client chặn ngay trước khi gặp trang 413 HTML thiếu CORS (#647); bổ sung E2E `material-upload-student.spec.ts` phủ upload `PUT` raw body + preflight CORS + tên file Unicode và học viên đa-org mở/phát/tải tài liệu buổi học qua `?org=`.
+
 ### CI/Infra
 - `design:compare` sửa lỗi deterministic ảnh design-side màn `pay` bị pixel check đánh giá trắng/rỗng ở `desktop-light` và `tablet-light` (#653): đổi `pay.design.hash` trong `scripts/design-compare/screens.json` từ `#/pay/p7Hq2x` (hóa đơn đã trả đủ làm card trắng chỉ chiếm <1% pixel trên nền sáng) sang `#/pay/zz3Kpr` (`TOS9B4C7` còn dư nợ có mã QR, đồng bộ với `t-invoice` và `seed.payToken`), cập nhật bảng ánh xạ gốc cùng 6 ảnh đối chiếu `screenshots/pay/*.png` mà giữ nguyên độ chặt của `inspectPngBuffer`.
 
