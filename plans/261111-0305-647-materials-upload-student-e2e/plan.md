@@ -1,7 +1,7 @@
 ---
 title: "Tài liệu (#647): sửa CSP media inline, hạ trần 95 MB khớp Cloudflare edge & bổ sung E2E upload/học sinh"
 description: "Sửa lỗi CSP chặn phát trực tiếp media trong tab mới, hạ trần upload media xuống 95 MB dưới ngưỡng 100 MB của Cloudflare edge và bổ sung E2E Playwright cho upload raw PUT + CORS + học sinh mở/tải qua ?org=."
-status: in-progress
+status: completed
 priority: P2
 effort: 3h
 issue: 647
