@@ -18,6 +18,9 @@ Quy ước khi cập nhật:
 ### Changed
 - Trần dung lượng upload audio/video của tài liệu hạ từ 100 MiB xuống 95 MB (`95 MiB`) để nằm dưới giới hạn request body 100 MB của Cloudflare Free/Pro edge — client chặn ngay trước khi gặp trang 413 HTML thiếu CORS (#647); bổ sung E2E `material-upload-student.spec.ts` phủ upload `PUT` raw body + preflight CORS + tên file Unicode và học viên đa-org mở/phát/tải tài liệu buổi học qua `?org=`.
 
+### CI/Infra
+- `design:compare` loại bỏ phụ thuộc Vite dev ở bước xác thực email và khởi tạo bài làm học viên trong `design-seed.ts` (#652): đóng nguyên tử `studentPage` sau `sign-up/email`, xác thực qua `studentCtx.request.get(verifyUrl, { maxRedirects: 0 })` kèm kiểm tra `302`/`Location`/cookie và `GET /api/auth/get-session` (`emailVerified === true`), chuyển khởi tạo 4 attempt sang `studentCtx.request.post(.../quiz/start)`; bổ sung helper thuần `apps/e2e/src/design-seed-nav.ts` (`withNavRetry`, `clampTimeoutMs`, `redactCapabilityUrl`, `assertVerifiedEmailRedirect`) với trần `SEED_DEADLINE` 390s, che capability token không gắn `Error.cause`, và ép quyền `0o700`/`0o600` cho `.state`.
+
 ## 2026-11-10
 
 ### Added
