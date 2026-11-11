@@ -16,8 +16,8 @@ import { syllabusLesson } from "./syllabus";
 /**
  * Thư mục của ngân hàng tài liệu, dùng chung cho mọi giáo viên trong org.
  * `parentId` NULL là thư mục gốc. Tên duy nhất trong cùng một cha (coalesce
- * vì SQLite coi mọi NULL là khác nhau trong unique index). Độ sâu tối đa và
- * chống vòng lặp do route kiểm (cần duyệt cây, CHECK không làm được).
+ * vì SQLite coi mọi NULL là khác nhau trong unique index). Độ sâu tối đa (5)
+ * và chống vòng lặp được khóa nguyên tử bằng SQL `WITH RECURSIVE` ngay trong route (#646).
  * FK cha là NO ACTION: thư mục chỉ xoá được khi rỗng, còn xoá org thì
  * cascade dọn cả cây trong cùng một câu lệnh.
  */

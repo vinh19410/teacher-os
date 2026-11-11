@@ -13,17 +13,17 @@ const byName = (a: MaterialFolderView, b: MaterialFolderView) =>
 /**
  * Server trả danh sách thư mục phẳng; client dựng cây theo `parentId` rồi
  * trải phẳng theo duyệt tiền thứ tự (cha trước con, anh em theo tên). Thư
- * mục có cha không tồn tại (dữ liệu lệch) được coi như thư mục gốc để
- * không bao giờ bị mất khỏi giao diện; vòng lặp bị cắt.
+ * mục có cha không tồn tại hoặc kẹt trong chu trình `parentId` (#646) đều
+ * được đưa về cấp gốc từ nút đầu chu trình để không bao giờ biến mất khỏi UI.
  */
 export function flattenFolderTree(
 	folders: readonly MaterialFolderView[],
 ): FolderTreeRow[] {
-	const ids = new Set(folders.map((f) => f.id));
+	const byId = new Map(folders.map((f) => [f.id, f]));
 	const children = new Map<string | null, MaterialFolderView[]>();
 	for (const folder of folders) {
 		const parent =
-			folder.parentId !== null && ids.has(folder.parentId)
+			folder.parentId !== null && byId.has(folder.parentId)
 				? folder.parentId
 				: null;
 		const list = children.get(parent) ?? [];
@@ -41,6 +41,23 @@ export function flattenFolderTree(
 		}
 	};
 	walk(null, 0);
+	for (const start of [...folders].sort(byName)) {
+		if (seen.has(start.id)) continue;
+		const trace: MaterialFolderView[] = [];
+		const indexById = new Map<string, number>();
+		let current: MaterialFolderView | undefined = start;
+		while (current !== undefined && !indexById.has(current.id)) {
+			indexById.set(current.id, trace.length);
+			trace.push(current);
+			current =
+				current.parentId !== null ? byId.get(current.parentId) : undefined;
+		}
+		const cycleStart = current ? (indexById.get(current.id) ?? 0) : 0;
+		const cycleRoot = [...trace.slice(cycleStart)].sort(byName)[0] ?? start;
+		seen.add(cycleRoot.id);
+		rows.push({ folder: cycleRoot, depth: 0 });
+		walk(cycleRoot.id, 1);
+	}
 	return rows;
 }
 

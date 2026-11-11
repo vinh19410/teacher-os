@@ -140,3 +140,38 @@ export function canPublishGrade(role: string | null | undefined): boolean {
 export function canReviewGrade(role: string | null | undefined): boolean {
 	return typeof role === "string" && GRADING_REVIEW_ROLE_MAP[role] === true;
 }
+
+/**
+ * #646: vai trò đọc/ghi Ngân hàng tài liệu & tài liệu buổi học — tách độc lập
+ * hoàn toàn khỏi `GRADING_*` để thay đổi chính sách chấm bài không làm trôi
+ * quyền học liệu:
+ * - `canWriteMaterials`: `teacher`, `owner`, `admin`, `class_teacher`.
+ * - `canReadMaterials`: các vai trên + `ta` (chỉ đọc/mở/chọn từ ngân hàng).
+ */
+export const MATERIAL_WRITE_ROLES = [
+	"teacher",
+	"owner",
+	"admin",
+	"class_teacher",
+] as const;
+export const MATERIAL_READ_ROLES = [...MATERIAL_WRITE_ROLES, "ta"] as const;
+
+const MATERIAL_WRITE_ROLE_MAP: Record<string, true> = {
+	teacher: true,
+	owner: true,
+	admin: true,
+	class_teacher: true,
+};
+
+const MATERIAL_READ_ROLE_MAP: Record<string, true> = {
+	...MATERIAL_WRITE_ROLE_MAP,
+	ta: true,
+};
+
+export function canWriteMaterials(role: string | null | undefined): boolean {
+	return typeof role === "string" && MATERIAL_WRITE_ROLE_MAP[role] === true;
+}
+
+export function canReadMaterials(role: string | null | undefined): boolean {
+	return typeof role === "string" && MATERIAL_READ_ROLE_MAP[role] === true;
+}

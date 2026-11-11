@@ -31,6 +31,7 @@ vi.mock("@tanstack/react-router", () => ({
 vi.mock("sonner", () => ({ toast: toastMock }));
 vi.mock("@/lib/reauth", () => ({ reauth: vi.fn() }));
 
+import { kernelQueryKey } from "@/lib/repos/kernel";
 import { Route, validateMaterialsSearch } from "./index";
 
 const Materials = (Route as unknown as { component: () => React.ReactNode })
@@ -68,7 +69,12 @@ type Handler = (method: string, url: URL, init?: RequestInit) => Reply | null;
 
 let fetchMock: ReturnType<typeof vi.fn>;
 
-function renderRoute(items: MaterialView[], handler?: Handler) {
+function renderRoute(
+	items: MaterialView[],
+	handler?: Handler,
+	options?: { role?: string; folders?: MaterialFolderView[] },
+) {
+	const folders = options?.folders ?? FOLDERS;
 	fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
 		const url = new URL(String(input));
 		const method = (init?.method ?? "GET").toUpperCase();
@@ -76,7 +82,7 @@ function renderRoute(items: MaterialView[], handler?: Handler) {
 		const reply: Reply =
 			custom ??
 			(url.pathname === "/api/materials/folders"
-				? { status: 200, body: { folders: FOLDERS } }
+				? { status: 200, body: { folders } }
 				: url.pathname === "/api/materials" && method === "GET"
 					? { status: 200, body: { items } }
 					: { status: 500, body: {} });
@@ -89,6 +95,11 @@ function renderRoute(items: MaterialView[], handler?: Handler) {
 	const client = new QueryClient({
 		defaultOptions: { queries: { retry: false } },
 	});
+	if (options?.role !== undefined) {
+		client.setQueryData(kernelQueryKey, {
+			viewer: { role: options.role, canAccessFinance: false },
+		});
+	}
 	return render(
 		<QueryClientProvider client={client}>
 			<Materials />
@@ -344,5 +355,95 @@ describe("/materials writes", () => {
 		expect((await within(dialog).findByRole("alert")).textContent).toMatch(
 			/còn thư mục con hoặc tài liệu/,
 		);
+	});
+
+	it("renders cyclic folders at root and moves a cyclic folder to root in one save (#646)", async () => {
+		const cyclicFolders: MaterialFolderView[] = [
+			{
+				id: "x",
+				parentId: "y",
+				name: "X",
+				createdAt: "2026-11-01T00:00:00.000Z",
+			},
+			{
+				id: "y",
+				parentId: "x",
+				name: "Y",
+				createdAt: "2026-11-01T00:00:00.000Z",
+			},
+		];
+		mockSearch.current = { folderId: "x" };
+		renderRoute(
+			[],
+			(method, url) =>
+				method === "PATCH" && url.pathname === "/api/materials/folders/x"
+					? {
+							status: 200,
+							body: {
+								folder: {
+									id: "x",
+									parentId: null,
+									name: "X",
+									createdAt: "2026-11-01T00:00:00.000Z",
+								},
+							},
+						}
+					: null,
+			{ folders: cyclicFolders },
+		);
+
+		const nav = await screen.findByRole("navigation", {
+			name: "Thư mục tài liệu",
+		});
+		expect(await within(nav).findByRole("button", { name: "X" })).toBeTruthy();
+		expect(within(nav).getByRole("button", { name: "Y" })).toBeTruthy();
+
+		fireEvent.click(await screen.findByRole("button", { name: "Di chuyển" }));
+		const dialog = await screen.findByRole("dialog", {
+			name: /Di chuyển/,
+		});
+		fireEvent.click(within(dialog).getByRole("button", { name: "Lưu" }));
+
+		await waitFor(() => expect(writes()).toHaveLength(1));
+		const [, reqInit] = writes()[0] as [unknown, RequestInit];
+		expect(JSON.parse(String(reqInit.body))).toEqual({ parentId: null });
+	});
+
+	it("hides all write actions and shows read-only empty copy when viewer role is ta (#646)", async () => {
+		mockSearch.current = { folderId: "f-1" };
+		renderRoute([material({ folderId: "f-1" })], undefined, { role: "ta" });
+
+		expect(await screen.findByText("Đề Writing Task 1")).toBeTruthy();
+		expect(
+			screen.getByRole("link", { name: "Tải xuống Đề Writing Task 1" }),
+		).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Thêm liên kết" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Tải file lên" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Thư mục mới" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Đổi tên" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Di chuyển" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Xóa thư mục" })).toBeNull();
+		expect(
+			screen.queryByRole("button", { name: "Sửa Đề Writing Task 1" }),
+		).toBeNull();
+		expect(
+			screen.queryByRole("button", { name: "Xóa Đề Writing Task 1" }),
+		).toBeNull();
+
+		cleanup();
+		mockSearch.current = {};
+		renderRoute([], undefined, { role: "ta", folders: [] });
+		const empty = await screen.findByTestId("materials-empty");
+		expect(
+			within(empty).getByText(
+				"Ngân hàng tài liệu của trung tâm hiện chưa có học liệu nào.",
+			),
+		).toBeTruthy();
+		expect(
+			within(empty).queryByRole("button", { name: "Thêm liên kết" }),
+		).toBeNull();
+		expect(
+			within(empty).queryByRole("button", { name: "Tải file lên" }),
+		).toBeNull();
 	});
 });
