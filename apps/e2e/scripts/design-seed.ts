@@ -7,7 +7,7 @@
  * (apps/e2e/specs/helpers-quiz.ts). Ghi ids vào
  * scripts/design-compare/.state/design-seed.json cho capture.mjs.
  */
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
@@ -19,6 +19,13 @@ import {
 	seedSubmittedEssay,
 } from "../specs/helpers-quiz";
 import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "../specs/origins";
+import {
+	assertVerifiedEmailRedirect,
+	clampTimeoutMs,
+	redactCapabilityUrl,
+	TransientNavError,
+	withNavRetry,
+} from "../src/design-seed-nav";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const OUT_FILE = path.resolve(
@@ -37,14 +44,49 @@ const TITLE_WRITING = "Viết Task 1: Biểu đồ năng lượng";
 const TITLE_SPEAKING = "Nói Part 2: Địa điểm yêu thích";
 const TITLE_ESSAY = "Viết Task 2: Học từ xa";
 
+// Trần 390s (< 420s SIGTERM của capture.mjs) để design-seed kịp ném timeline đã redact.
+const SEED_START = Date.now();
+const SEED_DEADLINE = SEED_START + 390_000;
+let navRetryCount = 0;
+const recordRetry = ({
+	nextAttempt,
+	label,
+	lastEntry,
+}: {
+	nextAttempt: number;
+	label: string;
+	lastEntry: string;
+}) => {
+	navRetryCount += 1;
+	console.warn(
+		`[design-seed] retry #${navRetryCount} (${label}, attempt=${nextAttempt}): ${lastEntry}`,
+	);
+};
+
 /** Vite dev lần đầu load có thể full-reload khi optimize deps → chờ cho
  * mạng lặng + một nhịp trước khi tương tác. */
 async function gotoStable(page: Page, url: string) {
-	await page.goto(url, { waitUntil: "load" });
-	try {
-		await page.waitForLoadState("networkidle", { timeout: 8_000 });
-	} catch {
-		/* long-poll không lặng — bỏ qua */
+	await withNavRetry(
+		(timeoutMs) => page.goto(url, { waitUntil: "load", timeout: timeoutMs }),
+		{
+			label: `gotoStable ${url}`,
+			attempts: 2,
+			perAttemptMs: 45_000,
+			deadline: SEED_DEADLINE,
+			onRetry: recordRetry,
+		},
+	);
+	if (SEED_DEADLINE - Date.now() > 7_000) {
+		try {
+			await page.waitForLoadState("networkidle", {
+				timeout: Math.min(
+					8_000,
+					Math.max(1_000, SEED_DEADLINE - Date.now() - 6_000),
+				),
+			});
+		} catch {
+			/* long-poll không lặng — bỏ qua */
+		}
 	}
 	const { promise, resolve } = Promise.withResolvers<void>();
 	setTimeout(resolve, 800);
@@ -53,6 +95,7 @@ async function gotoStable(page: Page, url: string) {
 
 async function readVerificationUrl(email: string): Promise<string> {
 	for (let i = 0; i < 40; i++) {
+		clampTimeoutMs(SEED_DEADLINE, 20_000, "readVerificationUrl");
 		try {
 			const lines = readFileSync(MAIL_LOG, "utf8")
 				.split("\n")
@@ -531,70 +574,178 @@ try {
 	const studentPage = await studentCtx.newPage();
 	await gotoStable(studentPage, `${STUDENT_ORIGIN}/login`);
 	try {
-		await studentPage.click("#tab-signup", { timeout: 15_000 });
+		await studentPage.click("#tab-signup", {
+			timeout: clampTimeoutMs(SEED_DEADLINE, 15_000, "student #tab-signup"),
+		});
 	} catch (err) {
-		const dbg = path.resolve(
-			HERE,
-			"../../../scripts/design-compare/.state/debug",
-		);
-		mkdirSync(dbg, { recursive: true });
-		await studentPage.screenshot({ path: path.join(dbg, "student-login.png") });
-		console.error(
-			`[design-seed] student login không render đúng. url=${studentPage.url()}\nbody=${(await studentPage.content()).slice(0, 600)}`,
-		);
+		try {
+			const dbg = path.resolve(
+				HERE,
+				"../../../scripts/design-compare/.state/debug",
+			);
+			mkdirSync(dbg, { recursive: true, mode: 0o700 });
+			chmodSync(dbg, 0o700);
+			const loginShot = path.join(dbg, "student-login.png");
+			await studentPage.screenshot({ path: loginShot, timeout: 5_000 });
+			chmodSync(loginShot, 0o600);
+			const safeBody = redactCapabilityUrl(await studentPage.content()).slice(
+				0,
+				600,
+			);
+			console.error(
+				`[design-seed] student login không render đúng. url=${redactCapabilityUrl(studentPage.url())}\nbody=${safeBody}`,
+			);
+		} catch {
+			/* debug capture không được che lỗi gốc hoặc lố SEED_DEADLINE */
+		}
 		throw err;
 	}
 	await studentPage.fill("#signup-name", "Phạm Bảo Ngọc");
 	await studentPage.fill("#signup-email", studentEmail);
 	await studentPage.fill("#signup-password", PASSWORD);
-	await studentPage.getByRole("button", { name: "Tạo tài khoản" }).click();
-	const verifyUrl = await readVerificationUrl(studentEmail);
-	await studentPage.goto(verifyUrl);
-	await studentPage.getByRole("button", { name: "Vào cổng học viên" }).click();
-	await studentPage.waitForURL(new RegExp(`^${STUDENT_ORIGIN}`), {
-		timeout: 30_000,
-	});
-
-	// 8) Student bắt đầu 4 đề (reading/listening/writing/speaking) → attempt ids.
-	// Link "Làm bài" sang /learn/quizzes/<assignmentId>; nút "Bắt đầu" POST
-	// …/quiz/start trả attemptId (URL không đổi).
-	const attemptIds: Record<string, string> = {};
-	for (const [skill, title] of [
-		["reading", TITLE_READING],
-		["listening", TITLE_LISTENING],
-		["writing", TITLE_WRITING],
-		["speaking", TITLE_SPEAKING],
-	] as const) {
-		await gotoStable(studentPage, `${STUDENT_ORIGIN}/`);
-		const row = studentPage.getByRole("link", {
-			name: `Làm bài: ${title}`,
-		});
-		await row.waitFor({ timeout: 20_000 });
-		const navPromise = studentPage.waitForURL(/\/learn\/quizzes\/[^/]+$/, {
-			timeout: 30_000,
-		});
-		await row.click();
-		await navPromise;
-		const startDialog = studentPage.getByRole("alertdialog", {
-			name: "Bắt đầu làm bài",
-		});
-		const startRes = studentPage.waitForResponse(
-			(r) => r.request().method() === "POST" && r.url().endsWith("/quiz/start"),
-			{ timeout: 30_000 },
+	const signUpTimeout = clampTimeoutMs(
+		SEED_DEADLINE,
+		30_000,
+		"student sign-up",
+	);
+	const signUpResPromise = studentPage.waitForResponse(
+		(r) => {
+			const u = new URL(r.url());
+			return (
+				r.request().method() === "POST" &&
+				u.origin === API_ORIGIN &&
+				u.pathname === "/api/auth/sign-up/email"
+			);
+		},
+		{ timeout: signUpTimeout },
+	);
+	signUpResPromise.catch(() => {});
+	const [signUpRes] = await Promise.all([
+		signUpResPromise,
+		studentPage
+			.getByRole("button", { name: "Tạo tài khoản" })
+			.click({ timeout: signUpTimeout }),
+	]);
+	if (!signUpRes.ok()) {
+		throw new Error(
+			`[design-seed] student sign-up thất bại: HTTP ${signUpRes.status()}`,
 		);
-		await startDialog.getByRole("button", { name: "Bắt đầu" }).click();
-		const res = await startRes;
-		const body = (await res.json()) as { attemptId?: string };
-		if (!body.attemptId) {
-			throw new Error(`quiz/start không trả attemptId cho ${skill}`);
-		}
-		attemptIds[skill] = body.attemptId;
 	}
+	// Đóng nguyên tử renderer /login để chặn SignUpForm chạy getSession() ->
+	// window.location.assign("/") ở nền mà không đua navigation (#652 RT-1).
+	await studentPage.close();
+
+	const tVerifyStart = Date.now();
+	const verifyUrl = await readVerificationUrl(studentEmail);
+	// #652: xác thực qua API trực tiếp (maxRedirects: 0) thay vì page.goto qua
+	// Vite dev — không còn chết vì cold-transform module graph trên máy đang tải.
+	await withNavRetry(
+		async (timeoutMs) => {
+			const res = await studentCtx.request.get(verifyUrl, {
+				maxRedirects: 0,
+				timeout: timeoutMs,
+			});
+			if (res.status() >= 500) {
+				throw new TransientNavError(`verify-email HTTP ${res.status()}`);
+			}
+			const cookies = await studentCtx.cookies(API_ORIGIN);
+			assertVerifiedEmailRedirect({
+				status: res.status(),
+				location: res.headers().location,
+				studentOrigin: STUDENT_ORIGIN,
+				cookies,
+			});
+			const sessRes = await studentCtx.request.get(
+				`${API_ORIGIN}/api/auth/get-session`,
+				{
+					timeout: clampTimeoutMs(SEED_DEADLINE, 15_000, "student get-session"),
+				},
+			);
+			if (sessRes.status() >= 500) {
+				throw new TransientNavError(`get-session HTTP ${sessRes.status()}`);
+			}
+			if (!sessRes.ok()) {
+				throw new Error(`get-session HTTP ${sessRes.status()}`);
+			}
+			const sessBody = (await sessRes.json()) as {
+				user?: { emailVerified?: boolean };
+			} | null;
+			if (sessBody?.user?.emailVerified !== true) {
+				throw new Error(
+					"student session chưa có emailVerified=true sau verify-email",
+				);
+			}
+		},
+		{
+			label: `verify-email ${verifyUrl}`,
+			attempts: 2,
+			perAttemptMs: 30_000,
+			deadline: SEED_DEADLINE,
+			onRetry: recordRetry,
+		},
+	);
+	const verifyMs = Date.now() - tVerifyStart;
+	// 8) Student bắt đầu 4 đề (reading/listening/writing/speaking) → attempt ids.
+	// #652: gọi thẳng POST /api/student/assignments/:id/quiz/start qua studentCtx.request
+	// (idempotent, chia sẻ cookie phiên với studentCtx, không phụ thuộc Vite dev
+	// cold-transform hay full-reload khi optimizeDeps bundle media/recorder).
+	const tQuizzesStart = Date.now();
+	const attemptIds: Record<string, string> = {};
+	const quizTargets = [
+		["reading", 0],
+		["listening", 1],
+		["writing", 2],
+		["speaking", 3],
+	] as const;
+	for (const [skill, idx] of quizTargets) {
+		const assignmentId = fixture.assignmentIds[idx];
+		if (!assignmentId) {
+			throw new Error(
+				`design-seed fixture thiếu assignment #${idx} (${skill})`,
+			);
+		}
+		attemptIds[skill] = await withNavRetry(
+			async (timeoutMs) => {
+				const res = await studentCtx.request.post(
+					`${API_ORIGIN}/api/student/assignments/${encodeURIComponent(assignmentId)}/quiz/start`,
+					{
+						data: {},
+						headers: { Origin: STUDENT_ORIGIN },
+						timeout: timeoutMs,
+						maxRedirects: 0,
+					},
+				);
+				if (res.status() >= 500) {
+					throw new TransientNavError(
+						`quiz/start HTTP ${res.status()} cho ${skill}`,
+					);
+				}
+				if (!res.ok()) {
+					throw new Error(`quiz/start HTTP ${res.status()} cho ${skill}`);
+				}
+				const body = (await res.json()) as { attemptId?: string };
+				if (!body.attemptId) {
+					throw new Error(`quiz/start không trả attemptId cho ${skill}`);
+				}
+				return body.attemptId;
+			},
+			{
+				label: `quiz/start ${skill}`,
+				attempts: 2,
+				perAttemptMs: 30_000,
+				deadline: SEED_DEADLINE,
+				onRetry: recordRetry,
+			},
+		);
+	}
+	const quizzesMs = Date.now() - tQuizzesStart;
 
 	await ctx.close();
 	await studentCtx.close();
 
-	mkdirSync(path.dirname(OUT_FILE), { recursive: true });
+	const outDir = path.dirname(OUT_FILE);
+	mkdirSync(outDir, { recursive: true, mode: 0o700 });
+	chmodSync(outDir, 0o700);
 	const out = {
 		runToken,
 		teacherEmail,
@@ -617,12 +768,19 @@ try {
 		payToken,
 		syllabusId,
 		seededAt: new Date().toISOString(),
+		seedDurationMs: Date.now() - SEED_START,
+		verifyDurationMs: verifyMs,
+		quizzesDurationMs: quizzesMs,
+		navRetryCount,
 		apiOrigin: API_ORIGIN,
 		webOrigin: WEB_ORIGIN,
 		studentOrigin: STUDENT_ORIGIN,
 	};
-	writeFileSync(OUT_FILE, `${JSON.stringify(out, null, 2)}\n`);
-	console.log(`[design-seed] xong → ${OUT_FILE}`);
+	writeFileSync(OUT_FILE, `${JSON.stringify(out, null, 2)}\n`, { mode: 0o600 });
+	chmodSync(OUT_FILE, 0o600);
+	console.log(
+		`[design-seed] xong → ${OUT_FILE} (totalMs=${out.seedDurationMs}, verifyMs=${verifyMs}, quizzesMs=${quizzesMs}, retries=${navRetryCount})`,
+	);
 	console.log(
 		`[design-seed] attempts: reading=${out.attemptReadingId} listening=${out.attemptListeningId} writing=${out.attemptWritingId} speaking=${out.attemptSpeakingId} grading=${out.attemptId}`,
 	);
