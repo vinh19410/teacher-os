@@ -63,6 +63,9 @@ test("#647: upload thật + CORS preflight + «Phát» media + học viên đa-o
 	page,
 }) => {
 	const stamp = Date.now();
+	// Ghim NGÀY BUỔI một mốc duy nhất: gọi rời `vietnamTodayISO()` 6 chỗ có
+	// thể lệch qua nửa đêm giờ VN giữa seed và assert (#647 review Kongming).
+	const sessionDate = vietnamTodayISO();
 	const MP3_NAME = `Bài nghe – Unit 1 (${stamp}).mp3`;
 	const PDF_NAME = `Phiếu bài tập – Buổi 1 (${stamp}).pdf`;
 	const teacherAEmail = await signUpViaApi(page, {
@@ -147,7 +150,6 @@ test("#647: upload thật + CORS preflight + «Phát» media + học viên đa-o
 
 	// ---- E4: nút «Phát» mở tab inline media — đăng ký listener TRƯỚC click
 	// (red-team #3) để không hụt lỗi console nhanh trên loopback. ----
-	const consoleErrors: string[] = [];
 	const popupErrors: string[] = [];
 	const context = page.context();
 	const onPage = (newPage: Page) => {
@@ -180,8 +182,6 @@ test("#647: upload thật + CORS preflight + «Phát» media + học viên đa-o
 			"same-origin",
 		);
 		expect(docResponse.headers()["referrer-policy"]).toBe("no-referrer");
-		// readyState của MediaDocument tùy lúc — poll đến khi element nạp xong
-		// (HAVE_METADATA) thay vì khẳng định 1 lần duy nhất (flaky 1/2 run).
 		// readyState của MediaDocument tùy lúc — poll boolean đến khi element
 		// thực sự nạp dữ liệu để phát, không phải 1 lần khẳng định (flaky).
 		await expect
@@ -199,7 +199,6 @@ test("#647: upload thật + CORS preflight + «Phát» media + học viên đa-o
 			)
 			.toBe(true);
 		await popup.close();
-		expect(consoleErrors).toHaveLength(0);
 		expect(
 			popupErrors.filter(
 				(e) =>
@@ -222,7 +221,7 @@ test("#647: upload thật + CORS preflight + «Phát» media + học viên đa-o
 	});
 	const classAId = await seedDatedClass(page, {
 		name: `Lớp Tài liệu ${stamp}`,
-		startDate: vietnamTodayISO(),
+		startDate: sessionDate,
 		sessionsTotal: 1,
 	});
 	const enrollResponse = await page.request.post(
@@ -251,7 +250,7 @@ test("#647: upload thật + CORS preflight + «Phát» media + học viên đa-o
 			r
 				.url()
 				.includes(
-					`/api/classes/${classAId}/sessions/${vietnamTodayISO()}/materials/files`,
+					`/api/classes/${classAId}/sessions/${sessionDate}/materials/files`,
 				),
 	);
 	await sessionDialog
@@ -330,7 +329,7 @@ test("#647: upload thật + CORS preflight + «Phát» media + học viên đa-o
 		// Negative control: KHÔNG kèm ?org= / header org → server rơi về
 		// rows[0] (Org B) và chặn (404) dù lớp ở Org A.
 		const noOrgResponse = await studentPage.request.get(
-			`${API_ORIGIN}/api/student/classes/${classAId}/sessions/${vietnamTodayISO()}/materials/${mp3.id}/file`,
+			`${API_ORIGIN}/api/student/classes/${classAId}/sessions/${sessionDate}/materials/${mp3.id}/file`,
 		);
 		expect(noOrgResponse.status()).toBe(404);
 
@@ -410,6 +409,16 @@ test("#647: upload thật + CORS preflight + «Phát» media + học viên đa-o
 		expect(studentDocResponse.url()).toContain(
 			`org=${encodeURIComponent(orgAId)}`,
 		);
+		// Khoá chặt nhánh inline media của route học viên (unit test route
+		// server chỉ phủ nhánh attachment kind="file").
+		expect(studentDocResponse.headers()["content-disposition"] ?? "").toMatch(
+			/^inline;/,
+		);
+		const studentCsp =
+			studentDocResponse.headers()["content-security-policy"] ?? "";
+		expect(studentCsp).toContain("media-src 'self'");
+		expect(studentCsp).not.toContain("allow-scripts");
+		expect(studentDocResponse.headers()["referrer-policy"]).toBe("no-referrer");
 		await expect
 			.poll(
 				async () =>
@@ -460,15 +469,15 @@ test("#647: upload thật + CORS preflight + «Phát» media + học viên đa-o
 				timeout: 30_000,
 			});
 			const unauthorizedList = await otherPage.request.get(
-				`${API_ORIGIN}/api/student/classes/${classAId}/sessions/${vietnamTodayISO()}/materials`,
+				`${API_ORIGIN}/api/student/classes/${classAId}/sessions/${sessionDate}/materials`,
 			);
 			expect(unauthorizedList.status()).toBe(404);
 			const unauthorizedNoOrg = await otherPage.request.get(
-				`${API_ORIGIN}/api/student/classes/${classAId}/sessions/${vietnamTodayISO()}/materials/${mp3.id}/file`,
+				`${API_ORIGIN}/api/student/classes/${classAId}/sessions/${sessionDate}/materials/${mp3.id}/file`,
 			);
 			expect(unauthorizedNoOrg.status()).toBe(404);
 			const unauthorizedWithOrg = await otherPage.request.get(
-				`${API_ORIGIN}/api/student/classes/${classAId}/sessions/${vietnamTodayISO()}/materials/${mp3.id}/file?org=${orgAId}`,
+				`${API_ORIGIN}/api/student/classes/${classAId}/sessions/${sessionDate}/materials/${mp3.id}/file?org=${orgAId}`,
 			);
 			expect(unauthorizedWithOrg.status()).toBe(404);
 		} finally {
