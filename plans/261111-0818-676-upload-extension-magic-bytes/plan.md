@@ -1,7 +1,7 @@
 ---
 title: "Bảo mật upload tài liệu (#676): đối chiếu extension ↔ MIME & kiểm tra magic-byte streaming trước khi lưu kho"
 description: "Siết chặt xác thực file upload tài liệu theo đuôi file và magic-byte đầu luồng (peek tối đa 64 byte không đệm RAM) trên server, đồng bộ fallback MIME ở client và bổ sung kiểm thử âm unit + E2E."
-status: pending
+status: completed
 priority: P1
 effort: 3h
 issue: 676
@@ -89,11 +89,11 @@ flowchart TD
 
 ## Success Criteria
 
-- [ ] `resolveMaterialMimeType(fileName, browserType)` chuẩn hoá tên qua `sanitizeMediaFileName`, chặn dotfile bắt đầu bằng `.` (`.pdf`, `..pdf`), chỉ fallback tự do khi `browserType` là `""` hoặc `"application/octet-stream"`, hỗ trợ các bí danh trình duyệt/container hợp lệ (`.m4a` + `video/mp4`, OOXML + `application/x-zip-compressed`), và từ chối mọi `browserType` nguy hiểm/lệch đuôi (`("doc.pdf", "text/html") -> null`, `("payload.html", "audio/mpeg") -> null`, `("a.bin", "application/pdf") -> null`, `("a.toString", "") -> null`).
-- [ ] `matchesMaterialMagic(mimeType, head)` nhận đúng chữ ký của cả 10 MIME trong `MATERIAL_MIME` và chặn triệt để các mẫu giả mạo/polyglot (`<html>`, UTF-16LE BOM `\uFEFF <html>` giả MP3, `ID3<html>`, `<!--ftyp--><html>`, `RIFF<!--WEBP--><html>`, `%PDF-<html>`, `PK\x03\x04<html>`, HEIC/AVIF/MOV `ftyp` giả MP4).
-- [ ] `peekStream(body, maxBytes)` đọc vòng lặp tối đa `maxBytes` (chịu chunk 1 byte), phát lại byte-identical toàn bộ stream, giải phóng khoá reader trên mọi nhánh EOF/lỗi/`cancel()` mà không ném `Controller is already closed`, và chặn vòng lặp chunk rỗng vô hạn.
-- [ ] `storeUpload` (`PUT /api/materials/files` và `PUT /api/classes/:classId/sessions/:date/materials/files`) huỷ `body` sạch khi từ chối sớm, trả `415 UNSUPPORTED_FILE_TYPE` khi lệch đuôi hoặc sai magic-byte (để lại 0 object trong `MediaStore`), và giữ nguyên `400 INVALID_FILE` khi lệch `Content-Length` ở cả ngưỡng `<= 64` byte lẫn `> 64` byte.
-- [ ] Spec E2E `apps/e2e/specs/material-upload-student.spec.ts` xanh trọn vẹn (bao gồm E2E âm trên cả ngân hàng lẫn buổi học và kiểm bấm `"Tải lên"` trên `UploadDialog`), `CHANGELOG.md` có mục `#676`, issue follow-up `ai-handle` cho các route raw-PUT còn lại đã được tạo, và toàn bộ gate local (`pnpm exec biome check .`, `pnpm check-types`, `pnpm test`) xanh 0 lỗi.
+- [x] `resolveMaterialMimeType(fileName, browserType)` chuẩn hoá tên qua `sanitizeMediaFileName`, chặn dotfile bắt đầu bằng `.` (`.pdf`, `..pdf`), chỉ fallback tự do khi `browserType` là `""` hoặc `"application/octet-stream"`, hỗ trợ các bí danh trình duyệt/container hợp lệ (`.m4a` + `video/mp4`, OOXML + `application/x-zip-compressed`), và từ chối mọi `browserType` nguy hiểm/lệch đuôi (`("doc.pdf", "text/html") -> null`, `("payload.html", "audio/mpeg") -> null`, `("a.bin", "application/pdf") -> null`, `("a.toString", "") -> null`).
+- [x] `matchesMaterialMagic(mimeType, head)` nhận đúng chữ ký của cả 10 MIME trong `MATERIAL_MIME` và chặn triệt để các mẫu giả mạo/polyglot (`<html>`, UTF-16LE BOM `\uFEFF <html>` giả MP3, `ID3<html>`, `<!--ftyp--><html>`, `RIFF<!--WEBP--><html>`, `%PDF-<html>`, `PK\x03\x04<html>`, HEIC/AVIF/MOV `ftyp` giả MP4).
+- [x] `peekStream(body, maxBytes)` đọc vòng lặp tối đa `maxBytes` (chịu chunk 1 byte), phát lại byte-identical toàn bộ stream, giải phóng khoá reader trên mọi nhánh EOF/lỗi/`cancel()` mà không ném `Controller is already closed`, và chặn vòng lặp chunk rỗng vô hạn.
+- [x] `storeUpload` (`PUT /api/materials/files` và `PUT /api/classes/:classId/sessions/:date/materials/files`) huỷ `body` sạch khi từ chối sớm, trả `415 UNSUPPORTED_FILE_TYPE` khi lệch đuôi hoặc sai magic-byte (để lại 0 object trong `MediaStore`), và giữ nguyên `400 INVALID_FILE` khi lệch `Content-Length` ở cả ngưỡng `<= 64` byte lẫn `> 64` byte.
+- [x] Spec E2E `apps/e2e/specs/material-upload-student.spec.ts` xanh trọn vẹn (bao gồm E2E âm trên cả ngân hàng lẫn buổi học và kiểm bấm `"Tải lên"` trên `UploadDialog`), `CHANGELOG.md` có mục `#676`, issue follow-up `ai-handle` cho các route raw-PUT còn lại đã được tạo, và toàn bộ gate local (`pnpm exec biome check .`, `pnpm check-types`, `pnpm test`) xanh 0 lỗi.
 
 ## Red Team Review
 

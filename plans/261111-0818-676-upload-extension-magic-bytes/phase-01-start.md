@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Phase 1: Hợp đồng MIME/extension/magic-byte, peekStream & xác thực storeUpload (TDD)"
-status: pending
+status: done
 priority: P1
 effort: "2h"
 dependencies: []

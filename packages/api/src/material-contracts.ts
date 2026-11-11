@@ -1,10 +1,11 @@
 import { z } from "zod";
-import { normalizeMediaType } from "./lib/quiz-media";
+import { normalizeMediaType, sanitizeMediaFileName } from "./lib/quiz-media";
 
 /**
- * Ngân hàng tài liệu của org và tài liệu theo buổi học. Mọi rule ở đây là
- * hàm thuần để server, app giáo viên và cổng học viên cùng một nguồn sự
- * thật — client chặn trước đúng những gì server sẽ trả 4xx.
+ * Ngân hàng tài liệu của org và tài liệu theo buổi học. Quy tắc tên file,
+ * đuôi file, loại MIME và trần dung lượng là hàm thuần dùng chung 1:1 giữa
+ * client và server; chữ ký nhị phân đầu file (`matchesMaterialMagic`) được
+ * server xác thực trực tiếp trên stream upload trước khi lưu kho (#676).
  */
 
 export const MATERIAL_KINDS = ["file", "link", "media"] as const;
@@ -80,27 +81,223 @@ const MATERIAL_EXTENSION_TYPES: Readonly<Record<string, string>> = {
 const MATERIAL_MIME_ALIASES: Readonly<Record<string, string>> = {
 	"audio/x-m4a": "audio/mp4",
 	"audio/m4a": "audio/mp4",
+	"audio/mp4a-latm": "audio/mp4",
 	"audio/mp3": "audio/mpeg",
+	"audio/x-mp3": "audio/mpeg",
+	"audio/mpeg3": "audio/mpeg",
+	"audio/x-mpeg-3": "audio/mpeg",
 	"image/jpg": "image/jpeg",
+	"image/pjpeg": "image/jpeg",
+	"image/x-png": "image/png",
+	"application/x-pdf": "application/pdf",
 };
 
+const OOXML_MIMES: Readonly<Record<string, true>> = {
+	"application/vnd.openxmlformats-officedocument.wordprocessingml.document": true,
+	"application/vnd.openxmlformats-officedocument.presentationml.presentation": true,
+	"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": true,
+};
+
+/** Các `major_brand` ISO-BMFF không phải container MP4/M4A phát được trên web. */
+const BANNED_FTYP_BRANDS: Readonly<Record<string, true>> = {
+	"qt  ": true,
+	heic: true,
+	heix: true,
+	hevc: true,
+	hevx: true,
+	mif1: true,
+	msf1: true,
+	avif: true,
+	avis: true,
+	"jp2 ": true,
+};
+
+/** Số byte đầu luồng tối đa server đọc sớm để kiểm chữ ký magic-byte (#676). */
+export const MATERIAL_MAGIC_PEEK_BYTES = 64;
+
+function extensionMime(fileName: string): string | null {
+	const clean = sanitizeMediaFileName(fileName);
+	if (!clean || clean.startsWith(".")) return null;
+	const dot = clean.lastIndexOf(".");
+	if (dot <= 0 || dot === clean.length - 1) return null;
+	const ext = clean.slice(dot + 1).toLowerCase();
+	return Object.hasOwn(MATERIAL_EXTENSION_TYPES, ext)
+		? (MATERIAL_EXTENSION_TYPES[ext] ?? null)
+		: null;
+}
+
+/** Kiểm tra tên file (sau sanitize) có phần thân và đuôi khớp đúng MIME chuẩn. */
+export function materialExtensionMatches(
+	fileName: string,
+	mimeType: string,
+): boolean {
+	const normalized = normalizeMediaType(mimeType);
+	return (
+		Object.hasOwn(MATERIAL_MIME, normalized) &&
+		extensionMime(fileName) === normalized
+	);
+}
+
 /**
- * MIME client gửi lên cho file đã chọn: MIME trình duyệt nếu thuộc
- * allowlist (sau khi gộp bí danh), ngược lại tra theo đuôi file. Không khớp
- * → null. Server chỉ nhận MIME chuẩn trong `MATERIAL_MIME`.
+ * MIME client gửi lên cho file đã chọn: tên file phải có thân + đuôi thuộc
+ * `MATERIAL_EXTENSION_TYPES`; chỉ fallback tự do theo đuôi khi `browserType`
+ * rỗng hoặc `application/octet-stream`, còn lại bắt buộc MIME trình duyệt
+ * (sau khi gộp bí danh / container tương thích) khớp đúng MIME của đuôi file.
  */
 export function resolveMaterialMimeType(
 	fileName: string,
 	browserType: string,
 ): string | null {
+	const extMime = extensionMime(fileName);
+	if (!extMime) return null;
 	const normalized = normalizeMediaType(browserType);
-	const canonical = MATERIAL_MIME_ALIASES[normalized] ?? normalized;
-	if (Object.hasOwn(MATERIAL_MIME, canonical)) return canonical;
-	const dot = fileName.lastIndexOf(".");
-	if (dot < 0) return null;
-	return (
-		MATERIAL_EXTENSION_TYPES[fileName.slice(dot + 1).toLowerCase()] ?? null
-	);
+	if (normalized === "" || normalized === "application/octet-stream") {
+		return extMime;
+	}
+	if (extMime === "audio/mp4" && normalized === "video/mp4") {
+		return "audio/mp4";
+	}
+	if (
+		Object.hasOwn(OOXML_MIMES, extMime) &&
+		(normalized === "application/zip" ||
+			normalized === "application/x-zip-compressed")
+	) {
+		return extMime;
+	}
+	const canonical = Object.hasOwn(MATERIAL_MIME_ALIASES, normalized)
+		? (MATERIAL_MIME_ALIASES[normalized] ?? normalized)
+		: normalized;
+	return Object.hasOwn(MATERIAL_MIME, canonical) && canonical === extMime
+		? canonical
+		: null;
+}
+
+function hasBytesAt(
+	buf: Uint8Array,
+	offset: number,
+	expected: readonly number[],
+): boolean {
+	if (buf.byteLength < offset + expected.length) return false;
+	for (let i = 0; i < expected.length; i++) {
+		if (buf[offset + i] !== expected[i]) return false;
+	}
+	return true;
+}
+
+/**
+ * Xác thực chữ ký nhị phân đầu luồng (`head`, tối đa 64 byte) khớp với MIME
+ * chuẩn đã khai báo, chặn các payload giả mạo và polyglot HTML/UTF-16LE BOM.
+ */
+export function matchesMaterialMagic(
+	mimeType: string,
+	head: Uint8Array,
+): boolean {
+	const normalized = normalizeMediaType(mimeType);
+	if (!Object.hasOwn(MATERIAL_MIME, normalized)) return false;
+
+	if (normalized === "application/pdf") {
+		const major = head[5] ?? 0;
+		const minor = head[7] ?? 0;
+		return (
+			head.byteLength >= 8 &&
+			hasBytesAt(head, 0, [0x25, 0x50, 0x44, 0x46, 0x2d]) &&
+			(major === 0x31 || major === 0x32) &&
+			head[6] === 0x2e &&
+			minor >= 0x30 &&
+			minor <= 0x39
+		);
+	}
+	if (normalized === "image/png") {
+		return hasBytesAt(
+			head,
+			0,
+			[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
+		);
+	}
+	if (normalized === "image/jpeg") {
+		return hasBytesAt(head, 0, [0xff, 0xd8, 0xff]);
+	}
+	if (normalized === "image/webp") {
+		return (
+			head.byteLength >= 16 &&
+			hasBytesAt(head, 0, [0x52, 0x49, 0x46, 0x46]) &&
+			hasBytesAt(head, 8, [0x57, 0x45, 0x42, 0x50]) &&
+			(hasBytesAt(head, 12, [0x56, 0x50, 0x38, 0x20]) ||
+				hasBytesAt(head, 12, [0x56, 0x50, 0x38, 0x4c]) ||
+				hasBytesAt(head, 12, [0x56, 0x50, 0x38, 0x58]))
+		);
+	}
+	if (Object.hasOwn(OOXML_MIMES, normalized)) {
+		if (
+			head.byteLength < 30 ||
+			!hasBytesAt(head, 0, [0x50, 0x4b, 0x03, 0x04])
+		) {
+			return false;
+		}
+		const view = new DataView(head.buffer, head.byteOffset, head.byteLength);
+		const method = view.getUint16(8, true);
+		const nameLen = view.getUint16(26, true);
+		return (method === 0 || method === 8) && nameLen > 0;
+	}
+	if (normalized === "audio/mpeg") {
+		if (head.byteLength >= 10 && hasBytesAt(head, 0, [0x49, 0x44, 0x33])) {
+			const major = head[3] ?? 0;
+			const rev = head[4] ?? 0xff;
+			const syncBits =
+				(head[6] ?? 0x80) |
+				(head[7] ?? 0x80) |
+				(head[8] ?? 0x80) |
+				(head[9] ?? 0x80);
+			if (major >= 2 && major <= 4 && rev < 0xff && (syncBits & 0x80) === 0) {
+				return true;
+			}
+		}
+		if (head.byteLength < 4) return false;
+		const b0 = head[0] ?? 0;
+		const b1 = head[1] ?? 0;
+		const b2 = head[2] ?? 0;
+		return (
+			b0 === 0xff &&
+			(b1 & 0xe0) === 0xe0 &&
+			(b1 & 0x18) !== 0x08 &&
+			(b1 & 0x06) === 0x02 &&
+			(b2 & 0xf0) !== 0x00 &&
+			(b2 & 0xf0) !== 0xf0 &&
+			(b2 & 0x0c) !== 0x0c
+		);
+	}
+	if (normalized === "audio/mp4" || normalized === "video/mp4") {
+		if (
+			head.byteLength < 12 ||
+			!hasBytesAt(head, 4, [0x66, 0x74, 0x79, 0x70])
+		) {
+			return false;
+		}
+		const view = new DataView(head.buffer, head.byteOffset, head.byteLength);
+		const boxSize = view.getUint32(0, false);
+		if (boxSize < 16 || boxSize > 4096) return false;
+		const c0 = head[8] ?? 0;
+		const c1 = head[9] ?? 0;
+		const c2 = head[10] ?? 0;
+		const c3 = head[11] ?? 0;
+		if (
+			c0 < 0x20 ||
+			c0 > 0x7e ||
+			c1 < 0x20 ||
+			c1 > 0x7e ||
+			c2 < 0x20 ||
+			c2 > 0x7e ||
+			c3 < 0x20 ||
+			c3 > 0x7e
+		) {
+			return false;
+		}
+		return !Object.hasOwn(
+			BANNED_FTYP_BRANDS,
+			String.fromCharCode(c0, c1, c2, c3),
+		);
+	}
+	return false;
 }
 
 export type MaterialUploadCheck =

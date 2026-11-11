@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Phase 2: Kiểm thử E2E case âm trên stack thật, CHANGELOG & issue follow-up"
-status: pending
+status: done
 priority: P1
 effort: "1h"
 dependencies: [1]
