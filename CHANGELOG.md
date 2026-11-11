@@ -21,6 +21,7 @@ Quy ước khi cập nhật:
 - Server test suite không còn đỏ ảo khi chạy trong thư mục chứa ký tự tiếng Việt / non-ASCII (#656): chuyển toàn bộ `91` vị trí lấy đường dẫn hệ điều hành bằng `new URL(..., import.meta.url).pathname` ở `88` file `.test.ts` của `apps/server` sang `fileURLToPath` từ `node:url` (giữ nguyên `.href` cho dynamic ESM `import()` và HTTP URL `.pathname`), đồng thời bổ sung bài test canh cổng AST + runtime `apps/server/src/non-ascii-path-guard.test.ts`.
 
 ### Changed
+- Chuyển `createStudentGuard` sang fail-closed (`403 STUDENT_ORG_MISMATCH`) khi `x-student-org-id` hoặc `?org=` không khớp hồ sơ học viên của phiên đăng nhập, giới hạn `?org=` chỉ cho `GET`/`HEAD`, và đồng bộ thứ tự mặc định với `GET /api/student/orgs`; Student Portal tự phục hồi mượt mà `localStorage.active_student_org_id` cũ trên mọi truy vấn `GET` song song, cô lập theo `userId` giữa các phiên đăng nhập mà không bao giờ tự retry thao tác ghi sang tổ chức khác, đồng thời khoá allowlist MIME + `COOP: same-origin` + `CORP: same-site` + `Referrer-Policy: no-referrer` cho `mediaObjectResponse` (#675).
 - Trần dung lượng upload audio/video của tài liệu hạ từ 100 MiB xuống 95 MB (`95 MiB`) để nằm dưới giới hạn request body 100 MB của Cloudflare Free/Pro edge — client chặn ngay trước khi gặp trang 413 HTML thiếu CORS (#647); bổ sung E2E `material-upload-student.spec.ts` phủ upload `PUT` raw body + preflight CORS + tên file Unicode và học viên đa-org mở/phát/tải tài liệu buổi học qua `?org=`.
 
 ### CI/Infra

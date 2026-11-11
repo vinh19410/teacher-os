@@ -49,6 +49,7 @@ vi.mock("sonner", () => ({
 
 vi.mock("@/lib/query-client", () => ({
 	isHttpError: () => false,
+	isStudentOrgMismatchError: () => false,
 	reauth: vi.fn(),
 }));
 

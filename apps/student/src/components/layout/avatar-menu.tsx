@@ -1,6 +1,7 @@
 import { LogOut } from "lucide-react";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { syncActiveStudentUser } from "@/lib/student-org-storage";
 
 /**
  * Nội dung menu tài khoản học viên — mở từ user footer của shell chung
@@ -23,6 +24,7 @@ export function AvatarMenuContent({
 		} catch {
 			// Best-effort sign-out
 		} finally {
+			syncActiveStudentUser(null);
 			window.location.assign("/login");
 		}
 	}

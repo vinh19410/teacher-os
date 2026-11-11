@@ -30,6 +30,7 @@ function StudentOnboardingPage() {
 			<OnboardingWizard
 				onCompleted={() => void navigate({ to: "/" })}
 				initialEntryScore={meQuery.data?.student.entryScore}
+				orgId={meQuery.data?.student.orgId}
 			/>
 		</div>
 	);

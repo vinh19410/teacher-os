@@ -1968,6 +1968,8 @@ export const STUDENT_ERROR_CODES = {
 	NOT_LINKED: "STUDENT_NOT_LINKED",
 	AMBIGUOUS: "STUDENT_AMBIGUOUS",
 	EMAIL_UNVERIFIED: "STUDENT_EMAIL_UNVERIFIED",
+	/** 403 khi x-student-org-id hoặc ?org= (trên GET/HEAD) khác rỗng nhưng không khớp hồ sơ nào của phiên (#675). */
+	ORG_MISMATCH: "STUDENT_ORG_MISMATCH",
 } as const;
 export type StudentErrorCode =
 	(typeof STUDENT_ERROR_CODES)[keyof typeof STUDENT_ERROR_CODES];
