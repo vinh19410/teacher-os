@@ -12,8 +12,7 @@ function encodeRfc8187(value: string): string {
 }
 
 /** CSP khoá cứng cho mọi phản hồi tải về (`attachment`) và lỗi `416`. */
-export const STRICT_CSP =
-	"default-src 'none'; frame-ancestors 'none'; sandbox";
+export const STRICT_CSP = "default-src 'none'; frame-ancestors 'none'; sandbox";
 
 /**
  * CSP cho tài liệu media mở trực tiếp trong tab mới (`inline` — nút «Phát» /

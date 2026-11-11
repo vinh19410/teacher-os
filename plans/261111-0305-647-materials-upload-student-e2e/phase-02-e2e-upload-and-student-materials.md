@@ -83,8 +83,8 @@ Xác minh tự động end-to-end trên trình duyệt thật (cross-origin web 
 - **Verify:** `E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 E2E_ADMIN_PORT=8104 E2E_PROFILE_PORT=8105 pnpm --filter e2e e2e specs/material-bank.spec.ts specs/material-upload-student.spec.ts && pnpm exec biome check . && pnpm check-types && pnpm test` thoát với mã `0`.
 
 ## Todo
-- [ ] Task 2.1: Viết `apps/e2e/specs/material-upload-student.spec.ts` phủ đủ E1–E6 (upload PUT, CORS preflight dương/âm, Phát popup CSP, học viên đa-org `?org=`, chặn 404)
-- [ ] Task 2.2: Cập nhật `CHANGELOG.md`, chạy pass E2E (`material-bank.spec.ts` + `material-upload-student.spec.ts`) và toàn bộ cổng `biome check`, `check-types`, `pnpm test`
+- [x] Task 2.1: Viết `apps/e2e/specs/material-upload-student.spec.ts` phủ đủ E1–E6 (upload PUT, CORS preflight dương/âm, Phát popup CSP, học viên đa-org `?org=`, chặn 404)
+- [x] Task 2.2: Cập nhật `CHANGELOG.md`, chạy pass E2E (`material-bank.spec.ts` + `material-upload-student.spec.ts`) và toàn bộ cổng `biome check`, `check-types`, `pnpm test`
 
 ## Verification
 - `E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 E2E_ADMIN_PORT=8104 E2E_PROFILE_PORT=8105 pnpm --filter e2e e2e specs/material-bank.spec.ts specs/material-upload-student.spec.ts` (thoát 0)

@@ -1,7 +1,7 @@
 import { MATERIAL_ERROR_CODES } from "@teacher-os/api/material-contracts";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { HttpError } from "@/lib/kernel-load-state";
 import { UPLOAD_HELP } from "@/components/materials/material-dialogs";
+import { HttpError } from "@/lib/kernel-load-state";
 import {
 	deleteMaterial,
 	fetchMaterials,
