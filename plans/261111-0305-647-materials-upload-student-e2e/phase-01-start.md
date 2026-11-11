@@ -88,11 +88,11 @@ dependencies: []
 - **Verify:** `pnpm --filter web test -- src/lib/repos/materials.test.ts src/components/materials/material-picker.test.tsx src/components/class-detail/session-materials-modal.test.tsx src/routes/_auth/materials/index.test.tsx && pnpm --filter student test -- src/components/class/lesson-materials.test.tsx` thoát với mã `0`.
 
 ## Todo
-- [ ] Task 1.1: Viết test đỏ cho `MATERIAL_MEDIA_MAX_BYTES = 95 * 1024 * 1024`
-- [ ] Task 1.2: Hạ `MATERIAL_MEDIA_MAX_BYTES` xuống `95 * 1024 * 1024` và chạy xanh test `@teacher-os/api`
-- [ ] Task 1.3: Viết test đỏ cho `materialFileResponse` chuẩn hoá MIME + tách CSP + `206` + `COOP`/`Referrer-Policy`
-- [ ] Task 1.4: Cài đặt `INLINE_MEDIA_CSP` / `STRICT_CSP` / `octet-stream` clamp trong `material-file-response.ts` và chạy xanh test `server`
-- [ ] Task 1.5: Cập nhật `UPLOAD_HELP` (`95 MB`) + fallback `413` trong `apps/web` theo TDD
+- [x] Task 1.1: Viết test đỏ cho `MATERIAL_MEDIA_MAX_BYTES = 95 * 1024 * 1024`
+- [x] Task 1.2: Hạ `MATERIAL_MEDIA_MAX_BYTES` xuống `95 * 1024 * 1024` và chạy xanh test `@teacher-os/api`
+- [x] Task 1.3: Viết test đỏ cho `materialFileResponse` chuẩn hoá MIME + tách CSP + `206` + `COOP`/`Referrer-Policy`
+- [x] Task 1.4: Cài đặt `INLINE_MEDIA_CSP` / `STRICT_CSP` / `octet-stream` clamp trong `material-file-response.ts` và chạy xanh test `server`
+- [x] Task 1.5: Cập nhật `UPLOAD_HELP` (`95 MB`) + fallback `413` trong `apps/web` theo TDD
 
 ## Verification
 - `pnpm --filter @teacher-os/api test -- material-contracts.test.ts` (thoát 0)
