@@ -16,8 +16,13 @@ export function isMaterialKind(value: string): value is MaterialKind {
 
 /** Trần dung lượng tài liệu (PDF, ảnh, Office). */
 export const MATERIAL_DOC_MAX_BYTES = 25 * 1024 * 1024;
-/** Trần dung lượng audio/video. */
-export const MATERIAL_MEDIA_MAX_BYTES = 100 * 1024 * 1024;
+/**
+ * Trần dung lượng audio/video: 95 MiB (99.614.720 B) — nằm dưới giới hạn
+ * request body 100 MB (~100.000.000 B SI) của Cloudflare Free/Pro edge để
+ * client chặn ngay trước khi đụng trang HTML 413 không có CORS của proxy
+ * (#647; chỉ tăng khi cả staging và prod đều ở gói Business >= 200 MB).
+ */
+export const MATERIAL_MEDIA_MAX_BYTES = 95 * 1024 * 1024;
 
 export const MATERIAL_TITLE_MAX = 200;
 export const MATERIAL_DESCRIPTION_MAX = 1000;
