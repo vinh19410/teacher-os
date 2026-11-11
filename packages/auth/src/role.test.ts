@@ -2,10 +2,14 @@ import { describe, expect, test } from "vitest";
 import {
 	canAccessFinance,
 	canPublishGrade,
+	canReadMaterials,
 	canReviewGrade,
+	canWriteMaterials,
 	FINANCE_ROLES,
 	GRADING_PUBLISH_ROLES,
 	GRADING_REVIEW_ROLES,
+	MATERIAL_READ_ROLES,
+	MATERIAL_WRITE_ROLES,
 	resolveRequestApp,
 	resolveUserRole,
 } from "./role";
@@ -275,5 +279,45 @@ describe("canPublishGrade / canReviewGrade (TOS-33 #481 AC-004)", () => {
 		expect(canPublishGrade("ta")).toBe(false);
 		expect(canReviewGrade("ta")).toBe(true);
 		void ROLES;
+	});
+});
+
+describe("canWriteMaterials / canReadMaterials (#646)", () => {
+	test("canWriteMaterials allows teacher/owner/admin/class_teacher — NOT ta", () => {
+		expect(MATERIAL_WRITE_ROLES).toEqual([
+			"teacher",
+			"owner",
+			"admin",
+			"class_teacher",
+		]);
+		expect(canWriteMaterials("teacher")).toBe(true);
+		expect(canWriteMaterials("owner")).toBe(true);
+		expect(canWriteMaterials("admin")).toBe(true);
+		expect(canWriteMaterials("class_teacher")).toBe(true);
+		expect(canWriteMaterials("ta")).toBe(false);
+	});
+
+	test("canReadMaterials allows write roles PLUS ta", () => {
+		expect(MATERIAL_READ_ROLES).toEqual([
+			"teacher",
+			"owner",
+			"admin",
+			"class_teacher",
+			"ta",
+		]);
+		for (const role of MATERIAL_READ_ROLES) {
+			expect(canReadMaterials(role)).toBe(true);
+		}
+	});
+
+	test("both deny student, case-mismatch, unknown, empty, null/undefined", () => {
+		for (const fn of [canWriteMaterials, canReadMaterials]) {
+			expect(fn("student")).toBe(false);
+			expect(fn("TEACHER")).toBe(false);
+			expect(fn("unknown")).toBe(false);
+			expect(fn("")).toBe(false);
+			expect(fn(null)).toBe(false);
+			expect(fn(undefined)).toBe(false);
+		}
 	});
 });

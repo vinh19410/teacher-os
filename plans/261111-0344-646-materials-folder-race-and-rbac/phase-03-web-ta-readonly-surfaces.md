@@ -87,9 +87,9 @@ dependencies: [1, 2]
 
 ## Todo
 
-- [ ] Viết unit test đỏ cho `viewer.role = "ta"` trên `/materials`, `SessionMaterialsModal`, `MaterialPicker`/`MaterialBankBrowser` và test gỡ chu trình `FolderDialog`
-- [ ] Cài đặt `useCanWriteMaterials()` và ẩn nút/hộp thoại ghi trên cả 3 bề mặt UI + kẹp `depth` ở `FolderPanel` & `MaterialBankBrowser`
-- [ ] Chạy đủ cổng `biome check`, `check-types`, `test`, `design:compare` và chụp screenshot 3 viewport (light/dark) cho POT
+- [x] Viết unit test đỏ cho `viewer.role = "ta"` trên `/materials`, `SessionMaterialsModal`, `MaterialPicker`/`MaterialBankBrowser` và test gỡ chu trình `FolderDialog`
+- [x] Cài đặt `useCanWriteMaterials()` và ẩn nút/hộp thoại ghi trên cả 3 bề mặt UI + kẹp `depth` ở `FolderPanel` & `MaterialBankBrowser`
+- [x] Chạy đủ cổng `biome check`, `check-types`, `test`, `design:compare` và chụp screenshot 3 viewport (light/dark) cho POT
 
 ## Verification
 

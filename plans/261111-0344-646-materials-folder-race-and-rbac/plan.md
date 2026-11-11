@@ -1,7 +1,7 @@
 ---
 title: "Chặn race chu trình thư mục tài liệu & tách phân quyền tài liệu khỏi chấm bài (#646)"
 description: "Bảo vệ nguyên tử cây thư mục tài liệu bằng SQL WITH RECURSIVE, hiển thị thư mục bị cô lập ở client, tách canReadMaterials/canWriteMaterials và ẩn nút ghi cho role ta trên cả 3 bề mặt web UI."
-status: pending
+status: completed
 priority: P1
 effort: "4h"
 issue: 646
@@ -56,11 +56,11 @@ Giải pháp nhúng trực tiếp điều kiện `WITH RECURSIVE` nguyên tử v
 
 ## Success Criteria
 
-- [ ] `packages/auth/src/role.ts` export `MATERIAL_WRITE_ROLES`, `MATERIAL_READ_ROLES`, `canWriteMaterials`, `canReadMaterials` với bảng tra riêng; `apps/server/src/routes/materials.ts` không còn tham chiếu `canReviewGrade` hay `canPublishGrade`; `materials.test.ts` phủ cả HTTP gate cho role không thuộc allowlist, `class_teacher`, `ta` và cô lập `parentId` chéo org.
-- [ ] `apps/server/src/routes/materials.test.ts` chứng minh bằng `Promise.all`: đua chéo `A → B` và `B → A` trả `[200, 400]` (`FOLDER_CYCLE`); đua đổi tên thuần + di chuyển thuần bảo toàn cả hai thay đổi, đua trùng tên khi di chuyển trả `[200, 409]` (`FOLDER_NAME_TAKEN`); đua vượt trần 5 cấp ở `POST` và `PATCH` trả `400 FOLDER_TOO_DEEP`; di chuyển thư mục đang kẹt vòng sang cha hợp lệ hoặc gốc thành công (`200`).
-- [ ] `flattenFolderTree` trả đủ mọi thư mục trong chu trình `x ↔ y` kèm nhánh con `b → x` giữ đúng thứ tự cha–con (`[["x", 0], ["b", 1], ["y", 1]]`); `FolderPanel`, `FolderSelect` (giữ `\u00A0\u00A0`) và `MaterialBankBrowser` kẹp thụt lề tối đa `MATERIAL_FOLDER_MAX_DEPTH - 1`; `FolderDialog` ở mode `move` khởi tạo `parentId = null` khi cha hiện tại nằm trong `exclude` hoặc không tồn tại.
-- [ ] Với `viewer.role = "ta"`, cả 3 bề mặt (`/materials`, `SessionMaterialsModal`, `MaterialPicker` + `MaterialBankBrowser`) ẩn toàn bộ nút ghi/upload/sửa/xóa, câu nhắc upload và đóng cổng render dialog ghi, trong khi vẫn giữ các thao tác đọc/mở/tải và `Chọn từ ngân hàng` ở `MaterialPicker`.
-- [ ] `pnpm exec biome check .`, `pnpm check-types`, `pnpm test` (`@teacher-os/auth`, `server`, `web`), `pnpm design:compare` và kiểm tra trực quan 3 viewport (`1440×900`, `768×1024`, `375×812`, light/dark) đều đạt.
+- [x] `packages/auth/src/role.ts` export `MATERIAL_WRITE_ROLES`, `MATERIAL_READ_ROLES`, `canWriteMaterials`, `canReadMaterials` với bảng tra riêng; `apps/server/src/routes/materials.ts` không còn tham chiếu `canReviewGrade` hay `canPublishGrade`; `materials.test.ts` phủ cả HTTP gate cho role không thuộc allowlist, `class_teacher`, `ta` và cô lập `parentId` chéo org.
+- [x] `apps/server/src/routes/materials.test.ts` chứng minh bằng `Promise.all`: đua chéo `A → B` và `B → A` trả `[200, 400]` (`FOLDER_CYCLE`); đua đổi tên thuần + di chuyển thuần bảo toàn cả hai thay đổi, đua trùng tên khi di chuyển trả `[200, 409]` (`FOLDER_NAME_TAKEN`); đua vượt trần 5 cấp ở `POST` và `PATCH` trả `400 FOLDER_TOO_DEEP`; di chuyển thư mục đang kẹt vòng sang cha hợp lệ hoặc gốc thành công (`200`).
+- [x] `flattenFolderTree` trả đủ mọi thư mục trong chu trình `x ↔ y` kèm nhánh con `b → x` giữ đúng thứ tự cha–con (`[["x", 0], ["b", 1], ["y", 1]]`); `FolderPanel`, `FolderSelect` (giữ `\u00A0\u00A0`) và `MaterialBankBrowser` kẹp thụt lề tối đa `MATERIAL_FOLDER_MAX_DEPTH - 1`; `FolderDialog` ở mode `move` khởi tạo `parentId = null` khi cha hiện tại nằm trong `exclude` hoặc không tồn tại.
+- [x] Với `viewer.role = "ta"`, cả 3 bề mặt (`/materials`, `SessionMaterialsModal`, `MaterialPicker` + `MaterialBankBrowser`) ẩn toàn bộ nút ghi/upload/sửa/xóa, câu nhắc upload và đóng cổng render dialog ghi, trong khi vẫn giữ các thao tác đọc/mở/tải và `Chọn từ ngân hàng` ở `MaterialPicker`.
+- [x] `pnpm exec biome check .`, `pnpm check-types`, `pnpm test` (`@teacher-os/auth`, `server`, `web`), `pnpm design:compare` và kiểm tra trực quan 3 viewport (`1440×900`, `768×1024`, `375×812`, light/dark) đều đạt.
 
 ## Red Team Review
 

@@ -3,6 +3,7 @@
  * danh sách/thư mục/upload trên đúng đường API thật qua `startKernelServer`
  * — mọi request vẫn ghi vào `server.writes` để test assert payload.
  */
+import type { KernelSnapshot } from "@teacher-os/api/contracts";
 import type { MaterialView } from "@teacher-os/api/material-contracts";
 import type { KernelServer } from "@/test/kernel-harness";
 import { snapshotFixture, startKernelServer } from "@/test/kernel-harness";
@@ -30,8 +31,9 @@ export const bankMaterialRow: MaterialView = {
  */
 export function startMaterialsBankServer(
 	items = [bankMaterialRow],
+	snapshot: KernelSnapshot = snapshotFixture(),
 ): KernelServer {
-	return startKernelServer(snapshotFixture(), (req) => {
+	return startKernelServer(snapshot, (req) => {
 		if (req.method === "GET" && req.path === "/api/materials/folders") {
 			return { status: 200, body: { folders: [] } };
 		}

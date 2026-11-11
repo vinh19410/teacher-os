@@ -184,10 +184,10 @@ Tách riêng hàm phân quyền đọc/ghi tài liệu trong `@teacher-os/auth/r
 
 ## Todo
 
-- [ ] Viết unit test ma trận role cho `canReadMaterials` / `canWriteMaterials` trong `packages/auth/src/role.test.ts`
-- [ ] Cài đặt `MATERIAL_WRITE_ROLES`, `MATERIAL_READ_ROLES`, `canWriteMaterials`, `canReadMaterials` trong `packages/auth/src/role.ts`
-- [ ] Viết test đua đồng thời `Promise.all` (chu trình, rename+move, va chạm tên, độ sâu, gỡ chu trình cũ, cô lập chéo org & RBAC HTTP) trong `apps/server/src/routes/materials.test.ts`
-- [ ] Cài đặt guard SQL `WITH RECURSIVE` nguyên tử, partial `PATCH` và tách `canReadMaterials`/`canWriteMaterials` trong `apps/server/src/routes/materials.ts` + cập nhật docblock `packages/db/src/schema/material.ts`
+- [x] Viết unit test ma trận role cho `canReadMaterials` / `canWriteMaterials` trong `packages/auth/src/role.test.ts`
+- [x] Cài đặt `MATERIAL_WRITE_ROLES`, `MATERIAL_READ_ROLES`, `canWriteMaterials`, `canReadMaterials` trong `packages/auth/src/role.ts`
+- [x] Viết test đua đồng thời `Promise.all` (chu trình, rename+move, va chạm tên, độ sâu, gỡ chu trình cũ, cô lập chéo org & RBAC HTTP) trong `apps/server/src/routes/materials.test.ts`
+- [x] Cài đặt guard SQL `WITH RECURSIVE` nguyên tử, partial `PATCH` và tách `canReadMaterials`/`canWriteMaterials` trong `apps/server/src/routes/materials.ts` + cập nhật docblock `packages/db/src/schema/material.ts`
 
 ## Verification
 

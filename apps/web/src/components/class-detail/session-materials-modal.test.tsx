@@ -27,16 +27,19 @@ const directRow: LessonMaterialView = {
 	attachedAt: "2026-11-08T00:00:00.000Z",
 };
 
-function startSessionServer(body: unknown) {
-	return startKernelServer(snapshotFixture(), (req) => {
-		if (
-			req.method === "GET" &&
-			req.path === "/api/classes/cl-1/sessions/2026-11-10/materials"
-		) {
-			return { status: 200, body };
-		}
-		return undefined;
-	});
+function startSessionServer(body: unknown, role = "teacher") {
+	return startKernelServer(
+		snapshotFixture({ viewer: { role, canAccessFinance: false } }),
+		(req) => {
+			if (
+				req.method === "GET" &&
+				req.path === "/api/classes/cl-1/sessions/2026-11-10/materials"
+			) {
+				return { status: 200, body };
+			}
+			return undefined;
+		},
+	);
 }
 
 afterEach(() => {
@@ -147,5 +150,68 @@ describe("SessionMaterialsModal", () => {
 			name: "Tài liệu từ giáo trình",
 		});
 		expect(within(dialog).queryByTestId("session-materials-empty")).toBeNull();
+	});
+
+	it("hides attach, upload, and detach controls for ta while keeping open actions and curriculum list (#646)", async () => {
+		startSessionServer(
+			{
+				items: [directRow],
+				curriculumMaterials: [
+					{
+						id: "mat-syllabus",
+						title: "Cam 15 Test 1 Passage 1",
+						description: "",
+						kind: "file",
+						url: null,
+						mimeType: "application/pdf",
+						sizeBytes: 2048,
+						originalName: "cam15.pdf",
+						position: 0,
+					},
+				],
+			},
+			"ta",
+		);
+		renderModal();
+
+		const dialog = await screen.findByRole("dialog", {
+			name: "Tài liệu buổi 10/11",
+		});
+		const list = await within(dialog).findByRole("list", {
+			name: "Tài liệu đã gắn",
+		});
+		expect(within(list).getByText("Handout buổi 1")).toBeTruthy();
+		expect(
+			within(list).getByRole("link", { name: "Tải xuống Handout buổi 1" }),
+		).toBeTruthy();
+		expect(
+			within(dialog).queryByRole("button", { name: "Chọn từ ngân hàng" }),
+		).toBeNull();
+		expect(
+			within(dialog).queryByRole("button", { name: "Tải lên mới" }),
+		).toBeNull();
+		expect(
+			within(dialog).queryByLabelText("Chọn file tải lên cho buổi học"),
+		).toBeNull();
+		expect(
+			within(list).queryByRole("button", { name: "Gỡ Handout buổi 1" }),
+		).toBeNull();
+		const curriculum = within(dialog).getByRole("list", {
+			name: "Tài liệu từ giáo trình",
+		});
+		expect(
+			within(curriculum).getByText("Cam 15 Test 1 Passage 1"),
+		).toBeTruthy();
+
+		cleanup();
+		startSessionServer({ items: [] }, "ta");
+		renderModal();
+		const emptyDialog = await screen.findByRole("dialog", {
+			name: "Tài liệu buổi 10/11",
+		});
+		const emptyEl = await within(emptyDialog).findByTestId(
+			"session-materials-empty",
+		);
+		expect(emptyEl.textContent).toBe("Chưa có tài liệu nào cho buổi này.");
 	});
 });

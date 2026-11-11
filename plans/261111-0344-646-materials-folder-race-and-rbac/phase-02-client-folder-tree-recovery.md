@@ -54,9 +54,9 @@ dependencies: [1]
 
 ## Todo
 
-- [ ] Sửa và mở rộng test chu trình + nhánh con chu trình trong `apps/web/src/lib/material-folders.test.ts`
-- [ ] Cập nhật `flattenFolderTree` trong `apps/web/src/lib/material-folders.ts` để chọn gốc chu trình theo `byName` và duyệt `depth = 0` giữ đúng thứ tự cha–con
-- [ ] Kẹp `depth` với `"\u00a0\u00a0"` trong `apps/web/src/components/materials/folder-select.tsx` và sửa khởi tạo `parentId` khi `exclude` hoặc cha mồ côi trong `apps/web/src/components/materials/material-dialogs.tsx`
+- [x] Sửa và mở rộng test chu trình + nhánh con chu trình trong `apps/web/src/lib/material-folders.test.ts`
+- [x] Cập nhật `flattenFolderTree` trong `apps/web/src/lib/material-folders.ts` để chọn gốc chu trình theo `byName` và duyệt `depth = 0` giữ đúng thứ tự cha–con
+- [x] Kẹp `depth` với `"\u00a0\u00a0"` trong `apps/web/src/components/materials/folder-select.tsx` và sửa khởi tạo `parentId` khi `exclude` hoặc cha mồ côi trong `apps/web/src/components/materials/material-dialogs.tsx`
 
 ## Verification
 
