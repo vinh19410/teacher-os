@@ -544,7 +544,7 @@ test("#647: upload thật + CORS preflight + «Phát» media + học viên đa-o
 			: await studentPdf.failure();
 		expect(downloadedPdf).toEqual(minimalPdfBytes(stamp.toString(36)));
 
-		// ---- E6: học viên chỉ thuộc Org B bị chặn 404 ----
+		// ---- E6: học viên chỉ thuộc Org B bị chặn 404 / 403 STUDENT_ORG_MISMATCH + tự phục hồi ----
 		const otherStudentContext = await newStudentContext(context);
 		const otherPage = await otherStudentContext.newPage();
 		try {

@@ -34,7 +34,11 @@ import {
 	SpeakingSubmissionPanel,
 } from "@/components/quiz/speaking-submission-panel";
 import { formatQuizDueText } from "@/lib/assignment-status";
-import { isHttpError, reauth } from "@/lib/query-client";
+import {
+	isHttpError,
+	isStudentOrgMismatchError,
+	reauth,
+} from "@/lib/query-client";
 import {
 	type QuizAttemptStore,
 	type QuizSaveState,
@@ -293,6 +297,19 @@ export function QuizTakeView({
 		},
 		onError: (error) => {
 			if (error instanceof QuizSubmitSkippedError) return;
+			if (isStudentOrgMismatchError(error)) {
+				const alreadyHalted =
+					storeRef.current?.getHalted() === "org_mismatch" ||
+					essayStoreRef.current?.getHalted() === "org_mismatch";
+				storeRef.current?.halt("org_mismatch");
+				essayStoreRef.current?.halt("org_mismatch");
+				if (!alreadyHalted) {
+					toast.error(
+						"Tổ chức học tập vừa thay đổi — bài làm đã lưu tạm trên trình duyệt, vui lòng tải lại trang.",
+					);
+				}
+				return;
+			}
 			// Speaking (#305): server chặn nộp khi chưa có file / file vừa đổi
 			// ở tab khác — refetch để panel hiện đúng file trên server.
 			if (
