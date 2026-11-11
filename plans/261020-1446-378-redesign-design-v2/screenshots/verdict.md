@@ -16,12 +16,12 @@ Mỗi dòng: PASS khi ảnh ghép thỏa checklist cấu trúc (phase 1) ở t�
 | login-reset | tablet×dark | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
 | login-reset | phone×light | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
 | login-reset | phone×dark | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
-| pay | desktop×light | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
-| pay | desktop×dark | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
-| pay | tablet×light | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
-| pay | tablet×dark | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
-| pay | phone×light | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
-| pay | phone×dark | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
+| pay | desktop×light | PASS | #653: Card PayPage v2 căn giữa (design #/pay/zz3Kpr TOS9B4C7 có dư nợ + QR; app invoicePartial chưa gắn bank link nên hiện banner chưa thiết lập chuyển khoản) |
+| pay | desktop×dark | PASS | #653: Card PayPage v2 căn giữa (design #/pay/zz3Kpr TOS9B4C7 có dư nợ + QR; app invoicePartial chưa gắn bank link nên hiện banner chưa thiết lập chuyển khoản) |
+| pay | tablet×light | PASS | #653: Card PayPage v2 căn giữa (design #/pay/zz3Kpr TOS9B4C7 có dư nợ + QR; app invoicePartial chưa gắn bank link nên hiện banner chưa thiết lập chuyển khoản) |
+| pay | tablet×dark | PASS | #653: Card PayPage v2 căn giữa (design #/pay/zz3Kpr TOS9B4C7 có dư nợ + QR; app invoicePartial chưa gắn bank link nên hiện banner chưa thiết lập chuyển khoản) |
+| pay | phone×light | PASS | #653: Card PayPage v2 căn giữa (design #/pay/zz3Kpr TOS9B4C7 có dư nợ + QR; app invoicePartial chưa gắn bank link nên hiện banner chưa thiết lập chuyển khoản) |
+| pay | phone×dark | PASS | #653: Card PayPage v2 căn giữa (design #/pay/zz3Kpr TOS9B4C7 có dư nợ + QR; app invoicePartial chưa gắn bank link nên hiện banner chưa thiết lập chuyển khoản) |
 | t-dashboard | desktop×light | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
 | t-dashboard | desktop×dark | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
 | t-dashboard | tablet×light | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |

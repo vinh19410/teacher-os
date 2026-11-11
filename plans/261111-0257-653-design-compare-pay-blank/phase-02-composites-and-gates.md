@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Phase 2: Regenerate Pay Composites, Visual Audit & Quality Gates"
-status: pending
+status: completed
 priority: P1
 effort: "35m"
 dependencies: [1]
@@ -80,9 +80,9 @@ Plan này được viết theo hợp đồng bàn giao `--advice` + `--tdd` cho 
 
 ## Todo
 
-- [ ] Task 2.1: Chụp ghép lại 6 ảnh composite màn `pay` và kiểm chứng 2 lượt `--force` + 1 lượt cache-hit
-- [ ] Task 2.2: Đối chiếu trực quan 6 ảnh `pay` và cập nhật `verdict.md` + `CHANGELOG.md`
-- [ ] Task 2.3: Dọn sạch artifact nhạy cảm, kiểm tra allowlist Scope Lock, cổng chất lượng local và tiến trình mồ côi
+- [x] Task 2.1: Chụp ghép lại 6 ảnh composite màn `pay` và kiểm chứng 2 lượt `--force` + 1 lượt cache-hit
+- [x] Task 2.2: Đối chiếu trực quan 6 ảnh `pay` và cập nhật `verdict.md` + `CHANGELOG.md`
+- [x] Task 2.3: Dọn sạch artifact nhạy cảm, kiểm tra allowlist Scope Lock, cổng chất lượng local và tiến trình mồ côi
 
 ## Verification
 

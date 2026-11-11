@@ -10,6 +10,11 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-11-11
+
+### CI/Infra
+- `design:compare` sửa lỗi deterministic ảnh design-side màn `pay` bị pixel check đánh giá trắng/rỗng ở `desktop-light` và `tablet-light` (#653): đổi `pay.design.hash` trong `scripts/design-compare/screens.json` từ `#/pay/p7Hq2x` (hóa đơn đã trả đủ làm card trắng chỉ chiếm <1% pixel trên nền sáng) sang `#/pay/zz3Kpr` (`TOS9B4C7` còn dư nợ có mã QR, đồng bộ với `t-invoice` và `seed.payToken`), cập nhật bảng ánh xạ gốc cùng 6 ảnh đối chiếu `screenshots/pay/*.png` mà giữ nguyên độ chặt của `inspectPngBuffer`.
+
 ## 2026-11-10
 
 ### Added

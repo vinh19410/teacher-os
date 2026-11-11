@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Phase 1: TDD Red→Green Alignment of Pay Design Route"
-status: pending
+status: completed
 priority: P1
 effort: "25m"
 dependencies: []
@@ -68,9 +68,9 @@ Plan này được viết theo hợp đồng bàn giao `--advice` + `--tdd` cho 
 
 ## Todo
 
-- [ ] Task 1.1: Cô lập `.cache/design-v2` của worktree và tái hiện lỗi màn `pay` phía design (TDD Red)
-- [ ] Task 1.2: Cập nhật `pay.design.hash` sang `#/pay/zz3Kpr` và đồng bộ bảng ánh xạ Phase 1
-- [ ] Task 1.3: Xác minh TDD Green trên màn `pay` và toàn bộ 214 ảnh phía design
+- [x] Task 1.1: Cô lập `.cache/design-v2` của worktree và tái hiện lỗi màn `pay` phía design (TDD Red)
+- [x] Task 1.2: Cập nhật `pay.design.hash` sang `#/pay/zz3Kpr` và đồng bộ bảng ánh xạ Phase 1
+- [x] Task 1.3: Xác minh TDD Green trên màn `pay` và toàn bộ 214 ảnh phía design
 
 ## Verification
 

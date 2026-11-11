@@ -1,7 +1,7 @@
 ---
 title: "#653: Align design-compare pay route to payable invoice TOS9B4C7"
 description: "Sửa lỗi deterministic ảnh design-side màn pay bị pixel check đánh giá trắng/rỗng ở desktop-light (0.511%) và tablet-light (0.842%) bằng cách trỏ screens.json sang hóa đơn còn dư nợ #/pay/zz3Kpr (TOS9B4C7) khớp với seed app và phase-05, đồng thời chụp ghép lại đúng 6 ảnh screenshots/pay/*.png."
-status: pending
+status: completed
 priority: P1
 effort: "1h"
 issue: 653
@@ -73,16 +73,16 @@ flowchart TD
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: TDD Red→Green Alignment of Pay Design Route](./phase-01-start.md) | Pending |
-| 2 | [Phase 2: Regenerate Pay Composites, Visual Audit & Quality Gates](./phase-02-composites-and-gates.md) | Pending |
+| 1 | [Phase 1: TDD Red→Green Alignment of Pay Design Route](./phase-01-start.md) | Completed |
+| 2 | [Phase 2: Regenerate Pay Composites, Visual Audit & Quality Gates](./phase-02-composites-and-gates.md) | Completed |
 
 ## Success Criteria
 
-- [ ] Bước TDD Red xác nhận `pnpm design:compare --screens pay --side design --force` trước khi sửa thoát mã khác `0` với đúng 2 lỗi `pay/desktop-light` và `pay/tablet-light` đều có `nonDominant < 1.0%`.
-- [ ] Sau khi cập nhật `scripts/design-compare/screens.json:39` sang `"#/pay/zz3Kpr"` và đồng bộ `phase-01-visual-harness-baseline.md:37`, `pnpm design:compare --screens pay --side design --force` thoát `0` (`6 ảnh, 0 lỗi`) và `pnpm design:compare --screens all --side design --force` thoát `0` (`214 ảnh, 0 lỗi`).
-- [ ] 2 lần chạy liên tiếp `pnpm design:compare --screens pay --side both --force` (`18 ảnh, 0 lỗi` mỗi lượt) và 1 lần chạy kế tiếp `pnpm design:compare --screens pay --side both` không `--force` (`0 ảnh, 0 lỗi`) đều thoát `0`, chỉ đúng 6 file PNG dưới `plans/261020-1446-378-redesign-design-v2/screenshots/pay/` thay đổi.
-- [ ] Kiểm tra trực quan 6 ảnh composite `screenshots/pay/{desktop,tablet,phone}-{light,dark}.png` (không có bất kỳ lệnh chụp nào chạy đè sau bước duyệt): cột `Design v2` hiển thị card `Tuition payment` của `TOS9B4C7` có mã QR, số dư `3.500.000 ₫` và thông tin Vietcombank; cột `App mới` hiển thị card `PayPage` v2 căn giữa của `invoicePartial`; không tràn ngang ở `375×812`.
-- [ ] Allowlist kiểm tra Git xác nhận ngoài thư mục plan/journal hiện tại chỉ chạm đúng 9 file mục tiêu (`screens.json`, `phase-01-visual-harness-baseline.md`, `verdict.md`, `CHANGELOG.md`, và 6 file `screenshots/pay/*.png`); `pnpm test:design-compare` pass 23/23 test; `pnpm exec biome check .`, `pnpm check-types`, `pnpm test` đều xanh; `.state`, `.mail-log.jsonl`, `local.db*`, `.pid-*` đã được dọn sạch và 0 tiến trình con mồ côi.
+- [x] Bước TDD Red xác nhận `pnpm design:compare --screens pay --side design --force` trước khi sửa thoát mã khác `0` với đúng 2 lỗi `pay/desktop-light` và `pay/tablet-light` đều có `nonDominant < 1.0%`.
+- [x] Sau khi cập nhật `scripts/design-compare/screens.json:39` sang `"#/pay/zz3Kpr"` và đồng bộ `phase-01-visual-harness-baseline.md:37`, `pnpm design:compare --screens pay --side design --force` thoát `0` (`6 ảnh, 0 lỗi`) và `pnpm design:compare --screens all --side design --force` thoát `0` (`214 ảnh, 0 lỗi`).
+- [x] 2 lần chạy liên tiếp `pnpm design:compare --screens pay --side both --force` (`18 ảnh, 0 lỗi` mỗi lượt) và 1 lần chạy kế tiếp `pnpm design:compare --screens pay --side both` không `--force` (`0 ảnh, 0 lỗi`) đều thoát `0`, chỉ đúng 6 file PNG dưới `plans/261020-1446-378-redesign-design-v2/screenshots/pay/` thay đổi.
+- [x] Kiểm tra trực quan 6 ảnh composite `screenshots/pay/{desktop,tablet,phone}-{light,dark}.png` (không có bất kỳ lệnh chụp nào chạy đè sau bước duyệt): cột `Design v2` hiển thị card `Tuition payment` của `TOS9B4C7` có mã QR, số dư `3.500.000 ₫` và thông tin Vietcombank; cột `App mới` hiển thị card `PayPage` v2 căn giữa của `invoicePartial`; không tràn ngang ở `375×812`.
+- [x] Allowlist kiểm tra Git xác nhận ngoài thư mục plan/journal hiện tại chỉ chạm đúng 9 file mục tiêu (`screens.json`, `phase-01-visual-harness-baseline.md`, `verdict.md`, `CHANGELOG.md`, và 6 file `screenshots/pay/*.png`); `pnpm test:design-compare` pass 23/23 test; `pnpm exec biome check .`, `pnpm check-types`, `pnpm test` đều xanh; `.state`, `.mail-log.jsonl`, `local.db*`, `.pid-*` đã được dọn sạch và 0 tiến trình mồ côi.
 
 ## Validation Log
 
@@ -98,7 +98,7 @@ flowchart TD
 ### Whole-Plan Consistency Sweep (Post-Validation)
 - Files reread: `plan.md`, `phase-01-start.md`, `phase-02-composites-and-gates.md`
 - Decision deltas checked: 8
-- Reconciled stale references: 8 (xoá toàn bộ `DESIGN_CACHE_DIR=/root/projects/teacher-os/...`, đồng bộ thứ tự duyệt mắt → xoá `.state`/artifact tạm → cổng chất lượng, đồng bộ allowlist 9 file mục tiêu ở cả `plan.md` và `phase-02`).
+- Reconciled stale references: 8 (xoá toàn bộ `DESIGN_CACHE_DIR=<main-checkout>/...`, đồng bộ thứ tự duyệt mắt → xoá `.state`/artifact tạm → cổng chất lượng, đồng bộ allowlist 9 file mục tiêu ở cả `plan.md` và `phase-02`).
 - Unresolved contradictions: 0
 
 ## Red Team Review
@@ -129,5 +129,14 @@ flowchart TD
 - **GO** cho bước cập nhật issue `#653` (`ready to cook` → `in progress`) và chạy `/ak-fix --auto plans/261111-0257-653-design-compare-pay-blank/plan.md --advice`.
 - Hai tinh chỉnh nhỏ đã áp vào `phase-02`: (1) đồng bộ tên log `.state/run{1..3}.log` (bỏ chữ `task-2-1.log` sót lại); (2) ghi `sha256sum` của 6 ảnh `screenshots/pay/*.png` ra `/tmp/pay-composites-653.sha256` lúc duyệt mắt ở Task 2.2 rồi đối chiếu `sha256sum -c` + dọn file `/tmp/pay-composites-653.sha256` ở Task 2.3 `Verify` để bảo chứng cơ học không có bước nào ghi đè ảnh sau khi duyệt.
 - Rủi ro thực thi cần canh: 3 lượt `--side both` trên máy chia sẻ đều boot full stack (`api`/`web`/`student` + `design-seed.ts`); nếu bất kỳ lượt nào fail thì tuân thủ `Failure Protocol`, không tự retry mù; trích đoạn Red/Green khi đăng POT phải xoá đường dẫn tuyệt đối nội bộ.
+
+### Implementation notes (`ak-fix --advice`, 2026-11-11)
+- Phase 1 đạt TDD Red → Green trọn vẹn: `pay` phía design đạt `6 ảnh, 0 lỗi`, toàn bộ 36 màn phía design đạt `214 ảnh, 0 lỗi`, `pnpm test:design-compare` đạt `23/23 pass`.
+- Phase 2 Task 2.1: lượt `run1` đạt `18 ảnh, 0 lỗi`; lượt `run2` lần đầu vấp đúng flake tồn tại sẵn `#652` (`design-seed.ts:552` `verify-email` `TimeoutError` khi máy chịu tải `load average > 3`, trước khi chạm bước chụp `pay`). Đã dừng ngay theo `Failure Protocol` và tham vấn `kongming` (`KongmingFailureProtocol21`): xác nhận `#652` độc lập ngoài phạm vi, giữ nguyên `design-seed.ts`, lưu `run2.fail1.log` và tiếp tục chạy `run2` + `run3` không sửa code.
+- Lượt `run2` kế tiếp đã pass toàn bộ `design-seed.ts` + 12 ảnh chụp (`6 app` + `6 design` đều pass `assertNonBlankPngFile`), nhưng gặp `page.screenshot: Timeout 30000ms` ở bước `compose()` khi máy vọt `loadavg = 40.76` (do phiên agent song song `#652` chạy `vitest` + `tsc` + dev servers trên VM 4 core). Đã leo thang lần 2 lên `kongming` (`KongmingFailureProtocol21b`): giữ nguyên `capture.mjs`, cài cổng chờ `loadavg < 4.5` trước khi chạy `run2` + `run3`.
+
+### Code review fixes (`ak-code-review --pending --advice`, 2026-11-11)
+- Verdict từ reviewer độc lập `LocalCodeReview653`: **Approved** (`0 Critical / 0 Important / 2 Minor`).
+- Đã xử lý trọn vẹn `2/2` Minor: (1) thay đường dẫn mẫu trong log đối soát dòng 101 bằng `<main-checkout>/...`; (2) cập nhật `status: completed` cho plan + 2 phase và tick `[x]` đầy đủ các mục `Success Criteria`.
 
 <!-- slug: 653-design-compare-pay-blank -->
