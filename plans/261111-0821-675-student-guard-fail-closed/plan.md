@@ -1,7 +1,7 @@
 ---
 title: "Bảo mật (#675): khoá fail-closed createStudentGuard, tự phục hồi org học viên & rà soát mediaObjectResponse"
 description: "Chuyển createStudentGuard sang fail-closed (403 STUDENT_ORG_MISMATCH, chỉ nhận ?org= trên GET/HEAD), bổ sung tự phục hồi active_student_org_id an toàn đa truy vấn song song và đa tài khoản trên Student Portal không tự retry lệnh ghi, cập nhật E2E E6 và khoá hợp đồng bảo mật mediaObjectResponse."
-status: pending
+status: completed
 priority: P1
 effort: 3h
 issue: 675
@@ -60,16 +60,16 @@ flowchart TD
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: Khoá fail-closed `createStudentGuard`, đồng bộ `/orgs` & chuẩn hoá bảo mật `mediaObjectResponse`](./phase-01-start.md) | Pending |
-| 2 | [Phase 2: Tự phục hồi `active_student_org_id` đa truy vấn & đa tài khoản trên Student Portal, cập nhật E2E E6 & CHANGELOG](./phase-02-student-org-self-heal-and-e2e.md) | Pending |
+| 1 | [Phase 1: Khoá fail-closed `createStudentGuard`, đồng bộ `/orgs` & chuẩn hoá bảo mật `mediaObjectResponse`](./phase-01-start.md) | Completed |
+| 2 | [Phase 2: Tự phục hồi `active_student_org_id` đa truy vấn & đa tài khoản trên Student Portal, cập nhật E2E E6 & CHANGELOG](./phase-02-student-org-self-heal-and-e2e.md) | Completed |
 
 ## Success Criteria
 
-- [ ] `STUDENT_ERROR_CODES.ORG_MISMATCH` (`"STUDENT_ORG_MISMATCH"`) được xuất từ `@teacher-os/api/contracts`; mọi request tới route gắn `createStudentGuard` mang `x-student-org-id` (hoặc `?org=` trên `GET`/`HEAD`) khác rỗng nhưng không khớp `rows` đều bị từ chối `403` với `code: "STUDENT_ORG_MISMATCH"`; `GET /api/student/orgs` dùng cùng `.trim()` và `.orderBy(desc(student.createdAt), asc(student.id))` với `createStudentGuard`.
-- [ ] Tham số `?org=` chỉ có hiệu lực trên `GET`/`HEAD` và bị bỏ qua hoàn toàn trên `POST`/`PUT`/`PATCH`/`DELETE` (kể cả khi `?org=` mang ID của một org phụ hợp lệ); giá trị header/query chỉ gồm khoảng trắng được coi như không truyền.
-- [ ] Trên `apps/student`, mọi truy vấn `GET` song song mang `sentOrgId` cũ đều tự retry đúng 1 lần (`retryDelay: 0`) về org hợp lệ không hiện màn lỗi `403`; mọi thao tác ghi (`MutationCache`, `quiz.ts` `request()`/`uploadQuizMedia`, `QuizAttemptStore.drain()`, `vocab.ts` `parseWriteErrorAndThrow`) xoá org cũ + `invalidateQueries(["student"])` mà không tự thực thi lại lệnh ghi sang org khác; `submitOnboarding` ghim `orgId` tường minh; `/_auth` `beforeLoad`, đăng xuất và `reauth()` cô lập hoàn toàn `active_student_org_id` giữa các tài khoản; các component đọc org cập nhật tức thì qua `useSyncExternalStore`.
-- [ ] `mediaObjectResponse` giữ nguyên `Content-Security-Policy: default-src 'none'; sandbox` (không có `allow-same-origin`/`allow-scripts`), gắn `Cross-Origin-Opener-Policy: same-origin`, chuẩn hoá & allowlist MIME (ép `application/octet-stream` + `attachment` khi ngoài allowlist hoặc rỗng), kèm đăng ký `Cross-Origin-Resource-Policy: same-site` + `Referrer-Policy: no-referrer` trên `app.ts` cho đủ các route media và kiểm tra `audio/*` trong `fetchVocabAudioObjectUrl`.
-- [ ] Spec E2E `apps/e2e/specs/material-upload-student.spec.ts` (gồm E5, E6 `403 STUDENT_ORG_MISMATCH` & kiểm thử tự phục hồi trình duyệt thật với `orgBId`), `pnpm exec biome check .`, `pnpm check-types`, và các bộ unit test liên quan đều xanh 0 lỗi; `CHANGELOG.md` cập nhật mục `#675`.
+- [x] `STUDENT_ERROR_CODES.ORG_MISMATCH` (`"STUDENT_ORG_MISMATCH"`) được xuất từ `@teacher-os/api/contracts`; mọi request tới route gắn `createStudentGuard` mang `x-student-org-id` (hoặc `?org=` trên `GET`/`HEAD`) khác rỗng nhưng không khớp `rows` đều bị từ chối `403` với `code: "STUDENT_ORG_MISMATCH"`; `GET /api/student/orgs` dùng cùng `.trim()` và `.orderBy(desc(student.createdAt), asc(student.id))` với `createStudentGuard`.
+- [x] Tham số `?org=` chỉ có hiệu lực trên `GET`/`HEAD` và bị bỏ qua hoàn toàn trên `POST`/`PUT`/`PATCH`/`DELETE` (kể cả khi `?org=` mang ID của một org phụ hợp lệ); giá trị header/query chỉ gồm khoảng trắng được coi như không truyền.
+- [x] Trên `apps/student`, mọi truy vấn `GET` song song mang `sentOrgId` cũ đều tự retry đúng 1 lần (`retryDelay: 0`) về org hợp lệ không hiện màn lỗi `403`; mọi thao tác ghi (`MutationCache`, `quiz.ts` `request()`/`uploadQuizMedia`, `QuizAttemptStore.drain()`, `vocab.ts` `parseWriteErrorAndThrow`) xoá org cũ + `invalidateQueries(["student"])` mà không tự thực thi lại lệnh ghi sang org khác; `submitOnboarding` ghim `orgId` tường minh; `/_auth` `beforeLoad`, đăng xuất và `reauth()` cô lập hoàn toàn `active_student_org_id` giữa các tài khoản; các component đọc org cập nhật tức thì qua `useSyncExternalStore`.
+- [x] `mediaObjectResponse` giữ nguyên `Content-Security-Policy: default-src 'none'; sandbox` (không có `allow-same-origin`/`allow-scripts`), gắn `Cross-Origin-Opener-Policy: same-origin`, chuẩn hoá & allowlist MIME (ép `application/octet-stream` + `attachment` khi ngoài allowlist hoặc rỗng), kèm đăng ký `Cross-Origin-Resource-Policy: same-site` + `Referrer-Policy: no-referrer` trên `app.ts` cho đủ các route media và kiểm tra `audio/*` trong `fetchVocabAudioObjectUrl`.
+- [x] Spec E2E `apps/e2e/specs/material-upload-student.spec.ts` (gồm E5, E6 `403 STUDENT_ORG_MISMATCH` & kiểm thử tự phục hồi trình duyệt thật với `orgBId`), `pnpm exec biome check .`, `pnpm check-types`, và các bộ unit test liên quan đều xanh 0 lỗi; `CHANGELOG.md` cập nhật mục `#675`.
 
 ## Red Team Review
 

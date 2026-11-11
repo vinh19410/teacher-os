@@ -118,8 +118,9 @@ export type StudentEnv = {
 /**
  * Guard học viên dùng chung cho mọi route /api/student: nạp dòng student theo
  * email session (tự provision khi email đã verify), chọn org theo header
- * `x-student-org-id` và đặt `studentCtx`. Không khớp → 403 NOT_LINKED /
- * EMAIL_UNVERIFIED.
+ * `x-student-org-id` (hoặc `?org=` chỉ trên GET/HEAD) và đặt `studentCtx`.
+ * Truyền org khác rỗng không khớp hồ sơ → 403 STUDENT_ORG_MISMATCH (#675);
+ * không có hồ sơ nào → 403 STUDENT_NOT_LINKED; chưa xác thực → EMAIL_UNVERIFIED.
  */
 export function createStudentGuard(deps: StudentRouteDeps) {
 	return async (c: Context<StudentEnv>, next: () => Promise<void>) => {
@@ -175,17 +176,32 @@ export function createStudentGuard(deps: StudentRouteDeps) {
 		}
 
 		// Thẻ <audio>/<video> và link tải không gửi được header, nên cho phép
-		// `?org=` làm phương án dự phòng; giá trị vẫn chỉ khớp với các hồ sơ
-		// học viên của chính phiên đăng nhập này (rows).
-		const requestedOrgId =
-			c.req.header("x-student-org-id") ?? c.req.query("org");
+		// `?org=` làm phương án dự phòng CHỈ trên GET/HEAD; mọi phương thức ghi
+		// bỏ qua `?org=`. Khi có truyền org khác rỗng mà không khớp dòng nào
+		// trong `rows`, từ chối fail-closed 403 STUDENT_ORG_MISMATCH (#675).
+		const rawHeaderOrg = c.req.header("x-student-org-id")?.trim();
+		const headerOrgId = rawHeaderOrg ? rawHeaderOrg : undefined;
+		const method = c.req.method.toUpperCase();
+		const rawQueryOrg =
+			method === "GET" || method === "HEAD"
+				? c.req.query("org")?.trim()
+				: undefined;
+		const queryOrgId = rawQueryOrg ? rawQueryOrg : undefined;
+		const requestedOrgId = headerOrgId ?? queryOrgId;
 		let matchedStudent = rows[0];
 
 		if (requestedOrgId) {
 			const found = rows.find((r) => r.orgId === requestedOrgId);
-			if (found) {
-				matchedStudent = found;
+			if (!found) {
+				return c.json(
+					{
+						error: STUDENT_ERROR_CODES.ORG_MISMATCH,
+						code: STUDENT_ERROR_CODES.ORG_MISMATCH,
+					},
+					403,
+				);
 			}
+			matchedStudent = found;
 		}
 
 		if (!matchedStudent) {
@@ -677,7 +693,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const sessionUser = c.get("sessionUser");
 		const db = deps.getDb();
 		const normalizedEmail = sessionUser.email.toLowerCase();
-		const requestedOrgId = c.req.header("x-student-org-id");
+		const rawHeaderOrg = c.req.header("x-student-org-id")?.trim();
+		const requestedOrgId = rawHeaderOrg ? rawHeaderOrg : undefined;
 
 		const studentRows = await db
 			.select({
@@ -689,7 +706,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			.from(student)
 			.innerJoin(organization, eq(student.orgId, organization.id))
 			.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
-			.orderBy(desc(student.createdAt), desc(student.id));
+			.orderBy(desc(student.createdAt), asc(student.id));
 
 		if (studentRows.length === 0) {
 			return c.json([]);

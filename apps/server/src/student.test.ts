@@ -421,13 +421,40 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 			.where(eq(schema.student.id, "student-amb-2"));
 
 		try {
-			// Without header: fallback to most recent
+			// Without header: fallback to most recent (tie-broken by asc(student.id) -> org-1)
 			const res = await app.request("/api/student/me", {
 				headers: { "x-test-user": "ambiguous" },
 			});
 			expect(res.status).toBe(200);
 			const body = (await res.json()) as { student: { orgId: string } };
-			expect(["org-1", "org-2"]).toContain(body.student.orgId);
+			expect(body.student.orgId).toBe("org-1");
+
+			// GET /orgs default isCurrent matches createStudentGuard tie-breaker (#675)
+			const orgsDefault = await app.request("/api/student/orgs", {
+				headers: { "x-test-user": "ambiguous" },
+			});
+			expect(orgsDefault.status).toBe(200);
+			const orgsDefaultBody = (await orgsDefault.json()) as Array<{
+				id: string;
+				isCurrent: boolean;
+			}>;
+			expect(orgsDefaultBody.find((o) => o.isCurrent)?.id).toBe(
+				body.student.orgId,
+			);
+
+			// GET /orgs trims padded x-student-org-id header
+			const orgsPadded = await app.request("/api/student/orgs", {
+				headers: {
+					"x-test-user": "ambiguous",
+					"x-student-org-id": "  org-2  ",
+				},
+			});
+			expect(orgsPadded.status).toBe(200);
+			const orgsPaddedBody = (await orgsPadded.json()) as Array<{
+				id: string;
+				isCurrent: boolean;
+			}>;
+			expect(orgsPaddedBody.find((o) => o.isCurrent)?.id).toBe("org-2");
 
 			// With header: resolves specifically to requested org-1
 			const resOrg1 = await app.request("/api/student/me", {
@@ -439,6 +466,34 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 			expect(resOrg1.status).toBe(200);
 			const body1 = (await resOrg1.json()) as { student: { orgId: string } };
 			expect(body1.student.orgId).toBe("org-1");
+
+			// Whitespace-only header is treated as absent -> falls back to default org
+			const resBlank = await app.request("/api/student/me", {
+				headers: {
+					"x-test-user": "ambiguous",
+					"x-student-org-id": "   ",
+				},
+			});
+			expect(resBlank.status).toBe(200);
+			const blankBody = (await resBlank.json()) as {
+				student: { orgId: string };
+			};
+			expect(blankBody.student.orgId).toBe("org-1");
+
+			// Mismatched header fails closed with 403 STUDENT_ORG_MISMATCH (#675)
+			const resForeignHeader = await app.request("/api/student/me", {
+				headers: {
+					"x-test-user": "ambiguous",
+					"x-student-org-id": "org-not-mine",
+				},
+			});
+			expect(resForeignHeader.status).toBe(403);
+			const foreignHeaderBody = (await resForeignHeader.json()) as {
+				error?: string;
+				code?: string;
+			};
+			expect(foreignHeaderBody.code).toBe(STUDENT_ERROR_CODES.ORG_MISMATCH);
+			expect(foreignHeaderBody.error).toBe(STUDENT_ERROR_CODES.ORG_MISMATCH);
 		} finally {
 			await libsql
 				.update(schema.student)
@@ -463,26 +518,149 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 				expect(body.student.orgId).toBe(orgId);
 			}
 
-			// An org the session has no student record in never grants access.
+			// HEAD also supports ?org= and fails closed on mismatch (#675).
+			const headValid = await app.request("/api/student/me?org=org-2", {
+				method: "HEAD",
+				headers: { "x-test-user": "ambiguous" },
+			});
+			expect(headValid.status).toBe(200);
+			const headForeign = await app.request(
+				"/api/student/me?org=org-not-mine",
+				{
+					method: "HEAD",
+					headers: { "x-test-user": "ambiguous" },
+				},
+			);
+			expect(headForeign.status).toBe(403);
+
+			// An org the session has no student record in fails closed with 403 STUDENT_ORG_MISMATCH.
 			const foreign = await app.request("/api/student/me?org=org-not-mine", {
 				headers: { "x-test-user": "ambiguous" },
 			});
-			expect(foreign.status).toBe(200);
+			expect(foreign.status).toBe(403);
 			const foreignBody = (await foreign.json()) as {
+				error?: string;
+				code?: string;
+			};
+			expect(foreignBody.code).toBe(STUDENT_ERROR_CODES.ORG_MISMATCH);
+
+			// Whitespace-only header does not swallow a valid ?org= query fallback.
+			const blankHeaderWithQuery = await app.request(
+				"/api/student/me?org=org-2",
+				{
+					headers: {
+						"x-test-user": "ambiguous",
+						"x-student-org-id": "   ",
+					},
+				},
+			);
+			expect(blankHeaderWithQuery.status).toBe(200);
+			const blankHeaderBody = (await blankHeaderWithQuery.json()) as {
 				student: { orgId: string };
 			};
-			expect(["org-1", "org-2"]).toContain(foreignBody.student.orgId);
+			expect(blankHeaderBody.student.orgId).toBe("org-2");
 
-			// Header wins over the query fallback.
+			// Header wins over the query fallback, and mismatched header never falls back to ?org=.
 			const both = await app.request("/api/student/me?org=org-2", {
 				headers: { "x-test-user": "ambiguous", "x-student-org-id": "org-1" },
 			});
 			const bothBody = (await both.json()) as { student: { orgId: string } };
 			expect(bothBody.student.orgId).toBe("org-1");
+
+			const mismatchHeaderValidQuery = await app.request(
+				"/api/student/me?org=org-1",
+				{
+					headers: {
+						"x-test-user": "ambiguous",
+						"x-student-org-id": "org-not-mine",
+					},
+				},
+			);
+			expect(mismatchHeaderValidQuery.status).toBe(403);
+
+			// Write methods completely ignore ?org= (even when ?org= names a valid secondary org),
+			// while still rejecting a mismatched x-student-org-id header (#675).
+			const validOnboardingPayload = {
+				examInterest: "ielts",
+				currentLevel: "intermediate",
+				targetScore: "6.5",
+				learningGoals: ["study-abroad"],
+				dailyStudyHours: "1-2",
+			};
+			const postSecondaryQuery = await app.request(
+				"/api/student/onboarding?org=org-2",
+				{
+					method: "POST",
+					headers: {
+						"x-test-user": "ambiguous",
+						Origin: "http://localhost:8003",
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify(validOnboardingPayload),
+				},
+			);
+			expect(postSecondaryQuery.status).toBe(200);
+			const postSecondaryBody = (await postSecondaryQuery.json()) as {
+				student: { orgId: string };
+			};
+			expect(postSecondaryBody.student.orgId).toBe("org-1");
+
+			const postForeignQuery = await app.request(
+				"/api/student/onboarding?org=org-not-mine",
+				{
+					method: "POST",
+					headers: {
+						"x-test-user": "ambiguous",
+						Origin: "http://localhost:8003",
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify(validOnboardingPayload),
+				},
+			);
+			expect(postForeignQuery.status).toBe(200);
+			const postForeignBody = (await postForeignQuery.json()) as {
+				student: { orgId: string };
+			};
+			expect(postForeignBody.student.orgId).toBe("org-1");
+
+			const postForeignHeader = await app.request("/api/student/onboarding", {
+				method: "POST",
+				headers: {
+					"x-test-user": "ambiguous",
+					"x-student-org-id": "org-not-mine",
+					Origin: "http://localhost:8003",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(validOnboardingPayload),
+			});
+			expect(postForeignHeader.status).toBe(403);
+			const postForeignHeaderBody = (await postForeignHeader.json()) as {
+				code?: string;
+			};
+			expect(postForeignHeaderBody.code).toBe(STUDENT_ERROR_CODES.ORG_MISMATCH);
 		} finally {
 			await libsql
 				.update(schema.student)
-				.set({ email: "" })
+				.set({
+					onboardingCompletedAt: null,
+					examInterest: null,
+					currentLevel: null,
+					targetScore: null,
+					learningGoals: null,
+					dailyStudyHours: null,
+				})
+				.where(eq(schema.student.id, "student-amb-1"));
+			await libsql
+				.update(schema.student)
+				.set({
+					email: "",
+					onboardingCompletedAt: null,
+					examInterest: null,
+					currentLevel: null,
+					targetScore: null,
+					learningGoals: null,
+					dailyStudyHours: null,
+				})
 				.where(eq(schema.student.id, "student-amb-2"));
 		}
 	});

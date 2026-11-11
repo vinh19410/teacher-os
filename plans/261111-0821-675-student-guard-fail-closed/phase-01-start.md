@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Phase 1: Khoá fail-closed createStudentGuard, đồng bộ /orgs & chuẩn hoá bảo mật mediaObjectResponse"
-status: todo
+status: completed
 priority: P1
 effort: "1.25h"
 dependencies: []
@@ -114,10 +114,10 @@ Bổ sung mã lỗi hợp đồng `STUDENT_ORG_MISMATCH`, chuyển `createStuden
 - **Verify:** `pnpm --filter server test -- src/lib/media-response.test.ts src/routes/grading.test.ts src/routes/student-quiz-media.test.ts` thoát với mã `0` và in `passed`.
 
 ## Todo
-- [ ] Task 1.1: Thêm `STUDENT_ERROR_CODES.ORG_MISMATCH` vào `packages/api/src/contracts.ts`
-- [ ] Task 1.2: Viết bài test đỏ cho `createStudentGuard` fail-closed (`GET`/`HEAD`/`POST`, `?org=org-2`, khoảng trắng) & đồng bộ `GET /orgs` trong `apps/server/src/student.test.ts`
-- [ ] Task 1.3: Cài đặt `createStudentGuard` fail-closed + đồng bộ `GET /api/student/orgs` trong `apps/server/src/routes/student.ts` và chạy xanh test server
-- [ ] Task 1.4: Viết test đỏ + cập nhật allowlist MIME, `COOP: same-origin` cho `mediaObjectResponse` và `CORP: same-site` + `Referrer-Policy: no-referrer` trong `app.ts`
+- [x] Task 1.1: Thêm `STUDENT_ERROR_CODES.ORG_MISMATCH` vào `packages/api/src/contracts.ts`
+- [x] Task 1.2: Viết bài test đỏ cho `createStudentGuard` fail-closed (`GET`/`HEAD`/`POST`, `?org=org-2`, khoảng trắng) & đồng bộ `GET /orgs` trong `apps/server/src/student.test.ts`
+- [x] Task 1.3: Cài đặt `createStudentGuard` fail-closed + đồng bộ `GET /api/student/orgs` trong `apps/server/src/routes/student.ts` và chạy xanh test server
+- [x] Task 1.4: Viết test đỏ + cập nhật allowlist MIME, `COOP: same-origin` cho `mediaObjectResponse` và `CORP: same-site` + `Referrer-Policy: no-referrer` trong `app.ts`
 
 ## Verification
 - `pnpm --filter @teacher-os/api check-types` (thoát 0)

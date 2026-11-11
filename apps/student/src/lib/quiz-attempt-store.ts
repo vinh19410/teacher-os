@@ -6,6 +6,7 @@ import {
 	useState,
 	useSyncExternalStore,
 } from "react";
+import { isStudentOrgMismatchError } from "@/lib/query-client";
 
 /** Debounce autosave PATCH (RT#7) — 600ms sau lần gõ cuối. */
 export const QUIZ_AUTOSAVE_DEBOUNCE_MS = 600;
@@ -27,7 +28,11 @@ export const quizAttemptEssayMirrorKey = (attemptId: string): string =>
 export type QuizSaveState = "saving" | "saved" | "error";
 
 /** Lý do dừng hàng đợi autosave — mỗi lý do có luồng xử lý riêng (RT#11). */
-export type QuizAttemptHaltReason = "auth" | "submitted" | "finalized";
+export type QuizAttemptHaltReason =
+	| "auth"
+	| "submitted"
+	| "org_mismatch"
+	| "finalized";
 
 export interface QuizAttemptSnapshot {
 	revision: number;
@@ -58,6 +63,8 @@ interface QuizAttemptStoreOptions {
 	onAuthError?: () => void;
 	/** 409 `submitted` trên PATCH: redirect cứng sang attempt route. */
 	onAlreadySubmitted?: () => void;
+	/** 403 `STUDENT_ORG_MISMATCH` trên PATCH (#675): halt giữ nguyên mirror + báo reload, không tự gửi tiếp sang org mặc định. */
+	onOrgMismatch?: () => void;
 	/** Cap ký tự setAnswer clamp trước khi queue PATCH — mặc định
 	 * `QUIZ_ANSWER_VALUE_MAX` (500); đề Writing dùng `QUIZ_ESSAY_MAX`
 	 * (#304). Bất biến theo attempt vì 1 attempt gắn 1 skill. */
@@ -119,6 +126,7 @@ export function createQuizAttemptStore(
 		send,
 		onAuthError,
 		onAlreadySubmitted,
+		onOrgMismatch,
 		valueMax = QUIZ_ANSWER_VALUE_MAX,
 		debounceMs = QUIZ_AUTOSAVE_DEBOUNCE_MS,
 		storage = defaultStorage(),
@@ -268,6 +276,16 @@ export function createQuizAttemptStore(
 						onAlreadySubmitted?.();
 						return;
 					}
+					if (isStudentOrgMismatchError(error)) {
+						halted = "org_mismatch";
+						saveState = "error";
+						waveFailed = true;
+						lastSendError = error;
+						cancelTimer();
+						if (answers.get(q) === value) pending.set(q, value);
+						onOrgMismatch?.();
+						return;
+					}
 					waveFailed = true;
 					saveState = "error";
 					lastSendError = error;
@@ -355,17 +373,22 @@ export function createQuizAttemptStore(
 	 */
 	const drain = async (): Promise<void> => {
 		cancelTimer();
+		if (halted === "org_mismatch") {
+			throw lastSendError ?? new Error("quiz attempt org mismatch");
+		}
 		if (halted !== null) return;
 		waveFailed = false;
 		for (let wave = 0; wave < QUIZ_DRAIN_MAX_WAVES; wave += 1) {
 			flushPending();
 			if (inflight.size === 0 && (pending.size === 0 || halted !== null)) {
+				if (halted === "org_mismatch") break;
 				return;
 			}
 			if (inflight.size > 0) {
 				// promise trong `inflight` không bao giờ reject (catch ở trong).
 				await Promise.all(Array.from(inflight));
 			}
+			if (halted === "org_mismatch") break;
 			if (halted !== null) return;
 			if (pending.size === 0) return;
 		}
@@ -461,7 +484,7 @@ export function createQuizAttemptStore(
 		/** Unmount/org-switch: best-effort keepalive flush, giữ mirror nếu còn bay/lỗi. */
 		dispose() {
 			cancelTimer();
-			if (halted === "auth") return;
+			if (halted === "auth" || halted === "org_mismatch") return;
 			if (halted !== null) {
 				clearMirrorIfOwned();
 				return;
@@ -485,6 +508,7 @@ export interface UseQuizAttemptStoreOptions {
 	send: QuizAnswerSender;
 	onAuthError?: () => void;
 	onAlreadySubmitted?: () => void;
+	onOrgMismatch?: () => void;
 	/** Forward xuống store (#304) — đọc một lúc tạo store, bất biến theo
 	 * attemptId (deps chỉ `[attemptId]`). */
 	valueMax?: number;
@@ -517,6 +541,7 @@ export function useQuizAttemptStore(
 			send: (q, value, opts) => current.send(q, value, opts),
 			onAuthError: () => current.onAuthError?.(),
 			onAlreadySubmitted: () => current.onAlreadySubmitted?.(),
+			onOrgMismatch: () => current.onOrgMismatch?.(),
 			valueMax: current.valueMax,
 			mirrorKey: current.mirrorKey,
 		});

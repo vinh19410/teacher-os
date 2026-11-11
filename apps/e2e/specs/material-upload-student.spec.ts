@@ -15,8 +15,9 @@
  * - E5: học viên đa-org — mặc định rơi vào org mới nhất (Org B); không có
  *   `?org=` → 404; sau khi đổi sang Org A, `src`/`href` mang `?org=`, audio
  *   nạp được, popup «Mở» phát được và «Tải» về đúng tên + byte.
- * - E6: học viên chỉ thuộc Org B bị chặn 404 cả list lẫn file (có lẫn không
- *   `?org=`).
+ * - E6: học viên chỉ thuộc Org B bị chặn 404 khi không kèm `?org=`, bị chặn
+ *   403 STUDENT_ORG_MISMATCH khi kèm `?org=` của Org A (#675), và cổng học viên
+ *   tự phục hồi khi `localStorage.active_student_org_id` trỏ vào org lạ.
  *
  * Seed bằng API/DB (helpers.ts, helpers-dated-class.ts) để không đụng UI seed.
  */
@@ -292,6 +293,7 @@ test("#647: upload thật + CORS preflight + «Phát» media + học viên đa-o
 	const teacherBEmail = await signUpViaApi(teacherBPage, {
 		name: `Trung tâm Beta ${stamp}`,
 	});
+	const orgBId = await orgIdForTeacherEmail(teacherBEmail);
 	try {
 		await seedStudent({
 			teacherEmail: teacherBEmail,
@@ -479,7 +481,30 @@ test("#647: upload thật + CORS preflight + «Phát» media + học viên đa-o
 			const unauthorizedWithOrg = await otherPage.request.get(
 				`${API_ORIGIN}/api/student/classes/${classAId}/sessions/${sessionDate}/materials/${mp3.id}/file?org=${orgAId}`,
 			);
-			expect(unauthorizedWithOrg.status()).toBe(404);
+			expect(unauthorizedWithOrg.status()).toBe(403);
+			expect(await unauthorizedWithOrg.json()).toMatchObject({
+				code: "STUDENT_ORG_MISMATCH",
+			});
+
+			// #675: tự phục hồi khi localStorage.active_student_org_id trỏ vào org không thuộc hồ sơ
+			await otherPage.evaluate((staleOrg) => {
+				localStorage.setItem("active_student_org_id", staleOrg);
+			}, orgAId);
+			await otherPage.reload();
+			await expect(otherPage.getByTestId("org-switcher-single")).toContainText(
+				`Trung tâm Beta ${stamp}`,
+				{ timeout: 15_000 },
+			);
+			await expect(
+				otherPage.getByText("Không thể truy cập cổng học viên"),
+			).toHaveCount(0);
+			await expect
+				.poll(() =>
+					otherPage.evaluate(() =>
+						localStorage.getItem("active_student_org_id"),
+					),
+				)
+				.toBe(orgBId);
 		} finally {
 			await otherStudentContext.close();
 		}

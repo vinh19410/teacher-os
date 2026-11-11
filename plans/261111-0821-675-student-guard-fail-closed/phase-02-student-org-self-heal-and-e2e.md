@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Phase 2: Tự phục hồi active_student_org_id đa truy vấn & đa tài khoản trên Student Portal, cập nhật E2E E6 & CHANGELOG"
-status: todo
+status: completed
 priority: P1
 effort: "1.75h"
 dependencies: [1]
@@ -143,9 +143,9 @@ Triển khai cơ chế tự phục hồi `active_student_org_id` an toàn trư�
 - **Verify:** `E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 E2E_ADMIN_PORT=8104 E2E_PROFILE_PORT=8105 pnpm --filter e2e e2e specs/material-upload-student.spec.ts && pnpm exec biome check . && pnpm check-types && pnpm --filter @teacher-os/api test && pnpm --filter server test -- src/student.test.ts src/lib/media-response.test.ts src/routes/grading.test.ts src/routes/student-quiz-media.test.ts && pnpm --filter student test` thoát với mã `0`.
 
 ## Todo
-- [ ] Task 2.1: Viết bài test đỏ cho tự phục hồi đa truy vấn song song, cô lập `userId`, chống retry lệnh ghi (`MutationCache`, `QuizAttemptStore.drain()`, `vocab.ts`), `OrgSwitcher` và đăng xuất
-- [ ] Task 2.2: Cài đặt `student-org-storage.ts` + cơ chế tự phục hồi & cô lập trên `apps/student` và chạy xanh toàn bộ test `student`
-- [ ] Task 2.3: Khai báo `orgBId`, cập nhật E2E E6 (`material-upload-student.spec.ts`) + `CHANGELOG.md` và chạy xanh E2E cùng toàn bộ local gate
+- [x] Task 2.1: Viết bài test đỏ cho tự phục hồi đa truy vấn song song, cô lập `userId`, chống retry lệnh ghi (`MutationCache`, `QuizAttemptStore.drain()`, `vocab.ts`), `OrgSwitcher` và đăng xuất
+- [x] Task 2.2: Cài đặt `student-org-storage.ts` + cơ chế tự phục hồi & cô lập trên `apps/student` và chạy xanh toàn bộ test `student`
+- [x] Task 2.3: Khai báo `orgBId`, cập nhật E2E E6 (`material-upload-student.spec.ts`) + `CHANGELOG.md` và chạy xanh E2E cùng toàn bộ local gate
 
 ## Verification
 - `pnpm --filter student test` (thoát 0)

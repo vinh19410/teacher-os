@@ -180,6 +180,12 @@ export function QuizTakeView({
 			essayStoreRef.current?.halt("submitted");
 			if (attemptId) window.location.assign(attemptSummaryHref(attemptId));
 		},
+		onOrgMismatch: () => {
+			essayStoreRef.current?.halt("org_mismatch");
+			toast.error(
+				"Tổ chức học tập vừa thay đổi — bài làm đã lưu tạm trên trình duyệt, vui lòng tải lại trang.",
+			);
+		},
 	});
 	const snapshot = useQuizAttemptSnapshot(store);
 	storeRef.current = store;
@@ -203,6 +209,12 @@ export function QuizTakeView({
 		onAlreadySubmitted: () => {
 			storeRef.current?.halt("submitted");
 			if (attemptId) window.location.assign(attemptSummaryHref(attemptId));
+		},
+		onOrgMismatch: () => {
+			storeRef.current?.halt("org_mismatch");
+			toast.error(
+				"Tổ chức học tập vừa thay đổi — bài làm đã lưu tạm trên trình duyệt, vui lòng tải lại trang.",
+			);
 		},
 	});
 	const essaySnapshot = useQuizAttemptSnapshot(essayStore);
