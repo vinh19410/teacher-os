@@ -1,0 +1,12 @@
+# UC-01 — Xem danh sách học viên + lọc
+
+| Trường | Nội dung |
+|--------|----------|
+| **a. Actor** | Giáo viên (chủ tổ chức hoặc trợ giảng — mọi membership role đều xem được) ✅ [S1] `kernel.ts:456-461`; `app.ts:279-296` |
+| **b. Tiền điều kiện** | (1) Teacher đã đăng nhập, session hợp lệ; (2) membership teacher đã bootstrap (kernelCtx có orgId). ✅ [S10] `app.ts:279-296` |
+| **c. Trigger** | Mở menu "Học viên" / truy cập `/students` ✅ [S2] `index.tsx:27-29` |
+| **d. Kịch bản chính** | 1. SPA load data store (đã có snapshot từ `/api/kernel`). 1a. Chưa có → GET `/api/kernel`. ✅ [S3] `use-students.ts:17-25` <br>2. Web map snapshot.students → view model (pkg active mới nhất, done/remaining derive, portalLinked, avatar initials). ✅ [S3] `repos/students.ts:34-91` <br>3. Header hiển thị kicker "N học viên đang học · M lời mời đang chờ" + lead "K cần chú ý (nợ học phí / sắp hết gói)". N = students không pending; M = pendingStudents + invitations pending unique; K = BR-008. ✅ [S2][S3] `index.tsx:50-87` <br>4. Tab "Học viên (N_tổng)" hiển thị bảng Học viên / Lớp học / Tags: mỗi dòng có avatar+name, SĐT/email (hoặc "Chưa có SĐT / Email"), badge portal (nếu có), các lớp kèm badge "Đã mời" cho enrollment invited, tags, nút resend cho học viên chờ xác nhận. ✅ [S2] `index.tsx:158-248` <br>5. GV chọn chip lọc ("Tất cả/Sắp hết buổi/Nợ học phí/Viết/Nói") → danh sách lọc lại client-side. ✅ (cơ chế) / 🟡 (hiệu lực — tags luôn rỗng) `index.tsx:31-37,75-81` |
+| **e. Nhánh thay thế** | 3a. Tab "Lời mời đang chờ": hiển thị pendingStudents + invitations pending đã khử trùng theo email; nút "Mời học viên" khi trống. ✅ [S2] `index.tsx:43-60,128-132` <br>4a. Học viên có email + portalLinked=false: badge "Chờ xác nhận" + nút "Gửi lại lời mời" (→ UC-04). ✅ [S2] `index.tsx:186-194,233-242` <br>5a. Click dòng → UC-02. ✅ [S2] `index.tsx:162-169` |
+| **f. Ngoại lệ** | E-016 401 (chưa đăng nhập); E-017 403 student/admin role; E-019 empty state "Chưa có học viên nào" + CTA hoặc "Không có học viên nào phù hợp với bộ lọc."; E-020 snapshot lệch shape. ✅ |
+| **g. Hậu điều kiện** | Không đổi dữ liệu; GV thấy đúng roster org của mình, không row demo. ✅ [S4] `snapshot.ts:267-273` |
+| **h. Nguồn & traceability** | FR-001..005, FR-023; BR-003/006/007/008/009/016; E-016/017/019/020. Test: `index.test.tsx:53-59,95-124,126-135,137-187,189-257`; `kernel.test.ts:5027-5034`; E2E `student-row-detail.spec.ts:13-32`. OQ-3 (chip vô hiệu), OQ-8 (không phân trang). |

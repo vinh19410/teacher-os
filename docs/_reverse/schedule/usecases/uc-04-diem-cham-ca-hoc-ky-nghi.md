@@ -1,0 +1,14 @@
+# UC-schedule-04 — Đi tới ca học / kỳ nghỉ từ lịch (điểm chạm biên)
+
+| Mục | Nội dung |
+|-----|----------|
+| **a. Mục tiêu & mức** | Mức người dùng (mục tiêu con). Từ bức tranh lịch, đi thẳng tới công việc cụ thể: điểm danh/sửa một ca học, hoặc tạo/hoàn tác kỳ nghỉ. **Nghiệp vụ ghi thuộc feature classes / holidays** — UC này chỉ đóng vai trò điểm vào. |
+| **b. Actor chính** | Giáo viên. Stakeholder: feature classes (hộp thoại ca học), feature holidays (hộp thoại lịch nghỉ, hoàn tác). |
+| **c. Tiền điều kiện** | Đang ở màn Lịch dạy, view Tuần hoặc Ngày (hoặc thẻ kỳ nghỉ còn hiệu lực hoàn tác ở view Tuần). |
+| **d. Trigger** | Bấm một mục trên lịch: ca học thực, nút "+ Tạo lịch nghỉ", hoặc thẻ kỳ nghỉ có nút hoàn tác. |
+| **e. Luồng chính** | 1. Bấm ca học thực → hộp thoại ca học của lớp mở với đúng ngày/khung giờ của mục bấm (ca legacy quy về thứ của ngày đang xem).<br>2. Trong hộp thoại, giáo viên xem danh sách học viên và thực hiện điểm danh/sửa buổi theo nghiệp vụ lớp học; ghi xong lịch được tải lại để phản ánh.<br>3. Bấm "+ Tạo lịch nghỉ" → hộp thoại lịch nghỉ: kiểm tên (2–100) và khoảng ngày (tối đa 30 ngày tính cả hai đầu), bảng xem trước các buổi bị ảnh hưởng, áp dụng thành công thì tải lại lịch và thẻ kỳ nghỉ xuất hiện trong cả 3 view.<br>4. Thẻ kỳ nghỉ trong view Tuần có nút hoàn tác (chỉ ở ngày đầu hiển thị của kỳ, và khi kỳ chưa bắt đầu) → mở hộp thoại hoàn tác, hoàn tất thì tải lại lịch. |
+| **f. Luồng thay đổi** | 1a. Mục là **ca dự kiến** (lớp chưa có học viên) → chỉ hiển thị gợi ý "Dự kiến · chưa có học viên", không bấm được, không mở hộp thoại nào.<br>3a. Khoảng ngày không trúng buổi nào / đã qua / quá 30 ngày → chặn xác nhận kèm cảnh báo inline (chi tiết thuộc SRS holidays).<br>4a. Kỳ nghỉ đã bắt đầu hoặc buổi bù đã bị đụng → hoàn tác bị chặn kèm mã lý do (chi tiết thuộc SRS holidays). |
+| **g. Hậu điều kiện** | Lịch phản ánh thay đổi của feature tương ứng (buổi đã điểm danh/hủy, thẻ kỳ nghỉ mới/bị gỡ); trạng thái view trên địa chỉ giữ nguyên. |
+| **h. Ràng buộc & kiểm chứng** | BR-010 (ca dự kiến không tương tác), BR-014 (chỉ chọn lớp đang hoạt động khi tạo lịch nghỉ). FR-014, FR-015. Kiểm chứng render: test mở hộp thoại ca học từ agenda (`apps/web/src/routes/_auth/schedule.test.tsx:730-740`), test nút "+ Tạo lịch nghỉ" (`:477-481`), e2e hộp thoại lịch nghỉ + thẻ 3 view (`apps/e2e/specs/schedule-views-and-events.spec.ts:155-269`), e2e hộp thoại ca học (`apps/e2e/specs/schedule-session-modal.spec.ts:1-10`). 🟡 Nghiệp vụ chi tiết điểm danh/dời/hoàn tác cần SRS riêng của feature đó (ngoài phạm vi file này). |
+
+**Nguồn chính:** `apps/web/src/components/schedule/schedule-day-view.tsx:66-68,102-135`; `apps/web/src/components/schedule/schedule-week-view.tsx:64-67,144-233,236-271`; `apps/web/src/routes/_auth/schedule.tsx:157-162,238-251`; `apps/web/src/components/schedule/class-session-modal.tsx:18-25`; `apps/web/src/components/schedule/holiday-modal.tsx:1-9`.
