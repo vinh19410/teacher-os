@@ -1,19 +1,78 @@
 import { QUIZ_MEDIA_NAME_MAX, QUIZ_MEDIA_TYPES } from "../contracts";
+import { LIBRARY_AUDIO_MIME } from "../library-contracts";
 
-/** Đuôi file → MIME chuẩn, dùng khi `File.type` rỗng hoặc lạ (Windows hay
- * báo `.m4a` là rỗng; Safari iOS báo Voice Memos là `audio/x-m4a`). */
+export {
+	matchesLibraryAudioMagic,
+	matchesQuizMediaMagic,
+	QUIZ_MEDIA_MAGIC_PEEK_BYTES,
+} from "./media-magic";
+
+/** Đuôi file → MIME mặc định khi `File.type` rỗng hoặc `application/octet-stream`
+ * (Windows hay báo `.m4a` rỗng; Safari iOS báo Voice Memos là `audio/x-m4a`). */
 const EXTENSION_TYPES: Readonly<Record<string, string>> = {
 	mp3: "audio/mpeg",
 	m4a: "audio/mp4",
 	aac: "audio/aac",
 	wav: "audio/wav",
+	wave: "audio/wav",
 	weba: "audio/webm",
 	ogg: "audio/ogg",
 	oga: "audio/ogg",
+	opus: "audio/ogg",
 	mp4: "video/mp4",
 	mov: "video/quicktime",
+	qt: "video/quicktime",
 	webm: "video/webm",
 };
+
+const COMPATIBLE_QUIZ_MIMES_BY_EXT: Readonly<
+	Record<string, readonly string[]>
+> = {
+	mp3: ["audio/mpeg"],
+	m4a: ["audio/mp4", "audio/x-m4a", "audio/aac"],
+	mp4: ["video/mp4", "audio/mp4"],
+	aac: ["audio/aac", "audio/mp4", "audio/x-m4a"],
+	wav: ["audio/wav", "audio/x-wav", "audio/wave"],
+	wave: ["audio/wav", "audio/x-wav", "audio/wave"],
+	webm: ["video/webm", "audio/webm"],
+	weba: ["audio/webm"],
+	ogg: ["audio/ogg"],
+	oga: ["audio/ogg"],
+	opus: ["audio/ogg"],
+	mov: ["video/quicktime"],
+	qt: ["video/quicktime"],
+};
+
+const QUIZ_MEDIA_MIME_ALIASES: Readonly<Record<string, string>> = {
+	"audio/mp3": "audio/mpeg",
+	"audio/x-mp3": "audio/mpeg",
+	"audio/x-mpeg": "audio/mpeg",
+	"audio/mpeg3": "audio/mpeg",
+	"audio/x-mpeg-3": "audio/mpeg",
+	"audio/m4a": "audio/mp4",
+	"audio/mp4a-latm": "audio/mp4",
+	"audio/vnd.wave": "audio/wav",
+	"audio/x-aac": "audio/aac",
+	"audio/aacp": "audio/aac",
+	"audio/vnd.dlna.adts": "audio/aac",
+	"audio/adts": "audio/aac",
+	"audio/x-hx-aac-adts": "audio/aac",
+	"audio/opus": "audio/ogg",
+	"audio/x-opus+ogg": "audio/ogg",
+	"audio/x-vorbis+ogg": "audio/ogg",
+	"audio/x-speex+ogg": "audio/ogg",
+	"video/ogg": "audio/ogg",
+	"application/ogg": "audio/ogg",
+};
+
+function cleanAllowedExtension(fileName: string): string | null {
+	const clean = sanitizeMediaFileName(fileName);
+	if (!clean || clean.startsWith(".")) return null;
+	const dot = clean.lastIndexOf(".");
+	if (dot <= 0 || dot === clean.length - 1) return null;
+	const ext = clean.slice(dot + 1).toLowerCase();
+	return Object.hasOwn(EXTENSION_TYPES, ext) ? ext : null;
+}
 
 /** MIME bỏ `;params`, lowercase — dạng so khớp allowlist. */
 export function normalizeMediaType(raw: string): string {
@@ -25,20 +84,77 @@ export function isAllowedQuizMediaType(raw: string): boolean {
 }
 
 /**
- * MIME gửi lên server cho file bài nói: giữ `browserType` nếu thuộc
- * allowlist, ngược lại tra theo đuôi file. Không khớp → null (từ chối ở
- * client). Server kiểm lại Content-Type theo cùng allowlist.
+ * MIME gửi lên server cho file bài nói (#681): tên file sau sanitize phải có
+ * thân + đuôi thuộc `EXTENSION_TYPES`; chỉ fallback tự do khi `browserType`
+ * rỗng hoặc `application/octet-stream`, còn lại bắt buộc `browserType` (sau
+ * khi gộp bí danh OS/trình duyệt) nằm trong tập tương thích của đuôi file.
  */
 export function resolveQuizMediaType(
 	fileName: string,
 	browserType: string,
 ): string | null {
+	const ext = cleanAllowedExtension(fileName);
+	if (!ext) return null;
 	const normalized = normalizeMediaType(browserType);
-	if (Object.hasOwn(QUIZ_MEDIA_TYPES, normalized)) return normalized;
-	const dot = fileName.lastIndexOf(".");
-	if (dot < 0) return null;
-	const extension = fileName.slice(dot + 1).toLowerCase();
-	return EXTENSION_TYPES[extension] ?? null;
+	if (normalized === "" || normalized === "application/octet-stream") {
+		return EXTENSION_TYPES[ext] ?? null;
+	}
+	if (ext === "m4a" && normalized === "video/mp4") {
+		return "audio/mp4";
+	}
+	const canonical = Object.hasOwn(QUIZ_MEDIA_MIME_ALIASES, normalized)
+		? (QUIZ_MEDIA_MIME_ALIASES[normalized] ?? normalized)
+		: normalized;
+	if (!Object.hasOwn(QUIZ_MEDIA_TYPES, canonical)) return null;
+	return COMPATIBLE_QUIZ_MIMES_BY_EXT[ext]?.includes(canonical) === true
+		? canonical
+		: null;
+}
+
+/** Kiểm tra tên file có phần thân và đuôi tương thích với MIME trong `QUIZ_MEDIA_TYPES`. */
+export function quizMediaExtensionMatches(
+	fileName: string,
+	mimeType: string,
+): boolean {
+	const normalized = normalizeMediaType(mimeType);
+	if (!Object.hasOwn(QUIZ_MEDIA_TYPES, normalized)) return false;
+	const ext = cleanAllowedExtension(fileName);
+	if (!ext) return false;
+	return COMPATIBLE_QUIZ_MIMES_BY_EXT[ext]?.includes(normalized) === true;
+}
+
+/** Resolver chỉ nhận audio thuộc `LIBRARY_AUDIO_MIME` (Library, Placement, Vocab). */
+export function resolveLibraryAudioMimeType(
+	fileName: string,
+	browserType: string,
+): string | null {
+	const ext = cleanAllowedExtension(fileName);
+	if (!ext) return null;
+	const normalized = normalizeMediaType(browserType);
+	if (
+		ext === "webm" &&
+		(normalized === "" ||
+			normalized === "application/octet-stream" ||
+			normalized === "video/webm")
+	) {
+		return "audio/webm";
+	}
+	const resolved = resolveQuizMediaType(fileName, browserType);
+	return resolved !== null && Object.hasOwn(LIBRARY_AUDIO_MIME, resolved)
+		? resolved
+		: null;
+}
+
+/** Kiểm tra tên file có phần thân và đuôi tương thích với MIME audio trong `LIBRARY_AUDIO_MIME`. */
+export function libraryAudioExtensionMatches(
+	fileName: string,
+	mimeType: string,
+): boolean {
+	const normalized = normalizeMediaType(mimeType);
+	return (
+		Object.hasOwn(LIBRARY_AUDIO_MIME, normalized) &&
+		quizMediaExtensionMatches(fileName, normalized)
+	);
 }
 
 export function isVideoMediaType(type: string): boolean {
@@ -98,12 +214,12 @@ export function validateQuizMediaFiles(
 	if (files.length === 0) return { ok: false, reason: "none" };
 	const file = files.length === 1 ? files[0] : undefined;
 	if (!file) return { ok: false, reason: "multiple" };
+	if (sanitizeMediaFileName(file.name) === null) {
+		return { ok: false, reason: "name", file };
+	}
 	const type = resolveQuizMediaType(file.name, file.type);
 	if (type === null) return { ok: false, reason: "type", file };
 	if (file.size === 0) return { ok: false, reason: "empty", file };
 	if (file.size > maxBytes) return { ok: false, reason: "size", file };
-	if (sanitizeMediaFileName(file.name) === null) {
-		return { ok: false, reason: "name", file };
-	}
 	return { ok: true, file, type };
 }

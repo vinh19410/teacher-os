@@ -35,59 +35,76 @@ import type {
 	StudentLessonMaterialView,
 } from "@teacher-os/api/material-contracts";
 import { env } from "@teacher-os/env/web";
+import { useSyncExternalStore } from "react";
 import { HttpError } from "@/lib/query-client";
+import {
+	clearActiveStudentOrgId,
+	getActiveStudentOrgId,
+	setActiveStudentOrgId,
+	subscribeActiveStudentOrg,
+} from "@/lib/student-org-storage";
+
+export {
+	clearActiveStudentOrgId,
+	getActiveStudentOrgId,
+	setActiveStudentOrgId,
+};
 
 export function getApiBaseUrl(): string {
 	const raw = env.VITE_SERVER_URL;
 	return raw.endsWith("/") ? raw.slice(0, -1) : raw;
 }
 
-export function getActiveStudentOrgId(): string | null {
-	if (typeof window === "undefined") return null;
-	return localStorage.getItem("active_student_org_id");
-}
-
-export function setActiveStudentOrgId(orgId: string): void {
-	if (typeof window === "undefined") return;
-	localStorage.setItem("active_student_org_id", orgId);
-}
-
 export function getStudentHeaders(
 	extra: Record<string, string> = {},
+	explicitOrgId?: string | null,
 ): Record<string, string> {
 	const headers: Record<string, string> = {
 		Accept: "application/json",
 		...extra,
 	};
-	const activeOrgId = getActiveStudentOrgId();
+	const activeOrgId =
+		explicitOrgId !== undefined ? explicitOrgId : getActiveStudentOrgId();
 	if (activeOrgId) {
 		headers["x-student-org-id"] = activeOrgId;
 	}
 	return headers;
 }
 
+async function throwStudentHttpError(
+	res: Response,
+	sentOrgId: string | undefined,
+	fallbackMessage = `Request failed with status ${res.status}`,
+	useBodyErrorAsMessage = false,
+): Promise<never> {
+	let code: string | undefined;
+	let message = fallbackMessage;
+	try {
+		const body = (await res.json()) as { code?: string; error?: string };
+		code = body.code ?? body.error;
+		if (useBodyErrorAsMessage && body.error) {
+			message = body.error;
+		}
+	} catch {
+		// Non-JSON body
+	}
+	throw new HttpError(res.status, message, {
+		code,
+		sentOrgId,
+	});
+}
+
 export async function fetchStudentMe(): Promise<StudentMe> {
+	const headers = getStudentHeaders();
+	const sentOrgId = headers["x-student-org-id"];
 	const res = await fetch(`${getApiBaseUrl()}/api/student/me`, {
 		method: "GET",
-		headers: getStudentHeaders(),
+		headers,
 		credentials: "include",
 	});
 
 	if (!res.ok) {
-		let code: string | undefined;
-		try {
-			const body = (await res.json()) as { code?: string; error?: string };
-			code = body.code ?? body.error;
-		} catch {
-			// Non-JSON body
-		}
-		throw new HttpError(
-			res.status,
-			`Request failed with status ${res.status}`,
-			{
-				code,
-			},
-		);
+		await throwStudentHttpError(res, sentOrgId);
 	}
 
 	const data = (await res.json()) as unknown;
@@ -96,32 +113,25 @@ export async function fetchStudentMe(): Promise<StudentMe> {
 
 export async function submitOnboarding(
 	payload: StudentOnboardingPayload,
+	explicitOrgId?: string,
 ): Promise<StudentMe> {
-	const res = await fetch(`${getApiBaseUrl()}/api/student/onboarding`, {
-		method: "POST",
-		headers: getStudentHeaders({
+	const headers = getStudentHeaders(
+		{
 			Accept: "application/json",
 			"Content-Type": "application/json",
-		}),
+		},
+		explicitOrgId,
+	);
+	const sentOrgId = headers["x-student-org-id"];
+	const res = await fetch(`${getApiBaseUrl()}/api/student/onboarding`, {
+		method: "POST",
+		headers,
 		credentials: "include",
 		body: JSON.stringify(payload),
 	});
 
 	if (!res.ok) {
-		let code: string | undefined;
-		try {
-			const body = (await res.json()) as { code?: string; error?: string };
-			code = body.code ?? body.error;
-		} catch {
-			// Non-JSON body
-		}
-		throw new HttpError(
-			res.status,
-			`Request failed with status ${res.status}`,
-			{
-				code,
-			},
-		);
+		await throwStudentHttpError(res, sentOrgId);
 	}
 
 	const data = (await res.json()) as unknown;
@@ -129,27 +139,16 @@ export async function submitOnboarding(
 }
 
 export async function fetchStudentOverview(): Promise<StudentOverview> {
+	const headers = getStudentHeaders();
+	const sentOrgId = headers["x-student-org-id"];
 	const res = await fetch(`${getApiBaseUrl()}/api/student/overview`, {
 		method: "GET",
-		headers: getStudentHeaders(),
+		headers,
 		credentials: "include",
 	});
 
 	if (!res.ok) {
-		let code: string | undefined;
-		try {
-			const body = (await res.json()) as { code?: string; error?: string };
-			code = body.code ?? body.error;
-		} catch {
-			// Non-JSON body
-		}
-		throw new HttpError(
-			res.status,
-			`Request failed with status ${res.status}`,
-			{
-				code,
-			},
-		);
+		await throwStudentHttpError(res, sentOrgId);
 	}
 
 	const data = (await res.json()) as unknown;
@@ -157,27 +156,16 @@ export async function fetchStudentOverview(): Promise<StudentOverview> {
 }
 
 export async function fetchStudentSchedule(): Promise<StudentScheduleResponse> {
+	const headers = getStudentHeaders();
+	const sentOrgId = headers["x-student-org-id"];
 	const res = await fetch(`${getApiBaseUrl()}/api/student/schedule`, {
 		method: "GET",
-		headers: getStudentHeaders(),
+		headers,
 		credentials: "include",
 	});
 
 	if (!res.ok) {
-		let code: string | undefined;
-		try {
-			const body = (await res.json()) as { code?: string; error?: string };
-			code = body.code ?? body.error;
-		} catch {
-			// Non-JSON body
-		}
-		throw new HttpError(
-			res.status,
-			`Request failed with status ${res.status}`,
-			{
-				code,
-			},
-		);
+		await throwStudentHttpError(res, sentOrgId);
 	}
 
 	const data = (await res.json()) as unknown;
@@ -187,30 +175,19 @@ export async function fetchStudentSchedule(): Promise<StudentScheduleResponse> {
 export async function fetchStudentClassDetail(
 	classId: string,
 ): Promise<StudentClassDetail> {
+	const headers = getStudentHeaders();
+	const sentOrgId = headers["x-student-org-id"];
 	const res = await fetch(
 		`${getApiBaseUrl()}/api/student/classes/${encodeURIComponent(classId)}`,
 		{
 			method: "GET",
-			headers: getStudentHeaders(),
+			headers,
 			credentials: "include",
 		},
 	);
 
 	if (!res.ok) {
-		let code: string | undefined;
-		try {
-			const body = (await res.json()) as { code?: string; error?: string };
-			code = body.code ?? body.error;
-		} catch {
-			// Non-JSON body
-		}
-		throw new HttpError(
-			res.status,
-			`Request failed with status ${res.status}`,
-			{
-				code,
-			},
-		);
+		await throwStudentHttpError(res, sentOrgId);
 	}
 
 	const data = (await res.json()) as unknown;
@@ -220,27 +197,16 @@ export async function fetchStudentClassDetail(
 export async function fetchStudentNotifications(): Promise<
 	StudentInvitationItem[]
 > {
+	const headers = getStudentHeaders();
+	const sentOrgId = headers["x-student-org-id"];
 	const res = await fetch(`${getApiBaseUrl()}/api/student/notifications`, {
 		method: "GET",
-		headers: getStudentHeaders(),
+		headers,
 		credentials: "include",
 	});
 
 	if (!res.ok) {
-		let code: string | undefined;
-		try {
-			const body = (await res.json()) as { code?: string; error?: string };
-			code = body.code ?? body.error;
-		} catch {
-			// Non-JSON body
-		}
-		throw new HttpError(
-			res.status,
-			`Request failed with status ${res.status}`,
-			{
-				code,
-			},
-		);
+		await throwStudentHttpError(res, sentOrgId);
 	}
 
 	return (await res.json()) as StudentInvitationItem[];
@@ -249,24 +215,23 @@ export async function fetchStudentNotifications(): Promise<
 export async function acceptStudentInvitation(
 	id: string,
 ): Promise<{ ok: boolean; orgId: string }> {
+	const headers = getStudentHeaders({ "Content-Type": "application/json" });
+	const sentOrgId = headers["x-student-org-id"];
 	const res = await fetch(
 		`${getApiBaseUrl()}/api/student/invitations/${encodeURIComponent(id)}/accept`,
 		{
 			method: "POST",
-			headers: getStudentHeaders({ "Content-Type": "application/json" }),
+			headers,
 			credentials: "include",
 		},
 	);
 
 	if (!res.ok) {
-		const data = (await res.json().catch(() => ({}))) as {
-			error?: string;
-			code?: string;
-		};
-		throw new HttpError(
-			res.status,
-			data.error || `Failed to accept invitation: ${res.status}`,
-			{ code: data.code },
+		await throwStudentHttpError(
+			res,
+			sentOrgId,
+			`Failed to accept invitation: ${res.status}`,
+			true,
 		);
 	}
 
@@ -276,24 +241,23 @@ export async function acceptStudentInvitation(
 export async function rejectStudentInvitation(
 	id: string,
 ): Promise<{ ok: boolean }> {
+	const headers = getStudentHeaders({ "Content-Type": "application/json" });
+	const sentOrgId = headers["x-student-org-id"];
 	const res = await fetch(
 		`${getApiBaseUrl()}/api/student/invitations/${encodeURIComponent(id)}/reject`,
 		{
 			method: "POST",
-			headers: getStudentHeaders({ "Content-Type": "application/json" }),
+			headers,
 			credentials: "include",
 		},
 	);
 
 	if (!res.ok) {
-		const data = (await res.json().catch(() => ({}))) as {
-			error?: string;
-			code?: string;
-		};
-		throw new HttpError(
-			res.status,
-			data.error || `Failed to reject invitation: ${res.status}`,
-			{ code: data.code },
+		await throwStudentHttpError(
+			res,
+			sentOrgId,
+			`Failed to reject invitation: ${res.status}`,
+			true,
 		);
 	}
 
@@ -303,24 +267,23 @@ export async function rejectStudentInvitation(
 export async function acceptClassEnrollment(
 	enrollmentId: string,
 ): Promise<{ ok: boolean }> {
+	const headers = getStudentHeaders({ "Content-Type": "application/json" });
+	const sentOrgId = headers["x-student-org-id"];
 	const res = await fetch(
 		`${getApiBaseUrl()}/api/student/enrollments/${encodeURIComponent(enrollmentId)}/accept`,
 		{
 			method: "POST",
-			headers: getStudentHeaders({ "Content-Type": "application/json" }),
+			headers,
 			credentials: "include",
 		},
 	);
 
 	if (!res.ok) {
-		const data = (await res.json().catch(() => ({}))) as {
-			error?: string;
-			code?: string;
-		};
-		throw new HttpError(
-			res.status,
-			data.error || `Failed to accept enrollment: ${res.status}`,
-			{ code: data.code },
+		await throwStudentHttpError(
+			res,
+			sentOrgId,
+			`Failed to accept enrollment: ${res.status}`,
+			true,
 		);
 	}
 
@@ -328,27 +291,16 @@ export async function acceptClassEnrollment(
 }
 
 export async function fetchStudentOrgs(): Promise<StudentOrgItem[]> {
+	const headers = getStudentHeaders();
+	const sentOrgId = headers["x-student-org-id"];
 	const res = await fetch(`${getApiBaseUrl()}/api/student/orgs`, {
 		method: "GET",
-		headers: getStudentHeaders(),
+		headers,
 		credentials: "include",
 	});
 
 	if (!res.ok) {
-		let code: string | undefined;
-		try {
-			const body = (await res.json()) as { code?: string; error?: string };
-			code = body.code ?? body.error;
-		} catch {
-			// Non-JSON body
-		}
-		throw new HttpError(
-			res.status,
-			`Request failed with status ${res.status}`,
-			{
-				code,
-			},
-		);
+		await throwStudentHttpError(res, sentOrgId);
 	}
 
 	return (await res.json()) as StudentOrgItem[];
@@ -384,7 +336,11 @@ export interface UseStudentScheduleOptions {
 }
 
 export function useStudentSchedule(options?: UseStudentScheduleOptions) {
-	const activeOrgId = getActiveStudentOrgId();
+	const activeOrgId = useSyncExternalStore(
+		subscribeActiveStudentOrg,
+		getActiveStudentOrgId,
+		getActiveStudentOrgId,
+	);
 	return useQuery({
 		queryKey: ["student", "schedule", activeOrgId],
 		queryFn: fetchStudentSchedule,
@@ -404,30 +360,19 @@ export function useStudentClassDetail(classId: string) {
 export async function fetchStudentClassmates(
 	classId: string,
 ): Promise<ClassmatesResponse> {
+	const headers = getStudentHeaders();
+	const sentOrgId = headers["x-student-org-id"];
 	const res = await fetch(
 		`${getApiBaseUrl()}/api/student/classes/${encodeURIComponent(classId)}/classmates`,
 		{
 			method: "GET",
-			headers: getStudentHeaders(),
+			headers,
 			credentials: "include",
 		},
 	);
 
 	if (!res.ok) {
-		let code: string | undefined;
-		try {
-			const body = (await res.json()) as { code?: string; error?: string };
-			code = body.code ?? body.error;
-		} catch {
-			// Non-JSON body
-		}
-		throw new HttpError(
-			res.status,
-			`Request failed with status ${res.status}`,
-			{
-				code,
-			},
-		);
+		await throwStudentHttpError(res, sentOrgId);
 	}
 
 	const data = (await res.json()) as unknown;
@@ -468,24 +413,15 @@ export async function fetchLessonMaterials(
 	classId: string,
 	date: string,
 ): Promise<StudentLessonMaterialView[]> {
+	const headers = getStudentHeaders();
+	const sentOrgId = headers["x-student-org-id"];
 	const res = await fetch(lessonMaterialsPath(classId, date), {
 		method: "GET",
-		headers: getStudentHeaders(),
+		headers,
 		credentials: "include",
 	});
 	if (!res.ok) {
-		let code: string | undefined;
-		try {
-			const body = (await res.json()) as { code?: string; error?: string };
-			code = body.code ?? body.error;
-		} catch {
-			// Non-JSON body
-		}
-		throw new HttpError(
-			res.status,
-			`Request failed with status ${res.status}`,
-			{ code },
-		);
+		await throwStudentHttpError(res, sentOrgId);
 	}
 	const data = (await res.json()) as StudentLessonMaterialListResponse & {
 		/** #655: tài liệu ngân hàng gắn qua giáo trình của lớp (đã dedupe). */
@@ -530,27 +466,18 @@ export async function fetchPracticeCatalog(filters: {
 	if (filters.q) params.set("q", filters.q);
 	if (filters.page && filters.page > 1)
 		params.set("page", String(filters.page));
+	const headers = getStudentHeaders();
+	const sentOrgId = headers["x-student-org-id"];
 	const res = await fetch(
 		`${getApiBaseUrl()}/api/student/practice?${params.toString()}`,
 		{
 			method: "GET",
-			headers: getStudentHeaders(),
+			headers,
 			credentials: "include",
 		},
 	);
 	if (!res.ok) {
-		let code: string | undefined;
-		try {
-			const body = (await res.json()) as { code?: string; error?: string };
-			code = body.code ?? body.error;
-		} catch {
-			// Non-JSON body
-		}
-		throw new HttpError(
-			res.status,
-			`Request failed with status ${res.status}`,
-			{ code },
-		);
+		await throwStudentHttpError(res, sentOrgId);
 	}
 	const data = (await res.json()) as unknown;
 	return practiceCatalogResponseSchema.parse(data);
@@ -580,31 +507,22 @@ export function usePracticeCatalog(filters: {
 export async function startPractice(
 	testId: string,
 ): Promise<StartPracticeResponse> {
+	const headers = getStudentHeaders({
+		"Content-Type": "application/json",
+		Origin: window.location.origin,
+	});
+	const sentOrgId = headers["x-student-org-id"];
 	const res = await fetch(
 		`${getApiBaseUrl()}/api/student/practice/${encodeURIComponent(testId)}/attempts`,
 		{
 			method: "POST",
-			headers: getStudentHeaders({
-				"Content-Type": "application/json",
-				Origin: window.location.origin,
-			}),
+			headers,
 			credentials: "include",
 			body: JSON.stringify({}),
 		},
 	);
 	if (!res.ok) {
-		let code: string | undefined;
-		try {
-			const body = (await res.json()) as { code?: string; error?: string };
-			code = body.code ?? body.error;
-		} catch {
-			// Non-JSON body
-		}
-		throw new HttpError(
-			res.status,
-			`Request failed with status ${res.status}`,
-			{ code },
-		);
+		await throwStudentHttpError(res, sentOrgId);
 	}
 	const data = (await res.json()) as unknown;
 	return startPracticeResponseSchema.parse(data);
@@ -628,24 +546,15 @@ async function historyGet<T>(
 	path: string,
 	parse: (raw: unknown) => T,
 ): Promise<T> {
+	const headers = getStudentHeaders();
+	const sentOrgId = headers["x-student-org-id"];
 	const res = await fetch(`${getApiBaseUrl()}${path}`, {
 		method: "GET",
-		headers: getStudentHeaders(),
+		headers,
 		credentials: "include",
 	});
 	if (!res.ok) {
-		let code: string | undefined;
-		try {
-			const body = (await res.json()) as { code?: string; error?: string };
-			code = body.code ?? body.error;
-		} catch {
-			// Non-JSON body
-		}
-		throw new HttpError(
-			res.status,
-			`Request failed with status ${res.status}`,
-			{ code },
-		);
+		await throwStudentHttpError(res, sentOrgId);
 	}
 	return parse(await res.json());
 }
@@ -739,16 +648,18 @@ export async function fetchStudentInbox(): Promise<StudentInboxResponse> {
 }
 
 export async function markInboxRead(id: string): Promise<{ ok: boolean }> {
+	const headers = getStudentHeaders({ "Content-Type": "application/json" });
+	const sentOrgId = headers["x-student-org-id"];
 	const res = await fetch(
 		`${getApiBaseUrl()}/api/student/inbox/${encodeURIComponent(id)}/read`,
 		{
 			method: "POST",
-			headers: getStudentHeaders({ "Content-Type": "application/json" }),
+			headers,
 			credentials: "include",
 		},
 	);
 	if (!res.ok) {
-		throw new HttpError(res.status, `Request failed with status ${res.status}`);
+		await throwStudentHttpError(res, sentOrgId);
 	}
 	return { ok: true };
 }
@@ -805,10 +716,11 @@ export function useRejectInvitation() {
 	});
 }
 
-export function useSubmitOnboarding() {
+export function useSubmitOnboarding(explicitOrgId?: string) {
 	const queryClient = useQueryClient();
 	return useMutation({
-		mutationFn: submitOnboarding,
+		mutationFn: (payload: StudentOnboardingPayload) =>
+			submitOnboarding(payload, explicitOrgId),
 		onSuccess: (data) => {
 			queryClient.setQueryData(["student", "me"], data);
 			void queryClient.invalidateQueries({ queryKey: ["student", "overview"] });
@@ -830,13 +742,15 @@ export function useAcceptClassEnrollment() {
 
 /** Unsettled tuition invoices of THIS student in the CURRENT org. */
 export async function fetchStudentInvoices(): Promise<StudentInvoiceItem[]> {
+	const headers = getStudentHeaders();
+	const sentOrgId = headers["x-student-org-id"];
 	const res = await fetch(`${getApiBaseUrl()}/api/student/invoices`, {
 		method: "GET",
-		headers: getStudentHeaders(),
+		headers,
 		credentials: "include",
 	});
 	if (!res.ok) {
-		throw new HttpError(res.status, `Request failed with status ${res.status}`);
+		await throwStudentHttpError(res, sentOrgId);
 	}
 	return (await res.json()) as StudentInvoiceItem[];
 }
@@ -852,16 +766,18 @@ export function useStudentInvoices() {
 export async function fetchStudentInvoicePayment(
 	invoiceId: string,
 ): Promise<PaymentInstructions> {
+	const headers = getStudentHeaders();
+	const sentOrgId = headers["x-student-org-id"];
 	const res = await fetch(
 		`${getApiBaseUrl()}/api/student/invoices/${invoiceId}/payment`,
 		{
 			method: "GET",
-			headers: getStudentHeaders(),
+			headers,
 			credentials: "include",
 		},
 	);
 	if (!res.ok) {
-		throw new HttpError(res.status, `Request failed with status ${res.status}`);
+		await throwStudentHttpError(res, sentOrgId);
 	}
 	return (await res.json()) as PaymentInstructions;
 }

@@ -22,17 +22,21 @@ import {
 	TargetScoreStep,
 } from "@/components/onboarding/onboarding-steps";
 import { cn } from "@/lib/cn";
+import { isStudentOrgMismatchError } from "@/lib/query-client";
 import { useSubmitOnboarding } from "@/lib/repos/student";
 
 export interface OnboardingWizardProps {
 	onCompleted: () => void;
 	/** Điểm đầu vào đã có (giáo viên nhập trước) — điền sẵn để học viên thấy và sửa có chủ đích. */
 	initialEntryScore?: string | null;
+	/** Ghim orgId từ `/api/student/me` để tránh ghi nhầm sang org mặc định khi org cũ vừa bị gỡ (#675). */
+	orgId?: string;
 }
 
 export function OnboardingWizard({
 	onCompleted,
 	initialEntryScore,
+	orgId,
 }: OnboardingWizardProps) {
 	const [step, setStep] = useState(0);
 	const [answers, setAnswers] = useState<{
@@ -52,7 +56,7 @@ export function OnboardingWizard({
 		learningGoalsNote: "",
 		dailyStudyHours: null,
 	});
-	const submitMutation = useSubmitOnboarding();
+	const submitMutation = useSubmitOnboarding(orgId);
 
 	const isExamStepValid =
 		answers.examInterest !== null &&
@@ -122,7 +126,13 @@ export function OnboardingWizard({
 			await submitMutation.mutateAsync(payload);
 			toast.success("Thiết lập mục tiêu thành công!");
 			onCompleted();
-		} catch {
+		} catch (err) {
+			if (isStudentOrgMismatchError(err)) {
+				toast.error(
+					"Tổ chức học tập vừa thay đổi, vui lòng kiểm tra lại trước khi lưu.",
+				);
+				return;
+			}
 			toast.error("Không thể lưu thông tin. Vui lòng thử lại.");
 		}
 	};

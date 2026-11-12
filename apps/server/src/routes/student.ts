@@ -35,7 +35,10 @@ import { essayTaskOf, hasGradableTask } from "@teacher-os/api/lib/ielts-band";
 import { inferQuestionTypes } from "@teacher-os/api/lib/infer-question-types";
 import {
 	isAllowedQuizMediaType,
+	matchesQuizMediaMagic,
 	normalizeMediaType,
+	QUIZ_MEDIA_MAGIC_PEEK_BYTES,
+	quizMediaExtensionMatches,
 	sanitizeMediaFileName,
 } from "@teacher-os/api/lib/quiz-media";
 import {
@@ -70,6 +73,7 @@ import {
 	ensurePaymentRefs,
 	loadPaymentInstructions,
 } from "../lib/payment-instructions";
+import { type PeekedStream, peekStream } from "../lib/peek-stream";
 import {
 	loadEssayAnnotations,
 	toPlainAnnotation,
@@ -118,8 +122,9 @@ export type StudentEnv = {
 /**
  * Guard học viên dùng chung cho mọi route /api/student: nạp dòng student theo
  * email session (tự provision khi email đã verify), chọn org theo header
- * `x-student-org-id` và đặt `studentCtx`. Không khớp → 403 NOT_LINKED /
- * EMAIL_UNVERIFIED.
+ * `x-student-org-id` (hoặc `?org=` chỉ trên GET/HEAD) và đặt `studentCtx`.
+ * Truyền org khác rỗng không khớp hồ sơ → 403 STUDENT_ORG_MISMATCH (#675);
+ * không có hồ sơ nào → 403 STUDENT_NOT_LINKED; chưa xác thực → EMAIL_UNVERIFIED.
  */
 export function createStudentGuard(deps: StudentRouteDeps) {
 	return async (c: Context<StudentEnv>, next: () => Promise<void>) => {
@@ -175,17 +180,32 @@ export function createStudentGuard(deps: StudentRouteDeps) {
 		}
 
 		// Thẻ <audio>/<video> và link tải không gửi được header, nên cho phép
-		// `?org=` làm phương án dự phòng; giá trị vẫn chỉ khớp với các hồ sơ
-		// học viên của chính phiên đăng nhập này (rows).
-		const requestedOrgId =
-			c.req.header("x-student-org-id") ?? c.req.query("org");
+		// `?org=` làm phương án dự phòng CHỈ trên GET/HEAD; mọi phương thức ghi
+		// bỏ qua `?org=`. Khi có truyền org khác rỗng mà không khớp dòng nào
+		// trong `rows`, từ chối fail-closed 403 STUDENT_ORG_MISMATCH (#675).
+		const rawHeaderOrg = c.req.header("x-student-org-id")?.trim();
+		const headerOrgId = rawHeaderOrg ? rawHeaderOrg : undefined;
+		const method = c.req.method.toUpperCase();
+		const rawQueryOrg =
+			method === "GET" || method === "HEAD"
+				? c.req.query("org")?.trim()
+				: undefined;
+		const queryOrgId = rawQueryOrg ? rawQueryOrg : undefined;
+		const requestedOrgId = headerOrgId ?? queryOrgId;
 		let matchedStudent = rows[0];
 
 		if (requestedOrgId) {
 			const found = rows.find((r) => r.orgId === requestedOrgId);
-			if (found) {
-				matchedStudent = found;
+			if (!found) {
+				return c.json(
+					{
+						error: STUDENT_ERROR_CODES.ORG_MISMATCH,
+						code: STUDENT_ERROR_CODES.ORG_MISMATCH,
+					},
+					403,
+				);
 			}
+			matchedStudent = found;
 		}
 
 		if (!matchedStudent) {
@@ -677,7 +697,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const sessionUser = c.get("sessionUser");
 		const db = deps.getDb();
 		const normalizedEmail = sessionUser.email.toLowerCase();
-		const requestedOrgId = c.req.header("x-student-org-id");
+		const rawHeaderOrg = c.req.header("x-student-org-id")?.trim();
+		const requestedOrgId = rawHeaderOrg ? rawHeaderOrg : undefined;
 
 		const studentRows = await db
 			.select({
@@ -689,7 +710,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			.from(student)
 			.innerJoin(organization, eq(student.orgId, organization.id))
 			.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
-			.orderBy(desc(student.createdAt), desc(student.id));
+			.orderBy(desc(student.createdAt), asc(student.id));
 
 		if (studentRows.length === 0) {
 			return c.json([]);
@@ -1718,10 +1739,13 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		if (size > QUIZ_MEDIA_MAX_BYTES) {
 			return c.json({ error: "payload too large" }, 413);
 		}
-		const contentType = normalizeMediaType(c.req.header("Content-Type") ?? "");
-		if (!isAllowedQuizMediaType(contentType)) {
+		const contentTypeRaw = normalizeMediaType(
+			c.req.header("Content-Type") ?? "",
+		);
+		if (!isAllowedQuizMediaType(contentTypeRaw)) {
 			return c.json({ error: "unsupported media type" }, 415);
 		}
+		let contentType: string = contentTypeRaw;
 		let name: string | null = null;
 		try {
 			name = sanitizeMediaFileName(
@@ -1732,6 +1756,15 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		}
 		if (name === null) {
 			return c.json({ error: "invalid file name" }, 400);
+		}
+		// #681: client cũ (SPA đã cache) vẫn có thể gửi `.m4a` với MIME
+		// `video/mp4` — chuẩn hoá về `audio/mp4` trước khi kiểm đuôi file.
+		if (contentType === "video/mp4" && name.toLowerCase().endsWith(".m4a")) {
+			contentType = "audio/mp4";
+		}
+		if (!quizMediaExtensionMatches(name, contentType)) {
+			await c.req.raw.body?.cancel().catch(() => undefined);
+			return c.json({ error: "unsupported media type" }, 415);
 		}
 
 		const attempt = await loadOwnedAttemptWithSkill(attemptId, s.id, orgId);
@@ -1753,9 +1786,34 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const newKey = `quiz-media/${orgId}/${attemptId}/${crypto.randomUUID()}`;
 		const discardNew = () =>
 			inBackground("discard new object", () => store.delete(newKey));
+		// #681: đọc sớm tối đa 64 byte đầu (không đệm RAM) để kiểm chữ ký
+		// nhị phân chống polyglot trước khi ghi kho; phát lại nguyên vẹn qua
+		// `peeked.stream` với backpressure pull-based.
+		let peeked: PeekedStream;
 		try {
-			await store.put(newKey, body, { contentType, size });
+			peeked = await peekStream(
+				body,
+				Math.min(QUIZ_MEDIA_MAGIC_PEEK_BYTES, size + 1),
+			);
 		} catch (error) {
+			console.error("[student] speaking media stream failed", { error });
+			return c.json({ error: "upload failed" }, 500);
+		}
+		if (
+			(peeked.ended && peeked.readBytes !== size) ||
+			peeked.readBytes > size
+		) {
+			await peeked.abort("size mismatch");
+			return c.json({ error: "size mismatch" }, 400);
+		}
+		if (!matchesQuizMediaMagic(contentType, peeked.head, size)) {
+			await peeked.abort("unsupported media type");
+			return c.json({ error: "unsupported media type" }, 415);
+		}
+		try {
+			await store.put(newKey, peeked.stream, { contentType, size });
+		} catch (error) {
+			await peeked.abort("store error");
 			discardNew();
 			if (error instanceof MediaSizeMismatchError) {
 				return c.json({ error: "size mismatch" }, 400);

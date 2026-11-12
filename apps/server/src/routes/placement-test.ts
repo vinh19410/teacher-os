@@ -1,5 +1,8 @@
 import {
+	libraryAudioExtensionMatches,
+	matchesLibraryAudioMagic,
 	normalizeMediaType,
+	QUIZ_MEDIA_MAGIC_PEEK_BYTES,
 	sanitizeMediaFileName,
 } from "@teacher-os/api/lib/quiz-media";
 import { LIBRARY_AUDIO_MIME } from "@teacher-os/api/library-contracts";
@@ -26,6 +29,7 @@ import { type Context, Hono } from "hono";
 import type { Db, KernelCtx } from "../app";
 import { mediaObjectResponse } from "../lib/media-response";
 import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
+import { type PeekedStream, peekStream } from "../lib/peek-stream";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type PlacementContext = Context<Env>;
@@ -313,6 +317,14 @@ export function placementTestRoutes(deps: PlacementTestRouteDeps) {
 		if (!name) {
 			return c.json({ error: "INVALID_AUDIO", code: "INVALID_AUDIO" }, 400);
 		}
+		// #681: đối chiếu đuôi file với Content-Type trước khi đụng kho.
+		if (!libraryAudioExtensionMatches(name, contentType)) {
+			await c.req.raw.body?.cancel().catch(() => undefined);
+			return c.json(
+				{ error: "UNSUPPORTED_AUDIO_TYPE", code: "UNSUPPORTED_AUDIO_TYPE" },
+				415,
+			);
+		}
 
 		const requestBody = c.req.raw.body;
 		if (requestBody === null) {
@@ -326,9 +338,37 @@ export function placementTestRoutes(deps: PlacementTestRouteDeps) {
 				store.delete(objectKey),
 			);
 
+		// #681: đọc sớm tối đa 64 byte đầu (không đệm RAM) kiểm chữ ký nhị
+		// phân chống polyglot trước khi ghi kho.
+		let peeked: PeekedStream;
 		try {
-			await store.put(objectKey, requestBody, { contentType, size });
+			peeked = await peekStream(
+				requestBody,
+				Math.min(QUIZ_MEDIA_MAGIC_PEEK_BYTES, size + 1),
+			);
 		} catch (error) {
+			console.error("[placement-test] audio upload stream failed", { error });
+			return c.json({ error: "audio upload failed" }, 500);
+		}
+		if (
+			(peeked.ended && peeked.readBytes !== size) ||
+			peeked.readBytes > size
+		) {
+			await peeked.abort("size mismatch");
+			return c.json({ error: "INVALID_AUDIO", code: "INVALID_AUDIO" }, 400);
+		}
+		if (!matchesLibraryAudioMagic(contentType, peeked.head, size)) {
+			await peeked.abort("unsupported audio type");
+			return c.json(
+				{ error: "UNSUPPORTED_AUDIO_TYPE", code: "UNSUPPORTED_AUDIO_TYPE" },
+				415,
+			);
+		}
+
+		try {
+			await store.put(objectKey, peeked.stream, { contentType, size });
+		} catch (error) {
+			await peeked.abort("store error");
 			discardObject();
 			if (error instanceof MediaSizeMismatchError) {
 				return c.json({ error: "INVALID_AUDIO", code: "INVALID_AUDIO" }, 400);

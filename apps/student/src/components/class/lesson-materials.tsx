@@ -8,9 +8,14 @@ import {
 	Music,
 	Paperclip,
 } from "lucide-react";
-import { useId, useState } from "react";
+import { useId, useState, useSyncExternalStore } from "react";
 import { HttpError } from "@/lib/query-client";
-import { lessonMaterialFileUrl, useLessonMaterials } from "@/lib/repos/student";
+import {
+	getActiveStudentOrgId,
+	lessonMaterialFileUrl,
+	useLessonMaterials,
+} from "@/lib/repos/student";
+import { subscribeActiveStudentOrg } from "@/lib/student-org-storage";
 
 const ACTION_CLASS =
 	"inline-flex h-8 items-center gap-1.5 rounded-md border bg-background px-3 font-medium text-xs shadow-xs outline-none transition-colors hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50 [&_svg]:size-3.5";
@@ -57,6 +62,11 @@ function MaterialRow({
 	classId: string;
 	date: string;
 }) {
+	useSyncExternalStore(
+		subscribeActiveStudentOrg,
+		getActiveStudentOrgId,
+		getActiveStudentOrgId,
+	);
 	const size = formatFileSize(material.sizeBytes);
 	const fileUrl = lessonMaterialFileUrl(classId, date, material.id);
 	const downloadUrl = lessonMaterialFileUrl(classId, date, material.id, true);

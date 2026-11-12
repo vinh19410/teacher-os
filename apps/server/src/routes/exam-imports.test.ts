@@ -50,6 +50,7 @@ import { sha256Hex } from "../lib/exam-import/fingerprint";
 // PDF tối thiểu HỢP LỆ (TOS-27): server inspect bằng unpdf nên bytes giả
 // "%%%%" không còn qua nổi kiểm trang — fixture phải là PDF thật.
 import { buildExamPdf } from "../lib/exam-import/make-pdf";
+import { pngBytes } from "../lib/test-media-fixtures";
 import type { SessionUser } from "../session";
 
 const MIGRATIONS_DIR = fileURLToPath(
@@ -978,6 +979,162 @@ describe("exam imports + ví Credit (TOS-24 #470)", () => {
 			},
 		);
 		expect(nonJsonRes.status).toBe(415);
+	});
+
+	test("#681: đuôi lệch payload.html + image/png → 400 INVALID_FILE reason type, không đụng ví", async () => {
+		const htmlBytes = new TextEncoder().encode(
+			"<!doctype html><html><script>alert(1)</script></html>",
+		);
+		const res = await app.request("/api/exam-imports", {
+			method: "POST",
+			headers: {
+				"x-test-user": "teacher",
+				"Content-Type": "image/png",
+				"Content-Length": String(htmlBytes.byteLength),
+				"X-File-Name": encodeURIComponent("payload.html"),
+			},
+			body: htmlBytes,
+		});
+		expect(res.status).toBe(400);
+		await expect(res.json()).resolves.toMatchObject({
+			code: EXAM_IMPORT_ERROR_CODES.INVALID_FILE,
+			reason: "type",
+		});
+		expect(await db.select().from(examImportJob)).toHaveLength(0);
+		expect(memory.objects.size).toBe(0);
+		expect(await walletLogs()).toHaveLength(0);
+	});
+
+	test("#681: đuôi wrong.pdf + image/png → 400 INVALID_FILE reason type", async () => {
+		const res = await app.request("/api/exam-imports", {
+			method: "POST",
+			headers: {
+				"x-test-user": "teacher",
+				"Content-Type": "image/png",
+				"Content-Length": String(PDF_BYTES.byteLength),
+				"X-File-Name": encodeURIComponent("wrong.pdf"),
+			},
+			body: PDF_BYTES,
+		});
+		expect(res.status).toBe(400);
+		await expect(res.json()).resolves.toMatchObject({ reason: "type" });
+		expect(await db.select().from(examImportJob)).toHaveLength(0);
+	});
+
+	test("#681: spoof.png mang body HTML → 400 INVALID_FILE reason type", async () => {
+		const htmlBytes = new TextEncoder().encode(
+			"<!doctype html><html><script>alert(1)</script></html>",
+		);
+		const res = await app.request("/api/exam-imports", {
+			method: "POST",
+			headers: {
+				"x-test-user": "teacher",
+				"Content-Type": "image/png",
+				"Content-Length": String(htmlBytes.byteLength),
+				"X-File-Name": encodeURIComponent("spoof.png"),
+			},
+			body: htmlBytes,
+		});
+		expect(res.status).toBe(400);
+		await expect(res.json()).resolves.toMatchObject({
+			code: EXAM_IMPORT_ERROR_CODES.INVALID_FILE,
+			reason: "type",
+		});
+		expect(await db.select().from(examImportJob)).toHaveLength(0);
+	});
+
+	test("#681: spoof.jpg mang \\xff\\xd8\\xff<html> → 400 INVALID_FILE reason type", async () => {
+		const spoofJpeg = new Uint8Array([
+			0xff,
+			0xd8,
+			0xff,
+			...new TextEncoder().encode("<html><script>alert(1)</script>"),
+		]);
+		const res = await app.request("/api/exam-imports", {
+			method: "POST",
+			headers: {
+				"x-test-user": "teacher",
+				"Content-Type": "image/jpeg",
+				"Content-Length": String(spoofJpeg.byteLength),
+				"X-File-Name": encodeURIComponent("spoof.jpg"),
+			},
+			body: spoofJpeg,
+		});
+		expect(res.status).toBe(400);
+		await expect(res.json()).resolves.toMatchObject({ reason: "type" });
+		expect(await db.select().from(examImportJob)).toHaveLength(0);
+	});
+
+	test("#681: ảnh PNG thật + de-anh.png → 200 và file lưu nguyên vẹn lên R2", async () => {
+		const png = pngBytes(64, 7);
+		const res = await app.request("/api/exam-imports", {
+			method: "POST",
+			headers: {
+				"x-test-user": "teacher",
+				"Content-Type": "image/png",
+				"Content-Length": String(png.byteLength),
+				"X-File-Name": encodeURIComponent("de-anh.png"),
+			},
+			body: png,
+		});
+		expect(res.status).toBe(200);
+		const job = examImportJobSchema.parse(await res.json());
+		expect(job.mimeType).toBe("image/png");
+		expect(memory.objects.has(`exam-imports/org-1/${job.id}`)).toBe(true);
+		expect(memory.objects.get(`exam-imports/org-1/${job.id}`)?.bytes).toEqual(
+			png,
+		);
+	});
+
+	test("#681: stream khai Content-Length 100 nhưng bơm 150 byte → 400 reason size, ngắt tại byte 101", async () => {
+		let sent = false;
+		const stream = new ReadableStream<Uint8Array>({
+			pull(controller) {
+				if (!sent) {
+					sent = true;
+					controller.enqueue(PDF_BYTES.subarray(0, 100));
+					return;
+				}
+				// Nguồn bơm tiếp 50 byte sau khi server đã ngắt — chỉ có ý
+				// nghĩa nếu server KHÔNG cancel; mọi trường hợp đều kết thúc.
+				controller.enqueue(PDF_BYTES.subarray(0, 50));
+				controller.close();
+			},
+		});
+		const res = await app.request("/api/exam-imports", {
+			method: "POST",
+			headers: {
+				"x-test-user": "teacher",
+				"Content-Type": "application/pdf",
+				"Content-Length": "100",
+				"X-File-Name": encodeURIComponent("oversize.pdf"),
+			},
+			body: stream,
+			duplex: "half",
+		} as RequestInit & { duplex: "half" });
+		expect(res.status).toBe(400);
+		await expect(res.json()).resolves.toMatchObject({
+			code: EXAM_IMPORT_ERROR_CODES.INVALID_FILE,
+			reason: "size",
+		});
+		expect(await db.select().from(examImportJob)).toHaveLength(0);
+		expect(memory.objects.size).toBe(0);
+	});
+
+	test("#681: stream kết thúc sớm trước declaredSize → 400 reason size", async () => {
+		const res = await app.request("/api/exam-imports", {
+			method: "POST",
+			headers: {
+				"x-test-user": "teacher",
+				"Content-Type": "application/pdf",
+				"Content-Length": String(PDF_BYTES.byteLength + 50),
+				"X-File-Name": encodeURIComponent("short.pdf"),
+			},
+			body: PDF_BYTES,
+		});
+		expect(res.status).toBe(400);
+		await expect(res.json()).resolves.toMatchObject({ reason: "size" });
+		expect(await db.select().from(examImportJob)).toHaveLength(0);
 	});
 });
 
