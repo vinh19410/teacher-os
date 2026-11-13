@@ -170,6 +170,14 @@ export const importSyllabusSchema = z.object({
 });
 export type ImportSyllabus = z.infer<typeof importSyllabusSchema>;
 
+/** Sync a class's curriculum copy from its linked template (or a replacement template when source was deleted). */
+export const syncCurriculumSchema = z
+	.object({
+		templateId: z.string().min(1).optional(),
+	})
+	.strict();
+export type SyncCurriculum = z.infer<typeof syncCurriculumSchema>;
+
 /** Remove a class curriculum: deletes the imported copy tree, nulls the pointer. */
 export const removeCurriculumSchema = z.object({}).strict();
 export type RemoveCurriculum = z.infer<typeof removeCurriculumSchema>;
