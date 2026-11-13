@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, type Page, test } from "@playwright/test";
 import { signUpViaApi } from "./helpers";
 
@@ -144,4 +145,55 @@ test("bản copy của lớp không có nút import ghi đè (chỉ template)", 
 	// (đã assert ở đầu test); copy chỉ sửa được qua "Quản lý buổi" của lớp.
 	await page.goto(`/syllabus/${copy.id}`);
 	await expect(page.getByText("Không tìm thấy syllabus")).toBeVisible();
+});
+
+test("tải file mẫu trên trang chi tiết trả đúng CSV v4, không tràn ngang ở 320px và import ghi đè được ngay", async ({
+	page,
+}) => {
+	await signUpViaApi(page);
+	await createSyllabusTemplate(page, "E2E Download Sample Detail");
+
+	await page.setViewportSize({ width: 320, height: 812 });
+	const sampleBtn = page.getByRole("button", { name: "Tải file mẫu" });
+	await expect(sampleBtn).toBeVisible();
+	await sampleBtn.focus();
+	await expect(sampleBtn).toBeFocused();
+	const hasHorizontalOverflow = await page.evaluate(
+		() =>
+			document.documentElement.scrollWidth >
+			document.documentElement.clientWidth,
+	);
+	expect(hasHorizontalOverflow).toBe(false);
+	await page.setViewportSize({ width: 1280, height: 720 });
+
+	const downloadPromise = page.waitForEvent("download");
+	await sampleBtn.click();
+	const download = await downloadPromise;
+	expect(download.suggestedFilename()).toBe("syllabus-template.csv");
+	const downloadedPath = await download.path();
+	if (!downloadedPath) throw new Error("Missing downloaded sample CSV path");
+	const rawBytes = readFileSync(downloadedPath);
+	const csvText = rawBytes.toString("utf8");
+	expect(
+		csvText.startsWith("\uFEFFModule,Mô tả module,Mục tiêu,Tài liệu,Loại\r\n"),
+	).toBe(true);
+	expect(csvText).toContain("Kiểm tra giữa kỳ");
+	expect(csvText).toContain("Kiểm tra cuối kỳ");
+
+	await page.setInputFiles("input[type=file]", {
+		name: download.suggestedFilename(),
+		mimeType: "text/csv",
+		buffer: rawBytes,
+	});
+	await expect(page.getByText("2 module · 5 buổi học")).toBeVisible();
+	await page.getByRole("button", { name: "Ghi đè nội dung" }).click();
+	await page
+		.getByRole("dialog")
+		.getByRole("button", { name: "Ghi đè", exact: true })
+		.click();
+	await expect(page.getByText("Đã ghi đè nội dung giáo trình.")).toBeVisible();
+	await expect(page.getByText("Module 1 — Nền tảng")).toBeVisible();
+	await expect(page.getByText("Module 2 — Thực hành")).toBeVisible();
+	await expect(page.getByText("Thi giữa kỳ", { exact: true })).toBeVisible();
+	await expect(page.getByText("Thi cuối kỳ", { exact: true })).toBeVisible();
 });

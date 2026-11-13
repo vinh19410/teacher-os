@@ -308,3 +308,23 @@ export function buildSampleCsv(): string {
 	];
 	return lines.join("\r\n");
 }
+
+export const SYLLABUS_SAMPLE_FILENAME = "syllabus-template.csv";
+
+/**
+ * Tải xuống file mẫu CSV chuẩn v4 (`syllabus-template.csv`, UTF-8 BOM + CRLF)
+ * ở client-side — dùng chung cho modal Tạo syllabus và trang chi tiết `/syllabus/:id`.
+ */
+export function downloadSyllabusSampleCsv(): void {
+	const csv = buildSampleCsv();
+	const url = URL.createObjectURL(
+		new Blob([csv], { type: "text/csv;charset=utf-8" }),
+	);
+	const a = document.createElement("a");
+	a.href = url;
+	a.download = SYLLABUS_SAMPLE_FILENAME;
+	a.click();
+	// Revoke sau khi download khởi hành — revoke đồng bộ ngay sau click
+	// có thể hủy download trên Safari/Firefox.
+	setTimeout(() => URL.revokeObjectURL(url), 0);
+}

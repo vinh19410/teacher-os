@@ -11,7 +11,7 @@ import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { CLASS_TYPE_LABELS } from "@/lib/mock-data";
 import {
-	buildSampleCsv,
+	downloadSyllabusSampleCsv,
 	parseSyllabusFile,
 	type SyllabusImportResult,
 } from "@/lib/syllabus-import";
@@ -67,20 +67,6 @@ export function AddSyllabusModal({
 		} finally {
 			setParsing(false);
 		}
-	}
-
-	function downloadSample() {
-		const csv = buildSampleCsv();
-		const url = URL.createObjectURL(
-			new Blob([csv], { type: "text/csv;charset=utf-8" }),
-		);
-		const a = document.createElement("a");
-		a.href = url;
-		a.download = "syllabus-template.csv";
-		a.click();
-		// Revoke sau khi download khởi hành — revoke đồng bộ ngay sau click
-		// có thể hủy download trên Safari/Firefox.
-		setTimeout(() => URL.revokeObjectURL(url), 0);
 	}
 
 	const importBlocked = importResult !== null && !importResult.ok;
@@ -204,7 +190,7 @@ export function AddSyllabusModal({
 							type="button"
 							variant="secondary"
 							size="sm"
-							onClick={downloadSample}
+							onClick={downloadSyllabusSampleCsv}
 						>
 							Tải file mẫu
 						</Button>

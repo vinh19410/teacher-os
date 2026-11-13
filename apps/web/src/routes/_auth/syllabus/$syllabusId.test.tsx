@@ -9,6 +9,7 @@ import {
 	within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { buildSampleCsv } from "@/lib/syllabus-import";
 import {
 	classRow,
 	type KernelServer,
@@ -75,6 +76,7 @@ beforeEach(() => {
 
 afterEach(() => {
 	cleanup();
+	vi.restoreAllMocks();
 	vi.unstubAllGlobals();
 });
 
@@ -123,6 +125,53 @@ describe("syllabus template detail", () => {
 		);
 		expect(dialog.textContent).toMatch(/thay bằng 1 module · 1 buổi học/);
 		expect(within(dialog).getByRole("button", { name: "Ghi đè" })).toBeTruthy();
+	});
+
+	it("downloads the v4 sample CSV template from the detail toolbar", async () => {
+		let capturedBlob: Blob | null = null;
+		let createdAnchor: HTMLAnchorElement | null = null;
+		vi.spyOn(URL, "createObjectURL").mockImplementation(
+			(obj: Blob | MediaSource) => {
+				capturedBlob = obj as Blob;
+				return "blob:detail-sample";
+			},
+		);
+		vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+		const origCreateElement = document.createElement.bind(document);
+		vi.spyOn(document, "createElement").mockImplementation(((tag: string) => {
+			const el = origCreateElement(tag);
+			if (tag.toLowerCase() === "a") {
+				createdAnchor = el as HTMLAnchorElement;
+			}
+			return el;
+		}) as typeof document.createElement);
+		const clickSpy = vi
+			.spyOn(HTMLAnchorElement.prototype, "click")
+			.mockImplementation(() => {});
+
+		renderWithKernel(<SyllabusDetail />);
+		await screen.findByRole("heading", { level: 1, name: "Template Writing" });
+
+		fireEvent.click(screen.getByRole("button", { name: "Tải file mẫu" }));
+
+		expect(clickSpy).toHaveBeenCalledTimes(1);
+		expect(createdAnchor).not.toBeNull();
+		if (!createdAnchor) throw new Error("expected createdAnchor");
+		expect((createdAnchor as HTMLAnchorElement).download).toBe(
+			"syllabus-template.csv",
+		);
+		expect(capturedBlob).toBeInstanceOf(Blob);
+		if (!capturedBlob) throw new Error("expected capturedBlob");
+		const buf = await new Promise<ArrayBuffer>((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onload = () => resolve(reader.result as ArrayBuffer);
+			reader.onerror = () => reject(reader.error);
+			reader.readAsArrayBuffer(capturedBlob as Blob);
+		});
+		const decodedCsv = new TextDecoder("utf-8", { ignoreBOM: true }).decode(
+			buf,
+		);
+		expect(decodedCsv).toBe(buildSampleCsv());
 	});
 });
 
@@ -176,7 +225,11 @@ describe("syllabus template → overwrite in flight", () => {
 		const importButton = screen.getByRole("button", {
 			name: "Nhập từ Excel/CSV",
 		}) as HTMLButtonElement;
+		const sampleButton = screen.getByRole("button", {
+			name: "Tải file mẫu",
+		}) as HTMLButtonElement;
 		expect(importButton.disabled).toBe(true);
+		expect(sampleButton.disabled).toBe(false);
 
 		land();
 		await waitFor(() => expect(importButton.disabled).toBe(false));
