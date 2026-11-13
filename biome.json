@@ -42,7 +42,8 @@
 			"!.cursor/skills",
 			"!.claude/skills",
 			"!_templates/**/*.html",
-			"!docs/**/preview.html"
+			"!docs/**/preview.html",
+			"!docs/_shared/kg"
 		]
 	},
 	"formatter": {
