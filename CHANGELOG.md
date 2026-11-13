@@ -12,6 +12,9 @@ Quy ước khi cập nhật:
 
 ## 2026-11-13
 
+### CI/Infra
+- Tự động tổng hợp danh sách commit vừa phát hành và gửi thông báo dạng Discord Embed (`Beta Release` màu vàng cho `develop`, `Official Release` màu xanh lá cho `main`) ở cuối job `deploy` của `deploy-staging.yml` và `deploy.yml` sau khi toàn bộ smoke checks pass qua `scripts/notify-discord-changelog.mjs`, sử dụng secret `DISCORD_WEBHOOK_URL` (hỗ trợ `--dry-run` / `--strict`, tự cắt trần 4.096 ký tự, retry `429`/`5xx`, che URL/token khỏi log và fail-open nếu thiếu secret hoặc Discord gián đoạn tạm thời) (#686).
+
 ### Fixed
 - Bổ sung nốt bản vá giải phóng stream cho `storeUpload` trong `apps/server/src/routes/materials.ts`: dùng `await peeked.abort(...)` thay cho `peeked.stream.cancel()` khi stream đã bị `pipeThrough` khoá trong `store.put` (tránh nuốt `TypeError` và rò rỉ reader gốc khi upload lỗi), kèm unit test hồi quy trong `apps/server/src/routes/materials.test.ts` (#681).
 - Sửa E2E `apps/e2e/specs/media-upload-magic-bytes.spec.ts` thực hiện đăng nhập `POST /api/auth/sign-in/email` với tài khoản admin sau `ensureAdminAccount` để giữ cookie session khi chạy nối tiếp sau `admin-auth.spec.ts` trong full suite.

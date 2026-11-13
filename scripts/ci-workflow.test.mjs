@@ -643,6 +643,38 @@ test("staging deploy workflow deploys only from develop and gates deploy on unca
 		["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN"],
 		"staging vocab seed step must follow least-privilege and receive only CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN",
 	);
+
+	const profileIdx = steps.findIndex((s) =>
+		/name:\s*Smoke check profile\b/.test(s),
+	);
+	const discordIdx = steps.findIndex((s) =>
+		/name:\s*Notify Discord release changelog\b/.test(s),
+	);
+	assert.ok(
+		profileIdx >= 0 &&
+			discordIdx > profileIdx &&
+			discordIdx === steps.length - 1,
+		"staging Discord notify step must run last in deploy job after Smoke check profile",
+	);
+	const discordStep = steps[discordIdx];
+	assert.match(
+		discordStep,
+		/timeout-minutes:\s*\d+/,
+		"staging Discord notify step must declare timeout-minutes",
+	);
+	assert.match(
+		discordStep,
+		/node scripts\/notify-discord-changelog\.mjs --stage staging\b/,
+		"staging Discord notify step must run notify-discord-changelog.mjs --stage staging",
+	);
+	const discordEnvKeys = [...discordStep.matchAll(/^ {10}([A-Z0-9_]+):/gm)].map(
+		(m) => m[1],
+	);
+	assert.deepEqual(
+		discordEnvKeys,
+		["DISCORD_WEBHOOK_URL"],
+		"staging Discord notify step must follow least-privilege and receive only DISCORD_WEBHOOK_URL",
+	);
 });
 
 test("e2e has no standalone workflow and runs only inside the prod deploy", () => {
@@ -789,6 +821,39 @@ test("prod deploy is gated on uncached quality and the 6-shard fully-parallel e2
 			`step after deploy must skip on dry-run in deploy.yml: ${step.split("\n")[0]}`,
 		);
 	}
+
+	const deploySteps = splitJobSteps(deployJob);
+	const profileIdx = deploySteps.findIndex((s) =>
+		/name:\s*Smoke check profile\b/.test(s),
+	);
+	const discordIdx = deploySteps.findIndex((s) =>
+		/name:\s*Notify Discord release changelog\b/.test(s),
+	);
+	assert.ok(
+		profileIdx >= 0 &&
+			discordIdx > profileIdx &&
+			discordIdx === deploySteps.length - 1,
+		"prod Discord notify step must run last in deploy job after Smoke check profile",
+	);
+	const discordStep = deploySteps[discordIdx];
+	assert.match(
+		discordStep,
+		/timeout-minutes:\s*\d+/,
+		"prod Discord notify step must declare timeout-minutes",
+	);
+	assert.match(
+		discordStep,
+		/node scripts\/notify-discord-changelog\.mjs --stage prod\b/,
+		"prod Discord notify step must run notify-discord-changelog.mjs --stage prod",
+	);
+	const discordEnvKeys = [...discordStep.matchAll(/^ {10}([A-Z0-9_]+):/gm)].map(
+		(m) => m[1],
+	);
+	assert.deepEqual(
+		discordEnvKeys,
+		["DISCORD_WEBHOOK_URL"],
+		"prod Discord notify step must follow least-privilege and receive only DISCORD_WEBHOOK_URL",
+	);
 
 	const alchemyRaw = readFileSync(alchemyPath, "utf8");
 	const alchemyCode = alchemyRaw
