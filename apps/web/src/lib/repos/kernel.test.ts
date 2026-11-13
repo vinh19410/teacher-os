@@ -3,6 +3,7 @@
  * Pure functions only — transport lives in the provider.
  */
 import {
+	classUpdateSchema,
 	type KernelSnapshot,
 	reorderLessonsSchema,
 	reorderModulesSchema,
@@ -639,6 +640,68 @@ describe("kernelCommand", () => {
 		});
 		expect(cmd.path).toBe("/api/classes/c1/tuition-fee");
 		expect(cmd.body).toEqual({ tuitionFee: 6_000_000 });
+	});
+
+	test("update-class emits PATCH /api/classes/:id matching classUpdateSchema (#693)", async () => {
+		const cmd = kernelCommand({
+			type: "update-class",
+			classId: "cl/special",
+			payload: {
+				name: "IELTS 6.5",
+				type: "ielts",
+				level: "Band 6.5",
+				skills: ["Writing", "Speaking"],
+				mode: "Online",
+				tuitionFee: null,
+				schedule: { days: [0, 2], start: "19:00", end: "20:30" },
+				startDate: "2026-12-01",
+				sessionsTotal: 16,
+			},
+		});
+		expect(cmd.method).toBe("PATCH");
+		expect(cmd.path).toBe("/api/classes/cl%2Fspecial");
+		expect(classUpdateSchema.safeParse(cmd.body).success).toBe(true);
+
+		const realFetch = globalThis.fetch;
+		const calls: Array<{ url: string; method?: string; body?: string }> = [];
+		globalThis.fetch = vi.fn(async (input, init) => {
+			calls.push({
+				url: String(input),
+				method: init?.method,
+				body: typeof init?.body === "string" ? init.body : undefined,
+			});
+			return new Response(JSON.stringify({ ok: true }), {
+				status: 200,
+				headers: { "content-type": "application/json" },
+			});
+		}) as typeof fetch;
+		try {
+			await postKernelCommand("http://localhost:8000", {
+				type: "update-class",
+				classId: "c1",
+				payload: {
+					name: "Giao tiếp A2",
+					type: "communication",
+					level: "",
+					skills: [],
+					mode: "Offline",
+				},
+			});
+			expect(calls).toHaveLength(1);
+			expect(calls[0].url).toBe("http://localhost:8000/api/classes/c1");
+			expect(calls[0].method).toBe("PATCH");
+			const sent = JSON.parse(calls[0].body ?? "{}");
+			expect(sent).toEqual({
+				name: "Giao tiếp A2",
+				type: "communication",
+				level: "",
+				skills: [],
+				mode: "Offline",
+			});
+			expect(classUpdateSchema.safeParse(sent).success).toBe(true);
+		} finally {
+			globalThis.fetch = realFetch;
+		}
 	});
 
 	test("check-in and cancel-lesson ride the bus with an exactly-empty body", () => {

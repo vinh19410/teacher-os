@@ -152,6 +152,22 @@ export type KernelAction =
 			};
 	  }
 	| {
+			/** Cập nhật thông tin lớp học (#693); schedule/startDate/sessionsTotal omit khi lịch bị khóa hoặc giữ nguyên legacy. */
+			type: "update-class";
+			classId: string;
+			payload: {
+				name: string;
+				type: ClassType;
+				level: string;
+				skills: string[];
+				mode: string;
+				tuitionFee?: number | null;
+				schedule?: { days: number[]; start: string; end: string };
+				startDate?: string;
+				sessionsTotal?: number;
+			};
+	  }
+	| {
 			type: "add-syllabus";
 			payload: {
 				id: string;

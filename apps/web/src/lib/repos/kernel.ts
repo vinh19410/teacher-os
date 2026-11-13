@@ -68,6 +68,12 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 					tuitionFee: action.payload.tuitionFee ?? null,
 				},
 			};
+		case "update-class":
+			return {
+				path: `/api/classes/${encodeURIComponent(action.classId)}`,
+				method: "PATCH",
+				body: { ...action.payload },
+			};
 		case "add-invoice":
 			// Issue #61: invoiceCreateSchema is .strict() — the body must carry
 			// exactly these four fields; note always rides along ("" default).

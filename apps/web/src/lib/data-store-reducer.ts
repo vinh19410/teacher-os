@@ -340,6 +340,42 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 			};
 		}
 
+		case "update-class": {
+			const { payload } = action;
+			return {
+				...state,
+				classes: state.classes.map((c) => {
+					if (c.id !== action.classId) return c;
+					return {
+						...c,
+						name: payload.name,
+						type: payload.type,
+						level: payload.level,
+						skills: payload.type === "ielts" ? payload.skills : [],
+						mode: payload.mode,
+						tuitionFee:
+							payload.tuitionFee !== undefined
+								? payload.tuitionFee
+								: c.tuitionFee,
+						schedule:
+							payload.schedule !== undefined
+								? JSON.stringify({
+										...payload.schedule,
+										days: [...new Set(payload.schedule.days)].sort(
+											(a, b) => a - b,
+										),
+									})
+								: c.schedule,
+						startDate:
+							payload.startDate !== undefined ? payload.startDate : c.startDate,
+						sessionsTotal:
+							payload.sessionsTotal !== undefined
+								? payload.sessionsTotal
+								: c.sessionsTotal,
+					};
+				}),
+			};
+		}
 		case "update-class-notes": {
 			return {
 				...state,

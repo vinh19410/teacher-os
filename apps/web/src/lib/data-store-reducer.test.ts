@@ -466,6 +466,61 @@ describe("reducer", () => {
 			before.classes.find((c) => c.id === "c2")?.notes,
 		);
 	});
+
+	test("update-class updates general info and serializes schedule, keeping omitted fields intact (#693)", () => {
+		const before = cloneSeed();
+		const originalC1 = before.classes.find((c) => c.id === "c1");
+		expect(originalC1).toBeDefined();
+		const next = reducer(before, {
+			type: "update-class",
+			classId: "c1",
+			payload: {
+				name: "IELTS Writing 7.5",
+				type: "ielts",
+				level: "Band 7.5+",
+				skills: ["Writing", "Reading"],
+				mode: "Offline",
+				tuitionFee: 4_500_000,
+				schedule: { days: [4, 1, 1], start: "18:30", end: "20:00" },
+				startDate: "2026-12-01",
+				sessionsTotal: 16,
+			},
+		});
+		const updated = next.classes.find((c) => c.id === "c1");
+		expect(updated).toMatchObject({
+			name: "IELTS Writing 7.5",
+			type: "ielts",
+			level: "Band 7.5+",
+			skills: ["Writing", "Reading"],
+			mode: "Offline",
+			tuitionFee: 4_500_000,
+			startDate: "2026-12-01",
+			sessionsTotal: 16,
+		});
+		expect(JSON.parse(updated?.schedule ?? "")).toEqual({
+			days: [1, 4],
+			start: "18:30",
+			end: "20:00",
+		});
+
+		const partial = reducer(next, {
+			type: "update-class",
+			classId: "c1",
+			payload: {
+				name: "Giao tiếp B1",
+				type: "communication",
+				level: "Band 6.0",
+				skills: ["Writing"],
+				mode: "Online",
+			},
+		});
+		const afterPartial = partial.classes.find((c) => c.id === "c1");
+		expect(afterPartial?.skills).toEqual([]);
+		expect(afterPartial?.tuitionFee).toBe(4_500_000);
+		expect(afterPartial?.schedule).toBe(updated?.schedule);
+		expect(afterPartial?.startDate).toBe("2026-12-01");
+		expect(afterPartial?.sessionsTotal).toBe(16);
+	});
 });
 
 describe("enroll-student (issue #122 / #251 / #253)", () => {

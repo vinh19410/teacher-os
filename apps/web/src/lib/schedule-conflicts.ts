@@ -33,6 +33,8 @@ export interface ScheduleConflictDraft {
 	end: string;
 	startDate: string;
 	sessionsTotal: number;
+	/** ID lớp đang chỉnh sửa — loại trừ khỏi danh sách kiểm tra trùng (#693). */
+	excludeClassId?: string;
 }
 
 export interface ScheduleConflict {
@@ -83,6 +85,9 @@ export function findScheduleConflicts(
 
 	const conflicts: ScheduleConflict[] = [];
 	for (const cls of classes) {
+		if (draft.excludeClassId !== undefined && cls.id === draft.excludeClassId) {
+			continue;
+		}
 		const schedule = parseStoredSchedule(cls.schedule);
 		if (!schedule) continue; // legacy free-text
 		if (schedule.end <= schedule.start) continue; // legacy overnight

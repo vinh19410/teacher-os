@@ -798,3 +798,134 @@ describe("class screen → lesson kind stays with the syllabus", () => {
 		expect(within(dialog).getByLabelText("Trạng thái")).toBeTruthy();
 	});
 });
+
+describe("class detail → edit class info (#693)", () => {
+	it("opens EditClassModal from PageHead Chỉnh sửa button and updates class info when unlocked", async () => {
+		const snapshot = snapshotFixture({
+			classes: [
+				classRow({
+					id: "cl-1",
+					name: "IELTS Writing",
+					schedule: '{"days":[0,2],"start":"19:00","end":"20:30"}',
+					startDate: "2026-12-01",
+					sessionsTotal: 12,
+				}),
+				classRow({
+					id: "cl-2",
+					name: "IELTS Speaking",
+					schedule: '{"days":[4],"start":"19:00","end":"20:30"}',
+					startDate: "2026-12-01",
+					sessionsTotal: 12,
+				}),
+			],
+		});
+		const server = startKernelServer(snapshot, (req, srv) => {
+			if (req.method === "PATCH" && req.path === "/api/classes/cl-1") {
+				const body = req.body as Record<string, unknown>;
+				const target = srv.snapshot.classes.find((c) => c.id === "cl-1");
+				if (target) {
+					target.name = String(body.name ?? target.name);
+					target.mode = String(body.mode ?? target.mode);
+					if (body.schedule) {
+						target.schedule = JSON.stringify(body.schedule);
+					}
+				}
+			}
+			return undefined;
+		});
+		renderWithKernel(<ClassDetail />);
+
+		fireEvent.click(await screen.findByRole("button", { name: "Chỉnh sửa" }));
+		const dialog = screen.getByRole("dialog", { name: "Chỉnh sửa lớp học" });
+		expect(
+			(within(dialog).getByLabelText("Giờ bắt đầu") as HTMLInputElement)
+				.disabled,
+		).toBe(false);
+		expect(
+			within(dialog).queryByTestId("schedule-conflict-warning"),
+		).toBeNull();
+
+		fireEvent.change(within(dialog).getByLabelText(/Tên lớp/), {
+			target: { value: "IELTS Writing Pro" },
+		});
+		fireEvent.click(within(dialog).getByRole("button", { name: "T6" }));
+		expect(
+			within(dialog).getByTestId("schedule-conflict-warning").textContent,
+		).toContain("IELTS Speaking");
+
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Lưu thay đổi" }),
+		);
+
+		await waitFor(() =>
+			expect(
+				screen.queryByRole("dialog", { name: "Chỉnh sửa lớp học" }),
+			).toBeNull(),
+		);
+		expect(server.writes).toContainEqual({
+			method: "PATCH",
+			path: "/api/classes/cl-1",
+			body: {
+				name: "IELTS Writing Pro",
+				type: "ielts",
+				level: "Band 7.0",
+				skills: ["Writing"],
+				mode: "Online",
+				tuitionFee: null,
+				schedule: { days: [0, 2, 4], start: "19:00", end: "20:30" },
+				sessionsTotal: 12,
+			},
+		});
+		expect(
+			await screen.findByRole("heading", { name: "IELTS Writing Pro" }),
+		).toBeTruthy();
+	});
+
+	it("locks schedule controls when class already has real lessons and keeps EditClassFeeModal working", async () => {
+		const snapshot = snapshotFixture({
+			classes: [
+				classRow({
+					id: "cl-1",
+					name: "IELTS Writing",
+					schedule: '{"days":[0],"start":"19:00","end":"20:30"}',
+					startDate: "2026-08-01",
+					sessionsTotal: 12,
+				}),
+			],
+			students: [studentRow({ id: "st-1", name: "Học viên Một" })],
+			enrollments: [
+				enrollmentRow({ id: "en-1", classId: "cl-1", studentId: "st-1" }),
+			],
+			lessons: [
+				lessonRow({
+					id: "les-1",
+					classId: "cl-1",
+					enrollmentId: "en-1",
+					date: "2026-08-03",
+				}),
+			],
+		});
+		const server = startKernelServer(snapshot);
+		renderWithKernel(<ClassDetail />);
+
+		fireEvent.click(await screen.findByRole("button", { name: "Chỉnh sửa" }));
+		const dialog = screen.getByRole("dialog", { name: "Chỉnh sửa lớp học" });
+		expect(within(dialog).getByTestId("schedule-locked-note")).toBeTruthy();
+		expect(
+			(within(dialog).getByLabelText("Giờ bắt đầu") as HTMLInputElement)
+				.disabled,
+		).toBe(true);
+		fireEvent.click(within(dialog).getByRole("button", { name: "Hủy" }));
+		expect(
+			screen.queryByRole("dialog", { name: "Chỉnh sửa lớp học" }),
+		).toBeNull();
+
+		// Tab Học viên vẫn giữ EditClassFeeModal với nút "Sửa"
+		fireEvent.click(screen.getByRole("tab", { name: "Học viên" }));
+		fireEvent.click(await screen.findByRole("button", { name: "Sửa" }));
+		const feeDialog = screen.getByRole("dialog", { name: "Sửa học phí lớp" });
+		expect(feeDialog).toBeTruthy();
+		fireEvent.click(within(feeDialog).getByRole("button", { name: "Hủy" }));
+		expect(server.writes).toEqual([]);
+	});
+});
