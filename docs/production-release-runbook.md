@@ -91,6 +91,7 @@ loads `packages/infra/.env` first — a value there wins over the same name in
 | `SEPAY_BANKHUB_WEBHOOK_SECRET` | Operator-generated, registered via `apps/server/scripts/bankhub-setup.ts` | operator env → Worker binding | generate new, re-run bankhub-setup, update `.env`, redeploy |
 | `SEPAY_BANKHUB_BASE_URL` | Deploy operator | operator env → Worker binding | n/a (endpoint); production MUST set `https://bankhub-api.sepay.vn` — blank falls back to the sandbox host and the feature silently no-ops |
 | `GITHUB_WEBHOOK_SECRET` | Operator-generated (`openssl rand -hex 32`) | GitHub environment secret `GH_WEBHOOK_SECRET` → bước deploy CI → Worker binding `GITHUB_WEBHOOK_SECRET` (#421) | sinh mới → cập nhật secret trên trang webhook GitHub và GitHub environment → redeploy; trong lúc lệch, delivery trả 401 và có thể "Redeliver" từ UI. **Cảnh báo:** `withDefault("")` nghĩa là deploy prod/staging NGOÀI CI mà không export `GITHUB_WEBHOOK_SECRET` sẽ ghi đè secret đang chạy về rỗng ⇒ endpoint 503 — deploy tay phải export biến từ `.env` (hoặc chờ CI) |
+| `DISCORD_WEBHOOK_URL` | Release operator (Discord Server channel webhook) | Optional GitHub repository secret or per-environment secret (`staging` / `production`) used ONLY by the post-smoke `Notify Discord release changelog` CI step (#686) | Discord Channel Settings → Integrations → Webhooks → Copy/Reset Webhook URL, then update via `gh secret set DISCORD_WEBHOOK_URL` (per env or repo). Never committed or logged; if unset or Discord is unreachable, deploy stays green with `::notice::` / `::warning::` |
 
 ## Lead intake — form đăng ký msmy.io.vn (#506)
 
@@ -207,6 +208,7 @@ do not run it. Still run it locally before shipping (`ak-ship official`) so a
 red suite is caught before the merge, not at the release gate.
 Deploys are serialized
 (`cancel-in-progress: false`) so forward-only D1 migrations never race.
+After every smoke check passes (and not in `dry_run`), `Notify Discord release changelog` runs `node scripts/notify-discord-changelog.mjs --stage prod` using `DISCORD_WEBHOOK_URL` to post an `Official Release` embed to Discord (non-blocking if unset or Discord fails).
 
 Scope of automation: code + bindings + migrations only. The operator gates
 this file cannot decide remain manual per the preflight above — rehearsing a
@@ -242,6 +244,7 @@ network-first cache headers. Throwaway smoke accounts are accepted junk rows
 in the staging D1; prod deliberately gets no signup smoke. The manual
 "Provision staging" procedure below remains the path for first provisioning
 or destroy/recreate.
+After every staging smoke check passes (and not in `dry_run`), `Notify Discord release changelog` runs `node scripts/notify-discord-changelog.mjs --stage staging` using `DISCORD_WEBHOOK_URL` to post a `Beta Release` embed to Discord (non-blocking if unset or Discord fails).
 
 To preview a staging deploy without applying it, run `Deploy Staging` manually from
 `develop` with `dry_run` enabled: it prints the Alchemy plan and skips seed and

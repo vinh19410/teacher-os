@@ -221,3 +221,9 @@ jobs:
           done
           echo "::error::profile did not pass smoke checks within 10 minutes of deploy"
           exit 1
+      - name: Notify Discord release changelog
+        if: ${{ !inputs.dry_run }}
+        timeout-minutes: 2
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: node scripts/notify-discord-changelog.mjs --stage prod
