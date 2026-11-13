@@ -1,6 +1,11 @@
 import { readFileSync } from "node:fs";
 import { expect, type Page, test } from "@playwright/test";
-import { ensureAdminAccount, signUpViaApi } from "./helpers";
+import {
+	ADMIN_EMAIL,
+	ADMIN_PASSWORD,
+	ensureAdminAccount,
+	signUpViaApi,
+} from "./helpers";
 import {
 	ADMIN_ORIGIN,
 	API_ORIGIN,
@@ -195,7 +200,15 @@ test.describe("#681 media upload magic-byte rejection (E2E âm)", () => {
 	test("Admin library audio: PUT /api/admin/library/tests/:id/parts/:part/audio từ chối spoof.mp3 (415), GET audio vẫn 404", async ({
 		request,
 	}) => {
-		await ensureAdminAccount(request as unknown as never);
+		await ensureAdminAccount(request);
+		const signInRes = await request.post(
+			`${API_ORIGIN}/api/auth/sign-in/email`,
+			{
+				data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
+				headers: { "Content-Type": "application/json", Origin: ADMIN_ORIGIN },
+			},
+		);
+		expect(signInRes.status()).toBe(200);
 		const createRes = await request.post(
 			`${API_ORIGIN}/api/admin/library/tests`,
 			{

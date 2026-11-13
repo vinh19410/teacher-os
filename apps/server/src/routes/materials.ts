@@ -387,11 +387,11 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 			(peeked.ended && peeked.readBytes !== size) ||
 			peeked.readBytes > size
 		) {
-			await peeked.stream.cancel().catch(() => undefined);
+			await peeked.abort("size mismatch");
 			return { ok: false, response: materialError(c, 400, "INVALID_FILE") };
 		}
 		if (!matchesMaterialMagic(check.mimeType, peeked.head)) {
-			await peeked.stream.cancel().catch(() => undefined);
+			await peeked.abort("unsupported file type");
 			return {
 				ok: false,
 				response: materialError(c, 415, "UNSUPPORTED_FILE_TYPE"),
@@ -408,7 +408,7 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 				size,
 			});
 		} catch (error) {
-			await peeked.stream.cancel().catch(() => undefined);
+			await peeked.abort("store error");
 			discard();
 			if (error instanceof MediaSizeMismatchError) {
 				return { ok: false, response: materialError(c, 400, "INVALID_FILE") };

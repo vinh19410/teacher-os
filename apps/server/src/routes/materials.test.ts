@@ -93,9 +93,15 @@ function sessionFor(headers: Headers): Promise<SessionUser | null> {
 
 function createMemoryStore() {
 	const objects = new Map<string, { bytes: Uint8Array; contentType: string }>();
-	const failures = { delete: false };
+	const failures = { delete: false, put: false };
 	const store: MediaStore = {
 		async put(key, body, { contentType, size }) {
+			if (failures.put) {
+				// Mô phỏng R2 `pipeThrough(FixedLengthStream)` đã khoá stream trước khi
+				// `put` ném lỗi — ép `storeUpload` phải gọi `peeked.abort(...)`.
+				void body.getReader();
+				throw new Error("r2 put failed");
+			}
 			const counted = enforceDeclaredSize(body, size);
 			const bytes = new Uint8Array(
 				await new Response(counted.stream).arrayBuffer(),
@@ -308,6 +314,7 @@ describe("material bank and session materials", () => {
 
 	beforeEach(() => {
 		memory.failures.delete = false;
+		memory.failures.put = false;
 	});
 
 	function headers(user = "teacher-1"): Record<string, string> {
@@ -2292,6 +2299,43 @@ describe("material bank and session materials", () => {
 		expect(new Uint8Array(await downloadedChunked.arrayBuffer())).toEqual(
 			chunkedPdf,
 		);
+	});
+
+	test("aborts upstream body when store.put throws after locking replay stream", async () => {
+		let sourceCanceled = false;
+		let sentHead = false;
+		const headChunk = pdfFixture(new Array<number>(72).fill(0x20));
+		const openStream = new ReadableStream<Uint8Array>({
+			pull(controller) {
+				if (!sentHead) {
+					sentHead = true;
+					controller.enqueue(headChunk);
+					return;
+				}
+				// Giữ nguồn mở giống kết nối đang upload dở để chỉ `peeked.abort()` mới huỷ được.
+			},
+			cancel() {
+				sourceCanceled = true;
+			},
+		});
+
+		memory.failures.put = true;
+		const res = await app.request("/api/materials/files", {
+			method: "PUT",
+			headers: {
+				"x-test-user": "teacher-1",
+				Origin: TEACHER_ORIGIN,
+				"Content-Type": PDF,
+				"Content-Length": "200",
+				"X-File-Name": encodeURIComponent("locked-fail.pdf"),
+			},
+			body: openStream,
+			duplex: "half",
+		} as RequestInit);
+
+		expect(res.status).toBe(500);
+		await settle();
+		expect(sourceCanceled).toBe(true);
 	});
 });
 

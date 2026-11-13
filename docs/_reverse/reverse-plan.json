@@ -1,521 +1,468 @@
 {
-  "$schema": "https://ai4ba.example/reverse-plan.schema.json",
-  "generator": "/code-to-srs",
-  "generated_at": "2026-11-11",
-  "codebase": "/root/projects/teacher-os",
-  "stack": "pnpm monorepo · Cloudflare Workers + Hono · TanStack Router SPA (web/student/admin) · Drizzle + D1 · Better-Auth · Zod contracts",
-  "language": "vi",
-  "features": [
-    {
-      "slug": "auth-signin",
-      "sources": [
-        "apps/web/src/routes/login.tsx",
-        "apps/web/src/routes/forgot-password.tsx",
-        "apps/web/src/routes/reset-password.tsx",
-        "apps/web/src/lib/features.ts",
-        "packages/auth/src/role.ts",
-        "apps/server/src/session.ts",
-        "apps/e2e/specs/signin-validation.spec.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [
-        "oauth",
-        "multi-role"
-      ],
-      "status": "done"
-    },
-    {
-      "slug": "auth-student-signup",
-      "sources": [
-        "apps/student/src/routes/login.tsx",
-        "apps/student/src/routes/verify-email.tsx",
-        "apps/student/src/routes/forgot-password.tsx",
-        "apps/student/src/routes/reset-password.tsx",
-        "apps/server/src/student-provisioning.ts",
-        "apps/e2e/specs/student-portal-email-verification.spec.ts",
-        "apps/e2e/specs/student-portal-provisioning.spec.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [
-        "multi-role",
-        "email-verification"
-      ],
-      "status": "done"
-    },
-    {
-      "slug": "student-invitations",
-      "sources": [
-        "packages/db/src/schema/student-invitation.ts",
-        "apps/server/src/routes/student.ts",
-        "apps/web/src/routes/_auth/students/index.tsx",
-        "apps/e2e/specs/student-org-invitation-and-switcher.spec.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [
-        "multi-role",
-        "async"
-      ],
-      "status": "done"
-    },
-    {
-      "slug": "dashboard",
-      "sources": [
-        "apps/web/src/routes/_auth/dashboard.tsx",
-        "apps/server/src/routes/dashboard-reminders.ts",
-        "apps/e2e/specs/dashboard-reminders.spec.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [],
-      "status": "done"
-    },
-    {
-      "slug": "classes",
-      "sources": [
-        "apps/web/src/routes/_auth/classes/index.tsx",
-        "apps/web/src/routes/_auth/classes/$classId.tsx",
-        "apps/server/src/routes/kernel.ts",
-        "packages/db/src/schema/class.ts",
-        "packages/db/src/schema/class-session.ts",
-        "apps/e2e/specs/class-operations.spec.ts",
-        "apps/e2e/specs/create-class-validation.spec.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [
-        "state-machine"
-      ],
-      "status": "done"
-    },
-    {
-      "slug": "enrollment-lifecycle",
-      "sources": [
-        "packages/db/src/schema/enrollment.ts",
-        "apps/server/src/routes/enrollment-activation.ts",
-        "apps/server/src/routes/kernel.ts",
-        "apps/e2e/specs/enroll-existing-student.spec.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [
-        "state-machine"
-      ],
-      "status": "done"
-    },
-    {
-      "slug": "students",
-      "sources": [
-        "apps/web/src/routes/_auth/students/index.tsx",
-        "apps/web/src/routes/_auth/students/$studentId.tsx",
-        "apps/server/src/routes/student.ts",
-        "packages/db/src/schema/student.ts",
-        "apps/e2e/specs/student-row-detail.spec.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [
-        "multi-role"
-      ],
-      "status": "done"
-    },
-    {
-      "slug": "syllabus",
-      "sources": [
-        "apps/web/src/routes/_auth/syllabus/index.tsx",
-        "apps/web/src/routes/_auth/syllabus/$syllabusId.tsx",
-        "apps/server/src/routes/syllabus.ts",
-        "apps/server/src/routes/syllabus-content-routes.ts",
-        "packages/db/src/schema/syllabus.ts",
-        "apps/e2e/specs/syllabus-excel-csv-import.spec.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [],
-      "status": "done"
-    },
-    {
-      "slug": "assignment-prompt-bank",
-      "sources": [
-        "apps/server/src/routes/assignments/index.ts",
-        "packages/db/src/schema/assignment-prompt.ts",
-        "apps/web/src/routes/_auth/assignments/index.tsx",
-        "apps/web/src/routes/_auth/assignments/new.tsx",
-        "apps/e2e/specs/assignment-prompt-create.spec.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [
-        "state-machine"
-      ],
-      "status": "done"
-    },
-    {
-      "slug": "assignment-tests",
-      "sources": [
-        "apps/server/src/routes/assignments/tests.ts",
-        "packages/db/src/schema/assignment-test.ts",
-        "apps/web/src/routes/_auth/assignments/tests/new.tsx",
-        "apps/web/src/lib/test-ranges.ts",
-        "apps/e2e/specs/assignment-test-create.spec.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [],
-      "status": "done"
-    },
-    {
-      "slug": "exam-import-ai",
-      "sources": [
-        "apps/server/src/routes/exam-imports.ts",
-        "packages/db/src/schema/exam-import-job.ts",
-        "apps/web/src/routes/_auth/assignments/tests/import.tsx",
-        "apps/e2e/specs/ai-exam-import-ac-001.spec.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [
-        "async",
-        "ai"
-      ],
-      "status": "done"
-    },
-    {
-      "slug": "grading",
-      "sources": [
-        "apps/server/src/routes/grading.ts",
-        "packages/db/src/schema/ai-grading-draft.ts",
-        "packages/db/src/schema/comment-bank.ts",
-        "apps/web/src/routes/_auth/grading/index.tsx",
-        "apps/web/src/routes/_auth/grading/$attemptId.tsx",
-        "apps/e2e/specs/ai-grading-ac-001.spec.ts",
-        "apps/e2e/specs/teacher-grade-submission.spec.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [
-        "async",
-        "ai"
-      ],
-      "status": "done"
-    },
-    {
-      "slug": "attendance",
-      "sources": [
-        "apps/server/src/routes/daily-attendance.ts",
-        "apps/server/src/routes/holidays.ts",
-        "apps/web/src/routes/_auth/attendance.tsx",
-        "apps/e2e/specs/daily-attendance.spec.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [],
-      "status": "done"
-    },
-    {
-      "slug": "schedule",
-      "sources": [
-        "apps/web/src/routes/_auth/schedule.tsx",
-        "apps/server/src/routes/events.ts",
-        "packages/db/src/schema/org-event.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "medium",
-      "complexity_flags": [],
-      "status": "done"
-    },
-    {
-      "slug": "tuition-invoicing",
-      "sources": [
-        "apps/web/src/routes/_auth/tuition/index.tsx",
-        "apps/web/src/routes/_auth/tuition/$invoiceId.tsx",
-        "apps/web/src/routes/_auth/debts/index.tsx",
-        "apps/server/src/routes/payment-transactions.ts",
-        "packages/db/src/schema/invoice.ts",
-        "apps/e2e/specs/create-invoice.spec.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [
-        "state-machine"
-      ],
-      "status": "done"
-    },
-    {
-      "slug": "online-payment",
-      "sources": [
-        "apps/server/src/routes/bank-hub-webhooks.ts",
-        "apps/server/src/routes/public-pay.ts",
-        "apps/server/src/routes/bank-link.ts",
-        "apps/web/src/routes/pay.$token.tsx",
-        "packages/db/src/schema/org-bank-link.ts",
-        "packages/db/src/schema/payment-transaction.ts",
-        "apps/e2e/specs/tuition-bank-transfer.spec.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [
-        "webhook",
-        "payment",
-        "external-redirect"
-      ],
-      "status": "done"
-    },
-    {
-      "slug": "leads",
-      "sources": [
-        "apps/server/src/routes/public-leads.ts",
-        "apps/server/src/routes/leads.ts",
-        "packages/db/src/schema/lead.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [
-        "throttle"
-      ],
-      "status": "done"
-    },
-    {
-      "slug": "placement-test",
-      "sources": [
-        "apps/server/src/routes/public-placement-test.ts",
-        "apps/server/src/routes/placement-test.ts",
-        "packages/db/src/schema/placement-test.ts",
-        "apps/web/src/routes/_auth/placement-test/index.tsx"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [
-        "media"
-      ],
-      "status": "done"
-    },
-    {
-      "slug": "vocab-hub",
-      "sources": [
-        "apps/server/src/routes/vocab-teacher.ts",
-        "apps/server/src/routes/vocab-library.ts",
-        "packages/db/src/schema/vocab.ts",
-        "packages/db/src/schema/vocab-library.ts",
-        "apps/web/src/routes/_auth/vocab/index.tsx",
-        "apps/e2e/specs/vocab-hub-suggestion.spec.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [],
-      "status": "done"
-    },
-    {
-      "slug": "materials",
-      "sources": [
-        "apps/server/src/routes/materials.ts",
-        "packages/db/src/schema/material.ts",
-        "apps/web/src/routes/_auth/materials/index.tsx"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [
-        "media",
-        "async"
-      ],
-      "status": "done"
-    },
-    {
-      "slug": "reports",
-      "sources": [
-        "apps/web/src/routes/_auth/tuition/index.tsx",
-        "apps/web/src/components/tuition/revenue-chart.tsx",
-        "apps/web/src/lib/tuition-from-kernel.ts",
-        "apps/server/src/routes/snapshot.ts",
-        "packages/db/src/schema/invoice.ts",
-        "apps/e2e/specs/tuition-revenue-chart.spec.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [],
-      "status": "done"
-    },
-    {
-      "slug": "notifications-teacher",
-      "sources": [
-        "apps/server/src/routes/notification-logs.ts",
-        "packages/db/src/schema/notif.ts",
-        "packages/db/src/schema/notification-record.ts",
-        "apps/web/src/routes/_auth/notifications/index.tsx"
-      ],
-      "existing_doc": null,
-      "confidence": "medium",
-      "complexity_flags": [
-        "async"
-      ],
-      "status": "done"
-    },
-    {
-      "slug": "study-pack",
-      "sources": [
-        "apps/server/src/routes/study-pack.ts",
-        "packages/db/src/schema/study-pack.ts",
-        "apps/e2e/specs/study-pack.spec.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [],
-      "status": "done"
-    },
-    {
-      "slug": "student-quiz",
-      "sources": [
-        "apps/server/src/routes/student.ts",
-        "packages/db/src/schema/quiz-attempt.ts",
-        "apps/student/src/routes/_auth/learn/quizzes/$assignmentId.tsx",
-        "apps/student/src/routes/_auth/learn/quizzes/attempt/$attemptId.tsx",
-        "apps/e2e/specs/student-quiz-take-review.spec.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [
-        "state-machine",
-        "media"
-      ],
-      "status": "done"
-    },
-    {
-      "slug": "student-practice",
-      "sources": [
-        "apps/server/src/routes/student-practice.ts",
-        "packages/db/src/schema/vocab.ts",
-        "apps/student/src/routes/_auth/practice/index.tsx",
-        "apps/e2e/specs/student-practice.spec.ts",
-        "apps/e2e/specs/vocab-srs.spec.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [
-        "state-machine"
-      ],
-      "status": "done"
-    },
-    {
-      "slug": "student-classes",
-      "sources": [
-        "apps/server/src/routes/student-class.ts",
-        "apps/server/src/routes/student-classmates.ts",
-        "apps/student/src/routes/_auth/classes/$classId.tsx",
-        "apps/e2e/specs/student-class-detail.spec.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [],
-      "status": "done"
-    },
-    {
-      "slug": "student-tuition",
-      "sources": [
-        "apps/student/src/routes/_auth/tuition/index.tsx",
-        "apps/student/src/routes/_auth/tuition/$invoiceId.tsx",
-        "apps/e2e/specs/student-tuition-summary.spec.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "medium",
-      "complexity_flags": [],
-      "status": "done"
-    },
-    {
-      "slug": "student-history",
-      "sources": [
-        "apps/server/src/routes/student-history.ts",
-        "apps/student/src/routes/_auth/history.tsx",
-        "apps/e2e/specs/student-history.spec.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [],
-      "status": "done"
-    },
-    {
-      "slug": "admin-library",
-      "sources": [
-        "apps/server/src/routes/admin-library.ts",
-        "packages/db/src/schema/library-test.ts",
-        "apps/admin/src/routes/_auth/library/tests/index.tsx",
-        "apps/admin/src/routes/_auth/library/packs.tsx",
-        "apps/e2e/specs/admin-library-listening.spec.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "high",
-      "complexity_flags": [
-        "multi-role",
-        "media",
-        "async"
-      ],
-      "status": "done"
-    },
-    {
-      "slug": "parent-reports",
-      "sources": [
-        "apps/web/src/lib/features.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "low",
-      "complexity_flags": [
-        "flag-off"
-      ],
-      "status": "done"
-    },
-    {
-      "slug": "credits",
-      "sources": [
-        "apps/server/src/routes/credits.ts",
-        "packages/db/src/schema/credit-wallet.ts"
-      ],
-      "existing_doc": null,
-      "confidence": "medium",
-      "complexity_flags": [
-        "payment"
-      ],
-      "status": "done"
-    }
-  ],
-  "shared_infrastructure": [
-    "apps/server/src/routes/kernel.ts (kernel snapshot + command bus — đọc chéo cho mọi feature teacher portal)",
-    "apps/server/src/routes/readiness.ts + snapshot.ts (probe/snapshot — không phải feature nghiệp vụ)",
-    "apps/server/src/routes/github-webhooks.ts (#421 HMAC webhook — automation, không phải feature nghiệp vụ)",
-    "apps/server/src/routes/bank-hub-mock.ts (sandbox dev cho thanh toán — phụ trợ online-payment)",
-    "apps/server/src/session.ts + bootstrapMiddleware (org context — cross-cutting)"
-  ],
-  "batch_order": [
-    "auth-signin",
-    "auth-student-signup",
-    "student-invitations",
-    "classes",
-    "enrollment-lifecycle",
-    "students",
-    "syllabus",
-    "dashboard",
-    "schedule",
-    "assignment-prompt-bank",
-    "assignment-tests",
-    "exam-import-ai",
-    "credits",
-    "grading",
-    "attendance",
-    "tuition-invoicing",
-    "online-payment",
-    "leads",
-    "placement-test",
-    "vocab-hub",
-    "materials",
-    "study-pack",
-    "reports",
-    "notifications-teacher",
-    "student-quiz",
-    "student-practice",
-    "student-classes",
-    "student-tuition",
-    "student-history",
-    "admin-library",
-    "parent-reports"
-  ]
+	"$schema": "https://ai4ba.example/reverse-plan.schema.json",
+	"generator": "/code-to-srs",
+	"generated_at": "2026-11-11",
+	"codebase": "/root/projects/teacher-os",
+	"stack": "pnpm monorepo · Cloudflare Workers + Hono · TanStack Router SPA (web/student/admin) · Drizzle + D1 · Better-Auth · Zod contracts",
+	"language": "vi",
+	"features": [
+		{
+			"slug": "auth-signin",
+			"sources": [
+				"apps/web/src/routes/login.tsx",
+				"apps/web/src/routes/forgot-password.tsx",
+				"apps/web/src/routes/reset-password.tsx",
+				"apps/web/src/lib/features.ts",
+				"packages/auth/src/role.ts",
+				"apps/server/src/session.ts",
+				"apps/e2e/specs/signin-validation.spec.ts"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": ["oauth", "multi-role"],
+			"status": "done"
+		},
+		{
+			"slug": "auth-student-signup",
+			"sources": [
+				"apps/student/src/routes/login.tsx",
+				"apps/student/src/routes/verify-email.tsx",
+				"apps/student/src/routes/forgot-password.tsx",
+				"apps/student/src/routes/reset-password.tsx",
+				"apps/server/src/student-provisioning.ts",
+				"apps/e2e/specs/student-portal-email-verification.spec.ts",
+				"apps/e2e/specs/student-portal-provisioning.spec.ts"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": ["multi-role", "email-verification"],
+			"status": "done"
+		},
+		{
+			"slug": "student-invitations",
+			"sources": [
+				"packages/db/src/schema/student-invitation.ts",
+				"apps/server/src/routes/student.ts",
+				"apps/web/src/routes/_auth/students/index.tsx",
+				"apps/e2e/specs/student-org-invitation-and-switcher.spec.ts"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": ["multi-role", "async"],
+			"status": "done"
+		},
+		{
+			"slug": "dashboard",
+			"sources": [
+				"apps/web/src/routes/_auth/dashboard.tsx",
+				"apps/server/src/routes/dashboard-reminders.ts",
+				"apps/e2e/specs/dashboard-reminders.spec.ts"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": [],
+			"status": "done"
+		},
+		{
+			"slug": "classes",
+			"sources": [
+				"apps/web/src/routes/_auth/classes/index.tsx",
+				"apps/web/src/routes/_auth/classes/$classId.tsx",
+				"apps/server/src/routes/kernel.ts",
+				"packages/db/src/schema/class.ts",
+				"packages/db/src/schema/class-session.ts",
+				"apps/e2e/specs/class-operations.spec.ts",
+				"apps/e2e/specs/create-class-validation.spec.ts"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": ["state-machine"],
+			"status": "done"
+		},
+		{
+			"slug": "enrollment-lifecycle",
+			"sources": [
+				"packages/db/src/schema/enrollment.ts",
+				"apps/server/src/routes/enrollment-activation.ts",
+				"apps/server/src/routes/kernel.ts",
+				"apps/e2e/specs/enroll-existing-student.spec.ts"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": ["state-machine"],
+			"status": "done"
+		},
+		{
+			"slug": "students",
+			"sources": [
+				"apps/web/src/routes/_auth/students/index.tsx",
+				"apps/web/src/routes/_auth/students/$studentId.tsx",
+				"apps/server/src/routes/student.ts",
+				"packages/db/src/schema/student.ts",
+				"apps/e2e/specs/student-row-detail.spec.ts"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": ["multi-role"],
+			"status": "done"
+		},
+		{
+			"slug": "syllabus",
+			"sources": [
+				"apps/web/src/routes/_auth/syllabus/index.tsx",
+				"apps/web/src/routes/_auth/syllabus/$syllabusId.tsx",
+				"apps/server/src/routes/syllabus.ts",
+				"apps/server/src/routes/syllabus-content-routes.ts",
+				"packages/db/src/schema/syllabus.ts",
+				"apps/e2e/specs/syllabus-excel-csv-import.spec.ts"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": [],
+			"status": "done"
+		},
+		{
+			"slug": "assignment-prompt-bank",
+			"sources": [
+				"apps/server/src/routes/assignments/index.ts",
+				"packages/db/src/schema/assignment-prompt.ts",
+				"apps/web/src/routes/_auth/assignments/index.tsx",
+				"apps/web/src/routes/_auth/assignments/new.tsx",
+				"apps/e2e/specs/assignment-prompt-create.spec.ts"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": ["state-machine"],
+			"status": "done"
+		},
+		{
+			"slug": "assignment-tests",
+			"sources": [
+				"apps/server/src/routes/assignments/tests.ts",
+				"packages/db/src/schema/assignment-test.ts",
+				"apps/web/src/routes/_auth/assignments/tests/new.tsx",
+				"apps/web/src/lib/test-ranges.ts",
+				"apps/e2e/specs/assignment-test-create.spec.ts"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": [],
+			"status": "done"
+		},
+		{
+			"slug": "exam-import-ai",
+			"sources": [
+				"apps/server/src/routes/exam-imports.ts",
+				"packages/db/src/schema/exam-import-job.ts",
+				"apps/web/src/routes/_auth/assignments/tests/import.tsx",
+				"apps/e2e/specs/ai-exam-import-ac-001.spec.ts"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": ["async", "ai"],
+			"status": "done"
+		},
+		{
+			"slug": "grading",
+			"sources": [
+				"apps/server/src/routes/grading.ts",
+				"packages/db/src/schema/ai-grading-draft.ts",
+				"packages/db/src/schema/comment-bank.ts",
+				"apps/web/src/routes/_auth/grading/index.tsx",
+				"apps/web/src/routes/_auth/grading/$attemptId.tsx",
+				"apps/e2e/specs/ai-grading-ac-001.spec.ts",
+				"apps/e2e/specs/teacher-grade-submission.spec.ts"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": ["async", "ai"],
+			"status": "done"
+		},
+		{
+			"slug": "attendance",
+			"sources": [
+				"apps/server/src/routes/daily-attendance.ts",
+				"apps/server/src/routes/holidays.ts",
+				"apps/web/src/routes/_auth/attendance.tsx",
+				"apps/e2e/specs/daily-attendance.spec.ts"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": [],
+			"status": "done"
+		},
+		{
+			"slug": "schedule",
+			"sources": [
+				"apps/web/src/routes/_auth/schedule.tsx",
+				"apps/server/src/routes/events.ts",
+				"packages/db/src/schema/org-event.ts"
+			],
+			"existing_doc": null,
+			"confidence": "medium",
+			"complexity_flags": [],
+			"status": "done"
+		},
+		{
+			"slug": "tuition-invoicing",
+			"sources": [
+				"apps/web/src/routes/_auth/tuition/index.tsx",
+				"apps/web/src/routes/_auth/tuition/$invoiceId.tsx",
+				"apps/web/src/routes/_auth/debts/index.tsx",
+				"apps/server/src/routes/payment-transactions.ts",
+				"packages/db/src/schema/invoice.ts",
+				"apps/e2e/specs/create-invoice.spec.ts"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": ["state-machine"],
+			"status": "done"
+		},
+		{
+			"slug": "online-payment",
+			"sources": [
+				"apps/server/src/routes/bank-hub-webhooks.ts",
+				"apps/server/src/routes/public-pay.ts",
+				"apps/server/src/routes/bank-link.ts",
+				"apps/web/src/routes/pay.$token.tsx",
+				"packages/db/src/schema/org-bank-link.ts",
+				"packages/db/src/schema/payment-transaction.ts",
+				"apps/e2e/specs/tuition-bank-transfer.spec.ts"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": ["webhook", "payment", "external-redirect"],
+			"status": "done"
+		},
+		{
+			"slug": "leads",
+			"sources": [
+				"apps/server/src/routes/public-leads.ts",
+				"apps/server/src/routes/leads.ts",
+				"packages/db/src/schema/lead.ts"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": ["throttle"],
+			"status": "done"
+		},
+		{
+			"slug": "placement-test",
+			"sources": [
+				"apps/server/src/routes/public-placement-test.ts",
+				"apps/server/src/routes/placement-test.ts",
+				"packages/db/src/schema/placement-test.ts",
+				"apps/web/src/routes/_auth/placement-test/index.tsx"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": ["media"],
+			"status": "done"
+		},
+		{
+			"slug": "vocab-hub",
+			"sources": [
+				"apps/server/src/routes/vocab-teacher.ts",
+				"apps/server/src/routes/vocab-library.ts",
+				"packages/db/src/schema/vocab.ts",
+				"packages/db/src/schema/vocab-library.ts",
+				"apps/web/src/routes/_auth/vocab/index.tsx",
+				"apps/e2e/specs/vocab-hub-suggestion.spec.ts"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": [],
+			"status": "done"
+		},
+		{
+			"slug": "materials",
+			"sources": [
+				"apps/server/src/routes/materials.ts",
+				"packages/db/src/schema/material.ts",
+				"apps/web/src/routes/_auth/materials/index.tsx"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": ["media", "async"],
+			"status": "done"
+		},
+		{
+			"slug": "reports",
+			"sources": [
+				"apps/web/src/routes/_auth/tuition/index.tsx",
+				"apps/web/src/components/tuition/revenue-chart.tsx",
+				"apps/web/src/lib/tuition-from-kernel.ts",
+				"apps/server/src/routes/snapshot.ts",
+				"packages/db/src/schema/invoice.ts",
+				"apps/e2e/specs/tuition-revenue-chart.spec.ts"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": [],
+			"status": "done"
+		},
+		{
+			"slug": "notifications-teacher",
+			"sources": [
+				"apps/server/src/routes/notification-logs.ts",
+				"packages/db/src/schema/notif.ts",
+				"packages/db/src/schema/notification-record.ts",
+				"apps/web/src/routes/_auth/notifications/index.tsx"
+			],
+			"existing_doc": null,
+			"confidence": "medium",
+			"complexity_flags": ["async"],
+			"status": "done"
+		},
+		{
+			"slug": "study-pack",
+			"sources": [
+				"apps/server/src/routes/study-pack.ts",
+				"packages/db/src/schema/study-pack.ts",
+				"apps/e2e/specs/study-pack.spec.ts"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": [],
+			"status": "done"
+		},
+		{
+			"slug": "student-quiz",
+			"sources": [
+				"apps/server/src/routes/student.ts",
+				"packages/db/src/schema/quiz-attempt.ts",
+				"apps/student/src/routes/_auth/learn/quizzes/$assignmentId.tsx",
+				"apps/student/src/routes/_auth/learn/quizzes/attempt/$attemptId.tsx",
+				"apps/e2e/specs/student-quiz-take-review.spec.ts"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": ["state-machine", "media"],
+			"status": "done"
+		},
+		{
+			"slug": "student-practice",
+			"sources": [
+				"apps/server/src/routes/student-practice.ts",
+				"packages/db/src/schema/vocab.ts",
+				"apps/student/src/routes/_auth/practice/index.tsx",
+				"apps/e2e/specs/student-practice.spec.ts",
+				"apps/e2e/specs/vocab-srs.spec.ts"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": ["state-machine"],
+			"status": "done"
+		},
+		{
+			"slug": "student-classes",
+			"sources": [
+				"apps/server/src/routes/student-class.ts",
+				"apps/server/src/routes/student-classmates.ts",
+				"apps/student/src/routes/_auth/classes/$classId.tsx",
+				"apps/e2e/specs/student-class-detail.spec.ts"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": [],
+			"status": "done"
+		},
+		{
+			"slug": "student-tuition",
+			"sources": [
+				"apps/student/src/routes/_auth/tuition/index.tsx",
+				"apps/student/src/routes/_auth/tuition/$invoiceId.tsx",
+				"apps/e2e/specs/student-tuition-summary.spec.ts"
+			],
+			"existing_doc": null,
+			"confidence": "medium",
+			"complexity_flags": [],
+			"status": "done"
+		},
+		{
+			"slug": "student-history",
+			"sources": [
+				"apps/server/src/routes/student-history.ts",
+				"apps/student/src/routes/_auth/history.tsx",
+				"apps/e2e/specs/student-history.spec.ts"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": [],
+			"status": "done"
+		},
+		{
+			"slug": "admin-library",
+			"sources": [
+				"apps/server/src/routes/admin-library.ts",
+				"packages/db/src/schema/library-test.ts",
+				"apps/admin/src/routes/_auth/library/tests/index.tsx",
+				"apps/admin/src/routes/_auth/library/packs.tsx",
+				"apps/e2e/specs/admin-library-listening.spec.ts"
+			],
+			"existing_doc": null,
+			"confidence": "high",
+			"complexity_flags": ["multi-role", "media", "async"],
+			"status": "done"
+		},
+		{
+			"slug": "parent-reports",
+			"sources": ["apps/web/src/lib/features.ts"],
+			"existing_doc": null,
+			"confidence": "low",
+			"complexity_flags": ["flag-off"],
+			"status": "done"
+		},
+		{
+			"slug": "credits",
+			"sources": [
+				"apps/server/src/routes/credits.ts",
+				"packages/db/src/schema/credit-wallet.ts"
+			],
+			"existing_doc": null,
+			"confidence": "medium",
+			"complexity_flags": ["payment"],
+			"status": "done"
+		}
+	],
+	"shared_infrastructure": [
+		"apps/server/src/routes/kernel.ts (kernel snapshot + command bus — đọc chéo cho mọi feature teacher portal)",
+		"apps/server/src/routes/readiness.ts + snapshot.ts (probe/snapshot — không phải feature nghiệp vụ)",
+		"apps/server/src/routes/github-webhooks.ts (#421 HMAC webhook — automation, không phải feature nghiệp vụ)",
+		"apps/server/src/routes/bank-hub-mock.ts (sandbox dev cho thanh toán — phụ trợ online-payment)",
+		"apps/server/src/session.ts + bootstrapMiddleware (org context — cross-cutting)"
+	],
+	"batch_order": [
+		"auth-signin",
+		"auth-student-signup",
+		"student-invitations",
+		"classes",
+		"enrollment-lifecycle",
+		"students",
+		"syllabus",
+		"dashboard",
+		"schedule",
+		"assignment-prompt-bank",
+		"assignment-tests",
+		"exam-import-ai",
+		"credits",
+		"grading",
+		"attendance",
+		"tuition-invoicing",
+		"online-payment",
+		"leads",
+		"placement-test",
+		"vocab-hub",
+		"materials",
+		"study-pack",
+		"reports",
+		"notifications-teacher",
+		"student-quiz",
+		"student-practice",
+		"student-classes",
+		"student-tuition",
+		"student-history",
+		"admin-library",
+		"parent-reports"
+	]
 }

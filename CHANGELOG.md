@@ -10,6 +10,15 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-11-13
+
+### Fixed
+- Bổ sung nốt bản vá giải phóng stream cho `storeUpload` trong `apps/server/src/routes/materials.ts`: dùng `await peeked.abort(...)` thay cho `peeked.stream.cancel()` khi stream đã bị `pipeThrough` khoá trong `store.put` (tránh nuốt `TypeError` và rò rỉ reader gốc khi upload lỗi), kèm unit test hồi quy trong `apps/server/src/routes/materials.test.ts` (#681).
+- Sửa E2E `apps/e2e/specs/media-upload-magic-bytes.spec.ts` thực hiện đăng nhập `POST /api/auth/sign-in/email` với tài khoản admin sau `ensureAdminAccount` để giữ cookie session khi chạy nối tiếp sau `admin-auth.spec.ts` trong full suite.
+
+### Docs
+- Hoàn thiện bộ reverse-SRS cho 31/31 tính năng dưới `docs/_reverse/`, tài liệu đặc tả & mô hình tier-1/tier-2 cho `docs/auth-signin/`, và bỏ qua cache `docs/_shared/kg` trong git/biome.
+
 ## 2026-11-11
 
 ### Fixed
