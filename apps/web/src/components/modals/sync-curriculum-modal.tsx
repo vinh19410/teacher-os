@@ -40,16 +40,19 @@ function SyncBullets({
 	cls,
 	targetTotalLessons,
 	hasRealSessions,
+	isMissingSource,
 }: {
 	cls: ClassGroup | undefined;
 	targetTotalLessons: number;
 	hasRealSessions?: boolean;
+	isMissingSource?: boolean;
 }) {
 	return (
 		<ul className="mt-3 list-disc space-y-1.5 pl-5 text-muted-foreground text-sm">
 			<li>
-				Toàn bộ module, bài học, mục tiêu và tài liệu đính kèm sẽ được cập nhật
-				theo template gốc (các chỉnh sửa riêng trên lớp sẽ bị ghi đè).
+				Toàn bộ module, bài học, mục tiêu và tài liệu đính kèm sẽ được cập nhật{" "}
+				{isMissingSource ? "theo template đã chọn" : "theo template gốc"} (các
+				chỉnh sửa riêng trên lớp sẽ bị ghi đè).
 			</li>
 			<li>
 				Tiến độ bài học (Đã học / Đang học / Sắp tới) được giữ nguyên theo thứ
@@ -170,6 +173,7 @@ export function SyncCurriculumModal({
 								cls={cls}
 								targetTotalLessons={selectedTemplate.totalLessons}
 								hasRealSessions={hasRealSessions}
+								isMissingSource
 							/>
 						) : null}
 					</>

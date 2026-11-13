@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { Modal } from "./modal";
 
 afterEach(cleanup);
@@ -53,5 +53,40 @@ describe("Modal", () => {
 			</Modal>,
 		);
 		expect(screen.getByRole("button", { name: "Lưu" })).not.toBeNull();
+	});
+
+	it("khi hai Modal cùng mở, Escape chỉ đóng modal trên cùng", () => {
+		const onCloseParent = vi.fn();
+		const onCloseChild = vi.fn();
+		const { rerender } = render(
+			<>
+				<Modal open onClose={onCloseParent} title="Modal cha">
+					<p>Cha</p>
+				</Modal>
+				<Modal open onClose={onCloseChild} title="Modal con">
+					<p>Con</p>
+				</Modal>
+			</>,
+		);
+
+		fireEvent.keyDown(document, { key: "Escape" });
+		expect(onCloseChild).toHaveBeenCalledTimes(1);
+		expect(onCloseParent).not.toHaveBeenCalled();
+
+		// Khi modal con vẫn mở với close guard no-op (đang saving), Escape không đóng modal cha.
+		const onCloseLocked = vi.fn();
+		rerender(
+			<>
+				<Modal open onClose={onCloseParent} title="Modal cha">
+					<p>Cha</p>
+				</Modal>
+				<Modal open onClose={onCloseLocked} title="Modal con">
+					<p>Đang lưu</p>
+				</Modal>
+			</>,
+		);
+		fireEvent.keyDown(document, { key: "Escape" });
+		expect(onCloseLocked).toHaveBeenCalledTimes(1);
+		expect(onCloseParent).not.toHaveBeenCalled();
 	});
 });

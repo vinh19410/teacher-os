@@ -8,7 +8,6 @@ import { CLASS_TYPE_LABELS, type ClassGroup } from "@/lib/mock-data";
 import {
 	useClassCurriculum,
 	useClassCurriculumSyncState,
-	useTemplates,
 } from "@/lib/repos/use-syllabus";
 import type { DirectKernelAction } from "@/lib/use-direct-kernel-action";
 
@@ -40,7 +39,6 @@ export function CurriculumManagementSection({
 }: CurriculumManagementSectionProps) {
 	const sy = useClassCurriculum(cls.id);
 	const syncState = useClassCurriculumSyncState(cls.id);
-	const templates = useTemplates();
 	const [importOpen, setImportOpen] = useState(false);
 	const [syncOpen, setSyncOpen] = useState(false);
 	const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false);
@@ -48,8 +46,8 @@ export function CurriculumManagementSection({
 	return (
 		<div>
 			{sy ? (
-				<div className="flex flex-wrap items-center gap-4">
-					<div className="flex-1">
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+					<div className="min-w-0 flex-1">
 						<div className="font-semibold text-sm">{sy.name}</div>
 						<div className="text-muted-foreground text-xs">
 							{sy.level} ·{" "}
@@ -88,12 +86,12 @@ export function CurriculumManagementSection({
 							</div>
 						) : null}
 					</div>
-					<div className="flex flex-wrap items-center gap-2">
+					<div className="flex flex-wrap items-center gap-2 sm:shrink-0">
 						{syncState.kind === "missing-source-template" ? (
 							<Button
 								variant="outline"
 								size="sm"
-								disabled={busy || templates.length === 0}
+								disabled={busy}
 								onClick={() => setSyncOpen(true)}
 							>
 								Đồng bộ từ template khác

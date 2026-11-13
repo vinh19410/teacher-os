@@ -839,7 +839,7 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 			return c.json(
 				{
 					error:
-						"Lớp đã có buổi học thủ công. Vui lòng xóa các buổi chưa học trước khi nhập giáo trình.",
+						"Lớp đã có buổi học thủ công. Vui lòng xóa các buổi chưa học trước khi đồng bộ giáo trình.",
 					reason: "has-manual-sessions",
 					code: "MANUAL_SESSIONS_EXIST",
 				},
@@ -848,29 +848,27 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 		}
 
 		const lessonCount = tree.lessons.length;
+		if (lessonCount === 0) {
+			return c.json(
+				{
+					error:
+						"Template chưa có bài học nào. Vui lòng thêm ít nhất 1 bài học trước khi đồng bộ.",
+					reason: "empty-template",
+					code: "CURRICULUM_EMPTY_TEMPLATE",
+				},
+				422,
+			);
+		}
 		const hasLesson = existingLesson.length > 0;
-		if (!hasLesson) {
-			if (lessonCount > 52) {
-				return c.json(
-					{
-						error: "Template vượt quá giới hạn 52 buổi học của lớp.",
-						reason: "too-many-lessons",
-						code: "CURRICULUM_TOO_MANY_LESSONS",
-					},
-					422,
-				);
-			}
-			if (cls.sessionsTotal === 0 && lessonCount === 0) {
-				return c.json(
-					{
-						error:
-							"Template chưa có bài học nào. Vui lòng thêm ít nhất 1 bài học trước khi nhập vào lớp trống.",
-						reason: "empty-template",
-						code: "CURRICULUM_EMPTY_TEMPLATE",
-					},
-					422,
-				);
-			}
+		if (lessonCount > 52) {
+			return c.json(
+				{
+					error: "Template vượt quá giới hạn 52 buổi học của lớp.",
+					reason: "too-many-lessons",
+					code: "CURRICULUM_TOO_MANY_LESSONS",
+				},
+				422,
+			);
 		}
 
 		const previousStatuses = flattenSyllabusLessons(
@@ -885,15 +883,14 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 			orgId: ctx.orgId,
 		});
 
-		const candidateSessionsTotal =
-			lessonCount > 0 ? lessonCount : cls.sessionsTotal;
+		const candidateSessionsTotal = lessonCount;
 		statements.push(
 			db
 				.update(classTable)
 				.set({
 					syllabusId: copy.id,
-					sessionsTotal: sql`CASE WHEN EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${classId}) THEN ${classTable.sessionsTotal} ELSE ${candidateSessionsTotal} END`,
-					schedulingMode: sql`CASE WHEN EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.classId} = ${classId} AND ${classSession.orgId} = ${ctx.orgId}) THEN ${classTable.schedulingMode} ELSE 'auto' END`,
+					sessionsTotal: sql`CASE WHEN EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${classId}) OR EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.orgId} = ${ctx.orgId} AND ${classSession.classId} = ${classId}) THEN ${classTable.sessionsTotal} ELSE ${candidateSessionsTotal} END`,
+					schedulingMode: sql`CASE WHEN EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.classId} = ${classId} AND ${classSession.orgId} = ${ctx.orgId}) THEN NULL ELSE 'auto' END`,
 				})
 				.where(
 					and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)),
@@ -907,22 +904,69 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 				throw err;
 			}
 			const message = err instanceof Error ? err.message : String(err);
-			if (/FOREIGN KEY/i.test(message) && tree.links.length > 0) {
-				const missing = await findMissingLinkedMaterial(
-					db,
-					ctx.orgId,
-					tree.links,
-				);
-				if (missing !== undefined) {
+			if (/FOREIGN KEY/i.test(message)) {
+				if (tree.links.length > 0) {
+					const missing = await findMissingLinkedMaterial(
+						db,
+						ctx.orgId,
+						tree.links,
+					);
+					if (missing !== undefined) {
+						return c.json(
+							{
+								error: "material-not-found",
+								materialId: missing,
+								code: "CURRICULUM_MATERIAL_NOT_FOUND",
+							},
+							422,
+						);
+					}
+				}
+				const afterCopy = await findClassCurriculum(db, classId, ctx.orgId);
+				if (!afterCopy || afterCopy.id !== copy.id) {
 					return c.json(
 						{
-							error: "material-not-found",
-							materialId: missing,
-							code: "CURRICULUM_MATERIAL_NOT_FOUND",
+							error: "Lớp chưa có giáo trình để đồng bộ.",
+							code: "CURRICULUM_NOT_FOUND",
+						},
+						409,
+					);
+				}
+				const afterTpl = await findTemplate(db, tpl.id, ctx.orgId);
+				if (!afterTpl) {
+					if (body.data.templateId !== undefined) {
+						return c.json({ error: "syllabus not found" }, 404);
+					}
+					return c.json(
+						{
+							error:
+								"Template gốc đã bị xóa. Vui lòng chọn một template khác để đồng bộ.",
+							code: "CURRICULUM_SOURCE_TEMPLATE_MISSING",
 						},
 						422,
 					);
 				}
+			}
+			const [raceCs] = await db
+				.select({ id: classSession.id })
+				.from(classSession)
+				.where(
+					and(
+						eq(classSession.orgId, ctx.orgId),
+						eq(classSession.classId, classId),
+					),
+				)
+				.limit(1);
+			if (raceCs) {
+				return c.json(
+					{
+						error:
+							"Lớp đã có buổi học thủ công. Vui lòng xóa các buổi chưa học trước khi đồng bộ giáo trình.",
+						reason: "has-manual-sessions",
+						code: "MANUAL_SESSIONS_EXIST",
+					},
+					409,
+				);
 			}
 			throw err;
 		}

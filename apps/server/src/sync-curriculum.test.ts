@@ -942,4 +942,259 @@ describe("POST /api/classes/:id/curriculum/sync (#700)", () => {
 			reason: "has-manual-sessions",
 		});
 	});
+
+	test("8. Returns 422 CURRICULUM_EMPTY_TEMPLATE even when class sessionsTotal > 0", async () => {
+		const t = await setupTestApp();
+		const teacher = await t.insertUser("Teacher Sync Empty");
+		const tplId = await t.createTemplate(teacher.token, [
+			{ title: "M1", lessons: [{ title: "L1" }] },
+		]);
+		const classId = await t.createClass(teacher.token, {
+			templateId: tplId,
+			sessionsTotal: 3,
+		});
+
+		// Delete template's module/lesson so template has 0 lessons while class has sessionsTotal=3
+		await t.db
+			.delete(schema.syllabusModule)
+			.where(eq(schema.syllabusModule.syllabusId, tplId));
+
+		const res = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/curriculum/sync`,
+			{ body: {} },
+		);
+		expect(res.status).toBe(422);
+		expect(await res.json()).toMatchObject({
+			code: "CURRICULUM_EMPTY_TEMPLATE",
+			reason: "empty-template",
+		});
+	});
+
+	test("9. Returns 422 CURRICULUM_TEMPLATE_TOO_LARGE and 422 CURRICULUM_MATERIAL_NOT_FOUND", async () => {
+		const t = await setupTestApp();
+		const teacher = await t.insertUser("Teacher Sync Large & Mat");
+		const orgId = await t.bootstrappedOrgId(teacher.token);
+		const teacherB = await t.insertUser("Teacher B Foreign Mat");
+		await t.kernel(teacherB.token);
+		const orgB = (await t.db.select().from(schema.organization)).find(
+			(o) => o.id !== orgId,
+		);
+		if (!orgB) throw new Error("orgB not bootstrapped");
+		const orgBId = orgB.id;
+		await t.seedBankMaterials(orgBId);
+
+		const tplBase = await t.createTemplate(teacher.token, [
+			{ title: "M1", lessons: [{ title: "L1" }] },
+		]);
+		const classId = await t.createClass(teacher.token, {
+			templateId: tplBase,
+			sessionsTotal: 1,
+		});
+
+		// Template > MAX_IMPORT_NODES (500): seed 501 modules directly on source template
+		const oversizedTplId = await t.createTemplate(teacher.token, [
+			{ title: "Small", lessons: [{ title: "L1" }] },
+		]);
+		const oversizedModules = Array.from({ length: 501 }, (_, i) => ({
+			id: crypto.randomUUID(),
+			orgId,
+			syllabusId: oversizedTplId,
+			title: `Mod ${i}`,
+			description: "",
+			position: i + 1,
+		}));
+		await t.db.insert(schema.syllabusModule).values(oversizedModules);
+
+		const rTooLarge = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/curriculum/sync`,
+			{ body: { templateId: oversizedTplId } },
+		);
+		expect(rTooLarge.status).toBe(422);
+		expect(await rTooLarge.json()).toMatchObject({
+			code: "CURRICULUM_TEMPLATE_TOO_LARGE",
+		});
+
+		// Foreign org material link on template → 422 CURRICULUM_MATERIAL_NOT_FOUND
+		const modId = (
+			await t.db
+				.select({ id: schema.syllabusModule.id })
+				.from(schema.syllabusModule)
+				.where(eq(schema.syllabusModule.syllabusId, tplBase))
+		)[0]?.id as string;
+		const lesId = (
+			await t.db
+				.select({ id: schema.syllabusLesson.id })
+				.from(schema.syllabusLesson)
+				.where(eq(schema.syllabusLesson.moduleId, modId))
+		)[0]?.id as string;
+		await t.db.insert(schema.syllabusLessonMaterial).values({
+			orgId,
+			syllabusLessonId: lesId,
+			materialId: "mat-1",
+			position: 0,
+		});
+
+		const rMissingMat = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/curriculum/sync`,
+			{ body: {} },
+		);
+		expect(rMissingMat.status).toBe(422);
+		expect(await rMissingMat.json()).toMatchObject({
+			code: "CURRICULUM_MATERIAL_NOT_FOUND",
+			materialId: "mat-1",
+		});
+	});
+
+	test("10. Rejects >52 lessons with 422 CURRICULUM_TOO_MANY_LESSONS even when class has existing lesson rows", async () => {
+		const t = await setupTestApp();
+		const teacher = await t.insertUser("Teacher Sync >52 With Lessons");
+		await t.bootstrappedOrgId(teacher.token);
+
+		const tplId = await t.createTemplate(teacher.token, [
+			{
+				title: "M1",
+				lessons: [{ title: "L1" }, { title: "L2" }, { title: "L3" }],
+			},
+		]);
+		const classId = await t.createClass(teacher.token, {
+			templateId: tplId,
+			sessionsTotal: 3,
+		});
+
+		const addStudentRes = await t.call(teacher.token, "/api/students", {
+			body: {
+				name: "Student Active >52",
+				email: "active53@test.local",
+				classId,
+				activateNow: true,
+			},
+		});
+		expect(addStudentRes.status).toBe(201);
+
+		const lessons53 = Array.from({ length: 53 }, (_, i) => ({
+			title: `Lesson ${i + 1}`,
+		}));
+		const replaceRes = await t.call(
+			teacher.token,
+			`/api/syllabus-templates/${tplId}/replace-content`,
+			{
+				body: {
+					modules: [{ title: "Big Module", lessons: lessons53 }],
+				},
+			},
+		);
+		expect(replaceRes.status).toBe(200);
+
+		const syncRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/curriculum/sync`,
+			{ body: {} },
+		);
+		expect(syncRes.status).toBe(422);
+		expect(await syncRes.json()).toMatchObject({
+			code: "CURRICULUM_TOO_MANY_LESSONS",
+			reason: "too-many-lessons",
+		});
+
+		const snapAfter = await t.kernel(teacher.token);
+		const clsAfter = snapAfter.classes.find((c) => c.id === classId);
+		expect(clsAfter?.sessionsTotal).toBe(3);
+		const copyAfter = snapAfter.syllabi.find(
+			(s) => s.id === clsAfter?.syllabusId,
+		);
+		expect(copyAfter?.totalLessons).toBe(3);
+		expect(copyAfter?.modules[0]?.lessons.map((l) => l.title)).toEqual([
+			"L1",
+			"L2",
+			"L3",
+		]);
+	}, 15_000);
+
+	test("11. Concurrent class_session insertion triggers atomic rollback and 409 MANUAL_SESSIONS_EXIST", async () => {
+		const t = await setupTestApp();
+		const teacher = await t.insertUser("Teacher Sync Race");
+		const orgId = await t.bootstrappedOrgId(teacher.token);
+
+		const tplId = await t.createTemplate(teacher.token, [
+			{
+				title: "M1",
+				lessons: [{ title: "L1" }, { title: "L2" }, { title: "L3" }],
+			},
+		]);
+		const classId = await t.createClass(teacher.token, {
+			templateId: tplId,
+			sessionsTotal: 3,
+		});
+
+		await t.call(
+			teacher.token,
+			`/api/syllabus-templates/${tplId}/replace-content`,
+			{
+				body: {
+					modules: [
+						{
+							title: "M1 Updated",
+							lessons: [
+								{ title: "New 1" },
+								{ title: "New 2" },
+								{ title: "New 3" },
+								{ title: "New 4" },
+							],
+						},
+					],
+				},
+			},
+		);
+
+		const origBatch = t.db.batch.bind(t.db);
+		let raced = false;
+		(t.db as unknown as { batch: Db["batch"] }).batch = ((
+			stmts: Parameters<Db["batch"]>[0],
+		) => {
+			if (!raced) {
+				raced = true;
+				return t.db
+					.insert(schema.classSession)
+					.values({
+						id: crypto.randomUUID(),
+						orgId,
+						classId,
+						date: "2026-11-25",
+						time: "19:00",
+						dur: 90,
+						topic: "Concurrent Manual Session",
+						zoom: "",
+					})
+					.then(() => origBatch(stmts));
+			}
+			return origBatch(stmts);
+		}) as unknown as Db["batch"];
+
+		const res = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/curriculum/sync`,
+			{ body: {} },
+		);
+		expect(res.status).toBe(409);
+		expect(await res.json()).toMatchObject({
+			code: "MANUAL_SESSIONS_EXIST",
+			reason: "has-manual-sessions",
+		});
+
+		const snapAfter = await t.kernel(teacher.token);
+		const clsAfter = snapAfter.classes.find((c) => c.id === classId);
+		expect(clsAfter?.sessionsTotal).toBe(3);
+		const copyAfter = snapAfter.syllabi.find(
+			(s) => s.id === clsAfter?.syllabusId,
+		);
+		expect(copyAfter?.totalLessons).toBe(3);
+		expect(copyAfter?.modules[0]?.lessons.map((l) => l.title)).toEqual([
+			"L1",
+			"L2",
+			"L3",
+		]);
+	});
 });

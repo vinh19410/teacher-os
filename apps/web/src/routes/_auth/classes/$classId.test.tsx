@@ -791,9 +791,7 @@ describe("class screen → lesson kind stays with the syllabus", () => {
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Sắp xếp buổi" }));
 		fireEvent.click(screen.getByRole("button", { name: "+ Thêm buổi học" }));
-		const dialog = screen
-			.getAllByRole("dialog")
-			.find((d) => d.textContent?.includes("Thêm buổi học")) as HTMLElement;
+		const dialog = screen.getByRole("dialog", { name: "Thêm buổi học" });
 		expect(within(dialog).queryByLabelText("Loại buổi học")).toBeNull();
 		expect(within(dialog).getByLabelText("Trạng thái")).toBeTruthy();
 	});
@@ -1529,5 +1527,241 @@ describe("class detail → sync class curriculum (#700)", () => {
 				body: { templateId: "sy-other" },
 			},
 		]);
+	});
+
+	it("shows missing-source-template banner inside Quản lý buổi của lớp and opens TemplatePicker sync modal", async () => {
+		startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-1",
+						name: "IELTS Writing",
+						syllabusId: "sy-c",
+						schedule: SCHEDULE,
+						sessionsTotal: 1,
+					}),
+				],
+				syllabi: [
+					syllabusRow({
+						id: "sy-other",
+						name: "Template Thay Thế",
+						totalLessons: 2,
+						modules: [
+							{
+								id: "m-o",
+								title: "Unit Other",
+								description: "",
+								lessons: [
+									makeLesson("lo-1", "Task 1"),
+									makeLesson("lo-2", "Task 2"),
+								],
+							},
+						],
+					}),
+					syllabusRow({
+						id: "sy-c",
+						name: "Bản cũ",
+						classId: "cl-1",
+						sourceTemplateId: "sy-deleted",
+						totalLessons: 1,
+						modules: [
+							{
+								id: "m-c",
+								title: "Unit 1",
+								description: "",
+								lessons: [makeLesson("lc-1", "Line chart")],
+							},
+						],
+					}),
+				],
+			}),
+		);
+		renderWithKernel(<ClassDetail />);
+
+		fireEvent.click(
+			await screen.findByRole("button", { name: "Sắp xếp buổi" }),
+		);
+		const dialog = screen.getByRole("dialog", { name: "Quản lý buổi của lớp" });
+		const banner = within(dialog).getByTestId("manage-modal-sync-banner");
+		expect(banner.textContent).toContain("Template gốc đã bị xóa");
+
+		fireEvent.click(
+			within(banner).getByRole("button", { name: "Đồng bộ từ template khác" }),
+		);
+		expect(
+			screen.getByRole("dialog", {
+				name: "Đồng bộ giáo trình từ template khác",
+			}),
+		).toBeTruthy();
+	});
+
+	it("renders SyncCurriculumModal as sibling dialog, respects Escape stack and saving guard", async () => {
+		let resolveWrite: (() => void) | undefined;
+		startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-1",
+						name: "IELTS Writing",
+						syllabusId: "sy-c",
+						schedule: SCHEDULE,
+						sessionsTotal: 1,
+					}),
+				],
+				syllabi: [
+					syllabusRow({
+						id: "sy-t",
+						name: "Template Gốc",
+						totalLessons: 2,
+						modules: [
+							{
+								id: "m-t",
+								title: "Unit 1",
+								description: "",
+								lessons: [
+									makeLesson("lt-1", "Task 1"),
+									makeLesson("lt-2", "Task 2"),
+								],
+							},
+						],
+					}),
+					syllabusRow({
+						id: "sy-c",
+						name: "Template Gốc",
+						classId: "cl-1",
+						sourceTemplateId: "sy-t",
+						totalLessons: 1,
+						modules: [
+							{
+								id: "m-c",
+								title: "Unit 1",
+								description: "",
+								lessons: [makeLesson("lc-1", "Line chart")],
+							},
+						],
+					}),
+				],
+			}),
+			() =>
+				new Promise((resolve) => {
+					resolveWrite = () => resolve(undefined);
+				}),
+		);
+		renderWithKernel(<ClassDetail />);
+
+		fireEvent.click(
+			await screen.findByRole("button", { name: "Sắp xếp buổi" }),
+		);
+		const manageDialog = screen.getByRole("dialog", {
+			name: "Quản lý buổi của lớp",
+		});
+		const banner = within(manageDialog).getByTestId("manage-modal-sync-banner");
+		fireEvent.click(
+			within(banner).getByRole("button", { name: "Đồng bộ lại" }),
+		);
+
+		const syncDialog = screen.getByRole("dialog", {
+			name: "Đồng bộ lại giáo trình?",
+		});
+		// Sibling dialog — không lồng trong manageDialog.
+		expect(manageDialog.contains(syncDialog)).toBe(false);
+
+		// Đóng bằng Escape chỉ đóng syncDialog, giữ manageDialog mở.
+		fireEvent.keyDown(document, { key: "Escape" });
+		expect(
+			screen.queryByRole("dialog", { name: "Đồng bộ lại giáo trình?" }),
+		).toBeNull();
+		expect(
+			screen.getByRole("dialog", { name: "Quản lý buổi của lớp" }),
+		).toBeTruthy();
+
+		// Mở lại và nhấn submit để vào trạng thái saving: Escape không được đóng cả 2 dialog.
+		fireEvent.click(
+			within(banner).getByRole("button", { name: "Đồng bộ lại" }),
+		);
+		const syncDialog2 = screen.getByRole("dialog", {
+			name: "Đồng bộ lại giáo trình?",
+		});
+		fireEvent.click(
+			within(syncDialog2).getByRole("button", { name: "Đồng bộ lại" }),
+		);
+		fireEvent.keyDown(document, { key: "Escape" });
+		expect(
+			screen.getByRole("dialog", { name: "Đồng bộ lại giáo trình?" }),
+		).toBeTruthy();
+		expect(
+			screen.getByRole("dialog", { name: "Quản lý buổi của lớp" }),
+		).toBeTruthy();
+
+		resolveWrite?.();
+		await waitFor(() =>
+			expect(
+				screen.queryByRole("dialog", { name: "Đồng bộ lại giáo trình?" }),
+			).toBeNull(),
+		);
+		expect(
+			screen.getByRole("dialog", { name: "Quản lý buổi của lớp" }),
+		).toBeTruthy();
+
+		// Escape lần nữa đóng nốt manageDialog.
+		fireEvent.keyDown(document, { key: "Escape" });
+		expect(
+			screen.queryByRole("dialog", { name: "Quản lý buổi của lớp" }),
+		).toBeNull();
+	});
+
+	it("allows opening TemplatePicker modal with empty explanation when 0 templates remain", async () => {
+		startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-1",
+						name: "IELTS Writing",
+						syllabusId: "sy-c",
+						schedule: SCHEDULE,
+						sessionsTotal: 1,
+					}),
+				],
+				syllabi: [
+					syllabusRow({
+						id: "sy-c",
+						name: "Bản mồ côi",
+						classId: "cl-1",
+						sourceTemplateId: "sy-deleted",
+						totalLessons: 1,
+						modules: [
+							{
+								id: "m-c",
+								title: "Unit 1",
+								description: "",
+								lessons: [makeLesson("lc-1", "Line chart")],
+							},
+						],
+					}),
+				],
+			}),
+		);
+		renderWithKernel(<ClassDetail />);
+
+		fireEvent.click(await screen.findByRole("tab", { name: "Giáo trình" }));
+		const openBtn = screen.getByRole("button", {
+			name: "Đồng bộ từ template khác",
+		}) as HTMLButtonElement;
+		expect(openBtn.disabled).toBe(false);
+		fireEvent.click(openBtn);
+
+		const syncDialog = screen.getByRole("dialog", {
+			name: "Đồng bộ giáo trình từ template khác",
+		});
+		expect(syncDialog.textContent).toContain(
+			"Chưa có template nào — tạo syllabus ở trang Syllabus trước.",
+		);
+		expect(
+			(
+				within(syncDialog).getByRole("button", {
+					name: "Đồng bộ giáo trình",
+				}) as HTMLButtonElement
+			).disabled,
+		).toBe(true);
 	});
 });

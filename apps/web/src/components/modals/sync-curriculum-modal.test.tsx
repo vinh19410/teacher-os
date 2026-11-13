@@ -250,6 +250,7 @@ describe("SyncCurriculumModal", () => {
 		expect(dialog.textContent).toContain(
 			'Template gốc của lớp "IELTS Writing" đã bị xóa',
 		);
+		expect(dialog.textContent).toContain("theo template đã chọn");
 		expect(
 			within(dialog)
 				.getAllByRole("option")

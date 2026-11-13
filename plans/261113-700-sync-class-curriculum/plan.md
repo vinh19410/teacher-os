@@ -24,8 +24,8 @@ Cho phép giáo viên tại trang chi tiết lớp (`/classes/$classId`) nhận 
 ## Phases & Checklist
 
 - [x] Setup issue #700 và branch `feat/700-sync-class-curriculum`
-- [ ] Phase 1: Bổ sung `syncCurriculumSchema` tại `packages/api/src/contracts.ts`
-- [ ] Phase 2: Triển khai `POST /api/classes/:id/curriculum/sync` + `buildSyncBatch` / `flattenSyllabusLessons` tại `apps/server` kèm integration tests
-- [ ] Phase 3: Nối command bus `sync-curriculum`, `isCurriculumOutOfSync`, `useClassCurriculumSyncState`, `SyncCurriculumModal`, `CurriculumManagementSection`, `ClassSessionsManageModal` tại `apps/web` kèm unit/component tests
-- [ ] Phase 4: Viết và chạy E2E spec `apps/e2e/specs/class-sync-curriculum.spec.ts` (3 viewport light/dark + 320px reflow), chạy `design:compare` (`t-class-detail`) và toàn bộ local gates (`pnpm check`, `pnpm check-types`, `pnpm test`, `pnpm build`)
-- [ ] Phase 5: Cập nhật `CHANGELOG.md`, review cô lập (`code-reviewer` đạt `Approve`), mở PR & merge vào `develop`, verify CI xanh và đăng POT lên #700
+- [x] Phase 1: Bổ sung `syncCurriculumSchema` tại `packages/api/src/contracts.ts`
+- [x] Phase 2: Triển khai `POST /api/classes/:id/curriculum/sync` + `buildSyncBatch` / `flattenSyllabusLessons` tại `apps/server` kèm integration tests
+- [x] Phase 3: Nối command bus `sync-curriculum`, `isCurriculumOutOfSync`, `useClassCurriculumSyncState`, `SyncCurriculumModal`, `CurriculumManagementSection`, `ClassSessionsManageModal` tại `apps/web` kèm unit/component tests
+- [x] Phase 4: Viết và chạy E2E spec `apps/e2e/specs/class-sync-curriculum.spec.ts` (3 viewport light/dark + 320px reflow), chạy `design:compare` (`t-class-detail`) và toàn bộ local gates (`pnpm check`, `pnpm check-types`, `pnpm test`, `pnpm build`)
+- [x] Phase 5: Cập nhật `CHANGELOG.md`, review cô lập (`code-reviewer` đạt `Approve`), mở PR & merge vào `develop`, verify CI xanh và đăng POT lên #700
