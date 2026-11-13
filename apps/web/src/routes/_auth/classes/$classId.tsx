@@ -474,6 +474,7 @@ function ClassDetailRoute() {
 					<CurriculumManagementSection
 						key={`curriculum-${cls.id}`}
 						cls={cls}
+						hasRealSessions={hasRealSessions}
 						run={run}
 						isPending={isPending}
 						busy={busy}

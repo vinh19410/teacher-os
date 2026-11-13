@@ -7,6 +7,7 @@ import {
 	type KernelSnapshot,
 	reorderLessonsSchema,
 	reorderModulesSchema,
+	syncCurriculumSchema,
 } from "@teacher-os/api/contracts";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { HttpError, MalformedSnapshotError } from "@/lib/kernel-load-state";
@@ -616,7 +617,7 @@ describe("kernelCommand", () => {
 		);
 	});
 
-	test("import-syllabus, remove-curriculum and update-class-notes target the class subpath", () => {
+	test("import-syllabus, sync-curriculum, remove-curriculum and update-class-notes target the class subpath", () => {
 		const imported = kernelCommand({
 			type: "import-curriculum",
 			classId: "c1",
@@ -624,6 +625,25 @@ describe("kernelCommand", () => {
 		});
 		expect(imported.path).toBe("/api/classes/c1/curriculum/import");
 		expect(imported.body).toEqual({ templateId: "tpl1" });
+		const syncedLinked = kernelCommand({
+			type: "sync-curriculum",
+			classId: "c1",
+		});
+		expect(syncedLinked.path).toBe("/api/classes/c1/curriculum/sync");
+		expect(syncedLinked.body).toEqual({});
+		expect(syncCurriculumSchema.safeParse(syncedLinked.body).success).toBe(
+			true,
+		);
+		const syncedReplacement = kernelCommand({
+			type: "sync-curriculum",
+			classId: "c1",
+			templateId: "tpl2",
+		});
+		expect(syncedReplacement.path).toBe("/api/classes/c1/curriculum/sync");
+		expect(syncedReplacement.body).toEqual({ templateId: "tpl2" });
+		expect(syncCurriculumSchema.safeParse(syncedReplacement.body).success).toBe(
+			true,
+		);
 		const removed = kernelCommand({ type: "remove-curriculum", classId: "c1" });
 		expect(removed.path).toBe("/api/classes/c1/curriculum/remove");
 		expect(removed.body).toEqual({});

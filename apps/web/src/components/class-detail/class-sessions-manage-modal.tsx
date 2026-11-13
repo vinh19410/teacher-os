@@ -3,6 +3,7 @@ import { AddLessonModal } from "@/components/modals/add-lesson-modal";
 import { AddModuleModal } from "@/components/modals/add-module-modal";
 import { EditLessonModal } from "@/components/modals/edit-lesson-modal";
 import { EditModuleModal } from "@/components/modals/edit-module-modal";
+import { SyncCurriculumModal } from "@/components/modals/sync-curriculum-modal";
 import { LessonBankMaterialsBadge } from "@/components/syllabus/lesson-bank-materials-badge";
 import {
 	LessonStatusBadge,
@@ -21,7 +22,10 @@ import {
 	resolveClassSessions,
 } from "@/lib/class-sessions";
 import type { ClassGroup, ClassSessionItem } from "@/lib/mock-data";
-import { useClassCurriculum } from "@/lib/repos/use-syllabus";
+import {
+	useClassCurriculum,
+	useClassCurriculumSyncState,
+} from "@/lib/repos/use-syllabus";
 import type { DirectKernelAction } from "@/lib/use-direct-kernel-action";
 
 export interface ClassSessionsManageModalProps {
@@ -55,6 +59,10 @@ export function ClassSessionsManageModal({
 	busy,
 }: ClassSessionsManageModalProps) {
 	const curriculum = useClassCurriculum(cls.id);
+	const syncState = useClassCurriculumSyncState(cls.id);
+	const hasRealSessions =
+		(lessons?.length ?? 0) > 0 || (classSessions?.length ?? 0) > 0;
+	const [syncOpen, setSyncOpen] = useState(false);
 	const [addModuleOpen, setAddModuleOpen] = useState(false);
 	const [editModuleId, setEditModuleId] = useState<string | null>(null);
 	const [addLessonModuleId, setAddLessonModuleId] = useState<string | null>(
@@ -105,6 +113,31 @@ export function ClassSessionsManageModal({
 	return (
 		<Modal open={open} onClose={onClose} title="Quản lý buổi của lớp">
 			<div className="flex flex-col gap-4">
+				{syncState.kind === "out-of-sync" && (
+					<div
+						data-testid="manage-modal-sync-banner"
+						className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-muted/50 px-3.5 py-2.5"
+					>
+						<div className="flex min-w-0 flex-1 items-center gap-2 text-xs">
+							<span
+								aria-hidden="true"
+								className="size-2 shrink-0 rounded-full bg-[var(--warn)]"
+							/>
+							<span>
+								Template gốc &quot;{syncState.sourceTemplate.name}&quot; đã có
+								thay đổi so với giáo trình của lớp.
+							</span>
+						</div>
+						<Button
+							variant="outline"
+							size="sm"
+							disabled={busy}
+							onClick={() => setSyncOpen(true)}
+						>
+							Đồng bộ lại
+						</Button>
+					</div>
+				)}
 				<p className="text-muted-foreground text-xs">
 					Thứ tự buổi quyết định chủ đề hiển thị trên lịch lớp.
 				</p>
@@ -255,6 +288,12 @@ export function ClassSessionsManageModal({
 				moduleId={editLessonRef?.moduleId ?? null}
 				lessonId={editLessonRef?.lessonId ?? null}
 				showStatus
+			/>
+			<SyncCurriculumModal
+				open={syncOpen}
+				onClose={() => setSyncOpen(false)}
+				classId={cls.id}
+				hasRealSessions={hasRealSessions}
 			/>
 			{mutations.confirmModal}
 		</Modal>
