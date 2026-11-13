@@ -43,4 +43,4 @@ Chạy cho mọi PR đụng UI. Ghi kèm screenshot cho thay đổi hình ảnh.
 - [ ] PR đụng UI → chạy `pnpm design:compare` (exit 0) + kèm screenshot 3 viewport (1440×900,
       768×1024, 375×812) trong mô tả PR.
 - [ ] `pnpm --filter web test`, `pnpm check`, `pnpm run check-types`.
-- [ ] Ship `official` → full E2E pass (`pnpm --filter e2e e2e`, port 8100–8105; xem `AGENTS.md`). Luồng khác không bắt buộc.
+- [ ] Spec E2E liên quan (`pnpm --filter e2e e2e <spec>`, port 8100–8105; xem `AGENTS.md`) khi sửa E2E hoặc cần verify cục bộ; full E2E chạy tự động trên GitHub Actions (`e2e.yml`) ở PR vào `main`.

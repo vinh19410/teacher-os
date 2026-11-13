@@ -202,10 +202,10 @@ must pass, then `APP_DOMAIN=<domain> pnpm alchemy deploy --stage prod` (secrets
 come from GitHub repo secrets mirroring the inventory above — same names, no
 values in Git), then a `/readyz` smoke that must return `200 {"ok":true}`
 within ~10 minutes or the run is marked failed. The full Playwright E2E suite
-also gates this workflow: the `e2e` job runs it in 6 shards with
-`--fully-parallel`, and `deploy` needs both `quality` and `e2e`. Staging and PRs
-do not run it. Still run it locally before shipping (`ak-ship official`) so a
-red suite is caught before the merge, not at the release gate.
+(`.github/workflows/e2e.yml`, 6 shards with `--fully-parallel`) runs on pull
+requests to `main` so a red suite is caught on the PR before merge, and
+`deploy.yml` calls the same reusable workflow (`deploy` needs both `quality` and
+`e2e`) before shipping production. Staging and `develop` PRs do not run it.
 Deploys are serialized
 (`cancel-in-progress: false`) so forward-only D1 migrations never race.
 After every smoke check passes (and not in `dry_run`), `Notify Discord release changelog` runs `node scripts/notify-discord-changelog.mjs --stage prod` using `DISCORD_WEBHOOK_URL` to post an `Official Release` embed to Discord (non-blocking if unset or Discord fails).
@@ -252,7 +252,7 @@ smoke steps. Check that the plan does not replace or delete the D1 database, R2
 buckets or custom domains before deploying.
 
 Similarly, to preview a production deploy without applying it, run `Deploy Production` (`deploy.yml`)
-manually via `workflow_dispatch` with `dry_run` enabled: it gates on uncached quality, prints the
+manually via `workflow_dispatch` with `dry_run` enabled: it gates on uncached quality and reusable E2E, prints the
 Alchemy plan, and skips smoke checks.
 
 Alchemy state lives in the account-level `alchemy-state-store` Worker, which
