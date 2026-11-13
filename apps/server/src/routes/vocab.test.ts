@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import {
 	VOCAB_DURATION_MAX_MS,
@@ -20,10 +21,9 @@ import { ensureDeckCards } from "../lib/vocab-provision";
 import type { SessionUser } from "../session";
 
 const STUDENT_ORIGIN = "http://localhost:8003";
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 interface MemoryMediaStore extends MediaStore {
 	objects: Map<string, { bytes: Uint8Array; contentType: string }>;

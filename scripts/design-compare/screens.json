@@ -36,7 +36,7 @@
 			"phase": 5,
 			"auth": null,
 			"design": {
-				"hash": "#/pay/p7Hq2x",
+				"hash": "#/pay/zz3Kpr",
 				"steps": []
 			},
 			"app": "/pay/{seed.payToken}"

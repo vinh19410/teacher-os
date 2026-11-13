@@ -7,6 +7,7 @@ import {
 	waitFor,
 	within,
 } from "@testing-library/react";
+import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { itFollowsTheKernelFormContract } from "@/test/kernel-form-contract";
 import {
@@ -116,5 +117,125 @@ describe("ImportSyllabusModal", () => {
 			).toBe(true),
 		);
 		expect(onClose).not.toHaveBeenCalled();
+	});
+
+	it("maps allowlisted 409/422 curriculum import error codes to actionable Vietnamese alerts (#670)", async () => {
+		let nextReply: { status: number; body: unknown } = {
+			status: 409,
+			body: {
+				error:
+					"Lớp đã có buổi học thủ công. Vui lòng xóa các buổi chưa học trước khi nhập giáo trình.",
+				reason: "has-manual-sessions",
+				code: "MANUAL_SESSIONS_EXIST",
+			},
+		};
+		startKernelServer(snapshot(), () => nextReply);
+		renderWithKernel(
+			<ImportSyllabusModal open onClose={() => {}} classId="cl-1" />,
+		);
+		const dialog = await screen.findByRole("dialog");
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Nhập giáo trình" }),
+		);
+
+		const alert = await within(dialog).findByRole("alert");
+		expect(alert.textContent).toBe(
+			"Lớp đã có buổi học thủ công. Vui lòng xóa các buổi chưa học trước khi nhập giáo trình.",
+		);
+
+		nextReply = {
+			status: 422,
+			body: {
+				error:
+					"Template chưa có bài học nào. Vui lòng thêm ít nhất 1 bài học trước khi nhập vào lớp trống.",
+				reason: "empty-template",
+				code: "CURRICULUM_EMPTY_TEMPLATE",
+			},
+		};
+		fireEvent.change(within(dialog).getByRole("combobox"), {
+			target: { value: "sy-b" },
+		});
+		expect(within(dialog).queryByRole("alert")).toBeNull();
+
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Nhập giáo trình" }),
+		);
+		expect((await within(dialog).findByRole("alert")).textContent).toBe(
+			"Template chưa có bài học nào. Vui lòng thêm ít nhất 1 bài học trước khi nhập vào lớp trống.",
+		);
+	});
+
+	it("clears alert error on reopen without wiping reconcile notice / submitBlocked (#670)", async () => {
+		function Harness() {
+			const [open, setOpen] = useState(true);
+			return (
+				<div>
+					<button type="button" onClick={() => setOpen((v) => !v)}>
+						Toggle
+					</button>
+					<ImportSyllabusModal
+						open={open}
+						onClose={() => setOpen(false)}
+						classId="cl-1"
+					/>
+				</div>
+			);
+		}
+
+		// 1) Error cleared on reopen
+		let failWrite = true;
+		startKernelServer(snapshot(), (_req, srv) => {
+			if (failWrite) {
+				return {
+					status: 409,
+					body: {
+						error: "Lớp đã có buổi học thủ công.",
+						reason: "has-manual-sessions",
+						code: "MANUAL_SESSIONS_EXIST",
+					},
+				};
+			}
+			srv.snapshotReply = () => ({ status: 503, body: {} });
+			return undefined;
+		});
+		renderWithKernel(<Harness />);
+		let dialog = await screen.findByRole("dialog");
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Nhập giáo trình" }),
+		);
+		expect((await within(dialog).findByRole("alert")).textContent).toContain(
+			"Lớp đã có buổi học thủ công",
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Toggle" }));
+		fireEvent.click(screen.getByRole("button", { name: "Toggle" }));
+		dialog = await screen.findByRole("dialog");
+		expect(within(dialog).queryByRole("alert")).toBeNull();
+
+		// 2) Committed notice + submitBlocked preserved on reopen
+		failWrite = false;
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Nhập giáo trình" }),
+		);
+		await waitFor(() =>
+			expect(
+				(
+					within(dialog).getByRole("button", {
+						name: "Nhập giáo trình",
+					}) as HTMLButtonElement
+				).disabled,
+			).toBe(true),
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Toggle" }));
+		fireEvent.click(screen.getByRole("button", { name: "Toggle" }));
+		dialog = await screen.findByRole("dialog");
+		expect(
+			(
+				within(dialog).getByRole("button", {
+					name: "Nhập giáo trình",
+				}) as HTMLButtonElement
+			).disabled,
+		).toBe(true);
 	});
 });

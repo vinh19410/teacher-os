@@ -27,7 +27,9 @@ import type {
 	Lesson,
 	LessonStatus,
 	LessonType,
+	Syllabus,
 } from "@/lib/mock-data";
+import { splitSyllabi } from "@/lib/repos/syllabus";
 
 /** Real lessons for one weekday column of the viewed week. */
 export function selectWeekColumnLessons(
@@ -197,18 +199,31 @@ export function selectProjectedWeekBlocks(
 	lessons: readonly Lesson[],
 	dates: readonly string[],
 	classSessions: readonly ClassSessionItem[] = [],
+	syllabi?: readonly Syllabus[],
 ): ProjectedWeekBlock[] {
 	const classIdsWithRows = new Set(lessons.map((l) => l.classId));
+	const curriculumByClassId =
+		syllabi !== undefined
+			? splitSyllabi([...syllabi]).curriculumByClassId
+			: null;
 	const dateSet = new Set(dates);
 	const blocks: ProjectedWeekBlock[] = [];
 	for (const cls of classes) {
 		if (classIdsWithRows.has(cls.id)) continue;
-		if (cls.schedulingMode === "manual") {
+		const byDate = new Map<string, ClassSessionItem>();
+		for (const cs of classSessions) {
+			if (cs.classId === cls.id) byDate.set(cs.date, cs);
+		}
+		const attachedCurriculum = curriculumByClassId
+			? (curriculumByClassId.get(cls.id) ?? null)
+			: null;
+		const hasCurriculum = curriculumByClassId
+			? attachedCurriculum !== null
+			: Boolean(cls.syllabusId);
+		const isManual =
+			byDate.size > 0 || (!hasCurriculum && cls.schedulingMode === "manual");
+		if (isManual) {
 			// Manual class: real occurrences only — from class_session rows.
-			const byDate = new Map<string, ClassSessionItem>();
-			for (const cs of classSessions) {
-				if (cs.classId === cls.id) byDate.set(cs.date, cs);
-			}
 			for (const dateISO of dates) {
 				const cs = byDate.get(dateISO);
 				if (!cs) continue;
@@ -222,10 +237,17 @@ export function selectProjectedWeekBlocks(
 			}
 			continue;
 		}
+		const attachedLessonCount = attachedCurriculum
+			? attachedCurriculum.modules.reduce((sum, m) => sum + m.lessons.length, 0)
+			: 0;
+		const effectiveSessionsTotal =
+			cls.sessionsTotal === 0 && attachedLessonCount > 0
+				? attachedLessonCount
+				: cls.sessionsTotal;
 		const sessions = projectClassSessions({
 			schedule: cls.schedule,
 			startDate: cls.startDate,
-			sessionsTotal: cls.sessionsTotal,
+			sessionsTotal: effectiveSessionsTotal,
 		});
 		if (!sessions) continue;
 		for (const session of sessions) {
@@ -283,6 +305,7 @@ export function buildWeekModel(
 		classes: ClassGroup[];
 		lessons: Lesson[];
 		classSessions?: ClassSessionItem[];
+		syllabi?: Syllabus[];
 	},
 	dates: readonly string[],
 ): WeekModel {
@@ -299,6 +322,7 @@ export function buildWeekModel(
 		data.lessons,
 		dates,
 		data.classSessions ?? [],
+		data.syllabi,
 	);
 	return { columns, projected, slotCount: weekSlotCount(columns, projected) };
 }

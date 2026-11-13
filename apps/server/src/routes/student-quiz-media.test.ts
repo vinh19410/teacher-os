@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import type {
 	QuizAttemptDetail,
@@ -16,14 +17,23 @@ import {
 	type MediaStore,
 	type ServerApp,
 } from "../app";
+import {
+	aacAdtsBytes,
+	movLegacyWideMdatBytes,
+	movQtFtypBytes,
+	mp3Bytes,
+	mp4Bytes,
+	oggBytes,
+	wavBytes,
+	webmBytes,
+} from "../lib/test-media-fixtures";
 import type { SessionUser } from "../session";
 
 const CORS_ORIGINS = ["http://localhost:8003"];
 const STUDENT_ORIGIN = "http://localhost:8003";
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 const OWNER = { "x-test-user": "google-verified" };
 
 /** Store Map trong bộ nhớ — đọc hết stream để khoá hành vi "body phải tới
@@ -57,10 +67,6 @@ function createMemoryMediaStore() {
 		},
 	};
 	return { store, objects, hooks };
-}
-
-function bytesOf(length: number, fill: number): Uint8Array {
-	return new Uint8Array(length).fill(fill);
 }
 
 const sessionFor = async (headers: Headers): Promise<SessionUser | null> => {
@@ -184,6 +190,7 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 			["ca-s4", "prompt-speaking"],
 			["ca-s5", "prompt-speaking"],
 			["ca-s6", "prompt-speaking"],
+			["ca-s7", "prompt-speaking"],
 			["ca-r1", "prompt-reading"],
 		];
 		for (const [id, promptId] of assignments) {
@@ -337,7 +344,7 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 	test("speaking media upload, replace, play back and submit", async () => {
 		const attemptId = await startAttempt("ca-s1");
 
-		const first = await putMedia(attemptId, bytesOf(2048, 1));
+		const first = await putMedia(attemptId, mp3Bytes(2048, 1));
 		expect(first.status).toBe(200);
 		const firstBody = (await first.json()) as {
 			media: { name: string; type: string; size: number; uploadedAt: string };
@@ -360,7 +367,8 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 		expect(takeBody.note).toBe("<p>Nói tự nhiên, không đọc giấy.</p>");
 
 		// Thay file: key mới, object cũ bị xoá → store chỉ còn 1 object.
-		const replaced = await putMedia(attemptId, bytesOf(3000, 7), {
+		const replacedBytes = mp4Bytes(3000, 7);
+		const replaced = await putMedia(attemptId, replacedBytes, {
 			"Content-Type": "video/mp4",
 			"X-File-Name": "answer-v2.mp4",
 		});
@@ -381,7 +389,7 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 			"filename*=UTF-8''answer-v2.mp4",
 		);
 		const playedBytes = new Uint8Array(await played.arrayBuffer());
-		expect(playedBytes).toEqual(bytesOf(3000, 7));
+		expect(playedBytes).toEqual(replacedBytes);
 
 		const submitted = await submit(attemptId);
 		expect(submitted.status).toBe(200);
@@ -430,7 +438,7 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 		// Nhánh self-heal của submit không được chạy khi attempt còn in_progress.
 		expect(await targetSubmittedAt("ca-s2")).toBeNull();
 
-		expect((await putMedia(attemptId, bytesOf(100, 2))).status).toBe(200);
+		expect((await putMedia(attemptId, mp3Bytes(100, 2))).status).toBe(200);
 		const removed = await deleteMedia(attemptId);
 		expect(removed.status).toBe(200);
 		await settle();
@@ -454,7 +462,7 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 		const attemptId = await startAttempt("ca-s3");
 		const readingAttempt = await startAttempt("ca-r1");
 		const before = memory.objects.size;
-		const body = bytesOf(64, 3);
+		const body = mp3Bytes(64, 3);
 
 		const cases: Array<{
 			name: string;
@@ -541,7 +549,7 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 			{
 				name: "body longer than declared Content-Length",
 				res: () =>
-					putMedia(attemptId, bytesOf(20, 1), { "Content-Length": "10" }),
+					putMedia(attemptId, mp3Bytes(20, 1), { "Content-Length": "10" }),
 				status: 400,
 				error: "size mismatch",
 			},
@@ -563,12 +571,12 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 
 	test("upload after submit is 409 ATTEMPT_SUBMITTED and leaves no object", async () => {
 		const attemptId = await startAttempt("ca-s4");
-		expect((await putMedia(attemptId, bytesOf(10, 1))).status).toBe(200);
+		expect((await putMedia(attemptId, mp3Bytes(10, 1))).status).toBe(200);
 		expect((await submit(attemptId)).status).toBe(200);
 		await settle();
 		const before = memory.objects.size;
 
-		const late = await putMedia(attemptId, bytesOf(10, 2));
+		const late = await putMedia(attemptId, mp3Bytes(10, 2));
 		expect(late.status).toBe(409);
 		expect(await late.json()).toEqual({
 			error: "attempt already submitted",
@@ -599,7 +607,7 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 
 	test("media routes return 503 without a media store", async () => {
 		const attemptId = await startAttempt("ca-s3");
-		const put = await putMedia(attemptId, bytesOf(5, 1), {}, appWithoutStore);
+		const put = await putMedia(attemptId, mp3Bytes(5, 1), {}, appWithoutStore);
 		expect(put.status).toBe(503);
 		const del = await appWithoutStore.request(
 			`/api/student/attempts/${attemptId}/media`,
@@ -621,7 +629,7 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 					method === "GET"
 						? {}
 						: { Origin: STUDENT_ORIGIN, "Content-Type": "audio/mpeg" },
-				...(method === "PUT" ? { body: bytesOf(4, 1) } : {}),
+				...(method === "PUT" ? { body: mp3Bytes(4, 1) } : {}),
 			});
 			expect(res.status, method).toBe(401);
 		}
@@ -668,7 +676,7 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 
 	test("PUT that loses the CAS to a concurrent change returns MEDIA_CONFLICT and discards its object", async () => {
 		const attemptId = await startAttempt("ca-s5");
-		expect((await putMedia(attemptId, bytesOf(10, 1))).status).toBe(200);
+		expect((await putMedia(attemptId, mp3Bytes(10, 1))).status).toBe(200);
 		await settle();
 		const keysBefore = new Set(memory.objects.keys());
 
@@ -679,7 +687,7 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 				.set({ mediaKey: `quiz-media/org-1/${attemptId}/other-tab` })
 				.where(eq(schema.quizAttempt.id, attemptId));
 		};
-		const res = await putMedia(attemptId, bytesOf(10, 9), {
+		const res = await putMedia(attemptId, mp3Bytes(10, 9), {
 			"X-File-Name": "late.mp3",
 		});
 		expect(res.status).toBe(409);
@@ -693,11 +701,220 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 		expect(new Set(memory.objects.keys())).toEqual(keysBefore);
 	});
 
+	test("upload validates filename extension and magic bytes before storing (#681)", async () => {
+		const attemptId = await startAttempt("ca-s7");
+		const before = memory.objects.size;
+		const htmlBytes = new TextEncoder().encode(
+			"<!doctype html><html><script>alert(1)</script></html>",
+		);
+
+		// 1. Extension mismatch / dotfile / spoofed magic -> 415 unsupported media type
+		let extRejectCanceled = false;
+		const extRejectStream = new ReadableStream<Uint8Array>({
+			start(controller) {
+				controller.enqueue(htmlBytes);
+				controller.close();
+			},
+			cancel() {
+				extRejectCanceled = true;
+			},
+		});
+		const extReject = await app.request(
+			`/api/student/attempts/${attemptId}/media`,
+			{
+				method: "PUT",
+				headers: {
+					...OWNER,
+					Origin: STUDENT_ORIGIN,
+					"Content-Type": "audio/mpeg",
+					"Content-Length": String(htmlBytes.byteLength),
+					"X-File-Name": encodeURIComponent("payload.html"),
+				},
+				body: extRejectStream,
+				duplex: "half",
+			} as RequestInit,
+		);
+		expect(extReject.status).toBe(415);
+		expect(((await extReject.json()) as { error: string }).error).toBe(
+			"unsupported media type",
+		);
+		expect(extRejectCanceled).toBe(true);
+
+		for (const [name, type, bytes] of [
+			[".mp3", "audio/mpeg", mp3Bytes(16, 1)],
+			["spoof.mp3", "audio/mpeg", htmlBytes],
+			[
+				"id3-html.mp3",
+				"audio/mpeg",
+				new TextEncoder().encode("ID3\x04<html><script>alert(1)</script>"),
+			],
+			[
+				"utf16.mp3",
+				"audio/mpeg",
+				new Uint8Array([0xff, 0xfe, 0x20, 0x00, 0x3c, 0x00, 0x68, 0x00]),
+			],
+			[
+				"badwav.wav",
+				"audio/wav",
+				new TextEncoder().encode("RIFF<a  WAVEfmt ><script>alert(1)</script>"),
+			],
+			[
+				"badogg.ogg",
+				"audio/ogg",
+				new TextEncoder().encode("OggS\x00\x02<html><script>alert(1)</script>"),
+			],
+			[
+				"badwebm.webm",
+				"video/webm",
+				new Uint8Array([
+					0x1a,
+					0x45,
+					0xdf,
+					0xa3,
+					...new TextEncoder().encode(
+						"<html><!--webm--><script>alert(1)</script>",
+					),
+				]),
+			],
+			["badm4a.m4a", "audio/mp4", htmlBytes],
+			[
+				"comment.mp4",
+				"video/mp4",
+				new TextEncoder().encode("<!--ftyp--><html><script>alert(1)</script>"),
+			],
+			[
+				"comment.mov",
+				"video/quicktime",
+				new Uint8Array([
+					0,
+					0,
+					0,
+					8,
+					...new TextEncoder().encode("wide<!--mdat--><html><script>"),
+				]),
+			],
+			["photo.mov", "video/quicktime", htmlBytes],
+		] as Array<[string, string, Uint8Array]>) {
+			const res = await putMedia(attemptId, bytes, {
+				"X-File-Name": encodeURIComponent(name),
+				"Content-Type": type,
+			});
+			expect(res.status, `${name} + ${type}`).toBe(415);
+			await settle();
+			expect(memory.objects.size, name).toBe(before);
+		}
+
+		// .m4a + video/mp4 carrying qt brand and ftyp size > totalSize rejected
+		expect(
+			(
+				await putMedia(attemptId, movQtFtypBytes(20, 6), {
+					"X-File-Name": encodeURIComponent("voice.m4a"),
+					"Content-Type": "video/mp4",
+				})
+			).status,
+			".m4a + video/mp4 + qt brand",
+		).toBe(415);
+		// ftyp boxSize > declared size: peekStream dừng ở byte size + 1 nên
+		// thiếu byte phần đuôi → 400 size mismatch trước khi chạm magic.
+		expect(
+			(
+				await putMedia(attemptId, mp4Bytes(16, 7), {
+					"X-File-Name": encodeURIComponent("short.m4a"),
+					"Content-Type": "audio/mp4",
+					"Content-Length": "16",
+				})
+			).status,
+			"ftyp boxSize > declared size",
+		).toBe(400);
+		await settle();
+		expect(memory.objects.size).toBe(before);
+
+		// 2. Lying Content-Length both <= 64B Slowloris and > 64B through store.put
+		const slowlorisGate = Promise.withResolvers<void>();
+		let sent11 = false;
+		const slowlorisBody = new ReadableStream<Uint8Array>({
+			async pull(controller) {
+				if (!sent11) {
+					sent11 = true;
+					controller.enqueue(mp3Bytes(11, 1));
+					return;
+				}
+				await slowlorisGate.promise;
+				controller.close();
+			},
+			cancel() {
+				slowlorisGate.resolve();
+			},
+		});
+		const slowlorisRes = await app.request(
+			`/api/student/attempts/${attemptId}/media`,
+			{
+				method: "PUT",
+				headers: {
+					...OWNER,
+					Origin: STUDENT_ORIGIN,
+					"Content-Type": "audio/mpeg",
+					"Content-Length": "10",
+					"X-File-Name": encodeURIComponent("slow.mp3"),
+				},
+				body: slowlorisBody,
+				duplex: "half",
+			} as RequestInit,
+		);
+		expect(slowlorisRes.status).toBe(400);
+		expect(((await slowlorisRes.json()) as { error: string }).error).toBe(
+			"size mismatch",
+		);
+
+		const valid150 = mp3Bytes(150, 2);
+		expect(
+			(
+				await putMedia(attemptId, valid150, {
+					"Content-Length": "300",
+				})
+			).status,
+		).toBe(400);
+		expect(
+			(
+				await putMedia(attemptId, valid150, {
+					"Content-Length": "100",
+				})
+			).status,
+		).toBe(400);
+		await settle();
+		expect(memory.objects.size).toBe(before);
+
+		// 3. Genuine containers accepted: WAV / OGG / WebM / AAC / MOV
+		for (const validCase of [
+			{ name: "voice.wav", type: "audio/wav", bytes: wavBytes(2048, 2) },
+			{ name: "voice.ogg", type: "audio/ogg", bytes: oggBytes(28, 3) },
+			{ name: "voice.webm", type: "audio/webm", bytes: webmBytes(36, 4) },
+			{ name: "voice.aac", type: "audio/aac", bytes: aacAdtsBytes(16, 5) },
+			{
+				name: "clip.mov",
+				type: "video/quicktime",
+				bytes: movQtFtypBytes(20, 6),
+			},
+			{
+				name: "legacy.mov",
+				type: "video/quicktime",
+				bytes: movLegacyWideMdatBytes(24, 8),
+			},
+		] as Array<{ name: string; type: string; bytes: Uint8Array }>) {
+			const okRes = await putMedia(attemptId, validCase.bytes, {
+				"X-File-Name": encodeURIComponent(validCase.name),
+				"Content-Type": validCase.type,
+				"Content-Length": String(validCase.bytes.byteLength),
+			});
+			expect(okRes.status, validCase.name).toBe(200);
+		}
+	});
+
 	test("media GET encodes the file name per RFC 8187", async () => {
 		const id = await startAttempt("ca-s3");
 		expect(
 			(
-				await putMedia(id, bytesOf(8, 4), {
+				await putMedia(id, mp3Bytes(8, 4), {
 					"X-File-Name": encodeURIComponent("it's (1).mp3"),
 				})
 			).status,
@@ -734,7 +951,7 @@ describe("student speaking media (/api/student/attempts/:id/media)", () => {
 
 	test("a DELETE that loses the CAS to another delete is still idempotent", async () => {
 		const attemptId = await startAttempt("ca-s6");
-		expect((await putMedia(attemptId, bytesOf(10, 6))).status).toBe(200);
+		expect((await putMedia(attemptId, mp3Bytes(10, 6))).status).toBe(200);
 		await settle();
 
 		// Tab khác gỡ file đúng lúc request này đã đọc key nhưng chưa CAS.

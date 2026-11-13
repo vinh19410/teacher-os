@@ -8,6 +8,7 @@
  * throwing/rejecting stubs; no session or cookie helpers are needed.
  */
 
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import * as schema from "@teacher-os/db/schema/index";
 import { membership } from "@teacher-os/db/schema/membership";
@@ -21,10 +22,9 @@ import { type AppDeps, buildApp, type Db } from "./app";
 import { PROBE_QUERY } from "./routes/readiness";
 
 const CORS_ORIGIN = "http://localhost:8001";
-const MIGRATIONS_DIR = new URL(
-	"../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 interface TestApp {
 	app: ReturnType<typeof buildApp>;

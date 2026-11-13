@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import {
 	session as authSession,
@@ -18,10 +19,9 @@ import { buildApp, type Db, type ServerApp } from "../../app";
  * and the manual rows surfacing on /invoices/:id/transactions.
  */
 const CORS_ORIGIN = "http://localhost:8001";
-const MIGRATIONS_DIR = new URL(
-	"../../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 const CLIENT_REQUEST_ID = "3f2504e0-4f89-41d3-9a0c-0305e82c3301";
 

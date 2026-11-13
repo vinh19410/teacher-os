@@ -1,10 +1,45 @@
 import type { VocabTeacherWord } from "@teacher-os/api/contracts";
 import { QUIZ_MEDIA_MAX_BYTES } from "@teacher-os/api/contracts";
+import type { QuizMediaRejectReason } from "@teacher-os/api/lib/quiz-media";
+import { LIBRARY_AUDIO_MIME } from "@teacher-os/api/library-contracts";
 import { MediaDropzone } from "@teacher-os/ui/components/quiz/media-dropzone";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
 
+const VOCAB_AUDIO_ACCEPT = [
+	...Object.keys(LIBRARY_AUDIO_MIME),
+	".mp3",
+	".m4a",
+	".aac",
+	".wav",
+	".wave",
+	".ogg",
+	".oga",
+	".opus",
+	".webm",
+	".weba",
+].join(",");
+
+export function vocabAudioRejectMessage(
+	reason: QuizMediaRejectReason,
+): string | null {
+	switch (reason) {
+		case "none":
+			return null;
+		case "multiple":
+			return "Chỉ tải lên được 1 file âm thanh mỗi lần.";
+		case "size":
+			return "Dung lượng file âm thanh vượt quá 50 MB.";
+		case "empty":
+			return "File âm thanh rỗng.";
+		case "name":
+			return "Tên file âm thanh không hợp lệ (tối đa 200 ký tự).";
+		case "type":
+			return "Định dạng âm thanh không hỗ trợ (chỉ nhận MP3, M4A, WAV, AAC, OGG, WEBM).";
+	}
+}
 /**
  * Một hàng từ vựng trong editor deck (#359): word / IPA / translation
  * editable inline + nút Lưu / Xoá / upload audio. Audio upload dùng
@@ -90,12 +125,15 @@ export function VocabWordRow({
 					</p>
 				) : null}
 				<MediaDropzone
-					accept="audio/*"
+					accept={VOCAB_AUDIO_ACCEPT}
 					maxBytes={QUIZ_MEDIA_MAX_BYTES}
-					disabled={isDraft}
+					disabled={isDraft || saving}
 					hint="MP3/M4A/WAV · tối đa 50 MB"
 					onFile={(file) => void onUploadAudio(row.id, file)}
-					onReject={() => undefined}
+					onReject={(reason) => {
+						const message = vocabAudioRejectMessage(reason);
+						if (message) toast.error(message);
+					}}
 				/>
 			</div>
 

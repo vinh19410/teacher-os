@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { EXAM_IMPORT_ERROR_CODES } from "@teacher-os/api/contracts";
 import {
@@ -14,10 +15,9 @@ import type { Db } from "../../app";
 import { ensureWallet, reserveCredits } from "../credits/wallet";
 import { releaseStaleImports } from "./release-stale";
 
-const MIGRATIONS_DIR = new URL(
-	"../../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 async function seedProcessingJob(
 	db: Db,

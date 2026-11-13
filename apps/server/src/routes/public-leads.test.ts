@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import type { Mailer, MailInput } from "@teacher-os/auth/mail/mailer";
 import * as schema from "@teacher-os/db/schema/index";
@@ -15,10 +16,9 @@ import {
 
 const CORS_ORIGIN = "http://localhost:8001";
 const PROFILE_ORIGIN = "https://msmy.io.vn";
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 const sessionFor = async (headers: Headers) => {
 	if (headers.get("x-test-user") === "teacher-1") {

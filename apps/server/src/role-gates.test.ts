@@ -7,6 +7,7 @@
  * shared-cookie-zone case the API gates must defend against.
  */
 
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { ACCOUNT_ERROR_CODES } from "@teacher-os/api/contracts";
 import { type Auth, createAuth } from "@teacher-os/auth";
@@ -29,10 +30,9 @@ const ADMIN_EMAILS = [
 	"gate-admin-3@test.local",
 	"gate-admin-4@test.local",
 ];
-const MIGRATIONS_DIR = new URL(
-	"../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 function sessionTokenFrom(res: Response): string {
 	const token = /better-auth\.session_token=([^;]+)/.exec(

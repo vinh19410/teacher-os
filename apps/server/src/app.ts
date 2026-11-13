@@ -308,33 +308,27 @@ export function buildApp(deps: AppDeps) {
 	app.use(
 		logger((line, ...rest) => console.log(redactResetToken(line), ...rest)),
 	);
-	// File bài nói học viên (#305): CORP same-site thay cho `cross-origin`
-	// global — cookie SameSite=None nên trang ngoài nhúng được `<video src>`
-	// tới API. Đăng ký TRƯỚC secureHeaders: secureHeaders ghi header sau
-	// next(), middleware ngoài cùng hơn mới ghi được giá trị cuối.
-	app.use("/api/student/attempts/:attemptId/media", async (c, next) => {
-		await next();
-		c.res.headers.set("Cross-Origin-Resource-Policy", "same-site");
-	});
-	// Media giáo viên (chấm bài) — cùng lý do override CORP như route học viên ở trên.
-	app.use("/api/grading/:attemptId/media", async (c, next) => {
-		await next();
-		c.res.headers.set("Cross-Origin-Resource-Policy", "same-site");
-	});
-	// Audio nháp của đề kiểm tra đầu vào (#515): CORP same-site như media chấm bài.
-	app.use("/api/placement-test/audio/:id", async (c, next) => {
-		await next();
-		c.res.headers.set("Cross-Origin-Resource-Policy", "same-site");
-	});
-	// File tài liệu (giáo viên + học viên): CORP same-site để app web/cổng
-	// học viên phát được `<audio>`/`<video>` trỏ thẳng tới API.
+	// Các route stream file/media xác thực bằng cookie `SameSite=None` (#305,
+	// #515, #647, #675): đặt `Cross-Origin-Resource-Policy: same-site` để app
+	// cùng site (web/student/admin) đọc/nhúng được nhưng chặn trang ngoài nhúng
+	// `<audio>`/`<video>`/`<img>` kèm cookie, đồng thời đặt `Referrer-Policy:
+	// no-referrer` tránh rò rỉ `?org=`/ID qua Referer. Đăng ký TRƯỚC
+	// `secureHeaders` và ghi SAU `await next()` vì `secureHeaders` ghi đè cuối.
 	for (const path of [
+		"/api/student/attempts/:attemptId/media",
+		"/api/grading/:attemptId/media",
+		"/api/placement-test/audio/:id",
+		"/api/exam-imports/:id/file",
+		"/api/admin/library/tests/:testId/parts/:slot/audio",
+		"/api/student/vocab/audio/:wordId",
+		"/api/kernel/vocab/words/:wordId/audio",
 		"/api/materials/:id/file",
 		"/api/student/classes/:classId/sessions/:date/materials/:materialId/file",
 	]) {
 		app.use(path, async (c, next) => {
 			await next();
 			c.res.headers.set("Cross-Origin-Resource-Policy", "same-site");
+			c.res.headers.set("Referrer-Policy", "no-referrer");
 		});
 	}
 	app.use(

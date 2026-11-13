@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import * as schema from "@teacher-os/db/schema/index";
 import { invoice } from "@teacher-os/db/schema/invoice";
@@ -12,10 +13,9 @@ import type {
 	BankHubContext,
 } from "../lib/bank-hub/bank-hub-client";
 
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 const IPN_KEY = "ipn-key";
 const WEBHOOK_SECRET = "whsec";

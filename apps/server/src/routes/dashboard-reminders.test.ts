@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import {
 	type DashboardReminders,
@@ -12,10 +13,9 @@ import { beforeAll, describe, expect, test } from "vitest";
 import { buildApp, type Db } from "../app";
 import { computeReminders, type ReminderScope } from "./dashboard-reminders";
 
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 const TEACHER = { "x-test-user": "teacher-1" };
 const STUDENT = { "x-test-user": "student-u" };
 const NO_AUTH = {};

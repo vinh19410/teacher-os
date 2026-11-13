@@ -16,12 +16,12 @@ Mỗi dòng: PASS khi ảnh ghép thỏa checklist cấu trúc (phase 1) ở t�
 | login-reset | tablet×dark | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
 | login-reset | phone×light | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
 | login-reset | phone×dark | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
-| pay | desktop×light | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
-| pay | desktop×dark | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
-| pay | tablet×light | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
-| pay | tablet×dark | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
-| pay | phone×light | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
-| pay | phone×dark | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
+| pay | desktop×light | PASS | #653: Card PayPage v2 căn giữa (design #/pay/zz3Kpr TOS9B4C7 có dư nợ + QR; app invoicePartial chưa gắn bank link nên hiện banner chưa thiết lập chuyển khoản) |
+| pay | desktop×dark | PASS | #653: Card PayPage v2 căn giữa (design #/pay/zz3Kpr TOS9B4C7 có dư nợ + QR; app invoicePartial chưa gắn bank link nên hiện banner chưa thiết lập chuyển khoản) |
+| pay | tablet×light | PASS | #653: Card PayPage v2 căn giữa (design #/pay/zz3Kpr TOS9B4C7 có dư nợ + QR; app invoicePartial chưa gắn bank link nên hiện banner chưa thiết lập chuyển khoản) |
+| pay | tablet×dark | PASS | #653: Card PayPage v2 căn giữa (design #/pay/zz3Kpr TOS9B4C7 có dư nợ + QR; app invoicePartial chưa gắn bank link nên hiện banner chưa thiết lập chuyển khoản) |
+| pay | phone×light | PASS | #653: Card PayPage v2 căn giữa (design #/pay/zz3Kpr TOS9B4C7 có dư nợ + QR; app invoicePartial chưa gắn bank link nên hiện banner chưa thiết lập chuyển khoản) |
+| pay | phone×dark | PASS | #653: Card PayPage v2 căn giữa (design #/pay/zz3Kpr TOS9B4C7 có dư nợ + QR; app invoicePartial chưa gắn bank link nên hiện banner chưa thiết lập chuyển khoản) |
 | t-dashboard | desktop×light | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
 | t-dashboard | desktop×dark | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
 | t-dashboard | tablet×light | PASS | Khớp khung shell sidebar-07, bố cục vùng, primitive, token oklch & Geist v2 |
@@ -225,7 +225,7 @@ Nguồn design: `teacheros-design-v2@7a53fc0` `TeacherClass.tsx`. Raw app:
 | Khối | Design v2 | App sau #391 | Verdict |
 |---|---|---|---|
 | Back link | Ghost `← Classes` | Ghost `← Lớp học` (buttonVariants ghost sm + ArrowLeft) | PASS |
-| Header | kicker `type · lịch · phòng`, 2 action | kicker `IELTS · T3 & T5 & T7 · 18:00–19:30 · Online`; "Giao bài tập" outline + "Sắp xếp buổi" primary | PASS (nhãn tiếng Việt, "Add session" = "Sắp xếp buổi" — lệch có chủ đích) |
+| Header | kicker `type · lịch · phòng`, 2 action | kicker `IELTS · T3 & T5 & T7 · 18:00–19:30 · Online`; "Giao bài tập" outline (lớp seed `auto` đã có 10 dòng `lesson` nhưng không gắn giáo trình nên ẩn cả "Sắp xếp buổi" lẫn "+ Thêm buổi học" theo #670) | PASS (khớp hợp đồng hiển thị nút hành động theo trạng thái giáo trình/buổi thật tại `DESIGN.md`) |
 | Hàng stat | 4 thẻ | 4 thẻ: học viên (sub từ ngày) / buổi đã học x/y (sub % giáo trình) / bài trong syllabus / bài chờ nộp (sub "Trên N bài đã giao") | PASS (thẻ 3 = "Bài trong syllabus" thay Attendance rate — không có data tổng tin được) |
 | Tabs | 3 tab, "Sessions & practice" mặc định | 5 tab: Sessions & practice (mặc định) · Học viên · Giáo trình · Từ vựng · Ghi chú | PASS (giữ thêm Từ vựng/Ghi chú — tính năng thật ngoài phạm vi design) |
 | Sessions | `Section` card, `li` per buổi, số ô, thanh điểm danh, "Take/Edit attendance →", Edit | `Section` "Sessions (5)": card `li[data-testid=session-row]`, ô số `bg-primary` khi đã học, link "Điểm danh →"/"Sửa điểm danh →", thanh "n/N đã điểm danh", "Điều chỉnh" | PASS (thanh 3 phân đoạn đã/vắng/chưa — bỏ late, không có data; buổi quá khứ chưa có data amber) |

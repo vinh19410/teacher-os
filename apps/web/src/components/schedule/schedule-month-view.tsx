@@ -33,6 +33,11 @@ export function ScheduleMonthView({
 				{
 					classes: data.classes,
 					lessons: data.lessons,
+					// #670: nguồn sự thật giáo trình lớp theo syllabus.classId
+					// (splitSyllabi) và buổi manual theo class_session — giữ nhất
+					// quán với view Tuần/Ngày.
+					syllabi: data.syllabi,
+					classSessions: data.classSessions,
 					events: data.events,
 					holidays: data.holidays,
 				},

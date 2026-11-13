@@ -1,5 +1,6 @@
 import { MATERIAL_ERROR_CODES } from "@teacher-os/api/material-contracts";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { UPLOAD_HELP } from "@/components/materials/material-dialogs";
 import { HttpError } from "@/lib/kernel-load-state";
 import {
 	deleteMaterial,
@@ -36,7 +37,7 @@ afterEach(() => {
 });
 
 describe("prepareMaterialUpload", () => {
-	it("accepts allowlisted files and resolves the MIME from the extension", () => {
+	it("accepts allowlisted files and resolves MIME from extension/browser aliases", () => {
 		expect(prepareMaterialUpload(fileOf("de-thi.pdf", "", 1000))).toEqual({
 			ok: true,
 			mimeType: "application/pdf",
@@ -44,12 +45,36 @@ describe("prepareMaterialUpload", () => {
 		expect(
 			prepareMaterialUpload(fileOf("nghe.m4a", "audio/x-m4a", 1000)),
 		).toEqual({ ok: true, mimeType: "audio/mp4" });
+		expect(
+			prepareMaterialUpload(
+				fileOf("bai-giang.mp4", "application/octet-stream", 1000),
+			),
+		).toEqual({ ok: true, mimeType: "video/mp4" });
+		expect(
+			prepareMaterialUpload(fileOf("nghe-win.m4a", "video/mp4", 1000)),
+		).toEqual({ ok: true, mimeType: "audio/mp4" });
+		expect(
+			prepareMaterialUpload(
+				fileOf("giao-an.docx", "application/x-zip-compressed", 1000),
+			),
+		).toEqual({
+			ok: true,
+			mimeType:
+				"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+		});
 	});
 
-	it("rejects unsupported types before anything is sent", () => {
-		const prep = prepareMaterialUpload(fileOf("trang.html", "text/html", 10));
-		expect(prep.ok).toBe(false);
-		if (!prep.ok) expect(prep.message).toMatch(/Định dạng chưa hỗ trợ/);
+	it("rejects unsupported types, spoofed browser types, unknown extensions, and dotfiles before sending", () => {
+		for (const bad of [
+			fileOf("trang.html", "text/html", 10),
+			fileOf("spoof.mp3", "text/html", 100),
+			fileOf("a.bin", "application/pdf", 100),
+			fileOf("..pdf", "application/pdf", 100),
+		]) {
+			const prep = prepareMaterialUpload(bad);
+			expect(prep.ok).toBe(false);
+			if (!prep.ok) expect(prep.message).toMatch(/Định dạng chưa hỗ trợ/);
+		}
 	});
 
 	it("rejects empty and oversized files with the per-kind cap", () => {
@@ -63,15 +88,20 @@ describe("prepareMaterialUpload", () => {
 			message: "File quá lớn — tối đa 25 MB.",
 		});
 		const bigVideo = prepareMaterialUpload(
-			fileOf("a.mp4", "video/mp4", 101 * 1024 * 1024),
+			fileOf("a.mp4", "video/mp4", 96 * 1024 * 1024),
 		);
 		expect(bigVideo).toEqual({
 			ok: false,
-			message: "File quá lớn — tối đa 100 MB.",
+			message: "File quá lớn — tối đa 95 MB.",
 		});
 		expect(
-			prepareMaterialUpload(fileOf("a.mp4", "video/mp4", 99 * 1024 * 1024)).ok,
+			prepareMaterialUpload(fileOf("a.mp4", "video/mp4", 100_000_000)).ok,
+		).toBe(false);
+		expect(
+			prepareMaterialUpload(fileOf("a.mp4", "video/mp4", 95 * 1024 * 1024)).ok,
 		).toBe(true);
+		expect(UPLOAD_HELP).toContain("MP3/M4A/MP4 tối đa 95 MB");
+		expect(UPLOAD_HELP).not.toContain("100 MB");
 	});
 });
 
@@ -100,6 +130,9 @@ describe("materialErrorMessage", () => {
 	});
 
 	it("falls back by status and for network failures", () => {
+		expect(materialErrorMessage(new HttpError(413, "x"))).toBe(
+			"File quá lớn so với giới hạn cho phép.",
+		);
 		expect(materialErrorMessage(new HttpError(403, "x"))).toMatch(
 			/không có quyền/,
 		);

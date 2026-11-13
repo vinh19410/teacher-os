@@ -1,0 +1,14 @@
+# UC-schedule-02 — Tạo sự kiện vận hành
+
+| Mục | Nội dung |
+|-----|----------|
+| **a. Mục tiêu & mức** | Mức người dùng. Ghi một sự kiện vận hành (ví dụ "Họp chuyên môn giáo viên") vào lịch của tổ chức, tách khỏi ca học, và thấy nó xuất hiện ngay. |
+| **b. Actor chính** | Giáo viên (mọi thành viên tổ chức đã đăng nhập — chưa có phân vai, xem OQ-2). |
+| **c. Tiền điều kiện** | Đã đăng nhập; đang ở màn Lịch dạy. |
+| **d. Trigger** | Bấm nút "Sự kiện" trên đầu trang lịch. |
+| **e. Luồng chính** | 1. Hộp thoại mở với form trống; trường ngày mặc định là ngày đang neo của view.<br>2. Giáo viên nhập: tên sự kiện, ngày, giờ bắt đầu, giờ kết thúc, ghi chú (tùy chọn).<br>3. Trong lúc nhập, mỗi trường có nội dung sẽ được kiểm ngay theo bộ luật và báo lỗi đỏ dưới trường (chưa nhập thì chưa xát lỗi).<br>4. Bấm "Tạo sự kiện": nếu còn trường sai, hệ thống chặn, không gửi yêu cầu đi đâu.<br>5. Hệ thống gửi yêu cầu tạo; máy chủ xác nhận phiên, **tự chốt tổ chức và người tạo từ phiên** (form không gửi mã tổ chức), kiểm lại toàn bộ bộ luật.<br>6. Tạo thành công: hệ thống ghi dòng sự kiện thuộc tổ chức; bản chụp dữ liệu đang mở được chèn sự kiện mới và sắp xếp lại theo ngày rồi giờ.<br>7. Hộp thoại đóng, báo "Đã tạo sự kiện vận hành."; chip sự kiện xuất hiện ngay trong view đang mở (≤ 2 giây), và cũng thấy ở 2 view còn lại. |
+| **f. Luồng thay đổi** | 4a. Bấm Hủy hoặc đóng hộp thoại trong khi chưa lưu → không để lại dấu vết dữ liệu; không cho đóng trong lúc đang ghi.<br>5a. Máy chủ từ chối vì dữ liệu → dòng "Dữ liệu chưa hợp lệ — kiểm tra lại các trường." trong hộp thoại, form mở để sửa, không có toast lỗi.<br>5b. Máy chủ từ chối vì lý do khác hoặc quá hạn chờ → toast "Không tạo được sự kiện — thử lại.", form mở lại.<br>5c. Hết phiên đăng nhập → hệ thống đưa về đăng nhập lại. |
+| **g. Hậu điều kiện** | Dòng sự kiện tồn tại trong dữ liệu của tổ chức với người tạo = người đăng nhập; mọi view lịch của tổ chức (sau khi tải dữ liệu) đều hiển thị chip; số liệu dạy học (buổi, điểm danh, nhắc việc) không đổi. |
+| **h. Ràng buộc & kiểm chứng** | BR-001 (tên 2–100 sau cắt trắng), BR-002 (ngày có thật trên lịch), BR-003 (HH:mm, kết thúc sau bắt đầu), BR-004 (ghi chú ≤ 500, mặc định rỗng), BR-005 (tổ chức từ phiên). FR-006, FR-008, FR-009, FR-012. Kiểm chứng: 7 test schema (`packages/api/src/event-contracts.test.ts`), 8 test API (`apps/server/src/routes/events.test.ts:108-237`), 2 test hộp thoại (`apps/web/src/components/schedule/org-event-modal.test.tsx:73-117`), e2e đo tạo ≤ 2s (`apps/e2e/specs/schedule-views-and-events.spec.ts:100-119`), test không refetch (`apps/web/src/routes/_auth/schedule.test.tsx:664-704`). |
+
+**Nguồn chính:** `apps/web/src/components/schedule/org-event-modal.tsx:44-117,119-228`; `apps/web/src/lib/repos/events.ts:55-93`; `apps/server/src/routes/events.ts:34-63`; `packages/api/src/event-contracts.ts:3-46`.

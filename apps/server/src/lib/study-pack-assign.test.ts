@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { vietnamDateTimeMs } from "@teacher-os/api/vietnam-date";
 import { assignmentPrompt } from "@teacher-os/db/schema/assignment-prompt";
@@ -32,10 +33,9 @@ import {
 	loadClassStudyPacks,
 } from "./study-pack-assign";
 
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 describe("study-pack-assign (schedule, assign, cancel, backfill)", () => {
 	let db: Db;

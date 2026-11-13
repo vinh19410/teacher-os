@@ -8,6 +8,7 @@
  */
 
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import type { KernelSnapshot } from "@teacher-os/api/contracts";
 import {
@@ -23,10 +24,9 @@ import { beforeAll, describe, expect, test } from "vitest";
 import { buildApp, type Db } from "./app";
 
 const CORS_ORIGIN = "http://localhost:8001";
-const MIGRATIONS_DIR = new URL(
-	"../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 async function createTestApp() {
 	const client = createClient({ url: "file::memory:" });
@@ -506,7 +506,7 @@ describe("occurrence mutations (#98 phase 2)", () => {
 
 	test("CSRF ordering contract: kernel.use('*') registered before every kernel.post (RT13)", async () => {
 		const source = readFileSync(
-			new URL("./routes/kernel.ts", import.meta.url).pathname,
+			fileURLToPath(new URL("./routes/kernel.ts", import.meta.url).href),
 			"utf8",
 		);
 		const useIdx = source.indexOf('kernel.use("*"');

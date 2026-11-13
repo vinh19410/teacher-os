@@ -1,12 +1,53 @@
-import type { VocabTeacherWord } from "@teacher-os/api/contracts";
+import {
+	QUIZ_MEDIA_MAX_BYTES,
+	type VocabTeacherWord,
+} from "@teacher-os/api/contracts";
+import {
+	resolveLibraryAudioMimeType,
+	sanitizeMediaFileName,
+} from "@teacher-os/api/lib/quiz-media";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { useData } from "@/lib/data-store";
 import { getApiBaseUrl } from "@/lib/repos/api-base-url";
 import { VocabWordRow } from "./vocab-word-row";
+
+export function prepareVocabAudioUpload(
+	file: File,
+):
+	| { ok: true; contentType: string; encodedFileName: string }
+	| { ok: false; message: string } {
+	if (sanitizeMediaFileName(file.name) === null) {
+		return {
+			ok: false,
+			message: "Tên file âm thanh không hợp lệ (tối đa 200 ký tự).",
+		};
+	}
+	const contentType = resolveLibraryAudioMimeType(file.name, file.type);
+	if (!contentType) {
+		return {
+			ok: false,
+			message:
+				"Định dạng âm thanh không hỗ trợ (chỉ nhận MP3, M4A, WAV, AAC, OGG, WEBM).",
+		};
+	}
+	if (file.size <= 0) {
+		return { ok: false, message: "File âm thanh rỗng." };
+	}
+	if (file.size > QUIZ_MEDIA_MAX_BYTES) {
+		return {
+			ok: false,
+			message: "Dung lượng file âm thanh vượt quá 50 MB.",
+		};
+	}
+	return {
+		ok: true,
+		contentType,
+		encodedFileName: encodeURIComponent(file.name),
+	};
+}
 
 /**
  * Editor soạn từ vựng của một deck (#359). Words load per-deck qua
@@ -26,7 +67,7 @@ export function VocabDeckEditorDialog({
 	const [loading, setLoading] = useState(true);
 	const [loadError, setLoadError] = useState(false);
 	const [savingId, setSavingId] = useState<string | null>(null);
-
+	const [uploadingWordId, setUploadingWordId] = useState<string | null>(null);
 	const draftCounterRef = useRef(0);
 
 	const loadWords = useCallback(async () => {
@@ -120,24 +161,43 @@ export function VocabDeckEditorDialog({
 		wordId: string,
 		file: File,
 	): Promise<"ok" | "error"> => {
-		const res = await fetch(
-			`${getApiBaseUrl()}/api/kernel/vocab/words/${wordId}/audio`,
-			{
-				method: "PUT",
-				credentials: "include",
-				headers: {
-					"Content-Type": file.type || "audio/mpeg",
-					"Content-Length": String(file.size),
-				},
-				body: file,
-			},
-		);
-		if (!res.ok) {
-			toast.error("Không upload được file âm thanh phát âm.");
+		if (savingId || uploadingWordId) return "error";
+		const prepared = prepareVocabAudioUpload(file);
+		if (!prepared.ok) {
+			toast.error(prepared.message);
 			return "error";
 		}
-		await loadWords();
-		return "ok";
+		setUploadingWordId(wordId);
+		try {
+			const res = await fetch(
+				`${getApiBaseUrl()}/api/kernel/vocab/words/${encodeURIComponent(wordId)}/audio`,
+				{
+					method: "PUT",
+					credentials: "include",
+					headers: {
+						"Content-Type": prepared.contentType,
+						"X-File-Name": prepared.encodedFileName,
+					},
+					body: file,
+				},
+			);
+			if (!res.ok) {
+				if (res.status === 415) {
+					toast.error(
+						"Định dạng âm thanh không hợp lệ hoặc nội dung file không khớp đuôi file.",
+					);
+				} else if (res.status === 413) {
+					toast.error("Dung lượng file âm thanh vượt quá 50 MB.");
+				} else {
+					toast.error("Không upload được file âm thanh phát âm.");
+				}
+				return "error";
+			}
+			await loadWords();
+			return "ok";
+		} finally {
+			setUploadingWordId(null);
+		}
 	};
 
 	return (
@@ -179,7 +239,7 @@ export function VocabDeckEditorDialog({
 						<VocabWordRow
 							key={row.id}
 							row={row}
-							saving={savingId === row.id}
+							saving={savingId === row.id || uploadingWordId === row.id}
 							onSave={handleSaveRow}
 							onRemove={handleRemoveRow}
 							onUploadAudio={handleUploadAudio}

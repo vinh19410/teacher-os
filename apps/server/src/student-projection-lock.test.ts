@@ -8,10 +8,14 @@
  * test này fail và buộc một quyết định tường minh (mở khoá có chủ ý kèm
  * review, thay vì lộ dữ liệu mặc định).
  */
+
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "vitest";
 
-const STUDENT_ROUTE = new URL("./routes/student.ts", import.meta.url).pathname;
+const STUDENT_ROUTE = fileURLToPath(
+	new URL("./routes/student.ts", import.meta.url).href,
+);
 
 describe("student portal projection lock (TOS-7 #440)", () => {
 	test("student.ts không chiếu attendance/attendanceNote từ bảng lesson", () => {

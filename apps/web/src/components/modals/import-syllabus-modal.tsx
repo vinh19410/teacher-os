@@ -1,12 +1,33 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { TemplatePicker } from "@/components/syllabus/template-picker";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
+import { isHttpError } from "@/lib/kernel-load-state";
 import { useClasses } from "@/lib/repos/use-classes";
 import { useTemplates } from "@/lib/repos/use-syllabus";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
 
+function importCurriculumErrorMessage(
+	code: string | undefined,
+): string | undefined {
+	switch (code) {
+		case "MANUAL_SESSIONS_EXIST":
+			return "Lớp đã có buổi học thủ công. Vui lòng xóa các buổi chưa học trước khi nhập giáo trình.";
+		case "CURRICULUM_EMPTY_TEMPLATE":
+			return "Template chưa có bài học nào. Vui lòng thêm ít nhất 1 bài học trước khi nhập vào lớp trống.";
+		case "CURRICULUM_TOO_MANY_LESSONS":
+			return "Template vượt quá giới hạn 52 buổi học của lớp.";
+		case "CURRICULUM_TEMPLATE_TOO_LARGE":
+			return "Template quá lớn để import.";
+		case "CURRICULUM_ALREADY_EXISTS":
+			return "Lớp đã có giáo trình.";
+		case "CURRICULUM_MATERIAL_NOT_FOUND":
+			return "Một số tài liệu gắn trong template không còn tồn tại trong ngân hàng tài liệu.";
+		default:
+			return undefined;
+	}
+}
 /**
  * Import a syllabus template into a class as its own curriculum copy
  * (issue #79). Lists templates only — a class copy is never importable.
@@ -27,8 +48,17 @@ export function ImportSyllabusModal({
 	// The list loads with the snapshot (may be empty on first paint), so the
 	// stored id can go stale — always derive the effective selection.
 	const [selectedId, setSelectedId] = useState("");
-	const { saving, error, notice, submitBlocked, run, reconcile } =
+	const { saving, error, setError, notice, submitBlocked, run, reconcile } =
 		useKernelFormSubmit();
+	const wasOpenRef = useRef(false);
+	useEffect(() => {
+		if (open && !wasOpenRef.current) {
+			// Clear transient validation/conflict error on reopen, keeping `notice`
+			// (`submitBlocked`) intact so committed/outcome-unknown never replays blindly.
+			setError(undefined);
+		}
+		wasOpenRef.current = open;
+	}, [open, setError]);
 	const templateId = templates.some((t) => t.id === selectedId)
 		? selectedId
 		: (templates[0]?.id ?? "");
@@ -49,6 +79,11 @@ export function ImportSyllabusModal({
 		});
 		if (result?.kind === "refreshed") {
 			onClose();
+			return;
+		}
+		if (result?.kind === "definite-failure" && isHttpError(result.error)) {
+			const mapped = importCurriculumErrorMessage(result.error.code);
+			if (mapped) setError(mapped);
 		}
 	}
 
@@ -72,7 +107,10 @@ export function ImportSyllabusModal({
 				<TemplatePicker
 					templates={templates}
 					value={templateId}
-					onChange={setSelectedId}
+					onChange={(nextId) => {
+						setSelectedId(nextId);
+						setError(undefined);
+					}}
 				/>
 				{error && (
 					<p role="alert" className="text-danger text-xs">

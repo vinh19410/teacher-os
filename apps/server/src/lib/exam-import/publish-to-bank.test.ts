@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import {
 	EXAM_IMPORT_ERROR_CODES,
@@ -18,10 +19,9 @@ import type { Db } from "../../app";
 import { loadSnapshot } from "../../routes/snapshot";
 import { mergeReviewedDraft, publishExamImportToBank } from "./publish-to-bank";
 
-const MIGRATIONS_DIR = new URL(
-	"../../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 function sampleDraft(
 	overrides: Partial<ExtractedExamDraft> = {},

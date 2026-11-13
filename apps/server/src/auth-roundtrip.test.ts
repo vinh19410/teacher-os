@@ -9,6 +9,7 @@
  * end-to-end before any browser E2E is written.
  */
 
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { createAuth } from "@teacher-os/auth";
 import { createLogMailer } from "@teacher-os/auth/mail/mailer";
@@ -20,10 +21,9 @@ import { buildApp, type Db } from "./app";
 import { getSessionUser } from "./session";
 
 const CORS_ORIGIN = "http://localhost:8001";
-const MIGRATIONS_DIR = new URL(
-	"../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 describe("real better-auth round-trip under node", () => {
 	let app: ReturnType<typeof buildApp>;

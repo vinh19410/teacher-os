@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { LIBRARY_ERROR_CODES } from "@teacher-os/api/library-contracts";
 import * as schema from "@teacher-os/db/schema/index";
@@ -23,10 +24,9 @@ import type { SessionUser } from "../session";
 const ADMIN_ORIGIN = "http://localhost:8004";
 const TEACHER_ORIGIN = "http://localhost:8001";
 const ADMIN_EMAILS = ["root@test.local", "root2@test.local"];
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 const SESSIONS: Record<string, SessionUser | null> = {
 	admin: {

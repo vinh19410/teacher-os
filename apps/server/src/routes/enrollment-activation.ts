@@ -20,11 +20,13 @@ import {
 	organizationHolidayClass,
 } from "@teacher-os/db/schema/organization-holiday";
 import { sessionPackage } from "@teacher-os/db/schema/session-package";
+import { syllabus } from "@teacher-os/db/schema/syllabus";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import type { Db } from "../app";
 import { isManualClass } from "../lib/class-mode";
 import { backfillStudyPackTargetsForStudent } from "../lib/study-pack-assign";
+import { findClassCurriculum } from "../lib/syllabus-curriculum";
 import { isRollbackableConstraintError } from "./holidays";
 
 type GeneratorRow = Omit<typeof lesson.$inferInsert, "id" | "createdAt">;
@@ -256,9 +258,400 @@ function formatDayMonth(date: Date): string {
 	}).format(date);
 }
 
+export type MaterializeScheduleResult =
+	| { ok: true }
+	| { ok: false; error: "class" };
+
 export type ActivateEnrollmentResult =
 	| { ok: true }
 	| { ok: false; error: "enrollment" | "class" };
+
+/**
+ * Sinh hoặc bù lịch học + gói buổi cho một enrollment đang ở trạng thái `active`
+ * (dùng chung cho `activateEnrollment` và `backfillStuckEnrollments` khi lớp
+ * chuyển `manual -> auto` ở `curriculum/import`, issue #670).
+ *
+ * - Đọc tươi `classTable`, `findClassCurriculum` và `isManualClass` bên trong
+ *   vòng retry `attempt = 1..3` để khóa kín cửa sổ TOCTOU sau CAS.
+ * - Statement 0 guard trên `enrollment.status` kiểm tra nguyên tử: enrollment
+ *   vẫn `active`, chưa có dòng `lesson` nào, và trạng thái lớp (`scheduling_mode`,
+ *   `sessions_total`, sự tồn tại bản sao `syllabus`, số dòng `class_session` nếu
+ *   manual) không thay đổi kể từ lúc đọc.
+ */
+export async function materializeScheduleForEnrollment(
+	db: Db,
+	input: {
+		orgId: string;
+		enrollmentId: string;
+		studentId: string;
+		classId: string;
+		mode: "activate" | "backfill";
+	},
+): Promise<MaterializeScheduleResult> {
+	const { orgId, enrollmentId, studentId, classId } = input;
+
+	for (let attempt = 1; attempt <= 3; attempt += 1) {
+		const [cls] = await db
+			.select({
+				id: classTable.id,
+				name: classTable.name,
+				schedule: classTable.schedule,
+				sessionsTotal: classTable.sessionsTotal,
+				startDate: classTable.startDate,
+				mode: classTable.mode,
+				tuitionFee: classTable.tuitionFee,
+				syllabusId: classTable.syllabusId,
+				schedulingMode: classTable.schedulingMode,
+			})
+			.from(classTable)
+			.where(and(eq(classTable.id, classId), eq(classTable.orgId, orgId)));
+		if (!cls) {
+			return { ok: false, error: "class" };
+		}
+
+		const hasCurriculum = Boolean(await findClassCurriculum(db, cls.id, orgId));
+		const isManual = await isManualClass(
+			db,
+			orgId,
+			cls.id,
+			cls.syllabusId,
+			cls.schedulingMode,
+		);
+
+		if (input.mode === "backfill" && (isManual || cls.sessionsTotal <= 0)) {
+			return { ok: true };
+		}
+
+		const classSessionRows = isManual
+			? await db
+					.select()
+					.from(classSession)
+					.where(
+						and(
+							eq(classSession.orgId, orgId),
+							eq(classSession.classId, cls.id),
+						),
+					)
+					.orderBy(classSession.date)
+			: [];
+
+		const packageValues = {
+			orgId,
+			studentId,
+			total: isManual ? classSessionRows.length : cls.sessionsTotal,
+			price: cls.tuitionFee ?? 0,
+			mode: cls.mode,
+			start: formatDayMonth(new Date()),
+			expiry: "",
+			status: "active",
+			enrollmentId,
+		};
+
+		const generated: GeneratorRow[] = isManual
+			? classSessionRows.map((cs) => ({
+					orgId,
+					classId: cls.id,
+					enrollmentId,
+					day: isoToLessonWeekday(cs.date),
+					time: cs.time,
+					dur: cs.dur,
+					date: cs.date,
+					type: "1:1",
+					status: "upcoming" as const,
+					topic: cs.topic,
+					zoom: cs.zoom,
+				}))
+			: generateScheduleLessons({
+					schedule: cls.schedule,
+					startDate: cls.startDate,
+					sessionsTotal: cls.sessionsTotal,
+					orgId,
+					classId: cls.id,
+					enrollmentId,
+				});
+		const parsedSchedule = parseStoredSchedule(cls.schedule);
+		let scheduleShifted = false;
+
+		const [shifts, cancels, existingClassLessons] = await Promise.all([
+			loadClassShifts(db, orgId, cls.id),
+			loadClassCancels(db, orgId, cls.id),
+			db
+				.select({ id: lesson.id })
+				.from(lesson)
+				.where(and(eq(lesson.orgId, orgId), eq(lesson.classId, cls.id)))
+				.limit(1),
+		]);
+		let rows: GeneratorRow[] = generated.map((row) => ({ ...row }));
+		const newShifts: Array<{
+			holidayId: string;
+			originalDate: string;
+			makeupDate: string;
+		}> = [];
+		const newCancels: Array<{
+			holidayId: string;
+			date: string;
+		}> = [];
+
+		if (parsedSchedule && rows.length > 0) {
+			const effective: EffectiveShift[] = shifts.map((shift) => ({
+				originalDate: shift.originalDate,
+				makeupDate: shift.makeupDate,
+				time: parsedSchedule.start,
+				dur: scheduleDurationMinutes(parsedSchedule),
+			}));
+			rows = applyShiftsToRows(rows, effective);
+			scheduleShifted = true;
+
+			const cancelDates = new Set(cancels.map((c) => c.date));
+			for (const row of rows) {
+				if (
+					row.date !== null &&
+					row.date !== undefined &&
+					cancelDates.has(row.date) &&
+					row.status === "upcoming"
+				) {
+					row.status = "cancelled";
+				}
+			}
+
+			if (
+				shifts.length === 0 &&
+				cancels.length === 0 &&
+				existingClassLessons.length === 0
+			) {
+				const holidays = await loadClassHolidays(db, orgId, cls.id);
+				if (holidays.length > 0) {
+					const datesByName = new Map<string, string>();
+					for (const holiday of holidays) {
+						for (
+							let d = holiday.fromDate;
+							d <= holiday.toDate;
+							d = addDaysISO(d, 1)
+						) {
+							if (!datesByName.has(d)) datesByName.set(d, holiday.name);
+						}
+					}
+					for (const holiday of holidays) {
+						const planned = planHolidayShift({
+							range: {
+								fromDate: holiday.fromDate,
+								toDate: holiday.toDate,
+							},
+							classes: [
+								{
+									id: cls.id,
+									name: cls.name ?? cls.id,
+									schedule: cls.schedule,
+									lessons: rows.map((row) => ({
+										date: row.date ?? null,
+										status: row.status ?? "upcoming",
+										enrollmentId: row.enrollmentId,
+									})),
+								},
+							],
+							existingHolidayDates: new Map([[cls.id, datesByName]]),
+							todayISO: vietnamTodayISO(),
+							mode: holiday.mode,
+						});
+						for (const shift of planned.shifts) {
+							newShifts.push({
+								holidayId: holiday.id,
+								originalDate: shift.originalDate,
+								makeupDate: shift.makeupDate,
+							});
+							rows = applyShiftsToRows(rows, [
+								{
+									originalDate: shift.originalDate,
+									makeupDate: shift.makeupDate,
+									time: parsedSchedule.start,
+									dur: scheduleDurationMinutes(parsedSchedule),
+								},
+							]);
+						}
+						for (const cancel of planned.cancellations) {
+							newCancels.push({
+								holidayId: holiday.id,
+								date: cancel.date,
+							});
+							for (const row of rows) {
+								if (row.date === cancel.date && row.status === "upcoming") {
+									row.status = "cancelled";
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		const syllabusStateSql = hasCurriculum
+			? sql`EXISTS (SELECT 1 FROM ${syllabus} WHERE ${syllabus.classId} = ${cls.id} AND ${syllabus.orgId} = ${orgId})`
+			: sql`NOT EXISTS (SELECT 1 FROM ${syllabus} WHERE ${syllabus.classId} = ${cls.id} AND ${syllabus.orgId} = ${orgId})`;
+		const manualCountGuardSql = isManual
+			? sql` AND (SELECT count(*) FROM ${classSession} WHERE ${classSession.classId} = ${cls.id} AND ${classSession.orgId} = ${orgId}) = ${classSessionRows.length}`
+			: sql``;
+
+		// Statement 0: khóa nguyên tử trạng thái enrollment + 0 lesson + trạng thái lớp
+		// trước mọi câu INSERT/UPSERT tiếp theo trong cùng batch.
+		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
+			db
+				.update(enrollment)
+				.set({
+					status: sql`CASE WHEN ${enrollment.status} = 'active' AND NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.enrollmentId} = ${enrollmentId} AND ${lesson.orgId} = ${orgId}) AND EXISTS (SELECT 1 FROM ${classTable} WHERE ${classTable.id} = ${cls.id} AND ${classTable.orgId} = ${orgId} AND ${classTable.schedulingMode} = ${cls.schedulingMode} AND ${classTable.sessionsTotal} = ${cls.sessionsTotal}) AND ${syllabusStateSql}${manualCountGuardSql} THEN 'active' ELSE NULL END`,
+				})
+				.where(
+					and(eq(enrollment.id, enrollmentId), eq(enrollment.orgId, orgId)),
+				),
+			input.mode === "backfill"
+				? db
+						.insert(sessionPackage)
+						.values({
+							id: crypto.randomUUID(),
+							...packageValues,
+						})
+						.onConflictDoUpdate({
+							target: sessionPackage.enrollmentId,
+							set: {
+								total: sql`CASE WHEN ${sessionPackage.orgId} = ${orgId} THEN ${packageValues.total} ELSE NULL END`,
+							},
+						})
+				: db.insert(sessionPackage).values({
+						id: crypto.randomUUID(),
+						...packageValues,
+					}),
+		];
+
+		const materialMoveStatements = (shift: {
+			originalDate: string;
+			makeupDate: string;
+		}): [BatchItem<"sqlite">, BatchItem<"sqlite">] => [
+			db.delete(lessonMaterial).where(
+				and(
+					eq(lessonMaterial.orgId, orgId),
+					eq(lessonMaterial.classId, cls.id),
+					eq(lessonMaterial.date, shift.makeupDate),
+					inArray(
+						lessonMaterial.materialId,
+						db
+							.select({ mid: lessonMaterial.materialId })
+							.from(lessonMaterial)
+							.where(
+								and(
+									eq(lessonMaterial.orgId, orgId),
+									eq(lessonMaterial.classId, cls.id),
+									eq(lessonMaterial.date, shift.originalDate),
+								),
+							),
+					),
+				),
+			),
+			db
+				.update(lessonMaterial)
+				.set({ date: shift.makeupDate })
+				.where(
+					and(
+						eq(lessonMaterial.orgId, orgId),
+						eq(lessonMaterial.classId, cls.id),
+						eq(lessonMaterial.date, shift.originalDate),
+					),
+				),
+		];
+		for (const shift of newShifts) {
+			statements.push(
+				db.insert(holidaySessionShift).values({
+					id: crypto.randomUUID(),
+					orgId,
+					classId: cls.id,
+					...shift,
+				}),
+			);
+			statements.push(...materialMoveStatements(shift));
+		}
+		if (scheduleShifted) {
+			for (const shift of shifts) {
+				statements.push(...materialMoveStatements(shift));
+			}
+		}
+		for (const cancel of newCancels) {
+			statements.push(
+				db.insert(holidaySessionCancel).values({
+					id: crypto.randomUUID(),
+					orgId,
+					classId: cls.id,
+					...cancel,
+				}),
+			);
+		}
+		const referencedHolidayIds = [
+			...new Set([
+				...newShifts.map((s) => s.holidayId),
+				...newCancels.map((c) => c.holidayId),
+			]),
+		];
+		const holidayExistsGuard =
+			referencedHolidayIds.length > 0
+				? sql` AND (SELECT count(*) FROM ${organizationHoliday} WHERE ${organizationHoliday.orgId} = ${orgId} AND ${organizationHoliday.id} IN (${sql.join(
+						referencedHolidayIds.map((id) => sql`${id}`),
+						sql`, `,
+					)})) = ${referencedHolidayIds.length}`
+				: sql``;
+		for (const row of rows) {
+			statements.push(
+				db.insert(lesson).values({
+					id: crypto.randomUUID(),
+					...row,
+					status: sql`CASE WHEN (SELECT count(*) FROM ${holidaySessionShift} WHERE ${holidaySessionShift.orgId} = ${orgId} AND ${holidaySessionShift.classId} = ${cls.id}) = ${shifts.length + newShifts.length} AND (SELECT count(*) FROM ${holidaySessionCancel} WHERE ${holidaySessionCancel.orgId} = ${orgId} AND ${holidaySessionCancel.classId} = ${cls.id}) = ${cancels.length + newCancels.length}${holidayExistsGuard} THEN ${row.status} ELSE NULL END`,
+				}),
+			);
+		}
+		try {
+			await db.batch(statements);
+			return { ok: true };
+		} catch (err: unknown) {
+			if (!isRollbackableConstraintError(err)) {
+				throw err;
+			}
+			const [enrAfter, existingLesson, existingPkg] = await Promise.all([
+				db
+					.select({ status: enrollment.status })
+					.from(enrollment)
+					.where(
+						and(eq(enrollment.id, enrollmentId), eq(enrollment.orgId, orgId)),
+					),
+				db
+					.select({ id: lesson.id })
+					.from(lesson)
+					.where(
+						and(eq(lesson.orgId, orgId), eq(lesson.enrollmentId, enrollmentId)),
+					)
+					.limit(1),
+				db
+					.select({ total: sessionPackage.total })
+					.from(sessionPackage)
+					.where(
+						and(
+							eq(sessionPackage.orgId, orgId),
+							eq(sessionPackage.enrollmentId, enrollmentId),
+						),
+					)
+					.limit(1),
+			]);
+			if (enrAfter[0]?.status !== "active") {
+				return { ok: true };
+			}
+			if (
+				existingLesson.length > 0 ||
+				(input.mode === "activate" && (existingPkg[0]?.total ?? 0) > 0)
+			) {
+				return { ok: true };
+			}
+			if (attempt >= 3) {
+				throw err;
+			}
+		}
+	}
+	throw new Error("materializeScheduleForEnrollment: guard retry exhausted");
+}
 
 /**
  * Kích hoạt enrollment: chuyển 'invited' -> 'active' và sinh sessionPackage +
@@ -363,330 +756,21 @@ export async function activateEnrollment(
 		return { ok: false, error: "enrollment" };
 	}
 
-	const isManual = await isManualClass(
+	const materialized = await materializeScheduleForEnrollment(db, {
+		orgId,
+		enrollmentId,
+		studentId: existingEnrollment.studentId,
+		classId: existingEnrollment.classId,
+		mode: "activate",
+	});
+	if (!materialized.ok) {
+		return materialized;
+	}
+	await backfillStudyPackTargetsForStudent(
 		db,
 		orgId,
-		cls.id,
-		cls.syllabusId,
-		cls.schedulingMode,
+		existingEnrollment.classId,
+		existingEnrollment.studentId,
 	);
-
-	const classSessionRows = isManual
-		? await db
-				.select()
-				.from(classSession)
-				.where(
-					and(eq(classSession.orgId, orgId), eq(classSession.classId, cls.id)),
-				)
-				.orderBy(classSession.date)
-		: [];
-
-	const packageValues = {
-		orgId,
-		studentId: existingEnrollment.studentId,
-		total: isManual ? classSessionRows.length : cls.sessionsTotal,
-		price: cls.tuitionFee ?? 0,
-		mode: cls.mode,
-		start: formatDayMonth(new Date()),
-		expiry: "",
-		status: "active",
-		enrollmentId,
-	};
-
-	const generated: GeneratorRow[] = isManual
-		? classSessionRows.map((cs) => ({
-				orgId,
-				classId: cls.id,
-				enrollmentId,
-				day: isoToLessonWeekday(cs.date),
-				time: cs.time,
-				dur: cs.dur,
-				date: cs.date,
-				type: "1:1",
-				status: "upcoming" as const,
-				topic: cs.topic,
-				zoom: cs.zoom,
-			}))
-		: generateScheduleLessons({
-				schedule: cls.schedule,
-				startDate: cls.startDate,
-				sessionsTotal: cls.sessionsTotal,
-				orgId,
-				classId: cls.id,
-				enrollmentId,
-			});
-	const parsedSchedule = parseStoredSchedule(cls.schedule);
-	// #662: shift có thực sự được áp lên generated rows hay không — schedule
-	// legacy (`parsedSchedule` null) thì không, và loop move material non-I6
-	// phải bỏ để không yank tài liệu khỏi buổi thật còn ở ngày gốc.
-	let scheduleShifted = false;
-
-	// D6 (I2b/I3/I6): dựng batch từ state đã đọc (shifts + rows đã áp
-	// shift); mọi insert lesson mang guard CASE đếm `holiday_session_shift`
-	// — một apply commit giữa lúc đọc và ghi làm guard lệch → batch fail
-	// (NOT NULL) → đọc lại và dựng lại, tối đa 3 lần.
-	for (let attempt = 1; attempt <= 3; attempt += 1) {
-		const [shifts, cancels, existingClassLessons] = await Promise.all([
-			loadClassShifts(db, orgId, cls.id),
-			loadClassCancels(db, orgId, cls.id),
-			db
-				.select({ id: lesson.id })
-				.from(lesson)
-				.where(and(eq(lesson.orgId, orgId), eq(lesson.classId, cls.id)))
-				.limit(1),
-		]);
-		let rows: GeneratorRow[] = generated.map((row) => ({ ...row }));
-		const newShifts: Array<{
-			holidayId: string;
-			originalDate: string;
-			makeupDate: string;
-		}> = [];
-		const newCancels: Array<{
-			holidayId: string;
-			date: string;
-		}> = [];
-
-		if (parsedSchedule && rows.length > 0) {
-			const effective: EffectiveShift[] = shifts.map((shift) => ({
-				originalDate: shift.originalDate,
-				makeupDate: shift.makeupDate,
-				time: parsedSchedule.start,
-				dur: scheduleDurationMinutes(parsedSchedule),
-			}));
-			rows = applyShiftsToRows(rows, effective);
-			// #662: shift đã thực sự áp lên rows — cho phép loop move non-I6
-			// dưới đây chạy (schedule legacy null thì cờ giữ false, không move).
-			scheduleShifted = true;
-
-			// TOS-13 D7: dòng sinh ra rơi vào ngày trong `holiday_session_cancel`
-			// của lớp → `cancelled` (không sinh buổi bù).
-			const cancelDates = new Set(cancels.map((c) => c.date));
-			for (const row of rows) {
-				if (
-					row.date !== null &&
-					row.date !== undefined &&
-					cancelDates.has(row.date) &&
-					row.status === "upcoming"
-				) {
-					row.status = "cancelled";
-				}
-			}
-
-			// I6 (+ TOS-13): lớp chưa có dòng shift/cancel nào nhưng có kỳ nghỉ
-			// hiệu lực (chưa từng có học viên lúc apply, hoặc lớp tạo sau) — chạy
-			// planner trên tập dòng vừa sinh và tự sinh shift/cancel trong batch.
-			if (
-				shifts.length === 0 &&
-				cancels.length === 0 &&
-				existingClassLessons.length === 0
-			) {
-				const holidays = await loadClassHolidays(db, orgId, cls.id);
-				if (holidays.length > 0) {
-					// date → tên kỳ nghỉ; `holidays` đã sắp createdAt ASC nên kỳ
-					// khai báo trước thắng khi chồng ngày (đồng bộ loader route).
-					const datesByName = new Map<string, string>();
-					for (const holiday of holidays) {
-						for (
-							let d = holiday.fromDate;
-							d <= holiday.toDate;
-							d = addDaysISO(d, 1)
-						) {
-							if (!datesByName.has(d)) datesByName.set(d, holiday.name);
-						}
-					}
-					for (const holiday of holidays) {
-						const planned = planHolidayShift({
-							range: {
-								fromDate: holiday.fromDate,
-								toDate: holiday.toDate,
-							},
-							classes: [
-								{
-									id: cls.id,
-									name: cls.name ?? cls.id,
-									schedule: cls.schedule,
-									lessons: rows.map((row) => ({
-										date: row.date ?? null,
-										status: row.status ?? "upcoming",
-										enrollmentId: row.enrollmentId,
-									})),
-								},
-							],
-							existingHolidayDates: new Map([[cls.id, datesByName]]),
-							todayISO: vietnamTodayISO(),
-							mode: holiday.mode,
-						});
-						for (const shift of planned.shifts) {
-							newShifts.push({
-								holidayId: holiday.id,
-								originalDate: shift.originalDate,
-								makeupDate: shift.makeupDate,
-							});
-							rows = applyShiftsToRows(rows, [
-								{
-									originalDate: shift.originalDate,
-									makeupDate: shift.makeupDate,
-									time: parsedSchedule.start,
-									dur: scheduleDurationMinutes(parsedSchedule),
-								},
-							]);
-						}
-						for (const cancel of planned.cancellations) {
-							newCancels.push({
-								holidayId: holiday.id,
-								date: cancel.date,
-							});
-							for (const row of rows) {
-								if (row.date === cancel.date && row.status === "upcoming") {
-									row.status = "cancelled";
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-
-		const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
-			db.insert(sessionPackage).values({
-				id: crypto.randomUUID(),
-				...packageValues,
-			}),
-		];
-		/** Cặp statement dọn-trùng + move `lesson_material` cho một shift —
-		 * dùng chung I6 (newShifts, #659) và non-I6 (shifts có sẵn, #662). */
-		const materialMoveStatements = (shift: {
-			originalDate: string;
-			makeupDate: string;
-		}): [BatchItem<"sqlite">, BatchItem<"sqlite">] => [
-			db.delete(lessonMaterial).where(
-				and(
-					eq(lessonMaterial.orgId, orgId),
-					eq(lessonMaterial.classId, cls.id),
-					eq(lessonMaterial.date, shift.makeupDate),
-					inArray(
-						lessonMaterial.materialId,
-						db
-							.select({ mid: lessonMaterial.materialId })
-							.from(lessonMaterial)
-							.where(
-								and(
-									eq(lessonMaterial.orgId, orgId),
-									eq(lessonMaterial.classId, cls.id),
-									eq(lessonMaterial.date, shift.originalDate),
-								),
-							),
-					),
-				),
-			),
-			db
-				.update(lessonMaterial)
-				.set({ date: shift.makeupDate })
-				.where(
-					and(
-						eq(lessonMaterial.orgId, orgId),
-						eq(lessonMaterial.classId, cls.id),
-						eq(lessonMaterial.date, shift.originalDate),
-					),
-				),
-		];
-		for (const shift of newShifts) {
-			statements.push(
-				db.insert(holidaySessionShift).values({
-					id: crypto.randomUUID(),
-					orgId,
-					classId: cls.id,
-					...shift,
-				}),
-			);
-			// #659: activation tự sinh shift (nhánh I6 — lớp manual chưa từng có
-			// shift/lesson lúc apply) phải kéo tài liệu đã gắn vào ngày gốc theo
-			// buổi bù, pattern `shiftStatements` của holidays.ts (#645): dọn
-			// TRƯỚC các dòng trùng materialId ở makeupDate để UPDATE move không
-			// đụng khoá chính (classId, date, materialId); KHÔNG xoá dòng khác ở
-			// makeupDate — #658: ngày có buổi manual `class_session` là dữ liệu
-			// thật. Khi trùng materialId, bản move thắng bản đích (nhất quán
-			// scenario C #645) — nội dung tài liệu (bảng material) không mất,
-			// chỉ liên kết ngày bù được thay bằng bản cùng materialId từ ngày
-			// gốc. Hai câu này nằm trong cùng batch nguyên tử: guard CASE của
-			// lesson insert làm toàn batch rollback khi trạng thái lệch. Thứ tự
-			// per-shift là load-bearing: shift chuỗi (makeup kỳ trước trúng kỳ
-			// sau) cần thấy ghi của câu trước — test chuỗi trong describe #659
-			// của holidays.test.ts bẫy đúng case gom-sai gây PK conflict.
-			statements.push(...materialMoveStatements(shift));
-		}
-		// #662: non-I6 (shift row có sẵn — re-activation sau xóa enrollment,
-		// attach-sau-shift) move material theo shift đã có. Sau activation
-		// ngày gốc không còn buổi thật nào: `classSessionRows` không filter
-		// date nên mọi generated row tại `originalDate` đều bị
-		// `applyShiftsToRows` dịch sang ngày bù — move khớp ý đồ teacher
-		// (reversal #658, xem plan #662 decision 2). Gate `scheduleShifted`:
-		// schedule legacy (`parseStoredSchedule` null) thì shift KHÔNG được áp
-		// lên rows — lesson thật `upcoming` ở lại ngày gốc, move sẽ yank tài
-		// liệu khỏi buổi thật nên phải bỏ. Thứ tự `createdAt ASC` của
-		// `shifts` khớp thứ tự `applyShiftsToRows` — shift chuỗi đi đúng đích
-		// cuối. Loop nằm trong vòng retry (statements dựng lại mỗi attempt).
-		// Makeup trúng `holiday_session_cancel` vẫn là đích move — chủ ý,
-		// mirror #645; test T7 describe #662 bẫy. Orphan legacy (link ở ngày
-		// gốc không còn session nào) cũng được move — chấp nhận có chủ ý
-		// (decision 8, nhất quán pattern không-gate của #659).
-		if (scheduleShifted) {
-			for (const shift of shifts) {
-				statements.push(...materialMoveStatements(shift));
-			}
-		}
-		for (const cancel of newCancels) {
-			statements.push(
-				db.insert(holidaySessionCancel).values({
-					id: crypto.randomUUID(),
-					orgId,
-					classId: cls.id,
-					...cancel,
-				}),
-			);
-		}
-		const referencedHolidayIds = [
-			...new Set([
-				...newShifts.map((s) => s.holidayId),
-				...newCancels.map((c) => c.holidayId),
-			]),
-		];
-		const holidayExistsGuard =
-			referencedHolidayIds.length > 0
-				? sql` AND (SELECT count(*) FROM ${organizationHoliday} WHERE ${organizationHoliday.orgId} = ${orgId} AND ${organizationHoliday.id} IN (${sql.join(
-						referencedHolidayIds.map((id) => sql`${id}`),
-						sql`, `,
-					)})) = ${referencedHolidayIds.length}`
-				: sql``;
-		for (const row of rows) {
-			statements.push(
-				db.insert(lesson).values({
-					id: crypto.randomUUID(),
-					...row,
-					/**
-					 * Guard chống lệch đọc (I2b + TOS-13): count shift và cancel
-					 * trong DB phải vẫn bằng số đã đọc CỘNG với số batch này tự sinh,
-					 * và các kỳ nghỉ vừa tham chiếu vẫn còn tồn tại.
-					 */
-					status: sql`CASE WHEN (SELECT count(*) FROM ${holidaySessionShift} WHERE ${holidaySessionShift.classId} = ${cls.id}) = ${shifts.length + newShifts.length} AND (SELECT count(*) FROM ${holidaySessionCancel} WHERE ${holidaySessionCancel.classId} = ${cls.id}) = ${cancels.length + newCancels.length}${holidayExistsGuard} THEN ${row.status} ELSE NULL END`,
-				}),
-			);
-		}
-		try {
-			await db.batch(statements);
-			await backfillStudyPackTargetsForStudent(
-				db,
-				orgId,
-				existingEnrollment.classId,
-				existingEnrollment.studentId,
-			);
-			return { ok: true };
-		} catch (err: unknown) {
-			if (attempt >= 3 || !isRollbackableConstraintError(err)) {
-				throw err;
-			}
-			// Vòng sau đọc lại shifts/rows và dựng batch mới.
-		}
-	}
-	throw new Error("activateEnrollment: shift guard retry exhausted");
+	return { ok: true };
 }

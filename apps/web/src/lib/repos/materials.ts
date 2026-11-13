@@ -8,6 +8,7 @@
  * hoá và X-File-Name đã encodeURIComponent; client chặn trước loại/dung
  * lượng bằng đúng hàm server dùng (`checkMaterialUpload`).
  */
+import { useQueryClient } from "@tanstack/react-query";
 import {
 	checkMaterialUpload,
 	type LessonMaterialView,
@@ -25,8 +26,11 @@ import {
 	resolveMaterialMimeType,
 	type SyllabusBankMaterialRef,
 } from "@teacher-os/api/material-contracts";
+import { canWriteMaterials } from "@teacher-os/auth/role";
+import { useCallback, useSyncExternalStore } from "react";
 import { HttpError } from "@/lib/kernel-load-state";
 import { getApiBaseUrl } from "./api-base-url";
+import { kernelQueryKey } from "./kernel";
 
 export class MaterialRequestError extends HttpError {
 	readonly materialCode: MaterialErrorCode | null;
@@ -200,6 +204,9 @@ export function materialErrorMessage(error: unknown): string {
 		default:
 			break;
 	}
+	// Phủ phản hồi 413 có CORS nhưng không kèm JSON FILE_TOO_LARGE (trần 95 MiB
+	// ở prepareMaterialUpload đã chặn trước nhánh 413 thiếu CORS của Cloudflare edge).
+	if (error.status === 413) return "File quá lớn so với giới hạn cho phép.";
 	if (error.status === 403) return "Bạn không có quyền thực hiện thao tác này.";
 	if (error.status === 400)
 		return "Dữ liệu không hợp lệ. Kiểm tra lại rồi thử lại.";
@@ -458,4 +465,26 @@ export async function detachSessionMaterial(
 		`${sessionPath(classId, date)}/${encodeURIComponent(materialId)}`,
 		{ method: "DELETE" },
 	);
+}
+
+/**
+ * #646: Quyền ghi Ngân hàng tài liệu của người dùng hiện tại, đọc từ cache
+ * `kernelQueryKey` (tự cập nhật khi snapshot refetch; fallback `"teacher"` để
+ * tương thích test mount `QueryClientProvider` thuần không bọc `DataProvider`).
+ */
+export function useCanWriteMaterials(): boolean {
+	const queryClient = useQueryClient();
+	const subscribe = useCallback(
+		(onStoreChange: () => void) =>
+			queryClient.getQueryCache().subscribe(onStoreChange),
+		[queryClient],
+	);
+	const role = useSyncExternalStore(
+		subscribe,
+		() =>
+			queryClient.getQueryData<{ viewer?: { role?: string } }>(kernelQueryKey)
+				?.viewer?.role ?? "teacher",
+		() => "teacher",
+	);
+	return canWriteMaterials(role);
 }

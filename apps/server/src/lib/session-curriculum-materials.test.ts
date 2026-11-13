@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import * as schema from "@teacher-os/db/schema/index";
 import { and, eq } from "drizzle-orm";
@@ -7,10 +8,9 @@ import { beforeAll, describe, expect, test } from "vitest";
 import type { Db } from "../app";
 import { resolveCurriculumMaterials } from "./session-curriculum-materials";
 
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 /**
  * Lịch thử nghiệm: 3 buổi dated (d1, d2, d3) và 3 bài giáo trình

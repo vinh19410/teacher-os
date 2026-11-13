@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import * as schema from "@teacher-os/db/schema/index";
 import { drizzle } from "drizzle-orm/libsql";
@@ -6,10 +7,9 @@ import { beforeAll, describe, expect, test } from "vitest";
 import { buildApp, type Db, type ServerApp } from "./app";
 
 const CORS_ORIGIN = "https://app.teacheros.io.vn";
-const MIGRATIONS_DIR = new URL(
-	"../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 describe("API Server HTTPS Redirect & Security Headers", () => {
 	let app: ServerApp;

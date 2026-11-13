@@ -55,6 +55,7 @@ coverage
 apps/e2e/playwright-report/
 apps/e2e/test-results/
 
+.bruno-report-*.json
 # Misc
 *.tgz
 .cache
@@ -69,7 +70,10 @@ __pycache__/
 
 # Agent tooling
 .zcode/
+docs/_shared/kg/
 .claude/*
+!.claude/skills/
+!.claude/scripts/
 !.claude/state/
 .claude/state/*
 !.claude/state/atlassian/

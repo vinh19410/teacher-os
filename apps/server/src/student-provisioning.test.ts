@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import * as schema from "@teacher-os/db/schema/index";
 import { drizzle } from "drizzle-orm/libsql";
@@ -6,10 +7,9 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { Db } from "./app";
 import { provisionStudentForUser } from "./student-provisioning";
 
-const MIGRATIONS_DIR = new URL(
-	"../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 describe("provisionStudentForUser", () => {
 	let db: Db;

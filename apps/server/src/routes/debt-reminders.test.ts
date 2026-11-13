@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import type { DebtReminderResponse } from "@teacher-os/api/contracts";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
@@ -19,10 +20,9 @@ import { beforeAll, describe, expect, test } from "vitest";
 import { buildApp, type Db, type ServerApp } from "../app";
 
 const CORS_ORIGIN = "http://localhost:8001";
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 describe("POST /api/debt-reminders (TOS-18 #452)", () => {
 	const client = createClient({ url: "file::memory:" });

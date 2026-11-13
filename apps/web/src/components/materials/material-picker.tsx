@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MATERIAL_LINKS_MAX } from "@teacher-os/api/contracts";
 import {
+	MATERIAL_FOLDER_MAX_DEPTH,
 	MATERIAL_ROOT_FOLDER,
 	type MaterialView,
 	type SyllabusBankMaterialRef,
@@ -26,6 +27,7 @@ import {
 	materialsAllQueryKey,
 	prepareMaterialUpload,
 	uploadMaterialFile,
+	useCanWriteMaterials,
 } from "@/lib/repos/materials";
 
 const ALL_FOLDERS = "";
@@ -76,6 +78,7 @@ export function MaterialBankBrowser({
 }) {
 	const folderSelectId = useId();
 	const searchId = useId();
+	const canWrite = useCanWriteMaterials();
 	const [folderId, setFolderId] = useState(ALL_FOLDERS);
 	const [query, setQuery] = useState("");
 	const [debounced, setDebounced] = useState("");
@@ -111,11 +114,17 @@ export function MaterialBankBrowser({
 					>
 						<option value={ALL_FOLDERS}>Tất cả thư mục</option>
 						<option value={MATERIAL_ROOT_FOLDER}>Chưa xếp thư mục</option>
-						{rows.map(({ folder, depth }) => (
-							<option key={folder.id} value={folder.id}>
-								{`${"  ".repeat(depth)}${depth > 0 ? "└ " : ""}${folder.name}`}
-							</option>
-						))}
+						{rows.map(({ folder, depth }) => {
+							const clampedDepth = Math.min(
+								depth,
+								MATERIAL_FOLDER_MAX_DEPTH - 1,
+							);
+							return (
+								<option key={folder.id} value={folder.id}>
+									{`${"\u00a0\u00a0".repeat(clampedDepth)}${clampedDepth > 0 ? "└ " : ""}${folder.name}`}
+								</option>
+							);
+						})}
 					</Select>
 				</Field>
 				<Field label="Tìm kiếm" htmlFor={searchId}>
@@ -146,7 +155,9 @@ export function MaterialBankBrowser({
 				<p className="rounded-lg border border-dashed p-4 text-center text-muted-foreground text-sm">
 					{debounced || folderId !== ALL_FOLDERS
 						? "Không có tài liệu phù hợp."
-						: "Ngân hàng chưa có tài liệu. Dùng “Tải lên mới” hoặc thêm ở trang Tài liệu."}
+						: canWrite
+							? "Ngân hàng chưa có tài liệu. Dùng “Tải lên mới” hoặc thêm ở trang Tài liệu."
+							: "Ngân hàng tài liệu của trung tâm hiện chưa có học liệu nào."}
 				</p>
 			) : (
 				<ul
@@ -206,6 +217,7 @@ export function MaterialPicker({
 	disabled?: boolean;
 }) {
 	const queryClient = useQueryClient();
+	const canWrite = useCanWriteMaterials();
 	const [browsing, setBrowsing] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const fileInput = useRef<HTMLInputElement>(null);
@@ -283,32 +295,40 @@ export function MaterialPicker({
 					<Library aria-hidden="true" />
 					Chọn từ ngân hàng
 				</Button>
-				<Button
-					variant="outline"
-					size="sm"
-					disabled={disabled || atCap}
-					aria-busy={upload.isPending}
-					onClick={() => fileInput.current?.click()}
-				>
-					<Upload aria-hidden="true" />
-					{upload.isPending ? "Đang tải lên…" : "Tải file lên"}
-				</Button>
-				<input
-					ref={fileInput}
-					type="file"
-					className="sr-only"
-					tabIndex={-1}
-					aria-label="Chọn file tải lên ngân hàng tài liệu"
-					accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.pptx,.xlsx,.mp3,.m4a,.mp4"
-					onChange={(e) => pickFile(e.target.files?.[0])}
-				/>
+				{canWrite && (
+					<>
+						<Button
+							variant="outline"
+							size="sm"
+							disabled={disabled || atCap}
+							aria-busy={upload.isPending}
+							onClick={() => fileInput.current?.click()}
+						>
+							<Upload aria-hidden="true" />
+							{upload.isPending ? "Đang tải lên…" : "Tải file lên"}
+						</Button>
+						<input
+							ref={fileInput}
+							type="file"
+							className="sr-only"
+							tabIndex={-1}
+							aria-label="Chọn file tải lên ngân hàng tài liệu"
+							accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.pptx,.xlsx,.mp3,.m4a,.mp4"
+							onChange={(e) => pickFile(e.target.files?.[0])}
+						/>
+					</>
+				)}
 			</div>
-			<p className="text-muted-foreground text-xs">
-				{`${UPLOAD_HELP} File tải lên được lưu vào ngân hàng tài liệu (Chưa xếp thư mục).`}
-				{atCap
-					? ` Tối đa ${MATERIAL_LINKS_MAX} tài liệu cho một buổi/bài — gỡ bớt để chọn thêm.`
-					: ""}
-			</p>
+			{(canWrite || atCap) && (
+				<p className="text-muted-foreground text-xs">
+					{canWrite
+						? `${UPLOAD_HELP} File tải lên được lưu vào ngân hàng tài liệu (Chưa xếp thư mục).`
+						: ""}
+					{atCap
+						? `${canWrite ? " " : ""}Tối đa ${MATERIAL_LINKS_MAX} tài liệu cho một buổi/bài — gỡ bớt để chọn thêm.`
+						: ""}
+				</p>
+			)}
 			{error && (
 				<p role="alert" className="text-destructive text-sm">
 					{error}

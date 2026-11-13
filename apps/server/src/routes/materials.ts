@@ -5,19 +5,22 @@ import {
 	type LessonMaterialView,
 	lessonMaterialAttachSchema,
 	MATERIAL_FOLDER_MAX_DEPTH,
+	MATERIAL_MAGIC_PEEK_BYTES,
 	MATERIAL_ROOT_FOLDER,
 	MATERIAL_SEARCH_MAX,
 	type MaterialErrorCode,
 	type MaterialFolderView,
 	type MaterialKind,
 	type MaterialView,
+	matchesMaterialMagic,
+	materialExtensionMatches,
 	materialFolderCreateSchema,
 	materialFolderUpdateSchema,
 	materialLinkCreateSchema,
 	materialUpdateSchema,
 } from "@teacher-os/api/material-contracts";
 import { parseStartDateStrict } from "@teacher-os/api/skeleton";
-import { canPublishGrade, canReviewGrade } from "@teacher-os/auth/role";
+import { canReadMaterials, canWriteMaterials } from "@teacher-os/auth/role";
 import { classTable } from "@teacher-os/db/schema/class";
 import { classSession } from "@teacher-os/db/schema/class-session";
 import { lesson } from "@teacher-os/db/schema/lesson";
@@ -34,6 +37,7 @@ import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
 import { materialFileResponse } from "../lib/material-file-response";
 import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
+import { type PeekedStream, peekStream } from "../lib/peek-stream";
 import { resolveCurriculumMaterials } from "../lib/session-curriculum-materials";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
@@ -134,8 +138,8 @@ function subtree(
 
 /**
  * Ngân hàng tài liệu của org + tài liệu theo buổi học, mount trong kernel
- * (`/api`). Đọc: mọi vai trò được rà bài (`canReviewGrade`, gồm trợ giảng);
- * ghi: vai trò được chốt bài (`canPublishGrade`). Mọi truy vấn lọc theo
+ * (`/api`). Đọc: `canReadMaterials` (gồm trợ giảng `ta`); ghi:
+ * `canWriteMaterials` (#646 — tách riêng khỏi quyền chấm bài). Mọi truy vấn lọc theo
  * `orgId` của phiên — id của org khác trả 404.
  *
  * File tải lên là raw body (PUT, header Content-Type/Content-Length/
@@ -159,8 +163,8 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		if (!ctx) return c.json({ error: "unauthorized" }, 401);
 		const isRead = c.req.method === "GET" || c.req.method === "HEAD";
 		const allowed = isRead
-			? canReviewGrade(ctx.role)
-			: canPublishGrade(ctx.role);
+			? canReadMaterials(ctx.role)
+			: canWriteMaterials(ctx.role);
 		if (!allowed) return c.json({ error: "forbidden", code: "FORBIDDEN" }, 403);
 		return next();
 	};
@@ -331,6 +335,7 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 			size,
 		});
 		if (!check.ok) {
+			await c.req.raw.body?.cancel().catch(() => undefined);
 			if (check.reason === "type") {
 				return {
 					ok: false,
@@ -357,7 +362,40 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		}
 		const body = c.req.raw.body;
 		if (!name || body === null) {
+			await body?.cancel().catch(() => undefined);
 			return { ok: false, response: materialError(c, 400, "INVALID_FILE") };
+		}
+		if (!materialExtensionMatches(name, check.mimeType)) {
+			await body.cancel().catch(() => undefined);
+			return {
+				ok: false,
+				response: materialError(c, 415, "UNSUPPORTED_FILE_TYPE"),
+			};
+		}
+
+		let peeked: PeekedStream;
+		try {
+			peeked = await peekStream(
+				body,
+				Math.min(MATERIAL_MAGIC_PEEK_BYTES, size + 1),
+			);
+		} catch (error) {
+			console.error("[materials] upload stream failed", { error });
+			return { ok: false, response: c.json({ error: "upload failed" }, 500) };
+		}
+		if (
+			(peeked.ended && peeked.readBytes !== size) ||
+			peeked.readBytes > size
+		) {
+			await peeked.abort("size mismatch");
+			return { ok: false, response: materialError(c, 400, "INVALID_FILE") };
+		}
+		if (!matchesMaterialMagic(check.mimeType, peeked.head)) {
+			await peeked.abort("unsupported file type");
+			return {
+				ok: false,
+				response: materialError(c, 415, "UNSUPPORTED_FILE_TYPE"),
+			};
 		}
 
 		const id = crypto.randomUUID();
@@ -365,8 +403,12 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		const discard = () =>
 			inBackground("discard material object", () => store.delete(objectKey));
 		try {
-			await store.put(objectKey, body, { contentType: check.mimeType, size });
+			await store.put(objectKey, peeked.stream, {
+				contentType: check.mimeType,
+				size,
+			});
 		} catch (error) {
+			await peeked.abort("store error");
 			discard();
 			if (error instanceof MediaSizeMismatchError) {
 				return { ok: false, response: materialError(c, 400, "INVALID_FILE") };
@@ -616,6 +658,139 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 
 	// ---- Thư mục ----
 
+	type RawInsertedFolder = {
+		id: string;
+		org_id: string;
+		parent_id: string | null;
+		name: string;
+		created_at: number | Date;
+	};
+
+	/**
+	 * #646: Guard SQL nguyên tử cho thao tác di chuyển thư mục sang cha khác gốc.
+	 * Kiểm ngay tại thời điểm UPDATE: `nextParent` và `id` cùng thuộc `orgId`,
+	 * `id` không nằm trong chuỗi tổ tiên của `nextParent` (không tạo vòng),
+	 * tổ tiên không dính chu trình cũ, và tổng độ sâu sau khi chuyển <= 5.
+	 * CTE `sub` loại cạnh quay về chính `id` (`c.id != id`) nên vẫn cho phép
+	 * di chuyển thư mục đang kẹt vòng lịch sử sang cha hợp lệ để tự phục hồi.
+	 */
+	function folderMoveGuard(orgId: string, id: string, nextParent: string) {
+		return sql`(
+			WITH RECURSIVE
+				anc(id, parent_id, depth) AS (
+					SELECT id, parent_id, 1
+					FROM ${materialFolder}
+					WHERE id = ${nextParent} AND org_id = ${orgId}
+					UNION ALL
+					SELECT p.id, p.parent_id, anc.depth + 1
+					FROM ${materialFolder} p
+					JOIN anc ON p.id = anc.parent_id
+					WHERE p.org_id = ${orgId} AND anc.depth <= ${MATERIAL_FOLDER_MAX_DEPTH}
+				),
+				sub(id, level) AS (
+					SELECT id, 1
+					FROM ${materialFolder}
+					WHERE id = ${id} AND org_id = ${orgId}
+					UNION ALL
+					SELECT c.id, sub.level + 1
+					FROM ${materialFolder} c
+					JOIN sub ON c.parent_id = sub.id
+					WHERE c.org_id = ${orgId} AND c.id != ${id} AND sub.level <= ${MATERIAL_FOLDER_MAX_DEPTH}
+				)
+			SELECT CASE
+				WHEN EXISTS (SELECT 1 FROM anc)
+					AND EXISTS (SELECT 1 FROM sub)
+					AND NOT EXISTS (SELECT 1 FROM anc WHERE anc.id = ${id})
+					AND (SELECT max(depth) FROM anc) <= ${MATERIAL_FOLDER_MAX_DEPTH}
+					AND (SELECT max(depth) FROM anc) + (SELECT max(level) FROM sub) <= ${MATERIAL_FOLDER_MAX_DEPTH}
+				THEN 1
+				ELSE 0
+			END
+		) = 1`;
+	}
+
+	/** #646: Chèn thư mục con nguyên tử — chặn cha bị xóa/chéo org/dính vòng/quá cấp 5 ngay trong INSERT. */
+	async function insertChildFolder(
+		db: Db,
+		orgId: string,
+		id: string,
+		parentId: string,
+		name: string,
+	): Promise<FolderRow | null> {
+		// Driver D1/libsql trả raw snake_case cho db.all(sql`...`) (xem ingest-transaction.ts).
+		const rawRows = (await db.all(sql`
+			INSERT INTO ${materialFolder} (id, org_id, parent_id, name)
+			SELECT ${id}, ${orgId}, ${parentId}, ${name}
+			WHERE (
+				WITH RECURSIVE anc(id, parent_id, depth) AS (
+					SELECT id, parent_id, 1
+					FROM ${materialFolder}
+					WHERE id = ${parentId} AND org_id = ${orgId}
+					UNION ALL
+					SELECT p.id, p.parent_id, anc.depth + 1
+					FROM ${materialFolder} p
+					JOIN anc ON p.id = anc.parent_id
+					WHERE p.org_id = ${orgId} AND anc.depth <= ${MATERIAL_FOLDER_MAX_DEPTH}
+				)
+				SELECT CASE
+					WHEN EXISTS (SELECT 1 FROM anc)
+						AND (SELECT max(depth) FROM anc) + 1 <= ${MATERIAL_FOLDER_MAX_DEPTH}
+					THEN 1
+					ELSE 0
+				END
+			) = 1
+			RETURNING id, org_id, parent_id, name, created_at
+		`)) as RawInsertedFolder[];
+		const raw = rawRows[0];
+		if (!raw) return null;
+		return {
+			id: raw.id,
+			orgId: raw.org_id,
+			parentId: raw.parent_id,
+			name: raw.name,
+			createdAt:
+				raw.created_at instanceof Date
+					? raw.created_at
+					: new Date(Number(raw.created_at)),
+		};
+	}
+
+	function classifyCreateBlock(
+		c: MaterialContext,
+		reloaded: FolderRow[],
+		parentId: string,
+	): Response | null {
+		const rById = new Map(reloaded.map((f) => [f.id, f]));
+		if (!rById.has(parentId)) return materialError(c, 404, "FOLDER_NOT_FOUND");
+		const rDepth = folderDepth(rById, parentId);
+		if (!Number.isFinite(rDepth)) return materialError(c, 400, "FOLDER_CYCLE");
+		if (rDepth + 1 > MATERIAL_FOLDER_MAX_DEPTH) {
+			return materialError(c, 400, "FOLDER_TOO_DEEP");
+		}
+		return null;
+	}
+
+	function classifyMoveBlock(
+		c: MaterialContext,
+		reloaded: FolderRow[],
+		id: string,
+		targetParent: string,
+	): Response | null {
+		const rById = new Map(reloaded.map((f) => [f.id, f]));
+		if (!rById.has(id) || !rById.has(targetParent)) {
+			return materialError(c, 404, "FOLDER_NOT_FOUND");
+		}
+		const rTree = subtree(reloaded, id);
+		const rDepth = folderDepth(rById, targetParent);
+		if (rTree.ids.has(targetParent) || !Number.isFinite(rDepth)) {
+			return materialError(c, 400, "FOLDER_CYCLE");
+		}
+		if (rDepth + rTree.height > MATERIAL_FOLDER_MAX_DEPTH) {
+			return materialError(c, 400, "FOLDER_TOO_DEEP");
+		}
+		return null;
+	}
+
 	routes.get("/materials/folders", async (c) => {
 		const ctx = c.get("kernelCtx");
 		const folders = await loadFolders(deps.getDb(), ctx.orgId);
@@ -629,23 +804,46 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		const db = deps.getDb();
 		const { name, parentId } = body.data;
 		if (parentId !== null) {
-			const folders = await loadFolders(db, ctx.orgId);
-			const byId = new Map(folders.map((f) => [f.id, f]));
-			if (!byId.has(parentId)) return materialError(c, 404, "FOLDER_NOT_FOUND");
-			if (folderDepth(byId, parentId) + 1 > MATERIAL_FOLDER_MAX_DEPTH) {
-				return materialError(c, 400, "FOLDER_TOO_DEEP");
-			}
+			const earlyBlock = classifyCreateBlock(
+				c,
+				await loadFolders(db, ctx.orgId),
+				parentId,
+			);
+			if (earlyBlock) return earlyBlock;
 		}
 		if (await nameTaken(db, ctx.orgId, parentId, name)) {
 			return materialError(c, 409, "FOLDER_NAME_TAKEN");
 		}
 		const id = crypto.randomUUID();
 		try {
-			const [row] = await db
-				.insert(materialFolder)
-				.values({ id, orgId: ctx.orgId, parentId, name })
-				.returning();
-			if (!row) throw new Error("folder insert returned no row");
+			if (parentId === null) {
+				const [row] = await db
+					.insert(materialFolder)
+					.values({ id, orgId: ctx.orgId, parentId: null, name })
+					.returning();
+				if (!row) throw new Error("folder insert returned no row");
+				return c.json({ folder: toFolderView(row) }, 201);
+			}
+			let row = await insertChildFolder(db, ctx.orgId, id, parentId, name);
+			if (!row) {
+				const firstBlock = classifyCreateBlock(
+					c,
+					await loadFolders(db, ctx.orgId),
+					parentId,
+				);
+				if (firstBlock) return firstBlock;
+				row = await insertChildFolder(db, ctx.orgId, id, parentId, name);
+				if (!row) {
+					const secondBlock = classifyCreateBlock(
+						c,
+						await loadFolders(db, ctx.orgId),
+						parentId,
+					);
+					return (
+						secondBlock ?? c.json({ error: "concurrent folder conflict" }, 409)
+					);
+				}
+			}
 			return c.json({ folder: toFolderView(row) }, 201);
 		} catch (error) {
 			// Đua với request tạo cùng tên: đọc lại trạng thái thay vì parse lỗi.
@@ -667,37 +865,84 @@ export function materialRoutes(deps: MaterialRouteDeps) {
 		const current = byId.get(id);
 		if (!current) return materialError(c, 404, "FOLDER_NOT_FOUND");
 
+		const nameChanged = body.data.name !== undefined;
+		const parentChanged = body.data.parentId !== undefined;
+		if (!nameChanged && !parentChanged) {
+			return c.json({ folder: toFolderView(current) });
+		}
+
 		const nextName = body.data.name ?? current.name;
 		const nextParent =
 			body.data.parentId === undefined ? current.parentId : body.data.parentId;
-		if (nextParent !== null && nextParent !== current.parentId) {
-			if (!byId.has(nextParent))
-				return materialError(c, 404, "FOLDER_NOT_FOUND");
-			const tree = subtree(folders, id);
-			if (tree.ids.has(nextParent))
-				return materialError(c, 400, "FOLDER_CYCLE");
-			if (
-				folderDepth(byId, nextParent) + tree.height >
-				MATERIAL_FOLDER_MAX_DEPTH
-			) {
-				return materialError(c, 400, "FOLDER_TOO_DEEP");
-			}
+		if (parentChanged && nextParent !== null) {
+			const earlyBlock = classifyMoveBlock(c, folders, id, nextParent);
+			if (earlyBlock) return earlyBlock;
 		}
 		if (await nameTaken(db, ctx.orgId, nextParent, nextName, id)) {
 			return materialError(c, 409, "FOLDER_NAME_TAKEN");
 		}
-		try {
-			const [row] = await db
+		const runUpdate = async () => {
+			const [updated] = await db
 				.update(materialFolder)
-				.set({ name: nextName, parentId: nextParent })
+				.set({
+					...(body.data.name !== undefined ? { name: body.data.name } : {}),
+					...(body.data.parentId !== undefined
+						? { parentId: body.data.parentId }
+						: {}),
+				})
+				.where(
+					and(
+						eq(materialFolder.id, id),
+						eq(materialFolder.orgId, ctx.orgId),
+						parentChanged && nextParent !== null
+							? folderMoveGuard(ctx.orgId, id, nextParent)
+							: undefined,
+					),
+				)
+				.returning();
+			return updated;
+		};
+		try {
+			let row = await runUpdate();
+			if (!row) {
+				if (!(parentChanged && nextParent !== null)) {
+					return materialError(c, 404, "FOLDER_NOT_FOUND");
+				}
+				const firstBlock = classifyMoveBlock(
+					c,
+					await loadFolders(db, ctx.orgId),
+					id,
+					nextParent,
+				);
+				if (firstBlock) return firstBlock;
+				row = await runUpdate();
+				if (!row) {
+					const secondBlock = classifyMoveBlock(
+						c,
+						await loadFolders(db, ctx.orgId),
+						id,
+						nextParent,
+					);
+					return (
+						secondBlock ?? c.json({ error: "concurrent folder conflict" }, 409)
+					);
+				}
+			}
+			return c.json({ folder: toFolderView(row) });
+		} catch (error) {
+			const [fresh] = await db
+				.select()
+				.from(materialFolder)
 				.where(
 					and(eq(materialFolder.id, id), eq(materialFolder.orgId, ctx.orgId)),
 				)
-				.returning();
-			if (!row) return materialError(c, 404, "FOLDER_NOT_FOUND");
-			return c.json({ folder: toFolderView(row) });
-		} catch (error) {
-			if (await nameTaken(db, ctx.orgId, nextParent, nextName, id)) {
+				.limit(1);
+			if (!fresh) return materialError(c, 404, "FOLDER_NOT_FOUND");
+			const collisionParent =
+				body.data.parentId !== undefined ? body.data.parentId : fresh.parentId;
+			const collisionName =
+				body.data.name !== undefined ? body.data.name : fresh.name;
+			if (await nameTaken(db, ctx.orgId, collisionParent, collisionName, id)) {
 				return materialError(c, 409, "FOLDER_NAME_TAKEN");
 			}
 			throw error;

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { fmtDue } from "@/components/assignments/assignment-status";
 import { ClassRosterTab } from "@/components/class-detail/class-roster-tab";
@@ -181,6 +181,22 @@ function ClassDetailRoute() {
 	};
 	const sy = useClassCurriculum(classId);
 	const cls = classById(classId);
+	const classLessonsForClass = data.lessons.filter(
+		(l) => l.classId === classId,
+	);
+	const classSessionsForClass = (data.classSessions ?? []).filter(
+		(cs) => cs.classId === classId,
+	);
+	const isManual =
+		classSessionsForClass.length > 0 ||
+		(!sy && cls?.schedulingMode === "manual");
+	const canAddManualSession =
+		!sy && (isManual || classLessonsForClass.length === 0);
+
+	useEffect(() => {
+		if (!sy && manageOpen) setManageOpen(false);
+		if (!canAddManualSession && addSessionOpen) setAddSessionOpen(false);
+	}, [sy, manageOpen, canAddManualSession, addSessionOpen]);
 
 	if (!cls) {
 		throw notFound();
@@ -256,11 +272,11 @@ function ClassDetailRoute() {
 							>
 								Sắp xếp buổi
 							</Button>
-						) : (
+						) : canAddManualSession ? (
 							<Button size="sm" onClick={() => setAddSessionOpen(true)}>
 								+ Thêm buổi học
 							</Button>
-						)}
+						) : null}
 					</>
 				}
 			/>
@@ -357,12 +373,10 @@ function ClassDetailRoute() {
 						<div className="grid gap-6 xl:grid-cols-2 xl:items-start">
 							<ClassSessionsSection
 								cls={cls}
-								lessons={data.lessons.filter((l) => l.classId === classId)}
+								lessons={classLessonsForClass}
 								legacyLessons={classLessons}
 								syllabus={sy}
-								classSessions={(data.classSessions ?? []).filter(
-									(cs) => cs.classId === classId,
-								)}
+								classSessions={classSessionsForClass}
 								holidayShifts={data.holidayShifts}
 								studentById={studentById}
 								run={run}
@@ -465,12 +479,8 @@ function ClassDetailRoute() {
 
 			<ClassSessionsManageModal
 				key={`manage-sessions-${cls.id}`}
-				open={manageOpen}
+				open={manageOpen && Boolean(sy)}
 				onClose={() => setManageOpen(false)}
-				onOpenCurriculum={() => {
-					setManageOpen(false);
-					handleTabChange("curriculum");
-				}}
 				cls={cls}
 				run={run}
 				isPending={isPending}
@@ -478,12 +488,10 @@ function ClassDetailRoute() {
 			/>
 			<AddClassSessionModal
 				key={`add-session-${cls.id}`}
-				open={addSessionOpen}
+				open={addSessionOpen && canAddManualSession}
 				onClose={() => setAddSessionOpen(false)}
 				cls={cls}
-				existingDateISOs={(data.classSessions ?? [])
-					.filter((cs) => cs.classId === classId)
-					.map((cs) => cs.date)}
+				existingDateISOs={classSessionsForClass.map((cs) => cs.date)}
 			/>
 			<EnrollStudentModal
 				key={`enroll-student-${cls.id}`}

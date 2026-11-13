@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import {
 	buildPlacementSnapshot,
@@ -17,10 +18,9 @@ import {
 
 const CORS_ORIGIN = "http://localhost:8001";
 const PROFILE_ORIGIN = "https://msmy.io.vn";
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 function createMemoryMediaStore(): MediaStore {
 	const objects = new Map<string, { bytes: Uint8Array; contentType: string }>();

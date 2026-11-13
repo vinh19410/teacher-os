@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import {
 	type KernelSnapshot,
@@ -10,15 +11,15 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, test } from "vitest";
-import { buildApp, type Db, type ServerApp } from "../app";
+import { buildApp, type Db, enforceDeclaredSize, type ServerApp } from "../app";
 import type { MediaStore, StoredMedia } from "../lib/media-store";
+import { mp3Bytes, wavBytes } from "../lib/test-media-fixtures";
 import type { SessionUser } from "../session";
 
 const TEACHER_ORIGIN = "http://localhost:8001";
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 interface MemoryMediaStore extends MediaStore {
 	objects: Map<string, { bytes: Uint8Array; contentType: string }>;
@@ -29,7 +30,8 @@ function createMemoryMediaStore(): MemoryMediaStore {
 	return {
 		objects,
 		async put(key, body, meta) {
-			const reader = body.getReader();
+			const counted = enforceDeclaredSize(body, meta.size);
+			const reader = counted.stream.getReader();
 			const chunks: Uint8Array[] = [];
 			let total = 0;
 			while (true) {
@@ -196,8 +198,8 @@ describe("teacher vocab kernel sub-routes (/api/kernel/vocab/* & snapshot)", () 
 		expect(w2Res.status).toBe(201);
 		const { id: word2Id } = (await w2Res.json()) as { id: string };
 
-		// 4) Upload audio for word1 (server generates org-scoped key)
-		const audioBytes = new Uint8Array([0xff, 0xfb, 0x90, 0x64]);
+		// 4) Upload audio for word1 (server generates org-scoped key) — genuine MPEG frame bytes (#681)
+		const audioBytes = mp3Bytes(16, 1);
 		const uploadRes = await app.request(
 			`/api/kernel/vocab/words/${word1Id}/audio`,
 			{
@@ -207,6 +209,7 @@ describe("teacher vocab kernel sub-routes (/api/kernel/vocab/* & snapshot)", () 
 					Origin: TEACHER_ORIGIN,
 					"Content-Type": "audio/mpeg",
 					"Content-Length": String(audioBytes.byteLength),
+					"X-File-Name": encodeURIComponent("curriculum.mp3"),
 				},
 				body: audioBytes,
 			},
@@ -230,6 +233,7 @@ describe("teacher vocab kernel sub-routes (/api/kernel/vocab/* & snapshot)", () 
 					Origin: TEACHER_ORIGIN,
 					"Content-Type": "text/html",
 					"Content-Length": "4",
+					"X-File-Name": encodeURIComponent("curriculum.mp3"),
 				},
 				body: new Uint8Array([1, 2, 3, 4]),
 			},
@@ -805,5 +809,200 @@ describe("teacher vocab kernel sub-routes (/api/kernel/vocab/* & snapshot)", () 
 			stateNew: 1,
 			stateReview: 1,
 		});
+	});
+
+	test("vocab word audio upload enforces X-File-Name, extension, and magic bytes (#681)", async () => {
+		const deckRes = await app.request("/api/kernel/vocab/decks", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				classId: "class-t1",
+				title: "Upload Guards Deck",
+				lang: "en",
+			}),
+		});
+		expect(deckRes.status).toBe(201);
+		const { id: guardsDeckId } = (await deckRes.json()) as { id: string };
+		const wRes = await app.request("/api/kernel/vocab/words/upsert", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				deckId: guardsDeckId,
+				word: "guards",
+				translation: "bảo vệ",
+				sortOrder: 9,
+			}),
+		});
+		expect(wRes.status).toBe(201);
+		const { id: wordId } = (await wRes.json()) as { id: string };
+		const htmlBytes = new TextEncoder().encode(
+			"<!doctype html><html><script>alert(1)</script></html>",
+		);
+		const put = async (
+			overrides: Record<string, string | undefined> = {},
+			body: BodyInit = htmlBytes,
+		) =>
+			app.request(`/api/kernel/vocab/words/${wordId}/audio`, {
+				method: "PUT",
+				headers: {
+					"x-test-user": "teacher",
+					Origin: TEACHER_ORIGIN,
+					"Content-Type": "audio/mpeg",
+					"Content-Length":
+						overrides["Content-Length"] ??
+						String(
+							typeof body === "string"
+								? new TextEncoder().encode(body).byteLength
+								: body instanceof Uint8Array
+									? body.byteLength
+									: htmlBytes.byteLength,
+						),
+					"X-File-Name": encodeURIComponent("word.mp3"),
+					...overrides,
+				},
+				body,
+			});
+
+		// Missing / dotfile / spoofed -> 400 / 415
+		const missingName = await put({ "X-File-Name": "" });
+		expect(missingName.status).toBe(400);
+		expect(await missingName.json()).toMatchObject({
+			code: "VOCAB_INVALID_AUDIO",
+		});
+		const dotFile = await put({ "X-File-Name": encodeURIComponent(".mp3") });
+		expect(dotFile.status).toBe(415);
+		const htmlExt = await put({
+			"X-File-Name": encodeURIComponent("payload.html"),
+		});
+		expect(htmlExt.status).toBe(415);
+		expect(await htmlExt.json()).toMatchObject({
+			code: "VOCAB_INVALID_AUDIO",
+		});
+		const videoMime = await put({ "Content-Type": "video/mp4" });
+		expect(videoMime.status).toBe(415);
+		const spoofMagic = await put(
+			{ "X-File-Name": encodeURIComponent("word.mp3") },
+			htmlBytes,
+		);
+		expect(spoofMagic.status).toBe(415);
+		const id3Html = await put(
+			{ "X-File-Name": encodeURIComponent("word.mp3") },
+			new TextEncoder().encode("ID3\x04<html><script>alert(1)</script>"),
+		);
+		expect(id3Html.status).toBe(415);
+		const utf16 = await put(
+			{ "X-File-Name": encodeURIComponent("word.mp3") },
+			new Uint8Array([0xff, 0xfe, 0x20, 0x00, 0x3c, 0x00, 0x68, 0x00]),
+		);
+		expect(utf16.status).toBe(415);
+
+		// Lying Content-Length both <= 64B Slowloris and > 64B -> 400, old key untouched
+		const slowlorisGate = Promise.withResolvers<void>();
+		let sent11 = false;
+		const slowlorisBody = new ReadableStream<Uint8Array>({
+			async pull(controller) {
+				if (!sent11) {
+					sent11 = true;
+					controller.enqueue(mp3Bytes(11, 1));
+					return;
+				}
+				await slowlorisGate.promise;
+				controller.close();
+			},
+			cancel() {
+				slowlorisGate.resolve();
+			},
+		});
+		const slowloris = await app.request(
+			`/api/kernel/vocab/words/${wordId}/audio`,
+			{
+				method: "PUT",
+				headers: {
+					"x-test-user": "teacher",
+					Origin: TEACHER_ORIGIN,
+					"Content-Type": "audio/mpeg",
+					"Content-Length": "10",
+					"X-File-Name": encodeURIComponent("word.mp3"),
+				},
+				body: slowlorisBody,
+				duplex: "half",
+			} as RequestInit & { duplex: "half" },
+		);
+		expect(slowloris.status).toBe(400);
+		expect(await slowloris.json()).toMatchObject({
+			code: "VOCAB_INVALID_AUDIO",
+		});
+		const valid150 = mp3Bytes(150, 2);
+		const lieLength = async (length: string): Promise<Response> =>
+			app.request(`/api/kernel/vocab/words/${wordId}/audio`, {
+				method: "PUT",
+				headers: {
+					"x-test-user": "teacher",
+					Origin: TEACHER_ORIGIN,
+					"Content-Type": "audio/mpeg",
+					"Content-Length": length,
+					"X-File-Name": encodeURIComponent("word.mp3"),
+				},
+				body: valid150,
+			});
+		expect((await lieLength("300")).status).toBe(400);
+		expect((await lieLength("100")).status).toBe(400);
+
+		const [wordRow] = await libsql
+			.select({ audioKey: schema.vocabWord.audioKey })
+			.from(schema.vocabWord)
+			.where(eq(schema.vocabWord.id, wordId));
+		expect(wordRow?.audioKey ?? null).toBeNull();
+
+		// audio/mp3 alias normalized to audio/mpeg; audio/wave accepted for .wav
+		const aliasMp3 = await app.request(
+			`/api/kernel/vocab/words/${wordId}/audio`,
+			{
+				method: "PUT",
+				headers: {
+					"x-test-user": "teacher",
+					Origin: TEACHER_ORIGIN,
+					"Content-Type": "audio/mp3",
+					"Content-Length": String(mp3Bytes(16, 1).byteLength),
+					"X-File-Name": encodeURIComponent("word.mp3"),
+				},
+				body: mp3Bytes(16, 1),
+			},
+		);
+		expect(aliasMp3.status).toBe(200);
+		const aliasJson = (await aliasMp3.json()) as { audioKey: string };
+		expect(aliasJson.audioKey).toContain(`vocab/org-t1/${wordId}/`);
+		const wavRes = await app.request(
+			`/api/kernel/vocab/words/${wordId}/audio`,
+			{
+				method: "PUT",
+				headers: {
+					"x-test-user": "teacher",
+					Origin: TEACHER_ORIGIN,
+					"Content-Type": "audio/wave",
+					"Content-Length": String(wavBytes(2048, 2).byteLength),
+					"X-File-Name": encodeURIComponent("word.wav"),
+				},
+				body: wavBytes(2048, 2),
+			},
+		);
+		expect(wavRes.status).toBe(200);
+
+		// Polyglot WAV after success must NOT touch the stored key
+		const [wordRowBefore] = await libsql
+			.select({ audioKey: schema.vocabWord.audioKey })
+			.from(schema.vocabWord)
+			.where(eq(schema.vocabWord.id, wordId));
+		const audioKeyBefore = wordRowBefore?.audioKey ?? null;
+		const badWav = await put(
+			{ "X-File-Name": encodeURIComponent("word.mp3") },
+			new TextEncoder().encode("RIFF<a  WAVEfmt ><script>alert(1)</script>"),
+		);
+		expect(badWav.status).toBe(415);
+		const [wordRowAfter] = await libsql
+			.select({ audioKey: schema.vocabWord.audioKey })
+			.from(schema.vocabWord)
+			.where(eq(schema.vocabWord.id, wordId));
+		expect(wordRowAfter?.audioKey ?? null).toBe(audioKeyBefore);
 	});
 });

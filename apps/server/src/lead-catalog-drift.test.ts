@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import {
 	LEAD_COURSE_GROUPS,
 	LEAD_COURSE_LABELS,
@@ -12,11 +13,10 @@ import {
 } from "@teacher-os/api/placement-test-contracts";
 import { describe, expect, it } from "vitest";
 
-const profileHtmlPath = new URL(
-	"../../profile/public/index.html",
-	import.meta.url,
+const profileHtmlPath = fileURLToPath(
+	new URL("../../profile/public/index.html", import.meta.url).href,
 );
-const html = readFileSync(profileHtmlPath.pathname, "utf8");
+const html = readFileSync(profileHtmlPath, "utf8");
 
 function extractSelectValues(selectName: string): string[] {
 	const re = new RegExp(
@@ -62,11 +62,11 @@ describe("profile lead catalog drift (#506 phase 5)", () => {
 	});
 
 	it("placement-seed/questions.json khớp LEAD_COURSES và hợp lệ với validatePlacementForPublish khi gắn audioId (D6, D12)", () => {
-		const questionsPath = new URL(
-			"../../web/public/placement-seed/questions.json",
-			import.meta.url,
+		const questionsPath = fileURLToPath(
+			new URL("../../web/public/placement-seed/questions.json", import.meta.url)
+				.href,
 		);
-		const raw = JSON.parse(readFileSync(questionsPath.pathname, "utf8"));
+		const raw = JSON.parse(readFileSync(questionsPath, "utf8"));
 		const parsed = placementContentSchema.parse(raw);
 		expect(parsed.bands.length).toBeGreaterThan(0);
 		for (const band of parsed.bands) {

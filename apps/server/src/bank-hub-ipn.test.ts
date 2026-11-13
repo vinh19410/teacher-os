@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import * as schema from "@teacher-os/db/schema/index";
 import { invoice } from "@teacher-os/db/schema/invoice";
@@ -14,10 +15,9 @@ import type {
 } from "./lib/bank-hub/bank-hub-client";
 
 const CORS_ORIGIN = "http://localhost:8001";
-const MIGRATIONS_DIR = new URL(
-	"../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../packages/db/src/migrations", import.meta.url).href,
+);
 const IPN_PATH = "/webhooks/sepay/bankhub/ipn";
 
 function account(xid: string, companyXid: string): BankHubAccount {

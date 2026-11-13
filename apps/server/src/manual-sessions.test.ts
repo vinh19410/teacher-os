@@ -1,5 +1,7 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import type { KernelSnapshot } from "@teacher-os/api/contracts";
+import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import {
 	session as authSession,
 	user as authUser,
@@ -12,10 +14,9 @@ import { describe, expect, test } from "vitest";
 import { buildApp, type Db } from "./app";
 
 const CORS_ORIGIN = "http://localhost:8001";
-const MIGRATIONS_DIR = new URL(
-	"../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 async function setupTestApp() {
 	const client = createClient({ url: "file::memory:" });
@@ -920,3 +921,644 @@ async function orgIdOf(t: ManualSessionsTestApp): Promise<string> {
 	if (!org) throw new Error("org chưa được bootstrap");
 	return org.id;
 }
+
+function futureMondayISO(): string {
+	const base = addDaysISO(vietnamTodayISO(), 7);
+	const dow = new Date(`${base}T00:00:00Z`).getUTCDay(); // 0=Sun, 1=Mon
+	const delta = (8 - dow) % 7;
+	return addDaysISO(base, delta);
+}
+
+async function seedTemplateWithLessons(
+	t: ManualSessionsTestApp,
+	token: string,
+	name: string,
+	lessonCount: number,
+): Promise<string> {
+	const tplRes = await t.call(token, "/api/syllabus-templates", {
+		body: {
+			name,
+			type: "ielts",
+			level: "Band 7.0",
+			skills: ["Writing"],
+			description: "",
+			totalLessons: lessonCount,
+		},
+	});
+	expect(tplRes.status).toBe(201);
+	const { id: templateId } = (await tplRes.json()) as { id: string };
+	if (lessonCount === 0) return templateId;
+
+	const modRes = await t.call(
+		token,
+		`/api/syllabus-templates/${templateId}/modules`,
+		{ body: { title: "Module 1", description: "" } },
+	);
+	expect(modRes.status).toBe(201);
+	const { id: moduleId } = (await modRes.json()) as { id: string };
+
+	if (lessonCount <= 6) {
+		for (let i = 0; i < lessonCount; i += 1) {
+			const lRes = await t.call(
+				token,
+				`/api/syllabus-templates/${templateId}/modules/${moduleId}/lessons`,
+				{
+					body: {
+						title: `Bài ${i + 1}`,
+						objectives: "",
+						materials: "",
+						status: "upcoming",
+					},
+				},
+			);
+			expect(lRes.status).toBe(201);
+		}
+	} else {
+		const orgId = await orgIdOf(t);
+		await t.db.insert(schema.syllabusLesson).values(
+			Array.from({ length: lessonCount }, (_, i) => ({
+				id: crypto.randomUUID(),
+				orgId,
+				moduleId,
+				title: `Bài ${i + 1}`,
+				objectives: "",
+				materials: "",
+				status: "upcoming",
+				position: i,
+			})),
+		);
+	}
+	return templateId;
+}
+
+describe("Manual <-> Auto Curriculum Lifecycle (Issue #670)", () => {
+	test("670-1: empty manual class importing K=3 lesson template transitions to auto with sessionsTotal=3", async () => {
+		const t = await setupTestApp();
+		const teacher = await t.insertUser("Teacher 670-1");
+		const startMonday = futureMondayISO();
+		const templateId = await seedTemplateWithLessons(
+			t,
+			teacher.token,
+			"Template 3 bài",
+			3,
+		);
+
+		const createRes = await t.call(teacher.token, "/api/classes", {
+			body: {
+				name: "Lớp trống 670-1",
+				type: "ielts",
+				skills: ["Writing"],
+				templateId: "",
+				schedulingMode: "manual",
+				schedule: { days: [0, 2], start: "19:00", end: "20:30" },
+				sessionsTotal: 12,
+				startDate: startMonday,
+			},
+		});
+		expect(createRes.status).toBe(201);
+		const { id: classId } = (await createRes.json()) as { id: string };
+
+		const importRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/curriculum/import`,
+			{ body: { templateId } },
+		);
+		expect(importRes.status).toBe(201);
+		const { id: copyId } = (await importRes.json()) as { id: string };
+
+		const snap = await t.kernel(teacher.token);
+		const cls = snap.classes.find((c) => c.id === classId);
+		expect(cls?.schedulingMode).toBe("auto");
+		expect(cls?.sessionsTotal).toBe(3);
+		expect(cls?.syllabusId).toBe(copyId);
+	});
+
+	test("670-2: manual class with 2 active students + org holiday importing K=3 template backfills shifted lessons & package totals", async () => {
+		const t = await setupTestApp();
+		const teacher = await t.insertUser("Teacher 670-2");
+		const startMonday = futureMondayISO();
+		const templateId = await seedTemplateWithLessons(
+			t,
+			teacher.token,
+			"Template Holiday 3 bài",
+			3,
+		);
+
+		const createRes = await t.call(teacher.token, "/api/classes", {
+			body: {
+				name: "Lớp có HV & Lễ 670-2",
+				type: "ielts",
+				skills: ["Writing"],
+				templateId: "",
+				schedulingMode: "manual",
+				// days: [0] = Thứ Hai hàng tuần
+				schedule: { days: [0], start: "19:00", end: "20:30" },
+				sessionsTotal: 12,
+				startDate: startMonday,
+			},
+		});
+		expect(createRes.status).toBe(201);
+		const { id: classId } = (await createRes.json()) as { id: string };
+		const orgId = await orgIdOf(t);
+
+		// Chèn kỳ nghỉ lễ scope org đúng ngày buổi đầu tiên (startMonday)
+		await t.libsql.insert(schema.organizationHoliday).values({
+			id: crypto.randomUUID(),
+			orgId,
+			name: "Nghỉ lễ trung tâm",
+			fromDate: startMonday,
+			toDate: startMonday,
+			scope: "org",
+			mode: "shift",
+			createdByUserId: teacher.id,
+		});
+
+		for (const [idx, email] of ["s1@test.local", "s2@test.local"].entries()) {
+			const sRes = await t.call(teacher.token, "/api/students", {
+				body: {
+					name: `Học viên ${idx + 1}`,
+					email,
+					classId,
+					activateNow: true,
+				},
+			});
+			expect(sRes.status).toBe(201);
+		}
+
+		const beforePackages = await t.libsql
+			.select()
+			.from(schema.sessionPackage)
+			.where(eq(schema.sessionPackage.orgId, orgId));
+		expect(beforePackages.map((p) => p.total)).toEqual([0, 0]);
+
+		const importRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/curriculum/import`,
+			{ body: { templateId } },
+		);
+		expect(importRes.status).toBe(201);
+
+		const afterLessons = await t.libsql
+			.select()
+			.from(schema.lesson)
+			.where(eq(schema.lesson.classId, classId));
+		// 2 học viên × (3 buổi hiệu lực + 1 buổi holiday tại startMonday) = 8 dòng
+		const nonHoliday = afterLessons.filter((l) => l.status !== "holiday");
+		const holidayRows = afterLessons.filter((l) => l.status === "holiday");
+		expect(nonHoliday).toHaveLength(6);
+		expect(holidayRows).toHaveLength(2);
+		expect(holidayRows.every((l) => l.date === startMonday)).toBe(true);
+		// Buổi bù rơi vào thứ Hai tuần thứ 4 (startMonday + 21 ngày)
+		const expectedMakeup = addDaysISO(startMonday, 21);
+		expect(nonHoliday.some((l) => l.date === expectedMakeup)).toBe(true);
+
+		const shifts = await t.libsql
+			.select()
+			.from(schema.holidaySessionShift)
+			.where(eq(schema.holidaySessionShift.classId, classId));
+		expect(shifts).toHaveLength(1);
+		expect(shifts[0]?.originalDate).toBe(startMonday);
+		expect(shifts[0]?.makeupDate).toBe(expectedMakeup);
+
+		const afterPackages = await t.libsql
+			.select()
+			.from(schema.sessionPackage)
+			.where(eq(schema.sessionPackage.orgId, orgId));
+		expect(afterPackages.map((p) => p.total)).toEqual([3, 3]);
+	});
+
+	test("670-3: partial backfill self-heals on retry (404 for unknown template, 201 heal, then 409)", async () => {
+		const t = await setupTestApp();
+		const teacher = await t.insertUser("Teacher 670-3");
+		const startMonday = futureMondayISO();
+		const templateId = await seedTemplateWithLessons(
+			t,
+			teacher.token,
+			"Template Heal 3 bài",
+			3,
+		);
+
+		const createRes = await t.call(teacher.token, "/api/classes", {
+			body: {
+				name: "Lớp Heal 670-3",
+				type: "ielts",
+				skills: ["Writing"],
+				templateId: "",
+				schedulingMode: "manual",
+				schedule: { days: [0, 2], start: "19:00", end: "20:30" },
+				sessionsTotal: 12,
+				startDate: startMonday,
+			},
+		});
+		const { id: classId } = (await createRes.json()) as { id: string };
+
+		for (const [idx, email] of [
+			"heal1@test.local",
+			"heal2@test.local",
+		].entries()) {
+			const sRes = await t.call(teacher.token, "/api/students", {
+				body: {
+					name: `HV Heal ${idx + 1}`,
+					email,
+					classId,
+					activateNow: true,
+				},
+			});
+			expect(sRes.status).toBe(201);
+		}
+
+		const firstImport = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/curriculum/import`,
+			{ body: { templateId } },
+		);
+		expect(firstImport.status).toBe(201);
+
+		// Mô phỏng lỗi giữa chừng trên enrollment thứ 2: xóa lesson + đặt total=0
+		const enrollments = await t.libsql
+			.select()
+			.from(schema.enrollment)
+			.where(eq(schema.enrollment.classId, classId));
+		expect(enrollments).toHaveLength(2);
+		const stuckEnrollmentId = enrollments[1]?.id ?? "";
+		await t.libsql
+			.delete(schema.lesson)
+			.where(eq(schema.lesson.enrollmentId, stuckEnrollmentId));
+		await t.libsql
+			.update(schema.sessionPackage)
+			.set({ total: 0 })
+			.where(eq(schema.sessionPackage.enrollmentId, stuckEnrollmentId));
+
+		// Gọi với templateId không tồn tại → 404 (không được heal lén)
+		const badTplRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/curriculum/import`,
+			{ body: { templateId: "missing-template-id" } },
+		);
+		expect(badTplRes.status).toBe(404);
+
+		// Gọi lại hợp lệ → tự hồi phục học viên bị kẹt, trả 201
+		const healRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/curriculum/import`,
+			{ body: { templateId } },
+		);
+		expect(healRes.status).toBe(201);
+
+		const allLessons = await t.libsql
+			.select()
+			.from(schema.lesson)
+			.where(eq(schema.lesson.classId, classId));
+		expect(allLessons).toHaveLength(6);
+		const pkgs = await t.libsql
+			.select()
+			.from(schema.sessionPackage)
+			.where(eq(schema.sessionPackage.enrollmentId, stuckEnrollmentId));
+		expect(pkgs[0]?.total).toBe(3);
+
+		// Gọi lần 3 khi không còn học viên kẹt → 409
+		const dupRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/curriculum/import`,
+			{ body: { templateId } },
+		);
+		expect(dupRes.status).toBe(409);
+		expect(await dupRes.json()).toMatchObject({
+			error: "Lớp đã có giáo trình",
+			code: "CURRICULUM_ALREADY_EXISTS",
+		});
+	});
+
+	test("670-4: rejects 409 has-manual-sessions when class_session exists and prevents hybrid state under Promise.all race", async () => {
+		const t = await setupTestApp();
+		const teacher = await t.insertUser("Teacher 670-4");
+		const startMonday = futureMondayISO();
+		const templateId = await seedTemplateWithLessons(
+			t,
+			teacher.token,
+			"Template Race 3 bài",
+			3,
+		);
+
+		const createRes = await t.call(teacher.token, "/api/classes", {
+			body: {
+				name: "Lớp có buổi thủ công",
+				type: "ielts",
+				skills: ["Writing"],
+				templateId: "",
+				schedulingMode: "manual",
+				schedule: { days: [0], start: "19:00", end: "20:30" },
+				sessionsTotal: 12,
+				startDate: startMonday,
+			},
+		});
+		const { id: classId } = (await createRes.json()) as { id: string };
+
+		const addSessionRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/sessions`,
+			{
+				body: {
+					date: startMonday,
+					time: "19:00",
+					dur: 90,
+					topic: "Buổi nháp",
+				},
+			},
+		);
+		expect(addSessionRes.status).toBe(201);
+
+		const blockedImport = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/curriculum/import`,
+			{ body: { templateId } },
+		);
+		expect(blockedImport.status).toBe(409);
+		expect(await blockedImport.json()).toMatchObject({
+			reason: "has-manual-sessions",
+			code: "MANUAL_SESSIONS_EXIST",
+		});
+
+		// Xóa buổi nháp rồi import lại → 201 thành công
+		const delRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/sessions/${startMonday}`,
+			{ method: "DELETE" },
+		);
+		expect(delRes.status).toBe(200);
+
+		const retryImport = await t.call(
+			teacher.token,
+			`/api/classes/${classId}/curriculum/import`,
+			{ body: { templateId } },
+		);
+		expect(retryImport.status).toBe(201);
+
+		// Đua song phương Promise.all giữa POST /sessions và POST /curriculum/import
+		for (let round = 0; round < 5; round += 1) {
+			const cRes = await t.call(teacher.token, "/api/classes", {
+				body: {
+					name: `Lớp Race ${round}`,
+					type: "ielts",
+					skills: ["Writing"],
+					templateId: "",
+					schedulingMode: "manual",
+					schedule: { days: [0], start: "19:00", end: "20:30" },
+					sessionsTotal: 12,
+					startDate: startMonday,
+				},
+			});
+			const { id: raceClassId } = (await cRes.json()) as { id: string };
+			const [sRes, iRes] = await Promise.all([
+				t.call(teacher.token, `/api/classes/${raceClassId}/sessions`, {
+					body: {
+						date: startMonday,
+						time: "19:00",
+						dur: 90,
+						topic: "Race session",
+					},
+				}),
+				t.call(teacher.token, `/api/classes/${raceClassId}/curriculum/import`, {
+					body: { templateId },
+				}),
+			]);
+			const statuses = [sRes.status, iRes.status].sort((a, b) => a - b);
+			expect(statuses).toEqual([201, 409]);
+
+			const csRows = await t.libsql
+				.select()
+				.from(schema.classSession)
+				.where(eq(schema.classSession.classId, raceClassId));
+			const copyRows = await t.libsql
+				.select()
+				.from(schema.syllabus)
+				.where(eq(schema.syllabus.classId, raceClassId));
+			expect(csRows.length > 0 && copyRows.length > 0).toBe(false);
+		}
+	});
+
+	test("670-5: boundary lesson counts — 0 lessons on manual class and >52 lessons return 422; 0 lessons on auto class preserves sessionsTotal", async () => {
+		const t = await setupTestApp();
+		const teacher = await t.insertUser("Teacher 670-5");
+		const startMonday = futureMondayISO();
+		const emptyTplId = await seedTemplateWithLessons(
+			t,
+			teacher.token,
+			"Template 0 bài",
+			0,
+		);
+		const over52TplId = await seedTemplateWithLessons(
+			t,
+			teacher.token,
+			"Template 53 bài",
+			53,
+		);
+
+		const createManualRes = await t.call(teacher.token, "/api/classes", {
+			body: {
+				name: "Lớp Manual Biên",
+				type: "ielts",
+				skills: ["Writing"],
+				templateId: "",
+				schedulingMode: "manual",
+				schedule: { days: [0], start: "19:00", end: "20:30" },
+				sessionsTotal: 12,
+				startDate: startMonday,
+			},
+		});
+		const { id: manualClassId } = (await createManualRes.json()) as {
+			id: string;
+		};
+
+		const emptyImport = await t.call(
+			teacher.token,
+			`/api/classes/${manualClassId}/curriculum/import`,
+			{ body: { templateId: emptyTplId } },
+		);
+		expect(emptyImport.status).toBe(422);
+		expect(await emptyImport.json()).toMatchObject({
+			reason: "empty-template",
+			code: "CURRICULUM_EMPTY_TEMPLATE",
+		});
+
+		const over52Import = await t.call(
+			teacher.token,
+			`/api/classes/${manualClassId}/curriculum/import`,
+			{ body: { templateId: over52TplId } },
+		);
+		expect(over52Import.status).toBe(422);
+		expect(await over52Import.json()).toMatchObject({
+			reason: "too-many-lessons",
+			code: "CURRICULUM_TOO_MANY_LESSONS",
+		});
+
+		// Lớp auto có sẵn sessionsTotal=12 nhập template 0 bài → 201, giữ sessionsTotal=12
+		const createAutoRes = await t.call(teacher.token, "/api/classes", {
+			body: {
+				name: "Lớp Auto Legacy",
+				type: "ielts",
+				skills: ["Writing"],
+				templateId: "",
+				schedulingMode: "auto",
+				schedule: { days: [0], start: "19:00", end: "20:30" },
+				sessionsTotal: 12,
+				startDate: startMonday,
+			},
+		});
+		const { id: autoClassId } = (await createAutoRes.json()) as { id: string };
+		const autoEmptyImport = await t.call(
+			teacher.token,
+			`/api/classes/${autoClassId}/curriculum/import`,
+			{ body: { templateId: emptyTplId } },
+		);
+		expect(autoEmptyImport.status).toBe(201);
+		const snap = await t.kernel(teacher.token);
+		expect(snap.classes.find((c) => c.id === autoClassId)?.sessionsTotal).toBe(
+			12,
+		);
+	});
+
+	test("670-6: curriculum/remove resets 0-lesson class (and legacy 0-lesson package total) to manual/0, but preserves auto & lessons when lessons exist", async () => {
+		const t = await setupTestApp();
+		const teacher = await t.insertUser("Teacher 670-6");
+		const startMonday = futureMondayISO();
+		const tpl3Id = await seedTemplateWithLessons(
+			t,
+			teacher.token,
+			"Template 3 bài",
+			3,
+		);
+		const tpl5Id = await seedTemplateWithLessons(
+			t,
+			teacher.token,
+			"Template 5 bài",
+			5,
+		);
+
+		// (a) Lớp 0 lesson (kể cả có HV active với lịch legacy không sinh lesson) → remove đưa cả class lẫn session_package về 0
+		const c1Res = await t.call(teacher.token, "/api/classes", {
+			body: {
+				name: "Lớp gỡ khi 0 lesson",
+				type: "ielts",
+				skills: ["Writing"],
+				templateId: "",
+				schedulingMode: "manual",
+				schedule: { days: [0], start: "19:00", end: "20:30" },
+				sessionsTotal: 12,
+				startDate: startMonday,
+			},
+		});
+		const { id: emptyClassId } = (await c1Res.json()) as { id: string };
+		// Đổi lịch sang chuỗi legacy để backfill chỉ cập nhật session_package.total mà sinh 0 dòng lesson
+		await t.libsql
+			.update(schema.classTable)
+			.set({ schedule: "T2 19:00" })
+			.where(eq(schema.classTable.id, emptyClassId));
+		await t.call(teacher.token, "/api/students", {
+			body: {
+				name: "HV Legacy",
+				email: "legacy670@test.local",
+				classId: emptyClassId,
+				activateNow: true,
+			},
+		});
+		expect(
+			(
+				await t.call(
+					teacher.token,
+					`/api/classes/${emptyClassId}/curriculum/import`,
+					{ body: { templateId: tpl3Id } },
+				)
+			).status,
+		).toBe(201);
+
+		const removeEmpty = await t.call(
+			teacher.token,
+			`/api/classes/${emptyClassId}/curriculum/remove`,
+			{ body: {} },
+		);
+		expect(removeEmpty.status).toBe(200);
+		let snap = await t.kernel(teacher.token);
+		const clsEmpty = snap.classes.find((c) => c.id === emptyClassId);
+		expect(clsEmpty?.schedulingMode).toBe("manual");
+		expect(clsEmpty?.sessionsTotal).toBe(0);
+		expect(clsEmpty?.syllabusId).toBeNull();
+		const [enrLegacy] = await t.libsql
+			.select()
+			.from(schema.enrollment)
+			.where(eq(schema.enrollment.classId, emptyClassId));
+		const [pkgAfterRemove] = await t.libsql
+			.select()
+			.from(schema.sessionPackage)
+			.where(eq(schema.sessionPackage.enrollmentId, enrLegacy?.id ?? ""));
+		expect(pkgAfterRemove?.total).toBe(0);
+
+		// Nhập lại template 5 bài → package total lên 5!
+		expect(
+			(
+				await t.call(
+					teacher.token,
+					`/api/classes/${emptyClassId}/curriculum/import`,
+					{ body: { templateId: tpl5Id } },
+				)
+			).status,
+		).toBe(201);
+		const [pkgAfterReimport] = await t.libsql
+			.select()
+			.from(schema.sessionPackage)
+			.where(eq(schema.sessionPackage.enrollmentId, enrLegacy?.id ?? ""));
+		expect(pkgAfterReimport?.total).toBe(5);
+
+		// (b) Lớp đã có dòng lesson thật → remove giữ nguyên auto & sessionsTotal=3; re-import 5 bài không ghi đè sessionsTotal hay lesson cũ
+		const c2Res = await t.call(teacher.token, "/api/classes", {
+			body: {
+				name: "Lớp gỡ khi đã có lesson",
+				type: "ielts",
+				skills: ["Writing"],
+				templateId: tpl3Id,
+				schedulingMode: "auto",
+				schedule: { days: [0], start: "19:00", end: "20:30" },
+				sessionsTotal: 3,
+				startDate: startMonday,
+			},
+		});
+		const { id: activeClassId } = (await c2Res.json()) as { id: string };
+		await t.call(teacher.token, "/api/students", {
+			body: {
+				name: "HV Đang Học",
+				email: "active670@test.local",
+				classId: activeClassId,
+				activateNow: true,
+			},
+		});
+
+		const removeActive = await t.call(
+			teacher.token,
+			`/api/classes/${activeClassId}/curriculum/remove`,
+			{ body: {} },
+		);
+		expect(removeActive.status).toBe(200);
+		snap = await t.kernel(teacher.token);
+		const clsActive = snap.classes.find((c) => c.id === activeClassId);
+		expect(clsActive?.schedulingMode).toBe("auto");
+		expect(clsActive?.sessionsTotal).toBe(3);
+		expect(clsActive?.syllabusId).toBeNull();
+		expect(
+			snap.lessons.filter((l) => l.classId === activeClassId),
+		).toHaveLength(3);
+
+		const reimportRes = await t.call(
+			teacher.token,
+			`/api/classes/${activeClassId}/curriculum/import`,
+			{ body: { templateId: tpl5Id } },
+		);
+		expect(reimportRes.status).toBe(201);
+		snap = await t.kernel(teacher.token);
+		const clsReimported = snap.classes.find((c) => c.id === activeClassId);
+		expect(clsReimported?.schedulingMode).toBe("auto");
+		expect(clsReimported?.sessionsTotal).toBe(3);
+		expect(
+			snap.lessons.filter((l) => l.classId === activeClassId),
+		).toHaveLength(3);
+	});
+});

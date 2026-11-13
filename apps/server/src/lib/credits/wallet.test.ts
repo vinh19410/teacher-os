@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import {
 	QUICK_GRADE_MONTHLY_LIMIT,
@@ -30,10 +31,9 @@ import {
 // SQLite THẬT in-memory + migration thật (có 0051 credit_wallet) — chứng
 // minh batch UPDATE+INSERT...SELECT WHERE changes()=1 nguyên tử trên SQL
 // thật, không fake db (precedent boot.ts apps/e2e).
-const MIGRATIONS_DIR = new URL(
-	"../../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 const ORG = "org-w1";
 const USER = "u-w1";

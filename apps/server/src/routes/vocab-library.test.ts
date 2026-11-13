@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import {
 	type KernelSnapshot,
@@ -16,10 +17,9 @@ import { buildApp, type Db, type ServerApp } from "../app";
 import type { SessionUser } from "../session";
 
 const TEACHER_ORIGIN = "http://localhost:8001";
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 describe("built-in vocab library routes (/api/kernel/vocab-library/*, #361)", () => {
 	let app: ServerApp;

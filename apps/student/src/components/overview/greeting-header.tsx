@@ -1,5 +1,7 @@
 import { StudentSpot } from "@teacher-os/ui/components/illustrations";
+import { useSyncExternalStore } from "react";
 import { getActiveStudentOrgId, useStudentOrgs } from "@/lib/repos/student";
+import { subscribeActiveStudentOrg } from "@/lib/student-org-storage";
 import { formatVietnamToday } from "@/lib/vietnam-display-date";
 
 export function GreetingHeader({
@@ -22,7 +24,11 @@ export function GreetingHeader({
 			: "Bạn không có bài tập nào cần nộp gấp.";
 
 	// Kicker = tên org đang hoạt động (cùng rule với OrgSwitcher).
-	const activeOrgId = getActiveStudentOrgId();
+	const activeOrgId = useSyncExternalStore(
+		subscribeActiveStudentOrg,
+		getActiveStudentOrgId,
+		getActiveStudentOrgId,
+	);
 	const currentOrg =
 		orgs?.find((o) => o.id === activeOrgId) ??
 		orgs?.find((o) => o.isCurrent) ??

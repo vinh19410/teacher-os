@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import * as schema from "@teacher-os/db/schema/index";
 import { drizzle } from "drizzle-orm/libsql";
@@ -8,10 +9,9 @@ import type { SessionUser } from "../session";
 import { classmateInitials } from "./student-classmates";
 
 const CORS_ORIGINS = ["http://localhost:8003"];
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 /** Session test: `x-test-user: hoa` → học viên Hoa (org-1, lớp class-1). */
 function sessionFor(email: string, name: string) {

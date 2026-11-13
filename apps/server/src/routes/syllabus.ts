@@ -7,12 +7,16 @@ import {
 	syllabusReplaceContentSchema,
 } from "@teacher-os/api/contracts";
 import { classTable } from "@teacher-os/db/schema/class";
+import { classSession } from "@teacher-os/db/schema/class-session";
+import { enrollment } from "@teacher-os/db/schema/enrollment";
+import { lesson } from "@teacher-os/db/schema/lesson";
+import { sessionPackage } from "@teacher-os/db/schema/session-package";
 import {
 	syllabus,
 	syllabusLesson,
 	syllabusModule,
 } from "@teacher-os/db/schema/syllabus";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
@@ -23,11 +27,14 @@ import {
 	buildImportBatch,
 	clearPointersTo,
 	findClassCurriculum,
+	findExistingMaterialIds,
 	findTemplate,
 	MAX_IMPORT_NODES,
 	selectTemplateTree,
 	setClassCurriculumPointer,
 } from "../lib/syllabus-curriculum";
+import { materializeScheduleForEnrollment } from "./enrollment-activation";
+import { isRollbackableConstraintError } from "./holidays";
 import { mountContentRoutes } from "./syllabus-content-routes";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
@@ -64,13 +71,65 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 		return { ok: true, data: parsed.data };
 	}
 
-	/** Class row for write paths: only existence + the syllabus pointer. */
-	async function findClassPointer(db: Db, classId: string, orgId: string) {
+	/** Class row for curriculum write paths (#670 includes schedulingMode + sessionsTotal). */
+	async function findClassRow(db: Db, classId: string, orgId: string) {
 		const [row] = await db
-			.select({ id: classTable.id, syllabusId: classTable.syllabusId })
+			.select({
+				id: classTable.id,
+				syllabusId: classTable.syllabusId,
+				schedulingMode: classTable.schedulingMode,
+				sessionsTotal: classTable.sessionsTotal,
+			})
 			.from(classTable)
 			.where(and(eq(classTable.id, classId), eq(classTable.orgId, orgId)));
 		return row;
+	}
+
+	/**
+	 * Sinh bù lịch học + gói buổi cho các active enrollment đang kẹt ở 0 dòng lesson
+	 * và package.total = 0 (hoặc chưa có package) sau khi lớp chuyển sang `auto` (#670).
+	 * Chạy tuần tự từng học viên để không vượt trần một `db.batch` của D1 và để học viên
+	 * thứ 2 nhìn thấy dòng shift I6 vừa sinh bởi học viên thứ 1.
+	 */
+	async function backfillStuckEnrollments(
+		db: Db,
+		orgId: string,
+		classId: string,
+	): Promise<number> {
+		const stuck = await db
+			.select({
+				id: enrollment.id,
+				studentId: enrollment.studentId,
+			})
+			.from(enrollment)
+			.leftJoin(
+				sessionPackage,
+				and(
+					eq(sessionPackage.enrollmentId, enrollment.id),
+					eq(sessionPackage.orgId, enrollment.orgId),
+				),
+			)
+			.where(
+				and(
+					eq(enrollment.orgId, orgId),
+					eq(enrollment.classId, classId),
+					eq(enrollment.status, "active"),
+					sql`NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.enrollmentId} = ${enrollment.id})`,
+					sql`(${sessionPackage.id} IS NULL OR ${sessionPackage.total} = 0)`,
+				),
+			);
+		let healed = 0;
+		for (const row of stuck) {
+			const materialized = await materializeScheduleForEnrollment(db, {
+				orgId,
+				enrollmentId: row.id,
+				studentId: row.studentId,
+				classId,
+				mode: "backfill",
+			});
+			if (materialized.ok) healed += 1;
+		}
+		return healed;
 	}
 
 	//
@@ -290,26 +349,174 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 			return c.json({ error: "class not found" }, 404);
 		}
 
-		const cls = await findClassPointer(db, classId, ctx.orgId);
+		const cls = await findClassRow(db, classId, ctx.orgId);
 		if (!cls) {
 			return c.json({ error: "class not found" }, 404);
 		}
-		// Deterministic duplicate check — never parse SQLite error strings.
-		// The copy (found via class_id, the source of truth) decides, so a
-		// stale/template pointer can never block a legitimate import.
-		const existing = await findClassCurriculum(db, classId, ctx.orgId);
-		if (existing) {
-			return c.json({ error: "Lớp đã có giáo trình" }, 409);
-		}
-
+		// Validate template existence + org ownership BEFORE `existing` self-heal
+		// so foreign/deleted templateIds always 404 without side effects.
 		const tpl = await findTemplate(db, body.data.templateId, ctx.orgId);
 		if (!tpl) {
 			return c.json({ error: "syllabus not found" }, 404);
 		}
-		const tree = await selectTemplateTree(db, tpl.id, ctx.orgId);
-		if (tree.modules.length + tree.lessons.length > MAX_IMPORT_NODES) {
-			return c.json({ error: "Template quá lớn để import" }, 422);
+
+		// Deterministic duplicate check — the copy (via class_id) is source of truth.
+		// #670 self-heal: if a previous import committed the copy tree then timed out
+		// mid-backfill (or left a pre-#670 manual/0-session class with a copy), heal
+		// the stuck state idempotently and return 201; otherwise return 409.
+		const existing = await findClassCurriculum(db, classId, ctx.orgId);
+		if (existing) {
+			if (cls.schedulingMode === "manual" && cls.sessionsTotal === 0) {
+				const [existingCs, existingLesson] = await Promise.all([
+					db
+						.select({ id: classSession.id })
+						.from(classSession)
+						.where(
+							and(
+								eq(classSession.orgId, ctx.orgId),
+								eq(classSession.classId, classId),
+							),
+						)
+						.limit(1),
+					db
+						.select({ id: lesson.id })
+						.from(lesson)
+						.where(
+							and(eq(lesson.orgId, ctx.orgId), eq(lesson.classId, classId)),
+						)
+						.limit(1),
+				]);
+				if (existingCs.length === 0 && existingLesson.length === 0) {
+					const existingTree = await selectTemplateTree(
+						db,
+						existing.id,
+						ctx.orgId,
+					);
+					const existingCount = existingTree.lessons.length;
+					if (existingCount >= 1 && existingCount <= 52) {
+						try {
+							await db
+								.update(classTable)
+								.set({
+									syllabusId: existing.id,
+									sessionsTotal: existingCount,
+									schedulingMode: sql`CASE WHEN EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.classId} = ${classId} AND ${classSession.orgId} = ${ctx.orgId}) THEN ${classTable.schedulingMode} ELSE 'auto' END`,
+								})
+								.where(
+									and(
+										eq(classTable.id, classId),
+										eq(classTable.orgId, ctx.orgId),
+									),
+								);
+						} catch (healErr: unknown) {
+							// FK race với `curriculum/remove` đồng thời (syllabus vừa bị
+							// xóa giữa lúc đọc và lúc UPDATE): rollback-able → trả đúng
+							// nghĩa 409 thay vì 500; client retry tự đi lại nhánh hợp lệ.
+							if (isRollbackableConstraintError(healErr)) {
+								return c.json(
+									{
+										error: "Lớp đã có giáo trình",
+										code: "CURRICULUM_ALREADY_EXISTS",
+									},
+									409,
+								);
+							}
+							throw healErr;
+						}
+						await backfillStuckEnrollments(db, ctx.orgId, classId);
+						return c.json({ id: existing.id } satisfies CreatedResponse, 201);
+					}
+				}
+			}
+			if (cls.schedulingMode === "auto" && cls.sessionsTotal > 0) {
+				const healed = await backfillStuckEnrollments(db, ctx.orgId, classId);
+				if (healed > 0) {
+					return c.json({ id: existing.id } satisfies CreatedResponse, 201);
+				}
+			}
+			return c.json(
+				{
+					error: "Lớp đã có giáo trình",
+					code: "CURRICULUM_ALREADY_EXISTS",
+				},
+				409,
+			);
 		}
+
+		const tree = await selectTemplateTree(db, tpl.id, ctx.orgId);
+		if (
+			tree.modules.length + tree.lessons.length + tree.links.length >
+			MAX_IMPORT_NODES
+		) {
+			return c.json(
+				{
+					error: "Template quá lớn để import",
+					code: "CURRICULUM_TEMPLATE_TOO_LARGE",
+				},
+				422,
+			);
+		}
+
+		const [existingCs, existingLesson] = await Promise.all([
+			db
+				.select({ id: classSession.id })
+				.from(classSession)
+				.where(
+					and(
+						eq(classSession.orgId, ctx.orgId),
+						eq(classSession.classId, classId),
+					),
+				)
+				.limit(1),
+			db
+				.select({ id: lesson.id })
+				.from(lesson)
+				.where(and(eq(lesson.orgId, ctx.orgId), eq(lesson.classId, classId)))
+				.limit(1),
+		]);
+		if (existingCs.length > 0) {
+			return c.json(
+				{
+					error:
+						"Lớp đã có buổi học thủ công. Vui lòng xóa các buổi chưa học trước khi nhập giáo trình.",
+					reason: "has-manual-sessions",
+					code: "MANUAL_SESSIONS_EXIST",
+				},
+				409,
+			);
+		}
+
+		const lessonCount = tree.lessons.length;
+		const hasLesson = existingLesson.length > 0;
+		if (!hasLesson) {
+			if (lessonCount > 52) {
+				return c.json(
+					{
+						error: "Template vượt quá giới hạn 52 buổi học của lớp.",
+						reason: "too-many-lessons",
+						code: "CURRICULUM_TOO_MANY_LESSONS",
+					},
+					422,
+				);
+			}
+			if (
+				cls.schedulingMode === "manual" &&
+				cls.sessionsTotal === 0 &&
+				lessonCount === 0
+			) {
+				return c.json(
+					{
+						error:
+							"Template chưa có bài học nào. Vui lòng thêm ít nhất 1 bài học trước khi nhập vào lớp trống.",
+						reason: "empty-template",
+						code: "CURRICULUM_EMPTY_TEMPLATE",
+					},
+					422,
+				);
+			}
+		}
+		const candidateSessionsTotal =
+			lessonCount > 0 ? lessonCount : cls.sessionsTotal;
 
 		const { copyId, statements } = buildImportBatch(db, {
 			template: tpl,
@@ -317,27 +524,99 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 			classId,
 			orgId: ctx.orgId,
 		});
-		statements.push(setClassCurriculumPointer(db, classId, ctx.orgId, copyId));
+		statements.push(
+			db
+				.update(classTable)
+				.set({
+					syllabusId: copyId,
+					sessionsTotal: sql`CASE WHEN EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${classId}) THEN ${classTable.sessionsTotal} ELSE ${candidateSessionsTotal} END`,
+					schedulingMode: sql`CASE WHEN EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.classId} = ${classId} AND ${classSession.orgId} = ${ctx.orgId}) THEN NULL ELSE 'auto' END`,
+				})
+				.where(
+					and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)),
+				),
+		);
 		try {
 			await db.batch(statements);
-		} catch {
-			// Unique index race backstop (syllabus_class_unique): only a
-			// concurrent import surfaces here as a copy — re-check via
-			// class_id instead of swallowing real errors into a 409.
+		} catch (err: unknown) {
 			const after = await findClassCurriculum(db, classId, ctx.orgId);
-			if (after) {
-				return c.json({ error: "Lớp đã có giáo trình" }, 409);
+			// Lost ACK after D1 committed our own copy: proceed to backfill + 201.
+			if (!after || after.id !== copyId) {
+				if (!isRollbackableConstraintError(err)) {
+					throw err;
+				}
+				const message = err instanceof Error ? err.message : String(err);
+				if (/FOREIGN KEY/i.test(message) && tree.links.length > 0) {
+					const materialIds = [...new Set(tree.links.map((l) => l.materialId))];
+					const existingMats = await findExistingMaterialIds(
+						db,
+						ctx.orgId,
+						materialIds,
+					);
+					const missing = materialIds.find((id) => !existingMats.has(id));
+					if (missing !== undefined) {
+						return c.json(
+							{
+								error: "material-not-found",
+								materialId: missing,
+								code: "CURRICULUM_MATERIAL_NOT_FOUND",
+							},
+							422,
+						);
+					}
+				}
+				if (after) {
+					return c.json(
+						{
+							error: "Lớp đã có giáo trình",
+							code: "CURRICULUM_ALREADY_EXISTS",
+						},
+						409,
+					);
+				}
+				const [foreign] = await db
+					.select({ id: syllabus.id })
+					.from(syllabus)
+					.where(eq(syllabus.classId, classId));
+				if (foreign) {
+					return c.json(
+						{
+							error: "Lớp đã có giáo trình",
+							code: "CURRICULUM_ALREADY_EXISTS",
+						},
+						409,
+					);
+				}
+				const [raceCs] = await db
+					.select({ id: classSession.id })
+					.from(classSession)
+					.where(
+						and(
+							eq(classSession.orgId, ctx.orgId),
+							eq(classSession.classId, classId),
+						),
+					)
+					.limit(1);
+				if (raceCs) {
+					return c.json(
+						{
+							error:
+								"Lớp đã có buổi học thủ công. Vui lòng xóa các buổi chưa học trước khi nhập giáo trình.",
+							reason: "has-manual-sessions",
+							code: "MANUAL_SESSIONS_EXIST",
+						},
+						409,
+					);
+				}
+				throw new Error("import-syllabus batch failed");
 			}
-			// syllabus_class_unique is org-global: a foreign-org copy holding
-			// this class id must surface as 409, never a raw 500.
-			const [foreign] = await db
-				.select({ id: syllabus.id })
-				.from(syllabus)
-				.where(eq(syllabus.classId, classId));
-			if (foreign) {
-				return c.json({ error: "class already has a curriculum" }, 409);
-			}
-			throw new Error("import-syllabus batch failed");
+		}
+
+		const effectiveTotal = hasLesson
+			? cls.sessionsTotal
+			: candidateSessionsTotal;
+		if (effectiveTotal > 0) {
+			await backfillStuckEnrollments(db, ctx.orgId, classId);
 		}
 		return c.json({ id: copyId } satisfies CreatedResponse, 201);
 	};
@@ -353,7 +632,7 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 			return c.json({ error: "class not found" }, 404);
 		}
 
-		const cls = await findClassPointer(db, classId, ctx.orgId);
+		const cls = await findClassRow(db, classId, ctx.orgId);
 		if (!cls) {
 			return c.json({ error: "class not found" }, 404);
 		}
@@ -368,10 +647,44 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 			return c.json({ ok: true });
 		}
 
-		// FK order (NO ACTION): null the pointer FIRST, then delete
-		// child-first (lessons → modules → syllabus), every DELETE org-scoped.
+		const hasRealSessionsSql = sql`EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${classId}) OR EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.orgId} = ${ctx.orgId} AND ${classSession.classId} = ${classId})`;
+
+		// FK order (NO ACTION): null the pointer (and reset manual/0 when the class
+		// has 0 real sessions) FIRST, sync session_package.total to 0 when 0 real
+		// sessions, then delete child-first (lessons → modules → syllabus).
 		await db.batch([
-			setClassCurriculumPointer(db, classId, ctx.orgId, null),
+			db
+				.update(classTable)
+				.set({
+					syllabusId: null,
+					schedulingMode: sql`CASE WHEN ${hasRealSessionsSql} THEN ${classTable.schedulingMode} ELSE 'manual' END`,
+					sessionsTotal: sql`CASE WHEN ${hasRealSessionsSql} THEN ${classTable.sessionsTotal} ELSE 0 END`,
+				})
+				.where(
+					and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)),
+				),
+			db
+				.update(sessionPackage)
+				.set({
+					total: sql`CASE WHEN ${hasRealSessionsSql} THEN ${sessionPackage.total} ELSE 0 END`,
+				})
+				.where(
+					and(
+						eq(sessionPackage.orgId, ctx.orgId),
+						inArray(
+							sessionPackage.enrollmentId,
+							db
+								.select({ id: enrollment.id })
+								.from(enrollment)
+								.where(
+									and(
+										eq(enrollment.orgId, ctx.orgId),
+										eq(enrollment.classId, classId),
+									),
+								),
+						),
+					),
+				),
 			db.delete(syllabusLesson).where(
 				and(
 					eq(syllabusLesson.orgId, ctx.orgId),
@@ -454,7 +767,7 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 		resolve: async (c, db, orgId) => {
 			const id = c.req.param("id");
 			if (id === undefined) return undefined;
-			const cls = await findClassPointer(db, id, orgId);
+			const cls = await findClassRow(db, id, orgId);
 			if (!cls) return undefined;
 			return findClassCurriculum(db, cls.id, orgId);
 		},

@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import type {
 	LessonMaterialView,
@@ -25,10 +26,9 @@ import type { SessionUser } from "../session";
 
 const TEACHER_ORIGIN = "http://localhost:8001";
 const STUDENT_ORIGIN = "http://localhost:8003";
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 const PDF = "application/pdf";
 const SESSION_DATE = "2026-11-10";
@@ -46,6 +46,20 @@ const SESSIONS: Record<string, SessionUser> = {
 		userId: "ta-1",
 		userName: "Trợ giảng",
 		email: "ta@test.local",
+		emailVerified: true,
+		role: "teacher",
+	},
+	"ct-1": {
+		userId: "ct-1",
+		userName: "GV phụ trách lớp",
+		email: "ct@test.local",
+		emailVerified: true,
+		role: "teacher",
+	},
+	"susp-1": {
+		userId: "susp-1",
+		userName: "Tạm ngưng",
+		email: "susp@test.local",
 		emailVerified: true,
 		role: "teacher",
 	},
@@ -79,9 +93,15 @@ function sessionFor(headers: Headers): Promise<SessionUser | null> {
 
 function createMemoryStore() {
 	const objects = new Map<string, { bytes: Uint8Array; contentType: string }>();
-	const failures = { delete: false };
+	const failures = { delete: false, put: false };
 	const store: MediaStore = {
 		async put(key, body, { contentType, size }) {
+			if (failures.put) {
+				// Mô phỏng R2 `pipeThrough(FixedLengthStream)` đã khoá stream trước khi
+				// `put` ném lỗi — ép `storeUpload` phải gọi `peeked.abort(...)`.
+				void body.getReader();
+				throw new Error("r2 put failed");
+			}
 			const counted = enforceDeclaredSize(body, size);
 			const bytes = new Uint8Array(
 				await new Response(counted.stream).arrayBuffer(),
@@ -109,8 +129,41 @@ function createMemoryStore() {
 	return { store, objects, failures };
 }
 
-function bytesOf(length: number, fill = 7): Uint8Array {
-	return new Uint8Array(length).fill(fill);
+function pdfFixture(tail: readonly number[] = []): Uint8Array {
+	const head = [0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34];
+	const out = new Uint8Array(head.length + tail.length);
+	out.set(head, 0);
+	out.set(tail, head.length);
+	return out;
+}
+
+function zipFixture(): Uint8Array {
+	const out = new Uint8Array(31);
+	out.set([0x50, 0x4b, 0x03, 0x04, 20, 0, 0, 0, 0, 0]);
+	out[26] = 1;
+	out[30] = 0x61;
+	return out;
+}
+
+function mp3Id3Fixture(): Uint8Array {
+	return new Uint8Array([0x49, 0x44, 0x33, 4, 0, 0, 0, 0, 0, 10]);
+}
+
+function mp4Fixture(): Uint8Array {
+	return new Uint8Array([
+		0, 0, 0, 16, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d, 0, 0, 0, 0,
+	]);
+}
+
+function defaultFixtureFor(mimeType: string): Uint8Array {
+	if (mimeType.startsWith("application/vnd.openxmlformats-officedocument.")) {
+		return zipFixture();
+	}
+	if (mimeType === "audio/mpeg") return mp3Id3Fixture();
+	if (mimeType === "audio/mp4" || mimeType === "video/mp4") {
+		return mp4Fixture();
+	}
+	return pdfFixture();
 }
 
 describe("material bank and session materials", () => {
@@ -142,11 +195,30 @@ describe("material bank and session materials", () => {
 				email: "ta@test.local",
 				role: "teacher",
 			},
+			{
+				id: "ct-1",
+				name: "GV phụ trách lớp",
+				email: "ct@test.local",
+				role: "teacher",
+			},
+			{
+				id: "susp-1",
+				name: "Tạm ngưng",
+				email: "susp@test.local",
+				role: "teacher",
+			},
 			{ id: "t-2", name: "Thầy Nam", email: "nam@test.local", role: "teacher" },
 		]);
 		await db.insert(schema.membership).values([
 			{ id: "mem-1", orgId: "org-1", userId: "t-1", role: "teacher" },
 			{ id: "mem-ta", orgId: "org-1", userId: "ta-1", role: "ta" },
+			{ id: "mem-ct", orgId: "org-1", userId: "ct-1", role: "class_teacher" },
+			{
+				id: "mem-susp",
+				orgId: "org-1",
+				userId: "susp-1",
+				role: "suspended",
+			},
 			{ id: "mem-2", orgId: "org-2", userId: "t-2", role: "teacher" },
 		]);
 		await db.insert(schema.student).values([
@@ -242,6 +314,7 @@ describe("material bank and session materials", () => {
 
 	beforeEach(() => {
 		memory.failures.delete = false;
+		memory.failures.put = false;
 	});
 
 	function headers(user = "teacher-1"): Record<string, string> {
@@ -294,13 +367,14 @@ describe("material bank and session materials", () => {
 			target?: ServerApp;
 		} = {},
 	) {
-		const bytes = options.bytes ?? bytesOf(8);
+		const mimeType = options.type ?? PDF;
+		const bytes = options.bytes ?? defaultFixtureFor(mimeType);
 		return (options.target ?? app).request(path, {
 			method: "PUT",
 			headers: {
 				"x-test-user": options.user ?? "teacher-1",
 				Origin: TEACHER_ORIGIN,
-				"Content-Type": options.type ?? PDF,
+				"Content-Type": mimeType,
 				"Content-Length": options.length ?? String(bytes.byteLength),
 				"X-File-Name": encodeURIComponent(options.name ?? "Unit 1.pdf"),
 			},
@@ -345,6 +419,98 @@ describe("material bank and session materials", () => {
 		expect(
 			(await upload("/api/materials/files", { user: "ta-1" })).status,
 		).toBe(403);
+
+		// Unknown/revoked membership role hits materialRoutes gate directly (403 FORBIDDEN, not STUDENT_ON_TEACHER_APP).
+		const suspList = await get("/api/materials", "susp-1");
+		expect(suspList.status).toBe(403);
+		const suspBody: { code?: string } = await suspList.json();
+		expect(suspBody.code).toBe("FORBIDDEN");
+		expect((await get(sessionPath(), "susp-1")).status).toBe(403);
+
+		// class_teacher can write folders and materials; ta gets 403 FORBIDDEN across all remaining write endpoints.
+		const ctFolderRes = await createFolder("CT Folder", null, "ct-1");
+		expect(ctFolderRes.status).toBe(201);
+		const ctFolderBody: { folder: MaterialFolderView } =
+			await ctFolderRes.json();
+		const ctFolder = ctFolderBody.folder;
+		const ctMat = await createLink("CT Material", ctFolder.id);
+		const attachRes = await json(
+			sessionPath(),
+			"POST",
+			{ materialId: ctMat.id },
+			"ct-1",
+		);
+		expect(attachRes.status).toBe(201);
+
+		expect(
+			(
+				await json(
+					`/api/materials/folders/${ctFolder.id}`,
+					"PATCH",
+					{ name: "Nope" },
+					"ta-1",
+				)
+			).status,
+		).toBe(403);
+		expect(
+			(await del(`/api/materials/folders/${ctFolder.id}`, "ta-1")).status,
+		).toBe(403);
+		expect(
+			(
+				await json(
+					`/api/materials/${ctMat.id}`,
+					"PATCH",
+					{ title: "Nope" },
+					"ta-1",
+				)
+			).status,
+		).toBe(403);
+		expect((await del(`/api/materials/${ctMat.id}`, "ta-1")).status).toBe(403);
+		expect(
+			(await json(sessionPath(), "POST", { materialId: ctMat.id }, "ta-1"))
+				.status,
+		).toBe(403);
+		expect(
+			(await upload(`${sessionPath()}/files`, { user: "ta-1" })).status,
+		).toBe(403);
+		expect((await del(`${sessionPath()}/${ctMat.id}`, "ta-1")).status).toBe(
+			403,
+		);
+
+		// Cross-org parentId injection is rejected on both POST and PATCH.
+		expect(
+			(await createFolder("Cross-org child", ctFolder.id, "teacher-2")).status,
+		).toBe(404);
+		const org2RootRes = await createFolder("Org2 Root", null, "teacher-2");
+		const org2RootBody: { folder: MaterialFolderView } =
+			await org2RootRes.json();
+		expect(
+			(
+				await json(
+					`/api/materials/folders/${org2RootBody.folder.id}`,
+					"PATCH",
+					{ parentId: ctFolder.id },
+					"teacher-2",
+				)
+			).status,
+		).toBe(404);
+
+		// Clean up seeded test rows so later tests start with clean bank state.
+		expect((await del(`${sessionPath()}/${ctMat.id}`, "ct-1")).status).toBe(
+			200,
+		);
+		expect((await del(`/api/materials/${ctMat.id}`, "ct-1")).status).toBe(200);
+		expect(
+			(await del(`/api/materials/folders/${ctFolder.id}`, "ct-1")).status,
+		).toBe(200);
+		expect(
+			(
+				await del(
+					`/api/materials/folders/${org2RootBody.folder.id}`,
+					"teacher-2",
+				)
+			).status,
+		).toBe(200);
 	});
 
 	test("folder CRUD: unique names per parent, rename, move, delete only when empty", async () => {
@@ -456,6 +622,163 @@ describe("material bank and session materials", () => {
 		expect(okMove.status).toBe(200);
 	});
 
+	test("concurrent folder moves, renames, and creates enforce cycle, depth, and partial-update invariants atomically (#646)", async () => {
+		const makeFolder = async (name: string, parentId: string | null = null) => {
+			const res = await createFolder(name, parentId);
+			expect(res.status).toBe(201);
+			const body: { folder: MaterialFolderView } = await res.json();
+			return body.folder;
+		};
+
+		// 1. Concurrent cross-move A -> B and B -> A: exactly one 200 and one 400 FOLDER_CYCLE.
+		const raceA = await makeFolder("Race A");
+		const raceB = await makeFolder("Race B");
+		const [mAB, mBA] = await Promise.all([
+			json(`/api/materials/folders/${raceA.id}`, "PATCH", {
+				parentId: raceB.id,
+			}),
+			json(`/api/materials/folders/${raceB.id}`, "PATCH", {
+				parentId: raceA.id,
+			}),
+		]);
+		expect([mAB.status, mBA.status].sort()).toEqual([200, 400]);
+		const cycleLoser = mAB.status === 400 ? mAB : mBA;
+		const cycleBody: { code?: string } = await cycleLoser.json();
+		expect(cycleBody.code).toBe("FOLDER_CYCLE");
+		const listAfterRace: { folders: MaterialFolderView[] } = await (
+			await get("/api/materials/folders")
+		).json();
+		const rowA = listAfterRace.folders.find((f) => f.id === raceA.id);
+		const rowB = listAfterRace.folders.find((f) => f.id === raceB.id);
+		expect(
+			(rowA?.parentId === null && rowB?.parentId === raceA.id) ||
+				(rowB?.parentId === null && rowA?.parentId === raceB.id),
+		).toBe(true);
+
+		// 2a. Concurrent pure rename + pure move on the same folder preserves BOTH updates.
+		const parentP = await makeFolder("Parent P");
+		const child = await makeFolder("Child Orig", parentP.id);
+		const [renRes, movRes] = await Promise.all([
+			json(`/api/materials/folders/${child.id}`, "PATCH", {
+				name: "Child Renamed",
+			}),
+			json(`/api/materials/folders/${child.id}`, "PATCH", { parentId: null }),
+		]);
+		expect([renRes.status, movRes.status]).toEqual([200, 200]);
+		const listAfterPartial: { folders: MaterialFolderView[] } = await (
+			await get("/api/materials/folders")
+		).json();
+		const updatedChild = listAfterPartial.folders.find(
+			(f) => f.id === child.id,
+		);
+		expect(updatedChild?.name).toBe("Child Renamed");
+		expect(updatedChild?.parentId).toBeNull();
+
+		// 2b. Concurrent moves of same-named folders into the same parent return [200, 409 FOLDER_NAME_TAKEN], never 500.
+		const src1 = await makeFolder("Clash Src 1");
+		const src2 = await makeFolder("Clash Src 2");
+		const dest = await makeFolder("Clash Dest");
+		const clash1 = await makeFolder("Same Name", src1.id);
+		const clash2 = await makeFolder("Same Name", src2.id);
+		const [c1Res, c2Res] = await Promise.all([
+			json(`/api/materials/folders/${clash1.id}`, "PATCH", {
+				parentId: dest.id,
+			}),
+			json(`/api/materials/folders/${clash2.id}`, "PATCH", {
+				parentId: dest.id,
+			}),
+		]);
+		expect([c1Res.status, c2Res.status].sort()).toEqual([200, 409]);
+		const clashLoser = c1Res.status === 409 ? c1Res : c2Res;
+		const clashBody: { code?: string } = await clashLoser.json();
+		expect(clashBody.code).toBe("FOLDER_NAME_TAKEN");
+
+		// 3a. Concurrent PATCH depth-cap race (4 + 5 individually valid, combined = 6 > 5).
+		const r0 = await makeFolder("DepthRace R0");
+		const l1 = await makeFolder("DepthRace L1");
+		const l2 = await makeFolder("DepthRace L2", l1.id);
+		await makeFolder("DepthRace L3", l2.id);
+		const s1 = await makeFolder("DepthRace S1");
+		const s2 = await makeFolder("DepthRace S2", s1.id);
+		await makeFolder("DepthRace S3", s2.id);
+		const [dMove1, dMove2] = await Promise.all([
+			json(`/api/materials/folders/${l1.id}`, "PATCH", { parentId: r0.id }),
+			json(`/api/materials/folders/${s1.id}`, "PATCH", { parentId: l2.id }),
+		]);
+		expect([dMove1.status, dMove2.status].sort()).toEqual([200, 400]);
+		const depthLoser = dMove1.status === 400 ? dMove1 : dMove2;
+		const depthLoserBody: { code?: string } = await depthLoser.json();
+		expect(depthLoserBody.code).toBe("FOLDER_TOO_DEEP");
+
+		// 3b. Concurrent PATCH + POST depth-cap race (combined = 6 > 5).
+		const d0 = await makeFolder("PostRace D0");
+		const d1 = await makeFolder("PostRace D1");
+		const d2 = await makeFolder("PostRace D2", d1.id);
+		const d3 = await makeFolder("PostRace D3", d2.id);
+		const d4 = await makeFolder("PostRace D4", d3.id);
+		const [pMove, pCreate] = await Promise.all([
+			json(`/api/materials/folders/${d1.id}`, "PATCH", { parentId: d0.id }),
+			createFolder("PostRace D5", d4.id),
+		]);
+		const pStatuses = [pMove.status, pCreate.status];
+		expect(pStatuses.includes(400)).toBe(true);
+		expect(pStatuses.some((s) => s === 200 || s === 201)).toBe(true);
+		const postRaceLoser = pMove.status === 400 ? pMove : pCreate;
+		const postRaceBody: { code?: string } = await postRaceLoser.json();
+		expect(postRaceBody.code).toBe("FOLDER_TOO_DEEP");
+		const listAfterDepthRaces: { folders: MaterialFolderView[] } = await (
+			await get("/api/materials/folders")
+		).json();
+		const byIdAfterDepth = new Map(
+			listAfterDepthRaces.folders.map((f) => [f.id, f]),
+		);
+		for (const folder of listAfterDepthRaces.folders) {
+			let depth = 0;
+			let cur: string | null = folder.id;
+			while (cur !== null) {
+				depth += 1;
+				cur = byIdAfterDepth.get(cur)?.parentId ?? null;
+			}
+			expect(depth).toBeLessThanOrEqual(5);
+		}
+
+		// 4. Legacy cyclic rows: POST child / re-confirming cycle -> 400 FOLDER_CYCLE; moving under valid root breaks cycle -> 200.
+		const validRoot = await makeFolder("Recovery Root");
+		await db.insert(schema.materialFolder).values([
+			{ id: "cyc-x", orgId: "org-1", parentId: null, name: "Cycle X" },
+			{ id: "cyc-y", orgId: "org-1", parentId: "cyc-x", name: "Cycle Y" },
+		]);
+		await db
+			.update(schema.materialFolder)
+			.set({ parentId: "cyc-y" })
+			.where(eq(schema.materialFolder.id, "cyc-x"));
+
+		const postOnCycle = await createFolder("Under Cycle", "cyc-x");
+		expect(postOnCycle.status).toBe(400);
+		const postOnCycleBody: { code?: string } = await postOnCycle.json();
+		expect(postOnCycleBody.code).toBe("FOLDER_CYCLE");
+
+		const reconfirmCycle = await json("/api/materials/folders/cyc-x", "PATCH", {
+			parentId: "cyc-y",
+		});
+		expect(reconfirmCycle.status).toBe(400);
+		const reconfirmBody: { code?: string } = await reconfirmCycle.json();
+		expect(reconfirmBody.code).toBe("FOLDER_CYCLE");
+
+		const breakCycle = await json("/api/materials/folders/cyc-x", "PATCH", {
+			parentId: validRoot.id,
+		});
+		expect(breakCycle.status).toBe(200);
+		const listAfterRecovery: { folders: MaterialFolderView[] } = await (
+			await get("/api/materials/folders")
+		).json();
+		expect(
+			listAfterRecovery.folders.find((f) => f.id === "cyc-x")?.parentId,
+		).toBe(validRoot.id);
+		expect(
+			listAfterRecovery.folders.find((f) => f.id === "cyc-y")?.parentId,
+		).toBe("cyc-x");
+	});
 	test("link create validates url and fields; list filters by q, kind, folder", async () => {
 		for (const url of [
 			"javascript:alert(1)",
@@ -573,7 +896,7 @@ describe("material bank and session materials", () => {
 			(await upload("/api/materials/files", { target: appNoStore })).status,
 		).toBe(503);
 
-		const bytes = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+		const bytes = mp3Id3Fixture();
 		const res = await upload("/api/materials/files", {
 			bytes,
 			type: "audio/mpeg",
@@ -596,6 +919,17 @@ describe("material bank and session materials", () => {
 		expect(full.headers.get("X-Content-Type-Options")).toBe("nosniff");
 		expect(full.headers.get("Content-Disposition")).toMatch(/^inline;/);
 		expect(full.headers.get("Cross-Origin-Resource-Policy")).toBe("same-site");
+		expect(full.headers.get("Cross-Origin-Opener-Policy")).toBe("same-origin");
+		expect(full.headers.get("Referrer-Policy")).toBe("no-referrer");
+		expect(full.headers.get("Content-Security-Policy")).toContain(
+			"media-src 'self'",
+		);
+		expect(full.headers.get("Content-Security-Policy")).toContain(
+			"sandbox allow-same-origin",
+		);
+		expect(full.headers.get("Content-Security-Policy")).not.toContain(
+			"allow-scripts",
+		);
 		expect(new Uint8Array(await full.arrayBuffer())).toEqual(bytes);
 
 		const partial = await get(
@@ -607,8 +941,15 @@ describe("material bank and session materials", () => {
 		);
 		expect(partial.status).toBe(206);
 		expect(partial.headers.get("Content-Range")).toBe("bytes 2-4/10");
+		expect(partial.headers.get("Content-Disposition")).toMatch(/^inline;/);
+		expect(partial.headers.get("Content-Security-Policy")).toContain(
+			"media-src 'self'",
+		);
+		expect(partial.headers.get("Content-Security-Policy")).not.toContain(
+			"allow-scripts",
+		);
 		expect(new Uint8Array(await partial.arrayBuffer())).toEqual(
-			new Uint8Array([3, 4, 5]),
+			new Uint8Array([0x33, 4, 0]),
 		);
 		const unsatisfiable = await get(
 			`/api/materials/${created.id}/file`,
@@ -619,6 +960,9 @@ describe("material bank and session materials", () => {
 
 		const download = await get(`/api/materials/${created.id}/file?download=1`);
 		expect(download.headers.get("Content-Disposition")).toMatch(/^attachment;/);
+		expect(download.headers.get("Content-Security-Policy")).toBe(
+			"default-src 'none'; frame-ancestors 'none'; sandbox",
+		);
 
 		const pdf = await upload("/api/materials/files", { name: "Unit 2.pdf" });
 		const pdfMaterial = ((await pdf.json()) as { material: MaterialView })
@@ -626,6 +970,9 @@ describe("material bank and session materials", () => {
 		expect(pdfMaterial.kind).toBe("file");
 		const pdfFile = await get(`/api/materials/${pdfMaterial.id}/file`);
 		expect(pdfFile.headers.get("Content-Disposition")).toMatch(/^attachment;/);
+		expect(pdfFile.headers.get("Content-Security-Policy")).toBe(
+			"default-src 'none'; frame-ancestors 'none'; sandbox",
+		);
 	});
 
 	test("org isolation: another org sees 404 on every id-addressed route", async () => {
@@ -819,7 +1166,7 @@ describe("material bank and session materials", () => {
 			(await (
 				await upload("/api/materials/files", {
 					name: "Worksheet.pdf",
-					bytes: new Uint8Array([9, 8, 7]),
+					bytes: pdfFixture([9, 8, 7]),
 				})
 			).json()) as { material: MaterialView }
 		).material;
@@ -858,8 +1205,15 @@ describe("material bank and session materials", () => {
 		expect(download.headers.get("Cross-Origin-Resource-Policy")).toBe(
 			"same-site",
 		);
+		expect(download.headers.get("Cross-Origin-Opener-Policy")).toBe(
+			"same-origin",
+		);
+		expect(download.headers.get("Referrer-Policy")).toBe("no-referrer");
+		expect(download.headers.get("Content-Security-Policy")).toBe(
+			"default-src 'none'; frame-ancestors 'none'; sandbox",
+		);
 		expect(new Uint8Array(await download.arrayBuffer())).toEqual(
-			new Uint8Array([9, 8, 7]),
+			pdfFixture([9, 8, 7]),
 		);
 		// Material not attached to this session, or a link: 404.
 		expect(
@@ -972,7 +1326,7 @@ describe("material bank and session materials", () => {
 		const uploadBody = (await (
 			await upload("/api/materials/files", {
 				name: "GT Worksheet.pdf",
-				bytes: new Uint8Array([5, 6]),
+				bytes: pdfFixture([5, 6]),
 			})
 		).json()) as { material: MaterialView };
 		const bankFile = uploadBody.material;
@@ -1035,7 +1389,7 @@ describe("material bank and session materials", () => {
 		const download = await get(`${curPath}/${bankFile.id}/file`, "student-1");
 		expect(download.status).toBe(200);
 		expect(new Uint8Array(await download.arrayBuffer())).toEqual(
-			new Uint8Array([5, 6]),
+			pdfFixture([5, 6]),
 		);
 		// Link giáo trình không có file (như link direct).
 		expect(
@@ -1677,6 +2031,311 @@ describe("material bank and session materials", () => {
 				expect(res.status, `combo ${JSON.stringify(combo)}`).toBe(combo.expect);
 			}
 		});
+	});
+
+	test("upload validates filename extension against Content-Type and verifies magic bytes before storing (#676)", async () => {
+		const before = memory.objects.size;
+		const htmlBytes = new TextEncoder().encode(
+			"<!doctype html><html><script>alert(1)</script></html>",
+		);
+
+		// 1. Extension mismatch: Content-Type audio/mpeg + X-File-Name payload.html -> 415, body canceled, 0 stored
+		let extRejectCanceled = false;
+		const extRejectStream = new ReadableStream<Uint8Array>({
+			start(controller) {
+				controller.enqueue(htmlBytes);
+				controller.close();
+			},
+			cancel() {
+				extRejectCanceled = true;
+			},
+		});
+		const extReject = await app.request("/api/materials/files", {
+			method: "PUT",
+			headers: {
+				"x-test-user": "teacher-1",
+				Origin: TEACHER_ORIGIN,
+				"Content-Type": "audio/mpeg",
+				"Content-Length": String(htmlBytes.byteLength),
+				"X-File-Name": encodeURIComponent("payload.html"),
+			},
+			body: extRejectStream,
+			duplex: "half",
+		} as RequestInit);
+		expect(extReject.status).toBe(415);
+		await expect(extReject.json()).resolves.toMatchObject({
+			code: "UNSUPPORTED_FILE_TYPE",
+		});
+		expect(extRejectCanceled).toBe(true);
+		expect(memory.objects.size).toBe(before);
+
+		// 2. Cross-allowed mismatch: audio/mpeg + lesson.pdf (with valid PDF bytes) -> 415
+		const crossMismatch = await upload("/api/materials/files", {
+			type: "audio/mpeg",
+			name: "lesson.pdf",
+			bytes: pdfFixture(),
+		});
+		expect(crossMismatch.status).toBe(415);
+		await expect(crossMismatch.json()).resolves.toMatchObject({
+			code: "UNSUPPORTED_FILE_TYPE",
+		});
+
+		// 3. Matching extension (.mp3 / .mp4) with spoofed HTML, UTF-16LE BOM HTML, ID3<html>, and <!--ftyp--> polyglots -> 415
+		let magicRejectCanceled = false;
+		const magicRejectStream = new ReadableStream<Uint8Array>(
+			{
+				pull(controller) {
+					controller.enqueue(htmlBytes);
+				},
+				cancel() {
+					magicRejectCanceled = true;
+				},
+			},
+			{ highWaterMark: 0 },
+		);
+		const spoofMp3 = await app.request("/api/materials/files", {
+			method: "PUT",
+			headers: {
+				"x-test-user": "teacher-1",
+				Origin: TEACHER_ORIGIN,
+				"Content-Type": "audio/mpeg",
+				"Content-Length": String(htmlBytes.byteLength * 10),
+				"X-File-Name": encodeURIComponent("spoof.mp3"),
+			},
+			body: magicRejectStream,
+			duplex: "half",
+		} as RequestInit);
+		expect(spoofMp3.status).toBe(415);
+		await expect(spoofMp3.json()).resolves.toMatchObject({
+			code: "UNSUPPORTED_FILE_TYPE",
+		});
+		expect(magicRejectCanceled).toBe(true);
+
+		const utf16BomHtml = new Uint8Array([
+			0xff, 0xfe, 0x20, 0x00, 0x3c, 0x00, 0x68, 0x00, 0x74, 0x00, 0x6d, 0x00,
+		]);
+		expect(
+			(
+				await upload("/api/materials/files", {
+					type: "audio/mpeg",
+					name: "utf16-bom.mp3",
+					bytes: utf16BomHtml,
+				})
+			).status,
+		).toBe(415);
+		expect(
+			(
+				await upload("/api/materials/files", {
+					type: "audio/mpeg",
+					name: "id3-html.mp3",
+					bytes: new TextEncoder().encode("ID3<html><script>alert(1)</script>"),
+				})
+			).status,
+		).toBe(415);
+		expect(
+			(
+				await upload("/api/materials/files", {
+					type: "video/mp4",
+					name: "comment-polyglot.mp4",
+					bytes: new TextEncoder().encode(
+						"<!--ftyp--><html><script>alert(1)</script></html>",
+					),
+				})
+			).status,
+		).toBe(415);
+
+		// 4. Session upload route also enforces magic bytes and writes neither object nor lesson_material
+		const sessionBefore = (
+			await db
+				.select()
+				.from(schema.lessonMaterial)
+				.where(
+					and(
+						eq(schema.lessonMaterial.classId, "class-1"),
+						eq(schema.lessonMaterial.date, SESSION_DATE),
+					),
+				)
+		).length;
+		const spoofSessionPdf = await upload(`${sessionPath()}/files`, {
+			type: "application/pdf",
+			name: "fake.pdf",
+			bytes: htmlBytes,
+		});
+		expect(spoofSessionPdf.status).toBe(415);
+		await expect(spoofSessionPdf.json()).resolves.toMatchObject({
+			code: "UNSUPPORTED_FILE_TYPE",
+		});
+		const sessionAfter = (
+			await db
+				.select()
+				.from(schema.lessonMaterial)
+				.where(
+					and(
+						eq(schema.lessonMaterial.classId, "class-1"),
+						eq(schema.lessonMaterial.date, SESSION_DATE),
+					),
+				)
+		).length;
+		expect(sessionAfter).toBe(sessionBefore);
+		expect(memory.objects.size).toBe(before);
+
+		// 5. Lying Content-Length (both <=64B Slowloris hang attempt and >64B through store.put) -> 400 INVALID_FILE
+		const slowlorisGate = Promise.withResolvers<void>();
+		let sent11 = false;
+		const slowlorisBody = new ReadableStream<Uint8Array>({
+			async pull(controller) {
+				if (!sent11) {
+					sent11 = true;
+					controller.enqueue(pdfFixture([1, 2, 3])); // 11 bytes (> declared 10)
+					return;
+				}
+				await slowlorisGate.promise;
+				controller.close();
+			},
+			cancel() {
+				slowlorisGate.resolve();
+			},
+		});
+		const slowlorisRes = await app.request("/api/materials/files", {
+			method: "PUT",
+			headers: {
+				"x-test-user": "teacher-1",
+				Origin: TEACHER_ORIGIN,
+				"Content-Type": PDF,
+				"Content-Length": "10",
+				"X-File-Name": encodeURIComponent("slow.pdf"),
+			},
+			body: slowlorisBody,
+			duplex: "half",
+		} as RequestInit);
+		expect(slowlorisRes.status).toBe(400);
+		await expect(slowlorisRes.json()).resolves.toMatchObject({
+			code: "INVALID_FILE",
+		});
+
+		const valid150Pdf = pdfFixture(new Array<number>(142).fill(0x20));
+		const shortPostPeek = await upload("/api/materials/files", {
+			type: PDF,
+			name: "short-large.pdf",
+			bytes: valid150Pdf,
+			length: "300",
+		});
+		expect(shortPostPeek.status).toBe(400);
+		const longPostPeek = await upload("/api/materials/files", {
+			type: PDF,
+			name: "long-large.pdf",
+			bytes: valid150Pdf,
+			length: "100",
+		});
+		expect(longPostPeek.status).toBe(400);
+		await settle();
+		expect(memory.objects.size).toBe(before);
+
+		// 6. Positive formats (.jpeg, .png, .webp, .m4a, raw MPEG Layer III .mp3) & 1-byte chunked stream -> 201
+		for (const validCase of [
+			{
+				name: "photo.jpeg",
+				type: "image/jpeg",
+				bytes: new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]),
+			},
+			{
+				name: "diagram.png",
+				type: "image/png",
+				bytes: new Uint8Array([
+					0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0,
+				]),
+			},
+			{
+				name: "poster.webp",
+				type: "image/webp",
+				bytes: new TextEncoder().encode("RIFF$\x00\x00\x00WEBPVP8 "),
+			},
+			{
+				name: "voice.m4a",
+				type: "audio/mp4",
+				bytes: mp4Fixture(),
+			},
+			{
+				name: "frame.mp3",
+				type: "audio/mpeg",
+				bytes: new Uint8Array([0xff, 0xfb, 0x90, 0x64, 0x00, 0x01]),
+			},
+		]) {
+			const okRes = await upload("/api/materials/files", validCase);
+			expect(okRes.status, validCase.name).toBe(201);
+		}
+
+		const chunkedPdf = pdfFixture(
+			Array.from({ length: 112 }, (_, idx) => idx & 0xff),
+		);
+		let offset = 0;
+		const oneByteStream = new ReadableStream<Uint8Array>({
+			pull(controller) {
+				if (offset >= chunkedPdf.byteLength) {
+					controller.close();
+					return;
+				}
+				controller.enqueue(chunkedPdf.subarray(offset, offset + 1));
+				offset += 1;
+			},
+		});
+		const chunkedRes = await app.request("/api/materials/files", {
+			method: "PUT",
+			headers: {
+				"x-test-user": "teacher-1",
+				Origin: TEACHER_ORIGIN,
+				"Content-Type": PDF,
+				"Content-Length": String(chunkedPdf.byteLength),
+				"X-File-Name": encodeURIComponent("chunked.pdf"),
+			},
+			body: oneByteStream,
+			duplex: "half",
+		} as RequestInit);
+		expect(chunkedRes.status).toBe(201);
+		const chunkedBody = (await chunkedRes.json()) as { material: MaterialView };
+		const downloadedChunked = await get(
+			`/api/materials/${chunkedBody.material.id}/file`,
+		);
+		expect(new Uint8Array(await downloadedChunked.arrayBuffer())).toEqual(
+			chunkedPdf,
+		);
+	});
+
+	test("aborts upstream body when store.put throws after locking replay stream", async () => {
+		let sourceCanceled = false;
+		let sentHead = false;
+		const headChunk = pdfFixture(new Array<number>(72).fill(0x20));
+		const openStream = new ReadableStream<Uint8Array>({
+			pull(controller) {
+				if (!sentHead) {
+					sentHead = true;
+					controller.enqueue(headChunk);
+					return;
+				}
+				// Giữ nguồn mở giống kết nối đang upload dở để chỉ `peeked.abort()` mới huỷ được.
+			},
+			cancel() {
+				sourceCanceled = true;
+			},
+		});
+
+		memory.failures.put = true;
+		const res = await app.request("/api/materials/files", {
+			method: "PUT",
+			headers: {
+				"x-test-user": "teacher-1",
+				Origin: TEACHER_ORIGIN,
+				"Content-Type": PDF,
+				"Content-Length": "200",
+				"X-File-Name": encodeURIComponent("locked-fail.pdf"),
+			},
+			body: openStream,
+			duplex: "half",
+		} as RequestInit);
+
+		expect(res.status).toBe(500);
+		await settle();
+		expect(sourceCanceled).toBe(true);
 	});
 });
 

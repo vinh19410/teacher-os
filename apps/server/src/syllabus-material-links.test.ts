@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import type { KernelSnapshot } from "@teacher-os/api/contracts";
 import type { SyllabusBankMaterialRef } from "@teacher-os/api/material-contracts";
@@ -26,10 +27,9 @@ const bankOf = (
 	(lesson as SnapshotLessonWithBank).bankMaterials ?? [];
 
 const CORS_ORIGIN = "http://localhost:8001";
-const MIGRATIONS_DIR = new URL(
-	"../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 /**
  * Issue #655 — links tài liệu ngân hàng trên bài học giáo trình: upsert

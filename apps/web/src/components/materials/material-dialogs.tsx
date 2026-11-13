@@ -22,6 +22,7 @@ import {
 	deleteMaterial,
 	deleteMaterialFolder,
 	formatBytes,
+	isMaterialRequestError,
 	materialErrorMessage,
 	materialsAllQueryKey,
 	prepareMaterialUpload,
@@ -57,8 +58,13 @@ function useMaterialWrite<TInput, TResult>(
 				return;
 			}
 			setError(materialErrorMessage(err));
-			// 404/409: dữ liệu trên máy đã cũ — tải lại để giao diện khớp server.
-			if (isHttpError(err) && (err.status === 404 || err.status === 409)) {
+			// 404/409 hoặc thua race chu trình/độ sâu (#646): dữ liệu trên máy đã cũ — tải lại cây thư mục.
+			if (
+				(isHttpError(err) && (err.status === 404 || err.status === 409)) ||
+				(isMaterialRequestError(err) &&
+					(err.materialCode === "FOLDER_CYCLE" ||
+						err.materialCode === "FOLDER_TOO_DEEP"))
+			) {
 				await queryClient.invalidateQueries({
 					queryKey: materialsAllQueryKey,
 				});
@@ -129,18 +135,39 @@ export function FolderDialog({
 	const [name, setName] = useState(
 		mode.type === "create" ? "" : mode.folder.name,
 	);
-	const [parentId, setParentId] = useState<string | null>(
-		mode.type === "create" ? mode.parentId : mode.folder.parentId,
+	const exclude =
+		mode.type === "move"
+			? folderSubtreeIds(folders, mode.folder.id)
+			: undefined;
+	const rawParentId =
+		mode.type === "create" ? mode.parentId : mode.folder.parentId;
+	const [parentId, setParentId] = useState<string | null>(() =>
+		rawParentId !== null &&
+		!exclude?.has(rawParentId) &&
+		folders.some((f) => f.id === rawParentId)
+			? rawParentId
+			: null,
 	);
+	const effectiveParentId =
+		parentId !== null &&
+		!exclude?.has(parentId) &&
+		folders.some((f) => f.id === parentId)
+			? parentId
+			: null;
 	const { mutation, error, setError } = useMaterialWrite(
 		() => {
 			if (mode.type === "create") {
-				return createMaterialFolder({ name: name.trim(), parentId });
+				return createMaterialFolder({
+					name: name.trim(),
+					parentId: effectiveParentId,
+				});
 			}
 			if (mode.type === "rename") {
 				return updateMaterialFolder(mode.folder.id, { name: name.trim() });
 			}
-			return updateMaterialFolder(mode.folder.id, { parentId });
+			return updateMaterialFolder(mode.folder.id, {
+				parentId: effectiveParentId,
+			});
 		},
 		{
 			successText:
@@ -161,10 +188,6 @@ export function FolderDialog({
 			: mode.type === "rename"
 				? "Đổi tên thư mục"
 				: `Di chuyển “${mode.folder.name}”`;
-	const exclude =
-		mode.type === "move"
-			? folderSubtreeIds(folders, mode.folder.id)
-			: undefined;
 
 	function submit(e: FormEvent) {
 		e.preventDefault();
@@ -212,7 +235,7 @@ export function FolderDialog({
 					<Field label={mode.type === "create" ? "Nằm trong" : "Chuyển vào"}>
 						<FolderSelect
 							folders={folders}
-							value={parentId}
+							value={effectiveParentId}
 							onChange={setParentId}
 							rootLabel="Thư mục gốc"
 							exclude={exclude}
@@ -322,7 +345,7 @@ export function LinkDialog({
 
 /** Dòng hướng dẫn định dạng + giới hạn (khớp `MATERIAL_MIME`). */
 export const UPLOAD_HELP =
-	"PDF, PNG/JPG/WEBP, DOCX/PPTX/XLSX tối đa 25 MB; MP3/M4A/MP4 tối đa 100 MB.";
+	"PDF, PNG/JPG/WEBP, DOCX/PPTX/XLSX tối đa 25 MB; MP3/M4A/MP4 tối đa 95 MB.";
 
 export function UploadDialog({
 	folders,

@@ -45,6 +45,30 @@ describe("audioRejectMessage", () => {
 		expect("video/mp4" in LIBRARY_AUDIO_MIME).toBe(false);
 		expect("audio/mpeg" in LIBRARY_AUDIO_MIME).toBe(true);
 	});
+
+	it("chặn đuôi lệch payload.html, MIME nguy hiểm text/html, file 0 byte; nhận .m4a rỗng và .webm (#681)", () => {
+		expect(
+			audioRejectMessage(
+				new File(["x"], "payload.html", { type: "audio/mpeg" }),
+			),
+		).toMatch(/không hỗ trợ/);
+		expect(
+			audioRejectMessage(
+				new File(["x"], "section-1.mp3", { type: "text/html" }),
+			),
+		).toMatch(/không hỗ trợ/);
+		expect(
+			audioRejectMessage(new File([""], "empty.mp3", { type: "audio/mpeg" })),
+		).toMatch(/rỗng/);
+		expect(
+			audioRejectMessage(new File(["x"], "section-1.m4a", { type: "" })),
+		).toBe("File không hợp lệ.");
+		expect(
+			audioRejectMessage(
+				new File(["x"], "section-1.webm", { type: "video/webm" }),
+			),
+		).toBe("File không hợp lệ.");
+	});
 });
 
 describe("AudioUploader (render tĩnh)", () => {

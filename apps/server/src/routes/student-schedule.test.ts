@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import * as schema from "@teacher-os/db/schema/index";
 import { drizzle } from "drizzle-orm/libsql";
@@ -7,10 +8,9 @@ import { buildApp, type Db, type ServerApp } from "../app";
 import type { SessionUser } from "../session";
 
 const CORS_ORIGINS = ["http://localhost:8003"];
-const MIGRATIONS_DIR = new URL(
-	"../../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 function sessionFor(email: string, name: string) {
 	return {
