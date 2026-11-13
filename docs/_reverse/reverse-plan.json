@@ -290,7 +290,7 @@
       "complexity_flags": [
         "media"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "slug": "vocab-hub",
@@ -305,7 +305,7 @@
       "existing_doc": null,
       "confidence": "high",
       "complexity_flags": [],
-      "status": "pending"
+      "status": "done"
     },
     {
       "slug": "materials",
@@ -320,21 +320,22 @@
         "media",
         "async"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "slug": "reports",
       "sources": [
-        "apps/server/src/routes/reporting/index.ts",
-        "apps/server/src/routes/reporting/loaders.ts",
-        "packages/db/src/schema/report.ts",
-        "apps/web/src/routes/_auth/reports.tsx",
+        "apps/web/src/routes/_auth/tuition/index.tsx",
+        "apps/web/src/components/tuition/revenue-chart.tsx",
+        "apps/web/src/lib/tuition-from-kernel.ts",
+        "apps/server/src/routes/snapshot.ts",
+        "packages/db/src/schema/invoice.ts",
         "apps/e2e/specs/tuition-revenue-chart.spec.ts"
       ],
       "existing_doc": null,
-      "confidence": "medium",
+      "confidence": "high",
       "complexity_flags": [],
-      "status": "pending"
+      "status": "done"
     },
     {
       "slug": "notifications-teacher",
@@ -349,7 +350,7 @@
       "complexity_flags": [
         "async"
       ],
-      "status": "pending"
+      "status": "done"
     },
     {
       "slug": "study-pack",
@@ -361,7 +362,7 @@
       "existing_doc": null,
       "confidence": "high",
       "complexity_flags": [],
-      "status": "pending"
+      "status": "done"
     },
     {
       "slug": "student-quiz",
