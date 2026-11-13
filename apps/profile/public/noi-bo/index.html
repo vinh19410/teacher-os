@@ -1,190 +1,226 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex,nofollow">
-  <title>Tài liệu nội bộ — Kịch bản tư vấn học viên | Cô Thục Mỹ</title>
+  <title>Nội bộ · Kịch bản tư vấn | Cô Mỹ Dạy Tiếng Anh</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg: #0f172a;
-      --card-bg: #1e293b;
-      --card-border: #334155;
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --accent: #f59e0b;
-      --accent-hover: #d97706;
-      --primary: #3b82f6;
-      --primary-hover: #2563eb;
-      --success: #10b981;
-      --font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: var(--font);
-      background: var(--bg);
-      color: var(--text);
+      font-family: "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #F7F4EC;
+      color: #16261E;
       line-height: 1.6;
-      padding: 24px 16px;
+      padding: clamp(16px, 4vw, 48px);
+      -webkit-font-smoothing: antialiased;
     }
-    .container {
-      max-width: 800px;
+    main {
+      max-width: 820px;
+      width: 100%;
       margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
     }
     header {
-      margin-bottom: 24px;
       padding-bottom: 16px;
-      border-bottom: 1px solid var(--card-border);
+      border-bottom: 1px solid #DFD9C8;
     }
     .badge {
       display: inline-block;
-      padding: 4px 10px;
+      padding: 4px 12px;
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       border-radius: 9999px;
-      background: #7c2d12;
-      color: #fed7aa;
-      margin-bottom: 8px;
+      background: #FFF5DC;
+      color: #16261E;
+      border: 1px solid #E5A424;
+      margin-bottom: 10px;
     }
     h1 {
-      font-size: 24px;
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 8px;
+      color: #163828;
+      font-size: clamp(24px, 3.5vw, 28px);
+      font-weight: 800;
+      line-height: 1.25;
+      letter-spacing: -0.015em;
     }
     .lead {
-      color: var(--text-muted);
-      font-size: 14px;
+      color: #4E6157;
+      font-size: 15px;
+      margin-top: 8px;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    a {
+      color: #163828;
+      font-weight: 600;
+      text-underline-offset: 3px;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    a:hover { color: #0F291D; }
+    a:focus-visible,
+    .btn:focus-visible {
+      outline: 3px solid #E5A424;
+      outline-offset: 2px;
     }
     .warning-box {
-      background: rgba(245, 158, 11, 0.1);
-      border-left: 4px solid var(--accent);
+      background: #FFF5DC;
+      border: 1px solid #E5A424;
+      border-left: 4px solid #E5A424;
+      border-radius: 8px;
       padding: 12px 16px;
-      margin-bottom: 24px;
-      border-radius: 4px;
-      font-size: 13.5px;
-      color: #fde68a;
+      font-size: 14px;
+      color: #16261E;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     .card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 8px;
-      padding: 20px;
-      margin-bottom: 20px;
+      background: #FFFFFF;
+      border: 1px solid #DFD9C8;
+      border-radius: 14px;
+      padding: clamp(16px, 3vw, 22px);
+      min-width: 0;
     }
-    .card h2 {
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    h2 {
+      color: #163828;
       font-size: 17px;
-      margin-bottom: 6px;
-      color: #fff;
+      font-weight: 700;
+      line-height: 1.35;
     }
-    .card p.desc {
-      font-size: 13.5px;
-      color: var(--text-muted);
+    .desc {
+      color: #4E6157;
+      font-size: 14px;
       margin-bottom: 12px;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
-    .snippet-box {
-      background: #090d16;
-      border: 1px solid #1e293b;
-      border-radius: 6px;
-      padding: 14px;
-      font-family: inherit;
-      font-size: 13.5px;
+    pre {
       white-space: pre-wrap;
-      color: #e2e8f0;
-      max-height: 260px;
-      overflow-y: auto;
-      margin-bottom: 12px;
-      user-select: all;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      font-family: inherit;
+      font-size: 14.5px;
+      line-height: 1.6;
+      color: #16261E;
+      background: #FAF6EA;
+      border: 1px solid #DFD9C8;
+      border-radius: 8px;
+      padding: 14px;
+      max-width: 100%;
     }
     .btn {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 8px 16px;
+      justify-content: center;
+      font: inherit;
+      font-weight: 800;
       font-size: 14px;
-      font-weight: 600;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-      transition: background 0.15s ease;
-    }
-    .btn-gold {
-      background: var(--accent);
-      color: #0f172a;
-    }
-    .btn-gold:hover {
-      background: var(--accent-hover);
-    }
-    .btn-primary {
-      background: var(--primary);
-      color: #fff;
-    }
-    .btn-primary:hover {
-      background: var(--primary-hover);
-    }
-    .contact-card {
-      background: #1e293b;
-      border: 1px dashed var(--card-border);
+      background: #163828;
+      color: #FFFFFF;
+      border: 0;
       border-radius: 8px;
-      padding: 18px;
-      margin-top: 32px;
+      padding: 10px 16px;
+      min-height: 44px;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+      flex-shrink: 0;
     }
-    .contact-card h3 {
-      font-size: 15px;
-      margin-bottom: 10px;
-      color: #fff;
+    .btn:hover { background: #0F291D; }
+    .contact-card {
+      background: #FFFFFF;
+      border: 1px dashed #DFD9C8;
+      border-radius: 14px;
+      padding: clamp(16px, 3vw, 22px);
+      min-width: 0;
+    }
+    .contact-card h2 {
+      font-size: 16px;
+      margin-bottom: 12px;
     }
     .contact-list {
       list-style: none;
-      font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 14.5px;
+      color: #4E6157;
     }
     .contact-list li {
-      margin-bottom: 6px;
-      color: var(--text-muted);
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     .contact-list strong {
-      color: #f1f5f9;
+      color: #16261E;
+      font-weight: 700;
     }
     #toast {
       position: fixed;
-      bottom: 24px;
-      right: 24px;
-      background: #10b981;
-      color: #064e3b;
+      bottom: 20px;
+      right: 20px;
+      max-width: calc(100vw - 32px);
+      background: #163828;
+      color: #FFFFFF;
+      border: 1px solid #E5A424;
       font-weight: 600;
-      padding: 10px 18px;
-      border-radius: 6px;
+      padding: 10px 16px;
+      border-radius: 8px;
       font-size: 14px;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.25s ease;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transition: opacity 0.2s ease;
+      box-shadow: 0 6px 18px rgba(22, 38, 30, 0.18);
       z-index: 1000;
     }
     #toast.show {
       opacity: 1;
     }
+    @media (max-width: 480px) {
+      .card-head .btn {
+        width: 100%;
+      }
+      #toast {
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+        text-align: center;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="container">
+  <main>
     <header>
       <span class="badge">Nội bộ tư vấn viên</span>
-      <h1>Kịch Bản Tư Vấn &amp; Chăm Sóc Học Viên</h1>
-      <p class="lead">Bộ tài liệu và kịch bản chat mẫu của Cô Đỗ Thục Mỹ (The English Corner) dành cho tư vấn viên.</p>
+      <h1>Kịch bản tư vấn (nội bộ)</h1>
+      <p class="lead">Trang dành cho tư vấn viên, không có link từ trang chính. <a href="../">Về trang chính</a></p>
     </header>
 
     <div class="warning-box">
       🔒 <strong>Lưu ý bảo mật:</strong> Trang này chỉ lưu hành nội bộ. Không gửi liên kết trang này cho học viên hoặc chia sẻ công khai.
     </div>
 
-    <!-- Mẫu 1 -->
-    <div class="card">
-      <h2>Mẫu 1 • Tin Nhắn Gửi Trọn Bộ Hồ Sơ &amp; Lộ Trình</h2>
+    <article class="card">
+      <div class="card-head">
+        <h2>Mẫu 1 · Gửi trọn bộ hồ sơ và lộ trình cho học viên</h2>
+        <button type="button" class="btn" data-copy-target="s0">Chép nội dung</button>
+      </div>
       <p class="desc">Dùng khi học viên hỏi thông tin tổng quan, cần biết bằng cấp, phương pháp và quy trình kèm cặp 365 ngày.</p>
-      <div class="snippet-box" id="snippet1">Chào bạn, gửi bạn thông tin tổng hợp Hồ sơ Năng lực Giảng viên của Cô Đỗ Thục Mỹ (The English Corner) và Quy trình Đào tạo 365 Ngày nhé:
+      <pre id="s0">Chào bạn, gửi bạn thông tin tổng hợp Hồ sơ Năng lực Giảng viên của Cô Đỗ Thục Mỹ (The English Corner) và Quy trình Đào tạo 365 Ngày nhé:
 
 1️⃣ BẢO CHỨNG CHUYÊN MÔN CÔ THỤC MỸ:
 • Cử nhân ĐH Quốc Tế Hồng Bàng (HIU) | Giảng viên Thỉnh giảng ĐH HUFLIT TP.HCM
@@ -199,31 +235,29 @@
 • Sau giờ học: Đích thân cô Mỹ chấm Writing &amp; Speaking theo 4 tiêu chí Giám khảo
 • Đồng hành 365 ngày: Tài trợ 100% phí App luyện Speaking Forecast theo Quý &amp; ưu tiên chấm bài không giới hạn tới ngày thi!
 
-🎁 Hiện lớp đang dành tặng 05 suất 【KHÁM BỆNH TIẾNG ANH 1-1 MIỄN PHÍ】 cùng cô Mỹ để đánh giá 4 kỹ năng và thiết kế Thời khóa biểu Thứ 2 - Chủ Nhật riêng cho bạn. Bạn nhắn mục tiêu hiện tại để cô xếp lịch nhé!</div>
-      <button type="button" class="btn btn-gold" data-copy-target="snippet1">
-        📋 Copy Kịch Bản Mẫu 1
-      </button>
-    </div>
+🎁 Hiện lớp đang dành tặng 05 suất 【KHÁM BỆNH TIẾNG ANH 1-1 MIỄN PHÍ】 cùng cô Mỹ để đánh giá 4 kỹ năng và thiết kế Thời khóa biểu Thứ 2 - Chủ Nhật riêng cho bạn. Bạn nhắn mục tiêu hiện tại để cô xếp lịch nhé!</pre>
+    </article>
 
-    <!-- Mẫu 2 -->
-    <div class="card">
-      <h2>Mẫu 2 • Lời Mời Test Đầu Vào 1-1</h2>
+    <article class="card">
+      <div class="card-head">
+        <h2>Mẫu 2 · Mời học viên test đầu vào 1-1</h2>
+        <button type="button" class="btn" data-copy-target="s1">Chép nội dung</button>
+      </div>
       <p class="desc">Dùng để mời học viên đặt lịch kiểm tra trình độ 4 kỹ năng trực tiếp cùng cô Mỹ qua Google Meet.</p>
-      <div class="snippet-box" id="snippet2">🎁 MỜI BẠN THAM GIA BUỔI "KHÁM BỆNH TIẾNG ANH 1-1" CÙNG CÔ THỤC MỸ:
+      <pre id="s1">🎁 MỜI BẠN THAM GIA BUỔI "KHÁM BỆNH TIẾNG ANH 1-1" CÙNG CÔ THỤC MỸ:
 • Thời lượng: 30 phút trực tiếp 1-1 qua Google Meet cùng cô Mỹ
 • Nội dung: Đánh giá khẩu hình phát âm IPA, bắt lỗi ngữ pháp/dịch ngầm, quy đổi trình độ theo khung CEFR (A1-C1) và tính chính xác số giờ học cần thiết
 • Quà tặng sau buổi test: Bảng Kế hoạch Học tập Cá nhân hóa (Thứ 2 - Chủ Nhật) khớp với lịch đi làm/đi học của bạn.
-👉 Bạn cho cô xin Tên + SĐT Zalo + Khung giờ rảnh trong tuần để cô xếp lịch nhé!</div>
-      <button type="button" class="btn btn-primary" data-copy-target="snippet2">
-        📋 Copy Lời Mời Mẫu 2
-      </button>
-    </div>
+👉 Bạn cho cô xin Tên + SĐT Zalo + Khung giờ rảnh trong tuần để cô xếp lịch nhé!</pre>
+    </article>
 
-    <!-- Mẫu 3 -->
-    <div class="card">
-      <h2>Mẫu 3 • Tóm Tắt Bộ 5 File Hồ Sơ &amp; Tài Liệu PDF</h2>
+    <article class="card">
+      <div class="card-head">
+        <h2>Mẫu 3 · Tóm tắt bộ 5 file hồ sơ &amp; tài liệu PDF</h2>
+        <button type="button" class="btn" data-copy-target="s2">Chép nội dung</button>
+      </div>
       <p class="desc">Dùng gửi nhanh qua Zalo danh mục tài liệu hồ sơ của cô Mỹ cho phụ huynh hoặc học viên cần hồ sơ minh chứng.</p>
-      <div class="snippet-box" id="snippet3">🌟 TRỌN BỘ HỒ SƠ GIẢNG VIÊN &amp; LỘ TRÌNH ĐÀO TẠO CÔ ĐỖ THỊ THỤC MỸ (THE ENGLISH CORNER)
+      <pre id="s2">🌟 TRỌN BỘ HỒ SƠ GIẢNG VIÊN &amp; LỘ TRÌNH ĐÀO TẠO CÔ ĐỖ THỤC MỸ (THE ENGLISH CORNER)
 • Giảng viên: Cô Đỗ Thục Mỹ (Cử nhân ĐH Quốc Tế Hồng Bàng HIU | GV Thỉnh giảng ĐH HUFLIT TP.HCM)
 • Chứng nhận Quốc tế: University of London (UK), IDP IELTS Australia &amp; ALAP (UK)
 • Giải thưởng: Giải Nhì Dạy Tốt &amp; Top 2 GV Truyền cảm hứng Vinschool | Top 5 GV Truyền cảm hứng IMAP
@@ -233,79 +267,97 @@
   3. Bộ 4 Bảng Tóm Tắt Bảo Chứng, Phương Pháp &amp; 3 Lộ Trình Học
   4. Ms. Thuc My Master Teacher Profile (6 Pages English)
   5. Ms. Thuc My 1-Page Executive CV (English)
-📞 Zalo Tư vấn &amp; Đặt lịch Khám bệnh Tiếng Anh 1-1: 0929.060.994</div>
-      <button type="button" class="btn btn-gold" data-copy-target="snippet3">
-        📋 Copy Danh Mục Mẫu 3
-      </button>
-    </div>
+📞 Zalo Tư vấn &amp; Đặt lịch Khám bệnh Tiếng Anh 1-1: 0929.060.994</pre>
+    </article>
 
-    <!-- Contact Info -->
-    <div class="contact-card">
-      <h3>Thông Tin Liên Hệ Nhanh Của Lớp</h3>
+    <section class="contact-card" aria-labelledby="contact-heading">
+      <h2 id="contact-heading">Thông tin liên hệ nhanh của lớp</h2>
       <ul class="contact-list">
         <li>📞 <strong>Hotline / Zalo:</strong> 0929.060.994 (Cô Thục Mỹ)</li>
-        <li>✉️ <strong>Email học thuật:</strong> mydt13@gmail.com</li>
+        <li>✉️ <strong>Email học thuật:</strong> <a href="mailto:mydt13@gmail.com">mydt13@gmail.com</a></li>
         <li>🌐 <strong>Fanpage:</strong> Cô Mỹ Dạy Tiếng Anh (@theenglishcorner.vn)</li>
         <li>📍 <strong>Lớp học:</strong> Online Google Meet &amp; Offline Vinhomes Grand Park (TP. Thủ Đức)</li>
       </ul>
-    </div>
-  </div>
+    </section>
+  </main>
 
-  <div id="toast" role="status" aria-live="polite">Đã sao chép vào bộ nhớ tạm!</div>
+  <div id="toast" role="status" aria-live="polite"></div>
 
   <script>
-    (() => {
-      const toast = document.getElementById('toast');
-      let timer = null;
+    (function () {
+      var toast = document.getElementById('toast');
+      var toastTimer = null;
 
       function showToast(msg) {
         if (!toast) return;
-        toast.textContent = msg || 'Đã sao chép vào bộ nhớ tạm!';
+        toast.textContent = msg;
         toast.classList.add('show');
-        clearTimeout(timer);
-        timer = setTimeout(() => {
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
           toast.classList.remove('show');
-        }, 2200);
-      }
-
-      function copyText(text) {
-        if (!text) return;
-        if (navigator.clipboard && window.isSecureContext) {
-          navigator.clipboard.writeText(text).then(
-            () => { showToast('Đã sao chép vào bộ nhớ tạm!'); },
-            () => { fallbackCopy(text); }
-          );
-        } else {
-          fallbackCopy(text);
-        }
+        }, 1800);
       }
 
       function fallbackCopy(text) {
-        const ta = document.createElement('textarea');
+        var ta = document.createElement('textarea');
         ta.value = text;
+        ta.setAttribute('readonly', '');
         ta.style.position = 'fixed';
         ta.style.left = '-9999px';
         ta.style.top = '0';
         document.body.appendChild(ta);
         ta.focus();
         ta.select();
+        var ok = false;
         try {
-          const ok = document.execCommand('copy');
-          if (ok) showToast('Đã sao chép vào bộ nhớ tạm!');
-          else showToast('Vui lòng chọn văn bản và copy thủ công.');
+          ok = document.execCommand('copy');
         } catch (_e) {
-          showToast('Vui lòng chọn văn bản và copy thủ công.');
+          ok = false;
         }
         document.body.removeChild(ta);
+        return ok;
       }
 
-      document.querySelectorAll('[data-copy-target]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const targetId = btn.getAttribute('data-copy-target');
-          const el = document.getElementById(targetId);
-          if (el) {
-            copyText(el.innerText || el.textContent);
-          }
+      function copyText(text, onSuccess, onError) {
+        if (!text) return;
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function' && window.isSecureContext) {
+          navigator.clipboard.writeText(text).then(onSuccess, function () {
+            if (fallbackCopy(text)) {
+              onSuccess();
+            } else {
+              onError();
+            }
+          });
+        } else if (fallbackCopy(text)) {
+          onSuccess();
+        } else {
+          onError();
+        }
+      }
+
+      document.querySelectorAll('[data-copy-target]').forEach(function (btn) {
+        var originalLabel = btn.textContent;
+        var btnTimer = null;
+
+        btn.addEventListener('click', function () {
+          var targetId = btn.getAttribute('data-copy-target');
+          var el = targetId ? document.getElementById(targetId) : null;
+          if (!el) return;
+
+          copyText(
+            el.textContent,
+            function () {
+              btn.textContent = 'Đã chép ✓';
+              clearTimeout(btnTimer);
+              btnTimer = setTimeout(function () {
+                btn.textContent = originalLabel;
+              }, 1800);
+              showToast('Đã sao chép vào bộ nhớ tạm!');
+            },
+            function () {
+              showToast('Vui lòng chọn văn bản và copy thủ công.');
+            }
+          );
         });
       });
     })();
