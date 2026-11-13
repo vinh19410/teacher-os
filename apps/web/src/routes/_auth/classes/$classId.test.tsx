@@ -929,3 +929,249 @@ describe("class detail → edit class info (#693)", () => {
 		expect(server.writes).toEqual([]);
 	});
 });
+
+describe("class detail → ClassSessionsManageModal session datetime (#697)", () => {
+	const SCHEDULE = '{"days":[1,4],"start":"19:00","end":"20:30"}';
+	const makeSyllabusLesson = (id: string, title: string) => ({
+		id,
+		title,
+		objectives: "",
+		materials: "",
+		kind: "lesson" as const,
+		status: "upcoming" as const,
+	});
+
+	it("renders Buổi N + date/time across modules and updates immediately on lesson/module reorder", async () => {
+		const snapshot = snapshotFixture({
+			classes: [
+				classRow({
+					id: "cl-1",
+					name: "IELTS Writing",
+					syllabusId: "sy-c",
+					schedule: SCHEDULE,
+					startDate: "2026-08-24",
+					sessionsTotal: 3,
+				}),
+			],
+			syllabi: [
+				syllabusRow({
+					id: "sy-c",
+					name: "Writing 7.0",
+					classId: "cl-1",
+					sourceTemplateId: "sy-t",
+					totalLessons: 3,
+					modules: [
+						{
+							id: "m-a",
+							title: "Unit 1",
+							description: "",
+							lessons: [
+								makeSyllabusLesson("l-1", "Family (Collocations)"),
+								makeSyllabusLesson("l-2", "Family (*Listening)"),
+							],
+						},
+						{
+							id: "m-b",
+							title: "Unit 2",
+							description: "",
+							lessons: [makeSyllabusLesson("l-3", "Work (*Grammar)")],
+						},
+					],
+				}),
+			],
+		});
+
+		startKernelServer(snapshot, (req, srv) => {
+			const sy = srv.snapshot.syllabi[0];
+			if (!sy) return undefined;
+			if (req.path.endsWith("/modules/reorder")) {
+				const { moduleIds } = req.body as { moduleIds: string[] };
+				sy.modules.sort(
+					(a, b) => moduleIds.indexOf(a.id) - moduleIds.indexOf(b.id),
+				);
+			}
+			const lessonReorderMatch = req.path.match(
+				/\/modules\/([^/]+)\/lessons\/reorder$/,
+			);
+			if (lessonReorderMatch) {
+				const mod = sy.modules.find((m) => m.id === lessonReorderMatch[1]);
+				const { lessonIds } = req.body as { lessonIds: string[] };
+				mod?.lessons.sort(
+					(a, b) => lessonIds.indexOf(a.id) - lessonIds.indexOf(b.id),
+				);
+			}
+			return undefined;
+		});
+
+		renderWithKernel(<ClassDetail />);
+		const sessionRows = await screen.findAllByTestId("session-row");
+		expect(sessionRows).toHaveLength(3);
+		expect(sessionRows[0].textContent).toContain("Thứ Ba, 25/08 · 19:00–20:30");
+		expect(sessionRows[1].textContent).toContain(
+			"Thứ Sáu, 28/08 · 19:00–20:30",
+		);
+		expect(sessionRows[2].textContent).toContain("Thứ Ba, 01/09 · 19:00–20:30");
+
+		fireEvent.click(screen.getByRole("button", { name: "Sắp xếp buổi" }));
+		const dialog = screen.getByRole("dialog", { name: "Quản lý buổi của lớp" });
+
+		const slotsBefore = within(dialog)
+			.getAllByTestId("curriculum-lesson-slot")
+			.map((el) => el.textContent);
+		expect(slotsBefore).toEqual([
+			"Buổi 1 · Thứ Ba, 25/08 · 19:00–20:30",
+			"Buổi 2 · Thứ Sáu, 28/08 · 19:00–20:30",
+			"Buổi 3 · Thứ Ba, 01/09 · 19:00–20:30",
+		]);
+
+		// Di chuyển bài 2 lên vị trí 1 -> nhận mốc Buổi 1 (25/08)
+		fireEvent.click(
+			within(dialog).getByRole("button", {
+				name: "Đưa Family (*Listening) lên",
+			}),
+		);
+		await waitFor(() => {
+			const lessonTitles = Array.from(
+				dialog.querySelectorAll("div[class*='grid-cols-[20px_1fr_auto']"),
+			).map((row) => ({
+				slot: within(row as HTMLElement).getByTestId("curriculum-lesson-slot")
+					.textContent,
+				title: row.textContent,
+			}));
+			expect(lessonTitles[0].slot).toBe("Buổi 1 · Thứ Ba, 25/08 · 19:00–20:30");
+			expect(lessonTitles[0].title).toContain("Family (*Listening)");
+			expect(lessonTitles[1].slot).toBe(
+				"Buổi 2 · Thứ Sáu, 28/08 · 19:00–20:30",
+			);
+			expect(lessonTitles[1].title).toContain("Family (Collocations)");
+		});
+
+		// Đưa Unit 2 lên trước Unit 1 -> Work (*Grammar) nhận mốc Buổi 1 (25/08)
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Đưa Unit 2 lên" }),
+		);
+		await waitFor(() => {
+			const rows = Array.from(
+				dialog.querySelectorAll("div[class*='grid-cols-[20px_1fr_auto']"),
+			);
+			expect(rows[0].textContent).toContain("Work (*Grammar)");
+			expect(
+				within(rows[0] as HTMLElement).getByTestId("curriculum-lesson-slot")
+					.textContent,
+			).toBe("Buổi 1 · Thứ Ba, 25/08 · 19:00–20:30");
+			expect(
+				within(rows[1] as HTMLElement).getByTestId("curriculum-lesson-slot")
+					.textContent,
+			).toBe("Buổi 2 · Thứ Sáu, 28/08 · 19:00–20:30");
+			expect(
+				within(rows[2] as HTMLElement).getByTestId("curriculum-lesson-slot")
+					.textContent,
+			).toBe("Buổi 3 · Thứ Ba, 01/09 · 19:00–20:30");
+		});
+	});
+
+	it("reflects holiday skip, cancelled status, rescheduled time, and overflow unscheduled lessons", async () => {
+		const snapshot = snapshotFixture({
+			classes: [
+				classRow({
+					id: "cl-1",
+					name: "IELTS Writing",
+					syllabusId: "sy-c",
+					schedule: SCHEDULE,
+					startDate: "2026-08-25",
+					sessionsTotal: 3,
+				}),
+			],
+			students: [studentRow({ id: "st-1", name: "Học viên Một" })],
+			enrollments: [
+				enrollmentRow({ id: "en-1", classId: "cl-1", studentId: "st-1" }),
+			],
+			lessons: [
+				lessonRow({
+					id: "les-1",
+					classId: "cl-1",
+					enrollmentId: "en-1",
+					sid: "st-1",
+					date: "2026-08-26",
+					day: 3,
+					time: "18:00",
+					dur: 120,
+					status: "upcoming",
+				} as never),
+				lessonRow({
+					id: "les-h",
+					classId: "cl-1",
+					enrollmentId: "en-1",
+					sid: "st-1",
+					date: "2026-08-28",
+					day: 5,
+					time: "19:00",
+					dur: 90,
+					status: "holiday",
+				} as never),
+				lessonRow({
+					id: "les-2",
+					classId: "cl-1",
+					enrollmentId: "en-1",
+					sid: "st-1",
+					date: "2026-09-01",
+					day: 2,
+					time: "19:00",
+					dur: 90,
+					status: "upcoming",
+				} as never),
+				lessonRow({
+					id: "les-3",
+					classId: "cl-1",
+					enrollmentId: "en-1",
+					sid: "st-1",
+					date: "2026-09-04",
+					day: 5,
+					time: "19:00",
+					dur: 90,
+					status: "cancelled",
+				} as never),
+			],
+			syllabi: [
+				syllabusRow({
+					id: "sy-c",
+					name: "Writing 7.0",
+					classId: "cl-1",
+					sourceTemplateId: "sy-t",
+					totalLessons: 4,
+					modules: [
+						{
+							id: "m-1",
+							title: "Unit 1",
+							description: "",
+							lessons: [
+								makeSyllabusLesson("l-1", "Bài 1"),
+								makeSyllabusLesson("l-2", "Bài 2"),
+								makeSyllabusLesson("l-3", "Bài 3"),
+								makeSyllabusLesson("l-4", "Bài 4 (vượt lịch)"),
+							],
+						},
+					],
+				}),
+			],
+		});
+
+		startKernelServer(snapshot);
+		renderWithKernel(<ClassDetail />);
+
+		fireEvent.click(
+			await screen.findByRole("button", { name: "Sắp xếp buổi" }),
+		);
+		const dialog = screen.getByRole("dialog", { name: "Quản lý buổi của lớp" });
+		const slots = within(dialog)
+			.getAllByTestId("curriculum-lesson-slot")
+			.map((el) => el.textContent);
+
+		expect(slots).toEqual([
+			"Buổi 1 · Thứ Tư, 26/08 · 18:00–20:00",
+			"Buổi 2 · Thứ Ba, 01/09 · 19:00–20:30",
+			"Buổi 3 · Thứ Sáu, 04/09 · 19:00–20:30 · Đã hủy",
+			"Buổi 4 · Chưa có lịch",
+		]);
+	});
+});

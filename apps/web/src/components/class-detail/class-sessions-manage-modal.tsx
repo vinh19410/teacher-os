@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AddLessonModal } from "@/components/modals/add-lesson-modal";
 import { AddModuleModal } from "@/components/modals/add-module-modal";
 import { EditLessonModal } from "@/components/modals/edit-lesson-modal";
@@ -14,7 +14,13 @@ import {
 } from "@/components/syllabus/syllabus-mutations";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import type { ClassGroup } from "@/lib/mock-data";
+import {
+	type ClassSession,
+	type ClassSessionLesson,
+	formatCurriculumLessonSlot,
+	resolveClassSessions,
+} from "@/lib/class-sessions";
+import type { ClassGroup, ClassSessionItem } from "@/lib/mock-data";
 import { useClassCurriculum } from "@/lib/repos/use-syllabus";
 import type { DirectKernelAction } from "@/lib/use-direct-kernel-action";
 
@@ -22,6 +28,8 @@ export interface ClassSessionsManageModalProps {
 	open: boolean;
 	onClose: () => void;
 	cls: ClassGroup;
+	lessons?: ClassSessionLesson[];
+	classSessions?: ClassSessionItem[];
 	run: DirectKernelAction["run"];
 	isPending: DirectKernelAction["isPending"];
 	busy: boolean;
@@ -41,6 +49,8 @@ export function ClassSessionsManageModal({
 	open,
 	onClose,
 	cls,
+	lessons,
+	classSessions,
 	run,
 	busy,
 }: ClassSessionsManageModalProps) {
@@ -55,6 +65,26 @@ export function ClassSessionsManageModal({
 		lessonId: string;
 	} | null>(null);
 
+	const { sessions } = useMemo(
+		() =>
+			resolveClassSessions({
+				cls,
+				lessons: lessons ?? [],
+				syllabus: curriculum,
+				classSessions,
+			}),
+		[cls, lessons, curriculum, classSessions],
+	);
+	const sessionByIndex = useMemo(() => {
+		const map = new Map<number, ClassSession>();
+		if (sessions) {
+			for (const s of sessions) {
+				if (s.index > 0) map.set(s.index, s);
+			}
+		}
+		return map;
+	}, [sessions]);
+
 	const mutations = useSyllabusMutations({
 		target: curriculum ? { kind: "class", classId: cls.id } : null,
 		syllabus: curriculum,
@@ -64,6 +94,13 @@ export function ClassSessionsManageModal({
 	});
 	const sy = curriculum;
 	if (!sy) return null;
+
+	const moduleOffsets: number[] = [];
+	let runningCount = 0;
+	for (const mod of sy.modules) {
+		moduleOffsets.push(runningCount);
+		runningCount += mod.lessons.length;
+	}
 
 	return (
 		<Modal open={open} onClose={onClose} title="Quản lý buổi của lớp">
@@ -111,52 +148,64 @@ export function ClassSessionsManageModal({
 									</div>
 								</div>
 								<div>
-									{m.lessons.map((l, li) => (
-										<div
-											key={l.id}
-											className="grid grid-cols-[20px_1fr_auto] items-start gap-3 border-border border-b border-solid px-5 py-3 last:border-b-0 hover:bg-muted/40 max-app:grid-cols-[20px_1fr]"
-										>
-											<span
-												className={`lesson-dot mt-[5px] h-2.5 w-2.5 shrink-0 rounded-full ${lessonDotClassFor(l.status)}`}
-											/>
-											<div>
-												<div className="font-medium text-sm">{l.title}</div>
-												<div className="mt-0.5 text-[11px] text-muted-foreground">
-													{l.materials}
-													<LessonBankMaterialsBadge
-														count={l.bankMaterials?.length ?? 0}
+									{m.lessons.map((l, li) => {
+										const ordinal = (moduleOffsets[mi] ?? 0) + li + 1;
+										return (
+											<div
+												key={l.id}
+												className="grid grid-cols-[20px_1fr_auto] items-start gap-3 border-border border-b border-solid px-5 py-3 last:border-b-0 hover:bg-muted/40 max-app:grid-cols-[20px_1fr]"
+											>
+												<span
+													className={`lesson-dot mt-[5px] h-2.5 w-2.5 shrink-0 rounded-full ${lessonDotClassFor(l.status)}`}
+												/>
+												<div className="min-w-0">
+													<div
+														data-testid="curriculum-lesson-slot"
+														className="mb-0.5 text-muted-foreground text-xs tabular-nums"
+													>
+														{formatCurriculumLessonSlot(
+															ordinal,
+															sessionByIndex.get(ordinal),
+														)}
+													</div>
+													<div className="font-medium text-sm">{l.title}</div>
+													<div className="mt-0.5 text-[11px] text-muted-foreground">
+														{l.materials}
+														<LessonBankMaterialsBadge
+															count={l.bankMaterials?.length ?? 0}
+														/>
+													</div>
+												</div>
+												<div className="flex flex-wrap items-center gap-2 max-app:col-start-2 max-app:pt-1">
+													<LessonStatusBadge status={l.status} />
+													<button
+														type="button"
+														onClick={() =>
+															setEditLessonRef({
+																moduleId: m.id,
+																lessonId: l.id,
+															})
+														}
+														disabled={busy}
+														className="rounded-sm px-1.5 py-0.5 text-muted-foreground text-xs transition-colors duration-[150ms] hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+													>
+														Sửa
+													</button>
+													<SyllabusMutationButtons
+														label={l.title}
+														upDisabled={li === 0}
+														downDisabled={li === m.lessons.length - 1}
+														busy={busy}
+														onUp={() => mutations.moveLesson(m.id, li, -1)}
+														onDown={() => mutations.moveLesson(m.id, li, 1)}
+														onDelete={() =>
+															mutations.requestDeleteLesson(m.id, l.id, l.title)
+														}
 													/>
 												</div>
 											</div>
-											<div className="flex flex-wrap items-center gap-2 max-app:col-start-2 max-app:pt-1">
-												<LessonStatusBadge status={l.status} />
-												<button
-													type="button"
-													onClick={() =>
-														setEditLessonRef({
-															moduleId: m.id,
-															lessonId: l.id,
-														})
-													}
-													disabled={busy}
-													className="rounded-sm px-1.5 py-0.5 text-muted-foreground text-xs transition-colors duration-[150ms] hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
-												>
-													Sửa
-												</button>
-												<SyllabusMutationButtons
-													label={l.title}
-													upDisabled={li === 0}
-													downDisabled={li === m.lessons.length - 1}
-													busy={busy}
-													onUp={() => mutations.moveLesson(m.id, li, -1)}
-													onDown={() => mutations.moveLesson(m.id, li, 1)}
-													onDelete={() =>
-														mutations.requestDeleteLesson(m.id, l.id, l.title)
-													}
-												/>
-											</div>
-										</div>
-									))}
+										);
+									})}
 									<button
 										type="button"
 										onClick={() => setAddLessonModuleId(m.id)}

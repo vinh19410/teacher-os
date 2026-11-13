@@ -879,3 +879,65 @@ export function sessionAttendanceTally(
 		unmarked: states.length - marked - absent - cancelled - holiday,
 	};
 }
+
+/**
+ * Suy diễn danh sách buổi học dùng chung giữa `ClassSessionsSection` và
+ * `ClassSessionsManageModal` (#697) để hai bề mặt luôn đồng bộ `buổi N ↔ bài N`.
+ */
+export function resolveClassSessions(input: {
+	cls: Pick<
+		ClassGroup,
+		"schedule" | "startDate" | "sessionsTotal" | "schedulingMode"
+	>;
+	lessons: ClassSessionLesson[];
+	syllabus: Syllabus | null;
+	classSessions?: ClassSessionItem[];
+}): {
+	sessions: ClassSession[] | null;
+	isManual: boolean;
+	syllabusLessonCount: number;
+	effectiveSessionsTotal: number;
+} {
+	const isManual =
+		(input.classSessions?.length ?? 0) > 0 ||
+		(!input.syllabus && input.cls.schedulingMode === "manual");
+	const syllabusLessonCount = input.syllabus
+		? input.syllabus.modules.reduce((sum, m) => sum + m.lessons.length, 0)
+		: 0;
+	const effectiveSessionsTotal =
+		!isManual && input.cls.sessionsTotal === 0 && syllabusLessonCount > 0
+			? syllabusLessonCount
+			: input.cls.sessionsTotal;
+	const sessions = buildClassSessions({
+		schedule: input.cls.schedule,
+		startDate: input.cls.startDate,
+		lessons: input.lessons,
+		sessionsTotal: effectiveSessionsTotal,
+		manual: isManual,
+		classSessions: input.classSessions,
+	});
+	return {
+		sessions,
+		isManual,
+		syllabusLessonCount,
+		effectiveSessionsTotal,
+	};
+}
+
+/**
+ * Nhãn mốc lịch cho bài học thứ `ordinal` (1-based xuyên các module) trong
+ * modal "Quản lý buổi của lớp" (#697): khớp buổi N ↔ bài N với `session.index === ordinal`.
+ */
+export function formatCurriculumLessonSlot(
+	ordinal: number,
+	session: ClassSession | undefined,
+): string {
+	if (!session) {
+		return `Buổi ${ordinal} · Chưa có lịch`;
+	}
+	const base = `Buổi ${ordinal} · ${formatSessionDate(session.dateISO)} · ${sessionTimeRange(session)}`;
+	if (sessionStatus(session) === "cancelled") {
+		return `${base} · Đã hủy`;
+	}
+	return base;
+}
