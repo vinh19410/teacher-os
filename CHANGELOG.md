@@ -16,6 +16,7 @@ Quy ước khi cập nhật:
 - Bổ sung nút "Tải file mẫu" (`syllabus-template.csv` chuẩn v4, UTF-8 BOM) ngay cạnh nút "Nhập từ Excel/CSV" trên trang chi tiết giáo trình `/syllabus/$syllabusId`, dùng chung helper `downloadSyllabusSampleCsv()` với modal Tạo syllabus mới (#688).
 
 ### Changed
+- Gỡ nút "+ Thêm buổi" bị lặp trên thanh tiêu đề thẻ Sessions khi lớp chưa có buổi học (0 buổi) và bổ sung nút "Nhập buổi từ syllabus" ngay trong khung empty state để mở trực tiếp hộp thoại gắn giáo trình từ template (#691).
 - Chuyển đổi file mẫu và luồng nhập giáo trình từ CSV sang chỉ dùng Excel `.xlsx` (`syllabus-template.xlsx` gồm 2 sheet `Syllabus` và `Hướng dẫn`, định dạng Text `@`, ghim hàng tiêu đề, dropdown cột `Loại`), đổi nhãn UI sang `"Nhập từ Excel"` / `"Nhập nhanh từ Excel (tùy chọn)"`, từ chối `.csv`/`.xls` và gỡ `papaparse` khỏi `apps/web` (#690).
 
 ### CI/Infra
