@@ -13,6 +13,7 @@ Quy ước khi cập nhật:
 ## 2026-11-13
 
 ### Added
+- Hiển thị mốc thứ tự và ngày giờ thực tế của buổi học (`Buổi N · <Thứ, dd/MM> · <HH:mm–HH:mm>`) ngay trên từng dòng bài học trong popup **"Quản lý buổi của lớp"** (`ClassSessionsManageModal`), đồng bộ nguồn buổi học qua helper dùng chung `resolveClassSessions` với `ClassSessionsSection` (tự cập nhật khi đổi thứ tự bài/module, phản ánh buổi dời ngày/giờ, bỏ qua buổi `holiday` `index = 0` sang buổi bù, gắn hậu tố `· Đã hủy` và fallback `Buổi N · Chưa có lịch` khi vượt số buổi lịch lớp hoặc lịch legacy không suy được ngày) (#697).
 - Cho phép chỉnh sửa thông tin lớp học ngay trên trang chi tiết lớp `/classes/$classId` qua nút `"Chỉnh sửa"` và modal `EditClassModal`, hỗ trợ API `PATCH /api/classes/:id` (org-scoped, validate `classUpdateSchema`, khóa kỹ năng/số buổi theo giáo trình hoặc chế độ thủ công, khóa nguyên tử lịch học `409 CLASS_SCHEDULE_LOCKED` khi lớp đã có buổi học thực tế kèm race guard ở `activateEnrollment`, và cảnh báo trùng lịch realtime loại trừ chính lớp đang sửa qua `excludeClassId`) (#693).
 - Bổ sung nút "Tải file mẫu" (`syllabus-template.csv` chuẩn v4, UTF-8 BOM) ngay cạnh nút "Nhập từ Excel/CSV" trên trang chi tiết giáo trình `/syllabus/$syllabusId`, dùng chung helper `downloadSyllabusSampleCsv()` với modal Tạo syllabus mới (#688).
 

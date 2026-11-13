@@ -516,6 +516,8 @@ function ClassDetailRoute() {
 				open={manageOpen && Boolean(sy)}
 				onClose={() => setManageOpen(false)}
 				cls={cls}
+				lessons={classLessonsForClass}
+				classSessions={classSessionsForClass}
 				run={run}
 				isPending={isPending}
 				busy={busy}

@@ -14,8 +14,8 @@ import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Section } from "@/components/ui/section";
 import {
-	buildClassSessions,
 	formatSessionDate,
+	resolveClassSessions,
 	sessionAttendanceState,
 	sessionAttendanceTally,
 	sessionLessonInfo,
@@ -108,29 +108,15 @@ export function ClassSessionsSection({
 	const [actionsDateISO, setActionsDateISO] = useState<string | null>(null);
 	const [materialsDateISO, setMaterialsDateISO] = useState<string | null>(null);
 
-	// Issue #649: manual = lớp tạo không template (`schedulingMode: "manual"`)
-	// hoặc đã có buổi thủ công. `sessionsTotal === 0` không phải tín hiệu —
-	// deploy skew (server cũ) không gửi schedulingMode và lớp auto legacy
-	// phải giữ nguyên projection #121.
-	const isManual =
-		(classSessions?.length ?? 0) > 0 ||
-		(!syllabus && cls.schedulingMode === "manual");
-	const syllabusLessonCount = syllabus
-		? syllabus.modules.reduce((sum, m) => sum + m.lessons.length, 0)
-		: 0;
-	const effectiveSessionsTotal =
-		!isManual && cls.sessionsTotal === 0 && syllabusLessonCount > 0
-			? syllabusLessonCount
-			: cls.sessionsTotal;
-
-	const sessions = buildClassSessions({
-		schedule: cls.schedule,
-		startDate: cls.startDate,
-		lessons,
-		sessionsTotal: effectiveSessionsTotal,
-		manual: isManual,
-		classSessions,
-	});
+	// Issue #649 & #697: dùng chung helper resolveClassSessions với modal
+	// "Quản lý buổi của lớp" để đồng bộ 100% ánh xạ buổi N ↔ bài N.
+	const { sessions, isManual, syllabusLessonCount, effectiveSessionsTotal } =
+		resolveClassSessions({
+			cls,
+			lessons,
+			syllabus,
+			classSessions,
+		});
 	// Projection mode: zero real rows for an auto-scheduled class means every displayed
 	// session is a schedule projection (display-only).
 	const isProjected = !isManual && lessons.length === 0 && sessions !== null;

@@ -6,7 +6,10 @@
 import { describe, expect, test } from "vitest";
 import {
 	buildClassSessions,
+	type ClassSession,
 	type ClassSessionLesson,
+	formatCurriculumLessonSlot,
+	resolveClassSessions,
 	sessionAttendanceState,
 	sessionRowTargets,
 	sessionStatus,
@@ -300,5 +303,148 @@ describe("any-NULL and divergence guards hold the frozen fallback", () => {
 		if (!bucket) throw new Error("missing bucket for target date");
 		// id-min: sid-a's ids sort before sid-b's regardless of topic text.
 		expect(sessionTopic(bucket, [])).toBe("Zulu");
+	});
+});
+
+describe("resolveClassSessions & formatCurriculumLessonSlot (#697)", () => {
+	const makeSyllabus = (lessonCount: number) => ({
+		id: "sy-1",
+		name: "Test Syllabus",
+		level: "Band 7.0",
+		type: "ielts" as const,
+		classId: "cl-1",
+		sourceTemplateId: null,
+		skills: ["Writing"],
+		description: "",
+		totalLessons: lessonCount,
+		modules: [
+			{
+				id: "m-1",
+				title: "Unit 1",
+				description: "",
+				lessons: Array.from({ length: lessonCount }, (_, i) => ({
+					id: `sl-${i + 1}`,
+					title: `Bài ${i + 1}`,
+					objectives: "",
+					materials: "",
+					kind: "lesson" as const,
+					status: "upcoming" as const,
+				})),
+			},
+		],
+	});
+
+	test("projects sessions for 0-lesson class including sessionsTotal=0 fallback to syllabusLessonCount", () => {
+		const sy = makeSyllabus(3);
+		const explicitTotal = resolveClassSessions({
+			cls: {
+				schedule: SCHEDULE,
+				startDate: "2026-08-25",
+				sessionsTotal: 3,
+			},
+			lessons: [],
+			syllabus: sy,
+		});
+		expect(explicitTotal.sessions).toHaveLength(3);
+		expect(formatCurriculumLessonSlot(1, explicitTotal.sessions?.[0])).toBe(
+			"Buổi 1 · Thứ Ba, 25/08 · 19:00–20:30",
+		);
+		expect(formatCurriculumLessonSlot(2, explicitTotal.sessions?.[1])).toBe(
+			"Buổi 2 · Thứ Sáu, 28/08 · 19:00–20:30",
+		);
+
+		const fallbackTotal = resolveClassSessions({
+			cls: {
+				schedule: SCHEDULE,
+				startDate: "2026-08-25",
+				sessionsTotal: 0,
+			},
+			lessons: [],
+			syllabus: sy,
+		});
+		expect(fallbackTotal.effectiveSessionsTotal).toBe(3);
+		expect(fallbackTotal.sessions).toHaveLength(3);
+		expect(formatCurriculumLessonSlot(3, fallbackTotal.sessions?.[2])).toBe(
+			"Buổi 3 · Thứ Ba, 01/09 · 19:00–20:30",
+		);
+	});
+
+	test("handles rescheduled date/time, holiday index=0 skip, cancelled suffix, overflow, and legacy null", () => {
+		const sy = makeSyllabus(4);
+		const rows: ClassSessionLesson[] = [
+			// Buổi 1: rescheduled to Wed 2026-08-26 at 18:00 (120m)
+			dated({
+				id: "l-1",
+				date: "2026-08-26",
+				day: 3,
+				time: "18:00",
+				dur: 120,
+			}),
+			// Holiday on 2026-08-28 -> index = 0 (skipped)
+			dated({
+				id: "l-h",
+				date: "2026-08-28",
+				day: 5,
+				status: "holiday",
+			}),
+			// Buổi 2 (makeup): 2026-09-01
+			dated({
+				id: "l-2",
+				date: "2026-09-01",
+				day: 2,
+			}),
+			// Buổi 3: cancelled on 2026-09-04
+			dated({
+				id: "l-3",
+				date: "2026-09-04",
+				day: 5,
+				status: "cancelled",
+			}),
+		];
+
+		const { sessions } = resolveClassSessions({
+			cls: {
+				schedule: SCHEDULE,
+				startDate: "2026-08-25",
+				sessionsTotal: 3,
+			},
+			lessons: rows,
+			syllabus: sy,
+		});
+		expect(sessions).not.toBeNull();
+		const byIndex = new Map<number, ClassSession>();
+		for (const s of sessions ?? []) {
+			if (s.index > 0) byIndex.set(s.index, s);
+		}
+
+		expect(formatCurriculumLessonSlot(1, byIndex.get(1))).toBe(
+			"Buổi 1 · Thứ Tư, 26/08 · 18:00–20:00",
+		);
+		// Holiday bucket skipped -> ordinal 2 maps to 2026-09-01
+		expect(formatCurriculumLessonSlot(2, byIndex.get(2))).toBe(
+			"Buổi 2 · Thứ Ba, 01/09 · 19:00–20:30",
+		);
+		expect(formatCurriculumLessonSlot(3, byIndex.get(3))).toBe(
+			"Buổi 3 · Thứ Sáu, 04/09 · 19:00–20:30 · Đã hủy",
+		);
+		// Overflow beyond class sessionsTotal
+		expect(formatCurriculumLessonSlot(4, byIndex.get(4))).toBe(
+			"Buổi 4 · Chưa có lịch",
+		);
+
+		// Legacy free-text schedule -> sessions === null -> Chưa có lịch
+		const legacy = resolveClassSessions({
+			cls: {
+				schedule: "T3 & T5 19:00",
+				startDate: "01/08",
+				sessionsTotal: 4,
+			},
+			lessons: [],
+			syllabus: sy,
+		});
+		expect(legacy.sessions).toBeNull();
+		expect(formatCurriculumLessonSlot(1, undefined)).toBe(
+			"Buổi 1 · Chưa có lịch",
+		);
 	});
 });
