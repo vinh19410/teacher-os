@@ -12,6 +12,9 @@ Quy ước khi cập nhật:
 
 ## 2026-11-13
 
+### Added
+- Bổ sung nút "Tải file mẫu" (`syllabus-template.csv` chuẩn v4, UTF-8 BOM) ngay cạnh nút "Nhập từ Excel/CSV" trên trang chi tiết giáo trình `/syllabus/$syllabusId`, dùng chung helper `downloadSyllabusSampleCsv()` với modal Tạo syllabus mới (#688).
+
 ### CI/Infra
 - Tự động tổng hợp danh sách commit vừa phát hành và gửi thông báo dạng Discord Embed (`Beta Release` màu vàng cho `develop`, `Official Release` màu xanh lá cho `main`) ở cuối job `deploy` của `deploy-staging.yml` và `deploy.yml` sau khi toàn bộ smoke checks pass qua `scripts/notify-discord-changelog.mjs`, sử dụng secret `DISCORD_WEBHOOK_URL` (hỗ trợ `--dry-run` / `--strict`, tự cắt trần 4.096 ký tự, retry `429`/`5xx`, che URL/token khỏi log và fail-open nếu thiếu secret hoặc Discord gián đoạn tạm thời) (#686).
 

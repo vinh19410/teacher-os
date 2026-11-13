@@ -1,10 +1,18 @@
-import { describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import {
 	buildSampleCsv,
+	downloadSyllabusSampleCsv,
 	normalizeRow,
 	parseSyllabusFile,
 	rowsToModules,
+	SYLLABUS_SAMPLE_FILENAME,
 } from "./syllabus-import";
+
+afterEach(() => {
+	vi.restoreAllMocks();
+	vi.unstubAllGlobals();
+	vi.useRealTimers();
+});
 
 const HEADERS = ["Module", "Mô tả module", "Mục tiêu", "Tài liệu"];
 
@@ -729,5 +737,49 @@ describe("buildSampleCsv", () => {
 				result.modules.flatMap((m) => m.lessons).map((l) => l.kind),
 			).toEqual(["lesson", "lesson", "midterm", "lesson", "final"]);
 		}
+	});
+});
+
+describe("downloadSyllabusSampleCsv", () => {
+	test("tạo Blob CSV UTF-8 BOM, kích hoạt tải syllabus-template.csv và revoke URL bất đồng bộ", async () => {
+		vi.useFakeTimers();
+		let capturedBlob: Blob | null = null;
+		const createObjectURL = vi
+			.spyOn(URL, "createObjectURL")
+			.mockImplementation((obj: Blob | MediaSource) => {
+				capturedBlob = obj as Blob;
+				return "blob:syllabus-sample";
+			});
+		const revokeObjectURL = vi
+			.spyOn(URL, "revokeObjectURL")
+			.mockImplementation(() => {});
+		const anchor = {
+			href: "",
+			download: "",
+			click: vi.fn(),
+		};
+		const createElement = vi.fn(() => anchor);
+		vi.stubGlobal("document", { createElement });
+
+		downloadSyllabusSampleCsv();
+
+		expect(createObjectURL).toHaveBeenCalledTimes(1);
+		expect(capturedBlob).toBeInstanceOf(Blob);
+		if (!capturedBlob) throw new Error("expected capturedBlob");
+		expect((capturedBlob as Blob).type).toBe("text/csv;charset=utf-8");
+		const decodedCsv = new TextDecoder("utf-8", { ignoreBOM: true }).decode(
+			await (capturedBlob as Blob).arrayBuffer(),
+		);
+		expect(decodedCsv).toBe(buildSampleCsv());
+
+		expect(createElement).toHaveBeenCalledWith("a");
+		expect(anchor.href).toBe("blob:syllabus-sample");
+		expect(anchor.download).toBe(SYLLABUS_SAMPLE_FILENAME);
+		expect(anchor.download).toBe("syllabus-template.csv");
+		expect(anchor.click).toHaveBeenCalledTimes(1);
+
+		expect(revokeObjectURL).not.toHaveBeenCalled();
+		vi.runAllTimers();
+		expect(revokeObjectURL).toHaveBeenCalledWith("blob:syllabus-sample");
 	});
 });
