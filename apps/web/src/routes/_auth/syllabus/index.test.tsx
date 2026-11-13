@@ -168,4 +168,12 @@ describe("syllabus gallery header and filters", () => {
 				.map((b) => b.textContent),
 		).toEqual(["Tất cả", "Viết", "Nói", "Đọc", "Nghe"]);
 	});
+
+	it("shows Excel-only guidance in empty state", async () => {
+		startKernelServer(snapshotFixture());
+		renderWithKernel(<SyllabusRoute />);
+		const empty = await screen.findByTestId("syllabus-empty-state");
+		expect(empty.textContent).toContain("file Excel (.xlsx).");
+		expect(empty.textContent).not.toContain("CSV");
+	});
 });

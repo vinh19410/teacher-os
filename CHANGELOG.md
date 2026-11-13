@@ -15,6 +15,9 @@ Quy ước khi cập nhật:
 ### Added
 - Bổ sung nút "Tải file mẫu" (`syllabus-template.csv` chuẩn v4, UTF-8 BOM) ngay cạnh nút "Nhập từ Excel/CSV" trên trang chi tiết giáo trình `/syllabus/$syllabusId`, dùng chung helper `downloadSyllabusSampleCsv()` với modal Tạo syllabus mới (#688).
 
+### Changed
+- Chuyển đổi file mẫu và luồng nhập giáo trình từ CSV sang chỉ dùng Excel `.xlsx` (`syllabus-template.xlsx` gồm 2 sheet `Syllabus` và `Hướng dẫn`, định dạng Text `@`, ghim hàng tiêu đề, dropdown cột `Loại`), đổi nhãn UI sang `"Nhập từ Excel"` / `"Nhập nhanh từ Excel (tùy chọn)"`, từ chối `.csv`/`.xls` và gỡ `papaparse` khỏi `apps/web` (#690).
+
 ### CI/Infra
 - Tự động tổng hợp danh sách commit vừa phát hành và gửi thông báo dạng Discord Embed (`Beta Release` màu vàng cho `develop`, `Official Release` màu xanh lá cho `main`) ở cuối job `deploy` của `deploy-staging.yml` và `deploy.yml` sau khi toàn bộ smoke checks pass qua `scripts/notify-discord-changelog.mjs`, sử dụng secret `DISCORD_WEBHOOK_URL` (hỗ trợ `--dry-run` / `--strict`, tự cắt trần 4.096 ký tự, retry `429`/`5xx`, che URL/token khỏi log và fail-open nếu thiếu secret hoặc Discord gián đoạn tạm thời) (#686).
 

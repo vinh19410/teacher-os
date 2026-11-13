@@ -11,7 +11,7 @@ import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { CLASS_TYPE_LABELS } from "@/lib/mock-data";
 import {
-	downloadSyllabusSampleCsv,
+	downloadSyllabusSampleXlsx,
 	parseSyllabusFile,
 	type SyllabusImportResult,
 } from "@/lib/syllabus-import";
@@ -168,11 +168,11 @@ export function AddSyllabusModal({
 						placeholder="Mô tả lộ trình và mục tiêu…"
 					/>
 				</Field>
-				<Field label="Nhập nhanh từ Excel/CSV (tùy chọn)">
+				<Field label="Nhập nhanh từ Excel (tùy chọn)">
 					<input
 						ref={fileInputRef}
 						type="file"
-						accept=".csv,.xlsx"
+						accept=".xlsx"
 						className="hidden"
 						onChange={onFileChange}
 					/>
@@ -190,7 +190,7 @@ export function AddSyllabusModal({
 							type="button"
 							variant="secondary"
 							size="sm"
-							onClick={downloadSyllabusSampleCsv}
+							onClick={downloadSyllabusSampleXlsx}
 						>
 							Tải file mẫu
 						</Button>
