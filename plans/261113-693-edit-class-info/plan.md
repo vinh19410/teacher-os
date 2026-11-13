@@ -33,4 +33,4 @@ Cho phép giáo viên chỉnh sửa thông tin lớp học ngay tại trang chi 
 - [x] Phase 2 (Wave 1B - Frontend): `update-class` action/reducer/repo, `findScheduleConflicts` (`excludeClassId`), shared helpers, `EditClassModal`, button trên `/classes/$classId`, unit tests
 - [x] Phase 3: Tích hợp Wave 1, E2E (`edit-class.spec.ts`), chụp screenshot 3 viewport Light/Dark, `pnpm design:compare`
 - [x] Phase 4: Cập nhật `CHANGELOG.md`, local quality gates (`biome check`, `check-types`, `test`, `build`)
-- [ ] Phase 5: Code review độc lập, PR vào `develop`, merge, verify CI & Staging deploy, đăng POT
+- [x] Phase 5: Code review độc lập (vòng 2 `APPROVE`), PR vào `develop`, merge, verify CI & Staging deploy, đăng POT

@@ -13,6 +13,7 @@ import {
 	waitFor,
 	within,
 } from "@testing-library/react";
+import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ClassGroup } from "@/lib/mock-data";
 import { itFollowsTheKernelFormContract } from "@/test/kernel-form-contract";
@@ -723,15 +724,30 @@ describe("EditClassModal", () => {
 			shouldFail ? { status: 500, body: { error: "boom" } } : undefined,
 		);
 		const onClose = vi.fn();
-		const { rerender } = renderWithKernel(
-			<EditClassModal
-				open
-				onClose={onClose}
-				cls={cls}
-				hasRealSessions={false}
-				existingClasses={[cls]}
-			/>,
-		);
+		function Harness() {
+			const [open, setOpen] = useState(true);
+			return (
+				<>
+					<button type="button" onClick={() => setOpen(false)}>
+						test-close
+					</button>
+					<button type="button" onClick={() => setOpen(true)}>
+						test-reopen
+					</button>
+					<EditClassModal
+						open={open}
+						onClose={() => {
+							onClose();
+							setOpen(false);
+						}}
+						cls={cls}
+						hasRealSessions={false}
+						existingClasses={[cls]}
+					/>
+				</>
+			);
+		}
+		renderWithKernel(<Harness />);
 		let dialog = await screen.findByRole("dialog");
 
 		// Empty legacy mode keeps state="" rather than silently coercing to Online
@@ -778,25 +794,14 @@ describe("EditClassModal", () => {
 
 		// Close & reopen same class -> submitBlocked & notice are reset cleanly
 		shouldFail = false;
-		rerender(
-			<EditClassModal
-				open={false}
-				onClose={onClose}
-				cls={{ ...cls, mode: "Online" }}
-				hasRealSessions={false}
-				existingClasses={[cls]}
-			/>,
-		);
-		rerender(
-			<EditClassModal
-				open
-				onClose={onClose}
-				cls={{ ...cls, mode: "Online" }}
-				hasRealSessions={false}
-				existingClasses={[cls]}
-			/>,
-		);
+		fireEvent.click(screen.getByRole("button", { name: "test-close" }));
+		fireEvent.click(screen.getByRole("button", { name: "test-reopen" }));
 		dialog = await screen.findByRole("dialog");
+		const reopenedModeSelect = within(dialog).getByLabelText(
+			"Hình thức",
+		) as HTMLSelectElement;
+		expect(reopenedModeSelect.value).toBe("");
+		fireEvent.change(reopenedModeSelect, { target: { value: "Online" } });
 		const saveBtn = within(dialog).getByRole("button", {
 			name: "Lưu thay đổi",
 		}) as HTMLButtonElement;
