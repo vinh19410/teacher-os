@@ -27,7 +27,7 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import type { Db } from "../app";
 
-/** 27 columns on assignment_prompt × 3 rows = 81 binds <= 100 D1 bind limit (#574). */
+/** 29 columns on assignment_prompt × 3 rows = 87 binds <= 100 D1 bind limit (#574, #702). */
 export const D1_PROMPT_CLONE_INSERT_CHUNK = 3;
 /** 7 columns × 10 rows = 70 binds <= 100 D1 bind limit. */
 export const D1_PACK_ITEM_INSERT_CHUNK = 10;
@@ -50,6 +50,7 @@ export interface ResolvedStudyPackItemMeta {
 	skill: StudyPackSkill;
 	part: string;
 	type: string;
+	level: string;
 	status: string;
 }
 
@@ -220,6 +221,7 @@ export async function resolveStudyPackItemMetadata(
 			skill: string;
 			part: string;
 			type: string;
+			level: string;
 			status: string;
 		}
 	>
@@ -231,6 +233,7 @@ export async function resolveStudyPackItemMetadata(
 			skill: string;
 			part: string;
 			type: string;
+			level: string;
 			status: string;
 		}
 	>();
@@ -268,6 +271,7 @@ export async function resolveStudyPackItemMetadata(
 					skill: assignmentPrompt.skill,
 					part: assignmentPrompt.part,
 					type: assignmentPrompt.type,
+					level: assignmentPrompt.level,
 					status: assignmentPrompt.status,
 				})
 				.from(assignmentPrompt)
@@ -283,6 +287,7 @@ export async function resolveStudyPackItemMetadata(
 					skill: row.skill,
 					part: row.part,
 					type: row.type,
+					level: row.level,
 					status: row.status,
 				});
 			}
@@ -313,6 +318,7 @@ export async function resolveStudyPackItemMetadata(
 					skill: row.testSkill,
 					part: row.part,
 					type: row.type.trim() || groups[0]?.type || "tfng",
+					level: "",
 					status: row.testStatus,
 				});
 			}
@@ -329,6 +335,7 @@ export async function resolveStudyPackItemMetadata(
 					skill: libraryExercise.skill,
 					part: libraryExercise.part,
 					type: libraryExercise.type,
+					level: libraryExercise.level,
 					status: libraryExercise.status,
 				})
 				.from(libraryExercise)
@@ -339,6 +346,7 @@ export async function resolveStudyPackItemMetadata(
 					skill: row.skill,
 					part: row.part,
 					type: row.type,
+					level: row.level,
 					status: row.status,
 				});
 			}
@@ -413,6 +421,7 @@ export async function validateStudyPackItems(
 				skill: string;
 				part: string;
 				type: string;
+				level: string;
 				status: string;
 				writingPart: string | null;
 			}
@@ -426,6 +435,7 @@ export async function validateStudyPackItems(
 					skill: assignmentPrompt.skill,
 					part: assignmentPrompt.part,
 					type: assignmentPrompt.type,
+					level: assignmentPrompt.level,
 					status: assignmentPrompt.status,
 					writingPart: assignmentPrompt.writingPart,
 				})
@@ -478,6 +488,7 @@ export async function validateStudyPackItems(
 				skill: row.skill as StudyPackSkill,
 				part: row.part,
 				type: row.type,
+				level: row.level,
 				status: row.status,
 			});
 		}
@@ -556,6 +567,7 @@ export async function validateStudyPackItems(
 				skill: "reading",
 				part: row.part,
 				type: row.type.trim() || groups[0]?.type || "tfng",
+				level: "",
 				status: row.testStatus,
 			});
 		}
@@ -570,6 +582,7 @@ export async function validateStudyPackItems(
 				skill: string;
 				part: string;
 				type: string;
+				level: string;
 				status: string;
 			}
 		>();
@@ -582,6 +595,7 @@ export async function validateStudyPackItems(
 					skill: libraryExercise.skill,
 					part: libraryExercise.part,
 					type: libraryExercise.type,
+					level: libraryExercise.level,
 					status: libraryExercise.status,
 				})
 				.from(libraryExercise)
@@ -621,6 +635,7 @@ export async function validateStudyPackItems(
 				skill: row.skill as StudyPackSkill,
 				part: row.part,
 				type: row.type,
+				level: row.level,
 				status: row.status,
 			});
 		}
@@ -724,6 +739,16 @@ export async function materializePrompts(
 			for (const row of rows) {
 				const libraryRef = studyPackSourceKey("library_exercise", row.id);
 				libraryRefs.push(libraryRef);
+				const audioUrl = row.audioUrl.trim();
+				let audioName = "";
+				if (audioUrl) {
+					try {
+						audioName =
+							new URL(audioUrl).pathname.split("/").pop() || "listening.mp3";
+					} catch {
+						audioName = "listening.mp3";
+					}
+				}
 				toInsert.push({
 					id: crypto.randomUUID(),
 					orgId,
@@ -734,14 +759,16 @@ export async function materializePrompts(
 					type: row.type,
 					title: row.title,
 					band: row.band,
+					level: row.level,
 					source: "",
 					prompt: "",
 					intro: row.intro,
 					passage: row.passage,
-					transcript: "",
+					transcript: row.transcript,
 					cueTopic: "",
 					cuePoints: "",
-					audioName: "",
+					audioName,
+					audioUrl,
 					imageUrl: "",
 					questions: row.questions,
 					optionBank: row.optionBank,
@@ -823,6 +850,7 @@ export function toStudyPackSummaryView(
 		scope: row.orgId === null ? "system" : "org",
 		title: row.title,
 		description: row.description,
+		level: row.level,
 		status: row.status === "ready" ? "ready" : "draft",
 		sourcePackId: row.sourcePackId,
 		dayCount,
@@ -889,6 +917,7 @@ export async function loadStudyPackDetailFromRow(
 			skill: meta?.skill ?? "reading",
 			part: meta?.part ?? "",
 			type: meta?.type ?? "",
+			level: meta?.level ?? "",
 			status: meta?.status ?? "draft",
 			note: item.note,
 		};

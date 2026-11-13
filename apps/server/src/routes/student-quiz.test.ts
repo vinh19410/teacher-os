@@ -46,6 +46,7 @@ const writeHeaders = (origin: string = STUDENT_ORIGIN) => ({
 
 describe("student quiz take & review (/api/student/* quiz attempt domain)", () => {
 	let app: ServerApp;
+	const fetchedAudioUrls: string[] = [];
 	const backgroundJobs: Promise<unknown>[] = [];
 	let libsql: Db;
 
@@ -393,6 +394,27 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 				return null;
 			},
 			authHandler: () => new Response("auth OK"),
+			fetchExternalAudio: async (input, init) => {
+				const url = typeof input === "string" ? input : input.toString();
+				fetchedAudioUrls.push(url);
+				if (url.includes("off-allowlist")) {
+					if (init?.redirect === "manual") {
+						return new Response(null, {
+							status: 302,
+							headers: { location: "https://evil.example.com/x.mp3" },
+						});
+					}
+					fetchedAudioUrls.push("https://evil.example.com/x.mp3");
+					return new Response(new Uint8Array([0x49, 0x44, 0x33]), {
+						status: 200,
+						headers: { "content-type": "audio/mpeg" },
+					});
+				}
+				return new Response(new Uint8Array([0x49, 0x44, 0x33, 0x03, 0, 0]), {
+					status: 200,
+					headers: { "content-type": "audio/mpeg" },
+				});
+			},
 		});
 	});
 
@@ -1567,5 +1589,145 @@ describe("student quiz take & review (/api/student/* quiz attempt domain)", () =
 		const untimedBody = (await untimedRes.json()) as StudentQuizDetail;
 		expect(untimedBody.due).toBe("2026-11-20");
 		expect(untimedBody.dueAt).toBeNull();
+	});
+
+	test("listening assignment exposes level & hasAudio on take without transcript, then reveals transcript only after submit (#702)", async () => {
+		await libsql.insert(schema.assignmentPrompt).values([
+			{
+				id: "prompt-listening-702",
+				orgId: "org-1",
+				task: "task2",
+				genre: "",
+				skill: "listening",
+				part: "part1",
+				type: "gap",
+				title: "Listening Foundation Day 1",
+				band: "5.0",
+				level: "IELTS Foundation",
+				prompt: "",
+				intro: "<p>Listen and complete.</p>",
+				audioName: "accidents.mp3",
+				audioUrl: "https://listenaminute.com/a/accidents.mp3",
+				transcript: "Accidents happen every day at work.",
+				questions: JSON.stringify([
+					{
+						stem: "Accidents happen every ____ at work.",
+						opts: null,
+						answer: "day",
+						alts: "",
+						pin: null,
+					},
+				]),
+				optionBank: "[]",
+				note: "",
+				status: "ready",
+			},
+			{
+				id: "prompt-listening-bad-host",
+				orgId: "org-1",
+				task: "task2",
+				genre: "",
+				skill: "listening",
+				part: "part1",
+				type: "gap",
+				title: "Bad Host Audio",
+				band: "5.0",
+				level: "IELTS Foundation",
+				prompt: "",
+				audioName: "bad.mp3",
+				audioUrl: "https://listenaminute.com/a/off-allowlist.mp3",
+				transcript: "Secret",
+				questions: "[]",
+				optionBank: "[]",
+				note: "",
+				status: "ready",
+			},
+		]);
+
+		await libsql.insert(schema.classAssignment).values([
+			{
+				id: "ca-listen-702",
+				orgId: "org-1",
+				classId: "class-1",
+				promptId: "prompt-listening-702",
+				title: "Listening Foundation Day 1",
+				due: "2026-11-25",
+			},
+			{
+				id: "ca-listen-bad-host",
+				orgId: "org-1",
+				classId: "class-1",
+				promptId: "prompt-listening-bad-host",
+				title: "Bad Host Audio",
+				due: "2026-11-25",
+			},
+		]);
+		await libsql.insert(schema.classAssignmentTarget).values([
+			{
+				id: "cat-listen-702",
+				orgId: "org-1",
+				assignmentId: "ca-listen-702",
+				studentId: "student-1",
+				submittedAt: null,
+			},
+			{
+				id: "cat-listen-bad-host",
+				orgId: "org-1",
+				assignmentId: "ca-listen-bad-host",
+				studentId: "student-1",
+				submittedAt: null,
+			},
+		]);
+
+		const quizRes = await app.request(
+			"/api/student/assignments/ca-listen-702/quiz",
+			{ headers: OWNER },
+		);
+		expect(quizRes.status).toBe(200);
+		const quizBody = (await quizRes.json()) as StudentQuizDetail & {
+			transcript?: string;
+			audioUrl?: string;
+		};
+		expect(quizBody.level).toBe("IELTS Foundation");
+		expect(quizBody.hasAudio).toBe(true);
+		expect(quizBody.transcript).toBeUndefined();
+		expect(quizBody.audioUrl).toBeUndefined();
+
+		const audioOk = await app.request(
+			"/api/student/assignments/ca-listen-702/audio",
+			{ headers: OWNER },
+		);
+		expect(audioOk.status).toBe(200);
+		expect(audioOk.headers.get("content-type")).toBe("audio/mpeg");
+
+		const audioBad = await app.request(
+			"/api/student/assignments/ca-listen-bad-host/audio",
+			{ headers: OWNER },
+		);
+		expect(audioBad.status).toBe(404);
+		expect(
+			fetchedAudioUrls.some((url) => url.includes("evil.example.com")),
+		).toBe(false);
+
+		const attemptId = await startAttempt("ca-listen-702");
+		// in_progress detail is blocked -> 409
+		const lockedDetail = await app.request(
+			`/api/student/attempts/${attemptId}/detail`,
+			{ headers: OWNER },
+		);
+		expect(lockedDetail.status).toBe(409);
+
+		await patchAnswer(attemptId, 0, "day");
+		const submitRes = await submit(attemptId);
+		expect(submitRes.status).toBe(200);
+
+		const reviewRes = await app.request(
+			`/api/student/attempts/${attemptId}/detail`,
+			{ headers: OWNER },
+		);
+		expect(reviewRes.status).toBe(200);
+		const reviewBody = (await reviewRes.json()) as QuizAttemptDetail;
+		expect(reviewBody.hasAudio).toBe(true);
+		expect(reviewBody.transcript).toBe("Accidents happen every day at work.");
 	});
 });

@@ -126,6 +126,13 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: pnpm --filter @teacher-os/db exec tsx scripts/seed-vocab-library.ts --d1 --d1-stage staging --if-needed --verify
+      - name: Seed built-in study packs (staging only)
+        if: ${{ !inputs.dry_run }}
+        timeout-minutes: 5
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: pnpm --filter @teacher-os/db exec tsx scripts/seed-study-packs.ts --d1 --d1-stage staging --if-needed --verify
       - name: Smoke check auth (sign-up → get-session)
         if: ${{ !inputs.dry_run }}
         # Issue #125: /readyz cannot see auth breakage (cookie config, CORS,

@@ -10,7 +10,7 @@ import { classTable } from "./class";
 import { organization } from "./organization";
 
 /**
- * Đề bài tập thư viện hệ thống (`reading` | `grammar` | `vocabulary`) dùng trong
+ * Đề bài tập thư viện hệ thống (`reading` | `listening` | `grammar` | `vocabulary`) dùng trong
  * bộ đề tự học (#533). Khi gán bộ đề vào lớp, bài tập này được materialize
  * idempotent thành dòng `assignment_prompt` (có `library_ref`) của trung tâm.
  */
@@ -18,13 +18,16 @@ export const libraryExercise = sqliteTable(
 	"study_pack_exercise",
 	{
 		id: text("id").primaryKey(),
-		skill: text("skill").notNull(), // "reading" | "grammar" | "vocabulary"
+		skill: text("skill").notNull(), // "reading" | "listening" | "grammar" | "vocabulary"
 		part: text("part").notNull().default(""),
 		type: text("type").notNull().default(""),
 		title: text("title").notNull(),
 		band: text("band").notNull().default("7.0"),
+		level: text("level").notNull().default(""),
 		intro: text("intro").notNull().default(""),
 		passage: text("passage").notNull().default(""),
+		audioUrl: text("audio_url").notNull().default(""),
+		transcript: text("transcript").notNull().default(""),
 		questions: text("questions").notNull().default("[]"),
 		optionBank: text("option_bank").notNull().default("[]"),
 		note: text("note").notNull().default(""),
@@ -55,6 +58,7 @@ export const studyPack = sqliteTable(
 		}),
 		title: text("title").notNull(),
 		description: text("description").notNull().default(""),
+		level: text("level").notNull().default(""),
 		status: text("status").notNull().default("draft"), // "draft" | "ready"
 		sourcePackId: text("source_pack_id"),
 		createdBy: text("created_by"),

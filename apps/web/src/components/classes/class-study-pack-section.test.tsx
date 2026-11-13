@@ -64,6 +64,7 @@ const sampleReadyPack: StudyPackSummaryView = {
 	scope: "org",
 	title: "Bộ đề Grammar & Reading 2 ngày",
 	description: "Lộ trình ôn tập 2 ngày",
+	level: "",
 	status: "ready",
 	sourcePackId: null,
 	dayCount: 2,

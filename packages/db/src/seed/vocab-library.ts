@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { Client } from "@libsql/client";
 import Papa from "papaparse";
 
@@ -83,10 +84,9 @@ export interface VerifyCountsResult {
 	};
 }
 
-const DEFAULT_DATA_DIR = new URL(
-	"../../seed-data/vocab-library",
-	import.meta.url,
-).pathname;
+const DEFAULT_DATA_DIR = fileURLToPath(
+	new URL("../../seed-data/vocab-library", import.meta.url).href,
+);
 
 const DEFAULT_MAX_CHUNK_BYTES = 48 * 1024;
 

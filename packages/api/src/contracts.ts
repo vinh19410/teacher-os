@@ -901,6 +901,7 @@ const assignmentPromptBaseSchema = z
 		type: z.string().trim().max(20),
 		title: z.string().trim().min(1).max(200),
 		band: z.enum(ASSIGNMENT_BANDS),
+		level: z.string().trim().max(100).optional(),
 		source: z.string().trim().max(200),
 		// Rich text (HTML string) — the meaningful cap is measured on the
 		// plain text without markup; raw cap guards transport. intro/transcript/
@@ -913,6 +914,7 @@ const assignmentPromptBaseSchema = z
 		// cuePoints stays PLAIN text (one idea per line) — do not convert.
 		cuePoints: z.string().max(2000),
 		audioName: z.string().trim().max(200),
+		audioUrl: z.string().trim().max(500).optional(),
 		imageUrl: z.string().trim().max(500).default(""),
 		questions: z.array(assignmentQuestionSchema).max(40),
 		/**
@@ -1022,7 +1024,11 @@ export const assignmentPromptCreateSchema =
 					path: ["questions"],
 					message: "question stem required",
 				});
-			if (value.status === "ready" && !value.audioName.trim())
+			if (
+				value.status === "ready" &&
+				!value.audioName.trim() &&
+				!(value.audioUrl ?? "").trim()
+			)
 				ctx.addIssue({
 					code: "custom",
 					path: ["audioName"],
@@ -1069,6 +1075,21 @@ export const assignmentPromptCreateSchema =
 				path: ["imageUrl"],
 				message: "imageUrl must be an https URL",
 			});
+		if (value.audioUrl?.trim()) {
+			if (value.skill !== "listening") {
+				ctx.addIssue({
+					code: "custom",
+					path: ["audioUrl"],
+					message: "audioUrl only applies to listening prompts",
+				});
+			} else if (!isAllowedStudyPackAudioUrl(value.audioUrl)) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["audioUrl"],
+					message: "invalid listening audioUrl",
+				});
+			}
+		}
 		if (auto && value.status === "ready") {
 			for (const [index, question] of value.questions.entries()) {
 				if (!question.stem.trim())
@@ -1214,6 +1235,12 @@ export const assignmentPromptUpdateSchema = assignmentPromptBaseSchema
 		// Answer-choice theo type HIỆU DỤNG từng câu (mirror create — #286):
 		// ép kind của type prompt lên mọi câu sẽ false-reject đề trộn dạng
 		// (prompt tfng + câu note answer tự do) ngay tại schema, mù field.
+		if (value.audioUrl?.trim() && !isAllowedStudyPackAudioUrl(value.audioUrl))
+			ctx.addIssue({
+				code: "custom",
+				path: ["audioUrl"],
+				message: "invalid listening audioUrl",
+			});
 		if (value.questions) {
 			for (const [index, question] of value.questions.entries()) {
 				const kind =
@@ -1888,6 +1915,7 @@ export interface KernelAssignmentPromptRow {
 	type: string;
 	title: string;
 	band: string;
+	level?: string;
 	source: string;
 	prompt: string;
 	intro: string;
@@ -1896,6 +1924,7 @@ export interface KernelAssignmentPromptRow {
 	cueTopic: string;
 	cuePoints: string;
 	audioName: string;
+	audioUrl?: string;
 	imageUrl: string;
 	questions: AssignmentQuestion[];
 	/** Phase-02 FR7 — structured option bank (labeled choice list). */
@@ -2841,12 +2870,14 @@ export const studentQuizDetailSchema = z
 		part: z.string(),
 		type: z.string(),
 		band: z.string(),
+		level: z.string().optional(),
 		intro: z.string(),
 		prompt: z.string(),
 		passage: z.string(),
 		cueTopic: z.string(),
 		cuePoints: z.string(),
 		audioName: z.string(),
+		hasAudio: z.boolean().optional(),
 		imageUrl: z.string(),
 		optionBank: z.array(z.string()),
 		/** "Hướng dẫn thêm" của giáo viên — CHỈ có với đề Speaking (#305):
@@ -2954,6 +2985,8 @@ export const quizAttemptDetailSchema = quizAttemptSummarySchema
 	.omit({ items: true })
 	.extend({
 		note: z.string(),
+		transcript: z.string().optional(),
+		hasAudio: z.boolean().optional(),
 		writing: studentWritingSectionSchema.optional(),
 		questions: z.array(
 			studentQuizQuestionSchema
@@ -4529,6 +4562,39 @@ export const STUDY_PACK_SKILLS = [
 ] as const;
 export type StudyPackSkill = (typeof STUDY_PACK_SKILLS)[number];
 
+export const STUDY_PACK_LEVELS = [
+	"IELTS Foundation",
+	"IELTS First Step",
+	"Pre IELTS",
+	"IELTS Advanced",
+] as const;
+export type StudyPackLevel = (typeof STUDY_PACK_LEVELS)[number];
+
+export const STUDY_PACK_AUDIO_HOSTS = [
+	"www.listenaminute.com",
+	"listenaminute.com",
+	"lingua.com",
+	"www.lingua.com",
+] as const;
+
+export function isAllowedStudyPackAudioUrl(raw: string): boolean {
+	const trimmed = raw.trim();
+	if (!trimmed || trimmed.length > 500) return false;
+	try {
+		const url = new URL(trimmed);
+		return (
+			url.protocol === "https:" &&
+			url.username === "" &&
+			url.password === "" &&
+			url.port === "" &&
+			(STUDY_PACK_AUDIO_HOSTS as readonly string[]).includes(url.hostname) &&
+			/\.mp3$/i.test(url.pathname)
+		);
+	} catch {
+		return false;
+	}
+}
+
 export const STUDY_PACK_SOURCE_KINDS = [
 	"org_prompt",
 	"library_test_part",
@@ -4538,6 +4604,7 @@ export type StudyPackSourceKind = (typeof STUDY_PACK_SOURCE_KINDS)[number];
 
 export const LIBRARY_EXERCISE_SKILLS = [
 	"reading",
+	"listening",
 	"grammar",
 	"vocabulary",
 ] as const;
@@ -4563,6 +4630,7 @@ const studyPackBaseSchema = z
 	.object({
 		title: z.string().trim().min(1).max(200),
 		description: z.string().trim().max(2000).default(""),
+		level: z.string().trim().max(100).default(""),
 		status: z.enum(["draft", "ready"]).default("draft"),
 		items: z
 			.array(studyPackItemInputSchema)
@@ -4615,8 +4683,11 @@ const libraryExerciseBaseSchema = z
 		type: z.string().trim().min(1).max(20),
 		title: z.string().trim().min(1).max(200),
 		band: z.enum(ASSIGNMENT_BANDS).default(DEFAULT_ASSIGNMENT_BAND),
+		level: z.string().trim().max(100).default(""),
 		intro: richTextField(2000).default(""),
 		passage: richTextField(20000).default(""),
+		audioUrl: z.string().trim().max(500).default(""),
+		transcript: richTextField(10000).default(""),
 		questions: z.array(assignmentQuestionSchema).max(40).default([]),
 		optionBank: z
 			.array(z.string().trim().min(1).max(200))
@@ -4650,6 +4721,34 @@ const libraryExerciseBaseSchema = z
 				code: "custom",
 				path: ["passage"],
 				message: "passage required",
+			});
+		}
+		if (value.skill === "listening") {
+			const trimmedAudioUrl = value.audioUrl.trim();
+			if (
+				value.status === "ready" &&
+				!isAllowedStudyPackAudioUrl(trimmedAudioUrl)
+			) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["audioUrl"],
+					message: "valid https mp3 audioUrl required for listening exercise",
+				});
+			} else if (
+				trimmedAudioUrl &&
+				!isAllowedStudyPackAudioUrl(trimmedAudioUrl)
+			) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["audioUrl"],
+					message: "invalid listening audioUrl",
+				});
+			}
+		} else if (value.audioUrl.trim()) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["audioUrl"],
+				message: "audioUrl only applies to listening exercises",
 			});
 		}
 		if (
@@ -4791,6 +4890,7 @@ export interface StudyPackItemView {
 	skill: StudyPackSkill | string;
 	part: string;
 	type: string;
+	level: string;
 	status: string;
 	note: string;
 }
@@ -4801,6 +4901,7 @@ export interface StudyPackSummaryView {
 	scope: "org" | "system";
 	title: string;
 	description: string;
+	level: string;
 	status: "draft" | "ready";
 	sourcePackId: string | null;
 	dayCount: number;
@@ -4820,8 +4921,11 @@ export interface LibraryExerciseView {
 	type: string;
 	title: string;
 	band: string;
+	level: string;
 	intro: string;
 	passage: string;
+	audioUrl: string;
+	transcript: string;
 	questions: AssignmentQuestion[];
 	optionBank: string[];
 	note: string;

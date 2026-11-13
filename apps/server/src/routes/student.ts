@@ -79,6 +79,7 @@ import {
 	toPlainAnnotation,
 } from "../lib/quiz-annotation";
 import { toQuizAttemptGrade } from "../lib/quiz-grade";
+import { streamStudyPackAudio } from "../lib/study-pack-audio";
 import type { SessionUser } from "../session";
 import { provisionStudentForUser } from "../student-provisioning";
 import { activateEnrollment } from "./enrollment-activation";
@@ -103,6 +104,8 @@ export interface StudentRouteDeps {
 	runInBackground?(promise: Promise<unknown>): void;
 	/** TOS-30: grader chấm nháp AI — vắng mặt → bỏ qua chấm nháp. */
 	getAiGrader?(): AiGrader | undefined;
+	/** #702: injectable fetch cho audio proxy của listening study-pack prompts. */
+	fetchExternalAudio?: typeof fetch;
 }
 
 export interface StudentContext {
@@ -748,6 +751,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	// bỏ qua /api/student — router mount riêng sẽ không có auth).
 	router.use("/assignments/:assignmentId/quiz", requireStudent);
 	router.use("/assignments/:assignmentId/quiz/*", requireStudent);
+	router.use("/assignments/:assignmentId/audio", requireStudent);
 	router.use("/attempts/*", requireStudent);
 	// #320: Hono use(path) chỉ khớp đúng path — đăng ký cả hai dạng.
 	router.use("/invoices", requireStudent);
@@ -1426,12 +1430,14 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			part: prompt.part,
 			type: prompt.type,
 			band: prompt.band,
+			...(prompt.level ? { level: prompt.level } : {}),
 			intro: prompt.intro,
 			prompt: prompt.prompt,
 			passage: prompt.passage,
 			cueTopic: prompt.cueTopic,
 			cuePoints: prompt.cuePoints,
 			audioName: prompt.audioName,
+			...(prompt.audioUrl ? { hasAudio: true } : {}),
 			imageUrl: prompt.imageUrl,
 			optionBank: parseQuizOptionBank(prompt.optionBank),
 			// Speaking (#305) không có đáp án — "Hướng dẫn thêm" là hướng dẫn
@@ -1471,6 +1477,42 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				: null,
 		};
 		return c.json(detail);
+	});
+
+	router.get("/assignments/:assignmentId/audio", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const assignmentId = c.req.param("assignmentId");
+		const [row] = await deps
+			.getDb()
+			.select({ audioUrl: assignmentPrompt.audioUrl })
+			.from(classAssignment)
+			.innerJoin(
+				classAssignmentTarget,
+				and(
+					eq(classAssignmentTarget.assignmentId, classAssignment.id),
+					eq(classAssignmentTarget.orgId, orgId),
+					eq(classAssignmentTarget.studentId, s.id),
+				),
+			)
+			.innerJoin(
+				assignmentPrompt,
+				and(
+					eq(assignmentPrompt.id, classAssignment.promptId),
+					eq(assignmentPrompt.orgId, orgId),
+				),
+			)
+			.where(
+				and(
+					eq(classAssignment.id, assignmentId),
+					eq(classAssignment.orgId, orgId),
+					visibleAssignmentFilter(new Date()),
+				),
+			)
+			.limit(1);
+		if (!row?.audioUrl) {
+			return c.json({ error: "audio not found" }, 404);
+		}
+		return streamStudyPackAudio(row.audioUrl, deps.fetchExternalAudio);
 	});
 
 	/**
@@ -2140,6 +2182,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 						type: assignmentPrompt.type,
 						skill: assignmentTest.skill,
 						part: assignmentPrompt.part,
+						audioUrl: assignmentPrompt.audioUrl,
+						transcript: assignmentPrompt.transcript,
 					})
 					.from(assignmentTest)
 					.leftJoin(
@@ -2171,6 +2215,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 						type: assignmentPrompt.type,
 						skill: assignmentPrompt.skill,
 						part: assignmentPrompt.part,
+						audioUrl: assignmentPrompt.audioUrl,
+						transcript: assignmentPrompt.transcript,
 						writingPart: assignmentPrompt.writingPart,
 						writingType: assignmentPrompt.writingType,
 						writingPrompt: assignmentPrompt.writingPrompt,
@@ -2210,6 +2256,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			promptType: header[0]?.type ?? "",
 			skill: header[0]?.skill ?? "",
 			part: header[0]?.part ?? "",
+			hasAudio: Boolean(header[0]?.audioUrl),
+			transcript: header[0]?.transcript ?? "",
 			writing:
 				attempt.mode !== "practice" &&
 				header[0] &&
@@ -2383,6 +2431,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			promptType,
 			skill,
 			part,
+			hasAudio,
+			transcript,
 			writing,
 		} = loaded;
 		const effectiveTypes = inferQuestionTypes(questions, promptType);
@@ -2418,6 +2468,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			essay: detailEssayView ? detailEssayView.text : null,
 			skill,
 			media: skill === "speaking" ? toQuizAttemptMedia(attempt) : null,
+			...(hasAudio ? { hasAudio: true } : {}),
+			...(transcript ? { transcript } : {}),
 			...(writing ? { writing } : {}),
 			questions: reviewQuestions.map((question, index) => {
 				const given = answers[String(index)];

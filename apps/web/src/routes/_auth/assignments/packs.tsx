@@ -1,19 +1,34 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+	createFileRoute,
+	Link,
+	useNavigate,
+	useSearch,
+} from "@tanstack/react-router";
 import {
 	MAX_PACK_DAYS,
 	MAX_PACK_ITEMS_PER_DAY,
 	MAX_PACK_TOTAL_ITEMS,
+	STUDY_PACK_LEVELS,
 	STUDY_PACK_SKILLS,
 	type StudyPackDetailView,
 	type StudyPackItemInput,
 	type StudyPackSummaryView,
 } from "@teacher-os/api/contracts";
-import { ArrowLeft, Copy, Eye, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+	ArrowLeft,
+	Copy,
+	Eye,
+	Pencil,
+	Plus,
+	Trash2,
+	Volume2,
+} from "lucide-react";
 import {
 	type FormEvent,
 	useCallback,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 } from "react";
 import { toast } from "sonner";
@@ -21,6 +36,7 @@ import { skillOf } from "@/components/assignments/assignment-presets";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ChipFilter } from "@/components/ui/chip-filter";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { PageHead } from "@/components/ui/page-head";
@@ -31,11 +47,25 @@ import {
 	createStudyPack,
 	deleteStudyPack,
 	fetchStudyPackDetail,
+	fetchStudyPackExerciseAudioObjectUrl,
 	fetchStudyPacks,
 	updateStudyPack,
 } from "@/lib/repos/study-pack";
 
 export const Route = createFileRoute("/_auth/assignments/packs")({
+	validateSearch: (input: {
+		scope?: string;
+		level?: string;
+	}): { scope?: "org" | "system"; level?: string } => ({
+		scope:
+			input.scope === "org" || input.scope === "system"
+				? input.scope
+				: undefined,
+		level:
+			typeof input.level === "string" && input.level.trim().length > 0
+				? input.level.trim()
+				: undefined,
+	}),
 	component: StudyPacksRoute,
 });
 
@@ -59,12 +89,31 @@ function formatSkillLabel(skill: string): string {
 	return skill;
 }
 
+const ALL_LEVEL_LABEL = "Tất cả";
+
 export function StudyPacksRoute() {
+	const navigate = useNavigate();
+	const searchParams = useSearch({ from: "/_auth/assignments/packs" });
 	const { data } = useData();
 	const [packs, setPacks] = useState<StudyPackSummaryView[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
-	const [scope, setScope] = useState<"org" | "system">("org");
+	const scope: "org" | "system" = searchParams.scope ?? "org";
+	const levelFilter = searchParams.level ?? "all";
+
+	const setFilters = useCallback(
+		(nextScope: "org" | "system", nextLevel: string) => {
+			void navigate({
+				to: "/assignments/packs",
+				search: {
+					...(nextScope !== "org" ? { scope: nextScope } : {}),
+					...(nextLevel !== "all" ? { level: nextLevel } : {}),
+				},
+				replace: true,
+			});
+		},
+		[navigate],
+	);
 
 	// Modal state for Create / Edit org pack
 	const [editorOpen, setEditorOpen] = useState(false);
@@ -72,6 +121,7 @@ export function StudyPacksRoute() {
 	const [loadingDetail, setLoadingDetail] = useState(false);
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
+	const [packLevel, setPackLevel] = useState("");
 	const [status, setStatus] = useState<"draft" | "ready">("ready");
 	const [items, setItems] = useState<DraftPackItem[]>([]);
 	const [formError, setFormError] = useState<string | null>(null);
@@ -87,6 +137,58 @@ export function StudyPacksRoute() {
 		null,
 	);
 	const [busyId, setBusyId] = useState<string | null>(null);
+	const [previewExerciseId, setPreviewExerciseId] = useState<string | null>(
+		null,
+	);
+	const [previewAudioUrl, setPreviewAudioUrl] = useState<string | null>(null);
+	const [previewLoadingId, setPreviewLoadingId] = useState<string | null>(null);
+	const [previewError, setPreviewError] = useState<string | null>(null);
+	const previewAbortRef = useRef<AbortController | null>(null);
+
+	useEffect(() => {
+		return () => {
+			if (previewAudioUrl) URL.revokeObjectURL(previewAudioUrl);
+		};
+	}, [previewAudioUrl]);
+
+	function resetAudioPreview() {
+		previewAbortRef.current?.abort();
+		previewAbortRef.current = null;
+		setPreviewExerciseId(null);
+		setPreviewAudioUrl(null);
+		setPreviewLoadingId(null);
+		setPreviewError(null);
+	}
+
+	async function handlePreviewAudio(exerciseId: string) {
+		previewAbortRef.current?.abort();
+		const controller = new AbortController();
+		previewAbortRef.current = controller;
+		setPreviewError(null);
+		setPreviewLoadingId(exerciseId);
+		try {
+			const url = await fetchStudyPackExerciseAudioObjectUrl(
+				exerciseId,
+				controller.signal,
+			);
+			if (controller.signal.aborted) {
+				URL.revokeObjectURL(url);
+				return;
+			}
+			setPreviewExerciseId(exerciseId);
+			setPreviewAudioUrl(url);
+		} catch {
+			if (!controller.signal.aborted) {
+				setPreviewExerciseId(exerciseId);
+				setPreviewAudioUrl(null);
+				setPreviewError("Không tải được file nghe.");
+			}
+		} finally {
+			if (!controller.signal.aborted) {
+				setPreviewLoadingId(null);
+			}
+		}
+	}
 
 	const eligiblePrompts = useMemo(() => {
 		return (data.assignmentPrompts ?? []).filter((prompt) => {
@@ -122,15 +224,52 @@ export function StudyPacksRoute() {
 		}
 	}, [eligiblePrompts, itemPromptId]);
 
-	const filteredPacks = useMemo(
+	const scopePacks = useMemo(
 		() => packs.filter((p) => p.scope === scope),
 		[packs, scope],
+	);
+
+	const { levelOptions, levelCounts } = useMemo(() => {
+		const countsByLevel = new Map<string, number>();
+		for (const p of scopePacks) {
+			const lvl = p.level?.trim();
+			if (!lvl) continue;
+			countsByLevel.set(lvl, (countsByLevel.get(lvl) ?? 0) + 1);
+		}
+		if (levelFilter !== "all" && !countsByLevel.has(levelFilter)) {
+			countsByLevel.set(levelFilter, 0);
+		}
+		const orderedLevels = [
+			...STUDY_PACK_LEVELS.filter((lvl) => countsByLevel.has(lvl)),
+			...[...countsByLevel.keys()].filter(
+				(lvl) => !(STUDY_PACK_LEVELS as readonly string[]).includes(lvl),
+			),
+		];
+		const counts: Record<string, number> = {
+			[ALL_LEVEL_LABEL]: scopePacks.length,
+		};
+		for (const lvl of orderedLevels) {
+			counts[lvl] = countsByLevel.get(lvl) ?? 0;
+		}
+		return {
+			levelOptions: [ALL_LEVEL_LABEL, ...orderedLevels],
+			levelCounts: counts,
+		};
+	}, [scopePacks, levelFilter]);
+
+	const filteredPacks = useMemo(
+		() =>
+			levelFilter === "all"
+				? scopePacks
+				: scopePacks.filter((p) => p.level === levelFilter),
+		[scopePacks, levelFilter],
 	);
 
 	function openCreateModal() {
 		setEditingPackId(null);
 		setTitle("");
 		setDescription("");
+		setPackLevel("");
 		setStatus("ready");
 		setItems([]);
 		setItemDayIndex(1);
@@ -144,6 +283,7 @@ export function StudyPacksRoute() {
 		setEditingPackId(pack.id);
 		setTitle(pack.title);
 		setDescription(pack.description);
+		setPackLevel(pack.level ?? "");
 		setStatus(pack.status);
 		setItems([]);
 		setItemDayIndex(1);
@@ -156,6 +296,7 @@ export function StudyPacksRoute() {
 			const res = await fetchStudyPackDetail(pack.id);
 			setTitle(res.pack.title);
 			setDescription(res.pack.description);
+			setPackLevel(res.pack.level ?? "");
 			setStatus(res.pack.status);
 			setItems(
 				res.pack.items.map((it) => ({
@@ -185,6 +326,7 @@ export function StudyPacksRoute() {
 		setBusyId(packId);
 		try {
 			const res = await fetchStudyPackDetail(packId);
+			resetAudioPreview();
 			setViewingPack(res.pack);
 		} catch {
 			toast.error("Không tải được chi tiết bộ đề hệ thống.");
@@ -199,7 +341,7 @@ export function StudyPacksRoute() {
 			await cloneStudyPack(pack.id);
 			toast.success("Đã nhân bản bộ đề về trung tâm.");
 			await loadPacks();
-			setScope("org");
+			setFilters("org", "all");
 		} catch {
 			toast.error("Không thể nhân bản bộ đề. Vui lòng thử lại.");
 		} finally {
@@ -299,6 +441,7 @@ export function StudyPacksRoute() {
 			const payload = {
 				title: trimmedTitle,
 				description: description.trim(),
+				level: packLevel,
 				status,
 				items: items.map((it) => ({
 					dayIndex: it.dayIndex,
@@ -354,7 +497,7 @@ export function StudyPacksRoute() {
 					<button
 						type="button"
 						aria-pressed={scope === "org"}
-						onClick={() => setScope("org")}
+						onClick={() => setFilters("org", "all")}
 						className={cn(
 							"rounded-sm px-3 py-1.5 font-medium text-sm transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
 							scope === "org"
@@ -367,7 +510,7 @@ export function StudyPacksRoute() {
 					<button
 						type="button"
 						aria-pressed={scope === "system"}
-						onClick={() => setScope("system")}
+						onClick={() => setFilters("system", "all")}
 						className={cn(
 							"rounded-sm px-3 py-1.5 font-medium text-sm transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
 							scope === "system"
@@ -388,6 +531,20 @@ export function StudyPacksRoute() {
 				</p>
 			</div>
 
+			{levelOptions.length > 1 && (
+				<div className="mb-6">
+					<ChipFilter
+						ariaLabel="Trình độ bộ đề"
+						options={levelOptions}
+						value={levelFilter === "all" ? ALL_LEVEL_LABEL : levelFilter}
+						onChange={(selected) =>
+							setFilters(scope, selected === ALL_LEVEL_LABEL ? "all" : selected)
+						}
+						counts={levelCounts}
+					/>
+				</div>
+			)}
+
 			{error && (
 				<Card className="mb-6 border-destructive/40 bg-destructive/5 p-4">
 					<p className="text-destructive text-sm">{error}</p>
@@ -405,19 +562,34 @@ export function StudyPacksRoute() {
 			{!loading && !error && filteredPacks.length === 0 && (
 				<Card variant="white" className="p-8 text-center">
 					<h2 className="font-semibold text-foreground text-lg">
-						{scope === "org"
-							? "Chưa có bộ đề nào của trung tâm"
-							: "Chưa có bộ đề nào trong thư viện hệ thống"}
+						{levelFilter !== "all" && scopePacks.length > 0
+							? `Không có bộ đề nào ở trình độ "${levelFilter}"`
+							: scope === "org"
+								? "Chưa có bộ đề nào của trung tâm"
+								: "Chưa có bộ đề nào trong thư viện hệ thống"}
 					</h2>
 					<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
-						{scope === "org"
-							? "Tạo bộ đề mới từ ngân hàng đề tự chấm hoặc nhân bản từ thư viện hệ thống để gán cho các lớp học."
-							: "Các bộ đề chuẩn hóa từ hệ thống sẽ hiển thị tại đây khi sẵn sàng."}
+						{levelFilter !== "all" && scopePacks.length > 0
+							? "Thử chọn lại Tất cả để xem toàn bộ bộ đề trong mục này."
+							: scope === "org"
+								? "Tạo bộ đề mới từ ngân hàng đề tự chấm hoặc nhân bản từ thư viện hệ thống để gán cho các lớp học."
+								: "Các bộ đề chuẩn hóa từ hệ thống sẽ hiển thị tại đây khi sẵn sàng."}
 					</p>
-					{scope === "org" && (
+					{levelFilter !== "all" && scopePacks.length > 0 ? (
 						<div className="mt-5 flex justify-center">
-							<Button onClick={openCreateModal}>Tạo bộ đề đầu tiên</Button>
+							<Button
+								variant="outline"
+								onClick={() => setFilters(scope, "all")}
+							>
+								Xóa bộ lọc trình độ
+							</Button>
 						</div>
+					) : (
+						scope === "org" && (
+							<div className="mt-5 flex justify-center">
+								<Button onClick={openCreateModal}>Tạo bộ đề đầu tiên</Button>
+							</div>
+						)
 					)}
 				</Card>
 			)}
@@ -435,12 +607,19 @@ export function StudyPacksRoute() {
 									<h2 className="font-semibold text-base text-foreground">
 										{pack.title}
 									</h2>
-									<Badge
-										variant={pack.status === "ready" ? "success" : "secondary"}
-										dot
-									>
-										{pack.status === "ready" ? "Sẵn sàng" : "Nháp"}
-									</Badge>
+									<div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+										{pack.level && (
+											<Badge variant="secondary">{pack.level}</Badge>
+										)}
+										<Badge
+											variant={
+												pack.status === "ready" ? "success" : "secondary"
+											}
+											dot
+										>
+											{pack.status === "ready" ? "Sẵn sàng" : "Nháp"}
+										</Badge>
+									</div>
 								</div>
 								{pack.description && (
 									<p className="text-muted-foreground text-sm">
@@ -529,6 +708,21 @@ export function StudyPacksRoute() {
 								onChange={(e) => setDescription(e.target.value)}
 								placeholder="Mục tiêu và hướng dẫn ngắn cho bộ đề"
 							/>
+						</Field>
+
+						<Field label="Trình độ" htmlFor="pack-level">
+							<Select
+								id="pack-level"
+								value={packLevel}
+								onChange={(e) => setPackLevel(e.target.value)}
+							>
+								<option value="">Chưa gắn trình độ</option>
+								{STUDY_PACK_LEVELS.map((lvl) => (
+									<option key={lvl} value={lvl}>
+										{lvl}
+									</option>
+								))}
+							</Select>
 						</Field>
 
 						<Field label="Trạng thái" htmlFor="pack-status">
@@ -675,7 +869,10 @@ export function StudyPacksRoute() {
 
 			<Modal
 				open={viewingPack !== null}
-				onClose={() => setViewingPack(null)}
+				onClose={() => {
+					resetAudioPreview();
+					setViewingPack(null);
+				}}
 				title={viewingPack?.title ?? "Chi tiết bộ đề"}
 			>
 				{viewingPack && (
@@ -685,24 +882,60 @@ export function StudyPacksRoute() {
 								{viewingPack.description}
 							</p>
 						)}
-						<p className="text-muted-foreground text-xs tabular-nums">
-							{viewingPack.dayCount} ngày · {viewingPack.itemCount} bài tập
-						</p>
+						<div className="flex flex-wrap items-center gap-2 text-muted-foreground text-xs tabular-nums">
+							{viewingPack.level && (
+								<Badge variant="secondary">{viewingPack.level}</Badge>
+							)}
+							<span>
+								{viewingPack.dayCount} ngày · {viewingPack.itemCount} bài tập
+							</span>
+						</div>
 						<ul className="max-h-72 space-y-2 overflow-y-auto rounded-md border border-border p-2">
 							{viewingPack.items.map((it) => (
 								<li
 									key={it.id}
-									className="flex items-center justify-between gap-2 rounded-sm bg-muted/50 px-3 py-2 text-sm"
+									className="space-y-2 rounded-sm bg-muted/50 px-3 py-2 text-sm"
 								>
-									<div>
-										<span className="font-medium text-foreground">
-											Ngày {it.dayIndex}:
-										</span>{" "}
-										<span className="text-foreground">{it.title}</span>{" "}
-										<span className="text-muted-foreground text-xs">
-											({formatSkillLabel(it.skill)})
-										</span>
+									<div className="flex items-center justify-between gap-2">
+										<div>
+											<span className="font-medium text-foreground">
+												Ngày {it.dayIndex}:
+											</span>{" "}
+											<span className="text-foreground">{it.title}</span>{" "}
+											<span className="text-muted-foreground text-xs">
+												({formatSkillLabel(it.skill)})
+											</span>
+										</div>
+										{it.sourceKind === "library_exercise" &&
+											it.skill === "listening" && (
+												<Button
+													type="button"
+													variant="outline"
+													size="sm"
+													disabled={previewLoadingId === it.sourceId}
+													onClick={() => void handlePreviewAudio(it.sourceId)}
+												>
+													<Volume2 className="size-3.5" />
+													{previewLoadingId === it.sourceId
+														? "Đang tải…"
+														: "Nghe thử"}
+												</Button>
+											)}
 									</div>
+									{previewExerciseId === it.sourceId && previewAudioUrl && (
+										<audio
+											controls
+											preload="metadata"
+											src={previewAudioUrl}
+											className="w-full"
+											data-testid="study-pack-preview-audio"
+										>
+											<track kind="captions" />
+										</audio>
+									)}
+									{previewExerciseId === it.sourceId && previewError && (
+										<p className="text-destructive text-xs">{previewError}</p>
+									)}
 								</li>
 							))}
 						</ul>
@@ -710,7 +943,10 @@ export function StudyPacksRoute() {
 							<Button
 								type="button"
 								variant="outline"
-								onClick={() => setViewingPack(null)}
+								onClick={() => {
+									resetAudioPreview();
+									setViewingPack(null);
+								}}
 							>
 								Đóng
 							</Button>
@@ -718,6 +954,7 @@ export function StudyPacksRoute() {
 								type="button"
 								onClick={() => {
 									const packToClone = viewingPack;
+									resetAudioPreview();
 									setViewingPack(null);
 									void handleCloneSystemPack(packToClone);
 								}}

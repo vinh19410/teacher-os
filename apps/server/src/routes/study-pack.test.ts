@@ -78,6 +78,7 @@ const sessionFor = async (headers: Headers): Promise<SessionUser | null> => {
 describe("study pack routes & student scheduled visibility (#533)", () => {
 	let app: ServerApp;
 	let db: Db;
+	const fetchedAudioUrls: string[] = [];
 
 	beforeAll(async () => {
 		const client = createClient({ url: "file::memory:" });
@@ -258,6 +259,28 @@ describe("study pack routes & student scheduled visibility (#533)", () => {
 			authHandler: () => new Response(null, { status: 404 }),
 			corsOrigin: CORS_ORIGINS,
 			getSessionUser: sessionFor,
+			fetchExternalAudio: async (input, init) => {
+				const url = typeof input === "string" ? input : input.toString();
+				fetchedAudioUrls.push(url);
+				if (url.includes("redirect-bad")) {
+					if (init?.redirect === "manual") {
+						return new Response(null, {
+							status: 302,
+							headers: { location: "https://evil.example.com/payload.mp3" },
+						});
+					}
+					// Simulate Fetch following 302 into SSRF target if redirect !== "manual"
+					fetchedAudioUrls.push("https://evil.example.com/payload.mp3");
+					return new Response(new Uint8Array([0x49, 0x44, 0x33]), {
+						status: 200,
+						headers: { "content-type": "audio/mpeg" },
+					});
+				}
+				return new Response(new Uint8Array([0x49, 0x44, 0x33, 0x03, 0, 0]), {
+					status: 200,
+					headers: { "content-type": "audio/mpeg" },
+				});
+			},
 		});
 	});
 
@@ -922,5 +945,219 @@ describe("study pack routes & student scheduled visibility (#533)", () => {
 			"pr-grammar-2",
 		]);
 		expect(activePack?.assignments.map((a) => a.targetsTotal)).toEqual([1, 2]);
+	});
+
+	test("level metadata, clone/assign audio+transcript copy, teacher/student audio proxy & release gate (#702)", async () => {
+		const validAudioUrl = "https://listenaminute.com/a/accidents.mp3";
+		await db.insert(schema.libraryExercise).values([
+			{
+				id: "lex-listen-released",
+				skill: "listening",
+				part: "part1",
+				type: "gap",
+				title: "Accidents Listening",
+				band: "5.0",
+				level: "IELTS Foundation",
+				audioUrl: validAudioUrl,
+				transcript: "Accidents can happen anywhere.",
+				intro: "<p>Listen and complete.</p>",
+				questions: JSON.stringify([
+					{
+						stem: "Accidents can happen ____.",
+						opts: null,
+						answer: "anywhere",
+						alts: "",
+					},
+				]),
+				status: "ready",
+			},
+			{
+				id: "lex-listen-future",
+				skill: "listening",
+				part: "part1",
+				type: "gap",
+				title: "Future Listening",
+				band: "5.0",
+				level: "IELTS Foundation",
+				audioUrl: "https://lingua.com/audio/future.mp3",
+				transcript: "Future transcript.",
+				intro: "<p>Listen.</p>",
+				questions: JSON.stringify([
+					{
+						stem: "Word ____.",
+						opts: null,
+						answer: "here",
+						alts: "",
+					},
+				]),
+				status: "ready",
+			},
+			{
+				id: "lex-listen-redirect-bad",
+				skill: "listening",
+				part: "part1",
+				type: "gap",
+				title: "Evil Redirect Listening",
+				band: "5.0",
+				level: "IELTS Foundation",
+				audioUrl: "https://listenaminute.com/a/redirect-bad.mp3",
+				transcript: "Should not stream.",
+				intro: "<p>Listen.</p>",
+				questions: JSON.stringify([
+					{
+						stem: "Word ____.",
+						opts: null,
+						answer: "here",
+						alts: "",
+					},
+				]),
+				status: "ready",
+			},
+		]);
+
+		await db.insert(schema.studyPack).values({
+			id: "sys-pack-listening-level",
+			orgId: null,
+			title: "Listening Foundation Pack",
+			description: "System pack with level + audio",
+			level: "IELTS Foundation",
+			status: "ready",
+		});
+
+		await db.insert(schema.studyPackItem).values([
+			{
+				id: "sys-listen-item-1",
+				packId: "sys-pack-listening-level",
+				dayIndex: 1,
+				position: 0,
+				sourceKind: "library_exercise",
+				sourceId: "lex-listen-released",
+				note: "",
+			},
+			{
+				id: "sys-listen-item-2",
+				packId: "sys-pack-listening-level",
+				dayIndex: 2,
+				position: 0,
+				sourceKind: "library_exercise",
+				sourceId: "lex-listen-future",
+				note: "",
+			},
+		]);
+
+		// Teacher previews library exercise audio via proxy
+		const previewOk = await app.request(
+			"/api/study-packs/exercises/lex-listen-released/audio",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(previewOk.status).toBe(200);
+		expect(previewOk.headers.get("content-type")).toBe("audio/mpeg");
+		expect(previewOk.headers.get("cross-origin-resource-policy")).toBe(
+			"same-site",
+		);
+
+		// Redirect off audio host allowlist fails closed -> 404 (and never follows to evil host)
+		const previewBad = await app.request(
+			"/api/study-packs/exercises/lex-listen-redirect-bad/audio",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(previewBad.status).toBe(404);
+		expect(
+			fetchedAudioUrls.some((url) => url.includes("evil.example.com")),
+		).toBe(false);
+
+		// Clone system pack preserves pack.level and item.level
+		const cloneRes = await app.request(
+			"/api/study-packs/sys-pack-listening-level/clone",
+			{
+				method: "POST",
+				headers: teacherHeaders("teacher-1"),
+				body: "{}",
+			},
+		);
+		expect(cloneRes.status).toBe(201);
+		const { pack: cloned } = (await cloneRes.json()) as {
+			pack: StudyPackDetailView;
+		};
+		expect(cloned.level).toBe("IELTS Foundation");
+		expect(
+			cloned.items.every((item) => item.level === "IELTS Foundation"),
+		).toBe(true);
+
+		// Assign directly to a fresh class (starting today 00:00 -> Day 1 released, Day 2 unreleased)
+		await db.insert(schema.classTable).values({
+			id: "class-listen-702",
+			orgId: "org-1",
+			name: "Foundation Class",
+			level: "5.0",
+			type: "ielts",
+			skills: '["listening"]',
+			mode: "Online",
+			schedule: '{"days":[1],"start":"18:00","end":"20:00"}',
+			sessionsTotal: 10,
+			sessionsDone: 0,
+			status: "active",
+			startDate: vietnamTodayISO(),
+			notes: "",
+		});
+		await db.insert(schema.enrollment).values({
+			id: "enr-listen-702",
+			orgId: "org-1",
+			classId: "class-listen-702",
+			studentId: "stu-1",
+			status: "active",
+		});
+
+		const assignRes = await app.request(
+			"/api/classes/class-listen-702/study-packs",
+			{
+				method: "POST",
+				headers: teacherHeaders("teacher-1"),
+				body: JSON.stringify({
+					packId: cloned.id,
+					startDate: vietnamTodayISO(),
+					releaseTime: "00:00",
+					dueTime: "23:59",
+				}),
+			},
+		);
+		expect(assignRes.status).toBe(201);
+		const assignBody = (await assignRes.json()) as ClassStudyPacksResponse;
+		const day1Assignment = assignBody.packs[0]?.assignments.find(
+			(a) => a.dayIndex === 1,
+		);
+		const day2Assignment = assignBody.packs[0]?.assignments.find(
+			(a) => a.dayIndex === 2,
+		);
+		expect(day1Assignment).toBeDefined();
+		expect(day2Assignment).toBeDefined();
+
+		// Materialized prompt carries level, audioUrl, audioName, transcript
+		const [promptRow] = await db
+			.select()
+			.from(schema.assignmentPrompt)
+			.where(eq(schema.assignmentPrompt.id, day1Assignment?.promptId ?? ""));
+		expect(promptRow?.level).toBe("IELTS Foundation");
+		expect(promptRow?.audioUrl).toBe(validAudioUrl);
+		expect(promptRow?.audioName).toBe("accidents.mp3");
+		expect(promptRow?.transcript).toBe("Accidents can happen anywhere.");
+
+		// Day 2 unreleased student audio returns 404
+		const day2AudioRes = await app.request(
+			`/api/student/assignments/${day2Assignment?.assignmentId}/audio`,
+			{ headers: studentHeaders("student-1") },
+		);
+		expect(day2AudioRes.status).toBe(404);
+
+		// Day 1 released student audio streams 200 audio/mpeg
+		const day1AudioRes = await app.request(
+			`/api/student/assignments/${day1Assignment?.assignmentId}/audio`,
+			{ headers: studentHeaders("student-1") },
+		);
+		expect(day1AudioRes.status).toBe(200);
+		expect(day1AudioRes.headers.get("content-type")).toBe("audio/mpeg");
+		expect(day1AudioRes.headers.get("cross-origin-resource-policy")).toBe(
+			"same-site",
+		);
 	});
 });

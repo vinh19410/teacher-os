@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
@@ -8,7 +9,9 @@ import { describe, expect, it } from "vitest";
 import { buildVocabLibraryUpsertStatements } from "../seed/vocab-library";
 import * as schema from "./index";
 
-const MIGRATIONS_DIR = new URL("../migrations", import.meta.url).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../migrations", import.meta.url).href,
+);
 
 describe("vocab schema & migration 0038 (#363)", () => {
 	it("rehearses 0038 recreate on populated DB (preserving existing decks/words/cards + indexes) and supports classId=null + vocab_suggestion unique/upsert", async () => {
