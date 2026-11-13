@@ -11,6 +11,9 @@ export interface ModalProps {
 
 const FOCUSABLE =
 	'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
+// Theo dõi thứ tự mở dialog để Escape/Tab chỉ tác động lên modal trên cùng
+// khi nhiều Modal cùng mở song song (hoặc modal xác nhận mở từ modal quản lý).
+const openModalStack: symbol[] = [];
 /**
  * Modal dialog component.
  *
@@ -48,8 +51,13 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
 
 	useEffect(() => {
 		if (!open) return;
+		const modalId = Symbol("modal");
+		openModalStack.push(modalId);
+		const isTopmost = () =>
+			openModalStack[openModalStack.length - 1] === modalId;
 		previouslyFocused.current = document.activeElement as HTMLElement;
 		const onKey = (e: KeyboardEvent) => {
+			if (!isTopmost()) return;
 			if (e.key === "Escape") onCloseRef.current();
 			trapFocus(e);
 		};
@@ -60,6 +68,8 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
 			first?.focus();
 		});
 		return () => {
+			const idx = openModalStack.lastIndexOf(modalId);
+			if (idx !== -1) openModalStack.splice(idx, 1);
 			document.removeEventListener("keydown", onKey);
 			previouslyFocused.current?.focus();
 		};

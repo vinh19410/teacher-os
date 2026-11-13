@@ -114,3 +114,65 @@ export function splitSyllabi(syllabi: Syllabus[]): {
 	}
 	return { templates, curriculumByClassId, templateUsage };
 }
+
+/**
+ * So sánh cấu trúc nội dung giữa bản sao giáo trình của lớp và template gốc
+ * (#700). Bỏ qua `id` (syllabus/module/lesson) và `status` của bài học; dùng
+ * trực tiếp sau `mapSyllabi` (đã chuẩn hóa `objectives`/`materials` rỗng → "—").
+ */
+export function isCurriculumOutOfSync(
+	copy: ClassCurriculum,
+	template: SyllabusTemplate,
+): boolean {
+	if (
+		copy.name !== template.name ||
+		copy.level !== template.level ||
+		copy.type !== template.type ||
+		copy.description !== template.description
+	) {
+		return true;
+	}
+	if (
+		copy.skills.length !== template.skills.length ||
+		copy.skills.some((skill, i) => skill !== template.skills[i])
+	) {
+		return true;
+	}
+	if (copy.modules.length !== template.modules.length) {
+		return true;
+	}
+	for (let mi = 0; mi < copy.modules.length; mi++) {
+		const modCopy = copy.modules[mi];
+		const modTpl = template.modules[mi];
+		if (!modCopy || !modTpl) return true;
+		if (
+			modCopy.title !== modTpl.title ||
+			(modCopy.description ?? "") !== (modTpl.description ?? "") ||
+			modCopy.lessons.length !== modTpl.lessons.length
+		) {
+			return true;
+		}
+		for (let li = 0; li < modCopy.lessons.length; li++) {
+			const lessonCopy = modCopy.lessons[li];
+			const lessonTpl = modTpl.lessons[li];
+			if (!lessonCopy || !lessonTpl) return true;
+			if (
+				lessonCopy.title !== lessonTpl.title ||
+				lessonCopy.objectives !== lessonTpl.objectives ||
+				lessonCopy.materials !== lessonTpl.materials ||
+				lessonCopy.kind !== lessonTpl.kind
+			) {
+				return true;
+			}
+			const copyBank = lessonCopy.bankMaterials ?? [];
+			const tplBank = lessonTpl.bankMaterials ?? [];
+			if (
+				copyBank.length !== tplBank.length ||
+				copyBank.some((b, bi) => b.id !== tplBank[bi]?.id)
+			) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
