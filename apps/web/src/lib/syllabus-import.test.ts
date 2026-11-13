@@ -1,11 +1,15 @@
+import ExcelJS from "exceljs";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import {
-	buildSampleCsv,
-	downloadSyllabusSampleCsv,
+	buildSampleXlsxBytes,
+	downloadSyllabusSampleXlsx,
 	normalizeRow,
 	parseSyllabusFile,
 	rowsToModules,
+	SAMPLE_HEADER,
+	SAMPLE_ROWS,
 	SYLLABUS_SAMPLE_FILENAME,
+	SYLLABUS_SAMPLE_MIME,
 } from "./syllabus-import";
 
 afterEach(() => {
@@ -645,103 +649,179 @@ describe("normalizeRow", () => {
 	});
 });
 
-describe("parseSyllabusFile (CSV)", () => {
-	test("delimiter ; (Excel locale Việt Nam) parse đúng", async () => {
-		const file = new File(["M1;d1;o1;m1"], "x.csv", {
-			type: "text/csv",
+async function buildXlsxFile(
+	populate: (workbook: ExcelJS.Workbook) => void,
+	filename = "syllabus.xlsx",
+): Promise<File> {
+	const workbook = new ExcelJS.Workbook();
+	populate(workbook);
+	const raw = await workbook.xlsx.writeBuffer();
+	const buffer = new ArrayBuffer(raw.byteLength);
+	new Uint8Array(buffer).set(new Uint8Array(raw));
+	return new File([buffer], filename, { type: SYLLABUS_SAMPLE_MIME });
+}
+
+describe("parseSyllabusFile (XLSX)", () => {
+	test("đuôi .csv và .xls bị từ chối", async () => {
+		const csvResult = await parseSyllabusFile(
+			new File(["Module,Mô tả module,Mục tiêu,Tài liệu\r\nM1,,o1,"], "x.csv", {
+				type: "text/csv",
+			}),
+		);
+		expect(csvResult).toEqual({
+			ok: false,
+			errors: ["Chỉ nhận file Excel (.xlsx)."],
 		});
+
+		const xlsResult = await parseSyllabusFile(
+			new File(["Module\r\nM1"], "x.xls", { type: "application/vnd.ms-excel" }),
+		);
+		expect(xlsResult).toEqual({
+			ok: false,
+			errors: ["Chỉ nhận file Excel (.xlsx)."],
+		});
+	});
+
+	test("file vượt 2 MB bị từ chối", async () => {
+		const big = new Uint8Array(2 * 1024 * 1024 + 1);
+		const result = await parseSyllabusFile(new File([big], "x.xlsx"));
+		expect(result).toEqual({ ok: false, errors: ["File vượt giới hạn 2 MB."] });
+	});
+
+	test("file giả mạo .xlsx (không phải ZIP hợp lệ) bị từ chối", async () => {
+		const fake = new File(
+			["Module,Mô tả module,Mục tiêu,Tài liệu\r\nM1,,o1,"],
+			"fake.xlsx",
+			{ type: SYLLABUS_SAMPLE_MIME },
+		);
+		const result = await parseSyllabusFile(fake);
+		expect(result).toEqual({
+			ok: false,
+			errors: ["Không đọc được file. Kiểm tra file Excel (.xlsx) hợp lệ."],
+		});
+	});
+
+	test("đọc .xlsx tạo bằng ExcelJS: hỗ trợ merge cells cột Module và nhiều sheet (chỉ đọc sheet 1)", async () => {
+		const file = await buildXlsxFile((workbook) => {
+			const sheet1 = workbook.addWorksheet("Syllabus");
+			sheet1.addRow(["Module", "Mô tả module", "Mục tiêu", "Tài liệu", "Loại"]);
+			sheet1.addRow(["Module 1", "Tổng quan", "Mục tiêu 1", "Tài liệu 1", ""]);
+			sheet1.addRow(["", "", "Mục tiêu 2", "", "giữa kỳ"]);
+			sheet1.addRow(["Module 2", "", "Mục tiêu 3", "Tài liệu 3", "cuối kỳ"]);
+			sheet1.mergeCells("A2:A3");
+
+			const sheet2 = workbook.addWorksheet("Hướng dẫn");
+			sheet2.addRow(["Mục", "Hướng dẫn"]);
+			sheet2.addRow(["Lỗi giả", "Sheet 2 không được parse"]);
+		});
+
 		const result = await parseSyllabusFile(file);
 		expect(result).toEqual({
 			ok: true,
 			modules: [
 				{
-					title: "M1",
-					description: "d1",
+					title: "Module 1",
+					description: "Tổng quan",
 					lessons: [
 						{
 							title: "Buổi 1",
-							objectives: "o1",
-							materials: "m1",
+							objectives: "Mục tiêu 1",
+							materials: "Tài liệu 1",
 							kind: "lesson",
+							status: "upcoming",
+						},
+						{
+							title: "Buổi 2",
+							objectives: "Mục tiêu 2",
+							materials: "",
+							kind: "midterm",
+							status: "upcoming",
+						},
+					],
+				},
+				{
+					title: "Module 2",
+					description: "",
+					lessons: [
+						{
+							title: "Buổi 3",
+							objectives: "Mục tiêu 3",
+							materials: "Tài liệu 3",
+							kind: "final",
 							status: "upcoming",
 						},
 					],
 				},
 			],
-			lessonCount: 1,
+			lessonCount: 3,
 		});
-	});
-
-	test("BOM đầu file bị strip khỏi tên module đầu tiên", async () => {
-		const file = new File(
-			[
-				"\uFEFFModule,Mô tả module,Mục tiêu,Tài liệu\r\nModule 1 — Nền tảng,,Hiểu cấu trúc đề,",
-			],
-			"x.csv",
-			{ type: "text/csv" },
-		);
-		const result = await parseSyllabusFile(file);
-		expect(result.ok).toBe(true);
-		if (result.ok) {
-			expect(result.modules[0].title).toBe("Module 1 — Nền tảng");
-		}
-	});
-
-	test("đuôi .xls bị từ chối", async () => {
-		const result = await parseSyllabusFile(
-			new File(["Module\r\nM1"], "x.xls", { type: "application/vnd.ms-excel" }),
-		);
-		expect(result).toEqual({
-			ok: false,
-			errors: ["Chỉ nhận file .csv hoặc .xlsx."],
-		});
-	});
-
-	test("file vượt 2 MB bị từ chối", async () => {
-		const big = "a".repeat(2 * 1024 * 1024 + 1);
-		const result = await parseSyllabusFile(new File([big], "x.csv"));
-		expect(result).toEqual({ ok: false, errors: ["File vượt giới hạn 2 MB."] });
-	});
-
-	test("quote chưa đóng → lỗi 'cú pháp CSV không hợp lệ'", async () => {
-		const result = await parseSyllabusFile(
-			new File(['"M1,d1,o,'], "x.csv", { type: "text/csv" }),
-		);
-		expect(result.ok).toBe(false);
-		if (!result.ok) {
-			expect(result.errors[0]).toContain("cú pháp CSV không hợp lệ");
-		}
 	});
 });
 
-describe("buildSampleCsv", () => {
-	test("buildSampleCsv có BOM, CRLF, 6 dòng; header 5 cột 'Loại' không 'Trạng thái'; 5 buổi với giữa kỳ cuối M1, cuối kỳ cuối M2 (law 7 v4)", () => {
-		const csv = buildSampleCsv();
-		expect(csv.startsWith("\uFEFF")).toBe(true);
-		const lines = csv.slice(1).split("\r\n");
-		expect(lines).toHaveLength(6);
-		expect(lines[0]).toBe("Module,Mô tả module,Mục tiêu,Tài liệu,Loại");
-		expect(lines[0]).not.toContain("Trạng thái");
-		expect(lines[1].startsWith("Module 1 — Nền tảng")).toBe(true);
-		expect(lines[2].startsWith(",")).toBe(true);
-		expect(lines[3]).toBe(",,Kiểm tra giữa kỳ,,giữa kỳ");
-		expect(lines[4].startsWith("Module 2 — Thực hành")).toBe(true);
-		expect(lines[5]).toBe(",,Kiểm tra cuối kỳ,,cuối kỳ");
+describe("buildSampleXlsxBytes", () => {
+	test("có 2 sheet ['Syllabus', 'Hướng dẫn'], frozen row 1, header in đậm, 5 cột numFmt='@', validation E2:E501 và đúng 6 dòng khớp SAMPLE_HEADER + SAMPLE_ROWS", async () => {
+		const bytes = buildSampleXlsxBytes();
+		const workbook = new ExcelJS.Workbook();
+		await workbook.xlsx.load(bytes.buffer);
 
-		// Round-trip: file mẫu của chính app phải parse ra đúng 5 buổi thi/không thi.
-		const result = rowsToModules(lines.slice(1).map((line) => line.split(",")));
-		expect(result.ok).toBe(true);
-		if (result.ok) {
-			expect(result.lessonCount).toBe(5);
+		expect(workbook.worksheets.map((ws) => ws.name)).toEqual([
+			"Syllabus",
+			"Hướng dẫn",
+		]);
+
+		const syllabus = workbook.worksheets[0];
+		expect(syllabus.views[0]).toMatchObject({ state: "frozen", ySplit: 1 });
+
+		const headerRow = syllabus.getRow(1);
+		for (let c = 1; c <= 5; c++) {
+			expect(syllabus.getColumn(c).numFmt).toBe("@");
+			expect(headerRow.getCell(c).font?.bold).toBe(true);
+		}
+
+		const dataValidations = (
+			syllabus as unknown as {
+				dataValidations: {
+					find: (address: string) => ExcelJS.DataValidation | undefined;
+				};
+			}
+		).dataValidations;
+		for (let r = 2; r <= 501; r++) {
+			const dv = dataValidations.find(`E${r}`);
+			expect(dv?.type).toBe("list");
+			expect(dv?.formulae?.[0]).toBe('"giữa kỳ,cuối kỳ"');
+		}
+
+		expect(syllabus.rowCount).toBe(6);
+		const actualRows: string[][] = [];
+		syllabus.eachRow({ includeEmpty: true }, (row) => {
+			const values: string[] = [];
+			for (let c = 1; c <= 5; c++) {
+				const v = row.getCell(c).value;
+				values.push(v === undefined || v === null ? "" : String(v));
+			}
+			actualRows.push(values);
+		});
+		expect(actualRows).toEqual([[...SAMPLE_HEADER], ...SAMPLE_ROWS]);
+
+		// Round-trip: file mẫu của chính app phải parse ra đúng 2 module · 5 buổi.
+		const roundTrip = await parseSyllabusFile(
+			new File([bytes], SYLLABUS_SAMPLE_FILENAME, {
+				type: SYLLABUS_SAMPLE_MIME,
+			}),
+		);
+		expect(roundTrip.ok).toBe(true);
+		if (roundTrip.ok) {
+			expect(roundTrip.modules).toHaveLength(2);
+			expect(roundTrip.lessonCount).toBe(5);
 			expect(
-				result.modules.flatMap((m) => m.lessons).map((l) => l.kind),
+				roundTrip.modules.flatMap((m) => m.lessons).map((l) => l.kind),
 			).toEqual(["lesson", "lesson", "midterm", "lesson", "final"]);
 		}
 	});
 });
 
-describe("downloadSyllabusSampleCsv", () => {
-	test("tạo Blob CSV UTF-8 BOM, kích hoạt tải syllabus-template.csv và revoke URL bất đồng bộ", async () => {
+describe("downloadSyllabusSampleXlsx", () => {
+	test("tạo Blob XLSX đúng MIME, tải syllabus-template.xlsx và revoke URL bất đồng bộ", async () => {
 		vi.useFakeTimers();
 		let capturedBlob: Blob | null = null;
 		const createObjectURL = vi
@@ -761,21 +841,21 @@ describe("downloadSyllabusSampleCsv", () => {
 		const createElement = vi.fn(() => anchor);
 		vi.stubGlobal("document", { createElement });
 
-		downloadSyllabusSampleCsv();
+		downloadSyllabusSampleXlsx();
 
 		expect(createObjectURL).toHaveBeenCalledTimes(1);
 		expect(capturedBlob).toBeInstanceOf(Blob);
 		if (!capturedBlob) throw new Error("expected capturedBlob");
-		expect((capturedBlob as Blob).type).toBe("text/csv;charset=utf-8");
-		const decodedCsv = new TextDecoder("utf-8", { ignoreBOM: true }).decode(
+		expect((capturedBlob as Blob).type).toBe(SYLLABUS_SAMPLE_MIME);
+		const downloadedBytes = new Uint8Array(
 			await (capturedBlob as Blob).arrayBuffer(),
 		);
-		expect(decodedCsv).toBe(buildSampleCsv());
+		expect(downloadedBytes).toEqual(buildSampleXlsxBytes());
 
 		expect(createElement).toHaveBeenCalledWith("a");
 		expect(anchor.href).toBe("blob:syllabus-sample");
 		expect(anchor.download).toBe(SYLLABUS_SAMPLE_FILENAME);
-		expect(anchor.download).toBe("syllabus-template.csv");
+		expect(anchor.download).toBe("syllabus-template.xlsx");
 		expect(anchor.click).toHaveBeenCalledTimes(1);
 
 		expect(revokeObjectURL).not.toHaveBeenCalled();

@@ -434,9 +434,6 @@ importers:
       lucide-react:
         specifier: 'catalog:'
         version: 1.31.0(react@19.2.8)
-      papaparse:
-        specifier: ^5.7.0
-        version: 5.7.0
       pdfjs-dist:
         specifier: ^6.4.299
         version: 6.4.299
@@ -477,9 +474,6 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 22.20.1
-      '@types/papaparse':
-        specifier: ^5.5.2
-        version: 5.5.2
       '@types/react':
         specifier: 'catalog:'
         version: 19.2.18
@@ -489,6 +483,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^6.0.4
         version: 6.0.5(vite@8.2.1(@types/node@22.20.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.1))
+      exceljs:
+        specifier: 'catalog:'
+        version: 4.4.0
       jsdom:
         specifier: 'catalog:'
         version: 26.1.0

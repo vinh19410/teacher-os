@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, type Page, test } from "@playwright/test";
+import ExcelJS from "exceljs";
 import { signUpViaApi } from "./helpers";
 
 /** Tạo syllabus template rỗng (không import file) qua popup và chờ tới
@@ -35,10 +36,10 @@ test("ghi đè sau xác nhận thay cây, hủy giữ nguyên dữ liệu hiện
 	await expect(page.getByText("Module thủ công")).toBeVisible();
 
 	// Import file mẫu 4 cột → preview.
-	await page.getByRole("button", { name: "Nhập từ Excel/CSV" }).click();
+	await page.getByRole("button", { name: "Nhập từ Excel" }).click();
 	await page.setInputFiles(
 		"input[type=file]",
-		"fixtures/syllabus-import.sample.csv",
+		"fixtures/syllabus-import.sample.xlsx",
 	);
 	await expect(page.getByText("2 module · 3 buổi học")).toBeVisible();
 
@@ -88,7 +89,7 @@ test("bản copy của lớp không có nút import ghi đè (chỉ template)", 
 	);
 	// Template: nút import PHẢI hiện.
 	await expect(
-		page.getByRole("button", { name: "Nhập từ Excel/CSV" }),
+		page.getByRole("button", { name: "Nhập từ Excel" }),
 	).toBeVisible();
 
 	// Tạo lớp chọn template này → server deep-copy thành bản copy của lớp.
@@ -147,7 +148,7 @@ test("bản copy của lớp không có nút import ghi đè (chỉ template)", 
 	await expect(page.getByText("Không tìm thấy syllabus")).toBeVisible();
 });
 
-test("tải file mẫu trên trang chi tiết trả đúng CSV v4, không tràn ngang ở 320px và import ghi đè được ngay", async ({
+test("tải file mẫu trên trang chi tiết trả đúng XLSX v4, không tràn ngang ở 320px và import ghi đè được ngay", async ({
 	page,
 }) => {
 	await signUpViaApi(page);
@@ -169,20 +170,56 @@ test("tải file mẫu trên trang chi tiết trả đúng CSV v4, không tràn 
 	const downloadPromise = page.waitForEvent("download");
 	await sampleBtn.click();
 	const download = await downloadPromise;
-	expect(download.suggestedFilename()).toBe("syllabus-template.csv");
+	expect(download.suggestedFilename()).toBe("syllabus-template.xlsx");
 	const downloadedPath = await download.path();
-	if (!downloadedPath) throw new Error("Missing downloaded sample CSV path");
+	if (!downloadedPath) throw new Error("Missing downloaded sample XLSX path");
 	const rawBytes = readFileSync(downloadedPath);
-	const csvText = rawBytes.toString("utf8");
-	expect(
-		csvText.startsWith("\uFEFFModule,Mô tả module,Mục tiêu,Tài liệu,Loại\r\n"),
-	).toBe(true);
-	expect(csvText).toContain("Kiểm tra giữa kỳ");
-	expect(csvText).toContain("Kiểm tra cuối kỳ");
+
+	const workbook = new ExcelJS.Workbook();
+	await workbook.xlsx.load(
+		rawBytes.buffer.slice(
+			rawBytes.byteOffset,
+			rawBytes.byteOffset + rawBytes.byteLength,
+		),
+	);
+	expect(workbook.worksheets.map((ws) => ws.name)).toEqual([
+		"Syllabus",
+		"Hướng dẫn",
+	]);
+	const syllabusSheet = workbook.worksheets[0];
+	expect(syllabusSheet).toBeDefined();
+	const headerValues = [1, 2, 3, 4, 5].map((c) =>
+		String(syllabusSheet?.getRow(1).getCell(c).value ?? ""),
+	);
+	expect(headerValues).toEqual([
+		"Module",
+		"Mô tả module",
+		"Mục tiêu",
+		"Tài liệu",
+		"Loại",
+	]);
+	expect(syllabusSheet?.views[0]).toMatchObject({
+		state: "frozen",
+		ySplit: 1,
+	});
+	for (let c = 1; c <= 5; c++) {
+		expect(syllabusSheet?.getColumn(c).numFmt).toBe("@");
+	}
+	const dataValidations = (
+		syllabusSheet as unknown as {
+			dataValidations: {
+				find: (address: string) => ExcelJS.DataValidation | undefined;
+			};
+		}
+	).dataValidations;
+	const dv = dataValidations.find("E2");
+	expect(dv?.type).toBe("list");
+	expect(dv?.formulae?.[0]).toBe('"giữa kỳ,cuối kỳ"');
 
 	await page.setInputFiles("input[type=file]", {
 		name: download.suggestedFilename(),
-		mimeType: "text/csv",
+		mimeType:
+			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 		buffer: rawBytes,
 	});
 	await expect(page.getByText("2 module · 5 buổi học")).toBeVisible();

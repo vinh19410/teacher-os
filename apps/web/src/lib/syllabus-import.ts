@@ -1,13 +1,14 @@
 /**
- * Syllabus Excel/CSV import v4 (issue #154) — parse 100% client-side.
+ * Syllabus Excel (.xlsx) import v4 (issue #154) — parse 100% client-side.
  * Core `rowsToModules`/`normalizeRow` thuần (chạy được trong vitest env node);
- * adapter `parseSyllabusFile` dynamic-import papaparse/read-excel-file để tách
+ * adapter `parseSyllabusFile` dynamic-import `read-excel-file/browser` để tách
  * chunk. File không bao giờ tới server — format 5 cột: cột thứ 5 "Loại" tùy
  * chọn (`giữa kỳ`/`cuối kỳ`, rỗng = buổi thường); file 4 cột v3 vẫn import
  * bình thường, title buổi tự sinh `Buổi {n}` theo thứ tự dòng.
  */
 import type { SyllabusModuleContent } from "@teacher-os/api/contracts";
 import type { SyllabusLessonKind } from "./mock-data";
+import { SYLLABUS_SAMPLE_XLSX_BASE64 } from "./syllabus-template-xlsx";
 
 export const IMPORT_MAX_NODES = 500;
 export const IMPORT_FILE_MAX_BYTES = 2 * 1024 * 1024;
@@ -220,54 +221,69 @@ export function rowsToModules(rows: unknown[][]): SyllabusImportResult {
 	return { ok: true, modules, lessonCount };
 }
 
+function readFileArrayBuffer(file: File): Promise<ArrayBuffer> {
+	if (typeof file.arrayBuffer === "function") {
+		return file.arrayBuffer();
+	}
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onload = () => {
+			if (reader.result instanceof ArrayBuffer) {
+				resolve(reader.result);
+			} else {
+				reject(new Error("Expected ArrayBuffer from FileReader"));
+			}
+		};
+		reader.onerror = () => {
+			reject(reader.error ?? new Error("FileReader failed"));
+		};
+		reader.readAsArrayBuffer(file);
+	});
+}
+
 /**
- * Browser adapter: chọn nhánh parse theo đuôi file, bắt mọi exception
- * — caller không bao giờ thấy reject thoát ra ngoài.
+ * Browser adapter: kiểm tra định dạng `.xlsx` (đuôi file + ZIP magic bytes)
+ * và parse sheet đầu tiên, bắt mọi exception — caller không bao giờ thấy
+ * reject thoát ra ngoài.
  */
 export async function parseSyllabusFile(
 	file: File,
 ): Promise<SyllabusImportResult> {
 	try {
-		const name = file.name.toLowerCase();
-		const isCsv = name.endsWith(".csv");
-		if (!isCsv && !name.endsWith(".xlsx")) {
-			return { ok: false, errors: ["Chỉ nhận file .csv hoặc .xlsx."] };
+		if (!file.name.toLowerCase().endsWith(".xlsx")) {
+			return { ok: false, errors: ["Chỉ nhận file Excel (.xlsx)."] };
 		}
 		if (file.size > IMPORT_FILE_MAX_BYTES) {
 			return { ok: false, errors: ["File vượt giới hạn 2 MB."] };
 		}
-		if (isCsv) {
-			const Papa = (await import("papaparse")).default;
-			const result = Papa.parse<string[]>(await file.text());
-			if (result.errors.length > 0) {
-				return {
-					ok: false,
-					errors: result.errors.map(
-						(e) => `Dòng ${(e.row ?? 0) + 1}: cú pháp CSV không hợp lệ`,
-					),
-				};
-			}
-			const rows = result.data;
-			// Strip BOM ở cell đầu của dòng đầu (Excel VN thường ghi UTF-8 BOM).
-			if (rows[0]?.[0]?.startsWith("\uFEFF")) {
-				rows[0][0] = rows[0][0].slice(1);
-			}
-			return rowsToModules(rows);
+		const buffer = await readFileArrayBuffer(file);
+		const magic = new Uint8Array(buffer, 0, Math.min(4, buffer.byteLength));
+		if (
+			magic.length < 4 ||
+			magic[0] !== 0x50 ||
+			magic[1] !== 0x4b ||
+			magic[2] !== 0x03 ||
+			magic[3] !== 0x04
+		) {
+			return {
+				ok: false,
+				errors: ["Không đọc được file. Kiểm tra file Excel (.xlsx) hợp lệ."],
+			};
 		}
 		const { readSheet } = await import("read-excel-file/browser");
-		const rows = await readSheet(file);
+		const rows = await readSheet(buffer);
 		return rowsToModules(rows);
 	} catch {
 		return {
 			ok: false,
-			errors: ["Không đọc được file. Kiểm tra file Excel/CSV hợp lệ."],
+			errors: ["Không đọc được file. Kiểm tra file Excel (.xlsx) hợp lệ."],
 		};
 	}
 }
 
 /**
- * Dữ liệu file mẫu v4 — nguồn sự thật chung cho `buildSampleCsv` (nút tải
- * file mẫu) và script regenerate fixture e2e
+ * Dữ liệu file mẫu v4 — nguồn sự thật chung cho file mẫu `.xlsx` nhúng sẵn
+ * (`syllabus-template-xlsx.ts`) và script regenerate fixture e2e
  * (`apps/e2e/scripts/regen-syllabus-v4-fixture.mjs`) — script mirror 1:1
  * SAMPLE_ROWS (giới hạn đã biết: .mjs không import được TS; đổi SAMPLE_ROWS
  * phải đổi ROWS trong script rồi chạy regen — red-team #8). 5 buổi / 2 module:
@@ -297,28 +313,32 @@ export const SAMPLE_ROWS: Array<
 	["", "", "Kiểm tra cuối kỳ", "", "cuối kỳ"],
 ];
 
+export const SYLLABUS_SAMPLE_FILENAME = "syllabus-template.xlsx";
+export const SYLLABUS_SAMPLE_MIME =
+	"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
 /**
- * File mẫu: CSV UTF-8 có BOM + CRLF, 5 cột (cột Loại tùy chọn), khớp fixture
- * e2e v4 — 2 module · 5 buổi (Buổi 1..5 xuyên module theo thứ tự dòng).
+ * Giải mã file mẫu `.xlsx` nhúng sẵn thành bytes chuẩn `ArrayBuffer` (tương
+ * thích `new Blob([bytes])` trên TypeScript 5.7+).
  */
-export function buildSampleCsv(): string {
-	const lines = [
-		`\uFEFF${SAMPLE_HEADER.join(",")}`,
-		...SAMPLE_ROWS.map((row) => row.join(",")),
-	];
-	return lines.join("\r\n");
+export function buildSampleXlsxBytes(): Uint8Array<ArrayBuffer> {
+	const binary = atob(SYLLABUS_SAMPLE_XLSX_BASE64);
+	const arrayBuffer = new ArrayBuffer(binary.length);
+	const bytes = new Uint8Array(arrayBuffer);
+	for (let i = 0; i < binary.length; i++) {
+		bytes[i] = binary.charCodeAt(i);
+	}
+	return bytes;
 }
 
-export const SYLLABUS_SAMPLE_FILENAME = "syllabus-template.csv";
-
 /**
- * Tải xuống file mẫu CSV chuẩn v4 (`syllabus-template.csv`, UTF-8 BOM + CRLF)
- * ở client-side — dùng chung cho modal Tạo syllabus và trang chi tiết `/syllabus/:id`.
+ * Tải xuống file mẫu Excel chuẩn v4 (`syllabus-template.xlsx`) ở client-side —
+ * dùng chung cho modal Tạo syllabus và trang chi tiết `/syllabus/:id`.
  */
-export function downloadSyllabusSampleCsv(): void {
-	const csv = buildSampleCsv();
+export function downloadSyllabusSampleXlsx(): void {
+	const bytes = buildSampleXlsxBytes();
 	const url = URL.createObjectURL(
-		new Blob([csv], { type: "text/csv;charset=utf-8" }),
+		new Blob([bytes], { type: SYLLABUS_SAMPLE_MIME }),
 	);
 	const a = document.createElement("a");
 	a.href = url;

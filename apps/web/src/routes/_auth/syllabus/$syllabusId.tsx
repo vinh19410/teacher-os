@@ -33,7 +33,7 @@ import { useData } from "@/lib/data-store";
 import { CLASS_TYPE_LABELS, type Syllabus } from "@/lib/mock-data";
 import { useTemplates } from "@/lib/repos/use-syllabus";
 import {
-	downloadSyllabusSampleCsv,
+	downloadSyllabusSampleXlsx,
 	parseSyllabusFile,
 	type SyllabusImportResult,
 } from "@/lib/syllabus-import";
@@ -182,7 +182,7 @@ function SyllabusDetail({
 					<input
 						ref={fileInputRef}
 						type="file"
-						accept=".csv,.xlsx"
+						accept=".xlsx"
 						className="hidden"
 						onChange={onImportFileChange}
 					/>
@@ -190,7 +190,7 @@ function SyllabusDetail({
 						type="button"
 						variant="secondary"
 						size="sm"
-						onClick={downloadSyllabusSampleCsv}
+						onClick={downloadSyllabusSampleXlsx}
 					>
 						Tải file mẫu
 					</Button>
@@ -201,7 +201,7 @@ function SyllabusDetail({
 						disabled={parsing || busy}
 						onClick={() => fileInputRef.current?.click()}
 					>
-						Nhập từ Excel/CSV
+						Nhập từ Excel
 					</Button>
 					<Button
 						variant="secondary"
