@@ -30,6 +30,7 @@ import {
 	notificationDepsFrom,
 } from "../../lib/notifications/emit";
 import { gradeReturnedEvent } from "../../lib/notifications/templates";
+import { streamStudyPackAudio } from "../../lib/study-pack-audio";
 import { loadSnapshot } from "../snapshot";
 import { parseQuizOptionBank } from "../student";
 import { testsRoutes } from "./tests";
@@ -58,6 +59,8 @@ export function assignmentRoutes(deps: {
 	studentOrigin?: Parameters<typeof emitNotifications>[0]["studentOrigin"];
 	/** #463: khoảng chờ giữa các lượt retry email thông báo (test/E2E truyền [0, 0]). */
 	notificationRetryDelaysMs?: number[];
+	/** #702: injectable fetch cho audio proxy của listening study-pack prompts. */
+	fetchExternalAudio?: typeof fetch;
 }) {
 	const routes = new Hono<Env>();
 	routes.use("*", async (c, next) => {
@@ -128,6 +131,7 @@ export function assignmentRoutes(deps: {
 				type: body.data.type,
 				title: body.data.title,
 				band: body.data.band,
+				level: body.data.level ?? "",
 				source: body.data.source,
 				prompt: body.data.prompt,
 				intro: body.data.intro,
@@ -136,6 +140,7 @@ export function assignmentRoutes(deps: {
 				cueTopic: body.data.cueTopic,
 				cuePoints: body.data.cuePoints,
 				audioName: body.data.audioName,
+				audioUrl: body.data.audioUrl ?? "",
 				imageUrl: body.data.imageUrl,
 				questions: JSON.stringify(body.data.questions),
 				// Phase-02 FR7: explicit map — a missing entry here silently drops
@@ -219,6 +224,7 @@ export function assignmentRoutes(deps: {
 				cueTopic: assignmentPrompt.cueTopic,
 				cuePoints: assignmentPrompt.cuePoints,
 				audioName: assignmentPrompt.audioName,
+				audioUrl: assignmentPrompt.audioUrl,
 				imageUrl: assignmentPrompt.imageUrl,
 				note: assignmentPrompt.note,
 				questions: assignmentPrompt.questions,
@@ -290,6 +296,12 @@ export function assignmentRoutes(deps: {
 				{ error: "questions only apply to reading or listening" },
 				400,
 			);
+		if (body.data.audioUrl?.trim() && row.skill !== "listening") {
+			return c.json(
+				{ error: "audioUrl only applies to listening prompts" },
+				400,
+			);
+		}
 
 		// #630 phase-1: cờ hoisted lên đây — content-lock bên dưới cần biết
 		// payload có thay đổi phần Writing không để khoá nội dung.
@@ -389,6 +401,7 @@ export function assignmentRoutes(deps: {
 			[row.cueTopic, body.data.cueTopic],
 			[row.cuePoints, body.data.cuePoints],
 			[row.audioName, body.data.audioName],
+			[row.audioUrl, body.data.audioUrl],
 			[row.imageUrl, body.data.imageUrl],
 			[row.note, body.data.note],
 		] as const) {
@@ -467,6 +480,7 @@ export function assignmentRoutes(deps: {
 		// Metadata: không bao giờ khoá — đổi tên/điểm/nguồn/trạng thái luôn được.
 		if (body.data.title !== undefined) updates.title = body.data.title;
 		if (body.data.band !== undefined) updates.band = body.data.band;
+		if (body.data.level !== undefined) updates.level = body.data.level;
 		if (body.data.source !== undefined) updates.source = body.data.source;
 		if (body.data.status !== undefined) updates.status = body.data.status;
 		// Content: chỉ ghi khi thực sự đổi (đến được đây với contentChanged
@@ -488,6 +502,8 @@ export function assignmentRoutes(deps: {
 				updates.cuePoints = body.data.cuePoints;
 			if (body.data.audioName !== undefined)
 				updates.audioName = body.data.audioName;
+			if (body.data.audioUrl !== undefined)
+				updates.audioUrl = body.data.audioUrl;
 			if (body.data.imageUrl !== undefined)
 				updates.imageUrl = body.data.imageUrl;
 			if (body.data.note !== undefined) updates.note = body.data.note;
@@ -522,6 +538,27 @@ export function assignmentRoutes(deps: {
 			.returning({ id: assignmentPrompt.id });
 		if (!updated[0]) return c.json({ error: "prompt not found" }, 404);
 		return c.json({ id: promptId } satisfies CreatedResponse);
+	});
+
+	routes.get("/prompts/:id/audio", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const promptId = c.req.param("id");
+		const [row] = await deps
+			.getDb()
+			.select({ audioUrl: assignmentPrompt.audioUrl })
+			.from(assignmentPrompt)
+			.where(
+				and(
+					eq(assignmentPrompt.id, promptId),
+					eq(assignmentPrompt.orgId, ctx.orgId),
+				),
+			)
+			.limit(1);
+		if (!row?.audioUrl) {
+			return c.json({ error: "audio not found" }, 404);
+		}
+		return streamStudyPackAudio(row.audioUrl, deps.fetchExternalAudio);
 	});
 
 	// Full-test builder CRUD — mount con để tự nằm trong kernel mount

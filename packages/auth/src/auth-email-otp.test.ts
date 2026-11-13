@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { type Client, createClient } from "@libsql/client";
 import * as schema from "@teacher-os/db/schema/index";
 import { drizzle } from "drizzle-orm/libsql";
@@ -6,10 +7,9 @@ import { describe, expect, type Mock, test, vi } from "vitest";
 import { type Auth, createAuth } from "./index";
 import type { Mailer } from "./mail/mailer";
 
-const MIGRATIONS_DIR = new URL(
-	"../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../packages/db/src/migrations", import.meta.url),
+);
 
 const API_ORIGIN = "http://api.test";
 const TEACHER_ORIGIN = "http://teacher.test";

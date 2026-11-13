@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto";
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 
 /** Same file the boot shim uses (apps/e2e/src/boot.ts) — tests run after
  * boot, sequential (workers: 1), so a second short-lived connection is safe. */
-const DB_PATH = new URL("../local.db", import.meta.url).pathname;
+const DB_PATH = fileURLToPath(new URL("../local.db", import.meta.url).href);
 
 /**
  * Seeds a Google account row for the given user email so /profile renders the

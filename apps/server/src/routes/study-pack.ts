@@ -7,6 +7,7 @@ import { canPublishGrade, canReviewGrade } from "@teacher-os/auth/role";
 import { classTable } from "@teacher-os/db/schema/class";
 import {
 	classStudyPack,
+	libraryExercise,
 	studyPack,
 	studyPackItem,
 } from "@teacher-os/db/schema/study-pack";
@@ -20,6 +21,7 @@ import {
 	cancelClassStudyPack,
 	loadClassStudyPacks,
 } from "../lib/study-pack-assign";
+import { streamStudyPackAudio } from "../lib/study-pack-audio";
 import {
 	buildPackItemTupleKey,
 	buildStudyPackItemInsertStatements,
@@ -32,7 +34,10 @@ import {
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type StudyPackContext = Context<Env>;
 
-export function studyPackRoutes(deps: { getDb(): Db }) {
+export function studyPackRoutes(deps: {
+	getDb(): Db;
+	fetchExternalAudio?: typeof fetch;
+}) {
 	const routes = new Hono<Env>();
 
 	function unauthorized(c: StudyPackContext) {
@@ -97,6 +102,25 @@ export function studyPackRoutes(deps: { getDb(): Db }) {
 		return c.json({ packs });
 	});
 
+	routes.get("/study-packs/exercises/:id/audio", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		if (!canReviewGrade(ctx.role)) return forbidden(c);
+
+		const db = deps.getDb();
+		const id = c.req.param("id");
+		const [row] = await db
+			.select({ audioUrl: libraryExercise.audioUrl })
+			.from(libraryExercise)
+			.where(
+				and(eq(libraryExercise.id, id), eq(libraryExercise.status, "ready")),
+			);
+		if (!row || !row.audioUrl.trim()) {
+			return c.json({ error: "audio not found" }, 404);
+		}
+		return streamStudyPackAudio(row.audioUrl, deps.fetchExternalAudio);
+	});
+
 	routes.get("/study-packs/:id", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
@@ -139,6 +163,7 @@ export function studyPackRoutes(deps: { getDb(): Db }) {
 				orgId: ctx.orgId,
 				title: body.data.title,
 				description: body.data.description,
+				level: body.data.level,
 				status: body.data.status,
 				sourcePackId: null,
 				createdBy: ctx.userId,
@@ -205,6 +230,7 @@ export function studyPackRoutes(deps: { getDb(): Db }) {
 				.set({
 					title: body.data.title,
 					description: body.data.description,
+					level: body.data.level,
 					status: body.data.status,
 					updatedAt: new Date(),
 				})
@@ -330,6 +356,7 @@ export function studyPackRoutes(deps: { getDb(): Db }) {
 				orgId: ctx.orgId,
 				title: sourcePack.title,
 				description: sourcePack.description,
+				level: sourcePack.level,
 				status: sourcePack.status,
 				sourcePackId: sourcePack.id,
 				createdBy: ctx.userId,

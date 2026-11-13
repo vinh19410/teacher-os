@@ -6,6 +6,7 @@ import type {
 	StudyPackSummaryView,
 	StudyPackUpdateInput,
 } from "@teacher-os/api/contracts";
+import { LIBRARY_AUDIO_MIME } from "@teacher-os/api/library-contracts";
 import { getApiBaseUrl } from "./api-base-url";
 
 async function requestJson<T>(
@@ -148,4 +149,27 @@ export async function cancelClassStudyPack(
 		undefined,
 		baseUrl,
 	);
+}
+
+export async function fetchStudyPackExerciseAudioObjectUrl(
+	exerciseId: string,
+	signal?: AbortSignal,
+	baseUrl: string = getApiBaseUrl(),
+): Promise<string> {
+	const res = await fetch(
+		`${baseUrl}/api/study-packs/exercises/${encodeURIComponent(exerciseId)}/audio`,
+		{ credentials: "include", signal },
+	);
+	if (!res.ok) {
+		await res.body?.cancel().catch(() => {});
+		throw new Error(`Audio fetch failed (${res.status})`);
+	}
+	const rawType = (res.headers.get("Content-Type") ?? "").toLowerCase();
+	const mimeType = rawType.split(";")[0]?.trim() ?? "";
+	if (!Object.hasOwn(LIBRARY_AUDIO_MIME, mimeType)) {
+		await res.body?.cancel().catch(() => {});
+		throw new Error("Unexpected listening audio content type");
+	}
+	const blob = new Blob([await res.blob()], { type: mimeType });
+	return URL.createObjectURL(blob);
 }

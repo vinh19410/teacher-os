@@ -174,6 +174,7 @@ export function kernelRoutes(deps: {
 	getAiGrader?(): AiGrader | undefined;
 	aiRetryDelaysMs?: number[];
 	aiGradingTimeoutMs?: number;
+	fetchExternalAudio?: typeof fetch;
 	now?: () => Date;
 }) {
 	const kernel = new Hono<Env>();

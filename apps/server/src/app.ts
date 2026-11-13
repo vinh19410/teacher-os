@@ -187,6 +187,11 @@ export interface AppDeps {
 	 * (#506 D13) — cùng cách `studentOrigin`.
 	 */
 	appOrigin?: string;
+	/**
+	 * Optional fetch implementation cho audio proxy của bộ đề tự học (#702)
+	 * — production dùng `fetch` mặc định, E2E/test inject mock offline.
+	 */
+	fetchExternalAudio?: typeof fetch;
 }
 
 /** Better-Auth handles its own session bootstrapping under /api/auth. */
@@ -316,6 +321,7 @@ export function buildApp(deps: AppDeps) {
 	// `secureHeaders` và ghi SAU `await next()` vì `secureHeaders` ghi đè cuối.
 	for (const path of [
 		"/api/student/attempts/:attemptId/media",
+		"/api/student/assignments/:assignmentId/audio",
 		"/api/grading/:attemptId/media",
 		"/api/placement-test/audio/:id",
 		"/api/exam-imports/:id/file",
@@ -324,6 +330,8 @@ export function buildApp(deps: AppDeps) {
 		"/api/kernel/vocab/words/:wordId/audio",
 		"/api/materials/:id/file",
 		"/api/student/classes/:classId/sessions/:date/materials/:materialId/file",
+		"/api/study-packs/exercises/:id/audio",
+		"/api/assignments/prompts/:id/audio",
 	]) {
 		app.use(path, async (c, next) => {
 			await next();

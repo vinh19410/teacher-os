@@ -393,6 +393,7 @@ export function ClassStudyPackSection({ classId }: { classId: string }) {
 							) : (
 								readyPacks.map((p) => (
 									<option key={p.id} value={p.id}>
+										{p.level ? `[${p.level}] ` : ""}
 										{p.title} ({p.dayCount} ngày · {p.itemCount} bài ·{" "}
 										{p.scope === "system" ? "Hệ thống" : "Trung tâm"})
 									</option>

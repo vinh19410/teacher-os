@@ -57,6 +57,11 @@ vi.mock("@/lib/repos/quiz", () => ({
 	quizDetailQueryKey: (s: unknown) => ["quiz-detail", s],
 	useStudentQuizDetail: () => ({ data: mockDetail, isPending: false }),
 	useStartQuizAttempt: () => ({ mutate: vi.fn(), isPending: false }),
+	useAssignmentAudioObjectUrl: () => ({
+		audioSrc: null,
+		audioLoading: false,
+		audioError: null,
+	}),
 	patchQuizAnswer: (...args: unknown[]) => patchAnswerMock(...args),
 	patchQuizEssay: (...args: unknown[]) => patchEssayMock(...args),
 	submitQuizAttempt: (...args: unknown[]) => submitMock(...args),
@@ -228,5 +233,48 @@ describe("QuizTakeView — hybrid MCQ + Writing dual-store runtime (#574)", () =
 			</QueryClientProvider>,
 		);
 		expect(screen.queryByTestId("quiz-runtime-due")).toBeNull();
+	});
+
+	it("keeps hook order stable when transitioning from attempt=null to started attempt (#702)", () => {
+		mockDetail = {
+			...mockDetail,
+			hasAudio: true,
+			attempt: null,
+		};
+		const qc = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		const { rerender } = render(
+			<QueryClientProvider client={qc}>
+				<QuizTakeView
+					source={{ kind: "assignment", id: "ca-hyb-1" }}
+					serverAnswers={{}}
+					serverEssay=""
+				/>
+			</QueryClientProvider>,
+		);
+		expect(screen.getByText("Bắt đầu làm bài")).toBeTruthy();
+
+		mockDetail = {
+			...mockDetail,
+			hasAudio: true,
+			attempt: {
+				id: "att-hyb-started",
+				status: "in_progress",
+				answers: {},
+				essay: "",
+				media: null,
+			},
+		};
+		rerender(
+			<QueryClientProvider client={qc}>
+				<QuizTakeView
+					source={{ kind: "assignment", id: "ca-hyb-1" }}
+					serverAnswers={{}}
+					serverEssay=""
+				/>
+			</QueryClientProvider>,
+		);
+		expect(screen.getByTestId("navigator-progress")).toBeTruthy();
 	});
 });

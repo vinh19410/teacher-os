@@ -610,6 +610,9 @@ test("staging deploy workflow deploys only from develop and gates deploy on unca
 	const seedIdx = steps.findIndex((s) =>
 		/name:\s*Seed built-in vocab library \(staging only\)/.test(s),
 	);
+	const studyPackSeedIdx = steps.findIndex((s) =>
+		/name:\s*Seed built-in study packs \(staging only\)/.test(s),
+	);
 	const authIdx = steps.findIndex((s) =>
 		/name:\s*Smoke check auth \(sign-up/.test(s),
 	);
@@ -617,33 +620,40 @@ test("staging deploy workflow deploys only from develop and gates deploy on unca
 		deployIdx >= 0 &&
 			readyzIdx > deployIdx &&
 			seedIdx > readyzIdx &&
-			authIdx > seedIdx,
-		"staging vocab seed step must run after /readyz and before auth smoke",
+			studyPackSeedIdx > seedIdx &&
+			authIdx > studyPackSeedIdx,
+		"staging vocab & study-pack seed steps must run after /readyz and before auth smoke",
 	);
-	const seedStep = steps[seedIdx];
-	assert.match(
-		seedStep,
-		/timeout-minutes:\s*\d+/,
-		"staging vocab seed step must declare timeout-minutes",
-	);
-	assert.match(
-		seedStep,
-		/pnpm --filter @teacher-os\/db exec tsx scripts\/seed-vocab-library\.ts --d1 --d1-stage staging --if-needed --verify/,
-		"staging vocab seed step must run locked tsx seed-vocab-library with --d1-stage staging --if-needed --verify",
-	);
-	assert.doesNotMatch(
-		seedStep,
-		/D1_DATABASE_ID/,
-		"staging vocab seed step must resolve staging DB fail-closed via --d1-stage staging without D1_DATABASE_ID",
-	);
-	const seedEnvKeys = [...seedStep.matchAll(/^ {10}([A-Z0-9_]+):/gm)].map(
-		(m) => m[1],
-	);
-	assert.deepEqual(
-		seedEnvKeys.sort(),
-		["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN"],
-		"staging vocab seed step must follow least-privilege and receive only CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN",
-	);
+	for (const [label, step, scriptName] of [
+		["vocab", steps[seedIdx], "seed-vocab-library\\.ts"],
+		["study-pack", steps[studyPackSeedIdx], "seed-study-packs\\.ts"],
+	]) {
+		assert.match(
+			step,
+			/timeout-minutes:\s*\d+/,
+			`staging ${label} seed step must declare timeout-minutes`,
+		);
+		assert.match(
+			step,
+			new RegExp(
+				`pnpm --filter @teacher-os\\/db exec tsx scripts\\/${scriptName} --d1 --d1-stage staging --if-needed --verify`,
+			),
+			`staging ${label} seed step must run locked tsx with --d1-stage staging --if-needed --verify`,
+		);
+		assert.doesNotMatch(
+			step,
+			/D1_DATABASE_ID/,
+			`staging ${label} seed step must resolve staging DB fail-closed via --d1-stage staging without D1_DATABASE_ID`,
+		);
+		const seedEnvKeys = [...step.matchAll(/^ {10}([A-Z0-9_]+):/gm)].map(
+			(m) => m[1],
+		);
+		assert.deepEqual(
+			seedEnvKeys.sort(),
+			["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN"],
+			`staging ${label} seed step must follow least-privilege and receive only CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN`,
+		);
+	}
 
 	const profileIdx = steps.findIndex((s) =>
 		/name:\s*Smoke check profile\b/.test(s),
@@ -873,8 +883,8 @@ test("prod deploy is gated on uncached quality and the reusable e2e workflow", (
 	);
 	assert.doesNotMatch(
 		code,
-		/seed-vocab-library|seedVocabLibrary|vocab_library/,
-		"deploy.yml must never seed built-in vocab library while production license gate is closed (#573)",
+		/seed-vocab-library|seedVocabLibrary|vocab_library|seed-study-packs|seedStudyPacks/,
+		"deploy.yml must never seed built-in vocab library or study packs while production license gate is closed (#573, #702)",
 	);
 	assert.match(
 		code,

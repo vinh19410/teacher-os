@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { type Client, createClient } from "@libsql/client";
 import { type APIRequestContext, expect, type Page } from "@playwright/test";
 import {
@@ -7,6 +8,13 @@ import {
 	STUDENT_ORIGIN,
 	WEB_ORIGIN,
 } from "./origins";
+
+const MAIL_LOG_PATH = fileURLToPath(
+	new URL("../.mail-log.jsonl", import.meta.url).href,
+);
+const LOCAL_DB_PATH = fileURLToPath(
+	new URL("../local.db", import.meta.url).href,
+);
 /** Sign up through the real UI; a fresh context lands on the default
  * "Create account" tab (apps/web/src/routes/login.tsx), and the first
  * authenticated GET /api/kernel bootstraps the org server-side.
@@ -100,10 +108,9 @@ export interface VerificationEmailEntry {
 export async function readVerificationEmails(): Promise<
 	VerificationEmailEntry[]
 > {
-	const logPath = new URL("../.mail-log.jsonl", import.meta.url).pathname;
 	return withBusyRetry(async () => {
-		if (!existsSync(logPath)) return [];
-		const content = readFileSync(logPath, "utf8");
+		if (!existsSync(MAIL_LOG_PATH)) return [];
+		const content = readFileSync(MAIL_LOG_PATH, "utf8");
 		const lines = content.split("\n").filter((l) => l.trim().length > 0);
 		return lines.map((l) => JSON.parse(l) as VerificationEmailEntry);
 	});
@@ -147,7 +154,7 @@ export async function verifyStudentEmailFromMailLog(
  * xong thay vì throw ngay (flaky một lần query). */
 export async function orgIdForTeacherEmail(email: string): Promise<string> {
 	const client = createClient({
-		url: `file:${new URL("../local.db", import.meta.url).pathname}`,
+		url: `file:${LOCAL_DB_PATH}`,
 	});
 	await client.execute("PRAGMA busy_timeout = 5000;");
 	try {
@@ -194,7 +201,7 @@ export async function seedStudent(opts: {
 	onboarded?: boolean;
 }): Promise<{ id: string; name: string; email: string }> {
 	const client = createClient({
-		url: `file:${new URL("../local.db", import.meta.url).pathname}`,
+		url: `file:${LOCAL_DB_PATH}`,
 	});
 	await client.execute("PRAGMA busy_timeout = 5000;");
 	try {
@@ -435,7 +442,7 @@ export async function ensureAdminAccount(
 		}
 	}
 	const client = createClient({
-		url: `file:${new URL("../local.db", import.meta.url).pathname}`,
+		url: `file:${LOCAL_DB_PATH}`,
 	});
 	try {
 		await client.execute("PRAGMA busy_timeout = 5000;");
@@ -527,7 +534,7 @@ export async function seedOrgMember(
 	}
 
 	const client = createClient({
-		url: `file:${new URL("../local.db", import.meta.url).pathname}`,
+		url: `file:${LOCAL_DB_PATH}`,
 	});
 	await client.execute("PRAGMA busy_timeout = 5000;");
 	try {

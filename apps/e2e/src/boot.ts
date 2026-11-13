@@ -9,17 +9,20 @@
 import { appendFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
 import { createClient } from "@libsql/client";
 import { createAuth } from "@teacher-os/auth";
 import type { Mailer } from "@teacher-os/auth/mail/mailer";
 import * as schema from "@teacher-os/db/schema/index";
+import { seedStudyPacks } from "@teacher-os/db/seed/study-packs";
 import { seedVocabLibrary } from "@teacher-os/db/seed/vocab-library";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { buildApp, type Db } from "server/app";
 import { createFakeAiGrader } from "server/lib/ai-grading/fake-grader";
 import { createFakeExamExtractor } from "server/lib/exam-import/fake-extractor";
+import { isAllowedStudyPackAudioUrl } from "server/lib/study-pack-audio";
 import { getSessionUser } from "server/session";
 import { createFakeBankHub } from "./fake-bank-hub";
 import { createFsMediaStore } from "./fs-media-store";
@@ -48,7 +51,9 @@ const ADMIN_EMAILS = (process.env.E2E_ADMIN_EMAILS ?? "admin@e2e.local")
 // red-team #7): requests carrying it classify as student instead of
 // failing the better-auth origin check.
 const STUDENT_ORIGIN = `http://localhost:${Number(process.env.E2E_STUDENT_PORT ?? 8003)}`;
-const MAIL_LOG_PATH = new URL("../.mail-log.jsonl", import.meta.url).pathname;
+const MAIL_LOG_PATH = fileURLToPath(
+	new URL("../.mail-log.jsonl", import.meta.url).href,
+);
 rmSync(MAIL_LOG_PATH, { force: true });
 
 const recordingMailer: Mailer = {
@@ -90,11 +95,10 @@ const recordingMailer: Mailer = {
 		appendFileSync(MAIL_LOG_PATH, `${line}\n`, "utf8");
 	},
 };
-const DB_PATH = new URL("../local.db", import.meta.url).pathname;
-const MIGRATIONS_DIR = new URL(
-	"../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const DB_PATH = fileURLToPath(new URL("../local.db", import.meta.url).href);
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../packages/db/src/migrations", import.meta.url).href,
+);
 
 // Wipe db + WAL siblings so every run starts from a clean slate (orphaned WAL
 // files could otherwise replay stale pages into the fresh database).
@@ -112,6 +116,15 @@ try {
 } catch (err) {
 	console.error(
 		"[vocab-library-seed] failed — every spec will fail; check CSV/EXPECTED_COUNTS first",
+		err,
+	);
+	throw err;
+}
+try {
+	await seedStudyPacks(client);
+} catch (err) {
+	console.error(
+		"[study-packs-seed] failed — check seed-data/study-packs/ JSON bundle",
 		err,
 	);
 	throw err;
@@ -213,6 +226,31 @@ const app = buildApp({
 	leadOrigins: [LEAD_ORIGIN],
 	leadIpSecret: "e2e-local-secret-0123456789abcdef0123456789abcdef",
 	appOrigin: CORS_ORIGINS[0],
+	// #702: deterministic offline MP3 stub for curated Listening audio proxy in E2E
+	fetchExternalAudio: async (input) => {
+		const url =
+			typeof input === "string"
+				? input
+				: input instanceof URL
+					? input.toString()
+					: input.url;
+		if (!isAllowedStudyPackAudioUrl(url)) {
+			return new Response("not found", { status: 404 });
+		}
+		const bytes = new Uint8Array(256);
+		// Minimal valid MPEG-1 Layer 3 32kbps 44.1kHz mono frame header
+		bytes[0] = 0xff;
+		bytes[1] = 0xfb;
+		bytes[2] = 0x10;
+		bytes[3] = 0xc4;
+		return new Response(bytes, {
+			status: 200,
+			headers: {
+				"content-type": "audio/mpeg",
+				"content-length": String(bytes.byteLength),
+			},
+		});
+	},
 });
 
 // #533 E2E-only helper: deterministically shift available_at / due_at of

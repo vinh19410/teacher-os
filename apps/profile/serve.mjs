@@ -1,9 +1,9 @@
 import { readFile, stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import { extname, join, resolve, sep } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
-const root = new URL("./public", import.meta.url).pathname;
+const root = fileURLToPath(new URL("./public", import.meta.url));
 const rootWithSep = root.endsWith(sep) ? root : `${root}${sep}`;
 const rootIndexFile = join(root, "index.html");
 const testIndexFile = join(root, "kiem-tra-dau-vao", "index.html");

@@ -29,6 +29,7 @@ export const assignmentPrompt = sqliteTable(
 		type: text("type").notNull().default(""),
 		title: text("title").notNull(),
 		band: text("band").notNull().default("7.0"), // "6.0".."7.5"
+		level: text("level").notNull().default(""),
 		source: text("source").notNull().default(""),
 		prompt: text("prompt").notNull(),
 		intro: text("intro").notNull().default(""),
@@ -37,6 +38,7 @@ export const assignmentPrompt = sqliteTable(
 		cueTopic: text("cue_topic").notNull().default(""),
 		cuePoints: text("cue_points").notNull().default(""),
 		audioName: text("audio_name").notNull().default(""),
+		audioUrl: text("audio_url").notNull().default(""),
 		imageUrl: text("image_url").notNull().default(""),
 		questions: text("questions").notNull().default("[]"),
 		/**

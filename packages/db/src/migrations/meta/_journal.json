@@ -484,6 +484,13 @@
       "when": 1794220002043,
       "tag": "0068_salty_impossible_man",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "6",
+      "when": 1794587185160,
+      "tag": "0069_study_pack_level_listening",
+      "breakpoints": true
     }
   ]
 }

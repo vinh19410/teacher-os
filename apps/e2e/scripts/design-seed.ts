@@ -32,7 +32,9 @@ const OUT_FILE = path.resolve(
 	HERE,
 	"../../../scripts/design-compare/.state/design-seed.json",
 );
-const MAIL_LOG = new URL("../.mail-log.jsonl", import.meta.url).pathname;
+const MAIL_LOG = fileURLToPath(
+	new URL("../.mail-log.jsonl", import.meta.url).href,
+);
 const PASSWORD = "password-8chars";
 const runToken = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 const teacherEmail = `design.teacher.${runToken}@test.local`;
@@ -258,7 +260,7 @@ try {
 	}
 
 	const db = createClient({
-		url: `file:${new URL("../local.db", import.meta.url).pathname}`,
+		url: `file:${fileURLToPath(new URL("../local.db", import.meta.url).href)}`,
 	});
 	await db.execute("PRAGMA busy_timeout = 5000;");
 	// Tên org + class hiển thị đẹp cho ảnh so sánh.

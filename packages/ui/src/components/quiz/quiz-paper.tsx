@@ -31,12 +31,14 @@ export type QuizPaperDetail = Pick<
 	| "skill"
 	| "type"
 	| "band"
+	| "level"
 	| "intro"
 	| "prompt"
 	| "passage"
 	| "cueTopic"
 	| "cuePoints"
 	| "audioName"
+	| "hasAudio"
 	| "imageUrl"
 	| "optionBank"
 	| "note"
@@ -63,6 +65,10 @@ export function QuizPaper({
 	writingSection = null,
 	essay,
 	onEssayChange,
+	audioSrc,
+	audioLoading = false,
+	audioError = false,
+	transcript,
 }: {
 	detail: QuizPaperDetail;
 	parts: QuizPart[];
@@ -81,6 +87,12 @@ export function QuizPaper({
 	writingSection?: { part: string; type: string; prompt: string } | null;
 	essay?: string;
 	onEssayChange?: (value: string) => void;
+	/** Blob URL proxy cho bài nghe Listening (#702). */
+	audioSrc?: string | null;
+	audioLoading?: boolean;
+	audioError?: boolean;
+	/** Transcript bài nghe — chỉ truyền sau khi nộp bài (reviewMode). */
+	transcript?: string;
 }) {
 	const reviewMode = mode === "review";
 	const skill = detail.skill;
@@ -186,13 +198,54 @@ export function QuizPaper({
 	return (
 		<article className="flex flex-col gap-4 rounded-xl bg-card text-foreground">
 			<p className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.08em]">
-				{SKILL_LABELS[skill] ?? skill} · Band {detail.band}
+				{SKILL_LABELS[skill] ?? skill}
+				{detail.level?.trim() ? ` · ${detail.level.trim()}` : ""} · Band{" "}
+				{detail.band}
 			</p>
 
 			{skill === "listening" && (
-				<p className="rounded-md border border-border bg-muted p-3 text-sm">
-					🔊 {detail.audioName.trim() || "Chưa đính file nghe"}
-				</p>
+				<div className="flex flex-col gap-2 rounded-md border border-border bg-muted p-3 text-sm">
+					{audioSrc ? (
+						<>
+							{/* biome-ignore lint/a11y/useMediaCaption: Listening exam audio; transcript unlocks after submit (#702) */}
+							<audio
+								controls
+								preload="metadata"
+								src={audioSrc}
+								className="w-full"
+								data-testid="quiz-audio-player"
+							/>
+							{detail.audioName.trim() && (
+								<p className="text-muted-foreground text-xs">
+									🔊 {detail.audioName.trim()}
+								</p>
+							)}
+						</>
+					) : audioLoading ? (
+						<p className="text-muted-foreground text-sm">Đang tải file nghe…</p>
+					) : audioError ? (
+						<p role="alert" className="text-danger text-sm">
+							Không tải được file nghe.
+						</p>
+					) : (
+						<p>🔊 {detail.audioName.trim() || "Chưa đính file nghe"}</p>
+					)}
+				</div>
+			)}
+
+			{reviewMode && transcript && !isEmptyRichText(transcript) && (
+				<details
+					open
+					className="rounded-lg border border-border bg-muted/40 p-4 text-sm"
+					data-testid="quiz-review-transcript"
+				>
+					<summary className="cursor-pointer font-semibold text-foreground">
+						Transcript bài nghe
+					</summary>
+					<div className="mt-2 whitespace-pre-line text-muted-foreground leading-relaxed">
+						{transcript}
+					</div>
+				</details>
 			)}
 
 			{(skill === "reading" || skill === "grammar" || skill === "vocabulary") &&
