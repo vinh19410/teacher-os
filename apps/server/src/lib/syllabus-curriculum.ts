@@ -119,6 +119,96 @@ export function sameIdSet(payload: string[], dbIds: string[]): boolean {
 export const MAX_IMPORT_NODES = 500;
 
 /**
+ * Sắp xếp phẳng danh sách bài học theo đúng thứ tự giáo trình: từng module
+ * theo thứ tự đầu vào `modules`, bên trong mỗi module giữ nguyên thứ tự
+ * đầu vào `lessons`.
+ *
+ * `selectTemplateTree` query `lessons` bằng `inArray(moduleId, ...)` và sort
+ * theo `(position, createdAt)` trên toàn syllabus — nên mảng trả về bị xen kẽ
+ * theo position (`[mod1.pos0, mod2.pos0, ...]`) thay vì tuần tự từng module.
+ * Luôn đi qua helper này khi đọc `previousStatuses` hoặc map tiến độ 1..N.
+ */
+export function flattenSyllabusLessons<
+	M extends { id: string },
+	L extends { moduleId: string },
+>(modules: readonly M[], lessons: readonly L[]): L[] {
+	const byModule = new Map<string, L[]>();
+	for (const lesson of lessons) {
+		const list = byModule.get(lesson.moduleId);
+		if (list) {
+			list.push(lesson);
+		} else {
+			byModule.set(lesson.moduleId, [lesson]);
+		}
+	}
+	return modules.flatMap((m) => byModule.get(m.id) ?? []);
+}
+
+function buildTreeInsertStatements(
+	db: Db,
+	input: {
+		syllabusId: string;
+		orgId: string;
+		modules: (typeof syllabusModule.$inferSelect)[];
+		lessons: (typeof syllabusLesson.$inferSelect)[];
+		links?: {
+			syllabusLessonId: string;
+			materialId: string;
+			position: number;
+		}[];
+		statusForLesson: (lesson: typeof syllabusLesson.$inferSelect) => string;
+	},
+): BatchItem<"sqlite">[] {
+	const { syllabusId, orgId } = input;
+	const moduleIds = new Map(
+		input.modules.map((m) => [m.id, crypto.randomUUID()]),
+	);
+	const lessonIds = new Map(
+		input.lessons.map((l) => [l.id, crypto.randomUUID()]),
+	);
+	return [
+		...input.modules.map((m) =>
+			db.insert(syllabusModule).values({
+				id: moduleIds.get(m.id) as string,
+				orgId,
+				syllabusId,
+				title: m.title,
+				description: m.description,
+				position: m.position,
+				createdAt: m.createdAt,
+			}),
+		),
+		...input.lessons.map((l) =>
+			db.insert(syllabusLesson).values({
+				id: lessonIds.get(l.id) as string,
+				orgId,
+				moduleId: moduleIds.get(l.moduleId) as string,
+				title: l.title,
+				objectives: l.objectives,
+				materials: l.materials,
+				kind: l.kind,
+				status: input.statusForLesson(l),
+				position: l.position,
+				createdAt: l.createdAt,
+			}),
+		),
+		...(input.links ?? []).flatMap((link) => {
+			const lessonId = lessonIds.get(link.syllabusLessonId);
+			// Link mồ côi (bài học đã bị xoá khỏi cây) không copy.
+			if (lessonId === undefined) return [];
+			return [
+				db.insert(syllabusLessonMaterial).values({
+					orgId,
+					syllabusLessonId: lessonId,
+					materialId: link.materialId,
+					position: link.position,
+				}),
+			];
+		}),
+	];
+}
+
+/**
  * Deep-copy batch of a template tree into a class copy (issue #79).
  * All ids are generated before the batch so the copy is wired with fresh
  * UUIDs; every lesson status resets to `upcoming` (status is per-class
@@ -150,12 +240,6 @@ export function buildImportBatch(
 } {
 	const { template, classId, orgId } = input;
 	const copyId = crypto.randomUUID();
-	const moduleIds = new Map(
-		input.modules.map((m) => [m.id, crypto.randomUUID()]),
-	);
-	const lessonIds = new Map(
-		input.lessons.map((l) => [l.id, crypto.randomUUID()]),
-	);
 	const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
 		db.insert(syllabus).values({
 			id: copyId,
@@ -170,48 +254,120 @@ export function buildImportBatch(
 			classId,
 			sourceTemplateId: template.id,
 		}),
-		...input.modules.map((m) =>
-			db.insert(syllabusModule).values({
-				id: moduleIds.get(m.id) as string,
-				orgId,
-				syllabusId: copyId,
-				title: m.title,
-				description: m.description,
-				position: m.position,
-				createdAt: m.createdAt,
-			}),
-		),
-		...input.lessons.map((l) =>
-			db.insert(syllabusLesson).values({
-				id: lessonIds.get(l.id) as string,
-				orgId,
-				moduleId: moduleIds.get(l.moduleId) as string,
-				title: l.title,
-				objectives: l.objectives,
-				materials: l.materials,
-				// kind là nội dung giáo trình — copy giữ nguyên (status
-				// là tiến độ per-lớp, reset upcoming ở dưới).
-				kind: l.kind,
-				status: "upcoming",
-				position: l.position,
-				createdAt: l.createdAt,
-			}),
-		),
-		...(input.links ?? []).flatMap((link) => {
-			const lessonId = lessonIds.get(link.syllabusLessonId);
-			// Link mồ côi (bài học đã bị xoá khỏi cây) không copy.
-			if (lessonId === undefined) return [];
-			return [
-				db.insert(syllabusLessonMaterial).values({
-					orgId,
-					syllabusLessonId: lessonId,
-					materialId: link.materialId,
-					position: link.position,
-				}),
-			];
+		...buildTreeInsertStatements(db, {
+			syllabusId: copyId,
+			orgId,
+			modules: input.modules,
+			lessons: input.lessons,
+			links: input.links,
+			// kind là nội dung giáo trình — copy giữ nguyên (status
+			// là tiến độ per-lớp, reset upcoming).
+			statusForLesson: () => "upcoming",
 		}),
 	];
 	return { copyId, statements };
+}
+
+/**
+ * Đồng bộ bản copy giáo trình của lớp từ template (#700): giữ nguyên `copyId`
+ * (tránh đứt FK `class.syllabus_id`), thay toàn bộ cây module/lesson/link
+ * theo template mới và ánh xạ lại `previousStatuses` theo thứ tự phẳng 1..N
+ * (bài thừa nhận `"upcoming"`). Thứ tự câu lệnh nghiêm ngặt: delete child-first
+ * → update parent in-place → insert parent-first; toàn bộ org-scoped.
+ */
+export function buildSyncBatch(
+	db: Db,
+	input: {
+		copyId: string;
+		template: typeof syllabus.$inferSelect;
+		modules: (typeof syllabusModule.$inferSelect)[];
+		lessons: (typeof syllabusLesson.$inferSelect)[];
+		links?: {
+			syllabusLessonId: string;
+			materialId: string;
+			position: number;
+		}[];
+		previousStatuses: readonly string[];
+		orgId: string;
+	},
+): {
+	statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]];
+} {
+	const { copyId, template, orgId } = input;
+	const orderedLessons = flattenSyllabusLessons(input.modules, input.lessons);
+	const statusByLessonId = new Map(
+		orderedLessons.map((l, idx) => [
+			l.id,
+			input.previousStatuses[idx] ?? "upcoming",
+		]),
+	);
+
+	const moduleIdSubquery = db
+		.select({ id: syllabusModule.id })
+		.from(syllabusModule)
+		.where(
+			and(
+				eq(syllabusModule.syllabusId, copyId),
+				eq(syllabusModule.orgId, orgId),
+			),
+		);
+
+	const statements: [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]] = [
+		db.delete(syllabusLessonMaterial).where(
+			and(
+				eq(syllabusLessonMaterial.orgId, orgId),
+				inArray(
+					syllabusLessonMaterial.syllabusLessonId,
+					db
+						.select({ id: syllabusLesson.id })
+						.from(syllabusLesson)
+						.where(
+							and(
+								eq(syllabusLesson.orgId, orgId),
+								inArray(syllabusLesson.moduleId, moduleIdSubquery),
+							),
+						),
+				),
+			),
+		),
+		db
+			.delete(syllabusLesson)
+			.where(
+				and(
+					eq(syllabusLesson.orgId, orgId),
+					inArray(syllabusLesson.moduleId, moduleIdSubquery),
+				),
+			),
+		db
+			.delete(syllabusModule)
+			.where(
+				and(
+					eq(syllabusModule.syllabusId, copyId),
+					eq(syllabusModule.orgId, orgId),
+				),
+			),
+		db
+			.update(syllabus)
+			.set({
+				name: template.name,
+				level: template.level,
+				type: template.type,
+				skills: template.skills,
+				description: template.description,
+				totalLessons: orderedLessons.length,
+				sourceTemplateId: template.id,
+			})
+			.where(and(eq(syllabus.id, copyId), eq(syllabus.orgId, orgId))),
+		...buildTreeInsertStatements(db, {
+			syllabusId: copyId,
+			orgId,
+			modules: input.modules,
+			lessons: orderedLessons,
+			links: input.links,
+			statusForLesson: (l) => statusByLessonId.get(l.id) ?? "upcoming",
+		}),
+	];
+	return { statements };
 }
 
 /** Pre-read of a template's module/lesson tree, ordered by position. */
@@ -229,7 +385,7 @@ export async function selectTemplateTree(
 				eq(syllabusModule.orgId, orgId),
 			),
 		)
-		.orderBy(asc(syllabusModule.position));
+		.orderBy(asc(syllabusModule.position), asc(syllabusModule.createdAt));
 	const lessons = modules.length
 		? await db
 				.select()
@@ -243,7 +399,7 @@ export async function selectTemplateTree(
 						),
 					),
 				)
-				.orderBy(asc(syllabusLesson.position))
+				.orderBy(asc(syllabusLesson.position), asc(syllabusLesson.createdAt))
 		: [];
 	// #655: đọc thêm links tài liệu ngân hàng của template — buildImportBatch
 	// copy kèm remap lessonId. Template không có links → mảng rỗng, hành vi
@@ -265,7 +421,10 @@ export async function selectTemplateTree(
 						),
 					),
 				)
-				.orderBy(asc(syllabusLessonMaterial.position))
+				.orderBy(
+					asc(syllabusLessonMaterial.position),
+					asc(syllabusLessonMaterial.createdAt),
+				)
 		: [];
 	return { modules, lessons, links };
 }
