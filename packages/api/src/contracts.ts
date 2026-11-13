@@ -95,6 +95,51 @@ export const IELTS_SKILLS = [
 /** Strict HH:MM (00:00–23:59) — shared by the contract and web parsing. */
 export const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
 
+export const classScheduleInputSchema = z.object({
+	/** 0 = Monday … 6 = Sunday (dayNames index convention). */
+	days: z
+		.array(z.number().int().min(0).max(6))
+		.min(1)
+		.max(7)
+		.refine((days) => new Set(days).size === days.length),
+	start: z.string().regex(TIME_REGEX),
+	end: z.string().regex(TIME_REGEX),
+});
+
+function refineClassFields(
+	input: {
+		type: ClassType;
+		skills: readonly string[];
+		schedule?: { start: string; end: string };
+	},
+	ctx: z.RefinementCtx,
+) {
+	// Issue #105: creation/update rejects end <= start. Legacy stored rows with
+	// end < start still parse (parseStoredSchedule guards only start ===
+	// end) — the cross-midnight duration math stays for display only.
+	if (input.schedule && input.schedule.end <= input.schedule.start) {
+		ctx.addIssue({
+			code: "custom",
+			path: ["schedule", "end"],
+			message: "Giờ kết thúc phải sau giờ bắt đầu",
+		});
+	}
+	if (input.type === "ielts" && input.skills.length === 0) {
+		ctx.addIssue({
+			code: "custom",
+			path: ["skills"],
+			message: "Lớp IELTS cần ít nhất một kỹ năng",
+		});
+	}
+	if (input.type === "communication" && input.skills.length > 0) {
+		ctx.addIssue({
+			code: "custom",
+			path: ["skills"],
+			message: "Lớp Giao tiếp không chọn kỹ năng",
+		});
+	}
+}
+
 export const classCreateSchema = z
 	.object({
 		name: z.string().min(1),
@@ -108,49 +153,15 @@ export const classCreateSchema = z
 		mode: z.string().default("Online"),
 		/** Template to import a per-class curriculum copy from; "" = empty class. */
 		templateId: z.string().default(""),
-		schedule: z.object({
-			/** 0 = Monday … 6 = Sunday (dayNames index convention). */
-			days: z
-				.array(z.number().int().min(0).max(6))
-				.min(1)
-				.max(7)
-				.refine((days) => new Set(days).size === days.length),
-			start: z.string().regex(TIME_REGEX),
-			end: z.string().regex(TIME_REGEX),
-		}),
-		/** Capped: each enrollment generates this many lesson rows in one D1 batch — an uncapped value could brick the class (no class-edit endpoint exists). */
+		schedule: classScheduleInputSchema,
+		/** Capped: each enrollment generates this many lesson rows in one D1 batch; editable via PATCH /classes/:id only before real sessions exist. */
 		sessionsTotal: z.number().int().min(1).max(52).default(12),
 		/** Học phí mỗi học viên (VND) cho toàn khóa; null/undefined = chưa thiết lập, sửa được sau khi tạo. */
 		tuitionFee: z.number().int().min(1).nullish(),
 		startDate: z.string().default(""),
 		schedulingMode: z.enum(["auto", "manual"]).default("auto"),
 	})
-	.superRefine((input, ctx) => {
-		// Issue #105: creation rejects end <= start. Legacy stored rows with
-		// end < start still parse (parseStoredSchedule guards only start ===
-		// end) — the cross-midnight duration math stays for display only.
-		if (input.schedule.end <= input.schedule.start) {
-			ctx.addIssue({
-				code: "custom",
-				path: ["schedule", "end"],
-				message: "Giờ kết thúc phải sau giờ bắt đầu",
-			});
-		}
-		if (input.type === "ielts" && input.skills.length === 0) {
-			ctx.addIssue({
-				code: "custom",
-				path: ["skills"],
-				message: "Lớp IELTS cần ít nhất một kỹ năng",
-			});
-		}
-		if (input.type === "communication" && input.skills.length > 0) {
-			ctx.addIssue({
-				code: "custom",
-				path: ["skills"],
-				message: "Lớp Giao tiếp không chọn kỹ năng",
-			});
-		}
-	});
+	.superRefine(refineClassFields);
 export type ClassCreate = z.infer<typeof classCreateSchema>;
 
 /** Import a deep copy of a syllabus template into a class (issue #79). */
@@ -176,6 +187,61 @@ export const classTuitionFeeUpdateSchema = z
 	.object({ tuitionFee: z.number().int().min(1).nullable() })
 	.strict();
 export type ClassTuitionFeeUpdate = z.infer<typeof classTuitionFeeUpdateSchema>;
+
+/**
+ * Mã 409 khóa lịch học của PATCH /classes/:id (#693). Server trả
+ * kèm `code` trong body lỗi; web tra ánh xạ thông báo theo mã này.
+ */
+export const CLASS_ERROR_CODES = {
+	/** Lớp đã có buổi học thực tế (lesson hoặc class_session) — không được đổi lịch, ngày khai giảng hoặc số buổi. */
+	SCHEDULE_LOCKED: "CLASS_SCHEDULE_LOCKED",
+} as const;
+export type ClassErrorCode =
+	(typeof CLASS_ERROR_CODES)[keyof typeof CLASS_ERROR_CODES];
+
+const ISO_CALENDAR_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+function isValidIsoCalendarDate(value: string): boolean {
+	if (!ISO_CALENDAR_DATE_REGEX.test(value)) return false;
+	const year = Number.parseInt(value.slice(0, 4), 10);
+	if (year < 2000 || year > 2100) return false;
+	const check = new Date(`${value}T00:00:00Z`);
+	return (
+		!Number.isNaN(check.getTime()) && check.toISOString().slice(0, 10) === value
+	);
+}
+
+/** Cập nhật thông tin lớp học (#693); schedule/startDate/sessionsTotal chỉ đổi được khi chưa có buổi học thực tế. */
+export const classUpdateSchema = z
+	.object({
+		name: z
+			.string()
+			.trim()
+			.min(1, "Vui lòng nhập tên lớp")
+			.max(120, "Tên lớp tối đa 120 ký tự"),
+		type: z.enum(CLASS_TYPES),
+		level: z.string().trim().max(120).default(""),
+		skills: z
+			.array(z.enum(IELTS_SKILLS))
+			.max(IELTS_SKILLS.length)
+			.refine((skills) => new Set(skills).size === skills.length)
+			.default([]),
+		mode: z.string().trim().min(1, "Vui lòng chọn hình thức").max(60),
+		tuitionFee: z.number().int().min(1).nullable().optional(),
+		schedule: classScheduleInputSchema.optional(),
+		startDate: z
+			.string()
+			.trim()
+			.refine(
+				(v) => v === "" || isValidIsoCalendarDate(v),
+				"Ngày khai giảng không hợp lệ",
+			)
+			.optional(),
+		sessionsTotal: z.number().int().min(1).max(52).optional(),
+	})
+	.strict()
+	.superRefine(refineClassFields);
+export type ClassUpdate = z.infer<typeof classUpdateSchema>;
 
 /**
  * Bulk content cho syllabus create (Excel/CSV import).

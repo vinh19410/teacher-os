@@ -15,6 +15,7 @@ import { ClassAssignmentsTab } from "@/components/classes/class-assignments-tab"
 import { ClassStudyPackSection } from "@/components/classes/class-study-pack-section";
 import { AddClassSessionModal } from "@/components/modals/add-class-session-modal";
 import { EditClassFeeModal } from "@/components/modals/edit-class-fee-modal";
+import { EditClassModal } from "@/components/modals/edit-class-modal";
 import { EnrollStudentModal } from "@/components/modals/enroll-student-modal";
 import { ImportSyllabusModal } from "@/components/modals/import-syllabus-modal";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -173,6 +174,7 @@ function ClassDetailRoute() {
 	>("list");
 	const [addStudentOpen, setAddStudentOpen] = useState(false);
 	const [feeModalOpen, setFeeModalOpen] = useState(false);
+	const [editModalOpen, setEditModalOpen] = useState(false);
 	const [notes, setNotes] = useState<string | null>(null);
 	const handleTabChange = (nextTab: string) => {
 		setTab(nextTab);
@@ -189,6 +191,8 @@ function ClassDetailRoute() {
 	const classSessionsForClass = (data.classSessions ?? []).filter(
 		(cs) => cs.classId === classId,
 	);
+	const hasRealSessions =
+		classLessonsForClass.length > 0 || classSessionsForClass.length > 0;
 	const isManual =
 		classSessionsForClass.length > 0 ||
 		(!sy && cls?.schedulingMode === "manual");
@@ -262,6 +266,13 @@ function ClassDetailRoute() {
 				title={cls.name}
 				action={
 					<>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => setEditModalOpen(true)}
+						>
+							Chỉnh sửa
+						</Button>
 						{assignmentsView === "list" && (
 							<Button
 								variant="outline"
@@ -534,6 +545,14 @@ function ClassDetailRoute() {
 				onClose={() => setFeeModalOpen(false)}
 				classId={cls.id}
 				current={cls.tuitionFee}
+			/>
+			<EditClassModal
+				key={`edit-class-${cls.id}`}
+				open={editModalOpen}
+				onClose={() => setEditModalOpen(false)}
+				cls={cls}
+				hasRealSessions={hasRealSessions}
+				existingClasses={data.classes}
 			/>
 		</div>
 	);

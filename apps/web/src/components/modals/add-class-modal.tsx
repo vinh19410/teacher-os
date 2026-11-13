@@ -1,8 +1,4 @@
-import {
-	CLASS_TYPES,
-	type ClassType,
-	IELTS_SKILLS,
-} from "@teacher-os/api/contracts";
+import type { ClassType } from "@teacher-os/api/contracts";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { TemplatePicker } from "@/components/syllabus/template-picker";
 import { Button } from "@/components/ui/button";
@@ -16,45 +12,29 @@ import {
 } from "@/lib/date-input";
 import { parseVndAmount } from "@/lib/format-currency";
 import { addMinutes } from "@/lib/format-schedule";
-import { CLASS_TYPE_LABELS, dayNames, type Syllabus } from "@/lib/mock-data";
 import { useClasses } from "@/lib/repos/use-classes";
 import { useTemplates } from "@/lib/repos/use-syllabus";
 import { findScheduleConflicts } from "@/lib/schedule-conflicts";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
+import {
+	CLASS_TYPE_OPTIONS,
+	DAY_OPTIONS,
+	LEVEL_OPTIONS,
+	MODE_OPTIONS,
+	parseValidSessionsTotal,
+	SESSION_PRESETS,
+	SKILL_OPTIONS,
+	sessionsFromTemplate,
+	skillsFromTemplate,
+} from "./class-form-helpers";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
+import { ScheduleConflictBanner } from "./schedule-conflict-banner";
 
-const CLASS_TYPE_OPTIONS = CLASS_TYPES.map((value) => ({
-	value,
-	label: CLASS_TYPE_LABELS[value],
-}));
+export { sessionsFromTemplate, skillsFromTemplate };
 
-const SKILL_OPTIONS = IELTS_SKILLS.map((value) => ({ value, label: value }));
-
-/** Kỹ năng lớp lấy từ syllabus: thứ tự canonical theo IELTS_SKILLS,
- * tự dedupe và lọc giá trị ngoài enum (phòng thủ dữ liệu cũ). */
-export function skillsFromTemplate(
-	templateSkills: readonly string[],
-): string[] {
-	return IELTS_SKILLS.filter((skill) => templateSkills.includes(skill));
-}
-
-/** Tổng số buổi lấy từ syllabus: đếm mọi buổi qua mọi module,
- * gồm cả buổi thi (midterm/final). Đếm từ cây modules thay vì
- * totalLessons vì totalLessons có thể stale (chỉ sync khi replace). */
-export function sessionsFromTemplate(
-	templateModules: Syllabus["modules"] | undefined | null,
-): number {
-	return (templateModules ?? []).reduce(
-		(sum, module) => sum + (module?.lessons?.length ?? 0),
-		0,
-	);
-}
-
-const DAY_OPTIONS = dayNames.map((label, value) => ({ value, label }));
-
-const SESSION_MINUTES = 90;
-const DEFAULT_START = "19:00";
-const DEFAULT_END = addMinutes(DEFAULT_START, SESSION_MINUTES);
+const SESSION_MINUTES = SESSION_PRESETS.durationMinutes;
+const DEFAULT_START = SESSION_PRESETS.defaultStart;
+const DEFAULT_END = SESSION_PRESETS.defaultEnd;
 
 export function AddClassModal({
 	open,
@@ -71,8 +51,8 @@ export function AddClassModal({
 	const [mode, setMode] = useState("Online");
 	const [templateId, setTemplateId] = useState("");
 	const [days, setDays] = useState<number[]>([]);
-	const [startTime, setStartTime] = useState(DEFAULT_START);
-	const [endTime, setEndTime] = useState(DEFAULT_END);
+	const [startTime, setStartTime] = useState<string>(DEFAULT_START);
+	const [endTime, setEndTime] = useState<string>(DEFAULT_END);
 	const [endTouched, setEndTouched] = useState(false);
 	const [total, setTotal] = useState("12");
 	const [fee, setFee] = useState("");
@@ -95,13 +75,7 @@ export function AddClassModal({
 	// Parse như path submit (issue #105): draft sai schema không đóng góp run
 	// window và không đưa vào skeletonOf một total không chặn (trục draft;
 	// trục stored class đã clamp trong helper theo precedent class-sessions).
-	const parsedDraftTotal = Number.parseInt(total, 10);
-	const draftTotal =
-		Number.isInteger(parsedDraftTotal) &&
-		parsedDraftTotal >= 1 &&
-		parsedDraftTotal <= 52
-			? parsedDraftTotal
-			: 0;
+	const draftTotal = parseValidSessionsTotal(total) ?? 0;
 	const scheduleConflicts = useMemo(
 		() =>
 			findScheduleConflicts(
@@ -265,17 +239,20 @@ export function AddClassModal({
 				<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
 					<Field label="Trình độ">
 						<Select value={level} onChange={(e) => setLevel(e.target.value)}>
-							<option>Band 5.5</option>
-							<option>Band 6.0</option>
-							<option>Band 6.5</option>
-							<option>Band 7.0</option>
-							<option>Band 7.5+</option>
+							{LEVEL_OPTIONS.map((opt) => (
+								<option key={opt} value={opt}>
+									{opt}
+								</option>
+							))}
 						</Select>
 					</Field>
 					<Field label="Hình thức">
 						<Select value={mode} onChange={(e) => setMode(e.target.value)}>
-							<option>Online</option>
-							<option>Offline</option>
+							{MODE_OPTIONS.map((opt) => (
+								<option key={opt} value={opt}>
+									{opt}
+								</option>
+							))}
 						</Select>
 					</Field>
 				</div>
@@ -319,34 +296,7 @@ export function AddClassModal({
 					</Field>
 				</div>
 				{showScheduleConflicts && (
-					<div
-						role="status"
-						data-testid="schedule-conflict-warning"
-						className="rounded-md bg-warn-soft p-3 text-warn text-xs"
-					>
-						<p className="font-medium">
-							<span className="mr-2 inline-flex rounded-md bg-destructive px-2 py-0.5 font-medium text-white text-xs">
-								Trùng lịch
-							</span>
-							Lịch bị trùng với lớp đang học
-						</p>
-						<ul className="mt-1 space-y-0.5">
-							{scheduleConflicts
-								.slice(0, 3)
-								.map(({ cls, sharedDays, schedule }) => (
-									// JSX text children — React escape tên lớp tự do;
-									// không bao giờ HTML inner.
-									<li key={cls.id} className="break-words">
-										{cls.name} ·{" "}
-										{sharedDays.map((d) => dayNames[d]).join(" & ")} ·{" "}
-										{schedule.start}–{schedule.end}
-									</li>
-								))}
-							{scheduleConflicts.length > 3 && (
-								<li>+{scheduleConflicts.length - 3} lớp khác</li>
-							)}
-						</ul>
-					</div>
+					<ScheduleConflictBanner conflicts={scheduleConflicts} />
 				)}
 				<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
 					{templateId.trim() !== "" ? (

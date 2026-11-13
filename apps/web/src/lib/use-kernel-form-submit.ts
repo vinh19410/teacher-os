@@ -1,6 +1,7 @@
 import {
 	ASSIGNMENT_PROMPT_ERROR_CODES,
 	ASSIGNMENT_TEST_ERROR_CODES,
+	CLASS_ERROR_CODES,
 } from "@teacher-os/api/contracts";
 import { useCallback, useState } from "react";
 import { useData } from "@/lib/data-store";
@@ -24,6 +25,8 @@ function lockFailureMessage(error: unknown): string {
 			return "Đề đã được giao hoặc đang dùng trong bộ đề nên không sửa được phần Writing. Hãy trả phần này về như cũ để lưu các thay đổi khác.";
 		case ASSIGNMENT_TEST_ERROR_CODES.PARTS_LOCKED:
 			return "Bộ đề đã có học viên làm bài nên không thể thay đổi hoặc gỡ part. Bạn vẫn có thể đổi tên, thời gian và trạng thái bộ đề. Muốn thay đổi đề, hãy tạo bộ đề mới.";
+		case CLASS_ERROR_CODES.SCHEDULE_LOCKED:
+			return "Lớp đã có buổi học thực tế nên không sửa được lịch học, ngày khai giảng hoặc số buổi. Bạn vẫn có thể lưu thay đổi thông tin chung của lớp.";
 		default:
 			return GENERIC_FAILURE_MESSAGE;
 	}

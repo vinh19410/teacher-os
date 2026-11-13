@@ -497,7 +497,7 @@ export async function materializeScheduleForEnrollment(
 			db
 				.update(enrollment)
 				.set({
-					status: sql`CASE WHEN ${enrollment.status} = 'active' AND NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.enrollmentId} = ${enrollmentId} AND ${lesson.orgId} = ${orgId}) AND EXISTS (SELECT 1 FROM ${classTable} WHERE ${classTable.id} = ${cls.id} AND ${classTable.orgId} = ${orgId} AND ${classTable.schedulingMode} = ${cls.schedulingMode} AND ${classTable.sessionsTotal} = ${cls.sessionsTotal}) AND ${syllabusStateSql}${manualCountGuardSql} THEN 'active' ELSE NULL END`,
+					status: sql`CASE WHEN ${enrollment.status} = 'active' AND NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.enrollmentId} = ${enrollmentId} AND ${lesson.orgId} = ${orgId}) AND EXISTS (SELECT 1 FROM ${classTable} WHERE ${classTable.id} = ${cls.id} AND ${classTable.orgId} = ${orgId} AND ${classTable.schedulingMode} = ${cls.schedulingMode} AND ${classTable.sessionsTotal} = ${cls.sessionsTotal} AND ${classTable.schedule} = ${cls.schedule} AND ${classTable.startDate} = ${cls.startDate}) AND ${syllabusStateSql}${manualCountGuardSql} THEN 'active' ELSE NULL END`,
 				})
 				.where(
 					and(eq(enrollment.id, enrollmentId), eq(enrollment.orgId, orgId)),

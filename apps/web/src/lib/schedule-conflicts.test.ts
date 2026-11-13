@@ -218,4 +218,28 @@ describe("findScheduleConflicts — rule boundaries", () => {
 		// Tuần sau: classStart 12-29 > draftEnd → không.
 		expect(findScheduleConflicts(tueDraft, [tue("2026-12-29")])).toEqual([]);
 	});
+
+	test("excludeClassId skips the edited class while still warning on another conflicting class (#693)", () => {
+		const self = cls({
+			id: "c-self",
+			name: "Lớp đang sửa",
+			schedule: '{"days":[0],"start":"19:00","end":"20:30"}',
+		});
+		const other = cls({
+			id: "c-other",
+			name: "Lớp khác cùng giờ",
+			schedule: '{"days":[0],"start":"19:30","end":"21:00"}',
+		});
+
+		expect(
+			findScheduleConflicts({ ...draft, excludeClassId: "c-self" }, [self]),
+		).toEqual([]);
+
+		const hits = findScheduleConflicts({ ...draft, excludeClassId: "c-self" }, [
+			self,
+			other,
+		]);
+		expect(hits).toHaveLength(1);
+		expect(hits[0].cls.id).toBe("c-other");
+	});
 });

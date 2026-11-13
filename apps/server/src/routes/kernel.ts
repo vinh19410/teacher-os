@@ -11,12 +11,15 @@ import type {
 } from "@teacher-os/api/contracts";
 import {
 	addManualSessionSchema,
+	CLASS_ERROR_CODES,
 	classAssignmentCreateSchema,
 	classCreateSchema,
 	classNotesSchema,
 	classTuitionFeeUpdateSchema,
+	classUpdateSchema,
 	debtReminderCreateSchema,
 	enrollStudentSchema,
+	IELTS_SKILLS,
 	INVOICE_PAYMENT_METHOD_LABEL,
 	invoiceCreateSchema,
 	invoiceMarkPaidSchema,
@@ -39,6 +42,7 @@ import {
 import {
 	isoToLessonWeekday,
 	parseStartDateStrict,
+	parseStoredSchedule,
 } from "@teacher-os/api/skeleton";
 import {
 	vietnamDateTimeMs,
@@ -68,8 +72,8 @@ import { student } from "@teacher-os/db/schema/student";
 import { studentInvitation } from "@teacher-os/db/schema/student-invitation";
 import {
 	syllabus,
-	type syllabusLesson,
-	type syllabusModule,
+	syllabusLesson,
+	syllabusModule,
 } from "@teacher-os/db/schema/syllabus";
 import { and, desc, eq, inArray, isNull, lte, ne, or, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
@@ -1753,6 +1757,277 @@ export function kernelRoutes(deps: {
 			.update(classTable)
 			.set({ tuitionFee: input.tuitionFee })
 			.where(and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)));
+		return c.json({ ok: true });
+	});
+
+	async function hasRealClassSessions(
+		db: Db,
+		orgId: string,
+		classId: string,
+	): Promise<boolean> {
+		const [existingLesson, existingSession] = await Promise.all([
+			db
+				.select({ id: lesson.id })
+				.from(lesson)
+				.where(and(eq(lesson.orgId, orgId), eq(lesson.classId, classId)))
+				.limit(1),
+			db
+				.select({ id: classSession.id })
+				.from(classSession)
+				.where(
+					and(eq(classSession.orgId, orgId), eq(classSession.classId, classId)),
+				)
+				.limit(1),
+		]);
+		return existingLesson.length > 0 || existingSession.length > 0;
+	}
+
+	function scheduleLockedResponse(c: KernelContext) {
+		return c.json(
+			{
+				error:
+					"Lớp đã có buổi học thực tế nên không thể đổi lịch học, ngày khai giảng hoặc số buổi.",
+				code: CLASS_ERROR_CODES.SCHEDULE_LOCKED,
+			},
+			409,
+		);
+	}
+
+	/**
+	 * Cập nhật thông tin lớp học (#693).
+	 * - Thông tin chung (`name`, `type`, `level`, `skills`, `mode`, `tuitionFee`) luôn sửa được.
+	 * - `schedule`, `startDate`, `sessionsTotal` chỉ sửa được khi lớp chưa có buổi học thực tế (`lesson` hoặc `class_session`),
+	 *   bảo vệ nguyên tử bằng `WHERE NOT EXISTS (...)` chống race với `activateEnrollment` / `POST /sessions`.
+	 * - `syllabusId` và `schedulingMode` không thay đổi qua route này.
+	 */
+	kernel.patch("/classes/:id", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, classUpdateSchema);
+		if (!body.ok) return body.response;
+		const input = body.data;
+		const db = deps.getDb();
+		const classId = c.req.param("id");
+
+		const cls = await findClass(db, classId, ctx.orgId);
+		if (!cls) {
+			return c.json({ error: "class not found" }, 404);
+		}
+
+		const copy = await findClassCurriculum(db, classId, ctx.orgId);
+		if (copy) {
+			let copySkillsRaw: unknown = [];
+			try {
+				copySkillsRaw = JSON.parse(copy.skills);
+			} catch {
+				copySkillsRaw = [];
+			}
+			const copySkills = Array.isArray(copySkillsRaw)
+				? IELTS_SKILLS.filter((skill) => copySkillsRaw.includes(skill))
+				: [];
+			if (copySkills.length > 0) {
+				const normalizedInputSkills = IELTS_SKILLS.filter((skill) =>
+					input.skills.includes(skill),
+				);
+				if (
+					input.type !== "ielts" ||
+					normalizedInputSkills.length !== copySkills.length ||
+					normalizedInputSkills.some((skill, idx) => skill !== copySkills[idx])
+				) {
+					return c.json({ error: "skills locked by curriculum" }, 400);
+				}
+			}
+
+			const lessonRows = await db
+				.select({ id: syllabusLesson.id })
+				.from(syllabusLesson)
+				.innerJoin(
+					syllabusModule,
+					and(
+						eq(syllabusLesson.moduleId, syllabusModule.id),
+						eq(syllabusModule.orgId, ctx.orgId),
+					),
+				)
+				.where(
+					and(
+						eq(syllabusModule.syllabusId, copy.id),
+						eq(syllabusLesson.orgId, ctx.orgId),
+					),
+				);
+			const curriculumLessonCount = lessonRows.length;
+			if (
+				curriculumLessonCount > 0 &&
+				input.sessionsTotal !== undefined &&
+				input.sessionsTotal !== cls.sessionsTotal &&
+				input.sessionsTotal !== curriculumLessonCount
+			) {
+				return c.json({ error: "sessionsTotal locked by curriculum" }, 400);
+			}
+		}
+
+		const normalizedInputSchedule =
+			input.schedule !== undefined
+				? JSON.stringify({
+						days: [...new Set(input.schedule.days)].sort((a, b) => a - b),
+						start: input.schedule.start,
+						end: input.schedule.end,
+					})
+				: undefined;
+
+		let scheduleChanged = false;
+		let nextSchedule = cls.schedule;
+		if (normalizedInputSchedule !== undefined) {
+			const parsedExisting = parseStoredSchedule(cls.schedule);
+			if (
+				parsedExisting !== null &&
+				JSON.stringify(parsedExisting) === normalizedInputSchedule
+			) {
+				scheduleChanged = false;
+				nextSchedule = cls.schedule;
+			} else {
+				scheduleChanged = true;
+				nextSchedule = normalizedInputSchedule;
+			}
+		}
+
+		const nextStartDate =
+			input.startDate !== undefined ? input.startDate : cls.startDate;
+		const nextSessionsTotal =
+			input.sessionsTotal !== undefined
+				? input.sessionsTotal
+				: cls.sessionsTotal;
+		const nextTuitionFee =
+			input.tuitionFee !== undefined ? input.tuitionFee : cls.tuitionFee;
+
+		if (
+			nextStartDate !== cls.startDate &&
+			nextStartDate !== "" &&
+			nextStartDate < vietnamTodayISO()
+		) {
+			return c.json({ error: "startDate cannot be in the past" }, 400);
+		}
+
+		if (nextSessionsTotal !== cls.sessionsTotal) {
+			const isManual = await isManualClass(
+				db,
+				ctx.orgId,
+				classId,
+				cls.syllabusId,
+				cls.schedulingMode,
+			);
+			if (isManual) {
+				if (await hasRealClassSessions(db, ctx.orgId, classId)) {
+					return scheduleLockedResponse(c);
+				}
+				return c.json(
+					{ error: "cannot change sessionsTotal on manual class" },
+					400,
+				);
+			}
+		}
+
+		const touchesSchedule =
+			scheduleChanged ||
+			nextStartDate !== cls.startDate ||
+			nextSessionsTotal !== cls.sessionsTotal;
+
+		if (!touchesSchedule) {
+			const updated = await db
+				.update(classTable)
+				.set({
+					name: input.name,
+					type: input.type,
+					level: input.level,
+					skills: JSON.stringify(input.skills),
+					mode: input.mode,
+					tuitionFee: nextTuitionFee,
+				})
+				.where(and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)))
+				.returning({ id: classTable.id });
+			if (updated.length === 0) {
+				return c.json({ error: "class not found" }, 404);
+			}
+			return c.json({ ok: true });
+		}
+
+		const casWhere = and(
+			eq(classTable.id, classId),
+			eq(classTable.orgId, ctx.orgId),
+			eq(classTable.schedulingMode, cls.schedulingMode),
+			cls.syllabusId === null
+				? isNull(classTable.syllabusId)
+				: eq(classTable.syllabusId, cls.syllabusId),
+			sql`NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.classId} = ${classId} AND ${lesson.orgId} = ${ctx.orgId})`,
+			sql`NOT EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.classId} = ${classId} AND ${classSession.orgId} = ${ctx.orgId})`,
+		);
+
+		const updateClassStmt = db
+			.update(classTable)
+			.set({
+				name: input.name,
+				type: input.type,
+				level: input.level,
+				skills: JSON.stringify(input.skills),
+				mode: input.mode,
+				tuitionFee: nextTuitionFee,
+				schedule: nextSchedule,
+				startDate: nextStartDate,
+				sessionsTotal: nextSessionsTotal,
+			})
+			.where(casWhere)
+			.returning({ id: classTable.id });
+
+		const updated =
+			nextSessionsTotal !== cls.sessionsTotal
+				? (
+						await db.batch([
+							updateClassStmt,
+							db
+								.update(sessionPackage)
+								.set({ total: nextSessionsTotal })
+								.where(
+									and(
+										eq(sessionPackage.orgId, ctx.orgId),
+										inArray(
+											sessionPackage.enrollmentId,
+											db
+												.select({ id: enrollment.id })
+												.from(enrollment)
+												.where(
+													and(
+														eq(enrollment.orgId, ctx.orgId),
+														eq(enrollment.classId, classId),
+													),
+												),
+										),
+										sql`EXISTS (
+											SELECT 1 FROM ${classTable}
+											WHERE ${classTable.id} = ${classId}
+												AND ${classTable.orgId} = ${ctx.orgId}
+												AND ${classTable.sessionsTotal} = ${nextSessionsTotal}
+												AND NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.classId} = ${classId} AND ${lesson.orgId} = ${ctx.orgId})
+												AND NOT EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.classId} = ${classId} AND ${classSession.orgId} = ${ctx.orgId})
+										)`,
+									),
+								),
+						])
+					)[0]
+				: await updateClassStmt;
+
+		if (updated.length === 0) {
+			if (await hasRealClassSessions(db, ctx.orgId, classId)) {
+				return scheduleLockedResponse(c);
+			}
+			const stillExists = await findClass(db, classId, ctx.orgId);
+			if (!stillExists) {
+				return c.json({ error: "class not found" }, 404);
+			}
+			return c.json(
+				{ error: "Lớp vừa thay đổi chế độ lịch học, vui lòng thử lại." },
+				409,
+			);
+		}
+
 		return c.json({ ok: true });
 	});
 
