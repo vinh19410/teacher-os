@@ -13,6 +13,7 @@ Quy ước khi cập nhật:
 ## 2026-11-13
 
 ### Added
+- Cho phép chỉnh sửa thông tin lớp học ngay trên trang chi tiết lớp `/classes/$classId` qua nút `"Chỉnh sửa"` và modal `EditClassModal`, hỗ trợ API `PATCH /api/classes/:id` (org-scoped, validate `classUpdateSchema`, khóa kỹ năng/số buổi theo giáo trình hoặc chế độ thủ công, khóa nguyên tử lịch học `409 CLASS_SCHEDULE_LOCKED` khi lớp đã có buổi học thực tế kèm race guard ở `activateEnrollment`, và cảnh báo trùng lịch realtime loại trừ chính lớp đang sửa qua `excludeClassId`) (#693).
 - Bổ sung nút "Tải file mẫu" (`syllabus-template.csv` chuẩn v4, UTF-8 BOM) ngay cạnh nút "Nhập từ Excel/CSV" trên trang chi tiết giáo trình `/syllabus/$syllabusId`, dùng chung helper `downloadSyllabusSampleCsv()` với modal Tạo syllabus mới (#688).
 
 ### Changed

@@ -69,11 +69,23 @@ describe("classUpdateSchema", () => {
 		expect(parsed.success).toBe(false);
 	});
 
-	test("từ chối startDate không đúng định dạng hoặc ngày không tồn tại", () => {
+	test("từ chối startDate không đúng định dạng, ngoài dải 2000..2100 hoặc ngày không tồn tại", () => {
 		expect(
 			classUpdateSchema.safeParse({
 				...validBase,
 				startDate: "2026-02-30",
+			}).success,
+		).toBe(false);
+		expect(
+			classUpdateSchema.safeParse({
+				...validBase,
+				startDate: "1999-12-31",
+			}).success,
+		).toBe(false);
+		expect(
+			classUpdateSchema.safeParse({
+				...validBase,
+				startDate: "2101-01-01",
 			}).success,
 		).toBe(false);
 		expect(

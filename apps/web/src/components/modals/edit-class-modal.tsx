@@ -5,12 +5,16 @@ import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChipMulti } from "@/components/ui/chip-multi";
 import { CurrencyInput } from "@/components/ui/currency-input";
+import {
+	DatePickerInput,
+	TimeInput24h,
+} from "@/components/ui/date-picker-input";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import type { KernelAction } from "@/lib/data-actions";
 import { parseVndAmount } from "@/lib/format-currency";
 import { addMinutes } from "@/lib/format-schedule";
-import { type ClassGroup, dayNames } from "@/lib/mock-data";
+import type { ClassGroup } from "@/lib/mock-data";
 import { useClassCurriculum } from "@/lib/repos/use-syllabus";
 import { findScheduleConflicts } from "@/lib/schedule-conflicts";
 import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
@@ -28,6 +32,7 @@ import {
 	skillsFromTemplate,
 } from "./class-form-helpers";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
+import { ScheduleConflictBanner } from "./schedule-conflict-banner";
 
 export interface EditClassModalProps {
 	open: boolean;
@@ -125,9 +130,12 @@ export function EditClassModal({
 	const [days, setDays] = useState<number[]>(initial.days);
 	const [startTime, setStartTime] = useState(initial.startTime);
 	const [endTime, setEndTime] = useState(initial.endTime);
+	const [startTimeInvalid, setStartTimeInvalid] = useState(false);
+	const [endTimeInvalid, setEndTimeInvalid] = useState(false);
 	const [timesTouched, setTimesTouched] = useState(false);
 	const [endTouched, setEndTouched] = useState(parsedInitialSchedule !== null);
 	const [startDate, setStartDate] = useState(initial.startDate);
+	const [startDateInvalid, setStartDateInvalid] = useState(false);
 	const [total, setTotal] = useState(initial.total);
 
 	const {
@@ -147,9 +155,9 @@ export function EditClassModal({
 		const classChanged = prevClassIdRef.current !== cls.id;
 		if (classChanged) {
 			prevClassIdRef.current = cls.id;
-			reset();
 		}
 		if ((open && !wasOpenRef.current) || classChanged) {
+			reset();
 			const next = buildInitialState(
 				cls,
 				curriculumLessonCount,
@@ -167,11 +175,13 @@ export function EditClassModal({
 			setDays(next.days);
 			setStartTime(next.startTime);
 			setEndTime(next.endTime);
+			setStartTimeInvalid(false);
+			setEndTimeInvalid(false);
 			setTimesTouched(false);
 			setEndTouched(parseSchedule(cls.schedule) !== null);
 			setStartDate(next.startDate);
+			setStartDateInvalid(false);
 			setTotal(next.total);
-			setError(undefined);
 		}
 		wasOpenRef.current = open;
 	}, [
@@ -182,7 +192,6 @@ export function EditClassModal({
 		curriculumSkills,
 		skillsLockedByCurriculum,
 		isManualMode,
-		setError,
 		reset,
 	]);
 
@@ -306,11 +315,17 @@ export function EditClassModal({
 				parsedInitialSchedule !== null ||
 				days.length > 0 ||
 				startTime !== "" ||
-				endTime !== "";
+				endTime !== "" ||
+				startTimeInvalid ||
+				endTimeInvalid;
 
 			if (shouldSendSchedule) {
 				if (days.length === 0) {
 					setError("Chọn ít nhất một ngày học.");
+					return;
+				}
+				if (startTimeInvalid || endTimeInvalid) {
+					setError("Giờ học phải đúng định dạng HH:mm.");
 					return;
 				}
 				if (!startTime || !endTime) {
@@ -332,6 +347,10 @@ export function EditClassModal({
 				});
 			}
 
+			if (startDateInvalid) {
+				setError("Ngày khai giảng không hợp lệ (dd/mm/yyyy).");
+				return;
+			}
 			const startDateChanged = trimmedStartDate !== cls.startDate.trim();
 			if (startDateChanged) {
 				if (trimmedStartDate !== "") {
@@ -440,6 +459,11 @@ export function EditClassModal({
 								onChange={(e) => setMode(e.target.value)}
 								disabled={saving}
 							>
+								{!modeOptions.includes("") && mode === "" && (
+									<option value="" disabled>
+										Chọn hình thức...
+									</option>
+								)}
 								{modeOptions.map((opt) => (
 									<option key={opt} value={opt}>
 										{opt}
@@ -520,53 +544,32 @@ export function EditClassModal({
 					</Field>
 					<div className="grid grid-cols-2 gap-4 max-app:grid-cols-1">
 						<Field label="Giờ bắt đầu">
-							<Input
-								type="time"
+							<TimeInput24h
+								presets={[]}
+								className="w-full sm:w-full"
 								value={startTime}
-								onChange={(e) => handleStartTimeChange(e.target.value)}
+								onChange={handleStartTimeChange}
+								onInvalidChange={setStartTimeInvalid}
 								disabled={hasRealSessions || saving}
 							/>
 						</Field>
 						<Field label="Giờ kết thúc">
-							<Input
-								type="time"
+							<TimeInput24h
+								presets={[]}
+								className="w-full sm:w-full"
 								value={endTime}
-								onChange={(e) => {
+								onChange={(next) => {
 									setTimesTouched(true);
 									setEndTouched(true);
-									setEndTime(e.target.value);
+									setEndTime(next);
 								}}
+								onInvalidChange={setEndTimeInvalid}
 								disabled={hasRealSessions || saving}
 							/>
 						</Field>
 					</div>
 					{showScheduleConflicts && (
-						<div
-							role="status"
-							data-testid="schedule-conflict-warning"
-							className="rounded-md bg-warn-soft p-3 text-warn text-xs"
-						>
-							<p className="font-medium">
-								<span className="mr-2 inline-flex rounded-md bg-destructive px-2 py-0.5 font-medium text-white text-xs">
-									Trùng lịch
-								</span>
-								Lịch bị trùng với lớp đang học
-							</p>
-							<ul className="mt-1 space-y-0.5">
-								{scheduleConflicts
-									.slice(0, 3)
-									.map(({ cls: other, sharedDays, schedule }) => (
-										<li key={other.id} className="break-words">
-											{other.name} ·{" "}
-											{sharedDays.map((d) => dayNames[d]).join(" & ")} ·{" "}
-											{schedule.start}–{schedule.end}
-										</li>
-									))}
-								{scheduleConflicts.length > 3 && (
-									<li>+{scheduleConflicts.length - 3} lớp khác</li>
-								)}
-							</ul>
-						</div>
+						<ScheduleConflictBanner conflicts={scheduleConflicts} />
 					)}
 					<div className="grid grid-cols-2 gap-4 max-app:grid-cols-1">
 						<Field
@@ -604,11 +607,12 @@ export function EditClassModal({
 									: undefined
 							}
 						>
-							<Input
-								type="date"
+							<DatePickerInput
 								value={startDateInputValue}
-								min={todayVN}
-								onChange={(e) => setStartDate(e.target.value)}
+								minDateISO={todayVN}
+								todayISO={todayVN}
+								onChange={setStartDate}
+								onInvalidChange={setStartDateInvalid}
 								disabled={hasRealSessions || saving}
 							/>
 						</Field>

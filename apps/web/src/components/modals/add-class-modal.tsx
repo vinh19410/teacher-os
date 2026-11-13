@@ -12,7 +12,6 @@ import {
 } from "@/lib/date-input";
 import { parseVndAmount } from "@/lib/format-currency";
 import { addMinutes } from "@/lib/format-schedule";
-import { dayNames } from "@/lib/mock-data";
 import { useClasses } from "@/lib/repos/use-classes";
 import { useTemplates } from "@/lib/repos/use-syllabus";
 import { findScheduleConflicts } from "@/lib/schedule-conflicts";
@@ -29,6 +28,7 @@ import {
 	skillsFromTemplate,
 } from "./class-form-helpers";
 import { KernelSubmitNotice } from "./kernel-submit-notice";
+import { ScheduleConflictBanner } from "./schedule-conflict-banner";
 
 export { sessionsFromTemplate, skillsFromTemplate };
 
@@ -296,34 +296,7 @@ export function AddClassModal({
 					</Field>
 				</div>
 				{showScheduleConflicts && (
-					<div
-						role="status"
-						data-testid="schedule-conflict-warning"
-						className="rounded-md bg-warn-soft p-3 text-warn text-xs"
-					>
-						<p className="font-medium">
-							<span className="mr-2 inline-flex rounded-md bg-destructive px-2 py-0.5 font-medium text-white text-xs">
-								Trùng lịch
-							</span>
-							Lịch bị trùng với lớp đang học
-						</p>
-						<ul className="mt-1 space-y-0.5">
-							{scheduleConflicts
-								.slice(0, 3)
-								.map(({ cls, sharedDays, schedule }) => (
-									// JSX text children — React escape tên lớp tự do;
-									// không bao giờ HTML inner.
-									<li key={cls.id} className="break-words">
-										{cls.name} ·{" "}
-										{sharedDays.map((d) => dayNames[d]).join(" & ")} ·{" "}
-										{schedule.start}–{schedule.end}
-									</li>
-								))}
-							{scheduleConflicts.length > 3 && (
-								<li>+{scheduleConflicts.length - 3} lớp khác</li>
-							)}
-						</ul>
-					</div>
+					<ScheduleConflictBanner conflicts={scheduleConflicts} />
 				)}
 				<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
 					{templateId.trim() !== "" ? (

@@ -28,9 +28,9 @@ Cho phép giáo viên chỉnh sửa thông tin lớp học ngay tại trang chi 
 ## Phases & Checklist
 
 - [x] Setup issue #693, follow-up #694, branch `feat/693-edit-class-info`
-- [ ] Phase 1: Shared foundation (`packages/api` contracts + `page-head.tsx` responsive action wrap)
-- [ ] Phase 2 (Wave 1A - Backend): `PATCH /api/classes/:id`, race guard trong `enrollment-activation.ts`, server tests
-- [ ] Phase 2 (Wave 1B - Frontend): `update-class` action/reducer/repo, `findScheduleConflicts` (`excludeClassId`), shared helpers, `EditClassModal`, button trên `/classes/$classId`, unit tests
-- [ ] Phase 3: Tích hợp Wave 1, E2E (`edit-class.spec.ts`), chụp screenshot 3 viewport Light/Dark, `pnpm design:compare`
-- [ ] Phase 4: Cập nhật `CHANGELOG.md`, local quality gates (`biome check`, `check-types`, `test`, `build`)
+- [x] Phase 1: Shared foundation (`packages/api` contracts + `page-head.tsx` responsive action wrap)
+- [x] Phase 2 (Wave 1A - Backend): `PATCH /api/classes/:id`, race guard trong `enrollment-activation.ts`, server tests
+- [x] Phase 2 (Wave 1B - Frontend): `update-class` action/reducer/repo, `findScheduleConflicts` (`excludeClassId`), shared helpers, `EditClassModal`, button trên `/classes/$classId`, unit tests
+- [x] Phase 3: Tích hợp Wave 1, E2E (`edit-class.spec.ts`), chụp screenshot 3 viewport Light/Dark, `pnpm design:compare`
+- [x] Phase 4: Cập nhật `CHANGELOG.md`, local quality gates (`biome check`, `check-types`, `test`, `build`)
 - [ ] Phase 5: Code review độc lập, PR vào `develop`, merge, verify CI & Staging deploy, đăng POT

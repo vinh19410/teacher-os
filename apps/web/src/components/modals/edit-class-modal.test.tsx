@@ -1,7 +1,11 @@
 // @vitest-environment jsdom
 
 import { CLASS_ERROR_CODES } from "@teacher-os/api/contracts";
-import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
+import {
+	addDaysISO,
+	formatViDateDisplay,
+	vietnamTodayISO,
+} from "@teacher-os/api/vietnam-date";
 import {
 	cleanup,
 	fireEvent,
@@ -166,7 +170,7 @@ describe("EditClassModal", () => {
 		expect(
 			(within(dialog).getByLabelText("Ngày khai giảng") as HTMLInputElement)
 				.value,
-		).toBe(futureDate);
+		).toBe(formatViDateDisplay(futureDate));
 	});
 
 	it("allows editing general info and schedule when hasRealSessions is false", async () => {
@@ -202,7 +206,7 @@ describe("EditClassModal", () => {
 			target: { value: "20" },
 		});
 		fireEvent.change(within(dialog).getByLabelText("Ngày khai giảng"), {
-			target: { value: laterFutureDate },
+			target: { value: formatViDateDisplay(laterFutureDate) },
 		});
 
 		fireEvent.click(
@@ -373,7 +377,7 @@ describe("EditClassModal", () => {
 		);
 		const dialog2 = await screen.findByRole("dialog");
 		fireEvent.change(within(dialog2).getByLabelText("Ngày khai giảng"), {
-			target: { value: "2021-05-10" },
+			target: { value: "10/05/2021" },
 		});
 		fireEvent.click(
 			within(dialog2).getByRole("button", { name: "Lưu thay đổi" }),
@@ -710,5 +714,94 @@ describe("EditClassModal", () => {
 			"Lớp đã có buổi học thực tế nên không sửa được lịch học, ngày khai giảng hoặc số buổi",
 		);
 		expect(onClose).not.toHaveBeenCalled();
+	});
+
+	it("resets submitBlocked/notice when reopened on the same class after 5xx error and validates invalid time/date & empty legacy mode", async () => {
+		const cls = makeClassGroup({ mode: "" });
+		let shouldFail = true;
+		startKernelServer(snapshotFixture(), () =>
+			shouldFail ? { status: 500, body: { error: "boom" } } : undefined,
+		);
+		const onClose = vi.fn();
+		const { rerender } = renderWithKernel(
+			<EditClassModal
+				open
+				onClose={onClose}
+				cls={cls}
+				hasRealSessions={false}
+				existingClasses={[cls]}
+			/>,
+		);
+		let dialog = await screen.findByRole("dialog");
+
+		// Empty legacy mode keeps state="" rather than silently coercing to Online
+		const modeSelect = within(dialog).getByLabelText(
+			"Hình thức",
+		) as HTMLSelectElement;
+		expect(modeSelect.value).toBe("");
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Lưu thay đổi" }),
+		);
+		expect((await within(dialog).findByRole("alert")).textContent).toBe(
+			"Vui lòng chọn hình thức.",
+		);
+
+		fireEvent.change(modeSelect, { target: { value: "Online" } });
+
+		// Invalid time / date typed partially in 24h / dd-mm-yyyy controls are caught
+		fireEvent.change(within(dialog).getByLabelText("Giờ bắt đầu"), {
+			target: { value: "99:99" },
+		});
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Lưu thay đổi" }),
+		);
+		expect((await within(dialog).findByRole("alert")).textContent).toBe(
+			"Giờ học phải đúng định dạng HH:mm.",
+		);
+		fireEvent.change(within(dialog).getByLabelText("Giờ bắt đầu"), {
+			target: { value: "19:00" },
+		});
+
+		// Trigger 500 -> notice blocks submit button
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Lưu thay đổi" }),
+		);
+		await waitFor(() => {
+			expect(
+				(
+					within(dialog).getByRole("button", {
+						name: "Lưu thay đổi",
+					}) as HTMLButtonElement
+				).disabled,
+			).toBe(true);
+		});
+
+		// Close & reopen same class -> submitBlocked & notice are reset cleanly
+		shouldFail = false;
+		rerender(
+			<EditClassModal
+				open={false}
+				onClose={onClose}
+				cls={{ ...cls, mode: "Online" }}
+				hasRealSessions={false}
+				existingClasses={[cls]}
+			/>,
+		);
+		rerender(
+			<EditClassModal
+				open
+				onClose={onClose}
+				cls={{ ...cls, mode: "Online" }}
+				hasRealSessions={false}
+				existingClasses={[cls]}
+			/>,
+		);
+		dialog = await screen.findByRole("dialog");
+		const saveBtn = within(dialog).getByRole("button", {
+			name: "Lưu thay đổi",
+		}) as HTMLButtonElement;
+		expect(saveBtn.disabled).toBe(false);
+		fireEvent.click(saveBtn);
+		await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
 	});
 });

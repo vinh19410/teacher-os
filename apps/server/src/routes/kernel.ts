@@ -1950,7 +1950,18 @@ export function kernelRoutes(deps: {
 			return c.json({ ok: true });
 		}
 
-		const updated = await db
+		const casWhere = and(
+			eq(classTable.id, classId),
+			eq(classTable.orgId, ctx.orgId),
+			eq(classTable.schedulingMode, cls.schedulingMode),
+			cls.syllabusId === null
+				? isNull(classTable.syllabusId)
+				: eq(classTable.syllabusId, cls.syllabusId),
+			sql`NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.classId} = ${classId} AND ${lesson.orgId} = ${ctx.orgId})`,
+			sql`NOT EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.classId} = ${classId} AND ${classSession.orgId} = ${ctx.orgId})`,
+		);
+
+		const updateClassStmt = db
 			.update(classTable)
 			.set({
 				name: input.name,
@@ -1963,19 +1974,45 @@ export function kernelRoutes(deps: {
 				startDate: nextStartDate,
 				sessionsTotal: nextSessionsTotal,
 			})
-			.where(
-				and(
-					eq(classTable.id, classId),
-					eq(classTable.orgId, ctx.orgId),
-					eq(classTable.schedulingMode, cls.schedulingMode),
-					cls.syllabusId === null
-						? isNull(classTable.syllabusId)
-						: eq(classTable.syllabusId, cls.syllabusId),
-					sql`NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.classId} = ${classId} AND ${lesson.orgId} = ${ctx.orgId})`,
-					sql`NOT EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.classId} = ${classId} AND ${classSession.orgId} = ${ctx.orgId})`,
-				),
-			)
+			.where(casWhere)
 			.returning({ id: classTable.id });
+
+		const updated =
+			nextSessionsTotal !== cls.sessionsTotal
+				? (
+						await db.batch([
+							updateClassStmt,
+							db
+								.update(sessionPackage)
+								.set({ total: nextSessionsTotal })
+								.where(
+									and(
+										eq(sessionPackage.orgId, ctx.orgId),
+										inArray(
+											sessionPackage.enrollmentId,
+											db
+												.select({ id: enrollment.id })
+												.from(enrollment)
+												.where(
+													and(
+														eq(enrollment.orgId, ctx.orgId),
+														eq(enrollment.classId, classId),
+													),
+												),
+										),
+										sql`EXISTS (
+											SELECT 1 FROM ${classTable}
+											WHERE ${classTable.id} = ${classId}
+												AND ${classTable.orgId} = ${ctx.orgId}
+												AND ${classTable.sessionsTotal} = ${nextSessionsTotal}
+												AND NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.classId} = ${classId} AND ${lesson.orgId} = ${ctx.orgId})
+												AND NOT EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.classId} = ${classId} AND ${classSession.orgId} = ${ctx.orgId})
+										)`,
+									),
+								),
+						])
+					)[0]
+				: await updateClassStmt;
 
 		if (updated.length === 0) {
 			if (await hasRealClassSessions(db, ctx.orgId, classId)) {
@@ -1989,29 +2026,6 @@ export function kernelRoutes(deps: {
 				{ error: "Lớp vừa thay đổi chế độ lịch học, vui lòng thử lại." },
 				409,
 			);
-		}
-
-		if (nextSessionsTotal !== cls.sessionsTotal) {
-			await db
-				.update(sessionPackage)
-				.set({ total: nextSessionsTotal })
-				.where(
-					and(
-						eq(sessionPackage.orgId, ctx.orgId),
-						inArray(
-							sessionPackage.enrollmentId,
-							db
-								.select({ id: enrollment.id })
-								.from(enrollment)
-								.where(
-									and(
-										eq(enrollment.orgId, ctx.orgId),
-										eq(enrollment.classId, classId),
-									),
-								),
-						),
-					),
-				);
 		}
 
 		return c.json({ ok: true });

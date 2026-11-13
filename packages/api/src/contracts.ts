@@ -203,6 +203,8 @@ const ISO_CALENDAR_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 function isValidIsoCalendarDate(value: string): boolean {
 	if (!ISO_CALENDAR_DATE_REGEX.test(value)) return false;
+	const year = Number.parseInt(value.slice(0, 4), 10);
+	if (year < 2000 || year > 2100) return false;
 	const check = new Date(`${value}T00:00:00Z`);
 	return (
 		!Number.isNaN(check.getTime()) && check.toISOString().slice(0, 10) === value
