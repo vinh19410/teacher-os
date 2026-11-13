@@ -60,7 +60,7 @@ export function SyllabusRoute() {
 					<h2 className="font-semibold text-lg">Chưa có syllabus nào</h2>
 					<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
 						Bấm "+ Tạo syllabus" ở góc trên để tạo giáo trình mẫu hoặc nhập từ
-						file Excel/CSV.
+						file Excel (.xlsx).
 					</p>
 				</Card>
 			) : list.length === 0 ? (

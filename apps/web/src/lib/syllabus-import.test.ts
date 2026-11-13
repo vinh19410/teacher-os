@@ -688,17 +688,46 @@ describe("parseSyllabusFile (XLSX)", () => {
 		expect(result).toEqual({ ok: false, errors: ["File vượt giới hạn 2 MB."] });
 	});
 
-	test("file giả mạo .xlsx (không phải ZIP hợp lệ) bị từ chối", async () => {
+	test("file giả mạo .xlsx (0 byte, không phải ZIP, hoặc ZIP hỏng) bị từ chối", async () => {
+		const empty = new File([], "empty.xlsx", { type: SYLLABUS_SAMPLE_MIME });
+		expect(await parseSyllabusFile(empty)).toEqual({
+			ok: false,
+			errors: ["Không đọc được file. Kiểm tra file Excel (.xlsx) hợp lệ."],
+		});
+
 		const fake = new File(
 			["Module,Mô tả module,Mục tiêu,Tài liệu\r\nM1,,o1,"],
 			"fake.xlsx",
 			{ type: SYLLABUS_SAMPLE_MIME },
 		);
-		const result = await parseSyllabusFile(fake);
-		expect(result).toEqual({
+		expect(await parseSyllabusFile(fake)).toEqual({
 			ok: false,
 			errors: ["Không đọc được file. Kiểm tra file Excel (.xlsx) hợp lệ."],
 		});
+
+		const corruptZip = new File(
+			[new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x00, 0x01])],
+			"corrupt.XLSX",
+			{ type: SYLLABUS_SAMPLE_MIME },
+		);
+		expect(await parseSyllabusFile(corruptZip)).toEqual({
+			ok: false,
+			errors: ["Không đọc được file. Kiểm tra file Excel (.xlsx) hợp lệ."],
+		});
+	});
+
+	test("hỗ trợ đuôi viết hoa .XLSX", async () => {
+		const file = await buildXlsxFile((workbook) => {
+			const sheet = workbook.addWorksheet("Syllabus");
+			sheet.addRow(["Module", "Mô tả module", "Mục tiêu", "Tài liệu", "Loại"]);
+			sheet.addRow(["Module 1", "", "Mục tiêu 1", "", ""]);
+		}, "SAMPLE.XLSX");
+
+		const result = await parseSyllabusFile(file);
+		expect(result.ok).toBe(true);
+		if (result.ok) {
+			expect(result.lessonCount).toBe(1);
+		}
 	});
 
 	test("đọc .xlsx tạo bằng ExcelJS: hỗ trợ merge cells cột Module và nhiều sheet (chỉ đọc sheet 1)", async () => {
@@ -802,6 +831,15 @@ describe("buildSampleXlsxBytes", () => {
 			actualRows.push(values);
 		});
 		expect(actualRows).toEqual([[...SAMPLE_HEADER], ...SAMPLE_ROWS]);
+
+		const guide = workbook.worksheets[1];
+		expect(guide.views[0]).toMatchObject({ state: "frozen", ySplit: 1 });
+		expect(guide.getColumn(1).numFmt).toBe("@");
+		expect(guide.getColumn(2).numFmt).toBe("@");
+		expect(guide.rowCount).toBe(7);
+		expect(guide.getRow(1).getCell(1).font?.bold).toBe(true);
+		expect(String(guide.getRow(1).getCell(1).value)).toBe("Mục");
+		expect(String(guide.getRow(2).getCell(2).value)).toContain("Syllabus");
 
 		// Round-trip: file mẫu của chính app phải parse ra đúng 2 module · 5 buổi.
 		const roundTrip = await parseSyllabusFile(

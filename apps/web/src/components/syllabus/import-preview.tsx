@@ -7,7 +7,7 @@ import type { SyllabusImportResult } from "@/lib/syllabus-import";
 const PREVIEW_HEADERS = ["#", "Module", "Mục tiêu", "Tài liệu", "Loại"];
 
 /**
- * Preview kết quả parse import Excel/CSV — dùng chung popup tạo syllabus và
+ * Preview kết quả parse import Excel (.xlsx) — dùng chung popup tạo syllabus và
  * màn hình syllabus detail (issue #152): bảng 5 cột khi ok (cột Loại #154),
  * danh sách lỗi (cap 100) khi lỗi, nút gỡ file trên cả hai nhánh.
  */
