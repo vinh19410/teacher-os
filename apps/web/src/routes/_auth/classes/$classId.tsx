@@ -16,6 +16,7 @@ import { ClassStudyPackSection } from "@/components/classes/class-study-pack-sec
 import { AddClassSessionModal } from "@/components/modals/add-class-session-modal";
 import { EditClassFeeModal } from "@/components/modals/edit-class-fee-modal";
 import { EnrollStudentModal } from "@/components/modals/enroll-student-modal";
+import { ImportSyllabusModal } from "@/components/modals/import-syllabus-modal";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, StatCard } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/field";
@@ -163,6 +164,7 @@ function ClassDetailRoute() {
 	const [tab, setTab] = useState<string>(activeTab);
 	const [manageOpen, setManageOpen] = useState(false);
 	const [addSessionOpen, setAddSessionOpen] = useState(false);
+	const [importSyllabusOpen, setImportSyllabusOpen] = useState(false);
 	const [practiceMode, setPracticeMode] = useState<"sessions" | "study-pack">(
 		"sessions",
 	);
@@ -192,11 +194,23 @@ function ClassDetailRoute() {
 		(!sy && cls?.schedulingMode === "manual");
 	const canAddManualSession =
 		!sy && (isManual || classLessonsForClass.length === 0);
+	const canImportSyllabus =
+		!sy &&
+		classSessionsForClass.length === 0 &&
+		classLessonsForClass.length === 0;
 
 	useEffect(() => {
 		if (!sy && manageOpen) setManageOpen(false);
 		if (!canAddManualSession && addSessionOpen) setAddSessionOpen(false);
-	}, [sy, manageOpen, canAddManualSession, addSessionOpen]);
+		if (!canImportSyllabus && importSyllabusOpen) setImportSyllabusOpen(false);
+	}, [
+		sy,
+		manageOpen,
+		canAddManualSession,
+		addSessionOpen,
+		canImportSyllabus,
+		importSyllabusOpen,
+	]);
 
 	if (!cls) {
 		throw notFound();
@@ -384,7 +398,16 @@ function ClassDetailRoute() {
 								onCancelOccurrence={handleCancelOccurrence}
 								onSaveEdit={handleSaveOccurrenceEdit}
 								onDeleteOccurrence={handleDeleteOccurrence}
-								onAddSession={() => setAddSessionOpen(true)}
+								onAddSession={
+									canAddManualSession
+										? () => setAddSessionOpen(true)
+										: undefined
+								}
+								onImportSyllabus={
+									canImportSyllabus
+										? () => setImportSyllabusOpen(true)
+										: undefined
+								}
 								isPending={isPending}
 								busy={busy}
 							/>
@@ -492,6 +515,12 @@ function ClassDetailRoute() {
 				onClose={() => setAddSessionOpen(false)}
 				cls={cls}
 				existingDateISOs={classSessionsForClass.map((cs) => cs.date)}
+			/>
+			<ImportSyllabusModal
+				key={`import-sessions-${cls.id}`}
+				open={importSyllabusOpen && canImportSyllabus}
+				onClose={() => setImportSyllabusOpen(false)}
+				classId={cls.id}
 			/>
 			<EnrollStudentModal
 				key={`enroll-student-${cls.id}`}

@@ -67,6 +67,7 @@ export function ClassSessionsSection({
 	classSessions,
 	holidayShifts = [],
 	onAddSession,
+	onImportSyllabus,
 	onDeleteOccurrence,
 }: {
 	cls: ClassGroup;
@@ -93,6 +94,7 @@ export function ClassSessionsSection({
 	 * bucket manual 0 lesson; optional để caller cũ/test không truyền vẫn chạy. */
 	holidayShifts?: KernelHolidayShiftRow[];
 	onAddSession?: () => void;
+	onImportSyllabus?: () => void;
 	onDeleteOccurrence?: (dateISO: string) => Promise<OccurrenceActionResult>;
 	isPending: (key: string) => boolean;
 	busy: boolean;
@@ -133,6 +135,43 @@ export function ClassSessionsSection({
 	// session is a schedule projection (display-only).
 	const isProjected = !isManual && lessons.length === 0 && sessions !== null;
 
+	const isEmptyAttachedSyllabus =
+		sessions === null &&
+		Boolean(syllabus) &&
+		syllabusLessonCount === 0 &&
+		effectiveSessionsTotal === 0 &&
+		lessons.length === 0 &&
+		(classSessions?.length ?? 0) === 0 &&
+		legacyLessons.length === 0;
+
+	if (isEmptyAttachedSyllabus || (sessions !== null && sessions.length === 0)) {
+		return (
+			<Section title="Sessions">
+				<div className="rounded-lg border border-border border-dashed p-8 text-center">
+					<p className="font-semibold text-sm">Chưa có buổi học nào</p>
+					<p className="mt-1 text-muted-foreground text-xs">
+						{syllabus
+							? "Giáo trình của lớp hiện chưa có bài học nào. Nhấn “Sắp xếp buổi” ở góc trên để thêm bài học."
+							: "Lớp chưa có giáo trình mẫu. Bạn có thể thêm buổi học thủ công hoặc nhập buổi từ syllabus để bắt đầu giảng dạy."}
+					</p>
+					{!syllabus && (onAddSession || onImportSyllabus) && (
+						<div className="mt-4 flex flex-wrap justify-center gap-2">
+							{onAddSession && (
+								<Button size="sm" onClick={onAddSession}>
+									+ Thêm buổi học
+								</Button>
+							)}
+							{onImportSyllabus && (
+								<Button variant="outline" size="sm" onClick={onImportSyllabus}>
+									Nhập buổi từ syllabus
+								</Button>
+							)}
+						</div>
+					)}
+				</div>
+			</Section>
+		);
+	}
 	if (sessions === null) {
 		return (
 			<Section title="Sessions">
@@ -167,35 +206,6 @@ export function ClassSessionsSection({
 					/>
 				</div>
 				<LegacyMaterialsNote />
-			</Section>
-		);
-	}
-	if (sessions !== null && sessions.length === 0) {
-		return (
-			<Section
-				title="Sessions"
-				action={
-					onAddSession ? (
-						<Button variant="outline" size="sm" onClick={onAddSession}>
-							+ Thêm buổi
-						</Button>
-					) : undefined
-				}
-			>
-				<div className="rounded-lg border border-border border-dashed p-8 text-center">
-					<p className="font-semibold text-sm">Chưa có buổi học nào</p>
-					<p className="mt-1 text-muted-foreground text-xs">
-						Lớp chưa có giáo trình mẫu. Bạn có thể thêm buổi học thủ công để bắt
-						đầu giảng dạy.
-					</p>
-					{onAddSession && (
-						<div className="mt-4 flex justify-center">
-							<Button size="sm" onClick={onAddSession}>
-								+ Thêm buổi học
-							</Button>
-						</div>
-					)}
-				</div>
 			</Section>
 		);
 	}

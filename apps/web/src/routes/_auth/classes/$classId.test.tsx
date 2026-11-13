@@ -381,7 +381,14 @@ describe("class detail → Buổi học tab", () => {
 	it("shows + Thêm buổi học button when class has no syllabus and opens manual session modal (Issue #649)", async () => {
 		startKernelServer(
 			snapshotFixture({
-				classes: [classRow({ id: "cl-1", syllabusId: null })],
+				classes: [
+					classRow({
+						id: "cl-1",
+						syllabusId: null,
+						schedulingMode: "manual",
+						sessionsTotal: 0,
+					}),
+				],
 				syllabi: [syllabusRow({ id: "sy-t", name: "Template A" })],
 			}),
 		);
@@ -389,7 +396,11 @@ describe("class detail → Buổi học tab", () => {
 		const addSessionBtns = (await screen.findAllByRole("button", {
 			name: "+ Thêm buổi học",
 		})) as HTMLButtonElement[];
-		expect(addSessionBtns.length).toBeGreaterThanOrEqual(1);
+		expect(screen.queryByRole("button", { name: "+ Thêm buổi" })).toBeNull();
+		expect(addSessionBtns).toHaveLength(2);
+		expect(
+			screen.getByRole("button", { name: "Nhập buổi từ syllabus" }),
+		).toBeTruthy();
 
 		fireEvent.click(addSessionBtns[0]);
 		const dialog = screen.getByRole("dialog", {
@@ -408,6 +419,100 @@ describe("class detail → Buổi học tab", () => {
 		expect(
 			screen.getByRole("button", { name: "Nhập từ template" }),
 		).toBeTruthy();
+	});
+
+	it("imports syllabus directly from the empty Sessions state and switches to projected sessions", async () => {
+		const templateModules = [
+			{
+				id: "m-a",
+				title: "Module A",
+				description: "",
+				lessons: [lesson("l-1", "Line chart"), lesson("l-2", "Bar chart")],
+			},
+		];
+		const server = startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-1",
+						syllabusId: null,
+						schedulingMode: "manual",
+						sessionsTotal: 0,
+						schedule: SCHEDULE,
+						startDate: "2026-08-24",
+					}),
+				],
+				syllabi: [
+					syllabusRow({
+						id: "sy-t",
+						name: "Template A",
+						totalLessons: 2,
+						modules: templateModules,
+					}),
+				],
+			}),
+			(req, srv) => {
+				if (req.path === "/api/classes/cl-1/curriculum/import") {
+					srv.snapshot.syllabi.push(
+						syllabusRow({
+							id: "sy-copy",
+							name: "Template A",
+							classId: "cl-1",
+							sourceTemplateId: "sy-t",
+							totalLessons: 2,
+							modules: templateModules,
+						}),
+					);
+					srv.snapshot.classes[0] = {
+						...srv.snapshot.classes[0],
+						syllabusId: "sy-copy",
+						schedulingMode: "auto",
+						sessionsTotal: 2,
+					};
+					return { status: 201, body: { id: "sy-copy" } };
+				}
+				return undefined;
+			},
+		);
+		renderWithKernel(<ClassDetail />);
+
+		fireEvent.click(
+			await screen.findByRole("button", { name: "Nhập buổi từ syllabus" }),
+		);
+		const dialog = screen.getByRole("dialog", {
+			name: "Nhập giáo trình từ template",
+		});
+		const select = within(dialog).getByLabelText(
+			"Template giáo trình",
+		) as HTMLSelectElement;
+		expect(
+			within(dialog).getByRole("option", { name: "Template A · 2 buổi" }),
+		).toBeTruthy();
+		expect(select.value).toBe("sy-t");
+
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Nhập giáo trình" }),
+		);
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		expect(server.writes).toEqual([
+			{
+				method: "POST",
+				path: "/api/classes/cl-1/curriculum/import",
+				body: { templateId: "sy-t" },
+			},
+		]);
+
+		expect(
+			await screen.findByRole("button", { name: "Sắp xếp buổi" }),
+		).toBeTruthy();
+		expect(screen.queryByText("Chưa có buổi học nào")).toBeNull();
+		expect(
+			screen.queryByRole("button", { name: "Nhập buổi từ syllabus" }),
+		).toBeNull();
+		const rows = screen.getAllByTestId("session-row");
+		expect(rows).toHaveLength(2);
+		expect(rows[0].textContent).toContain("Line chart");
+		expect(rows[1].textContent).toContain("Bar chart");
 	});
 
 	it("shows Sắp xếp buổi button when class has a syllabus", async () => {
@@ -452,6 +557,10 @@ describe("class detail → Buổi học tab", () => {
 		await openSessionsTab();
 
 		expect(await screen.findByText("Task 1 Line Chart")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "+ Thêm buổi" })).toBeTruthy();
+		expect(
+			screen.queryByRole("button", { name: "Nhập buổi từ syllabus" }),
+		).toBeNull();
 		const adjustBtn = await screen.findByRole("button", { name: "Điều chỉnh" });
 		fireEvent.click(adjustBtn);
 
@@ -618,6 +727,45 @@ describe("class detail → Buổi học tab", () => {
 			screen.queryByRole("button", { name: "+ Thêm buổi học" }),
 		).toBeNull();
 		expect(screen.queryByRole("button", { name: "+ Thêm buổi" })).toBeNull();
+	});
+
+	it("hides manual and import CTAs in empty Sessions state when an empty 0-lesson syllabus is already attached", async () => {
+		startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-1",
+						syllabusId: "sy-c",
+						sessionsTotal: 0,
+						schedule: SCHEDULE,
+						startDate: "2026-08-24",
+					}),
+				],
+				syllabi: [
+					syllabusRow({
+						id: "sy-c",
+						classId: "cl-1",
+						totalLessons: 0,
+						modules: [
+							{ id: "m-1", title: "Module 1", description: "", lessons: [] },
+						],
+					}),
+				],
+			}),
+		);
+		renderWithKernel(<ClassDetail />);
+
+		expect(await screen.findByText("Chưa có buổi học nào")).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "+ Thêm buổi" })).toBeNull();
+		expect(
+			screen.queryByRole("button", { name: "+ Thêm buổi học" }),
+		).toBeNull();
+		expect(
+			screen.queryByRole("button", { name: "Nhập buổi từ syllabus" }),
+		).toBeNull();
+		expect(
+			screen.getByText(/Giáo trình của lớp hiện chưa có bài học nào/),
+		).toBeTruthy();
 	});
 });
 
