@@ -194,6 +194,12 @@ export type KernelAction =
 			templateId: string;
 	  }
 	| {
+			/** Sync the class's curriculum copy from its linked source template or a replacement template (issue #700). */
+			type: "sync-curriculum";
+			classId: string;
+			templateId?: string;
+	  }
+	| {
 			/** Delete the class's imported curriculum copy and null the pointer. */
 			type: "remove-curriculum";
 			classId: string;
