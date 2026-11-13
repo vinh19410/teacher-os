@@ -498,8 +498,9 @@ describe("EditClassModal", () => {
 			).toBe(true);
 		});
 		expect(
-			within(dialog).getByText("Đang đồng bộ theo giáo trình của lớp"),
-		).toBeTruthy();
+			within(dialog).getAllByText("Đang đồng bộ theo giáo trình của lớp")
+				.length,
+		).toBeGreaterThanOrEqual(1);
 
 		fireEvent.change(within(dialog).getByLabelText(/Tên lớp/), {
 			target: { value: "Lớp có giáo trình" },
@@ -510,6 +511,133 @@ describe("EditClassModal", () => {
 
 		await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
 		expect(server.writes[0].body).not.toHaveProperty("sessionsTotal");
+	});
+
+	it("locks type and skills when curriculum specifies skills, and locks sessionsTotal in manual mode", async () => {
+		const clsWithCurriculumSkills = makeClassGroup({
+			id: "cl-cur",
+			syllabusId: "sy-cur",
+			type: "ielts",
+			skills: ["Reading"],
+			sessionsTotal: 2,
+		});
+		const server = startKernelServer(
+			snapshotFixture({
+				syllabi: [
+					syllabusRow({
+						id: "sy-cur",
+						classId: "cl-cur",
+						skills: ["Reading"],
+						totalLessons: 2,
+						modules: [
+							{
+								id: "m-1",
+								title: "Module 1",
+								description: "",
+								lessons: [
+									{
+										id: "l-1",
+										title: "B1",
+										objectives: "",
+										materials: "",
+										kind: "lesson",
+										status: "upcoming",
+									},
+									{
+										id: "l-2",
+										title: "B2",
+										objectives: "",
+										materials: "",
+										kind: "lesson",
+										status: "upcoming",
+									},
+								],
+							},
+						],
+					}),
+				],
+			}),
+		);
+		const onClose = vi.fn();
+		renderWithKernel(
+			<EditClassModal
+				open
+				onClose={onClose}
+				cls={clsWithCurriculumSkills}
+				hasRealSessions={false}
+				existingClasses={[clsWithCurriculumSkills]}
+			/>,
+		);
+		const dialog = await screen.findByRole("dialog");
+
+		await waitFor(() => {
+			expect(
+				(
+					within(dialog).getByRole("button", {
+						name: "Giao tiếp",
+					}) as HTMLButtonElement
+				).disabled,
+			).toBe(true);
+		});
+		expect(
+			(
+				within(dialog).getByRole("button", {
+					name: "Writing",
+				}) as HTMLButtonElement
+			).disabled,
+		).toBe(true);
+
+		fireEvent.change(within(dialog).getByLabelText(/Tên lớp/), {
+			target: { value: "Lớp khóa kỹ năng theo giáo trình" },
+		});
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Lưu thay đổi" }),
+		);
+		await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+		expect(server.writes[0].body).toMatchObject({
+			type: "ielts",
+			skills: ["Reading"],
+		});
+		expect(server.writes[0].body).not.toHaveProperty("sessionsTotal");
+
+		cleanup();
+		const manualCls = makeClassGroup({
+			id: "cl-manual",
+			syllabusId: "",
+			schedulingMode: "manual",
+			sessionsTotal: 0,
+		});
+		const serverManual = startKernelServer(snapshotFixture());
+		const onCloseManual = vi.fn();
+		renderWithKernel(
+			<EditClassModal
+				open
+				onClose={onCloseManual}
+				cls={manualCls}
+				hasRealSessions={false}
+				existingClasses={[manualCls]}
+			/>,
+		);
+		const manualDialog = await screen.findByRole("dialog");
+		const totalInput = within(manualDialog).getByLabelText(
+			"Tổng số buổi",
+		) as HTMLInputElement;
+		expect(totalInput.disabled).toBe(true);
+		expect(totalInput.value).toBe("0");
+		expect(
+			within(manualDialog).getByText(
+				"Lớp thủ công tự cập nhật theo từng buổi học thêm vào",
+			),
+		).toBeTruthy();
+
+		fireEvent.change(within(manualDialog).getByLabelText(/Tên lớp/), {
+			target: { value: "Lớp thủ công đã sửa" },
+		});
+		fireEvent.click(
+			within(manualDialog).getByRole("button", { name: "Lưu thay đổi" }),
+		);
+		await waitFor(() => expect(onCloseManual).toHaveBeenCalledTimes(1));
+		expect(serverManual.writes[0].body).not.toHaveProperty("sessionsTotal");
 	});
 
 	it("never shows self-conflict warning, but warns when matching another class", async () => {

@@ -19,6 +19,7 @@ import {
 	classUpdateSchema,
 	debtReminderCreateSchema,
 	enrollStudentSchema,
+	IELTS_SKILLS,
 	INVOICE_PAYMENT_METHOD_LABEL,
 	invoiceCreateSchema,
 	invoiceMarkPaidSchema,
@@ -71,8 +72,8 @@ import { student } from "@teacher-os/db/schema/student";
 import { studentInvitation } from "@teacher-os/db/schema/student-invitation";
 import {
 	syllabus,
-	type syllabusLesson,
-	type syllabusModule,
+	syllabusLesson,
+	syllabusModule,
 } from "@teacher-os/db/schema/syllabus";
 import { and, desc, eq, inArray, isNull, lte, ne, or, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
@@ -1813,6 +1814,57 @@ export function kernelRoutes(deps: {
 			return c.json({ error: "class not found" }, 404);
 		}
 
+		const copy = await findClassCurriculum(db, classId, ctx.orgId);
+		if (copy) {
+			let copySkillsRaw: unknown = [];
+			try {
+				copySkillsRaw = JSON.parse(copy.skills);
+			} catch {
+				copySkillsRaw = [];
+			}
+			const copySkills = Array.isArray(copySkillsRaw)
+				? IELTS_SKILLS.filter((skill) => copySkillsRaw.includes(skill))
+				: [];
+			if (copySkills.length > 0) {
+				const normalizedInputSkills = IELTS_SKILLS.filter((skill) =>
+					input.skills.includes(skill),
+				);
+				if (
+					input.type !== "ielts" ||
+					normalizedInputSkills.length !== copySkills.length ||
+					normalizedInputSkills.some((skill, idx) => skill !== copySkills[idx])
+				) {
+					return c.json({ error: "skills locked by curriculum" }, 400);
+				}
+			}
+
+			const lessonRows = await db
+				.select({ id: syllabusLesson.id })
+				.from(syllabusLesson)
+				.innerJoin(
+					syllabusModule,
+					and(
+						eq(syllabusLesson.moduleId, syllabusModule.id),
+						eq(syllabusModule.orgId, ctx.orgId),
+					),
+				)
+				.where(
+					and(
+						eq(syllabusModule.syllabusId, copy.id),
+						eq(syllabusLesson.orgId, ctx.orgId),
+					),
+				);
+			const curriculumLessonCount = lessonRows.length;
+			if (
+				curriculumLessonCount > 0 &&
+				input.sessionsTotal !== undefined &&
+				input.sessionsTotal !== cls.sessionsTotal &&
+				input.sessionsTotal !== curriculumLessonCount
+			) {
+				return c.json({ error: "sessionsTotal locked by curriculum" }, 400);
+			}
+		}
+
 		const normalizedInputSchedule =
 			input.schedule !== undefined
 				? JSON.stringify({
@@ -1916,6 +1968,9 @@ export function kernelRoutes(deps: {
 					eq(classTable.id, classId),
 					eq(classTable.orgId, ctx.orgId),
 					eq(classTable.schedulingMode, cls.schedulingMode),
+					cls.syllabusId === null
+						? isNull(classTable.syllabusId)
+						: eq(classTable.syllabusId, cls.syllabusId),
 					sql`NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.classId} = ${classId} AND ${lesson.orgId} = ${ctx.orgId})`,
 					sql`NOT EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.classId} = ${classId} AND ${classSession.orgId} = ${ctx.orgId})`,
 				),

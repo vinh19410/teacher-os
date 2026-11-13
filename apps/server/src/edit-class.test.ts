@@ -180,6 +180,7 @@ async function setupTestApp() {
 		token: string,
 		name: string,
 		lessonCount: number,
+		skills: ("Writing" | "Speaking" | "Reading" | "Listening")[] = ["Writing"],
 	): Promise<string> {
 		const lessons = Array.from({ length: lessonCount }, (_, idx) => ({
 			title: `Bài ${idx + 1}`,
@@ -192,8 +193,8 @@ async function setupTestApp() {
 			body: {
 				name,
 				level: "Band 6.5",
-				type: "ielts",
-				skills: ["Writing"],
+				type: skills.length === 0 ? "communication" : "ielts",
+				skills,
 				description: "",
 				totalLessons: lessonCount,
 				modules:
@@ -764,6 +765,40 @@ describe("PATCH /api/classes/:id (Issue #693)", () => {
 		});
 		expect(hijackRes.status).toBe(400);
 
+		// Cannot change skills or sessionsTotal away from attached non-empty curriculum
+		const badSkillsRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}`,
+			{
+				method: "PATCH",
+				body: {
+					name: "Lớp Gắn Giáo Trình",
+					type: "ielts",
+					level: "Band 7.0",
+					skills: ["Writing", "Speaking"],
+					mode: "Offline",
+				},
+			},
+		);
+		expect(badSkillsRes.status).toBe(400);
+
+		const badSessionsRes = await t.call(
+			teacher.token,
+			`/api/classes/${classId}`,
+			{
+				method: "PATCH",
+				body: {
+					name: "Lớp Gắn Giáo Trình",
+					type: "ielts",
+					level: "Band 7.0",
+					skills: ["Writing"],
+					mode: "Offline",
+					sessionsTotal: 8,
+				},
+			},
+		);
+		expect(badSessionsRes.status).toBe(400);
+
 		// Valid edit preserves syllabusId, schedulingMode, and attached curriculum tree
 		const editBeforeLesson = await t.call(
 			teacher.token,
@@ -774,10 +809,11 @@ describe("PATCH /api/classes/:id (Issue #693)", () => {
 					name: "Lớp Gắn Giáo Trình Đã Sửa",
 					type: "ielts",
 					level: "Band 7.0",
-					skills: ["Writing", "Speaking"],
+					skills: ["Writing"],
 					mode: "Offline",
 					tuitionFee: 5_000_000,
 					schedule: { days: [1, 3], start: "19:30", end: "21:00" },
+					startDate: addDaysISO(startMonday, 7),
 				},
 			},
 		);
@@ -795,6 +831,40 @@ describe("PATCH /api/classes/:id (Issue #693)", () => {
 		});
 		const copySyllabus = snap.syllabi.find((s) => s.id === copyId);
 		expect(copySyllabus?.modules[0]?.lessons).toHaveLength(4);
+
+		// Curriculum with empty skills allows editing skills
+		const emptySkillsTplId = await t.seedTemplateWithLessons(
+			teacher.token,
+			"Giáo trình chưa khóa kỹ năng",
+			4,
+			[],
+		);
+		const emptySkillsClassId = await t.createAutoClass(teacher.token, {
+			name: "Lớp Giáo Trình Skills Rỗng",
+			templateId: emptySkillsTplId,
+			sessionsTotal: 4,
+			startDate: startMonday,
+			skills: ["Writing"],
+		});
+		const editEmptySkillsRes = await t.call(
+			teacher.token,
+			`/api/classes/${emptySkillsClassId}`,
+			{
+				method: "PATCH",
+				body: {
+					name: "Lớp Giáo Trình Skills Rỗng",
+					type: "ielts",
+					level: "Band 6.5",
+					skills: ["Reading", "Listening"],
+					mode: "Online",
+				},
+			},
+		);
+		expect(editEmptySkillsRes.status).toBe(200);
+		snap = await t.kernel(teacher.token);
+		expect(
+			snap.classes.find((c) => c.id === emptySkillsClassId)?.skills,
+		).toEqual(["Reading", "Listening"]);
 
 		// Manual class with 0 sessions: cannot override sessionsTotal (400), omitting keeps 0 & manual
 		const manualId = await t.createAutoClass(teacher.token, {

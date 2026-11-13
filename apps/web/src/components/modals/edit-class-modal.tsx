@@ -41,19 +41,31 @@ function buildInitialState(
 	cls: ClassGroup,
 	curriculumLessonCount: number,
 	sessionsLockedByCurriculum: boolean,
+	curriculumSkills: string[],
+	skillsLockedByCurriculum: boolean,
+	isManualMode: boolean,
 ) {
 	const parsed = parseSchedule(cls.schedule);
 	const initialTotal = sessionsLockedByCurriculum
 		? String(cls.sessionsTotal > 0 ? cls.sessionsTotal : curriculumLessonCount)
-		: cls.sessionsTotal > 0
+		: isManualMode
 			? String(cls.sessionsTotal)
-			: "";
+			: cls.sessionsTotal > 0
+				? String(cls.sessionsTotal)
+				: "";
+
+	const classType: ClassType = skillsLockedByCurriculum ? "ielts" : cls.type;
+	const skills = skillsLockedByCurriculum
+		? curriculumSkills
+		: cls.type === "ielts"
+			? skillsFromTemplate(cls.skills)
+			: [];
 
 	return {
 		name: cls.name,
-		classType: cls.type,
+		classType,
 		level: cls.level,
-		skills: cls.type === "ielts" ? skillsFromTemplate(cls.skills) : [],
+		skills,
 		mode: cls.mode,
 		fee:
 			cls.tuitionFee !== null && cls.tuitionFee !== undefined
@@ -81,6 +93,15 @@ export function EditClassModal({
 	const sessionsLockedByCurriculum = Boolean(
 		curriculum && curriculumLessonCount > 0,
 	);
+	const curriculumSkillsKey = curriculum
+		? skillsFromTemplate(curriculum.skills).join(",")
+		: "";
+	const curriculumSkills = useMemo(
+		() => (curriculumSkillsKey === "" ? [] : curriculumSkillsKey.split(",")),
+		[curriculumSkillsKey],
+	);
+	const skillsLockedByCurriculum = curriculumSkills.length > 0;
+	const isManualMode = cls.schedulingMode === "manual" && !curriculum;
 	const parsedInitialSchedule = useMemo(
 		() => parseSchedule(cls.schedule),
 		[cls.schedule],
@@ -90,6 +111,9 @@ export function EditClassModal({
 		cls,
 		curriculumLessonCount,
 		sessionsLockedByCurriculum,
+		curriculumSkills,
+		skillsLockedByCurriculum,
+		isManualMode,
 	);
 
 	const [name, setName] = useState(initial.name);
@@ -130,6 +154,9 @@ export function EditClassModal({
 				cls,
 				curriculumLessonCount,
 				sessionsLockedByCurriculum,
+				curriculumSkills,
+				skillsLockedByCurriculum,
+				isManualMode,
 			);
 			setName(next.name);
 			setClassType(next.classType);
@@ -152,6 +179,9 @@ export function EditClassModal({
 		cls,
 		curriculumLessonCount,
 		sessionsLockedByCurriculum,
+		curriculumSkills,
+		skillsLockedByCurriculum,
+		isManualMode,
 		setError,
 		reset,
 	]);
@@ -317,7 +347,7 @@ export function EditClassModal({
 				payload.startDate = trimmedStartDate;
 			}
 
-			if (!sessionsLockedByCurriculum) {
+			if (!sessionsLockedByCurriculum && !isManualMode) {
 				const trimmedTotal = total.trim();
 				const isUnchangedZero = cls.sessionsTotal === 0 && trimmedTotal === "";
 				const isUnchangedLegacyOverCap =
@@ -376,7 +406,7 @@ export function EditClassModal({
 							<ChipMulti
 								options={CLASS_TYPE_OPTIONS}
 								value={[classType]}
-								disabled={saving}
+								disabled={skillsLockedByCurriculum || saving}
 								onChange={(next) => {
 									const other = next.find((v) => v !== classType);
 									if (other) {
@@ -421,9 +451,11 @@ export function EditClassModal({
 					<Field
 						label={classType === "ielts" ? "Kỹ năng *" : "Kỹ năng"}
 						help={
-							classType === "communication"
-								? "Lớp Giao tiếp không chọn kỹ năng IELTS."
-								: undefined
+							skillsLockedByCurriculum
+								? "Đang đồng bộ theo giáo trình của lớp"
+								: classType === "communication"
+									? "Lớp Giao tiếp không chọn kỹ năng IELTS."
+									: undefined
 						}
 					>
 						{/* biome-ignore lint/a11y/useSemanticElements: nhóm chip kỹ năng gắn role="group" + aria-label theo DESIGN.md */}
@@ -432,7 +464,11 @@ export function EditClassModal({
 								options={SKILL_OPTIONS}
 								value={classType === "communication" ? [] : skills}
 								onChange={setSkills}
-								disabled={classType === "communication" || saving}
+								disabled={
+									classType === "communication" ||
+									skillsLockedByCurriculum ||
+									saving
+								}
 							/>
 						</div>
 					</Field>
@@ -536,9 +572,13 @@ export function EditClassModal({
 						<Field
 							label="Tổng số buổi"
 							help={
-								sessionsLockedByCurriculum && !hasRealSessions
-									? "Đang đồng bộ theo giáo trình của lớp"
-									: undefined
+								hasRealSessions
+									? undefined
+									: sessionsLockedByCurriculum
+										? "Đang đồng bộ theo giáo trình của lớp"
+										: isManualMode
+											? "Lớp thủ công tự cập nhật theo từng buổi học thêm vào"
+											: undefined
 							}
 						>
 							<Input
@@ -549,7 +589,10 @@ export function EditClassModal({
 								value={total}
 								onChange={(e) => setTotal(e.target.value)}
 								disabled={
-									hasRealSessions || sessionsLockedByCurriculum || saving
+									hasRealSessions ||
+									sessionsLockedByCurriculum ||
+									isManualMode ||
+									saving
 								}
 							/>
 						</Field>
