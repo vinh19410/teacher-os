@@ -104,6 +104,11 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				path: `/api/classes/${action.classId}/curriculum/import`,
 				body: { templateId: action.templateId },
 			};
+		case "sync-curriculum":
+			return {
+				path: `/api/classes/${action.classId}/curriculum/sync`,
+				body: action.templateId ? { templateId: action.templateId } : {},
+			};
 		case "remove-curriculum":
 			// Body must stay exactly {} — same CSRF-safe convention as
 			// check-in/cancel.

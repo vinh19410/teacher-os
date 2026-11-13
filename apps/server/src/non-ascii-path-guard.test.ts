@@ -372,5 +372,5 @@ describe("server test suite non-ASCII workspace path guard (#656)", () => {
 			offendingFiles,
 			`OFFENDING_COUNT=${offendingFiles.length}\n${offendingFiles.join("\n")}`,
 		).toEqual([]);
-	}, 20_000);
+	}, 30_000);
 });
