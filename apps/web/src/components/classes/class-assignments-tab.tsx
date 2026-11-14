@@ -4,68 +4,45 @@ import {
 	hasGradableTask,
 	isGradableSkill,
 } from "@teacher-os/api/lib/ielts-band";
-import { isEmptyRichText } from "@teacher-os/api/rich-text";
-import { parseStartDateStrict } from "@teacher-os/api/skeleton";
-import {
-	addDaysISO,
-	formatVietnamTimeHHMM,
-	formatViWeekdayDate,
-	parseTimeHHMM,
-	vietnamDateTimeMs,
-	vietnamTodayISO,
-} from "@teacher-os/api/vietnam-date";
-import { RichTextBody } from "@teacher-os/ui/components/assignments/rich-text-body";
+import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { BookOpen, ChevronDown, Headphones, Mic, PenLine } from "lucide-react";
-import { type ComponentType, useMemo, useState } from "react";
 import {
-	isAutoSkill,
-	partOf,
-	type SkillId,
-	skillOf,
-	typeOf,
-} from "@/components/assignments/assignment-presets";
+	type ComponentType,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import {
-	fmtDue,
 	fmtDueDisplay,
 	fmtWhen,
 	rollupStatus,
 	studentSubmissionStatus,
 } from "@/components/assignments/assignment-status";
 import { StatusTag } from "@/components/assignments/status-tag";
-import { KernelSubmitNotice } from "@/components/modals/kernel-submit-notice";
 import { Avatar } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { ChipFilter } from "@/components/ui/chip-filter";
-import {
-	DatePickerInput,
-	TimeInput24h,
-} from "@/components/ui/date-picker-input";
 import { Section } from "@/components/ui/section";
-import { SectionLabel } from "@/components/ui/section-label";
 import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/cn";
 import { useData } from "@/lib/data-store";
-import type { ClassAssignment, ClassGroup, Student } from "@/lib/mock-data";
-import { useKernelFormSubmit } from "@/lib/use-kernel-form-submit";
+import type { ClassAssignment, ClassGroup } from "@/lib/mock-data";
+
+export interface LastAssignedTarget {
+	assignedId?: string;
+	baselineIds?: ReadonlySet<string>;
+}
 
 export interface ClassAssignmentsTabProps {
 	classGroup: ClassGroup;
-	view: "list" | "assign" | "success";
-	onViewChange: (view: "list" | "assign" | "success") => void;
+	onOpenAssignModal: () => void;
 	/** #319: vào bằng `?tab=assignments` từ trang chấm — mở sẵn toàn bộ item. */
 	assignmentsFocus?: boolean;
+	/** Tăng mỗi lần vừa giao bài thành công để tự mở sẵn bài mới nhất đầu danh sách. */
+	lastAssignedNonce?: number;
+	/** Định danh mục tiêu vừa giao (hoặc baseline trước POST) để chờ đúng snapshot mới (#717). */
+	lastAssignedTarget?: LastAssignedTarget;
 }
-
-const PICKER_SKILL_OPTIONS = [
-	"Tất cả",
-	"Writing",
-	"Reading",
-	"Listening",
-	"Speaking",
-	"Grammar",
-	"Vocabulary",
-];
 
 /** Icon kỹ năng cho header accordion bài đã giao (#391, design SKILL_ICON);
  * kỹ năng lạ rơi về BookOpen. Không có data thanh kỹ năng theo học viên nên
@@ -106,7 +83,7 @@ function TargetGradeActions({
 				<Link
 					to="/grading/$attemptId"
 					params={{ attemptId: target.attemptId }}
-					className="font-medium text-primary text-xs hover:text-primary"
+					className="rounded-xs font-medium text-primary text-xs outline-none hover:text-primary focus-visible:shadow-[var(--focus-ring)]"
 				>
 					Xem / sửa điểm
 				</Link>
@@ -127,17 +104,16 @@ function TargetGradeActions({
 
 export function ClassAssignmentsTab({
 	classGroup,
-	view,
-	onViewChange,
+	onOpenAssignModal,
 	assignmentsFocus = false,
+	lastAssignedNonce = 0,
+	lastAssignedTarget,
 }: ClassAssignmentsTabProps) {
 	const { data, studentById } = useData();
-	const submit = useKernelFormSubmit();
-	const [validationNowMs, setValidationNowMs] = useState(() => Date.now());
-	const effectiveNowMs = Math.max(Date.now(), validationNowMs);
+	const effectiveNowMs = Date.now();
 	const todayVN = vietnamTodayISO(new Date(effectiveNowMs));
 
-	// Class assignments for this specific class
+	// Bài đã giao cho lớp này, sắp mới nhất lên đầu
 	const classAssignments = useMemo(() => {
 		return (data.classAssignments ?? [])
 			.filter((ca) => ca.classId === classGroup.id)
@@ -161,7 +137,46 @@ export function ClassAssignmentsTab({
 		const first = firstPending ?? classAssignments[0];
 		return first ? new Set([first.id]) : new Set<string>();
 	}, [classAssignments, assignmentsFocus]);
+
 	const [userOpenIds, setUserOpenIds] = useState<Set<string> | null>(null);
+	const newestId = classAssignments[0]?.id;
+	const lastHandledNonceRef = useRef(0);
+
+	useEffect(() => {
+		if (!lastAssignedNonce) {
+			lastHandledNonceRef.current = 0;
+			return;
+		}
+		if (lastAssignedNonce === lastHandledNonceRef.current) {
+			return;
+		}
+		const matchedById = lastAssignedTarget?.assignedId
+			? classAssignments.find((ca) => ca.id === lastAssignedTarget.assignedId)
+			: undefined;
+		const matchedByBaseline = lastAssignedTarget?.baselineIds
+			? classAssignments.find(
+					(ca) => !lastAssignedTarget.baselineIds?.has(ca.id),
+				)
+			: undefined;
+		const targetId = lastAssignedTarget
+			? (matchedById?.id ?? matchedByBaseline?.id)
+			: newestId;
+		// Đợi DataProvider commit bản ghi mới nếu TanStack Query notifyManager đến sau 1 tick.
+		if (!targetId) return;
+		lastHandledNonceRef.current = lastAssignedNonce;
+		setUserOpenIds((prev) => {
+			const next = new Set(prev ?? defaultOpenIds);
+			next.add(targetId);
+			return next;
+		});
+	}, [
+		lastAssignedNonce,
+		lastAssignedTarget,
+		classAssignments,
+		newestId,
+		defaultOpenIds,
+	]);
+
 	const toggleItem = (id: string) => {
 		const base = new Set(userOpenIds ?? defaultOpenIds);
 		if (base.has(id)) {
@@ -172,778 +187,6 @@ export function ClassAssignmentsTab({
 		setUserOpenIds(base);
 	};
 
-	// Enrolled students in this class
-	const enrolledStudents = useMemo(() => {
-		return classGroup.studentIds
-			.map(studentById)
-			.filter((s): s is Student => s !== undefined);
-	}, [classGroup.studentIds, studentById]);
-
-	// Assign form state
-	const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
-	const [skillFilter, setSkillFilter] = useState<"all" | SkillId>("all");
-	const [due, setDue] = useState<string>(() => addDaysISO(todayVN, 7));
-	const [dueTime, setDueTime] = useState<string>("23:59");
-	const [dueDateInvalid, setDueDateInvalid] = useState(false);
-	const [dueTimeInvalid, setDueTimeInvalid] = useState(false);
-	const [formResetKey, setFormResetKey] = useState(0);
-	const [note, setNote] = useState("");
-	const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>(() =>
-		classGroup.studentIds.slice(0, 100),
-	);
-	const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
-	const [lastAssigned, setLastAssigned] = useState<{
-		promptTitle: string;
-		due: string;
-		dueAt: string;
-		studentIds: string[];
-	} | null>(null);
-
-	// Ready prompts for picker
-	const readyPrompts = useMemo(() => {
-		return data.assignmentPrompts.filter((p) => {
-			if (p.status !== "ready") return false;
-			const pSkill = p.skill ?? "writing";
-			if (skillFilter !== "all" && pSkill !== skillFilter) return false;
-			return true;
-		});
-	}, [data.assignmentPrompts, skillFilter]);
-
-	// Previously assigned prompt IDs in this class
-	const assignedPromptIds = useMemo(() => {
-		return new Set(classAssignments.map((ca) => ca.promptId));
-	}, [classAssignments]);
-
-	const selectedPrompt = useMemo(() => {
-		if (!selectedPromptId) return null;
-		return (
-			data.assignmentPrompts.find(
-				(p) => p.id === selectedPromptId && p.status === "ready",
-			) ?? null
-		);
-	}, [data.assignmentPrompts, selectedPromptId]);
-
-	// Reassign check
-	const previousAssignment = useMemo(() => {
-		if (!selectedPromptId) return null;
-		return (
-			classAssignments.find((ca) => ca.promptId === selectedPromptId) ?? null
-		);
-	}, [classAssignments, selectedPromptId]);
-
-	// Validation
-	const promptOk = Boolean(selectedPrompt);
-	const dueValidDate =
-		!dueDateInvalid && Boolean(due && parseStartDateStrict(due) !== null);
-	const dueTimeValid =
-		!dueTimeInvalid && Boolean(dueTime && parseTimeHHMM(dueTime) !== null);
-	const dueAtMs =
-		dueValidDate && dueTimeValid ? vietnamDateTimeMs(due, dueTime) : Number.NaN;
-	const dueAtPreviewIso = Number.isFinite(dueAtMs)
-		? new Date(dueAtMs).toISOString()
-		: null;
-	const dueDateNotPast = dueValidDate && due >= todayVN;
-	const dueTimeNotPast =
-		dueDateNotPast &&
-		(due > todayVN ||
-			dueTime === "23:59" ||
-			(Number.isFinite(dueAtMs) && dueAtMs > effectiveNowMs));
-	const dueOk =
-		dueValidDate && dueTimeValid && dueDateNotPast && dueTimeNotPast;
-	const dueErrorMsg =
-		dueDateInvalid || (hasAttemptedSubmit && !due)
-			? "Ngày không hợp lệ — nhập theo định dạng dd/mm/yyyy (ví dụ 06/11/2026)."
-			: dueTimeInvalid || (hasAttemptedSubmit && !dueTime)
-				? "Giờ không hợp lệ — nhập theo định dạng 24h HH:mm (ví dụ 23:59)."
-				: dueValidDate && !dueDateNotPast
-					? "Chọn hạn nộp từ hôm nay trở đi."
-					: dueDateNotPast && dueTimeValid && !dueTimeNotPast
-						? "Giờ hạn nộp hôm nay phải sau thời điểm hiện tại."
-						: null;
-	const studentsOk =
-		selectedStudentIds.length > 0 && selectedStudentIds.length <= 100;
-	const isReassign = promptOk && previousAssignment !== null;
-	const canSubmit = promptOk && dueOk && studentsOk;
-	// Toggle all students
-	function handleToggleAllStudents() {
-		if (selectedStudentIds.length === enrolledStudents.length) {
-			setSelectedStudentIds([]);
-		} else {
-			setSelectedStudentIds(enrolledStudents.map((s) => s.id).slice(0, 100));
-		}
-	}
-
-	function handleStudentToggle(studentId: string, checked: boolean) {
-		if (checked) {
-			if (selectedStudentIds.length >= 100) return;
-			setSelectedStudentIds((prev) => [...prev, studentId]);
-		} else {
-			setSelectedStudentIds((prev) => prev.filter((id) => id !== studentId));
-		}
-	}
-
-	function handleSkillChipChange(opt: string) {
-		if (opt === "Writing") setSkillFilter("writing");
-		else if (opt === "Reading") setSkillFilter("reading");
-		else if (opt === "Listening") setSkillFilter("listening");
-		else if (opt === "Speaking") setSkillFilter("speaking");
-		else if (opt === "Grammar") setSkillFilter("grammar");
-		else if (opt === "Vocabulary") setSkillFilter("vocabulary");
-		else setSkillFilter("all");
-	}
-
-	const selectedSkillChip =
-		skillFilter === "writing"
-			? "Writing"
-			: skillFilter === "reading"
-				? "Reading"
-				: skillFilter === "listening"
-					? "Listening"
-					: skillFilter === "speaking"
-						? "Speaking"
-						: skillFilter === "grammar"
-							? "Grammar"
-							: skillFilter === "vocabulary"
-								? "Vocabulary"
-								: "Tất cả";
-	// Action bar copy
-	const actionState = useMemo(() => {
-		if (!promptOk) {
-			return {
-				title: "Chưa chọn đề",
-				sub: "Chọn đề sẵn sàng, hạn nộp, rồi chọn học viên.",
-			};
-		}
-		if (!studentsOk) {
-			return {
-				title: "Chưa chọn học viên",
-				sub: "Giao cho ít nhất một học viên trong lớp này.",
-			};
-		}
-		if (!dueOk) {
-			if (dueDateNotPast && dueTimeValid && !dueTimeNotPast) {
-				return {
-					title: "Giờ hạn nộp đã qua",
-					sub: "Chọn giờ sau thời điểm hiện tại hoặc chuyển sang ngày khác.",
-				};
-			}
-			return {
-				title: "Thiếu hoặc sai hạn nộp",
-				sub: `Hạn phải từ hôm nay (${fmtDue(todayVN)}) trở đi.`,
-			};
-		}
-		return {
-			title: `Giao cho ${selectedStudentIds.length} học viên`,
-			sub: `${selectedPrompt?.title} · hạn ${fmtDueDisplay(due, dueAtPreviewIso)}`,
-		};
-	}, [
-		promptOk,
-		studentsOk,
-		dueOk,
-		dueDateNotPast,
-		dueTimeValid,
-		dueTimeNotPast,
-		todayVN,
-		selectedStudentIds.length,
-		selectedPrompt,
-		due,
-		dueAtPreviewIso,
-	]);
-
-	function handleDueChange(nextIso: string) {
-		if (submit.error) submit.reset();
-		setValidationNowMs(Date.now());
-		setDue(nextIso);
-	}
-
-	function handleDueTimeChange(nextTime: string) {
-		if (submit.error) submit.reset();
-		setValidationNowMs(Date.now());
-		setDueTime(nextTime);
-	}
-
-	async function handleSubmit() {
-		setHasAttemptedSubmit(true);
-		const clickNowMs = Date.now();
-		setValidationNowMs(clickNowMs);
-		const clickTodayVN = vietnamTodayISO(new Date(clickNowMs));
-		const clickDateOk = dueValidDate && due >= clickTodayVN;
-		const clickTimeOk =
-			clickDateOk &&
-			dueTimeValid &&
-			(due > clickTodayVN ||
-				dueTime === "23:59" ||
-				(Number.isFinite(dueAtMs) && dueAtMs > clickNowMs));
-		if (!promptOk || !studentsOk || !clickTimeOk || !selectedPrompt) return;
-
-		const result = await submit.run({
-			type: "assign-class-prompt",
-			payload: {
-				classId: classGroup.id,
-				promptId: selectedPrompt.id,
-				due,
-				dueTime,
-				note: note.trim(),
-				studentIds: selectedStudentIds,
-			},
-		});
-
-		if (result?.kind === "refreshed") {
-			setLastAssigned({
-				promptTitle: selectedPrompt.title,
-				due,
-				dueAt: new Date(dueAtMs).toISOString(),
-				studentIds: selectedStudentIds,
-			});
-			onViewChange("success");
-		}
-	}
-
-	function handleResetToAssign() {
-		const freshNowMs = Date.now();
-		const freshTodayVN = vietnamTodayISO(new Date(freshNowMs));
-		submit.reset();
-		setValidationNowMs(freshNowMs);
-		setSelectedPromptId(null);
-		setSkillFilter("all");
-		setDue(addDaysISO(freshTodayVN, 7));
-		setDueTime("23:59");
-		setDueDateInvalid(false);
-		setDueTimeInvalid(false);
-		setFormResetKey((k) => k + 1);
-		setNote("");
-		setSelectedStudentIds(enrolledStudents.map((s) => s.id).slice(0, 100));
-		setHasAttemptedSubmit(false);
-		onViewChange("assign");
-	}
-
-	async function handleReconcile() {
-		await submit.reconcile();
-	}
-
-	// --------------------------------------------------------------------------
-	// 1. VIEW: SUCCESS
-	// --------------------------------------------------------------------------
-	if (view === "success" && lastAssigned) {
-		return (
-			<Card
-				variant="white"
-				className="mx-auto flex max-w-xl flex-col gap-5 p-8"
-			>
-				<div
-					aria-hidden="true"
-					className="grid h-12 w-12 place-items-center rounded-full bg-success-soft text-success"
-				>
-					<svg
-						aria-hidden="true"
-						width="24"
-						height="24"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2.5"
-					>
-						<path d="M5 12l5 5L20 7" />
-					</svg>
-				</div>
-				<h2 className="font-semibold text-[22px] text-foreground">
-					Đã giao bài tập
-				</h2>
-				<p className="text-muted-foreground text-sm">
-					“{lastAssigned.promptTitle}” đã giao cho lớp {classGroup.name}. Học
-					viên thấy đề và hạn nộp. Chưa có bài nộp.
-				</p>
-
-				<ul className="flex flex-col gap-2.5 border-border-soft border-y py-4">
-					<li className="flex items-center justify-between gap-4">
-						<span className="text-muted-foreground text-sm">Lớp</span>
-						<strong className="font-semibold text-foreground text-sm">
-							{classGroup.name}
-						</strong>
-					</li>
-					<li className="flex items-center justify-between gap-4">
-						<span className="text-muted-foreground text-sm">Đề</span>
-						<strong className="font-semibold text-foreground text-sm">
-							{lastAssigned.promptTitle}
-						</strong>
-					</li>
-					<li className="flex items-center justify-between gap-4">
-						<span className="text-muted-foreground text-sm">Hạn nộp</span>
-						<strong className="text-foreground text-sm">
-							{fmtDueDisplay(lastAssigned.due, lastAssigned.dueAt)}
-						</strong>
-					</li>
-					<li className="flex items-center justify-between gap-4">
-						<span className="text-muted-foreground text-sm">Đã nộp</span>
-						<strong className="text-foreground text-sm">
-							0/{lastAssigned.studentIds.length}
-						</strong>
-					</li>
-				</ul>
-
-				<div className="flex flex-col gap-2">
-					<span className="text-muted-foreground text-sm">
-						Học viên ({lastAssigned.studentIds.length})
-					</span>
-					<div className="flex flex-col gap-2">
-						{lastAssigned.studentIds.map((sid) => {
-							const s = studentById(sid);
-							return (
-								<div
-									key={sid}
-									className="flex items-center justify-between rounded-lg border border-border-soft bg-muted/40 p-2.5"
-								>
-									<div className="flex items-center gap-2.5">
-										<Avatar text={s?.avatar ?? "??"} size="sm" />
-										<span className="font-medium text-foreground text-sm">
-											{s?.name ?? sid}
-										</span>
-									</div>
-									<StatusTag tone="neutral">Chưa nộp</StatusTag>
-								</div>
-							);
-						})}
-					</div>
-				</div>
-
-				<div className="flex flex-wrap gap-3 pt-2">
-					<Button variant="secondary" onClick={handleResetToAssign}>
-						Giao đề khác
-					</Button>
-					<Button variant="ghost" onClick={() => onViewChange("list")}>
-						Xem bài đã giao
-					</Button>
-				</div>
-			</Card>
-		);
-	}
-
-	// --------------------------------------------------------------------------
-	// 2. VIEW: ASSIGN FORM
-	// --------------------------------------------------------------------------
-	if (view === "assign") {
-		const previewSkill = selectedPrompt
-			? skillOf(selectedPrompt.skill ?? "writing")
-			: null;
-		const previewPart = selectedPrompt
-			? partOf(
-					selectedPrompt.skill ?? "writing",
-					selectedPrompt.part ?? selectedPrompt.task,
-				)
-			: null;
-		const previewType = selectedPrompt
-			? typeOf(
-					selectedPrompt.skill ?? "writing",
-					selectedPrompt.part ?? selectedPrompt.task,
-					selectedPrompt.type ?? selectedPrompt.genre,
-				)
-			: null;
-
-		return (
-			<div className="flex flex-col gap-6 pb-28">
-				<div className="grid gap-6 lg:grid-cols-[1.2fr_1fr] lg:items-start">
-					{/* Left: Picker Card */}
-					<Card variant="white" className="flex flex-col gap-4 p-5">
-						<div className="flex items-center justify-between gap-2">
-							<SectionLabel>Đề sẵn sàng</SectionLabel>
-							<Link
-								to="/assignments/new"
-								search={{ classId: classGroup.id }}
-								className="font-medium text-muted-foreground text-xs hover:text-foreground"
-							>
-								Thêm đề mới
-							</Link>
-						</div>
-
-						{/* Filter chips */}
-						<ChipFilter
-							options={PICKER_SKILL_OPTIONS}
-							value={selectedSkillChip}
-							onChange={handleSkillChipChange}
-						/>
-
-						{/* Prompt Cards */}
-						{readyPrompts.length === 0 ? (
-							<div className="rounded-lg border border-border-soft bg-muted/50 p-6 text-center text-muted-foreground text-sm">
-								Không có đề{" "}
-								{selectedSkillChip !== "Tất cả" ? `${selectedSkillChip} ` : ""}
-								sẵn sàng.
-							</div>
-						) : (
-							<div
-								role="radiogroup"
-								aria-label="Chọn đề"
-								className="flex flex-col gap-2"
-							>
-								{readyPrompts.map((p) => {
-									const isSelected = selectedPromptId === p.id;
-									const isAlreadyAssigned = assignedPromptIds.has(p.id);
-									const skill = skillOf(p.skill ?? "writing");
-									const part = partOf(skill.id, p.part ?? p.task);
-
-									return (
-										<button
-											type="button"
-											key={p.id}
-											aria-pressed={isSelected}
-											onClick={() => setSelectedPromptId(p.id)}
-											className={cn(
-												"flex flex-col gap-1.5 rounded-xl border p-3.5 text-left transition-all duration-150",
-												isSelected
-													? "border-primary bg-muted shadow-xs ring-1 ring-fg"
-													: "border-border bg-background hover:border-primary/60 hover:bg-muted/50",
-											)}
-										>
-											<div className="flex items-start justify-between gap-2">
-												<strong className="font-semibold text-foreground text-sm">
-													{p.title}
-												</strong>
-												<span className="shrink-0 text-muted-foreground text-xs">
-													{part.label} · Band {p.band}
-												</span>
-											</div>
-											<div className="flex flex-wrap items-center gap-2 text-xs">
-												<Tag>{skill.name}</Tag>
-												{p.writing != null && <Tag>+ Writing</Tag>}
-												{isAlreadyAssigned ? (
-													<StatusTag tone="used">Đã giao lớp này</StatusTag>
-												) : (
-													<StatusTag tone="ok">Sẵn sàng</StatusTag>
-												)}
-												{p.source.trim() && (
-													<span className="truncate text-muted-foreground">
-														{p.source.trim()}
-													</span>
-												)}
-											</div>
-										</button>
-									);
-								})}
-							</div>
-						)}
-
-						<p className="text-[11px] text-muted-foreground">
-							Bản nháp không hiện ở đây. Sửa trong ngân hàng rồi mới giao.
-						</p>
-						{hasAttemptedSubmit && !promptOk && (
-							<p className="font-medium text-danger text-xs">
-								Chọn một đề sẵn sàng trước khi giao.
-							</p>
-						)}
-					</Card>
-
-					{/* Right: Targets + Preview */}
-					<div className="flex flex-col gap-6">
-						{/* Target Card */}
-						<Card variant="white" className="flex flex-col gap-5 p-5">
-							<div>
-								<SectionLabel>Giao cho lớp này</SectionLabel>
-								<h2 className="mt-1 font-semibold text-[20px] text-foreground">
-									Hạn nộp và học viên
-								</h2>
-							</div>
-
-							{/* Due Date & Time (#572) */}
-							<div className="flex flex-col gap-2">
-								<div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
-									<div className="flex flex-col gap-1.5">
-										<label
-											htmlFor="assignment-due-input"
-											className="font-medium text-foreground text-xs"
-										>
-											Ngày hạn nộp <span className="text-danger">*</span>
-										</label>
-										<DatePickerInput
-											key={`due-date-${formResetKey}`}
-											id="assignment-due-input"
-											required
-											minDateISO={todayVN}
-											todayISO={todayVN}
-											value={due}
-											onChange={handleDueChange}
-											onInvalidChange={setDueDateInvalid}
-											aria-invalid={
-												dueDateInvalid ||
-												(dueValidDate && !dueDateNotPast) ||
-												(hasAttemptedSubmit && !dueValidDate)
-											}
-											aria-describedby={
-												dueErrorMsg || dueOk
-													? "assignment-due-feedback"
-													: undefined
-											}
-										/>
-									</div>
-									<div className="flex flex-col gap-1.5">
-										<label
-											htmlFor="assignment-due-time-input"
-											className="font-medium text-foreground text-xs"
-										>
-											Giờ hạn nộp <span className="text-danger">*</span>
-										</label>
-										<TimeInput24h
-											key={`due-time-${formResetKey}`}
-											id="assignment-due-time-input"
-											required
-											value={dueTime}
-											minTimeHHMM={
-												due === todayVN
-													? formatVietnamTimeHHMM(effectiveNowMs)
-													: undefined
-											}
-											onChange={handleDueTimeChange}
-											onInvalidChange={setDueTimeInvalid}
-											aria-invalid={
-												dueTimeInvalid ||
-												(dueDateNotPast && dueTimeValid && !dueTimeNotPast) ||
-												(hasAttemptedSubmit && !dueTimeValid)
-											}
-											aria-describedby={
-												dueErrorMsg || dueOk
-													? "assignment-due-feedback"
-													: undefined
-											}
-										/>
-									</div>
-								</div>
-								{dueErrorMsg ? (
-									<p
-										id="assignment-due-feedback"
-										className="font-medium text-danger text-xs"
-									>
-										{dueErrorMsg}
-									</p>
-								) : dueOk ? (
-									<p
-										id="assignment-due-feedback"
-										data-testid="assignment-due-preview"
-										className="text-muted-foreground text-xs"
-									>
-										Đã hiểu:{" "}
-										<strong className="font-medium text-foreground">
-											{formatViWeekdayDate(due)} lúc {dueTime}
-										</strong>{" "}
-										(giờ Việt Nam)
-									</p>
-								) : null}
-							</div>
-
-							{/* Message / Note */}
-							<div className="flex flex-col gap-1.5">
-								<label
-									htmlFor="assignment-note-input"
-									className="font-medium text-muted-foreground text-xs"
-								>
-									Nhắn học viên (không bắt buộc)
-								</label>
-								<textarea
-									id="assignment-note-input"
-									rows={2}
-									value={note}
-									onChange={(e) => setNote(e.target.value)}
-									placeholder="Ví dụ: nộp trước buổi T5, lập dàn ý 4 đoạn."
-									className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-base text-foreground shadow-xs outline-none transition-[color,box-shadow] placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
-								/>
-							</div>
-
-							{/* Student Checklist */}
-							<div className="flex flex-col gap-2">
-								<div className="flex items-center justify-between gap-2">
-									<SectionLabel>Học viên trong lớp</SectionLabel>
-									<button
-										type="button"
-										onClick={handleToggleAllStudents}
-										className="font-medium text-muted-foreground text-xs hover:text-foreground"
-									>
-										{selectedStudentIds.length === enrolledStudents.length
-											? "Bỏ chọn tất cả"
-											: "Chọn tất cả"}
-									</button>
-								</div>
-
-								{enrolledStudents.length === 0 ? (
-									<p className="text-muted-foreground text-xs">
-										Lớp chưa có học viên nào.
-									</p>
-								) : (
-									<div className="flex flex-col divide-y divide-border-soft rounded-lg border border-border-soft">
-										{enrolledStudents.map((s) => {
-											const isChecked = selectedStudentIds.includes(s.id);
-											return (
-												<label
-													key={s.id}
-													className="flex cursor-pointer items-center justify-between p-3 hover:bg-muted/50"
-												>
-													<div className="flex items-center gap-3">
-														<input
-															type="checkbox"
-															checked={isChecked}
-															onChange={(e) =>
-																handleStudentToggle(s.id, e.target.checked)
-															}
-															className="h-4 w-4 rounded-sm border-border text-primary focus:ring-primary"
-														/>
-														<Avatar text={s.avatar} size="sm" />
-														<span className="font-medium text-foreground text-sm">
-															{s.name}
-														</span>
-													</div>
-													<span className="text-muted-foreground text-xs">
-														{s.phone}
-													</span>
-												</label>
-											);
-										})}
-									</div>
-								)}
-
-								{hasAttemptedSubmit && !studentsOk && (
-									<p className="font-medium text-danger text-xs">
-										Chọn ít nhất một học viên.
-									</p>
-								)}
-							</div>
-
-							{/* Reassign Warning Note */}
-							{isReassign && previousAssignment && (
-								<div className="rounded-md border border-warn/40 bg-warn-soft p-3 text-muted-foreground text-xs leading-relaxed">
-									Đề này đã giao lớp này, hạn{" "}
-									{fmtDueDisplay(
-										previousAssignment.due,
-										previousAssignment.dueAt,
-									)}
-									. Giao lại sẽ thêm lượt mới cho học viên đã chọn.
-								</div>
-							)}
-						</Card>
-
-						{/* Live Preview Paper */}
-						<div className="rounded-lg border border-border bg-muted/40 p-5">
-							<p className="text-muted-foreground text-sm">
-								Xem trước phía học viên
-							</p>
-							<p className="mt-1 font-semibold text-[17px] text-foreground">
-								{selectedPrompt ? selectedPrompt.title : "Chọn một đề"}
-							</p>
-							<p className="mt-1.5 text-muted-foreground text-xs">
-								{(() => {
-									const duePreviewText =
-										dueValidDate && dueTimeValid
-											? fmtDueDisplay(due, dueAtPreviewIso)
-											: "—";
-									return selectedPrompt && previewPart
-										? `${previewPart.spec} · hạn ${duePreviewText}`
-										: `hạn ${duePreviewText}`;
-								})()}
-							</p>
-							{selectedPrompt ? (
-								<>
-									{isAutoSkill(selectedPrompt.skill ?? "writing") && (
-										<p className="mt-3 font-medium text-foreground text-xs">
-											Phần 1 · {(selectedPrompt.questions ?? []).length} câu hỏi
-											trắc nghiệm
-										</p>
-									)}
-									{!isEmptyRichText(
-										isAutoSkill(selectedPrompt.skill ?? "writing")
-											? (selectedPrompt.passage ?? "")
-											: selectedPrompt.prompt,
-									) && (
-										<RichTextBody
-											text={
-												isAutoSkill(selectedPrompt.skill ?? "writing")
-													? (selectedPrompt.passage ?? "")
-													: selectedPrompt.prompt
-											}
-											legacyWhitespace="pre-wrap"
-											className="mt-2 text-foreground text-sm leading-[1.55]"
-										/>
-									)}
-									{selectedPrompt.writing != null && (
-										<div className="mt-3 border-border border-t pt-2.5 text-sm">
-											<p className="font-medium text-foreground text-xs">
-												Phần 2 · Writing (
-												{selectedPrompt.writing.part === "task1"
-													? "Task 1"
-													: "Task 2"}
-												)
-											</p>
-											<RichTextBody
-												text={selectedPrompt.writing.prompt}
-												className="mt-1 text-foreground text-sm leading-[1.55]"
-											/>
-										</div>
-									)}
-								</>
-							) : (
-								<p className="mt-3 text-foreground text-sm leading-[1.55]">
-									Đề sẽ hiện khi bạn chọn từ ngân hàng.
-								</p>
-							)}
-							{selectedPrompt && previewType && (
-								<div className="mt-3 flex flex-wrap gap-2">
-									{previewSkill && <Tag>{previewSkill.name}</Tag>}
-									{selectedPrompt.writing != null && <Tag>+ Writing</Tag>}
-									{previewPart && <Tag>{previewPart.label}</Tag>}
-									<Tag>{previewType.label}</Tag>
-									<Tag>{`Band ${selectedPrompt.band}`}</Tag>
-									{selectedPrompt.source.trim() && (
-										<Tag>{selectedPrompt.source.trim()}</Tag>
-									)}
-									{note.trim() && <Tag>Có lời nhắn</Tag>}
-								</div>
-							)}
-						</div>
-					</div>
-				</div>
-
-				{/* Sticky Action Bar */}
-				<div className="fixed inset-x-0 bottom-0 z-20 border-border border-t bg-background/95 p-4 shadow-lg backdrop-blur-sm">
-					<div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4">
-						{/* Left: Action copy */}
-						<div className="flex flex-col">
-							<strong className="font-semibold text-foreground text-sm">
-								{actionState.title}
-							</strong>
-							<span className="text-muted-foreground text-xs">
-								{actionState.sub}
-							</span>
-						</div>
-
-						{/* Right: Buttons + Submit Notice */}
-						<div className="flex items-center gap-3">
-							{submit.error && (
-								<p
-									role="alert"
-									className="font-medium text-destructive text-xs"
-								>
-									{submit.error}
-								</p>
-							)}
-							{submit.notice && (
-								<KernelSubmitNotice
-									notice={submit.notice}
-									onReconcile={handleReconcile}
-									disabled={submit.saving}
-								/>
-							)}
-							<Button
-								onClick={handleSubmit}
-								disabled={!canSubmit || submit.saving}
-								className={cn(!canSubmit && "cursor-not-allowed opacity-40")}
-							>
-								Giao bài tập
-							</Button>
-						</div>
-					</div>
-				</div>
-			</div>
-		);
-	}
-
-	// --------------------------------------------------------------------------
-	// 3. VIEW: LIST
-	// --------------------------------------------------------------------------
 	const totalTargetsCount = classAssignments.reduce(
 		(acc, ca) => acc + ca.targets.length,
 		0,
@@ -959,6 +202,7 @@ export function ClassAssignmentsTab({
 
 	return (
 		<Section
+			className="max-sm:[&>div:first-child>h2]:min-w-0 max-sm:[&>div:first-child>h2]:flex-wrap max-sm:[&>div:first-child]:flex-wrap"
 			title={
 				<>
 					Bài đã giao lớp này{" "}
@@ -972,23 +216,25 @@ export function ClassAssignmentsTab({
 			}
 			count={classAssignments.length}
 			action={
-				<Button
-					id="list-assign-btn"
-					variant="ghost"
-					size="sm"
-					onClick={() => onViewChange("assign")}
-				>
-					Giao thêm đề
-				</Button>
+				classAssignments.length > 0 ? (
+					<Button
+						id="list-assign-btn"
+						variant="outline"
+						size="sm"
+						onClick={onOpenAssignModal}
+					>
+						+ Giao bài tập
+					</Button>
+				) : undefined
 			}
 		>
 			{classAssignments.length === 0 ? (
-				<div className="rounded-lg border border-dashed p-6 text-center">
+				<div className="rounded-lg border border-border border-dashed p-6 text-center">
 					<p className="text-muted-foreground text-sm">
 						Chưa giao bài nào cho lớp này.
 					</p>
 					<div className="mt-4 flex justify-center">
-						<Button size="sm" onClick={() => onViewChange("assign")}>
+						<Button size="sm" onClick={onOpenAssignModal}>
 							Giao bài tập
 						</Button>
 					</div>
@@ -1024,12 +270,12 @@ export function ClassAssignmentsTab({
 									type="button"
 									aria-expanded={open}
 									onClick={() => toggleItem(ca.id)}
-									className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+									className="flex w-full flex-wrap items-center gap-x-3 gap-y-2 rounded-lg px-4 py-3 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:flex-nowrap"
 								>
 									<span className="grid size-9 shrink-0 place-items-center rounded-md bg-muted">
-										<SkillIcon className="size-4" />
+										<SkillIcon aria-hidden="true" className="size-4" />
 									</span>
-									<span className="min-w-0 flex-1">
+									<span className="min-w-0 flex-1 basis-[calc(100%-3.5rem)] sm:basis-0">
 										<span className="block truncate font-medium text-sm">
 											{ca.title}
 										</span>
@@ -1047,8 +293,10 @@ export function ClassAssignmentsTab({
 											</span>
 										</span>
 									</span>
-									{promptRow?.writing != null && <Tag>+ Writing</Tag>}
-									<StatusTag tone={rollup.tone}>{rollup.label}</StatusTag>
+									<span className="flex flex-wrap items-center gap-2 pl-12 sm:shrink-0 sm:pl-0">
+										{promptRow?.writing != null && <Tag>+ Writing</Tag>}
+										<StatusTag tone={rollup.tone}>{rollup.label}</StatusTag>
+									</span>
 									<span className="hidden w-24 sm:block">
 										<span className="block h-1.5 overflow-hidden rounded-full bg-muted">
 											<span
@@ -1058,8 +306,9 @@ export function ClassAssignmentsTab({
 										</span>
 									</span>
 									<ChevronDown
+										aria-hidden="true"
 										className={cn(
-											"size-4 shrink-0 text-muted-foreground transition-transform",
+											"ml-auto size-4 shrink-0 text-muted-foreground transition-transform sm:ml-0",
 											open && "rotate-180",
 										)}
 									/>
@@ -1067,7 +316,7 @@ export function ClassAssignmentsTab({
 								{open && (
 									<div
 										id={`assign-body-${ca.id}`}
-										className="sub-list divide-y divide-border-soft border-border-soft border-t"
+										className="sub-list divide-y divide-border border-border border-t"
 									>
 										{ca.targets.map((target) => {
 											const s = studentById(target.studentId);
@@ -1080,15 +329,15 @@ export function ClassAssignmentsTab({
 											return (
 												<div
 													key={target.studentId}
-													className="sub-row flex items-center justify-between px-4 py-2.5"
+													className="sub-row flex flex-col gap-2 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between"
 												>
-													<div className="flex items-center gap-2.5">
+													<div className="flex min-w-0 items-center gap-2.5">
 														<Avatar text={s?.avatar ?? "??"} size="sm" />
-														<strong className="font-medium text-foreground text-sm">
+														<strong className="truncate font-medium text-foreground text-sm">
 															{s?.name ?? target.studentId}
 														</strong>
 													</div>
-													<div className="flex items-center gap-3">
+													<div className="flex flex-wrap items-center gap-2 sm:shrink-0 sm:justify-end sm:gap-3">
 														<span className="text-muted-foreground text-xs">
 															{target.submittedAt
 																? fmtWhen(target.submittedAt)

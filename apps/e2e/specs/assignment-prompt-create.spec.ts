@@ -690,12 +690,17 @@ test("author answer explanation, preserve through preview and test-builder updat
 	await page
 		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
-	await page.getByRole("button", { name: "Giao bài tập" }).first().click();
-	await page.getByRole("button", { name: new RegExp(TITLE) }).click();
-	await page.getByRole("button", { name: "Giao bài tập" }).last().click();
-	await expect(
-		page.getByRole("heading", { name: "Đã giao bài tập" }),
-	).toBeVisible();
+	await page.getByRole("button", { name: "Giao bài tập", exact: true }).click();
+	const assignDialog = page.getByRole("dialog", {
+		name: /Giao bài tập · Lớp Reading 571/,
+	});
+	await expect(assignDialog).toBeVisible();
+	await assignDialog.getByRole("button", { name: new RegExp(TITLE) }).click();
+	await assignDialog
+		.getByRole("button", { name: "Giao bài tập", exact: true })
+		.click();
+	await expect(assignDialog).toBeHidden();
+	await expect(page.getByText(TITLE).first()).toBeVisible();
 
 	// Browser context riêng cho học viên tránh đụng cookie localhost với giáo viên.
 	const studentCtx = await browser.newContext();

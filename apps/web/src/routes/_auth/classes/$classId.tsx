@@ -13,7 +13,11 @@ import type {
 	OccurrenceActionResult,
 	OccurrenceEditPayload,
 } from "@/components/class-detail/session-actions-modal";
-import { ClassAssignmentsTab } from "@/components/classes/class-assignments-tab";
+import { AssignClassPromptModal } from "@/components/classes/assign-class-prompt-modal";
+import {
+	ClassAssignmentsTab,
+	type LastAssignedTarget,
+} from "@/components/classes/class-assignments-tab";
 import { ClassStudyPackSection } from "@/components/classes/class-study-pack-section";
 import { AddClassSessionModal } from "@/components/modals/add-class-session-modal";
 import { ClassStatusModal } from "@/components/modals/class-status-modal";
@@ -184,19 +188,29 @@ function ClassDetailRoute() {
 	const [practiceMode, setPracticeMode] = useState<"sessions" | "study-pack">(
 		"sessions",
 	);
-	const [assignmentsView, setAssignmentsView] = useState<
-		"list" | "assign" | "success"
-	>("list");
+	const [assignModalOpen, setAssignModalOpen] = useState(false);
+	const [lastAssigned, setLastAssigned] = useState<{
+		classId: string;
+		nonce: number;
+		target?: LastAssignedTarget;
+	}>({ classId, nonce: 0 });
 	const [addStudentOpen, setAddStudentOpen] = useState(false);
 	const [feeModalOpen, setFeeModalOpen] = useState(false);
 	const [editModalOpen, setEditModalOpen] = useState(false);
 	const [statusModalOpen, setStatusModalOpen] = useState(false);
 	const [notes, setNotes] = useState<string | null>(null);
+	const resetLastAssigned = () => setLastAssigned({ classId, nonce: 0 });
+	useEffect(() => {
+		if (lastAssigned.classId !== classId) {
+			setAssignModalOpen(false);
+			setLastAssigned({ classId, nonce: 0 });
+		}
+	}, [classId, lastAssigned.classId]);
 	const handleTabChange = (nextTab: string) => {
 		setTab(nextTab);
 		if (nextTab !== "sessions-practice") {
-			setAssignmentsView("list");
 			setPracticeMode("sessions");
+			resetLastAssigned();
 		}
 	};
 	const sy = useClassCurriculum(classId);
@@ -321,25 +335,11 @@ function ClassDetailRoute() {
 						>
 							Chỉnh sửa
 						</Button>
-						{assignmentsView === "list" && (
-							<Button
-								variant="outline"
-								size="sm"
-								onClick={() => {
-									setTab("sessions-practice");
-									setPracticeMode("sessions");
-									setAssignmentsView("assign");
-								}}
-							>
-								Giao bài tập
-							</Button>
-						)}
 						{sy ? (
 							<Button
 								size="sm"
 								onClick={() => {
 									setTab("sessions-practice");
-									setAssignmentsView("list");
 									setManageOpen(true);
 								}}
 							>
@@ -416,8 +416,8 @@ function ClassDetailRoute() {
 							type="button"
 							aria-pressed={practiceMode === "study-pack"}
 							onClick={() => {
-								setAssignmentsView("list");
 								setPracticeMode("study-pack");
+								resetLastAssigned();
 							}}
 							className={cn(
 								"rounded-sm px-3 py-1.5 font-medium text-sm transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
@@ -434,13 +434,6 @@ function ClassDetailRoute() {
 						<ClassStudyPackSection
 							key={`study-pack-${cls.id}`}
 							classId={cls.id}
-						/>
-					) : assignmentsView !== "list" ? (
-						<ClassAssignmentsTab
-							key={classId}
-							classGroup={cls}
-							view={assignmentsView}
-							onViewChange={setAssignmentsView}
 						/>
 					) : (
 						<div className="grid gap-6 xl:grid-cols-2 xl:items-start">
@@ -473,9 +466,16 @@ function ClassDetailRoute() {
 							<ClassAssignmentsTab
 								key={`assign-${classId}`}
 								classGroup={cls}
-								view="list"
-								onViewChange={setAssignmentsView}
+								onOpenAssignModal={() => setAssignModalOpen(true)}
 								assignmentsFocus={assignmentsFocus}
+								lastAssignedNonce={
+									lastAssigned.classId === cls.id ? lastAssigned.nonce : 0
+								}
+								lastAssignedTarget={
+									lastAssigned.classId === cls.id
+										? lastAssigned.target
+										: undefined
+								}
 							/>
 						</div>
 					)}
@@ -612,6 +612,31 @@ function ClassDetailRoute() {
 				open={statusModalOpen}
 				onClose={() => setStatusModalOpen(false)}
 				cls={cls}
+			/>
+			<AssignClassPromptModal
+				key={`assign-prompt-${cls.id}`}
+				open={assignModalOpen}
+				onClose={() => setAssignModalOpen(false)}
+				classGroup={cls}
+				onAssigned={(info) =>
+					setLastAssigned((prev) => ({
+						classId: cls.id,
+						nonce: (prev.classId === cls.id ? prev.nonce : 0) + 1,
+						target: {
+							assignedId: info.assignedId,
+							baselineIds: info.baselineIds,
+						},
+					}))
+				}
+				onRequestAddStudent={
+					isPaused
+						? undefined
+						: () => {
+								setAssignModalOpen(false);
+								handleTabChange("roster");
+								setAddStudentOpen(true);
+							}
+				}
 			/>
 		</div>
 	);

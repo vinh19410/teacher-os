@@ -164,13 +164,20 @@ async function assignPromptToClass(page: Page) {
 	await page
 		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
-	await page.getByRole("button", { name: "Giao bài tập" }).first().click();
-	await page.getByRole("button", { name: new RegExp(PROMPT_TITLE) }).click();
-	await expect(page.getByText("Giao cho 2 học viên")).toBeVisible();
-	await page.getByRole("button", { name: "Giao bài tập" }).last().click();
-	await expect(
-		page.getByRole("heading", { name: "Đã giao bài tập" }),
-	).toBeVisible();
+	await page.getByRole("button", { name: "Giao bài tập", exact: true }).click();
+	const assignDialog = page.getByRole("dialog", {
+		name: new RegExp(`Giao bài tập · ${CLASS_NAME}`),
+	});
+	await expect(assignDialog).toBeVisible();
+	await assignDialog
+		.getByRole("button", { name: new RegExp(PROMPT_TITLE) })
+		.click();
+	await expect(assignDialog.getByText("Giao cho 2 học viên")).toBeVisible();
+	await assignDialog
+		.getByRole("button", { name: "Giao bài tập", exact: true })
+		.click();
+	await expect(assignDialog).toBeHidden();
+	await expect(page.getByText(PROMPT_TITLE).first()).toBeVisible();
 }
 
 /** Tạo hóa đơn cho STUDENT_1 qua modal /tuition (pattern create-invoice.spec). */
