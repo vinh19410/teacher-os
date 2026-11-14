@@ -222,4 +222,96 @@ describe("AssignPackToClassModal", () => {
 			await screen.findByText("Bộ đề này đang chạy trên lớp với lịch khác."),
 		).toBeTruthy();
 	});
+
+	it("shows accurate active conflict warning, validates releaseTime >= dueTime, resets on reopen, and decouples onAssigned errors", async () => {
+		mockFetchClassStudyPacks.mockResolvedValue({
+			packs: [
+				{
+					id: "csp-1",
+					classId: "cl-active",
+					packId: "pack-1",
+					title: samplePack.title,
+					startDate: "2026-11-10",
+					releaseTime: "06:00",
+					dueTime: "17:00",
+					status: "active",
+					createdAt: "2026-11-01T00:00:00.000Z",
+					cancelledAt: null,
+					assignments: [],
+				},
+			],
+			holidays: [],
+		});
+		const onAssignedRejects = vi
+			.fn()
+			.mockRejectedValue(new Error("refresh failed"));
+		mockAssignStudyPackToClass.mockResolvedValue({
+			packs: [],
+			holidays: [],
+		});
+
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		const { rerender } = render(
+			<QueryClientProvider client={client}>
+				<AssignPackToClassModal
+					open={true}
+					onClose={vi.fn()}
+					pack={samplePack}
+					onAssigned={onAssignedRejects}
+				/>
+			</QueryClientProvider>,
+		);
+
+		expect(
+			await screen.findByText(/Để đổi lịch học mới, hãy dừng bản đang chạy/),
+		).toBeTruthy();
+
+		// Invalid releaseTime >= dueTime blocked client-side
+		fireEvent.change(screen.getByLabelText(/Giờ mở bài/), {
+			target: { value: "18:00" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Xác nhận gán bộ đề" }));
+		expect(
+			await screen.findByText("Giờ hạn nộp phải sau giờ mở bài."),
+		).toBeTruthy();
+		expect(mockAssignStudyPackToClass).not.toHaveBeenCalled();
+
+		// Fix releaseTime and submit while onAssigned rejects -> confirmation stays visible
+		fireEvent.change(screen.getByLabelText(/Giờ mở bài/), {
+			target: { value: "07:00" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Xác nhận gán bộ đề" }));
+		expect(
+			await screen.findByRole("link", { name: /Mở trang lớp học/ }),
+		).toBeTruthy();
+		expect(screen.queryByText("Không thể gán bộ đề.")).toBeNull();
+
+		// Close and reopen -> confirmation resets back to fresh form with default times
+		rerender(
+			<QueryClientProvider client={client}>
+				<AssignPackToClassModal
+					open={false}
+					onClose={vi.fn()}
+					pack={samplePack}
+					onAssigned={onAssignedRejects}
+				/>
+			</QueryClientProvider>,
+		);
+		rerender(
+			<QueryClientProvider client={client}>
+				<AssignPackToClassModal
+					open={true}
+					onClose={vi.fn()}
+					pack={samplePack}
+					onAssigned={onAssignedRejects}
+				/>
+			</QueryClientProvider>,
+		);
+		expect(screen.queryByRole("link", { name: /Mở trang lớp học/ })).toBeNull();
+		expect(
+			(screen.getByLabelText(/Giờ mở bài/) as HTMLInputElement).value,
+		).toBe("06:00");
+	});
 });

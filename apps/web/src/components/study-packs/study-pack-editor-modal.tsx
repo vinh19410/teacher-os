@@ -427,7 +427,11 @@ export function StudyPackEditorModal({
 				: await createStudyPack(payload);
 			toast.success(editingPackId ? "Đã cập nhật bộ đề." : "Đã tạo bộ đề mới.");
 			onClose();
-			await onSaved(res.pack);
+			try {
+				await onSaved(res.pack);
+			} catch {
+				// Save already succeeded; parent query/cache refresh handles retry.
+			}
 		} catch {
 			setFormError("Không lưu được bộ đề. Vui lòng kiểm tra lại dữ liệu.");
 			toast.error("Không lưu được bộ đề.");

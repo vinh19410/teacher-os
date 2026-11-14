@@ -440,4 +440,47 @@ describe("StudyPackDetailRoute (/assignments/packs/$packId)", () => {
 		).toBeTruthy();
 		expect(screen.queryByRole("button", { name: "Gán cho lớp" })).toBeNull();
 	});
+
+	it("updates pack detail cache and clears stale ?item= when StudyPackEditorModal saves removed item", async () => {
+		const updatedOrgPack: StudyPackDetailView = {
+			...orgPack,
+			title: "Bộ đề Trung tâm đã cập nhật",
+			items: [
+				{
+					...orgPack.items[0],
+					id: "org-item-new",
+					title: "Writing Task 1",
+				},
+			],
+		};
+		routerState.params = { packId: "org-pack-1" };
+		routerState.search = { item: "org-item-1" };
+		mockFetchStudyPackDetail.mockResolvedValue({ pack: orgPack });
+		mockUpdateStudyPack.mockResolvedValue({ pack: updatedOrgPack });
+
+		renderDetailRoute();
+
+		await screen.findByRole("heading", { name: "Bộ đề Trung tâm 14 ngày" });
+		fireEvent.click(screen.getByRole("button", { name: "Chỉnh sửa" }));
+
+		const titleInput = await screen.findByLabelText(/Tiêu đề bộ đề/);
+		fireEvent.change(titleInput, {
+			target: { value: "Bộ đề Trung tâm đã cập nhật" },
+		});
+		routerState.navigate.mockClear();
+
+		fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+
+		expect(
+			await screen.findByRole("heading", {
+				name: "Bộ đề Trung tâm đã cập nhật",
+			}),
+		).toBeTruthy();
+		expect(routerState.navigate).toHaveBeenCalledWith({
+			to: "/assignments/packs/$packId",
+			params: { packId: "org-pack-1" },
+			search: {},
+			replace: true,
+		});
+	});
 });

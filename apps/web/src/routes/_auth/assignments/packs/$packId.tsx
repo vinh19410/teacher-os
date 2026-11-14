@@ -719,6 +719,12 @@ export function StudyPackDetailRoute() {
 					queryClient.setQueryData(["study-pack-detail", pack.id], {
 						pack: updated,
 					});
+					if (
+						searchParams.item &&
+						!updated.items.some((entry) => entry.id === searchParams.item)
+					) {
+						updateSearch({ item: undefined });
+					}
 				}}
 			/>
 

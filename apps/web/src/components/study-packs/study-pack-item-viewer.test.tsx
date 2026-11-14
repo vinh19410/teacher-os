@@ -392,4 +392,105 @@ describe("StudyPackItemViewer", () => {
 		await screen.findByRole("button", { name: /Nộp bài/ });
 		expect(mockFetchStudyPackItemAudio).not.toHaveBeenCalled();
 	});
+
+	it("preserves MCQ choices in Làm thử when detail.type is empty, supports blank-stem answerable questions, and revokes aborted audio fetches", async () => {
+		mockGetStudyPackItemDetail.mockResolvedValue({
+			...readingDetail,
+			type: "",
+			intro: "<p><strong>Hướng dẫn HTML</strong></p>",
+			prompt: "<p>Yêu cầu đề HTML</p>",
+			passage: "<p>Đoạn văn HTML</p>",
+			transcript: "",
+			questions: [
+				{
+					stem: "",
+					opts: ["Option X", "Option Y"],
+					answer: "B",
+					alts: "",
+					type: null,
+					pin: null,
+					explanation: "",
+				},
+			],
+		});
+
+		const { container } = renderWithQuery(
+			<StudyPackItemViewer
+				packId="pack-1"
+				item={{ ...readingItem, type: "" }}
+				activeTab="key"
+				onTabChange={vi.fn()}
+			/>,
+		);
+
+		await screen.findByText("Hướng dẫn HTML");
+		expect(container.textContent).not.toContain("<strong>");
+		expect(container.textContent).not.toContain("<p>");
+		const simView = renderWithQuery(
+			<StudyPackItemViewer
+				packId="pack-1"
+				item={{ ...readingItem, type: "" }}
+				activeTab="sim"
+				onTabChange={vi.fn()}
+			/>,
+		);
+		expect(
+			await simView.findByRole("radio", { name: /Option X/ }),
+		).toBeTruthy();
+
+		// Aborted in-flight audio request must revoke its resolved blob URL
+		let resolveAudio!: (url: string) => void;
+		let capturedSignal: AbortSignal | undefined;
+		mockGetStudyPackItemDetail.mockResolvedValue(listeningDetail);
+		mockFetchStudyPackItemAudio.mockImplementationOnce(
+			(_packId, _itemId, signal) => {
+				capturedSignal = signal;
+				return new Promise<string>((resolve) => {
+					resolveAudio = resolve;
+				});
+			},
+		);
+
+		const revokeSpy = vi.fn();
+		Object.defineProperty(URL, "revokeObjectURL", {
+			writable: true,
+			configurable: true,
+			value: revokeSpy,
+		});
+
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		const { rerender } = render(
+			<QueryClientProvider client={client}>
+				<StudyPackItemViewer
+					packId="pack-1"
+					item={listeningItem}
+					activeTab="sim"
+					onTabChange={vi.fn()}
+				/>
+			</QueryClientProvider>,
+		);
+
+		await waitFor(() => {
+			expect(mockFetchStudyPackItemAudio).toHaveBeenCalledTimes(1);
+		});
+
+		rerender(
+			<QueryClientProvider client={client}>
+				<StudyPackItemViewer
+					packId="pack-1"
+					item={readingItem}
+					activeTab="key"
+					onTabChange={vi.fn()}
+				/>
+			</QueryClientProvider>,
+		);
+		expect(capturedSignal?.aborted).toBe(true);
+
+		resolveAudio("blob:aborted-url");
+		await waitFor(() => {
+			expect(revokeSpy).toHaveBeenCalledWith("blob:aborted-url");
+		});
+	});
 });

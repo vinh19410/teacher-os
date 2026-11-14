@@ -202,10 +202,16 @@ export function AssignPackToClassModal({
 				`Đã gán "${pack.title}" cho lớp ${selectedClass?.name ?? ""}.`.trim(),
 			);
 			setAssignedClassId(selectedClassId);
-			await onAssigned?.(selectedClassId);
 		} catch (err) {
 			setFormError(getAssignErrorMessage(err));
 			toast.error("Không thể gán bộ đề.");
+			setSubmitting(false);
+			return;
+		}
+		try {
+			await onAssigned?.(selectedClassId);
+		} catch {
+			// Parent refresh failures are handled by caller query state; assignment already succeeded.
 		} finally {
 			setSubmitting(false);
 		}
@@ -291,8 +297,8 @@ export function AssignPackToClassModal({
 							role="status"
 							className="rounded-md border border-border bg-muted px-3 py-2 text-muted-foreground text-xs"
 						>
-							Lớp này đang có bộ đề này ở trạng thái Đang chạy. Chọn khung giờ
-							khác hoặc kiểm tra tại{" "}
+							Lớp này đang chạy bộ đề này. Để đổi lịch học mới, hãy dừng bản
+							đang chạy tại{" "}
 							<Link
 								to="/classes/$classId"
 								params={{ classId: selectedClassId }}
@@ -300,8 +306,8 @@ export function AssignPackToClassModal({
 								className="font-medium text-foreground underline"
 							>
 								trang lớp học
-							</Link>
-							.
+							</Link>{" "}
+							trước; giữ nguyên lịch cũ sẽ đồng bộ cho học viên mới.
 						</p>
 					)}
 

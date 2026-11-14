@@ -98,10 +98,24 @@ function toQuizSimulation(
 	if (!isAutoSkill(detail.skill) || detail.questions.length === 0) {
 		return null;
 	}
+	const fallbackType = detail.type || "mcq";
+	const normalizedItems = detail.questions.map((question, index) => {
+		if (question.stem.trim() !== "") return question;
+		const hasInteractiveTarget =
+			(Array.isArray(question.opts) && question.opts.length > 0) ||
+			detail.optionBank.length > 0 ||
+			question.pin != null ||
+			question.answer.trim() !== "";
+		if (!hasInteractiveTarget) return question;
+		return {
+			...question,
+			stem: `Chọn đáp án phù hợp cho câu ${index + 1}.`,
+		};
+	});
 	const base = buildQuizSim(
 		{
 			task: detail.part || "part1",
-			genre: detail.type || "mcq",
+			genre: fallbackType,
 			title: detail.title,
 			band: detail.band,
 			source: detail.source,
@@ -110,13 +124,13 @@ function toQuizSimulation(
 			status: detail.status === "draft" ? "draft" : "ready",
 			skill: detail.skill,
 			part: detail.part,
-			type: detail.type,
+			type: fallbackType,
 			passage: detail.passage,
 			intro: detail.intro,
 			audioName: detail.audioName,
 			imageUrl: detail.imageUrl,
 			optionBank: detail.optionBank,
-			items: detail.questions,
+			items: normalizedItems,
 			writing: null,
 		},
 		`${packId}:${detail.id}`,
@@ -511,7 +525,8 @@ export function StudyPackItemViewer({
 							</p>
 							<RichTextBody
 								text={detail.intro}
-								className="whitespace-pre-wrap text-foreground text-sm leading-relaxed"
+								legacyWhitespace="pre-wrap"
+								className="text-foreground text-sm leading-relaxed"
 							/>
 						</div>
 					)}
@@ -523,7 +538,8 @@ export function StudyPackItemViewer({
 							</p>
 							<RichTextBody
 								text={detail.prompt}
-								className="whitespace-pre-wrap text-foreground text-sm leading-relaxed"
+								legacyWhitespace="pre-wrap"
+								className="text-foreground text-sm leading-relaxed"
 							/>
 						</div>
 					)}
@@ -597,7 +613,8 @@ export function StudyPackItemViewer({
 										<div className="mt-2 rounded-md border border-border bg-card p-3.5">
 											<RichTextBody
 												text={detail.transcript}
-												className="whitespace-pre-wrap font-normal text-foreground text-sm leading-[1.85]"
+												legacyWhitespace="pre-wrap"
+												className="font-normal text-foreground text-sm leading-[1.85]"
 											/>
 										</div>
 									)}
@@ -634,7 +651,8 @@ export function StudyPackItemViewer({
 							</p>
 							<RichTextBody
 								text={detail.passage}
-								className="whitespace-pre-wrap font-normal text-[15px] text-foreground leading-[1.85]"
+								legacyWhitespace="pre-wrap"
+								className="font-normal text-[15px] text-foreground leading-[1.85]"
 							/>
 						</div>
 					)}
