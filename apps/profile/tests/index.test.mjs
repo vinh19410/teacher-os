@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { pathToFileURL } from "node:url";
 import vm from "node:vm";
+import { inflateSync } from "node:zlib";
 import { buildProfile } from "../build.mjs";
 import * as serveModule from "../serve.mjs";
 
@@ -835,4 +836,709 @@ test("modal-dialog CSS avoids flex height collapse and JS resets image dimension
 	assert.match(html, /modalImg\.removeAttribute\(\s*['"]width['"]\s*\)/);
 	assert.match(html, /modalImg\.removeAttribute\(\s*['"]height['"]\s*\)/);
 	assert.match(html, /pdfModal\.addEventListener\(\s*['"]close['"]/);
+});
+
+const utf16BeDecoder = new TextDecoder("utf-16be");
+
+function decodeUtf16BeHex(hex) {
+	const clean = hex.replace(/\s+/g, "");
+	const normalized = clean.length % 2 === 0 ? clean : `${clean}0`;
+	const bytes = Buffer.from(normalized, "hex");
+	if (bytes.length >= 2 && bytes[0] === 0xfe && bytes[1] === 0xff) {
+		return utf16BeDecoder.decode(bytes.subarray(2));
+	}
+	return utf16BeDecoder.decode(bytes);
+}
+
+function unescapePdfLiteral(raw) {
+	const withoutLineCont = raw.replace(/\\\r?\n/g, "");
+	const unescaped = withoutLineCont.replace(
+		/\\([nrtbf()\\]|[0-7]{1,3})/g,
+		(_, seq) => {
+			switch (seq) {
+				case "n":
+					return "\n";
+				case "r":
+					return "\r";
+				case "t":
+					return "\t";
+				case "b":
+					return "\b";
+				case "f":
+					return "\f";
+				case "(":
+				case ")":
+				case "\\":
+					return seq;
+				default:
+					return String.fromCharCode(Number.parseInt(seq, 8));
+			}
+		},
+	);
+	if (unescaped.startsWith("\u00fe\u00ff")) {
+		return utf16BeDecoder.decode(Buffer.from(unescaped.slice(2), "latin1"));
+	}
+	return unescaped;
+}
+
+function extractBalancedDict(text, startIdx) {
+	const openIdx = text.indexOf("<<", startIdx);
+	if (openIdx === -1) return null;
+	let depth = 0;
+	let parenDepth = 0;
+	for (let i = openIdx; i < text.length - 1; i++) {
+		const ch = text[i];
+		if (ch === "\\" && parenDepth > 0) {
+			i++;
+			continue;
+		}
+		if (ch === "(") {
+			parenDepth++;
+			continue;
+		}
+		if (ch === ")" && parenDepth > 0) {
+			parenDepth--;
+			continue;
+		}
+		if (parenDepth === 0 && ch === "<" && text[i + 1] === "<") {
+			depth++;
+			i++;
+			continue;
+		}
+		if (parenDepth === 0 && ch === ">" && text[i + 1] === ">") {
+			depth--;
+			i++;
+			if (depth === 0) {
+				return text.slice(openIdx, i + 1);
+			}
+		}
+	}
+	return null;
+}
+
+function parsePdfXrefAndObjects(buf, { strictXref = false } = {}) {
+	const tail = buf.subarray(Math.max(0, buf.length - 1024)).toString("latin1");
+	const sxMatch = /startxref\s+(\d+)/.exec(tail);
+	assert.ok(sxMatch, "PDF missing startxref");
+	const startxref = Number(sxMatch[1]);
+	const xrefRegion = buf.subarray(startxref).toString("latin1");
+	assert.ok(xrefRegion.startsWith("xref"), "startxref does not point to xref");
+
+	const trailerIdx = xrefRegion.indexOf("trailer");
+	assert.ok(trailerIdx > 0, "PDF missing trailer");
+	const trailerText = xrefRegion.slice(trailerIdx);
+	const xrefLines = xrefRegion
+		.slice(0, trailerIdx)
+		.split(/\r?\n/)
+		.filter((line) => line.length > 0);
+	assert.equal(xrefLines[0].trim(), "xref");
+
+	const entries = new Map();
+	let cursor = 1;
+	while (cursor < xrefLines.length) {
+		const headerMatch = /^(\d+)\s+(\d+)\s*$/.exec(xrefLines[cursor]);
+		assert.ok(headerMatch, `Invalid xref subsection: ${xrefLines[cursor]}`);
+		const startId = Number(headerMatch[1]);
+		const count = Number(headerMatch[2]);
+		cursor++;
+		for (let j = 0; j < count; j++) {
+			const row = xrefLines[cursor + j];
+			const rowMatch = /^(\d{10}) (\d{5}) ([nf])\s*$/.exec(row);
+			assert.ok(rowMatch, `Invalid xref row: ${JSON.stringify(row)}`);
+			entries.set(startId + j, {
+				offset: Number(rowMatch[1]),
+				gen: Number(rowMatch[2]),
+				type: rowMatch[3],
+			});
+		}
+		cursor += count;
+	}
+
+	if (strictXref) {
+		const sizeMatch = /\/Size\s+(\d+)/.exec(trailerText);
+		assert.ok(sizeMatch, "Trailer missing /Size");
+		assert.equal(
+			entries.size,
+			Number(sizeMatch[1]),
+			`xref entry count (${entries.size}) does not match trailer /Size (${sizeMatch[1]})`,
+		);
+		const rawXrefBytes = buf.subarray(startxref, startxref + trailerIdx);
+		const rawLines = rawXrefBytes.toString("latin1").match(/[^\n]*\n/g) ?? [];
+		for (const line of rawLines) {
+			if (/^\d{10} \d{5} [nf]/.test(line)) {
+				assert.equal(
+					Buffer.byteLength(line, "latin1"),
+					20,
+					`Expected 20-byte xref entry, got ${Buffer.byteLength(line, "latin1")}: ${JSON.stringify(line)}`,
+				);
+			}
+		}
+	}
+
+	const liveObjects = [];
+	for (const [id, entry] of entries.entries()) {
+		if (entry.type === "n") {
+			liveObjects.push({ id, gen: entry.gen, offset: entry.offset });
+		}
+	}
+	liveObjects.sort((a, b) => a.offset - b.offset);
+
+	const objects = new Map();
+	for (let i = 0; i < liveObjects.length; i++) {
+		const current = liveObjects[i];
+		const end =
+			i + 1 < liveObjects.length ? liveObjects[i + 1].offset : startxref;
+		const chunk = buf.subarray(current.offset, end);
+		if (strictXref) {
+			const head = chunk.subarray(0, 48).toString("latin1");
+			assert.ok(
+				head.startsWith(`${current.id} ${current.gen} obj`),
+				`xref offset mismatch for obj ${current.id}: got ${JSON.stringify(head)}`,
+			);
+		}
+		objects.set(current.id, chunk);
+	}
+
+	return { entries, objects, trailerText };
+}
+
+function getObjectHeaderText(chunk) {
+	const scanLen = Math.min(chunk.length, 65536);
+	const preview = chunk.subarray(0, scanLen).toString("latin1");
+	const streamIdx = preview.search(/>>\s*stream\r?\n/);
+	return streamIdx === -1 ? preview : preview.slice(0, streamIdx + 2);
+}
+
+function resolveIndirectInt(objects, refId) {
+	if (!objects) return null;
+	const target = objects.get(refId);
+	if (!target) return null;
+	const match = /^\d+\s+\d+\s+obj\s+(\d+)\s+endobj\b/.exec(
+		target.subarray(0, 128).toString("latin1"),
+	);
+	return match ? Number(match[1]) : null;
+}
+
+function extractObjectStream(
+	chunk,
+	{ objects = null, strictXref = false } = {},
+) {
+	const headerPreview = chunk
+		.subarray(0, Math.min(chunk.length, 65536))
+		.toString("latin1");
+	const streamMatch = />>\s*stream\r?\n/.exec(headerPreview);
+	if (!streamMatch) return null;
+	const streamStart = streamMatch.index + streamMatch[0].length;
+	const dictHeader = headerPreview.slice(0, streamMatch.index);
+	const inlineLenMatch = /\/Length\s+(\d+)(?!\s+\d+\s+R)/.exec(dictHeader);
+	const indirectLenMatch = /\/Length\s+(\d+)\s+\d+\s+R/.exec(dictHeader);
+	let explicitLen = inlineLenMatch ? Number(inlineLenMatch[1]) : null;
+	if (explicitLen === null && indirectLenMatch) {
+		explicitLen = resolveIndirectInt(objects, Number(indirectLenMatch[1]));
+	}
+	let rawStream;
+	if (explicitLen !== null) {
+		rawStream = chunk.subarray(streamStart, streamStart + explicitLen);
+		if (strictXref) {
+			const endPreview = chunk
+				.subarray(streamStart + explicitLen, streamStart + explicitLen + 16)
+				.toString("latin1");
+			assert.match(
+				endPreview,
+				/^\r?\nendstream\b/,
+				`Stream /Length (${explicitLen}) does not end cleanly before endstream`,
+			);
+		}
+	} else {
+		const endIdx = chunk.lastIndexOf(Buffer.from("endstream"));
+		assert.ok(endIdx > streamStart, "Missing endstream");
+		rawStream = chunk.subarray(streamStart, endIdx);
+		while (
+			rawStream.length > 0 &&
+			(rawStream[rawStream.length - 1] === 0x0a ||
+				rawStream[rawStream.length - 1] === 0x0d)
+		) {
+			rawStream = rawStream.subarray(0, rawStream.length - 1);
+		}
+	}
+	if (/\/FlateDecode\b/.test(dictHeader)) {
+		return inflateSync(rawStream);
+	}
+	return rawStream;
+}
+
+function parseToUnicodeCMap(cmapText) {
+	const map = new Map();
+	let keyHexLen = 4;
+	const csMatch = /begincodespacerange([\s\S]*?)endcodespacerange/.exec(
+		cmapText,
+	);
+	if (csMatch) {
+		const firstRange = /<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>/.exec(csMatch[1]);
+		if (firstRange) {
+			keyHexLen = firstRange[1].length;
+		}
+	}
+
+	for (const blockMatch of cmapText.matchAll(
+		/beginbfchar([\s\S]*?)endbfchar/g,
+	)) {
+		for (const pair of blockMatch[1].matchAll(
+			/<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>/g,
+		)) {
+			keyHexLen = pair[1].length;
+			map.set(pair[1].toUpperCase(), decodeUtf16BeHex(pair[2]));
+		}
+	}
+
+	for (const blockMatch of cmapText.matchAll(
+		/beginbfrange([\s\S]*?)endbfrange/g,
+	)) {
+		const body = blockMatch[1];
+		const entryRe =
+			/<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>\s*(?:\[([^\]]+)\]|<([0-9A-Fa-f]+)>)/g;
+		for (const entry of body.matchAll(entryRe)) {
+			const lo = Number.parseInt(entry[1], 16);
+			const hi = Number.parseInt(entry[2], 16);
+			const width = entry[1].length;
+			keyHexLen = width;
+			if (entry[3]) {
+				const dests = [...entry[3].matchAll(/<([0-9A-Fa-f]+)>/g)].map(
+					(m) => m[1],
+				);
+				for (let code = lo; code <= hi; code++) {
+					const dest = dests[code - lo];
+					if (dest) {
+						map.set(
+							code.toString(16).toUpperCase().padStart(width, "0"),
+							decodeUtf16BeHex(dest),
+						);
+					}
+				}
+			} else if (entry[4]) {
+				const baseHex = entry[4];
+				const prefix = baseHex.slice(0, -4);
+				const baseTail = Number.parseInt(baseHex.slice(-4), 16);
+				for (let code = lo; code <= hi; code++) {
+					const dstHex =
+						prefix +
+						(baseTail + (code - lo))
+							.toString(16)
+							.toUpperCase()
+							.padStart(4, "0");
+					map.set(
+						code.toString(16).toUpperCase().padStart(width, "0"),
+						decodeUtf16BeHex(dstHex),
+					);
+				}
+			}
+		}
+	}
+
+	return { map, keyHexLen };
+}
+
+function decodeHexWithCMap(hexStr, cmap) {
+	const hex = hexStr.replace(/\s+/g, "").toUpperCase();
+	const step = cmap?.keyHexLen ?? 2;
+	let out = "";
+	for (let i = 0; i + step <= hex.length; i += step) {
+		const code = hex.slice(i, i + step);
+		out += cmap?.map.get(code) ?? "";
+	}
+	return out;
+}
+
+function resolveSubDictText(resourcesText, keyName, objects) {
+	const keyMatch = new RegExp(`/${keyName}\\b`).exec(resourcesText);
+	if (!keyMatch) return "";
+	const afterKey = resourcesText
+		.slice(keyMatch.index + keyMatch[0].length)
+		.trimStart();
+	if (afterKey.startsWith("<<")) {
+		return extractBalancedDict(afterKey, 0) ?? "";
+	}
+	const refMatch = /^(\d+)\s+\d+\s+R/.exec(afterKey);
+	if (refMatch) {
+		const target = objects.get(Number(refMatch[1]));
+		if (target) return getObjectHeaderText(target);
+	}
+	return "";
+}
+
+function buildFontCMapTable(resourcesText, objects, strictXref = false) {
+	const table = new Map();
+	const fontDictText = resolveSubDictText(resourcesText, "Font", objects);
+	if (!fontDictText) return table;
+	for (const fm of fontDictText.matchAll(
+		/\/([^\s/()<>[\]{}%]+)\s+(\d+)\s+\d+\s+R/g,
+	)) {
+		const fontName = fm[1];
+		const fontObj = objects.get(Number(fm[2]));
+		if (!fontObj) continue;
+		const tuMatch = /\/ToUnicode\s+(\d+)\s+\d+\s+R/.exec(
+			getObjectHeaderText(fontObj),
+		);
+		if (!tuMatch) continue;
+		const tuObj = objects.get(Number(tuMatch[1]));
+		if (!tuObj) continue;
+		const tuStream = extractObjectStream(tuObj, { objects, strictXref });
+		if (!tuStream) continue;
+		table.set(fontName, parseToUnicodeCMap(tuStream.toString("latin1")));
+	}
+	return table;
+}
+
+function decodeContentStreamText(streamText, fontCMaps) {
+	let currentFont = null;
+	let raw = "";
+	const joinedParts = [];
+	const tokenRe =
+		/\/([^\s/()<>[\]{}%]+)\s+[-+]?\d*\.?\d+\s+Tf|\[((?:\\.|[^\]])*?)\]\s*TJ|<([0-9A-Fa-f\s]+)>\s*(?:Tj|'|")|\(((?:\\.|[^\\)])*)\)\s*(?:Tj|'|")/g;
+	for (const match of streamText.matchAll(tokenRe)) {
+		if (match[1]) {
+			currentFont = match[1];
+		} else if (match[2] !== undefined) {
+			const cmap = currentFont ? fontCMaps.get(currentFont) : null;
+			let arrayText = "";
+			for (const item of match[2].matchAll(
+				/<([0-9A-Fa-f\s]+)>|\(((?:\\.|[^\\)])*)\)/g,
+			)) {
+				if (item[1] !== undefined) {
+					arrayText += decodeHexWithCMap(item[1], cmap);
+				} else if (item[2] !== undefined) {
+					arrayText += unescapePdfLiteral(item[2]);
+				}
+			}
+			raw += arrayText;
+			if (arrayText.trim().length > 0) joinedParts.push(arrayText);
+		} else if (match[3] !== undefined) {
+			const cmap = currentFont ? fontCMaps.get(currentFont) : null;
+			const piece = decodeHexWithCMap(match[3], cmap);
+			raw += piece;
+			if (piece.trim().length > 0) joinedParts.push(piece);
+		} else if (match[4] !== undefined) {
+			const piece = unescapePdfLiteral(match[4]);
+			raw += piece;
+			if (piece.trim().length > 0) joinedParts.push(piece);
+		}
+	}
+	return {
+		raw: raw.normalize("NFC"),
+		joined: joinedParts.join(" ").normalize("NFC"),
+	};
+}
+
+function collectPageNodes(objects, trailerText) {
+	const pages = [];
+	const rootMatch = /\/Root\s+(\d+)\s+\d+\s+R/.exec(trailerText);
+	if (rootMatch) {
+		const rootObj = objects.get(Number(rootMatch[1]));
+		const pagesMatch = rootObj
+			? /\/Pages\s+(\d+)\s+\d+\s+R/.exec(getObjectHeaderText(rootObj))
+			: null;
+		if (pagesMatch) {
+			const visited = new Set();
+			const walk = (nodeId, inheritedResText) => {
+				if (visited.has(nodeId)) return;
+				visited.add(nodeId);
+				const chunk = objects.get(nodeId);
+				if (!chunk) return;
+				const header = getObjectHeaderText(chunk);
+				const ownRes = resolveSubDictText(header, "Resources", objects);
+				const effectiveRes = ownRes || inheritedResText;
+				const kidsMatch = /\/Kids\s*\[([^\]]+)\]/.exec(header);
+				if (kidsMatch && /\/Type\s*\/Pages\b/.test(header)) {
+					for (const ref of kidsMatch[1].matchAll(/(\d+)\s+\d+\s+R/g)) {
+						walk(Number(ref[1]), effectiveRes);
+					}
+				} else if (/\/Type\s*\/Page\b(?!s)/.test(header)) {
+					pages.push({ pageText: header, inheritedResText: effectiveRes });
+				}
+			};
+			walk(Number(pagesMatch[1]), "");
+		}
+	}
+	if (pages.length === 0) {
+		for (const [, chunk] of objects.entries()) {
+			const header = getObjectHeaderText(chunk);
+			if (/\/Type\s*\/Page\b(?!s)/.test(header)) {
+				pages.push({
+					pageText: header,
+					inheritedResText: resolveSubDictText(header, "Resources", objects),
+				});
+			}
+		}
+	}
+	return pages;
+}
+
+function decodeFormXObjects(
+	resourcesText,
+	objects,
+	parentCMaps,
+	strictXref,
+	visited = new Set(),
+) {
+	const xobjDictText = resolveSubDictText(resourcesText, "XObject", objects);
+	if (!xobjDictText) return { raw: "", joined: "" };
+	let raw = "";
+	const joinedParts = [];
+	for (const xobjMatch of xobjDictText.matchAll(
+		/\/([^\s/()<>[\]{}%]+)\s+(\d+)\s+\d+\s+R/g,
+	)) {
+		const xid = Number(xobjMatch[2]);
+		if (visited.has(xid)) continue;
+		const xObj = objects.get(xid);
+		if (!xObj) continue;
+		const xHeader = getObjectHeaderText(xObj);
+		if (!/\/Subtype\s*\/Form\b/.test(xHeader)) continue;
+		visited.add(xid);
+		const xResText = resolveSubDictText(xHeader, "Resources", objects);
+		const mergedCMaps = new Map([
+			...parentCMaps,
+			...buildFontCMapTable(xResText, objects, strictXref),
+		]);
+		const xStream = extractObjectStream(xObj, { objects, strictXref });
+		if (xStream) {
+			const decoded = decodeContentStreamText(
+				xStream.toString("latin1"),
+				mergedCMaps,
+			);
+			raw += decoded.raw;
+			if (decoded.joined) joinedParts.push(decoded.joined);
+		}
+		const nested = decodeFormXObjects(
+			xResText,
+			objects,
+			mergedCMaps,
+			strictXref,
+			visited,
+		);
+		raw += nested.raw;
+		if (nested.joined) joinedParts.push(nested.joined);
+	}
+	return {
+		raw: raw.normalize("NFC"),
+		joined: joinedParts.join(" ").normalize("NFC"),
+	};
+}
+
+function decodePdfDocument(buf, { strictXref = false } = {}) {
+	const { objects, trailerText } = parsePdfXrefAndObjects(buf, { strictXref });
+	const metadataStrings = [];
+
+	for (const [, chunk] of objects.entries()) {
+		const headerText = getObjectHeaderText(chunk);
+		for (const hexMatch of headerText.matchAll(/<FEFF([0-9A-Fa-f]+)>/gi)) {
+			metadataStrings.push(decodeUtf16BeHex(hexMatch[1]).normalize("NFC"));
+		}
+		for (const litMatch of headerText.matchAll(
+			/\/(?:Title|Alt|ActualText)\s*\(((?:\\.|[^\\)])*)\)/g,
+		)) {
+			metadataStrings.push(unescapePdfLiteral(litMatch[1]).normalize("NFC"));
+		}
+		if (
+			/\/Subtype\s*\/XML\b/.test(headerText) ||
+			/\/Metadata\b/.test(headerText)
+		) {
+			const metaStream = extractObjectStream(chunk, { objects, strictXref });
+			if (metaStream) {
+				metadataStrings.push(metaStream.toString("utf8").normalize("NFC"));
+			}
+		}
+	}
+
+	const pageNodes = collectPageNodes(objects, trailerText);
+	const pages = [];
+	for (const { pageText, inheritedResText } of pageNodes) {
+		const resourcesText =
+			resolveSubDictText(pageText, "Resources", objects) || inheritedResText;
+		const fontCMaps = buildFontCMapTable(resourcesText, objects, strictXref);
+
+		const contentIds = [];
+		const singleContent = /\/Contents\s+(\d+)\s+\d+\s+R/.exec(pageText);
+		const arrayContent = /\/Contents\s*\[([^\]]+)\]/.exec(pageText);
+		if (singleContent) {
+			contentIds.push(Number(singleContent[1]));
+		} else if (arrayContent) {
+			for (const ref of arrayContent[1].matchAll(/(\d+)\s+\d+\s+R/g)) {
+				contentIds.push(Number(ref[1]));
+			}
+		}
+
+		let raw = "";
+		const joinedParts = [];
+		for (const cid of contentIds) {
+			const cObj = objects.get(cid);
+			if (!cObj) continue;
+			const decoded = extractObjectStream(cObj, { objects, strictXref });
+			if (decoded) {
+				const parsed = decodeContentStreamText(
+					decoded.toString("latin1"),
+					fontCMaps,
+				);
+				raw += parsed.raw;
+				if (parsed.joined) joinedParts.push(parsed.joined);
+			}
+		}
+
+		const formXObjText = decodeFormXObjects(
+			resourcesText,
+			objects,
+			fontCMaps,
+			strictXref,
+		);
+		raw += formXObjText.raw;
+		if (formXObjText.joined) joinedParts.push(formXObjText.joined);
+
+		pages.push({
+			raw: raw.normalize("NFC"),
+			joined: joinedParts.join(" ").normalize("NFC"),
+		});
+	}
+
+	return { metadataStrings, pages };
+}
+
+function readJpegDimensions(buf) {
+	assert.ok(buf.length > 4, "JPEG buffer too short");
+	assert.equal(buf[0], 0xff, "Missing JPEG SOI marker");
+	assert.equal(buf[1], 0xd8, "Missing JPEG SOI marker");
+	let pos = 2;
+	while (pos < buf.length) {
+		while (pos < buf.length && buf[pos] !== 0xff) pos++;
+		while (pos < buf.length && buf[pos] === 0xff) pos++;
+		if (pos >= buf.length) break;
+		const marker = buf[pos++];
+		if (
+			marker === 0x00 ||
+			marker === 0x01 ||
+			(marker >= 0xd0 && marker <= 0xd9)
+		) {
+			if (marker === 0xd9) break;
+			continue;
+		}
+		if (marker === 0xda) break;
+		assert.ok(pos + 2 <= buf.length, "Truncated JPEG segment");
+		const segLen = buf.readUInt16BE(pos);
+		assert.ok(
+			segLen >= 2 && pos + segLen <= buf.length,
+			"Invalid JPEG segment length",
+		);
+		if (marker === 0xc0 || marker === 0xc2) {
+			assert.ok(
+				segLen >= 7 && pos + 7 <= buf.length,
+				"Truncated JPEG SOF frame header",
+			);
+			return {
+				height: buf.readUInt16BE(pos + 3),
+				width: buf.readUInt16BE(pos + 5),
+			};
+		}
+		pos += segLen;
+	}
+	assert.fail("JPEG missing SOF0/SOF2 frame header");
+}
+
+test("teacher-profile PDFs and thumbnails use Đỗ Thục Mỹ without Đỗ Thị Thục Mỹ", () => {
+	const baseAssetDir = new URL(
+		"../public/assets/teacher-profile/",
+		import.meta.url,
+	);
+	const pdfNames = [
+		"01-Ms-Thuc-My-Teacher-Profile-EN.pdf",
+		"02-Ho-So-Giang-Vien-Co-Thuc-My-VN.pdf",
+		"03-Quy-Trinh-Dao-Tao-IELTS-365-Ngay-VN.pdf",
+		"04-Bang-Gioi-Thieu-Fanpage-The-English-Corner.pdf",
+		"05-Ms-Thuc-My-CV-1Page-Pure-EN.pdf",
+	];
+	const strictFiles = new Set([
+		"02-Ho-So-Giang-Vien-Co-Thuc-My-VN.pdf",
+		"04-Bang-Gioi-Thieu-Fanpage-The-English-Corner.pdf",
+	]);
+
+	const expectedThumbDims = {
+		"01-Ms-Thuc-My-Teacher-Profile-EN.jpg": { width: 700, height: 470 },
+		"02-Ho-So-Giang-Vien-Co-Thuc-My-VN.jpg": { width: 700, height: 470 },
+		"03-Quy-Trinh-Dao-Tao-IELTS-365-Ngay-VN.jpg": { width: 700, height: 470 },
+		"04-Bang-Gioi-Thieu-Fanpage-The-English-Corner.jpg": {
+			width: 700,
+			height: 470,
+		},
+		"05-Ms-Thuc-My-CV-1Page-Pure-EN.jpg": { width: 495, height: 700 },
+	};
+
+	for (const name of pdfNames) {
+		const buf = readFileSync(new URL(`pdf/${name}`, baseAssetDir));
+		const doc = decodePdfDocument(buf, { strictXref: strictFiles.has(name) });
+		assert.ok(doc.pages.length >= 1, `${name} should have at least 1 page`);
+		const allRawText = doc.pages.map((p) => p.raw).join("\n");
+		const allJoinedText = doc.pages.map((p) => p.joined).join("\n");
+		assert.ok(
+			allRawText.length > 50,
+			`${name} decoded page text unexpectedly short`,
+		);
+		for (const meta of doc.metadataStrings) {
+			assert.doesNotMatch(
+				meta,
+				/Đỗ\s*Thị|Thị\s*Thục/i,
+				`${name} metadata still contains Đỗ Thị / Thị Thục: ${meta}`,
+			);
+			assert.doesNotMatch(
+				meta,
+				/Đỗ {2,}Thục/,
+				`${name} metadata contains double space between Đỗ and Thục: ${meta}`,
+			);
+		}
+		assert.doesNotMatch(
+			allRawText,
+			/Đỗ\s*Thị|Thị\s*Thục/i,
+			`${name} raw page content still contains Đỗ Thị / Thị Thục`,
+		);
+		assert.doesNotMatch(
+			allJoinedText,
+			/Đỗ\s*Thị|Thị\s*Thục/i,
+			`${name} joined page content still contains Đỗ Thị / Thị Thục`,
+		);
+		assert.doesNotMatch(
+			allRawText,
+			/Đỗ {2,}Thục/,
+			`${name} contains double space between Đỗ and Thục`,
+		);
+
+		if (name === "02-Ho-So-Giang-Vien-Co-Thuc-My-VN.pdf") {
+			assert.equal(doc.pages.length, 6);
+			assert.ok(
+				doc.metadataStrings.includes(
+					"Hồ Sơ Giảng Viên — Cô Đỗ Thục Mỹ (Bản Minh Họa Đầy Đủ)",
+				),
+			);
+			assert.ok(doc.metadataStrings.includes("Cô Đỗ Thục Mỹ"));
+			assert.ok(doc.pages[0].raw.includes("Cô Đỗ Thục Mỹ"));
+			assert.match(doc.pages[0].raw, /[^ô]\s*Đỗ Thục Mỹ\s*\(“Ms\. Thục Mỹ”\)/);
+			assert.ok(doc.pages[0].raw.includes("Trang 01 / 06"));
+			assert.ok(doc.pages[5].raw.includes("Cô Đỗ Thục Mỹ"));
+			assert.ok(doc.pages[5].raw.includes("Cảm ơn bạn đã theo dõi hồ sơ!"));
+		}
+
+		if (name === "04-Bang-Gioi-Thieu-Fanpage-The-English-Corner.pdf") {
+			assert.equal(doc.pages.length, 4);
+			assert.ok(
+				doc.pages[0].raw.includes(
+					"Bảng 1: 6 Bảo Chứng Chuyên Môn Của Cô Đỗ Thục Mỹ",
+				),
+			);
+		}
+
+		const thumbName = name.replace(/\.pdf$/, ".jpg");
+		const thumbUrl = new URL(`thumbs/${thumbName}`, baseAssetDir);
+		assert.equal(existsSync(thumbUrl), true, `Missing thumbnail ${thumbName}`);
+		const dims = readJpegDimensions(readFileSync(thumbUrl));
+		assert.deepEqual(
+			dims,
+			expectedThumbDims[thumbName],
+			`${thumbName} must match expected dimensions`,
+		);
+	}
 });
