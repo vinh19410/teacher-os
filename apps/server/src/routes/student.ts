@@ -60,7 +60,16 @@ import {
 	studentInvitation,
 	user,
 } from "@teacher-os/db/schema/index";
-import { and, asc, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import {
+	and,
+	asc,
+	desc,
+	eq,
+	isNotNull,
+	isNull,
+	notLike,
+	sql,
+} from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
@@ -107,6 +116,8 @@ export interface StudentRouteDeps {
 	getAiGrader?(): AiGrader | undefined;
 	/** #702: injectable fetch cho audio proxy của listening study-pack prompts. */
 	fetchExternalAudio?: typeof fetch;
+	/** Allowlist email giáo viên để định tuyến auto-join single-org (#716). */
+	teacherEmails?: string[];
 }
 
 export interface StudentContext {
@@ -151,19 +162,33 @@ export function createStudentGuard(deps: StudentRouteDeps) {
 		let rows = await db
 			.select()
 			.from(student)
-			.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
+			.where(
+				and(
+					sql`lower(trim(${student.email})) = ${normalizedEmail}`,
+					notLike(student.id, "demo-student:%"),
+				),
+			)
 			.orderBy(desc(student.createdAt), asc(student.id));
 
 		if (rows.length === 0) {
 			try {
-				await provisionStudentForUser(db, {
-					name: sessionUser.userName,
-					email: sessionUser.email,
-				});
+				await provisionStudentForUser(
+					db,
+					{
+						name: sessionUser.userName,
+						email: sessionUser.email,
+					},
+					{ teacherEmails: deps.teacherEmails },
+				);
 				rows = await db
 					.select()
 					.from(student)
-					.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
+					.where(
+						and(
+							sql`lower(trim(${student.email})) = ${normalizedEmail}`,
+							notLike(student.id, "demo-student:%"),
+						),
+					)
 					.orderBy(desc(student.createdAt), asc(student.id));
 			} catch (err) {
 				console.error("Failed to provision student for user", {
@@ -704,17 +729,44 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const rawHeaderOrg = c.req.header("x-student-org-id")?.trim();
 		const requestedOrgId = rawHeaderOrg ? rawHeaderOrg : undefined;
 
-		const studentRows = await db
-			.select({
-				studentId: student.id,
-				orgId: student.orgId,
-				orgName: organization.name,
-				createdAt: student.createdAt,
-			})
-			.from(student)
-			.innerJoin(organization, eq(student.orgId, organization.id))
-			.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
-			.orderBy(desc(student.createdAt), asc(student.id));
+		const loadStudentOrgRows = () =>
+			db
+				.select({
+					studentId: student.id,
+					orgId: student.orgId,
+					orgName: organization.name,
+					createdAt: student.createdAt,
+				})
+				.from(student)
+				.innerJoin(organization, eq(student.orgId, organization.id))
+				.where(
+					and(
+						sql`lower(trim(${student.email})) = ${normalizedEmail}`,
+						notLike(student.id, "demo-student:%"),
+					),
+				)
+				.orderBy(desc(student.createdAt), asc(student.id));
+
+		let studentRows = await loadStudentOrgRows();
+
+		if (studentRows.length === 0 && sessionUser.emailVerified === true) {
+			try {
+				await provisionStudentForUser(
+					db,
+					{
+						name: sessionUser.userName,
+						email: sessionUser.email,
+					},
+					{ teacherEmails: deps.teacherEmails },
+				);
+				studentRows = await loadStudentOrgRows();
+			} catch (err) {
+				console.error("Failed to provision student for user", {
+					userId: sessionUser.userId,
+					error: err,
+				});
+			}
+		}
 
 		if (studentRows.length === 0) {
 			return c.json([]);

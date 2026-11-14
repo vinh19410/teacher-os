@@ -11,32 +11,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NotificationBell } from "@/components/layout/notification-bell";
 
 const navigateMock = vi.fn();
-const acceptMutateMock = vi.fn(() =>
-	Promise.resolve({ ok: true, orgId: "org-1" }),
-);
-const rejectMutateMock = vi.fn(() => Promise.resolve({ ok: true }));
 const markReadMutateMock = vi.fn(() => Promise.resolve({ ok: true }));
-const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
-vi.mock("sonner", () => ({ toast }));
 
-let invitations: Array<Record<string, unknown>> = [];
 let inbox: { items: Array<Record<string, unknown>>; unread: number } = {
 	items: [],
 	unread: 0,
 };
+let inboxLoading = false;
 
 vi.mock("@tanstack/react-router", () => ({
 	useNavigate: () => navigateMock,
 }));
 
 vi.mock("@/lib/repos/student", () => ({
-	useStudentNotifications: () => ({
-		data: invitations,
-		isLoading: false,
-	}),
-	useStudentInbox: () => ({ data: inbox, isLoading: false }),
-	useAcceptInvitation: () => ({ mutateAsync: acceptMutateMock }),
-	useRejectInvitation: () => ({ mutateAsync: rejectMutateMock }),
+	useStudentInbox: () => ({ data: inbox, isLoading: inboxLoading }),
 	useMarkInboxRead: () => ({
 		mutateAsync: markReadMutateMock,
 		isPending: false,
@@ -53,14 +41,6 @@ function renderBell() {
 		</QueryClientProvider>,
 	);
 }
-
-const invite = {
-	id: "inv-1",
-	orgName: "Academy 1",
-	inviterName: "Nguyễn Giáo Viên",
-	status: "pending",
-	createdAt: new Date().toISOString(),
-};
 
 const inboxItem = {
 	id: "n-1",
@@ -84,50 +64,56 @@ beforeEach(() => {
 		configurable: true,
 	});
 	navigateMock.mockReset();
-	acceptMutateMock.mockClear();
-	rejectMutateMock.mockClear();
 	markReadMutateMock.mockClear();
-	toast.success.mockReset();
-	toast.error.mockReset();
-	invitations = [];
 	inbox = { items: [], unread: 0 };
+	inboxLoading = false;
 });
 
 afterEach(() => {
 	cleanup();
 });
 
-describe("NotificationBell — inbox in-app (TOS-21 D7)", () => {
-	it("badge = lời mời pending + unread, số aria-hidden, aria-label mô tả", () => {
-		invitations = [invite];
+describe("NotificationBell — inbox-only (#716)", () => {
+	it("badge bằng inbox.unread, số aria-hidden, aria-label mô tả", () => {
 		inbox = { items: [inboxItem], unread: 2 };
 		renderBell();
 
 		const badge = screen.getByTestId("notification-badge");
-		expect(badge.textContent).toBe("3");
+		expect(badge.textContent).toBe("2");
 		expect(badge.getAttribute("aria-hidden")).toBe("true");
 		expect(
-			screen.getByRole("button", { name: /3 mục chưa xử lý/ }),
+			screen.getByRole("button", { name: /2 mục chưa xử lý/ }),
 		).toBeTruthy();
 	});
 
-	it("bấm item thông báo → gọi mark read mutation và navigate theo linkPath", async () => {
+	it("không hiển thị badge khi inbox.unread === 0", () => {
+		inbox = { items: [], unread: 0 };
+		const { container } = renderBell();
+		expect(screen.getByRole("button", { name: "Thông báo" })).toBeTruthy();
+		expect(container.innerHTML).not.toContain(
+			'data-testid="notification-badge"',
+		);
+	});
+
+	it("bấm item thông báo chưa đọc → đánh dấu đã đọc, navigate theo linkPath và đóng popover", async () => {
 		inbox = { items: [inboxItem], unread: 1 };
 		renderBell();
 
 		fireEvent.click(
 			screen.getByRole("button", { name: "Thông báo (1 mục chưa xử lý)" }),
 		);
+		expect(screen.getByRole("dialog")).toBeTruthy();
 		const item = await waitFor(() => screen.getByTestId("inbox-item"));
 		fireEvent.click(item);
 
 		await waitFor(() => {
 			expect(markReadMutateMock).toHaveBeenCalledWith("n-1");
 			expect(navigateMock).toHaveBeenCalledWith({ to: "/attempts/at-1" });
+			expect(screen.queryByRole("dialog")).toBeNull();
 		});
 	});
 
-	it("hiển thị tiêu đề, nội dung và chấm chưa đọc của item", () => {
+	it("hiển thị tiêu đề, nội dung của item và không có UI lời mời org", () => {
 		inbox = { items: [inboxItem], unread: 1 };
 		renderBell();
 		fireEvent.click(screen.getByRole("button", { name: /1 mục chưa xử lý/ }));
@@ -138,9 +124,12 @@ describe("NotificationBell — inbox in-app (TOS-21 D7)", () => {
 				"Giáo viên đã trả điểm bài kiểm tra IELTS Reading giữa kỳ.",
 			),
 		).toBeTruthy();
+		expect(screen.queryByRole("button", { name: /Chấp nhận/ })).toBeNull();
+		expect(screen.queryByRole("button", { name: /Từ chối/ })).toBeNull();
+		expect(screen.queryByText("Lời mời")).toBeNull();
 	});
 
-	it("đã đọc (readAt có) → không chấm chưa đọc, badge không đếm", () => {
+	it("đã đọc (readAt có) → không hiển thị badge", () => {
 		inbox = {
 			items: [{ ...inboxItem, readAt: new Date().toISOString() }],
 			unread: 0,
@@ -152,104 +141,26 @@ describe("NotificationBell — inbox in-app (TOS-21 D7)", () => {
 		expect(screen.queryByTestId("notification-badge")).toBeNull();
 	});
 
-	it("rỗng → 'Chưa có thông báo'", () => {
+	it("rỗng → 'Chưa có thông báo' và không có nút Chấp nhận / Từ chối", () => {
 		renderBell();
 		fireEvent.click(screen.getByRole("button", { name: "Thông báo" }));
 		expect(screen.getByText("Chưa có thông báo")).toBeTruthy();
+		expect(screen.queryByRole("button", { name: /Chấp nhận/ })).toBeNull();
+		expect(screen.queryByRole("button", { name: /Từ chối/ })).toBeNull();
 	});
-});
 
-describe("NotificationBell — lời mời org (giữ nguyên v1)", () => {
-	it("hiện lời mời pending và bấm Chấp nhận gọi mutation", async () => {
-		invitations = [invite];
+	it("hiển thị trạng thái đang tải khi isInboxLoading=true", () => {
+		inboxLoading = true;
 		renderBell();
-		fireEvent.click(screen.getByRole("button", { name: /1 mục chưa xử lý/ }));
-
-		expect(screen.getByText(/đã mời bạn tham gia tổ chức/)).toBeTruthy();
-		fireEvent.click(screen.getByRole("button", { name: /Chấp nhận/ }));
-		await waitFor(() => expect(acceptMutateMock).toHaveBeenCalledWith("inv-1"));
-		await waitFor(() => {
-			expect(toast.success).toHaveBeenCalledTimes(1);
-			expect(toast.success).toHaveBeenCalledWith("Đã tham gia Academy 1");
-		});
+		fireEvent.click(screen.getByRole("button", { name: "Thông báo" }));
+		expect(screen.getByText("Đang tải thông báo...")).toBeTruthy();
 	});
 
-	it("bấm Chấp nhận khi orgName trống hiển thị toast fallback 'Đã tham gia tổ chức' (#522)", async () => {
-		invitations = [{ ...invite, orgName: "   " }];
-		renderBell();
-		fireEvent.click(screen.getByRole("button", { name: /1 mục chưa xử lý/ }));
-
-		fireEvent.click(screen.getByRole("button", { name: /Chấp nhận/ }));
-		await waitFor(() => {
-			expect(acceptMutateMock).toHaveBeenCalledWith("inv-1");
-			expect(toast.success).toHaveBeenCalledTimes(1);
-			expect(toast.success).toHaveBeenCalledWith("Đã tham gia tổ chức");
-		});
-	});
-
-	it("không hiển thị toast xác nhận khi acceptMutation bị lỗi (#522)", async () => {
-		vi.spyOn(console, "error").mockImplementation(() => {});
-		acceptMutateMock.mockRejectedValueOnce(new Error("network failed"));
-		invitations = [invite];
-		renderBell();
-		fireEvent.click(screen.getByRole("button", { name: /1 mục chưa xử lý/ }));
-
-		fireEvent.click(screen.getByRole("button", { name: /Chấp nhận/ }));
-		await waitFor(() => expect(acceptMutateMock).toHaveBeenCalledWith("inv-1"));
-		expect(toast.success).not.toHaveBeenCalled();
-	});
-
-	it("bấm Từ chối gọi reject mutation", async () => {
-		invitations = [invite];
-		renderBell();
-		fireEvent.click(screen.getByRole("button", { name: /1 mục chưa xử lý/ }));
-
-		fireEvent.click(screen.getByRole("button", { name: /Từ chối/ }));
-		await waitFor(() => expect(rejectMutateMock).toHaveBeenCalledWith("inv-1"));
-	});
-
-	it("Esc đóng panel", () => {
+	it("Esc đóng dialog", () => {
 		renderBell();
 		fireEvent.click(screen.getByRole("button", { name: "Thông báo" }));
 		expect(screen.getByRole("dialog")).toBeTruthy();
 		fireEvent.keyDown(window, { key: "Escape" });
 		expect(screen.queryByRole("dialog")).toBeNull();
-	});
-});
-
-// Hai case legacy (port nguyên văn từ test/notification-bell.test.tsx cũ —
-// giữ nguyên assertion khi gộp file test chuông TOS-21).
-describe("NotificationBell — badge lời mời (case legacy)", () => {
-	it("renders bell icon without badge when there are no pending invitations", () => {
-		invitations = [];
-		const { container } = renderBell();
-		const html = container.innerHTML;
-		expect(html).toContain('aria-label="Thông báo"');
-		expect(html).not.toContain('data-testid="notification-badge"');
-	});
-
-	it("renders badge with count when there are pending invitations", () => {
-		invitations = [
-			{
-				id: "inv-1",
-				orgId: "org-1",
-				orgName: "Academy 1",
-				inviterName: "Teacher One",
-				status: "pending",
-				createdAt: Date.now(),
-			},
-			{
-				id: "inv-2",
-				orgId: "org-2",
-				orgName: "Academy 2",
-				inviterName: "Teacher Two",
-				status: "pending",
-				createdAt: Date.now(),
-			},
-		];
-		const { container } = renderBell();
-		const html = container.innerHTML;
-		expect(html).toContain('data-testid="notification-badge"');
-		expect(html).toContain(">2</span>");
 	});
 });

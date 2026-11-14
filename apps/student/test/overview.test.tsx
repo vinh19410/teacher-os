@@ -323,6 +323,8 @@ describe("StudentErrorView", () => {
 		);
 		expect(html).toContain("Tài khoản chưa được liên kết");
 		expect(html).toContain("test@student.vn");
+		expect(html).toContain("liên hệ giáo viên");
+		expect(html).not.toContain("Chuông thông báo");
 		expect(html).toContain("Đăng xuất");
 	});
 

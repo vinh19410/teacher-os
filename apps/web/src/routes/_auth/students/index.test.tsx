@@ -17,7 +17,7 @@ import {
 	startKernelServer,
 	studentRow,
 } from "@/test/kernel-harness";
-import { resetRouterState, routerState } from "@/test/router-mock";
+import { resetRouterState } from "@/test/router-mock";
 
 vi.mock("@tanstack/react-router", async () =>
 	(await import("@/test/router-mock")).routerMock(),
@@ -35,10 +35,6 @@ function startServer() {
 			],
 			enrollments: [enrollmentRow({ classId: "cl-1", studentId: "st-1" })],
 		}),
-		(req) =>
-			req.path === "/api/students/invitations"
-				? { status: 200, body: [] }
-				: undefined,
 	);
 }
 
@@ -50,19 +46,20 @@ afterEach(() => {
 });
 
 describe("students list", () => {
-	it("lists every student from the kernel snapshot", async () => {
+	it("lists every student from the kernel snapshot without org tabs", async () => {
 		startServer();
 		renderWithKernel(<StudentsRoute />);
 		expect(await screen.findByText("Học viên Một")).toBeTruthy();
 		expect(screen.getByText("Học viên Hai")).toBeTruthy();
-		expect(screen.getByRole("tab", { name: "Học viên (2)" })).toBeTruthy();
+		expect(screen.queryByRole("tab")).toBeNull();
 	});
 
-	it("supports both manual student creation (Thêm học viên) and email invitation (Mời học viên)", async () => {
+	it("supports manual student creation (Thêm học viên) without Mời học viên or Lời mời đang chờ UI (#716)", async () => {
 		const server = startServer();
 		renderWithKernel(<StudentsRoute />);
 		await screen.findByText("Học viên Một");
-		expect(screen.getByRole("button", { name: /Mời học viên/ })).toBeTruthy();
+		expect(screen.queryByRole("button", { name: /Mời học viên/ })).toBeNull();
+		expect(screen.queryByRole("tab", { name: /Lời mời đang chờ/ })).toBeNull();
 		expect(screen.getByRole("button", { name: "Thêm học viên" })).toBeTruthy();
 
 		fireEvent.click(screen.getByRole("button", { name: "Thêm học viên" }));
@@ -92,7 +89,7 @@ describe("students list", () => {
 });
 
 describe("students list header and filters", () => {
-	it("counts students, pending invitations and those needing attention from live data", async () => {
+	it("counts students and those needing attention from live data (#716)", async () => {
 		vi.unstubAllGlobals();
 		startKernelServer(
 			snapshotFixture({
@@ -103,21 +100,9 @@ describe("students list header and filters", () => {
 				],
 				invoices: [invoiceRow({ id: "inv-1", studentId: "st-2" })],
 			}),
-			(req) =>
-				req.path === "/api/students/invitations"
-					? {
-							status: 200,
-							body: [
-								{ id: "iv-1", status: "pending" },
-								{ id: "iv-2", status: "accepted" },
-							],
-						}
-					: undefined,
 		);
 		renderWithKernel(<StudentsRoute />);
-		expect(
-			await screen.findByText("3 học viên đang học · 1 lời mời đang chờ"),
-		).toBeTruthy();
+		expect(await screen.findByText("3 học viên")).toBeTruthy();
 		expect(
 			screen.getByText("1 cần chú ý (nợ học phí / sắp hết gói)"),
 		).toBeTruthy();
@@ -134,15 +119,21 @@ describe("students list header and filters", () => {
 		).toEqual(["Tất cả", "Sắp hết buổi", "Nợ học phí", "Viết", "Nói"]);
 	});
 
-	it("#570: renders Chờ xác nhận badge and Gửi lại lời mời action when student has email and portalLinked=false", async () => {
+	it("#716: hides org invite badges/buttons when student has email and portalLinked=false, while keeping Chưa liên kết Portal for empty email", async () => {
 		vi.unstubAllGlobals();
-		const server = startKernelServer(
+		startKernelServer(
 			snapshotFixture({
 				students: [
 					studentRow({
 						id: "st-pending",
 						name: "Lê Chờ Xác Nhận",
 						email: "pending@example.com",
+						portalLinked: false,
+					}),
+					studentRow({
+						id: "st-no-email",
+						name: "Trần Chưa Email",
+						email: "",
 						portalLinked: false,
 					}),
 					studentRow({
@@ -153,107 +144,19 @@ describe("students list header and filters", () => {
 					}),
 				],
 			}),
-			(req) => {
-				if (req.path === "/api/students/invitations") {
-					return { status: 200, body: [] };
-				}
-				if (
-					req.method === "POST" &&
-					req.path === "/api/students/st-pending/resend-invite"
-				) {
-					return {
-						status: 200,
-						body: { ok: true, id: "st-pending", updatedAt: Date.now() },
-					};
-				}
-				return undefined;
-			},
 		);
 		renderWithKernel(<StudentsRoute />);
 		await screen.findByText("Lê Chờ Xác Nhận");
-		expect(screen.getAllByText("Chờ xác nhận")).toHaveLength(1);
-		const resendBtn = screen.getByRole("button", { name: /Gửi lại lời mời/ });
-		fireEvent.click(resendBtn);
-		await waitFor(() => {
-			expect(
-				server.writes.some(
-					(r) =>
-						r.method === "POST" &&
-						r.path === "/api/students/st-pending/resend-invite",
-				),
-			).toBe(true);
-		});
-		expect(routerState.navigate).not.toHaveBeenCalled();
-	});
+		expect(screen.getByText("Trần Chưa Email")).toBeTruthy();
+		expect(screen.getByText("Phạm Đã Vào")).toBeTruthy();
 
-	it("#616: unifies pending count and includes unlinked portal student in Lời mời đang chờ tab", async () => {
-		vi.unstubAllGlobals();
-		const server = startKernelServer(
-			snapshotFixture({
-				students: [
-					studentRow({
-						id: "st-unlinked",
-						name: "Học Viên Chờ Cổng",
-						email: "chocong@example.com",
-						portalLinked: false,
-					}),
-					studentRow({
-						id: "st-active",
-						name: "Học Viên Đang Học",
-						email: "danghoc@example.com",
-						portalLinked: true,
-					}),
-				],
-			}),
-			(req) => {
-				if (req.path === "/api/students/invitations") {
-					return { status: 200, body: [] };
-				}
-				if (
-					req.method === "POST" &&
-					req.path === "/api/students/st-unlinked/resend-invite"
-				) {
-					return {
-						status: 200,
-						body: { ok: true, id: "st-unlinked", updatedAt: Date.now() },
-					};
-				}
-				return undefined;
-			},
-		);
-		renderWithKernel(<StudentsRoute />);
-		await screen.findByText("Học Viên Đang Học");
-
-		// Kicker does NOT count unlinked student into "đang học", counts them in "lời mời đang chờ"
+		expect(screen.queryByRole("button", { name: /Mời học viên/ })).toBeNull();
+		expect(screen.queryByRole("tab", { name: /Lời mời đang chờ/ })).toBeNull();
+		expect(screen.queryByText("Chờ xác nhận")).toBeNull();
 		expect(
-			screen.getByText("1 học viên đang học · 1 lời mời đang chờ"),
-		).toBeTruthy();
-
-		// Tabs: "Học viên (2)" retains full org roster, "Lời mời đang chờ (1)" reflects pending
-		expect(screen.getByRole("tab", { name: "Học viên (2)" })).toBeTruthy();
-		const invitesTab = screen.getByRole("tab", {
-			name: "Lời mời đang chờ (1)",
-		});
-		expect(invitesTab).toBeTruthy();
-
-		// Click "Lời mời đang chờ (1)" tab -> renders pending student row with resend button
-		fireEvent.click(invitesTab);
-		expect(await screen.findByText("Học Viên Chờ Cổng")).toBeTruthy();
-		expect(screen.getByText("chocong@example.com")).toBeTruthy();
-		expect(screen.getAllByText("Chờ xác nhận")).toHaveLength(1);
-		expect(screen.queryByText("Chưa có lời mời nào đang chờ")).toBeNull();
-
-		const resendBtn = screen.getByRole("button", { name: /Gửi lại lời mời/ });
-		fireEvent.click(resendBtn);
-		await waitFor(() => {
-			expect(
-				server.writes.some(
-					(r) =>
-						r.method === "POST" &&
-						r.path === "/api/students/st-unlinked/resend-invite",
-				),
-			).toBe(true);
-		});
+			screen.queryByRole("button", { name: /Gửi lại lời mời/ }),
+		).toBeNull();
+		expect(screen.getAllByText("Chưa liên kết Portal")).toHaveLength(1);
 	});
 
 	it("hides paused classes from AddStudentModal class selector (#694)", async () => {
@@ -265,10 +168,6 @@ describe("students list header and filters", () => {
 					classRow({ id: "cl-p", name: "Lớp Tạm Dừng", status: "paused" }),
 				],
 			}),
-			(req) =>
-				req.path === "/api/students/invitations"
-					? { status: 200, body: [] }
-					: undefined,
 		);
 		renderWithKernel(<StudentsRoute />);
 		const addButtons = await screen.findAllByRole("button", {

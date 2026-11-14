@@ -4,7 +4,6 @@ import {
 } from "@teacher-os/api/contracts";
 import { type FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { PendingInviteCallout } from "@/components/students/pending-invite-callout";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
@@ -105,7 +104,7 @@ export function AddStudentModal({
 		if (result?.kind === "refreshed") {
 			if (trimmedEmail && result.inviteEmailSent === false) {
 				toast.warning(
-					"Đã lưu hồ sơ học viên nhưng chưa gửi được email lời mời — bạn có thể bấm Gửi lại lời mời trong danh sách học viên.",
+					"Đã lưu hồ sơ học viên. Học viên có thể đăng nhập cổng học viên bằng email này để tự động liên kết hồ sơ.",
 				);
 			}
 			onClose();
@@ -118,22 +117,11 @@ export function AddStudentModal({
 		}
 	}
 
-	const trimmedCurrentEmail = email.trim().toLowerCase();
-	const unjoinedConflict =
-		failureError?.code === STUDENT_INVITATION_ERROR_CODES.ALREADY_IN_ORG &&
-		failureError.portalLinked === false &&
-		failureError.existingStudentId
-			? {
-					studentId: failureError.existingStudentId,
-					studentName: failureError.existingStudentName,
-				}
-			: null;
-	const joinedConflictError =
-		failureError?.code === STUDENT_INVITATION_ERROR_CODES.ALREADY_IN_ORG &&
-		failureError.portalLinked === true
+	const duplicateEmailError =
+		failureError?.code === STUDENT_INVITATION_ERROR_CODES.ALREADY_IN_ORG
 			? failureError.existingStudentName
-				? `Email này đã tham gia cổng học viên (${failureError.existingStudentName}).`
-				: "Email này đã tham gia cổng học viên."
+				? `Email này đã tồn tại trong danh sách học viên (${failureError.existingStudentName}).`
+				: "Email này đã tồn tại trong danh sách học viên."
 			: undefined;
 
 	const effectiveClassId = (defaultClassId ?? classId).trim();
@@ -145,7 +133,7 @@ export function AddStudentModal({
 			onClose={saving ? () => undefined : onClose}
 			title="Thêm học viên mới"
 		>
-			<form noValidate onSubmit={submit} className="flex flex-col gap-3">
+			<form noValidate onSubmit={submit} className="flex flex-col">
 				<Field label="Họ tên học viên *" required error={nameError}>
 					<Input
 						value={name}
@@ -253,23 +241,10 @@ export function AddStudentModal({
 				)}
 
 				<div className="flex flex-col gap-2 empty:hidden">
-					{unjoinedConflict && trimmedCurrentEmail ? (
-						<PendingInviteCallout
-							target={{
-								kind: "student",
-								studentId: unjoinedConflict.studentId,
-								recipientLabel: trimmedCurrentEmail,
-							}}
-							studentName={unjoinedConflict.studentName}
-							email={trimmedCurrentEmail}
-							onResent={onClose}
-						/>
-					) : (
-						(joinedConflictError ?? error) && (
-							<p role="alert" className="text-danger text-xs">
-								{joinedConflictError ?? error}
-							</p>
-						)
+					{(duplicateEmailError ?? error) && (
+						<p role="alert" className="text-danger text-xs">
+							{duplicateEmailError ?? error}
+						</p>
 					)}
 					{notice && (
 						<KernelSubmitNotice
