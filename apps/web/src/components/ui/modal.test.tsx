@@ -89,4 +89,114 @@ describe("Modal", () => {
 		expect(onCloseLocked).toHaveBeenCalledTimes(1);
 		expect(onCloseParent).not.toHaveBeenCalled();
 	});
+
+	it("hỗ trợ size='xl', description và scrollableBody mà không làm gãy layout", () => {
+		render(
+			<Modal
+				open
+				onClose={() => {}}
+				title="Giao bài tập"
+				description="Chọn một đề sẵn sàng và đặt hạn nộp."
+				size="xl"
+				scrollableBody
+				footer={<button type="button">Huỷ</button>}
+			>
+				<div data-testid="scroll-content">Nội dung dài</div>
+			</Modal>,
+		);
+
+		const dialog = screen.getByRole("dialog", { name: "Giao bài tập" });
+		expect(dialog.className).toContain("max-w-4xl");
+		expect(dialog.className).toContain("overflow-hidden");
+		expect(
+			screen.getByText("Chọn một đề sẵn sàng và đặt hạn nộp."),
+		).not.toBeNull();
+		const body = screen.getByTestId("scroll-content").parentElement;
+		expect(body?.className).toContain("overflow-y-auto");
+		expect(body?.className).toContain("flex-1");
+	});
+
+	it("Escape không đóng Modal khi có popup con đang mở bên trong hoặc qua portal, nhưng đóng sau khi popup con đã đóng", () => {
+		const onClose = vi.fn();
+		const { rerender } = render(
+			<Modal open onClose={onClose} title="Modal có DatePicker">
+				<button type="button" aria-haspopup="dialog" aria-expanded="true">
+					Chọn ngày
+				</button>
+			</Modal>,
+		);
+
+		fireEvent.keyDown(document, { key: "Escape" });
+		expect(onClose).not.toHaveBeenCalled();
+
+		// Đóng trigger bên trong nhưng còn portal dialog đang mở
+		rerender(
+			<>
+				<Modal open onClose={onClose} title="Modal có DatePicker">
+					<button type="button" aria-haspopup="dialog" aria-expanded="false">
+						Chọn ngày
+					</button>
+				</Modal>
+				<div data-base-ui-portal="">
+					<div role="dialog" data-open="">
+						Lịch tháng
+					</div>
+				</div>
+			</>,
+		);
+		fireEvent.keyDown(document, { key: "Escape" });
+		expect(onClose).not.toHaveBeenCalled();
+
+		// Sau khi popup con đóng hoàn toàn -> Escape đóng Modal bình thường
+		rerender(
+			<Modal open onClose={onClose} title="Modal có DatePicker">
+				<button type="button" aria-haspopup="dialog" aria-expanded="false">
+					Chọn ngày
+				</button>
+			</Modal>,
+		);
+		fireEvent.keyDown(document, { key: "Escape" });
+		expect(onClose).toHaveBeenCalledTimes(1);
+	});
+
+	it("click backdrop không đóng Modal khi bắt đầu kéo từ bên trong hoặc khi có popup portal đang mở lúc pointerdown", () => {
+		const onClose = vi.fn();
+		const { rerender } = render(
+			<>
+				<Modal open onClose={onClose} title="Modal có DatePicker">
+					<input aria-label="Ngày" />
+				</Modal>
+				<div data-base-ui-portal="">
+					<div role="dialog" data-open="">
+						Lịch tháng
+					</div>
+				</div>
+			</>,
+		);
+
+		const modalDialog = screen.getByRole("dialog", {
+			name: "Modal có DatePicker",
+		});
+		const overlay = modalDialog.parentElement as HTMLElement;
+
+		// 1. Kéo chuột từ bên trong dialog rồi thả trên overlay -> không đóng
+		fireEvent.pointerDown(screen.getByLabelText("Ngày"));
+		fireEvent.click(overlay);
+		expect(onClose).not.toHaveBeenCalled();
+
+		// 2. Click backdrop khi portal đang mở tại pointerdown (portal đóng trước click) -> không đóng Modal
+		fireEvent.pointerDown(overlay);
+		rerender(
+			<Modal open onClose={onClose} title="Modal có DatePicker">
+				<input aria-label="Ngày" />
+			</Modal>,
+		);
+		fireEvent.click(overlay);
+		expect(onClose).not.toHaveBeenCalled();
+
+		// 3. Click backdrop khi không còn portal -> đóng Modal
+		fireEvent.pointerDown(overlay);
+		fireEvent.click(overlay);
+		expect(onClose).toHaveBeenCalledTimes(1);
+	});
 });

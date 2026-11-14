@@ -2025,3 +2025,292 @@ describe("class detail → pause and resume class status (#694)", () => {
 		expect(screen.queryByRole("dialog")).toBeNull();
 	});
 });
+
+describe("class detail → assign homework modal (#717)", () => {
+	it("omits PageHead trigger, opens AssignClassPromptModal from Bài đã giao lớp này while keeping list mounted, and closes on Huỷ", async () => {
+		startKernelServer(twoClasses());
+		renderWithKernel(<ClassDetail />);
+
+		await screen.findByRole("heading", { name: "IELTS Writing" });
+		const pageHeadActions = screen.getByRole("button", {
+			name: "Chỉnh sửa",
+		}).parentElement;
+		expect(pageHeadActions).toBeTruthy();
+		expect(
+			within(pageHeadActions as HTMLElement).queryByRole("button", {
+				name: /Giao bài tập/,
+			}),
+		).toBeNull();
+
+		const assignButtons = screen.getAllByRole("button", {
+			name: "Giao bài tập",
+		});
+		expect(assignButtons).toHaveLength(1);
+		expect(screen.getByText("Bài đã giao lớp này")).toBeTruthy();
+
+		fireEvent.click(assignButtons[0]);
+		const dialog = await screen.findByRole("dialog", { name: /Giao bài tập/ });
+		expect(dialog).toBeTruthy();
+		expect(screen.getByText("Bài đã giao lớp này")).toBeTruthy();
+
+		fireEvent.click(within(dialog).getByRole("button", { name: "Huỷ" }));
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		expect(screen.getByText("Bài đã giao lớp này")).toBeTruthy();
+	});
+
+	it("hides + Thêm học viên vào lớp inside AssignClassPromptModal when class is paused and empty", async () => {
+		const snapshot = snapshotFixture({
+			classes: [
+				classRow({ id: "cl-1", name: "IELTS Paused", status: "paused" }),
+			],
+			students: [],
+			enrollments: [],
+		});
+		startKernelServer(snapshot);
+		renderWithKernel(<ClassDetail />);
+
+		await screen.findByRole("heading", { name: "IELTS Paused" });
+		fireEvent.click(screen.getByRole("button", { name: "Giao bài tập" }));
+		const dialog = await screen.findByRole("dialog", { name: /Giao bài tập/ });
+
+		expect(
+			within(dialog).queryByRole("button", {
+				name: "+ Thêm học viên vào lớp",
+			}),
+		).toBeNull();
+		expect(
+			within(dialog).getByText(
+				"Mở lại lớp để thêm học viên trước khi giao bài.",
+			),
+		).toBeTruthy();
+	});
+
+	it("resets auto-expand nonce on study-pack toggle, tab switch, and SPA classId switch (#717)", async () => {
+		const makeReadyPrompt = (id: string, title: string, prompt: string) => ({
+			id,
+			skill: "writing",
+			part: "task2",
+			type: "opinion",
+			task: "task2",
+			genre: "opinion",
+			title,
+			band: "7.0",
+			source: "",
+			prompt,
+			intro: "",
+			passage: "",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			imageUrl: "",
+			questions: [],
+			optionBank: [],
+			note: "",
+			status: "ready",
+			createdAt: "2026-09-01T00:00:00.000Z",
+		});
+		const snapshot = snapshotFixture({
+			classes: [
+				classRow({ id: "cl-1", name: "IELTS Writing" }),
+				classRow({ id: "cl-2", name: "IELTS Speaking" }),
+			],
+			students: [
+				studentRow({ id: "st-1", name: "Học viên Một" }),
+				studentRow({ id: "st-2", name: "Học viên Hai" }),
+			],
+			enrollments: [
+				enrollmentRow({ id: "en-1", classId: "cl-1", studentId: "st-1" }),
+				enrollmentRow({ id: "en-2", classId: "cl-2", studentId: "st-2" }),
+			],
+			assignmentPrompts: [
+				makeReadyPrompt("pr-1", "Ready Writing Prompt", "Essay prompt"),
+				makeReadyPrompt("pr-2", "Second Ready Prompt", "Essay prompt 2"),
+				makeReadyPrompt("pr-3", "Third Ready Prompt", "Essay prompt 3"),
+			],
+			classAssignments: [
+				{
+					id: "ca-cl1-pending",
+					classId: "cl-1",
+					promptId: "pr-1",
+					title: "CL1 Pending Grade",
+					due: "2099-01-10",
+					note: "",
+					createdAt: "2026-09-01T00:00:00.000Z",
+					targets: [
+						{
+							studentId: "st-1",
+							submittedAt: "2026-09-02T00:00:00.000Z",
+							attemptId: "att-1",
+							gradedAt: null,
+							band: null,
+						},
+					],
+				},
+				{
+					id: "ca-cl2-top",
+					classId: "cl-2",
+					promptId: "pr-1",
+					title: "CL2 Top Unsubmitted",
+					due: "2099-01-20",
+					note: "",
+					createdAt: "2026-10-01T00:00:00.000Z",
+					targets: [
+						{
+							studentId: "st-2",
+							submittedAt: null,
+							attemptId: null,
+							gradedAt: null,
+							band: null,
+						},
+					],
+				},
+				{
+					id: "ca-cl2-pending",
+					classId: "cl-2",
+					promptId: "pr-1",
+					title: "CL2 Older Pending",
+					due: "2099-01-10",
+					note: "",
+					createdAt: "2026-09-01T00:00:00.000Z",
+					targets: [
+						{
+							studentId: "st-2",
+							submittedAt: "2026-09-02T00:00:00.000Z",
+							attemptId: "att-2",
+							gradedAt: null,
+							band: null,
+						},
+					],
+				},
+			],
+		});
+		let assignSeq = 0;
+		startKernelServer(snapshot, (req, srv) => {
+			if (req.path === "/api/classes/cl-1/assignments") {
+				assignSeq += 1;
+				const body = (req.body ?? {}) as { promptId?: string };
+				const prompt = srv.snapshot.assignmentPrompts.find(
+					(p) => p.id === body.promptId,
+				);
+				srv.snapshot.classAssignments.unshift({
+					id: `ca-cl1-new-${assignSeq}`,
+					classId: "cl-1",
+					promptId: prompt?.id ?? "pr-1",
+					title: prompt?.title ?? "Ready Writing Prompt",
+					due: "2099-02-10",
+					note: "",
+					createdAt: `2026-11-14T12:0${assignSeq}:00.000Z`,
+					targets: [
+						{
+							studentId: "st-1",
+							submittedAt: null,
+							attemptId: null,
+							gradedAt: null,
+							band: null,
+						},
+					],
+				});
+			}
+			return undefined;
+		});
+
+		renderWithKernel(<RerenderableClassDetail />);
+		await screen.findByRole("heading", { name: "IELTS Writing" });
+
+		// Giao bài ở cl-1 -> item mới nhất (index 0) tự mở
+		fireEvent.click(screen.getByRole("button", { name: "+ Giao bài tập" }));
+		const dialog = await screen.findByRole("dialog", { name: /Giao bài tập/ });
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: /Ready Writing Prompt/ }),
+		);
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Giao bài tập" }),
+		);
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		await waitFor(() =>
+			expect(
+				screen
+					.getByRole("button", { name: /Ready Writing Prompt/ })
+					.getAttribute("aria-expanded"),
+			).toBe("true"),
+		);
+
+		// 1. Chuyển SPA sang cl-2: ca-cl2-top (chưa nộp) KHÔNG được tự mở do rò nonce từ cl-1
+		routerState.params = { classId: "cl-2" };
+		fireEvent.click(screen.getByTestId("rerender"));
+		await screen.findByRole("heading", { name: "IELTS Speaking" });
+		expect(
+			screen
+				.getByRole("button", { name: /CL2 Top Unsubmitted/ })
+				.getAttribute("aria-expanded"),
+		).toBe("false");
+		expect(
+			screen
+				.getByRole("button", { name: /CL2 Older Pending/ })
+				.getAttribute("aria-expanded"),
+		).toBe("true");
+
+		// 2. Quay lại cl-1 & kiểm tra toggle Bộ đề tự học reset nonce
+		routerState.params = { classId: "cl-1" };
+		fireEvent.click(screen.getByTestId("rerender"));
+		await screen.findByRole("heading", { name: "IELTS Writing" });
+		expect(
+			screen
+				.getByRole("button", { name: /Ready Writing Prompt/ })
+				.getAttribute("aria-expanded"),
+		).toBe("false");
+
+		// Giao thêm bài ở cl-1 -> mở, rồi toggle Bộ đề tự học -> quay về Buổi học & bài giao phải về defaultOpenIds
+		fireEvent.click(screen.getByRole("button", { name: "+ Giao bài tập" }));
+		const dialog2 = await screen.findByRole("dialog", { name: /Giao bài tập/ });
+		fireEvent.click(
+			within(dialog2).getByRole("button", { name: /Second Ready Prompt/ }),
+		);
+		fireEvent.click(
+			within(dialog2).getByRole("button", { name: "Giao bài tập" }),
+		);
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		await waitFor(() =>
+			expect(
+				screen
+					.getByRole("button", { name: /Second Ready Prompt/ })
+					.getAttribute("aria-expanded"),
+			).toBe("true"),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Bộ đề tự học" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Buổi học & bài giao" }),
+		);
+		expect(
+			screen
+				.getByRole("button", { name: /Second Ready Prompt/ })
+				.getAttribute("aria-expanded"),
+		).toBe("false");
+
+		// 3. Giao bài thứ 3 -> mở, rồi chuyển tab lớp -> quay lại tab Buổi học & luyện tập phải về defaultOpenIds
+		fireEvent.click(screen.getByRole("button", { name: "+ Giao bài tập" }));
+		const dialog3 = await screen.findByRole("dialog", { name: /Giao bài tập/ });
+		fireEvent.click(
+			within(dialog3).getByRole("button", { name: /Third Ready Prompt/ }),
+		);
+		fireEvent.click(
+			within(dialog3).getByRole("button", { name: "Giao bài tập" }),
+		);
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		await waitFor(() =>
+			expect(
+				screen
+					.getByRole("button", { name: /Third Ready Prompt/ })
+					.getAttribute("aria-expanded"),
+			).toBe("true"),
+		);
+		fireEvent.click(screen.getByRole("tab", { name: "Học viên" }));
+		fireEvent.click(screen.getByRole("tab", { name: "Buổi học & luyện tập" }));
+		expect(
+			screen
+				.getByRole("button", { name: /Third Ready Prompt/ })
+				.getAttribute("aria-expanded"),
+		).toBe("false");
+	});
+});

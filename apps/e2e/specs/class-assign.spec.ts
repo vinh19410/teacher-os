@@ -9,9 +9,10 @@ import {
 import { API_ORIGIN, WEB_ORIGIN } from "./origins";
 
 /**
- * Issue #208 — Giao bài trên lớp:
- * class detail → tab Bài tập → assign view → submit → success → list view with
- * derived submission status → reload → verify "Đã dùng 1 lớp" in bank → reassign
+ * Issue #208 / #717 — Giao bài trên lớp:
+ * class detail → Buổi học & luyện tập → mở AssignClassPromptModal → chọn đề,
+ * kiểm tra Escape/backdrop/calendar popover, giao bài -> auto-expand item mới
+ * trong #assigned-list → reload → verify "Đã dùng 1 lớp" in bank → reassign
  * warning → verify "Đã dùng 1 lớp" stays distinct after reassign.
  */
 test("class detail → assign prompt → verify list, bank tag, and reassign", async ({
@@ -100,33 +101,62 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 		.click();
 	await expect(page.getByText("Chưa giao bài nào cho lớp này.")).toBeVisible();
 
-	// 7. Click "Giao bài tập"
-	await page.getByRole("button", { name: "Giao bài tập" }).first().click();
+	// 7. Click "Giao bài tập" -> opens Modal over class page (list behind stays mounted)
+	await page.getByRole("button", { name: "Giao bài tập", exact: true }).click();
+	const assignDialog = page.getByRole("dialog", {
+		name: new RegExp(`Giao bài tập · ${CLASS_NAME}`),
+	});
+	await expect(assignDialog).toBeVisible();
+	await expect(page.getByText("Bài đã giao lớp này")).toBeAttached();
+
+	// 7b. Cancel via "Huỷ" button and Escape key returns cleanly without mutating
+	await assignDialog.getByLabel("Tìm đề sẵn sàng").fill(PROMPT_TITLE);
+	await assignDialog
+		.getByRole("button", { name: new RegExp(PROMPT_TITLE) })
+		.click();
+	await assignDialog.getByRole("button", { name: "Huỷ", exact: true }).click();
+	await expect(assignDialog).toBeHidden();
+	await expect(page.getByText("Chưa giao bài nào cho lớp này.")).toBeVisible();
+
+	await page.getByRole("button", { name: "Giao bài tập", exact: true }).click();
+	await expect(assignDialog).toBeVisible();
+	await page.keyboard.press("Escape");
+	await expect(assignDialog).toBeHidden();
+	await expect(page.getByText("Chưa giao bài nào cho lớp này.")).toBeVisible();
+
+	// Re-open cleanly (search reset) & verify ready vs draft prompts
+	await page.getByRole("button", { name: "Giao bài tập", exact: true }).click();
+	await expect(assignDialog).toBeVisible();
+	await expect(assignDialog.getByLabel("Tìm đề sẵn sàng")).toHaveValue("");
 
 	// Picker shows ready prompt, but DOES NOT show draft prompt
-	await expect(page.getByText(PROMPT_TITLE)).toBeVisible();
-	await expect(page.getByText("QC-208 Draft Prompt")).toHaveCount(0);
+	await expect(assignDialog.getByText(PROMPT_TITLE)).toBeVisible();
+	await expect(assignDialog.getByText("QC-208 Draft Prompt")).toHaveCount(0);
 
 	// Select ready prompt
-	await page.getByRole("button", { name: new RegExp(PROMPT_TITLE) }).click();
+	await assignDialog
+		.getByRole("button", { name: new RegExp(PROMPT_TITLE) })
+		.click();
 
-	// Action bar copy reflects selection
-	await expect(page.getByText("Giao cho 1 học viên")).toBeVisible();
+	// Preview bar appears when selected & action bar copy reflects selection
+	await expect(assignDialog.getByText("Xem trước phía học viên")).toBeVisible();
+	await expect(assignDialog.getByText("Giao cho 1 học viên")).toBeVisible();
 
-	// 8. Submit assignment
-	await page.getByRole("button", { name: "Giao bài tập" }).last().click();
-
-	// 9. Success view
+	// 8. Submit assignment -> Modal closes immediately, toast shows, new item expanded at top
+	await assignDialog
+		.getByRole("button", { name: "Giao bài tập", exact: true })
+		.click();
+	await expect(assignDialog).toBeHidden();
 	await expect(
-		page.getByRole("heading", { name: "Đã giao bài tập" }),
+		page.getByText(`Đã giao “${PROMPT_TITLE}” cho 1 học viên.`),
 	).toBeVisible();
-	await expect(page.getByText("0/1", { exact: true }).first()).toBeVisible();
-	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
-
-	// 10. Click "Xem bài đã giao" → List view
-	await page.getByRole("button", { name: "Xem bài đã giao" }).click();
 	await expect(page.getByText("Bài đã giao lớp này")).toBeVisible();
-	await expect(page.getByText(PROMPT_TITLE)).toBeVisible();
+	await expect(
+		page.locator(".assign-item button[aria-expanded]").first(),
+	).toHaveAttribute("aria-expanded", "true");
+	await expect(
+		page.locator("#assigned-list").getByText(PROMPT_TITLE),
+	).toBeVisible();
 	await expect(page.getByText("Đang mở").first()).toBeVisible();
 	await expect(page.getByText("Chưa có bài nộp").first()).toBeVisible();
 	await expect(page.getByText("Chưa nộp").first()).toBeVisible();
@@ -152,21 +182,30 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 	await page
 		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
-	await page.getByRole("button", { name: "Giao thêm đề" }).click();
+	await expect(
+		page.getByRole("button", { name: "Giao bài tập", exact: true }),
+	).toHaveCount(0);
+	await page
+		.getByRole("button", { name: "+ Giao bài tập", exact: true })
+		.click();
+	await expect(assignDialog).toBeVisible();
 
 	// Pick same prompt → warning note appears
-	await page.getByRole("button", { name: new RegExp(PROMPT_TITLE) }).click();
-	await expect(page.getByText("Đề này đã giao lớp này, hạn")).toBeVisible();
+	await assignDialog
+		.getByRole("button", { name: new RegExp(PROMPT_TITLE) })
+		.click();
 	await expect(
-		page.getByText("Giao lại sẽ thêm lượt mới cho học viên đã chọn."),
+		assignDialog.getByText("Đề này đã giao lớp này, hạn"),
+	).toBeVisible();
+	await expect(
+		assignDialog.getByText("Giao lại sẽ thêm lượt mới cho học viên đã chọn."),
 	).toBeVisible();
 
 	// Submit reassign
-	await page.getByRole("button", { name: "Giao bài tập" }).last().click();
-	await expect(
-		page.getByRole("heading", { name: "Đã giao bài tập" }),
-	).toBeVisible();
-	await page.getByRole("button", { name: "Xem bài đã giao" }).click();
+	await assignDialog
+		.getByRole("button", { name: "Giao bài tập", exact: true })
+		.click();
+	await expect(assignDialog).toBeHidden();
 
 	// Now there are 2 items in class assignments
 	const items = page.locator(".assign-item");
@@ -246,40 +285,59 @@ test("#572 (en-US locale): dd/mm/yyyy typing without segment jump, calendar popo
 			page.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),
 		).toBeVisible();
 
-		// Navigate to class assign form
+		// Navigate to class assign modal
 		await page.goto("/classes");
 		await page.getByText(CLASS_NAME).click();
 		await page
 			.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 			.click();
-		await page.getByRole("button", { name: "Giao bài tập" }).first().click();
-		await page.getByRole("button", { name: new RegExp(PROMPT_TITLE) }).click();
+		await page
+			.getByRole("button", { name: "Giao bài tập", exact: true })
+			.click();
+		const assignDialog = page.getByRole("dialog", {
+			name: new RegExp(`Giao bài tập · ${CLASS_NAME}`),
+		});
+		const calendarDialog = page.locator(
+			"[data-base-ui-portal] [role='dialog']",
+		);
+		await expect(assignDialog).toBeVisible();
+		await assignDialog
+			.getByRole("button", { name: new RegExp(PROMPT_TITLE) })
+			.click();
 
-		const dueInput = page.locator("#assignment-due-input");
-		const calendarBtn = page.getByRole("button", { name: "Chọn ngày" });
-		const dueTimeInput = page.locator("#assignment-due-time-input");
+		const dueInput = assignDialog.locator("#assignment-due-input");
+		const calendarBtn = assignDialog.getByRole("button", { name: "Chọn ngày" });
+		const dueTimeInput = assignDialog.locator("#assignment-due-time-input");
 
-		// 1. Keyboard focus order & Escape restore
+		// 1. Keyboard focus order & Escape closes calendar popover WITHOUT closing Modal
 		await dueInput.focus();
 		await expect(dueInput).toBeFocused();
 		await page.keyboard.press("Tab");
 		await expect(calendarBtn).toBeFocused();
 		await page.keyboard.press("Enter");
-		await expect(page.getByRole("dialog")).toBeVisible();
+		await expect(calendarDialog).toBeVisible();
 		await page.keyboard.press("Escape");
-		await expect(page.getByRole("dialog")).toBeHidden();
+		await expect(calendarDialog).toBeHidden();
+		await expect(assignDialog).toBeVisible();
 		await expect(calendarBtn).toBeFocused();
 		await page.keyboard.press("Tab");
 		await expect(dueTimeInput).toBeFocused();
+
+		// Clicking outer dark overlay while calendar popover is open must close ONLY calendar popover, keeping Modal open
+		await calendarBtn.click();
+		await expect(calendarDialog).toBeVisible();
+		await page.mouse.click(5, 5);
+		await expect(calendarDialog).toBeHidden();
+		await expect(assignDialog).toBeVisible();
 
 		// 2. Sequential typing under en-US locale: "06/11/2027" stays Nov 6 (never June 11)
 		await dueInput.click();
 		await dueInput.fill("");
 		await dueInput.pressSequentially("06/11/2027");
 		await expect(dueInput).toHaveValue("06/11/2027");
-		await expect(page.getByTestId("assignment-due-preview")).toContainText(
-			"Thứ Bảy, 06/11/2027",
-		);
+		await expect(
+			assignDialog.getByTestId("assignment-due-preview"),
+		).toContainText("Thứ Bảy, 06/11/2027");
 
 		// 3. 8-digit typing "09112027" never jumps segments ("10/09"); normalizes on blur
 		await dueInput.fill("");
@@ -289,18 +347,18 @@ test("#572 (en-US locale): dd/mm/yyyy typing without segment jump, calendar popo
 
 		await dueTimeInput.fill("17:30");
 		await dueTimeInput.blur();
-		await expect(page.getByTestId("assignment-due-preview")).toContainText(
-			"09/11/2027 lúc 17:30 (giờ Việt Nam)",
-		);
+		await expect(
+			assignDialog.getByTestId("assignment-due-preview"),
+		).toContainText("09/11/2027 lúc 17:30 (giờ Việt Nam)");
 
 		// 4. Calendar popover opens on November 2027 & picking Nov 15 updates input + preview
 		await calendarBtn.click();
-		await expect(page.getByText("Tháng 11, 2027")).toBeVisible();
-		await page.getByRole("button", { name: "15/11/2027" }).click();
+		await expect(calendarDialog.getByText("Tháng 11, 2027")).toBeVisible();
+		await calendarDialog.getByRole("button", { name: "15/11/2027" }).click();
 		await expect(dueInput).toHaveValue("15/11/2027");
-		await expect(page.getByTestId("assignment-due-preview")).toContainText(
-			"15/11/2027 lúc 17:30 (giờ Việt Nam)",
-		);
+		await expect(
+			assignDialog.getByTestId("assignment-due-preview"),
+		).toContainText("15/11/2027 lúc 17:30 (giờ Việt Nam)");
 
 		// 5. REVIEW.md: 3 viewports (1440×900, 768×1024, 375×812) + 320px reflow across light & dark
 		const shotDir = "/tmp/572-screenshots";
@@ -333,6 +391,13 @@ test("#572 (en-US locale): dd/mm/yyyy typing without segment jump, calendar popo
 					() => document.documentElement.scrollWidth > window.innerWidth,
 				);
 				expect(overflowClosed).toBe(false);
+				const modalOverflow = await assignDialog.evaluate(
+					(el) => el.scrollWidth > el.clientWidth + 1,
+				);
+				expect(modalOverflow).toBe(false);
+				await assignDialog
+					.getByLabel("Tìm đề sẵn sàng")
+					.scrollIntoViewIfNeeded();
 				if (vp.capture) {
 					await page.screenshot({
 						path: `${shotDir}/assign-form-${vp.name}-${theme}.png`,
@@ -340,7 +405,7 @@ test("#572 (en-US locale): dd/mm/yyyy typing without segment jump, calendar popo
 				}
 
 				await calendarBtn.click();
-				await expect(page.getByRole("dialog")).toBeVisible();
+				await expect(calendarDialog).toBeVisible();
 				const overflowOpen = await page.evaluate(
 					() => document.documentElement.scrollWidth > window.innerWidth,
 				);
@@ -353,7 +418,8 @@ test("#572 (en-US locale): dd/mm/yyyy typing without segment jump, calendar popo
 				}
 
 				await page.keyboard.press("Escape");
-				await expect(page.getByRole("dialog")).toBeHidden();
+				await expect(calendarDialog).toBeHidden();
+				await expect(assignDialog).toBeVisible();
 			}
 		}
 
@@ -370,20 +436,56 @@ test("#572 (en-US locale): dd/mm/yyyy typing without segment jump, calendar popo
 				r.url().endsWith("/assignments") &&
 				r.request().method() === "POST",
 		);
-		await page.getByRole("button", { name: "Giao bài tập" }).last().click();
+		await assignDialog
+			.getByRole("button", { name: "Giao bài tập", exact: true })
+			.click();
 		const createRes = await createResPromise;
 		expect(createRes.status()).toBe(201);
 		const { id: assignmentId } = (await createRes.json()) as { id: string };
 		expect(assignmentId).toBeTruthy();
 
-		await expect(
-			page.getByRole("heading", { name: "Đã giao bài tập" }),
-		).toBeVisible();
-		await expect(page.getByText("17:30 15/11/2027")).toBeVisible();
-
-		await page.getByRole("button", { name: "Xem bài đã giao" }).click();
+		await expect(assignDialog).toBeHidden();
 		await expect(page.getByText(/Hạn 17:30 15\/11\/2027/)).toBeVisible();
 		await expect(page.getByText("Đang mở").first()).toBeVisible();
+		await expect(
+			page.locator("#assigned-list button[aria-expanded]").first(),
+		).toHaveAttribute("aria-expanded", "true");
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await page.evaluate(() => {
+			window.localStorage.removeItem("theme");
+			document.documentElement.classList.remove("dark");
+		});
+		await page.screenshot({
+			path: `${shotDir}/class-assigned-list-1440x900-light.png`,
+		});
+		for (const vp of [
+			{ name: "1440x900", width: 1440, height: 900 },
+			{ name: "768x1024", width: 768, height: 1024 },
+			{ name: "375x812", width: 375, height: 812 },
+			{ name: "320x812", width: 320, height: 812 },
+		] as const) {
+			await page.setViewportSize({ width: vp.width, height: vp.height });
+			for (const theme of ["light", "dark"] as const) {
+				await page.evaluate((t) => {
+					if (t === "dark") {
+						window.localStorage.setItem("theme", "dark");
+						document.documentElement.classList.add("dark");
+					} else {
+						window.localStorage.removeItem("theme");
+						document.documentElement.classList.remove("dark");
+					}
+				}, theme);
+				const listOverflow = await page.evaluate(
+					() => document.documentElement.scrollWidth > window.innerWidth,
+				);
+				expect(listOverflow).toBe(false);
+			}
+		}
+		await page.evaluate(() => {
+			window.localStorage.removeItem("theme");
+			document.documentElement.classList.remove("dark");
+		});
+		await page.setViewportSize({ width: 1280, height: 800 });
 
 		// 7. Shift due_at to 1 minute ago -> verify immediate VN overdue transition
 		const shiftRes = await request.post(

@@ -169,27 +169,26 @@ test("hybrid Grammar + Writing assignment: author, preview, assign, student take
 		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
 	await teacherPage
-		.getByRole("button", { name: "Giao bài tập" })
-		.first()
+		.getByRole("button", { name: "Giao bài tập", exact: true })
 		.click();
+	const assignDialog = teacherPage.getByRole("dialog", {
+		name: /Giao bài tập ·/,
+	});
+	await expect(assignDialog).toBeVisible();
 
 	// Filter by Grammar chip -> see hybrid prompt with + Writing tag
-	await teacherPage
+	await assignDialog
 		.getByRole("button", { name: "Grammar", exact: true })
 		.click();
-	const promptOption = teacherPage.getByRole("button", {
+	const promptOption = assignDialog.getByRole("button", {
 		name: PROMPT_TITLE,
 	});
 	await expect(promptOption).toContainText("+ Writing");
 	await promptOption.click();
-	await teacherPage
-		.getByRole("button", { name: "Giao bài tập" })
-		.last()
+	await assignDialog
+		.getByRole("button", { name: "Giao bài tập", exact: true })
 		.click();
-	await expect(
-		teacherPage.getByRole("heading", { name: "Đã giao bài tập" }),
-	).toBeVisible();
-	await teacherPage.getByRole("button", { name: "Xem bài đã giao" }).click();
+	await expect(assignDialog).toBeHidden();
 	await expect(teacherPage.getByText(PROMPT_TITLE).first()).toBeVisible();
 
 	// 4. Student signs up on student portal, opens hybrid assignment, answers 1 right + 1 wrong + writes essay, submits
