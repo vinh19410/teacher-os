@@ -502,8 +502,29 @@ test("landing page has 8 blocks in order and preserves critical anchors (#600)",
 		"co-my-la-ai",
 		"dang-ky-tu-van",
 	];
+	let lastIndex = -1;
 	for (const id of blockIds) {
-		assert.match(html, new RegExp(`id="${id}"`), `missing block #${id}`);
+		const pos = html.indexOf(`id="${id}"`);
+		assert.ok(pos > -1, `missing block #${id}`);
+		assert.ok(pos > lastIndex, `block #${id} is out of order`);
+		lastIndex = pos;
+	}
+	const compatAnchors = [
+		"khoa-hoc",
+		"bang-chung",
+		"quy-trinh",
+		"chung-chi",
+		"dang-ky",
+		"hoc-vien",
+		"co-my",
+		"hoi-dap",
+	];
+	for (const anchor of compatAnchors) {
+		assert.match(
+			html,
+			new RegExp(`id="${anchor}"`),
+			`missing backwards-compatible anchor #${anchor}`,
+		);
 	}
 	assert.match(
 		html,
@@ -553,4 +574,56 @@ test("image lightbox dialog exists with proper controls and is balanced (#600)",
 		html,
 		/<dialog\s+id="imgModal"[^>]*>[\s\S]*?id="closeImgModal"[\s\S]*?id="modalImg"[\s\S]*?<\/dialog>/,
 	);
+});
+
+test("new editorial design blocks, carousel, and no broken/draft placeholders (#699)", () => {
+	assert.match(html, /class="hero-quote-card"/);
+	assert.equal((html.match(/class="trust-stat"/g) ?? []).length, 4);
+	assert.equal((html.match(/class="track-card\b/g) ?? []).length, 3);
+	assert.equal((html.match(/class="proof-card"/g) ?? []).length, 3);
+
+	const reasonListMatch = html.match(
+		/<ol\s+class="reason-list"[^>]*>([\s\S]*?)<\/ol>/,
+	);
+	assert.ok(reasonListMatch, 'expected <ol class="reason-list">');
+	const reasonItems = [
+		...reasonListMatch[1].matchAll(/<li>([\s\S]*?)<\/li>/g),
+	].map((m) => m[1]);
+	assert.equal(reasonItems.length, 3);
+	for (const item of reasonItems) {
+		const pMatch = item.match(/<p>([\s\S]*?)<\/p>/);
+		assert.ok(
+			pMatch && pMatch[1].trim().length > 10,
+			"each reason must have non-empty <p>",
+		);
+	}
+
+	assert.match(html, /class="workflow-grid four-steps"/);
+	assert.equal((html.match(/class="step-card\b/g) ?? []).length, 4);
+	assert.match(html, /<details\s+class="pdf-links"\s+id="ho-so-pdf">/);
+	assert.match(html, /id="certCarousel"/);
+	assert.match(html, /id="certPrevBtn"/);
+	assert.match(html, /id="certNextBtn"/);
+	assert.match(html, /id="mobileStickyCta"/);
+	assert.match(html, /id="leadSuccessBox"/);
+	assert.match(html, /id="generatedMsgBox"/);
+	assert.match(html, /id="pdfModal"/);
+	assert.match(html, /8\+\s*năm/);
+	assert.match(html, /Nhắn Zalo để nhận báo giá/);
+
+	assert.ok(!html.includes("/src/imports/"), "no broken /src/imports/ paths");
+	assert.ok(
+		!/đang cập nhật/i.test(html),
+		"no draft 'đang cập nhật' placeholder",
+	);
+});
+
+test("internal page noi-bo uses warm paper design, ../ home link, and 3 copy buttons (#699)", () => {
+	const noiBoHtml = readFileSync(
+		new URL("noi-bo/index.html", publicDir),
+		"utf8",
+	);
+	assert.match(noiBoHtml, /#F7F4EC/i);
+	assert.match(noiBoHtml, /<a\s+href="\.\.\/"/);
+	assert.equal((noiBoHtml.match(/data-copy-target=/g) ?? []).length, 3);
 });
