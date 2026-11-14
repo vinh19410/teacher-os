@@ -153,7 +153,7 @@ describe("AssignPackToClassModal", () => {
 		});
 		const onAssigned = vi.fn();
 
-		renderModal(
+		const { rerender } = renderModal(
 			<AssignPackToClassModal
 				open={true}
 				onClose={vi.fn()}
@@ -183,6 +183,24 @@ describe("AssignPackToClassModal", () => {
 		})) as HTMLAnchorElement;
 		expect(classLink.getAttribute("href")).toBe("/classes/cl-active");
 		expect(onAssigned).toHaveBeenCalledWith("cl-active");
+
+		// Simulate parent data-store refresh changing mockDataState.classes reference
+		mockDataState.classes = [...mockDataState.classes];
+		rerender(
+			<QueryClientProvider
+				client={
+					new QueryClient({ defaultOptions: { queries: { retry: false } } })
+				}
+			>
+				<AssignPackToClassModal
+					open={true}
+					onClose={vi.fn()}
+					pack={samplePack}
+					onAssigned={onAssigned}
+				/>
+			</QueryClientProvider>,
+		);
+		expect(screen.getByRole("link", { name: /Mở trang lớp học/ })).toBeTruthy();
 	});
 
 	it("handles 409 conflict errors gracefully without navigating", async () => {

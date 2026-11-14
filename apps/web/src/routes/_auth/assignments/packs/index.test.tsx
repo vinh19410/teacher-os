@@ -1,7 +1,14 @@
 // @vitest-environment jsdom
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { StudyPackSummaryView } from "@teacher-os/api/contracts";
-import { cleanup, render, screen } from "@testing-library/react";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { resetRouterState, routerState } from "@/test/router-mock";
 
@@ -11,13 +18,14 @@ vi.mock("@tanstack/react-router", async () =>
 
 const mockFetchStudyPacks =
 	vi.fn<() => Promise<{ packs: StudyPackSummaryView[] }>>();
+const mockDeleteStudyPack = vi.fn<(id: string) => Promise<{ ok: true }>>();
 
 vi.mock("@/lib/repos/study-pack", () => ({
 	fetchStudyPacks: () => mockFetchStudyPacks(),
 	fetchStudyPackDetail: vi.fn(),
 	createStudyPack: vi.fn(),
 	updateStudyPack: vi.fn(),
-	deleteStudyPack: vi.fn(),
+	deleteStudyPack: (id: string) => mockDeleteStudyPack(id),
 	cloneStudyPack: vi.fn(),
 }));
 
@@ -33,6 +41,17 @@ vi.mock("@/lib/data-store", () => ({
 }));
 
 import { StudyPacksRoute } from "./index";
+
+function renderPacksRoute() {
+	const client = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
+	return render(
+		<QueryClientProvider client={client}>
+			<StudyPacksRoute />
+		</QueryClientProvider>,
+	);
+}
 
 const orgPackSummary: StudyPackSummaryView = {
 	id: "org-1",
@@ -60,7 +79,9 @@ const systemPackSummary: StudyPackSummaryView = {
 
 beforeEach(() => {
 	resetRouterState();
+	mockStore.data.viewer = { role: "teacher" };
 	mockFetchStudyPacks.mockReset();
+	mockDeleteStudyPack.mockReset();
 	mockFetchStudyPacks.mockResolvedValue({
 		packs: [orgPackSummary, systemPackSummary],
 	});
@@ -73,7 +94,7 @@ afterEach(() => {
 describe("StudyPacksRoute (/assignments/packs/)", () => {
 	it("links org pack cards to /assignments/packs/$packId via Xem chi tiết and title link", async () => {
 		routerState.search = {};
-		render(<StudyPacksRoute />);
+		renderPacksRoute();
 
 		const detailLink = (await screen.findByRole("link", {
 			name: "Xem chi tiết",
@@ -88,12 +109,38 @@ describe("StudyPacksRoute (/assignments/packs/)", () => {
 
 	it("links system pack cards to /assignments/packs/$packId instead of opening legacy modal", async () => {
 		routerState.search = { scope: "system" };
-		render(<StudyPacksRoute />);
+		renderPacksRoute();
 
 		const detailLink = (await screen.findByRole("link", {
 			name: "Xem chi tiết",
 		})) as HTMLAnchorElement;
 		expect(detailLink.getAttribute("href")).toBe("/assignments/packs/sys-1");
 		expect(screen.queryByRole("button", { name: "Xem chi tiết" })).toBeNull();
+	});
+
+	it("requires delete confirmation modal and surfaces 409 error on assigned pack", async () => {
+		mockDeleteStudyPack.mockRejectedValueOnce(
+			Object.assign(new Error("conflict"), { status: 409 }),
+		);
+		routerState.search = {};
+		renderPacksRoute();
+
+		const deleteBtn = await screen.findByRole("button", { name: "Xoá" });
+		fireEvent.click(deleteBtn);
+
+		expect(
+			await screen.findByText(
+				/Bạn có chắc muốn xoá bộ đề "Bộ đề Trung tâm B1"/,
+			),
+		).toBeTruthy();
+		expect(mockDeleteStudyPack).not.toHaveBeenCalled();
+
+		fireEvent.click(screen.getByRole("button", { name: "Xác nhận xoá" }));
+		expect(
+			await screen.findByText("Không thể xoá bộ đề đã gán cho lớp học."),
+		).toBeTruthy();
+		await waitFor(() => {
+			expect(mockDeleteStudyPack).toHaveBeenCalledWith("org-1");
+		});
 	});
 });

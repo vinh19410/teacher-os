@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import {
 	createFileRoute,
 	Link,
@@ -17,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
+import { Modal } from "@/components/ui/modal";
 import { PageHead } from "@/components/ui/page-head";
 import { cn } from "@/lib/cn";
 import { useData } from "@/lib/data-store";
@@ -46,9 +48,10 @@ const ALL_LEVEL_LABEL = "Tất cả";
 
 export function StudyPacksRoute() {
 	const navigate = useNavigate();
+	const queryClient = useQueryClient();
 	const searchParams = useSearch({ from: "/_auth/assignments/packs/" });
 	const { data } = useData();
-	const canManagePacks = canPublishGrade(data.viewer?.role ?? "teacher");
+	const canManagePacks = canPublishGrade(data.viewer?.role);
 
 	const [packs, setPacks] = useState<StudyPackSummaryView[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -75,6 +78,11 @@ export function StudyPacksRoute() {
 	const [editingPack, setEditingPack] = useState<StudyPackSummaryView | null>(
 		null,
 	);
+	const [deletingPack, setDeletingPack] = useState<StudyPackSummaryView | null>(
+		null,
+	);
+	const [deleteError, setDeleteError] = useState<string | null>(null);
+	const [deleting, setDeleting] = useState(false);
 	const [busyId, setBusyId] = useState<string | null>(null);
 
 	const loadPacks = useCallback(async () => {
@@ -159,21 +167,31 @@ export function StudyPacksRoute() {
 		}
 	}
 
-	async function handleDeleteOrgPack(pack: StudyPackSummaryView) {
-		setBusyId(pack.id);
+	async function handleConfirmDelete() {
+		if (!deletingPack) return;
+		const target = deletingPack;
+		setDeleteError(null);
+		setDeleting(true);
+		setBusyId(target.id);
 		try {
-			await deleteStudyPack(pack.id);
+			await deleteStudyPack(target.id);
 			toast.success("Đã xoá bộ đề.");
-			setPacks((prev) => prev.filter((p) => p.id !== pack.id));
+			void queryClient.removeQueries({
+				queryKey: ["study-pack-detail", target.id],
+			});
+			setPacks((prev) => prev.filter((p) => p.id !== target.id));
+			setDeletingPack(null);
 		} catch (err) {
 			const status =
 				err && typeof err === "object" && "status" in err ? err.status : null;
-			if (status === 409) {
-				toast.error("Không thể xoá bộ đề đã gán cho lớp học.");
-			} else {
-				toast.error("Không thể xoá bộ đề. Vui lòng thử lại.");
-			}
+			const message =
+				status === 409
+					? "Không thể xoá bộ đề đã gán cho lớp học."
+					: "Không thể xoá bộ đề. Vui lòng thử lại.";
+			setDeleteError(message);
+			toast.error(message);
 		} finally {
+			setDeleting(false);
 			setBusyId(null);
 		}
 	}
@@ -376,7 +394,10 @@ export function StudyPacksRoute() {
 													variant="danger"
 													size="sm"
 													disabled={busyId === pack.id}
-													onClick={() => void handleDeleteOrgPack(pack)}
+													onClick={() => {
+														setDeleteError(null);
+														setDeletingPack(pack);
+													}}
 												>
 													<Trash2 className="size-3.5" />
 													Xoá
@@ -404,10 +425,52 @@ export function StudyPacksRoute() {
 				open={editorOpen}
 				onClose={() => setEditorOpen(false)}
 				editingPack={editingPack}
-				onSaved={async () => {
+				onSaved={async (saved) => {
+					queryClient.setQueryData(["study-pack-detail", saved.id], {
+						pack: saved,
+					});
 					await loadPacks();
 				}}
 			/>
+
+			<Modal
+				open={Boolean(deletingPack)}
+				onClose={() => {
+					if (!deleting) setDeletingPack(null);
+				}}
+				title="Xoá bộ đề"
+				description={
+					deletingPack
+						? `Bạn có chắc muốn xoá bộ đề "${deletingPack.title}"? Hành động này không thể hoàn tác.`
+						: undefined
+				}
+			>
+				<div className="space-y-4">
+					{deleteError && (
+						<p role="alert" className="text-destructive text-sm">
+							{deleteError}
+						</p>
+					)}
+					<div className="flex justify-end gap-2">
+						<Button
+							type="button"
+							variant="outline"
+							disabled={deleting}
+							onClick={() => setDeletingPack(null)}
+						>
+							Huỷ
+						</Button>
+						<Button
+							type="button"
+							variant="danger"
+							disabled={deleting}
+							onClick={() => void handleConfirmDelete()}
+						>
+							{deleting ? "Đang xoá…" : "Xác nhận xoá"}
+						</Button>
+					</div>
+				</div>
+			</Modal>
 		</div>
 	);
 }

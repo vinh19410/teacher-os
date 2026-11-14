@@ -360,4 +360,36 @@ describe("StudyPackItemViewer", () => {
 			await screen.findByText("Reading Passage 1: Urban Trees"),
 		).toBeTruthy();
 	});
+
+	it("renders rich-text HTML exerciseNote cleanly and skips auto audio fetch in Làm thử for non-listening items", async () => {
+		mockGetStudyPackItemDetail.mockResolvedValue({
+			...readingDetail,
+			hasAudio: true,
+			exerciseNote: "<p><strong>Mẹo đọc:</strong> Tìm từ khoá trước</p>",
+		});
+
+		const { container } = renderWithQuery(
+			<StudyPackItemViewer
+				packId="pack-1"
+				item={readingItem}
+				activeTab="key"
+				onTabChange={vi.fn()}
+			/>,
+		);
+
+		await screen.findByText("Mẹo đọc:");
+		expect(container.textContent).not.toContain("<strong>");
+
+		renderWithQuery(
+			<StudyPackItemViewer
+				packId="pack-1"
+				item={readingItem}
+				activeTab="sim"
+				onTabChange={vi.fn()}
+			/>,
+		);
+
+		await screen.findByRole("button", { name: /Nộp bài/ });
+		expect(mockFetchStudyPackItemAudio).not.toHaveBeenCalled();
+	});
 });

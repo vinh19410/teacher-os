@@ -98,7 +98,7 @@ export function StudyPackDetailRoute() {
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
 	const { data } = useData();
-	const canManagePacks = canPublishGrade(data.viewer?.role ?? "teacher");
+	const canManagePacks = canPublishGrade(data.viewer?.role);
 
 	const {
 		data: packRes,
@@ -123,6 +123,17 @@ export function StudyPackDetailRoute() {
 	const [mobileShowDetail, setMobileShowDetail] = useState(() =>
 		Boolean(searchParams.item),
 	);
+	const prevPackIdRef = useRef(packId);
+
+	// Reset local query, emitted-query tracker, and mobile view when navigating between packs.
+	useEffect(() => {
+		if (prevPackIdRef.current === packId) return;
+		prevPackIdRef.current = packId;
+		const nextQ = searchParams.q ?? "";
+		lastEmittedQuery.current = nextQ;
+		setQuery(nextQ);
+		setMobileShowDetail(Boolean(searchParams.item));
+	}, [packId, searchParams.q, searchParams.item]);
 
 	// Modals & action busy states
 	const [assignOpen, setAssignOpen] = useState(false);
@@ -149,9 +160,7 @@ export function StudyPackDetailRoute() {
 				item: "item" in next ? next.item : searchParams.item,
 				tab: "tab" in next ? next.tab : activeTab,
 			};
-			if ("q" in next) {
-				lastEmittedQuery.current = next.q ?? "";
-			}
+			lastEmittedQuery.current = merged.q ?? "";
 			void navigate({
 				to: "/assignments/packs/$packId",
 				params: { packId },
@@ -162,26 +171,6 @@ export function StudyPackDetailRoute() {
 		[navigate, packId, skillFilter, query, searchParams.item, activeTab],
 	);
 
-	// Debounce ?q= updates by 300ms so typing stays responsive.
-	useEffect(() => {
-		const timer = setTimeout(() => {
-			if (query === lastEmittedQuery.current) return;
-			lastEmittedQuery.current = query;
-			void navigate({
-				to: "/assignments/packs/$packId",
-				params: { packId },
-				search: buildDetailSearch({
-					skill: skillFilter,
-					q: query,
-					item: searchParams.item,
-					tab: activeTab,
-				}),
-				replace: true,
-			});
-		}, 300);
-		return () => clearTimeout(timer);
-	}, [query, skillFilter, searchParams.item, activeTab, navigate, packId]);
-
 	const items = useMemo(
 		() =>
 			[...(pack?.items ?? [])].sort(
@@ -189,6 +178,48 @@ export function StudyPackDetailRoute() {
 			),
 		[pack?.items],
 	);
+
+	// Debounce ?q= updates by 300ms so typing stays responsive.
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			if (query === lastEmittedQuery.current) return;
+			lastEmittedQuery.current = query;
+			const term = query.trim().toLowerCase();
+			const stillMatches = searchParams.item
+				? items.some((it) => {
+						if (it.id !== searchParams.item) return false;
+						if (skillFilter !== "all" && it.skill !== skillFilter) return false;
+						if (!term) return true;
+						return (
+							it.title.toLowerCase().includes(term) ||
+							it.note.toLowerCase().includes(term) ||
+							`buổi ${it.dayIndex}`.includes(term) ||
+							`ngày ${it.dayIndex}`.includes(term)
+						);
+					})
+				: false;
+			void navigate({
+				to: "/assignments/packs/$packId",
+				params: { packId },
+				search: buildDetailSearch({
+					skill: skillFilter,
+					q: query,
+					item: stillMatches ? searchParams.item : undefined,
+					tab: activeTab,
+				}),
+				replace: true,
+			});
+		}, 300);
+		return () => clearTimeout(timer);
+	}, [
+		query,
+		skillFilter,
+		searchParams.item,
+		activeTab,
+		navigate,
+		packId,
+		items,
+	]);
 
 	const queryMatchedItems = useMemo(() => {
 		const term = query.trim().toLowerCase();
@@ -203,14 +234,18 @@ export function StudyPackDetailRoute() {
 	}, [items, query]);
 
 	const { skillOptions, skillCounts, skillLabelToSlug } = useMemo(() => {
+		const allSlugs = new Set<string>();
+		for (const it of items) {
+			allSlugs.add(it.skill);
+		}
+		if (skillFilter !== "all") {
+			allSlugs.add(skillFilter);
+		}
 		const countsBySkill = new Map<string, number>();
 		for (const it of queryMatchedItems) {
 			countsBySkill.set(it.skill, (countsBySkill.get(it.skill) ?? 0) + 1);
 		}
-		if (skillFilter !== "all" && !countsBySkill.has(skillFilter)) {
-			countsBySkill.set(skillFilter, 0);
-		}
-		const slugs = [...countsBySkill.keys()];
+		const slugs = [...allSlugs];
 		const options: string[] = [ALL_SKILL_LABEL];
 		const counts: Record<string, number> = {
 			[ALL_SKILL_LABEL]: queryMatchedItems.length,
@@ -227,7 +262,7 @@ export function StudyPackDetailRoute() {
 			skillCounts: counts,
 			skillLabelToSlug: labelMap,
 		};
-	}, [queryMatchedItems, skillFilter]);
+	}, [items, queryMatchedItems, skillFilter]);
 
 	const filteredItems = useMemo(() => {
 		if (skillFilter === "all") return queryMatchedItems;
@@ -375,7 +410,8 @@ export function StudyPackDetailRoute() {
 		);
 	}
 
-	const canAssign = canManagePacks && pack.status === "ready";
+	const canAssign =
+		canManagePacks && pack.status === "ready" && pack.dayCount > 0;
 	const selectedSkillChipValue =
 		skillFilter === "all" ? ALL_SKILL_LABEL : formatPackSkillLabel(skillFilter);
 	const hasActiveFilters = query.trim() !== "" || skillFilter !== "all";
@@ -516,7 +552,7 @@ export function StudyPackDetailRoute() {
 									value={selectedSkillChipValue}
 									onChange={(label) => {
 										const nextSlug = skillLabelToSlug.get(label) ?? "all";
-										updateSearch({ skill: nextSlug });
+										updateSearch({ skill: nextSlug, item: undefined });
 									}}
 									counts={skillCounts}
 								/>
@@ -535,7 +571,7 @@ export function StudyPackDetailRoute() {
 										type="button"
 										onClick={() => {
 											setQuery("");
-											updateSearch({ q: "", skill: "all" });
+											updateSearch({ q: "", skill: "all", item: undefined });
 										}}
 										className="font-medium text-foreground text-xs underline underline-offset-2 focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 									>

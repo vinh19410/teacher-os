@@ -22,9 +22,25 @@ import {
 } from "@/lib/repos/study-pack";
 
 interface DraftPackItem extends StudyPackItemInput {
-	key: string;
+	uid: string;
+	dayText: string;
 	title: string;
 	skill: string;
+}
+
+function tupleKeyOf(
+	dayIndex: number,
+	sourceKind: string,
+	sourceId: string,
+): string {
+	return `${dayIndex}:${sourceKind}:${sourceId}`;
+}
+
+function nextDraftUid(): string {
+	return typeof crypto !== "undefined" &&
+		typeof crypto.randomUUID === "function"
+		? crypto.randomUUID()
+		: `draft-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 const ALLOWED_SKILLS = new Set<string>(STUDY_PACK_SKILLS);
@@ -52,8 +68,9 @@ function isPackDetailView(
 
 function mapDetailToDraftItems(pack: StudyPackDetailView): DraftPackItem[] {
 	return pack.items.map((it) => ({
-		key: `${it.dayIndex}:${it.sourceKind}:${it.sourceId}`,
+		uid: nextDraftUid(),
 		dayIndex: it.dayIndex,
+		dayText: String(it.dayIndex),
 		sourceKind: it.sourceKind,
 		sourceId: it.sourceId,
 		note: it.note,
@@ -125,16 +142,27 @@ export function StudyPackEditorModal({
 
 	const onCloseRef = useRef(onClose);
 	onCloseRef.current = onClose;
+	const editingPackRef = useRef(editingPack);
+	editingPackRef.current = editingPack;
+	const sessionKeyRef = useRef<string | null>(null);
 
 	useEffect(() => {
-		if (!open) return;
+		if (!open) {
+			sessionKeyRef.current = null;
+			return;
+		}
+		const sessionKey = editingPackId ?? "__create__";
+		if (sessionKeyRef.current === sessionKey) return;
+		sessionKeyRef.current = sessionKey;
+
+		const targetPack = editingPackRef.current;
 		let active = true;
 		setFormError(null);
 		setPromptSearch("");
 		setItemNote("");
 		setItemPromptId("");
 
-		if (!editingPack) {
+		if (!targetPack) {
 			setLoadingDetail(false);
 			setTitle("");
 			setDescription("");
@@ -147,15 +175,15 @@ export function StudyPackEditorModal({
 			};
 		}
 
-		setTitle(editingPack.title);
-		setDescription(editingPack.description);
-		setPackLevel(editingPack.level ?? "");
-		setStatus(editingPack.status);
+		setTitle(targetPack.title);
+		setDescription(targetPack.description);
+		setPackLevel(targetPack.level ?? "");
+		setStatus(targetPack.status);
 
-		if (isPackDetailView(editingPack)) {
+		if (isPackDetailView(targetPack)) {
 			setLoadingDetail(false);
-			setItems(mapDetailToDraftItems(editingPack));
-			const maxDay = editingPack.items.reduce(
+			setItems(mapDetailToDraftItems(targetPack));
+			const maxDay = targetPack.items.reduce(
 				(max, it) => Math.max(max, it.dayIndex),
 				0,
 			);
@@ -168,7 +196,7 @@ export function StudyPackEditorModal({
 		setItems([]);
 		setItemDayIndex(1);
 		setLoadingDetail(true);
-		void fetchStudyPackDetail(editingPack.id)
+		void fetchStudyPackDetail(targetPack.id)
 			.then((res) => {
 				if (!active) return;
 				setTitle(res.pack.title);
@@ -194,13 +222,14 @@ export function StudyPackEditorModal({
 		return () => {
 			active = false;
 		};
-	}, [open, editingPack]);
+	}, [open, editingPackId]);
 
 	useEffect(() => {
-		if (
-			filteredPrompts.length > 0 &&
-			!filteredPrompts.some((p) => p.id === itemPromptId)
-		) {
+		if (filteredPrompts.length === 0) {
+			if (itemPromptId !== "") setItemPromptId("");
+			return;
+		}
+		if (!filteredPrompts.some((p) => p.id === itemPromptId)) {
 			setItemPromptId(filteredPrompts[0].id);
 		}
 	}, [filteredPrompts, itemPromptId]);
@@ -230,8 +259,13 @@ export function StudyPackEditorModal({
 			);
 			return;
 		}
-		const key = `${itemDayIndex}:org_prompt:${itemPromptId}`;
-		if (items.some((it) => it.key === key)) {
+		const tupleKey = tupleKeyOf(itemDayIndex, "org_prompt", itemPromptId);
+		if (
+			items.some(
+				(it) =>
+					tupleKeyOf(it.dayIndex, it.sourceKind, it.sourceId) === tupleKey,
+			)
+		) {
 			setFormError("Bài tập này đã có trong ngày đã chọn.");
 			return;
 		}
@@ -241,8 +275,9 @@ export function StudyPackEditorModal({
 			return;
 		}
 		const nextItem: DraftPackItem = {
-			key,
+			uid: nextDraftUid(),
 			dayIndex: itemDayIndex,
+			dayText: String(itemDayIndex),
 			sourceKind: "org_prompt",
 			sourceId: prompt.id,
 			note: itemNote.trim(),
@@ -257,45 +292,74 @@ export function StudyPackEditorModal({
 		setItemDayIndex(Math.min(MAX_PACK_DAYS, itemDayIndex + 1));
 	}
 
-	function handleUpdateItemDay(targetKey: string, nextDay: number) {
+	function handleUpdateItemDayText(targetUid: string, rawText: string) {
 		setFormError(null);
+		setItems((prev) =>
+			prev.map((it) =>
+				it.uid === targetUid ? { ...it, dayText: rawText } : it,
+			),
+		);
+	}
+
+	function handleCommitItemDay(targetUid: string) {
+		const target = items.find((it) => it.uid === targetUid);
+		if (!target) return;
+		const trimmed = target.dayText.trim();
+		const nextDay = trimmed === "" ? Number.NaN : Number(trimmed);
 		if (!Number.isInteger(nextDay) || nextDay < 1 || nextDay > MAX_PACK_DAYS) {
 			setFormError(`Ngày học phải từ 1 đến ${MAX_PACK_DAYS}.`);
 			return;
 		}
-		const target = items.find((it) => it.key === targetKey);
-		if (!target || target.dayIndex === nextDay) return;
-		const nextKey = `${nextDay}:${target.sourceKind}:${target.sourceId}`;
-		if (items.some((it) => it.key === nextKey)) {
+		if (nextDay === target.dayIndex) {
+			if (target.dayText !== String(target.dayIndex)) {
+				setItems((prev) =>
+					prev.map((it) =>
+						it.uid === targetUid ? { ...it, dayText: String(nextDay) } : it,
+					),
+				);
+			}
+			return;
+		}
+		const nextTuple = tupleKeyOf(nextDay, target.sourceKind, target.sourceId);
+		if (
+			items.some(
+				(it) =>
+					it.uid !== targetUid &&
+					tupleKeyOf(it.dayIndex, it.sourceKind, it.sourceId) === nextTuple,
+			)
+		) {
 			setFormError("Bài tập này đã có trong ngày đã chọn.");
 			return;
 		}
-		const dayCount = items.filter((it) => it.dayIndex === nextDay).length;
+		const dayCount = items.filter(
+			(it) => it.uid !== targetUid && it.dayIndex === nextDay,
+		).length;
 		if (dayCount >= MAX_PACK_ITEMS_PER_DAY) {
 			setFormError(
 				`Mỗi ngày tối đa ${MAX_PACK_ITEMS_PER_DAY} bài tập (Ngày ${nextDay}).`,
 			);
 			return;
 		}
+		setFormError(null);
 		setItems((prev) =>
 			prev
 				.map((it) =>
-					it.key === targetKey
-						? { ...it, dayIndex: nextDay, key: nextKey }
+					it.uid === targetUid
+						? { ...it, dayIndex: nextDay, dayText: String(nextDay) }
 						: it,
 				)
 				.sort((a, b) => a.dayIndex - b.dayIndex),
 		);
 	}
 
-	function handleUpdateItemNote(targetKey: string, nextNote: string) {
+	function handleUpdateItemNote(targetUid: string, nextNote: string) {
 		setItems((prev) =>
-			prev.map((it) => (it.key === targetKey ? { ...it, note: nextNote } : it)),
+			prev.map((it) => (it.uid === targetUid ? { ...it, note: nextNote } : it)),
 		);
 	}
 
-	function handleRemoveItem(key: string) {
-		setItems((prev) => prev.filter((it) => it.key !== key));
+	function handleRemoveItem(uid: string) {
+		setItems((prev) => prev.filter((it) => it.uid !== uid));
 	}
 
 	async function handleSavePack(event: FormEvent) {
@@ -310,6 +374,45 @@ export function StudyPackEditorModal({
 			setFormError("Bộ đề Sẵn sàng cần có ít nhất 1 bài tập.");
 			return;
 		}
+
+		// Parse and validate every draft item's edited dayText before submitting.
+		const normalizedItems: StudyPackItemInput[] = [];
+		const seenTuples = new Set<string>();
+		const countsByDay = new Map<number, number>();
+		for (const it of items) {
+			const trimmedDay = it.dayText.trim();
+			const parsedDay = trimmedDay === "" ? Number.NaN : Number(trimmedDay);
+			if (
+				!Number.isInteger(parsedDay) ||
+				parsedDay < 1 ||
+				parsedDay > MAX_PACK_DAYS
+			) {
+				setFormError(`Ngày học phải từ 1 đến ${MAX_PACK_DAYS}.`);
+				return;
+			}
+			const tuple = tupleKeyOf(parsedDay, it.sourceKind, it.sourceId);
+			if (seenTuples.has(tuple)) {
+				setFormError("Bài tập này đã có trong ngày đã chọn.");
+				return;
+			}
+			seenTuples.add(tuple);
+			const nextCount = (countsByDay.get(parsedDay) ?? 0) + 1;
+			if (nextCount > MAX_PACK_ITEMS_PER_DAY) {
+				setFormError(
+					`Mỗi ngày tối đa ${MAX_PACK_ITEMS_PER_DAY} bài tập (Ngày ${parsedDay}).`,
+				);
+				return;
+			}
+			countsByDay.set(parsedDay, nextCount);
+			normalizedItems.push({
+				dayIndex: parsedDay,
+				sourceKind: it.sourceKind,
+				sourceId: it.sourceId,
+				note: it.note.trim(),
+			});
+		}
+		normalizedItems.sort((a, b) => a.dayIndex - b.dayIndex);
+
 		setSaving(true);
 		try {
 			const payload = {
@@ -317,12 +420,7 @@ export function StudyPackEditorModal({
 				description: description.trim(),
 				level: packLevel,
 				status,
-				items: items.map((it) => ({
-					dayIndex: it.dayIndex,
-					sourceKind: it.sourceKind,
-					sourceId: it.sourceId,
-					note: it.note.trim(),
-				})),
+				items: normalizedItems,
 			};
 			const res = editingPackId
 				? await updateStudyPack(editingPackId, payload)
@@ -488,7 +586,7 @@ export function StudyPackEditorModal({
 							<ul className="max-h-56 space-y-2 overflow-y-auto rounded-md border border-border p-2">
 								{items.map((item) => (
 									<li
-										key={item.key}
+										key={item.uid}
 										className="space-y-2 rounded-sm bg-muted/50 px-3 py-2 text-sm"
 									>
 										<div className="flex items-start justify-between gap-2">
@@ -511,7 +609,7 @@ export function StudyPackEditorModal({
 												variant="ghost"
 												size="sm"
 												aria-label={`Xoá ${item.title} khỏi Ngày ${item.dayIndex}`}
-												onClick={() => handleRemoveItem(item.key)}
+												onClick={() => handleRemoveItem(item.uid)}
 											>
 												Xoá
 											</Button>
@@ -523,20 +621,18 @@ export function StudyPackEditorModal({
 													min={1}
 													max={MAX_PACK_DAYS}
 													aria-label={`Ngày học cho ${item.title}`}
-													value={String(item.dayIndex)}
-													onChange={(e) => {
-														const next = Number(e.target.value);
-														if (Number.isInteger(next)) {
-															handleUpdateItemDay(item.key, next);
-														}
-													}}
+													value={item.dayText}
+													onChange={(e) =>
+														handleUpdateItemDayText(item.uid, e.target.value)
+													}
+													onBlur={() => handleCommitItemDay(item.uid)}
 													className="h-8 text-xs"
 												/>
 												<Input
 													aria-label={`Ghi chú cho ${item.title}`}
 													value={item.note}
 													onChange={(e) =>
-														handleUpdateItemNote(item.key, e.target.value)
+														handleUpdateItemNote(item.uid, e.target.value)
 													}
 													placeholder="Ghi chú buổi học"
 													className="h-8 text-xs"

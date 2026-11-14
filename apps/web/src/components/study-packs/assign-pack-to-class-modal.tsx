@@ -6,7 +6,7 @@ import type {
 } from "@teacher-os/api/contracts";
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { CheckCircle2, ExternalLink } from "lucide-react";
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { fmtDue } from "@/components/assignments/assignment-status";
 import { buildStudyPackSchedulePreview } from "@/components/classes/class-study-pack-section";
@@ -101,13 +101,15 @@ export function AssignPackToClassModal({
 	const [submitting, setSubmitting] = useState(false);
 	const [assignedClassId, setAssignedClassId] = useState<string | null>(null);
 
+	const wasOpenRef = useRef(false);
+
+	// Reset form state only on closed -> open transitions so live store updates
+	// never wipe user inputs or the post-assignment confirmation view.
 	useEffect(() => {
-		if (!open) return;
-		setSelectedClassId((prev) =>
-			prev && activeClasses.some((c) => c.id === prev)
-				? prev
-				: (activeClasses[0]?.id ?? ""),
-		);
+		const justOpened = open && !wasOpenRef.current;
+		wasOpenRef.current = open;
+		if (!justOpened) return;
+		setSelectedClassId(activeClasses[0]?.id ?? "");
 		setStartDate(vietnamTodayISO());
 		setStartDateInvalid(false);
 		setReleaseTime("06:00");
@@ -117,6 +119,18 @@ export function AssignPackToClassModal({
 		setFormError(null);
 		setAssignedClassId(null);
 	}, [open, activeClasses]);
+
+	// Keep selectedClassId valid if active classes arrive asynchronously or change.
+	useEffect(() => {
+		if (!open || assignedClassId) return;
+		if (
+			selectedClassId &&
+			activeClasses.some((c) => c.id === selectedClassId)
+		) {
+			return;
+		}
+		setSelectedClassId(activeClasses[0]?.id ?? "");
+	}, [open, activeClasses, selectedClassId, assignedClassId]);
 
 	const { data: classPacksData, isFetching: loadingClassSchedule } = useQuery({
 		queryKey: ["class-study-packs", selectedClassId],
@@ -207,7 +221,7 @@ export function AssignPackToClassModal({
 		>
 			{assignedClassId ? (
 				<div className="space-y-4">
-					<div className="flex items-start gap-3 rounded-lg border border-verdict-correct bg-verdict-correct-soft p-4 text-verdict-correct">
+					<div className="flex items-start gap-3 rounded-lg border border-success/40 bg-success/10 p-4 text-success">
 						<CheckCircle2 className="mt-0.5 size-5 shrink-0" />
 						<div className="space-y-1 text-sm">
 							<p className="font-medium">

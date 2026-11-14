@@ -159,9 +159,11 @@ function QuestionKeyCard({
 				<div className="min-w-0 flex-1 text-foreground">
 					{tableInfo ? (
 						<span>
-							Hàng {tableInfo.row} — Cột {tableInfo.col}:{" "}
-							<span className="font-medium">{tableInfo.rowTitle}</span> /{" "}
-							{tableInfo.colTitle}
+							Hàng {tableInfo.row} — Cột {tableInfo.col}
+							{tableInfo.rowTitle || tableInfo.colTitle ? ": " : ""}
+							{[tableInfo.rowTitle, tableInfo.colTitle]
+								.filter(Boolean)
+								.join(" / ")}
 						</span>
 					) : question.stem.trim() ? (
 						<ClozeStemText
@@ -344,6 +346,7 @@ export function StudyPackItemViewer({
 		if (
 			activeTab === "sim" &&
 			detail?.hasAudio &&
+			detail.skill === "listening" &&
 			!currentAudioUrl &&
 			!currentAudioLoading &&
 			!currentAudioError &&
@@ -355,6 +358,7 @@ export function StudyPackItemViewer({
 	}, [
 		activeTab,
 		detail?.hasAudio,
+		detail?.skill,
 		currentAudioUrl,
 		currentAudioLoading,
 		currentAudioError,
@@ -405,8 +409,10 @@ export function StudyPackItemViewer({
 	const hasPins = detail.questions.some((q) => isValidPin(q.pin));
 	const itemNote = item.note.trim();
 	const exerciseNote = detail.exerciseNote.trim();
-	const sameNotes = itemNote !== "" && itemNote === exerciseNote;
-	const hasAnyNote = itemNote !== "" || exerciseNote !== "";
+	const hasItemNote = !isEmptyRichText(itemNote);
+	const hasExerciseNote = !isEmptyRichText(exerciseNote);
+	const sameNotes = hasItemNote && itemNote === exerciseNote;
+	const hasAnyNote = hasItemNote || hasExerciseNote;
 	const hasTranscript = !isEmptyRichText(detail.transcript);
 	const canSimulate = isAutoSkill(detail.skill) && sim !== null;
 
@@ -461,30 +467,36 @@ export function StudyPackItemViewer({
 							{sameNotes ? (
 								<>
 									<p className="font-medium text-foreground text-xs">Ghi chú</p>
-									<p className="whitespace-pre-wrap text-muted-foreground">
-										{itemNote}
-									</p>
+									<RichTextBody
+										text={itemNote}
+										legacyWhitespace="pre-wrap"
+										className="text-muted-foreground text-sm"
+									/>
 								</>
 							) : (
 								<>
-									{itemNote && (
+									{hasItemNote && (
 										<div>
 											<p className="font-medium text-foreground text-xs">
 												Ghi chú buổi học
 											</p>
-											<p className="whitespace-pre-wrap text-muted-foreground">
-												{itemNote}
-											</p>
+											<RichTextBody
+												text={itemNote}
+												legacyWhitespace="pre-wrap"
+												className="text-muted-foreground text-sm"
+											/>
 										</div>
 									)}
-									{exerciseNote && (
+									{hasExerciseNote && (
 										<div>
 											<p className="font-medium text-foreground text-xs">
 												Ghi chú bài tập
 											</p>
-											<p className="whitespace-pre-wrap text-muted-foreground">
-												{exerciseNote}
-											</p>
+											<RichTextBody
+												text={exerciseNote}
+												legacyWhitespace="pre-wrap"
+												className="text-muted-foreground text-sm"
+											/>
 										</div>
 									)}
 								</>
@@ -595,7 +607,11 @@ export function StudyPackItemViewer({
 					)}
 
 					{validImageUrl &&
-						(hasPins && isImageBasedType(detail.skill, typeId) ? (
+						(hasPins &&
+						(isImageBasedType(detail.skill, typeId) ||
+							questionTypes.some((qt) =>
+								isImageBasedType(detail.skill, qt),
+							)) ? (
 							<PinOverlay
 								imageUrl={validImageUrl}
 								items={detail.questions}

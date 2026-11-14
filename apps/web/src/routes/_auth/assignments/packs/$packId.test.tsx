@@ -382,5 +382,62 @@ describe("StudyPackDetailRoute (/assignments/packs/$packId)", () => {
 			search: { q: "Campus" },
 			replace: true,
 		});
+		// Skill filter chips remain visible while search narrows to a single skill
+		expect(screen.getByRole("button", { name: /^Reading/ })).toBeTruthy();
+		expect(screen.getByRole("button", { name: /^Grammar/ })).toBeTruthy();
+	});
+
+	it("clears stale ?item= on skill change, resets pending query across pack navigation, and hides assign on 0-day packs", async () => {
+		routerState.search = { item: "item-1" };
+		mockFetchStudyPackDetail
+			.mockResolvedValueOnce({ pack: systemPack })
+			.mockResolvedValueOnce({
+				pack: { ...orgPack, dayCount: 0, itemCount: 0, items: [] },
+			});
+
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		const { rerender } = render(
+			<QueryClientProvider client={client}>
+				<StudyPackDetailRoute />
+			</QueryClientProvider>,
+		);
+
+		await screen.findByText("Nội dung của Reading: Climate Change");
+		fireEvent.click(screen.getByRole("button", { name: /^Listening/ }));
+		expect(routerState.navigate).toHaveBeenCalledWith({
+			to: "/assignments/packs/$packId",
+			params: { packId: "sys-pack-1" },
+			search: { skill: "listening" },
+			replace: true,
+		});
+
+		// Type partial search query then navigate to another pack before debounce fires
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+		const searchInput = screen.getByLabelText(
+			"Tìm bài tập trong bộ đề",
+		) as HTMLInputElement;
+		fireEvent.change(searchInput, { target: { value: "Pending" } });
+		routerState.navigate.mockClear();
+
+		routerState.params = { packId: "org-pack-1" };
+		routerState.search = {};
+		rerender(
+			<QueryClientProvider client={client}>
+				<StudyPackDetailRoute />
+			</QueryClientProvider>,
+		);
+
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(350);
+		});
+		expect(routerState.navigate).not.toHaveBeenCalled();
+
+		vi.useRealTimers();
+		expect(
+			await screen.findByRole("heading", { name: "Bộ đề Trung tâm 14 ngày" }),
+		).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Gán cho lớp" })).toBeNull();
 	});
 });
