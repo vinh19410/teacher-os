@@ -627,3 +627,70 @@ test("internal page noi-bo uses warm paper design, ../ home link, and 3 copy but
 	assert.match(noiBoHtml, /<a\s+href="\.\.\/"/);
 	assert.equal((noiBoHtml.match(/data-copy-target=/g) ?? []).length, 3);
 });
+
+test("modal-dialog CSS avoids flex height collapse and JS resets image dimensions on close (#706)", () => {
+	const styleMatch = html.match(/<style>([\s\S]*?)<\/style>/);
+	assert.ok(styleMatch, "index.html must contain <style> block");
+	const css = styleMatch[1].replace(/\/\*[\s\S]*?\*\//g, "");
+
+	const extractRule = (selectorPattern) => {
+		const m = css.match(
+			new RegExp(`(?:^|\\n)\\s*${selectorPattern}\\s*\\{([^}]*)\\}`),
+		);
+		assert.ok(m, `Missing CSS rule for ${selectorPattern}`);
+		return m[1];
+	};
+
+	const dialogRule = extractRule("dialog\\.modal-dialog");
+	assert.match(dialogRule, /width:\s*min\(94vw,\s*1080px\)/);
+	assert.match(dialogRule, /max-width:\s*min\(94vw,\s*1080px\)/);
+	assert.match(dialogRule, /max-height:\s*90vh/);
+	assert.match(dialogRule, /max-height:\s*90dvh/);
+	assert.match(dialogRule, /overflow-y:\s*auto/);
+
+	const dialogOpenRule = extractRule("dialog\\.modal-dialog\\[open\\]");
+	assert.match(dialogOpenRule, /display:\s*block/);
+	assert.doesNotMatch(dialogOpenRule, /flex-direction:\s*column/);
+
+	const backdropRule = extractRule("dialog\\.modal-dialog::backdrop");
+	assert.match(backdropRule, /-webkit-backdrop-filter:\s*blur\(4px\)/);
+
+	const headerRule = extractRule("\\.modal-header");
+	assert.match(headerRule, /position:\s*sticky/);
+	assert.match(headerRule, /border-top-left-radius:/);
+	assert.match(headerRule, /border-top-right-radius:/);
+
+	const headerTitleRule = extractRule("\\.modal-header h3");
+	assert.match(headerTitleRule, /min-width:\s*0/);
+	assert.match(headerTitleRule, /overflow-wrap:\s*break-word/);
+
+	const headerBtnRule = extractRule("\\.modal-header \\.btn");
+	assert.match(headerBtnRule, /flex-shrink:\s*0/);
+
+	const bodyRule = extractRule("\\.modal-body");
+	assert.doesNotMatch(bodyRule, /\bflex:\s*1\b/);
+	assert.doesNotMatch(bodyRule, /overflow-y:\s*auto/);
+	assert.match(bodyRule, /border-bottom-left-radius:/);
+	assert.match(bodyRule, /border-bottom-right-radius:/);
+
+	const pdfRule = extractRule("\\.pdf-iframe");
+	assert.match(pdfRule, /calc\(90vh\s*-\s*150px\)/);
+	assert.match(pdfRule, /calc\(90dvh\s*-\s*150px\)/);
+
+	const lightboxRule = extractRule("\\.lightbox-img");
+	assert.match(lightboxRule, /width:\s*auto/);
+	assert.match(lightboxRule, /height:\s*auto/);
+	assert.match(lightboxRule, /max-width:\s*100%/);
+	assert.match(lightboxRule, /object-fit:\s*contain/);
+	assert.match(lightboxRule, /calc\(90vh\s*-\s*150px\)/);
+	assert.match(lightboxRule, /calc\(90dvh\s*-\s*150px\)/);
+
+	assert.match(html, /el\.querySelector\(\s*['"]img['"]\s*\)/);
+	assert.match(html, /modalImg\.width\s*=\s*thumb\.naturalWidth/);
+	assert.match(html, /modalImg\.height\s*=\s*thumb\.naturalHeight/);
+	assert.match(html, /imgModal\.scrollTop\s*=\s*0/);
+	assert.match(html, /modal\.getBoundingClientRect\(\)/);
+	assert.match(html, /modalImg\.removeAttribute\(\s*['"]width['"]\s*\)/);
+	assert.match(html, /modalImg\.removeAttribute\(\s*['"]height['"]\s*\)/);
+	assert.match(html, /pdfModal\.addEventListener\(\s*['"]close['"]/);
+});
