@@ -2,9 +2,10 @@ import {
 	PLACEMENT_LEVELS,
 	PLACEMENT_OPTION_MAX,
 	PLACEMENT_PROMPT_MAX,
-	type PlacementListeningQuestion,
+	type PlacementListeningMcqQuestion,
 	type PlacementPublishIssue,
 	type PlacementQuestionKind,
+	type PlacementReadingQuestion,
 	type PlacementVgQuestion,
 } from "@teacher-os/api/placement-test-contracts";
 import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
@@ -13,17 +14,28 @@ import { inputCls, Select } from "@/components/ui/field";
 
 const OPTION_LETTERS = ["A", "B", "C", "D"] as const;
 
+type EditableMcqQuestion =
+	| PlacementVgQuestion
+	| PlacementListeningMcqQuestion
+	| PlacementReadingQuestion;
+
 export interface QuestionCardProps {
-	question: PlacementVgQuestion | PlacementListeningQuestion;
+	question: EditableMcqQuestion;
 	displayNumber: number;
 	basePath: string;
 	canMoveUp: boolean;
 	canMoveDown: boolean;
 	canRemove: boolean;
 	showKindSelector?: boolean;
+	allowEmptyPrompt?: boolean;
+	topExtra?: React.ReactNode;
 	issues: readonly PlacementPublishIssue[];
 	onChange: (
-		patch: Partial<PlacementVgQuestion & PlacementListeningQuestion>,
+		patch: Partial<
+			PlacementVgQuestion &
+				PlacementListeningMcqQuestion &
+				PlacementReadingQuestion
+		>,
 	) => void;
 	onMoveUp: () => void;
 	onMoveDown: () => void;
@@ -38,6 +50,8 @@ export function QuestionCard({
 	canMoveDown,
 	canRemove,
 	showKindSelector = false,
+	allowEmptyPrompt = false,
+	topExtra,
 	issues,
 	onChange,
 	onMoveUp,
@@ -47,6 +61,30 @@ export function QuestionCard({
 	const cardIssues = issues.filter(
 		(item) => item.path === basePath || item.path.startsWith(`${basePath}.`),
 	);
+	const optionCount = question.options.length === 3 ? 3 : 4;
+	const activeLetters = OPTION_LETTERS.slice(0, optionCount);
+
+	const handleToggleOptionCount = (nextCount: 3 | 4) => {
+		if (nextCount === optionCount) return;
+		if (nextCount === 3) {
+			const nextOptions = [
+				question.options[0] ?? "",
+				question.options[1] ?? "",
+				question.options[2] ?? "",
+			];
+			const nextAnswer = question.answer === 3 ? null : question.answer;
+			onChange({ options: nextOptions, answer: nextAnswer });
+			return;
+		}
+		onChange({
+			options: [
+				question.options[0] ?? "",
+				question.options[1] ?? "",
+				question.options[2] ?? "",
+				question.options[3] ?? "",
+			],
+		});
+	};
 
 	return (
 		<div
@@ -62,6 +100,7 @@ export function QuestionCard({
 					<span className="font-mono text-muted-foreground text-xs">
 						({question.id})
 					</span>
+					{topExtra}
 				</div>
 
 				<div className="flex flex-wrap items-center gap-2">
@@ -108,6 +147,18 @@ export function QuestionCard({
 						</Select>
 					</label>
 
+					<Select
+						aria-label={`Số lựa chọn câu ${displayNumber}`}
+						value={optionCount}
+						onChange={(e) =>
+							handleToggleOptionCount(Number(e.target.value) === 3 ? 3 : 4)
+						}
+						className="h-8 w-auto py-1 text-xs"
+					>
+						<option value={3}>3 đáp án</option>
+						<option value={4}>4 đáp án</option>
+					</Select>
+
 					<Button
 						variant="outline"
 						size="icon-sm"
@@ -150,7 +201,11 @@ export function QuestionCard({
 						aria-label={`Nội dung câu ${displayNumber}`}
 						value={question.prompt}
 						onChange={(e) => onChange({ prompt: e.target.value })}
-						placeholder="Nhập câu hỏi..."
+						placeholder={
+							allowEmptyPrompt
+								? "Không bắt buộc nếu đề hiển thị theo biển báo / chỗ trống..."
+								: "Nhập câu hỏi..."
+						}
 						className={`${inputCls} mt-1 min-h-[60px] w-full resize-y py-2`}
 					/>
 				</label>
@@ -158,10 +213,10 @@ export function QuestionCard({
 
 			<fieldset className="mt-3">
 				<legend className="font-medium text-muted-foreground text-xs">
-					4 đáp án (chọn nút tròn ở đáp án đúng)
+					{optionCount} đáp án (chọn nút tròn ở đáp án đúng)
 				</legend>
 				<div className="mt-1.5 grid gap-2 sm:grid-cols-2">
-					{OPTION_LETTERS.map((letter, optIdx) => {
+					{activeLetters.map((letter, optIdx) => {
 						const isCorrect = question.answer === optIdx;
 						return (
 							<div
@@ -185,12 +240,9 @@ export function QuestionCard({
 									aria-label={`Đáp án ${letter} câu ${displayNumber}`}
 									value={question.options[optIdx] ?? ""}
 									onChange={(e) => {
-										const nextOptions: [string, string, string, string] = [
-											question.options[0],
-											question.options[1],
-											question.options[2],
-											question.options[3],
-										];
+										const nextOptions = activeLetters.map(
+											(_, i) => question.options[i] ?? "",
+										);
 										nextOptions[optIdx] = e.target.value;
 										onChange({ options: nextOptions });
 									}}

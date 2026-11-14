@@ -1,1089 +1,2125 @@
 import {
-	buildPlacementSummary,
-	flattenQuestions,
-	gradeAttempt,
+	buildProvisionalSummary,
+	countObjectiveProgress,
+	countWords,
+	scoreObjectiveTest,
 } from "./grading.js";
 import {
 	buildLeadPayload,
-	LEAD_EMAIL_MAX,
+	buildPlacementSubmissionLead,
 	LEAD_NAME_MAX,
-	LEAD_NOTE_MAX,
 	leadErrorMessage,
 	PLACEMENT_COURSE_GROUPS,
 	PLACEMENT_STUDY_MODES,
 	validateLeadForm,
 } from "./lead-gate.js";
 
-const STORAGE_KEY = "msmy_placement_attempt_v1";
-const DRAFT_STORAGE_KEY = "msmy_lead_draft_v1";
+const DEFAULT_API_BASE = "https://api.teacheros.io.vn";
 const ZALO_URL = "https://zalo.me/0929060994";
-function getLeadApiBase() {
-	if (typeof document === "undefined") return "http://localhost:8000";
+const STORAGE_KEY = "msmy_placement_attempt_v2";
+const LEAD_DRAFT_KEY = "msmy_lead_draft_v1";
+
+const RECOMMENDED_TIMER_SECONDS = 40 * 60;
+const SPEAKING_MAX_BYTES = 50 * 1024 * 1024;
+const OPTION_LETTERS = ["A", "B", "C", "D"];
+
+const SKILL_STEPS = [
+	{ id: "listening", shortLabel: "1. Listening", title: "Phần 1 · Listening" },
+	{
+		id: "vocab-grammar",
+		shortLabel: "2. Grammar & Vocab",
+		title: "Phần 2 · Grammar & Vocabulary",
+	},
+	{ id: "reading", shortLabel: "3. Reading", title: "Phần 3 · Reading" },
+	{ id: "writing", shortLabel: "4. Writing", title: "Phần 4 · Writing" },
+	{ id: "speaking", shortLabel: "5. Speaking", title: "Phần 5 · Speaking" },
+];
+
+const OBJECTIVE_AND_WRITING_STEPS = new Set([
+	"listening",
+	"vocab-grammar",
+	"reading",
+	"writing",
+]);
+
+const READING_KIND_LABELS = {
+	sign: "Biển báo / Thông báo",
+	message: "Tin nhắn / Email",
+	passage: "Bài đọc hiểu",
+	cloze: "Đoạn văn điền từ",
+};
+
+const CEFR_ORDER = ["Pre-A1", "A1", "A2", "A2+", "B1", "B2", "B2+", "C1", "C2"];
+
+const CEFR_EXPLORER_DATA = [
+	{
+		cefr: "Pre-A1",
+		range: "Dưới 25%",
+		courseLabel: "Nền tảng Cơ bản",
+		audience:
+			"Người mới bắt đầu hoặc mất gốc lâu năm, cần củng cố phát âm, từ vựng và mẫu câu cơ bản.",
+		goals: [
+			"Đánh vần, phát âm đúng 44 âm IPA",
+			"Nắm vững thì hiện tại đơn, quá khứ đơn cơ bản",
+			"Nghe – phản xạ các câu chào hỏi, số đếm, giờ giấc",
+		],
+	},
+	{
+		cefr: "A1",
+		range: "25% – 44%",
+		courseLabel: "Giao tiếp 1 (Mất gốc & Nền tảng)",
+		audience:
+			"Học viên nghe hiểu từ khóa quen thuộc và đặt câu đơn, muốn nói mạch lạc hơn.",
+		goals: [
+			"Làm chủ cấu trúc câu tiếng Anh chuẩn bản ngữ",
+			"Nghe hiểu hội thoại sinh hoạt, mua sắm, đặt lịch",
+			"Viết đoạn ngắn 50–80 từ rõ ý và đúng ngữ pháp cơ bản",
+		],
+	},
+	{
+		cefr: "A2",
+		range: "45% – 64%",
+		courseLabel: "Giao tiếp 2 (Sơ trung cấp)",
+		audience:
+			"Học viên đã giao tiếp cơ bản, muốn mở rộng vốn từ và diễn đạt tự nhiên trong công việc.",
+		goals: [
+			"Thảo luận tự tin về thói quen, kế hoạch, kinh nghiệm",
+			"Đọc hiểu email ngắn, thông báo và bài báo đơn giản",
+			"Liên kết ý khi nói và viết đoạn văn trôi chảy",
+		],
+	},
+	{
+		cefr: "A2+ / B1",
+		range: "65% – 84%",
+		courseLabel: "Giao tiếp 3 / Pre-IELTS",
+		audience:
+			"Học viên có nền tảng khá, muốn chuẩn bị bước sang luyện thi IELTS học thuật.",
+		goals: [
+			"Thành thạo mệnh đề quan hệ, câu điều kiện, bị động",
+			"Đọc hiểu văn bản dài, suy luận ý tác giả",
+			"Nói và viết bày tỏ quan điểm có dẫn chứng thuyết phục",
+		],
+	},
+	{
+		cefr: "B1+",
+		range: "85% – 100%",
+		courseLabel: "IELTS Foundation / Intensive",
+		audience:
+			"Học viên nắm chắc ngữ pháp – từ vựng cốt lõi, sẵn sàng luyện chiến thuật IELTS 4 kỹ năng.",
+		goals: [
+			"Luyện chiến thuật Listening & Reading chuẩn bài thi thật",
+			"Phát triển bài viết Writing mạch lạc, từ vựng học thuật",
+			"Phản xạ Speaking trôi chảy qua cả 3 phần IELTS Speaking",
+		],
+	},
+];
+
+function resolvePrepSeconds(task) {
+	const n = Number(task?.prepSeconds);
+	return Number.isFinite(n) && n >= 0 ? Math.trunc(n) : 10;
+}
+
+function createCefrExplorer(snapshotBands) {
+	const items =
+		Array.isArray(snapshotBands) && snapshotBands.length > 0
+			? snapshotBands.map((band, idx) => {
+					const fallback =
+						CEFR_EXPLORER_DATA.find(
+							(d) =>
+								d.cefr.toLowerCase() ===
+								String(band.cefr ?? "")
+									.trim()
+									.toLowerCase(),
+						) ??
+						CEFR_EXPLORER_DATA[idx] ??
+						CEFR_EXPLORER_DATA[0];
+					const advice = String(band.advice ?? "").trim();
+					return {
+						cefr: String(band.cefr ?? "").trim() || fallback.cefr,
+						range: `${band.min}% – ${band.max}%`,
+						courseLabel:
+							String(
+								band.displayCourse || band.courseLabel || band.course || "",
+							).trim() || fallback.courseLabel,
+						audience: advice || fallback.audience,
+						goals: fallback.goals,
+					};
+				})
+			: CEFR_EXPLORER_DATA;
+
+	let activeIndex = 0;
+
+	const details = el("details", {
+		id: "cefrExplorerBox",
+		className: "cefr-explorer",
+	});
+	details.appendChild(
+		el("summary", {}, [
+			"Tham khảo khung CEFR & các khóa học của cô Đỗ Thục Mỹ",
+		]),
+	);
+
+	const tabsWrap = el("div", {
+		className: "cefr-tabs",
+		role: "tablist",
+		"aria-label": "Khung tham chiếu CEFR",
+	});
+	const panel = el("div", {
+		id: "cefrDetailPanel",
+		className: "cefr-detail-panel",
+		role: "tabpanel",
+	});
+
+	function renderPanel() {
+		const item = items[activeIndex] ?? items[0];
+		for (const [idx, btn] of [...tabsWrap.children].entries()) {
+			btn.setAttribute("aria-selected", idx === activeIndex ? "true" : "false");
+		}
+		panel.replaceChildren(
+			el("div", { className: "cefr-stat-cell" }, [
+				el("span", { className: "cefr-stat-label", textContent: "Cấp độ" }),
+				el("strong", {
+					className: "cefr-stat-value",
+					textContent: `${item.cefr} (${item.range})`,
+				}),
+				el("span", { className: "cefr-stat-sub", textContent: item.audience }),
+			]),
+			el("div", { className: "cefr-stat-cell" }, [
+				el("span", {
+					className: "cefr-stat-label",
+					textContent: "Khóa học gợi ý",
+				}),
+				el("strong", {
+					className: "cefr-stat-value",
+					textContent: item.courseLabel,
+				}),
+				el(
+					"ul",
+					{ className: "cefr-ref-goals" },
+					item.goals.map((g) => el("li", { textContent: g })),
+				),
+			]),
+		);
+	}
+
+	items.forEach((item, idx) => {
+		const tabBtn = el(
+			"button",
+			{
+				type: "button",
+				className: "cefr-tab-btn",
+				role: "tab",
+				"aria-selected": idx === 0 ? "true" : "false",
+			},
+			[item.cefr],
+		);
+		tabBtn.addEventListener("click", () => {
+			activeIndex = idx;
+			renderPanel();
+		});
+		tabsWrap.appendChild(tabBtn);
+	});
+
+	renderPanel();
+	details.appendChild(tabsWrap);
+	details.appendChild(panel);
+	return details;
+}
+
+function resolveApiBase() {
 	const meta = document.querySelector('meta[name="lead-api"]');
-	const raw = meta?.getAttribute("content")?.trim() || "http://localhost:8000";
+	const raw = meta?.getAttribute("content")?.trim() || DEFAULT_API_BASE;
 	return raw.replace(/\/+$/, "");
 }
 
-function resolveAudioUrl(src) {
-	const raw = String(src ?? "").trim();
-	if (!raw) return "";
-	if (/^https?:\/\//i.test(raw)) return raw;
-	const base = getLeadApiBase();
-	return `${base}${raw.startsWith("/") ? "" : "/"}${raw}`;
+function resolveMediaUrl(apiBase, src) {
+	const trimmed = String(src ?? "").trim();
+	if (!trimmed) return "";
+	if (/^https?:\/\//i.test(trimmed)) return trimmed;
+	if (trimmed.startsWith("/")) return `${apiBase}${trimmed}`;
+	return `${apiBase}/${trimmed}`;
 }
 
-function getPartCounts(test) {
-	const part1 = test?.parts?.find((p) => p.id === "vocab-grammar");
-	const part2 = test?.parts?.find((p) => p.id === "listening");
-	const vgCount = Array.isArray(part1?.questions) ? part1.questions.length : 0;
-	const clips = Array.isArray(part2?.clips) ? part2.clips : [];
-	const clipCount = clips.length;
-	const listeningCount = clips.reduce(
-		(sum, c) => sum + (Array.isArray(c?.questions) ? c.questions.length : 0),
-		0,
-	);
-	return {
-		vgCount,
-		listeningCount,
-		clipCount,
-		totalQuestions: vgCount + listeningCount,
-	};
-}
-const VALID_STEPS = new Set(["intro", "info", "part1", "part2", "result"]);
-const OPTION_LETTERS = ["A", "B", "C", "D"];
-
-let pageLoadedAt = Date.now();
-let leadRequestGeneration = 0;
-let isPageUnloading = false;
-if (typeof window !== "undefined") {
-	window.addEventListener("beforeunload", () => {
-		isPageUnloading = true;
-	});
-	window.addEventListener("pagehide", () => {
-		isPageUnloading = true;
-	});
+function formatClock(totalSeconds) {
+	const clamped = Math.max(0, Math.floor(Number(totalSeconds) || 0));
+	const mins = Math.floor(clamped / 60);
+	const secs = clamped % 60;
+	return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 }
 
-function createEl(tag, className, text) {
-	const el = document.createElement(tag);
-	if (className) el.className = className;
-	if (text !== undefined && text !== null) {
-		el.textContent = String(text);
-	}
-	return el;
-}
-
-function parseSavedLead(rawLead) {
-	if (!rawLead || typeof rawLead !== "object") return null;
-	const candidate = {
-		name: typeof rawLead.name === "string" ? rawLead.name : "",
-		phone: typeof rawLead.phone === "string" ? rawLead.phone : "",
-		email: typeof rawLead.email === "string" ? rawLead.email : "",
-		birthDate: typeof rawLead.birthDate === "string" ? rawLead.birthDate : "",
-		course: typeof rawLead.course === "string" ? rawLead.course : "",
-		studyMode: typeof rawLead.studyMode === "string" ? rawLead.studyMode : "",
-		note: typeof rawLead.note === "string" ? rawLead.note : "",
-		registered: Boolean(rawLead.registered),
-		syncedPlacement:
-			typeof rawLead.syncedPlacement === "string"
-				? rawLead.syncedPlacement
-				: "",
-	};
-	if (candidate.registered) {
-		const check = validateLeadForm(candidate);
-		if (!check.ok) {
-			candidate.registered = false;
-			candidate.syncedPlacement = "";
+function el(tag, attrs = {}, children = []) {
+	const node = document.createElement(tag);
+	for (const [k, v] of Object.entries(attrs)) {
+		if (v === undefined || v === null || v === false) continue;
+		if (k === "className") {
+			node.className = v;
+		} else if (k === "textContent") {
+			node.textContent = v;
+		} else if (k === "dataset") {
+			for (const [dk, dv] of Object.entries(v)) {
+				if (dv !== undefined && dv !== null) node.dataset[dk] = String(dv);
+			}
+		} else if (v === true) {
+			node.setAttribute(k, "");
 		} else {
-			Object.assign(candidate, check.normalized);
+			node.setAttribute(k, String(v));
 		}
 	}
-	const hasAnyValue =
-		candidate.name ||
-		candidate.phone ||
-		candidate.email ||
-		candidate.birthDate ||
-		candidate.course ||
-		candidate.studyMode ||
-		candidate.note ||
-		candidate.registered;
-	return hasAnyValue ? candidate : null;
+	const list = Array.isArray(children) ? children : [children];
+	for (const child of list) {
+		if (child === undefined || child === null || child === false) continue;
+		if (typeof child === "string" || typeof child === "number") {
+			node.appendChild(document.createTextNode(String(child)));
+		} else {
+			node.appendChild(child);
+		}
+	}
+	return node;
 }
 
-function syncHomepageLeadDraft(lead) {
-	if (!lead || typeof lead !== "object") return;
-	try {
-		const existingRaw = localStorage.getItem(DRAFT_STORAGE_KEY);
-		const existing =
-			existingRaw && typeof JSON.parse(existingRaw) === "object"
-				? JSON.parse(existingRaw)
-				: {};
-		const merged = {
-			...existing,
-			name: lead.name || existing?.name || "",
-			phone: lead.phone || existing?.phone || "",
-			email: lead.email || existing?.email || "",
-			birthDate: lead.birthDate || existing?.birthDate || "",
-			course: lead.course || existing?.course || "",
-			studyMode: lead.studyMode || existing?.studyMode || "",
-			note: lead.note || existing?.note || "",
-		};
-		localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(merged));
-	} catch {
-		// Ignore storage errors
+function normalizeSnapshot(raw) {
+	if (!raw || typeof raw !== "object" || !Array.isArray(raw.parts)) {
+		throw new Error("Cấu trúc đề kiểm tra đầu vào không hợp lệ.");
+	}
+	const parts = raw.parts;
+	const listening = parts.find((p) => p?.id === "listening") ?? parts[0];
+	const vocabGrammar = parts.find((p) => p?.id === "vocab-grammar") ?? parts[1];
+	const reading = parts.find((p) => p?.id === "reading") ?? parts[2];
+	const writing = parts.find((p) => p?.id === "writing") ?? parts[3];
+	const speaking = parts.find((p) => p?.id === "speaking") ?? parts[4];
+
+	if (
+		!listening ||
+		!Array.isArray(listening.clips) ||
+		!vocabGrammar ||
+		!Array.isArray(vocabGrammar.questions) ||
+		!reading ||
+		!Array.isArray(reading.passages) ||
+		!writing ||
+		!speaking ||
+		!Array.isArray(speaking.tasks)
+	) {
+		throw new Error("Đề kiểm tra chưa đủ 5 kỹ năng.");
+	}
+
+	return {
+		version: Number(raw.version) || 1,
+		bands: Array.isArray(raw.bands) ? raw.bands : [],
+		parts: [listening, vocabGrammar, reading, writing, speaking],
+		listening,
+		vocabGrammar,
+		reading,
+		writing,
+		speaking,
+	};
+}
+
+function resolveSpeakingUploadMeta(blobType, isAudioOnly = false) {
+	const base = String(blobType ?? "")
+		.split(";")[0]
+		.trim()
+		.toLowerCase();
+	switch (base) {
+		case "video/webm":
+			return { contentType: "video/webm", filename: "speaking.webm" };
+		case "audio/webm":
+			return { contentType: "audio/webm", filename: "speaking.webm" };
+		case "video/mp4":
+			return { contentType: "video/mp4", filename: "speaking.mp4" };
+		case "audio/mp4":
+			return { contentType: "audio/mp4", filename: "speaking.mp4" };
+		case "audio/ogg":
+		case "video/ogg":
+			return { contentType: "audio/ogg", filename: "speaking.ogg" };
+		case "audio/mpeg":
+		case "audio/mp3":
+			return { contentType: "audio/mpeg", filename: "speaking.mp3" };
+		case "audio/wav":
+		case "audio/x-wav":
+			return { contentType: "audio/wav", filename: "speaking.wav" };
+		default:
+			return isAudioOnly
+				? { contentType: "audio/webm", filename: "speaking.webm" }
+				: { contentType: "video/webm", filename: "speaking.webm" };
 	}
 }
 
-function clearHomepageLeadDraft() {
-	try {
-		localStorage.removeItem(DRAFT_STORAGE_KEY);
-	} catch {
-		// Ignore storage errors
+function pickSupportedRecorderMime(audioOnly) {
+	if (typeof window.MediaRecorder === "undefined") return "";
+	const candidates = audioOnly
+		? [
+				"audio/webm;codecs=opus",
+				"audio/webm",
+				"audio/mp4",
+				"audio/ogg;codecs=opus",
+				"audio/ogg",
+			]
+		: [
+				"video/webm;codecs=vp9,opus",
+				"video/webm;codecs=vp8,opus",
+				"video/webm",
+				"video/mp4",
+			];
+	if (typeof window.MediaRecorder.isTypeSupported !== "function") {
+		return "";
 	}
+	return (
+		candidates.find((mime) => window.MediaRecorder.isTypeSupported(mime)) ?? ""
+	);
 }
 
-function loadSavedAttempt(test) {
-	const allQuestions = flattenQuestions(test);
-	const validQuestionIds = new Set(allQuestions.map((q) => q.id));
-	const clipMaxPlays = new Map();
-	for (const part of test.parts ?? []) {
-		if (Array.isArray(part.clips)) {
-			for (const clip of part.clips) {
-				clipMaxPlays.set(clip.id, Number(clip.maxPlays) || 2);
+function sanitizeObjectiveAnswers(snapshot, answers) {
+	const listeningOut = {};
+	for (const clip of snapshot.listening.clips) {
+		for (const q of clip.questions ?? []) {
+			const val = answers?.listening?.[q.id];
+			if (q.type === "gap") {
+				listeningOut[q.id] =
+					typeof val === "string" ? val.trim().slice(0, 120) : "";
+			} else if (
+				typeof val === "number" &&
+				Number.isInteger(val) &&
+				val >= 0 &&
+				val <= 3
+			) {
+				listeningOut[q.id] = val;
+			} else {
+				listeningOut[q.id] = null;
 			}
 		}
 	}
 
-	const fresh = {
-		version: test.version,
-		step: "intro",
-		answers: {},
-		plays: {},
-		result: null,
-		lead: null,
-	};
+	const vocabGrammarOut = {};
+	for (const q of snapshot.vocabGrammar.questions) {
+		const val = answers?.vocabGrammar?.[q.id];
+		vocabGrammarOut[q.id] =
+			typeof val === "number" && Number.isInteger(val) && val >= 0 && val <= 3
+				? val
+				: null;
+	}
 
+	const readingOut = {};
+	for (const passage of snapshot.reading.passages) {
+		for (const q of passage.questions ?? []) {
+			const val = answers?.reading?.[q.id];
+			readingOut[q.id] =
+				typeof val === "number" && Number.isInteger(val) && val >= 0 && val <= 3
+					? val
+					: null;
+		}
+	}
+
+	return {
+		listening: listeningOut,
+		vocabGrammar: vocabGrammarOut,
+		reading: readingOut,
+	};
+}
+
+function createEmptyLead() {
+	return {
+		name: "",
+		phone: "",
+		email: "",
+		birthDate: "",
+		course: "",
+		studyMode: "",
+		note: "",
+	};
+}
+
+function createInitialState() {
+	return {
+		step: "intro",
+		lead: createEmptyLead(),
+		answers: {
+			listening: {},
+			vocabGrammar: {},
+			reading: {},
+		},
+		plays: {},
+		writingText: "",
+		speakingMode: "none",
+		speakingDurationSec: null,
+		timerStartedAt: null,
+		submission: null,
+	};
+}
+
+function loadLeadDraft() {
+	try {
+		const raw = localStorage.getItem(LEAD_DRAFT_KEY);
+		if (!raw) return null;
+		const parsed = JSON.parse(raw);
+		if (!parsed || typeof parsed !== "object") return null;
+		return parsed;
+	} catch {
+		return null;
+	}
+}
+
+function saveLeadDraft(lead, placementSummary = "", course = "") {
+	try {
+		const existing = loadLeadDraft() ?? {};
+		const next = {
+			...existing,
+			name: lead.name || existing.name || "",
+			phone: lead.phone || existing.phone || "",
+			email: lead.email || existing.email || "",
+			birthDate: lead.birthDate || existing.birthDate || "",
+			course: course || lead.course || existing.course || "",
+			studyMode: lead.studyMode || existing.studyMode || "",
+			note: lead.note || existing.note || "",
+			placement: placementSummary || existing.placement || "",
+			updatedAt: new Date().toISOString(),
+		};
+		localStorage.setItem(LEAD_DRAFT_KEY, JSON.stringify(next));
+	} catch {
+		// Ignore localStorage quota/privacy errors
+	}
+}
+
+function loadAttemptState(testVersion) {
+	const base = createInitialState();
 	try {
 		const raw = localStorage.getItem(STORAGE_KEY);
-		if (!raw) return fresh;
+		if (!raw) {
+			const draft = loadLeadDraft();
+			if (draft) {
+				base.lead = { ...base.lead, ...draft };
+			}
+			return base;
+		}
 		const parsed = JSON.parse(raw);
-		if (!parsed || typeof parsed !== "object") return fresh;
-		const savedLead = parseSavedLead(parsed.lead);
-		if (savedLead || (parsed.step && parsed.step !== "intro")) {
-			pageLoadedAt = Math.min(pageLoadedAt, Date.now() - 3500);
+		if (!parsed || typeof parsed !== "object") return base;
+		if (parsed.testVersion !== testVersion) {
+			const draft = loadLeadDraft();
+			if (draft) base.lead = { ...base.lead, ...draft };
+			return base;
 		}
-		if (parsed.version !== test.version) {
-			if (savedLead) {
-				const preserved = {
-					...fresh,
-					lead: { ...savedLead, syncedPlacement: "" },
-				};
-				saveAttempt(preserved);
-				return preserved;
-			}
-			localStorage.removeItem(STORAGE_KEY);
-			return fresh;
-		}
-
-		const answers = {};
-		if (parsed.answers && typeof parsed.answers === "object") {
-			for (const [qId, val] of Object.entries(parsed.answers)) {
-				if (
-					validQuestionIds.has(qId) &&
-					Number.isInteger(val) &&
-					val >= 0 &&
-					val < 4
-				) {
-					answers[qId] = val;
-				}
-			}
-		}
-
-		const plays = {};
-		if (parsed.plays && typeof parsed.plays === "object") {
-			for (const [clipId, max] of clipMaxPlays.entries()) {
-				const rawCount = parsed.plays[clipId];
-				if (Number.isInteger(rawCount) && rawCount > 0) {
-					plays[clipId] = Math.min(max, rawCount);
-				}
-			}
-		}
-
-		let step = VALID_STEPS.has(parsed.step) ? parsed.step : "intro";
-		const result =
-			step === "result" || (parsed.result && typeof parsed.result === "object")
-				? gradeAttempt(test, answers)
-				: null;
-		if (step === "result" && !result) {
-			step = "intro";
-		}
-		if (
-			(step === "part1" || step === "part2" || step === "result") &&
-			!savedLead?.registered
-		) {
-			step = "info";
-		}
-
-		return {
-			version: test.version,
-			step,
-			answers,
-			plays,
-			result,
-			lead: savedLead,
+		const merged = {
+			...base,
+			...parsed,
+			lead: { ...base.lead, ...(parsed.lead ?? {}) },
+			answers: {
+				listening: parsed.answers?.listening ?? {},
+				vocabGrammar: parsed.answers?.vocabGrammar ?? {},
+				reading: parsed.answers?.reading ?? {},
+			},
+			plays: parsed.plays ?? {},
+			writingText:
+				typeof parsed.writingText === "string" ? parsed.writingText : "",
+			speakingMode: parsed.speakingMode === "skipped" ? "skipped" : "none",
+			speakingDurationSec: null,
+			timerStartedAt:
+				typeof parsed.timerStartedAt === "number"
+					? parsed.timerStartedAt
+					: null,
+			submission: parsed.submission ?? null,
 		};
+		const validSteps = new Set([
+			"intro",
+			"info",
+			"listening",
+			"vocab-grammar",
+			"reading",
+			"writing",
+			"speaking",
+			"result",
+		]);
+		if (!validSteps.has(merged.step)) merged.step = "intro";
+		if (merged.step === "result" && !merged.submission) merged.step = "intro";
+		return merged;
 	} catch {
-		return fresh;
+		return base;
 	}
 }
 
-function saveAttempt(state) {
+function saveAttemptState(testVersion, state) {
 	try {
 		localStorage.setItem(
 			STORAGE_KEY,
 			JSON.stringify({
-				version: state.version,
+				testVersion,
 				step: state.step,
+				lead: state.lead,
 				answers: state.answers,
 				plays: state.plays,
-				result: state.result,
-				lead: state.lead ?? null,
+				writingText: state.writingText,
+				speakingMode: state.speakingMode === "skipped" ? "skipped" : "none",
+				timerStartedAt: state.timerStartedAt,
+				submission: state.submission,
 			}),
 		);
 	} catch {
-		// Storage blocked (e.g., strict private mode); attempt still works in memory
+		// Ignore localStorage failures
 	}
 }
 
-function clearAttempt(test, options = {}) {
-	const keepLead = Boolean(options?.keepLead);
-	const currentLead =
-		options?.currentLead && typeof options.currentLead === "object"
-			? options.currentLead
-			: null;
-	leadRequestGeneration += 1;
-	const nextLead =
-		keepLead && currentLead ? { ...currentLead, syncedPlacement: "" } : null;
-	const nextState = {
-		version: test.version,
-		step: keepLead ? "intro" : "info",
-		answers: {},
-		plays: {},
-		result: null,
-		lead: nextLead,
-	};
-	try {
-		if (keepLead && nextLead) {
-			saveAttempt(nextState);
-		} else {
-			localStorage.removeItem(STORAGE_KEY);
-			clearHomepageLeadDraft();
+function buildQuestionNumberMap(snapshot) {
+	const map = new Map();
+	let index = 1;
+	for (const clip of snapshot.listening.clips) {
+		for (const q of clip.questions ?? []) {
+			map.set(q.id, index++);
 		}
-	} catch {
-		// Ignore storage errors
 	}
-	return nextState;
+	for (const q of snapshot.vocabGrammar.questions) {
+		map.set(q.id, index++);
+	}
+	for (const passage of snapshot.reading.passages) {
+		for (const q of passage.questions ?? []) {
+			map.set(q.id, index++);
+		}
+	}
+	return map;
 }
 
-function createLeadIdentityBar(test, state, rerender) {
-	if (!state.lead?.registered) return null;
-	const bar = createEl("div", "lead-identity-bar");
-	const info = createEl(
-		"span",
-		"lead-identity-text",
-		`Học viên: ${state.lead.name} (${state.lead.phone} • ${state.lead.email})`,
-	);
-	const changeBtn = createEl(
-		"button",
-		"btn-link-inline",
-		"Không phải bạn? Đổi thông tin",
-	);
-	changeBtn.type = "button";
-	changeBtn.id = "changeLeadInfoBtn";
-	changeBtn.addEventListener("click", () => {
-		const fresh = clearAttempt(test, { keepLead: false });
-		state.step = fresh.step;
-		state.answers = fresh.answers;
-		state.plays = fresh.plays;
-		state.result = fresh.result;
-		state.lead = fresh.lead;
-		rerender("info", { persist: false });
-	});
-	bar.append(info, changeBtn);
-	return bar;
-}
+function createApp() {
+	const appRoot = document.getElementById("appRoot");
+	if (!appRoot) return;
 
-function renderMaintenance(root) {
-	root.replaceChildren();
-	const card = createEl("section", "error-card");
-	card.id = "maintenanceCard";
-	card.appendChild(createEl("span", "kicker-pill", "Thông báo hệ thống"));
-	card.appendChild(createEl("h1", "", "Bài kiểm tra đang bảo trì"));
-	card.appendChild(
-		createEl(
-			"p",
-			"muted-copy",
-			"Bộ đề kiểm tra đầu vào hiện đang được cô Thục Mỹ cập nhật. Bạn vui lòng quay lại sau ít phút hoặc quay về trang chủ để đăng ký tư vấn lộ trình 1-1.",
-		),
-	);
+	const apiBase = resolveApiBase();
+	const pageOpenedAt = Date.now();
 
-	const actions = createEl("div", "btn-row");
-	const homeLink = createEl("a", "btn btn-primary", "← Quay Về Trang Chủ");
-	homeLink.href = "../";
+	let snapshot = null;
+	let state = createInitialState();
+	let questionNumbers = new Map();
 
-	const retryBtn = createEl("button", "btn btn-outline", "Thử Tải Lại Trang");
-	retryBtn.type = "button";
-	retryBtn.addEventListener("click", () => window.location.reload());
+	// Runtime-only state (not persisted)
+	let activeAudio = null;
+	let activeClipId = null;
+	let timerInterval = null;
+	let speakingAudioOnly = false;
+	let mediaStream = null;
+	let mediaRecorder = null;
+	let recordedChunks = [];
+	let recordedBlob = null;
+	let recordedBlobUrl = "";
+	let isRecording = false;
+	let recStartedAt = 0;
+	let recTickInterval = null;
+	let speakingTaskIndex = 0;
+	let speakingPhase = "idle"; // idle | prep | answer
+	let speakingPhaseSecondsLeft = 0;
+	let speakingPhaseInterval = null;
+	let speakingMediaError = "";
+	let speakingUploadError = "";
+	let isUploadingSpeaking = false;
+	let submitError = "";
+	let isSubmitting = false;
+	let unansweredConfirmState = null;
+	let consultSavedMessage = "";
+	let consultSaving = false;
 
-	const zaloLink = createEl(
-		"a",
-		"btn btn-gold",
-		"💬 Nhắn Zalo Cô Mỹ: 0929.060.994",
-	);
-	zaloLink.href = ZALO_URL;
-	zaloLink.target = "_blank";
-	zaloLink.rel = "noopener";
-
-	actions.append(homeLink, retryBtn, zaloLink);
-	card.appendChild(actions);
-	root.appendChild(card);
-}
-
-function createStepperBar(test, state) {
-	const bar = createEl("div", "stepper-bar");
-	const pills = createEl("div", "stepper-pills");
-
-	const { vgCount, listeningCount } = getPartCounts(test);
-	const steps = [
-		{ id: "intro", label: "1. Giới thiệu" },
-		{ id: "info", label: "2. Thông tin của bạn" },
-		{ id: "part1", label: `3. Phần 1: Vocab + Grammar (${vgCount} câu)` },
-		{ id: "part2", label: `4. Phần 2: Listening (${listeningCount} câu)` },
-		{ id: "result", label: "5. Kết quả & Lộ trình" },
-	];
-
-	const order = ["intro", "info", "part1", "part2", "result"];
-	const currentIdx = order.indexOf(state.step);
-	for (const [idx, s] of steps.entries()) {
-		let cls = "step-pill";
-		if (idx === currentIdx) cls += " is-active";
-		else if (idx < currentIdx) cls += " is-done";
-		pills.appendChild(createEl("span", cls, s.label));
+	function persist() {
+		if (!snapshot) return;
+		saveAttemptState(snapshot.version, state);
 	}
 
-	const totalQuestions = flattenQuestions(test).length;
-	const answeredCount = Object.keys(state.answers).length;
-	const counter = createEl(
-		"span",
-		"progress-counter",
-		`Đã trả lời: ${answeredCount}/${totalQuestions} câu`,
-	);
-
-	bar.append(pills, counter);
-	return bar;
-}
-
-function createQuestionFieldset(question, displayIndex, state, onAnswerChange) {
-	const fieldset = createEl("fieldset", "question-card");
-	fieldset.dataset.questionId = question.id;
-
-	const legend = createEl("legend", "question-legend");
-	const kindLabel =
-		question.kind === "grammar"
-			? "Ngữ pháp"
-			: question.kind === "vocab"
-				? "Từ vựng"
-				: "Listening";
-	legend.appendChild(
-		createEl("span", "question-meta", `Câu ${displayIndex} • ${kindLabel}`),
-	);
-	legend.appendChild(document.createTextNode(question.prompt));
-	fieldset.appendChild(legend);
-
-	const optionsList = createEl("div", "options-list");
-	const selectedIdx = state.answers[question.id];
-
-	question.options.forEach((optText, optIdx) => {
-		const label = createEl(
-			"label",
-			selectedIdx === optIdx ? "option-label is-selected" : "option-label",
-		);
-		const radio = document.createElement("input");
-		radio.type = "radio";
-		radio.name = `q_${question.id}`;
-		radio.value = String(optIdx);
-		radio.checked = selectedIdx === optIdx;
-
-		radio.addEventListener("change", () => {
-			state.answers[question.id] = optIdx;
-			saveAttempt(state);
-			for (const sibling of optionsList.querySelectorAll(".option-label")) {
-				sibling.classList.remove("is-selected");
+	function stopActiveAudio() {
+		if (activeAudio) {
+			try {
+				activeAudio.pause();
+				activeAudio.currentTime = 0;
+			} catch {
+				// Ignore pause errors
 			}
-			label.classList.add("is-selected");
-			onAnswerChange();
-		});
-
-		const letterPrefix = OPTION_LETTERS[optIdx]
-			? `${OPTION_LETTERS[optIdx]}. `
-			: "";
-		const span = createEl("span", "", `${letterPrefix}${optText}`);
-		label.append(radio, span);
-		optionsList.appendChild(label);
-	});
-
-	fieldset.appendChild(optionsList);
-	return fieldset;
-}
-
-function renderApp(root, test, state) {
-	let activeClipsCleanup = [];
-	const cleanupActiveAudio = () => {
-		for (const stopFn of activeClipsCleanup) {
-			stopFn();
+			activeAudio = null;
 		}
-		activeClipsCleanup = [];
-	};
-
-	const rerender = (nextStep, { persist = true } = {}) => {
-		cleanupActiveAudio();
-		if (nextStep) {
-			state.step = nextStep;
-			if (persist) saveAttempt(state);
-		}
-		root.replaceChildren();
-		root.appendChild(createStepperBar(test, state));
-
-		if (state.step === "intro") {
-			renderIntroStep(root, test, state, rerender);
-		} else if (state.step === "info") {
-			renderInfoStep(root, test, state, rerender);
-		} else if (state.step === "part1") {
-			renderPart1Step(root, test, state, rerender);
-		} else if (state.step === "part2") {
-			renderPart2Step(root, test, state, rerender, activeClipsCleanup);
-		} else if (state.step === "result") {
-			renderResultStep(root, test, state, rerender);
-		}
-		window.scrollTo({ top: 0, behavior: "smooth" });
-		if (nextStep) {
-			const heading = root.querySelector("h1");
-			if (heading) {
-				heading.tabIndex = -1;
-				heading.focus({ preventScroll: true });
-			}
-		}
-	};
-
-	rerender();
-}
-
-function renderIntroStep(root, test, state, rerender) {
-	const { vgCount, listeningCount, clipCount, totalQuestions } =
-		getPartCounts(test);
-	const card = createEl("section", "intro-card");
-	card.appendChild(
-		createEl(
-			"span",
-			"kicker-pill",
-			"Bài Kiểm Tra Đầu Vào Chẩn Đoán Trình Độ (Miễn Phí 100%)",
-		),
-	);
-	card.appendChild(
-		createEl(
-			"h1",
-			"",
-			`Đánh Giá Năng Lực Tiếng Anh Đầu Vào (${totalQuestions} Câu • Vocab, Grammar & Listening)`,
-		),
-	);
-	card.appendChild(
-		createEl(
-			"p",
-			"muted-copy",
-			"Bài kiểm tra giúp xác định mức CEFR hiện tại của bạn (A1 – B2+) và gợi ý lộ trình học phù hợp nhất cùng cô Đỗ Thục Mỹ. Bạn chỉ cần để lại họ tên, email và số điện thoại trước khi bắt đầu để nhận kết quả CEFR và lộ trình học cá nhân hóa.",
-		),
-	);
-
-	const identityBar = createLeadIdentityBar(test, state, rerender);
-	if (identityBar) {
-		card.appendChild(identityBar);
+		activeClipId = null;
 	}
 
-	const hasSavedProgress =
-		Object.keys(state.answers).length > 0 ||
-		Object.values(state.plays).some((n) => Number(n) > 0);
-
-	if (hasSavedProgress) {
-		const banner = createEl("div", "resume-banner");
-		banner.appendChild(
-			createEl(
-				"span",
-				"resume-banner-text",
-				`Bạn đang có bài làm dở (${Object.keys(state.answers).length}/${totalQuestions} câu đã chọn). Bạn có thể tiếp tục hoặc xóa để làm lại từ đầu.`,
-			),
-		);
-		const bannerActions = createEl("div", "header-actions");
-		const resumeBtn = createEl(
-			"button",
-			"btn btn-primary btn-sm",
-			"Tiếp Tục Bài Đang Làm →",
-		);
-		resumeBtn.type = "button";
-		resumeBtn.id = "resumeAttemptBtn";
-		resumeBtn.addEventListener("click", () =>
-			rerender(state.lead?.registered ? "part1" : "info"),
-		);
-
-		const resetBtn = createEl(
-			"button",
-			"btn btn-outline btn-sm",
-			"Làm Lại Từ Đầu",
-		);
-		resetBtn.type = "button";
-		resetBtn.id = "resetAttemptBtn";
-		resetBtn.addEventListener("click", () => {
-			const fresh = clearAttempt(test, {
-				keepLead: true,
-				currentLead: state.lead,
-			});
-			state.step = fresh.step;
-			state.answers = fresh.answers;
-			state.plays = fresh.plays;
-			state.result = fresh.result;
-			state.lead = fresh.lead;
-			rerender("intro");
-		});
-		bannerActions.append(resumeBtn, resetBtn);
-		banner.appendChild(bannerActions);
-		card.appendChild(banner);
-	}
-
-	const grid = createEl("div", "intro-grid");
-	const features = [
-		{
-			title: `Phần 1: Vocab + Grammar (${vgCount} câu)`,
-			desc: "Các câu hỏi ngữ pháp bản chất và từ vựng học thuật trải đều từ mức A1 đến C1.",
-		},
-		{
-			title: `Phần 2: Listening (${clipCount} đoạn • ${listeningCount} câu)`,
-			desc: `${clipCount} đoạn nghe độc thoại và hội thoại thực tế (A2 – C1) kèm câu hỏi trắc nghiệm.`,
-		},
-		{
-			title: "Quy định làm bài & Lưu tự động",
-			desc: "Không giới hạn thời gian. Mỗi đoạn âm thanh có số lượt nghe quy định riêng. Câu trả lời tự động lưu khi tải lại trang.",
-		},
-	];
-	for (const f of features) {
-		const box = createEl("div", "intro-feature");
-		box.appendChild(createEl("strong", "", f.title));
-		box.appendChild(createEl("p", "", f.desc));
-		grid.appendChild(box);
-	}
-	card.appendChild(grid);
-
-	const actions = createEl("div", "btn-row");
-	const startBtn = createEl(
-		"button",
-		"btn btn-primary",
-		"📝 Bắt Đầu Làm Bài Kiểm Tra",
-	);
-	startBtn.type = "button";
-	startBtn.id = "startTestBtn";
-	startBtn.addEventListener("click", () =>
-		rerender(state.lead?.registered ? "part1" : "info"),
-	);
-
-	const homeLink = createEl("a", "btn btn-outline", "← Quay Lại Trang Chủ");
-	homeLink.href = "../";
-
-	actions.append(startBtn, homeLink);
-	card.appendChild(actions);
-	root.appendChild(card);
-}
-
-function renderInfoStep(root, _test, state, rerender) {
-	const card = createEl("section", "step-card");
-	card.id = "leadGateCard";
-	card.appendChild(
-		createEl("span", "kicker-pill", "Bước 2 / 5 • Thông Tin Học Viên"),
-	);
-	card.appendChild(createEl("h1", "", "Thông Tin Của Bạn Trước Khi Làm Bài"));
-	card.appendChild(
-		createEl(
-			"p",
-			"muted-copy",
-			"Vui lòng điền họ tên, email và số điện thoại Zalo để hệ thống lưu tiến độ bài làm, chấm điểm CEFR và gợi ý lộ trình học phù hợp nhất cùng cô Thục Mỹ.",
-		),
-	);
-
-	const form = createEl("form", "lead-gate-form");
-	form.id = "leadGateForm";
-	form.noValidate = true;
-
-	const honeypotWrap = createEl("div", "honeypot-field");
-	honeypotWrap.setAttribute("aria-hidden", "true");
-	const honeypotLabel = createEl("label", "", "Website");
-	honeypotLabel.htmlFor = "leadWebsite";
-	const websiteInput = createEl("input", "");
-	websiteInput.type = "text";
-	websiteInput.id = "leadWebsite";
-	websiteInput.name = "website";
-	websiteInput.tabIndex = -1;
-	websiteInput.autocomplete = "off";
-	honeypotWrap.append(honeypotLabel, websiteInput);
-	form.appendChild(honeypotWrap);
-
-	const saved = state.lead ?? {};
-	const requiredGrid = createEl("div", "info-form-grid");
-
-	const makeRequiredLabel = (forId, labelText) => {
-		const lbl = createEl("label", "", `${labelText} `);
-		lbl.htmlFor = forId;
-		const star = createEl("span", "required-star", "*");
-		star.setAttribute("aria-hidden", "true");
-		lbl.appendChild(star);
-		return lbl;
-	};
-
-	// 1. Họ và tên
-	const fieldName = createEl("div", "field");
-	fieldName.id = "fieldLeadName";
-	const nameInput = createEl("input", "input-control");
-	nameInput.type = "text";
-	nameInput.id = "leadName";
-	nameInput.name = "name";
-	nameInput.required = true;
-	nameInput.setAttribute("aria-required", "true");
-	nameInput.maxLength = LEAD_NAME_MAX;
-	nameInput.autocomplete = "name";
-	nameInput.placeholder = "Ví dụ: Nguyễn Minh Anh";
-	nameInput.value = saved.name ?? "";
-	nameInput.setAttribute("aria-describedby", "helpLeadName errLeadName");
-	const helpName = createEl(
-		"span",
-		"field-help",
-		"Tên để cô Mỹ xưng hô và lưu kết quả bài kiểm tra.",
-	);
-	helpName.id = "helpLeadName";
-	const errName = createEl("span", "field-error", "");
-	errName.id = "errLeadName";
-	fieldName.append(
-		makeRequiredLabel("leadName", "Họ và tên học viên"),
-		nameInput,
-		helpName,
-		errName,
-	);
-
-	// 2. Email
-	const fieldEmail = createEl("div", "field");
-	fieldEmail.id = "fieldLeadEmail";
-	const emailInput = createEl("input", "input-control");
-	emailInput.type = "email";
-	emailInput.id = "leadEmail";
-	emailInput.name = "email";
-	emailInput.required = true;
-	emailInput.setAttribute("aria-required", "true");
-	emailInput.maxLength = LEAD_EMAIL_MAX;
-	emailInput.inputMode = "email";
-	emailInput.autocomplete = "email";
-	emailInput.placeholder = "Ví dụ: minhanh@gmail.com";
-	emailInput.value = saved.email ?? "";
-	emailInput.setAttribute("aria-describedby", "helpLeadEmail errLeadEmail");
-	const helpEmail = createEl(
-		"span",
-		"field-help",
-		"Email để nhận báo cáo CEFR và bộ tài liệu tự học.",
-	);
-	helpEmail.id = "helpLeadEmail";
-	const errEmail = createEl("span", "field-error", "");
-	errEmail.id = "errLeadEmail";
-	fieldEmail.append(
-		makeRequiredLabel("leadEmail", "Email nhận kết quả & tài liệu"),
-		emailInput,
-		helpEmail,
-		errEmail,
-	);
-
-	// 3. Số điện thoại Zalo
-	const fieldPhone = createEl("div", "field");
-	fieldPhone.id = "fieldLeadPhone";
-	const phoneInput = createEl("input", "input-control");
-	phoneInput.type = "tel";
-	phoneInput.id = "leadPhone";
-	phoneInput.name = "phone";
-	phoneInput.required = true;
-	phoneInput.setAttribute("aria-required", "true");
-	phoneInput.inputMode = "tel";
-	phoneInput.autocomplete = "tel";
-	phoneInput.placeholder = "Ví dụ: 0909 123 456";
-	phoneInput.value = saved.phone ?? "";
-	phoneInput.setAttribute("aria-describedby", "helpLeadPhone errLeadPhone");
-	const helpPhone = createEl(
-		"span",
-		"field-help",
-		"Số Zalo 10 chữ số (bắt đầu bằng 0 hoặc +84) để cô Mỹ hỗ trợ lộ trình 1-1.",
-	);
-	helpPhone.id = "helpLeadPhone";
-	const errPhone = createEl("span", "field-error", "");
-	errPhone.id = "errLeadPhone";
-	fieldPhone.append(
-		makeRequiredLabel("leadPhone", "Số điện thoại Zalo"),
-		phoneInput,
-		helpPhone,
-		errPhone,
-	);
-
-	requiredGrid.append(fieldName, fieldEmail, fieldPhone);
-	form.appendChild(requiredGrid);
-
-	// Khối Thông tin thêm (không bắt buộc)
-	const detailsEl = createEl("details", "optional-details");
-	detailsEl.id = "leadOptionalDetails";
-	if (saved.birthDate || saved.course || saved.studyMode || saved.note) {
-		detailsEl.open = true;
-	}
-	const summaryEl = createEl(
-		"summary",
-		"",
-		"Thông tin thêm (không bắt buộc: ngày sinh, khóa học, hình thức lớp, ghi chú)",
-	);
-	detailsEl.appendChild(summaryEl);
-
-	const optionalGrid = createEl("div", "info-form-grid optional-grid");
-
-	// 4. Ngày sinh
-	const fieldBirthDate = createEl("div", "field");
-	fieldBirthDate.id = "fieldLeadBirthDate";
-	const birthLabel = createEl("label", "", "Ngày sinh (không bắt buộc)");
-	birthLabel.htmlFor = "leadBirthDate";
-	const birthInput = createEl("input", "input-control");
-	birthInput.type = "date";
-	birthInput.id = "leadBirthDate";
-	birthInput.name = "birthDate";
-	birthInput.min = "1940-01-01";
-	birthInput.value = saved.birthDate ?? "";
-	birthInput.setAttribute("aria-describedby", "errLeadBirthDate");
-	const errBirthDate = createEl("span", "field-error", "");
-	errBirthDate.id = "errLeadBirthDate";
-	fieldBirthDate.append(birthLabel, birthInput, errBirthDate);
-
-	// 5. Khóa học quan tâm
-	const fieldCourse = createEl("div", "field");
-	fieldCourse.id = "fieldLeadCourse";
-	const courseLabel = createEl(
-		"label",
-		"",
-		"Khóa học bạn quan tâm (không bắt buộc)",
-	);
-	courseLabel.htmlFor = "leadCourse";
-	const courseSelect = createEl("select", "input-control");
-	courseSelect.id = "leadCourse";
-	courseSelect.name = "course";
-	courseSelect.setAttribute("aria-describedby", "errLeadCourse");
-	const defaultCourseOpt = createEl("option", "", "Chọn khóa (không bắt buộc)");
-	defaultCourseOpt.value = "";
-	courseSelect.appendChild(defaultCourseOpt);
-	for (const group of PLACEMENT_COURSE_GROUPS) {
-		if (group.key === "other") {
-			for (const opt of group.options) {
-				const optEl = createEl("option", "", opt.label);
-				optEl.value = opt.value;
-				courseSelect.appendChild(optEl);
-			}
-		} else {
-			const optgroup = createEl("optgroup", "");
-			optgroup.label = group.label;
-			for (const opt of group.options) {
-				const optEl = createEl("option", "", opt.label);
-				optEl.value = opt.value;
-				optgroup.appendChild(optEl);
-			}
-			courseSelect.appendChild(optgroup);
+	function stopSpeakingIntervals() {
+		if (recTickInterval) {
+			clearInterval(recTickInterval);
+			recTickInterval = null;
+		}
+		if (speakingPhaseInterval) {
+			clearInterval(speakingPhaseInterval);
+			speakingPhaseInterval = null;
 		}
 	}
-	courseSelect.value = saved.course ?? "";
-	const errCourse = createEl("span", "field-error", "");
-	errCourse.id = "errLeadCourse";
-	fieldCourse.append(courseLabel, courseSelect, errCourse);
 
-	// 6. Hình thức lớp
-	const fieldStudyMode = createEl("div", "field");
-	fieldStudyMode.id = "fieldLeadStudyMode";
-	const modeLabel = createEl(
-		"label",
-		"",
-		"Hình thức & Quy mô lớp (không bắt buộc)",
-	);
-	modeLabel.htmlFor = "leadStudyMode";
-	const modeSelect = createEl("select", "input-control");
-	modeSelect.id = "leadStudyMode";
-	modeSelect.name = "studyMode";
-	modeSelect.setAttribute("aria-describedby", "errLeadStudyMode");
-	const defaultModeOpt = createEl(
-		"option",
-		"",
-		"Chọn hình thức (không bắt buộc)",
-	);
-	defaultModeOpt.value = "";
-	modeSelect.appendChild(defaultModeOpt);
-	for (const mode of PLACEMENT_STUDY_MODES) {
-		const optEl = createEl("option", "", mode.label);
-		optEl.value = mode.value;
-		modeSelect.appendChild(optEl);
-	}
-	modeSelect.value = saved.studyMode ?? "";
-	const errStudyMode = createEl("span", "field-error", "");
-	errStudyMode.id = "errLeadStudyMode";
-	fieldStudyMode.append(modeLabel, modeSelect, errStudyMode);
-
-	// 7. Ghi chú
-	const fieldNote = createEl("div", "field full-span");
-	fieldNote.id = "fieldLeadNote";
-	const noteLabel = createEl(
-		"label",
-		"",
-		"Mục tiêu đầu ra & Ghi chú (không bắt buộc)",
-	);
-	noteLabel.htmlFor = "leadNote";
-	const noteInput = createEl("textarea", "input-control");
-	noteInput.id = "leadNote";
-	noteInput.name = "note";
-	noteInput.rows = 3;
-	noteInput.maxLength = LEAD_NOTE_MAX;
-	noteInput.placeholder = "Ví dụ: Cần IELTS 6.5 trong 6 tháng / Phỏng vấn IT";
-	noteInput.value = saved.note ?? "";
-	noteInput.setAttribute("aria-describedby", "errLeadNote");
-	const errNote = createEl("span", "field-error", "");
-	errNote.id = "errLeadNote";
-	fieldNote.append(noteLabel, noteInput, errNote);
-
-	optionalGrid.append(fieldBirthDate, fieldCourse, fieldStudyMode, fieldNote);
-	detailsEl.appendChild(optionalGrid);
-	form.appendChild(detailsEl);
-
-	// Hộp báo lỗi mạng / 429 / 5xx
-	const errorAlert = createEl("div", "gate-error-alert");
-	errorAlert.id = "leadGateErrorBox";
-	errorAlert.setAttribute("role", "alert");
-	errorAlert.hidden = true;
-	const errorAlertText = createEl("p", "gate-error-text", "");
-	errorAlertText.id = "leadGateErrorText";
-	const errorAlertActions = createEl("div", "header-actions");
-	const retrySubmitBtn = createEl(
-		"button",
-		"btn btn-primary btn-sm",
-		"Thử Gửi Lại",
-	);
-	retrySubmitBtn.type = "button";
-	retrySubmitBtn.id = "retryLeadSubmitBtn";
-	retrySubmitBtn.addEventListener("click", () => {
-		form.requestSubmit();
-	});
-	const zaloAlertLink = createEl(
-		"a",
-		"btn btn-gold btn-sm",
-		"💬 Nhắn Zalo Cô Mỹ: 0929.060.994",
-	);
-	zaloAlertLink.id = "leadGateZaloLink";
-	zaloAlertLink.href = ZALO_URL;
-	zaloAlertLink.target = "_blank";
-	zaloAlertLink.rel = "noopener";
-	errorAlertActions.append(retrySubmitBtn, zaloAlertLink);
-	errorAlert.append(errorAlertText, errorAlertActions);
-	form.appendChild(errorAlert);
-
-	const actions = createEl("div", "btn-row");
-	const backBtn = createEl(
-		"button",
-		"btn btn-outline",
-		"← Quay Lại Giới Thiệu",
-	);
-	backBtn.type = "button";
-	backBtn.id = "backToIntroBtn";
-	backBtn.addEventListener("click", () => rerender("intro"));
-
-	const submitBtn = createEl(
-		"button",
-		"btn btn-primary",
-		"Tiếp Tục Vào Phần 1 →",
-	);
-	submitBtn.type = "submit";
-	submitBtn.id = "submitLeadGateBtn";
-	actions.append(backBtn, submitBtn);
-	form.appendChild(actions);
-
-	const fieldRegistry = [
-		{
-			key: "name",
-			wrapper: fieldName,
-			input: nameInput,
-			errEl: errName,
-			inDetails: false,
-			defaultErr:
-				"Vui lòng nhập họ và tên của bạn (tối thiểu 2 ký tự, tối đa 80 ký tự).",
-		},
-		{
-			key: "email",
-			wrapper: fieldEmail,
-			input: emailInput,
-			errEl: errEmail,
-			inDetails: false,
-			defaultErr: "Vui lòng nhập địa chỉ email hợp lệ.",
-		},
-		{
-			key: "phone",
-			wrapper: fieldPhone,
-			input: phoneInput,
-			errEl: errPhone,
-			inDetails: false,
-			defaultErr:
-				"Vui lòng nhập số điện thoại Việt Nam hợp lệ (10 chữ số, bắt đầu bằng 0 hoặc +84).",
-		},
-		{
-			key: "birthDate",
-			wrapper: fieldBirthDate,
-			input: birthInput,
-			errEl: errBirthDate,
-			inDetails: true,
-			defaultErr: "Ngày sinh không hợp lệ (năm từ 1940 đến năm hiện tại).",
-		},
-		{
-			key: "course",
-			wrapper: fieldCourse,
-			input: courseSelect,
-			errEl: errCourse,
-			inDetails: true,
-			defaultErr: "Khóa học đã chọn không hợp lệ.",
-		},
-		{
-			key: "studyMode",
-			wrapper: fieldStudyMode,
-			input: modeSelect,
-			errEl: errStudyMode,
-			inDetails: true,
-			defaultErr: "Hình thức lớp đã chọn không hợp lệ.",
-		},
-		{
-			key: "note",
-			wrapper: fieldNote,
-			input: noteInput,
-			errEl: errNote,
-			inDetails: true,
-			defaultErr: "Ghi chú không được vượt quá 500 ký tự.",
-		},
-	];
-
-	const getFormValues = () => ({
-		name: nameInput.value,
-		email: emailInput.value,
-		phone: phoneInput.value,
-		birthDate: birthInput.value,
-		course: courseSelect.value,
-		studyMode: modeSelect.value,
-		note: noteInput.value,
-	});
-
-	const setFieldError = (entry, message) => {
-		const hasErr = Boolean(message);
-		entry.wrapper.classList.toggle("has-error", hasErr);
-		if (hasErr) {
-			entry.input.setAttribute("aria-invalid", "true");
-			entry.errEl.textContent = message;
-		} else {
-			entry.input.removeAttribute("aria-invalid");
-			entry.errEl.textContent = "";
-		}
-	};
-
-	const persistDraftLead = () => {
-		const vals = getFormValues();
-		state.lead = {
-			name: vals.name.trim(),
-			email: vals.email.trim(),
-			phone: vals.phone.trim(),
-			birthDate: vals.birthDate.trim(),
-			course: vals.course.trim(),
-			studyMode: vals.studyMode.trim(),
-			note: vals.note.trim(),
-			registered: Boolean(state.lead?.registered),
-			syncedPlacement: state.lead?.syncedPlacement ?? "",
-		};
-		saveAttempt(state);
-	};
-
-	for (const entry of fieldRegistry) {
-		entry.input.addEventListener("blur", () => {
-			const check = validateLeadForm(getFormValues());
-			setFieldError(entry, check.errors[entry.key] ?? "");
-		});
-		entry.input.addEventListener("input", () => {
-			if (entry.wrapper.classList.contains("has-error")) {
-				const check = validateLeadForm(getFormValues());
-				if (!check.errors[entry.key]) {
-					setFieldError(entry, "");
+	function stopMediaStream() {
+		if (mediaStream) {
+			for (const track of mediaStream.getTracks()) {
+				try {
+					track.stop();
+				} catch {
+					// Ignore track stop errors
 				}
 			}
-			persistDraftLead();
-		});
-		entry.input.addEventListener("change", persistDraftLead);
+			mediaStream = null;
+		}
 	}
 
-	form.addEventListener("submit", async (e) => {
-		e.preventDefault();
-		errorAlert.hidden = true;
-		errorAlertText.textContent = "";
-
-		const check = validateLeadForm(getFormValues());
-		let firstFailed = null;
-		for (const entry of fieldRegistry) {
-			const msg = check.errors[entry.key] ?? "";
-			setFieldError(entry, msg);
-			if (msg && !firstFailed) {
-				firstFailed = entry;
+	function revokeRecordedUrl() {
+		if (recordedBlobUrl) {
+			try {
+				URL.revokeObjectURL(recordedBlobUrl);
+			} catch {
+				// Ignore revoke errors
 			}
+			recordedBlobUrl = "";
 		}
+	}
 
-		if (!check.ok && firstFailed) {
-			if (firstFailed.inDetails) {
-				detailsEl.open = true;
-			}
-			firstFailed.input.focus();
+	function stopPageTimer() {
+		if (timerInterval) {
+			clearInterval(timerInterval);
+			timerInterval = null;
+		}
+	}
+
+	function computeRemainingTimerSeconds() {
+		if (!state.timerStartedAt) return RECOMMENDED_TIMER_SECONDS;
+		const elapsedSec = Math.floor((Date.now() - state.timerStartedAt) / 1000);
+		return Math.max(0, RECOMMENDED_TIMER_SECONDS - elapsedSec);
+	}
+
+	function updateTimerDom() {
+		const badge = document.getElementById("testTimerBadge");
+		if (!badge) return;
+		if (!OBJECTIVE_AND_WRITING_STEPS.has(state.step)) {
+			badge.textContent = "Speaking · Không tính vào 40 phút";
+			badge.classList.remove("is-warning", "is-expired");
 			return;
 		}
+		const remaining = computeRemainingTimerSeconds();
+		badge.textContent =
+			remaining > 0 ? `Gợi ý: ${formatClock(remaining)}` : "Đã hết 40:00 gợi ý";
+		badge.classList.toggle("is-warning", remaining > 0 && remaining <= 300);
+		badge.classList.toggle("is-expired", remaining === 0);
 
-		const payload = buildLeadPayload({
-			lead: check.normalized,
-			elapsedMs: Date.now() - pageLoadedAt,
-			website: websiteInput.value,
+		const notice = document.getElementById("timerExpiredNotice");
+		if (notice) {
+			notice.hidden = remaining > 0;
+		}
+	}
+
+	function ensurePageTimerRunning() {
+		stopPageTimer();
+		if (!OBJECTIVE_AND_WRITING_STEPS.has(state.step)) return;
+		if (!state.timerStartedAt) {
+			state.timerStartedAt = Date.now();
+			persist();
+		}
+		updateTimerDom();
+		timerInterval = setInterval(updateTimerDom, 1000);
+	}
+
+	function updateProgressCounterDom() {
+		const node = document.querySelector(".progress-counter");
+		if (!node || !snapshot) return;
+		const progress = countObjectiveProgress(snapshot, state.answers);
+		node.textContent = `Đã trả lời ${progress.answered}/${progress.total} câu khách quan`;
+	}
+
+	function navigateToStep(nextStep) {
+		if (isRecording) {
+			speakingMediaError =
+				"Vui lòng bấm Dừng ghi âm/ghi hình trước khi chuyển phần khác.";
+			render();
+			return;
+		}
+		stopActiveAudio();
+		stopMediaStream();
+		stopSpeakingIntervals();
+		unansweredConfirmState = null;
+		submitError = "";
+		speakingMediaError = "";
+		state.step = nextStep;
+		if (OBJECTIVE_AND_WRITING_STEPS.has(nextStep) && !state.timerStartedAt) {
+			state.timerStartedAt = Date.now();
+		}
+		persist();
+		render();
+		window.scrollTo({ top: 0, behavior: "smooth" });
+	}
+
+	function renderTestHeader(activeSkillId) {
+		const progress = countObjectiveProgress(snapshot, state.answers);
+		const remaining = computeRemainingTimerSeconds();
+		const isTimedSkill = OBJECTIVE_AND_WRITING_STEPS.has(activeSkillId);
+
+		const stepperItems = SKILL_STEPS.map((skill) => {
+			const isActive = skill.id === activeSkillId;
+			return el(
+				"button",
+				{
+					type: "button",
+					className: `skill-step-pill${isActive ? " is-active" : ""}`,
+					dataset: { skillStep: skill.id },
+					"aria-current": isActive ? "step" : undefined,
+				},
+				[skill.shortLabel],
+			);
 		});
 
-		submitBtn.disabled = true;
-		submitBtn.setAttribute("aria-busy", "true");
-		const reqGen = ++leadRequestGeneration;
-		const controller = new AbortController();
-		const timeoutId = setTimeout(() => controller.abort(), 10_000);
-
-		try {
-			const apiBase = getLeadApiBase();
-			const res = await fetch(`${apiBase}/public/leads`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(payload),
-				signal: controller.signal,
+		for (const btn of stepperItems) {
+			btn.addEventListener("click", () => {
+				const target = btn.dataset.skillStep;
+				if (target && target !== state.step) {
+					navigateToStep(target);
+				}
 			});
-			if (reqGen !== leadRequestGeneration) return;
+		}
 
-			if (res.status === 200 || res.status === 201) {
-				state.lead = {
-					...check.normalized,
-					registered: true,
-					syncedPlacement: "",
-				};
-				saveAttempt(state);
-				syncHomepageLeadDraft(state.lead);
-				rerender("part1");
+		const topMeta = el("div", { className: "test-topbar-meta" }, [
+			el("div", { className: "test-student-pill" }, [
+				el("span", {}, [
+					"Thí sinh: ",
+					el("strong", { textContent: state.lead.name || "Chưa nhập" }),
+				]),
+				el(
+					"button",
+					{
+						type: "button",
+						id: "changeLeadInfoBtn",
+						className: "link-inline-btn",
+					},
+					["Đổi thông tin"],
+				),
+			]),
+			el("div", { className: "test-topbar-stats" }, [
+				el("span", { className: "progress-counter" }, [
+					`Đã trả lời ${progress.answered}/${progress.total} câu khách quan`,
+				]),
+				el(
+					"span",
+					{
+						id: "testTimerBadge",
+						className: `timer-badge${isTimedSkill && remaining <= 300 && remaining > 0 ? " is-warning" : ""}${isTimedSkill && remaining === 0 ? " is-expired" : ""}`,
+						dataset: { testid: "test-timer" },
+					},
+					[
+						isTimedSkill
+							? remaining > 0
+								? `Gợi ý: ${formatClock(remaining)}`
+								: "Đã hết 40:00 gợi ý"
+							: "Speaking · Không tính vào 40 phút",
+					],
+				),
+			]),
+		]);
+
+		topMeta
+			.querySelector("#changeLeadInfoBtn")
+			?.addEventListener("click", () => navigateToStep("info"));
+
+		const expiredNotice = el(
+			"div",
+			{
+				id: "timerExpiredNotice",
+				className: "timer-expired-notice",
+				hidden: !(isTimedSkill && remaining === 0),
+				role: "status",
+			},
+			[
+				"Đã hết 40 phút gợi ý cho 4 phần đầu — bạn vẫn có thể hoàn thành câu trả lời và nộp bài bình thường.",
+			],
+		);
+
+		return el("header", { className: "test-topbar" }, [
+			topMeta,
+			el(
+				"nav",
+				{
+					className: "skill-stepper",
+					"aria-label": "Tiến độ 5 kỹ năng",
+				},
+				stepperItems,
+			),
+			expiredNotice,
+		]);
+	}
+
+	function renderMcqQuestionFieldset(q, currentValue, onSelect) {
+		const num = questionNumbers.get(q.id) ?? 1;
+		const options = Array.isArray(q.options) ? q.options : [];
+		const promptText = String(q.prompt ?? "").trim();
+
+		const fieldset = el("fieldset", {
+			className: "question-card",
+			dataset: { questionId: q.id },
+		});
+
+		const legendChildren = [
+			el("span", { className: "question-num", textContent: `Câu ${num}` }),
+		];
+		if (q.kind === "grammar" || q.kind === "vocab") {
+			legendChildren.push(
+				el("span", {
+					className: "question-tag",
+					textContent: q.kind === "vocab" ? "Từ vựng" : "Ngữ pháp",
+				}),
+			);
+		}
+		if (q.level) {
+			legendChildren.push(
+				el("span", {
+					className: "question-level-pill",
+					textContent: q.level,
+				}),
+			);
+		}
+		const legend = el("legend", { className: "question-legend" }, [
+			el("span", { className: "question-meta-row" }, legendChildren),
+			promptText
+				? el("span", { className: "question-prompt", textContent: promptText })
+				: el("span", {
+						className: "question-prompt is-subtle",
+						textContent: "Chọn đáp án đúng nhất:",
+					}),
+		]);
+		fieldset.appendChild(legend);
+
+		const optionsGrid = el("div", { className: "options-list" });
+		options.forEach((optText, optIdx) => {
+			const inputId = `opt-${q.id}-${optIdx}`;
+			const isSelected = currentValue === optIdx;
+			const radio = el("input", {
+				type: "radio",
+				id: inputId,
+				name: `q-${q.id}`,
+				value: String(optIdx),
+				checked: isSelected,
+				dataset: { questionId: q.id, optionIndex: String(optIdx) },
+			});
+			radio.addEventListener("change", () => {
+				onSelect(optIdx);
+				for (const item of optionsGrid.querySelectorAll(".option-item")) {
+					item.classList.remove("is-selected");
+				}
+				label.classList.add("is-selected");
+				updateProgressCounterDom();
+			});
+
+			const letter = OPTION_LETTERS[optIdx] ?? String(optIdx + 1);
+			const label = el(
+				"label",
+				{
+					for: inputId,
+					className: `option-item${isSelected ? " is-selected" : ""}`,
+				},
+				[
+					radio,
+					el("span", { className: "option-letter", textContent: letter }),
+					el("span", { className: "option-text", textContent: optText }),
+				],
+			);
+			optionsGrid.appendChild(label);
+		});
+
+		fieldset.appendChild(optionsGrid);
+		return fieldset;
+	}
+
+	function renderGapQuestionFieldset(q, currentValue, onInput) {
+		const num = questionNumbers.get(q.id) ?? 1;
+		const fieldset = el("fieldset", {
+			className: "question-card is-gap",
+			dataset: { questionId: q.id },
+		});
+
+		const meta = el("span", { className: "question-meta-row" }, [
+			el("span", { className: "question-num", textContent: `Câu ${num}` }),
+			el("span", { className: "question-tag", textContent: "Điền từ / số" }),
+			q.level
+				? el("span", { className: "question-level-pill", textContent: q.level })
+				: null,
+		]);
+
+		fieldset.appendChild(
+			el("legend", { className: "question-legend" }, [
+				meta,
+				el("span", {
+					className: "question-prompt",
+					textContent: q.prompt || "Điền thông tin nghe được vào chỗ trống:",
+				}),
+			]),
+		);
+
+		const inputId = `gap-${q.id}`;
+		const input = el("input", {
+			type: "text",
+			id: inputId,
+			className: "gap-input",
+			value: typeof currentValue === "string" ? currentValue : "",
+			maxlength: "120",
+			autocomplete: "off",
+			spellcheck: "false",
+			placeholder: "Nhập từ hoặc số bạn nghe được...",
+			dataset: { gapInput: q.id, questionId: q.id },
+		});
+		input.addEventListener("input", () => {
+			onInput(input.value);
+			updateProgressCounterDom();
+		});
+
+		fieldset.appendChild(
+			el("div", { className: "gap-input-wrap" }, [
+				el("label", {
+					for: inputId,
+					className: "sr-only",
+					textContent: `Câu ${num}: ${q.prompt || "Điền đáp án"}`,
+				}),
+				input,
+				el(
+					"p",
+					{ className: "gap-hint" },
+					"Gợi ý: Viết ngắn gọn (không cần viết hoa hay ký tự phụ như $, p.m.).",
+				),
+			]),
+		);
+		return fieldset;
+	}
+
+	function renderIntroStep() {
+		const objectiveStats = countObjectiveProgress(snapshot, {});
+		const writing = snapshot.writing;
+		const speakingCount = snapshot.speaking.tasks.length;
+
+		return el("section", { className: "card intro-card" }, [
+			el("p", { className: "kicker-pill" }, [
+				"Đánh giá năng lực 5 kỹ năng · Miễn phí",
+			]),
+			el("h1", { className: "display-title" }, [
+				"Bài Kiểm Tra Đầu Vào Tiếng Anh (5 Kỹ Năng)",
+			]),
+			el("p", { className: "lead-copy" }, [
+				"Bài kiểm tra đánh giá toàn diện 5 kỹ năng để cô Đỗ Thục Mỹ xếp đúng lớp CEFR / IELTS và thiết kế lộ trình học sát năng lực thực tế của bạn.",
+			]),
+			el("div", { className: "intro-grid" }, [
+				el("div", { className: "intro-stat" }, [
+					el("strong", {}, [`${objectiveStats.total} câu khách quan`]),
+					el("span", {}, [
+						"Listening (có giới hạn lượt nghe), Grammar & Vocabulary, và Reading.",
+					]),
+				]),
+				el("div", { className: "intro-stat" }, [
+					el("strong", {}, ["Writing & Speaking thực tế"]),
+					el("span", {}, [
+						`1 bài viết (${writing.minWords}–${writing.maxWords} từ) và ${speakingCount} câu hỏi Speaking ghi âm/ghi hình (hoặc bỏ qua nếu thiếu mic).`,
+					]),
+				]),
+				el("div", { className: "intro-stat" }, [
+					el("strong", {}, ["Đồng hồ gợi ý 40 phút"]),
+					el("span", {}, [
+						"Áp dụng nhẹ nhàng cho 4 phần đầu; khi hết giờ hệ thống chỉ nhắc nhẹ, không làm mất bài.",
+					]),
+				]),
+			]),
+			el("div", { className: "provisional-notice-box" }, [
+				el("strong", {}, ["Cách tính kết quả & xếp lớp chính thức: "]),
+				"Sau khi nộp bài, bạn nhận ngay ",
+				el("strong", {}, ["Kết quả tạm tính"]),
+				" cho 3 phần trắc nghiệm/điền từ. Cô Đỗ Thục Mỹ sẽ trực tiếp chấm phần Writing & Speaking và gửi kết quả xếp lớp CEFR chính thức kèm lộ trình chi tiết qua Zalo.",
+			]),
+			el("div", { className: "intro-actions" }, [
+				el(
+					"button",
+					{
+						type: "button",
+						id: "startTestBtn",
+						className: "btn btn-primary btn-lg",
+					},
+					["Bắt đầu kiểm tra ngay →"],
+				),
+				el("a", { href: "../", className: "btn btn-ghost" }, [
+					"← Về trang chủ",
+				]),
+			]),
+		]);
+	}
+
+	function renderInfoStep() {
+		const values = { ...createEmptyLead(), ...state.lead };
+		const hasOptionalValue = Boolean(
+			values.birthDate || values.course || values.studyMode || values.note,
+		);
+
+		const card = el("section", {
+			id: "leadGateCard",
+			className: "card lead-gate-card",
+		});
+
+		card.appendChild(
+			el("p", { className: "kicker-pill" }, [
+				"Bước 1 · Thông tin nhận kết quả",
+			]),
+		);
+		card.appendChild(
+			el("h1", { className: "section-title" }, [
+				"Nhập thông tin trước khi vào làm bài",
+			]),
+		);
+		card.appendChild(
+			el("p", { className: "muted-copy" }, [
+				"Cô Đỗ Thục Mỹ sẽ dùng SĐT và Email này để gửi kết quả xếp lớp CEFR chính thức sau khi chấm phần Writing & Speaking.",
+			]),
+		);
+
+		const formError = el("div", {
+			id: "leadFormError",
+			className: "form-error-banner",
+			role: "alert",
+			hidden: true,
+		});
+		card.appendChild(formError);
+
+		const form = el("form", {
+			id: "leadGateForm",
+			className: "lead-form",
+			novalidate: true,
+		});
+
+		const fieldErrors = {};
+		function makeField(
+			id,
+			name,
+			labelText,
+			required,
+			inputNode,
+			hintText = "",
+		) {
+			const errNode = el("p", {
+				id: `${id}Error`,
+				className: "field-error",
+				hidden: true,
+			});
+			fieldErrors[name] = { input: inputNode, error: errNode };
+			return el("div", { className: "form-field" }, [
+				el("label", { for: id, className: "field-label" }, [
+					labelText,
+					required ? el("span", { className: "req-mark" }, [" *"]) : null,
+				]),
+				inputNode,
+				hintText ? el("p", { className: "field-hint" }, [hintText]) : null,
+				errNode,
+			]);
+		}
+
+		const nameInput = el("input", {
+			type: "text",
+			id: "leadName",
+			name: "name",
+			required: true,
+			maxlength: String(LEAD_NAME_MAX),
+			autocomplete: "name",
+			placeholder: "Ví dụ: Nguyễn Minh Anh",
+			value: values.name,
+		});
+
+		const phoneInput = el("input", {
+			type: "tel",
+			id: "leadPhone",
+			name: "phone",
+			required: true,
+			inputmode: "tel",
+			autocomplete: "tel",
+			placeholder: "Ví dụ: 0912345678 hoặc +84912345678",
+			value: values.phone,
+		});
+
+		const emailInput = el("input", {
+			type: "email",
+			id: "leadEmail",
+			name: "email",
+			required: true,
+			autocomplete: "email",
+			placeholder: "Ví dụ: minhanh@gmail.com",
+			value: values.email,
+		});
+
+		const birthDateInput = el("input", {
+			type: "date",
+			id: "leadBirthDate",
+			name: "birthDate",
+			value: values.birthDate,
+		});
+
+		const courseSelect = el("select", { id: "leadCourse", name: "course" }, [
+			el("option", { value: "" }, ["-- Chọn khóa học quan tâm (tuỳ chọn) --"]),
+			...PLACEMENT_COURSE_GROUPS.map((group) =>
+				el(
+					"optgroup",
+					{ label: group.label },
+					group.options.map((opt) =>
+						el(
+							"option",
+							{
+								value: opt.value,
+								selected: values.course === opt.value,
+							},
+							[opt.label],
+						),
+					),
+				),
+			),
+		]);
+
+		const studyModeSelect = el(
+			"select",
+			{ id: "leadStudyMode", name: "studyMode" },
+			[
+				el("option", { value: "" }, ["-- Chọn hình thức học (tuỳ chọn) --"]),
+				...PLACEMENT_STUDY_MODES.map((mode) =>
+					el(
+						"option",
+						{
+							value: mode.value,
+							selected: values.studyMode === mode.value,
+						},
+						[mode.label],
+					),
+				),
+			],
+		);
+
+		const noteInput = el("textarea", {
+			id: "leadNote",
+			name: "note",
+			rows: "3",
+			maxlength: "500",
+			placeholder:
+				"Ví dụ: Mục tiêu IELTS 6.5 trong 6 tháng hoặc muốn cải thiện giao tiếp...",
+			textContent: values.note,
+		});
+
+		// Honeypot anti-bot field (kept offscreen cleanly)
+		const websiteTrap = el("div", {
+			className: "honeypot-field",
+			"aria-hidden": "true",
+		});
+		const websiteInput = el("input", {
+			type: "text",
+			id: "leadWebsite",
+			name: "website",
+			tabindex: "-1",
+			autocomplete: "off",
+		});
+		websiteTrap.appendChild(websiteInput);
+
+		form.appendChild(
+			el("div", { className: "form-grid-2" }, [
+				makeField("leadName", "name", "Họ và tên", true, nameInput),
+				makeField(
+					"leadPhone",
+					"phone",
+					"Số điện thoại (Zalo)",
+					true,
+					phoneInput,
+					"Chuẩn 10 số Việt Nam (0xxxxxxxxx hoặc +84...).",
+				),
+			]),
+		);
+
+		form.appendChild(
+			makeField("leadEmail", "email", "Email nhận lộ trình", true, emailInput),
+		);
+
+		const optionalDetails = el(
+			"details",
+			{
+				id: "leadOptionalDetails",
+				className: "optional-details",
+				open: hasOptionalValue,
+			},
+			[
+				el("summary", {}, [
+					"Thông tin bổ sung (Ngày sinh, Khóa quan tâm, Ghi chú)",
+				]),
+				el("div", { className: "optional-fields-body" }, [
+					el("div", { className: "form-grid-2" }, [
+						makeField(
+							"leadBirthDate",
+							"birthDate",
+							"Ngày sinh",
+							false,
+							birthDateInput,
+						),
+						makeField(
+							"leadCourse",
+							"course",
+							"Khóa học quan tâm",
+							false,
+							courseSelect,
+						),
+					]),
+					makeField(
+						"leadStudyMode",
+						"studyMode",
+						"Hình thức học mong muốn",
+						false,
+						studyModeSelect,
+					),
+					makeField(
+						"leadNote",
+						"note",
+						"Ghi chú / Mục tiêu học",
+						false,
+						noteInput,
+					),
+				]),
+			],
+		);
+		form.appendChild(optionalDetails);
+		form.appendChild(websiteTrap);
+
+		const submitBtn = el(
+			"button",
+			{
+				type: "submit",
+				id: "submitLeadGateBtn",
+				className: "btn btn-primary btn-lg",
+			},
+			["Xác nhận & Vào Phần 1: Listening →"],
+		);
+
+		form.appendChild(
+			el("div", { className: "form-actions" }, [
+				el(
+					"button",
+					{
+						type: "button",
+						className: "btn btn-ghost",
+						id: "backToIntroBtn",
+					},
+					["← Quay lại giới thiệu"],
+				),
+				submitBtn,
+			]),
+		);
+
+		function clearFieldErrors() {
+			formError.hidden = true;
+			formError.textContent = "";
+			for (const entry of Object.values(fieldErrors)) {
+				entry.input.removeAttribute("aria-invalid");
+				entry.error.hidden = true;
+				entry.error.textContent = "";
+			}
+		}
+
+		function applyErrors(errorsMap, topMessage = "") {
+			let firstInvalid = null;
+			for (const [field, msg] of Object.entries(errorsMap)) {
+				const entry = fieldErrors[field];
+				if (!entry) continue;
+				if (!firstInvalid) firstInvalid = entry.input;
+				entry.input.setAttribute("aria-invalid", "true");
+				entry.error.textContent = msg;
+				entry.error.hidden = false;
+			}
+			if (topMessage) {
+				formError.textContent = topMessage;
+				formError.hidden = false;
+			}
+			if (firstInvalid) {
+				if (optionalDetails?.contains(firstInvalid) && !optionalDetails.open) {
+					optionalDetails.open = true;
+				}
+				firstInvalid.focus();
+			}
+		}
+
+		form
+			.querySelector("#backToIntroBtn")
+			?.addEventListener("click", () => navigateToStep("intro"));
+
+		form.addEventListener("submit", async (e) => {
+			e.preventDefault();
+			clearFieldErrors();
+
+			const rawValues = {
+				name: nameInput.value,
+				phone: phoneInput.value,
+				email: emailInput.value,
+				birthDate: birthDateInput.value,
+				course: courseSelect.value,
+				studyMode: studyModeSelect.value,
+				note: noteInput.value,
+			};
+
+			const validated = validateLeadForm(rawValues);
+			if (!validated.ok) {
+				applyErrors(
+					validated.errors,
+					"Vui lòng kiểm tra lại các thông tin bắt buộc được đánh dấu.",
+				);
 				return;
 			}
+
+			submitBtn.disabled = true;
+			submitBtn.textContent = "Đang lưu thông tin...";
+
+			try {
+				const payload = buildLeadPayload({
+					lead: validated.normalized,
+					elapsedMs: Date.now() - pageOpenedAt,
+					website: websiteInput.value,
+				});
+
+				const res = await fetch(`${apiBase}/public/leads`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						Accept: "application/json",
+					},
+					body: JSON.stringify(payload),
+				});
+
+				let body = null;
+				try {
+					body = await res.json();
+				} catch {
+					body = null;
+				}
+
+				if (!res.ok) {
+					const mapped = leadErrorMessage(res.status, body);
+					const fieldMap = {};
+					for (const f of mapped.fields) {
+						if (fieldErrors[f]) {
+							fieldMap[f] = "Giá trị chưa hợp lệ, vui lòng kiểm tra lại.";
+						}
+					}
+					applyErrors(fieldMap, mapped.message);
+					return;
+				}
+
+				state.lead = { ...validated.normalized };
+				saveLeadDraft(state.lead);
+				if (!state.timerStartedAt) {
+					state.timerStartedAt = Date.now();
+				}
+				state.step = "listening";
+				persist();
+				render();
+				window.scrollTo({ top: 0, behavior: "smooth" });
+			} catch {
+				applyErrors(
+					{},
+					"Không thể kết nối máy chủ để lưu thông tin. Vui lòng kiểm tra mạng và thử lại.",
+				);
+			} finally {
+				submitBtn.disabled = false;
+				submitBtn.textContent = "Xác nhận & Vào Phần 1: Listening →";
+			}
+		});
+
+		card.appendChild(form);
+		return card;
+	}
+
+	function renderListeningStep() {
+		const listening = snapshot.listening;
+		const wrapper = el("div", {
+			className: "skill-view",
+			dataset: { skill: "listening" },
+		});
+		wrapper.appendChild(renderTestHeader("listening"));
+
+		wrapper.appendChild(
+			el("section", { className: "card skill-intro-card" }, [
+				el("p", { className: "kicker-pill" }, ["Phần 1 / 5 · Nghe hiểu"]),
+				el("h1", { className: "section-title" }, [
+					listening.title || "Listening Comprehension",
+				]),
+				el("p", { className: "muted-copy" }, [
+					"Mỗi đoạn âm thanh có số lượt nghe giới hạn. Hãy đọc nhanh câu hỏi trước khi bấm phát âm thanh.",
+				]),
+			]),
+		);
+
+		for (const clip of listening.clips) {
+			const maxPlays = Number(clip.maxPlays) > 0 ? Number(clip.maxPlays) : 2;
+			const playsUsed = Number(state.plays[clip.id] ?? 0);
+			const remaining = Math.max(0, maxPlays - playsUsed);
+			const audioSrc = resolveMediaUrl(apiBase, clip.src);
+
+			const clipCard = el("section", {
+				className: "card listening-clip-card",
+				dataset: { clipId: clip.id },
+			});
+
+			clipCard.appendChild(
+				el("div", { className: "clip-header" }, [
+					el("div", { className: "clip-badges" }, [
+						clip.partLabel
+							? el("span", {
+									className: "part-badge",
+									textContent: clip.partLabel,
+								})
+							: null,
+						clip.level
+							? el("span", {
+									className: "question-level-pill",
+									textContent: clip.level,
+								})
+							: null,
+					]),
+					clip.title
+						? el("h2", { className: "clip-title", textContent: clip.title })
+						: null,
+					clip.instruction
+						? el("p", {
+								className: "clip-instruction",
+								textContent: clip.instruction,
+							})
+						: null,
+				]),
+			);
+
+			const audioNode = el("audio", {
+				preload: "metadata",
+				src: audioSrc,
+				dataset: { audioClip: clip.id },
+			});
+
+			const playBtn = el(
+				"button",
+				{
+					type: "button",
+					className: "btn btn-teal clip-play-btn",
+					disabled: remaining <= 0,
+					dataset: { playClip: clip.id },
+				},
+				[remaining > 0 ? "▶ Nghe đoạn âm thanh" : "Đã hết lượt nghe"],
+			);
+
+			const statusSpan = el(
+				"span",
+				{
+					className: `clip-status${remaining <= 0 ? " is-exhausted" : ""}`,
+					dataset: { clipStatus: clip.id },
+				},
+				[`Còn ${remaining}/${maxPlays} lượt nghe`],
+			);
+
+			const progressFill = el("div", {
+				className: "clip-progress-fill",
+				dataset: { clipProgress: clip.id },
+			});
+			const timeText = el(
+				"span",
+				{
+					className: "clip-time",
+					dataset: { clipTime: clip.id },
+				},
+				["00:00 / 00:00"],
+			);
+			const audioErr = el("p", {
+				className: "clip-error-msg",
+				hidden: true,
+			});
+
+			function syncClipUi(isPlayingNow = false) {
+				const used = Number(state.plays[clip.id] ?? 0);
+				const left = Math.max(0, maxPlays - used);
+				statusSpan.textContent = `Còn ${left}/${maxPlays} lượt nghe`;
+				statusSpan.classList.toggle("is-exhausted", left <= 0);
+				if (isPlayingNow) {
+					playBtn.disabled = true;
+					playBtn.textContent = "Đang phát âm thanh...";
+				} else if (left <= 0) {
+					playBtn.disabled = true;
+					playBtn.textContent = "Đã hết lượt nghe";
+				} else {
+					playBtn.disabled = false;
+					playBtn.textContent = "▶ Nghe đoạn âm thanh";
+				}
+			}
+
+			audioNode.addEventListener("loadedmetadata", () => {
+				if (Number.isFinite(audioNode.duration) && audioNode.duration > 0) {
+					timeText.textContent = `00:00 / ${formatClock(audioNode.duration)}`;
+				}
+			});
+
+			audioNode.addEventListener("timeupdate", () => {
+				const dur = Number.isFinite(audioNode.duration)
+					? audioNode.duration
+					: 0;
+				const cur = Number.isFinite(audioNode.currentTime)
+					? audioNode.currentTime
+					: 0;
+				const pct = dur > 0 ? Math.min(100, (cur / dur) * 100) : 0;
+				progressFill.style.width = `${pct}%`;
+				timeText.textContent = `${formatClock(cur)} / ${formatClock(dur)}`;
+			});
+
+			audioNode.addEventListener("ended", () => {
+				if (activeAudio === audioNode) {
+					activeAudio = null;
+					activeClipId = null;
+				}
+				progressFill.style.width = "100%";
+				syncClipUi(false);
+			});
+
+			let attemptRefunded = false;
+			function refundAttemptOnce() {
+				if (attemptRefunded) return;
+				attemptRefunded = true;
+				const curUsed = Number(state.plays[clip.id] ?? 0);
+				if (curUsed > 0) {
+					state.plays[clip.id] = curUsed - 1;
+					persist();
+				}
+			}
+
+			audioNode.addEventListener("error", () => {
+				if (activeAudio === audioNode) {
+					refundAttemptOnce();
+					activeAudio = null;
+					activeClipId = null;
+					audioErr.textContent =
+						"Không thể tải file âm thanh. Lượt nghe đã được hoàn lại, vui lòng thử lại.";
+					audioErr.hidden = false;
+					syncClipUi(false);
+				}
+			});
+
+			playBtn.addEventListener("click", async () => {
+				audioErr.hidden = true;
+				const curUsed = Number(state.plays[clip.id] ?? 0);
+				if (curUsed >= maxPlays || activeClipId === clip.id) return;
+
+				stopActiveAudio();
+				// Re-enable previously playing button if another clip was playing
+				for (const otherBtn of wrapper.querySelectorAll(".clip-play-btn")) {
+					const cid = otherBtn.getAttribute("data-play-clip");
+					if (cid && cid !== clip.id) {
+						const otherClip = listening.clips.find((c) => c.id === cid);
+						const otherMax = Number(otherClip?.maxPlays) || 2;
+						const otherLeft = Math.max(
+							0,
+							otherMax - Number(state.plays[cid] ?? 0),
+						);
+						otherBtn.disabled = otherLeft <= 0;
+						otherBtn.textContent =
+							otherLeft > 0 ? "▶ Nghe đoạn âm thanh" : "Đã hết lượt nghe";
+					}
+				}
+
+				attemptRefunded = false;
+				state.plays[clip.id] = curUsed + 1;
+				persist();
+				activeAudio = audioNode;
+				activeClipId = clip.id;
+				syncClipUi(true);
+
+				try {
+					audioNode.currentTime = 0;
+					await audioNode.play();
+				} catch (err) {
+					if (activeAudio === audioNode) {
+						activeAudio = null;
+						activeClipId = null;
+						syncClipUi(false);
+					}
+					if (err?.name !== "AbortError") {
+						refundAttemptOnce();
+						audioErr.textContent =
+							"Trình duyệt không phát được âm thanh. Lượt nghe đã được hoàn lại, vui lòng thử bấm nghe lại.";
+						audioErr.hidden = false;
+						syncClipUi(false);
+					}
+				}
+			});
+
+			clipCard.appendChild(
+				el("div", { className: "clip-player-box" }, [
+					audioNode,
+					el("div", { className: "clip-player-row" }, [playBtn, statusSpan]),
+					el("div", { className: "clip-progress-row" }, [
+						el("div", { className: "clip-progress", "aria-hidden": "true" }, [
+							progressFill,
+						]),
+						timeText,
+					]),
+					audioErr,
+				]),
+			);
+
+			if (clip.notesTitle) {
+				clipCard.appendChild(
+					el("div", { className: "clip-notes-header" }, [
+						el("span", { className: "notes-kicker" }, ["Phiếu ghi chú"]),
+						el("strong", { textContent: clip.notesTitle }),
+					]),
+				);
+			}
+
+			const qList = el("div", { className: "questions-stack" });
+			for (const q of clip.questions ?? []) {
+				if (q.type === "gap") {
+					qList.appendChild(
+						renderGapQuestionFieldset(
+							q,
+							state.answers.listening[q.id],
+							(val) => {
+								state.answers.listening[q.id] = val;
+								persist();
+							},
+						),
+					);
+				} else {
+					qList.appendChild(
+						renderMcqQuestionFieldset(
+							q,
+							state.answers.listening[q.id],
+							(optIdx) => {
+								state.answers.listening[q.id] = optIdx;
+								persist();
+							},
+						),
+					);
+				}
+			}
+			clipCard.appendChild(qList);
+			wrapper.appendChild(clipCard);
+		}
+
+		const navBar = el("div", { className: "step-nav-bar" }, [
+			el(
+				"button",
+				{
+					type: "button",
+					className: "btn btn-ghost",
+					id: "prevToInfoBtn",
+				},
+				["← Thông tin cá nhân"],
+			),
+			el(
+				"button",
+				{
+					type: "button",
+					id: "nextToVocabBtn",
+					className: "btn btn-primary btn-lg",
+				},
+				["Tiếp tục: Grammar & Vocabulary →"],
+			),
+		]);
+		navBar
+			.querySelector("#prevToInfoBtn")
+			?.addEventListener("click", () => navigateToStep("info"));
+		navBar
+			.querySelector("#nextToVocabBtn")
+			?.addEventListener("click", () => navigateToStep("vocab-grammar"));
+		wrapper.appendChild(navBar);
+
+		return wrapper;
+	}
+
+	function renderVocabGrammarStep() {
+		const vg = snapshot.vocabGrammar;
+		const wrapper = el("div", {
+			className: "skill-view",
+			dataset: { skill: "vocab-grammar" },
+		});
+		wrapper.appendChild(renderTestHeader("vocab-grammar"));
+
+		wrapper.appendChild(
+			el("section", { className: "card skill-intro-card" }, [
+				el("p", { className: "kicker-pill" }, [
+					"Phần 2 / 5 · Ngữ pháp & Từ vựng",
+				]),
+				el("h1", { className: "section-title" }, [
+					vg.title || "Grammar & Vocabulary",
+				]),
+				el("p", { className: "muted-copy" }, [
+					"Chọn một đáp án đúng nhất để hoàn thành câu hoặc chọn nghĩa/cách dùng phù hợp.",
+				]),
+			]),
+		);
+
+		const stack = el("div", { className: "questions-stack" });
+		for (const q of vg.questions) {
+			stack.appendChild(
+				renderMcqQuestionFieldset(
+					q,
+					state.answers.vocabGrammar[q.id],
+					(optIdx) => {
+						state.answers.vocabGrammar[q.id] = optIdx;
+						persist();
+					},
+				),
+			);
+		}
+		wrapper.appendChild(el("div", { className: "card" }, [stack]));
+
+		const navBar = el("div", { className: "step-nav-bar" }, [
+			el(
+				"button",
+				{
+					type: "button",
+					className: "btn btn-ghost",
+					id: "prevToListeningBtn",
+				},
+				["← Quay lại Listening"],
+			),
+			el(
+				"button",
+				{
+					type: "button",
+					id: "nextToReadingBtn",
+					className: "btn btn-primary btn-lg",
+				},
+				["Tiếp tục: Reading →"],
+			),
+		]);
+		navBar
+			.querySelector("#prevToListeningBtn")
+			?.addEventListener("click", () => navigateToStep("listening"));
+		navBar
+			.querySelector("#nextToReadingBtn")
+			?.addEventListener("click", () => navigateToStep("reading"));
+		wrapper.appendChild(navBar);
+
+		return wrapper;
+	}
+
+	function renderReadingBody(passage) {
+		const bodyText = String(passage.body ?? "");
+		const container = el("div", {
+			className: `reading-body kind-${passage.kind || "passage"}`,
+		});
+
+		if (passage.kind === "cloze") {
+			const paragraphs = bodyText.split(/\n{2,}/);
+			for (const para of paragraphs) {
+				const pNode = el("p", { className: "reading-paragraph" });
+				const segments = para.split(/(\[\d+\])/g);
+				for (const seg of segments) {
+					const match = /^\[(\d+)\]$/.exec(seg);
+					if (match) {
+						pNode.appendChild(
+							el("span", {
+								className: "cloze-blank-badge",
+								textContent: `(${match[1]})`,
+							}),
+						);
+					} else {
+						pNode.appendChild(document.createTextNode(seg));
+					}
+				}
+				container.appendChild(pNode);
+			}
+			return container;
+		}
+
+		const blocks = bodyText.split(/\n{2,}/);
+		for (const block of blocks) {
+			const lines = block.split("\n");
+			const pNode = el("p", { className: "reading-paragraph" });
+			lines.forEach((line, idx) => {
+				if (idx > 0) pNode.appendChild(document.createElement("br"));
+				pNode.appendChild(document.createTextNode(line));
+			});
+			container.appendChild(pNode);
+		}
+		return container;
+	}
+
+	function renderReadingStep() {
+		const reading = snapshot.reading;
+		const wrapper = el("div", {
+			className: "skill-view",
+			dataset: { skill: "reading" },
+		});
+		wrapper.appendChild(renderTestHeader("reading"));
+
+		wrapper.appendChild(
+			el("section", { className: "card skill-intro-card" }, [
+				el("p", { className: "kicker-pill" }, ["Phần 3 / 5 · Đọc hiểu"]),
+				el("h1", { className: "section-title" }, [
+					reading.title || "Reading Comprehension",
+				]),
+				el("p", { className: "muted-copy" }, [
+					"Đọc kỹ từng biển báo, tin nhắn, bài đọc và đoạn điền từ bên dưới rồi chọn đáp án đúng.",
+				]),
+			]),
+		);
+
+		for (const passage of reading.passages) {
+			const card = el("section", {
+				className: "card reading-passage-card",
+				dataset: {
+					passageId: passage.id,
+					passageKind: passage.kind || "passage",
+				},
+			});
+
+			card.appendChild(
+				el("div", { className: "passage-header" }, [
+					el("div", { className: "clip-badges" }, [
+						passage.partLabel
+							? el("span", {
+									className: "part-badge",
+									textContent: passage.partLabel,
+								})
+							: null,
+						el("span", {
+							className: "question-tag",
+							textContent: READING_KIND_LABELS[passage.kind] ?? "Bài đọc hiểu",
+						}),
+					]),
+					passage.title
+						? el("h2", { className: "clip-title", textContent: passage.title })
+						: null,
+					passage.instruction
+						? el("p", {
+								className: "clip-instruction",
+								textContent: passage.instruction,
+							})
+						: null,
+				]),
+			);
+
+			card.appendChild(renderReadingBody(passage));
+
+			const qList = el("div", { className: "questions-stack" });
+			for (const q of passage.questions ?? []) {
+				qList.appendChild(
+					renderMcqQuestionFieldset(
+						q,
+						state.answers.reading[q.id],
+						(optIdx) => {
+							state.answers.reading[q.id] = optIdx;
+							persist();
+						},
+					),
+				);
+			}
+			card.appendChild(qList);
+			wrapper.appendChild(card);
+		}
+
+		const navBar = el("div", { className: "step-nav-bar" }, [
+			el(
+				"button",
+				{
+					type: "button",
+					className: "btn btn-ghost",
+					id: "prevToVocabBtn",
+				},
+				["← Quay lại Grammar & Vocabulary"],
+			),
+			el(
+				"button",
+				{
+					type: "button",
+					id: "nextToWritingBtn",
+					className: "btn btn-primary btn-lg",
+				},
+				["Tiếp tục: Writing →"],
+			),
+		]);
+		navBar
+			.querySelector("#prevToVocabBtn")
+			?.addEventListener("click", () => navigateToStep("vocab-grammar"));
+		navBar
+			.querySelector("#nextToWritingBtn")
+			?.addEventListener("click", () => navigateToStep("writing"));
+		wrapper.appendChild(navBar);
+
+		return wrapper;
+	}
+
+	function renderWritingStep() {
+		const writing = snapshot.writing;
+		const minWords = Number(writing.minWords) || 50;
+		const maxWords = Number(writing.maxWords) || 80;
+
+		const wrapper = el("div", {
+			className: "skill-view",
+			dataset: { skill: "writing" },
+		});
+		wrapper.appendChild(renderTestHeader("writing"));
+
+		const card = el("section", { className: "card writing-card" }, [
+			el("p", { className: "kicker-pill" }, ["Phần 4 / 5 · Viết (Writing)"]),
+			el("h1", {
+				className: "section-title",
+				textContent: writing.promptTitle || "Bài viết ngắn",
+			}),
+		]);
+
+		const promptBox = el("div", { className: "writing-prompt-box" });
+		const promptLines = String(writing.promptBody ?? "").split("\n");
+		for (const line of promptLines) {
+			if (!line.trim()) continue;
+			promptBox.appendChild(el("p", { textContent: line }));
+		}
+		promptBox.appendChild(
+			el("p", { className: "writing-range-hint" }, [
+				`Độ dài gợi ý: ${minWords}–${maxWords} từ. Cô Đỗ Thục Mỹ sẽ chấm trực tiếp bài viết của bạn.`,
+			]),
+		);
+		card.appendChild(promptBox);
+
+		const textarea = el("textarea", {
+			id: "writingTextarea",
+			className: "writing-textarea",
+			rows: "9",
+			maxlength: "10000",
+			placeholder: "Viết câu trả lời tiếng Anh của bạn tại đây...",
+			textContent: state.writingText,
+			dataset: { testid: "writing-textarea" },
+		});
+
+		const wordCountBadge = el("span", {
+			id: "writingWordCount",
+			className: "word-count-badge",
+			dataset: { testid: "writing-word-count" },
+		});
+		const wordStatusHint = el("span", {
+			id: "writingWordHint",
+			className: "word-count-hint",
+		});
+
+		function syncWordCounter() {
+			const count = countWords(textarea.value);
+			wordCountBadge.textContent = `${count} / ${minWords}–${maxWords} từ`;
+			wordCountBadge.classList.remove("is-ok", "is-under", "is-over");
+			if (count === 0) {
+				wordStatusHint.textContent = "Bạn chưa nhập nội dung.";
+			} else if (count < minWords) {
+				wordCountBadge.classList.add("is-under");
+				wordStatusHint.textContent = `Cần thêm khoảng ${minWords - count} từ để đạt mốc gợi ý.`;
+			} else if (count > maxWords) {
+				wordCountBadge.classList.add("is-over");
+				wordStatusHint.textContent =
+					"Bài hơi dài hơn gợi ý, vẫn hợp lệ để nộp.";
+			} else {
+				wordCountBadge.classList.add("is-ok");
+				wordStatusHint.textContent = "Đạt độ dài gợi ý.";
+			}
+		}
+
+		syncWordCounter();
+		textarea.addEventListener("input", () => {
+			state.writingText = textarea.value;
+			persist();
+			syncWordCounter();
+		});
+
+		card.appendChild(
+			el("div", { className: "writing-editor-wrap" }, [
+				el("label", {
+					for: "writingTextarea",
+					className: "field-label",
+					textContent: "Bài viết của bạn",
+				}),
+				textarea,
+				el("div", { className: "writing-meta-row" }, [
+					wordCountBadge,
+					wordStatusHint,
+				]),
+			]),
+		);
+
+		wrapper.appendChild(card);
+
+		const navBar = el("div", { className: "step-nav-bar" }, [
+			el(
+				"button",
+				{
+					type: "button",
+					className: "btn btn-ghost",
+					id: "prevToReadingBtn",
+				},
+				["← Quay lại Reading"],
+			),
+			el(
+				"button",
+				{
+					type: "button",
+					id: "nextToSpeakingBtn",
+					className: "btn btn-primary btn-lg",
+				},
+				["Tiếp tục: Speaking & Nộp bài →"],
+			),
+		]);
+		navBar
+			.querySelector("#prevToReadingBtn")
+			?.addEventListener("click", () => navigateToStep("reading"));
+		navBar
+			.querySelector("#nextToSpeakingBtn")
+			?.addEventListener("click", () => navigateToStep("speaking"));
+		wrapper.appendChild(navBar);
+
+		return wrapper;
+	}
+
+	function buildSubmissionPayload(finalSpeakingMode) {
+		return {
+			lead: buildPlacementSubmissionLead(state.lead),
+			answers: sanitizeObjectiveAnswers(snapshot, state.answers),
+			writingText: state.writingText.slice(0, 10000),
+			speakingMode: finalSpeakingMode,
+			speakingDurationSec:
+				finalSpeakingMode === "upload" && state.speakingDurationSec !== null
+					? Math.min(3600, Math.max(0, Math.round(state.speakingDurationSec)))
+					: null,
+		};
+	}
+
+	async function uploadSpeakingMedia(
+		submissionId,
+		uploadToken,
+		blob,
+		durationSec,
+	) {
+		const meta = resolveSpeakingUploadMeta(blob.type, speakingAudioOnly);
+		const headers = {
+			"X-Upload-Token": uploadToken,
+			"Content-Type": meta.contentType,
+			"X-Media-Filename": meta.filename,
+			"X-Speaking-Duration": String(Math.max(0, Math.round(durationSec ?? 0))),
+		};
+		const res = await fetch(
+			`${apiBase}/public/placement-test/submissions/${encodeURIComponent(submissionId)}/speaking-media`,
+			{
+				method: "PUT",
+				headers,
+				body: blob,
+			},
+		);
+		let body = null;
+		try {
+			body = await res.json();
+		} catch {
+			body = null;
+		}
+		if (!res.ok) {
+			const errCode = body?.error || `HTTP ${res.status}`;
+			throw new Error(`Tải file Speaking chưa thành công (${errCode}).`);
+		}
+		return body;
+	}
+
+	async function executeSubmission(finalSpeakingMode) {
+		if (isSubmitting) return;
+		isSubmitting = true;
+		submitError = "";
+		speakingUploadError = "";
+		render();
+
+		try {
+			const payload = buildSubmissionPayload(finalSpeakingMode);
+			const res = await fetch(`${apiBase}/public/placement-test/submissions`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Accept: "application/json",
+				},
+				body: JSON.stringify(payload),
+			});
 
 			let body = null;
 			try {
@@ -1091,736 +2127,1293 @@ function renderInfoStep(root, _test, state, rerender) {
 			} catch {
 				body = null;
 			}
-			const errInfo = leadErrorMessage(res.status, body);
 
-			if (errInfo.kind === "field") {
-				let firstServerField = null;
-				for (const entry of fieldRegistry) {
-					if (errInfo.fields.includes(entry.key)) {
-						setFieldError(entry, entry.defaultErr);
-						if (!firstServerField) firstServerField = entry;
-					}
+			if (!res.ok) {
+				if (res.status === 429) {
+					submitError =
+						body?.error === "PLACEMENT_DAILY_CAP"
+							? "Số điện thoại này đã đạt giới hạn lượt nộp hôm nay. Vui lòng nhắn Zalo cô Mỹ nếu cần làm lại."
+							: "Bạn thao tác quá nhanh. Vui lòng đợi ít phút rồi thử nộp lại.";
+				} else if (res.status === 400) {
+					submitError =
+						"Dữ liệu bài làm hoặc thông tin liên hệ chưa hợp lệ. Vui lòng kiểm tra lại SĐT / Họ tên rồi thử nộp lại.";
+				} else if (res.status === 404 || res.status === 503) {
+					submitError =
+						"Hệ thống nộp bài tạm thời bảo trì. Vui lòng thử lại sau hoặc nhắn Zalo cô Mỹ.";
+				} else {
+					submitError =
+						"Hệ thống đang bận, chưa thể nộp bài. Vui lòng thử nộp lại sau giây lát.";
 				}
-				if (firstServerField) {
-					if (firstServerField.inDetails) {
-						detailsEl.open = true;
-					}
-					firstServerField.input.focus();
-					return;
-				}
-			}
-
-			errorAlertText.textContent = errInfo.message;
-			errorAlert.hidden = false;
-		} catch {
-			if (reqGen !== leadRequestGeneration) return;
-			const errInfo = leadErrorMessage(0, null);
-			errorAlertText.textContent = errInfo.message;
-			errorAlert.hidden = false;
-		} finally {
-			clearTimeout(timeoutId);
-			submitBtn.disabled = false;
-			submitBtn.removeAttribute("aria-busy");
-		}
-	});
-
-	card.appendChild(form);
-	root.appendChild(card);
-}
-
-function updateProgressCounter(root, test, state) {
-	const counter = root.querySelector(".progress-counter");
-	if (!counter) return;
-	const totalQuestions = flattenQuestions(test).length;
-	const answeredCount = Object.keys(state.answers).length;
-	counter.textContent = `Đã trả lời: ${answeredCount}/${totalQuestions} câu`;
-}
-
-function renderPart1Step(root, test, state, rerender) {
-	const part1 = test.parts.find((p) => p.id === "vocab-grammar");
-	const { vgCount, listeningCount } = getPartCounts(test);
-	const card = createEl("section", "step-card");
-	card.appendChild(createEl("span", "kicker-pill", "Phần 1 / 2"));
-	card.appendChild(
-		createEl("h1", "", "Phần 1: Ngữ Pháp & Từ Vựng (Vocab + Grammar)"),
-	);
-	card.appendChild(
-		createEl(
-			"p",
-			"muted-copy",
-			`Chọn đáp án đúng nhất cho ${vgCount} câu bên dưới. Bạn có thể chuyển sang Phần 2 bất cứ lúc nào và quay lại chỉnh sửa trước khi nộp bài.`,
-		),
-	);
-	const identityBar = createLeadIdentityBar(test, state, rerender);
-	if (identityBar) {
-		card.appendChild(identityBar);
-	}
-
-	const stack = createEl("div", "questions-stack");
-	const questions = part1?.questions ?? [];
-	questions.forEach((q, idx) => {
-		stack.appendChild(
-			createQuestionFieldset(q, idx + 1, state, () =>
-				updateProgressCounter(root, test, state),
-			),
-		);
-	});
-	card.appendChild(stack);
-
-	const actions = createEl("div", "btn-row");
-	const backBtn = createEl("button", "btn btn-outline", "← Về Mục Giới Thiệu");
-	backBtn.type = "button";
-	backBtn.addEventListener("click", () => rerender("intro"));
-
-	const nextBtn = createEl(
-		"button",
-		"btn btn-primary",
-		`Tiếp Tục Sang Phần 2: Listening (${listeningCount} câu) →`,
-	);
-	nextBtn.type = "button";
-	nextBtn.id = "toPart2Btn";
-	nextBtn.addEventListener("click", () => rerender("part2"));
-
-	actions.append(backBtn, nextBtn);
-	card.appendChild(actions);
-	root.appendChild(card);
-}
-
-function renderPart2Step(root, test, state, rerender, activeClipsCleanup) {
-	const part1 = test.parts.find((p) => p.id === "vocab-grammar");
-	const part2 = test.parts.find((p) => p.id === "listening");
-	const clips = part2?.clips ?? [];
-	const card = createEl("section", "step-card");
-	card.appendChild(createEl("span", "kicker-pill", "Phần 2 / 2"));
-	card.appendChild(
-		createEl(
-			"h1",
-			"",
-			`Phần 2: Nghe Hiểu (Listening – ${clips.length} Đoạn Audio)`,
-		),
-	);
-	card.appendChild(
-		createEl(
-			"p",
-			"muted-copy",
-			"Mỗi đoạn âm thanh có giới hạn số lần phát và không thể tua. Hãy đọc trước các câu hỏi của từng đoạn rồi bấm nút Phát đoạn nghe.",
-		),
-	);
-	const identityBar = createLeadIdentityBar(test, state, rerender);
-	if (identityBar) {
-		card.appendChild(identityBar);
-	}
-
-	let questionNumber = (part1?.questions?.length ?? 0) + 1;
-	const clipControllers = [];
-
-	const pauseAllOtherClips = (exceptClipId) => {
-		for (const ctrl of clipControllers) {
-			if (ctrl.clipId !== exceptClipId) {
-				ctrl.stopIfPlaying();
-			}
-		}
-	};
-
-	for (const clip of clips) {
-		const maxPlays = Number(clip.maxPlays) || 2;
-		const block = createEl("div", "clip-block");
-		block.dataset.clipBlock = clip.id;
-
-		const header = createEl("div", "clip-header");
-		const titleGroup = createEl("div", "clip-title-group");
-		titleGroup.appendChild(
-			createEl("h3", "", clip.title || `Đoạn nghe ${clip.id}`),
-		);
-		titleGroup.appendChild(
-			createEl(
-				"p",
-				"muted-copy",
-				`Mức độ: ${clip.level} • Tối đa ${maxPlays} lần nghe`,
-			),
-		);
-
-		const controls = createEl("div", "clip-controls");
-		const playBtn = createEl("button", "btn btn-primary btn-sm");
-		playBtn.type = "button";
-		playBtn.dataset.playClip = clip.id;
-
-		const statusEl = createEl("span", "clip-status");
-		statusEl.setAttribute("aria-live", "polite");
-		statusEl.dataset.clipStatus = clip.id;
-
-		const audio = document.createElement("audio");
-		audio.preload = "none";
-		audio.src = resolveAudioUrl(clip.src);
-		audio.dataset.audioClip = clip.id;
-
-		let activeSession = false;
-		let chargedCurrentAttempt = false;
-
-		const getPlays = () => {
-			const count = state.plays[clip.id];
-			return Number.isInteger(count) && count > 0
-				? Math.min(maxPlays, count)
-				: 0;
-		};
-
-		const updateClipUi = (errorMessage = "") => {
-			const used = getPlays();
-			const remaining = Math.max(0, maxPlays - used);
-			statusEl.classList.remove("is-exhausted", "is-error");
-
-			if (errorMessage) {
-				playBtn.disabled = remaining <= 0;
-				playBtn.textContent =
-					remaining > 0 ? "▶ Phát đoạn nghe" : "🔒 Đã hết lượt nghe";
-				statusEl.textContent = errorMessage;
-				statusEl.classList.add("is-error");
 				return;
 			}
 
-			if (activeSession) {
-				playBtn.disabled = true;
-				playBtn.textContent = "🔊 Đang phát đoạn nghe...";
-				statusEl.textContent = `Đang phát (còn ${remaining}/${maxPlays} lượt nghe sau lượt này)`;
-				return;
-			}
+			const objective =
+				body.objective ?? scoreObjectiveTest(snapshot, state.answers);
+			const summaryText =
+				objective.provisionalSummary || buildProvisionalSummary(objective);
 
-			if (remaining <= 0) {
-				playBtn.disabled = true;
-				playBtn.textContent = "🔒 Đã hết lượt nghe";
-				statusEl.textContent = `Đã hết lượt nghe (0/${maxPlays} lượt còn lại)`;
-				statusEl.classList.add("is-exhausted");
-				return;
-			}
+			state.speakingMode = finalSpeakingMode;
+			state.submission = {
+				submissionId: body.submissionId,
+				leadId: body.leadId,
+				uploadToken: body.uploadToken ?? null,
+				speakingStatus: body.speakingStatus ?? "none",
+				objective,
+				writingWordCount: countWords(state.writingText),
+				submittedAt: new Date().toISOString(),
+			};
 
-			playBtn.disabled = false;
-			playBtn.textContent =
-				used === 0 ? "▶ Phát đoạn nghe" : "▶ Phát lại đoạn nghe";
-			statusEl.textContent = `Còn ${remaining}/${maxPlays} lượt nghe`;
-		};
-
-		audio.addEventListener("playing", () => {
-			if (!activeSession) return;
-			if (!chargedCurrentAttempt) {
-				chargedCurrentAttempt = true;
-				state.plays[clip.id] = Math.min(maxPlays, getPlays() + 1);
-				saveAttempt(state);
-			}
-			updateClipUi();
-		});
-
-		audio.addEventListener("ended", () => {
-			activeSession = false;
-			chargedCurrentAttempt = false;
-			updateClipUi();
-		});
-
-		const refundPlayIfCharged = () => {
-			if (!chargedCurrentAttempt) return;
-			const nextCount = Math.max(0, getPlays() - 1);
-			if (nextCount > 0) {
-				state.plays[clip.id] = nextCount;
-			} else {
-				delete state.plays[clip.id];
-			}
-			saveAttempt(state);
-		};
-
-		audio.addEventListener("error", () => {
-			if (isPageUnloading || !activeSession) return;
-			refundPlayIfCharged();
-			activeSession = false;
-			chargedCurrentAttempt = false;
-			updateClipUi(
-				"Không tải được âm thanh – không bị trừ lượt nghe. Vui lòng thử lại.",
+			saveLeadDraft(
+				state.lead,
+				summaryText,
+				objective.provisionalBand?.course || state.lead.course,
 			);
-		});
 
-		playBtn.addEventListener("click", () => {
-			if (activeSession || getPlays() >= maxPlays) return;
-			pauseAllOtherClips(clip.id);
-			activeSession = true;
-			chargedCurrentAttempt = false;
-			updateClipUi();
-			try {
-				audio.currentTime = 0;
-			} catch {
-				// Ignore currentTime reset before metadata is loaded
-			}
-			const playPromise = audio.play();
-			if (playPromise && typeof playPromise.catch === "function") {
-				playPromise.catch(() => {
-					if (isPageUnloading || !activeSession) return;
-					refundPlayIfCharged();
-					activeSession = false;
-					chargedCurrentAttempt = false;
-					updateClipUi(
-						"Không phát được âm thanh – không bị trừ lượt nghe. Vui lòng thử lại.",
+			if (
+				finalSpeakingMode === "upload" &&
+				recordedBlob &&
+				body.uploadToken &&
+				body.submissionId
+			) {
+				try {
+					await uploadSpeakingMedia(
+						body.submissionId,
+						body.uploadToken,
+						recordedBlob,
+						state.speakingDurationSec ?? 0,
 					);
-				});
+					state.submission.speakingStatus = "uploaded";
+					state.submission.uploadToken = null;
+				} catch (uploadErr) {
+					state.submission.speakingStatus = "pending_upload";
+					speakingUploadError =
+						uploadErr instanceof Error
+							? uploadErr.message
+							: "Không thể tải file Speaking lên máy chủ. Bài làm vẫn đã được lưu — bạn có thể bấm Thử tải lại bên dưới.";
+				}
 			}
-		});
 
-		const stopIfPlaying = () => {
-			if (!activeSession && audio.paused) return;
-			activeSession = false;
-			chargedCurrentAttempt = false;
-			try {
-				audio.pause();
-				audio.currentTime = 0;
-			} catch {
-				// Ignore pause errors
-			}
-			updateClipUi();
-		};
-
-		clipControllers.push({ clipId: clip.id, stopIfPlaying });
-		activeClipsCleanup.push(stopIfPlaying);
-		updateClipUi();
-
-		controls.append(playBtn, statusEl, audio);
-		header.append(titleGroup, controls);
-		block.appendChild(header);
-
-		const stack = createEl("div", "questions-stack");
-		for (const q of clip.questions ?? []) {
-			stack.appendChild(
-				createQuestionFieldset(q, questionNumber, state, () =>
-					updateProgressCounter(root, test, state),
-				),
-			);
-			questionNumber += 1;
+			stopPageTimer();
+			stopActiveAudio();
+			stopMediaStream();
+			stopSpeakingIntervals();
+			unansweredConfirmState = null;
+			state.step = "result";
+			persist();
+		} catch {
+			submitError =
+				"Không thể kết nối máy chủ để nộp bài. Vui lòng kiểm tra kết nối mạng và thử lại.";
+		} finally {
+			isSubmitting = false;
+			render();
+			window.scrollTo({ top: 0, behavior: "smooth" });
 		}
-		block.appendChild(stack);
-		card.appendChild(block);
 	}
 
-	const confirmHost = createEl("div");
-	card.appendChild(confirmHost);
-
-	const finalizeSubmission = () => {
-		state.result = gradeAttempt(test, state.answers);
-		rerender("result");
-	};
-
-	const actions = createEl("div", "btn-row");
-	const backBtn = createEl(
-		"button",
-		"btn btn-outline",
-		"← Quay Lại Phần 1 (Vocab + Grammar)",
-	);
-	backBtn.type = "button";
-	backBtn.addEventListener("click", () => rerender("part1"));
-
-	const submitBtn = createEl(
-		"button",
-		"btn btn-gold",
-		"✨ Nộp Bài & Xem Kết Quả Xếp Lớp",
-	);
-	submitBtn.type = "button";
-	submitBtn.id = "submitTestBtn";
-	submitBtn.addEventListener("click", () => {
-		const totalQuestions = flattenQuestions(test).length;
-		const answeredCount = Object.keys(state.answers).length;
-		const unanswered = totalQuestions - answeredCount;
-		if (unanswered <= 0) {
-			finalizeSubmission();
+	function handleRequestSubmit() {
+		if (isRecording) {
+			speakingMediaError =
+				"Vui lòng bấm Dừng ghi âm/ghi hình trước khi nộp bài.";
+			render();
+			return;
+		}
+		if (recordedBlob && recordedBlob.size > SPEAKING_MAX_BYTES) {
+			speakingMediaError =
+				"File Speaking vượt quá giới hạn 50 MB. Vui lòng ghi lại ngắn hơn hoặc chọn Bỏ qua phần Speaking.";
+			render();
 			return;
 		}
 
-		confirmHost.replaceChildren();
-		const confirmBox = createEl("div", "confirm-submit-box");
-		confirmBox.id = "unansweredConfirmBox";
-		confirmBox.appendChild(
-			createEl(
-				"p",
-				"",
-				`Bạn còn ${unanswered}/${totalQuestions} câu chưa chọn đáp án. Câu bỏ trống sẽ được tính là 0 điểm. Bạn có chắc chắn muốn nộp bài ngay?`,
+		const progress = countObjectiveProgress(snapshot, state.answers);
+		const words = countWords(state.writingText);
+		const hasValidBlob = Boolean(
+			recordedBlob &&
+				recordedBlob.size > 0 &&
+				recordedBlob.size <= SPEAKING_MAX_BYTES,
+		);
+		const speakingFinalMode = hasValidBlob
+			? "upload"
+			: state.speakingMode === "skipped"
+				? "skipped"
+				: "skipped";
+		const needsSpeakingDecision =
+			!hasValidBlob && state.speakingMode !== "skipped";
+
+		if (progress.unanswered > 0 || words === 0 || needsSpeakingDecision) {
+			unansweredConfirmState = {
+				unansweredObjective: progress.unanswered,
+				writingEmpty: words === 0,
+				speakingUnrecorded: needsSpeakingDecision,
+				resolvedSpeakingMode: speakingFinalMode,
+			};
+			render();
+			document
+				.getElementById("unansweredConfirmBox")
+				?.scrollIntoView({ behavior: "smooth", block: "center" });
+			return;
+		}
+
+		void executeSubmission(speakingFinalMode);
+	}
+
+	function renderSpeakingStep() {
+		const speaking = snapshot.speaking;
+		const tasks = speaking.tasks;
+		const hasMediaApi = Boolean(
+			navigator.mediaDevices &&
+				typeof navigator.mediaDevices.getUserMedia === "function" &&
+				typeof window.MediaRecorder === "function",
+		);
+		const hasValidBlob = Boolean(
+			recordedBlob && state.speakingMode === "upload",
+		);
+
+		const wrapper = el("div", {
+			className: "skill-view",
+			dataset: { skill: "speaking" },
+		});
+		wrapper.appendChild(renderTestHeader("speaking"));
+
+		const introCard = el("section", { className: "card skill-intro-card" }, [
+			el("p", { className: "kicker-pill" }, ["Phần 5 / 5 · Nói (Speaking)"]),
+			el("h1", { className: "section-title" }, [
+				"Kiểm tra Speaking cùng hệ thống ghi âm / ghi hình",
+			]),
+			el("p", { className: "muted-copy" }, [
+				"Trả lời lần lượt các câu hỏi bên dưới trong một lượt ghi duy nhất. Nếu thiết bị không có camera/micro, bạn có thể chọn Chỉ ghi âm hoặc Bỏ qua phần Speaking.",
+			]),
+		]);
+		wrapper.appendChild(introCard);
+
+		// Full prompt preview list
+		const tasksCard = el("section", { className: "card speaking-tasks-card" }, [
+			el("h2", { className: "subsection-title" }, [
+				`Danh sách ${tasks.length} câu hỏi Speaking`,
+			]),
+			el(
+				"ol",
+				{ className: "speaking-task-list" },
+				tasks.map((task, idx) =>
+					el(
+						"li",
+						{
+							className: `speaking-task-item${isRecording && speakingTaskIndex === idx ? " is-current" : ""}`,
+						},
+						[
+							el("div", { className: "speaking-task-meta" }, [
+								el("span", {
+									className: "part-badge",
+									textContent: task.partLabel || `Câu ${idx + 1}`,
+								}),
+								task.level
+									? el("span", {
+											className: "question-level-pill",
+											textContent: task.level,
+										})
+									: null,
+								el("span", {
+									className: "speaking-timing-hint",
+									textContent: `Chuẩn bị ${task.prepSeconds ?? 10}s · Trả lời ${task.answerSeconds ?? 45}s`,
+								}),
+							]),
+							el("p", {
+								className: "speaking-task-prompt",
+								textContent: task.prompt,
+							}),
+						],
+					),
+				),
+			),
+		]);
+		wrapper.appendChild(tasksCard);
+
+		// Recorder Card
+		const recorderCard = el("section", {
+			id: "speakingRecorderCard",
+			className: "card speaking-recorder-card",
+		});
+
+		if (speakingMediaError) {
+			recorderCard.appendChild(
+				el(
+					"div",
+					{
+						id: "speakingErrorBanner",
+						className: "form-error-banner",
+						role: "alert",
+					},
+					[speakingMediaError],
+				),
+			);
+		}
+
+		// Mode selector (Camera+Mic vs Audio-only) when idle
+		if (!isRecording && !hasValidBlob) {
+			const modeBar = el("div", { className: "speaking-mode-switch" }, [
+				el("span", { className: "mode-label" }, ["Chế độ ghi:"]),
+				el(
+					"button",
+					{
+						type: "button",
+						id: "speakingVideoModeBtn",
+						className: `btn btn-sm ${!speakingAudioOnly ? "btn-teal" : "btn-ghost"}`,
+					},
+					["Camera + Micro"],
+				),
+				el(
+					"button",
+					{
+						type: "button",
+						id: "speakingAudioModeBtn",
+						className: `btn btn-sm ${speakingAudioOnly ? "btn-teal" : "btn-ghost"}`,
+					},
+					["Chỉ ghi âm (Audio-only)"],
+				),
+			]);
+			modeBar
+				.querySelector("#speakingVideoModeBtn")
+				?.addEventListener("click", () => {
+					speakingAudioOnly = false;
+					speakingMediaError = "";
+					render();
+				});
+			modeBar
+				.querySelector("#speakingAudioModeBtn")
+				?.addEventListener("click", () => {
+					speakingAudioOnly = true;
+					speakingMediaError = "";
+					render();
+				});
+			recorderCard.appendChild(modeBar);
+		}
+
+		if (!hasMediaApi) {
+			recorderCard.appendChild(
+				el("div", { className: "provisional-notice-box" }, [
+					"Trình duyệt hoặc thiết bị hiện tại không hỗ trợ API ghi âm/ghi hình (MediaRecorder). Bạn có thể bấm ",
+					el("strong", {}, ["Bỏ qua phần Speaking"]),
+					" bên dưới để hoàn tất nộp bài ngay.",
+				]),
+			);
+		}
+
+		function applyTaskPhase(task) {
+			const prepSec = resolvePrepSeconds(task);
+			if (prepSec === 0) {
+				speakingPhase = "answer";
+				speakingPhaseSecondsLeft = Number(task?.answerSeconds) || 45;
+				return;
+			}
+			speakingPhase = "prep";
+			speakingPhaseSecondsLeft = prepSec;
+		}
+
+		if (isRecording) {
+			const activeTask = tasks[speakingTaskIndex] ?? tasks[0];
+			const elapsedSec = Math.max(
+				0,
+				Math.round((Date.now() - recStartedAt) / 1000),
+			);
+
+			const liveStage = el("div", {
+				id: "speakingPreviewStage",
+				className: "speaking-live-stage",
+			});
+
+			if (!speakingAudioOnly) {
+				const liveVideo = el("video", {
+					id: "speakingLiveVideo",
+					className: "speaking-video-box",
+					autoplay: true,
+					muted: true,
+					playsinline: true,
+				});
+				liveVideo.muted = true;
+				liveVideo.playsInline = true;
+				if (mediaStream) {
+					liveVideo.srcObject = mediaStream;
+					liveVideo.play?.().catch(() => {});
+				}
+				liveStage.appendChild(liveVideo);
+			} else {
+				liveStage.appendChild(
+					el("div", { className: "speaking-audio-only-box" }, [
+						el("span", { className: "rec-dot", "aria-hidden": "true" }),
+						"Đang thu âm bằng Micro (Audio-only)...",
+					]),
+				);
+			}
+
+			liveStage.appendChild(
+				el("div", { className: "speaking-rec-hud" }, [
+					el("span", { id: "speakingRecTimer", className: "rec-timer-pill" }, [
+						`● Đang ghi: ${formatClock(elapsedSec)}`,
+					]),
+					el(
+						"span",
+						{ className: "speaking-phase-pill", id: "speakingPhaseBadge" },
+						[
+							speakingPhase === "prep"
+								? `Chuẩn bị còn ${speakingPhaseSecondsLeft}s`
+								: `Đang trả lời (${speakingPhaseSecondsLeft}s)`,
+						],
+					),
+				]),
+			);
+
+			if (activeTask) {
+				liveStage.appendChild(
+					el(
+						"div",
+						{ id: "speakingActiveTask", className: "speaking-teleprompter" },
+						[
+							el("p", { className: "teleprompter-label" }, [
+								`Câu ${speakingTaskIndex + 1}/${tasks.length} · ${activeTask.partLabel || ""}`,
+							]),
+							el("p", {
+								className: "teleprompter-prompt",
+								textContent: activeTask.prompt,
+							}),
+						],
+					),
+				);
+			}
+
+			const recControls = el("div", { className: "speaking-actions-row" });
+			if (speakingPhase === "prep") {
+				const speakNowBtn = el(
+					"button",
+					{
+						type: "button",
+						className: "btn btn-teal",
+						id: "speakingSpeakNowBtn",
+					},
+					["Nói ngay →"],
+				);
+				speakNowBtn.addEventListener("click", () => {
+					speakingPhase = "answer";
+					speakingPhaseSecondsLeft = Number(activeTask?.answerSeconds) || 45;
+					render();
+				});
+				recControls.appendChild(speakNowBtn);
+			}
+			if (speakingTaskIndex < tasks.length - 1) {
+				const nextTaskBtn = el(
+					"button",
+					{
+						type: "button",
+						className: "btn btn-ghost",
+						id: "speakingNextTaskBtn",
+					},
+					["Câu tiếp theo →"],
+				);
+				nextTaskBtn.addEventListener("click", () => {
+					speakingTaskIndex += 1;
+					applyTaskPhase(tasks[speakingTaskIndex]);
+					render();
+				});
+				recControls.appendChild(nextTaskBtn);
+			}
+
+			const stopBtn = el(
+				"button",
+				{
+					type: "button",
+					id: "stopSpeakingBtn",
+					className: "btn btn-danger",
+				},
+				["■ Dừng ghi"],
+			);
+			stopBtn.addEventListener("click", () => {
+				if (mediaRecorder && mediaRecorder.state !== "inactive") {
+					mediaRecorder.stop();
+				}
+			});
+			recControls.appendChild(stopBtn);
+			liveStage.appendChild(recControls);
+			recorderCard.appendChild(liveStage);
+		} else if (hasValidBlob) {
+			const sizeMb = (recordedBlob.size / (1024 * 1024)).toFixed(2);
+			const isTooLarge = recordedBlob.size > SPEAKING_MAX_BYTES;
+			const isAudio =
+				speakingAudioOnly ||
+				String(recordedBlob.type ?? "")
+					.toLowerCase()
+					.startsWith("audio/");
+
+			const reviewBox = el("div", {
+				id: "speakingReviewBox",
+				className: "speaking-review-box",
+			});
+			reviewBox.appendChild(
+				el("div", { className: "speaking-review-meta" }, [
+					el("span", { className: "status-pill is-ok" }, [
+						"Đã ghi bài nói (sẵn sàng nộp)",
+					]),
+					el("span", {}, [
+						`Thời lượng: ${state.speakingDurationSec ?? 0}s · Dung lượng: ${sizeMb} MB / 50 MB`,
+					]),
+				]),
+			);
+
+			if (isTooLarge) {
+				reviewBox.appendChild(
+					el("p", { className: "form-error-banner", role: "alert" }, [
+						"Bản ghi vượt quá giới hạn 50 MB. Vui lòng bấm Ghi lại ngắn hơn hoặc chọn Bỏ qua phần Speaking.",
+					]),
+				);
+			}
+
+			if (recordedBlobUrl) {
+				if (isAudio) {
+					reviewBox.appendChild(
+						el("audio", {
+							id: "speakingPlaybackAudio",
+							className: "speaking-playback-audio",
+							controls: true,
+							src: recordedBlobUrl,
+						}),
+					);
+				} else {
+					reviewBox.appendChild(
+						el("video", {
+							id: "speakingPlaybackVideo",
+							className: "speaking-video-box",
+							controls: true,
+							playsinline: true,
+							src: recordedBlobUrl,
+						}),
+					);
+				}
+			}
+
+			const retakeBtn = el(
+				"button",
+				{
+					type: "button",
+					id: "retakeSpeakingBtn",
+					className: "btn btn-ghost",
+				},
+				["↺ Ghi lại"],
+			);
+			retakeBtn.addEventListener("click", () => {
+				revokeRecordedUrl();
+				recordedBlob = null;
+				recordedChunks = [];
+				state.speakingMode = "none";
+				state.speakingDurationSec = null;
+				speakingMediaError = "";
+				persist();
+				render();
+			});
+			reviewBox.appendChild(
+				el("div", { className: "speaking-actions-row" }, [retakeBtn]),
+			);
+			recorderCard.appendChild(reviewBox);
+		} else {
+			if (state.speakingMode === "skipped") {
+				recorderCard.appendChild(
+					el("div", { className: "speaking-skipped-box" }, [
+						el("span", { className: "status-pill is-muted" }, [
+							"Đã chọn bỏ qua phần Speaking",
+						]),
+						el("p", {}, [
+							"Bạn có thể bấm Nộp bài ngay bên dưới (chỉ chấm 4 kỹ năng đã làm), hoặc vẫn có thể bật mic/camera để ghi lại nếu đổi ý.",
+						]),
+					]),
+				);
+			}
+
+			const actionRow = el("div", { className: "speaking-actions-row" });
+			const startBtn = el(
+				"button",
+				{
+					type: "button",
+					id: "startSpeakingBtn",
+					className: "btn btn-teal",
+					disabled: !hasMediaApi,
+				},
+				[
+					speakingAudioOnly
+						? "🎙️ Bắt đầu ghi âm (Audio-only)"
+						: "🎥 Bắt đầu ghi hình & thu âm",
+				],
+			);
+
+			startBtn.addEventListener("click", async () => {
+				if (!hasMediaApi || isRecording) return;
+				speakingMediaError = "";
+				unansweredConfirmState = null;
+
+				try {
+					const constraints = speakingAudioOnly
+						? { audio: true, video: false }
+						: {
+								video: { width: { ideal: 640 }, height: { ideal: 480 } },
+								audio: true,
+							};
+					mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+					const preferredMime = pickSupportedRecorderMime(speakingAudioOnly);
+					mediaRecorder = preferredMime
+						? new window.MediaRecorder(mediaStream, {
+								mimeType: preferredMime,
+							})
+						: new window.MediaRecorder(mediaStream);
+
+					recordedChunks = [];
+					mediaRecorder.addEventListener("dataavailable", (evt) => {
+						if (evt.data && evt.data.size > 0) {
+							recordedChunks.push(evt.data);
+						}
+					});
+
+					mediaRecorder.addEventListener("stop", () => {
+						const finalDuration = Math.max(
+							1,
+							Math.round((Date.now() - recStartedAt) / 1000),
+						);
+						const finalMime =
+							mediaRecorder?.mimeType ||
+							preferredMime ||
+							(speakingAudioOnly ? "audio/webm" : "video/webm");
+
+						stopSpeakingIntervals();
+						stopMediaStream();
+						isRecording = false;
+						speakingPhase = "idle";
+
+						const blob = new Blob(recordedChunks, { type: finalMime });
+						if (blob.size > 0) {
+							revokeRecordedUrl();
+							recordedBlob = blob;
+							recordedBlobUrl = URL.createObjectURL(blob);
+							state.speakingMode = "upload";
+							state.speakingDurationSec = finalDuration;
+						} else {
+							speakingMediaError =
+								"Không thu được dữ liệu âm thanh/video. Vui lòng thử ghi lại hoặc chọn Bỏ qua.";
+						}
+						persist();
+						render();
+					});
+
+					recStartedAt = Date.now();
+					isRecording = true;
+					speakingTaskIndex = 0;
+					applyTaskPhase(tasks[0]);
+					mediaRecorder.start(1000);
+
+					stopSpeakingIntervals();
+					recTickInterval = setInterval(() => {
+						const timerEl = document.getElementById("speakingRecTimer");
+						if (timerEl) {
+							const secs = Math.max(
+								0,
+								Math.round((Date.now() - recStartedAt) / 1000),
+							);
+							timerEl.textContent = `● Đang ghi: ${formatClock(secs)}`;
+						}
+					}, 500);
+
+					speakingPhaseInterval = setInterval(() => {
+						if (speakingPhaseSecondsLeft > 1) {
+							speakingPhaseSecondsLeft -= 1;
+							const badge = document.getElementById("speakingPhaseBadge");
+							if (badge) {
+								badge.textContent =
+									speakingPhase === "prep"
+										? `Chuẩn bị còn ${speakingPhaseSecondsLeft}s`
+										: `Đang trả lời (${speakingPhaseSecondsLeft}s)`;
+							}
+							return;
+						}
+
+						const curTask = tasks[speakingTaskIndex];
+						if (speakingPhase === "prep") {
+							speakingPhase = "answer";
+							speakingPhaseSecondsLeft = Number(curTask?.answerSeconds) || 45;
+							render();
+						} else if (speakingTaskIndex < tasks.length - 1) {
+							speakingTaskIndex += 1;
+							applyTaskPhase(tasks[speakingTaskIndex]);
+							render();
+						} else {
+							const badge = document.getElementById("speakingPhaseBadge");
+							if (badge) {
+								badge.textContent =
+									"Đã hết thời gian gợi ý — bấm Dừng ghi khi xong";
+							}
+						}
+					}, 1000);
+
+					render();
+				} catch {
+					stopMediaStream();
+					isRecording = false;
+					speakingMediaError = speakingAudioOnly
+						? "Không thể truy cập Micro (thiếu quyền hoặc không có micro). Bạn có thể cấp quyền lại hoặc chọn Bỏ qua phần Speaking."
+						: "Không thể truy cập Camera/Micro. Hãy thử chuyển sang chế độ Chỉ ghi âm (Audio-only) hoặc chọn Bỏ qua phần Speaking.";
+					render();
+				}
+			});
+
+			const skipBtn = el(
+				"button",
+				{
+					type: "button",
+					id: "skipSpeakingBtn",
+					className: "btn btn-ghost",
+				},
+				["Bỏ qua phần Speaking (nộp bài không kèm ghi âm)"],
+			);
+			skipBtn.addEventListener("click", () => {
+				revokeRecordedUrl();
+				recordedBlob = null;
+				recordedChunks = [];
+				state.speakingMode = "skipped";
+				state.speakingDurationSec = null;
+				speakingMediaError = "";
+				unansweredConfirmState = null;
+				persist();
+				render();
+			});
+
+			actionRow.appendChild(startBtn);
+			actionRow.appendChild(skipBtn);
+			recorderCard.appendChild(actionRow);
+		}
+
+		wrapper.appendChild(recorderCard);
+
+		if (submitError) {
+			wrapper.appendChild(
+				el(
+					"div",
+					{
+						id: "submitErrorBanner",
+						className: "form-error-banner",
+						role: "alert",
+					},
+					[submitError],
+				),
+			);
+		}
+
+		if (unansweredConfirmState) {
+			const reminders = [];
+			if (unansweredConfirmState.unansweredObjective > 0) {
+				reminders.push(
+					`còn ${unansweredConfirmState.unansweredObjective} câu khách quan chưa trả lời`,
+				);
+			}
+			if (unansweredConfirmState.writingEmpty) {
+				reminders.push("phần Writing đang để trống");
+			}
+			if (unansweredConfirmState.speakingUnrecorded) {
+				reminders.push("phần Speaking chưa ghi âm/ghi hình");
+			}
+
+			const confirmBox = el(
+				"div",
+				{
+					id: "unansweredConfirmBox",
+					className: "confirm-submit-box",
+					role: "alertdialog",
+					"aria-labelledby": "confirmTitle",
+				},
+				[
+					el("strong", { id: "confirmTitle" }, [
+						"Một số phần vẫn đang bỏ trống",
+					]),
+					el("p", {}, [
+						`Hiện tại bài làm của bạn ${reminders.join(", ")}. Bạn vẫn muốn nộp bài ngay chứ?`,
+					]),
+					el("div", { className: "confirm-actions" }, [
+						el(
+							"button",
+							{
+								type: "button",
+								id: "cancelSubmitBtn",
+								className: "btn btn-ghost",
+							},
+							["Quay lại kiểm tra"],
+						),
+						el(
+							"button",
+							{
+								type: "button",
+								id: "confirmSubmitBtn",
+								className: "btn btn-primary",
+								disabled: isSubmitting,
+							},
+							[isSubmitting ? "Đang nộp bài..." : "Vẫn nộp bài ngay"],
+						),
+					]),
+				],
+			);
+
+			confirmBox
+				.querySelector("#cancelSubmitBtn")
+				?.addEventListener("click", () => {
+					unansweredConfirmState = null;
+					render();
+				});
+			confirmBox
+				.querySelector("#confirmSubmitBtn")
+				?.addEventListener("click", () => {
+					void executeSubmission(unansweredConfirmState.resolvedSpeakingMode);
+				});
+			wrapper.appendChild(confirmBox);
+		}
+
+		const navBar = el("div", { className: "step-nav-bar" }, [
+			el(
+				"button",
+				{
+					type: "button",
+					className: "btn btn-ghost",
+					id: "prevToWritingBtn",
+				},
+				["← Quay lại Writing"],
+			),
+			el(
+				"button",
+				{
+					type: "button",
+					id: "submitTestBtn",
+					className: "btn btn-primary btn-lg",
+					disabled: isSubmitting || isRecording,
+				},
+				[isSubmitting ? "Đang nộp bài..." : "Hoàn thành & Nộp bài 5 kỹ năng"],
+			),
+		]);
+		navBar
+			.querySelector("#prevToWritingBtn")
+			?.addEventListener("click", () => navigateToStep("writing"));
+		navBar
+			.querySelector("#submitTestBtn")
+			?.addEventListener("click", handleRequestSubmit);
+		wrapper.appendChild(navBar);
+
+		return wrapper;
+	}
+
+	function renderResultStep() {
+		const submission = state.submission;
+		const objective =
+			submission?.objective ?? scoreObjectiveTest(snapshot, state.answers);
+		const summaryText =
+			objective.provisionalSummary || buildProvisionalSummary(objective);
+		const writingWordCount =
+			submission?.writingWordCount ?? countWords(state.writingText);
+		const speakingStatus = submission?.speakingStatus ?? "skipped";
+
+		const resultCard = el("section", {
+			id: "testResultCard",
+			className: "card result-card",
+		});
+
+		resultCard.appendChild(
+			el(
+				"span",
+				{
+					className: "provisional-badge",
+					dataset: { testid: "provisional-badge" },
+				},
+				["Kết quả tạm tính — Chờ chấm Writing & Speaking"],
 			),
 		);
-		const confirmActions = createEl("div", "header-actions");
-		const confirmYes = createEl(
-			"button",
-			"btn btn-primary btn-sm",
-			"Vẫn Nộp Bài Ngay",
-		);
-		confirmYes.type = "button";
-		confirmYes.id = "confirmSubmitBtn";
-		confirmYes.addEventListener("click", finalizeSubmission);
 
-		const confirmCancel = createEl(
-			"button",
-			"btn btn-outline btn-sm",
-			"Quay Lại Làm Tiếp",
-		);
-		confirmCancel.type = "button";
-		confirmCancel.id = "cancelSubmitBtn";
-		confirmCancel.addEventListener("click", () =>
-			confirmHost.replaceChildren(),
+		resultCard.appendChild(
+			el("h1", { className: "display-title" }, [
+				"Kết quả tạm tính — Chờ chấm Writing & Speaking",
+			]),
 		);
 
-		confirmActions.append(confirmYes, confirmCancel);
-		confirmBox.appendChild(confirmActions);
-		confirmHost.appendChild(confirmBox);
-	});
+		resultCard.appendChild(
+			el("div", { className: "teacher-grading-callout" }, [
+				el("strong", {}, ["Thông báo chấm bài chính thức: "]),
+				"Cô Đỗ Thục Mỹ sẽ trực tiếp chấm phần Writing & Speaking và gửi kết quả xếp lớp CEFR chính thức kèm lộ trình chi tiết qua Zalo.",
+			]),
+		);
 
-	actions.append(backBtn, submitBtn);
-	card.appendChild(actions);
-	root.appendChild(card);
-}
+		// Objective headline score card (NO final official CEFR label claimed!)
+		resultCard.appendChild(
+			el("div", { className: "provisional-hero-grid" }, [
+				el("div", { className: "provisional-score-box" }, [
+					el("span", { className: "score-label" }, [
+						"Trung bình 3 phần khách quan",
+					]),
+					el(
+						"strong",
+						{
+							className: "score-big",
+							dataset: { testid: "objective-average-pct" },
+						},
+						[`${objective.averagePct}%`],
+					),
+					el("span", { className: "score-sub" }, [
+						`Đúng ${objective.totalCorrect}/${objective.totalQuestions} câu (chưa bao gồm Writing & Speaking)`,
+					]),
+				]),
+				el("div", { className: "provisional-score-box is-pending" }, [
+					el("span", { className: "score-label" }, ["Xếp lớp CEFR chính thức"]),
+					el("strong", { className: "score-pending-title" }, [
+						"Đang chờ chấm Writing & Speaking",
+					]),
+					el("span", { className: "score-sub" }, [
+						"Sau khi chấm đủ kỹ năng nói & viết, cô Mỹ sẽ chốt mức lớp phù hợp nhất.",
+					]),
+				]),
+			]),
+		);
 
-function renderResultStep(root, test, state, rerender) {
-	const result = gradeAttempt(test, state.answers);
-	state.result = result;
-	saveAttempt(state);
-	if (state.lead?.registered) {
-		syncHomepageLeadDraft(state.lead);
-	}
-	const summaryText = buildPlacementSummary(result);
-	const courseCode = result.band.course;
-	const courseLabel = result.band.courseLabel || courseCode;
+		// 3 Objective skills + Writing + Speaking status cards
+		const listeningPct =
+			objective.listening.pct === null ? "—" : `${objective.listening.pct}%`;
+		const vgPct =
+			objective.vocabGrammar.pct === null
+				? "—"
+				: `${objective.vocabGrammar.pct}%`;
+		const readingPct =
+			objective.reading.pct === null ? "—" : `${objective.reading.pct}%`;
 
-	if (state.lead?.registered && state.lead.syncedPlacement !== summaryText) {
-		const reqGen = ++leadRequestGeneration;
-		const leadSnapshot = { ...state.lead };
-		const payload = buildLeadPayload({
-			lead: leadSnapshot,
-			placement: summaryText,
-			elapsedMs: Math.max(3500, Date.now() - pageLoadedAt),
-		});
-		const apiBase = getLeadApiBase();
-		fetch(`${apiBase}/public/leads`, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(payload),
-			keepalive: true,
-		})
-			.then(async (res) => {
-				if (res.status !== 200 && res.status !== 201) return;
-				let body = null;
-				try {
-					body = await res.json();
-				} catch {
-					body = null;
-				}
-				if (
-					typeof body?.submitCount === "number" &&
-					reqGen === leadRequestGeneration &&
-					state.lead &&
-					state.lead.phone === leadSnapshot.phone
-				) {
-					state.lead.syncedPlacement = summaryText;
-					saveAttempt(state);
-				}
-			})
-			.catch(() => {
-				// Best-effort sync; retry on next renderResultStep if failed
+		let speakingLabel = "Đã bỏ qua phần Speaking";
+		let speakingBadgeClass = "is-muted";
+		if (speakingStatus === "uploaded") {
+			speakingLabel = "Đã gửi file ghi âm/ghi hình · Chờ cô chấm";
+			speakingBadgeClass = "is-ok";
+		} else if (speakingStatus === "pending_upload") {
+			speakingLabel = "Bài đã nộp, file Speaking chưa tải lên được";
+			speakingBadgeClass = "is-warn";
+		}
+
+		resultCard.appendChild(
+			el("div", { className: "result-skills-grid" }, [
+				el(
+					"div",
+					{
+						className: "skill-score-tile",
+						dataset: { skillResult: "listening" },
+					},
+					[
+						el("span", { className: "tile-label" }, ["1. Listening"]),
+						el("strong", { className: "tile-value" }, [
+							`${objective.listening.correct}/${objective.listening.total} (${listeningPct})`,
+						]),
+					],
+				),
+				el(
+					"div",
+					{
+						className: "skill-score-tile",
+						dataset: { skillResult: "vocab-grammar" },
+					},
+					[
+						el("span", { className: "tile-label" }, [
+							"2. Grammar & Vocabulary",
+						]),
+						el("strong", { className: "tile-value" }, [
+							`${objective.vocabGrammar.correct}/${objective.vocabGrammar.total} (${vgPct})`,
+						]),
+					],
+				),
+				el(
+					"div",
+					{
+						className: "skill-score-tile",
+						dataset: { skillResult: "reading" },
+					},
+					[
+						el("span", { className: "tile-label" }, ["3. Reading"]),
+						el("strong", { className: "tile-value" }, [
+							`${objective.reading.correct}/${objective.reading.total} (${readingPct})`,
+						]),
+					],
+				),
+				el(
+					"div",
+					{
+						className: "skill-score-tile",
+						dataset: { skillResult: "writing" },
+					},
+					[
+						el("span", { className: "tile-label" }, ["4. Writing"]),
+						el("strong", { className: "tile-value-sm" }, [
+							writingWordCount > 0
+								? `${writingWordCount} từ · Chờ cô chấm`
+								: "Chưa viết nội dung",
+						]),
+					],
+				),
+				el(
+					"div",
+					{
+						className: "skill-score-tile",
+						dataset: { skillResult: "speaking" },
+					},
+					[
+						el("span", { className: "tile-label" }, ["5. Speaking"]),
+						el("strong", { className: `tile-value-sm ${speakingBadgeClass}` }, [
+							speakingLabel,
+						]),
+					],
+				),
+			]),
+		);
+
+		// Retry Speaking Media Upload box if upload failed
+		if (speakingStatus === "pending_upload") {
+			const retryBox = el("div", {
+				id: "speakingUploadRetryBox",
+				className: "speaking-retry-box",
+				role: "alert",
 			});
-	}
-
-	const card = createEl("section", "result-card");
-	card.id = "testResultCard";
-	card.appendChild(
-		createEl("span", "kicker-pill", "Hoàn Thành Bài Kiểm Tra Đầu Vào"),
-	);
-	card.appendChild(
-		createEl("h1", "", "Kết Quả Đánh Giá Trình Độ & Lộ Trình Gợi Ý"),
-	);
-	card.appendChild(createEl("p", "muted-copy", summaryText));
-	const identityBar = createLeadIdentityBar(test, state, rerender);
-	if (identityBar) {
-		card.appendChild(identityBar);
-	}
-	const hero = createEl("div", "result-hero");
-	hero.appendChild(
-		createEl("h2", "", `Trình độ CEFR ước tính: ${result.band.cefr}`),
-	);
-	hero.appendChild(
-		createEl(
-			"p",
-			"",
-			"Đáp án chi tiết được bảo mật để cô Thục Mỹ trực tiếp phân tích lỗ hổng tư duy và chữa bài 1-1 cùng bạn.",
-		),
-	);
-
-	const scoreGrid = createEl("div", "score-grid");
-	const items = [
-		{
-			label: "Tổng điểm bài test",
-			value: `${result.totalScore}/${result.maxScore}`,
-			id: "totalScoreValue",
-		},
-		{
-			label: "Phần 1: Vocab + Grammar",
-			value: `${result.vocabGrammar.score}/${result.vocabGrammar.total}`,
-			id: "vgScoreValue",
-		},
-		{
-			label: "Phần 2: Listening",
-			value: `${result.listening.score}/${result.listening.total}`,
-			id: "listeningScoreValue",
-		},
-		{
-			label: "Mức CEFR ước tính",
-			value: result.band.cefr,
-			id: "cefrBandValue",
-		},
-	];
-	for (const item of items) {
-		const box = createEl("div", "score-box");
-		box.appendChild(createEl("span", "", item.label));
-		const strong = createEl("strong", "", item.value);
-		strong.id = item.id;
-		box.appendChild(strong);
-		scoreGrid.appendChild(box);
-	}
-	hero.appendChild(scoreGrid);
-	card.appendChild(hero);
-
-	const recBox = createEl("div", "recommendation-box");
-	recBox.appendChild(
-		createEl("h3", "", `Khóa học gợi ý tham khảo: ${courseLabel}`),
-	);
-	recBox.appendChild(
-		createEl(
-			"p",
-			"",
-			"Khi bấm nút đăng ký bên dưới, điểm kiểm tra đầu vào và khóa học gợi ý sẽ được điền sẵn vào biểu mẫu tư vấn. Bạn hoàn toàn có thể đổi sang khóa Tiếng Anh Giao Tiếp / Công Sở hoặc khóa học khác ngay trên biểu mẫu.",
-		),
-	);
-	recBox.appendChild(
-		createEl(
-			"p",
-			"recommendation-note",
-			"🎁 Quyền lợi kèm theo: Bạn được tặng thêm 01 buổi Khám Bệnh Tiếng Anh 1-1 (30 phút qua Google Meet) trực tiếp cùng cô Thục Mỹ để kiểm tra kỹ năng Nói (Speaking) và chốt lộ trình cá nhân hóa.",
-		),
-	);
-	card.appendChild(recBox);
-
-	const cefrExplorer = createCefrExplorer(result.band.cefr);
-	card.appendChild(cefrExplorer);
-
-	const actions = createEl("div", "btn-row");
-	const registerParams = new URLSearchParams({
-		ketqua: summaryText,
-		khoa: courseCode,
-	});
-	const registerLink = createEl(
-		"a",
-		"btn btn-gold",
-		"🎓 Đăng Ký Theo Kết Quả Này",
-	);
-	registerLink.id = "registerWithResultBtn";
-	registerLink.href = `../?${registerParams.toString()}#dang-ky-tu-van`;
-
-	const zaloLink = createEl(
-		"a",
-		"btn btn-primary",
-		"💬 Nhắn Kết Quả Qua Zalo Cô Mỹ: 0929.060.994",
-	);
-	zaloLink.href = ZALO_URL;
-	zaloLink.target = "_blank";
-	zaloLink.rel = "noopener";
-
-	const retryBtn = createEl("button", "btn btn-outline", "🔄 Làm Lại");
-	retryBtn.type = "button";
-	retryBtn.id = "retryTestBtn";
-	retryBtn.addEventListener("click", () => {
-		const fresh = clearAttempt(test, {
-			keepLead: true,
-			currentLead: state.lead,
-		});
-		state.step = fresh.step;
-		state.answers = fresh.answers;
-		state.plays = fresh.plays;
-		state.result = fresh.result;
-		state.lead = fresh.lead;
-		rerender("intro");
-	});
-
-	actions.append(registerLink, zaloLink, retryBtn);
-	card.appendChild(actions);
-	root.appendChild(card);
-}
-
-async function init() {
-	const root = document.getElementById("appRoot");
-	if (!root) return;
-	try {
-		const apiBase = getLeadApiBase();
-		const res = await fetch(`${apiBase}/public/placement-test`, {
-			cache: "no-cache",
-		});
-		if (!res.ok) {
-			throw new Error(`HTTP ${res.status}`);
-		}
-		const test = await res.json();
-		if (
-			!test ||
-			!Array.isArray(test.parts) ||
-			!Array.isArray(test.bands) ||
-			flattenQuestions(test).length === 0
-		) {
-			throw new Error("Invalid schema");
-		}
-		const state = loadSavedAttempt(test);
-		renderApp(root, test, state);
-	} catch {
-		renderMaintenance(root);
-	}
-}
-
-if (typeof window !== "undefined" && typeof document !== "undefined") {
-	init();
-}
-
-const CEFR_EXPLORER_DATA = {
-	a1: {
-		code: "A1 – A2",
-		name: "Giai đoạn Xây nền Bản chất (Foundation)",
-		band: "0.0 → 4.0+",
-		bandSub: "Chuẩn hóa gốc ngữ pháp & phát âm",
-		hours: "150 – 250 Giờ",
-		vocab: "Tích lũy 1.500 – 2.500 từ vựng cốt lõi",
-		outcome:
-			"Nắm vững 8 Từ loại chức năng, chuẩn hóa 44 âm IPA & âm lướt Schwa /ə/, tự viết chuẩn xác câu đơn và câu ghép.",
-	},
-	b1: {
-		code: "CEFR B1",
-		name: "Giai đoạn Bước đệm Học thuật (Pre-IELTS)",
-		band: "4.5 → 5.0+",
-		bandSub: "Phát triển phản xạ & đọc hiểu câu dài",
-		hours: "350 – 400 Giờ",
-		vocab: "Tích lũy 3.000 – 3.500 từ & Collocations",
-		outcome:
-			"Làm chủ kỹ thuật đọc bắt Danh từ chính (Head-Noun), nghe bắt từ khóa MHKL 30p/ngày và phản xạ Speaking 3 nhịp A.R.E tự nhiên.",
-	},
-	b2: {
-		code: "CEFR B2",
-		name: "Giai đoạn Tăng tốc Thực chiến (IELTS Intensive)",
-		band: "5.5 → 6.5",
-		bandSub: "Làm chủ 4 kỹ năng học thuật chuẩn Giám khảo",
-		hours: "500 – 600 Giờ",
-		vocab: "Tích lũy 4.500+ Collocations học thuật",
-		outcome:
-			"Thành thạo Process Writing 5 bước (Task 1 & 2), xử lý trọn bộ đề Forecast Speaking theo Quý và nâng cấp cấu trúc câu học thuật.",
-	},
-	c1: {
-		code: "CEFR C1",
-		name: "Giai đoạn Bứt phá Toàn diện (Advanced Mastery)",
-		band: "7.0 → 8.0+",
-		bandSub: "Tư duy phản biện & bản ngữ hóa ngôn ngữ",
-		hours: "750 – 900+ Giờ",
-		vocab: "Tích lũy 7.000+ từ vựng & Idiomatic expressions",
-		outcome:
-			"Làm chủ Stylistic Writing, kiểm soát ngữ điệu và phát âm tự nhiên (Connected Speech), phản xạ tranh luận sắc bén.",
-	},
-};
-
-function createCefrExplorer(currentCefr) {
-	const box = createEl("div", "cefr-interactive-box");
-	box.id = "cefrExplorerBox";
-	box.appendChild(
-		createEl(
-			"h3",
-			"",
-			"📊 Bảng Định Lượng Giờ Học & Quy Đổi Trình Độ CEFR (0 → 7.5+ IELTS)",
-		),
-	);
-	box.appendChild(
-		createEl(
-			"p",
-			"muted-copy",
-			"Chọn từng cấp độ để xem mục tiêu band, thời lượng giờ học ước tính và năng lực đầu ra tương ứng.",
-		),
-	);
-
-	let activeKey = "a1";
-	if (currentCefr) {
-		const norm = currentCefr.toLowerCase();
-		if (norm.includes("b1")) activeKey = "b1";
-		else if (norm.includes("b2")) activeKey = "b2";
-		else if (norm.includes("c1") || norm.includes("c2")) activeKey = "c1";
-		else if (norm.includes("a1") || norm.includes("a2")) activeKey = "a1";
-	}
-
-	const selectorRow = createEl("div", "cefr-selector-row");
-	selectorRow.setAttribute("role", "tablist");
-	selectorRow.setAttribute("aria-label", "Chọn cấp độ CEFR");
-
-	const detailPanel = createEl("div", "cefr-detail-panel");
-	detailPanel.id = "cefrDetailPanel";
-	detailPanel.setAttribute("aria-live", "polite");
-
-	const cell1 = createEl("div", "cefr-stat-cell");
-	cell1.appendChild(createEl("span", "cefr-stat-label", "Khung Tham Chiếu"));
-	const valCode = createEl("span", "cefr-stat-value", "");
-	valCode.id = "cefrCode";
-	const subName = createEl("span", "cefr-stat-sub", "");
-	subName.id = "cefrName";
-	cell1.append(valCode, subName);
-
-	const cell2 = createEl("div", "cefr-stat-cell");
-	cell2.appendChild(createEl("span", "cefr-stat-label", "Mục Tiêu Band IELTS"));
-	const valBand = createEl("span", "cefr-stat-value", "");
-	valBand.id = "cefrBand";
-	const subBand = createEl("span", "cefr-stat-sub", "");
-	subBand.id = "cefrBandSub";
-	cell2.append(valBand, subBand);
-
-	const cell3 = createEl("div", "cefr-stat-cell");
-	cell3.appendChild(createEl("span", "cefr-stat-label", "Định Lượng Giờ Học"));
-	const valHours = createEl("span", "cefr-stat-value", "");
-	valHours.id = "cefrHours";
-	const subVocab = createEl("span", "cefr-stat-sub", "");
-	subVocab.id = "cefrVocab";
-	cell3.append(valHours, subVocab);
-
-	const cell4 = createEl("div", "cefr-stat-cell");
-	cell4.appendChild(createEl("span", "cefr-stat-label", "Năng Lực Đầu Ra"));
-	const subOutcome = createEl("span", "cefr-stat-sub", "");
-	subOutcome.id = "cefrOutcome";
-	subOutcome.style.fontWeight = "600";
-	cell4.appendChild(subOutcome);
-
-	detailPanel.append(cell1, cell2, cell3, cell4);
-
-	function updatePanel(key) {
-		const d = CEFR_EXPLORER_DATA[key];
-		if (!d) return;
-		valCode.textContent = d.code;
-		subName.textContent = d.name;
-		valBand.textContent = d.band;
-		subBand.textContent = d.bandSub;
-		valHours.textContent = d.hours;
-		subVocab.textContent = d.vocab;
-		subOutcome.textContent = d.outcome;
-		selectorRow.querySelectorAll(".cefr-tab-btn").forEach((btn) => {
-			btn.setAttribute(
-				"aria-selected",
-				String(btn.getAttribute("data-cefr-btn") === key),
+			retryBox.appendChild(
+				el("strong", {}, ["File Speaking chưa tải lên hoàn tất"]),
 			);
+			retryBox.appendChild(
+				el("p", {}, [
+					speakingUploadError ||
+						"Bài làm 4 kỹ năng còn lại đã được lưu an toàn. Bạn có thể thử tải lại bản ghi Speaking ngay bây giờ.",
+				]),
+			);
+			const canRetryUpload = Boolean(
+				recordedBlob && submission?.submissionId && submission?.uploadToken,
+			);
+			if (canRetryUpload) {
+				const retryUploadBtn = el(
+					"button",
+					{
+						type: "button",
+						id: "retrySpeakingUploadBtn",
+						className: "btn btn-teal",
+						disabled: isUploadingSpeaking,
+					},
+					[
+						isUploadingSpeaking
+							? "Đang tải lại..."
+							: "Thử tải lại video/audio Speaking",
+					],
+				);
+				retryUploadBtn.addEventListener("click", async () => {
+					if (isUploadingSpeaking) return;
+					isUploadingSpeaking = true;
+					speakingUploadError = "";
+					render();
+					try {
+						await uploadSpeakingMedia(
+							submission.submissionId,
+							submission.uploadToken,
+							recordedBlob,
+							state.speakingDurationSec ?? 0,
+						);
+						state.submission.speakingStatus = "uploaded";
+						state.submission.uploadToken = null;
+						persist();
+					} catch (err) {
+						speakingUploadError =
+							err instanceof Error
+								? err.message
+								: "Thử tải lại chưa thành công. Vui lòng thử lại hoặc nhắn Zalo cô Mỹ.";
+					} finally {
+						isUploadingSpeaking = false;
+						render();
+					}
+				});
+				retryBox.appendChild(retryUploadBtn);
+			} else {
+				retryBox.appendChild(
+					el("p", { className: "muted-copy" }, [
+						"Bản ghi tạm trên trình duyệt không còn khả dụng sau khi tải lại trang. Vui lòng nhắn Zalo cô Mỹ để được hỗ trợ hẹn lịch Speaking ngắn.",
+					]),
+				);
+			}
+			resultCard.appendChild(retryBox);
+		}
+
+		// Breakdown by CEFR level
+		if (Array.isArray(objective.byLevel) && objective.byLevel.length > 0) {
+			const sortedLevels = [...objective.byLevel].sort((a, b) => {
+				const ia = CEFR_ORDER.indexOf(a.level);
+				const ib = CEFR_ORDER.indexOf(b.level);
+				return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+			});
+
+			resultCard.appendChild(
+				el("div", { className: "level-breakdown-section" }, [
+					el("h2", { className: "subsection-title" }, [
+						"Phân tích theo từng cấp độ câu hỏi",
+					]),
+					el(
+						"div",
+						{ className: "level-bars-grid" },
+						sortedLevels.map((item) =>
+							el("div", { className: "level-bar-card" }, [
+								el("div", { className: "level-bar-head" }, [
+									el("strong", { textContent: item.level }),
+									el("span", {
+										textContent: `${item.correct}/${item.total} (${item.pct}%)`,
+									}),
+								]),
+								el("div", { className: "level-bar-track" }, [
+									el("div", {
+										className: "level-bar-fill",
+										style: `width: ${Math.max(0, Math.min(100, item.pct))}%`,
+									}),
+								]),
+							]),
+						),
+					),
+				]),
+			);
+		}
+
+		// CTAs: Zalo + #registerWithResultBtn + Retry
+		const params = new URLSearchParams({
+			ketqua: summaryText,
+			khoa: objective.provisionalBand?.course || state.lead.course || "",
 		});
+		const consultHref = `../?${params.toString()}#dang-ky-tu-van`;
+
+		const registerBtn = el(
+			"button",
+			{
+				type: "button",
+				id: "registerWithResultBtn",
+				className: "btn btn-primary btn-lg",
+				disabled: consultSaving,
+			},
+			[
+				consultSaving
+					? "Đang lưu yêu cầu tư vấn..."
+					: "Đăng ký tư vấn lộ trình kèm kết quả tạm tính",
+			],
+		);
+
+		registerBtn.addEventListener("click", async () => {
+			if (consultSaving) return;
+			consultSaving = true;
+			consultSavedMessage = "";
+			render();
+
+			saveLeadDraft(
+				state.lead,
+				summaryText,
+				objective.provisionalBand?.course || state.lead.course,
+			);
+
+			try {
+				const payload = buildLeadPayload({
+					lead: {
+						...state.lead,
+						course:
+							state.lead.course || objective.provisionalBand?.course || "",
+					},
+					placement: summaryText,
+					elapsedMs: Date.now() - pageOpenedAt,
+				});
+				const res = await fetch(`${apiBase}/public/leads`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						Accept: "application/json",
+					},
+					body: JSON.stringify(payload),
+				});
+				if (res.ok) {
+					consultSavedMessage = `Đã lưu yêu cầu tư vấn kèm kết quả tạm tính cho SĐT ${state.lead.phone}. Cô Đỗ Thục Mỹ sẽ chấm Writing & Speaking và gửi lộ trình chi tiết qua Zalo!`;
+				} else {
+					consultSavedMessage =
+						"Thông tin kết quả tạm tính đã được lưu sẵn. Bạn có thể bấm nhắn Zalo hoặc mở biểu mẫu trang chủ bên dưới để gửi thêm ghi chú.";
+				}
+			} catch {
+				consultSavedMessage =
+					"Thông tin kết quả tạm tính đã được lưu tạm trên máy. Bạn có thể bấm nhắn Zalo cô Mỹ hoặc mở biểu mẫu trang chủ bên dưới.";
+			} finally {
+				consultSaving = false;
+				render();
+			}
+		});
+
+		const ctaRow = el("div", { className: "result-cta-row" }, [
+			el(
+				"a",
+				{
+					id: "zaloResultCta",
+					href: ZALO_URL,
+					target: "_blank",
+					rel: "noopener noreferrer",
+					className: "btn btn-teal btn-lg",
+				},
+				["Nhắn Zalo cô Đỗ Thục Mỹ (0929 060 994)"],
+			),
+			registerBtn,
+			el(
+				"button",
+				{
+					type: "button",
+					id: "retryTestBtn",
+					className: "btn btn-ghost",
+				},
+				["Làm lại bài mới"],
+			),
+		]);
+
+		ctaRow.querySelector("#retryTestBtn")?.addEventListener("click", () => {
+			stopActiveAudio();
+			stopMediaStream();
+			stopSpeakingIntervals();
+			stopPageTimer();
+			revokeRecordedUrl();
+			recordedBlob = null;
+			recordedChunks = [];
+			speakingUploadError = "";
+			speakingMediaError = "";
+			consultSavedMessage = "";
+			const preservedLead = { ...state.lead };
+			state = createInitialState();
+			state.lead = preservedLead;
+			persist();
+			render();
+			window.scrollTo({ top: 0, behavior: "smooth" });
+		});
+
+		resultCard.appendChild(ctaRow);
+
+		if (consultSavedMessage) {
+			resultCard.appendChild(
+				el(
+					"div",
+					{
+						id: "registerConsultFeedback",
+						className: "consult-feedback-box",
+						role: "status",
+					},
+					[
+						el("p", { textContent: consultSavedMessage }),
+						el(
+							"a",
+							{
+								id: "openHomepageConsultLink",
+								href: consultHref,
+								className: "link-inline-btn",
+							},
+							["Mở biểu mẫu tư vấn chi tiết trên trang chủ →"],
+						),
+					],
+				),
+			);
+		}
+
+		// CEFR Reference Explorer
+		resultCard.appendChild(createCefrExplorer(snapshot?.bands));
+
+		return resultCard;
 	}
 
-	const tabKeys = [
-		{ key: "a1", label: "A1 – A2 (Mất gốc → 4.0+)" },
-		{ key: "b1", label: "B1 (Pre-IELTS → 4.5–5.0+)" },
-		{ key: "b2", label: "B2 (Intensive → 5.5–6.5)" },
-		{ key: "c1", label: "C1 (Advanced → 7.0–7.5+)" },
-	];
-
-	for (const tab of tabKeys) {
-		const btn = createEl("button", "cefr-tab-btn", tab.label);
-		btn.type = "button";
-		btn.setAttribute("role", "tab");
-		btn.setAttribute("data-cefr-btn", tab.key);
-		btn.setAttribute("aria-selected", String(tab.key === activeKey));
-		btn.addEventListener("click", () => updatePanel(tab.key));
-		selectorRow.appendChild(btn);
+	function renderLoadError(message) {
+		appRoot.replaceChildren(
+			el("section", { className: "card error-card", role: "alert" }, [
+				el("p", { className: "kicker-pill" }, ["Không thể tải đề kiểm tra"]),
+				el("h1", { className: "section-title" }, [
+					"Hệ thống tạm thời chưa tải được đề",
+				]),
+				el("p", { className: "muted-copy", textContent: message }),
+				el("div", { className: "intro-actions" }, [
+					el(
+						"button",
+						{
+							type: "button",
+							id: "reloadTestBtn",
+							className: "btn btn-primary",
+						},
+						["Thử tải lại đề"],
+					),
+					el("a", { href: ZALO_URL, className: "btn btn-teal" }, [
+						"Nhắn Zalo cô Mỹ",
+					]),
+				]),
+			]),
+		);
+		document
+			.getElementById("reloadTestBtn")
+			?.addEventListener("click", () => void init());
 	}
 
-	updatePanel(activeKey);
-	box.append(selectorRow, detailPanel);
-	return box;
+	function render() {
+		if (!snapshot) return;
+		stopPageTimer();
+
+		let content = null;
+		switch (state.step) {
+			case "intro":
+				content = renderIntroStep();
+				content
+					.querySelector("#startTestBtn")
+					?.addEventListener("click", () => navigateToStep("info"));
+				break;
+			case "info":
+				content = renderInfoStep();
+				break;
+			case "listening":
+				content = renderListeningStep();
+				ensurePageTimerRunning();
+				break;
+			case "vocab-grammar":
+				content = renderVocabGrammarStep();
+				ensurePageTimerRunning();
+				break;
+			case "reading":
+				content = renderReadingStep();
+				ensurePageTimerRunning();
+				break;
+			case "writing":
+				content = renderWritingStep();
+				ensurePageTimerRunning();
+				break;
+			case "speaking":
+				content = renderSpeakingStep();
+				break;
+			case "result":
+				content = renderResultStep();
+				break;
+			default:
+				content = renderIntroStep();
+				break;
+		}
+
+		appRoot.replaceChildren(content);
+	}
+
+	async function init() {
+		try {
+			const res = await fetch(`${apiBase}/public/placement-test`, {
+				headers: { Accept: "application/json" },
+			});
+			if (!res.ok) {
+				throw new Error(
+					res.status === 404 || res.status === 503
+						? "Bài kiểm tra hiện đang được cập nhật, vui lòng thử lại sau ít phút."
+						: `Không thể tải đề kiểm tra (mã lỗi ${res.status}).`,
+				);
+			}
+			const raw = await res.json();
+			snapshot = normalizeSnapshot(raw);
+			questionNumbers = buildQuestionNumberMap(snapshot);
+			state = loadAttemptState(snapshot.version);
+			render();
+		} catch (err) {
+			renderLoadError(
+				err instanceof Error
+					? err.message
+					: "Không thể kết nối máy chủ để tải đề kiểm tra.",
+			);
+		}
+	}
+
+	void init();
 }
+
+createApp();

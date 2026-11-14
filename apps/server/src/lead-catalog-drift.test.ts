@@ -7,6 +7,7 @@ import {
 	LEAD_STUDY_MODE_LABELS,
 	LEAD_STUDY_MODES,
 } from "@teacher-os/api/lead-contracts";
+import { matchesLibraryAudioMagic } from "@teacher-os/api/lib/quiz-media";
 import {
 	placementContentSchema,
 	validatePlacementForPublish,
@@ -61,7 +62,7 @@ describe("profile lead catalog drift (#506 phase 5)", () => {
 		}
 	});
 
-	it("placement-seed/questions.json khớp LEAD_COURSES và hợp lệ với validatePlacementForPublish khi gắn audioId (D6, D12)", () => {
+	it("placement-seed/questions.json khớp LEAD_COURSES, đủ 6 clip MP3 Kokoro và hợp lệ với validatePlacementForPublish khi gắn audioId (#515, #721)", () => {
 		const questionsPath = fileURLToPath(
 			new URL("../../web/public/placement-seed/questions.json", import.meta.url)
 				.href,
@@ -73,7 +74,30 @@ describe("profile lead catalog drift (#506 phase 5)", () => {
 			expect(LEAD_COURSES).toContain(band.course);
 		}
 		const withFakeAudio = structuredClone(parsed);
-		withFakeAudio.parts[1].clips.forEach((clip, idx) => {
+		const listeningPart = withFakeAudio.parts.find(
+			(
+				p,
+			): p is Extract<
+				(typeof withFakeAudio.parts)[number],
+				{ id: "listening" }
+			> => p.id === "listening",
+		);
+		expect(listeningPart?.clips.length).toBe(6);
+		listeningPart?.clips.forEach((clip, idx) => {
+			const clipPath = fileURLToPath(
+				new URL(
+					`../../web/public/placement-seed/${clip.id}.mp3`,
+					import.meta.url,
+				).href,
+			);
+			const buf = readFileSync(clipPath);
+			expect(
+				matchesLibraryAudioMagic(
+					"audio/mpeg",
+					new Uint8Array(buf.subarray(0, 64)),
+					buf.length,
+				),
+			).toBe(true);
 			clip.audioId = `00000000-0000-4000-8000-00000000000${idx + 1}`;
 		});
 		expect(validatePlacementForPublish(withFakeAudio)).toEqual([]);

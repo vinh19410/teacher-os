@@ -83,13 +83,54 @@ function createMemoryMediaStore(): MemoryMediaStore {
 function makeContent(audioId: string | null): PlacementContent {
 	return {
 		bands: [
-			{ min: 0, max: 1, cefr: "A1", course: "ielts-foundation" },
-			{ min: 2, max: 2, cefr: "B1", course: "ielts-pre" },
+			{
+				min: 0,
+				max: 49,
+				cefr: "A1",
+				course: "comm-1",
+				displayCourse: "Communication English Level 1",
+				advice: "Học từ Lesson 1.",
+			},
+			{
+				min: 50,
+				max: 100,
+				cefr: "B1",
+				course: "comm-2",
+				displayCourse: "Communication English Level 2",
+				advice: "Học tiếp Level 2.",
+			},
 		],
 		parts: [
 			{
+				id: "listening",
+				title: "Listening",
+				clips: [
+					{
+						id: "clip-la",
+						partLabel: "Part 1",
+						instruction: "Listen and choose.",
+						title: "Đoạn nghe 1",
+						notesTitle: "",
+						transcript: "",
+						audioId,
+						maxPlays: 2,
+						level: "A2",
+						questions: [
+							{
+								id: "l-01",
+								type: "mcq",
+								level: "A2",
+								prompt: "Where is the speaker?",
+								options: ["Library", "Station", "Park"],
+								answer: 0,
+							},
+						],
+					},
+				],
+			},
+			{
 				id: "vocab-grammar",
-				title: "Vocab + Grammar",
+				title: "Grammar & Vocabulary",
 				questions: [
 					{
 						id: "vg-01",
@@ -102,24 +143,47 @@ function makeContent(audioId: string | null): PlacementContent {
 				],
 			},
 			{
-				id: "listening",
-				title: "Listening",
-				clips: [
+				id: "reading",
+				title: "Reading",
+				passages: [
 					{
-						id: "clip-1",
-						audioId,
-						maxPlays: 2,
-						level: "A2",
-						title: "Đoạn nghe 1",
+						id: "ra",
+						partLabel: "Part 1",
+						kind: "sign",
+						instruction: "Choose.",
+						title: "POOL",
+						body: "POOL CLOSED MONDAY",
 						questions: [
 							{
-								id: "l-01",
-								level: "A2",
-								prompt: "Where is the speaker?",
-								options: ["Library", "Station", "Park", "Office"],
-								answer: 0,
+								id: "r-a1",
+								level: "A1",
+								prompt: "",
+								options: ["Open daily", "Closed Monday", "Free"],
+								answer: 1,
 							},
 						],
+					},
+				],
+			},
+			{
+				id: "writing",
+				title: "Writing",
+				promptTitle: "Email to a friend",
+				promptBody: "Write an email to a friend.",
+				minWords: 50,
+				maxWords: 80,
+			},
+			{
+				id: "speaking",
+				title: "Speaking",
+				tasks: [
+					{
+						id: "s-01",
+						partLabel: "Part 1",
+						level: "A1",
+						prompt: "What is your name?",
+						prepSeconds: 5,
+						answerSeconds: 20,
 					},
 				],
 			},
@@ -367,7 +431,7 @@ describe("placement-test teacher routes (#515 phase 2)", () => {
 		expect(stateAfterPub.isLeadOrg).toBe(true);
 
 		const editedDraft = makeContent(audioId);
-		editedDraft.parts[0].questions[0]!.prompt = "Câu hỏi chỉ mới lưu nháp";
+		editedDraft.parts[1].questions[0]!.prompt = "Câu hỏi chỉ mới lưu nháp";
 		const save2 = await app.request("/api/placement-test/draft", {
 			method: "PUT",
 			headers: {
@@ -385,7 +449,7 @@ describe("placement-test teacher routes (#515 phase 2)", () => {
 		expect(publicRes.status).toBe(200);
 		const publicSnapshot = (await publicRes.json()) as PlacementSnapshot;
 		expect(publicSnapshot.version).toBe(1);
-		expect(publicSnapshot.parts[0].questions[0]?.prompt).toBe(
+		expect(publicSnapshot.parts[1].questions[0]?.prompt).toBe(
 			"She ______ to school every morning.",
 		);
 
@@ -447,7 +511,7 @@ describe("placement-test teacher routes (#515 phase 2)", () => {
 		};
 		expect(body.issues).toEqual(
 			expect.arrayContaining([
-				expect.objectContaining({ path: "parts.1.clips.0.audioId" }),
+				expect.objectContaining({ path: "parts.0.clips.0.audioId" }),
 			]),
 		);
 	});
@@ -476,10 +540,17 @@ describe("placement-test teacher routes (#515 phase 2)", () => {
 			.set({ createdAt: twoDaysAgo })
 			.where(eq(schema.placementTestAudio.id, publishedAudioId));
 
-		// Nháp có ngưỡng sai (chỉ tới 1 trong khi có 2 câu) -> 422
+		// Nháp có ngưỡng sai (không kết thúc ở 100%) -> 422
 		const badContent = makeContent(publishedAudioId);
 		badContent.bands = [
-			{ min: 0, max: 1, cefr: "A1", course: "ielts-foundation" },
+			{
+				min: 0,
+				max: 50,
+				cefr: "A1",
+				course: "comm-1",
+				displayCourse: "Level 1",
+				advice: "",
+			},
 		];
 		await app.request("/api/placement-test/draft", {
 			method: "PUT",
@@ -606,5 +677,75 @@ describe("placement-test teacher routes (#515 phase 2)", () => {
 			.select({ id: schema.placementTestAudio.id })
 			.from(schema.placementTestAudio);
 		expect(after.map((row) => row.id)).toEqual(before.map((row) => row.id));
+	});
+
+	test("tương thích ngược: draft v1 lưu sẵn trong DB vẫn đọc lên dạng 5 phần qua GET /api/placement-test", async () => {
+		const legacyDraft = {
+			bands: [
+				{ min: 0, max: 1, cefr: "A1", course: "foundation-core" },
+				{ min: 2, max: 2, cefr: "B1", course: "comm-2" },
+			],
+			parts: [
+				{
+					id: "vocab-grammar",
+					title: "Vocab + Grammar",
+					questions: [
+						{
+							id: "vg-01",
+							kind: "grammar",
+							level: "A1",
+							prompt: "Legacy prompt",
+							options: ["a", "b", "c", "d"],
+							answer: 0,
+						},
+					],
+				},
+				{
+					id: "listening",
+					title: "Listening",
+					clips: [
+						{
+							id: "clip-1",
+							audioId: null,
+							maxPlays: 2,
+							level: "A2",
+							title: "Legacy clip",
+							questions: [
+								{
+									id: "l-01",
+									level: "A2",
+									prompt: "Legacy listening",
+									options: ["1", "2", "3", "4"],
+									answer: 1,
+								},
+							],
+						},
+					],
+				},
+			],
+		};
+
+		await db.insert(schema.placementTest).values({
+			orgId: "org-1",
+			draft: JSON.stringify(legacyDraft),
+			published: null,
+			revision: 3,
+			publishedVersion: 0,
+			updatedAt: new Date(),
+		});
+
+		const res = await app.request("/api/placement-test", {
+			headers: { "x-test-user": "teacher-1" },
+		});
+		expect(res.status).toBe(200);
+		const body = (await res.json()) as PlacementTeacherStateResponse;
+		expect(body.draft?.parts.map((p) => p.id)).toEqual([
+			"listening",
+			"vocab-grammar",
+			"reading",
+			"writing",
+			"speaking",
+		]);
+		expect(body.draft?.bands[1]?.max).toBe(100);
 	});
 });

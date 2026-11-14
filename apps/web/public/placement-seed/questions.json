@@ -2,394 +2,648 @@
 	"bands": [
 		{
 			"min": 0,
-			"max": 8,
+			"max": 29,
+			"cefr": "Pre-A1",
+			"course": "foundation-core",
+			"displayCourse": "Chưa đủ nền cho Level 1",
+			"advice": "Nên học lớp nền tảng / kèm 1-1 khoảng 1–2 tháng (phát âm, câu cơ bản) rồi vào Level 1; hoặc vào Level 1 với hỗ trợ thêm."
+		},
+		{
+			"min": 30,
+			"max": 54,
 			"cefr": "A1",
-			"course": "ielts-foundation"
+			"course": "comm-1",
+			"displayCourse": "Communication English Level 1",
+			"advice": "Học trọn khoá Level 1 từ Lesson 1."
 		},
 		{
-			"min": 9,
-			"max": 15,
+			"min": 55,
+			"max": 67,
 			"cefr": "A2",
-			"course": "ielts-first-step"
+			"course": "comm-1",
+			"displayCourse": "Communication English Level 1",
+			"advice": "Học Level 1 để chắc nền, tập trung Speaking theo cấu trúc Answer → Reason → Example; tiến nhanh lên Level 2."
 		},
 		{
-			"min": 16,
-			"max": 22,
-			"cefr": "B1",
-			"course": "ielts-pre"
+			"min": 68,
+			"max": 84,
+			"cefr": "A2+ / B1 thấp",
+			"course": "comm-2",
+			"displayCourse": "Communication English Level 2",
+			"advice": "Học trọn khoá Level 2 từ Lesson 1."
 		},
 		{
-			"min": 23,
-			"max": 30,
-			"cefr": "B2+",
-			"course": "ielts-advanced"
+			"min": 85,
+			"max": 100,
+			"cefr": "B1 trở lên",
+			"course": "comm-3",
+			"displayCourse": "Vượt Level 2",
+			"advice": "Nên vào lớp B1+/IELTS nền tảng; Level 2 sẽ quá dễ."
 		}
 	],
 	"parts": [
-		{
-			"id": "vocab-grammar",
-			"title": "Vocab + Grammar",
-			"questions": [
-				{
-					"id": "vg-01",
-					"kind": "grammar",
-					"level": "A1",
-					"prompt": "My younger brother usually ______ to school by bicycle, but today he is taking the bus because of the rain.",
-					"options": ["go", "goes", "going", "went"],
-					"answer": 1
-				},
-				{
-					"id": "vg-02",
-					"kind": "vocab",
-					"level": "A1",
-					"prompt": "Could you please speak a little more ______? I am still learning English and cannot catch every word.",
-					"options": ["slowly", "heavily", "brightly", "narrowly"],
-					"answer": 0
-				},
-				{
-					"id": "vg-03",
-					"kind": "grammar",
-					"level": "A1",
-					"prompt": "There aren't ______ empty seats left in the front row of the lecture hall.",
-					"options": ["much", "some", "any", "a"],
-					"answer": 2
-				},
-				{
-					"id": "vg-04",
-					"kind": "vocab",
-					"level": "A2",
-					"prompt": "Students who want to borrow reference books for the weekend must ______ them to the library desk by Monday morning.",
-					"options": ["return", "remind", "repair", "replace"],
-					"answer": 0
-				},
-				{
-					"id": "vg-05",
-					"kind": "grammar",
-					"level": "A2",
-					"prompt": "While we ______ for the train at the central station last night, the power suddenly went out.",
-					"options": ["wait", "have waited", "are waiting", "were waiting"],
-					"answer": 3
-				},
-				{
-					"id": "vg-06",
-					"kind": "vocab",
-					"level": "A2",
-					"prompt": "The community center offers a wide ______ of evening workshops, including photography, pottery, and public speaking.",
-					"options": ["range", "border", "height", "piece"],
-					"answer": 0
-				},
-				{
-					"id": "vg-07",
-					"kind": "grammar",
-					"level": "B1",
-					"prompt": "The new training program has made a ______ improvement in how clearly our interns structure their weekly reports.",
-					"options": ["notice", "noticeable", "noticeably", "noticing"],
-					"answer": 1
-				},
-				{
-					"id": "vg-08",
-					"kind": "grammar",
-					"level": "B1",
-					"prompt": "The quality of the vegetables sold at these weekend farmers' markets ______ significantly from season to season.",
-					"options": ["vary", "varying", "varies", "have varied"],
-					"answer": 2
-				},
-				{
-					"id": "vg-09",
-					"kind": "vocab",
-					"level": "B1",
-					"prompt": "To finish the group project on schedule, every team member needs to ______ a concerted effort over the next two weeks.",
-					"options": ["do", "make", "take", "create"],
-					"answer": 1
-				},
-				{
-					"id": "vg-10",
-					"kind": "vocab",
-					"level": "B1",
-					"prompt": "Because of severe weather along the coast, the organizers decided to ______ the outdoor charity run until next Sunday.",
-					"options": ["put off", "turn down", "look after", "bring up"],
-					"answer": 0
-				},
-				{
-					"id": "vg-11",
-					"kind": "grammar",
-					"level": "B2",
-					"prompt": "Had the municipal council invested in flood drainage ten years ago, the downtown district ______ such severe disruption last month.",
-					"options": [
-						"will not suffer",
-						"did not suffer",
-						"would not suffer",
-						"would not have suffered"
-					],
-					"answer": 3
-				},
-				{
-					"id": "vg-12",
-					"kind": "vocab",
-					"level": "B2",
-					"prompt": "Although the two researchers used different survey methods, they arrived at remarkably similar conclusions that ______ the original hypothesis.",
-					"options": ["reinforce", "exaggerate", "postpone", "scatter"],
-					"answer": 0
-				},
-				{
-					"id": "vg-13",
-					"kind": "grammar",
-					"level": "B2",
-					"prompt": "The environmental policy, the long-term effects of ______ are still being debated by economists, will take effect in January.",
-					"options": ["that", "what", "which", "whom"],
-					"answer": 2
-				},
-				{
-					"id": "vg-14",
-					"kind": "grammar",
-					"level": "C1",
-					"prompt": "Seldom ______ such a rapid shift in commuter behavior without a corresponding change in public transit fares.",
-					"options": [
-						"urban planners have witnessed",
-						"have urban planners witnessed",
-						"witnessed urban planners",
-						"urban planners witnessed"
-					],
-					"answer": 1
-				},
-				{
-					"id": "vg-15",
-					"kind": "vocab",
-					"level": "C1",
-					"prompt": "While the committee praised the proposal's ambition, several members questioned whether its financial projections were truly ______ in a slowing economy.",
-					"options": ["feasible", "arbitrary", "obsolete", "superficial"],
-					"answer": 0
-				}
-			]
-		},
 		{
 			"id": "listening",
 			"title": "Listening",
 			"clips": [
 				{
-					"id": "clip-1",
+					"id": "clip-la",
+					"partLabel": "Part 1",
+					"instruction": "For each question, choose the correct answer. You will hear each conversation twice.",
+					"title": "Conversation 1 · Cinema time",
+					"notesTitle": "",
+					"transcript": "Female: Shall we meet outside the cinema at seven forty-five?\nMale: That's too late. The film starts at seven fifteen.\nFemale: Oh, I thought it started at seven forty-five.\nMale: No, that's the later one. Let's meet at seven, so we have time to buy popcorn.",
+					"audioId": null,
+					"maxPlays": 2,
+					"level": "A1",
+					"questions": [
+						{
+							"id": "l-a1",
+							"type": "mcq",
+							"level": "A1",
+							"prompt": "What time does the film start?",
+							"options": ["7:00", "7:15", "7:45"],
+							"answer": 1
+						}
+					]
+				},
+				{
+					"id": "clip-lb",
+					"partLabel": "Part 1",
+					"instruction": "For each question, choose the correct answer. You will hear each conversation twice.",
+					"title": "Conversation 2 · Going to work",
+					"notesTitle": "",
+					"transcript": "Male: Your car's at the garage this week, isn't it? Are you going to take the bus to work?\nFemale: The bus is so slow in the morning. It isn't raining today, so I'll ride my bike.",
+					"audioId": null,
+					"maxPlays": 2,
+					"level": "A1",
+					"questions": [
+						{
+							"id": "l-b1",
+							"type": "mcq",
+							"level": "A1",
+							"prompt": "How will the woman get to work today?",
+							"options": ["by bike", "by bus", "by car"],
+							"answer": 0
+						}
+					]
+				},
+				{
+					"id": "clip-lc",
+					"partLabel": "Part 1",
+					"instruction": "For each question, choose the correct answer. You will hear each conversation twice.",
+					"title": "Conversation 3 · Ordering lunch",
+					"notesTitle": "",
+					"transcript": "Male: Can I have a ham sandwich, please?\nFemale: I'm sorry, we haven't got any ham left. We've got cheese or chicken.\nMale: Hmm, I don't really like cheese. Chicken, then. And a bottle of water, please.",
 					"audioId": null,
 					"maxPlays": 2,
 					"level": "A2",
-					"title": "Đoạn nghe 1 (A2) – Thông báo tại thư viện cộng đồng",
 					"questions": [
 						{
-							"id": "l-01",
+							"id": "l-c1",
+							"type": "mcq",
 							"level": "A2",
-							"prompt": "Why is the second floor of the library closed this week?",
+							"prompt": "What does the man buy?",
 							"options": [
-								"New bookshelves are being installed.",
-								"The air-conditioning system is being repaired.",
-								"A children's art exhibition is being set up.",
-								"The study tables are being repainted."
-							],
-							"answer": 1
-						},
-						{
-							"id": "l-02",
-							"level": "A2",
-							"prompt": "Where can visitors use quiet study desks during the renovation?",
-							"options": [
-								"In the ground-floor café",
-								"In the basement archive room",
-								"In Room 104 next to the garden entrance",
-								"In the main reception lobby"
+								"a ham sandwich",
+								"a cheese sandwich",
+								"a chicken sandwich"
 							],
 							"answer": 2
-						},
+						}
+					]
+				},
+				{
+					"id": "clip-ld",
+					"partLabel": "Part 1",
+					"instruction": "For each question, choose the correct answer. You will hear each conversation twice.",
+					"title": "Conversation 4 · Finding the phone",
+					"notesTitle": "",
+					"transcript": "Female: Have you seen my phone? It isn't in my bag.\nMale: Did you leave it on the kitchen table again?\nFemale: No, I looked there. Oh wait, here it is. It was in my coat pocket all the time!",
+					"audioId": null,
+					"maxPlays": 2,
+					"level": "A2",
+					"questions": [
 						{
-							"id": "l-03",
+							"id": "l-d1",
+							"type": "mcq",
 							"level": "A2",
-							"prompt": "What time does the library close on Saturday?",
+							"prompt": "Where was the woman's phone?",
 							"options": [
-								"At 4:30 p.m.",
-								"At 5:00 p.m.",
-								"At 6:00 p.m.",
-								"At 8:00 p.m."
+								"in her bag",
+								"in her coat pocket",
+								"on the kitchen table"
 							],
 							"answer": 1
 						}
 					]
 				},
 				{
-					"id": "clip-2",
+					"id": "clip-le",
+					"partLabel": "Part 2",
+					"instruction": "For each question, write the correct answer in the gap. Write ONE word or a number. You will hear a phone message about an English course.",
+					"title": "Phone message · Evening English Course",
+					"notesTitle": "Evening English Course",
+					"transcript": "Sarah: Hello, this is Sarah from Sunrise Language Centre. I'm calling about the evening English course you asked about. The course starts on Monday, the fifteenth of March. Classes are on Mondays and Wednesdays, from six thirty to eight p.m. The course costs two hundred and forty dollars, and that includes the course book. Classes are in Room nine, on the second floor. On the first day, please bring a photo for your student card. If you have any questions, you can call me back on this number. Thank you, bye!",
+					"audioId": null,
+					"maxPlays": 2,
+					"level": "A2+",
+					"questions": [
+						{
+							"id": "l-e1",
+							"type": "gap",
+							"level": "A2",
+							"prompt": "Start date: Monday ____ March",
+							"accept": ["15", "15th", "fifteenth", "the15th", "thefifteenth"]
+						},
+						{
+							"id": "l-e2",
+							"type": "gap",
+							"level": "A2",
+							"prompt": "Class time: 6:30 – ____ p.m.",
+							"accept": ["8", "800", "eight", "eightoclock", "8oclock"]
+						},
+						{
+							"id": "l-e3",
+							"type": "gap",
+							"level": "A2+",
+							"prompt": "Price: $ ____",
+							"accept": [
+								"240",
+								"24000",
+								"twohundredandforty",
+								"twohundredforty"
+							]
+						},
+						{
+							"id": "l-e4",
+							"type": "gap",
+							"level": "A2",
+							"prompt": "Room number: ____",
+							"accept": ["9", "nine", "room9", "roomnine"]
+						},
+						{
+							"id": "l-e5",
+							"type": "gap",
+							"level": "A2+",
+							"prompt": "Bring a ____ for the student card",
+							"accept": [
+								"photo",
+								"photograph",
+								"picture",
+								"photos",
+								"photographs"
+							]
+						}
+					]
+				},
+				{
+					"id": "clip-lf",
+					"partLabel": "Part 3",
+					"instruction": "For each question, choose the correct answer. You will hear an interview with a man who moved from the city to a farm.",
+					"title": "Interview · From city to farm",
+					"notesTitle": "",
+					"transcript": "Interviewer: Today I'm talking to Daniel Price, who left his job in the city two years ago to run a small farm. Daniel, why did you decide to change your life?\nDaniel: Well, people often think I hated my job, but actually I enjoyed it. The problem was the hours. I was in the office until nine most nights, and I hardly ever saw my children awake. So when my uncle offered to sell me his farm, it felt like the right moment.\nInterviewer: Was it difficult at first?\nDaniel: Very! I knew nothing about animals. In our first winter, two of our sheep got sick and I had no idea what to do. Luckily, the people on the farms near us were really kind. They taught me almost everything I know.\nInterviewer: And what about money?\nDaniel: We earn less than before, that's true. But we spend a lot less too. We grow most of our own food, and we don't need two cars any more.\nInterviewer: What advice would you give people who want to do the same thing?\nDaniel: Don't just dream about it. Try it first. Spend a few weeks working on a farm before you buy one. Some people discover it isn't for them, and that's fine.",
 					"audioId": null,
 					"maxPlays": 2,
 					"level": "B1",
-					"title": "Đoạn nghe 2 (B1) – Hội thoại tư vấn khóa kỹ năng thuyết trình",
 					"questions": [
 						{
-							"id": "l-04",
+							"id": "l-f1",
+							"type": "mcq",
 							"level": "B1",
-							"prompt": "Why does the man prefer the Thursday evening class over the Tuesday class?",
+							"prompt": "Why did Daniel leave his job in the city?",
 							"options": [
-								"It is taught by a different instructor.",
-								"It is held closer to his apartment.",
-								"He has a regular team meeting on Tuesday evenings.",
-								"The Thursday class has a lower tuition fee."
+								"He didn't enjoy his work.",
+								"His uncle needed help on the farm.",
+								"He had to work very long hours."
 							],
 							"answer": 2
 						},
 						{
-							"id": "l-05",
-							"level": "B1",
-							"prompt": "What is the maximum number of participants in each workshop group?",
+							"id": "l-f2",
+							"type": "mcq",
+							"level": "A2+",
+							"prompt": "In his first winter on the farm, Daniel…",
 							"options": [
-								"8 participants",
-								"12 participants",
-								"15 participants",
-								"20 participants"
+								"got a lot of help from his neighbours.",
+								"lost all of his sheep.",
+								"did a course about animals."
+							],
+							"answer": 0
+						},
+						{
+							"id": "l-f3",
+							"type": "mcq",
+							"level": "B1",
+							"prompt": "What does Daniel say about money?",
+							"options": [
+								"His family has more money now.",
+								"They spend much less than before.",
+								"They had to sell both of their cars."
 							],
 							"answer": 1
 						},
 						{
-							"id": "l-06",
+							"id": "l-f4",
+							"type": "mcq",
 							"level": "B1",
-							"prompt": "What must participants complete before attending the first session?",
+							"prompt": "What is Daniel's advice?",
 							"options": [
-								"A short two-minute self-introduction audio clip",
-								"A written grammar test on the website",
-								"A five-page reading assignment on body language",
-								"A payment for printed textbooks at the front desk"
+								"Try working on a farm before you decide.",
+								"Buy a farm as soon as you can.",
+								"Ask farmers about their problems."
+							],
+							"answer": 0
+						}
+					]
+				}
+			]
+		},
+		{
+			"id": "vocab-grammar",
+			"title": "Grammar & Vocabulary",
+			"questions": [
+				{
+					"id": "gv-01",
+					"kind": "grammar",
+					"level": "A1",
+					"prompt": "My sister ___ a nurse.",
+					"options": ["am", "is", "are"],
+					"answer": 1
+				},
+				{
+					"id": "gv-02",
+					"kind": "grammar",
+					"level": "A1",
+					"prompt": "___ you like coffee?",
+					"options": ["Do", "Does", "Are"],
+					"answer": 0
+				},
+				{
+					"id": "gv-03",
+					"kind": "vocab",
+					"level": "A1",
+					"prompt": "I usually get up ___ 6 o'clock.",
+					"options": ["in", "on", "at"],
+					"answer": 2
+				},
+				{
+					"id": "gv-04",
+					"kind": "grammar",
+					"level": "A2",
+					"prompt": "Last weekend, we ___ to Vung Tau.",
+					"options": ["go", "gone", "going", "went"],
+					"answer": 3
+				},
+				{
+					"id": "gv-05",
+					"kind": "grammar",
+					"level": "A2",
+					"prompt": "My brother is ___ than me.",
+					"options": ["tall", "more tall", "taller", "tallest"],
+					"answer": 2
+				},
+				{
+					"id": "gv-06",
+					"kind": "grammar",
+					"level": "A2",
+					"prompt": "I'm ___ visit my grandparents next Sunday.",
+					"options": ["going to", "will", "go to", "want"],
+					"answer": 0
+				},
+				{
+					"id": "gv-07",
+					"kind": "grammar",
+					"level": "A2+",
+					"prompt": "I ___ English for three years, but I still feel shy when I speak.",
+					"options": ["study", "am studying", "have studied", "studying"],
+					"answer": 2
+				},
+				{
+					"id": "gv-08",
+					"kind": "grammar",
+					"level": "A2+",
+					"prompt": "She ___ TV when I called her last night.",
+					"options": ["watched", "is watching", "watches", "was watching"],
+					"answer": 3
+				},
+				{
+					"id": "gv-09",
+					"kind": "grammar",
+					"level": "A2+",
+					"prompt": "If it rains tomorrow, we ___ at home.",
+					"options": ["stay", "will stay", "stayed", "would stay"],
+					"answer": 1
+				},
+				{
+					"id": "gv-10",
+					"kind": "grammar",
+					"level": "B1",
+					"prompt": "I've lived here for a year, so I'm used to ___ up early for the metro.",
+					"options": ["get", "got", "getting", "be get"],
+					"answer": 2
+				},
+				{
+					"id": "gv-11",
+					"kind": "grammar",
+					"level": "B1",
+					"prompt": "The film ___ we watched last night was really boring.",
+					"options": ["who", "where", "what", "which"],
+					"answer": 3
+				},
+				{
+					"id": "gv-12",
+					"kind": "grammar",
+					"level": "B1",
+					"prompt": "If I had more money, I ___ a bigger apartment.",
+					"options": ["rent", "would rent", "will rent", "rented"],
+					"answer": 1
+				}
+			]
+		},
+		{
+			"id": "reading",
+			"title": "Reading",
+			"passages": [
+				{
+					"id": "ra",
+					"partLabel": "Part 1",
+					"kind": "sign",
+					"instruction": "For each question, choose the correct answer.",
+					"title": "CITY SWIMMING POOL",
+					"body": "CITY SWIMMING POOL\nChildren under 12 must swim with an adult.\nClosed every Monday for cleaning.",
+					"questions": [
+						{
+							"id": "r-a1",
+							"level": "A1",
+							"prompt": "",
+							"options": [
+								"Adults can only swim alone on Mondays.",
+								"Young children must be with an adult in the pool.",
+								"The pool is cleaned every day."
+							],
+							"answer": 1
+						}
+					]
+				},
+				{
+					"id": "rb",
+					"partLabel": "Part 1",
+					"kind": "message",
+					"instruction": "For each question, choose the correct answer.",
+					"title": "Message from Mum",
+					"body": "Tuan,\nThe dentist phoned. Your appointment is now on Thursday at 4, not Wednesday. Call them if that's a problem.\nMum",
+					"questions": [
+						{
+							"id": "r-b1",
+							"level": "A2",
+							"prompt": "",
+							"options": [
+								"Tuan's appointment is now on a different day.",
+								"Tuan must call the dentist to change the time.",
+								"Mum is going to the dentist on Thursday."
 							],
 							"answer": 0
 						}
 					]
 				},
 				{
-					"id": "clip-3",
-					"audioId": null,
-					"maxPlays": 2,
-					"level": "B1",
-					"title": "Đoạn nghe 3 (B1) – Hướng dẫn chuyến khảo sát khu bảo tồn đất ngập nước",
+					"id": "rc",
+					"partLabel": "Part 1",
+					"kind": "sign",
+					"instruction": "For each question, choose the correct answer.",
+					"title": "OFFICE KITCHEN",
+					"body": "OFFICE KITCHEN\nPlease take your food out of the fridge by 5 p.m. on Friday.\nAnything left after this time will be thrown away.",
 					"questions": [
 						{
-							"id": "l-07",
-							"level": "B1",
-							"prompt": "What change has been made to the morning schedule?",
+							"id": "r-c1",
+							"level": "A2",
+							"prompt": "",
 							"options": [
-								"The boat tour has been cancelled due to high wind.",
-								"The group will visit the water-testing laboratory before the boardwalk trail.",
-								"Lunch will be served an hour earlier at the visitor center.",
-								"The bird-watching session has been moved to the afternoon."
+								"Staff can leave food in the fridge at the weekend.",
+								"Staff must buy their lunch on Fridays.",
+								"Staff should take their food home before the weekend."
+							],
+							"answer": 2
+						}
+					]
+				},
+				{
+					"id": "rd",
+					"partLabel": "Part 1",
+					"kind": "message",
+					"instruction": "For each question, choose the correct answer.",
+					"title": "Message from Ben",
+					"body": "Hi Anna,\nThis week the English club is meeting in Room 12 because they're painting Room 8. Same time as usual!\nBen",
+					"questions": [
+						{
+							"id": "r-d1",
+							"level": "A2",
+							"prompt": "Why is Ben writing to Anna?",
+							"options": [
+								"to change the time of the meeting",
+								"to tell her the club is in a different room",
+								"to ask her to help with the painting"
+							],
+							"answer": 1
+						}
+					]
+				},
+				{
+					"id": "re",
+					"partLabel": "Part 2",
+					"kind": "passage",
+					"instruction": "Read the article about a young woman who works abroad. For each question, choose the correct answer.",
+					"title": "A new start in Auckland",
+					"body": "Thu Ha is 25 and comes from Can Tho. Last year, she moved to Auckland, New Zealand, to work in a hotel restaurant.\n\n\"I studied English at school, but when I arrived, I couldn't understand people very well,\" she says. \"Everyone spoke so fast! In my first week, a customer asked for a 'flat white' and I brought him a glass of milk. Now I know it's a kind of coffee!\"\n\nThu Ha works five days a week, usually in the evening. On her days off, she goes to English classes at a community centre near her flat. \"The classes are free, and I've made friends from Brazil, Korea and Germany there. We always speak English together because it's the only language we all know.\"\n\nThe hardest thing for Thu Ha is the weather. \"In Can Tho it's hot all year. Here, the winter is cold and wet, and I had to buy my first real coat.\" But she loves her new life. \"Next year I want to study hotel management. My manager has offered to help me find a good course.\"",
+					"questions": [
+						{
+							"id": "r-e1",
+							"level": "A2",
+							"prompt": "When Thu Ha first arrived in Auckland,",
+							"options": [
+								"she couldn't find a job.",
+								"she found it hard to understand people.",
+								"people didn't understand her English."
 							],
 							"answer": 1
 						},
 						{
-							"id": "l-08",
-							"level": "B1",
-							"prompt": "Which item does the guide remind participants NOT to bring onto the wooden trail?",
+							"id": "r-e2",
+							"level": "A2",
+							"prompt": "What happened with the customer in her first week?",
 							"options": [
-								"Binoculars",
-								"Reusable water bottles",
-								"Camera tripods",
-								"Waterproof notebooks"
+								"She gave him the wrong drink.",
+								"He didn't like his coffee.",
+								"She forgot what he ordered."
+							],
+							"answer": 0
+						},
+						{
+							"id": "r-e3",
+							"level": "A2+",
+							"prompt": "Why does Thu Ha speak English with her classmates?",
+							"options": [
+								"Their teacher tells them to.",
+								"They want to pass an exam.",
+								"They have no other language in common."
 							],
 							"answer": 2
 						},
 						{
-							"id": "l-09",
-							"level": "B1",
-							"prompt": "Where should participants meet at 3:15 p.m. for the return bus?",
+							"id": "r-e4",
+							"level": "A2+",
+							"prompt": "What does Thu Ha say about the weather in Auckland?",
 							"options": [
-								"At the north parking lot by the ticket booth",
-								"At the wooden bridge near the reed marsh",
-								"Inside the laboratory lecture room",
-								"At the east gate next to the bicycle shelter"
+								"It is similar to the weather in Can Tho.",
+								"She needed to buy warm clothes for it.",
+								"The summer is too hot for her."
 							],
+							"answer": 1
+						},
+						{
+							"id": "r-e5",
+							"level": "B1",
+							"prompt": "What are Thu Ha's plans for the future?",
+							"options": [
+								"Her manager will help her start studying.",
+								"She wants to go back to Can Tho.",
+								"She hopes to become a manager next year."
+							],
+							"answer": 0
+						}
+					]
+				},
+				{
+					"id": "rf",
+					"partLabel": "Part 3",
+					"kind": "cloze",
+					"instruction": "For each question, choose the correct answer to fill the gap.",
+					"title": "Working from home",
+					"body": "More and more people now work from home at least one day a [1]. For many, the biggest advantage is that they don't have to travel to the office. Instead, they can [2] that time with their family or do some exercise.\n\nHowever, working from home is not always easy. Some people find it difficult to [3] on their work when there are children or pets around. Others say they miss their colleagues and feel [4]. Experts suggest creating a quiet space just for work and taking short [5] during the day. It is also a good idea to [6] in touch with your team by video call.",
+					"questions": [
+						{
+							"id": "r-f1",
+							"level": "A2+",
+							"prompt": "Gap 1",
+							"options": ["time", "hour", "week", "moment"],
+							"answer": 2
+						},
+						{
+							"id": "r-f2",
+							"level": "A2+",
+							"prompt": "Gap 2",
+							"options": ["pay", "spend", "make", "do"],
+							"answer": 1
+						},
+						{
+							"id": "r-f3",
+							"level": "B1",
+							"prompt": "Gap 3",
+							"options": ["concentrate", "care", "interest", "mind"],
+							"answer": 0
+						},
+						{
+							"id": "r-f4",
+							"level": "B1",
+							"prompt": "Gap 4",
+							"options": ["single", "only", "lone", "lonely"],
+							"answer": 3
+						},
+						{
+							"id": "r-f5",
+							"level": "B1",
+							"prompt": "Gap 5",
+							"options": ["holidays", "stops", "breaks", "ends"],
+							"answer": 2
+						},
+						{
+							"id": "r-f6",
+							"level": "B1",
+							"prompt": "Gap 6",
+							"options": ["make", "hold", "have", "keep"],
 							"answer": 3
 						}
 					]
+				}
+			]
+		},
+		{
+			"id": "writing",
+			"title": "Writing",
+			"promptTitle": "Email to a friend",
+			"promptBody": "You have just moved to a new city. Write an email to your English-speaking friend (50–80 words). Tell your friend:\n\n  1. where you live now and who you live with\n  2. what you usually do at weekends\n  3. whether you like your new home, and why / why not",
+			"minWords": 50,
+			"maxWords": 80
+		},
+		{
+			"id": "speaking",
+			"title": "Speaking",
+			"tasks": [
+				{
+					"id": "s-01",
+					"partLabel": "Part 1 · About you",
+					"level": "A1–A2",
+					"prompt": "What's your name, and where are you from?",
+					"prepSeconds": 5,
+					"answerSeconds": 20
 				},
 				{
-					"id": "clip-4",
-					"audioId": null,
-					"maxPlays": 2,
-					"level": "B2",
-					"title": "Đoạn nghe 4 (B2) – Thảo luận học thuật về dự án khảo sát không gian xanh đô thị",
-					"questions": [
-						{
-							"id": "l-10",
-							"level": "B2",
-							"prompt": "What limitation did the students find in their initial questionnaire data?",
-							"options": [
-								"Too few questionnaires were returned by local residents.",
-								"Most responses came from retired residents visiting parks on weekday mornings.",
-								"Several questions about cycling lanes were accidentally left out.",
-								"The online survey link stopped working after the first three days."
-							],
-							"answer": 1
-						},
-						{
-							"id": "l-11",
-							"level": "B2",
-							"prompt": "What does the tutor suggest the students do next to balance their sample?",
-							"options": [
-								"Conduct short interviews near commuter train exits between 5 p.m. and 7 p.m.",
-								"Send printed questionnaires to local primary schools.",
-								"Replace the survey with automated pedestrian counters at park gates.",
-								"Extend the survey deadline by another four weeks."
-							],
-							"answer": 0
-						},
-						{
-							"id": "l-12",
-							"level": "B2",
-							"prompt": "Which section of the report do the students agree to revise first?",
-							"options": [
-								"The historical overview of city parks",
-								"The budget comparison between districts",
-								"The methodology section explaining sampling bias",
-								"The appendix of maps and photographs"
-							],
-							"answer": 2
-						}
-					]
+					"id": "s-02",
+					"partLabel": "Part 1 · About you",
+					"level": "A1–A2",
+					"prompt": "Do you work or study? Tell me about it.",
+					"prepSeconds": 5,
+					"answerSeconds": 20
 				},
 				{
-					"id": "clip-5",
-					"audioId": null,
-					"maxPlays": 2,
-					"level": "C1",
-					"title": "Đoạn nghe 5 (C1) – Bài giảng về kiến trúc lựa chọn và hình thành thói quen bền vững",
-					"questions": [
-						{
-							"id": "l-13",
-							"level": "C1",
-							"prompt": "According to the lecturer, why do information campaigns alone rarely produce lasting behavioral change?",
-							"options": [
-								"People generally distrust statistics published by public agencies.",
-								"High awareness does not automatically overcome the friction of daily routines.",
-								"Most campaigns focus too heavily on financial penalties rather than rewards.",
-								"Media coverage tends to fade before citizens understand the core message."
-							],
-							"answer": 1
-						},
-						{
-							"id": "l-14",
-							"level": "C1",
-							"prompt": "What did the cafeteria study demonstrate about changing the default option?",
-							"options": [
-								"Diners complained when low-carbon meals were listed at the top of the menu.",
-								"Price discounts were twice as effective as changing menu layout.",
-								"Placing plant-based dishes as the standard daily special increased their selection without restricting choice.",
-								"Calorie labels had a stronger effect on staff than on students."
-							],
-							"answer": 2
-						},
-						{
-							"id": "l-15",
-							"level": "C1",
-							"prompt": "What caution does the lecturer raise at the end of the talk?",
-							"options": [
-								"Default nudges can lose effectiveness if users perceive them as manipulative or opaque.",
-								"Behavioral interventions are too expensive for small municipalities to test.",
-								"Laboratory experiments on habit formation cannot be replicated in workplaces.",
-								"Digital reminders always cause fatigue within the first week."
-							],
-							"answer": 0
-						}
-					]
+					"id": "s-03",
+					"partLabel": "Part 1 · About you",
+					"level": "A1–A2",
+					"prompt": "What do you usually do in the evening?",
+					"prepSeconds": 5,
+					"answerSeconds": 20
+				},
+				{
+					"id": "s-04",
+					"partLabel": "Part 1 · About you",
+					"level": "A1–A2",
+					"prompt": "Tell me about your family.",
+					"prepSeconds": 5,
+					"answerSeconds": 20
+				},
+				{
+					"id": "s-05",
+					"partLabel": "Part 2 · Tell me about…",
+					"level": "A2",
+					"prompt": "Talk about what you did last weekend.\nWhere did you go? Who were you with? Did you enjoy it?",
+					"prepSeconds": 15,
+					"answerSeconds": 45
+				},
+				{
+					"id": "s-06",
+					"partLabel": "Part 2 · Tell me about…",
+					"level": "A2",
+					"prompt": "Describe your home.\nWhat is your favourite room? Why?",
+					"prepSeconds": 15,
+					"answerSeconds": 45
+				},
+				{
+					"id": "s-07",
+					"partLabel": "Part 3 · Your opinion",
+					"level": "A2+–B1",
+					"prompt": "Would you prefer to live in a big city or in the countryside?\nGive reasons and examples.",
+					"prepSeconds": 20,
+					"answerSeconds": 60
+				},
+				{
+					"id": "s-08",
+					"partLabel": "Part 3 · Your opinion",
+					"level": "A2+–B1",
+					"prompt": "Some people say young people spend too much time on social media.\nDo you agree? Why / why not?",
+					"prepSeconds": 20,
+					"answerSeconds": 60
 				}
 			]
 		}

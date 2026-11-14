@@ -272,6 +272,8 @@ export interface LeadRow {
 	source: string;
 	status: LeadStatus;
 	submitCount: number;
+	hasPlacementSubmission?: boolean;
+	placementSubmissionStatus?: "pending_grading" | "graded" | null;
 	/** ISO timestamp. */
 	createdAt: string;
 	updatedAt: string;

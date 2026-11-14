@@ -1,131 +1,272 @@
 /**
- * Module chấm điểm thuần cho trang kiểm tra đầu vào (/kiem-tra-dau-vao/).
- * Không phụ thuộc DOM hay trình duyệt; chạy được trực tiếp trên Node test runner và browser.
+ * Pure objective scoring & text normalization helpers for the 5-skill placement test.
+ * Mirrors packages/api/src/placement-test-contracts.ts so client preview matches server grading.
  */
 
 export const LEAD_PLACEMENT_MAX = 300;
 
+export const PLACEMENT_LEVEL_ORDER = [
+	"Pre-A1",
+	"A1",
+	"A2",
+	"A2+",
+	"B1",
+	"B2",
+	"B2+",
+	"C1",
+	"C2",
+];
+
+const FALLBACK_BAND = {
+	min: 0,
+	max: 100,
+	cefr: "A1",
+	course: "comm-1",
+	courseLabel: "Giao tiếp 1",
+	displayCourse: "Giao tiếp 1",
+	advice: "",
+};
+
 /**
- * Trải phẳng toàn bộ câu hỏi của bài kiểm tra theo thứ tự Phần 1 -> Phần 2.
- * @param {object} test Dữ liệu bộ đề kiểm tra đầu vào
- * @returns {Array<{id: string, partId: string, clipId?: string, level: string, prompt: string, options: string[], answer: number}>}
+ * Normalizes a listening gap-fill answer for exact comparison.
+ * Strips time/currency markers ("p.m.", "$", "dollars", "o'clock") and non-alphanumeric chars.
  */
-export function flattenQuestions(test) {
-	if (!test || !Array.isArray(test.parts)) return [];
-	const items = [];
-	for (const part of test.parts) {
-		if (!part || typeof part !== "object") continue;
-		if (Array.isArray(part.questions)) {
-			for (const q of part.questions) {
-				items.push({
-					...q,
-					partId: part.id,
-				});
-			}
-		}
-		if (Array.isArray(part.clips)) {
-			for (const clip of part.clips) {
-				if (!clip || !Array.isArray(clip.questions)) continue;
-				for (const q of clip.questions) {
-					items.push({
-						...q,
-						partId: part.id,
-						clipId: clip.id,
-					});
-				}
-			}
-		}
-	}
-	return items;
+export function normalizeGapAnswer(raw) {
+	return String(raw ?? "")
+		.toLowerCase()
+		.replace(/p\.?m\.?|\$|dollars?|o'clock/g, "")
+		.replace(/[^a-z0-9]/g, "");
 }
 
 /**
- * Chấm điểm bài làm và quy đổi sang CEFR + mã khóa học đề xuất theo bảng bands.
- * Câu bỏ trống hoặc đáp án không phải số nguyên hợp lệ được tính là 0 điểm.
- *
- * @param {object} test Dữ liệu bộ đề kiểm tra đầu vào
- * @param {Record<string, number | undefined | null>} answers Map id câu hỏi -> chỉ số đáp án (0..3)
+ * Counts whitespace-delimited words in Writing text.
  */
-export function gradeAttempt(test, answers = {}) {
-	const safeAnswers =
-		answers && typeof answers === "object" ? answers : Object.create(null);
-	const questions = flattenQuestions(test);
+export function countWords(text) {
+	const trimmed = String(text ?? "").trim();
+	if (!trimmed) return 0;
+	return trimmed.split(/\s+/).filter(Boolean).length;
+}
 
-	let vgScore = 0;
-	let vgTotal = 0;
-	let listeningScore = 0;
+/**
+ * Matches a percentage score (0..100) to a placement band.
+ */
+export function matchBandByPct(pct, bands) {
+	const list = Array.isArray(bands) ? bands : [];
+	if (list.length === 0) {
+		return { ...FALLBACK_BAND };
+	}
+	const rounded = Math.round(Number.isFinite(pct) ? pct : 0);
+	const sorted = [...list].sort((a, b) => a.min - b.min);
+	const matched = sorted.find(
+		(band) => rounded >= band.min && rounded <= band.max,
+	);
+	if (matched) return matched;
+	return rounded < sorted[0].min ? sorted[0] : sorted[sorted.length - 1];
+}
+
+function createSectionScore(correct, total) {
+	return {
+		correct,
+		total,
+		pct: total > 0 ? Math.round((correct / total) * 100) : null,
+	};
+}
+
+function recordLevelStat(levelMap, level, isCorrect) {
+	const key = String(level || "A1");
+	const current = levelMap.get(key) ?? { correct: 0, total: 0 };
+	current.total += 1;
+	if (isCorrect) current.correct += 1;
+	levelMap.set(key, current);
+}
+
+function isCorrectChoiceIndex(selected, expected) {
+	return (
+		typeof selected === "number" &&
+		Number.isInteger(selected) &&
+		selected === expected
+	);
+}
+
+function resolveSnapshotParts(snapshot) {
+	const parts = Array.isArray(snapshot?.parts) ? snapshot.parts : [];
+	const listening = parts.find((part) => part?.id === "listening") ??
+		parts[0] ?? { clips: [] };
+	const vocabGrammar = parts.find((part) => part?.id === "vocab-grammar") ??
+		parts[1] ?? { questions: [] };
+	const reading = parts.find((part) => part?.id === "reading") ??
+		parts[2] ?? { passages: [] };
+	const writing =
+		parts.find((part) => part?.id === "writing") ?? parts[3] ?? null;
+	const speaking =
+		parts.find((part) => part?.id === "speaking") ?? parts[4] ?? null;
+	return { listening, vocabGrammar, reading, writing, speaking };
+}
+
+/**
+ * Scores the 3 objective parts of a 5-skill PlacementSnapshot (listening, vocab-grammar, reading).
+ */
+export function scoreObjectiveTest(snapshot, answers = {}) {
+	const { listening, vocabGrammar, reading } = resolveSnapshotParts(snapshot);
+	const listeningAnswers = answers?.listening ?? {};
+	const vocabGrammarAnswers = answers?.vocabGrammar ?? {};
+	const readingAnswers = answers?.reading ?? {};
+
+	const levelMap = new Map();
+
+	let listeningCorrect = 0;
 	let listeningTotal = 0;
-
-	for (const q of questions) {
-		const picked = safeAnswers[q.id];
-		const isCorrect =
-			Number.isInteger(picked) && picked >= 0 && picked === q.answer;
-		if (q.partId === "vocab-grammar") {
-			vgTotal += 1;
-			if (isCorrect) vgScore += 1;
-		} else if (q.partId === "listening") {
+	for (const clip of listening?.clips ?? []) {
+		for (const q of clip?.questions ?? []) {
 			listeningTotal += 1;
-			if (isCorrect) listeningScore += 1;
+			const rawAns = listeningAnswers[q.id];
+			let ok = false;
+			if (q.type === "gap") {
+				const normalizedUser = normalizeGapAnswer(
+					typeof rawAns === "string" ? rawAns : "",
+				);
+				ok =
+					normalizedUser.length > 0 &&
+					(q.accept ?? []).some(
+						(accepted) => normalizeGapAnswer(accepted) === normalizedUser,
+					);
+			} else {
+				ok = isCorrectChoiceIndex(rawAns, q.answer);
+			}
+			if (ok) listeningCorrect += 1;
+			recordLevelStat(levelMap, q.level, ok);
 		}
 	}
 
-	const totalScore = vgScore + listeningScore;
-	const maxScore = vgTotal + listeningTotal;
+	let vgCorrect = 0;
+	let vgTotal = 0;
+	for (const q of vocabGrammar?.questions ?? []) {
+		vgTotal += 1;
+		const ok = isCorrectChoiceIndex(vocabGrammarAnswers[q.id], q.answer);
+		if (ok) vgCorrect += 1;
+		recordLevelStat(levelMap, q.level, ok);
+	}
 
-	const bands = Array.isArray(test?.bands) ? test.bands : [];
-	const matchedBand = bands.find(
-		(b) =>
-			typeof b.min === "number" &&
-			typeof b.max === "number" &&
-			totalScore >= b.min &&
-			totalScore <= b.max,
-	) ??
-		bands[0] ?? {
-			min: 0,
-			max: maxScore,
-			cefr: "A1",
-			course: "ielts-foundation",
-			courseLabel: "",
+	let readingCorrect = 0;
+	let readingTotal = 0;
+	for (const passage of reading?.passages ?? []) {
+		for (const q of passage?.questions ?? []) {
+			readingTotal += 1;
+			const ok = isCorrectChoiceIndex(readingAnswers[q.id], q.answer);
+			if (ok) readingCorrect += 1;
+			recordLevelStat(levelMap, q.level, ok);
+		}
+	}
+
+	const listeningScore = createSectionScore(listeningCorrect, listeningTotal);
+	const vocabGrammarScore = createSectionScore(vgCorrect, vgTotal);
+	const readingScore = createSectionScore(readingCorrect, readingTotal);
+
+	const sectionPcts = [
+		listeningScore.pct,
+		vocabGrammarScore.pct,
+		readingScore.pct,
+	].filter((pct) => pct !== null);
+
+	const averagePct =
+		sectionPcts.length > 0
+			? Math.round(
+					sectionPcts.reduce((sum, pct) => sum + pct, 0) / sectionPcts.length,
+				)
+			: 0;
+
+	const orderedLevels = [
+		...PLACEMENT_LEVEL_ORDER.filter((lvl) => levelMap.has(lvl)),
+		...[...levelMap.keys()].filter(
+			(lvl) => !PLACEMENT_LEVEL_ORDER.includes(lvl),
+		),
+	];
+
+	const byLevel = orderedLevels.map((level) => {
+		const stats = levelMap.get(level);
+		return {
+			level,
+			correct: stats.correct,
+			total: stats.total,
+			pct:
+				stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0,
 		};
+	});
+
+	const provisionalBand = matchBandByPct(averagePct, snapshot?.bands);
 
 	return {
-		totalScore,
-		maxScore,
-		vocabGrammar: {
-			score: vgScore,
-			total: vgTotal,
-		},
-		listening: {
-			score: listeningScore,
-			total: listeningTotal,
-		},
-		band: {
-			min: matchedBand.min,
-			max: matchedBand.max,
-			cefr: matchedBand.cefr,
-			course: matchedBand.course,
-			courseLabel: matchedBand.courseLabel ?? "",
-		},
+		listening: listeningScore,
+		vocabGrammar: vocabGrammarScore,
+		reading: readingScore,
+		totalCorrect: listeningCorrect + vgCorrect + readingCorrect,
+		totalQuestions: listeningTotal + vgTotal + readingTotal,
+		averagePct,
+		byLevel,
+		provisionalBand,
 	};
 }
 
 /**
- * Tạo chuỗi tóm tắt kết quả để đính kèm vào form đăng ký (tối đa 300 ký tự).
- * Ví dụ: "Kiểm tra đầu vào: 21/30 (Vocab + Grammar 11/15, Listening 10/15) – CEFR B1"
- *
- * @param {ReturnType<typeof gradeAttempt>} result
- * @returns {string}
+ * Formats a concise provisional summary within LEAD_PLACEMENT_MAX chars for lead persistence.
  */
-export function buildPlacementSummary(result) {
-	if (!result || typeof result !== "object") return "";
-	const totalScore = Number(result.totalScore ?? 0);
-	const maxScore = Number(result.maxScore ?? 30);
-	const vgScore = Number(result.vocabGrammar?.score ?? 0);
-	const vgTotal = Number(result.vocabGrammar?.total ?? 15);
-	const lScore = Number(result.listening?.score ?? 0);
-	const lTotal = Number(result.listening?.total ?? 15);
-	const cefr = String(result.band?.cefr ?? "A1").trim();
+export function buildProvisionalSummary(objective) {
+	const band = objective?.provisionalBand ?? FALLBACK_BAND;
+	const summary = `Tạm tính ${band.cefr} (${objective?.averagePct ?? 0}%) • Nghe ${objective?.listening?.correct ?? 0}/${objective?.listening?.total ?? 0}, NP-TV ${objective?.vocabGrammar?.correct ?? 0}/${objective?.vocabGrammar?.total ?? 0}, Đọc ${objective?.reading?.correct ?? 0}/${objective?.reading?.total ?? 0}`;
+	if (summary.length <= LEAD_PLACEMENT_MAX) return summary;
+	return `${summary.slice(0, LEAD_PLACEMENT_MAX - 1)}…`;
+}
 
-	const summary = `Kiểm tra đầu vào: ${totalScore}/${maxScore} (Vocab + Grammar ${vgScore}/${vgTotal}, Listening ${lScore}/${lTotal}) – CEFR ${cefr}`;
-	return summary.slice(0, LEAD_PLACEMENT_MAX);
+/**
+ * Counts how many objective questions exist and how many have been answered so far.
+ */
+export function countObjectiveProgress(snapshot, answers = {}) {
+	const { listening, vocabGrammar, reading } = resolveSnapshotParts(snapshot);
+	const lAns = answers?.listening ?? {};
+	const vgAns = answers?.vocabGrammar ?? {};
+	const rAns = answers?.reading ?? {};
+
+	let total = 0;
+	let answered = 0;
+	const unansweredByPart = {
+		listening: 0,
+		vocabGrammar: 0,
+		reading: 0,
+	};
+
+	for (const clip of listening?.clips ?? []) {
+		for (const q of clip?.questions ?? []) {
+			total += 1;
+			const val = lAns[q.id];
+			const done =
+				q.type === "gap"
+					? typeof val === "string" && val.trim().length > 0
+					: typeof val === "number" && Number.isInteger(val);
+			if (done) answered += 1;
+			else unansweredByPart.listening += 1;
+		}
+	}
+
+	for (const q of vocabGrammar?.questions ?? []) {
+		total += 1;
+		const val = vgAns[q.id];
+		if (typeof val === "number" && Number.isInteger(val)) answered += 1;
+		else unansweredByPart.vocabGrammar += 1;
+	}
+
+	for (const passage of reading?.passages ?? []) {
+		for (const q of passage?.questions ?? []) {
+			total += 1;
+			const val = rAns[q.id];
+			if (typeof val === "number" && Number.isInteger(val)) answered += 1;
+			else unansweredByPart.reading += 1;
+		}
+	}
+
+	return {
+		answered,
+		total,
+		unanswered: total - answered,
+		unansweredByPart,
+	};
 }
