@@ -308,7 +308,7 @@
   <div id="toast" role="status" aria-live="polite"></div>
 
   <script>
-    (function () {
+    (() => {
       var toast = document.getElementById('toast');
       var toastTimer = null;
 
@@ -317,7 +317,7 @@
         toast.textContent = msg;
         toast.classList.add('show');
         clearTimeout(toastTimer);
-        toastTimer = setTimeout(function () {
+        toastTimer = setTimeout(() => {
           toast.classList.remove('show');
         }, 1800);
       }
@@ -345,7 +345,7 @@
       function copyText(text, onSuccess, onError) {
         if (!text) return;
         if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function' && window.isSecureContext) {
-          navigator.clipboard.writeText(text).then(onSuccess, function () {
+          navigator.clipboard.writeText(text).then(onSuccess, () => {
             if (fallbackCopy(text)) {
               onSuccess();
             } else {
@@ -359,26 +359,26 @@
         }
       }
 
-      document.querySelectorAll('[data-copy-target]').forEach(function (btn) {
+      document.querySelectorAll('[data-copy-target]').forEach((btn) => {
         var originalLabel = btn.textContent;
         var btnTimer = null;
 
-        btn.addEventListener('click', function () {
+        btn.addEventListener('click', () => {
           var targetId = btn.getAttribute('data-copy-target');
           var el = targetId ? document.getElementById(targetId) : null;
           if (!el) return;
 
           copyText(
             el.textContent,
-            function () {
+            () => {
               btn.textContent = 'Đã chép ✓';
               clearTimeout(btnTimer);
-              btnTimer = setTimeout(function () {
+              btnTimer = setTimeout(() => {
                 btn.textContent = originalLabel;
               }, 1800);
               showToast('Đã sao chép vào bộ nhớ tạm!');
             },
-            function () {
+            () => {
               showToast('Vui lòng chọn văn bản và copy thủ công.');
             }
           );

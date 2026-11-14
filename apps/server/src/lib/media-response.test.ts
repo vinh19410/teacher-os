@@ -138,6 +138,7 @@ describe("mediaObjectResponse security contract (#675)", () => {
 			"/api/student/attempts/att-1/media",
 			"/api/grading/att-1/media",
 			"/api/placement-test/audio/aud-1",
+			"/api/leads/lead-1/placement-submission/media",
 			"/api/exam-imports/job-1/file",
 			"/api/admin/library/tests/test-1/parts/s1/audio",
 			"/api/student/vocab/audio/word-1",

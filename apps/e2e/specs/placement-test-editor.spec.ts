@@ -1,18 +1,19 @@
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
 import { signUpViaApi } from "./helpers";
 import { API_ORIGIN, PROFILE_ORIGIN, WEB_ORIGIN } from "./origins";
 
 const LEAD_ORG_ID = "e2e-lead-org";
-const SAMPLE_MP3_PATH = new URL(
-	"../../web/public/placement-seed/clip-1.mp3",
-	import.meta.url,
-).pathname;
+const STORAGE_KEY = "msmy_placement_attempt_v2";
+const SAMPLE_MP3_PATH = fileURLToPath(
+	new URL("../../web/public/placement-seed/clip-la.mp3", import.meta.url),
+);
 
 function openDb() {
 	const client = createClient({
-		url: `file:${new URL("../local.db", import.meta.url).pathname}`,
+		url: `file:${fileURLToPath(new URL("../local.db", import.meta.url))}`,
 	});
 	client.execute("PRAGMA busy_timeout = 5000;");
 	return client;
@@ -21,6 +22,10 @@ function openDb() {
 async function resetLeadOrgPlacementTest() {
 	const client = openDb();
 	try {
+		await client.execute({
+			sql: "DELETE FROM placement_test_submission WHERE org_id = ?",
+			args: [LEAD_ORG_ID],
+		});
 		await client.execute({
 			sql: "DELETE FROM placement_test WHERE org_id = ?",
 			args: [LEAD_ORG_ID],
@@ -63,38 +68,59 @@ async function signUpLeadTeacher(page: Page): Promise<string> {
 	return email;
 }
 
-test.describe("placement test editor (/placement-test -> /kiem-tra-dau-vao/)", () => {
+function makeSeedAttempt(answers: Record<string, number | string>) {
+	return {
+		version: 1,
+		step: "vocab-grammar",
+		lead: {
+			name: "",
+			phone: "",
+			email: "",
+			birthDate: "",
+			course: "",
+			studyMode: "",
+			note: "",
+		},
+		answers: {
+			listening: {},
+			vocabGrammar: answers,
+			reading: {},
+		},
+		writingText: "",
+		speakingMode: "none",
+		speakingDurationSec: null,
+		plays: {},
+		timerStartedAt: null,
+		submission: null,
+	};
+}
+
+test.describe("placement test editor 5 kỹ năng (/placement-test -> /kiem-tra-dau-vao/)", () => {
 	test.beforeEach(async () => {
 		await resetLeadOrgPlacementTest();
 	});
 
-	test("nhập đề gốc, nháp chưa phát hành hiện bảo trì, sửa câu + xóa câu kiểm lỗi ngưỡng rồi phát hành, thay audio nghe thử và phát ở trang profile", async ({
+	test("nhập đề gốc 5 kỹ năng, nhập lại đề gốc mẫu, sửa + xóa câu kiểm lỗi ngưỡng %, phát hành, thay audio clip-la và giữ localStorage khi bảo trì", async ({
 		page,
 	}) => {
-		// 1. Khi chưa phát hành, trang profile hiện bảo trì và không xóa bài làm dở trong localStorage
+		// 1. Khi chưa phát hành, trang profile hiện thông báo chưa tải được đề và giữ nguyên localStorage v2
 		await page.goto(`${PROFILE_ORIGIN}/kiem-tra-dau-vao/`);
-		await page.evaluate(() => {
-			localStorage.setItem(
-				"msmy_placement_attempt_v1",
-				JSON.stringify({
-					version: 1,
-					step: "part1",
-					answers: { "vg-01": 1 },
-					plays: {},
-				}),
-			);
-		});
+		await page.evaluate(
+			({ key, attempt }) => {
+				localStorage.setItem(key, JSON.stringify(attempt));
+			},
+			{ key: STORAGE_KEY, attempt: makeSeedAttempt({ "gv-01": 1 }) },
+		);
 		await page.reload();
 		await expect(
-			page.getByRole("heading", { name: "Bài kiểm tra đang bảo trì" }),
+			page.getByRole("heading", { name: "Hệ thống tạm thời chưa tải được đề" }),
 		).toBeVisible();
-		const preservedBeforePublish = await page.evaluate(() =>
-			localStorage.getItem("msmy_placement_attempt_v1"),
+		const preservedBeforePublish = await page.evaluate(
+			(key) => localStorage.getItem(key),
+			STORAGE_KEY,
 		);
-		expect(preservedBeforePublish).toContain('"vg-01":1');
-		await page.evaluate(() =>
-			localStorage.removeItem("msmy_placement_attempt_v1"),
-		);
+		expect(preservedBeforePublish).toContain('"gv-01":1');
+		await page.evaluate((key) => localStorage.removeItem(key), STORAGE_KEY);
 
 		// 2. Đăng nhập giáo viên thuộc e2e-lead-org, mở /placement-test và bấm Nhập đề gốc
 		await signUpLeadTeacher(page);
@@ -109,39 +135,70 @@ test.describe("placement test editor (/placement-test -> /kiem-tra-dau-vao/)", (
 		).toBeVisible({
 			timeout: 30_000,
 		});
-		await expect(page.getByTestId("total-questions-count")).toHaveText("30");
+		await expect(page.getByTestId("total-questions-count")).toHaveText("40");
 
-		// 3. Nháp đã lưu nhưng chưa bấm Phát hành -> trang profile vẫn hiện bảo trì
+		// Kiểm tra đủ 5 tab kỹ năng hiển thị đúng số lượng câu
+		await expect(
+			page.getByRole("tab", { name: /1\. Listening \(13\)/ }),
+		).toBeVisible();
+		await expect(
+			page.getByRole("tab", { name: /2\. Grammar & Vocab \(12\)/ }),
+		).toBeVisible();
+		await expect(
+			page.getByRole("tab", { name: /3\. Reading \(15\)/ }),
+		).toBeVisible();
+		await expect(page.getByRole("tab", { name: /4\. Writing/ })).toBeVisible();
+		await expect(
+			page.getByRole("tab", { name: /5\. Speaking \(8\)/ }),
+		).toBeVisible();
+
+		// 2b. Kiểm tra nút "Nhập lại đề gốc mẫu" khôi phục bản nháp gốc sau xác nhận
+		await page
+			.getByLabel("Nội dung câu 1", { exact: true })
+			.fill("Nội dung tạm sẽ bị ghi đè khi nhập lại đề mẫu");
+		await page.getByTestId("reimport-seed-btn").click();
+		await expect(page.getByTestId("confirm-reimport-btn")).toBeVisible();
+		await page.getByTestId("confirm-reimport-btn").click();
+		await expect(
+			page.getByLabel("Nội dung câu 1", { exact: true }),
+		).toHaveValue("What time does the film start?", { timeout: 30_000 });
+		await expect(page.getByTestId("total-questions-count")).toHaveText("40");
+
+		// 3. Nháp đã lưu nhưng chưa bấm Phát hành -> trang profile vẫn chưa có đề công khai
 		const profileTab = await page.context().newPage();
 		await profileTab.goto(`${PROFILE_ORIGIN}/kiem-tra-dau-vao/`);
 		await expect(
-			profileTab.getByRole("heading", { name: "Bài kiểm tra đang bảo trì" }),
+			profileTab.getByRole("heading", {
+				name: "Hệ thống tạm thời chưa tải được đề",
+			}),
 		).toBeVisible();
 
-		// 4. Sửa câu 1, xóa câu 15 của Phần 1 -> tổng câu còn 29 -> bấm Phát hành bị chặn vì ngưỡng cuối = 30
+		// 4. Sửa câu 1 (Listening l-a1), sang tab G&V xóa câu 25 (tổng còn 39) và kiểm lỗi ngưỡng % cuối != 100%
 		const updatedPrompt =
-			"Câu hỏi số 1 đã được cô Mỹ cập nhật trực tiếp trên màn sửa đề.";
+			"Câu hỏi số 1 Listening đã được cô Mỹ cập nhật trực tiếp trên màn sửa đề.";
 		await page
 			.getByLabel("Nội dung câu 1", { exact: true })
 			.fill(updatedPrompt);
-		await page.getByRole("button", { name: "Xóa câu 15", exact: true }).click();
-		await expect(page.getByTestId("total-questions-count")).toHaveText("29");
+		await page.getByRole("tab", { name: /2\. Grammar & Vocab/ }).click();
+		await page.getByRole("button", { name: "Xóa câu 25", exact: true }).click();
+		await expect(page.getByTestId("total-questions-count")).toHaveText("39");
 
+		await page.getByLabel("Điểm tối đa ngưỡng 5", { exact: true }).fill("95");
 		await page.getByTestId("publish-btn").click();
 		const issuesBanner = page.getByTestId("publish-issues-banner");
 		await expect(issuesBanner).toBeVisible();
 		await expect(issuesBanner).toContainText(
-			"Ngưỡng cuối cùng phải kết thúc đúng bằng tổng số câu (29).",
+			"Ngưỡng cuối cùng phải kết thúc đúng bằng 100%.",
 		);
 
-		// 5. Sửa ngưỡng cuối thành 29 rồi Phát hành v1
-		await page.getByLabel("Điểm tối đa ngưỡng 4", { exact: true }).fill("29");
+		// 5. Sửa ngưỡng 5 tối đa thành 100 rồi Phát hành v1
+		await page.getByLabel("Điểm tối đa ngưỡng 5", { exact: true }).fill("100");
 		await page.getByTestId("publish-btn").click();
 		await expect(page.getByTestId("confirm-publish-btn")).toBeVisible();
 		await page.getByTestId("confirm-publish-btn").click();
 		await expect(page.getByText(/Đã phát hành v1/)).toBeVisible();
 
-		// Kiểm tra 3 viewport + screenshot trên màn sửa đề theo REVIEW.md
+		// Kiểm tra 3 viewport + dark mode trên màn sửa đề 5 kỹ năng
 		for (const vp of [
 			{ width: 1440, height: 900, label: "desktop-1440x900" },
 			{ width: 768, height: 1024, label: "tablet-768x1024" },
@@ -155,27 +212,30 @@ test.describe("placement test editor (/placement-test -> /kiem-tra-dau-vao/)", (
 			);
 			expect(overflow, `no horizontal overflow at ${vp.label}`).toBe(false);
 			await page.screenshot({
-				path: new URL(
-					`../../../plans/reports/placement-editor-${vp.label}.png`,
-					import.meta.url,
-				).pathname,
+				path: fileURLToPath(
+					new URL(
+						`../../../plans/reports/721-placement-editor-${vp.label}.png`,
+						import.meta.url,
+					),
+				),
 				fullPage: false,
 			});
 		}
 		await page.setViewportSize({ width: 1440, height: 900 });
-		// Kiểm tra dark mode theo REVIEW.md
 		await page.getByRole("switch", { name: "Giao diện tối" }).click();
 		await expect(page.locator("html")).toHaveClass(/\bdark\b/);
 		await page.screenshot({
-			path: new URL(
-				"../../../plans/reports/placement-editor-desktop-dark.png",
-				import.meta.url,
-			).pathname,
+			path: fileURLToPath(
+				new URL(
+					"../../../plans/reports/721-placement-editor-desktop-dark.png",
+					import.meta.url,
+				),
+			),
 			fullPage: false,
 		});
 		await page.getByRole("switch", { name: "Giao diện tối" }).click();
 
-		// 6. Tải lại trang profile -> thấy ngay đề 29 câu, điền bước thông tin và thấy nội dung câu 1 mới
+		// 6. Tải lại trang profile -> thấy đề 39 câu khách quan, điền cổng thông tin và vào Listening thấy nội dung câu 1 mới
 		const dbClean = openDb();
 		try {
 			await dbClean.execute("UPDATE lead SET ip_hash = '' WHERE ip_hash != ''");
@@ -185,42 +245,47 @@ test.describe("placement test editor (/placement-test -> /kiem-tra-dau-vao/)", (
 		await profileTab.reload();
 		await expect(
 			profileTab.getByRole("heading", {
-				name: /Đánh Giá Năng Lực Tiếng Anh Đầu Vào \(29 Câu/,
+				name: "Bài Kiểm Tra Đầu Vào Tiếng Anh (5 Kỹ Năng)",
 			}),
 		).toBeVisible();
+		await expect(profileTab.locator("body")).toContainText("39 câu khách quan");
+
 		await profileTab.locator("#startTestBtn").click();
 		await expect(
 			profileTab.getByRole("heading", {
-				name: "Thông Tin Của Bạn Trước Khi Làm Bài",
+				name: "Nhập thông tin trước khi vào làm bài",
 			}),
 		).toBeVisible();
 		await profileTab.locator("#leadName").fill("Học Viên Kiểm Đề");
-		await profileTab.locator("#leadEmail").fill("kiemde@example.com");
 		await profileTab
 			.locator("#leadPhone")
 			.fill(`0909${String(Date.now()).slice(-6)}`);
+		await profileTab.locator("#leadEmail").fill("kiemde@example.com");
 		await profileTab.locator("#submitLeadGateBtn").click();
+
 		await expect(
-			profileTab.locator('fieldset[data-question-id="vg-01"]'),
+			profileTab.locator('fieldset[data-question-id="l-a1"]'),
 		).toContainText(updatedPrompt);
 		await expect(profileTab.locator(".progress-counter")).toContainText(
-			"Đã trả lời: 0/29 câu",
+			"Đã trả lời 0/39 câu khách quan",
 		);
-		// 7. Thay audio đoạn 1, bấm Nghe thử ở màn sửa (blob:), rồi Phát hành v2 và phát ở trang profile
+
+		// 7. Quay lại tab Listening, thay audio đoạn 1 (clip-la), nghe thử (blob:), Phát hành v2 và kiểm Range 206
+		await page.getByRole("tab", { name: /1\. Listening/ }).click();
 		const mp3Buffer = readFileSync(SAMPLE_MP3_PATH);
 		await page
 			.getByLabel("Tải audio cho đoạn nghe 1", { exact: true })
 			.setInputFiles({
-				name: "clip-1-replaced.mp3",
+				name: "clip-la-replaced.mp3",
 				mimeType: "audio/mpeg",
 				buffer: mp3Buffer,
 			});
-		await expect(page.locator('[data-clip-audio="clip-1"]')).toContainText(
-			"clip-1-replaced.mp3",
+		await expect(page.locator('[data-clip-audio="clip-la"]')).toContainText(
+			"clip-la-replaced.mp3",
 		);
 
 		await page
-			.locator('[data-clip-audio="clip-1"]')
+			.locator('[data-clip-audio="clip-la"]')
 			.getByRole("button", { name: "Nghe thử" })
 			.click();
 		const previewAudio = page.getByLabel("Trình phát nghe thử đoạn 1", {
@@ -233,7 +298,6 @@ test.describe("placement test editor (/placement-test -> /kiem-tra-dau-vao/)", (
 		await page.getByTestId("confirm-publish-btn").click();
 		await expect(page.getByText(/Đã phát hành v2/)).toBeVisible();
 
-		// Kiểm tra HTTP 206 Range trên URL audio mới của đoạn 1 và phát trên trang profile
 		const publicRes = await page.request.get(
 			`${API_ORIGIN}/public/placement-test`,
 			{
@@ -243,10 +307,10 @@ test.describe("placement test editor (/placement-test -> /kiem-tra-dau-vao/)", (
 		expect(publicRes.status()).toBe(200);
 		const publicData = (await publicRes.json()) as {
 			version: number;
-			parts: [unknown, { clips: Array<{ id: string; src: string }> }];
+			parts: Array<{ clips?: Array<{ id: string; src: string }> }>;
 		};
 		expect(publicData.version).toBe(2);
-		const clip1Src = publicData.parts[1].clips[0]?.src ?? "";
+		const clip1Src = publicData.parts[0]?.clips?.[0]?.src ?? "";
 		expect(clip1Src).toMatch(/^\/public\/placement-test\/audio\//);
 
 		const rangeRes = await page.request.get(`${API_ORIGIN}${clip1Src}`, {
@@ -258,29 +322,27 @@ test.describe("placement test editor (/placement-test -> /kiem-tra-dau-vao/)", (
 		expect(rangeRes.status()).toBe(206);
 		expect(rangeRes.headers()["content-range"]).toMatch(/^bytes 0-99\/\d+$/);
 
-		// 8. Chặn API công khai bằng page.route -> hiện trang bảo trì mà không xóa localStorage
-		await profileTab.evaluate(() => {
-			localStorage.setItem(
-				"msmy_placement_attempt_v1",
-				JSON.stringify({
-					version: 2,
-					step: "part1",
-					answers: { "vg-01": 1 },
-					plays: {},
-				}),
-			);
-		});
+		// 8. Chặn API công khai bằng page.route -> hiện thông báo chưa tải được đề mà không xóa localStorage v2
+		await profileTab.evaluate(
+			({ key, attempt }) => {
+				localStorage.setItem(key, JSON.stringify(attempt));
+			},
+			{ key: STORAGE_KEY, attempt: makeSeedAttempt({ "gv-01": 1 }) },
+		);
 		await profileTab.route("**/public/placement-test", (route) =>
 			route.abort("failed"),
 		);
 		await profileTab.reload();
 		await expect(
-			profileTab.getByRole("heading", { name: "Bài kiểm tra đang bảo trì" }),
+			profileTab.getByRole("heading", {
+				name: "Hệ thống tạm thời chưa tải được đề",
+			}),
 		).toBeVisible();
-		const preservedOnApiError = await profileTab.evaluate(() =>
-			localStorage.getItem("msmy_placement_attempt_v1"),
+		const preservedOnApiError = await profileTab.evaluate(
+			(key) => localStorage.getItem(key),
+			STORAGE_KEY,
 		);
-		expect(preservedOnApiError).toContain('"vg-01":1');
+		expect(preservedOnApiError).toContain('"gv-01":1');
 		await profileTab.close();
 	});
 });

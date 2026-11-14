@@ -1,16 +1,33 @@
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
 import { signUpViaApi } from "./helpers";
 import { API_ORIGIN, PROFILE_ORIGIN, WEB_ORIGIN } from "./origins";
 
 const LEAD_ORG_ID = "e2e-lead-org";
+const STORAGE_KEY = "msmy_placement_attempt_v2";
 const SEED_DIR = new URL("../../web/public/placement-seed/", import.meta.url);
 const questionsPath = new URL("questions.json", SEED_DIR);
-const questionsData = JSON.parse(readFileSync(questionsPath.pathname, "utf8"));
+const questionsData = JSON.parse(
+	readFileSync(fileURLToPath(questionsPath), "utf8"),
+);
+
+const VIEWPORTS = [
+	{ width: 1440, height: 900, label: "desktop-1440x900" },
+	{ width: 768, height: 1024, label: "tablet-768x1024" },
+	{ width: 375, height: 812, label: "mobile-375x812" },
+] as const;
+
+function reportPath(filename: string): string {
+	return fileURLToPath(
+		new URL(`../../../plans/reports/${filename}`, import.meta.url),
+	);
+}
+
 function openDb() {
 	const client = createClient({
-		url: `file:${new URL("../local.db", import.meta.url).pathname}`,
+		url: `file:${fileURLToPath(new URL("../local.db", import.meta.url))}`,
 	});
 	client.execute("PRAGMA busy_timeout = 5000;");
 	return client;
@@ -19,22 +36,30 @@ function openDb() {
 const uniquePhone = () =>
 	`0909${String(Date.now()).slice(-5)}${Math.floor(Math.random() * 10)}`;
 
-async function ensurePlacementPublished(page: Page) {
+async function clearRateLimits() {
 	const client = openDb();
 	try {
-		await client.execute({
-			sql: "DELETE FROM placement_test WHERE org_id = ?",
-			args: [LEAD_ORG_ID],
-		});
-		await client.execute({
-			sql: "DELETE FROM placement_test_audio WHERE org_id = ?",
-			args: [LEAD_ORG_ID],
-		});
+		await client.execute("UPDATE lead SET ip_hash = '' WHERE ip_hash != ''");
+		await client.execute(
+			"UPDATE placement_test_submission SET ip_hash = '' WHERE ip_hash != ''",
+		);
 	} finally {
 		client.close();
 	}
+}
 
-	const email = await signUpViaApi(page, { name: "Cô Mỹ Seed E2E" });
+async function countLeads(): Promise<number> {
+	const db = openDb();
+	try {
+		const res = await db.execute("SELECT COUNT(*) AS cnt FROM lead");
+		return Number(res.rows[0]?.cnt ?? 0);
+	} finally {
+		db.close();
+	}
+}
+
+async function signUpLeadOrgTeacher(page: Page, name: string): Promise<string> {
+	const email = await signUpViaApi(page, { name });
 	const db = openDb();
 	try {
 		const user = await db.execute({
@@ -55,14 +80,39 @@ async function ensurePlacementPublished(page: Page) {
 			if (reassigned > 0) break;
 			await page.waitForTimeout(250);
 		}
-		expect(reassigned).toBe(1);
+		expect(reassigned, "membership reassign sang lead org").toBe(1);
 	} finally {
 		db.close();
 	}
+	return email;
+}
+
+async function ensurePlacementPublished(page: Page) {
+	const client = openDb();
+	try {
+		await client.execute({
+			sql: "DELETE FROM placement_test_submission WHERE org_id = ?",
+			args: [LEAD_ORG_ID],
+		});
+		await client.execute({
+			sql: "DELETE FROM placement_test WHERE org_id = ?",
+			args: [LEAD_ORG_ID],
+		});
+		await client.execute({
+			sql: "DELETE FROM placement_test_audio WHERE org_id = ?",
+			args: [LEAD_ORG_ID],
+		});
+	} finally {
+		client.close();
+	}
+
+	await signUpLeadOrgTeacher(page, "Cô Mỹ Seed E2E");
 
 	const content = structuredClone(questionsData);
-	for (const clip of content.parts[1].clips) {
-		const mp3Bytes = readFileSync(new URL(`${clip.id}.mp3`, SEED_DIR).pathname);
+	for (const clip of content.parts[0].clips) {
+		const mp3Bytes = readFileSync(
+			fileURLToPath(new URL(`${clip.id}.mp3`, SEED_DIR)),
+		);
 		const uploadRes = await page.request.put(
 			`${API_ORIGIN}/api/placement-test/audio`,
 			{
@@ -104,27 +154,29 @@ async function ensurePlacementPublished(page: Page) {
 	);
 	expect(pubRes.status()).toBe(200);
 }
+
 async function playClipOnceToEnd(page: Page, clipId: string) {
 	const playBtn = page.locator(`button[data-play-clip="${clipId}"]`);
 	await expect(playBtn).toBeEnabled();
 	await playBtn.click();
 
-	// Wait until the browser fires `playing` and increments the play counter in localStorage,
-	// then seek to the end of the real MP3 stream so `ended` fires naturally within <1s.
-	await page.waitForFunction((id) => {
-		const raw = localStorage.getItem("msmy_placement_attempt_v1");
-		if (!raw) return false;
-		const parsed = JSON.parse(raw);
-		const audio = document.querySelector<HTMLAudioElement>(
-			`audio[data-audio-clip="${id}"]`,
-		);
-		return (
-			audio !== null &&
-			!audio.paused &&
-			typeof parsed?.plays?.[id] === "number" &&
-			parsed.plays[id] >= 1
-		);
-	}, clipId);
+	await page.waitForFunction(
+		({ key, id }) => {
+			const raw = localStorage.getItem(key);
+			if (!raw) return false;
+			const parsed = JSON.parse(raw);
+			const audio = document.querySelector<HTMLAudioElement>(
+				`audio[data-audio-clip="${id}"]`,
+			);
+			return (
+				audio !== null &&
+				!audio.paused &&
+				typeof parsed?.plays?.[id] === "number" &&
+				parsed.plays[id] >= 1
+			);
+		},
+		{ key: STORAGE_KEY, id: clipId },
+	);
 
 	await page.evaluate((id) => {
 		const audio = document.querySelector<HTMLAudioElement>(
@@ -141,7 +193,68 @@ async function playClipOnceToEnd(page: Page, clipId: string) {
 	await expect(playBtn).not.toContainText("Đang phát");
 }
 
-test.describe("profile placement test (/kiem-tra-dau-vao/)", () => {
+async function installSyntheticMediaRecorder(page: Page) {
+	await page.addInitScript(() => {
+		const createSyntheticStream = async () => {
+			const canvas = document.createElement("canvas");
+			canvas.width = 64;
+			canvas.height = 48;
+			const ctx = canvas.getContext("2d");
+			let tick = 0;
+			const draw = () => {
+				if (!ctx) return;
+				ctx.fillStyle = tick % 2 === 0 ? "#0f766e" : "#115e59";
+				ctx.fillRect(0, 0, canvas.width, canvas.height);
+				ctx.fillStyle = "#ffffff";
+				ctx.fillRect((tick * 4) % 56, 18, 6, 6);
+				tick += 1;
+			};
+			draw();
+			const timer = window.setInterval(draw, 50);
+
+			const canvasStream = canvas.captureStream(10);
+			const tracks: MediaStreamTrack[] = [...canvasStream.getVideoTracks()];
+
+			let audioCtx: AudioContext | null = null;
+			try {
+				audioCtx = new AudioContext();
+				if (audioCtx.state === "suspended") {
+					await audioCtx.resume();
+				}
+				const osc = audioCtx.createOscillator();
+				const gain = audioCtx.createGain();
+				gain.gain.value = 0;
+				osc.connect(gain);
+				const dest = audioCtx.createMediaStreamDestination();
+				gain.connect(dest);
+				osc.start();
+				tracks.push(...dest.stream.getAudioTracks());
+			} catch {
+				// Fallback video-only stream if WebAudio unavailable
+			}
+
+			const combined = new MediaStream(tracks);
+			for (const track of tracks) {
+				const origStop = track.stop.bind(track);
+				track.stop = () => {
+					window.clearInterval(timer);
+					audioCtx?.close().catch(() => {});
+					origStop();
+				};
+			}
+			return combined;
+		};
+
+		Object.defineProperty(navigator, "mediaDevices", {
+			configurable: true,
+			value: {
+				getUserMedia: () => createSyntheticStream(),
+			},
+		});
+	});
+}
+
+test.describe("profile placement test 5 kỹ năng (/kiem-tra-dau-vao/ -> /leads)", () => {
 	test.beforeAll(async ({ browser }) => {
 		const context = await browser.newContext();
 		const page = await context.newPage();
@@ -152,25 +265,11 @@ test.describe("profile placement test (/kiem-tra-dau-vao/)", () => {
 		}
 	});
 
-	test("bấm CTA từ trang chủ sang /kiem-tra-dau-vao/, điền form tạo lead source=placement-test trước Phần 1, giữ đáp án khi reload, khóa nút nghe sau 2 lần, nộp bài đồng bộ placement vào cùng lead và bấm đăng ký hợp nhất dòng (#534)", async ({
+	test("làm trọn bộ 5 kỹ năng, quay Speaking WebM, hợp nhất tư vấn trang chủ và giáo viên chấm W&S + phạt sàn Speaking (-1 band) tại /leads (#721)", async ({
 		page,
 	}) => {
-		const client = openDb();
-		try {
-			await client.execute("UPDATE lead SET ip_hash = '' WHERE ip_hash != ''");
-		} finally {
-			client.close();
-		}
-
-		const countLeads = async () => {
-			const db = openDb();
-			try {
-				const res = await db.execute("SELECT COUNT(*) AS cnt FROM lead");
-				return Number(res.rows[0]?.cnt ?? 0);
-			} finally {
-				db.close();
-			}
-		};
+		await clearRateLimits();
+		await installSyntheticMediaRecorder(page);
 
 		const leadsBefore = await countLeads();
 		const phone = uniquePhone();
@@ -186,33 +285,28 @@ test.describe("profile placement test (/kiem-tra-dau-vao/)", () => {
 		await expect(page).toHaveURL(/\/kiem-tra-dau-vao\/$/);
 		await expect(
 			page.getByRole("heading", {
-				name: /Đánh Giá Năng Lực Tiếng Anh Đầu Vào/,
+				name: "Bài Kiểm Tra Đầu Vào Tiếng Anh (5 Kỹ Năng)",
 			}),
 		).toBeVisible();
 
-		// 2. Bấm Bắt đầu -> vào bước Thông tin của bạn, điền Họ tên + Email + SĐT + trường tuỳ chọn -> tạo 1 dòng lead (source=placement-test) rồi vào Phần 1
+		// 2. Bấm Bắt đầu -> vào cổng thông tin, điền đầy đủ + tuỳ chọn -> tạo lead source=placement-test (submit_count=1)
 		await page.locator("#startTestBtn").click();
 		await expect(
 			page.getByRole("heading", {
-				name: "Thông Tin Của Bạn Trước Khi Làm Bài",
+				name: "Nhập thông tin trước khi vào làm bài",
 			}),
 		).toBeVisible();
 		await page.locator("#leadName").fill("Trần Minh Quân");
-		await page.locator("#leadEmail").fill(email);
 		await page.locator("#leadPhone").fill(phone);
+		await page.locator("#leadEmail").fill(email);
 		await page.locator("#leadOptionalDetails summary").click();
 		await page.locator("#leadStudyMode").selectOption("group-online");
 		await page.locator("#leadNote").fill("Cần lộ trình B1-B2");
 		await page.locator("#submitLeadGateBtn").click();
 
-		await expect(
-			page.getByRole("heading", {
-				name: /Phần 1: Ngữ Pháp & Từ Vựng/,
-			}),
-		).toBeVisible();
+		await expect(page.locator('[data-skill="listening"]')).toBeVisible();
 
-		const leadsAfterGate = await countLeads();
-		expect(leadsAfterGate).toBe(leadsBefore + 1);
+		expect(await countLeads()).toBe(leadsBefore + 1);
 		{
 			const dbGate = openDb();
 			try {
@@ -231,112 +325,154 @@ test.describe("profile placement test (/kiem-tra-dau-vao/)", () => {
 				dbGate.close();
 			}
 		}
-		const vgQuestions = questionsData.parts[0].questions as Array<{
+
+		// 3. Phần 1 Listening: kiểm giới hạn phát clip-la 2 lượt, làm đúng 13/13 câu (cả MCQ + gap-fill), kiểm reload giữ state
+		const clipLaBtn = page.locator('button[data-play-clip="clip-la"]');
+		const clipLaStatus = page.locator('[data-clip-status="clip-la"]');
+		await expect(clipLaStatus).toContainText("Còn 2/2 lượt nghe");
+
+		await playClipOnceToEnd(page, "clip-la");
+		await expect(clipLaStatus).toContainText("Còn 1/2 lượt nghe");
+		await expect(clipLaBtn).toBeEnabled();
+
+		await playClipOnceToEnd(page, "clip-la");
+		await expect(clipLaStatus).toContainText("Còn 0/2 lượt nghe");
+		await expect(clipLaBtn).toBeDisabled();
+		await expect(clipLaBtn).toContainText("Đã hết lượt nghe");
+
+		const listeningClips = questionsData.parts[0].clips as Array<{
+			id: string;
+			questions: Array<{
+				id: string;
+				type?: string;
+				answer?: number;
+				accept?: string[];
+			}>;
+		}>;
+		for (const clip of listeningClips) {
+			for (const q of clip.questions) {
+				if (q.type === "gap") {
+					const accepted = q.accept?.[0] ?? "";
+					await page.locator(`input[data-gap-input="${q.id}"]`).fill(accepted);
+				} else {
+					await page
+						.locator(
+							`fieldset[data-question-id="${q.id}"] input[value="${q.answer ?? 0}"]`,
+						)
+						.check();
+				}
+			}
+		}
+		await expect(page.locator(".progress-counter")).toContainText(
+			"Đã trả lời 13/40 câu khách quan",
+		);
+
+		await page.reload();
+		await expect(page.locator('[data-skill="listening"]')).toBeVisible();
+		await expect(clipLaStatus).toContainText("Còn 0/2 lượt nghe");
+		await expect(clipLaBtn).toBeDisabled();
+		await expect(page.locator(".progress-counter")).toContainText(
+			"Đã trả lời 13/40 câu khách quan",
+		);
+
+		// 4. Phần 2 Grammar & Vocab: đúng 9/12 (75%)
+		await page.locator("#nextToVocabBtn").click();
+		await expect(page.locator('[data-skill="vocab-grammar"]')).toBeVisible();
+		const gvQuestions = questionsData.parts[1].questions as Array<{
 			id: string;
 			answer: number;
 		}>;
-		for (const [i, q] of vgQuestions.entries()) {
+		for (const [i, q] of gvQuestions.entries()) {
+			const pick = i < 9 ? q.answer : (q.answer + 1) % 4;
+			await page
+				.locator(`fieldset[data-question-id="${q.id}"] input[value="${pick}"]`)
+				.check();
+		}
+		await expect(page.locator(".progress-counter")).toContainText(
+			"Đã trả lời 25/40 câu khách quan",
+		);
+
+		// 5. Phần 3 Reading: đúng 12/15 (80%) -> tổng 34/40 khách quan = 85%
+		await page.locator("#nextToReadingBtn").click();
+		await expect(page.locator('[data-skill="reading"]')).toBeVisible();
+		const readingPassages = questionsData.parts[2].passages as Array<{
+			questions: Array<{ id: string; answer: number }>;
+		}>;
+		const readingQuestions = readingPassages.flatMap((p) => p.questions);
+		for (const [i, q] of readingQuestions.entries()) {
 			const pick = i < 12 ? q.answer : (q.answer + 1) % 4;
 			await page
 				.locator(`fieldset[data-question-id="${q.id}"] input[value="${pick}"]`)
 				.check();
 		}
 		await expect(page.locator(".progress-counter")).toContainText(
-			"Đã trả lời: 15/30 câu",
+			"Đã trả lời 40/40 câu khách quan",
 		);
 
-		// Reload giữa bài giữ nguyên bước và toàn bộ câu trả lời đã chọn
-		await page.reload();
-		await expect(
-			page.getByRole("heading", {
-				name: /Phần 1: Ngữ Pháp & Từ Vựng/,
-			}),
-		).toBeVisible();
-		await expect(page.locator(".progress-counter")).toContainText(
-			"Đã trả lời: 15/30 câu",
+		// 6. Phần 4 Writing: 56 từ đạt chuẩn gợi ý 50–80 từ
+		await page.locator("#nextToWritingBtn").click();
+		await expect(page.locator('[data-skill="writing"]')).toBeVisible();
+		const writing56Words =
+			"Dear Alex, thank you for organizing our weekend English workshop in the park. Last Saturday I joined a small conversation group with three new classmates and we practiced ordering lunch and giving directions. Could you please send me the schedule for next week and let me know if I should bring my workbook? Best regards, Minh.";
+		await page.locator("#writingTextarea").fill(writing56Words);
+		await expect(page.getByTestId("writing-word-count")).toContainText(
+			"56 / 50–80 từ",
 		);
-		const firstVg = vgQuestions[0];
-		if (!firstVg) throw new Error("missing vg-01");
-		await expect(
-			page.locator(
-				`fieldset[data-question-id="${firstVg.id}"] input[value="${firstVg.answer}"]`,
-			),
-		).toBeChecked();
-
-		// 3. Chuyển sang Phần 2 (Listening) — kiểm tra giới hạn phát audio 2 lần & bền vững qua reload
-		await page.locator("#toPart2Btn").click();
-		await expect(
-			page.getByRole("heading", {
-				name: /Phần 2: Nghe Hiểu/,
-			}),
-		).toBeVisible();
-
-		const clip1Btn = page.locator('button[data-play-clip="clip-1"]');
-		const clip1Status = page.locator('[data-clip-status="clip-1"]');
-		await expect(clip1Status).toContainText("Còn 2/2 lượt nghe");
-
-		// Lần nghe 1
-		await playClipOnceToEnd(page, "clip-1");
-		await expect(clip1Status).toContainText("Còn 1/2 lượt nghe");
-		await expect(clip1Btn).toBeEnabled();
-
-		// Lần nghe 2 -> khóa nút nghe
-		await playClipOnceToEnd(page, "clip-1");
-		await expect(clip1Status).toContainText(
-			"Đã hết lượt nghe (0/2 lượt còn lại)",
-		);
-		await expect(clip1Btn).toBeDisabled();
-
-		// Reload trang -> nút nghe của clip-1 vẫn bị khóa
-		await page.reload();
-		await expect(clip1Status).toContainText(
-			"Đã hết lượt nghe (0/2 lượt còn lại)",
-		);
-		await expect(clip1Btn).toBeDisabled();
-
-		// 4. Chọn đáp án cho 15 câu Listening (7 câu đúng, 8 câu sai -> tổng 12 + 7 = 19/30 -> B1 / ielts-pre)
-		const listeningQuestions = (
-			questionsData.parts[1].clips as Array<{
-				questions: Array<{ id: string; answer: number }>;
-			}>
-		).flatMap((c) => c.questions);
-
-		for (const [i, q] of listeningQuestions.entries()) {
-			const pick = i < 7 ? q.answer : (q.answer + 1) % 4;
-			await page
-				.locator(`fieldset[data-question-id="${q.id}"] input[value="${pick}"]`)
-				.check();
-		}
-		await expect(page.locator(".progress-counter")).toContainText(
-			"Đã trả lời: 30/30 câu",
+		await expect(page.locator("#writingWordHint")).toContainText(
+			"Đạt độ dài gợi ý.",
 		);
 
-		// Nộp bài -> xem màn kết quả và đồng bộ điểm vào cùng dòng lead
-		const syncResponsePromise = page.waitForResponse(
+		// 7. Phần 5 Speaking: không tính vào 40 phút, ghi WebM từ canvas+audio stream rồi xem lại trước khi nộp
+		await page.locator("#nextToSpeakingBtn").click();
+		await expect(page.locator('[data-skill="speaking"]')).toBeVisible();
+		await expect(page.getByTestId("test-timer")).toContainText(
+			"Speaking · Không tính vào 40 phút",
+		);
+		await page.locator("#startSpeakingBtn").click();
+		await expect(page.locator("#stopSpeakingBtn")).toBeVisible();
+		await page.waitForTimeout(1200);
+		await page.locator("#stopSpeakingBtn").click();
+		await expect(page.locator("#speakingReviewBox")).toBeVisible();
+		await expect(page.locator("#speakingReviewBox")).toContainText(
+			"Đã ghi bài nói (sẵn sàng nộp)",
+		);
+		await expect(page.locator("#speakingPlaybackVideo")).toBeVisible();
+
+		// 8. Nộp bài -> POST /submissions (201) + PUT /speaking-media (200) -> màn Kết quả tạm tính
+		const submitPromise = page.waitForResponse(
 			(res) =>
-				res.url().endsWith("/public/leads") &&
+				res.url().endsWith("/public/placement-test/submissions") &&
 				res.request().method() === "POST",
 		);
+		const uploadMediaPromise = page.waitForResponse(
+			(res) =>
+				/\/public\/placement-test\/submissions\/[^/]+\/speaking-media$/.test(
+					res.url(),
+				) && res.request().method() === "PUT",
+		);
 		await page.locator("#submitTestBtn").click();
-		const syncResponse = await syncResponsePromise;
-		expect(syncResponse.status()).toBe(201);
+		const submitRes = await submitPromise;
+		const uploadMediaRes = await uploadMediaPromise;
+		expect(submitRes.status()).toBe(201);
+		expect(uploadMediaRes.status()).toBe(200);
 
 		const resultCard = page.locator("#testResultCard");
 		await expect(resultCard).toBeVisible();
-		await expect(page.locator("#totalScoreValue")).toHaveText("19/30");
-		await expect(page.locator("#vgScoreValue")).toHaveText("12/15");
-		await expect(page.locator("#listeningScoreValue")).toHaveText("7/15");
-		await expect(page.locator("#cefrBandValue")).toHaveText("B1");
-		await expect(resultCard).toContainText(
-			"Khóa học gợi ý tham khảo: Pre IELTS (4.0–4.5)",
+		await expect(page.getByTestId("provisional-badge")).toContainText(
+			"Kết quả tạm tính — Chờ chấm Writing & Speaking",
+		);
+		await expect(page.getByTestId("objective-average-pct")).toHaveText("85%");
+		await expect(page.locator('[data-skill-result="speaking"]')).toContainText(
+			"Đã gửi file ghi âm/ghi hình · Chờ cô chấm",
 		);
 
-		const expectedSummary =
-			"Kiểm tra đầu vào: 19/30 (Vocab + Grammar 12/15, Listening 7/15) – CEFR B1";
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await page.screenshot({
+			path: reportPath("721-profile-provisional-result-desktop-1440x900.png"),
+			fullPage: false,
+		});
 
-		// Sau khi nộp bài: vẫn đúng +1 dòng lead cho SĐT đó, placement đã được gắn và submit_count = 2
-		const leadsAfterSubmit = await countLeads();
-		expect(leadsAfterSubmit).toBe(leadsBefore + 1);
+		expect(await countLeads()).toBe(leadsBefore + 1);
 		{
 			const dbAfter = openDb();
 			try {
@@ -346,19 +482,16 @@ test.describe("profile placement test (/kiem-tra-dau-vao/)", () => {
 				});
 				expect(rowRes.rows.length).toBe(1);
 				expect(rowRes.rows[0]?.source).toBe("placement-test");
-				expect(rowRes.rows[0]?.email).toBe(email);
-				expect(rowRes.rows[0]?.study_mode).toBe("group-online");
-				expect(rowRes.rows[0]?.note).toBe("Cần lộ trình B1-B2");
-				expect(rowRes.rows[0]?.placement).toBe(expectedSummary);
+				expect(rowRes.rows[0]?.placement).not.toBe("");
 				expect(Number(rowRes.rows[0]?.submit_count)).toBe(2);
 			} finally {
 				dbAfter.close();
 			}
 		}
 
-		// Reload trang kết quả không gửi lại POST /public/leads và không làm tăng submit_count
+		// Reload giữ màn kết quả, không tăng submit_count
 		await page.reload();
-		await expect(page.locator("#testResultCard")).toBeVisible();
+		await expect(resultCard).toBeVisible();
 		{
 			const dbReload = openDb();
 			try {
@@ -372,69 +505,173 @@ test.describe("profile placement test (/kiem-tra-dau-vao/)", () => {
 			}
 		}
 
-		// 5. Bấm "Đăng Ký Theo Kết Quả Này" -> chuyển về form đăng ký, điền sẵn kết quả, khóa học và thông tin đã nhập, URL sạch query
+		// 9. Bấm đăng ký kèm kết quả tạm tính -> mở form trang chủ -> hợp nhất vào cùng dòng lead
+		const consultPostPromise = page.waitForResponse(
+			(res) =>
+				res.url().endsWith("/public/leads") &&
+				res.request().method() === "POST",
+		);
 		await page.locator("#registerWithResultBtn").click();
+		const consultRes = await consultPostPromise;
+		expect(consultRes.status()).toBe(201);
+		await expect(page.locator("#registerConsultFeedback")).toBeVisible();
+		await page.locator("#openHomepageConsultLink").click();
+
 		await expect(page).toHaveURL(`${PROFILE_ORIGIN}/#dang-ky-tu-van`);
 		expect(new URL(page.url()).search).toBe("");
 
 		const banner = page.locator("#quizPlacementBanner");
 		await expect(banner).toBeVisible();
-		await expect(banner).toHaveText(`Đã đính kèm: ${expectedSummary}`);
-		await expect(page.locator("#courseTrack")).toHaveValue("ielts-practical");
+		await expect(banner).toContainText("Đã đính kèm:");
+		await expect(page.locator("#courseTrack")).toHaveValue(
+			"workplace-interview",
+		);
 		await expect(page.locator("#studentName")).toHaveValue("Trần Minh Quân");
 		await expect(page.locator("#studentPhone")).toHaveValue(phone);
 
-		// Gửi form tư vấn với cùng SĐT -> hợp nhất vào cùng dòng lead, giữ nguyên source=placement-test và các trường đã lưu
-		const form = page.locator("#consultForm");
-		await form.getByRole("button", { name: "Đăng Ký Khóa Học" }).click();
-
+		const consultForm = page.locator("#consultForm");
+		await consultForm.getByRole("button", { name: "Đăng Ký Khóa Học" }).click();
 		await expect(page.locator("#leadSuccessBox")).toBeVisible();
 
-		const dbVerify = openDb();
+		{
+			const dbMerged = openDb();
+			try {
+				const rowRes = await dbMerged.execute({
+					sql: "SELECT source, email, study_mode, note, submit_count FROM lead WHERE phone = ?",
+					args: [phone],
+				});
+				expect(rowRes.rows.length).toBe(1);
+				expect(rowRes.rows[0]?.source).toBe("placement-test");
+				expect(rowRes.rows[0]?.email).toBe(email);
+				expect(rowRes.rows[0]?.study_mode).toBe("group-online");
+				expect(rowRes.rows[0]?.note).toBe("Cần lộ trình B1-B2");
+				expect(Number(rowRes.rows[0]?.submit_count)).toBe(4);
+			} finally {
+				dbMerged.close();
+			}
+		}
+
+		// 10. Context giáo viên trên /leads: mở modal chấm W&S, kiểm video blob:, 3 viewport + dark mode, chấm W=5/5/5 & S=0/0/0/0 để kích hoạt hạ 1 bậc Speaking floor
+		const browser = page.context().browser();
+		if (!browser) throw new Error("missing browser instance");
+		const teacherContext = await browser.newContext();
+		const teacherPage = await teacherContext.newPage();
 		try {
-			const rowRes = await dbVerify.execute({
-				sql: "SELECT source, email, course, study_mode, note, placement, submit_count FROM lead WHERE phone = ?",
-				args: [phone],
+			await signUpLeadOrgTeacher(teacherPage, "Cô Mỹ Chấm Bài E2E");
+			await teacherPage.goto(`${WEB_ORIGIN}/leads`);
+			const table = teacherPage.getByTestId("leads-table");
+			await expect(table).toBeVisible();
+
+			const targetRow = table
+				.locator("tr", { hasText: phone })
+				.filter({ hasText: "Chờ chấm W&S" });
+			await expect(targetRow).toBeVisible();
+			await targetRow.click();
+
+			const panel = teacherPage.getByTestId("placement-submission-panel");
+			await expect(panel).toBeVisible();
+			const mediaPlayer = teacherPage.getByTestId("speaking-media-player");
+			await expect(mediaPlayer).toBeVisible();
+			await expect(mediaPlayer).toHaveAttribute("src", /^blob:/, {
+				timeout: 15_000,
 			});
-			expect(rowRes.rows.length).toBe(1);
-			expect(rowRes.rows[0]?.source).toBe("placement-test");
-			expect(rowRes.rows[0]?.email).toBe(email);
-			expect(rowRes.rows[0]?.course).toBe("ielts-practical");
-			expect(rowRes.rows[0]?.study_mode).toBe("group-online");
-			expect(rowRes.rows[0]?.note).toBe("Cần lộ trình B1-B2");
-			expect(rowRes.rows[0]?.placement).toBe(expectedSummary);
-			expect(Number(rowRes.rows[0]?.submit_count)).toBe(3);
+
+			for (const vp of VIEWPORTS) {
+				await teacherPage.setViewportSize({
+					width: vp.width,
+					height: vp.height,
+				});
+				const overflow = await teacherPage.evaluate(
+					() =>
+						document.documentElement.scrollWidth >
+						document.documentElement.clientWidth,
+				);
+				expect(overflow, `no /leads modal overflow at ${vp.label}`).toBe(false);
+				await teacherPage.screenshot({
+					path: reportPath(`721-leads-grading-${vp.label}.png`),
+					fullPage: false,
+				});
+			}
+
+			await teacherPage.setViewportSize({ width: 1440, height: 900 });
+			await teacherPage.evaluate(() =>
+				document.documentElement.classList.add("dark"),
+			);
+			await teacherPage.screenshot({
+				path: reportPath("721-leads-grading-desktop-dark.png"),
+				fullPage: false,
+			});
+			await teacherPage.evaluate(() =>
+				document.documentElement.classList.remove("dark"),
+			);
+
+			await teacherPage.getByTestId("writing-ct-5").click();
+			await teacherPage.getByTestId("writing-or-5").click();
+			await teacherPage.getByTestId("writing-lg-5").click();
+			await teacherPage.getByTestId("speaking-gv-0").click();
+			await teacherPage.getByTestId("speaking-dm-0").click();
+			await teacherPage.getByTestId("speaking-pr-0").click();
+			await teacherPage.getByTestId("speaking-ic-0").click();
+
+			await expect(
+				teacherPage.getByTestId("speaking-floor-note"),
+			).toContainText("Điểm Speaking thấp hơn đáng kể");
+			await expect(teacherPage.getByTestId("final-band-preview")).toContainText(
+				"A2 (71%)",
+			);
+
+			await teacherPage
+				.getByLabel("Nhận xét bài kiểm tra đầu vào")
+				.fill(
+					"Nghe đọc ngữ pháp rất vững, cần luyện phản xạ nói câu trọn vẹn.",
+				);
+
+			const gradePromise = teacherPage.waitForResponse(
+				(res) =>
+					/\/api\/leads\/[^/]+\/placement-submission$/.test(res.url()) &&
+					res.request().method() === "PATCH",
+			);
+			await teacherPage.getByTestId("save-placement-grade-btn").click();
+			const gradeRes = await gradePromise;
+			expect(gradeRes.status()).toBe(200);
+			await expect(
+				teacherPage.getByText("Đã lưu kết quả chấm bài kiểm tra đầu vào."),
+			).toBeVisible();
+
+			await teacherPage.keyboard.press("Escape");
+			await expect(panel).toBeHidden();
+			await expect(table.locator("tr", { hasText: phone })).toContainText(
+				"Đã chấm bài test",
+			);
+
+			const dbGraded = openDb();
+			try {
+				const gradedRow = await dbGraded.execute({
+					sql: "SELECT placement FROM lead WHERE phone = ? LIMIT 1",
+					args: [phone],
+				});
+				const placementText = String(gradedRow.rows[0]?.placement ?? "");
+				expect(placementText).toContain("A2");
+				expect(placementText).toContain("71%");
+			} finally {
+				dbGraded.close();
+			}
 		} finally {
-			dbVerify.close();
+			await teacherContext.close();
 		}
 	});
 
-	test("cổng thông tin: chặn khi thiếu/sai trường bắt buộc, giữ ở form kèm Thử lại + Zalo khi API lỗi 500, và xóa thông tin khi bấm Đổi thông tin (#534)", async ({
+	test("cổng thông tin: kiểm lỗi hợp lệ, giữ form khi API 500, thử gửi lại và quay lại sửa thông tin đã điền (#721)", async ({
 		page,
 	}) => {
-		const client = openDb();
-		try {
-			await client.execute("UPDATE lead SET ip_hash = '' WHERE ip_hash != ''");
-		} finally {
-			client.close();
-		}
-
-		const countLeads = async () => {
-			const db = openDb();
-			try {
-				const res = await db.execute("SELECT COUNT(*) AS cnt FROM lead");
-				return Number(res.rows[0]?.cnt ?? 0);
-			} finally {
-				db.close();
-			}
-		};
-
+		await clearRateLimits();
 		const leadsBefore = await countLeads();
+
 		await page.goto(`${PROFILE_ORIGIN}/kiem-tra-dau-vao/`);
 		await page.locator("#startTestBtn").click();
 		await expect(page.locator("#leadGateCard")).toBeVisible();
 
-		// 1. Bấm gửi khi để trống -> báo lỗi cả 3 trường bắt buộc, focus trường đầu tiên (#leadName), không tạo lead
+		// 1. Gửi form rỗng -> báo lỗi 3 trường, focus #leadName, không tạo lead
 		await page.locator("#submitLeadGateBtn").click();
 		await expect(page.locator("#leadName")).toHaveAttribute(
 			"aria-invalid",
@@ -448,16 +685,16 @@ test.describe("profile placement test (/kiem-tra-dau-vao/)", () => {
 			"aria-invalid",
 			"true",
 		);
-		await expect(page.locator("#errLeadName")).toContainText("họ và tên");
-		await expect(page.locator("#errLeadEmail")).toContainText("email");
-		await expect(page.locator("#errLeadPhone")).toContainText("số điện thoại");
+		await expect(page.locator("#leadNameError")).toBeVisible();
+		await expect(page.locator("#leadPhoneError")).toBeVisible();
+		await expect(page.locator("#leadEmailError")).toBeVisible();
 		await expect(page.locator("#leadName")).toBeFocused();
 		expect(await countLeads()).toBe(leadsBefore);
 
-		// 2. Điền tên hợp lệ nhưng email sai định dạng -> focus chuyển sang #leadEmail
+		// 2. Họ tên đúng nhưng email + SĐT sai -> focus trường lỗi tiếp theo (#leadEmail theo thứ tự validateLeadForm)
 		await page.locator("#leadName").fill("Lê Thu Trang");
-		await page.locator("#leadEmail").fill("email-khong-hop-le");
 		await page.locator("#leadPhone").fill("0909123");
+		await page.locator("#leadEmail").fill("email-khong-hop-le");
 		await page.locator("#submitLeadGateBtn").click();
 		await expect(page.locator("#leadName")).not.toHaveAttribute(
 			"aria-invalid",
@@ -470,7 +707,7 @@ test.describe("profile placement test (/kiem-tra-dau-vao/)", () => {
 		await expect(page.locator("#leadEmail")).toBeFocused();
 		expect(await countLeads()).toBe(leadsBefore);
 
-		// 3. API trả 500 ở bước gửi -> chặn ở form, hiện thông báo kèm nút Thử Gửi Lại + link Zalo
+		// 3. API trả 500 khi gửi -> chặn ở form, hiện #leadFormError chứa "Hệ thống đang bận", không tạo lead
 		await page.route("**/public/leads", async (route) => {
 			if (route.request().method() === "POST") {
 				await route.fulfill({
@@ -487,96 +724,67 @@ test.describe("profile placement test (/kiem-tra-dau-vao/)", () => {
 		});
 
 		const phone = uniquePhone();
-		await page.locator("#leadEmail").fill("thutrang@example.com");
 		await page.locator("#leadPhone").fill(phone);
-		await page.locator("#leadPhone").blur();
-		await expect(page.locator("#leadPhone")).not.toHaveAttribute(
-			"aria-invalid",
-			"true",
-		);
-		await expect(page.locator("#leadEmail")).not.toHaveAttribute(
-			"aria-invalid",
-			"true",
-		);
+		await page.locator("#leadEmail").fill("thutrang@example.com");
 		await page.locator("#submitLeadGateBtn").click();
 
-		const errBox = page.locator("#leadGateErrorBox");
-		await expect(errBox).toBeVisible();
-		await expect(errBox).toContainText("Hệ thống đang bận");
-		await expect(page.locator("#retryLeadSubmitBtn")).toBeVisible();
-		await expect(page.locator("#leadGateZaloLink")).toHaveAttribute(
-			"href",
-			/zalo\.me\/0929060994/,
-		);
-		await expect(
-			page.getByRole("heading", { name: /Phần 1: Ngữ Pháp & Từ Vựng/ }),
-		).toHaveCount(0);
+		const formError = page.locator("#leadFormError");
+		await expect(formError).toBeVisible();
+		await expect(formError).toContainText("Hệ thống đang bận");
+		await expect(page.locator('[data-skill="listening"]')).toHaveCount(0);
 		expect(await countLeads()).toBe(leadsBefore);
 
-		// Bỏ chặn 500 và bấm Thử Gửi Lại -> vào Phần 1
+		// Gỡ mock 500 và bấm #submitLeadGateBtn lại -> vào Listening + tạo 1 lead
 		await page.unroute("**/public/leads");
-		await page.locator("#retryLeadSubmitBtn").click();
-		await expect(
-			page.getByRole("heading", { name: /Phần 1: Ngữ Pháp & Từ Vựng/ }),
-		).toBeVisible();
+		await page.locator("#submitLeadGateBtn").click();
+		await expect(page.locator('[data-skill="listening"]')).toBeVisible();
 		expect(await countLeads()).toBe(leadsBefore + 1);
 
-		// 4. Bấm "Không phải bạn? Đổi thông tin" -> xóa lead khỏi localStorage và quay về form trống
+		// 4. Bấm #changeLeadInfoBtn -> quay lại cổng thông tin, giữ sẵn tên/SĐT để chỉnh sửa
 		await page.locator("#changeLeadInfoBtn").click();
 		await expect(page.locator("#leadGateCard")).toBeVisible();
-		await expect(page.locator("#leadName")).toHaveValue("");
-		await expect(page.locator("#leadEmail")).toHaveValue("");
-		await expect(page.locator("#leadPhone")).toHaveValue("");
-		const savedAfterClear = await page.evaluate(() =>
-			localStorage.getItem("msmy_placement_attempt_v1"),
+		await expect(page.locator("#leadName")).toHaveValue("Lê Thu Trang");
+		await expect(page.locator("#leadPhone")).toHaveValue(phone);
+		const savedAfterEdit = await page.evaluate(
+			(key) => localStorage.getItem(key),
+			STORAGE_KEY,
 		);
-		expect(savedAfterClear).toBeNull();
+		expect(savedAfterEdit).not.toBeNull();
 	});
-	test("đạt chuẩn 3 viewport (1440×900, 768×1024, 375×812) không tràn ngang, điều hướng bàn phím, xác nhận câu trống và hoàn lượt khi audio lỗi", async ({
+
+	test("3 viewport không tràn ngang, điều hướng bàn phím, hoàn lượt khi audio clip-lb lỗi, hộp xác nhận trống và bỏ qua Speaking (#721)", async ({
 		page,
 	}) => {
-		const client = openDb();
-		try {
-			await client.execute("UPDATE lead SET ip_hash = '' WHERE ip_hash != ''");
-		} finally {
-			client.close();
-		}
-
-		const viewports = [
-			{ width: 1440, height: 900, label: "desktop-1440x900" },
-			{ width: 768, height: 1024, label: "tablet-768x1024" },
-			{ width: 375, height: 812, label: "mobile-375x812" },
-		];
-
+		await clearRateLimits();
 		await page.goto(`${PROFILE_ORIGIN}/kiem-tra-dau-vao/`);
-		for (const vp of viewports) {
+
+		for (const vp of VIEWPORTS) {
 			await page.setViewportSize({ width: vp.width, height: vp.height });
 			const overflow = await page.evaluate(
 				() =>
 					document.documentElement.scrollWidth >
 					document.documentElement.clientWidth,
 			);
-			expect(overflow, `no horizontal overflow at ${vp.label}`).toBe(false);
+			expect(overflow, `no intro horizontal overflow at ${vp.label}`).toBe(
+				false,
+			);
 			await page.screenshot({
-				path: new URL(
-					`../../../plans/reports/placement-test-${vp.label}.png`,
-					import.meta.url,
-				).pathname,
+				path: reportPath(`721-profile-intro-${vp.label}.png`),
 				fullPage: false,
 			});
 		}
 
-		// Điều hướng bằng bàn phím: focus nút Bắt đầu -> Enter -> kiểm tra 3 viewport bước form -> điền form -> Enter sang Phần 1
+		// Điều hướng bàn phím sang cổng thông tin & chụp 3 viewport
 		await page.setViewportSize({ width: 1440, height: 900 });
 		await page.locator("#startTestBtn").focus();
 		await page.keyboard.press("Enter");
 		await expect(
 			page.getByRole("heading", {
-				name: "Thông Tin Của Bạn Trước Khi Làm Bài",
+				name: "Nhập thông tin trước khi vào làm bài",
 			}),
 		).toBeVisible();
 
-		for (const vp of viewports) {
+		for (const vp of VIEWPORTS) {
 			await page.setViewportSize({ width: vp.width, height: vp.height });
 			const overflow = await page.evaluate(
 				() =>
@@ -587,78 +795,83 @@ test.describe("profile placement test (/kiem-tra-dau-vao/)", () => {
 				false,
 			);
 			await page.screenshot({
-				path: new URL(
-					`../../../plans/reports/placement-gate-${vp.label}.png`,
-					import.meta.url,
-				).pathname,
+				path: reportPath(`721-profile-gate-${vp.label}.png`),
 				fullPage: false,
 			});
 		}
 
-		await page.setViewportSize({ width: 1440, height: 900 });
-		await page.locator("#leadName").focus();
-		await page.keyboard.type("Phạm Hoàng Minh");
-		await page.keyboard.press("Tab");
-		await expect(page.locator("#leadEmail")).toBeFocused();
-		await page.keyboard.type(`hoangminh.${Date.now()}@example.com`);
-		await page.keyboard.press("Tab");
-		await expect(page.locator("#leadPhone")).toBeFocused();
-		await page.keyboard.type(uniquePhone());
-		await page.locator("#submitLeadGateBtn").focus();
-		await page.keyboard.press("Enter");
-		await expect(
-			page.getByRole("heading", { name: /Phần 1: Ngữ Pháp & Từ Vựng/ }),
-		).toBeVisible();
-		const firstRadio = page
-			.locator('fieldset[data-question-id="vg-01"] input[type="radio"]')
-			.first();
-		await firstRadio.focus();
-		await page.keyboard.press("Space");
-		await expect(firstRadio).toBeChecked();
-
-		// Sang Phần 2 bằng bàn phím
-		await page.locator("#toPart2Btn").focus();
-		await page.keyboard.press("Enter");
-		await expect(
-			page.getByRole("heading", { name: /Phần 2: Nghe Hiểu/ }),
-		).toBeVisible();
-
-		// Kiểm tra hoàn lượt khi audio lỗi trước khi ended
+		// Cài chặn mạng clip-lb trước khi render Listening (do audio preload="metadata")
 		const pubDataRes = await page.request.get(
 			`${API_ORIGIN}/public/placement-test`,
 			{
 				headers: { Origin: PROFILE_ORIGIN },
 			},
 		);
+		expect(pubDataRes.status()).toBe(200);
 		const pubData = (await pubDataRes.json()) as {
-			parts: [unknown, { clips: Array<{ id: string; src: string }> }];
+			parts: [{ clips: Array<{ id: string; src: string }> }];
 		};
-		const clip2Src =
-			pubData.parts[1].clips.find((c) => c.id === "clip-2")?.src ??
-			"/public/placement-test/audio/clip-2";
-		await page.route(`**${clip2Src}`, (route) => route.abort("failed"));
-		const clip2Btn = page.locator('button[data-play-clip="clip-2"]');
-		const clip2Status = page.locator('[data-clip-status="clip-2"]');
-		await clip2Btn.click();
-		await expect(clip2Status).toContainText("không bị trừ lượt nghe");
-		await expect(clip2Btn).toBeEnabled();
-		const savedPlaysClip2 = await page.evaluate(() => {
-			const raw = localStorage.getItem("msmy_placement_attempt_v1");
-			return raw ? (JSON.parse(raw)?.plays?.["clip-2"] ?? 0) : 0;
-		});
-		expect(savedPlaysClip2).toBe(0);
-		await page.unroute(`**${clip2Src}`);
-		// Nộp bài khi còn câu trống -> hiện hộp xác nhận số câu trống
+		const clipLbSrc =
+			pubData.parts[0].clips.find((c) => c.id === "clip-lb")?.src ??
+			"/public/placement-test/audio/clip-lb";
+		await page.route(`**${clipLbSrc}`, (route) => route.abort("failed"));
+
+		// Tab theo thứ tự DOM hàng 1 (#leadName -> #leadPhone -> #leadEmail) và Enter gửi
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await page.locator("#leadName").focus();
+		await page.keyboard.type("Phạm Hoàng Minh");
+		await page.keyboard.press("Tab");
+		await expect(page.locator("#leadPhone")).toBeFocused();
+		await page.keyboard.type(uniquePhone());
+		await page.keyboard.press("Tab");
+		await expect(page.locator("#leadEmail")).toBeFocused();
+		await page.keyboard.type(`hoangminh.${Date.now()}@example.com`);
+		await page.locator("#submitLeadGateBtn").focus();
+		await page.keyboard.press("Enter");
+		await expect(page.locator('[data-skill="listening"]')).toBeVisible();
+
+		// Bấm phát clip-lb đang lỗi -> hiện lỗi + hoàn lượt giữ nguyên 2/2 + plays["clip-lb"] === 0
+		const clipLbBtn = page.locator('button[data-play-clip="clip-lb"]');
+		const clipLbStatus = page.locator('[data-clip-status="clip-lb"]');
+		await clipLbBtn.click();
+		const clipLbErr = clipLbBtn
+			.locator("xpath=ancestor::div[contains(@class,'clip-player-box')]")
+			.locator(".clip-error-msg");
+		await expect(clipLbErr).toBeVisible();
+		await expect(clipLbErr).toHaveText(
+			/Không thể tải file âm thanh|Trình duyệt không phát được âm thanh/,
+		);
+		await expect(clipLbStatus).toContainText("Còn 2/2 lượt nghe");
+		await expect(clipLbBtn).toBeEnabled();
+		const savedPlaysClipLb = await page.evaluate((key) => {
+			const raw = localStorage.getItem(key);
+			return raw ? (JSON.parse(raw)?.plays?.["clip-lb"] ?? 0) : 0;
+		}, STORAGE_KEY);
+		expect(savedPlaysClipLb).toBe(0);
+		await page.unroute(`**${clipLbSrc}`);
+
+		// Nhảy sang tab Speaking, kiểm tra hộp xác nhận câu trống + Bỏ qua phần Speaking
+		await page
+			.locator('nav.skill-stepper button[data-skill-step="speaking"]')
+			.click();
+		await expect(page.locator('[data-skill="speaking"]')).toBeVisible();
+
 		await page.locator("#submitTestBtn").click();
 		const confirmBox = page.locator("#unansweredConfirmBox");
 		await expect(confirmBox).toBeVisible();
-		await expect(confirmBox).toContainText("29/30 câu chưa chọn đáp án");
-
 		await page.locator("#cancelSubmitBtn").click();
 		await expect(confirmBox).toBeHidden();
 
+		await page.locator("#skipSpeakingBtn").click();
+		await expect(page.getByText("Đã chọn bỏ qua phần Speaking")).toBeVisible();
+
 		await page.locator("#submitTestBtn").click();
+		await expect(confirmBox).toBeVisible();
 		await page.locator("#confirmSubmitBtn").click();
+
 		await expect(page.locator("#testResultCard")).toBeVisible();
+		await expect(page.locator('[data-skill-result="speaking"]')).toContainText(
+			"Đã bỏ qua phần Speaking",
+		);
 	});
 });

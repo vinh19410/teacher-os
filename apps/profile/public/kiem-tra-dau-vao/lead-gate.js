@@ -282,3 +282,29 @@ export function leadErrorMessage(status, body = null) {
 			"Hệ thống đang bận, chưa thể lưu thông tin của bạn. Vui lòng thử lại hoặc nhắn Zalo cô Mỹ.",
 	};
 }
+
+/**
+ * Tạo object `lead` khớp `placementPublicSubmitSchema.lead`
+ * cho request `POST /public/placement-test/submissions`.
+ *
+ * @param {Record<string, unknown>} lead
+ */
+export function buildPlacementSubmissionLead(lead = {}) {
+	const safe = lead && typeof lead === "object" ? lead : {};
+	const name = String(safe.name ?? "")
+		.trim()
+		.slice(0, 120);
+	const rawPhone = String(safe.phone ?? "").trim();
+	const phone = normalizeVietnamPhone(rawPhone) ?? rawPhone;
+	const email = String(safe.email ?? "")
+		.trim()
+		.slice(0, LEAD_EMAIL_MAX);
+	const birthDate = String(safe.birthDate ?? "")
+		.trim()
+		.slice(0, 20);
+	const note = String(safe.note ?? "")
+		.trim()
+		.slice(0, LEAD_NOTE_MAX);
+
+	return { name, phone, email, birthDate, note };
+}

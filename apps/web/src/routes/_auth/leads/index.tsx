@@ -19,6 +19,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { fmtWhen } from "@/components/assignments/assignment-status";
 import { StatusTag } from "@/components/assignments/status-tag";
+import { PlacementSubmissionPanel } from "@/components/leads/placement-submission-panel";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
@@ -413,10 +414,26 @@ function LeadsRoute() {
 											>
 												{scheduleLabel(row) || "—"}
 											</span>,
-											<div key="status" className="whitespace-nowrap">
+											<div
+												key="status"
+												className="flex flex-wrap items-center gap-1.5 whitespace-nowrap"
+											>
 												<StatusTag tone={STATUS_TONES[row.status]}>
 													{LEAD_STATUS_LABELS[row.status]}
 												</StatusTag>
+												{row.hasPlacementSubmission && (
+													<StatusTag
+														tone={
+															row.placementSubmissionStatus === "graded"
+																? "ok"
+																: "warn"
+														}
+													>
+														{row.placementSubmissionStatus === "graded"
+															? "Đã chấm bài test"
+															: "Chờ chấm W&S"}
+													</StatusTag>
+												)}
 											</div>,
 										],
 									}))}
@@ -500,9 +517,14 @@ function LeadDetailModal({
 	const [teacherNote, setTeacherNote] = useState(row.teacherNote);
 
 	return (
-		<Modal open onClose={onClose} title={row.name}>
+		<Modal
+			open
+			onClose={onClose}
+			title={row.name}
+			size={row.hasPlacementSubmission ? "xl" : "md"}
+		>
 			<div className="flex flex-col gap-4">
-				<div className="grid grid-cols-2 gap-4">
+				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
 					<Field label="SĐT Zalo">
 						<a
 							href={`https://zalo.me/${row.phone}`}
@@ -517,7 +539,7 @@ function LeadDetailModal({
 						{row.email ? (
 							<a
 								href={`mailto:${row.email}`}
-								className="underline underline-offset-2"
+								className="break-all underline underline-offset-2"
 							>
 								{row.email}
 							</a>
@@ -549,6 +571,10 @@ function LeadDetailModal({
 				{row.placement && <Field label="Kết quả test">{row.placement}</Field>}
 				{row.note && <Field label="Mục tiêu / ghi chú">{row.note}</Field>}
 				<Field label="Nguồn">{row.source}</Field>
+
+				{row.hasPlacementSubmission && (
+					<PlacementSubmissionPanel leadId={row.id} />
+				)}
 
 				<div className="flex flex-col gap-1.5">
 					<label

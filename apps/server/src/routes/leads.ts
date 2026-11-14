@@ -6,25 +6,126 @@ import {
 	leadPatchSchema,
 	leadQuerySchema,
 } from "@teacher-os/api/lead-contracts";
+import { normalizeMediaType } from "@teacher-os/api/lib/quiz-media";
+import {
+	buildPlacementZaloText,
+	computePlacementFinal,
+	type PlacementObjectiveResult,
+	type PlacementSnapshot,
+	type PlacementSpeakingRubric,
+	type PlacementSubmissionDetail,
+	type PlacementWritingRubric,
+	placementTeacherGradeSchema,
+} from "@teacher-os/api/placement-test-contracts";
 import { canAccessFinance } from "@teacher-os/auth/role";
 import { lead } from "@teacher-os/db/schema/lead";
-import { and, count, desc, eq, sql } from "drizzle-orm";
+import { placementTestSubmission } from "@teacher-os/db/schema/placement-test";
+import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import type { Db, KernelCtx } from "../app";
+import { parseByteRange } from "../lib/byte-range";
+import { mediaObjectResponse } from "../lib/media-response";
+import type { MediaStore } from "../lib/media-store";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type LeadContext = Context<Env>;
 
+export interface LeadRouteDeps {
+	getDb(): Db;
+	getMediaStore?(): MediaStore | undefined;
+}
+
+function buildSubmissionDetail(
+	sub: typeof placementTestSubmission.$inferSelect,
+	leadRow: typeof lead.$inferSelect,
+): PlacementSubmissionDetail {
+	const snapshot = JSON.parse(sub.snapshotJson) as PlacementSnapshot;
+	const answers = JSON.parse(sub.answersJson) as {
+		listening: Record<string, string | number | null>;
+		vocabGrammar: Record<string, number | null>;
+		reading: Record<string, number | null>;
+	};
+	const objective = JSON.parse(
+		sub.objectiveBreakdownJson,
+	) as PlacementObjectiveResult;
+	const writingRubric = sub.writingRubricJson
+		? (JSON.parse(sub.writingRubricJson) as PlacementWritingRubric)
+		: null;
+	const speakingRubric = sub.speakingRubricJson
+		? (JSON.parse(sub.speakingRubricJson) as PlacementSpeakingRubric)
+		: null;
+
+	const activeBand =
+		sub.finalBandLevel && sub.finalCourse
+			? {
+					min: objective.provisionalBand.min,
+					max: objective.provisionalBand.max,
+					cefr: sub.finalBandLevel,
+					course: sub.finalCourse as typeof objective.provisionalBand.course,
+					courseLabel: sub.finalDisplayCourse ?? sub.finalCourse,
+					displayCourse: sub.finalDisplayCourse ?? sub.finalCourse,
+					advice:
+						snapshot.bands.find((b) => b.cefr === sub.finalBandLevel)?.advice ??
+						objective.provisionalBand.advice,
+				}
+			: objective.provisionalBand;
+
+	const activePct = sub.finalScorePct ?? objective.averagePct;
+	const zaloText = buildPlacementZaloText({
+		studentName: leadRow.name,
+		phone: leadRow.phone,
+		objective,
+		writingScore: sub.writingScore,
+		speakingScore: sub.speakingScore,
+		speakingStatus: sub.speakingStatus,
+		band: activeBand,
+		averagePct: activePct,
+		note: sub.finalNote,
+		teacherFeedback: sub.teacherFeedback,
+	});
+
+	return {
+		id: sub.id,
+		leadId: leadRow.id,
+		studentName: leadRow.name,
+		studentPhone: leadRow.phone,
+		testVersion: sub.testVersion,
+		status: sub.status,
+		submittedAt: sub.submittedAt.toISOString(),
+		snapshot,
+		answers,
+		objective,
+		writingText: sub.writingText,
+		writingWordCount: sub.writingWordCount,
+		speakingStatus: sub.speakingStatus,
+		speakingMediaUrl: sub.speakingMediaKey
+			? `/api/leads/${leadRow.id}/placement-submission/media`
+			: null,
+		speakingMediaMime: sub.speakingMediaMime,
+		speakingMediaSize: sub.speakingMediaSize,
+		speakingDurationSec: sub.speakingDurationSec,
+		writingRubric,
+		writingScore: sub.writingScore,
+		speakingRubric,
+		speakingScore: sub.speakingScore,
+		teacherFeedback: sub.teacherFeedback,
+		finalBandLevel: sub.finalBandLevel,
+		finalCourse: sub.finalCourse,
+		finalDisplayCourse: sub.finalDisplayCourse,
+		finalScorePct: sub.finalScorePct,
+		finalNote: sub.finalNote,
+		gradedAt: sub.gradedAt ? sub.gradedAt.toISOString() : null,
+		zaloText,
+	};
+}
+
 /**
- * API giáo viên cho lead (#506 phase 3, #524) — mount TRONG kernelRoutes
+ * API giáo viên cho lead (#506 phase 3, #524, #721) — mount TRONG kernelRoutes
  * (`kernel.route("/leads", …)`) để thừa hưởng Origin guard + session
- * bootstrap, và tự gắn role gate `canAccessFinance(ctx.role)` (chỉ
- * `teacher`/`owner`/`admin` được đọc/sửa PII của lead; `ta` và `class_teacher`
- * bị 403 `leads-forbidden`). Lead org khác ⇒ 404 (không lộ tồn tại).
- *
- * Response KHÔNG trả `ipHash` (vết chống spam là nội bộ).
+ * bootstrap, và tự gắn role gate `canAccessFinance(ctx.role)`. Lead org khác ⇒ 404.
+ * Response KHÔNG trả `ipHash` hay `uploadTokenHash`.
  */
-export function leadRoutes(deps: { getDb(): Db }) {
+export function leadRoutes(deps: LeadRouteDeps) {
 	const routes = new Hono<Env>();
 
 	routes.use("*", async (c, next) => {
@@ -35,8 +136,12 @@ export function leadRoutes(deps: { getDb(): Db }) {
 		}
 		return next();
 	});
+
 	/** Map row DB → LeadRow wire (timestamps ISO, bỏ ipHash). */
-	function toLeadRow(row: typeof lead.$inferSelect): LeadRow {
+	function toLeadRow(
+		row: typeof lead.$inferSelect,
+		subMeta?: { status: "pending_grading" | "graded" },
+	): LeadRow {
 		return {
 			id: row.id,
 			name: row.name,
@@ -53,12 +158,44 @@ export function leadRoutes(deps: { getDb(): Db }) {
 			source: row.source,
 			status: row.status,
 			submitCount: row.submitCount,
+			hasPlacementSubmission: subMeta !== undefined,
+			placementSubmissionStatus: subMeta ? subMeta.status : null,
 			createdAt: row.createdAt.toISOString(),
 			updatedAt: row.updatedAt.toISOString(),
 			statusChangedAt: row.statusChangedAt
 				? row.statusChangedAt.toISOString()
 				: null,
 		};
+	}
+
+	async function loadOwnedLeadAndLatestSubmission(
+		db: Db,
+		orgId: string,
+		leadId: string,
+	) {
+		const [leadRow] = await db
+			.select()
+			.from(lead)
+			.where(and(eq(lead.id, leadId), eq(lead.orgId, orgId)))
+			.limit(1);
+		if (!leadRow) return null;
+
+		const [sub] = await db
+			.select()
+			.from(placementTestSubmission)
+			.where(
+				and(
+					eq(placementTestSubmission.orgId, orgId),
+					eq(placementTestSubmission.leadId, leadRow.id),
+				),
+			)
+			.orderBy(
+				desc(placementTestSubmission.submittedAt),
+				desc(placementTestSubmission.id),
+			)
+			.limit(1);
+
+		return { leadRow, sub: sub ?? null };
 	}
 
 	routes.get("/", async (c: LeadContext) => {
@@ -77,8 +214,6 @@ export function leadRoutes(deps: { getDb(): Db }) {
 		const db = deps.getDb();
 		const orgWhere = eq(lead.orgId, ctx.orgId);
 
-		// `q`: lower(name) LIKE hoặc phone LIKE — escape % _ \ (mẫu
-		// buildNotificationQFilter #454). Phone giữ nguyên case (số).
 		const trimmedQ = q?.trim() ?? "";
 		const pattern = `%${trimmedQ.toLowerCase().replace(/[\\%_]/g, "\\$&")}%`;
 		const qWhere =
@@ -89,8 +224,6 @@ export function leadRoutes(deps: { getDb(): Db }) {
 				)`
 				: undefined;
 
-		// counts (chip trạng thái): tính trên q, KHÔNG áp status — 1 query
-		// GROUP BY (tránh N+1), kèm tổng "all".
 		const countWhere = and(orgWhere, qWhere);
 		const rowWhere = and(
 			countWhere,
@@ -113,6 +246,37 @@ export function leadRoutes(deps: { getDb(): Db }) {
 				.groupBy(lead.status),
 		]);
 
+		const subMetaByLeadId = new Map<
+			string,
+			{ status: "pending_grading" | "graded" }
+		>();
+		if (rows.length > 0) {
+			const subRows = await db
+				.select({
+					leadId: placementTestSubmission.leadId,
+					status: placementTestSubmission.status,
+				})
+				.from(placementTestSubmission)
+				.where(
+					and(
+						eq(placementTestSubmission.orgId, ctx.orgId),
+						inArray(
+							placementTestSubmission.leadId,
+							rows.map((r) => r.id),
+						),
+					),
+				)
+				.orderBy(
+					desc(placementTestSubmission.submittedAt),
+					desc(placementTestSubmission.id),
+				);
+			for (const sr of subRows) {
+				if (!subMetaByLeadId.has(sr.leadId)) {
+					subMetaByLeadId.set(sr.leadId, { status: sr.status });
+				}
+			}
+		}
+
 		const total = totalRows[0]?.total ?? 0;
 		const counts: Record<(typeof LEAD_STATUSES)[number] | "all", number> = {
 			new: 0,
@@ -131,7 +295,7 @@ export function leadRoutes(deps: { getDb(): Db }) {
 		counts.all = all;
 
 		const response: LeadListResponse = {
-			rows: rows.map(toLeadRow),
+			rows: rows.map((row) => toLeadRow(row, subMetaByLeadId.get(row.id))),
 			total,
 			page,
 			pageSize: LEAD_PAGE_SIZE,
@@ -155,15 +319,12 @@ export function leadRoutes(deps: { getDb(): Db }) {
 		if (!parsedBody.success) return c.json({ error: "invalid body" }, 400);
 
 		const db = deps.getDb();
-		// param() trả string | undefined trên Context generic — rỗng ⇒ không
-		// match ⇒ 404 (cùng semantics).
 		const leadId = c.req.param("id") ?? "";
 		const [existing] = await db
 			.select()
 			.from(lead)
 			.where(and(eq(lead.id, leadId), eq(lead.orgId, ctx.orgId)))
 			.limit(1);
-		// Org khác / không tồn tại — cùng 404, không lộ tồn tại (IDOR).
 		if (!existing) {
 			return c.json({ error: "LEAD_NOT_FOUND", code: "LEAD_NOT_FOUND" }, 404);
 		}
@@ -184,6 +345,216 @@ export function leadRoutes(deps: { getDb(): Db }) {
 			return c.json({ error: "LEAD_NOT_FOUND", code: "LEAD_NOT_FOUND" }, 404);
 		}
 		return c.json(toLeadRow(updated));
+	});
+
+	routes.get("/:id/placement-submission", async (c: LeadContext) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return c.json({ error: "unauthorized" }, 401);
+
+		const leadId = c.req.param("id") ?? "";
+		const loaded = await loadOwnedLeadAndLatestSubmission(
+			deps.getDb(),
+			ctx.orgId,
+			leadId,
+		);
+		if (!loaded) {
+			return c.json({ error: "LEAD_NOT_FOUND", code: "LEAD_NOT_FOUND" }, 404);
+		}
+		if (!loaded.sub) {
+			return c.json(
+				{
+					error: "PLACEMENT_SUBMISSION_NOT_FOUND",
+					code: "PLACEMENT_SUBMISSION_NOT_FOUND",
+				},
+				404,
+			);
+		}
+
+		c.header("Cache-Control", "no-store");
+		return c.json(buildSubmissionDetail(loaded.sub, loaded.leadRow));
+	});
+
+	routes.get("/:id/placement-submission/media", async (c: LeadContext) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return c.json({ error: "unauthorized" }, 401);
+
+		const leadId = c.req.param("id") ?? "";
+		const loaded = await loadOwnedLeadAndLatestSubmission(
+			deps.getDb(),
+			ctx.orgId,
+			leadId,
+		);
+		if (!loaded) {
+			return c.json({ error: "LEAD_NOT_FOUND", code: "LEAD_NOT_FOUND" }, 404);
+		}
+		if (!loaded.sub?.speakingMediaKey) {
+			return c.json({ error: "not found" }, 404);
+		}
+
+		const store = deps.getMediaStore?.();
+		if (!store) {
+			return c.json({ error: "media storage unavailable" }, 503);
+		}
+
+		const total = loaded.sub.speakingMediaSize ?? 0;
+		const rangeHeader = c.req.header("Range");
+		let requestedRange: { start: number; end: number } | null = null;
+		if (
+			total > 0 &&
+			typeof rangeHeader === "string" &&
+			rangeHeader.trim().startsWith("bytes=") &&
+			!rangeHeader.includes(",")
+		) {
+			requestedRange = parseByteRange(rangeHeader, total);
+			if (!requestedRange) {
+				return new Response("Range Not Satisfiable", {
+					status: 416,
+					headers: {
+						"Content-Type": "text/plain; charset=utf-8",
+						"Content-Range": `bytes */${total}`,
+						"Accept-Ranges": "bytes",
+						"X-Content-Type-Options": "nosniff",
+						"Content-Security-Policy": "default-src 'none'; sandbox",
+					},
+				});
+			}
+		}
+
+		const object = await store.get(
+			loaded.sub.speakingMediaKey,
+			requestedRange
+				? {
+						offset: requestedRange.start,
+						length: requestedRange.end - requestedRange.start + 1,
+					}
+				: undefined,
+		);
+		if (!object) {
+			return c.json({ error: "not found" }, 404);
+		}
+
+		if (requestedRange && object.range) {
+			const normalized = normalizeMediaType(
+				loaded.sub.speakingMediaMime ?? object.contentType ?? "",
+			);
+			const safeType =
+				normalized.startsWith("audio/") || normalized.startsWith("video/")
+					? normalized
+					: "application/octet-stream";
+			return new Response(object.body, {
+				status: 206,
+				headers: {
+					"Content-Type": safeType,
+					"Content-Range": `bytes ${requestedRange.start}-${requestedRange.end}/${total}`,
+					"Content-Length": String(object.range.length),
+					"Accept-Ranges": "bytes",
+					"X-Content-Type-Options": "nosniff",
+					"Cross-Origin-Opener-Policy": "same-origin",
+					"Content-Security-Policy": "default-src 'none'; sandbox",
+					"Cache-Control": "private, no-store",
+				},
+			});
+		}
+
+		const res = mediaObjectResponse(object, {
+			mediaType: loaded.sub.speakingMediaMime,
+			mediaName: `speaking-${loaded.sub.id}`,
+		});
+		res.headers.set("Accept-Ranges", "bytes");
+		return res;
+	});
+
+	routes.patch("/:id/placement-submission", async (c: LeadContext) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return c.json({ error: "unauthorized" }, 401);
+
+		let rawBody: unknown;
+		try {
+			rawBody = await c.req.raw.json();
+		} catch {
+			return c.json({ error: "invalid body" }, 400);
+		}
+		const parsedBody = placementTeacherGradeSchema.safeParse(rawBody);
+		if (!parsedBody.success) {
+			return c.json({ error: "invalid body" }, 400);
+		}
+
+		const db = deps.getDb();
+		const leadId = c.req.param("id") ?? "";
+		const loaded = await loadOwnedLeadAndLatestSubmission(
+			db,
+			ctx.orgId,
+			leadId,
+		);
+		if (!loaded) {
+			return c.json({ error: "LEAD_NOT_FOUND", code: "LEAD_NOT_FOUND" }, 404);
+		}
+		if (!loaded.sub) {
+			return c.json(
+				{
+					error: "PLACEMENT_SUBMISSION_NOT_FOUND",
+					code: "PLACEMENT_SUBMISSION_NOT_FOUND",
+				},
+				404,
+			);
+		}
+
+		const snapshot = JSON.parse(loaded.sub.snapshotJson) as PlacementSnapshot;
+		const objective = JSON.parse(
+			loaded.sub.objectiveBreakdownJson,
+		) as PlacementObjectiveResult;
+
+		const final = computePlacementFinal({
+			objective,
+			bands: snapshot.bands,
+			writingRubric: parsedBody.data.writingRubric,
+			speakingRubric: parsedBody.data.speakingRubric,
+		});
+
+		const now = new Date();
+		const [updatedSub] = await db
+			.update(placementTestSubmission)
+			.set({
+				status: "graded",
+				writingRubricJson: JSON.stringify(parsedBody.data.writingRubric),
+				writingScore: final.writingScore,
+				speakingRubricJson: parsedBody.data.speakingRubric
+					? JSON.stringify(parsedBody.data.speakingRubric)
+					: null,
+				speakingScore: final.speakingScore,
+				teacherFeedback: parsedBody.data.teacherFeedback,
+				finalBandLevel: final.band.cefr,
+				finalCourse: final.band.course,
+				finalDisplayCourse: final.band.displayCourse || final.band.courseLabel,
+				finalScorePct: final.averagePct,
+				finalNote: final.note,
+				gradedBy: ctx.userId,
+				gradedAt: now,
+				updatedAt: now,
+			})
+			.where(
+				and(
+					eq(placementTestSubmission.id, loaded.sub.id),
+					eq(placementTestSubmission.orgId, ctx.orgId),
+				),
+			)
+			.returning();
+
+		if (!updatedSub) {
+			return c.json({ error: "not found" }, 404);
+		}
+
+		await db
+			.update(lead)
+			.set({
+				placement: final.finalSummary,
+				course: final.band.course,
+				updatedAt: now,
+			})
+			.where(and(eq(lead.id, loaded.leadRow.id), eq(lead.orgId, ctx.orgId)));
+
+		c.header("Cache-Control", "no-store");
+		return c.json(buildSubmissionDetail(updatedSub, loaded.leadRow));
 	});
 
 	return routes;
