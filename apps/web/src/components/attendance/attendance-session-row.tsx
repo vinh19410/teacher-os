@@ -61,6 +61,7 @@ export function AttendanceSessionRow({
 	// Saving của chính ca này hoặc một ca khác đang bay — mọi nút ghi đều khoá
 	// để tránh double-PUT và dead-click nuốt save im lặng (CR-Bugs F1/FAIL-3).
 	const lockSaving = saving || busy;
+	const isReadOnly = isFutureDate || Boolean(session.classPaused);
 	const [draft, dispatch] = useReducer(
 		attendanceDraftReducer,
 		session.students,
@@ -134,7 +135,7 @@ export function AttendanceSessionRow({
 	};
 
 	const handleSubmit = () => {
-		if (isFutureDate || lockSaving || session.mode === "legacy") return;
+		if (isReadOnly || lockSaving || session.mode === "legacy") return;
 		const currentMissing = missingAttendanceLessonIds(draft);
 		if (currentMissing.length > 0) {
 			// TOS-8 D2: ca chưa recorded → hỏi xác nhận "Gán Có mặt và lưu".
@@ -208,6 +209,7 @@ export function AttendanceSessionRow({
 				</div>
 
 				<div className="flex flex-wrap items-center gap-2">
+					{session.classPaused && <Badge variant="muted">Tạm dừng</Badge>}
 					{session.mode === "legacy" && (
 						<Badge variant="outline">Lớp chưa gắn lịch ngày</Badge>
 					)}
@@ -217,11 +219,11 @@ export function AttendanceSessionRow({
 								? `Đã điểm danh (${presentCount}/${totalStudents} có mặt)`
 								: "Đã điểm danh"}
 						</Badge>
-					) : (
+					) : !session.classPaused ? (
 						<Badge variant="warn" dot>
 							Chưa điểm danh
 						</Badge>
-					)}
+					) : null}
 				</div>
 			</button>
 
@@ -274,6 +276,11 @@ export function AttendanceSessionRow({
 						</div>
 					) : (
 						<div className="space-y-4">
+							{session.classPaused && (
+								<p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-muted-foreground text-xs">
+									Lớp đang tạm dừng — chỉ xem lịch sử điểm danh.
+								</p>
+							)}
 							{isFutureDate && (
 								<p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-muted-foreground text-xs">
 									Chưa đến ngày học
@@ -299,7 +306,7 @@ export function AttendanceSessionRow({
 										type="button"
 										variant="outline"
 										size="sm"
-										disabled={lockSaving || isFutureDate}
+										disabled={lockSaving || isReadOnly}
 										onClick={handleSubmit}
 									>
 										Thử lại
@@ -309,14 +316,14 @@ export function AttendanceSessionRow({
 
 							{/* TOS-8 D1: điền nhanh chỉ điền ô trống; disabled khi ca đã
 						recorded (không bulk đè lịch sử "Chưa rõ"), ngày tương lai,
-						đang lưu, hoặc không còn ai trống. Lớp legacy không render
+						lớp tạm dừng, đang lưu, hoặc không còn ai trống. Lớp legacy không render
 						(cả nhánh dated này không chạy với legacy). */}
 							<Button
 								type="button"
 								variant="secondary"
 								disabled={
 									lockSaving ||
-									isFutureDate ||
+									isReadOnly ||
 									session.recorded ||
 									missingIds.length === 0
 								}
@@ -384,7 +391,7 @@ export function AttendanceSessionRow({
 													})
 												}
 												ariaLabel={`Trạng thái điểm danh của ${student.studentName}`}
-												disabled={lockSaving || isFutureDate}
+												disabled={lockSaving || isReadOnly}
 												firstRadioRef={(el) => {
 													firstRadioByLessonRef.current[lessonId] = el;
 												}}
@@ -394,7 +401,7 @@ export function AttendanceSessionRow({
 												type="text"
 												maxLength={255}
 												value={draftEntry.note}
-												disabled={lockSaving || isFutureDate}
+												disabled={lockSaving || isReadOnly}
 												aria-label={`Ghi chú học vụ của ${student.studentName}`}
 												placeholder="Ghi chú học vụ (≤ 255 ký tự)…"
 												onChange={(e) =>
@@ -414,7 +421,7 @@ export function AttendanceSessionRow({
 							<div className="flex flex-col gap-2 border-border border-t pt-3 lg:flex-row lg:items-center lg:justify-end">
 								<Button
 									type="button"
-									disabled={lockSaving || isFutureDate}
+									disabled={lockSaving || isReadOnly}
 									onClick={handleSubmit}
 									className="min-h-[44px] w-full lg:min-h-9 lg:w-auto"
 								>

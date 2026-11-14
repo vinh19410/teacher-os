@@ -1349,6 +1349,26 @@ describe("bus 4-state through a real QueryClient", () => {
 		expect(result.kind).toBe("definite-failure");
 	});
 
+	test("POST 409 CLASS_PAUSED → definite-failure preserves error code (#694)", async () => {
+		mockApi(
+			() =>
+				jsonResponse(409, {
+					error: "Lớp học đang tạm dừng.",
+					code: "CLASS_PAUSED",
+				}),
+			() => jsonResponse(200, snapshot),
+		);
+		const { bus, queryClient } = makeBus();
+		await queryClient.prefetchQuery(kernelQueryOptions(baseUrl));
+		const result = await bus.run(action);
+		expect(result.kind).toBe("definite-failure");
+		if (result.kind === "definite-failure") {
+			expect(result.status).toBe(409);
+			expect(result.code).toBe("CLASS_PAUSED");
+			expect(result.reason).toBe("Lớp học đang tạm dừng.");
+		}
+	});
+
 	test("POST 5xx → outcome-unknown (a committed write may have lost its ack)", async () => {
 		mockApi(
 			() => jsonResponse(504, { error: "edge" }),

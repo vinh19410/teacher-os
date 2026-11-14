@@ -200,9 +200,29 @@ export type ClassTuitionFeeUpdate = z.infer<typeof classTuitionFeeUpdateSchema>;
  * Mã 409 khóa lịch học của PATCH /classes/:id (#693). Server trả
  * kèm `code` trong body lỗi; web tra ánh xạ thông báo theo mã này.
  */
+export const CLASS_STATUSES = ["active", "paused"] as const;
+export type ClassStatus = (typeof CLASS_STATUSES)[number];
+
+export const classStatusUpdateSchema = z
+	.object({
+		status: z.enum(CLASS_STATUSES),
+	})
+	.strict();
+export type ClassStatusUpdateInput = z.infer<typeof classStatusUpdateSchema>;
+
+export const classStatusResponseSchema = z
+	.object({
+		ok: z.literal(true),
+		status: z.enum(CLASS_STATUSES),
+	})
+	.strict();
+export type ClassStatusResponse = z.infer<typeof classStatusResponseSchema>;
+
 export const CLASS_ERROR_CODES = {
 	/** Lớp đã có buổi học thực tế (lesson hoặc class_session) — không được đổi lịch, ngày khai giảng hoặc số buổi. */
 	SCHEDULE_LOCKED: "CLASS_SCHEDULE_LOCKED",
+	/** Lớp đang tạm dừng — chặn tuyển sinh mới và thao tác ghi giảng dạy (#694). */
+	CLASS_PAUSED: "CLASS_PAUSED",
 } as const;
 export type ClassErrorCode =
 	(typeof CLASS_ERROR_CODES)[keyof typeof CLASS_ERROR_CODES];
@@ -1467,11 +1487,13 @@ export const sessionAttendanceSaveSchema = z
 	.object({
 		entries: z
 			.array(
-				z.object({
-					lessonId: z.string().min(1),
-					attendance: attendanceStatusSchema,
-					note: z.string().trim().max(255).default(""),
-				}),
+				z
+					.object({
+						lessonId: z.string().min(1),
+						attendance: attendanceStatusSchema,
+						note: z.string().trim().max(255).default(""),
+					})
+					.strict(),
 			)
 			.min(1),
 	})
@@ -1502,6 +1524,8 @@ export const dailyAttendanceResponseSchema = z
 					dur: z.number().int().min(1),
 					mode: z.enum(["dated", "legacy"]),
 					recorded: z.boolean(),
+					/** #694: lớp đang tạm dừng — UI hiển thị badge Tạm dừng và khóa chỉ-xem. */
+					classPaused: z.boolean().optional(),
 					students: z.array(
 						z.object({
 							lessonId: z.string().min(1).nullable(),
@@ -1705,7 +1729,7 @@ export interface KernelClassRow {
 	 * derives from completed lessons (invariant 7). Do not trust it.
 	 */
 	sessionsDone: number;
-	status: string;
+	status: ClassStatus;
 	startDate: string;
 	/** Học phí mỗi học viên (VND) cho toàn khóa; null = chưa thiết lập. */
 	tuitionFee: number | null;
@@ -1846,24 +1870,26 @@ export interface KernelClassSessionRow {
 	zoom: string;
 }
 
-export const addManualSessionSchema = z.object({
-	date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
-	time: z
-		.string()
-		.regex(TIME_REGEX, "Giờ học phải theo định dạng HH:mm (00:00–23:59)"),
-	dur: z.number().int().min(15).max(360).default(90),
-	topic: z.string().min(1, "Chủ đề không được để trống").max(500),
-	zoom: z
-		.string()
-		.max(2000)
-		.default("")
-		.refine((val) => val === "" || val.startsWith("https://"), {
-			message: "Link Zoom phải là URL https:// hoặc để trống",
-		}),
-	// Issue #655: tài liệu ngân hàng gắn ngay lúc tạo buổi manual — server
-	// validate org + tồn tại rồi insert `lesson_material` cùng batch.
-	materialIds: z.array(z.string().min(1)).max(MATERIAL_LINKS_MAX).default([]),
-});
+export const addManualSessionSchema = z
+	.object({
+		date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
+		time: z
+			.string()
+			.regex(TIME_REGEX, "Giờ học phải theo định dạng HH:mm (00:00–23:59)"),
+		dur: z.number().int().min(15).max(360).default(90),
+		topic: z.string().min(1, "Chủ đề không được để trống").max(500),
+		zoom: z
+			.string()
+			.max(2000)
+			.default("")
+			.refine((val) => val === "" || val.startsWith("https://"), {
+				message: "Link Zoom phải là URL https:// hoặc để trống",
+			}),
+		// Issue #655: tài liệu ngân hàng gắn ngay lúc tạo buổi manual — server
+		// validate org + tồn tại rồi insert `lesson_material` cùng batch.
+		materialIds: z.array(z.string().min(1)).max(MATERIAL_LINKS_MAX).default([]),
+	})
+	.strict();
 export type AddManualSessionInput = z.infer<typeof addManualSessionSchema>;
 
 export interface KernelInvoiceRow {
@@ -2231,7 +2257,7 @@ export const studentClassSchema = z.object({
 	schedule: z.string(),
 	sessionsDone: z.number().int(),
 	sessionsTotal: z.number().int(),
-	status: z.string(),
+	status: z.enum(CLASS_STATUSES).catch("active"),
 	nextSession: studentNextSessionSchema.nullable(),
 	/**
 	 * Enrollment của học viên trong lớp này. 'invited' = giáo viên đã thêm vào
@@ -3036,9 +3062,11 @@ export const studentInviteSchema = z.object({
 });
 export type StudentInviteInput = z.infer<typeof studentInviteSchema>;
 
-export const resendStudentInviteSchema = z.object({
-	enrollmentId: z.string().trim().min(1).optional(),
-});
+export const resendStudentInviteSchema = z
+	.object({
+		enrollmentId: z.string().trim().min(1).optional(),
+	})
+	.strict();
 export type ResendStudentInviteInput = z.infer<
 	typeof resendStudentInviteSchema
 >;

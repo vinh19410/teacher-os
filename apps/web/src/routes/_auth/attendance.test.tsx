@@ -71,11 +71,14 @@ function renderAttendance() {
 	const queryClient = new QueryClient({
 		defaultOptions: { queries: { retry: false, gcTime: 0 } },
 	});
-	return render(
-		<QueryClientProvider client={queryClient}>
-			<AttendanceRoute />
-		</QueryClientProvider>,
-	);
+	return {
+		queryClient,
+		...render(
+			<QueryClientProvider client={queryClient}>
+				<AttendanceRoute />
+			</QueryClientProvider>,
+		),
+	};
 }
 
 beforeEach(() => {
@@ -846,5 +849,198 @@ describe("/attendance TOS-8 auto-advance", () => {
 		expect(
 			screen.queryByRole("radiogroup", { name: /Nguyễn Minh Anh/ }),
 		).toBeNull();
+	});
+});
+
+describe("/attendance paused class sessions (#694)", () => {
+	const PAUSED_AND_ACTIVE: DailyAttendanceResponse = {
+		date: "2026-10-07",
+		sessions: [
+			{
+				classId: "cls-paused",
+				className: "Lớp Tạm Dừng",
+				time: "17:00",
+				dur: 90,
+				mode: "dated",
+				recorded: false,
+				classPaused: true,
+				students: [
+					{
+						lessonId: "l-p1",
+						studentId: "s-p1",
+						studentName: "Phạm Tạm Dừng",
+						attendance: null,
+						note: "",
+					},
+				],
+			},
+			{
+				classId: "cls-1",
+				className: "IELTS 6.5A",
+				time: "18:00",
+				dur: 90,
+				mode: "dated",
+				recorded: false,
+				classPaused: false,
+				students: [
+					{
+						lessonId: "l-1",
+						studentId: "s-1",
+						studentName: "Nguyễn Minh Anh",
+						attendance: null,
+						note: "",
+					},
+				],
+			},
+		],
+		counts: { all: 2, pending: 1, completed: 0 },
+	};
+
+	it("marks paused sessions read-only with Tạm dừng badge, excludes them from pending tab/auto-expand/auto-advance, and disables inputs", async () => {
+		routerState.search = { date: "2026-10-07", status: "all" };
+		vi.stubGlobal(
+			"fetch",
+			vi
+				.fn()
+				.mockImplementation(
+					async () =>
+						new Response(JSON.stringify(PAUSED_AND_ACTIVE), { status: 200 }),
+				),
+		);
+
+		renderAttendance();
+		const pausedBtn = await screen.findByRole("button", {
+			name: /Lớp Tạm Dừng/,
+		});
+		expect(pausedBtn.textContent).toContain("Tạm dừng");
+		expect(pausedBtn.textContent).not.toContain("Chưa điểm danh");
+
+		fireEvent.click(pausedBtn);
+		expect(
+			screen.getByText("Lớp đang tạm dừng — chỉ xem lịch sử điểm danh."),
+		).toBeTruthy();
+
+		const pausedGroup = screen.getByRole("radiogroup", {
+			name: /Trạng thái điểm danh của Phạm Tạm Dừng/,
+		});
+		for (const radio of within(pausedGroup).getAllByRole("radio")) {
+			expect((radio as HTMLInputElement).disabled).toBe(true);
+		}
+		expect(
+			(
+				screen.getByRole("button", {
+					name: "Đánh dấu tất cả Có mặt",
+				}) as HTMLButtonElement
+			).disabled,
+		).toBe(true);
+		expect(
+			(
+				screen.getByRole("button", {
+					name: "Lưu điểm danh ca học",
+				}) as HTMLButtonElement
+			).disabled,
+		).toBe(true);
+
+		// Pending chip filters out paused unrecorded sessions so only active pending shows.
+		cleanup();
+		routerState.search = { date: "2026-10-07", status: "pending" };
+		const savedActive: DailyAttendanceResponse = {
+			...PAUSED_AND_ACTIVE,
+			sessions: [
+				PAUSED_AND_ACTIVE.sessions[0],
+				{
+					...PAUSED_AND_ACTIVE.sessions[1],
+					recorded: true,
+					students: [
+						{
+							...PAUSED_AND_ACTIVE.sessions[1].students[0],
+							attendance: "present",
+						},
+					],
+				},
+			],
+			counts: { all: 2, pending: 0, completed: 1 },
+		};
+		let gets = 0;
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+				if (init?.method === "PUT") {
+					return new Response(JSON.stringify({ updated: 1, recorded: true }), {
+						status: 200,
+					});
+				}
+				const payload = gets === 0 ? PAUSED_AND_ACTIVE : savedActive;
+				gets += 1;
+				return new Response(JSON.stringify(payload), { status: 200 });
+			}),
+		);
+		renderAttendance();
+		expect(await screen.findByText("IELTS 6.5A")).toBeTruthy();
+		expect(screen.queryByText("Lớp Tạm Dừng")).toBeNull();
+
+		const activeGroup = screen.getByRole("radiogroup", {
+			name: /Trạng thái điểm danh của Nguyễn Minh Anh/,
+		});
+		fireEvent.click(within(activeGroup).getByRole("radio", { name: "Có mặt" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Lưu điểm danh ca học" }),
+		);
+		await waitFor(() =>
+			expect(toast.success).toHaveBeenCalledWith("Đã lưu điểm danh"),
+		);
+		expect(
+			screen.queryByText("Lớp đang tạm dừng — chỉ xem lịch sử điểm danh."),
+		).toBeNull();
+	});
+
+	it("handles 409 CLASS_PAUSED on PUT save by showing Vietnamese toast and refetching", async () => {
+		routerState.search = { date: "2026-10-07", status: "all" };
+		const pausedDaily: DailyAttendanceResponse = {
+			date: "2026-10-07",
+			sessions: [
+				{
+					...PAUSED_AND_ACTIVE.sessions[0],
+					classId: "cls-1",
+					className: "IELTS 6.5A",
+				},
+			],
+			counts: { all: 1, pending: 0, completed: 0 },
+		};
+		let getCalls = 0;
+		const fetchMock = vi.fn(
+			async (_input: RequestInfo | URL, init?: RequestInit) => {
+				if (init?.method === "PUT") {
+					return new Response(
+						JSON.stringify({ error: "paused", code: "CLASS_PAUSED" }),
+						{ status: 409 },
+					);
+				}
+				const body = getCalls === 0 ? SAMPLE_DAILY : pausedDaily;
+				getCalls += 1;
+				return new Response(JSON.stringify(body), { status: 200 });
+			},
+		);
+		vi.stubGlobal("fetch", fetchMock);
+
+		const { queryClient } = renderAttendance();
+		const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+		await screen.findByText("IELTS 6.5A");
+		fireEvent.click(screen.getByRole("button", { name: /IELTS 6.5A/ }));
+		const group = screen.getByRole("radiogroup", {
+			name: /Trạng thái điểm danh của Nguyễn Minh Anh/,
+		});
+		fireEvent.click(within(group).getByRole("radio", { name: "Có mặt" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Lưu điểm danh ca học" }),
+		);
+
+		await waitFor(() =>
+			expect(toast.error).toHaveBeenCalledWith(
+				"Lớp đang tạm dừng — chỉ xem lịch sử điểm danh.",
+			),
+		);
+		await waitFor(() => expect(getCalls).toBeGreaterThanOrEqual(2));
+		expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["kernel"] });
 	});
 });

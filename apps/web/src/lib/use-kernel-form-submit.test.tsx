@@ -2,6 +2,7 @@
 import {
 	ASSIGNMENT_PROMPT_ERROR_CODES,
 	ASSIGNMENT_TEST_ERROR_CODES,
+	CLASS_ERROR_CODES,
 } from "@teacher-os/api/contracts";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -164,5 +165,25 @@ describe("useKernelFormSubmit — 409 lock messages (#630)", () => {
 		expect(latest.current?.error).toBeUndefined();
 		expect(latest.current?.failureError).toBeUndefined();
 		expect(screen.getByTestId("error").textContent).toBe("");
+	});
+
+	it("maps CLASS_PAUSED (409) to Vietnamese copy and refreshes kernel snapshot (#694)", async () => {
+		dataFixture.refresh.mockResolvedValue(true);
+		dataFixture.dispatch.mockResolvedValue({
+			kind: "definite-failure",
+			status: 409,
+			error: new HttpError(409, "paused", {
+				code: CLASS_ERROR_CODES.CLASS_PAUSED,
+			}),
+		});
+		const { run } = renderHarness();
+
+		await run();
+
+		expect(latest.current?.failureError?.code).toBe(
+			CLASS_ERROR_CODES.CLASS_PAUSED,
+		);
+		expect(latest.current?.error).toContain("tạm dừng");
+		expect(dataFixture.refresh).toHaveBeenCalledTimes(1);
 	});
 });

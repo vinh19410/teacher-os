@@ -9,7 +9,7 @@ import {
 	lessonsToday,
 	upcomingLessonsThisWeek,
 } from "./dashboard-from-kernel";
-import type { Lesson, Student } from "./mock-data";
+import type { ClassGroup, Lesson, Student } from "./mock-data";
 
 const monday = new Date(2026, 7, 17, 12, 0, 0);
 const wednesday = new Date(2026, 7, 19, 12, 0, 0);
@@ -703,5 +703,74 @@ describe("formatClassSessionMeta (issue #373)", () => {
 		expect(formatClassSessionMeta({ ...session, topic: "   " })).toBe(
 			"90' · 1:1",
 		);
+	});
+});
+
+describe("paused classes filter (#694)", () => {
+	test("excludes paused class lessons from lessonsToday, upcomingLessonsThisWeek, and atRiskRows", () => {
+		const wed = new Date(2026, 9, 7, 10, 0); // day = 3
+		const classes: Pick<ClassGroup, "id" | "status">[] = [
+			{ id: "cl-active", status: "active" },
+			{ id: "cl-paused", status: "paused" },
+		];
+		const students = [
+			student("s-act", { name: "Active Stu" }),
+			student("s-pau", { name: "Paused Stu" }),
+		];
+		const lessons: Lesson[] = [
+			lesson({
+				id: "l-today-act",
+				classId: "cl-active",
+				sid: "s-act",
+				day: 3,
+				status: "upcoming",
+			}),
+			lesson({
+				id: "l-today-pau",
+				classId: "cl-paused",
+				sid: "s-pau",
+				day: 3,
+				status: "upcoming",
+			}),
+			lesson({
+				id: "l-up-act",
+				classId: "cl-active",
+				sid: "s-act",
+				day: 5,
+				status: "upcoming",
+			}),
+			lesson({
+				id: "l-up-pau",
+				classId: "cl-paused",
+				sid: "s-pau",
+				day: 5,
+				status: "upcoming",
+			}),
+			lesson({
+				id: "l-risk-act",
+				classId: "cl-active",
+				sid: "s-act",
+				day: 1,
+				date: "2026-10-05",
+				status: "absent",
+			}),
+			lesson({
+				id: "l-risk-pau",
+				classId: "cl-paused",
+				sid: "s-pau",
+				day: 1,
+				date: "2026-10-05",
+				status: "absent",
+			}),
+		];
+		expect(lessonsToday(lessons, wed, classes).map((l) => l.id)).toEqual([
+			"l-today-act",
+		]);
+		expect(
+			upcomingLessonsThisWeek(lessons, wed, classes).map((l) => l.id),
+		).toEqual(["l-up-act"]);
+		expect(
+			atRiskRows(students, lessons, wed, classes).map((r) => r.student.id),
+		).toEqual(["s-act"]);
 	});
 });

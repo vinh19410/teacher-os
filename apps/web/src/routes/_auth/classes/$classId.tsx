@@ -1,4 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { CLASS_ERROR_CODES } from "@teacher-os/api/contracts";
+import { canManageClassStatus } from "@teacher-os/auth/role";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -14,10 +16,12 @@ import type {
 import { ClassAssignmentsTab } from "@/components/classes/class-assignments-tab";
 import { ClassStudyPackSection } from "@/components/classes/class-study-pack-section";
 import { AddClassSessionModal } from "@/components/modals/add-class-session-modal";
+import { ClassStatusModal } from "@/components/modals/class-status-modal";
 import { EditClassFeeModal } from "@/components/modals/edit-class-fee-modal";
 import { EditClassModal } from "@/components/modals/edit-class-modal";
 import { EnrollStudentModal } from "@/components/modals/enroll-student-modal";
 import { ImportSyllabusModal } from "@/components/modals/import-syllabus-modal";
+import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, StatCard } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/field";
@@ -29,6 +33,7 @@ import { VocabDeckList } from "@/components/vocab/vocab-deck-list";
 import { cn } from "@/lib/cn";
 import { useData } from "@/lib/data-store";
 import { formatSchedule } from "@/lib/format-schedule";
+import { isHttpError } from "@/lib/kernel-load-state";
 import { occurrenceSummary } from "@/lib/kernel-outcome";
 import { CLASS_TYPE_LABELS, fmtVND } from "@/lib/mock-data";
 import { useClasses } from "@/lib/repos/use-classes";
@@ -107,7 +112,16 @@ function ClassDetailRoute() {
 		const result = await dispatch(action);
 		const summary = occurrenceSummary(result, successText);
 		toast[summary.kind](summary.message);
-		if (result.kind === "committed" || result.kind === "outcome-unknown") {
+		const failureCode =
+			result.kind === "definite-failure"
+				? (result.code ??
+					(isHttpError(result.error) ? result.error.code : undefined))
+				: undefined;
+		if (
+			result.kind === "committed" ||
+			result.kind === "outcome-unknown" ||
+			failureCode === CLASS_ERROR_CODES.CLASS_PAUSED
+		) {
 			await refresh();
 		}
 		// committed counts as landed for UX truthfulness: the write IS saved;
@@ -121,6 +135,7 @@ function ClassDetailRoute() {
 				result.kind === "definite-failure" && "reason" in result
 					? result.reason
 					: undefined,
+			code: failureCode,
 		};
 	}
 
@@ -175,6 +190,7 @@ function ClassDetailRoute() {
 	const [addStudentOpen, setAddStudentOpen] = useState(false);
 	const [feeModalOpen, setFeeModalOpen] = useState(false);
 	const [editModalOpen, setEditModalOpen] = useState(false);
+	const [statusModalOpen, setStatusModalOpen] = useState(false);
 	const [notes, setNotes] = useState<string | null>(null);
 	const handleTabChange = (nextTab: string) => {
 		setTab(nextTab);
@@ -185,6 +201,8 @@ function ClassDetailRoute() {
 	};
 	const sy = useClassCurriculum(classId);
 	const cls = classById(classId);
+	const isPaused = cls?.status === "paused";
+	const canToggleStatus = canManageClassStatus(data.viewer?.role ?? "teacher");
 	const classLessonsForClass = data.lessons.filter(
 		(l) => l.classId === classId,
 	);
@@ -197,7 +215,7 @@ function ClassDetailRoute() {
 		classSessionsForClass.length > 0 ||
 		(!sy && cls?.schedulingMode === "manual");
 	const canAddManualSession =
-		!sy && (isManual || classLessonsForClass.length === 0);
+		!isPaused && !sy && (isManual || classLessonsForClass.length === 0);
 	const canImportSyllabus =
 		!sy &&
 		classSessionsForClass.length === 0 &&
@@ -205,13 +223,20 @@ function ClassDetailRoute() {
 
 	useEffect(() => {
 		if (!sy && manageOpen) setManageOpen(false);
+		const closedByPause = isPaused && (addSessionOpen || addStudentOpen);
 		if (!canAddManualSession && addSessionOpen) setAddSessionOpen(false);
 		if (!canImportSyllabus && importSyllabusOpen) setImportSyllabusOpen(false);
+		if (isPaused && addStudentOpen) setAddStudentOpen(false);
+		if (closedByPause) {
+			toast.error("Lớp đang tạm dừng — thao tác này tạm khóa.");
+		}
 	}, [
+		isPaused,
 		sy,
 		manageOpen,
 		canAddManualSession,
 		addSessionOpen,
+		addStudentOpen,
 		canImportSyllabus,
 		importSyllabusOpen,
 	]);
@@ -262,10 +287,33 @@ function ClassDetailRoute() {
 				Lớp học
 			</Link>
 			<PageHead
-				kicker={`${CLASS_TYPE_LABELS[cls.type]} · ${formatSchedule(cls.schedule)} · ${cls.mode}`}
+				kicker={
+					<span className="inline-flex flex-wrap items-center gap-2">
+						<span>
+							{CLASS_TYPE_LABELS[cls.type]} · {formatSchedule(cls.schedule)} ·{" "}
+							{cls.mode}
+						</span>
+						<Badge
+							variant={isPaused ? "muted" : "success"}
+							dot={!isPaused}
+							data-testid="class-status-badge"
+						>
+							{isPaused ? "Tạm dừng" : "Đang hoạt động"}
+						</Badge>
+					</span>
+				}
 				title={cls.name}
 				action={
 					<>
+						{canToggleStatus && (
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => setStatusModalOpen(true)}
+							>
+								{isPaused ? "Mở lại lớp" : "Tạm dừng lớp"}
+							</Button>
+						)}
 						<Button
 							variant="outline"
 							size="sm"
@@ -442,13 +490,15 @@ function ClassDetailRoute() {
 							{cls.tuitionFee ? `${fmtVND(cls.tuitionFee)} / học viên` : "—"}
 						</p>
 						<div className="flex gap-2">
-							<Button
-								variant="outline"
-								size="sm"
-								onClick={() => setAddStudentOpen(true)}
-							>
-								+ Thêm học viên vào lớp
-							</Button>
+							{!isPaused && (
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => setAddStudentOpen(true)}
+								>
+									+ Thêm học viên vào lớp
+								</Button>
+							)}
 							<Button
 								variant="outline"
 								size="sm"
@@ -538,7 +588,7 @@ function ClassDetailRoute() {
 			/>
 			<EnrollStudentModal
 				key={`enroll-student-${cls.id}`}
-				open={addStudentOpen}
+				open={addStudentOpen && !isPaused}
 				onClose={() => setAddStudentOpen(false)}
 				classId={cls.id}
 			/>
@@ -556,6 +606,12 @@ function ClassDetailRoute() {
 				cls={cls}
 				hasRealSessions={hasRealSessions}
 				existingClasses={data.classes}
+			/>
+			<ClassStatusModal
+				key={`class-status-${cls.id}`}
+				open={statusModalOpen}
+				onClose={() => setStatusModalOpen(false)}
+				cls={cls}
 			/>
 		</div>
 	);

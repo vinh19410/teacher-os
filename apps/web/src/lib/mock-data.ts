@@ -3,6 +3,7 @@ import type {
 	AssignmentSkill,
 	AssignmentWritingSection,
 	AttendanceStatus,
+	ClassStatus,
 	ClassType,
 	KernelAssignmentTestRow,
 	KernelEnrollmentRow,
@@ -207,7 +208,7 @@ export interface ClassGroup {
 	schedule: string;
 	sessionsDone: number;
 	sessionsTotal: number;
-	status: string;
+	status: ClassStatus;
 	startDate: string;
 	tuitionFee: number | null;
 	notes: string;

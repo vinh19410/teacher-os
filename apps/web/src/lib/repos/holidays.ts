@@ -29,15 +29,19 @@ async function postJson<T>(
 	});
 	const raw: unknown = await res.json().catch(() => null);
 	if (!res.ok) {
+		const record =
+			raw != null && typeof raw === "object"
+				? (raw as Record<string, unknown>)
+				: null;
+		const code =
+			record && typeof record.code === "string" ? record.code : undefined;
 		const error =
-			raw != null &&
-			typeof raw === "object" &&
-			"error" in raw &&
-			typeof raw.error === "string"
-				? raw.error
+			record && typeof record.error === "string"
+				? record.error
 				: "request-failed";
-		throw Object.assign(new Error(error), {
-			holidayErrorCode: error,
+		const errorCode = code ?? error;
+		throw Object.assign(new Error(errorCode), {
+			holidayErrorCode: errorCode,
 			status: res.status,
 		});
 	}

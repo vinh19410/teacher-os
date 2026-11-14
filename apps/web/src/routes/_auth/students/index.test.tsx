@@ -255,4 +255,31 @@ describe("students list header and filters", () => {
 			).toBe(true);
 		});
 	});
+
+	it("hides paused classes from AddStudentModal class selector (#694)", async () => {
+		vi.unstubAllGlobals();
+		startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({ id: "cl-a", name: "Lớp Đang Học", status: "active" }),
+					classRow({ id: "cl-p", name: "Lớp Tạm Dừng", status: "paused" }),
+				],
+			}),
+			(req) =>
+				req.path === "/api/students/invitations"
+					? { status: 200, body: [] }
+					: undefined,
+		);
+		renderWithKernel(<StudentsRoute />);
+		const addButtons = await screen.findAllByRole("button", {
+			name: "Thêm học viên",
+		});
+		fireEvent.click(addButtons[0]);
+		const dialog = screen.getByRole("dialog", { name: "Thêm học viên mới" });
+		const options = within(dialog)
+			.getAllByRole("option")
+			.map((o) => o.textContent);
+		expect(options).toContain("Lớp Đang Học");
+		expect(options).not.toContain("Lớp Tạm Dừng");
+	});
 });

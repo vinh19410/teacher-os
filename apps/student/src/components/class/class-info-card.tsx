@@ -97,7 +97,10 @@ export function ClassInfoCard({
 	const teacher = cls.teacher;
 	const teacherEmail = teacher?.email.trim() ?? "";
 
-	const nextId = findNextLessonId(detail.lessons, todayISO, now);
+	const isPaused = cls.status === "paused";
+	const nextId = isPaused
+		? null
+		: findNextLessonId(detail.lessons, todayISO, now);
 	const nextLesson = nextId
 		? (detail.lessons.find((l) => l.id === nextId) ?? null)
 		: null;

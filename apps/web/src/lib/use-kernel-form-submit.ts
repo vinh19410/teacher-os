@@ -27,6 +27,8 @@ function lockFailureMessage(error: unknown): string {
 			return "Bộ đề đã có học viên làm bài nên không thể thay đổi hoặc gỡ part. Bạn vẫn có thể đổi tên, thời gian và trạng thái bộ đề. Muốn thay đổi đề, hãy tạo bộ đề mới.";
 		case CLASS_ERROR_CODES.SCHEDULE_LOCKED:
 			return "Lớp đã có buổi học thực tế nên không sửa được lịch học, ngày khai giảng hoặc số buổi. Bạn vẫn có thể lưu thay đổi thông tin chung của lớp.";
+		case CLASS_ERROR_CODES.CLASS_PAUSED:
+			return "Lớp đang tạm dừng — mở lại lớp để tiếp tục thao tác này.";
 		default:
 			return GENERIC_FAILURE_MESSAGE;
 	}
@@ -78,8 +80,12 @@ export function useKernelFormSubmit(): KernelFormSubmitState {
 					return result;
 				}
 				if (result.kind === "definite-failure") {
-					setFailureError(isHttpError(result.error) ? result.error : undefined);
+					const httpErr = isHttpError(result.error) ? result.error : undefined;
+					setFailureError(httpErr);
 					setError(lockFailureMessage(result.error));
+					if (httpErr?.code === CLASS_ERROR_CODES.CLASS_PAUSED) {
+						void refresh();
+					}
 					return result;
 				}
 				setError(undefined);
@@ -94,7 +100,7 @@ export function useKernelFormSubmit(): KernelFormSubmitState {
 				setSaving(false);
 			}
 		},
-		[dispatch, saving, notice],
+		[dispatch, refresh, saving, notice],
 	);
 
 	const reconcile = useCallback(async (): Promise<boolean> => {

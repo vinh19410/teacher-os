@@ -299,3 +299,52 @@ describe("buildDayAgenda — holiday items (TOS-14b, #453)", () => {
 		expect(without.map((i) => i.kind)).toEqual(["lesson"]);
 	});
 });
+
+describe("buildDayAgenda — paused classes (#694)", () => {
+	it("omits projected, legacy, and unrecorded paused buckets while keeping dated historical sessions", () => {
+		const tue = "2026-11-03"; // Tuesday = day 2, matching cls default days:[1]
+		const items = buildDayAgenda(
+			{
+				classes: [
+					{ ...cls("c-paused-proj"), status: "paused" },
+					{ ...cls("c-paused-unrec"), status: "paused" },
+					{ ...cls("c-paused-hist"), status: "paused" },
+				],
+				lessons: [
+					lesson({
+						id: "l-unrec",
+						classId: "c-paused-unrec",
+						sid: "s1",
+						day: 2,
+						date: tue,
+						status: "upcoming",
+					}),
+					lesson({
+						id: "l-hist-1",
+						classId: "c-paused-hist",
+						sid: "s1",
+						day: 2,
+						date: tue,
+						status: "completed",
+					}),
+					lesson({
+						id: "l-hist-2",
+						classId: "c-paused-hist",
+						sid: "s2",
+						day: 2,
+						date: tue,
+						status: "upcoming",
+					}),
+				],
+			},
+			tue,
+		);
+		expect(items).toHaveLength(1);
+		expect(items[0].kind).toBe("lesson");
+		if (items[0].kind === "lesson") {
+			expect(items[0].classId).toBe("c-paused-hist");
+			expect(items[0].rows).toHaveLength(2);
+			expect(items[0].status).toBe("completed");
+		}
+	});
+});

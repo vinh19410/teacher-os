@@ -23,9 +23,9 @@ export class DailyAttendanceApiError extends HttpError {
 	constructor(
 		status: number,
 		message: string,
-		opts: { reason?: string; missing?: string[] } = {},
+		opts: { reason?: string; code?: string; missing?: string[] } = {},
 	) {
-		super(status, message);
+		super(status, message, { reason: opts.reason, code: opts.code });
 		this.name = "DailyAttendanceApiError";
 		this.reason = opts.reason;
 		this.missing = opts.missing;
@@ -37,17 +37,22 @@ async function throwAttendanceHttpError(
 	action: string,
 ): Promise<never> {
 	let reason: string | undefined;
+	let code: string | undefined;
 	let missing: string[] | undefined;
 	try {
 		const body = (await res.json()) as {
 			reason?: unknown;
 			error?: unknown;
+			code?: unknown;
 			missing?: unknown;
 		};
 		if (typeof body?.reason === "string") {
 			reason = body.reason;
 		} else if (typeof body?.error === "string") {
 			reason = body.error;
+		}
+		if (typeof body?.code === "string") {
+			code = body.code;
 		}
 		if (Array.isArray(body?.missing)) {
 			missing = body.missing.filter((x): x is string => typeof x === "string");
@@ -58,7 +63,7 @@ async function throwAttendanceHttpError(
 	throw new DailyAttendanceApiError(
 		res.status,
 		`Failed to ${action}: ${res.status}`,
-		{ reason, missing },
+		{ reason, code, missing },
 	);
 }
 

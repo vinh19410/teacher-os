@@ -1,8 +1,9 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import type {
-	DailyAttendanceResponse,
-	SessionAttendanceSave,
+import {
+	CLASS_ERROR_CODES,
+	type DailyAttendanceResponse,
+	type SessionAttendanceSave,
 } from "@teacher-os/api/contracts";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -121,7 +122,9 @@ export function AttendanceRoute() {
 		setAutoExpandedForKey(autoKey);
 
 		if (search.status === "pending") {
-			const firstPending = data.sessions.find((s) => !s.recorded);
+			const firstPending = data.sessions.find(
+				(s) => !s.recorded && !s.classPaused,
+			);
 			if (firstPending) {
 				setExpandedKeys(new Set([sessionKey(firstPending)]));
 				return;
@@ -222,7 +225,9 @@ export function AttendanceRoute() {
 					? sessions
 					: [...sessions.slice(savedIndex + 1), ...sessions];
 			const matchesChip = (s: DailyAttendanceSession) => {
-				if (searchAtStart.status === "pending") return !s.recorded;
+				if (searchAtStart.status === "pending") {
+					return !s.recorded && !s.classPaused;
+				}
 				if (searchAtStart.status === "completed") return s.recorded;
 				return true;
 			};
@@ -231,6 +236,7 @@ export function AttendanceRoute() {
 					sessionKey(s) !== key &&
 					matchesChip(s) &&
 					!s.recorded &&
+					!s.classPaused &&
 					s.mode !== "legacy",
 			);
 			if (next) {
@@ -244,10 +250,10 @@ export function AttendanceRoute() {
 			// `actionablePending` loại legacy vì màn này không điểm danh được
 			// legacy (kongming điều kiện 1), không dùng counts.pending.
 			const actionable = sessions.filter(
-				(s) => !s.recorded && s.mode !== "legacy",
+				(s) => !s.recorded && !s.classPaused && s.mode !== "legacy",
 			).length;
 			const legacyPending = sessions.filter(
-				(s) => !s.recorded && s.mode === "legacy",
+				(s) => !s.recorded && !s.classPaused && s.mode === "legacy",
 			).length;
 			if (actionable === 0) {
 				setLiveMessage(
@@ -284,6 +290,14 @@ export function AttendanceRoute() {
 					}));
 					return;
 				}
+				if (err.status === 409 && err.code === CLASS_ERROR_CODES.CLASS_PAUSED) {
+					toast.error("Lớp đang tạm dừng — chỉ xem lịch sử điểm danh.");
+					await Promise.all([
+						dailyQuery.refetch(),
+						queryClient.invalidateQueries({ queryKey: ["kernel"] }),
+					]);
+					return;
+				}
 				if (
 					(err.status === 409 && err.reason === "roster-changed") ||
 					(err.status === 422 &&
@@ -307,7 +321,7 @@ export function AttendanceRoute() {
 
 	const sessions = data?.sessions ?? [];
 	const filteredSessions = sessions.filter((s) => {
-		if (search.status === "pending") return !s.recorded;
+		if (search.status === "pending") return !s.recorded && !s.classPaused;
 		if (search.status === "completed") return s.recorded;
 		return true;
 	});
@@ -407,7 +421,10 @@ export function AttendanceRoute() {
 						{search.status === "pending" &&
 						data &&
 						data.counts.all > 0 &&
-						data.sessions.every((s) => s.recorded || s.mode === "legacy")
+						data.sessions.every(
+							(s) =>
+								s.recorded || s.mode === "legacy" || Boolean(s.classPaused),
+						)
 							? "Đã điểm danh xong mọi ca trong ngày"
 							: "Không có ca học nào trong ngày này."}
 					</p>
