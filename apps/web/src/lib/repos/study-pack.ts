@@ -3,6 +3,7 @@ import type {
 	ClassStudyPacksResponse,
 	StudyPackCreateInput,
 	StudyPackDetailView,
+	StudyPackItemDetailView,
 	StudyPackSummaryView,
 	StudyPackUpdateInput,
 } from "@teacher-os/api/contracts";
@@ -151,15 +152,11 @@ export async function cancelClassStudyPack(
 	);
 }
 
-export async function fetchStudyPackExerciseAudioObjectUrl(
-	exerciseId: string,
+async function fetchAudioBlobObjectUrl(
+	url: string,
 	signal?: AbortSignal,
-	baseUrl: string = getApiBaseUrl(),
 ): Promise<string> {
-	const res = await fetch(
-		`${baseUrl}/api/study-packs/exercises/${encodeURIComponent(exerciseId)}/audio`,
-		{ credentials: "include", signal },
-	);
+	const res = await fetch(url, { credentials: "include", signal });
 	if (!res.ok) {
 		await res.body?.cancel().catch(() => {});
 		throw new Error(`Audio fetch failed (${res.status})`);
@@ -172,4 +169,47 @@ export async function fetchStudyPackExerciseAudioObjectUrl(
 	}
 	const blob = new Blob([await res.blob()], { type: mimeType });
 	return URL.createObjectURL(blob);
+}
+
+/**
+ * Fetches full detail of a single study pack item (content, questions, audio metadata).
+ */
+export async function getStudyPackItemDetail(
+	packId: string,
+	itemId: string,
+	baseUrl?: string,
+): Promise<StudyPackItemDetailView> {
+	const data = await requestJson<{ item: StudyPackItemDetailView }>(
+		"GET",
+		`/api/study-packs/${encodeURIComponent(packId)}/items/${encodeURIComponent(itemId)}`,
+		undefined,
+		baseUrl,
+	);
+	return data.item;
+}
+
+/**
+ * Streams a study pack item's listening audio and returns a Blob object URL.
+ */
+export async function fetchStudyPackItemAudio(
+	packId: string,
+	itemId: string,
+	signal?: AbortSignal,
+	baseUrl: string = getApiBaseUrl(),
+): Promise<string> {
+	return fetchAudioBlobObjectUrl(
+		`${baseUrl}/api/study-packs/${encodeURIComponent(packId)}/items/${encodeURIComponent(itemId)}/audio`,
+		signal,
+	);
+}
+
+export async function fetchStudyPackExerciseAudioObjectUrl(
+	exerciseId: string,
+	signal?: AbortSignal,
+	baseUrl: string = getApiBaseUrl(),
+): Promise<string> {
+	return fetchAudioBlobObjectUrl(
+		`${baseUrl}/api/study-packs/exercises/${encodeURIComponent(exerciseId)}/audio`,
+		signal,
+	);
 }

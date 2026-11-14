@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import type {
 	ClassStudyPackView,
 	StudyPackSummaryView,
@@ -292,7 +293,13 @@ export function ClassStudyPackSection({ classId }: { classId: string }) {
 							<div className="space-y-1">
 								<div className="flex flex-wrap items-center gap-2">
 									<h3 className="font-semibold text-base text-foreground">
-										{pack.title}
+										<Link
+											to="/assignments/packs/$packId"
+											params={{ packId: pack.packId }}
+											className="rounded-sm hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+										>
+											{pack.title}
+										</Link>
 									</h3>
 									<Badge
 										variant={pack.status === "active" ? "success" : "secondary"}
