@@ -52,6 +52,7 @@ export function ClassSessionModal({
 
 	const rows = sessionRef ? findSessionRows(data.lessons, sessionRef) : [];
 	const cls = sessionRef ? classById(sessionRef.classId) : undefined;
+	const isPaused = cls?.status === "paused";
 	const open = sessionRef !== null && rows.length > 0;
 
 	// Reset edit form state when opening a new session modal
@@ -296,7 +297,7 @@ export function ClassSessionModal({
 													>
 														Hủy
 													</Button>
-													{state.canCheckIn && (
+													{state.canCheckIn && !isPaused && (
 														<Button
 															size="sm"
 															disabled={busy || isRowPending || saving}

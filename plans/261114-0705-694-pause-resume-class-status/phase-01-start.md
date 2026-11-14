@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Phase 1: Contracts and Server"
-status: todo
+status: done
 ---
 
 # Phase 1: Contracts and Server
@@ -11,7 +11,7 @@ status: todo
 
 ## Tasks
 
-- [ ] **Task 1.1: API Contracts (`@teacher-os/api`) & Snapshot Normalizers**
+- [x] **Task 1.1: API Contracts (`@teacher-os/api`) & Snapshot Normalizers**
   - **Target files & symbols:**
     - `packages/api/src/contracts.ts`: `CLASS_STATUSES`, `ClassStatus`, `CLASS_ERROR_CODES` (`~L203`), `classStatusUpdateSchema`, `classStatusResponseSchema`, `dailyAttendanceResponseSchema` (`L1493-L1528`), `KernelClassRow` (interface tại `L1692-L1714`), `studentClassSchema` (`L2226-L2247`), rà soát thêm `.strict()` nếu tương thích cho `addManualSessionSchema` (`L1849-L1866`), `resendStudentInviteSchema` (`L3039-L3041`), entry của `sessionAttendanceSaveSchema` (`L1470-L1474`)
     - `apps/server/src/routes/snapshot.ts`: normalize `status` tại `L669` (`row.status === "paused" ? "paused" : "active"`)
@@ -24,7 +24,7 @@ status: todo
   - **Success criteria:** `classUpdateSchema` vẫn từ chối `status`; schema input reject giá trị ngoài `"active" | "paused"`; `snapshot.ts` và `student-class.ts` pass `check-types` sạch.
   - **Verify:** `pnpm --filter @teacher-os/api test && pnpm --filter @teacher-os/api check-types`
 
-- [ ] **Task 1.2: Server Write Guards, Role Auth, D1 TOCTOU Atomicity & `POST /api/classes/:id/status`**
+- [x] **Task 1.2: Server Write Guards, Role Auth, D1 TOCTOU Atomicity & `POST /api/classes/:id/status`**
   - **Target files & symbols:**
     - `apps/server/src/routes/kernel.ts`: `findClass` (`L407-L423`), `findLessonAction` (`L432-L451`), `POST /students` (`L468-L635`), `POST /students/:id/resend-invite` (`L1127-L1349`), `POST /classes/:id/enroll` (`L1395-L1448`), `POST /enrollments/:enrollmentId/accept` (`L1458-L1475`), `POST /classes/:id/status` (mới, đặt gần `POST /classes/:id/notes` `L1722` & `POST /classes/:id/tuition-fee` `L1743`), `lessonStatusAction` (`L2158-L2229`), `POST /classes/:id/sessions` (`L2692-L2916`), `occurrenceStatusAction` (`L3092-L3143`), `POST /classes/:id/sessions/:date/check-in` (`L3145-L3163`), `PUT /classes/:id/sessions/:date/attendance` (`L3185-L3316`)
     - `packages/auth/src/role.ts` & `packages/auth/src/role.test.ts`: export `CLASS_STATUS_MANAGE_ROLES` & `canManageClassStatus(role)` fail-closed (cho phép `teacher | owner | admin | class_teacher`, từ chối `ta` / `null` / `undefined`)
@@ -60,7 +60,7 @@ status: todo
   - **Success criteria:** Tất cả write guards vượt qua race D1 không orphan row, không nuốt lỗi `CLASS_PAUSED`, không đốt cooldown hay backfill chui.
   - **Verify:** `pnpm --filter @teacher-os/auth test && pnpm --filter server exec vitest run src/class-status.test.ts`
 
-- [ ] **Task 1.3: Server Read Filters — Daily Attendance Bucket, Dashboard Reminders & Student Portal API**
+- [x] **Task 1.3: Server Read Filters — Daily Attendance Bucket, Dashboard Reminders & Student Portal API**
   - **Target files & symbols:**
     - `apps/server/src/routes/daily-attendance.ts`: `queryDailyRows` (`L80-L172`, cả 2 nhánh `select`), `computeDailyAttendance` (`L183-L300`)
     - `apps/server/src/routes/dashboard-reminders.ts`: `attendanceRows` query (`L110-L132`)

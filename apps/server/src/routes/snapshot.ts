@@ -666,7 +666,8 @@ export async function loadSnapshot(
 			schedule: row.schedule,
 			sessionsTotal: row.sessionsTotal,
 			sessionsDone: row.sessionsDone,
-			status: row.status,
+			status:
+				row.status === "paused" ? ("paused" as const) : ("active" as const),
 			startDate: row.startDate,
 			tuitionFee: row.tuitionFee ?? null,
 			schedulingMode: row.schedulingMode ?? "auto",

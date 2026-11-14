@@ -4,6 +4,7 @@ import type {
 	AssignmentTestCreate,
 	AssignmentTestPartsSet,
 	AssignmentTestUpdate,
+	ClassStatus,
 	ClassType,
 	InvoicePaymentCreate,
 	StudentCreateInput,
@@ -281,6 +282,11 @@ export type KernelAction =
 	| {
 			type: "update-class-tuition-fee";
 			payload: { classId: string; tuitionFee: number | null };
+	  }
+	| {
+			type: "update-class-status";
+			classId: string;
+			status: ClassStatus;
 	  }
 	| { type: "activate-enrollment"; enrollmentId: string }
 	| { type: "delete-enrollment"; enrollmentId: string }

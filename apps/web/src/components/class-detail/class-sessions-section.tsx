@@ -212,6 +212,7 @@ export function ClassSessionsSection({
 	const todayISO = todayISOVietnam();
 	// Live session behind the roster modal: re-resolved from the derived list
 	// on every render so checked-in rows flip to badges without a snapshot.
+	const isPaused = cls.status === "paused";
 	const modalSession = sessions.find((s) => s.index === modalIndex) ?? null;
 	const actionsSession =
 		sessions.find((s) => s.dateISO === actionsDateISO) ?? null;
@@ -259,7 +260,8 @@ export function ClassSessionsSection({
 							status === "upcoming" &&
 							s.dateISO < todayISO &&
 							attendees.length > 0;
-						const isPastUnmarked = isPast && markedCount + absentCount === 0;
+						const isPastUnmarked =
+							!isPaused && isPast && markedCount + absentCount === 0;
 						// Link attendance cho buổi ĐÃ TỚI NGÀY (kể cả hôm nay — gate
 						// action trong modal vẫn chặn check-in sớm qua
 						// sessionIsEligibleDate) hoặc đã học. Buổi `holiday` (TOS-11)
@@ -270,6 +272,10 @@ export function ClassSessionsSection({
 							status !== "holiday" &&
 							s.dateISO <= todayISO &&
 							attendees.length > 0;
+						const showGroupAttendanceLink =
+							(status === "completed" || dateArrived) &&
+							isGroupSession &&
+							(!isPaused || markedCount + absentCount > 0);
 						const hasAdjust =
 							!isProjected &&
 							(sessionRowTargets(s).length > 0 ||
@@ -341,25 +347,27 @@ export function ClassSessionsSection({
 									<div className="mt-0.5 truncate font-medium text-sm">
 										{info.title ?? "—"}
 									</div>
-									{(status === "completed" || dateArrived) &&
-										isGroupSession && (
-											<button
-												type="button"
-												// #403: selector ổn định cho harness design:compare
-												// (t-attendance appSteps) — phân biệt với nút commit
-												// check-in 1:1 cùng text "Điểm danh".
-												data-testid={`session-attendance-open-${s.index}`}
-												disabled={busy}
-												onClick={() => setModalIndex(s.index)}
-												className="mt-0.5 inline-flex items-center gap-1 font-medium text-xs underline-offset-4 hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
-											>
-												{status === "completed" ||
-												(tally.unmarked === 0 && markedCount + absentCount > 0)
+									{showGroupAttendanceLink && (
+										<button
+											type="button"
+											// #403: selector ổn định cho harness design:compare
+											// (t-attendance appSteps) — phân biệt với nút commit
+											// check-in 1:1 cùng text "Điểm danh".
+											data-testid={`session-attendance-open-${s.index}`}
+											disabled={busy}
+											onClick={() => setModalIndex(s.index)}
+											className="mt-0.5 inline-flex items-center gap-1 font-medium text-xs underline-offset-4 hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
+										>
+											{isPaused
+												? "Xem điểm danh"
+												: status === "completed" ||
+														(tally.unmarked === 0 &&
+															markedCount + absentCount > 0)
 													? "Sửa điểm danh"
 													: "Điểm danh"}{" "}
-												→
-											</button>
-										)}
+											→
+										</button>
+									)}
 									{
 										// Buổi holiday vô hình với học sinh (TOS-11) — không mở
 										// modal tài liệu (#645): server cũng chặn attach 409.
@@ -370,9 +378,7 @@ export function ClassSessionsSection({
 												onClick={() => setMaterialsDateISO(s.dateISO)}
 												className={cn(
 													"mt-0.5 inline-flex items-center gap-1 font-medium text-xs underline-offset-4 hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
-													(status === "completed" || dateArrived) &&
-														isGroupSession &&
-														"ml-3",
+													showGroupAttendanceLink && "ml-3",
 												)}
 											>
 												<Paperclip aria-hidden="true" className="size-3.5" />
@@ -397,8 +403,11 @@ export function ClassSessionsSection({
 									<span className="inline-flex shrink-0 items-center rounded-md border border-warn/50 bg-warn-soft px-1.5 py-0.5 font-medium text-warn text-xs">
 										Nghỉ lễ — Đã dời lịch
 									</span>
+								) : isPaused && isPast && markedCount + absentCount === 0 ? (
+									<Badge variant="muted">Chưa điểm danh</Badge>
 								) : status === "completed" ||
 									isPast ||
+									(isPaused && markedCount + absentCount > 0) ||
 									(tally.unmarked === 0 && markedCount + absentCount > 0) ? (
 									<AttendanceSummary
 										tally={tally}
@@ -410,7 +419,8 @@ export function ClassSessionsSection({
 										Sắp tới
 									</span>
 								)}
-								{attendance.kind === "actionable" &&
+								{!isPaused &&
+									attendance.kind === "actionable" &&
 									checkInId !== null &&
 									!isGroupSession && (
 										// #91: check-in 1-click 1:1 — KHÔNG phụ thuộc hasAdjust:
@@ -468,12 +478,14 @@ export function ClassSessionsSection({
 				run={run}
 				isPending={isPending}
 				busy={busy}
+				readOnly={isPaused}
 				onClose={() => setModalIndex(null)}
 			/>
 			<SessionActionsModal
 				key={actionsDateISO ?? "no-session-actions"}
 				session={actionsSession}
 				studentById={studentById}
+				isPaused={isPaused}
 				onClose={() => setActionsDateISO(null)}
 				onComplete={onComplete}
 				onCancelOccurrence={onCancelOccurrence}

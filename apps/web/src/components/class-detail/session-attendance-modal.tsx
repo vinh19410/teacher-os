@@ -25,6 +25,7 @@ export function SessionAttendanceModal({
 	run,
 	isPending,
 	busy,
+	readOnly = false,
 	onClose,
 }: {
 	session: ClassSession | null;
@@ -36,6 +37,7 @@ export function SessionAttendanceModal({
 	) => Promise<KernelCommandResult>;
 	isPending: (key: string) => boolean;
 	busy: boolean;
+	readOnly?: boolean;
 	onClose: () => void;
 }) {
 	const closeRef = useRef<HTMLButtonElement>(null);
@@ -53,7 +55,11 @@ export function SessionAttendanceModal({
 			? "cancelled"
 			: attendance?.kind === "future"
 				? "upcoming"
-				: "completed";
+				: attendance?.kind === "completed"
+					? "completed"
+					: readOnly
+						? "unmarked"
+						: "completed";
 	const roster = session === null ? [] : sessionStudents(session);
 
 	return (
@@ -62,8 +68,10 @@ export function SessionAttendanceModal({
 			onClose={onClose}
 			title={
 				session
-					? `Điểm danh — ${formatSessionDate(session.dateISO)}`
-					: "Điểm danh"
+					? `${readOnly ? "Xem điểm danh" : "Điểm danh"} — ${formatSessionDate(session.dateISO)}`
+					: readOnly
+						? "Xem điểm danh"
+						: "Điểm danh"
 			}
 			footer={
 				<Button
@@ -89,7 +97,7 @@ export function SessionAttendanceModal({
 						<span className="font-medium text-sm">
 							{studentById(sid)?.name ?? "Học viên"}
 						</span>
-						{display === "check-in" && enrollmentLessonId ? (
+						{!readOnly && display === "check-in" && enrollmentLessonId ? (
 							<Button
 								type="button"
 								size="sm"
@@ -119,6 +127,8 @@ export function SessionAttendanceModal({
 							<Badge variant="danger">Đã hủy</Badge>
 						) : display === "absent" ? (
 							<Badge variant="secondary">Vắng</Badge>
+						) : readOnly && attendance?.kind !== "future" ? (
+							<Badge variant="muted">Chưa điểm danh</Badge>
 						) : (
 							<Badge variant="accent">Sắp tới</Badge>
 						)}

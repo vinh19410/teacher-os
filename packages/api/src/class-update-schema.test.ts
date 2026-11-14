@@ -1,5 +1,13 @@
 import { describe, expect, test } from "vitest";
-import { CLASS_ERROR_CODES, classUpdateSchema } from "./contracts";
+import {
+	CLASS_ERROR_CODES,
+	CLASS_STATUSES,
+	classStatusResponseSchema,
+	classStatusUpdateSchema,
+	classUpdateSchema,
+	dailyAttendanceResponseSchema,
+	studentClassSchema,
+} from "./contracts";
 
 describe("classUpdateSchema", () => {
 	const validBase = {
@@ -115,7 +123,80 @@ describe("classUpdateSchema", () => {
 		).toBe(false);
 	});
 
-	test("khai báo CLASS_ERROR_CODES.SCHEDULE_LOCKED", () => {
+	test("khai báo CLASS_ERROR_CODES.SCHEDULE_LOCKED và CLASS_PAUSED", () => {
 		expect(CLASS_ERROR_CODES.SCHEDULE_LOCKED).toBe("CLASS_SCHEDULE_LOCKED");
+		expect(CLASS_ERROR_CODES.CLASS_PAUSED).toBe("CLASS_PAUSED");
+	});
+});
+
+describe("class status contracts (#694)", () => {
+	test("CLASS_STATUSES chỉ gồm đúng 2 trạng thái active và paused", () => {
+		expect(CLASS_STATUSES).toEqual(["active", "paused"]);
+	});
+
+	test("classStatusUpdateSchema chấp nhận active | paused và từ chối archived / key lạ", () => {
+		expect(
+			classStatusUpdateSchema.safeParse({ status: "active" }).success,
+		).toBe(true);
+		expect(
+			classStatusUpdateSchema.safeParse({ status: "paused" }).success,
+		).toBe(true);
+		expect(
+			classStatusUpdateSchema.safeParse({ status: "archived" }).success,
+		).toBe(false);
+		expect(
+			classStatusUpdateSchema.safeParse({ status: "paused", extra: 1 }).success,
+		).toBe(false);
+	});
+
+	test("classStatusResponseSchema parse ok & status", () => {
+		expect(
+			classStatusResponseSchema.safeParse({ ok: true, status: "paused" })
+				.success,
+		).toBe(true);
+		expect(
+			classStatusResponseSchema.safeParse({ ok: true, status: "archived" })
+				.success,
+		).toBe(false);
+	});
+
+	test("dailyAttendanceResponseSchema chấp nhận classPaused optional mà không đòi hỏi bắt buộc", () => {
+		const parsed = dailyAttendanceResponseSchema.safeParse({
+			date: "2026-10-01",
+			sessions: [
+				{
+					classId: "c1",
+					className: "IELTS",
+					time: "19:00",
+					dur: 90,
+					mode: "dated",
+					recorded: false,
+					classPaused: true,
+					students: [],
+				},
+			],
+			counts: { all: 1, pending: 0, completed: 0 },
+		});
+		expect(parsed.success).toBe(true);
+	});
+
+	test("studentClassSchema giữ active/paused và catch giá trị lạ về active", () => {
+		const base = {
+			id: "c1",
+			name: "IELTS",
+			level: "6.5",
+			mode: "Online",
+			schedule: "T2 19:00",
+			sessionsDone: 1,
+			sessionsTotal: 10,
+			enrollmentId: "e1",
+			enrollmentStatus: "active",
+			nextSession: null,
+			teacher: null,
+		};
+		const paused = studentClassSchema.parse({ ...base, status: "paused" });
+		expect(paused.status).toBe("paused");
+		const fallback = studentClassSchema.parse({ ...base, status: "archived" });
+		expect(fallback.status).toBe("active");
 	});
 });

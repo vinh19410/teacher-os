@@ -137,6 +137,7 @@ export function AddStudentModal({
 			: undefined;
 
 	const effectiveClassId = (defaultClassId ?? classId).trim();
+	const activeClasses = data.classes.filter((c) => c.status !== "paused");
 
 	return (
 		<Modal
@@ -221,7 +222,7 @@ export function AddStudentModal({
 					/>
 				</Field>
 
-				{!defaultClassId && data.classes.length > 0 && (
+				{!defaultClassId && activeClasses.length > 0 && (
 					<Field label="Ghi danh vào lớp (tùy chọn)">
 						<Select
 							value={classId}
@@ -229,7 +230,7 @@ export function AddStudentModal({
 							disabled={saving}
 						>
 							<option value="">— Chưa chọn lớp —</option>
-							{data.classes.map((cls) => (
+							{activeClasses.map((cls) => (
 								<option key={cls.id} value={cls.id}>
 									{cls.name}
 								</option>

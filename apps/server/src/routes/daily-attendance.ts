@@ -33,6 +33,7 @@ export interface RawDailyAttendanceRow {
 	lessonId: string;
 	classId: string;
 	className: string;
+	classStatus: string;
 	studentId: string;
 	studentName: string;
 	time: string;
@@ -97,6 +98,7 @@ async function queryDailyRows(
 					lessonId: lesson.id,
 					classId: lesson.classId,
 					className: classTable.name,
+					classStatus: classTable.status,
 					studentId: student.id,
 					studentName: student.name,
 					time: lesson.time,
@@ -141,6 +143,7 @@ async function queryDailyRows(
 			lessonId: lesson.id,
 			classId: lesson.classId,
 			className: classTable.name,
+			classStatus: classTable.status,
 			studentId: student.id,
 			studentName: student.name,
 			time: lesson.time,
@@ -220,6 +223,13 @@ export async function computeDailyAttendance(
 		);
 		const first = sortedByTime[0];
 		if (!first) continue;
+		const isPaused = first.classStatus !== "active";
+		if (
+			isPaused &&
+			!rows.some((r) => r.status === "completed" || r.status === "absent")
+		) {
+			continue;
+		}
 
 		// Giữ toàn bộ dòng trong bucket (classId, date) để tập lessonId khớp 1-1
 		// với rosterRows của PUT /api/classes/:id/sessions/:date/attendance.
@@ -244,13 +254,14 @@ export async function computeDailyAttendance(
 			dur: first.dur,
 			mode: "dated",
 			recorded: !rows.some((r) => r.status === "upcoming"),
+			...(isPaused ? { classPaused: true } : {}),
 			students,
 		});
 	}
 
 	for (const rows of legacyBuckets.values()) {
 		const first = rows[0];
-		if (!first) continue;
+		if (first?.classStatus !== "active") continue;
 
 		const byStudent = new Map<string, RawDailyAttendanceRow>();
 		for (const row of rows) {
@@ -287,7 +298,7 @@ export async function computeDailyAttendance(
 	);
 
 	const completed = sessions.filter((s) => s.recorded).length;
-	const pending = sessions.length - completed;
+	const pending = sessions.filter((s) => !s.recorded && !s.classPaused).length;
 
 	return {
 		date: dateISO,

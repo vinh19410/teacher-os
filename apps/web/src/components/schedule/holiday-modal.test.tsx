@@ -425,3 +425,63 @@ describe("HolidayModal TOS-13: phương thức Hủy buổi (không bù)", () =>
 		expect(onClose).toHaveBeenCalled();
 	});
 });
+
+describe("HolidayModal CLASS_PAUSED (#694)", () => {
+	it("shows Vietnamese paused-class error and refreshes classes when previewHoliday returns CLASS_PAUSED", async () => {
+		const onRefreshClasses = vi.fn();
+		repos.previewHoliday.mockRejectedValueOnce(
+			Object.assign(new Error("CLASS_PAUSED"), {
+				holidayErrorCode: "CLASS_PAUSED",
+			}),
+		);
+		render(
+			<HolidayModal
+				open
+				classes={CLASSES}
+				onClose={vi.fn()}
+				onApplied={vi.fn()}
+				onRefreshClasses={onRefreshClasses}
+			/>,
+		);
+		fillValidForm();
+		await waitFor(() => expect(repos.previewHoliday).toHaveBeenCalled());
+		expect(
+			await screen.findByText(
+				"Lớp đang tạm dừng — không thể áp dụng lịch nghỉ cho lớp này.",
+			),
+		).toBeTruthy();
+		expect(onRefreshClasses).toHaveBeenCalledTimes(1);
+	});
+
+	it("shows Vietnamese toast error, clears stale preview, and refreshes classes when applyHoliday rejects with CLASS_PAUSED", async () => {
+		const onRefreshClasses = vi.fn();
+		repos.applyHoliday.mockRejectedValueOnce(
+			Object.assign(new Error("CLASS_PAUSED"), {
+				holidayErrorCode: "CLASS_PAUSED",
+			}),
+		);
+		render(
+			<HolidayModal
+				open
+				classes={CLASSES}
+				onClose={vi.fn()}
+				onApplied={vi.fn()}
+				onRefreshClasses={onRefreshClasses}
+			/>,
+		);
+		fillValidForm();
+		await waitFor(() =>
+			expect(screen.getByTestId("holiday-preview")).toBeTruthy(),
+		);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Xác nhận áp dụng & Dời buổi" }),
+		);
+		await waitFor(() =>
+			expect(toast.error).toHaveBeenCalledWith(
+				"Lớp đang tạm dừng — không thể áp dụng lịch nghỉ cho lớp này.",
+			),
+		);
+		expect(screen.queryByTestId("holiday-preview")).toBeNull();
+		expect(onRefreshClasses).toHaveBeenCalledTimes(1);
+	});
+});

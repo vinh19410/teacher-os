@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Phase 2: Web and Student UI"
-status: todo
+status: done
 ---
 
 # Phase 2: Web and Student UI
@@ -11,7 +11,7 @@ status: todo
 
 ## Tasks
 
-- [ ] **Task 2.1: Kernel Store, Action & Outcome Error Mapping cho `CLASS_PAUSED` (`apps/web`)**
+- [x] **Task 2.1: Kernel Store, Action & Outcome Error Mapping cho `CLASS_PAUSED` (`apps/web`)**
   - **Target files & symbols:**
     - `apps/web/src/lib/mock-data.ts` (`ClassGroup` `L196-L215`), `apps/web/src/lib/repos/classes.ts` (`mapClasses` `L70`: chuẩn hóa `row.status === "paused" ? "paused" : "active"`)
     - `apps/web/src/lib/data-actions.ts`: `KernelAction` union (thêm `{ type: "update-class-status"; classId: string; status: ClassStatus }`)
@@ -26,7 +26,7 @@ status: todo
   - **Success criteria:** Mọi write action thua race `pause` trên tab khác đều phát `toast.error` rõ nghĩa (chỉ 1 toast) và tự refetch đồng bộ state.
   - **Verify:** `pnpm --filter web exec vitest run src/lib/`
 
-- [ ] **Task 2.2: Schedule (Bucket-Level), Conflicts & Dashboard Filters (`apps/web`)**
+- [x] **Task 2.2: Schedule (Bucket-Level), Conflicts & Dashboard Filters (`apps/web`)**
   - **Target files & symbols:**
     - `apps/web/src/lib/schedule-conflicts.ts`: `findScheduleConflicts` (`c.status !== "active"` bị bỏ qua)
     - `apps/web/src/lib/schedule-week.ts` (`rollupSessionStatus` `L86-L98`, `selectProjectedWeekBlocks` `L197-L265`, filter bucket `L303-L395`), `apps/web/src/lib/schedule-day.ts` (`L95-L142`), `apps/web/src/lib/schedule-month.ts` (`L212-L255`)
@@ -43,7 +43,7 @@ status: todo
   - **Success criteria:** Lớp `paused` không sinh ô lịch sắp tới, buổi legacy lặp tuần, hay nhắc việc giả; buổi lịch sử trên `/schedule` giữ nguyên đúng sĩ số.
   - **Verify:** `pnpm --filter web exec vitest run src/lib/ src/routes/_auth/dashboard.test.tsx src/routes/_auth/schedule.test.tsx`
 
-- [ ] **Task 2.3: Teacher Web UI — `/classes`, `ClassStatusModal`, `/classes/$classId`, Điểm danh Read-Only, Roster, `AddStudentModal`, `/schedule`, `/students/$studentId`**
+- [x] **Task 2.3: Teacher Web UI — `/classes`, `ClassStatusModal`, `/classes/$classId`, Điểm danh Read-Only, Roster, `AddStudentModal`, `/schedule`, `/students/$studentId`**
   - **Target files & symbols:**
     - `apps/web/src/routes/_auth/classes/index.tsx` & `apps/web/src/routes/_auth/classes/index.test.tsx` & `apps/web/src/routes/_auth/list-page-filters.test.ts`: thêm chip `"Tạm dừng"`, khai báo `validateSearch` trả về `{ filter?: ClassListFilter }` (bắt buộc optional để mọi `<Link to="/classes">` hợp lệ typecheck, sanitize giá trị lạ), dùng `navigate({ search, replace: true })`; cập nhật `classes/index.test.tsx:99-120` cho chip `"Tạm dừng"` + URL state via `routerState.search`.
     - `apps/web/src/components/modals/class-status-modal.tsx` (mới): modal xác nhận `"Tạm dừng lớp"` / `"Mở lại lớp"`, nút hành động `variant="outline"` / `variant="default"` (KHÔNG `destructive`), nêu rõ: bảo toàn buổi học & học viên, ẩn lịch sắp tới, chặn tuyển sinh/điểm danh mới, và ghi chú kỳ nghỉ toàn trung tâm trong lúc tạm dừng không tự dời lịch / khả năng đụng lịch khi mở lại.
@@ -61,7 +61,7 @@ status: todo
   - **Success criteria:** UI đồng nhất 2 trạng thái, điểm danh lịch sử xem được read-only, không kẹt modal hay hiện warn badge sai.
   - **Verify:** `pnpm --filter web test && pnpm --filter web check-types`
 
-- [ ] **Task 2.4: Student Portal UI (`apps/student`)**
+- [x] **Task 2.4: Student Portal UI (`apps/student`)**
   - **Target files & symbols:**
     - `apps/student/src/components/overview/class-card.tsx`: badge `"Tạm dừng"`, disabled `"Tham gia lớp"` + giải thích `"Lớp đang tạm dừng — chưa thể tham gia"` khi `invited` & `paused`, hiển thị `"Lớp đang tạm dừng"` khi `enrolled` & `paused`.
     - `apps/student/src/components/class/class-detail-view.tsx`, `class-info-card.tsx`, `class-lesson-list.tsx`: banner thông báo lớp đang tạm dừng; ép `nextId = null` ở cả `ClassInfoCard` (`L100`) & `ClassLessonList` (`L108`) khi `isPaused`; với buổi `upcoming` quá giờ của lớp `paused`, bỏ qua `isLessonEnded` và hiển thị nhãn trung tính `"Tạm hoãn"` thay vì `"Đã kết thúc"`.

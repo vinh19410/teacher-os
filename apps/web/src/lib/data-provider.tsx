@@ -24,6 +24,7 @@ import type {
 	Syllabus,
 } from "./mock-data";
 import { reauth } from "./reauth";
+import { dailyAttendanceBaseQueryKey } from "./repos/daily-attendance";
 import {
 	createKernelCommandBus,
 	type KernelCommandBus,
@@ -102,11 +103,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
 			// resolve = refreshed, throw = committed. throwOnError makes
 			// refetchQueries reject instead of swallowing the failure, and
 			// type "all" keeps it truthful even with no active observer.
-			refetch: () =>
-				queryClient.refetchQueries(
+			refetch: async () => {
+				await queryClient.refetchQueries(
 					{ queryKey: kernelQueryKey, exact: true, type: "all" },
 					{ throwOnError: true },
-				),
+				);
+				// Keep exact: true on kernelQueryKey so remindersQueryKey stays synced
+				// to kernelDataUpdatedAt, while marking cached daily attendance dates stale.
+				await queryClient.invalidateQueries({
+					queryKey: dailyAttendanceBaseQueryKey,
+				});
+			},
 			// A dead session mid-write/mid-refresh bounces to login (phase-4);
 			// the discriminated result still tells the caller what landed.
 			onAuthLost: reauth,

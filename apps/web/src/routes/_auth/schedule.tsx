@@ -193,7 +193,12 @@ export function ScheduleRoute() {
 					→
 				</Button>
 			</div>
-			{data.classes.length === 0 && data.events.length === 0 ? (
+			{!data.classes.some((c) => c.status === "active") &&
+			data.events.length === 0 &&
+			!data.lessons.some(
+				(l) =>
+					l.date != null && (l.status === "completed" || l.status === "absent"),
+			) ? (
 				<Card
 					variant="white"
 					className="p-8 text-center"
@@ -246,6 +251,9 @@ export function ScheduleRoute() {
 					.map((cls) => ({ id: cls.id, name: cls.name }))}
 				onClose={() => setHolidayModalOpen(false)}
 				onApplied={() => {
+					void refresh();
+				}}
+				onRefreshClasses={() => {
 					void refresh();
 				}}
 			/>

@@ -1,10 +1,13 @@
 // @vitest-environment jsdom
 
+import { useQuery } from "@tanstack/react-query";
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { KernelAction } from "@/lib/data-actions";
 import { useData } from "@/lib/data-store";
+import { dailyAttendanceBaseQueryKey } from "@/lib/repos/daily-attendance";
 import {
+	classRow,
 	renderWithKernel,
 	snapshotFixture,
 	startKernelServer,
@@ -198,5 +201,68 @@ describe("DataProvider writes", () => {
 		fireEvent.click(screen.getByRole("button", { name: "refresh" }));
 		await waitFor(() => expect(document.body.dataset.refreshed).toBe("true"));
 		expect(await screen.findByText("Tên mới")).toBeTruthy();
+	});
+
+	it("invalidates daily attendance queries when update-class-status succeeds", async () => {
+		let attendanceLoads = 0;
+		const server = startKernelServer(
+			snapshotFixture({
+				classes: [classRow({ id: "cl-1", status: "active" })],
+			}),
+			(_req, srv) => {
+				srv.snapshot.classes[0] = {
+					...srv.snapshot.classes[0],
+					status: "paused",
+				};
+				return undefined;
+			},
+		);
+
+		function StatusAndAttendanceProbe() {
+			const { dispatch } = useData();
+			const attendanceQuery = useQuery({
+				queryKey: [...dailyAttendanceBaseQueryKey, "2026-11-14"],
+				queryFn: async () => {
+					attendanceLoads += 1;
+					return { count: attendanceLoads };
+				},
+			});
+			return (
+				<div>
+					<span data-testid="attendance-loads">
+						{attendanceQuery.data?.count ?? 0}
+					</span>
+					<button
+						type="button"
+						onClick={async () => {
+							await dispatch({
+								type: "update-class-status",
+								classId: "cl-1",
+								status: "paused",
+							});
+						}}
+					>
+						pause
+					</button>
+				</div>
+			);
+		}
+
+		renderWithKernel(<StatusAndAttendanceProbe />);
+		await waitFor(() =>
+			expect(screen.getByTestId("attendance-loads").textContent).toBe("1"),
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "pause" }));
+		await waitFor(() =>
+			expect(screen.getByTestId("attendance-loads").textContent).toBe("2"),
+		);
+		expect(server.writes).toEqual([
+			{
+				method: "POST",
+				path: "/api/classes/cl-1/status",
+				body: { status: "paused" },
+			},
+		]);
 	});
 });

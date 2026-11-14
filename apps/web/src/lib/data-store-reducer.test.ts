@@ -573,3 +573,23 @@ describe("enroll-student (issue #122 / #251 / #253)", () => {
 		expect(next).toEqual(before);
 	});
 });
+
+describe("update-class-status (#694)", () => {
+	test("updates target class status between active and paused without mutating others", () => {
+		const before = cloneSeed();
+		const paused = reducer(before, {
+			type: "update-class-status",
+			classId: "c1",
+			status: "paused",
+		});
+		expect(paused.classes.find((c) => c.id === "c1")?.status).toBe("paused");
+		expect(paused.classes.find((c) => c.id === "c2")?.status).toBe("active");
+
+		const resumed = reducer(paused, {
+			type: "update-class-status",
+			classId: "c1",
+			status: "active",
+		});
+		expect(resumed.classes.find((c) => c.id === "c1")?.status).toBe("active");
+	});
+});

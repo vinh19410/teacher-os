@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: "Phase 3: E2E Review and Docs"
-status: todo
+status: done
 ---
 
 # Phase 3: E2E Review and Docs
@@ -11,7 +11,7 @@ status: todo
 
 ## Tasks
 
-- [ ] **Task 3.1: Targeted E2E Spec (`apps/e2e/specs/class-status.spec.ts`) & Visual Screenshots (POT)**
+- [x] **Task 3.1: Targeted E2E Spec (`apps/e2e/specs/class-status.spec.ts`) & Visual Screenshots (POT)**
   - **Target files & symbols:**
     - `apps/e2e/specs/helpers.ts` (đọc trước để tái dùng `signUpViaApi` và seed `@test.local` trên DB `boot:api` mới sạch)
     - `apps/e2e/specs/class-status.spec.ts` (spec mới)
@@ -28,7 +28,7 @@ status: todo
   - **Success criteria:** `specs/class-status.spec.ts` (và `specs/class-operations.spec.ts` nếu ảnh hưởng selector) pass ổn định trên stack Playwright thật; ảnh POT sạch PII.
   - **Verify:** `E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 E2E_ADMIN_PORT=8104 E2E_PROFILE_PORT=8105 pnpm --filter e2e e2e specs/class-status.spec.ts`
 
-- [ ] **Task 3.2: Visual Regression (`design:compare`)**
+- [x] **Task 3.2: Visual Regression (`design:compare`)**
   - **Target files & symbols:**
     - `scripts/design-compare/`
   - **Steps:**
@@ -37,7 +37,7 @@ status: todo
   - **Success criteria:** Lệnh thoát mã `0`, không sai lệch layout hay vi phạm token `DESIGN.md`.
   - **Verify:** `pnpm design:compare --force --screens t-classes,t-class-detail --side both --label new`
 
-- [ ] **Task 3.3: Local Multi-Perspective Code Review (`--advice`) & Docs Sync**
+- [x] **Task 3.3: Local Multi-Perspective Code Review (`--advice`) & Docs Sync**
   - **Target files & symbols:**
     - `CHANGELOG.md`
     - `docs/_reverse/classes/reverse-gaps.md` (`OQ-1` tại `L5`, Conflict `L32`)
@@ -47,7 +47,7 @@ status: todo
   - **Success criteria:** Zero Critical/Important review findings; docs phản ánh đúng trạng thái 2 chiều `active ↔ paused`.
   - **Verify:** `git diff --stat` sạch các file đúng scope
 
-- [ ] **Task 3.4: Full Local Quality Gate Verification (Pre-Ship)**
+- [x] **Task 3.4: Full Local Quality Gate Verification (Pre-Ship)**
   - **Target files & symbols:** Toàn bộ monorepo.
   - **Steps:**
     1. Chạy `pnpm check:fix` nếu cần sửa format/import rồi xác minh lại bằng `pnpm exec biome check .` (read-only).

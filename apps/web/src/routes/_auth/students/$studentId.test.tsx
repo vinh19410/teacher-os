@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, screen } from "@testing-library/react";
+import { cleanup, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	classRow,
@@ -75,5 +75,35 @@ describe("student detail", () => {
 		expect(screen.getByText("Chưa đặt mục tiêu")).toBeTruthy();
 		expect(screen.queryByText(/Band —/)).toBeNull();
 		expect(screen.queryByText(/\(\)/)).toBeNull();
+	});
+
+	it("renders Tạm dừng badge next to paused enrolled classes (#694)", async () => {
+		vi.unstubAllGlobals();
+		startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({ id: "cl-1", name: "IELTS Writing", status: "active" }),
+					classRow({ id: "cl-2", name: "Lớp Tạm Dừng", status: "paused" }),
+				],
+				students: [
+					studentRow({ id: "st-1", name: "Học viên Một", phone: "0901000001" }),
+				],
+				enrollments: [
+					enrollmentRow({ id: "en-1", classId: "cl-1", studentId: "st-1" }),
+					enrollmentRow({ id: "en-2", classId: "cl-2", studentId: "st-1" }),
+				],
+			}),
+		);
+		routerState.params = { studentId: "st-1" };
+		renderWithKernel(<StudentDetail />);
+		expect(await screen.findByText("Lớp Tạm Dừng")).toBeTruthy();
+		const pausedClassRow = screen
+			.getByText("Lớp Tạm Dừng")
+			.closest("div") as HTMLElement;
+		expect(within(pausedClassRow).getByText("Tạm dừng")).toBeTruthy();
+		const activeClassRow = screen
+			.getByText("IELTS Writing")
+			.closest("div") as HTMLElement;
+		expect(within(activeClassRow).queryByText("Tạm dừng")).toBeNull();
 	});
 });

@@ -9,6 +9,7 @@ import {
 } from "@testing-library/react";
 import { useReducer } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useData } from "@/lib/data-store";
 import {
 	classRow,
 	enrollmentRow,
@@ -1763,5 +1764,264 @@ describe("class detail → sync class curriculum (#700)", () => {
 				}) as HTMLButtonElement
 			).disabled,
 		).toBe(true);
+	});
+});
+
+describe("class detail → pause and resume class status (#694)", () => {
+	it("shows Đang hoạt động badge (not Đang học in PageHead) and toggles active ↔ paused via ClassStatusModal", async () => {
+		const snapshot = twoClasses();
+		const server = startKernelServer(snapshot, (req, srv) => {
+			if (req.method === "POST" && req.path === "/api/classes/cl-1/status") {
+				const body = req.body as { status: "active" | "paused" };
+				const target = srv.snapshot.classes.find((c) => c.id === "cl-1");
+				if (target) target.status = body.status;
+				return { status: 200, body: { ok: true, status: body.status } };
+			}
+			return undefined;
+		});
+		renderWithKernel(<ClassDetail />);
+
+		const badge = await screen.findByTestId("class-status-badge");
+		expect(badge.textContent).toBe("Đang hoạt động");
+
+		fireEvent.click(screen.getByRole("button", { name: "Tạm dừng lớp" }));
+		const pauseDialog = screen.getByRole("dialog", {
+			name: "Tạm dừng lớp IELTS Writing",
+		});
+		const confirmPause = within(pauseDialog).getByRole("button", {
+			name: "Xác nhận tạm dừng",
+		});
+		expect(confirmPause.getAttribute("class") ?? "").not.toContain(
+			"destructive",
+		);
+		fireEvent.click(confirmPause);
+
+		await waitFor(() =>
+			expect(
+				screen.queryByRole("dialog", { name: "Tạm dừng lớp IELTS Writing" }),
+			).toBeNull(),
+		);
+		expect(server.writes).toContainEqual({
+			method: "POST",
+			path: "/api/classes/cl-1/status",
+			body: { status: "paused" },
+		});
+		expect(screen.getByTestId("class-status-badge").textContent).toBe(
+			"Tạm dừng",
+		);
+		expect(screen.getByRole("button", { name: "Mở lại lớp" })).toBeTruthy();
+
+		fireEvent.click(screen.getByRole("button", { name: "Mở lại lớp" }));
+		const resumeDialog = screen.getByRole("dialog", {
+			name: "Mở lại lớp IELTS Writing",
+		});
+		fireEvent.click(
+			within(resumeDialog).getByRole("button", { name: "Xác nhận mở lại" }),
+		);
+		await waitFor(() =>
+			expect(
+				screen.queryByRole("dialog", { name: "Mở lại lớp IELTS Writing" }),
+			).toBeNull(),
+		);
+		expect(server.writes).toContainEqual({
+			method: "POST",
+			path: "/api/classes/cl-1/status",
+			body: { status: "active" },
+		});
+		expect(screen.getByTestId("class-status-badge").textContent).toBe(
+			"Đang hoạt động",
+		);
+	});
+
+	it("hides Tạm dừng lớp / Mở lại lớp button for ta role while keeping it for teacher", async () => {
+		startKernelServer({
+			...twoClasses(),
+			viewer: {
+				role: "ta",
+				canAccessFinance: false,
+			},
+		});
+		renderWithKernel(<ClassDetail />);
+
+		expect(await screen.findByTestId("class-status-badge")).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Tạm dừng lớp" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Mở lại lớp" })).toBeNull();
+	});
+
+	it("hides + Thêm buổi học and + Thêm học viên vào lớp when paused, but keeps Sửa and Sắp xếp buổi", async () => {
+		startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-1",
+						name: "IELTS Writing",
+						status: "paused",
+						syllabusId: null,
+						sessionsTotal: 0,
+					}),
+				],
+			}),
+		);
+		renderWithKernel(<ClassDetail />);
+
+		expect(await screen.findByTestId("class-status-badge")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Chỉnh sửa" })).toBeTruthy();
+		expect(
+			screen.queryByRole("button", { name: "+ Thêm buổi học" }),
+		).toBeNull();
+
+		fireEvent.click(screen.getByRole("tab", { name: "Học viên" }));
+		expect(
+			screen.queryByRole("button", { name: "+ Thêm học viên vào lớp" }),
+		).toBeNull();
+	});
+
+	it("keeps Sắp xếp buổi available when syllabus-backed class is paused", async () => {
+		startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-1",
+						name: "IELTS Writing",
+						status: "paused",
+						syllabusId: "sy-c",
+						schedule: '{"days":[0],"start":"19:00","end":"20:30"}',
+						startDate: "2026-10-12",
+						sessionsTotal: 2,
+					}),
+				],
+				syllabi: [
+					syllabusRow({
+						id: "sy-c",
+						classId: "cl-1",
+						modules: [
+							{
+								id: "m-1",
+								title: "Unit 1",
+								description: "",
+								lessons: [
+									{
+										id: "lc-1",
+										title: "Line chart",
+										objectives: "",
+										materials: "",
+										kind: "lesson" as const,
+										status: "upcoming" as const,
+									},
+								],
+							},
+						],
+					}),
+				],
+			}),
+		);
+		renderWithKernel(<ClassDetail />);
+
+		fireEvent.click(
+			await screen.findByRole("tab", { name: "Buổi học & luyện tập" }),
+		);
+		expect(screen.getByRole("button", { name: "Sắp xếp buổi" })).toBeTruthy();
+	});
+
+	it("keeps Nhập buổi từ syllabus available when a paused class has no syllabus and zero sessions", async () => {
+		startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-1",
+						name: "IELTS Writing",
+						status: "paused",
+						syllabusId: null,
+						schedulingMode: "manual",
+						sessionsTotal: 0,
+						schedule: '{"days":[0],"start":"19:00","end":"20:30"}',
+						startDate: "2026-08-24",
+					}),
+				],
+				syllabi: [
+					syllabusRow({
+						id: "sy-tpl",
+						name: "IELTS Template",
+						classId: null,
+					}),
+				],
+			}),
+		);
+		renderWithKernel(<ClassDetail />);
+
+		expect(
+			await screen.findByRole("button", { name: "Nhập buổi từ syllabus" }),
+		).toBeTruthy();
+		expect(
+			screen.queryByRole("button", { name: "+ Thêm buổi học" }),
+		).toBeNull();
+	});
+
+	it("closes EnrollStudentModal when the class transitions to paused and keeps it closed on resume", async () => {
+		startKernelServer(twoClasses(), (req, srv) => {
+			if (req.path === "/api/classes/cl-1/status") {
+				const next = (req.body as { status: "active" | "paused" }).status;
+				srv.snapshot.classes[0] = {
+					...srv.snapshot.classes[0],
+					status: next,
+				};
+			}
+			return undefined;
+		});
+
+		function StatusDriver() {
+			const { dispatch } = useData();
+			return (
+				<div>
+					<button
+						type="button"
+						data-testid="driver-pause"
+						onClick={() => {
+							void dispatch({
+								type: "update-class-status",
+								classId: "cl-1",
+								status: "paused",
+							});
+						}}
+					>
+						driver-pause
+					</button>
+					<button
+						type="button"
+						data-testid="driver-resume"
+						onClick={() => {
+							void dispatch({
+								type: "update-class-status",
+								classId: "cl-1",
+								status: "active",
+							});
+						}}
+					>
+						driver-resume
+					</button>
+				</div>
+			);
+		}
+
+		renderWithKernel(
+			<>
+				<ClassDetail />
+				<StatusDriver />
+			</>,
+		);
+
+		const dialog = await openEnrollDialog();
+		expect(dialog).toBeTruthy();
+
+		fireEvent.click(screen.getByTestId("driver-pause"));
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+
+		fireEvent.click(screen.getByTestId("driver-resume"));
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: "+ Thêm học viên vào lớp" }),
+			).toBeTruthy(),
+		);
+		expect(screen.queryByRole("dialog")).toBeNull();
 	});
 });

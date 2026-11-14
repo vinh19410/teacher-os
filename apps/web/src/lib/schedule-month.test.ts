@@ -390,3 +390,54 @@ describe("buildMonthCells — perf (D6 budget: 50 classes × 24 sessions)", () =
 		expect(elapsed).toBeLessThan(50);
 	});
 });
+
+describe("buildMonthCells — paused classes (#694)", () => {
+	it("omits projected, legacy, and unrecorded paused items while keeping dated historical sessions", () => {
+		// 2026-11-17 is Tuesday (day = 2) matching cls default schedule days:[1]
+		const targetDate = "2026-11-17";
+		const cells = buildMonthCells(
+			{
+				classes: [
+					{ ...cls("c-paused-proj"), status: "paused" },
+					{ ...cls("c-paused-unrec"), status: "paused" },
+					{ ...cls("c-paused-hist"), status: "paused" },
+				],
+				lessons: [
+					lesson({
+						id: "l-unrec",
+						classId: "c-paused-unrec",
+						sid: "s1",
+						day: 2,
+						date: targetDate,
+						status: "upcoming",
+					}),
+					lesson({
+						id: "l-legacy",
+						classId: "c-paused-proj",
+						sid: "s1",
+						day: 2,
+						date: null,
+						status: "completed",
+					}),
+					lesson({
+						id: "l-hist",
+						classId: "c-paused-hist",
+						sid: "s1",
+						day: 2,
+						date: targetDate,
+						status: "completed",
+					}),
+				],
+			},
+			"2026-11-15",
+			"2026-11-17",
+		);
+		const cell = cells.find((c) => c.date === targetDate);
+		expect(cell).toBeDefined();
+		expect(cell?.items).toHaveLength(1);
+		expect(cell?.overflow).toBe(0);
+		if (cell?.items[0].kind === "lesson") {
+			expect(cell.items[0].classId).toBe("c-paused-hist");
+		}
+	});
+});

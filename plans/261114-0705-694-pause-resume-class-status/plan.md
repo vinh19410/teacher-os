@@ -2,7 +2,7 @@
 store_id: "teacher-os/261114-0705-2"
 title: "feat(classes): Cho phép tạm dừng và mở lại lớp học (#694)"
 description: "Triển khai chuyển trạng thái lớp hai chiều active ↔ paused (0 DB migration), khóa nguyên tử D1 TOCTOU, lọc lịch/nhắc việc/điểm danh không phá hủy dữ liệu, và cập nhật đồng bộ Teacher Web + Student Portal."
-status: pending
+status: completed
 priority: P1
 issue: 694
 branch: "vinh19410/feat-classes-allow-pausing-and-resuming-class-st"

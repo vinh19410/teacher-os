@@ -259,6 +259,14 @@ function StudentDetailRoute() {
 													Đã mời
 												</Badge>
 											)}
+											{c.status === "paused" && (
+												<Badge
+													variant="muted"
+													className="px-1.5 py-0 text-[10px]"
+												>
+													Tạm dừng
+												</Badge>
+											)}
 										</div>
 										<div className="mt-1 text-muted-foreground text-xs">
 											{classMeta(c)}

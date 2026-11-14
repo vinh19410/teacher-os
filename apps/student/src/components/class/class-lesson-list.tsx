@@ -46,6 +46,11 @@ const LESSON_STATUS: Record<
 		variant: "outline",
 		badgeClass: "text-muted-foreground",
 	},
+	paused_upcoming: {
+		label: "Tạm hoãn",
+		variant: "outline",
+		badgeClass: "text-muted-foreground",
+	},
 };
 
 export function lessonDayLabel(lesson: StudentClassLesson): string {
@@ -86,11 +91,13 @@ export function findNextLessonId(
 
 export function ClassLessonList({
 	classId,
+	isPaused = false,
 	lessons,
 	todayISO,
 	now,
 }: {
 	classId: string;
+	isPaused?: boolean;
 	lessons: StudentClassLesson[];
 	todayISO: string;
 	now: Date;
@@ -105,16 +112,19 @@ export function ClassLessonList({
 		);
 	}
 
-	const nextId = findNextLessonId(lessons, todayISO, now);
+	const nextId = isPaused ? null : findNextLessonId(lessons, todayISO, now);
 
 	return (
 		<div className="rounded-xl border bg-card p-6 text-card-foreground shadow-sm">
 			<ol className="relative">
 				{lessons.map((lesson, i) => {
 					const isNext = lesson.id === nextId;
-					const displayStatus = isLessonEnded(lesson, now)
-						? "ended"
-						: lesson.status;
+					const displayStatus =
+						isPaused && lesson.status === "upcoming"
+							? "paused_upcoming"
+							: isLessonEnded(lesson, now)
+								? "ended"
+								: lesson.status;
 					const future =
 						nextId !== null &&
 						displayStatus === "upcoming" &&
@@ -159,12 +169,14 @@ export function ClassLessonList({
 									displayStatus === "absent" &&
 										"border-destructive bg-destructive text-white",
 									(displayStatus === "cancelled" ||
-										displayStatus === "ended") &&
+										displayStatus === "ended" ||
+										displayStatus === "paused_upcoming") &&
 										"bg-muted text-muted-foreground",
 									displayStatus !== "completed" &&
 										displayStatus !== "absent" &&
 										displayStatus !== "cancelled" &&
 										displayStatus !== "ended" &&
+										displayStatus !== "paused_upcoming" &&
 										"bg-background text-muted-foreground",
 									isNext && "text-foreground ring-[3px] ring-ring/30",
 								)}

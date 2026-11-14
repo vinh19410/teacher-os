@@ -62,17 +62,18 @@ describe("issue #170 list page filters and KPI styling logic", () => {
 
 		const filterByMode = (modeLabel: string) => {
 			if (modeLabel === "Tất cả") return mockClasses;
-			return mockClasses.filter((c) =>
-				modeLabel === "Đang học"
-					? c.status === "active"
-					: c.mode === (MODE_MAP[modeLabel] ?? modeLabel),
-			);
+			return mockClasses.filter((c) => {
+				if (modeLabel === "Đang học") return c.status === "active";
+				if (modeLabel === "Tạm dừng") return c.status === "paused";
+				return c.mode === (MODE_MAP[modeLabel] ?? modeLabel);
+			});
 		};
 
 		expect(filterByMode("Tất cả")).toHaveLength(4);
 		expect(filterByMode("Trực tuyến")).toHaveLength(2);
 		expect(filterByMode("Trực tiếp")).toHaveLength(2);
 		expect(filterByMode("Đang học")).toHaveLength(2);
+		expect(filterByMode("Tạm dừng")).toHaveLength(2);
 	});
 
 	it("syllabus filter correctly maps Vietnamese labels to wire skills", () => {

@@ -102,3 +102,16 @@ describe("kernelCommand delete-syllabus (#211)", () => {
 		expect(request.body).toEqual({});
 	});
 });
+
+describe("kernelCommand update-class-status (#694)", () => {
+	test("maps to POST /api/classes/:id/status with exact status body", () => {
+		const pauseReq = kernelCommand({
+			type: "update-class-status",
+			classId: "cl-1/special",
+			status: "paused",
+		});
+		expect(pauseReq.path).toBe("/api/classes/cl-1%2Fspecial/status");
+		expect(pauseReq.method ?? "POST").toBe("POST");
+		expect(pauseReq.body).toEqual({ status: "paused" });
+	});
+});

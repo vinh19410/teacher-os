@@ -1,6 +1,7 @@
 import {
 	ACCOUNT_ERROR_CODES,
 	type AssignmentQuestion,
+	CLASS_ERROR_CODES,
 	CURRENT_LEVEL_OPTIONS,
 	DAILY_STUDY_HOUR_OPTIONS,
 	type EssayAnnotation,
@@ -410,7 +411,7 @@ export function createQuizWriteGuard(allowedOrigins: string[]) {
 	return async (
 		c: Context<StudentEnv>,
 		next: () => Promise<void>,
-	): Promise<Response | void> => {
+	): Promise<Response | undefined> => {
 		const method = c.req.method;
 		if (
 			method === "POST" ||
@@ -426,7 +427,8 @@ export function createQuizWriteGuard(allowedOrigins: string[]) {
 				(method === "PUT" || method === "DELETE") &&
 				QUIZ_MEDIA_ROUTE_PATH.test(c.req.path)
 			) {
-				return next();
+				await next();
+				return;
 			}
 			const contentType = c.req.header("Content-Type") ?? "";
 			if (!contentType.toLowerCase().startsWith("application/json")) {
@@ -434,12 +436,15 @@ export function createQuizWriteGuard(allowedOrigins: string[]) {
 			}
 			// Cap đo TRÊN BYTE THẬT của body (chunked/malformed
 			// Content-Length không lọt) — precedent POST /api/syllabus-templates (syllabus.ts).
-			return bodyLimit({
+			const limited = await bodyLimit({
 				maxSize: c.req.path.endsWith("/essay") ? QUIZ_ESSAY_BODY_MAX : 4096,
 				onError: (bc) => bc.json({ error: "payload too large" }, 413),
 			})(c, next);
+			if (limited) return limited;
+			return;
 		}
-		return next();
+		await next();
+		return;
 	};
 }
 
@@ -1019,7 +1024,9 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			enrollmentRows.map(async (cls) =>
 				toStudentClass(
 					cls,
-					await loadNextSession(db, orgId, cls.id, now),
+					cls.status === "active"
+						? await loadNextSession(db, orgId, cls.id, now)
+						: null,
 					teacher,
 				),
 			),
@@ -1090,7 +1097,9 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const now = new Date();
 		const [teacher, nextSession, lessons, assignments] = await Promise.all([
 			loadOrgTeacher(db, orgId),
-			loadNextSession(db, orgId, row.id, now),
+			row.status === "active"
+				? loadNextSession(db, orgId, row.id, now)
+				: Promise.resolve(null),
 			// Lọc theo enrollment (không theo lớp) để trạng thái riêng như
 			// "vắng" là của chính học viên. `date` null theo cả lớp nên không
 			// cần NULLS LAST; lớp legacy được sắp lại bởi orderStudentLessons.
@@ -1166,7 +1175,11 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const now = new Date();
 		const [teacher, ...nextSessions] = await Promise.all([
 			loadOrgTeacher(db, orgId),
-			...classRows.map((r) => loadNextSession(db, orgId, r.id, now)),
+			...classRows.map((r) =>
+				r.status === "active"
+					? loadNextSession(db, orgId, r.id, now)
+					: Promise.resolve(null),
+			),
 		]);
 
 		const classes = classRows.map((row, index) =>
@@ -1215,7 +1228,12 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const undatedLessons: StudentScheduleLesson[] = [];
 
 		for (const classRow of classRows) {
-			const rawClassLessons = lessonsByClass.get(classRow.id) ?? [];
+			const rawClassLessons = (lessonsByClass.get(classRow.id) ?? []).filter(
+				(l) =>
+					classRow.status === "active" ||
+					l.status === "completed" ||
+					l.status === "absent",
+			);
 			if (rawClassLessons.length === 0) continue;
 
 			const ordered = orderStudentLessons(
@@ -1338,6 +1356,15 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const result = await activateEnrollment(db, orgId, enrollmentId);
 		if (result.ok) {
 			return c.json({ ok: true });
+		}
+		if (result.error === "class-paused") {
+			return c.json(
+				{
+					error: "Lớp đang tạm dừng, chưa thể tham gia.",
+					code: CLASS_ERROR_CODES.CLASS_PAUSED,
+				},
+				409,
+			);
 		}
 		return c.json(
 			{

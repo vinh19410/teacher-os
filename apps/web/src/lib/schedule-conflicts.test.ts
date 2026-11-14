@@ -242,4 +242,12 @@ describe("findScheduleConflicts — rule boundaries", () => {
 		expect(hits).toHaveLength(1);
 		expect(hits[0].cls.id).toBe("c-other");
 	});
+
+	test("ignores paused classes when checking draft conflicts (#694)", () => {
+		const hits = findScheduleConflicts(draft, [
+			cls({ id: "c-paused", status: "paused" }),
+			cls({ id: "c-active", status: "active" }),
+		]);
+		expect(hits.map((h) => h.cls.id)).toEqual(["c-active"]);
+	});
 });

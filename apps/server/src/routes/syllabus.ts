@@ -44,6 +44,57 @@ type Env = { Variables: { kernelCtx: KernelCtx } };
 type SyllabusContext = Context<Env>;
 
 /**
+ * Sinh bù lịch học + gói buổi cho các active enrollment đang kẹt ở 0 dòng lesson
+ * và package.total = 0 (hoặc chưa có package) sau khi lớp chuyển sang `auto` (#670).
+ * Chạy tuần tự từng học viên để không vượt trần một `db.batch` của D1 và để học viên
+ * thứ 2 nhìn thấy dòng shift I6 vừa sinh bởi học viên thứ 1.
+ */
+export async function backfillStuckEnrollments(
+	db: Db,
+	orgId: string,
+	classId: string,
+): Promise<number> {
+	const stuck = await db
+		.select({
+			id: enrollment.id,
+			studentId: enrollment.studentId,
+		})
+		.from(enrollment)
+		.leftJoin(
+			sessionPackage,
+			and(
+				eq(sessionPackage.enrollmentId, enrollment.id),
+				eq(sessionPackage.orgId, enrollment.orgId),
+			),
+		)
+		.where(
+			and(
+				eq(enrollment.orgId, orgId),
+				eq(enrollment.classId, classId),
+				eq(enrollment.status, "active"),
+				sql`NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.enrollmentId} = ${enrollment.id})`,
+				sql`(${sessionPackage.id} IS NULL OR ${sessionPackage.total} = 0)`,
+			),
+		);
+	let healed = 0;
+	for (const row of stuck) {
+		const materialized = await materializeScheduleForEnrollment(db, {
+			orgId,
+			enrollmentId: row.id,
+			studentId: row.studentId,
+			classId,
+			mode: "backfill",
+		});
+		if (materialized.ok) {
+			healed += 1;
+		} else if (materialized.error === "class-paused") {
+			break;
+		}
+	}
+	return healed;
+}
+
+/**
  * Syllabus + curriculum router. Mounted INSIDE kernelRoutes via
  * kernel.route("/", ...) so the kernel router's Origin + JSON content-type
  * CSRF guard covers these routes too — never mount this standalone.
@@ -82,6 +133,7 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 				syllabusId: classTable.syllabusId,
 				schedulingMode: classTable.schedulingMode,
 				sessionsTotal: classTable.sessionsTotal,
+				status: classTable.status,
 			})
 			.from(classTable)
 			.where(and(eq(classTable.id, classId), eq(classTable.orgId, orgId)));
@@ -97,53 +149,6 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 		const materialIds = [...new Set(links.map((l) => l.materialId))];
 		const existingMats = await findExistingMaterialIds(db, orgId, materialIds);
 		return materialIds.find((id) => !existingMats.has(id));
-	}
-
-	/**
-	 * Sinh bù lịch học + gói buổi cho các active enrollment đang kẹt ở 0 dòng lesson
-	 * và package.total = 0 (hoặc chưa có package) sau khi lớp chuyển sang `auto` (#670).
-	 * Chạy tuần tự từng học viên để không vượt trần một `db.batch` của D1 và để học viên
-	 * thứ 2 nhìn thấy dòng shift I6 vừa sinh bởi học viên thứ 1.
-	 */
-	async function backfillStuckEnrollments(
-		db: Db,
-		orgId: string,
-		classId: string,
-	): Promise<number> {
-		const stuck = await db
-			.select({
-				id: enrollment.id,
-				studentId: enrollment.studentId,
-			})
-			.from(enrollment)
-			.leftJoin(
-				sessionPackage,
-				and(
-					eq(sessionPackage.enrollmentId, enrollment.id),
-					eq(sessionPackage.orgId, enrollment.orgId),
-				),
-			)
-			.where(
-				and(
-					eq(enrollment.orgId, orgId),
-					eq(enrollment.classId, classId),
-					eq(enrollment.status, "active"),
-					sql`NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.enrollmentId} = ${enrollment.id})`,
-					sql`(${sessionPackage.id} IS NULL OR ${sessionPackage.total} = 0)`,
-				),
-			);
-		let healed = 0;
-		for (const row of stuck) {
-			const materialized = await materializeScheduleForEnrollment(db, {
-				orgId,
-				enrollmentId: row.id,
-				studentId: row.studentId,
-				classId,
-				mode: "backfill",
-			});
-			if (materialized.ok) healed += 1;
-		}
-		return healed;
 	}
 
 	//
@@ -437,12 +442,18 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 							}
 							throw healErr;
 						}
-						await backfillStuckEnrollments(db, ctx.orgId, classId);
+						if (cls.status === "active") {
+							await backfillStuckEnrollments(db, ctx.orgId, classId);
+						}
 						return c.json({ id: existing.id } satisfies CreatedResponse, 201);
 					}
 				}
 			}
-			if (cls.schedulingMode === "auto" && cls.sessionsTotal > 0) {
+			if (
+				cls.status === "active" &&
+				cls.schedulingMode === "auto" &&
+				cls.sessionsTotal > 0
+			) {
 				const healed = await backfillStuckEnrollments(db, ctx.orgId, classId);
 				if (healed > 0) {
 					return c.json({ id: existing.id } satisfies CreatedResponse, 201);
@@ -627,7 +638,8 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 		const effectiveTotal = hasLesson
 			? cls.sessionsTotal
 			: candidateSessionsTotal;
-		if (effectiveTotal > 0) {
+		const clsAfter = await findClassRow(db, classId, ctx.orgId);
+		if (clsAfter?.status === "active" && effectiveTotal > 0) {
 			await backfillStuckEnrollments(db, ctx.orgId, classId);
 		}
 		return c.json({ id: copyId } satisfies CreatedResponse, 201);
@@ -971,7 +983,12 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 			throw err;
 		}
 
-		if (!hasLesson && candidateSessionsTotal > 0) {
+		const clsAfter = await findClassRow(db, classId, ctx.orgId);
+		if (
+			clsAfter?.status === "active" &&
+			!hasLesson &&
+			candidateSessionsTotal > 0
+		) {
 			await backfillStuckEnrollments(db, ctx.orgId, classId);
 		}
 		return c.json({ ok: true, id: copy.id }, 200);

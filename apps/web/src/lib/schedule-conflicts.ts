@@ -14,9 +14,8 @@
  *    startDate (legacy) or an unusable skeleton (total ≤ 0) means "no known
  *    end" — the class stays eligible instead of being silently dropped.
  *
- * `status` is deliberately NOT consulted: the server insert is the only
- * class-status write (kernel.ts), so a finished class still reads "active" —
- * date liveness is the honest "đang chạy" signal.
+ * Lớp có `status !== "active"` (`paused`, #694) được bỏ qua khi kiểm tra trùng
+ * lịch; các lớp `active` vẫn dùng cửa sổ ngày thực chạy để xác định còn chạy.
  */
 import { TIME_REGEX } from "@teacher-os/api/contracts";
 import {
@@ -85,6 +84,7 @@ export function findScheduleConflicts(
 
 	const conflicts: ScheduleConflict[] = [];
 	for (const cls of classes) {
+		if (cls.status === "paused") continue;
 		if (draft.excludeClassId !== undefined && cls.id === draft.excludeClassId) {
 			continue;
 		}

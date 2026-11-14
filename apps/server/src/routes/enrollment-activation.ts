@@ -260,11 +260,11 @@ function formatDayMonth(date: Date): string {
 
 export type MaterializeScheduleResult =
 	| { ok: true }
-	| { ok: false; error: "class" };
+	| { ok: false; error: "class" | "class-paused" };
 
 export type ActivateEnrollmentResult =
 	| { ok: true }
-	| { ok: false; error: "enrollment" | "class" };
+	| { ok: false; error: "enrollment" | "class" | "class-paused" };
 
 /**
  * Sinh hoặc bù lịch học + gói buổi cho một enrollment đang ở trạng thái `active`
@@ -302,11 +302,15 @@ export async function materializeScheduleForEnrollment(
 				tuitionFee: classTable.tuitionFee,
 				syllabusId: classTable.syllabusId,
 				schedulingMode: classTable.schedulingMode,
+				status: classTable.status,
 			})
 			.from(classTable)
 			.where(and(eq(classTable.id, classId), eq(classTable.orgId, orgId)));
 		if (!cls) {
 			return { ok: false, error: "class" };
+		}
+		if (cls.status !== "active") {
+			return { ok: false, error: "class-paused" };
 		}
 
 		const hasCurriculum = Boolean(await findClassCurriculum(db, cls.id, orgId));
@@ -497,7 +501,7 @@ export async function materializeScheduleForEnrollment(
 			db
 				.update(enrollment)
 				.set({
-					status: sql`CASE WHEN ${enrollment.status} = 'active' AND NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.enrollmentId} = ${enrollmentId} AND ${lesson.orgId} = ${orgId}) AND EXISTS (SELECT 1 FROM ${classTable} WHERE ${classTable.id} = ${cls.id} AND ${classTable.orgId} = ${orgId} AND ${classTable.schedulingMode} = ${cls.schedulingMode} AND ${classTable.sessionsTotal} = ${cls.sessionsTotal} AND ${classTable.schedule} = ${cls.schedule} AND ${classTable.startDate} = ${cls.startDate}) AND ${syllabusStateSql}${manualCountGuardSql} THEN 'active' ELSE NULL END`,
+					status: sql`CASE WHEN ${enrollment.status} = 'active' AND NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.enrollmentId} = ${enrollmentId} AND ${lesson.orgId} = ${orgId}) AND EXISTS (SELECT 1 FROM ${classTable} WHERE ${classTable.id} = ${cls.id} AND ${classTable.orgId} = ${orgId} AND ${classTable.status} = 'active' AND ${classTable.schedulingMode} = ${cls.schedulingMode} AND ${classTable.sessionsTotal} = ${cls.sessionsTotal} AND ${classTable.schedule} = ${cls.schedule} AND ${classTable.startDate} = ${cls.startDate}) AND ${syllabusStateSql}${manualCountGuardSql} THEN 'active' ELSE NULL END`,
 				})
 				.where(
 					and(eq(enrollment.id, enrollmentId), eq(enrollment.orgId, orgId)),
@@ -611,38 +615,53 @@ export async function materializeScheduleForEnrollment(
 			if (!isRollbackableConstraintError(err)) {
 				throw err;
 			}
-			const [enrAfter, existingLesson, existingPkg] = await Promise.all([
-				db
-					.select({ status: enrollment.status })
-					.from(enrollment)
-					.where(
-						and(eq(enrollment.id, enrollmentId), eq(enrollment.orgId, orgId)),
-					),
-				db
-					.select({ id: lesson.id })
-					.from(lesson)
-					.where(
-						and(eq(lesson.orgId, orgId), eq(lesson.enrollmentId, enrollmentId)),
-					)
-					.limit(1),
-				db
-					.select({ total: sessionPackage.total })
-					.from(sessionPackage)
-					.where(
-						and(
-							eq(sessionPackage.orgId, orgId),
-							eq(sessionPackage.enrollmentId, enrollmentId),
+			const [enrAfter, existingLesson, existingPkg, clsAfter] =
+				await Promise.all([
+					db
+						.select({ status: enrollment.status })
+						.from(enrollment)
+						.where(
+							and(eq(enrollment.id, enrollmentId), eq(enrollment.orgId, orgId)),
 						),
-					)
-					.limit(1),
-			]);
-			if (enrAfter[0]?.status !== "active") {
-				return { ok: true };
-			}
+					db
+						.select({ id: lesson.id })
+						.from(lesson)
+						.where(
+							and(
+								eq(lesson.orgId, orgId),
+								eq(lesson.enrollmentId, enrollmentId),
+							),
+						)
+						.limit(1),
+					db
+						.select({ total: sessionPackage.total })
+						.from(sessionPackage)
+						.where(
+							and(
+								eq(sessionPackage.orgId, orgId),
+								eq(sessionPackage.enrollmentId, enrollmentId),
+							),
+						)
+						.limit(1),
+					db
+						.select({ id: classTable.id, status: classTable.status })
+						.from(classTable)
+						.where(and(eq(classTable.id, classId), eq(classTable.orgId, orgId)))
+						.limit(1),
+				]);
 			if (
 				existingLesson.length > 0 ||
 				(input.mode === "activate" && (existingPkg[0]?.total ?? 0) > 0)
 			) {
+				return { ok: true };
+			}
+			if (!clsAfter[0]) {
+				return { ok: false, error: "class" };
+			}
+			if (clsAfter[0].status !== "active") {
+				return { ok: false, error: "class-paused" };
+			}
+			if (enrAfter[0]?.status !== "active") {
 				return { ok: true };
 			}
 			if (attempt >= 3) {
@@ -671,15 +690,6 @@ export async function activateEnrollment(
 	orgId: string,
 	enrollmentId: string,
 ): Promise<ActivateEnrollmentResult> {
-	// Re-read sau race: request đồng thời khác có thể đã kích hoạt enrollment.
-	async function isAlreadyActive(): Promise<boolean> {
-		const [row] = await db
-			.select({ status: enrollment.status })
-			.from(enrollment)
-			.where(and(eq(enrollment.id, enrollmentId), eq(enrollment.orgId, orgId)));
-		return row?.status === "active";
-	}
-
 	// Pre-read: kiểm tra tồn tại và org-scoping
 	const [existingEnrollment] = await db
 		.select({
@@ -714,6 +724,7 @@ export async function activateEnrollment(
 			tuitionFee: classTable.tuitionFee,
 			syllabusId: classTable.syllabusId,
 			schedulingMode: classTable.schedulingMode,
+			status: classTable.status,
 		})
 		.from(classTable)
 		.where(
@@ -725,11 +736,11 @@ export async function activateEnrollment(
 	if (!cls) {
 		return { ok: false, error: "class" };
 	}
+	if (cls.status !== "active") {
+		return { ok: false, error: "class-paused" };
+	}
 
-	// CAS update: chỉ flip nếu status vẫn là 'invited'. Không bọc try-catch
-	// nuốt lỗi: sau khi CAS commit, mọi lỗi batch là lỗi thật phải ném ra —
-	// `isAlreadyActive()` sẽ luôn true ở điểm này và không được dùng để trả
-	// `{ ok: true }` ảo khi package/lesson chưa được ghi.
+	// CAS update: chỉ flip nếu status vẫn là 'invited' VÀ lớp vẫn đang 'active'.
 	const updated = await db
 		.update(enrollment)
 		.set({ status: "active" })
@@ -738,13 +749,49 @@ export async function activateEnrollment(
 				eq(enrollment.id, enrollmentId),
 				eq(enrollment.orgId, orgId),
 				eq(enrollment.status, "invited"),
+				sql`EXISTS (SELECT 1 FROM ${classTable} WHERE ${classTable.id} = ${existingEnrollment.classId} AND ${classTable.orgId} = ${orgId} AND ${classTable.status} = 'active')`,
 			),
 		)
 		.returning({ id: enrollment.id });
 
 	if (updated.length === 0) {
-		// Đã bị kích hoạt bởi request đồng thời khác
-		if (await isAlreadyActive()) {
+		// Disambiguate race winner vs deletion vs pause according to D1 concurrency precedence
+		const [currentEnr, clsAfter, existingLesson] = await Promise.all([
+			db
+				.select({ status: enrollment.status })
+				.from(enrollment)
+				.where(
+					and(eq(enrollment.id, enrollmentId), eq(enrollment.orgId, orgId)),
+				)
+				.limit(1),
+			db
+				.select({ status: classTable.status })
+				.from(classTable)
+				.where(
+					and(
+						eq(classTable.id, existingEnrollment.classId),
+						eq(classTable.orgId, orgId),
+					),
+				)
+				.limit(1),
+			db
+				.select({ id: lesson.id })
+				.from(lesson)
+				.where(
+					and(eq(lesson.orgId, orgId), eq(lesson.enrollmentId, enrollmentId)),
+				)
+				.limit(1),
+		]);
+		if (!currentEnr[0]) {
+			return { ok: false, error: "enrollment" };
+		}
+		if (!clsAfter[0]) {
+			return { ok: false, error: "class" };
+		}
+		if (
+			currentEnr[0].status === "active" &&
+			(clsAfter[0].status === "active" || existingLesson.length > 0)
+		) {
 			await backfillStudyPackTargetsForStudent(
 				db,
 				orgId,
@@ -752,6 +799,9 @@ export async function activateEnrollment(
 				existingEnrollment.studentId,
 			);
 			return { ok: true };
+		}
+		if (clsAfter[0].status !== "active") {
+			return { ok: false, error: "class-paused" };
 		}
 		return { ok: false, error: "enrollment" };
 	}
@@ -764,6 +814,17 @@ export async function activateEnrollment(
 		mode: "activate",
 	});
 	if (!materialized.ok) {
+		await db
+			.update(enrollment)
+			.set({ status: "invited" })
+			.where(
+				and(
+					eq(enrollment.id, enrollmentId),
+					eq(enrollment.orgId, orgId),
+					eq(enrollment.status, "active"),
+					sql`NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.enrollmentId} = ${enrollmentId} AND ${lesson.orgId} = ${orgId})`,
+				),
+			);
 		return materialized;
 	}
 	await backfillStudyPackTargetsForStudent(

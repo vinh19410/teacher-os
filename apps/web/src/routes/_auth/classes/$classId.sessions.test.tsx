@@ -728,3 +728,118 @@ describe("manual 0-lesson bucket với holiday shift — badge Đã dời (#665)
 		expect(within(row).queryByText("Nghỉ lễ — Đã dời lịch")).toBeNull();
 	});
 });
+
+describe("paused class sessions & read-only attendance (#694)", () => {
+	it("shows Xem điểm danh → for paused group session with recorded history, renders Chưa điểm danh (never Đã học), and omits inline Điểm danh", async () => {
+		const base = mondayClass(["st-1", "st-2"]);
+		base.classes[0].status = "paused";
+		base.lessons[0].status = "completed";
+		base.lessons[0].attendance = "present";
+		server = startKernelServer(base);
+		await openSessionsTab();
+
+		const rowToday = sessionRow("12/10");
+		expect(
+			within(rowToday).queryByRole("button", { name: "Điểm danh →" }),
+		).toBeNull();
+		const viewBtn = within(rowToday).getByRole("button", {
+			name: "Xem điểm danh →",
+		});
+		fireEvent.click(viewBtn);
+
+		const dialog = screen.getByRole("dialog");
+		expect(dialog.getAttribute("aria-label")).toContain("Xem điểm danh —");
+		const row1 = within(dialog)
+			.getByText("Học viên 1")
+			.closest("div") as HTMLElement;
+		const row2 = within(dialog)
+			.getByText("Học viên 2")
+			.closest("div") as HTMLElement;
+		expect(within(row1).getByText("Đã học")).toBeTruthy();
+		expect(within(row2).getByText("Chưa điểm danh")).toBeTruthy();
+		expect(within(row2).queryByText("Đã học")).toBeNull();
+		expect(
+			within(dialog).queryByRole("button", { name: "Điểm danh" }),
+		).toBeNull();
+	});
+
+	it("hides inline 1:1 Điểm danh button and hides 0-recorded group Điểm danh → when paused", async () => {
+		const single = mondayClass(["st-1"]);
+		single.classes[0].status = "paused";
+		server = startKernelServer(single);
+		await openSessionsTab();
+
+		const rowToday = sessionRow("12/10");
+		expect(
+			within(rowToday).queryByRole("button", { name: "Điểm danh" }),
+		).toBeNull();
+
+		cleanup();
+		const groupUnrecorded = mondayClass(["st-1", "st-2"]);
+		groupUnrecorded.classes[0].status = "paused";
+		server = startKernelServer(groupUnrecorded);
+		await openSessionsTab();
+
+		const groupToday = sessionRow("12/10");
+		expect(
+			within(groupToday).queryByRole("button", { name: /Điểm danh/ }),
+		).toBeNull();
+	});
+
+	it("disables Hoàn thành buổi in SessionActionsModal when paused while keeping Hủy buổi enabled", async () => {
+		const base = mondayClass(["st-1", "st-2"]);
+		base.classes[0].status = "paused";
+		server = startKernelServer(base);
+		await openSessionsTab();
+
+		fireEvent.click(
+			within(sessionRow("12/10")).getByRole("button", { name: "Điều chỉnh" }),
+		);
+		const dialog = screen.getByRole("dialog");
+		const completeBtn = within(dialog).getByRole("button", {
+			name: "Hoàn thành buổi",
+		}) as HTMLButtonElement;
+		expect(completeBtn.disabled).toBe(true);
+		expect(dialog.textContent).toContain("Lớp đang tạm dừng");
+		const cancelBtn = within(dialog).getByRole("button", {
+			name: "Hủy buổi",
+		}) as HTMLButtonElement;
+		expect(cancelBtn.disabled).toBe(false);
+	});
+
+	it("handles stale 409 CLASS_PAUSED on occurrence complete with Vietnamese message and snapshot refresh", async () => {
+		const base = mondayClass(["st-1", "st-2"]);
+		server = startKernelServer(base, (req, srv) => {
+			if (
+				req.method === "POST" &&
+				req.path === `/api/classes/cl-1/sessions/${TODAY}/check-in`
+			) {
+				srv.snapshot.classes[0].status = "paused";
+				return { status: 409, body: { error: "paused", code: "CLASS_PAUSED" } };
+			}
+			return undefined;
+		});
+		await openSessionsTab();
+
+		fireEvent.click(
+			within(sessionRow("12/10")).getByRole("button", { name: "Điều chỉnh" }),
+		);
+		const dialog = screen.getByRole("dialog");
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Hoàn thành buổi" }),
+		);
+		const confirm = within(dialog).getByRole("alertdialog");
+		fireEvent.click(within(confirm).getByRole("button", { name: "Xác nhận" }));
+
+		await waitFor(() =>
+			expect(toast.error).toHaveBeenCalledWith(
+				expect.stringContaining("Lớp đang tạm dừng"),
+			),
+		);
+		await waitFor(() =>
+			expect(screen.getByTestId("class-status-badge").textContent).toBe(
+				"Tạm dừng",
+			),
+		);
+	});
+});

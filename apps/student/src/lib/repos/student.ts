@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+	CLASS_ERROR_CODES,
 	type ClassmatesResponse,
 	classmatesResponseSchema,
 	type HistoryListResponse,
@@ -14,6 +15,7 @@ import {
 	type PracticeSkill,
 	practiceCatalogResponseSchema,
 	type StartPracticeResponse,
+	type StudentClass,
 	type StudentClassDetail,
 	type StudentInboxResponse,
 	type StudentInvitationItem,
@@ -36,7 +38,7 @@ import type {
 } from "@teacher-os/api/material-contracts";
 import { env } from "@teacher-os/env/web";
 import { useSyncExternalStore } from "react";
-import { HttpError } from "@/lib/query-client";
+import { HttpError, isHttpError } from "@/lib/query-client";
 import {
 	clearActiveStudentOrgId,
 	getActiveStudentOrgId,
@@ -728,12 +730,58 @@ export function useSubmitOnboarding(explicitOrgId?: string) {
 	});
 }
 
+export function countActiveEnrolledClasses(
+	classes: readonly Pick<StudentClass, "status" | "enrollmentStatus">[],
+): number {
+	return classes.filter(
+		(c) => c.enrollmentStatus === "active" && c.status === "active",
+	).length;
+}
+
+export function resolveAcceptEnrollmentErrorMessage(error: unknown): string {
+	if (isHttpError(error)) {
+		if (error.code === CLASS_ERROR_CODES.CLASS_PAUSED) {
+			return "Lớp đang tạm dừng — chưa thể tham gia lúc này.";
+		}
+		if (error.status === 404) {
+			return "Lời mời tham gia lớp không còn hiệu lực.";
+		}
+	}
+	return "Không thể xác nhận tham gia lớp. Vui lòng thử lại.";
+}
+
 export function useAcceptClassEnrollment() {
 	const queryClient = useQueryClient();
 	return useMutation({
 		mutationFn: acceptClassEnrollment,
 		onSuccess: () => {
 			void queryClient.invalidateQueries({ queryKey: ["student", "overview"] });
+			void queryClient.invalidateQueries({ queryKey: ["student", "schedule"] });
+			void queryClient.invalidateQueries({ queryKey: ["student", "class"] });
+			void queryClient.invalidateQueries({
+				queryKey: ["student", "notifications"],
+			});
+		},
+		onError: (error) => {
+			if (
+				isHttpError(error) &&
+				(error.code === CLASS_ERROR_CODES.CLASS_PAUSED ||
+					error.status === 404 ||
+					error.status === 409)
+			) {
+				void queryClient.invalidateQueries({
+					queryKey: ["student", "overview"],
+				});
+				void queryClient.invalidateQueries({
+					queryKey: ["student", "schedule"],
+				});
+				void queryClient.invalidateQueries({
+					queryKey: ["student", "class"],
+				});
+				void queryClient.invalidateQueries({
+					queryKey: ["student", "notifications"],
+				});
+			}
 		},
 	});
 }

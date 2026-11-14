@@ -394,6 +394,14 @@ export function reducer(state: MockData, action: KernelAction): MockData {
 				),
 			};
 		}
+		case "update-class-status": {
+			return {
+				...state,
+				classes: state.classes.map((c) =>
+					c.id === action.classId ? { ...c, status: action.status } : c,
+				),
+			};
+		}
 		default:
 			return state;
 	}

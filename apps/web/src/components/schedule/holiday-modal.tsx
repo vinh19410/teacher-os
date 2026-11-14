@@ -6,6 +6,7 @@
  * lại preview và báo lịch vừa thay đổi.
  */
 import {
+	CLASS_ERROR_CODES,
 	HOLIDAY_MAX_DAYS,
 	type HolidayDraft,
 	type HolidayMode,
@@ -22,6 +23,21 @@ import { applyHoliday, previewHoliday } from "@/lib/repos/holidays";
 import { formatDayMonth, todayISOVietnam } from "@/lib/week-grid";
 import { HolidayPreviewTable } from "./holiday-preview-table";
 
+const CLASS_PAUSED_HOLIDAY_MESSAGE =
+	"Lớp đang tạm dừng — không thể áp dụng lịch nghỉ cho lớp này.";
+
+function holidayErrorCodeOf(cause: unknown): string {
+	if (
+		cause != null &&
+		typeof cause === "object" &&
+		"holidayErrorCode" in cause &&
+		typeof cause.holidayErrorCode === "string"
+	) {
+		return cause.holidayErrorCode;
+	}
+	return cause instanceof Error ? cause.message : "request-failed";
+}
+
 export interface HolidayModalClassOption {
 	id: string;
 	name: string;
@@ -32,6 +48,7 @@ export function HolidayModal({
 	classes,
 	onClose,
 	onApplied,
+	onRefreshClasses,
 }: {
 	open: boolean;
 	/** Lớp đang mở của tổ chức — cho radio "Chọn lớp học cụ thể". */
@@ -39,6 +56,8 @@ export function HolidayModal({
 	onClose: () => void;
 	/** Gọi sau khi apply thành công (đã refresh snapshot bên ngoài). */
 	onApplied: (shiftedCount: number) => void;
+	/** Làm mới danh sách lớp khi gặp CLASS_PAUSED từ server. */
+	onRefreshClasses?: () => void;
 }) {
 	const [name, setName] = useState("");
 	const [fromDate, setFromDate] = useState("");
@@ -126,11 +145,17 @@ export function HolidayModal({
 				.catch((cause: unknown) => {
 					if (previewSeq.current === seq) {
 						setPreview(null);
-						setPreviewError(
-							cause instanceof Error
-								? cause.message
-								: "Không tải được bảng xem trước",
-						);
+						const code = holidayErrorCodeOf(cause);
+						if (code === CLASS_ERROR_CODES.CLASS_PAUSED) {
+							setPreviewError(CLASS_PAUSED_HOLIDAY_MESSAGE);
+							onRefreshClasses?.();
+						} else {
+							setPreviewError(
+								cause instanceof Error
+									? cause.message
+									: "Không tải được bảng xem trước",
+							);
+						}
 					}
 				})
 				.finally(() => {
@@ -192,7 +217,7 @@ export function HolidayModal({
 			}
 			onClose();
 		} catch (cause: unknown) {
-			const code = cause instanceof Error ? cause.message : "request-failed";
+			const code = holidayErrorCodeOf(cause);
 			if (code === "stale-preview") {
 				toast.error("Lịch vừa thay đổi, kiểm tra lại bảng xem trước.");
 				if (draft) {
@@ -209,11 +234,17 @@ export function HolidayModal({
 						.catch((reloadCause: unknown) => {
 							if (previewSeq.current === seq) {
 								setPreview(null);
-								setPreviewError(
-									reloadCause instanceof Error
-										? reloadCause.message
-										: "Không tải được bảng xem trước",
-								);
+								const reloadCode = holidayErrorCodeOf(reloadCause);
+								if (reloadCode === CLASS_ERROR_CODES.CLASS_PAUSED) {
+									setPreviewError(CLASS_PAUSED_HOLIDAY_MESSAGE);
+									onRefreshClasses?.();
+								} else {
+									setPreviewError(
+										reloadCause instanceof Error
+											? reloadCause.message
+											: "Không tải được bảng xem trước",
+									);
+								}
 							}
 						})
 						.finally(() => {
@@ -226,6 +257,12 @@ export function HolidayModal({
 				toast.error("Không có buổi học nào trong khoảng ngày đã chọn.");
 			} else if (code === "too-large") {
 				toast.error("Phạm vi quá lớn — chọn ít lớp hoặc khoảng ngắn hơn.");
+			} else if (code === CLASS_ERROR_CODES.CLASS_PAUSED) {
+				previewSeq.current += 1;
+				setPreview(null);
+				setPreviewError(CLASS_PAUSED_HOLIDAY_MESSAGE);
+				toast.error(CLASS_PAUSED_HOLIDAY_MESSAGE);
+				onRefreshClasses?.();
 			} else {
 				toast.error("Không áp dụng được lịch nghỉ. Thử lại.");
 			}

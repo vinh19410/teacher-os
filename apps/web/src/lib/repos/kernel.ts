@@ -74,6 +74,12 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				method: "PATCH",
 				body: { ...action.payload },
 			};
+		case "update-class-status":
+			return {
+				path: `/api/classes/${encodeURIComponent(action.classId)}/status`,
+				method: "POST",
+				body: { status: action.status },
+			};
 		case "add-invoice":
 			// Issue #61: invoiceCreateSchema is .strict() — the body must carry
 			// exactly these four fields; note always rides along ("" default).
@@ -428,6 +434,7 @@ export type KernelCommandResult =
 			status: number;
 			error: unknown;
 			reason?: string;
+			code?: string;
 	  }
 	| { kind: "outcome-unknown"; error: unknown };
 
@@ -782,6 +789,7 @@ export function createKernelCommandBus(
 						status: classified.status,
 						error,
 						reason: isHttpError(error) ? error.reason : undefined,
+						code: isHttpError(error) ? error.code : undefined,
 					}
 				: { kind: "outcome-unknown", error };
 		}

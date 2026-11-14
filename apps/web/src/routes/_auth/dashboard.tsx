@@ -73,10 +73,10 @@ function DashboardRoute() {
 
 	const displayName = session.data.user.name || "Giáo viên";
 	const now = new Date();
-	const today = lessonsToday(data.lessons, now);
+	const today = lessonsToday(data.lessons, now, data.classes);
 	const todayGroups = groupLessonsByClassSession(today);
-	const risk = atRiskRows(data.students, data.lessons, now);
-	const upcoming = upcomingLessonsThisWeek(data.lessons, now);
+	const risk = atRiskRows(data.students, data.lessons, now, data.classes);
+	const upcoming = upcomingLessonsThisWeek(data.lessons, now, data.classes);
 
 	// Bộ đếm thẻ nhắc việc đếm ở server (TOS-6 #439). Observer thứ 2 trên
 	// cùng cache entry ["kernel"] (staleTime Infinity → không tự fetch):

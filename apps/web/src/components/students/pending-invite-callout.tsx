@@ -1,3 +1,4 @@
+import { CLASS_ERROR_CODES } from "@teacher-os/api/contracts";
 import { RefreshCw } from "lucide-react";
 import {
 	type KeyboardEvent,
@@ -31,8 +32,13 @@ function extractErrorDetails(err: unknown): {
 	retryAfterSeconds?: number;
 } {
 	if (err && typeof err === "object") {
-		const message =
-			"message" in err && typeof err.message === "string" && err.message.trim()
+		const isClassPaused =
+			"code" in err && err.code === CLASS_ERROR_CODES.CLASS_PAUSED;
+		const message = isClassPaused
+			? "Lớp đang tạm dừng — không thể gửi lại lời mời."
+			: "message" in err &&
+					typeof err.message === "string" &&
+					err.message.trim()
 				? err.message
 				: "Không thể gửi lại lời mời. Vui lòng thử lại sau.";
 		const retryAfterSeconds =
@@ -50,11 +56,13 @@ export function ResendInviteButton({
 	target,
 	size = "sm",
 	compact = false,
+	disabled = false,
 	onResent,
 }: {
 	target: ResendInviteTarget;
 	size?: "sm" | "default";
 	compact?: boolean;
+	disabled?: boolean;
 	onResent?: () => void;
 }) {
 	const resendInvitation = useResendInvitation();
@@ -73,7 +81,7 @@ export function ResendInviteButton({
 
 	const handleClick = async (e: MouseEvent<HTMLButtonElement>) => {
 		e.stopPropagation();
-		if (isPending || cooldownSeconds > 0) return;
+		if (disabled || isPending || cooldownSeconds > 0) return;
 		const recipient =
 			target.kind === "invitation" ? target.email : target.recipientLabel;
 		try {
@@ -113,7 +121,7 @@ export function ResendInviteButton({
 			type="button"
 			variant="secondary"
 			size={size}
-			disabled={isPending || cooldownSeconds > 0}
+			disabled={disabled || isPending || cooldownSeconds > 0}
 			onClick={handleClick}
 			onKeyDown={handleKeyDown}
 			aria-label={label}

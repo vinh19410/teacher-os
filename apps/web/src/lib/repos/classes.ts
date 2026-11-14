@@ -67,7 +67,7 @@ export function mapClasses(snapshot: KernelSnapshot): ClassGroup[] {
 		schedule: row.schedule,
 		sessionsDone: maxCompleted(row.id),
 		sessionsTotal: row.sessionsTotal,
-		status: row.status,
+		status: row.status === "paused" ? "paused" : "active",
 		startDate: row.startDate,
 		tuitionFee: row.tuitionFee ?? null,
 		notes: row.notes,

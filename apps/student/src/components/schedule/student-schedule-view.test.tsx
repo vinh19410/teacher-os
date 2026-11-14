@@ -343,4 +343,59 @@ describe("StudentScheduleView component", () => {
 		expect(row).toBeTruthy();
 		expect(row.textContent).toContain("Buổi kế tiếp");
 	});
+
+	it("11. Lớp tạm dừng hiển thị badge Tạm dừng + 'Lớp đang tạm dừng' và không đưa buổi upcoming vào tab Sắp tới (#694)", () => {
+		const classesWithPaused: StudentClass[] = [
+			MOCK_CLASSES[0],
+			{
+				...MOCK_CLASSES[1],
+				status: "paused",
+				nextSession: null,
+			},
+		];
+		const lessonsWithPausedUpcoming: StudentScheduleLesson[] = [
+			...MOCK_LESSONS,
+			{
+				id: "les-paused-past-upcoming",
+				classId: "cls-2",
+				className: "Writing Intensive",
+				date: "2026-11-03",
+				day: 2,
+				time: "09:00",
+				dur: 90,
+				status: "upcoming",
+				topic: "Past Paused Slot",
+			},
+		];
+
+		render(
+			<StudentScheduleView
+				classes={classesWithPaused}
+				lessons={lessonsWithPausedUpcoming}
+				now={FIXED_NOW}
+			/>,
+		);
+
+		const pausedCard = screen.getByTestId("class-schedule-card-cls-2");
+		expect(pausedCard.textContent).toContain("Tạm dừng");
+		expect(pausedCard.textContent).toContain("Lớp đang tạm dừng");
+		expect(pausedCard.textContent).not.toContain("Chưa có lịch buổi tới");
+
+		// Lớp cls-2 đã paused → les-upcoming-future (12/11) không xuất hiện ở tab Sắp tới
+		expect(screen.queryByTestId("session-row-les-upcoming-future")).toBeNull();
+		expect(
+			screen.queryByTestId("session-row-les-paused-past-upcoming"),
+		).toBeNull();
+		// Lớp cls-1 vẫn active → hiển thị bình thường
+		expect(screen.getByTestId("session-row-les-upcoming-next")).toBeTruthy();
+
+		// Chuyển sang tab "Tất cả": buổi đã học vẫn giữ, buổi upcoming của lớp paused hiển thị "Tạm hoãn" thay vì "Đã kết thúc"
+		fireEvent.click(screen.getByRole("tab", { name: /Tất cả/ }));
+		expect(screen.getByTestId("session-row-les-past-absent")).toBeTruthy();
+		const pausedRow = screen.getByTestId(
+			"session-row-les-paused-past-upcoming",
+		);
+		expect(pausedRow.textContent).toContain("Tạm hoãn");
+		expect(pausedRow.textContent).not.toContain("Đã kết thúc");
+	});
 });
