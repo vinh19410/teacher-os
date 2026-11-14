@@ -44,6 +44,8 @@ export const VALID_DYNAMIC_PREFIXES = [
 	// "/assignments/" chỉ nhận MỘT segment, "tests/<id>" có slash nên cần
 	// prefix riêng (exact /tests/new + /tests/preview đã có ở trên).
 	"/assignments/tests/",
+	// Study pack detail route /assignments/packs/$packId (#720) — hai segment sau /assignments/.
+	"/assignments/packs/",
 	"/classes/",
 	// Trang chấm bài Writing/Speaking (#319) — /grading/$attemptId.
 	"/grading/",

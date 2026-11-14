@@ -3,6 +3,7 @@ import {
 	assignmentQuestionSchema,
 	STUDY_PACK_SKILLS,
 	type StudyPackDetailView,
+	type StudyPackItemDetailView,
 	type StudyPackItemInput,
 	type StudyPackItemView,
 	type StudyPackSkill,
@@ -20,7 +21,7 @@ import {
 } from "@teacher-os/db/schema/library-test";
 import {
 	libraryExercise,
-	type studyPack,
+	studyPack,
 	studyPackItem,
 } from "@teacher-os/db/schema/study-pack";
 import { and, asc, eq, inArray } from "drizzle-orm";
@@ -87,6 +88,45 @@ export function studyPackSourceKey(
 	sourceId: string,
 ): string {
 	return `${sourceKind}:${sourceId}`;
+}
+
+export function extractAudioName(audioUrl: string): string {
+	const trimmed = audioUrl.trim();
+	if (!trimmed) return "";
+	try {
+		return new URL(trimmed).pathname.split("/").pop() || "listening.mp3";
+	} catch {
+		return "listening.mp3";
+	}
+}
+
+interface StudyPackItemMeta {
+	title: string;
+	skill: string;
+	part: string;
+	type: string;
+	level: string;
+	status: string;
+}
+
+function toStudyPackItemView(
+	item: typeof studyPackItem.$inferSelect,
+	meta?: StudyPackItemMeta,
+): StudyPackItemView {
+	return {
+		id: item.id,
+		dayIndex: item.dayIndex,
+		position: item.position,
+		sourceKind: item.sourceKind as StudyPackSourceKind,
+		sourceId: item.sourceId,
+		title: meta?.title ?? "",
+		skill: meta?.skill ?? "reading",
+		part: meta?.part ?? "",
+		type: meta?.type ?? "",
+		level: meta?.level ?? "",
+		status: meta?.status ?? "draft",
+		note: item.note ?? "",
+	};
 }
 
 function parseJsonArray(raw: string): unknown[] {
@@ -213,30 +253,8 @@ export async function resolveStudyPackItemMetadata(
 	db: Db,
 	orgId: string | null,
 	items: readonly StudyPackItemSourceRef[],
-): Promise<
-	Map<
-		string,
-		{
-			title: string;
-			skill: string;
-			part: string;
-			type: string;
-			level: string;
-			status: string;
-		}
-	>
-> {
-	const map = new Map<
-		string,
-		{
-			title: string;
-			skill: string;
-			part: string;
-			type: string;
-			level: string;
-			status: string;
-		}
-	>();
+): Promise<Map<string, StudyPackItemMeta>> {
+	const map = new Map<string, StudyPackItemMeta>();
 	if (items.length === 0) return map;
 
 	const orgPromptIds = [
@@ -740,15 +758,7 @@ export async function materializePrompts(
 				const libraryRef = studyPackSourceKey("library_exercise", row.id);
 				libraryRefs.push(libraryRef);
 				const audioUrl = row.audioUrl.trim();
-				let audioName = "";
-				if (audioUrl) {
-					try {
-						audioName =
-							new URL(audioUrl).pathname.split("/").pop() || "listening.mp3";
-					} catch {
-						audioName = "listening.mp3";
-					}
-				}
+				const audioName = extractAudioName(audioUrl);
 				toInsert.push({
 					id: crypto.randomUUID(),
 					orgId,
@@ -903,29 +913,216 @@ export async function loadStudyPackDetailFromRow(
 			asc(studyPackItem.id),
 		);
 	const metaMap = await resolveStudyPackItemMetadata(db, row.orgId, itemRows);
-	const items: StudyPackItemView[] = itemRows.map((item) => {
-		const meta = metaMap.get(
-			studyPackSourceKey(item.sourceKind, item.sourceId),
-		);
-		return {
-			id: item.id,
-			dayIndex: item.dayIndex,
-			position: item.position,
-			sourceKind: item.sourceKind as StudyPackSourceKind,
-			sourceId: item.sourceId,
-			title: meta?.title ?? "",
-			skill: meta?.skill ?? "reading",
-			part: meta?.part ?? "",
-			type: meta?.type ?? "",
-			level: meta?.level ?? "",
-			status: meta?.status ?? "draft",
-			note: item.note,
-		};
-	});
+	const items: StudyPackItemView[] = itemRows.map((item) =>
+		toStudyPackItemView(
+			item,
+			metaMap.get(studyPackSourceKey(item.sourceKind, item.sourceId)),
+		),
+	);
 	return {
 		...toStudyPackSummaryView(row, itemRows),
 		items,
 	};
+}
+
+export interface StudyPackItemWithAudio {
+	detail: StudyPackItemDetailView;
+	audioUrl: string;
+}
+
+function buildStudyPackItemDetail(
+	item: typeof studyPackItem.$inferSelect,
+	meta: StudyPackItemMeta,
+	content: {
+		band: string;
+		source: string;
+		prompt: string;
+		intro: string;
+		passage: string;
+		transcript: string;
+		audioName: string;
+		audioUrl: string;
+		imageUrl: string;
+		questions: AssignmentQuestion[];
+		optionBank: string[];
+		exerciseNote: string;
+	},
+): StudyPackItemWithAudio {
+	const audioUrl = content.audioUrl.trim();
+	const hasAudio = Boolean(audioUrl);
+	return {
+		detail: {
+			...toStudyPackItemView(item, meta),
+			band: content.band,
+			source: content.source,
+			prompt: content.prompt,
+			intro: content.intro,
+			passage: content.passage,
+			transcript: content.transcript,
+			audioName: hasAudio
+				? content.audioName.trim() || extractAudioName(audioUrl)
+				: "",
+			hasAudio,
+			imageUrl: content.imageUrl,
+			questions: content.questions,
+			optionBank: content.optionBank,
+			exerciseNote: content.exerciseNote,
+		},
+		audioUrl,
+	};
+}
+
+/**
+ * Resolve full item content + internal `audioUrl` for a study pack item across
+ * all 3 backing source kinds (`library_exercise`, `org_prompt`, `library_test_part`).
+ */
+export async function loadStudyPackItemWithAudio(
+	db: Db,
+	packId: string,
+	itemId: string,
+): Promise<StudyPackItemWithAudio | null> {
+	const [entry] = await db
+		.select({
+			item: studyPackItem,
+			packOrgId: studyPack.orgId,
+		})
+		.from(studyPackItem)
+		.innerJoin(studyPack, eq(studyPackItem.packId, studyPack.id))
+		.where(and(eq(studyPackItem.packId, packId), eq(studyPackItem.id, itemId)))
+		.limit(1);
+	if (!entry) return null;
+
+	const { item, packOrgId } = entry;
+
+	if (item.sourceKind === "library_exercise") {
+		const [exercise] = await db
+			.select()
+			.from(libraryExercise)
+			.where(eq(libraryExercise.id, item.sourceId))
+			.limit(1);
+		if (!exercise) return null;
+		return buildStudyPackItemDetail(
+			item,
+			{
+				title: exercise.title,
+				skill: exercise.skill,
+				part: exercise.part,
+				type: exercise.type,
+				level: exercise.level,
+				status: exercise.status,
+			},
+			{
+				band: exercise.band,
+				source: "",
+				prompt: "",
+				intro: exercise.intro,
+				passage: exercise.passage,
+				transcript: exercise.transcript,
+				audioName: "",
+				audioUrl: exercise.audioUrl,
+				imageUrl: "",
+				questions: parseQuestions(exercise.questions),
+				optionBank: parseStringArray(exercise.optionBank),
+				exerciseNote: exercise.note ?? "",
+			},
+		);
+	}
+
+	if (item.sourceKind === "org_prompt") {
+		if (packOrgId === null) return null;
+		const [promptRow] = await db
+			.select()
+			.from(assignmentPrompt)
+			.where(
+				and(
+					eq(assignmentPrompt.id, item.sourceId),
+					eq(assignmentPrompt.orgId, packOrgId),
+				),
+			)
+			.limit(1);
+		if (!promptRow) return null;
+		return buildStudyPackItemDetail(
+			item,
+			{
+				title: promptRow.title,
+				skill: promptRow.skill,
+				part: promptRow.part,
+				type: promptRow.type,
+				level: promptRow.level,
+				status: promptRow.status,
+			},
+			{
+				band: promptRow.band,
+				source: promptRow.source,
+				prompt: promptRow.prompt,
+				intro: promptRow.intro,
+				passage: promptRow.passage,
+				transcript: promptRow.transcript,
+				audioName: promptRow.audioName,
+				audioUrl: promptRow.audioUrl,
+				imageUrl: promptRow.imageUrl,
+				questions: parseQuestions(promptRow.questions),
+				optionBank: parseStringArray(promptRow.optionBank),
+				exerciseNote: promptRow.note ?? "",
+			},
+		);
+	}
+
+	if (item.sourceKind === "library_test_part") {
+		const [joined] = await db
+			.select({
+				partRow: libraryTestPart,
+				testTitle: libraryTest.title,
+				testSkill: libraryTest.skill,
+				testStatus: libraryTest.status,
+			})
+			.from(libraryTestPart)
+			.innerJoin(libraryTest, eq(libraryTestPart.testId, libraryTest.id))
+			.where(eq(libraryTestPart.id, item.sourceId))
+			.limit(1);
+		if (!joined) return null;
+		const flattened = flattenLibraryTestPart(joined.partRow, joined.testTitle);
+		return buildStudyPackItemDetail(
+			item,
+			{
+				title: flattened.title,
+				skill: joined.testSkill,
+				part: joined.partRow.part,
+				type: flattened.type.trim() || "tfng",
+				level: "",
+				status: joined.testStatus,
+			},
+			{
+				band: joined.partRow.band,
+				source: joined.partRow.source,
+				prompt: "",
+				intro: flattened.intro,
+				passage: joined.partRow.passage,
+				transcript: joined.partRow.transcript,
+				audioName: "",
+				audioUrl: "",
+				imageUrl: joined.partRow.imageUrl,
+				questions: flattened.questions,
+				optionBank: flattened.optionBank,
+				exerciseNote: joined.partRow.note ?? "",
+			},
+		);
+	}
+
+	return null;
+}
+
+/**
+ * Load public `StudyPackItemDetailView` (without raw external `audioUrl`)
+ * for a single item belonging to `packId`.
+ */
+export async function loadStudyPackItemDetail(
+	db: Db,
+	packId: string,
+	itemId: string,
+): Promise<StudyPackItemDetailView | null> {
+	const resolved = await loadStudyPackItemWithAudio(db, packId, itemId);
+	return resolved?.detail ?? null;
 }
 
 export function buildPackItemTupleKey(

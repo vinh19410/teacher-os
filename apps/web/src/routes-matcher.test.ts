@@ -83,6 +83,12 @@ describe("routes-matcher", () => {
 			// Prefix reasoning test "new"/"preview" vẫn match exact route ở trên.
 			expect(isValidAppRoute("/assignments/tests/new")).toBe(true);
 			expect(isValidAppRoute("/assignments/tests/preview")).toBe(true);
+			// Study pack detail route (#720): /assignments/packs/<packId>
+			expect(isValidAppRoute("/assignments/packs")).toBe(true);
+			expect(isValidAppRoute("/assignments/packs/")).toBe(true);
+			expect(isValidAppRoute("/assignments/packs/pack-123")).toBe(true);
+			expect(isValidAppRoute("/assignments/packs/pack-123/")).toBe(true);
+			expect(isValidAppRoute("/assignments/packs/pack-123/extra")).toBe(false);
 			// Trang chấm bài (#319): /grading/<attemptId> — một segment.
 			expect(isValidAppRoute("/grading/att-123")).toBe(true);
 			expect(isValidAppRoute("/grading/att-123/")).toBe(true);
@@ -141,6 +147,7 @@ describe("routes-matcher", () => {
 					.replace(/\$classId/g, "sample-id")
 					.replace(/\$syllabusId/g, "sample-id")
 					.replace(/\$assignmentId/g, "sample-id")
+					.replace(/\$packId/g, "sample-id")
 					.replace(/\$invoiceId/g, "sample-id");
 				expect(
 					isValidAppRoute(concretePath),

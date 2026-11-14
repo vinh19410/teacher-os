@@ -28,6 +28,10 @@ export function PreviewQuizSimulation({
 	onEssayChange,
 	onSubmit,
 	onReset,
+	audioSrc,
+	audioLoading = false,
+	audioError = null,
+	transcript,
 }: {
 	sim: QuizSimulation;
 	answers: Record<number, string>;
@@ -37,6 +41,10 @@ export function PreviewQuizSimulation({
 	onEssayChange?: (value: string) => void;
 	onSubmit: () => void;
 	onReset: () => void;
+	audioSrc?: string | null;
+	audioLoading?: boolean;
+	audioError?: string | boolean | null;
+	transcript?: string;
 }) {
 	// sim được dựng lại mỗi render ở route nên memo theo identity không bao giờ
 	// hit — buildQuizParts là map thuần rẻ, gọi trực tiếp cho đúng. Type prompt
@@ -102,6 +110,10 @@ export function PreviewQuizSimulation({
 					review={review}
 					writingSection={sim.writing ?? null}
 					essay={essay}
+					audioSrc={audioSrc}
+					audioLoading={audioLoading}
+					audioError={Boolean(audioError)}
+					transcript={transcript}
 				/>
 				<QuizNavigator
 					parts={parts}
@@ -131,6 +143,9 @@ export function PreviewQuizSimulation({
 				writingSection={sim.writing ?? null}
 				essay={essay}
 				onEssayChange={onEssayChange}
+				audioSrc={audioSrc}
+				audioLoading={audioLoading}
+				audioError={Boolean(audioError)}
 			/>
 			<div className="flex items-center justify-between gap-3">
 				<span className="text-muted-foreground text-xs">

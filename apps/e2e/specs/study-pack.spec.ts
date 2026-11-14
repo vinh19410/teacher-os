@@ -333,11 +333,11 @@ test("study pack end-to-end: create grammar & reading prompts -> build 2-day pac
 	await expect(page.getByText("0/2 đã nộp")).toBeVisible();
 });
 
-test("built-in Course Foun/GT1 IELTS Foundation study pack: filter, preview, assign, student listening blob audio & post-submit transcript (#702)", async ({
+test("built-in Course Foun/GT1 IELTS Foundation study pack: filter, detail page preview & simulation, assign, class pack link, student listening blob audio & post-submit transcript (#702, #720)", async ({
 	page,
 	browser,
 }) => {
-	test.setTimeout(120_000);
+	test.setTimeout(180_000);
 
 	const runToken = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 	const CLASS_NAME = `E2E 702 Foundation ${runToken}`;
@@ -424,17 +424,112 @@ test("built-in Course Foun/GT1 IELTS Foundation study pack: filter, preview, ass
 	}
 	await page.setViewportSize({ width: 1440, height: 900 });
 
-	// Preview Day 1 Listening audio inside system pack detail modal
+	// Navigate to dedicated study pack detail page (/assignments/packs/$packId)
 	const packCard = page.locator("div").filter({ hasText: PACK_TITLE }).first();
-	await packCard.getByRole("button", { name: "Xem chi tiết" }).first().click();
-	const detailDialog = page.getByRole("dialog");
-	await expect(detailDialog.getByText(DAY_1_TITLE)).toBeVisible();
-	await detailDialog.getByRole("button", { name: "Nghe thử" }).first().click();
-	const previewAudio = detailDialog.getByTestId("study-pack-preview-audio");
+	await packCard.getByRole("link", { name: "Xem chi tiết" }).first().click();
+	await expect(page).toHaveURL(
+		/\/assignments\/packs\/syspack-foun-gt1-discipline/,
+	);
+	await expect(
+		page.getByRole("heading", { level: 1, name: PACK_TITLE }),
+	).toBeVisible();
+	await expect(page.getByRole("tab", { name: "Đề & Đáp án" })).toHaveAttribute(
+		"aria-selected",
+		"true",
+	);
+
+	// Explicitly select Day 1 in the left rail so ?item= is synced across mobile/desktop
+	await page
+		.getByRole("navigation", { name: "Danh sách buổi học" })
+		.getByRole("button", { name: new RegExp(DAY_1_TITLE) })
+		.click();
+	await expect(page).toHaveURL(/item=/);
+	await expect(
+		page.getByRole("heading", { level: 2, name: DAY_1_TITLE }),
+	).toBeVisible();
+	await expect(page.getByText("Đáp án đúng").first()).toBeVisible();
+	await expect(page.getByText("Giải thích").first()).toBeVisible();
+	await expect(page.getByText(/Mẹo tự học:/)).toBeVisible();
+
+	await page.getByRole("button", { name: /Transcript/i }).click();
+	await expect(
+		page.getByText(
+			/Education is one of the most important things in our lives\./,
+		),
+	).toBeVisible();
+
+	await page.getByRole("button", { name: "Nghe thử" }).click();
+	const previewAudio = page.getByTestId("study-pack-preview-audio");
 	await expect(previewAudio).toBeVisible();
 	await expect(previewAudio).toHaveAttribute("src", /^blob:/);
-	await detailDialog.getByRole("button", { name: "Đóng" }).last().click();
-	await expect(detailDialog).toBeHidden();
+
+	// Capture #720 POT screenshots across 3 viewports (light & dark) + 320px reflow check
+	for (const vp of REVIEW_VIEWPORTS) {
+		await page.setViewportSize(vp);
+		expect(
+			await page.evaluate(
+				() => document.documentElement.scrollWidth > window.innerWidth,
+			),
+			`pack detail horizontal overflow (light) at ${vp.width}x${vp.height}`,
+		).toBe(false);
+		await page.screenshot({
+			path: `../../plans/reports/720-pack-detail-${vp.width}x${vp.height}-light.png`,
+			fullPage: true,
+		});
+		await page.evaluate(() => document.documentElement.classList.add("dark"));
+		expect(
+			await page.evaluate(
+				() => document.documentElement.scrollWidth > window.innerWidth,
+			),
+			`pack detail horizontal overflow (dark) at ${vp.width}x${vp.height}`,
+		).toBe(false);
+		await page.screenshot({
+			path: `../../plans/reports/720-pack-detail-${vp.width}x${vp.height}-dark.png`,
+			fullPage: true,
+		});
+		await page.evaluate(() =>
+			document.documentElement.classList.remove("dark"),
+		);
+	}
+
+	await page.setViewportSize({ width: 320, height: 800 });
+	expect(
+		await page.evaluate(
+			() => document.documentElement.scrollWidth > window.innerWidth,
+		),
+		"pack detail horizontal overflow at 320x800",
+	).toBe(false);
+	await page.getByRole("button", { name: /Danh sách buổi/ }).click();
+	expect(
+		await page.evaluate(
+			() => document.documentElement.scrollWidth > window.innerWidth,
+		),
+		"pack master list horizontal overflow at 320x800",
+	).toBe(false);
+	await page
+		.getByRole("navigation", { name: "Danh sách buổi học" })
+		.getByRole("button", { name: new RegExp(DAY_1_TITLE) })
+		.click();
+	await page.setViewportSize({ width: 1440, height: 900 });
+
+	// Test "Làm thử" interactive quiz simulation tab + URL ?tab=sim
+	await page.getByRole("tab", { name: "Làm thử" }).click();
+	await expect(page).toHaveURL(/tab=sim/);
+	await page
+		.locator('[data-question="0"] label', { hasText: "Success and failure" })
+		.click();
+	await page.getByRole("button", { name: /^Nộp bài/ }).click();
+	await expect(page.getByRole("button", { name: "Làm lại" })).toBeVisible();
+	await page.getByRole("tab", { name: "Đề & Đáp án" }).click();
+
+	// Test skill filter chip URL sync & reset
+	await page
+		.locator('[aria-label="Lọc kỹ năng trong bộ đề"]')
+		.getByRole("button", { name: /^Reading/ })
+		.click();
+	await expect(page).toHaveURL(/skill=reading/);
+	await page.getByRole("button", { name: "Xoá bộ lọc" }).click();
+	await expect(page).not.toHaveURL(/skill=reading/);
 
 	// 3. Assign the 69-day system study pack to the class starting today (00:00 - 23:59)
 	const todayISO = vietnamTodayISO();
@@ -454,8 +549,12 @@ test("built-in Course Foun/GT1 IELTS Foundation study pack: filter, preview, ass
 		.click();
 	await expect(assignDialog).toBeHidden();
 
-	// Wait for Day 1 to render in class table
+	// Wait for Day 1 to render in class table and verify class pack title links to detail page
 	await expect(page.getByText(DAY_1_TITLE)).toBeVisible({ timeout: 20_000 });
+	await expect(page.getByRole("link", { name: PACK_TITLE })).toHaveAttribute(
+		"href",
+		"/assignments/packs/syspack-foun-gt1-discipline",
+	);
 
 	// Fetch Day 1 & Day 2 assignmentIds from API
 	const packsRes = await page.request.get(

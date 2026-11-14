@@ -130,6 +130,9 @@ function normalizeQuestion(item: QuestionItem): AssignmentQuestion {
 		alts: typeof item.alts === "string" ? item.alts : "",
 		type: typeof item.type === "string" && item.type !== "" ? item.type : null,
 		pin: isValidPin(item.pin) ? item.pin : null,
+		...(typeof item.answerSet === "string" && item.answerSet.trim() !== ""
+			? { answerSet: item.answerSet.trim() }
+			: {}),
 		...(typeof item.explanation === "string" &&
 		!isEmptyRichText(item.explanation)
 			? { explanation: item.explanation }

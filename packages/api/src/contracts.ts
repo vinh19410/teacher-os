@@ -4950,6 +4950,21 @@ export interface StudyPackDetailView extends StudyPackSummaryView {
 	items: StudyPackItemView[];
 }
 
+export interface StudyPackItemDetailView extends StudyPackItemView {
+	band: string;
+	source: string;
+	prompt: string;
+	intro: string;
+	passage: string;
+	transcript: string;
+	audioName: string;
+	hasAudio: boolean;
+	imageUrl: string;
+	questions: AssignmentQuestion[];
+	optionBank: string[];
+	exerciseNote: string;
+}
+
 export interface LibraryExerciseView {
 	id: string;
 	skill: LibraryExerciseSkill;

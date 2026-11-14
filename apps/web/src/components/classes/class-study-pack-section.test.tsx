@@ -39,6 +39,10 @@ const mockCancelClassStudyPack =
 		(classId: string, classPackId: string) => Promise<ClassStudyPacksResponse>
 	>();
 
+vi.mock("@tanstack/react-router", async () =>
+	(await import("@/test/router-mock")).routerMock(),
+);
+
 vi.mock("@/lib/repos/study-pack", () => ({
 	fetchClassStudyPacks: (...args: [string]) =>
 		mockFetchClassStudyPacks(...args),
@@ -237,9 +241,10 @@ describe("ClassStudyPackSection", () => {
 
 		render(<ClassStudyPackSection classId="cl-1" />);
 
-		expect(
-			await screen.findByText("Bộ đề Grammar & Reading 2 ngày"),
-		).toBeTruthy();
+		const packLink = (await screen.findByRole("link", {
+			name: "Bộ đề Grammar & Reading 2 ngày",
+		})) as HTMLAnchorElement;
+		expect(packLink.getAttribute("href")).toBe("/assignments/packs/pack-1");
 		expect(screen.getByText("Đang chạy")).toBeTruthy();
 		expect(
 			screen.getByText("Bắt đầu: 01/11/2026 · Khung giờ: 06:00 – 17:00"),
