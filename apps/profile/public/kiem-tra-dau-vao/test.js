@@ -73,6 +73,118 @@ function createEl(tag, className, text) {
 	return el;
 }
 
+const SVG_NS = "http://www.w3.org/2000/svg";
+const ICON_SHAPES = {
+	"message-circle": [["path", { d: "M7.9 20A9 9 0 1 0 4 16.1L2 22Z" }]],
+	"clipboard-list": [
+		["rect", { width: "8", height: "4", x: "8", y: "2", rx: "1", ry: "1" }],
+		[
+			"path",
+			{
+				d: "M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2",
+			},
+		],
+		["path", { d: "M12 11h4" }],
+		["path", { d: "M12 16h4" }],
+		["path", { d: "M8 11h.01" }],
+		["path", { d: "M8 16h.01" }],
+	],
+	play: [["polygon", { points: "6 3 20 12 6 21 6 3" }]],
+	"volume-2": [
+		[
+			"path",
+			{
+				d: "M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z",
+			},
+		],
+		["path", { d: "M16 9a5 5 0 0 1 0 6" }],
+		["path", { d: "M19.364 18.364a9 9 0 0 0 0-12.728" }],
+	],
+	lock: [
+		["rect", { width: "18", height: "11", x: "3", y: "11", rx: "2", ry: "2" }],
+		["path", { d: "M7 11V7a5 5 0 0 1 10 0v4" }],
+	],
+	"check-circle-2": [
+		["circle", { cx: "12", cy: "12", r: "10" }],
+		["path", { d: "m9 12 2 2 4-4" }],
+	],
+	gift: [
+		["rect", { x: "3", y: "8", width: "18", height: "4", rx: "1" }],
+		["path", { d: "M12 8v13" }],
+		["path", { d: "M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7" }],
+		[
+			"path",
+			{
+				d: "M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5",
+			},
+		],
+	],
+	"graduation-cap": [
+		[
+			"path",
+			{
+				d: "M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z",
+			},
+		],
+		["path", { d: "M22 10v6" }],
+		["path", { d: "M6 12.5V16a6 3 0 0 0 12 0v-3.5" }],
+	],
+	"rotate-ccw": [
+		["path", { d: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" }],
+		["path", { d: "M3 3v5h5" }],
+	],
+	"bar-chart-3": [
+		["path", { d: "M3 3v16a2 2 0 0 0 2 2h16" }],
+		["path", { d: "M18 17V9" }],
+		["path", { d: "M13 17V5" }],
+		["path", { d: "M8 17v-3" }],
+	],
+};
+
+function createIconSvg(name) {
+	const svg = document.createElementNS(SVG_NS, "svg");
+	svg.setAttribute("class", "ml-icon");
+	svg.setAttribute("viewBox", "0 0 24 24");
+	svg.setAttribute("fill", "none");
+	svg.setAttribute("stroke", "currentColor");
+	svg.setAttribute("stroke-width", "1.9");
+	svg.setAttribute("stroke-linecap", "round");
+	svg.setAttribute("stroke-linejoin", "round");
+	svg.setAttribute("aria-hidden", "true");
+	for (const [tag, attrs] of ICON_SHAPES[name] ?? []) {
+		const child = document.createElementNS(SVG_NS, tag);
+		for (const [k, v] of Object.entries(attrs)) {
+			child.setAttribute(k, v);
+		}
+		svg.appendChild(child);
+	}
+	return svg;
+}
+
+function setButtonLabel(btn, iconName, text) {
+	btn.replaceChildren(createIconSvg(iconName), createEl("span", "", text));
+}
+
+function createTitleBanner({ kicker, title, description, mascotSrc }) {
+	const row = createEl("div", "ml-title-row");
+	const main = createEl("div", "ml-title-main");
+	main.appendChild(createEl("span", "kicker-pill", kicker));
+	main.appendChild(createEl("h1", "", title));
+	if (description) {
+		main.appendChild(createEl("p", "muted-copy", description));
+	}
+	row.appendChild(main);
+	if (mascotSrc) {
+		const img = document.createElement("img");
+		img.src = mascotSrc;
+		img.alt = "";
+		img.setAttribute("aria-hidden", "true");
+		img.className = "step-mascot";
+		row.appendChild(img);
+	}
+	return row;
+}
+
 function parseSavedLead(rawLead) {
 	if (!rawLead || typeof rawLead !== "object") return null;
 	const candidate = {
@@ -335,11 +447,8 @@ function renderMaintenance(root) {
 	retryBtn.type = "button";
 	retryBtn.addEventListener("click", () => window.location.reload());
 
-	const zaloLink = createEl(
-		"a",
-		"btn btn-gold",
-		"💬 Nhắn Zalo Cô Mỹ: 0929.060.994",
-	);
+	const zaloLink = createEl("a", "btn btn-gold");
+	setButtonLabel(zaloLink, "message-circle", "Nhắn Zalo Cô Mỹ: 0929.060.994");
 	zaloLink.href = ZALO_URL;
 	zaloLink.target = "_blank";
 	zaloLink.rel = "noopener";
@@ -483,25 +592,13 @@ function renderIntroStep(root, test, state, rerender) {
 		getPartCounts(test);
 	const card = createEl("section", "intro-card");
 	card.appendChild(
-		createEl(
-			"span",
-			"kicker-pill",
-			"Bài Kiểm Tra Đầu Vào Chẩn Đoán Trình Độ (Miễn Phí 100%)",
-		),
-	);
-	card.appendChild(
-		createEl(
-			"h1",
-			"",
-			`Đánh Giá Năng Lực Tiếng Anh Đầu Vào (${totalQuestions} Câu • Vocab, Grammar & Listening)`,
-		),
-	);
-	card.appendChild(
-		createEl(
-			"p",
-			"muted-copy",
-			"Bài kiểm tra giúp xác định mức CEFR hiện tại của bạn (A1 – B2+) và gợi ý lộ trình học phù hợp nhất cùng cô Đỗ Thục Mỹ. Bạn chỉ cần để lại họ tên, email và số điện thoại trước khi bắt đầu để nhận kết quả CEFR và lộ trình học cá nhân hóa.",
-		),
+		createTitleBanner({
+			kicker: "Bài Kiểm Tra Đầu Vào Chẩn Đoán Trình Độ (Miễn Phí 100%)",
+			title: `Đánh Giá Năng Lực Tiếng Anh Đầu Vào (${totalQuestions} Câu • Vocab, Grammar & Listening)`,
+			description:
+				"Bài kiểm tra giúp xác định mức CEFR hiện tại của bạn (A1 – B2+) và gợi ý lộ trình học phù hợp nhất cùng cô Đỗ Thục Mỹ. Bạn chỉ cần để lại họ tên, email và số điện thoại trước khi bắt đầu để nhận kết quả CEFR và lộ trình học cá nhân hóa.",
+			mascotSrc: "../assets/mascots/mascot-checklist.png",
+		}),
 	);
 
 	const identityBar = createLeadIdentityBar(test, state, rerender);
@@ -582,11 +679,8 @@ function renderIntroStep(root, test, state, rerender) {
 	card.appendChild(grid);
 
 	const actions = createEl("div", "btn-row");
-	const startBtn = createEl(
-		"button",
-		"btn btn-primary",
-		"📝 Bắt Đầu Làm Bài Kiểm Tra",
-	);
+	const startBtn = createEl("button", "btn btn-primary");
+	setButtonLabel(startBtn, "clipboard-list", "Bắt Đầu Làm Bài Kiểm Tra");
 	startBtn.type = "button";
 	startBtn.id = "startTestBtn";
 	startBtn.addEventListener("click", () =>
@@ -605,15 +699,13 @@ function renderInfoStep(root, _test, state, rerender) {
 	const card = createEl("section", "step-card");
 	card.id = "leadGateCard";
 	card.appendChild(
-		createEl("span", "kicker-pill", "Bước 2 / 5 • Thông Tin Học Viên"),
-	);
-	card.appendChild(createEl("h1", "", "Thông Tin Của Bạn Trước Khi Làm Bài"));
-	card.appendChild(
-		createEl(
-			"p",
-			"muted-copy",
-			"Vui lòng điền họ tên, email và số điện thoại Zalo để hệ thống lưu tiến độ bài làm, chấm điểm CEFR và gợi ý lộ trình học phù hợp nhất cùng cô Thục Mỹ.",
-		),
+		createTitleBanner({
+			kicker: "Bước 2 / 5 • Thông Tin Học Viên",
+			title: "Thông Tin Của Bạn Trước Khi Làm Bài",
+			description:
+				"Vui lòng điền họ tên, email và số điện thoại Zalo để hệ thống lưu tiến độ bài làm, chấm điểm CEFR và gợi ý lộ trình học phù hợp nhất cùng cô Thục Mỹ.",
+			mascotSrc: "../assets/mascots/mascot-give-opinion.png",
+		}),
 	);
 
 	const form = createEl("form", "lead-gate-form");
@@ -879,10 +971,11 @@ function renderInfoStep(root, _test, state, rerender) {
 	retrySubmitBtn.addEventListener("click", () => {
 		form.requestSubmit();
 	});
-	const zaloAlertLink = createEl(
-		"a",
-		"btn btn-gold btn-sm",
-		"💬 Nhắn Zalo Cô Mỹ: 0929.060.994",
+	const zaloAlertLink = createEl("a", "btn btn-gold btn-sm");
+	setButtonLabel(
+		zaloAlertLink,
+		"message-circle",
+		"Nhắn Zalo Cô Mỹ: 0929.060.994",
 	);
 	zaloAlertLink.id = "leadGateZaloLink";
 	zaloAlertLink.href = ZALO_URL;
@@ -1140,16 +1233,14 @@ function renderPart1Step(root, test, state, rerender) {
 	const part1 = test.parts.find((p) => p.id === "vocab-grammar");
 	const { vgCount, listeningCount } = getPartCounts(test);
 	const card = createEl("section", "step-card");
-	card.appendChild(createEl("span", "kicker-pill", "Phần 1 / 2"));
+	card.dataset.part = "vocabulary";
 	card.appendChild(
-		createEl("h1", "", "Phần 1: Ngữ Pháp & Từ Vựng (Vocab + Grammar)"),
-	);
-	card.appendChild(
-		createEl(
-			"p",
-			"muted-copy",
-			`Chọn đáp án đúng nhất cho ${vgCount} câu bên dưới. Bạn có thể chuyển sang Phần 2 bất cứ lúc nào và quay lại chỉnh sửa trước khi nộp bài.`,
-		),
+		createTitleBanner({
+			kicker: "Phần 1 / 2",
+			title: "Phần 1: Ngữ Pháp & Từ Vựng (Vocab + Grammar)",
+			description: `Chọn đáp án đúng nhất cho ${vgCount} câu bên dưới. Bạn có thể chuyển sang Phần 2 bất cứ lúc nào và quay lại chỉnh sửa trước khi nộp bài.`,
+			mascotSrc: "../assets/mascots/mascot-chunks.png",
+		}),
 	);
 	const identityBar = createLeadIdentityBar(test, state, rerender);
 	if (identityBar) {
@@ -1191,20 +1282,15 @@ function renderPart2Step(root, test, state, rerender, activeClipsCleanup) {
 	const part2 = test.parts.find((p) => p.id === "listening");
 	const clips = part2?.clips ?? [];
 	const card = createEl("section", "step-card");
-	card.appendChild(createEl("span", "kicker-pill", "Phần 2 / 2"));
+	card.dataset.part = "listening";
 	card.appendChild(
-		createEl(
-			"h1",
-			"",
-			`Phần 2: Nghe Hiểu (Listening – ${clips.length} Đoạn Audio)`,
-		),
-	);
-	card.appendChild(
-		createEl(
-			"p",
-			"muted-copy",
-			"Mỗi đoạn âm thanh có giới hạn số lần phát và không thể tua. Hãy đọc trước các câu hỏi của từng đoạn rồi bấm nút Phát đoạn nghe.",
-		),
+		createTitleBanner({
+			kicker: "Phần 2 / 2",
+			title: `Phần 2: Nghe Hiểu (Listening – ${clips.length} Đoạn Audio)`,
+			description:
+				"Mỗi đoạn âm thanh có giới hạn số lần phát và không thể tua. Hãy đọc trước các câu hỏi của từng đoạn rồi bấm nút Phát đoạn nghe.",
+			mascotSrc: "../assets/mascots/mascot-listening.png",
+		}),
 	);
 	const identityBar = createLeadIdentityBar(test, state, rerender);
 	if (identityBar) {
@@ -1271,8 +1357,11 @@ function renderPart2Step(root, test, state, rerender, activeClipsCleanup) {
 
 			if (errorMessage) {
 				playBtn.disabled = remaining <= 0;
-				playBtn.textContent =
-					remaining > 0 ? "▶ Phát đoạn nghe" : "🔒 Đã hết lượt nghe";
+				setButtonLabel(
+					playBtn,
+					remaining > 0 ? "play" : "lock",
+					remaining > 0 ? "Phát đoạn nghe" : "Đã hết lượt nghe",
+				);
 				statusEl.textContent = errorMessage;
 				statusEl.classList.add("is-error");
 				return;
@@ -1280,22 +1369,25 @@ function renderPart2Step(root, test, state, rerender, activeClipsCleanup) {
 
 			if (activeSession) {
 				playBtn.disabled = true;
-				playBtn.textContent = "🔊 Đang phát đoạn nghe...";
+				setButtonLabel(playBtn, "volume-2", "Đang phát đoạn nghe...");
 				statusEl.textContent = `Đang phát (còn ${remaining}/${maxPlays} lượt nghe sau lượt này)`;
 				return;
 			}
 
 			if (remaining <= 0) {
 				playBtn.disabled = true;
-				playBtn.textContent = "🔒 Đã hết lượt nghe";
+				setButtonLabel(playBtn, "lock", "Đã hết lượt nghe");
 				statusEl.textContent = `Đã hết lượt nghe (0/${maxPlays} lượt còn lại)`;
 				statusEl.classList.add("is-exhausted");
 				return;
 			}
 
 			playBtn.disabled = false;
-			playBtn.textContent =
-				used === 0 ? "▶ Phát đoạn nghe" : "▶ Phát lại đoạn nghe";
+			setButtonLabel(
+				playBtn,
+				"play",
+				used === 0 ? "Phát đoạn nghe" : "Phát lại đoạn nghe",
+			);
 			statusEl.textContent = `Còn ${remaining}/${maxPlays} lượt nghe`;
 		};
 
@@ -1412,11 +1504,8 @@ function renderPart2Step(root, test, state, rerender, activeClipsCleanup) {
 	backBtn.type = "button";
 	backBtn.addEventListener("click", () => rerender("part1"));
 
-	const submitBtn = createEl(
-		"button",
-		"btn btn-gold",
-		"✨ Nộp Bài & Xem Kết Quả Xếp Lớp",
-	);
+	const submitBtn = createEl("button", "btn btn-gold");
+	setButtonLabel(submitBtn, "check-circle-2", "Nộp Bài & Xem Kết Quả Xếp Lớp");
 	submitBtn.type = "button";
 	submitBtn.id = "submitTestBtn";
 	submitBtn.addEventListener("click", () => {
@@ -1521,12 +1610,13 @@ function renderResultStep(root, test, state, rerender) {
 	const card = createEl("section", "result-card");
 	card.id = "testResultCard";
 	card.appendChild(
-		createEl("span", "kicker-pill", "Hoàn Thành Bài Kiểm Tra Đầu Vào"),
+		createTitleBanner({
+			kicker: "Hoàn Thành Bài Kiểm Tra Đầu Vào",
+			title: "Kết Quả Đánh Giá Trình Độ & Lộ Trình Gợi Ý",
+			description: summaryText,
+			mascotSrc: "../assets/mascots/mascot-checklist.png",
+		}),
 	);
-	card.appendChild(
-		createEl("h1", "", "Kết Quả Đánh Giá Trình Độ & Lộ Trình Gợi Ý"),
-	);
-	card.appendChild(createEl("p", "muted-copy", summaryText));
 	const identityBar = createLeadIdentityBar(test, state, rerender);
 	if (identityBar) {
 		card.appendChild(identityBar);
@@ -1588,13 +1678,16 @@ function renderResultStep(root, test, state, rerender) {
 			"Khi bấm nút đăng ký bên dưới, điểm kiểm tra đầu vào và khóa học gợi ý sẽ được điền sẵn vào biểu mẫu tư vấn. Bạn hoàn toàn có thể đổi sang khóa Tiếng Anh Giao Tiếp / Công Sở hoặc khóa học khác ngay trên biểu mẫu.",
 		),
 	);
-	recBox.appendChild(
+	const recNote = createEl("p", "recommendation-note");
+	recNote.append(
+		createIconSvg("gift"),
 		createEl(
-			"p",
-			"recommendation-note",
-			"🎁 Quyền lợi kèm theo: Bạn được tặng thêm 01 buổi Khám Bệnh Tiếng Anh 1-1 (30 phút qua Google Meet) trực tiếp cùng cô Thục Mỹ để kiểm tra kỹ năng Nói (Speaking) và chốt lộ trình cá nhân hóa.",
+			"span",
+			"",
+			"Quyền lợi kèm theo: Bạn được tặng thêm 01 buổi Khám Bệnh Tiếng Anh 1-1 (30 phút qua Google Meet) trực tiếp cùng cô Thục Mỹ để kiểm tra kỹ năng Nói (Speaking) và chốt lộ trình cá nhân hóa.",
 		),
 	);
+	recBox.appendChild(recNote);
 	card.appendChild(recBox);
 
 	const cefrExplorer = createCefrExplorer(result.band.cefr);
@@ -1605,24 +1698,23 @@ function renderResultStep(root, test, state, rerender) {
 		ketqua: summaryText,
 		khoa: courseCode,
 	});
-	const registerLink = createEl(
-		"a",
-		"btn btn-gold",
-		"🎓 Đăng Ký Theo Kết Quả Này",
-	);
+	const registerLink = createEl("a", "btn btn-gold");
+	setButtonLabel(registerLink, "graduation-cap", "Đăng Ký Theo Kết Quả Này");
 	registerLink.id = "registerWithResultBtn";
 	registerLink.href = `../?${registerParams.toString()}#dang-ky-tu-van`;
 
-	const zaloLink = createEl(
-		"a",
-		"btn btn-primary",
-		"💬 Nhắn Kết Quả Qua Zalo Cô Mỹ: 0929.060.994",
+	const zaloLink = createEl("a", "btn btn-primary");
+	setButtonLabel(
+		zaloLink,
+		"message-circle",
+		"Nhắn Kết Quả Qua Zalo Cô Mỹ: 0929.060.994",
 	);
 	zaloLink.href = ZALO_URL;
 	zaloLink.target = "_blank";
 	zaloLink.rel = "noopener";
 
-	const retryBtn = createEl("button", "btn btn-outline", "🔄 Làm Lại");
+	const retryBtn = createEl("button", "btn btn-outline");
+	setButtonLabel(retryBtn, "rotate-ccw", "Làm Lại");
 	retryBtn.type = "button";
 	retryBtn.id = "retryTestBtn";
 	retryBtn.addEventListener("click", () => {
@@ -1720,13 +1812,16 @@ const CEFR_EXPLORER_DATA = {
 function createCefrExplorer(currentCefr) {
 	const box = createEl("div", "cefr-interactive-box");
 	box.id = "cefrExplorerBox";
-	box.appendChild(
+	const cefrHeading = createEl("h3", "");
+	cefrHeading.append(
+		createIconSvg("bar-chart-3"),
 		createEl(
-			"h3",
+			"span",
 			"",
-			"📊 Bảng Định Lượng Giờ Học & Quy Đổi Trình Độ CEFR (0 → 7.5+ IELTS)",
+			"Bảng Định Lượng Giờ Học & Quy Đổi Trình Độ CEFR (0 → 7.5+ IELTS)",
 		),
 	);
+	box.appendChild(cefrHeading);
 	box.appendChild(
 		createEl(
 			"p",
