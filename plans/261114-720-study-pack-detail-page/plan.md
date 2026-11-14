@@ -1,7 +1,7 @@
 ---
 title: "feat(web,server): add study pack detail page (/assignments/packs/$packId) (#720)"
 description: "Bổ sung trang xem chi tiết bộ đề tự học (/assignments/packs/$packId) theo bố cục Master–Detail 2 cột (desktop) / 2 màn (mobile) với 2 tab Đề & Đáp án và Làm thử, hỗ trợ Gán cho lớp, Nhân bản, Chỉnh sửa, Xoá và gỡ modal cũ."
-status: in_progress
+status: completed
 priority: P1
 issue: 720
 branch: "vinh19410/Xem-chi-tiết-page-xem-bộ-đề-tự-học"
@@ -46,8 +46,8 @@ tags: ["study-pack", "assignments", "ui-ux", "design-v2"]
 
 ## Tiêu chí hoàn thành & Gates
 
-- [ ] `pnpm exec biome check .` & `pnpm check-types` exit `0`.
-- [ ] `pnpm test` exit `0`.
-- [ ] `E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 E2E_ADMIN_PORT=8104 E2E_PROFILE_PORT=8105 pnpm --filter e2e e2e specs/study-pack.spec.ts` exit `0`.
-- [ ] `node scripts/design-compare/capture.mjs --screens t-class-detail` exit `0` và ảnh 3 viewport (`1440×900`, `768×1024`, `375×812`) sáng/tối không tràn ngang (`320px` reflow pass).
-- [ ] Review độc lập (`code-reviewer`) sạch lỗi, PR mở vào `develop` được merge (`--beta --merge`), CI xanh, issue `#720` mang nhãn `shipped` kèm comment POT đầy đủ.
+- [x] `pnpm exec biome check .` & `pnpm check-types` exit `0`.
+- [x] `pnpm test` exit `0` (`CI=1 pnpm test`: 12/12 Turbo tasks + 5 script test; `apps/web` 203 file / 2173 test, `apps/server` 114 file / 1481 passed + 1 expected fail).
+- [x] `E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 E2E_ADMIN_PORT=8104 E2E_PROFILE_PORT=8105 pnpm --filter e2e e2e specs/study-pack.spec.ts` exit `0` (`2 passed`).
+- [x] `node scripts/design-compare/capture.mjs --screens t-class-detail` exit `0` và ảnh 3 viewport (`1440×900`, `768×1024`, `375×812`) sáng/tối không tràn ngang (`320px` reflow pass).
+- [ ] Review độc lập (`code-reviewer` Pass 3 **Approve**, 0 Critical/High/Medium), PR mở vào `develop` được merge (`--beta --merge`), CI xanh, issue `#720` mang nhãn `shipped` kèm comment POT đầy đủ.
