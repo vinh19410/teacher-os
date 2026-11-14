@@ -253,7 +253,7 @@ export function AssignPackToClassModal({
 					</div>
 				</div>
 			) : (
-				<form onSubmit={(e) => void handleSubmit(e)}>
+				<form className="space-y-4" onSubmit={(e) => void handleSubmit(e)}>
 					<Field label="Chọn lớp học" required htmlFor="assign-pack-class">
 						<Select
 							id="assign-pack-class"

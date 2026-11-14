@@ -350,7 +350,7 @@ export function StudyPackEditorModal({
 					Đang tải chi tiết bộ đề…
 				</p>
 			) : (
-				<form onSubmit={(e) => void handleSavePack(e)}>
+				<form className="space-y-4" onSubmit={(e) => void handleSavePack(e)}>
 					<Field label="Tiêu đề bộ đề" required htmlFor="pack-title">
 						<Input
 							id="pack-title"

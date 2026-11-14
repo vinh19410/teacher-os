@@ -590,7 +590,10 @@ export function StudyPackDetailRoute() {
 															)}
 														</div>
 														{isSelected && (
-															<Check className="mt-1 size-4 shrink-0 text-primary" />
+															<Check
+																className="mt-1 size-4 shrink-0 text-primary"
+																aria-hidden="true"
+															/>
 														)}
 													</button>
 												</li>
@@ -603,7 +606,8 @@ export function StudyPackDetailRoute() {
 					</aside>
 
 					{/* Right pane: Selected Item Detail Viewer */}
-					<main
+					<section
+						aria-label="Chi tiết buổi học"
 						className={cn(
 							mobileShowDetail ? "block" : "hidden lg:block",
 							"min-w-0 space-y-4",
@@ -661,7 +665,7 @@ export function StudyPackDetailRoute() {
 								</p>
 							</Card>
 						)}
-					</main>
+					</section>
 				</div>
 			)}
 
