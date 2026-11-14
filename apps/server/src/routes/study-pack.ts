@@ -27,6 +27,8 @@ import {
 	buildStudyPackItemInsertStatements,
 	D1_PACK_ITEM_INSERT_CHUNK,
 	loadStudyPackDetailFromRow,
+	loadStudyPackItemDetail,
+	loadStudyPackItemWithAudio,
 	loadStudyPackSummaries,
 	validateStudyPackItems,
 } from "../lib/study-pack-clone";
@@ -121,6 +123,24 @@ export function studyPackRoutes(deps: {
 		return streamStudyPackAudio(row.audioUrl, deps.fetchExternalAudio);
 	});
 
+	async function findReadableStudyPack(
+		db: Db,
+		packId: string,
+		orgId: string,
+	): Promise<typeof studyPack.$inferSelect | null> {
+		const [row] = await db
+			.select()
+			.from(studyPack)
+			.where(eq(studyPack.id, packId));
+		if (
+			!row ||
+			(row.orgId !== orgId && !(row.orgId === null && row.status === "ready"))
+		) {
+			return null;
+		}
+		return row;
+	}
+
 	routes.get("/study-packs/:id", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
@@ -128,17 +148,53 @@ export function studyPackRoutes(deps: {
 
 		const db = deps.getDb();
 		const id = c.req.param("id");
-		const [row] = await db.select().from(studyPack).where(eq(studyPack.id, id));
-		if (
-			!row ||
-			(row.orgId !== ctx.orgId &&
-				!(row.orgId === null && row.status === "ready"))
-		) {
+		const row = await findReadableStudyPack(db, id, ctx.orgId);
+		if (!row) {
 			return c.json({ error: "study pack not found" }, 404);
 		}
 
 		const pack = await loadStudyPackDetailFromRow(db, row);
 		return c.json({ pack });
+	});
+
+	routes.get("/study-packs/:packId/items/:itemId", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		if (!canReviewGrade(ctx.role)) return forbidden(c);
+
+		const db = deps.getDb();
+		const packId = c.req.param("packId");
+		const itemId = c.req.param("itemId");
+		const packRow = await findReadableStudyPack(db, packId, ctx.orgId);
+		if (!packRow) {
+			return c.json({ error: "study pack not found" }, 404);
+		}
+
+		const item = await loadStudyPackItemDetail(db, packId, itemId);
+		if (!item) {
+			return c.json({ error: "study pack item not found" }, 404);
+		}
+		return c.json({ item });
+	});
+
+	routes.get("/study-packs/:packId/items/:itemId/audio", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		if (!canReviewGrade(ctx.role)) return forbidden(c);
+
+		const db = deps.getDb();
+		const packId = c.req.param("packId");
+		const itemId = c.req.param("itemId");
+		const packRow = await findReadableStudyPack(db, packId, ctx.orgId);
+		if (!packRow) {
+			return c.json({ error: "study pack not found" }, 404);
+		}
+
+		const resolved = await loadStudyPackItemWithAudio(db, packId, itemId);
+		if (!resolved?.audioUrl) {
+			return c.json({ error: "audio not found" }, 404);
+		}
+		return streamStudyPackAudio(resolved.audioUrl, deps.fetchExternalAudio);
 	});
 
 	routes.post("/study-packs", async (c) => {

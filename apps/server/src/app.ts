@@ -331,6 +331,7 @@ export function buildApp(deps: AppDeps) {
 		"/api/materials/:id/file",
 		"/api/student/classes/:classId/sessions/:date/materials/:materialId/file",
 		"/api/study-packs/exercises/:id/audio",
+		"/api/study-packs/:packId/items/:itemId/audio",
 		"/api/assignments/prompts/:id/audio",
 	]) {
 		app.use(path, async (c, next) => {
