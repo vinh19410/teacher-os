@@ -324,6 +324,7 @@ export function buildApp(deps: AppDeps) {
 		"/api/student/assignments/:assignmentId/audio",
 		"/api/grading/:attemptId/media",
 		"/api/placement-test/audio/:id",
+		"/api/leads/:id/placement-submission/media",
 		"/api/exam-imports/:id/file",
 		"/api/admin/library/tests/:testId/parts/:slot/audio",
 		"/api/student/vocab/audio/:wordId",

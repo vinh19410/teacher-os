@@ -491,6 +491,13 @@
       "when": 1794587185160,
       "tag": "0069_study_pack_level_listening",
       "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "6",
+      "when": 1794688947697,
+      "tag": "0070_giant_shinobi_shaw",
+      "breakpoints": true
     }
   ]
 }

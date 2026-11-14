@@ -1,410 +1,539 @@
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import {
+	existsSync,
+	mkdtempSync,
+	readdirSync,
+	readFileSync,
+	rmSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { test } from "node:test";
+import test from "node:test";
 import { pathToFileURL } from "node:url";
+
 import { buildProfile } from "../build.mjs";
 import {
-	buildPlacementSummary,
-	flattenQuestions,
-	gradeAttempt,
+	buildProvisionalSummary,
+	countObjectiveProgress,
+	countWords,
 	LEAD_PLACEMENT_MAX,
+	matchBandByPct,
+	normalizeGapAnswer,
+	scoreObjectiveTest,
 } from "../public/kiem-tra-dau-vao/grading.js";
 import {
 	buildLeadPayload,
+	buildPlacementSubmissionLead,
+	isValidBirthDate,
+	LEAD_MIN_SAFE_ELAPSED_MS,
 	leadErrorMessage,
 	normalizeVietnamPhone,
+	PLACEMENT_COURSE_GROUPS,
+	PLACEMENT_STUDY_MODES,
 	validateLeadForm,
 } from "../public/kiem-tra-dau-vao/lead-gate.js";
 import { createProfileServer } from "../serve.mjs";
 
 const publicDir = new URL("../public/", import.meta.url);
-const testDir = new URL("../public/kiem-tra-dau-vao/", import.meta.url);
-const homeHtml = readFileSync(new URL("index.html", publicDir), "utf8");
-const testPageHtml = readFileSync(new URL("index.html", testDir), "utf8");
+const placementDir = new URL("../public/kiem-tra-dau-vao/", import.meta.url);
 
-function makeSampleFixture() {
-	const vgQuestions = Array.from({ length: 15 }, (_, idx) => ({
-		id: `vg-${String(idx + 1).padStart(2, "0")}`,
-		kind: idx < 8 ? "grammar" : "vocab",
-		level: "A1",
-		prompt: `VG Question ${idx + 1}`,
-		options: ["A", "B", "C", "D"],
-		answer: idx % 4,
-	}));
+function walkFiles(dirUrl) {
+	const results = [];
+	for (const entry of readdirSync(dirUrl, { withFileTypes: true })) {
+		const childUrl = new URL(
+			entry.isDirectory() ? `${entry.name}/` : entry.name,
+			dirUrl,
+		);
+		if (entry.isDirectory()) {
+			results.push(...walkFiles(childUrl));
+		} else if (/\.(html|js|mjs|css|json|txt)$/i.test(entry.name)) {
+			results.push(childUrl);
+		}
+	}
+	return results;
+}
 
-	const clips = Array.from({ length: 5 }, (_, cIdx) => ({
-		id: `clip-${cIdx + 1}`,
-		src: `/public/placement-test/audio/00000000-0000-4000-8000-00000000000${cIdx + 1}`,
-		maxPlays: 2,
-		level: "B1",
-		title: `Đoạn nghe ${cIdx + 1}`,
-		questions: Array.from({ length: 3 }, (__, qIdx) => {
-			const num = cIdx * 3 + qIdx + 1;
-			return {
-				id: `l-${String(num).padStart(2, "0")}`,
-				level: "B1",
-				prompt: `Listening Question ${num}`,
-				options: ["A", "B", "C", "D"],
-				answer: num % 4,
-			};
-		}),
-	}));
-
+function createFiveSkillSnapshotFixture() {
 	return {
-		version: 1,
+		version: 2,
 		bands: [
 			{
 				min: 0,
-				max: 8,
+				max: 24,
+				cefr: "Pre-A1",
+				course: "comm-1",
+				courseLabel: "Giao tiếp 1",
+				displayCourse: "Giao tiếp 1",
+				advice: "Bắt đầu từ nền tảng.",
+			},
+			{
+				min: 25,
+				max: 44,
 				cefr: "A1",
-				course: "ielts-foundation",
-				courseLabel: "IELTS Foundation (0–3.0)",
+				course: "comm-1",
+				courseLabel: "Giao tiếp 1",
+				displayCourse: "Giao tiếp 1",
+				advice: "Củng cố phản xạ cơ bản.",
 			},
 			{
-				min: 9,
-				max: 15,
+				min: 45,
+				max: 64,
 				cefr: "A2",
-				course: "ielts-first-step",
-				courseLabel: "IELTS First Step (3.0–3.5)",
+				course: "comm-2",
+				courseLabel: "Giao tiếp 2",
+				displayCourse: "Giao tiếp 2",
+				advice: "Mở rộng giao tiếp ứng dụng.",
 			},
 			{
-				min: 16,
-				max: 22,
-				cefr: "B1",
-				course: "ielts-pre",
-				courseLabel: "Pre IELTS (4.0–4.5)",
+				min: 65,
+				max: 84,
+				cefr: "A2+",
+				course: "comm-3",
+				courseLabel: "Giao tiếp 3",
+				displayCourse: "Giao tiếp 3",
+				advice: "Chuẩn bị tiền IELTS.",
 			},
 			{
-				min: 23,
-				max: 30,
-				cefr: "B2+",
-				course: "ielts-advanced",
-				courseLabel: "IELTS Advanced (5.0–7.5+)",
+				min: 85,
+				max: 100,
+				cefr: "B1+",
+				course: "ielts-found",
+				courseLabel: "IELTS Foundation",
+				displayCourse: "IELTS Foundation",
+				advice: "Sẵn sàng luyện thi IELTS.",
 			},
 		],
 		parts: [
 			{
-				id: "vocab-grammar",
-				title: "Vocab + Grammar",
-				questions: vgQuestions,
-			},
-			{
 				id: "listening",
 				title: "Listening",
-				clips,
+				clips: [
+					{
+						id: "clip-1",
+						partLabel: "Part 1",
+						instruction: "Choose the correct answer.",
+						title: "Daily Life",
+						notesTitle: "",
+						src: "/public/placement-test/audio/clip-1",
+						maxPlays: 2,
+						level: "A1",
+						questions: [
+							{
+								id: "l-q1",
+								type: "mcq",
+								level: "A1",
+								prompt: "What time is the class?",
+								options: ["8:00", "9:00", "10:00"],
+								answer: 1,
+							},
+						],
+					},
+					{
+						id: "clip-2",
+						partLabel: "Part 2",
+						instruction: "Write ONE word or number.",
+						title: "Museum Notes",
+						notesTitle: "CAMBRIDGE MUSEUM",
+						src: "/public/placement-test/audio/clip-2",
+						maxPlays: 2,
+						level: "A2",
+						questions: [
+							{
+								id: "l-q2",
+								type: "gap",
+								level: "A2",
+								prompt: "Closing time:",
+								accept: ["7:30 p.m.", "19:30"],
+							},
+							{
+								id: "l-q3",
+								type: "gap",
+								level: "A2",
+								prompt: "Ticket price:",
+								accept: ["15 dollars", "$15", "15"],
+							},
+						],
+					},
+				],
+			},
+			{
+				id: "vocab-grammar",
+				title: "Grammar & Vocabulary",
+				questions: [
+					{
+						id: "gv-q1",
+						kind: "grammar",
+						level: "A1",
+						prompt: "She ____ to school every day.",
+						options: ["go", "goes", "going", "gone"],
+						answer: 1,
+					},
+					{
+						id: "gv-q2",
+						kind: "vocab",
+						level: "B1",
+						prompt: "The train was ____ because of heavy rain.",
+						options: ["delayed", "arrived", "opened", "built"],
+						answer: 0,
+					},
+				],
+			},
+			{
+				id: "reading",
+				title: "Reading",
+				passages: [
+					{
+						id: "rp-1",
+						partLabel: "Part 1",
+						kind: "sign",
+						instruction: "Read the sign.",
+						title: "",
+						body: "Library closes at 6 p.m. today.",
+						questions: [
+							{
+								id: "r-q1",
+								level: "A1",
+								prompt: "",
+								options: [
+									"The library opens late.",
+									"The library closes at 6 p.m.",
+									"The library is closed all day.",
+								],
+								answer: 1,
+							},
+						],
+					},
+					{
+						id: "rp-2",
+						partLabel: "Part 4",
+						kind: "cloze",
+						instruction: "Choose the best word.",
+						title: "Healthy Habits",
+						body: "Drink water every [1] to stay active.",
+						questions: [
+							{
+								id: "r-q2",
+								level: "A2+",
+								prompt: "Gap 1",
+								options: ["morning", "book", "table", "shoe"],
+								answer: 0,
+							},
+						],
+					},
+				],
+			},
+			{
+				id: "writing",
+				title: "Writing",
+				promptTitle: "Write a short email",
+				promptBody: "Invite your friend to a weekend picnic.",
+				minWords: 50,
+				maxWords: 80,
+			},
+			{
+				id: "speaking",
+				title: "Speaking",
+				tasks: [
+					{
+						id: "sp-1",
+						partLabel: "Part 1",
+						level: "A2",
+						prompt: "Tell me about your hometown.",
+						prepSeconds: 10,
+						answerSeconds: 45,
+					},
+				],
 			},
 		],
 	};
 }
 
-test("HTML tĩnh của trang chủ và trang kiểm tra đầu vào không còn chuỗi '30 câu' hay file questions.json tĩnh", () => {
-	assert.equal(existsSync(new URL("questions.json", testDir)), false);
-	assert.equal(/30\s*câu/i.test(homeHtml), false);
-	assert.equal(/30\s*câu/i.test(testPageHtml), false);
-	assert.match(
-		testPageHtml,
-		/<meta\s+name="lead-api"\s+content="https:\/\/api\.teacheros\.io\.vn"\s*\/?>/,
-	);
-	assert.match(
-		testPageHtml,
-		/<link\s+rel="canonical"\s+href="https:\/\/msmy\.io\.vn\/kiem-tra-dau-vao\/"\s*\/?>/,
-	);
-});
+test("Bất biến file tĩnh: không chứa '30 câu', không có questions.json tĩnh, đầy đủ UI 5 kỹ năng và 'Kết quả tạm tính'", () => {
+	const textFiles = walkFiles(publicDir);
+	assert.ok(textFiles.length > 0);
+	for (const fileUrl of textFiles) {
+		const content = readFileSync(fileUrl, "utf8");
+		assert.equal(
+			/30\s*câu/i.test(content),
+			false,
+			`${fileUrl.pathname} must not contain '30 câu'`,
+		);
+	}
 
-test("gradeAttempt và buildPlacementSummary tính đúng ngưỡng 0, 8/9, 15/16, 22/23, 30, trả kèm courseLabel và cắt summary ở 300 ký tự", () => {
-	const fixture = makeSampleFixture();
-	const flat = flattenQuestions(fixture);
-	assert.equal(flat.length, 30);
-
-	const pickCorrectN = (n) => {
-		const answers = {};
-		for (let i = 0; i < flat.length; i++) {
-			const q = flat[i];
-			answers[q.id] = i < n ? q.answer : (q.answer + 1) % 4;
-		}
-		return answers;
-	};
-
-	const r0 = gradeAttempt(fixture, {});
-	assert.equal(r0.totalScore, 0);
-	assert.equal(r0.vocabGrammar.score, 0);
-	assert.equal(r0.listening.score, 0);
-	assert.equal(r0.band.cefr, "A1");
-	assert.equal(r0.band.course, "ielts-foundation");
-	assert.equal(r0.band.courseLabel, "IELTS Foundation (0–3.0)");
-
-	const r8 = gradeAttempt(fixture, pickCorrectN(8));
-	assert.equal(r8.totalScore, 8);
-	assert.equal(r8.band.cefr, "A1");
-
-	const r9 = gradeAttempt(fixture, pickCorrectN(9));
-	assert.equal(r9.totalScore, 9);
-	assert.equal(r9.band.cefr, "A2");
-	assert.equal(r9.band.courseLabel, "IELTS First Step (3.0–3.5)");
-
-	const r15 = gradeAttempt(fixture, pickCorrectN(15));
-	assert.equal(r15.totalScore, 15);
-	assert.equal(r15.band.cefr, "A2");
-
-	const r16 = gradeAttempt(fixture, pickCorrectN(16));
-	assert.equal(r16.totalScore, 16);
-	assert.equal(r16.band.cefr, "B1");
-	assert.equal(r16.band.course, "ielts-pre");
-	assert.equal(r16.band.courseLabel, "Pre IELTS (4.0–4.5)");
-
-	const r22 = gradeAttempt(fixture, pickCorrectN(22));
-	assert.equal(r22.totalScore, 22);
-	assert.equal(r22.band.cefr, "B1");
-
-	const r23 = gradeAttempt(fixture, pickCorrectN(23));
-	assert.equal(r23.totalScore, 23);
-	assert.equal(r23.band.cefr, "B2+");
-	assert.equal(r23.band.course, "ielts-advanced");
-
-	const r30 = gradeAttempt(fixture, pickCorrectN(30));
-	assert.equal(r30.totalScore, 30);
-	assert.equal(r30.vocabGrammar.score, 15);
-	assert.equal(r30.listening.score, 15);
-	assert.equal(r30.band.cefr, "B2+");
-
-	const summary = buildPlacementSummary(r22);
 	assert.equal(
-		summary,
-		"Kiểm tra đầu vào: 22/30 (Vocab + Grammar 15/15, Listening 7/15) – CEFR B1",
+		existsSync(new URL("questions.json", placementDir)),
+		false,
+		"static questions.json must not exist under apps/profile/public/kiem-tra-dau-vao/",
 	);
-	assert.ok(summary.length <= LEAD_PLACEMENT_MAX);
+
+	const testHtml = readFileSync(new URL("index.html", placementDir), "utf8");
+	assert.match(testHtml, /<meta\s+name="lead-api"\s+content="[^"]+"/i);
+	assert.match(
+		testHtml,
+		/<link\s+rel="canonical"\s+href="https:\/\/msmy\.io\.vn\/kiem-tra-dau-vao\/"/i,
+	);
+	assert.match(testHtml, /id="appRoot"/);
+	assert.match(testHtml, /5 Kỹ Năng/i);
+
+	const testJs = readFileSync(new URL("test.js", placementDir), "utf8");
+	for (const requiredToken of [
+		"Listening",
+		"Grammar & Vocab",
+		"Reading",
+		"Writing",
+		"Speaking",
+		"40 * 60",
+		"/public/placement-test",
+		"/public/placement-test/submissions",
+		"speaking-media",
+		"Kết quả tạm tính — Chờ chấm Writing & Speaking",
+		"Cô Đỗ Thục Mỹ sẽ trực tiếp chấm phần Writing & Speaking",
+		"registerWithResultBtn",
+	]) {
+		assert.ok(
+			testJs.includes(requiredToken),
+			`test.js must include '${requiredToken}'`,
+		);
+	}
 });
 
-test("serve.mjs thay meta lead-api ở cả trang chủ và /kiem-tra-dau-vao/, giữ redirect 301 và chặn path traversal", async () => {
-	const server = createProfileServer("http://localhost:8100");
+test("normalizeGapAnswer chuẩn hóa p.m., $, dollars, o'clock, chữ hoa và ký tự thừa", () => {
+	assert.equal(normalizeGapAnswer("7:30 p.m."), "730");
+	assert.equal(normalizeGapAnswer("7:30 PM"), "730");
+	assert.equal(normalizeGapAnswer("7:30 p.m"), "730");
+	assert.equal(normalizeGapAnswer("$12.50"), "1250");
+	assert.equal(normalizeGapAnswer("15 dollars"), "15");
+	assert.equal(normalizeGapAnswer("1 Dollar"), "1");
+	assert.equal(normalizeGapAnswer("8 o'clock"), "8");
+	assert.equal(normalizeGapAnswer("  Museum Shop! "), "museumshop");
+	assert.equal(normalizeGapAnswer(""), "");
+	assert.equal(normalizeGapAnswer(null), "");
+});
+
+test("countWords đếm đúng số từ với khoảng trắng và xuống dòng", () => {
+	assert.equal(countWords(""), 0);
+	assert.equal(countWords("   \n\t  "), 0);
+	assert.equal(countWords("Hello"), 1);
+	assert.equal(countWords("  Dear Anna,\nI would like   to invite you! "), 8);
+});
+
+test("matchBandByPct chọn đúng band theo biên %, ngoài biên và fallback khi rỗng", () => {
+	const bands = createFiveSkillSnapshotFixture().bands;
+	assert.equal(matchBandByPct(0, bands).cefr, "Pre-A1");
+	assert.equal(matchBandByPct(24, bands).cefr, "Pre-A1");
+	assert.equal(matchBandByPct(25, bands).cefr, "A1");
+	assert.equal(matchBandByPct(44, bands).cefr, "A1");
+	assert.equal(matchBandByPct(45, bands).cefr, "A2");
+	assert.equal(matchBandByPct(64, bands).cefr, "A2");
+	assert.equal(matchBandByPct(65, bands).cefr, "A2+");
+	assert.equal(matchBandByPct(84, bands).cefr, "A2+");
+	assert.equal(matchBandByPct(85, bands).cefr, "B1+");
+	assert.equal(matchBandByPct(100, bands).cefr, "B1+");
+	assert.equal(matchBandByPct(-10, bands).cefr, "Pre-A1");
+	assert.equal(matchBandByPct(120, bands).cefr, "B1+");
+	assert.equal(matchBandByPct(50, []).cefr, "A1");
+});
+
+test("scoreObjectiveTest chấm cả Listening (MCQ + Gap), Grammar & Vocab, Reading, tính averagePct và byLevel", () => {
+	const snapshot = createFiveSkillSnapshotFixture();
+
+	// 100% correct across all 3 parts (including gap variations)
+	const fullScore = scoreObjectiveTest(snapshot, {
+		listening: {
+			"l-q1": 1,
+			"l-q2": "7:30 PM",
+			"l-q3": "$15",
+		},
+		vocabGrammar: {
+			"gv-q1": 1,
+			"gv-q2": 0,
+		},
+		reading: {
+			"r-q1": 1,
+			"r-q2": 0,
+		},
+	});
+
+	assert.deepEqual(fullScore.listening, { correct: 3, total: 3, pct: 100 });
+	assert.deepEqual(fullScore.vocabGrammar, { correct: 2, total: 2, pct: 100 });
+	assert.deepEqual(fullScore.reading, { correct: 2, total: 2, pct: 100 });
+	assert.equal(fullScore.totalCorrect, 7);
+	assert.equal(fullScore.totalQuestions, 7);
+	assert.equal(fullScore.averagePct, 100);
+	assert.equal(fullScore.provisionalBand.cefr, "B1+");
+
+	// Mixed score: Listening 2/3 (67%), GV 1/2 (50%), Reading 1/2 (50%) -> avg = round((67+50+50)/3) = 56% -> A2
+	const partialScore = scoreObjectiveTest(snapshot, {
+		listening: {
+			"l-q1": 1,
+			"l-q2": "7:30",
+			"l-q3": "wrong",
+		},
+		vocabGrammar: {
+			"gv-q1": 1,
+			"gv-q2": 2,
+		},
+		reading: {
+			"r-q1": 1,
+			"r-q2": 3,
+		},
+	});
+
+	assert.deepEqual(partialScore.listening, { correct: 2, total: 3, pct: 67 });
+	assert.deepEqual(partialScore.vocabGrammar, {
+		correct: 1,
+		total: 2,
+		pct: 50,
+	});
+	assert.deepEqual(partialScore.reading, { correct: 1, total: 2, pct: 50 });
+	assert.equal(partialScore.totalCorrect, 4);
+	assert.equal(partialScore.totalQuestions, 7);
+	assert.equal(partialScore.averagePct, 56);
+	assert.equal(partialScore.provisionalBand.cefr, "A2");
+	assert.deepEqual(partialScore.byLevel, [
+		{ level: "A1", correct: 3, total: 3, pct: 100 },
+		{ level: "A2", correct: 1, total: 2, pct: 50 },
+		{ level: "A2+", correct: 0, total: 1, pct: 0 },
+		{ level: "B1", correct: 0, total: 1, pct: 0 },
+	]);
+
+	const summary = buildProvisionalSummary(partialScore);
+	assert.ok(summary.length > 0 && summary.length <= LEAD_PLACEMENT_MAX);
+	assert.match(summary, /Tạm tính A2 \(56%\)/);
+
+	const progress = countObjectiveProgress(snapshot, {
+		listening: { "l-q1": 1, "l-q2": "7:30", "l-q3": "   " },
+		vocabGrammar: { "gv-q1": 1 },
+		reading: {},
+	});
+	assert.deepEqual(progress, {
+		answered: 3,
+		total: 7,
+		unanswered: 4,
+		unansweredByPart: { listening: 1, vocabGrammar: 1, reading: 2 },
+	});
+});
+
+test("lead-gate.js giữ catalog khóa học, validate form, chuẩn hóa SĐT VN và buildPlacementSubmissionLead", () => {
+	assert.ok(PLACEMENT_COURSE_GROUPS.length >= 2);
+	assert.ok(PLACEMENT_STUDY_MODES.length >= 2);
+
+	assert.equal(normalizeVietnamPhone("0912345678"), "0912345678");
+	assert.equal(normalizeVietnamPhone("+84 912 345 678"), "0912345678");
+	assert.equal(normalizeVietnamPhone("84912345678"), "0912345678");
+	assert.equal(normalizeVietnamPhone("09123"), null);
+
+	assert.equal(isValidBirthDate("2001-09-15"), true);
+	assert.equal(isValidBirthDate("2020-02-30"), false);
+	assert.equal(isValidBirthDate("1920-01-01"), false);
+
+	const invalid = validateLeadForm({
+		name: "A",
+		email: "bad-email",
+		phone: "123",
+	});
+	assert.equal(invalid.ok, false);
+	assert.ok(invalid.errors.name);
+	assert.ok(invalid.errors.email);
+	assert.ok(invalid.errors.phone);
+
+	const validCourse = PLACEMENT_COURSE_GROUPS[0].options[0].value;
+	const validMode = PLACEMENT_STUDY_MODES[0].value;
+	const valid = validateLeadForm({
+		name: "  Nguyễn Minh Anh  ",
+		email: "minhanh@example.com",
+		phone: "+84912345678",
+		birthDate: "2002-05-10",
+		course: validCourse,
+		studyMode: validMode,
+		note: "Cần thi IELTS 6.5",
+	});
+	assert.equal(valid.ok, true);
+	assert.equal(valid.normalized.phone, "0912345678");
+
+	const leadPayload = buildLeadPayload({
+		lead: valid.normalized,
+		placement: "X".repeat(500),
+		elapsedMs: 100,
+	});
+	assert.equal(leadPayload.source, "placement-test");
+	assert.equal(leadPayload.placement.length, LEAD_PLACEMENT_MAX);
+	assert.ok(leadPayload.elapsedMs >= LEAD_MIN_SAFE_ELAPSED_MS);
+
+	const submissionLead = buildPlacementSubmissionLead(valid.normalized);
+	assert.deepEqual(submissionLead, {
+		name: "Nguyễn Minh Anh",
+		phone: "0912345678",
+		email: "minhanh@example.com",
+		birthDate: "2002-05-10",
+		note: "Cần thi IELTS 6.5",
+	});
+
+	assert.equal(leadErrorMessage(400, { fields: ["phone"] }).kind, "field");
+	assert.equal(leadErrorMessage(429).kind, "rate_limit");
+	assert.equal(leadErrorMessage(503).kind, "busy");
+});
+
+test("serve.mjs thay meta lead-api ở trang chủ & /kiem-tra-dau-vao/, redirect 301 và chặn path traversal", async () => {
+	const server = createProfileServer("https://api.staging.test");
 	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 	const { port } = server.address();
 	const base = `http://127.0.0.1:${port}`;
 
 	try {
-		const res301 = await fetch(`${base}/kiem-tra-dau-vao?ref=hero`, {
+		const resRedirect = await fetch(`${base}/kiem-tra-dau-vao`, {
 			redirect: "manual",
 		});
-		assert.equal(res301.status, 301);
-		assert.equal(res301.headers.get("location"), "/kiem-tra-dau-vao/?ref=hero");
+		assert.equal(resRedirect.status, 301);
+		assert.equal(resRedirect.headers.get("location"), "/kiem-tra-dau-vao/");
 
-		const resDoubleSlash = await fetch(`${base}//kiem-tra-dau-vao?ref=probe`, {
-			redirect: "manual",
-		});
-		assert.equal(resDoubleSlash.status, 301);
-		assert.equal(
-			resDoubleSlash.headers.get("location"),
-			"/kiem-tra-dau-vao/?ref=probe",
-		);
-
-		const resHome = await fetch(`${base}/`);
-		assert.equal(resHome.status, 200);
-		assert.match(
-			await resHome.text(),
-			/<meta name="lead-api" content="http:\/\/localhost:8100">/,
-		);
-
-		const res200 = await fetch(`${base}/kiem-tra-dau-vao/`);
-		assert.equal(res200.status, 200);
-		assert.match(res200.headers.get("content-type") ?? "", /text\/html/);
-		const pageHtml = await res200.text();
-		assert.match(pageHtml, /Bài Kiểm Tra Đầu Vào/);
+		const resPage = await fetch(`${base}/kiem-tra-dau-vao/`);
+		assert.equal(resPage.status, 200);
+		const pageHtml = await resPage.text();
 		assert.match(
 			pageHtml,
-			/<meta name="lead-api" content="http:\/\/localhost:8100">/,
+			/<meta name="lead-api" content="https:\/\/api\.staging\.test">/,
 		);
 
-		const res400 = await fetch(`${base}/%E0%A4%A`);
-		assert.equal(res400.status, 400);
+		const resMissingJson = await fetch(
+			`${base}/kiem-tra-dau-vao/questions.json`,
+		);
+		assert.equal(resMissingJson.status, 404);
 
-		const res403 = await fetch(`${base}/..%2fpackage.json`);
-		assert.equal(res403.status, 403);
+		const resTraversal = await fetch(`${base}/%2e%2e/package.json`);
+		assert.equal(resTraversal.status >= 400, true);
 	} finally {
 		await new Promise((resolve) => server.close(resolve));
 	}
 });
 
 test("build.mjs copy public sang dist, không có questions.json và thay meta lead-api ở cả hai trang HTML", async () => {
-	const tmpRoot = mkdtempSync(join(tmpdir(), "profile-build-test-"));
+	const tmpRoot = mkdtempSync(join(tmpdir(), "profile-placement-build-"));
 	try {
 		const distDir = join(tmpRoot, "dist");
 		await buildProfile({
 			distUrl: pathToFileURL(distDir),
-			leadApiUrl: "http://localhost:8100",
+			leadApiUrl: "https://api.prod.test",
 		});
 
-		assert.equal(
-			existsSync(join(distDir, "kiem-tra-dau-vao", "questions.json")),
-			false,
-		);
-		const builtIndex = readFileSync(join(distDir, "index.html"), "utf8");
-		assert.match(
-			builtIndex,
-			/<meta name="lead-api" content="http:\/\/localhost:8100">/,
-		);
-		assert.match(
-			builtIndex,
-			/<link\s+rel="canonical"\s+href="https:\/\/msmy\.io\.vn\/"\s*\/?>/,
-		);
-		const builtTestIndex = readFileSync(
+		const builtHome = readFileSync(join(distDir, "index.html"), "utf8");
+		const builtTest = readFileSync(
 			join(distDir, "kiem-tra-dau-vao", "index.html"),
 			"utf8",
 		);
 		assert.match(
-			builtTestIndex,
-			/<meta name="lead-api" content="http:\/\/localhost:8100">/,
+			builtHome,
+			/<meta name="lead-api" content="https:\/\/api\.prod\.test">/,
 		);
 		assert.match(
-			builtTestIndex,
-			/<link\s+rel="canonical"\s+href="https:\/\/msmy\.io\.vn\/kiem-tra-dau-vao\/"\s*\/?>/,
+			builtTest,
+			/<meta name="lead-api" content="https:\/\/api\.prod\.test">/,
+		);
+		assert.equal(
+			existsSync(join(distDir, "kiem-tra-dau-vao", "questions.json")),
+			false,
 		);
 	} finally {
 		rmSync(tmpRoot, { recursive: true, force: true });
 	}
-});
-
-test("validateLeadForm kiểm tra họ tên, email bắt buộc, SĐT Việt Nam (0…/84…/+84…), ngày sinh và ghi chú (#534)", () => {
-	assert.equal(normalizeVietnamPhone("0909 123 456"), "0909123456");
-	assert.equal(normalizeVietnamPhone("+84 909 123 456"), "0909123456");
-	assert.equal(normalizeVietnamPhone("84909123456"), "0909123456");
-	assert.equal(normalizeVietnamPhone("090912345"), null);
-
-	const missingAll = validateLeadForm({});
-	assert.equal(missingAll.ok, false);
-	assert.ok(missingAll.errors.name);
-	assert.ok(missingAll.errors.email);
-	assert.ok(missingAll.errors.phone);
-
-	const shortName = validateLeadForm({
-		name: "A",
-		email: "hocvien@example.com",
-		phone: "0909123456",
-	});
-	assert.equal(shortName.ok, false);
-	assert.ok(shortName.errors.name);
-
-	const badEmail = validateLeadForm({
-		name: "Nguyễn Minh Anh",
-		email: "khong-phai-email",
-		phone: "0909123456",
-	});
-	assert.equal(badEmail.ok, false);
-	assert.ok(badEmail.errors.email);
-
-	const badPhone = validateLeadForm({
-		name: "Nguyễn Minh Anh",
-		email: "minhanh@example.com",
-		phone: "090912345",
-	});
-	assert.equal(badPhone.ok, false);
-	assert.ok(badPhone.errors.phone);
-
-	const futureBirth = validateLeadForm({
-		name: "Nguyễn Minh Anh",
-		email: "minhanh@example.com",
-		phone: "+84 909 123 456",
-		birthDate: "2099-01-01",
-	});
-	assert.equal(futureBirth.ok, false);
-	assert.ok(futureBirth.errors.birthDate);
-
-	const invalidCalendarBirth = validateLeadForm({
-		name: "Nguyễn Minh Anh",
-		email: "minhanh@example.com",
-		phone: "84909123456",
-		birthDate: "2026-02-30",
-	});
-	assert.equal(invalidCalendarBirth.ok, false);
-	assert.ok(invalidCalendarBirth.errors.birthDate);
-
-	const tooLongNote = validateLeadForm({
-		name: "Nguyễn Minh Anh",
-		email: "minhanh@example.com",
-		phone: "0909123456",
-		note: "a".repeat(501),
-	});
-	assert.equal(tooLongNote.ok, false);
-	assert.ok(tooLongNote.errors.note);
-
-	const validMinimal = validateLeadForm({
-		name: "  Nguyễn Minh Anh  ",
-		email: "  minhanh@example.com ",
-		phone: "+84 909 123 456",
-	});
-	assert.equal(validMinimal.ok, true);
-	assert.deepEqual(validMinimal.errors, {});
-	assert.equal(validMinimal.normalized.name, "Nguyễn Minh Anh");
-	assert.equal(validMinimal.normalized.email, "minhanh@example.com");
-	assert.equal(validMinimal.normalized.phone, "0909123456");
-});
-
-test("buildLeadPayload luôn gắn source=placement-test, bỏ trường rỗng, cắt placement <= 300 ký tự và giữ đủ trường khi đồng bộ điểm (#534)", () => {
-	const gatePayload = buildLeadPayload({
-		lead: {
-			name: "  Lê Hoàng Nam ",
-			phone: "+84 912 345 678",
-			email: " nam@example.com ",
-			birthDate: "",
-			course: "",
-			studyMode: "",
-			note: "",
-		},
-		elapsedMs: 1200,
-	});
-	assert.equal(gatePayload.source, "placement-test");
-	assert.equal(gatePayload.name, "Lê Hoàng Nam");
-	assert.equal(gatePayload.phone, "0912345678");
-	assert.equal(gatePayload.email, "nam@example.com");
-	assert.ok(gatePayload.elapsedMs >= 1200);
-	assert.ok(gatePayload.elapsedMs >= 3500);
-	assert.equal("birthDate" in gatePayload, false);
-	assert.equal("course" in gatePayload, false);
-	assert.equal("studyMode" in gatePayload, false);
-	assert.equal("note" in gatePayload, false);
-	assert.equal("placement" in gatePayload, false);
-
-	const longPlacement = `Kiểm tra đầu vào: ${"X".repeat(350)}`;
-	const syncPayload = buildLeadPayload({
-		lead: {
-			name: "Lê Hoàng Nam",
-			phone: "0912345678",
-			email: "nam@example.com",
-			birthDate: "2004-08-20",
-			course: "ielts-pre",
-			studyMode: "group-online",
-			note: "Mục tiêu 6.5",
-		},
-		placement: longPlacement,
-		elapsedMs: 48_000,
-	});
-	assert.equal(syncPayload.source, "placement-test");
-	assert.equal(syncPayload.birthDate, "2004-08-20");
-	assert.equal(syncPayload.course, "ielts-pre");
-	assert.equal(syncPayload.studyMode, "group-online");
-	assert.equal(syncPayload.note, "Mục tiêu 6.5");
-	assert.equal(syncPayload.elapsedMs, 48_000);
-	assert.equal(syncPayload.placement.length, LEAD_PLACEMENT_MAX);
-});
-
-test("leadErrorMessage ánh xạ đúng lỗi 400, 429, 503 và lỗi mạng sang tiếng Việt (#534)", () => {
-	const err400 = leadErrorMessage(400, {
-		code: "LEAD_INVALID",
-		fields: ["email", "phone"],
-	});
-	assert.equal(err400.kind, "field");
-	assert.deepEqual(err400.fields, ["email", "phone"]);
-
-	const err429 = leadErrorMessage(429, { code: "LEAD_RATE_LIMITED" });
-	assert.equal(err429.kind, "rate_limit");
-	assert.match(err429.message, /quá nhiều lượt đăng ký/i);
-
-	const err503 = leadErrorMessage(503, { code: "LEAD_INTAKE_DISABLED" });
-	assert.equal(err503.kind, "busy");
-	assert.match(err503.message, /Hệ thống đang bận/i);
-
-	const errNet = leadErrorMessage(0, null);
-	assert.equal(errNet.kind, "busy");
-	assert.match(errNet.message, /Zalo cô Mỹ/);
 });

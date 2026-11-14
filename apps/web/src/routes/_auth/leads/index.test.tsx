@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { LeadListResponse, LeadRow } from "@teacher-os/api/lead-contracts";
+import type { PlacementSubmissionDetail } from "@teacher-os/api/placement-test-contracts";
 import {
 	cleanup,
 	fireEvent,
@@ -267,5 +268,265 @@ describe("màn /leads (#506 phase 4)", () => {
 		const view = renderRoute();
 		expect(view.container.innerHTML).toBe("");
 		expect(fetchMock).not.toHaveBeenCalled();
+	});
+
+	it("hiển thị badge Chờ chấm W&S, phát media Speaking blob:, preview quy tắc sàn -1 bậc và lưu điểm chấm (#721)", async () => {
+		const sampleSub: PlacementSubmissionDetail = {
+			id: "sub-1",
+			leadId: "lead-1",
+			studentName: "Nguyễn Thu Hà",
+			studentPhone: "0909123456",
+			testVersion: 1,
+			status: "pending_grading",
+			submittedAt: "2026-11-14T10:00:00.000Z",
+			snapshot: {
+				version: 1,
+				bands: [
+					{
+						min: 0,
+						max: 24,
+						cefr: "A1",
+						course: "foundation-core",
+						courseLabel: "Xây Nền Từ Gốc",
+						displayCourse: "Xây Nền Từ Gốc",
+						advice: "",
+					},
+					{
+						min: 25,
+						max: 49,
+						cefr: "A2",
+						course: "comm-1",
+						courseLabel: "Giao tiếp 1",
+						displayCourse: "Giao tiếp 1",
+						advice: "",
+					},
+					{
+						min: 50,
+						max: 74,
+						cefr: "B1",
+						course: "comm-2",
+						courseLabel: "Giao tiếp 2",
+						displayCourse: "Giao tiếp 2",
+						advice: "",
+					},
+					{
+						min: 75,
+						max: 100,
+						cefr: "B2",
+						course: "comm-3",
+						courseLabel: "Giao tiếp 3",
+						displayCourse: "Giao tiếp 3",
+						advice: "Lộ trình B2",
+					},
+				],
+				parts: [
+					{ id: "listening", title: "Listening", clips: [] },
+					{ id: "vocab-grammar", title: "G&V", questions: [] },
+					{ id: "reading", title: "Reading", passages: [] },
+					{
+						id: "writing",
+						title: "Writing",
+						promptTitle: "Email",
+						promptBody: "Write",
+						minWords: 50,
+						maxWords: 80,
+					},
+					{ id: "speaking", title: "Speaking", tasks: [] },
+				],
+			},
+			answers: {
+				listening: { "l-01": 0 },
+				vocabGrammar: { "vg-01": 1 },
+				reading: { "r-01": 2 },
+			},
+			objective: {
+				listening: { correct: 11, total: 13, pct: 85 },
+				vocabGrammar: { correct: 10, total: 12, pct: 83 },
+				reading: { correct: 12, total: 15, pct: 80 },
+				totalCorrect: 33,
+				totalQuestions: 40,
+				averagePct: 83,
+				byLevel: [{ level: "B1", correct: 10, total: 12, pct: 83 }],
+				items: [
+					{
+						id: "l-01",
+						section: "listening",
+						type: "mcq",
+						level: "A2",
+						prompt: "Where?",
+						expected: 0,
+						studentAnswer: 0,
+						correct: true,
+					},
+				],
+				provisionalBand: {
+					min: 75,
+					max: 100,
+					cefr: "B2",
+					course: "comm-3",
+					courseLabel: "Giao tiếp 3",
+					displayCourse: "Giao tiếp 3",
+					advice: "Lộ trình B2",
+				},
+				provisionalSummary: "Tạm tính B2",
+			},
+			writingText: "Hello Sarah, I live in District 1 with my family.",
+			writingWordCount: 10,
+			speakingStatus: "uploaded",
+			speakingMediaUrl: "/api/leads/lead-1/placement-submission/media",
+			speakingMediaMime: "video/webm",
+			speakingMediaSize: 128,
+			speakingDurationSec: 42,
+			writingRubric: null,
+			writingScore: null,
+			speakingRubric: null,
+			speakingScore: null,
+			teacherFeedback: "",
+			finalBandLevel: null,
+			finalCourse: null,
+			finalDisplayCourse: null,
+			finalScorePct: null,
+			finalNote: "",
+			gradedAt: null,
+			zaloText: "ZALO MOCK",
+		};
+
+		const origCreateObjectURL = URL.createObjectURL;
+		const origRevokeObjectURL = URL.revokeObjectURL;
+		const createObjectURLMock = vi.fn(() => "blob:mock-speaking");
+		const revokeObjectURLMock = vi.fn();
+		Object.defineProperty(URL, "createObjectURL", {
+			configurable: true,
+			writable: true,
+			value: createObjectURLMock,
+		});
+		Object.defineProperty(URL, "revokeObjectURL", {
+			configurable: true,
+			writable: true,
+			value: revokeObjectURLMock,
+		});
+		const clipboardWriteMock = vi.fn().mockResolvedValue(undefined);
+		Object.defineProperty(navigator, "clipboard", {
+			configurable: true,
+			value: { writeText: clipboardWriteMock },
+		});
+
+		const listData = seedResponse({
+			rows: [
+				row({
+					source: "placement-test",
+					hasPlacementSubmission: true,
+					placementSubmissionStatus: "pending_grading",
+				}),
+			],
+		});
+
+		let gradePatchBody: unknown = null;
+		fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+			const url = String(input);
+			const method = init?.method ?? "GET";
+			if (url.endsWith("/placement-submission/media")) {
+				return Promise.resolve(
+					new Response(new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]), {
+						status: 200,
+						headers: { "content-type": "video/webm" },
+					}),
+				);
+			}
+			if (url.endsWith("/placement-submission") && method === "GET") {
+				return Promise.resolve(
+					new Response(JSON.stringify(sampleSub), {
+						status: 200,
+						headers: { "content-type": "application/json" },
+					}),
+				);
+			}
+			if (url.endsWith("/placement-submission") && method === "PATCH") {
+				gradePatchBody = JSON.parse(String(init?.body ?? "{}"));
+				return Promise.resolve(
+					new Response(
+						JSON.stringify({
+							...sampleSub,
+							status: "graded",
+							writingScore: 15,
+							speakingScore: 0,
+							finalBandLevel: "A2",
+							finalScorePct: 50,
+						}),
+						{
+							status: 200,
+							headers: { "content-type": "application/json" },
+						},
+					),
+				);
+			}
+			return Promise.resolve(
+				new Response(JSON.stringify(listData), {
+					status: 200,
+					headers: { "content-type": "application/json" },
+				}),
+			);
+		});
+		vi.stubGlobal("fetch", fetchMock);
+
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		render(
+			<QueryClientProvider client={client}>
+				<Leads />
+			</QueryClientProvider>,
+		);
+
+		await screen.findByText("Chờ chấm W&S");
+		fireEvent.click(screen.getByText("Nguyễn Thu Hà"));
+
+		await screen.findByTestId("placement-submission-panel");
+		await waitFor(() => {
+			const player = screen.getByTestId("speaking-media-player");
+			expect(player.tagName).toBe("VIDEO");
+			expect(player.getAttribute("src")).toBe("blob:mock-speaking");
+		});
+
+		// Chấm Writing 5/5/5 (100%) và Speaking 0/0/0/0 (0%, A1) -> trung bình (85+83+80+100+0)/5 = 70% (B1),
+		// Speaking bậc 0 (A1) thấp hơn B1 >= 2 bậc => hạ 1 bậc xuống A2 + cảnh báo speaking-floor-note!
+		fireEvent.click(screen.getByTestId("writing-ct-5"));
+		fireEvent.click(screen.getByTestId("writing-or-5"));
+		fireEvent.click(screen.getByTestId("writing-lg-5"));
+		fireEvent.click(screen.getByTestId("speaking-gv-0"));
+		fireEvent.click(screen.getByTestId("speaking-dm-0"));
+		fireEvent.click(screen.getByTestId("speaking-pr-0"));
+		fireEvent.click(screen.getByTestId("speaking-ic-0"));
+
+		await screen.findByTestId("speaking-floor-note");
+		expect(screen.getByTestId("final-band-preview").textContent).toContain(
+			"A2 (70%)",
+		);
+
+		fireEvent.change(screen.getByLabelText("Nhận xét bài kiểm tra đầu vào"), {
+			target: { value: "Cần luyện nói thêm" },
+		});
+
+		fireEvent.click(screen.getByTestId("copy-zalo-result-btn"));
+		await waitFor(() => expect(clipboardWriteMock).toHaveBeenCalled());
+
+		fireEvent.click(screen.getByTestId("save-placement-grade-btn"));
+		await waitFor(() => expect(gradePatchBody).not.toBeNull());
+		expect(gradePatchBody).toEqual({
+			writingRubric: { ct: 5, or: 5, lg: 5 },
+			speakingRubric: { gv: 0, dm: 0, pr: 0, ic: 0 },
+			teacherFeedback: "Cần luyện nói thêm",
+		});
+		expect(toastMock.success).toHaveBeenCalled();
+		Object.defineProperty(URL, "createObjectURL", {
+			configurable: true,
+			writable: true,
+			value: origCreateObjectURL,
+		});
+		Object.defineProperty(URL, "revokeObjectURL", {
+			configurable: true,
+			writable: true,
+			value: origRevokeObjectURL,
+		});
 	});
 });
