@@ -12,6 +12,9 @@ Quy ước khi cập nhật:
 
 ## 2026-11-14
 
+### Changed
+- Áp dụng đồng bộ design system **Cô Mỹ Lessons (`CoMyLessons`)** lên toàn bộ 3 bề mặt của `apps/profile` (`msmy.io.vn`): chuẩn hóa palette semantic (`--page: #ffffff`, `--ink: #1b2a3a`, `--teal: #0d7c6b`, `--rust: #a8570f`, `--blue: #205fae`, `--amber: #f5a73b`, `--mint`/`--cream`/`--sky`/`--paper`) và cặp font `DM Sans` + `Be Vietnam Pro`, gỡ `box-shadow` trang trí (chỉ giữ `:focus-visible`), thay monogram `"M"` bằng nhãn đơn vị `.ml-unit-badge` (`CÔ MỸ`), áp dụng mẫu `PageFooter` và thay emoji UI bằng inline Lucide SVG (`class="ml-icon"` / `.ml-contact-disc`), gắn 4 minh họa flat-vector mascot vào `apps/profile/public/assets/mascots/`, giữ đúng ngân sách 1 block nền `--ink` (`#khoa-ielts` trên landing và `.result-hero` trên `/kiem-tra-dau-vao/`) cùng màu part `[data-part="vocabulary"|"listening"]`, đồng thời cập nhật `apps/profile/public/noi-bo/index.html` mà vẫn giữ nguyên vẹn nội dung các mẫu tin nhắn Zalo và bộ test/lightbox/lead-gate/placement E2E (#709).
+
 ### Fixed
 - Sửa lỗi popup lightbox `#imgModal` trên `apps/profile` (`msmy.io.vn`) cắt ảnh chứng chỉ còn khe ~32px trên iOS Safari/WebKit: chuyển `dialog.modal-dialog[open]` sang `display: block` với `.modal-header` sticky bo góc trên, di chuyển `overflow-y: auto` lên `<dialog>`, đồng bộ kích thước ảnh từ thumbnail và reset `width`/`height` khi đóng, kiểm tra tọa độ `getBoundingClientRect()` khi click backdrop để không đóng nhầm từ thanh cuộn, đồng thời bổ sung contract test (`apps/profile/tests/index.test.mjs`) và E2E regression (`apps/e2e/specs/profile-lightbox.spec.ts`) (#706).
 

@@ -618,14 +618,156 @@ test("new editorial design blocks, carousel, and no broken/draft placeholders (#
 	);
 });
 
-test("internal page noi-bo uses warm paper design, ../ home link, and 3 copy buttons (#699)", () => {
+test("internal page noi-bo uses Co My Lessons design tokens, ../ home link, and 3 copy buttons (#699, #709)", () => {
 	const noiBoHtml = readFileSync(
 		new URL("noi-bo/index.html", publicDir),
 		"utf8",
 	);
-	assert.match(noiBoHtml, /#F7F4EC/i);
+	assert.match(noiBoHtml, /DM Sans/);
+	assert.match(noiBoHtml, /Be Vietnam Pro/);
+	assert.match(noiBoHtml, /--teal:\s*#0d7c6b/i);
+	assert.match(noiBoHtml, /--ink:\s*#1b2a3a/i);
+	assert.doesNotMatch(noiBoHtml, /#(F7F4EC|163828|0F291D|F4C44E)\b/i);
 	assert.match(noiBoHtml, /<a\s+href="\.\.\/"/);
 	assert.equal((noiBoHtml.match(/data-copy-target=/g) ?? []).length, 3);
+});
+
+test("applies Co My Lessons design system uniformly across landing, placement test, and noi-bo (#709)", () => {
+	const testHtml = readFileSync(
+		new URL("kiem-tra-dau-vao/index.html", publicDir),
+		"utf8",
+	);
+	const testCss = readFileSync(
+		new URL("kiem-tra-dau-vao/test.css", publicDir),
+		"utf8",
+	);
+	const testJs = readFileSync(
+		new URL("kiem-tra-dau-vao/test.js", publicDir),
+		"utf8",
+	);
+	const noiBoHtml = readFileSync(
+		new URL("noi-bo/index.html", publicDir),
+		"utf8",
+	);
+
+	const landingCss = (html.match(/<style>([\s\S]*?)<\/style>/) ?? [])[1] ?? "";
+	const noiBoCss =
+		(noiBoHtml.match(/<style>([\s\S]*?)<\/style>/) ?? [])[1] ?? "";
+
+	const requiredTokens = [
+		["--page", "#ffffff"],
+		["--ink", "#1b2a3a"],
+		["--muted", "#57616b"],
+		["--teal", "#0d7c6b"],
+		["--rust", "#a8570f"],
+		["--blue", "#205fae"],
+		["--amber", "#f5a73b"],
+		["--mint", "#e3f1ee"],
+		["--cream", "#fdf1db"],
+		["--sky", "#e5edf9"],
+		["--paper", "#fbfaf7"],
+		["--hairline", "#d9dde1"],
+	];
+
+	for (const [surfaceName, cssSource] of [
+		["index.html <style>", landingCss],
+		["kiem-tra-dau-vao/test.css", testCss],
+		["noi-bo/index.html <style>", noiBoCss],
+	]) {
+		for (const [token, hex] of requiredTokens) {
+			assert.match(
+				cssSource,
+				new RegExp(`${token}:\\s*${hex}\\b`, "i"),
+				`${surfaceName} must define ${token}: ${hex}`,
+			);
+		}
+
+		// Disallow decorative box-shadow outside :focus-visible rules
+		const cleanCss = cssSource.replace(/\/\*[\s\S]*?\*\//g, "");
+		for (const block of cleanCss.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+			const selector = block[1].trim();
+			const body = block[2];
+			if (/box-shadow\s*:/i.test(body) && !/:focus-visible\b/.test(selector)) {
+				for (const propMatch of body.matchAll(/box-shadow\s*:\s*([^;]+)/gi)) {
+					assert.equal(
+						propMatch[1].trim().toLowerCase(),
+						"none",
+						`${surfaceName} selector "${selector}" must not use decorative box-shadow`,
+					);
+				}
+			}
+		}
+	}
+
+	const legacyHexRegex =
+		/#(F7F4EC|EFEADF|EFECE2|FAF6EA|163828|0F291D|1E4734|F4C44E|D9A726|DFD9C8|FFF5DC|16261E)\b/i;
+	for (const [name, content] of [
+		["public/index.html", html],
+		["kiem-tra-dau-vao/index.html", testHtml],
+		["kiem-tra-dau-vao/test.css", testCss],
+		["noi-bo/index.html", noiBoHtml],
+	]) {
+		assert.doesNotMatch(
+			content,
+			legacyHexRegex,
+			`${name} must not retain legacy forest/gold hex colors`,
+		);
+		assert.doesNotMatch(
+			content,
+			/Cormorant Garamond|Plus Jakarta Sans/i,
+			`${name} must not load legacy typography`,
+		);
+	}
+
+	for (const [name, docHtml] of [
+		["public/index.html", html],
+		["kiem-tra-dau-vao/index.html", testHtml],
+		["noi-bo/index.html", noiBoHtml],
+	]) {
+		assert.match(
+			docHtml,
+			/fonts\.googleapis\.com\/css2\?[^"]*DM\+Sans[^"]*Be\+Vietnam\+Pro|fonts\.googleapis\.com\/css2\?[^"]*Be\+Vietnam\+Pro[^"]*DM\+Sans/,
+			`${name} must load Google Fonts DM Sans + Be Vietnam Pro`,
+		);
+		assert.match(
+			docHtml,
+			/class="ml-icon"/,
+			`${name} must render inline Lucide SVGs with class="ml-icon"`,
+		);
+	}
+
+	// Brand mark & PageFooter checks
+	assert.doesNotMatch(html, /class="brand-monogram"/);
+	assert.doesNotMatch(testHtml, /class="brand-badge"/);
+	assert.match(html, /class="ml-unit-badge"/);
+	assert.match(testHtml, /class="ml-unit-badge"/);
+	assert.match(html, /class="ml-contact-disc"/);
+	assert.match(testHtml, /class="ml-contact-disc"/);
+
+	// 4 mascot illustrations exist on disk and are wired into pages
+	for (const mascot of [
+		"mascot-checklist.png",
+		"mascot-chunks.png",
+		"mascot-listening.png",
+		"mascot-give-opinion.png",
+	]) {
+		assert.ok(
+			existsSync(new URL(`assets/mascots/${mascot}`, publicDir)),
+			`missing mascot asset ${mascot}`,
+		);
+	}
+	assert.match(html, /assets\/mascots\/mascot-give-opinion\.png/);
+	assert.match(html, /assets\/mascots\/mascot-checklist\.png/);
+	assert.match(testJs, /\.\.\/assets\/mascots\/mascot-checklist\.png/);
+	assert.match(testJs, /\.\.\/assets\/mascots\/mascot-chunks\.png/);
+	assert.match(testJs, /\.\.\/assets\/mascots\/mascot-listening\.png/);
+	assert.match(noiBoHtml, /\.\.\/assets\/mascots\/mascot-give-opinion\.png/);
+
+	// Part colors wired in placement test
+	assert.match(testJs, /dataset\.part\s*=\s*["']vocabulary["']/);
+	assert.match(testJs, /dataset\.part\s*=\s*["']listening["']/);
+	assert.match(testCss, /\[data-part="vocabulary"\]/);
+	assert.match(testCss, /\[data-part="listening"\]/);
 });
 
 test("modal-dialog CSS avoids flex height collapse and JS resets image dimensions on close (#706)", () => {
