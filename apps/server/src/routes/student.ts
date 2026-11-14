@@ -60,7 +60,16 @@ import {
 	studentInvitation,
 	user,
 } from "@teacher-os/db/schema/index";
-import { and, asc, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import {
+	and,
+	asc,
+	desc,
+	eq,
+	isNotNull,
+	isNull,
+	notLike,
+	sql,
+} from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
@@ -153,7 +162,12 @@ export function createStudentGuard(deps: StudentRouteDeps) {
 		let rows = await db
 			.select()
 			.from(student)
-			.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
+			.where(
+				and(
+					sql`lower(trim(${student.email})) = ${normalizedEmail}`,
+					notLike(student.id, "demo-student:%"),
+				),
+			)
 			.orderBy(desc(student.createdAt), asc(student.id));
 
 		if (rows.length === 0) {
@@ -169,7 +183,12 @@ export function createStudentGuard(deps: StudentRouteDeps) {
 				rows = await db
 					.select()
 					.from(student)
-					.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
+					.where(
+						and(
+							sql`lower(trim(${student.email})) = ${normalizedEmail}`,
+							notLike(student.id, "demo-student:%"),
+						),
+					)
 					.orderBy(desc(student.createdAt), asc(student.id));
 			} catch (err) {
 				console.error("Failed to provision student for user", {
@@ -720,7 +739,12 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				})
 				.from(student)
 				.innerJoin(organization, eq(student.orgId, organization.id))
-				.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
+				.where(
+					and(
+						sql`lower(trim(${student.email})) = ${normalizedEmail}`,
+						notLike(student.id, "demo-student:%"),
+					),
+				)
 				.orderBy(desc(student.createdAt), asc(student.id));
 
 		let studentRows = await loadStudentOrgRows();

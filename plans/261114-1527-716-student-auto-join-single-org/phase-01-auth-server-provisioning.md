@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: "Phase 1: Auth Hooks & Server Single-Org Provisioning"
-status: todo
+status: completed
 ---
 
 # Phase 1: Auth Hooks & Server Single-Org Provisioning
@@ -20,7 +20,7 @@ status: todo
 
 ## Tasks
 
-- [ ] Implement `packages/auth/src/student-provisioning.ts` với 3-tier org resolution & auto-accept pending invite
-- [ ] Wire `createAuth` hooks (`user.create.after`, `user.update.after`, `afterEmailVerification`) trong `packages/auth/src/index.ts`
-- [ ] Update `apps/server/src/student-provisioning.ts` wrapper & `apps/server/src/routes/student.ts` (`createStudentGuard` + `/orgs`)
-- [ ] Verify `@teacher-os/auth` tests, `server` tests, và `pnpm check-types`
+- [x] Implement `packages/auth/src/student-provisioning.ts` với 3-tier org resolution & auto-accept pending invite
+- [x] Wire `createAuth` hooks (`user.create.after`, `user.update.after`, `afterEmailVerification`) trong `packages/auth/src/index.ts`
+- [x] Update `apps/server/src/student-provisioning.ts` wrapper & `apps/server/src/routes/student.ts` (`createStudentGuard` + `/orgs`)
+- [x] Verify `@teacher-os/auth` tests, `server` tests, và `pnpm check-types`

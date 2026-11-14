@@ -5,7 +5,7 @@ import {
 	studentInvitation,
 	user,
 } from "@teacher-os/db/schema/index";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, notLike, sql } from "drizzle-orm";
 import type { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
 
 export interface ProvisionStudentOptions {
@@ -23,12 +23,17 @@ const ACTIVE_MANAGER_ROLES = ["owner", "teacher", "admin"];
 async function acceptPendingInvitations(
 	db: ProvisioningSqliteDb,
 	email: string,
+	orgIds: string[],
 ): Promise<void> {
+	if (orgIds.length === 0) {
+		return;
+	}
 	await db
 		.update(studentInvitation)
 		.set({ status: "accepted", updatedAt: new Date() })
 		.where(
 			and(
+				inArray(studentInvitation.orgId, orgIds),
 				sql`lower(trim(${studentInvitation.email})) = ${email}`,
 				eq(studentInvitation.status, "pending"),
 			),
@@ -111,13 +116,18 @@ export async function provisionStudentForUser(
 
 	try {
 		const existing = await db
-			.select({ id: student.id })
+			.select({ id: student.id, orgId: student.orgId })
 			.from(student)
-			.where(sql`lower(trim(${student.email})) = ${email}`)
-			.limit(1);
+			.where(
+				and(
+					sql`lower(trim(${student.email})) = ${email}`,
+					notLike(student.id, "demo-student:%"),
+				),
+			);
 
 		if (existing.length > 0) {
-			await acceptPendingInvitations(db, email);
+			const existingOrgIds = Array.from(new Set(existing.map((r) => r.orgId)));
+			await acceptPendingInvitations(db, email, existingOrgIds);
 			return;
 		}
 
@@ -140,7 +150,7 @@ export async function provisionStudentForUser(
 			parentPhone: "",
 		});
 
-		await acceptPendingInvitations(db, email);
+		await acceptPendingInvitations(db, email, [targetOrg.id]);
 	} catch (err) {
 		console.error("provisionStudentForUser failed or collided", {
 			email,

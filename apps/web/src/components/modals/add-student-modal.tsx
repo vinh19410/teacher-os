@@ -133,7 +133,7 @@ export function AddStudentModal({
 			onClose={saving ? () => undefined : onClose}
 			title="Thêm học viên mới"
 		>
-			<form noValidate onSubmit={submit} className="flex flex-col gap-3">
+			<form noValidate onSubmit={submit} className="flex flex-col">
 				<Field label="Họ tên học viên *" required error={nameError}>
 					<Input
 						value={name}

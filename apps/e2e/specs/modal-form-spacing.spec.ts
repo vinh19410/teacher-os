@@ -211,15 +211,15 @@ test("Modal 'Tạo lớp mới' TemplatePicker 'Lớp trống' không bị kho�
 	await expect(dialog).toBeHidden();
 });
 
-test("Modal 'Mời học viên' (form đã bỏ class trùng) nhận đúng gap-4 = 14px từ Modal body", async ({
+test("Modal 'Thêm học viên mới' trên /students nhận đúng gap-4 = 14px từ Modal body wrapper (#716)", async ({
 	page,
-}) => {
+}, testInfo) => {
 	await signUpViaApi(page);
 
 	await page.goto("/students");
-	await page.getByRole("button", { name: "Mời học viên" }).click();
+	await page.getByRole("button", { name: "Thêm học viên" }).first().click();
 
-	const dialog = page.getByRole("dialog");
+	const dialog = page.getByRole("dialog", { name: "Thêm học viên mới" });
 	await expect(dialog).toBeVisible();
 
 	for (const vp of VIEWPORTS) {
@@ -227,33 +227,35 @@ test("Modal 'Mời học viên' (form đã bỏ class trùng) nhận đúng gap-
 		await page.waitForTimeout(100);
 
 		await dialog.screenshot({
-			path: path.join(REPORT_DIR, `invite-student-${vp.name}.png`),
+			path: testInfo.outputPath(`add-student-${vp.name}.png`),
 		});
 
-		const gaps = await dialog.evaluate((d) => {
-			const form = d.querySelector("form#invite-student-form");
+		const metrics = await dialog.evaluate((d) => {
+			const form = d.querySelector("form");
 			if (!form) return null;
+			const rowGap = window.getComputedStyle(form).rowGap;
 			const children = Array.from(form.children).filter(
 				(el) =>
 					(el as HTMLElement).offsetWidth > 0 &&
 					(el as HTMLElement).offsetHeight > 0,
 			);
-			const measured: number[] = [];
+			const gaps: number[] = [];
 			for (let i = 0; i < children.length - 1; i++) {
 				const c1 = children[i];
 				const c2 = children[i + 1];
 				if (!c1 || !c2) continue;
 				const r1 = c1.getBoundingClientRect();
 				const r2 = c2.getBoundingClientRect();
-				measured.push(Math.round(r2.top - r1.bottom));
+				gaps.push(Math.round(r2.top - r1.bottom));
 			}
-			return measured;
+			return { rowGap, gaps };
 		});
 
-		expect(gaps).not.toBeNull();
-		if (gaps) {
-			for (const gap of gaps) {
-				// 14px chuẩn gap-4
+		expect(metrics).not.toBeNull();
+		if (metrics) {
+			// Modal body wrapper ([&>form]:gap-4) ép form nhận gap-4 = 1rem = 14px (root font-size 14px)
+			expect(metrics.rowGap).toBe("14px");
+			for (const gap of metrics.gaps) {
 				expect(gap).toBe(14);
 			}
 		}

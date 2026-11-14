@@ -1,7 +1,7 @@
 ---
 phase: 2
 title: "Phase 2: Web & Student UI Single-Org Cleanup"
-status: todo
+status: completed
 ---
 
 # Phase 2: Web & Student UI Single-Org Cleanup
@@ -20,6 +20,6 @@ Gỡ bỏ giao diện "Mời học viên vào tổ chức" khỏi danh sách `/s
 
 ## Tasks
 
-- [ ] Clean up `apps/web/src/routes/_auth/students/index.tsx`, `$studentId.tsx`, và `add-student-modal.tsx`
-- [ ] Clean up `apps/student/src/components/layout/notification-bell.tsx`
-- [ ] Update & pass `apps/web` và `apps/student` unit/component tests + `pnpm check-types`
+- [x] Clean up `apps/web/src/routes/_auth/students/index.tsx`, `$studentId.tsx`, và `add-student-modal.tsx`
+- [x] Clean up `apps/student/src/components/layout/notification-bell.tsx`
+- [x] Update & pass `apps/web` và `apps/student` unit/component tests + `pnpm check-types`

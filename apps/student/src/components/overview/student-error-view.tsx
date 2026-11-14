@@ -105,7 +105,7 @@ export function StudentErrorView({
 		teacherPortalUrl = customTeacherPortalUrl ?? getTeacherPortalUrl();
 	} else if (code === STUDENT_ERROR_CODES.NOT_LINKED) {
 		title = "Tài khoản chưa được liên kết";
-		description = `Email ${userEmail ? `(${userEmail})` : ""} hiện chưa tham gia lớp học nào. Nếu giáo viên đã gửi lời mời, vui lòng bấm vào biểu tượng Chuông thông báo ở góc trên để chấp nhận tham gia lớp.`;
+		description = `Email ${userEmail ? `(${userEmail}) ` : ""}hiện chưa được liên kết với hồ sơ học viên nào. Vui lòng kiểm tra lại email đăng nhập hoặc liên hệ giáo viên để được hỗ trợ.`;
 		icon = <AlertCircle className="size-8 text-primary" />;
 	} else if (isEmailUnverified) {
 		title = "Email chưa được xác thực";

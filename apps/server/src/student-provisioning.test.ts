@@ -335,4 +335,73 @@ describe("provisionStudentForUser", () => {
 			.where(eq(schema.student.email, "tier3@example.com"));
 		expect(tier3Student?.orgId).toBe("org-empty");
 	});
+
+	test("bỏ qua bản ghi demo-student:% trùng email và chỉ accept invitation thuộc org đã provision (#716)", async () => {
+		await db.insert(schema.organization).values([
+			{ id: "org-active", name: "Active Org", createdAt: new Date(1000) },
+			{ id: "org-other", name: "Other Org", createdAt: new Date(2000) },
+		]);
+		await db.insert(schema.user).values({
+			id: "u-inviter",
+			name: "Teacher Inviter",
+			email: "teacher@example.com",
+			emailVerified: true,
+			role: "teacher",
+		});
+		await db.insert(schema.membership).values({
+			id: "mem-active",
+			orgId: "org-active",
+			userId: "u-inviter",
+			role: "teacher",
+		});
+		await db.insert(schema.student).values({
+			id: "demo-student:org-other",
+			orgId: "org-other",
+			name: "Demo Placeholder",
+			email: "learner@example.com",
+		});
+		await db.insert(schema.studentInvitation).values([
+			{
+				id: "inv-active-org",
+				orgId: "org-active",
+				inviterUserId: "u-inviter",
+				email: "learner@example.com",
+				status: "pending",
+			},
+			{
+				id: "inv-other-org",
+				orgId: "org-other",
+				inviterUserId: "u-inviter",
+				email: "learner@example.com",
+				status: "pending",
+			},
+		]);
+
+		await provisionStudentForUser(db, {
+			name: "Real Learner",
+			email: "learner@example.com",
+		});
+
+		const realStudents = await db.select().from(schema.student);
+		expect(realStudents).toHaveLength(2);
+		expect(
+			realStudents.some(
+				(r) =>
+					r.id !== "demo-student:org-other" &&
+					r.orgId === "org-active" &&
+					r.name === "Real Learner",
+			),
+		).toBe(true);
+
+		const [activeInv] = await db
+			.select()
+			.from(schema.studentInvitation)
+			.where(eq(schema.studentInvitation.id, "inv-active-org"));
+		const [otherInv] = await db
+			.select()
+			.from(schema.studentInvitation)
+			.where(eq(schema.studentInvitation.id, "inv-other-org"));
+		expect(activeInv?.status).toBe("accepted");
+		expect(otherInv?.status).toBe("pending");
+	});
 });
