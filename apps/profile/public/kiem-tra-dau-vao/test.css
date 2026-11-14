@@ -2,35 +2,57 @@
  * DESIGN TOKENS (Synced with apps/profile/public/index.html :root)
  */
 :root {
-	--hue: 154;
-	--warm-hue: 84;
+	/* Palette: Cô Mỹ Lessons (CoMyLessons) */
+	--page: #ffffff;
+	--paper: #fbfaf7;
+	--butter: #fffaef;
+	--slate: #e9ebf1;
+	--hairline: #d9dde1;
+	--hairline-soft: #e8eaec;
 
-	--paper: #f7f4ec;
-	--paper-elevated: #ffffff;
-	--paper-sunken: #efece2;
-	--paper-warm: #faf6ea;
-	--line: #dfd9c8;
-	--line-strong: #c8c0ac;
+	--ink: #1b2a3a;
+	--ink-raised: #2a3a48;
+	--muted: #57616b;
+	--on-fill: #ffffff;
+	--on-ink-muted: #d9dde1;
 
-	--ink: #16261e;
-	--ink-2: #35473e;
-	--ink-3: #4e6157;
+	--teal: #0d7c6b;
+	--teal-line: #cee6e0;
+	--mint: #e3f1ee;
+	--rust: #a8570f;
+	--blue: #205fae;
+	--blue-line: #c3d1eb;
+	--sky: #e5edf9;
+	--amber: #f5a73b;
+	--amber-line: #f0dcb8;
+	--cream: #fdf1db;
 
-	--brand: #163828;
-	--brand-deep: #0f291d;
-	--brand-surface: #1e4734;
-	--brand-tint: #e7f0eb;
-	--brand-muted: #cfe0d6;
+	/* Semantic mapping for original layout */
+	--paper-elevated: var(--page);
+	--paper-sunken: var(--slate);
+	--paper-warm: var(--butter);
+	--line: var(--hairline);
+	--line-strong: var(--muted);
 
-	--gold: #f4c44e;
-	--gold-deep: #8f5400;
-	--gold-border: #e5a424;
-	--gold-soft: #fff5dc;
+	--ink-2: var(--ink-raised);
+	--ink-3: var(--muted);
 
-	--danger: #b42318;
-	--danger-soft: #fef3f2;
-	--success: #166534;
-	--success-soft: #ecfdf3;
+	--brand: var(--teal);
+	--brand-deep: var(--ink);
+	--brand-surface: var(--ink-raised);
+	--brand-tint: var(--mint);
+	--brand-muted: var(--teal-line);
+
+	--gold: var(--amber);
+	--gold-deep: var(--rust);
+	--gold-border: var(--amber);
+	--gold-soft: var(--cream);
+
+	--danger: var(--rust);
+	--danger-soft: var(--cream);
+	--danger-line: var(--amber-line);
+	--success: var(--teal);
+	--success-soft: var(--mint);
 
 	--font-display: "Cormorant Garamond", Georgia, serif;
 	--font-body:
@@ -121,8 +143,13 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 summary:focus-visible {
-	outline: 3px solid var(--gold-border);
+	outline: 3px solid var(--blue);
 	outline-offset: 2px;
+}
+
+.site-header :focus-visible,
+.result-hero :focus-visible {
+	outline-color: var(--gold);
 }
 
 .container {
@@ -283,7 +310,8 @@ h2 {
 }
 
 .btn-gold:hover:not(:disabled) {
-	background: #f7ce68;
+	background: var(--gold);
+	filter: brightness(0.94);
 }
 
 .btn-outline {
@@ -292,19 +320,21 @@ h2 {
 	border-color: var(--line-strong);
 }
 
+.btn-outline:hover:not(:disabled) {
+	border-color: var(--brand);
+	background: var(--paper-warm);
+}
+
 .site-header .btn-outline {
 	background: transparent;
 	color: #ffffff;
 	border-color: rgba(255, 255, 255, 0.35);
 }
 
-.site-header .btn-outline:hover {
+.site-header .btn-outline:hover:not(:disabled) {
 	background: rgba(255, 255, 255, 0.1);
-}
-
-.btn-outline:hover:not(:disabled) {
-	border-color: var(--brand);
-	background: var(--paper-warm);
+	color: #ffffff;
+	border-color: rgba(255, 255, 255, 0.65);
 }
 
 /* Cards & Steps */
@@ -317,7 +347,7 @@ h2 {
 	border: 2px solid var(--line-strong);
 	border-radius: var(--radius-lg);
 	padding: clamp(20px, 3.5vw, 36px);
-	box-shadow: 0 10px 30px rgba(22, 38, 30, 0.06);
+	box-shadow: 0 10px 30px rgba(27, 42, 58, 0.06);
 }
 
 .stepper-bar {
@@ -357,14 +387,14 @@ h2 {
 
 .step-pill.is-done {
 	background: var(--brand-tint);
-	color: var(--brand);
+	color: var(--brand-deep);
 	border-color: var(--brand-muted);
 }
 
 .progress-counter {
 	font-size: 0.88rem;
 	font-weight: 700;
-	color: var(--brand);
+	color: var(--brand-deep);
 }
 
 .intro-grid {
@@ -699,13 +729,13 @@ h2 {
 .clip-status.is-exhausted {
 	background: var(--danger-soft);
 	color: var(--danger);
-	border-color: #fecdca;
+	border-color: var(--danger-line);
 }
 
 .clip-status.is-error {
 	background: var(--danger-soft);
 	color: var(--danger);
-	border-color: #fecdca;
+	border-color: var(--danger-line);
 }
 
 /* Confirm Submit Box */
@@ -725,7 +755,7 @@ h2 {
 
 /* Result Screen */
 .result-hero {
-	background: var(--brand);
+	background: var(--brand-deep);
 	color: #ffffff;
 	border-radius: var(--radius);
 	padding: clamp(20px, 3.5vw, 32px);
@@ -884,7 +914,7 @@ h2 {
 }
 
 .footer-inner a {
-	color: var(--brand);
+	color: var(--brand-deep);
 	font-weight: 700;
 }
 

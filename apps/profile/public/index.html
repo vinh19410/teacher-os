@@ -5,55 +5,76 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cô Mỹ Dạy Tiếng Anh | Học hiểu từ gốc, đồng hành đến ngày thi IELTS</title>
   <meta name="description" content="Lớp nhóm 4–6 bạn hoặc kèm 1-1 cùng cô Đỗ Thục Mỹ: Xây Nền, IELTS 5.5 → 7.5+, Tiếng Anh Công Sở. Làm test xếp lớp miễn phí, nhận lộ trình qua Zalo.">
-  <meta name="theme-color" content="#163828">
+  <meta name="theme-color" content="#0d7c6b">
   <meta name="lead-api" content="https://api.teacheros.io.vn">
   <link rel="canonical" href="https://msmy.io.vn/">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="vi_VN">
   <meta property="og:title" content="Cô Mỹ Dạy Tiếng Anh | Học hiểu từ gốc, đồng hành đến ngày thi IELTS">
   <meta property="og:description" content="Lớp 4–6 bạn hoặc kèm 1-1, học online hoặc tại Vinhomes Grand Park. Làm test xếp lớp miễn phí nhận 1 buổi Khám Bệnh Tiếng Anh 1-1 cùng cô Mỹ.">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23163828'/><text x='32' y='43' font-family='Georgia,serif' font-size='32' font-weight='bold' fill='%23F4C44E' text-anchor='middle'>M</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%231b2a3a'/><text x='32' y='43' font-family='Georgia,serif' font-size='32' font-weight='bold' fill='%23f5a73b' text-anchor='middle'>M</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     /*
-     * DESIGN TOKENS (Brand Register: Editorial Academic Warmth)
+     * DESIGN TOKENS (Color Palette: Cô Mỹ Lessons / CoMyLessons on original layout)
      * Preserving "Cô Mỹ Dạy Tiếng Anh | The English Corner" identity
      */
     :root {
-      --hue: 154;
-      --warm-hue: 84;
+      /* Cô Mỹ Lessons System Palette */
+      --page: #ffffff;
+      --paper: #fbfaf7;
+      --butter: #fffaef;
+      --slate: #e9ebf1;
+      --hairline: #d9dde1;
+      --hairline-soft: #e8eaec;
 
-      /* Surfaces & Neutrals */
-      --paper: #F7F4EC;
-      --paper-elevated: #FFFFFF;
-      --paper-sunken: #EFECE2;
-      --paper-warm: #FAF6EA;
-      --line: #DFD9C8;
-      --line-strong: #858071;
+      --ink: #1b2a3a;
+      --ink-raised: #2a3a48;
+      --muted: #57616b;
+      --on-fill: #ffffff;
+      --on-ink-muted: #d9dde1;
+
+      --teal: #0d7c6b;
+      --teal-line: #cee6e0;
+      --mint: #e3f1ee;
+      --rust: #a8570f;
+      --blue: #205fae;
+      --blue-line: #c3d1eb;
+      --sky: #e5edf9;
+      --amber: #f5a73b;
+      --amber-line: #f0dcb8;
+      --cream: #fdf1db;
+
+      /* Surfaces & Neutrals (mapped to original variables) */
+      --paper-elevated: var(--page);
+      --paper-sunken: var(--slate);
+      --paper-warm: var(--butter);
+      --line: var(--hairline);
+      --line-strong: var(--muted);
 
       /* Ink hierarchy (all contrast-verified >= 4.5:1 on paper & white) */
-      --ink: #16261E;
-      --ink-2: #35473E;
-      --ink-3: #4E6157;
+      --ink-2: var(--ink-raised);
+      --ink-3: var(--muted);
 
-      /* Brand Forest Green & Gold Accents */
-      --brand: #163828;
-      --brand-deep: #0F291D;
-      --brand-surface: #1E4734;
-      --brand-tint: #E7F0EB;
-      --brand-muted: #CFE0D6;
+      /* Brand Teal & Amber Accents */
+      --brand: var(--teal);
+      --brand-deep: var(--ink);
+      --brand-surface: var(--ink-raised);
+      --brand-tint: var(--mint);
+      --brand-muted: var(--teal-line);
 
-      --gold: #F4C44E;
-      --gold-deep: #8F5400;
-      --gold-border: #E5A424;
-      --gold-soft: #FFF5DC;
+      --gold: var(--amber);
+      --gold-deep: var(--rust);
+      --gold-border: var(--amber);
+      --gold-soft: var(--cream);
 
-      --danger: #B42318;
-      --danger-soft: #FEF3F2;
-      --success: #166534;
-      --success-soft: #ECFDF3;
+      --danger: var(--rust);
+      --danger-soft: var(--cream);
+      --danger-line: var(--amber-line);
+      --success: var(--teal);
+      --success-soft: var(--mint);
 
       /* Typography */
       --font-display: "Cormorant Garamond", Georgia, serif;
@@ -136,7 +157,7 @@
     }
 
     h1, h2, h3, h4 {
-      color: var(--brand);
+      color: var(--brand-deep);
       line-height: var(--leading-display);
       text-wrap: balance;
       font-weight: 800;
@@ -148,8 +169,17 @@
     }
 
     :focus-visible {
-      outline: 3px solid var(--gold-border);
+      outline: 3px solid var(--blue);
       outline-offset: 3px;
+    }
+
+    .hero-frame :focus-visible,
+    .track-card.featured-track :focus-visible,
+    .step-card.highlight-step :focus-visible,
+    .site-footer :focus-visible,
+    .floating-cta-bar :focus-visible,
+    .modal-header :focus-visible {
+      outline-color: var(--gold);
     }
 
     .container {
@@ -180,7 +210,7 @@
       position: sticky;
       top: 0;
       z-index: 40;
-      background: rgba(247, 244, 236, 0.94);
+      background: rgba(251, 250, 247, 0.94);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--line);
@@ -208,7 +238,7 @@
       width: 42px;
       height: 42px;
       border-radius: var(--radius-sm);
-      background: var(--brand);
+      background: var(--brand-deep);
       color: var(--gold);
       font-family: var(--font-display);
       font-size: 24px;
@@ -263,7 +293,7 @@
 
     .nav-links a:hover {
       background: var(--paper-sunken);
-      color: var(--brand);
+      color: var(--brand-deep);
     }
 
     .nav-actions {
@@ -315,6 +345,7 @@
 
     .btn-primary:hover {
       background: var(--brand-surface);
+      border-color: var(--brand-surface);
     }
 
     .btn-gold {
@@ -324,7 +355,8 @@
     }
 
     .btn-gold:hover {
-      background: #F7CE68;
+      background: var(--gold);
+      filter: brightness(0.94);
     }
 
     .btn-outline {
@@ -335,7 +367,8 @@
 
     .btn-outline:hover {
       background: var(--paper-sunken);
-      border-color: var(--brand);
+      color: var(--brand-deep);
+      border-color: var(--brand-deep);
     }
 
     .btn-ghost-dark {
@@ -365,7 +398,7 @@
     }
 
     .hero-frame {
-      background: var(--brand);
+      background: var(--brand-deep);
       color: #FFFFFF;
       border-radius: var(--radius-lg);
       padding: clamp(24px, 4vw, 48px);
@@ -380,8 +413,8 @@
       display: inline-flex;
       align-items: center;
       gap: var(--space-2);
-      background: rgba(244, 196, 78, 0.16);
-      border: 1px solid rgba(244, 196, 78, 0.42);
+      background: rgba(245, 167, 59, 0.16);
+      border: 1px solid rgba(245, 167, 59, 0.42);
       color: var(--gold);
       font-size: 12.5px;
       font-weight: 800;
@@ -427,7 +460,7 @@
       color: #FFFFFF;
       font-weight: 700;
       text-decoration: underline;
-      text-decoration-color: rgba(244, 196, 78, 0.7);
+      text-decoration-color: rgba(245, 167, 59, 0.7);
       text-underline-offset: 4px;
     }
 
@@ -473,7 +506,7 @@
 
     .hero-quote-card {
       background: var(--brand-surface);
-      border: 1px solid rgba(244, 196, 78, 0.38);
+      border: 1px solid rgba(245, 167, 59, 0.38);
       border-radius: var(--radius);
       padding: var(--space-4);
       flex: 1;
@@ -488,7 +521,7 @@
       flex-direction: column;
       gap: 2px;
       padding-bottom: var(--space-3);
-      border-bottom: 1px solid rgba(244, 196, 78, 0.25);
+      border-bottom: 1px solid rgba(245, 167, 59, 0.25);
     }
 
     .hero-quote-header strong {
@@ -502,7 +535,7 @@
       font-style: italic;
       font-size: 17px;
       line-height: 1.25;
-      color: #FFF4D4;
+      color: var(--cream);
     }
 
     .hero-quote-text {
@@ -680,7 +713,7 @@
     }
 
     .track-card.featured-track {
-      background: var(--brand);
+      background: var(--brand-deep);
       color: #FFFFFF;
       border-top-color: var(--gold);
     }
@@ -689,7 +722,7 @@
       display: inline-block;
       align-self: flex-start;
       background: var(--paper-sunken);
-      color: var(--brand);
+      color: var(--brand-deep);
       font-size: 12px;
       font-weight: 800;
       padding: 5px 12px;
@@ -844,7 +877,7 @@
       position: absolute;
       bottom: 10px;
       right: 10px;
-      background: rgba(22, 56, 40, 0.9);
+      background: rgba(27, 42, 58, 0.9);
       color: var(--gold);
       font-size: 12px;
       font-weight: 700;
@@ -982,7 +1015,7 @@
     }
 
     .step-card.highlight-step {
-      background: var(--brand);
+      background: var(--brand-deep);
       color: #FFFFFF;
       border-top-color: var(--gold);
     }
@@ -1207,7 +1240,7 @@
       padding: 0;
       border-radius: 6px;
       background: #FFFFFF;
-      box-shadow: 0 4px 14px rgba(22, 38, 30, 0.12);
+      box-shadow: 0 4px 14px rgba(27, 42, 58, 0.12);
       transition: transform var(--dur-layout) var(--ease-out);
     }
 
@@ -1302,7 +1335,7 @@
     .input-control:focus {
       outline: none;
       border-color: var(--brand);
-      box-shadow: 0 0 0 3px rgba(22, 56, 40, 0.15);
+      box-shadow: 0 0 0 3px rgba(13, 124, 107, 0.18);
     }
 
     .field.has-error .input-control {
@@ -1317,7 +1350,7 @@
       padding: 10px 14px;
       font-size: 13.5px;
       font-weight: 600;
-      color: #633C00;
+      color: var(--brand-deep);
       margin-top: var(--space-3);
       margin-bottom: var(--space-3);
     }
@@ -1333,7 +1366,7 @@
     }
 
     .lead-success-box h3 {
-      color: var(--success);
+      color: var(--brand-deep);
       font-size: 18px;
       margin-bottom: var(--space-2);
     }
@@ -1514,62 +1547,81 @@
     dialog.modal-dialog {
       margin: auto;
       width: min(94vw, 1080px);
+      max-width: min(94vw, 1080px);
+      max-height: 90vh;
       max-height: 90dvh;
       border: 2px solid var(--gold-border);
       border-radius: var(--radius-lg);
       background: var(--paper-elevated);
       color: var(--ink);
       padding: 0;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
     }
 
     dialog.modal-dialog[open] {
-      display: flex;
-      flex-direction: column;
+      display: block;
     }
 
     dialog.modal-dialog::backdrop {
-      background: rgba(15, 41, 29, 0.76);
+      background: rgba(27, 42, 58, 0.76);
+      -webkit-backdrop-filter: blur(4px);
       backdrop-filter: blur(4px);
     }
 
     .modal-header {
-      background: var(--brand);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: var(--brand-deep);
       color: #FFFFFF;
       padding: 14px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: var(--space-3);
+      border-top-left-radius: calc(var(--radius-lg) - 2px);
+      border-top-right-radius: calc(var(--radius-lg) - 2px);
     }
 
     .modal-header h3 {
       color: #FFFFFF;
       font-size: 16.5px;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+
+    .modal-header .btn {
+      flex-shrink: 0;
     }
 
     .modal-body {
       padding: var(--space-4);
-      overflow-y: auto;
-      flex: 1;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       background: var(--paper-sunken);
+      border-bottom-left-radius: calc(var(--radius-lg) - 2px);
+      border-bottom-right-radius: calc(var(--radius-lg) - 2px);
     }
 
     .pdf-iframe {
+      display: block;
       width: 100%;
-      height: 72dvh;
+      height: max(240px, calc(90vh - 150px));
+      height: max(240px, calc(90dvh - 150px));
       border: none;
       border-radius: var(--radius-sm);
       background: #FFFFFF;
     }
 
     .lightbox-img {
+      display: block;
+      width: auto;
+      height: auto;
       max-width: 100%;
-      max-height: 72dvh;
+      max-height: max(160px, calc(90vh - 150px));
+      max-height: max(160px, calc(90dvh - 150px));
       object-fit: contain;
       border-radius: var(--radius-sm);
       background: #FFFFFF;
@@ -2302,6 +2354,17 @@
         }, 2500);
       }
 
+      const isBackdropClick = (modal, e) => {
+        if (e.target !== modal || e.detail === 0) return false;
+        const rect = modal.getBoundingClientRect();
+        return (
+          e.clientX < rect.left ||
+          e.clientX > rect.right ||
+          e.clientY < rect.top ||
+          e.clientY > rect.bottom
+        );
+      };
+
       // 1. Image lightbox
       const imgModal = document.getElementById('imgModal');
       const imgModalTitle = document.getElementById('imgModalTitle');
@@ -2314,21 +2377,41 @@
             if (!src) return;
             const caption = el.getAttribute('data-lightbox-caption') || 'Hình ảnh';
             if (imgModalTitle) imgModalTitle.textContent = caption;
+            const thumb = el.querySelector('img');
+            if (
+              thumb &&
+              thumb.getAttribute('src') === src &&
+              thumb.naturalWidth > 0 &&
+              thumb.naturalHeight > 0
+            ) {
+              modalImg.width = thumb.naturalWidth;
+              modalImg.height = thumb.naturalHeight;
+            } else {
+              modalImg.removeAttribute('width');
+              modalImg.removeAttribute('height');
+            }
             modalImg.src = src;
             modalImg.alt = caption;
             if (typeof imgModal.showModal === 'function') {
               imgModal.showModal();
+              imgModal.scrollTop = 0;
             } else {
               window.open(src, '_blank', 'noopener');
             }
           });
         });
         closeImgModal.addEventListener('click', () => imgModal.close());
+        modalImg.addEventListener('error', () => {
+          modalImg.removeAttribute('width');
+          modalImg.removeAttribute('height');
+        });
         imgModal.addEventListener('close', () => {
           modalImg.removeAttribute('src');
+          modalImg.removeAttribute('width');
+          modalImg.removeAttribute('height');
         });
         imgModal.addEventListener('click', (e) => {
-          if (e.target === imgModal) imgModal.close();
+          if (isBackdropClick(imgModal, e)) imgModal.close();
         });
       }
 
@@ -2342,7 +2425,7 @@
           pdfViewerFrame.src = 'about:blank';
         });
         pdfModal.addEventListener('click', (e) => {
-          if (e.target === pdfModal) pdfModal.close();
+          if (isBackdropClick(pdfModal, e)) pdfModal.close();
         });
       }
 

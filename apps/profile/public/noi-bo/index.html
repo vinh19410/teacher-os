@@ -4,16 +4,40 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#0d7c6b">
   <title>Nội bộ · Kịch bản tư vấn | Cô Mỹ Dạy Tiếng Anh</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --page: #ffffff;
+      --paper: #fbfaf7;
+      --butter: #fffaef;
+      --slate: #e9ebf1;
+      --hairline: #d9dde1;
+      --hairline-soft: #e8eaec;
+      --ink: #1b2a3a;
+      --ink-raised: #2a3a48;
+      --muted: #57616b;
+      --on-fill: #ffffff;
+      --on-ink-muted: #d9dde1;
+      --teal: #0d7c6b;
+      --teal-line: #cee6e0;
+      --mint: #e3f1ee;
+      --rust: #a8570f;
+      --blue: #205fae;
+      --blue-line: #c3d1eb;
+      --sky: #e5edf9;
+      --amber: #f5a73b;
+      --amber-line: #f0dcb8;
+      --cream: #fdf1db;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #F7F4EC;
-      color: #16261E;
+      background: var(--paper);
+      color: var(--ink);
       line-height: 1.6;
       padding: clamp(16px, 4vw, 48px);
       -webkit-font-smoothing: antialiased;
@@ -28,7 +52,7 @@
     }
     header {
       padding-bottom: 16px;
-      border-bottom: 1px solid #DFD9C8;
+      border-bottom: 1px solid var(--hairline);
     }
     .badge {
       display: inline-block;
@@ -38,52 +62,52 @@
       text-transform: uppercase;
       letter-spacing: 0.05em;
       border-radius: 9999px;
-      background: #FFF5DC;
-      color: #16261E;
-      border: 1px solid #E5A424;
+      background: var(--cream);
+      color: var(--ink);
+      border: 1px solid var(--amber);
       margin-bottom: 10px;
     }
     h1 {
-      color: #163828;
+      color: var(--ink);
       font-size: clamp(24px, 3.5vw, 28px);
       font-weight: 800;
       line-height: 1.25;
       letter-spacing: -0.015em;
     }
     .lead {
-      color: #4E6157;
+      color: var(--muted);
       font-size: 15px;
       margin-top: 8px;
       overflow-wrap: anywhere;
       word-break: break-word;
     }
     a {
-      color: #163828;
+      color: var(--teal);
       font-weight: 600;
       text-underline-offset: 3px;
       overflow-wrap: anywhere;
       word-break: break-word;
     }
-    a:hover { color: #0F291D; }
+    a:hover { color: var(--ink); }
     a:focus-visible,
     .btn:focus-visible {
-      outline: 3px solid #E5A424;
+      outline: 3px solid var(--blue);
       outline-offset: 2px;
     }
     .warning-box {
-      background: #FFF5DC;
-      border: 1px solid #E5A424;
-      border-left: 4px solid #E5A424;
+      background: var(--cream);
+      border: 1px solid var(--amber);
+      border-left: 4px solid var(--amber);
       border-radius: 8px;
       padding: 12px 16px;
       font-size: 14px;
-      color: #16261E;
+      color: var(--ink);
       overflow-wrap: anywhere;
       word-break: break-word;
     }
     .card {
-      background: #FFFFFF;
-      border: 1px solid #DFD9C8;
+      background: var(--page);
+      border: 1px solid var(--hairline);
       border-radius: 14px;
       padding: clamp(16px, 3vw, 22px);
       min-width: 0;
@@ -97,13 +121,13 @@
       margin-bottom: 8px;
     }
     h2 {
-      color: #163828;
+      color: var(--ink);
       font-size: 17px;
       font-weight: 700;
       line-height: 1.35;
     }
     .desc {
-      color: #4E6157;
+      color: var(--muted);
       font-size: 14px;
       margin-bottom: 12px;
       overflow-wrap: anywhere;
@@ -116,9 +140,9 @@
       font-family: inherit;
       font-size: 14.5px;
       line-height: 1.6;
-      color: #16261E;
-      background: #FAF6EA;
-      border: 1px solid #DFD9C8;
+      color: var(--ink);
+      background: var(--butter);
+      border: 1px solid var(--hairline);
       border-radius: 8px;
       padding: 14px;
       max-width: 100%;
@@ -130,8 +154,8 @@
       font: inherit;
       font-weight: 800;
       font-size: 14px;
-      background: #163828;
-      color: #FFFFFF;
+      background: var(--teal);
+      color: var(--on-fill);
       border: 0;
       border-radius: 8px;
       padding: 10px 16px;
@@ -140,10 +164,10 @@
       transition: background-color 0.15s ease;
       flex-shrink: 0;
     }
-    .btn:hover { background: #0F291D; }
+    .btn:hover { background: var(--ink); }
     .contact-card {
-      background: #FFFFFF;
-      border: 1px dashed #DFD9C8;
+      background: var(--page);
+      border: 1px dashed var(--hairline);
       border-radius: 14px;
       padding: clamp(16px, 3vw, 22px);
       min-width: 0;
@@ -158,14 +182,14 @@
       flex-direction: column;
       gap: 8px;
       font-size: 14.5px;
-      color: #4E6157;
+      color: var(--muted);
     }
     .contact-list li {
       overflow-wrap: anywhere;
       word-break: break-word;
     }
     .contact-list strong {
-      color: #16261E;
+      color: var(--ink);
       font-weight: 700;
     }
     #toast {
@@ -173,9 +197,9 @@
       bottom: 20px;
       right: 20px;
       max-width: calc(100vw - 32px);
-      background: #163828;
-      color: #FFFFFF;
-      border: 1px solid #E5A424;
+      background: var(--ink);
+      color: var(--on-fill);
+      border: 1px solid var(--amber);
       font-weight: 600;
       padding: 10px 16px;
       border-radius: 8px;
@@ -183,7 +207,7 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.2s ease;
-      box-shadow: 0 6px 18px rgba(22, 38, 30, 0.18);
+      box-shadow: 0 6px 18px rgba(27, 42, 58, 0.18);
       z-index: 1000;
     }
     #toast.show {
