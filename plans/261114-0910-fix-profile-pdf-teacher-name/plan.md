@@ -1,7 +1,7 @@
 ---
 title: "Sửa tên giảng viên Đỗ Thục Mỹ trong PDF và thumbnail hồ sơ (apps/profile)"
 description: "Loại bỏ chữ 'Thị ' dư thừa trong 02-Ho-So-Giang-Vien-Co-Thuc-My-VN.pdf và 04-Bang-Gioi-Thieu-Fanpage-The-English-Corner.pdf, tạo lại thumbnail 700x470, và bổ sung TDD regression test không phụ thuộc thư viện ngoài."
-status: pending
+status: completed
 priority: P1
 effort: 2h
 branch: fix/profile-pdf-teacher-name
@@ -36,7 +36,7 @@ created: 2026-11-14
 
 | Phase | File | Mô tả | Status |
 |---|---|---|---|
-| Phase 01 | [phase-01-start.md](./phase-01-start.md) | TDD RED test, vá PDF 02 & 04, render lại thumbs 700x470, chụp POT & verify gates | pending |
+| Phase 01 | [phase-01-start.md](./phase-01-start.md) | TDD RED test, vá PDF 02 & 04, render lại thumbs 700x470, chụp POT & verify gates | completed |
 
 ## Success Criteria
 

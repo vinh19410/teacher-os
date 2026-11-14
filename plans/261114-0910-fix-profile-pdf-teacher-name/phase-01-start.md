@@ -1,6 +1,6 @@
 ---
 title: "Phase 01: TDD RED test, sửa PDF 02 & 04, render lại thumbnail 700x470 và verify POT"
-status: pending
+status: completed
 ---
 
 # Phase 01: Sửa tên giảng viên thành Đỗ Thục Mỹ trong PDF và thumbnail
@@ -54,14 +54,14 @@ status: pending
 
 - **Goal:** Chụp ảnh POT sắc nét cho các trang PDF đã sửa, 2 thumbnail mới, và phần `#ho-so-pdf` của `apps/profile` ở 3 viewport (`1440x900`, `768x1024`, `375x812`), kiểm tra trực quan, và vượt qua toàn bộ gate chất lượng local.
 - **Target files and symbols:**
-  - `plans/reports/<ISSUE_NUM>-pdf02-page1-fixed.png`
-  - `plans/reports/<ISSUE_NUM>-pdf02-page6-fixed.png`
-  - `plans/reports/<ISSUE_NUM>-pdf04-page1-fixed.png`
-  - `plans/reports/<ISSUE_NUM>-profile-1440x900.png`
-  - `plans/reports/<ISSUE_NUM>-profile-768x1024.png`
-  - `plans/reports/<ISSUE_NUM>-profile-375x812.png`
+  - `plans/reports/710-pdf02-page1-fixed.png`
+  - `plans/reports/710-pdf02-page6-fixed.png`
+  - `plans/reports/710-pdf04-page1-fixed.png`
+  - `plans/reports/710-profile-1440x900.png`
+  - `plans/reports/710-profile-768x1024.png`
+  - `plans/reports/710-profile-375x812.png`
   - `CHANGELOG.md`
-  - `plans/journals/2026-11-14-ship-<ISSUE_NUM>-profile-pdf-teacher-name.md`
+  - `plans/journals/2026-11-14-ship-710-profile-pdf-teacher-name.md`
 - **Steps:**
   1. Render PNG độ phân giải cao từ các PDF đã vá và chụp screenshot `#ho-so-pdf` qua `createProfileServer` (nhớ click mở `<details id="ho-so-pdf">` trước khi chụp) tại 3 viewport, lưu vào `plans/reports/`.
   2. Mở từng ảnh PNG bằng `read_file` xác nhận không trắng/vỡ layout và tên `"Đỗ Thục Mỹ"` hiển thị rõ.

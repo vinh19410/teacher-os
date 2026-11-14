@@ -13,6 +13,7 @@ Quy ước khi cập nhật:
 ## 2026-11-14
 
 ### Fixed
+- Sửa lỗi sai tên giảng viên từ `"Đỗ Thị Thục Mỹ"` thành `"Đỗ Thục Mỹ"` (và `"Cô Đỗ Thục Mỹ"`) trên bộ tài liệu PDF công khai của `apps/profile` (`msmy.io.vn`): cập nhật metadata `/Title`, tag `/Alt` và các text stream + tọa độ `Td`/`Tm` trong `02-Ho-So-Giang-Vien-Co-Thuc-My-VN.pdf` (Trang 1, Trang 6) và `04-Bang-Gioi-Thieu-Fanpage-The-English-Corner.pdf` (Trang 1), render lại 2 thumbnail `700x470` (`thumbs/02-...jpg`, `thumbs/04-...jpg`), đồng thời bổ sung TDD regression test zero-dependency trong `apps/profile/tests/index.test.mjs` quét đủ 5 PDF và 5 thumbnail (#710).
 - Sửa lỗi popup lightbox `#imgModal` trên `apps/profile` (`msmy.io.vn`) cắt ảnh chứng chỉ còn khe ~32px trên iOS Safari/WebKit: chuyển `dialog.modal-dialog[open]` sang `display: block` với `.modal-header` sticky bo góc trên, di chuyển `overflow-y: auto` lên `<dialog>`, đồng bộ kích thước ảnh từ thumbnail và reset `width`/`height` khi đóng, kiểm tra tọa độ `getBoundingClientRect()` khi click backdrop để không đóng nhầm từ thanh cuộn, đồng thời bổ sung contract test (`apps/profile/tests/index.test.mjs`) và E2E regression (`apps/e2e/specs/profile-lightbox.spec.ts`) (#706).
 
 ## 2026-11-13
