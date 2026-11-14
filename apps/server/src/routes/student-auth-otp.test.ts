@@ -157,7 +157,7 @@ describe("Student Email OTP Authentication & Profile Matching Integration (#578)
 		expect(body.student.email.toLowerCase()).toBe(email.toLowerCase());
 	});
 
-	test("Trường hợp C: Học viên có pending studentInvitation -> createStudentGuard trả về 403 NOT_LINKED", async () => {
+	test("Trường hợp C: Học viên có pending studentInvitation -> đăng nhập OTP tự tạo hồ sơ, tự accept lời mời và trả về 200 OK (#716)", async () => {
 		const email = "invited-student@example.com";
 
 		// Create teacher user as inviter
@@ -184,7 +184,21 @@ describe("Student Email OTP Authentication & Profile Matching Integration (#578)
 		// Student logs in via OTP
 		const cookie = await loginWithOtp(email);
 
-		// Access student me endpoint
+		// Auth hook must already provision student and accept invitation BEFORE /api/student/me
+		const studentRes = await raw.execute({
+			sql: "SELECT id, org_id, email FROM student WHERE lower(trim(email)) = ?",
+			args: [email.toLowerCase()],
+		});
+		expect(studentRes.rows).toHaveLength(1);
+		expect(studentRes.rows[0]?.org_id).toBe("org-default");
+
+		const invRes = await raw.execute({
+			sql: "SELECT status FROM student_invitation WHERE id = ?",
+			args: ["inv-1"],
+		});
+		expect(invRes.rows[0]?.status).toBe("accepted");
+
+		// Access student me endpoint -> 200 OK (never 403)
 		const meRes = await app.request("/api/student/me", {
 			headers: {
 				origin: PORTAL_ORIGIN,
@@ -192,9 +206,11 @@ describe("Student Email OTP Authentication & Profile Matching Integration (#578)
 			},
 		});
 
-		// As designed, pending invitation students get 403 NOT_LINKED to display invitation acceptance UI
-		expect(meRes.status).toBe(403);
-		const body = (await meRes.json()) as { error: string; code: string };
-		expect(body.code).toBe("STUDENT_NOT_LINKED");
+		expect(meRes.status).toBe(200);
+		const body = (await meRes.json()) as {
+			student: { orgId: string; email: string };
+		};
+		expect(body.student.orgId).toBe("org-default");
+		expect(body.student.email.toLowerCase()).toBe(email.toLowerCase());
 	});
 });

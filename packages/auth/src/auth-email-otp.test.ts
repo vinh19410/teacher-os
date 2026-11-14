@@ -291,7 +291,8 @@ describe("Email OTP authentication in packages/auth (#578)", () => {
 		// Victim logs in via OTP
 		const sendRes = await sendOtp(ctx, STUDENT_ORIGIN, email);
 		expect(sendRes.status).toBe(200);
-		const otp = ctx.send.mock.calls[0][0].text.match(/\b\d{6}\b/)?.[0] ?? "";
+		const mailText = String(ctx.send.mock.calls[0]?.[0]?.text ?? "");
+		const otp = mailText.match(/\b\d{6}\b/)?.[0] ?? "";
 		expect(otp).toBeTruthy();
 
 		const signInRes = await signInOtp(ctx, STUDENT_ORIGIN, email, otp);
@@ -314,5 +315,85 @@ describe("Email OTP authentication in packages/auth (#578)", () => {
 			})
 		).rows[0];
 		expect(userRow.email_verified).toBe(1);
+	});
+
+	test("OTP sign-in from STUDENT_ORIGIN auto-provisions student into teacher's active org and auto-accepts pending invitation (#716)", async () => {
+		const ctx = await setup({ teacherEmails: ["boss-teacher@example.com"] });
+
+		// Seed an earlier empty org and a later org owned by TEACHER_EMAILS
+		await ctx.raw.execute({
+			sql: "INSERT INTO organization (id, name, created_at) VALUES (?, ?, ?)",
+			args: ["org-empty-early", "Empty Lead Org", 1000],
+		});
+		await ctx.raw.execute({
+			sql: "INSERT INTO user (id, name, email, email_verified, created_at, updated_at, role) VALUES (?, ?, ?, ?, ?, ?, ?)",
+			args: [
+				"u-boss-teacher",
+				"Boss Teacher",
+				"boss-teacher@example.com",
+				1,
+				1500,
+				1500,
+				"teacher",
+			],
+		});
+		await ctx.raw.execute({
+			sql: "INSERT INTO organization (id, name, created_at) VALUES (?, ?, ?)",
+			args: ["org-teacher-active", "Active Academy", 2000],
+		});
+		await ctx.raw.execute({
+			sql: "INSERT INTO membership (id, org_id, user_id, role, created_at) VALUES (?, ?, ?, ?, ?)",
+			args: [
+				"mem-boss-teacher",
+				"org-teacher-active",
+				"u-boss-teacher",
+				"teacher",
+				2000,
+			],
+		});
+
+		const email = "otp-invited-student@example.com";
+		await ctx.raw.execute({
+			sql: "INSERT INTO student_invitation (id, org_id, inviter_user_id, email, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+			args: [
+				"inv-otp-1",
+				"org-teacher-active",
+				"u-boss-teacher",
+				email,
+				"pending",
+				2500,
+				2500,
+			],
+		});
+
+		const sendRes = await sendOtp(ctx, STUDENT_ORIGIN, email);
+		expect(sendRes.status).toBe(200);
+		const mailText = String(ctx.send.mock.calls[0]?.[0]?.text ?? "");
+		const otp = mailText.match(/\b\d{6}\b/)?.[0] ?? "";
+		expect(otp).toBeTruthy();
+
+		const signInRes = await signInOtp(ctx, STUDENT_ORIGIN, email, otp);
+		expect(signInRes.status).toBe(200);
+
+		const studentRows = (
+			await ctx.raw.execute({
+				sql: "SELECT org_id, name, email FROM student WHERE lower(trim(email)) = ?",
+				args: [email],
+			})
+		).rows;
+		expect(studentRows).toHaveLength(1);
+		expect(studentRows[0]).toMatchObject({
+			org_id: "org-teacher-active",
+			name: "otp-invited-student",
+			email,
+		});
+
+		const invitationRow = (
+			await ctx.raw.execute({
+				sql: "SELECT status FROM student_invitation WHERE id = ?",
+				args: ["inv-otp-1"],
+			})
+		).rows[0];
+		expect(invitationRow?.status).toBe("accepted");
 	});
 });
