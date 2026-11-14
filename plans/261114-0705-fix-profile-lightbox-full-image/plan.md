@@ -1,7 +1,7 @@
 ---
 title: "fix-profile-lightbox-full-image"
 description: "Sửa lỗi popup lightbox trên apps/profile (msmy.io.vn) cắt ảnh chứng chỉ còn khe 32px trên iOS Safari và bổ sung kiểm thử TDD + E2E"
-status: pending
+status: completed
 priority: P1
 effort: "2h"
 tags: [bugfix, profile, safari, lightbox, tdd]

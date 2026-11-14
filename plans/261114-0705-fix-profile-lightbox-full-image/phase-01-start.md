@@ -92,10 +92,10 @@ Khắc phục triệt để lỗi `#imgModal` bị sụp chiều cao cắt ảnh
 
 ## Todo
 
-- [ ] Task 1.1: Viết unit/contract test RED trong `apps/profile/tests/index.test.mjs`
-- [ ] Task 1.2: Viết E2E spec `apps/e2e/specs/profile-lightbox.spec.ts`
-- [ ] Task 1.3: Sửa CSS & JS lightbox trong `apps/profile/public/index.html` (GREEN)
-- [ ] Task 1.4: Chạy toàn bộ local gates, WebKit check, E2E spec lẻ và chụp ảnh POT 3 viewport
+- [x] Task 1.1: Viết unit/contract test RED trong `apps/profile/tests/index.test.mjs`
+- [x] Task 1.2: Viết E2E spec `apps/e2e/specs/profile-lightbox.spec.ts`
+- [x] Task 1.3: Sửa CSS & JS lightbox trong `apps/profile/public/index.html` (GREEN)
+- [x] Task 1.4: Chạy toàn bộ local gates, WebKit check, E2E spec lẻ và chụp ảnh POT 3 viewport
 
 ## Verification
 

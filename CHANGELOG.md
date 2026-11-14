@@ -10,6 +10,11 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-11-14
+
+### Fixed
+- Sửa lỗi popup lightbox `#imgModal` trên `apps/profile` (`msmy.io.vn`) cắt ảnh chứng chỉ còn khe ~32px trên iOS Safari/WebKit: chuyển `dialog.modal-dialog[open]` sang `display: block` với `.modal-header` sticky bo góc trên, di chuyển `overflow-y: auto` lên `<dialog>`, đồng bộ kích thước ảnh từ thumbnail và reset `width`/`height` khi đóng, kiểm tra tọa độ `getBoundingClientRect()` khi click backdrop để không đóng nhầm từ thanh cuộn, đồng thời bổ sung contract test (`apps/profile/tests/index.test.mjs`) và E2E regression (`apps/e2e/specs/profile-lightbox.spec.ts`) (#706).
+
 ## 2026-11-13
 
 ### Added
