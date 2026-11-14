@@ -411,7 +411,7 @@ export function createQuizWriteGuard(allowedOrigins: string[]) {
 	return async (
 		c: Context<StudentEnv>,
 		next: () => Promise<void>,
-	): Promise<Response | undefined> => {
+	): Promise<Response | void> => {
 		const method = c.req.method;
 		if (
 			method === "POST" ||
@@ -427,8 +427,7 @@ export function createQuizWriteGuard(allowedOrigins: string[]) {
 				(method === "PUT" || method === "DELETE") &&
 				QUIZ_MEDIA_ROUTE_PATH.test(c.req.path)
 			) {
-				await next();
-				return;
+				return next();
 			}
 			const contentType = c.req.header("Content-Type") ?? "";
 			if (!contentType.toLowerCase().startsWith("application/json")) {
@@ -436,15 +435,12 @@ export function createQuizWriteGuard(allowedOrigins: string[]) {
 			}
 			// Cap đo TRÊN BYTE THẬT của body (chunked/malformed
 			// Content-Length không lọt) — precedent POST /api/syllabus-templates (syllabus.ts).
-			const limited = await bodyLimit({
+			return bodyLimit({
 				maxSize: c.req.path.endsWith("/essay") ? QUIZ_ESSAY_BODY_MAX : 4096,
 				onError: (bc) => bc.json({ error: "payload too large" }, 413),
 			})(c, next);
-			if (limited) return limited;
-			return;
 		}
-		await next();
-		return;
+		return next();
 	};
 }
 

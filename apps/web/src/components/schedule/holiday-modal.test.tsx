@@ -484,4 +484,145 @@ describe("HolidayModal CLASS_PAUSED (#694)", () => {
 		expect(screen.queryByTestId("holiday-preview")).toBeNull();
 		expect(onRefreshClasses).toHaveBeenCalledTimes(1);
 	});
+
+	it("prunes paused classIds after classes refresh so subsequent preview/apply exclude stale paused IDs", async () => {
+		const twoClasses = [
+			{ id: "cl-1", name: "IELTS Writing" },
+			{ id: "cl-2", name: "IELTS Speaking" },
+		];
+		let rerenderFn!: (ui: React.ReactElement) => void;
+		const onRefreshClasses = vi.fn(() => {
+			rerenderFn(
+				<HolidayModal
+					open
+					classes={[twoClasses[1]]}
+					onClose={vi.fn()}
+					onApplied={vi.fn()}
+					onRefreshClasses={onRefreshClasses}
+				/>,
+			);
+		});
+		repos.previewHoliday
+			.mockRejectedValueOnce(
+				Object.assign(new Error("CLASS_PAUSED"), {
+					holidayErrorCode: "CLASS_PAUSED",
+				}),
+			)
+			.mockResolvedValueOnce({
+				...PREVIEW,
+				shifts: [
+					{
+						...PREVIEW.shifts[0],
+						classId: "cl-2",
+						className: "IELTS Speaking",
+					},
+				],
+				planHash: "hash-cl2",
+			});
+
+		const view = render(
+			<HolidayModal
+				open
+				classes={twoClasses}
+				onClose={vi.fn()}
+				onApplied={vi.fn()}
+				onRefreshClasses={onRefreshClasses}
+			/>,
+		);
+		rerenderFn = view.rerender;
+
+		fillValidForm();
+		fireEvent.click(screen.getByLabelText("Chọn lớp học cụ thể"));
+		fireEvent.click(screen.getByRole("button", { name: "IELTS Writing" }));
+		fireEvent.click(screen.getByRole("button", { name: "IELTS Speaking" }));
+
+		await waitFor(() => expect(onRefreshClasses).toHaveBeenCalledTimes(1));
+		await waitFor(() =>
+			expect(
+				screen.queryByRole("button", { name: "IELTS Writing" }),
+			).toBeNull(),
+		);
+		await waitFor(() =>
+			expect(repos.previewHoliday).toHaveBeenLastCalledWith(
+				expect.objectContaining({
+					scope: "classes",
+					classIds: ["cl-2"],
+				}),
+			),
+		);
+		await waitFor(() =>
+			expect(screen.getByTestId("holiday-preview")).toBeTruthy(),
+		);
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Xác nhận áp dụng & Dời buổi" }),
+		);
+		await waitFor(() =>
+			expect(repos.applyHoliday).toHaveBeenCalledWith(
+				expect.objectContaining({
+					scope: "classes",
+					classIds: ["cl-2"],
+				}),
+				"hash-cl2",
+			),
+		);
+	});
+
+	it("clears single paused classId after classes refresh instead of leaving a hidden selection trap", async () => {
+		let rerenderFn!: (ui: React.ReactElement) => void;
+		const onRefreshClasses = vi.fn(() => {
+			rerenderFn(
+				<HolidayModal
+					open
+					classes={[]}
+					onClose={vi.fn()}
+					onApplied={vi.fn()}
+					onRefreshClasses={onRefreshClasses}
+				/>,
+			);
+		});
+		repos.previewHoliday.mockResolvedValueOnce(PREVIEW);
+		repos.applyHoliday.mockRejectedValueOnce(
+			Object.assign(new Error("CLASS_PAUSED"), {
+				holidayErrorCode: "CLASS_PAUSED",
+			}),
+		);
+
+		const view = render(
+			<HolidayModal
+				open
+				classes={CLASSES}
+				onClose={vi.fn()}
+				onApplied={vi.fn()}
+				onRefreshClasses={onRefreshClasses}
+			/>,
+		);
+		rerenderFn = view.rerender;
+
+		fillValidForm();
+		fireEvent.click(screen.getByLabelText("Chọn lớp học cụ thể"));
+		fireEvent.click(screen.getByRole("button", { name: "IELTS Writing" }));
+
+		await waitFor(() =>
+			expect(screen.getByTestId("holiday-preview")).toBeTruthy(),
+		);
+		repos.previewHoliday.mockClear();
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Xác nhận áp dụng & Dời buổi" }),
+		);
+		await waitFor(() => expect(onRefreshClasses).toHaveBeenCalledTimes(1));
+		await waitFor(() =>
+			expect(screen.getByText("Chọn ít nhất một lớp")).toBeTruthy(),
+		);
+		expect(
+			(
+				screen.getByRole("button", {
+					name: "Xác nhận áp dụng & Dời buổi",
+				}) as HTMLButtonElement
+			).disabled,
+		).toBe(true);
+		await settle();
+		expect(repos.previewHoliday).not.toHaveBeenCalled();
+	});
 });

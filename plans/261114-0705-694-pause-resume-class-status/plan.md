@@ -21,9 +21,9 @@ tags: ["classes", "kernel", "web", "student", "d1-concurrency"]
 
 | Phase | Title | Status | File |
 |---|---|---|---|
-| 1 | Contracts and Server | todo | [phase-01-start.md](./phase-01-start.md) |
-| 2 | Web and Student UI | todo | [phase-02-web-and-student-ui.md](./phase-02-web-and-student-ui.md) |
-| 3 | E2E Review and Docs | todo | [phase-03-e2e-review-and-docs.md](./phase-03-e2e-review-and-docs.md) |
+| 1 | Contracts and Server | done | [phase-01-start.md](./phase-01-start.md) |
+| 2 | Web and Student UI | done | [phase-02-web-and-student-ui.md](./phase-02-web-and-student-ui.md) |
+| 3 | E2E Review and Docs | done | [phase-03-e2e-review-and-docs.md](./phase-03-e2e-review-and-docs.md) |
 
 ## Architectural Locks & Invariants
 
@@ -65,7 +65,7 @@ Tổng hợp kiểm định chéo từ 3 persona (`Security Adversary`: 1C/6I/1M
 
 ## DONE Criteria
 
-- [ ] Toàn bộ contracts, role guard, server write guards (kể cả D1 race scenarios), và server read filters (`daily-attendance`, `dashboard-reminders`, `student`, `snapshot`, `syllabus`, `holidays`) được chứng minh bằng automated tests.
-- [ ] Web (`/classes` + `?filter=`, `/classes/$classId`, `/schedule`, `/dashboard`, `/attendance`, `/students/$studentId`, `AddStudentModal`) và Student Portal đồng bộ 2 trạng thái `active ↔ paused`, không lộ `"Buổi tới"`, warn badge giả, hay `"Đã kết thúc"` sai cho buổi tạm dừng.
-- [ ] Targeted E2E (`apps/e2e/specs/class-status.spec.ts` + `class-operations.spec.ts` nếu ảnh hưởng selector) pass trên port override; `pnpm design:compare --force --screens t-classes,t-class-detail --side both --label new` đạt mã `0`.
+- [x] Toàn bộ contracts, role guard, server write guards (kể cả D1 race scenarios), và server read filters (`daily-attendance`, `dashboard-reminders`, `student`, `snapshot`, `syllabus`, `holidays`) được chứng minh bằng automated tests.
+- [x] Web (`/classes` + `?filter=`, `/classes/$classId`, `/schedule`, `/dashboard`, `/attendance`, `/students/$studentId`, `AddStudentModal`) và Student Portal đồng bộ 2 trạng thái `active ↔ paused`, không lộ `"Buổi tới"`, warn badge giả, hay `"Đã kết thúc"` sai cho buổi tạm dừng.
+- [x] Targeted E2E (`apps/e2e/specs/class-status.spec.ts` + `class-operations.spec.ts` nếu ảnh hưởng selector) pass trên port override; `pnpm design:compare --force --screens t-classes,t-class-detail --side both --label new` đạt mã `0`.
 - [ ] Full local gates pass (`pnpm exec biome check .`, `pnpm check-types`, `pnpm test`, `pnpm build`) + `ak-code-review` + Kongming gates + Beta PR vào `develop` merge xanh CI/Staging + POT hoàn chỉnh trên issue `#694`.

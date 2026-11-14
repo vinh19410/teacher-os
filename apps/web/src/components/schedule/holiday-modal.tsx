@@ -89,6 +89,8 @@ export function HolidayModal({
 	const draft: HolidayDraft | null = parsed.success ? parsed.data : null;
 	const draftRef = useRef<HolidayDraft | null>(null);
 	draftRef.current = draft;
+	const onRefreshClassesRef = useRef(onRefreshClasses);
+	onRefreshClassesRef.current = onRefreshClasses;
 	const previewKey = draft
 		? `${draft.fromDate}|${draft.toDate}|${draft.scope}|${draft.classIds.join(",")}|${draft.mode}`
 		: null;
@@ -117,6 +119,16 @@ export function HolidayModal({
 		});
 		return () => cancelAnimationFrame(raf1);
 	}, [open]);
+
+	// Prune selected classIds if refreshing classes drops a newly paused class (#694).
+	useEffect(() => {
+		const validIds = new Set(classes.map((cls) => cls.id));
+		setClassIds((prev) => {
+			if (prev.length === 0) return prev;
+			const next = prev.filter((id) => validIds.has(id));
+			return next.length === prev.length ? prev : next;
+		});
+	}, [classes]);
 
 	// Debounce 300ms — chỉ gọi preview khi form hợp lệ và các trường quyết định
 	// lịch (fromDate/toDate/scope/classIds) thay đổi; sửa `name` (khi vẫn hợp lệ)
@@ -148,7 +160,7 @@ export function HolidayModal({
 						const code = holidayErrorCodeOf(cause);
 						if (code === CLASS_ERROR_CODES.CLASS_PAUSED) {
 							setPreviewError(CLASS_PAUSED_HOLIDAY_MESSAGE);
-							onRefreshClasses?.();
+							onRefreshClassesRef.current?.();
 						} else {
 							setPreviewError(
 								cause instanceof Error
