@@ -18,6 +18,7 @@ import {
 	resolveRequestApp,
 	resolveUserRole,
 } from "./role";
+import { provisionStudentForUser } from "./student-provisioning";
 import {
 	authBaseURL,
 	authCookiePrefix,
@@ -238,6 +239,38 @@ export function createAuth(input: CreateAuthInput) {
 		});
 	}
 
+	async function maybeProvisionVerifiedStudent(
+		candidate: unknown,
+	): Promise<void> {
+		if (!candidate || typeof candidate !== "object") return;
+		const candidateUser = candidate as {
+			role?: unknown;
+			emailVerified?: unknown;
+			email?: unknown;
+			name?: unknown;
+		};
+		if (
+			candidateUser.role !== "student" ||
+			candidateUser.emailVerified !== true
+		) {
+			return;
+		}
+		if (
+			typeof candidateUser.email !== "string" ||
+			!candidateUser.email.trim()
+		) {
+			return;
+		}
+		await provisionStudentForUser(
+			input.db as object,
+			{
+				name: typeof candidateUser.name === "string" ? candidateUser.name : "",
+				email: candidateUser.email,
+			},
+			{ teacherEmails: input.teacherEmails },
+		);
+	}
+
 	return betterAuth({
 		database: drizzleAdapter(input.db, {
 			provider: "sqlite",
@@ -319,6 +352,9 @@ export function createAuth(input: CreateAuthInput) {
 						error,
 					});
 				}
+			},
+			afterEmailVerification: async (verifiedUser) => {
+				await maybeProvisionVerifiedStudent(verifiedUser);
 			},
 			sendOnSignUp: true,
 			autoSignInAfterVerification: true,
@@ -495,6 +531,14 @@ export function createAuth(input: CreateAuthInput) {
 								role: appRole,
 							},
 						};
+					},
+					after: async (created) => {
+						await maybeProvisionVerifiedStudent(created);
+					},
+				},
+				update: {
+					after: async (updated) => {
+						await maybeProvisionVerifiedStudent(updated);
 					},
 				},
 			},

@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import * as schema from "@teacher-os/db/schema/index";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { describe, expect, test, vi } from "vitest";
@@ -139,5 +140,104 @@ describe("auth email verification wiring", () => {
 		// Must propagate error — not swallow (so client UI can display error)
 		expect(res.status).not.toBe(200);
 		expect(sendSpy).toHaveBeenCalledTimes(2);
+	});
+
+	test("student Email+Password sign-up creates no student row while unverified, and auto-provisions into teacher's active org on verify-email (#716)", async () => {
+		const client = createClient({ url: "file::memory:" });
+		const libsql = drizzle(client, { schema });
+		await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
+
+		const apiOrigin = "http://api.test";
+		const teacherOrigin = "http://teacher.test";
+		const studentOrigin = "http://student.test";
+
+		// Earlier empty org (e.g. lead seed org) must be skipped in favor of teacher's active org
+		await libsql.insert(schema.organization).values([
+			{ id: "org-empty-early", name: "Empty Org", createdAt: new Date(1000) },
+			{
+				id: "org-teacher-active",
+				name: "Teacher Active Org",
+				createdAt: new Date(2000),
+			},
+		]);
+		await libsql.insert(schema.user).values({
+			id: "u-teacher-owner",
+			name: "Owner Teacher",
+			email: "owner@example.com",
+			emailVerified: true,
+			role: "teacher",
+		});
+		await libsql.insert(schema.membership).values({
+			id: "mem-owner",
+			orgId: "org-teacher-active",
+			userId: "u-teacher-owner",
+			role: "teacher",
+		});
+
+		const sendSpy = vi.fn().mockResolvedValue(undefined);
+		const auth = createAuth({
+			db: libsql,
+			corsOrigin: [teacherOrigin, studentOrigin],
+			studentOrigins: [studentOrigin],
+			teacherEmails: ["owner@example.com"],
+			secret: "test-secret-0123456789abcdef0123456789abcdef",
+			baseURL: apiOrigin,
+			googleClientId: "test-dummy",
+			googleClientSecret: "test-dummy",
+			mailer: { send: sendSpy },
+		});
+
+		const email = "verify-student@example.com";
+		const signUpRes = await auth.handler(
+			new Request(`${apiOrigin}/api/auth/sign-up/email`, {
+				method: "POST",
+				headers: {
+					"content-type": "application/json",
+					origin: studentOrigin,
+				},
+				body: JSON.stringify({
+					name: "Verify Student",
+					email,
+					password: "password123",
+					callbackURL: `${studentOrigin}/login`,
+				}),
+			}),
+		);
+		expect(signUpRes.status).toBe(200);
+		expect(sendSpy).toHaveBeenCalledTimes(1);
+
+		// Before email verification: user exists with emailVerified=false and NO student row
+		const [unverifiedUser] = await libsql
+			.select()
+			.from(schema.user)
+			.where(eq(schema.user.email, email));
+		expect(unverifiedUser?.emailVerified).toBe(false);
+		expect(unverifiedUser?.role).toBe("student");
+		const studentsBefore = await libsql.select().from(schema.student);
+		expect(studentsBefore).toHaveLength(0);
+
+		// Extract verification link and trigger /api/auth/verify-email
+		const emailText = String(sendSpy.mock.calls[0]?.[0]?.text ?? "");
+		const verifyUrl = emailText.match(/https?:\/\/\S+/)?.[0];
+		expect(verifyUrl).toBeTruthy();
+
+		const verifyRes = await auth.handler(new Request(verifyUrl as string));
+		expect(verifyRes.status).toBe(302);
+		expect(verifyRes.headers.get("location")).toBe(`${studentOrigin}/login`);
+
+		// After verification: student row is immediately provisioned in teacher's active org
+		const [verifiedUser] = await libsql
+			.select()
+			.from(schema.user)
+			.where(eq(schema.user.email, email));
+		expect(verifiedUser?.emailVerified).toBe(true);
+
+		const studentsAfter = await libsql.select().from(schema.student);
+		expect(studentsAfter).toHaveLength(1);
+		expect(studentsAfter[0]).toMatchObject({
+			orgId: "org-teacher-active",
+			name: "Verify Student",
+			email,
+		});
 	});
 });
