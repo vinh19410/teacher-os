@@ -498,6 +498,13 @@
       "when": 1794688947697,
       "tag": "0070_giant_shinobi_shaw",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "6",
+      "when": 1794784327346,
+      "tag": "0071_placement_ai_grading",
+      "breakpoints": true
     }
   ]
 }

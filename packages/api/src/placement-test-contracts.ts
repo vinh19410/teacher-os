@@ -2038,11 +2038,134 @@ export const placementPublicSubmitSchema = z
 	.strict();
 export type PlacementPublicSubmit = z.infer<typeof placementPublicSubmitSchema>;
 
+// ---------------------------------------------------------------------------
+// Chấm nháp AI Writing/Speaking + highlight lỗi (#730)
+// ---------------------------------------------------------------------------
+
+/** Loại lỗi — key ổn định (API/DB), nhãn tiếng Việt cho UI. */
+export const PLACEMENT_ERROR_CATEGORIES = [
+	{ key: "grammar", label: "Ngữ pháp" },
+	{ key: "vocabulary", label: "Từ vựng" },
+	{ key: "spelling", label: "Chính tả" },
+	{ key: "coherence", label: "Mạch lạc" },
+	{ key: "pronunciation", label: "Phát âm" },
+] as const;
+export type PlacementErrorCategory =
+	(typeof PLACEMENT_ERROR_CATEGORIES)[number]["key"];
+const PLACEMENT_ERROR_CATEGORY_KEYS = PLACEMENT_ERROR_CATEGORIES.map(
+	(c) => c.key,
+) as [PlacementErrorCategory, ...PlacementErrorCategory[]];
+
+export const PLACEMENT_ERRORS_MAX = 60;
+export const PLACEMENT_ERROR_QUOTE_MAX = 300;
+export const PLACEMENT_ERROR_EXPLANATION_MAX = 600;
+
+/**
+ * Một lỗi được đánh dấu trên bài viết (Writing) hoặc transcript (Speaking).
+ * `quote` là đoạn nguyên văn bị sai; `start`/`end` là offset ký tự (UTF-16,
+ * `end` loại trừ) trong văn bản nguồn do SERVER định vị lại từ `quote`
+ * (`locatePlacementErrors`) — null khi không tìm thấy (thẻ vẫn hiện, không tô).
+ */
+export const placementErrorSchema = z
+	.object({
+		id: z.string().trim().min(1).max(40),
+		category: z.enum(PLACEMENT_ERROR_CATEGORY_KEYS),
+		quote: z.string().min(1).max(PLACEMENT_ERROR_QUOTE_MAX),
+		start: z.number().int().min(0).nullable().default(null),
+		end: z.number().int().min(0).nullable().default(null),
+		correction: z.string().max(PLACEMENT_ERROR_QUOTE_MAX).default(""),
+		explanation: z.string().max(PLACEMENT_ERROR_EXPLANATION_MAX).default(""),
+	})
+	.strict();
+export type PlacementError = z.infer<typeof placementErrorSchema>;
+
+export const placementErrorListSchema = z
+	.array(placementErrorSchema)
+	.max(PLACEMENT_ERRORS_MAX);
+
+/**
+ * Định vị lại offset của từng lỗi trong `text` (thuần, dùng chung server/UI):
+ * - Giữ `start/end` nếu `text.slice(start, end) === quote` và không chồng lấn.
+ * - Ngược lại tìm `quote` (ưu tiên khớp chính xác, sau đó không phân biệt
+ *   hoa thường) từ đầu văn bản, bỏ qua vùng đã bị lỗi trước chiếm.
+ * - Không tìm được → `start = end = null`.
+ * Kết quả sắp theo vị trí (lỗi không định vị được xếp cuối, giữ thứ tự gốc).
+ */
+export function locatePlacementErrors(
+	text: string,
+	errors: readonly PlacementError[],
+): PlacementError[] {
+	const taken: Array<[number, number]> = [];
+	const overlaps = (s: number, e: number) =>
+		taken.some(([ts, te]) => s < te && ts < e);
+	const lower = text.toLowerCase();
+	const find = (quote: string): [number, number] | null => {
+		for (const [hay, needle] of [
+			[text, quote],
+			[lower, quote.toLowerCase()],
+		] as const) {
+			let from = 0;
+			while (from <= hay.length) {
+				const idx = hay.indexOf(needle, from);
+				if (idx < 0) break;
+				const end = idx + needle.length;
+				if (!overlaps(idx, end)) return [idx, end];
+				from = idx + 1;
+			}
+		}
+		return null;
+	};
+	const located = errors.map((err) => {
+		const { start, end } = err;
+		if (
+			start !== null &&
+			end !== null &&
+			end > start &&
+			text.slice(start, end) === err.quote &&
+			!overlaps(start, end)
+		) {
+			taken.push([start, end]);
+			return err;
+		}
+		const hit = err.quote.trim().length > 0 ? find(err.quote) : null;
+		if (hit) taken.push(hit);
+		return { ...err, start: hit?.[0] ?? null, end: hit?.[1] ?? null };
+	});
+	return located
+		.map((err, i) => ({ err, i }))
+		.sort((a, b) => {
+			const as = a.err.start ?? Number.POSITIVE_INFINITY;
+			const bs = b.err.start ?? Number.POSITIVE_INFINITY;
+			return as === bs ? a.i - b.i : as - bs;
+		})
+		.map(({ err }) => err);
+}
+
+export type PlacementAiStatus = "none" | "processing" | "drafted" | "failed";
+
+/** Mã lỗi pipeline chấm AI placement (lưu `ai_error_code`). */
+export const PLACEMENT_AI_ERROR_CODES = {
+	DISABLED: "AI_GRADING_DISABLED",
+	FAILED: "AI_GRADING_FAILED",
+	TIMEOUT: "AI_GRADING_TIMEOUT",
+	NO_TRANSCRIPT: "AI_GRADING_NO_TRANSCRIPT",
+} as const;
+
+/** Bản nháp AI cho một kỹ năng — rubric theo đúng thang 0–5 hiện có. */
+export interface PlacementAiSkillDraft<R> {
+	rubric: R;
+	feedback: string;
+	errors: PlacementError[];
+}
+
 export const placementTeacherGradeSchema = z
 	.object({
 		writingRubric: placementWritingRubricSchema,
 		speakingRubric: placementSpeakingRubricSchema.nullable().default(null),
 		teacherFeedback: z.string().max(PLACEMENT_TEACHER_FEEDBACK_MAX).default(""),
+		/** #730: lỗi giáo viên chốt cho bài viết / transcript (đã sửa/xoá/thêm). */
+		writingErrors: placementErrorListSchema.default([]),
+		speakingErrors: placementErrorListSchema.default([]),
 	})
 	.strict();
 export type PlacementTeacherGrade = z.infer<typeof placementTeacherGradeSchema>;
@@ -2081,4 +2204,48 @@ export interface PlacementSubmissionDetail {
 	finalNote: string;
 	gradedAt: string | null;
 	zaloText: string;
+	/** #730: trạng thái chấm nháp AI + bản nháp (chỉ giáo viên thấy). */
+	aiStatus: PlacementAiStatus;
+	aiErrorCode: string | null;
+	aiDraftedAt: string | null;
+	aiWriting: PlacementAiSkillDraft<PlacementWritingRubric> | null;
+	aiSpeaking: PlacementAiSkillDraft<PlacementSpeakingRubric> | null;
+	/** Transcript Speaking AI chuyển từ audio ("" = chưa có). */
+	speakingTranscript: string;
+	/** Lỗi đã chốt (null = chưa chốt lần nào) — offset đã định vị lại. */
+	writingErrors: PlacementError[] | null;
+	speakingErrors: PlacementError[] | null;
+	/** Link kết quả công khai tuyệt đối (null = chưa chốt). */
+	resultUrl: string | null;
+	resultEmailStatus: "sent" | "failed" | "skipped" | null;
+}
+
+/**
+ * Kết quả công khai cho học viên (#730) — GET /public/placement-test/results/:token.
+ * Chỉ tồn tại sau khi giáo viên chốt; không chứa nháp AI, đáp án đúng hay PII
+ * ngoài tên học viên.
+ */
+export interface PlacementPublicResultView {
+	studentName: string;
+	submittedAt: string;
+	gradedAt: string;
+	objective: Pick<
+		PlacementObjectiveResult,
+		"listening" | "vocabGrammar" | "reading"
+	>;
+	writingText: string;
+	writingRubric: PlacementWritingRubric | null;
+	writingScore: number | null;
+	writingErrors: PlacementError[];
+	speakingStatus: "none" | "pending_upload" | "uploaded" | "skipped";
+	speakingTranscript: string;
+	speakingRubric: PlacementSpeakingRubric | null;
+	speakingScore: number | null;
+	speakingErrors: PlacementError[];
+	finalBandLevel: string | null;
+	finalDisplayCourse: string | null;
+	finalScorePct: number | null;
+	finalNote: string;
+	bandAdvice: string;
+	teacherFeedback: string;
 }
