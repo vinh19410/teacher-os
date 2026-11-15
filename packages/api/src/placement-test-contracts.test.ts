@@ -1029,4 +1029,67 @@ describe("placement-test-contracts v2", () => {
 		expect(normalized!.parts[4].title).toBe("Speaking");
 		expect(normalized!.parts[4].tasks).toHaveLength(8);
 	});
+
+	it("Speaking task hỗ trợ audioId tùy chọn: buildPlacementSnapshot chuyển thành src không rò rỉ audioId và extractReferencedAudioIds giữ cả Speaking audio", () => {
+		const content = makeValidContent();
+		content.parts[4].tasks.push({
+			id: "s-02",
+			partLabel: "Part 2",
+			level: "B1",
+			prompt: "Describe your favorite book.",
+			prepSeconds: 15,
+			answerSeconds: 45,
+			audioId: SAMPLE_AUDIO_ID_2,
+		});
+
+		const published = buildPlacementSnapshot(content, 7);
+		expect(JSON.stringify(published)).not.toContain("audioId");
+		expect(published.parts[4].tasks[0]?.src).toBe("");
+		expect(published.parts[4].tasks[1]?.src).toBe(
+			`/public/placement-test/audio/${SAMPLE_AUDIO_ID_2}`,
+		);
+
+		const normalized = normalizePublishedPlacementSnapshot(published);
+		expect(normalized?.parts[4].tasks[0]?.src).toBe("");
+		expect(normalized?.parts[4].tasks[1]?.src).toBe(
+			`/public/placement-test/audio/${SAMPLE_AUDIO_ID_2}`,
+		);
+
+		// Snapshot cũ chưa có field src trên Speaking task vẫn chuẩn hóa về src = ""
+		const legacyV2WithoutSpeakingSrc = {
+			...published,
+			parts: [
+				published.parts[0],
+				published.parts[1],
+				published.parts[2],
+				published.parts[3],
+				{
+					id: "speaking",
+					title: "Speaking",
+					tasks: [
+						{
+							id: "s-old",
+							partLabel: "Part 1",
+							level: "A1",
+							prompt: "Old question",
+							prepSeconds: 5,
+							answerSeconds: 20,
+						},
+					],
+				},
+			],
+		};
+		const normalizedLegacyV2 = normalizePublishedPlacementSnapshot(
+			legacyV2WithoutSpeakingSrc,
+		);
+		expect(normalizedLegacyV2?.parts[4].tasks[0]?.src).toBe("");
+
+		const refs = extractReferencedAudioIds(
+			JSON.stringify(content),
+			JSON.stringify(published),
+		);
+		expect([...refs].sort()).toEqual(
+			[SAMPLE_AUDIO_ID, SAMPLE_AUDIO_ID_2].sort(),
+		);
+	});
 });

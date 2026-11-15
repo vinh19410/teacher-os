@@ -214,7 +214,7 @@ test.describe("placement test editor 5 kỹ năng (/placement-test -> /kiem-tra-
 			await page.screenshot({
 				path: fileURLToPath(
 					new URL(
-						`../../../plans/reports/721-placement-editor-${vp.label}.png`,
+						`../../../plans/reports/727-placement-editor-${vp.label}.png`,
 						import.meta.url,
 					),
 				),
@@ -227,7 +227,7 @@ test.describe("placement test editor 5 kỹ năng (/placement-test -> /kiem-tra-
 		await page.screenshot({
 			path: fileURLToPath(
 				new URL(
-					"../../../plans/reports/721-placement-editor-desktop-dark.png",
+					"../../../plans/reports/727-placement-editor-desktop-dark.png",
 					import.meta.url,
 				),
 			),
@@ -294,6 +294,49 @@ test.describe("placement test editor 5 kỹ năng (/placement-test -> /kiem-tra-
 		await expect(previewAudio).toBeVisible();
 		await expect(previewAudio).toHaveAttribute("src", /^blob:/);
 
+		// 7b. Sang tab 5. Speaking: tải audio tùy chọn cho câu 1, không chặn xuất bản dù 7 câu còn lại dùng TTS fallback
+		await page.getByRole("tab", { name: /5\. Speaking/ }).click();
+		await expect(page.locator('[data-section="speaking"]')).toContainText(
+			"hệ thống đọc từng câu hỏi và học viên ghi âm trả lời qua micro — audio-only",
+		);
+		await expect(
+			page
+				.locator('[data-clip-audio="s-02"]')
+				.getByText(
+					"Tùy chọn — bỏ trống hệ thống tự đọc câu hỏi bằng giọng tiếng Anh",
+				),
+		).toBeVisible();
+		await page
+			.getByLabel("Tải audio câu hỏi nói 1", { exact: true })
+			.setInputFiles({
+				name: "speaking-task-1.mp3",
+				mimeType: "audio/mpeg",
+				buffer: mp3Buffer,
+			});
+		await expect(page.locator('[data-clip-audio="s-01"]')).toContainText(
+			"speaking-task-1.mp3",
+		);
+		await page
+			.locator('[data-clip-audio="s-01"]')
+			.getByRole("button", { name: "Nghe thử" })
+			.click();
+		const speakingPreviewAudio = page.getByLabel(
+			"Trình phát nghe thử câu hỏi nói 1",
+			{ exact: true },
+		);
+		await expect(speakingPreviewAudio).toBeVisible();
+		await expect(speakingPreviewAudio).toHaveAttribute("src", /^blob:/);
+		await page.setViewportSize({ width: 1440, height: 900 });
+		await page.screenshot({
+			path: fileURLToPath(
+				new URL(
+					"../../../plans/reports/727-placement-editor-speaking-desktop-1440x900.png",
+					import.meta.url,
+				),
+			),
+			fullPage: false,
+		});
+
 		await page.getByTestId("publish-btn").click();
 		await page.getByTestId("confirm-publish-btn").click();
 		await expect(page.getByText(/Đã phát hành v2/)).toBeVisible();
@@ -307,11 +350,20 @@ test.describe("placement test editor 5 kỹ năng (/placement-test -> /kiem-tra-
 		expect(publicRes.status()).toBe(200);
 		const publicData = (await publicRes.json()) as {
 			version: number;
-			parts: Array<{ clips?: Array<{ id: string; src: string }> }>;
+			parts: Array<{
+				id?: string;
+				clips?: Array<{ id: string; src: string }>;
+				tasks?: Array<{ id: string; src?: string }>;
+			}>;
 		};
 		expect(publicData.version).toBe(2);
 		const clip1Src = publicData.parts[0]?.clips?.[0]?.src ?? "";
 		expect(clip1Src).toMatch(/^\/public\/placement-test\/audio\//);
+		const speakingPart = publicData.parts.find((p) => p.id === "speaking");
+		expect(speakingPart?.tasks?.[0]?.src).toMatch(
+			/^\/public\/placement-test\/audio\//,
+		);
+		expect(speakingPart?.tasks?.[1]?.src ?? "").toBe("");
 
 		const rangeRes = await page.request.get(`${API_ORIGIN}${clip1Src}`, {
 			headers: {

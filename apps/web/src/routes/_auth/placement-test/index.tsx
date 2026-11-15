@@ -1099,6 +1099,7 @@ export function PlacementTestRoute() {
 						<SpeakingEditorSection
 							tasks={localDraft.parts[4].tasks}
 							issues={publishIssues}
+							audioMap={audioMap}
 							onAddTask={() =>
 								setLocalDraft((prev) => (prev ? addSpeakingTask(prev) : prev))
 							}
@@ -1115,6 +1116,30 @@ export function PlacementTestRoute() {
 							onRemoveTask={(tIdx) =>
 								setLocalDraft((prev) =>
 									prev ? removeSpeakingTask(prev, tIdx) : prev,
+								)
+							}
+							onTaskAudioUploaded={(tIdx, uploaded) => {
+								setAudioMap((prev) => ({
+									...prev,
+									[uploaded.audioId]: {
+										name: uploaded.name,
+										size: uploaded.size,
+										type: uploaded.type,
+									},
+								}));
+								setLocalDraft((prev) =>
+									prev
+										? updateSpeakingTask(prev, tIdx, {
+												audioId: uploaded.audioId,
+											})
+										: prev,
+								);
+							}}
+							onTaskAudioCleared={(tIdx) =>
+								setLocalDraft((prev) =>
+									prev
+										? updateSpeakingTask(prev, tIdx, { audioId: null })
+										: prev,
 								)
 							}
 						/>

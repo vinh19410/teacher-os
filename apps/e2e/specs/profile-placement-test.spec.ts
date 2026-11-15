@@ -195,50 +195,40 @@ async function playClipOnceToEnd(page: Page, clipId: string) {
 
 async function installSyntheticMediaRecorder(page: Page) {
 	await page.addInitScript(() => {
-		const createSyntheticStream = async () => {
-			const canvas = document.createElement("canvas");
-			canvas.width = 64;
-			canvas.height = 48;
-			const ctx = canvas.getContext("2d");
-			let tick = 0;
-			const draw = () => {
-				if (!ctx) return;
-				ctx.fillStyle = tick % 2 === 0 ? "#0f766e" : "#115e59";
-				ctx.fillRect(0, 0, canvas.width, canvas.height);
-				ctx.fillStyle = "#ffffff";
-				ctx.fillRect((tick * 4) % 56, 18, 6, 6);
-				tick += 1;
-			};
-			draw();
-			const timer = window.setInterval(draw, 50);
+		const win = window as unknown as {
+			__gumConstraintsHistory?: unknown[];
+			__spokenPrompts?: string[];
+			__speakingRecorderEvents?: Array<{ type: string; state: string }>;
+		};
+		win.__gumConstraintsHistory = [];
+		win.__spokenPrompts = [];
+		win.__speakingRecorderEvents = [];
 
-			const canvasStream = canvas.captureStream(10);
-			const tracks: MediaStreamTrack[] = [...canvasStream.getVideoTracks()];
-
-			let audioCtx: AudioContext | null = null;
-			try {
-				audioCtx = new AudioContext();
-				if (audioCtx.state === "suspended") {
-					await audioCtx.resume();
-				}
-				const osc = audioCtx.createOscillator();
-				const gain = audioCtx.createGain();
-				gain.gain.value = 0;
-				osc.connect(gain);
-				const dest = audioCtx.createMediaStreamDestination();
-				gain.connect(dest);
-				osc.start();
-				tracks.push(...dest.stream.getAudioTracks());
-			} catch {
-				// Fallback video-only stream if WebAudio unavailable
+		const createSyntheticAudioStream = async (
+			constraints?: MediaStreamConstraints,
+		) => {
+			win.__gumConstraintsHistory?.push(constraints);
+			if (constraints?.video) {
+				throw new Error("Audio-only flow must not request video track");
 			}
+			const audioCtx = new AudioContext();
+			if (audioCtx.state === "suspended") {
+				await audioCtx.resume();
+			}
+			const osc = audioCtx.createOscillator();
+			const gain = audioCtx.createGain();
+			gain.gain.value = 0.01;
+			osc.connect(gain);
+			const dest = audioCtx.createMediaStreamDestination();
+			gain.connect(dest);
+			osc.start();
 
+			const tracks = [...dest.stream.getAudioTracks()];
 			const combined = new MediaStream(tracks);
 			for (const track of tracks) {
 				const origStop = track.stop.bind(track);
 				track.stop = () => {
-					window.clearInterval(timer);
-					audioCtx?.close().catch(() => {});
+					audioCtx.close().catch(() => {});
 					origStop();
 				};
 			}
@@ -248,7 +238,73 @@ async function installSyntheticMediaRecorder(page: Page) {
 		Object.defineProperty(navigator, "mediaDevices", {
 			configurable: true,
 			value: {
-				getUserMedia: () => createSyntheticStream(),
+				getUserMedia: (constraints?: MediaStreamConstraints) =>
+					createSyntheticAudioStream(constraints),
+			},
+		});
+
+		const NativeMediaRecorder = window.MediaRecorder;
+		if (NativeMediaRecorder) {
+			const OrigStart = NativeMediaRecorder.prototype.start;
+			const OrigPause = NativeMediaRecorder.prototype.pause;
+			const OrigResume = NativeMediaRecorder.prototype.resume;
+			const OrigStop = NativeMediaRecorder.prototype.stop;
+			NativeMediaRecorder.prototype.start = function (timeslice?: number) {
+				win.__speakingRecorderEvents?.push({
+					type: "start",
+					state: this.state,
+				});
+				return timeslice !== undefined
+					? OrigStart.call(this, timeslice)
+					: OrigStart.call(this);
+			};
+			NativeMediaRecorder.prototype.pause = function () {
+				win.__speakingRecorderEvents?.push({
+					type: "pause",
+					state: this.state,
+				});
+				return OrigPause.call(this);
+			};
+			NativeMediaRecorder.prototype.resume = function () {
+				win.__speakingRecorderEvents?.push({
+					type: "resume",
+					state: this.state,
+				});
+				return OrigResume.call(this);
+			};
+			NativeMediaRecorder.prototype.stop = function () {
+				win.__speakingRecorderEvents?.push({
+					type: "stop",
+					state: this.state,
+				});
+				return OrigStop.call(this);
+			};
+		}
+
+		class SyntheticUtterance {
+			text: string;
+			lang = "";
+			rate = 1;
+			onend: (() => void) | null = null;
+			onerror: (() => void) | null = null;
+			constructor(text = "") {
+				this.text = text;
+			}
+		}
+		Object.defineProperty(window, "SpeechSynthesisUtterance", {
+			configurable: true,
+			value: SyntheticUtterance,
+		});
+		Object.defineProperty(window, "speechSynthesis", {
+			configurable: true,
+			value: {
+				cancel: () => {},
+				speak: (utter: SyntheticUtterance) => {
+					win.__spokenPrompts?.push(utter.text);
+					window.setTimeout(() => {
+						utter.onend?.();
+					}, 60);
+				},
 			},
 		});
 	});
@@ -266,7 +322,7 @@ test.describe
 			}
 		});
 
-		test("làm trọn bộ 5 kỹ năng, quay Speaking WebM, hợp nhất tư vấn trang chủ và giáo viên chấm W&S + phạt sàn Speaking (-1 band) tại /leads (#721)", async ({
+		test("làm trọn bộ 5 kỹ năng, Speaking audio-only tuần tự đọc-trả lời từng câu, hợp nhất tư vấn trang chủ và giáo viên chấm W&S + phạt sàn Speaking (-1 band) tại /leads (#727)", async ({
 			page,
 		}) => {
 			await clearRateLimits();
@@ -432,22 +488,138 @@ test.describe
 				"Đạt độ dài gợi ý.",
 			);
 
-			// 7. Phần 5 Speaking: không tính vào 40 phút, ghi WebM từ canvas+audio stream rồi xem lại trước khi nộp
+			// 7. Phần 5 Speaking: không tính vào 40 phút, audio-only tuần tự từng câu (đọc câu hỏi -> chuẩn bị -> ghi âm -> tạm dừng -> câu tiếp)
 			await page.locator("#nextToSpeakingBtn").click();
 			await expect(page.locator('[data-skill="speaking"]')).toBeVisible();
 			await expect(page.locator(".question-level-pill")).toHaveCount(0);
 			await expect(page.getByTestId("test-timer")).toContainText(
 				"Speaking · Không tính vào 40 phút",
 			);
+			await expect(page.locator("#speakingOverviewCard")).toContainText(
+				"Audio-only (chỉ Micro)",
+			);
+			await expect(page.locator("#speakingOverviewCard")).toContainText(
+				"8 câu tuần tự",
+			);
+			// Trước khi bấm bắt đầu, ẩn đề từng câu hỏi và không có Camera + Micro / <video>
+			await expect(page.locator("#speakingSessionCard")).toHaveCount(0);
+			await expect(page.locator("#speakingActivePrompt")).toHaveCount(0);
+			await expect(page.locator('[data-skill="speaking"] video')).toHaveCount(
+				0,
+			);
+			await expect(page.locator('[data-skill="speaking"]')).not.toContainText(
+				"Camera + Micro",
+			);
+
 			await page.locator("#startSpeakingBtn").click();
-			await expect(page.locator("#stopSpeakingBtn")).toBeVisible();
-			await page.waitForTimeout(1200);
-			await page.locator("#stopSpeakingBtn").click();
+
+			const gumConstraints = await page.evaluate(
+				() =>
+					(
+						window as unknown as {
+							__gumConstraintsHistory?: Array<{
+								audio?: unknown;
+								video?: unknown;
+							}>;
+						}
+					).__gumConstraintsHistory ?? [],
+			);
+			expect(gumConstraints.length).toBeGreaterThanOrEqual(1);
+			for (const c of gumConstraints) {
+				expect(c.audio).toBe(true);
+				expect(c.video).toBe(false);
+			}
+
+			// Câu 1: auto đọc -> chuyển sang prep -> thử Nghe lại câu hỏi (tối đa 1 lần) -> Trả lời ngay
+			const sessionCard = page.locator("#speakingSessionCard");
+			await expect(sessionCard).toBeVisible();
+			await expect(sessionCard).toContainText("Câu 1 / 8");
+			await expect(
+				page.locator("#speakingSessionCard .question-level-pill"),
+			).toHaveCount(0);
+			const phaseBanner = page.locator("#speakingPhaseBanner");
+			await expect(phaseBanner).toHaveClass(/\bis-prep\b/, { timeout: 5000 });
+
+			const replayBtn = page.locator("#speakingReplayPromptBtn");
+			await expect(replayBtn).toBeEnabled();
+			await replayBtn.click();
+			await expect(replayBtn).toBeDisabled();
+			await expect(replayBtn).toContainText("Đã nghe lại (1/1)");
+			await expect(page.locator("#speakingReplayStatus")).toContainText(
+				"Đã phát lại câu hỏi (1/1)",
+			);
+
+			await page.locator("#speakingStartAnswerNowBtn").click();
+			await expect(phaseBanner).toHaveClass(/\bis-answer\b/);
+			await expect(page.locator("#speakingPhaseBadge")).toContainText(
+				"Đang ghi âm câu trả lời (Micro)",
+			);
+
+			// Chụp 3 viewport + reflow 320px trong lúc đang ghi âm tuần tự câu Speaking
+			for (const vp of [
+				...VIEWPORTS,
+				{ width: 320, height: 568, label: "reflow-320x568" },
+			] as const) {
+				await page.setViewportSize({ width: vp.width, height: vp.height });
+				const overflow = await page.evaluate(
+					() =>
+						document.documentElement.scrollWidth >
+						document.documentElement.clientWidth,
+				);
+				expect(overflow, `no speaking horizontal overflow at ${vp.label}`).toBe(
+					false,
+				);
+				if (vp.label !== "reflow-320x568") {
+					await page.screenshot({
+						path: reportPath(`727-profile-speaking-active-${vp.label}.png`),
+						fullPage: false,
+					});
+				}
+			}
+			await page.setViewportSize({ width: 1440, height: 900 });
+			// Đợi đủ >250ms để MediaRecorder nhả ít nhất 1 audio chunk thực
+			await page.waitForTimeout(400);
+			await page.locator("#speakingNextTaskBtn").click();
+
+			// Câu 2..8: tự đọc xong chuyển sang prep -> Trả lời ngay -> Xong câu này
+			for (let idx = 1; idx < 8; idx += 1) {
+				await expect(sessionCard).toContainText(`Câu ${idx + 1} / 8`);
+				await expect(phaseBanner).toHaveClass(/\bis-prep\b/, { timeout: 5000 });
+				await page.locator("#speakingStartAnswerNowBtn").click();
+				await expect(phaseBanner).toHaveClass(/\bis-answer\b/);
+				await page.waitForTimeout(120);
+				await page.locator("#speakingNextTaskBtn").click();
+			}
+
 			await expect(page.locator("#speakingReviewBox")).toBeVisible();
 			await expect(page.locator("#speakingReviewBox")).toContainText(
-				"Đã ghi bài nói (sẵn sàng nộp)",
+				"Đã ghi âm hoàn tất (sẵn sàng nộp)",
 			);
-			await expect(page.locator("#speakingPlaybackVideo")).toBeVisible();
+			const playbackAudio = page.locator("#speakingPlaybackAudio");
+			await expect(playbackAudio).toBeVisible();
+			await expect(playbackAudio).toHaveAttribute("src", /^blob:/);
+			await expect(page.locator("video")).toHaveCount(0);
+
+			const recorderStateChecks = await page.evaluate(() => {
+				const win = window as unknown as {
+					__spokenPrompts?: string[];
+					__speakingRecorderEvents?: Array<{ type: string; state: string }>;
+				};
+				return {
+					spokenCount: win.__spokenPrompts?.length ?? 0,
+					eventTypes: (win.__speakingRecorderEvents ?? []).map((e) => e.type),
+				};
+			});
+			expect(recorderStateChecks.spokenCount).toBeGreaterThanOrEqual(9);
+			expect(recorderStateChecks.eventTypes).toContain("start");
+			expect(recorderStateChecks.eventTypes).toContain("pause");
+			expect(recorderStateChecks.eventTypes).toContain("resume");
+			expect(recorderStateChecks.eventTypes).toContain("stop");
+
+			await page.screenshot({
+				path: reportPath("727-profile-speaking-review-desktop-1440x900.png"),
+				fullPage: false,
+			});
 
 			// 8. Nộp bài -> POST /submissions (201) + PUT /speaking-media (200) -> màn Kết quả tạm tính
 			const submitPromise = page.waitForResponse(
@@ -476,11 +648,11 @@ test.describe
 			await expect(page.getByTestId("objective-average-pct")).toHaveText("85%");
 			await expect(
 				page.locator('[data-skill-result="speaking"]'),
-			).toContainText("Đã gửi file ghi âm/ghi hình · Chờ cô chấm");
+			).toContainText("Đã gửi file ghi âm · Chờ cô chấm");
 
 			await page.setViewportSize({ width: 1440, height: 900 });
 			await page.screenshot({
-				path: reportPath("721-profile-provisional-result-desktop-1440x900.png"),
+				path: reportPath("727-profile-provisional-result-desktop-1440x900.png"),
 				fullPage: false,
 			});
 
@@ -565,7 +737,7 @@ test.describe
 				}
 			}
 
-			// 10. Context giáo viên trên /leads: mở modal chấm W&S, kiểm video blob:, 3 viewport + dark mode, chấm W=5/5/5 & S=0/0/0/0 để kích hoạt hạ 1 bậc Speaking floor
+			// 10. Context giáo viên trên /leads: mở modal chấm W&S, kiểm audio blob:, 3 viewport + dark mode, chấm W=5/5/5 & S=0/0/0/0 để kích hoạt hạ 1 bậc Speaking floor
 			const browser = page.context().browser();
 			if (!browser) throw new Error("missing browser instance");
 			const teacherContext = await browser.newContext();
@@ -586,6 +758,7 @@ test.describe
 				await expect(panel).toBeVisible();
 				const mediaPlayer = teacherPage.getByTestId("speaking-media-player");
 				await expect(mediaPlayer).toBeVisible();
+				await expect(mediaPlayer).toHaveJSProperty("tagName", "AUDIO");
 				await expect(mediaPlayer).toHaveAttribute("src", /^blob:/, {
 					timeout: 15_000,
 				});
@@ -604,7 +777,7 @@ test.describe
 						false,
 					);
 					await teacherPage.screenshot({
-						path: reportPath(`721-leads-grading-${vp.label}.png`),
+						path: reportPath(`727-leads-grading-${vp.label}.png`),
 						fullPage: false,
 					});
 				}
@@ -614,7 +787,7 @@ test.describe
 					document.documentElement.classList.add("dark"),
 				);
 				await teacherPage.screenshot({
-					path: reportPath("721-leads-grading-desktop-dark.png"),
+					path: reportPath("727-leads-grading-desktop-dark.png"),
 					fullPage: false,
 				});
 				await teacherPage.evaluate(() =>
@@ -785,7 +958,7 @@ test.describe
 					false,
 				);
 				await page.screenshot({
-					path: reportPath(`721-profile-intro-${vp.label}.png`),
+					path: reportPath(`727-profile-intro-${vp.label}.png`),
 					fullPage: false,
 				});
 			}
@@ -811,7 +984,7 @@ test.describe
 					false,
 				);
 				await page.screenshot({
-					path: reportPath(`721-profile-gate-${vp.label}.png`),
+					path: reportPath(`727-profile-gate-${vp.label}.png`),
 					fullPage: false,
 				});
 			}
@@ -1110,8 +1283,8 @@ test.describe
 
 				await page.locator("#nextToSpeakingBtn").click();
 				await expect(page.locator('[data-skill="speaking"]')).toBeVisible();
-				await expect(page.locator(".speaking-tasks-card")).toContainText(
-					"Danh sách 8 câu hỏi Speaking",
+				await expect(page.locator("#speakingOverviewCard")).toContainText(
+					"8 câu tuần tự",
 				);
 			} finally {
 				if (savedRow) {
