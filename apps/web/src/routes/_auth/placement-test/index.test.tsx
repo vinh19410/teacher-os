@@ -247,6 +247,12 @@ describe("PlacementTestRoute (/placement-test)", () => {
 
 		fireEvent.click(screen.getByRole("tab", { name: /5\. Speaking/ }));
 		expect(screen.getByLabelText("Nội dung Speaking 1")).toBeTruthy();
+		expect(screen.getByText("Audio đọc câu hỏi 1 (tùy chọn)")).toBeTruthy();
+		const optionalHint = screen.getByText(
+			/Tùy chọn — bỏ trống hệ thống tự đọc/,
+		);
+		expect(optionalHint.className).toContain("text-muted-foreground");
+		expect(optionalHint.className).not.toContain("text-destructive");
 
 		fireEvent.click(screen.getByTestId("publish-btn"));
 
@@ -461,5 +467,32 @@ describe("PlacementTestRoute (/placement-test)", () => {
 
 		await waitFor(() => expect(draftPutCalls).toBe(1));
 		expect(toastMock.success).toHaveBeenCalled();
+	});
+
+	it("cho phép gỡ audio tùy chọn trên câu hỏi Speaking trong tab 5 (#727)", async () => {
+		const AUDIO_ID = "11111111-1111-4111-8111-111111111111";
+		const state = makeStateResponse();
+		state.draft!.parts[4].tasks[0] = {
+			...state.draft!.parts[4].tasks[0]!,
+			audioId: AUDIO_ID,
+		};
+		state.audio = {
+			[AUDIO_ID]: { name: "speaking-q1.mp3", size: 2048, type: "audio/mpeg" },
+		};
+		renderEditor(state);
+
+		await waitFor(() => {
+			expect(screen.getByRole("tab", { name: /5\. Speaking/ })).toBeTruthy();
+		});
+		fireEvent.click(screen.getByRole("tab", { name: /5\. Speaking/ }));
+		expect(screen.getByText(/speaking-q1\.mp3/)).toBeTruthy();
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Gỡ audio câu hỏi nói 1" }),
+		);
+		expect(screen.queryByText(/speaking-q1\.mp3/)).toBeNull();
+		expect(
+			screen.getByText(/Tùy chọn — bỏ trống hệ thống tự đọc/),
+		).toBeTruthy();
 	});
 });

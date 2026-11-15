@@ -240,6 +240,7 @@ describe("placement-test content-model (5 skills)", () => {
 
 		state = addSpeakingTask(state);
 		expect(state.parts[4].tasks).toHaveLength(2);
+		expect(state.parts[4].tasks[1]?.audioId).toBeNull();
 		state = moveSpeakingTask(state, 0, 1);
 		expect(state.parts[4].tasks[1]?.id).toBe("s-01");
 		state = removeSpeakingTask(state, 0);

@@ -751,4 +751,116 @@ describe("placement-test teacher routes (#515 phase 2)", () => {
 		expect(body.draft?.parts[4]?.tasks).toHaveLength(8);
 		expect(body.draft?.bands[1]?.max).toBe(100);
 	});
+
+	test("Speaking task audioId kiểm tra cô lập đa org khi publish và giữ audio qua dọn rác mồ côi", async () => {
+		const org1Listening = await uploadSampleAudio("teacher-1", "listening-1");
+		const org1Speaking = await uploadSampleAudio("teacher-1", "speaking-1");
+		const org2Audio = await uploadSampleAudio("teacher-2", "org2-speaking");
+
+		const foreignDraft = makeContent(org1Listening.audioId);
+		foreignDraft.parts[4].tasks[0] = {
+			...foreignDraft.parts[4].tasks[0]!,
+			audioId: org2Audio.audioId,
+		};
+
+		await app.request("/api/placement-test/draft", {
+			method: "PUT",
+			headers: {
+				"x-test-user": "teacher-1",
+				origin: CORS_ORIGIN,
+				"content-type": "application/json",
+			},
+			body: JSON.stringify({
+				revision: 0,
+				content: foreignDraft,
+			}),
+		});
+
+		const rejectForeign = await app.request("/api/placement-test/publish", {
+			method: "POST",
+			headers: {
+				"x-test-user": "teacher-1",
+				origin: CORS_ORIGIN,
+				"content-type": "application/json",
+			},
+			body: JSON.stringify({
+				revision: 1,
+			}),
+		});
+		expect(rejectForeign.status).toBe(422);
+		const rejectBody = (await rejectForeign.json()) as {
+			issues: Array<{ path: string; message: string }>;
+		};
+		expect(rejectBody.issues).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					path: "parts.4.tasks.0.audioId",
+				}),
+			]),
+		);
+
+		// Tạo 1 file audio mồ côi cũ (> 24h) để chắc chắn chỉ audio Speaking được giữ lại.
+		const orphan = await uploadSampleAudio("teacher-1", "old-orphan");
+		await db
+			.update(schema.placementTestAudio)
+			.set({ createdAt: new Date(Date.now() - 48 * 60 * 60 * 1000) })
+			.where(eq(schema.placementTestAudio.id, orphan.audioId));
+
+		const validDraft = makeContent(org1Listening.audioId);
+		validDraft.parts[4].tasks[0] = {
+			...validDraft.parts[4].tasks[0]!,
+			audioId: org1Speaking.audioId,
+		};
+
+		const saveValidRes = await app.request("/api/placement-test/draft", {
+			method: "PUT",
+			headers: {
+				"x-test-user": "teacher-1",
+				origin: CORS_ORIGIN,
+				"content-type": "application/json",
+			},
+			body: JSON.stringify({
+				revision: 1,
+				content: validDraft,
+			}),
+		});
+		expect(saveValidRes.status).toBe(200);
+
+		const okPub = await app.request("/api/placement-test/publish", {
+			method: "POST",
+			headers: {
+				"x-test-user": "teacher-1",
+				origin: CORS_ORIGIN,
+				"content-type": "application/json",
+			},
+			body: JSON.stringify({
+				revision: 2,
+			}),
+		});
+		expect(okPub.status).toBe(200);
+		const [publishedRow] = await db
+			.select({ published: schema.placementTest.published })
+			.from(schema.placementTest)
+			.where(eq(schema.placementTest.orgId, "org-1"));
+		const publishedJson = JSON.parse(publishedRow?.published ?? "{}") as {
+			parts: [
+				unknown,
+				unknown,
+				unknown,
+				unknown,
+				{ tasks: Array<{ src?: string }> },
+			];
+		};
+		expect(publishedJson.parts[4].tasks[0]?.src).toBe(
+			`/public/placement-test/audio/${org1Speaking.audioId}`,
+		);
+
+		const remainingOrg1 = await db
+			.select({ id: schema.placementTestAudio.id })
+			.from(schema.placementTestAudio)
+			.where(eq(schema.placementTestAudio.orgId, "org-1"));
+		expect(remainingOrg1.map((r) => r.id).sort()).toEqual(
+			[org1Listening.audioId, org1Speaking.audioId].sort(),
+		);
+	});
 });

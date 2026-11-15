@@ -200,6 +200,8 @@ export const placementSpeakingTaskSchema = z.object({
 	prompt: z.string().max(PLACEMENT_PROMPT_MAX),
 	prepSeconds: z.number().int().min(0).max(120).default(15),
 	answerSeconds: z.number().int().min(5).max(180).default(45),
+	/** Audio đọc câu hỏi tùy chọn (upload bởi giáo viên; không có thì client tự đọc bằng Web Speech). */
+	audioId: z.string().uuid().nullable().optional(),
 });
 export type PlacementSpeakingTask = z.infer<typeof placementSpeakingTaskSchema>;
 
@@ -371,6 +373,7 @@ export interface PlacementPublishedSpeakingTask {
 	prompt: string;
 	prepSeconds: number;
 	answerSeconds: number;
+	src?: string;
 }
 
 export interface PlacementSnapshot {
@@ -907,6 +910,7 @@ export function buildPlacementSnapshot(
 					prompt: t.prompt.trim(),
 					prepSeconds: t.prepSeconds,
 					answerSeconds: t.answerSeconds,
+					src: t.audioId ? `/public/placement-test/audio/${t.audioId}` : "",
 				})),
 			},
 		],
@@ -1000,6 +1004,22 @@ const placementPublishedBandSchema = z.object({
 	advice: z.string().optional(),
 });
 
+const placementPublishedSpeakingTaskSchema = z.object({
+	id: z.string(),
+	partLabel: z.string().default(""),
+	level: z.string(),
+	prompt: z.string(),
+	prepSeconds: z.number().int().min(0).max(120).default(15),
+	answerSeconds: z.number().int().min(5).max(180).default(45),
+	src: z.string().default(""),
+});
+
+const placementPublishedSpeakingPartSchema = z.object({
+	id: z.literal("speaking"),
+	title: z.string().default("Speaking"),
+	tasks: z.array(placementPublishedSpeakingTaskSchema),
+});
+
 const placementSnapshotV2Schema = z.object({
 	version: z.number().int().min(1).default(1),
 	bands: z.array(placementPublishedBandSchema),
@@ -1084,7 +1104,7 @@ const placementSnapshotV2Schema = z.object({
 			minWords: z.number().int().min(0).default(50),
 			maxWords: z.number().int().min(0).default(80),
 		}),
-		placementSpeakingPartSchema,
+		placementPublishedSpeakingPartSchema,
 	]),
 });
 
@@ -1330,7 +1350,7 @@ export function normalizePublishedPlacementSnapshot(
 				? {
 						...speaking,
 						title: speakingTitle,
-						tasks: defaultSpeaking.tasks,
+						tasks: defaultSpeaking.tasks.map((t) => ({ ...t, src: "" })),
 					}
 				: {
 						...speaking,
@@ -1453,7 +1473,13 @@ export function normalizePublishedPlacementSnapshot(
 				passages: backfilledReadingPassages,
 			},
 			createDefaultPlacementWritingPart(),
-			createDefaultPlacementSpeakingPart(),
+			{
+				...createDefaultPlacementSpeakingPart(),
+				tasks: createDefaultPlacementSpeakingPart().tasks.map((t) => ({
+					...t,
+					src: "",
+				})),
+			},
 		],
 	};
 }
@@ -1475,23 +1501,27 @@ export function extractReferencedAudioIds(
 			const parsed = JSON.parse(raw) as {
 				parts?: Array<{
 					clips?: Array<{ audioId?: unknown; src?: unknown }>;
+					tasks?: Array<{ audioId?: unknown; src?: unknown }>;
 				}>;
 			};
 			if (!Array.isArray(parsed?.parts)) continue;
 			for (const part of parsed.parts) {
-				if (!Array.isArray(part?.clips)) continue;
-				for (const clip of part.clips) {
+				const items = [
+					...(Array.isArray(part?.clips) ? part.clips : []),
+					...(Array.isArray(part?.tasks) ? part.tasks : []),
+				];
+				for (const item of items) {
 					if (
-						typeof clip?.audioId === "string" &&
-						clip.audioId.trim().length > 0
+						typeof item?.audioId === "string" &&
+						item.audioId.trim().length > 0
 					) {
-						ids.add(clip.audioId.trim());
+						ids.add(item.audioId.trim());
 					}
 					if (
-						typeof clip?.src === "string" &&
-						clip.src.startsWith(PUBLIC_AUDIO_SRC_PREFIX)
+						typeof item?.src === "string" &&
+						item.src.startsWith(PUBLIC_AUDIO_SRC_PREFIX)
 					) {
-						const tail = clip.src.slice(PUBLIC_AUDIO_SRC_PREFIX.length).trim();
+						const tail = item.src.slice(PUBLIC_AUDIO_SRC_PREFIX.length).trim();
 						if (tail.length > 0) {
 							ids.add(tail);
 						}

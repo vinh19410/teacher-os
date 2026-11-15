@@ -618,6 +618,7 @@ export function addSpeakingTask(content: PlacementContent): PlacementContent {
 		prompt: "",
 		prepSeconds: 15,
 		answerSeconds: 45,
+		audioId: null,
 	};
 	return replaceSpeaking(content, {
 		...content.parts[4],

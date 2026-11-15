@@ -223,7 +223,7 @@ function PlacementSubmissionBody({
 			})
 			.catch(() => {
 				if (!cancelled) {
-					setMediaError("Không tải được file ghi âm/ghi hình Speaking.");
+					setMediaError("Không tải được file ghi âm Speaking.");
 				}
 			})
 			.finally(() => {
@@ -521,7 +521,7 @@ function PlacementSubmissionBody({
 						{submission.speakingStatus === "skipped"
 							? "Học viên đã chọn bỏ qua phần Speaking khi nộp bài."
 							: submission.speakingStatus === "pending_upload"
-								? "File ghi hình/âm Speaking chưa hoàn tất tải lên."
+								? "File ghi âm Speaking chưa hoàn tất tải lên."
 								: "Không có file Speaking kèm theo."}
 					</p>
 				)}

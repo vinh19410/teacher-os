@@ -16,6 +16,7 @@ import {
 	type MediaByteRange,
 	type MediaStore,
 } from "../app";
+import { mp3Id3Bytes } from "../lib/test-media-fixtures";
 import { PLACEMENT_SUBMISSION_IP_MAX } from "./public-placement-test";
 
 const CORS_ORIGIN = "http://localhost:8001";
@@ -805,5 +806,117 @@ describe("public-placement-test routes (#515, #721)", () => {
 		);
 		expect(originalLead?.course).toBe("comm-1");
 		expect(originalLead?.note).toBe("Đã tư vấn xong");
+	});
+
+	test("PUT /submissions/:id/speaking-media chỉ chấp nhận audio-only: từ chối video/mp4 và video/quicktime (415), nhận audio/mpeg và video/webm -> audio/webm (200)", async () => {
+		await seedPublishedOrgLead();
+		const app = createAppWithLeadOrg("org-lead");
+
+		const createSub = async (phone: string) => {
+			const res = await app.request("/public/placement-test/submissions", {
+				method: "POST",
+				headers: {
+					origin: PROFILE_ORIGIN,
+					"content-type": "application/json",
+				},
+				body: JSON.stringify({
+					lead: { name: "Học viên Audio", phone },
+					answers: { listening: {}, vocabGrammar: {}, reading: {} },
+					writingText: "",
+					speakingMode: "upload",
+					speakingDurationSec: 18,
+				}),
+			});
+			expect(res.status).toBe(201);
+			return (await res.json()) as {
+				submissionId: string;
+				uploadToken: string;
+			};
+		};
+
+		const subReject = await createSub("0911112233");
+		// Fake MP4 header (ftypisom) với Content-Type video/mp4 & .mp4 -> 415
+		const fakeMp4 = new Uint8Array([
+			0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d,
+			0x00, 0x00, 0x02, 0x00,
+		]);
+		const mp4Res = await app.request(
+			`/public/placement-test/submissions/${subReject.submissionId}/speaking-media`,
+			{
+				method: "PUT",
+				headers: {
+					origin: PROFILE_ORIGIN,
+					"x-upload-token": subReject.uploadToken,
+					"x-media-filename": "speaking.mp4",
+					"content-type": "video/mp4",
+					"content-length": String(fakeMp4.byteLength),
+				},
+				body: fakeMp4,
+			},
+		);
+		expect(mp4Res.status).toBe(415);
+
+		const movRes = await app.request(
+			`/public/placement-test/submissions/${subReject.submissionId}/speaking-media`,
+			{
+				method: "PUT",
+				headers: {
+					origin: PROFILE_ORIGIN,
+					"x-upload-token": subReject.uploadToken,
+					"x-media-filename": "speaking.mov",
+					"content-type": "video/quicktime",
+					"content-length": String(fakeMp4.byteLength),
+				},
+				body: fakeMp4,
+			},
+		);
+		expect(movRes.status).toBe(415);
+
+		// Chấp nhận speaking.webm gửi với Content-Type video/webm (chuẩn hóa -> audio/webm)
+		const webm = validWebmBytes();
+		const webmRes = await app.request(
+			`/public/placement-test/submissions/${subReject.submissionId}/speaking-media`,
+			{
+				method: "PUT",
+				headers: {
+					origin: PROFILE_ORIGIN,
+					"x-upload-token": subReject.uploadToken,
+					"x-media-filename": "speaking.webm",
+					"content-type": "video/webm",
+					"content-length": String(webm.byteLength),
+				},
+				body: webm,
+			},
+		);
+		expect(webmRes.status).toBe(200);
+		const [savedWebm] = await db
+			.select()
+			.from(schema.placementTestSubmission)
+			.where(eq(schema.placementTestSubmission.id, subReject.submissionId));
+		expect(savedWebm?.speakingMediaMime).toBe("audio/webm");
+
+		// Chấp nhận audio/mpeg (.mp3) hợp lệ
+		const subMp3 = await createSub("0911112244");
+		const mp3 = mp3Id3Bytes("speaking-audio-only");
+		const mp3Res = await app.request(
+			`/public/placement-test/submissions/${subMp3.submissionId}/speaking-media`,
+			{
+				method: "PUT",
+				headers: {
+					origin: PROFILE_ORIGIN,
+					"x-upload-token": subMp3.uploadToken,
+					"x-media-filename": "speaking.mp3",
+					"content-type": "audio/mpeg",
+					"content-length": String(mp3.byteLength),
+				},
+				body: mp3,
+			},
+		);
+		expect(mp3Res.status).toBe(200);
+		const [savedMp3] = await db
+			.select()
+			.from(schema.placementTestSubmission)
+			.where(eq(schema.placementTestSubmission.id, subMp3.submissionId));
+		expect(savedMp3?.speakingMediaMime).toBe("audio/mpeg");
 	});
 });
