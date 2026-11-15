@@ -378,7 +378,7 @@ export function resolveSpeakingSubmitDecision({
 export function resolveSpeakingStatusDisplay(speakingStatus) {
 	if (speakingStatus === "uploaded") {
 		return {
-			label: "Đã gửi file ghi âm/ghi hình · Chờ cô chấm",
+			label: "Đã gửi file ghi âm · Chờ cô chấm",
 			badgeClass: "is-ok",
 		};
 	}
@@ -463,4 +463,153 @@ export function resolveRestoredAttemptStep(
 		return { step: "reading", redirectedToReading: true };
 	}
 	return { step, redirectedToReading: false };
+}
+
+function clampSpeakingInt(rawValue, min, max, fallback) {
+	const num = Number(rawValue);
+	if (!Number.isFinite(num)) return fallback;
+	return Math.min(max, Math.max(min, Math.trunc(num)));
+}
+
+/**
+ * Resolves bounded prep and answer durations (seconds) for a Speaking task.
+ */
+export function resolveTaskTimings(task) {
+	return {
+		prepSeconds: clampSpeakingInt(task?.prepSeconds, 0, 120, 15),
+		answerSeconds: clampSpeakingInt(task?.answerSeconds, 5, 180, 45),
+	};
+}
+
+/**
+ * Computes a bounded safety timeout (ms) when reading a Speaking prompt aloud
+ * so headless browsers or silent TTS never hang the reading phase.
+ */
+export function computeSpeechFallbackTimeoutMs(prompt) {
+	const text = String(prompt ?? "").trim();
+	const wordCount = text ? text.split(/\s+/).length : 0;
+	return Math.min(25000, Math.max(4000, wordCount * 550 + 2500));
+}
+
+/**
+ * Creates the initial idle state for sequential Speaking turn-taking.
+ */
+export function createInitialSpeakingSession(totalTasks = 0) {
+	return {
+		status: "idle",
+		taskIndex: 0,
+		totalTasks: Math.max(0, Math.trunc(Number(totalTasks) || 0)),
+		phase: "idle",
+		secondsLeft: 0,
+		replayUsedForCurrentTask: false,
+	};
+}
+
+/**
+ * Enters the `reading` phase for the given task index and resets per-task replay quota.
+ */
+export function startSpeakingTaskReading(session, taskIndex, tasks = []) {
+	if (!Array.isArray(tasks) || tasks.length === 0) {
+		return {
+			...createInitialSpeakingSession(0),
+			status: "completed",
+			phase: "done",
+		};
+	}
+	const safeIndex = Math.max(
+		0,
+		Math.min(tasks.length - 1, Math.trunc(Number(taskIndex) || 0)),
+	);
+	return {
+		...session,
+		status: "active",
+		taskIndex: safeIndex,
+		totalTasks: tasks.length,
+		phase: "reading",
+		secondsLeft: 0,
+		replayUsedForCurrentTask: false,
+	};
+}
+
+/**
+ * Advances from `reading` into `prep` (if prepSeconds > 0) or directly `answer`.
+ */
+export function transitionSpeakingAfterReading(session, tasks = []) {
+	const task = Array.isArray(tasks) ? tasks[session?.taskIndex ?? 0] : null;
+	if (!task) {
+		return {
+			...session,
+			status: "completed",
+			phase: "done",
+			secondsLeft: 0,
+		};
+	}
+	const { prepSeconds, answerSeconds } = resolveTaskTimings(task);
+	if (prepSeconds > 0) {
+		return {
+			...session,
+			status: "active",
+			phase: "prep",
+			secondsLeft: prepSeconds,
+		};
+	}
+	return {
+		...session,
+		status: "active",
+		phase: "answer",
+		secondsLeft: answerSeconds,
+	};
+}
+
+/**
+ * Skips remaining `prep` countdown and immediately starts the `answer` phase.
+ */
+export function transitionSpeakingToAnswer(session, tasks = []) {
+	const task = Array.isArray(tasks) ? tasks[session?.taskIndex ?? 0] : null;
+	if (!task) {
+		return {
+			...session,
+			status: "completed",
+			phase: "done",
+			secondsLeft: 0,
+		};
+	}
+	const { answerSeconds } = resolveTaskTimings(task);
+	return {
+		...session,
+		status: "active",
+		phase: "answer",
+		secondsLeft: answerSeconds,
+	};
+}
+
+/**
+ * Advances from the current task's `answer` phase to the next task's `reading`
+ * phase, or completes the session after the final task.
+ */
+export function transitionSpeakingNextTask(session, tasks = []) {
+	const list = Array.isArray(tasks) ? tasks : [];
+	const nextIndex = (session?.taskIndex ?? 0) + 1;
+	if (nextIndex < list.length) {
+		return startSpeakingTaskReading(session, nextIndex, list);
+	}
+	return {
+		...session,
+		status: "completed",
+		phase: "done",
+		secondsLeft: 0,
+		replayUsedForCurrentTask: false,
+	};
+}
+
+/**
+ * Allows at most one prompt replay during the `prep` phase of each Speaking task.
+ */
+export function canReplaySpeakingPrompt(session) {
+	return Boolean(
+		session &&
+			session.status === "active" &&
+			session.phase === "prep" &&
+			!session.replayUsedForCurrentTask,
+	);
 }

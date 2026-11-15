@@ -5,15 +5,18 @@ import {
 	PLACEMENT_PROMPT_MAX,
 	PLACEMENT_SPEAKING_RUBRIC,
 	PLACEMENT_WRITING_RUBRIC,
+	type PlacementAudioMeta,
 	type PlacementPublishIssue,
 	type PlacementSpeakingTask,
 	type PlacementWritingPart,
 } from "@teacher-os/api/placement-test-contracts";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { ClipAudioField } from "@/components/placement-test/clip-audio-field";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { inputCls, Select } from "@/components/ui/field";
+import type { UploadedPlacementAudio } from "@/lib/repos/placement-test";
 
 function BoundedNumberInput({
 	label,
@@ -170,17 +173,26 @@ export function WritingEditorCard({
 export function SpeakingEditorSection({
 	tasks,
 	issues,
+	audioMap,
 	onAddTask,
 	onUpdateTask,
 	onMoveTask,
 	onRemoveTask,
+	onTaskAudioUploaded,
+	onTaskAudioCleared,
 }: {
 	tasks: readonly PlacementSpeakingTask[];
 	issues: readonly PlacementPublishIssue[];
+	audioMap?: Record<string, PlacementAudioMeta>;
 	onAddTask: () => void;
 	onUpdateTask: (index: number, patch: Partial<PlacementSpeakingTask>) => void;
 	onMoveTask: (fromIndex: number, toIndex: number) => void;
 	onRemoveTask: (index: number) => void;
+	onTaskAudioUploaded?: (
+		index: number,
+		uploaded: UploadedPlacementAudio,
+	) => void;
+	onTaskAudioCleared?: (index: number) => void;
 }) {
 	const topIssues = issues.filter(
 		(item) => item.path === "parts.4" || item.path === "parts.4.tasks",
@@ -194,8 +206,9 @@ export function SpeakingEditorSection({
 						Phần 5: Nói (Speaking)
 					</h2>
 					<p className="text-muted-foreground text-sm">
-						Hiện có <strong>{tasks.length}</strong> câu hỏi nói (học viên quay
-						video hoặc ghi âm gửi lên; giáo viên chấm 4 tiêu chí{" "}
+						Hiện có <strong>{tasks.length}</strong> câu hỏi nói (hệ thống đọc
+						từng câu hỏi và học viên ghi âm trả lời qua micro — audio-only; giáo
+						viên chấm 4 tiêu chí{" "}
 						{PLACEMENT_SPEAKING_RUBRIC.map((r) => r.label).join(", ")} — 20
 						điểm).
 					</p>
@@ -347,6 +360,32 @@ export function SpeakingEditorSection({
 									className={`${inputCls} mt-1 min-h-[60px] w-full resize-y py-2`}
 								/>
 							</label>
+
+							<ClipAudioField
+								clipId={task.id}
+								clipNumber={idx + 1}
+								audioId={task.audioId ?? null}
+								audioMeta={task.audioId ? audioMap?.[task.audioId] : undefined}
+								optional
+								titleLabel={`Audio đọc câu hỏi ${idx + 1} (tùy chọn)`}
+								uploadAriaLabel={`Tải audio câu hỏi nói ${idx + 1}`}
+								previewAriaLabel={`Trình phát nghe thử câu hỏi nói ${idx + 1}`}
+								clearAriaLabel={`Gỡ audio câu hỏi nói ${idx + 1}`}
+								onUploaded={(uploaded) => {
+									if (onTaskAudioUploaded) {
+										onTaskAudioUploaded(idx, uploaded);
+									} else {
+										onUpdateTask(idx, { audioId: uploaded.audioId });
+									}
+								}}
+								onClear={() => {
+									if (onTaskAudioCleared) {
+										onTaskAudioCleared(idx);
+									} else {
+										onUpdateTask(idx, { audioId: null });
+									}
+								}}
+							/>
 
 							{taskIssues.length > 0 && (
 								<ul className="space-y-1 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-destructive text-xs">

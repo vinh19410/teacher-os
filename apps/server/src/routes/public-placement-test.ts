@@ -1,8 +1,8 @@
 import {
-	matchesQuizMediaMagic,
+	libraryAudioExtensionMatches,
+	matchesLibraryAudioMagic,
 	QUIZ_MEDIA_MAGIC_PEEK_BYTES,
-	quizMediaExtensionMatches,
-	resolveQuizMediaType,
+	resolveLibraryAudioMimeType,
 	sanitizeMediaFileName,
 } from "@teacher-os/api/lib/quiz-media";
 import {
@@ -97,10 +97,12 @@ function safeExtension(fileName: string, mime: string): string {
 			return clean.slice(dot + 1).toLowerCase();
 		}
 	}
-	if (mime.includes("mp4")) return "mp4";
+	if (mime.includes("mp4")) return "m4a";
 	if (mime.includes("mpeg")) return "mp3";
 	if (mime.includes("ogg")) return "ogg";
 	if (mime.includes("wav")) return "wav";
+	if (mime.includes("aac")) return "aac";
+	if (mime.includes("flac")) return "flac";
 	return "webm";
 }
 
@@ -222,7 +224,7 @@ async function tryInsertSubmissionAtomic(params: {
  * Route công khai cho `/kiem-tra-dau-vao/` trên `apps/profile` (#515, #721).
  * Mount ngoài `/api/*` để không qua bootstrap/session; CORS theo `leadOrigins`
  * (không credentials). Hỗ trợ phát audio Range, nộp bài 5 kỹ năng, và tải
- * video/audio Speaking bằng upload token dùng một lần.
+ * audio Speaking bằng upload token dùng một lần.
  */
 export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 	const router = new Hono();
@@ -780,13 +782,8 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 			return c.json({ error: "invalid file name" }, 400);
 		}
 		const browserType = c.req.header("Content-Type") ?? "";
-		const contentType = resolveQuizMediaType(fileName, browserType);
-		if (
-			!contentType ||
-			(!contentType.startsWith("audio/") &&
-				!contentType.startsWith("video/")) ||
-			!quizMediaExtensionMatches(fileName, contentType)
-		) {
+		const contentType = resolveLibraryAudioMimeType(fileName, browserType);
+		if (!contentType || !libraryAudioExtensionMatches(fileName, contentType)) {
 			return c.json({ error: "unsupported media type" }, 415);
 		}
 
@@ -821,7 +818,7 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 			return c.json({ error: "size mismatch" }, 400);
 		}
 
-		if (!matchesQuizMediaMagic(contentType, peeked.head, size)) {
+		if (!matchesLibraryAudioMagic(contentType, peeked.head, size)) {
 			await peeked.abort("unsupported media type");
 			return c.json({ error: "unsupported media type" }, 415);
 		}

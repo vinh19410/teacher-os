@@ -14,8 +14,11 @@ import { pathToFileURL } from "node:url";
 import { buildProfile } from "../build.mjs";
 import {
 	buildProvisionalSummary,
+	canReplaySpeakingPrompt,
+	computeSpeechFallbackTimeoutMs,
 	countObjectiveProgress,
 	countWords,
+	createInitialSpeakingSession,
 	LEAD_PLACEMENT_MAX,
 	matchBandByPct,
 	normalizeGapAnswer,
@@ -24,9 +27,14 @@ import {
 	resolveSpeakingStatusDisplay,
 	resolveSpeakingStepState,
 	resolveSpeakingSubmitDecision,
+	resolveTaskTimings,
 	resolveWritingPromptState,
 	scoreObjectiveTest,
+	startSpeakingTaskReading,
 	stripInlineCefrLabel,
+	transitionSpeakingAfterReading,
+	transitionSpeakingNextTask,
+	transitionSpeakingToAnswer,
 } from "../public/kiem-tra-dau-vao/grading.js";
 import {
 	buildLeadPayload,
@@ -301,10 +309,25 @@ test("Bất biến file tĩnh: không chứa '30 câu', không có questions.jso
 		"Kết quả tạm tính — Chờ chấm Writing & Speaking",
 		"Cô Đỗ Thục Mỹ sẽ trực tiếp chấm phần Writing & Speaking",
 		"registerWithResultBtn",
+		"speakingPlaybackAudio",
+		"video: false",
+		"speakingFinishEarlyBtn",
+		"speakingReplayPromptBtn",
 	]) {
 		assert.ok(
 			testJs.includes(requiredToken),
 			`test.js must include '${requiredToken}'`,
+		);
+	}
+	for (const forbiddenToken of [
+		"speakingVideoModeBtn",
+		"speakingPlaybackVideo",
+		"speakingLiveVideo",
+		"Camera + Micro",
+	]) {
+		assert.ok(
+			!testJs.includes(forbiddenToken),
+			`test.js must NOT include '${forbiddenToken}' (audio-only mode)`,
 		);
 	}
 });
@@ -633,7 +656,9 @@ test("defensive helpers xử lý Reading/Writing/Speaking rỗng, speakingMode='
 	assert.notEqual(noneDisplay.label, skippedDisplay.label);
 	assert.equal(skippedDisplay.label, "Đã bỏ qua phần Speaking");
 	assert.equal(noneDisplay.badgeClass, "is-muted");
-	assert.equal(resolveSpeakingStatusDisplay("uploaded").badgeClass, "is-ok");
+	const uploadedDisplay = resolveSpeakingStatusDisplay("uploaded");
+	assert.equal(uploadedDisplay.badgeClass, "is-ok");
+	assert.equal(uploadedDisplay.label, "Đã gửi file ghi âm · Chờ cô chấm");
 	assert.equal(
 		resolveSpeakingStatusDisplay("pending_upload").badgeClass,
 		"is-warn",
@@ -740,4 +765,79 @@ test("stripInlineCefrLabel xóa nhãn CEFR trong ngoặc trên tiêu đề nhưn
 	assert.equal(stripInlineCefrLabel(""), "");
 	assert.equal(stripInlineCefrLabel(null), "");
 	assert.equal(stripInlineCefrLabel(undefined), "");
+});
+
+test("sequential Speaking state machine chuyển pha reading -> prep -> answer 1..N, zero-prep shortcut và giới hạn 1 lượt nghe lại (#727)", () => {
+	const tasks = [
+		{
+			id: "s-1",
+			prompt: "Tell me about your hometown.",
+			prepSeconds: 10,
+			answerSeconds: 30,
+		},
+		{
+			id: "s-2",
+			prompt: "What do you do in your free time?",
+			prepSeconds: 0,
+			answerSeconds: 45,
+		},
+	];
+
+	assert.deepEqual(resolveTaskTimings(tasks[0]), {
+		prepSeconds: 10,
+		answerSeconds: 30,
+	});
+	assert.deepEqual(
+		resolveTaskTimings({ prepSeconds: -5, answerSeconds: 999 }),
+		{
+			prepSeconds: 0,
+			answerSeconds: 180,
+		},
+	);
+
+	const timeoutShort = computeSpeechFallbackTimeoutMs("Hello");
+	const timeoutLong = computeSpeechFallbackTimeoutMs("word ".repeat(200));
+	assert.equal(timeoutShort >= 4000, true);
+	assert.equal(timeoutLong <= 25000, true);
+
+	let session = createInitialSpeakingSession(tasks.length);
+	assert.equal(session.status, "idle");
+	assert.equal(canReplaySpeakingPrompt(session), false);
+
+	// Câu 1: reading -> prep -> nghe lại 1 lần -> answer sớm -> sang Câu 2
+	session = startSpeakingTaskReading(session, 0, tasks);
+	assert.equal(session.status, "active");
+	assert.equal(session.taskIndex, 0);
+	assert.equal(session.phase, "reading");
+	assert.equal(canReplaySpeakingPrompt(session), false);
+
+	session = transitionSpeakingAfterReading(session, tasks);
+	assert.equal(session.phase, "prep");
+	assert.equal(session.secondsLeft, 10);
+	assert.equal(canReplaySpeakingPrompt(session), true);
+
+	// Dùng 1 lần nghe lại trong prep -> khóa replay trong câu hiện tại
+	session = { ...session, replayUsedForCurrentTask: true };
+	assert.equal(canReplaySpeakingPrompt(session), false);
+
+	session = transitionSpeakingToAnswer(session, tasks);
+	assert.equal(session.phase, "answer");
+	assert.equal(session.secondsLeft, 30);
+	assert.equal(canReplaySpeakingPrompt(session), false);
+
+	// Sang Câu 2: reset replay quota; prepSeconds = 0 -> reading đi thẳng tới answer
+	session = transitionSpeakingNextTask(session, tasks);
+	assert.equal(session.taskIndex, 1);
+	assert.equal(session.phase, "reading");
+	assert.equal(session.replayUsedForCurrentTask, false);
+
+	session = transitionSpeakingAfterReading(session, tasks);
+	assert.equal(session.phase, "answer");
+	assert.equal(session.secondsLeft, 45);
+
+	// Hết câu 2 -> completed
+	session = transitionSpeakingNextTask(session, tasks);
+	assert.equal(session.status, "completed");
+	assert.equal(session.phase, "done");
+	assert.equal(canReplaySpeakingPrompt(session), false);
 });

@@ -516,6 +516,25 @@ export function placementTestRoutes(deps: PlacementTestRouteDeps) {
 			}
 		});
 
+		const speakingPartIdx = draft.parts.findIndex((p) => p.id === "speaking");
+		const speakingTasks =
+			speakingPartIdx >= 0
+				? (
+						draft.parts[speakingPartIdx] as Extract<
+							PlacementContent["parts"][number],
+							{ id: "speaking" }
+						>
+					).tasks
+				: [];
+		speakingTasks.forEach((task, tIdx) => {
+			if (task.audioId && !orgAudioIds.has(task.audioId)) {
+				issues.push({
+					path: `parts.${speakingPartIdx}.tasks.${tIdx}.audioId`,
+					message: "File âm thanh không tồn tại hoặc không thuộc tổ chức này.",
+				});
+			}
+		});
+
 		if (issues.length > 0) {
 			return c.json(
 				{
