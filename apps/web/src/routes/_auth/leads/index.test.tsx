@@ -389,6 +389,16 @@ describe("màn /leads (#506 phase 4)", () => {
 			finalNote: "",
 			gradedAt: null,
 			zaloText: "ZALO MOCK",
+			aiStatus: "none",
+			aiErrorCode: null,
+			aiDraftedAt: null,
+			aiWriting: null,
+			aiSpeaking: null,
+			speakingTranscript: "",
+			writingErrors: null,
+			speakingErrors: null,
+			resultUrl: null,
+			resultEmailStatus: null,
 		};
 
 		const origCreateObjectURL = URL.createObjectURL;
@@ -516,6 +526,8 @@ describe("màn /leads (#506 phase 4)", () => {
 			writingRubric: { ct: 5, or: 5, lg: 5 },
 			speakingRubric: { gv: 0, dm: 0, pr: 0, ic: 0 },
 			teacherFeedback: "Cần luyện nói thêm",
+			writingErrors: [],
+			speakingErrors: [],
 		});
 		expect(toastMock.success).toHaveBeenCalled();
 		Object.defineProperty(URL, "createObjectURL", {
