@@ -25,9 +25,9 @@ dependencies: []
 
 ## Todo
 
-- [ ] Task 1.1 — Viết TDD Red tests cho backfill `v1 -> v2`, seed-sync, deep-clone, collision & cap 100
-- [ ] Task 1.2 — Tạo module dữ liệu chuẩn `packages/api/src/placement-test-defaults.ts`
-- [ ] Task 1.3 — Cập nhật `buildUpgradedLegacyBands`, `upgradeLegacyPlacementContent`, `normalizePublishedPlacementSnapshot` & `buildPlacementZaloText` (Green)
+- [x] Task 1.1 — Viết TDD Red tests cho backfill `v1 -> v2`, seed-sync, deep-clone, collision & cap 100
+- [x] Task 1.2 — Tạo module dữ liệu chuẩn `packages/api/src/placement-test-defaults.ts`
+- [x] Task 1.3 — Cập nhật `buildUpgradedLegacyBands`, `upgradeLegacyPlacementContent`, `normalizePublishedPlacementSnapshot` & `buildPlacementZaloText` (Green)
 
 ## Tasks & Steps
 

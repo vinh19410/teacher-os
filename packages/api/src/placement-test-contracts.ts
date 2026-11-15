@@ -6,6 +6,12 @@ import {
 	type LeadCourse,
 	normalizeVietnamPhone,
 } from "./lead-contracts";
+import {
+	createDefaultPlacementReadingPart,
+	createDefaultPlacementSpeakingPart,
+	createDefaultPlacementWritingPart,
+	dedupeReadingPassages,
+} from "./placement-test-defaults";
 
 /**
  * Contract dùng chung cho bộ đề kiểm tra đầu vào 5 kỹ năng (#515, #721):
@@ -1070,10 +1076,54 @@ const placementSnapshotV2Schema = z.object({
 				}),
 			),
 		}),
-		placementWritingPartSchema,
+		z.object({
+			id: z.literal("writing"),
+			title: z.string().default("Writing"),
+			promptTitle: z.string().default(""),
+			promptBody: z.string().default(""),
+			minWords: z.number().int().min(0).default(50),
+			maxWords: z.number().int().min(0).default(80),
+		}),
 		placementSpeakingPartSchema,
 	]),
 });
+
+function collectObjectiveIds(
+	listeningClips: ReadonlyArray<{ questions: ReadonlyArray<{ id: string }> }>,
+	vgQuestions: ReadonlyArray<{ id: string }>,
+	readingPassages: ReadonlyArray<{
+		id: string;
+		questions: ReadonlyArray<{ id: string }>;
+	}>,
+) {
+	const usedQuestionIds = new Set<string>();
+	const usedPassageIds = new Set<string>();
+	let existingCount = 0;
+
+	for (const clip of listeningClips) {
+		for (const q of clip.questions) {
+			usedQuestionIds.add(q.id);
+			existingCount += 1;
+		}
+	}
+	for (const q of vgQuestions) {
+		usedQuestionIds.add(q.id);
+		existingCount += 1;
+	}
+	for (const passage of readingPassages) {
+		usedPassageIds.add(passage.id);
+		for (const q of passage.questions) {
+			usedQuestionIds.add(q.id);
+			existingCount += 1;
+		}
+	}
+
+	return {
+		usedQuestionIds,
+		usedPassageIds,
+		remainingBudget: Math.max(0, PLACEMENT_MAX_QUESTIONS - existingCount),
+	};
+}
 
 function buildUpgradedLegacyBands(
 	rawBands: ReadonlyArray<z.infer<typeof legacyBandSchema>>,
@@ -1093,38 +1143,35 @@ function buildUpgradedLegacyBands(
 		];
 	}
 
-	const upgraded = rawBands.map((b, idx) => {
-		const min =
-			idx === 0 ? 0 : Math.min(99, Math.round((b.min / oldTotal) * 100));
-		const max =
-			idx === rawBands.length - 1
-				? 100
-				: Math.min(100, Math.round((b.max / oldTotal) * 100));
+	const boundedBands = rawBands.slice(0, PLACEMENT_MAX_BANDS);
+	const count = boundedBands.length;
+	const upgraded: Array<PlacementBand & { courseLabel: string }> = [];
+
+	for (let idx = 0; idx < count; idx += 1) {
+		const b = boundedBands[idx]!;
+		const isLast = idx === count - 1;
+		const prev = idx > 0 ? upgraded[idx - 1] : undefined;
+		const min = prev ? Math.min(100, prev.max + 1) : 0;
+		// Reserve at least 1% point per trailing band so N >= 3 never collapse onto 100.
+		const maxCap = isLast ? 100 : Math.max(min, 100 - (count - 1 - idx));
+		const scaledMax = Math.round((b.max / oldTotal) * 100);
+		const max = isLast ? 100 : Math.min(maxCap, Math.max(min, scaledMax));
+
+		const normalizedCourse: LeadCourse = LEAD_COURSE_SET.has(b.course)
+			? (b.course as LeadCourse)
+			: "comm-1";
 		const courseLabel =
-			b.courseLabel?.trim() ||
-			LEAD_COURSE_LABELS[b.course as LeadCourse] ||
-			b.course;
-		return {
+			b.courseLabel?.trim() || LEAD_COURSE_LABELS[normalizedCourse];
+
+		upgraded.push({
 			min,
-			max: Math.max(min, max),
-			cefr: b.cefr,
-			course: b.course,
+			max,
+			cefr: b.cefr.trim().slice(0, PLACEMENT_CEFR_MAX) || `Level ${idx + 1}`,
+			course: normalizedCourse,
 			courseLabel,
 			displayCourse: courseLabel,
 			advice: "",
-		};
-	});
-
-	// Đảm bảo liền mạch 0..100 sau làm tròn
-	for (let i = 1; i < upgraded.length; i += 1) {
-		const prev = upgraded[i - 1]!;
-		const curr = upgraded[i]!;
-		if (curr.min !== prev.max + 1) {
-			curr.min = Math.min(100, prev.max + 1);
-			if (curr.max < curr.min) {
-				curr.max = i === upgraded.length - 1 ? 100 : curr.min;
-			}
-		}
+		});
 	}
 
 	return upgraded;
@@ -1160,12 +1207,22 @@ export function upgradeLegacyPlacementContent(
 		oldTotal,
 	).map(({ courseLabel: _ignored, ...band }) => band);
 
+	const { usedQuestionIds, usedPassageIds, remainingBudget } =
+		collectObjectiveIds(oldListening.clips, oldVg.questions, []);
+	const defaultReading = createDefaultPlacementReadingPart();
+	const backfilledReadingPassages = dedupeReadingPassages(
+		defaultReading.passages,
+		usedQuestionIds,
+		usedPassageIds,
+		remainingBudget,
+	);
+
 	return {
 		bands: upgradedBands,
 		parts: [
 			{
 				id: "listening",
-				title: oldListening.title || "Listening",
+				title: oldListening.title.trim() || "Listening",
 				clips: oldListening.clips.map((clip) => ({
 					id: clip.id,
 					partLabel: "",
@@ -1188,27 +1245,16 @@ export function upgradeLegacyPlacementContent(
 			},
 			{
 				id: "vocab-grammar",
-				title: oldVg.title || "Grammar & Vocabulary",
+				title: oldVg.title.trim() || "Grammar & Vocabulary",
 				questions: oldVg.questions,
 			},
 			{
 				id: "reading",
-				title: "Reading",
-				passages: [],
+				title: defaultReading.title,
+				passages: backfilledReadingPassages,
 			},
-			{
-				id: "writing",
-				title: "Writing",
-				promptTitle: "",
-				promptBody: "",
-				minWords: 50,
-				maxWords: 80,
-			},
-			{
-				id: "speaking",
-				title: "Speaking",
-				tasks: [],
-			},
+			createDefaultPlacementWritingPart(),
+			createDefaultPlacementSpeakingPart(),
 		],
 	};
 }
@@ -1224,6 +1270,73 @@ export function normalizePublishedPlacementSnapshot(
 	const v2 = placementSnapshotV2Schema.safeParse(raw);
 	if (v2.success) {
 		const [listening, vg, reading, writing, speaking] = v2.data.parts;
+		const { usedQuestionIds, usedPassageIds, remainingBudget } =
+			collectObjectiveIds(listening.clips, vg.questions, reading.passages);
+
+		const defaultReading = createDefaultPlacementReadingPart();
+		const readingTitle = reading.title.trim() || defaultReading.title;
+		const normalizedReading =
+			reading.passages.length === 0
+				? {
+						...reading,
+						title: readingTitle,
+						passages: dedupeReadingPassages(
+							defaultReading.passages,
+							usedQuestionIds,
+							usedPassageIds,
+							remainingBudget,
+						),
+					}
+				: {
+						...reading,
+						title: readingTitle,
+					};
+
+		const defaultWriting = createDefaultPlacementWritingPart();
+		const writingTitle = writing.title.trim() || defaultWriting.title;
+		const minWords =
+			writing.minWords >= 10
+				? Math.min(500, writing.minWords)
+				: defaultWriting.minWords;
+		const maxWords = Math.min(
+			1000,
+			Math.max(
+				minWords,
+				writing.maxWords >= 10 ? writing.maxWords : defaultWriting.maxWords,
+			),
+		);
+		const hasPromptBody = writing.promptBody.trim().length > 0;
+		const normalizedWriting = hasPromptBody
+			? {
+					...writing,
+					title: writingTitle,
+					promptTitle: writing.promptTitle.trim() || "Bài viết ngắn",
+					minWords,
+					maxWords,
+				}
+			: {
+					...writing,
+					title: writingTitle,
+					promptTitle: defaultWriting.promptTitle,
+					promptBody: defaultWriting.promptBody,
+					minWords,
+					maxWords,
+				};
+
+		const defaultSpeaking = createDefaultPlacementSpeakingPart();
+		const speakingTitle = speaking.title.trim() || defaultSpeaking.title;
+		const normalizedSpeaking =
+			speaking.tasks.length === 0
+				? {
+						...speaking,
+						title: speakingTitle,
+						tasks: defaultSpeaking.tasks,
+					}
+				: {
+						...speaking,
+						title: speakingTitle,
+					};
+
 		return {
 			version: v2.data.version,
 			bands: v2.data.bands.map((b) => {
@@ -1242,7 +1355,19 @@ export function normalizePublishedPlacementSnapshot(
 					advice: b.advice?.trim() ?? "",
 				};
 			}),
-			parts: [listening, vg, reading, writing, speaking],
+			parts: [
+				{
+					...listening,
+					title: listening.title.trim() || "Listening",
+				},
+				{
+					...vg,
+					title: vg.title.trim() || "Grammar & Vocabulary",
+				},
+				normalizedReading,
+				normalizedWriting,
+				normalizedSpeaking,
+			],
 		};
 	}
 
@@ -1262,20 +1387,25 @@ export function normalizePublishedPlacementSnapshot(
 	const upgradedBands: PlacementPublishedBand[] = buildUpgradedLegacyBands(
 		v1.data.bands,
 		oldTotal,
-	).map((b) => {
-		const course = LEAD_COURSE_SET.has(b.course)
-			? (b.course as LeadCourse)
-			: ("comm-1" as LeadCourse);
-		return {
-			min: b.min,
-			max: b.max,
-			cefr: b.cefr,
-			course,
-			courseLabel: b.courseLabel,
-			displayCourse: b.displayCourse,
-			advice: b.advice,
-		};
-	});
+	).map((b) => ({
+		min: b.min,
+		max: b.max,
+		cefr: b.cefr,
+		course: b.course as LeadCourse,
+		courseLabel: b.courseLabel,
+		displayCourse: b.displayCourse,
+		advice: b.advice,
+	}));
+
+	const { usedQuestionIds, usedPassageIds, remainingBudget } =
+		collectObjectiveIds(oldListening.clips, oldVg.questions, []);
+	const defaultReading = createDefaultPlacementReadingPart();
+	const backfilledReadingPassages = dedupeReadingPassages(
+		defaultReading.passages,
+		usedQuestionIds,
+		usedPassageIds,
+		remainingBudget,
+	);
 
 	return {
 		version: v1.data.version,
@@ -1283,7 +1413,7 @@ export function normalizePublishedPlacementSnapshot(
 		parts: [
 			{
 				id: "listening",
-				title: oldListening.title || "Listening",
+				title: oldListening.title.trim() || "Listening",
 				clips: oldListening.clips.map((clip) => ({
 					id: clip.id,
 					partLabel: "",
@@ -1307,7 +1437,7 @@ export function normalizePublishedPlacementSnapshot(
 			},
 			{
 				id: "vocab-grammar",
-				title: oldVg.title || "Grammar & Vocabulary",
+				title: oldVg.title.trim() || "Grammar & Vocabulary",
 				questions: oldVg.questions.map((q) => ({
 					id: q.id,
 					kind: q.kind,
@@ -1319,22 +1449,11 @@ export function normalizePublishedPlacementSnapshot(
 			},
 			{
 				id: "reading",
-				title: "Reading",
-				passages: [],
+				title: defaultReading.title,
+				passages: backfilledReadingPassages,
 			},
-			{
-				id: "writing",
-				title: "Writing",
-				promptTitle: "",
-				promptBody: "",
-				minWords: 50,
-				maxWords: 80,
-			},
-			{
-				id: "speaking",
-				title: "Speaking",
-				tasks: [],
-			},
+			createDefaultPlacementWritingPart(),
+			createDefaultPlacementSpeakingPart(),
 		],
 	};
 }
@@ -1823,7 +1942,9 @@ export function buildPlacementZaloText(params: {
 			? `${params.speakingScore}/20 (${Math.round((params.speakingScore / 20) * 100)}%)`
 			: params.speakingStatus === "skipped"
 				? "bỏ qua"
-				: "chưa chấm";
+				: params.speakingStatus === "none"
+					? "không có bài nói"
+					: "chưa chấm";
 
 	const lines = [
 		"KET QUA KIEM TRA DAU VAO — MS MY ENGLISH",

@@ -10,6 +10,14 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-11-15
+
+### Fixed
+- Khắc phục lỗi mất nội dung phần **Reading** (cùng **Writing** và **Speaking** kế tiếp) trên `/kiem-tra-dau-vao/` (`apps/profile`) khi bản ghi `placement_test.published` hoặc draft trên D1 đang lưu cấu trúc legacy `v1` 2 phần (`vocab-grammar` + `listening`):
+  - Bổ sung factory dữ liệu mặc định 3 kỹ năng thuần văn bản khớp `apps/web/public/placement-seed/questions.json` (`packages/api/src/placement-test-defaults.ts`: `6` bài đọc Reading / `15` câu, Writing `Email to a friend`, `8` nhiệm vụ Speaking) với cơ chế cấp phát ID duy nhất `<= 64` ký tự (`allocateUniquePlacementId`), tôn trọng trần `PLACEMENT_MAX_QUESTIONS = 100` và không cắt dở bài `cloze` khi thiếu ngân sách câu hỏi.
+  - Cập nhật `normalizePublishedPlacementSnapshot` và `upgradeLegacyPlacementContent` (`packages/api/src/placement-test-contracts.ts`) để backfill 3 kỹ năng còn thiếu khi nâng cấp `v1 -> v2` (giữ nguyên `version` trên `published` nhằm bảo toàn đáp án `localStorage` của học viên và giữ nguyên draft `v2` giáo viên đang soạn), giới hạn tối đa `PLACEMENT_MAX_BANDS = 8` + chuẩn hoá `cefr` khi nâng cấp `legacyBands`, bổ sung khôi phục phòng thủ cho snapshot `v2` thiếu nội dung hoặc `minWords`/`maxWords`/`title` bất thường, và hỗ trợ `speakingStatus === "none"` trong `buildPlacementZaloText`.
+  - Bổ sung defense-in-depth trên `apps/profile/public/kiem-tra-dau-vao/` (`grading.js` + `test.js`): tách `resolveReadingRenderState`, `resolveWritingPromptState`, `resolveSpeakingStepState`, `resolveSpeakingSubmitDecision`, `resolveSpeakingStatusDisplay`, `countReadingQuestions` và `resolveRestoredAttemptStep` kèm `knownReadingCount` trong `localStorage` để tự chuyển hướng về `"reading"` khi tải lại bản đã backfill mà không chặn học viên chủ động bỏ qua Reading trên đề `v2` bình thường (#724).
+
 ## 2026-11-14
 
 ### Added

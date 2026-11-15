@@ -1,7 +1,14 @@
 import {
 	buildProvisionalSummary,
 	countObjectiveProgress,
+	countReadingQuestions,
 	countWords,
+	resolveReadingRenderState,
+	resolveRestoredAttemptStep,
+	resolveSpeakingStatusDisplay,
+	resolveSpeakingStepState,
+	resolveSpeakingSubmitDecision,
+	resolveWritingPromptState,
 	scoreObjectiveTest,
 } from "./grading.js";
 import {
@@ -441,6 +448,7 @@ function createInitialState() {
 		writingText: "",
 		speakingMode: "none",
 		speakingDurationSec: null,
+		knownReadingCount: null,
 		timerStartedAt: null,
 		submission: null,
 	};
@@ -511,6 +519,12 @@ function loadAttemptState(testVersion) {
 				typeof parsed.writingText === "string" ? parsed.writingText : "",
 			speakingMode: parsed.speakingMode === "skipped" ? "skipped" : "none",
 			speakingDurationSec: null,
+			knownReadingCount:
+				typeof parsed.knownReadingCount === "number" &&
+				Number.isInteger(parsed.knownReadingCount) &&
+				parsed.knownReadingCount >= 0
+					? parsed.knownReadingCount
+					: null,
 			timerStartedAt:
 				typeof parsed.timerStartedAt === "number"
 					? parsed.timerStartedAt
@@ -547,6 +561,12 @@ function saveAttemptState(testVersion, state) {
 				plays: state.plays,
 				writingText: state.writingText,
 				speakingMode: state.speakingMode === "skipped" ? "skipped" : "none",
+				knownReadingCount:
+					typeof state.knownReadingCount === "number" &&
+					Number.isInteger(state.knownReadingCount) &&
+					state.knownReadingCount >= 0
+						? state.knownReadingCount
+						: null,
 				timerStartedAt: state.timerStartedAt,
 				submission: state.submission,
 			}),
@@ -608,12 +628,14 @@ function createApp() {
 	let isUploadingSpeaking = false;
 	let submitError = "";
 	let isSubmitting = false;
+	let readingBackfillNotice = false;
 	let unansweredConfirmState = null;
 	let consultSavedMessage = "";
 	let consultSaving = false;
 
 	function persist() {
 		if (!snapshot) return;
+		state.knownReadingCount = countReadingQuestions(snapshot);
 		saveAttemptState(snapshot.version, state);
 	}
 
@@ -729,6 +751,9 @@ function createApp() {
 		unansweredConfirmState = null;
 		submitError = "";
 		speakingMediaError = "";
+		if (nextStep !== "reading") {
+			readingBackfillNotice = false;
+		}
 		state.step = nextStep;
 		if (OBJECTIVE_AND_WRITING_STEPS.has(nextStep) && !state.timerStartedAt) {
 			state.timerStartedAt = Date.now();
@@ -999,9 +1024,15 @@ function createApp() {
 					]),
 				]),
 				el("div", { className: "intro-stat" }, [
-					el("strong", {}, ["Writing & Speaking thực tế"]),
+					el("strong", {}, [
+						speakingCount > 0
+							? "Writing & Speaking thực tế"
+							: "Writing thực tế",
+					]),
 					el("span", {}, [
-						`1 bài viết (${writing.minWords}–${writing.maxWords} từ) và ${speakingCount} câu hỏi Speaking ghi âm/ghi hình (hoặc bỏ qua nếu thiếu mic).`,
+						speakingCount > 0
+							? `1 bài viết (${writing.minWords}–${writing.maxWords} từ) và ${speakingCount} câu hỏi Speaking ghi âm/ghi hình (hoặc bỏ qua nếu thiếu mic).`
+							: `1 bài viết (${writing.minWords}–${writing.maxWords} từ).`,
 					]),
 				]),
 				el("div", { className: "intro-stat" }, [
@@ -1845,6 +1876,36 @@ function createApp() {
 			]),
 		);
 
+		if (readingBackfillNotice) {
+			wrapper.appendChild(
+				el(
+					"div",
+					{
+						id: "readingBackfillBanner",
+						className: "provisional-notice-box",
+						role: "status",
+					},
+					[
+						el("strong", {}, ["Phần Reading vừa được cập nhật bổ sung"]),
+						el("p", {}, [
+							"Hệ thống vừa bổ sung đầy đủ các bài đọc hiểu cho bài kiểm tra. Vui lòng hoàn thành phần Reading trước khi chuyển sang bước tiếp theo.",
+						]),
+					],
+				),
+			);
+		}
+
+		const readingState = resolveReadingRenderState(reading);
+		if (!readingState.hasPassages) {
+			wrapper.appendChild(
+				el("section", { id: "readingEmptyNotice", className: "card" }, [
+					el("div", { className: "provisional-notice-box" }, [
+						el("p", {}, [readingState.emptyMessage]),
+					]),
+				]),
+			);
+		}
+
 		for (const passage of reading.passages) {
 			const card = el("section", {
 				className: "card reading-passage-card",
@@ -1931,9 +1992,9 @@ function createApp() {
 	}
 
 	function renderWritingStep() {
-		const writing = snapshot.writing;
-		const minWords = Number(writing.minWords) || 50;
-		const maxWords = Number(writing.maxWords) || 80;
+		const writingState = resolveWritingPromptState(snapshot.writing);
+		const minWords = writingState.minWords;
+		const maxWords = writingState.maxWords;
 
 		const wrapper = el("div", {
 			className: "skill-view",
@@ -1945,14 +2006,12 @@ function createApp() {
 			el("p", { className: "kicker-pill" }, ["Phần 4 / 5 · Viết (Writing)"]),
 			el("h1", {
 				className: "section-title",
-				textContent: writing.promptTitle || "Bài viết ngắn",
+				textContent: writingState.promptTitle,
 			}),
 		]);
 
 		const promptBox = el("div", { className: "writing-prompt-box" });
-		const promptLines = String(writing.promptBody ?? "").split("\n");
-		for (const line of promptLines) {
-			if (!line.trim()) continue;
+		for (const line of writingState.lines) {
 			promptBox.appendChild(el("p", { textContent: line }));
 		}
 		promptBox.appendChild(
@@ -2231,13 +2290,14 @@ function createApp() {
 				recordedBlob.size > 0 &&
 				recordedBlob.size <= SPEAKING_MAX_BYTES,
 		);
-		const speakingFinalMode = hasValidBlob
-			? "upload"
-			: state.speakingMode === "skipped"
-				? "skipped"
-				: "skipped";
-		const needsSpeakingDecision =
-			!hasValidBlob && state.speakingMode !== "skipped";
+		const speakingState = resolveSpeakingStepState(snapshot.speaking);
+		const speakingDecision = resolveSpeakingSubmitDecision({
+			hasSpeakingTasks: speakingState.hasTasks,
+			hasValidBlob,
+			speakingMode: state.speakingMode,
+		});
+		const speakingFinalMode = speakingDecision.finalMode;
+		const needsSpeakingDecision = speakingDecision.needsSpeakingDecision;
 
 		if (progress.unanswered > 0 || words === 0 || needsSpeakingDecision) {
 			unansweredConfirmState = {
@@ -2258,6 +2318,7 @@ function createApp() {
 
 	function renderSpeakingStep() {
 		const speaking = snapshot.speaking;
+		const speakingState = resolveSpeakingStepState(speaking);
 		const tasks = speaking.tasks;
 		const hasMediaApi = Boolean(
 			navigator.mediaDevices &&
@@ -2280,511 +2341,534 @@ function createApp() {
 				"Kiểm tra Speaking cùng hệ thống ghi âm / ghi hình",
 			]),
 			el("p", { className: "muted-copy" }, [
-				"Trả lời lần lượt các câu hỏi bên dưới trong một lượt ghi duy nhất. Nếu thiết bị không có camera/micro, bạn có thể chọn Chỉ ghi âm hoặc Bỏ qua phần Speaking.",
+				speakingState.hasTasks
+					? "Trả lời lần lượt các câu hỏi bên dưới trong một lượt ghi duy nhất. Nếu thiết bị không có camera/micro, bạn có thể chọn Chỉ ghi âm hoặc Bỏ qua phần Speaking."
+					: "Bài kiểm tra hiện tại chưa bao gồm câu hỏi Speaking. Bạn có thể kiểm tra lại các phần đã làm hoặc bấm Nộp bài ngay bên dưới.",
 			]),
 		]);
 		wrapper.appendChild(introCard);
 
-		// Full prompt preview list
-		const tasksCard = el("section", { className: "card speaking-tasks-card" }, [
-			el("h2", { className: "subsection-title" }, [
-				`Danh sách ${tasks.length} câu hỏi Speaking`,
-			]),
-			el(
-				"ol",
-				{ className: "speaking-task-list" },
-				tasks.map((task, idx) =>
-					el(
-						"li",
-						{
-							className: `speaking-task-item${isRecording && speakingTaskIndex === idx ? " is-current" : ""}`,
-						},
-						[
-							el("div", { className: "speaking-task-meta" }, [
-								el("span", {
-									className: "part-badge",
-									textContent: task.partLabel || `Câu ${idx + 1}`,
-								}),
-								task.level
-									? el("span", {
-											className: "question-level-pill",
-											textContent: task.level,
-										})
-									: null,
-								el("span", {
-									className: "speaking-timing-hint",
-									textContent: `Chuẩn bị ${task.prepSeconds ?? 10}s · Trả lời ${task.answerSeconds ?? 45}s`,
-								}),
-							]),
-							el("p", {
-								className: "speaking-task-prompt",
-								textContent: task.prompt,
-							}),
-						],
-					),
-				),
-			),
-		]);
-		wrapper.appendChild(tasksCard);
-
-		// Recorder Card
-		const recorderCard = el("section", {
-			id: "speakingRecorderCard",
-			className: "card speaking-recorder-card",
-		});
-
-		if (speakingMediaError) {
-			recorderCard.appendChild(
+		if (!speakingState.hasTasks) {
+			wrapper.appendChild(
 				el(
-					"div",
-					{
-						id: "speakingErrorBanner",
-						className: "form-error-banner",
-						role: "alert",
-					},
-					[speakingMediaError],
+					"section",
+					{ id: "speakingEmptyNotice", className: "card speaking-tasks-card" },
+					[
+						el("div", { className: "provisional-notice-box" }, [
+							el("p", {}, [speakingState.emptyMessage]),
+						]),
+					],
 				),
 			);
-		}
-
-		// Mode selector (Camera+Mic vs Audio-only) when idle
-		if (!isRecording && !hasValidBlob) {
-			const modeBar = el("div", { className: "speaking-mode-switch" }, [
-				el("span", { className: "mode-label" }, ["Chế độ ghi:"]),
-				el(
-					"button",
-					{
-						type: "button",
-						id: "speakingVideoModeBtn",
-						className: `btn btn-sm ${!speakingAudioOnly ? "btn-teal" : "btn-ghost"}`,
-					},
-					["Camera + Micro"],
-				),
-				el(
-					"button",
-					{
-						type: "button",
-						id: "speakingAudioModeBtn",
-						className: `btn btn-sm ${speakingAudioOnly ? "btn-teal" : "btn-ghost"}`,
-					},
-					["Chỉ ghi âm (Audio-only)"],
-				),
-			]);
-			modeBar
-				.querySelector("#speakingVideoModeBtn")
-				?.addEventListener("click", () => {
-					speakingAudioOnly = false;
-					speakingMediaError = "";
-					render();
-				});
-			modeBar
-				.querySelector("#speakingAudioModeBtn")
-				?.addEventListener("click", () => {
-					speakingAudioOnly = true;
-					speakingMediaError = "";
-					render();
-				});
-			recorderCard.appendChild(modeBar);
-		}
-
-		if (!hasMediaApi) {
-			recorderCard.appendChild(
-				el("div", { className: "provisional-notice-box" }, [
-					"Trình duyệt hoặc thiết bị hiện tại không hỗ trợ API ghi âm/ghi hình (MediaRecorder). Bạn có thể bấm ",
-					el("strong", {}, ["Bỏ qua phần Speaking"]),
-					" bên dưới để hoàn tất nộp bài ngay.",
-				]),
-			);
-		}
-
-		function applyTaskPhase(task) {
-			const prepSec = resolvePrepSeconds(task);
-			if (prepSec === 0) {
-				speakingPhase = "answer";
-				speakingPhaseSecondsLeft = Number(task?.answerSeconds) || 45;
-				return;
-			}
-			speakingPhase = "prep";
-			speakingPhaseSecondsLeft = prepSec;
-		}
-
-		if (isRecording) {
-			const activeTask = tasks[speakingTaskIndex] ?? tasks[0];
-			const elapsedSec = Math.max(
-				0,
-				Math.round((Date.now() - recStartedAt) / 1000),
-			);
-
-			const liveStage = el("div", {
-				id: "speakingPreviewStage",
-				className: "speaking-live-stage",
-			});
-
-			if (!speakingAudioOnly) {
-				const liveVideo = el("video", {
-					id: "speakingLiveVideo",
-					className: "speaking-video-box",
-					autoplay: true,
-					muted: true,
-					playsinline: true,
-				});
-				liveVideo.muted = true;
-				liveVideo.playsInline = true;
-				if (mediaStream) {
-					liveVideo.srcObject = mediaStream;
-					liveVideo.play?.().catch(() => {});
-				}
-				liveStage.appendChild(liveVideo);
-			} else {
-				liveStage.appendChild(
-					el("div", { className: "speaking-audio-only-box" }, [
-						el("span", { className: "rec-dot", "aria-hidden": "true" }),
-						"Đang thu âm bằng Micro (Audio-only)...",
-					]),
-				);
-			}
-
-			liveStage.appendChild(
-				el("div", { className: "speaking-rec-hud" }, [
-					el("span", { id: "speakingRecTimer", className: "rec-timer-pill" }, [
-						`● Đang ghi: ${formatClock(elapsedSec)}`,
-					]),
-					el(
-						"span",
-						{ className: "speaking-phase-pill", id: "speakingPhaseBadge" },
-						[
-							speakingPhase === "prep"
-								? `Chuẩn bị còn ${speakingPhaseSecondsLeft}s`
-								: `Đang trả lời (${speakingPhaseSecondsLeft}s)`,
-						],
-					),
-				]),
-			);
-
-			if (activeTask) {
-				liveStage.appendChild(
-					el(
-						"div",
-						{ id: "speakingActiveTask", className: "speaking-teleprompter" },
-						[
-							el("p", { className: "teleprompter-label" }, [
-								`Câu ${speakingTaskIndex + 1}/${tasks.length} · ${activeTask.partLabel || ""}`,
-							]),
-							el("p", {
-								className: "teleprompter-prompt",
-								textContent: activeTask.prompt,
-							}),
-						],
-					),
-				);
-			}
-
-			const recControls = el("div", { className: "speaking-actions-row" });
-			if (speakingPhase === "prep") {
-				const speakNowBtn = el(
-					"button",
-					{
-						type: "button",
-						className: "btn btn-teal",
-						id: "speakingSpeakNowBtn",
-					},
-					["Nói ngay →"],
-				);
-				speakNowBtn.addEventListener("click", () => {
-					speakingPhase = "answer";
-					speakingPhaseSecondsLeft = Number(activeTask?.answerSeconds) || 45;
-					render();
-				});
-				recControls.appendChild(speakNowBtn);
-			}
-			if (speakingTaskIndex < tasks.length - 1) {
-				const nextTaskBtn = el(
-					"button",
-					{
-						type: "button",
-						className: "btn btn-ghost",
-						id: "speakingNextTaskBtn",
-					},
-					["Câu tiếp theo →"],
-				);
-				nextTaskBtn.addEventListener("click", () => {
-					speakingTaskIndex += 1;
-					applyTaskPhase(tasks[speakingTaskIndex]);
-					render();
-				});
-				recControls.appendChild(nextTaskBtn);
-			}
-
-			const stopBtn = el(
-				"button",
-				{
-					type: "button",
-					id: "stopSpeakingBtn",
-					className: "btn btn-danger",
-				},
-				["■ Dừng ghi"],
-			);
-			stopBtn.addEventListener("click", () => {
-				if (mediaRecorder && mediaRecorder.state !== "inactive") {
-					mediaRecorder.stop();
-				}
-			});
-			recControls.appendChild(stopBtn);
-			liveStage.appendChild(recControls);
-			recorderCard.appendChild(liveStage);
-		} else if (hasValidBlob) {
-			const sizeMb = (recordedBlob.size / (1024 * 1024)).toFixed(2);
-			const isTooLarge = recordedBlob.size > SPEAKING_MAX_BYTES;
-			const isAudio =
-				speakingAudioOnly ||
-				String(recordedBlob.type ?? "")
-					.toLowerCase()
-					.startsWith("audio/");
-
-			const reviewBox = el("div", {
-				id: "speakingReviewBox",
-				className: "speaking-review-box",
-			});
-			reviewBox.appendChild(
-				el("div", { className: "speaking-review-meta" }, [
-					el("span", { className: "status-pill is-ok" }, [
-						"Đã ghi bài nói (sẵn sàng nộp)",
-					]),
-					el("span", {}, [
-						`Thời lượng: ${state.speakingDurationSec ?? 0}s · Dung lượng: ${sizeMb} MB / 50 MB`,
-					]),
-				]),
-			);
-
-			if (isTooLarge) {
-				reviewBox.appendChild(
-					el("p", { className: "form-error-banner", role: "alert" }, [
-						"Bản ghi vượt quá giới hạn 50 MB. Vui lòng bấm Ghi lại ngắn hơn hoặc chọn Bỏ qua phần Speaking.",
-					]),
-				);
-			}
-
-			if (recordedBlobUrl) {
-				if (isAudio) {
-					reviewBox.appendChild(
-						el("audio", {
-							id: "speakingPlaybackAudio",
-							className: "speaking-playback-audio",
-							controls: true,
-							src: recordedBlobUrl,
-						}),
-					);
-				} else {
-					reviewBox.appendChild(
-						el("video", {
-							id: "speakingPlaybackVideo",
-							className: "speaking-video-box",
-							controls: true,
-							playsinline: true,
-							src: recordedBlobUrl,
-						}),
-					);
-				}
-			}
-
-			const retakeBtn = el(
-				"button",
-				{
-					type: "button",
-					id: "retakeSpeakingBtn",
-					className: "btn btn-ghost",
-				},
-				["↺ Ghi lại"],
-			);
-			retakeBtn.addEventListener("click", () => {
-				revokeRecordedUrl();
-				recordedBlob = null;
-				recordedChunks = [];
-				state.speakingMode = "none";
-				state.speakingDurationSec = null;
-				speakingMediaError = "";
-				persist();
-				render();
-			});
-			reviewBox.appendChild(
-				el("div", { className: "speaking-actions-row" }, [retakeBtn]),
-			);
-			recorderCard.appendChild(reviewBox);
 		} else {
-			if (state.speakingMode === "skipped") {
-				recorderCard.appendChild(
-					el("div", { className: "speaking-skipped-box" }, [
-						el("span", { className: "status-pill is-muted" }, [
-							"Đã chọn bỏ qua phần Speaking",
-						]),
-						el("p", {}, [
-							"Bạn có thể bấm Nộp bài ngay bên dưới (chỉ chấm 4 kỹ năng đã làm), hoặc vẫn có thể bật mic/camera để ghi lại nếu đổi ý.",
-						]),
-					]),
-				);
-			}
-
-			const actionRow = el("div", { className: "speaking-actions-row" });
-			const startBtn = el(
-				"button",
-				{
-					type: "button",
-					id: "startSpeakingBtn",
-					className: "btn btn-teal",
-					disabled: !hasMediaApi,
-				},
+			// Full prompt preview list
+			const tasksCard = el(
+				"section",
+				{ className: "card speaking-tasks-card" },
 				[
-					speakingAudioOnly
-						? "🎙️ Bắt đầu ghi âm (Audio-only)"
-						: "🎥 Bắt đầu ghi hình & thu âm",
+					el("h2", { className: "subsection-title" }, [
+						`Danh sách ${tasks.length} câu hỏi Speaking`,
+					]),
+					el(
+						"ol",
+						{ className: "speaking-task-list" },
+						tasks.map((task, idx) =>
+							el(
+								"li",
+								{
+									className: `speaking-task-item${isRecording && speakingTaskIndex === idx ? " is-current" : ""}`,
+								},
+								[
+									el("div", { className: "speaking-task-meta" }, [
+										el("span", {
+											className: "part-badge",
+											textContent: task.partLabel || `Câu ${idx + 1}`,
+										}),
+										task.level
+											? el("span", {
+													className: "question-level-pill",
+													textContent: task.level,
+												})
+											: null,
+										el("span", {
+											className: "speaking-timing-hint",
+											textContent: `Chuẩn bị ${task.prepSeconds ?? 10}s · Trả lời ${task.answerSeconds ?? 45}s`,
+										}),
+									]),
+									el("p", {
+										className: "speaking-task-prompt",
+										textContent: task.prompt,
+									}),
+								],
+							),
+						),
+					),
 				],
 			);
+			wrapper.appendChild(tasksCard);
 
-			startBtn.addEventListener("click", async () => {
-				if (!hasMediaApi || isRecording) return;
-				speakingMediaError = "";
-				unansweredConfirmState = null;
+			// Recorder Card
+			const recorderCard = el("section", {
+				id: "speakingRecorderCard",
+				className: "card speaking-recorder-card",
+			});
 
-				try {
-					const constraints = speakingAudioOnly
-						? { audio: true, video: false }
-						: {
-								video: { width: { ideal: 640 }, height: { ideal: 480 } },
-								audio: true,
-							};
-					mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+			if (speakingMediaError) {
+				recorderCard.appendChild(
+					el(
+						"div",
+						{
+							id: "speakingErrorBanner",
+							className: "form-error-banner",
+							role: "alert",
+						},
+						[speakingMediaError],
+					),
+				);
+			}
 
-					const preferredMime = pickSupportedRecorderMime(speakingAudioOnly);
-					mediaRecorder = preferredMime
-						? new window.MediaRecorder(mediaStream, {
-								mimeType: preferredMime,
-							})
-						: new window.MediaRecorder(mediaStream);
-
-					recordedChunks = [];
-					mediaRecorder.addEventListener("dataavailable", (evt) => {
-						if (evt.data && evt.data.size > 0) {
-							recordedChunks.push(evt.data);
-						}
-					});
-
-					mediaRecorder.addEventListener("stop", () => {
-						const finalDuration = Math.max(
-							1,
-							Math.round((Date.now() - recStartedAt) / 1000),
-						);
-						const finalMime =
-							mediaRecorder?.mimeType ||
-							preferredMime ||
-							(speakingAudioOnly ? "audio/webm" : "video/webm");
-
-						stopSpeakingIntervals();
-						stopMediaStream();
-						isRecording = false;
-						speakingPhase = "idle";
-
-						const blob = new Blob(recordedChunks, { type: finalMime });
-						if (blob.size > 0) {
-							revokeRecordedUrl();
-							recordedBlob = blob;
-							recordedBlobUrl = URL.createObjectURL(blob);
-							state.speakingMode = "upload";
-							state.speakingDurationSec = finalDuration;
-						} else {
-							speakingMediaError =
-								"Không thu được dữ liệu âm thanh/video. Vui lòng thử ghi lại hoặc chọn Bỏ qua.";
-						}
-						persist();
+			// Mode selector (Camera+Mic vs Audio-only) when idle
+			if (!isRecording && !hasValidBlob) {
+				const modeBar = el("div", { className: "speaking-mode-switch" }, [
+					el("span", { className: "mode-label" }, ["Chế độ ghi:"]),
+					el(
+						"button",
+						{
+							type: "button",
+							id: "speakingVideoModeBtn",
+							className: `btn btn-sm ${!speakingAudioOnly ? "btn-teal" : "btn-ghost"}`,
+						},
+						["Camera + Micro"],
+					),
+					el(
+						"button",
+						{
+							type: "button",
+							id: "speakingAudioModeBtn",
+							className: `btn btn-sm ${speakingAudioOnly ? "btn-teal" : "btn-ghost"}`,
+						},
+						["Chỉ ghi âm (Audio-only)"],
+					),
+				]);
+				modeBar
+					.querySelector("#speakingVideoModeBtn")
+					?.addEventListener("click", () => {
+						speakingAudioOnly = false;
+						speakingMediaError = "";
 						render();
 					});
+				modeBar
+					.querySelector("#speakingAudioModeBtn")
+					?.addEventListener("click", () => {
+						speakingAudioOnly = true;
+						speakingMediaError = "";
+						render();
+					});
+				recorderCard.appendChild(modeBar);
+			}
 
-					recStartedAt = Date.now();
-					isRecording = true;
-					speakingTaskIndex = 0;
-					applyTaskPhase(tasks[0]);
-					mediaRecorder.start(1000);
+			if (!hasMediaApi) {
+				recorderCard.appendChild(
+					el("div", { className: "provisional-notice-box" }, [
+						"Trình duyệt hoặc thiết bị hiện tại không hỗ trợ API ghi âm/ghi hình (MediaRecorder). Bạn có thể bấm ",
+						el("strong", {}, ["Bỏ qua phần Speaking"]),
+						" bên dưới để hoàn tất nộp bài ngay.",
+					]),
+				);
+			}
 
-					stopSpeakingIntervals();
-					recTickInterval = setInterval(() => {
-						const timerEl = document.getElementById("speakingRecTimer");
-						if (timerEl) {
-							const secs = Math.max(
-								0,
+			function applyTaskPhase(task) {
+				const prepSec = resolvePrepSeconds(task);
+				if (prepSec === 0) {
+					speakingPhase = "answer";
+					speakingPhaseSecondsLeft = Number(task?.answerSeconds) || 45;
+					return;
+				}
+				speakingPhase = "prep";
+				speakingPhaseSecondsLeft = prepSec;
+			}
+
+			if (isRecording) {
+				const activeTask = tasks[speakingTaskIndex] ?? tasks[0];
+				const elapsedSec = Math.max(
+					0,
+					Math.round((Date.now() - recStartedAt) / 1000),
+				);
+
+				const liveStage = el("div", {
+					id: "speakingPreviewStage",
+					className: "speaking-live-stage",
+				});
+
+				if (!speakingAudioOnly) {
+					const liveVideo = el("video", {
+						id: "speakingLiveVideo",
+						className: "speaking-video-box",
+						autoplay: true,
+						muted: true,
+						playsinline: true,
+					});
+					liveVideo.muted = true;
+					liveVideo.playsInline = true;
+					if (mediaStream) {
+						liveVideo.srcObject = mediaStream;
+						liveVideo.play?.().catch(() => {});
+					}
+					liveStage.appendChild(liveVideo);
+				} else {
+					liveStage.appendChild(
+						el("div", { className: "speaking-audio-only-box" }, [
+							el("span", { className: "rec-dot", "aria-hidden": "true" }),
+							"Đang thu âm bằng Micro (Audio-only)...",
+						]),
+					);
+				}
+
+				liveStage.appendChild(
+					el("div", { className: "speaking-rec-hud" }, [
+						el(
+							"span",
+							{ id: "speakingRecTimer", className: "rec-timer-pill" },
+							[`● Đang ghi: ${formatClock(elapsedSec)}`],
+						),
+						el(
+							"span",
+							{ className: "speaking-phase-pill", id: "speakingPhaseBadge" },
+							[
+								speakingPhase === "prep"
+									? `Chuẩn bị còn ${speakingPhaseSecondsLeft}s`
+									: `Đang trả lời (${speakingPhaseSecondsLeft}s)`,
+							],
+						),
+					]),
+				);
+
+				if (activeTask) {
+					liveStage.appendChild(
+						el(
+							"div",
+							{ id: "speakingActiveTask", className: "speaking-teleprompter" },
+							[
+								el("p", { className: "teleprompter-label" }, [
+									`Câu ${speakingTaskIndex + 1}/${tasks.length} · ${activeTask.partLabel || ""}`,
+								]),
+								el("p", {
+									className: "teleprompter-prompt",
+									textContent: activeTask.prompt,
+								}),
+							],
+						),
+					);
+				}
+
+				const recControls = el("div", { className: "speaking-actions-row" });
+				if (speakingPhase === "prep") {
+					const speakNowBtn = el(
+						"button",
+						{
+							type: "button",
+							className: "btn btn-teal",
+							id: "speakingSpeakNowBtn",
+						},
+						["Nói ngay →"],
+					);
+					speakNowBtn.addEventListener("click", () => {
+						speakingPhase = "answer";
+						speakingPhaseSecondsLeft = Number(activeTask?.answerSeconds) || 45;
+						render();
+					});
+					recControls.appendChild(speakNowBtn);
+				}
+				if (speakingTaskIndex < tasks.length - 1) {
+					const nextTaskBtn = el(
+						"button",
+						{
+							type: "button",
+							className: "btn btn-ghost",
+							id: "speakingNextTaskBtn",
+						},
+						["Câu tiếp theo →"],
+					);
+					nextTaskBtn.addEventListener("click", () => {
+						speakingTaskIndex += 1;
+						applyTaskPhase(tasks[speakingTaskIndex]);
+						render();
+					});
+					recControls.appendChild(nextTaskBtn);
+				}
+
+				const stopBtn = el(
+					"button",
+					{
+						type: "button",
+						id: "stopSpeakingBtn",
+						className: "btn btn-danger",
+					},
+					["■ Dừng ghi"],
+				);
+				stopBtn.addEventListener("click", () => {
+					if (mediaRecorder && mediaRecorder.state !== "inactive") {
+						mediaRecorder.stop();
+					}
+				});
+				recControls.appendChild(stopBtn);
+				liveStage.appendChild(recControls);
+				recorderCard.appendChild(liveStage);
+			} else if (hasValidBlob) {
+				const sizeMb = (recordedBlob.size / (1024 * 1024)).toFixed(2);
+				const isTooLarge = recordedBlob.size > SPEAKING_MAX_BYTES;
+				const isAudio =
+					speakingAudioOnly ||
+					String(recordedBlob.type ?? "")
+						.toLowerCase()
+						.startsWith("audio/");
+
+				const reviewBox = el("div", {
+					id: "speakingReviewBox",
+					className: "speaking-review-box",
+				});
+				reviewBox.appendChild(
+					el("div", { className: "speaking-review-meta" }, [
+						el("span", { className: "status-pill is-ok" }, [
+							"Đã ghi bài nói (sẵn sàng nộp)",
+						]),
+						el("span", {}, [
+							`Thời lượng: ${state.speakingDurationSec ?? 0}s · Dung lượng: ${sizeMb} MB / 50 MB`,
+						]),
+					]),
+				);
+
+				if (isTooLarge) {
+					reviewBox.appendChild(
+						el("p", { className: "form-error-banner", role: "alert" }, [
+							"Bản ghi vượt quá giới hạn 50 MB. Vui lòng bấm Ghi lại ngắn hơn hoặc chọn Bỏ qua phần Speaking.",
+						]),
+					);
+				}
+
+				if (recordedBlobUrl) {
+					if (isAudio) {
+						reviewBox.appendChild(
+							el("audio", {
+								id: "speakingPlaybackAudio",
+								className: "speaking-playback-audio",
+								controls: true,
+								src: recordedBlobUrl,
+							}),
+						);
+					} else {
+						reviewBox.appendChild(
+							el("video", {
+								id: "speakingPlaybackVideo",
+								className: "speaking-video-box",
+								controls: true,
+								playsinline: true,
+								src: recordedBlobUrl,
+							}),
+						);
+					}
+				}
+
+				const retakeBtn = el(
+					"button",
+					{
+						type: "button",
+						id: "retakeSpeakingBtn",
+						className: "btn btn-ghost",
+					},
+					["↺ Ghi lại"],
+				);
+				retakeBtn.addEventListener("click", () => {
+					revokeRecordedUrl();
+					recordedBlob = null;
+					recordedChunks = [];
+					state.speakingMode = "none";
+					state.speakingDurationSec = null;
+					speakingMediaError = "";
+					persist();
+					render();
+				});
+				reviewBox.appendChild(
+					el("div", { className: "speaking-actions-row" }, [retakeBtn]),
+				);
+				recorderCard.appendChild(reviewBox);
+			} else {
+				if (state.speakingMode === "skipped") {
+					recorderCard.appendChild(
+						el("div", { className: "speaking-skipped-box" }, [
+							el("span", { className: "status-pill is-muted" }, [
+								"Đã chọn bỏ qua phần Speaking",
+							]),
+							el("p", {}, [
+								"Bạn có thể bấm Nộp bài ngay bên dưới (chỉ chấm 4 kỹ năng đã làm), hoặc vẫn có thể bật mic/camera để ghi lại nếu đổi ý.",
+							]),
+						]),
+					);
+				}
+
+				const actionRow = el("div", { className: "speaking-actions-row" });
+				const startBtn = el(
+					"button",
+					{
+						type: "button",
+						id: "startSpeakingBtn",
+						className: "btn btn-teal",
+						disabled: !hasMediaApi,
+					},
+					[
+						speakingAudioOnly
+							? "🎙️ Bắt đầu ghi âm (Audio-only)"
+							: "🎥 Bắt đầu ghi hình & thu âm",
+					],
+				);
+
+				startBtn.addEventListener("click", async () => {
+					if (!hasMediaApi || isRecording) return;
+					speakingMediaError = "";
+					unansweredConfirmState = null;
+
+					try {
+						const constraints = speakingAudioOnly
+							? { audio: true, video: false }
+							: {
+									video: { width: { ideal: 640 }, height: { ideal: 480 } },
+									audio: true,
+								};
+						mediaStream =
+							await navigator.mediaDevices.getUserMedia(constraints);
+
+						const preferredMime = pickSupportedRecorderMime(speakingAudioOnly);
+						mediaRecorder = preferredMime
+							? new window.MediaRecorder(mediaStream, {
+									mimeType: preferredMime,
+								})
+							: new window.MediaRecorder(mediaStream);
+
+						recordedChunks = [];
+						mediaRecorder.addEventListener("dataavailable", (evt) => {
+							if (evt.data && evt.data.size > 0) {
+								recordedChunks.push(evt.data);
+							}
+						});
+
+						mediaRecorder.addEventListener("stop", () => {
+							const finalDuration = Math.max(
+								1,
 								Math.round((Date.now() - recStartedAt) / 1000),
 							);
-							timerEl.textContent = `● Đang ghi: ${formatClock(secs)}`;
-						}
-					}, 500);
+							const finalMime =
+								mediaRecorder?.mimeType ||
+								preferredMime ||
+								(speakingAudioOnly ? "audio/webm" : "video/webm");
 
-					speakingPhaseInterval = setInterval(() => {
-						if (speakingPhaseSecondsLeft > 1) {
-							speakingPhaseSecondsLeft -= 1;
-							const badge = document.getElementById("speakingPhaseBadge");
-							if (badge) {
-								badge.textContent =
-									speakingPhase === "prep"
-										? `Chuẩn bị còn ${speakingPhaseSecondsLeft}s`
-										: `Đang trả lời (${speakingPhaseSecondsLeft}s)`;
+							stopSpeakingIntervals();
+							stopMediaStream();
+							isRecording = false;
+							speakingPhase = "idle";
+
+							const blob = new Blob(recordedChunks, { type: finalMime });
+							if (blob.size > 0) {
+								revokeRecordedUrl();
+								recordedBlob = blob;
+								recordedBlobUrl = URL.createObjectURL(blob);
+								state.speakingMode = "upload";
+								state.speakingDurationSec = finalDuration;
+							} else {
+								speakingMediaError =
+									"Không thu được dữ liệu âm thanh/video. Vui lòng thử ghi lại hoặc chọn Bỏ qua.";
 							}
-							return;
-						}
+							persist();
+							render();
+						});
 
-						const curTask = tasks[speakingTaskIndex];
-						if (speakingPhase === "prep") {
-							speakingPhase = "answer";
-							speakingPhaseSecondsLeft = Number(curTask?.answerSeconds) || 45;
-							render();
-						} else if (speakingTaskIndex < tasks.length - 1) {
-							speakingTaskIndex += 1;
-							applyTaskPhase(tasks[speakingTaskIndex]);
-							render();
-						} else {
-							const badge = document.getElementById("speakingPhaseBadge");
-							if (badge) {
-								badge.textContent =
-									"Đã hết thời gian gợi ý — bấm Dừng ghi khi xong";
+						recStartedAt = Date.now();
+						isRecording = true;
+						speakingTaskIndex = 0;
+						applyTaskPhase(tasks[0]);
+						mediaRecorder.start(1000);
+
+						stopSpeakingIntervals();
+						recTickInterval = setInterval(() => {
+							const timerEl = document.getElementById("speakingRecTimer");
+							if (timerEl) {
+								const secs = Math.max(
+									0,
+									Math.round((Date.now() - recStartedAt) / 1000),
+								);
+								timerEl.textContent = `● Đang ghi: ${formatClock(secs)}`;
 							}
-						}
-					}, 1000);
+						}, 500);
 
+						speakingPhaseInterval = setInterval(() => {
+							if (speakingPhaseSecondsLeft > 1) {
+								speakingPhaseSecondsLeft -= 1;
+								const badge = document.getElementById("speakingPhaseBadge");
+								if (badge) {
+									badge.textContent =
+										speakingPhase === "prep"
+											? `Chuẩn bị còn ${speakingPhaseSecondsLeft}s`
+											: `Đang trả lời (${speakingPhaseSecondsLeft}s)`;
+								}
+								return;
+							}
+
+							const curTask = tasks[speakingTaskIndex];
+							if (speakingPhase === "prep") {
+								speakingPhase = "answer";
+								speakingPhaseSecondsLeft = Number(curTask?.answerSeconds) || 45;
+								render();
+							} else if (speakingTaskIndex < tasks.length - 1) {
+								speakingTaskIndex += 1;
+								applyTaskPhase(tasks[speakingTaskIndex]);
+								render();
+							} else {
+								const badge = document.getElementById("speakingPhaseBadge");
+								if (badge) {
+									badge.textContent =
+										"Đã hết thời gian gợi ý — bấm Dừng ghi khi xong";
+								}
+							}
+						}, 1000);
+
+						render();
+					} catch {
+						stopMediaStream();
+						isRecording = false;
+						speakingMediaError = speakingAudioOnly
+							? "Không thể truy cập Micro (thiếu quyền hoặc không có micro). Bạn có thể cấp quyền lại hoặc chọn Bỏ qua phần Speaking."
+							: "Không thể truy cập Camera/Micro. Hãy thử chuyển sang chế độ Chỉ ghi âm (Audio-only) hoặc chọn Bỏ qua phần Speaking.";
+						render();
+					}
+				});
+
+				const skipBtn = el(
+					"button",
+					{
+						type: "button",
+						id: "skipSpeakingBtn",
+						className: "btn btn-ghost",
+					},
+					["Bỏ qua phần Speaking (nộp bài không kèm ghi âm)"],
+				);
+				skipBtn.addEventListener("click", () => {
+					revokeRecordedUrl();
+					recordedBlob = null;
+					recordedChunks = [];
+					state.speakingMode = "skipped";
+					state.speakingDurationSec = null;
+					speakingMediaError = "";
+					unansweredConfirmState = null;
+					persist();
 					render();
-				} catch {
-					stopMediaStream();
-					isRecording = false;
-					speakingMediaError = speakingAudioOnly
-						? "Không thể truy cập Micro (thiếu quyền hoặc không có micro). Bạn có thể cấp quyền lại hoặc chọn Bỏ qua phần Speaking."
-						: "Không thể truy cập Camera/Micro. Hãy thử chuyển sang chế độ Chỉ ghi âm (Audio-only) hoặc chọn Bỏ qua phần Speaking.";
-					render();
-				}
-			});
+				});
 
-			const skipBtn = el(
-				"button",
-				{
-					type: "button",
-					id: "skipSpeakingBtn",
-					className: "btn btn-ghost",
-				},
-				["Bỏ qua phần Speaking (nộp bài không kèm ghi âm)"],
-			);
-			skipBtn.addEventListener("click", () => {
-				revokeRecordedUrl();
-				recordedBlob = null;
-				recordedChunks = [];
-				state.speakingMode = "skipped";
-				state.speakingDurationSec = null;
-				speakingMediaError = "";
-				unansweredConfirmState = null;
-				persist();
-				render();
-			});
+				actionRow.appendChild(startBtn);
+				actionRow.appendChild(skipBtn);
+				recorderCard.appendChild(actionRow);
+			}
 
-			actionRow.appendChild(startBtn);
-			actionRow.appendChild(skipBtn);
-			recorderCard.appendChild(actionRow);
+			wrapper.appendChild(recorderCard);
 		}
-
-		wrapper.appendChild(recorderCard);
 
 		if (submitError) {
 			wrapper.appendChild(
@@ -2979,15 +3063,8 @@ function createApp() {
 		const readingPct =
 			objective.reading.pct === null ? "—" : `${objective.reading.pct}%`;
 
-		let speakingLabel = "Đã bỏ qua phần Speaking";
-		let speakingBadgeClass = "is-muted";
-		if (speakingStatus === "uploaded") {
-			speakingLabel = "Đã gửi file ghi âm/ghi hình · Chờ cô chấm";
-			speakingBadgeClass = "is-ok";
-		} else if (speakingStatus === "pending_upload") {
-			speakingLabel = "Bài đã nộp, file Speaking chưa tải lên được";
-			speakingBadgeClass = "is-warn";
-		}
+		const { label: speakingLabel, badgeClass: speakingBadgeClass } =
+			resolveSpeakingStatusDisplay(speakingStatus);
 
 		resultCard.appendChild(
 			el("div", { className: "result-skills-grid" }, [
@@ -3403,6 +3480,19 @@ function createApp() {
 			snapshot = normalizeSnapshot(raw);
 			questionNumbers = buildQuestionNumberMap(snapshot);
 			state = loadAttemptState(snapshot.version);
+			const currentReadingCount = countReadingQuestions(snapshot);
+			const restored = resolveRestoredAttemptStep(
+				state.step,
+				snapshot,
+				state.answers,
+				state.knownReadingCount,
+			);
+			state.knownReadingCount = currentReadingCount;
+			if (restored.redirectedToReading) {
+				state.step = restored.step;
+				readingBackfillNotice = true;
+				saveAttemptState(snapshot.version, state);
+			}
 			render();
 		} catch (err) {
 			renderLoadError(

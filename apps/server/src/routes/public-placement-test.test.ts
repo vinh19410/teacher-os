@@ -660,9 +660,23 @@ describe("public-placement-test routes (#515, #721)", () => {
 		});
 		expect(getRes.status).toBe(200);
 		const served = (await getRes.json()) as {
-			parts: Array<{ id: string }>;
+			version: number;
+			parts: [
+				{ id: "listening" },
+				{ id: "vocab-grammar" },
+				{
+					id: "reading";
+					passages: Array<{
+						id: string;
+						questions: Array<{ id: string; answer: number }>;
+					}>;
+				},
+				{ id: "writing"; promptTitle: string; promptBody: string },
+				{ id: "speaking"; tasks: Array<{ id: string }> },
+			];
 			bands: Array<{ min: number; max: number }>;
 		};
+		expect(served.version).toBe(1);
 		expect(served.parts.map((p) => p.id)).toEqual([
 			"listening",
 			"vocab-grammar",
@@ -670,8 +684,16 @@ describe("public-placement-test routes (#515, #721)", () => {
 			"writing",
 			"speaking",
 		]);
+		expect(served.parts[2].passages).toHaveLength(6);
+		const readingQs = served.parts[2].passages.flatMap((p) => p.questions);
+		expect(readingQs).toHaveLength(15);
+		expect(served.parts[3].promptBody.length).toBeGreaterThan(0);
+		expect(served.parts[4].tasks).toHaveLength(8);
 		expect(served.bands[served.bands.length - 1]?.max).toBe(100);
 
+		const readingAnswers = Object.fromEntries(
+			readingQs.map((q) => [q.id, q.answer]),
+		);
 		const subRes = await app.request("/public/placement-test/submissions", {
 			method: "POST",
 			headers: {
@@ -684,7 +706,7 @@ describe("public-placement-test routes (#515, #721)", () => {
 				answers: {
 					listening: { "v1-l-1": 1 },
 					vocabGrammar: { "v1-vg-1": 0 },
-					reading: {},
+					reading: readingAnswers,
 				},
 				writingText: "",
 				speakingMode: "none",
@@ -692,8 +714,17 @@ describe("public-placement-test routes (#515, #721)", () => {
 		});
 		expect(subRes.status).toBe(201);
 		const subBody = (await subRes.json()) as {
-			objective: { averagePct: number; provisionalBand: { cefr: string } };
+			objective: {
+				reading: { correct: number; total: number; pct: number };
+				averagePct: number;
+				provisionalBand: { cefr: string };
+			};
 		};
+		expect(subBody.objective.reading).toEqual({
+			correct: 15,
+			total: 15,
+			pct: 100,
+		});
 		expect(subBody.objective.averagePct).toBe(100);
 		expect(subBody.objective.provisionalBand.cefr).toBe("B1");
 	});

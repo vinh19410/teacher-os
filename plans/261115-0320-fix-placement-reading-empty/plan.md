@@ -1,7 +1,7 @@
 ---
 title: "fix(placement-test): backfill reading, writing, and speaking on legacy v1 snapshots"
 description: "Khắc phục lỗi phần Reading (cùng Writing và Speaking kế tiếp) bị trống trên /kiem-tra-dau-vao/ khi D1 placement_test.published đang lưu snapshot v1 cũ, kết hợp defense-in-depth trên apps/profile và E2E 3 viewport."
-status: pending
+status: completed
 priority: P1
 effort: "2h"
 tags: ["placement-test", "bugfix", "profile", "api", "tdd"]
@@ -32,8 +32,8 @@ created: 2026-11-15
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Phase 1: Backfill canonical 3 kỹ năng trong @teacher-os/api & apps/server](./phase-01-start.md) | Pending |
-| 2 | [Phase 2: Defense-in-depth trên apps/profile, E2E 3 viewport & Full Gates](./phase-02-profile-defensive-rendering-and-e2e.md) | Pending |
+| 1 | [Phase 1: Backfill canonical 3 kỹ năng trong @teacher-os/api & apps/server](./phase-01-start.md) | Done |
+| 2 | [Phase 2: Defense-in-depth trên apps/profile, E2E 3 viewport & Full Gates](./phase-02-profile-defensive-rendering-and-e2e.md) | Done |
 
 ## Advisor Scope Lock
 
@@ -67,11 +67,11 @@ created: 2026-11-15
 
 ## Success Criteria
 
-- [ ] `pnpm --filter @teacher-os/api test` pass 100% (bao gồm seed-sync drift check, deep-clone isolation, ID collision `<= 64` chars, `PLACEMENT_MAX_QUESTIONS = 100` cap đối xứng, `buildUpgradedLegacyBands` course/overlap, `v1` & `v2` backfill, và `buildPlacementZaloText` với `speakingStatus: "none"`).
-- [ ] `pnpm --filter server test src/routes/public-placement-test.test.ts src/routes/placement-test.test.ts src/routes/leads-placement-submission.test.ts` pass 100%.
-- [ ] `pnpm --filter profile test && pnpm --filter profile build` pass 100% (kiểm trực tiếp 6 helper của `grading.js` và bất biến không chứa `30 câu` dưới `apps/profile/public/`).
-- [ ] `CAPTURE_POT_ISSUE=<ISSUE_NUMBER> E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 E2E_ADMIN_PORT=8104 E2E_PROFILE_PORT=8105 pnpm --filter e2e e2e specs/profile-placement-test.spec.ts` pass 100%, xác nhận `/kiem-tra-dau-vao/` hiển thị đủ 6 bài đọc (`15` câu, tổng `45 câu khách quan`), Writing và 8 câu Speaking trên snapshot `v1` ở 3 viewport (`1440×900`, `768×1024`, `375×812`) + `320×568` không tràn ngang.
-- [ ] `pnpm exec biome check .`, `pnpm check-types`, `pnpm test` đều exit `0`.
+- [x] `pnpm --filter @teacher-os/api test` pass 100% (bao gồm seed-sync drift check, deep-clone isolation, ID collision `<= 64` chars, `PLACEMENT_MAX_QUESTIONS = 100` cap đối xứng, `buildUpgradedLegacyBands` course/overlap, `v1` & `v2` backfill, và `buildPlacementZaloText` với `speakingStatus: "none"`).
+- [x] `pnpm --filter server test src/routes/public-placement-test.test.ts src/routes/placement-test.test.ts src/routes/leads-placement-submission.test.ts` pass 100%.
+- [x] `pnpm --filter profile test && pnpm --filter profile build` pass 100% (kiểm trực tiếp các helper của `grading.js` và bất biến không chứa `30 câu` dưới `apps/profile/public/`).
+- [x] `CAPTURE_POT_ISSUE=724 E2E_API_PORT=8100 E2E_WEB_PORT=8101 E2E_STUDENT_PORT=8103 E2E_ADMIN_PORT=8104 E2E_PROFILE_PORT=8105 pnpm --filter e2e e2e specs/profile-placement-test.spec.ts` pass 100%, xác nhận `/kiem-tra-dau-vao/` hiển thị đủ 6 bài đọc (`15` câu, tổng `45 câu khách quan`), Writing và 8 câu Speaking trên snapshot `v1` ở 3 viewport (`1440×900`, `768×1024`, `375×812`) + `320×568` không tràn ngang.
+- [x] `pnpm exec biome check .`, `pnpm check-types`, `pnpm test` đều exit `0`.
 
 ## Validation Log
 

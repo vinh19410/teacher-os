@@ -27,10 +27,10 @@ Bổ sung lớp phòng thủ giao diện và điều hướng trên `apps/profil
 
 ## Todo
 
-- [ ] Task 2.1 — Viết TDD Red tests cho pure defensive helpers trong `grading.js` & bất biến `apps/profile`
-- [ ] Task 2.2 — Cài đặt pure helpers vào `grading.js` và nối vào `test.js` (Green)
-- [ ] Task 2.3 — E2E regression test cô lập trên snapshot `v1` & chụp POT 3 viewport
-- [ ] Task 2.4 — Chạy toàn bộ Quality Gates tại local (`biome check`, `check-types`, `pnpm test`)
+- [x] Task 2.1 — Viết TDD Red tests cho pure defensive helpers trong `grading.js` & bất biến `apps/profile`
+- [x] Task 2.2 — Cài đặt pure helpers vào `grading.js` và nối vào `test.js` (Green)
+- [x] Task 2.3 — E2E regression test cô lập trên snapshot `v1` & chụp POT 3 viewport
+- [x] Task 2.4 — Chạy toàn bộ Quality Gates tại local (`biome check`, `check-types`, `pnpm test`)
 
 ## Tasks & Steps
 
