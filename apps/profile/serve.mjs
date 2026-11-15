@@ -7,6 +7,7 @@ const root = fileURLToPath(new URL("./public", import.meta.url));
 const rootWithSep = root.endsWith(sep) ? root : `${root}${sep}`;
 const rootIndexFile = join(root, "index.html");
 const testIndexFile = join(root, "kiem-tra-dau-vao", "index.html");
+const resultIndexFile = join(root, "kiem-tra-dau-vao", "ket-qua", "index.html");
 const port = Number(process.env.PORT) || 8005;
 const types = {
 	".html": "text/html; charset=utf-8",
@@ -137,7 +138,9 @@ export function createProfileServer(
 
 			const isRootIndex = file.toLowerCase() === rootIndexFile.toLowerCase();
 			const isTestIndex = file.toLowerCase() === testIndexFile.toLowerCase();
-			if (isRootIndex || isTestIndex) {
+			const isResultIndex =
+				file.toLowerCase() === resultIndexFile.toLowerCase();
+			if (isRootIndex || isTestIndex || isResultIndex) {
 				const raw = await readFile(file, "utf8");
 				const withLeadApi = replaceLeadApiMeta(raw, leadApiUrl);
 				const rendered = isRootIndex
