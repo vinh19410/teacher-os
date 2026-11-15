@@ -239,6 +239,18 @@ export const server = Cloudflare.Worker("server", {
 		RESEND_API_KEY: Config.String("RESEND_API_KEY").pipe(
 			Config.withDefault(""),
 		),
+		// #730: chấm nháp AI bài test đầu vào qua OpenAI. Key rỗng ⇒ grader
+		// tắt (AI_GRADING_DISABLED). Same pattern as RESEND_API_KEY —
+		// redacted conflicts with withDefault. Model rỗng ⇒ mặc định trong code.
+		OPENAI_API_KEY: Config.String("OPENAI_API_KEY").pipe(
+			Config.withDefault(""),
+		),
+		OPENAI_GRADING_MODEL: Config.String("OPENAI_GRADING_MODEL").pipe(
+			Config.withDefault("gpt-6-luna"),
+		),
+		OPENAI_TRANSCRIBE_MODEL: Config.String("OPENAI_TRANSCRIBE_MODEL").pipe(
+			Config.withDefault("gpt-4o-transcribe"),
+		),
 		// SePay Bank Hub (#320): blank secret ⇒ getBankHub() trả undefined ⇒
 		// các route ngân hàng trả 503 BANKHUB_DISABLED (dev không cần cấu hình).
 		// Same pattern as RESEND_API_KEY — redacted conflicts with withDefault.

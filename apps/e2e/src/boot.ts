@@ -22,6 +22,7 @@ import { migrate } from "drizzle-orm/libsql/migrator";
 import { buildApp, type Db } from "server/app";
 import { createFakeAiGrader } from "server/lib/ai-grading/fake-grader";
 import { createFakeExamExtractor } from "server/lib/exam-import/fake-extractor";
+import { createFakePlacementAiGrader } from "server/lib/placement-ai/fake-grader";
 import { isAllowedStudyPackAudioUrl } from "server/lib/study-pack-audio";
 import { getSessionUser } from "server/session";
 import { createFakeBankHub } from "./fake-bank-hub";
@@ -189,6 +190,8 @@ const fakeBankHub = createFakeBankHub({
 	origin: `http://localhost:${PORT}`,
 });
 
+const placementAiGrader = createFakePlacementAiGrader();
+
 const app = buildApp({
 	getDb: () => libsql as unknown as Db,
 	corsOrigin: CORS_ORIGINS,
@@ -205,6 +208,9 @@ const app = buildApp({
 	// AC-001 thấy draft `ai_drafted` mà không đụng Workers AI. Pipeline chạy
 	// fire-and-forget (không waitUntil trong Node) — test chờ qua UI.
 	getAiGrader: () => createFakeAiGrader(),
+	// #730: grader placement fake (rubric 3, lỗi = từ đầu tiên, transcript
+	// cố định) — E2E chấm nháp Writing/Speaking offline, không gọi OpenAI.
+	getPlacementAiGrader: () => placementAiGrader,
 	adminEmails: ADMIN_EMAILS,
 	adminOrigins: [
 		`http://localhost:${Number(process.env.E2E_ADMIN_PORT ?? 8004)}`,
