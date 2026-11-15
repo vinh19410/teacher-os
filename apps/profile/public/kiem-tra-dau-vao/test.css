@@ -765,16 +765,6 @@ h3 {
 	padding: 3px 9px;
 }
 
-.question-level-pill {
-	background: var(--mint);
-	color: var(--teal);
-	border: 1px solid var(--teal-line);
-	font-size: 0.76rem;
-	font-weight: 800;
-	border-radius: 6px;
-	padding: 2px 8px;
-}
-
 .clip-title {
 	font-size: var(--step-1);
 	margin-top: 2px;

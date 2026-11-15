@@ -12,6 +12,11 @@ Quy ước khi cập nhật:
 
 ## 2026-11-15
 
+### Changed
+- Ẩn toàn bộ phần hiển thị nhãn cấp độ CEFR của câu hỏi, đoạn nghe và nhiệm vụ nói trong lúc thí sinh làm bài kiểm tra đầu vào tại `/kiem-tra-dau-vao/` (`apps/profile`):
+  - Gỡ bỏ 4 điểm render `.question-level-pill` (Listening clip, MCQ, Gap-fill, Speaking task) cùng rule CSS `.question-level-pill` trong `test.js` / `test.css`, đồng thời không render `.clip-badges` rỗng khi thiếu `partLabel` để giữ khoảng cách tiêu đề gọn gàng.
+  - Bổ sung `stripInlineCefrLabel` trong `grading.js` để tự động lược bỏ nhãn CEFR nằm trong ngoặc trên tiêu đề đoạn nghe/bài đọc (ví dụ `"Đoạn nghe 1 (A2) – ..."` → `"Đoạn nghe 1 – ..."`), trong khi giữ nguyên dữ liệu `level`, khối `"Phân tích theo từng cấp độ câu hỏi"` trên màn Kết quả tạm tính và giao diện soạn đề/chấm bài của giáo viên trên `apps/web` (#726).
+
 ### Fixed
 - Khắc phục lỗi mất nội dung phần **Reading** (cùng **Writing** và **Speaking** kế tiếp) trên `/kiem-tra-dau-vao/` (`apps/profile`) khi bản ghi `placement_test.published` hoặc draft trên D1 đang lưu cấu trúc legacy `v1` 2 phần (`vocab-grammar` + `listening`):
   - Bổ sung factory dữ liệu mặc định 3 kỹ năng thuần văn bản khớp `apps/web/public/placement-seed/questions.json` (`packages/api/src/placement-test-defaults.ts`: `6` bài đọc Reading / `15` câu, Writing `Email to a friend`, `8` nhiệm vụ Speaking) với cơ chế cấp phát ID duy nhất `<= 64` ký tự (`allocateUniquePlacementId`), tôn trọng trần `PLACEMENT_MAX_QUESTIONS = 100` và không cắt dở bài `cloze` khi thiếu ngân sách câu hỏi.

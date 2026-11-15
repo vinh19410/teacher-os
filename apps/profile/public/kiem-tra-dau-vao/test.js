@@ -10,6 +10,7 @@ import {
 	resolveSpeakingSubmitDecision,
 	resolveWritingPromptState,
 	scoreObjectiveTest,
+	stripInlineCefrLabel,
 } from "./grading.js";
 import {
 	buildLeadPayload,
@@ -881,14 +882,6 @@ function createApp() {
 				}),
 			);
 		}
-		if (q.level) {
-			legendChildren.push(
-				el("span", {
-					className: "question-level-pill",
-					textContent: q.level,
-				}),
-			);
-		}
 		const legend = el("legend", { className: "question-legend" }, [
 			el("span", { className: "question-meta-row" }, legendChildren),
 			promptText
@@ -951,9 +944,6 @@ function createApp() {
 		const meta = el("span", { className: "question-meta-row" }, [
 			el("span", { className: "question-num", textContent: `Câu ${num}` }),
 			el("span", { className: "question-tag", textContent: "Điền từ / số" }),
-			q.level
-				? el("span", { className: "question-level-pill", textContent: q.level })
-				: null,
 		]);
 
 		fieldset.appendChild(
@@ -1476,24 +1466,25 @@ function createApp() {
 				dataset: { clipId: clip.id },
 			});
 
+			const partLabel = stripInlineCefrLabel(clip.partLabel);
+			const displayClipTitle = stripInlineCefrLabel(clip.title);
+			const displayNotesTitle = stripInlineCefrLabel(clip.notesTitle);
+
 			clipCard.appendChild(
 				el("div", { className: "clip-header" }, [
-					el("div", { className: "clip-badges" }, [
-						clip.partLabel
-							? el("span", {
+					partLabel
+						? el("div", { className: "clip-badges" }, [
+								el("span", {
 									className: "part-badge",
-									textContent: clip.partLabel,
-								})
-							: null,
-						clip.level
-							? el("span", {
-									className: "question-level-pill",
-									textContent: clip.level,
-								})
-							: null,
-					]),
-					clip.title
-						? el("h2", { className: "clip-title", textContent: clip.title })
+									textContent: partLabel,
+								}),
+							])
+						: null,
+					displayClipTitle
+						? el("h2", {
+								className: "clip-title",
+								textContent: displayClipTitle,
+							})
 						: null,
 					clip.instruction
 						? el("p", {
@@ -1676,11 +1667,11 @@ function createApp() {
 				]),
 			);
 
-			if (clip.notesTitle) {
+			if (displayNotesTitle) {
 				clipCard.appendChild(
 					el("div", { className: "clip-notes-header" }, [
 						el("span", { className: "notes-kicker" }, ["Phiếu ghi chú"]),
-						el("strong", { textContent: clip.notesTitle }),
+						el("strong", { textContent: displayNotesTitle }),
 					]),
 				);
 			}
@@ -1915,13 +1906,16 @@ function createApp() {
 				},
 			});
 
+			const displayPartLabel = stripInlineCefrLabel(passage.partLabel);
+			const displayPassageTitle = stripInlineCefrLabel(passage.title);
+
 			card.appendChild(
 				el("div", { className: "passage-header" }, [
 					el("div", { className: "clip-badges" }, [
-						passage.partLabel
+						displayPartLabel
 							? el("span", {
 									className: "part-badge",
-									textContent: passage.partLabel,
+									textContent: displayPartLabel,
 								})
 							: null,
 						el("span", {
@@ -1929,8 +1923,11 @@ function createApp() {
 							textContent: READING_KIND_LABELS[passage.kind] ?? "Bài đọc hiểu",
 						}),
 					]),
-					passage.title
-						? el("h2", { className: "clip-title", textContent: passage.title })
+					displayPassageTitle
+						? el("h2", {
+								className: "clip-title",
+								textContent: displayPassageTitle,
+							})
 						: null,
 					passage.instruction
 						? el("p", {
@@ -2372,8 +2369,9 @@ function createApp() {
 					el(
 						"ol",
 						{ className: "speaking-task-list" },
-						tasks.map((task, idx) =>
-							el(
+						tasks.map((task, idx) => {
+							const displayPartLabel = stripInlineCefrLabel(task.partLabel);
+							return el(
 								"li",
 								{
 									className: `speaking-task-item${isRecording && speakingTaskIndex === idx ? " is-current" : ""}`,
@@ -2382,14 +2380,8 @@ function createApp() {
 									el("div", { className: "speaking-task-meta" }, [
 										el("span", {
 											className: "part-badge",
-											textContent: task.partLabel || `Câu ${idx + 1}`,
+											textContent: displayPartLabel || `Câu ${idx + 1}`,
 										}),
-										task.level
-											? el("span", {
-													className: "question-level-pill",
-													textContent: task.level,
-												})
-											: null,
 										el("span", {
 											className: "speaking-timing-hint",
 											textContent: `Chuẩn bị ${task.prepSeconds ?? 10}s · Trả lời ${task.answerSeconds ?? 45}s`,
@@ -2400,8 +2392,8 @@ function createApp() {
 										textContent: task.prompt,
 									}),
 								],
-							),
-						),
+							);
+						}),
 					),
 				],
 			);
@@ -2544,13 +2536,16 @@ function createApp() {
 				);
 
 				if (activeTask) {
+					const activePartLabel = stripInlineCefrLabel(activeTask.partLabel);
 					liveStage.appendChild(
 						el(
 							"div",
 							{ id: "speakingActiveTask", className: "speaking-teleprompter" },
 							[
 								el("p", { className: "teleprompter-label" }, [
-									`Câu ${speakingTaskIndex + 1}/${tasks.length} · ${activeTask.partLabel || ""}`,
+									activePartLabel
+										? `Câu ${speakingTaskIndex + 1}/${tasks.length} · ${activePartLabel}`
+										: `Câu ${speakingTaskIndex + 1}/${tasks.length}`,
 								]),
 								el("p", {
 									className: "teleprompter-prompt",

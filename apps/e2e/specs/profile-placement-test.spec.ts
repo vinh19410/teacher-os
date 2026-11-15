@@ -306,6 +306,7 @@ test.describe
 			await page.locator("#submitLeadGateBtn").click();
 
 			await expect(page.locator('[data-skill="listening"]')).toBeVisible();
+			await expect(page.locator(".question-level-pill")).toHaveCount(0);
 
 			expect(await countLeads()).toBe(leadsBefore + 1);
 			{
@@ -381,6 +382,7 @@ test.describe
 			// 4. Phần 2 Grammar & Vocab: đúng 9/12 (75%)
 			await page.locator("#nextToVocabBtn").click();
 			await expect(page.locator('[data-skill="vocab-grammar"]')).toBeVisible();
+			await expect(page.locator(".question-level-pill")).toHaveCount(0);
 			const gvQuestions = questionsData.parts[1].questions as Array<{
 				id: string;
 				answer: number;
@@ -400,6 +402,7 @@ test.describe
 			// 5. Phần 3 Reading: đúng 12/15 (80%) -> tổng 34/40 khách quan = 85%
 			await page.locator("#nextToReadingBtn").click();
 			await expect(page.locator('[data-skill="reading"]')).toBeVisible();
+			await expect(page.locator(".question-level-pill")).toHaveCount(0);
 			const readingPassages = questionsData.parts[2].passages as Array<{
 				questions: Array<{ id: string; answer: number }>;
 			}>;
@@ -432,6 +435,7 @@ test.describe
 			// 7. Phần 5 Speaking: không tính vào 40 phút, ghi WebM từ canvas+audio stream rồi xem lại trước khi nộp
 			await page.locator("#nextToSpeakingBtn").click();
 			await expect(page.locator('[data-skill="speaking"]')).toBeVisible();
+			await expect(page.locator(".question-level-pill")).toHaveCount(0);
 			await expect(page.getByTestId("test-timer")).toContainText(
 				"Speaking · Không tính vào 40 phút",
 			);
@@ -465,6 +469,7 @@ test.describe
 
 			const resultCard = page.locator("#testResultCard");
 			await expect(resultCard).toBeVisible();
+			await expect(page.locator(".level-breakdown-section")).toBeVisible();
 			await expect(page.getByTestId("provisional-badge")).toContainText(
 				"Kết quả tạm tính — Chờ chấm Writing & Speaking",
 			);
@@ -974,7 +979,10 @@ test.describe
 								src: "/public/placement-test/audio/11111111-1111-4111-8111-111111111111",
 								maxPlays: 2,
 								level: "A2",
-								title: `Legacy V1 Audio ${cIdx + 1}`,
+								title:
+									cIdx === 0
+										? "Đoạn nghe 1 (A2) – Thông báo tại thư viện cộng đồng"
+										: `Đoạn nghe ${cIdx + 1} (B1) – Legacy V1 Audio ${cIdx + 1}`,
 								questions: Array.from({ length: 3 }, (_, qIdx) => ({
 									id: `v1-l-${cIdx * 3 + qIdx + 1}`,
 									level: "A2",
@@ -1006,6 +1014,55 @@ test.describe
 				await expect(page.locator(".progress-counter")).toContainText(
 					"Đã trả lời 0/45 câu khách quan",
 				);
+				await expect(page.locator(".question-level-pill")).toHaveCount(0);
+				const firstListeningClip = page.locator(".listening-clip-card").first();
+				await expect(firstListeningClip.locator(".clip-badges")).toHaveCount(0);
+				await expect(firstListeningClip.locator(".clip-title")).toHaveText(
+					"Đoạn nghe 1 – Thông báo tại thư viện cộng đồng",
+				);
+
+				const potIssue = process.env.CAPTURE_POT_ISSUE?.trim();
+				const checkViewports = [
+					...VIEWPORTS,
+					{ width: 320, height: 568, label: "reflow-320x568" },
+				] as const;
+
+				for (const vp of checkViewports) {
+					await page.setViewportSize({ width: vp.width, height: vp.height });
+					await page.evaluate(() => {
+						const clip = document.querySelector(".listening-clip-card");
+						const header = document.querySelector(".site-header");
+						if (!clip) return;
+						const headerHeight = header
+							? header.getBoundingClientRect().height
+							: 0;
+						const top =
+							clip.getBoundingClientRect().top +
+							window.scrollY -
+							headerHeight -
+							16;
+						window.scrollTo({ top: Math.max(0, top), behavior: "instant" });
+					});
+					const overflow = await page.evaluate(
+						() =>
+							document.documentElement.scrollWidth >
+							document.documentElement.clientWidth,
+					);
+					expect(
+						overflow,
+						`no listening horizontal overflow at ${vp.label}`,
+					).toBe(false);
+					if (potIssue && vp.label !== "reflow-320x568") {
+						await page.screenshot({
+							path: reportPath(
+								`${potIssue}-placement-no-level-${vp.label}.png`,
+							),
+							fullPage: false,
+						});
+					}
+				}
+
+				await page.setViewportSize({ width: 1440, height: 900 });
 
 				await page
 					.locator('nav.skill-stepper button[data-skill-step="reading"]')
@@ -1030,12 +1087,6 @@ test.describe
 					"Đã trả lời 1/45 câu khách quan",
 				);
 
-				const potIssue = process.env.CAPTURE_POT_ISSUE?.trim();
-				const checkViewports = [
-					...VIEWPORTS,
-					{ width: 320, height: 568, label: "reflow-320x568" },
-				] as const;
-
 				for (const vp of checkViewports) {
 					await page.setViewportSize({ width: vp.width, height: vp.height });
 					await passageCards.first().scrollIntoViewIfNeeded();
@@ -1048,14 +1099,6 @@ test.describe
 						overflow,
 						`no reading horizontal overflow at ${vp.label}`,
 					).toBe(false);
-					if (potIssue && vp.label !== "reflow-320x568") {
-						await page.screenshot({
-							path: reportPath(
-								`${potIssue}-entry-test-reading-${vp.label}.png`,
-							),
-							fullPage: false,
-						});
-					}
 				}
 
 				await page.setViewportSize({ width: 1440, height: 900 });
