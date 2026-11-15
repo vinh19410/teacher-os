@@ -270,3 +270,182 @@ export function countObjectiveProgress(snapshot, answers = {}) {
 		unansweredByPart,
 	};
 }
+
+/**
+ * Resolves defensive UI state for the Reading step.
+ */
+export function resolveReadingRenderState(reading) {
+	const passages = Array.isArray(reading?.passages) ? reading.passages : [];
+	if (passages.length > 0) {
+		return { hasPassages: true, emptyMessage: "" };
+	}
+	return {
+		hasPassages: false,
+		emptyMessage:
+			"Phần Reading hiện chưa có bài đọc nào. Bạn có thể chuyển sang bước tiếp theo.",
+	};
+}
+
+/**
+ * Resolves normalized prompt lines, title fallback, and word bounds for Writing.
+ */
+export function resolveWritingPromptState(writing) {
+	const parsedMin = Number(writing?.minWords);
+	const minWords =
+		Number.isFinite(parsedMin) && parsedMin > 0 ? Math.floor(parsedMin) : 50;
+	const parsedMax = Number(writing?.maxWords);
+	const rawMaxWords =
+		Number.isFinite(parsedMax) && parsedMax > 0 ? Math.floor(parsedMax) : 80;
+	const maxWords = Math.max(minWords, rawMaxWords);
+	const promptTitle =
+		String(writing?.promptTitle ?? "").trim() || "Bài viết ngắn";
+	const rawLines = String(writing?.promptBody ?? "").split("\n");
+	const lines = rawLines.filter((line) => line.trim().length > 0);
+	if (lines.length === 0) {
+		return {
+			promptTitle,
+			lines: [
+				"Hãy viết một đoạn văn ngắn bằng tiếng Anh để giới thiệu bản thân, công việc hoặc sở thích của bạn trong đời sống hằng ngày.",
+			],
+			minWords,
+			maxWords,
+			isFallback: true,
+		};
+	}
+	return {
+		promptTitle,
+		lines,
+		minWords,
+		maxWords,
+		isFallback: false,
+	};
+}
+
+/**
+ * Resolves defensive UI state for the Speaking step.
+ */
+export function resolveSpeakingStepState(speaking) {
+	const tasks = Array.isArray(speaking?.tasks) ? speaking.tasks : [];
+	if (tasks.length > 0) {
+		return { hasTasks: true, emptyMessage: "" };
+	}
+	return {
+		hasTasks: false,
+		emptyMessage:
+			"Đề kiểm tra hiện không có câu hỏi Speaking. Bạn có thể nộp bài ngay bên dưới.",
+	};
+}
+
+/**
+ * Determines final speakingMode and whether submit needs confirmation.
+ * Checks `!hasSpeakingTasks` before `hasValidBlob` so no phantom upload is attempted.
+ */
+export function resolveSpeakingSubmitDecision({
+	hasSpeakingTasks,
+	hasValidBlob,
+	speakingMode,
+}) {
+	if (!hasSpeakingTasks) {
+		return { finalMode: "none", needsSpeakingDecision: false };
+	}
+	if (hasValidBlob) {
+		return { finalMode: "upload", needsSpeakingDecision: false };
+	}
+	if (speakingMode === "skipped") {
+		return { finalMode: "skipped", needsSpeakingDecision: false };
+	}
+	return { finalMode: "skipped", needsSpeakingDecision: true };
+}
+
+/**
+ * Resolves student-facing label and badge class for all Speaking submission statuses.
+ */
+export function resolveSpeakingStatusDisplay(speakingStatus) {
+	if (speakingStatus === "uploaded") {
+		return {
+			label: "Đã gửi file ghi âm/ghi hình · Chờ cô chấm",
+			badgeClass: "is-ok",
+		};
+	}
+	if (speakingStatus === "pending_upload") {
+		return {
+			label: "Bài đã nộp, file Speaking chưa tải lên được",
+			badgeClass: "is-warn",
+		};
+	}
+	if (speakingStatus === "none") {
+		return {
+			label: "Không áp dụng (đề không có phần Speaking)",
+			badgeClass: "is-muted",
+		};
+	}
+	return {
+		label: "Đã bỏ qua phần Speaking",
+		badgeClass: "is-muted",
+	};
+}
+
+/**
+ * Counts the total number of Reading questions in a placement test snapshot.
+ */
+export function countReadingQuestions(snapshot) {
+	const readingPart =
+		snapshot?.reading ?? resolveSnapshotParts(snapshot).reading ?? {};
+	const passages = Array.isArray(readingPart?.passages)
+		? readingPart.passages
+		: [];
+	let total = 0;
+	for (const passage of passages) {
+		total += Array.isArray(passage?.questions) ? passage.questions.length : 0;
+	}
+	return total;
+}
+
+/**
+ * Redirects restored localStorage attempts from Writing/Speaking back to Reading
+ * when a backfilled snapshot now contains Reading questions with zero valid answers
+ * and the attempt had not already seen Reading questions (`knownReadingCount`).
+ */
+export function resolveRestoredAttemptStep(
+	step,
+	snapshot,
+	answers = {},
+	knownReadingCount = null,
+) {
+	if (step !== "writing" && step !== "speaking") {
+		return { step, redirectedToReading: false };
+	}
+	if (typeof knownReadingCount === "number" && knownReadingCount > 0) {
+		return { step, redirectedToReading: false };
+	}
+
+	const readingPart =
+		snapshot?.reading ?? resolveSnapshotParts(snapshot).reading ?? {};
+	const passages = Array.isArray(readingPart?.passages)
+		? readingPart.passages
+		: [];
+	const readingAnswers = answers?.reading ?? {};
+
+	let totalReadingQuestions = 0;
+	let answeredReadingQuestions = 0;
+
+	for (const passage of passages) {
+		for (const q of passage?.questions ?? []) {
+			totalReadingQuestions += 1;
+			const val = readingAnswers[q.id];
+			if (
+				typeof val === "number" &&
+				Number.isInteger(val) &&
+				val >= 0 &&
+				val <= 3
+			) {
+				answeredReadingQuestions += 1;
+			}
+		}
+	}
+
+	if (totalReadingQuestions > 0 && answeredReadingQuestions === 0) {
+		return { step: "reading", redirectedToReading: true };
+	}
+	return { step, redirectedToReading: false };
+}

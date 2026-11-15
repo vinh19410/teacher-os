@@ -19,6 +19,12 @@ import {
 	LEAD_PLACEMENT_MAX,
 	matchBandByPct,
 	normalizeGapAnswer,
+	resolveReadingRenderState,
+	resolveRestoredAttemptStep,
+	resolveSpeakingStatusDisplay,
+	resolveSpeakingStepState,
+	resolveSpeakingSubmitDecision,
+	resolveWritingPromptState,
 	scoreObjectiveTest,
 } from "../public/kiem-tra-dau-vao/grading.js";
 import {
@@ -536,4 +542,155 @@ test("build.mjs copy public sang dist, không có questions.json và thay meta l
 	} finally {
 		rmSync(tmpRoot, { recursive: true, force: true });
 	}
+});
+
+test("defensive helpers xử lý Reading/Writing/Speaking rỗng, speakingMode='none' và reload redirect về Reading", () => {
+	assert.deepEqual(
+		resolveReadingRenderState({ passages: [] }).hasPassages,
+		false,
+	);
+	assert.equal(
+		resolveReadingRenderState({ passages: [] }).emptyMessage.length > 0,
+		true,
+	);
+	assert.equal(
+		resolveReadingRenderState({ passages: [{ id: "ra", questions: [] }] })
+			.hasPassages,
+		true,
+	);
+
+	const emptyWriting = resolveWritingPromptState({
+		promptTitle: "",
+		promptBody: "\n  ",
+		minWords: 120,
+		maxWords: 60,
+	});
+	assert.equal(emptyWriting.isFallback, true);
+	assert.equal(emptyWriting.promptTitle, "Bài viết ngắn");
+	assert.equal(emptyWriting.lines.length > 0, true);
+	assert.equal(emptyWriting.minWords, 120);
+	assert.equal(emptyWriting.maxWords, 120);
+
+	const filledWriting = resolveWritingPromptState({
+		promptTitle: "Email to a friend",
+		promptBody: "Line 1\n\n  Line 2  ",
+		minWords: 50,
+		maxWords: 80,
+	});
+	assert.equal(filledWriting.isFallback, false);
+	assert.equal(filledWriting.promptTitle, "Email to a friend");
+	assert.deepEqual(filledWriting.lines, ["Line 1", "  Line 2  "]);
+
+	const emptySpeaking = resolveSpeakingStepState({ tasks: [] });
+	assert.equal(emptySpeaking.hasTasks, false);
+	assert.equal(emptySpeaking.emptyMessage.length > 0, true);
+	assert.equal(
+		resolveSpeakingStepState({ tasks: [{ id: "s-01" }] }).hasTasks,
+		true,
+	);
+
+	assert.deepEqual(
+		resolveSpeakingSubmitDecision({
+			hasSpeakingTasks: false,
+			hasValidBlob: true,
+			speakingMode: "upload",
+		}),
+		{ finalMode: "none", needsSpeakingDecision: false },
+	);
+	assert.deepEqual(
+		resolveSpeakingSubmitDecision({
+			hasSpeakingTasks: true,
+			hasValidBlob: false,
+			speakingMode: "none",
+		}),
+		{ finalMode: "skipped", needsSpeakingDecision: true },
+	);
+	assert.deepEqual(
+		resolveSpeakingSubmitDecision({
+			hasSpeakingTasks: true,
+			hasValidBlob: false,
+			speakingMode: "skipped",
+		}),
+		{ finalMode: "skipped", needsSpeakingDecision: false },
+	);
+	assert.deepEqual(
+		resolveSpeakingSubmitDecision({
+			hasSpeakingTasks: true,
+			hasValidBlob: true,
+			speakingMode: "upload",
+		}),
+		{ finalMode: "upload", needsSpeakingDecision: false },
+	);
+
+	const noneDisplay = resolveSpeakingStatusDisplay("none");
+	const skippedDisplay = resolveSpeakingStatusDisplay("skipped");
+	assert.notEqual(noneDisplay.label, skippedDisplay.label);
+	assert.equal(skippedDisplay.label, "Đã bỏ qua phần Speaking");
+	assert.equal(noneDisplay.badgeClass, "is-muted");
+	assert.equal(resolveSpeakingStatusDisplay("uploaded").badgeClass, "is-ok");
+	assert.equal(
+		resolveSpeakingStatusDisplay("pending_upload").badgeClass,
+		"is-warn",
+	);
+
+	const snapshotWithReading = {
+		parts: [
+			{ id: "listening", clips: [] },
+			{ id: "vocab-grammar", questions: [] },
+			{
+				id: "reading",
+				passages: [
+					{
+						id: "ra",
+						questions: [{ id: "r-a1", answer: 1 }],
+					},
+				],
+			},
+		],
+	};
+
+	assert.deepEqual(
+		resolveRestoredAttemptStep("writing", snapshotWithReading, { reading: {} }),
+		{ step: "reading", redirectedToReading: true },
+	);
+	assert.deepEqual(
+		resolveRestoredAttemptStep("speaking", snapshotWithReading, {
+			reading: { staleKey: 1, "r-a1": null },
+		}),
+		{ step: "reading", redirectedToReading: true },
+	);
+	assert.deepEqual(
+		resolveRestoredAttemptStep("writing", snapshotWithReading, {
+			reading: { "r-a1": 1 },
+		}),
+		{ step: "writing", redirectedToReading: false },
+	);
+	assert.deepEqual(
+		resolveRestoredAttemptStep("listening", snapshotWithReading, {
+			reading: {},
+		}),
+		{ step: "listening", redirectedToReading: false },
+	);
+	assert.deepEqual(
+		resolveRestoredAttemptStep("result", snapshotWithReading, { reading: {} }),
+		{ step: "result", redirectedToReading: false },
+	);
+	assert.deepEqual(
+		resolveRestoredAttemptStep(
+			"writing",
+			snapshotWithReading,
+			{ reading: {} },
+			15,
+		),
+		{ step: "writing", redirectedToReading: false },
+	);
+	assert.deepEqual(
+		resolveRestoredAttemptStep(
+			"speaking",
+			snapshotWithReading,
+			{ reading: {} },
+			0,
+		),
+		{ step: "reading", redirectedToReading: true },
+	);
 });

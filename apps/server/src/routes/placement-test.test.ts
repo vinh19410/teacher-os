@@ -746,6 +746,9 @@ describe("placement-test teacher routes (#515 phase 2)", () => {
 			"writing",
 			"speaking",
 		]);
+		expect(body.draft?.parts[2]?.passages).toHaveLength(6);
+		expect(body.draft?.parts[3]?.promptTitle).toBe("Email to a friend");
+		expect(body.draft?.parts[4]?.tasks).toHaveLength(8);
 		expect(body.draft?.bands[1]?.max).toBe(100);
 	});
 });

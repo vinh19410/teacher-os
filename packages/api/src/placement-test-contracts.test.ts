@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { LEAD_COURSE_LABELS } from "./lead-contracts";
 import {
@@ -9,11 +11,19 @@ import {
 	gradePlacementObjective,
 	normalizePlacementGapAnswer,
 	normalizePublishedPlacementSnapshot,
+	PLACEMENT_ID_REGEX,
+	PLACEMENT_MAX_QUESTIONS,
 	type PlacementContent,
 	placementContentSchema,
 	upgradeLegacyPlacementContent,
 	validatePlacementForPublish,
 } from "./placement-test-contracts";
+import {
+	allocateUniquePlacementId,
+	createDefaultPlacementReadingPart,
+	createDefaultPlacementSpeakingPart,
+	createDefaultPlacementWritingPart,
+} from "./placement-test-defaults";
 
 const SAMPLE_AUDIO_ID = "11111111-1111-4111-8111-111111111111";
 const SAMPLE_AUDIO_ID_2 = "22222222-2222-4222-8222-222222222222";
@@ -290,6 +300,29 @@ describe("placement-test-contracts v2", () => {
 			"writing",
 			"speaking",
 		]);
+		expect(placementContentSchema.safeParse(upgraded).success).toBe(true);
+		const readingPart = upgraded?.parts[2];
+		const writingPart = upgraded?.parts[3];
+		const speakingPart = upgraded?.parts[4];
+		expect(readingPart?.id).toBe("reading");
+		if (readingPart?.id === "reading") {
+			expect(readingPart.passages).toHaveLength(6);
+			const totalReadingQs = readingPart.passages.reduce(
+				(sum, p) => sum + p.questions.length,
+				0,
+			);
+			expect(totalReadingQs).toBe(15);
+		}
+		if (writingPart?.id === "writing") {
+			expect(writingPart.promptTitle).toBe("Email to a friend");
+			expect(writingPart.promptBody.length).toBeGreaterThan(0);
+			expect(writingPart.minWords).toBe(50);
+			expect(writingPart.maxWords).toBe(80);
+		}
+		if (speakingPart?.id === "speaking") {
+			expect(speakingPart.tasks).toHaveLength(8);
+		}
+		expect(validatePlacementForPublish(upgraded!)).toEqual([]);
 		expect(upgraded?.bands[0]?.min).toBe(0);
 		expect(upgraded?.bands[upgraded.bands.length - 1]?.max).toBe(100);
 	});
@@ -441,20 +474,559 @@ describe("placement-test-contracts v2", () => {
 		expect(normalized?.parts[0].clips[0]?.src).toBe(
 			`/public/placement-test/audio/${SAMPLE_AUDIO_ID}`,
 		);
+		expect(normalized?.parts[2].passages).toHaveLength(6);
+		const readingQs =
+			normalized?.parts[2].passages.flatMap((p) => p.questions) ?? [];
+		expect(readingQs).toHaveLength(15);
+		expect(normalized?.parts[3].promptTitle).toBe("Email to a friend");
+		expect(normalized?.parts[3].promptBody.length).toBeGreaterThan(0);
+		expect(normalized?.parts[4].tasks).toHaveLength(8);
 		expect(normalized?.bands[0]?.min).toBe(0);
 		expect(normalized?.bands[normalized.bands.length - 1]?.max).toBe(100);
 
-		const objective = gradePlacementObjective(normalized!, {
+		const objectiveEmptyReading = gradePlacementObjective(normalized!, {
 			listening: { "l-1": 1 },
 			vocabGrammar: { "vg-1": 1 },
 			reading: {},
 		});
-		expect(objective.listening).toMatchObject({ correct: 1, total: 1 });
-		expect(objective.vocabGrammar).toMatchObject({ correct: 1, total: 1 });
-		expect(objective.reading).toMatchObject({ correct: 0, total: 0 });
-		expect(objective.averagePct).toBe(100);
-		expect(objective.provisionalBand.cefr).toBe("B1");
+		expect(objectiveEmptyReading.listening).toMatchObject({
+			correct: 1,
+			total: 1,
+		});
+		expect(objectiveEmptyReading.vocabGrammar).toMatchObject({
+			correct: 1,
+			total: 1,
+		});
+		expect(objectiveEmptyReading.reading).toMatchObject({
+			correct: 0,
+			total: 15,
+			pct: 0,
+		});
+		expect(objectiveEmptyReading.averagePct).toBe(67);
+
+		const readingAnswers = Object.fromEntries(
+			readingQs.map((q) => [q.id, q.answer]),
+		);
+		const objectiveAllCorrect = gradePlacementObjective(normalized!, {
+			listening: { "l-1": 1 },
+			vocabGrammar: { "vg-1": 1 },
+			reading: readingAnswers,
+		});
+		expect(objectiveAllCorrect.reading).toMatchObject({
+			correct: 15,
+			total: 15,
+			pct: 100,
+		});
+		expect(objectiveAllCorrect.averagePct).toBe(100);
+		expect(objectiveAllCorrect.provisionalBand.cefr).toBe("B1");
 
 		expect(normalizePublishedPlacementSnapshot({ invalid: true })).toBeNull();
+	});
+
+	it("dữ liệu mặc định 3 kỹ năng khớp tuyệt đối với questions.json và deep-clone an toàn", () => {
+		const seedPath = fileURLToPath(
+			new URL(
+				"../../../apps/web/public/placement-seed/questions.json",
+				import.meta.url,
+			).href,
+		);
+		const seed = JSON.parse(readFileSync(seedPath, "utf8")) as {
+			parts: unknown[];
+		};
+		const reading1 = createDefaultPlacementReadingPart();
+		const writing1 = createDefaultPlacementWritingPart();
+		const speaking1 = createDefaultPlacementSpeakingPart();
+
+		expect(reading1).toEqual(seed.parts[2]);
+		expect(writing1).toEqual(seed.parts[3]);
+		expect(speaking1).toEqual(seed.parts[4]);
+
+		reading1.passages[0]?.questions[0]?.options.push("MUTATED");
+		writing1.promptTitle = "MUTATED";
+		if (speaking1.tasks[0]) {
+			speaking1.tasks[0].prompt = "MUTATED";
+		}
+
+		const reading2 = createDefaultPlacementReadingPart();
+		const writing2 = createDefaultPlacementWritingPart();
+		const speaking2 = createDefaultPlacementSpeakingPart();
+		expect(reading2.passages[0]?.questions[0]?.options).not.toContain(
+			"MUTATED",
+		);
+		expect(writing2.promptTitle).toBe("Email to a friend");
+		expect(speaking2.tasks[0]?.prompt).not.toBe("MUTATED");
+	});
+
+	it("chuẩn hóa legacy bands có course lạ và tránh chồng lấn biên 100 khi >= 3 bands", () => {
+		const v1Draft = {
+			bands: [
+				{ min: 0, max: 29, cefr: "Pre-A1", course: "unknown-legacy-course" },
+				{ min: 30, max: 30, cefr: "A1", course: "comm-1" },
+				{ min: 30, max: 30, cefr: "A2", course: "comm-2" },
+				{ min: 30, max: 30, cefr: "B1", course: "comm-3" },
+			],
+			parts: [
+				{
+					id: "vocab-grammar",
+					title: "Vocab + Grammar",
+					questions: [
+						{
+							id: "vg-01",
+							kind: "grammar",
+							level: "A1",
+							prompt: "Old VG",
+							options: ["a", "b", "c", "d"],
+							answer: 0,
+						},
+					],
+				},
+				{
+					id: "listening",
+					title: "Listening",
+					clips: [
+						{
+							id: "clip-1",
+							audioId: SAMPLE_AUDIO_ID,
+							maxPlays: 2,
+							level: "A2",
+							title: "Old Clip",
+							questions: [
+								{
+									id: "l-01",
+									level: "A2",
+									prompt: "Old L",
+									options: ["1", "2", "3", "4"],
+									answer: 1,
+								},
+							],
+						},
+					],
+				},
+			],
+		};
+
+		const upgraded = upgradeLegacyPlacementContent(v1Draft);
+		expect(upgraded).not.toBeNull();
+		expect(upgraded?.bands[0]?.course).toBe("comm-1");
+		expect(upgraded?.bands[0]?.displayCourse).toBe(
+			LEAD_COURSE_LABELS["comm-1"],
+		);
+		expect(upgraded?.bands[3]?.max).toBe(100);
+		for (let i = 1; i < (upgraded?.bands.length ?? 0); i += 1) {
+			const prev = upgraded!.bands[i - 1]!;
+			const curr = upgraded!.bands[i]!;
+			expect(curr.min).toBe(prev.max + 1);
+			expect(curr.min).toBeLessThanOrEqual(curr.max);
+		}
+		expect(validatePlacementForPublish(upgraded!)).toEqual([]);
+	});
+
+	it("chống trùng ID <= 64 ký tự khi backfill đè trùng r-a1 / r-a1-d1", () => {
+		const used = new Set(["r-a1", "r-a1-d1"]);
+		expect(allocateUniquePlacementId("r-a1", used)).toBe("r-a1-d2");
+		const longId = "a".repeat(64);
+		const longSet = new Set([longId]);
+		const dedupedLong = allocateUniquePlacementId(longId, longSet);
+		expect(dedupedLong).not.toBe(longId);
+		expect(dedupedLong.length).toBeLessThanOrEqual(64);
+		expect(PLACEMENT_ID_REGEX.test(dedupedLong)).toBe(true);
+
+		const collidingV1Draft = {
+			bands: [
+				{ min: 0, max: 1, cefr: "A1", course: "comm-1" },
+				{ min: 2, max: 2, cefr: "B1", course: "comm-3" },
+			],
+			parts: [
+				{
+					id: "vocab-grammar",
+					title: "VG",
+					questions: [
+						{
+							id: "r-a1",
+							kind: "grammar",
+							level: "A1",
+							prompt: "Q1",
+							options: ["a", "b", "c", "d"],
+							answer: 0,
+						},
+						{
+							id: "r-a1-d1",
+							kind: "vocab",
+							level: "A1",
+							prompt: "Q2",
+							options: ["a", "b", "c", "d"],
+							answer: 1,
+						},
+					],
+				},
+				{
+					id: "listening",
+					title: "Listening",
+					clips: [
+						{
+							id: "clip-1",
+							audioId: SAMPLE_AUDIO_ID,
+							maxPlays: 2,
+							level: "A1",
+							title: "Clip 1",
+							questions: [
+								{
+									id: "l-01",
+									level: "A1",
+									prompt: "LQ",
+									options: ["1", "2", "3", "4"],
+									answer: 0,
+								},
+							],
+						},
+					],
+				},
+			],
+		};
+
+		const upgraded = upgradeLegacyPlacementContent(collidingV1Draft);
+		expect(upgraded).not.toBeNull();
+		const readingQs = upgraded!.parts[2].passages.flatMap((p) => p.questions);
+		expect(readingQs[0]?.id).toBe("r-a1-d2");
+		expect(validatePlacementForPublish(upgraded!)).toEqual([]);
+	});
+
+	it("tôn trọng trần 100 câu khách quan đối xứng giữa draft v1, snapshot v1 và snapshot v2", () => {
+		const makeVg = (count: number) =>
+			Array.from({ length: count }, (_, idx) => ({
+				id: `vg-${idx + 1}`,
+				kind: "grammar" as const,
+				level: "A1",
+				prompt: `VG ${idx + 1}`,
+				options: ["a", "b", "c", "d"],
+				answer: 0,
+			}));
+		const makeListeningQs = (offset: number, count: number) =>
+			Array.from({ length: count }, (_, idx) => ({
+				id: `l-${offset + idx + 1}`,
+				level: "A1",
+				prompt: `L ${offset + idx + 1}`,
+				options: ["1", "2", "3", "4"],
+				answer: 1,
+			}));
+
+		const v1NearCapDraft = {
+			bands: [{ min: 0, max: 95, cefr: "B1", course: "comm-3" }],
+			parts: [
+				{
+					id: "vocab-grammar",
+					title: "VG",
+					questions: makeVg(55),
+				},
+				{
+					id: "listening",
+					title: "Listening",
+					clips: [
+						{
+							id: "c1",
+							audioId: SAMPLE_AUDIO_ID,
+							maxPlays: 2,
+							level: "A1",
+							title: "C1",
+							questions: makeListeningQs(0, 20),
+						},
+						{
+							id: "c2",
+							audioId: SAMPLE_AUDIO_ID_2,
+							maxPlays: 2,
+							level: "A2",
+							title: "C2",
+							questions: makeListeningQs(20, 20),
+						},
+					],
+				},
+			],
+		};
+
+		const upgradedDraft = upgradeLegacyPlacementContent(v1NearCapDraft);
+		expect(upgradedDraft).not.toBeNull();
+		expect(placementContentSchema.safeParse(upgradedDraft).success).toBe(true);
+		const draftReadingQs = upgradedDraft!.parts[2].passages.flatMap(
+			(p) => p.questions,
+		);
+		expect(draftReadingQs).toHaveLength(PLACEMENT_MAX_QUESTIONS - 95);
+		expect(
+			upgradedDraft!.parts[2].passages.every((p) => p.questions.length > 0),
+		).toBe(true);
+
+		const snapNearCap = normalizePublishedPlacementSnapshot({
+			...v1NearCapDraft,
+			version: 2,
+		});
+		expect(snapNearCap).not.toBeNull();
+		expect(
+			snapNearCap!.parts[2].passages.flatMap((p) => p.questions),
+		).toHaveLength(PLACEMENT_MAX_QUESTIONS - 95);
+
+		const v2SnapNearCap = normalizePublishedPlacementSnapshot({
+			...snapNearCap!,
+			parts: [
+				snapNearCap!.parts[0],
+				snapNearCap!.parts[1],
+				{ id: "reading", title: "Reading", passages: [] },
+				snapNearCap!.parts[3],
+				snapNearCap!.parts[4],
+			],
+		});
+		expect(
+			v2SnapNearCap!.parts[2].passages.flatMap((p) => p.questions),
+		).toHaveLength(PLACEMENT_MAX_QUESTIONS - 95);
+
+		const v1AtCapDraft = {
+			...v1NearCapDraft,
+			parts: [
+				{ id: "vocab-grammar", title: "VG", questions: makeVg(60) },
+				v1NearCapDraft.parts[1],
+			],
+		};
+		const atCap = upgradeLegacyPlacementContent(v1AtCapDraft);
+		expect(atCap?.parts[2].passages).toEqual([]);
+	});
+
+	it("giữ nguyên draft v2 đang chỉnh sửa nhưng backfill phòng thủ cho published snapshot v2 thiếu nội dung", () => {
+		const validContent = makeValidContent();
+		const v2DraftWithEmptyReading: PlacementContent = {
+			...validContent,
+			parts: [
+				validContent.parts[0],
+				validContent.parts[1],
+				{ id: "reading", title: "Reading", passages: [] },
+				{
+					id: "writing",
+					title: "Writing",
+					promptTitle: "",
+					promptBody: "",
+					minWords: 50,
+					maxWords: 80,
+				},
+				{ id: "speaking", title: "Speaking", tasks: [] },
+			],
+		};
+
+		const untouchedDraft = upgradeLegacyPlacementContent(
+			v2DraftWithEmptyReading,
+		);
+		expect(untouchedDraft?.parts[2].passages).toEqual([]);
+		expect(untouchedDraft?.parts[3].promptBody).toBe("");
+		expect(untouchedDraft?.parts[4].tasks).toEqual([]);
+
+		const v2SnapEmpty = {
+			...buildPlacementSnapshot(v2DraftWithEmptyReading, 4),
+			parts: [
+				...buildPlacementSnapshot(v2DraftWithEmptyReading, 4).parts.slice(0, 3),
+				{
+					id: "writing",
+					title: "Writing",
+					promptTitle: "Custom Stale Title",
+					promptBody: "   ",
+					minWords: 120,
+					maxWords: 60,
+				},
+				{ id: "speaking", title: "Speaking", tasks: [] },
+			],
+		};
+
+		const recovered = normalizePublishedPlacementSnapshot(v2SnapEmpty);
+		expect(recovered?.parts[2].passages).toHaveLength(6);
+		expect(recovered?.parts[3].promptTitle).toBe("Email to a friend");
+		expect(recovered?.parts[3].promptBody.length).toBeGreaterThan(0);
+		expect(recovered?.parts[3].minWords).toBe(120);
+		expect(recovered?.parts[3].maxWords).toBe(120);
+		expect(recovered?.parts[4].tasks).toHaveLength(8);
+
+		const v2SnapTitleMissingOnly = {
+			...buildPlacementSnapshot(v2DraftWithEmptyReading, 4),
+			parts: [
+				...buildPlacementSnapshot(v2DraftWithEmptyReading, 4).parts.slice(0, 3),
+				{
+					id: "writing",
+					title: "Writing",
+					promptTitle: "  ",
+					promptBody: "Write about your hometown.",
+					minWords: 40,
+					maxWords: 90,
+				},
+				{ id: "speaking", title: "Speaking", tasks: [] },
+			],
+		};
+		const titleRecovered = normalizePublishedPlacementSnapshot(
+			v2SnapTitleMissingOnly,
+		);
+		expect(titleRecovered?.parts[3].promptTitle).toBe("Bài viết ngắn");
+		expect(titleRecovered?.parts[3].promptBody).toBe(
+			"Write about your hometown.",
+		);
+	});
+
+	it("buildPlacementZaloText hiển thị đúng nhãn khi speakingStatus === 'none'", () => {
+		const snapshot = buildPlacementSnapshot(makeValidContent(), 1);
+		const objective = gradePlacementObjective(snapshot, {
+			listening: {},
+			vocabGrammar: {},
+			reading: {},
+		});
+		const text = buildPlacementZaloText({
+			studentName: "Nguyen An",
+			phone: "0901234567",
+			objective,
+			writingScore: null,
+			speakingScore: null,
+			speakingStatus: "none",
+			band: snapshot.bands[0]!,
+			averagePct: 0,
+			note: "",
+			teacherFeedback: "",
+		});
+		expect(text).toContain("Speaking: không có bài nói");
+	});
+
+	it("[I1] giới hạn tối đa 8 band và chuẩn hoá cefr rỗng/quá dài khi nâng cấp legacy v1", () => {
+		const nineBands = Array.from({ length: 9 }, (_, i) => ({
+			min: i * 2,
+			max: i * 2 + 1,
+			cefr: i === 0 ? "   " : i === 1 ? ` ${"B".repeat(50)} ` : `A${i}`,
+			course: "comm-1",
+		}));
+		const legacyNineBands = {
+			bands: nineBands,
+			parts: [
+				{
+					id: "vocab-grammar",
+					title: "   ",
+					questions: Array.from({ length: 2 }, (_, idx) => ({
+						id: `vg-b-${idx}`,
+						level: "A1",
+						prompt: `VG ${idx}?`,
+						options: ["A", "B", "C", "D"],
+						answer: 0,
+					})),
+				},
+				{
+					id: "listening",
+					title: "  ",
+					clips: [
+						{
+							id: "c-b1",
+							audioId: SAMPLE_AUDIO_ID,
+							maxPlays: 2,
+							level: "A1",
+							title: "C1",
+							questions: [
+								{
+									id: "l-b1",
+									level: "A1",
+									prompt: "Listen 1",
+									options: ["A", "B", "C", "D"],
+									answer: 1,
+								},
+							],
+						},
+					],
+				},
+			],
+		};
+
+		const upgraded = upgradeLegacyPlacementContent(legacyNineBands);
+		expect(upgraded).not.toBeNull();
+		expect(placementContentSchema.safeParse(upgraded).success).toBe(true);
+		expect(upgraded!.bands).toHaveLength(8);
+		expect(upgraded!.bands[0]!.cefr).toBe("Level 1");
+		expect(upgraded!.bands[1]!.cefr).toBe("B".repeat(40));
+		expect(upgraded!.parts[0].title).toBe("Listening");
+		expect(upgraded!.parts[1].title).toBe("Grammar & Vocabulary");
+
+		const snap = normalizePublishedPlacementSnapshot({
+			...legacyNineBands,
+			version: 5,
+		});
+		expect(snap).not.toBeNull();
+		expect(snap!.bands).toHaveLength(8);
+		expect(snap!.parts[0].title).toBe("Listening");
+		expect(snap!.parts[1].title).toBe("Grammar & Vocabulary");
+	});
+
+	it("[M1] bỏ qua bài cloze nếu ngân sách câu hỏi còn lại không đủ chứa trọn bài", () => {
+		const makeVgList = (count: number) =>
+			Array.from({ length: count }, (_, idx) => ({
+				id: `vg-m1-${idx + 1}`,
+				level: "A2",
+				prompt: `VG ${idx + 1}?`,
+				options: ["A", "B", "C", "D"],
+				answer: 0,
+			}));
+		const makeListeningList = (count: number) =>
+			Array.from({ length: count }, (_, idx) => ({
+				id: `l-m1-${idx + 1}`,
+				level: "A2",
+				prompt: `L ${idx + 1}?`,
+				options: ["A", "B", "C", "D"],
+				answer: 1,
+			}));
+
+		const draftWith88Existing = {
+			bands: [{ min: 0, max: 88, cefr: "B1", course: "comm-2" }],
+			parts: [
+				{ id: "vocab-grammar", title: "VG", questions: makeVgList(68) },
+				{
+					id: "listening",
+					title: "Listening",
+					clips: [
+						{
+							id: "c-m1",
+							audioId: SAMPLE_AUDIO_ID,
+							maxPlays: 2,
+							level: "A2",
+							title: "Clip 1",
+							questions: makeListeningList(20),
+						},
+					],
+				},
+			],
+		};
+
+		const upgraded = upgradeLegacyPlacementContent(draftWith88Existing);
+		expect(upgraded).not.toBeNull();
+		const passages = upgraded!.parts[2].passages;
+		expect(passages.some((p) => p.kind === "cloze")).toBe(false);
+		expect(passages.flatMap((p) => p.questions)).toHaveLength(9);
+	});
+
+	it("[M3] khôi phục an toàn snapshot v2 có minWords/maxWords < 10 và tiêu đề toàn khoảng trắng", () => {
+		const baseSnap = buildPlacementSnapshot(makeValidContent(), 7);
+		const corruptedSnap = {
+			...baseSnap,
+			parts: [
+				{ ...baseSnap.parts[0], title: "   " },
+				{ ...baseSnap.parts[1], title: "\t\n" },
+				{ ...baseSnap.parts[2], title: "  ", passages: [] },
+				{
+					...baseSnap.parts[3],
+					title: "   ",
+					promptTitle: "   ",
+					promptBody: "   ",
+					minWords: 0,
+					maxWords: 0,
+				},
+				{ ...baseSnap.parts[4], title: "  ", tasks: [] },
+			],
+		};
+
+		const normalized = normalizePublishedPlacementSnapshot(corruptedSnap);
+		expect(normalized).not.toBeNull();
+		expect(normalized!.parts[0].title).toBe("Listening");
+		expect(normalized!.parts[1].title).toBe("Grammar & Vocabulary");
+		expect(normalized!.parts[2].title).toBe("Reading");
+		expect(normalized!.parts[2].passages).toHaveLength(6);
+		expect(normalized!.parts[3].title).toBe("Writing");
+		expect(normalized!.parts[3].promptTitle).toBe("Email to a friend");
+		expect(normalized!.parts[3].minWords).toBe(50);
+		expect(normalized!.parts[3].maxWords).toBe(80);
+		expect(normalized!.parts[4].title).toBe("Speaking");
+		expect(normalized!.parts[4].tasks).toHaveLength(8);
 	});
 });
