@@ -5,6 +5,21 @@
 
 export const LEAD_PLACEMENT_MAX = 300;
 
+const INLINE_CEFR_TAG_RE =
+	/\s*[([][\s]*(?:(?:level|cefr)\s+)?(?:pre-a1|a1|a2\+?|b1\+?|b2\+?|c1|c2)(?:\s*(?:[–—/-]|to)\s*(?:pre-a1|a1|a2\+?|b1\+?|b2\+?|c1|c2))?[\s]*[)\]]/gi;
+
+/**
+ * Strips inline parenthesized/bracketed CEFR level annotations (e.g. "(A2)", "[B1–B2]", "(Level A2+)")
+ * from student-facing clip or passage titles without altering normal text.
+ */
+export function stripInlineCefrLabel(rawTitle) {
+	return String(rawTitle ?? "")
+		.replace(INLINE_CEFR_TAG_RE, " ")
+		.replace(/\s{2,}/g, " ")
+		.replace(/\s+([,:;!?])/g, "$1")
+		.trim();
+}
+
 export const PLACEMENT_LEVEL_ORDER = [
 	"Pre-A1",
 	"A1",

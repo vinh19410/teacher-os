@@ -26,6 +26,7 @@ import {
 	resolveSpeakingSubmitDecision,
 	resolveWritingPromptState,
 	scoreObjectiveTest,
+	stripInlineCefrLabel,
 } from "../public/kiem-tra-dau-vao/grading.js";
 import {
 	buildLeadPayload,
@@ -263,6 +264,11 @@ test("Bất biến file tĩnh: không chứa '30 câu', không có questions.jso
 			/30\s*câu/i.test(content),
 			false,
 			`${fileUrl.pathname} must not contain '30 câu'`,
+		);
+		assert.equal(
+			content.includes("question-level-pill"),
+			false,
+			`${fileUrl.pathname} must not contain 'question-level-pill'`,
 		);
 	}
 
@@ -693,4 +699,45 @@ test("defensive helpers xử lý Reading/Writing/Speaking rỗng, speakingMode='
 		),
 		{ step: "reading", redirectedToReading: true },
 	);
+});
+
+test("stripInlineCefrLabel xóa nhãn CEFR trong ngoặc trên tiêu đề nhưng giữ nguyên văn bản thường", () => {
+	assert.equal(
+		stripInlineCefrLabel("Đoạn nghe 1 (A2) – Thông báo tại thư viện cộng đồng"),
+		"Đoạn nghe 1 – Thông báo tại thư viện cộng đồng",
+	);
+	assert.equal(
+		stripInlineCefrLabel(
+			"Đoạn nghe 2 (B1) – Hội thoại tư vấn khóa kỹ năng thuyết trình",
+		),
+		"Đoạn nghe 2 – Hội thoại tư vấn khóa kỹ năng thuyết trình",
+	);
+	assert.equal(
+		stripInlineCefrLabel("Đoạn nghe 4 (B2) – Thảo luận học thuật"),
+		"Đoạn nghe 4 – Thảo luận học thuật",
+	);
+	assert.equal(
+		stripInlineCefrLabel("Đoạn nghe 5 (C1) – Bài giảng"),
+		"Đoạn nghe 5 – Bài giảng",
+	);
+	assert.equal(stripInlineCefrLabel("(Pre-A1) Khởi động"), "Khởi động");
+	assert.equal(
+		stripInlineCefrLabel("Bài đọc [A2+–B1]: Working from home"),
+		"Bài đọc: Working from home",
+	);
+	assert.equal(
+		stripInlineCefrLabel("Task (Level A1-A2) — Greeting"),
+		"Task — Greeting",
+	);
+	assert.equal(
+		stripInlineCefrLabel("Conversation 1 · Cinema time"),
+		"Conversation 1 · Cinema time",
+	);
+	assert.equal(
+		stripInlineCefrLabel("Reading (Part 1): Room 104"),
+		"Reading (Part 1): Room 104",
+	);
+	assert.equal(stripInlineCefrLabel(""), "");
+	assert.equal(stripInlineCefrLabel(null), "");
+	assert.equal(stripInlineCefrLabel(undefined), "");
 });
