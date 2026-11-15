@@ -1,5 +1,5 @@
 /**
- * Leads repo (#506 phase 4, #721) — fetch GET/PATCH /api/leads và chi tiết/chấm bài test đầu vào.
+ * Leads repo (#506 phase 4, #721, #730) — fetch GET/PATCH /api/leads, chi tiết/chấm bài test đầu vào và chấm lại AI.
  */
 import { queryOptions } from "@tanstack/react-query";
 import type {
@@ -116,6 +116,25 @@ export async function gradeLeadPlacementSubmission(
 		throw new HttpError(
 			res.status,
 			`Failed to grade placement submission: ${res.status}`,
+		);
+	}
+	return (await res.json()) as PlacementSubmissionDetail;
+}
+
+/** Yêu cầu server chấm nháp lại bằng AI (#730) — trả detail với aiStatus "processing". */
+export async function retryLeadPlacementAi(
+	leadId: string,
+	baseUrl: string = getApiBaseUrl(),
+): Promise<PlacementSubmissionDetail> {
+	const url = `${baseUrl}/api/leads/${encodeURIComponent(leadId)}/placement-submission/ai-retry`;
+	const res = await fetch(url, {
+		method: "POST",
+		credentials: "include",
+	});
+	if (!res.ok) {
+		throw new HttpError(
+			res.status,
+			`Failed to retry placement AI grading: ${res.status}`,
 		);
 	}
 	return (await res.json()) as PlacementSubmissionDetail;
