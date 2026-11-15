@@ -115,6 +115,7 @@ import {
 	loadPaymentInstructions,
 } from "../lib/payment-instructions";
 import { recordManualPayment } from "../lib/payments/record-manual-payment";
+import type { PlacementAiGrader } from "../lib/placement-ai/grader";
 import { requireFinanceRole } from "../lib/require-finance-role";
 import {
 	buildImportBatch,
@@ -174,6 +175,9 @@ export function kernelRoutes(deps: {
 	/** TOS-33 (#481): grader + vòng retry cho "Thử chấm lại AI" — cùng DI
 	 * nguồn buildApp với submit route. */
 	getAiGrader?(): AiGrader | undefined;
+	/** #730: grader nháp AI placement + origin profile cho link kết quả. */
+	getPlacementAiGrader?(): PlacementAiGrader | undefined;
+	leadOrigins?: string[];
 	aiRetryDelaysMs?: number[];
 	aiGradingTimeoutMs?: number;
 	fetchExternalAudio?: typeof fetch;

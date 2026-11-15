@@ -12,6 +12,7 @@ import type { AiGrader } from "./lib/ai-grading/grader";
 import type { BankHubContext } from "./lib/bank-hub/bank-hub-client";
 import type { ExamExtractor } from "./lib/exam-import/extractor";
 import type { MediaStore } from "./lib/media-store";
+import type { PlacementAiGrader } from "./lib/placement-ai/grader";
 import { createAdminMeRoutes } from "./lib/require-admin";
 import { redactResetToken } from "./log-redaction";
 import { adminLibraryRoutes } from "./routes/admin-library";
@@ -165,6 +166,12 @@ export interface AppDeps {
 	 * không đụng Credit), cùng hợp đồng fail-closed với `getExamExtractor`.
 	 */
 	getAiGrader?(): AiGrader | undefined;
+	/**
+	 * #730: grader nháp AI Writing/Speaking bài test đầu vào — OpenAI ở
+	 * production (bật khi có OPENAI_API_KEY, độc lập AI_ENABLED), fake ở
+	 * e2e/test. Vắng mặt → bài có thứ để chấm bị đánh dấu AI_GRADING_DISABLED.
+	 */
+	getPlacementAiGrader?(): PlacementAiGrader | undefined;
 	/**
 	 * Lead intake (#506 D4): org đích cho POST /public/leads — org lấy từ
 	 * env, KHÔNG tin client. Rỗng/vắng ⇒ route trả 503 LEAD_INTAKE_DISABLED

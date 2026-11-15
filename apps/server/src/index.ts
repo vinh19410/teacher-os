@@ -13,6 +13,8 @@ import {
 	type BankHubContext,
 	createBankHubContext,
 } from "./lib/bank-hub/bank-hub-client";
+import type { PlacementAiGrader } from "./lib/placement-ai/grader";
+import { createPlacementAiGrader } from "./lib/placement-ai/openai-grader";
 import { createR2MediaStore } from "./lib/r2-media-store";
 import { getSessionUser } from "./session";
 
@@ -34,6 +36,8 @@ let bankHub: BankHubContext | undefined;
 // TOS-24 (#470): kho file đề nhập AI dùng chung bucket MEDIA — memoized
 // riêng để không tạo adapter mới mỗi request (same pattern mediaStore).
 let examImportStore: MediaStore | undefined;
+// #730: grader OpenAI memoized (null = đã kiểm tra, không có key).
+let placementAiGrader: PlacementAiGrader | null | undefined;
 
 // Plan TOS-21 (#454): mailer memoized riêng, dùng chung cho createAuth lẫn
 // buildApp (AppDeps.mailer). Giữ nguyên check MAILER_IMPL + cảnh báo log-only.
@@ -137,6 +141,12 @@ const app = buildApp({
 		return examImportStore;
 	},
 	...createAiProviders(env),
+	// #730: chấm nháp AI bài test đầu vào qua OpenAI — bật khi có
+	// OPENAI_API_KEY (độc lập AI_ENABLED); rỗng → AI_GRADING_DISABLED.
+	getPlacementAiGrader: () => {
+		placementAiGrader ??= createPlacementAiGrader(env) ?? null;
+		return placementAiGrader ?? undefined;
+	},
 	// Plan #413: cổng admin — allowlist email + origin console cho CSRF.
 	adminEmails: parseCORSOrigins(env.ADMIN_EMAILS),
 	teacherEmails: parseCORSOrigins(env.TEACHER_EMAILS ?? ""),

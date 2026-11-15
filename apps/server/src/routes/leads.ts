@@ -10,6 +10,8 @@ import { normalizeMediaType } from "@teacher-os/api/lib/quiz-media";
 import {
 	buildPlacementZaloText,
 	computePlacementFinal,
+	locatePlacementErrors,
+	PLACEMENT_AI_ERROR_CODES,
 	type PlacementObjectiveResult,
 	type PlacementSnapshot,
 	type PlacementSpeakingRubric,
@@ -17,6 +19,7 @@ import {
 	type PlacementWritingRubric,
 	placementTeacherGradeSchema,
 } from "@teacher-os/api/placement-test-contracts";
+import type { Mailer } from "@teacher-os/auth/mail/mailer";
 import { canAccessFinance } from "@teacher-os/auth/role";
 import { lead } from "@teacher-os/db/schema/lead";
 import { placementTestSubmission } from "@teacher-os/db/schema/placement-test";
@@ -26,6 +29,22 @@ import type { Db, KernelCtx } from "../app";
 import { parseByteRange } from "../lib/byte-range";
 import { mediaObjectResponse } from "../lib/media-response";
 import type { MediaStore } from "../lib/media-store";
+import type { PlacementAiGrader } from "../lib/placement-ai/grader";
+import {
+	buildPlacementResultUrl,
+	type PlacementResultEmailStatus,
+	parseAiSpeakingDraft,
+	parseAiWritingDraft,
+	parseStoredErrors,
+	randomResultToken,
+	sendPlacementResultEmail,
+} from "../lib/placement-ai/placement-result";
+import {
+	claimPlacementAiGrading,
+	runClaimedPlacementAiGrading,
+	schedulePlacementAiTask,
+	sweepStalePlacementAiGrading,
+} from "../lib/placement-ai/run-placement-grading";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type LeadContext = Context<Env>;
@@ -33,11 +52,21 @@ type LeadContext = Context<Env>;
 export interface LeadRouteDeps {
 	getDb(): Db;
 	getMediaStore?(): MediaStore | undefined;
+	/** #730: grader nháp AI placement (vắng → retry trả 503). */
+	getPlacementAiGrader?(): PlacementAiGrader | undefined;
+	runInBackground?(promise: Promise<unknown>): void;
+	/** #730: gửi link kết quả cho học viên khi chốt (vắng → `skipped`). */
+	mailer?: Mailer;
+	/** #730: origin profile đầu tiên dựng link kết quả tuyệt đối. */
+	leadOrigins?: string[];
 }
+
+const RESULT_EMAIL_STATUSES = new Set(["sent", "failed", "skipped"]);
 
 function buildSubmissionDetail(
 	sub: typeof placementTestSubmission.$inferSelect,
 	leadRow: typeof lead.$inferSelect,
+	resultOrigin: string | undefined,
 ): PlacementSubmissionDetail {
 	const snapshot = JSON.parse(sub.snapshotJson) as PlacementSnapshot;
 	const answers = JSON.parse(sub.answersJson) as {
@@ -116,6 +145,27 @@ function buildSubmissionDetail(
 		finalNote: sub.finalNote,
 		gradedAt: sub.gradedAt ? sub.gradedAt.toISOString() : null,
 		zaloText,
+		aiStatus: sub.aiStatus,
+		aiErrorCode: sub.aiErrorCode,
+		aiDraftedAt: sub.aiDraftedAt ? sub.aiDraftedAt.toISOString() : null,
+		aiWriting: parseAiWritingDraft(sub.aiWritingJson, sub.writingText),
+		aiSpeaking: parseAiSpeakingDraft(
+			sub.aiSpeakingJson,
+			sub.speakingTranscript,
+		),
+		speakingTranscript: sub.speakingTranscript,
+		writingErrors: parseStoredErrors(sub.writingErrorsJson, sub.writingText),
+		speakingErrors: parseStoredErrors(
+			sub.speakingErrorsJson,
+			sub.speakingTranscript,
+		),
+		resultUrl: sub.resultToken
+			? buildPlacementResultUrl(resultOrigin, sub.resultToken)
+			: null,
+		resultEmailStatus:
+			sub.resultEmailStatus && RESULT_EMAIL_STATUSES.has(sub.resultEmailStatus)
+				? (sub.resultEmailStatus as PlacementResultEmailStatus)
+				: null,
 	};
 }
 
@@ -127,6 +177,7 @@ function buildSubmissionDetail(
  */
 export function leadRoutes(deps: LeadRouteDeps) {
 	const routes = new Hono<Env>();
+	const resultOrigin = deps.leadOrigins?.[0];
 
 	routes.use("*", async (c, next) => {
 		const ctx = c.get("kernelCtx");
@@ -352,8 +403,11 @@ export function leadRoutes(deps: LeadRouteDeps) {
 		if (!ctx) return c.json({ error: "unauthorized" }, 401);
 
 		const leadId = c.req.param("id") ?? "";
+		const db = deps.getDb();
+		// Dọn lười nháp AI treo (isolate chết giữa waitUntil) trước khi đọc.
+		await sweepStalePlacementAiGrading(db, ctx.orgId);
 		const loaded = await loadOwnedLeadAndLatestSubmission(
-			deps.getDb(),
+			db,
 			ctx.orgId,
 			leadId,
 		);
@@ -371,7 +425,74 @@ export function leadRoutes(deps: LeadRouteDeps) {
 		}
 
 		c.header("Cache-Control", "no-store");
-		return c.json(buildSubmissionDetail(loaded.sub, loaded.leadRow));
+		return c.json(
+			buildSubmissionDetail(loaded.sub, loaded.leadRow, resultOrigin),
+		);
+	});
+
+	/**
+	 * #730: chấm lại nháp AI — chỉ khi `failed|drafted`; CAS về `processing`
+	 * rồi chạy nền. Đang chạy/chưa có gì để chấm → 409.
+	 */
+	routes.post("/:id/placement-submission/ai-retry", async (c: LeadContext) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return c.json({ error: "unauthorized" }, 401);
+
+		const db = deps.getDb();
+		await sweepStalePlacementAiGrading(db, ctx.orgId);
+		const loaded = await loadOwnedLeadAndLatestSubmission(
+			db,
+			ctx.orgId,
+			c.req.param("id") ?? "",
+		);
+		if (!loaded) {
+			return c.json({ error: "LEAD_NOT_FOUND", code: "LEAD_NOT_FOUND" }, 404);
+		}
+		if (!loaded.sub) {
+			return c.json(
+				{
+					error: "PLACEMENT_SUBMISSION_NOT_FOUND",
+					code: "PLACEMENT_SUBMISSION_NOT_FOUND",
+				},
+				404,
+			);
+		}
+		if (!deps.getPlacementAiGrader?.()) {
+			return c.json(
+				{
+					error: PLACEMENT_AI_ERROR_CODES.DISABLED,
+					code: PLACEMENT_AI_ERROR_CODES.DISABLED,
+				},
+				503,
+			);
+		}
+		const startedAt = await claimPlacementAiGrading(db, loaded.sub.id, [
+			"failed",
+			"drafted",
+		]);
+		if (!startedAt) {
+			return c.json(
+				{
+					error: "PLACEMENT_AI_RETRY_CONFLICT",
+					code: "PLACEMENT_AI_RETRY_CONFLICT",
+				},
+				409,
+			);
+		}
+		schedulePlacementAiTask(
+			deps,
+			runClaimedPlacementAiGrading(deps, loaded.sub.id, startedAt),
+		);
+
+		const [fresh] = await db
+			.select()
+			.from(placementTestSubmission)
+			.where(eq(placementTestSubmission.id, loaded.sub.id))
+			.limit(1);
+		c.header("Cache-Control", "no-store");
+		return c.json(
+			buildSubmissionDetail(fresh ?? loaded.sub, loaded.leadRow, resultOrigin),
+		);
 	});
 
 	routes.get("/:id/placement-submission/media", async (c: LeadContext) => {
@@ -511,6 +632,18 @@ export function leadRoutes(deps: LeadRouteDeps) {
 			speakingRubric: parsedBody.data.speakingRubric,
 		});
 
+		// #730: lỗi giáo viên chốt — server luôn định vị lại offset.
+		const writingErrors = locatePlacementErrors(
+			loaded.sub.writingText,
+			parsedBody.data.writingErrors,
+		);
+		const speakingErrors = locatePlacementErrors(
+			loaded.sub.speakingTranscript,
+			parsedBody.data.speakingErrors,
+		);
+		// Token sinh một lần ở lần chốt đầu, giữ nguyên khi chốt lại.
+		const resultToken = loaded.sub.resultToken ?? randomResultToken();
+
 		const now = new Date();
 		const [updatedSub] = await db
 			.update(placementTestSubmission)
@@ -528,6 +661,10 @@ export function leadRoutes(deps: LeadRouteDeps) {
 				finalDisplayCourse: final.band.displayCourse || final.band.courseLabel,
 				finalScorePct: final.averagePct,
 				finalNote: final.note,
+				writingErrorsJson: JSON.stringify(writingErrors),
+				speakingErrorsJson: JSON.stringify(speakingErrors),
+				resultToken,
+				resultPublishedAt: loaded.sub.resultPublishedAt ?? now,
 				gradedBy: ctx.userId,
 				gradedAt: now,
 				updatedAt: now,
@@ -553,8 +690,33 @@ export function leadRoutes(deps: LeadRouteDeps) {
 			})
 			.where(and(eq(lead.id, loaded.leadRow.id), eq(lead.orgId, ctx.orgId)));
 
+		// Gửi link kết quả đồng bộ (timeout ngắn trong mailer) để response
+		// phản ánh đúng trạng thái; lỗi gửi không làm hỏng lượt chốt.
+		const resultEmailStatus = await sendPlacementResultEmail({
+			mailer: deps.mailer,
+			to: loaded.leadRow.email,
+			studentName: loaded.leadRow.name,
+			resultUrl: buildPlacementResultUrl(resultOrigin, resultToken),
+			submissionId: updatedSub.id,
+		});
+		await db
+			.update(placementTestSubmission)
+			.set({ resultEmailStatus })
+			.where(
+				and(
+					eq(placementTestSubmission.id, updatedSub.id),
+					eq(placementTestSubmission.orgId, ctx.orgId),
+				),
+			);
+
 		c.header("Cache-Control", "no-store");
-		return c.json(buildSubmissionDetail(updatedSub, loaded.leadRow));
+		return c.json(
+			buildSubmissionDetail(
+				{ ...updatedSub, resultEmailStatus },
+				loaded.leadRow,
+				resultOrigin,
+			),
+		);
 	});
 
 	return routes;
