@@ -169,16 +169,22 @@ type Handler = (
 	url: string,
 	method: string,
 	body: unknown,
-) => PlacementSubmissionDetail | undefined;
+) => PlacementSubmissionDetail | Response | undefined;
 
 function stubFetch(handler: Handler) {
-	const calls: Array<{ url: string; method: string; body: unknown }> = [];
+	const calls: Array<{
+		url: string;
+		method: string;
+		body: unknown;
+		headers: Headers;
+	}> = [];
 	const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
 		const url = String(input);
 		const method = init?.method ?? "GET";
 		const body = init?.body ? JSON.parse(String(init.body)) : undefined;
-		calls.push({ url, method, body });
+		calls.push({ url, method, body, headers: new Headers(init?.headers) });
 		const data = handler(url, method, body);
+		if (data instanceof Response) return Promise.resolve(data);
 		return Promise.resolve(
 			data
 				? new Response(JSON.stringify(data), {
@@ -297,16 +303,21 @@ describe("PlacementSubmissionPanel — chấm nháp AI (#730)", () => {
 				"processing",
 			),
 		);
-		expect(
-			calls.some(
-				(c) => c.method === "POST" && c.url.endsWith("/ai-retry") && !c.body,
-			),
-		).toBe(true);
+		// Kernel chỉ nhận POST JSON: phải có Content-Type + body `{}`.
+		const retryCall = calls.find(
+			(c) => c.method === "POST" && c.url.endsWith("/ai-retry"),
+		);
+		expect(retryCall?.headers.get("content-type")).toBe("application/json");
+		expect(retryCall?.body).toEqual({});
 		expect(toastMock.success).toHaveBeenCalled();
 	});
 
-	it("aiStatus none → giữ UI chấm tay, không banner, không highlight", async () => {
-		stubFetch((url, method) => (isGet(url, method) ? makeSub() : undefined));
+	it("aiStatus none, không có bài để chấm → giữ UI chấm tay, không banner, không highlight", async () => {
+		stubFetch((url, method) =>
+			isGet(url, method)
+				? makeSub({ writingText: "", speakingStatus: "skipped" })
+				: undefined,
+		);
 		renderPanel();
 		await screen.findByTestId("placement-submission-panel");
 		expect(screen.queryByTestId("placement-ai-status")).toBeNull();
@@ -314,6 +325,94 @@ describe("PlacementSubmissionPanel — chấm nháp AI (#730)", () => {
 		expect(
 			screen.getByTestId("writing-ct-3").getAttribute("aria-pressed"),
 		).toBe("true");
+	});
+
+	it("aiStatus none + có bài viết (upload bỏ ngang) → nút 'Chấm bằng AI'; server 503 → toast AI chưa bật", async () => {
+		const calls = stubFetch((url, method) => {
+			if (isGet(url, method)) {
+				return makeSub({ speakingStatus: "pending_upload" });
+			}
+			if (url.endsWith("/ai-retry") && method === "POST") {
+				return Response.json(
+					{ error: "AI_GRADING_DISABLED", code: "AI_GRADING_DISABLED" },
+					{ status: 503 },
+				);
+			}
+			return undefined;
+		});
+		renderPanel();
+		const status = await screen.findByTestId("placement-ai-status");
+		expect(status.dataset.aiStatus).toBe("none");
+		const button = screen.getByTestId("placement-ai-retry-btn");
+		expect(button.textContent).toContain("Chấm bằng AI");
+		fireEvent.click(button);
+		await waitFor(() => expect(toastMock.error).toHaveBeenCalled());
+		expect(String(toastMock.error.mock.calls[0]?.[0])).toContain(
+			"AI chấm điểm chưa được bật",
+		);
+		expect(calls.filter((c) => c.url.endsWith("/ai-retry"))).toHaveLength(1);
+	});
+
+	it("kết quả đã chốt → ẩn nút chấm lại bằng AI", async () => {
+		stubFetch((url, method) =>
+			isGet(url, method)
+				? {
+						...DRAFTED,
+						status: "graded",
+						gradedAt: "2026-11-15T10:00:00.000Z",
+						writingRubric: { ct: 4, or: 3, lg: 2 },
+						writingErrors: [],
+						speakingErrors: [],
+						resultUrl: "https://example.test/r",
+					}
+				: undefined,
+		);
+		renderPanel();
+		const status = await screen.findByTestId("placement-ai-status");
+		expect(status.dataset.aiStatus).toBe("drafted");
+		expect(screen.queryByTestId("placement-ai-retry-btn")).toBeNull();
+	});
+
+	it("nháp AI mới về khi form đang sửa → không xoá chỉnh sửa, hiện 'Áp dụng nháp AI'", async () => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		let server = makeSub({ aiStatus: "processing" });
+		stubFetch((url, method) => (isGet(url, method) ? server : undefined));
+		renderPanel();
+		await screen.findByTestId("placement-ai-status");
+
+		// Giáo viên chấm tay trong lúc AI đang chạy.
+		fireEvent.click(screen.getByTestId("writing-ct-1"));
+		const feedback = screen.getByLabelText(
+			"Nhận xét bài kiểm tra đầu vào",
+		) as HTMLTextAreaElement;
+		fireEvent.change(feedback, { target: { value: "Nhận xét tay." } });
+
+		server = DRAFTED;
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(PLACEMENT_AI_POLL_MS + 50);
+		});
+		await waitFor(() =>
+			expect(screen.getByTestId("placement-ai-status").dataset.aiStatus).toBe(
+				"drafted",
+			),
+		);
+		// Không ghi đè: điểm tay + nhận xét giữ nguyên, chưa có highlight AI.
+		expect(
+			screen.getByTestId("writing-ct-1").getAttribute("aria-pressed"),
+		).toBe("true");
+		expect(feedback.value).toBe("Nhận xét tay.");
+		expect(screen.queryAllByTestId("writing-error-mark")).toHaveLength(0);
+
+		fireEvent.click(screen.getByTestId("placement-ai-apply-draft-btn"));
+		expect(
+			screen.getByTestId("writing-ct-4").getAttribute("aria-pressed"),
+		).toBe("true");
+		expect(
+			screen.getByTestId("speaking-ic-4").getAttribute("aria-pressed"),
+		).toBe("true");
+		expect(screen.getAllByTestId("writing-error-mark")).toHaveLength(1);
+		expect(feedback.value).toBe("Nhận xét tay.");
+		expect(screen.queryByTestId("placement-ai-apply-draft-btn")).toBeNull();
 	});
 
 	it("drafted → nhãn nháp, highlight bài viết + transcript, điểm live, PATCH gửi kèm lỗi rồi hiện link kết quả", async () => {

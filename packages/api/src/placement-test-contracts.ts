@@ -2117,7 +2117,8 @@ export const placementErrorListSchema = z
  * Định vị lại offset của từng lỗi trong `text` (thuần, dùng chung server/UI):
  * - Giữ `start/end` nếu `text.slice(start, end) === quote` và không chồng lấn.
  * - Ngược lại tìm `quote` (ưu tiên khớp chính xác, sau đó không phân biệt
- *   hoa thường) từ đầu văn bản, bỏ qua vùng đã bị lỗi trước chiếm.
+ *   hoa thường — chỉ khi hạ chữ thường không đổi độ dài văn bản/quote) từ
+ *   đầu văn bản, bỏ qua vùng đã bị lỗi trước chiếm.
  * - Không tìm được → `start = end = null`.
  * Kết quả sắp theo vị trí (lỗi không định vị được xếp cuối, giữ thứ tự gốc).
  */
@@ -2129,11 +2130,16 @@ export function locatePlacementErrors(
 	const overlaps = (s: number, e: number) =>
 		taken.some(([ts, te]) => s < te && ts < e);
 	const lower = text.toLowerCase();
+	// Hạ chữ thường có thể đổi độ dài chuỗi (vd "İ" → "i̇"), làm lệch offset
+	// so với văn bản gốc — khi đó chỉ khớp chính xác.
+	const lowerSafe = lower.length === text.length;
 	const find = (quote: string): [number, number] | null => {
-		for (const [hay, needle] of [
-			[text, quote],
-			[lower, quote.toLowerCase()],
-		] as const) {
+		const lowerQuote = quote.toLowerCase();
+		const passes: Array<readonly [string, string]> = [[text, quote]];
+		if (lowerSafe && lowerQuote.length === quote.length) {
+			passes.push([lower, lowerQuote]);
+		}
+		for (const [hay, needle] of passes) {
 			let from = 0;
 			while (from <= hay.length) {
 				const idx = hay.indexOf(needle, from);

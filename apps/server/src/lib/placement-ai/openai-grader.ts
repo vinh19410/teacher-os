@@ -5,17 +5,22 @@ import {
 	PLACEMENT_WRITING_RUBRIC,
 } from "@teacher-os/api/placement-test-contracts";
 import {
-	normalizeSkillDraft,
+	normalizeKindDraft,
 	PLACEMENT_AI_ERRORS_MAX,
+	PLACEMENT_AI_KIND_CONFIG,
 	type PlacementAiGrader,
 	PlacementAiGradingError,
+	type PlacementAiPollResult,
 } from "./grader";
 
 export const OPENAI_API_BASE = "https://api.openai.com/v1";
 export const DEFAULT_OPENAI_GRADING_MODEL = "gpt-6-luna";
 export const DEFAULT_OPENAI_TRANSCRIBE_MODEL = "gpt-4o-transcribe";
-/** Timeout mỗi lượt gọi OpenAI (chấm hoặc chuyển giọng nói). */
-export const OPENAI_CALL_TIMEOUT_MS = 90_000;
+/**
+ * Timeout mỗi lượt HTTP tới OpenAI. Chấm chạy ở background mode (tạo job +
+ * poll) nên mỗi lượt ngắn — vừa ngân sách ~30s của `waitUntil` trên Workers.
+ */
+export const OPENAI_CALL_TIMEOUT_MS = 25_000;
 
 export interface OpenAiPlacementGraderOptions {
 	apiKey: string;
@@ -165,8 +170,43 @@ function isAbortLike(error: unknown, signal: AbortSignal): boolean {
 	);
 }
 
+/** Lỗi HTTP không đáng thử lại (job hỏng vĩnh viễn) — trừ 408/409/429/5xx. */
+function isTransientStatus(status: number): boolean {
+	return status === 408 || status === 409 || status === 429 || status >= 500;
+}
+
+class OpenAiHttpError extends PlacementAiGradingError {
+	readonly status: number;
+
+	constructor(path: string, status: number) {
+		super(PLACEMENT_AI_ERROR_CODES.FAILED, `openai ${path} http ${status}`);
+		this.status = status;
+	}
+}
+
+/** Lấy text JSON từ `output[].content[]` (type `output_text`) của Responses. */
+function responseOutputText(data: unknown): string | null {
+	const output = (data as { output?: unknown })?.output;
+	if (!Array.isArray(output)) return null;
+	const parts: string[] = [];
+	for (const item of output) {
+		const content = (item as { content?: unknown })?.content;
+		if (!Array.isArray(content)) continue;
+		for (const c of content) {
+			const part = c as { type?: unknown; text?: unknown };
+			if (part.type === "output_text" && typeof part.text === "string") {
+				parts.push(part.text);
+			}
+		}
+	}
+	const text = parts.join("");
+	return text.trim().length > 0 ? text : null;
+}
+
 /**
- * Adapter OpenAI dùng `fetch` thuần (chạy được trên Workers lẫn node). Không
+ * Adapter OpenAI dùng `fetch` thuần (chạy được trên Workers lẫn node). Chấm
+ * qua Responses API background mode: `start*` tạo job (`background: true`,
+ * `store: true`) trả `response.id`; `poll` đọc `GET /responses/{id}`. Không
  * bao giờ log key hay nội dung bài làm — lỗi chỉ mang mã + HTTP status.
  */
 export function createOpenAiPlacementGrader(
@@ -180,19 +220,19 @@ export function createOpenAiPlacementGrader(
 
 	async function request(
 		path: string,
-		init: { body: BodyInit; json: boolean },
+		init: { method: "GET" | "POST"; body?: BodyInit; json?: boolean },
 		signal?: AbortSignal,
 	): Promise<unknown> {
 		const combined = callSignal(timeoutMs, signal);
 		let res: Response;
 		try {
 			res = await doFetch(`${OPENAI_API_BASE}${path}`, {
-				method: "POST",
+				method: init.method,
 				headers: {
 					Authorization: `Bearer ${options.apiKey}`,
 					...(init.json ? { "Content-Type": "application/json" } : {}),
 				},
-				body: init.body,
+				...(init.body === undefined ? {} : { body: init.body }),
 				signal: combined,
 			});
 		} catch (error) {
@@ -210,10 +250,7 @@ export function createOpenAiPlacementGrader(
 		if (!res.ok) {
 			// Bỏ body: thân lỗi có thể lặp lại nội dung bài làm.
 			await res.body?.cancel().catch(() => {});
-			throw new PlacementAiGradingError(
-				PLACEMENT_AI_ERROR_CODES.FAILED,
-				`openai ${path} http ${res.status}`,
-			);
+			throw new OpenAiHttpError(path, res.status);
 		}
 		try {
 			return await res.json();
@@ -231,42 +268,41 @@ export function createOpenAiPlacementGrader(
 		}
 	}
 
-	async function chatJson(
+	async function startJob(
 		messages: Array<{ role: string; content: string }>,
 		schema: ReturnType<typeof draftJsonSchema>,
 		signal?: AbortSignal,
-	): Promise<unknown> {
+	): Promise<string> {
 		const data = await request(
-			"/chat/completions",
+			"/responses",
 			{
+				method: "POST",
 				json: true,
 				body: JSON.stringify({
 					model: gradingModel,
-					messages,
-					response_format: { type: "json_schema", json_schema: schema },
+					background: true,
+					store: true,
+					input: messages,
+					text: {
+						format: {
+							type: "json_schema",
+							name: schema.name,
+							strict: schema.strict,
+							schema: schema.schema,
+						},
+					},
 				}),
 			},
 			signal,
 		);
-		const choices = (data as { choices?: unknown })?.choices;
-		const message = Array.isArray(choices)
-			? (choices[0] as { message?: { content?: unknown } } | undefined)?.message
-			: undefined;
-		const content = message?.content;
-		if (typeof content !== "string" || content.trim().length === 0) {
+		const id = (data as { id?: unknown })?.id;
+		if (typeof id !== "string" || id.length === 0) {
 			throw new PlacementAiGradingError(
 				PLACEMENT_AI_ERROR_CODES.FAILED,
-				"openai chat returned no content",
+				"openai responses returned no id",
 			);
 		}
-		try {
-			return JSON.parse(content);
-		} catch {
-			throw new PlacementAiGradingError(
-				PLACEMENT_AI_ERROR_CODES.FAILED,
-				"openai chat content is not valid JSON",
-			);
-		}
+		return id;
 	}
 
 	return {
@@ -286,7 +322,7 @@ export function createOpenAiPlacementGrader(
 			form.append("response_format", "json");
 			const data = await request(
 				"/audio/transcriptions",
-				{ json: false, body: form },
+				{ method: "POST", body: form },
 				signal,
 			);
 			const text = (data as { text?: unknown })?.text;
@@ -299,32 +335,75 @@ export function createOpenAiPlacementGrader(
 			return text.trim();
 		},
 
-		async gradeWriting(input, signal) {
-			const keys = PLACEMENT_WRITING_RUBRIC.map((r) => r.key);
-			const raw = await chatJson(
+		startWriting(input, signal) {
+			return startJob(
 				writingMessages(input),
-				draftJsonSchema("placement_writing_grade", keys),
+				draftJsonSchema(
+					"placement_writing_grade",
+					PLACEMENT_AI_KIND_CONFIG.writing.rubricKeys,
+				),
 				signal,
 			);
-			return normalizeSkillDraft(raw, {
-				rubricKeys: keys,
-				idPrefix: "w",
-				sourceText: input.text,
-			});
 		},
 
-		async gradeSpeaking(input, signal) {
-			const keys = PLACEMENT_SPEAKING_RUBRIC.map((r) => r.key);
-			const raw = await chatJson(
+		startSpeaking(input, signal) {
+			return startJob(
 				speakingMessages(input),
-				draftJsonSchema("placement_speaking_grade", keys),
+				draftJsonSchema(
+					"placement_speaking_grade",
+					PLACEMENT_AI_KIND_CONFIG.speaking.rubricKeys,
+				),
 				signal,
 			);
-			return normalizeSkillDraft(raw, {
-				rubricKeys: keys,
-				idPrefix: "s",
-				sourceText: input.transcript,
-			});
+		},
+
+		async poll(id, kind, sourceText, signal): Promise<PlacementAiPollResult> {
+			let data: unknown;
+			try {
+				data = await request(
+					`/responses/${encodeURIComponent(id)}`,
+					{ method: "GET" },
+					signal,
+				);
+			} catch (error) {
+				if (
+					error instanceof OpenAiHttpError &&
+					!isTransientStatus(error.status)
+				) {
+					return { state: "error", code: error.code };
+				}
+				// Mạng/timeout/5xx/429: chưa biết kết quả — thử lại lượt sau.
+				return { state: "pending", transient: true };
+			}
+			const status = (data as { status?: unknown })?.status;
+			if (
+				status === "failed" ||
+				status === "cancelled" ||
+				status === "incomplete"
+			) {
+				return { state: "error", code: PLACEMENT_AI_ERROR_CODES.FAILED };
+			}
+			// queued/in_progress (hoặc trạng thái trung gian khác) → chờ tiếp;
+			// job treo quá lâu bị finalize đánh dấu TIMEOUT.
+			if (status !== "completed") return { state: "pending" };
+			const text = responseOutputText(data);
+			if (text === null) {
+				return { state: "error", code: PLACEMENT_AI_ERROR_CODES.FAILED };
+			}
+			try {
+				return {
+					state: "draft",
+					draft: normalizeKindDraft(JSON.parse(text), kind, sourceText),
+				};
+			} catch (error) {
+				return {
+					state: "error",
+					code:
+						error instanceof PlacementAiGradingError
+							? error.code
+							: PLACEMENT_AI_ERROR_CODES.FAILED,
+				};
+			}
 		},
 	};
 }

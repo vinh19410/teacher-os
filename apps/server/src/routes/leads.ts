@@ -23,7 +23,7 @@ import type { Mailer } from "@teacher-os/auth/mail/mailer";
 import { canAccessFinance } from "@teacher-os/auth/role";
 import { lead } from "@teacher-os/db/schema/lead";
 import { placementTestSubmission } from "@teacher-os/db/schema/placement-test";
-import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import type { Db, KernelCtx } from "../app";
 import { parseByteRange } from "../lib/byte-range";
@@ -41,6 +41,8 @@ import {
 } from "../lib/placement-ai/placement-result";
 import {
 	claimPlacementAiGrading,
+	finalizePlacementAiGrading,
+	hasPlacementAiWork,
 	runClaimedPlacementAiGrading,
 	schedulePlacementAiTask,
 	sweepStalePlacementAiGrading,
@@ -424,15 +426,16 @@ export function leadRoutes(deps: LeadRouteDeps) {
 			);
 		}
 
+		// Job chấm nền xong thì lưu nháp ngay lúc giáo viên mở bài.
+		const sub = await finalizePlacementAiGrading(deps, loaded.sub);
 		c.header("Cache-Control", "no-store");
-		return c.json(
-			buildSubmissionDetail(loaded.sub, loaded.leadRow, resultOrigin),
-		);
+		return c.json(buildSubmissionDetail(sub, loaded.leadRow, resultOrigin));
 	});
 
 	/**
-	 * #730: chấm lại nháp AI — chỉ khi `failed|drafted`; CAS về `processing`
-	 * rồi chạy nền. Đang chạy/chưa có gì để chấm → 409.
+	 * #730: chấm (lại) nháp AI — khi `none|failed|drafted` và bài có việc để
+	 * chấm; CAS về `processing` rồi chạy nền. Đang chạy / không có gì để chấm
+	 * / kết quả đã chốt (không đổi thứ học viên đã nhận) → 409.
 	 */
 	routes.post("/:id/placement-submission/ai-retry", async (c: LeadContext) => {
 		const ctx = c.get("kernelCtx");
@@ -457,6 +460,15 @@ export function leadRoutes(deps: LeadRouteDeps) {
 				404,
 			);
 		}
+		const retryConflict = () =>
+			c.json(
+				{
+					error: "PLACEMENT_AI_RETRY_CONFLICT",
+					code: "PLACEMENT_AI_RETRY_CONFLICT",
+				},
+				409,
+			);
+		if (loaded.sub.status === "graded") return retryConflict();
 		if (!deps.getPlacementAiGrader?.()) {
 			return c.json(
 				{
@@ -466,18 +478,18 @@ export function leadRoutes(deps: LeadRouteDeps) {
 				503,
 			);
 		}
-		const startedAt = await claimPlacementAiGrading(db, loaded.sub.id, [
-			"failed",
-			"drafted",
-		]);
+		if (!hasPlacementAiWork(loaded.sub)) return retryConflict();
+		// Lượt cũ có thể đã xong ở OpenAI nhưng chưa được lưu → chốt trước.
+		await finalizePlacementAiGrading(deps, loaded.sub);
+		const startedAt = await claimPlacementAiGrading(
+			db,
+			loaded.sub.id,
+			["none", "failed", "drafted"],
+			new Date(),
+			{ notGraded: true },
+		);
 		if (!startedAt) {
-			return c.json(
-				{
-					error: "PLACEMENT_AI_RETRY_CONFLICT",
-					code: "PLACEMENT_AI_RETRY_CONFLICT",
-				},
-				409,
-			);
+			return retryConflict();
 		}
 		schedulePlacementAiTask(
 			deps,
@@ -641,8 +653,6 @@ export function leadRoutes(deps: LeadRouteDeps) {
 			loaded.sub.speakingTranscript,
 			parsedBody.data.speakingErrors,
 		);
-		// Token sinh một lần ở lần chốt đầu, giữ nguyên khi chốt lại.
-		const resultToken = loaded.sub.resultToken ?? randomResultToken();
 
 		const now = new Date();
 		const [updatedSub] = await db
@@ -663,8 +673,9 @@ export function leadRoutes(deps: LeadRouteDeps) {
 				finalNote: final.note,
 				writingErrorsJson: JSON.stringify(writingErrors),
 				speakingErrorsJson: JSON.stringify(speakingErrors),
-				resultToken,
-				resultPublishedAt: loaded.sub.resultPublishedAt ?? now,
+				// Token sinh một lần ở lần chốt đầu, giữ nguyên khi chốt lại —
+				// coalesce trong UPDATE để hai lượt chốt đồng thời dùng chung token.
+				resultToken: sql`coalesce(${placementTestSubmission.resultToken}, ${randomResultToken()})`,
 				gradedBy: ctx.userId,
 				gradedAt: now,
 				updatedAt: now,
@@ -690,24 +701,45 @@ export function leadRoutes(deps: LeadRouteDeps) {
 			})
 			.where(and(eq(lead.id, loaded.leadRow.id), eq(lead.orgId, ctx.orgId)));
 
-		// Gửi link kết quả đồng bộ (timeout ngắn trong mailer) để response
-		// phản ánh đúng trạng thái; lỗi gửi không làm hỏng lượt chốt.
-		const resultEmailStatus = await sendPlacementResultEmail({
-			mailer: deps.mailer,
-			to: loaded.leadRow.email,
-			studentName: loaded.leadRow.name,
-			resultUrl: buildPlacementResultUrl(resultOrigin, resultToken),
-			submissionId: updatedSub.id,
-		});
-		await db
+		const resultToken = updatedSub.resultToken;
+		if (!resultToken) {
+			return c.json({ error: "not found" }, 404);
+		}
+		// Lần chốt đầu = lượt thắng CAS đặt `result_published_at`; chỉ lần đó
+		// gửi email. Chốt lại giữ nguyên trạng thái email cũ.
+		const [firstPublish] = await db
 			.update(placementTestSubmission)
-			.set({ resultEmailStatus })
+			.set({ resultPublishedAt: now })
 			.where(
 				and(
 					eq(placementTestSubmission.id, updatedSub.id),
 					eq(placementTestSubmission.orgId, ctx.orgId),
+					isNull(placementTestSubmission.resultPublishedAt),
 				),
-			);
+			)
+			.returning({ id: placementTestSubmission.id });
+
+		let resultEmailStatus = updatedSub.resultEmailStatus;
+		if (firstPublish) {
+			// Gửi link kết quả đồng bộ (timeout ngắn trong mailer) để response
+			// phản ánh đúng trạng thái; lỗi gửi không làm hỏng lượt chốt.
+			resultEmailStatus = await sendPlacementResultEmail({
+				getMailer: () => deps.mailer,
+				to: loaded.leadRow.email,
+				studentName: loaded.leadRow.name,
+				resultUrl: buildPlacementResultUrl(resultOrigin, resultToken),
+				submissionId: updatedSub.id,
+			});
+			await db
+				.update(placementTestSubmission)
+				.set({ resultEmailStatus })
+				.where(
+					and(
+						eq(placementTestSubmission.id, updatedSub.id),
+						eq(placementTestSubmission.orgId, ctx.orgId),
+					),
+				);
+		}
 
 		c.header("Cache-Control", "no-store");
 		return c.json(

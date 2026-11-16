@@ -4,6 +4,8 @@ import {
 	PLACEMENT_ERROR_CATEGORIES,
 	PLACEMENT_ERROR_EXPLANATION_MAX,
 	PLACEMENT_ERROR_QUOTE_MAX,
+	PLACEMENT_SPEAKING_RUBRIC,
+	PLACEMENT_WRITING_RUBRIC,
 	type PlacementAiSkillDraft,
 	type PlacementError,
 	type PlacementSpeakingRubric,
@@ -22,16 +24,46 @@ export interface PlacementAiAudio {
 	filename: string;
 }
 
+export type PlacementAiSkillKind = "writing" | "speaking";
+
+/** Nháp một kỹ năng (rubric Writing hoặc Speaking) — lưu nguyên JSON. */
+export type PlacementAiAnyDraft =
+	| PlacementAiSkillDraft<PlacementWritingRubric>
+	| PlacementAiSkillDraft<PlacementSpeakingRubric>;
+
+/**
+ * Kết quả poll một job chấm nền:
+ * - `pending`: job còn chạy; `transient` = không hỏi được lúc này (mạng,
+ *   timeout, 5xx/429) — giữ `processing`, không tính quá hạn.
+ * - `draft`: job xong, nháp đã chuẩn hoá.
+ * - `error`: job hỏng vĩnh viễn (failed/cancelled/incomplete, JSON sai…).
+ */
+export type PlacementAiPollResult =
+	| { state: "pending"; transient?: boolean }
+	| { state: "draft"; draft: PlacementAiAnyDraft }
+	| { state: "error"; code: PlacementAiErrorCode };
+
+/**
+ * Chấm hai pha: `start*` tạo job nền (trả id job) trong vài giây để vừa
+ * ngân sách `waitUntil` của Workers; `poll` hỏi kết quả lúc giáo viên mở
+ * bài. `transcribe` vẫn đồng bộ (một lượt ngắn, có timeout).
+ */
 export interface PlacementAiGrader {
 	transcribe(audio: PlacementAiAudio, signal?: AbortSignal): Promise<string>;
-	gradeWriting(
+	startWriting(
 		input: { prompt: string; text: string },
 		signal?: AbortSignal,
-	): Promise<PlacementAiSkillDraft<PlacementWritingRubric>>;
-	gradeSpeaking(
+	): Promise<string>;
+	startSpeaking(
 		input: { prompts: string[]; transcript: string },
 		signal?: AbortSignal,
-	): Promise<PlacementAiSkillDraft<PlacementSpeakingRubric>>;
+	): Promise<string>;
+	poll(
+		id: string,
+		kind: PlacementAiSkillKind,
+		sourceText: string,
+		signal?: AbortSignal,
+	): Promise<PlacementAiPollResult>;
 }
 
 export type PlacementAiErrorCode =
@@ -137,4 +169,30 @@ export function normalizeSkillDraft<K extends string>(
 		feedback,
 		errors: locatePlacementErrors(params.sourceText, parsed.data),
 	};
+}
+
+/** Key rubric + tiền tố id lỗi theo kỹ năng. */
+export const PLACEMENT_AI_KIND_CONFIG = {
+	writing: {
+		rubricKeys: PLACEMENT_WRITING_RUBRIC.map((r) => r.key),
+		idPrefix: "w",
+	},
+	speaking: {
+		rubricKeys: PLACEMENT_SPEAKING_RUBRIC.map((r) => r.key),
+		idPrefix: "s",
+	},
+} as const;
+
+/** `normalizeSkillDraft` theo kỹ năng (rubric Writing hoặc Speaking). */
+export function normalizeKindDraft(
+	raw: unknown,
+	kind: PlacementAiSkillKind,
+	sourceText: string,
+): PlacementAiAnyDraft {
+	const config = PLACEMENT_AI_KIND_CONFIG[kind];
+	return normalizeSkillDraft(raw, {
+		rubricKeys: config.rubricKeys,
+		idPrefix: config.idPrefix,
+		sourceText,
+	}) as PlacementAiAnyDraft;
 }

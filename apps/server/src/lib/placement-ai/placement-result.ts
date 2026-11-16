@@ -88,14 +88,27 @@ export type PlacementResultEmailStatus = "sent" | "failed" | "skipped";
  * link — không PII khác (MAILER_IMPL=log in nguyên body ra log).
  */
 export async function sendPlacementResultEmail(params: {
-	mailer?: Mailer;
+	/** Getter có thể throw (mailer cấu hình sai trong `index.ts`) → "failed". */
+	getMailer: () => Mailer | undefined;
 	to: string | null | undefined;
 	studentName: string;
 	resultUrl: string;
 	submissionId: string;
 }): Promise<PlacementResultEmailStatus> {
 	const to = params.to?.trim() ?? "";
-	if (!to || !params.mailer) return "skipped";
+	if (!to) return "skipped";
+	let mailer: Mailer | undefined;
+	try {
+		mailer = params.getMailer();
+	} catch (error) {
+		console.error(
+			"[placement-ai] mailer unavailable",
+			params.submissionId,
+			error instanceof Error ? error.name : "unknown",
+		);
+		return "failed";
+	}
+	if (!mailer) return "skipped";
 	const greeting = params.studentName.trim()
 		? `Chào ${params.studentName.trim()},`
 		: "Chào bạn,";
@@ -117,7 +130,7 @@ export async function sendPlacementResultEmail(params: {
 		)
 		.join("<br>");
 	try {
-		await params.mailer.send({
+		await mailer.send({
 			to,
 			subject: "Kết quả bài kiểm tra đầu vào tiếng Anh",
 			html,

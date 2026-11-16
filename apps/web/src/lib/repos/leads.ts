@@ -127,9 +127,12 @@ export async function retryLeadPlacementAi(
 	baseUrl: string = getApiBaseUrl(),
 ): Promise<PlacementSubmissionDetail> {
 	const url = `${baseUrl}/api/leads/${encodeURIComponent(leadId)}/placement-submission/ai-retry`;
+	// Kernel chỉ nhận POST JSON (thiếu Content-Type → 415) — gửi body rỗng `{}`.
 	const res = await fetch(url, {
 		method: "POST",
 		credentials: "include",
+		headers: { "Content-Type": "application/json" },
+		body: "{}",
 	});
 	if (!res.ok) {
 		throw new HttpError(
