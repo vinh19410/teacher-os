@@ -31,6 +31,8 @@ export interface FakePlacementAiGraderOptions {
 	transientPoll?: boolean;
 	/** Poll của kỹ năng này trả lỗi FAILED (đọc mỗi lượt — đổi được giữa test). */
 	failPoll?: Partial<Record<PlacementAiSkillKind, boolean>>;
+	/** `start*` của kỹ năng này ném lỗi FAILED (đọc mỗi lượt — đổi được giữa test). */
+	failStart?: Partial<Record<PlacementAiSkillKind, boolean>>;
 	/** Ghi lại AbortSignal mỗi lượt gọi nhận được (test deadline). */
 	signals?: Array<AbortSignal | undefined>;
 	/** Đếm số lượt gọi (test không chạy trùng). */
@@ -119,12 +121,24 @@ export function createFakePlacementAiGrader(
 			options.signals?.push(signal);
 			if (options.calls) options.calls.writing += 1;
 			await gate();
+			if (options.failStart?.writing) {
+				throw new PlacementAiGradingError(
+					PLACEMENT_AI_ERROR_CODES.FAILED,
+					"fake start failure",
+				);
+			}
 			return enqueue("writing", input.text);
 		},
 		async startSpeaking(input, signal) {
 			options.signals?.push(signal);
 			if (options.calls) options.calls.speaking += 1;
 			await gate();
+			if (options.failStart?.speaking) {
+				throw new PlacementAiGradingError(
+					PLACEMENT_AI_ERROR_CODES.FAILED,
+					"fake start failure",
+				);
+			}
 			return enqueue("speaking", input.transcript);
 		},
 		async poll(id, kind, sourceText, signal): Promise<PlacementAiPollResult> {

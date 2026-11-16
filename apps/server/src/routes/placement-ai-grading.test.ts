@@ -785,6 +785,56 @@ describe("chấm nền qua job OpenAI background + finalize lười (#730)", () 
 		expect(after.aiSpeaking).toBeNull();
 	});
 
+	test("chấm lại mà không tạo được job Speaking → bỏ nháp Speaking cũ ngay ở pha nền", async () => {
+		const failStart: NonNullable<FakePlacementAiGraderOptions["failStart"]> =
+			{};
+		const h = await createHarness({ grader: { failStart } });
+		const created = await h.submit({ speakingMode: "upload" });
+		await h.upload(created.submissionId, created.uploadToken);
+		await h.flush();
+		expect((await h.detail(created.leadId)).aiSpeaking).not.toBeNull();
+
+		failStart.speaking = true;
+		const retry = await teacherPost(
+			h.app,
+			`/api/leads/${created.leadId}/placement-submission/ai-retry`,
+		);
+		expect(retry.status).toBe(200);
+		await h.flush();
+		const row = await rowOf(h, created.submissionId);
+		expect(row.aiSpeakingJson).toBeNull();
+		expect(row.aiSpeakingResponseId).toBeNull();
+		expect(row.aiWritingResponseId).not.toBeNull();
+
+		const after = await h.detail(created.leadId);
+		expect(after.aiStatus).toBe("failed");
+		expect(after.aiErrorCode).toBe("AI_GRADING_FAILED");
+		expect(after.aiWriting).not.toBeNull();
+		expect(after.aiSpeaking).toBeNull();
+	});
+
+	test("cả hai kỹ năng không tạo được job → failed và bỏ cả hai nháp cũ", async () => {
+		const failStart: NonNullable<FakePlacementAiGraderOptions["failStart"]> =
+			{};
+		const h = await createHarness({ grader: { failStart } });
+		const created = await h.submit({ speakingMode: "upload" });
+		await h.upload(created.submissionId, created.uploadToken);
+		await h.flush();
+		expect((await h.detail(created.leadId)).aiStatus).toBe("drafted");
+
+		failStart.writing = true;
+		failStart.speaking = true;
+		await teacherPost(
+			h.app,
+			`/api/leads/${created.leadId}/placement-submission/ai-retry`,
+		);
+		await h.flush();
+		const after = await h.detail(created.leadId);
+		expect(after.aiStatus).toBe("failed");
+		expect(after.aiWriting).toBeNull();
+		expect(after.aiSpeaking).toBeNull();
+	});
+
 	test("mọi lời gọi OpenAI đều có deadline (pha nền dùng chung, poll riêng)", async () => {
 		const signals: Array<AbortSignal | undefined> = [];
 		const h = await createHarness({ grader: { signals } });

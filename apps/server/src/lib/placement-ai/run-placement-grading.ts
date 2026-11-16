@@ -199,6 +199,12 @@ export async function runClaimedPlacementAiGrading(
 	let firstError: PlacementAiErrorCode | null = null;
 	let writingId: string | null = null;
 	let speakingId: string | null = null;
+	// Kỹ năng lượt này có việc để chấm — dùng để bỏ nháp lượt trước khi
+	// không tạo được job (tránh nháp cũ đứng cạnh transcript mới).
+	let writingAttempted = false;
+	let speakingAttempted = false;
+	// Đánh đổi: đọc R2 + UPDATE transcript không bị deadline này giới hạn, và
+	// POST /responses bị huỷ giữa chừng có thể vẫn tạo job ở OpenAI (mồ côi).
 	const budget = AbortSignal.timeout(PLACEMENT_AI_BACKGROUND_BUDGET_MS);
 
 	try {
@@ -216,9 +222,11 @@ export async function runClaimedPlacementAiGrading(
 			// Hai nhánh chạy song song: pha nền nằm trong `waitUntil` (~30s sau
 			// response), nên tổng thời gian = nhánh dài nhất thay vì cộng dồn.
 			// Id job chỉ lưu một lần ở cuối để finalize không chốt `drafted`
-			// khi job Speaking chưa kịp tạo.
+			// khi job Speaking chưa kịp tạo. Ngân sách không đảm bảo tuyệt đối
+			// (xem `budget`), nhưng lần ghi cuối thường vẫn kịp chạy.
 			const writingBranch = async () => {
 				if (!hasWriting(sub)) return;
+				writingAttempted = true;
 				try {
 					writingId = await grader.startWriting(
 						{ prompt: writingPrompt, text: sub.writingText },
@@ -230,6 +238,7 @@ export async function runClaimedPlacementAiGrading(
 			};
 			const speakingBranch = async () => {
 				if (!hasSpeaking(sub)) return;
+				speakingAttempted = true;
 				try {
 					const audio = await loadSpeakingAudio(deps.getMediaStore?.(), sub);
 					const text = audio
@@ -264,6 +273,12 @@ export async function runClaimedPlacementAiGrading(
 		.set({
 			aiWritingResponseId: writingId,
 			aiSpeakingResponseId: speakingId,
+			...(writingAttempted && writingId === null
+				? { aiWritingJson: null }
+				: {}),
+			...(speakingAttempted && speakingId === null
+				? { aiSpeakingJson: null }
+				: {}),
 			aiErrorCode: hasJob
 				? firstError
 				: (firstError ?? PLACEMENT_AI_ERROR_CODES.FAILED),
