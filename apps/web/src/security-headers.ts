@@ -45,7 +45,8 @@ export function shouldRedirectHost(request: Request): string | null {
 		hostname === "www.teacheros.io.vn" ||
 		hostname === "www.app.teacheros.io.vn"
 	) {
-		targetHost = "app.teacheros.io.vn";
+		// Former prod hosts: send stray hits to the current prod app.
+		targetHost = "app.msmy.io.vn";
 	} else if (
 		hostname === "staging.teacheros.io.vn" ||
 		hostname === "www.staging.teacheros.io.vn" ||

@@ -31,7 +31,7 @@ import {
 	validateLeadForm,
 } from "./lead-gate.js";
 
-const DEFAULT_API_BASE = "https://api.teacheros.io.vn";
+const DEFAULT_API_BASE = "https://api.msmy.io.vn";
 const ZALO_URL = "https://zalo.me/0929060994";
 const STORAGE_KEY = "msmy_placement_attempt_v2";
 const LEAD_DRAFT_KEY = "msmy_lead_draft_v1";
