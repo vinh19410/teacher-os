@@ -29,27 +29,27 @@ describe("shouldRedirectHost (issue #117)", () => {
 		).toBeNull();
 	});
 
-	it("redirects apex domain to canonical app host with https", () => {
+	it("redirects the former prod apex to the current prod app host with https", () => {
 		expect(shouldRedirectHost(new Request("http://teacheros.io.vn/"))).toBe(
-			"https://app.teacheros.io.vn/",
+			"https://app.msmy.io.vn/",
 		);
 		expect(
 			shouldRedirectHost(new Request("https://teacheros.io.vn/students")),
-		).toBe("https://app.teacheros.io.vn/students");
+		).toBe("https://app.msmy.io.vn/students");
 		expect(
 			shouldRedirectHost(
 				new Request("https://TEACHEROS.IO.VN/classes?tab=active"),
 			),
-		).toBe("https://app.teacheros.io.vn/classes?tab=active");
+		).toBe("https://app.msmy.io.vn/classes?tab=active");
 	});
 
-	it("redirects www domain to canonical app host with https", () => {
+	it("redirects the former prod www host to the current prod app host with https", () => {
 		expect(shouldRedirectHost(new Request("http://www.teacheros.io.vn/"))).toBe(
-			"https://app.teacheros.io.vn/",
+			"https://app.msmy.io.vn/",
 		);
 		expect(
 			shouldRedirectHost(new Request("https://www.teacheros.io.vn/tuition")),
-		).toBe("https://app.teacheros.io.vn/tuition");
+		).toBe("https://app.msmy.io.vn/tuition");
 	});
 
 	it("redirects staging domain to app.staging host", () => {
@@ -71,7 +71,7 @@ describe("shouldRedirectHost (issue #117)", () => {
 	it("strips redundant www.app prefix", () => {
 		expect(
 			shouldRedirectHost(new Request("https://www.app.teacheros.io.vn/")),
-		).toBe("https://app.teacheros.io.vn/");
+		).toBe("https://app.msmy.io.vn/");
 		expect(
 			shouldRedirectHost(
 				new Request("https://www.app.staging.teacheros.io.vn/dashboard"),

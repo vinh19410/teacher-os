@@ -6,7 +6,7 @@ values** — only secret names, owners, and rotation paths.
 
 ## Topology — single source of truth
 
-The production topology is `teacheros.io.vn` (+ `www.`, landing), `app.<domain>` (web), `student.<domain>` (student portal) + `api.<domain>` (API). It is
+The production topology is `APP_DOMAIN=msmy.io.vn`: `msmy.io.vn` (+ `www.`, teacher profile), `app.<domain>` (web), `student.<domain>` (student portal), `admin.<domain>` (admin) + `api.<domain>` (API). Landing gets no custom domain on prod (the apex belongs to the profile). The former prod apex `teacheros.io.vn` now hosts staging only. It is
 **encoded in runtime configuration, not in this document**: the deploy-time
 variable `APP_DOMAIN` (bare lowercase domain) derives every URL below via
 `packages/infra/src/topology.ts`, wired in `packages/infra/alchemy.run.ts`.
@@ -15,8 +15,8 @@ environment — never editing this runbook.
 
 | Setting | Value (APP_DOMAIN set) | Where it comes from |
 | --- | --- | --- |
-| Landing origin | `https://<domain>` (+ `https://www.<domain>`) | Website.StaticSite `domain: { name: landingHost, aliases: landingAliases }` |
-| Profile origin | `https://msmy.io.vn` (+ `https://www.msmy.io.vn`) on prod (`APP_DOMAIN=teacheros.io.vn`), `https://profile.<domain>` elsewhere | Website.StaticSite (`profile`) `domain: { name: profileHost, aliases: profileAliases }` from `packages/infra/src/topology.ts` (#536) |
+| Landing origin | `https://<domain>` (+ `https://www.<domain>`) on staging; none on prod (workers.dev only) | Website.StaticSite `domain: { name: landingHost, aliases: landingAliases }`, skipped when `landingHost` is undefined |
+| Profile origin | `https://msmy.io.vn` (+ `https://www.msmy.io.vn`) on prod (`APP_DOMAIN=msmy.io.vn`), `https://profile.<domain>` elsewhere | Website.StaticSite (`profile`) `domain: { name: profileHost, aliases: profileAliases }` from `packages/infra/src/topology.ts` (#536) |
 | Web origin | `https://app.<domain>` | Website.Vite `domain: { name: appHost, aliases: appAliases }` (no aliases) |
 | Student portal origin | `https://student.<domain>` | Website.Vite (student) `domain: studentHost` from `packages/infra/src/topology.ts` |
 | Admin console origin | `https://admin.<domain>` | Website.Vite (admin) `domain: adminHost` from `packages/infra/src/topology.ts` (plan #413) |
@@ -30,12 +30,12 @@ environment — never editing this runbook.
 | Better Auth base URL | `https://api.<domain>/api/auth` | `authBaseURL()` in `packages/auth/src/topology.ts` (mount path `/api/auth`) |
 | Google redirect URI | `https://api.<domain>/api/auth/callback/google` | derived from the Better Auth base URL |
 | Session cookies | cross-subdomain, `Domain=.<domain>`, `SameSite=None; Secure; HttpOnly` | `COOKIE_DOMAIN` binding → `crossSubDomainCookieDomain()` in `packages/auth/src/topology.ts` |
-| Auth cookie namespace | default `better-auth` on prod; `teacheros-staging` on any other member of the prod cookie zone (staging) | `BETTER_AUTH_COOKIE_PREFIX` binding → `resolveDomainTopology().authCookiePrefix` in `packages/infra/src/topology.ts`, validated by `authCookiePrefix()` in `packages/auth/src/topology.ts` |
+| Auth cookie namespace | default `better-auth` on prod; `teacheros-staging` on any other member of the prod (`msmy.io.vn`) or former prod (`teacheros.io.vn`) cookie zone (staging) | `BETTER_AUTH_COOKIE_PREFIX` binding → `resolveDomainTopology().authCookiePrefix` in `packages/infra/src/topology.ts`, validated by `authCookiePrefix()` in `packages/auth/src/topology.ts` |
 | `VITE_SERVER_URL` (web build) | `https://api.<domain>` | derived from `APP_DOMAIN`; server worker URL otherwise |
 | `LEAD_API_URL` (profile build) | `https://api.<domain>` | derived from `APP_DOMAIN` (`topology.apiOrigin`); server worker URL otherwise (#536) |
 | `STUDENT_PORTAL_URL` (profile build) | `https://student.<domain>` | derived from `APP_DOMAIN` (`topology.studentOrigin`); `studentWorker.url` otherwise, dev default `http://localhost:8003` (#560) |
 
-First deploy with this topology: custom domain apex (`teacheros.io.vn`) and `www` detach from the web Worker and attach to the landing Worker (`apps/landing`) in the same apply. Staging is deployed first (`staging.teacheros.io.vn`); certificates already exist in the Cloudflare zone.
+Domain move to `msmy.io.vn`: the first prod deploy with `APP_DOMAIN=msmy.io.vn` detaches `app/student/admin/api.teacheros.io.vn` and the landing apex `teacheros.io.vn` (+ `www`), and attaches `app/student/admin/api.msmy.io.vn` in the same apply. Before it, register `https://api.msmy.io.vn/api/auth/callback/google` in the Google OAuth console. Sessions do not carry over (cookie domain changes from `.teacheros.io.vn` to `.msmy.io.vn`), so every user signs in again once. The old hosts stop resolving to a Worker; a redirect to the new hosts needs a Cloudflare Redirect Rule set by hand (the CI token lacks Rulesets permission).
 With `APP_DOMAIN` unset (local dev only), the stack keeps its generated
 `workers.dev` URLs and per-host cookies, and `alchemy dev` defaults
 `CORS_ORIGIN` to `http://localhost:8001`. Staging resolves the same table with
@@ -63,8 +63,8 @@ Staging is the QC browser target: `https://staging.teacheros.io.vn` (landing), `
 and `https://api.staging.teacheros.io.vn` (API). It lives in the same
 Cloudflare zone but in its own Alchemy stage, with its own D1 database, its
 own `BETTER_AUTH_SECRET` value, and cookies scoped to
-`.staging.teacheros.io.vn`. Because staging is a subdomain of the prod apex,
-browsers also send prod's parent-domain session cookie
+`.staging.teacheros.io.vn`. Because staging is a subdomain of the former prod apex,
+browsers may still send the old prod parent-domain session cookie
 (`__Secure-better-auth.session_token`, `Domain=.teacheros.io.vn`) to the
 staging API; staging therefore emits its session under the namespaced
 `teacheros-staging` prefix (topology table above), so the foreign prod-zone
@@ -115,14 +115,14 @@ Vận hành:
   export trong `public-leads.ts` — chỉnh qua code, không phải env.
 - **Thứ tự phát hành bộ đề kiểm tra đầu vào (`/placement-test` → `/kiem-tra-dau-vao/`, #515):**
   1. Đảm bảo biến `LEAD_ORG_ID` (UUID `organization.id` của cô Mỹ) được truyền khi deploy `server`, sau đó deploy `server` và `web` (migration `0058` tạo bảng `placement_test` và `placement_test_audio` chạy cùng deploy). **Tuyệt đối không deploy `apps/profile` trước bước 4**, nếu không học viên mở `/kiem-tra-dau-vao/` sẽ thấy trang bảo trì.
-  2. Đăng nhập `https://app.teacheros.io.vn/placement-test`, xác nhận `LEAD_ORG_ID` khớp org của cô Mỹ (màn sửa không hiện cảnh báo lệch tổ chức).
+  2. Đăng nhập `https://app.msmy.io.vn/placement-test`, xác nhận `LEAD_ORG_ID` khớp org của cô Mỹ (màn sửa không hiện cảnh báo lệch tổ chức).
   3. Cô Mỹ bấm **"Nhập đề gốc (30 câu, 5 audio)"**, nghe thử từng đoạn, chỉnh sửa câu hỏi / ngưỡng CEFR nếu cần, đối chiếu `plans/reports/placement-test-content-review.md`, rồi bấm **Phát hành**.
   4. Kiểm tra API công khai và HTTP `Range` trước khi deploy profile:
-     - `curl -i https://api.teacheros.io.vn/public/placement-test -H "Origin: https://msmy.io.vn"` trả `200` kèm `Access-Control-Allow-Origin: https://msmy.io.vn` và `Cache-Control: no-cache`.
-     - `curl -i -H "Range: bytes=0-99" https://api.teacheros.io.vn<src-của-clip-1>` trả `206 Partial Content` kèm `Content-Range: bytes 0-99/<size>`.
+     - `curl -i https://api.msmy.io.vn/public/placement-test -H "Origin: https://msmy.io.vn"` trả `200` kèm `Access-Control-Allow-Origin: https://msmy.io.vn` và `Cache-Control: no-cache`.
+     - `curl -i -H "Range: bytes=0-99" https://api.msmy.io.vn<src-của-clip-1>` trả `206 Partial Content` kèm `Content-Range: bytes 0-99/<size>`.
   5. Đưa `apps/profile` lên production qua `deploy.yml` (#536, #560): resource `Cloudflare.Website.StaticSite("profile")` trong `packages/infra/alchemy.run.ts` tự chạy `LEAD_API_URL=<apiOrigin> STUDENT_PORTAL_URL=<studentOrigin> pnpm build` (thay `<meta name="lead-api">` ở cả `dist/index.html` lẫn `dist/kiem-tra-dau-vao/index.html`, và thay `href` của `#studentPortalLink` trên `dist/index.html`) rồi gắn custom domain `msmy.io.vn` + alias `www.msmy.io.vn`, sau đó bước `Smoke check profile` kiểm chứng tự động. **Cảnh báo thứ tự 2 đợt:** nếu cần promote riêng `server` lên `main` ở đợt 1 (trước khi cô Mỹ phát hành bộ đề ở bước 3–4 và trước khi dọn bản ghi DNS A/AAAA/CNAME cũ trên zone `msmy.io.vn`), phải promote từ SHA `7d331c05b305fbe7fd16b98fb0942e5ab93a68cb` (trước commit merge `#536`); chỉ promote `develop` HEAD chứa `profileWorker` ở đợt 2.
   6. Smoke test trên Safari iOS (`https://msmy.io.vn/kiem-tra-dau-vao/`): bấm bắt đầu, điền form thông tin cá nhân (tạo lead `source = placement-test`), nghe thử audio, hoàn thành bài test và xác nhận dòng lead trên `/leads` đã được cập nhật `placement` kèm điểm CEFR (#534).
-- **Tùy chọn — WAF rate limiting** trên zone teacheros.io.vn cho path
+- **Tùy chọn — WAF rate limiting** trên zone msmy.io.vn cho path
   `/public/leads` khi có spam thật (lớp 3 của plan; Turnstile chỉ bật khi cần).
 - Email báo lead mới gửi mọi thành viên org qua mailer chung (D13); mailer
   lỗi không ảnh hưởng response — check log `[leads]` khi nghi ngờ.
@@ -135,7 +135,7 @@ Vận hành:
 2. **Cloudflare auth** — from `packages/infra`: `pnpm alchemy profile show`
    prints the active provider profile (or use a valid `CLOUDFLARE_API_TOKEN`
    in `.env`). NO-GO if unauthenticated.
-3. **Zone readiness** — the domain's DNS zone (`teacheros.io.vn`, plus `msmy.io.vn` for the production `profile` StaticSite in #536) exists in the same Cloudflare
+3. **Zone readiness** — the prod DNS zone `msmy.io.vn` (app/student/admin/api + profile) and the staging zone `teacheros.io.vn` exist in the same Cloudflare
    account (`CLOUDFLARE_ACCOUNT_ID`) and `CLOUDFLARE_API_TOKEN` has zone + Workers custom-domain permissions on both zones (Alchemy infers the zone from `api.<domain>` / `app.<domain>` / `msmy.io.vn` and
    provisions DNS records and certificates; a zone hosted elsewhere or outside token scope is a
    NO-GO until moved or token-scoped).

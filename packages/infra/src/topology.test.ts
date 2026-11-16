@@ -34,10 +34,18 @@ describe("resolveDomainTopology", () => {
 		});
 	});
 
-	it("derives landing host and aliases for prod domain, appAliases empty", () => {
-		const topology = resolveDomainTopology("teacheros.io.vn");
-		expect(topology.landingHost).toBe("teacheros.io.vn");
-		expect(topology.landingAliases).toEqual(["www.teacheros.io.vn"]);
+	it("derives the prod app/student/api hosts on msmy.io.vn and leaves landing unattached", () => {
+		const topology = resolveDomainTopology("msmy.io.vn");
+		expect(topology.appOrigin).toBe("https://app.msmy.io.vn");
+		expect(topology.studentOrigin).toBe("https://student.msmy.io.vn");
+		expect(topology.apiOrigin).toBe("https://api.msmy.io.vn");
+		expect(topology.googleRedirectURI).toBe(
+			"https://api.msmy.io.vn/api/auth/callback/google",
+		);
+		expect(topology.cookieDomain).toBe(".msmy.io.vn");
+		expect(topology.landingHost).toBeUndefined();
+		expect(topology.landingAliases).toEqual([]);
+		expect(topology.profileHost).toBe("msmy.io.vn");
 		expect(topology.appAliases).toEqual([]);
 	});
 
@@ -71,7 +79,7 @@ describe("resolveDomainTopology", () => {
 		}
 	});
 
-	it("scopes staging into its own auth cookie namespace (issue #125: staging nests inside the prod cookie zone)", () => {
+	it("scopes staging into its own auth cookie namespace (issue #125: staging nests inside the former prod cookie zone)", () => {
 		expect(
 			resolveDomainTopology("staging.teacheros.io.vn").authCookiePrefix,
 		).toBe("teacheros-staging");
@@ -79,14 +87,20 @@ describe("resolveDomainTopology", () => {
 
 	it("keeps the prod domain on the default better-auth cookie namespace", () => {
 		expect(
-			resolveDomainTopology("teacheros.io.vn").authCookiePrefix,
+			resolveDomainTopology(PROD_APP_DOMAIN).authCookiePrefix,
 		).toBeUndefined();
 	});
 
-	it("prefixes any other member of the prod cookie zone, not just the staging label", () => {
-		expect(
-			resolveDomainTopology("preview.teacheros.io.vn").authCookiePrefix,
-		).toBe("teacheros-staging");
+	it("prefixes any other member of the prod or former-prod cookie zone, not just the staging label", () => {
+		for (const domain of [
+			"preview.teacheros.io.vn",
+			"teacheros.io.vn",
+			"staging.msmy.io.vn",
+		]) {
+			expect(resolveDomainTopology(domain).authCookiePrefix).toBe(
+				"teacheros-staging",
+			);
+		}
 	});
 
 	it("leaves unrelated zones on the default namespace (no shared cookie zone with prod)", () => {
