@@ -230,7 +230,12 @@ export async function runClaimedPlacementAiGrading(
 			firstError = PLACEMENT_AI_ERROR_CODES.DISABLED;
 		} else {
 			const { writingPrompt, speakingPrompts } = promptsOf(sub);
-			if (hasWriting(sub)) {
+			// Hai nhánh chạy song song: pha nền nằm trong `waitUntil` (~30s sau
+			// response), nên tổng thời gian = nhánh dài nhất thay vì cộng dồn.
+			// Id job chỉ lưu một lần ở cuối để finalize không chốt `drafted`
+			// khi job Speaking chưa kịp tạo.
+			const writingBranch = async () => {
+				if (!hasWriting(sub)) return;
 				try {
 					writingId = await grader.startWriting({
 						prompt: writingPrompt,
@@ -239,30 +244,30 @@ export async function runClaimedPlacementAiGrading(
 				} catch (error) {
 					firstError ??= errorCodeOf(error);
 				}
-			}
-			if (hasSpeaking(sub)) {
+			};
+			const speakingBranch = async () => {
+				if (!hasSpeaking(sub)) return;
 				try {
 					const audio = await loadSpeakingAudio(deps.getMediaStore?.(), sub);
 					const text = audio ? (await grader.transcribe(audio)).trim() : "";
 					if (!text) {
 						firstError ??= PLACEMENT_AI_ERROR_CODES.NO_TRANSCRIPT;
-					} else {
-						// Kết quả đã chốt là thứ học viên thấy — không đổi transcript.
-						await db
-							.update(placementTestSubmission)
-							.set({ speakingTranscript: text })
-							.where(
-								and(casWhere, ne(placementTestSubmission.status, "graded")),
-							);
-						speakingId = await grader.startSpeaking({
-							prompts: speakingPrompts,
-							transcript: text,
-						});
+						return;
 					}
+					// Kết quả đã chốt là thứ học viên thấy — không đổi transcript.
+					await db
+						.update(placementTestSubmission)
+						.set({ speakingTranscript: text })
+						.where(and(casWhere, ne(placementTestSubmission.status, "graded")));
+					speakingId = await grader.startSpeaking({
+						prompts: speakingPrompts,
+						transcript: text,
+					});
 				} catch (error) {
 					firstError ??= errorCodeOf(error);
 				}
-			}
+			};
+			await Promise.all([writingBranch(), speakingBranch()]);
 		}
 	} catch (error) {
 		firstError ??= errorCodeOf(error);
