@@ -263,7 +263,7 @@ function createFiveSkillSnapshotFixture() {
 	};
 }
 
-test("Bất biến file tĩnh: không chứa '30 câu', không có questions.json tĩnh, đầy đủ UI 5 kỹ năng và 'Kết quả tạm tính'", () => {
+test("Bất biến file tĩnh: không chứa '30 câu', không có questions.json tĩnh, đầy đủ UI 5 kỹ năng và màn kết quả Reading/Listening kèm thông báo email", () => {
 	const textFiles = walkFiles(publicDir);
 	assert.ok(textFiles.length > 0);
 	for (const fileUrl of textFiles) {
@@ -306,8 +306,10 @@ test("Bất biến file tĩnh: không chứa '30 câu', không có questions.jso
 		"/public/placement-test",
 		"/public/placement-test/submissions",
 		"speaking-media",
-		"Kết quả tạm tính — Chờ chấm Writing & Speaking",
-		"Cô Đỗ Thục Mỹ sẽ trực tiếp chấm phần Writing & Speaking",
+		"Hoàn tất nộp bài — Chờ chấm Writing & Speaking",
+		"Kết quả Reading & Listening",
+		"gửi kết quả chi tiết qua email",
+		"email-grading-notice",
 		"registerWithResultBtn",
 		"speakingPlaybackAudio",
 		"video: false",
@@ -324,10 +326,17 @@ test("Bất biến file tĩnh: không chứa '30 câu', không có questions.jso
 		"speakingPlaybackVideo",
 		"speakingLiveVideo",
 		"Camera + Micro",
+		"Phân tích theo từng cấp độ câu hỏi",
+		"level-breakdown-section",
+		"provisional-hero-grid",
+		"objective-average-pct",
+		"createCefrExplorer",
+		"CEFR_EXPLORER_DATA",
+		"cefrExplorerBox",
 	]) {
 		assert.ok(
 			!testJs.includes(forbiddenToken),
-			`test.js must NOT include '${forbiddenToken}' (audio-only mode)`,
+			`test.js must NOT include '${forbiddenToken}'`,
 		);
 	}
 });

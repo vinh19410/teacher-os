@@ -9,7 +9,6 @@ import {
 	pickSupportedRecorderMime,
 	resolveReadingRenderState,
 	resolveRestoredAttemptStep,
-	resolveSpeakingStatusDisplay,
 	resolveSpeakingStepState,
 	resolveSpeakingSubmitDecision,
 	resolveSpeakingUploadMeta,
@@ -66,178 +65,6 @@ const READING_KIND_LABELS = {
 	passage: "Bài đọc hiểu",
 	cloze: "Đoạn văn điền từ",
 };
-
-const CEFR_ORDER = ["Pre-A1", "A1", "A2", "A2+", "B1", "B2", "B2+", "C1", "C2"];
-
-const CEFR_EXPLORER_DATA = [
-	{
-		cefr: "Pre-A1",
-		range: "Dưới 25%",
-		courseLabel: "Nền tảng Cơ bản",
-		audience:
-			"Người mới bắt đầu hoặc mất gốc lâu năm, cần củng cố phát âm, từ vựng và mẫu câu cơ bản.",
-		goals: [
-			"Đánh vần, phát âm đúng 44 âm IPA",
-			"Nắm vững thì hiện tại đơn, quá khứ đơn cơ bản",
-			"Nghe – phản xạ các câu chào hỏi, số đếm, giờ giấc",
-		],
-	},
-	{
-		cefr: "A1",
-		range: "25% – 44%",
-		courseLabel: "Giao tiếp 1 (Mất gốc & Nền tảng)",
-		audience:
-			"Học viên nghe hiểu từ khóa quen thuộc và đặt câu đơn, muốn nói mạch lạc hơn.",
-		goals: [
-			"Làm chủ cấu trúc câu tiếng Anh chuẩn bản ngữ",
-			"Nghe hiểu hội thoại sinh hoạt, mua sắm, đặt lịch",
-			"Viết đoạn ngắn 50–80 từ rõ ý và đúng ngữ pháp cơ bản",
-		],
-	},
-	{
-		cefr: "A2",
-		range: "45% – 64%",
-		courseLabel: "Giao tiếp 2 (Sơ trung cấp)",
-		audience:
-			"Học viên đã giao tiếp cơ bản, muốn mở rộng vốn từ và diễn đạt tự nhiên trong công việc.",
-		goals: [
-			"Thảo luận tự tin về thói quen, kế hoạch, kinh nghiệm",
-			"Đọc hiểu email ngắn, thông báo và bài báo đơn giản",
-			"Liên kết ý khi nói và viết đoạn văn trôi chảy",
-		],
-	},
-	{
-		cefr: "A2+ / B1",
-		range: "65% – 84%",
-		courseLabel: "Giao tiếp 3 / Pre-IELTS",
-		audience:
-			"Học viên có nền tảng khá, muốn chuẩn bị bước sang luyện thi IELTS học thuật.",
-		goals: [
-			"Thành thạo mệnh đề quan hệ, câu điều kiện, bị động",
-			"Đọc hiểu văn bản dài, suy luận ý tác giả",
-			"Nói và viết bày tỏ quan điểm có dẫn chứng thuyết phục",
-		],
-	},
-	{
-		cefr: "B1+",
-		range: "85% – 100%",
-		courseLabel: "IELTS Foundation / Intensive",
-		audience:
-			"Học viên nắm chắc ngữ pháp – từ vựng cốt lõi, sẵn sàng luyện chiến thuật IELTS 4 kỹ năng.",
-		goals: [
-			"Luyện chiến thuật Listening & Reading chuẩn bài thi thật",
-			"Phát triển bài viết Writing mạch lạc, từ vựng học thuật",
-			"Phản xạ Speaking trôi chảy qua cả 3 phần IELTS Speaking",
-		],
-	},
-];
-
-function createCefrExplorer(snapshotBands) {
-	const items =
-		Array.isArray(snapshotBands) && snapshotBands.length > 0
-			? snapshotBands.map((band, idx) => {
-					const fallback =
-						CEFR_EXPLORER_DATA.find(
-							(d) =>
-								d.cefr.toLowerCase() ===
-								String(band.cefr ?? "")
-									.trim()
-									.toLowerCase(),
-						) ??
-						CEFR_EXPLORER_DATA[idx] ??
-						CEFR_EXPLORER_DATA[0];
-					const advice = String(band.advice ?? "").trim();
-					return {
-						cefr: String(band.cefr ?? "").trim() || fallback.cefr,
-						range: `${band.min}% – ${band.max}%`,
-						courseLabel:
-							String(
-								band.displayCourse || band.courseLabel || band.course || "",
-							).trim() || fallback.courseLabel,
-						audience: advice || fallback.audience,
-						goals: fallback.goals,
-					};
-				})
-			: CEFR_EXPLORER_DATA;
-
-	let activeIndex = 0;
-
-	const details = el("details", {
-		id: "cefrExplorerBox",
-		className: "cefr-explorer",
-	});
-	details.appendChild(
-		el("summary", {}, [
-			"Tham khảo khung CEFR & các khóa học của cô Đỗ Thục Mỹ",
-		]),
-	);
-
-	const tabsWrap = el("div", {
-		className: "cefr-tabs",
-		role: "tablist",
-		"aria-label": "Khung tham chiếu CEFR",
-	});
-	const panel = el("div", {
-		id: "cefrDetailPanel",
-		className: "cefr-detail-panel",
-		role: "tabpanel",
-	});
-
-	function renderPanel() {
-		const item = items[activeIndex] ?? items[0];
-		for (const [idx, btn] of [...tabsWrap.children].entries()) {
-			btn.setAttribute("aria-selected", idx === activeIndex ? "true" : "false");
-		}
-		panel.replaceChildren(
-			el("div", { className: "cefr-stat-cell" }, [
-				el("span", { className: "cefr-stat-label", textContent: "Cấp độ" }),
-				el("strong", {
-					className: "cefr-stat-value",
-					textContent: `${item.cefr} (${item.range})`,
-				}),
-				el("span", { className: "cefr-stat-sub", textContent: item.audience }),
-			]),
-			el("div", { className: "cefr-stat-cell" }, [
-				el("span", {
-					className: "cefr-stat-label",
-					textContent: "Khóa học gợi ý",
-				}),
-				el("strong", {
-					className: "cefr-stat-value",
-					textContent: item.courseLabel,
-				}),
-				el(
-					"ul",
-					{ className: "cefr-ref-goals" },
-					item.goals.map((g) => el("li", { textContent: g })),
-				),
-			]),
-		);
-	}
-
-	items.forEach((item, idx) => {
-		const tabBtn = el(
-			"button",
-			{
-				type: "button",
-				className: "cefr-tab-btn",
-				role: "tab",
-				"aria-selected": idx === 0 ? "true" : "false",
-			},
-			[item.cefr],
-		);
-		tabBtn.addEventListener("click", () => {
-			activeIndex = idx;
-			renderPanel();
-		});
-		tabsWrap.appendChild(tabBtn);
-	});
-
-	renderPanel();
-	details.appendChild(tabsWrap);
-	details.appendChild(panel);
-	return details;
-}
 
 function resolveApiBase() {
 	const meta = document.querySelector('meta[name="lead-api"]');
@@ -584,6 +411,7 @@ function createApp() {
 	let isFinalizingRecording = false;
 	let speakingMediaError = "";
 	let speakingUploadError = "";
+	let speakingRetrySucceeded = false;
 	let isUploadingSpeaking = false;
 	let submitError = "";
 	let isSubmitting = false;
@@ -771,6 +599,7 @@ function createApp() {
 		unansweredConfirmState = null;
 		submitError = "";
 		speakingMediaError = "";
+		speakingRetrySucceeded = false;
 		if (nextStep !== "reading") {
 			readingBackfillNotice = false;
 		}
@@ -1052,10 +881,10 @@ function createApp() {
 				]),
 			]),
 			el("div", { className: "provisional-notice-box" }, [
-				el("strong", {}, ["Cách tính kết quả & xếp lớp chính thức: "]),
-				"Sau khi nộp bài, bạn nhận ngay ",
-				el("strong", {}, ["Kết quả tạm tính"]),
-				" cho 3 phần trắc nghiệm/điền từ. Cô Đỗ Thục Mỹ sẽ trực tiếp chấm phần Writing & Speaking và gửi kết quả xếp lớp CEFR chính thức kèm lộ trình chi tiết qua Zalo.",
+				el("strong", {}, ["Cách nhận kết quả bài kiểm tra: "]),
+				"Sau khi nộp bài, bạn xem ngay số câu đúng phần ",
+				el("strong", {}, ["Listening & Reading"]),
+				". Cô Đỗ Thục Mỹ sẽ chấm phần Writing & Speaking và gửi kết quả chi tiết qua email bạn đã đăng ký.",
 			]),
 			el("div", { className: "intro-actions" }, [
 				el(
@@ -2183,6 +2012,7 @@ function createApp() {
 		isSubmitting = true;
 		submitError = "";
 		speakingUploadError = "";
+		speakingRetrySucceeded = false;
 		render();
 
 		try {
@@ -3344,9 +3174,16 @@ function createApp() {
 			submission?.objective ?? scoreObjectiveTest(snapshot, state.answers);
 		const summaryText =
 			objective.provisionalSummary || buildProvisionalSummary(objective);
-		const writingWordCount =
-			submission?.writingWordCount ?? countWords(state.writingText);
 		const speakingStatus = submission?.speakingStatus ?? "skipped";
+		const registeredEmail = String(state.lead?.email ?? "").trim();
+
+		const formatCorrectCount = (sec) =>
+			sec &&
+			Number.isFinite(sec.correct) &&
+			Number.isFinite(sec.total) &&
+			sec.total > 0
+				? `${sec.correct}/${sec.total} câu đúng`
+				: "—";
 
 		const resultCard = el("section", {
 			id: "testResultCard",
@@ -3360,66 +3197,13 @@ function createApp() {
 					className: "provisional-badge",
 					dataset: { testid: "provisional-badge" },
 				},
-				["Kết quả tạm tính — Chờ chấm Writing & Speaking"],
+				["Hoàn tất nộp bài — Chờ chấm Writing & Speaking"],
 			),
 		);
 
 		resultCard.appendChild(
-			el("h1", { className: "display-title" }, [
-				"Kết quả tạm tính — Chờ chấm Writing & Speaking",
-			]),
+			el("h1", { className: "display-title" }, ["Kết quả Reading & Listening"]),
 		);
-
-		resultCard.appendChild(
-			el("div", { className: "teacher-grading-callout" }, [
-				el("strong", {}, ["Thông báo chấm bài chính thức: "]),
-				"Cô Đỗ Thục Mỹ sẽ trực tiếp chấm phần Writing & Speaking và gửi kết quả xếp lớp CEFR chính thức kèm lộ trình chi tiết qua Zalo.",
-			]),
-		);
-
-		// Objective headline score card (NO final official CEFR label claimed!)
-		resultCard.appendChild(
-			el("div", { className: "provisional-hero-grid" }, [
-				el("div", { className: "provisional-score-box" }, [
-					el("span", { className: "score-label" }, [
-						"Trung bình 3 phần khách quan",
-					]),
-					el(
-						"strong",
-						{
-							className: "score-big",
-							dataset: { testid: "objective-average-pct" },
-						},
-						[`${objective.averagePct}%`],
-					),
-					el("span", { className: "score-sub" }, [
-						`Đúng ${objective.totalCorrect}/${objective.totalQuestions} câu (chưa bao gồm Writing & Speaking)`,
-					]),
-				]),
-				el("div", { className: "provisional-score-box is-pending" }, [
-					el("span", { className: "score-label" }, ["Xếp lớp CEFR chính thức"]),
-					el("strong", { className: "score-pending-title" }, [
-						"Đang chờ chấm Writing & Speaking",
-					]),
-					el("span", { className: "score-sub" }, [
-						"Sau khi chấm đủ kỹ năng nói & viết, cô Mỹ sẽ chốt mức lớp phù hợp nhất.",
-					]),
-				]),
-			]),
-		);
-
-		// 3 Objective skills + Writing + Speaking status cards
-		const listeningPct =
-			objective.listening.pct === null ? "—" : `${objective.listening.pct}%`;
-		const vgPct =
-			objective.vocabGrammar.pct === null
-				? "—"
-				: `${objective.vocabGrammar.pct}%`;
-		const readingPct =
-			objective.reading.pct === null ? "—" : `${objective.reading.pct}%`;
-
-		const { label: speakingLabel, badgeClass: speakingBadgeClass } =
-			resolveSpeakingStatusDisplay(speakingStatus);
 
 		resultCard.appendChild(
 			el("div", { className: "result-skills-grid" }, [
@@ -3430,24 +3214,9 @@ function createApp() {
 						dataset: { skillResult: "listening" },
 					},
 					[
-						el("span", { className: "tile-label" }, ["1. Listening"]),
+						el("span", { className: "tile-label" }, ["Listening"]),
 						el("strong", { className: "tile-value" }, [
-							`${objective.listening.correct}/${objective.listening.total} (${listeningPct})`,
-						]),
-					],
-				),
-				el(
-					"div",
-					{
-						className: "skill-score-tile",
-						dataset: { skillResult: "vocab-grammar" },
-					},
-					[
-						el("span", { className: "tile-label" }, [
-							"2. Grammar & Vocabulary",
-						]),
-						el("strong", { className: "tile-value" }, [
-							`${objective.vocabGrammar.correct}/${objective.vocabGrammar.total} (${vgPct})`,
+							formatCorrectCount(objective.listening),
 						]),
 					],
 				),
@@ -3458,41 +3227,38 @@ function createApp() {
 						dataset: { skillResult: "reading" },
 					},
 					[
-						el("span", { className: "tile-label" }, ["3. Reading"]),
+						el("span", { className: "tile-label" }, ["Reading"]),
 						el("strong", { className: "tile-value" }, [
-							`${objective.reading.correct}/${objective.reading.total} (${readingPct})`,
-						]),
-					],
-				),
-				el(
-					"div",
-					{
-						className: "skill-score-tile",
-						dataset: { skillResult: "writing" },
-					},
-					[
-						el("span", { className: "tile-label" }, ["4. Writing"]),
-						el("strong", { className: "tile-value-sm" }, [
-							writingWordCount > 0
-								? `${writingWordCount} từ · Chờ cô chấm`
-								: "Chưa viết nội dung",
-						]),
-					],
-				),
-				el(
-					"div",
-					{
-						className: "skill-score-tile",
-						dataset: { skillResult: "speaking" },
-					},
-					[
-						el("span", { className: "tile-label" }, ["5. Speaking"]),
-						el("strong", { className: `tile-value-sm ${speakingBadgeClass}` }, [
-							speakingLabel,
+							formatCorrectCount(objective.reading),
 						]),
 					],
 				),
 			]),
+		);
+
+		const emailNoticeChildren = registeredEmail
+			? [
+					el("strong", {}, ["Thông báo chấm bài Writing & Speaking: "]),
+					"Bài làm của bạn đã được ghi nhận. Cô Đỗ Thục Mỹ sẽ chấm phần Writing & Speaking và gửi kết quả chi tiết qua email đã đăng ký: ",
+					el("strong", { dataset: { testid: "registered-email" } }, [
+						registeredEmail,
+					]),
+					".",
+				]
+			: [
+					el("strong", {}, ["Thông báo chấm bài Writing & Speaking: "]),
+					"Bài làm của bạn đã được ghi nhận. Cô Đỗ Thục Mỹ sẽ chấm phần Writing & Speaking và gửi kết quả chi tiết qua email đã đăng ký.",
+				];
+
+		resultCard.appendChild(
+			el(
+				"div",
+				{
+					className: "teacher-grading-callout",
+					dataset: { testid: "email-grading-notice" },
+				},
+				emailNoticeChildren,
+			),
 		);
 
 		// Retry Speaking Media Upload box if upload failed
@@ -3543,6 +3309,7 @@ function createApp() {
 						);
 						state.submission.speakingStatus = "uploaded";
 						state.submission.uploadToken = null;
+						speakingRetrySucceeded = true;
 						persist();
 					} catch (err) {
 						speakingUploadError =
@@ -3563,42 +3330,17 @@ function createApp() {
 				);
 			}
 			resultCard.appendChild(retryBox);
-		}
-
-		// Breakdown by CEFR level
-		if (Array.isArray(objective.byLevel) && objective.byLevel.length > 0) {
-			const sortedLevels = [...objective.byLevel].sort((a, b) => {
-				const ia = CEFR_ORDER.indexOf(a.level);
-				const ib = CEFR_ORDER.indexOf(b.level);
-				return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
-			});
-
+		} else if (speakingStatus === "uploaded" && speakingRetrySucceeded) {
 			resultCard.appendChild(
-				el("div", { className: "level-breakdown-section" }, [
-					el("h2", { className: "subsection-title" }, [
-						"Phân tích theo từng cấp độ câu hỏi",
-					]),
-					el(
-						"div",
-						{ className: "level-bars-grid" },
-						sortedLevels.map((item) =>
-							el("div", { className: "level-bar-card" }, [
-								el("div", { className: "level-bar-head" }, [
-									el("strong", { textContent: item.level }),
-									el("span", {
-										textContent: `${item.correct}/${item.total} (${item.pct}%)`,
-									}),
-								]),
-								el("div", { className: "level-bar-track" }, [
-									el("div", {
-										className: "level-bar-fill",
-										style: `width: ${Math.max(0, Math.min(100, item.pct))}%`,
-									}),
-								]),
-							]),
-						),
-					),
-				]),
+				el(
+					"div",
+					{
+						id: "speakingUploadRetrySuccess",
+						className: "consult-feedback-box",
+						role: "status",
+					},
+					[el("p", {}, ["Đã tải lên thành công bản ghi Speaking."])],
+				),
 			);
 		}
 
@@ -3620,7 +3362,7 @@ function createApp() {
 			[
 				consultSaving
 					? "Đang lưu yêu cầu tư vấn..."
-					: "Đăng ký tư vấn lộ trình kèm kết quả tạm tính",
+					: "Đăng ký tư vấn lộ trình",
 			],
 		);
 
@@ -3655,14 +3397,14 @@ function createApp() {
 					body: JSON.stringify(payload),
 				});
 				if (res.ok) {
-					consultSavedMessage = `Đã lưu yêu cầu tư vấn kèm kết quả tạm tính cho SĐT ${state.lead.phone}. Cô Đỗ Thục Mỹ sẽ chấm Writing & Speaking và gửi lộ trình chi tiết qua Zalo!`;
+					consultSavedMessage = `Đã lưu yêu cầu tư vấn cho SĐT ${state.lead.phone}. Cô Đỗ Thục Mỹ sẽ chấm phần Writing & Speaking và gửi kết quả chi tiết qua email ${registeredEmail || "đã đăng ký"}!`;
 				} else {
 					consultSavedMessage =
-						"Thông tin kết quả tạm tính đã được lưu sẵn. Bạn có thể bấm nhắn Zalo hoặc mở biểu mẫu trang chủ bên dưới để gửi thêm ghi chú.";
+						"Yêu cầu của bạn đã được ghi nhận tạm trên máy. Bạn có thể bấm nhắn Zalo cô Mỹ hoặc mở biểu mẫu trang chủ bên dưới để gửi thêm ghi chú.";
 				}
 			} catch {
 				consultSavedMessage =
-					"Thông tin kết quả tạm tính đã được lưu tạm trên máy. Bạn có thể bấm nhắn Zalo cô Mỹ hoặc mở biểu mẫu trang chủ bên dưới.";
+					"Yêu cầu của bạn đã được ghi nhận tạm trên máy. Bạn có thể bấm nhắn Zalo cô Mỹ hoặc mở biểu mẫu trang chủ bên dưới để gửi thêm ghi chú.";
 			} finally {
 				consultSaving = false;
 				render();
@@ -3709,6 +3451,7 @@ function createApp() {
 			hasRecordedAnyAnswer = false;
 			isFinalizingRecording = false;
 			speakingUploadError = "";
+			speakingRetrySucceeded = false;
 			speakingMediaError = "";
 			consultSavedMessage = "";
 			const preservedLead = { ...state.lead };
@@ -3745,9 +3488,6 @@ function createApp() {
 				),
 			);
 		}
-
-		// CEFR Reference Explorer
-		resultCard.appendChild(createCefrExplorer(snapshot?.bands));
 
 		return resultCard;
 	}

@@ -20,6 +20,7 @@ Quy ước khi cập nhật:
   - Migration `0071`, `0072` (chỉ thêm cột vào `placement_test_submission`) (#730).
 
 ### Changed
+- Tinh gọn màn hình kết quả ngay sau khi nộp bài kiểm tra đầu vào tại `/kiem-tra-dau-vao/` (`apps/profile`): chỉ hiển thị số câu đúng hai phần **Listening** và **Reading** (`X/Y câu đúng`, không hiển thị `%`) kèm thông báo chờ kết quả chấm **Writing & Speaking** gửi qua email đã đăng ký (`state.lead.email`), đồng thời gỡ bỏ khối `"Phân tích theo từng cấp độ câu hỏi"`, bảng tham khảo khung CEFR (`#cefrExplorerBox`), hộp điểm trung bình tạm tính và các thẻ trạng thái còn lại trong `test.js` / `test.css` (#734).
 - Ẩn dòng hiển thị tên file âm thanh (`🔊 <audioName>`) bên dưới trình phát `<audio controls>` trong `QuizPaper` (`packages/ui/src/components/quiz/quiz-paper.tsx`) khi có `audioSrc` ở các màn làm bài/xem lại của học viên và tab `"Làm thử"` Study Pack của giáo viên; bổ sung `aria-label="Bài nghe"`, ưu tiên hiển thị `"Đang tải file nghe…"` ngay từ render đầu khi `audioLoading || detail.hasAudio` (sau `audioError`) để tránh nháy tên file, đồng thời giữ nguyên nhánh fallback khi `!detail.hasAudio` (#732).
 
 ### CI/Infra

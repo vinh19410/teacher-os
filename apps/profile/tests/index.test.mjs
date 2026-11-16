@@ -560,14 +560,15 @@ test("internal page apps/profile/public/noi-bo/index.html is protected with noin
 	);
 });
 
-test("kiem-tra-dau-vao/test.js embeds CEFR Level Explorer in test results (#600)", () => {
+test("kiem-tra-dau-vao/test.js omits CEFR Level Explorer and level breakdown in test results", () => {
 	const testJs = readFileSync(
 		new URL("kiem-tra-dau-vao/test.js", publicDir),
 		"utf8",
 	);
-	assert.ok(testJs.includes("createCefrExplorer"));
-	assert.ok(testJs.includes("CEFR_EXPLORER_DATA"));
-	assert.ok(testJs.includes("cefrDetailPanel"));
+	assert.equal(testJs.includes("createCefrExplorer"), false);
+	assert.equal(testJs.includes("CEFR_EXPLORER_DATA"), false);
+	assert.equal(testJs.includes("cefrDetailPanel"), false);
+	assert.equal(testJs.includes("Phân tích theo từng cấp độ câu hỏi"), false);
 });
 
 test("image lightbox dialog exists with proper controls and is balanced (#600)", () => {
