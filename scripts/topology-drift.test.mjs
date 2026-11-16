@@ -101,32 +101,42 @@ test("workflow APP_DOMAIN domains agree with the prod apex constant (cookie-zone
 		"deploy.yml APP_DOMAIN must be the exact PROD_APP_DOMAIN (default cookie namespace)",
 	);
 
+	const legacyApex = topology.match(
+		/LEGACY_PROD_APP_DOMAIN\s*=\s*"([^"]+)"/,
+	)?.[1];
+	assert.ok(
+		legacyApex,
+		"LEGACY_PROD_APP_DOMAIN found in packages/infra/src/topology.ts",
+	);
+
 	const stagingAppDomain = read(
 		"../.github/workflows/deploy-staging.yml",
 	).match(/^\s*APP_DOMAIN:\s*(\S+)\s*$/m)?.[1];
 	assert.ok(
 		stagingAppDomain &&
 			stagingAppDomain !== prodApex &&
-			stagingAppDomain.endsWith(`.${prodApex}`),
-		"deploy-staging.yml APP_DOMAIN must be a non-apex member of the prod cookie zone (namespaced cookie prefix)",
+			[prodApex, legacyApex].some((zone) =>
+				stagingAppDomain.endsWith(`.${zone}`),
+			),
+		"deploy-staging.yml APP_DOMAIN must be a non-apex member of the prod or former-prod cookie zone (namespaced cookie prefix)",
 	);
 });
 
-test("topology derives landing host and frees app aliases", async () => {
-	const { resolveDomainTopology } = await import(
+test("topology leaves landing unattached on prod and frees app aliases", async () => {
+	const { PROD_APP_DOMAIN, resolveDomainTopology } = await import(
 		"../packages/infra/src/topology.ts"
 	);
-	const t = resolveDomainTopology("teacheros.io.vn");
-	assert.equal(t.landingHost, "teacheros.io.vn");
+	const t = resolveDomainTopology(PROD_APP_DOMAIN);
+	assert.equal(t.landingHost, undefined);
+	assert.deepEqual(t.landingAliases, []);
 	assert.deepEqual(t.appAliases, []);
-	assert.ok(t.landingAliases.includes("www.teacheros.io.vn"));
 });
 
-test("workflow LANDING_ORIGIN matches each stage apex", () => {
+test("workflow LANDING_ORIGIN matches the staging apex and is absent on prod", () => {
 	const prod = read("../.github/workflows/deploy.yml").match(
 		/^\s*LANDING_ORIGIN:\s*(\S+)\s*$/m,
 	)?.[1];
-	assert.equal(prod, "https://teacheros.io.vn");
+	assert.equal(prod, undefined);
 
 	const staging = read("../.github/workflows/deploy-staging.yml").match(
 		/^\s*LANDING_ORIGIN:\s*(\S+)\s*$/m,

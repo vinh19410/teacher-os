@@ -16,7 +16,7 @@ config({ path: "../../apps/web/.env" });
 config({ path: "../../apps/server/.env" });
 
 /**
- * Domain topology: set APP_DOMAIN to a bare domain (teacheros.io.vn for prod,
+ * Domain topology: set APP_DOMAIN to a bare domain (msmy.io.vn for prod,
  * staging.teacheros.io.vn for staging) to serve the app at app.<domain> and
  * the API at api.<domain> with cross-subdomain session cookies. Without
  * APP_DOMAIN (local dev only) the stack keeps its generated workers.dev URLs
@@ -155,7 +155,7 @@ const adminEmailsConfig = Config.String("ADMIN_EMAILS").pipe(
 );
 
 // Single-org theo chính sách (#513): rỗng = không giới hạn (dev/e2e/staging);
-// production bắt buộc set (fail-closed khi deploy với APP_DOMAIN=teacheros.io.vn).
+// production bắt buộc set (fail-closed khi deploy với APP_DOMAIN=msmy.io.vn).
 const teacherEmails = resolveTeacherEmails(
 	process.env.TEACHER_EMAILS,
 	process.env.APP_DOMAIN,
@@ -320,7 +320,9 @@ export default Alchemy.Stack(
 				htmlHandling: "auto-trailing-slash",
 				notFoundHandling: "none",
 			},
-			...(topology && {
+			// Prod has no landingHost (msmy.io.vn apex is the profile site), so
+			// landing stays on its generated workers.dev URL there.
+			...(topology?.landingHost && {
 				domain: {
 					name: topology.landingHost,
 					aliases: topology.landingAliases,

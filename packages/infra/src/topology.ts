@@ -1,7 +1,7 @@
 /**
  * Single source of truth for the deploy topology: one bare domain (APP_DOMAIN)
  * derives every origin, the cookie domain and the Google redirect URI —
- * teacheros.io.vn for prod, staging.teacheros.io.vn for staging. The runbook
+ * msmy.io.vn for prod, staging.teacheros.io.vn for staging. The runbook
  * never changes topology by itself — changing APP_DOMAIN is the only way.
  *
  * When APP_DOMAIN is unset (local dev) the stack keeps the generated
@@ -33,9 +33,10 @@ export interface DomainTopology {
 	/**
 	 * Namespace prefix for auth cookie names, or undefined for the default
 	 * `better-auth` namespace. The prod domain keeps the default; any OTHER
-	 * member of the prod cookie zone gets "teacheros-staging" — staging's
-	 * cookie zone nests inside prod's (Domain=.teacheros.io.vn), and same-name
-	 * cookies from the parent zone shadowed staging sessions (issue #125).
+	 * member of the prod or former-prod cookie zone gets "teacheros-staging" —
+	 * staging's cookie zone nests inside the former prod zone
+	 * (Domain=.teacheros.io.vn), and same-name cookies from the parent zone
+	 * shadowed staging sessions (issue #125).
 	 * Unrelated zones don't share a cookie zone with prod and need no prefix.
 	 */
 	authCookiePrefix: string | undefined;
@@ -47,8 +48,11 @@ export interface DomainTopology {
 	 * not present on standard CI deploy tokens (still holds true for landingAliases).
 	 */
 	appAliases: string[];
-	/** Landing page hostname: the bare APP_DOMAIN itself (prod apex). */
-	landingHost: string;
+	/**
+	 * Landing page hostname: the bare APP_DOMAIN itself on staging. Undefined
+	 * on prod, where the apex is the teacher profile and landing is not attached.
+	 */
+	landingHost: string | undefined;
 	/**
 	 * Additional hostnames attached to the landing Worker. Serves the same
 	 * content (no 301 to apex — Redirect Rules need the Rulesets API the CI
@@ -74,10 +78,17 @@ export interface DomainTopology {
 
 /** The prod apex — the only member of its cookie zone allowed to keep the
  * default auth cookie namespace. */
-export const PROD_APP_DOMAIN = "teacheros.io.vn";
+export const PROD_APP_DOMAIN = "msmy.io.vn";
 
 /** The prod teacher-profile apex (#536) — only attached when APP_DOMAIN === PROD_APP_DOMAIN. */
 export const PROD_PROFILE_DOMAIN = "msmy.io.vn";
+
+/**
+ * Former prod apex. Browsers may still hold default-namespace session cookies
+ * scoped to `.teacheros.io.vn`, and staging still lives under it, so staging
+ * keeps the prefixed namespace to avoid the shadowing from issue #125.
+ */
+export const LEGACY_PROD_APP_DOMAIN = "teacheros.io.vn";
 
 /** Auth cookie namespace assigned to every non-prod member of the prod zone. */
 export const AUTH_COOKIE_PREFIX = "teacheros-staging";
@@ -102,8 +113,10 @@ export function resolveDomainTopology(appDomain: string): DomainTopology {
 		throw new Error(`APP_DOMAIN must be lowercase, got: ${appDomain}`);
 	}
 
+	const inCookieZone = (zone: string) =>
+		domain === zone || domain.endsWith(`.${zone}`);
 	const inProdCookieZone =
-		domain === PROD_APP_DOMAIN || domain.endsWith(`.${PROD_APP_DOMAIN}`);
+		inCookieZone(PROD_APP_DOMAIN) || inCookieZone(LEGACY_PROD_APP_DOMAIN);
 	const apiOrigin = `https://api.${domain}`;
 	const appAliases: string[] = [];
 	const isProd = domain === PROD_APP_DOMAIN;
@@ -129,8 +142,9 @@ export function resolveDomainTopology(appDomain: string): DomainTopology {
 				? AUTH_COOKIE_PREFIX
 				: undefined,
 		appAliases,
-		landingHost: domain,
-		landingAliases: [`www.${domain}`],
+		// Prod apex belongs to the profile site, so landing gets no domain there.
+		landingHost: isProd ? undefined : domain,
+		landingAliases: isProd ? [] : [`www.${domain}`],
 		profileHost,
 		profileAliases,
 		profileOrigins,
