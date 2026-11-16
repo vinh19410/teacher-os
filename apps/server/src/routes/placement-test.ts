@@ -30,6 +30,7 @@ import type { Db, KernelCtx } from "../app";
 import { mediaObjectResponse } from "../lib/media-response";
 import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
 import { type PeekedStream, peekStream } from "../lib/peek-stream";
+import { resolveLeadTargetOrg } from "../lib/resolve-lead-org";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type PlacementContext = Context<Env>;
@@ -40,6 +41,7 @@ export const PLACEMENT_AUDIO_ORPHAN_TTL_MS = 24 * 60 * 60 * 1000;
 export interface PlacementTestRouteDeps {
 	getDb(): Db;
 	leadOrgId?: string;
+	teacherEmails?: string[];
 	getLibraryAudioStore?(): MediaStore | undefined;
 	runInBackground?(promise: Promise<unknown>): void;
 }
@@ -164,9 +166,9 @@ export function placementTestRoutes(deps: PlacementTestRouteDeps) {
 				row.draft !== null &&
 				(row.published === null || row.revision !== row.publishedRevision),
 		);
-		const trimmedLeadOrgId = deps.leadOrgId?.trim() ?? "";
+		const resolvedLeadOrgId = await resolveLeadTargetOrg(db, deps);
 		const isLeadOrg = Boolean(
-			trimmedLeadOrgId && trimmedLeadOrgId === ctx.orgId,
+			resolvedLeadOrgId && resolvedLeadOrgId === ctx.orgId,
 		);
 
 		const response: PlacementTeacherStateResponse = {

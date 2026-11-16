@@ -448,3 +448,364 @@ describe("leads placement-submission routes (#721)", () => {
 		).toBe("graded");
 	});
 });
+
+describe("TEACHER_EMAILS org drift cho public placement & leads (#742)", () => {
+	test("fallback đọc đề/audio từ LEAD_ORG_ID khi org giáo viên chưa phát hành, ghi submission + speaking-media vào org giáo viên, ưu tiên đề riêng sau khi phát hành", async () => {
+		const client = createClient({ url: "file::memory:" });
+		const raw = drizzle(client, { schema });
+		await migrate(raw, { migrationsFolder: MIGRATIONS_DIR });
+		const db = raw as unknown as Db;
+		const store = createMemoryMediaStore();
+		const audioStore = createMemoryMediaStore();
+
+		await db.insert(schema.organization).values([
+			{ id: "org-qa", name: "QA Org" },
+			{ id: "org-my", name: "Cô Mỹ Org" },
+		]);
+		await db.insert(schema.user).values([
+			{
+				id: "u-my",
+				name: "Cô Mỹ",
+				email: "my@teacher.vn",
+				emailVerified: false,
+				role: "teacher",
+			},
+		]);
+		await db
+			.insert(schema.membership)
+			.values([
+				{ id: "m-my", orgId: "org-my", userId: "u-my", role: "teacher" },
+			]);
+		await db.insert(schema.lead).values({
+			id: "qa-lead-1",
+			orgId: "org-qa",
+			name: "QA Old Lead",
+			phone: "0905556677",
+			email: "qa@old.local",
+			source: "placement-test",
+			status: "new",
+			submitCount: 1,
+		});
+
+		const qaAudioId = "11111111-1111-4111-8111-111111111111";
+		const qaAudioBytes = new Uint8Array([
+			0x49, 0x44, 0x33, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		]);
+		await audioStore.put(
+			`placement/org-qa/${qaAudioId}`,
+			new ReadableStream({
+				start(controller) {
+					controller.enqueue(qaAudioBytes);
+					controller.close();
+				},
+			}),
+			{ contentType: "audio/mpeg", size: qaAudioBytes.byteLength },
+		);
+		await db.insert(schema.placementTestAudio).values({
+			id: qaAudioId,
+			orgId: "org-qa",
+			objectKey: `placement/org-qa/${qaAudioId}`,
+			name: "qa-clip.mp3",
+			contentType: "audio/mpeg",
+			size: qaAudioBytes.byteLength,
+		});
+
+		const qaContent = makeSampleContent();
+		qaContent.parts[2].title = "QA Fallback Reading";
+		const qaSnapshot = buildPlacementSnapshot(qaContent, 1);
+		await db.insert(schema.placementTest).values({
+			orgId: "org-qa",
+			draft: JSON.stringify(qaContent),
+			published: JSON.stringify(qaSnapshot),
+			revision: 1,
+			publishedRevision: 1,
+			publishedVersion: 1,
+			publishedAt: new Date(),
+			updatedAt: new Date(),
+		});
+
+		const app = buildApp({
+			getDb: () => db,
+			corsOrigin: CORS_ORIGIN,
+			leadOrgId: "org-qa",
+			teacherEmails: ["my@teacher.vn"],
+			leadOrigins: [PROFILE_ORIGIN],
+			leadIpSecret: "secret",
+			getMediaStore: () => store,
+			getLibraryAudioStore: () => audioStore,
+			authHandler: async () => new Response("unused", { status: 404 }),
+			getSessionUser: async (headers) => {
+				if (headers.get("x-test-user") === "co-my") {
+					return {
+						userId: "u-my",
+						userName: "Cô Mỹ",
+						email: "my@teacher.vn",
+						emailVerified: true,
+						role: "teacher",
+					};
+				}
+				return null;
+			},
+		});
+
+		// 1. Khi org-my chưa phát hành: đọc đề và audio fallback từ org-qa.
+		const publicGet = await app.request("/public/placement-test", {
+			headers: { origin: PROFILE_ORIGIN },
+		});
+		expect(publicGet.status).toBe(200);
+		const publicJson = (await publicGet.json()) as {
+			parts: Array<{ title: string }>;
+		};
+		expect(publicJson.parts[2]?.title).toBe("QA Fallback Reading");
+
+		const audioRes = await app.request(
+			`/public/placement-test/audio/${qaAudioId}`,
+			{ headers: { origin: PROFILE_ORIGIN } },
+		);
+		expect(audioRes.status).toBe(200);
+
+		// 2. Nộp bài + speaking-media: ghi vào org-my, không gộp vào qa-lead-1.
+		const submitRes = await app.request("/public/placement-test/submissions", {
+			method: "POST",
+			headers: {
+				origin: PROFILE_ORIGIN,
+				"content-type": "application/json",
+			},
+			body: JSON.stringify({
+				lead: {
+					name: "Thí Sinh Mới",
+					phone: "0905556677",
+					email: "ts@example.com",
+				},
+				answers: {
+					listening: { "l-a1": 1 },
+					vocabGrammar: { "gv-01": 1 },
+					reading: { "r-a1": 1 },
+				},
+				writingText:
+					"Hi Ben, I live in District 9 with my sister. On weekends I go cycling.",
+				speakingMode: "upload",
+				speakingDurationSec: 30,
+			}),
+		});
+		expect(submitRes.status).toBe(201);
+		const created = (await submitRes.json()) as {
+			submissionId: string;
+			leadId: string;
+			uploadToken: string;
+		};
+		expect(created.leadId).not.toBe("qa-lead-1");
+
+		const webm = new Uint8Array([
+			0x1a, 0x45, 0xdf, 0xa3, 0x9f, 0x42, 0x86, 0x81, 0x01, 0x42, 0x82, 0x84,
+			0x77, 0x65, 0x62, 0x6d, 0x11, 0x22, 0x33, 0x44,
+		]);
+		const putMedia = await app.request(
+			`/public/placement-test/submissions/${created.submissionId}/speaking-media`,
+			{
+				method: "PUT",
+				headers: {
+					origin: PROFILE_ORIGIN,
+					"x-upload-token": created.uploadToken,
+					"x-media-filename": "speaking.webm",
+					"content-type": "video/webm",
+					"content-length": String(webm.byteLength),
+				},
+				body: webm,
+			},
+		);
+		expect(putMedia.status).toBe(200);
+
+		// 3. Giáo viên mở /api/leads chỉ thấy lead mới của org-my (không thấy qa-lead-1) và chấm chốt được.
+		const listRes = await app.request("/api/leads", {
+			headers: { "x-test-user": "co-my" },
+		});
+		expect(listRes.status).toBe(200);
+		const list = (await listRes.json()) as LeadListResponse;
+		expect(list.total).toBe(1);
+		expect(list.rows[0]?.id).toBe(created.leadId);
+		expect(list.rows[0]?.hasPlacementSubmission).toBe(true);
+
+		const gradeRes = await app.request(
+			`/api/leads/${created.leadId}/placement-submission`,
+			{
+				method: "PATCH",
+				headers: {
+					"x-test-user": "co-my",
+					origin: CORS_ORIGIN,
+					"content-type": "application/json",
+				},
+				body: JSON.stringify({
+					writingRubric: { ct: 4, or: 4, lg: 4 },
+					speakingRubric: { gv: 4, dm: 4, pr: 4, ic: 4 },
+					teacherFeedback: "Tốt.",
+				}),
+			},
+		);
+		expect(gradeRes.status).toBe(200);
+		const graded = (await gradeRes.json()) as PlacementSubmissionDetail;
+		const token = new URL(graded.resultUrl ?? "").searchParams.get("t");
+		expect(token).toBeTruthy();
+
+		const resultRes = await app.request(
+			`/public/placement-test/results/${token}`,
+		);
+		expect(resultRes.status).toBe(200);
+
+		// 4. Khi org-my phát hành đề riêng -> ưu tiên đề org-my và cô lập audio của org-qa (404).
+		const myContent = makeSampleContent();
+		const firstClip = myContent.parts[0].clips[0];
+		if (firstClip) firstClip.audioId = null;
+		myContent.parts[2].title = "Cô Mỹ Own Reading";
+		const mySnapshot = buildPlacementSnapshot(myContent, 2);
+		await db.insert(schema.placementTest).values({
+			orgId: "org-my",
+			draft: JSON.stringify(myContent),
+			published: JSON.stringify(mySnapshot),
+			revision: 1,
+			publishedRevision: 1,
+			publishedVersion: 2,
+			publishedAt: new Date(),
+			updatedAt: new Date(),
+		});
+
+		const ownGet = await app.request("/public/placement-test", {
+			headers: { origin: PROFILE_ORIGIN },
+		});
+		expect(ownGet.status).toBe(200);
+		const ownJson = (await ownGet.json()) as {
+			parts: Array<{ title: string }>;
+		};
+		expect(ownJson.parts[2]?.title).toBe("Cô Mỹ Own Reading");
+
+		const blockedQaAudio = await app.request(
+			`/public/placement-test/audio/${qaAudioId}`,
+			{ headers: { origin: PROFILE_ORIGIN } },
+		);
+		expect(blockedQaAudio.status).toBe(404);
+	});
+
+	test("giữ upload speaking-media và link kết quả hoạt động cho submission cũ ở LEAD_ORG_ID sau khi TEACHER_EMAILS kích hoạt org mới (#742)", async () => {
+		const client = createClient({ url: "file::memory:" });
+		const raw = drizzle(client, { schema });
+		await migrate(raw, { migrationsFolder: MIGRATIONS_DIR });
+		const db = raw as unknown as Db;
+		const store = createMemoryMediaStore();
+
+		await db.insert(schema.organization).values([
+			{ id: "org-qa", name: "QA Org" },
+			{ id: "org-my", name: "Cô Mỹ Org" },
+		]);
+		await db.insert(schema.user).values([
+			{
+				id: "u-my",
+				name: "Cô Mỹ",
+				email: "my@teacher.vn",
+				emailVerified: true,
+				role: "teacher",
+			},
+		]);
+
+		const qaContent = makeSampleContent();
+		const qaClip0 = qaContent.parts[0].clips[0];
+		if (qaClip0) qaClip0.audioId = null;
+		await db.insert(schema.placementTest).values({
+			orgId: "org-qa",
+			draft: JSON.stringify(qaContent),
+			published: JSON.stringify(buildPlacementSnapshot(qaContent, 1)),
+			revision: 1,
+			publishedRevision: 1,
+			publishedVersion: 1,
+			publishedAt: new Date(),
+			updatedAt: new Date(),
+		});
+
+		const app = buildApp({
+			getDb: () => db,
+			corsOrigin: CORS_ORIGIN,
+			leadOrgId: "org-qa",
+			teacherEmails: ["my@teacher.vn"],
+			leadOrigins: [PROFILE_ORIGIN],
+			leadIpSecret: "secret",
+			getMediaStore: () => store,
+			authHandler: async () => new Response("unused", { status: 404 }),
+			getSessionUser: async () => null,
+		});
+
+		// Trước khi u-my có membership: submission được tạo ở org-qa.
+		const submitRes = await app.request("/public/placement-test/submissions", {
+			method: "POST",
+			headers: {
+				origin: PROFILE_ORIGIN,
+				"content-type": "application/json",
+			},
+			body: JSON.stringify({
+				lead: {
+					name: "Học Viên Chuyển Tiếp",
+					phone: "0905123789",
+					email: "transition@example.com",
+				},
+				answers: {
+					listening: { "l-a1": 1 },
+					vocabGrammar: { "gv-01": 1 },
+					reading: { "r-a1": 1 },
+				},
+				writingText: "Hi Ben, I live in District 9 with my sister.",
+				speakingMode: "upload",
+				speakingDurationSec: 25,
+			}),
+		});
+		expect(submitRes.status).toBe(201);
+		const created = (await submitRes.json()) as {
+			submissionId: string;
+			uploadToken: string;
+		};
+
+		// Sau đó giáo viên đăng nhập -> membership org-my được tạo -> resolveLeadTargetOrg chuyển sang org-my.
+		await db.insert(schema.membership).values({
+			id: "m-my",
+			orgId: "org-my",
+			userId: "u-my",
+			role: "teacher",
+		});
+
+		const webm = new Uint8Array([
+			0x1a, 0x45, 0xdf, 0xa3, 0x9f, 0x42, 0x86, 0x81, 0x01, 0x42, 0x82, 0x84,
+			0x77, 0x65, 0x62, 0x6d, 0x11, 0x22, 0x33, 0x44,
+		]);
+		const putMedia = await app.request(
+			`/public/placement-test/submissions/${created.submissionId}/speaking-media`,
+			{
+				method: "PUT",
+				headers: {
+					origin: PROFILE_ORIGIN,
+					"x-upload-token": created.uploadToken,
+					"x-media-filename": "speaking.webm",
+					"content-type": "video/webm",
+					"content-length": String(webm.byteLength),
+				},
+				body: webm,
+			},
+		);
+		expect(putMedia.status).toBe(200);
+
+		const resultToken = "a".repeat(64);
+		await db
+			.update(schema.placementTestSubmission)
+			.set({
+				status: "graded",
+				resultToken,
+				resultPublishedAt: new Date(),
+				gradedAt: new Date(),
+				finalBandLevel: "A2",
+				finalDisplayCourse: "Level 1",
+				finalScorePct: 70,
+			})
+			.where(eq(schema.placementTestSubmission.id, created.submissionId));
+
+		const resultRes = await app.request(
+			`/public/placement-test/results/${resultToken}`,
+		);
+		expect(resultRes.status).toBe(200);
+	});
+});

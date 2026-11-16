@@ -26,6 +26,9 @@ Quy ước khi cập nhật:
 ### CI/Infra
 - `deploy-staging.yml` / `deploy.yml` truyền `OPENAI_API_KEY` (secret), `OPENAI_GRADING_MODEL`, `OPENAI_TRANSCRIBE_MODEL` (vars) vào Worker (#730).
 
+### Fixed
+- Khắc phục lỗi lệch organization giữa các endpoint công khai (`/public/leads`, `/public/placement-test/*`) với tài khoản giáo viên allowlist `TEACHER_EMAILS` khi `LEAD_ORG_ID` trỏ vào org QA cũ (`apps/server`, `docs/production-release-runbook.md`): bổ sung `resolveLeadTargetOrg` và `loadPublishedPlacementSnapshot` (`apps/server/src/lib/resolve-lead-org.ts`) giữ nguyên cầu dao fail-closed `503` khi `LEAD_ORG_ID` rỗng, tự động định tuyến lượt ghi `POST /public/leads`, `POST /public/placement-test/submissions`, `speaking-media`, `results/:token` và `notifyNewLead` về org đang hoạt động của thành viên `FINANCE_ROLES` trong `TEACHER_EMAILS` (không lọc `user.email_verified = 1` trong SQL để tương thích `AUTH_ASSUME_EMAIL_VERIFIED="true"` trên staging), fallback đọc đề và audio công khai từ `LEAD_ORG_ID` cho tới khi org giáo viên tự phát hành (cô lập audio `LEAD_ORG_ID` sau khi phát hành), không gộp/lộ lead QA cũ, và đồng bộ cờ `isLeadOrg` trên `GET /api/placement-test` (#742).
+
 ## 2026-11-15
 
 ### Changed

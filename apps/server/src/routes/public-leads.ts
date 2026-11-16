@@ -10,6 +10,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { Db } from "../app";
 import { notifyNewLead } from "../lib/lead-notify";
+import { resolveLeadTargetOrg } from "../lib/resolve-lead-org";
 
 /**
  * POST /public/leads (plan #506 phase 2, D4–D7; #534): intake công khai cho
@@ -43,6 +44,8 @@ export interface PublicLeadRouteDeps {
 	getDb(): Db;
 	/** Org đích từ env LEAD_ORG_ID — rỗng ⇒ 503 LEAD_INTAKE_DISABLED. */
 	leadOrgId?: string;
+	/** Allowlist email giáo viên (TEACHER_EMAILS) để phân giải org hoạt động (#742). */
+	teacherEmails?: string[];
 	/** Origin profile được phép gửi (LEAD_ORIGINS đã parse). */
 	leadOrigins?: string[];
 	/** Secret HMAC băm IP (BETTER_AUTH_SECRET) — không lưu IP thô (D7). */
@@ -93,8 +96,8 @@ export function publicLeadRoutes(deps: PublicLeadRouteDeps) {
 		c.header("Cache-Control", "no-store");
 
 		// (a) fail-closed: chưa cấu hình org đích ⇒ tắt intake.
-		const leadOrgId = deps.leadOrgId?.trim() ?? "";
-		if (leadOrgId.length === 0) {
+		const configuredLeadOrgId = deps.leadOrgId?.trim() ?? "";
+		if (configuredLeadOrgId.length === 0) {
 			return c.json(
 				{ error: "LEAD_INTAKE_DISABLED", code: "LEAD_INTAKE_DISABLED" },
 				503,
@@ -166,6 +169,8 @@ export function publicLeadRoutes(deps: PublicLeadRouteDeps) {
 		}
 
 		const db = deps.getDb();
+		const leadOrgId =
+			(await resolveLeadTargetOrg(db, deps)) ?? configuredLeadOrgId;
 
 		// (f) Băm IP — CF-Connecting-IP ở Workers; vắng (node/e2e) ⇒ "unknown"
 		// (mọi test gọi không header rơi vào cùng bucket, có header riêng thì

@@ -8,7 +8,6 @@ import {
 import {
 	countPlacementWords,
 	gradePlacementObjective,
-	normalizePublishedPlacementSnapshot,
 	PLACEMENT_SPEAKING_MEDIA_MAX_BYTES,
 	PLACEMENT_UPLOAD_TOKEN_TTL_MS,
 	type PlacementObjectiveResult,
@@ -22,11 +21,10 @@ import {
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { lead } from "@teacher-os/db/schema/lead";
 import {
-	placementTest,
 	placementTestAudio,
 	placementTestSubmission,
 } from "@teacher-os/db/schema/placement-test";
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { Db } from "../app";
@@ -42,6 +40,10 @@ import {
 	runPlacementAiGrading,
 	schedulePlacementAiTask,
 } from "../lib/placement-ai/run-placement-grading";
+import {
+	loadPublishedPlacementSnapshot,
+	resolveLeadTargetOrg,
+} from "../lib/resolve-lead-org";
 
 export const PLACEMENT_SUBMISSION_IP_WINDOW_MS = 15 * 60 * 1000;
 export const PLACEMENT_SUBMISSION_IP_MAX = 5;
@@ -52,6 +54,7 @@ const LEAD_DEDUPE_WINDOW_MS = 24 * 60 * 60 * 1000;
 export interface PublicPlacementTestRouteDeps {
 	getDb(): Db;
 	leadOrgId?: string;
+	teacherEmails?: string[];
 	leadOrigins?: string[];
 	leadIpSecret?: string;
 	getLibraryAudioStore?(): MediaStore | undefined;
@@ -127,14 +130,6 @@ function safeExtension(fileName: string, mime: string): string {
 	if (mime.includes("aac")) return "aac";
 	if (mime.includes("flac")) return "flac";
 	return "webm";
-}
-
-function parsePublishedSnapshot(raw: string): PlacementSnapshot | null {
-	try {
-		return normalizePublishedPlacementSnapshot(JSON.parse(raw));
-	} catch {
-		return null;
-	}
 }
 
 async function readRateLimitCounts(
@@ -270,36 +265,31 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 	);
 
 	router.get("/", async (c) => {
-		const leadOrgId = deps.leadOrgId?.trim() ?? "";
-		if (!leadOrgId) {
+		const configuredLeadOrgId = deps.leadOrgId?.trim() ?? "";
+		if (!configuredLeadOrgId) {
 			return c.json(
 				{ error: "PLACEMENT_DISABLED", code: "PLACEMENT_DISABLED" },
 				503,
 			);
 		}
 
-		const [row] = await deps
-			.getDb()
-			.select({ published: placementTest.published })
-			.from(placementTest)
-			.where(eq(placementTest.orgId, leadOrgId));
+		const db = deps.getDb();
+		const targetOrgId =
+			(await resolveLeadTargetOrg(db, deps)) ?? configuredLeadOrgId;
+		const loaded = await loadPublishedPlacementSnapshot(
+			db,
+			targetOrgId,
+			configuredLeadOrgId,
+		);
 
-		if (!row || row.published === null) {
+		if (!loaded) {
 			return c.json(
 				{ error: "PLACEMENT_NOT_PUBLISHED", code: "PLACEMENT_NOT_PUBLISHED" },
 				404,
 			);
 		}
 
-		const normalized = parsePublishedSnapshot(row.published);
-		if (!normalized) {
-			return c.json(
-				{ error: "PLACEMENT_NOT_PUBLISHED", code: "PLACEMENT_NOT_PUBLISHED" },
-				404,
-			);
-		}
-
-		return new Response(JSON.stringify(normalized), {
+		return new Response(JSON.stringify(loaded.snapshot), {
 			status: 200,
 			headers: {
 				"Content-Type": "application/json; charset=utf-8",
@@ -309,8 +299,8 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 	});
 
 	router.get("/audio/:id", async (c) => {
-		const leadOrgId = deps.leadOrgId?.trim() ?? "";
-		if (!leadOrgId) {
+		const configuredLeadOrgId = deps.leadOrgId?.trim() ?? "";
+		if (!configuredLeadOrgId) {
 			return c.json(
 				{ error: "PLACEMENT_DISABLED", code: "PLACEMENT_DISABLED" },
 				503,
@@ -330,16 +320,38 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 			return c.json({ error: "not found" }, 404);
 		}
 
-		const [row] = await deps
-			.getDb()
+		const db = deps.getDb();
+		const targetOrgId =
+			(await resolveLeadTargetOrg(db, deps)) ?? configuredLeadOrgId;
+
+		let [row] = await db
 			.select()
 			.from(placementTestAudio)
 			.where(
 				and(
 					eq(placementTestAudio.id, audioId),
-					eq(placementTestAudio.orgId, leadOrgId),
+					eq(placementTestAudio.orgId, targetOrgId),
 				),
 			);
+
+		if (!row && configuredLeadOrgId !== targetOrgId) {
+			const activeTest = await loadPublishedPlacementSnapshot(
+				db,
+				targetOrgId,
+				configuredLeadOrgId,
+			);
+			if (activeTest?.sourceOrgId === configuredLeadOrgId) {
+				[row] = await db
+					.select()
+					.from(placementTestAudio)
+					.where(
+						and(
+							eq(placementTestAudio.id, audioId),
+							eq(placementTestAudio.orgId, configuredLeadOrgId),
+						),
+					);
+			}
+		}
 
 		if (!row) {
 			return c.json({ error: "not found" }, 404);
@@ -413,8 +425,8 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 
 	router.post("/submissions", async (c) => {
 		c.header("Cache-Control", "no-store");
-		const leadOrgId = deps.leadOrgId?.trim() ?? "";
-		if (!leadOrgId) {
+		const configuredLeadOrgId = deps.leadOrgId?.trim() ?? "";
+		if (!configuredLeadOrgId) {
 			return c.json(
 				{ error: "PLACEMENT_DISABLED", code: "PLACEMENT_DISABLED" },
 				503,
@@ -473,6 +485,8 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 		}
 
 		const db = deps.getDb();
+		const leadOrgId =
+			(await resolveLeadTargetOrg(db, deps)) ?? configuredLeadOrgId;
 		const now = new Date();
 		const nowMs = now.getTime();
 		const ipWindowStartMs = nowMs - PLACEMENT_SUBMISSION_IP_WINDOW_MS;
@@ -512,29 +526,20 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 			return rateLimitResponse(preCounts);
 		}
 
-		const [testRow] = await db
-			.select({
-				published: placementTest.published,
-				publishedVersion: placementTest.publishedVersion,
-			})
-			.from(placementTest)
-			.where(eq(placementTest.orgId, leadOrgId));
+		const loadedTest = await loadPublishedPlacementSnapshot(
+			db,
+			leadOrgId,
+			configuredLeadOrgId,
+		);
 
-		if (!testRow?.published) {
+		if (!loadedTest) {
 			return c.json(
 				{ error: "PLACEMENT_NOT_PUBLISHED", code: "PLACEMENT_NOT_PUBLISHED" },
 				404,
 			);
 		}
 
-		const snapshot = parsePublishedSnapshot(testRow.published);
-		if (!snapshot) {
-			return c.json(
-				{ error: "PLACEMENT_NOT_PUBLISHED", code: "PLACEMENT_NOT_PUBLISHED" },
-				404,
-			);
-		}
-
+		const snapshot = loadedTest.snapshot;
 		const submit = parsed.data;
 		const objective = gradePlacementObjective(snapshot, submit.answers);
 		const normalizedSnapshotJson = JSON.stringify(snapshot);
@@ -586,7 +591,7 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 				submissionId,
 				leadOrgId,
 				targetLeadId: mergeCandidate.id,
-				testVersion: testRow.publishedVersion,
+				testVersion: loadedTest.publishedVersion,
 				snapshotJson: normalizedSnapshotJson,
 				answersJson,
 				objective,
@@ -669,7 +674,7 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 					submissionId,
 					leadOrgId,
 					targetLeadId: newLeadId,
-					testVersion: testRow.publishedVersion,
+					testVersion: loadedTest.publishedVersion,
 					snapshotJson: normalizedSnapshotJson,
 					answersJson,
 					objective,
@@ -740,8 +745,8 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 
 	router.put("/submissions/:id/speaking-media", async (c) => {
 		c.header("Cache-Control", "no-store");
-		const leadOrgId = deps.leadOrgId?.trim() ?? "";
-		if (!leadOrgId) {
+		const configuredLeadOrgId = deps.leadOrgId?.trim() ?? "";
+		if (!configuredLeadOrgId) {
 			return c.json(
 				{ error: "PLACEMENT_DISABLED", code: "PLACEMENT_DISABLED" },
 				503,
@@ -778,13 +783,20 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 		}
 
 		const db = deps.getDb();
+		const targetOrgId =
+			(await resolveLeadTargetOrg(db, deps)) ?? configuredLeadOrgId;
+		const allowedOrgIds =
+			configuredLeadOrgId !== targetOrgId
+				? [targetOrgId, configuredLeadOrgId]
+				: [targetOrgId];
+
 		const [sub] = await db
 			.select()
 			.from(placementTestSubmission)
 			.where(
 				and(
 					eq(placementTestSubmission.id, submissionId),
-					eq(placementTestSubmission.orgId, leadOrgId),
+					inArray(placementTestSubmission.orgId, allowedOrgIds),
 				),
 			);
 
@@ -853,7 +865,7 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 		}
 
 		const ext = safeExtension(fileName, contentType);
-		const objectKey = `placement-submissions/${leadOrgId}/${sub.id}/${crypto.randomUUID()}.${ext}`;
+		const objectKey = `placement-submissions/${sub.orgId}/${sub.id}/${crypto.randomUUID()}.${ext}`;
 		const discardObject = () => {
 			const p = store.delete(objectKey).catch(() => {});
 			deps.runInBackground?.(p);
@@ -894,7 +906,7 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 				.where(
 					and(
 						eq(placementTestSubmission.id, sub.id),
-						eq(placementTestSubmission.orgId, leadOrgId),
+						eq(placementTestSubmission.orgId, sub.orgId),
 						eq(placementTestSubmission.uploadTokenHash, sub.uploadTokenHash),
 					),
 				)
@@ -934,8 +946,8 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 				},
 				404,
 			);
-		const leadOrgId = deps.leadOrgId?.trim() ?? "";
-		if (!leadOrgId) {
+		const configuredLeadOrgId = deps.leadOrgId?.trim() ?? "";
+		if (!configuredLeadOrgId) {
 			return c.json(
 				{ error: "PLACEMENT_DISABLED", code: "PLACEMENT_DISABLED" },
 				503,
@@ -944,15 +956,22 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 		const token = (c.req.param("token") ?? "").trim().toLowerCase();
 		if (!PLACEMENT_RESULT_TOKEN_RE.test(token)) return notFound();
 
-		const [row] = await deps
-			.getDb()
+		const db = deps.getDb();
+		const targetOrgId =
+			(await resolveLeadTargetOrg(db, deps)) ?? configuredLeadOrgId;
+		const allowedOrgIds =
+			configuredLeadOrgId !== targetOrgId
+				? [targetOrgId, configuredLeadOrgId]
+				: [targetOrgId];
+
+		const [row] = await db
 			.select({ sub: placementTestSubmission, studentName: lead.name })
 			.from(placementTestSubmission)
 			.innerJoin(lead, eq(lead.id, placementTestSubmission.leadId))
 			.where(
 				and(
 					eq(placementTestSubmission.resultToken, token),
-					eq(placementTestSubmission.orgId, leadOrgId),
+					inArray(placementTestSubmission.orgId, allowedOrgIds),
 				),
 			)
 			.limit(1);

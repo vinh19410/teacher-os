@@ -863,4 +863,60 @@ describe("placement-test teacher routes (#515 phase 2)", () => {
 			[org1Listening.audioId, org1Speaking.audioId].sort(),
 		);
 	});
+
+	test("isLeadOrg phân giải theo active TEACHER_EMAILS org khi LEAD_ORG_ID lệch sang org QA khác (#742)", async () => {
+		await db.insert(schema.organization).values({
+			id: "org-qa-legacy",
+			name: "QA Legacy Org",
+		});
+
+		const driftApp = buildApp({
+			getDb: () => db,
+			corsOrigin: CORS_ORIGIN,
+			leadOrgId: "org-qa-legacy",
+			teacherEmails: ["my@test.local", "hoa@test.local"],
+			leadOrigins: [PROFILE_ORIGIN],
+			getLibraryAudioStore: () => memoryStore.store,
+			authHandler: async () => new Response("not used", { status: 404 }),
+			getSessionUser: async (headers) => {
+				const tag = headers.get("x-test-user");
+				if (tag === "teacher-1") {
+					return {
+						userId: "u-teacher",
+						userName: "Cô Mỹ",
+						email: "my@test.local",
+						emailVerified: true,
+						role: "teacher",
+					};
+				}
+				if (tag === "teacher-2") {
+					return {
+						userId: "u-org2",
+						userName: "Cô Hoa",
+						email: "hoa@test.local",
+						emailVerified: true,
+						role: "teacher",
+					};
+				}
+				return null;
+			},
+		});
+
+		const teacher1Res = await driftApp.request("/api/placement-test", {
+			headers: { "x-test-user": "teacher-1" },
+		});
+		expect(teacher1Res.status).toBe(200);
+		const teacher1State =
+			(await teacher1Res.json()) as PlacementTeacherStateResponse;
+		expect(teacher1State.isLeadOrg).toBe(true);
+
+		// teacher-2 thuộc org-2 nên vẫn nhận isLeadOrg = false vì không phải active org.
+		const teacher2Res = await driftApp.request("/api/placement-test", {
+			headers: { "x-test-user": "teacher-2" },
+		});
+		expect(teacher2Res.status).toBe(200);
+		const teacher2State =
+			(await teacher2Res.json()) as PlacementTeacherStateResponse;
+		expect(teacher2State.isLeadOrg).toBe(false);
+	});
 });
