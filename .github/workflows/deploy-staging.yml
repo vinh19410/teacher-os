@@ -73,6 +73,9 @@ jobs:
     environment: staging
     steps:
       - uses: actions/checkout@v7
+        with:
+          # Full history: the Discord beta number counts commits since the last version bump.
+          fetch-depth: 0
       - uses: ./.github/actions/setup-workspace
       - name: Deploy to Cloudflare (stage staging)
         working-directory: packages/infra
