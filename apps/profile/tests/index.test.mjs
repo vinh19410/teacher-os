@@ -48,7 +48,7 @@ test("PDF viewer iframe is cleared on every dialog close, Esc included", () => {
 test("has meta[name=lead-api] and replaceLeadApiMeta replaces content", () => {
 	assert.match(
 		html,
-		/<meta\s+name="lead-api"\s+content="https:\/\/api\.teacheros\.io\.vn"\s*\/?>/,
+		/<meta\s+name="lead-api"\s+content="https:\/\/api\.msmy\.io\.vn"\s*\/?>/,
 	);
 	const replaced = replaceLeadApiMeta(html, "http://localhost:8100");
 	assert.match(
@@ -286,7 +286,7 @@ test("header has exactly one #studentPortalLink in .nav-actions with default pro
 	assert.ok(linkMatch, "#studentPortalLink must live inside .nav-actions");
 	const attrs = linkMatch[1];
 	const label = linkMatch[2].trim();
-	assert.match(attrs, /\bhref="https:\/\/student\.teacheros\.io\.vn"/);
+	assert.match(attrs, /\bhref="https:\/\/student\.msmy\.io\.vn"/);
 	assert.match(attrs, /\brel="noopener"/);
 	assert.match(
 		attrs,
@@ -323,7 +323,7 @@ test("replaceStudentPortalHref replaces href safely, preserves attributes, escap
 
 	// Attribute-order tolerance: id before href + extra target attribute
 	const reorderedSample =
-		'<div class="nav-actions"><a id="studentPortalLink" class="btn btn-outline btn-sm" target="_self" href="https://student.teacheros.io.vn" rel="noopener">Góc học viên</a></div>';
+		'<div class="nav-actions"><a id="studentPortalLink" class="btn btn-outline btn-sm" target="_self" href="https://student.msmy.io.vn" rel="noopener">Góc học viên</a></div>';
 	const reorderedReplaced = replaceStudentPortalHref(
 		reorderedSample,
 		"http://localhost:8003",
@@ -351,9 +351,9 @@ test("replaceStudentPortalHref replaces href safely, preserves attributes, escap
 		"JAVASCRIPT:alert(1)",
 		"data:text/html,<script>alert(1)</script>",
 		"//evil.example/login",
-		"student.teacheros.io.vn",
-		"ftp://student.teacheros.io.vn",
-		"https://user:pass@student.teacheros.io.vn",
+		"student.msmy.io.vn",
+		"ftp://student.msmy.io.vn",
+		"https://user:pass@student.msmy.io.vn",
 	]) {
 		assert.throws(
 			() => replaceStudentPortalHref(reorderedSample, badUrl),
@@ -439,7 +439,7 @@ test("createProfileServer and buildProfile wire studentPortalUrl only on root in
 		const body = await res.text();
 		assert.match(
 			body,
-			/\bhref="https:\/\/student\.teacheros\.io\.vn"[^>]*\bid="studentPortalLink"|\bid="studentPortalLink"[^>]*\bhref="https:\/\/student\.teacheros\.io\.vn"/,
+			/\bhref="https:\/\/student\.msmy\.io\.vn"[^>]*\bid="studentPortalLink"|\bid="studentPortalLink"[^>]*\bhref="https:\/\/student\.msmy\.io\.vn"/,
 		);
 	} finally {
 		await new Promise((resolve) => emptyUrlServer.close(resolve));
@@ -461,7 +461,7 @@ test("createProfileServer and buildProfile wire studentPortalUrl only on root in
 		);
 		assert.match(
 			builtHome,
-			/<meta name="lead-api" content="https:\/\/api\.teacheros\.io\.vn">/,
+			/<meta name="lead-api" content="https:\/\/api\.msmy\.io\.vn">/,
 		);
 		const builtPlacement = readFileSync(
 			join(distDir, "kiem-tra-dau-vao", "index.html"),

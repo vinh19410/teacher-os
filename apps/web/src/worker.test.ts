@@ -397,19 +397,19 @@ describe("apps/web worker fetch handler", () => {
 		const cases = [
 			{
 				from: "http://teacheros.io.vn/",
-				to: "https://app.teacheros.io.vn/",
+				to: "https://app.msmy.io.vn/",
 			},
 			{
 				from: "https://teacheros.io.vn/login?returnUrl=%2Fdashboard",
-				to: "https://app.teacheros.io.vn/login?returnUrl=%2Fdashboard",
+				to: "https://app.msmy.io.vn/login?returnUrl=%2Fdashboard",
 			},
 			{
 				from: "http://www.teacheros.io.vn/",
-				to: "https://app.teacheros.io.vn/",
+				to: "https://app.msmy.io.vn/",
 			},
 			{
 				from: "https://www.teacheros.io.vn/classes",
-				to: "https://app.teacheros.io.vn/classes",
+				to: "https://app.msmy.io.vn/classes",
 			},
 			{
 				from: "http://staging.teacheros.io.vn/",
@@ -421,7 +421,7 @@ describe("apps/web worker fetch handler", () => {
 			},
 			{
 				from: "https://www.app.teacheros.io.vn/",
-				to: "https://app.teacheros.io.vn/",
+				to: "https://app.msmy.io.vn/",
 			},
 		];
 

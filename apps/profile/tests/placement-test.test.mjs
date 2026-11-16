@@ -105,7 +105,7 @@ test("HTML tĩnh của trang chủ và trang kiểm tra đầu vào không còn 
 	assert.equal(/30\s*câu/i.test(testPageHtml), false);
 	assert.match(
 		testPageHtml,
-		/<meta\s+name="lead-api"\s+content="https:\/\/api\.teacheros\.io\.vn"\s*\/?>/,
+		/<meta\s+name="lead-api"\s+content="https:\/\/api\.msmy\.io\.vn"\s*\/?>/,
 	);
 	assert.match(
 		testPageHtml,
