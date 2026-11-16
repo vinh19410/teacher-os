@@ -91,29 +91,67 @@
 	text-underline-offset: 4px;
 }
 
+/*
+ * Màu loại lỗi khớp token `--class-*` của app giáo viên (packages/ui
+ * globals.css, light) để giáo viên và học viên nói cùng một màu:
+ * grammar = class-5, vocabulary = class-1, spelling = class-3,
+ * coherence = class-4, pronunciation = class-2.
+ */
 .err-grammar {
-	background: var(--sky);
-	text-decoration: underline solid var(--blue);
+	--err: oklch(0.55 0.19 5);
+	text-decoration: underline solid var(--err);
 }
 
 .err-vocabulary {
-	background: var(--cream);
-	text-decoration: underline dashed var(--rust);
+	--err: oklch(0.53 0.16 255);
+	text-decoration: underline dashed var(--err);
 }
 
 .err-spelling {
-	background: var(--mint);
-	text-decoration: underline wavy var(--teal);
+	--err: oklch(0.55 0.14 65);
+	text-decoration: underline wavy var(--err);
 }
 
 .err-coherence {
-	background: var(--slate);
-	text-decoration: underline dotted var(--ink);
+	--err: oklch(0.52 0.17 295);
+	text-decoration: underline dotted var(--err);
 }
 
 .err-pronunciation {
-	background: var(--butter);
-	text-decoration: underline double var(--amber);
+	--err: oklch(0.52 0.12 185);
+	text-decoration: underline double var(--err);
+}
+
+.err-border-grammar {
+	--err: oklch(0.55 0.19 5);
+}
+
+.err-border-vocabulary {
+	--err: oklch(0.53 0.16 255);
+}
+
+.err-border-spelling {
+	--err: oklch(0.55 0.14 65);
+}
+
+.err-border-coherence {
+	--err: oklch(0.52 0.17 295);
+}
+
+.err-border-pronunciation {
+	--err: oklch(0.52 0.12 185);
+}
+
+[class*="err-border-"] {
+	border-left-color: var(--err);
+}
+
+.err-grammar,
+.err-vocabulary,
+.err-spelling,
+.err-coherence,
+.err-pronunciation {
+	background: color-mix(in oklab, var(--err), transparent 88%);
 }
 
 .err-num {
@@ -180,26 +218,6 @@ a.err-num:hover {
 
 .error-card:target {
 	background: var(--butter);
-}
-
-.err-border-grammar {
-	border-left-color: var(--blue);
-}
-
-.err-border-vocabulary {
-	border-left-color: var(--rust);
-}
-
-.err-border-spelling {
-	border-left-color: var(--teal);
-}
-
-.err-border-coherence {
-	border-left-color: var(--ink);
-}
-
-.err-border-pronunciation {
-	border-left-color: var(--amber);
 }
 
 .error-card-head {
