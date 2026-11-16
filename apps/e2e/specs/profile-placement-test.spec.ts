@@ -641,20 +641,75 @@ test.describe
 
 			const resultCard = page.locator("#testResultCard");
 			await expect(resultCard).toBeVisible();
-			await expect(page.locator(".level-breakdown-section")).toBeVisible();
 			await expect(page.getByTestId("provisional-badge")).toContainText(
-				"Kết quả tạm tính — Chờ chấm Writing & Speaking",
+				"Hoàn tất nộp bài — Chờ chấm Writing & Speaking",
 			);
-			await expect(page.getByTestId("objective-average-pct")).toHaveText("85%");
-			await expect(
-				page.locator('[data-skill-result="speaking"]'),
-			).toContainText("Đã gửi file ghi âm · Chờ cô chấm");
+			await expect(resultCard.locator("h1")).toHaveText(
+				"Kết quả Reading & Listening",
+			);
+			await expect(resultCard.locator(".skill-score-tile")).toHaveCount(2);
 
+			const listeningTile = page.locator('[data-skill-result="listening"]');
+			await expect(listeningTile).toContainText("Listening");
+			await expect(listeningTile).toContainText("13/13 câu đúng");
+			await expect(listeningTile).not.toContainText("%");
+
+			const readingTile = page.locator('[data-skill-result="reading"]');
+			await expect(readingTile).toContainText("Reading");
+			await expect(readingTile).toContainText("12/15 câu đúng");
+			await expect(readingTile).not.toContainText("%");
+
+			const emailNotice = page.getByTestId("email-grading-notice");
+			await expect(emailNotice).toBeVisible();
+			await expect(page.getByTestId("registered-email")).toHaveText(email);
+
+			await expect(page.locator(".provisional-hero-grid")).toHaveCount(0);
+			await expect(page.getByTestId("objective-average-pct")).toHaveCount(0);
+			await expect(
+				page.locator('[data-skill-result="vocab-grammar"]'),
+			).toHaveCount(0);
+			await expect(page.locator('[data-skill-result="writing"]')).toHaveCount(
+				0,
+			);
+			await expect(page.locator('[data-skill-result="speaking"]')).toHaveCount(
+				0,
+			);
+			await expect(page.locator(".level-breakdown-section")).toHaveCount(0);
+			await expect(page.locator("#cefrExplorerBox")).toHaveCount(0);
+			await expect(resultCard).not.toContainText(
+				"Phân tích theo từng cấp độ câu hỏi",
+			);
+
+			await expect(page.locator("#zaloResultCta")).toBeVisible();
+			await expect(page.locator("#registerWithResultBtn")).toBeEnabled();
+			await expect(page.locator("#retryTestBtn")).toBeEnabled();
+
+			const potIssue = process.env.CAPTURE_POT_ISSUE?.trim();
+			const resultViewports = [
+				...VIEWPORTS,
+				{ width: 320, height: 568, label: "reflow-320x568" },
+			] as const;
+			for (const vp of resultViewports) {
+				await page.setViewportSize({ width: vp.width, height: vp.height });
+				await page.evaluate(() =>
+					window.scrollTo({ top: 0, behavior: "instant" }),
+				);
+				const overflow = await page.evaluate(
+					() =>
+						document.documentElement.scrollWidth >
+						document.documentElement.clientWidth,
+				);
+				expect(overflow, `no result horizontal overflow at ${vp.label}`).toBe(
+					false,
+				);
+				if (potIssue && vp.label !== "reflow-320x568") {
+					await page.screenshot({
+						path: reportPath(`${potIssue}-entry-test-result-${vp.label}.png`),
+						fullPage: false,
+					});
+				}
+			}
 			await page.setViewportSize({ width: 1440, height: 900 });
-			await page.screenshot({
-				path: reportPath("727-profile-provisional-result-desktop-1440x900.png"),
-				fullPage: false,
-			});
 
 			expect(await countLeads()).toBe(leadsBefore + 1);
 			{
@@ -1060,10 +1115,26 @@ test.describe
 			await expect(confirmBox).toBeVisible();
 			await page.locator("#confirmSubmitBtn").click();
 
-			await expect(page.locator("#testResultCard")).toBeVisible();
+			const skippedResultCard = page.locator("#testResultCard");
+			await expect(skippedResultCard).toBeVisible();
+			await expect(skippedResultCard.locator(".skill-score-tile")).toHaveCount(
+				2,
+			);
 			await expect(
-				page.locator('[data-skill-result="speaking"]'),
-			).toContainText("Đã bỏ qua phần Speaking");
+				page.locator('[data-skill-result="listening"]'),
+			).toContainText("0/13 câu đúng");
+			await expect(page.locator('[data-skill-result="reading"]')).toContainText(
+				"0/15 câu đúng",
+			);
+			await expect(page.getByTestId("email-grading-notice")).toBeVisible();
+			await expect(page.locator('[data-skill-result="speaking"]')).toHaveCount(
+				0,
+			);
+			await expect(page.locator(".level-breakdown-section")).toHaveCount(0);
+
+			await page.locator("#retryTestBtn").click();
+			await expect(page.locator("#startTestBtn")).toBeVisible();
+			await expect(skippedResultCard).toHaveCount(0);
 		});
 
 		test("snapshot v1 cũ tự backfill 6 bài đọc Reading (15 câu), Writing và 8 câu Speaking trên 3 viewport", async ({
