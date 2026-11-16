@@ -305,11 +305,7 @@ function readBeforeShaFromEnv(env) {
 	return "";
 }
 
-export function resolveGitReleaseContext({
-	cwd = process.cwd(),
-	env = process.env,
-	execGitImpl,
-} = {}) {
+function createGitRunners(cwd, execGitImpl) {
 	const execGit =
 		execGitImpl ??
 		((args) =>
@@ -318,7 +314,6 @@ export function resolveGitReleaseContext({
 				encoding: "utf8",
 				stdio: ["ignore", "pipe", "pipe"],
 			}));
-
 	const tryExecGit = (args) => {
 		try {
 			return execGit(args);
@@ -326,6 +321,66 @@ export function resolveGitReleaseContext({
 			return null;
 		}
 	};
+	return { execGit, tryExecGit };
+}
+
+function escapeRegExp(text) {
+	return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Beta build number that restarts at 1 whenever package.json gets a new
+ * version: the count of first-parent commits on the deployed branch since the
+ * commit that introduced the current version (the merge that brought the bump
+ * in counts as build 1). Returns null when history cannot answer (shallow
+ * clone, version never committed) so the caller can fall back to the run number.
+ */
+export function resolveBetaBuildNumber({
+	version,
+	headSha = "HEAD",
+	cwd = process.cwd(),
+	execGitImpl,
+} = {}) {
+	const cleanVersion = String(version ?? "").trim();
+	if (!cleanVersion) return null;
+	const { tryExecGit } = createGitRunners(cwd, execGitImpl);
+
+	const bumpSha = String(
+		tryExecGit([
+			"log",
+			"-1",
+			"--format=%H",
+			"--pickaxe-regex",
+			`-S"version"[[:space:]]*:[[:space:]]*"${escapeRegExp(cleanVersion)}"`,
+			headSha,
+			"--",
+			"package.json",
+		]) ?? "",
+	).trim();
+	if (!HEX40_RE.test(bumpSha)) return null;
+
+	// Builds = first-parent commits of the branch that already contain the bump.
+	const descendantsOutput = tryExecGit([
+		"rev-list",
+		"--ancestry-path",
+		`${bumpSha}..${headSha}`,
+	]);
+	const firstParentOutput = tryExecGit(["rev-list", "--first-parent", headSha]);
+	if (descendantsOutput === null || firstParentOutput === null) return null;
+	const shaList = (output) => String(output).split(/\s+/).filter(Boolean);
+	const containsBump = new Set([...shaList(descendantsOutput), bumpSha]);
+	const buildNumber = shaList(firstParentOutput).filter((sha) =>
+		containsBump.has(sha),
+	).length;
+	return buildNumber > 0 ? buildNumber : null;
+}
+
+export function resolveGitReleaseContext({
+	cwd = process.cwd(),
+	env = process.env,
+	execGitImpl,
+} = {}) {
+	const { execGit, tryExecGit } = createGitRunners(cwd, execGitImpl);
 
 	const envSha = String(env.GITHUB_SHA ?? "").trim();
 	const headSha = HEX40_RE.test(envSha)
@@ -568,7 +623,16 @@ export async function runNotifyDiscordChangelog(
 	const payload = buildDiscordReleasePayload({
 		stage,
 		version: pkg.version,
-		runNumber: env.GITHUB_RUN_NUMBER || "local",
+		runNumber:
+			(stage === "staging"
+				? resolveBetaBuildNumber({
+						version: pkg.version,
+						headSha: gitCtx.headSha,
+						cwd,
+						execGitImpl,
+					})
+				: null) ??
+			(env.GITHUB_RUN_NUMBER || "local"),
 		repository: env.GITHUB_REPOSITORY || "vinh19410/teacher-os",
 		serverUrl: env.GITHUB_SERVER_URL || "https://github.com",
 		beforeSha: gitCtx.beforeSha,

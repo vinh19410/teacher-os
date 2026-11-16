@@ -14,6 +14,7 @@ import {
 	postDiscordWebhook,
 	RELEASE_AUTHOR_NAME,
 	redactSecrets,
+	resolveBetaBuildNumber,
 	resolveGitReleaseContext,
 	runNotifyDiscordChangelog,
 	STAGING_COLOR,
@@ -570,5 +571,59 @@ test("resolveGitReleaseContext resolves commits across shallow clone with before
 		);
 	} finally {
 		rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test("resolveBetaBuildNumber restarts at 1 when package.json version is bumped", () => {
+	const repo = mkdtempSync(join(tmpdir(), "discord-beta-number-"));
+	try {
+		const git = (args) =>
+			execFileSync("git", args, {
+				cwd: repo,
+				encoding: "utf8",
+				env: {
+					...process.env,
+					GIT_AUTHOR_NAME: "Test Bot",
+					GIT_AUTHOR_EMAIL: "bot@example.com",
+					GIT_COMMITTER_NAME: "Test Bot",
+					GIT_COMMITTER_EMAIL: "bot@example.com",
+				},
+			}).trim();
+		const writePkg = (version) =>
+			writeFileSync(
+				join(repo, "package.json"),
+				`${JSON.stringify({ name: "teacher-os", version }, null, "\t")}\n`,
+			);
+		const commitFile = (name, message) => {
+			writeFileSync(join(repo, name), `${message}\n`);
+			git(["add", "."]);
+			git(["commit", "-m", message]);
+		};
+		const beta = (version) => resolveBetaBuildNumber({ version, cwd: repo });
+
+		git(["init", "-b", "develop"]);
+		writePkg("0.0.22");
+		commitFile("a.txt", "chore(release): v0.0.22");
+		assert.equal(beta("0.0.22"), 1);
+		commitFile("b.txt", "feat: one");
+		commitFile("c.txt", "feat: two");
+		assert.equal(beta("0.0.22"), 3);
+
+		// Bump arrives through a merged PR branch: the merge is build 1.
+		git(["checkout", "-b", "release/0.0.23"]);
+		writePkg("0.0.23");
+		commitFile("d.txt", "chore(release): v0.0.23");
+		commitFile("e.txt", "fix: on release branch");
+		git(["checkout", "develop"]);
+		git(["merge", "--no-ff", "release/0.0.23", "-m", "Merge pull request #1"]);
+		assert.equal(beta("0.0.23"), 1);
+		commitFile("f.txt", "feat: after bump");
+		assert.equal(beta("0.0.23"), 2);
+
+		// Version never committed -> null so the caller falls back to run number.
+		assert.equal(beta("9.9.9"), null);
+		assert.equal(beta(""), null);
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
 	}
 });
