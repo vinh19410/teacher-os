@@ -142,7 +142,7 @@
 	--err: oklch(0.52 0.12 185);
 }
 
-[class*="err-border-"] {
+.error-card[class*="err-border-"] {
 	border-left-color: var(--err);
 }
 
