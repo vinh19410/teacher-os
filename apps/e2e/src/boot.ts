@@ -48,6 +48,12 @@ const ADMIN_EMAILS = (process.env.E2E_ADMIN_EMAILS ?? "admin@e2e.local")
 	.split(",")
 	.map((s) => s.trim())
 	.filter((s) => s.length > 0);
+// #742: allowlist email giáo viên động trong E2E (rỗng mặc định để các spec
+// signUpViaApi cũ không bị chặn; spec drift đặt rồi reset trong beforeEach/afterEach).
+const runtimeTeacherEmails: string[] = (process.env.E2E_TEACHER_EMAILS ?? "")
+	.split(",")
+	.map((s) => s.trim())
+	.filter((s) => s.length > 0);
 // Portal origin is the role-classification student origin (plan #260,
 // red-team #7): requests carrying it classify as student instead of
 // failing the better-auth origin check.
@@ -141,6 +147,7 @@ const auth = createAuth({
 		`http://localhost:${Number(process.env.E2E_ADMIN_PORT ?? 8004)}`,
 	],
 	adminEmails: ADMIN_EMAILS,
+	teacherEmails: runtimeTeacherEmails,
 	secret: "e2e-local-secret-0123456789abcdef0123456789abcdef",
 	baseURL: `http://localhost:${PORT}`,
 	googleClientId: "e2e-dummy",
@@ -212,6 +219,7 @@ const app = buildApp({
 	// cố định) — E2E chấm nháp Writing/Speaking offline, không gọi OpenAI.
 	getPlacementAiGrader: () => placementAiGrader,
 	adminEmails: ADMIN_EMAILS,
+	teacherEmails: runtimeTeacherEmails,
 	adminOrigins: [
 		`http://localhost:${Number(process.env.E2E_ADMIN_PORT ?? 8004)}`,
 	],
@@ -314,6 +322,26 @@ app.post("/__e2e/study-pack-shift", async (c) => {
 		args,
 	});
 	return c.json({ ok: true, rowsAffected: res.rowsAffected });
+});
+
+// #742 E2E-only helper: bật/tắt allowlist TEACHER_EMAILS trong lúc chạy spec
+// drift org mà không cần khởi động lại boot:api (luôn reset về [] ở afterEach).
+app.post("/__e2e/teacher-emails", async (c) => {
+	const raw: unknown = await c.req.json().catch(() => null);
+	if (!raw || typeof raw !== "object" || !("emails" in raw)) {
+		return c.json({ error: "invalid-body" }, 400);
+	}
+	const emails = Array.isArray(raw.emails)
+		? raw.emails
+				.filter((item): item is string => typeof item === "string")
+				.map((item) => item.trim())
+				.filter((item) => item.length > 0)
+		: null;
+	if (!emails) {
+		return c.json({ error: "invalid-emails" }, 400);
+	}
+	runtimeTeacherEmails.splice(0, runtimeTeacherEmails.length, ...emails);
+	return c.json({ ok: true, teacherEmails: [...runtimeTeacherEmails] });
 });
 
 // Fake SePay hosted-link pages (#320) ride the same API server — the iframe

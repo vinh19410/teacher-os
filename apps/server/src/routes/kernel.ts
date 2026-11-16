@@ -161,6 +161,7 @@ export function kernelRoutes(deps: {
 	getLibraryAudioStore?(): MediaStore | undefined;
 	getMaterialsStore?(): MediaStore | undefined;
 	leadOrgId?: string;
+	teacherEmails?: string[];
 	corsOrigin?: string | string[];
 	corsOrigins?: string | string[];
 	/** #454 phase 3: thông báo qua queue — route phát sau khi ghi thành công. */
