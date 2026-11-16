@@ -299,7 +299,11 @@ test.describe("Teacher grades Writing/Speaking submissions", () => {
 		// Summary là full-page navigation (window.location.assign) — đợi URL
 		// sang /attempt/<id> trước khi parse, nếu không vẫn đọc được URL take
 		// screen (/learn/quizzes/<assignmentId>) và nhận nhầm assignment id.
-		await sp.waitForURL(/\/learn\/quizzes\/attempt\//, { timeout: 30_000 });
+		// Poll URL thay vì waitForURL: nếu lượt điều hướng đầu bị lượt sau huỷ
+		// (ERR_ABORTED), waitForURL fail dù trang vẫn tới đúng summary.
+		await expect(sp).toHaveURL(/\/learn\/quizzes\/attempt\//, {
+			timeout: 30_000,
+		});
 		const speakingAttemptId = new URL(sp.url()).pathname.split("/").pop() ?? "";
 
 		// Teacher opens the grading page from the class assignments tab.
@@ -371,7 +375,9 @@ test.describe("Teacher grades Writing/Speaking submissions", () => {
 		});
 		await expect(guard).toBeVisible();
 		await guard.getByRole("button", { name: "Nộp bài" }).click();
-		await sp.waitForURL(/\/learn\/quizzes\/attempt\//, { timeout: 30_000 });
+		await expect(sp).toHaveURL(/\/learn\/quizzes\/attempt\//, {
+			timeout: 30_000,
+		});
 		const practiceAttemptId = new URL(sp.url()).pathname.split("/").pop() ?? "";
 
 		// 2) Học viên vào Lịch sử thấy trạng thái thống nhất "Đã nộp — Đang
