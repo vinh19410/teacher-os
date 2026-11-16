@@ -305,6 +305,12 @@ describe("StudyPackItemViewer", () => {
 			);
 		});
 
+		const simAudioTake = await screen.findByTestId("quiz-audio-player");
+		expect(simAudioTake.getAttribute("src")).toBe("blob:audio-sim");
+		expect(simAudioTake.getAttribute("aria-label")).toBe("Bài nghe");
+		expect(screen.queryByText(/library-part1\.mp3/)).toBeNull();
+		expect(screen.queryByText(/🔊/)).toBeNull();
+
 		// Answer question B (Library) and submit simulation
 		const libraryRadio = await screen.findByRole("radio", { name: /Library/ });
 		fireEvent.click(libraryRadio);
@@ -316,6 +322,10 @@ describe("StudyPackItemViewer", () => {
 		expect(
 			screen.getByText("Receptionist: Welcome to Central Library."),
 		).toBeTruthy();
+		const simAudioReview = screen.getByTestId("quiz-audio-player");
+		expect(simAudioReview.getAttribute("aria-label")).toBe("Bài nghe");
+		expect(screen.queryByText(/library-part1\.mp3/)).toBeNull();
+		expect(screen.queryByText(/🔊/)).toBeNull();
 	});
 
 	it("shows clear empty/notice state for non-auto skills in Làm thử tab and allows switching back", async () => {

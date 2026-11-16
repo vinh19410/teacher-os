@@ -19,6 +19,9 @@ Quy ước khi cập nhật:
   - Chốt lần đầu sinh link kết quả công khai `/kiem-tra-dau-vao/ket-qua/?t=<token>` và gửi email cho học viên (fail-open); học viên chỉ thấy kết quả sau khi giáo viên chốt.
   - Migration `0071`, `0072` (chỉ thêm cột vào `placement_test_submission`) (#730).
 
+### Changed
+- Ẩn dòng hiển thị tên file âm thanh (`🔊 <audioName>`) bên dưới trình phát `<audio controls>` trong `QuizPaper` (`packages/ui/src/components/quiz/quiz-paper.tsx`) khi có `audioSrc` ở các màn làm bài/xem lại của học viên và tab `"Làm thử"` Study Pack của giáo viên; bổ sung `aria-label="Bài nghe"`, ưu tiên hiển thị `"Đang tải file nghe…"` ngay từ render đầu khi `audioLoading || detail.hasAudio` (sau `audioError`) để tránh nháy tên file, đồng thời giữ nguyên nhánh fallback khi `!detail.hasAudio` (#732).
+
 ### CI/Infra
 - `deploy-staging.yml` / `deploy.yml` truyền `OPENAI_API_KEY` (secret), `OPENAI_GRADING_MODEL`, `OPENAI_TRANSCRIBE_MODEL` (vars) vào Worker (#730).
 

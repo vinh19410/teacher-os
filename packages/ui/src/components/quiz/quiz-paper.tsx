@@ -206,27 +206,21 @@ export function QuizPaper({
 			{skill === "listening" && (
 				<div className="flex flex-col gap-2 rounded-md border border-border bg-muted p-3 text-sm">
 					{audioSrc ? (
-						<>
-							{/* biome-ignore lint/a11y/useMediaCaption: Listening exam audio; transcript unlocks after submit (#702) */}
-							<audio
-								controls
-								preload="metadata"
-								src={audioSrc}
-								className="w-full"
-								data-testid="quiz-audio-player"
-							/>
-							{detail.audioName.trim() && (
-								<p className="text-muted-foreground text-xs">
-									🔊 {detail.audioName.trim()}
-								</p>
-							)}
-						</>
-					) : audioLoading ? (
-						<p className="text-muted-foreground text-sm">Đang tải file nghe…</p>
+						// biome-ignore lint/a11y/useMediaCaption: Listening exam audio; transcript unlocks after submit (#702)
+						<audio
+							controls
+							preload="metadata"
+							src={audioSrc}
+							aria-label="Bài nghe"
+							className="w-full"
+							data-testid="quiz-audio-player"
+						/>
 					) : audioError ? (
 						<p role="alert" className="text-danger text-sm">
 							Không tải được file nghe.
 						</p>
+					) : audioLoading || detail.hasAudio ? (
+						<p className="text-muted-foreground text-sm">Đang tải file nghe…</p>
 					) : (
 						<p>🔊 {detail.audioName.trim() || "Chưa đính file nghe"}</p>
 					)}
