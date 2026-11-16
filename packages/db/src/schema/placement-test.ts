@@ -132,6 +132,13 @@ export const placementTestSubmission = sqliteTable(
 		aiWritingJson: text("ai_writing_json"),
 		/** JSON `PlacementAiSkillDraft` Speaking. */
 		aiSpeakingJson: text("ai_speaking_json"),
+		/**
+		 * Id job OpenAI Responses (background mode) đang chạy cho lượt chấm
+		 * hiện tại — finalize lười poll các id này khi giáo viên mở bài. Null
+		 * khi kỹ năng đó không có job hoặc job đã có kết quả.
+		 */
+		aiWritingResponseId: text("ai_writing_response_id"),
+		aiSpeakingResponseId: text("ai_speaking_response_id"),
 		/** Transcript lời nói Speaking (AI chuyển từ audio). */
 		speakingTranscript: text("speaking_transcript").notNull().default(""),
 		/** JSON `PlacementAiError[]` giáo viên chốt — thứ học viên thấy. */

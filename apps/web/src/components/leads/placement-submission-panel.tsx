@@ -110,6 +110,15 @@ function hydrationKeyOf(s: PlacementSubmissionDetail): string {
 	return `${s.id}:${s.gradedAt ?? "pending"}:${s.aiDraftedAt ?? "no-ai"}`;
 }
 
+/** Bài có nguồn để AI chấm (bài viết hoặc file nói đã upload/transcript). */
+function hasAiSourceOf(s: PlacementSubmissionDetail): boolean {
+	return (
+		s.writingText.trim().length > 0 ||
+		s.speakingStatus === "uploaded" ||
+		s.speakingTranscript.trim().length > 0
+	);
+}
+
 const EMAIL_STATUS_TEXT = {
 	sent: "Đã gửi email kết quả cho học viên.",
 	failed: "Gửi email kết quả lỗi — hãy gửi link qua Zalo.",
@@ -265,6 +274,11 @@ function PlacementSubmissionBody({
 	const [teacherFeedback, setTeacherFeedback] = useState(
 		() => submission.teacherFeedback,
 	);
+	// Giáo viên đã sửa form (rubric/lỗi/nhận xét) kể từ lần hydrate gần nhất.
+	const [dirty, setDirty] = useState(false);
+	// Nháp AI mới về khi form đang sửa → chờ giáo viên bấm "Áp dụng nháp AI".
+	const [draftPending, setDraftPending] = useState(false);
+	const touch = () => setDirty(true);
 
 	// Media playback qua Blob URL với credentials: "include" (hỗ trợ cross-origin web<->api dev/prod)
 	const [mediaBlobUrl, setMediaBlobUrl] = useState<string | null>(null);
@@ -275,11 +289,29 @@ function PlacementSubmissionBody({
 	const [copiedLink, setCopiedLink] = useState(false);
 
 	// Khởi tạo lại form khi đổi bài, khi vừa chốt, hoặc khi nháp AI mới về.
-	const hydratedKeyRef = useRef(hydrationKeyOf(submission));
+	// Nháp AI mới về lúc form đang sửa → KHÔNG ghi đè, chỉ mời áp dụng.
+	const hydratedRef = useRef({
+		key: hydrationKeyOf(submission),
+		id: submission.id,
+		gradedAt: submission.gradedAt,
+	});
 	useEffect(() => {
 		const hydrationKey = hydrationKeyOf(submission);
-		if (hydratedKeyRef.current === hydrationKey) return;
-		hydratedKeyRef.current = hydrationKey;
+		const prev = hydratedRef.current;
+		if (prev.key === hydrationKey) return;
+		hydratedRef.current = {
+			key: hydrationKey,
+			id: submission.id,
+			gradedAt: submission.gradedAt,
+		};
+		const onlyNewAiDraft =
+			prev.id === submission.id && prev.gradedAt === submission.gradedAt;
+		if (onlyNewAiDraft && dirty) {
+			setDraftPending(true);
+			return;
+		}
+		setDirty(false);
+		setDraftPending(false);
 		const next = initialPlacementGrading(submission);
 		setWritingRubric(next.writingRubric);
 		setIncludeSpeaking(next.includeSpeaking);
@@ -287,7 +319,30 @@ function PlacementSubmissionBody({
 		setWritingErrors(next.writingErrors);
 		setSpeakingErrors(next.speakingErrors);
 		setTeacherFeedback(submission.teacherFeedback);
-	}, [submission]);
+	}, [submission, dirty]);
+
+	/** Thay toàn bộ rubric + lỗi bằng nháp AI, giữ nhận xét giáo viên. */
+	const applyAiDraft = () => {
+		if (submission.aiWriting) {
+			setWritingRubric(submission.aiWriting.rubric);
+			setWritingErrors(
+				locatePlacementErrors(
+					submission.writingText,
+					submission.aiWriting.errors,
+				),
+			);
+		}
+		if (submission.aiSpeaking) {
+			setSpeakingRubric(submission.aiSpeaking.rubric);
+			setSpeakingErrors(
+				locatePlacementErrors(
+					submission.speakingTranscript,
+					submission.aiSpeaking.errors,
+				),
+			);
+		}
+		setDraftPending(false);
+	};
 
 	useEffect(() => {
 		const resolved = resolvePlacementSubmissionMediaUrl(
@@ -365,7 +420,7 @@ function PlacementSubmissionBody({
 	const retryMutation = useMutation({
 		mutationFn: () => retryLeadPlacementAi(submission.leadId),
 		onSuccess: (updated) => {
-			toast.success("Đã gửi yêu cầu AI chấm lại.");
+			toast.success("Đã gửi yêu cầu AI chấm.");
 			onSaved(updated);
 		},
 		onError: (err) => {
@@ -373,13 +428,18 @@ function PlacementSubmissionBody({
 				reauth();
 				return;
 			}
-			toast.error("Không thể yêu cầu AI chấm lại. Vui lòng thử lại.");
+			if (isHttpError(err) && err.status === 503) {
+				toast.error("AI chấm điểm chưa được bật — vui lòng chấm tay.");
+				return;
+			}
+			toast.error("Không thể yêu cầu AI chấm. Vui lòng thử lại.");
 		},
 	});
 
 	const insertFeedback = (text: string) => {
 		const addition = text.trim();
 		if (!addition) return;
+		touch();
 		setTeacherFeedback((prev) =>
 			(prev.trim() ? `${prev.trimEnd()}\n${addition}` : addition).slice(
 				0,
@@ -455,6 +515,9 @@ function PlacementSubmissionBody({
 				submission={submission}
 				retrying={retryMutation.isPending}
 				onRetry={() => retryMutation.mutate()}
+				locked={submission.status === "graded"}
+				hasAiSource={hasAiSourceOf(submission)}
+				onApplyDraft={draftPending ? applyAiDraft : undefined}
 			/>
 
 			{/* 3 điểm tự động */}
@@ -571,7 +634,10 @@ function PlacementSubmissionBody({
 					text={submission.writingText}
 					emptyText="(Học viên không nhập bài viết)"
 					errors={writingErrors}
-					onChange={setWritingErrors}
+					onChange={(next) => {
+						touch();
+						setWritingErrors(next);
+					}}
 				/>
 				{submission.aiWriting?.feedback.trim() && (
 					<AiFeedbackNote
@@ -590,9 +656,10 @@ function PlacementSubmissionBody({
 							desc={item.desc}
 							value={writingRubric[item.key]}
 							testIdPrefix={`writing-${item.key}`}
-							onChange={(next) =>
-								setWritingRubric((prev) => ({ ...prev, [item.key]: next }))
-							}
+							onChange={(next) => {
+								touch();
+								setWritingRubric((prev) => ({ ...prev, [item.key]: next }));
+							}}
 						/>
 					))}
 				</div>
@@ -614,7 +681,10 @@ function PlacementSubmissionBody({
 						<input
 							type="checkbox"
 							checked={includeSpeaking}
-							onChange={(e) => setIncludeSpeaking(e.target.checked)}
+							onChange={(e) => {
+								touch();
+								setIncludeSpeaking(e.target.checked);
+							}}
 							data-testid="toggle-speaking-grading"
 							className="size-3.5 accent-primary"
 						/>
@@ -693,7 +763,10 @@ function PlacementSubmissionBody({
 							text={submission.speakingTranscript}
 							emptyText="Chưa có transcript — AI chưa chuyển bài nói thành văn bản."
 							errors={speakingErrors}
-							onChange={setSpeakingErrors}
+							onChange={(next) => {
+								touch();
+								setSpeakingErrors(next);
+							}}
 						/>
 						{submission.aiSpeaking?.feedback.trim() && (
 							<AiFeedbackNote
@@ -716,9 +789,10 @@ function PlacementSubmissionBody({
 								desc={item.desc}
 								value={speakingRubric[item.key]}
 								testIdPrefix={`speaking-${item.key}`}
-								onChange={(next) =>
-									setSpeakingRubric((prev) => ({ ...prev, [item.key]: next }))
-								}
+								onChange={(next) => {
+									touch();
+									setSpeakingRubric((prev) => ({ ...prev, [item.key]: next }));
+								}}
 							/>
 						))}
 					</div>
@@ -776,7 +850,10 @@ function PlacementSubmissionBody({
 					maxLength={PLACEMENT_TEACHER_FEEDBACK_MAX}
 					aria-label="Nhận xét bài kiểm tra đầu vào"
 					value={teacherFeedback}
-					onChange={(e) => setTeacherFeedback(e.target.value)}
+					onChange={(e) => {
+						touch();
+						setTeacherFeedback(e.target.value);
+					}}
 					placeholder="Ghi chú điểm mạnh, lỗi cần khắc phục (sẽ kèm vào tin nhắn Zalo)..."
 					className={`${inputCls} mt-1 w-full resize-y py-2`}
 				/>

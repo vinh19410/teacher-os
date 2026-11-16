@@ -50,6 +50,28 @@ describe("locatePlacementErrors", () => {
 		expect(out[0]?.end).toBe(12);
 	});
 
+	it("skips the case-insensitive match when lowercasing changes the text length", () => {
+		// "İ".toLowerCase() is two UTF-16 units, so lowercase offsets would drift.
+		const turkish = "İstanbul is big. I like big city.";
+		const out = locatePlacementErrors(turkish, [
+			err({ id: "case", quote: "BIG CITY" }),
+			err({ id: "exact", quote: "big city" }),
+		]);
+		const exact = out.find((e) => e.id === "exact");
+		const caseOnly = out.find((e) => e.id === "case");
+		expect(exact?.start).toBe(turkish.indexOf("big city"));
+		expect(turkish.slice(exact?.start ?? 0, exact?.end ?? 0)).toBe("big city");
+		expect(caseOnly?.start).toBeNull();
+		expect(caseOnly?.end).toBeNull();
+	});
+
+	it("skips the case-insensitive match when lowercasing changes the quote length", () => {
+		const out = locatePlacementErrors("i̇stanbul is big.", [
+			err({ quote: "İstanbul" }),
+		]);
+		expect(out[0]?.start).toBeNull();
+	});
+
 	it("returns null offsets when the quote is absent, ordered last", () => {
 		const out = locatePlacementErrors(text, [
 			err({ id: "missing", quote: "banana" }),

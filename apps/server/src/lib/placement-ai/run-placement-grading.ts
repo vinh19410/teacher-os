@@ -1,24 +1,26 @@
 import { normalizeMediaType } from "@teacher-os/api/lib/quiz-media";
 import {
 	PLACEMENT_AI_ERROR_CODES,
-	type PlacementAiSkillDraft,
 	type PlacementAiStatus,
 	type PlacementSnapshot,
-	type PlacementSpeakingRubric,
-	type PlacementWritingRubric,
 } from "@teacher-os/api/placement-test-contracts";
 import { placementTestSubmission } from "@teacher-os/db/schema/placement-test";
-import { and, eq, inArray, lt } from "drizzle-orm";
+import { and, eq, inArray, isNull, lt, ne } from "drizzle-orm";
 import type { Db } from "../../app";
 import type { MediaStore } from "../media-store";
 import {
 	type PlacementAiErrorCode,
 	type PlacementAiGrader,
 	PlacementAiGradingError,
+	type PlacementAiPollResult,
+	type PlacementAiSkillKind,
 } from "./grader";
 
-/** Nháp `processing` quá ngưỡng này coi như isolate đã chết → TIMEOUT. */
-export const PLACEMENT_AI_STALE_AFTER_MS = 10 * 60 * 1000;
+/**
+ * Lượt `processing` quá ngưỡng này → TIMEOUT: chưa tạo được job nào (isolate
+ * chết giữa `waitUntil`) hoặc job OpenAI vẫn chưa xong khi poll.
+ */
+export const PLACEMENT_AI_STALE_AFTER_MS = 15 * 60 * 1000;
 /** Giới hạn file audio gửi transcribe (giới hạn upload của OpenAI). */
 export const PLACEMENT_AI_AUDIO_MAX_BYTES = 25 * 1024 * 1024;
 
@@ -29,7 +31,7 @@ export interface PlacementAiPipelineDeps {
 	runInBackground?(promise: Promise<unknown>): void;
 }
 
-type SubmissionRow = typeof placementTestSubmission.$inferSelect;
+export type SubmissionRow = typeof placementTestSubmission.$inferSelect;
 
 function hasWriting(sub: SubmissionRow): boolean {
 	return sub.writingText.trim().length > 0;
@@ -45,7 +47,8 @@ export function hasPlacementAiWork(sub: SubmissionRow): boolean {
 }
 
 /**
- * CAS sang `processing` khi `ai_status` thuộc `from` — trả mốc `ai_started_at`
+ * CAS sang `processing` khi `ai_status` thuộc `from` (và bài chưa chốt nếu
+ * `notGraded`) — trả mốc `ai_started_at`
  * của lượt thắng (dùng làm khoá cho lần ghi kết quả), null nếu thua.
  */
 export async function claimPlacementAiGrading(
@@ -53,14 +56,24 @@ export async function claimPlacementAiGrading(
 	submissionId: string,
 	from: PlacementAiStatus[],
 	now = new Date(),
+	options: { notGraded?: boolean } = {},
 ): Promise<Date | null> {
 	const won = await db
 		.update(placementTestSubmission)
-		.set({ aiStatus: "processing", aiStartedAt: now, aiErrorCode: null })
+		.set({
+			aiStatus: "processing",
+			aiStartedAt: now,
+			aiErrorCode: null,
+			aiWritingResponseId: null,
+			aiSpeakingResponseId: null,
+		})
 		.where(
 			and(
 				eq(placementTestSubmission.id, submissionId),
 				inArray(placementTestSubmission.aiStatus, from),
+				options.notGraded
+					? ne(placementTestSubmission.status, "graded")
+					: undefined,
 			),
 		)
 		.returning({ id: placementTestSubmission.id });
@@ -68,8 +81,10 @@ export async function claimPlacementAiGrading(
 }
 
 /**
- * Dọn lười nháp treo (isolate chết giữa `waitUntil`): `processing` quá
- * `PLACEMENT_AI_STALE_AFTER_MS` → `failed` TIMEOUT. Gọi khi giáo viên mở bài.
+ * Dọn lười lượt treo (isolate chết giữa `waitUntil` trước khi lưu id job):
+ * `processing` quá `PLACEMENT_AI_STALE_AFTER_MS` và KHÔNG có id job nào →
+ * `failed` TIMEOUT. Lượt đã có id job do `finalizePlacementAiGrading` xử lý
+ * (kết quả có thể đã sẵn sàng dù giáo viên mở bài muộn). Gọi khi giáo viên mở bài.
  */
 export async function sweepStalePlacementAiGrading(
 	db: Db,
@@ -90,6 +105,8 @@ export async function sweepStalePlacementAiGrading(
 					placementTestSubmission.aiStartedAt,
 					new Date(now.getTime() - PLACEMENT_AI_STALE_AFTER_MS),
 				),
+				isNull(placementTestSubmission.aiWritingResponseId),
+				isNull(placementTestSubmission.aiSpeakingResponseId),
 			),
 		);
 }
@@ -178,9 +195,12 @@ function promptsOf(sub: SubmissionRow): {
 }
 
 /**
- * Chạy chấm cho lượt ĐÃ claim (`processing`, `ai_started_at = startedAt`).
- * Lưu mọi phần chấm được; lỗi đầu tiên (nếu có) quyết định `failed` + mã.
- * Ghi kết quả CAS trên (`processing`, `startedAt`) để không đè lượt mới hơn.
+ * Pha khởi tạo cho lượt ĐÃ claim (`processing`, `ai_started_at = startedAt`),
+ * chạy trong `waitUntil` nên mỗi bước ngắn: tạo job Writing → transcribe →
+ * lưu transcript (bài chưa chốt) → tạo job Speaking → lưu id job. Không job
+ * nào tạo được → `failed` ngay; còn lại giữ `processing` (kèm mã lỗi phần hỏng,
+ * nếu có) để `finalizePlacementAiGrading` poll kết quả. Mọi lần ghi CAS trên
+ * (`processing`, `startedAt`) để không đè lượt mới hơn.
  */
 export async function runClaimedPlacementAiGrading(
 	deps: PlacementAiPipelineDeps,
@@ -195,10 +215,8 @@ export async function runClaimedPlacementAiGrading(
 	);
 
 	let firstError: PlacementAiErrorCode | null = null;
-	let writingDraft: PlacementAiSkillDraft<PlacementWritingRubric> | null = null;
-	let speakingDraft: PlacementAiSkillDraft<PlacementSpeakingRubric> | null =
-		null;
-	let transcript: string | null = null;
+	let writingId: string | null = null;
+	let speakingId: string | null = null;
 
 	try {
 		const [sub] = await db
@@ -214,7 +232,7 @@ export async function runClaimedPlacementAiGrading(
 			const { writingPrompt, speakingPrompts } = promptsOf(sub);
 			if (hasWriting(sub)) {
 				try {
-					writingDraft = await grader.gradeWriting({
+					writingId = await grader.startWriting({
 						prompt: writingPrompt,
 						text: sub.writingText,
 					});
@@ -225,14 +243,20 @@ export async function runClaimedPlacementAiGrading(
 			if (hasSpeaking(sub)) {
 				try {
 					const audio = await loadSpeakingAudio(deps.getMediaStore?.(), sub);
-					const text = audio ? await grader.transcribe(audio) : "";
-					if (!text.trim()) {
+					const text = audio ? (await grader.transcribe(audio)).trim() : "";
+					if (!text) {
 						firstError ??= PLACEMENT_AI_ERROR_CODES.NO_TRANSCRIPT;
 					} else {
-						transcript = text.trim();
-						speakingDraft = await grader.gradeSpeaking({
+						// Kết quả đã chốt là thứ học viên thấy — không đổi transcript.
+						await db
+							.update(placementTestSubmission)
+							.set({ speakingTranscript: text })
+							.where(
+								and(casWhere, ne(placementTestSubmission.status, "graded")),
+							);
+						speakingId = await grader.startSpeaking({
 							prompts: speakingPrompts,
-							transcript,
+							transcript: text,
 						});
 					}
 				} catch (error) {
@@ -244,24 +268,145 @@ export async function runClaimedPlacementAiGrading(
 		firstError ??= errorCodeOf(error);
 	}
 
-	const now = new Date();
+	const hasJob = writingId !== null || speakingId !== null;
 	await db
 		.update(placementTestSubmission)
 		.set({
-			aiStatus: firstError ? "failed" : "drafted",
-			aiErrorCode: firstError,
-			...(writingDraft ? { aiWritingJson: JSON.stringify(writingDraft) } : {}),
-			...(speakingDraft
-				? { aiSpeakingJson: JSON.stringify(speakingDraft) }
-				: {}),
-			...(transcript !== null ? { speakingTranscript: transcript } : {}),
-			...(writingDraft || speakingDraft ? { aiDraftedAt: now } : {}),
+			aiWritingResponseId: writingId,
+			aiSpeakingResponseId: speakingId,
+			aiErrorCode: hasJob
+				? firstError
+				: (firstError ?? PLACEMENT_AI_ERROR_CODES.FAILED),
+			...(hasJob ? {} : { aiStatus: "failed" as const }),
 		})
 		.where(casWhere);
 	if (firstError) {
 		// Không log nội dung bài — chỉ id + mã lỗi.
 		console.warn("[placement-ai] grading failed", submissionId, firstError);
 	}
+}
+
+async function pollJob(
+	grader: PlacementAiGrader | undefined,
+	id: string,
+	kind: PlacementAiSkillKind,
+	sourceText: string,
+): Promise<PlacementAiPollResult> {
+	if (!grader) return { state: "pending" };
+	try {
+		return await grader.poll(id, kind, sourceText);
+	} catch {
+		return { state: "pending", transient: true };
+	}
+}
+
+/**
+ * Finalize lười (gọi khi giáo viên mở bài / bấm chấm lại): lượt `processing`
+ * có id job → poll các job chưa có kết quả, lưu nháp từng phần. Mọi job xong
+ * → `drafted` (hoặc `failed` nếu có phần hỏng, vẫn giữ phần thành công). Job
+ * còn chạy quá `PLACEMENT_AI_STALE_AFTER_MS` → TIMEOUT; poll lỗi mạng tạm
+ * thời → giữ nguyên. Ghi CAS trên (`processing`, `ai_started_at`, id job đã
+ * đọc) để hai lượt mở bài song song không ghi chồng. Trả row mới nhất.
+ */
+export async function finalizePlacementAiGrading(
+	deps: PlacementAiPipelineDeps,
+	sub: SubmissionRow,
+	now = new Date(),
+): Promise<SubmissionRow> {
+	const writingId = sub.aiWritingResponseId;
+	const speakingId = sub.aiSpeakingResponseId;
+	if (
+		sub.aiStatus !== "processing" ||
+		!sub.aiStartedAt ||
+		(writingId === null && speakingId === null)
+	) {
+		return sub;
+	}
+	const grader = deps.getPlacementAiGrader?.();
+	const stale =
+		now.getTime() - sub.aiStartedAt.getTime() > PLACEMENT_AI_STALE_AFTER_MS;
+
+	let errorCode = sub.aiErrorCode as PlacementAiErrorCode | null;
+	let nextWriting = writingId;
+	let nextSpeaking = speakingId;
+	const drafts: { aiWritingJson?: string; aiSpeakingJson?: string } = {};
+
+	const settle = (
+		result: PlacementAiPollResult,
+		kind: PlacementAiSkillKind,
+	): boolean => {
+		if (result.state === "draft") {
+			drafts[kind === "writing" ? "aiWritingJson" : "aiSpeakingJson"] =
+				JSON.stringify(result.draft);
+			return true;
+		}
+		if (result.state === "error") {
+			errorCode ??= result.code;
+			return true;
+		}
+		if (stale && !result.transient) {
+			errorCode ??= PLACEMENT_AI_ERROR_CODES.TIMEOUT;
+			return true;
+		}
+		return false;
+	};
+
+	const [writingResult, speakingResult] = await Promise.all([
+		writingId === null
+			? null
+			: pollJob(grader, writingId, "writing", sub.writingText),
+		speakingId === null
+			? null
+			: pollJob(grader, speakingId, "speaking", sub.speakingTranscript),
+	]);
+	if (writingResult && settle(writingResult, "writing")) nextWriting = null;
+	if (speakingResult && settle(speakingResult, "speaking")) {
+		nextSpeaking = null;
+	}
+	if (nextWriting === writingId && nextSpeaking === speakingId) return sub;
+
+	const done = nextWriting === null && nextSpeaking === null;
+	const hasDraft = Object.keys(drafts).length > 0;
+	const db = deps.getDb();
+	const [updated] = await db
+		.update(placementTestSubmission)
+		.set({
+			...drafts,
+			aiWritingResponseId: nextWriting,
+			aiSpeakingResponseId: nextSpeaking,
+			aiErrorCode: errorCode,
+			...(hasDraft ? { aiDraftedAt: now } : {}),
+			...(done
+				? { aiStatus: errorCode ? ("failed" as const) : ("drafted" as const) }
+				: {}),
+		})
+		.where(
+			and(
+				eq(placementTestSubmission.id, sub.id),
+				eq(placementTestSubmission.aiStatus, "processing"),
+				eq(placementTestSubmission.aiStartedAt, sub.aiStartedAt),
+				writingId === null
+					? isNull(placementTestSubmission.aiWritingResponseId)
+					: eq(placementTestSubmission.aiWritingResponseId, writingId),
+				speakingId === null
+					? isNull(placementTestSubmission.aiSpeakingResponseId)
+					: eq(placementTestSubmission.aiSpeakingResponseId, speakingId),
+			),
+		)
+		.returning();
+	if (updated) {
+		if (done && errorCode) {
+			console.warn("[placement-ai] grading failed", sub.id, errorCode);
+		}
+		return updated;
+	}
+	// Thua CAS (lượt khác vừa ghi) → đọc lại bản mới nhất.
+	const [fresh] = await db
+		.select()
+		.from(placementTestSubmission)
+		.where(eq(placementTestSubmission.id, sub.id))
+		.limit(1);
+	return fresh ?? sub;
 }
 
 /**
