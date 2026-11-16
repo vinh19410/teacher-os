@@ -29,6 +29,10 @@ export interface FakePlacementAiGraderOptions {
 	pendingPolls?: number | Partial<Record<PlacementAiSkillKind, number>>;
 	/** Poll trả `pending` tạm thời (mô phỏng lỗi mạng) — không bao giờ xong. */
 	transientPoll?: boolean;
+	/** Poll của kỹ năng này trả lỗi FAILED (đọc mỗi lượt — đổi được giữa test). */
+	failPoll?: Partial<Record<PlacementAiSkillKind, boolean>>;
+	/** Ghi lại AbortSignal mỗi lượt gọi nhận được (test deadline). */
+	signals?: Array<AbortSignal | undefined>;
 	/** Đếm số lượt gọi (test không chạy trùng). */
 	calls?: {
 		transcribe: number;
@@ -105,24 +109,32 @@ export function createFakePlacementAiGrader(
 	}
 
 	return {
-		async transcribe() {
+		async transcribe(_audio, signal) {
+			options.signals?.push(signal);
 			if (options.calls) options.calls.transcribe += 1;
 			await gate();
 			return options.transcript ?? FAKE_PLACEMENT_TRANSCRIPT;
 		},
-		async startWriting(input) {
+		async startWriting(input, signal) {
+			options.signals?.push(signal);
 			if (options.calls) options.calls.writing += 1;
 			await gate();
 			return enqueue("writing", input.text);
 		},
-		async startSpeaking(input) {
+		async startSpeaking(input, signal) {
+			options.signals?.push(signal);
 			if (options.calls) options.calls.speaking += 1;
 			await gate();
 			return enqueue("speaking", input.transcript);
 		},
-		async poll(id, kind, sourceText): Promise<PlacementAiPollResult> {
+		async poll(id, kind, sourceText, signal): Promise<PlacementAiPollResult> {
+			options.signals?.push(signal);
 			if (options.calls) options.calls.poll = (options.calls.poll ?? 0) + 1;
 			if (options.transientPoll) return { state: "pending", transient: true };
+			if (options.failPoll?.[kind]) {
+				jobs.delete(id);
+				return { state: "error", code: PLACEMENT_AI_ERROR_CODES.FAILED };
+			}
 			const job = jobs.get(id);
 			if (!job || job.kind !== kind) {
 				return { state: "error", code: PLACEMENT_AI_ERROR_CODES.FAILED };

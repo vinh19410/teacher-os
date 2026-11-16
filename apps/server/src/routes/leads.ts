@@ -45,7 +45,6 @@ import {
 	hasPlacementAiWork,
 	runClaimedPlacementAiGrading,
 	schedulePlacementAiTask,
-	sweepStalePlacementAiGrading,
 } from "../lib/placement-ai/run-placement-grading";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
@@ -406,8 +405,6 @@ export function leadRoutes(deps: LeadRouteDeps) {
 
 		const leadId = c.req.param("id") ?? "";
 		const db = deps.getDb();
-		// Dọn lười nháp AI treo (isolate chết giữa waitUntil) trước khi đọc.
-		await sweepStalePlacementAiGrading(db, ctx.orgId);
 		const loaded = await loadOwnedLeadAndLatestSubmission(
 			db,
 			ctx.orgId,
@@ -426,7 +423,8 @@ export function leadRoutes(deps: LeadRouteDeps) {
 			);
 		}
 
-		// Job chấm nền xong thì lưu nháp ngay lúc giáo viên mở bài.
+		// Job chấm nền xong thì lưu nháp ngay lúc giáo viên mở bài; lượt treo
+		// quá hạn của chính bài này được đánh TIMEOUT tại đây.
 		const sub = await finalizePlacementAiGrading(deps, loaded.sub);
 		c.header("Cache-Control", "no-store");
 		return c.json(buildSubmissionDetail(sub, loaded.leadRow, resultOrigin));
@@ -442,7 +440,6 @@ export function leadRoutes(deps: LeadRouteDeps) {
 		if (!ctx) return c.json({ error: "unauthorized" }, 401);
 
 		const db = deps.getDb();
-		await sweepStalePlacementAiGrading(db, ctx.orgId);
 		const loaded = await loadOwnedLeadAndLatestSubmission(
 			db,
 			ctx.orgId,

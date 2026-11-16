@@ -27,6 +27,7 @@ import {
 } from "../lib/placement-ai/fake-grader";
 import type { PlacementAiGrader } from "../lib/placement-ai/grader";
 import {
+	PLACEMENT_AI_HARD_TIMEOUT_MS,
 	PLACEMENT_AI_STALE_AFTER_MS,
 	runPlacementAiGrading,
 } from "../lib/placement-ai/run-placement-grading";
@@ -742,6 +743,65 @@ const finalGrade = {
 };
 
 describe("chấm nền qua job OpenAI background + finalize lười (#730)", () => {
+	test("poll lỗi tạm thời kéo dài quá trần cứng → failed TIMEOUT, không treo mãi", async () => {
+		const h = await createHarness({ grader: { transientPoll: true } });
+		const { submissionId, leadId } = await h.submit({
+			speakingMode: "skipped",
+		});
+		await h.flush();
+		await h.db
+			.update(schema.placementTestSubmission)
+			.set({
+				aiStartedAt: new Date(Date.now() - PLACEMENT_AI_HARD_TIMEOUT_MS - 1000),
+			})
+			.where(eq(schema.placementTestSubmission.id, submissionId));
+		const d = await h.detail(leadId);
+		expect(d.aiStatus).toBe("failed");
+		expect(d.aiErrorCode).toBe("AI_GRADING_TIMEOUT");
+	});
+
+	test("chấm lại mà Speaking hỏng → bỏ nháp Speaking cũ, giữ Writing mới", async () => {
+		// Harness spread options → giữ tham chiếu object con để đổi giữa test.
+		const failPoll: NonNullable<FakePlacementAiGraderOptions["failPoll"]> = {};
+		const h = await createHarness({ grader: { failPoll } });
+		const created = await h.submit({ speakingMode: "upload" });
+		await h.upload(created.submissionId, created.uploadToken);
+		await h.flush();
+		const first = await h.detail(created.leadId);
+		expect(first.aiStatus).toBe("drafted");
+		expect(first.aiSpeaking).not.toBeNull();
+
+		failPoll.speaking = true;
+		const retry = await teacherPost(
+			h.app,
+			`/api/leads/${created.leadId}/placement-submission/ai-retry`,
+		);
+		expect(retry.status).toBe(200);
+		await h.flush();
+		const after = await h.detail(created.leadId);
+		expect(after.aiStatus).toBe("failed");
+		expect(after.aiErrorCode).toBe("AI_GRADING_FAILED");
+		expect(after.aiWriting).not.toBeNull();
+		expect(after.aiSpeaking).toBeNull();
+	});
+
+	test("mọi lời gọi OpenAI đều có deadline (pha nền dùng chung, poll riêng)", async () => {
+		const signals: Array<AbortSignal | undefined> = [];
+		const h = await createHarness({ grader: { signals } });
+		const created = await h.submit({ speakingMode: "upload" });
+		await h.upload(created.submissionId, created.uploadToken);
+		await h.flush();
+		// startWriting + transcribe + startSpeaking dùng cùng một deadline.
+		expect(signals).toHaveLength(3);
+		expect(signals.every((s) => s instanceof AbortSignal)).toBe(true);
+		expect(new Set(signals).size).toBe(1);
+		await h.detail(created.leadId);
+		const pollSignals = signals.slice(3);
+		expect(pollSignals).toHaveLength(2);
+		expect(pollSignals.every((s) => s instanceof AbortSignal)).toBe(true);
+		expect(pollSignals).not.toContain(signals[0]);
+	});
+
 	test("pipeline chỉ tạo job và lưu id; GET poll, xong hết → drafted", async () => {
 		const h = await createHarness({ grader: { pendingPolls: 1 } });
 		const created = await h.submit({ speakingMode: "upload" });
