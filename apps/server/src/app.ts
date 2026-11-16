@@ -12,6 +12,7 @@ import type { AiGrader } from "./lib/ai-grading/grader";
 import type { BankHubContext } from "./lib/bank-hub/bank-hub-client";
 import type { ExamExtractor } from "./lib/exam-import/extractor";
 import type { MediaStore } from "./lib/media-store";
+import type { PlacementAiGrader } from "./lib/placement-ai/grader";
 import { createAdminMeRoutes } from "./lib/require-admin";
 import { redactResetToken } from "./log-redaction";
 import { adminLibraryRoutes } from "./routes/admin-library";
@@ -166,6 +167,12 @@ export interface AppDeps {
 	 */
 	getAiGrader?(): AiGrader | undefined;
 	/**
+	 * #730: grader nháp AI Writing/Speaking bài test đầu vào — OpenAI ở
+	 * production (bật khi có OPENAI_API_KEY, độc lập AI_ENABLED), fake ở
+	 * e2e/test. Vắng mặt → bài có thứ để chấm bị đánh dấu AI_GRADING_DISABLED.
+	 */
+	getPlacementAiGrader?(): PlacementAiGrader | undefined;
+	/**
 	 * Lead intake (#506 D4): org đích cho POST /public/leads — org lấy từ
 	 * env, KHÔNG tin client. Rỗng/vắng ⇒ route trả 503 LEAD_INTAKE_DISABLED
 	 * (fail-closed như getBankHub).
@@ -187,6 +194,11 @@ export interface AppDeps {
 	 * (#506 D13) — cùng cách `studentOrigin`.
 	 */
 	appOrigin?: string;
+	/**
+	 * Optional fetch implementation cho audio proxy của bộ đề tự học (#702)
+	 * — production dùng `fetch` mặc định, E2E/test inject mock offline.
+	 */
+	fetchExternalAudio?: typeof fetch;
 }
 
 /** Better-Auth handles its own session bootstrapping under /api/auth. */
@@ -316,14 +328,19 @@ export function buildApp(deps: AppDeps) {
 	// `secureHeaders` và ghi SAU `await next()` vì `secureHeaders` ghi đè cuối.
 	for (const path of [
 		"/api/student/attempts/:attemptId/media",
+		"/api/student/assignments/:assignmentId/audio",
 		"/api/grading/:attemptId/media",
 		"/api/placement-test/audio/:id",
+		"/api/leads/:id/placement-submission/media",
 		"/api/exam-imports/:id/file",
 		"/api/admin/library/tests/:testId/parts/:slot/audio",
 		"/api/student/vocab/audio/:wordId",
 		"/api/kernel/vocab/words/:wordId/audio",
 		"/api/materials/:id/file",
 		"/api/student/classes/:classId/sessions/:date/materials/:materialId/file",
+		"/api/study-packs/exercises/:id/audio",
+		"/api/study-packs/:packId/items/:itemId/audio",
+		"/api/assignments/prompts/:id/audio",
 	]) {
 		app.use(path, async (c, next) => {
 			await next();

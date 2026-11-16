@@ -41,13 +41,54 @@ const AUDIO_ID = "11111111-1111-4111-8111-111111111111";
 function makeSampleDraft(): PlacementContent {
 	return {
 		bands: [
-			{ min: 0, max: 1, cefr: "A1", course: "ielts-foundation" },
-			{ min: 2, max: 2, cefr: "B1", course: "ielts-pre" },
+			{
+				min: 0,
+				max: 49,
+				cefr: "A1",
+				course: "foundation-core",
+				displayCourse: "Xây Nền Từ Gốc",
+				advice: "Bắt đầu nền tảng.",
+			},
+			{
+				min: 50,
+				max: 100,
+				cefr: "B1",
+				course: "comm-2",
+				displayCourse: "Giao tiếp 2",
+				advice: "Luyện phản xạ.",
+			},
 		],
 		parts: [
 			{
+				id: "listening",
+				title: "Listening",
+				clips: [
+					{
+						id: "clip-la",
+						partLabel: "Part A",
+						instruction: "Listen carefully.",
+						title: "Đoạn nghe 1",
+						notesTitle: "",
+						transcript: "Hello world",
+						audioId: AUDIO_ID,
+						maxPlays: 2,
+						level: "A2",
+						questions: [
+							{
+								id: "l-01",
+								type: "mcq",
+								level: "A2",
+								prompt: "Where is the speaker?",
+								options: ["Library", "Bank", "Park", "Cafe"],
+								answer: 0,
+							},
+						],
+					},
+				],
+			},
+			{
 				id: "vocab-grammar",
-				title: "Vocab + Grammar",
+				title: "Grammar & Vocabulary",
 				questions: [
 					{
 						id: "vg-01",
@@ -60,24 +101,47 @@ function makeSampleDraft(): PlacementContent {
 				],
 			},
 			{
-				id: "listening",
-				title: "Listening",
-				clips: [
+				id: "reading",
+				title: "Reading",
+				passages: [
 					{
-						id: "clip-1",
-						audioId: AUDIO_ID,
-						maxPlays: 2,
-						level: "A2",
-						title: "Đoạn nghe 1",
+						id: "p-1",
+						partLabel: "Signs",
+						kind: "sign",
+						instruction: "Look at the sign.",
+						title: "Park Sign",
+						body: "NO DOGS ALLOWED",
 						questions: [
 							{
-								id: "l-01",
+								id: "r-01",
 								level: "A2",
-								prompt: "Where is the speaker?",
-								options: ["Library", "Bank", "Park", "Cafe"],
-								answer: 0,
+								prompt: "",
+								options: ["Dogs are welcome", "No dogs here", "Free pets"],
+								answer: 1,
 							},
 						],
+					},
+				],
+			},
+			{
+				id: "writing",
+				title: "Writing",
+				promptTitle: "Email",
+				promptBody: "Write a short email.",
+				minWords: 50,
+				maxWords: 80,
+			},
+			{
+				id: "speaking",
+				title: "Speaking",
+				tasks: [
+					{
+						id: "s-01",
+						partLabel: "Câu 1",
+						level: "A2",
+						prompt: "Where are you from?",
+						prepSeconds: 10,
+						answerSeconds: 30,
 					},
 				],
 			},
@@ -97,7 +161,7 @@ function makeStateResponse(
 		isLeadOrg: true,
 		audio: {
 			[AUDIO_ID]: {
-				name: "clip-1.mp3",
+				name: "clip-la.mp3",
 				size: 102400,
 				type: "audio/mpeg",
 			},
@@ -159,21 +223,37 @@ describe("PlacementTestRoute (/placement-test)", () => {
 		);
 
 		await waitFor(() => {
-			expect(screen.getByText("Nhập đề gốc (30 câu, 5 audio)")).toBeTruthy();
+			expect(
+				screen.getByText("Nhập đề gốc 5 kỹ năng (40 câu, 6 audio)"),
+			).toBeTruthy();
 		});
 	});
 
-	it("cập nhật tổng điểm ở mục Ngưỡng khi thêm câu hỏi và chặn Phát hành khi ngưỡng chưa phủ tới tổng điểm", async () => {
-		renderEditor(makeStateResponse());
+	it("chuyển tab 5 kỹ năng và chặn Phát hành khi ngưỡng % chưa kết thúc bằng 100%", async () => {
+		const badDraft = makeSampleDraft();
+		badDraft.bands[1]!.max = 90;
+		renderEditor(makeStateResponse({ draft: badDraft }));
 
 		await waitFor(() => {
-			expect(screen.getByTestId("total-questions-count").textContent).toBe("2");
+			expect(screen.getByTestId("total-questions-count").textContent).toBe("3");
 		});
 
-		fireEvent.click(screen.getByText("Thêm câu hỏi Phần 1"));
-		expect(screen.getByTestId("total-questions-count").textContent).toBe("3");
+		fireEvent.click(screen.getByRole("tab", { name: /2\. Grammar & Vocab/ }));
+		fireEvent.click(screen.getByText("Thêm câu hỏi G&V"));
+		expect(screen.getByTestId("total-questions-count").textContent).toBe("4");
 
-		// Bấm Phát hành khi ngưỡng cuối vẫn dừng ở 2 -> hiện lỗi, không mở hộp xác nhận
+		fireEvent.click(screen.getByRole("tab", { name: /4\. Writing/ }));
+		expect(screen.getByLabelText("Tiêu đề đề bài Writing")).toBeTruthy();
+
+		fireEvent.click(screen.getByRole("tab", { name: /5\. Speaking/ }));
+		expect(screen.getByLabelText("Nội dung Speaking 1")).toBeTruthy();
+		expect(screen.getByText("Audio đọc câu hỏi 1 (tùy chọn)")).toBeTruthy();
+		const optionalHint = screen.getByText(
+			/Tùy chọn — bỏ trống hệ thống tự đọc/,
+		);
+		expect(optionalHint.className).toContain("text-muted-foreground");
+		expect(optionalHint.className).not.toContain("text-destructive");
+
 		fireEvent.click(screen.getByTestId("publish-btn"));
 
 		await waitFor(() => {
@@ -181,9 +261,7 @@ describe("PlacementTestRoute (/placement-test)", () => {
 		});
 		const banner = screen.getByTestId("publish-issues-banner");
 		expect(
-			within(banner).getByText(
-				/Ngưỡng cuối cùng phải kết thúc đúng bằng tổng số câu \(3\)/,
-			),
+			within(banner).getByText(/Ngưỡng cuối cùng phải kết thúc đúng bằng 100%/),
 		).toBeTruthy();
 		expect(screen.queryByTestId("confirm-publish-btn")).toBeNull();
 	});
@@ -261,7 +339,7 @@ describe("PlacementTestRoute (/placement-test)", () => {
 							code: "PLACEMENT_INVALID",
 							issues: [
 								{
-									path: "parts.1.clips.0.audioId",
+									path: "parts.0.clips.0.audioId",
 									message:
 										"File âm thanh không tồn tại hoặc không thuộc tổ chức này.",
 								},
@@ -307,5 +385,114 @@ describe("PlacementTestRoute (/placement-test)", () => {
 				).length,
 			).toBeGreaterThan(0);
 		});
+	});
+
+	it("nút Nhập lại đề gốc mẫu mở hộp xác nhận rồi tải seed + upload audio + lưu nháp", async () => {
+		const sampleSeed = makeSampleDraft();
+		sampleSeed.parts[0].clips[0]!.audioId = null;
+
+		const state = makeStateResponse();
+		let draftPutCalls = 0;
+		const fetchMock = vi.fn(
+			async (input: RequestInfo | URL, init?: RequestInit) => {
+				const url = typeof input === "string" ? input : input.toString();
+				const method = init?.method ?? "GET";
+				if (url.endsWith("/api/placement-test") && method === "GET") {
+					return new Response(JSON.stringify(state), {
+						status: 200,
+						headers: { "content-type": "application/json" },
+					});
+				}
+				if (url.includes("/placement-seed/questions.json")) {
+					return new Response(JSON.stringify(sampleSeed), {
+						status: 200,
+						headers: { "content-type": "application/json" },
+					});
+				}
+				if (url.includes("/placement-seed/clip-la.mp3")) {
+					return new Response(new Uint8Array([0x49, 0x44, 0x33, 0x03]), {
+						status: 200,
+						headers: { "content-type": "audio/mpeg" },
+					});
+				}
+				if (url.endsWith("/api/placement-test/draft") && method === "PUT") {
+					draftPutCalls += 1;
+					return new Response(JSON.stringify({ revision: 2, dirty: true }), {
+						status: 200,
+						headers: { "content-type": "application/json" },
+					});
+				}
+				return new Response("{}", { status: 200 });
+			},
+		);
+		vi.stubGlobal("fetch", fetchMock);
+
+		// uploadAudio uses XMLHttpRequest; mock minimal XHR for jsdom
+		class MockXhr {
+			status = 200;
+			responseText = JSON.stringify({
+				audioId: AUDIO_ID,
+				name: "clip-la.mp3",
+				size: 4,
+				type: "audio/mpeg",
+			});
+			onload: (() => void) | null = null;
+			onerror: (() => void) | null = null;
+			onabort: (() => void) | null = null;
+			upload = { onprogress: null as ((e: unknown) => void) | null };
+			open() {}
+			setRequestHeader() {}
+			send() {
+				queueMicrotask(() => this.onload?.());
+			}
+		}
+		vi.stubGlobal("XMLHttpRequest", MockXhr);
+
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		render(
+			<QueryClientProvider client={client}>
+				<PlacementTestRoute />
+			</QueryClientProvider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByTestId("reimport-seed-btn")).toBeTruthy();
+		});
+
+		fireEvent.click(screen.getByTestId("reimport-seed-btn"));
+		const confirmBtn = await screen.findByTestId("confirm-reimport-btn");
+		fireEvent.click(confirmBtn);
+
+		await waitFor(() => expect(draftPutCalls).toBe(1));
+		expect(toastMock.success).toHaveBeenCalled();
+	});
+
+	it("cho phép gỡ audio tùy chọn trên câu hỏi Speaking trong tab 5 (#727)", async () => {
+		const AUDIO_ID = "11111111-1111-4111-8111-111111111111";
+		const state = makeStateResponse();
+		state.draft!.parts[4].tasks[0] = {
+			...state.draft!.parts[4].tasks[0]!,
+			audioId: AUDIO_ID,
+		};
+		state.audio = {
+			[AUDIO_ID]: { name: "speaking-q1.mp3", size: 2048, type: "audio/mpeg" },
+		};
+		renderEditor(state);
+
+		await waitFor(() => {
+			expect(screen.getByRole("tab", { name: /5\. Speaking/ })).toBeTruthy();
+		});
+		fireEvent.click(screen.getByRole("tab", { name: /5\. Speaking/ }));
+		expect(screen.getByText(/speaking-q1\.mp3/)).toBeTruthy();
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Gỡ audio câu hỏi nói 1" }),
+		);
+		expect(screen.queryByText(/speaking-q1\.mp3/)).toBeNull();
+		expect(
+			screen.getByText(/Tùy chọn — bỏ trống hệ thống tự đọc/),
+		).toBeTruthy();
 	});
 });

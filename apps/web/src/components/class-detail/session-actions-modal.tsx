@@ -1,3 +1,4 @@
+import { CLASS_ERROR_CODES } from "@teacher-os/api/contracts";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
@@ -32,6 +33,8 @@ export interface OccurrenceActionResult {
 	skipped?: number;
 	/** Machine reason carried by HttpError (the 409/404 family). */
 	reason?: string;
+	/** Machine error code carried by HttpError (e.g. CLASS_PAUSED). */
+	code?: string;
 }
 
 export type OccurrenceEditPayload = Partial<{
@@ -45,6 +48,7 @@ export type OccurrenceEditPayload = Partial<{
 export interface SessionActionsModalProps {
 	session: ClassSession | null;
 	studentById: (id: string) => { name: string } | undefined;
+	isPaused?: boolean;
 	onClose: () => void;
 	onComplete: (dateISO: string) => Promise<OccurrenceActionResult>;
 	onCancelOccurrence: (dateISO: string) => Promise<OccurrenceActionResult>;
@@ -64,6 +68,7 @@ function bucketHead(
 export function SessionActionsModal({
 	session,
 	studentById,
+	isPaused = false,
 	onClose,
 	onComplete,
 	onCancelOccurrence,
@@ -125,6 +130,9 @@ export function SessionActionsModal({
 
 	function summarize(result: OccurrenceActionResult): string {
 		if (!result.ok) {
+			if (result.code === CLASS_ERROR_CODES.CLASS_PAUSED) {
+				return "Lớp đang tạm dừng — không thể thực hiện thao tác giảng dạy này.";
+			}
 			switch (result.reason) {
 				case "use-occurrence-endpoint":
 					return "Buổi này đã có định danh — hãy dùng biểu mẫu Điều chỉnh buổi.";
@@ -199,7 +207,11 @@ export function SessionActionsModal({
 							type="button"
 							size="sm"
 							disabled={
-								pending || !eligible || targets.length === 0 || moveDate !== ""
+								isPaused ||
+								pending ||
+								!eligible ||
+								targets.length === 0 ||
+								moveDate !== ""
 							}
 							onClick={() => setConfirming("complete")}
 						>
@@ -231,6 +243,11 @@ export function SessionActionsModal({
 							</Button>
 						)}
 					</div>
+					{isPaused && targets.length > 0 && (
+						<p className="text-muted-foreground text-xs">
+							Lớp đang tạm dừng — không thể đánh dấu hoàn thành buổi học.
+						</p>
+					)}
 					{!eligible && targets.length > 0 && (
 						<p className="text-muted-foreground text-xs">
 							Buổi diễn ra sau hôm nay — Hoàn thành mở khi đến buổi.

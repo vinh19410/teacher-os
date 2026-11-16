@@ -1,6 +1,8 @@
 import { describe, expect, test } from "vitest";
 import {
+	CLASS_STATUS_MANAGE_ROLES,
 	canAccessFinance,
+	canManageClassStatus,
 	canPublishGrade,
 	canReadMaterials,
 	canReviewGrade,
@@ -319,5 +321,26 @@ describe("canWriteMaterials / canReadMaterials (#646)", () => {
 			expect(fn(null)).toBe(false);
 			expect(fn(undefined)).toBe(false);
 		}
+	});
+});
+
+describe("class status role allowlist (#694)", () => {
+	test("canManageClassStatus allows teacher/owner/admin/class_teacher and denies ta/null/undefined/unknown", () => {
+		expect(CLASS_STATUS_MANAGE_ROLES).toEqual([
+			"teacher",
+			"owner",
+			"admin",
+			"class_teacher",
+		]);
+		expect(canManageClassStatus("teacher")).toBe(true);
+		expect(canManageClassStatus("owner")).toBe(true);
+		expect(canManageClassStatus("admin")).toBe(true);
+		expect(canManageClassStatus("class_teacher")).toBe(true);
+		expect(canManageClassStatus("ta")).toBe(false);
+		expect(canManageClassStatus("student")).toBe(false);
+		expect(canManageClassStatus("TEACHER")).toBe(false);
+		expect(canManageClassStatus("")).toBe(false);
+		expect(canManageClassStatus(null)).toBe(false);
+		expect(canManageClassStatus(undefined)).toBe(false);
 	});
 });

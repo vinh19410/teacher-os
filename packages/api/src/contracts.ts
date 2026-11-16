@@ -95,6 +95,51 @@ export const IELTS_SKILLS = [
 /** Strict HH:MM (00:00–23:59) — shared by the contract and web parsing. */
 export const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d$/;
 
+export const classScheduleInputSchema = z.object({
+	/** 0 = Monday … 6 = Sunday (dayNames index convention). */
+	days: z
+		.array(z.number().int().min(0).max(6))
+		.min(1)
+		.max(7)
+		.refine((days) => new Set(days).size === days.length),
+	start: z.string().regex(TIME_REGEX),
+	end: z.string().regex(TIME_REGEX),
+});
+
+function refineClassFields(
+	input: {
+		type: ClassType;
+		skills: readonly string[];
+		schedule?: { start: string; end: string };
+	},
+	ctx: z.RefinementCtx,
+) {
+	// Issue #105: creation/update rejects end <= start. Legacy stored rows with
+	// end < start still parse (parseStoredSchedule guards only start ===
+	// end) — the cross-midnight duration math stays for display only.
+	if (input.schedule && input.schedule.end <= input.schedule.start) {
+		ctx.addIssue({
+			code: "custom",
+			path: ["schedule", "end"],
+			message: "Giờ kết thúc phải sau giờ bắt đầu",
+		});
+	}
+	if (input.type === "ielts" && input.skills.length === 0) {
+		ctx.addIssue({
+			code: "custom",
+			path: ["skills"],
+			message: "Lớp IELTS cần ít nhất một kỹ năng",
+		});
+	}
+	if (input.type === "communication" && input.skills.length > 0) {
+		ctx.addIssue({
+			code: "custom",
+			path: ["skills"],
+			message: "Lớp Giao tiếp không chọn kỹ năng",
+		});
+	}
+}
+
 export const classCreateSchema = z
 	.object({
 		name: z.string().min(1),
@@ -108,49 +153,15 @@ export const classCreateSchema = z
 		mode: z.string().default("Online"),
 		/** Template to import a per-class curriculum copy from; "" = empty class. */
 		templateId: z.string().default(""),
-		schedule: z.object({
-			/** 0 = Monday … 6 = Sunday (dayNames index convention). */
-			days: z
-				.array(z.number().int().min(0).max(6))
-				.min(1)
-				.max(7)
-				.refine((days) => new Set(days).size === days.length),
-			start: z.string().regex(TIME_REGEX),
-			end: z.string().regex(TIME_REGEX),
-		}),
-		/** Capped: each enrollment generates this many lesson rows in one D1 batch — an uncapped value could brick the class (no class-edit endpoint exists). */
+		schedule: classScheduleInputSchema,
+		/** Capped: each enrollment generates this many lesson rows in one D1 batch; editable via PATCH /classes/:id only before real sessions exist. */
 		sessionsTotal: z.number().int().min(1).max(52).default(12),
 		/** Học phí mỗi học viên (VND) cho toàn khóa; null/undefined = chưa thiết lập, sửa được sau khi tạo. */
 		tuitionFee: z.number().int().min(1).nullish(),
 		startDate: z.string().default(""),
 		schedulingMode: z.enum(["auto", "manual"]).default("auto"),
 	})
-	.superRefine((input, ctx) => {
-		// Issue #105: creation rejects end <= start. Legacy stored rows with
-		// end < start still parse (parseStoredSchedule guards only start ===
-		// end) — the cross-midnight duration math stays for display only.
-		if (input.schedule.end <= input.schedule.start) {
-			ctx.addIssue({
-				code: "custom",
-				path: ["schedule", "end"],
-				message: "Giờ kết thúc phải sau giờ bắt đầu",
-			});
-		}
-		if (input.type === "ielts" && input.skills.length === 0) {
-			ctx.addIssue({
-				code: "custom",
-				path: ["skills"],
-				message: "Lớp IELTS cần ít nhất một kỹ năng",
-			});
-		}
-		if (input.type === "communication" && input.skills.length > 0) {
-			ctx.addIssue({
-				code: "custom",
-				path: ["skills"],
-				message: "Lớp Giao tiếp không chọn kỹ năng",
-			});
-		}
-	});
+	.superRefine(refineClassFields);
 export type ClassCreate = z.infer<typeof classCreateSchema>;
 
 /** Import a deep copy of a syllabus template into a class (issue #79). */
@@ -158,6 +169,14 @@ export const importSyllabusSchema = z.object({
 	templateId: z.string().min(1),
 });
 export type ImportSyllabus = z.infer<typeof importSyllabusSchema>;
+
+/** Sync a class's curriculum copy from its linked template (or a replacement template when source was deleted). */
+export const syncCurriculumSchema = z
+	.object({
+		templateId: z.string().min(1).optional(),
+	})
+	.strict();
+export type SyncCurriculum = z.infer<typeof syncCurriculumSchema>;
 
 /** Remove a class curriculum: deletes the imported copy tree, nulls the pointer. */
 export const removeCurriculumSchema = z.object({}).strict();
@@ -176,6 +195,81 @@ export const classTuitionFeeUpdateSchema = z
 	.object({ tuitionFee: z.number().int().min(1).nullable() })
 	.strict();
 export type ClassTuitionFeeUpdate = z.infer<typeof classTuitionFeeUpdateSchema>;
+
+/**
+ * Mã 409 khóa lịch học của PATCH /classes/:id (#693). Server trả
+ * kèm `code` trong body lỗi; web tra ánh xạ thông báo theo mã này.
+ */
+export const CLASS_STATUSES = ["active", "paused"] as const;
+export type ClassStatus = (typeof CLASS_STATUSES)[number];
+
+export const classStatusUpdateSchema = z
+	.object({
+		status: z.enum(CLASS_STATUSES),
+	})
+	.strict();
+export type ClassStatusUpdateInput = z.infer<typeof classStatusUpdateSchema>;
+
+export const classStatusResponseSchema = z
+	.object({
+		ok: z.literal(true),
+		status: z.enum(CLASS_STATUSES),
+	})
+	.strict();
+export type ClassStatusResponse = z.infer<typeof classStatusResponseSchema>;
+
+export const CLASS_ERROR_CODES = {
+	/** Lớp đã có buổi học thực tế (lesson hoặc class_session) — không được đổi lịch, ngày khai giảng hoặc số buổi. */
+	SCHEDULE_LOCKED: "CLASS_SCHEDULE_LOCKED",
+	/** Lớp đang tạm dừng — chặn tuyển sinh mới và thao tác ghi giảng dạy (#694). */
+	CLASS_PAUSED: "CLASS_PAUSED",
+} as const;
+export type ClassErrorCode =
+	(typeof CLASS_ERROR_CODES)[keyof typeof CLASS_ERROR_CODES];
+
+const ISO_CALENDAR_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+function isValidIsoCalendarDate(value: string): boolean {
+	if (!ISO_CALENDAR_DATE_REGEX.test(value)) return false;
+	const year = Number.parseInt(value.slice(0, 4), 10);
+	if (year < 2000 || year > 2100) return false;
+	const check = new Date(`${value}T00:00:00Z`);
+	return (
+		!Number.isNaN(check.getTime()) && check.toISOString().slice(0, 10) === value
+	);
+}
+
+/** Cập nhật thông tin lớp học (#693); schedule/startDate/sessionsTotal chỉ đổi được khi chưa có buổi học thực tế. */
+export const classUpdateSchema = z
+	.object({
+		name: z
+			.string()
+			.trim()
+			.min(1, "Vui lòng nhập tên lớp")
+			.max(120, "Tên lớp tối đa 120 ký tự"),
+		type: z.enum(CLASS_TYPES),
+		level: z.string().trim().max(120).default(""),
+		skills: z
+			.array(z.enum(IELTS_SKILLS))
+			.max(IELTS_SKILLS.length)
+			.refine((skills) => new Set(skills).size === skills.length)
+			.default([]),
+		mode: z.string().trim().min(1, "Vui lòng chọn hình thức").max(60),
+		tuitionFee: z.number().int().min(1).nullable().optional(),
+		schedule: classScheduleInputSchema.optional(),
+		startDate: z
+			.string()
+			.trim()
+			.refine(
+				(v) => v === "" || isValidIsoCalendarDate(v),
+				"Ngày khai giảng không hợp lệ",
+			)
+			.optional(),
+		sessionsTotal: z.number().int().min(1).max(52).optional(),
+	})
+	.strict()
+	.superRefine(refineClassFields);
+export type ClassUpdate = z.infer<typeof classUpdateSchema>;
 
 /**
  * Bulk content cho syllabus create (Excel/CSV import).
@@ -835,6 +929,7 @@ const assignmentPromptBaseSchema = z
 		type: z.string().trim().max(20),
 		title: z.string().trim().min(1).max(200),
 		band: z.enum(ASSIGNMENT_BANDS),
+		level: z.string().trim().max(100).optional(),
 		source: z.string().trim().max(200),
 		// Rich text (HTML string) — the meaningful cap is measured on the
 		// plain text without markup; raw cap guards transport. intro/transcript/
@@ -847,6 +942,7 @@ const assignmentPromptBaseSchema = z
 		// cuePoints stays PLAIN text (one idea per line) — do not convert.
 		cuePoints: z.string().max(2000),
 		audioName: z.string().trim().max(200),
+		audioUrl: z.string().trim().max(500).optional(),
 		imageUrl: z.string().trim().max(500).default(""),
 		questions: z.array(assignmentQuestionSchema).max(40),
 		/**
@@ -956,7 +1052,11 @@ export const assignmentPromptCreateSchema =
 					path: ["questions"],
 					message: "question stem required",
 				});
-			if (value.status === "ready" && !value.audioName.trim())
+			if (
+				value.status === "ready" &&
+				!value.audioName.trim() &&
+				!(value.audioUrl ?? "").trim()
+			)
 				ctx.addIssue({
 					code: "custom",
 					path: ["audioName"],
@@ -1003,6 +1103,21 @@ export const assignmentPromptCreateSchema =
 				path: ["imageUrl"],
 				message: "imageUrl must be an https URL",
 			});
+		if (value.audioUrl?.trim()) {
+			if (value.skill !== "listening") {
+				ctx.addIssue({
+					code: "custom",
+					path: ["audioUrl"],
+					message: "audioUrl only applies to listening prompts",
+				});
+			} else if (!isAllowedStudyPackAudioUrl(value.audioUrl)) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["audioUrl"],
+					message: "invalid listening audioUrl",
+				});
+			}
+		}
 		if (auto && value.status === "ready") {
 			for (const [index, question] of value.questions.entries()) {
 				if (!question.stem.trim())
@@ -1148,6 +1263,12 @@ export const assignmentPromptUpdateSchema = assignmentPromptBaseSchema
 		// Answer-choice theo type HIỆU DỤNG từng câu (mirror create — #286):
 		// ép kind của type prompt lên mọi câu sẽ false-reject đề trộn dạng
 		// (prompt tfng + câu note answer tự do) ngay tại schema, mù field.
+		if (value.audioUrl?.trim() && !isAllowedStudyPackAudioUrl(value.audioUrl))
+			ctx.addIssue({
+				code: "custom",
+				path: ["audioUrl"],
+				message: "invalid listening audioUrl",
+			});
 		if (value.questions) {
 			for (const [index, question] of value.questions.entries()) {
 				const kind =
@@ -1366,11 +1487,13 @@ export const sessionAttendanceSaveSchema = z
 	.object({
 		entries: z
 			.array(
-				z.object({
-					lessonId: z.string().min(1),
-					attendance: attendanceStatusSchema,
-					note: z.string().trim().max(255).default(""),
-				}),
+				z
+					.object({
+						lessonId: z.string().min(1),
+						attendance: attendanceStatusSchema,
+						note: z.string().trim().max(255).default(""),
+					})
+					.strict(),
 			)
 			.min(1),
 	})
@@ -1401,6 +1524,8 @@ export const dailyAttendanceResponseSchema = z
 					dur: z.number().int().min(1),
 					mode: z.enum(["dated", "legacy"]),
 					recorded: z.boolean(),
+					/** #694: lớp đang tạm dừng — UI hiển thị badge Tạm dừng và khóa chỉ-xem. */
+					classPaused: z.boolean().optional(),
 					students: z.array(
 						z.object({
 							lessonId: z.string().min(1).nullable(),
@@ -1604,7 +1729,7 @@ export interface KernelClassRow {
 	 * derives from completed lessons (invariant 7). Do not trust it.
 	 */
 	sessionsDone: number;
-	status: string;
+	status: ClassStatus;
 	startDate: string;
 	/** Học phí mỗi học viên (VND) cho toàn khóa; null = chưa thiết lập. */
 	tuitionFee: number | null;
@@ -1745,24 +1870,26 @@ export interface KernelClassSessionRow {
 	zoom: string;
 }
 
-export const addManualSessionSchema = z.object({
-	date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
-	time: z
-		.string()
-		.regex(TIME_REGEX, "Giờ học phải theo định dạng HH:mm (00:00–23:59)"),
-	dur: z.number().int().min(15).max(360).default(90),
-	topic: z.string().min(1, "Chủ đề không được để trống").max(500),
-	zoom: z
-		.string()
-		.max(2000)
-		.default("")
-		.refine((val) => val === "" || val.startsWith("https://"), {
-			message: "Link Zoom phải là URL https:// hoặc để trống",
-		}),
-	// Issue #655: tài liệu ngân hàng gắn ngay lúc tạo buổi manual — server
-	// validate org + tồn tại rồi insert `lesson_material` cùng batch.
-	materialIds: z.array(z.string().min(1)).max(MATERIAL_LINKS_MAX).default([]),
-});
+export const addManualSessionSchema = z
+	.object({
+		date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
+		time: z
+			.string()
+			.regex(TIME_REGEX, "Giờ học phải theo định dạng HH:mm (00:00–23:59)"),
+		dur: z.number().int().min(15).max(360).default(90),
+		topic: z.string().min(1, "Chủ đề không được để trống").max(500),
+		zoom: z
+			.string()
+			.max(2000)
+			.default("")
+			.refine((val) => val === "" || val.startsWith("https://"), {
+				message: "Link Zoom phải là URL https:// hoặc để trống",
+			}),
+		// Issue #655: tài liệu ngân hàng gắn ngay lúc tạo buổi manual — server
+		// validate org + tồn tại rồi insert `lesson_material` cùng batch.
+		materialIds: z.array(z.string().min(1)).max(MATERIAL_LINKS_MAX).default([]),
+	})
+	.strict();
 export type AddManualSessionInput = z.infer<typeof addManualSessionSchema>;
 
 export interface KernelInvoiceRow {
@@ -1822,6 +1949,7 @@ export interface KernelAssignmentPromptRow {
 	type: string;
 	title: string;
 	band: string;
+	level?: string;
 	source: string;
 	prompt: string;
 	intro: string;
@@ -1830,6 +1958,7 @@ export interface KernelAssignmentPromptRow {
 	cueTopic: string;
 	cuePoints: string;
 	audioName: string;
+	audioUrl?: string;
 	imageUrl: string;
 	questions: AssignmentQuestion[];
 	/** Phase-02 FR7 — structured option bank (labeled choice list). */
@@ -2128,7 +2257,7 @@ export const studentClassSchema = z.object({
 	schedule: z.string(),
 	sessionsDone: z.number().int(),
 	sessionsTotal: z.number().int(),
-	status: z.string(),
+	status: z.enum(CLASS_STATUSES).catch("active"),
 	nextSession: studentNextSessionSchema.nullable(),
 	/**
 	 * Enrollment của học viên trong lớp này. 'invited' = giáo viên đã thêm vào
@@ -2775,12 +2904,14 @@ export const studentQuizDetailSchema = z
 		part: z.string(),
 		type: z.string(),
 		band: z.string(),
+		level: z.string().optional(),
 		intro: z.string(),
 		prompt: z.string(),
 		passage: z.string(),
 		cueTopic: z.string(),
 		cuePoints: z.string(),
 		audioName: z.string(),
+		hasAudio: z.boolean().optional(),
 		imageUrl: z.string(),
 		optionBank: z.array(z.string()),
 		/** "Hướng dẫn thêm" của giáo viên — CHỈ có với đề Speaking (#305):
@@ -2888,6 +3019,8 @@ export const quizAttemptDetailSchema = quizAttemptSummarySchema
 	.omit({ items: true })
 	.extend({
 		note: z.string(),
+		transcript: z.string().optional(),
+		hasAudio: z.boolean().optional(),
 		writing: studentWritingSectionSchema.optional(),
 		questions: z.array(
 			studentQuizQuestionSchema
@@ -2929,9 +3062,11 @@ export const studentInviteSchema = z.object({
 });
 export type StudentInviteInput = z.infer<typeof studentInviteSchema>;
 
-export const resendStudentInviteSchema = z.object({
-	enrollmentId: z.string().trim().min(1).optional(),
-});
+export const resendStudentInviteSchema = z
+	.object({
+		enrollmentId: z.string().trim().min(1).optional(),
+	})
+	.strict();
 export type ResendStudentInviteInput = z.infer<
 	typeof resendStudentInviteSchema
 >;
@@ -4463,6 +4598,39 @@ export const STUDY_PACK_SKILLS = [
 ] as const;
 export type StudyPackSkill = (typeof STUDY_PACK_SKILLS)[number];
 
+export const STUDY_PACK_LEVELS = [
+	"IELTS Foundation",
+	"IELTS First Step",
+	"Pre IELTS",
+	"IELTS Advanced",
+] as const;
+export type StudyPackLevel = (typeof STUDY_PACK_LEVELS)[number];
+
+export const STUDY_PACK_AUDIO_HOSTS = [
+	"www.listenaminute.com",
+	"listenaminute.com",
+	"lingua.com",
+	"www.lingua.com",
+] as const;
+
+export function isAllowedStudyPackAudioUrl(raw: string): boolean {
+	const trimmed = raw.trim();
+	if (!trimmed || trimmed.length > 500) return false;
+	try {
+		const url = new URL(trimmed);
+		return (
+			url.protocol === "https:" &&
+			url.username === "" &&
+			url.password === "" &&
+			url.port === "" &&
+			(STUDY_PACK_AUDIO_HOSTS as readonly string[]).includes(url.hostname) &&
+			/\.mp3$/i.test(url.pathname)
+		);
+	} catch {
+		return false;
+	}
+}
+
 export const STUDY_PACK_SOURCE_KINDS = [
 	"org_prompt",
 	"library_test_part",
@@ -4472,6 +4640,7 @@ export type StudyPackSourceKind = (typeof STUDY_PACK_SOURCE_KINDS)[number];
 
 export const LIBRARY_EXERCISE_SKILLS = [
 	"reading",
+	"listening",
 	"grammar",
 	"vocabulary",
 ] as const;
@@ -4497,6 +4666,7 @@ const studyPackBaseSchema = z
 	.object({
 		title: z.string().trim().min(1).max(200),
 		description: z.string().trim().max(2000).default(""),
+		level: z.string().trim().max(100).default(""),
 		status: z.enum(["draft", "ready"]).default("draft"),
 		items: z
 			.array(studyPackItemInputSchema)
@@ -4549,8 +4719,11 @@ const libraryExerciseBaseSchema = z
 		type: z.string().trim().min(1).max(20),
 		title: z.string().trim().min(1).max(200),
 		band: z.enum(ASSIGNMENT_BANDS).default(DEFAULT_ASSIGNMENT_BAND),
+		level: z.string().trim().max(100).default(""),
 		intro: richTextField(2000).default(""),
 		passage: richTextField(20000).default(""),
+		audioUrl: z.string().trim().max(500).default(""),
+		transcript: richTextField(10000).default(""),
 		questions: z.array(assignmentQuestionSchema).max(40).default([]),
 		optionBank: z
 			.array(z.string().trim().min(1).max(200))
@@ -4584,6 +4757,34 @@ const libraryExerciseBaseSchema = z
 				code: "custom",
 				path: ["passage"],
 				message: "passage required",
+			});
+		}
+		if (value.skill === "listening") {
+			const trimmedAudioUrl = value.audioUrl.trim();
+			if (
+				value.status === "ready" &&
+				!isAllowedStudyPackAudioUrl(trimmedAudioUrl)
+			) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["audioUrl"],
+					message: "valid https mp3 audioUrl required for listening exercise",
+				});
+			} else if (
+				trimmedAudioUrl &&
+				!isAllowedStudyPackAudioUrl(trimmedAudioUrl)
+			) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["audioUrl"],
+					message: "invalid listening audioUrl",
+				});
+			}
+		} else if (value.audioUrl.trim()) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["audioUrl"],
+				message: "audioUrl only applies to listening exercises",
 			});
 		}
 		if (
@@ -4725,6 +4926,7 @@ export interface StudyPackItemView {
 	skill: StudyPackSkill | string;
 	part: string;
 	type: string;
+	level: string;
 	status: string;
 	note: string;
 }
@@ -4735,6 +4937,7 @@ export interface StudyPackSummaryView {
 	scope: "org" | "system";
 	title: string;
 	description: string;
+	level: string;
 	status: "draft" | "ready";
 	sourcePackId: string | null;
 	dayCount: number;
@@ -4747,6 +4950,21 @@ export interface StudyPackDetailView extends StudyPackSummaryView {
 	items: StudyPackItemView[];
 }
 
+export interface StudyPackItemDetailView extends StudyPackItemView {
+	band: string;
+	source: string;
+	prompt: string;
+	intro: string;
+	passage: string;
+	transcript: string;
+	audioName: string;
+	hasAudio: boolean;
+	imageUrl: string;
+	questions: AssignmentQuestion[];
+	optionBank: string[];
+	exerciseNote: string;
+}
+
 export interface LibraryExerciseView {
 	id: string;
 	skill: LibraryExerciseSkill;
@@ -4754,8 +4972,11 @@ export interface LibraryExerciseView {
 	type: string;
 	title: string;
 	band: string;
+	level: string;
 	intro: string;
 	passage: string;
+	audioUrl: string;
+	transcript: string;
 	questions: AssignmentQuestion[];
 	optionBank: string[];
 	note: string;

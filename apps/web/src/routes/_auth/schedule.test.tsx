@@ -29,6 +29,7 @@ vi.mock("@tanstack/react-router", async () =>
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
 
+import { ClassSessionModal } from "@/components/schedule/class-session-modal";
 import { ScheduleRoute } from "./schedule";
 
 // Monday 12/10/2026, 10:00 Vietnam time.
@@ -737,5 +738,119 @@ describe("schedule views and org events (TOS-14)", () => {
 		// Bấm ca học mở ClassSessionModal như view Tuần.
 		fireEvent.click(within(agenda).getByText("IELTS Writing"));
 		expect(await screen.findByRole("dialog")).toBeTruthy();
+	});
+});
+
+describe("paused classes on /schedule (#694)", () => {
+	it("shows empty state when all classes are paused and have no historical attendance", async () => {
+		server = startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-p",
+						name: "Lớp Tạm Dừng",
+						status: "paused",
+						schedule: '{"days":[1],"start":"19:00","end":"20:30"}',
+						startDate: "2026-10-12",
+					}),
+				],
+				students: [studentRow()],
+				enrollments: [enrollmentRow({ classId: "cl-p" })],
+				lessons: [
+					lessonRow({
+						id: "les-up",
+						classId: "cl-p",
+						day: 1,
+						date: "2026-10-12",
+						status: "upcoming",
+					}),
+				],
+				events: [],
+			}),
+		);
+		renderWithKernel(<ScheduleRoute />);
+		expect(await screen.findByTestId("schedule-empty-state")).toBeTruthy();
+		expect(screen.queryByText("Lớp Tạm Dừng")).toBeNull();
+	});
+
+	it("keeps dated historical attendance visible when all classes are paused", async () => {
+		server = startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-p",
+						name: "Lớp Có Lịch Sử",
+						status: "paused",
+						schedule: '{"days":[1],"start":"19:00","end":"20:30"}',
+						startDate: "2026-10-12",
+					}),
+				],
+				students: [studentRow()],
+				enrollments: [enrollmentRow({ classId: "cl-p" })],
+				lessons: [
+					lessonRow({
+						id: "les-comp",
+						classId: "cl-p",
+						day: 1,
+						date: "2026-10-12",
+						status: "completed",
+					}),
+				],
+				events: [],
+			}),
+		);
+		renderWithKernel(<ScheduleRoute />);
+		expect(
+			await screen.findByRole("button", { name: /Lớp Có Lịch Sử/ }),
+		).toBeTruthy();
+		expect(screen.queryByTestId("schedule-empty-state")).toBeNull();
+	});
+
+	it("hides Điểm danh action inside ClassSessionModal when the class is paused (#694)", async () => {
+		startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-p",
+						name: "Lớp Tạm Dừng",
+						status: "paused",
+						schedule: '{"days":[0],"start":"19:00","end":"20:30"}',
+						startDate: "2026-10-12",
+					}),
+				],
+				students: [studentRow({ id: "st-1", name: "Học viên Một" })],
+				enrollments: [
+					enrollmentRow({ id: "en-1", classId: "cl-p", studentId: "st-1" }),
+				],
+				lessons: [
+					lessonRow({
+						id: "les-1",
+						classId: "cl-p",
+						enrollmentId: "en-1",
+						day: 1,
+						time: "19:00",
+						date: "2026-10-12",
+						status: "upcoming",
+					}),
+				],
+			}),
+		);
+		renderWithKernel(
+			<ClassSessionModal
+				sessionRef={{
+					classId: "cl-p",
+					dateISO: "2026-10-12",
+					day: 1,
+					time: "19:00",
+				}}
+				onClose={vi.fn()}
+			/>,
+		);
+		const dialog = await screen.findByRole("dialog");
+		expect(dialog.textContent).toContain("Lớp Tạm Dừng");
+		expect(dialog.textContent).toContain("Học viên Một");
+		expect(
+			within(dialog).queryByRole("button", { name: "Điểm danh" }),
+		).toBeNull();
 	});
 });

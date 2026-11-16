@@ -82,3 +82,44 @@ describe("ClassLessonList — TOS-11 holiday", () => {
 		expect(container.textContent).not.toContain("Đã kết thúc");
 	});
 });
+
+describe("ClassLessonList — lớp tạm dừng (#694)", () => {
+	test("ẩn 'Buổi tới' và hiển thị 'Tạm hoãn' thay vì 'Đã kết thúc' hay 'Sắp tới' khi isPaused=true, vẫn giữ lịch sử và nút Tài liệu", () => {
+		render(
+			<ClassLessonList
+				classId="c1"
+				isPaused
+				lessons={[
+					lesson({ id: "l-done", status: "completed", date: "2026-11-10" }),
+					lesson({ id: "l-absent", status: "absent", date: "2026-11-12" }),
+					lesson({
+						id: "l-past-upcoming",
+						status: "upcoming",
+						date: "2026-11-18",
+						topic: "Past Unmarked Session",
+					}),
+					lesson({
+						id: "l-future-upcoming",
+						status: "upcoming",
+						date: "2026-12-01",
+						topic: "Future Session",
+					}),
+					lesson({ id: "l-holiday", status: "holiday", date: "2026-11-25" }),
+				]}
+				todayISO={TODAY}
+				now={NOW}
+			/>,
+		);
+
+		expect(screen.queryByText("Buổi tới")).toBeNull();
+		expect(screen.queryByText("Đã kết thúc")).toBeNull();
+		expect(screen.queryByText("Sắp tới")).toBeNull();
+		expect(screen.getAllByText("Tạm hoãn")).toHaveLength(2);
+		expect(screen.getByText("Đã học")).toBeTruthy();
+		expect(screen.getByText("Vắng")).toBeTruthy();
+		expect(screen.getByText("Nghỉ lễ — Đã dời lịch")).toBeTruthy();
+		expect(
+			screen.getAllByRole("button", { name: "Tài liệu" }).length,
+		).toBeGreaterThanOrEqual(3);
+	});
+});

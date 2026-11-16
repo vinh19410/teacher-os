@@ -1,4 +1,6 @@
+import { readFileSync } from "node:fs";
 import { expect, type Page, test } from "@playwright/test";
+import ExcelJS from "exceljs";
 import { signUpViaApi } from "./helpers";
 
 /** Tạo syllabus template rỗng (không import file) qua popup và chờ tới
@@ -34,10 +36,10 @@ test("ghi đè sau xác nhận thay cây, hủy giữ nguyên dữ liệu hiện
 	await expect(page.getByText("Module thủ công")).toBeVisible();
 
 	// Import file mẫu 4 cột → preview.
-	await page.getByRole("button", { name: "Nhập từ Excel/CSV" }).click();
+	await page.getByRole("button", { name: "Nhập từ Excel" }).click();
 	await page.setInputFiles(
 		"input[type=file]",
-		"fixtures/syllabus-import.sample.csv",
+		"fixtures/syllabus-import.sample.xlsx",
 	);
 	await expect(page.getByText("2 module · 3 buổi học")).toBeVisible();
 
@@ -87,7 +89,7 @@ test("bản copy của lớp không có nút import ghi đè (chỉ template)", 
 	);
 	// Template: nút import PHẢI hiện.
 	await expect(
-		page.getByRole("button", { name: "Nhập từ Excel/CSV" }),
+		page.getByRole("button", { name: "Nhập từ Excel" }),
 	).toBeVisible();
 
 	// Tạo lớp chọn template này → server deep-copy thành bản copy của lớp.
@@ -144,4 +146,91 @@ test("bản copy của lớp không có nút import ghi đè (chỉ template)", 
 	// (đã assert ở đầu test); copy chỉ sửa được qua "Quản lý buổi" của lớp.
 	await page.goto(`/syllabus/${copy.id}`);
 	await expect(page.getByText("Không tìm thấy syllabus")).toBeVisible();
+});
+
+test("tải file mẫu trên trang chi tiết trả đúng XLSX v4, không tràn ngang ở 320px và import ghi đè được ngay", async ({
+	page,
+}) => {
+	await signUpViaApi(page);
+	await createSyllabusTemplate(page, "E2E Download Sample Detail");
+
+	await page.setViewportSize({ width: 320, height: 812 });
+	const sampleBtn = page.getByRole("button", { name: "Tải file mẫu" });
+	await expect(sampleBtn).toBeVisible();
+	await sampleBtn.focus();
+	await expect(sampleBtn).toBeFocused();
+	const hasHorizontalOverflow = await page.evaluate(
+		() =>
+			document.documentElement.scrollWidth >
+			document.documentElement.clientWidth,
+	);
+	expect(hasHorizontalOverflow).toBe(false);
+	await page.setViewportSize({ width: 1280, height: 720 });
+
+	const downloadPromise = page.waitForEvent("download");
+	await sampleBtn.click();
+	const download = await downloadPromise;
+	expect(download.suggestedFilename()).toBe("syllabus-template.xlsx");
+	const downloadedPath = await download.path();
+	if (!downloadedPath) throw new Error("Missing downloaded sample XLSX path");
+	const rawBytes = readFileSync(downloadedPath);
+
+	const workbook = new ExcelJS.Workbook();
+	await workbook.xlsx.load(
+		rawBytes.buffer.slice(
+			rawBytes.byteOffset,
+			rawBytes.byteOffset + rawBytes.byteLength,
+		),
+	);
+	expect(workbook.worksheets.map((ws) => ws.name)).toEqual([
+		"Syllabus",
+		"Hướng dẫn",
+	]);
+	const syllabusSheet = workbook.worksheets[0];
+	expect(syllabusSheet).toBeDefined();
+	const headerValues = [1, 2, 3, 4, 5].map((c) =>
+		String(syllabusSheet?.getRow(1).getCell(c).value ?? ""),
+	);
+	expect(headerValues).toEqual([
+		"Module",
+		"Mô tả module",
+		"Mục tiêu",
+		"Tài liệu",
+		"Loại",
+	]);
+	expect(syllabusSheet?.views[0]).toMatchObject({
+		state: "frozen",
+		ySplit: 1,
+	});
+	for (let c = 1; c <= 5; c++) {
+		expect(syllabusSheet?.getColumn(c).numFmt).toBe("@");
+	}
+	const dataValidations = (
+		syllabusSheet as unknown as {
+			dataValidations: {
+				find: (address: string) => ExcelJS.DataValidation | undefined;
+			};
+		}
+	).dataValidations;
+	const dv = dataValidations.find("E2");
+	expect(dv?.type).toBe("list");
+	expect(dv?.formulae?.[0]).toBe('"giữa kỳ,cuối kỳ"');
+
+	await page.setInputFiles("input[type=file]", {
+		name: download.suggestedFilename(),
+		mimeType:
+			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+		buffer: rawBytes,
+	});
+	await expect(page.getByText("2 module · 5 buổi học")).toBeVisible();
+	await page.getByRole("button", { name: "Ghi đè nội dung" }).click();
+	await page
+		.getByRole("dialog")
+		.getByRole("button", { name: "Ghi đè", exact: true })
+		.click();
+	await expect(page.getByText("Đã ghi đè nội dung giáo trình.")).toBeVisible();
+	await expect(page.getByText("Module 1 — Nền tảng")).toBeVisible();
+	await expect(page.getByText("Module 2 — Thực hành")).toBeVisible();
+	await expect(page.getByText("Thi giữa kỳ", { exact: true })).toBeVisible();
+	await expect(page.getByText("Thi cuối kỳ", { exact: true })).toBeVisible();
 });

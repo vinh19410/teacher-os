@@ -5,6 +5,7 @@ import {
 	removeCurriculumSchema,
 	syllabusCreateSchema,
 	syllabusReplaceContentSchema,
+	syncCurriculumSchema,
 } from "@teacher-os/api/contracts";
 import { classTable } from "@teacher-os/db/schema/class";
 import { classSession } from "@teacher-os/db/schema/class-session";
@@ -25,10 +26,12 @@ import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
 import {
 	buildImportBatch,
+	buildSyncBatch,
 	clearPointersTo,
 	findClassCurriculum,
 	findExistingMaterialIds,
 	findTemplate,
+	flattenSyllabusLessons,
 	MAX_IMPORT_NODES,
 	selectTemplateTree,
 	setClassCurriculumPointer,
@@ -39,6 +42,57 @@ import { mountContentRoutes } from "./syllabus-content-routes";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type SyllabusContext = Context<Env>;
+
+/**
+ * Sinh bù lịch học + gói buổi cho các active enrollment đang kẹt ở 0 dòng lesson
+ * và package.total = 0 (hoặc chưa có package) sau khi lớp chuyển sang `auto` (#670).
+ * Chạy tuần tự từng học viên để không vượt trần một `db.batch` của D1 và để học viên
+ * thứ 2 nhìn thấy dòng shift I6 vừa sinh bởi học viên thứ 1.
+ */
+export async function backfillStuckEnrollments(
+	db: Db,
+	orgId: string,
+	classId: string,
+): Promise<number> {
+	const stuck = await db
+		.select({
+			id: enrollment.id,
+			studentId: enrollment.studentId,
+		})
+		.from(enrollment)
+		.leftJoin(
+			sessionPackage,
+			and(
+				eq(sessionPackage.enrollmentId, enrollment.id),
+				eq(sessionPackage.orgId, enrollment.orgId),
+			),
+		)
+		.where(
+			and(
+				eq(enrollment.orgId, orgId),
+				eq(enrollment.classId, classId),
+				eq(enrollment.status, "active"),
+				sql`NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.enrollmentId} = ${enrollment.id})`,
+				sql`(${sessionPackage.id} IS NULL OR ${sessionPackage.total} = 0)`,
+			),
+		);
+	let healed = 0;
+	for (const row of stuck) {
+		const materialized = await materializeScheduleForEnrollment(db, {
+			orgId,
+			enrollmentId: row.id,
+			studentId: row.studentId,
+			classId,
+			mode: "backfill",
+		});
+		if (materialized.ok) {
+			healed += 1;
+		} else if (materialized.error === "class-paused") {
+			break;
+		}
+	}
+	return healed;
+}
 
 /**
  * Syllabus + curriculum router. Mounted INSIDE kernelRoutes via
@@ -79,57 +133,22 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 				syllabusId: classTable.syllabusId,
 				schedulingMode: classTable.schedulingMode,
 				sessionsTotal: classTable.sessionsTotal,
+				status: classTable.status,
 			})
 			.from(classTable)
 			.where(and(eq(classTable.id, classId), eq(classTable.orgId, orgId)));
 		return row;
 	}
 
-	/**
-	 * Sinh bù lịch học + gói buổi cho các active enrollment đang kẹt ở 0 dòng lesson
-	 * và package.total = 0 (hoặc chưa có package) sau khi lớp chuyển sang `auto` (#670).
-	 * Chạy tuần tự từng học viên để không vượt trần một `db.batch` của D1 và để học viên
-	 * thứ 2 nhìn thấy dòng shift I6 vừa sinh bởi học viên thứ 1.
-	 */
-	async function backfillStuckEnrollments(
+	async function findMissingLinkedMaterial(
 		db: Db,
 		orgId: string,
-		classId: string,
-	): Promise<number> {
-		const stuck = await db
-			.select({
-				id: enrollment.id,
-				studentId: enrollment.studentId,
-			})
-			.from(enrollment)
-			.leftJoin(
-				sessionPackage,
-				and(
-					eq(sessionPackage.enrollmentId, enrollment.id),
-					eq(sessionPackage.orgId, enrollment.orgId),
-				),
-			)
-			.where(
-				and(
-					eq(enrollment.orgId, orgId),
-					eq(enrollment.classId, classId),
-					eq(enrollment.status, "active"),
-					sql`NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.enrollmentId} = ${enrollment.id})`,
-					sql`(${sessionPackage.id} IS NULL OR ${sessionPackage.total} = 0)`,
-				),
-			);
-		let healed = 0;
-		for (const row of stuck) {
-			const materialized = await materializeScheduleForEnrollment(db, {
-				orgId,
-				enrollmentId: row.id,
-				studentId: row.studentId,
-				classId,
-				mode: "backfill",
-			});
-			if (materialized.ok) healed += 1;
-		}
-		return healed;
+		links: readonly { materialId: string }[],
+	): Promise<string | undefined> {
+		if (links.length === 0) return undefined;
+		const materialIds = [...new Set(links.map((l) => l.materialId))];
+		const existingMats = await findExistingMaterialIds(db, orgId, materialIds);
+		return materialIds.find((id) => !existingMats.has(id));
 	}
 
 	//
@@ -423,12 +442,18 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 							}
 							throw healErr;
 						}
-						await backfillStuckEnrollments(db, ctx.orgId, classId);
+						if (cls.status === "active") {
+							await backfillStuckEnrollments(db, ctx.orgId, classId);
+						}
 						return c.json({ id: existing.id } satisfies CreatedResponse, 201);
 					}
 				}
 			}
-			if (cls.schedulingMode === "auto" && cls.sessionsTotal > 0) {
+			if (
+				cls.status === "active" &&
+				cls.schedulingMode === "auto" &&
+				cls.sessionsTotal > 0
+			) {
 				const healed = await backfillStuckEnrollments(db, ctx.orgId, classId);
 				if (healed > 0) {
 					return c.json({ id: existing.id } satisfies CreatedResponse, 201);
@@ -547,13 +572,11 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 				}
 				const message = err instanceof Error ? err.message : String(err);
 				if (/FOREIGN KEY/i.test(message) && tree.links.length > 0) {
-					const materialIds = [...new Set(tree.links.map((l) => l.materialId))];
-					const existingMats = await findExistingMaterialIds(
+					const missing = await findMissingLinkedMaterial(
 						db,
 						ctx.orgId,
-						materialIds,
+						tree.links,
 					);
-					const missing = materialIds.find((id) => !existingMats.has(id));
 					if (missing !== undefined) {
 						return c.json(
 							{
@@ -615,7 +638,8 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 		const effectiveTotal = hasLesson
 			? cls.sessionsTotal
 			: candidateSessionsTotal;
-		if (effectiveTotal > 0) {
+		const clsAfter = await findClassRow(db, classId, ctx.orgId);
+		if (clsAfter?.status === "active" && effectiveTotal > 0) {
 			await backfillStuckEnrollments(db, ctx.orgId, classId);
 		}
 		return c.json({ id: copyId } satisfies CreatedResponse, 201);
@@ -717,6 +741,259 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 		return c.json({ ok: true });
 	};
 
+	const syncCurriculumHandler = async (c: SyllabusContext) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, syncCurriculumSchema);
+		if (!body.ok) return body.response;
+		const db = deps.getDb();
+		const classId = c.req.param("id");
+		if (classId === undefined) {
+			return c.json({ error: "class not found" }, 404);
+		}
+
+		const cls = await findClassRow(db, classId, ctx.orgId);
+		if (!cls) {
+			return c.json({ error: "class not found" }, 404);
+		}
+		const copy = await findClassCurriculum(db, classId, ctx.orgId);
+		if (!copy) {
+			return c.json(
+				{
+					error: "Lớp chưa có giáo trình để đồng bộ.",
+					code: "CURRICULUM_NOT_FOUND",
+				},
+				409,
+			);
+		}
+
+		let tpl: typeof syllabus.$inferSelect | undefined;
+		if (body.data.templateId !== undefined) {
+			tpl = await findTemplate(db, body.data.templateId, ctx.orgId);
+			if (!tpl) {
+				return c.json({ error: "syllabus not found" }, 404);
+			}
+		} else {
+			if (!copy.sourceTemplateId) {
+				return c.json(
+					{
+						error:
+							"Template gốc đã bị xóa. Vui lòng chọn một template khác để đồng bộ.",
+						code: "CURRICULUM_SOURCE_TEMPLATE_MISSING",
+					},
+					422,
+				);
+			}
+			tpl = await findTemplate(db, copy.sourceTemplateId, ctx.orgId);
+			if (!tpl) {
+				return c.json(
+					{
+						error:
+							"Template gốc đã bị xóa. Vui lòng chọn một template khác để đồng bộ.",
+						code: "CURRICULUM_SOURCE_TEMPLATE_MISSING",
+					},
+					422,
+				);
+			}
+		}
+
+		const [tree, existingCopyTree, existingCs, existingLesson] =
+			await Promise.all([
+				selectTemplateTree(db, tpl.id, ctx.orgId),
+				selectTemplateTree(db, copy.id, ctx.orgId),
+				db
+					.select({ id: classSession.id })
+					.from(classSession)
+					.where(
+						and(
+							eq(classSession.orgId, ctx.orgId),
+							eq(classSession.classId, classId),
+						),
+					)
+					.limit(1),
+				db
+					.select({ id: lesson.id })
+					.from(lesson)
+					.where(and(eq(lesson.orgId, ctx.orgId), eq(lesson.classId, classId)))
+					.limit(1),
+			]);
+
+		if (
+			tree.modules.length + tree.lessons.length + tree.links.length >
+			MAX_IMPORT_NODES
+		) {
+			return c.json(
+				{
+					error: "Template quá lớn để đồng bộ.",
+					code: "CURRICULUM_TEMPLATE_TOO_LARGE",
+				},
+				422,
+			);
+		}
+
+		const missingMaterial = await findMissingLinkedMaterial(
+			db,
+			ctx.orgId,
+			tree.links,
+		);
+		if (missingMaterial !== undefined) {
+			return c.json(
+				{
+					error: "material-not-found",
+					materialId: missingMaterial,
+					code: "CURRICULUM_MATERIAL_NOT_FOUND",
+				},
+				422,
+			);
+		}
+
+		if (existingCs.length > 0) {
+			return c.json(
+				{
+					error:
+						"Lớp đã có buổi học thủ công. Vui lòng xóa các buổi chưa học trước khi đồng bộ giáo trình.",
+					reason: "has-manual-sessions",
+					code: "MANUAL_SESSIONS_EXIST",
+				},
+				409,
+			);
+		}
+
+		const lessonCount = tree.lessons.length;
+		if (lessonCount === 0) {
+			return c.json(
+				{
+					error:
+						"Template chưa có bài học nào. Vui lòng thêm ít nhất 1 bài học trước khi đồng bộ.",
+					reason: "empty-template",
+					code: "CURRICULUM_EMPTY_TEMPLATE",
+				},
+				422,
+			);
+		}
+		const hasLesson = existingLesson.length > 0;
+		if (lessonCount > 52) {
+			return c.json(
+				{
+					error: "Template vượt quá giới hạn 52 buổi học của lớp.",
+					reason: "too-many-lessons",
+					code: "CURRICULUM_TOO_MANY_LESSONS",
+				},
+				422,
+			);
+		}
+
+		const previousStatuses = flattenSyllabusLessons(
+			existingCopyTree.modules,
+			existingCopyTree.lessons,
+		).map((l) => l.status);
+		const { statements } = buildSyncBatch(db, {
+			copyId: copy.id,
+			template: tpl,
+			...tree,
+			previousStatuses,
+			orgId: ctx.orgId,
+		});
+
+		const candidateSessionsTotal = lessonCount;
+		statements.push(
+			db
+				.update(classTable)
+				.set({
+					syllabusId: copy.id,
+					sessionsTotal: sql`CASE WHEN EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.orgId} = ${ctx.orgId} AND ${lesson.classId} = ${classId}) OR EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.orgId} = ${ctx.orgId} AND ${classSession.classId} = ${classId}) THEN ${classTable.sessionsTotal} ELSE ${candidateSessionsTotal} END`,
+					schedulingMode: sql`CASE WHEN EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.classId} = ${classId} AND ${classSession.orgId} = ${ctx.orgId}) THEN NULL ELSE 'auto' END`,
+				})
+				.where(
+					and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)),
+				),
+		);
+
+		try {
+			await db.batch(statements);
+		} catch (err: unknown) {
+			if (!isRollbackableConstraintError(err)) {
+				throw err;
+			}
+			const message = err instanceof Error ? err.message : String(err);
+			if (/FOREIGN KEY/i.test(message)) {
+				if (tree.links.length > 0) {
+					const missing = await findMissingLinkedMaterial(
+						db,
+						ctx.orgId,
+						tree.links,
+					);
+					if (missing !== undefined) {
+						return c.json(
+							{
+								error: "material-not-found",
+								materialId: missing,
+								code: "CURRICULUM_MATERIAL_NOT_FOUND",
+							},
+							422,
+						);
+					}
+				}
+				const afterCopy = await findClassCurriculum(db, classId, ctx.orgId);
+				if (!afterCopy || afterCopy.id !== copy.id) {
+					return c.json(
+						{
+							error: "Lớp chưa có giáo trình để đồng bộ.",
+							code: "CURRICULUM_NOT_FOUND",
+						},
+						409,
+					);
+				}
+				const afterTpl = await findTemplate(db, tpl.id, ctx.orgId);
+				if (!afterTpl) {
+					if (body.data.templateId !== undefined) {
+						return c.json({ error: "syllabus not found" }, 404);
+					}
+					return c.json(
+						{
+							error:
+								"Template gốc đã bị xóa. Vui lòng chọn một template khác để đồng bộ.",
+							code: "CURRICULUM_SOURCE_TEMPLATE_MISSING",
+						},
+						422,
+					);
+				}
+			}
+			const [raceCs] = await db
+				.select({ id: classSession.id })
+				.from(classSession)
+				.where(
+					and(
+						eq(classSession.orgId, ctx.orgId),
+						eq(classSession.classId, classId),
+					),
+				)
+				.limit(1);
+			if (raceCs) {
+				return c.json(
+					{
+						error:
+							"Lớp đã có buổi học thủ công. Vui lòng xóa các buổi chưa học trước khi đồng bộ giáo trình.",
+						reason: "has-manual-sessions",
+						code: "MANUAL_SESSIONS_EXIST",
+					},
+					409,
+				);
+			}
+			throw err;
+		}
+
+		const clsAfter = await findClassRow(db, classId, ctx.orgId);
+		if (
+			clsAfter?.status === "active" &&
+			!hasLesson &&
+			candidateSessionsTotal > 0
+		) {
+			await backfillStuckEnrollments(db, ctx.orgId, classId);
+		}
+		return c.json({ ok: true, id: copy.id }, 200);
+	};
+
 	//
 	// Registration: mỗi operation một path ngữ cảnh duy nhất — alias cũ
 	// (/syllabi, import-syllabus, remove-curriculum) đã gỡ ở phase 8 (#401).
@@ -744,6 +1021,7 @@ export function syllabusRoutes(deps: { getDb(): Db }) {
 	routes.post("/classes/:id/curriculum/import", (c) =>
 		importCurriculumHandler(c),
 	);
+	routes.post("/classes/:id/curriculum/sync", (c) => syncCurriculumHandler(c));
 	routes.post("/classes/:id/curriculum/remove", (c) =>
 		removeCurriculumHandler(c),
 	);

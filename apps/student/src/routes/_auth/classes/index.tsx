@@ -7,6 +7,7 @@ import { OverviewEmptyState } from "@/components/overview/empty-state";
 import { StudentErrorView } from "@/components/overview/student-error-view";
 import { isHttpError } from "@/lib/query-client";
 import {
+	resolveAcceptEnrollmentErrorMessage,
 	useAcceptClassEnrollment,
 	useStudentOverview,
 } from "@/lib/repos/student";
@@ -27,7 +28,7 @@ function StudentClassesPage() {
 				toast.success("Đã tham gia lớp học thành công!");
 			},
 			onError: (err) => {
-				toast.error(err.message || "Không thể tham gia lớp học");
+				toast.error(resolveAcceptEnrollmentErrorMessage(err));
 			},
 		});
 	};

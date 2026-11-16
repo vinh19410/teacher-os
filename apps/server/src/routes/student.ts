@@ -1,6 +1,7 @@
 import {
 	ACCOUNT_ERROR_CODES,
 	type AssignmentQuestion,
+	CLASS_ERROR_CODES,
 	CURRENT_LEVEL_OPTIONS,
 	DAILY_STUDY_HOUR_OPTIONS,
 	type EssayAnnotation,
@@ -59,7 +60,16 @@ import {
 	studentInvitation,
 	user,
 } from "@teacher-os/db/schema/index";
-import { and, asc, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import {
+	and,
+	asc,
+	desc,
+	eq,
+	isNotNull,
+	isNull,
+	notLike,
+	sql,
+} from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
@@ -79,6 +89,7 @@ import {
 	toPlainAnnotation,
 } from "../lib/quiz-annotation";
 import { toQuizAttemptGrade } from "../lib/quiz-grade";
+import { streamStudyPackAudio } from "../lib/study-pack-audio";
 import type { SessionUser } from "../session";
 import { provisionStudentForUser } from "../student-provisioning";
 import { activateEnrollment } from "./enrollment-activation";
@@ -103,6 +114,10 @@ export interface StudentRouteDeps {
 	runInBackground?(promise: Promise<unknown>): void;
 	/** TOS-30: grader chấm nháp AI — vắng mặt → bỏ qua chấm nháp. */
 	getAiGrader?(): AiGrader | undefined;
+	/** #702: injectable fetch cho audio proxy của listening study-pack prompts. */
+	fetchExternalAudio?: typeof fetch;
+	/** Allowlist email giáo viên để định tuyến auto-join single-org (#716). */
+	teacherEmails?: string[];
 }
 
 export interface StudentContext {
@@ -147,19 +162,33 @@ export function createStudentGuard(deps: StudentRouteDeps) {
 		let rows = await db
 			.select()
 			.from(student)
-			.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
+			.where(
+				and(
+					sql`lower(trim(${student.email})) = ${normalizedEmail}`,
+					notLike(student.id, "demo-student:%"),
+				),
+			)
 			.orderBy(desc(student.createdAt), asc(student.id));
 
 		if (rows.length === 0) {
 			try {
-				await provisionStudentForUser(db, {
-					name: sessionUser.userName,
-					email: sessionUser.email,
-				});
+				await provisionStudentForUser(
+					db,
+					{
+						name: sessionUser.userName,
+						email: sessionUser.email,
+					},
+					{ teacherEmails: deps.teacherEmails },
+				);
 				rows = await db
 					.select()
 					.from(student)
-					.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
+					.where(
+						and(
+							sql`lower(trim(${student.email})) = ${normalizedEmail}`,
+							notLike(student.id, "demo-student:%"),
+						),
+					)
 					.orderBy(desc(student.createdAt), asc(student.id));
 			} catch (err) {
 				console.error("Failed to provision student for user", {
@@ -700,17 +729,44 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const rawHeaderOrg = c.req.header("x-student-org-id")?.trim();
 		const requestedOrgId = rawHeaderOrg ? rawHeaderOrg : undefined;
 
-		const studentRows = await db
-			.select({
-				studentId: student.id,
-				orgId: student.orgId,
-				orgName: organization.name,
-				createdAt: student.createdAt,
-			})
-			.from(student)
-			.innerJoin(organization, eq(student.orgId, organization.id))
-			.where(sql`lower(trim(${student.email})) = ${normalizedEmail}`)
-			.orderBy(desc(student.createdAt), asc(student.id));
+		const loadStudentOrgRows = () =>
+			db
+				.select({
+					studentId: student.id,
+					orgId: student.orgId,
+					orgName: organization.name,
+					createdAt: student.createdAt,
+				})
+				.from(student)
+				.innerJoin(organization, eq(student.orgId, organization.id))
+				.where(
+					and(
+						sql`lower(trim(${student.email})) = ${normalizedEmail}`,
+						notLike(student.id, "demo-student:%"),
+					),
+				)
+				.orderBy(desc(student.createdAt), asc(student.id));
+
+		let studentRows = await loadStudentOrgRows();
+
+		if (studentRows.length === 0 && sessionUser.emailVerified === true) {
+			try {
+				await provisionStudentForUser(
+					db,
+					{
+						name: sessionUser.userName,
+						email: sessionUser.email,
+					},
+					{ teacherEmails: deps.teacherEmails },
+				);
+				studentRows = await loadStudentOrgRows();
+			} catch (err) {
+				console.error("Failed to provision student for user", {
+					userId: sessionUser.userId,
+					error: err,
+				});
+			}
+		}
 
 		if (studentRows.length === 0) {
 			return c.json([]);
@@ -748,6 +804,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	// bỏ qua /api/student — router mount riêng sẽ không có auth).
 	router.use("/assignments/:assignmentId/quiz", requireStudent);
 	router.use("/assignments/:assignmentId/quiz/*", requireStudent);
+	router.use("/assignments/:assignmentId/audio", requireStudent);
 	router.use("/attempts/*", requireStudent);
 	// #320: Hono use(path) chỉ khớp đúng path — đăng ký cả hai dạng.
 	router.use("/invoices", requireStudent);
@@ -1015,7 +1072,9 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			enrollmentRows.map(async (cls) =>
 				toStudentClass(
 					cls,
-					await loadNextSession(db, orgId, cls.id, now),
+					cls.status === "active"
+						? await loadNextSession(db, orgId, cls.id, now)
+						: null,
 					teacher,
 				),
 			),
@@ -1086,7 +1145,9 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const now = new Date();
 		const [teacher, nextSession, lessons, assignments] = await Promise.all([
 			loadOrgTeacher(db, orgId),
-			loadNextSession(db, orgId, row.id, now),
+			row.status === "active"
+				? loadNextSession(db, orgId, row.id, now)
+				: Promise.resolve(null),
 			// Lọc theo enrollment (không theo lớp) để trạng thái riêng như
 			// "vắng" là của chính học viên. `date` null theo cả lớp nên không
 			// cần NULLS LAST; lớp legacy được sắp lại bởi orderStudentLessons.
@@ -1162,7 +1223,11 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const now = new Date();
 		const [teacher, ...nextSessions] = await Promise.all([
 			loadOrgTeacher(db, orgId),
-			...classRows.map((r) => loadNextSession(db, orgId, r.id, now)),
+			...classRows.map((r) =>
+				r.status === "active"
+					? loadNextSession(db, orgId, r.id, now)
+					: Promise.resolve(null),
+			),
 		]);
 
 		const classes = classRows.map((row, index) =>
@@ -1211,7 +1276,12 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const undatedLessons: StudentScheduleLesson[] = [];
 
 		for (const classRow of classRows) {
-			const rawClassLessons = lessonsByClass.get(classRow.id) ?? [];
+			const rawClassLessons = (lessonsByClass.get(classRow.id) ?? []).filter(
+				(l) =>
+					classRow.status === "active" ||
+					l.status === "completed" ||
+					l.status === "absent",
+			);
 			if (rawClassLessons.length === 0) continue;
 
 			const ordered = orderStudentLessons(
@@ -1335,6 +1405,15 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		if (result.ok) {
 			return c.json({ ok: true });
 		}
+		if (result.error === "class-paused") {
+			return c.json(
+				{
+					error: "Lớp đang tạm dừng, chưa thể tham gia.",
+					code: CLASS_ERROR_CODES.CLASS_PAUSED,
+				},
+				409,
+			);
+		}
 		return c.json(
 			{
 				error:
@@ -1426,12 +1505,14 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			part: prompt.part,
 			type: prompt.type,
 			band: prompt.band,
+			...(prompt.level ? { level: prompt.level } : {}),
 			intro: prompt.intro,
 			prompt: prompt.prompt,
 			passage: prompt.passage,
 			cueTopic: prompt.cueTopic,
 			cuePoints: prompt.cuePoints,
 			audioName: prompt.audioName,
+			...(prompt.audioUrl ? { hasAudio: true } : {}),
 			imageUrl: prompt.imageUrl,
 			optionBank: parseQuizOptionBank(prompt.optionBank),
 			// Speaking (#305) không có đáp án — "Hướng dẫn thêm" là hướng dẫn
@@ -1471,6 +1552,42 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				: null,
 		};
 		return c.json(detail);
+	});
+
+	router.get("/assignments/:assignmentId/audio", async (c) => {
+		const { student: s, orgId } = c.get("studentCtx");
+		const assignmentId = c.req.param("assignmentId");
+		const [row] = await deps
+			.getDb()
+			.select({ audioUrl: assignmentPrompt.audioUrl })
+			.from(classAssignment)
+			.innerJoin(
+				classAssignmentTarget,
+				and(
+					eq(classAssignmentTarget.assignmentId, classAssignment.id),
+					eq(classAssignmentTarget.orgId, orgId),
+					eq(classAssignmentTarget.studentId, s.id),
+				),
+			)
+			.innerJoin(
+				assignmentPrompt,
+				and(
+					eq(assignmentPrompt.id, classAssignment.promptId),
+					eq(assignmentPrompt.orgId, orgId),
+				),
+			)
+			.where(
+				and(
+					eq(classAssignment.id, assignmentId),
+					eq(classAssignment.orgId, orgId),
+					visibleAssignmentFilter(new Date()),
+				),
+			)
+			.limit(1);
+		if (!row?.audioUrl) {
+			return c.json({ error: "audio not found" }, 404);
+		}
+		return streamStudyPackAudio(row.audioUrl, deps.fetchExternalAudio);
 	});
 
 	/**
@@ -2140,6 +2257,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 						type: assignmentPrompt.type,
 						skill: assignmentTest.skill,
 						part: assignmentPrompt.part,
+						audioUrl: assignmentPrompt.audioUrl,
+						transcript: assignmentPrompt.transcript,
 					})
 					.from(assignmentTest)
 					.leftJoin(
@@ -2171,6 +2290,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 						type: assignmentPrompt.type,
 						skill: assignmentPrompt.skill,
 						part: assignmentPrompt.part,
+						audioUrl: assignmentPrompt.audioUrl,
+						transcript: assignmentPrompt.transcript,
 						writingPart: assignmentPrompt.writingPart,
 						writingType: assignmentPrompt.writingType,
 						writingPrompt: assignmentPrompt.writingPrompt,
@@ -2210,6 +2331,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			promptType: header[0]?.type ?? "",
 			skill: header[0]?.skill ?? "",
 			part: header[0]?.part ?? "",
+			hasAudio: Boolean(header[0]?.audioUrl),
+			transcript: header[0]?.transcript ?? "",
 			writing:
 				attempt.mode !== "practice" &&
 				header[0] &&
@@ -2383,6 +2506,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			promptType,
 			skill,
 			part,
+			hasAudio,
+			transcript,
 			writing,
 		} = loaded;
 		const effectiveTypes = inferQuestionTypes(questions, promptType);
@@ -2418,6 +2543,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			essay: detailEssayView ? detailEssayView.text : null,
 			skill,
 			media: skill === "speaking" ? toQuizAttemptMedia(attempt) : null,
+			...(hasAudio ? { hasAudio: true } : {}),
+			...(transcript ? { transcript } : {}),
 			...(writing ? { writing } : {}),
 			questions: reviewQuestions.map((question, index) => {
 				const given = answers[String(index)];

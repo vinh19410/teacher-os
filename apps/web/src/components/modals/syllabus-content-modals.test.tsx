@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { File as NodeFile } from "node:buffer";
 import {
 	cleanup,
 	fireEvent,
@@ -8,6 +9,10 @@ import {
 	within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+	buildSampleXlsxBytes,
+	SYLLABUS_SAMPLE_MIME,
+} from "@/lib/syllabus-import";
 import { itFollowsTheKernelFormContract } from "@/test/kernel-form-contract";
 import {
 	renderWithKernel,
@@ -102,6 +107,7 @@ const syllabusWithBank = () =>
 
 afterEach(() => {
 	cleanup();
+	vi.restoreAllMocks();
 	vi.unstubAllGlobals();
 });
 
@@ -118,6 +124,92 @@ describe("AddSyllabusModal", () => {
 			path: "/api/syllabus-templates",
 			body: { name: "IELTS Speaking 6.5", skills: ["Speaking"] },
 		},
+	});
+
+	it('renders the Excel-only import label and restricts file input to ".xlsx"', async () => {
+		startKernelServer(syllabus());
+		renderWithKernel(<AddSyllabusModal open onClose={() => {}} />);
+		const dialog = await screen.findByRole("dialog");
+
+		expect(
+			within(dialog).getByText("Nhập nhanh từ Excel (tùy chọn)"),
+		).toBeTruthy();
+		const input = dialog.querySelector(
+			'input[type="file"]',
+		) as HTMLInputElement;
+		expect(input).not.toBeNull();
+		expect(input.accept).toBe(".xlsx");
+	});
+
+	it('downloads "syllabus-template.xlsx" matching buildSampleXlsxBytes()', async () => {
+		startKernelServer(syllabus());
+		renderWithKernel(<AddSyllabusModal open onClose={() => {}} />);
+		const dialog = await screen.findByRole("dialog");
+
+		let capturedBlob: Blob | null = null;
+		let createdAnchor: HTMLAnchorElement | null = null;
+		vi.spyOn(URL, "createObjectURL").mockImplementation(
+			(obj: Blob | MediaSource) => {
+				capturedBlob = obj as Blob;
+				return "blob:add-syllabus-sample";
+			},
+		);
+		vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+		const origCreateElement = document.createElement.bind(document);
+		vi.spyOn(document, "createElement").mockImplementation(((tag: string) => {
+			const el = origCreateElement(tag);
+			if (tag.toLowerCase() === "a") {
+				createdAnchor = el as HTMLAnchorElement;
+			}
+			return el;
+		}) as typeof document.createElement);
+		const clickSpy = vi
+			.spyOn(HTMLAnchorElement.prototype, "click")
+			.mockImplementation(() => {});
+
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Tải file mẫu" }),
+		);
+
+		expect(clickSpy).toHaveBeenCalledTimes(1);
+		expect(createdAnchor).not.toBeNull();
+		if (!createdAnchor) throw new Error("expected createdAnchor");
+		expect((createdAnchor as HTMLAnchorElement).download).toBe(
+			"syllabus-template.xlsx",
+		);
+		expect(capturedBlob).toBeInstanceOf(Blob);
+		if (!capturedBlob) throw new Error("expected capturedBlob");
+		expect((capturedBlob as Blob).type).toBe(SYLLABUS_SAMPLE_MIME);
+		const buf = await new Promise<ArrayBuffer>((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onload = () => resolve(reader.result as ArrayBuffer);
+			reader.onerror = () => reject(reader.error);
+			reader.readAsArrayBuffer(capturedBlob as Blob);
+		});
+		expect(new Uint8Array(buf)).toEqual(buildSampleXlsxBytes());
+	});
+
+	it("rejects .csv upload with an explicit error and disables submit", async () => {
+		startKernelServer(syllabus());
+		renderWithKernel(<AddSyllabusModal open onClose={() => {}} />);
+		const dialog = await screen.findByRole("dialog");
+
+		const input = dialog.querySelector(
+			'input[type="file"]',
+		) as HTMLInputElement;
+		fireEvent.change(input, {
+			target: {
+				files: [new NodeFile(["M1;d1;o1;m1"], "x.csv", { type: "text/csv" })],
+			},
+		});
+
+		expect(
+			await within(dialog).findByText("Chỉ nhận file Excel (.xlsx)."),
+		).toBeTruthy();
+		const submitBtn = within(dialog).getByRole("button", {
+			name: "Tạo",
+		}) as HTMLButtonElement;
+		expect(submitBtn.disabled).toBe(true);
 	});
 });
 

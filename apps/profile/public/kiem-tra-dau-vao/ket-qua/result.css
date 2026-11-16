@@ -1,0 +1,253 @@
+/* Trang kết quả (#730). Dùng token màu của ../test.css, không thêm hex mới. */
+.result-app {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-5);
+	min-width: 0;
+}
+
+.result-app .card,
+.result-message {
+	background: var(--page);
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	padding: var(--space-5) var(--space-4);
+	min-width: 0;
+}
+
+.result-app h1,
+.result-app h2 {
+	font-family: var(--font-display);
+	margin: 0 0 var(--space-3);
+	overflow-wrap: anywhere;
+}
+
+.result-app h3 {
+	margin: var(--space-4) 0 var(--space-2);
+	font-size: 1rem;
+}
+
+.result-rubric {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+	gap: var(--space-3);
+	margin: var(--space-3) 0;
+}
+
+.result-stat {
+	background: var(--paper);
+	border: 1px solid var(--hairline-soft);
+	border-radius: var(--radius-sm);
+	padding: var(--space-3);
+	min-width: 0;
+}
+
+.result-stat dt {
+	font-size: 0.8125rem;
+	color: var(--muted);
+}
+
+.result-stat dd {
+	margin: var(--space-1) 0 0;
+	font-weight: 700;
+	font-size: 1.125rem;
+	overflow-wrap: anywhere;
+}
+
+.result-total {
+	font-weight: 700;
+	font-size: 1.125rem;
+	margin: 0 0 var(--space-2);
+}
+
+.result-prose {
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	margin: 0;
+}
+
+.result-cta {
+	display: flex;
+	justify-content: center;
+}
+
+/* Highlight lỗi: màu + kiểu gạch chân khác nhau theo loại (không chỉ dựa vào màu) */
+.annotated-text {
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	line-height: 2;
+	background: var(--paper);
+	border: 1px solid var(--hairline-soft);
+	border-radius: var(--radius-sm);
+	padding: var(--space-4);
+	margin: var(--space-3) 0;
+}
+
+.err-mark {
+	color: var(--ink);
+	padding: 0 2px;
+	border-radius: 3px;
+	text-decoration-thickness: 2px;
+	text-underline-offset: 4px;
+}
+
+/*
+ * Màu loại lỗi khớp token `--class-*` của app giáo viên (packages/ui
+ * globals.css, light) để giáo viên và học viên nói cùng một màu:
+ * grammar = class-5, vocabulary = class-1, spelling = class-3,
+ * coherence = class-4, pronunciation = class-2.
+ */
+.err-grammar {
+	--err: oklch(0.55 0.19 5);
+	text-decoration: underline solid var(--err);
+}
+
+.err-vocabulary {
+	--err: oklch(0.53 0.16 255);
+	text-decoration: underline dashed var(--err);
+}
+
+.err-spelling {
+	--err: oklch(0.55 0.14 65);
+	text-decoration: underline wavy var(--err);
+}
+
+.err-coherence {
+	--err: oklch(0.52 0.17 295);
+	text-decoration: underline dotted var(--err);
+}
+
+.err-pronunciation {
+	--err: oklch(0.52 0.12 185);
+	text-decoration: underline double var(--err);
+}
+
+.err-border-grammar {
+	--err: oklch(0.55 0.19 5);
+}
+
+.err-border-vocabulary {
+	--err: oklch(0.53 0.16 255);
+}
+
+.err-border-spelling {
+	--err: oklch(0.55 0.14 65);
+}
+
+.err-border-coherence {
+	--err: oklch(0.52 0.17 295);
+}
+
+.err-border-pronunciation {
+	--err: oklch(0.52 0.12 185);
+}
+
+.error-card[class*="err-border-"] {
+	border-left-color: var(--err);
+}
+
+.err-grammar,
+.err-vocabulary,
+.err-spelling,
+.err-coherence,
+.err-pronunciation {
+	background: color-mix(in oklab, var(--err), transparent 88%);
+}
+
+.err-num {
+	display: inline-block;
+	min-width: 1.5em;
+	min-height: 1.5em;
+	margin-left: 2px;
+	text-align: center;
+	font-weight: 700;
+	font-size: 0.875rem;
+	line-height: 1.5;
+	color: var(--ink);
+	text-decoration: none;
+	vertical-align: super;
+	border-radius: 999px;
+}
+
+a.err-num {
+	color: var(--blue);
+}
+
+a.err-num:hover {
+	background: var(--page);
+}
+
+.result-app :focus-visible {
+	outline: 3px solid var(--blue);
+	outline-offset: 2px;
+}
+
+.error-legend-title {
+	margin: 0 0 var(--space-2);
+	font-size: 0.875rem;
+	color: var(--muted);
+}
+
+.error-legend-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2) var(--space-4);
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	font-size: 0.875rem;
+}
+
+.error-cards {
+	list-style: none;
+	margin: var(--space-3) 0 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+}
+
+.error-card {
+	border: 1px solid var(--line);
+	border-left-width: 6px;
+	border-radius: var(--radius-sm);
+	padding: var(--space-3);
+	background: var(--page);
+	min-width: 0;
+}
+
+.error-card:target {
+	background: var(--butter);
+}
+
+.error-card-head {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+}
+
+.error-fix,
+.error-explain {
+	margin: var(--space-2) 0 0;
+	overflow-wrap: anywhere;
+}
+
+.error-quote {
+	text-decoration: line-through;
+	color: var(--muted);
+}
+
+.error-correction {
+	font-weight: 700;
+	color: var(--teal);
+}
+
+.error-explain {
+	color: var(--ink-raised);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	html {
+		scroll-behavior: smooth;
+	}
+}

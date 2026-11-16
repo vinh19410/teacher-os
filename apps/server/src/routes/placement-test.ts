@@ -14,9 +14,9 @@ import {
 	type PlacementAudioMeta,
 	type PlacementContent,
 	type PlacementTeacherStateResponse,
-	placementContentSchema,
 	placementDraftSaveSchema,
 	placementPublishRequestSchema,
+	upgradeLegacyPlacementContent,
 	validatePlacementForPublish,
 } from "@teacher-os/api/placement-test-contracts";
 import { canAccessFinance } from "@teacher-os/auth/role";
@@ -30,6 +30,7 @@ import type { Db, KernelCtx } from "../app";
 import { mediaObjectResponse } from "../lib/media-response";
 import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
 import { type PeekedStream, peekStream } from "../lib/peek-stream";
+import { resolveLeadTargetOrg } from "../lib/resolve-lead-org";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type PlacementContext = Context<Env>;
@@ -40,6 +41,7 @@ export const PLACEMENT_AUDIO_ORPHAN_TTL_MS = 24 * 60 * 60 * 1000;
 export interface PlacementTestRouteDeps {
 	getDb(): Db;
 	leadOrgId?: string;
+	teacherEmails?: string[];
 	getLibraryAudioStore?(): MediaStore | undefined;
 	runInBackground?(promise: Promise<unknown>): void;
 }
@@ -47,8 +49,7 @@ export interface PlacementTestRouteDeps {
 function parseSavedDraft(raw: string | null): PlacementContent | null {
 	if (!raw) return null;
 	try {
-		const parsed = placementContentSchema.safeParse(JSON.parse(raw));
-		return parsed.success ? parsed.data : null;
+		return upgradeLegacyPlacementContent(JSON.parse(raw));
 	} catch {
 		return null;
 	}
@@ -165,9 +166,9 @@ export function placementTestRoutes(deps: PlacementTestRouteDeps) {
 				row.draft !== null &&
 				(row.published === null || row.revision !== row.publishedRevision),
 		);
-		const trimmedLeadOrgId = deps.leadOrgId?.trim() ?? "";
+		const resolvedLeadOrgId = await resolveLeadTargetOrg(db, deps);
 		const isLeadOrg = Boolean(
-			trimmedLeadOrgId && trimmedLeadOrgId === ctx.orgId,
+			resolvedLeadOrgId && resolvedLeadOrgId === ctx.orgId,
 		);
 
 		const response: PlacementTeacherStateResponse = {
@@ -498,10 +499,39 @@ export function placementTestRoutes(deps: PlacementTestRouteDeps) {
 			.where(eq(placementTestAudio.orgId, ctx.orgId));
 		const orgAudioIds = new Set(orgAudioRows.map((r) => r.id));
 
-		draft.parts[1].clips.forEach((clip, cIdx) => {
+		const listeningPartIdx = draft.parts.findIndex((p) => p.id === "listening");
+		const listeningClips =
+			listeningPartIdx >= 0
+				? (
+						draft.parts[listeningPartIdx] as Extract<
+							PlacementContent["parts"][number],
+							{ id: "listening" }
+						>
+					).clips
+				: [];
+		listeningClips.forEach((clip, cIdx) => {
 			if (clip.audioId && !orgAudioIds.has(clip.audioId)) {
 				issues.push({
-					path: `parts.1.clips.${cIdx}.audioId`,
+					path: `parts.${listeningPartIdx}.clips.${cIdx}.audioId`,
+					message: "File âm thanh không tồn tại hoặc không thuộc tổ chức này.",
+				});
+			}
+		});
+
+		const speakingPartIdx = draft.parts.findIndex((p) => p.id === "speaking");
+		const speakingTasks =
+			speakingPartIdx >= 0
+				? (
+						draft.parts[speakingPartIdx] as Extract<
+							PlacementContent["parts"][number],
+							{ id: "speaking" }
+						>
+					).tasks
+				: [];
+		speakingTasks.forEach((task, tIdx) => {
+			if (task.audioId && !orgAudioIds.has(task.audioId)) {
+				issues.push({
+					path: `parts.${speakingPartIdx}.tasks.${tIdx}.audioId`,
 					message: "File âm thanh không tồn tại hoặc không thuộc tổ chức này.",
 				});
 			}

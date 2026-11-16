@@ -14,8 +14,8 @@ import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Section } from "@/components/ui/section";
 import {
-	buildClassSessions,
 	formatSessionDate,
+	resolveClassSessions,
 	sessionAttendanceState,
 	sessionAttendanceTally,
 	sessionLessonInfo,
@@ -67,6 +67,7 @@ export function ClassSessionsSection({
 	classSessions,
 	holidayShifts = [],
 	onAddSession,
+	onImportSyllabus,
 	onDeleteOccurrence,
 }: {
 	cls: ClassGroup;
@@ -93,6 +94,7 @@ export function ClassSessionsSection({
 	 * bucket manual 0 lesson; optional để caller cũ/test không truyền vẫn chạy. */
 	holidayShifts?: KernelHolidayShiftRow[];
 	onAddSession?: () => void;
+	onImportSyllabus?: () => void;
 	onDeleteOccurrence?: (dateISO: string) => Promise<OccurrenceActionResult>;
 	isPending: (key: string) => boolean;
 	busy: boolean;
@@ -106,33 +108,56 @@ export function ClassSessionsSection({
 	const [actionsDateISO, setActionsDateISO] = useState<string | null>(null);
 	const [materialsDateISO, setMaterialsDateISO] = useState<string | null>(null);
 
-	// Issue #649: manual = lớp tạo không template (`schedulingMode: "manual"`)
-	// hoặc đã có buổi thủ công. `sessionsTotal === 0` không phải tín hiệu —
-	// deploy skew (server cũ) không gửi schedulingMode và lớp auto legacy
-	// phải giữ nguyên projection #121.
-	const isManual =
-		(classSessions?.length ?? 0) > 0 ||
-		(!syllabus && cls.schedulingMode === "manual");
-	const syllabusLessonCount = syllabus
-		? syllabus.modules.reduce((sum, m) => sum + m.lessons.length, 0)
-		: 0;
-	const effectiveSessionsTotal =
-		!isManual && cls.sessionsTotal === 0 && syllabusLessonCount > 0
-			? syllabusLessonCount
-			: cls.sessionsTotal;
-
-	const sessions = buildClassSessions({
-		schedule: cls.schedule,
-		startDate: cls.startDate,
-		lessons,
-		sessionsTotal: effectiveSessionsTotal,
-		manual: isManual,
-		classSessions,
-	});
+	// Issue #649 & #697: dùng chung helper resolveClassSessions với modal
+	// "Quản lý buổi của lớp" để đồng bộ 100% ánh xạ buổi N ↔ bài N.
+	const { sessions, isManual, syllabusLessonCount, effectiveSessionsTotal } =
+		resolveClassSessions({
+			cls,
+			lessons,
+			syllabus,
+			classSessions,
+		});
 	// Projection mode: zero real rows for an auto-scheduled class means every displayed
 	// session is a schedule projection (display-only).
 	const isProjected = !isManual && lessons.length === 0 && sessions !== null;
 
+	const isEmptyAttachedSyllabus =
+		sessions === null &&
+		Boolean(syllabus) &&
+		syllabusLessonCount === 0 &&
+		effectiveSessionsTotal === 0 &&
+		lessons.length === 0 &&
+		(classSessions?.length ?? 0) === 0 &&
+		legacyLessons.length === 0;
+
+	if (isEmptyAttachedSyllabus || (sessions !== null && sessions.length === 0)) {
+		return (
+			<Section title="Sessions">
+				<div className="rounded-lg border border-border border-dashed p-8 text-center">
+					<p className="font-semibold text-sm">Chưa có buổi học nào</p>
+					<p className="mt-1 text-muted-foreground text-xs">
+						{syllabus
+							? "Giáo trình của lớp hiện chưa có bài học nào. Nhấn “Sắp xếp buổi” ở góc trên để thêm bài học."
+							: "Lớp chưa có giáo trình mẫu. Bạn có thể thêm buổi học thủ công hoặc nhập buổi từ syllabus để bắt đầu giảng dạy."}
+					</p>
+					{!syllabus && (onAddSession || onImportSyllabus) && (
+						<div className="mt-4 flex flex-wrap justify-center gap-2">
+							{onAddSession && (
+								<Button size="sm" onClick={onAddSession}>
+									+ Thêm buổi học
+								</Button>
+							)}
+							{onImportSyllabus && (
+								<Button variant="outline" size="sm" onClick={onImportSyllabus}>
+									Nhập buổi từ syllabus
+								</Button>
+							)}
+						</div>
+					)}
+				</div>
+			</Section>
+		);
+	}
 	if (sessions === null) {
 		return (
 			<Section title="Sessions">
@@ -170,35 +195,6 @@ export function ClassSessionsSection({
 			</Section>
 		);
 	}
-	if (sessions !== null && sessions.length === 0) {
-		return (
-			<Section
-				title="Sessions"
-				action={
-					onAddSession ? (
-						<Button variant="outline" size="sm" onClick={onAddSession}>
-							+ Thêm buổi
-						</Button>
-					) : undefined
-				}
-			>
-				<div className="rounded-lg border border-border border-dashed p-8 text-center">
-					<p className="font-semibold text-sm">Chưa có buổi học nào</p>
-					<p className="mt-1 text-muted-foreground text-xs">
-						Lớp chưa có giáo trình mẫu. Bạn có thể thêm buổi học thủ công để bắt
-						đầu giảng dạy.
-					</p>
-					{onAddSession && (
-						<div className="mt-4 flex justify-center">
-							<Button size="sm" onClick={onAddSession}>
-								+ Thêm buổi học
-							</Button>
-						</div>
-					)}
-				</div>
-			</Section>
-		);
-	}
 
 	const toggleDetails = (index: number) => {
 		setExpandedDetails((prev) => {
@@ -216,6 +212,7 @@ export function ClassSessionsSection({
 	const todayISO = todayISOVietnam();
 	// Live session behind the roster modal: re-resolved from the derived list
 	// on every render so checked-in rows flip to badges without a snapshot.
+	const isPaused = cls.status === "paused";
 	const modalSession = sessions.find((s) => s.index === modalIndex) ?? null;
 	const actionsSession =
 		sessions.find((s) => s.dateISO === actionsDateISO) ?? null;
@@ -263,7 +260,8 @@ export function ClassSessionsSection({
 							status === "upcoming" &&
 							s.dateISO < todayISO &&
 							attendees.length > 0;
-						const isPastUnmarked = isPast && markedCount + absentCount === 0;
+						const isPastUnmarked =
+							!isPaused && isPast && markedCount + absentCount === 0;
 						// Link attendance cho buổi ĐÃ TỚI NGÀY (kể cả hôm nay — gate
 						// action trong modal vẫn chặn check-in sớm qua
 						// sessionIsEligibleDate) hoặc đã học. Buổi `holiday` (TOS-11)
@@ -274,6 +272,10 @@ export function ClassSessionsSection({
 							status !== "holiday" &&
 							s.dateISO <= todayISO &&
 							attendees.length > 0;
+						const showGroupAttendanceLink =
+							(status === "completed" || dateArrived) &&
+							isGroupSession &&
+							(!isPaused || markedCount + absentCount > 0);
 						const hasAdjust =
 							!isProjected &&
 							(sessionRowTargets(s).length > 0 ||
@@ -345,25 +347,27 @@ export function ClassSessionsSection({
 									<div className="mt-0.5 truncate font-medium text-sm">
 										{info.title ?? "—"}
 									</div>
-									{(status === "completed" || dateArrived) &&
-										isGroupSession && (
-											<button
-												type="button"
-												// #403: selector ổn định cho harness design:compare
-												// (t-attendance appSteps) — phân biệt với nút commit
-												// check-in 1:1 cùng text "Điểm danh".
-												data-testid={`session-attendance-open-${s.index}`}
-												disabled={busy}
-												onClick={() => setModalIndex(s.index)}
-												className="mt-0.5 inline-flex items-center gap-1 font-medium text-xs underline-offset-4 hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
-											>
-												{status === "completed" ||
-												(tally.unmarked === 0 && markedCount + absentCount > 0)
+									{showGroupAttendanceLink && (
+										<button
+											type="button"
+											// #403: selector ổn định cho harness design:compare
+											// (t-attendance appSteps) — phân biệt với nút commit
+											// check-in 1:1 cùng text "Điểm danh".
+											data-testid={`session-attendance-open-${s.index}`}
+											disabled={busy}
+											onClick={() => setModalIndex(s.index)}
+											className="mt-0.5 inline-flex items-center gap-1 font-medium text-xs underline-offset-4 hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
+										>
+											{isPaused
+												? "Xem điểm danh"
+												: status === "completed" ||
+														(tally.unmarked === 0 &&
+															markedCount + absentCount > 0)
 													? "Sửa điểm danh"
 													: "Điểm danh"}{" "}
-												→
-											</button>
-										)}
+											→
+										</button>
+									)}
 									{
 										// Buổi holiday vô hình với học sinh (TOS-11) — không mở
 										// modal tài liệu (#645): server cũng chặn attach 409.
@@ -374,9 +378,7 @@ export function ClassSessionsSection({
 												onClick={() => setMaterialsDateISO(s.dateISO)}
 												className={cn(
 													"mt-0.5 inline-flex items-center gap-1 font-medium text-xs underline-offset-4 hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
-													(status === "completed" || dateArrived) &&
-														isGroupSession &&
-														"ml-3",
+													showGroupAttendanceLink && "ml-3",
 												)}
 											>
 												<Paperclip aria-hidden="true" className="size-3.5" />
@@ -401,8 +403,11 @@ export function ClassSessionsSection({
 									<span className="inline-flex shrink-0 items-center rounded-md border border-warn/50 bg-warn-soft px-1.5 py-0.5 font-medium text-warn text-xs">
 										Nghỉ lễ — Đã dời lịch
 									</span>
+								) : isPaused && isPast && markedCount + absentCount === 0 ? (
+									<Badge variant="muted">Chưa điểm danh</Badge>
 								) : status === "completed" ||
 									isPast ||
+									(isPaused && markedCount + absentCount > 0) ||
 									(tally.unmarked === 0 && markedCount + absentCount > 0) ? (
 									<AttendanceSummary
 										tally={tally}
@@ -414,7 +419,8 @@ export function ClassSessionsSection({
 										Sắp tới
 									</span>
 								)}
-								{attendance.kind === "actionable" &&
+								{!isPaused &&
+									attendance.kind === "actionable" &&
 									checkInId !== null &&
 									!isGroupSession && (
 										// #91: check-in 1-click 1:1 — KHÔNG phụ thuộc hasAdjust:
@@ -472,12 +478,14 @@ export function ClassSessionsSection({
 				run={run}
 				isPending={isPending}
 				busy={busy}
+				readOnly={isPaused}
 				onClose={() => setModalIndex(null)}
 			/>
 			<SessionActionsModal
 				key={actionsDateISO ?? "no-session-actions"}
 				session={actionsSession}
 				studentById={studentById}
+				isPaused={isPaused}
 				onClose={() => setActionsDateISO(null)}
 				onComplete={onComplete}
 				onCancelOccurrence={onCancelOccurrence}

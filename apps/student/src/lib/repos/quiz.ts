@@ -15,6 +15,8 @@ import {
 	studentQuizDetailSchema,
 } from "@teacher-os/api/contracts";
 import { normalizeMediaType } from "@teacher-os/api/lib/quiz-media";
+import { LIBRARY_AUDIO_MIME } from "@teacher-os/api/library-contracts";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import {
 	HttpError,
@@ -491,6 +493,125 @@ export async function fetchQuizMediaObjectUrl(
 	// Blob bọc blob gốc (không copy byte) chỉ để ép type đã kiểm.
 	const blob = new Blob([await res.blob()], { type });
 	return URL.createObjectURL(blob);
+}
+
+/**
+ * Tải audio Listening từ `/api/student/assignments/:assignmentId/audio` về blob
+ * URL (#702) — giữ CSP `media-src 'self' blob:` và truyền header `x-student-org-id`.
+ */
+export async function fetchAssignmentAudioObjectUrl(
+	assignmentId: string,
+	signal?: AbortSignal,
+): Promise<string> {
+	const url = `${getApiBaseUrl()}/api/student/assignments/${encodeURIComponent(assignmentId)}/audio`;
+	const headers = getStudentHeaders({ Accept: "audio/*" });
+	const sentOrgId = headers["x-student-org-id"];
+	let res = await fetch(url, {
+		method: "GET",
+		credentials: "include",
+		headers,
+		signal,
+	});
+	if (!res.ok) {
+		let { code } = await parseErrorBody(res);
+		if (
+			res.status === 403 &&
+			code === STUDENT_ERROR_CODES.ORG_MISMATCH &&
+			sentOrgId
+		) {
+			if (getActiveStudentOrgId() === sentOrgId) {
+				clearActiveStudentOrgId();
+				void studentQueryClient.invalidateQueries({
+					queryKey: ["student", "orgs"],
+					exact: true,
+				});
+			}
+			res = await fetch(url, {
+				method: "GET",
+				credentials: "include",
+				headers: getStudentHeaders({ Accept: "audio/*" }, null),
+				signal,
+			});
+			if (!res.ok) {
+				({ code } = await parseErrorBody(res));
+				throw new HttpError(
+					res.status,
+					`Request failed with status ${res.status}`,
+					{ code },
+				);
+			}
+		} else {
+			throw new HttpError(
+				res.status,
+				`Request failed with status ${res.status}`,
+				{
+					code,
+					sentOrgId,
+				},
+			);
+		}
+	}
+	const type = normalizeMediaType(res.headers.get("Content-Type") ?? "");
+	if (!Object.hasOwn(LIBRARY_AUDIO_MIME, type)) {
+		await res.body?.cancel().catch(() => {});
+		throw new HttpError(res.status, "Unexpected listening audio content type");
+	}
+	const blob = new Blob([await res.blob()], { type });
+	return URL.createObjectURL(blob);
+}
+
+export function useAssignmentAudioObjectUrl(assignmentId: string | null): {
+	audioSrc: string | null;
+	audioLoading: boolean;
+	audioError: boolean;
+} {
+	const [audioSrc, setAudioSrc] = useState<string | null>(null);
+	const [audioLoading, setAudioLoading] = useState(false);
+	const [audioError, setAudioError] = useState(false);
+
+	useEffect(() => {
+		setAudioSrc(null);
+		if (!assignmentId) {
+			setAudioLoading(false);
+			setAudioError(false);
+			return;
+		}
+		const controller = new AbortController();
+		let objectUrl: string | null = null;
+		setAudioLoading(true);
+		setAudioError(false);
+
+		void fetchAssignmentAudioObjectUrl(assignmentId, controller.signal)
+			.then((url) => {
+				if (controller.signal.aborted) {
+					URL.revokeObjectURL(url);
+					return;
+				}
+				objectUrl = url;
+				setAudioSrc(url);
+				setAudioLoading(false);
+			})
+			.catch((err) => {
+				if (
+					controller.signal.aborted ||
+					(err instanceof DOMException && err.name === "AbortError")
+				) {
+					return;
+				}
+				setAudioSrc(null);
+				setAudioError(true);
+				setAudioLoading(false);
+			});
+
+		return () => {
+			controller.abort();
+			if (objectUrl) {
+				URL.revokeObjectURL(objectUrl);
+			}
+		};
+	}, [assignmentId]);
+
+	return { audioSrc, audioLoading, audioError };
 }
 
 /**

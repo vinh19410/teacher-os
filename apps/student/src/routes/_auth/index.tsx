@@ -20,6 +20,8 @@ import {
 import { deriveAssignmentStatus } from "@/lib/assignment-status";
 import { isHttpError } from "@/lib/query-client";
 import {
+	countActiveEnrolledClasses,
+	resolveAcceptEnrollmentErrorMessage,
 	useAcceptClassEnrollment,
 	useStudentInvoices,
 	useStudentMe,
@@ -43,8 +45,8 @@ function StudentOverviewPage() {
 			onSuccess: () => {
 				toast.success("Đã xác nhận tham gia lớp thành công!");
 			},
-			onError: () => {
-				toast.error("Không thể xác nhận tham gia lớp. Vui lòng thử lại.");
+			onError: (err) => {
+				toast.error(resolveAcceptEnrollmentErrorMessage(err));
 			},
 		});
 	};
@@ -148,10 +150,7 @@ function StudentOverviewPage() {
 				/>
 				<StatCard
 					label="Lớp đang học"
-					value={String(
-						overview.classes.filter((c) => c.enrollmentStatus === "active")
-							.length,
-					)}
+					value={String(countActiveEnrolledClasses(overview.classes))}
 					sub="Lớp đã kích hoạt"
 				/>
 			</div>

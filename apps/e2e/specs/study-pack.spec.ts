@@ -332,3 +332,393 @@ test("study pack end-to-end: create grammar & reading prompts -> build 2-day pac
 	await expect(page.getByText("1/2 đã nộp")).toBeVisible();
 	await expect(page.getByText("0/2 đã nộp")).toBeVisible();
 });
+
+test("built-in Course Foun/GT1 IELTS Foundation study pack: filter, detail page preview & simulation, assign, class pack link, student listening blob audio & post-submit transcript (#702, #720)", async ({
+	page,
+	browser,
+}) => {
+	test.setTimeout(180_000);
+
+	const runToken = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+	const CLASS_NAME = `E2E 702 Foundation ${runToken}`;
+	const STUDENT_NAME = "Học viên Foundation 702";
+	const STUDENT_EMAIL = `st.702.${runToken}@test.local`;
+	const PACK_TITLE = "Course Foun/GT1 — Mô hình Kỷ luật (15 phút/ngày)";
+	const DAY_1_TITLE = "Buổi 1 — The Importance of Education";
+
+	// 1. Teacher signs up & seeds + activates a student in a fresh class
+	const teacherEmail = await signUpViaApi(page);
+	await seedStudent({
+		teacherEmail,
+		name: STUDENT_NAME,
+		email: STUDENT_EMAIL,
+		onboarded: true,
+	});
+
+	await page.getByText("Lớp học", { exact: true }).first().click();
+	await page.getByRole("button", { name: "+ Tạo lớp" }).click();
+	const classDialog = page.getByRole("dialog");
+	await classDialog.getByLabel("Tên lớp *").fill(CLASS_NAME);
+	await classDialog
+		.getByRole("button", { name: "Listening", exact: true })
+		.click();
+	await classDialog.getByRole("button", { name: "T2", exact: true }).click();
+	await classDialog.getByRole("button", { name: "T4", exact: true }).click();
+	await classDialog
+		.getByRole("button", { name: "Tạo lớp", exact: true })
+		.click();
+	await expect(classDialog).toBeHidden();
+
+	await page.getByText(CLASS_NAME).click();
+	await expect(page).toHaveURL(/\/classes\/[a-zA-Z0-9_-]+$/);
+	const classId = page.url().split("/classes/")[1]?.split("?")[0] ?? "";
+	expect(classId.length).toBeGreaterThan(0);
+
+	await page.getByRole("tab", { name: "Học viên", exact: true }).click();
+	await page.getByRole("button", { name: "+ Thêm học viên vào lớp" }).click();
+	const enrollDialog = page.getByRole("dialog");
+	await enrollDialog.getByRole("option", { name: STUDENT_NAME }).click();
+	await enrollDialog.getByRole("button", { name: "Lưu", exact: true }).click();
+	await expect(enrollDialog).toBeHidden();
+	await acceptAllClassEnrollments(page, classId);
+
+	// 2. Navigate to /assignments/packs -> System Library -> IELTS Foundation chip filter
+	await page.goto("/assignments/packs");
+	await page.getByRole("button", { name: "Thư viện hệ thống" }).click();
+	await expect(page).toHaveURL(/scope=system/);
+
+	const foundationChip = page.getByRole("button", {
+		name: /^IELTS Foundation/,
+	});
+	await expect(foundationChip).toBeVisible();
+	await foundationChip.click();
+	await foundationChip.focus();
+	await expect(foundationChip).toBeFocused();
+	await expect(page).toHaveURL(/scope=system/);
+	await expect(page).toHaveURL(/level=IELTS/);
+
+	await expect(page.getByText(PACK_TITLE)).toBeVisible();
+	await expect(page.getByText("69 ngày · 69 bài tập")).toBeVisible();
+
+	// Capture POT screenshots across 3 viewports + dark mode with zero overflow
+	for (const vp of REVIEW_VIEWPORTS) {
+		await page.setViewportSize(vp);
+		expect(
+			await page.evaluate(
+				() => document.documentElement.scrollWidth > window.innerWidth,
+			),
+			`horizontal overflow at ${vp.width}x${vp.height}`,
+		).toBe(false);
+		await page.screenshot({
+			path: `../../plans/reports/702-packs-system-${vp.width}x${vp.height}-light.png`,
+			fullPage: true,
+		});
+		await page.evaluate(() => document.documentElement.classList.add("dark"));
+		await page.screenshot({
+			path: `../../plans/reports/702-packs-system-${vp.width}x${vp.height}-dark.png`,
+			fullPage: true,
+		});
+		await page.evaluate(() =>
+			document.documentElement.classList.remove("dark"),
+		);
+	}
+	await page.setViewportSize({ width: 1440, height: 900 });
+
+	// Navigate to dedicated study pack detail page (/assignments/packs/$packId)
+	const packCard = page.locator("div").filter({ hasText: PACK_TITLE }).first();
+	await packCard.getByRole("link", { name: "Xem chi tiết" }).first().click();
+	await expect(page).toHaveURL(
+		/\/assignments\/packs\/syspack-foun-gt1-discipline/,
+	);
+	await expect(
+		page.getByRole("heading", { level: 1, name: PACK_TITLE }),
+	).toBeVisible();
+	await expect(page.getByRole("tab", { name: "Đề & Đáp án" })).toHaveAttribute(
+		"aria-selected",
+		"true",
+	);
+
+	// Explicitly select Day 1 in the left rail so ?item= is synced across mobile/desktop
+	await page
+		.getByRole("navigation", { name: "Danh sách buổi học" })
+		.getByRole("button", { name: new RegExp(DAY_1_TITLE) })
+		.click();
+	await expect(page).toHaveURL(/item=/);
+	await expect(
+		page.getByRole("heading", { level: 2, name: DAY_1_TITLE }),
+	).toBeVisible();
+	await expect(page.getByText("Đáp án đúng").first()).toBeVisible();
+	await expect(page.getByText("Giải thích").first()).toBeVisible();
+	await expect(page.getByText(/Mẹo tự học:/)).toBeVisible();
+
+	await page.getByRole("button", { name: /Transcript/i }).click();
+	await expect(
+		page.getByText(
+			/Education is one of the most important things in our lives\./,
+		),
+	).toBeVisible();
+
+	await page.getByRole("button", { name: "Nghe thử" }).click();
+	const previewAudio = page.getByTestId("study-pack-preview-audio");
+	await expect(previewAudio).toBeVisible();
+	await expect(previewAudio).toHaveAttribute("src", /^blob:/);
+
+	// Capture #720 POT screenshots across 3 viewports (light & dark) + 320px reflow check
+	for (const vp of REVIEW_VIEWPORTS) {
+		await page.setViewportSize(vp);
+		expect(
+			await page.evaluate(
+				() => document.documentElement.scrollWidth > window.innerWidth,
+			),
+			`pack detail horizontal overflow (light) at ${vp.width}x${vp.height}`,
+		).toBe(false);
+		await page.screenshot({
+			path: `../../plans/reports/720-pack-detail-${vp.width}x${vp.height}-light.png`,
+			fullPage: true,
+		});
+		await page.evaluate(() => document.documentElement.classList.add("dark"));
+		expect(
+			await page.evaluate(
+				() => document.documentElement.scrollWidth > window.innerWidth,
+			),
+			`pack detail horizontal overflow (dark) at ${vp.width}x${vp.height}`,
+		).toBe(false);
+		await page.screenshot({
+			path: `../../plans/reports/720-pack-detail-${vp.width}x${vp.height}-dark.png`,
+			fullPage: true,
+		});
+		await page.evaluate(() =>
+			document.documentElement.classList.remove("dark"),
+		);
+	}
+
+	await page.setViewportSize({ width: 320, height: 800 });
+	expect(
+		await page.evaluate(
+			() => document.documentElement.scrollWidth > window.innerWidth,
+		),
+		"pack detail horizontal overflow at 320x800",
+	).toBe(false);
+	await page.getByRole("button", { name: /Danh sách buổi/ }).click();
+	expect(
+		await page.evaluate(
+			() => document.documentElement.scrollWidth > window.innerWidth,
+		),
+		"pack master list horizontal overflow at 320x800",
+	).toBe(false);
+	await page
+		.getByRole("navigation", { name: "Danh sách buổi học" })
+		.getByRole("button", { name: new RegExp(DAY_1_TITLE) })
+		.click();
+	await page.setViewportSize({ width: 1440, height: 900 });
+
+	// Test "Làm thử" interactive quiz simulation tab + URL ?tab=sim
+	await page.getByRole("tab", { name: "Làm thử" }).click();
+	await expect(page).toHaveURL(/tab=sim/);
+	const simAudio = page.getByTestId("quiz-audio-player");
+	await expect(simAudio).toBeVisible({ timeout: 10_000 });
+	await expect(simAudio).toHaveAttribute("aria-label", "Bài nghe");
+	await expect(simAudio).toHaveAttribute("src", /^blob:/);
+	await expect(page.getByText("education.mp3")).toHaveCount(0);
+	await expect(page.getByText(/🔊/)).toHaveCount(0);
+	await page
+		.locator('[data-question="0"] label', { hasText: "Success and failure" })
+		.click();
+	await page.getByRole("button", { name: /^Nộp bài/ }).click();
+	await expect(page.getByRole("button", { name: "Làm lại" })).toBeVisible();
+	await page.getByRole("tab", { name: "Đề & Đáp án" }).click();
+
+	// Test skill filter chip URL sync & reset
+	await page
+		.locator('[aria-label="Lọc kỹ năng trong bộ đề"]')
+		.getByRole("button", { name: /^Reading/ })
+		.click();
+	await expect(page).toHaveURL(/skill=reading/);
+	await page.getByRole("button", { name: "Xoá bộ lọc" }).click();
+	await expect(page).not.toHaveURL(/skill=reading/);
+
+	// 3. Assign the 69-day system study pack to the class starting today (00:00 - 23:59)
+	const todayISO = vietnamTodayISO();
+	await page.goto(`/classes/${classId}`);
+	await page.getByRole("button", { name: "Bộ đề tự học", exact: true }).click();
+	await page.getByRole("button", { name: "Gán bộ đề" }).first().click();
+
+	const assignDialog = page.getByRole("dialog");
+	await assignDialog.locator("#assign-pack-id").selectOption({
+		label: `[IELTS Foundation] ${PACK_TITLE} (69 ngày · 69 bài · Hệ thống)`,
+	});
+	await assignDialog.getByLabel(/Ngày bắt đầu/).fill(todayISO);
+	await assignDialog.getByLabel(/Giờ mở bài/).fill("00:00");
+	await assignDialog.getByLabel(/Giờ hạn nộp/).fill("23:59");
+	await assignDialog
+		.getByRole("button", { name: "Xác nhận gán bộ đề" })
+		.click();
+	await expect(assignDialog).toBeHidden();
+
+	// Wait for Day 1 to render in class table and verify class pack title links to detail page
+	await expect(page.getByText(DAY_1_TITLE)).toBeVisible({ timeout: 20_000 });
+	await expect(page.getByRole("link", { name: PACK_TITLE })).toHaveAttribute(
+		"href",
+		"/assignments/packs/syspack-foun-gt1-discipline",
+	);
+
+	// Fetch Day 1 & Day 2 assignmentIds from API
+	const packsRes = await page.request.get(
+		`${API_ORIGIN}/api/classes/${classId}/study-packs`,
+		{ headers: { Origin: WEB_ORIGIN } },
+	);
+	expect(packsRes.status()).toBe(200);
+	const packsJson = (await packsRes.json()) as {
+		packs?: Array<{
+			assignments?: Array<{ dayIndex: number; assignmentId: string }>;
+		}>;
+	};
+	const assignments = packsJson.packs?.[0]?.assignments ?? [];
+	const day1AssignmentId =
+		assignments.find((a) => a.dayIndex === 1)?.assignmentId ?? "";
+	const day2AssignmentId =
+		assignments.find((a) => a.dayIndex === 2)?.assignmentId ?? "";
+	expect(day1AssignmentId.length).toBeGreaterThan(0);
+	expect(day2AssignmentId.length).toBeGreaterThan(0);
+
+	// 4. Student opens portal, verifies Day 2 audio is gated (404), opens Day 1 Listening
+	const studentContext = await browser.newContext({
+		viewport: { width: 1440, height: 900 },
+	});
+	const studentPage = await studentContext.newPage();
+	await signUpAndVerifyStudent(studentPage, STUDENT_NAME, STUDENT_EMAIL);
+
+	const day2AudioRes = await studentPage.request.get(
+		`${API_ORIGIN}/api/student/assignments/${day2AssignmentId}/audio`,
+		{ headers: { Origin: STUDENT_ORIGIN } },
+	);
+	expect(day2AudioRes.status()).toBe(404);
+
+	await expect(
+		studentPage.getByRole("link", { name: `Làm bài: ${DAY_1_TITLE}` }),
+	).toBeVisible();
+	await studentPage
+		.getByRole("link", { name: `Làm bài: ${DAY_1_TITLE}` })
+		.click();
+
+	const paper = studentPage.getByTestId("navigator-progress");
+	const startDialog = studentPage.getByRole("alertdialog", {
+		name: "Bắt đầu làm bài",
+	});
+	await expect(paper.or(startDialog)).toBeVisible();
+	if (await startDialog.isVisible()) {
+		await startDialog.getByRole("button", { name: "Bắt đầu" }).click();
+	}
+	await expect(paper).toBeVisible();
+
+	await expect(studentPage.getByText("IELTS Foundation")).toBeVisible();
+	const takeAudio = studentPage.getByTestId("quiz-audio-player");
+	await expect(takeAudio).toBeVisible();
+	await expect(takeAudio).toHaveAttribute("src", /^blob:/);
+	await expect(studentPage.getByTestId("quiz-review-transcript")).toHaveCount(
+		0,
+	);
+	await studentPage.screenshot({
+		path: "../../plans/reports/702-student-listening-take-1440x900.png",
+		fullPage: true,
+	});
+	await expect(takeAudio).toHaveAttribute("aria-label", "Bài nghe");
+	await expect(studentPage.getByText("education.mp3")).toHaveCount(0);
+	await expect(studentPage.getByText(/🔊/)).toHaveCount(0);
+
+	const potIssue = process.env.CAPTURE_POT_ISSUE?.trim();
+	const potViewports = [
+		{ key: "desktop-1440x900", width: 1440, height: 900 },
+		{ key: "tablet-768x1024", width: 768, height: 1024 },
+		{ key: "mobile-375x812", width: 375, height: 812 },
+	] as const;
+	try {
+		for (const vp of potViewports) {
+			await studentPage.setViewportSize({
+				width: vp.width,
+				height: vp.height,
+			});
+			await expect(takeAudio).toBeVisible();
+			for (const theme of ["light", "dark"] as const) {
+				await studentPage.evaluate((isDark) => {
+					document.documentElement.classList.toggle("dark", isDark);
+				}, theme === "dark");
+				expect(
+					await studentPage.evaluate(
+						() => document.documentElement.scrollWidth > window.innerWidth,
+					),
+					`student listening take overflow (${theme}) at ${vp.width}x${vp.height}`,
+				).toBe(false);
+				if (potIssue) {
+					await studentPage.screenshot({
+						path: `../../plans/reports/${potIssue}-quiz-audio-take-${vp.key}-${theme}.png`,
+						fullPage: true,
+					});
+				}
+			}
+		}
+		await studentPage.evaluate(() =>
+			document.documentElement.classList.remove("dark"),
+		);
+		await studentPage.setViewportSize({ width: 320, height: 568 });
+		expect(
+			await studentPage.evaluate(
+				() => document.documentElement.scrollWidth > window.innerWidth,
+			),
+			"student listening take horizontal overflow at 320x568",
+		).toBe(false);
+	} finally {
+		await studentPage.evaluate(() =>
+			document.documentElement.classList.remove("dark"),
+		);
+		await studentPage.setViewportSize({ width: 1440, height: 900 });
+	}
+
+	// Answer Q1 correctly, submit, then open detail review and verify transcript reveals
+	await studentPage
+		.locator('[data-question="0"] label', { hasText: "Success and failure" })
+		.click();
+	await expect(studentPage.getByTestId("save-state")).toHaveAttribute(
+		"data-state",
+		"saved",
+	);
+	await studentPage.getByRole("button", { name: "Nộp bài" }).click();
+	const confirmSubmitDialog = studentPage.getByRole("alertdialog", {
+		name: "Bạn còn câu hỏi chưa làm",
+	});
+	await expect(confirmSubmitDialog).toBeVisible();
+	await confirmSubmitDialog.getByRole("button", { name: "Nộp bài" }).click();
+	await expect(studentPage).toHaveURL(/\/learn\/quizzes\/attempt\//);
+
+	await studentPage.getByRole("link", { name: "Xem chi tiết bài làm" }).click();
+	await expect(studentPage).toHaveURL(/\/detail$/);
+
+	const transcriptBox = studentPage.getByTestId("quiz-review-transcript");
+	await expect(transcriptBox).toBeVisible();
+	await expect(transcriptBox).toContainText(
+		"Education is one of the most important things in our lives.",
+	);
+	const reviewAudio = studentPage.getByTestId("quiz-audio-player");
+	await expect(reviewAudio).toBeVisible();
+	await expect(reviewAudio).toHaveAttribute("src", /^blob:/);
+	await expect(reviewAudio).toHaveAttribute("aria-label", "Bài nghe");
+	await expect(studentPage.getByText("education.mp3")).toHaveCount(0);
+	await expect(studentPage.getByText(/🔊/)).toHaveCount(0);
+	expect(
+		await studentPage.evaluate(
+			() => document.documentElement.scrollWidth > window.innerWidth,
+		),
+	).toBe(false);
+	await studentPage.screenshot({
+		path: "../../plans/reports/702-student-listening-review-1440x900.png",
+		fullPage: true,
+	});
+	if (potIssue) {
+		await studentPage.screenshot({
+			path: `../../plans/reports/${potIssue}-quiz-audio-review-desktop-1440x900-light.png`,
+			fullPage: true,
+		});
+	}
+
+	await studentContext.close();
+});

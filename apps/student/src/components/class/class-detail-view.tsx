@@ -242,6 +242,7 @@ export function ClassDetailView({
 	const [tab, setTab] = useState<ClassTabId>("journey");
 	const stats = computeRingStats(detail);
 	const statusLabel = CLASS_STATUS_LABEL[cls.status] ?? cls.status;
+	const isPaused = cls.status === "paused";
 
 	return (
 		<>
@@ -280,6 +281,16 @@ export function ClassDetailView({
 					</a>
 				)}
 			</header>
+
+			{isPaused && (
+				<div
+					data-testid="class-paused-banner"
+					className="mb-6 rounded-xl border bg-muted/50 px-5 py-3.5 text-foreground text-sm"
+				>
+					Lớp đang tạm dừng — lịch buổi học sắp tới tạm hoãn. Bạn vẫn có thể xem
+					lại buổi đã học, tài liệu và làm bài tập.
+				</div>
+			)}
 
 			<ClassInfoCard
 				detail={detail}
@@ -342,6 +353,7 @@ export function ClassDetailView({
 						<h2 className="sr-only">Buổi học</h2>
 						<ClassLessonList
 							classId={cls.id}
+							isPaused={isPaused}
 							lessons={detail.lessons}
 							todayISO={todayISO}
 							now={now}

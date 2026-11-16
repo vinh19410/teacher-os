@@ -19,7 +19,7 @@ Bạn điền vào cột "Trả lời" hoặc trả lời trong chat, mình sẽ
 |---|---------|-----------|---------|
 | Q1 | Có được nâng `better-auth` lên ≥1.7.7 ngay, trước khi làm #578 không? | TD-01 | Có, nâng ngay (2026-11-04) |
 | Q2 | Dự kiến bật SePay khi nào, hay chưa có kế hoạch? Câu trả lời này quyết định mức ưu tiên của TD-04. | TD-04 | |
-| Q3 | Bạn có chấp nhận lâu dài việc E2E không chạy trên CI không? Hiện prod và staging chỉ gate bằng quality, E2E dựa vào kỷ luật chạy local. | TD-06 | |
+| Q3 | Có cần bật E2E trên CI cho PR vào `develop` hoặc staging không? Hiện `e2e.yml` đã chạy cho PR vào `main` và `deploy.yml` prod, còn PR vào `develop` và staging chưa chạy E2E. | TD-06 | |
 | Q4 | Mỗi tuần hoặc mỗi đợt release, bạn muốn dành bao nhiêu thời gian trả nợ (ví dụ 20%, hay một đợt riêng)? | TD-07, TD-08 | |
 | Q5 | Với repo nặng: chỉ dừng thêm file nặng từ nay, hay chấp nhận viết lại lịch sử git để giảm dung lượng? Viết lại lịch sử sẽ làm đổi hash và ảnh hưởng mọi clone. | TD-12 | |
 | Q6 | Có cần giữ ảnh trong `plans/` và `dogfood-output/` trên git không, hay chuyển ra kho ngoài được? | TD-12 | |
@@ -44,7 +44,7 @@ Mức ưu tiên:
 | TD-03 | P1 | Một số secret không được redact trong cấu hình deploy | Bảo mật | Mở |
 | TD-04 | P1 | Lỗi SePay Bank Hub phải sửa trước khi bật (#329) | Thanh toán | Chờ Q2 |
 | TD-05 | P2 | Chưa thấy test IDOR cho media bài nộp | Test | Cần xác minh |
-| TD-06 | P2 | E2E không chạy trên CI | Quy trình | Chờ Q3 |
+| TD-06 | P2 | E2E trên CI chỉ chạy ở PR `main` và deploy prod | Quy trình | Chờ Q3 |
 | TD-07 | P2 | File nguồn quá lớn | Kiến trúc | Chờ Q4 |
 | TD-08 | P2 | Lớp map sang "legacy UI shape" ở web | Kiến trúc | Chờ Q4 |
 | TD-09 | P2 | Tính ngày kết thúc lớp bỏ qua buổi bù | Nghiệp vụ | Cần xác minh |
@@ -104,10 +104,10 @@ SELECT provider_id, account_id, count(*) FROM account GROUP BY 1, 2 HAVING count
 - **Mức độ thực tế:** code có guard `ownedAttempt` (`apps/server/src/routes/student.ts:809`), nên đây là thiếu test bảo vệ, chưa phải lỗ hổng đã xác nhận.
 - **Hướng xử lý:** soát toàn bộ test server rồi thêm test GET và DELETE bằng tài khoản học viên khác.
 
-### TD-06: E2E chỉ chạy trên CI ở deploy production
+### TD-06: E2E trên CI chỉ chạy ở PR `main` và deploy production
 
-- **Bằng chứng:** `.github/workflows/deploy.yml` có job `e2e` (6 shard, `--fully-parallel`) và `deploy` phụ thuộc nó. `ci.yml`, `quality.yml` và `deploy-staging.yml` không chạy e2e.
-- **Rủi ro:** lỗi e2e chỉ lộ ra ở bước release lên prod, không có lưới ở PR hay staging; spec mới có test phụ thuộc thứ tự phải nằm trong describe serial, nếu không sẽ vỡ khi bị chia shard.
+- **Bằng chứng:** `.github/workflows/e2e.yml` (6 shard, `--fully-parallel`) chạy khi mở/cập nhật PR vào `main` và được `.github/workflows/deploy.yml` gọi lại để gate `deploy` prod. `ci.yml`, `quality.yml` và `deploy-staging.yml` (cùng các PR vào `develop`) không chạy E2E.
+- **Rủi ro:** lệch spec tích luỹ trên `develop` không bị chặn ở PR `develop` hay staging mà chỉ lộ khi mở PR release vào `main`; spec mới có test phụ thuộc thứ tự phải nằm trong `describe.serial`, nếu không sẽ vỡ khi bị chia shard.
 
 ### TD-07: File nguồn quá lớn
 

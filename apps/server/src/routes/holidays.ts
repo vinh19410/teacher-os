@@ -1,4 +1,5 @@
 import {
+	CLASS_ERROR_CODES,
 	HOLIDAY_ERROR_CODES,
 	type HolidayDraft,
 	type HolidayMode,
@@ -96,12 +97,12 @@ async function planHashOf(
 }
 
 /** Lớp áp dụng (loader bước 1): scope org → mọi lớp active; scope classes →
- * đúng các `classIds` thuộc org (lớp lạ/lệch org → 404, NFR-005). */
+ * đúng các `classIds` thuộc org (lớp lạ/lệch org → 404, NFR-005; lớp tạm dừng → 409 CLASS_PAUSED). */
 async function loadApplicableClasses(
 	db: Db,
 	orgId: string,
 	draft: HolidayDraft,
-): Promise<ApplicableClass[] | "class-not-found"> {
+): Promise<ApplicableClass[] | "class-not-found" | "class-paused"> {
 	if (draft.scope === "org") {
 		return db
 			.select({
@@ -113,7 +114,7 @@ async function loadApplicableClasses(
 			.where(and(eq(classTable.orgId, orgId), eq(classTable.status, "active")));
 	}
 	const wanted = [...new Set(draft.classIds)];
-	const found: ApplicableClass[] = [];
+	const found: Array<ApplicableClass & { status: string }> = [];
 	for (let i = 0; i < wanted.length; i += D1_IN_ARRAY_CHUNK) {
 		const slice = wanted.slice(i, i + D1_IN_ARRAY_CHUNK);
 		const rows = await db
@@ -121,19 +122,15 @@ async function loadApplicableClasses(
 				id: classTable.id,
 				name: classTable.name,
 				schedule: classTable.schedule,
+				status: classTable.status,
 			})
 			.from(classTable)
-			.where(
-				and(
-					eq(classTable.orgId, orgId),
-					eq(classTable.status, "active"),
-					inArray(classTable.id, slice),
-				),
-			);
+			.where(and(eq(classTable.orgId, orgId), inArray(classTable.id, slice)));
 		found.push(...rows);
 	}
 	if (found.length !== wanted.length) return "class-not-found";
-	return found;
+	if (found.some((row) => row.status !== "active")) return "class-paused";
+	return found.map(({ id, name, schedule }) => ({ id, name, schedule }));
 }
 
 /** Lesson của các lớp (loader bước 2) — chỉ cột planner cần, chunk 50. */
@@ -232,7 +229,7 @@ async function buildPlan(
 	orgId: string,
 	draft: HolidayDraft,
 ): Promise<
-	| { ok: false; notFound: true }
+	| { ok: false; reason: "class-not-found" | "class-paused" }
 	| {
 			ok: true;
 			shifts: PlannedShift[];
@@ -241,7 +238,9 @@ async function buildPlan(
 	  }
 > {
 	const classes = await loadApplicableClasses(db, orgId, draft);
-	if (classes === "class-not-found") return { ok: false, notFound: true };
+	if (classes === "class-not-found" || classes === "class-paused") {
+		return { ok: false, reason: classes };
+	}
 	const lessons =
 		classes.length > 0
 			? await loadClassLessons(
@@ -315,7 +314,7 @@ function shiftStatements(
 	holidayId: string,
 	shift: PlannedShift,
 ) {
-	const guard = sql`CASE WHEN (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${shift.classId} AND ${lesson.date} = ${shift.originalDate} AND ${lesson.status} = 'upcoming') = ${shift.enrollmentIds.length} AND (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${shift.classId} AND ${lesson.date} = ${shift.makeupDate}) = 0 AND (SELECT count(*) FROM ${holidaySessionShift} WHERE ${holidaySessionShift.classId} = ${shift.classId} AND ${holidaySessionShift.makeupDate} = ${shift.makeupDate}) = 0 THEN ${shift.originalDate} ELSE NULL END`;
+	const guard = sql`CASE WHEN (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${shift.classId} AND ${lesson.date} = ${shift.originalDate} AND ${lesson.status} = 'upcoming') = ${shift.enrollmentIds.length} AND (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${shift.classId} AND ${lesson.date} = ${shift.makeupDate}) = 0 AND (SELECT count(*) FROM ${holidaySessionShift} WHERE ${holidaySessionShift.classId} = ${shift.classId} AND ${holidaySessionShift.makeupDate} = ${shift.makeupDate}) = 0 AND EXISTS (SELECT 1 FROM ${classTable} WHERE ${classTable.id} = ${shift.classId} AND ${classTable.orgId} = ${orgId} AND ${classTable.status} = 'active') THEN ${shift.originalDate} ELSE NULL END`;
 	return [
 		db.insert(holidaySessionShift).values({
 			id: crypto.randomUUID(),
@@ -417,7 +416,7 @@ function cancelStatements(
 	holidayId: string,
 	cancellation: PlannedCancellation,
 ) {
-	const guard = sql`CASE WHEN (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${cancellation.classId} AND ${lesson.date} = ${cancellation.date} AND ${lesson.status} = 'upcoming') = ${cancellation.enrollmentIds.length} AND (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${cancellation.classId} AND ${lesson.date} = ${cancellation.date} AND ${lesson.status} != 'upcoming') = 0 AND (SELECT count(*) FROM ${holidaySessionCancel} WHERE ${holidaySessionCancel.classId} = ${cancellation.classId} AND ${holidaySessionCancel.date} = ${cancellation.date}) = 0 THEN ${cancellation.date} ELSE NULL END`;
+	const guard = sql`CASE WHEN (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${cancellation.classId} AND ${lesson.date} = ${cancellation.date} AND ${lesson.status} = 'upcoming') = ${cancellation.enrollmentIds.length} AND (SELECT count(*) FROM ${lesson} WHERE ${lesson.orgId} = ${orgId} AND ${lesson.classId} = ${cancellation.classId} AND ${lesson.date} = ${cancellation.date} AND ${lesson.status} != 'upcoming') = 0 AND (SELECT count(*) FROM ${holidaySessionCancel} WHERE ${holidaySessionCancel.classId} = ${cancellation.classId} AND ${holidaySessionCancel.date} = ${cancellation.date}) = 0 AND EXISTS (SELECT 1 FROM ${classTable} WHERE ${classTable.id} = ${cancellation.classId} AND ${classTable.orgId} = ${orgId} AND ${classTable.status} = 'active') THEN ${cancellation.date} ELSE NULL END`;
 	return [
 		db.insert(holidaySessionCancel).values({
 			id: crypto.randomUUID(),
@@ -492,6 +491,23 @@ export function holidayRoutes(deps: {
 		return { ok: true, data: parsed.data };
 	}
 
+	function holidayPlanErrorResponse(
+		c: HolidayContext,
+		reason: "class-not-found" | "class-paused",
+	) {
+		if (reason === "class-paused") {
+			return c.json(
+				{
+					error: "Lớp đang tạm dừng, không thể xếp lịch nghỉ cho lớp này.",
+					code: CLASS_ERROR_CODES.CLASS_PAUSED,
+					reason: CLASS_ERROR_CODES.CLASS_PAUSED,
+				},
+				409,
+			);
+		}
+		return c.json({ error: "class not found", reason: "class" }, 404);
+	}
+
 	holiday.post("/preview", async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return unauthorized(c);
@@ -499,7 +515,7 @@ export function holidayRoutes(deps: {
 		if (!body.ok) return body.response;
 		const plan = await buildPlan(deps.getDb(), ctx.orgId, body.data);
 		if (!plan.ok) {
-			return c.json({ error: "class not found", reason: "class" }, 404);
+			return holidayPlanErrorResponse(c, plan.reason);
 		}
 		return c.json(plan.preview);
 	});
@@ -524,7 +540,7 @@ export function holidayRoutes(deps: {
 		// D7: tính lại từ DB — planHash lệch nghĩa là bảng GV đã xem không còn đúng.
 		const plan = await buildPlan(db, ctx.orgId, input);
 		if (!plan.ok) {
-			return c.json({ error: "class not found", reason: "class" }, 404);
+			return holidayPlanErrorResponse(c, plan.reason);
 		}
 		const activeCount =
 			input.mode === "cancel" ? plan.cancellations.length : plan.shifts.length;
@@ -616,6 +632,29 @@ export function holidayRoutes(deps: {
 			// Guard CASE (C1) hoặc unique makeup (C3) vi phạm → rollback toàn
 			// batch, DB sạch — client phải tải lại preview và thử lại.
 			if (isRollbackableConstraintError(err)) {
+				if (input.scope === "classes") {
+					const targetIds = [...new Set(input.classIds)];
+					const currentClasses: Array<{ id: string; status: string }> = [];
+					for (let i = 0; i < targetIds.length; i += D1_IN_ARRAY_CHUNK) {
+						const slice = targetIds.slice(i, i + D1_IN_ARRAY_CHUNK);
+						const chunk = await db
+							.select({ id: classTable.id, status: classTable.status })
+							.from(classTable)
+							.where(
+								and(
+									eq(classTable.orgId, ctx.orgId),
+									inArray(classTable.id, slice),
+								),
+							);
+						currentClasses.push(...chunk);
+					}
+					if (currentClasses.length !== targetIds.length) {
+						return holidayPlanErrorResponse(c, "class-not-found");
+					}
+					if (currentClasses.some((cls) => cls.status !== "active")) {
+						return holidayPlanErrorResponse(c, "class-paused");
+					}
+				}
 				return c.json(
 					{
 						error: HOLIDAY_ERROR_CODES.STALE_PREVIEW,
@@ -647,6 +686,14 @@ export function holidayRoutes(deps: {
 				const rows = await db
 					.select({ studentId: enrollment.studentId })
 					.from(enrollment)
+					.innerJoin(
+						classTable,
+						and(
+							eq(classTable.id, enrollment.classId),
+							eq(classTable.orgId, ctx.orgId),
+							eq(classTable.status, "active"),
+						),
+					)
 					.where(
 						and(
 							eq(enrollment.orgId, ctx.orgId),

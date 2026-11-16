@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import type {
-	LibraryExerciseView,
-	StudyPackDetailView,
-	StudyPackItemInput,
-	StudyPackSummaryView,
+import {
+	type LibraryExerciseView,
+	STUDY_PACK_LEVELS,
+	type StudyPackDetailView,
+	type StudyPackItemInput,
+	type StudyPackSummaryView,
 } from "@teacher-os/api/contracts";
 import {
 	Button,
@@ -59,6 +60,7 @@ function AdminLibraryPacksRoute() {
 	// System study pack creation state
 	const [packTitle, setPackTitle] = useState("");
 	const [packDescription, setPackDescription] = useState("");
+	const [packLevel, setPackLevel] = useState("");
 	const [packStatus, setPackStatus] = useState<"draft" | "ready">("ready");
 	const [packItemsJson, setPackItemsJson] = useState("[]");
 	const [creatingPack, setCreatingPack] = useState(false);
@@ -144,6 +146,7 @@ function AdminLibraryPacksRoute() {
 				body: JSON.stringify({
 					title: packTitle.trim(),
 					description: packDescription.trim(),
+					...(packLevel ? { level: packLevel } : {}),
 					status: packStatus,
 					items: parsedItems,
 				}),
@@ -151,6 +154,7 @@ function AdminLibraryPacksRoute() {
 			toast.success("Đã tạo bộ đề hệ thống.");
 			setPackTitle("");
 			setPackDescription("");
+			setPackLevel("");
 			setPackItemsJson("[]");
 			await loadAll();
 		} catch {
@@ -235,8 +239,8 @@ function AdminLibraryPacksRoute() {
 					Bộ đề tự học &amp; Bài tập thư viện hệ thống
 				</h1>
 				<p className="text-muted-foreground text-sm">
-					Quản lý bài tập lẻ (Reading, Grammar, Vocabulary) và bộ đề tự học mẫu
-					dùng chung cho toàn hệ thống.
+					Quản lý bài tập lẻ (Reading, Listening, Grammar, Vocabulary) và bộ đề
+					tự học mẫu dùng chung cho toàn hệ thống.
 				</p>
 			</div>
 
@@ -272,6 +276,7 @@ function AdminLibraryPacksRoute() {
 									<div className="min-w-0">
 										<p className="font-medium text-foreground">{pack.title}</p>
 										<p className="text-muted-foreground text-xs">
+											{pack.level ? `${pack.level} · ` : ""}
 											{pack.status === "ready" ? "Sẵn sàng" : "Nháp"} ·{" "}
 											{pack.dayCount} ngày · {pack.itemCount} bài
 										</p>
@@ -310,6 +315,20 @@ function AdminLibraryPacksRoute() {
 								onChange={(e) => setPackDescription(e.target.value)}
 								placeholder="Mô tả ngắn gọn"
 							/>
+						</Field>
+						<Field label="Trình độ (tuỳ chọn)" htmlFor="admin-pack-level">
+							<Select
+								id="admin-pack-level"
+								value={packLevel}
+								onChange={(e) => setPackLevel(e.target.value)}
+							>
+								<option value="">Không gắn trình độ</option>
+								{STUDY_PACK_LEVELS.map((lvl) => (
+									<option key={lvl} value={lvl}>
+										{lvl}
+									</option>
+								))}
+							</Select>
 						</Field>
 						<Field label="Trạng thái" htmlFor="admin-pack-status">
 							<Select

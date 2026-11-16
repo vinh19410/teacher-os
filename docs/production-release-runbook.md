@@ -91,6 +91,7 @@ loads `packages/infra/.env` first — a value there wins over the same name in
 | `SEPAY_BANKHUB_WEBHOOK_SECRET` | Operator-generated, registered via `apps/server/scripts/bankhub-setup.ts` | operator env → Worker binding | generate new, re-run bankhub-setup, update `.env`, redeploy |
 | `SEPAY_BANKHUB_BASE_URL` | Deploy operator | operator env → Worker binding | n/a (endpoint); production MUST set `https://bankhub-api.sepay.vn` — blank falls back to the sandbox host and the feature silently no-ops |
 | `GITHUB_WEBHOOK_SECRET` | Operator-generated (`openssl rand -hex 32`) | GitHub environment secret `GH_WEBHOOK_SECRET` → bước deploy CI → Worker binding `GITHUB_WEBHOOK_SECRET` (#421) | sinh mới → cập nhật secret trên trang webhook GitHub và GitHub environment → redeploy; trong lúc lệch, delivery trả 401 và có thể "Redeliver" từ UI. **Cảnh báo:** `withDefault("")` nghĩa là deploy prod/staging NGOÀI CI mà không export `GITHUB_WEBHOOK_SECRET` sẽ ghi đè secret đang chạy về rỗng ⇒ endpoint 503 — deploy tay phải export biến từ `.env` (hoặc chờ CI) |
+| `DISCORD_WEBHOOK_URL` | Release operator (Discord Server channel webhook) | Optional GitHub repository secret or per-environment secret (`staging` / `production`) used ONLY by the post-smoke `Notify Discord release changelog` CI step (#686) | Discord Channel Settings → Integrations → Webhooks → Copy/Reset Webhook URL, then update via `gh secret set DISCORD_WEBHOOK_URL` (per env or repo). Never committed or logged; if unset or Discord is unreachable, deploy stays green with `::notice::` / `::warning::` |
 
 ## Lead intake — form đăng ký msmy.io.vn (#506)
 
@@ -100,8 +101,8 @@ Form đăng ký học trên `msmy.io.vn` POST thẳng vào `POST /public/leads` 
 
 | Binding | Bắt buộc | Giá trị |
 | --- | --- | --- |
-| `LEAD_ORG_ID` | Có (prod/staging khi bật luồng công khai) — bỏ trống ⇒ endpoint trả 503 `LEAD_INTAKE_DISABLED` / `PLACEMENT_DISABLED` (fail-closed, tắt intake bằng cách xoá binding) | `organization.id` của cô Mỹ — query D1: `SELECT id FROM organization;` (đối chiếu email giáo viên qua `membership`). Đặt trên GitHub Environment: `gh variable set LEAD_ORG_ID --env staging --body "<org-id-staging>"` và `gh variable set LEAD_ORG_ID --env production --body "<org-id-co-my>"` (`deploy-staging.yml` và `deploy.yml` truyền `vars.LEAD_ORG_ID` sang Worker) |
-| `LEAD_ORIGINS` | Có khi deploy không topology (workers.dev); topology tự mặc định theo `topology.profileOrigins`: `https://msmy.io.vn,https://www.msmy.io.vn` trên prod (`APP_DOMAIN=teacheros.io.vn`), `https://profile.<domain>` trên staging/domain khác, và `http://localhost:8005` ở dev (qua `resolveLeadOrigins`, kể cả khi `vars.LEAD_ORIGINS` để trống) | Origin trang profile, phân tách dấu phẩy; sai/thiếu origin ⇒ POST bị 403 `LEAD_ORIGIN_FORBIDDEN`. **Lưu ý (#536):** không để biến `LEAD_ORIGINS` cũ trên GitHub Environment `staging` hoặc `production` làm mất origin mặc định của stage; khi cần thêm origin QA trên staging thì phải gộp cả `https://profile.staging.teacheros.io.vn` |
+| `LEAD_ORG_ID` | Có (prod/staging khi bật luồng công khai) — bỏ trống ⇒ endpoint trả 503 `LEAD_INTAKE_DISABLED` / `PLACEMENT_DISABLED` (fail-closed, tắt intake bằng cách xoá binding) | `organization.id` fallback/mặc định cho intake công khai. Khi `TEACHER_EMAILS` khác rỗng và đã có thành viên `FINANCE_ROLES` (`teacher`, `owner`, `admin`), server (`resolveLeadTargetOrg` trong `apps/server/src/lib/resolve-lead-org.ts`) tự động định tuyến lượt ghi `/public/leads`, `/public/placement-test/submissions`, `speaking-media`, `results/:token` và `notifyNewLead` về organization đang hoạt động của giáo viên (ưu tiên thứ tự `TEACHER_EMAILS`, rồi `createdAt ASC, id ASC`), đồng thời fallback đọc đề/audio từ `LEAD_ORG_ID` nếu org giáo viên chưa phát hành bộ đề riêng (#742). Đặt `LEAD_ORG_ID` trên GitHub Environment: `gh variable set LEAD_ORG_ID --env staging --body "<org-id-staging>"` và `gh variable set LEAD_ORG_ID --env production --body "<org-id-co-my>"` (`deploy-staging.yml` và `deploy.yml` truyền `vars.LEAD_ORG_ID` sang Worker) |
+| `LEAD_ORIGINS` | Có khi deploy không topology (workers.dev); topology tự mặc định theo `topology.profileOrigins`: `https://msmy.io.vn,https://www.msmy.io.vn` trên prod (`APP_DOMAIN=msmy.io.vn`), `https://profile.<domain>` trên staging/domain khác, và `http://localhost:8005` ở dev (qua `resolveLeadOrigins`, kể cả khi `vars.LEAD_ORIGINS` để trống) | Origin trang profile, phân tách dấu phẩy; sai/thiếu origin ⇒ POST bị 403 `LEAD_ORIGIN_FORBIDDEN`. **Lưu ý (#536):** không để biến `LEAD_ORIGINS` cũ trên GitHub Environment `staging` hoặc `production` làm mất origin mặc định của stage; khi cần thêm origin QA trên staging thì phải gộp cả `https://profile.staging.teacheros.io.vn` |
 
 Vận hành:
 
@@ -201,12 +202,13 @@ must pass, then `APP_DOMAIN=<domain> pnpm alchemy deploy --stage prod` (secrets
 come from GitHub repo secrets mirroring the inventory above — same names, no
 values in Git), then a `/readyz` smoke that must return `200 {"ok":true}`
 within ~10 minutes or the run is marked failed. The full Playwright E2E suite
-also gates this workflow: the `e2e` job runs it in 6 shards with
-`--fully-parallel`, and `deploy` needs both `quality` and `e2e`. Staging and PRs
-do not run it. Still run it locally before shipping (`ak-ship official`) so a
-red suite is caught before the merge, not at the release gate.
+(`.github/workflows/e2e.yml`, 6 shards with `--fully-parallel`) runs on pull
+requests to `main` so a red suite is caught on the PR before merge, and
+`deploy.yml` calls the same reusable workflow (`deploy` needs both `quality` and
+`e2e`) before shipping production. Staging and `develop` PRs do not run it.
 Deploys are serialized
 (`cancel-in-progress: false`) so forward-only D1 migrations never race.
+After every smoke check passes (and not in `dry_run`), `Notify Discord release changelog` runs `node scripts/notify-discord-changelog.mjs --stage prod` using `DISCORD_WEBHOOK_URL` to post an `Official Release` embed to Discord (non-blocking if unset or Discord fails).
 
 Scope of automation: code + bindings + migrations only. The operator gates
 this file cannot decide remain manual per the preflight above — rehearsing a
@@ -242,6 +244,7 @@ network-first cache headers. Throwaway smoke accounts are accepted junk rows
 in the staging D1; prod deliberately gets no signup smoke. The manual
 "Provision staging" procedure below remains the path for first provisioning
 or destroy/recreate.
+After every staging smoke check passes (and not in `dry_run`), `Notify Discord release changelog` runs `node scripts/notify-discord-changelog.mjs --stage staging` using `DISCORD_WEBHOOK_URL` to post a `Beta Release` embed to Discord (non-blocking if unset or Discord fails).
 
 To preview a staging deploy without applying it, run `Deploy Staging` manually from
 `develop` with `dry_run` enabled: it prints the Alchemy plan and skips seed and
@@ -249,7 +252,7 @@ smoke steps. Check that the plan does not replace or delete the D1 database, R2
 buckets or custom domains before deploying.
 
 Similarly, to preview a production deploy without applying it, run `Deploy Production` (`deploy.yml`)
-manually via `workflow_dispatch` with `dry_run` enabled: it gates on uncached quality, prints the
+manually via `workflow_dispatch` with `dry_run` enabled: it gates on uncached quality and reusable E2E, prints the
 Alchemy plan, and skips smoke checks.
 
 Alchemy state lives in the account-level `alchemy-state-store` Worker, which

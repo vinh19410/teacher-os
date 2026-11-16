@@ -4,6 +4,7 @@ import type {
 	AssignmentTestCreate,
 	AssignmentTestPartsSet,
 	AssignmentTestUpdate,
+	ClassStatus,
 	ClassType,
 	InvoicePaymentCreate,
 	StudentCreateInput,
@@ -152,6 +153,22 @@ export type KernelAction =
 			};
 	  }
 	| {
+			/** Cập nhật thông tin lớp học (#693); schedule/startDate/sessionsTotal omit khi lịch bị khóa hoặc giữ nguyên legacy. */
+			type: "update-class";
+			classId: string;
+			payload: {
+				name: string;
+				type: ClassType;
+				level: string;
+				skills: string[];
+				mode: string;
+				tuitionFee?: number | null;
+				schedule?: { days: number[]; start: string; end: string };
+				startDate?: string;
+				sessionsTotal?: number;
+			};
+	  }
+	| {
 			type: "add-syllabus";
 			payload: {
 				id: string;
@@ -176,6 +193,12 @@ export type KernelAction =
 			type: "import-curriculum";
 			classId: string;
 			templateId: string;
+	  }
+	| {
+			/** Sync the class's curriculum copy from its linked source template or a replacement template (issue #700). */
+			type: "sync-curriculum";
+			classId: string;
+			templateId?: string;
 	  }
 	| {
 			/** Delete the class's imported curriculum copy and null the pointer. */
@@ -259,6 +282,11 @@ export type KernelAction =
 	| {
 			type: "update-class-tuition-fee";
 			payload: { classId: string; tuitionFee: number | null };
+	  }
+	| {
+			type: "update-class-status";
+			classId: string;
+			status: ClassStatus;
 	  }
 	| { type: "activate-enrollment"; enrollmentId: string }
 	| { type: "delete-enrollment"; enrollmentId: string }

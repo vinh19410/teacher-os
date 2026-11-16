@@ -8,7 +8,20 @@ import {
 	waitFor,
 	within,
 } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import ExcelJS from "exceljs";
+import {
+	afterEach,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
+import {
+	buildSampleXlsxBytes,
+	SYLLABUS_SAMPLE_MIME,
+} from "@/lib/syllabus-import";
 import {
 	classRow,
 	type KernelServer,
@@ -39,6 +52,18 @@ const lesson = (id: string) => ({
 });
 
 let server: KernelServer;
+let sampleUploadBytes: Uint8Array<ArrayBuffer>;
+
+beforeAll(async () => {
+	const workbook = new ExcelJS.Workbook();
+	const sheet = workbook.addWorksheet("Syllabus");
+	sheet.addRow(["Module", "Mô tả module", "Mục tiêu", "Tài liệu", "Loại"]);
+	sheet.addRow(["M1", "d1", "o1", "m1", ""]);
+	const raw = await workbook.xlsx.writeBuffer();
+	const buffer = new ArrayBuffer(raw.byteLength);
+	sampleUploadBytes = new Uint8Array(buffer);
+	sampleUploadBytes.set(new Uint8Array(raw));
+});
 
 beforeEach(() => {
 	resetRouterState();
@@ -75,6 +100,7 @@ beforeEach(() => {
 
 afterEach(() => {
 	cleanup();
+	vi.restoreAllMocks();
 	vi.unstubAllGlobals();
 });
 
@@ -109,8 +135,12 @@ describe("syllabus template detail", () => {
 		) as HTMLInputElement;
 		fireEvent.change(input, {
 			target: {
-				// node:buffer File — jsdom's File has no .text(), which the parser uses.
-				files: [new NodeFile(["M1;d1;o1;m1"], "x.csv", { type: "text/csv" })],
+				// node:buffer File — jsdom's File has no .arrayBuffer(), which the parser uses.
+				files: [
+					new NodeFile([sampleUploadBytes], "sample.xlsx", {
+						type: SYLLABUS_SAMPLE_MIME,
+					}),
+				],
 			},
 		});
 		fireEvent.click(
@@ -123,6 +153,72 @@ describe("syllabus template detail", () => {
 		);
 		expect(dialog.textContent).toMatch(/thay bằng 1 module · 1 buổi học/);
 		expect(within(dialog).getByRole("button", { name: "Ghi đè" })).toBeTruthy();
+	});
+
+	it("downloads the v4 sample XLSX template from the detail toolbar", async () => {
+		let capturedBlob: Blob | null = null;
+		let createdAnchor: HTMLAnchorElement | null = null;
+		vi.spyOn(URL, "createObjectURL").mockImplementation(
+			(obj: Blob | MediaSource) => {
+				capturedBlob = obj as Blob;
+				return "blob:detail-sample";
+			},
+		);
+		vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+		const origCreateElement = document.createElement.bind(document);
+		vi.spyOn(document, "createElement").mockImplementation(((tag: string) => {
+			const el = origCreateElement(tag);
+			if (tag.toLowerCase() === "a") {
+				createdAnchor = el as HTMLAnchorElement;
+			}
+			return el;
+		}) as typeof document.createElement);
+		const clickSpy = vi
+			.spyOn(HTMLAnchorElement.prototype, "click")
+			.mockImplementation(() => {});
+
+		renderWithKernel(<SyllabusDetail />);
+		await screen.findByRole("heading", { level: 1, name: "Template Writing" });
+
+		fireEvent.click(screen.getByRole("button", { name: "Tải file mẫu" }));
+
+		expect(clickSpy).toHaveBeenCalledTimes(1);
+		expect(createdAnchor).not.toBeNull();
+		if (!createdAnchor) throw new Error("expected createdAnchor");
+		expect((createdAnchor as HTMLAnchorElement).download).toBe(
+			"syllabus-template.xlsx",
+		);
+		expect(capturedBlob).toBeInstanceOf(Blob);
+		if (!capturedBlob) throw new Error("expected capturedBlob");
+		expect((capturedBlob as Blob).type).toBe(SYLLABUS_SAMPLE_MIME);
+		const buf = await new Promise<ArrayBuffer>((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onload = () => resolve(reader.result as ArrayBuffer);
+			reader.onerror = () => reject(reader.error);
+			reader.readAsArrayBuffer(capturedBlob as Blob);
+		});
+		expect(new Uint8Array(buf)).toEqual(buildSampleXlsxBytes());
+	});
+
+	it("rejects uploading a .csv file with an explicit error and hides overwrite", async () => {
+		const view = renderWithKernel(<SyllabusDetail />);
+		await screen.findByRole("heading", { level: 1, name: "Template Writing" });
+
+		const input = view.container.querySelector(
+			'input[type="file"]',
+		) as HTMLInputElement;
+		fireEvent.change(input, {
+			target: {
+				files: [new NodeFile(["M1;d1;o1;m1"], "x.csv", { type: "text/csv" })],
+			},
+		});
+
+		expect(
+			await screen.findByText("Chỉ nhận file Excel (.xlsx)."),
+		).toBeTruthy();
+		expect(
+			screen.queryByRole("button", { name: "Ghi đè nội dung" }),
+		).toBeNull();
 	});
 });
 
@@ -156,7 +252,11 @@ describe("syllabus template → overwrite in flight", () => {
 			view.container.querySelector('input[type="file"]') as HTMLInputElement,
 			{
 				target: {
-					files: [new NodeFile(["M1;d1;o1;m1"], "x.csv", { type: "text/csv" })],
+					files: [
+						new NodeFile([sampleUploadBytes], "sample.xlsx", {
+							type: SYLLABUS_SAMPLE_MIME,
+						}),
+					],
 				},
 			},
 		);
@@ -174,9 +274,13 @@ describe("syllabus template → overwrite in flight", () => {
 		);
 
 		const importButton = screen.getByRole("button", {
-			name: "Nhập từ Excel/CSV",
+			name: "Nhập từ Excel",
+		}) as HTMLButtonElement;
+		const sampleButton = screen.getByRole("button", {
+			name: "Tải file mẫu",
 		}) as HTMLButtonElement;
 		expect(importButton.disabled).toBe(true);
+		expect(sampleButton.disabled).toBe(false);
 
 		land();
 		await waitFor(() => expect(importButton.disabled).toBe(false));

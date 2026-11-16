@@ -175,3 +175,21 @@ export function canWriteMaterials(role: string | null | undefined): boolean {
 export function canReadMaterials(role: string | null | undefined): boolean {
 	return typeof role === "string" && MATERIAL_READ_ROLE_MAP[role] === true;
 }
+
+/**
+ * #694: vai trò chuyển trạng thái lớp (Tạm dừng ↔ Đang học) — theo chuẩn
+ * `MATERIAL_WRITE_ROLES` (`teacher`, `owner`, `admin`, `class_teacher`); `ta` bị
+ * chặn `403`. Khác với wrapper ở `kernel.ts` (giữ `role === undefined` cho test
+ * harness), helper trong `@teacher-os/auth` luôn fail-closed.
+ */
+export const CLASS_STATUS_MANAGE_ROLES = MATERIAL_WRITE_ROLES;
+
+const CLASS_STATUS_MANAGE_ROLE_MAP: Record<string, true> = {
+	...MATERIAL_WRITE_ROLE_MAP,
+};
+
+export function canManageClassStatus(role: string | null | undefined): boolean {
+	return (
+		typeof role === "string" && CLASS_STATUS_MANAGE_ROLE_MAP[role] === true
+	);
+}

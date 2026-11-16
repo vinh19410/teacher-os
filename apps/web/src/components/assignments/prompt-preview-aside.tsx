@@ -52,6 +52,7 @@ export function PromptPreviewAside({ prompt }: PromptPreviewAsideProps) {
 			</p>
 			<p className="mt-1.5 text-muted-foreground text-xs">
 				{part.spec} · Band {prompt.band}
+				{prompt.level?.trim() ? ` · ${prompt.level.trim()}` : ""}
 			</p>
 
 			{skillId === "listening" && (

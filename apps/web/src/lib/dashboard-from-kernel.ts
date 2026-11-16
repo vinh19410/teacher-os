@@ -1,5 +1,16 @@
-import type { Lesson, Student } from "@/lib/mock-data";
+import type { ClassGroup, Lesson, Student } from "@/lib/mock-data";
 import { startOfWeekMonday, todayISOVietnam, weekDates } from "@/lib/week-grid";
+
+function pausedClassIdSet(
+	classes?: readonly Pick<ClassGroup, "id" | "status">[],
+): Set<string> | null {
+	if (!classes) return null;
+	const paused = new Set<string>();
+	for (const cls of classes) {
+		if (cls.status === "paused") paused.add(cls.id);
+	}
+	return paused;
+}
 
 /**
  * Weekday on a lesson row: Monday=1 … Sunday=7.
@@ -10,11 +21,17 @@ export function lessonDayFromDate(now = new Date()): number {
 	return day === 0 ? 7 : day;
 }
 
-export function lessonsToday(lessons: Lesson[], now = new Date()): Lesson[] {
+export function lessonsToday(
+	lessons: Lesson[],
+	now = new Date(),
+	classes?: readonly Pick<ClassGroup, "id" | "status">[],
+): Lesson[] {
 	const day = lessonDayFromDate(now);
+	const pausedIds = pausedClassIdSet(classes);
 	return lessons
 		.filter(
 			(lesson) =>
+				!pausedIds?.has(lesson.classId) &&
 				lesson.day === day &&
 				// Buổi đã hủy và buổi nghỉ lễ đã dời (TOS-11) không phải ca dạy.
 				lesson.status !== "cancelled" &&
@@ -88,14 +105,17 @@ export function formatClassSessionMeta(g: DashboardClassSession): string {
 export function upcomingLessonsThisWeek(
 	lessons: Lesson[],
 	now = new Date(),
+	classes?: readonly Pick<ClassGroup, "id" | "status">[],
 ): Lesson[] {
 	const todayDay = lessonDayFromDate(now);
 	const todayIso = todayISOVietnam(now);
+	const pausedIds = pausedClassIdSet(classes);
 	const remaining = new Set(
 		weekDates(startOfWeekMonday(todayIso)).filter((iso) => iso > todayIso),
 	);
 	return lessons
 		.filter((lesson) => {
+			if (pausedIds?.has(lesson.classId)) return false;
 			// TOS-11: `holiday` xử lý như `cancelled` — không phải buổi sắp dạy.
 			if (lesson.status === "cancelled" || lesson.status === "holiday") {
 				return false;
@@ -148,11 +168,14 @@ export function atRiskRows(
 	students: Student[],
 	lessons: Lesson[],
 	now = new Date(),
+	classes?: readonly Pick<ClassGroup, "id" | "status">[],
 ): DashboardRiskRow[] {
 	const today = lessonDayFromDate(now);
+	const pausedIds = pausedClassIdSet(classes);
 	const reasonsBySid = new Map<string, Set<DashboardRiskReason>>();
 
 	for (const lesson of lessons) {
+		if (pausedIds?.has(lesson.classId)) continue;
 		let reason: DashboardRiskReason | null = null;
 		if (isRecentAbsence(lesson, now)) {
 			reason = "absent";

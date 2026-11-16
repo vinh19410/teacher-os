@@ -4,9 +4,10 @@ import {
 	useQuery,
 	useQueryClient,
 } from "@tanstack/react-query";
-import type {
-	StudentInvitationItem,
-	StudentInviteResendResponse,
+import {
+	CLASS_ERROR_CODES,
+	type StudentInvitationItem,
+	type StudentInviteResendResponse,
 } from "@teacher-os/api/contracts";
 import { getApiBaseUrl } from "./api-base-url";
 
@@ -240,6 +241,19 @@ export function useResendStudentInvite(baseUrl: string = getApiBaseUrl()) {
 			void queryClient.invalidateQueries({
 				queryKey: pendingInvitationsQueryKey,
 			});
+		},
+		onError: (err) => {
+			const apiErr = err as Partial<InviteApiError> | null | undefined;
+			if (
+				apiErr?.code === CLASS_ERROR_CODES.CLASS_PAUSED ||
+				apiErr?.status === 404 ||
+				apiErr?.status === 409
+			) {
+				void queryClient.invalidateQueries({
+					queryKey: pendingInvitationsQueryKey,
+				});
+				void queryClient.invalidateQueries({ queryKey: ["kernel"] });
+			}
 		},
 	});
 }

@@ -4,7 +4,7 @@ import {
 	PLACEMENT_AUDIO_MAX_BYTES,
 	type PlacementAudioMeta,
 } from "@teacher-os/api/placement-test-contracts";
-import { Headphones, Upload } from "lucide-react";
+import { Headphones, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -78,6 +78,13 @@ export interface ClipAudioFieldProps {
 	audioId: string | null;
 	audioMeta?: PlacementAudioMeta;
 	onUploaded: (uploaded: UploadedPlacementAudio) => void;
+	optional?: boolean;
+	titleLabel?: string;
+	emptyHint?: string;
+	uploadAriaLabel?: string;
+	previewAriaLabel?: string;
+	clearAriaLabel?: string;
+	onClear?: () => void;
 }
 
 export function ClipAudioField({
@@ -86,12 +93,29 @@ export function ClipAudioField({
 	audioId,
 	audioMeta,
 	onUploaded,
+	optional = false,
+	titleLabel,
+	emptyHint,
+	uploadAriaLabel,
+	previewAriaLabel,
+	clearAriaLabel,
+	onClear,
 }: ClipAudioFieldProps) {
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const mountedRef = useRef(true);
+	const previewRequestRef = useRef(0);
 	const [uploading, setUploading] = useState(false);
 	const [progress, setProgress] = useState<number | null>(null);
 	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 	const [loadingPreview, setLoadingPreview] = useState(false);
+
+	useEffect(() => {
+		mountedRef.current = true;
+		return () => {
+			mountedRef.current = false;
+			previewRequestRef.current += 1;
+		};
+	}, []);
 
 	useEffect(() => {
 		return () => {
@@ -101,9 +125,11 @@ export function ClipAudioField({
 		};
 	}, [previewUrl]);
 
-	// Khi đổi audioId sang file khác, thu hồi blob URL cũ.
+	// Khi đổi audioId sang file khác, hủy preview request cũ và thu hồi blob URL cũ.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: reset preview when audioId changes
 	useEffect(() => {
+		previewRequestRef.current += 1;
+		setLoadingPreview(false);
 		setPreviewUrl((prev) => {
 			if (prev) URL.revokeObjectURL(prev);
 			return null;
@@ -142,21 +168,29 @@ export function ClipAudioField({
 
 	const handleLoadPreview = async () => {
 		if (!audioId || loadingPreview) return;
+		const reqId = ++previewRequestRef.current;
 		setLoadingPreview(true);
 		try {
 			const url = await fetchAudioBlobUrl(audioId);
+			if (!mountedRef.current || reqId !== previewRequestRef.current) {
+				URL.revokeObjectURL(url);
+				return;
+			}
 			setPreviewUrl((prev) => {
 				if (prev) URL.revokeObjectURL(prev);
 				return url;
 			});
 		} catch (error) {
+			if (!mountedRef.current || reqId !== previewRequestRef.current) return;
 			toast.error(
 				error instanceof Error
 					? error.message
 					: "Không thể tải audio nghe thử.",
 			);
 		} finally {
-			setLoadingPreview(false);
+			if (mountedRef.current && reqId === previewRequestRef.current) {
+				setLoadingPreview(false);
+			}
 		}
 	};
 
@@ -168,7 +202,7 @@ export function ClipAudioField({
 			<div className="flex flex-wrap items-center justify-between gap-2">
 				<div className="min-w-0">
 					<div className="font-medium text-foreground text-xs">
-						File âm thanh đoạn {clipNumber}
+						{titleLabel ?? `File âm thanh đoạn ${clipNumber}`}
 					</div>
 					{audioId ? (
 						<div className="mt-0.5 truncate text-muted-foreground text-xs">
@@ -177,8 +211,15 @@ export function ClipAudioField({
 								: `Đã gắn audio (${audioId.slice(0, 8)}…)`}
 						</div>
 					) : (
-						<div className="mt-0.5 text-destructive text-xs">
-							Chưa có file âm thanh
+						<div
+							className={`mt-0.5 text-xs ${
+								optional ? "text-muted-foreground" : "text-destructive"
+							}`}
+						>
+							{emptyHint ??
+								(optional
+									? "Tùy chọn — bỏ trống hệ thống tự đọc câu hỏi bằng giọng tiếng Anh"
+									: "Chưa có file âm thanh")}
 						</div>
 					)}
 				</div>
@@ -188,7 +229,9 @@ export function ClipAudioField({
 						ref={fileInputRef}
 						type="file"
 						accept={ACCEPT_AUDIO}
-						aria-label={`Tải audio cho đoạn nghe ${clipNumber}`}
+						aria-label={
+							uploadAriaLabel ?? `Tải audio cho đoạn nghe ${clipNumber}`
+						}
 						onChange={handleFileChange}
 						className="sr-only"
 					/>
@@ -217,16 +260,37 @@ export function ClipAudioField({
 							{loadingPreview ? "Đang tải..." : "Nghe thử"}
 						</Button>
 					)}
+
+					{audioId && onClear && (
+						<Button
+							variant="ghost"
+							size="sm"
+							disabled={uploading}
+							aria-label={clearAriaLabel ?? `Gỡ audio đoạn ${clipNumber}`}
+							onClick={() => {
+								setPreviewUrl((prev) => {
+									if (prev) URL.revokeObjectURL(prev);
+									return null;
+								});
+								onClear();
+							}}
+						>
+							<X className="size-3.5" />
+							Gỡ audio
+						</Button>
+					)}
 				</div>
 			</div>
 
-			{previewUrl && (
+			{audioId && previewUrl && (
 				<div className="mt-2">
-					{/* biome-ignore lint/a11y/useMediaCaption: teacher audio preview for listening test */}
+					{/* biome-ignore lint/a11y/useMediaCaption: teacher audio preview for placement test */}
 					<audio
 						controls
 						src={previewUrl}
-						aria-label={`Trình phát nghe thử đoạn ${clipNumber}`}
+						aria-label={
+							previewAriaLabel ?? `Trình phát nghe thử đoạn ${clipNumber}`
+						}
 						className="h-9 w-full"
 					/>
 				</div>

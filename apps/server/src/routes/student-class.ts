@@ -1,4 +1,5 @@
 import {
+	type ClassStatus,
 	type EnrollmentStatus,
 	type StudentAssignment,
 	type StudentClass,
@@ -129,7 +130,9 @@ export function toStudentClass(
 		schedule: formatSchedule(row.schedule),
 		sessionsDone: row.sessionsDone,
 		sessionsTotal: row.sessionsTotal,
-		status: row.status,
+		status: (row.status === "paused"
+			? "paused"
+			: "active") satisfies ClassStatus,
 		enrollmentId: row.enrollmentId,
 		// DB lưu text; lifecycle chỉ ghi 'invited' | 'active' (schema enrollment).
 		enrollmentStatus: row.enrollmentStatus as EnrollmentStatus,

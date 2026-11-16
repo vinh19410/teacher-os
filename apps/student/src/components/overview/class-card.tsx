@@ -31,9 +31,12 @@ export function ClassCard({
 	nowMs,
 }: ClassCardProps) {
 	const isInvited = cls.enrollmentStatus === "invited";
+	const isPaused = cls.status === "paused";
 
-	let nextSessionText = "Chưa có lịch buổi tới";
-	if (cls.nextSession?.date) {
+	let nextSessionText = isPaused
+		? "Lớp đang tạm dừng"
+		: "Chưa có lịch buổi tới";
+	if (!isPaused && cls.nextSession?.date) {
 		const formattedDate = formatVietnamDateFromISO(cls.nextSession.date);
 		const time = cls.nextSession.time ? ` · ${cls.nextSession.time}` : "";
 		const topic = cls.nextSession.topic ? ` · ${cls.nextSession.topic}` : "";
@@ -99,13 +102,17 @@ export function ClassCard({
 				{isInvited ? (
 					<>
 						<p className="text-[12px] text-muted-foreground leading-normal">
-							Giáo viên đã mời bạn vào lớp. Xác nhận tham gia để bắt đầu khóa
-							học và nhận lịch buổi học.
+							{isPaused
+								? "Lớp đang tạm dừng — chưa thể tham gia"
+								: "Giáo viên đã mời bạn vào lớp. Xác nhận tham gia để bắt đầu khóa học và nhận lịch buổi học."}
 						</p>
 						<button
 							type="button"
-							disabled={accepting || !onAccept}
-							onClick={() => onAccept?.(cls.enrollmentId)}
+							disabled={accepting || !onAccept || isPaused}
+							onClick={() => {
+								if (isPaused) return;
+								onAccept?.(cls.enrollmentId);
+							}}
 							className="mt-3 flex h-10 w-full items-center justify-center rounded-lg bg-primary font-medium text-primary-foreground text-sm tracking-[0.02em] transition-colors duration-150 hover:bg-primary/90 focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none active:scale-[0.99] disabled:pointer-events-none disabled:opacity-40"
 						>
 							{accepting ? "Đang xử lý…" : "Tham gia lớp"}
@@ -209,6 +216,7 @@ export function ClassBadges({ cls }: { cls: StudentClass }) {
 		<div className="flex flex-wrap items-center gap-2">
 			{cls.level && <Tag>{cls.level}</Tag>}
 			{cls.mode && <Tag>{cls.mode}</Tag>}
+			{cls.status === "paused" && <Tag>Tạm dừng</Tag>}
 			{cls.enrollmentStatus === "invited" && <Tag hot>Chờ kích hoạt</Tag>}
 		</div>
 	);

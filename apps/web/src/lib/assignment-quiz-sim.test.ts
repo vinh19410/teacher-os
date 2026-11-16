@@ -307,6 +307,38 @@ describe("buildQuizSim — sanitize opts/pin như parseQuizQuestions phía serve
 		expect(sim?.fullQuestions[0]?.pin).toBeNull();
 		expect(sim?.takeQuestions[0]?.pin).toBeNull();
 	});
+
+	it("giữ nguyên answerSet cho câu chọn nhiều đáp án không phân biệt thứ tự (#720)", () => {
+		const groupedItems: QuestionItem[] = [
+			{
+				stem: "Choose TWO letters A-E (1)",
+				opts: ["A", "B", "C", "D", "E"],
+				answer: "B",
+				alts: "",
+				type: "multi",
+				answerSet: "pair-1",
+			},
+			{
+				stem: "Choose TWO letters A-E (2)",
+				opts: ["A", "B", "C", "D", "E"],
+				answer: "D",
+				alts: "",
+				type: "multi",
+				answerSet: " pair-1 ",
+			},
+		];
+		const sim = buildQuizSim(
+			draft({
+				skill: "reading",
+				part: "p2",
+				type: "multi",
+				items: groupedItems,
+			}),
+		);
+		expect(sim?.fullQuestions[0]?.answerSet).toBe("pair-1");
+		expect(sim?.fullQuestions[1]?.answerSet).toBe("pair-1");
+		expect("answerSet" in (sim?.takeQuestions[0] ?? {})).toBe(false);
+	});
 });
 
 describe("simKey — bank id | draft fingerprint", () => {

@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { type Client, createClient } from "@libsql/client";
 import * as schema from "@teacher-os/db/schema/index";
 import { drizzle } from "drizzle-orm/libsql";
@@ -10,10 +11,9 @@ import type { Mailer } from "./mail/mailer";
  * Plan #413 phase 1: cổng admin không được để origin admin tự cấp quyền admin
  * cho người lạ — user.create.before phải chặn email ngoài ADMIN_EMAILS.
  */
-const MIGRATIONS_DIR = new URL(
-	"../../../packages/db/src/migrations",
-	import.meta.url,
-).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../../../packages/db/src/migrations", import.meta.url),
+);
 
 const API_ORIGIN = "http://api.test";
 const ADMIN_ORIGIN = "http://admin.test";

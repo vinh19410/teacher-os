@@ -1,131 +1,662 @@
 /**
- * Module chấm điểm thuần cho trang kiểm tra đầu vào (/kiem-tra-dau-vao/).
- * Không phụ thuộc DOM hay trình duyệt; chạy được trực tiếp trên Node test runner và browser.
+ * Pure objective scoring & text normalization helpers for the 5-skill placement test.
+ * Mirrors packages/api/src/placement-test-contracts.ts so client preview matches server grading.
  */
 
 export const LEAD_PLACEMENT_MAX = 300;
 
+const INLINE_CEFR_TAG_RE =
+	/\s*[([][\s]*(?:(?:level|cefr)\s+)?(?:pre-a1|a1|a2\+?|b1\+?|b2\+?|c1|c2)(?:\s*(?:[–—/-]|to)\s*(?:pre-a1|a1|a2\+?|b1\+?|b2\+?|c1|c2))?[\s]*[)\]]/gi;
+
 /**
- * Trải phẳng toàn bộ câu hỏi của bài kiểm tra theo thứ tự Phần 1 -> Phần 2.
- * @param {object} test Dữ liệu bộ đề kiểm tra đầu vào
- * @returns {Array<{id: string, partId: string, clipId?: string, level: string, prompt: string, options: string[], answer: number}>}
+ * Strips inline parenthesized/bracketed CEFR level annotations (e.g. "(A2)", "[B1–B2]", "(Level A2+)")
+ * from student-facing clip or passage titles without altering normal text.
  */
-export function flattenQuestions(test) {
-	if (!test || !Array.isArray(test.parts)) return [];
-	const items = [];
-	for (const part of test.parts) {
-		if (!part || typeof part !== "object") continue;
-		if (Array.isArray(part.questions)) {
-			for (const q of part.questions) {
-				items.push({
-					...q,
-					partId: part.id,
-				});
-			}
-		}
-		if (Array.isArray(part.clips)) {
-			for (const clip of part.clips) {
-				if (!clip || !Array.isArray(clip.questions)) continue;
-				for (const q of clip.questions) {
-					items.push({
-						...q,
-						partId: part.id,
-						clipId: clip.id,
-					});
-				}
-			}
-		}
-	}
-	return items;
+export function stripInlineCefrLabel(rawTitle) {
+	return String(rawTitle ?? "")
+		.replace(INLINE_CEFR_TAG_RE, " ")
+		.replace(/\s{2,}/g, " ")
+		.replace(/\s+([,:;!?])/g, "$1")
+		.trim();
+}
+
+export const PLACEMENT_LEVEL_ORDER = [
+	"Pre-A1",
+	"A1",
+	"A2",
+	"A2+",
+	"B1",
+	"B2",
+	"B2+",
+	"C1",
+	"C2",
+];
+
+const FALLBACK_BAND = {
+	min: 0,
+	max: 100,
+	cefr: "A1",
+	course: "comm-1",
+	courseLabel: "Giao tiếp 1",
+	displayCourse: "Giao tiếp 1",
+	advice: "",
+};
+
+/**
+ * Normalizes a listening gap-fill answer for exact comparison.
+ * Strips time/currency markers ("p.m.", "$", "dollars", "o'clock") and non-alphanumeric chars.
+ */
+export function normalizeGapAnswer(raw) {
+	return String(raw ?? "")
+		.toLowerCase()
+		.replace(/p\.?m\.?|\$|dollars?|o'clock/g, "")
+		.replace(/[^a-z0-9]/g, "");
 }
 
 /**
- * Chấm điểm bài làm và quy đổi sang CEFR + mã khóa học đề xuất theo bảng bands.
- * Câu bỏ trống hoặc đáp án không phải số nguyên hợp lệ được tính là 0 điểm.
- *
- * @param {object} test Dữ liệu bộ đề kiểm tra đầu vào
- * @param {Record<string, number | undefined | null>} answers Map id câu hỏi -> chỉ số đáp án (0..3)
+ * Counts whitespace-delimited words in Writing text.
  */
-export function gradeAttempt(test, answers = {}) {
-	const safeAnswers =
-		answers && typeof answers === "object" ? answers : Object.create(null);
-	const questions = flattenQuestions(test);
+export function countWords(text) {
+	const trimmed = String(text ?? "").trim();
+	if (!trimmed) return 0;
+	return trimmed.split(/\s+/).filter(Boolean).length;
+}
 
-	let vgScore = 0;
-	let vgTotal = 0;
-	let listeningScore = 0;
+/**
+ * Matches a percentage score (0..100) to a placement band.
+ */
+export function matchBandByPct(pct, bands) {
+	const list = Array.isArray(bands) ? bands : [];
+	if (list.length === 0) {
+		return { ...FALLBACK_BAND };
+	}
+	const rounded = Math.round(Number.isFinite(pct) ? pct : 0);
+	const sorted = [...list].sort((a, b) => a.min - b.min);
+	const matched = sorted.find(
+		(band) => rounded >= band.min && rounded <= band.max,
+	);
+	if (matched) return matched;
+	return rounded < sorted[0].min ? sorted[0] : sorted[sorted.length - 1];
+}
+
+function createSectionScore(correct, total) {
+	return {
+		correct,
+		total,
+		pct: total > 0 ? Math.round((correct / total) * 100) : null,
+	};
+}
+
+function recordLevelStat(levelMap, level, isCorrect) {
+	const key = String(level || "A1");
+	const current = levelMap.get(key) ?? { correct: 0, total: 0 };
+	current.total += 1;
+	if (isCorrect) current.correct += 1;
+	levelMap.set(key, current);
+}
+
+function isCorrectChoiceIndex(selected, expected) {
+	return (
+		typeof selected === "number" &&
+		Number.isInteger(selected) &&
+		selected === expected
+	);
+}
+
+function resolveSnapshotParts(snapshot) {
+	const parts = Array.isArray(snapshot?.parts) ? snapshot.parts : [];
+	const listening = parts.find((part) => part?.id === "listening") ??
+		parts[0] ?? { clips: [] };
+	const vocabGrammar = parts.find((part) => part?.id === "vocab-grammar") ??
+		parts[1] ?? { questions: [] };
+	const reading = parts.find((part) => part?.id === "reading") ??
+		parts[2] ?? { passages: [] };
+	const writing =
+		parts.find((part) => part?.id === "writing") ?? parts[3] ?? null;
+	const speaking =
+		parts.find((part) => part?.id === "speaking") ?? parts[4] ?? null;
+	return { listening, vocabGrammar, reading, writing, speaking };
+}
+
+/**
+ * Scores the 3 objective parts of a 5-skill PlacementSnapshot (listening, vocab-grammar, reading).
+ */
+export function scoreObjectiveTest(snapshot, answers = {}) {
+	const { listening, vocabGrammar, reading } = resolveSnapshotParts(snapshot);
+	const listeningAnswers = answers?.listening ?? {};
+	const vocabGrammarAnswers = answers?.vocabGrammar ?? {};
+	const readingAnswers = answers?.reading ?? {};
+
+	const levelMap = new Map();
+
+	let listeningCorrect = 0;
 	let listeningTotal = 0;
-
-	for (const q of questions) {
-		const picked = safeAnswers[q.id];
-		const isCorrect =
-			Number.isInteger(picked) && picked >= 0 && picked === q.answer;
-		if (q.partId === "vocab-grammar") {
-			vgTotal += 1;
-			if (isCorrect) vgScore += 1;
-		} else if (q.partId === "listening") {
+	for (const clip of listening?.clips ?? []) {
+		for (const q of clip?.questions ?? []) {
 			listeningTotal += 1;
-			if (isCorrect) listeningScore += 1;
+			const rawAns = listeningAnswers[q.id];
+			let ok = false;
+			if (q.type === "gap") {
+				const normalizedUser = normalizeGapAnswer(
+					typeof rawAns === "string" ? rawAns : "",
+				);
+				ok =
+					normalizedUser.length > 0 &&
+					(q.accept ?? []).some(
+						(accepted) => normalizeGapAnswer(accepted) === normalizedUser,
+					);
+			} else {
+				ok = isCorrectChoiceIndex(rawAns, q.answer);
+			}
+			if (ok) listeningCorrect += 1;
+			recordLevelStat(levelMap, q.level, ok);
 		}
 	}
 
-	const totalScore = vgScore + listeningScore;
-	const maxScore = vgTotal + listeningTotal;
+	let vgCorrect = 0;
+	let vgTotal = 0;
+	for (const q of vocabGrammar?.questions ?? []) {
+		vgTotal += 1;
+		const ok = isCorrectChoiceIndex(vocabGrammarAnswers[q.id], q.answer);
+		if (ok) vgCorrect += 1;
+		recordLevelStat(levelMap, q.level, ok);
+	}
 
-	const bands = Array.isArray(test?.bands) ? test.bands : [];
-	const matchedBand = bands.find(
-		(b) =>
-			typeof b.min === "number" &&
-			typeof b.max === "number" &&
-			totalScore >= b.min &&
-			totalScore <= b.max,
-	) ??
-		bands[0] ?? {
-			min: 0,
-			max: maxScore,
-			cefr: "A1",
-			course: "ielts-foundation",
-			courseLabel: "",
+	let readingCorrect = 0;
+	let readingTotal = 0;
+	for (const passage of reading?.passages ?? []) {
+		for (const q of passage?.questions ?? []) {
+			readingTotal += 1;
+			const ok = isCorrectChoiceIndex(readingAnswers[q.id], q.answer);
+			if (ok) readingCorrect += 1;
+			recordLevelStat(levelMap, q.level, ok);
+		}
+	}
+
+	const listeningScore = createSectionScore(listeningCorrect, listeningTotal);
+	const vocabGrammarScore = createSectionScore(vgCorrect, vgTotal);
+	const readingScore = createSectionScore(readingCorrect, readingTotal);
+
+	const sectionPcts = [
+		listeningScore.pct,
+		vocabGrammarScore.pct,
+		readingScore.pct,
+	].filter((pct) => pct !== null);
+
+	const averagePct =
+		sectionPcts.length > 0
+			? Math.round(
+					sectionPcts.reduce((sum, pct) => sum + pct, 0) / sectionPcts.length,
+				)
+			: 0;
+
+	const orderedLevels = [
+		...PLACEMENT_LEVEL_ORDER.filter((lvl) => levelMap.has(lvl)),
+		...[...levelMap.keys()].filter(
+			(lvl) => !PLACEMENT_LEVEL_ORDER.includes(lvl),
+		),
+	];
+
+	const byLevel = orderedLevels.map((level) => {
+		const stats = levelMap.get(level);
+		return {
+			level,
+			correct: stats.correct,
+			total: stats.total,
+			pct:
+				stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0,
 		};
+	});
+
+	const provisionalBand = matchBandByPct(averagePct, snapshot?.bands);
 
 	return {
-		totalScore,
-		maxScore,
-		vocabGrammar: {
-			score: vgScore,
-			total: vgTotal,
-		},
-		listening: {
-			score: listeningScore,
-			total: listeningTotal,
-		},
-		band: {
-			min: matchedBand.min,
-			max: matchedBand.max,
-			cefr: matchedBand.cefr,
-			course: matchedBand.course,
-			courseLabel: matchedBand.courseLabel ?? "",
-		},
+		listening: listeningScore,
+		vocabGrammar: vocabGrammarScore,
+		reading: readingScore,
+		totalCorrect: listeningCorrect + vgCorrect + readingCorrect,
+		totalQuestions: listeningTotal + vgTotal + readingTotal,
+		averagePct,
+		byLevel,
+		provisionalBand,
 	};
 }
 
 /**
- * Tạo chuỗi tóm tắt kết quả để đính kèm vào form đăng ký (tối đa 300 ký tự).
- * Ví dụ: "Kiểm tra đầu vào: 21/30 (Vocab + Grammar 11/15, Listening 10/15) – CEFR B1"
- *
- * @param {ReturnType<typeof gradeAttempt>} result
- * @returns {string}
+ * Formats a concise provisional summary within LEAD_PLACEMENT_MAX chars for lead persistence.
  */
-export function buildPlacementSummary(result) {
-	if (!result || typeof result !== "object") return "";
-	const totalScore = Number(result.totalScore ?? 0);
-	const maxScore = Number(result.maxScore ?? 30);
-	const vgScore = Number(result.vocabGrammar?.score ?? 0);
-	const vgTotal = Number(result.vocabGrammar?.total ?? 15);
-	const lScore = Number(result.listening?.score ?? 0);
-	const lTotal = Number(result.listening?.total ?? 15);
-	const cefr = String(result.band?.cefr ?? "A1").trim();
+export function buildProvisionalSummary(objective) {
+	const band = objective?.provisionalBand ?? FALLBACK_BAND;
+	const summary = `Tạm tính ${band.cefr} (${objective?.averagePct ?? 0}%) • Nghe ${objective?.listening?.correct ?? 0}/${objective?.listening?.total ?? 0}, NP-TV ${objective?.vocabGrammar?.correct ?? 0}/${objective?.vocabGrammar?.total ?? 0}, Đọc ${objective?.reading?.correct ?? 0}/${objective?.reading?.total ?? 0}`;
+	if (summary.length <= LEAD_PLACEMENT_MAX) return summary;
+	return `${summary.slice(0, LEAD_PLACEMENT_MAX - 1)}…`;
+}
 
-	const summary = `Kiểm tra đầu vào: ${totalScore}/${maxScore} (Vocab + Grammar ${vgScore}/${vgTotal}, Listening ${lScore}/${lTotal}) – CEFR ${cefr}`;
-	return summary.slice(0, LEAD_PLACEMENT_MAX);
+/**
+ * Counts how many objective questions exist and how many have been answered so far.
+ */
+export function countObjectiveProgress(snapshot, answers = {}) {
+	const { listening, vocabGrammar, reading } = resolveSnapshotParts(snapshot);
+	const lAns = answers?.listening ?? {};
+	const vgAns = answers?.vocabGrammar ?? {};
+	const rAns = answers?.reading ?? {};
+
+	let total = 0;
+	let answered = 0;
+	const unansweredByPart = {
+		listening: 0,
+		vocabGrammar: 0,
+		reading: 0,
+	};
+
+	for (const clip of listening?.clips ?? []) {
+		for (const q of clip?.questions ?? []) {
+			total += 1;
+			const val = lAns[q.id];
+			const done =
+				q.type === "gap"
+					? typeof val === "string" && val.trim().length > 0
+					: typeof val === "number" && Number.isInteger(val);
+			if (done) answered += 1;
+			else unansweredByPart.listening += 1;
+		}
+	}
+
+	for (const q of vocabGrammar?.questions ?? []) {
+		total += 1;
+		const val = vgAns[q.id];
+		if (typeof val === "number" && Number.isInteger(val)) answered += 1;
+		else unansweredByPart.vocabGrammar += 1;
+	}
+
+	for (const passage of reading?.passages ?? []) {
+		for (const q of passage?.questions ?? []) {
+			total += 1;
+			const val = rAns[q.id];
+			if (typeof val === "number" && Number.isInteger(val)) answered += 1;
+			else unansweredByPart.reading += 1;
+		}
+	}
+
+	return {
+		answered,
+		total,
+		unanswered: total - answered,
+		unansweredByPart,
+	};
+}
+
+/**
+ * Resolves defensive UI state for the Reading step.
+ */
+export function resolveReadingRenderState(reading) {
+	const passages = Array.isArray(reading?.passages) ? reading.passages : [];
+	if (passages.length > 0) {
+		return { hasPassages: true, emptyMessage: "" };
+	}
+	return {
+		hasPassages: false,
+		emptyMessage:
+			"Phần Reading hiện chưa có bài đọc nào. Bạn có thể chuyển sang bước tiếp theo.",
+	};
+}
+
+/**
+ * Resolves normalized prompt lines, title fallback, and word bounds for Writing.
+ */
+export function resolveWritingPromptState(writing) {
+	const parsedMin = Number(writing?.minWords);
+	const minWords =
+		Number.isFinite(parsedMin) && parsedMin > 0 ? Math.floor(parsedMin) : 50;
+	const parsedMax = Number(writing?.maxWords);
+	const rawMaxWords =
+		Number.isFinite(parsedMax) && parsedMax > 0 ? Math.floor(parsedMax) : 80;
+	const maxWords = Math.max(minWords, rawMaxWords);
+	const promptTitle =
+		String(writing?.promptTitle ?? "").trim() || "Bài viết ngắn";
+	const rawLines = String(writing?.promptBody ?? "").split("\n");
+	const lines = rawLines.filter((line) => line.trim().length > 0);
+	if (lines.length === 0) {
+		return {
+			promptTitle,
+			lines: [
+				"Hãy viết một đoạn văn ngắn bằng tiếng Anh để giới thiệu bản thân, công việc hoặc sở thích của bạn trong đời sống hằng ngày.",
+			],
+			minWords,
+			maxWords,
+			isFallback: true,
+		};
+	}
+	return {
+		promptTitle,
+		lines,
+		minWords,
+		maxWords,
+		isFallback: false,
+	};
+}
+
+/**
+ * Resolves defensive UI state for the Speaking step.
+ */
+export function resolveSpeakingStepState(speaking) {
+	const tasks = Array.isArray(speaking?.tasks) ? speaking.tasks : [];
+	if (tasks.length > 0) {
+		return { hasTasks: true, emptyMessage: "" };
+	}
+	return {
+		hasTasks: false,
+		emptyMessage:
+			"Đề kiểm tra hiện không có câu hỏi Speaking. Bạn có thể nộp bài ngay bên dưới.",
+	};
+}
+
+/**
+ * Determines final speakingMode and whether submit needs confirmation.
+ * Checks `!hasSpeakingTasks` before `hasValidBlob` so no phantom upload is attempted.
+ */
+export function resolveSpeakingSubmitDecision({
+	hasSpeakingTasks,
+	hasValidBlob,
+	speakingMode,
+}) {
+	if (!hasSpeakingTasks) {
+		return { finalMode: "none", needsSpeakingDecision: false };
+	}
+	if (hasValidBlob) {
+		return { finalMode: "upload", needsSpeakingDecision: false };
+	}
+	if (speakingMode === "skipped") {
+		return { finalMode: "skipped", needsSpeakingDecision: false };
+	}
+	return { finalMode: "skipped", needsSpeakingDecision: true };
+}
+
+/**
+ * Resolves student-facing label and badge class for all Speaking submission statuses.
+ */
+export function resolveSpeakingStatusDisplay(speakingStatus) {
+	if (speakingStatus === "uploaded") {
+		return {
+			label: "Đã gửi file ghi âm · Chờ cô chấm",
+			badgeClass: "is-ok",
+		};
+	}
+	if (speakingStatus === "pending_upload") {
+		return {
+			label: "Bài đã nộp, file Speaking chưa tải lên được",
+			badgeClass: "is-warn",
+		};
+	}
+	if (speakingStatus === "none") {
+		return {
+			label: "Không áp dụng (đề không có phần Speaking)",
+			badgeClass: "is-muted",
+		};
+	}
+	return {
+		label: "Đã bỏ qua phần Speaking",
+		badgeClass: "is-muted",
+	};
+}
+
+/**
+ * Counts the total number of Reading questions in a placement test snapshot.
+ */
+export function countReadingQuestions(snapshot) {
+	const readingPart =
+		snapshot?.reading ?? resolveSnapshotParts(snapshot).reading ?? {};
+	const passages = Array.isArray(readingPart?.passages)
+		? readingPart.passages
+		: [];
+	let total = 0;
+	for (const passage of passages) {
+		total += Array.isArray(passage?.questions) ? passage.questions.length : 0;
+	}
+	return total;
+}
+
+/**
+ * Redirects restored localStorage attempts from Writing/Speaking back to Reading
+ * when a backfilled snapshot now contains Reading questions with zero valid answers
+ * and the attempt had not already seen Reading questions (`knownReadingCount`).
+ */
+export function resolveRestoredAttemptStep(
+	step,
+	snapshot,
+	answers = {},
+	knownReadingCount = null,
+) {
+	if (step !== "writing" && step !== "speaking") {
+		return { step, redirectedToReading: false };
+	}
+	if (typeof knownReadingCount === "number" && knownReadingCount > 0) {
+		return { step, redirectedToReading: false };
+	}
+
+	const readingPart =
+		snapshot?.reading ?? resolveSnapshotParts(snapshot).reading ?? {};
+	const passages = Array.isArray(readingPart?.passages)
+		? readingPart.passages
+		: [];
+	const readingAnswers = answers?.reading ?? {};
+
+	let totalReadingQuestions = 0;
+	let answeredReadingQuestions = 0;
+
+	for (const passage of passages) {
+		for (const q of passage?.questions ?? []) {
+			totalReadingQuestions += 1;
+			const val = readingAnswers[q.id];
+			if (
+				typeof val === "number" &&
+				Number.isInteger(val) &&
+				val >= 0 &&
+				val <= 3
+			) {
+				answeredReadingQuestions += 1;
+			}
+		}
+	}
+
+	if (totalReadingQuestions > 0 && answeredReadingQuestions === 0) {
+		return { step: "reading", redirectedToReading: true };
+	}
+	return { step, redirectedToReading: false };
+}
+
+function clampSpeakingInt(rawValue, min, max, fallback) {
+	const num = Number(rawValue);
+	if (!Number.isFinite(num)) return fallback;
+	return Math.min(max, Math.max(min, Math.trunc(num)));
+}
+
+/**
+ * Resolves bounded prep and answer durations (seconds) for a Speaking task.
+ */
+export function resolveTaskTimings(task) {
+	return {
+		prepSeconds: clampSpeakingInt(task?.prepSeconds, 0, 120, 15),
+		answerSeconds: clampSpeakingInt(task?.answerSeconds, 5, 180, 45),
+	};
+}
+
+/**
+ * Computes a bounded safety timeout (ms) when reading a Speaking prompt aloud
+ * so headless browsers or silent TTS never hang the reading phase.
+ */
+export function computeSpeechFallbackTimeoutMs(prompt) {
+	const text = String(prompt ?? "").trim();
+	const wordCount = text ? text.split(/\s+/).length : 0;
+	return Math.min(25000, Math.max(4000, wordCount * 550 + 2500));
+}
+
+/**
+ * Creates the initial idle state for sequential Speaking turn-taking.
+ */
+export function createInitialSpeakingSession(totalTasks = 0) {
+	return {
+		status: "idle",
+		taskIndex: 0,
+		totalTasks: Math.max(0, Math.trunc(Number(totalTasks) || 0)),
+		phase: "idle",
+		secondsLeft: 0,
+		replayUsedForCurrentTask: false,
+	};
+}
+
+/**
+ * Enters the `reading` phase for the given task index and resets per-task replay quota.
+ */
+export function startSpeakingTaskReading(session, taskIndex, tasks = []) {
+	if (!Array.isArray(tasks) || tasks.length === 0) {
+		return {
+			...createInitialSpeakingSession(0),
+			status: "completed",
+			phase: "done",
+		};
+	}
+	const safeIndex = Math.max(
+		0,
+		Math.min(tasks.length - 1, Math.trunc(Number(taskIndex) || 0)),
+	);
+	return {
+		...session,
+		status: "active",
+		taskIndex: safeIndex,
+		totalTasks: tasks.length,
+		phase: "reading",
+		secondsLeft: 0,
+		replayUsedForCurrentTask: false,
+	};
+}
+
+/**
+ * Advances from `reading` into `prep` (if prepSeconds > 0) or directly `answer`.
+ */
+export function transitionSpeakingAfterReading(session, tasks = []) {
+	const task = Array.isArray(tasks) ? tasks[session?.taskIndex ?? 0] : null;
+	if (!task) {
+		return {
+			...session,
+			status: "completed",
+			phase: "done",
+			secondsLeft: 0,
+		};
+	}
+	const { prepSeconds, answerSeconds } = resolveTaskTimings(task);
+	if (prepSeconds > 0) {
+		return {
+			...session,
+			status: "active",
+			phase: "prep",
+			secondsLeft: prepSeconds,
+		};
+	}
+	return {
+		...session,
+		status: "active",
+		phase: "answer",
+		secondsLeft: answerSeconds,
+	};
+}
+
+/**
+ * Skips remaining `prep` countdown and immediately starts the `answer` phase.
+ */
+export function transitionSpeakingToAnswer(session, tasks = []) {
+	const task = Array.isArray(tasks) ? tasks[session?.taskIndex ?? 0] : null;
+	if (!task) {
+		return {
+			...session,
+			status: "completed",
+			phase: "done",
+			secondsLeft: 0,
+		};
+	}
+	const { answerSeconds } = resolveTaskTimings(task);
+	return {
+		...session,
+		status: "active",
+		phase: "answer",
+		secondsLeft: answerSeconds,
+	};
+}
+
+/**
+ * Advances from the current task's `answer` phase to the next task's `reading`
+ * phase, or completes the session after the final task.
+ */
+export function transitionSpeakingNextTask(session, tasks = []) {
+	const list = Array.isArray(tasks) ? tasks : [];
+	const nextIndex = (session?.taskIndex ?? 0) + 1;
+	if (nextIndex < list.length) {
+		return startSpeakingTaskReading(session, nextIndex, list);
+	}
+	return {
+		...session,
+		status: "completed",
+		phase: "done",
+		secondsLeft: 0,
+		replayUsedForCurrentTask: false,
+	};
+}
+
+/**
+ * Allows at most one prompt replay during the `prep` phase of each Speaking task.
+ */
+export function canReplaySpeakingPrompt(session) {
+	return Boolean(
+		session &&
+			session.status === "active" &&
+			session.phase === "prep" &&
+			!session.replayUsedForCurrentTask,
+	);
+}
+
+export function resolveSpeakingUploadMeta(blobType) {
+	const base = String(blobType ?? "")
+		.split(";")[0]
+		.trim()
+		.toLowerCase();
+	switch (base) {
+		case "video/webm":
+		case "audio/webm":
+			return { contentType: "audio/webm", filename: "speaking.webm" };
+		case "audio/mp4":
+			return { contentType: "audio/mp4", filename: "speaking.m4a" };
+		case "audio/ogg":
+			return { contentType: "audio/ogg", filename: "speaking.ogg" };
+		case "audio/mpeg":
+		case "audio/mp3":
+			return { contentType: "audio/mpeg", filename: "speaking.mp3" };
+		case "audio/wav":
+		case "audio/x-wav":
+			return { contentType: "audio/wav", filename: "speaking.wav" };
+		case "audio/aac":
+			return { contentType: "audio/aac", filename: "speaking.aac" };
+		default:
+			return { contentType: "audio/webm", filename: "speaking.webm" };
+	}
+}
+
+export const SPEAKING_RECORDER_MIME_CANDIDATES = [
+	"audio/webm;codecs=opus",
+	"audio/webm",
+	"audio/mp4",
+	"audio/ogg;codecs=opus",
+	"audio/ogg",
+];
+
+/** Audio-only: never returns a video/* type. Empty string = let the browser choose. */
+export function pickSupportedRecorderMime(MediaRecorderImpl) {
+	if (typeof MediaRecorderImpl === "undefined" || !MediaRecorderImpl) return "";
+	if (typeof MediaRecorderImpl.isTypeSupported !== "function") {
+		return "";
+	}
+	return (
+		SPEAKING_RECORDER_MIME_CANDIDATES.find((mime) =>
+			MediaRecorderImpl.isTypeSupported(mime),
+		) ?? ""
+	);
 }

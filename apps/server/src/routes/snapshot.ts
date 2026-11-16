@@ -666,7 +666,8 @@ export async function loadSnapshot(
 			schedule: row.schedule,
 			sessionsTotal: row.sessionsTotal,
 			sessionsDone: row.sessionsDone,
-			status: row.status,
+			status:
+				row.status === "paused" ? ("paused" as const) : ("active" as const),
 			startDate: row.startDate,
 			tuitionFee: row.tuitionFee ?? null,
 			schedulingMode: row.schedulingMode ?? "auto",
@@ -751,6 +752,7 @@ export async function loadSnapshot(
 				type,
 				title,
 				band,
+				level,
 				source,
 				prompt,
 				intro,
@@ -759,6 +761,7 @@ export async function loadSnapshot(
 				cueTopic,
 				cuePoints,
 				audioName,
+				audioUrl,
 				imageUrl,
 				questions,
 				optionBank,
@@ -777,6 +780,7 @@ export async function loadSnapshot(
 				type,
 				title,
 				band,
+				level: typeof level === "string" ? level : "",
 				source,
 				prompt,
 				intro,
@@ -785,6 +789,7 @@ export async function loadSnapshot(
 				cueTopic,
 				cuePoints,
 				audioName,
+				audioUrl: typeof audioUrl === "string" ? audioUrl : "",
 				// Legacy rows predate image_url; defensive default matches the
 				// parseQuestions style for corrupted/missing values.
 				imageUrl: typeof imageUrl === "string" ? imageUrl : "",

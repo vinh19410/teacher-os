@@ -159,6 +159,52 @@ test("B: gán sau — lớp trống nhập từ template; nhập lần hai bằn
 		page.getByRole("button", { name: "Sắp xếp buổi", exact: true }),
 	).toHaveCount(0);
 	await expect(page.getByText("Chưa có buổi học nào")).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: "+ Thêm buổi", exact: true }),
+	).toHaveCount(0);
+	await expect(
+		page.getByRole("button", { name: "+ Thêm buổi học", exact: true }),
+	).toHaveCount(2);
+	const importBtn = page.getByRole("button", {
+		name: "Nhập buổi từ syllabus",
+		exact: true,
+	});
+	await expect(importBtn).toBeEnabled();
+	await importBtn.focus();
+	await expect(importBtn).toBeFocused();
+	for (const vp of [
+		{ name: "desktop-1440x900", width: 1440, height: 900 },
+		{ name: "tablet-768x1024", width: 768, height: 1024 },
+		{ name: "mobile-375x812", width: 375, height: 812 },
+		{ name: null, width: 320, height: 812 },
+	]) {
+		await page.setViewportSize({ width: vp.width, height: vp.height });
+		await page.waitForTimeout(250);
+		await expect(importBtn).toBeVisible();
+		const overflow = await page.evaluate(
+			() =>
+				document.documentElement.scrollWidth >
+				document.documentElement.clientWidth,
+		);
+		expect(overflow, `Overflow at ${vp.width}x${vp.height}`).toBe(false);
+		if (vp.name) {
+			await page.screenshot({
+				path: resolve(REPORT_DIR, `691-empty-sessions-${vp.name}-light.png`),
+				fullPage: true,
+			});
+			await page.evaluate(() => document.documentElement.classList.add("dark"));
+			await page.screenshot({
+				path: resolve(REPORT_DIR, `691-empty-sessions-${vp.name}-dark.png`),
+				fullPage: true,
+			});
+			await page.evaluate(() =>
+				document.documentElement.classList.remove("dark"),
+			);
+		}
+	}
+	await page.setViewportSize({ width: 1280, height: 720 });
+	await page.evaluate(() => document.documentElement.classList.remove("dark"));
+
 	// Nút đầu tiên là page head; nút thứ hai là CTA của empty state.
 	const addSessionBtn = page
 		.getByRole("button", { name: "+ Thêm buổi học", exact: true })
@@ -190,24 +236,17 @@ test("B: gán sau — lớp trống nhập từ template; nhập lần hai bằn
 	await page.keyboard.press("Escape");
 	await expect(addSessionDialog).toBeHidden();
 
-	// Gán sau: empty state giáo trình nằm ở tab "Giáo trình".
-	const curriculumTab = page.getByRole("tab", {
-		name: "Giáo trình",
-		exact: true,
+	// #691: nhập giáo trình trực tiếp từ empty state trong tab "Buổi học & luyện tập".
+	await importBtn.click();
+	const importDialog = page.getByRole("dialog", {
+		name: "Nhập giáo trình từ template",
 	});
-	await curriculumTab.click();
-	await expect(curriculumTab).toHaveAttribute("aria-selected", "true");
-	await expect(
-		page.getByText("Lớp chưa có giáo trình. Nhập", { exact: false }),
-	).toBeVisible();
-	await page.getByRole("button", { name: "Nhập từ template" }).click();
-	const importDialog = page.getByRole("dialog");
 	await importDialog
 		.getByLabel("Template giáo trình")
 		.selectOption({ index: 0 });
 	await importDialog.getByRole("button", { name: "Nhập giáo trình" }).click();
 	await expect(importDialog).toBeHidden();
-	await expect(page.getByText(`E2E 394 Assign ${stamp}`)).toBeVisible();
+
 	// Có giáo trình rồi thì page head quay lại "Sắp xếp buổi".
 	await expect(
 		page.getByRole("button", { name: "Sắp xếp buổi", exact: true }),
@@ -223,18 +262,15 @@ test("B: gán sau — lớp trống nhập từ template; nhập lần hai bằn
 	});
 	await expect(syllabusStatCard.getByText("3", { exact: true })).toBeVisible();
 
-	const sessionsTab = page.getByRole("tab", {
-		name: "Buổi học & luyện tập",
-		exact: true,
-	});
-	await sessionsTab.click();
-	await expect(sessionsTab).toHaveAttribute("aria-selected", "true");
 	await expect(page.getByText("Chưa có buổi học nào")).toHaveCount(0);
 	await expect(
 		page.getByRole("button", { name: "+ Thêm buổi học", exact: true }),
 	).toHaveCount(0);
 	await expect(
 		page.getByRole("button", { name: "+ Thêm buổi", exact: true }),
+	).toHaveCount(0);
+	await expect(
+		page.getByRole("button", { name: "Nhập buổi từ syllabus", exact: true }),
 	).toHaveCount(0);
 	const sessionRows = page.getByTestId("session-row");
 	await expect(sessionRows).toHaveCount(3);
@@ -269,6 +305,18 @@ test("B: gán sau — lớp trống nhập từ template; nhập lần hai bằn
 		);
 	}
 	await page.setViewportSize({ width: 1280, height: 720 });
+
+	// Tab "Giáo trình" đồng bộ trạng thái đã nhập.
+	const curriculumTab = page.getByRole("tab", {
+		name: "Giáo trình",
+		exact: true,
+	});
+	await curriculumTab.click();
+	await expect(curriculumTab).toHaveAttribute("aria-selected", "true");
+	await expect(page.getByText(`E2E 394 Assign ${stamp}`)).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: "Gỡ giáo trình", exact: true }),
+	).toBeVisible();
 
 	// Nhập lần hai qua API trực tiếp → 409.
 	const classUrl = page.url();
@@ -366,6 +414,9 @@ test("D: gỡ giáo trình — tab trở về trạng thái trống, template c�
 	await expect(confirmDialog).toBeHidden();
 	await expect(
 		page.getByText("Lớp chưa có giáo trình", { exact: false }),
+	).toBeVisible();
+	await expect(
+		page.getByRole("button", { name: "Nhập từ template" }),
 	).toBeVisible();
 
 	// Template vẫn còn nguyên.

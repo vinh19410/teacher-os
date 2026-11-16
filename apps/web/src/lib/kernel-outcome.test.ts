@@ -2,12 +2,24 @@
  * Decision table for direct-action outcomes: every KernelCommandResult maps
  * to a truthful toast + reconcile policy. Pure — no toast import needed here.
  */
-import { describe, expect, test } from "vitest";
+import { CLASS_ERROR_CODES } from "@teacher-os/api/contracts";
+import { beforeEach, describe, expect, test, vi } from "vitest";
+
+const toastMock = vi.hoisted(() => ({
+	success: vi.fn(),
+	info: vi.fn(),
+	warning: vi.fn(),
+	error: vi.fn(),
+}));
+vi.mock("sonner", () => ({ toast: toastMock }));
+
 import { HttpError } from "./kernel-load-state";
 import {
+	CLASS_PAUSED_MESSAGE,
 	FUTURE_SESSION_MESSAGE,
 	occurrenceSummary,
 	planDirectOutcome,
+	reportDirectOutcome,
 } from "./kernel-outcome";
 
 describe("planDirectOutcome", () => {
@@ -116,5 +128,53 @@ describe("future-session rejection (422)", () => {
 		expect(occurrenceSummary(other, "x").message).toBe(
 			"Không lưu được — dữ liệu chưa được ghi lên máy chủ.",
 		);
+	});
+});
+
+describe("class-paused rejection (409 CLASS_PAUSED)", () => {
+	const classPaused = {
+		kind: "definite-failure" as const,
+		status: 409,
+		code: CLASS_ERROR_CODES.CLASS_PAUSED,
+		error: new HttpError(409, "Lớp đang tạm dừng", {
+			code: CLASS_ERROR_CODES.CLASS_PAUSED,
+		}),
+		reason: "Lớp đang tạm dừng",
+	};
+
+	beforeEach(() => {
+		toastMock.success.mockReset();
+		toastMock.info.mockReset();
+		toastMock.warning.mockReset();
+		toastMock.error.mockReset();
+	});
+
+	test("planDirectOutcome maps CLASS_PAUSED to single error toast and heal-409 reconcile", () => {
+		expect(planDirectOutcome(classPaused, "Đã điểm danh.")).toEqual({
+			toastKind: "error",
+			message: CLASS_PAUSED_MESSAGE,
+			reconcile: "heal-409",
+		});
+	});
+
+	test("occurrenceSummary maps CLASS_PAUSED to Vietnamese error message", () => {
+		expect(occurrenceSummary(classPaused, "Đã điểm danh.")).toEqual({
+			kind: "error",
+			message: CLASS_PAUSED_MESSAGE,
+		});
+	});
+
+	test("reportDirectOutcome suppresses conflicting toast.info when toastKind is error and refresh succeeds", async () => {
+		const refresh = vi.fn().mockResolvedValue(true);
+		await reportDirectOutcome(
+			classPaused,
+			"Đã điểm danh.",
+			refresh,
+			"check-in",
+		);
+		expect(refresh).toHaveBeenCalledTimes(1);
+		expect(toastMock.error).toHaveBeenCalledTimes(1);
+		expect(toastMock.error).toHaveBeenCalledWith(CLASS_PAUSED_MESSAGE);
+		expect(toastMock.info).not.toHaveBeenCalled();
 	});
 });

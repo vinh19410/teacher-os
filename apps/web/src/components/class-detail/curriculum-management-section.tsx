@@ -1,14 +1,19 @@
 import { useState } from "react";
 
 import { ImportSyllabusModal } from "@/components/modals/import-syllabus-modal";
+import { SyncCurriculumModal } from "@/components/modals/sync-curriculum-modal";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { CLASS_TYPE_LABELS, type ClassGroup } from "@/lib/mock-data";
-import { useClassCurriculum } from "@/lib/repos/use-syllabus";
+import {
+	useClassCurriculum,
+	useClassCurriculumSyncState,
+} from "@/lib/repos/use-syllabus";
 import type { DirectKernelAction } from "@/lib/use-direct-kernel-action";
 
 export interface CurriculumManagementSectionProps {
 	cls: ClassGroup;
+	hasRealSessions?: boolean;
 	run: DirectKernelAction["run"];
 	isPending: DirectKernelAction["isPending"];
 	busy: boolean;
@@ -27,19 +32,22 @@ export interface CurriculumManagementSectionProps {
  */
 export function CurriculumManagementSection({
 	cls,
+	hasRealSessions,
 	run,
 	isPending,
 	busy,
 }: CurriculumManagementSectionProps) {
 	const sy = useClassCurriculum(cls.id);
+	const syncState = useClassCurriculumSyncState(cls.id);
 	const [importOpen, setImportOpen] = useState(false);
+	const [syncOpen, setSyncOpen] = useState(false);
 	const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false);
 
 	return (
 		<div>
 			{sy ? (
-				<div className="flex flex-wrap items-center gap-4">
-					<div className="flex-1">
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+					<div className="min-w-0 flex-1">
 						<div className="font-semibold text-sm">{sy.name}</div>
 						<div className="text-muted-foreground text-xs">
 							{sy.level} ·{" "}
@@ -48,15 +56,65 @@ export function CurriculumManagementSection({
 								: CLASS_TYPE_LABELS[sy.type]}{" "}
 							· {sy.totalLessons} buổi
 						</div>
+						{syncState.kind !== "no-curriculum" ? (
+							<div className="mt-1 flex items-center gap-1.5 text-muted-foreground text-xs">
+								{syncState.kind === "synced" ? (
+									<>
+										<span
+											aria-hidden="true"
+											className="size-2 shrink-0 rounded-full bg-[var(--success)]"
+										/>
+										<span>Đã đồng bộ với template gốc</span>
+									</>
+								) : syncState.kind === "out-of-sync" ? (
+									<>
+										<span
+											aria-hidden="true"
+											className="size-2 shrink-0 rounded-full bg-[var(--warn)]"
+										/>
+										<span>Có thay đổi so với template gốc</span>
+									</>
+								) : (
+									<>
+										<span
+											aria-hidden="true"
+											className="size-2 shrink-0 rounded-full bg-[var(--warn)]"
+										/>
+										<span>Template gốc đã bị xóa</span>
+									</>
+								)}
+							</div>
+						) : null}
 					</div>
-					<Button
-						variant="secondary"
-						size="sm"
-						disabled={busy}
-						onClick={() => setConfirmRemoveOpen(true)}
-					>
-						Gỡ giáo trình
-					</Button>
+					<div className="flex flex-wrap items-center gap-2 sm:shrink-0">
+						{syncState.kind === "missing-source-template" ? (
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={busy}
+								onClick={() => setSyncOpen(true)}
+							>
+								Đồng bộ từ template khác
+							</Button>
+						) : (
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={busy || syncState.kind === "synced"}
+								onClick={() => setSyncOpen(true)}
+							>
+								Đồng bộ lại
+							</Button>
+						)}
+						<Button
+							variant="secondary"
+							size="sm"
+							disabled={busy}
+							onClick={() => setConfirmRemoveOpen(true)}
+						>
+							Gỡ giáo trình
+						</Button>
+					</div>
 				</div>
 			) : (
 				<div className="rounded-lg border border-dashed p-6 text-center">
@@ -79,6 +137,13 @@ export function CurriculumManagementSection({
 				open={importOpen}
 				onClose={() => setImportOpen(false)}
 				classId={cls.id}
+			/>
+			<SyncCurriculumModal
+				key={`sync-${cls.id}`}
+				open={syncOpen}
+				onClose={() => setSyncOpen(false)}
+				classId={cls.id}
+				hasRealSessions={hasRealSessions}
 			/>
 			<Modal
 				open={confirmRemoveOpen}

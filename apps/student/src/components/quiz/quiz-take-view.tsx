@@ -52,6 +52,7 @@ import {
 	type QuizTakeSource,
 	quizDetailQueryKey,
 	submitQuizAttempt,
+	useAssignmentAudioObjectUrl,
 	useStartQuizAttempt,
 	useStudentQuizDetail,
 } from "@/lib/repos/quiz";
@@ -353,6 +354,15 @@ export function QuizTakeView({
 		submitMutation.mutate();
 	};
 
+	// Speaking (#305): file bài nói & speakingPartLabel giữ ở đây.
+	// Audio proxy (#702): gọi hook TRƯỚC mọi early return để không đổi số hook
+	// khi attempt chuyển từ null -> in_progress (Rules of Hooks).
+	const { audioSrc, audioLoading, audioError } = useAssignmentAudioObjectUrl(
+		source.kind === "assignment" && detail?.hasAudio && attempt !== null
+			? source.id
+			: null,
+	);
+
 	// RT red-team G: sau khi rời take screen (store dispose flush PATCH cuối),
 	// đánh dấu query detail stale để lần vào lại bằng SPA nav trong cửa sổ
 	// staleTime 60s loader đọc `attempt.essay`/answers MỚI từ server — nếu
@@ -542,6 +552,9 @@ export function QuizTakeView({
 							onAnswer={handleAnswer}
 							currentQuestion={currentQuestion}
 							hidePassage
+							audioSrc={audioSrc}
+							audioLoading={audioLoading}
+							audioError={audioError}
 							writingSection={hybridWriting}
 							essay={hybridEssayText}
 							onEssayChange={handleEssayChange}
@@ -557,6 +570,9 @@ export function QuizTakeView({
 							answers={answers}
 							onAnswer={handleAnswer}
 							currentQuestion={currentQuestion}
+							audioSrc={audioSrc}
+							audioLoading={audioLoading}
+							audioError={audioError}
 							writingSection={hybridWriting}
 							essay={hybridEssayText}
 							onEssayChange={handleEssayChange}

@@ -5,6 +5,7 @@ import {
 	type PlacementContent,
 } from "@teacher-os/api/placement-test-contracts";
 import * as schema from "@teacher-os/db/schema/index";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeEach, describe, expect, test } from "vitest";
@@ -15,6 +16,8 @@ import {
 	type MediaByteRange,
 	type MediaStore,
 } from "../app";
+import { mp3Id3Bytes } from "../lib/test-media-fixtures";
+import { PLACEMENT_SUBMISSION_IP_MAX } from "./public-placement-test";
 
 const CORS_ORIGIN = "http://localhost:8001";
 const PROFILE_ORIGIN = "https://msmy.io.vn";
@@ -70,7 +73,142 @@ function createMemoryMediaStore(): MediaStore {
 	};
 }
 
-describe("public-placement-test routes (#515 phase 2)", () => {
+function validWebmBytes(): Uint8Array {
+	return new Uint8Array([
+		0x1a, 0x45, 0xdf, 0xa3, 0x9f, 0x42, 0x86, 0x81, 0x01, 0x42, 0x82, 0x84,
+		0x77, 0x65, 0x62, 0x6d, 0x00, 0x00,
+	]);
+}
+
+function makeSampleContent(
+	audioId = "11111111-1111-4111-8111-111111111111",
+): PlacementContent {
+	return {
+		bands: [
+			{
+				min: 0,
+				max: 29,
+				cefr: "Pre-A1",
+				course: "foundation-core",
+				displayCourse: "Chưa đủ nền cho Level 1",
+				advice: "Học nền tảng.",
+			},
+			{
+				min: 30,
+				max: 54,
+				cefr: "A1",
+				course: "comm-1",
+				displayCourse: "Communication English Level 1",
+				advice: "Học trọn khoá Level 1.",
+			},
+			{
+				min: 55,
+				max: 100,
+				cefr: "B1 trở lên",
+				course: "comm-2",
+				displayCourse: "Communication English Level 2",
+				advice: "Học Level 2.",
+			},
+		],
+		parts: [
+			{
+				id: "listening",
+				title: "Listening",
+				clips: [
+					{
+						id: "clip-la",
+						partLabel: "Part 1",
+						instruction: "Choose.",
+						title: "Clip 1",
+						notesTitle: "",
+						transcript: "",
+						audioId,
+						maxPlays: 2,
+						level: "A2",
+						questions: [
+							{
+								id: "l-01",
+								type: "mcq",
+								level: "A2",
+								prompt: "L1",
+								options: ["A", "B", "C"],
+								answer: 1,
+							},
+							{
+								id: "l-e1",
+								type: "gap",
+								level: "A2",
+								prompt: "Price: $ ____",
+								accept: ["240", "twohundredforty"],
+							},
+						],
+					},
+				],
+			},
+			{
+				id: "vocab-grammar",
+				title: "Grammar & Vocabulary",
+				questions: [
+					{
+						id: "vg-01",
+						kind: "grammar",
+						level: "A1",
+						prompt: "Q1",
+						options: ["A", "B", "C"],
+						answer: 0,
+					},
+				],
+			},
+			{
+				id: "reading",
+				title: "Reading",
+				passages: [
+					{
+						id: "ra",
+						partLabel: "Part 1",
+						kind: "sign",
+						instruction: "Choose.",
+						title: "SIGN",
+						body: "CLOSED MONDAY",
+						questions: [
+							{
+								id: "r-a1",
+								level: "A1",
+								prompt: "",
+								options: ["Open", "Closed", "Free"],
+								answer: 1,
+							},
+						],
+					},
+				],
+			},
+			{
+				id: "writing",
+				title: "Writing",
+				promptTitle: "Email",
+				promptBody: "Write to friend.",
+				minWords: 50,
+				maxWords: 80,
+			},
+			{
+				id: "speaking",
+				title: "Speaking",
+				tasks: [
+					{
+						id: "s-01",
+						partLabel: "Part 1",
+						level: "A1",
+						prompt: "Name?",
+						prepSeconds: 5,
+						answerSeconds: 20,
+					},
+				],
+			},
+		],
+	};
+}
+
+describe("public-placement-test routes (#515, #721)", () => {
 	let db: Db;
 	let store: MediaStore;
 
@@ -93,10 +231,27 @@ describe("public-placement-test routes (#515 phase 2)", () => {
 			corsOrigin: CORS_ORIGIN,
 			leadOrgId,
 			leadOrigins: [PROFILE_ORIGIN],
+			leadIpSecret: "test-secret",
 			getLibraryAudioStore: () => store,
+			getMediaStore: () => store,
 			authHandler: async () => new Response("not used", { status: 404 }),
 			getSessionUser: async () => null,
 		});
+	}
+
+	async function seedPublishedOrgLead() {
+		const snapshot = buildPlacementSnapshot(makeSampleContent(), 2);
+		await db.insert(schema.placementTest).values({
+			orgId: "org-lead",
+			draft: JSON.stringify(makeSampleContent()),
+			published: JSON.stringify(snapshot),
+			revision: 1,
+			publishedRevision: 1,
+			publishedVersion: 2,
+			publishedAt: new Date(),
+			updatedAt: new Date(),
+		});
+		return snapshot;
 	}
 
 	test("trả 503 khi thiếu leadOrgId và 404 khi chưa phát hành", async () => {
@@ -117,61 +272,7 @@ describe("public-placement-test routes (#515 phase 2)", () => {
 	});
 
 	test("trả đúng snapshot đã phát hành kèm CORS origin profile và Cache-Control: no-cache", async () => {
-		const audioId = "11111111-1111-4111-8111-111111111111";
-		const content: PlacementContent = {
-			bands: [{ min: 0, max: 2, cefr: "A2", course: "ielts-first-step" }],
-			parts: [
-				{
-					id: "vocab-grammar",
-					title: "Vocab + Grammar",
-					questions: [
-						{
-							id: "vg-01",
-							kind: "grammar",
-							level: "A1",
-							prompt: "Q1",
-							options: ["A", "B", "C", "D"],
-							answer: 0,
-						},
-					],
-				},
-				{
-					id: "listening",
-					title: "Listening",
-					clips: [
-						{
-							id: "clip-1",
-							audioId,
-							maxPlays: 2,
-							level: "A2",
-							title: "Clip 1",
-							questions: [
-								{
-									id: "l-01",
-									level: "A2",
-									prompt: "L1",
-									options: ["A", "B", "C", "D"],
-									answer: 1,
-								},
-							],
-						},
-					],
-				},
-			],
-		};
-		const snapshot = buildPlacementSnapshot(content, 2);
-
-		await db.insert(schema.placementTest).values({
-			orgId: "org-lead",
-			draft: JSON.stringify(content),
-			published: JSON.stringify(snapshot),
-			revision: 1,
-			publishedRevision: 1,
-			publishedVersion: 2,
-			publishedAt: new Date(),
-			updatedAt: new Date(),
-		});
-
+		const snapshot = await seedPublishedOrgLead();
 		const app = createAppWithLeadOrg("org-lead");
 		const res = await app.request("/public/placement-test", {
 			headers: { origin: PROFILE_ORIGIN },
@@ -234,7 +335,6 @@ describe("public-placement-test routes (#515 phase 2)", () => {
 
 		const app = createAppWithLeadOrg("org-lead");
 
-		// 200 full
 		const fullRes = await app.request(
 			`/public/placement-test/audio/${leadAudioId}`,
 			{
@@ -246,7 +346,6 @@ describe("public-placement-test routes (#515 phase 2)", () => {
 		expect(fullRes.headers.get("content-length")).toBe("250");
 		expect((await fullRes.arrayBuffer()).byteLength).toBe(250);
 
-		// 206 partial bytes=0-99
 		const rangeRes = await app.request(
 			`/public/placement-test/audio/${leadAudioId}`,
 			{
@@ -268,7 +367,6 @@ describe("public-placement-test routes (#515 phase 2)", () => {
 		expect(slice.byteLength).toBe(100);
 		expect([...slice.slice(0, 5)]).toEqual([0, 1, 2, 3, 4]);
 
-		// 416 out-of-bounds range
 		const badRangeRes = await app.request(
 			`/public/placement-test/audio/${leadAudioId}`,
 			{
@@ -281,7 +379,6 @@ describe("public-placement-test routes (#515 phase 2)", () => {
 		expect(badRangeRes.status).toBe(416);
 		expect(badRangeRes.headers.get("content-range")).toBe("bytes */250");
 
-		// 404 audio belonging to another org
 		const otherOrgRes = await app.request(
 			`/public/placement-test/audio/${otherAudioId}`,
 			{
@@ -289,5 +386,537 @@ describe("public-placement-test routes (#515 phase 2)", () => {
 			},
 		);
 		expect(otherOrgRes.status).toBe(404);
+	});
+
+	test("POST /submissions chấm điểm tự động chuẩn, liên kết Lead theo SĐT 24h, chặn Origin lạ và rate limit", async () => {
+		await seedPublishedOrgLead();
+		const app = createAppWithLeadOrg("org-lead");
+
+		const badOrigin = await app.request("/public/placement-test/submissions", {
+			method: "POST",
+			headers: {
+				origin: "https://evil.example",
+				"content-type": "application/json",
+			},
+			body: JSON.stringify({}),
+		});
+		expect(badOrigin.status).toBe(403);
+
+		const res = await app.request("/public/placement-test/submissions", {
+			method: "POST",
+			headers: {
+				origin: PROFILE_ORIGIN,
+				"content-type": "application/json",
+				"cf-connecting-ip": "1.2.3.4",
+			},
+			body: JSON.stringify({
+				lead: { name: "Nguyễn Minh", phone: "0901234567" },
+				answers: {
+					listening: { "l-01": 1, "l-e1": "$240" },
+					vocabGrammar: { "vg-01": 0 },
+					reading: { "r-a1": 1 },
+				},
+				writingText: "Hi Anna, I live in District 9 now.",
+				speakingMode: "upload",
+				speakingDurationSec: 42,
+			}),
+		});
+		expect(res.status).toBe(201);
+		const body = (await res.json()) as {
+			submissionId: string;
+			leadId: string;
+			uploadToken: string | null;
+			speakingStatus: string;
+			objective: {
+				listening: { correct: number; total: number };
+				vocabGrammar: { correct: number; total: number };
+				reading: { correct: number; total: number };
+				averagePct: number;
+				provisionalBand: { cefr: string };
+				provisionalSummary: string;
+			};
+		};
+		expect(body.uploadToken).toBeTruthy();
+		expect(body.speakingStatus).toBe("pending_upload");
+		expect(body.objective.listening).toMatchObject({ correct: 2, total: 2 });
+		expect(body.objective.vocabGrammar).toMatchObject({ correct: 1, total: 1 });
+		expect(body.objective.reading).toMatchObject({ correct: 1, total: 1 });
+		expect(body.objective.averagePct).toBe(100);
+		expect(body.objective.provisionalSummary).toContain("Tạm tính B1 trở lên");
+
+		const [leadRow] = await db
+			.select()
+			.from(schema.lead)
+			.where(eq(schema.lead.id, body.leadId));
+		expect(leadRow?.source).toBe("placement-test");
+		expect(leadRow?.placement).toBe(body.objective.provisionalSummary);
+
+		// Rate limit sau PLACEMENT_SUBMISSION_IP_MAX lần từ cùng IP
+		for (let i = 1; i < PLACEMENT_SUBMISSION_IP_MAX; i += 1) {
+			const okRes = await app.request("/public/placement-test/submissions", {
+				method: "POST",
+				headers: {
+					origin: PROFILE_ORIGIN,
+					"content-type": "application/json",
+					"cf-connecting-ip": "1.2.3.4",
+				},
+				body: JSON.stringify({
+					lead: { name: "Nguyễn Minh", phone: "0901234567" },
+					answers: { listening: {}, vocabGrammar: {}, reading: {} },
+					writingText: "",
+					speakingMode: "skipped",
+				}),
+			});
+			expect(okRes.status).toBe(201);
+			const nextBody = (await okRes.json()) as { leadId: string };
+			expect(nextBody.leadId).toBe(body.leadId);
+		}
+
+		const cappedRes = await app.request("/public/placement-test/submissions", {
+			method: "POST",
+			headers: {
+				origin: PROFILE_ORIGIN,
+				"content-type": "application/json",
+				"cf-connecting-ip": "1.2.3.4",
+			},
+			body: JSON.stringify({
+				lead: { name: "Spammer", phone: "0909998888" },
+				answers: { listening: {}, vocabGrammar: {}, reading: {} },
+				writingText: "",
+				speakingMode: "none",
+			}),
+		});
+		expect(cappedRes.status).toBe(429);
+	});
+
+	test("PUT /submissions/:id/speaking-media kiểm tra uploadToken dùng 1 lần, từ chối sai magic bytes và chấp nhận WebM thật", async () => {
+		await seedPublishedOrgLead();
+		const app = createAppWithLeadOrg("org-lead");
+
+		const subRes = await app.request("/public/placement-test/submissions", {
+			method: "POST",
+			headers: {
+				origin: PROFILE_ORIGIN,
+				"content-type": "application/json",
+			},
+			body: JSON.stringify({
+				lead: { name: "Lê Bảo", phone: "0912345678" },
+				answers: { listening: {}, vocabGrammar: {}, reading: {} },
+				writingText: "",
+				speakingMode: "upload",
+				speakingDurationSec: 30,
+			}),
+		});
+		const { submissionId, uploadToken } = (await subRes.json()) as {
+			submissionId: string;
+			uploadToken: string;
+		};
+
+		// Fake HTML masquerading as WebM -> 415
+		const fakeHtml = new TextEncoder().encode(
+			"<html><script>1</script></html>",
+		);
+		const badMagic = await app.request(
+			`/public/placement-test/submissions/${submissionId}/speaking-media`,
+			{
+				method: "PUT",
+				headers: {
+					origin: PROFILE_ORIGIN,
+					"x-upload-token": uploadToken,
+					"x-media-filename": "speaking.webm",
+					"content-type": "video/webm",
+					"content-length": String(fakeHtml.byteLength),
+				},
+				body: fakeHtml,
+			},
+		);
+		expect(badMagic.status).toBe(415);
+
+		// Token sai -> 401
+		const webm = validWebmBytes();
+		const wrongTok = await app.request(
+			`/public/placement-test/submissions/${submissionId}/speaking-media`,
+			{
+				method: "PUT",
+				headers: {
+					origin: PROFILE_ORIGIN,
+					"x-upload-token": "wrong-token",
+					"x-media-filename": "speaking.webm",
+					"content-type": "video/webm",
+					"content-length": String(webm.byteLength),
+				},
+				body: webm,
+			},
+		);
+		expect(wrongTok.status).toBe(401);
+
+		// Hợp lệ -> 200 & hủy uploadTokenHash
+		const okUpload = await app.request(
+			`/public/placement-test/submissions/${submissionId}/speaking-media`,
+			{
+				method: "PUT",
+				headers: {
+					origin: PROFILE_ORIGIN,
+					"x-upload-token": uploadToken,
+					"x-media-filename": "speaking.webm",
+					"content-type": "video/webm;codecs=vp8,opus",
+					"content-length": String(webm.byteLength),
+				},
+				body: webm,
+			},
+		);
+		expect(okUpload.status).toBe(200);
+
+		// Dùng lại token đã dùng -> 401
+		const reuseTok = await app.request(
+			`/public/placement-test/submissions/${submissionId}/speaking-media`,
+			{
+				method: "PUT",
+				headers: {
+					origin: PROFILE_ORIGIN,
+					"x-upload-token": uploadToken,
+					"x-media-filename": "speaking.webm",
+					"content-type": "video/webm",
+					"content-length": String(webm.byteLength),
+				},
+				body: webm,
+			},
+		);
+		expect(reuseTok.status).toBe(401);
+	});
+
+	test("GET / và POST /submissions nâng cấp an toàn snapshot published v1 cũ trong D1", async () => {
+		const v1Published = {
+			version: 1,
+			bands: [
+				{
+					min: 0,
+					max: 1,
+					cefr: "A1",
+					course: "comm-1",
+					courseLabel: "Giao tiếp 1",
+				},
+				{
+					min: 2,
+					max: 2,
+					cefr: "B1",
+					course: "comm-3",
+					courseLabel: "Giao tiếp 3",
+				},
+			],
+			parts: [
+				{
+					id: "vocab-grammar",
+					title: "Vocab + Grammar",
+					questions: [
+						{
+							id: "v1-vg-1",
+							kind: "grammar",
+							level: "A1",
+							prompt: "I ____ a student.",
+							options: ["am", "is", "are", "be"],
+							answer: 0,
+						},
+					],
+				},
+				{
+					id: "listening",
+					title: "Listening",
+					clips: [
+						{
+							id: "clip-v1",
+							src: "/public/placement-test/audio/11111111-1111-4111-8111-111111111111",
+							maxPlays: 2,
+							level: "A1",
+							title: "Old Clip",
+							questions: [
+								{
+									id: "v1-l-1",
+									level: "A1",
+									prompt: "Who called?",
+									options: ["Tom", "Anna", "Lee", "Sam"],
+									answer: 1,
+								},
+							],
+						},
+					],
+				},
+			],
+		};
+
+		await db.insert(schema.placementTest).values({
+			orgId: "org-lead",
+			draft: null,
+			published: JSON.stringify(v1Published),
+			revision: 1,
+			publishedRevision: 1,
+			publishedVersion: 1,
+			publishedAt: new Date(),
+			updatedAt: new Date(),
+		});
+
+		const app = createAppWithLeadOrg("org-lead");
+		const getRes = await app.request("/public/placement-test", {
+			headers: { origin: PROFILE_ORIGIN },
+		});
+		expect(getRes.status).toBe(200);
+		const served = (await getRes.json()) as {
+			version: number;
+			parts: [
+				{ id: "listening" },
+				{ id: "vocab-grammar" },
+				{
+					id: "reading";
+					passages: Array<{
+						id: string;
+						questions: Array<{ id: string; answer: number }>;
+					}>;
+				},
+				{ id: "writing"; promptTitle: string; promptBody: string },
+				{ id: "speaking"; tasks: Array<{ id: string }> },
+			];
+			bands: Array<{ min: number; max: number }>;
+		};
+		expect(served.version).toBe(1);
+		expect(served.parts.map((p) => p.id)).toEqual([
+			"listening",
+			"vocab-grammar",
+			"reading",
+			"writing",
+			"speaking",
+		]);
+		expect(served.parts[2].passages).toHaveLength(6);
+		const readingQs = served.parts[2].passages.flatMap((p) => p.questions);
+		expect(readingQs).toHaveLength(15);
+		expect(served.parts[3].promptBody.length).toBeGreaterThan(0);
+		expect(served.parts[4].tasks).toHaveLength(8);
+		expect(served.bands[served.bands.length - 1]?.max).toBe(100);
+
+		const readingAnswers = Object.fromEntries(
+			readingQs.map((q) => [q.id, q.answer]),
+		);
+		const subRes = await app.request("/public/placement-test/submissions", {
+			method: "POST",
+			headers: {
+				origin: PROFILE_ORIGIN,
+				"content-type": "application/json",
+				"cf-connecting-ip": "5.6.7.8",
+			},
+			body: JSON.stringify({
+				lead: { name: "Học viên V1", phone: "0908887766" },
+				answers: {
+					listening: { "v1-l-1": 1 },
+					vocabGrammar: { "v1-vg-1": 0 },
+					reading: readingAnswers,
+				},
+				writingText: "",
+				speakingMode: "none",
+			}),
+		});
+		expect(subRes.status).toBe(201);
+		const subBody = (await subRes.json()) as {
+			objective: {
+				reading: { correct: number; total: number; pct: number };
+				averagePct: number;
+				provisionalBand: { cefr: string };
+			};
+		};
+		expect(subBody.objective.reading).toEqual({
+			correct: 15,
+			total: 15,
+			pct: 100,
+		});
+		expect(subBody.objective.averagePct).toBe(100);
+		expect(subBody.objective.provisionalBand.cefr).toBe("B1");
+	});
+
+	test("POST /submissions tạo Lead mới khi Lead trùng SĐT trong 24h đã có bài chấm chính thức (status=graded)", async () => {
+		const snapshot = await seedPublishedOrgLead();
+		const now = new Date();
+		const existingLeadId = "lead-graded-existing";
+		await db.insert(schema.lead).values({
+			id: existingLeadId,
+			orgId: "org-lead",
+			name: "Trần Hoa",
+			phone: "0907776655",
+			email: "hoa@example.com",
+			birthDate: "",
+			course: "comm-1",
+			studyMode: "",
+			studyDays: "",
+			timeSlot: "",
+			note: "Đã tư vấn xong",
+			placement: "A2 (71%) — Communication English Level 1",
+			teacherNote: "",
+			source: "placement-test",
+			status: "contacted",
+			ipHash: "old-ip",
+			submitCount: 1,
+			createdAt: now,
+			updatedAt: now,
+		});
+		await db.insert(schema.placementTestSubmission).values({
+			id: "sub-graded-existing",
+			orgId: "org-lead",
+			leadId: existingLeadId,
+			testVersion: 2,
+			snapshotJson: JSON.stringify(snapshot),
+			answersJson: JSON.stringify({
+				listening: {},
+				vocabGrammar: {},
+				reading: {},
+			}),
+			objectiveBreakdownJson: JSON.stringify({}),
+			status: "graded",
+			finalBandLevel: "A2",
+			finalCourse: "comm-1",
+			finalDisplayCourse: "Communication English Level 1",
+			finalScorePct: 71,
+			gradedBy: "teacher-1",
+			gradedAt: now,
+			submittedAt: now,
+			updatedAt: now,
+		});
+
+		const app = createAppWithLeadOrg("org-lead");
+		const retakeRes = await app.request("/public/placement-test/submissions", {
+			method: "POST",
+			headers: {
+				origin: PROFILE_ORIGIN,
+				"content-type": "application/json",
+				"cf-connecting-ip": "9.8.7.6",
+			},
+			body: JSON.stringify({
+				lead: { name: "Trần Hoa", phone: "0907776655", note: "Làm lại" },
+				answers: { listening: {}, vocabGrammar: {}, reading: {} },
+				writingText: "",
+				speakingMode: "none",
+			}),
+		});
+		expect(retakeRes.status).toBe(201);
+		const retakeBody = (await retakeRes.json()) as { leadId: string };
+		expect(retakeBody.leadId).not.toBe(existingLeadId);
+
+		const [originalLead] = await db
+			.select()
+			.from(schema.lead)
+			.where(eq(schema.lead.id, existingLeadId));
+		expect(originalLead?.placement).toBe(
+			"A2 (71%) — Communication English Level 1",
+		);
+		expect(originalLead?.course).toBe("comm-1");
+		expect(originalLead?.note).toBe("Đã tư vấn xong");
+	});
+
+	test("PUT /submissions/:id/speaking-media chỉ chấp nhận audio-only: từ chối video/mp4 và video/quicktime (415), nhận audio/mpeg và video/webm -> audio/webm (200)", async () => {
+		await seedPublishedOrgLead();
+		const app = createAppWithLeadOrg("org-lead");
+
+		const createSub = async (phone: string) => {
+			const res = await app.request("/public/placement-test/submissions", {
+				method: "POST",
+				headers: {
+					origin: PROFILE_ORIGIN,
+					"content-type": "application/json",
+				},
+				body: JSON.stringify({
+					lead: { name: "Học viên Audio", phone },
+					answers: { listening: {}, vocabGrammar: {}, reading: {} },
+					writingText: "",
+					speakingMode: "upload",
+					speakingDurationSec: 18,
+				}),
+			});
+			expect(res.status).toBe(201);
+			return (await res.json()) as {
+				submissionId: string;
+				uploadToken: string;
+			};
+		};
+
+		const subReject = await createSub("0911112233");
+		// Fake MP4 header (ftypisom) với Content-Type video/mp4 & .mp4 -> 415
+		const fakeMp4 = new Uint8Array([
+			0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d,
+			0x00, 0x00, 0x02, 0x00,
+		]);
+		const mp4Res = await app.request(
+			`/public/placement-test/submissions/${subReject.submissionId}/speaking-media`,
+			{
+				method: "PUT",
+				headers: {
+					origin: PROFILE_ORIGIN,
+					"x-upload-token": subReject.uploadToken,
+					"x-media-filename": "speaking.mp4",
+					"content-type": "video/mp4",
+					"content-length": String(fakeMp4.byteLength),
+				},
+				body: fakeMp4,
+			},
+		);
+		expect(mp4Res.status).toBe(415);
+
+		const movRes = await app.request(
+			`/public/placement-test/submissions/${subReject.submissionId}/speaking-media`,
+			{
+				method: "PUT",
+				headers: {
+					origin: PROFILE_ORIGIN,
+					"x-upload-token": subReject.uploadToken,
+					"x-media-filename": "speaking.mov",
+					"content-type": "video/quicktime",
+					"content-length": String(fakeMp4.byteLength),
+				},
+				body: fakeMp4,
+			},
+		);
+		expect(movRes.status).toBe(415);
+
+		// Chấp nhận speaking.webm gửi với Content-Type video/webm (chuẩn hóa -> audio/webm)
+		const webm = validWebmBytes();
+		const webmRes = await app.request(
+			`/public/placement-test/submissions/${subReject.submissionId}/speaking-media`,
+			{
+				method: "PUT",
+				headers: {
+					origin: PROFILE_ORIGIN,
+					"x-upload-token": subReject.uploadToken,
+					"x-media-filename": "speaking.webm",
+					"content-type": "video/webm",
+					"content-length": String(webm.byteLength),
+				},
+				body: webm,
+			},
+		);
+		expect(webmRes.status).toBe(200);
+		const [savedWebm] = await db
+			.select()
+			.from(schema.placementTestSubmission)
+			.where(eq(schema.placementTestSubmission.id, subReject.submissionId));
+		expect(savedWebm?.speakingMediaMime).toBe("audio/webm");
+
+		// Chấp nhận audio/mpeg (.mp3) hợp lệ
+		const subMp3 = await createSub("0911112244");
+		const mp3 = mp3Id3Bytes("speaking-audio-only");
+		const mp3Res = await app.request(
+			`/public/placement-test/submissions/${subMp3.submissionId}/speaking-media`,
+			{
+				method: "PUT",
+				headers: {
+					origin: PROFILE_ORIGIN,
+					"x-upload-token": subMp3.uploadToken,
+					"x-media-filename": "speaking.mp3",
+					"content-type": "audio/mpeg",
+					"content-length": String(mp3.byteLength),
+				},
+				body: mp3,
+			},
+		);
+		expect(mp3Res.status).toBe(200);
+		const [savedMp3] = await db
+			.select()
+			.from(schema.placementTestSubmission)
+			.where(eq(schema.placementTestSubmission.id, subMp3.submissionId));
+		expect(savedMp3?.speakingMediaMime).toBe("audio/mpeg");
 	});
 });

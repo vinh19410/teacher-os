@@ -1,5 +1,7 @@
+import { CLASS_ERROR_CODES } from "@teacher-os/api/contracts";
 import { toast } from "sonner";
 import type { KernelAction } from "./data-actions";
+import { isHttpError } from "./kernel-load-state";
 import type { KernelCommandResult } from "./repos/kernel";
 
 export type DirectOutcomePlan = {
@@ -11,6 +13,19 @@ export type DirectOutcomePlan = {
 
 /** Server refused a check-in on a session dated after today (422 `future-session`). */
 export const FUTURE_SESSION_MESSAGE = "Chưa tới ngày học — chưa thể điểm danh.";
+
+/** Server refused a write because the class is currently paused (409 `CLASS_PAUSED`). */
+export const CLASS_PAUSED_MESSAGE =
+	"Lớp đang tạm dừng — mở lại lớp để tiếp tục thao tác này.";
+
+function isClassPaused(result: KernelCommandResult): boolean {
+	if (result.kind !== "definite-failure" || result.status !== 409) return false;
+	return (
+		result.code === CLASS_ERROR_CODES.CLASS_PAUSED ||
+		(isHttpError(result.error) &&
+			result.error.code === CLASS_ERROR_CODES.CLASS_PAUSED)
+	);
+}
 
 function isFutureSession(result: KernelCommandResult): boolean {
 	return (
@@ -48,6 +63,13 @@ export function planDirectOutcome(
 				reconcile: "none",
 			};
 		case "definite-failure":
+			if (isClassPaused(result)) {
+				return {
+					toastKind: "error",
+					message: CLASS_PAUSED_MESSAGE,
+					reconcile: "heal-409",
+				};
+			}
 			if (isFutureSession(result)) {
 				// The tab's idea of "today" disagreed with the server's — resync.
 				return {
@@ -101,7 +123,9 @@ export async function reportDirectOutcome(
 	toast[plan.toastKind](plan.message);
 	if (plan.reconcile === "none") return;
 	if (await refresh()) {
-		toast.info("Đã tải lại dữ liệu mới nhất — hãy kiểm tra lại.");
+		if (plan.toastKind !== "error") {
+			toast.info("Đã tải lại dữ liệu mới nhất — hãy kiểm tra lại.");
+		}
 	} else {
 		toast.error(
 			"Không tải lại được dữ liệu — kiểm tra kết nối rồi kiểm tra lại.",
@@ -136,6 +160,9 @@ export function occurrenceSummary(
 		return { kind: "success", message: `${prefix}${suffix}` };
 	}
 	if (result.kind === "definite-failure") {
+		if (isClassPaused(result)) {
+			return { kind: "error", message: CLASS_PAUSED_MESSAGE };
+		}
 		if (isFutureSession(result)) {
 			return { kind: "error", message: FUTURE_SESSION_MESSAGE };
 		}

@@ -46,6 +46,8 @@ const ROUTE_CRUMBS: Record<string, string[]> = {
 	"/_auth/assignments/$assignmentId": ["Bài tập"],
 	"/_auth/assignments/new": ["Bài tập", "Tạo bài tập"],
 	"/_auth/assignments/preview": ["Bài tập", "Xem trước bài tập"],
+	"/_auth/assignments/packs/": ["Bài tập", "Bộ đề tự học"],
+	"/_auth/assignments/packs/$packId": ["Bài tập", "Bộ đề tự học"],
 	"/_auth/grading": ["Chấm bài"],
 	"/_auth/grading/": ["Chấm bài"],
 	"/_auth/grading/$attemptId": ["Chấm bài"],

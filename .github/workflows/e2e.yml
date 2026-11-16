@@ -1,0 +1,54 @@
+# PR gate for main, and the reusable E2E workflow deploy.yml calls before
+# shipping prod (a red E2E must block both the PR merge and the release).
+# No standalone push trigger: pushes to main run this suite via deploy.yml.
+#
+# Security & concurrency invariants (enforced by scripts/ci-workflow.test.mjs):
+# - Never accepts or reads GitHub secrets; callers never pass secrets.
+# - Top-level permissions stay read-only (contents: read).
+# - cancel-in-progress applies only to pull_request runs so stale PR commits
+#   free 6 runners early, while deploy.yml workflow_call runs never cancel.
+name: E2E
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_call: {}
+
+concurrency:
+  group: e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    # Each shard boots its own api/vite stack and fresh libsql DB (boot:api
+    # wipes it), so shards never share state. --fully-parallel lets Playwright
+    # balance by test instead of by spec file; specs whose tests depend on each
+    # other must stay in a serial describe so they land on one shard together.
+    # No secrets: the stack is local and talks to nothing in production.
+    name: e2e (shard ${{ matrix.shard }}/6)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-workspace
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-1.62.1-ubuntu-latest
+      - run: pnpm --filter e2e exec playwright install --with-deps chromium
+      - run: pnpm --filter e2e e2e --fully-parallel --shard=${{ matrix.shard }}/6
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report-shard-${{ matrix.shard }}
+          path: |
+            apps/e2e/playwright-report/
+            apps/e2e/test-results/
+          retention-days: 7

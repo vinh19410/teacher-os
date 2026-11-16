@@ -33,6 +33,7 @@ import { useData } from "@/lib/data-store";
 import { CLASS_TYPE_LABELS, type Syllabus } from "@/lib/mock-data";
 import { useTemplates } from "@/lib/repos/use-syllabus";
 import {
+	downloadSyllabusSampleXlsx,
 	parseSyllabusFile,
 	type SyllabusImportResult,
 } from "@/lib/syllabus-import";
@@ -173,15 +174,15 @@ function SyllabusDetail({
 				<StatCard num={String(sy.modules.length)} label="module" />
 			</div>
 
-			<div className="mb-3 flex items-center justify-between">
+			<div className="mb-3 flex flex-wrap items-center justify-between gap-2">
 				<SectionLabel>Nội dung giáo trình</SectionLabel>
-				<div className="flex items-center gap-2">
+				<div className="flex flex-wrap items-center gap-2">
 					{/* Trang này luôn là template (issue #394): import ghi đè luôn
 					    khả dụng — bản copy của lớp không vào được đây nữa. */}
 					<input
 						ref={fileInputRef}
 						type="file"
-						accept=".csv,.xlsx"
+						accept=".xlsx"
 						className="hidden"
 						onChange={onImportFileChange}
 					/>
@@ -189,10 +190,18 @@ function SyllabusDetail({
 						type="button"
 						variant="secondary"
 						size="sm"
+						onClick={downloadSyllabusSampleXlsx}
+					>
+						Tải file mẫu
+					</Button>
+					<Button
+						type="button"
+						variant="secondary"
+						size="sm"
 						disabled={parsing || busy}
 						onClick={() => fileInputRef.current?.click()}
 					>
-						Nhập từ Excel/CSV
+						Nhập từ Excel
 					</Button>
 					<Button
 						variant="secondary"

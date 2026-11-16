@@ -68,6 +68,18 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 					tuitionFee: action.payload.tuitionFee ?? null,
 				},
 			};
+		case "update-class":
+			return {
+				path: `/api/classes/${encodeURIComponent(action.classId)}`,
+				method: "PATCH",
+				body: { ...action.payload },
+			};
+		case "update-class-status":
+			return {
+				path: `/api/classes/${encodeURIComponent(action.classId)}/status`,
+				method: "POST",
+				body: { status: action.status },
+			};
 		case "add-invoice":
 			// Issue #61: invoiceCreateSchema is .strict() — the body must carry
 			// exactly these four fields; note always rides along ("" default).
@@ -97,6 +109,11 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 			return {
 				path: `/api/classes/${action.classId}/curriculum/import`,
 				body: { templateId: action.templateId },
+			};
+		case "sync-curriculum":
+			return {
+				path: `/api/classes/${action.classId}/curriculum/sync`,
+				body: action.templateId ? { templateId: action.templateId } : {},
 			};
 		case "remove-curriculum":
 			// Body must stay exactly {} — same CSRF-safe convention as
@@ -417,6 +434,7 @@ export type KernelCommandResult =
 			status: number;
 			error: unknown;
 			reason?: string;
+			code?: string;
 	  }
 	| { kind: "outcome-unknown"; error: unknown };
 
@@ -771,6 +789,7 @@ export function createKernelCommandBus(
 						status: classified.status,
 						error,
 						reason: isHttpError(error) ? error.reason : undefined,
+						code: isHttpError(error) ? error.code : undefined,
 					}
 				: { kind: "outcome-unknown", error };
 		}

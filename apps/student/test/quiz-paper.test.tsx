@@ -949,3 +949,142 @@ describe("QuizPaper — hybrid auto skill + Writing section (#574)", () => {
 		expect(html).toContain('aria-readonly="true"');
 	});
 });
+
+describe("QuizPaper — listening audio player không hiển thị tên file bên dưới (#732)", () => {
+	const listeningQuestions: StudentQuizQuestion[] = [
+		{ stem: "Where is the speaker?", opts: ["A", "B"], pin: null },
+	];
+
+	it("ẩn dòng tên file .mp3 và icon loa bên dưới thẻ <audio> ở cả take và review khi có audioSrc", () => {
+		const detail = paperFields({
+			skill: "listening",
+			type: "mcq",
+			level: "IELTS Foundation",
+			band: "5.0",
+			audioName: "exercise.mp3",
+			hasAudio: true,
+			passage: "",
+		});
+		const takeHtml = renderToStaticMarkup(
+			<QuizPaper
+				detail={detail}
+				parts={buildQuizParts(listeningQuestions, "mcq")}
+				answers={{}}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+				audioSrc="blob:http://localhost:8003/test-audio"
+			/>,
+		);
+		expect(takeHtml).toContain('data-testid="quiz-audio-player"');
+		expect(takeHtml).toContain('aria-label="Bài nghe"');
+		expect(takeHtml).toContain('src="blob:http://localhost:8003/test-audio"');
+		expect(takeHtml).not.toContain("exercise.mp3");
+		expect(takeHtml).not.toContain("🔊");
+
+		const reviewHtml = renderToStaticMarkup(
+			<QuizPaper
+				detail={detail}
+				parts={buildQuizParts(listeningQuestions, "mcq")}
+				answers={{ 0: "A" }}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+				mode="review"
+				review={{
+					0: {
+						verdict: "correct",
+						key: "A",
+						alts: "",
+						answer: "A",
+						note: "",
+					},
+				}}
+				audioSrc="blob:http://localhost:8003/test-audio"
+				transcript="Sample transcript"
+			/>,
+		);
+		expect(reviewHtml).toContain('data-testid="quiz-audio-player"');
+		expect(reviewHtml).toContain('aria-label="Bài nghe"');
+		expect(reviewHtml).toContain('src="blob:http://localhost:8003/test-audio"');
+		expect(reviewHtml).toContain('data-testid="quiz-review-transcript"');
+		expect(reviewHtml).not.toContain("exercise.mp3");
+		expect(reviewHtml).not.toContain("🔊");
+	});
+
+	it("giữ nguyên dòng fallback '🔊 <audioName>' khi không có hasAudio và không có audioSrc", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={paperFields({
+					skill: "listening",
+					type: "mcq",
+					audioName: "section-1.mp3",
+					passage: "",
+				})}
+				parts={buildQuizParts(listeningQuestions, "mcq")}
+				answers={{}}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+				audioSrc={null}
+				audioLoading={false}
+				audioError={false}
+			/>,
+		);
+		expect(html).toContain("🔊 section-1.mp3");
+		expect(html).not.toContain('data-testid="quiz-audio-player"');
+	});
+
+	it("hiển thị trạng thái đang tải (kể cả render đầu khi hasAudio=true) và lỗi tải audio mà không lộ tên file .mp3", () => {
+		const detail = paperFields({
+			skill: "listening",
+			type: "mcq",
+			audioName: "exercise.mp3",
+			hasAudio: true,
+			passage: "",
+		});
+		const initialHtml = renderToStaticMarkup(
+			<QuizPaper
+				detail={detail}
+				parts={buildQuizParts(listeningQuestions, "mcq")}
+				answers={{}}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+				audioSrc={null}
+				audioLoading={false}
+				audioError={false}
+			/>,
+		);
+		expect(initialHtml).toContain("Đang tải file nghe…");
+		expect(initialHtml).not.toContain("exercise.mp3");
+		expect(initialHtml).not.toContain("🔊");
+
+		const loadingHtml = renderToStaticMarkup(
+			<QuizPaper
+				detail={detail}
+				parts={buildQuizParts(listeningQuestions, "mcq")}
+				answers={{}}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+				audioSrc={null}
+				audioLoading={true}
+				audioError={false}
+			/>,
+		);
+		expect(loadingHtml).toContain("Đang tải file nghe…");
+		expect(loadingHtml).not.toContain("exercise.mp3");
+
+		const errorHtml = renderToStaticMarkup(
+			<QuizPaper
+				detail={detail}
+				parts={buildQuizParts(listeningQuestions, "mcq")}
+				answers={{}}
+				onAnswer={() => undefined}
+				currentQuestion={null}
+				audioSrc={null}
+				audioLoading={false}
+				audioError={true}
+			/>,
+		);
+		expect(errorHtml).toContain("Không tải được file nghe.");
+		expect(errorHtml).not.toContain("Đang tải file nghe…");
+		expect(errorHtml).not.toContain("exercise.mp3");
+	});
+});

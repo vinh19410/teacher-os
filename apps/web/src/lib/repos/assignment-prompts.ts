@@ -14,6 +14,7 @@ export function mapAssignmentPrompts(
 		genre: row.genre,
 		title: row.title,
 		band: row.band,
+		level: row.level ?? "",
 		source: row.source,
 		prompt: row.prompt,
 		intro: row.intro,
@@ -22,6 +23,7 @@ export function mapAssignmentPrompts(
 		cueTopic: row.cueTopic,
 		cuePoints: row.cuePoints,
 		audioName: row.audioName,
+		audioUrl: row.audioUrl ?? "",
 		imageUrl: row.imageUrl ?? "",
 		questions: row.questions,
 		// Legacy rows predate option_bank — collapse to [] like imageUrl (#269).

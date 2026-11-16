@@ -17,7 +17,7 @@ import type {
 	Syllabus,
 	SyllabusTemplate,
 } from "@/lib/mock-data";
-import { splitSyllabi } from "./syllabus";
+import { isCurriculumOutOfSync, splitSyllabi } from "./syllabus";
 
 export interface SyllabusRead {
 	syllabi: Syllabus[];
@@ -74,4 +74,42 @@ export function useTargetSyllabus(
 			splitSyllabi(data.syllabi).curriculumByClassId.get(target.classId) ?? null
 		);
 	}, [data, target]);
+}
+
+export type CurriculumSyncState =
+	| { kind: "no-curriculum" }
+	| { kind: "missing-source-template"; curriculum: ClassCurriculum }
+	| {
+			kind: "synced";
+			curriculum: ClassCurriculum;
+			sourceTemplate: SyllabusTemplate;
+	  }
+	| {
+			kind: "out-of-sync";
+			curriculum: ClassCurriculum;
+			sourceTemplate: SyllabusTemplate;
+	  };
+
+/** Trạng thái đồng bộ giữa giáo trình của lớp và template gốc (#700). */
+export function useClassCurriculumSyncState(
+	classId: string,
+): CurriculumSyncState {
+	const { data } = useData();
+	return useMemo(() => {
+		const { templates, curriculumByClassId } = splitSyllabi(data.syllabi);
+		const copy = curriculumByClassId.get(classId);
+		if (!copy) return { kind: "no-curriculum" };
+		if (copy.sourceTemplateId === null) {
+			return { kind: "missing-source-template", curriculum: copy };
+		}
+		const sourceTemplate = templates.find(
+			(t) => t.id === copy.sourceTemplateId,
+		);
+		if (!sourceTemplate) {
+			return { kind: "missing-source-template", curriculum: copy };
+		}
+		return isCurriculumOutOfSync(copy, sourceTemplate)
+			? { kind: "out-of-sync", curriculum: copy, sourceTemplate }
+			: { kind: "synced", curriculum: copy, sourceTemplate };
+	}, [data, classId]);
 }

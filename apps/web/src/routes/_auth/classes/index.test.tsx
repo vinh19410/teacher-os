@@ -17,7 +17,7 @@ vi.mock("@tanstack/react-router", async () =>
 	(await import("@/test/router-mock")).routerMock(),
 );
 
-import { ClassesRoute } from "./index";
+import { ClassesRoute, validateClassesSearch } from "./index";
 
 beforeEach(() => {
 	resetRouterState();
@@ -101,6 +101,7 @@ describe("classes list header and filters", () => {
 			"Trực tuyến",
 			"Trực tiếp",
 			"Đang học",
+			"Tạm dừng",
 		]);
 
 		fireEvent.click(screen.getByRole("button", { name: "Trực tiếp" }));
@@ -110,12 +111,57 @@ describe("classes list header and filters", () => {
 		expect(
 			screen.queryByRole("heading", { level: 3, name: "Lớp online" }),
 		).toBeNull();
+		expect(routerState.navigate).toHaveBeenCalledWith({
+			to: "/classes",
+			search: { filter: "offline" },
+			replace: true,
+		});
 
 		fireEvent.click(screen.getByRole("button", { name: "Đang học" }));
 		expect(
 			screen.queryByRole("heading", { level: 3, name: "Lớp tạm dừng" }),
 		).toBeNull();
 		expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(2);
+
+		fireEvent.click(screen.getByRole("button", { name: "Tạm dừng" }));
+		expect(
+			screen.getByRole("heading", { level: 3, name: "Lớp tạm dừng" }),
+		).toBeTruthy();
+		expect(
+			screen.queryByRole("heading", { level: 3, name: "Lớp online" }),
+		).toBeNull();
+		expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(1);
+		expect(routerState.navigate).toHaveBeenLastCalledWith({
+			to: "/classes",
+			search: { filter: "paused" },
+			replace: true,
+		});
+	});
+
+	it("restores active filter from URL search params and normalizes invalid filter (#694)", async () => {
+		vi.unstubAllGlobals();
+		routerState.search = { filter: "paused" };
+		startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({ id: "cl-1", name: "Lớp online", mode: "Online" }),
+					classRow({ id: "cl-3", name: "Lớp tạm dừng", status: "paused" }),
+				],
+			}),
+		);
+		renderWithKernel(<ClassesRoute />);
+		expect(
+			await screen.findByRole("heading", { level: 3, name: "Lớp tạm dừng" }),
+		).toBeTruthy();
+		expect(
+			screen.queryByRole("heading", { level: 3, name: "Lớp online" }),
+		).toBeNull();
+
+		expect(validateClassesSearch({})).toEqual({});
+		expect(validateClassesSearch({ filter: "paused" })).toEqual({
+			filter: "paused",
+		});
+		expect(validateClassesSearch({ filter: "bogus" })).toEqual({});
 	});
 });
 

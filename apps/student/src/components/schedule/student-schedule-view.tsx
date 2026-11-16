@@ -68,6 +68,11 @@ const LESSON_STATUS_CONFIG: Record<
 		variant: "outline",
 		badgeClass: "text-muted-foreground",
 	},
+	paused_upcoming: {
+		label: "Tạm hoãn",
+		variant: "outline",
+		badgeClass: "text-muted-foreground",
+	},
 };
 
 export function isSessionEnded(
@@ -134,6 +139,12 @@ export function StudentScheduleView({
 	};
 
 	// Lọc danh sách bài học theo lớp đang chọn trước
+	const pausedClassIds = useMemo(
+		() =>
+			new Set(classes.filter((c) => c.status === "paused").map((c) => c.id)),
+		[classes],
+	);
+
 	const scopedLessons = useMemo(() => {
 		return resolvedClassId === "all"
 			? lessons
@@ -144,13 +155,14 @@ export function StudentScheduleView({
 	const nextSessionId = useMemo(() => {
 		const next = scopedLessons.find(
 			(l) =>
+				!pausedClassIds.has(l.classId) &&
 				l.date != null &&
 				l.date >= todayISO &&
 				l.status === "upcoming" &&
 				!isSessionEnded(l, currentNow),
 		);
 		return next?.id ?? null;
-	}, [scopedLessons, todayISO, currentNow]);
+	}, [scopedLessons, pausedClassIds, todayISO, currentNow]);
 	// Phân loại và đếm số lượng cho từng tab
 	const { categorizedLessons, tabCounts } = useMemo(() => {
 		const counts: Record<ScheduleTab, number> = {
@@ -165,6 +177,18 @@ export function StudentScheduleView({
 		const completedList: StudentScheduleLesson[] = [];
 
 		for (const l of scopedLessons) {
+			if (pausedClassIds.has(l.classId)) {
+				if (
+					l.status === "completed" ||
+					l.status === "absent" ||
+					((l.status === "cancelled" || l.status === "holiday") &&
+						l.date != null &&
+						l.date < todayISO)
+				) {
+					completedList.push(l);
+				}
+				continue;
+			}
 			const ended = isSessionEnded(l, currentNow);
 
 			if (l.date != null) {
@@ -204,7 +228,7 @@ export function StudentScheduleView({
 			categorizedLessons: resultList,
 			tabCounts: counts,
 		};
-	}, [scopedLessons, currentNow, todayISO, activeTab]);
+	}, [scopedLessons, pausedClassIds, currentNow, todayISO, activeTab]);
 
 	return (
 		<div data-testid="student-schedule-page" className="space-y-8">
@@ -261,9 +285,14 @@ export function StudentScheduleView({
 												>
 													{cls.name}
 												</Link>
-												<span className="flex-none rounded-full bg-muted px-2 py-0.5 font-medium text-[11px] text-muted-foreground">
-													{cls.mode}
-												</span>
+												<div className="flex shrink-0 items-center gap-1.5">
+													{cls.status === "paused" && (
+														<Badge variant="secondary">Tạm dừng</Badge>
+													)}
+													<span className="flex-none rounded-full bg-muted px-2 py-0.5 font-medium text-[11px] text-muted-foreground">
+														{cls.mode}
+													</span>
+												</div>
 											</div>
 
 											<div className="space-y-1.5 text-sm">
@@ -300,7 +329,11 @@ export function StudentScheduleView({
 										</div>
 
 										<div className="mt-4 border-border border-t pt-3 text-xs">
-											{cls.nextSession?.date ? (
+											{cls.status === "paused" ? (
+												<span className="text-muted-foreground">
+													Lớp đang tạm dừng
+												</span>
+											) : cls.nextSession?.date ? (
 												<span className="text-muted-foreground">
 													Buổi tới:{" "}
 													<strong className="font-semibold text-foreground">
@@ -470,8 +503,14 @@ export function StudentScheduleView({
 								<div className="grid gap-3">
 									{categorizedLessons.map((lesson) => {
 										const isNext = lesson.id === nextSessionId;
+										const isPausedClass = pausedClassIds.has(lesson.classId);
 										const isEnded = isSessionEnded(lesson, currentNow);
-										const displayStatus = isEnded ? "ended" : lesson.status;
+										const displayStatus =
+											isPausedClass && lesson.status === "upcoming"
+												? "paused_upcoming"
+												: isEnded
+													? "ended"
+													: lesson.status;
 
 										const statusConfig = LESSON_STATUS_CONFIG[
 											displayStatus
@@ -512,12 +551,14 @@ export function StudentScheduleView({
 															displayStatus === "absent" &&
 																"border-destructive bg-destructive text-white",
 															(displayStatus === "cancelled" ||
-																displayStatus === "ended") &&
+																displayStatus === "ended" ||
+																displayStatus === "paused_upcoming") &&
 																"bg-muted text-muted-foreground",
 															displayStatus !== "completed" &&
 																displayStatus !== "absent" &&
 																displayStatus !== "cancelled" &&
 																displayStatus !== "ended" &&
+																displayStatus !== "paused_upcoming" &&
 																"bg-background text-muted-foreground",
 															isNext && "ring-2 ring-primary ring-offset-2",
 														)}

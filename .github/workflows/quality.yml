@@ -132,7 +132,7 @@ jobs:
             turbo-test-workspace-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
       - run: pnpm exec turbo run test --concurrency=2 --filter=!web --filter=!server
       - run: pnpm exec turbo run test:ledger --filter=server
-      - run: pnpm test:ci-workflow && pnpm test:topology-drift && pnpm test:devserver-watchdog && pnpm test:design-compare
+      - run: pnpm test:ci-workflow && pnpm test:topology-drift && pnpm test:devserver-watchdog && pnpm test:design-compare && pnpm test:discord-changelog
       - name: Prune stale Turbo cache entries
         if: inputs.turbo-cache && github.event_name == 'push'
         run: if [ -d .turbo/cache ]; then find .turbo/cache -type f -mtime +7 -delete; fi

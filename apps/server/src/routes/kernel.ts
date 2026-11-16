@@ -1,6 +1,7 @@
 import type {
 	BillingTimelineEvent,
 	BillingTimelineResponse,
+	ClassStatusResponse,
 	CreatedResponse,
 	DebtReminderResponse,
 	InvoicePaymentMethod,
@@ -11,12 +12,16 @@ import type {
 } from "@teacher-os/api/contracts";
 import {
 	addManualSessionSchema,
+	CLASS_ERROR_CODES,
 	classAssignmentCreateSchema,
 	classCreateSchema,
 	classNotesSchema,
+	classStatusUpdateSchema,
 	classTuitionFeeUpdateSchema,
+	classUpdateSchema,
 	debtReminderCreateSchema,
 	enrollStudentSchema,
+	IELTS_SKILLS,
 	INVOICE_PAYMENT_METHOD_LABEL,
 	invoiceCreateSchema,
 	invoiceMarkPaidSchema,
@@ -39,12 +44,13 @@ import {
 import {
 	isoToLessonWeekday,
 	parseStartDateStrict,
+	parseStoredSchedule,
 } from "@teacher-os/api/skeleton";
 import {
 	vietnamDateTimeMs,
 	vietnamTodayISO,
 } from "@teacher-os/api/vietnam-date";
-import { canPublishGrade } from "@teacher-os/auth/role";
+import { canManageClassStatus, canPublishGrade } from "@teacher-os/auth/role";
 import { assignmentPrompt } from "@teacher-os/db/schema/assignment-prompt";
 import { user as authUser } from "@teacher-os/db/schema/auth";
 import { classTable } from "@teacher-os/db/schema/class";
@@ -68,8 +74,8 @@ import { student } from "@teacher-os/db/schema/student";
 import { studentInvitation } from "@teacher-os/db/schema/student-invitation";
 import {
 	syllabus,
-	type syllabusLesson,
-	type syllabusModule,
+	syllabusLesson,
+	syllabusModule,
 } from "@teacher-os/db/schema/syllabus";
 import { and, desc, eq, inArray, isNull, lte, ne, or, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
@@ -109,6 +115,7 @@ import {
 	loadPaymentInstructions,
 } from "../lib/payment-instructions";
 import { recordManualPayment } from "../lib/payments/record-manual-payment";
+import type { PlacementAiGrader } from "../lib/placement-ai/grader";
 import { requireFinanceRole } from "../lib/require-finance-role";
 import {
 	buildImportBatch,
@@ -137,7 +144,7 @@ import { placementTestRoutes } from "./placement-test";
 import { commentBankRoutes, notifRoutes, reportRoutes } from "./reporting";
 import { loadInvoices, loadSnapshot } from "./snapshot";
 import { studyPackRoutes } from "./study-pack";
-import { syllabusRoutes } from "./syllabus";
+import { backfillStuckEnrollments, syllabusRoutes } from "./syllabus";
 import { vocabLibraryRoutes } from "./vocab-library";
 import { vocabTeacherRoutes } from "./vocab-teacher";
 
@@ -154,6 +161,7 @@ export function kernelRoutes(deps: {
 	getLibraryAudioStore?(): MediaStore | undefined;
 	getMaterialsStore?(): MediaStore | undefined;
 	leadOrgId?: string;
+	teacherEmails?: string[];
 	corsOrigin?: string | string[];
 	corsOrigins?: string | string[];
 	/** #454 phase 3: thông báo qua queue — route phát sau khi ghi thành công. */
@@ -168,8 +176,12 @@ export function kernelRoutes(deps: {
 	/** TOS-33 (#481): grader + vòng retry cho "Thử chấm lại AI" — cùng DI
 	 * nguồn buildApp với submit route. */
 	getAiGrader?(): AiGrader | undefined;
+	/** #730: grader nháp AI placement + origin profile cho link kết quả. */
+	getPlacementAiGrader?(): PlacementAiGrader | undefined;
+	leadOrigins?: string[];
 	aiRetryDelaysMs?: number[];
 	aiGradingTimeoutMs?: number;
+	fetchExternalAudio?: typeof fetch;
 	now?: () => Date;
 }) {
 	const kernel = new Hono<Env>();
@@ -218,6 +230,21 @@ export function kernelRoutes(deps: {
 
 	function canManageStudentInvites(role: string | undefined): boolean {
 		return role === undefined ? true : canPublishGrade(role);
+	}
+
+	function canManageClassStatusInKernel(role: string | undefined): boolean {
+		return role === undefined ? true : canManageClassStatus(role);
+	}
+
+	function classPausedResponse(c: KernelContext) {
+		return c.json(
+			{
+				error: "Lớp đang tạm dừng, không thể thực hiện thao tác này.",
+				code: CLASS_ERROR_CODES.CLASS_PAUSED,
+				reason: CLASS_ERROR_CODES.CLASS_PAUSED,
+			},
+			409,
+		);
 	}
 
 	function forbiddenInviteRole(c: KernelContext) {
@@ -411,6 +438,7 @@ export function kernelRoutes(deps: {
 				mode: classTable.mode,
 				tuitionFee: classTable.tuitionFee,
 				schedulingMode: classTable.schedulingMode,
+				status: classTable.status,
 			})
 			.from(classTable)
 			.where(and(eq(classTable.id, classId), eq(classTable.orgId, orgId)));
@@ -430,6 +458,7 @@ export function kernelRoutes(deps: {
 				id: lesson.id,
 				status: lesson.status,
 				classId: lesson.classId,
+				classStatus: classTable.status,
 				studentId: enrollment.studentId,
 				enrollmentClassId: enrollment.classId,
 				day: lesson.day,
@@ -441,6 +470,10 @@ export function kernelRoutes(deps: {
 			})
 			.from(lesson)
 			.innerJoin(enrollment, eq(lesson.enrollmentId, enrollment.id))
+			.innerJoin(
+				classTable,
+				and(eq(lesson.classId, classTable.id), eq(classTable.orgId, orgId)),
+			)
 			.where(and(eq(lesson.id, lessonId), eq(lesson.orgId, orgId)));
 		return row;
 	}
@@ -474,6 +507,9 @@ export function kernelRoutes(deps: {
 			classId !== "" ? await findClass(db, classId, ctx.orgId) : undefined;
 		if (classId !== "" && !cls) {
 			return c.json({ error: "class not found" }, 404);
+		}
+		if (cls && cls.status !== "active") {
+			return classPausedResponse(c);
 		}
 
 		async function findExistingByEmail() {
@@ -527,7 +563,8 @@ export function kernelRoutes(deps: {
 				createdAt: now,
 			}),
 		];
-		if (normalizedEmail !== "") {
+		const deferInvitationAcceptance = Boolean(cls);
+		if (normalizedEmail !== "" && !deferInvitationAcceptance) {
 			statements.push(
 				db
 					.update(studentInvitation)
@@ -548,7 +585,7 @@ export function kernelRoutes(deps: {
 					orgId: ctx.orgId,
 					classId: cls.id,
 					studentId,
-					status: "invited",
+					status: sql`CASE WHEN EXISTS (SELECT 1 FROM ${classTable} WHERE ${classTable.id} = ${cls.id} AND ${classTable.orgId} = ${ctx.orgId} AND ${classTable.status} = 'active') THEN 'invited' ELSE NULL END`,
 				}),
 			);
 		}
@@ -568,6 +605,15 @@ export function kernelRoutes(deps: {
 					},
 					409,
 				);
+			}
+			if (cls && isRollbackableConstraintError(cause)) {
+				const clsAfter = await findClass(db, cls.id, ctx.orgId);
+				if (!clsAfter) {
+					return c.json({ error: "class not found" }, 404);
+				}
+				if (clsAfter.status !== "active") {
+					return classPausedResponse(c);
+				}
 			}
 			throw cause;
 		}
@@ -615,11 +661,55 @@ export function kernelRoutes(deps: {
 		}
 
 		if (cls && enrollmentId) {
+			const cleanupCreatedStudentAndEnrollment = async () => {
+				await db
+					.delete(enrollment)
+					.where(
+						and(
+							eq(enrollment.id, enrollmentId),
+							eq(enrollment.orgId, ctx.orgId),
+							eq(enrollment.status, "invited"),
+							sql`NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.enrollmentId} = ${enrollmentId} AND ${lesson.orgId} = ${ctx.orgId})`,
+						),
+					);
+				await db
+					.delete(student)
+					.where(
+						and(
+							eq(student.id, studentId),
+							eq(student.orgId, ctx.orgId),
+							sql`NOT EXISTS (SELECT 1 FROM ${enrollment} WHERE ${enrollment.studentId} = ${studentId} AND ${enrollment.orgId} = ${ctx.orgId})`,
+							sql`NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.enrollmentId} IN (SELECT id FROM ${enrollment} WHERE ${enrollment.studentId} = ${studentId} AND ${enrollment.orgId} = ${ctx.orgId}))`,
+						),
+					);
+			};
+			const acceptPendingInvitation = async () => {
+				if (normalizedEmail !== "") {
+					await db
+						.update(studentInvitation)
+						.set({ status: "accepted", updatedAt: now })
+						.where(
+							and(
+								eq(studentInvitation.orgId, ctx.orgId),
+								sql`lower(trim(${studentInvitation.email})) = ${normalizedEmail}`,
+								eq(studentInvitation.status, "pending"),
+							),
+						);
+				}
+			};
 			if (input.activateNow) {
 				const act = await activateEnrollment(db, ctx.orgId, enrollmentId);
 				if (!act.ok) {
+					await cleanupCreatedStudentAndEnrollment();
+					if (act.error === "class-paused") {
+						return classPausedResponse(c);
+					}
+					if (act.error === "class") {
+						return c.json({ error: "class not found" }, 404);
+					}
 					return c.json({ error: "enrollment activation failed" }, 500);
 				}
+				await acceptPendingInvitation();
 				const inviteEmailSent = await sendDirectPortalInviteBestEffort(
 					cls.name,
 				);
@@ -633,6 +723,16 @@ export function kernelRoutes(deps: {
 					201,
 				);
 			}
+			const clsBeforeNotify = await findClass(db, cls.id, ctx.orgId);
+			if (!clsBeforeNotify) {
+				await cleanupCreatedStudentAndEnrollment();
+				return c.json({ error: "class not found" }, 404);
+			}
+			if (clsBeforeNotify.status !== "active") {
+				await cleanupCreatedStudentAndEnrollment();
+				return classPausedResponse(c);
+			}
+			await acceptPendingInvitation();
 			if (normalizedEmail === "") {
 				await notify(ctx.orgId, [
 					classEnrolledEvent({
@@ -1120,59 +1220,160 @@ export function kernelRoutes(deps: {
 		}
 
 		const requestedEnrollmentId = body.data.enrollmentId?.trim() ?? "";
-		let invitedEnrollment:
-			| { id: string; classId: string; className: string }
-			| undefined;
-		if (requestedEnrollmentId !== "") {
-			const [matched] = await db
-				.select({
-					id: enrollment.id,
-					classId: enrollment.classId,
-					className: classTable.name,
-				})
-				.from(enrollment)
-				.innerJoin(classTable, eq(enrollment.classId, classTable.id))
-				.where(
-					and(
-						eq(enrollment.id, requestedEnrollmentId),
-						eq(enrollment.studentId, studentRow.id),
-						eq(enrollment.orgId, ctx.orgId),
-						eq(enrollment.status, "invited"),
-					),
-				)
-				.limit(1);
-			if (!matched) {
-				return c.json(
-					{
-						error: "Lời mời vào lớp không tồn tại hoặc đã được xử lý",
-						code: STUDENT_INVITATION_ERROR_CODES.INVITATION_NOT_FOUND,
+		type ResendTargetResult =
+			| {
+					ok: true;
+					invitedEnrollment:
+						| { id: string; classId: string; className: string }
+						| undefined;
+					activeClassForPortal: { className: string } | undefined;
+			  }
+			| { ok: false; kind: "not-found" | "paused" };
+
+		const resolveResendTarget = async (): Promise<ResendTargetResult> => {
+			if (requestedEnrollmentId !== "") {
+				const [matched] = await db
+					.select({
+						id: enrollment.id,
+						classId: enrollment.classId,
+						className: classTable.name,
+						classStatus: classTable.status,
+					})
+					.from(enrollment)
+					.innerJoin(
+						classTable,
+						and(
+							eq(enrollment.classId, classTable.id),
+							eq(classTable.orgId, ctx.orgId),
+						),
+					)
+					.where(
+						and(
+							eq(enrollment.id, requestedEnrollmentId),
+							eq(enrollment.studentId, studentRow.id),
+							eq(enrollment.orgId, ctx.orgId),
+							eq(enrollment.status, "invited"),
+						),
+					)
+					.limit(1);
+				if (!matched) {
+					return { ok: false, kind: "not-found" };
+				}
+				if (matched.classStatus !== "active") {
+					return { ok: false, kind: "paused" };
+				}
+				return {
+					ok: true,
+					invitedEnrollment: {
+						id: matched.id,
+						classId: matched.classId,
+						className: matched.className,
 					},
-					404,
-				);
+					activeClassForPortal: undefined,
+				};
 			}
-			invitedEnrollment = matched;
-		} else {
-			const [latestInvited] = await db
-				.select({
-					id: enrollment.id,
-					classId: enrollment.classId,
-					className: classTable.name,
-				})
-				.from(enrollment)
-				.innerJoin(classTable, eq(enrollment.classId, classTable.id))
-				.where(
-					and(
-						eq(enrollment.studentId, studentRow.id),
-						eq(enrollment.orgId, ctx.orgId),
-						eq(enrollment.status, "invited"),
-					),
-				)
-				.orderBy(desc(enrollment.createdAt), desc(enrollment.id))
-				.limit(1);
-			invitedEnrollment = latestInvited;
+
+			const [[latestInvited], activeClassRows, pausedEnrollmentRows] =
+				await Promise.all([
+					db
+						.select({
+							id: enrollment.id,
+							classId: enrollment.classId,
+							className: classTable.name,
+						})
+						.from(enrollment)
+						.innerJoin(
+							classTable,
+							and(
+								eq(enrollment.classId, classTable.id),
+								eq(classTable.orgId, ctx.orgId),
+							),
+						)
+						.where(
+							and(
+								eq(enrollment.studentId, studentRow.id),
+								eq(enrollment.orgId, ctx.orgId),
+								eq(enrollment.status, "invited"),
+								eq(classTable.status, "active"),
+							),
+						)
+						.orderBy(desc(enrollment.createdAt), desc(enrollment.id))
+						.limit(1),
+					db
+						.select({ className: classTable.name })
+						.from(enrollment)
+						.innerJoin(
+							classTable,
+							and(
+								eq(enrollment.classId, classTable.id),
+								eq(classTable.orgId, ctx.orgId),
+							),
+						)
+						.where(
+							and(
+								eq(enrollment.studentId, studentRow.id),
+								eq(enrollment.orgId, ctx.orgId),
+								eq(enrollment.status, "active"),
+								eq(classTable.status, "active"),
+							),
+						)
+						.orderBy(desc(enrollment.createdAt), desc(enrollment.id))
+						.limit(1),
+					db
+						.select({ id: enrollment.id })
+						.from(enrollment)
+						.innerJoin(
+							classTable,
+							and(
+								eq(enrollment.classId, classTable.id),
+								eq(classTable.orgId, ctx.orgId),
+							),
+						)
+						.where(
+							and(
+								eq(enrollment.studentId, studentRow.id),
+								eq(enrollment.orgId, ctx.orgId),
+								inArray(enrollment.status, ["invited", "active"]),
+								ne(classTable.status, "active"),
+							),
+						)
+						.limit(1),
+				]);
+
+			if (
+				!latestInvited &&
+				!activeClassRows[0] &&
+				pausedEnrollmentRows.length > 0
+			) {
+				return { ok: false, kind: "paused" };
+			}
+			return {
+				ok: true,
+				invitedEnrollment: latestInvited,
+				activeClassForPortal: activeClassRows[0],
+			};
+		};
+
+		const rejectResendTarget = (kind: "not-found" | "paused") =>
+			kind === "paused"
+				? classPausedResponse(c)
+				: c.json(
+						{
+							error: "Lời mời vào lớp không tồn tại hoặc đã được xử lý",
+							code: STUDENT_INVITATION_ERROR_CODES.INVITATION_NOT_FOUND,
+						},
+						404,
+					);
+
+		const initialTarget = await resolveResendTarget();
+		if (!initialTarget.ok) {
+			return rejectResendTarget(initialTarget.kind);
 		}
 
-		if (studentRow.onboardingCompletedAt != null && !invitedEnrollment) {
+		if (
+			studentRow.onboardingCompletedAt != null &&
+			!initialTarget.invitedEnrollment
+		) {
 			return c.json(
 				{
 					error: "Học viên này đã tham gia cổng học viên",
@@ -1213,6 +1414,10 @@ export function kernelRoutes(deps: {
 			.returning({ id: student.id });
 
 		if (claimed.length === 0) {
+			const racedTarget = await resolveResendTarget();
+			if (!racedTarget.ok) {
+				return rejectResendTarget(racedTarget.kind);
+			}
 			const [reloaded] = await db
 				.select({ lastInviteEmailAt: student.lastInviteEmailAt })
 				.from(student)
@@ -1221,6 +1426,42 @@ export function kernelRoutes(deps: {
 			const refMs = reloaded?.lastInviteEmailAt?.getTime() ?? nowMs;
 			return cooldownResponse(c, refMs, nowMs, Math.max(cooldownMs, 1_000));
 		}
+
+		const rollbackClaimedInvite = async () => {
+			await db
+				.update(student)
+				.set({ lastInviteEmailAt: previousLastInviteAt })
+				.where(
+					and(
+						eq(student.id, studentRow.id),
+						eq(student.lastInviteEmailAt, now),
+					),
+				);
+		};
+
+		// Re-check class status after claiming cooldown timestamp so a concurrent pause
+		// never sends an email or queues notifications and rolls back `lastInviteEmailAt`.
+		const postClaimTarget = await resolveResendTarget();
+		if (!postClaimTarget.ok) {
+			await rollbackClaimedInvite();
+			return rejectResendTarget(postClaimTarget.kind);
+		}
+		if (
+			studentRow.onboardingCompletedAt != null &&
+			!postClaimTarget.invitedEnrollment
+		) {
+			await rollbackClaimedInvite();
+			return c.json(
+				{
+					error: "Học viên này đã tham gia cổng học viên",
+					code: STUDENT_INVITATION_ERROR_CODES.ALREADY_JOINED,
+				},
+				409,
+			);
+		}
+
+		const invitedEnrollment = postClaimTarget.invitedEnrollment;
+		const activeClassForPortal = postClaimTarget.activeClassForPortal;
 
 		const resendToken = crypto.randomUUID();
 		if (invitedEnrollment) {
@@ -1252,15 +1493,7 @@ export function kernelRoutes(deps: {
 					})
 				: false;
 			if (!ok) {
-				await db
-					.update(student)
-					.set({ lastInviteEmailAt: previousLastInviteAt })
-					.where(
-						and(
-							eq(student.id, studentRow.id),
-							eq(student.lastInviteEmailAt, now),
-						),
-					);
+				await rollbackClaimedInvite();
 				return c.json(
 					{
 						error:
@@ -1278,19 +1511,30 @@ export function kernelRoutes(deps: {
 		}
 
 		try {
-			const [activeClass] = await db
-				.select({ className: classTable.name })
-				.from(enrollment)
-				.innerJoin(classTable, eq(enrollment.classId, classTable.id))
-				.where(
-					and(
-						eq(enrollment.studentId, studentRow.id),
-						eq(enrollment.orgId, ctx.orgId),
-						eq(enrollment.status, "active"),
-					),
-				)
-				.orderBy(desc(enrollment.createdAt), desc(enrollment.id))
-				.limit(1);
+			const activeClass =
+				activeClassForPortal ??
+				(
+					await db
+						.select({ className: classTable.name })
+						.from(enrollment)
+						.innerJoin(
+							classTable,
+							and(
+								eq(enrollment.classId, classTable.id),
+								eq(classTable.orgId, ctx.orgId),
+							),
+						)
+						.where(
+							and(
+								eq(enrollment.studentId, studentRow.id),
+								eq(enrollment.orgId, ctx.orgId),
+								eq(enrollment.status, "active"),
+								eq(classTable.status, "active"),
+							),
+						)
+						.orderBy(desc(enrollment.createdAt), desc(enrollment.id))
+						.limit(1)
+				)[0];
 			const { senderName, replyToEmail } = await resolveOrgMailSender(
 				db,
 				ctx.orgId,
@@ -1317,15 +1561,7 @@ export function kernelRoutes(deps: {
 				"[invite] failed to resend student portal invite:",
 				sanitizeDeliveryError(msg).rawError,
 			);
-			await db
-				.update(student)
-				.set({ lastInviteEmailAt: previousLastInviteAt })
-				.where(
-					and(
-						eq(student.id, studentRow.id),
-						eq(student.lastInviteEmailAt, now),
-					),
-				);
+			await rollbackClaimedInvite();
 			return c.json(
 				{
 					error:
@@ -1395,6 +1631,9 @@ export function kernelRoutes(deps: {
 		if (!cls) {
 			return c.json({ error: "class not found" }, 404);
 		}
+		if (cls.status !== "active") {
+			return classPausedResponse(c);
+		}
 		const [existingStudent] = await db
 			.select({ id: student.id })
 			.from(student)
@@ -1418,19 +1657,93 @@ export function kernelRoutes(deps: {
 		}
 
 		const enrollmentId = crypto.randomUUID();
-		await db.insert(enrollment).values({
-			id: enrollmentId,
-			orgId: ctx.orgId,
-			classId: cls.id,
-			studentId: input.studentId,
-			status: "invited",
-		});
+		try {
+			await db.insert(enrollment).values({
+				id: enrollmentId,
+				orgId: ctx.orgId,
+				classId: cls.id,
+				studentId: input.studentId,
+				status: sql`CASE WHEN EXISTS (SELECT 1 FROM ${classTable} WHERE ${classTable.id} = ${cls.id} AND ${classTable.orgId} = ${ctx.orgId} AND ${classTable.status} = 'active') THEN 'invited' ELSE NULL END`,
+			});
+		} catch (err) {
+			if (isRollbackableConstraintError(err)) {
+				const [clsAfter, dupeAfter, studentAfter] = await Promise.all([
+					findClass(db, classId, ctx.orgId),
+					db
+						.select({ id: enrollment.id })
+						.from(enrollment)
+						.where(
+							and(
+								eq(enrollment.classId, classId),
+								eq(enrollment.studentId, input.studentId),
+							),
+						)
+						.limit(1),
+					db
+						.select({ id: student.id })
+						.from(student)
+						.where(
+							and(
+								eq(student.id, input.studentId),
+								eq(student.orgId, ctx.orgId),
+							),
+						)
+						.limit(1),
+				]);
+				if (!clsAfter) {
+					return c.json({ error: "class not found" }, 404);
+				}
+				if (studentAfter.length === 0) {
+					return c.json({ error: "student not found" }, 404);
+				}
+				if (dupeAfter.length > 0) {
+					return c.json({ error: "student already enrolled" }, 409);
+				}
+				if (clsAfter.status !== "active") {
+					return classPausedResponse(c);
+				}
+			}
+			throw err;
+		}
 		if (input.activateNow === true) {
 			const act = await activateEnrollment(db, ctx.orgId, enrollmentId);
 			if (!act.ok) {
+				await db
+					.delete(enrollment)
+					.where(
+						and(
+							eq(enrollment.id, enrollmentId),
+							eq(enrollment.orgId, ctx.orgId),
+							eq(enrollment.status, "invited"),
+							sql`NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.enrollmentId} = ${enrollmentId} AND ${lesson.orgId} = ${ctx.orgId})`,
+						),
+					);
+				if (act.error === "class-paused") {
+					return classPausedResponse(c);
+				}
+				if (act.error === "class") {
+					return c.json({ error: "class not found" }, 404);
+				}
 				return c.json({ error: "enrollment activation failed" }, 500);
 			}
 		} else {
+			const clsBeforeNotify = await findClass(db, cls.id, ctx.orgId);
+			if (clsBeforeNotify?.status !== "active") {
+				await db
+					.delete(enrollment)
+					.where(
+						and(
+							eq(enrollment.id, enrollmentId),
+							eq(enrollment.orgId, ctx.orgId),
+							eq(enrollment.status, "invited"),
+							sql`NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.enrollmentId} = ${enrollmentId} AND ${lesson.orgId} = ${ctx.orgId})`,
+						),
+					);
+				if (!clsBeforeNotify) {
+					return c.json({ error: "class not found" }, 404);
+				}
+				return classPausedResponse(c);
+			}
 			await notify(ctx.orgId, [
 				classEnrolledEvent({
 					enrollmentId,
@@ -1459,6 +1772,9 @@ export function kernelRoutes(deps: {
 		const result = await activateEnrollment(db, ctx.orgId, enrollmentId);
 		if (result.ok) {
 			return c.json({ ok: true });
+		}
+		if (result.error === "class-paused") {
+			return classPausedResponse(c);
 		}
 		return c.json(
 			{
@@ -1756,6 +2072,337 @@ export function kernelRoutes(deps: {
 		return c.json({ ok: true });
 	});
 
+	kernel.post("/classes/:id/status", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		if (!canManageClassStatusInKernel(ctx.role)) {
+			return c.json({ error: "forbidden", code: "FORBIDDEN" }, 403);
+		}
+		const body = await readBody(c, classStatusUpdateSchema);
+		if (!body.ok) return body.response;
+		const db = deps.getDb();
+		const classId = c.req.param("id");
+
+		const cls = await findClass(db, classId, ctx.orgId);
+		if (!cls) {
+			return c.json({ error: "class not found" }, 404);
+		}
+
+		const nextStatus = body.data.status;
+		if (nextStatus === "paused") {
+			await db
+				.update(classTable)
+				.set({ status: "paused" })
+				.where(
+					and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)),
+				);
+			return c.json({
+				ok: true,
+				status: "paused",
+			} satisfies ClassStatusResponse);
+		}
+
+		const transitioned = await db
+			.update(classTable)
+			.set({ status: "active" })
+			.where(
+				and(
+					eq(classTable.id, classId),
+					eq(classTable.orgId, ctx.orgId),
+					eq(classTable.status, "paused"),
+				),
+			)
+			.returning({ id: classTable.id });
+
+		if (transitioned.length > 0) {
+			const refreshed = await findClass(db, classId, ctx.orgId);
+			if (
+				refreshed &&
+				refreshed.status === "active" &&
+				refreshed.schedulingMode === "auto" &&
+				refreshed.sessionsTotal > 0
+			) {
+				await backfillStuckEnrollments(db, ctx.orgId, classId);
+			}
+		}
+
+		return c.json({
+			ok: true,
+			status: "active",
+		} satisfies ClassStatusResponse);
+	});
+
+	async function hasRealClassSessions(
+		db: Db,
+		orgId: string,
+		classId: string,
+	): Promise<boolean> {
+		const [existingLesson, existingSession] = await Promise.all([
+			db
+				.select({ id: lesson.id })
+				.from(lesson)
+				.where(and(eq(lesson.orgId, orgId), eq(lesson.classId, classId)))
+				.limit(1),
+			db
+				.select({ id: classSession.id })
+				.from(classSession)
+				.where(
+					and(eq(classSession.orgId, orgId), eq(classSession.classId, classId)),
+				)
+				.limit(1),
+		]);
+		return existingLesson.length > 0 || existingSession.length > 0;
+	}
+
+	function scheduleLockedResponse(c: KernelContext) {
+		return c.json(
+			{
+				error:
+					"Lớp đã có buổi học thực tế nên không thể đổi lịch học, ngày khai giảng hoặc số buổi.",
+				code: CLASS_ERROR_CODES.SCHEDULE_LOCKED,
+			},
+			409,
+		);
+	}
+
+	/**
+	 * Cập nhật thông tin lớp học (#693).
+	 * - Thông tin chung (`name`, `type`, `level`, `skills`, `mode`, `tuitionFee`) luôn sửa được.
+	 * - `schedule`, `startDate`, `sessionsTotal` chỉ sửa được khi lớp chưa có buổi học thực tế (`lesson` hoặc `class_session`),
+	 *   bảo vệ nguyên tử bằng `WHERE NOT EXISTS (...)` chống race với `activateEnrollment` / `POST /sessions`.
+	 * - `syllabusId` và `schedulingMode` không thay đổi qua route này.
+	 */
+	kernel.patch("/classes/:id", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		const body = await readBody(c, classUpdateSchema);
+		if (!body.ok) return body.response;
+		const input = body.data;
+		const db = deps.getDb();
+		const classId = c.req.param("id");
+
+		const cls = await findClass(db, classId, ctx.orgId);
+		if (!cls) {
+			return c.json({ error: "class not found" }, 404);
+		}
+
+		const copy = await findClassCurriculum(db, classId, ctx.orgId);
+		if (copy) {
+			let copySkillsRaw: unknown = [];
+			try {
+				copySkillsRaw = JSON.parse(copy.skills);
+			} catch {
+				copySkillsRaw = [];
+			}
+			const copySkills = Array.isArray(copySkillsRaw)
+				? IELTS_SKILLS.filter((skill) => copySkillsRaw.includes(skill))
+				: [];
+			if (copySkills.length > 0) {
+				const normalizedInputSkills = IELTS_SKILLS.filter((skill) =>
+					input.skills.includes(skill),
+				);
+				if (
+					input.type !== "ielts" ||
+					normalizedInputSkills.length !== copySkills.length ||
+					normalizedInputSkills.some((skill, idx) => skill !== copySkills[idx])
+				) {
+					return c.json({ error: "skills locked by curriculum" }, 400);
+				}
+			}
+
+			const lessonRows = await db
+				.select({ id: syllabusLesson.id })
+				.from(syllabusLesson)
+				.innerJoin(
+					syllabusModule,
+					and(
+						eq(syllabusLesson.moduleId, syllabusModule.id),
+						eq(syllabusModule.orgId, ctx.orgId),
+					),
+				)
+				.where(
+					and(
+						eq(syllabusModule.syllabusId, copy.id),
+						eq(syllabusLesson.orgId, ctx.orgId),
+					),
+				);
+			const curriculumLessonCount = lessonRows.length;
+			if (
+				curriculumLessonCount > 0 &&
+				input.sessionsTotal !== undefined &&
+				input.sessionsTotal !== cls.sessionsTotal &&
+				input.sessionsTotal !== curriculumLessonCount
+			) {
+				return c.json({ error: "sessionsTotal locked by curriculum" }, 400);
+			}
+		}
+
+		const normalizedInputSchedule =
+			input.schedule !== undefined
+				? JSON.stringify({
+						days: [...new Set(input.schedule.days)].sort((a, b) => a - b),
+						start: input.schedule.start,
+						end: input.schedule.end,
+					})
+				: undefined;
+
+		let scheduleChanged = false;
+		let nextSchedule = cls.schedule;
+		if (normalizedInputSchedule !== undefined) {
+			const parsedExisting = parseStoredSchedule(cls.schedule);
+			if (
+				parsedExisting !== null &&
+				JSON.stringify(parsedExisting) === normalizedInputSchedule
+			) {
+				scheduleChanged = false;
+				nextSchedule = cls.schedule;
+			} else {
+				scheduleChanged = true;
+				nextSchedule = normalizedInputSchedule;
+			}
+		}
+
+		const nextStartDate =
+			input.startDate !== undefined ? input.startDate : cls.startDate;
+		const nextSessionsTotal =
+			input.sessionsTotal !== undefined
+				? input.sessionsTotal
+				: cls.sessionsTotal;
+		const nextTuitionFee =
+			input.tuitionFee !== undefined ? input.tuitionFee : cls.tuitionFee;
+
+		if (
+			nextStartDate !== cls.startDate &&
+			nextStartDate !== "" &&
+			nextStartDate < vietnamTodayISO()
+		) {
+			return c.json({ error: "startDate cannot be in the past" }, 400);
+		}
+
+		if (nextSessionsTotal !== cls.sessionsTotal) {
+			const isManual = await isManualClass(
+				db,
+				ctx.orgId,
+				classId,
+				cls.syllabusId,
+				cls.schedulingMode,
+			);
+			if (isManual) {
+				if (await hasRealClassSessions(db, ctx.orgId, classId)) {
+					return scheduleLockedResponse(c);
+				}
+				return c.json(
+					{ error: "cannot change sessionsTotal on manual class" },
+					400,
+				);
+			}
+		}
+
+		const touchesSchedule =
+			scheduleChanged ||
+			nextStartDate !== cls.startDate ||
+			nextSessionsTotal !== cls.sessionsTotal;
+
+		if (!touchesSchedule) {
+			const updated = await db
+				.update(classTable)
+				.set({
+					name: input.name,
+					type: input.type,
+					level: input.level,
+					skills: JSON.stringify(input.skills),
+					mode: input.mode,
+					tuitionFee: nextTuitionFee,
+				})
+				.where(and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)))
+				.returning({ id: classTable.id });
+			if (updated.length === 0) {
+				return c.json({ error: "class not found" }, 404);
+			}
+			return c.json({ ok: true });
+		}
+
+		const casWhere = and(
+			eq(classTable.id, classId),
+			eq(classTable.orgId, ctx.orgId),
+			eq(classTable.schedulingMode, cls.schedulingMode),
+			cls.syllabusId === null
+				? isNull(classTable.syllabusId)
+				: eq(classTable.syllabusId, cls.syllabusId),
+			sql`NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.classId} = ${classId} AND ${lesson.orgId} = ${ctx.orgId})`,
+			sql`NOT EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.classId} = ${classId} AND ${classSession.orgId} = ${ctx.orgId})`,
+		);
+
+		const updateClassStmt = db
+			.update(classTable)
+			.set({
+				name: input.name,
+				type: input.type,
+				level: input.level,
+				skills: JSON.stringify(input.skills),
+				mode: input.mode,
+				tuitionFee: nextTuitionFee,
+				schedule: nextSchedule,
+				startDate: nextStartDate,
+				sessionsTotal: nextSessionsTotal,
+			})
+			.where(casWhere)
+			.returning({ id: classTable.id });
+
+		const updated =
+			nextSessionsTotal !== cls.sessionsTotal
+				? (
+						await db.batch([
+							updateClassStmt,
+							db
+								.update(sessionPackage)
+								.set({ total: nextSessionsTotal })
+								.where(
+									and(
+										eq(sessionPackage.orgId, ctx.orgId),
+										inArray(
+											sessionPackage.enrollmentId,
+											db
+												.select({ id: enrollment.id })
+												.from(enrollment)
+												.where(
+													and(
+														eq(enrollment.orgId, ctx.orgId),
+														eq(enrollment.classId, classId),
+													),
+												),
+										),
+										sql`EXISTS (
+											SELECT 1 FROM ${classTable}
+											WHERE ${classTable.id} = ${classId}
+												AND ${classTable.orgId} = ${ctx.orgId}
+												AND ${classTable.sessionsTotal} = ${nextSessionsTotal}
+												AND NOT EXISTS (SELECT 1 FROM ${lesson} WHERE ${lesson.classId} = ${classId} AND ${lesson.orgId} = ${ctx.orgId})
+												AND NOT EXISTS (SELECT 1 FROM ${classSession} WHERE ${classSession.classId} = ${classId} AND ${classSession.orgId} = ${ctx.orgId})
+										)`,
+									),
+								),
+						])
+					)[0]
+				: await updateClassStmt;
+
+		if (updated.length === 0) {
+			if (await hasRealClassSessions(db, ctx.orgId, classId)) {
+				return scheduleLockedResponse(c);
+			}
+			const stillExists = await findClass(db, classId, ctx.orgId);
+			if (!stillExists) {
+				return c.json({ error: "class not found" }, 404);
+			}
+			return c.json(
+				{ error: "Lớp vừa thay đổi chế độ lịch học, vui lòng thử lại." },
+				409,
+			);
+		}
+
+		return c.json({ ok: true });
+	});
+
 	// isoToLessonWeekday sống ở @teacher-os/api/skeleton (TOS-11 M5) — route
 	// holidays và activation cùng dùng một nguồn, không giữ bản mirror.
 
@@ -1849,6 +2496,7 @@ export function kernelRoutes(deps: {
 		orgId: string,
 		set: Partial<typeof lesson.$inferInsert>,
 		statusFilter: boolean,
+		requireActiveClass = false,
 	) {
 		return db
 			.update(lesson)
@@ -1868,6 +2516,11 @@ export function kernelRoutes(deps: {
 					// C2 (TOS-11): dòng `holiday` không bao giờ bị ghi đè qua occurrenceUpdate.
 					ne(lesson.status, "holiday"),
 					...(statusFilter ? [eq(lesson.status, "upcoming" as const)] : []),
+					...(requireActiveClass
+						? [
+								sql`EXISTS (SELECT 1 FROM ${classTable} WHERE ${classTable.id} = ${classId} AND ${classTable.orgId} = ${orgId} AND ${classTable.status} = 'active')`,
+							]
+						: []),
 				),
 			)
 			.returning({ id: lesson.id });
@@ -1897,12 +2550,15 @@ export function kernelRoutes(deps: {
 		if (row.enrollmentClassId !== row.classId) {
 			return c.json({ error: "lesson enrollment mismatch" }, 409);
 		}
+		const checkingIn = nextStatus === "completed";
+		if (checkingIn && row.classStatus !== "active") {
+			return classPausedResponse(c);
+		}
 		if (row.status !== "upcoming") {
 			return c.json({ error: "lesson is not upcoming" }, 409);
 		}
 		// Undated legacy rows carry no date to compare — the web UI gates them.
 		const today = vietnamTodayISO();
-		const checkingIn = nextStatus === "completed";
 		if (checkingIn && row.date !== null && row.date > today) {
 			return futureSession(c);
 		}
@@ -1923,15 +2579,32 @@ export function kernelRoutes(deps: {
 					checkingIn
 						? or(isNull(lesson.date), lte(lesson.date, today))
 						: undefined,
+					checkingIn
+						? sql`EXISTS (SELECT 1 FROM ${classTable} WHERE ${classTable.id} = ${row.classId} AND ${classTable.orgId} = ${ctx.orgId} AND ${classTable.status} = 'active')`
+						: undefined,
 				),
 			)
 			.returning({ id: lesson.id });
 		if (updated.length === 0) {
+			if (checkingIn) {
+				const clsAfter = await findClass(db, row.classId, ctx.orgId);
+				if (!clsAfter) {
+					return c.json({ error: "class not found" }, 404);
+				}
+				if (clsAfter.status !== "active") {
+					return classPausedResponse(c);
+				}
+			}
 			return c.json({ error: "lesson is not upcoming" }, 409);
 		}
 		// #454 phase 3: hủy buổi học là thay đổi lịch thật sự — phát cho học
-		// viên của dòng lesson. Check-in (completed) không phát.
-		if (nextStatus === "cancelled") {
+		// viên của dòng lesson. Check-in (completed) không phát. Lớp tạm dừng
+		// cũng không phát nhắc lịch hàng ngày cho học viên.
+		if (
+			nextStatus === "cancelled" &&
+			row.classStatus === "active" &&
+			(await findClass(db, row.classId, ctx.orgId))?.status === "active"
+		) {
 			await notify(ctx.orgId, [
 				...scheduleChangedEvents({
 					classId: row.classId,
@@ -2016,7 +2689,11 @@ export function kernelRoutes(deps: {
 			);
 			// #454: phát khi giờ học THỰC SỰ đổi — người nhận là mọi học viên
 			// có dòng lesson trong bucket (occurrence edit áp cả bucket).
-			if (body.data.time !== pre.time) {
+			if (
+				body.data.time !== pre.time &&
+				pre.classStatus === "active" &&
+				(await findClass(db, pre.classId, ctx.orgId))?.status === "active"
+			) {
 				const studentIds = await bucketStudentIds(
 					db,
 					pre.classId,
@@ -2066,7 +2743,11 @@ export function kernelRoutes(deps: {
 			return c.json({ error: "lesson changed or is not upcoming" }, 409);
 		}
 		// #454: lesson không ngày — phát cho đúng học viên của dòng khi giờ đổi.
-		if (body.data.time !== pre.time) {
+		if (
+			body.data.time !== pre.time &&
+			pre.classStatus === "active" &&
+			(await findClass(db, pre.classId, ctx.orgId))?.status === "active"
+		) {
 			await notify(
 				ctx.orgId,
 				scheduleChangedEvents({
@@ -2368,7 +3049,11 @@ export function kernelRoutes(deps: {
 					);
 				}
 			}
-			if (moved || timeChanged) {
+			if (
+				(moved || timeChanged) &&
+				cls.status === "active" &&
+				(await findClass(db, classId, ctx.orgId))?.status === "active"
+			) {
 				await notify(
 					ctx.orgId,
 					scheduleChangedEvents({
@@ -2421,6 +3106,9 @@ export function kernelRoutes(deps: {
 		const cls = await findClass(db, classId, kernelCtx.orgId);
 		if (!cls) {
 			return c.json({ error: "class not found", reason: "not-found" }, 404);
+		}
+		if (cls.status !== "active") {
+			return classPausedResponse(c);
 		}
 		if (await findClassCurriculum(db, classId, kernelCtx.orgId)) {
 			return c.json(
@@ -2525,7 +3213,7 @@ export function kernelRoutes(deps: {
 				id: newId,
 				orgId: kernelCtx.orgId,
 				classId,
-				date: dateISO,
+				date: sql<string>`CASE WHEN EXISTS (SELECT 1 FROM ${classTable} WHERE ${classTable.id} = ${classId} AND ${classTable.orgId} = ${kernelCtx.orgId} AND ${classTable.status} = 'active') THEN ${dateISO} ELSE NULL END`,
 				time: body.data.time,
 				dur: body.data.dur,
 				topic: body.data.topic.trim(),
@@ -2620,6 +3308,13 @@ export function kernelRoutes(deps: {
 				}
 			}
 			if (isRollbackableConstraintError(err)) {
+				const clsAfter = await findClass(db, classId, kernelCtx.orgId);
+				if (!clsAfter) {
+					return c.json({ error: "class not found", reason: "not-found" }, 404);
+				}
+				if (clsAfter.status !== "active") {
+					return classPausedResponse(c);
+				}
 				if (await findClassCurriculum(db, classId, kernelCtx.orgId)) {
 					return c.json(
 						{
@@ -2820,6 +3515,7 @@ export function kernelRoutes(deps: {
 		dateISO: string,
 		orgId: string,
 		db: Db,
+		classStatus: string,
 	): Promise<Response> {
 		const counts = await bucketCounts(db, classId, dateISO, orgId);
 		// Bucket trống vs settled-toàn-bộ phải phân biệt được (K5/R9).
@@ -2834,9 +3530,10 @@ export function kernelRoutes(deps: {
 		}
 		// #454: chụp người nhận trước khi hủy ghi đè trạng thái bucket.
 		const notifyStudentIds =
-			nextStatus === "cancelled"
+			nextStatus === "cancelled" && classStatus === "active"
 				? await bucketStudentIds(db, classId, dateISO, orgId)
 				: [];
+		const requireActiveClass = nextStatus === "completed";
 		const rows = await occurrenceUpdate(
 			db,
 			classId,
@@ -2844,10 +3541,25 @@ export function kernelRoutes(deps: {
 			orgId,
 			{ status: nextStatus },
 			true,
+			requireActiveClass,
 		);
+		if (requireActiveClass && rows.length === 0) {
+			const clsAfter = await findClass(db, classId, orgId);
+			if (!clsAfter) {
+				return c.json({ error: "class not found", reason: "not-found" }, 404);
+			}
+			if (clsAfter.status !== "active") {
+				return classPausedResponse(c);
+			}
+		}
 		// #454: hủy buổi học là thay đổi lịch thật sự — chỉ phát khi có dòng
-		// bị hủy (replay trên bucket đã hủy không phát lại).
-		if (nextStatus === "cancelled" && rows.length > 0) {
+		// bị hủy (replay trên bucket đã hủy không phát lại; lớp tạm dừng không phát).
+		if (
+			nextStatus === "cancelled" &&
+			rows.length > 0 &&
+			classStatus === "active" &&
+			(await findClass(db, classId, orgId))?.status === "active"
+		) {
 			await notify(
 				orgId,
 				scheduleChangedEvents({
@@ -2876,6 +3588,9 @@ export function kernelRoutes(deps: {
 		if (!cls) {
 			return c.json({ error: "class not found", reason: "not-found" }, 404);
 		}
+		if (cls.status !== "active") {
+			return classPausedResponse(c);
+		}
 		return occurrenceStatusAction(
 			c,
 			"completed",
@@ -2883,6 +3598,7 @@ export function kernelRoutes(deps: {
 			dateISO,
 			ctx.orgId,
 			db,
+			cls.status,
 		);
 	});
 
@@ -2903,6 +3619,7 @@ export function kernelRoutes(deps: {
 			dateISO,
 			ctx.orgId,
 			db,
+			cls.status,
 		);
 	});
 
@@ -2920,6 +3637,9 @@ export function kernelRoutes(deps: {
 		const cls = await findClass(db, classId, ctx.orgId);
 		if (!cls) {
 			return c.json({ error: "class not found", reason: "not-found" }, 404);
+		}
+		if (cls.status !== "active") {
+			return classPausedResponse(c);
 		}
 
 		const today = vietnamTodayISO();
@@ -3022,6 +3742,7 @@ export function kernelRoutes(deps: {
 								),
 						),
 						rosterCountGuard,
+						sql`EXISTS (SELECT 1 FROM ${classTable} WHERE ${classTable.id} = ${classId} AND ${classTable.orgId} = ${ctx.orgId} AND ${classTable.status} = 'active')`,
 					),
 				)
 				.returning({ id: lesson.id }),
@@ -3033,6 +3754,13 @@ export function kernelRoutes(deps: {
 		const results = await db.batch([first, ...rest]);
 		const updated = results.reduce((acc, rows) => acc + rows.length, 0);
 		if (updated !== entries.length) {
+			const clsAfter = await findClass(db, classId, ctx.orgId);
+			if (!clsAfter) {
+				return c.json({ error: "class not found", reason: "not-found" }, 404);
+			}
+			if (clsAfter.status !== "active") {
+				return classPausedResponse(c);
+			}
 			return c.json({ error: "roster changed", reason: "roster-changed" }, 409);
 		}
 

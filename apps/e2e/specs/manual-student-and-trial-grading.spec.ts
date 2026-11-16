@@ -103,15 +103,22 @@ test("manual student creation + instant activation unlocks invoice & assignment,
 	await page
 		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
-	await page.getByRole("button", { name: "Giao bài tập" }).first().click();
-	await page.getByRole("button", { name: new RegExp(PROMPT_TITLE) }).click();
-	await expect(page.getByText("Giao cho 1 học viên")).toBeVisible();
-	await page.getByRole("button", { name: "Giao bài tập" }).last().click();
+	await page.getByRole("button", { name: "Giao bài tập", exact: true }).click();
+	const assignDialog = page.getByRole("dialog", {
+		name: new RegExp(`Giao bài tập · ${CLASS_NAME}`),
+	});
+	await expect(assignDialog).toBeVisible();
+	await assignDialog
+		.getByRole("button", { name: new RegExp(PROMPT_TITLE) })
+		.click();
+	await expect(assignDialog.getByText("Giao cho 1 học viên")).toBeVisible();
+	await assignDialog
+		.getByRole("button", { name: "Giao bài tập", exact: true })
+		.click();
+	await expect(assignDialog).toBeHidden();
 	await expect(
-		page.getByRole("heading", { name: "Đã giao bài tập" }),
+		page.locator("#assigned-list").getByText(PROMPT_TITLE),
 	).toBeVisible();
-	await page.getByRole("button", { name: "Xem bài đã giao" }).click();
-	await expect(page.getByText(PROMPT_TITLE)).toBeVisible();
 
 	// 8. Điều hướng tới /grading → kiểm tra 3 viewport không tràn ngang → Tạo, chấm & xóa bài nộp mẫu
 	await page.goto("/grading");

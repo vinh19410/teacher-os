@@ -123,6 +123,7 @@ export async function computeReminders(
 		.where(
 			and(
 				eq(lesson.orgId, orgId),
+				eq(classTable.status, "active"),
 				eq(lesson.status, "upcoming"),
 				or(datedToday, legacyToday),
 				scope.kind === "assigned"

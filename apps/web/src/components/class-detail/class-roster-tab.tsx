@@ -100,6 +100,15 @@ export function ClassRosterTab({
 		studentName: string;
 	} | null>(null);
 
+	const isPaused = cls.status === "paused";
+	const hasOtherActiveClass = (studentId: string) =>
+		data.enrollments.some(
+			(e) =>
+				e.studentId === studentId &&
+				e.status === "active" &&
+				data.classes.some((c) => c.id === e.classId && c.status !== "paused"),
+		);
+
 	const activeStudents = cls.studentIds
 		.map(studentById)
 		.filter((s): s is Student => s !== undefined);
@@ -183,6 +192,10 @@ export function ClassRosterTab({
 														recipientLabel: s.email,
 													}}
 													compact
+													disabled={
+														isPaused &&
+														(isInvited || !hasOtherActiveClass(s.id))
+													}
 												/>
 											)}
 										{isInvited && en && (
@@ -190,7 +203,7 @@ export function ClassRosterTab({
 												<Button
 													size="sm"
 													variant="secondary"
-													disabled={busy}
+													disabled={busy || isPaused}
 													onClick={() =>
 														setConfirmAction({
 															type: "activate",
@@ -255,23 +268,23 @@ export function ClassRosterTab({
 						variant={confirmAction?.type === "activate" ? "primary" : "danger"}
 						size="sm"
 						disabled={busy}
-						onClick={() => {
+						onClick={async () => {
 							if (!confirmAction) return;
 							const { type, enrollmentId } = confirmAction;
-							setConfirmAction(null);
 							if (type === "activate") {
-								void run(
+								await run(
 									enrollmentId,
 									{ type: "activate-enrollment", enrollmentId },
 									"Đã kích hoạt học viên vào lớp.",
 								);
 							} else {
-								void run(
+								await run(
 									enrollmentId,
 									{ type: "delete-enrollment", enrollmentId },
 									"Đã hủy lời mời tham gia lớp.",
 								);
 							}
+							setConfirmAction(null);
 						}}
 					>
 						{confirmAction?.type === "activate" ? "Kích hoạt" : "Hủy lời mời"}

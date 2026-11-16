@@ -4,9 +4,12 @@ import { Modal } from "@/components/ui/modal";
 export interface PublishDialogProps {
 	open: boolean;
 	totalQuestions: number;
-	vgCount: number;
 	listeningCount: number;
 	clipCount: number;
+	vgCount: number;
+	readingCount: number;
+	passageCount: number;
+	speakingCount: number;
 	nextVersion: number;
 	publishing: boolean;
 	onClose: () => void;
@@ -16,9 +19,12 @@ export interface PublishDialogProps {
 export function PublishDialog({
 	open,
 	totalQuestions,
-	vgCount,
 	listeningCount,
 	clipCount,
+	vgCount,
+	readingCount,
+	passageCount,
+	speakingCount,
 	nextVersion,
 	publishing,
 	onClose,
@@ -47,7 +53,7 @@ export function PublishDialog({
 		>
 			<div className="space-y-3 text-sm">
 				<p className="text-foreground">
-					Bộ đề mới sẽ có hiệu lực ngay lập tức trên trang{" "}
+					Bộ đề 5 kỹ năng mới sẽ có hiệu lực ngay lập tức trên trang{" "}
 					<code className="font-mono text-xs">/kiem-tra-dau-vao/</code> mà không
 					cần deploy lại:
 				</p>
@@ -55,10 +61,15 @@ export function PublishDialog({
 					<li>
 						Tổng cộng{" "}
 						<strong className="text-foreground">
-							{totalQuestions} câu hỏi
+							{totalQuestions} câu hỏi tự động
 						</strong>{" "}
-						(Phần 1: {vgCount} câu, Phần 2: {clipCount} đoạn nghe •{" "}
-						{listeningCount} câu).
+						(Listening: {clipCount} đoạn • {listeningCount} câu, Grammar &
+						Vocab: {vgCount} câu, Reading: {passageCount} bài • {readingCount}{" "}
+						câu).
+					</li>
+					<li>
+						Kỹ năng giáo viên chấm: Writing (0–15) & Speaking ({speakingCount}{" "}
+						nhiệm vụ, 0–20).
 					</li>
 					<li>
 						Học viên đang làm dở phiên bản cũ khi tải lại trang sẽ được chuyển

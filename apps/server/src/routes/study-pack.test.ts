@@ -3,6 +3,7 @@ import { createClient } from "@libsql/client";
 import type {
 	ClassStudyPacksResponse,
 	StudyPackDetailView,
+	StudyPackItemDetailView,
 	StudyPackSummaryView,
 } from "@teacher-os/api/contracts";
 import {
@@ -15,6 +16,10 @@ import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, test } from "vitest";
 import { buildApp, type Db, type ServerApp } from "../app";
+import {
+	extractAudioName,
+	loadStudyPackItemDetail,
+} from "../lib/study-pack-clone";
 import type { SessionUser } from "../session";
 import { loadSnapshot } from "./snapshot";
 
@@ -54,6 +59,15 @@ const sessionFor = async (headers: Headers): Promise<SessionUser | null> => {
 			role: "teacher",
 		};
 	}
+	if (userKey === "viewer-1") {
+		return {
+			userId: "u-viewer-1",
+			userName: "Viewer",
+			email: "viewer@test.local",
+			emailVerified: true,
+			role: "teacher",
+		};
+	}
 	if (userKey === "student-1") {
 		return {
 			userId: "u-stu-1",
@@ -78,6 +92,7 @@ const sessionFor = async (headers: Headers): Promise<SessionUser | null> => {
 describe("study pack routes & student scheduled visibility (#533)", () => {
 	let app: ServerApp;
 	let db: Db;
+	const fetchedAudioUrls: string[] = [];
 
 	beforeAll(async () => {
 		const client = createClient({ url: "file::memory:" });
@@ -110,12 +125,24 @@ describe("study pack routes & student scheduled visibility (#533)", () => {
 				email: "tuan@test.local",
 				role: "teacher",
 			},
+			{
+				id: "u-viewer-1",
+				name: "Viewer",
+				email: "viewer@test.local",
+				role: "teacher",
+			},
 		]);
 
 		await db.insert(schema.membership).values([
 			{ id: "mem-1", orgId: "org-1", userId: "t-1", role: "teacher" },
 			{ id: "mem-2", orgId: "org-2", userId: "t-2", role: "teacher" },
 			{ id: "mem-ta", orgId: "org-1", userId: "ta-1", role: "ta" },
+			{
+				id: "mem-viewer",
+				orgId: "org-1",
+				userId: "u-viewer-1",
+				role: "viewer",
+			},
 		]);
 
 		await db.insert(schema.student).values([
@@ -258,6 +285,28 @@ describe("study pack routes & student scheduled visibility (#533)", () => {
 			authHandler: () => new Response(null, { status: 404 }),
 			corsOrigin: CORS_ORIGINS,
 			getSessionUser: sessionFor,
+			fetchExternalAudio: async (input, init) => {
+				const url = typeof input === "string" ? input : input.toString();
+				fetchedAudioUrls.push(url);
+				if (url.includes("redirect-bad")) {
+					if (init?.redirect === "manual") {
+						return new Response(null, {
+							status: 302,
+							headers: { location: "https://evil.example.com/payload.mp3" },
+						});
+					}
+					// Simulate Fetch following 302 into SSRF target if redirect !== "manual"
+					fetchedAudioUrls.push("https://evil.example.com/payload.mp3");
+					return new Response(new Uint8Array([0x49, 0x44, 0x33]), {
+						status: 200,
+						headers: { "content-type": "audio/mpeg" },
+					});
+				}
+				return new Response(new Uint8Array([0x49, 0x44, 0x33, 0x03, 0, 0]), {
+					status: 200,
+					headers: { "content-type": "audio/mpeg" },
+				});
+			},
 		});
 	});
 
@@ -922,5 +971,976 @@ describe("study pack routes & student scheduled visibility (#533)", () => {
 			"pr-grammar-2",
 		]);
 		expect(activePack?.assignments.map((a) => a.targetsTotal)).toEqual([1, 2]);
+	});
+
+	test("level metadata, clone/assign audio+transcript copy, teacher/student audio proxy & release gate (#702)", async () => {
+		const validAudioUrl = "https://listenaminute.com/a/accidents.mp3";
+		await db.insert(schema.libraryExercise).values([
+			{
+				id: "lex-listen-released",
+				skill: "listening",
+				part: "part1",
+				type: "gap",
+				title: "Accidents Listening",
+				band: "5.0",
+				level: "IELTS Foundation",
+				audioUrl: validAudioUrl,
+				transcript: "Accidents can happen anywhere.",
+				intro: "<p>Listen and complete.</p>",
+				questions: JSON.stringify([
+					{
+						stem: "Accidents can happen ____.",
+						opts: null,
+						answer: "anywhere",
+						alts: "",
+					},
+				]),
+				status: "ready",
+			},
+			{
+				id: "lex-listen-future",
+				skill: "listening",
+				part: "part1",
+				type: "gap",
+				title: "Future Listening",
+				band: "5.0",
+				level: "IELTS Foundation",
+				audioUrl: "https://lingua.com/audio/future.mp3",
+				transcript: "Future transcript.",
+				intro: "<p>Listen.</p>",
+				questions: JSON.stringify([
+					{
+						stem: "Word ____.",
+						opts: null,
+						answer: "here",
+						alts: "",
+					},
+				]),
+				status: "ready",
+			},
+			{
+				id: "lex-listen-redirect-bad",
+				skill: "listening",
+				part: "part1",
+				type: "gap",
+				title: "Evil Redirect Listening",
+				band: "5.0",
+				level: "IELTS Foundation",
+				audioUrl: "https://listenaminute.com/a/redirect-bad.mp3",
+				transcript: "Should not stream.",
+				intro: "<p>Listen.</p>",
+				questions: JSON.stringify([
+					{
+						stem: "Word ____.",
+						opts: null,
+						answer: "here",
+						alts: "",
+					},
+				]),
+				status: "ready",
+			},
+		]);
+
+		await db.insert(schema.studyPack).values({
+			id: "sys-pack-listening-level",
+			orgId: null,
+			title: "Listening Foundation Pack",
+			description: "System pack with level + audio",
+			level: "IELTS Foundation",
+			status: "ready",
+		});
+
+		await db.insert(schema.studyPackItem).values([
+			{
+				id: "sys-listen-item-1",
+				packId: "sys-pack-listening-level",
+				dayIndex: 1,
+				position: 0,
+				sourceKind: "library_exercise",
+				sourceId: "lex-listen-released",
+				note: "",
+			},
+			{
+				id: "sys-listen-item-2",
+				packId: "sys-pack-listening-level",
+				dayIndex: 2,
+				position: 0,
+				sourceKind: "library_exercise",
+				sourceId: "lex-listen-future",
+				note: "",
+			},
+		]);
+
+		// Teacher previews library exercise audio via proxy
+		const previewOk = await app.request(
+			"/api/study-packs/exercises/lex-listen-released/audio",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(previewOk.status).toBe(200);
+		expect(previewOk.headers.get("content-type")).toBe("audio/mpeg");
+		expect(previewOk.headers.get("cross-origin-resource-policy")).toBe(
+			"same-site",
+		);
+
+		// Redirect off audio host allowlist fails closed -> 404 (and never follows to evil host)
+		const previewBad = await app.request(
+			"/api/study-packs/exercises/lex-listen-redirect-bad/audio",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(previewBad.status).toBe(404);
+		expect(
+			fetchedAudioUrls.some((url) => url.includes("evil.example.com")),
+		).toBe(false);
+
+		// Clone system pack preserves pack.level and item.level
+		const cloneRes = await app.request(
+			"/api/study-packs/sys-pack-listening-level/clone",
+			{
+				method: "POST",
+				headers: teacherHeaders("teacher-1"),
+				body: "{}",
+			},
+		);
+		expect(cloneRes.status).toBe(201);
+		const { pack: cloned } = (await cloneRes.json()) as {
+			pack: StudyPackDetailView;
+		};
+		expect(cloned.level).toBe("IELTS Foundation");
+		expect(
+			cloned.items.every((item) => item.level === "IELTS Foundation"),
+		).toBe(true);
+
+		// Assign directly to a fresh class (starting today 00:00 -> Day 1 released, Day 2 unreleased)
+		await db.insert(schema.classTable).values({
+			id: "class-listen-702",
+			orgId: "org-1",
+			name: "Foundation Class",
+			level: "5.0",
+			type: "ielts",
+			skills: '["listening"]',
+			mode: "Online",
+			schedule: '{"days":[1],"start":"18:00","end":"20:00"}',
+			sessionsTotal: 10,
+			sessionsDone: 0,
+			status: "active",
+			startDate: vietnamTodayISO(),
+			notes: "",
+		});
+		await db.insert(schema.enrollment).values({
+			id: "enr-listen-702",
+			orgId: "org-1",
+			classId: "class-listen-702",
+			studentId: "stu-1",
+			status: "active",
+		});
+
+		const assignRes = await app.request(
+			"/api/classes/class-listen-702/study-packs",
+			{
+				method: "POST",
+				headers: teacherHeaders("teacher-1"),
+				body: JSON.stringify({
+					packId: cloned.id,
+					startDate: vietnamTodayISO(),
+					releaseTime: "00:00",
+					dueTime: "23:59",
+				}),
+			},
+		);
+		expect(assignRes.status).toBe(201);
+		const assignBody = (await assignRes.json()) as ClassStudyPacksResponse;
+		const day1Assignment = assignBody.packs[0]?.assignments.find(
+			(a) => a.dayIndex === 1,
+		);
+		const day2Assignment = assignBody.packs[0]?.assignments.find(
+			(a) => a.dayIndex === 2,
+		);
+		expect(day1Assignment).toBeDefined();
+		expect(day2Assignment).toBeDefined();
+
+		// Materialized prompt carries level, audioUrl, audioName, transcript
+		const [promptRow] = await db
+			.select()
+			.from(schema.assignmentPrompt)
+			.where(eq(schema.assignmentPrompt.id, day1Assignment?.promptId ?? ""));
+		expect(promptRow?.level).toBe("IELTS Foundation");
+		expect(promptRow?.audioUrl).toBe(validAudioUrl);
+		expect(promptRow?.audioName).toBe("accidents.mp3");
+		expect(promptRow?.transcript).toBe("Accidents can happen anywhere.");
+
+		// Day 2 unreleased student audio returns 404
+		const day2AudioRes = await app.request(
+			`/api/student/assignments/${day2Assignment?.assignmentId}/audio`,
+			{ headers: studentHeaders("student-1") },
+		);
+		expect(day2AudioRes.status).toBe(404);
+
+		// Day 1 released student audio streams 200 audio/mpeg
+		const day1AudioRes = await app.request(
+			`/api/student/assignments/${day1Assignment?.assignmentId}/audio`,
+			{ headers: studentHeaders("student-1") },
+		);
+		expect(day1AudioRes.status).toBe(200);
+		expect(day1AudioRes.headers.get("content-type")).toBe("audio/mpeg");
+		expect(day1AudioRes.headers.get("cross-origin-resource-policy")).toBe(
+			"same-site",
+		);
+	});
+
+	test("item detail auth, tenant/pack isolation & 404 guards (#720)", async () => {
+		await db.insert(schema.assignmentPrompt).values({
+			id: "pr-org2-secret-720",
+			orgId: "org-2",
+			task: "task2",
+			genre: "",
+			skill: "reading",
+			part: "p1",
+			type: "tfng",
+			title: "Org 2 Secret Prompt",
+			band: "7.0",
+			source: "",
+			prompt: "",
+			passage: "<p>Secret org-2 passage</p>",
+			status: "ready",
+		});
+
+		await db.insert(schema.studyPack).values([
+			{
+				id: "pack-720-iso-a",
+				orgId: "org-1",
+				title: "Org 1 Pack A",
+				description: "",
+				status: "ready",
+			},
+			{
+				id: "pack-720-iso-b",
+				orgId: "org-1",
+				title: "Org 1 Pack B",
+				description: "",
+				status: "ready",
+			},
+			{
+				id: "pack-720-org-draft",
+				orgId: "org-1",
+				title: "Org 1 Draft Pack",
+				description: "",
+				status: "draft",
+			},
+		]);
+
+		await db.insert(schema.studyPackItem).values([
+			{
+				id: "item-720-iso-a1",
+				packId: "pack-720-iso-a",
+				dayIndex: 1,
+				position: 0,
+				sourceKind: "library_exercise",
+				sourceId: "lex-vocab-1",
+				note: "Note A1",
+			},
+			{
+				id: "item-720-missing-src",
+				packId: "pack-720-iso-a",
+				dayIndex: 2,
+				position: 0,
+				sourceKind: "library_exercise",
+				sourceId: "lex-does-not-exist",
+				note: "",
+			},
+			{
+				id: "item-720-cross-org-prompt",
+				packId: "pack-720-iso-a",
+				dayIndex: 3,
+				position: 0,
+				sourceKind: "org_prompt",
+				sourceId: "pr-org2-secret-720",
+				note: "",
+			},
+			{
+				id: "item-720-iso-b1",
+				packId: "pack-720-iso-b",
+				dayIndex: 1,
+				position: 0,
+				sourceKind: "org_prompt",
+				sourceId: "pr-grammar-1",
+				note: "Note B1",
+			},
+			{
+				id: "item-720-org-draft-1",
+				packId: "pack-720-org-draft",
+				dayIndex: 1,
+				position: 0,
+				sourceKind: "org_prompt",
+				sourceId: "pr-grammar-1",
+				note: "Draft org note",
+			},
+			{
+				id: "sys-draft-item-720",
+				packId: "sys-pack-draft",
+				dayIndex: 1,
+				position: 0,
+				sourceKind: "library_exercise",
+				sourceId: "lex-vocab-1",
+				note: "",
+			},
+		]);
+
+		// 401 unauthenticated
+		const unauthRes = await app.request(
+			"/api/study-packs/pack-720-iso-a/items/item-720-iso-a1",
+		);
+		expect(unauthRes.status).toBe(401);
+
+		// 403 student
+		const stuRes = await app.request(
+			"/api/study-packs/pack-720-iso-a/items/item-720-iso-a1",
+			{ headers: { "x-test-user": "student-1" } },
+		);
+		expect(stuRes.status).toBe(403);
+
+		// 403 disallowed org membership role (not in GRADING_REVIEW_ROLES)
+		const viewerRes = await app.request(
+			"/api/study-packs/pack-720-iso-a/items/item-720-iso-a1",
+			{ headers: { "x-test-user": "viewer-1" } },
+		);
+		expect(viewerRes.status).toBe(403);
+
+		// 200 allowed for ta-1 on both org pack and ready system pack
+		const taOrgRes = await app.request(
+			"/api/study-packs/pack-720-iso-a/items/item-720-iso-a1",
+			{ headers: { "x-test-user": "ta-1" } },
+		);
+		expect(taOrgRes.status).toBe(200);
+
+		const taSysRes = await app.request(
+			"/api/study-packs/sys-pack-ready/items/sys-item-1",
+			{ headers: { "x-test-user": "ta-1" } },
+		);
+		expect(taSysRes.status).toBe(200);
+
+		// 200 allowed for teacher-1 on own org draft pack item
+		const draftOrgRes = await app.request(
+			"/api/study-packs/pack-720-org-draft/items/item-720-org-draft-1",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(draftOrgRes.status).toBe(200);
+
+		// 404 cross-org access (teacher-2 in org-2 reading org-1 pack item)
+		const crossOrgRes = await app.request(
+			"/api/study-packs/pack-720-iso-a/items/item-720-iso-a1",
+			{ headers: { "x-test-user": "teacher-2" } },
+		);
+		expect(crossOrgRes.status).toBe(404);
+
+		// 200 teacher-2 can read ready system pack item
+		const teacher2SysRes = await app.request(
+			"/api/study-packs/sys-pack-ready/items/sys-item-1",
+			{ headers: { "x-test-user": "teacher-2" } },
+		);
+		expect(teacher2SysRes.status).toBe(200);
+
+		// 404 draft system pack item
+		const sysDraftRes = await app.request(
+			"/api/study-packs/sys-pack-draft/items/sys-draft-item-720",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(sysDraftRes.status).toBe(404);
+
+		// 404 item belonging to another pack (packA + itemFromPackB)
+		const wrongPackRes = await app.request(
+			"/api/study-packs/pack-720-iso-a/items/item-720-iso-b1",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(wrongPackRes.status).toBe(404);
+
+		// 404 nonexistent packId / itemId
+		const missingPackRes = await app.request(
+			"/api/study-packs/pack-does-not-exist/items/item-720-iso-a1",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(missingPackRes.status).toBe(404);
+
+		const missingItemRes = await app.request(
+			"/api/study-packs/pack-720-iso-a/items/item-does-not-exist",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(missingItemRes.status).toBe(404);
+
+		// 404 missing backing record & cross-org org_prompt defense-in-depth
+		const missingSourceRes = await app.request(
+			"/api/study-packs/pack-720-iso-a/items/item-720-missing-src",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(missingSourceRes.status).toBe(404);
+
+		const crossOrgPromptRes = await app.request(
+			"/api/study-packs/pack-720-iso-a/items/item-720-cross-org-prompt",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(crossOrgPromptRes.status).toBe(404);
+
+		expect(
+			await loadStudyPackItemDetail(
+				db,
+				"pack-720-iso-a",
+				"item-720-cross-org-prompt",
+			),
+		).toBeNull();
+		expect(extractAudioName("   ")).toBe("");
+		expect(extractAudioName("https://listenaminute.com/a/")).toBe(
+			"listening.mp3",
+		);
+	});
+
+	test("item detail resolves full content for library_exercise, org_prompt & library_test_part without leaking audioUrl (#720)", async () => {
+		await db.insert(schema.libraryExercise).values([
+			{
+				id: "lex-720-detail-audio",
+				skill: "listening",
+				part: "part2",
+				type: "mcq",
+				title: "Airport Announcement 720",
+				band: "6.5",
+				level: "Pre IELTS",
+				intro: "<p>Listen carefully to the announcement.</p>",
+				passage: "<p>Departure board summary</p>",
+				audioUrl: "https://listenaminute.com/a/airport-720.mp3",
+				transcript: "Flight 204 departs from Gate 7.",
+				questions: JSON.stringify([
+					{
+						stem: "Which gate?",
+						opts: ["Gate 5", "Gate 7", "Gate 9"],
+						answer: "B",
+						alts: "Gate 7",
+						explanation: "<p>The speaker states Gate 7.</p>",
+					},
+				]),
+				optionBank: JSON.stringify(["Gate 5", "Gate 7", "Gate 9"]),
+				note: "Exercise-level listening hint",
+				status: "ready",
+			},
+			{
+				id: "lex-720-no-audio",
+				skill: "grammar",
+				part: "g2",
+				type: "gap",
+				title: "Conditionals Drill",
+				band: "6.0",
+				level: "IELTS Foundation",
+				intro: "<p>Fill in the blank.</p>",
+				passage: "",
+				audioUrl: "   ",
+				transcript: "",
+				questions: JSON.stringify([
+					{
+						stem: "If I ____ rich, I would travel.",
+						opts: null,
+						answer: "were",
+						alts: "was",
+					},
+				]),
+				optionBank: "[]",
+				note: "Exercise grammar note",
+				status: "ready",
+			},
+			{
+				id: "lex-720-redirect-bad",
+				skill: "listening",
+				part: "part1",
+				type: "gap",
+				title: "Bad Redirect Exercise",
+				band: "5.5",
+				level: "IELTS Foundation",
+				audioUrl: "https://listenaminute.com/a/redirect-bad-720.mp3",
+				questions: JSON.stringify([
+					{ stem: "Word ____.", opts: null, answer: "ok", alts: "" },
+				]),
+				status: "ready",
+			},
+		]);
+
+		await db.insert(schema.assignmentPrompt).values([
+			{
+				id: "pr-720-detail-full",
+				orgId: "org-1",
+				task: "task2",
+				genre: "",
+				skill: "reading",
+				part: "p2",
+				type: "tfng",
+				title: "Org Reading Prompt 720",
+				band: "7.5",
+				level: "IELTS Advanced",
+				source: "Cambridge 19 Test 2",
+				prompt: "<p>Read the article below.</p>",
+				intro: "<p>Choose TRUE, FALSE or NOT GIVEN.</p>",
+				passage: "<p>Arctic ice melted faster than expected.</p>",
+				transcript: "Optional companion audio transcript.",
+				audioName: "arctic-custom-name.mp3",
+				audioUrl: "https://lingua.com/audio/arctic-720.mp3",
+				imageUrl: "https://cdn.example.com/arctic-720.png",
+				questions: JSON.stringify([
+					{
+						stem: "Ice melted slower than forecast.",
+						opts: null,
+						answer: "FALSE",
+						alts: "F",
+						explanation: "<p>Paragraph 1 explicitly states faster.</p>",
+					},
+				]),
+				optionBank: JSON.stringify(["TRUE", "FALSE", "NOT GIVEN"]),
+				note: "Prompt-level teacher note",
+				status: "ready",
+			},
+			{
+				id: "pr-720-no-audio-stale",
+				orgId: "org-1",
+				task: "task2",
+				genre: "",
+				skill: "listening",
+				part: "s1",
+				type: "gap",
+				title: "Prompt Without Audio",
+				band: "6.0",
+				source: "Custom Sheet",
+				prompt: "<p>Prompt body</p>",
+				audioName: "stale-name-ignored.mp3",
+				audioUrl: "",
+				questions: JSON.stringify([
+					{ stem: "Name: ____", opts: null, answer: "Alice", alts: "" },
+				]),
+				status: "ready",
+			},
+			{
+				id: "pr-720-redirect-bad",
+				orgId: "org-1",
+				task: "task2",
+				genre: "",
+				skill: "listening",
+				part: "s2",
+				type: "gap",
+				title: "Prompt Redirect Bad",
+				band: "6.5",
+				prompt: "",
+				audioUrl: "https://lingua.com/audio/redirect-bad-prompt.mp3",
+				questions: JSON.stringify([
+					{ stem: "Word ____.", opts: null, answer: "test", alts: "" },
+				]),
+				status: "ready",
+			},
+		]);
+
+		await db.insert(schema.libraryTest).values({
+			id: "lt-720-read",
+			title: "Cambridge 17 Test 4",
+			skill: "reading",
+			status: "ready",
+		});
+
+		await db.insert(schema.libraryTestPart).values({
+			id: "ltp-720-p1",
+			testId: "lt-720-read",
+			part: "p1",
+			type: "",
+			title: "",
+			band: "7.0",
+			source: "Cambridge 17",
+			intro: "<p>Read the passage carefully.</p>",
+			passage: "<p>The history of glassmaking.</p>",
+			transcript: "",
+			imageUrl: "https://cdn.example.com/glass-720.png",
+			audioName: "ignored-without-url.mp3",
+			questions: JSON.stringify([
+				{
+					stem: "Glass was first made in Egypt.",
+					opts: null,
+					answer: "TRUE",
+					alts: "",
+					explanation: "<p>Early evidence points to Egypt.</p>",
+				},
+				{
+					stem: "Lead glass invention",
+					opts: null,
+					answer: "A",
+					alts: "",
+					answerSet: "pair-1",
+				},
+			]),
+			optionBank: "[]",
+			groups: JSON.stringify([
+				{
+					id: "grp-1",
+					type: "tfng",
+					instruction: "<p>Write TRUE, FALSE or NOT GIVEN.</p>",
+					startIndex: 0,
+					count: 1,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+				{
+					id: "grp-2",
+					type: "match_features",
+					instruction: "<p>Match each invention to a scientist.</p>",
+					startIndex: 1,
+					count: 1,
+					optionBank: ["Ravenscroft", "Faraday"],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+			]),
+			note: "Library part note 720",
+		});
+
+		await db.insert(schema.studyPack).values({
+			id: "pack-720-all-kinds",
+			orgId: "org-1",
+			title: "Pack All Kinds 720",
+			description: "All 3 source kinds",
+			level: "IELTS Advanced",
+			status: "ready",
+		});
+
+		await db.insert(schema.studyPackItem).values([
+			{
+				id: "item-720-lex",
+				packId: "pack-720-all-kinds",
+				dayIndex: 1,
+				position: 0,
+				sourceKind: "library_exercise",
+				sourceId: "lex-720-detail-audio",
+				note: "Pack note for exercise",
+			},
+			{
+				id: "item-720-prompt",
+				packId: "pack-720-all-kinds",
+				dayIndex: 2,
+				position: 0,
+				sourceKind: "org_prompt",
+				sourceId: "pr-720-detail-full",
+				note: "Pack note for org prompt",
+			},
+			{
+				id: "item-720-part",
+				packId: "pack-720-all-kinds",
+				dayIndex: 3,
+				position: 0,
+				sourceKind: "library_test_part",
+				sourceId: "ltp-720-p1",
+				note: "Pack note for library part",
+			},
+			{
+				id: "item-720-lex-no-audio",
+				packId: "pack-720-all-kinds",
+				dayIndex: 4,
+				position: 0,
+				sourceKind: "library_exercise",
+				sourceId: "lex-720-no-audio",
+				note: "",
+			},
+			{
+				id: "item-720-prompt-stale-audio",
+				packId: "pack-720-all-kinds",
+				dayIndex: 5,
+				position: 0,
+				sourceKind: "org_prompt",
+				sourceId: "pr-720-no-audio-stale",
+				note: "",
+			},
+			{
+				id: "item-720-lex-redirect-bad",
+				packId: "pack-720-all-kinds",
+				dayIndex: 6,
+				position: 0,
+				sourceKind: "library_exercise",
+				sourceId: "lex-720-redirect-bad",
+				note: "",
+			},
+			{
+				id: "item-720-prompt-redirect-bad",
+				packId: "pack-720-all-kinds",
+				dayIndex: 7,
+				position: 0,
+				sourceKind: "org_prompt",
+				sourceId: "pr-720-redirect-bad",
+				note: "",
+			},
+		]);
+
+		// 1. library_exercise detail
+		const lexRes = await app.request(
+			"/api/study-packs/pack-720-all-kinds/items/item-720-lex",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(lexRes.status).toBe(200);
+		const lexJson = (await lexRes.json()) as {
+			item: StudyPackItemDetailView & Record<string, unknown>;
+		};
+		expect("audioUrl" in lexJson.item).toBe(false);
+		expect(lexJson.item).toEqual({
+			id: "item-720-lex",
+			dayIndex: 1,
+			position: 0,
+			sourceKind: "library_exercise",
+			sourceId: "lex-720-detail-audio",
+			title: "Airport Announcement 720",
+			skill: "listening",
+			part: "part2",
+			type: "mcq",
+			level: "Pre IELTS",
+			status: "ready",
+			note: "Pack note for exercise",
+			band: "6.5",
+			source: "",
+			prompt: "",
+			intro: "<p>Listen carefully to the announcement.</p>",
+			passage: "<p>Departure board summary</p>",
+			transcript: "Flight 204 departs from Gate 7.",
+			audioName: "airport-720.mp3",
+			hasAudio: true,
+			imageUrl: "",
+			questions: [
+				{
+					stem: "Which gate?",
+					opts: ["Gate 5", "Gate 7", "Gate 9"],
+					answer: "B",
+					alts: "Gate 7",
+					explanation: "<p>The speaker states Gate 7.</p>",
+				},
+			],
+			optionBank: ["Gate 5", "Gate 7", "Gate 9"],
+			exerciseNote: "Exercise-level listening hint",
+		});
+
+		// 2. org_prompt detail (with audio + imageUrl + source + prompt + explanation)
+		const promptRes = await app.request(
+			"/api/study-packs/pack-720-all-kinds/items/item-720-prompt",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(promptRes.status).toBe(200);
+		const promptJson = (await promptRes.json()) as {
+			item: StudyPackItemDetailView & Record<string, unknown>;
+		};
+		expect("audioUrl" in promptJson.item).toBe(false);
+		expect(promptJson.item).toEqual({
+			id: "item-720-prompt",
+			dayIndex: 2,
+			position: 0,
+			sourceKind: "org_prompt",
+			sourceId: "pr-720-detail-full",
+			title: "Org Reading Prompt 720",
+			skill: "reading",
+			part: "p2",
+			type: "tfng",
+			level: "IELTS Advanced",
+			status: "ready",
+			note: "Pack note for org prompt",
+			band: "7.5",
+			source: "Cambridge 19 Test 2",
+			prompt: "<p>Read the article below.</p>",
+			intro: "<p>Choose TRUE, FALSE or NOT GIVEN.</p>",
+			passage: "<p>Arctic ice melted faster than expected.</p>",
+			transcript: "Optional companion audio transcript.",
+			audioName: "arctic-custom-name.mp3",
+			hasAudio: true,
+			imageUrl: "https://cdn.example.com/arctic-720.png",
+			questions: [
+				{
+					stem: "Ice melted slower than forecast.",
+					opts: null,
+					answer: "FALSE",
+					alts: "F",
+					explanation: "<p>Paragraph 1 explicitly states faster.</p>",
+				},
+			],
+			optionBank: ["TRUE", "FALSE", "NOT GIVEN"],
+			exerciseNote: "Prompt-level teacher note",
+		});
+
+		// 2b. org_prompt without audioUrl suppresses stale audioName
+		const promptNoAudioRes = await app.request(
+			"/api/study-packs/pack-720-all-kinds/items/item-720-prompt-stale-audio",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(promptNoAudioRes.status).toBe(200);
+		const promptNoAudioJson = (await promptNoAudioRes.json()) as {
+			item: StudyPackItemDetailView & Record<string, unknown>;
+		};
+		expect("audioUrl" in promptNoAudioJson.item).toBe(false);
+		expect(promptNoAudioJson.item.hasAudio).toBe(false);
+		expect(promptNoAudioJson.item.audioName).toBe("");
+
+		// 3. library_test_part detail (flattened groups, title fallback, explanation, answerSet)
+		const partRes = await app.request(
+			"/api/study-packs/pack-720-all-kinds/items/item-720-part",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(partRes.status).toBe(200);
+		const partJson = (await partRes.json()) as {
+			item: StudyPackItemDetailView & Record<string, unknown>;
+		};
+		expect("audioUrl" in partJson.item).toBe(false);
+		expect(partJson.item).toEqual({
+			id: "item-720-part",
+			dayIndex: 3,
+			position: 0,
+			sourceKind: "library_test_part",
+			sourceId: "ltp-720-p1",
+			title: "Cambridge 17 Test 4 — P1",
+			skill: "reading",
+			part: "p1",
+			type: "tfng",
+			level: "",
+			status: "ready",
+			note: "Pack note for library part",
+			band: "7.0",
+			source: "Cambridge 17",
+			prompt: "",
+			intro:
+				"<p>Read the passage carefully.</p>\n<p>Write TRUE, FALSE or NOT GIVEN.</p>\n<p>Match each invention to a scientist.</p>",
+			passage: "<p>The history of glassmaking.</p>",
+			transcript: "",
+			audioName: "",
+			hasAudio: false,
+			imageUrl: "https://cdn.example.com/glass-720.png",
+			questions: [
+				{
+					stem: "Glass was first made in Egypt.",
+					opts: null,
+					answer: "TRUE",
+					alts: "",
+					type: "tfng",
+					explanation: "<p>Early evidence points to Egypt.</p>",
+				},
+				{
+					stem: "Lead glass invention",
+					opts: null,
+					answer: "A",
+					alts: "",
+					type: "match_features",
+					answerSet: "pair-1",
+				},
+			],
+			optionBank: ["Ravenscroft", "Faraday"],
+			exerciseNote: "Library part note 720",
+		});
+	});
+
+	test("item audio proxy auth, isolation, streaming, security headers & SSRF redirect block (#720)", async () => {
+		// 401 unauthenticated
+		const unauthAudio = await app.request(
+			"/api/study-packs/pack-720-all-kinds/items/item-720-lex/audio",
+		);
+		expect(unauthAudio.status).toBe(401);
+
+		// 403 student & disallowed viewer role
+		const stuAudio = await app.request(
+			"/api/study-packs/pack-720-all-kinds/items/item-720-lex/audio",
+			{ headers: { "x-test-user": "student-1" } },
+		);
+		expect(stuAudio.status).toBe(403);
+
+		const viewerAudio = await app.request(
+			"/api/study-packs/pack-720-all-kinds/items/item-720-lex/audio",
+			{ headers: { "x-test-user": "viewer-1" } },
+		);
+		expect(viewerAudio.status).toBe(403);
+
+		// 404 cross-org, draft system pack, wrong pack, missing audio (exercise, prompt, test part)
+		const crossOrgAudio = await app.request(
+			"/api/study-packs/pack-720-all-kinds/items/item-720-lex/audio",
+			{ headers: { "x-test-user": "teacher-2" } },
+		);
+		expect(crossOrgAudio.status).toBe(404);
+
+		const sysDraftAudio = await app.request(
+			"/api/study-packs/sys-pack-draft/items/sys-draft-item-720/audio",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(sysDraftAudio.status).toBe(404);
+
+		const wrongPackAudio = await app.request(
+			"/api/study-packs/pack-720-iso-a/items/item-720-lex/audio",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(wrongPackAudio.status).toBe(404);
+
+		const missingLexAudio = await app.request(
+			"/api/study-packs/pack-720-all-kinds/items/item-720-lex-no-audio/audio",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(missingLexAudio.status).toBe(404);
+
+		const missingPromptAudio = await app.request(
+			"/api/study-packs/pack-720-all-kinds/items/item-720-prompt-stale-audio/audio",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(missingPromptAudio.status).toBe(404);
+
+		const missingPartAudio = await app.request(
+			"/api/study-packs/pack-720-all-kinds/items/item-720-part/audio",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(missingPartAudio.status).toBe(404);
+
+		// 200 streaming for library_exercise (teacher-1 & ta-1) + system pack item
+		const lexAudioRes = await app.request(
+			"/api/study-packs/pack-720-all-kinds/items/item-720-lex/audio",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(lexAudioRes.status).toBe(200);
+		expect(lexAudioRes.headers.get("content-type")).toBe("audio/mpeg");
+		expect(lexAudioRes.headers.get("cross-origin-resource-policy")).toBe(
+			"same-site",
+		);
+		expect(lexAudioRes.headers.get("referrer-policy")).toBe("no-referrer");
+		expect(lexAudioRes.headers.get("x-content-type-options")).toBe("nosniff");
+		expect(new Uint8Array(await lexAudioRes.arrayBuffer())).toEqual(
+			new Uint8Array([0x49, 0x44, 0x33, 0x03, 0, 0]),
+		);
+
+		const taAudioRes = await app.request(
+			"/api/study-packs/sys-pack-listening-level/items/sys-listen-item-1/audio",
+			{ headers: { "x-test-user": "ta-1" } },
+		);
+		expect(taAudioRes.status).toBe(200);
+		expect(taAudioRes.headers.get("content-type")).toBe("audio/mpeg");
+		expect(taAudioRes.headers.get("cross-origin-resource-policy")).toBe(
+			"same-site",
+		);
+		expect(taAudioRes.headers.get("referrer-policy")).toBe("no-referrer");
+
+		// 200 streaming for org_prompt
+		const promptAudioRes = await app.request(
+			"/api/study-packs/pack-720-all-kinds/items/item-720-prompt/audio",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(promptAudioRes.status).toBe(200);
+		expect(promptAudioRes.headers.get("content-type")).toBe("audio/mpeg");
+		expect(promptAudioRes.headers.get("cross-origin-resource-policy")).toBe(
+			"same-site",
+		);
+		expect(promptAudioRes.headers.get("referrer-policy")).toBe("no-referrer");
+		expect(new Uint8Array(await promptAudioRes.arrayBuffer())).toEqual(
+			new Uint8Array([0x49, 0x44, 0x33, 0x03, 0, 0]),
+		);
+
+		// SSRF redirect block for both library_exercise and org_prompt
+		const badLexRedirect = await app.request(
+			"/api/study-packs/pack-720-all-kinds/items/item-720-lex-redirect-bad/audio",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(badLexRedirect.status).toBe(404);
+
+		const badPromptRedirect = await app.request(
+			"/api/study-packs/pack-720-all-kinds/items/item-720-prompt-redirect-bad/audio",
+			{ headers: { "x-test-user": "teacher-1" } },
+		);
+		expect(badPromptRedirect.status).toBe(404);
+		expect(
+			fetchedAudioUrls.some((url) => url.includes("evil.example.com")),
+		).toBe(false);
 	});
 });

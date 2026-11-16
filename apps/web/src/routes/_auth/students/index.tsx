@@ -1,10 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Plus, UserPlus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useState } from "react";
 import { AddStudentModal } from "@/components/modals/add-student-modal";
-import { InviteStudentModal } from "@/components/modals/invite-student-modal";
-import { PendingInvitationsList } from "@/components/students/pending-invitations-list";
-import { ResendInviteButton } from "@/components/students/pending-invite-callout";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,17 +9,11 @@ import { Card } from "@/components/ui/card";
 import { ChipFilter } from "@/components/ui/chip-filter";
 import { DataTable } from "@/components/ui/data-table";
 import { PageHead } from "@/components/ui/page-head";
-import { Tabs } from "@/components/ui/tabs";
 import { Tag } from "@/components/ui/tag";
 
 import { useData } from "@/lib/data-store";
 import { classMeta } from "@/lib/mock-data";
 import { classesByStudent } from "@/lib/repos/enrollments";
-import { usePendingInvitations } from "@/lib/repos/invitations";
-import {
-	filterUniquePendingInvites,
-	isPendingPortalStudent,
-} from "@/lib/repos/students";
 import { useStudents } from "@/lib/repos/use-students";
 export const Route = createFileRoute("/_auth/students/")({
 	component: StudentsRoute,
@@ -40,27 +31,8 @@ export function StudentsRoute() {
 	const navigate = useNavigate();
 	const { students } = useStudents();
 	const { data } = useData();
-	const { data: invitations } = usePendingInvitations();
 	const [filter, setFilter] = useState("Tất cả");
-	const [activeTab, setActiveTab] = useState<"students" | "invitations">(
-		"students",
-	);
-	const [inviteModalOpen, setInviteModalOpen] = useState(false);
 	const [addModalOpen, setAddModalOpen] = useState(false);
-	const pendingStudents = students.filter(isPendingPortalStudent);
-	const pendingStudentEmails = new Set(
-		pendingStudents
-			.map((s) => (s.email ?? "").trim().toLowerCase())
-			.filter(Boolean),
-	);
-	const pendingInvites = filterUniquePendingInvites(
-		invitations,
-		pendingStudentEmails,
-	);
-	const totalPendingCount = pendingStudents.length + pendingInvites.length;
-	const activeStudentsCount = students.filter(
-		(s) => !isPendingPortalStudent(s),
-	).length;
 	const unpaidStudentIds = new Set(
 		data.invoices.filter((i) => i.status !== "paid").map((i) => i.sid),
 	);
@@ -82,55 +54,22 @@ export function StudentsRoute() {
 	return (
 		<div>
 			<PageHead
-				kicker={`${activeStudentsCount} học viên đang học · ${totalPendingCount} lời mời đang chờ`}
+				kicker={`${students.length} học viên`}
 				title="Học viên"
 				lead={`${attentionCount} cần chú ý (nợ học phí / sắp hết gói)`}
 				action={
-					<div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
-						<Button
-							variant="secondary"
-							onClick={() => setInviteModalOpen(true)}
-						>
-							<UserPlus className="h-4 w-4" />
-							Mời học viên
-						</Button>
-						<Button variant="primary" onClick={() => setAddModalOpen(true)}>
-							<Plus className="h-4 w-4" />
-							Thêm học viên
-						</Button>
-					</div>
+					<Button variant="primary" onClick={() => setAddModalOpen(true)}>
+						<Plus className="h-4 w-4" />
+						Thêm học viên
+					</Button>
 				}
 			/>
 
-			<div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-				<Tabs
-					tabs={[
-						{
-							id: "students",
-							label: `Học viên (${students.length})`,
-						},
-						{
-							id: "invitations",
-							label:
-								totalPendingCount > 0
-									? `Lời mời đang chờ (${totalPendingCount})`
-									: "Lời mời đang chờ",
-						},
-					]}
-					active={activeTab}
-					onChange={(id) => setActiveTab(id as "students" | "invitations")}
-				/>
-				{activeTab === "students" && (
-					<ChipFilter options={FILTERS} value={filter} onChange={setFilter} />
-				)}
+			<div className="mb-6">
+				<ChipFilter options={FILTERS} value={filter} onChange={setFilter} />
 			</div>
 
-			{activeTab === "invitations" ? (
-				<PendingInvitationsList
-					onInviteClick={() => setInviteModalOpen(true)}
-					pendingStudents={pendingStudents}
-				/>
-			) : students.length === 0 ? (
+			{students.length === 0 ? (
 				<Card
 					variant="white"
 					className="p-8 text-center"
@@ -138,8 +77,9 @@ export function StudentsRoute() {
 				>
 					<h2 className="font-semibold text-lg">Chưa có học viên nào</h2>
 					<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
-						Bạn có thể thêm học viên thủ công để quản lý lớp học, học phí, bài
-						tập ngay lập tức, hoặc mời học viên đăng nhập student portal.
+						Thêm học viên thủ công để quản lý lớp học, học phí, bài tập ngay lập
+						tức, hoặc học viên tự đăng ký trên student portal sẽ tự động xuất
+						hiện tại đây.
 					</p>
 					<div className="mt-4 flex justify-center">
 						<Button variant="primary" onClick={() => setAddModalOpen(true)}>
@@ -176,22 +116,14 @@ export function StudentsRoute() {
 												<span>
 													{s.phone || s.email || "Chưa có SĐT / Email"}
 												</span>
-												{!s.email ? (
+												{!s.email && (
 													<Badge
 														variant="muted"
 														className="px-1.5 py-0 text-[10px]"
 													>
 														Chưa liên kết Portal
 													</Badge>
-												) : isPendingPortalStudent(s) ? (
-													<Badge
-														variant="warn"
-														dot
-														className="px-1.5 py-0 text-[10px]"
-													>
-														Chờ xác nhận
-													</Badge>
-												) : null}
+												)}
 											</div>
 										</div>
 									</div>,
@@ -221,25 +153,10 @@ export function StudentsRoute() {
 											</span>
 										)}
 									</div>,
-									<div
-										key="tags"
-										className="flex flex-wrap items-center justify-between gap-2"
-									>
-										<div className="flex flex-wrap gap-1">
-											{s.tags.map((t) => (
-												<Tag key={t}>{t}</Tag>
-											))}
-										</div>
-										{isPendingPortalStudent(s) && (
-											<ResendInviteButton
-												target={{
-													kind: "student",
-													studentId: s.id,
-													recipientLabel: s.email,
-												}}
-												compact
-											/>
-										)}
+									<div key="tags" className="flex flex-wrap gap-1">
+										{s.tags.map((t) => (
+											<Tag key={t}>{t}</Tag>
+										))}
 									</div>,
 								],
 							};
@@ -248,10 +165,6 @@ export function StudentsRoute() {
 				</Card>
 			)}
 
-			<InviteStudentModal
-				open={inviteModalOpen}
-				onClose={() => setInviteModalOpen(false)}
-			/>
 			<AddStudentModal
 				open={addModalOpen}
 				onClose={() => setAddModalOpen(false)}

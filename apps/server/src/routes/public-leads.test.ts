@@ -633,4 +633,88 @@ describe("POST /public/leads (#506 phase 2)", () => {
 		expect(profileRow?.timeSlot).toBe("1815");
 		expect(profileRow?.placement).toBe("Kiểm tra đầu vào: 24/30 – CEFR B2+");
 	});
+
+	test("TEACHER_EMAILS drift: ghi lead và gửi email sang org hoạt động của giáo viên thay vì LEAD_ORG_ID cũ, không gộp/lộ lead QA cũ (#742)", async () => {
+		await db.insert(schema.organization).values([
+			{ id: "org-qa", name: "QA Old Org" },
+			{ id: "org-teacher", name: "Cô Mỹ Active Org" },
+		]);
+		await db.insert(schema.user).values([
+			{
+				id: "u-qa",
+				name: "QA Tester",
+				email: "qa@example.com",
+				emailVerified: true,
+				role: "teacher",
+			},
+			{
+				id: "u-my",
+				name: "Cô Mỹ",
+				email: "comy@example.com",
+				emailVerified: false,
+				role: "teacher",
+			},
+		]);
+		await db.insert(schema.membership).values([
+			{ id: "m-qa", orgId: "org-qa", userId: "u-qa", role: "teacher" },
+			{ id: "m-my", orgId: "org-teacher", userId: "u-my", role: "teacher" },
+		]);
+		await db.insert(schema.lead).values({
+			id: "qa-old-lead",
+			orgId: "org-qa",
+			name: "QA Cũ",
+			phone: "0909555111",
+			email: "qa@lead.local",
+			source: "profile",
+			status: "new",
+			submitCount: 1,
+		});
+
+		const instance = buildApp({
+			getDb: () => db,
+			corsOrigin: CORS_ORIGIN,
+			getSessionUser: async (headers) => {
+				if (headers.get("x-test-user") === "co-my") {
+					return {
+						userId: "u-my",
+						userName: "Cô Mỹ",
+						email: "comy@example.com",
+						emailVerified: true,
+						role: "teacher",
+					};
+				}
+				return null;
+			},
+			authHandler: async () => new Response(null, { status: 404 }),
+			leadOrgId: "org-qa",
+			teacherEmails: ["comy@example.com"],
+			leadOrigins: [PROFILE_ORIGIN],
+			leadIpSecret: "test-lead-secret",
+			mailer: recordingMailer,
+			appOrigin: CORS_ORIGIN,
+		});
+
+		const res = await submit(instance, validBody("0909555111"));
+		expect(res.status).toBe(201);
+		const body = (await res.json()) as { id: string; submitCount: number };
+		expect(body.id).not.toBe("qa-old-lead");
+		expect(body.submitCount).toBe(1);
+
+		const allLeads = await leadRows();
+		const created = allLeads.find((r) => r.id === body.id);
+		expect(created?.orgId).toBe("org-teacher");
+		expect(sent).toHaveLength(1);
+		expect(sent[0]?.to).toBe("comy@example.com");
+
+		const teacherListRes = await instance.request("/api/leads", {
+			headers: { "x-test-user": "co-my" },
+		});
+		expect(teacherListRes.status).toBe(200);
+		const teacherList = (await teacherListRes.json()) as {
+			rows: Array<{ id: string; name: string }>;
+			total: number;
+		};
+		expect(teacherList.total).toBe(1);
+		expect(teacherList.rows.map((r) => r.id)).toEqual([body.id]);
+	});
 });

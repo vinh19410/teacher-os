@@ -279,4 +279,59 @@ describe("dashboard", () => {
 			expect(remindersLoads).toBeGreaterThan(loadsBefore);
 		});
 	});
+
+	it("omits lessons and risks belonging to paused classes (#694)", async () => {
+		startRemindersServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-paused",
+						name: "IELTS Tạm Dừng",
+						status: "paused",
+					}),
+				],
+				students: [studentRow({ id: "st-p", name: "Minh Tâm" })],
+				enrollments: [
+					enrollmentRow({
+						id: "en-p",
+						classId: "cl-paused",
+						studentId: "st-p",
+					}),
+				],
+				lessons: [
+					lessonRow({
+						id: "les-today",
+						classId: "cl-paused",
+						enrollmentId: "en-p",
+						day: 3,
+						date: "2026-10-07",
+						status: "upcoming",
+					}),
+					lessonRow({
+						id: "les-week",
+						classId: "cl-paused",
+						enrollmentId: "en-p",
+						day: 5,
+						date: "2026-10-09",
+						status: "upcoming",
+					}),
+					lessonRow({
+						id: "les-risk",
+						classId: "cl-paused",
+						enrollmentId: "en-p",
+						day: 1,
+						date: "2026-10-05",
+						status: "absent",
+					}),
+				],
+			}),
+		);
+		renderWithKernel(<Dashboard />);
+		await screen.findByText("Không có buổi học nào hôm nay.");
+		expect(
+			screen.getByText("Không có buổi học nào trong phần còn lại của tuần."),
+		).toBeTruthy();
+		expect(screen.getByText("Không có học viên rủi ro.")).toBeTruthy();
+		expect(screen.queryByText("IELTS Tạm Dừng")).toBeNull();
+	});
 });

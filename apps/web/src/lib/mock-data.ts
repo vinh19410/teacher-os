@@ -3,6 +3,7 @@ import type {
 	AssignmentSkill,
 	AssignmentWritingSection,
 	AttendanceStatus,
+	ClassStatus,
 	ClassType,
 	KernelAssignmentTestRow,
 	KernelEnrollmentRow,
@@ -89,6 +90,7 @@ export interface AssignmentPrompt {
 	genre: string;
 	title: string;
 	band: string;
+	level?: string;
 	source: string;
 	prompt: string;
 	intro?: string;
@@ -97,6 +99,7 @@ export interface AssignmentPrompt {
 	cueTopic?: string;
 	cuePoints?: string;
 	audioName?: string;
+	audioUrl?: string;
 	/** Diagram image URL (https-only) — diagram prompts render it (#269). */
 	imageUrl?: string;
 	questions?: AssignmentQuestion[];
@@ -205,7 +208,7 @@ export interface ClassGroup {
 	schedule: string;
 	sessionsDone: number;
 	sessionsTotal: number;
-	status: string;
+	status: ClassStatus;
 	startDate: string;
 	tuitionFee: number | null;
 	notes: string;

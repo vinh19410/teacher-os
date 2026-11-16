@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const ciPath = join(repoRoot, ".github/workflows/ci.yml");
 const qualityPath = join(repoRoot, ".github/workflows/quality.yml");
+const e2ePath = join(repoRoot, ".github/workflows/e2e.yml");
 const setupActionPath = join(
 	repoRoot,
 	".github/actions/setup-workspace/action.yml",
@@ -609,6 +610,9 @@ test("staging deploy workflow deploys only from develop and gates deploy on unca
 	const seedIdx = steps.findIndex((s) =>
 		/name:\s*Seed built-in vocab library \(staging only\)/.test(s),
 	);
+	const studyPackSeedIdx = steps.findIndex((s) =>
+		/name:\s*Seed built-in study packs \(staging only\)/.test(s),
+	);
 	const authIdx = steps.findIndex((s) =>
 		/name:\s*Smoke check auth \(sign-up/.test(s),
 	);
@@ -616,70 +620,145 @@ test("staging deploy workflow deploys only from develop and gates deploy on unca
 		deployIdx >= 0 &&
 			readyzIdx > deployIdx &&
 			seedIdx > readyzIdx &&
-			authIdx > seedIdx,
-		"staging vocab seed step must run after /readyz and before auth smoke",
+			studyPackSeedIdx > seedIdx &&
+			authIdx > studyPackSeedIdx,
+		"staging vocab & study-pack seed steps must run after /readyz and before auth smoke",
 	);
-	const seedStep = steps[seedIdx];
+	for (const [label, step, scriptName] of [
+		["vocab", steps[seedIdx], "seed-vocab-library\\.ts"],
+		["study-pack", steps[studyPackSeedIdx], "seed-study-packs\\.ts"],
+	]) {
+		assert.match(
+			step,
+			/timeout-minutes:\s*\d+/,
+			`staging ${label} seed step must declare timeout-minutes`,
+		);
+		assert.match(
+			step,
+			new RegExp(
+				`pnpm --filter @teacher-os\\/db exec tsx scripts\\/${scriptName} --d1 --d1-stage staging --if-needed --verify`,
+			),
+			`staging ${label} seed step must run locked tsx with --d1-stage staging --if-needed --verify`,
+		);
+		assert.doesNotMatch(
+			step,
+			/D1_DATABASE_ID/,
+			`staging ${label} seed step must resolve staging DB fail-closed via --d1-stage staging without D1_DATABASE_ID`,
+		);
+		const seedEnvKeys = [...step.matchAll(/^ {10}([A-Z0-9_]+):/gm)].map(
+			(m) => m[1],
+		);
+		assert.deepEqual(
+			seedEnvKeys.sort(),
+			["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN"],
+			`staging ${label} seed step must follow least-privilege and receive only CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN`,
+		);
+	}
+
+	const profileIdx = steps.findIndex((s) =>
+		/name:\s*Smoke check profile\b/.test(s),
+	);
+	const discordIdx = steps.findIndex((s) =>
+		/name:\s*Notify Discord release changelog\b/.test(s),
+	);
+	assert.ok(
+		profileIdx >= 0 &&
+			discordIdx > profileIdx &&
+			discordIdx === steps.length - 1,
+		"staging Discord notify step must run last in deploy job after Smoke check profile",
+	);
+	const discordStep = steps[discordIdx];
 	assert.match(
-		seedStep,
+		discordStep,
 		/timeout-minutes:\s*\d+/,
-		"staging vocab seed step must declare timeout-minutes",
+		"staging Discord notify step must declare timeout-minutes",
 	);
 	assert.match(
-		seedStep,
-		/pnpm --filter @teacher-os\/db exec tsx scripts\/seed-vocab-library\.ts --d1 --d1-stage staging --if-needed --verify/,
-		"staging vocab seed step must run locked tsx seed-vocab-library with --d1-stage staging --if-needed --verify",
+		discordStep,
+		/node scripts\/notify-discord-changelog\.mjs --stage staging\b/,
+		"staging Discord notify step must run notify-discord-changelog.mjs --stage staging",
 	);
-	assert.doesNotMatch(
-		seedStep,
-		/D1_DATABASE_ID/,
-		"staging vocab seed step must resolve staging DB fail-closed via --d1-stage staging without D1_DATABASE_ID",
-	);
-	const seedEnvKeys = [...seedStep.matchAll(/^ {10}([A-Z0-9_]+):/gm)].map(
+	const discordEnvKeys = [...discordStep.matchAll(/^ {10}([A-Z0-9_]+):/gm)].map(
 		(m) => m[1],
 	);
 	assert.deepEqual(
-		seedEnvKeys.sort(),
-		["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN"],
-		"staging vocab seed step must follow least-privilege and receive only CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN",
+		discordEnvKeys,
+		["DISCORD_WEBHOOK_URL"],
+		"staging Discord notify step must follow least-privilege and receive only DISCORD_WEBHOOK_URL",
 	);
 });
 
-test("e2e has no standalone workflow and runs only inside the prod deploy", () => {
-	assert.equal(
-		existsSync(join(repoRoot, ".github/workflows/e2e.yml")),
-		false,
-		"e2e.yml must stay removed: e2e is a job of deploy.yml, not a reusable workflow",
-	);
-	for (const path of [
-		".github/workflows/ci.yml",
-		".github/workflows/quality.yml",
-		".github/workflows/deploy-staging.yml",
-	]) {
-		assert.doesNotMatch(
-			stripComments(readFileSync(join(repoRoot, path), "utf8")),
-			/playwright|--shard|apps\/e2e|filter e2e/i,
-			`${path} must not run the e2e suite (production deploy only)`,
-		);
-	}
-});
-
-test("prod deploy is gated on uncached quality and the 6-shard fully-parallel e2e", () => {
-	const raw = readFileSync(deployPath, "utf8");
+test("reusable e2e workflow gates PRs to main and workflow_call with 6-shard fully-parallel Playwright without secrets", () => {
+	assert.equal(existsSync(e2ePath), true, "missing .github/workflows/e2e.yml");
+	const raw = readFileSync(e2ePath, "utf8");
 	const code = stripComments(raw);
 
+	assert.match(
+		code,
+		/pull_request:\s*\n\s*branches:\s*\[main\]/,
+		"e2e.yml pull_request must target [main]",
+	);
+	assert.doesNotMatch(
+		code,
+		/branches:\s*\[[^\]]*\b(develop|staging)\b/,
+		"e2e.yml must not trigger on develop or staging",
+	);
+	assert.doesNotMatch(
+		code,
+		/pull_request_target/,
+		"e2e.yml must never use pull_request_target (fork PR escalation)",
+	);
+	assert.doesNotMatch(
+		code,
+		/^\s*push:/m,
+		"e2e.yml must not declare a standalone push trigger (pushes to main run via deploy.yml)",
+	);
+	assert.doesNotMatch(
+		code,
+		/\bpaths(?:-ignore)?:/,
+		"e2e.yml must never filter paths",
+	);
+	assert.match(
+		code,
+		/^\s*workflow_call:/m,
+		"e2e.yml must support workflow_call so deploy.yml can reuse it",
+	);
+	assertReadOnlyWorkflowPermissions(code, "e2e.yml");
+	assert.match(
+		code,
+		/^concurrency:\s*\n\s*group:\s*e2e-\$\{\{\s*github\.workflow\s*\}\}-\$\{\{\s*github\.ref\s*\}\}\s*\n\s*cancel-in-progress:\s*\$\{\{\s*github\.event_name\s*==\s*'pull_request'\s*\}\}\s*$/m,
+		"e2e.yml concurrency must cancel only pull_request runs and never workflow_call deploys",
+	);
+	assert.doesNotMatch(
+		code,
+		/\bsecrets\b/,
+		"e2e.yml must never reference or accept secrets",
+	);
+	assert.doesNotMatch(
+		code,
+		/continue-on-error/,
+		"e2e.yml must never use continue-on-error",
+	);
+
 	const e2eJob = extractJobBlock(code, "e2e");
-	assert.ok(e2eJob, "deploy.yml must declare an e2e job");
+	assert.ok(e2eJob, "e2e.yml must declare an e2e job");
 	assert.doesNotMatch(
 		e2eJob,
 		/^ {4}if:/m,
 		"e2e job must never declare job-level if: (a skipped job satisfies needs)",
 	);
-	assert.doesNotMatch(
+	assert.match(
 		e2eJob,
-		/secrets\./,
-		"e2e job must never receive prod secrets (stack is local)",
+		/uses:\s*\.\/\.github\/actions\/setup-workspace/,
+		"e2e job must use setup-workspace composite action",
 	);
+	assert.match(
+		e2eJob,
+		/fail-fast:\s*false/,
+		"e2e shards must not cancel each other so every failure is visible",
+	);
+	const shardList = e2eJob.match(/shard:\s*\[([^\]]*)\]/);
+	assert.ok(shardList, "e2e job must declare a shard matrix");
 	assert.match(
 		e2eJob,
 		/shard:\s*\[1, 2, 3, 4, 5, 6\]/,
@@ -687,23 +766,61 @@ test("prod deploy is gated on uncached quality and the 6-shard fully-parallel e2
 	);
 	assert.match(
 		e2eJob,
-		/fail-fast:\s*false/,
-		"e2e shards must not cancel each other so every failure is visible",
+		/playwright install --with-deps chromium/,
+		"e2e job must install playwright chromium",
+	);
+	const e2eStep = splitJobSteps(e2eJob).find((s) =>
+		/e2e\s+--fully-parallel\s+--shard=/.test(s),
+	);
+	assert.ok(e2eStep, "e2e job must run e2e with --fully-parallel and --shard");
+	assert.doesNotMatch(
+		e2eStep,
+		/^\s*if:/m,
+		"e2e run step must never be conditional",
+	);
+	const shardTotal = e2eStep.match(
+		/e2e\s+--fully-parallel\s+--shard=\$\{\{\s*matrix\.shard\s*\}\}\/(\d+)/,
+	);
+	assert.ok(shardTotal, "e2e must run with --fully-parallel and --shard=<n>/6");
+	assert.equal(
+		shardList[1].split(",").length,
+		Number(shardTotal[1]),
+		"shard matrix size must equal the --shard total",
+	);
+
+	for (const path of [
+		".github/workflows/ci.yml",
+		".github/workflows/quality.yml",
+		".github/workflows/deploy-staging.yml",
+	]) {
+		assert.doesNotMatch(
+			stripComments(readFileSync(join(repoRoot, path), "utf8")),
+			/playwright|--shard|apps\/e2e|filter e2e|e2e\.yml/i,
+			`${path} must not run the e2e suite (main PRs and production deploy only)`,
+		);
+	}
+});
+
+test("prod deploy is gated on uncached quality and the reusable e2e workflow", () => {
+	const raw = readFileSync(deployPath, "utf8");
+	const code = stripComments(raw);
+
+	const e2eCaller = extractJobBlock(code, "e2e");
+	assert.ok(e2eCaller, "deploy.yml must declare an e2e caller job");
+	assert.doesNotMatch(
+		e2eCaller,
+		/^ {4}if:/m,
+		"deploy.yml e2e job must never declare job-level if: (a skipped job satisfies needs)",
 	);
 	assert.match(
-		e2eJob,
-		/e2e\s+--fully-parallel\s+--shard=\$\{\{ matrix\.shard \}\}\/6/,
-		"e2e must run with --fully-parallel and --shard=<n>/6",
-	);
-	assert.match(
-		e2eJob,
-		/uses:\s*\.\/\.github\/actions\/setup-workspace/,
-		"e2e job must use setup-workspace composite action",
+		e2eCaller,
+		/^\s*uses:\s*\.\/\.github\/workflows\/e2e\.yml\s*$/m,
+		"deploy.yml e2e job must reuse ./.github/workflows/e2e.yml",
 	);
 	assert.doesNotMatch(
-		code,
-		/workflows\/e2e\.yml/,
-		"deploy.yml must not call a reusable e2e workflow",
+		e2eCaller,
+		/^\s*secrets:/m,
+		"deploy.yml e2e job must never receive prod secrets",
 	);
 	assert.doesNotMatch(
 		code,
@@ -766,8 +883,8 @@ test("prod deploy is gated on uncached quality and the 6-shard fully-parallel e2
 	);
 	assert.doesNotMatch(
 		code,
-		/seed-vocab-library|seedVocabLibrary|vocab_library/,
-		"deploy.yml must never seed built-in vocab library while production license gate is closed (#573)",
+		/seed-vocab-library|seedVocabLibrary|vocab_library|seed-study-packs|seedStudyPacks/,
+		"deploy.yml must never seed built-in vocab library or study packs while production license gate is closed (#573, #702)",
 	);
 	assert.match(
 		code,
@@ -789,6 +906,39 @@ test("prod deploy is gated on uncached quality and the 6-shard fully-parallel e2
 			`step after deploy must skip on dry-run in deploy.yml: ${step.split("\n")[0]}`,
 		);
 	}
+
+	const deploySteps = splitJobSteps(deployJob);
+	const profileIdx = deploySteps.findIndex((s) =>
+		/name:\s*Smoke check profile\b/.test(s),
+	);
+	const discordIdx = deploySteps.findIndex((s) =>
+		/name:\s*Notify Discord release changelog\b/.test(s),
+	);
+	assert.ok(
+		profileIdx >= 0 &&
+			discordIdx > profileIdx &&
+			discordIdx === deploySteps.length - 1,
+		"prod Discord notify step must run last in deploy job after Smoke check profile",
+	);
+	const discordStep = deploySteps[discordIdx];
+	assert.match(
+		discordStep,
+		/timeout-minutes:\s*\d+/,
+		"prod Discord notify step must declare timeout-minutes",
+	);
+	assert.match(
+		discordStep,
+		/node scripts\/notify-discord-changelog\.mjs --stage prod\b/,
+		"prod Discord notify step must run notify-discord-changelog.mjs --stage prod",
+	);
+	const discordEnvKeys = [...discordStep.matchAll(/^ {10}([A-Z0-9_]+):/gm)].map(
+		(m) => m[1],
+	);
+	assert.deepEqual(
+		discordEnvKeys,
+		["DISCORD_WEBHOOK_URL"],
+		"prod Discord notify step must follow least-privilege and receive only DISCORD_WEBHOOK_URL",
+	);
 
 	const alchemyRaw = readFileSync(alchemyPath, "utf8");
 	const alchemyCode = alchemyRaw

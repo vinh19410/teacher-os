@@ -20,7 +20,9 @@ import {
 	verifyCounts,
 } from "./vocab-library";
 
-const MIGRATIONS_DIR = new URL("../migrations", import.meta.url).pathname;
+const MIGRATIONS_DIR = fileURLToPath(
+	new URL("../migrations", import.meta.url).href,
+);
 
 describe("vocab-library seed pipeline (#361)", () => {
 	const tmpDirs: string[] = [];

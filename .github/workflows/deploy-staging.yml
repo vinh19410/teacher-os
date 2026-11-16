@@ -18,7 +18,7 @@
 # - CORS_ORIGIN must NOT be set here — with APP_DOMAIN present it defaults to
 #   the derived https://app.staging.teacheros.io.vn and an explicit disagreeing
 #   value fails the whole run by design.
-# - ci-workflow.test.mjs forbids secrets in ci.yml/quality.yml; staging
+# - ci-workflow.test.mjs forbids secrets in ci.yml/quality.yml/e2e.yml; staging
 #   credentials live in the GitHub environment "staging" (same secret names as
 #   production) and stay out of the PR pipeline.
 # - The deploy smoke covers auth (issue #125): /readyz alone shipped green
@@ -73,6 +73,9 @@ jobs:
     environment: staging
     steps:
       - uses: actions/checkout@v7
+        with:
+          # Full history: the Discord beta number counts commits since the last version bump.
+          fetch-depth: 0
       - uses: ./.github/actions/setup-workspace
       - name: Deploy to Cloudflare (stage staging)
         working-directory: packages/infra
@@ -83,6 +86,10 @@ jobs:
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          # #730: chấm nháp AI bài test đầu vào (rỗng = tắt; model rỗng = mặc định).
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_GRADING_MODEL: ${{ vars.OPENAI_GRADING_MODEL }}
+          OPENAI_TRANSCRIBE_MODEL: ${{ vars.OPENAI_TRANSCRIBE_MODEL }}
           # Tên secret Actions là GH_WEBHOOK_SECRET (Actions cấm tiền tố
           # GITHUB_); tên env/binding Worker vẫn là GITHUB_WEBHOOK_SECRET.
           GITHUB_WEBHOOK_SECRET: ${{ secrets.GH_WEBHOOK_SECRET }}
@@ -126,6 +133,13 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: pnpm --filter @teacher-os/db exec tsx scripts/seed-vocab-library.ts --d1 --d1-stage staging --if-needed --verify
+      - name: Seed built-in study packs (staging only)
+        if: ${{ !inputs.dry_run }}
+        timeout-minutes: 5
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: pnpm --filter @teacher-os/db exec tsx scripts/seed-study-packs.ts --d1 --d1-stage staging --if-needed --verify
       - name: Smoke check auth (sign-up → get-session)
         if: ${{ !inputs.dry_run }}
         # Issue #125: /readyz cannot see auth breakage (cookie config, CORS,
@@ -278,3 +292,9 @@ jobs:
           done
           echo "::error::profile did not pass smoke checks within 10 minutes of deploy"
           exit 1
+      - name: Notify Discord release changelog
+        if: ${{ !inputs.dry_run }}
+        timeout-minutes: 2
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: node scripts/notify-discord-changelog.mjs --stage staging

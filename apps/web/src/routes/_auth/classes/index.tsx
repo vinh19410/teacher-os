@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AddClassModal } from "@/components/modals/add-class-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,11 +13,38 @@ import { CLASS_TYPE_LABELS, classMeta } from "@/lib/mock-data";
 import { splitSyllabi } from "@/lib/repos/syllabus";
 import { useClasses } from "@/lib/repos/use-classes";
 
+export type ClassListFilter = "online" | "offline" | "active" | "paused";
+
+const FILTER_LABEL_TO_PARAM: Record<string, ClassListFilter> = {
+	"Trực tuyến": "online",
+	"Trực tiếp": "offline",
+	"Đang học": "active",
+	"Tạm dừng": "paused",
+};
+
+const FILTER_PARAM_TO_LABEL: Record<ClassListFilter, string> = {
+	online: "Trực tuyến",
+	offline: "Trực tiếp",
+	active: "Đang học",
+	paused: "Tạm dừng",
+};
+
+function isClassListFilter(value: unknown): value is ClassListFilter {
+	return typeof value === "string" && value in FILTER_PARAM_TO_LABEL;
+}
+
+export function validateClassesSearch(input: { filter?: string } = {}): {
+	filter?: ClassListFilter;
+} {
+	return isClassListFilter(input.filter) ? { filter: input.filter } : {};
+}
+
 export const Route = createFileRoute("/_auth/classes/")({
+	validateSearch: validateClassesSearch,
 	component: ClassesRoute,
 });
 
-const FILTERS = ["Tất cả", "Trực tuyến", "Trực tiếp", "Đang học"];
+const FILTERS = ["Tất cả", "Trực tuyến", "Trực tiếp", "Đang học", "Tạm dừng"];
 const MODE_MAP: Record<string, string> = {
 	"Trực tuyến": "Online",
 	"Trực tiếp": "Offline",
@@ -27,22 +54,40 @@ const SYLLABUS_LABEL = "Giáo trình";
 
 export function ClassesRoute() {
 	const navigate = useNavigate();
+	const searchParams = Route.useSearch();
 	const { classes } = useClasses();
 	const { data } = useData();
 	const { curriculumByClassId } = splitSyllabi(data.syllabi);
-	const [filter, setFilter] = useState("Tất cả");
+	const urlFilterLabel = isClassListFilter(searchParams.filter)
+		? FILTER_PARAM_TO_LABEL[searchParams.filter]
+		: "Tất cả";
+	const [filter, setFilter] = useState(urlFilterLabel);
 	const [modalOpen, setModalOpen] = useState(false);
+
+	useEffect(() => {
+		setFilter(urlFilterLabel);
+	}, [urlFilterLabel]);
+
+	function handleFilterChange(nextLabel: string) {
+		setFilter(nextLabel);
+		const nextParam = FILTER_LABEL_TO_PARAM[nextLabel];
+		navigate({
+			to: "/classes",
+			search: nextParam ? { filter: nextParam } : {},
+			replace: true,
+		});
+	}
 
 	const activeCount = classes.filter((c) => c.status === "active").length;
 
 	const list =
 		filter === "Tất cả"
 			? classes
-			: classes.filter((c) =>
-					filter === "Đang học"
-						? c.status === "active"
-						: c.mode === (MODE_MAP[filter] ?? filter),
-				);
+			: classes.filter((c) => {
+					if (filter === "Đang học") return c.status === "active";
+					if (filter === "Tạm dừng") return c.status === "paused";
+					return c.mode === (MODE_MAP[filter] ?? filter);
+				});
 
 	return (
 		<div>
@@ -52,7 +97,11 @@ export function ClassesRoute() {
 				action={<Button onClick={() => setModalOpen(true)}>+ Tạo lớp</Button>}
 			/>
 			<div className="mb-6">
-				<ChipFilter options={FILTERS} value={filter} onChange={setFilter} />
+				<ChipFilter
+					options={FILTERS}
+					value={filter}
+					onChange={handleFilterChange}
+				/>
 			</div>
 			{classes.length === 0 ? (
 				<Card

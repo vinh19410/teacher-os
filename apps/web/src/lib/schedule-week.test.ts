@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import type { ClassGroup, Lesson, Syllabus } from "@/lib/mock-data";
 import {
+	buildWeekModel,
 	distinctStudentsBySid,
 	findSessionRows,
 	rollupSessionStatus,
@@ -633,5 +634,126 @@ describe("distinctStudentsBySid (issue #204)", () => {
 			}),
 		];
 		expect(distinctStudentsBySid(rows)).toHaveLength(2);
+	});
+});
+
+describe("buildWeekModel — paused classes (#694)", () => {
+	test("drops paused projected blocks, legacy buckets, and unrecorded dated buckets; preserves mixed historical buckets with full headcount and non-upcoming status", () => {
+		const dates = mondayWeek("2026-10-12");
+		const pausedProjected: ClassGroup = {
+			...QC_CLASS,
+			id: "c-paused-proj",
+			name: "Paused Projected",
+			status: "paused",
+			startDate: "2026-10-01",
+			schedule: '{"days":[2],"start":"18:00","end":"19:30"}',
+		};
+		const activeProjected: ClassGroup = {
+			...QC_CLASS,
+			id: "c-active-proj",
+			name: "Active Projected",
+			status: "active",
+			startDate: "2026-10-01",
+			schedule: '{"days":[3],"start":"18:00","end":"19:30"}',
+		};
+		const pausedLegacy: ClassGroup = {
+			...QC_CLASS,
+			id: "c-paused-legacy",
+			name: "Paused Legacy",
+			status: "paused",
+			schedule: '{"days":[0],"start":"17:00","end":"18:30"}',
+		};
+		const pausedUnrecorded: ClassGroup = {
+			...QC_CLASS,
+			id: "c-paused-unrec",
+			name: "Paused Unrecorded",
+			status: "paused",
+			schedule: '{"days":[0],"start":"19:00","end":"20:30"}',
+		};
+		const pausedMixed: ClassGroup = {
+			...QC_CLASS,
+			id: "c-paused-mixed",
+			name: "Paused Mixed",
+			status: "paused",
+			schedule: '{"days":[0,1],"start":"20:45","end":"22:00"}',
+		};
+		const lessons: Lesson[] = [
+			lesson({
+				id: "l-leg",
+				classId: "c-paused-legacy",
+				sid: "s1",
+				day: 1,
+				time: "17:00",
+				date: null,
+				status: "completed",
+			}),
+			lesson({
+				id: "l-unrec",
+				classId: "c-paused-unrec",
+				sid: "s1",
+				day: 1,
+				time: "19:00",
+				date: "2026-10-12",
+				status: "upcoming",
+			}),
+			lesson({
+				id: "l-mix-1",
+				classId: "c-paused-mixed",
+				sid: "s1",
+				day: 1,
+				time: "20:45",
+				date: "2026-10-12",
+				status: "completed",
+			}),
+			lesson({
+				id: "l-mix-2",
+				classId: "c-paused-mixed",
+				sid: "s2",
+				day: 1,
+				time: "20:45",
+				date: "2026-10-12",
+				status: "upcoming",
+			}),
+			lesson({
+				id: "l-abs-1",
+				classId: "c-paused-mixed",
+				sid: "s1",
+				day: 2,
+				time: "20:45",
+				date: "2026-10-13",
+				status: "absent",
+			}),
+			lesson({
+				id: "l-abs-2",
+				classId: "c-paused-mixed",
+				sid: "s2",
+				day: 2,
+				time: "20:45",
+				date: "2026-10-13",
+				status: "upcoming",
+			}),
+		];
+
+		const model = buildWeekModel(
+			{
+				classes: [
+					pausedProjected,
+					activeProjected,
+					pausedLegacy,
+					pausedUnrecorded,
+					pausedMixed,
+				],
+				lessons,
+			},
+			dates,
+		);
+
+		expect(model.projected.map((b) => b.classId)).toEqual(["c-active-proj"]);
+		expect(model.columns[0].map((e) => e.classId)).toEqual(["c-paused-mixed"]);
+		expect(model.columns[0][0].rows).toHaveLength(2);
+		expect(model.columns[0][0].status).toBe("completed");
+		expect(model.columns[1].map((e) => e.classId)).toEqual(["c-paused-mixed"]);
+		expect(model.columns[1][0].rows).toHaveLength(2);
+		expect(model.columns[1][0].status).toBe("absent");
 	});
 });

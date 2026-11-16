@@ -209,6 +209,7 @@ export function selectProjectedWeekBlocks(
 	const dateSet = new Set(dates);
 	const blocks: ProjectedWeekBlock[] = [];
 	for (const cls of classes) {
+		if (cls.status === "paused") continue;
 		if (classIdsWithRows.has(cls.id)) continue;
 		const byDate = new Map<string, ClassSessionItem>();
 		for (const cs of classSessions) {
@@ -371,10 +372,26 @@ export function resolveWeekColumnEntries(
 ): WeekSessionEntry[] {
 	const out: WeekSessionEntry[] = [];
 	for (const entry of entries) {
-		const cls =
-			entry.dateISO === null
-				? classes.find((c) => c.id === entry.classId)
-				: undefined;
+		const targetCls = classes.find((c) => c.id === entry.classId);
+		if (targetCls && targetCls.status === "paused") {
+			// Paused class (#694): drop all legacy undated rows and unrecorded
+			// dated buckets, while preserving dated buckets with >= 1 historical
+			// completed/absent row and their full headcount at a non-upcoming status.
+			if (entry.dateISO === null) continue;
+			const hasHistoricalAttendance = entry.rows.some(
+				(r) => r.status === "completed" || r.status === "absent",
+			);
+			if (!hasHistoricalAttendance) continue;
+			const normalizedStatus: LessonStatus =
+				entry.status === "upcoming"
+					? entry.rows.some((r) => r.status === "completed")
+						? "completed"
+						: "absent"
+					: entry.status;
+			out.push({ ...entry, status: normalizedStatus });
+			continue;
+		}
+		const cls = entry.dateISO === null ? targetCls : undefined;
 		if (!cls) {
 			out.push(entry);
 			continue;
