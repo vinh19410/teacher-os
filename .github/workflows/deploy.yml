@@ -142,7 +142,7 @@ jobs:
       - name: Smoke check profile
         if: ${{ !inputs.dry_run }}
         # Plan #536: teacher profile StaticSite (msmy.io.vn + www). Poll up to
-        # ~10 minutes like landing; verify both HTML pages have the stage's
+        # ~10 minutes like /readyz; verify both HTML pages have the stage's
         # lead-api meta, www alias responds 200 HTML, and /kiem-tra-dau-vao
         # redirects to the trailing-slash directory URL.
         run: |
