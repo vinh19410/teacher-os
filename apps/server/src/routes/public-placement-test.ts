@@ -12,8 +12,11 @@ import {
 	PLACEMENT_SPEAKING_MEDIA_MAX_BYTES,
 	PLACEMENT_UPLOAD_TOKEN_TTL_MS,
 	type PlacementObjectiveResult,
+	type PlacementPublicResultView,
 	type PlacementPublicSubmit,
 	type PlacementSnapshot,
+	type PlacementSpeakingRubric,
+	type PlacementWritingRubric,
 	placementPublicSubmitSchema,
 } from "@teacher-os/api/placement-test-contracts";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
@@ -30,6 +33,15 @@ import type { Db } from "../app";
 import { parseByteRange } from "../lib/byte-range";
 import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
 import { type PeekedStream, peekStream } from "../lib/peek-stream";
+import type { PlacementAiGrader } from "../lib/placement-ai/grader";
+import {
+	PLACEMENT_RESULT_TOKEN_RE,
+	parseStoredErrors,
+} from "../lib/placement-ai/placement-result";
+import {
+	runPlacementAiGrading,
+	schedulePlacementAiTask,
+} from "../lib/placement-ai/run-placement-grading";
 
 export const PLACEMENT_SUBMISSION_IP_WINDOW_MS = 15 * 60 * 1000;
 export const PLACEMENT_SUBMISSION_IP_MAX = 5;
@@ -45,6 +57,17 @@ export interface PublicPlacementTestRouteDeps {
 	getLibraryAudioStore?(): MediaStore | undefined;
 	getMediaStore?(): MediaStore | undefined;
 	runInBackground?(promise: Promise<unknown>): void;
+	/** #730: grader nháp AI Writing/Speaking (chạy nền sau nộp/upload). */
+	getPlacementAiGrader?(): PlacementAiGrader | undefined;
+}
+
+function parseJsonOr<T>(raw: string | null, fallback: T): T {
+	if (!raw) return fallback;
+	try {
+		return JSON.parse(raw) as T;
+	} catch {
+		return fallback;
+	}
 }
 
 async function hmacIpHash(secret: string, ip: string): Promise<string> {
@@ -687,6 +710,12 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 			leadId = newLeadId;
 		}
 
+		// #730: chấm nháp AI nền. Chế độ upload chờ file Speaking rồi chấm
+		// Writing + Speaking cùng lượt ở PUT speaking-media.
+		if (submit.speakingMode !== "upload") {
+			schedulePlacementAiTask(deps, runPlacementAiGrading(deps, submissionId));
+		}
+
 		return c.json(
 			{
 				submissionId,
@@ -880,12 +909,113 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 			return c.json({ error: "UPLOAD_CONFLICT" }, 409);
 		}
 
+		// #730: chấm nháp AI Writing + Speaking cùng lượt sau upload.
+		schedulePlacementAiTask(deps, runPlacementAiGrading(deps, sub.id));
+
 		return c.json({
 			ok: true,
 			speakingStatus: "uploaded",
 			size,
 			mime: contentType,
 		});
+	});
+
+	/**
+	 * #730: kết quả công khai cho học viên theo token link (sau khi giáo viên
+	 * chốt). Không trả nháp AI, đáp án đúng hay PII ngoài tên học viên.
+	 */
+	router.get("/results/:token", async (c) => {
+		c.header("Cache-Control", "no-store");
+		const notFound = () =>
+			c.json(
+				{
+					error: "PLACEMENT_RESULT_NOT_FOUND",
+					code: "PLACEMENT_RESULT_NOT_FOUND",
+				},
+				404,
+			);
+		const leadOrgId = deps.leadOrgId?.trim() ?? "";
+		if (!leadOrgId) {
+			return c.json(
+				{ error: "PLACEMENT_DISABLED", code: "PLACEMENT_DISABLED" },
+				503,
+			);
+		}
+		const token = (c.req.param("token") ?? "").trim().toLowerCase();
+		if (!PLACEMENT_RESULT_TOKEN_RE.test(token)) return notFound();
+
+		const [row] = await deps
+			.getDb()
+			.select({ sub: placementTestSubmission, studentName: lead.name })
+			.from(placementTestSubmission)
+			.innerJoin(lead, eq(lead.id, placementTestSubmission.leadId))
+			.where(
+				and(
+					eq(placementTestSubmission.resultToken, token),
+					eq(placementTestSubmission.orgId, leadOrgId),
+				),
+			)
+			.limit(1);
+		const sub = row?.sub;
+		if (
+			!row ||
+			!sub?.resultToken ||
+			!constantTimeEqualHex(sub.resultToken, token) ||
+			sub.status !== "graded" ||
+			!sub.resultPublishedAt ||
+			!sub.gradedAt
+		) {
+			return notFound();
+		}
+
+		const objective = parseJsonOr<Partial<PlacementObjectiveResult>>(
+			sub.objectiveBreakdownJson,
+			{},
+		);
+		const snapshot = parseJsonOr<Partial<PlacementSnapshot>>(
+			sub.snapshotJson,
+			{},
+		);
+		const emptySection = { correct: 0, total: 0, pct: 0 };
+		const bandAdvice =
+			(Array.isArray(snapshot.bands) ? snapshot.bands : []).find(
+				(b) => b.cefr === sub.finalBandLevel,
+			)?.advice ?? "";
+
+		const view: PlacementPublicResultView = {
+			studentName: row.studentName,
+			submittedAt: sub.submittedAt.toISOString(),
+			gradedAt: sub.gradedAt.toISOString(),
+			objective: {
+				listening: objective.listening ?? emptySection,
+				vocabGrammar: objective.vocabGrammar ?? emptySection,
+				reading: objective.reading ?? emptySection,
+			},
+			writingText: sub.writingText,
+			writingRubric: parseJsonOr<PlacementWritingRubric | null>(
+				sub.writingRubricJson,
+				null,
+			),
+			writingScore: sub.writingScore,
+			writingErrors:
+				parseStoredErrors(sub.writingErrorsJson, sub.writingText) ?? [],
+			speakingStatus: sub.speakingStatus,
+			speakingTranscript: sub.speakingTranscript,
+			speakingRubric: parseJsonOr<PlacementSpeakingRubric | null>(
+				sub.speakingRubricJson,
+				null,
+			),
+			speakingScore: sub.speakingScore,
+			speakingErrors:
+				parseStoredErrors(sub.speakingErrorsJson, sub.speakingTranscript) ?? [],
+			finalBandLevel: sub.finalBandLevel,
+			finalDisplayCourse: sub.finalDisplayCourse,
+			finalScorePct: sub.finalScorePct,
+			finalNote: sub.finalNote,
+			bandAdvice,
+			teacherFeedback: sub.teacherFeedback,
+		};
+		return c.json(view);
 	});
 
 	return router;

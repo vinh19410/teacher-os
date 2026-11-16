@@ -17,7 +17,11 @@ export async function buildProfile({
 
 	const distBaseHref = `${distUrl.href.replace(/\/?$/, "/")}`;
 	if (leadApiUrl) {
-		for (const relHtml of ["./index.html", "./kiem-tra-dau-vao/index.html"]) {
+		for (const relHtml of [
+			"./index.html",
+			"./kiem-tra-dau-vao/index.html",
+			"./kiem-tra-dau-vao/ket-qua/index.html",
+		]) {
 			const targetUrl = new URL(relHtml, distBaseHref);
 			const html = await readFile(targetUrl, "utf8");
 			await writeFile(targetUrl, replaceLeadApiMeta(html, leadApiUrl), "utf8");

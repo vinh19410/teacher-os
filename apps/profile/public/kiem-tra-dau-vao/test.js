@@ -6,11 +6,13 @@ import {
 	countReadingQuestions,
 	countWords,
 	createInitialSpeakingSession,
+	pickSupportedRecorderMime,
 	resolveReadingRenderState,
 	resolveRestoredAttemptStep,
 	resolveSpeakingStatusDisplay,
 	resolveSpeakingStepState,
 	resolveSpeakingSubmitDecision,
+	resolveSpeakingUploadMeta,
 	resolveTaskTimings,
 	resolveWritingPromptState,
 	scoreObjectiveTest,
@@ -323,49 +325,6 @@ function normalizeSnapshot(raw) {
 		writing,
 		speaking,
 	};
-}
-
-function resolveSpeakingUploadMeta(blobType) {
-	const base = String(blobType ?? "")
-		.split(";")[0]
-		.trim()
-		.toLowerCase();
-	switch (base) {
-		case "video/webm":
-		case "audio/webm":
-			return { contentType: "audio/webm", filename: "speaking.webm" };
-		case "audio/mp4":
-			return { contentType: "audio/mp4", filename: "speaking.m4a" };
-		case "audio/ogg":
-			return { contentType: "audio/ogg", filename: "speaking.ogg" };
-		case "audio/mpeg":
-		case "audio/mp3":
-			return { contentType: "audio/mpeg", filename: "speaking.mp3" };
-		case "audio/wav":
-		case "audio/x-wav":
-			return { contentType: "audio/wav", filename: "speaking.wav" };
-		case "audio/aac":
-			return { contentType: "audio/aac", filename: "speaking.aac" };
-		default:
-			return { contentType: "audio/webm", filename: "speaking.webm" };
-	}
-}
-
-function pickSupportedRecorderMime() {
-	if (typeof window.MediaRecorder === "undefined") return "";
-	const candidates = [
-		"audio/webm;codecs=opus",
-		"audio/webm",
-		"audio/mp4",
-		"audio/ogg;codecs=opus",
-		"audio/ogg",
-	];
-	if (typeof window.MediaRecorder.isTypeSupported !== "function") {
-		return "";
-	}
-	return (
-		candidates.find((mime) => window.MediaRecorder.isTypeSupported(mime)) ?? ""
-	);
 }
 
 function sanitizeObjectiveAnswers(snapshot, answers) {
@@ -3123,7 +3082,9 @@ function createApp() {
 						stopMediaStream();
 						mediaStream = stream;
 
-						preferredRecorderMime = pickSupportedRecorderMime();
+						preferredRecorderMime = pickSupportedRecorderMime(
+							window.MediaRecorder,
+						);
 						const recorder = preferredRecorderMime
 							? new window.MediaRecorder(stream, {
 									mimeType: preferredRecorderMime,

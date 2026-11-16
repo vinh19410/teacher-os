@@ -1,5 +1,11 @@
 import { sql } from "drizzle-orm";
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import {
+	index,
+	integer,
+	sqliteTable,
+	text,
+	uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 import { lead } from "./lead";
 import { organization } from "./organization";
 
@@ -52,6 +58,7 @@ export const placementTestAudio = sqliteTable(
 );
 
 export type PlacementSubmissionStatus = "pending_grading" | "graded";
+export type PlacementAiStatus = "none" | "processing" | "drafted" | "failed";
 export type PlacementSpeakingStatus =
 	| "none"
 	| "pending_upload"
@@ -108,6 +115,46 @@ export const placementTestSubmission = sqliteTable(
 		speakingRubricJson: text("speaking_rubric_json"),
 		speakingScore: integer("speaking_score"),
 		teacherFeedback: text("teacher_feedback").notNull().default(""),
+		/**
+		 * Chấm nháp AI Writing/Speaking (#730). `ai_status`:
+		 * `none` (chưa/không chấm) → `processing` → `drafted` | `failed`.
+		 * Chuyển trạng thái CAS trên `ai_status`; nháp `processing` quá hạn bị
+		 * sweep về `failed` (AI_GRADING_TIMEOUT). Nháp chỉ giáo viên thấy.
+		 */
+		aiStatus: text("ai_status")
+			.$type<PlacementAiStatus>()
+			.notNull()
+			.default("none"),
+		aiErrorCode: text("ai_error_code"),
+		aiStartedAt: integer("ai_started_at", { mode: "timestamp_ms" }),
+		aiDraftedAt: integer("ai_drafted_at", { mode: "timestamp_ms" }),
+		/** JSON `PlacementAiSkillDraft` Writing (rubric + nhận xét + lỗi). */
+		aiWritingJson: text("ai_writing_json"),
+		/** JSON `PlacementAiSkillDraft` Speaking. */
+		aiSpeakingJson: text("ai_speaking_json"),
+		/**
+		 * Id job OpenAI Responses (background mode) đang chạy cho lượt chấm
+		 * hiện tại — finalize lười poll các id này khi giáo viên mở bài. Null
+		 * khi kỹ năng đó không có job hoặc job đã có kết quả.
+		 */
+		aiWritingResponseId: text("ai_writing_response_id"),
+		aiSpeakingResponseId: text("ai_speaking_response_id"),
+		/** Transcript lời nói Speaking (AI chuyển từ audio). */
+		speakingTranscript: text("speaking_transcript").notNull().default(""),
+		/** JSON `PlacementAiError[]` giáo viên chốt — thứ học viên thấy. */
+		writingErrorsJson: text("writing_errors_json"),
+		speakingErrorsJson: text("speaking_errors_json"),
+		/**
+		 * Token link kết quả công khai (sinh lúc chốt lần đầu, giữ nguyên
+		 * khi chốt lại). Lưu thô để giáo viên copy lại link bất cứ lúc nào —
+		 * chỉ lộ cho giáo viên cùng org; null = chưa chốt.
+		 */
+		resultToken: text("result_token"),
+		resultPublishedAt: integer("result_published_at", {
+			mode: "timestamp_ms",
+		}),
+		/** "sent" | "failed" | "skipped" (không có email) — lần chốt gần nhất. */
+		resultEmailStatus: text("result_email_status"),
 		finalBandLevel: text("final_band_level"),
 		finalCourse: text("final_course"),
 		finalDisplayCourse: text("final_display_course"),
@@ -132,6 +179,13 @@ export const placementTestSubmission = sqliteTable(
 		index("placement_test_submission_ip_created_idx").on(
 			table.ipHash,
 			table.submittedAt,
+		),
+		uniqueIndex("placement_test_submission_result_token_uq").on(
+			table.resultToken,
+		),
+		index("placement_test_submission_ai_status_idx").on(
+			table.aiStatus,
+			table.aiStartedAt,
 		),
 	],
 );

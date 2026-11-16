@@ -10,6 +10,18 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-11-16
+
+### Added
+- **AI chấm nháp Writing/Speaking bài kiểm tra đầu vào** (`apps/server`, `apps/web`, `apps/profile`):
+  - Thí sinh nộp bài → server tự tạo job chấm qua OpenAI Responses API (background mode; model `OPENAI_GRADING_MODEL`, mặc định `gpt-6-luna`; Speaking được transcribe bằng `OPENAI_TRANSCRIBE_MODEL`, mặc định `gpt-4o-transcribe`). Kết quả được lưu khi giáo viên mở bài ở `/leads`: rubric thành phần (Writing ct/or/lg, Speaking gv/dm/pr/ic, 0–5), nhận xét và danh sách lỗi (loại, đoạn sai, cách sửa, giải thích tiếng Việt). Tính năng bật khi có secret `OPENAI_API_KEY`, không trừ Credit.
+  - Panel giáo viên highlight lỗi theo màu + kiểu gạch chân, đánh số ① ② liên kết với thẻ sửa; giáo viên sửa/xoá lỗi, bôi đen để thêm lỗi, sửa điểm rồi chốt. AI lỗi/quá hạn → chờ chấm tay + nút "Chấm lại bằng AI".
+  - Chốt lần đầu sinh link kết quả công khai `/kiem-tra-dau-vao/ket-qua/?t=<token>` và gửi email cho học viên (fail-open); học viên chỉ thấy kết quả sau khi giáo viên chốt.
+  - Migration `0071`, `0072` (chỉ thêm cột vào `placement_test_submission`) (#730).
+
+### CI/Infra
+- `deploy-staging.yml` / `deploy.yml` truyền `OPENAI_API_KEY` (secret), `OPENAI_GRADING_MODEL`, `OPENAI_TRANSCRIBE_MODEL` (vars) vào Worker (#730).
+
 ## 2026-11-15
 
 ### Changed

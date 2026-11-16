@@ -2,14 +2,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	buildPlacementZaloText,
 	computePlacementFinal,
+	locatePlacementErrors,
 	PLACEMENT_SPEAKING_RUBRIC,
 	PLACEMENT_TEACHER_FEEDBACK_MAX,
 	PLACEMENT_WRITING_RUBRIC,
+	type PlacementError,
 	type PlacementSpeakingRubric,
 	type PlacementSubmissionDetail,
 	type PlacementWritingRubric,
 } from "@teacher-os/api/placement-test-contracts";
-import { Check, Copy, RefreshCw } from "lucide-react";
+import { Check, Copy, Link2, RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { StatusTag } from "@/components/assignments/status-tag";
@@ -23,7 +25,13 @@ import {
 	leadPlacementSubmissionQueryOptions,
 	leadsAllQueryKey,
 	resolvePlacementSubmissionMediaUrl,
+	retryLeadPlacementAi,
 } from "@/lib/repos/leads";
+import { PlacementAiStatusBanner } from "./placement-ai-status-banner";
+import { PlacementErrorHighlighter } from "./placement-error-highlighter";
+
+/** Chu kỳ poll khi AI đang chấm nháp (#730). */
+export const PLACEMENT_AI_POLL_MS = 4000;
 
 const SCORE_LEVELS = [0, 1, 2, 3, 4, 5] as const;
 
@@ -57,6 +65,93 @@ function formatStudentAnswer(
 		return ["A", "B", "C", "D"][studentAnswer] ?? String(studentAnswer);
 	}
 	return String(studentAnswer);
+}
+
+type GradingState = {
+	writingRubric: PlacementWritingRubric;
+	speakingRubric: PlacementSpeakingRubric;
+	includeSpeaking: boolean;
+	writingErrors: PlacementError[];
+	speakingErrors: PlacementError[];
+};
+
+/**
+ * Trạng thái chấm khởi tạo (#730): đã chốt (`writingErrors !== null`) → lấy
+ * rubric/lỗi đã lưu; chưa chốt mà có nháp AI → điền sẵn từ nháp AI; còn lại
+ * → mặc định chấm tay. Lỗi luôn được định vị lại theo văn bản nguồn.
+ */
+export function initialPlacementGrading(
+	submission: PlacementSubmissionDetail,
+): GradingState {
+	const useAi = submission.writingErrors === null;
+	const aiWriting = useAi ? submission.aiWriting : null;
+	const aiSpeaking = useAi ? submission.aiSpeaking : null;
+	return {
+		writingRubric:
+			aiWriting?.rubric ?? submission.writingRubric ?? DEFAULT_WRITING,
+		speakingRubric:
+			aiSpeaking?.rubric ?? submission.speakingRubric ?? DEFAULT_SPEAKING,
+		includeSpeaking:
+			submission.gradedAt !== null
+				? submission.speakingRubric !== null
+				: submission.speakingStatus === "uploaded",
+		writingErrors: locatePlacementErrors(
+			submission.writingText,
+			aiWriting?.errors ?? submission.writingErrors ?? [],
+		),
+		speakingErrors: locatePlacementErrors(
+			submission.speakingTranscript,
+			aiSpeaking?.errors ?? submission.speakingErrors ?? [],
+		),
+	};
+}
+
+function hydrationKeyOf(s: PlacementSubmissionDetail): string {
+	return `${s.id}:${s.gradedAt ?? "pending"}:${s.aiDraftedAt ?? "no-ai"}`;
+}
+
+/** Bài có nguồn để AI chấm (bài viết hoặc file nói đã upload/transcript). */
+function hasAiSourceOf(s: PlacementSubmissionDetail): boolean {
+	return (
+		s.writingText.trim().length > 0 ||
+		s.speakingStatus === "uploaded" ||
+		s.speakingTranscript.trim().length > 0
+	);
+}
+
+const EMAIL_STATUS_TEXT = {
+	sent: "Đã gửi email kết quả cho học viên.",
+	failed: "Gửi email kết quả lỗi — hãy gửi link qua Zalo.",
+	skipped: "Học viên không có email — gửi link qua Zalo.",
+} as const;
+
+function AiFeedbackNote({
+	feedback,
+	onInsert,
+	testId,
+}: {
+	feedback: string;
+	onInsert: () => void;
+	testId: string;
+}) {
+	return (
+		<div
+			data-testid={testId}
+			className="space-y-1.5 rounded-md border border-border border-dashed bg-muted/30 px-3 py-2 text-xs"
+		>
+			<div className="flex flex-wrap items-center justify-between gap-2">
+				<span className="font-medium text-foreground">
+					Nhận xét của AI (tham khảo)
+				</span>
+				<Button variant="ghost" size="sm" onClick={onInsert}>
+					Chèn vào nhận xét
+				</Button>
+			</div>
+			<p className="whitespace-pre-wrap break-words text-muted-foreground">
+				{feedback}
+			</p>
+		</div>
+	);
 }
 
 function RubricRow({
@@ -105,7 +200,11 @@ function RubricRow({
 
 export function PlacementSubmissionPanel({ leadId }: { leadId: string }) {
 	const queryClient = useQueryClient();
-	const query = useQuery(leadPlacementSubmissionQueryOptions(leadId));
+	const query = useQuery({
+		...leadPlacementSubmissionQueryOptions(leadId),
+		refetchInterval: (q) =>
+			q.state.data?.aiStatus === "processing" ? PLACEMENT_AI_POLL_MS : false,
+	});
 
 	useEffect(() => {
 		if (isHttpError(query.error) && query.error.status === 401) {
@@ -156,20 +255,30 @@ function PlacementSubmissionBody({
 	submission: PlacementSubmissionDetail;
 	onSaved: (updated: PlacementSubmissionDetail) => void;
 }) {
+	const [initial] = useState(() => initialPlacementGrading(submission));
 	const [writingRubric, setWritingRubric] = useState<PlacementWritingRubric>(
-		() => submission.writingRubric ?? DEFAULT_WRITING,
+		initial.writingRubric,
 	);
-	const [includeSpeaking, setIncludeSpeaking] = useState<boolean>(() =>
-		submission.gradedAt !== null
-			? submission.speakingRubric !== null
-			: submission.speakingStatus === "uploaded",
+	const [includeSpeaking, setIncludeSpeaking] = useState<boolean>(
+		initial.includeSpeaking,
 	);
 	const [speakingRubric, setSpeakingRubric] = useState<PlacementSpeakingRubric>(
-		() => submission.speakingRubric ?? DEFAULT_SPEAKING,
+		initial.speakingRubric,
+	);
+	const [writingErrors, setWritingErrors] = useState<PlacementError[]>(
+		initial.writingErrors,
+	);
+	const [speakingErrors, setSpeakingErrors] = useState<PlacementError[]>(
+		initial.speakingErrors,
 	);
 	const [teacherFeedback, setTeacherFeedback] = useState(
 		() => submission.teacherFeedback,
 	);
+	// Giáo viên đã sửa form (rubric/lỗi/nhận xét) kể từ lần hydrate gần nhất.
+	const [dirty, setDirty] = useState(false);
+	// Nháp AI mới về khi form đang sửa → chờ giáo viên bấm "Áp dụng nháp AI".
+	const [draftPending, setDraftPending] = useState(false);
+	const touch = () => setDirty(true);
 
 	// Media playback qua Blob URL với credentials: "include" (hỗ trợ cross-origin web<->api dev/prod)
 	const [mediaBlobUrl, setMediaBlobUrl] = useState<string | null>(null);
@@ -177,23 +286,63 @@ function PlacementSubmissionBody({
 	const [mediaError, setMediaError] = useState<string | null>(null);
 	const [mediaRetryTick, setMediaRetryTick] = useState(0);
 	const [copiedZalo, setCopiedZalo] = useState(false);
+	const [copiedLink, setCopiedLink] = useState(false);
 
-	const hydratedKeyRef = useRef(
-		`${submission.id}:${submission.gradedAt ?? "pending"}`,
-	);
+	// Khởi tạo lại form khi đổi bài, khi vừa chốt, hoặc khi nháp AI mới về.
+	// Nháp AI mới về lúc form đang sửa → KHÔNG ghi đè, chỉ mời áp dụng.
+	const hydratedRef = useRef({
+		key: hydrationKeyOf(submission),
+		id: submission.id,
+		gradedAt: submission.gradedAt,
+	});
 	useEffect(() => {
-		const hydrationKey = `${submission.id}:${submission.gradedAt ?? "pending"}`;
-		if (hydratedKeyRef.current === hydrationKey) return;
-		hydratedKeyRef.current = hydrationKey;
-		setWritingRubric(submission.writingRubric ?? DEFAULT_WRITING);
-		setIncludeSpeaking(
-			submission.gradedAt !== null
-				? submission.speakingRubric !== null
-				: submission.speakingStatus === "uploaded",
-		);
-		setSpeakingRubric(submission.speakingRubric ?? DEFAULT_SPEAKING);
+		const hydrationKey = hydrationKeyOf(submission);
+		const prev = hydratedRef.current;
+		if (prev.key === hydrationKey) return;
+		hydratedRef.current = {
+			key: hydrationKey,
+			id: submission.id,
+			gradedAt: submission.gradedAt,
+		};
+		const onlyNewAiDraft =
+			prev.id === submission.id && prev.gradedAt === submission.gradedAt;
+		if (onlyNewAiDraft && dirty) {
+			setDraftPending(true);
+			return;
+		}
+		setDirty(false);
+		setDraftPending(false);
+		const next = initialPlacementGrading(submission);
+		setWritingRubric(next.writingRubric);
+		setIncludeSpeaking(next.includeSpeaking);
+		setSpeakingRubric(next.speakingRubric);
+		setWritingErrors(next.writingErrors);
+		setSpeakingErrors(next.speakingErrors);
 		setTeacherFeedback(submission.teacherFeedback);
-	}, [submission]);
+	}, [submission, dirty]);
+
+	/** Thay toàn bộ rubric + lỗi bằng nháp AI, giữ nhận xét giáo viên. */
+	const applyAiDraft = () => {
+		if (submission.aiWriting) {
+			setWritingRubric(submission.aiWriting.rubric);
+			setWritingErrors(
+				locatePlacementErrors(
+					submission.writingText,
+					submission.aiWriting.errors,
+				),
+			);
+		}
+		if (submission.aiSpeaking) {
+			setSpeakingRubric(submission.aiSpeaking.rubric);
+			setSpeakingErrors(
+				locatePlacementErrors(
+					submission.speakingTranscript,
+					submission.aiSpeaking.errors,
+				),
+			);
+		}
+		setDraftPending(false);
+	};
 
 	useEffect(() => {
 		const resolved = resolvePlacementSubmissionMediaUrl(
@@ -252,6 +401,8 @@ function PlacementSubmissionBody({
 				writingRubric,
 				speakingRubric: activeSpeakingRubric,
 				teacherFeedback: teacherFeedback.trim(),
+				writingErrors,
+				speakingErrors: includeSpeaking ? speakingErrors : [],
 			}),
 		onSuccess: (updated) => {
 			toast.success("Đã lưu kết quả chấm bài kiểm tra đầu vào.");
@@ -265,6 +416,37 @@ function PlacementSubmissionBody({
 			toast.error("Không thể lưu điểm chấm. Vui lòng thử lại.");
 		},
 	});
+
+	const retryMutation = useMutation({
+		mutationFn: () => retryLeadPlacementAi(submission.leadId),
+		onSuccess: (updated) => {
+			toast.success("Đã gửi yêu cầu AI chấm.");
+			onSaved(updated);
+		},
+		onError: (err) => {
+			if (isHttpError(err) && err.status === 401) {
+				reauth();
+				return;
+			}
+			if (isHttpError(err) && err.status === 503) {
+				toast.error("AI chấm điểm chưa được bật — vui lòng chấm tay.");
+				return;
+			}
+			toast.error("Không thể yêu cầu AI chấm. Vui lòng thử lại.");
+		},
+	});
+
+	const insertFeedback = (text: string) => {
+		const addition = text.trim();
+		if (!addition) return;
+		touch();
+		setTeacherFeedback((prev) =>
+			(prev.trim() ? `${prev.trimEnd()}\n${addition}` : addition).slice(
+				0,
+				PLACEMENT_TEACHER_FEEDBACK_MAX,
+			),
+		);
+	};
 
 	const liveZaloText = buildPlacementZaloText({
 		studentName: submission.studentName,
@@ -290,7 +472,23 @@ function PlacementSubmissionBody({
 		}
 	};
 
+	const handleCopyLink = async () => {
+		if (!submission.resultUrl) return;
+		try {
+			await navigator.clipboard.writeText(submission.resultUrl);
+			setCopiedLink(true);
+			toast.success("Đã sao chép link kết quả.");
+			setTimeout(() => setCopiedLink(false), 2000);
+		} catch {
+			toast.error("Trình duyệt không cho phép sao chép tự động.");
+		}
+	};
+
 	const { objective } = submission;
+	const hasSpeakingTranscriptArea =
+		submission.speakingStatus === "uploaded" ||
+		submission.speakingTranscript.trim().length > 0 ||
+		speakingErrors.length > 0;
 	const isVideo =
 		submission.speakingMediaMime?.toLowerCase().startsWith("video/") ?? false;
 
@@ -312,6 +510,15 @@ function PlacementSubmissionBody({
 					{submission.status === "graded" ? "Đã chấm" : "Chờ chấm W&S"}
 				</StatusTag>
 			</div>
+
+			<PlacementAiStatusBanner
+				submission={submission}
+				retrying={retryMutation.isPending}
+				onRetry={() => retryMutation.mutate()}
+				locked={submission.status === "graded"}
+				hasAiSource={hasAiSourceOf(submission)}
+				onApplyDraft={draftPending ? applyAiDraft : undefined}
+			/>
 
 			{/* 3 điểm tự động */}
 			<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -422,9 +629,25 @@ function PlacementSubmissionBody({
 						{submission.writingWordCount} từ
 					</span>
 				</div>
-				<div className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded border border-border bg-muted/30 p-2.5 text-foreground text-sm">
-					{submission.writingText.trim() || "(Học viên không nhập bài viết)"}
-				</div>
+				<PlacementErrorHighlighter
+					skill="writing"
+					text={submission.writingText}
+					emptyText="(Học viên không nhập bài viết)"
+					errors={writingErrors}
+					onChange={(next) => {
+						touch();
+						setWritingErrors(next);
+					}}
+				/>
+				{submission.aiWriting?.feedback.trim() && (
+					<AiFeedbackNote
+						testId="writing-ai-feedback"
+						feedback={submission.aiWriting.feedback}
+						onInsert={() =>
+							insertFeedback(submission.aiWriting?.feedback ?? "")
+						}
+					/>
+				)}
 				<div className="space-y-1.5">
 					{PLACEMENT_WRITING_RUBRIC.map((item) => (
 						<RubricRow
@@ -433,9 +656,10 @@ function PlacementSubmissionBody({
 							desc={item.desc}
 							value={writingRubric[item.key]}
 							testIdPrefix={`writing-${item.key}`}
-							onChange={(next) =>
-								setWritingRubric((prev) => ({ ...prev, [item.key]: next }))
-							}
+							onChange={(next) => {
+								touch();
+								setWritingRubric((prev) => ({ ...prev, [item.key]: next }));
+							}}
 						/>
 					))}
 				</div>
@@ -457,7 +681,10 @@ function PlacementSubmissionBody({
 						<input
 							type="checkbox"
 							checked={includeSpeaking}
-							onChange={(e) => setIncludeSpeaking(e.target.checked)}
+							onChange={(e) => {
+								touch();
+								setIncludeSpeaking(e.target.checked);
+							}}
 							data-testid="toggle-speaking-grading"
 							className="size-3.5 accent-primary"
 						/>
@@ -526,6 +753,33 @@ function PlacementSubmissionBody({
 					</p>
 				)}
 
+				{includeSpeaking && hasSpeakingTranscriptArea && (
+					<div className="space-y-2">
+						<div className="font-medium text-foreground text-xs">
+							Transcript bài nói (AI chuyển từ file ghi âm)
+						</div>
+						<PlacementErrorHighlighter
+							skill="speaking"
+							text={submission.speakingTranscript}
+							emptyText="Chưa có transcript — AI chưa chuyển bài nói thành văn bản."
+							errors={speakingErrors}
+							onChange={(next) => {
+								touch();
+								setSpeakingErrors(next);
+							}}
+						/>
+						{submission.aiSpeaking?.feedback.trim() && (
+							<AiFeedbackNote
+								testId="speaking-ai-feedback"
+								feedback={submission.aiSpeaking.feedback}
+								onInsert={() =>
+									insertFeedback(submission.aiSpeaking?.feedback ?? "")
+								}
+							/>
+						)}
+					</div>
+				)}
+
 				{includeSpeaking && (
 					<div className="space-y-1.5">
 						{PLACEMENT_SPEAKING_RUBRIC.map((item) => (
@@ -535,9 +789,10 @@ function PlacementSubmissionBody({
 								desc={item.desc}
 								value={speakingRubric[item.key]}
 								testIdPrefix={`speaking-${item.key}`}
-								onChange={(next) =>
-									setSpeakingRubric((prev) => ({ ...prev, [item.key]: next }))
-								}
+								onChange={(next) => {
+									touch();
+									setSpeakingRubric((prev) => ({ ...prev, [item.key]: next }));
+								}}
 							/>
 						))}
 					</div>
@@ -562,6 +817,16 @@ function PlacementSubmissionBody({
 						{previewFinal.band.displayCourse || previewFinal.band.courseLabel}
 					</span>
 				</div>
+				<p
+					data-testid="placement-score-summary"
+					className="text-muted-foreground text-xs tabular-nums"
+				>
+					Writing {previewFinal.writingScore ?? 0}/15 · Speaking{" "}
+					{previewFinal.speakingScore !== null
+						? `${previewFinal.speakingScore}/20`
+						: "—"}{" "}
+					· Tổng {previewFinal.averagePct}% · CEFR {previewFinal.band.cefr}
+				</p>
 				{previewFinal.note && (
 					<p
 						data-testid="speaking-floor-note"
@@ -585,7 +850,10 @@ function PlacementSubmissionBody({
 					maxLength={PLACEMENT_TEACHER_FEEDBACK_MAX}
 					aria-label="Nhận xét bài kiểm tra đầu vào"
 					value={teacherFeedback}
-					onChange={(e) => setTeacherFeedback(e.target.value)}
+					onChange={(e) => {
+						touch();
+						setTeacherFeedback(e.target.value);
+					}}
 					placeholder="Ghi chú điểm mạnh, lỗi cần khắc phục (sẽ kèm vào tin nhắn Zalo)..."
 					className={`${inputCls} mt-1 w-full resize-y py-2`}
 				/>
@@ -614,10 +882,58 @@ function PlacementSubmissionBody({
 					data-testid="save-placement-grade-btn"
 				>
 					{gradeMutation.isPending
-						? "Đang lưu điểm..."
-						: "Lưu điểm & Cập nhật kết quả"}
+						? "Đang chốt kết quả..."
+						: submission.resultUrl
+							? "Cập nhật kết quả đã chốt"
+							: "Chốt kết quả & gửi học viên"}
 				</Button>
 			</div>
+
+			{submission.resultUrl && (
+				<div
+					data-testid="placement-result-link"
+					className="space-y-2 rounded-md border border-border bg-background p-3 text-xs"
+				>
+					<div className="font-medium text-foreground">
+						Link kết quả cho học viên
+					</div>
+					<div className="flex flex-wrap items-center gap-2">
+						<a
+							href={submission.resultUrl}
+							target="_blank"
+							rel="noreferrer"
+							className="min-w-0 flex-1 break-all text-foreground underline underline-offset-4"
+						>
+							{submission.resultUrl}
+						</a>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => void handleCopyLink()}
+							data-testid="copy-result-link-btn"
+						>
+							{copiedLink ? (
+								<Check className="size-3.5" />
+							) : (
+								<Link2 className="size-3.5" />
+							)}
+							{copiedLink ? "Đã sao chép link" : "Copy link kết quả"}
+						</Button>
+					</div>
+					{submission.resultEmailStatus && (
+						<p
+							data-testid="placement-result-email-status"
+							className={
+								submission.resultEmailStatus === "failed"
+									? "text-destructive"
+									: "text-muted-foreground"
+							}
+						>
+							{EMAIL_STATUS_TEXT[submission.resultEmailStatus]}
+						</p>
+					)}
+				</div>
+			)}
 		</div>
 	);
 }

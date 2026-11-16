@@ -70,6 +70,10 @@ jobs:
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          # #730: chấm nháp AI bài test đầu vào (rỗng = tắt; model rỗng = mặc định).
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_GRADING_MODEL: ${{ vars.OPENAI_GRADING_MODEL }}
+          OPENAI_TRANSCRIBE_MODEL: ${{ vars.OPENAI_TRANSCRIBE_MODEL }}
           # Tên secret Actions là GH_WEBHOOK_SECRET (Actions cấm tiền tố
           # GITHUB_); tên env/binding Worker vẫn là GITHUB_WEBHOOK_SECRET.
           GITHUB_WEBHOOK_SECRET: ${{ secrets.GH_WEBHOOK_SECRET }}
