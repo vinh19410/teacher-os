@@ -515,6 +515,12 @@ test("built-in Course Foun/GT1 IELTS Foundation study pack: filter, detail page 
 	// Test "Làm thử" interactive quiz simulation tab + URL ?tab=sim
 	await page.getByRole("tab", { name: "Làm thử" }).click();
 	await expect(page).toHaveURL(/tab=sim/);
+	const simAudio = page.getByTestId("quiz-audio-player");
+	await expect(simAudio).toBeVisible({ timeout: 10_000 });
+	await expect(simAudio).toHaveAttribute("aria-label", "Bài nghe");
+	await expect(simAudio).toHaveAttribute("src", /^blob:/);
+	await expect(page.getByText("education.mp3")).toHaveCount(0);
+	await expect(page.getByText(/🔊/)).toHaveCount(0);
 	await page
 		.locator('[data-question="0"] label', { hasText: "Success and failure" })
 		.click();
@@ -616,6 +622,57 @@ test("built-in Course Foun/GT1 IELTS Foundation study pack: filter, detail page 
 		path: "../../plans/reports/702-student-listening-take-1440x900.png",
 		fullPage: true,
 	});
+	await expect(takeAudio).toHaveAttribute("aria-label", "Bài nghe");
+	await expect(studentPage.getByText("education.mp3")).toHaveCount(0);
+	await expect(studentPage.getByText(/🔊/)).toHaveCount(0);
+
+	const potIssue = process.env.CAPTURE_POT_ISSUE?.trim();
+	const potViewports = [
+		{ key: "desktop-1440x900", width: 1440, height: 900 },
+		{ key: "tablet-768x1024", width: 768, height: 1024 },
+		{ key: "mobile-375x812", width: 375, height: 812 },
+	] as const;
+	try {
+		for (const vp of potViewports) {
+			await studentPage.setViewportSize({
+				width: vp.width,
+				height: vp.height,
+			});
+			await expect(takeAudio).toBeVisible();
+			for (const theme of ["light", "dark"] as const) {
+				await studentPage.evaluate((isDark) => {
+					document.documentElement.classList.toggle("dark", isDark);
+				}, theme === "dark");
+				expect(
+					await studentPage.evaluate(
+						() => document.documentElement.scrollWidth > window.innerWidth,
+					),
+					`student listening take overflow (${theme}) at ${vp.width}x${vp.height}`,
+				).toBe(false);
+				if (potIssue) {
+					await studentPage.screenshot({
+						path: `../../plans/reports/${potIssue}-quiz-audio-take-${vp.key}-${theme}.png`,
+						fullPage: true,
+					});
+				}
+			}
+		}
+		await studentPage.evaluate(() =>
+			document.documentElement.classList.remove("dark"),
+		);
+		await studentPage.setViewportSize({ width: 320, height: 568 });
+		expect(
+			await studentPage.evaluate(
+				() => document.documentElement.scrollWidth > window.innerWidth,
+			),
+			"student listening take horizontal overflow at 320x568",
+		).toBe(false);
+	} finally {
+		await studentPage.evaluate(() =>
+			document.documentElement.classList.remove("dark"),
+		);
+		await studentPage.setViewportSize({ width: 1440, height: 900 });
+	}
 
 	// Answer Q1 correctly, submit, then open detail review and verify transcript reveals
 	await studentPage
@@ -644,6 +701,9 @@ test("built-in Course Foun/GT1 IELTS Foundation study pack: filter, detail page 
 	const reviewAudio = studentPage.getByTestId("quiz-audio-player");
 	await expect(reviewAudio).toBeVisible();
 	await expect(reviewAudio).toHaveAttribute("src", /^blob:/);
+	await expect(reviewAudio).toHaveAttribute("aria-label", "Bài nghe");
+	await expect(studentPage.getByText("education.mp3")).toHaveCount(0);
+	await expect(studentPage.getByText(/🔊/)).toHaveCount(0);
 	expect(
 		await studentPage.evaluate(
 			() => document.documentElement.scrollWidth > window.innerWidth,
@@ -653,6 +713,12 @@ test("built-in Course Foun/GT1 IELTS Foundation study pack: filter, detail page 
 		path: "../../plans/reports/702-student-listening-review-1440x900.png",
 		fullPage: true,
 	});
+	if (potIssue) {
+		await studentPage.screenshot({
+			path: `../../plans/reports/${potIssue}-quiz-audio-review-desktop-1440x900-light.png`,
+			fullPage: true,
+		});
+	}
 
 	await studentContext.close();
 });

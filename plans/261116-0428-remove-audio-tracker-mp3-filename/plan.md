@@ -1,7 +1,7 @@
 ---
 title: "feat(ui): remove audio filename label below listening audio player"
 description: "Ẩn dòng hiển thị tên file âm thanh (🔊 <audioName>) bên dưới trình phát <audio controls> trong QuizPaper khi có audioSrc, chống nháy fallback khi hasAudio=true và bổ sung aria-label=\"Bài nghe\"."
-status: in-progress
+status: completed
 priority: P1
 effort: "1h"
 issue: 732

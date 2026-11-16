@@ -63,9 +63,9 @@ Cập nhật kiểm chứng E2E trong `apps/e2e/specs/study-pack.spec.ts` (teach
 - **Verify:** `gh pr view <PR_NUM> --json state,mergeCommit` báo `"state":"MERGED"` và `gh run list --branch develop --commit <MERGE_COMMIT_SHA>` báo tất cả run liên quan đạt `success`.
 
 ## Todo
-- [ ] Task 2.1: Cập nhật `apps/e2e/specs/study-pack.spec.ts`, chạy E2E lẻ `CAPTURE_POT_ISSUE=732`, khôi phục 17 ảnh lịch sử và kiểm tra 7 ảnh POT mới.
-- [ ] Task 2.2: Chạy `pnpm exec biome check .`, `pnpm check-types`, và `pnpm test` pass.
-- [ ] Task 2.3: Thực hiện review cô lập + Kongming, changelog/journal, mở PR `beta`, review/merge vào `develop`, chờ CI + Deploy Staging xanh, đăng Kongming & POT lên Issue `#732`.
+- [x] Task 2.1: Cập nhật `apps/e2e/specs/study-pack.spec.ts`, chạy E2E lẻ `CAPTURE_POT_ISSUE=732`, khôi phục 17 ảnh lịch sử và kiểm tra 7 ảnh POT mới.
+- [x] Task 2.2: Chạy `pnpm exec biome check .`, `pnpm check-types`, và `pnpm test` pass.
+- [x] Task 2.3: Thực hiện review cô lập + Kongming, changelog/journal, mở PR `beta`, review/merge vào `develop`, chờ CI + Deploy Staging xanh, đăng Kongming & POT lên Issue `#732`.
 
 ## Failure Protocol
 If any Verify step does not meet its stated pass condition, STOP this phase.

@@ -80,9 +80,9 @@ Viết unit test TDD chứng minh trạng thái RED trước, sau đó gỡ dòn
 - **Verify:** Cả 3 lệnh đều thoát với exit code `0` (`0 failed`).
 
 ## Todo
-- [ ] Task 1.1: Bổ sung TDD unit tests trong `apps/student/test/quiz-paper.test.tsx` và xác minh pha RED.
-- [ ] Task 1.2: Sửa `packages/ui/src/components/quiz/quiz-paper.tsx` và xác minh pha GREEN.
-- [ ] Task 1.3: Cập nhật `study-pack-item-viewer.test.tsx` và chạy unit tests `@teacher-os/ui`, `admin`, `web` simulation đều pass.
+- [x] Task 1.1: Bổ sung TDD unit tests trong `apps/student/test/quiz-paper.test.tsx` và xác minh pha RED.
+- [x] Task 1.2: Sửa `packages/ui/src/components/quiz/quiz-paper.tsx` và xác minh pha GREEN.
+- [x] Task 1.3: Cập nhật `study-pack-item-viewer.test.tsx` và chạy unit tests `@teacher-os/ui`, `admin`, `web` simulation đều pass.
 
 ## Failure Protocol
 If any Verify step does not meet its stated pass condition, STOP this phase.
