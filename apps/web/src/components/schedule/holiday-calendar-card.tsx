@@ -49,11 +49,13 @@ export function HolidayCalendarCard({
 			<div
 				data-testid="holiday-calendar-card"
 				data-holiday-id={holiday?.id}
-				className="flex items-start gap-3 rounded-lg border border-warn/50 bg-warn-soft px-3 py-2"
+				className="flex w-full min-w-0 items-start gap-3 rounded-lg border border-warn/50 bg-warn-soft px-3 py-2"
 			>
 				<Palmtree aria-hidden className="mt-0.5 size-4 shrink-0 text-warn" />
 				<div className="min-w-0 flex-1">
-					<div className="font-medium text-sm text-warn">{resolvedName}</div>
+					<div className="break-words font-medium text-sm text-warn">
+						{resolvedName}
+					</div>
 					{multiDay && resolvedFrom && resolvedTo && (
 						<div className="mt-px text-[11px] text-warn/80 tabular-nums">
 							{formatDayMonth(resolvedFrom)} – {formatDayMonth(resolvedTo)}
@@ -78,7 +80,7 @@ export function HolidayCalendarCard({
 		<div
 			data-testid="holiday-calendar-card"
 			data-holiday-id={holiday?.id}
-			className="rounded border border-warn/50 bg-warn-soft px-1.5 py-1 text-[11px] text-warn"
+			className="w-full min-w-0 rounded border border-warn/50 bg-warn-soft px-1.5 py-1 text-[11px] text-warn"
 		>
 			<div className="flex items-center gap-1">
 				<Palmtree aria-hidden className="size-3 shrink-0" />

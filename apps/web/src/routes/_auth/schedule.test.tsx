@@ -771,6 +771,11 @@ describe("paused classes on /schedule (#694)", () => {
 		renderWithKernel(<ScheduleRoute />);
 		expect(await screen.findByTestId("schedule-empty-state")).toBeTruthy();
 		expect(screen.queryByText("Lớp Tạm Dừng")).toBeNull();
+		expect(document.querySelector(".week-cal")).toBeTruthy();
+		expect(document.querySelectorAll(".day-col")).toHaveLength(7);
+		expect(
+			screen.queryByText("Không có buổi học nào trong tuần này."),
+		).toBeNull();
 	});
 
 	it("keeps dated historical attendance visible when all classes are paused", async () => {
@@ -852,5 +857,154 @@ describe("paused classes on /schedule (#694)", () => {
 		expect(
 			within(dialog).queryByRole("button", { name: "Điểm danh" }),
 		).toBeNull();
+	});
+});
+
+describe("schedule empty calendar and full-width cards", () => {
+	it("renders month grid alongside empty banner when 0 classes exist", async () => {
+		server = startKernelServer(
+			snapshotFixture({ classes: [], lessons: [], events: [], holidays: [] }),
+		);
+		routerState.search = { view: "month", date: "2026-10-12" };
+		renderWithKernel(<ScheduleRoute />);
+		expect(await screen.findByTestId("schedule-empty-state")).toBeTruthy();
+		const grid = await screen.findByTestId("schedule-month-grid");
+		expect(grid.querySelectorAll(".month-cell")).toHaveLength(42);
+	});
+
+	it("renders day agenda alongside empty banner without duplicate empty card when 0 classes exist", async () => {
+		server = startKernelServer(
+			snapshotFixture({ classes: [], lessons: [], events: [], holidays: [] }),
+		);
+		routerState.search = { view: "day", date: "2026-10-12" };
+		renderWithKernel(<ScheduleRoute />);
+		expect(await screen.findByTestId("schedule-empty-state")).toBeTruthy();
+		expect(await screen.findByTestId("schedule-day-agenda")).toBeTruthy();
+		expect(
+			screen.queryByText("Không có ca học hay sự kiện nào trong ngày này."),
+		).toBeNull();
+	});
+
+	it("renders session and projected cards full width across week columns", async () => {
+		server = startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-real",
+						name: "IELTS Writing",
+						schedule: '{"days":[1],"start":"19:00","end":"20:30"}',
+						startDate: "2026-10-12",
+					}),
+					classRow({
+						id: "cl-proj",
+						name: "Speaking Dự Kiến",
+						schedule: '{"days":[2],"start":"18:00","end":"19:30"}',
+						startDate: "2026-10-12",
+						sessionsTotal: 4,
+					}),
+				],
+				students: [studentRow({ id: "st-1", name: "Học viên Một" })],
+				enrollments: [
+					enrollmentRow({ id: "en-1", classId: "cl-real", studentId: "st-1" }),
+				],
+				lessons: [
+					lessonRow({
+						id: "les-1",
+						classId: "cl-real",
+						enrollmentId: "en-1",
+						day: 1,
+						date: "2026-10-12",
+					}),
+				],
+			}),
+		);
+		renderWithKernel(<ScheduleRoute />);
+		const realButton = await screen.findByRole("button", {
+			name: /IELTS Writing/,
+		});
+		const projCard = await screen.findByText("Speaking Dự Kiến");
+		const projBlock = projCard.closest(".lesson-block");
+		expect(realButton.className).toContain("w-full");
+		expect(realButton.className).toContain("min-w-0");
+		expect(projBlock?.className).toContain("w-full");
+		expect(projBlock?.className).toContain("min-w-0");
+		const dayCol = realButton.closest(".day-col");
+		expect(dayCol?.className).toContain("min-w-0");
+		expect(realButton.parentElement?.className).toContain("flex-col");
+	});
+
+	it("hides empty banner and preserves week notice when only holidays exist", async () => {
+		server = startKernelServer(
+			snapshotFixture({
+				classes: [],
+				lessons: [],
+				events: [],
+				holidays: [
+					{
+						id: "hol-only",
+						name: "Nghỉ lễ toàn trung tâm",
+						fromDate: "2026-10-12",
+						toDate: "2026-10-12",
+						scope: "org",
+						mode: "shift",
+					},
+				],
+			}),
+		);
+		renderWithKernel(<ScheduleRoute />);
+		const holidayCard = await screen.findByTestId("holiday-calendar-card");
+		expect(holidayCard.className).toContain("w-full");
+		expect(holidayCard.className).toContain("min-w-0");
+		expect(screen.queryByTestId("schedule-empty-state")).toBeNull();
+		expect(
+			screen.getByText("Không có buổi học nào trong tuần này."),
+		).toBeTruthy();
+	});
+
+	it("renders day view projected and real blocks full width", async () => {
+		server = startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({
+						id: "cl-real",
+						name: "IELTS Writing",
+						schedule: '{"days":[1],"start":"19:00","end":"20:30"}',
+						startDate: "2026-10-12",
+					}),
+					classRow({
+						id: "cl-proj",
+						name: "Speaking Dự Kiến",
+						schedule: '{"days":[0],"start":"18:00","end":"19:00"}',
+						startDate: "2026-10-12",
+						sessionsTotal: 4,
+					}),
+				],
+				students: [studentRow({ id: "st-1", name: "Học viên Một" })],
+				enrollments: [
+					enrollmentRow({ id: "en-1", classId: "cl-real", studentId: "st-1" }),
+				],
+				lessons: [
+					lessonRow({
+						id: "les-1",
+						classId: "cl-real",
+						enrollmentId: "en-1",
+						day: 1,
+						date: "2026-10-12",
+					}),
+				],
+			}),
+		);
+		routerState.search = { view: "day", date: "2026-10-12" };
+		renderWithKernel(<ScheduleRoute />);
+		const realButton = await screen.findByRole("button", {
+			name: /IELTS Writing/,
+		});
+		const projBlock = (await screen.findByText("Speaking Dự Kiến")).closest(
+			".lesson-block",
+		);
+		expect(realButton.className).toContain("w-full");
+		expect(realButton.className).toContain("min-w-0");
+		expect(projBlock?.className).toContain("w-full");
+		expect(projBlock?.className).toContain("min-w-0");
 	});
 });
