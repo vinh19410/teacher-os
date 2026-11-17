@@ -7,6 +7,7 @@ import type {
 import {
 	BookOpenCheck,
 	CalendarDays,
+	ClipboardCheck,
 	ClipboardList,
 	History,
 	LayoutDashboard,
@@ -57,6 +58,12 @@ export const STUDENT_NAV: NavGroup[] = [
 		group: "Học tập",
 		items: [
 			{ key: "overview", label: "Tổng quan", icon: LayoutDashboard, href: "/" },
+			{
+				key: "placement-test",
+				label: "Kiểm tra đầu vào",
+				icon: ClipboardCheck,
+				href: "/placement-test",
+			},
 			{ key: "classes", label: "Lớp học", icon: School, href: "/classes" },
 			{
 				key: "schedule",
@@ -101,6 +108,7 @@ export function StudentShellLink({
 }
 
 export const ACTIVE_KEY_BY_PREFIX: Record<string, string> = {
+	"/placement-test": "placement-test",
 	"/classes": "classes",
 	"/schedule": "schedule",
 	"/assignments": "assignments",
@@ -122,6 +130,7 @@ export function useStudentActiveKey(): string {
 /** Nhãn crumb theo activeKey ("tổ chức › mục"). */
 export const STUDENT_PAGE_LABEL: Record<string, string> = {
 	overview: "Tổng quan",
+	"placement-test": "Kiểm tra đầu vào",
 	classes: "Lớp học",
 	schedule: "Lịch học",
 	assignments: "Bài tập",
