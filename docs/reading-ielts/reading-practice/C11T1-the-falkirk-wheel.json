@@ -1,0 +1,166 @@
+{
+	"id": "3e3e05cd-edb1-4324-8c20-12949bda8490",
+	"url": "https://stepielts.com/student/reading/3e3e05cd-edb1-4324-8c20-12949bda8490?mode=practice",
+	"title": "The Falkirk Wheel",
+	"source": "C11T1",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "14-26",
+	"passage": {
+		"title": "The Falkirk Wheel",
+		"subtitle": "A unique engineering achievement",
+		"paragraphs": [
+			"The Falkirk Wheel in Scotland is the world’s first and only rotating boat lift. Opened in 2002, it is central to the ambitious £84.5m Millennium Link project to restore navigability across Scotland by reconnecting the historic waterways of the Forth & Clyde and Union Canals.",
+			"The major challenge of the project lays in the fact that the Forth & Clyde Canal is situated 35 metres below the level of the Union Canal. Historically, the two canals had been joined near the town of Falkirk by a sequence of 11 locks - enclosed sections of canal in which the water level could be raised or lowered - that stepped down across a distance of 1.5 km. This had been dismantled in 1933, thereby breaking the link.",
+			"When the project was launched in 1994, the British Waterways authority was keen to create a dramatic twenty-first-century landmark which would not only be a fitting commemoration of the Millennium, but also a lasting symbol of the economic regeneration of the region.",
+			"Numerous ideas were submitted for the project, including concepts ranging from rolling eggs to tilting tanks, from giant seesaws to overhead monorails. The eventual winner was a plan for the huge rotating steel boat lift which was to become The Falkirk Wheel. The unique shape of the structure is claimed to have been inspired by various sources, both manmade and natural, most notably a Celtic double-headed axe, but also the vast turning propeller of a ship, the ribcage of a whale or the spine of a fish.",
+			"The various parts of The Falkirk Wheel were all constructed and assembled, like one giant toy building set, at Butterley Engineering’s Steelworks in Derbyshire, some 400 km from Falkirk.A team there carefully assembled the 1,200 tonnes of steel, painstakingly fitting the pieces together to an accuracy of just 10 mm to ensure a perfect final fit. In the summer of 2001, the structure was then dismantled and transported on 35 lorries to Falkirk, before all being bolted back together again on the ground, and finally lifted into position in five large sections by crane. The Wheel would need to withstand immense and constantly changing stresses as it rotated, so to make the structure more robust, the steel sections were bolted rather than welded together. Over 45,000 bolt holes were matched with their bolts, and each bolt was hand-tightened.",
+			"The Wheel consists of two sets of opposing axe-shaped arms, attached about 25 metres apart to a fixed central spine. Two diametrically opposed water-filled ’gondolas’, each with a capacity of 360,000 litres, are fitted between the ends of the arms. These gondolas always weigh the same, whether or not they are carrying boats. This is because, according to Archimedes’ principle of displacement, floating objects displace their own weight in water. So when a boat enters a gondola, the amount of water leaving the gondola weighs exactly the same as the boat. This keeps the Wheel balanced and so, despite its enormous mass, it rotates through 180° in five and a half minutes while using very little power. It takes just 1.5 kilowatt-hours (5.4 MJ) of energy to rotate the Wheel - roughly the same as boiling eight small domestic kettles of water.",
+			"Boats needing to be lifted up enter the canal basin at the level of the Forth & Clyde Canal and then enter the lower gondola of the Wheel. Two hydraulic steel gates are raised, so as to seal the gondola off from the water in the canal basin. The water between the gates is then pumped out. A hydraulic clamp, which prevents the arms of the Wheel moving while the gondola is docked, is removed, allowing the Wheel to turn.In the central machine room an array of ten hydraulic motors then begins to rotate the central axle.The axle connects to the outer arms of the Wheel, which begin to rotate at a speed of 1/8 of a revolution per minute. As the wheel rotates, the gondolas are kept in the upright position by a simple gearing system. Two eight-metre-wide cogs orbit a fixed inner cog of the same width, connected by two smaller cogs travelling in the opposite direction to the outer cogs - so ensuring that the gondolas always remain level.When the gondola reaches the top, the boat passes straight onto the aqueduct situated 24 metres above the canal basin.",
+			"The remaining 11 metres of lift needed to reach the Union Canal is achieved by means of a pair of locks. The Wheel could not be constructed to elevate boats over the full 35-metre difference between the two canals, owing to the presence of the historically important Antonine Wall, which was built by the Romans in the second century AD. Boats travel under this wall via a tunnel, then through the locks, and finally on to the Union Canal."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "14-19",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 2?\nIn boxes 14-19 on your answer sheet, write\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 14,
+					"text": "The Falkirk Wheel has linked the Forth & Clyde Canal with the Union Canal for the first time in their history.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nFalkirk Wheel đã nối Kênh Forth & Clyde với Kênh Union lần đầu tiên trong lịch sử của họ.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nThe Falkirk Wheel ~ tên riêng giữ nguyên\nthe Forth & Clyde and Union Canals ~ tên riêng giữ nguyên\nhad been joined ~ has linked\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Về mặt lịch sử, hai con kênh này được nối với nhau gần thị trấn Falkirk bằng chuỗi 11 cửa cống. Cái này đã bị tháo dỡ vào năm 1933, do đó đã phá vỡ liên kết\".\n=> Điều này trái ngược với thông tin trong câu hỏi là \"Falkirk Wheel đã nối Kênh Forth & Clyde với Kênh Union lần đầu tiên trong lịch sử của họ\"(The Falkirk Wheel has linked the Forth & Clyde Canal with the Union Canal for the first time in their history).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Historically, the two canals had been joined near the town of Falkirk by a sequence of 11 locks - enclosed sections of canal in which the water level could be raised or lowered - that stepped down across a distance of 1.5 km.",
+						"This had been dismantled in 1933, thereby breaking the link."
+					]
+				},
+				{
+					"number": 15,
+					"text": "There was some opposition to the design of the Falkirk Wheel at first.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nLúc đầu có một số ý kiến phản đối thiết kế của Falkirk Wheel.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nthe project ~ the design of the Falkirk Wheel\nWhen the project was launched in 1994 ~ at first\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"Nhiều ý tưởng đã được đưa ra cho dự án, bao gồm các ý tưởng từ lăn trứng đến bể nghiêng, từ bập bênh khổng lồ đến đường ray một ray trên cao. Ý tưởng chiến thắng cuối cùng là kế hoạch cho thang máy xoay khổng lồ bằng thép mà sau này trở thành Falkirk Wheel\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"Lúc đầu có một số ý kiến phản đối thiết kế của Falkirk Wheel\" (There was some opposition to the design of the Falkirk Wheel at first).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Numerous ideas were submitted for the project, including concepts ranging from rolling eggs to tilting tanks, from giant seesaws to overhead monorails. The eventual winner was a plan for the huge rotating steel boat lift which was to become The Falkirk Wheel."
+					]
+				},
+				{
+					"number": 16,
+					"text": "The Falkirk Wheel was initially put together at the location where its components were manufactured.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nFalkirk Wheel ban đầu được lắp ráp tại địa điểm sản xuất các bộ phận của nó.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nThe Falkirk Wheel ~ tên riêng giữ nguyên\nwere all constructed and assembled ~ was initially put together\nat Butterley Engineering's Steelworks ~ at the location where its components were manufactured\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Các bộ phận khác nhau của Falkirk Wheel đều được chế tạo và lắp ráp, giống như một bộ đồ chơi khổng lồ, tại Steelworks của Butterley Engineering ở Derbyshire, cách Falkirk khoảng 400 km\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Falkirk Wheel ban đầu được lắp ráp tại địa điểm sản xuất các bộ phận của nó\".\n(The Falkirk Wheel was initially put together at the location where its components were manufactured).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"The various parts of The Falkirk Wheel were all constructed and assembled, like one giant toy building set, at Butterley Engineering’s Steelworks in Derbyshire, some 400 km from Falkirk.A team there carefully assembled the 1,200 tonnes of steel, painstakingly fitting the pieces together to an accuracy of just 10 mm to ensure a perfect final fit."
+					]
+				},
+				{
+					"number": 17,
+					"text": "The Falkirk Wheel is the only boat lift in the world which has steel sections bolted together by hand.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nFalkirk Wheel là thang nâng thuyền duy nhất trên thế giới có các phần thép được bắt vít với nhau bằng tay.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nThe Wheel ~ The Falkirk Wheel\nthe steel sections ~ steel sections\neach bolt was hand-tightened ~ bolted together by hand\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"Bánh xe sẽ cần phải chịu được lực căng lớn và thay đổi liên tục khi nó quay, do đó, để làm cho kết cấu chắc chắn hơn, các phần thép được bắt vít thay vì hàn lại với nhau. Hơn 45.000 lỗ bu lông được khớp với các bu lông của chúng và mỗi bu lông đều được siết chặt bằng tay\".\n\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"Falkirk Wheel là thang nâng thuyền duy nhất trên thế giới có các phần thép được bắt vít với nhau bằng tay\".\n(The Falkirk Wheel is the only boat lift in the world which has steel sections bolted together by hand).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"The Wheel would need to withstand immense and constantly changing stresses as it rotated, so to make the structure more robust, the steel sections were bolted rather than welded together. Over 45,000 bolt holes were matched with their bolts, and each bolt was hand-tightened."
+					]
+				},
+				{
+					"number": 18,
+					"text": "The weight of the gondolas varies according to the size of boat being carried",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTrọng lượng của thuyền gondola thay đổi tùy theo kích thước của thuyền được chở.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nThese gondolas always weigh ~ The weight of the gondolas\nboats ~ the size of boat being carried\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Những chiếc thuyền gondola này luôn có trọng lượng như nhau, cho dù chúng có chở thuyền hay không\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"Trọng lượng của thuyền gondola thay đổi tùy theo kích thước của thuyền được chở\" (The weight of the gondolas varies according to the size of boat being carried).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"These gondolas always weigh the same, whether or not they are carrying boats."
+					]
+				},
+				{
+					"number": 19,
+					"text": "The construction of the Falkirk Wheel site took into account the presence of a nearby ancient monument",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nViệc xây dựng của công trình Falkirk Wheel có cân nhắc đến sự hiện diện của một di tích cổ gần đó.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nThe Wheel could not be constructed ~ The construction of the Falkirk Wheel site\nowing to ~ took into account\nthe presence of the historically important Antonine Wall ~ the presence of a nearby ancient monument\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Công trình này không thể được xây dựng để nâng thuyền vượt qua khoảng cách 35 mét giữa hai con kênh, do sự hiện diện của Bức tường Antonine quan trọng về mặt lịch sử, được người La Mã xây dựng vào thế kỷ thứ hai sau Công nguyên\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Việc xây dựng của công trình Falkirk Wheel có cân nhắc đến sự hiện diện của một di tích cổ gần đó\".\n(The construction of the Falkirk Wheel site took into account the presence of a nearby ancient monument).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"The remaining 11 metres of lift needed to reach the Union Canal is achieved by means of a pair of locks. The Wheel could not be constructed to elevate boats over the full 35-metre difference between the two canals, owing to the presence of the historically important Antonine Wall, which was built by the Romans in the second century AD. Boats travel under this wall via a tunnel, then through the locks, and finally on to the Union Canal."
+					]
+				}
+			]
+		},
+		{
+			"range": "20-26",
+			"type": "MAP_DIAGRAM_LABEL",
+			"instructions": "Label the diagram below. Choose ONE WORD from the passage for each answer. Write your answers in boxes 20-26 on your answer sheet.",
+			"body_html": "<p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/reading-images/7209dd75-13e8-4852-aa88-9f0e344f5a9c.jpg\" alt=\"11 1 2 Ielts Reading Q14 26 980x663\"></p><p>[20]</p><p>[21]</p><p>[22]</p><p>[23]</p><p>[24]</p><p>[25]</p><p>[26]</p>",
+			"questions": [
+				{
+					"number": 20,
+					"text": "",
+					"answer": "gates",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nMột cặp___ được nâng lên để ngăn nước khỏi lưu vực kênh.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: A pair of + NOUN (NOUN làm Object của Preposition 'OF')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nTwo ~ A pair of\nare raised ~ are lifted\nso as to seal the gondola off from the water in the canal basin ~ in order to shut out water from canal basin\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Hai cổng thép thủy lực được nâng lên để ngăn thuyền gondola khỏi nước trong lưu vực kênh\" (Two hydraulic steel gates are raised, so as to seal the gondola off from the water in the canal basin).\n\nBước 5: Đáp án: gates\nHai cái cổng được nâng lên để ngăn nước khỏi lưu vực kênh (A pair of gates are lifted in order to shut out water from canal basin).",
+					"quotes": [
+						"Two hydraulic steel gates are raised, so as to seal the gondola off from the water in the canal basin."
+					]
+				},
+				{
+					"number": 21,
+					"text": "",
+					"answer": "clamp",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nMột ___ được đưa ra ngoài, cho phép cái Wheel quay.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: A + NOUN (NOUN theo sau Article 'A')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nis removed ~ is taken out\nallowing the Wheel to turn ~ enabling Wheel to rotate\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Một kẹp thủy lực ngăn các cánh tay của cái Wheel di chuyển trong khi thuyền gondola được neo vào đế, được tháo ra, cho phép cái Wheel này quay\".\n(A hydraulic clamp, which prevents the arms of the Wheel moving while the gondola is docked, is removed, allowing the Wheel to turn).\n\nBước 5: Đáp án: clamp\nMột cái kẹp được đưa ra ngoài, cho phép cái Wheel quay (A clamp is taken out, enabling Wheel to rotate).",
+					"quotes": [
+						"A hydraulic clamp, which prevents the arms of the Wheel moving while the gondola is docked, is removed, allowing the Wheel to turn.In the central machine room an array of ten hydraulic motors then begins to rotate the central axle.The axle connects to the outer arms of the Wheel, which begin to rotate at a speed of 1/8 of a revolution per minute."
+					]
+				},
+				{
+					"number": 22,
+					"text": "",
+					"answer": "axle",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nĐộng cơ thủy lực điều khiển___.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: drive + NOUN (NOUN làm Object của Transitive Verb 'DRIVE')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nhydraulic motors ~ thuật ngữ giữ nguyên\nbegins to rotate ~ drive\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Trong phòng máy trung tâm, một dãy mười động cơ thủy lực bắt đầu quay trục trung tâm\".\n(In the central machine room an array of ten hydraulic motors then begins to rotate the central axle).\n\nBước 5: Đáp án: axle\nĐộng cơ thủy lực điều khiển trục (Hydraulic motors drive axle).",
+					"quotes": [
+						"A hydraulic clamp, which prevents the arms of the Wheel moving while the gondola is docked, is removed, allowing the Wheel to turn.In the central machine room an array of ten hydraulic motors then begins to rotate the central axle.The axle connects to the outer arms of the Wheel, which begin to rotate at a speed of 1/8 of a revolution per minute."
+					]
+				},
+				{
+					"number": 23,
+					"text": "",
+					"answer": "cogs",
+					"quotes": [
+						"Two eight-metre-wide cogs orbit a fixed inner cog of the same width, connected by two smaller cogs travelling in the opposite direction to the outer cogs - so ensuring that the gondolas always remain level.When the gondola reaches the top, the boat passes straight onto the aqueduct situated 24 metres above the canal basin."
+					]
+				},
+				{
+					"number": 24,
+					"text": "",
+					"answer": "aqueduct",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nThuyền tới đỉnh của cái Wheel rồi di chuyển thẳng lên___.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: move directly onto + NOUN (NOUN làm Object của Preposition 'ONTO')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nWhen the gondola reaches the top ~ Boat reaches top Wheel\npasses straight onto ~ move directly onto\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Khi thuyền gondola lên đến đỉnh, thuyền sẽ đi thẳng vào hệ thống dẫn nước nằm cách lưu vực kênh 24 mét\".\n\nBước 5: Đáp án: aqueduct\nThuyền tới đỉnh của cái Wheel rồi di chuyển thẳng lên hệ thống dẫn nước.\n(Boat reaches top Wheel, then moves directly onto aqueduct).",
+					"quotes": [
+						"Two eight-metre-wide cogs orbit a fixed inner cog of the same width, connected by two smaller cogs travelling in the opposite direction to the outer cogs - so ensuring that the gondolas always remain level.When the gondola reaches the top, the boat passes straight onto the aqueduct situated 24 metres above the canal basin."
+					]
+				},
+				{
+					"number": 25,
+					"text": "",
+					"answer": "wall",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nThuyền đi qua đường hầm bên dưới ____ của người La Mã.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: Roman + NOUN (được bổ nghĩa bởi Adjective 'ROMAN')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nBoats travel ~ Boat travels\nvia a tunnel ~ through tunnel\nthe Romans in the second century AD ~ Roman\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Thuyền đi dưới bức tường này (bức tường xây bởi người Roma) qua một đường hầm, sau đó qua các âu tàu và cuối cùng đến Kênh đào Union\".\n(Boats travel under this wall via a tunnel, then through the locks, and finally on to the Union Canal).\n\nBước 5: Đáp án: wall",
+					"quotes": [
+						"The remaining 11 metres of lift needed to reach the Union Canal is achieved by means of a pair of locks. The Wheel could not be constructed to elevate boats over the full 35-metre difference between the two canals, owing to the presence of the historically important Antonine Wall, which was built by the Romans in the second century AD. Boats travel under this wall via a tunnel, then through the locks, and finally on to the Union Canal."
+					]
+				},
+				{
+					"number": 26,
+					"text": "",
+					"answer": "locks",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\n___nâng thuyền cao 11m ngang kênh Union.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: NOUN + raise (NOUN làm Subject cho Verb 'RAISE')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n11 metres ~ 11m\nthe Union Canal ~ Union Canal\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"11 mét thang máy còn lại cần thiết để đến được Kênh Union được thực hiện bằng một cặp khóa\".\n(The remaining 11 metres of lift needed to reach the Union Canal is achieved by means of a pair of locks).\n\nBước 5: Đáp án: locks\nHai cái khóa nâng thuyền cao lên 11m để ngang với kênh Union.\n(locks raise boat 11m to level of Union Canal).",
+					"quotes": [
+						"The remaining 11 metres of lift needed to reach the Union Canal is achieved by means of a pair of locks. The Wheel could not be constructed to elevate boats over the full 35-metre difference between the two canals, owing to the presence of the historically important Antonine Wall, which was built by the Romans in the second century AD. Boats travel under this wall via a tunnel, then through the locks, and finally on to the Union Canal."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/reading-images/7209dd75-13e8-4852-aa88-9f0e344f5a9c.jpg"
+	]
+}

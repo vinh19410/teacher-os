@@ -1,0 +1,164 @@
+{
+	"id": "c67829e2-fcf7-4cce-80f3-80a7bf12e8b9",
+	"url": "https://stepielts.com/student/reading/c67829e2-fcf7-4cce-80f3-80a7bf12e8b9?mode=practice",
+	"title": "Fishbourne Roman Palace",
+	"source": "Collection",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": " Fishbourne Roman Palace",
+		"subtitle": "The largest Roman villa in Britain",
+		"paragraphs": [
+			"Fishbourne Roman Palace is in the village of Fishbourne in West Sussex, England. This large palace was built in the 1st century AD, around thirty years after the Roman conquest of Britain, on the site of Roman army grain stores which had been established after the invasion, in the reign of the Roman Emperor Claudius in 43 AD. The rectangular palace was built around formal gardens, the northern half of which have been reconstructed. There were extensive alterations in the 2nd and 3rd centuries AD, with many of the original black and white mosaic floors being overlaid with more sophisticated coloured ones, including a perfectly preserved mosaic of a dolphin in the north wing. More alterations were in progress when the palace burnt down in around 270 AD, after which it was abandoned.",
+			"Local people had long believed that a Roman palace once existed in the area. However, it was not until 1960 that the archaeologist Barry Cunliffe, of Oxford University, first systematically excavated the site, after workmen had accidentally uncovered a wall while they were laying a water main. The Roman villa excavated by Cunliffe’s team was so grand that it became known as Fishbourne Roman Palace, and a museum was erected to preserve some of the remains. This is administered by the Sussex Archaeological Society.",
+			"In its day, the completed palace would have comprised four large wings with colonnaded fronts. The north and east wings consisted of suites of private rooms built around courtyards, with a monumental entrance in the middle of the east wing. In the north-east corner there was an assembly hall. The west wing contained state rooms, a large ceremonial reception room, and a gallery. The south wing contained the owner’s private apartments. The palace included as many as 50 mosaic floors, under-floor central heating and a bathhouse. In size, Fishbourne Palace would have been approximately equivalent to some of the great Roman palaces of Italy, and was by far the largest known Roman residence north of the European Alps, at about 500 feet (150m) square. A team of volunteers and professional archaeologists are involved in an ongoing archaeological excavation on the site of nearby, possibly military, buildings.",
+			"The first buildings to be erected on the site were constructed in the early part of the conquest in 43 AD. Later, two timber buildings were constructed, one with clay and mortar floors and plaster walls, which appears to have been a house of some comfort. These buildings were demolished in the 60s AD and replaced by a substantial stone house, which included colonnades, and a bath suite. It has been suggested that the palace itself, incorporating the previous house in its south-east corner, was constructed around 73-75 AD. However, Dr Miles Russell, of Bournemouth University, reinterpreted the ground plan and the collection of objects found and has suggested that, given the extremely close parallels with the imperial palace of Domitian in Rome, its construction may more plausibly date to after 92 AD.",
+			"With regard to who lived in Fishbourne Palace, there are a number of theories; for example, one proposed by Professor Cunliffe is that, in its early phase, the palace was the residence of Tiberius Claudius Cogidubnus, a local chieftain who supported the Romans, and who may have been installed as king of a number of territories following the first stage of the conquest. Cogidubnus is known from a reference to his loyalty in Agricola, a work by the Roman writer Tacitus, and from an inscription commemorating a temple dedicated to the gods Neptune and Minerva found in the nearby city of Chichester. Another theory is that it was built for Sallustius Lucullus, a Roman governor of Britain of the late 1st century, who may have been the son of the British prince Adminius. Two inscriptions recording the presence of Lucullus have been found in Chichester, and the redating by Miles Russell of the palace was designed for Lucullus, then it may have only been in use for a few years, as the Roman historian Suetonius records that Lucullus was executed by the Emperor Domitian in or shortly after 93 AD.",
+			"Additional theories suggest that either Verica, a British king of the Roman Empire in the years preceding the Claudian invasion, was owner of the palace, or Tiberius Claudius Catuarus, following the recent discovery of a gold ring belonging to him. The palace outlasted the original owner, whoever he was, and was extensively re-planned early in the 2nd century AD, and subdivided into a series of lesser apartments. Further redevelopment was begun in the late 3rd century AD, but these alterations were incomplete when the north wing was destroyed in a fire in around 270 AD. The damage was too great to repair, and the palace was abandoned and later dismantled.",
+			"A modern museum has been built by the Sussex Archaeological Society, incorporating most of the visible remains, including one wing of the palace. The gardens have been re-planted using authentic plants from the Roman period."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 1?\nIn boxes 1-6 on your answer sheet, write\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Fishbourne Palace was the first structure to be built on its site.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCung điện Fishbourne là công trình đầu tiên được xây dựng trên địa điểm của nó.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nFishbourne Roman Palace ~ Fishbourne Palace\non the site of Roman army grain stores which had been established after the invasion ~ first structure (ngụ ý rằng các kho ngũ cốc có trước)\non the site of ~ its site\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"cung điện lớn này được xây dựng vào thế kỷ 1 sau Công Nguyên... trên địa điểm của các kho ngũ cốc của quân đội La Mã đã được thành lập sau cuộc xâm lược\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"Cung điện Fishbourne là công trình đầu tiên được xây dựng trên địa điểm của nó\" (Fishbourne Palace was the first structure to be built on its site), vì nó được xây trên nền các kho ngũ cốc đã có từ trước.\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"The first buildings to be erected on the site were constructed in the early part of the conquest in 43 AD."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Fishbourne Palace was renovated more than once.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCung điện Fishbourne đã được cải tạo (renovated) nhiều hơn một lần.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nthe palace (ám chỉ Fishbourne Palace) ~ Fishbourne Palace\nextensive alterations, More alterations ~ renovated more than once\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"đã có những thay đổi lớn vào thế kỷ thứ 2 và thứ 3 sau Công Nguyên... Nhiều thay đổi khác đang được tiến hành khi cung điện bị cháy rụi\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Cung điện Fishbourne đã được cải tạo nhiều hơn một lần\" (Fishbourne Palace was renovated more than once), vì có \"thay đổi lớn\" và \"nhiều thay đổi khác\".\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"There were extensive alterations in the 2nd and 3rd centuries AD, with many of the original black and white mosaic floors being overlaid with more sophisticated coloured ones, including a perfectly preserved mosaic of a dolphin in the north wing. More alterations were in progress when the palace burnt down in around 270 AD, after which it was abandoned."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Fishbourne Palace was large in comparison with Roman palaces in Italy.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCung điện Fishbourne lớn khi so sánh với các cung điện La Mã ở Ý (Italy).\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nFishbourne Palace ~ Fishbourne Palace\napproximately equivalent to ~ large in comparison (điểm mâu thuẫn)\nsome of the great Roman palaces of Italy ~ Roman palaces in Italy\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Về kích thước, Cung điện Fishbourne sẽ tương đương với một số cung điện La Mã vĩ đại ở Ý\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"Cung điện Fishbourne lớn khi so sánh với các cung điện La Mã ở Ý\" (Fishbourne Palace was large in comparison with Roman palaces in Italy), vì nó \"tương đương\" chứ không phải \"lớn hơn\".\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"In size, Fishbourne Palace would have been approximately equivalent to some of the great Roman palaces of Italy, and was by far the largest known Roman residence north of the European Alps, at about 500 feet (150m) square."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Research is continuing in the area close to Fishbourne Palace.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNghiên cứu (research) vẫn đang tiếp tục ở khu vực gần Cung điện Fishbourne.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nongoing archaeological excavation ~ Research is continuing\non the site of nearby... buildings ~ in the area close to Fishbourne Palace\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Một đội ngũ tình nguyện viên và các nhà khảo cổ học chuyên nghiệp đang tham gia vào một cuộc khai quật khảo cổ đang diễn ra trên địa điểm của các tòa nhà gần đó\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Nghiên cứu vẫn đang tiếp tục ở khu vực gần Cung điện Fishbourne\" (Research is continuing in the area close to Fishbourne Palace).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"A team of volunteers and professional archaeologists are involved in an ongoing archaeological excavation on the site of nearby, possibly military, buildings."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Researchers agree on the identity of the person for whom Fishbourne Palace was constructed.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác nhà nghiên cứu (researchers) đồng ý về danh tính của người mà Cung điện Fishbourne được xây dựng cho.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\na number of theories, Another theory, Additional theories suggest ~ (ngụ ý không có sự đồng ý)\nwho lived in Fishbourne Palace / for whom Fishbourne Palace was constructed ~ identity of the person for whom Fishbourne Palace was constructed\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Về việc ai đã sống trong Cung điện Fishbourne, có một số giả thuyết; ví dụ, một giả thuyết được đề xuất bởi Giáo sư Cunliffe... Một giả thuyết khác là... Các giả thuyết bổ sung cho rằng...\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"Các nhà nghiên cứu đồng ý về danh tính của người mà Cung điện Fishbourne được xây dựng cho\" (Researchers agree on the identity of the person for whom Fishbourne Palace was constructed), vì có \"một số giả thuyết\", cho thấy sự không đồng thuận.\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"With regard to who lived in Fishbourne Palace, there are a number of theories; for example, one proposed by Professor Cunliffe is that, in its early phase, the palace was the residence of Tiberius Claudius Cogidubnus, a local chieftain who supported the Romans, and who may have been installed as king of a number of territories following the first stage of the conquest."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Fishbourne Palace was burnt down by local people.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCung điện Fishbourne bị người dân địa phương (local people) đốt cháy.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nthe palace, the north wing (ám chỉ Fishbourne Palace) ~ Fishbourne Palace\nburnt down, destroyed in a fire ~ burnt down\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"cung điện bị cháy rụi vào khoảng năm 270 sau Công Nguyên\" và \"cánh phía bắc bị phá hủy trong một trận hỏa hoạn\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"ai là người gây ra vụ cháy, cụ thể là người dân địa phương\" (by local people).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"More alterations were in progress when the palace burnt down in around 270 AD, after which it was abandoned."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-13",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the notes below. Choose NO MORE THAN TWO WORDS AND/OR A NUMBER from the passage for each answer. Write your answers in boxes 7-13 on your answer sheet.",
+			"body": "Fishbourne Palace\nConstruction\nThe first buildings on the site contained food for the ____ (7)\nThe palace building surrounded ____ (8)\nIn the 2nd and 3rd centuries colour was added to the ____ (9) of the palace.\nDiscovery\nThe first part of the palace to be found was part of a ____ (10)\nPossible inhabitants\nCogidubnus - he is named in several writings\nSallustius Lucullus - he may have lived there until approximately ____ (11) AD\nVerica - a British king\nCatuarus - his ____ (12) was found there\nPresent Day\nA ____ (13) has been built on the site to help protect it.",
+			"body_html": "<h3><strong>Fishbourne Palace</strong></h3><h4><strong>Construction</strong></h4><ul><li>The first buildings on the site contained food for the [7]</li><li>The palace building surrounded [8]</li><li>In the 2nd and 3rd centuries colour was added to the [9] of the palace.</li></ul><h4><strong>Discovery</strong></h4><ul><li>The first part of the palace to be found was part of a [10]</li></ul><h4><strong>Possible inhabitants</strong></h4><ul><li>Cogidubnus - he is named in several writings</li><li>Sallustius Lucullus - he may have lived there until approximately [11] AD</li><li>Verica - a British king</li><li>Catuarus - his [12] was found there</li></ul><h4><strong>Present Day</strong></h4><ul><li>A [13] has been built on the site to help protect it.</li></ul>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "The first buildings on the site contained food for the ____ (7)",
+					"answer": "Roman army",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nNhững tòa nhà đầu tiên trên địa điểm này chứa thức ăn cho ________.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: for the + NOUN (NOUN làm Object của Preposition 'for')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nThe first buildings ~ từ khóa giữ nguyên\ncontained food ~ grain stores\non the site ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"cung điện lớn này được xây dựng vào thế kỷ thứ nhất sau Công nguyên, khoảng ba mươi năm sau cuộc chinh phục nước Anh của người La Mã, trên địa điểm của các kho lương thực quân đội La Mã\"\n(This large palace was built in the 1st century AD, around thirty years after the Roman conquest of Britain, on the site of Roman army grain stores.)\n\nBước 5: Đáp án: Roman army\nNhững tòa nhà đầu tiên trên địa điểm này chứa thức ăn cho quân đội La Mã\n(The first buildings on the site contained food for the Roman army.)",
+					"quotes": [
+						"This large palace was built in the 1st century AD, around thirty years after the Roman conquest of Britain, on the site of Roman army grain stores which had been established after the invasion, in the reign of the Roman Emperor Claudius in 43 AD."
+					]
+				},
+				{
+					"number": 8,
+					"text": "The palace building surrounded ____ (8)",
+					"answer": "gardens / formal gardens",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nTòa cung điện được xây dựng bao quanh ________.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: surrounded + NOUN (NOUN làm Object của Transitive verb 'surrounded')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nThe palace building ~ The rectangular palace\nsurrounded ~ built around\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Cung điện hình chữ nhật được xây dựng bao quanh những khu vườn trang trọng\"\n(The rectangular palace was built around formal gardens.)\n\nBước 5: Đáp án: gardens | formal gardens\nTòa cung điện được xây dựng bao quanh vườn\n(The palace building surrounded gardens.)",
+					"quotes": [
+						"The rectangular palace was built around formal gardens, the northern half of which have been reconstructed."
+					]
+				},
+				{
+					"number": 9,
+					"text": "In the 2nd and 3rd centuries colour was added to the ____ (9) of the palace.",
+					"answer": "floors / mosaic floors",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nVào thế kỷ 2 và 3, màu sắc đã được thêm vào ________ của cung điện.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: the + NOUN (NOUN theo sau Article 'the')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n2nd and 3rd centuries ~ từ khóa giữ nguyên\ncolour was added ~ coloured ones\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Có những thay đổi rộng rãi vào thế kỷ 2 và 3 sau Công nguyên, với nhiều sàn khảm đen trắng ban đầu được phủ lên bằng những sàn khảm màu tinh xảo hơn\"\n(There were extensive alterations in the 2nd and 3rd centuries AD, with many of the original black and white mosaic floors being overlaid with more sophisticated coloured ones.)\n\nBước 5: Đáp án: floors | mosaic floors\nVào thế kỷ 2 và 3, màu sắc đã được thêm vào sàn nhà của cung điện\n(In the 2nd and 3rd centuries colour was added to the floors of the palace.)",
+					"quotes": [
+						"There were extensive alterations in the 2nd and 3rd centuries AD, with many of the original black and white mosaic floors being overlaid with more sophisticated coloured ones, including a perfectly preserved mosaic of a dolphin in the north wing."
+					]
+				},
+				{
+					"number": 10,
+					"text": "The first part of the palace to be found was part of a ____ (10)",
+					"answer": "wall",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nPhần đầu tiên của cung điện được tìm thấy là một phần của ________.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: part of a + NOUN (NOUN theo sau Article 'a')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nfirst part ~ first\nfound ~ uncovered\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"sau khi các công nhân vô tình phát hiện ra một bức tường trong khi họ đang đặt đường ống nước\"\n(after workmen had accidentally uncovered a wall while they were laying a water main.)\n\nBước 5: Đáp án: wall\nPhần đầu tiên của cung điện được tìm thấy là một phần của bức tường\n(The first part of the palace to be found was part of a wall.)",
+					"quotes": [
+						"However, it was not until 1960 that the archaeologist Barry Cunliffe, of Oxford University, first systematically excavated the site, after workmen had accidentally uncovered a wall while they were laying a water main."
+					]
+				},
+				{
+					"number": 11,
+					"text": "Sallustius Lucullus - he may have lived there until approximately ____ (11) AD",
+					"answer": "93",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nSallustius Lucullus - anh ta có thể đã sống ở đó cho đến khoảng ________ sau Công nguyên.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NUMBER\nDấu hiệu: approximately + NUMBER (NUMBER được bổ nghĩa bởi Adverb 'approximately')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nSallustius Lucullus ~ từ khóa giữ nguyên\nlived there until ~ executed\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"nhà sử học La Mã Suetonius ghi lại rằng Lucullus đã bị hoàng đế Domitian xử tử vào hoặc ngay sau năm 93 sau Công nguyên\"\n=> the Roman historian Suetonius records that Lucullus was executed by the Emperor Domitian in or shortly after 93 AD.\n\nBước 5: Đáp án: 93\nSallustius Lucullus - anh ta có thể đã sống ở đó cho đến khoảng 93 sau Công nguyên\n(Sallustius Lucullus - he may have lived there until approximately 93 AD.)",
+					"quotes": [
+						"Two inscriptions recording the presence of Lucullus have been found in Chichester, and the redating by Miles Russell of the palace was designed for Lucullus, then it may have only been in use for a few years, as the Roman historian Suetonius records that Lucullus was executed by the Emperor Domitian in or shortly after 93 AD."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Catuarus - his ____ (12) was found there",
+					"answer": "gold ring / ring",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCatuarus - ________ của anh ta đã được tìm thấy ở đó.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: his + NOUN (NOUN theo sau possessive adjective 'his')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nCatuarus ~ Tiberius Claudius Catuarus\nfound there ~ discovery\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"hoặc Tiberius Claudius Catuarus, sau khi phát hiện gần đây một chiếc nhẫn vàng thuộc về anh ta\"\n(or Tiberius Claudius Catuarus, following the recent discovery of a gold ring belonging to him.)\n\nBước 5: Đáp án: gold ring | ring\nCatuarus - nhẫn vàng của anh ta đã được tìm thấy ở đó\n(Catuarus - his gold ring was found there.)",
+					"quotes": [
+						"Additional theories suggest that either Verica, a British king of the Roman Empire in the years preceding the Claudian invasion, was owner of the palace, or Tiberius Claudius Catuarus, following the recent discovery of a gold ring belonging to him."
+					]
+				},
+				{
+					"number": 13,
+					"text": "A ____ (13) has been built on the site to help protect it.",
+					"answer": "modern museum / museum",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nMột ________ đã được xây dựng trên địa điểm để giúp bảo vệ nó.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: A + NOUN (NOUN theo sau Article 'A')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nbuilt on the site ~ built\nprotect it ~ preserve\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"một bảo tàng hiện đại đã được xây dựng bởi Hiệp hội Khảo cổ Sussex, kết hợp hầu hết các di tích có thể nhìn thấy\"\n(A modern museum has been built by the Sussex Archaeological Society, incorporating most of the visible remains.)\n\nBước 5: Đáp án: modern museum | museum\nMột bảo tàng hiện đại đã được xây dựng trên địa điểm để giúp bảo vệ nó\n(A modern museum has been built on the site to help protect it.)",
+					"quotes": [
+						"A modern museum has been built by the Sussex Archaeological Society, incorporating most of the visible remains, including one wing of the palace."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

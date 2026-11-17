@@ -1,0 +1,278 @@
+{
+	"id": "825a4b83-4f95-4538-9758-ff2384aa3e66",
+	"url": "https://stepielts.com/student/reading/825a4b83-4f95-4538-9758-ff2384aa3e66?mode=practice",
+	"title": "Is the era of artificial speech translation upon us?",
+	"source": "C19T3",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "27-40",
+	"passage": {
+		"title": "Is the era of artificial speech translation upon us?",
+		"paragraphs": [
+			"Once the stuff of science fiction, technology that enables people to talk using different languages is now here. But how effective is it?",
+			"Noise, Alex Waibel tells me, is one of the major challenges that artificial speech translation has to meet. A device may be able to recognise speech in a laboratory, or a meeting room, but will struggle to cope with the kind of background noise I can hear in my office surrounding Professor Waibel as he speaks to me from Kyoto station in Japan. I' m struggling to follow him in English, on a scratchy line that reminds me we are nearly 10,000 kilometres apart - and that distance is still an obstacle to communication even if you're speaking the same language, as we are. We haven't reached the future yet. If we had, Waibel would have been able to speak more comfortably in his native German and I would have been able to hear his words in English.",
+			"At Karlsruhe Institute of Technology, where he is a professor of computer science, Waibel and his colleagues already give lectures in German that their students can follow in English via an electronic translator. The system generates text that students can read on their laptops or phones, so the process is somewhat similar to subtitling. It helps that lecturers speak clearly, don't have to compete with background chatter, and say much the same thing each year.",
+			"The idea of artificial speech translation has been around for a long time. Douglas Adams' science fiction novel, The Hitchhiker's Guide to the Galaxy, published in 1979, featured a life form called the 'Babel fish' which, when placed in the ear, enabled a listener to understand any language in the universe. It came to represent one of those devices that technology enthusiasts dream of long before they become practically realisable, like TVs flat enough to hang on walls: objects that we once could only dream of having but that are now commonplace. Now devices that look like prototype Babel fish have started to appear, riding a wave of advances in artificial translation and voice recognition.",
+			"At this stage, however, they seem to be regarded as eye-catching novelties rather than steps towards what Waibel calls 'making a language-transparent society'. They tend to be domestic devices or applications suitable for hotel check-ins, for example, providing a practical alternative to speaking traveller's English. The efficiency of the translator is less important than the social function. However, 'Professionals are less inclined to be patient in a conversation,' founder and CEO at Waverly Labs, Andrew Ochoa, observes. To redress this, Waverly is now preparing a new model for professional applications, which entails performance improvements in speech recognition, translation accuracy and the lime it takes to deliver the translated speech.",
+			"For a conversation, both speakers need to have devices called Pilots (translator earpieces) in their ears. ' We find that there's a barrier with sharing one of the earphones with a stranger,' says Ochoa. That can't have been totally unexpected. The problem would be solved if earpiece translators became sufficiently prevalent that strangers would be likely to already have their own in their ears. Whether that happens, and how quickly, will probably depend not so much on the earpieces themselves, but on the prevalence of voice-controlled devices and artificial translation in general.",
+			"Waibel highlights the significance of certain Asian nations, noting that voice translation has really taken off in countries such as Japan with a range of systems. There is still a long way to go, though. A translation system needs to be simultaneous, like the translator's voice speaking over the foreign politician being interviewed on the TV, rather than in sections that oblige speakers to pause after every few remarks and wait for the translation to be delivered. It needs to work offline, for situations where internet access isn't possible, and to address apprehensions about the amount of private speech data accumulating in the cloud, having been sent to servers for processing.",
+			"Systems not only need to cope with physical challenges such as noise, they will also need to be socially aware by addressing people in the right way. Some cultural traditions demand solemn respect for academic status, for example, and it is only polite to respect this. Etiquette-sensitive artificial translators could relieve people of the need to know these differing cultural norms. At the same time, they might help to preserve local customs, slowing the spread of habits associated with international English, such as its readiness to get on first-name terms.",
+			"Professors and other professionals will not outsource language awareness to software, though. If the technology matures into seamless, ubiquitous artificial speech translation, it will actually add value to language skills. Whether it will help people conduct their family lives or relationships is open to question - though one noteworthy possibility is that it could overcome the language barriers that often arise between generations after migration, leaving children and their grandparents without a shared language.",
+			"Whatever uses it is put to, though, it will never be as good as the real thing. Even if voice-morphing technology simulates the speaker's voice, their lip movements won't match, and they will look like they are in a dubbed movie. The contrast will underline the value of shared languages, and the value of learning them. Sharing a language can promote a sense of belonging and community, as with the international scientists who use English as a lingua franca, where their predecessors used Latin. Though the practical need for a common language will diminish, the social value of sharing one will persist. And software will never be a substitute for the subtle but vital understanding that comes with knowledge of a language."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "27-30",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 27,
+					"text": "What does the reader learn about the conversation in the first paragraph?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The speakers are communicating in different languages."
+						},
+						{
+							"label": "B",
+							"text": "Neither of the speakers is familiar with their environment."
+						},
+						{
+							"label": "C",
+							"text": "The topic of the conversation is difficult for both speakers."
+						},
+						{
+							"label": "D",
+							"text": "Aspects of the conversation are challenging for both speakers."
+						}
+					],
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nNgười đọc biết được thông tin gì về cuộc hội thoại (giữa tác giả và giáo sư Alex Waibel) trong đoạn đầu?\n(Lưu ý: learn about sth không phải là 'học điều gì' mà cụm này mang nghĩa 'biết được/nhận được' thông tin gì đó)\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ: Tác giả đang ở trong văn phòng của mình (loại đáp án B), còn GS Alex Waibel đang ở nhà ga Kyoto ở Nhật nên có nhiều tiếng ồn. Hai người đang ở cách xa nhau 10,000 km, và trao đổi với nhau bằng tiếng Anh (loại đáp án A), trong khi ngôn ngữ mẹ đẻ của GS Alex Waibel là tiếng Đức.\n=> Thông tin được in đậm đồng nghĩa với câu D (các khía cạnh của cuộc hội thoại mà gây khó khăn cho việc giao tiếp giữa hai người - có tiếng ồn, cách xa nhau, giao tiếp không phải bằng tiếng mẹ đẻ).\nBước 3: Đáp án: D\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án C -> Đoạn văn không nhắc đến “chủ đề (topic) của cuộc nói chuyện giữa 2 người”.",
+					"quotes": [
+						"A device may be able to recognise speech in a laboratory, or a meeting room, but will struggle to cope with the kind of background noise I can hear in my office surrounding Professor Waibel as he speaks to me from Kyoto station in Japan. I' m struggling to follow him in English, on a scratchy line that reminds me we are nearly 10,000 kilometres apart - and that distance is still an obstacle to communication even if you're speaking the same language, as we are."
+					]
+				},
+				{
+					"number": 28,
+					"text": "What assists the electronic translator during lectures at Karlsruhe Institute of Technology?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the repeated content of lectures"
+						},
+						{
+							"label": "B",
+							"text": "the students' reading skills"
+						},
+						{
+							"label": "C",
+							"text": "the languages used"
+						},
+						{
+							"label": "D",
+							"text": "the lecturers' technical ability"
+						}
+					],
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nĐiều gì hỗ trợ (assist) việc dịch thuật tự động trong các tiết học ở Học viện Công nghệ Karlsruhe?\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ “Tại Viện Công nghệ Karlsruhe, nơi ông là giáo sư khoa học máy tính, Waibel và các đồng nghiệp đã giảng bài bằng tiếng Đức mà sinh viên có thể theo dõi bằng tiếng Anh thông qua một hệ thống dịch điện tử. Hệ thống này tạo ra văn bản mà sinh viên có thể đọc trên máy tính xách tay hoặc điện thoại của họ, vì vậy quá trình này hơi giống với việc phụ đề. Điều thuận lợi là các giảng viên nói rõ ràng, không phải cạnh tranh với tiếng ồn xung quanh, và thường nói những điều tương tự nhau mỗi năm”\n=> Thông tin được in đậm đồng nghĩa với câu A (nội dung được lặp đi lặp lại của bài giảng)\nBước 3: Đáp án A\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án B/ C/ D -> Đề văn không đề cập đến các khía cạnh “Khả năng đọc hiểu của sinh viên/ những ngôn ngữ được sử dụng trong tiết học/ khả năng sử dụng công nghệ của giảng viên”",
+					"quotes": [
+						"It helps that lecturers speak clearly, don't have to compete with background chatter, and say much the same thing each year."
+					]
+				},
+				{
+					"number": 29,
+					"text": "When referring to The Hitchhiker's Guide to the Galaxy, the writer suggests that",
+					"options": [
+						{
+							"label": "A",
+							"text": "the Babel fish was considered undesirable at the time."
+						},
+						{
+							"label": "B",
+							"text": "this book was not seriously intending to predict the future."
+						},
+						{
+							"label": "C",
+							"text": "artificial speech translation was not a surprising development."
+						},
+						{
+							"label": "D",
+							"text": "some speech translation techniques are better than others."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"It came to represent one of those devices that technology enthusiasts dream of long before they become practically realisable, like TVs flat enough to hang on walls: objects that we once could only dream of having but that are now commonplace."
+					]
+				},
+				{
+					"number": 30,
+					"text": "What does the writer say about sharing earpieces?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It is something people will get used to doing."
+						},
+						{
+							"label": "B",
+							"text": "The reluctance to do this is understandable."
+						},
+						{
+							"label": "C",
+							"text": "The equipment will be unnecessary in the future."
+						},
+						{
+							"label": "D",
+							"text": "It is something few people need to worry about."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"We find that there's a barrier with sharing one of the earphones with a stranger,' says Ochoa. That can't have been totally unexpected."
+					]
+				}
+			]
+		},
+		{
+			"range": "31-34",
+			"type": "MATCHING_ENDINGS",
+			"instructions": "Complete each sentence with the correct ending, A-F, below.\nWrite the correct letter, A-F, in boxes 31 - 34 on your answer sheet.",
+			"options": [
+				{
+					"label": "A",
+					"text": "but there are concerns about this."
+				},
+				{
+					"label": "B",
+					"text": "as systems do not need to conform to standard practices."
+				},
+				{
+					"label": "C",
+					"text": "but they are far from perfect."
+				},
+				{
+					"label": "D",
+					"text": "despite the noise issues."
+				},
+				{
+					"label": "E",
+					"text": "because translation is immediate."
+				},
+				{
+					"label": "F",
+					"text": "and have an awareness of good manners."
+				}
+			],
+			"body": "Speech translation methods are developing fast in Japan ____ (31)\nTV interviews that use translation voiceover methods are successful ____ (32)\nFuture translation systems should address people appropriately ____ (33)\nUsers may be able to maintain their local customs ____ (34)",
+			"body_html": "<p>Speech translation methods are developing fast in Japan [31]</p><p>TV interviews that use translation voiceover methods are successful [32]</p><p>Future translation systems should address people appropriately [33]</p><p>Users may be able to maintain their local customs [34]</p>",
+			"questions": [
+				{
+					"number": 31,
+					"text": "Speech translation methods are developing fast in Japan",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhần thông tin (Những cách thức phiên dịch lời nói đang phát triển nhanh ở Nhật Bản) sẽ phù hợp với ý nào?\nBước 2: Tìm các keywords được paraphrase trong bài:\nspeech translation ~ voice translation\ndeveloping fast ~ has really taken off\nJapan ~ tên riêng giữ nguyên\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ v”iệc phiên dịch lời nói đã thực sự phát triển nhiều nước, ví dụ như Nhật Bản, nhưng chặng đường phía trước vẫn còn dài”.\n=> Thông tin được in đậm đồng nghĩa với đáp án C (... nhưng chúng còn lâu mới hoàn hảo được).\nBước 4: Đáp án C",
+					"quotes": [
+						"Waibel highlights the significance of certain Asian nations, noting that voice translation has really taken off in countries such as Japan with a range of systems. There is still a long way to go, though."
+					]
+				},
+				{
+					"number": 32,
+					"text": "TV interviews that use translation voiceover methods are successful",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhần thông tin (Các cuộc phỏng vấn trên TV được lồng tiếng phiên dịch có được sự thành công) sẽ phù hợp với ý nào?\nBước 2: Tìm các keywords được paraphrase trong bài:\nTV interviews ~ interviewed on the TV\ntranslation voiceover ~ translator's voice speaking\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ “việc phiên dịch giữa 2 ngôn ngữ cần phải diễn ra đồng thời/cùng một lúc, chứ không nên là 1 bên nói rồi đợi 1 khoảng thời gian mới được nghe bản dịch, giống như các cuộc phỏng vấn được lồng tiếng phiên dịch trên TV”.\n=> Thông tin được in đậm đồng nghĩa với đáp án E (... bởi vì việc phiên dịch được diễn ra ngay lập tức).\nBước 4: Đáp án E",
+					"quotes": [
+						"A translation system needs to be simultaneous, like the translator's voice speaking over the foreign politician being interviewed on the TV, rather than in sections that oblige speakers to pause after every few remarks and wait for the translation to be delivered."
+					]
+				},
+				{
+					"number": 33,
+					"text": "Future translation systems should address people appropriately",
+					"answer": "F",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhần thông tin (Các hệ thống phiên dịch trong tương lai nên ứng xử với con người một cách phù hợp) sẽ phù hợp với ý nào?\nBước 2: Tìm các keywords được paraphrase trong bài:\naddress people ~ cụm từ giữ nguyên\nappropriately ~ in the right way\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ “việc phiên dịch cũng cần nên quan tâm về con người, ví dụ như một số nền văn hoá đòi hỏi sự tôn trọng cho các thành phần xã hội có học thức, và những cỗ máy phiên dịch nhận thức được với các chuẩn mực này sẽ giúp người nói còn không cần phải biết về những sự khác biệt văn hoá ấy nữa”\n=> Thông tin được in đậm đồng nghĩa với đáp án E (... và có sự nhận thức về các cách ứng xử chuẩn mực).\nBước 4: Đáp án F",
+					"quotes": [
+						"Systems not only need to cope with physical challenges such as noise, they will also need to be socially aware by addressing people in the right way.",
+						"Some cultural traditions demand solemn respect for academic status, for example, and it is only polite to respect this. Etiquette-sensitive artificial translators could relieve people of the need to know these differing cultural norms."
+					]
+				},
+				{
+					"number": 34,
+					"text": "Users may be able to maintain their local customs",
+					"answer": "B",
+					"quotes": [
+						"At the same time, they might help to preserve local customs, slowing the spread of habits associated with international English, such as its readiness to get on first-name terms."
+					]
+				}
+			]
+		},
+		{
+			"range": "35-40",
+			"type": "YES/NO/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 3?\nIn boxes 35 - 40 on your answer sheet, write\nYES if the statement agrees with the information\nNO if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 35,
+					"text": "Language translation systems will be seen as very useful throughout the academic and professional worlds.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NO",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững hệ thống phiên dịch ngôn ngữ sẽ được giới hàn lâm và chuyên gia xem là rất hữu ích trong tương lai.\nBước 2: Tìm các keywords được paraphrase trong bài:\nlanguage translation systems ~ language awareness\nacademic and professional worlds ~ professors and other professionals\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ “Mặc dù có những tiến bộ trong công nghệ dịch thuật, các giáo sư và chuyên gia vẫn sẽ không hoàn toàn dựa vào (outsource) phần mềm để hiểu và sử dụng ngôn ngữ, tức là mà chỉ dùng phần mềm như một công cụ hỗ trợ. Điều này trái ngược với thông tin trong câu hỏi \"Những hệ thống phiên dịch ngôn ngữ sẽ được giới hàn lâm và chuyên gia xem là rất hữu ích trong tương lai\". (Language translation systems will be seen as very useful)\nBước 4: Đáp án: NO.",
+					"quotes": [
+						"Professors and other professionals will not outsource language awareness to software, though."
+					]
+				},
+				{
+					"number": 36,
+					"text": "The overall value of automated translation to family life is yet to be shown.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nGiá trị tổng thể của việc dịch thuật tự động đối với đời sống gia đình vẫn chưa được thấy rõ.\nBước 2: Tìm các keywords được paraphrase trong bài:\n- automated translation ~ it (artificial speech translation)\n- family life ~ family lives or relationships\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ “Liệu công nghệ này có thực sự giúp ích cho đời sống gia đình hay các mối quan hệ của con người hay không vẫn còn là một câu hỏi chưa có lời đáp. Điều này đồng nghĩa với thông tin trong câu hỏi \"Giá trị tổng thể của việc dịch thuật tự động đối với đời sống gia đình vẫn chưa được thấy rõ\". (The overall value of automated translation to family life is yet to be shown)\nBước 4: Đáp án: YES.",
+					"quotes": [
+						"Whether it will help people conduct their family lives or relationships is open to question - though one noteworthy possibility is that it could overcome the language barriers that often arise between generations after migration, leaving children and their grandparents without a shared language."
+					]
+				},
+				{
+					"number": 37,
+					"text": "Automated translation could make life more difficult for immigrant families.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NO",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nViệc dịch thuật tự động có thể sẽ khiến cho cuộc sống của các gia đình nhập cư thêm phần khó khăn.\nBước 2: Tìm các keywords được paraphrase trong bài:\nautomated translation ~ it (artificial speech translation)\nimmigrant families ~ generations after migration\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ “Một triển vọng đáng chú ý là công nghệ này có thể giải quyết vấn đề bất đồng ngôn ngữ giữa các thế hệ trong gia đình nhập cư - vấn đề này thường khiến trẻ em không thể nói chuyện với ông bà bằng cùng một ngôn ngữ. Điều này trái ngược với thông tin trong câu hỏi \"Việc dịch thuật tự động có thể sẽ khiến cho cuộc sống của các gia đình nhập cư thêm phần khó khăn\". (one noteworthy possibility is that it could overcome the language barriers that often arise between generations after migration, leaving children and their grandparents without a shared language).\nBước 4: Đáp án: NO.",
+					"quotes": [
+						"Whether it will help people conduct their family lives or relationships is open to question - though one noteworthy possibility is that it could overcome the language barriers that often arise between generations after migration, leaving children and their grandparents without a shared language."
+					]
+				},
+				{
+					"number": 38,
+					"text": "Visual aspects of language translation are being considered by scientists.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững khía cạnh về mặt hình ảnh của việc phiên dịch đang được nghiên cứu bởi các nhà khoa học.\nBước 2: Tìm các keywords được paraphrase trong bài:\nvisual aspects ~ lip movements\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ “dù được sử dụng cho mục đích gì đi nữa, nó sẽ không bao giờ tốt bằng việc giao tiếp trực tiếp. Ngay cả khi công nghệ biến đổi giọng nói có thể mô phỏng giọng của người nói, thì chuyển động môi của họ sẽ không khớp, và họ sẽ trông giống như đang ở trong một bộ phim lồng tiếng”. Tuy nhiên, bài đọc không hề nhắc đến thông tin “Những khía cạnh về mặt hình ảnh của việc phiên dịch đang được nghiên cứu bởi các nhà khoa học” (are being considered by scientists).\nBước 4: Đáp án: NOT GIVEN.",
+					"quotes": [
+						"Whatever uses it is put to, though, it will never be as good as the real thing. Even if voice-morphing technology simulates the speaker's voice, their lip movements won't match, and they will look like they are in a dubbed movie."
+					]
+				},
+				{
+					"number": 39,
+					"text": "International scientists have found English easier to translate into other languages than Latin.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác nhà khoa học quốc tế nhận thấy là, so với tiếng Latin, tiếng Anh dễ được phiên dịch thành các ngôn ngữ khác hơn.\nBước 2: Tìm các keywords được paraphrase trong bài:\ninternational scientists ~ cụm từ giữ nguyên\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ “sử dụng chung một ngôn ngữ có thể tạo ra cảm giác gắn kết cộng đồng lại với nhau. Điều này thể hiện rõ ở cộng đồng các nhà khoa học quốc tế ngày nay, họ dùng tiếng Anh làm ngôn ngữ giao tiếp chung, trong khi thế hệ trước đây sử dụng tiếng Latin”. Tuy nhiên, bài đọc không hề nhắc đến thông tin “Các nhà khoa học quốc tế nhận thấy là, so với tiếng Latin, tiếng Anh dễ được phiên dịch thành các ngôn ngữ khác hơn” (International scientists have found English easier to translate into other languages than Latin).\nBước 4: Đáp án: NOT GIVEN.",
+					"quotes": [
+						"Sharing a language can promote a sense of belonging and community, as with the international scientists who use English as a lingua franca, where their predecessors used Latin."
+					]
+				},
+				{
+					"number": 40,
+					"text": "As far as language is concerned, there is a difference between people's social and practical needs.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nVề mặt ngôn ngữ, có sự khác biệt giữa nhu cầu xã hội và nhu cầu thực tế của con người.\nBước 2: Tìm các keywords được paraphrase trong bài:\n- practical needs ~ cụm từ giữ nguyên\n- social (needs) ~ social value\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ “Ngay cả khi nhu cầu thực tiễn về một ngôn ngữ chung có thể bị giảm đi, việc sử dụng chung một ngôn ngữ vẫn sẽ giữ được giá trị xã hội của nó”. Điều này đồng nghĩa với thông tin trong câu hỏi “về mặt ngôn ngữ, có sự khác biệt giữa nhu cầu xã hội và nhu cầu thực tế của con người. (Though the practical need for a common language will diminish, the social value of sharing one will persist).\nBước 4: Đáp án: YES.",
+					"quotes": [
+						"Though the practical need for a common language will diminish, the social value of sharing one will persist."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

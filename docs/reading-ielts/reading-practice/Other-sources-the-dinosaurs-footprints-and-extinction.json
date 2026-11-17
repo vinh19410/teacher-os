@@ -1,0 +1,157 @@
+{
+	"id": "11053f96-3f62-439c-a6da-cf0c766fccf5",
+	"url": "https://stepielts.com/student/reading/11053f96-3f62-439c-a6da-cf0c766fccf5?mode=practice",
+	"title": "The Dinosaurs Footprints and Extinction",
+	"source": "Other sources",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "The Dinosaurs Footprints and Extinction",
+		"paragraphs": [
+			"Everybody knows that the dinosaurs were killed by an asteroid. Something big hit the earth 65 million years ago and, when the dust had fallen, so had the great reptiles. There is thus a nice, if ironic, symmetry in the idea that a similar impact brought about the dinosaurs’ rise. That is the thesis proposed by Paul Olsen, of Columbia University, and his colleagues in Science.",
+			"Dinosaurs first appear in the fossil record 230 million years ago, during the Triassic period. But they were mostly small, and they shared the earth with lots of other sorts of reptile. It was in the subsequent Jurassic, which began 202 million years ago, that they overran the planet and turned into the monsters depicted in the book and movie \"Jurassic Park\". (Actually, though, the dinosaurs that appeared on screen were from the still more recent Cretaceous period.) Dr Olsen and his colleagues are not the first to suggest that the dinosaurs inherited the earth as the result of an asteroid strike. But they are the first to show that the takeover did, indeed, happen in a geological eyeblink.",
+			"Dinosaur skeletons are rare. Dinosaur footprints are, however, surprisingly abundant. And the sizes of the prints are as good an indication of the sizes of the beasts as are the skeletons themselves. Dr Olsen and his colleagues therefore concentrated on prints, not bones. The prints in question were made in eastern North America, a part of the world full of rift valleys similar to those in East Africa today. Like the modern African rift valleys, the American ones contained lakes, and these lakes grew and shrank at regular intervals because of climatic changes caused by periodic shifts in the earth’s orbit. That regularity, combined with reversals in the earth’s magnetic field, means rocks from this place and period can be dated to within a few thousand years. As a bonus, squishy lake-edge sediments are ideal for recording the tracks of passing animals. Dividing the labour between themselves, the ten authors of the paper were able to study such tracks at 80 sites.",
+			"The researchers looked at 18 so-called ichnotaxa. These are recognizable types of footprint that cannot be matched precisely with the species of animal that left them. But they can be matched with a general sort of animal, and thus act as an indicator of the fate of that group, even when there are no bones to tell the story. Five of the ichnotaxa the researchers looked at were made by dinosaurs. Four of these ichnotaxa disappear before the end of the Triassic, and four march confidently across the boundary into the Jurassic. Six, however, vanish at the boundary, or only just splutter across it, and three appear from nowhere, almost as soon as the Jurassic begins.",
+			"That boundary itself is suggestive. The first geological indication of the impact that killed the dinosaurs was an unusually high level of iridium in rocks at the end of the Cretaceous, when the beasts disappeared from the fossil record. Iridium is normally rare at the earth’s surface, but it is more abundant in meteorites. When people began to believe the impact theory, they started looking for other relevant anomalies. One that turned up was a surprising abundance of fern spores in rocks just above the boundary layer-a phenomenon known as a \"fern spike\". That matched the theory nicely. Many modern ferns are opportunists. They cannot compete against plants with leaves, but if a piece of land is cleared by, say, a volcanic eruption, they are often the first things to set up shop there. An asteroid strike would have scoured much of the earth of its vegetable cover, and provided a paradise for ferns. A fern spike in the rocks is thus a good indication that something dramatic has happened. Both an iridium anomaly and a fern spike appear in rocks at the end of the Triassic, too. That accounts for the disappearing ichnotaxa: the creatures that made them did not survive the holocaust.",
+			"The surprise is how rapidly the new ichnotaxa appeared. Dr Olsen and his colleagues suggest that the explanation for this rapid increase in size may be a phenomenon called ecological release. This is seen today when reptiles reach islands where they face no competitors. The most spectacular example is on the Indonesian island of Komodo, where local lizards have grown so large that they are often referred to as dragons. The dinosaurs, in other words, could flourish only when the competition had been knocked out.",
+			"That leaves the question of where the impact happened. No large crater in the earth’s crust seems to be 202 million years old. It may, of course, have been overlooked. Old craters are eroded and buried, and not always easy to find. Alternatively, it may have vanished. Although continental crust is more or less permanent, the ocean floor is constantly recycled by the tectonic processes that bring about continental drift. There is no ocean floor left that is more than 200 million years old, so a crater that formed in the ocean would have been swallowed up by now. There is a third possibility, however. This is that the crater is known, but has been misdated. The Manicouagan crater in Quebec is thought to be 214 million years old. It is huge-some 100km across- and seems to be the largest of between three and five craters that formed within a few hours of each other as the lumps of a disintegrated comet hit the earth one by one."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "YES/NO/NOT GIVEN",
+			"instructions": "Do the following statements agree with the claims of the writer in Reading Passage 1?\nIn boxes 1-6 on your answer sheet, write:\nYES if the statement agrees with the information\nNO if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Dr Paul Olsen and his colleagues believe that asteroid knock may also lead to dinosaurs' boom.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTiến sĩ Paul Olsen và các đồng nghiệp tin rằng vụ va chạm tiểu hành tinh cũng có thể dẫn đến sự bùng nổ của khủng long.\nBước 2: Tìm các keywords được paraphrase trong bài:\nsimilar impact ~ asteroid knock\nbrought about the dinosaurs' rise ~ lead to dinosaurs' boom\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"có một sự đối xứng thú vị, nếu không muốn nói là mỉa mai, trong ý tưởng rằng một vụ va chạm tương tự đã mang lại sự trỗi dậy của loài khủng long\"\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"va chạm tiểu hành tinh dẫn đến sự bùng nổ của khủng long\". (Dr Paul Olsen and his colleagues believe that asteroid knock may also lead to dinosaurs' boom.).\nBước 4: Đáp án: YES",
+					"quotes": [
+						"There is thus a nice, if ironic, symmetry in the idea that a similar impact brought about the dinosaurs’ rise."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Books and movie like Jurassic Park often exaggerate the size of the dinosaurs.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSách và phim như Công viên kỷ Jura thường phóng đại kích thước của khủng long.\nBước 2: Tìm các keywords được paraphrase trong bài:\nJurassic Park ~ từ khóa giữ nguyên\nexaggerate the size ~ từ khóa cần tìm\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"loài khủng long biến thành những quái vật được mô tả trong sách và phim 'Công viên kỷ Jura'\".\n==> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"phim ảnh thường phóng đại kích thước\" của chúng. (Books and movie like Jurassic Park often exaggerate the size of the dinosaurs.)\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"It was in the subsequent Jurassic, which began 202 million years ago, that they overran the planet and turned into the monsters depicted in the book and movie \"Jurassic Park\"."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Dinosaur footprints are more adequate than dinosaur skeletons.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nDấu chân khủng long đầy đủ/đáng tin cậy hơn bộ xương khủng long.\nBước 2: Tìm các keywords được paraphrase trong bài:\nsurprisingly abundant / as good an indication ~ more adequate\nprints ~ footprints\nbones ~ skeletons\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Xương khủng long rất hiếm. Tuy nhiên, dấu chân khủng long lại phong phú đến kinh ngạc\" và \"kích thước của các dấu chân là một dấu hiệu tốt về kích thước của các loài thú giống như chính các bộ xương vậy\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"dấu chân đầy đủ/tốt hơn xương (về mặt số lượng và khả năng chỉ báo)\" (Dinosaur footprints are more adequate than dinosaur skeletons.).\nBước 4: Đáp án: YES",
+					"quotes": [
+						"Dinosaur skeletons are rare. Dinosaur footprints are, however, surprisingly abundant. And the sizes of the prints are as good an indication of the sizes of the beasts as are the skeletons themselves."
+					]
+				},
+				{
+					"number": 4,
+					"text": "The prints were chosen by Dr Olsen to study because they are more detectable than earth magnetic field to track a date of geological precise within thousands years.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác dấu chân được Tiến sĩ Olsen chọn để nghiên cứu vì chúng dễ phát hiện hơn từ trường trái đất để theo dõi niên đại địa chất chính xác trong vòng hàng nghìn năm.\nBước 2: Tìm các keywords được paraphrase trong bài:\nconcentrated on ~ chosen to study\nreversals in the earth's magnetic field ~ earth magnetic field\ndated ~ date\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"Sự đều đặn đó, kết hợp với sự đảo cực của từ trường trái đất, có nghĩa là các tảng đá từ nơi này và thời kỳ này có thể được xác định niên đại trong vòng vài nghìn năm\".\n==> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"dấu chân dễ phát hiện hơn từ trường\" để xác định niên đại (The prints were chosen... because they are more detectable than earth magnetic field to track a date).\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Dr Olsen and his colleagues therefore concentrated on prints, not bones. The prints in question were made in eastern North America, a part of the world full of rift valleys similar to those in East Africa today. Like the modern African rift valleys, the American ones contained lakes, and these lakes grew and shrank at regular intervals because of climatic changes caused by periodic shifts in the earth’s orbit. That regularity, combined with reversals in the earth’s magnetic field, means rocks from this place and period can be dated to within a few thousand years."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Ichnotaxa showed that footprints of dinosaurs offer exact information of the trace left by an individual species.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NO",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nIchnotaxa cho thấy dấu chân của khủng long cung cấp thông tin chính xác về dấu vết để lại của từng loài riêng biệt.\nBước 2: Tìm các keywords được paraphrase trong bài:\nmatched precisely ~ exact information (Trái nghĩa)\nspecies of animal that left them ~ individual species\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Đây là những loại dấu chân có thể nhận dạng được nhưng không thể khớp chính xác với loài động vật đã để lại chúng\"\n==> Điều này trái ngược với thông tin trong câu hỏi \"cung cấp thông tin chính xác về từng loài\". (Ichnotaxa showed that footprints of dinosaurs offer exact information of the trace left by an individual species.).\nBước 4: Đáp án: NO",
+					"quotes": [
+						"These are recognizable types of footprint that cannot be matched precisely with the species of animal that left them."
+					]
+				},
+				{
+					"number": 6,
+					"text": "We can find more iridium in the earth's surface than in meteorites.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NO",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nChúng ta có thể tìm thấy nhiều iridium ở bề mặt trái đất hơn là trong các thiên thạch.\nBước 2: Tìm các keywords được paraphrase trong bài:\nrare... but more abundant in ~ more... than (Trái nghĩa)\nmeteorites ~ từ khóa giữ nguyên\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Iridium thường hiếm ở bề mặt trái đất, nhưng nó dồi dào hơn trong các thiên thạch\"\n==> Điều này trái ngược với thông tin trong câu hỏi \"iridium ở bề mặt trái đất nhiều hơn trong thiên thạch\". (We can find more iridium in the earth's surface than in meteorites.).\nBước 4: Đáp án: NO",
+					"quotes": [
+						"Iridium is normally rare at the earth’s surface, but it is more abundant in meteorites."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-13",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary below. Choose NO MORE THAN TWO WORDS from the passage for each answer.",
+			"body": "Dr Olsen and his colleagues applied a phenomenon named ____ (7) to explain the large size of the Eubrontes, which is a similar case to that nowadays reptiles invade a place where there are no ____ (8), for example, on an island called Komodo, indigenous huge lizards grow so big that people even regard them as ____ (9)\nHowever, there were no old impact traces being found. The answer ____ (10) may be due to the effect of movement. Even a crater formed in the ocean had been ____ (11). It is also possible that it had been ____ (12) under the impact of crustal movement. Besides, the third hypothesis is that the potential evidence - some craters may be ____ (13)",
+			"body_html": "<table><tbody><tr><td><p>Dr Olsen and his colleagues applied a phenomenon named [7] to explain the large size of the Eubrontes, which is a similar case to that nowadays reptiles invade a place where there are no [8], for example, on an island called Komodo, indigenous huge lizards grow so big that people even regard them as [9]</p><p>However, there were no old impact traces being found. The answer [10] may be due to the effect of movement. Even a crater formed in the ocean had been [11]. It is also possible that it had been [12] under the impact of crustal movement. Besides, the third hypothesis is that the potential evidence - some craters may be [13]</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "",
+					"answer": "ecological release",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nTiến sĩ Olsen và các đồng nghiệp đã áp dụng một hiện tượng tên là ____.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN PHRASE\nDấu hiệu: a phenomenon named + NOUN PHRASE (Cần một cụm danh từ chỉ tên một hiện tượng).\nBước 3: Tìm các keywords được paraphrase trong bài:\nsuggest ~ applied\ncalled ~ named\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Tiến sĩ Olsen và các đồng nghiệp gợi ý rằng lời giải thích cho sự gia tăng kích thước nhanh chóng này có thể là một hiện tượng gọi là ecological release\" (Dr Olsen and his colleagues suggest that the explanation for this rapid increase in size may be a phenomenon called ecological release).\nBước 5: Đáp án: ecological release.\nTiến sĩ Olsen và các đồng nghiệp đã áp dụng một hiện tượng tên là ecological release (Dr Olsen and his colleagues applied a phenomenon named ecological release).",
+					"quotes": [
+						"Dr Olsen and his colleagues suggest that the explanation for this rapid increase in size may be a phenomenon called ecological release."
+					]
+				},
+				{
+					"number": 8,
+					"text": "",
+					"answer": "competitors",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\n...một trường hợp tương tự như việc các loài bò sát ngày nay xâm chiếm một nơi không có ____.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (Số nhiều)\nDấu hiệu: where there are no + NOUN (Sau 'no' cần một danh từ số nhiều hoặc không đếm được).\nBước 3: Tìm các keywords được paraphrase trong bài:\ntoday ~ nowadays\nreach ~ invade\nno competitors ~ no ____\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Điều này được thấy ngày nay khi các loài bò sát đến các hòn đảo nơi chúng đối mặt với không có đối thủ cạnh tranh\" (This is seen today when reptiles reach islands where they face no competitors).\nBước 5: Đáp án: competitors.\n...xâm chiếm một nơi không có competitors (...reptiles invade a place where there are no competitors).",
+					"quotes": [
+						"This is seen today when reptiles reach islands where they face no competitors."
+					]
+				},
+				{
+					"number": 9,
+					"text": "",
+					"answer": "dragons",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\n...những con thằn lằn khổng lồ bản địa lớn đến mức mọi người thậm chí còn coi chúng là ____.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (Số nhiều)\nDấu hiệu: regard them as + NOUN (Cụm 'regard as' đi với danh từ để chỉ cách gọi tên).\nBước 3: Tìm các keywords được paraphrase trong bài:\nlocal lizards ~ huge lizards\nreferred to as ~ regard them as\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...nơi những con thằn lằn địa phương đã phát triển lớn đến mức chúng thường được gọi là rồng\" (...where local lizards have grown so large that they are often referred to as dragons).\nBước 5: Đáp án: dragons.\n...mọi người thậm chí còn coi chúng là dragons (...people even regard them as dragons).",
+					"quotes": [
+						"The most spectacular example is on the Indonesian island of Komodo, where local lizards have grown so large that they are often referred to as dragons."
+					]
+				},
+				{
+					"number": 10,
+					"text": "",
+					"answer": "overlooked",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCâu trả lời có thể là do ____...\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: VERB (Past Participle)\nDấu hiệu: May have been + VERB-ed. Chỗ trống cần một động từ ở dạng quá khứ phân từ để hoàn thành cấu trúc bị động, giải thích lý do hố va chạm không được tìm thấy.\nBước 3: Tìm các keywords được paraphrase trong bài:\nNo large crater... seems to be... old ~ no old impact trace being found\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Nó có lẽ, dĩ nhiên, đã bị bỏ qua\" (It may, of course, have been overlooked).\nBước 5: Đáp án: overlooked.\nCâu trả lời có thể là do bị overlooked (The answer may be due to overlooked).",
+					"quotes": ["It may, of course, have been overlooked."]
+				},
+				{
+					"number": 11,
+					"text": "",
+					"answer": "vanished",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nNó cũng có thể đã ____ dưới tác động của sự chuyển động vỏ Trái đất.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: VERB (Past Participle)\nDấu hiệu: may have + VERB-ed. Cấu trúc thì hoàn thành.\nBước 3: Tìm các keywords được paraphrase trong bài:\nAlternatively, it may have ~ It is also possible\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Ngoài ra, nó có thể đã biến mất\" (Alternatively, it may have vanished).\nBước 5: Đáp án: vanished.\nNó cũng có thể đã vanished dưới tác động của sự chuyển động vỏ Trái đất (It is also possible it has vanished under the impact of the crust movement).",
+					"quotes": ["Alternatively, it may have vanished."]
+				},
+				{
+					"number": 12,
+					"text": "",
+					"answer": "swallowed up",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nMột hố va chạm sẽ bị ____ cho đến bây giờ.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: VERB (Past Participle)\nDấu hiệu: would have been + VERB-ed. Cấu trúc bị động.\nBước 3: Tìm các keywords được paraphrase trong bài:\ntectonic processes ~ crust movement\nby now ~ từ khóa giữ nguyên\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...một hố va chạm hình thành dưới đại dương sẽ bị nuốt chửng cho đến bây giờ\" (...a crater that formed in the ocean would have been swallowed up by now).\nBước 5: Đáp án: swallowed up.\nMột hố va chạm sẽ bị swallowed up cho đến bây giờ (A crater would have been swallowed up by now).",
+					"quotes": [
+						"There is no ocean floor left that is more than 200 million years old, so a crater that formed in the ocean would have been swallowed up by now."
+					]
+				},
+				{
+					"number": 13,
+					"text": "",
+					"answer": "misdated",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\n...một số hố va chạm có thể đã bị ____.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: VERB (Past Particlipiple)\nDấu hiệu: has been + VERB-ed (Cấu trúc bị động: đã bị...).\nBước 3: Tìm các keywords được paraphrase trong bài:\nthird possibility ~ third hypothesis\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Đây là việc hố va chạm đã được biết đến, nhưng bị xác định sai niên đại\" (This is that the crater is known, but has been misdated).\nBước 5: Đáp án: misdated.\n...một số hố va chạm có thể đã bị misdated (...some craters may have been misdated).",
+					"quotes": ["This is that the crater is known, but has been misdated."]
+				}
+			]
+		}
+	],
+	"images": []
+}

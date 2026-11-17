@@ -1,0 +1,198 @@
+{
+	"id": "985fbe84-02ce-48e5-8199-e9b7e2fa50ff",
+	"url": "https://stepielts.com/student/reading/985fbe84-02ce-48e5-8199-e9b7e2fa50ff?mode=practice",
+	"title": "Assessing the threat of marine debris",
+	"source": "C14T4",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "27-40",
+	"passage": {
+		"title": "Assessing the threat of marine debris",
+		"subtitle": "Chelsea Rochman, an ecologist at the University of California, Davis, has been trying to answer a dismal question: Is everything terrible, or are things just very, very bad?",
+		"paragraphs": [
+			"Rochman is a member of the National Center for Ecological Analysis and Synthesis’s marine-debris working group, a collection of scientists who study, among other things, the growing problem of marine debris, also known as ocean trash. Plenty of studies have sounded alarm bells about the state of marine debris; in a recent paper published in the journal Ecology, Rochman and her colleagues set out to determine how many of those perceived risks are real.",
+			"Often, Rochman says, scientists will end a paper by speculating about the broader impacts of what they’ve found. For example, a study could show that certain seabirds eat plastic bags, and go on to warn that whole bird populations are at risk of dying out. ‘But the truth was that nobody had yet tested those perceived threats,’ Rochman says. ‘There wasn’t a lot of information.’",
+			"Rochman and her colleagues examined more than a hundred papers on the impacts of marine debris that were published through 2013. Within each paper, they asked what threats scientists had studied – 366 perceived threats in all – and what they’d actually found.",
+			"In 83 percent of cases, the perceived dangers of ocean trash were proven true. In the remaining cases, the working group found the studies had weaknesses in design and content which affected the validity of their conclusions – they lacked a control group, for example, or used faulty statistics.",
+			"Strikingly, Rochman says, only one well-designed study failed to find the effect it was looking for, an investigation of mussels ingesting microscopic bits. The plastic moved from the mussels’ stomachs to their bloodstreams, scientists found, and stayed there for weeks – but didn’t seem to stress out the shellfish.",
+			"While mussels may be fine eating trash, though, the analysis also gave a clearer picture of the many ways that ocean debris is bothersome.",
+			"Within the studies they looked at, most of the proven threats came from plastic debris, rather than other materials like metal or wood. Most of the dangers also involved large pieces of debris – animals getting entangled in trash, for example, or eating it and severely injuring themselves.",
+			"But a lot of ocean debris is ‘microplastic’, or pieces smaller than five millimeters. These may be ingredients used in cosmetics and toiletries, fibers shed by synthetic clothing in the wash, or eroded remnants of larger debris. Compared to the number of studies investigating large-scale debris, Rochman’s group found little research on the effects of these tiny bits. ‘There are a lot of open questions still for microplastic,’ Rochman says, though she notes that more papers on the subject have been published since 2013, the cutoff point for the group’s analysis.",
+			"There are also, she adds, a lot of open questions about the ways that ocean debris can lead to sea-creature death. Many studies have looked at how plastic affects an individual animal, or that animal’s tissues or cells, rather than whole populations. And in the lab, scientists often use higher concentrations of plastic than what’s really in the ocean. of that tells us how many birds or fish or sea turtles could die from plastic pollution – or how deaths in one species could affect that animal’s predators, or the rest of the ecosystem.",
+			"‘We need to be asking more ecologically relevant questions,’ Rochman says. Usually, scientists don’t know exactly how disasters such as a tanker accidentally spilling its whole cargo of oil and polluting huge areas of the ocean will affect the environment until after they’ve happened. ‘We don’t ask the right questions early enough,’ she says. But if ecologists can understand how the slow-moving effect of ocean trash is damaging ecosystems, they might be able to prevent things from getting worse.",
+			"Asking the right questions can help policy makers, and the public, figure out where to focus their attention. The problems that look or sound most dramatic may not be the best places to start. For example, the name of the ‘Great Pacific Garbage Patch’ – a collection of marine debris in the northern Pacific Ocean – might conjure up a vast, floating trash island. In reality though, much of the debris is tiny or below the surface; a person could sail through the area without seeing any trash at all. A Dutch group called ‘The Ocean Cleanup’ is currently working on plans to put mechanical devices in the Pacific Garbage Patch and similar areas to suck up plastic. But a recent paper used simulations to show that strategically positioning the cleanup devices closer to shore would more effectively reduce pollution over the long term.",
+			"‘I think clearing up some of these misperceptions is really important,’ Rochman says. Among scientists as well as in the media, she says, ‘A lot of the images about strandings and entanglement and all of that cause the perception that plastic debris is killing everything in the ocean.’ Interrogating the existing scientific literature can help ecologists figure out which problems really need addressing, and which ones they’d be better off – like the mussels – absorbing and ignoring."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "27-33",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 3?\nIn boxes 27 - 33 on your answer sheet, write:\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 27,
+					"text": "Rochman and her colleagues were the first people to research the problem of marine debris.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nRochman và các đồng nghiệp của cô ấy là những người đầu tiên nghiên cứu về vấn đề rác thải biển.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nRochman and her colleagues ~ cụm từ giữ nguyên\na collection of scientists who study ~ first people to research\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Nhiều nghiên cứu (trước đó) đã báo động về tình trạng rác thải biển; trong một bài báo mới xuất bản gần đây trong tạp chí Ecology, Rochman và đồng nghiệp muốn xác định xem bao nhiêu trong số những rủi ro đó là có thật.\"\n=> Điều này trái ngược với thông tin trong câu hỏi \"Rochman và đồng nghiệp của cô ấy là những người đầu tiên nghiên cứu về vấn đề rác thải biển\" (Rochman and her colleagues were the first people to research the problem of marine debris).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Plenty of studies have sounded alarm bells about the state of marine debris; in a recent paper published in the journal Ecology, Rochman and her colleagues set out to determine how many of those perceived risks are real."
+					]
+				},
+				{
+					"number": 28,
+					"text": "The creatures most in danger from ocean trash are certain seabirds.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSinh vật bị đe dọa nhiều nhất bởi rác thải đại dương là một số loài chim biển.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ncertain seabirds ~ từ khóa giữ nguyên\nmarine debris ~ ocean trash\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"Ví dụ, một nghiên cứu có thể chỉ ra rằng một số loài chim biển ăn túi nhựa, và tiếp tục cảnh báo rằng toàn bộ quần thể chim có nguy cơ tuyệt chủng.\"\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"chim biển là sinh vật bị đe dọa nhiều nhất bởi rác thải đại dương\" (The creatures most in danger from ocean trash are certain seabirds).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"For example, a study could show that certain seabirds eat plastic bags, and go on to warn that whole bird populations are at risk of dying out."
+					]
+				},
+				{
+					"number": 29,
+					"text": "The studies Rochman has reviewed have already proved that populations of some birds will soon become extinct.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác nghiên cứu mà Rochman đã xem xét đã chứng minh rằng quần thể của một số loài chim sẽ sớm bị tuyệt chủng.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nRochman and her colleagues examined more than a hundred papers ~ studies Rochman has reviewed\nproven true ~ proved\nwhole bird populations are at risk of dying out ~ populations of some birds will soon become extinct\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"'Nhưng sự thật là chưa ai thực sự kiểm chứng những mối đe dọa được nhận thức này,' Rochman nói. 'Chưa có nhiều thông tin.'\"\n=> Điều này trái ngược với thông tin trong câu hỏi \"các nghiên cứu đã chứng minh rằng quần thể của một số loài chim sẽ sớm bị tuyệt chủng\" (The studies Rochman has reviewed have already proved that populations of some birds will soon become extinct).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"‘But the truth was that nobody had yet tested those perceived threats,’ Rochman says."
+					]
+				},
+				{
+					"number": 30,
+					"text": "Rochman analysed papers on the different kinds of danger caused by ocean trash.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nRochman đã phân tích các bài báo về các loại nguy hiểm khác nhau do rác thải đại dương gây ra.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nRochman and her colleagues examined more than a hundred papers ~ Rochman analysed papers\nthreats ~ different kinds of danger\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Rochman và các đồng nghiệp của cô đã xem xét hơn một trăm bài báo về tác động của rác thải biển được xuất bản đến năm 2013. Trong mỗi bài báo, họ đã hỏi các nhà khoa học đã nghiên cứu những mối đe dọa nào - tổng cộng 366 mối đe dọa được nhận thức - và họ thực sự đã tìm thấy những gì.\"\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Rochman đã phân tích các bài báo về các loại nguy hiểm khác nhau do rác thải đại dương gây ra\" (Rochman analysed papers on the different kinds of danger caused by ocean trash).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Rochman and her colleagues examined more than a hundred papers on the impacts of marine debris that were published through 2013."
+					]
+				},
+				{
+					"number": 31,
+					"text": "Most of the research analysed by Rochman and her colleagues was badly designed.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nHầu hết các nghiên cứu được Rochman và đồng nghiệp phân tích đều được thiết kế không tốt.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nIn 83 percent of cases ~ Most of the research analysed by Rochman and her colleagues\nweaknesses in design and content ~ badly designed\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Trong 83% trường hợp, những nguy hiểm được nhận thức của rác thải đại dương đã được chứng minh là đúng. Trong các trường hợp còn lại, nhóm làm việc nhận thấy các nghiên cứu có điểm yếu trong thiết kế và nội dung ảnh hưởng đến tính hợp lệ của kết luận của họ.\"\n=> Điều này trái ngược với thông tin trong câu hỏi \"Hầu hết các nghiên cứu được Rochman và đồng nghiệp phân tích đều được thiết kế không tốt\" (Most of the research analysed by Rochman and her colleagues was badly designed). Thực tế, chỉ có một phần nhỏ (17%) có vấn đề về thiết kế.\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"In the remaining cases, the working group found the studies had weaknesses in design and content which affected the validity of their conclusions – they lacked a control group, for example, or used faulty statistics."
+					]
+				},
+				{
+					"number": 32,
+					"text": "One study examined by Rochman was expecting to find that mussels were harmed by eating plastic.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột nghiên cứu được Rochman xem xét đã kỳ vọng tìm thấy rằng vẹm bị tổn hại khi ăn nhựa.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nonly one well-designed study ~ One study examined by Rochman\nfailed to find the effect it was looking for ~ expecting to find\nmussels ingesting microscopic bits ~ mussels were harmed by eating plastic\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Đáng chú ý, Rochman nói, chỉ có một nghiên cứu được thiết kế tốt không tìm thấy tác động mà nó đang tìm kiếm, một cuộc điều tra về việc vẹm ăn các mảnh vi nhựa. Các nhà khoa học phát hiện ra rằng nhựa di chuyển từ dạ dày của vẹm vào máu và ở đó trong nhiều tuần - nhưng dường như không gây căng thẳng cho động vật có vỏ này.\"\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"một nghiên cứu kỳ vọng tìm thấy rằng vẹm bị tổn hại khi ăn nhựa\" (One study examined by Rochman was expecting to find that mussels were harmed by eating plastic).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Strikingly, Rochman says, only one well-designed study failed to find the effect it was looking for, an investigation of mussels ingesting microscopic bits."
+					]
+				},
+				{
+					"number": 33,
+					"text": "Some mussels choose to eat plastic in preference to their natural diet.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột số loài vẹm chọn ăn nhựa thay vì thức ăn tự nhiên của chúng.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nmussels ~ từ khóa giữ nguyên\ningesting microscopic bits ~ choose to eat plastic\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"vẹm ăn các mảnh vi nhựa. Các nhà khoa học phát hiện ra rằng nhựa di chuyển từ dạ dày của vẹm vào máu và ở đó trong nhiều tuần - nhưng dường như không gây căng thẳng cho động vật có vỏ này.\"\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"vẹm chọn ăn nhựa thay vì thức ăn tự nhiên của chúng\" (Some mussels choose to eat plastic in preference to their natural diet).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"The plastic moved from the mussels’ stomachs to their bloodstreams, scientists found, and stayed there for weeks – but didn’t seem to stress out the shellfish.",
+						"While mussels may be fine eating trash, though, the analysis also gave a clearer picture of the many ways that ocean debris is bothersome."
+					]
+				}
+			]
+		},
+		{
+			"range": "34-39",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the notes below. Choose ONE WORD ONLY from the passage for each answer. Write your answers in boxes 34 - 39 on your answer sheet.",
+			"body": "Findings related to marine debris\nStudies of marine debris found the biggest threats were\n• plastic (not metal or wood)\n• bits of debris that were ____ (34) (harmful to animals)\nThere was little research into ____ (35) e.g. from synthetic fibres.\nDrawbacks of the studies examined\n• most of them focused on individual animals, not entire ____ (36)\n• the ____ (37) of plastic used in the lab did not always reflect those in the ocean\n• there was insufficient information on\n– numbers of animals which could be affected\n– the impact of a reduction in numbers on the ____ (38) of that species\n– the impact on the ecosystem\nRochman says more information is needed on the possible impact of future ____ (39) (e.g. involving oil).",
+			"body_html": "<h3><strong>Findings related to marine debris</strong></h3><h4><strong>Studies of marine debris found the biggest threats were</strong></h4><p>•   plastic (not metal or wood)</p><p>•   bits of debris that were [34] (harmful to animals)</p><p>There was little research into [35] e.g. from synthetic fibres.</p><h4><strong>Drawbacks of the studies examined</strong></h4><p>•   most of them focused on individual animals, not entire [36]</p><p>•   the [37] of plastic used in the lab did not always reflect those in the ocean</p><p>•   there was insufficient information on</p><p>–   numbers of animals which could be affected</p><p>–   the impact of a reduction in numbers on the [38] of that species</p><p>–   the impact on the ecosystem</p><p>Rochman says more information is needed on the possible impact of future [39] (e.g. involving oil).</p>",
+			"questions": [
+				{
+					"number": 34,
+					"text": "• bits of debris that were ____ (34) (harmful to animals)",
+					"answer": "large",
+					"quotes": [
+						"Most of the dangers also involved large pieces of debris – animals getting entangled in trash, for example, or eating it and severely injuring themselves."
+					]
+				},
+				{
+					"number": 35,
+					"text": "There was little research into ____ (35) e.g. from synthetic fibres.",
+					"answer": "microplastic",
+					"quotes": [
+						"But a lot of ocean debris is ‘microplastic’, or pieces smaller than five millimeters. These may be ingredients used in cosmetics and toiletries, fibers shed by synthetic clothing in the wash, or eroded remnants of larger debris. Compared to the number of studies investigating large-scale debris, Rochman’s group found little research on the effects of these tiny bits."
+					]
+				},
+				{
+					"number": 36,
+					"text": "• most of them focused on individual animals, not entire ____ (36)",
+					"answer": "population",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nHầu hết các nghiên cứu tập trung vào từng cá thể động vật, không phải toàn bộ __________.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: entire + NOUN (NOUN được bổ nghĩa bởi ADJECTIVE \"ENTIRE\")\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nMany studies ~ most of them\nan individual animal ~ individual animals\nnot ~ rather than\nwhole ~ entire\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Nhiều nghiên cứu đã xem xét tác động của nhựa đối với một cá thể động vật, hoặc mô hoặc tế bào của động vật đó, chứ không phải toàn bộ quần thể\" (Many studies have looked at how plastic affects an individual animal, or that animal's tissues or cells, rather than whole populations).\n\nBước 5: Đáp án: population\nHầu hết các nghiên cứu tập trung vào từng cá thể động vật, không phải toàn bộ quần thể (most of them focused on individual animals, not entire populations).",
+					"quotes": [
+						"Many studies have looked at how plastic affects an individual animal, or that animal’s tissues or cells, rather than whole populations."
+					]
+				},
+				{
+					"number": 37,
+					"text": "• the ____ (37) of plastic used in the lab did not always reflect those in the ocean",
+					"answer": "population",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\n_______ của nhựa được sử dụng trong phòng thí nghiệm không phải lúc nào cũng phản ánh đúng lượng nhựa trong đại dương\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: the + NOUN + of plastic (NOUN theo sau Article \"THE\")\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nin the lab ~ cụm từ giữ nguyên\nin the ocean ~ cụm từ giữ nguyên\nhigher... than ~ did not always reflect\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Và trong phòng thí nghiệm, các nhà khoa học thường sử dụng nồng độ nhựa cao hơn so với thực tế trong đại dương\" (And in the lab, scientists often use higher concentrations of plastic than what's really in the ocean).\n\nBước 5: Đáp án: population\nNồng độ của nhựa được sử dụng trong phòng thí nghiệm không phải lúc nào cũng phản ánh đúng lượng nhựa trong đại dương (the concentrations of plastic used in the lab did not always reflect those in the ocean).",
+					"quotes": [
+						"And in the lab, scientists often use higher concentrations of plastic than what’s really in the ocean."
+					]
+				},
+				{
+					"number": 38,
+					"text": "– the impact of a reduction in numbers on the ____ (38) of that species",
+					"answer": "predators",
+					"quotes": [
+						"of that tells us how many birds or fish or sea turtles could die from plastic pollution – or how deaths in one species could affect that animal’s predators, or the rest of the ecosystem."
+					]
+				},
+				{
+					"number": 39,
+					"text": "Rochman says more information is needed on the possible impact of future ____ (39) (e.g. involving oil).",
+					"answer": "disasters",
+					"quotes": [
+						"Usually, scientists don’t know exactly how disasters such as a tanker accidentally spilling its whole cargo of oil and polluting huge areas of the ocean will affect the environment until after they’ve happened.",
+						"Usually, scientists don’t know exactly how disasters such as a tanker accidentally spilling its whole cargo of oil and polluting huge areas of the ocean will affect the environment until after they’ve happened. ‘We don’t ask the right questions early enough,’ she says. But if ecologists can understand how the slow-moving effect of ocean trash is damaging ecosystems, they might be able to prevent things from getting worse."
+					]
+				}
+			]
+		},
+		{
+			"range": "40",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 40,
+					"text": "What would be the best title for this passage?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Assessing the threat of marine debris"
+						},
+						{
+							"label": "B",
+							"text": "Marine debris: who is to blame?"
+						},
+						{
+							"label": "C",
+							"text": "A new solution to the problem of marine debris"
+						},
+						{
+							"label": "D",
+							"text": "Marine debris: the need for international action"
+						}
+					],
+					"answer": "A"
+				}
+			]
+		}
+	],
+	"images": []
+}

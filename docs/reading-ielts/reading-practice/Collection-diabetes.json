@@ -1,0 +1,287 @@
+{
+	"id": "9dd1e4da-c9dd-4760-bcc6-470d3eb00308",
+	"url": "https://stepielts.com/student/reading/9dd1e4da-c9dd-4760-bcc6-470d3eb00308?mode=practice",
+	"title": "Diabetes",
+	"source": "Collection",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-14",
+	"passage": {
+		"title": "Diabetes",
+		"paragraphs": [
+			"Here are a few diabetes-related facts that most people are probably not aware of. It is the world’s most rapidly spreading illness. It is the sixth most widespread cause of death in Australia. More than a million Australians have it, although 50% of them are currently unaware of it. Someone is diagnosed with diabetes every 10 minutes. There is a lot of information, but what exactly is diabetes?",
+			"Diabetes is the term given to a set of various disorders that occur when there is excessive glucose present in the blood. Here’s what tends to happen: Our body requires glucose as its key source of fuel or energy. The body produces glucose from meals containing carbohydrates such as starchy vegetables (like potatoes or maize) and cereal foods (such as bread, pasta, and rice), along with fruits and milk. Blood transports glucose throughout the body, and the amount of glucose is termed \"glycemia.\" Glycemia (blood sugar levels) in people and animals must be absolutely perfect, neith er too high nor too low. In order for the glucose to enter the body tissues, it must first leave the bloodstream, where it is already present. This is when insulin enters the picture. The pancreas, a gland situated right below the stomach, produces the hormone insulin. Insulin unlocks the door that allows glucose from the blood to enter the body cells, where it is converted into energy. This process is termed glucose metabolism. In diabetes, the pancreas either cannot produce insulin or produces insufficient insulin, which is futile. The glucose pathways are closed if insulin isn’t working as it ought to. Blood glucose levels rise as a result of glucose buildup, which leads to diabetes-related medical conditions.",
+			"People may refer to the illness as diabetes, though there are two forms of the disease. High blood glucose levels caused by the absence of insulin are a characteristic of type 1 diabetes. It happens when the pancreas’ insulin-producing beta cells are attacked and destroyed by the body’s immune system. Consequently, the pancreas yields little or no insulin. Although it may appear in adults, type 1 diabetes often emerges in young individuals. The most prevalent kind of diabetes is type 2. In type 2 diabetes, the cells will either not react to the insulin or the body will not create enough of it. For the body to be able to fully utilise sugar, it needs insulin. The primary source of energy for the body’s cells is sugar, which insulin carries from the blood to the cells.",
+			"Diabetes is usually diagnosed based on the type of diabetes that the patient possesses. Type 1 diabetes is typically detected fairly early since the symptoms are often sudden and perhaps even life-threatening; hyperglycemia (high blood sugar levels) may lead to comas. Many patients with type 2 diabetes exhibit no symptoms at all, whereas other symptoms may go overlooked since they are considered a typical feature of \"growing older.\" As a result, many people’s blood sugar levels could be incredibly high by the time symptoms appear. Common signs and symptoms include excessive thirst, excessive urination, being tired, constant hunger, slower wound healing, itching, skin infections, bad breath, blurred vision, unexplained weight transition, mood swings, migraines, dizziness, and leg cramps.",
+			"There is no cure for diabetes at the moment, though there is a significant amount of research being done to discover one and to provide better treatment strategies and solutions until a solution is found. Each diabetes treatment aims to get your blood sugars into t he non-diabetic range as often as possible, irrespective of whether you suffer from Type 1 or Type 2 dia betes. For patients with Type 1 diabetes, this will involve daily injections of insulin as well as living a healthy lifestyle. For people who have Type 2 diabetes, healthy food and regular physical exercise may be all that is necessary initially; however, medications and perhaps insulin may be required later on. Frequent self-testing is recommended in order to maintain blood glucose levels as close as possible to the non-diabe tic range. This could help avoid any short-term impacts of either low or excessively high blood sugar levels, as well as the potential long-term issues. Insulin has to be injected into the system if an individual is dependent on it. Insulin is not available as a tablet. Similar to the protein in food, insulin would be processed during digestion. To get insulin into your blood, it has to be injected into the fat beneath your skin. Diabetes may result in significant issues for patients. There could be issues if glucose accumulates in the blood rather than entering cells. Long-term high blood sugar levels may result in heart attacks, strokes, kidney failure, amputations, and blindness, whereas short-term issues are identic al to the symptoms. Out-of-range cholesterol levels and blood pressure can also lead to further complications like heart at tacks and strokes, and 2 out of 3 patients end up dying from these issues. Type 2 diabetes raises a person’s chance of a heart attack and stroke by 14 and up to 30 times, respectively, compared to other young people aged 18 to 44. Young males are twice as likely to have a stroke than young women, while young women account for nearly the entire spike in the risk of heart attacks. This indicates that a larger number of individuals will develop heart disease, heart attacks, and strokes than expected, often years or even decades in advance."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-7",
+			"type": "YES/NO/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 1?\nIn the boxes 1-7 of your answer sheet, write\nYES if the statement agrees with the information\nNO if the statement contradicts with the information\nNOT GIVEN if the information is not given the passage",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Type 1 diabetes is diagnosed quite rapidly, because of hyperglycemia.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTiểu đường Loại 1 được chẩn đoán khá nhanh chóng vì tình trạng tăng đường huyết.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ndetected fairly early ~ diagnosed quite rapidly\nhyperglycemia ~ từ khóa giữ nguyên\nType 1 diabetes ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Tiểu đường Loại 1 thường được phát hiện khá sớm vì các triệu chứng thường đột ngột... tăng đường huyết (hyperglycemia) có thể dẫn đến hôn mê\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"Tiểu đường Loại 1 được chẩn đoán nhanh do tăng đường huyết\" (Type 1 diabetes is typically detected fairly early since... hyperglycemia may lead to comas).\n\nBước 4: Đáp án: YES",
+					"quotes": [
+						"Type 1 diabetes is typically detected fairly early since the symptoms are often sudden and perhaps even life-threatening; hyperglycemia (high blood sugar levels) may lead to comas."
+					]
+				},
+				{
+					"number": 2,
+					"text": "A person diagnosed with diabetes can not produce insulin.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NO",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột người được chẩn đoán mắc bệnh tiểu đường thì không thể sản xuất insulin.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\npancreas either cannot produce insulin or produces insufficient insulin ~ can not produce insulin\ndiagnosed with diabetes ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Trong bệnh tiểu đường, tuyến tụy hoặc là không thể sản xuất insulin hoặc là sản xuất không đủ insulin\". Việc sản xuất \"không đủ\" (insufficient) đồng nghĩa với việc vẫn có sản xuất được một ít, chứ không phải hoàn toàn \"không thể\" (can not).\n==> Điều này trái ngược với thông tin trong câu hỏi \"người mắc bệnh tiểu đường không thể sản xuất insulin\" (pancreas either cannot produce insulin or produces insufficient insulin).\n\nBước 4: Đáp án: NO",
+					"quotes": [
+						"In diabetes, the pancreas either cannot produce insulin or produces insufficient insulin, which is futile."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Faults in the immune system of the people is the reason why they develop diabetes.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nLỗi trong hệ thống miễn dịch của con người là lý do tại sao họ phát triển bệnh tiểu đường.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nattacked and destroyed by the body's immune system ~ Faults in the immune system\nreason why they develop diabetes ~ It happens when\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Tiểu đường Loại 1... xảy ra khi các tế bào beta sản xuất insulin của tuyến tụy bị tấn công và phá hủy bởi hệ thống miễn dịch của cơ thể\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"lỗi hệ miễn dịch là nguyên nhân gây bệnh\" (It happens when the pancreas'... cells are attacked and destroyed by the body's immune system).\n\nBước 4: Đáp án: YES",
+					"quotes": [
+						"It happens when the pancreas’ insulin-producing beta cells are attacked and destroyed by the body’s immune system."
+					]
+				},
+				{
+					"number": 4,
+					"text": "The body gets glucose from meals with high carbohydrate content.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCơ thể nhận được glucose từ các bữa ăn có hàm lượng carbohydrate cao.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nproduces glucose from meals containing carbohydrates ~ gets glucose from meals with high carbohydrate content\nThe body ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ nêu \"Cơ thể sản xuất glucose từ các bữa ăn chứa carbohydrate như rau củ có tinh bột... ngũ cốc... cùng với trái cây và sữa\". chứ không đề cập đến các bữa ăn có high carbohydrate content\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"The body produces glucose from meals containing carbohydrates such as starchy vegetables (like potatoes or maize) and cereal foods (such as bread, pasta, and rice), along with fruits and milk."
+					]
+				},
+				{
+					"number": 5,
+					"text": "The most effective solution for patients in need of insulin is artificial insulin.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nGiải pháp hiệu quả nhất cho những bệnh nhân cần insulin là insulin nhân tạo.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ndaily injections of insulin ~ artificial insulin\nmost effective solution ~ từ khóa không xuất hiện\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Đối với bệnh nhân Tiểu đường Loại 1, việc này sẽ bao gồm tiêm insulin hàng ngày cùng với lối sống lành mạnh\".\n==> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"đây có phải là giải pháp 'hiệu quả nhất' hay không khi so sánh với các phương pháp khác\" (most effective solution).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"For patients with Type 1 diabetes, this will involve daily injections of insulin as well as living a healthy lifestyle."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Majority of people suffering from diabetes develop heart issues or suffer from strokes.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐa số những người mắc bệnh tiểu đường phát triển các vấn đề về tim hoặc bị đột quỵ.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n2 out of 3 patients ~ Majority of people\nend up dying from these issues ~ develop heart issues or suffer from strokes\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"...mức cholesterol và huyết áp nằm ngoài phạm vi cho phép cũng có thể dẫn đến các biến chứng như đau tim và đột quỵ, và 2 trong số 3 bệnh nhân cuối cùng sẽ tử vong vì những vấn đề này\". Tỷ lệ 2/3 (khoảng 66%) tương ứng với \"đa số\" (majority).\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"đa số bệnh nhân gặp vấn đề tim mạch hoặc đột quỵ\" (...complications like heart attacks and strokes, and 2 out of 3 patients end up dying from these issues).\n\nBước 4: Đáp án: YES",
+					"quotes": [
+						"Out-of-range cholesterol levels and blood pressure can also lead to further complications like heart at tacks and strokes, and 2 out of 3 patients end up dying from these issues."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Regular medical visits may significantly lower the likelihood of developing issues linked with diabetes.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác chuyến thăm khám y tế thường xuyên có thể làm giảm đáng kể khả năng phát triển các vấn đề liên quan đến tiểu đường.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nFrequent self-testing ~ khác với Regular medical visits\navoid any short-term impacts... long-term issues ~ lower the likelihood of developing issues\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"Tự kiểm tra thường xuyên (self-testing) được khuyến khích để giữ mức đường huyết gần phạm vi không tiểu đường nhất có thể\".\n==> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"về việc 'thăm khám y tế thường xuyên' (medical visits) có tác động như thế nào\" (regular medical visits).\n\nBước 4: Đáp án: NOT GIVEN"
+				}
+			]
+		},
+		{
+			"range": "8-11",
+			"type": "MATCHING_ENDINGS",
+			"instructions": "Complete the following sentences with the best endings from the box below.",
+			"options": [
+				{
+					"label": "A",
+					"text": "women."
+				},
+				{
+					"label": "B",
+					"text": "body cells."
+				},
+				{
+					"label": "C",
+					"text": "injections."
+				},
+				{
+					"label": "D",
+					"text": "a healthy lifestyle."
+				},
+				{
+					"label": "E",
+					"text": "do not realise the fact."
+				},
+				{
+					"label": "F",
+					"text": "never suffer any ill effects."
+				},
+				{
+					"label": "G",
+					"text": "people also suffer from strokes."
+				},
+				{
+					"label": "H",
+					"text": "The pancreas."
+				}
+			],
+			"body": "Non severe type 2 diabetes can be solely treated by ____ (8)\nIncreases in diabetes related heart problems are mainly seen in ____ (9)\nInsulin is a hormone that allows glucose to be absorbed by ____ (10)\nBizarre as it may seem, many people with diabetes ____ (11)",
+			"body_html": "<p>Non severe type 2 diabetes can be solely treated by [8]</p><p>Increases in diabetes related heart problems are mainly seen in [9]</p><p>Insulin is a hormone that allows glucose to be absorbed by [10]</p><p>Bizarre as it may seem, many people with diabetes [11]</p>",
+			"questions": [
+				{
+					"number": 8,
+					"text": "Non severe type 2 diabetes can be solely treated by",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nBệnh tiểu đường loại 2 không nghiêm trọng có thể được điều trị duy nhất bằng ________.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nhealthy food and regular physical exercise ~ a healthy lifestyle\nall that is necessary initially ~ solely treated by\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Đối với những người bị tiểu đường Loại 2, thực phẩm lành mạnh và tập thể dục thường xuyên có thể là tất cả những gì cần thiết ban đầu\".\n==> Thông tin được in đậm đồng nghĩa với đáp án D (a healthy lifestyle).\n\nBước 4: Đáp án: D",
+					"quotes": [
+						"For people who have Type 2 diabetes, healthy food and regular physical exercise may be all that is necessary initially; however, medications and perhaps insulin may be required later on."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Increases in diabetes related heart problems are mainly seen in",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSự gia tăng các vấn đề về tim liên quan đến tiểu đường chủ yếu được thấy ở ________.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\naccount for nearly the entire spike ~ mainly seen in\nrisk of heart attacks ~ heart problems\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"phụ nữ trẻ chiếm gần như toàn bộ sự gia tăng đột ngột về nguy cơ đau tim\".\n==> Thông tin được in đậm đồng nghĩa với đáp án A (women).\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"Young males are twice as likely to have a stroke than young women, while young women account for nearly the entire spike in the risk of heart attacks."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Insulin is a hormone that allows glucose to be absorbed by",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nInsulin là một loại hormone cho phép glucose được hấp thụ bởi ________.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nunlocks the door that allows glucose... to enter ~ allows glucose to be absorbed by\nbody cells ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Insulin mở cánh cửa cho phép glucose từ máu đi vào các tế bào cơ thể\".\n==> Thông tin được in đậm đồng nghĩa với đáp án B (body cells).\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"Insulin unlocks the door that allows glucose from the blood to enter the body cells, where it is converted into energy."
+					]
+				},
+				{
+					"number": 11,
+					"text": "Bizarre as it may seem, many people with diabetes",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nDù có vẻ kỳ lạ, nhiều người mắc bệnh tiểu đường ________.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n50% of them are currently unaware of it ~ do not realise the fact\nMore than a million Australians have it ~ many people\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Hơn một triệu người Úc mắc bệnh này, mặc dù 50% trong số họ hiện tại không hề biết về nó\".\n==> Thông tin được in đậm đồng nghĩa với đáp án E (do not realise the fact).\n\nBước 4: Đáp án: E",
+					"quotes": [
+						"More than a million Australians have it, although 50% of them are currently unaware of it."
+					]
+				}
+			]
+		},
+		{
+			"range": "12-14",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose THREE letters (A-G) and write them in the boxes 12-14, in your answer sheet.",
+			"questions": [
+				{
+					"number": 12,
+					"text": "According to the text in the passage, which of the following are symptoms of diabetes?",
+					"options": [
+						{
+							"label": "A",
+							"text": "nausea"
+						},
+						{
+							"label": "B",
+							"text": "tiredness"
+						},
+						{
+							"label": "C",
+							"text": "hot flushes"
+						},
+						{
+							"label": "D",
+							"text": "muscle pains"
+						},
+						{
+							"label": "E",
+							"text": "bleeding gums"
+						},
+						{
+							"label": "F",
+							"text": "dilation of the eyes"
+						},
+						{
+							"label": "G",
+							"text": "losing consciousness"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 13,
+					"text": "According to the text in the passage, which of the following are symptoms of diabetes?",
+					"options": [
+						{
+							"label": "A",
+							"text": "nausea"
+						},
+						{
+							"label": "B",
+							"text": "tiredness"
+						},
+						{
+							"label": "C",
+							"text": "hot flushes"
+						},
+						{
+							"label": "D",
+							"text": "muscle pains"
+						},
+						{
+							"label": "E",
+							"text": "bleeding gums"
+						},
+						{
+							"label": "F",
+							"text": "dilation of the eyes"
+						},
+						{
+							"label": "G",
+							"text": "losing consciousness"
+						}
+					],
+					"answer": "D"
+				},
+				{
+					"number": 14,
+					"text": "According to the text in the passage, which of the following are symptoms of diabetes?",
+					"options": [
+						{
+							"label": "A",
+							"text": "nausea"
+						},
+						{
+							"label": "B",
+							"text": "tiredness"
+						},
+						{
+							"label": "C",
+							"text": "hot flushes"
+						},
+						{
+							"label": "D",
+							"text": "muscle pains"
+						},
+						{
+							"label": "E",
+							"text": "bleeding gums"
+						},
+						{
+							"label": "F",
+							"text": "dilation of the eyes"
+						},
+						{
+							"label": "G",
+							"text": "losing consciousness"
+						}
+					],
+					"answer": "G"
+				}
+			]
+		}
+	],
+	"images": []
+}

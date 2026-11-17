@@ -1,0 +1,165 @@
+{
+	"id": "37236b1d-6d35-415f-867e-14983cd5a20b",
+	"url": "https://stepielts.com/student/reading/37236b1d-6d35-415f-867e-14983cd5a20b?mode=practice",
+	"title": "The impact of climate change on butterflies in Britain",
+	"source": "C19T4",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "The impact of climate change on butterflies in Britain",
+		"paragraphs": [
+			"According to conservationists, populations of around two thirds of butterfly species have declined in Britain over the past 40 years. If this trend continues, it might have unpredictable knock-on effects for other species in the ecosystem. Butterfly eggs develop into caterpillars and these insects, which are the second stage in a new butterfly's life cycle, consume vast quantities of plant material, and in turn act as prey for birds as well as bats and other small mammals. Only by arming themselves with an understanding of why butterfly numbers are down can conservationists hope to halt or reverse the decline.",
+			"Butterflies prefer outdoor conditions to be 'just right', which means neither too hot nor too cold. Under the conditions of climate change, the temperature at any given time in summer is generally getting warmer, leaving butterflies with the challenge of how to deal with this. One of the main ways in which species are ensuring conditions suit them is by changing the time of year at which they are active and reproduce. Scientists refer to the timing of such lifecycle events as 'phenology', so when an animal or plant starts to do something earlier in the year than it usually does, it is said to be 'advancing its phenology'.",
+			"These advances have been observed already in a wide range of butterflies - indeed, most species are advancing their phenology to some extent. In Britain, as the average spring temperature has increased by roughly 0.5°C over the past 20 years, species have advanced by between three days and a week on average, to keep in line with cooler temperatures. Is this a sign that butterflies are well equipped to cope with climate change, and readily adjust to new temperatures? Or are these populations under stress, being dragged along unwillingly by unnaturally fast changes? The answer is still unknown, but a new study is seeking to answer these questions.",
+			"First, the researchers pulled together data from millions of records that had been submitted by butterfly enthusiasts - people who spend their free time observing the activities of different species. This provided information on 130 species of butterflies in Great Britain every year for a 20-year period. They then estimated the abundance and distribution of each species across this time, along with how far north in the country they had moved. The data also, crucially, allowed researchers to estimate subtle changes in what time of the year each species was changing into an adult butterfly.",
+			"Analysing the trends in each variable, the researchers discovered that species with more flexible life cycles were more likely to be able to benefit from an earlier emergence driven by climate change. Some species are able to go from caterpillar to butterfly twice or more per year, so that the individual butterflies you see flying in the spring are the grandchildren or great-grandchildren of the individuals seen a year previously.",
+			"Among these species, researchers observed that those which have been advancing their phenology the most over the 20-year study period also had the most positive trends in abundance, distribution and northwards extent. For these species, such as Britain's tiniest butterfly, the dainty Small Blue, whose colonies are up to a hundred strong, some develop into butterflies early in spring, allowing their summer generations to complete another reproductive cycle by autumn so that more population growth occurs.",
+			"Other species, however, are less flexible and restricted to a single reproductive cycle per year. For these species, there was no evidence of any benefit to emerging earlier. Indeed, worryingly, it was found that the species in this group that specialise in very specific habitat types, often related to the caterpillar's preferred diet, actually tended to be most at harm from advancing phenology. The beautiful High Brown Fritillary, often described as Britain's most endangered butterfly, is in this group. It is found only in coppiced woodland and limestone pavement habitats. It is also a single-generation butterfly that has advanced its phenology. This suggests that climate change, while undoubtedly not the sole cause, might have played a part in the downfall of this species.",
+			"All is not lost, however. Many of Britain's single-generation species show the capacity, in continental Europe, to add a second generation in years that are sufficiently warm. Therefore, as the climate continues to warm, species like the Silver-studded Blue might be able to switch to multiple generations in the UK as well, and so begin to extract benefits from the additional warmth, potentially leading to population increases.",
+			"More immediately, conservationists can arm themselves with all this knowledge to spot the warning signs of species that may be at risk. The White Admiral of southern England, a much sought-after butterfly, experienced a significant increase in numbers from the 1920s but has shown a considerable decline in the past 20 years. This may be because the caterpillar exists solely on a diet of a plant called honeysuckle. But it is also likely to be due to climate change."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 1?\nIn boxes 1 - 6 on your answer sheet, write:\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Forty years ago, there were fewer butterflies in Britain than at present.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCách đây 40 năm, số lượng bướm ở Anh ít hơn so với hiện tại.\nBước 2: Tìm các keywords được paraphrase trong bài:\nover the past 40 years ~ Forty years ago\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Theo các nhà bảo tồn, số lượng của khoảng hai phần ba loài bướm ở Anh đã suy giảm trong 40 năm qua\" (bây giờ ít hơn ngày xưa). Điều này trái ngược với thông tin \"40 năm trước số lượng bướm ở Anh ít hơn so với hiện tại\" trong câu hỏi. (Forty years ago, there were fewer butterflies in Britain than at present.)\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"According to conservationists, populations of around two thirds of butterfly species have declined in Britain over the past 40 years."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Caterpillars are eaten by a number of different predators.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSâu bướm (caterpillar) là thức ăn của nhiều loài động vật săn mồi khác nhau.\nBước 2: Tìm các keywords được paraphrase trong bài:\nCaterpillars ~ từ khóa giữ nguyên\nbirds as well as bats and other small mammals ~ different predators\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"sâu bướm là con mồi của chim cũng như dơi và các loài động vật nhỏ khác\" (act as prey for birds as well as bats and other small mammals). Điều này đồng nghĩa với thông tin \"Sâu bướm là thức ăn của nhiều loài động vật săn mồi khác nhau\" trong câu hỏi. (Caterpillars are eaten by a number of different predators.)\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Butterfly eggs develop into caterpillars and these insects, which are the second stage in a new butterfly's life cycle, consume vast quantities of plant material, and in turn act as prey for birds as well as bats and other small mammals."
+					]
+				},
+				{
+					"number": 3,
+					"text": "'Phenology' is a term used to describe a creature's ability to alter the location of a lifecycle event.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\n\"Phenology\" (hiện tượng học) là thuật ngữ được sử dụng để mô tả khả năng thay đổi vị trí của một sự kiện trong vòng đời của sinh vật.\nBước 2: Tìm các keywords được paraphrase trong bài:\nPhenology ~ thuật ngữ giữ nguyên\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Các nhà khoa học định nghĩa ‘phenology’ là thời điểm của những sự kiện trong vòng đời sinh vật, nên khi động thực vật bắt đầu hoạt động nào đó sớm hơn thời điểm bình thường trong năm thì người ta gọi đó là ‘đi trước phenology’\". Điều này trái ngược với thông tin \"’Phenology’ là thuật ngữ được sử dụng để miêu tả khả năng thay đổi vị trí của một sự kiện trong vòng đời của sinh vật\" trong câu hỏi. (‘Phenology' is a term used to describe a creature's ability to alter the location of a lifecycle event.)\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Scientists refer to the timing of such lifecycle events as 'phenology', so when an animal or plant starts to do something earlier in the year than it usually does, it is said to be 'advancing its phenology'."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Some species of butterfly have a reduced lifespan due to spring temperature increases.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột số loài bướm có tuổi thọ ngắn hơn do sự gia tăng nhiệt độ vào mùa xuân.\nBước 2: Tìm các keywords được paraphrase trong bài:\naverage spring temperature has increased ~ spring temperature increases\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"nhiệt độ trung bình mùa xuân đã tăng khoảng 0.5°C trong 20 năm qua, (làm cho) các loài đã phát triển sớm hơn từ 3 đến 7 ngày\". Tuy nhiên, bài đọc không hề nhắc đến thông tin \"tuổi thọ ngắn hơn do sự gia tăng nhiệt độ mùa xuân\" trong câu hỏi. (have a reduced lifespan due to spring temperature increases.)\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"In Britain, as the average spring temperature has increased by roughly 0.5°C over the past 20 years, species have advanced by between three days and a week on average, to keep in line with cooler temperatures."
+					]
+				},
+				{
+					"number": 5,
+					"text": "There is a clear reason for the adaptations that butterflies are making to climate change.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCó một lý do rõ ràng cho những cách bướm thích nghi với biến đổi khí hậu.\nBước 2: Tìm các keywords được paraphrase trong bài:\nThe answer is still unknown ~ clear reason\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"hiện vẫn chưa có câu trả lời, nhưng một nghiên cứu mới đang tìm kiếm câu trả lời cho những câu hỏi về cách mà loài bướm thích nghi với biến đổi khí hậu”. Điều này trái ngược với thông tin \"có một lý do rõ ràng\" trong câu hỏi. (There is a clear reason for the adaptations that butterflies are making to climate change.)\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Or are these populations under stress, being dragged along unwillingly by unnaturally fast changes? The answer is still unknown, but a new study is seeking to answer these questions."
+					]
+				},
+				{
+					"number": 6,
+					"text": "The data used in the study was taken from the work of amateur butterfly watchers.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nDữ liệu được sử dụng trong nghiên cứu được lấy từ tư liệu của những người quan sát bướm nghiệp dư.\nBước 2: Tìm các keywords được paraphrase trong bài:\nbutterfly enthusiasts ~ amateur butterfly watchers\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"dữ liệu được lấy từ hàng triệu bản ghi được gửi bởi những người đam mê bướm - những người dành thời gian rảnh của họ để quan sát hoạt động của các loài bướm khác nhau\" (data from millions of records that had been submitted by butterfly enthusiasts - people who spend their free time observing the activities of different species). Điều này đồng nghĩa với thông tin \"dữ liệu được lấy từ những người quan sát bướm nghiệp dư\" trong câu hỏi. (The data used in the study was taken from the work of amateur butterfly watchers.)\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"First, the researchers pulled together data from millions of records that had been submitted by butterfly enthusiasts - people who spend their free time observing the activities of different species."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-13",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the notes below. Choose ONE WORD ONLY from the passage for each answer. Write your answers in boxes 7-13 on your answer sheet.",
+			"body": "Butterflies in the UK\nThe Small Blue\n• lives in large ____ (7)\n• first appears at the start of ____ (8)\n• completes more than one reproductive cycle per year\nThe High Brown Fritillary\n• has one reproductive cycle\n• is considered to be more ____ (9) than other species\n• its caterpillars occupy a limited range of ____ (10)\nThe Silver-studded Blue\n• is already able to reproduce twice a year in warm areas of ____ (11)\nThe White Admiral\n• is found in ____ (12) areas of England\n• both climate change and the ____ (13) of the caterpillar are possible reasons for decline",
+			"body_html": "<h3><strong>Butterflies in the UK</strong></h3><table><tbody><tr><td><h4><strong>The Small Blue</strong></h4><p>• lives in large [7]</p><p>• first appears at the start of [8]</p><p>• completes more than one reproductive cycle per year</p><h4><strong>The High Brown Fritillary</strong></h4><p>• has one reproductive cycle</p><p>• is considered to be more [9] than other species</p><p>• its caterpillars occupy a limited range of [10]</p><h4><strong>The Silver-studded Blue</strong></h4><p>• is already able to reproduce twice a year in warm areas of [11]</p><h4><strong>The White Admiral</strong></h4><p>• is found in [12] areas of England</p><p>• both climate change and the [13] of the caterpillar are possible reasons for decline </p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "• lives in large ____ (7)",
+					"answer": "colonies",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nCon bướm Small Blue sống trong những _________ lớn.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu:\nin + NOUN (NOUN làm Object của Preposition 'IN')\nLarge + NOUN (NOUN được bổ nghĩa bởi Adjective ‘LARGE’)\nBước 3: Tìm các keywords được paraphrase trong bài:\nBritain's tiniest butterfly, the dainty Small Blue ~ The small blue\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: “Loài bướm Small Blue, có bầy đàn lên đến một trăm cá thể\" (The dainty Small Blue, whose colonies are up to a hundred strong).\nBước 5: Đáp án: colonies\nCon bướm Small Blue sống trong những bầy đàn lớn. (The Small Blue lives in large colonies)",
+					"quotes": [
+						"For these species, such as Britain's tiniest butterfly, the dainty Small Blue, whose colonies are up to a hundred strong, some develop into butterflies early in spring, allowing their summer generations to complete another reproductive cycle by autumn so that more population growth occurs."
+					]
+				},
+				{
+					"number": 8,
+					"text": "• first appears at the start of ____ (8)",
+					"answer": "spring",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nCon bướm Small Blue xuất hiện lần đầu vào đầu _________.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: start of + NOUN (NOUN làm Object của Preposition 'OF')\nBước 3: Tìm các keywords được paraphrase trong bài:\nDevelop into butterflies ~ First appears.\nEarly in ~ Start of.\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"một số con thì phát triển thành bướm sớm vào mùa xuân\" (some develop into butterflies early in spring).\nBước 5: Đáp án: spring\nCon bướm Small Blue xuất hiện lần đầu vào đầu mùa xuân. (The Small Blue first appears at the start of spring)",
+					"quotes": [
+						"For these species, such as Britain's tiniest butterfly, the dainty Small Blue, whose colonies are up to a hundred strong, some develop into butterflies early in spring, allowing their summer generations to complete another reproductive cycle by autumn so that more population growth occurs."
+					]
+				},
+				{
+					"number": 9,
+					"text": "• is considered to be more ____ (9) than other species",
+					"answer": "endangered",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nLoài bướm High Brown Fritillary được coi là _________ hơn so với các loài khác.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: ADJECTIVE\nDấu hiệu: to be more + ADJECTIVE (cần có ADJECTIVE dùng để so sánh)\nBước 3: Tìm các keywords được paraphrase trong bài:\nOften described as ~ First appears.\nMost ~ More .. than other ….\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Loài bướm xinh đẹp High Brown Fritillary, thường được mô tả là loài bướm có nguy cơ bị tuyệt chủng nhất ở Anh\" (The beautiful High Brown Fritillary, often described as Britain's most endangered butterfly).\nBước 5: Đáp án: endangered\nLoài bướm High Brown Fritillary được coi là có nguy cơ bị tuyệt chủng hơn so với các loài khác. (The High Brown Fritillary is considered to be more endangered than other species).",
+					"quotes": [
+						"The beautiful High Brown Fritillary, often described as Britain's most endangered butterfly, is in this group."
+					]
+				},
+				{
+					"number": 10,
+					"text": "• its caterpillars occupy a limited range of ____ (10)",
+					"answer": "habitats",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nNhững con sâu bướm của loài High Brown Fritillary chỉ sống trong một số loại _________ nhất định.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: limited range of + NOUN (NOUN dùng làm Object của Preposition 'OF')\nBước 3: Tìm các keywords được paraphrase trong bài:\nOnly in ~ Limited range of\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Các con sâu bướm chỉ được tìm thấy trong các môi trường sống như rừng cây thấp và vùng đất đá vôi\" (It is found only in coppiced woodland and limestone pavement habitats).\nBước 5: Đáp án: habitats\nCon sâu bướm của loài High Brown Fritillary chỉ sống trong một số loại môi trường sống nhất định. (The High Brown Fritillary's caterpillars occupy a limited range of habitats)",
+					"quotes": [
+						"It is found only in coppiced woodland and limestone pavement habitats."
+					]
+				},
+				{
+					"number": 11,
+					"text": "• is already able to reproduce twice a year in warm areas of ____ (11)",
+					"answer": "Europe",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nBướm từ loài Silver-studded Blue có thể sinh sản hai lần một năm ở những khu vực ấm áp ở _________.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: warm areas of + NOUN (NOUN dùng làm Object của Preposition 'OF')\nBước 3: Tìm các keywords được paraphrase trong bài:\nTo add a second generation ~ Already able to reproduce twice a year.\nYears that are sufficiently warm ~ warm areas.\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Nhiều loài bướm một thế hệ ở Anh cho thấy khả năng, ở châu Âu, có thể sinh sản thêm một thế hệ thứ hai trong những năm ấm áp\" (Many of Britain's single-generation species show the capacity, in continental Europe, to add a second generation in years that are sufficiently warm).\nBước 5: Đáp án: Europe\nBướm từ loài Silver-studded Blue có thể sinh sản hai lần một năm ở những khu vực ấm áp ở Châu Âu. (The Silver-studded Blue is already able to reproduce twice a year in warm areas of Europe)",
+					"quotes": [
+						"Many of Britain's single-generation species show the capacity, in continental Europe, to add a second generation in years that are sufficiently warm."
+					]
+				},
+				{
+					"number": 12,
+					"text": "• is found in ____ (12) areas of England",
+					"answer": "southern",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nLoài bướm White Admiral được tìm thấy ở những vùng _________ của nước Anh.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: ADJECTIVE\nDấu hiệu: in + ADJECTIVE + areas (ADJECTIVE bổ nghĩa cho NOUN 'AREAS')\nBước 3: Tìm các keywords được paraphrase trong bài:\nOf … England ~ Found in … England.\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Loài bướm White Admiral ở miền nam nước Anh, một loài bướm mà rất được săn lùng, đã trải qua sự gia tăng đáng kể về số lượng từ những năm 1920, nhưng đã cho thấy sự suy giảm đáng kể trong 20 năm qua. (The White Admiral of southern England, a much sought-after butterfly, experienced a significant increase in numbers from the 1920s but has shown a considerable decline in the past 20 years).\nBước 5: Đáp án: southern\nLoài bướm White Admiral được tìm thấy ở những vùng phía nam của nước Anh. (The White Admiral is found in southern areas of England)",
+					"quotes": [
+						"The White Admiral of southern England, a much sought-after butterfly, experienced a significant increase in numbers from the 1920s but has shown a considerable decline in the past 20 years."
+					]
+				},
+				{
+					"number": 13,
+					"text": "• both climate change and the ____ (13) of the caterpillar are possible reasons for decline",
+					"answer": "Diet",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nSự biến đổi khí hậu và _________ của con sâu bướm có thể là lý do cho sự suy giảm của loài bướm White Admiral.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: the + NOUN + of the caterpillar (NOUN dùng làm chủ ngữ)\nBước 3: Tìm các keywords được paraphrase trong bài:\nMay be because ~ possible reasons for decline\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Điều này có thể là do con sâu bướm chỉ sống dựa vào chế độ ăn từ một loại cây gọi là cây kim ngân. Nhưng cũng có thể là do biến đổi khí hậu.\" (This may be because the caterpillar exists solely on a diet of a plant called honeysuckle. But it is also likely to be due to climate change).\nBước 5: Đáp án: Diet\nSự biến đổi khí hậu và chế độ ăn của con sâu bướm có thể là lý do cho sự suy giảm của loài bướm White Admiral. (Both climate change and the diet of the caterpillar are possible reasons for decline).",
+					"quotes": [
+						"This may be because the caterpillar exists solely on a diet of a plant called honeysuckle. But it is also likely to be due to climate change."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

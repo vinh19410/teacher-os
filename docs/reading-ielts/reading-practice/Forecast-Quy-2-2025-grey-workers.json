@@ -1,0 +1,335 @@
+{
+	"id": "04a47584-cd4a-4e95-bd4a-e9e461381cc2",
+	"url": "https://stepielts.com/student/reading/04a47584-cd4a-4e95-bd4a-e9e461381cc2?mode=practice",
+	"title": "Grey Workers",
+	"source": "Forecast Quý 2-2025",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Grey Workers",
+		"paragraphs": [
+			"A. Given the speed at which their workers are growing greyer, employers know surprisingly little about how productive they are. The general assumption is that the old are paid more in spite of, rather than because of, their extra productivity. That might partly explain why, when employers are under pressure to cut costs, they persuade the 55-year-olds to take early retirement. Earlier this year, Sun Life of Canada, an insurance company, announced that it was offering redundancy to all its British employees aged 50 or over “to bring in new blood”.",
+			"B. In Japan, says Mariko Fujiwara, an industrial anthropologist who runs a think-tank for Hakuhodo, Japan’s second-largest advertising agency, most companies are bringing down the retirement age from the traditional 57 to 50 or thereabouts--and in some cases, such as Nissan, to 45. More than perhaps anywhere else, pay in Japan is linked to seniority. Given that the percentage of workers who have spent more than 32 years with the same employer rose from 11% in 1980 to 42% by 1994, it is hardly surprising that seniority-based wage costs have become the most intractable item on corporate profit-and-loss accounts.",
+			"C. In Germany, Patrick Pohl, spokesman for Hoechst, expresses a widely held view: “The company is trying to lower the average age of the workforce. Perhaps the main reason for replacing older workers is that it makes it easier to ‘defrost’ the corporate culture. Older workers are less willing to try a new way of thinking. Younger workers are cheaper and more flexible.” Some German firms are hampered from getting rid of older workers as quickly as they would like. At SGL Carbon, a graphite producer, the average age of workers has been going up not down. The reason, says the company’s Ivo Lingnau, is not that SGL values older workers more. It is collective bargaining: the union agreement puts strict limits on the proportion of workers that may retire early.D Clearly, when older people do heavy physical work, their age may affect their productivity. But other skills may increase with age, including many that are crucial for good management, such as an ability to handle people diplomatically, to run a meeting or to spot a problem before it blows up. Peter Hicks, who coordinates OECD work on the policy implications of ageing, says that plenty of research suggests older people are paid more because they are worth more.",
+			"E. And the virtues of the young may be exaggerated. “The few companies that have kept on older workers find they have good judgment and their productivity is good,” says Mr. Peterson. “Besides, their education standards are much better than those of today’s young high-school graduates.” Companies may say that older workers are not worth training, because they are reaching the end of their working lives. In fact, young people tend to switch jobs so frequently that they offer the worst returns on training. “The median age for employer-driven training is the late 40s and early 50s,” says Mr. Hicks. “It goes mainly to managers.”",
+			"F. Take away those seniority-based pay scales, and older workers may become a much more attractive employment proposition. But most companies (and many workers) are uncomfortable with the idea of reducing someone’s pay in later life-although workers on piece-rates often earn less over time. So retaining the services of older workers may mean employing them in new ways.",
+			"G. One innovation, described in Mr Walker’s report on combating age barriers, was devised by IBM Belgium. Faced with the need to cut staff costs, and having decided to concentrate cuts on 55-60-year-olds, IBM set up a separate company called SkillTeam, which re-employed any of the early retired who wanted to go on working up to the age of 60. An employee who joined SkillTeam at the age of 55 on a five-year contract would work for 58% of his time, over the full period, for 88% of his last IBM salary. The company offered services to IBM, thus allowing it to retain access to some of the intellectual capital it would otherwise have lost.",
+			"H. The best way to tempt the old to go on working may be to build on such “bridge” jobs: part-time or temporary employment that creates a more gradual transition from full-time work to retirement. Mr. Quinn, who has studied the phenomenon, finds that, in the United States, nearly half of all men and women who had been in full-time jobs in middle age moved into such “bridge” jobs at the end of their working lives. In general, it is the best-paid and worst-paid who carry on working: “There are”, he says, “two very different types of bridge job-holders - those who continue working because they have to and those who continue working because they want to, even though they could afford to retire.”",
+			"I If the job market grows more flexible, the old may find more jobs that suit them. Often, they will be self-employed. Sometimes, they may start their own businesses. A study by David Storey of Warwick University found that, in Britain, 70% of businesses started by people over 55 survived, compared with an average of only 19%. To coax the old back into the job market, work will not only have to pay. It will need to be more fun than touring the country in an Airstream trailer, or seeing the grandchildren, or playing golf. Only then will there be many more Joe Clarks."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in the Reading Passage?\nIn boxes 1-4 on your answer sheet, write\nTRUE if the statement is true\nFALSE if the statement is false\nNOT GIVEN if the information is not given in the passage",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Insurance company Sun Life of Canada made a decision that it would hire more Canadian employees rather than British ones in order to get fresh blood.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCông ty bảo hiểm Sun Life of Canada đã quyết định thuê thêm nhiều nhân viên Canada hơn nhân viên Anh để có được \"máu mới\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nSun Life of Canada ~ từ khóa giữ nguyên\nannounced that it was offering redundancy to all its British employees ~ hire more Canadian employees\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Đầu năm nay, Sun Life of Canada, một công ty bảo hiểm, đã thông báo rằng họ đang đề nghị sa thải tất cả nhân viên người Anh từ 50 tuổi trở lên 'để đưa máu mới vào'.\"\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"thuê thêm nhiều nhân viên Canada hơn nhân viên Anh\" (hire more Canadian employees rather than British ones).\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Earlier this year, Sun Life of Canada, an insurance company, announced that it was offering redundancy to all its British employees aged 50 or over “to bring in new blood”."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Unlike other places, employees in Japan get paid according to the years they are employed.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nKhông giống những nơi khác, nhân viên ở Nhật Bản được trả lương dựa theo số năm họ được tuyển dụng.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\npay in Japan is linked to seniority ~ employees in Japan get paid according to the years they are employed\nMore than perhaps anywhere else ~ Unlike other places\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Hơn bất cứ nơi nào khác, lương ở Nhật Bản được liên kết với thâm niên.\"\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Không giống những nơi khác, nhân viên ở Nhật Bản được trả lương dựa theo số năm họ được tuyển dụng\" (Unlike other places, employees in Japan get paid according to the years they are employed).\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"More than perhaps anywhere else, pay in Japan is linked to seniority."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Elder workers are laid off by some German companies which are refreshing corporate culture.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCông nhân lớn tuổi bị sa thải bởi một số công ty Đức đang làm mới văn hóa doanh nghiệp.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nreplacing older workers ~ Elder workers are laid off\n'defrost' the corporate culture ~ refreshing corporate culture\nGerman firms ~ German companies\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Ở Đức, Patrick Pohl, người phát ngôn của Hoechst, bày tỏ một quan điểm được nhiều người chia sẻ: 'Công ty đang cố gắng hạ thấp độ tuổi trung bình của lực lượng lao động. Có lẽ lý do chính để thay thế người lao động lớn tuổi là nó giúp việc 'rã đông' văn hóa doanh nghiệp dễ dàng hơn. Những người lao động lớn tuổi ít sẵn sàng thử một cách suy nghĩ mới.'\"\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Công nhân lớn tuổi bị sa thải bởi một số công ty Đức đang làm mới văn hóa doanh nghiệp\" (Elder workers are laid off by some German companies which are refreshing corporate culture).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"C. In Germany, Patrick Pohl, spokesman for Hoechst, expresses a widely held view: “The company is trying to lower the average age of the workforce. Perhaps the main reason for replacing older workers is that it makes it easier to ‘defrost’ the corporate culture."
+					]
+				},
+				{
+					"number": 4,
+					"text": "According to Peter Hicks, companies pay older people more regardless of the contribution they make.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTheo Peter Hicks, các công ty trả lương cho người lớn tuổi nhiều hơn bất kể đóng góp mà họ tạo ra.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nPeter Hicks ~ từ khóa giữ nguyên\nolder people are paid more because they are worth more ~ companies pay older people more regardless of the contribution they make\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Peter Hicks, người điều phối công việc của OECD về các hàm ý chính sách của lão hóa, nói rằng nhiều nghiên cứu cho thấy người lớn tuổi được trả lương nhiều hơn bởi vì họ đáng giá hơn.\"\n=> Điều này trái ngược với thông tin trong câu hỏi \"các công ty trả lương cho người lớn tuổi nhiều hơn bất kể đóng góp mà họ tạo ra\" (companies pay older people more regardless of the contribution they make). Thực tế, bài đọc nói rằng họ được trả lương nhiều hơn vì họ đáng giá hơn, chứ không phải bất kể đóng góp của họ.\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"But other skills may increase with age, including many that are crucial for good management, such as an ability to handle people diplomatically, to run a meeting or to spot a problem before it blows up. Peter Hicks, who coordinates OECD work on the policy implications of ageing, says that plenty of research suggests older people are paid more because they are worth more."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-6",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose the correct letter, A, B, C, D or E.\nWrite your answers in boxes 5-6 on your answer sheet.",
+			"questions": [
+				{
+					"number": 5,
+					"text": "Which TWO factors are advantages of hiring elder people?",
+					"options": [
+						{
+							"label": "A",
+							"text": "their productivity is more superior to the young."
+						},
+						{
+							"label": "B",
+							"text": "paid less compared with younger ones."
+						},
+						{
+							"label": "C",
+							"text": "run fast when there is a meeting"
+						},
+						{
+							"label": "D",
+							"text": "have better communication skills"
+						},
+						{
+							"label": "E",
+							"text": "identify problems in an advanced time"
+						}
+					],
+					"answer": "D"
+				},
+				{
+					"number": 6,
+					"text": "Which TWO factors are advantages of hiring elder people?",
+					"options": [
+						{
+							"label": "A",
+							"text": "their productivity is more superior to the young."
+						},
+						{
+							"label": "B",
+							"text": "paid less compared with younger ones."
+						},
+						{
+							"label": "C",
+							"text": "run fast when there is a meeting"
+						},
+						{
+							"label": "D",
+							"text": "have better communication skills"
+						},
+						{
+							"label": "E",
+							"text": "identify problems in an advanced time"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "7-8",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose the correct letter, A, B, C, D or E.\nWrite your answers in boxes 5-6 on your answer sheet.",
+			"questions": [
+				{
+					"number": 7,
+					"text": "Which TWO factors are considered weaknesses of young graduates at workplace?",
+					"options": [
+						{
+							"label": "A",
+							"text": "they are not worth training."
+						},
+						{
+							"label": "B",
+							"text": "their productivity is lower than counterparts."
+						},
+						{
+							"label": "C",
+							"text": "they change jobs more often"
+						},
+						{
+							"label": "D",
+							"text": "their education can be inferior to the elder's."
+						},
+						{
+							"label": "E",
+							"text": "they are normally high school graduates."
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 8,
+					"text": "Which TWO factors are considered weaknesses of young graduates at workplace?",
+					"options": [
+						{
+							"label": "A",
+							"text": "they are not worth training."
+						},
+						{
+							"label": "B",
+							"text": "their productivity is lower than counterparts."
+						},
+						{
+							"label": "C",
+							"text": "they change jobs more often"
+						},
+						{
+							"label": "D",
+							"text": "their education can be inferior to the elder's."
+						},
+						{
+							"label": "E",
+							"text": "they are normally high school graduates."
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "9-13",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, C or D.\nWrite your answers in boxes 7-8 on your answer sheet.",
+			"questions": [
+				{
+					"number": 9,
+					"text": "According to paragraph F, the firms and workers still hold the opinion that",
+					"options": [
+						{
+							"label": "A",
+							"text": "older workers are more likely to attract other staff"
+						},
+						{
+							"label": "B",
+							"text": "people are not happy if their pay gets lower in retiring age."
+						},
+						{
+							"label": "C",
+							"text": "older people have more retaining motivation than young people"
+						},
+						{
+							"label": "D",
+							"text": "young people often earn less for their piece-rate salary."
+						}
+					],
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nTheo đoạn F, các công ty và người lao động vẫn giữ quan điểm gì?\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Nhưng hầu hết các công ty (và nhiều người lao động) đều cảm thấy không thoải mái với ý tưởng giảm lương cho ai đó trong những năm cuối đời làm việc - mặc dù những người làm việc theo sản phẩm thường kiếm được ít tiền hơn theo thời gian.\"\n=> Thông tin được in đậm đồng nghĩa với câu B (người ta không hài lòng nếu tiền lương của họ giảm xuống khi đến tuổi nghỉ hưu).\n\nBước 3: Đáp án: B\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A –> Đoạn văn không nhắc đến việc \"người lao động lớn tuổi có nhiều khả năng thu hút nhân viên khác\".\nĐáp án C -> Đoạn văn không đề cập đến việc \"người lớn tuổi có động lực làm việc nhiều hơn người trẻ\".\nĐáp án D -> Đoạn văn có đề cập đến \"những người làm việc theo sản phẩm thường kiếm được ít tiền hơn theo thời gian\" nhưng không nói rằng \"người trẻ thường kiếm được ít hơn cho mức lương theo sản phẩm của họ\".",
+					"quotes": [
+						"But most companies (and many workers) are uncomfortable with the idea of reducing someone’s pay in later life-although workers on piece-rates often earn less over time."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Which of the following statements is true for SkillTeam founded by IBM?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Ask all the old worker to continue their job former working hours basis"
+						},
+						{
+							"label": "B",
+							"text": "Carry on the action of cutting off the proportion of older employees"
+						},
+						{
+							"label": "C",
+							"text": "Ask employees to work overtime in order to get extra pay"
+						},
+						{
+							"label": "D",
+							"text": "Rehire old employees and kept the salary a bit lower"
+						}
+					],
+					"answer": "D",
+					"quotes": [
+						"Faced with the need to cut staff costs, and having decided to concentrate cuts on 55-60-year-olds, IBM set up a separate company called SkillTeam, which re-employed any of the early retired who wanted to go on working up to the age of 60. An employee who joined SkillTeam at the age of 55 on a five-year contract would work for 58% of his time, over the full period, for 88% of his last IBM salary."
+					]
+				},
+				{
+					"number": 11,
+					"text": "Which of the following is correct according to the research of Mr. Quinn?",
+					"options": [
+						{
+							"label": "A",
+							"text": "About 50% of all employees in America switched into 'bridge' jobs."
+						},
+						{
+							"label": "B",
+							"text": "Only the worst-paid continue to work."
+						},
+						{
+							"label": "C",
+							"text": "More men than women fell into the category of 'bridge' work."
+						},
+						{
+							"label": "D",
+							"text": "Some old people keep working for their motive rather than economic incentive."
+						}
+					],
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nĐiều nào sau đây là đúng theo nghiên cứu của ông Quinn?\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Có hai loại người giữ công việc cầu nối rất khác nhau - những người tiếp tục làm việc vì họ phải làm như vậy và những người tiếp tục làm việc vì họ muốn như vậy, mặc dù họ có thể đủ khả năng để nghỉ hưu.\"\n=> Thông tin được in đậm đồng nghĩa với câu D (Một số người già tiếp tục làm việc vì động lực của họ chứ không phải vì khuyến khích kinh tế).\n\nBước 3: Đáp án: D\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Đoạn văn có nói \"gần một nửa tất cả đàn ông và phụ nữ\" nhưng không phải là \"khoảng 50% tất cả nhân viên ở Mỹ\" chuyển sang công việc cầu nối.\nĐáp án B -> Đoạn văn không nói rằng \"chỉ những người được trả lương tệ nhất tiếp tục làm việc\".\nĐáp án C -> Đoạn văn không so sánh số lượng nam giới và phụ nữ trong loại hình công việc 'cầu nối'.",
+					"quotes": [
+						"In general, it is the best-paid and worst-paid who carry on working: “There are”, he says, “two very different types of bridge job-holders - those who continue working because they have to and those who continue working because they want to, even though they could afford to retire.”"
+					]
+				},
+				{
+					"number": 12,
+					"text": "Which of the following is correct according to David Storey?",
+					"options": [
+						{
+							"label": "A",
+							"text": "70% of businesses are successful if they hire older people."
+						},
+						{
+							"label": "B",
+							"text": "Average success of self-employed businesses is getting lower."
+						},
+						{
+							"label": "C",
+							"text": "Self-employed elder people are more likely to succeed."
+						},
+						{
+							"label": "D",
+							"text": "Older people's working hours are more flexible."
+						}
+					],
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nĐiều nào sau đây là đúng theo David Storey?\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Một nghiên cứu của David Storey thuộc Đại học Warwick cho thấy ở Anh, 70% doanh nghiệp do người trên 55 tuổi thành lập vẫn tồn tại, so với mức trung bình chỉ 19%.\"\n=> Thông tin được in đậm đồng nghĩa với câu C (Người lớn tuổi tự kinh doanh có nhiều khả năng thành công hơn).\n\nBước 3: Đáp án: C\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Đoạn văn không nói rằng \"70% doanh nghiệp thành công nếu họ thuê người lớn tuổi\", mà là 70% doanh nghiệp do người trên 55 tuổi thành lập vẫn tồn tại.\nĐáp án B -> Đoạn văn không đề cập đến việc \"sự thành công trung bình của các doanh nghiệp tự kinh doanh đang giảm\".\nĐáp án D -> Đoạn văn không nhắc đến việc \"giờ làm việc của người lớn tuổi linh hoạt hơn\".",
+					"quotes": [
+						"A study by David Storey of Warwick University found that, in Britain, 70% of businesses started by people over 55 survived, compared with an average of only 19%."
+					]
+				},
+				{
+					"number": 13,
+					"text": "What is the writer's purpose in this passage?",
+					"options": [
+						{
+							"label": "A",
+							"text": "There must be a successful retiring program for the old"
+						},
+						{
+							"label": "B",
+							"text": "Older people should be correctly valued in employment."
+						},
+						{
+							"label": "C",
+							"text": "Old people should offer more to help young employees grow."
+						},
+						{
+							"label": "D",
+							"text": "There are more jobs in the world that only employ older people"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But other skills may increase with age, including many that are crucial for good management, such as an ability to handle people diplomatically, to run a meeting or to spot a problem before it blows up. Peter Hicks, who coordinates OECD work on the policy implications of ageing, says that plenty of research suggests older people are paid more because they are worth more.",
+						"F. Take away those seniority-based pay scales, and older workers may become a much more attractive employment proposition. But most companies (and many workers) are uncomfortable with the idea of reducing someone’s pay in later life-although workers on piece-rates often earn less over time. So retaining the services of older workers may mean employing them in new ways."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

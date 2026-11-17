@@ -1,0 +1,132 @@
+{
+	"id": "41d53c8a-b08e-4ab8-88d6-97d801938d8d",
+	"url": "https://stepielts.com/student/reading/41d53c8a-b08e-4ab8-88d6-97d801938d8d?mode=practice",
+	"title": "Solving Traffic Problems in Big Cities",
+	"source": "Step IELTS",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-6",
+	"passage": {
+		"title": "Solving Traffic Problems in Big Cities",
+		"paragraphs": [
+			"In many big cities around the world, traffic is a serious problem. Every morning and evening, roads are full of cars, and daily commuters often spend a long time travelling to work or school. Because there are so many cars, cities suffer from heavy traffic and dirty air. Governments are now trying to find the best way to solve this problem.",
+			"One popular idea is to build more roads and expand the road network. Some people believe that if cities improve road infrastructure, cars will move more easily and this will relieve pressure on existing roads. However, other people say that this is not a good idea. They argue that when cities build more roads, more people decide to drive, so the number of private vehicles keeps rising. In the end, the new roads also become full, and the traffic problem does not really go away.",
+			"For this reason, many experts believe that a better answer is to invest in public transport. If buses and trains are cheap and comfortable, more people will leave their cars at home. Cheap tickets, or affordable fares, are very important because they encourage people to use buses and trains instead of driving. Good public transport can also save travel time for many workers, because buses and trains do not always get stuck in traffic.",
+			"Public transport has other benefits too. When fewer people drive, cities can reduce traffic congestion on the roads. Fewer cars also help to cut down on air pollution, so the air becomes cleaner and healthier. In other words, using buses and trains is a way to be environmentally friendly. For all of these reasons, many people think that better public transport is a long-term solution to the traffic problems in modern cities."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-3",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information in the passage?\nWrite\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 1,
+					"text": "People who travel every day usually need a great deal of time to reach their workplace or school.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững người đi lại hằng ngày thường cần rất nhiều thời gian để tới nơi làm việc hoặc trường học.\nBước 2: Tìm các keywords được paraphrase trong bài:\npeople who travel every day ~ daily commuters\na great deal of time ~ a long time\nworkplace or school ~ work or school\nBước 3: So sánh và đối chiếu:\nBài đọc viết \"daily commuters often spend a long time travelling to work or school\" (những người đi lại hằng ngày thường mất nhiều thời gian để tới nơi làm việc hoặc trường học).\n=> Bài khẳng định đúng ý câu hỏi.\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"daily commuters often spend a long time travelling to work or school"
+					]
+				},
+				{
+					"number": 2,
+					"text": "Constructing additional roads is a certain way to end traffic problems for good.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nXây thêm đường là một cách chắc chắn để chấm dứt hoàn toàn các vấn đề giao thông.\nBước 2: Tìm các keywords được paraphrase trong bài:\na certain way to end... for good ~ the traffic problem does not really go away (mâu thuẫn)\nconstructing additional roads ~ build more roads\nBước 3: So sánh và đối chiếu:\nBài đọc viết \"In the end, the new roads also become full, and the traffic problem does not really go away\" (Cuối cùng, những con đường mới cũng đầy xe, và vấn đề giao thông không thực sự biến mất).\n=> Câu hỏi khẳng định xây thêm đường CHẮC CHẮN chấm dứt kẹt xe, nhưng bài nói vấn đề không hề mất đi → trái ý.\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"the new roads also become full, and the traffic problem does not really go away"
+					]
+				},
+				{
+					"number": 3,
+					"text": "Travelling by train in large cities costs more than owning a car.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐi lại bằng tàu ở các thành phố lớn tốn kém hơn so với việc sở hữu một chiếc ô tô.\nBước 2: Tìm các keywords được paraphrase trong bài:\ntravelling by train costs ~ cheap tickets, affordable fares\ncosts more than owning a car ~ phép so sánh này KHÔNG xuất hiện trong bài\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ viết \"Cheap tickets, or affordable fares, are very important because they encourage people to use buses and trains instead of driving\" (Vé rẻ, hay giá vé phải chăng, rất quan trọng vì chúng khuyến khích mọi người dùng xe buýt và tàu thay vì lái xe).\n=> Bài chỉ nói vé rẻ, hoàn toàn không so sánh giá đi tàu với chi phí sở hữu ô tô → không đủ thông tin để kết luận.\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": ["Cheap tickets, or affordable fares, are very important"]
+				}
+			]
+		},
+		{
+			"range": "4-6",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 4,
+					"text": "According to the text, why are some people against the plan to create more roads?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They cost too much money to construct."
+						},
+						{
+							"label": "B",
+							"text": "They lead more individuals to drive, so the amount of personal cars keeps growing."
+						},
+						{
+							"label": "C",
+							"text": "They make public transport run more slowly."
+						}
+					],
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTheo bài đọc, vì sao một số người phản đối kế hoạch xây thêm đường?\nBước 2: Tìm các keywords được paraphrase trong bài:\nlead more individuals to drive ~ more people decide to drive\npersonal cars ~ private vehicles\nkeeps growing ~ keeps rising\nBước 3: So sánh và đối chiếu:\nBài đọc viết \"when cities build more roads, more people decide to drive, so the number of private vehicles keeps rising\" (khi các thành phố xây thêm đường, nhiều người quyết định lái xe hơn, nên số lượng xe cá nhân cứ tăng lên).\n=> Khớp phương án B. Phương án A (tốn quá nhiều tiền) và C (làm giao thông công cộng chạy chậm hơn) không được bài nhắc tới → loại.\nBước 4: Đáp án: B",
+					"quotes": [
+						"more people decide to drive, so the number of private vehicles keeps rising"
+					]
+				},
+				{
+					"number": 5,
+					"text": "Why does the writer think cheap ticket prices matter?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They persuade travellers to choose buses and trains."
+						},
+						{
+							"label": "B",
+							"text": "They allow the government to make a larger profit."
+						},
+						{
+							"label": "C",
+							"text": "They lower the cost of buying a vehicle."
+						}
+					],
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nVì sao tác giả cho rằng giá vé rẻ lại quan trọng?\nBước 2: Tìm các keywords được paraphrase trong bài:\ncheap ticket prices ~ affordable fares\npersuade travellers to choose buses and trains ~ encourage people to use buses and trains instead of driving\nBước 3: So sánh và đối chiếu:\nBài đọc viết \"Cheap tickets, or affordable fares, are very important because they encourage people to use buses and trains instead of driving\" (Vé rẻ, hay giá vé phải chăng, rất quan trọng vì chúng khuyến khích mọi người dùng xe buýt và tàu thay vì lái xe).\n=> Khớp phương án A. Phương án B (chính phủ có lợi nhuận lớn hơn) và C (giảm chi phí mua xe) không có trong bài → loại.\nBước 4: Đáp án: A",
+					"quotes": [
+						"they encourage people to use buses and trains instead of driving"
+					]
+				},
+				{
+					"number": 6,
+					"text": "What is the writer's opinion about improving public transport?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It works only for a short period of time."
+						},
+						{
+							"label": "B",
+							"text": "It is unable to make the air cleaner."
+						},
+						{
+							"label": "C",
+							"text": "It offers a lasting answer to traffic problems."
+						}
+					],
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nQuan điểm của tác giả về việc cải thiện giao thông công cộng là gì?\nBước 2: Tìm các keywords được paraphrase trong bài:\na lasting answer ~ a long-term solution\ntraffic problems ~ the traffic problems in modern cities\nBước 3: So sánh và đối chiếu:\nBài đọc viết \"better public transport is a long-term solution to the traffic problems in modern cities\" (giao thông công cộng tốt hơn là một giải pháp lâu dài cho các vấn đề giao thông ở đô thị hiện đại).\n=> Khớp phương án C. Phương án A (chỉ hiệu quả trong thời gian ngắn) và B (không làm không khí sạch hơn) đều trái với bài — bài nói rõ \"the air becomes cleaner and healthier\" → loại.\nBước 4: Đáp án: C",
+					"quotes": [
+						"better public transport is a long-term solution to the traffic problems in modern cities"
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

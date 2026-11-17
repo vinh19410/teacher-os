@@ -1,0 +1,206 @@
+{
+	"id": "f37fbc90-ff94-450c-a7bf-cef4bf925dcc",
+	"url": "https://stepielts.com/student/reading/f37fbc90-ff94-450c-a7bf-cef4bf925dcc?mode=practice",
+	"title": "Surviving city life",
+	"source": "Collection",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Surviving city life",
+		"paragraphs": [
+			"Although the colonisation of Australia profoundly affected the continent’s natural environment, many plants and animals have actually flourished since European settlement. Some even thrive in the concrete jungle of Australia’s biggest city, Sydney.",
+			"A. Ecologists often prefer to study plants and animals in exotic locations, but a growing number have turned their attention to the complex interactions of the wildlife that inhabits concrete jungles. Inner-city Sydney is the laboratory of choice for a number of ecologists, and their research is timely. More than half the world’s human population resides in cities, and urban development continues to increase all over the world.\nBy 2000, the United Nations projects five billion people will live in cities.\nAssociate Professor Dieter Hochuli, a biologist at the University of Sydney, believes that we need to understand how cities are changing the ecology of the systems they are built on, and how plants and animals are adapting to them.",
+			"B. If any species has learnt to thrive in an urban environment, it’s the native white ibis. A strange long-legged bird with a long bow-shaped beak, it is known as the ’garbage turkey’. The bird’s reputation for digging through inner-city bins and scavenging street garbage has not endeared it to the public. The white ibis began its move to the city in the 1970s, when large parts of its natural habitat of inland wetlands became degraded due to years of low rainfall. The species is a wetland forager, wildlife officer John Martin, from Sydney’s Royal Botanic Gardens, says. Now it happily forages in city parks and landfill. During the peak of its spring breeding season, there are more than 9,000 of these birds in Sydney.",
+			"C. Specimens at Sydney’s Australian Museum show that the city’s overall bird life has changed dramatically over the two centuries since colonisation. Prior to urban development, Sydney’s native bushland was populated by large numbers of small insect-eating birds, such as the superb fairy-wren and the eastern yellow robin. Today, homeowners prefer to landscape their backyards with tall trees and manicured lawns, an environment that provides little protection for small birds. But one bird’s trash is another’s treasure. Gardens filled with flowering plants and fruit trees favour omnivorous birds such as currawongs, bowerbirds, and the city’s most despised resident—the noisy miner bird.’They’re a real winner in cities,’ Australian Museum ornithologist Richard Major says.’The predominant driver in the decline of small birds is that we’ve made a suitable environment for native noisy miners.’",
+			"D. Many invertebrates, such as the golden orb weaver spider and the blue triangle butterfly, also relish living in the city. The golden orb spiders in Sydney are fatter and fitter than species found in the countryside, and Professor Hochuli and his team are trying to understand why.’We’re trying to determine whether it’s more food or the urban heat, as it’s up to four degrees warmer in the city.’ Hochuli has also found some varieties of ant more at home in the city. The green ant, known for its painful bite, will build a nest where there is space and food, regardless of whether it’s a backyard or a sports oval.’It’s remarkable how many things persist in city environments,’ he says. The decline in birds that eat small invertebrates means these populations grow unchecked, allowing them to chew their way through the foliage of the city’s trees.",
+			"E. While some species can survive in relatively small areas, mammals have been confined to patches of bushland scattered around Sydney and its nearby national parks. However, the rabbit-sized, long-nosed bandicoot has discovered the advantages of venturing out of Sydney Harbour National Park and into suburban gardens.’They forage for invertebrates in the grass and like the surrounding habitat to nest and escape from predators,’ Catherine Price, a research associate with the University of Sydney, says. Dr Price is trying to understand what encourages the little mammal into urban environments.’We don’t know if it’s an overflow from the park, or if they’ve got particular survival traits that allow them to evade dogs and cats, and use the urban habitat that benefits them,’ she says.",
+			"F. It’s not just native wildlife that has sought comfort in city living. Non-native species such as black rodents, cockroaches and foxes have also developed survival strategies too. But weeds are the pest that has gained the most advantage.’In residential Sydney, there would not be a single area of remnant bushland not infested by introduced plants,’ Michele Leishman, a Macquarie University plant biologist, says. Over 20 years, Leishman and her colleagues have shown how Sydney’s huge stretches of impermeable concrete, together with the stormwater system, have helped weeds infiltrate the few remaining pockets of bushland. As rain washes over backyards and roadways, it collects chemicals which enter the stormwater system, where it is piped to the edges of bushland. The nutrient-rich water seeps into the earth, favouring the many exotic species that live fast and die young, Leishman says. Indigenous plants prefer a low-fertility soil and struggle to cope with one that is more fertile."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "MATCHING_HEADINGS",
+			"instructions": "Reading Passage 2 has six paragraphs, A-F.\nChoose the correct heading for each paragraph from the List of Headings below.",
+			"options": [
+				{
+					"label": "i",
+					"text": "The behaviour of a small animal expanding its territory"
+				},
+				{
+					"label": "ii",
+					"text": "The urban environment encouraging the spread of imported flora and fauna"
+				},
+				{
+					"label": "iii",
+					"text": "Insects that thrive in urban areas"
+				},
+				{
+					"label": "iv",
+					"text": "A creature which likes rubbish"
+				},
+				{
+					"label": "v",
+					"text": "Creatures which change their shape and colour"
+				},
+				{
+					"label": "vi",
+					"text": "Why natural scientists are interested in studying urban wildlife"
+				},
+				{
+					"label": "vii",
+					"text": "Changes in the urban built environment encourage particular species"
+				}
+			],
+			"questions": [
+				{
+					"number": 1,
+					"text": "Paragraph A",
+					"answer": "vi",
+					"quotes": [
+						"A. Ecologists often prefer to study plants and animals in exotic locations, but a growing number have turned their attention to the complex interactions of the wildlife that inhabits concrete jungles. Inner-city Sydney is the laboratory of choice for a number of ecologists, and their research is timely. More than half the world’s human population resides in cities, and urban development continues to increase all over the world. By 2000, the United Nations projects five billion people will live in cities. Associate Professor Dieter Hochuli, a biologist at the University of Sydney, believes that we need to understand how cities are changing the ecology of the systems they are built on, and how plants and animals are adapting to them."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Paragraph B",
+					"answer": "iv",
+					"quotes": [
+						"If any species has learnt to thrive in an urban environment, it’s the native white ibis. A strange long-legged bird with a long bow-shaped beak, it is known as the ’garbage turkey’. The bird’s reputation for digging through inner-city bins and scavenging street garbage has not endeared it to the public."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Paragraph C",
+					"answer": "vii",
+					"quotes": [
+						"Today, homeowners prefer to landscape their backyards with tall trees and manicured lawns, an environment that provides little protection for small birds. But one bird’s trash is another’s treasure. Gardens filled with flowering plants and fruit trees favour omnivorous birds such as currawongs, bowerbirds, and the city’s most despised resident—the noisy miner bird. ’They’re a real winner in cities,’ Australian Museum ornithologist Richard Major says. ’The predominant driver in the decline of small birds is that we’ve made a suitable environment for native noisy miners."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Paragraph D",
+					"answer": "iii",
+					"quotes": [
+						"D. Many invertebrates, such as the golden orb weaver spider and the blue triangle butterfly, also relish living in the city. The golden orb spiders in Sydney are fatter and fitter than species found in the countryside, and Professor Hochuli and his team are trying to understand why. ’We’re trying to determine whether it’s more food or the urban heat, as it’s up to four degrees warmer in the city. ’ Hochuli has also found some varieties of ant more at home in the city. The green ant, known for its painful bite, will build a nest where there is space and food, regardless of whether it’s a backyard or a sports oval. ’It’s remarkable how many things persist in city environments,’ he says. The decline in birds that eat small invertebrates means these populations grow unchecked, allowing them to chew their way through the foliage of the city’s trees."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Paragraph E",
+					"answer": "i",
+					"quotes": [
+						"E. While some species can survive in relatively small areas, mammals have been confined to patches of bushland scattered around Sydney and its nearby national parks. However, the rabbit-sized, long-nosed bandicoot has discovered the advantages of venturing out of Sydney Harbour National Park and into suburban gardens. ’They forage for invertebrates in the grass and like the surrounding habitat to nest and escape from predators,’ Catherine Price, a research associate with the University of Sydney, says."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Paragraph F",
+					"answer": "ii",
+					"quotes": [
+						"F. It’s not just native wildlife that has sought comfort in city living. Non-native species such as black rodents, cockroaches and foxes have also developed survival strategies too. But weeds are the pest that has gained the most advantage. ’In residential Sydney, there would not be a single area of remnant bushland not infested by introduced plants,’ Michele Leishman, a Macquarie University plant biologist, says. Over 20 years, Leishman and her colleagues have shown how Sydney’s huge stretches of impermeable concrete, together with the stormwater system, have helped weeds infiltrate the few remaining pockets of bushland. As rain washes over backyards and roadways, it collects chemicals which enter the stormwater system, where it is piped to the edges of bushland. The nutrient-rich water seeps into the earth, favouring the many exotic species that live fast and die young, Leishman says. Indigenous plants prefer a low-fertility soil and struggle to cope with one that is more fertile."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "MATCHING_NAMES",
+			"instructions": "Look at the following statements (7-10) and the list of researchers below.\nMatch each statement with the correct researcher, A-D.\nYou may use any letter more than once.",
+			"options": [
+				{
+					"label": "A",
+					"text": "John Martin"
+				},
+				{
+					"label": "B",
+					"text": "Dieter Hochuli"
+				},
+				{
+					"label": "C",
+					"text": "Richard Major"
+				},
+				{
+					"label": "D",
+					"text": "Catherine Price"
+				}
+			],
+			"body": "____ (7)It is not clear why one small animal is moving from its natural environment\n____ (8)Hot weather might positively affect the health of a species\n____ (9)Sydney's residential gardens suit some species better than others\n____ (10)Research into the natural world's responses to urban settings is vital",
+			"body_html": "<p>[7]It is not clear why one small animal is moving from its natural environment</p><p>[8]Hot weather might positively affect the health of a species </p><p>[9]Sydney's residential gardens suit some species better than others</p><p>[10]Research into the natural world's responses to urban settings is vital </p>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "It is not clear why one small animal is moving from its natural environment",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Không rõ tại sao một động vật nhỏ đang di chuyển từ môi trường tự nhiên của nó\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nnot clear ~ don't know\nsmall animal ~ bandicoot\nmoving from its natural environment ~ venturing out of Sydney Harbour National Park\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Catherine Price \"Tiến sĩ Price đang cố gắng hiểu điều gì khuyến khích loài động vật có vú nhỏ này vào môi trường đô thị. 'Chúng tôi không biết liệu đó có phải là tràn ra từ công viên hay không, hoặc liệu chúng có những đặc điểm sinh tồn đặc biệt cho phép chúng tránh được chó và mèo'\".\n\nBước 4: Đáp án: D",
+					"quotes": [
+						"’We don’t know if it’s an overflow from the park, or if they’ve got particular survival traits that allow them to evade dogs and cats, and use the urban habitat that benefits them,’ she says."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Hot weather might positively affect the health of a species",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Thời tiết nóng có thể ảnh hưởng tích cực đến sức khỏe của một loài\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nhot weather ~ urban heat\npositively affect ~ fatter and fitter\nhealth of a species ~ golden orb spiders\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Dieter Hochuli (Professor Hochuli) \"Những con nhện dệt vàng ở Sydney béo hơn và khỏe mạnh hơn so với các loài được tìm thấy ở vùng nông thôn, và Giáo sư Hochuli và nhóm của ông đang cố gắng hiểu tại sao. 'Chúng tôi đang cố gắng xác định xem đó là do có nhiều thức ăn hơn hay do nhiệt đô thị, vì ở thành phố ấm hơn đến bốn độ'\".\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"The golden orb spiders in Sydney are fatter and fitter than species found in the countryside, and Professor Hochuli and his team are trying to understand why. ’We’re trying to determine whether it’s more food or the urban heat, as it’s up to four degrees warmer in the city."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Sydney's residential gardens suit some species better than others",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Các khu vườn dân cư của Sydney phù hợp với một số loài hơn những loài khác\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nresidential gardens ~ backyards with tall trees and manicured lawns\nsuit some species better than others ~ provides little protection for small birds / favour omnivorous birds\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Richard Major \"Ngày nay, chủ nhà thích cảnh quan sân sau của họ với cây cao và bãi cỏ được cắt tỉa, một môi trường cung cấp ít sự bảo vệ cho các loài chim nhỏ. Nhưng rác của một con chim là kho báu của con khác. Vườn đầy cây có hoa và cây ăn quả ưu ái các loài chim ăn tạp như currawongs, bowerbirds và cư dân bị ghét nhất của thành phố - chim thợ mỏ ồn ào. 'Chúng là người chiến thắng thực sự trong các thành phố,' chuyên gia điểu học Richard Major của Bảo tàng Úc nói\".\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"Today, homeowners prefer to landscape their backyards with tall trees and manicured lawns, an environment that provides little protection for small birds. But one bird’s trash is another’s treasure. Gardens filled with flowering plants and fruit trees favour omnivorous birds such as currawongs, bowerbirds, and the city’s most despised resident—the noisy miner bird. ’They’re a real winner in cities,’ Australian Museum ornithologist Richard Major says."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Research into the natural world's responses to urban settings is vital",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Nghiên cứu về phản ứng của thế giới tự nhiên đối với môi trường đô thị là rất quan trọng\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nresearch ~ their research\nnatural world's responses to urban settings ~ how plants and animals are adapting to cities\nvital ~ timely / need to understand\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Dieter Hochuli (Associate Professor Dieter Hochuli) \"Các nhà sinh thái học Sydney nội thành và nghiên cứu của họ rất kịp thời. Hơn một nửa dân số thế giới sống ở các thành phố, và sự phát triển đô thị tiếp tục tăng trên toàn thế giới. Phó Giáo sư Dieter Hochuli, một nhà sinh vật học tại Đại học Sydney, tin rằng chúng ta cần hiểu cách các thành phố đang thay đổi hệ sinh thái của các hệ thống mà chúng được xây dựng trên đó, và cách động thực vật đang thích nghi với chúng\".\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"Inner-city Sydney is the laboratory of choice for a number of ecologists, and their research is timely. More than half the world’s human population resides in cities, and urban development continues to increase all over the world. By 2000, the United Nations projects five billion people will live in cities. Associate Professor Dieter Hochuli, a biologist at the University of Sydney, believes that we need to understand how cities are changing the ecology of the systems they are built on, and how plants and animals are adapting to them."
+					]
+				}
+			]
+		},
+		{
+			"range": "11-13",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary below. Choose ONE WORD ONLY from the passage for each answer.",
+			"body": "Seeking comfort in city living\nIt's not only native plants and animals that are adapting to city life: non-native plants and animals are also adapting. Examples of successful city dwellers include small, non-native ____ (11) and non-native insects such as ____ (12). However, what causes most problems in the city is weeds. Michelle Leishman, a scientist from Macquarie University, has proven that Sydney's large areas of ____ (13) and its drainage network favour the growth of weeds. Water gathers chemicals as it passes from gardens and streets into the city drainage network. This, in turn, creates very good soil for several varieties of rapidly growing non-native plants.",
+			"body_html": "<table><tbody><tr><td><h3><strong>Seeking comfort in city living</strong></h3>\nIt's not only native plants and animals that are adapting to city life: non-native plants and animals are also adapting. Examples of successful city dwellers include small, non-native [11] and non-native insects such as [12]. However, what causes most problems in the city is weeds. Michelle Leishman, a scientist from Macquarie University, has proven that Sydney's large areas of [13] and its drainage network favour the growth of weeds. Water gathers chemicals as it passes from gardens and streets into the city drainage network. This, in turn, creates very good soil for several varieties of rapidly growing non-native plants.\n</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 11,
+					"text": "",
+					"answer": "rodents",
+					"quotes": [
+						"Non-native species such as black rodents, cockroaches and foxes have also developed survival strategies too. But weeds are the pest that has gained the most advantage."
+					]
+				},
+				{
+					"number": 12,
+					"text": "",
+					"answer": "cockroaches",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nVà côn trùng không bản địa như ______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: such as + NOUN (giới thiệu ví dụ cho \"non-native insects\")\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nnon-native insects ~ từ khóa giữ nguyên\nsuch as ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Các loài không bản địa như chuột đen, gián và cáo cũng đã phát triển các chiến lược sinh tồn\" (Non-native species such as black rodents, cockroaches and foxes have also developed survival strategies too).\n\nBước 5: Đáp án: cockroaches\nVà côn trùng không bản địa như gián (and non-native insects such as cockroaches).",
+					"quotes": [
+						"Non-native species such as black rodents, cockroaches and foxes have also developed survival strategies too. But weeds are the pest that has gained the most advantage."
+					]
+				},
+				{
+					"number": 13,
+					"text": "",
+					"answer": "concrete",
+					"quotes": [
+						"Over 20 years, Leishman and her colleagues have shown how Sydney’s huge stretches of impermeable concrete, together with the stormwater system, have helped weeds infiltrate the few remaining pockets of bushland."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

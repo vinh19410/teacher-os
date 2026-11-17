@@ -1,0 +1,276 @@
+{
+	"id": "31060f8a-9c1a-4ca4-83be-d2edb0b53491",
+	"url": "https://stepielts.com/student/reading/31060f8a-9c1a-4ca4-83be-d2edb0b53491?mode=practice",
+	"title": "Team Building",
+	"source": "Trainer",
+	"passage_number": null,
+	"time_minutes": 20,
+	"question_range": "1-14",
+	"passage": {
+		"title": "Team Building",
+		"subtitle": "If you thought ancient monuments were built in honour of gods and kings, think again, says Laura Spinney",
+		"paragraphs": [
+			"At Poverty Point in the US state of Louisiana, a remarkable monument overlooks the Mississippi river. Built around 3,500 years ago entirely from earth, it consists of six semicircular ridges and five mounds.'Mound A', as archaeologists refer to it, is the largest at 22 metres high. The earth mounds at Poverty Point are not just impressive, they are also intriguing. Ancient monuments have always been regarded as products of large, hierarchical societies, built as tributes to gods and kings. But the creators of the Poverty Point monument were hunter gatherers, who functioned in a more democratic way. They may have looked to elders for guidance, but these would not have exerted a commanding influence over their small groups. So who, or what, motivated building on such a grand scale?",
+			"Archaeologists have been excavating Poverty Point for more than a century. However, the truly remarkable nature of Mound A only emerged a few years ago. This was when a team led by Tristram Kidder of Washington University drilled into the mound. They saw for the first time that it consisted of neat layers of differently coloured earth. It rains a lot around Poverty Point, and we know that fluctuations in temperature and increased flooding eventually led to its abandonment. But Kidder could see no sign that the layers had combined, as you might expect if it had rained during construction. Kidder reached a startling conclusion: Mound A must have been built in one short period, perhaps in as little as 30 days, and probably no more than 90.",
+			"Mound A contains nearly 240,000 cubic metres of earth; the equivalent of 32,000 truckloads. There were no trucks then, of course, nor any other heavy machinery, animals like mules to carry the earth, or wheelbarrows. Assuming it did take 90 days, Kidder's group calculated that around 3,000 basket-carrying individuals would have been needed to get the job done. Given that people probably travelled in family groups, as many as 9,000 people may have assembled at Poverty Point during construction.'If that's true, it was an extraordinarily large gathering,' says Kidder. Why would they have chosen to do this?",
+			"Another archaeologist, Carl Lipo, thinks he has the answer: the same reason that the people of Easter Island built their famous stone heads. When Lipa first when to Easter Island, the prevailing idea was that the enormous statues had been rolled into place using logs, and the resulting deforestation contributed to the human population's collapse. But Lipo and fellow archaeologist Terry Hunt showed the statues could have been 'walked' upright into place by cooperating bands of people using ropes, with no need for trees. They argue further that by making statues, people's energy was directed into peaceful interactions and information-sharing. They ceased crafting statues, Lipo claims, precisely because daily existence became less of a challenge, and it was no longer so important that they work together.",
+			"An ancient temple known as Gobekli Tepe in south-east Turkey is another site where a giant team-building project might have taken place. Since excavations started, archaeologists have uncovered nine enclosures formed of massive stone pillars. Given the vast size of these pillars, a considerable workforce would have been needed to move them. But what archaeologists have also discovered is that every so often, the workers filled in the enclosures with broken rock and built new ones. The apparent disposability of these monuments makes sense if the main aim was building a team rather than a lasting structure. Indeed, the many bones from animals such as gazelle found in the filled-in enclosures suggest people held feasts to celebrate the end of a collaborative effort.",
+			"A number of researchers share Lipo's view that the need to cooperate is what drove monument makers. But as you might expect when a major shift in thinking is proposed, not everyone goes along with it. The sceptics include Tristram Kidder. For him, the interesting question is not 'Did cooperative building promote group survival' but 'What did the builders think they were doing? ' All human behaviour comes down to a pursuit of food and self-preservation, he says. As for why people came to Poverty Point, he and his colleagues have suggested it was a pilgrimage site.",
+			"If Lipo is right, have we in any way inherited our ancestors' tendency to work together for the sake of social harmony? Evolutionary biologist David Sloan Wilson thinks we have. Wilson cites the Burning Man festival, promoted as an experiment in community and art, which draws thousands of people to Nevada's Black Rock Desert each summer. Among the ten principles laid down by co-founder Larry Harvey are 'inclusion' and 'communal effort'. Another is 'leaving no trace', meaning that whatever festival-g oers create they destroy before departing. In this way, the desert landscape is only temporarily disturbed. Wilson says there is evidence that such cooperative ventures matter more today than ever because we are dependent on a wider range of people than our ancestors were. Food, education, security: all are provided by people beyond our family group. Recently, as part of his Neighbourhood Project in Binghamton, Wilson and his colleagues helped locals create their own parks.'This brought people together and enabled them to cooperate in numerous other contexts,' he explains. This included helping with repairs after a series of floods in 2011. Social psychologist Susan Fiske of Princeton University also sees value in community projects. Her research shows, for example, that they can help break down the ill-informed views that people hold towards others they have observed but do not usually interact with. So if modern projects really help build better communities, that will surely be a monumental achievement."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "YES/NO/NOT GIVEN",
+			"instructions": "Do the following statements agree with the claims of the writer in Reading Passage?\nIn boxes 1 - 6 on your answer sheet, write:\nYES if the statement agrees with the claims of the writer\nNO if the statement agrees with the claims of the writer\nNOT GIVEN if it is impossible to say what the writer thinks about this",
+			"questions": [
+				{
+					"number": 1,
+					"text": "The whole monument at Poverty Point was made out of earth.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nToàn bộ công trình ở Poverty Point được làm từ đất.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nBuilt ~ made\nentirely from earth ~ the whole monument was made out of earth\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Được xây dựng cách đây khoảng 3.500 năm hoàn toàn từ đất\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Toàn bộ công trình ở Poverty Point được làm từ đất\" (The whole monument at Poverty Point was made out of earth).\n\nBước 4: Đáp án: YES",
+					"quotes": [
+						"Built around 3,500 years ago entirely from earth, it consists of six semicircular ridges and five mounds."
+					]
+				},
+				{
+					"number": 2,
+					"text": "The monument at Poverty Point was the first of its kind to be built in the US.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCông trình ở Poverty Point là công trình đầu tiên (thuộc loại công trình đất đắp lớn và đê bao) được xây dựng ở Hoa Kỳ.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nPoverty Point ~ từ khóa giữ nguyên\nUS state of Louisiana ~ US\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"Ở Poverty Point thuộc bang Louisiana, Hoa Kỳ, có một công trình đáng chú ý nhìn ra sông Mississippi\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"đây là công trình đầu tiên thuộc loại này được xây dựng ở Hoa Kỳ\" (the first of its kind to be built in the US).\n\nBước 4: Đáp án: NOT GIVEN"
+				},
+				{
+					"number": 3,
+					"text": "The older members of the tribes at Poverty Point had great power over their people.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NO",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững thành viên lớn tuổi trong các bộ lạc ở Poverty Point có quyền lực lớn đối với người dân của họ.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nelders ~ older members of the tribes\nCommanding influence ~ power\nTheir small groups ~ their people\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Họ có thể tìm sự hướng dẫn từ những người lớn tuổi, nhưng những người này sẽ không có ảnh hưởng chi phối đối với các nhóm nhỏ của họ\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"Những thành viên lớn tuổi trong các bộ lạc ở Poverty Point có quyền lực lớn đối với người dân của họ\" (The older members of the tribes at Poverty Point had great power over their people).\n\nBước 4: Đáp án: NO",
+					"quotes": [
+						"They may have looked to elders for guidance, but these would not have exerted a commanding influence over their small groups."
+					]
+				},
+				{
+					"number": 4,
+					"text": "It is surprising that archaeologists took so long to discover the existence of Mound A.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nThật đáng ngạc nhiên khi các nhà khảo cổ học mất quá nhiều thời gian để phát hiện ra sự tồn tại của Mound A.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\narchaeologists ~ từ khóa giữ nguyên\nMound A ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"Các nhà khảo cổ học đã khai quật Poverty Point trong hơn một thế kỷ. Tuy nhiên, bản chất thực sự đáng chú ý của Mound A chỉ mới xuất hiện vài năm trước đây\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"thật đáng ngạc nhiên khi các nhà khảo cổ học mất quá nhiều thời gian để phát hiện ra sự tồn tại của Mound A\" (It is surprising that archaeologists took so long to discover the existence of Mound A).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Archaeologists have been excavating Poverty Point for more than a century. However, the truly remarkable nature of Mound A only emerged a few years ago."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Tristram Kidder's work at Mound A revealed something previously unknown to researchers.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCông việc của Tristram Kidder tại Mound A đã tiết lộ điều gì đó mà trước đây các nhà nghiên cứu chưa biết.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nTristram Kidder's work ~ từ khóa giữ nguyên\nrevealed ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Gần đây, nhóm nghiên cứu của Tristram Kidder từ Đại học Washington đã tiến hành khoan vào gò đất. Lần đầu tiên, họ phát hiện ra gò đất được cấu tạo từ nhiều lớp đất màu sắc khác nhau, xếp chồng lên nhau một cách gọn gàng\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Công việc của Tristram Kidder tại Mound A đã tiết lộ điều gì đó mà trước đây các nhà nghiên cứu chưa biết\" (Tristram Kidder's work at Mound A revealed something previously unknown to researchers).\n\nBước 4: Đáp án: YES",
+					"quotes": [
+						"However, the truly remarkable nature of Mound A only emerged a few years ago. This was when a team led by Tristram Kidder of Washington University drilled into the mound. They saw for the first time that it consisted of neat layers of differently coloured earth."
+					]
+				},
+				{
+					"number": 6,
+					"text": "A change in weather patterns forced people living around the Poverty Point monument to move away.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững thay đổi về thời tiết buộc cư dân quanh khu vực Poverty Point phải di cư đi nơi khác.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nfluctuations in temperature and increased flooding ~ change in weather patterns\nled to its abandonment ~ forced people to move away\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Ở Poverty Point thường có nhiều mưa, và chúng tôi biết rằng những thay đổi bất thường về nhiệt độ cũng như lũ lụt ngày càng diễn ra thường xuyên cuối cùng đã dẫn đến việc người ta đã phải bỏ hoang nơi này\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Những thay đổi về thời tiết buộc cư dân quanh khu vực Poverty Point phải di cư đi nơi khác\". (A change in weather patterns forced people living around the Poverty Point monument to move away).\n\nBước 4: Đáp án: YES",
+					"quotes": [
+						"It rains a lot around Poverty Point, and we know that fluctuations in temperature and increased flooding eventually led to its abandonment."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, C or D.\nWrite the correct letter in boxes 7-10 on your answer sheet.",
+			"questions": [
+				{
+					"number": 7,
+					"text": "The writer refers to trucks, mules and wheelbarrows in order to",
+					"options": [
+						{
+							"label": "A",
+							"text": "highlight the technical ability of the Poverty Point inhabitants."
+						},
+						{
+							"label": "B",
+							"text": "emphasise the number of workers required to build the mound."
+						},
+						{
+							"label": "C",
+							"text": "question the logic of choosing Poverty Point as a place for construction."
+						},
+						{
+							"label": "D",
+							"text": "challenge the idea that the mound could have been made so quickly."
+						}
+					],
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nTác giả đề cập đến xe tải (trucks), lừa (mules) và xe cút kít (wheelbarrows) nhằm mục đích gì?\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ: \"Không có xe tải, cũng như không có máy móc hạng nặng, động vật như lừa để vận chuyển đất, hay xe cút kít. Giả sử việc xây dựng mất 90 ngày, nhóm của Kidder tính toán rằng cần khoảng 3,000 người đeo giỏ để hoàn thành công việc.\"\n=> Thông tin được in đậm đồng nghĩa với câu B (nhấn mạnh số lượng công nhân cần có để xây dựng gò đất).\n\nBước 3: Đáp án: B\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Đoạn văn không đề cập đến \"khả năng kỹ thuật của cư dân Poverty Point\".\nĐáp án C -> Đoạn văn không đặt câu hỏi về \"lý do chọn Poverty Point làm nơi xây dựng\".\nĐáp án D -> Đoạn văn không bác bỏ quan ý kiến cho rằng \"gò đất có thể được xây dựng rất nhanh\".",
+					"quotes": [
+						"There were no trucks then, of course, nor any other heavy machinery, animals like mules to carry the earth, or wheelbarrows. Assuming it did take 90 days, Kidder's group calculated that around 3,000 basket-carrying individuals would have been needed to get the job done."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Archaeologist Carl Lipo's research at Easter Island has led him to believe that",
+					"options": [
+						{
+							"label": "A",
+							"text": "people had to cut down trees in order to transport larger statues."
+						},
+						{
+							"label": "B",
+							"text": "remote communities faced greater environmental challenges than other societies."
+						},
+						{
+							"label": "C",
+							"text": "islanders stopped making statues when their lives became easier."
+						},
+						{
+							"label": "D",
+							"text": "methods of making the statues varied amongst different groups."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"They ceased crafting statues, Lipo claims, precisely because daily existence became less of a challenge, and it was no longer so important that they work together."
+					]
+				},
+				{
+					"number": 9,
+					"text": "According to the writer, excavations at Gobekli Tepe suggest that",
+					"options": [
+						{
+							"label": "A",
+							"text": "there was disagreement between groups over the temple's design."
+						},
+						{
+							"label": "B",
+							"text": "human occupation drove certain animal populations into decline."
+						},
+						{
+							"label": "C",
+							"text": "each of the enclosures that were built served a different purpose."
+						},
+						{
+							"label": "D",
+							"text": "the builders had no intention of creating permanent structures."
+						}
+					],
+					"answer": "D",
+					"quotes": [
+						"The apparent disposability of these monuments makes sense if the main aim was building a team rather than a lasting structure."
+					]
+				},
+				{
+					"number": 10,
+					"text": "In the sixth paragraph, what are we told about Tristram Kidder?",
+					"options": [
+						{
+							"label": "A",
+							"text": "He feels the academic community should support Carl Lipo's theory."
+						},
+						{
+							"label": "B",
+							"text": "He has changed his mind about the purpose of the Poverty Point monument."
+						},
+						{
+							"label": "C",
+							"text": "He doubts that Carl Lipo has identified the key reason for monument making."
+						},
+						{
+							"label": "D",
+							"text": "He believes that most people recognise the need to help each other to survive."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"But as you might expect when a major shift in thinking is proposed, not everyone goes along with it. The sceptics include Tristram Kidder. For him, the interesting question is not 'Did cooperative building promote group survival' but 'What did the builders think they were doing? ' All human behaviour comes down to a pursuit of food and self-preservation, he says."
+					]
+				}
+			]
+		},
+		{
+			"range": "11-14",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary using the list of words, A-I, below.",
+			"options": [
+				{
+					"label": "A",
+					"text": "basic needs"
+				},
+				{
+					"label": "B",
+					"text": "different generations"
+				},
+				{
+					"label": "C",
+					"text": "new infrastructure"
+				},
+				{
+					"label": "D",
+					"text": "human activities"
+				},
+				{
+					"label": "E",
+					"text": "negative impressions"
+				},
+				{
+					"label": "F",
+					"text": "emergency situations"
+				},
+				{
+					"label": "G",
+					"text": "commercial advertising"
+				},
+				{
+					"label": "H",
+					"text": "economic growth"
+				}
+			],
+			"body": "Examples of cooperation in modern times\nDavid Wilson believes that events such as the Burning Man festival encourage social harmony. For example, participants in the festival cooperate so ____ (11) won't permanently affect the desert environment. In Wilson's opinion, cooperation is especially important today because we now rely on many people for our ____ (12) . Wilson also points to how community projects such as park creation can lead to improved group efforts in ____ (13) Psychologist Susan Fiske has also shown how ____ (14) can change when community projects encourage interaction between strangers.",
+			"body_html": "<table><tbody><tr><td><strong>A</strong> basic needs <br><strong>B</strong> different generations <br><strong>C</strong> new infrastructure <br><strong>D</strong> human activities <br><strong>E</strong> negative impressions <br><strong>F</strong> emergency situations <br><strong>G</strong> commercial advertising <br><strong>H</strong> economic growth </td></tr></tbody></table><h3><strong>Examples of cooperation in modern times </strong></h3><p>David Wilson believes that events such as the Burning Man festival encourage social harmony. For example, participants in the festival cooperate so [11] won't permanently affect the desert environment. In Wilson's opinion, cooperation is especially important today because we now rely on many people for our [12] . Wilson also points to how community projects such as park creation can lead to improved group efforts in [13] Psychologist Susan Fiske has also shown how [14] can change when community projects encourage interaction between strangers.</p>",
+			"questions": [
+				{
+					"number": 11,
+					"text": "",
+					"answer": "D",
+					"quotes": [
+						"Another is 'leaving no trace', meaning that whatever festival-g oers create they destroy before departing. In this way, the desert landscape is only temporarily disturbed."
+					]
+				},
+				{
+					"number": 12,
+					"text": "",
+					"answer": "A",
+					"quotes": [
+						"Food, education, security: all are provided by people beyond our family group."
+					]
+				},
+				{
+					"number": 13,
+					"text": "",
+					"answer": "F",
+					"quotes": [
+						"This included helping with repairs after a series of floods in 2011."
+					]
+				},
+				{
+					"number": 14,
+					"text": "",
+					"answer": "E",
+					"quotes": [
+						"Her research shows, for example, that they can help break down the ill-informed views that people hold towards others they have observed but do not usually interact with."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

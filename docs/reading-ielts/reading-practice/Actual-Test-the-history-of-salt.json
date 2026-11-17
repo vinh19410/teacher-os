@@ -1,0 +1,265 @@
+{
+	"id": "2232da83-db42-4c63-863f-a112d550c610",
+	"url": "https://stepielts.com/student/reading/2232da83-db42-4c63-863f-a112d550c610?mode=practice",
+	"title": "The History of Salt",
+	"source": "Actual Test",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "1-14",
+	"passage": {
+		"title": "The History of Salt",
+		"paragraphs": [
+			"A. Salt is so simple and plentiful that we almost take it for granted. In chemical terms, salt is the combination of a sodium ion with a chloride on, making it one of the most basic molecules on earth. It is also one of the most plentiful: it has been estimated that salt deposits under the state of Kansas alone could supply the entire world’s needs for the next 250,000 years.",
+			"B. But salt is also an essential element. Without it, life itself would be impossible since the human body requires the mineral in order to function properly. The concentration of sodium ions in the blood is directly related to the regulation of safe body fluid levels. And while we are all familiar with its many uses in cooking, we may not be aware that this element is used in some 14,000 commercial applications. From manufacturing pulp and paper to setting dyes in textiles and fabric, from producing soaps and detergents to making our roads safe in winter, salt plays an essential part in our daily lives.",
+			"C. Salt has a long and influential role in world history. From the dawn of civilization, it has been a key factor in economic, religious, social and political development in every corner of the world. It has been the subject of superstition, folklore, and warfare, and has even been used as currency.",
+			"D. As a precious and portable commodity, salt has long been a cornerstone of economies throughout history.In fact, researcher M.R. Bloch conjectured that civilization began along the edges of the desert because of the natural surface deposits of salt found there. Bloch also believed that the first war - likely fought near the ancient city of Essalt on the Jordan River - could have been fought over the city’s precious supplies of the mineral.",
+			"E. In 2200 BC, the Chinese emperor Hsia Yu levied one of the first known taxes. He taxed salt. In Tibet, Marco Polo noted that tiny cakes of salt were pressed with images of the Grand Khan to be used as coins and to this day among the nomads of Ethiopia’s Danakil Plains it is still used as money. Greek slave traders often bartered it for slaves, giving rise to the expression that someone was \"not worth his salt.\" Roman legionnaires were paid in salt - a salarium, the Latin origin of the word \"salary.\"",
+			"F. Merchants in 12th-century Timbuktu-the gateway to the Sahara Desert and the seat of scholars - valued this mineral as highly as books and gold. In France, Charles of Anjou levied the gabelle, a salt tax, in 1259 to finance his conquest of the Kingdom of Naples. Outrage over the gabelle fueled the French Revolution. Though the revolutionaries eliminated the tax shortly after Louis XVI, the Republic of France re-established the gabelle in the early 19th Century; only in 1946 was it removed from the books.",
+			"G. The Erie Canal, an engineering marvel that connected the Great Lakes to New York’s Hudson River in 1825, was called \"the ditch that salt built.\" Salt tax revenues paid for half the cost of construction of the canal. The British monarchy supported itself with high salt taxes, leading to a bustling black market for the white crystal. In 1785, the earl of Dundonald wrote that every year in England, 10,000 people were arrested for salt smuggling. And protesting against British rule in 1930, Mahatma Gandhi led a 200-mile march to the Arabian Ocean to collect untaxed salt for India’s poor.",
+			"H. In religion and culture, salt long held an important place with Greek worshippers consecrating it in their rituals. Further, in Buddhist tradition, salt repels evil spirits, which is why it is customary to throw it over your shoulder before entering your house after a funeral: it scares off any evil spirits that may be clinging to your back. Shinto religion also uses it to purify an area. Before sumo wrestlers enter the ring for a match - which is in reality an elaborate Shinto rite - a handful is thrown into the center to drive off malevolent spirits.",
+			"I. In the Southwest of the United States, the Pueblo worship the Salt Mother. Other native tribes had significant restrictions on who was permitted to eat salt. Hopi legend holds that the angry Warrior Twins punished mankind by placing valuable salt deposits far from civilization, requiring hard work and bravery to harvest the precious mineral. Today, a gift of salt endures in India as a potent symbol of good luck and a reference to Mahatma Gandhi’s liberation of India.",
+			"J. The effects of salt deficiency are highlighted in times of war, when human bodies and national economies are strained to their limits. Thousands of Napoleon’s troops died during the French retreat from Moscow due to inadequate wound healing and lowered resistance to disease - the results of salt deficiency."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-3",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose THREE letters A-H.\nWrite your answers in boxes 1-3 on your answer sheet.\nNB. Your answers may be given in any order.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Which THREE statements are true of salt?",
+					"options": [
+						{
+							"label": "A",
+							"text": "A number of cities take their name from the word salt."
+						},
+						{
+							"label": "B",
+							"text": "Salt contributed to the French Revolution."
+						},
+						{
+							"label": "C",
+							"text": "The uses of salt are countless."
+						},
+						{
+							"label": "D",
+							"text": "Salt has been produced in China for less than 2000 years."
+						},
+						{
+							"label": "E",
+							"text": "There are many commercial applications for salt"
+						},
+						{
+							"label": "F",
+							"text": "Salt deposits in the state of Kansas are vast."
+						},
+						{
+							"label": "G",
+							"text": "Salt has few industrial uses nowadays."
+						},
+						{
+							"label": "H",
+							"text": "Slaves used salt as a currency."
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 2,
+					"text": "Which THREE statements are true of salt?",
+					"options": [
+						{
+							"label": "A",
+							"text": "A number of cities take their name from the word salt."
+						},
+						{
+							"label": "B",
+							"text": "Salt contributed to the French Revolution."
+						},
+						{
+							"label": "C",
+							"text": "The uses of salt are countless."
+						},
+						{
+							"label": "D",
+							"text": "Salt has been produced in China for less than 2000 years."
+						},
+						{
+							"label": "E",
+							"text": "There are many commercial applications for salt"
+						},
+						{
+							"label": "F",
+							"text": "Salt deposits in the state of Kansas are vast."
+						},
+						{
+							"label": "G",
+							"text": "Salt has few industrial uses nowadays."
+						},
+						{
+							"label": "H",
+							"text": "Slaves used salt as a currency."
+						}
+					],
+					"answer": "E"
+				},
+				{
+					"number": 3,
+					"text": "Which THREE statements are true of salt?",
+					"options": [
+						{
+							"label": "A",
+							"text": "A number of cities take their name from the word salt."
+						},
+						{
+							"label": "B",
+							"text": "Salt contributed to the French Revolution."
+						},
+						{
+							"label": "C",
+							"text": "The uses of salt are countless."
+						},
+						{
+							"label": "D",
+							"text": "Salt has been produced in China for less than 2000 years."
+						},
+						{
+							"label": "E",
+							"text": "There are many commercial applications for salt"
+						},
+						{
+							"label": "F",
+							"text": "Salt deposits in the state of Kansas are vast."
+						},
+						{
+							"label": "G",
+							"text": "Salt has few industrial uses nowadays."
+						},
+						{
+							"label": "H",
+							"text": "Slaves used salt as a currency."
+						}
+					],
+					"answer": "F"
+				}
+			]
+		},
+		{
+			"range": "4-8",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary. Choose NO MORE THAN TWO WORDS from the passage for each answer.",
+			"body": "Salt is such an ____ (4) that people would not be able to live without it. As well as its uses in cooking, this basic mineral has thousands of business ____ (5) ranging from making paper to the manufacture of soap. Being a prized and ____ (6) it has played a major part in the economies of many countries. As such, salt has not only led to war, but has also been used to raise ____ (7) by governments in many parts of the world. There are also many instances of its place in religion and culture, being used as a means to get rid of evil ____ (8)",
+			"body_html": "Salt is such an [4] that people would not be able to live without it. As well as its uses in cooking, this basic mineral has thousands of business [5] ranging from making paper to the manufacture of soap. Being a prized and [6] it has played a major part in the economies of many countries. As such, salt has not only led to war, but has also been used to raise [7] by governments in many parts of the world. There are also many instances of its place in religion and culture, being used as a means to get rid of evil [8]",
+			"questions": [
+				{
+					"number": 4,
+					"text": "",
+					"answer": "essential element",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nMuối là một ________ đến nỗi con người không thể sống thiếu nó.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN PHRASE\nDấu hiệu: such + an + NOUN PHRASE + that (cấu trúc \"such...that\" với danh từ đếm được số ít)\nBước 3: Tìm các keywords được paraphrase trong bài:\npeople would not be able to live without it ~ life itself would be impossible\nsalt ~ từ khóa giữ nguyên\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Nhưng muối cũng là một nguyên tố thiết yếu. Thiếu nó, cuộc sống sẽ không thể tồn tại\" (But salt is also an essential element. Without it, life itself would be impossible).\n\nBước 5: Đáp án: essential element\nMuối là một nguyên tố thiết yếu đến nỗi con người không thể sống thiếu nó (Salt is such an essential element that people would not be able to live without it).",
+					"quotes": ["But salt is also an essential element."]
+				},
+				{
+					"number": 5,
+					"text": "",
+					"answer": "applications",
+					"quotes": [
+						"And while we are all familiar with its many uses in cooking, we may not be aware that this element is used in some 14,000 commercial applications. From manufacturing pulp and paper to setting dyes in textiles and fabric, from producing soaps and detergents to making our roads safe in winter, salt plays an essential part in our daily lives."
+					]
+				},
+				{
+					"number": 6,
+					"text": "",
+					"answer": "portable commodity",
+					"quotes": [
+						"D. As a precious and portable commodity, salt has long been a cornerstone of economies throughout history.In fact, researcher M.R."
+					]
+				},
+				{
+					"number": 7,
+					"text": "",
+					"answer": "taxes",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nNhư vậy, muối không chỉ dẫn đến chiến tranh mà còn được sử dụng để tăng ________ bởi chính phủ ở nhiều nơi trên thế giới.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (số nhiều)\nDấu hiệu: raise + NOUN (động từ \"raise\" cần tân ngữ là danh từ)\nBước 3: Tìm các keywords được paraphrase trong bài:\nraise ~ levied\ngovernments ~ Chinese emperor, Charles of Anjou, British monarchy\nsalt ~ từ khóa giữ nguyên\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Vào năm 2200 trước Công nguyên, hoàng đế Trung Quốc Hsia Yu đã áp đặt một trong những loại thuế đầu tiên được biết đến. Ông đánh thuế muối\" (In 2200 BC, the Chinese emperor Hsia Yu levied one of the first known taxes. He taxed salt).\n\nBước 5: Đáp án: taxes\nNhư vậy, muối không chỉ dẫn đến chiến tranh mà còn được sử dụng để tăng thuế bởi chính phủ ở nhiều nơi trên thế giới (As such, salt has not only led to war, but has also been used to raise taxes by governments in many parts of the world).",
+					"quotes": [
+						"E. In 2200 BC, the Chinese emperor Hsia Yu levied one of the first known taxes."
+					]
+				},
+				{
+					"number": 8,
+					"text": "",
+					"answer": "spirits",
+					"quotes": [
+						"Further, in Buddhist tradition, salt repels evil spirits, which is why it is customary to throw it over your shoulder before entering your house after a funeral: it scares off any evil spirits that may be clinging to your back."
+					]
+				}
+			]
+		},
+		{
+			"range": "9-14",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information in Reading Passage 2?\nIn boxes 9-14 on your answer sheet write\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information about the statement",
+			"questions": [
+				{
+					"number": 9,
+					"text": "It has been suggested that salt was responsible for the first war.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"quotes": [
+						"Bloch also believed that the first war - likely fought near the ancient city of Essalt on the Jordan River - could have been fought over the city’s precious supplies of the mineral."
+					]
+				},
+				{
+					"number": 10,
+					"text": "The first tax on salt was imposed by a Chinese emperor.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nThuế muối đầu tiên được áp đặt bởi một hoàng đế Trung Quốc.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nfirst tax ~ one of the first known taxes\nsalt ~ từ khóa giữ nguyên\nimposed ~ levied\nChinese emperor ~ từ khóa giữ nguyên\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"Vào năm 2200 trước Công nguyên, hoàng đế Trung Quốc Hsia Yu đã áp đặt một trong những loại thuế đầu tiên được biết đến\" (In 2200 BC, the Chinese emperor Hsia Yu levied one of the first known taxes).\n==> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"thuế muối đầu tiên\" mà chỉ nói \"một trong những loại thuế đầu tiên được biết đến\" (It has been suggested that salt was responsible for the first war).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"E. In 2200 BC, the Chinese emperor Hsia Yu levied one of the first known taxes. He taxed salt."
+					]
+				},
+				{
+					"number": 11,
+					"text": "Salt is no longer used as a form of currency.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMuối không còn được sử dụng như một hình thức tiền tệ nữa.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nno longer used ~ still used\nform of currency ~ used as money/coins\nsalt ~ từ khóa giữ nguyên\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Marco Polo ghi nhận rằng những viên muối nhỏ được ép với hình ảnh của Khan để được sử dụng như tiền xu và cho đến ngày nay ở vùng đồng bằng Danakil của Ethiopia, nó vẫn được sử dụng như tiền\".\n==> Điều này trái ngược với thông tin trong câu hỏi \"muối không còn được sử dụng như một hình thức tiền tệ nữa\" (Marco Polo noted that tiny cakes of salt were pressed with images of the Grand Khan to be used as coins and to this day among the nomads of Ethiopia's Danakil Plains it is still used as money).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"In Tibet, Marco Polo noted that tiny cakes of salt were pressed with images of the Grand Khan to be used as coins and to this day among the nomads of Ethiopia’s Danakil Plains it is still used as money."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Most of the money for the construction of the Erie Canal came from salt taxes.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhần lớn tiền để xây dựng kênh đào Erie đến từ thuế muối.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nmost of the money ~ half the cost\nconstruction ~ từ khóa giữ nguyên\nErie Canal ~ từ khóa giữ nguyên\nsalt taxes ~ salt tax revenues\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Kênh đào Erie, một kỳ công kỹ thuật đã kết nối Great Lakes với sông Hudson của New York vào năm 1825, được gọi là 'con mương mà muối đã xây dựng'. Doanh thu thuế muối đã trả cho một nửa chi phí xây dựng kênh đào\".\n==> Điều này trái ngược với thông tin trong câu hỏi \"phần lớn tiền\" vì bài chỉ nói \"một nửa\" (half) chứ không phải \"phần lớn\" (most) (The Erie Canal, an engineering marvel that connected the Great Lakes to New York's Hudson River in 1825, was called \"the ditch that salt built.\" Salt tax revenues paid for half the cost of construction of the canal).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Salt tax revenues paid for half the cost of construction of the canal."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Hopi legend believes that salt deposits were placed far away from civilization to penalize mankind.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTruyền thuyết Hopi tin rằng các mỏ muối được đặt xa văn minh để trừng phạt loài người.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nHopi legend ~ từ khóa giữ nguyên\nbelieves ~ holds\nsalt deposits ~ từ khóa giữ nguyên\nplaced far away from civilization ~ từ khóa giữ nguyên\npenalize mankind ~ punished mankind\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Truyền thuyết Hopi tin rằng những Chiến binh Song sinh hung dữ đã trừng phạt loài người bằng cách đặt các mỏ muối quý giá xa văn minh, đòi hỏi phải làm việc chăm chỉ và dũng cảm để thu hoạch khoáng sản quý giá này\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"các mỏ muối được đặt xa văn minh để trừng phạt loài người\" (Hopi legend holds that the angry Warrior Twins punished mankind by placing valuable salt deposits far from civilization, requiring hard work and bravery to harvest the precious mineral).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Hopi legend holds that the angry Warrior Twins punished mankind by placing valuable salt deposits far from civilization, requiring hard work and bravery to harvest the precious mineral."
+					]
+				},
+				{
+					"number": 14,
+					"text": "A lack of salt is connected with the deaths of some soldiers.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"quotes": [
+						"Thousands of Napoleon’s troops died during the French retreat from Moscow due to inadequate wound healing and lowered resistance to disease - the results of salt deficiency."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

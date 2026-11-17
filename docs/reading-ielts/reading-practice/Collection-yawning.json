@@ -1,0 +1,313 @@
+{
+	"id": "3de5213c-a060-4e9d-bc35-1239ceb711db",
+	"url": "https://stepielts.com/student/reading/3de5213c-a060-4e9d-bc35-1239ceb711db?mode=practice",
+	"title": "Yawning",
+	"source": "Collection",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "1-14",
+	"passage": {
+		"title": "Yawning",
+		"subtitle": "How and why we yawn still presents problems for researchers in an area which has only recently been opened up to study",
+		"paragraphs": [
+			"When Robert R Provine began studying yawning in the 1960s, it was difficult for him to convince research students of the merits of ’yawning science’. Although it may appear quirky to some, Provine’s decision to study yawning was a logical extension of his research in developmental neuroscience.",
+			"The verb ’to yawn’ is derived from the Old English ganien or ginian, meaning to gape or open wide. But in addition to gaping jaws, yawning has significant features that are easy to observe and analyse. Provine ’collected’ yawns to study by using a variation of the contagion response*. He asked people to ’think about yawning’ and, once they began to yawn, to depress a button and that would record from the start of the yawn to the exhalation at its end.",
+			"Provine’s early discoveries can be summarized as follows: the yawn is highly stereotyped but not invariant in its duration and form. It is an excellent example of the instinctive ’fixed action pattern’ of classical animal-behavior study, or ethology. It is not a reflex (short-duration, rapid, proportional response to a simple stimulus), but, once started, a yawn progresses with the inevitability of a sneeze. The standard yawn runs its course over about six seconds on average, but its duration can range from about three seconds to much longer than the average. There are no half-yawns: this is an example of the typical intensity of fixed action patterns and a reason why you cannot stifle yawns. Just like a cough, yawns can come in bouts with a highly variable inter-yawn interval, which is generally about 68 seconds but rarely more than 70. There is no relation between yawn frequency and duration: producers of short or long yawns do not compensate by yawning more or less often. Furthermore, Provine’s hypotheses about the form and function of yawning can be tested by three informative yawn variants which can be used to look at the roles of the nose, the mouth and the jaws.",
+			"i) The closed nose yawnSubjects are asked to pinch their nose closed when they feel themselves start to yawn. Most subjects report being able to perform perfectly normal closed nose yawns. This indicates that the inhalation at the onset of a yawn, and the exhalation at its end, need not involve the nostrils - the mouth provides a sufficient airway.",
+			"ii) The clenched teeth yawnSubjects are asked to clench their teeth when they feel themselves start to yawn but allow themselves to inhale normally through their open lips and clenched teeth. This variant gives one the sensation of being stuck mid-yawn. This shows that gaping of the jaws is an essential component of the fixed action pattern of the yawn, and unless it is accomplished, the program (or pattern) will not run to completion. The yawn is also shown to be more than a deep breath, because, unlike normal breathing, inhalation and exhalation cannot be performed so well through the clenched teeth as through the nose.",
+			"iii) The nose yawnThis variant tests the adequacy of the nasal airway to sustain a yawn. Unlike normal breathing, which can be performed equally well through mouth or nose, yawning is impossible via nasal inhalation alone. As with the clenched teeth yawn, the nose yawn provides the unfulfilling sensation of being stuck in mid-yawn. Exhalation, on the other hand, can be accomplished equally well through nose or mouth. Through this methodology Provine demonstrated that inhalation through the oral airway and the gaping of jaws are necessary for normal yawns. The motor program for yawning will not run to completion without feedback that these parts of the program have been accomplished.",
+			"But yawning is a powerful, generalized movement that involves much more than airway manoeuvres and jaw-gaping. When yawning you also stretch your facial muscles, tilt your head back, narrow or close your eyes, produce tears, salivate, open the Eustachian tubes of your middle ear and perform many other, yet unspecified, cardiovascular and respiratory acts. Perhaps the yawn shares components with other behaviour. For example, is the yawn a kind of ’slow sneeze’ or is the sneeze a ’fast yawn’? Both share common respiratory and other features including jaw gaping, eye closing and head tilting. Yawning and stretching share properties and may be performed together as parts of a global motor complex. Studies by J I P deVries et al. in the early 1980s, charting movement in the developing foetus using ultrasound, observed a link between yawning and stretching. The most extraordinary demonstration of the yawn-stretch linkage occurs in many people paralyzed on one side of their body because of brain damage caused by a stroke. The prominent British neurologist Sir Francis Walshe noted in 1923 that when these people yawn, they are startled and mystified to observe that their otherwise paralyzed arm rises and flexes automatically in what neurologists term an ’associated response’. Yawning apparently activates undamaged, unconsciously controlled connections between the brain and the motor system, causing the paralyzed limb to move. It is not known whether the associated response is a positive prognosis for recovery, nor whether yawning is therapeutic for prevention of muscular deterioration.",
+			"Provine speculated that, in general, yawning may have many functions, and selecting a single function from the available options may be an unrealistic goal. Yawning appears to be associated with a change of behavioural state, switching from one activity to another. Yawning is also a reminder that ancient and unconscious behavior linking us to the animal world lurks beneath the veneer of culture, rationality and language."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary below using the list of words, below.",
+			"options": [
+				{
+					"label": "A",
+					"text": "form and function"
+				},
+				{
+					"label": "B",
+					"text": "long yawns"
+				},
+				{
+					"label": "C",
+					"text": "3 seconds"
+				},
+				{
+					"label": "D",
+					"text": "fixed action pattern"
+				},
+				{
+					"label": "E",
+					"text": "68 seconds"
+				},
+				{
+					"label": "F",
+					"text": "short yawns"
+				},
+				{
+					"label": "G",
+					"text": "reflex"
+				},
+				{
+					"label": "H",
+					"text": "sneeze"
+				},
+				{
+					"label": "I",
+					"text": "short duration"
+				},
+				{
+					"label": "J",
+					"text": "6 seconds"
+				},
+				{
+					"label": "K",
+					"text": "half-yawns"
+				}
+			],
+			"body": "Provine's early findings on yawns\nThrough his observation of yawns, Provine was able to confirm that ____ (1) do not exist. Just like a ____ (2), yawns cannot be interrupted after they have begun. This is because yawns occur as a ____ (3) rather than a stimulus response as was previously thought.\nIn measuring the time taken to yawn, Provine found that a typical yawn lasts about ____ (4). He also found that it is common for people to yawn a number of times in quick succession with the yawns usually being around ____ (5) apart. When studying whether length and rate were connected, Provine concluded that people who yawn less do not necessarily produce ____ (6) to make up for this.",
+			"body_html": "<table><tbody><tr><td><h3><strong>Provine's early findings on yawns</strong></h3><p>Through his observation of yawns, Provine was able to confirm that [1] do not exist. Just like a [2], yawns cannot be interrupted after they have begun. This is because yawns occur as a [3] rather than a stimulus response as was previously thought.</p><p>In measuring the time taken to yawn, Provine found that a typical yawn lasts about [4]. He also found that it is common for people to yawn a number of times in quick succession with the yawns usually being around [5] apart. When studying whether length and rate were connected, Provine concluded that people who yawn less do not necessarily produce [6] to make up for this.</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "",
+					"answer": "K",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nThông qua quan sát của mình, Provine đã có thể xác nhận rằng ______ không tồn tại.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN PHRASE (from the box)\n• Dấu hiệu: that + [NOUN PHRASE] + do not exist.\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• do not exist ~ There are no...\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Không có những cái ngáp nửa vời\" (There are no half-yawns).\n==> Từ phù hợp là K (half-yawns).\n\nBước 5: Đáp án: K\nThông qua quan sát của mình, Provine đã có thể xác nhận rằng nửa cái ngáp không tồn tại.",
+					"quotes": [
+						"There are no half-yawns: this is an example of the typical intensity of fixed action patterns and a reason why you cannot stifle yawns."
+					]
+				},
+				{
+					"number": 2,
+					"text": "",
+					"answer": "H",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nGiống như một ______, ngáp không thể bị gián đoạn sau khi chúng đã bắt đầu.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN (from the box)\n• Dấu hiệu: Just like a + [NOUN].\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• cannot be interrupted after they have begun ~ progresses with the inevitability of\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"một khi đã bắt đầu, một cái ngáp tiến triển với sự không thể tránh khỏi của một cái hắt hơi\" (once started, a yawn progresses with the inevitability of a sneeze).\n==> Từ phù hợp là H (sneeze).\n\nBước 5: Đáp án: H\nGiống như một cái hắt hơi, ngáp không thể bị gián đoạn sau khi chúng đã bắt đầu.",
+					"quotes": [
+						"It is not a reflex (short-duration, rapid, proportional response to a simple stimulus), but, once started, a yawn progresses with the inevitability of a sneeze."
+					]
+				},
+				{
+					"number": 3,
+					"text": "",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nĐiều này là do ngáp xảy ra như một ______ thay vì một phản ứng kích thích như người ta từng nghĩ trước đây.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN PHRASE (from the box)\n• Dấu hiệu: as a + [NOUN PHRASE].\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• occur as a ~ It is an excellent example of the instinctive...\n• rather than a stimulus response ~ It is not a reflex\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Đó là một ví dụ tuyệt vời về 'mẫu hành động cố định' bản năng... Nó không phải là một phản xạ (phản ứng với một kích thích đơn giản)\" (It is an excellent example of the instinctive 'fixed action pattern'... It is not a reflex (short-duration, rapid, proportional response to a simple stimulus)).\n==> Cụm từ phù hợp là D (fixed action pattern).\n\nBước 5: Đáp án: D\nĐiều này là do ngáp xảy ra như một mẫu hành động cố định thay vì một phản ứng kích thích như người ta từng nghĩ trước đây.",
+					"quotes": [
+						"It is an excellent example of the instinctive ’fixed action pattern’ of classical animal-behavior study, or ethology."
+					]
+				},
+				{
+					"number": 4,
+					"text": "",
+					"answer": "J",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\n...một cái ngáp điển hình kéo dài khoảng ______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN PHRASE (from the box)\n• Dấu hiệu: lasts about + [time].\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• a typical yawn lasts about ~ The standard yawn runs its course over about\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Cái ngáp tiêu chuẩn diễn ra trong khoảng sáu giây trung bình\" (The standard yawn runs its course over about six seconds on average).\n==> Cụm từ phù hợp là J (6 seconds).\n\nBước 5: Đáp án: J\n...một cái ngáp điển hình kéo dài khoảng 6 giây.",
+					"quotes": [
+						"The standard yawn runs its course over about six seconds on average, but its duration can range from about three seconds to much longer than the average."
+					]
+				},
+				{
+					"number": 5,
+					"text": "",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\n...các cái ngáp thường cách nhau khoảng ______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN PHRASE (from the box)\n• Dấu hiệu: being around + [time] + apart.\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• apart ~ inter-yawn interval\n• usually being around ~ which is generally about\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"ngáp có thể đến từng đợt với khoảng thời gian giữa các lần ngáp rất thay đổi, thường là khoảng 68 giây\" (yawns can come in bouts with a highly variable inter-yawn interval, which is generally about 68 seconds).\n==> Cụm từ phù hợp là E (68 seconds).\n\nBước 5: Đáp án: E\n...các cái ngáp thường cách nhau khoảng 68 giây.",
+					"quotes": [
+						"Just like a cough, yawns can come in bouts with a highly variable inter-yawn interval, which is generally about 68 seconds but rarely more than 70."
+					]
+				},
+				{
+					"number": 6,
+					"text": "",
+					"answer": "B",
+					"quotes": [
+						"There is no relation between yawn frequency and duration: producers of short or long yawns do not compensate by yawning more or less often."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-11",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, C or D.\nWrite the correct letter in boxes 7-11 on your answer sheet.",
+			"questions": [
+				{
+					"number": 7,
+					"text": "What did Provine conclude from his 'closed nose yawn' experiment?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Ending a yawn requires use of the nostrils."
+						},
+						{
+							"label": "B",
+							"text": "You can yawn without breathing through your nose."
+						},
+						{
+							"label": "C",
+							"text": "Breathing through the nose produces a silent yawn."
+						},
+						{
+							"label": "D",
+							"text": "The role of the nose in yawning needs further investigation."
+						}
+					],
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nProvine đã kết luận điều gì từ thí nghiệm 'ngáp ngậm mũi' của mình?\n\nBước 2: Tìm thông tin dựa trên keywords:\nĐoạn i) chỉ rõ: \"Hầu hết các đối tượng báo cáo có thể thực hiện những cái ngáp ngậm mũi hoàn toàn bình thường. Điều này cho thấy rằng việc hít vào khi bắt đầu ngáp và thở ra khi kết thúc không cần phải liên quan đến lỗ mũi - miệng cung cấp một đường thở đủ\".\n==> Thông tin được in đậm đồng nghĩa với câu B (Bạn có thể ngáp mà không cần thở bằng mũi).\n\nBước 3: Đáp án: B\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Đoạn văn nói điều ngược lại, rằng việc kết thúc ngáp \"không cần liên quan đến lỗ mũi\".\nĐáp án C -> Đoạn văn không đề cập đến việc thở bằng mũi tạo ra ngáp im lặng.\nĐáp án D -> Đoạn văn đưa ra kết luận, không phải nói cần điều tra thêm.",
+					"quotes": [
+						"Most subjects report being able to perform perfectly normal closed nose yawns. This indicates that the inhalation at the onset of a yawn, and the exhalation at its end, need not involve the nostrils - the mouth provides a sufficient airway."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Provine's clenched teeth yawn experiment shows that",
+					"options": [
+						{
+							"label": "A",
+							"text": "yawning is unconnected with fatigue."
+						},
+						{
+							"label": "B",
+							"text": "a yawn is the equivalent of a deep intake of breath."
+						},
+						{
+							"label": "C",
+							"text": "you have to be able to open your mouth wide to yawn."
+						},
+						{
+							"label": "D",
+							"text": "breathing with the teeth together is as efficient as through the nose."
+						}
+					],
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nThí nghiệm ngáp nghiến răng của Provine cho thấy rằng...\n\nBước 2: Tìm thông tin dựa trên keywords:\nĐoạn ii) chỉ rõ: \"Điều này cho thấy rằng việc há miệng là một thành phần thiết yếu của mẫu hành động cố định của cái ngáp, và trừ khi nó được thực hiện, chương trình (hoặc mẫu) sẽ không hoàn thành\".\n==> Thông tin được in đậm đồng nghĩa với câu C (bạn phải có khả năng mở miệng rộng để ngáp).\n\nBước 3: Đáp án: C\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Đoạn văn không đề cập đến sự mệt mỏi trong thí nghiệm này.\nĐáp án B -> Đoạn văn nói ngáp \"hơn cả một hơi thở sâu\", không phải \"tương đương\".\nĐáp án D -> Đoạn văn nói điều ngược lại: \"hít vào và thở ra không thể được thực hiện tốt qua răng nghiến như qua mũi\".",
+					"quotes": [
+						"This shows that gaping of the jaws is an essential component of the fixed action pattern of the yawn, and unless it is accomplished, the program (or pattern) will not run to completion."
+					]
+				},
+				{
+					"number": 9,
+					"text": "The nose yawn experiment was used to test whether yawning",
+					"options": [
+						{
+							"label": "A",
+							"text": "can be stopped after it has started."
+						},
+						{
+							"label": "B",
+							"text": "is the result of motor programming."
+						},
+						{
+							"label": "C",
+							"text": "involves both inhalation and exhalation."
+						},
+						{
+							"label": "D",
+							"text": "can be accomplished only through the nose."
+						}
+					],
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nThí nghiệm ngáp bằng mũi được sử dụng để kiểm tra xem việc ngáp...\n\nBước 2: Tìm thông tin dựa trên keywords:\nĐoạn iii) chỉ rõ: \"Biến thể này kiểm tra sự đầy đủ của đường thở qua mũi để duy trì một cái ngáp... việc ngáp là không thể chỉ qua đường hít vào bằng mũi\".\n==> Thông tin được in đậm đồng nghĩa với câu D (chỉ có thể được thực hiện qua mũi - câu hỏi là để kiểm tra liệu điều này có đúng không, và kết quả là không đúng).\n\nBước 3: Đáp án: D\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Thí nghiệm không kiểm tra việc ngáp có thể dừng lại hay không.\nĐáp án B -> Thí nghiệm kiểm tra một khía cạnh vật lý, không phải nguồn gốc lập trình vận động.\nĐáp án C -> Thí nghiệm tập trung vào việc hít vào, không phải cả hai.",
+					"quotes": [
+						"Unlike normal breathing, which can be performed equally well through mouth or nose, yawning is impossible via nasal inhalation alone."
+					]
+				},
+				{
+					"number": 10,
+					"text": "In people paralyzed on one side because of brain damage",
+					"options": [
+						{
+							"label": "A",
+							"text": "yawning may involve only one side of the face."
+						},
+						{
+							"label": "B",
+							"text": "the yawning response indicates that recovery is likely."
+						},
+						{
+							"label": "C",
+							"text": "movement in a paralysed arm is stimulated by yawning."
+						},
+						{
+							"label": "D",
+							"text": "yawning can be used as an example to prevent muscle wasting."
+						}
+					],
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nỞ những người bị liệt một bên do tổn thương não...\n\nBước 2: Tìm thông tin dựa trên keywords:\nĐoạn văn cuối cùng chỉ rõ: \"...họ ngạc nhiên và bối rối khi quan sát thấy cánh tay bị liệt của họ tự động nâng lên và gập lại trong cái mà các nhà thần kinh học gọi là 'phản ứng liên hợp'\".\n==> Thông tin được in đậm đồng nghĩa với câu C (chuyển động ở cánh tay bị liệt được kích thích bởi việc ngáp).\n\nBước 3: Đáp án: C\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Đoạn văn không đề cập đến việc ngáp chỉ liên quan đến một bên mặt.\nĐáp án B -> Đoạn văn nói rõ \"Không biết liệu phản ứng liên hợp có phải là một tiên lượng tích cực cho sự phục hồi hay không\".\nĐáp án D -> Đoạn văn nói rõ \"cũng không biết liệu ngáp có tác dụng điều trị để ngăn ngừa sự suy thoái cơ bắp hay không\".",
+					"quotes": [
+						"The prominent British neurologist Sir Francis Walshe noted in 1923 that when these people yawn, they are startled and mystified to observe that their otherwise paralyzed arm rises and flexes automatically in what neurologists term an ’associated response’. Yawning apparently activates undamaged, unconsciously controlled connections between the brain and the motor system, causing the paralyzed limb to move."
+					]
+				},
+				{
+					"number": 11,
+					"text": "In the last paragraph, the writer concludes that",
+					"options": [
+						{
+							"label": "A",
+							"text": "yawning is a sign of boredom."
+						},
+						{
+							"label": "B",
+							"text": "we yawn in spite of the development of our species."
+						},
+						{
+							"label": "C",
+							"text": "yawning is a more passive activity than we imagine."
+						},
+						{
+							"label": "D",
+							"text": "we are stimulated to yawn when our brain activity is low."
+						}
+					],
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nTrong đoạn cuối, người viết kết luận rằng...\n\nBước 2: Tìm thông tin dựa trên keywords:\nĐoạn cuối cùng chỉ rõ: \"Ngáp cũng là một lời nhắc nhở rằng hành vi cổ xưa và vô thức liên kết chúng ta với thế giới động vật ẩn nấp bên dưới lớp vỏ văn hóa, lý trí và ngôn ngữ\".\n==> Thông tin này có nghĩa là chúng ta vẫn ngáp, một hành vi bản năng, mặc dù loài người đã phát triển văn hóa và lý trí. Điều này đồng nghĩa với câu B (chúng ta ngáp bất chấp sự phát triển của loài người).\n\nBước 3: Đáp án: B\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Đoạn văn không kết luận ngáp là dấu hiệu của sự buồn chán.\nĐáp án C -> Đoạn văn mô tả ngáp là một \"chuyển động mạnh mẽ, tổng quát\", trái ngược với \"bị động\".\nĐáp án D -> Đoạn văn không đề cập đến mối liên hệ giữa ngáp và hoạt động não thấp.",
+					"quotes": [
+						"Yawning is also a reminder that ancient and unconscious behavior linking us to the animal world lurks beneath the veneer of culture, rationality and language."
+					]
+				}
+			]
+		},
+		{
+			"range": "12-14",
+			"type": "YES/NO/NOT GIVEN",
+			"instructions": "Do the following statements agree with the claims of the writer in Reading Passage 3?\nIn boxes 12-14 on your answer sheet, write\nYES if the statement agrees with the claims of the writer\nNO if the statement contradicts the claims of the writer\nNOT GIVEN if it is impossible to say what the writer thinks about this",
+			"questions": [
+				{
+					"number": 12,
+					"text": "Research students were initially reluctant to appreciate the value of Provine's studies.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác sinh viên nghiên cứu ban đầu miễn cưỡng đánh giá cao giá trị của các nghiên cứu của Provine.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• reluctant ~ difficult... to convince\n• appreciate the value ~ merits\n• research students ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Khi Robert R Provine bắt đầu nghiên cứu về ngáp vào những năm 1960, thật khó để ông thuyết phục các sinh viên nghiên cứu về giá trị của 'khoa học ngáp'\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi (When Robert R Provine began studying yawning in the 1960s, it was difficult for him to convince research students of the merits of 'yawning science').\n\nBước 4: Đáp án: YES",
+					"quotes": [
+						"When Robert R Provine began studying yawning in the 1960s, it was difficult for him to convince research students of the merits of ’yawning science’."
+					]
+				},
+				{
+					"number": 13,
+					"text": "When foetuses yawn and stretch they are learning how to control movement.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nKhi bào thai ngáp và vươn vai, chúng đang học cách kiểm soát chuyển động.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• foetuses ~ developing foetus\n• yawn and stretch ~ từ khóa giữ nguyên\n• learning how to control movement ~ ?\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"Các nghiên cứu... đã quan sát thấy một mối liên hệ giữa ngáp và vươn vai ở bào thai đang phát triển\".\n==> Tuy nhiên, bài đọc không hề nhắc đến mục đích của hành động này, tức là không nói liệu chúng có đang \"học cách kiểm soát chuyển động\" hay không. (Studies by J I P deVries et al. in the early 1980s, charting movement in the developing foetus using ultrasound, observed a link between yawning and stretching.).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Studies by J I P deVries et al. in the early 1980s, charting movement in the developing foetus using ultrasound, observed a link between yawning and stretching."
+					]
+				},
+				{
+					"number": 14,
+					"text": "According to Provine, referring to only one function is probably inadequate to explain why people yawn.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTheo Provine, việc chỉ đề cập đến một chức năng có lẽ không đủ để giải thích tại sao mọi người ngáp.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• referring to only one function ~ selecting a single function\n• inadequate to explain ~ unrealistic goal\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Provine suy đoán rằng, nói chung, ngáp có thể có nhiều chức năng, và việc chọn một chức năng duy nhất từ các lựa chọn có sẵn có thể là một mục tiêu không thực tế\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi (Provine speculated that, in general, yawning may have many functions, and selecting a single function from the available options may be an unrealistic goal.).\n\nBước 4: Đáp án: YES",
+					"quotes": [
+						"Provine speculated that, in general, yawning may have many functions, and selecting a single function from the available options may be an unrealistic goal."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

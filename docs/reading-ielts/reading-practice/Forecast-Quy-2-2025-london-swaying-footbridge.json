@@ -1,0 +1,234 @@
+{
+	"id": "d71f1643-f37c-4a1f-88db-560c1d7f7cea",
+	"url": "https://stepielts.com/student/reading/d71f1643-f37c-4a1f-88db-560c1d7f7cea?mode=practice",
+	"title": "London Swaying Footbridge",
+	"source": "Forecast Quý 2-2025",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "1-14",
+	"passage": {
+		"title": "London Swaying Footbridge",
+		"paragraphs": [
+			"A. In September 1996, a competition was organized by the Financial Times in association with the London Borough of Southwark to design a new footbridge across the Thames, which at that time would be London’s only pedestrian bridge and the first new crossing on this part of the Thames. The news quickly spread nationwide and worldwide through TV stations and radio networks. The competition attracted over 200 entries. In the end, architect Norman Foster, sculptor Sir Anthony Caro as well as Arup (an engineer team) took the top prize. The Millennium Bridge represents a creative collaboration between architecture, art and engineering. As a key element in London’s pedestrian infrastructure, this bridge has created new routes for Londoners and encouraged new life on the embankment alongside St Paul’s.",
+			"B. On 10th June 2000, the bridge was opened to the public. It is estimated that 100,000 people crossed it that day, and there were up to 2,000 people on it at any one time. Initially the bridge remained stationary, but it gradually began to sway. Although a few visitors raised the concern when they reached the other end of the bridge, the organizer was not aware of how serious the safety problem was until it began to wobble more noticeably when a large group of people were crossing. The wobble became so marked that people needed to stop walking to regain their balance, and even grab the handrails for support. Quickly, quite a lot of people realized that the bridge was not safe for walking. The decision to immediately limit the number of people crossing was taken, but even so the deck movement was sufficient to make people uncomfortable and to raise concern for public safety so that on 12th June the bridge was closed until the problem could be solved.",
+			"C. Embarrassed, the engineers searched out a video recording which showed the center span oscillating about 3 inches side to side each second. The engineers first thought that winds might be exerting excessive force on the many large flags and banners be decking the bridge for its gala premiere. However, they discovered that the pedestrians themselves had a significant impact. Normal human activities like jumping, running, swaying and even walking can create horizontal forces which cause excessive dynamic vibration in a lateral direction on the bridge. As they felt the bridge moving, the pedestrians would naturally have adjusted their walking style to the same rhythm as the bridge. These altered footsteps would have made the motion worse - something like when four people in a boat all stand up together. As more pedestrians copied the movements of the bridge, the dramatic swaying increased, as seen in the video.",
+			"D. The engineers realized that in order to reduce the movements of the bridge, the impact of the movement of pedestrians needed to be quantified and related to the motion of the bridge. Although there were some descriptions of this phenomenon in existing literature, none of these actually quantified the force. They realized that there was no quantitative analytical way to design the bridge against this effect. The Engineering Designer, Ove Arup, launched a research program and invited a number of universities and research organizations to have input.",
+			"E. One research method used at the University of Southampton involved a pedestrian walking on the spot on a small shake - table. Tests undertaken by Imperial College included pedestrians walking along a 7.2-meter platform which was shaken laterally at various frequencies and amplitudes. Unfortunately, each test had its limitations. The Imperial College test could only capture seven or eight footsteps, and the Southampton tests, although monitoring more footsteps, couldn’t examine normal forward-walking. Neither test could investigate any influence of other people in the crowd on the behaviour of the individual being tested.",
+			"F. The laboratory testing resulted in information which allowed the design of a custom retro-fit to begin. Unfortunately, the limitations of the tests became clear, and it was felt that the only way to replicate the exact conditions of the bridge was to carry out real tests involving pedestrians, on the bridge itself. These tests, undertaken by the Arup engineers, could include factors not available in a laboratory test. The first test was held in July 2000 with 100 participants. The result was used to refine the load model for pedestrians. Another series of pedestrian-tests involving 275 pedestrians was held in December 2000. The aim of these tests was to further validate the assumptions made by the engineers, and to undertake a load test to provide information in order to design a prototype damper installation.",
+			"G. Aside from greatly limiting the usage of the bridge, only two feasible options to improve the situation were found by researchers. The first was to increase the stiffness of the bridge to move all its lateral natural frequencies out of the range so that it could be excited by the lateral footfall forces, and the second option was to improve the bridge’s damping to reduce the resonant response."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "MATCHING_HEADINGS",
+			"instructions": "The Reading Passage has seven paragraphs A-G.\nChoose the correct heading for each paragraph from the list of headings below.\nExample: Paragraph A - The closure of bridge due to safety issues",
+			"options": [
+				{
+					"label": "I",
+					"text": "The discovery of workable choices to improve bridge performance"
+				},
+				{
+					"label": "II",
+					"text": "Conclusive tests contributing to load model improvement"
+				},
+				{
+					"label": "III",
+					"text": "Limited information from lab tests"
+				},
+				{
+					"label": "IV",
+					"text": "The birth of a new bridge"
+				},
+				{
+					"label": "IX",
+					"text": "The discovery of human actions affecting the bridge"
+				},
+				{
+					"label": "V",
+					"text": "Urgency to fix the shortcomings of a bridge"
+				},
+				{
+					"label": "VI",
+					"text": "The closure of bridge due to safety issues"
+				},
+				{
+					"label": "VII",
+					"text": "Necessity to measure the force exerted by pedestrians"
+				},
+				{
+					"label": "VIII",
+					"text": "The disappointment of engineers"
+				}
+			],
+			"questions": [
+				{
+					"number": 1,
+					"text": "Paragraph B",
+					"answer": "VI",
+					"explanation": "Bước 1: Đọc và hiểu đoạn B:\nVào ngày 10 tháng 6 năm 2000, cây cầu được mở cửa cho công chúng với khoảng 100,000 người đi qua trong ngày đó. Ban đầu cầu đứng yên, nhưng dần dần bắt đầu lắc lư. Mặc dù có người lo ngại, nhưng đến khi cầu lắc lư mạnh hơn với nhiều người qua lại, vấn đề mới được nhận ra. Tình trạng nghiêm trọng đến mức người đi phải dừng lại để giữ thăng bằng. Quyết định hạn chế số người đi qua được đưa ra, nhưng do lo ngại về an toàn, cầu đã bị đóng cửa vào ngày 12 tháng 6 cho đến khi vấn đề được giải quyết.\n\nBước 2: Tóm tắt nội dung chính của đoạn B:\nĐoạn B mô tả việc cầu bắt đầu lắc lư khi có nhiều người đi qua, gây ra mối lo ngại về an toàn và dẫn đến việc đóng cửa cây cầu vào ngày 12 tháng 6.\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề VI \"The closure of bridge due to safety issues\" (Việc đóng cửa cầu do vấn đề an toàn)\n\nBước 4: Đáp án: VI",
+					"quotes": [
+						"B. On 10th June 2000, the bridge was opened to the public. It is estimated that 100,000 people crossed it that day, and there were up to 2,000 people on it at any one time. Initially the bridge remained stationary, but it gradually began to sway. Although a few visitors raised the concern when they reached the other end of the bridge, the organizer was not aware of how serious the safety problem was until it began to wobble more noticeably when a large group of people were crossing. The wobble became so marked that people needed to stop walking to regain their balance, and even grab the handrails for support. Quickly, quite a lot of people realized that the bridge was not safe for walking. The decision to immediately limit the number of people crossing was taken, but even so the deck movement was sufficient to make people uncomfortable and to raise concern for public safety so that on 12th June the bridge was closed until the problem could be solved."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Paragraph C",
+					"answer": "IX",
+					"explanation": "Bước 1: Đọc và hiểu đoạn C:\nKỹ sư xem xét video ghi lại cầu dao động khoảng 3 inch mỗi giây. Ban đầu họ nghĩ gió tác động vào cờ và biểu ngữ trên cầu gây ra hiện tượng này. Tuy nhiên, họ phát hiện người đi bộ có ảnh hưởng đáng kể. Hoạt động thông thường như nhảy, chạy và đi bộ tạo ra lực ngang gây dao động. Khi cảm thấy cầu di chuyển, người đi bộ tự điều chỉnh bước đi theo nhịp cầu, làm tình trạng tồi tệ hơn - tương tự khi bốn người cùng đứng lên trên thuyền. Càng nhiều người bắt chước chuyển động của cầu, cầu càng lắc lư mạnh hơn.\n\nBước 2: Tóm tắt nội dung chính của đoạn C:\nĐoạn C giải thích việc kỹ sư phát hiện ra rằng chính hành động của người đi bộ đã ảnh hưởng đến cây cầu, khi họ điều chỉnh bước đi theo nhịp cầu, làm tăng dao động.\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề IX \"The discovery of human actions affecting the bridge\" (Khám phá ra hành động con người ảnh hưởng đến cầu)\n\nBước 4: Đáp án: IX",
+					"quotes": [
+						"However, they discovered that the pedestrians themselves had a significant impact. Normal human activities like jumping, running, swaying and even walking can create horizontal forces which cause excessive dynamic vibration in a lateral direction on the bridge."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Paragraph D",
+					"answer": "VII",
+					"explanation": "Bước 1: Đọc và hiểu đoạn D:\nKỹ sư nhận ra để giảm chuyển động của cầu, cần lượng hóa tác động của người đi bộ liên quan đến chuyển động của cầu. Mặc dù có mô tả về hiện tượng này trong tài liệu hiện có, nhưng chưa có tài liệu nào lượng hóa lực tác động. Họ nhận ra không có cách phân tích định lượng nào để thiết kế cầu chống lại hiệu ứng này. Nhà thiết kế kỹ thuật, Ove Arup, đã khởi động chương trình nghiên cứu và mời nhiều trường đại học và tổ chức nghiên cứu tham gia.\n\nBước 2: Tóm tắt nội dung chính của đoạn D:\nĐoạn D nhấn mạnh việc kỹ sư nhận ra cần phải lượng hóa lực từ người đi bộ để giảm chuyển động của cầu, dẫn đến việc khởi động chương trình nghiên cứu.\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề VII \"Necessity to measure the force exerted by pedestrians\" (Sự cần thiết đo lường lực tác động từ người đi bộ)\n\nBước 4: Đáp án: VII",
+					"quotes": [
+						"D. The engineers realized that in order to reduce the movements of the bridge, the impact of the movement of pedestrians needed to be quantified and related to the motion of the bridge. Although there were some descriptions of this phenomenon in existing literature, none of these actually quantified the force. They realized that there was no quantitative analytical way to design the bridge against this effect."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Paragraph E",
+					"answer": "III",
+					"explanation": "Bước 1: Đọc và hiểu đoạn E:\nMột phương pháp nghiên cứu tại Đại học Southampton gồm người đi bộ tại chỗ trên bàn rung nhỏ. Thử nghiệm của Imperial College gồm người đi bộ dọc theo nền tảng 7.2 mét rung lắc ngang ở các tần số và biên độ khác nhau. Đáng tiếc, mỗi thử nghiệm đều có hạn chế. Thử nghiệm của Imperial College chỉ có thể ghi lại bảy hoặc tám bước chân, còn thử nghiệm Southampton, dù theo dõi nhiều bước chân hơn, không thể kiểm tra việc đi bộ thẳng bình thường. Cả hai thử nghiệm đều không thể khảo sát ảnh hưởng của những người khác trong đám đông lên hành vi của cá nhân được kiểm tra.\n\nBước 2: Tóm tắt nội dung chính của đoạn E:\nĐoạn E mô tả các thử nghiệm trong phòng thí nghiệm tại các trường đại học, nhưng nhấn mạnh những hạn chế của chúng trong việc mô phỏng chính xác điều kiện thực tế.\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề III \"Limited information from lab tests\" (Thông tin hạn chế từ thử nghiệm phòng thí nghiệm)\n\nBước 4: Đáp án: III",
+					"quotes": [
+						"Unfortunately, each test had its limitations. The Imperial College test could only capture seven or eight footsteps, and the Southampton tests, although monitoring more footsteps, couldn’t examine normal forward-walking. Neither test could investigate any influence of other people in the crowd on the behaviour of the individual being tested."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Paragraph F",
+					"answer": "II",
+					"quotes": [
+						"The first test was held in July 2000 with 100 participants. The result was used to refine the load model for pedestrians. Another series of pedestrian-tests involving 275 pedestrians was held in December 2000. The aim of these tests was to further validate the assumptions made by the engineers, and to undertake a load test to provide information in order to design a prototype damper installation."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Paragraph G",
+					"answer": "I",
+					"explanation": "Bước 1: Đọc và hiểu đoạn G:\nNgoài việc giới hạn nghiêm ngặt việc sử dụng cầu, các nhà nghiên cứu chỉ tìm thấy hai lựa chọn khả thi để cải thiện tình hình. Lựa chọn đầu tiên là tăng độ cứng của cầu để di chuyển tất cả tần số tự nhiên bên của nó ra khỏi phạm vi có thể bị kích thích bởi lực đi lại, và lựa chọn thứ hai là cải thiện độ giảm chấn của cầu để giảm phản ứng cộng hưởng.\n\nBước 2: Tóm tắt nội dung chính của đoạn G:\nĐoạn G trình bày hai lựa chọn khả thi mà các nhà nghiên cứu đã tìm ra để cải thiện hiệu suất cầu: tăng độ cứng hoặc cải thiện độ giảm chấn.\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề I \"The discovery of workable choices to improve bridge performance\" (Khám phá các lựa chọn khả thi để cải thiện hiệu suất cầu)\n\nBước 4: Đáp án: I",
+					"quotes": [
+						"G. Aside from greatly limiting the usage of the bridge, only two feasible options to improve the situation were found by researchers. The first was to increase the stiffness of the bridge to move all its lateral natural frequencies out of the range so that it could be excited by the lateral footfall forces, and the second option was to improve the bridge’s damping to reduce the resonant response."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-13",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in the Reading Passage?\nIn boxes 7-13 on your answer sheet, write\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if the information is not given in the passage",
+			"questions": [
+				{
+					"number": 7,
+					"text": "The winner of the bridge-designing competition was chosen by the local government.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNgười chiến thắng cuộc thi thiết kế cầu được chọn bởi chính quyền địa phương.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nthe competition ~ bridge-designing competition\nIn the end, architect Norman Foster, sculptor Sir Anthony Caro as well as Arup (an engineer team) took the top prize ~ The winner of the bridge-designing competition was chosen\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Cuối cùng, kiến trúc sư Norman Foster, nhà điêu khắc Sir Anthony Caro cùng với Arup (một đội kỹ sư) giành được giải thưởng cao nhất.\"\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"ai là người chọn ra người chiến thắng\" (chosen by the local government).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"In the end, architect Norman Foster, sculptor Sir Anthony Caro as well as Arup (an engineer team) took the top prize."
+					]
+				},
+				{
+					"number": 8,
+					"text": "The bridge was closed within days of its opening as it had developed cracks.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCây cầu bị đóng cửa trong vòng vài ngày sau khi khai trương vì có vết nứt.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\non 12th June the bridge was closed ~ The bridge was closed\nuntil the problem could be solved ~ as it had developed cracks\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"vào ngày 12 tháng 6, cầu đã bị đóng cửa cho đến khi vấn đề được giải quyết\" và \"sự dao động của sàn đủ để khiến mọi người khó chịu và gây lo ngại về an toàn công cộng\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"cầu bị đóng cửa vì có vết nứt\" (as it had developed cracks). Thực tế, cầu bị đóng cửa vì lắc lư quá mức chứ không phải vì có vết nứt.\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"The decision to immediately limit the number of people crossing was taken, but even so the deck movement was sufficient to make people uncomfortable and to raise concern for public safety so that on 12th June the bridge was closed until the problem could be solved."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Engineers identified the possibility of bridge shaking because of wind power.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác kỹ sư xác định khả năng cây cầu rung lắc do sức gió.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nThe engineers first thought that winds might be exerting excessive force ~ Engineers identified the possibility of bridge shaking because of wind power\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Ban đầu các kỹ sư nghĩ rằng gió có thể tạo ra lực quá mức lên nhiều cờ và biểu ngữ trang trí cầu trong lễ khai trương. Tuy nhiên, họ phát hiện người đi bộ có ảnh hưởng đáng kể.\"\n=> Điều này trái ngược với thông tin trong câu hỏi. Câu hỏi nói \"các kỹ sư xác định khả năng cây cầu rung lắc do sức gió\" (Engineers identified the possibility), nhưng đoạn văn nói rằng họ chỉ \"nghĩ\" (first thought) về khả năng này ban đầu và sau đó họ phát hiện ra nguyên nhân thực sự là do người đi bộ. \"First thought\" chỉ là suy đoán ban đầu, không phải là xác định cuối cùng.\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"The engineers first thought that winds might be exerting excessive force on the many large flags and banners be decking the bridge for its gala premiere. However, they discovered that the pedestrians themselves had a significant impact. Normal human activities like jumping, running, swaying and even walking can create horizontal forces which cause excessive dynamic vibration in a lateral direction on the bridge."
+					]
+				},
+				{
+					"number": 10,
+					"text": "There were ample descriptions in literature that helped engineers learn how to quantify the force.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi: Có rất nhiều mô tả trong tài liệu giúp các kỹ sư học cách định lượng lực tác động.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nnone of these actually quantified the force ~ ample descriptions in literature that helped engineers learn how to quantify the force\nAlthough there were some descriptions of this phenomenon in existing literature ~ There were ample descriptions in literature\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Mặc dù có một số mô tả về hiện tượng này trong tài liệu hiện có, nhưng không có tài liệu nào thực sự định lượng lực tác động.\"\n=> Điều này trái ngược với thông tin trong câu hỏi \"có rất nhiều mô tả trong tài liệu giúp kỹ sư học cách định lượng lực\" (ample descriptions in literature that helped engineers learn how to quantify the force).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Although there were some descriptions of this phenomenon in existing literature, none of these actually quantified the force."
+					]
+				},
+				{
+					"number": 11,
+					"text": "Laboratory tests proved to be sufficient in quantifying the force exerted by people's movements.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi: Các thử nghiệm trong phòng thí nghiệm đã chứng minh là đủ để định lượng lực tác động bởi chuyển động của con người.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\neach test had its limitations ~ Laboratory tests proved to be sufficient\nThe Imperial College test could only capture seven or eight footsteps ~ quantifying the force exerted by people's movements\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Đáng tiếc, mỗi thử nghiệm đều có những hạn chế của nó. Thử nghiệm của Imperial College chỉ có thể ghi lại bảy hoặc tám bước chân, và thử nghiệm của Southampton, mặc dù theo dõi nhiều bước chân hơn, không thể kiểm tra việc đi bộ tiến về phía trước bình thường.\"\n=> Điều này trái ngược với thông tin trong câu hỏi \"các thử nghiệm trong phòng thí nghiệm đã chứng minh là đủ\" (Laboratory tests proved to be sufficient).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Unfortunately, each test had its limitations. The Imperial College test could only capture seven or eight footsteps, and the Southampton tests, although monitoring more footsteps, couldn’t examine normal forward-walking."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Tests done at University of Southampton helped engineers find ways to make the bridge safer.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"quotes": [
+						"E. One research method used at the University of Southampton involved a pedestrian walking on the spot on a small shake - table. Tests undertaken by Imperial College included pedestrians walking along a 7.2-meter platform which was shaken laterally at various frequencies and amplitudes. Unfortunately, each test had its limitations. The Imperial College test could only capture seven or eight footsteps, and the Southampton tests, although monitoring more footsteps, couldn’t examine normal forward-walking.",
+						"F. The laboratory testing resulted in information which allowed the design of a custom retro-fit to begin. Unfortunately, the limitations of the tests became clear, and it was felt that the only way to replicate the exact conditions of the bridge was to carry out real tests involving pedestrians, on the bridge itself."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Raising bridge's rigidity was declared to be a viable solution for the problem of excessive vibration of bridge.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"quotes": [
+						"G. Aside from greatly limiting the usage of the bridge, only two feasible options to improve the situation were found by researchers. The first was to increase the stiffness of the bridge to move all its lateral natural frequencies out of the range so that it could be excited by the lateral footfall forces, and the second option was to improve the bridge’s damping to reduce the resonant response."
+					]
+				}
+			]
+		},
+		{
+			"range": "14",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, C or D.\nWrite your answer in box 14 on your answer sheet.",
+			"questions": [
+				{
+					"number": 14,
+					"text": "What is the main purpose of this passage?",
+					"options": [
+						{
+							"label": "A",
+							"text": "To show how to design a new footbridge across the Thames"
+						},
+						{
+							"label": "B",
+							"text": "To present tests at labs to investigate the influence of people walking on the bridge"
+						},
+						{
+							"label": "C",
+							"text": "To identify reasons why the bridge swayed"
+						},
+						{
+							"label": "D",
+							"text": "To show a scientific process of seeking methods to increase the stability of the bridge"
+						}
+					],
+					"answer": "D",
+					"quotes": [
+						"Initially the bridge remained stationary, but it gradually began to sway.",
+						"The decision to immediately limit the number of people crossing was taken, but even so the deck movement was sufficient to make people uncomfortable and to raise concern for public safety so that on 12th June the bridge was closed until the problem could be solved.",
+						"G. Aside from greatly limiting the usage of the bridge, only two feasible options to improve the situation were found by researchers. The first was to increase the stiffness of the bridge to move all its lateral natural frequencies out of the range so that it could be excited by the lateral footfall forces, and the second option was to improve the bridge’s damping to reduce the resonant response.",
+						"D. The engineers realized that in order to reduce the movements of the bridge, the impact of the movement of pedestrians needed to be quantified and related to the motion of the bridge."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

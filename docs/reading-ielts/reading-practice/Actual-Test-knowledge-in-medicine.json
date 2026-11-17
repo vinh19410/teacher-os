@@ -1,0 +1,175 @@
+{
+	"id": "eb89939e-930a-434b-a067-2d7346e00b73",
+	"url": "https://stepielts.com/student/reading/eb89939e-930a-434b-a067-2d7346e00b73?mode=practice",
+	"title": "Knowledge in medicine",
+	"source": "Actual Test",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-14",
+	"passage": {
+		"title": "Knowledge in medicine",
+		"paragraphs": [
+			"A. What counts as knowledge? What do we mean when we say that we know something? What is the status of different kinds of knowledge? In order to explore these questions we are going to focus on one particular area of knowledge - medicine.",
+			"B. How do you know when you are ill? This may seem to be an absurd question. You know you are ill because you feel ill; your body tells you that you are ill. You may know that you feel pain or discomfort but knowing you are ill is a bit more complex. At times, people experience the symptoms of illness, but in fact they are simply tired or over-worked or they may just have a hangover. At over times, people may be suffering from a disease and fail to be aware of the illness until it has reached a late stage in its development. So how do we know we are ill, and what counts as knowledge?",
+			"C. Think about this example. You feel unwell. You have a bad cough and always seem to be tired. Perhaps it could be stress at work, or maybe you should give up smoking. You feel worse. You visit the doctor who listens to your chest and heart, takes your temperature and blood pressure, and then finally prescribes antibiotics for your cough.",
+			"D. Things do not improve but you struggle on thinking you should pull yourself together, perhaps things will ease off at work soon. A return visit to your doctor shocks you. This time the doctor, drawing on years of training and experience, diagnoses pneumonia. This means that you will need bed rest and a considerable time off work. The scenario is transformed. Although you still have the same symptoms, you no longer think that these are caused by pressure at work. You now have proof that you are ill. This is the result of the combination of your own subjective experience and the diagnoses of someone who has the status of a medical expert. You have a medically authenticated diagnosis and it appears that you are seriously ill; you know you are ill and have evidence upon which to base this knowledge.",
+			"E. This scenario shows many different sources of knowledge. For example, you decide to consult the doctor in the first place because you feel unwell - this is personal knowledge about your own body. However, the doctor’s expert diagnosis is based on experience and training, with sources of knowledge as diverse as other experts, laboratory reports, medical textbooks and years of experience.",
+			"F. One source of knowledge is the experience of our own bodies; the personal knowledge we have own changes that might be significant, as well as the subjective experience of pain and physical stress. These experiences are mediated by other forms of knowledge such as the words we have available to describe our experience and the common sense of our families and friends as well as that drawn from popular culture. Over the past decade, for example, Western culture has seen a significant emphasis on stress-related illness or the media. Reference to being ’stressed out’ has become a common response in daily exchanges in the workplace and has become part of popular common-sense knowledge. It is thus not surprising that we might seek such an explanation of physical symptoms of discomfort.",
+			"G. We might also rely on the observations of others who know us. Comments from friends and family such as ’you do look ill’ or ’that’s a bad cough’ might be another source of knowledge. Complementary health practices, such as holistic medicine, produce their own sets of knowledge upon which we might also draw in deciding the nature and degree of our ill health and seek possible treatments.",
+			"H. Perhaps the most influential and authoritative source of knowledge is the medical knowledge provided by the general practitioner. We expect the doctor to have access to expert knowledge. This is socially sanctioned. It would not be acceptable to notify our employer that we simply felt too unwell to turn up to work or to work out of faith healer, astrologer, therapist or even our priest though it was not a good idea. We need an expert medical diagnosis in order to obtain the necessary certificate if we need to be off work for more than the statutory self-certification period. The knowledge of the medical science is privileged in this respect in contemporary Western culture. Medical practitioners are also seen as having the requisite expert knowledge that permits them legally to prescribe drugs and treatment to which patients would not otherwise have access. However there is a range of different knowledge upon which we draw when making decisions about our own state of health.",
+			"I. However, there is more than existing knowledge in this little story: new knowledge is constructed within it. Given the doctor’s medical training and background, she may hypothesize ’is this now pneumonia? And then proceed to look for evidence about how you will use observations and instruments to assess the evidence and critically interpret it in the light of her training and experience. This results in new knowledge and new experience both for you and for the doctor. This will then be added to the doctor’s medical knowledge and may help in future diagnosis of pneumonia."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the table. Choose NO MORE THAN THREE WORDS from the passage for each answer. Write your answers in boxes 1-6 on your answer sheet.",
+			"body": "Source of knowledge\nExample\nPersonal experience\nSymptoms of a ____ (1) and tiredness\nDoctor's measurement of ____ (2) and temperature\nCommon judgment from ____ (3) around you\nScientific Evidence\nMedical knowledge from the general ____ (4)\nE.g. Doctor's medical ____ (5)\nExamine the medical hypothesis with the previous drill and ____ (6)",
+			"body_table": [
+				["Source of knowledge", "Example"],
+				[
+					"Personal experience",
+					"Symptoms of a ____ (1) and tiredness\nDoctor's measurement of ____ (2) and temperature\nCommon judgment from ____ (3) around you"
+				],
+				[
+					"Scientific Evidence",
+					"Medical knowledge from the general ____ (4)\nE.g. Doctor's medical ____ (5)\nExamine the medical hypothesis with the previous drill and ____ (6)"
+				]
+			],
+			"body_html": "<table><tbody><tr><td><strong>Source of knowledge</strong></td><td><strong>Example</strong></td></tr><tr><td>\n\nPersonal experience\n\n</td><td><ul><li>Symptoms of a [1] and tiredness</li><li>Doctor's measurement of [2] and temperature</li><li>Common judgment from [3] around you</li></ul></td></tr><tr><td>\n\nScientific Evidence\n\n</td><td><ul><li>Medical knowledge from the general [4]\n<ul><li>E.g. Doctor's medical [5]</li></ul></li></ul><ul><li>Examine the medical hypothesis with the previous drill and [6]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Symptoms of a ____ (1) and tiredness",
+					"answer": "bad cough",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp\nCác triệu chứng của một cơn ______ và sự mệt mỏi.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: Cụm danh từ (NOUN PHRASE) hoặc Danh từ (NOUN).\nDấu hiệu: 'Symptoms of a' + [NOUN/NOUN PHRASE] + 'and tiredness' (Chỗ trống đứng sau mạo từ 'a' và nằm trong cấu trúc song song với 'tiredness', mô tả một triệu chứng).\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nSymptoms ~ từ khóa giữ nguyên\ntiredness ~ tired\n\nBước 4: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"Bạn cảm thấy không khỏe. Bạn bị ho nặng và dường như luôn mệt mỏi.\" (You feel unwell. You have a bad cough and always seem to be tired.)\n\nBước 5: Đáp án: bad cough\nCác triệu chứng của một cơn ho nặng và sự mệt mỏi\n(Symptoms of a bad cough and tiredness).",
+					"quotes": ["You have a bad cough and always seem to be tired."]
+				},
+				{
+					"number": 2,
+					"text": "Doctor's measurement of ____ (2) and temperature",
+					"answer": "blood pressure",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp\nPhép đo của bác sĩ về _________ và nhiệt độ.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: Danh từ (NOUN) hoặc Cụm danh từ (NOUN PHRASE).\nDấu hiệu: 'measurement of' + [NOUN/NOUN PHRASE] + 'and temperature' (Chỗ trống nằm trong cấu trúc song song với 'temperature', chỉ một thứ mà bác sĩ đo lường).\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nblood pressure ~ measurement\ntemperature ~ từ khóa giữ nguyên\ndoctor ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Bạn đến gặp bác sĩ, người nghe tim và phổi của bạn, đo nhiệt độ và huyết áp của bạn\" (You visit the doctor who listens to your chest and heart, takes your temperature and blood pressure).\n\nBước 5: Đáp án: blood pressure\nPhép đo của bác sĩ về huyết áp và nhiệt độ\n(Doctor's measurement of blood pressure and temperature).",
+					"quotes": [
+						"You visit the doctor who listens to your chest and heart, takes your temperature and blood pressure, and then finally prescribes antibiotics for your cough."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Common judgment from ____ (3) around you",
+					"answer": "families and friends",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp\nĐánh giá chung từ _________ xung quanh bạn.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: Danh từ (NOUN) hoặc Cụm danh từ (NOUN PHRASE).\nDấu hiệu: 'from' + [NOUN/NOUN PHRASE] (Chỗ trống chỉ nguồn gốc của 'phán đoán', tức là một nhóm người).\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nfamilies and friends ~ comments from\ncommon judgment ~ observations\naround you ~ know us\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Chúng ta cũng có thể dựa vào những quan sát của người khác biết chúng ta. Những nhận xét từ bạn bè và gia đình như 'bạn trông có vẻ ốm' hoặc 'cơn ho đó thật tệ' có thể là một nguồn kiến thức khác\" (We might also rely on the observations of others who know us. Comments from friends and family such as 'you do look ill' or 'that's a bad cough' might be another source of knowledge).\n\nBước 5: Đáp án: families and friends\nĐánh giá chung từ gia đình và bạn bè xung quanh bạn (Common judgment from families and friends around you).",
+					"quotes": [
+						"These experiences are mediated by other forms of knowledge such as the words we have available to describe our experience and the common sense of our families and friends as well as that drawn from popular culture."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Medical knowledge from the general ____ (4)",
+					"answer": "practitioner",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nKiến thức y khoa từ _________ đa khoa.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: Danh từ (NOUN).\nDấu hiệu: 'general' + [NOUN] (Tính từ 'general' cần một danh từ theo sau)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\npractitioner ~ general practitioner\nmedical knowledge ~ từ khóa giữ nguyên\ngeneral ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Có lẽ nguồn kiến thức có ảnh hưởng và có thẩm quyền nhất là kiến thức y khoa được cung cấp bởi bác sĩ đa khoa\" (Perhaps the most influential and authoritative source of knowledge is the medical knowledge provided by the general practitioner).\nBước 5: Đáp án: practitioner\nKiến thức y khoa từ bác sĩ đa khoa (Medical knowledge from the general practitioner).",
+					"quotes": [
+						"H. Perhaps the most influential and authoritative source of knowledge is the medical knowledge provided by the general practitioner."
+					]
+				},
+				{
+					"number": 5,
+					"text": "E.g. Doctor's medical ____ (5)",
+					"answer": "diagnosis",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\n_________ y khoa của bác sĩ.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: Danh từ (NOUN).\nDấu hiệu: 'Doctor's medical' + [NOUN] (Sau tính từ 'medical' cần một danh từ. Đây là một ví dụ về 'bằng chứng khoa học').\n\nBước 3: Tìm các keywords được paraphrase trong bài:\ndiagnosis ~ medical\ndoctor ~ từ khóa giữ nguyên\nmedical ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Chúng ta cần chẩn đoán y khoa từ bác sĩ để có được chứng nhận cần thiết nếu chúng ta cần nghỉ làm hoặc hơn thế nữa\" (We need an expert medical diagnosis in order to obtain the necessary certificates if we need to be off work or more than this).\n\nBước 5: Đáp án: diagnosis\nChẩn đoán y khoa của bác sĩ (E.g. Doctor's medical diagnosis).",
+					"quotes": [
+						"We need an expert medical diagnosis in order to obtain the necessary certificate if we need to be off work for more than the statutory self-certification period."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Examine the medical hypothesis with the previous drill and ____ (6)",
+					"answer": "background",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nKiểm tra giả thuyết y khoa với bài tập trước đó và _________.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: Danh từ (NOUN).\nDấu hiệu: 'drill and' + [NOUN] (Chỗ trống nằm trong cấu trúc song song với 'drill', chỉ một yếu tố bác sĩ dùng để kiểm tra giả thuyết).\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nbackground ~ training and experience\nmedical hypothesis ~ hypothesize\nexamine ~ look for evidence\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Với đào tạo và nền tảng y khoa của bác sĩ, cô ấy có thể đưa ra giả thuyết 'đây có phải là viêm phổi bây giờ?' Và sau đó tiến hành tìm kiếm bằng chứng về nó\" (Given the doctor's medical training and background, she may hypothesize 'is this now pneumonia?' And then proceed to look for evidence about it).\n\nBước 5: Đáp án: background\nXem xét giả thuyết y khoa dựa trên các phân tích và dữ liệu nền trước đó. (Examine the medical hypothesis with the previous drill and background).",
+					"quotes": [
+						"Given the doctor’s medical training and background, she may hypothesize ’is this now pneumonia?"
+					]
+				}
+			]
+		},
+		{
+			"range": "7-14",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "The reading passage has nine paragraphs A-I.\nWhich paragraph contains the following information?\nNB You may use any letter more than once",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H", "I"],
+			"questions": [
+				{
+					"number": 7,
+					"text": "The contrast between the nature of personal judgment and the nature of doctor",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTìm đoạn văn mô tả sự tương phản (contrast) giữa bản chất của nhận định cá nhân (nature of personal judgment) và bản chất của (kiến thức) bác sĩ (nature of doctor).\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\ncontrast ~ However\npersonal judgment ~ personal knowledge, you feel unwell (bạn cảm thấy không khỏe)\nnature of doctor ~ doctor's expert diagnosis, experience and training\n\nBước 3: So sánh và đối chiếu:\nĐoạn E chỉ rõ: \"...bạn quyết định đi khám bác sĩ... vì bạn cảm thấy không khỏe - đây là kiến thức cá nhân... Tuy nhiên, chẩn đoán chuyên môn của bác sĩ lại dựa trên kinh nghiệm và đào tạo...\" (...you decide to consult the doctor... because you feel unwell - this is personal knowledge... However, the doctor's expert diagnosis is based on experience and training...)\n==> Thông tin này cho thấy đoạn E đã \"so sánh, làm rõ sự tương phản (dùng 'However') giữa kiến thức cá nhân và kiến thức chuyên môn của bác sĩ\".\n\nBước 4: Đáp án: E",
+					"quotes": [
+						"For example, you decide to consult the doctor in the first place because you feel unwell - this is personal knowledge about your own body. However, the doctor’s expert diagnosis is based on experience and training, with sources of knowledge as diverse as other experts, laboratory reports, medical textbooks and years of experience."
+					]
+				},
+				{
+					"number": 8,
+					"text": "The reference of culture about pressure",
+					"answer": "F",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTìm đoạn văn nói về việc văn hóa (culture) đề cập/tham chiếu (reference) đến áp lực (pressure).\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nculture ~ Western culture, popular culture\npressure ~ stress-related illness, 'stressed out'\nreference ~ emphasis on, Reference to\n\nBước 3: So sánh và đối chiếu:\nĐoạn F chỉ rõ: \"...văn hóa phương Tây (Western culture) đã chứng kiến sự nhấn mạnh đáng kể vào bệnh lý liên quan đến căng thẳng (stress-related illness)... Việc đề cập đến (Reference to) việc bị 'căng thẳng (stressed out)' đã trở thành một phản ứng phổ biến...\" (...Western culture has seen a significant emphasis on stress-related illness... Reference to being 'stressed out' has become a common response...)\n==> Thông tin này cho thấy đoạn F đã \"đề cập đến việc văn hóa (phương Tây) tham chiếu đến áp lực (stress)\".\n\nBước 4: Đáp án: F",
+					"quotes": [
+						"Over the past decade, for example, Western culture has seen a significant emphasis on stress-related illness or the media. Reference to being ’stressed out’ has become a common response in daily exchanges in the workplace and has become part of popular common-sense knowledge."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Sick leave will be not permitted if employees are without the professional diagnosis",
+					"answer": "H",
+					"quotes": [
+						"It would not be acceptable to notify our employer that we simply felt too unwell to turn up to work or to work out of faith healer, astrologer, therapist or even our priest though it was not a good idea. We need an expert medical diagnosis in order to obtain the necessary certificate if we need to be off work for more than the statutory self-certification period."
+					]
+				},
+				{
+					"number": 10,
+					"text": "How doctors are regarded in the society",
+					"answer": "H",
+					"quotes": [
+						"H. Perhaps the most influential and authoritative source of knowledge is the medical knowledge provided by the general practitioner. We expect the doctor to have access to expert knowledge. This is socially sanctioned. It would not be acceptable to notify our employer that we simply felt too unwell to turn up to work or to work out of faith healer, astrologer, therapist or even our priest though it was not a good idea. We need an expert medical diagnosis in order to obtain the necessary certificate if we need to be off work for more than the statutory self-certification period. The knowledge of the medical science is privileged in this respect in contemporary Western culture. Medical practitioners are also seen as having the requisite expert knowledge that permits them legally to prescribe drugs and treatment to which patients would not otherwise have access."
+					]
+				},
+				{
+					"number": 11,
+					"text": "The symptom of the patients can be added as new information",
+					"answer": "I",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTìm đoạn văn nói rằng triệu chứng của bệnh nhân có thể được thêm vào như thông tin mới\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nsymptom of the patients ~ the case of 'you' having pneumonia\nadded as new information ~ new knowledge is constructed, results in new knowledge, This will then be added to the doctor's medical knowledge\n\nBước 3: So sánh và đối chiếu:\nĐoạn I chỉ rõ: \"...kiến thức mới được xây dựng (new knowledge is constructed) bên trong nó... Điều này dẫn đến kiến thức mới... cho cả bạn và bác sĩ. Sau đó, điều này sẽ được thêm vào kiến thức y khoa của bác sĩ...\" (...new knowledge is constructed... This results in new knowledge... This will then be added to the doctor's medical knowledge...)\n==> Thông tin này cho thấy đoạn I đã \"giải thích cách trường hợp (triệu chứng) của bệnh nhân trở thành thông tin/kiến thức mới, được thêm vào kho kiến thức của bác sĩ\".\n\nBước 4: Đáp án: I",
+					"quotes": [
+						"However, there is more than existing knowledge in this little story: new knowledge is constructed within it. Given the doctor’s medical training and background, she may hypothesize ’is this now pneumonia? And then proceed to look for evidence about how you will use observations and instruments to assess the evidence and critically interpret it in the light of her training and experience. This results in new knowledge and new experience both for you and for the doctor. This will then be added to the doctor’s medical knowledge and may help in future diagnosis of pneumonia."
+					]
+				},
+				{
+					"number": 12,
+					"text": "What the situation will be if we come across knowledge from non-specialized outer sources",
+					"answer": "G",
+					"quotes": [
+						"G. We might also rely on the observations of others who know us. Comments from friends and family such as ’you do look ill’ or ’that’s a bad cough’ might be another source of knowledge. Complementary health practices, such as holistic medicine, produce their own sets of knowledge upon which we might also draw in deciding the nature and degree of our ill health and seek possible treatments."
+					]
+				},
+				{
+					"number": 13,
+					"text": "An example of collective judgment from personal experience and professional doctor",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTìm đoạn văn cung cấp ví dụ về sự phán đoán kết hợp từ kinh nghiệm cá nhân (personal experience) và bác sĩ chuyên môn.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nexample ~ (the scenario of diagnosing pneumonia)\ncollective judgment ~ combination (sự kết hợp)\npersonal experience ~ your own subjective experience\nprofessional doctor ~ diagnoses of someone who has the status of a medical expert\n\nBước 3: So sánh và đối chiếu:\nĐoạn D chỉ rõ: \"Đây là kết quả của sự kết hợp (combination) của trải nghiệm chủ quan của riêng bạn (your own subjective experience) và sự chẩn đoán của một người có vị thế là chuyên gia y tế (diagnoses of... a medical expert).\" (This is the result of the combination of your own subjective experience and the diagnoses of someone who has the status of a medical expert.)\n==> Thông tin này cho thấy đoạn D đã \"đưa ra một ví dụ về phán đoán kết hợp giữa kinh nghiệm cá nhân và chẩn đoán của bác sĩ\".\n\nBước 4: Đáp án: D",
+					"quotes": [
+						"This is the result of the combination of your own subjective experience and the diagnoses of someone who has the status of a medical expert."
+					]
+				},
+				{
+					"number": 14,
+					"text": "A reference about those people who do not realize their illness",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTìm đoạn văn tham chiếu đến những người không nhận ra bệnh của họ.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\ndo not realize ~ fail to be aware of\ntheir illness ~ a disease\n\nBước 3: So sánh và đối chiếu:\nĐoạn B chỉ rõ: \"Vào những thời điểm khác, mọi người có thể đang mắc bệnh (a disease) và không nhận thức được (fail to be aware of) bệnh tật cho đến khi nó đã ở giai đoạn muộn...\" (At over times, people may be suffering from a disease and fail to be aware of the illness until it has reached a late stage...)\n==> Thông tin này cho thấy đoạn B đã \"đề cập đến những người không nhận ra bệnh của họ\".\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"At over times, people may be suffering from a disease and fail to be aware of the illness until it has reached a late stage in its development."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,235 @@
+{
+	"id": "222b2921-0ec7-477e-8702-9c63079c1691",
+	"url": "https://stepielts.com/student/reading/222b2921-0ec7-477e-8702-9c63079c1691?mode=practice",
+	"title": "Keep a watchful eye on the bridges",
+	"source": "Forecast Quý 2-2025",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Keep a watchful eye on the bridges",
+		"paragraphs": [
+			"A. Most road and rail bridges are only inspected visually, if at all. Every few months, engineers have to clamber over the structure in an attempt to find problems before the bridge shows obvious signs of damage. Technologies developed at Los Alamos National Laboratory, New Mexico, and Texas A&M University may replace these surveys with microwave sensors that constantly monitor the condition of bridges.",
+			"B. “The device uses microwaves to measure the distance between the sensor and the bridge, much like radar does,” says Albert Migliori, a Los Alamos physicist.“Any load on the bridge - such as traffic - induces displacements, which change that distance as the bridge moves up and down.” By monitoring these movements over several minutes, the researchers can find out how the bridge resonates. Changes in its behavior can give an early warning of damage.",
+			"C. The Interstate 40 bridge over the Rio Grande river in Albuquerque provided the researchers with a rare opportunity to test their ideas. Chuck Farrar, an engineer at Los Alamos, explains: “The New Mexico authorities decided to raze this bridge and replace it. We were able to mount instruments on it, test it under various load conditions and even inflict damage just before it was demolished.” In the 1960s and 1970s, 2500 similar bridges were built in the US. They have two steel girders supporting the load in each section. Highway experts know that this design is “fracture critical” because a failure in either girder would cause the bridge to fail.",
+			"D. After setting up the microwave dish on the ground below the bridge, the Los Alamos team installed conventional accelerometers at several points along the span to measure its motion. They then tested the bridge while traffic roared across it and while subjecting it to pounding from a “shaker”, which delivered precise punches to a specific point on the road.",
+			"E. “We then created damage that we hoped would simulate fatigue cracks that can occur in steel girders,” says Farrar. They first cut a slot about 60 centimetres long in the middle of one girder. They then extended the cut until it reached the bottom of the girder and finally they cut across the flange - the bottom of the girder’s “I” shape.",
+			"F. The initial, crude analysis of the bridge’s behaviour, based on the frequency at which the bridge resonates, did not indicate that anything was wrong until the flange was damaged. But later the data were reanalysed with algorithms that took into account changes in the mode shapes of the structure -shapes that the structure takes on when excited at a particular frequency. These more sophisticated algorithms, which were developed by Norris Stubbs at Texas A&M University, successfully identified and located the damage caused by the initial cut.",
+			"G. “When any structure vibrates, the energy is distributed throughout with some points not moving, while others vibrate strongly at various frequencies,” says Stubbs. “My algorithms use pattern recognition to detect changes in the distribution of this energy.” NASA already uses Stubbs’ method to check the behaviour of the body flap that slows space shuttles down after they land.",
+			"H. A commercial system based on the Los Alamos hardware is now available, complete with the Stubbs algorithms, from the Quatro Corporation in Albuquerque for about $100 000. Tim Darling, another Los Alamos physicist working on the microwave interferometer with Migliori, says that as the electronics become cheaper, a microwave inspection system will eventually be applied to most large bridges in the US. “In a decade I would like to see a battery or solar-powered package mounted under each bridge, scanning it every day to detect changes,” he says."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, C or D.\nWrite your answers in boxes 1-4 on your answer sheet.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "How did the traditional way prevent damage of the bridges before the invention of new monitoring system",
+					"options": [
+						{
+							"label": "A",
+							"text": "bridges have to be tested in every movement on two points"
+						},
+						{
+							"label": "B",
+							"text": "bridges have to be closely monitored by microwave devices"
+						},
+						{
+							"label": "C",
+							"text": "bridges have already been monitored by sensors"
+						},
+						{
+							"label": "D",
+							"text": "bridges have to be frequently inspected by professional workers with naked eyes"
+						}
+					],
+					"answer": "D",
+					"quotes": [
+						"A. Most road and rail bridges are only inspected visually, if at all. Every few months, engineers have to clamber over the structure in an attempt to find problems before the bridge shows obvious signs of damage."
+					]
+				},
+				{
+					"number": 2,
+					"text": "How do the new microwave monitors find out the problems of bridges",
+					"options": [
+						{
+							"label": "A",
+							"text": "by changing the distance between the positions of devices"
+						},
+						{
+							"label": "B",
+							"text": "by controlling the traffic flow on the bridges"
+						},
+						{
+							"label": "C",
+							"text": "by monitoring the distance caused by traffic between two points"
+						},
+						{
+							"label": "D",
+							"text": "by displacement of the several critical parts in the bridges"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"B. “The device uses microwaves to measure the distance between the sensor and the bridge, much like radar does,” says Albert Migliori, a Los Alamos physicist.“Any load on the bridge - such as traffic - induces displacements, which change that distance as the bridge moves up and down.” By monitoring these movements over several minutes, the researchers can find out how the bridge resonates."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Why did the expert believe there is a problem for the design called, “fracture critical”",
+					"options": [
+						{
+							"label": "A",
+							"text": "engineers failed to apply the newly developed construction materials"
+						},
+						{
+							"label": "B",
+							"text": "there was not enough finance to repair the bridges"
+						},
+						{
+							"label": "C",
+							"text": "the supporting parts of the bridges may crack and cause the bridge to fail"
+						},
+						{
+							"label": "D",
+							"text": "there was bigger traffic load conditions than the designers had anticipated"
+						}
+					],
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nTại sao các chuyên gia tin rằng có vấn đề với thiết kế được gọi là \"fracture critical\" (nguy cơ nứt gãy)?\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Trong những năm 1960 và 1970, 2500 cây cầu tương tự đã được xây dựng ở Mỹ. Chúng có hai dầm thép hỗ trợ tải trọng trong mỗi phần. Các chuyên gia đường cao tốc biết rằng thiết kế này là \"fracture critical\" (nguy cơ nứt gãy) vì một hư hỏng ở một trong hai dầm sẽ gây ra sự sụp đổ của cầu.\"\n=> Thông tin được in đậm đồng nghĩa với câu C (các bộ phận hỗ trợ của cầu có thể bị nứt và gây ra sự sụp đổ của cầu).\n\nBước 3: Đáp án: C\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Đoạn văn không nhắc đến việc \"các kỹ sư không áp dụng vật liệu xây dựng mới phát triển\".\nĐáp án B -> Đoạn văn không đề cập đến việc \"không có đủ tài chính để sửa chữa cầu\".\nĐáp án D -> Đoạn văn không nói về việc \"có điều kiện tải trọng giao thông lớn hơn so với dự đoán của các nhà thiết kế\".",
+					"quotes": [
+						"Highway experts know that this design is “fracture critical” because a failure in either girder would cause the bridge to fail."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Problem was not recognized by a basic method in the beginning",
+					"options": [
+						{
+							"label": "A",
+							"text": "until the mid of faces of bridges has fractures"
+						},
+						{
+							"label": "B",
+							"text": "until the damage appears along and down to the flanges"
+						},
+						{
+							"label": "C",
+							"text": "until the points on the road have been punched"
+						},
+						{
+							"label": "D",
+							"text": "until the frequency of resonates appears disordered"
+						}
+					],
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nVấn đề không được phát hiện bởi phương pháp cơ bản ban đầu cho đến khi nào?\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Phân tích ban đầu, thô sơ về hành vi của cầu, dựa trên tần số mà cầu cộng hưởng, không cho thấy có gì sai cho đến khi bản mép bị hư hỏng. Nhưng sau đó dữ liệu được phân tích lại với các thuật toán xem xét đến những thay đổi trong hình dạng chế độ của cấu trúc - hình dạng mà cấu trúc có khi được kích thích ở một tần số cụ thể.\"\n=> Thông tin được in đậm đồng nghĩa với câu B (cho đến khi hư hỏng xuất hiện dọc và xuống đến bản mép).\n\nBước 3: Đáp án: B\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Đoạn văn không nhắc đến việc \"cho đến khi giữa mặt cầu có vết nứt\".\nĐáp án C -> Đoạn văn không đề cập đến việc \"cho đến khi các điểm trên đường đã bị đấm\".\nĐáp án D -> Đoạn văn không nói về việc \"cho đến khi tần số cộng hưởng xuất hiện không theo trật tự\".",
+					"quotes": [
+						"F. The initial, crude analysis of the bridge’s behaviour, based on the frequency at which the bridge resonates, did not indicate that anything was wrong until the flange was damaged."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-8",
+			"type": "MAP_DIAGRAM_LABEL",
+			"instructions": "Filling the blanks in the diagram below. Choose NO MORE THAN TWO WORDS from the passage for each answer. Write the correct answer in boxes 5-8 on your answer sheet.",
+			"body_html": "<p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/reading-images/8787ed66-3146-4d72-bcbf-87b3397818f7.png\" alt=\"S\"></p><ul><li>[5]</li><li>[6] </li><li>[7] </li><li>[8] </li></ul>",
+			"questions": [
+				{
+					"number": 5,
+					"text": "",
+					"answer": "microwave/microwave dishes/microwave dish",
+					"explanation": "Bước 1: Quan sát kỹ diagram và hiểu được đặc điểm miêu tả chính:\nThiết bị cảm biến hiện đại dùng để đo khoảng cách giữa cảm biến và cầu sử dụng _____ (công nghệ tương tự như radar).\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: set up + NOUN\n\nBước 3: Tìm các keywords được paraphrase trong bài:\ndevice ~ từ khóa giữ nguyên\nmeasure the distance ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Thiết bị sử dụng sóng vi ba để đo khoảng cách giữa cảm biến và cầu, tương tự như radar\" (\"The device uses microwaves to measure the distance between the sensor and the bridge, much like radar does\").\n\nBước 5: Đáp án: microwave/microwave dishes/microwave dish.\nThiết bị cảm biến hiện đại dùng để đo khoảng cách giữa cảm biến và cầu sử dụng sóng vi ba (công nghệ tương tự như radar).",
+					"quotes": [
+						"B. “The device uses microwaves to measure the distance between the sensor and the bridge, much like radar does,” says Albert Migliori, a Los Alamos physicist.“Any load on the bridge - such as traffic - induces displacements, which change that distance as the bridge moves up and down.” By monitoring these movements over several minutes, the researchers can find out how the bridge resonates."
+					]
+				},
+				{
+					"number": 6,
+					"text": "",
+					"answer": "accelerometers",
+					"quotes": [
+						"D. After setting up the microwave dish on the ground below the bridge, the Los Alamos team installed conventional accelerometers at several points along the span to measure its motion."
+					]
+				},
+				{
+					"number": 7,
+					"text": "",
+					"answer": "steel girders",
+					"explanation": "Bước 1: Quan sát kỹ diagram và hiểu được đặc điểm miêu tả chính:\nCầu có thiết kế với hai _____ thép hỗ trợ tải trọng trong mỗi phần.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: two steel + NOUN + supporting (NOUN là danh từ chỉ bộ phận cấu trúc của cầu)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nsteel ~ từ khóa giữ nguyên\nsupporting the load ~ từ khóa giữ nguyên\ntwo ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Chúng có hai dầm thép hỗ trợ tải trọng trong mỗi phần\" (\"They have two steel girders supporting the load in each section\").\n\nBước 5: Đáp án: steel girders\nCầu có thiết kế với hai dầm thép hỗ trợ tải trọng trong mỗi phần.",
+					"quotes": [
+						"They have two steel girders supporting the load in each section."
+					]
+				},
+				{
+					"number": 8,
+					"text": "",
+					"answer": "flange",
+					"quotes": [
+						"They then extended the cut until it reached the bottom of the girder and finally they cut across the flange - the bottom of the girder’s “I” shape."
+					]
+				}
+			]
+		},
+		{
+			"range": "9-13",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "The reading passage has eight paragraphs.\nWhich paragraph contains the following information?\nIn boxes 9-13 on your answer sheet",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H"],
+			"questions": [
+				{
+					"number": 9,
+					"text": "a bridge offers a great chance to test theories",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột cây cầu mang đến cơ hội tuyệt vời để thử nghiệm các lý thuyết.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nbridge ~ từ khóa giữ nguyên\nrare opportunity ~ great chance\ntest their ideas ~ test theories\n\nBước 3: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"Cầu Interstate 40 bắc qua sông Rio Grande ở Albuquerque đã cung cấp cho các nhà nghiên cứu một cơ hội hiếm hoi để thử nghiệm ý tưởng của họ.\"\n=> Thông tin này cho thấy đoạn C đã \"đề cập đến một cây cầu mang đến cơ hội tuyệt vời để thử nghiệm các lý thuyết\".\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"C. The Interstate 40 bridge over the Rio Grande river in Albuquerque provided the researchers with a rare opportunity to test their ideas."
+					]
+				},
+				{
+					"number": 10,
+					"text": "a ten-year positive change in technology for detecting changes",
+					"answer": "H",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột sự thay đổi tích cực trong công nghệ phát hiện thay đổi trong mười năm.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nin a decade ~ ten-year\neventually be applied ~ positive change\ndetect changes ~ detecting changes\n\nBước 3: So sánh và đối chiếu:\nĐoạn H chỉ rõ: \"Tim Darling, một nhà vật lý khác của Los Alamos làm việc trên máy giao thoa vi sóng với Migliori, nói rằng khi thiết bị điện tử trở nên rẻ hơn, hệ thống kiểm tra vi sóng cuối cùng sẽ được áp dụng cho hầu hết các cây cầu lớn ở Mỹ. \"Trong một thập kỷ, tôi muốn thấy một gói pin hoặc năng lượng mặt trời được gắn dưới mỗi cây cầu, quét nó mỗi ngày để phát hiện những thay đổi,\" ông nói.\"\n=> Thông tin này cho thấy đoạn H đã \"đề cập đến một sự thay đổi tích cực trong công nghệ phát hiện thay đổi trong thời gian mười năm\".\nBước 4: Đáp án: H",
+					"quotes": [
+						"Tim Darling, another Los Alamos physicist working on the microwave interferometer with Migliori, says that as the electronics become cheaper, a microwave inspection system will eventually be applied to most large bridges in the US. “In a decade I would like to see a battery or solar-powered package mounted under each bridge, scanning it every day to detect changes,” he says."
+					]
+				},
+				{
+					"number": 11,
+					"text": "an example of applying bridge-monitoring technology in the field of aerospace",
+					"answer": "G",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột ví dụ về việc áp dụng công nghệ giám sát cầu trong lĩnh vực hàng không vũ trụ.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nNASA ~ aerospace\nStubbs' method ~ bridge-monitoring technology\ncheck the behaviour ~ applying\n\nBước 3: So sánh và đối chiếu:\nĐoạn G chỉ rõ: \"NASA đã sử dụng phương pháp của Stubbs để kiểm tra hành vi của cánh thân làm chậm tàu con thoi không gian sau khi chúng hạ cánh.\"\n=> Thông tin này cho thấy đoạn G đã \"đề cập đến một ví dụ về việc áp dụng công nghệ giám sát cầu trong lĩnh vực hàng không vũ trụ\".\nBước 4: Đáp án: G",
+					"quotes": [
+						"“My algorithms use pattern recognition to detect changes in the distribution of this energy.” NASA already uses Stubbs’ method to check the behaviour of the body flap that slows space shuttles down after they land."
+					]
+				},
+				{
+					"number": 12,
+					"text": "explanation of the mechanism for the new microwave monitoring to work",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nGiải thích về cơ chế hoạt động của hệ thống giám sát vi sóng mới.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\ndevice uses microwaves ~ microwave monitoring\nmeasure the distance ~ mechanism\nwork ~ to work\n\nBước 3: So sánh và đối chiếu:\nĐoạn B chỉ rõ: \"Thiết bị sử dụng sóng vi ba để đo khoảng cách giữa cảm biến và cầu, tương tự như radar. Bất kỳ tải trọng nào trên cầu - như giao thông - đều gây ra sự dịch chuyển, làm thay đổi khoảng cách đó khi cầu di chuyển lên xuống.\"\n=> Thông tin này cho thấy đoạn B đã \"giải thích về cơ chế hoạt động của hệ thống giám sát vi sóng mới\".\nBước 4: Đáp án: B",
+					"quotes": [
+						"B. “The device uses microwaves to measure the distance between the sensor and the bridge, much like radar does,” says Albert Migliori, a Los Alamos physicist.“Any load on the bridge - such as traffic - induces displacements, which change that distance as the bridge moves up and down.” By monitoring these movements over several minutes, the researchers can find out how the bridge resonates."
+					]
+				},
+				{
+					"number": 13,
+					"text": "how is the damage deliberately created by the researchers",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCách các nhà nghiên cứu cố ý tạo ra thiệt hại.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\ncreated damage ~ damage deliberately created\nsimulate fatigue cracks ~ by the researchers\ncut a slot ~ create\n\nBước 3: So sánh và đối chiếu:\nĐoạn E chỉ rõ: \"Chúng tôi sau đó tạo ra thiệt hại mà chúng tôi hy vọng sẽ mô phỏng các vết nứt có thể xảy ra trong các dầm thép,\" Farrar nói. \"Họ đầu tiên cắt một khe dài khoảng 60 cm ở giữa một dầm. Sau đó họ mở rộng vết cắt cho đến khi nó chạm đến đáy của dầm và cuối cùng họ cắt ngang bản mép - đáy của hình chữ 'I' của dầm.\"\n=> Thông tin này cho thấy đoạn E đã \"mô tả cách các nhà nghiên cứu cố ý tạo ra thiệt hại\".\nBước 4: Đáp án: E",
+					"quotes": [
+						"E. “We then created damage that we hoped would simulate fatigue cracks that can occur in steel girders,” says Farrar. They first cut a slot about 60 centimetres long in the middle of one girder. They then extended the cut until it reached the bottom of the girder and finally they cut across the flange - the bottom of the girder’s “I” shape."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/reading-images/8787ed66-3146-4d72-bcbf-87b3397818f7.png"
+	]
+}

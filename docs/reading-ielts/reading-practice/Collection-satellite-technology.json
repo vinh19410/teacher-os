@@ -1,0 +1,223 @@
+{
+	"id": "bd964172-195c-4906-a09a-cfa7ae40a5ed",
+	"url": "https://stepielts.com/student/reading/bd964172-195c-4906-a09a-cfa7ae40a5ed?mode=practice",
+	"title": "Satellite Technology",
+	"source": "Collection",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Satellite Technology",
+		"paragraphs": [
+			"The space-age began with the launch of the Russian artificial satellite Sputnik in 1957 and developed further with the race to the moon between the United States and Russia. This rivalry was characterized by advanced technology and huge budgets. In this process, there were spectacular successes, some failures, but also many spin-offs.",
+			"Europe, Japan, China, and India quickly joined this space club of the superpowers. With the advent of relatively low-cost high-performance mini-satellites and launchers, the acquisition of indigenous space capabilities by smaller nations in Asia has become possible. How, in what manner, and for what purpose will these capabilities be realized?",
+			"A. Rocket technology has progressed considerably since the days of ’fire arrows’ (bamboo poles filled with gunpowder) first used in China around 500 BC, and, during the Sung Dynasty, to repel Mongol invaders at the battle of Kaifeng (Kai-fung fu) in AD 1232. These ancient rockets stand in stark contrast to the present-day Chinese rocket launch vehicles, called the ’Long March’, intended to place a Chinese astronaut in space by 2005 and, perhaps, to achieve a Chinese moon-landing by the end of the decade.",
+			"B. In the last decade, there has been a dramatic growth in space activities in Asia both in the utilization of space-based services and the production of satellites and launchers. This rapid expansion has led many commentators and analysts to predict that Asia will become a world space power. The space-age has had dramatic effects worldwide with direct developments in space technology influencing telecommunications, meteorological forecasting, earth resource and environmental monitoring, and disaster mitigation (flood, forest fires, and oil spills). Asian nations have been particularly eager to embrace these developments.",
+			"C. New and innovative uses for satellites are constantly being explored with potential revolutionary effects, such as in the field of health and telemedicine, distance education, crime prevention (piracy on the high seas), food and agricultural planning and production (rice crop monitoring). Space in Asia is very much influenced by the competitive commercial space sector, the emergence of low-cost mini-satellites, and the globalization of industrial and financial markets. It is not evident how Asian space will develop in the coming decades in the face of these trends. It is, however, important to understand and assess the factors and forces that shape Asian space activities and development in determining its possible consequences for the region.",
+			"D. At present, three Asian nations, Japan, China, and India, have comprehensive end-to-end space capabilities and possess a complete space infrastructure: space technology, satellite manufacturing, rockets, and spaceports. Already self-sufficient in terms of satellite design and manufacturing, South Korea is currently attempting to join their ranks with its plans to develop a launch site and spaceport. Additionally, nations in Southeast Asia as well as those bordering the Indian subcontinent (Nepal, Pakistan, and Bangladesh), have, or are starting to develop indigenous space programmes. The Association of Southeast Asian Nations (ASEAN) has, in varying degrees, embraced space applications using foreign technology and over the past five years or so its space activities have been expanding. Southeast Asia is predicted to become the largest and fastest-growing market for commercial space products and applications, driven by telecommunications (mobile and fixed services), the Internet, and remote sensing applications. In the development of this technology, many non-technical factors, such as economics, politics, culture, and history, interact and play important roles, which in turn affect Asian technology.",
+			"E. Asia and Southeast Asia, in particular, suffers from a long list of recurrent large-scale environmental problems including storms and flooding, forest fires and deforestation, and crop failures. Thus the space application that has attracted the most attention in this region is remote sensing. Remote sensing satellites equipped with instruments to take photographs of the ground at different wavelengths provide essential information for natural resource accounting, environmental management, disaster prevention and monitoring, land-use mapping, and sustainable development planning. Progress in these applications has been rapid and impressive. ASEAN members, unlike Japan, China, and India, do not have their own remote sensing satellites, however, most of its member nations have facilities to receive, process, and interpret such data from American and European satellites. In particular, Thailand, Malaysia, and Singapore have world-class remote sensing processing facilities and research programmes. ASEAN has plans to develop (and launch) its own satellites and in particular remote sensing satellites. Japan is regarded as the dominant space power in Asia and its record of successes and quality of technologies are equal to those of the West. In view of the technological challenges and high risks involved in space activities, a very long, and expensive, the learning curve has been followed to obtain those successes achieved. Japan’s satellite manufacturing was based on the old and traditional defense and military procurement methodologies as practiced in the US and Europe.",
+			"F. In recent years there have been fundamental changes in the way satellites are designed and built to drastically reduce costs. The emergence of ’small satellites’ and their quick adoption by Asian countries as a way to develop low-cost satellite technology and rapidly establish a space capability has given these countries the possibility to shorten their learning curve by a decade or more. The global increase of technology transfer mechanisms and use of readily available commercial technology to replace costly space and military-standard components may very well result in a highly competitive Asian satellite manufacturing industry.",
+			"G. The laws of physics are the same in Tokyo as in Toulouse, and the principles of electronics and mechanics know no political or cultural boundaries. However, no such immutability applies to engineer practices and management; they are very much influenced by education, culture, and history. These factors, in turn, have an effect on costs, lead times, product designs and, eventually, international sales. Many Asian nations are sending their engineers to be trained in the West. Highly experienced, they return to work in the growing Asian space industry. Will this acquisition of technical expertise, coupled perhaps with the world-renowned Japanese manufacturing and management techniques, be applied to build world-class satellites and reduce costs?"
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MATCHING_HEADINGS",
+			"instructions": "The reading passage has seven paragraphs, A-G.\nChoose the correct heading for paragraphs A-F from the list below.\nWrite the correct number, i-ix, in boxes 1-5 on your answer sheet.\nExample: Paragraph D - Current space technology development in Asia",
+			"options": [
+				{
+					"label": "i",
+					"text": "Western countries provide essential assistance"
+				},
+				{
+					"label": "ii",
+					"text": "Unbalanced development for an essential space technology"
+				},
+				{
+					"label": "iii",
+					"text": "Innovative application compelled by competition"
+				},
+				{
+					"label": "iv",
+					"text": "An ancient invention which is related to the future"
+				},
+				{
+					"label": "v",
+					"text": "Military purpose of the satellite"
+				},
+				{
+					"label": "vi",
+					"text": "Rockets for application in ancient China"
+				},
+				{
+					"label": "vii",
+					"text": "Space development in Asia in the past"
+				},
+				{
+					"label": "viii",
+					"text": "Non-technology factors counts"
+				},
+				{
+					"label": "ix",
+					"text": "competitive edge gained by more economically feasible satellite"
+				}
+			],
+			"questions": [
+				{
+					"number": 1,
+					"text": "Paragraph A",
+					"answer": "iv",
+					"quotes": [
+						"Rocket technology has progressed considerably since the days of ’fire arrows’ (bamboo poles filled with gunpowder) first used in China around 500 BC, and, during the Sung Dynasty, to repel Mongol invaders at the battle of Kaifeng (Kai-fung fu) in AD 1232. These ancient rockets stand in stark contrast to the present-day Chinese rocket launch vehicles, called the ’Long March’, intended to place a Chinese astronaut in space by 2005 and, perhaps, to achieve a Chinese moon-landing by the end of the decade."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Paragraph B",
+					"answer": "vii",
+					"quotes": [
+						"In the last decade, there has been a dramatic growth in space activities in Asia both in the utilization of space-based services and the production of satellites and launchers. This rapid expansion has led many commentators and analysts to predict that Asia will become a world space power."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Paragraph C",
+					"answer": "iii",
+					"quotes": [
+						"C. New and innovative uses for satellites are constantly being explored with potential revolutionary effects, such as in the field of health and telemedicine, distance education, crime prevention (piracy on the high seas), food and agricultural planning and production (rice crop monitoring). Space in Asia is very much influenced by the competitive commercial space sector, the emergence of low-cost mini-satellites, and the globalization of industrial and financial markets."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Paragraph E",
+					"answer": "ii"
+				},
+				{
+					"number": 5,
+					"text": "Paragraph F",
+					"answer": "ix",
+					"quotes": [
+						"F. In recent years there have been fundamental changes in the way satellites are designed and built to drastically reduce costs. The emergence of ’small satellites’ and their quick adoption by Asian countries as a way to develop low-cost satellite technology and rapidly establish a space capability has given these countries the possibility to shorten their learning curve by a decade or more. The global increase of technology transfer mechanisms and use of readily available commercial technology to replace costly space and military-standard components may very well result in a highly competitive Asian satellite manufacturing industry."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-9",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Match the following reasons for each question according to the information given in the passage.",
+			"options": [
+				{
+					"label": "A",
+					"text": "Because it helps administrate the crops."
+				},
+				{
+					"label": "B",
+					"text": "Because there are some unapproachable areas."
+				},
+				{
+					"label": "C",
+					"text": "Because the economic level in that area is low."
+				},
+				{
+					"label": "D",
+					"text": "Because there are influences from some other social factors."
+				},
+				{
+					"label": "E",
+					"text": "Because it can be used in non-peaceful purpose."
+				},
+				{
+					"label": "F",
+					"text": "Because disasters such as bush fires happened in Southeast Asia."
+				}
+			],
+			"body": "Why is remote-photographic technology used to resolve environmental problems? ____ (6)\nWhy is satellite technology used in the medicine area? ____ (7)\nWhy Asian countries' satellite technology is limited for development? ____ (8)\nWhy is satellite technology deployed in an agricultural area? ____ (9)",
+			"body_html": "<p>Why is remote-photographic technology used to resolve environmental problems? [6]</p><p>Why is satellite technology used in the medicine area? [7]</p><p>Why Asian countries' satellite technology is limited for development? [8]</p><p>Why is satellite technology deployed in an agricultural area? [9]</p>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "Why is remote-photographic technology used to resolve environmental problems?",
+					"answer": "F",
+					"quotes": [
+						"E. Asia and Southeast Asia, in particular, suffers from a long list of recurrent large-scale environmental problems including storms and flooding, forest fires and deforestation, and crop failures. Thus the space application that has attracted the most attention in this region is remote sensing."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Why is satellite technology used in the medicine area?",
+					"answer": "B",
+					"quotes": [
+						"C. New and innovative uses for satellites are constantly being explored with potential revolutionary effects, such as in the field of health and telemedicine, distance education, crime prevention (piracy on the high seas), food and agricultural planning and production (rice crop monitoring)."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Why Asian countries' satellite technology is limited for development?",
+					"answer": "D",
+					"quotes": [
+						"In the development of this technology, many non-technical factors, such as economics, politics, culture, and history, interact and play important roles, which in turn affect Asian technology."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Why is satellite technology deployed in an agricultural area?",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTại sao công nghệ vệ tinh được triển khai trong khu vực nông nghiệp?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• agricultural area ~ agricultural / rice crop\n• satellite technology ~ uses for satellites / remote sensing\n• deployed ~ planning and production\n\nBước 3: So sánh và đối chiếu:\nĐoạn C liệt kê các ứng dụng của vệ tinh, trong đó có: \"quy hoạch và sản xuất lương thực và nông nghiệp (giám sát vụ lúa)\" (food and agricultural planning and production (rice crop monitoring)).\n==> Thông tin \"giám sát vụ lúa\" (rice crop monitoring) và \"quy hoạch nông nghiệp\" (agricultural planning) đồng nghĩa với việc \"quản lý mùa màng\" (administrate the crops) trong câu A.\n\nBước 4: Đáp án: A\nBởi vì nó giúp quản lý mùa màng (Because it helps administrate the crops).",
+					"quotes": [
+						"C. New and innovative uses for satellites are constantly being explored with potential revolutionary effects, such as in the field of health and telemedicine, distance education, crime prevention (piracy on the high seas), food and agricultural planning and production (rice crop monitoring)."
+					]
+				}
+			]
+		},
+		{
+			"range": "10-13",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in the Reading Passage?\nIn boxes 10-13 on your answer sheet, write:\nTRUE if the statement is true\nFALSE if the statement is false\nNOT GIVEN if the information is not given in the passage",
+			"questions": [
+				{
+					"number": 10,
+					"text": "Ancient China had already deployed rockets as a military purpose as early as 500 years ago.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTrung Quốc cổ đại đã triển khai tên lửa cho mục đích quân sự từ cách đây 500 năm.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• Ancient China ~ China\n• Rockets ~ fire arrows / ancient rockets\n• 500 years ago ~ mốc thời gian cần so sánh\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Tên lửa được sử dụng lần đầu tiên ở Trung Quốc vào khoảng năm 500 trước Công nguyên (500 BC)\" (first used in China around 500 BC).\n==> 500 BC là cách đây khoảng 2500 năm, không phải 500 năm.\n==> Điều này trái ngược với thông tin trong câu hỏi \"cách đây 500 năm\".\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Rocket technology has progressed considerably since the days of ’fire arrows’ (bamboo poles filled with gunpowder) first used in China around 500 BC, and, during the Sung Dynasty, to repel Mongol invaders at the battle of Kaifeng (Kai-fung fu) in AD 1232."
+					]
+				},
+				{
+					"number": 11,
+					"text": "Space technology has enhanced the literacy of Asia.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCông nghệ không gian đã nâng cao trình độ biết chữ của châu Á.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• Space technology ~ Satellites\n• Literacy ~ liên quan đến giáo dục\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"giáo dục từ xa\" (distance education) trong đoạn C.\n==> Tuy nhiên, bài đọc không hề nhắc đến thông tin việc này có \"nâng cao trình độ biết chữ\" (enhanced the literacy) hay không. Giáo dục từ xa có thể bao gồm đại học hoặc đào tạo nghề, không nhất thiết là xóa mù chữ.\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"C. New and innovative uses for satellites are constantly being explored with potential revolutionary effects, such as in the field of health and telemedicine, distance education, crime prevention (piracy on the high seas), food and agricultural planning and production (rice crop monitoring)."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Photos taken by satellites with certain technology help predict some natural catastrophes prevention and surveillance.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nẢnh chụp bởi vệ tinh với công nghệ nhất định giúp dự đoán việc phòng ngừa và giám sát một số thảm họa thiên nhiên.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• Photos taken by satellites ~ Remote sensing satellites... take photographs\n• Natural catastrophes ~ disaster (storms, flooding...)\n• Prevention and surveillance ~ prevention and monitoring\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Vệ tinh viễn thám... chụp ảnh mặt đất... cung cấp thông tin thiết yếu cho... phòng ngừa và giám sát thảm họa\" (Remote sensing satellites... provide essential information for... disaster prevention and monitoring).\n==> Điều này đồng nghĩa với thông tin trong câu hỏi.\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Remote sensing satellites equipped with instruments to take photographs of the ground at different wavelengths provide essential information for natural resource accounting, environmental management, disaster prevention and monitoring, land-use mapping, and sustainable development planning."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Commercial competition constitutes a boosting factor to Asian technology.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCạnh tranh thương mại tạo thành một yếu tố thúc đẩy đối với công nghệ châu Á.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• Commercial competition ~ competitive commercial space sector / highly competitive Asian satellite manufacturing industry\n• Boosting factor ~ influenced by / establish a space capability\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ ở đoạn C \"Không gian ở châu Á chịu ảnh hưởng rất lớn bởi khu vực không gian thương mại cạnh tranh\" (Space in Asia is very much influenced by the competitive commercial space sector) và đoạn F nói rằng sự cạnh tranh có thể dẫn đến một ngành công nghiệp sản xuất vệ tinh cạnh tranh cao (highly competitive Asian satellite manufacturing industry).\n==> Điều này đồng nghĩa với thông tin trong câu hỏi là cạnh tranh đóng vai trò thúc đẩy.\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Space in Asia is very much influenced by the competitive commercial space sector, the emergence of low-cost mini-satellites, and the globalization of industrial and financial markets."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

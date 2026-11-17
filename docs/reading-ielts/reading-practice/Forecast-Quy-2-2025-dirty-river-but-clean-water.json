@@ -1,0 +1,161 @@
+{
+	"id": "d9c8c2f0-ac3e-4901-b351-67c341335590",
+	"url": "https://stepielts.com/student/reading/d9c8c2f0-ac3e-4901-b351-67c341335590?mode=practice",
+	"title": "Dirty river but clean water",
+	"source": "Forecast Quý 2-2025",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Dirty river but clean water",
+		"paragraphs": [
+			"Floods can occur in rivers when the flow rate exceeds the capacity of the river channel, particularly at bends or meanders in the waterway. Floods often cause damage to homes and businesses if they are in the natural flood plains of rivers. While riverine flood damage can be eliminated by moving away from rivers and other bodies of water; people have traditionally lived and worked by rivers because the land is usually flat and fertile and because rivers provide easy travel and access to commerce and industry.",
+			"A. Fire and flood are two of humanity’s worst nightmares. People have, therefore, always sought to control them. Forest fires are snuffed out quickly. The flow of rivers is regulated by weirs and dams. At least, that is how it used to be. But foresters have learned that forests need fires to clear out the brush and even to get seeds to germinate. And a similar revelation is now dawning on hydrologists. Rivers－and the ecosystems they support－need floods. That is why a man-made torrent has been surging down the Grand Canyon.\nBy Thursday March 6th it was running at full throttle, which was expected to be sustained for 60 hours.",
+			"B. Floods once raged through the canyon every year. Spring Snow from as far away as Wyoming would melt and swell the Colorado river to a flow that averaged around 1,500 cubic metres (50,000 cubic feet) a second. Every eight years or so, that figure rose to almost 3,000 cubic metres. These floods infused the river with sediment, carved its beaches and built its sandbars.",
+			"C. However, in the four decades since the building of the Glen Canyon dam, just upstream of the Grand Canyon, the only sediment that it has collected has come from tiny, undammed tributaries. Even that has not been much use as those tributaries are not powerful enough to distribute the sediment in an ecologically valuable way.",
+			"D. This lack of flooding has harmed local wildlife. The humpback chub, for example, thrived in the rust-red waters of the Colorado. Recently, though, its population has crashed. At first sight, it looked as if the reason was that the chub were being eaten by trout introduced for sport fishing in the mid-20th century. But trout and chub co-existed until the Glen Canyon dam was built, so something else is going on. Steve Gloss, of the United States’ Geological Survey (USGS), reckons that the chub’s decline is the result of losing their most valuable natural defense, the Colorado’s rusty sediment. The chub were well adapted to the poor visibility created by the thick, red water which gave the river its name, and depended on it to hide from predators. Without the cloudy water the chub became vulnerable.",
+			"E. And the chub are not alone. In the years since the Glen Canyon dam was built, several species have vanished altogether. These include the Colorado pike-minnow, the razorback sucker and the roundtail chub. Meanwhile, aliens including fathead minnows, channel catfish and common carp, which would have been hard, put to survive in the savage waters of the undammed canyon, have moved in.",
+			"F. So flooding is the obvious answer. Unfortunately, it is easier said than done. Floods were sent down the Grand Canyon in 1996 and 2004 and the results were mixed. In 1996 the flood was allowed to go on too long. To start with, all seemed well. The floodwaters built up sandbanks and infused the river with sediment. Eventually, however, the continued flow washed most of the sediment out of the canyon. This problem was avoided in 2004, but unfortunately, on that occasion, the volume of sand available behind the dam was too low to rebuild the sandbanks. This time, the USGS is convinced that things will be better. The amount of sediment available is three times greater than it was in 2004. So if a flood is going to do some good, this is the time to unleash one.",
+			"G. Even so, it may turn out to be an empty gesture. At less than 1,200 cubic metres a second, this flood is smaller than even an average spring flood, let alone one of the mightier deluges of the past. Those glorious inundations moved massive quantities of sediment through the Grand Canyon, wiping the slate dirty, and making a muddy mess of silt and muck that would make modern river rafters cringe."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-7",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in the Reading Passage?\nIn boxes 1-7 on your answer sheet, write\nTRUE if the statement is true\nFALSE if the statement is false\nNOT GIVEN if the information is not given in the passage",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Damage caused by fire is worse than that caused by flood.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi: Thiệt hại do hỏa hoạn gây ra tệ hơn thiệt hại do lũ lụt.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nfire and flood ~ thuật ngữ giữ nguyên\nworst nightmares ~ damage, worse\n\nBước 3: So sánh và đối chiếu: Bài đọc chỉ rõ \"Lửa và lũ lụt là hai cơn ác mộng tồi tệ nhất của loài người\" (Fire and flood are two of humanity's worst nightmares). => Tuy nhiên, bài đọc không hề đề cập đến việc so sánh mức độ thiệt hại giữa hai loại thảm họa này.\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": ["Fire and flood are two of humanity’s worst nightmares."]
+				},
+				{
+					"number": 2,
+					"text": "The flow in the Colorado river peaks at almost 1500 cubic meters every eight years.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi: Dòng chảy của sông Colorado đạt đỉnh ở mức gần 1500 mét khối mỗi tám năm một lần.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nevery eight years ~ thuật ngữ giữ nguyên\n3,000 cubic metres ~ 1500 cubic meters\nrose to ~ peaks\n\nBước 3: So sánh và đối chiếu: Bài đọc chỉ rõ \"Cứ tám năm một lần, con số này tăng lên gần 3,000 mét khối\"\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Every eight years or so, that figure rose to almost 3,000 cubic metres."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Contribution of sediments delivered by tributaries has little impact.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi: Sự đóng góp của trầm tích từ các phụ lưu có tác động rất ít.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ntributaries ~ thuật ngữ giữ nguyên\nsediment ~ thuật ngữ giữ nguyên\nnot powerful enough ~ little impact\n\nBước 3: So sánh và đối chiếu: Bài đọc chỉ rõ \"Ngay cả điều đó cũng không có nhiều tác dụng vì những phụ lưu này không đủ mạnh để phân phối trầm tích theo cách có giá trị sinh thái\"\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"sự đóng góp của trầm tích từ các phụ lưu có tác động rất ít\".\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Even that has not been much use as those tributaries are not powerful enough to distribute the sediment in an ecologically valuable way."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Decreasing number of chubs is always caused by introducing of trout since mid 20th century.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi: Số lượng cá chub giảm luôn do việc đưa cá hồi vào từ giữa thế kỷ 20.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nchub ~ thuật ngữ giữ nguyên\ntrout ~ thuật ngữ giữ nguyên\npopulation has crashed ~ decreasing number\n\nBước 3: So sánh và đối chiếu: Bài đọc chỉ rõ \"sự suy giảm của cá chub là kết quả của việc mất đi phòng thủ tự nhiên quý giá nhất của chúng, trầm tích đỏ sét của sông Colorado\"\n=> Điều này trái ngược với thông tin trong câu hỏi \"số lượng cá chub giảm luôn do việc đưa cá hồi vào\" (decreasing number of chubs is always caused by introducing of trout).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"At first sight, it looked as if the reason was that the chub were being eaten by trout introduced for sport fishing in the mid-20th century. But trout and chub co-existed until the Glen Canyon dam was built, so something else is going on. Steve Gloss, of the United States’ Geological Survey (USGS), reckons that the chub’s decline is the result of losing their most valuable natural defense, the Colorado’s rusty sediment."
+					]
+				},
+				{
+					"number": 5,
+					"text": "It seemed that the artificial flood in 1996 had achieved success partly at the very beginning.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi: Có vẻ như trận lũ nhân tạo năm 1996 đã đạt được thành công một phần ngay từ đầu.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nartificial flood in 1996 ~ thuật ngữ giữ nguyên\nall seemed well ~ achieved success partly\nto start with ~ at the very beginning\n\nBước 3: So sánh và đối chiếu: Bài đọc chỉ rõ \"Ban đầu, mọi thứ có vẻ tốt đẹp\"\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"trận lũ nhân tạo năm 1996 đã đạt được thành công một phần ngay từ đầu\".\n\nBước 4: Đáp án: TRUE",
+					"quotes": ["To start with, all seemed well."]
+				},
+				{
+					"number": 6,
+					"text": "In fact, the yield of artificial flood water is smaller than an average natural flood at present.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi: Thực tế, lưu lượng nước lũ nhân tạo nhỏ hơn một trận lũ tự nhiên trung bình hiện nay.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n1,200 cubic metres ~ yield of artificial flood water\naverage spring flood ~ average natural flood\n\nBước 3: So sánh và đối chiếu: Bài đọc chỉ rõ \"Với lưu lượng chưa đến 1,200 mét khối mỗi giây, trận lũ này nhỏ hơn cả một trận lũ mùa xuân trung bình\"\n=> Điều này đồng nghĩa với thông tin trong câu hỏi.\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"At less than 1,200 cubic metres a second, this flood is smaller than even an average spring flood, let alone one of the mightier deluges of the past."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Mighty floods drove fast moving flows with clean and high quality water.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi: Những trận lũ lớn đẩy dòng chảy nhanh với nước sạch và chất lượng cao.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nmighty floods ~ glorious inundations\nmuddy mess ~ clean and high quality water\nmassive quantities of sediment ~ fast moving flows\n\nBước 3: So sánh và đối chiếu: Bài đọc chỉ rõ \"Những trận lũ huy hoàng đó di chuyển một lượng lớn trầm tích qua Grand Canyon, làm mờ đi tấm bảng, và tạo ra một mớ hỗn độn bùn và bùn nhão\"\n=> Điều này trái ngược với thông tin trong câu hỏi \"với nước sạch và chất lượng cao\" (with clean and high quality water).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"At less than 1,200 cubic metres a second, this flood is smaller than even an average spring flood, let alone one of the mightier deluges of the past. Those glorious inundations moved massive quantities of sediment through the Grand Canyon, wiping the slate dirty, and making a muddy mess of silt and muck that would make modern river rafters cringe."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-13",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary below. Choose NO MORE THAN TWO WORDS from the passage for each answer. Write your answers in boxes 8-13 on your answer sheet.",
+			"body": "The eco-impact of the Canyon Dam\nFloods are people’s nightmare. In the past, the Grand canyon was raged by flood every year. The snow from far Wyoming would melt in the season of ____ (8) and caused a flood flow peak in Colorado river. In the four decades after people built the Glen Canyon dam, it only could gather ____ (9) together from tiny, undammed tributaries. Then, several species disappeared including Colorado pike-minnow, the ____ (10) and the round-tail chub. Meanwhile, some moved in such as fathead minnows, channel catfish and ____ (11). The non-stopped flow led to the washing away of the sediment out of the canyon, which poses great threat to the chubs because they rely on the poor ____ (12). In addition, the volume of ____ (13) available behind the dam was too low to rebuild the bars and flooding became more serious.",
+			"body_html": "<p><strong>The eco-impact of the Canyon Dam</strong></p><p>Floods are people’s nightmare. In the past, the Grand canyon was raged by flood every year. The snow from far Wyoming would melt in the season of [8] and caused a flood flow peak in Colorado river. In the four decades after people built the Glen Canyon dam, it only could gather [9] together from tiny, undammed tributaries. Then, several species disappeared including Colorado pike-minnow,  the [10] and the round-tail chub. Meanwhile, some moved in such as fathead minnows, channel catfish and [11]. The non-stopped flow led to the washing away of the sediment out of the canyon, which poses great threat to the chubs because they rely on the poor [12]. In addition, the volume of [13] available behind the dam was too low to rebuild the bars and flooding became more serious.</p><p></p>",
+			"questions": [
+				{
+					"number": 8,
+					"text": "",
+					"answer": "spring",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần): Tuyết từ Wyoming tan ra trong mùa ______ và gây ra dòng chảy lũ đạt đỉnh ở sông Colorado.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: season of + NOUN (NOUN làm Object của Preposition 'OF')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nWyoming ~ thuật ngữ giữ nguyên\nSpring Snow ~ season of spring\nColorado river ~ thuật ngữ giữ nguyên\n\nBước 4: So sánh và đối chiếu: Bài đọc chỉ rõ: \"Tuyết mùa xuân từ xa tận Wyoming tan chảy và làm dâng nước sông Colorado lên đến mức trung bình khoảng 1,500 mét khối một giây\"\n\nBước 5: Đáp án: spring",
+					"quotes": [
+						"Spring Snow from as far away as Wyoming would melt and swell the Colorado river to a flow that averaged around 1,500 cubic metres (50,000 cubic feet) a second."
+					]
+				},
+				{
+					"number": 9,
+					"text": "",
+					"answer": "sediment",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần): Sau bốn thập kỷ xây dựng đập Glen Canyon, nó chỉ có thể thu thập _____ từ các phụ lưu nhỏ không có đập.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: gather + NOUN (NOUN làm Object của Transitive verb 'gather')\nBước 3: Tìm các keywords được paraphrase trong bài:\nGlen Canyon dam ~ thuật ngữ giữ nguyên\nsediment ~ thuật ngữ giữ nguyên\nundammed tributaries ~ thuật ngữ giữ nguyên\n\nBước 4: So sánh và đối chiếu: Bài đọc chỉ rõ: \"Chỉ có trầm tích được thu thập từ các phụ lưu nhỏ không có đập\"\n\nBước 5: Đáp án: sediment",
+					"quotes": [
+						"C. However, in the four decades since the building of the Glen Canyon dam, just upstream of the Grand Canyon, the only sediment that it has collected has come from tiny, undammed tributaries."
+					]
+				},
+				{
+					"number": 10,
+					"text": "",
+					"answer": "razorback sucker",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần): Nhiều loài đã biến mất bao gồm cá pike-minnow Colorado, cá _____ và cá chub đuôi tròn.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: the + NOUN (NOUN theo sau Article 'the')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nColorado pike-minnow ~ thuật ngữ giữ nguyên\nrazorback sucker ~ thuật ngữ giữ nguyên\nroundtail chub ~ thuật ngữ giữ nguyên\n\nBước 4: So sánh và đối chiếu: Bài đọc chỉ rõ: \"Những loài biến mất bao gồm cá pike-minnow Colorado, cá razorback sucker và cá chub đuôi tròn\"\n\nBước 5: Đáp án: razorback sucker",
+					"quotes": [
+						"These include the Colorado pike-minnow, the razorback sucker and the roundtail chub."
+					]
+				},
+				{
+					"number": 11,
+					"text": "",
+					"answer": "common carp",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần): Trong khi đó, một số loài đã di chuyển vào như cá minnow đầu to, cá da trơn và cá _____.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: and + NOUN (NOUN theo sau liên từ 'and' trong danh sách liệt kê)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nfathead minnows ~ thuật ngữ giữ nguyên\nchannel catfish ~ thuật ngữ giữ nguyên\ncommon carp ~ thuật ngữ giữ nguyên\n\nBước 4: So sánh và đối chiếu: Bài đọc chỉ rõ: \"Trong khi đó, các loài ngoại lai bao gồm cá minnow đầu to, cá da trơn và cá common carp\"\n\nBước 5: Đáp án: common carp",
+					"quotes": [
+						"Meanwhile, aliens including fathead minnows, channel catfish and common carp, which would have been hard, put to survive in the savage waters of the undammed canyon, have moved in."
+					]
+				},
+				{
+					"number": 12,
+					"text": "",
+					"answer": "visibility",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần): Dòng chảy liên tục dẫn đến việc trầm tích bị cuốn ra khỏi hẻm núi, điều này đe dọa cá chub vì chúng dựa vào độ _____ kém.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu: Loại từ: NOUN Dấu hiệu: poor + NOUN (NOUN được bổ nghĩa bởi tính từ 'poor')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nchub ~ thuật ngữ giữ nguyên\npoor visibility ~ thuật ngữ giữ nguyên\nhide from predators ~ rely on\n\nBước 4: So sánh và đối chiếu: Bài đọc chỉ rõ: \"Cá chub đã thích nghi tốt với độ visibility kém tạo ra bởi nước đỏ đặc, và phụ thuộc vào nó để ẩn nấp khỏi kẻ săn mồi\"\n\nBước 5: Đáp án: visibility",
+					"quotes": [
+						"The chub were well adapted to the poor visibility created by the thick, red water which gave the river its name, and depended on it to hide from predators."
+					]
+				},
+				{
+					"number": 13,
+					"text": "",
+					"answer": "sand",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần): Thêm vào đó, lượng _____ có sẵn phía sau đập quá thấp để tái tạo các bãi cát và lũ lụt trở nên nghiêm trọng hơn.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: volume of + NOUN (NOUN làm Object của Preposition 'of')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nvolume ~ thuật ngữ giữ nguyên\nsand ~ thuật ngữ giữ nguyên\ndam ~ thuật ngữ giữ nguyên\n\nBước 4: So sánh và đối chiếu: Bài đọc chỉ rõ: \"Lượng cát có sẵn phía sau đập quá thấp để tái tạo các bãi cát\"\n\nBước 5: Đáp án: sand",
+					"quotes": [
+						"This problem was avoided in 2004, but unfortunately, on that occasion, the volume of sand available behind the dam was too low to rebuild the sandbanks."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

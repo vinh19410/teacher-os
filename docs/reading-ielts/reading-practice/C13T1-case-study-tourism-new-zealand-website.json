@@ -1,0 +1,180 @@
+{
+	"id": "15f466cc-2e18-4c32-af30-16ea25bb17dc",
+	"url": "https://stepielts.com/student/reading/15f466cc-2e18-4c32-af30-16ea25bb17dc?mode=practice",
+	"title": "Case Study: Tourism New Zealand website",
+	"source": "C13T1",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Case Study: Tourism New Zealand website",
+		"paragraphs": [
+			"New Zealand is a small country of four million inhabitants, a long-haul flight from all the major tourist-generating markets of the world. Tourism currently makes up 9% of the country’s gross domestic product, and is the country’s largest export sector. Unlike other export sectors, which make products and then sell them overseas, tourism brings its customers to New Zealand. The product is the country itself – the people, the places and the experiences. In 1999, Tourism New Zealand launched a campaign to communicate a new brand position to the world. The campaign focused on New Zealand’s scenic beauty, exhilarating outdoor activities and authentic Maori culture, and it made New Zealand one of the strongest national brands in the world.",
+			"A key feature of the campaign was the website www.newzealand.com, which provided potential visitors to New Zealand with a single gateway to everything the destination had to offer. The heart of the website was a database of tourism services operators, both those based in New Zealand and those based abroad which offered tourism service to the country. Any tourism-related business could be listed by filling in a simple form. This meant that even the smallest bed and breakfast address or specialist activity provider could gain a web presence with access to an audience of long-haul visitors. In addition, because participating businesses were able to update the details they gave on a regular basis, the information provided remained accurate. And to maintain and improve standards, Tourism New Zealand organised a scheme whereby organisations appearing on the website underwent an independent evaluation against a set of agreed national standards of quality. As part of this, the effect of each business on the environment was considered.",
+			"To communicate the New Zealand experience, the site also carried features relating to famous people and places.One of the most popular was an interview with former New Zealand All Blacks rugby captain Tana Umaga. Another feature that attracted a lot of attention was an interactive journey through a number of the locations chosen for blockbuster films which had made use of New Zealand’s stunning scenery as a backdrop. As the site developed, additional features were added to help independent travelers devise their own customised itineraries. To make it easier to plan motoring holidays, the site catalogued the most popular driving routes in the country, highlighting different routes according to the season and indicating distances and times.",
+			"Later, a Travel Planner feature was added, which allowed visitors to click and ‘bookmark’ places or attractions they were interested in, and then view the results on a map. The Travel Planner offered suggested routes and public transport options between the chosen locations. There were also links to accommodation in the area.\nBy registering with the website, users could save their Travel Plan and return to it later, or print it out to take on the visit.\nThe website also had a ‘Your Words’ section where anyone could submit a blog of their New Zealand travels for possible inclusion on the website.",
+			"The Tourism New Zealand website won two Webby awards for online achievement and innovation. More importantly perhaps, the growth of tourism to New Zealand was impressive. Overall tourism expenditure increased by an average of 6.9% per year between 1999 and 2004. From Britain, visits to New Zealand grew at an average annual rate of 13% between 2002 and 2006, compared to a rate of 4% overall for British visits abroad.",
+			"The website was set up to allow both individuals and travel organisations to create itineraries and travel packages to suit their own needs and interests. On the website, visitors can search for activities not solely by geographical location, but also by the particular nature of the activity. This is important as research shows that activities are the key driver of visitor satisfaction, contributing 74% to visitor satisfaction, while transport and accommodation account for the remaining 26%. The more activities that visitors undertake, the more satisfied they will be. It has also been found that visitors enjoy cultural activities most when they are interactive, such as visiting a marae (meeting ground) to learn about traditional Maori life. Many long-haul travelers enjoy such learning experiences, which provide them with stories to take home to their friends and family. In addition, it appears that visitors to New Zealand don’t want to be ‘one of the crowd’ and find activities that involve only a few people more special and meaningful.",
+			"It could be argued that New Zealand is not a typical destination. New Zealand is a small country with a visitor economy composed mainly of small businesses. It is generally perceived as a safe English-speaking country with a reliable transport infrastructure. Because of the long-haul flight, most visitors stay for longer (average 20 days) and want to see as much of the country as possible on what is often seen as a once-in-a-lifetime visit. However, the underlying lessons apply anywhere – the effectiveness of a strong brand, a strategy based on unique experiences and a comprehensive and user-friendly website."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-7",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the table below. Choose ONE WORD ONLY from the passage for each answer. Write your answers in boxes 1-7 on your answer sheet.",
+			"body": "Section of website\nComments\nDatabase of tourism services\n• easy for tourism-related businesses to get on the list\n• allowed businesses to ____ (1) information regularly\n• provided a country-wide evaluation of businesses, including their impact on the ____ (2).\nSpecial features on local topics\n• e.g. an interview with a former sports ____ (3), and an interactive tour of various locations used in ____ (4).\nInformation on driving routes\n• varied depending on the ____ (5).\nTravel Planner\n• included a map showing selected places, details of public transport and local ____ (6).\n‘Your Words’\n• travelers could send a link to their ____ (7).",
+			"body_table": [
+				["Section of website", "Comments"],
+				[
+					"Database of tourism services",
+					"• easy for tourism-related businesses to get on the list\n• allowed businesses to ____ (1) information regularly\n• provided a country-wide evaluation of businesses, including their impact on the ____ (2)."
+				],
+				[
+					"Special features on local topics",
+					"• e.g. an interview with a former sports ____ (3), and an interactive tour of various locations used in ____ (4)."
+				],
+				[
+					"Information on driving routes",
+					"• varied depending on the ____ (5)."
+				],
+				[
+					"Travel Planner",
+					"• included a map showing selected places, details of public transport and local ____ (6)."
+				],
+				["‘Your Words’", "• travelers could send a link to their ____ (7)."]
+			],
+			"body_html": "<table><tbody><tr><td><strong>Section of website</strong></td><td><strong>Comments</strong></td></tr><tr><td><p>Database of tourism services</p></td><td><p>•   easy for tourism-related businesses to get on the list</p><p>•   allowed businesses to [1] information regularly</p><p>•   provided a country-wide evaluation of businesses, including their impact on the [2].</p></td></tr><tr><td>Special features on local topics</td><td>•   e.g. an interview with a former sports [3], and an interactive tour of various locations used in [4].</td></tr><tr><td>Information on driving routes</td><td>•   varied depending on the [5].</td></tr><tr><td>Travel Planner</td><td>•   included a map showing selected places, details of public transport and local [6].</td></tr><tr><td>‘Your Words’</td><td>•   travelers could send a link to their [7].</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "• allowed businesses to ____ (1) information regularly",
+					"answer": "update",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\n(Database of tourism services) cho phép các doanh nghiệp ______ thông tin thường xuyên.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: VERB\nDấu hiệu: to + VERB (VERB trong công thức động từ 'ALLOW + O + TO V')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nThe details ~ information\nOn a regular basis ~ regularly\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Vì các doanh nghiệp tham gia có thể cập nhật các chi tiết họ cung cấp một cách thường xuyên, thông tin được cung cấp vẫn chính xác\"\n(In addition, because participating businesses were able to update the details they gave on a regular basis, the information provided remained accurate).\n\nBước 5: Đáp án: update\n(Database of tourism services) cho phép các doanh nghiệp cập nhật thông tin thường xuyên (This allowed businesses to update information regularly).",
+					"quotes": [
+						"In addition, because participating businesses were able to update the details they gave on a regular basis, the information provided remained accurate."
+					]
+				},
+				{
+					"number": 2,
+					"text": "• provided a country-wide evaluation of businesses, including their impact on the ____ (2).",
+					"answer": "environment",
+					"quotes": [
+						"And to maintain and improve standards, Tourism New Zealand organised a scheme whereby organisations appearing on the website underwent an independent evaluation against a set of agreed national standards of quality. As part of this, the effect of each business on the environment was considered."
+					]
+				},
+				{
+					"number": 3,
+					"text": "• e.g. an interview with a former sports ____ (3), and an interactive tour of various locations used in ____ (4).",
+					"answer": "captain",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nVí dụ: một cuộc phỏng vấn với một cựu_____thể thao.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: former + NOUN (NOUN được bổ nghĩa bởi Adjective 'FORMER')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nIndependent evaluation against a set of agreed national standards ~ country-wide evaluation\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Một trong những phần phổ biến nhất là một cuộc phỏng vấn với cựu đội trưởng đội bóng bầu dục All Blacks New Zealand, Tana Umaga\"\n(One of the most popular was an interview with former New Zealand All Blacks rugby captain Tana Umaga).\n\nBước 5: Đáp án: captain\nVí dụ: một cuộc phỏng vấn với một cựu đội trưởng thể thao (e.g. an interview with a former sports captain).",
+					"quotes": [
+						"To communicate the New Zealand experience, the site also carried features relating to famous people and places.One of the most popular was an interview with former New Zealand All Blacks rugby captain Tana Umaga."
+					]
+				},
+				{
+					"number": 4,
+					"text": "• e.g. an interview with a former sports ____ (3), and an interactive tour of various locations used in ____ (4).",
+					"answer": "films",
+					"quotes": [
+						"Another feature that attracted a lot of attention was an interactive journey through a number of the locations chosen for blockbuster films which had made use of New Zealand’s stunning scenery as a backdrop."
+					]
+				},
+				{
+					"number": 5,
+					"text": "• varied depending on the ____ (5).",
+					"answer": "season",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nThay đổi tùy thuộc theo _____.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: depending on the + NOUN (NOUN làm Object của Preposition 'ON')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nHighlighting different routes ~ varied\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Để giúp việc lập kế hoạch cho các kỳ nghỉ lái xe dễ dàng hơn, trang web đã phân loại các tuyến đường lái xe phổ biến nhất trong nước, làm nổi bật các tuyến đường khác nhau theo mùa và chỉ ra khoảng cách và thời gian\"\n(To make it easier to plan motoring holidays, the site catalogued the most popular driving routes in the country, highlighting different routes according to the season and indicating distances and times).\n\nBước 5: Đáp án: season\nThay đổi tùy thuộc theo mùa (varied depending on the season).",
+					"quotes": [
+						"To make it easier to plan motoring holidays, the site catalogued the most popular driving routes in the country, highlighting different routes according to the season and indicating distances and times."
+					]
+				},
+				{
+					"number": 6,
+					"text": "• included a map showing selected places, details of public transport and local ____ (6).",
+					"answer": "accommodation",
+					"quotes": [
+						"The Travel Planner offered suggested routes and public transport options between the chosen locations. There were also links to accommodation in the area."
+					]
+				},
+				{
+					"number": 7,
+					"text": "• travelers could send a link to their ____ (7).",
+					"answer": "blog",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nDu khách có thể gửi một liên kết đến _____ của họ.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: ltheir + NOUN (NOUN theo sau Possessive Adjective 'THEIR')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nSubmit ~ send a link\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Trang web cũng có một phần 'Your Words' nơi bất kỳ ai cũng có thể gửi một bài blog về chuyến du lịch New Zealand của họ để có thể được đưa vào trang web\"\n(The website also had a 'Your Words' section where anyone could submit a blog of their New Zealand travels for possible inclusion on the website).\n\nBước 5: Đáp án: blog\nDu khách có thể gửi một liên kết đến bài blog của họ (travelers could send a link to their blog).",
+					"quotes": [
+						"The website also had a ‘Your Words’ section where anyone could submit a blog of their New Zealand travels for possible inclusion on the website."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-13",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 1?\nIn boxes 8 - 13 on your answer sheet, write\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 8,
+					"text": "The website www.newzealand.com aimed to provide ready-made itineraries and packages for travel companies and individual tourists.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTrang web www.newzealand.com được tạo ra nhằm mục đích cung cấp các lịch trình và gói du lịch có sẵn cho các công ty du lịch và du khách cá nhân.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nWebsite ~ www.newzealand.com\nCreate itineraries and travel packages ~ aimed to provide ready-made itineraries and packages\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Trang web được thiết lập để cho phép cả cá nhân và tổ chức du lịch tạo ra các lịch trình và gói du lịch phù hợp với nhu cầu và sở thích riêng của họ\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"nhằm mục đích cung cấp các lịch trình và gói du lịch có sẵn\" (aimed to provide ready-made itineraries and packages).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"The website was set up to allow both individuals and travel organisations to create itineraries and travel packages to suit their own needs and interests."
+					]
+				},
+				{
+					"number": 9,
+					"text": "It was found that most visitors started searching on the website by geographical location.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNgười ta nhận thấy rằng hầu hết du khách bắt đầu tìm kiếm trên trang web theo vị trí địa lý.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nVisitors can search ~ most visitors started searching\nGeographical location ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Trên trang web, du khách có thể tìm kiếm các hoạt động không chỉ theo vị trí địa lý, mà còn theo bản chất cụ thể của hoạt động\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"hầu hết du khách bắt đầu tìm kiếm theo vị trí địa lý\" (most visitors started searching by geographical location).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"On the website, visitors can search for activities not solely by geographical location, but also by the particular nature of the activity."
+					]
+				},
+				{
+					"number": 10,
+					"text": "According to research, 26% of visitor satisfaction is related to their accommodation",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTheo nghiên cứu, 26% sự hài lòng của du khách liên quan đến chỗ ở của họ.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n26% ~ từ khóa giữ nguyên\nVisitor satisfaction ~ từ khóa giữ nguyên\nAccommodation ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Điều này quan trọng vì nghiên cứu cho thấy các hoạt động là yếu tố chính thúc đẩy sự hài lòng của du khách, đóng góp 74% vào sự hài lòng, trong khi phương tiện di chuyển và chỗ ở chiếm 26% còn lại\"\n=> Điều này trái ngược với thông tin trong câu hỏi \"26% sự hài lòng của du khách liên quan đến chỗ ở của họ\" (26% of visitor satisfaction is related to their accommodation), vì 26% bao gồm cả phương tiện di chuyển và chỗ ở, không chỉ riêng chỗ ở.\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"This is important as research shows that activities are the key driver of visitor satisfaction, contributing 74% to visitor satisfaction, while transport and accommodation account for the remaining 26%."
+					]
+				},
+				{
+					"number": 11,
+					"text": "Visitors to New Zealand like to become involved in the local culture",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nDu khách đến New Zealand thích tham gia vào văn hóa địa phương.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nVisitors to New Zealand ~ từ khóa giữ nguyên\nVisitor satisfaction ~ từ khóa giữ nguyên\nAccommodation ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Người ta cũng phát hiện ra rằng du khách thích các hoạt động văn hóa nhất khi chúng mang tính tương tác, chẳng hạn như thăm marae (nơi tụ họp) để tìm hiểu về cuộc sống truyền thống của người Maori\"\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Du khách đến New Zealand thích tham gia vào văn hóa địa phương\" (Visitors to New Zealand like to become involved in the local culture).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"It has also been found that visitors enjoy cultural activities most when they are interactive, such as visiting a marae (meeting ground) to learn about traditional Maori life."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Visitors like staying in small hotels in New Zealand rather than in larger ones",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nDu khách thích ở tại các khách sạn nhỏ ở New Zealand hơn là ở các khách sạn lớn.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nActivities that involve only a few people ~ staying in small hotels\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Du khách đến New Zealand không muốn là 'một trong đám đông' và thấy các hoạt động chỉ có vài người tham gia là đặc biệt và có ý nghĩa hơn\"\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"du khách thích ở tại các khách sạn nhỏ hơn là ở các khách sạn lớn\" (Visitors like staying in small hotels rather than in larger ones).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"In addition, it appears that visitors to New Zealand don’t want to be ‘one of the crowd’ and find activities that involve only a few people more special and meaningful."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Many visitors feel it is unlikely that they will return to New Zealand after their visit",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhiều du khách cảm thấy khó có khả năng họ sẽ quay trở lại New Zealand sau chuyến thăm của mình.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nOnce-in-a-lifetime visit ~ unlikely that they will return\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Hầu hết du khách ở lại lâu hơn (trung bình 20 ngày) và muốn xem càng nhiều nơi của đất nước càng tốt trong chuyến đi thường được xem là 'một lần trong đời'\"\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Nhiều du khách cảm thấy khó có khả năng họ sẽ quay trở lại New Zealand sau chuyến thăm của mình\" (Many visitors feel it is unlikely that they will return to New Zealand after their visit).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Because of the long-haul flight, most visitors stay for longer (average 20 days) and want to see as much of the country as possible on what is often seen as a once-in-a-lifetime visit."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

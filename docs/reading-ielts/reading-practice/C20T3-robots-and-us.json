@@ -1,0 +1,284 @@
+{
+	"id": "bd5bae37-579a-43ff-936d-404ca273a740",
+	"url": "https://stepielts.com/student/reading/bd5bae37-579a-43ff-936d-404ca273a740?mode=practice",
+	"title": "Robots and us",
+	"source": "C20T3",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "27-40",
+	"passage": {
+		"title": "Robots and us",
+		"subtitle": "Three leaders in their fields answer questions about our relationships with robot",
+		"paragraphs": [
+			"When asked ’Should robots be used to colonise other planets?’, cosmology and astrophysics Professor Martin Rees said he believed the solar system would be mapped by robotic craft by the end of the century.’The next step would be mining of asteroids, enabling fabrication of large structures in space without having to bring all the raw materials from Earth.... I think this is more realistic and benign than the ... \"terraforming\"* of planets.’ He maintains that colonised planets ’should be preserved with a status that is analogous to Antarctica here on Earth.’",
+			"On the question of using robots to colonise other planets and exploit mineral resources, engineering Professor Daniel Wolpert replied, ’I don’t see a pressing need to colonise other planets unless we can bring these resources back to Earth. The vast majority of Earth is currently inaccessible to us. Using robots to gather resources nearer to home would seem to be a better use of our robotic tools.’Meanwhile, for anthropology Professor Kathleen Richardson, the idea of ’colonisation’ of other planets seemed morally dubious: I think whether we do something on Earth or on Mars we should always do it in the spirit of a genuine interest in \"the Other\", not to impose a particular model, but to meet \"the Other\".’",
+			"In response to the second question, ’How soon will machine intelligence outstrip human intelligence?’, Rees mentions robots that are advanced enough to beat humans at chess, but then goes on to say, ’Robots are still limited in their ability to sense their environment: they can’t yet recognise and move the pieces on a real chessboard as cleverly as a child can. Later this century, however, their more advanced successors may relate to their surroundings, and to people, as adeptly as we do. Moral questions then arise.... Should we feel guilty about exploiting sophisticated robots? Should we fret if they are underemployed, frustrated, or bored?’",
+			"Wolpert’s response to the question about machine intelligence outstripping human intelligence was this: ’In a limited sense it already has. Machines can already navigate, remember and search for items with an ability that far outstrips humans. However, there is no machine that can identify visual objects or speech with the reliability and flexibility of humans.... Expecting a machine close to the creative intelligence of a human within the next 50 years would be highly ambitious.’",
+			"Richardson believes that our fear of machines becoming too advanced has more to do with human nature than anything intrinsic to the machines themselves. In her view, it stems from humans’ tendency to personify inanimate objects: we create machines based on representations of ourselves, imagine that machines think and behave as we do, and therefore see them as an autonomous threat.’One of the consequences of thinking that the problem lies with machines is that ... we tend to imagine they are greater and more powerful than they really are and subsequently they become so.’",
+			"This led on to the third question, ’Should we be scared by advances in artificial intelligence?’ To this question, Rees replied, ’Those who should be worried are the futurologists who believe in the so-called \"singularity\". ** ... And another worry is that we are increasingly dependent on computer networks, and that these could behave like a single \"brain\" with a mind of its own, and with goals that may be contrary to human welfare. I think we should ensure that robots remain as no more than \"idiot savants\" lacking the capacity to outwit us, even though they may greatly surpass us in the ability to calculate and process information.’",
+			"Wolpert’s response was to say that we have already seen the damaging effects of artificial intelligence in the form of computer viruses.’But in this case,’ he says, ’the real intelligence is the malicious designer. Critically, the benefits of computers outweigh the damage that computer viruses cause. Similarly, while there may be misuses of robotics in the near future, the benefits that they will bring are likely to outweigh these negative aspects.’",
+			"Richardson’s response to this question was this: ’We need to ask why fears of artificial intelligence and robots persist; none have in fact risen up and challenged human supremacy.’ She believes that as robots have never shown themselves to be a threat to humans, it seems unlikely that they ever will. In fact, she went on, ’Not all fear robots; many people welcome machine intelligence.’In answer to the fourth question, ’What can science fiction tell us about robotics?’, Rees replied, ’I sometimes advise students that it’s better to read first-rate science fiction than second-rate science – more stimulating, and perhaps no more likely to be wrong.’",
+			"As his response, Wolpert commented, ’Science fiction has often been remarkable at predicting the future.... Science fiction has painted a vivid spectrum of possible futures, from cute and helpful robots to dystopian robotic societies. Interestingly, almost no science fiction envisages a future without robots.’",
+			"Finally, on the question of science fiction, Richardson pointed out that in modern society, people tend to think there is reality on the one hand, and fiction and fantasy on the other. She then explained that the division did not always exist, and that scientists and technologists made this separation because they wanted to carve out the sphere of their work.’But the divide is not so clear cut, and that is why the worlds seem to collide at times,’ she said.’In some cases, we need to bring these different understandings together to get a whole perspective. Perhaps then, we won’t be so frightened that something we create as a copy of ourselves will be a threat to us.’",
+			"* terraforming: modifying a planet’s atmosphere to suit human needs** singularity: the point when robots will be able to start creating ever more sophisticated versions of themselves"
+		]
+	},
+	"question_groups": [
+		{
+			"range": "27-33",
+			"type": "MATCHING_FEATURES",
+			"instructions": "Look at the following statements and the list of experts below.\nMatch each statement with the correct expert, A, B or C.\nNB You may use any letter more than once.",
+			"options": [
+				{
+					"label": "A",
+					"text": "Martin Rees"
+				},
+				{
+					"label": "B",
+					"text": "Daniel Wolpert"
+				},
+				{
+					"label": "C",
+					"text": "Kathleen Richardson"
+				}
+			],
+			"body": "For our own safety, humans will need to restrict the abilities of robots. ____ (27)\nThe risk of robots harming us is less serious than humans believe it to be. ____ (28)\nIt will take many decades for robot intelligence to be as imaginative as human intelligence. ____ (29)\nWe may have to start considering whether we are treating robots fairly. ____ (30)\nRobots are probably of more help to us on Earth than in space. ____ (31)\nThe ideas in high-quality science fiction may prove to be just as accurate as those found in the work of mediocre scientists. ____ (32)\nThere are those who look forward to robots developing greater intelligence. ____ (33)",
+			"body_html": "<p>For our own safety, humans will need to restrict the abilities of robots. [27]</p><p> The risk of robots harming us is less serious than humans believe it to be. [28]</p><p>It will take many decades for robot intelligence to be as imaginative as human intelligence. [29]</p><p>We may have to start considering whether we are treating robots fairly. [30]</p><p>Robots are probably of more help to us on Earth than in space. [31]</p><p>The ideas in high-quality science fiction may prove to be just as accurate as those found in the work of mediocre scientists. [32]</p><p>There are those who look forward to robots developing greater intelligence. [33]</p>",
+			"questions": [
+				{
+					"number": 27,
+					"text": "For our own safety, humans will need to restrict the abilities of robots.",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi\nĐề hỏi ai là người đưa ra ý kiến này: \"Vì sự an toàn của chính chúng ta, con người sẽ cần phải hạn chế khả năng của robot.\"\nBước 2: Tìm các keywords được paraphrase trong bài\nFor our own safety ~ lacking the capacity to outwit us\nhumans will need to restrict the abilities of robots ~ we should ensure that robots remain as no more than \"idiot savants\"\nBước 3: So sánh và đối chiếu\nBài đọc chỉ rõ đoạn trích liên quan đến Martin Rees: \"Tôi nghĩ chúng ta nên đảm bảo rằng robot vẫn không hơn gì những 'kẻ ngốc uyên bác' thiếu khả năng qua mặt chúng ta, mặc dù chúng có thể vượt xa chúng ta về khả năng tính toán và xử lý thông tin.\"\nBước 4: Đáp án: A",
+					"quotes": [
+						"I think we should ensure that robots remain as no more than \"idiot savants\" lacking the capacity to outwit us, even though they may greatly surpass us in the ability to calculate and process information.’"
+					]
+				},
+				{
+					"number": 28,
+					"text": "The risk of robots harming us is less serious than humans believe it to be.",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi\nĐề hỏi ai là người đưa ra ý kiến này: \"Nguy cơ robot làm hại chúng ta ít nghiêm trọng hơn những gì con người tin.\"\nBước 2: Tìm các keywords được paraphrase trong bài\nThe risk of robots harming us is less serious ~ Not all fear [robots]\nthan humans believe it to be ~ many people welcome machine intelligence\nBước 3: So sánh và đối chiếu\nBài đọc chỉ rõ đoạn trích liên quan đến Kathleen Richardson: \"'Không phải ai cũng sợ [robot]; nhiều người chào đón trí tuệ máy móc.'\" Điều này ngụ ý rằng nỗi sợ hãi không phổ biến như người ta tưởng và do đó, nguy cơ có thể ít nghiêm trọng hơn.\nBước 4: Đáp án: C",
+					"quotes": [
+						"In fact, she went on, ’Not all fear robots; many people welcome machine intelligence."
+					]
+				},
+				{
+					"number": 29,
+					"text": "It will take many decades for robot intelligence to be as imaginative as human intelligence.",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi\nĐề hỏi ai là người đưa ra ý kiến này: \"Sẽ mất nhiều thập kỷ để trí tuệ robot có thể sáng tạo như trí tuệ con người.\"\nBước 2: Tìm các keywords được paraphrase trong bài\nIt will take many decades ~ within the next 50 years would be highly ambitious\nrobot intelligence to be as imaginative as human intelligence ~ Expecting a machine close to the creative intelligence of a human\nBước 3: So sánh và đối chiếu\nBài đọc chỉ rõ đoạn trích liên quan đến Daniel Wolpert: \"Mong đợi một cỗ máy gần với trí tuệ sáng tạo của con người trong vòng 50 năm tới sẽ là rất tham vọng.\"\nBước 4: Đáp án: B",
+					"quotes": [
+						"Expecting a machine close to the creative intelligence of a human within the next 50 years would be highly ambitious.’"
+					]
+				},
+				{
+					"number": 30,
+					"text": "We may have to start considering whether we are treating robots fairly.",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi\nĐề hỏi ai là người đưa ra ý kiến này: \"Chúng ta có thể phải bắt đầu xem xét liệu chúng ta có đang đối xử công bằng với robot hay không.\"\nBước 2: Tìm các keywords được paraphrase trong bài\nWe may have to start considering ~ Moral questions then arise\nwhether we are treating robots fairly ~ Should we feel guilty about exploiting [sophisticated robots]? Should we fret if they are underemployed, frustrated, or bored?\nBước 3: So sánh và đối chiếu\nBài đọc chỉ rõ đoạn trích liên quan đến Martin Rees: \"Những câu hỏi về đạo đức sau đó nảy sinh. ... Chúng ta có nên cảm thấy tội lỗi về việc khai thác [những con robot tinh vi]? Chúng ta có nên lo lắng nếu chúng bị thiếu việc làm, thất vọng, hoặc buồn chán không?\"\nBước 4: Đáp án: A",
+					"quotes": [
+						"Moral questions then arise. ... Should we feel guilty about exploiting sophisticated robots? Should we fret if they are underemployed, frustrated, or bored?’"
+					]
+				},
+				{
+					"number": 31,
+					"text": "Robots are probably of more help to us on Earth than in space.",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi\nĐề hỏi ai là người đưa ra ý kiến này: \"Robot có lẽ hữu ích hơn đối với chúng ta trên Trái Đất hơn là trong không gian.\"\nBước 2: Tìm các keywords được paraphrase trong bài\nmore help to us on Earth ~ a better use of our robotic tools\nthan in space ~ (so sánh với việc) colonise other planets\nBước 3: So sánh và đối chiếu\nBài đọc chỉ rõ đoạn trích liên quan đến Daniel Wolpert: \"Sử dụng robot để thu thập tài nguyên gần nhà hơn dường như là một cách sử dụng tốt hơn các công cụ robot của chúng ta.\" (so sánh với việc thuộc địa hóa các hành tinh khác).\nBước 4: Đáp án: B",
+					"quotes": [
+						"Using robots to gather resources nearer to home would seem to be a better use of our robotic tools."
+					]
+				},
+				{
+					"number": 32,
+					"text": "The ideas in high-quality science fiction may prove to be just as accurate as those found in the work of mediocre scientists.",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi\nĐề hỏi ai là người đưa ra ý kiến này: \"Những ý tưởng trong khoa học viễn tưởng chất lượng cao có thể chứng tỏ là chính xác như những ý tưởng được tìm thấy trong công trình của các nhà khoa học tầm thường.\"\nBước 2: Tìm các keywords được paraphrase trong bài\nThe ideas in high-quality science fiction ~ first-rate science fiction\nmay prove to be just as accurate as ~ perhaps no more likely to be wrong\nthose found in the work of mediocre scientists ~ than second-rate science\nBước 3: So sánh và đối chiếu\nBài đọc chỉ rõ đoạn trích liên quan đến Martin Rees: 'Tôi đôi khi khuyên sinh viên rằng tốt hơn là đọc khoa học viễn tưởng hạng nhất hơn là khoa học hạng hai - kích thích hơn, và có lẽ không có khả năng sai nhiều hơn.'\nBước 4: Đáp án: A",
+					"quotes": [
+						"’, Rees replied, ’I sometimes advise students that it’s better to read first-rate science fiction than second-rate science – more stimulating, and perhaps no more likely to be wrong.’"
+					]
+				},
+				{
+					"number": 33,
+					"text": "There are those who look forward to robots developing greater intelligence.",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi\nĐề hỏi ai là người đưa ra ý kiến này: \"Có những người mong chờ robot phát triển trí tuệ cao hơn.\"\nBước 2: Tìm các keywords được paraphrase trong bài\nThere are those who look forward to ~ many people welcome\nrobots developing greater intelligence ~ machine intelligence\nBước 3: So sánh và đối chiếu\nBài đọc chỉ rõ đoạn trích liên quan đến Kathleen Richardson: \"'Không phải ai cũng sợ robot; nhiều người chào đón trí tuệ máy móc.'\"\nBước 4: Đáp án: C",
+					"quotes": [
+						"In fact, she went on, ’Not all fear robots; many people welcome machine intelligence."
+					]
+				}
+			]
+		},
+		{
+			"range": "34-36",
+			"type": "MATCHING_ENDINGS",
+			"instructions": "Complete each sentence with the correct ending, A-D, below.",
+			"options": [
+				{
+					"label": "A",
+					"text": "robots to explore outer space."
+				},
+				{
+					"label": "B",
+					"text": "advances made in machine intelligence so far."
+				},
+				{
+					"label": "C",
+					"text": "changes made to other planets for our own benefit."
+				},
+				{
+					"label": "D",
+					"text": "the harm already done by artificial intelligence."
+				}
+			],
+			"body": "Richardson and Rees express similar views regarding the ethical aspect of ____ (34)\nRees and Wolpert share an opinion about the extent of ____ (35)\nWolpert disagrees with Richardson on the question of ____ (36)",
+			"body_html": "<p>Richardson and Rees express similar views regarding the ethical aspect of [34]</p><p>Rees and Wolpert share an opinion about the extent of [35]</p><p>Wolpert disagrees with Richardson on the question of [36]</p>",
+			"questions": [
+				{
+					"number": 34,
+					"text": "Richardson and Rees express similar views regarding the ethical aspect of",
+					"answer": "C",
+					"quotes": [
+						"I think this is more realistic and benign than the ... \"terraforming\"* of planets.’ He maintains that colonised planets ’should be preserved with a status that is analogous to Antarctica here on Earth.’",
+						"’Meanwhile, for anthropology Professor Kathleen Richardson, the idea of ’colonisation’ of other planets seemed morally dubious: I think whether we do something on Earth or on Mars we should always do it in the spirit of a genuine interest in \"the Other\", not to impose a particular model, but to meet \"the Other\".’"
+					]
+				},
+				{
+					"number": 35,
+					"text": "Rees and Wolpert share an opinion about the extent of",
+					"answer": "B",
+					"quotes": [
+						"’, Rees mentions robots that are advanced enough to beat humans at chess, but then goes on to say, ’Robots are still limited in their ability to sense their environment: they can’t yet recognise and move the pieces on a real chessboard as cleverly as a child can.",
+						"Wolpert’s response to the question about machine intelligence outstripping human intelligence was this: ’In a limited sense it already has. Machines can already navigate, remember and search for items with an ability that far outstrips humans."
+					]
+				},
+				{
+					"number": 36,
+					"text": "Wolpert disagrees with Richardson on the question of",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi\nPhần thông tin (Wolpert không đồng ý với Richardson về câu hỏi...) sẽ phù hợp với ý nào?\nBước 2: Tìm các keywords được paraphrase trong bài\nwe have already seen the damaging effects of artificial intelligence in the form of computer viruses ~ Wolpert's view on AI harm\nnone have in fact risen up and challenged human supremacy ~ Richardson's view on AI harm\ndisagrees on the question of ~ one sees existing damage, the other sees no historical threat\nBước 3: So sánh và đối chiếu\nBài đọc chỉ rõ khi được hỏi về nỗi sợ AI, Wolpert nói rằng \"chúng ta đã thấy những tác động gây hại của trí tuệ nhân tạo dưới dạng virus máy tính.\" Ngược lại, Richardson trả lời rằng \"trên thực tế chưa có con robot nào nổi dậy và thách thức sự thống trị của con người.\"\n=> Thông tin được in đậm cho thấy Wolpert tin rằng AI đã gây ra tác hại, trong khi Richardson tin rằng chưa có tác hại nào xảy ra. Điều này đồng nghĩa với đáp án D (tác hại đã gây ra bởi trí tuệ nhân tạo).\nBước 4: Đáp án: D",
+					"quotes": [
+						"Wolpert’s response was to say that we have already seen the damaging effects of artificial intelligence in the form of computer viruses. ’But in this case,’ he says, ’the real intelligence is the malicious designer.",
+						"Richardson’s response to this question was this: ’We need to ask why fears of artificial intelligence and robots persist; none have in fact risen up and challenged human supremacy.’"
+					]
+				}
+			]
+		},
+		{
+			"range": "37-40",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 37,
+					"text": "What point does Richardson make about fear of machines?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It has grown alongside the development of ever more advanced robots."
+						},
+						{
+							"label": "B",
+							"text": "It is the result of our inclination to attribute human characteristics to non-human entities."
+						},
+						{
+							"label": "C",
+							"text": "It has its origins in basic misunderstandings about how inanimate objects function."
+						},
+						{
+							"label": "D",
+							"text": "It demonstrates a key difference between human intelligence and machine intelligence."
+						}
+					],
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi\nRichardson đưa ra quan điểm gì về nỗi sợ máy móc?\nBước 2: Tìm thông tin dựa trên keywords\nBài đọc chỉ rõ \"Theo quan điểm của bà, nó xuất phát từ xu hướng nhân cách hóa các vật vô tri của con người: chúng ta tạo ra máy móc dựa trên sự mô phỏng chính chúng ta, tưởng tượng rằng máy móc suy nghĩ và hành xử như chúng ta, và do đó xem chúng như một mối đe dọa tự trị.\"\n=> Thông tin được in đậm đồng nghĩa với câu B (Đó là kết quả của khuynh hướng gán đặc điểm của con người cho các thực thể không phải con người).\nBước 3: Đáp án: B\nBước 4: Giải thích đáp án gây nhiễu\nĐáp án A -> Đoạn văn không nói rằng nỗi sợ hãi đã tăng lên cùng với sự phát triển của robot.\nĐáp án C -> Đoạn văn nói về xu hướng tâm lý (nhân cách hóa), chứ không phải sự hiểu lầm về cách hoạt động của vật thể.\nĐáp án D -> Richardson không so sánh trí tuệ con người và máy móc ở đây; bà đang giải thích nguồn gốc của nỗi sợ.",
+					"quotes": [
+						"In her view, it stems from humans’ tendency to personify inanimate objects: we create machines based on representations of ourselves, imagine that machines think and behave as we do, and therefore see them as an autonomous threat."
+					]
+				},
+				{
+					"number": 38,
+					"text": "What potential advance does Rees see as a cause for concern?",
+					"options": [
+						{
+							"label": "A",
+							"text": "robots outnumbering people"
+						},
+						{
+							"label": "B",
+							"text": "robots having abilities which humans do not"
+						},
+						{
+							"label": "C",
+							"text": "artificial intelligence developing independent thought"
+						},
+						{
+							"label": "D",
+							"text": "artificial intelligence taking over every aspect of our lives"
+						}
+					],
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi\nRees coi tiến bộ tiềm năng nào là một nguyên nhân đáng lo ngại?\nBước 2: Tìm thông tin dựa trên keywords\nBài đọc chỉ rõ \"'...Và một mối lo ngại khác là chúng ta ngày càng phụ thuộc vào các mạng máy tính, và rằng những mạng này có thể hoạt động như một \"bộ não\" duy nhất với một tâm trí của riêng nó, và với những mục tiêu có thể trái với phúc lợi của con người.'\"\n=> Thông tin được in đậm đồng nghĩa với câu C (Trí tuệ nhân tạo phát triển tư duy độc lập).\nBước 3: Đáp án: C\nBước 4: Giải thích đáp án gây nhiễu\nĐáp án A -> Đoạn văn không đề cập đến việc robot đông hơn người.\nĐáp án B -> Rees thừa nhận robot có những khả năng vượt trội (tính toán) nhưng điều ông lo ngại là chúng có \"tâm trí riêng\".\nĐáp án D -> Mặc dù là một mối lo ngại, nhưng đoạn văn không nói rằng AI sẽ tiếp quản \"mọi khía cạnh\" của cuộc sống chúng ta, mà là nó có thể có những mục tiêu trái ngược.",
+					"quotes": [
+						"** ... And another worry is that we are increasingly dependent on computer networks, and that these could behave like a single \"brain\" with a mind of its own, and with goals that may be contrary to human welfare."
+					]
+				},
+				{
+					"number": 39,
+					"text": "What does Wolpert emphasise in his response to the question about science fiction?",
+					"options": [
+						{
+							"label": "A",
+							"text": "how science fiction influences our attitudes to robots"
+						},
+						{
+							"label": "B",
+							"text": "how fundamental robots are to the science fiction genre"
+						},
+						{
+							"label": "C",
+							"text": "how the image of robots in science fiction has changed over time"
+						},
+						{
+							"label": "D",
+							"text": "how reactions to similar portrayals of robots in science fiction may vary"
+						}
+					],
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi\nWolpert nhấn mạnh điều gì trong câu trả lời của mình về khoa học viễn tưởng?\nBước 2: Tìm thông tin dựa trên keywords\nBài đọc chỉ rõ \"'Điều thú vị là, hầu như không có tác phẩm khoa học viễn tưởng nào hình dung ra một tương lai không có robot.'\"\n=> Thông tin được in đậm đồng nghĩa với câu B (Robot cơ bản và quan trọng như thế nào đối với thể loại khoa học viễn tưởng).\nBước 3: Đáp án: B\nBước 4: Giải thích đáp án gây nhiễu\nĐáp án A, C, D -> Wolpert không bình luận về việc khoa học viễn tưởng ảnh hưởng đến thái độ, hình ảnh robot đã thay đổi như thế nào, hay phản ứng của mọi người đối với những miêu tả đó. Ông chỉ nhấn mạnh sự hiện diện gần như không thể thiếu của robot trong thể loại này.",
+					"quotes": [
+						"Interestingly, almost no science fiction envisages a future without robots.’"
+					]
+				},
+				{
+					"number": 40,
+					"text": "What is Richardson doing in her comment about reality and fantasy?",
+					"options": [
+						{
+							"label": "A",
+							"text": "warning people not to confuse one with the other"
+						},
+						{
+							"label": "B",
+							"text": "outlining ways in which one has impacted on the other"
+						},
+						{
+							"label": "C",
+							"text": "recommending a change of approach in how people view them"
+						},
+						{
+							"label": "D",
+							"text": "explaining why scientists have a different perspective on them from other people"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"’But the divide is not so clear cut, and that is why the worlds seem to collide at times,’ she said. ’In some cases, we need to bring these different understandings together to get a whole perspective. Perhaps then, we won’t be so frightened that something we create as a copy of ourselves will be a threat to us.’"
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

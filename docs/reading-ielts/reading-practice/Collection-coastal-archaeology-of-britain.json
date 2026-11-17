@@ -1,0 +1,301 @@
+{
+	"id": "3fe823b0-b409-4259-b631-1276119d7ed0",
+	"url": "https://stepielts.com/student/reading/3fe823b0-b409-4259-b631-1276119d7ed0?mode=practice",
+	"title": "Coastal Archaeology of Britain",
+	"source": "Collection",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Coastal Archaeology of Britain",
+		"paragraphs": [
+			"A. The recognition of the wealth and diversity of England’s coastal archaeology has been one of the most important developments of recent years. Some elements of this enormous resource have long been known. The so-called ‘submerged forests’ off the coasts of England, sometimes with clear evidence of human activity, had attracted the interest of antiquarians since at least the eighteenth century but serious and systematic attention has been given to the archaeological potential of the coast only since the early 1980s.",
+			"B. It is possible to trace a variety of causes for this concentration of effort and interest. In the 1980s and 1990s scientific research into climate change and its environmental impact spilt over into a much broader public debate as awareness of these issues grew; the prospect of rising sea levels over the next century, and their impact on current coastal environments, has been a particular focus for concern. At the same time, archaeologists were beginning to recognize that the destruction caused by natural processes of coastal erosion and by human activity was having an increasing impact on the archaeological resource of the coast.",
+			"C. The dominant process affecting the physical form of England in the post-glacial period has been the rise in the altitude of sea level relative to the land, as the glaciers melted and the landmass readjusted. The encroachment of the sea, the loss of huge areas of land now under the North Sea and the English Channel, and especially the loss of the land bridge between England and France, which finally made Britain an island, must have been immensely significant factors in the lives of our prehistoric ancestors. Yet the way in which prehistoric communities adjusted to these environmental changes has seldom been a major theme in discussions of the period. One factor contributing to this has been that, although the rise in relative sea level is comparatively well documented, we know little about the constant reconfiguration of the coastline. This was affected by many processes, mostly quite, which have not yet been adequately researched. The detailed reconstruction of coastline histories and the changing environments available for human use will be an important theme for future research.",
+			"D. So great has been the rise in sea level and the consequent regression of the coast that much of the archaeological evidence now exposed in the coastal zone, whether being eroded or exposed as a buried land surface, is derived from what was originally terrestrial occupation. Its current location in the coastal zone is the product of later unrelated processes, and it can tell us little about past adaptations to the sea. Estimates of its significance will need to be made in the context of other related evidence from dry land sites. Nevertheless, its physical environment means that preservation is often excellent, for example in the case of the Neolithic structure excavated at the Stumble in Essex.",
+			"E. In some cases, these buried land surfaces do contain evidence for human exploitation of what was a coastal environment, and elsewhere along the modern coast, there is similar evidence. Where the evidence does relate to past human exploitation of the resources and the opportunities offered by the sea and the coast, it is both diverse and as yet little understood. We are not yet in a position to make even preliminary estimates of answers to such fundamental questions as the extent to which the sea and the coast affected human life in the past, what percentage of the population at any time lived within reach of the sea, or whether human settlements in coastal environments showed a distinct character from that inland.",
+			"F. The most striking evidence for use of the sea is in the form of boats, yet we still have much to learn about their production and use. Most of the known wrecks around our coast are not unexpectedly of post-medieval date and offer an unparalleled opportunity for research which has as yet been little used. The prehistoric sewn-plank boats such as those from the Humber estuary and Dover all seem to belong to the second millennium BC; after this, there is a gap in the record of a millennium, which cannot yet be explained, before boats reappear, but built using a very different technology. Boatbuilding must have been an extremely important activity around much of our coast, yet we know almost nothing about it. Boats were some of the most complex artefacts produced by pre-modern societies, and further research on their production and use make an important contribution to our understanding of past attitudes to technology and technological change.",
+			"G. Boats needed landing places, yet here again, our knowledge is very patchy. In many cases the natural shores and beaches would have sufficed, leaving little or no archaeological trace, but especially in later periods, many ports and harbors, as well as smaller facilities such as quays, wharves, and jetties, were built. Despite a growth of interest in the waterfront archaeology of some of our more important Roman and medieval towns, very little attention has been paid to the multitude of smaller landing places. Redevelopment of harbor sites and other development and natural pressures along the coast are subjecting these important locations to unprecedented threats, yet few surveys of such sites have been undertaken.",
+			"H. One of the most important revelations of recent research has been the extent of industrial activity along the coast. Fishing and salt production are among the better-documented activities, but even here our knowledge is patchy. Many forms of fishing will eave little archaeological trace and one of the surprises of the recent survey has been the extent of past investment in facilities for procuring fish and shellfish. Elaborate wooden fish weirs, often of considerable extent and responsive to aerial photography in shallow water, have been identified in areas such as Essex and the Severn estuary. The production of salt, especially in the late Iron Age and early Roman periods, has been recognized for some time, especially in the Thames estuary and around the Solent and Poole Harbor, but the reasons for the decline of that industry and the nature of later coastal salt working are much less well understood. Other industries were also located along the coast, either because the raw materials outcropped there or for ease of working and transport: mineral resources such as sand, gravel, stone, coal, ironstone, and alum were all exploited. These industries are poorly documented, but their remains are sometimes extensive and striking.",
+			"I. Some appreciation of the variety and importance of the archaeological remains preserved in the coastal zone, albeit only in preliminary form, can thus be gained from recent work, but the complexity of the problem of managing that resource is also being realised. The problem arises not only from the scale and variety of the archaeological remains, but also from two other sources: the very varied natural and human threats to the resource, and the complex web of organisations with authority over, or interests in, the coastal zone. Human threats include the redevelopment of historic towns and old dockland areas, and the increased importance of the coast for the leisure and tourism industries, resulting in pressure for the increased provision of facilities such as marinas. The larger size of ferries has also caused an increase in the damage caused by their wash to fragile deposits in the intertidal zone. The most significant natural threat is the predicted rise in sea level over the next century especially in the south and east of England. Its impact on archaeology is not easy to predict, and though it is likely to be highly localised, it will be at a scale much larger than that of most archaeological sites. Thus protecting one site may simply result in transposing the threat to a point further along the coast. The management of the archaeological remains will have to be considered in a much longer time scale and a much wider geographical scale than is common in the case of dry land sites, and this will pose a serious challenge for archaeologists."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-3",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter A, B, C or D.\nWrite your answers in boxes 1-3 on your answer sheet.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "What has caused public interest in coastal archaeology in recent years?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The rapid development of England’s coastal archaeology"
+						},
+						{
+							"label": "B",
+							"text": "The rising awareness of climate change"
+						},
+						{
+							"label": "C",
+							"text": "The discovery of an underwater forest"
+						},
+						{
+							"label": "D",
+							"text": "The systematic research conducted on coastal archaeological findings"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"In the 1980s and 1990s scientific research into climate change and its environmental impact spilt over into a much broader public debate as awareness of these issues grew; the prospect of rising sea levels over the next century, and their impact on current coastal environments, has been a particular focus for concern."
+					]
+				},
+				{
+					"number": 2,
+					"text": "What does the passage say about the evidence of boats?",
+					"options": [
+						{
+							"label": "A",
+							"text": "There’s enough knowledge of the boatbuilding technology of the prehistoric people."
+						},
+						{
+							"label": "B",
+							"text": "Many of the boats discovered were found in harbours."
+						},
+						{
+							"label": "C",
+							"text": "The use of boats had not been recorded for a thousand years."
+						},
+						{
+							"label": "D",
+							"text": "Boats were first used for fishing."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"The prehistoric sewn-plank boats such as those from the Humber estuary and Dover all seem to belong to the second millennium BC; after this, there is a gap in the record of a millennium, which cannot yet be explained, before boats reappear, but built using a very different technology."
+					]
+				},
+				{
+					"number": 3,
+					"text": "What can be discovered from the air?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Salt mines"
+						},
+						{
+							"label": "B",
+							"text": "Roman towns"
+						},
+						{
+							"label": "C",
+							"text": "Harbours"
+						},
+						{
+							"label": "D",
+							"text": "Fisheries"
+						}
+					],
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nĐiều gì có thể được khám phá từ trên không?\n\nBước 2: Tìm thông tin dựa trên keywords:\nĐoạn H chỉ rõ: \"Các đập chắn cá bằng gỗ phức tạp... phản ứng tốt với nhiếp ảnh trên không trong vùng nước nông\" (Elaborate wooden fish weirs... responsive to aerial photography).\n==> Thông tin được in đậm liên quan đến việc đánh cá, đồng nghĩa với câu D (Các ngư trường/nghề cá - Fisheries).\n\nBước 3: Đáp án: D\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A (Mỏ muối), B (Thị trấn La Mã), C (Bến cảng) -> Bài đọc có nhắc đến các địa điểm này nhưng không gắn chúng với thông tin \"khám phá từ trên không\" (aerial photography) như các đập chắn cá.",
+					"quotes": [
+						"Elaborate wooden fish weirs, often of considerable extent and responsive to aerial photography in shallow water, have been identified in areas such as Essex and the Severn estuary."
+					]
+				}
+			]
+		},
+		{
+			"range": "4-10",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 2?\nIn boxes 4-10 on your answer sheet write\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 4,
+					"text": "England lost much of its land after the ice age due to the rising sea level.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNước Anh đã mất phần lớn đất đai sau kỷ băng hà do mực nước biển dâng cao.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nEngland lost much of its land ~ the loss of huge areas of land\nafter the ice age ~ post-glacial period / glaciers melted\nrising sea level ~ rise in the altitude of sea level\n\nBước 3: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"Quá trình chủ yếu ảnh hưởng... trong thời kỳ hậu băng hà là sự gia tăng độ cao của mực nước biển... sự xâm lấn của biển, sự mất mát của những vùng đất khổng lồ hiện đang nằm dưới Biển Bắc\" (The encroachment of the sea, the loss of huge areas of land... rise in the altitude of sea level).\n==> Điều này đồng nghĩa với thông tin trong câu hỏi.\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"C. The dominant process affecting the physical form of England in the post-glacial period has been the rise in the altitude of sea level relative to the land, as the glaciers melted and the landmass readjusted. The encroachment of the sea, the loss of huge areas of land now under the North Sea and the English Channel, and especially the loss of the land bridge between England and France, which finally made Britain an island, must have been immensely significant factors in the lives of our prehistoric ancestors."
+					]
+				},
+				{
+					"number": 5,
+					"text": "The coastline of England has changed periodically.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐường bờ biển của Anh đã thay đổi theo định kỳ (liên tục).\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ncoastline ~ từ khóa giữ nguyên\nchanged ~ reconfiguration (tái cấu trúc/thay đổi hình dạng)\nperiodically ~ constant (liên tục/thường xuyên)\n\nBước 3: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"chúng ta biết rất ít về sự tái cấu trúc liên tục của đường bờ biển\" (we know little about the constant reconfiguration of the coastline).\n==> Điều này trái nghĩa với thông tin trong câu hỏi \"đường bờ biển đã thay đổi theo định kỳ/liên tục\".\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"One factor contributing to this has been that, although the rise in relative sea level is comparatively well documented, we know little about the constant reconfiguration of the coastline."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Coastal archaeological evidence may be well protected by sea water.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nBằng chứng khảo cổ học ven biển có thể được bảo vệ tốt bởi nước biển.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nwell protected ~ preservation is often excellent\nsea water ~ physical environment (ám chỉ môi trường vật lý ẩm ướt/bùn lầy ở vùng ven biển)\n\nBước 3: So sánh và đối chiếu:\nĐoạn D chỉ rõ: \"Tuy nhiên, môi trường vật lý của nó có nghĩa là sự bảo quản thường rất xuất sắc, ví dụ như trong trường hợp cấu trúc thời đồ đá mới được khai quật tại Stumble\" (Nevertheless, its physical environment means that preservation is often excellent).\n==> Điều này đồng nghĩa với thông tin trong câu hỏi về việc bằng chứng được bảo vệ tốt (preservation is excellent) nhờ môi trường biển.\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Nevertheless, its physical environment means that preservation is often excellent, for example in the case of the Neolithic structure excavated at the Stumble in Essex."
+					]
+				},
+				{
+					"number": 7,
+					"text": "The design of boats used by pre-modern people was very simple.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nThiết kế của những chiếc thuyền được sử dụng bởi người tiền hiện đại rất đơn giản.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ndesign of boats ~ boats / boatbuilding\npre-modern people ~ pre-modern societies\nsimple ~ complex (phức tạp)\n\nBước 3: So sánh và đối chiếu:\nĐoạn F chỉ rõ: \"Thuyền là một trong những hiện vật phức tạp nhất được sản xuất bởi các xã hội tiền hiện đại\" (Boats were some of the most complex artefacts produced by pre-modern societies).\n==> Điều này trái ngược với thông tin trong câu hỏi là \"rất đơn giản\" (very simple).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Boats were some of the most complex artefacts produced by pre-modern societies, and further research on their production and use make an important contribution to our understanding of past attitudes to technology and technological change."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Similar boats were also discovered in many other European countries.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững chiếc thuyền tương tự cũng được phát hiện ở nhiều quốc gia châu Âu khác.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nSimilar boats ~ sewn-plank boats\nmany other European countries ~ Humber estuary and Dover (chỉ đề cập địa điểm ở Anh)\n\nBước 3: So sánh và đối chiếu:\nĐoạn F có đề cập đến các loại thuyền \"như những chiếc từ cửa sông Humber và Dover\" (đều thuộc Anh).\n==> Tuy nhiên, bài đọc không hề nhắc đến thông tin chúng được phát hiện ở \"nhiều quốc gia châu Âu khác\" (many other European countries).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"The prehistoric sewn-plank boats such as those from the Humber estuary and Dover all seem to belong to the second millennium BC; after this, there is a gap in the record of a millennium, which cannot yet be explained, before boats reappear, but built using a very different technology."
+					]
+				},
+				{
+					"number": 9,
+					"text": "There are few documents relating to mineral exploitation.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCó rất ít tài liệu liên quan đến việc khai thác khoáng sản.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nfew documents ~ poorly documented\nmineral exploitation ~ mineral resources... were all exploited\n\nBước 3: So sánh và đối chiếu:\nĐoạn H liệt kê các tài nguyên khoáng sản (cát, sỏi, đá, than...) và chỉ rõ: \"Những ngành công nghiệp này được ghi chép rất kém\" (These industries are poorly documented).\n==> Điều này đồng nghĩa với thông tin trong câu hỏi là \"có ít tài liệu\" (few documents).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"These industries are poorly documented, but their remains are sometimes extensive and striking."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Large passenger boats are causing increasing damage to the seashore.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác tàu chở khách lớn đang gây ra thiệt hại ngày càng tăng cho bờ biển.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nLarge passenger boats ~ larger size of ferries (phà lớn)\ncausing increasing damage ~ caused an increase in the damage\nseashore ~ fragile deposits in the intertidal zone\n\nBước 3: So sánh và đối chiếu:\nĐoạn I chỉ rõ: \"Kích thước lớn hơn của các phà cũng đã gây ra sự gia tăng thiệt hại do sóng của chúng gây ra cho các lớp trầm tích mong manh trong vùng triều\" (The larger size of ferries has also caused an increase in the damage).\n==> Điều này đồng nghĩa với thông tin trong câu hỏi.\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"The larger size of ferries has also caused an increase in the damage caused by their wash to fragile deposits in the intertidal zone."
+					]
+				}
+			]
+		},
+		{
+			"range": "11-13",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose THREE letters, A-G.\nWrite your answers in boxes 11-13 on your answer sheet.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "Which THREE of the following statements are mentioned in the passage?",
+					"options": [
+						{
+							"label": "A",
+							"text": "How coastal archaeology was originally discovered"
+						},
+						{
+							"label": "B",
+							"text": "It is difficult to understand how many people lived close to the sea."
+						},
+						{
+							"label": "C",
+							"text": "How much the prehistoric communities understand the climate change"
+						},
+						{
+							"label": "D",
+							"text": "Our knowledge of boat evidence is limited."
+						},
+						{
+							"label": "E",
+							"text": "Some fishing ground was converted to ports."
+						},
+						{
+							"label": "F",
+							"text": "Human development threatens the archaeological remains."
+						},
+						{
+							"label": "G",
+							"text": "Coastal archaeology will become more important in the future."
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 12,
+					"text": "Which THREE of the following statements are mentioned in the passage?",
+					"options": [
+						{
+							"label": "A",
+							"text": "How coastal archaeology was originally discovered"
+						},
+						{
+							"label": "B",
+							"text": "It is difficult to understand how many people lived close to the sea."
+						},
+						{
+							"label": "C",
+							"text": "How much the prehistoric communities understand the climate change"
+						},
+						{
+							"label": "D",
+							"text": "Our knowledge of boat evidence is limited."
+						},
+						{
+							"label": "E",
+							"text": "Some fishing ground was converted to ports."
+						},
+						{
+							"label": "F",
+							"text": "Human development threatens the archaeological remains."
+						},
+						{
+							"label": "G",
+							"text": "Coastal archaeology will become more important in the future."
+						}
+					],
+					"answer": "D"
+				},
+				{
+					"number": 13,
+					"text": "Which THREE of the following statements are mentioned in the passage?",
+					"options": [
+						{
+							"label": "A",
+							"text": "How coastal archaeology was originally discovered"
+						},
+						{
+							"label": "B",
+							"text": "It is difficult to understand how many people lived close to the sea."
+						},
+						{
+							"label": "C",
+							"text": "How much the prehistoric communities understand the climate change"
+						},
+						{
+							"label": "D",
+							"text": "Our knowledge of boat evidence is limited."
+						},
+						{
+							"label": "E",
+							"text": "Some fishing ground was converted to ports."
+						},
+						{
+							"label": "F",
+							"text": "Human development threatens the archaeological remains."
+						},
+						{
+							"label": "G",
+							"text": "Coastal archaeology will become more important in the future."
+						}
+					],
+					"answer": "F"
+				}
+			]
+		}
+	],
+	"images": []
+}

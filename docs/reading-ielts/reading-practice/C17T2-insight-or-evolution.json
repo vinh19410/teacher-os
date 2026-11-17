@@ -1,0 +1,297 @@
+{
+	"id": "dc07be6a-a729-4e93-9068-4ac72e82105b",
+	"url": "https://stepielts.com/student/reading/dc07be6a-a729-4e93-9068-4ac72e82105b?mode=practice",
+	"title": "Insight or evolution?",
+	"source": "C17T2",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "27-40",
+	"passage": {
+		"title": "Insight or evolution?",
+		"subtitle": "Two scientists consider the origins of discoveries and other innovative behavior",
+		"paragraphs": [
+			"Scientific discovery is popularly believed to result from the sheer genius of such intellectual stars as naturalist Charles Darwin and theoretical physicist Albert Einstein. Our view of such unique contributions to science often disregards the person’s prior experience and the efforts of their lesser-known predecessors. Conventional wisdom also places great weight on insight in promoting breakthrough scientific achievements, as if ideas spontaneously pop into someone’s head – fully formed and functional.",
+			"There may be some limited truth to this view. However, we believe that it largely misrepresents the real nature of scientific discovery, as well as that of creativity and innovation in many other realms of human endeavor.",
+			"Setting aside such greats as Darwin and Einstein – whose monumental contributions are duly celebrated – we suggest that innovation is more a process of trial and error, where two steps forward may sometimes come with one step back, as well as one or more stops to the right or left. This evolutionary view of human innovation undermines the notion of creative genius and recognizes the cumulative nature of scientific progress.",
+			"Consider one unheralded scientist: John Nicholson, a mathematical physicist working in the 1910s who postulated the existence of ‘proto-elements’ in outer space.\nBy combining different numbers of weights of these proto-elements’ atoms, Nicholson could recover the weights of all the elements in the then-known periodic table.\nThese successes are all the more noteworthy given the fact that Nicholson was wrong about the presence of proto-elements: they do not actually exist. Yet, amid his often fanciful theories and wild speculations, Nicholson also proposed a novel theory about the structure of atoms. Niels Bohr, the Nobel prize-winning father of modern atomic theory, jumped off from this interesting idea to conceive his now-famous model of the atom.",
+			"What are we to make of this story? One might simply conclude that science is a collective and cumulative enterprise. That may be true, but there may be a deeper insight to be gleaned. We propose that science is constantly evolving, much as species of animals do. In biological systems, organisms may display new characteristics that result from random genetic mutations. In the same way, random, arbitrary or accidental mutations of ideas may help pave the way for advances in science. If mutations prove beneficial, then the animal or the scientific theory will continue to thrive and perhaps reproduce.",
+			"Support for this evolutionary view of behavioral innovation comes from many domains. Consider one example of an influential innovation in US horseracing. The so-called ‘acey-deucy’ stirrup placement, in which the rider’s foot in his left stirrup is placed as much as 25 centimeters lower than the right, is believed to confer important speed advantages when turning on oval tracks. It was developed by a relatively unknown jockey named Jackie Westrope. Had Westrope conducted methodical investigations or examined extensive film records in a shrewd plan to outrun his rivals? Had he foreseen the speed advantage that would be conferred by riding acey-deucy? No. He suffered a leg injury, which left him unable to fully bend his left knee. His modification just happened to coincide with enhanced left-hand turning performance. This led to the rapid and widespread adoption of riding acey-deucy by many riders, a racing style which continues in today’s thoroughbred racing.",
+			"Plenty of other stories show that fresh advances can arise from error, misadventure, and also pure serendipity – a happy accident. For example, in the early 1970s, two employees of the company 3M each had a problem: Spencer Silver had a product – a glue which was only slightly sticky – and no use for it, while his colleague Art Fry was trying to figure out how to affix temporary bookmarks in his hymn book without damaging its pages. The solution to both these problems was invention of the brilliantly simple yet phenomenally successful Post-It note. Such examples give lie to the claim that ingenious, designing minds are responsible for human creativity and invention. Far more banal and mechanical forces may be at work; forces that are fundamentally connected to the laws of science.",
+			"The notions of insight, creativity and genius are often invoked, but they remain vague and of doubtful scientific utility, especially when one considers the diverse and enduring contributions of individuals such as Plato, Leonardo da Vinci, Shakespeare, Beethoven, Galileo, Newton, Kepler, Curie, Pasteur and Edison. These notions merely label rather than explain the evolution of human innovations. We need another approach, and there is a promising candidate.",
+			"The Law of Effect was advanced by psychologist Edward Thorndike in 1898, some 40 years after Charles Darwin published his groundbreaking work on biological evolution, On the Origin of Species. This simple law holds that organisms tend to repeat successful behaviors and to refrain from performing unsuccessful ones. Just like Darwin’s Law of Natural Selection, the Law of Effect involves an entirely mechanical process of variation and selection, without any end objective in sight.",
+			"Of course, the origin of human innovation demands much further study. In particular, the provenance of the raw material on which the Law of Effect operates is not as clearly known as that of the genetic mutations on which the Law of Natural Selection operates. The generation of novel ideas and behaviors may not be entirely random, but constrained by prior successes and failures – of the current individual (such as Bohr) or of predecessors (such as Nicholson).",
+			"The time seems right for abandoning the naïve notion of intelligent design and genius, and for scientifically exploring the true origins of creative behavior."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "27-31",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 27,
+					"text": "The purpose of the first paragraph is to",
+					"options": [
+						{
+							"label": "A",
+							"text": "defend particular ideas."
+						},
+						{
+							"label": "B",
+							"text": "compare certain beliefs."
+						},
+						{
+							"label": "C",
+							"text": "disprove a widely held view."
+						},
+						{
+							"label": "D",
+							"text": "outline a common assumption."
+						}
+					],
+					"answer": "D",
+					"quotes": [
+						"Scientific discovery is popularly believed to result from the sheer genius of such intellectual stars as naturalist Charles Darwin and theoretical physicist Albert Einstein. Our view of such unique contributions to science often disregards the person’s prior experience and the efforts of their lesser-known predecessors.",
+						"Conventional wisdom also places great weight on insight in promoting breakthrough scientific achievements, as if ideas spontaneously pop into someone’s head – fully formed and functional."
+					]
+				},
+				{
+					"number": 28,
+					"text": "What are the writers doing in the second paragraph?",
+					"options": [
+						{
+							"label": "A",
+							"text": "criticising an opinion"
+						},
+						{
+							"label": "B",
+							"text": "justifying a standpoint"
+						},
+						{
+							"label": "C",
+							"text": "explaining an approach"
+						},
+						{
+							"label": "D",
+							"text": "supporting an argument"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"There may be some limited truth to this view. However, we believe that it largely misrepresents the real nature of scientific discovery, as well as that of creativity and innovation in many other realms of human endeavor."
+					]
+				},
+				{
+					"number": 29,
+					"text": "In the third paragraph, what do the writers suggest about Darwin and Einstein?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They represent an exception to a general rule."
+						},
+						{
+							"label": "B",
+							"text": "Their way of working has been misunderstood."
+						},
+						{
+							"label": "C",
+							"text": "They are an ideal which others should aspire to."
+						},
+						{
+							"label": "D",
+							"text": "Their achievements deserve greater recognition."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Setting aside such greats as Darwin and Einstein – whose monumental contributions are duly celebrated – we suggest that innovation is more a process of trial and error, where two steps forward may sometimes come with one step back, as well as one or more stops to the right or left. This evolutionary view of human innovation undermines the notion of creative genius and recognizes the cumulative nature of scientific progress."
+					]
+				},
+				{
+					"number": 30,
+					"text": "John Nicholson is an example of a person whose idea",
+					"options": [
+						{
+							"label": "A",
+							"text": "established his reputation as an influential scientist."
+						},
+						{
+							"label": "B",
+							"text": "was only fully understood at a later point in history."
+						},
+						{
+							"label": "C",
+							"text": "laid the foundations for someone else’s breakthrough."
+						},
+						{
+							"label": "D",
+							"text": "initially met with skepticism from the scientific community."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Consider one unheralded scientist: John Nicholson, a mathematical physicist working in the 1910s who postulated the existence of ‘proto-elements’ in outer space. By combining different numbers of weights of these proto-elements’ atoms, Nicholson could recover the weights of all the elements in the then-known periodic table.",
+						"These successes are all the more noteworthy given the fact that Nicholson was wrong about the presence of proto-elements: they do not actually exist.",
+						"Yet, amid his often fanciful theories and wild speculations, Nicholson also proposed a novel theory about the structure of atoms. Niels Bohr, the Nobel prize-winning father of modern atomic theory, jumped off from this interesting idea to conceive his now-famous model of the atom."
+					]
+				},
+				{
+					"number": 31,
+					"text": "What is the key point of interest about the ‘acey-deucy’ stirrup placement?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the simple reason why it was invented"
+						},
+						{
+							"label": "B",
+							"text": "the enthusiasm with which it was adopted"
+						},
+						{
+							"label": "C",
+							"text": "the research that went into its development"
+						},
+						{
+							"label": "D",
+							"text": "the cleverness of the person who first used it"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"The so-called ‘acey-deucy’ stirrup placement, in which the rider’s foot in his left stirrup is placed as much as 25 centimeters lower than the right, is believed to confer important speed advantages when turning on oval tracks. It was developed by a relatively unknown jockey named Jackie Westrope. Had Westrope conducted methodical investigations or examined extensive film records in a shrewd plan to outrun his rivals? Had he foreseen the speed advantage that would be conferred by riding acey-deucy? No. He suffered a leg injury, which left him unable to fully bend his left knee. His modification just happened to coincide with enhanced left-hand turning performance. This led to the rapid and widespread adoption of riding acey-deucy by many riders, a racing style which continues in today’s thoroughbred racing."
+					]
+				}
+			]
+		},
+		{
+			"range": "32-36",
+			"type": "YES/NO/NOT GIVEN",
+			"instructions": "Do the following statements agree with the claims of the writer in Reading Passage 3?\nIn boxes 32-36 on your answer sheet, write\nYES if the statement agrees with the claims of the writer\nNO if the statement contradicts the claims of the writer\nNOT GIVEN if it is impossible to say what the writer thinks about this",
+			"questions": [
+				{
+					"number": 32,
+					"text": "Acknowledging people such as Plato or da Vinci as geniuses will help us understand the process by which great minds create new ideas.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NO",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nViệc công nhận những người như Plato hay da Vinci là thiên tài sẽ giúp chúng ta hiểu được quá trình mà những bộ óc vĩ đại tạo ra những ý tưởng mới.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nPlato, Leonardo da Vinci ~ Plato or da Vinci\ngenius ~ geniuses\nexplain the evolution ~ understand the process\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"những khái niệm về sự thông tuệ, sáng tạo và thiên tài thường được viện dẫn, nhưng chúng vẫn còn mơ hồ và có giá trị khoa học đáng ngờ\"\n=> Điều này trái ngược với thông tin trong câu hỏi là \"công nhận những người như Plato hay da Vinci là thiên tài sẽ giúp chúng ta hiểu được quá trình đó\" (Acknowledging people such as Plato or da Vinci as geniuses will help us understand the process).\n\nBước 4: Đáp án: NO",
+					"quotes": [
+						"The notions of insight, creativity and genius are often invoked, but they remain vague and of doubtful scientific utility, especially when one considers the diverse and enduring contributions of individuals such as Plato, Leonardo da Vinci, Shakespeare, Beethoven, Galileo, Newton, Kepler, Curie, Pasteur and Edison. These notions merely label rather than explain the evolution of human innovations."
+					]
+				},
+				{
+					"number": 33,
+					"text": "The Law of Effect was discovered at a time when psychologists were seeking a scientific reason why creativity occurs.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nQuy luật Hiệu ứng (Law of Effect) được phát hiện vào thời điểm các nhà tâm lý học đang tìm kiếm một lý do khoa học giải thích tại sao sự sáng tạo xảy ra.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nLaw of Effect ~ thuật ngữ giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"Quy Luật Hiệu Ứng đã được đề ra bởi nhà tâm lý học Edward Thorndike vào năm 1898\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin trong câu hỏi là nó \"được phát hiện vào thời điểm các nhà tâm lý học đang tìm kiếm một lý do khoa học giải thích tại sao sự sáng tạo xảy ra\" (The Law of Effect was discovered at a time when psychologists were seeking a scientific reason why creativity occurs).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"The Law of Effect was advanced by psychologist Edward Thorndike in 1898, some 40 years after Charles Darwin published his groundbreaking work on biological evolution, On the Origin of Species."
+					]
+				},
+				{
+					"number": 34,
+					"text": "The Law of Effect states that no planning is involved in the behaviour of organisms.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nQuy luật Hiệu ứng (Law of Effect) cho thấy rằng không có sự lập kế hoạch nào được đưa ra trong hành vi của sinh vật.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nLaw of Effect ~ thuật ngữ giữ nguyên\nwithout any end objective in sight ~ no planning is involved\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Tương tự như Quy luật Chọn lọc Tự nhiên của Darwin, Quy luật Hiệu Ứng cũng chỉ là một quá trình biến đổi và chọn lọc mang tính cơ học, không nhắm đến bất kỳ mục tiêu cụ thể nào\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi là \"Quy luật Hiệu ứng cho thấy rằng không có sự lập kế hoạch nào được thực hiện trong hành vi của sinh vật\". (The Law of Effect states that no planning is involved in the behaviour of organisms).\n\nBước 4: Đáp án: YES",
+					"quotes": [
+						"This simple law holds that organisms tend to repeat successful behaviors and to refrain from performing unsuccessful ones. Just like Darwin’s Law of Natural Selection, the Law of Effect involves an entirely mechanical process of variation and selection, without any end objective in sight."
+					]
+				},
+				{
+					"number": 35,
+					"text": "The Law of Effect sets out clear explanations about the sources of new ideas and behaviours.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NO",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nQuy Luật Hiệu Ứng (Law of Effect) đưa ra những lời giải thích rõ ràng về nguồn gốc của những ý tưởng và hành vi mới.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nLaw of Effect ~ thuật ngữ giữ nguyên\norigin of human innovation ~ sources of new ideas and behaviours\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Dĩ nhiên, nguồn gốc của sự sáng tạo ở con người vẫn cần được nghiên cứu kỹ hơn. Cụ thể là, chúng ta chưa hiểu rõ nguồn gốc của những yếu tố ban đầu mà Quy Luật Hiệu Ứng áp dụng, không như cách chúng ta hiểu về các đột biến gen trong Quy Luật Chọn lọc Tự nhiên.\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"Luật Hiệu quả đưa ra những giải thích rõ ràng về nguồn gốc của những ý tưởng và hành vi mới\" (The Law of Effect sets out clear explanations about the sources of new ideas and behaviours).\n\nBước 4: Đáp án: NO",
+					"quotes": [
+						"In particular, the provenance of the raw material on which the Law of Effect operates is not as clearly known as that of the genetic mutations on which the Law of Natural Selection operates."
+					]
+				},
+				{
+					"number": 36,
+					"text": "Many scientists are now turning away from the notion of intelligent design and genius.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nNhiều nhà khoa học hiện đang từ bỏ quan niệm về 'thiết kế thông minh' và thiên tài.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nabandoning ~ turning away\nintelligent design and genius ~ cụm từ giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc (tác giả kêu gọi) \"đã đến lúc chúng ta nên từ bỏ quan niệm ngây thơ về 'thiết kế thông minh' và thiên tài\"\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin trong câu hỏi là \"nhiều nhà khoa học hiện đang từ bỏ quan niệm về thiết kế thông minh và thiên tài\" (Many scientists are now turning away from the notion of intelligent design and genius).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"The time seems right for abandoning the naïve notion of intelligent design and genius, and for scientifically exploring the true origins of creative behavior."
+					]
+				}
+			]
+		},
+		{
+			"range": "37-40",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary using the list of words, A-G, below. Write the correct letter, A-G, in boxes 37-40 on your answer sheet.",
+			"options": [
+				{
+					"label": "A",
+					"text": "invention"
+				},
+				{
+					"label": "B",
+					"text": "goals"
+				},
+				{
+					"label": "C",
+					"text": "compromise"
+				},
+				{
+					"label": "D",
+					"text": "mistakes"
+				},
+				{
+					"label": "E",
+					"text": "luck"
+				},
+				{
+					"label": "F",
+					"text": "inspiration"
+				},
+				{
+					"label": "G",
+					"text": "experiments"
+				}
+			],
+			"body": "The origins of creative behaviour\nThe traditional view of scientific discovery is that breakthroughs happen when a single great mind has sudden ____ (37) . Although this can occur, it is not often the case. Advances are more likely to be the result of a longer process. In some cases, this process involves ____ (38) , such as Nicholson’s theory about proto-elements. In others, simple necessity may provoke innovation, as with Westrope’s decision to modify the position of his riding stirrups. There is also often an element of ____ (39) , for example, the coincidence of ideas that led to the invention of the Post-It note. With both the Law of Natural Selection and the Law of Effect, there may be no clear ____ (40) involved, but merely a process of variation and selection.",
+			"body_html": "<h3><strong>The origins of creative behaviour</strong></h3><p>The traditional view of scientific discovery is that breakthroughs happen when a single great mind has sudden [37] . Although this can occur, it is not often the case. Advances are more likely to be the result of a longer process. In some cases, this process involves [38] , such as Nicholson’s theory about proto-elements. In others, simple necessity may provoke innovation, as with Westrope’s decision to modify the position of his riding stirrups. There is also often an element of [39] , for example, the coincidence of ideas that led to the invention of the Post-It note. With both the Law of Natural Selection and the Law of Effect, there may be no clear [40] involved, but merely a process of variation and selection.</p>",
+			"questions": [
+				{
+					"number": 37,
+					"text": "",
+					"answer": "F",
+					"quotes": [
+						"Conventional wisdom also places great weight on insight in promoting breakthrough scientific achievements, as if ideas spontaneously pop into someone’s head – fully formed and functional."
+					]
+				},
+				{
+					"number": 38,
+					"text": "",
+					"answer": "D",
+					"quotes": [
+						"These successes are all the more noteworthy given the fact that Nicholson was wrong about the presence of proto-elements: they do not actually exist."
+					]
+				},
+				{
+					"number": 39,
+					"text": "",
+					"answer": "E",
+					"quotes": [
+						"Plenty of other stories show that fresh advances can arise from error, misadventure, and also pure serendipity – a happy accident. For example, in the early 1970s, two employees of the company 3M each had a problem: Spencer Silver had a product – a glue which was only slightly sticky – and no use for it, while his colleague Art Fry was trying to figure out how to affix temporary bookmarks in his hymn book without damaging its pages. The solution to both these problems was invention of the brilliantly simple yet phenomenally successful Post-It note."
+					]
+				},
+				{
+					"number": 40,
+					"text": "",
+					"answer": "B",
+					"quotes": [
+						"This simple law holds that organisms tend to repeat successful behaviors and to refrain from performing unsuccessful ones. Just like Darwin’s Law of Natural Selection, the Law of Effect involves an entirely mechanical process of variation and selection, without any end objective in sight."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

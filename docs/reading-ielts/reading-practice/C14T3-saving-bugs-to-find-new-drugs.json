@@ -1,0 +1,197 @@
+{
+	"id": "933ac81e-b4f1-42f3-af1c-ca22364974c1",
+	"url": "https://stepielts.com/student/reading/933ac81e-b4f1-42f3-af1c-ca22364974c1?mode=practice",
+	"title": "Saving bugs to find new drugs",
+	"source": "C14T3",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "14-26",
+	"passage": {
+		"title": "Saving bugs to find new drugs",
+		"subtitle": "Zoologist Ross Piper looks at the potential of insects in pharmaceutical research",
+		"paragraphs": [
+			"A. More drugs than you might think are derived from, or inspired by, compounds found in living things. Looking to nature for the soothing and curing of our ailments is nothing new – we have been doing it for tens of thousands of years. You only have to look at other primates – such as the capuchin monkeys who rub themselves with toxin-oozing millipedes to deter mosquitoes, or the chimpanzees who use noxious forest plants to rid themselves of intestinal parasites – to realise that our ancient ancestors too probably had a basic grasp of medicine.",
+			"B. Pharmaceutical science and chemistry built on these ancient foundations and perfected the extraction, characterization, modification and testing of these natural products. Then, for a while, modern pharmaceutical science moved its focus away from nature and into the laboratory, designing chemical compounds from scratch. The main cause of this shift is that although there are plenty of promising chemical compounds in nature, finding them is far from easy. Securing sufficient numbers of the organism in question, isolating and characterizing the compounds of interest, and producing large quantities of these compounds are all significant hurdles.",
+			"C. Laboratory-based drug discovery has achieved varying levels of success, something which has now prompted the development of new approaches focusing once again on natural products. With the ability to mine genomes for useful compounds, it is now evident that we have barely scratched the surface of nature’s molecular diversity. This realization, together with several looming health crises, such as antibiotic resistance, has put bioprospecting – the search for useful compounds in nature – firmly back on the map.",
+			"D. Insects are the undisputed masters of the terrestrial domain, where the occupy every possible niche. Consequently, they have a bewildering array of interactions with other organisms, something which has driven the evolution of an enormous range of very interesting compounds for defensive and offensive purposes. Their remarkable diversity exceeds that of every other group of animals on the planet combined. Yet even though insects are far and away the most diverse animals in existence, their potential as sources of therapeutic compounds is yet to be realised.",
+			"E. From the tiny proportion of insects that have been investigated, several promising compounds have been identified. For example, alloferon, an antimicrobial compound produced by blow fly larvae, is used as an antiviral and antitumor agent in South Korea and Russia. The larvae of a few other insect species are being investigated for the potent antimicrobial compounds they produce. Meanwhile, a compound from the venom of the wasp Polybia paulista has potential in cancer treatment.",
+			"F. Why is it that insects have received relatively little attention in bioprospecting? Firstly, there are so many insects that, without some manner of targeted approach, investigating this huge variety of species is a daunting task. Secondly, insects are generally very small, and the glands inside them that secrete potentially useful compounds are smaller still. This can make it difficult to obtain sufficient quantities of the compound for subsequent testing. Thirdly, although we consider insects to be everywhere, the reality of this ubiquity is vast numbers of a few extremely common species. Many insect species are infrequently encountered and very difficult to rear in captivity, which, again, can leave us with insufficient material to work with.",
+			"G. My colleagues and I at Aberystwyth University in the UK have developed an approach in which we use our knowledge of ecology as a guide to target our efforts. The creatures that particularly interest us are the many insects that secrete powerful poison for subduing prey and keeping it fresh for future consumption. There are even more insects that are masters of exploiting filthy habitats, such as faeces and carcasses, where they are regularly challenged by thousands of micro-organisms. These insects have many antimicrobial compounds for dealing with pathogenic bacteria and fungi, suggesting that there is certainly potential to find many compounds that can serve as or inspire new antibiotics.",
+			"H. Although natural history knowledge points us in the right direction, it doesn’t solve the problems associated with obtaining useful compounds from insects. Fortunately, it is now possible to snip out the stretches of the insect’s DNA that carry the codes for the interesting compounds and insert them into cell lines that allow larger quantities to be produced. And although the road from isolating and characterizing compounds with desirable qualities to developing a commercial product is very long and full of pitfalls, the variety of successful animal-derived pharmaceuticals on the market demonstrates there is a precedent here that is worth exploring.",
+			"I. With every bit of wilderness that disappears, we deprive ourselves of potential medicines. As much as I’d love to help develop a groundbreaking insect-derived medicine, my main motivation for looking at insects in this way is conservation. I sincerely believe that all species, however small and seemingly insignificant, have a right to exist for their own sake. If we can shine a light on the darker recesses of nature’s medicine cabinet, exploring the useful chemistry of the most diverse animals on the planet, I believe we can make people think differently about the value of nature."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "14-20",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Reading Passage 2 has nine paragraphs, A-I. Which paragraph contains the following information?\nWrite the correct letter, A-I, in boxes 14 - 20 on your answer sheet.",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H", "I"],
+			"questions": [
+				{
+					"number": 14,
+					"text": "Mention of factors driving a renewed interest in natural medicinal compounds",
+					"answer": "C",
+					"quotes": [
+						"C. Laboratory-based drug discovery has achieved varying levels of success, something which has now prompted the development of new approaches focusing once again on natural products."
+					]
+				},
+				{
+					"number": 15,
+					"text": "How recent technological advances have made insect research easier",
+					"answer": "H",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCách mà những tiến bộ trong công nghệ gần đây đã làm cho việc nghiên cứu côn trùng trở nên dễ dàng hơn.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nSnip out the stretches of the insect's DNA ~ recent technological advances\n\nBước 3: So sánh và đối chiếu:\nĐoạn H chỉ rõ “May mắn thay, giờ đây có thể cắt ra những đoạn DNA của côn trùng mang mã của các hợp chất thú vị và chèn chúng vào các dòng tế bào cho phép sản xuất với số lượng lớn hơn”.\n=> Thông tin này cho thấy đoạn H đã đề cập đến “Cách mà những tiến bộ trong công nghệ gần đây đã làm cho việc nghiên cứu côn trùng trở nên dễ dàng hơn”.\n\nBước 4: Đáp án: H",
+					"quotes": [
+						"Fortunately, it is now possible to snip out the stretches of the insect’s DNA that carry the codes for the interesting compounds and insert them into cell lines that allow larger quantities to be produced."
+					]
+				},
+				{
+					"number": 16,
+					"text": "Examples of animals which use medicinal substances from nature",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững ví dụ cho thấy động vật cũng biết tận dụng các chất dược liệu từ tự nhiên.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nCapuchin monkeys ~ animals\nRub themselves with toxin-oozing millipedes ~ use medicinal substances from nature\n\nBước 3: So sánh và đối chiếu:\nĐoạn A chỉ rõ “Chỉ cần nhìn vào các loài linh trưởng khác – như khỉ capuchin tự xoa mình bằng chất độc từ cuốn chiếu để xua đuổi muỗi, hay tinh tinh sử dụng các loại cây rừng có độc để loại bỏ ký sinh trùng trong ruột – là đủ để nhận ra rằng tổ tiên xa xưa của chúng ta cũng có thể đã hiểu biết cơ bản về y học”.\n=> Thông tin này cho thấy đoạn A đã đề cập “Những ví dụ cho thấy động vật cũng biết tận dụng các chất dược liệu từ tự nhiên”.\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"You only have to look at other primates – such as the capuchin monkeys who rub themselves with toxin-oozing millipedes to deter mosquitoes, or the chimpanzees who use noxious forest plants to rid themselves of intestinal parasites – to realise that our ancient ancestors too probably had a basic grasp of medicine."
+					]
+				},
+				{
+					"number": 17,
+					"text": "Reasons why it is challenging to use insects in drug research",
+					"answer": "F",
+					"quotes": [
+						"Firstly, there are so many insects that, without some manner of targeted approach, investigating this huge variety of species is a daunting task. Secondly, insects are generally very small, and the glands inside them that secrete potentially useful compounds are smaller still. This can make it difficult to obtain sufficient quantities of the compound for subsequent testing. Thirdly, although we consider insects to be everywhere, the reality of this ubiquity is vast numbers of a few extremely common species."
+					]
+				},
+				{
+					"number": 18,
+					"text": "Reference to how interest in drug research may benefit wildlife",
+					"answer": "I",
+					"quotes": [
+						"With every bit of wilderness that disappears, we deprive ourselves of potential medicines. As much as I’d love to help develop a groundbreaking insect-derived medicine, my main motivation for looking at insects in this way is conservation. I sincerely believe that all species, however small and seemingly insignificant, have a right to exist for their own sake. If we can shine a light on the darker recesses of nature’s medicine cabinet, exploring the useful chemistry of the most diverse animals on the planet, I believe we can make people think differently about the value of nature."
+					]
+				},
+				{
+					"number": 19,
+					"text": "A reason why nature-based medicines fell out of favour for a period",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nLý do tại sao thuốc dựa trên tự nhiên mất đi sự ưa chuộng trong một khoảng thời gian.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nModern pharmaceutical science moved its focus away from nature ~ nature-based medicines fell out of favour\n\nBước 3: So sánh và đối chiếu:\nĐoạn B chỉ rõ “Sau đó, trong một thời gian, ngành dược học hiện đại chuyển trọng tâm từ tự nhiên vào phòng thí nghiệm, tự thiết kế các hợp chất hóa học từ đầu. Nguyên nhân chính cho sự thay đổi này là, mặc dù trong tự nhiên có rất nhiều hợp chất hóa học tiềm năng, việc tìm ra chúng không hề dễ dàng”.\n=> Thông tin này cho thấy đoạn B đã “Lý do tại sao thuốc dựa trên tự nhiên mất đi sự ưa chuộng trong một khoảng thời gian”.\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"Then, for a while, modern pharmaceutical science moved its focus away from nature and into the laboratory, designing chemical compounds from scratch. The main cause of this shift is that although there are plenty of promising chemical compounds in nature, finding them is far from easy."
+					]
+				},
+				{
+					"number": 20,
+					"text": "An example of an insect-derived medicine in use at the moment",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nVí dụ về một loại thuốc có nguồn gốc từ côn trùng đang được sử dụng hiện nay.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nAlloferon, an antimicrobial compound produced by blow fly larvae ~ An example of an insect-derived medicine\n\nBước 3: So sánh và đối chiếu:\nĐoạn E chỉ rõ “Chẳng hạn, alloferon, một hợp chất kháng khuẩn được sản xuất bởi ấu trùng ruồi giấm, đang được sử dụng như một chất chống virus và chống ung thư tại Hàn Quốc và Nga”.\n=> Thông tin này cho thấy đoạn E đã đề cập đến “Ví dụ về một loại thuốc có nguồn gốc từ côn trùng đang được sử dụng hiện nay”.\n\nBước 4: Đáp án: E",
+					"quotes": [
+						"For example, alloferon, an antimicrobial compound produced by blow fly larvae, is used as an antiviral and antitumor agent in South Korea and Russia."
+					]
+				}
+			]
+		},
+		{
+			"range": "21-22",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "Which TWO of the following make insects interesting for drug research?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the huge number of individual insects in the world"
+						},
+						{
+							"label": "B",
+							"text": "the variety of substances insects have developed to protect themselves"
+						},
+						{
+							"label": "C",
+							"text": "the potential to extract and make use of insects’ genetic codes"
+						},
+						{
+							"label": "D",
+							"text": "the similarities between different species of insect"
+						},
+						{
+							"label": "E",
+							"text": "the manageable size of most insects"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 22,
+					"text": "Which TWO of the following make insects interesting for drug research?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the huge number of individual insects in the world"
+						},
+						{
+							"label": "B",
+							"text": "the variety of substances insects have developed to protect themselves"
+						},
+						{
+							"label": "C",
+							"text": "the potential to extract and make use of insects’ genetic codes"
+						},
+						{
+							"label": "D",
+							"text": "the similarities between different species of insect"
+						},
+						{
+							"label": "E",
+							"text": "the manageable size of most insects"
+						}
+					],
+					"answer": "C"
+				}
+			]
+		},
+		{
+			"range": "23-26",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary below. Choose ONE WORD ONLY from the passage for each answer. Write your answers in boxes 23 - 26 on your answer sheet.",
+			"body": "Research at Aberystwyth University\nRoss Piper and fellow zoologists at Aberystwyth University are using their expertise in ____ (23) when undertaking bioprospecting with insects. They are especially interested in the compounds that insects produce to overpower and preserve their ____ (24). They are also interested in compounds which insects use to protect themselves from pathogenic bacteria and fungi found in their ____ (25). Piper hopes that these substances will be useful in the development of drugs such as ____ (26)",
+			"body_html": "<h3><strong>Research at Aberystwyth University</strong></h3><p>Ross Piper and fellow zoologists at Aberystwyth University are using their expertise in [23] when undertaking bioprospecting with insects. They are especially interested in the compounds that insects produce to overpower and preserve their [24]. They are also interested in compounds which insects use to protect themselves from pathogenic bacteria and fungi found in their [25]. Piper hopes that these substances will be useful in the development of drugs such as [26]</p>",
+			"questions": [
+				{
+					"number": 23,
+					"text": "",
+					"answer": "ecology",
+					"quotes": [
+						"G. My colleagues and I at Aberystwyth University in the UK have developed an approach in which we use our knowledge of ecology as a guide to target our efforts."
+					]
+				},
+				{
+					"number": 24,
+					"text": "",
+					"answer": "prey",
+					"quotes": [
+						"The creatures that particularly interest us are the many insects that secrete powerful poison for subduing prey and keeping it fresh for future consumption."
+					]
+				},
+				{
+					"number": 25,
+					"text": "",
+					"answer": "habitats",
+					"quotes": [
+						"There are even more insects that are masters of exploiting filthy habitats, such as faeces and carcasses, where they are regularly challenged by thousands of micro-organisms."
+					]
+				},
+				{
+					"number": 26,
+					"text": "",
+					"answer": "antibiotics",
+					"quotes": [
+						"These insects have many antimicrobial compounds for dealing with pathogenic bacteria and fungi, suggesting that there is certainly potential to find many compounds that can serve as or inspire new antibiotics."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

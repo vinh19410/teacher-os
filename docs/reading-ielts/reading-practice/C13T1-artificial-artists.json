@@ -1,0 +1,297 @@
+{
+	"id": "f901f9de-3e12-43b0-93b9-dfeef4699e08",
+	"url": "https://stepielts.com/student/reading/f901f9de-3e12-43b0-93b9-dfeef4699e08?mode=practice",
+	"title": "Artificial artists",
+	"source": "C13T1",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "27-40",
+	"passage": {
+		"title": "Artificial artist?",
+		"subtitle": "Can computers really create works of art?",
+		"paragraphs": [
+			"The Painting Fool is one of a growing number of computer programs which, so their makers claim, possess creative talents. Classical music by an artificial composer has had audiences enraptured, and even tricked them into believing a human was behind the score. Artworks painted by a robot have sold for thousands of dollars and been hung in prestigious galleries. And software has been built which creates are that could not have been imagined by the programmer.",
+			"Human beings are the only species to perform sophisticated creative acts regularly. If we can break this process down into computer code, where does that leave human creativity? ‘This is a question at the very core of humanity,’ says Geraint Wiggins, a computational creativity researcher at Goldsmiths, University of London. ‘It scares a lot of people. They are worried that it is taking something special away from what it means to be human.’",
+			"To some extent, we are all familiar with computerised art. The question is: where does the work of the artist stop and the creativity of the computer begin? Consider one of the oldest machine artists, Aaron, a robot that has had paintings exhibited in London’s Tate Modern and the San Francisco Museum of Modern Art. Aaron can pick up a paintbrush and paint on canvas on its own. Impressive perhaps, but it is still little more than a tool to realise the programmer’s own creative ideas.",
+			"Simon Colton, the designer of the Painting Fool, is keen to make sure his creation doesn’t attract the same criticism. Unlike earlier ‘artists’ such as Aaron, the Painting Fool only needs minimal direction and can come up with its own concepts by going online for material. The software runs its own web searches and trawls through social media sites. It is now beginning to display a kind of imagination too, creating pictures from scratch. One of its original works is a series of fuzzy landscapes, depicting trees and sky. While some might say they have a mechanical look, Colton argues that such reactions arise from people’s double standards towards software-produced and human-produced art. After all, he says, consider that the Painting Fool painted the landscapes without referring to a photo. ‘If a child painted a new scene from its head, you’d say it has a certain level of imagination,’ he points out. ‘The same should be true of a machine.’ Software bugs can also lead to unexpected results. Some of the Painting Fool’s paintings of a chair came out in black and white, thanks to a technical glitch. This gives the work an eerie, ghostlike quality. Human artists like the renowned Ellsworth Kelly are lauded for limiting their colour palette – so why should computers be any different?",
+			"Researchers like Colton don’t believe it is right to measure machine creativity directly to that of humans who ‘have had millennia to develop our skills’. Others, though, are fascinated by the prospect that a computer might create something as original and subtle as our best artists. So far, only one has come close. Composer David Cope invented a program called Experiments in Musical Intelligence, or EMI. Not only did EMI create compositions in Cope’s style, but also that of the most revered classical composers, including Bach, Chopin and Mozart. Audiences were moved to tears, and EMI even fooled classical music experts into thinking they were hearing genuine Bach. Not everyone was impressed however. Some, such as Wiggins, have blasted Cope’s work as pseudoscience, and condemned him for his deliberately vague explanation of how the software worked. Meanwhile, Douglas Hofstadter of Indiana University said EMI created replicas which still rely completely on the original artist’s creative impulses. When audiences found out the truth they were often outraged with Cope, and one music lover even tried to punch him. Amid such controversy, Cope destroyed EMI’s vital databases.",
+			"But why did so many people love the music, yet recoil when the discovered how it was composed? A study by computer scientist David Moffat of Glasgow Caledonian University provides a clue. He asked both expert musicians and non-experts to assess six compositions. The participants weren’t told beforehand whether the tunes were composed by humans or computers, but were asked to guess, and then rate how much they liked each one. People who thought the composer was a computer tended to dislike the piece more than those who believed it was human. This was true even among the experts, who might have been expected to be more objective in their analyses.",
+			"Where does this prejudice come from? Paul Bloom of Yale University has a suggestion: he reckons part of the pleasure we get from art stems from the creative process behind the work. This can give it an ‘irresistible essence’, says Bloom. Meanwhile, experiments by Justin Kruger of New York University have shown that people’s enjoyment of an artwork increases if they think more time and effort was needed to create it. Similarly, Colton thinks that when people experience art, they wonder what the artist might have been thinking or what the artist is trying to tell them. It seems obvious, therefore, that with computers producing art, this speculation is cut short – there’s nothing to explore. But as technology becomes increasingly complex, finding those greater depths in computer art could become possible. This is precisely why Colton asks the Painting Fool to tap into online social networks for its inspiration: hopefully this way it will choose themes that will already be meaningful to us."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "27-31",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 27,
+					"text": "What is the writer suggesting about computer-produced works in the first paragraph?",
+					"options": [
+						{
+							"label": "A",
+							"text": "People’s acceptance of them can vary considerably."
+						},
+						{
+							"label": "B",
+							"text": "A great deal of progress has already been attained in this field."
+						},
+						{
+							"label": "C",
+							"text": "They have had more success in some artistic genres than in others."
+						},
+						{
+							"label": "D",
+							"text": "the advances are not as significant as the public believes them to be."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"The Painting Fool is one of a growing number of computer programs which, so their makers claim, possess creative talents. Classical music by an artificial composer has had audiences enraptured, and even tricked them into believing a human was behind the score. Artworks painted by a robot have sold for thousands of dollars and been hung in prestigious galleries."
+					]
+				},
+				{
+					"number": 28,
+					"text": "According to Geraint Wiggins, why are many people worried by computer art?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It is aesthetically inferior to human art."
+						},
+						{
+							"label": "B",
+							"text": "It may ultimately supersede human art."
+						},
+						{
+							"label": "C",
+							"text": "It undermines a fundamental human quality."
+						},
+						{
+							"label": "D",
+							"text": "It will lead to a deterioration in human ability."
+						}
+					],
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nTheo Geraint Wiggins, tại sao nhiều người lại lo lắng (worried) về nghệ thuật máy tính (computer art)?\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Geraint Wiggins, nhà nghiên cứu tính sáng tạo máy tính tại Goldsmiths, Đại học London, cho biết: Đây là câu hỏi cốt lõi của nhân loại. Nó khiến nhiều người sợ hãi. Họ e ngại rằng điều này đang tước đi một phần bản chất đặc biệt ý nghĩa của con người.\".\n=> Thông tin được in đậm đồng nghĩa với câu C (Nó làm suy đồi một phẩm chất cơ bản của con người).\n\nBước 3: Đáp án C\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Đoạn văn không nhắc đến việc \"Về mặt thẩm mỹ, nó thua kém nghệ thuật của con người\".\nĐáp án B -> Đoạn văn không đề cập đến việc \"Cuối cùng nó có thể thay thế nghệ thuật của con người\".\nĐáp án D -> Đoạn văn không nói về việc \"Nó sẽ dẫn đến sự suy giảm khả năng của con người\".",
+					"quotes": [
+						"‘This is a question at the very core of humanity,’ says Geraint Wiggins, a computational creativity researcher at Goldsmiths, University of London. ‘It scares a lot of people. They are worried that it is taking something special away from what it means to be human.’"
+					]
+				},
+				{
+					"number": 29,
+					"text": "What is a key difference between Aaron and the Painting Fool?",
+					"options": [
+						{
+							"label": "A",
+							"text": "its programmer’s background"
+						},
+						{
+							"label": "B",
+							"text": "public response to its work"
+						},
+						{
+							"label": "C",
+							"text": "the source of its subject matter"
+						},
+						{
+							"label": "D",
+							"text": "the technical standard of its output"
+						}
+					],
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nSự khác biệt chính (key difference) giữa Aaron và the Painting Fool là gì?\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Không giống các 'nghệ sĩ' đời trước như Aaron, The Painting Fool chỉ cần một ít chỉ dẫn thôi là đã có thể tự nghĩ ra ý tưởng và lên mạng tìm tư liệu\".\n=> Thông tin được in đậm đồng nghĩa với câu C (Nguồn gốc chủ đề của nó).\n\nBước 3: Đáp án C\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Đoạn văn không nhắc đến việc \"Nền tảng lập trình viên tạo ra nó\".\nĐáp án B -> Đoạn văn không đề cập đến việc \"Phản ứng của công chúng đối với công việc của nó\".\nĐáp án D -> Đoạn văn không nói về việc \"Tiêu chuẩn kỹ thuật đầu ra của nó\".",
+					"quotes": [
+						"Unlike earlier ‘artists’ such as Aaron, the Painting Fool only needs minimal direction and can come up with its own concepts by going online for material."
+					]
+				},
+				{
+					"number": 30,
+					"text": "What point does Simon Colton make in the fourth paragraph?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Software-produced art is often dismissed as childish and simplistic."
+						},
+						{
+							"label": "B",
+							"text": "The same concepts of creativity should not be applied to all forms of art."
+						},
+						{
+							"label": "C",
+							"text": "It is unreasonable to expect a machine to be as imaginative as a human being."
+						},
+						{
+							"label": "D",
+							"text": "People tend to judge computer art and human art according to different criteria."
+						}
+					],
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nSimon Colton đưa ra quan điểm gì trong đoạn văn thứ tư (in the fourth paragraph)?\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Trong khi một số người có thể nói rằng chúng có vẻ ngoài máy móc, Colton lập luận rằng những phản ứng như vậy xuất phát từ tiêu chuẩn kép của con người đối với nghệ thuật do con người sản xuất và do phần mềm sản xuất.\n=> Thông tin được in đậm đồng nghĩa với câu D (Mọi người có xu hướng đánh giá nghệ thuật máy tính và nghệ thuật con người theo các tiêu chí khác nhau).\n\nBước 3: Đáp án D\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Đoạn văn không nhắc đến việc \"Nghệ thuật sản xuất bằng phần mềm thường bị coi là trẻ con và đơn giản\".\nĐáp án B -> Đoạn văn không đề cập đến việc \"Những khái niệm giống nhau về sự sáng tạo không nên được áp dụng cho tất cả các loại hình nghệ thuật\".\nĐáp án C -> Đoạn văn không nói về việc \"Thật vô lý khi mong đợi một cỗ máy có trí tưởng tượng như con người\".",
+					"quotes": [
+						"While some might say they have a mechanical look, Colton argues that such reactions arise from people’s double standards towards software-produced and human-produced art."
+					]
+				},
+				{
+					"number": 31,
+					"text": "The writer refers to the paintings of a chair as an example of computer art which",
+					"options": [
+						{
+							"label": "A",
+							"text": "achieves a particularly striking effect."
+						},
+						{
+							"label": "B",
+							"text": "exhibits a certain level of genuine artistic skill."
+						},
+						{
+							"label": "C",
+							"text": "closely resembles that of a well-known artist."
+						},
+						{
+							"label": "D",
+							"text": "highlights the technical limitations of the software."
+						}
+					],
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nTác giả đề cập đến những bức tranh về chiếc ghế như một ví dụ về nghệ thuật máy tính mà ___.\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Một số bức tranh về chiếc ghế của Painting Fool có màu đen trắng do trục trặc kỹ thuật. Điều này mang lại cho tác phẩm một sắc thái kỳ quái, ma quái\".\n=> Thông tin được in đậm đồng nghĩa với câu A (Đạt được hiệu quả đặc biệt nổi bật).\n\nBước 3: Đáp án A\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án B -> Đoạn văn không nhắc đến việc \"Thể hiện một mức độ nhất định của kỹ năng nghệ thuật thực sự\".\nĐáp án C -> Đoạn văn không đề cập đến việc \"Gần giống với một nghệ sĩ nổi tiếng\".\nĐáp án D -> Đoạn văn không nói về việc \"Làm nổi bật những hạn chế về mặt kỹ thuật của phần mềm\".",
+					"quotes": [
+						"Some of the Painting Fool’s paintings of a chair came out in black and white, thanks to a technical glitch. This gives the work an eerie, ghostlike quality."
+					]
+				}
+			]
+		},
+		{
+			"range": "32-37",
+			"type": "MATCHING_ENDINGS",
+			"instructions": "Complete each sentence with the correct ending, A-G below.\nWrite the correct letter, A-G, in boxes 32-37 on your answer sheet.",
+			"options": [
+				{
+					"label": "A",
+					"text": "generating work that was virtually indistinguishable from that of humans."
+				},
+				{
+					"label": "B",
+					"text": "knowing whether it was the work of humans or software."
+				},
+				{
+					"label": "C",
+					"text": "producing work entirely dependent on the imagination of its creator."
+				},
+				{
+					"label": "D",
+					"text": "comparing the artistic achievements of humans and computers."
+				},
+				{
+					"label": "E",
+					"text": "revealing the technical details of his program."
+				},
+				{
+					"label": "F",
+					"text": "persuading the public to appreciate computer art."
+				},
+				{
+					"label": "G",
+					"text": "discovering that it was the product of a computer program"
+				}
+			],
+			"body": "Simon Colton says it is important to consider the long-term view then ____ (32)\nDavid Cope’s EMI software surprised people by ____ (33)\nGeraint Wiggins criticized Cope for not ____ (34)\nDouglas Hofstadter claimed that EMI was ____ (35)\nAudiences who had listened to EMI’s music became angry after ____ (36)\nThe participants in David Moffat’s study had to assess music without ____ (37)",
+			"body_html": "<p>Simon Colton says it is important to consider the long-term view then [32]</p><p>David Cope’s EMI software surprised people by [33]</p><p>Geraint Wiggins criticized Cope for not [34]</p><p>Douglas Hofstadter claimed that EMI was [35]</p><p>Audiences who had listened to EMI’s music became angry after [36]</p><p>The participants in David Moffat’s study had to assess music without [37]</p>",
+			"questions": [
+				{
+					"number": 32,
+					"text": "Simon Colton says it is important to consider the long-term view then",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhần thông tin (Simon Colton cho rằng điều quan trọng là phải xem xét tầm nhìn dài hạn khi___) sẽ phù hợp với ý nào?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nResearchers like Colton ~ Simon Colton\nmillennia to develop our skills ~ the long-term view\nmeasure ~ comparing\nmachine creativity directly to that of humans ~ the artistic achievements of humans and computers\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Các nhà nghiên cứu như Colton cho rằng không nên so sánh trực tiếp khả năng sáng tạo của máy móc với con người, vì con người đã có hàng thiên niên kỷ để phát triển kỹ năng của mình\".\n=> Thông tin được in đậm đồng nghĩa với đáp án D (so sánh những thành tựu nghệ thuật của con người và máy tính).\n\nBước 4: Đáp án D",
+					"quotes": [
+						"Researchers like Colton don’t believe it is right to measure machine creativity directly to that of humans who ‘have had millennia to develop our skills’."
+					]
+				},
+				{
+					"number": 33,
+					"text": "David Cope’s EMI software surprised people by",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhần thông tin (Phần mềm EMI của David Cope khiến mọi người ngạc nhiên bởi vì...) sẽ phù hợp với ý nào?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nComposer David Cope ~ David Cope\nExperiments in Musical Intelligence, or EMI ~ EMI software\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Nhà soạn nhạc David Cope đã tạo ra một chương trình có tên Experiments in Musical Intelligence, hay EMI. EMI không chỉ sáng tác theo phong cách của Cope, mà còn bắt chước được cả những nhà soạn nhạc cổ điển nổi tiếng như Bach, Chopin và Mozart. Khán giả đã phải rơi nước mắt khi nghe nhạc của EMI, và nó thậm chí còn đánh lừa được cả những chuyên gia âm nhạc cổ điển, khiến họ tưởng đang nghe nhạc của Bach thật sự\".\n=> Thông tin được in đậm đồng nghĩa với đáp án A (...tạo ra sản phẩm gần như không thể phân biệt được với sản phẩm của con người).\n\nBước 4: Đáp án A",
+					"quotes": [
+						"Composer David Cope invented a program called Experiments in Musical Intelligence, or EMI. Not only did EMI create compositions in Cope’s style, but also that of the most revered classical composers, including Bach, Chopin and Mozart. Audiences were moved to tears, and EMI even fooled classical music experts into thinking they were hearing genuine Bach."
+					]
+				},
+				{
+					"number": 34,
+					"text": "Geraint Wiggins criticized Cope for not",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhần thông tin (Geraint Wiggins chỉ trích Cope vì đã không...) sẽ phù hợp với ý nào?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nSome, such as Wiggins ~ Geraint Wiggins\ncondemned ~ criticized\nvague explanation ~ revealing\nhow the software worked ~ the technical details of his program\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Một số người, như Wiggins, đã chỉ trích công trình của Cope là giả khoa học và lên án ông vì đã cố tình giải thích mơ hồ về cách thức hoạt động của phần mềm\".\n=> Thông tin được in đậm đồng nghĩa với đáp án E (...công bố kỹ thuật chi tiết về chương trình của mình.).\n\nBước 4: Đáp án E",
+					"quotes": [
+						"Some, such as Wiggins, have blasted Cope’s work as pseudoscience, and condemned him for his deliberately vague explanation of how the software worked."
+					]
+				},
+				{
+					"number": 35,
+					"text": "Douglas Hofstadter claimed that EMI was",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhần thông tin (Douglas Hofstadter cho rằng EMI là...) sẽ phù hợp với ý nào?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nDouglas Hofstadter of Indiana University ~ Douglas Hofstadter\nEMI ~ từ khoá giữ nguyên\nrely completely on ~ entirely dependent on\nthe original artist's creative impulses ~ the imagination of its creator\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"...Douglas Hofstadter thuộc Đại học Indiana cho rằng, EMI chỉ tạo ra những bản sao, vẫn hoàn toàn dựa vào cảm hứng sáng tạo của nghệ sĩ gốc\".\n=> Thông tin được in đậm đồng nghĩa với đáp án C (...tạo ra tác phẩm hoàn toàn phụ thuộc vào trí tưởng tượng của người tạo ra nó).\n\nBước 4: Đáp án C",
+					"quotes": [
+						"Meanwhile, Douglas Hofstadter of Indiana University said EMI created replicas which still rely completely on the original artist’s creative impulses."
+					]
+				},
+				{
+					"number": 36,
+					"text": "Audiences who had listened to EMI’s music became angry after",
+					"answer": "G",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhần thông tin (Khán giả đã nghe nhạc của EMI trở nên tức giận sau khi...) sẽ phù hợp với ý nào?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\naudiences ~ từ khoá giữ nguyên\nbecame angry ~ they were often outraged\nfound out the truth ~ discovering that it was the product of a computer program\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Khi khán giả biết được sự thật, họ thường tỏ ra phẫn nộ với Cope, thậm chí có một người yêu thích âm nhạc còn định đấm anh ta\".\n=> Thông tin được in đậm đồng nghĩa với đáp án G (...phát hiện ra rằng đó là sản phẩm của một chương trình máy tính).\n\nBước 4: Đáp án G",
+					"quotes": [
+						"When audiences found out the truth they were often outraged with Cope, and one music lover even tried to punch him."
+					]
+				},
+				{
+					"number": 37,
+					"text": "The participants in David Moffat’s study had to assess music without",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhần thông tin (Những người tham gia nghiên cứu của David Moffat phải đánh giá âm nhạc mà không...) sẽ phù hợp với ý nào?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nThe participants ~ The participants in David Moffat’s study\nassess six compositions ~ assess music\nweren’t told beforehand ~ without knowing\nwhether the tunes were composed by humans or computers ~ whether it was the work of humans or software\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Một nghiên cứu của David Moffat, chuyên gia khoa học máy tính tại Đại học Glasgow Caledonian, đã cung cấp một manh mối. Ông yêu cầu cả các nhạc sĩ chuyên nghiệp và người không chuyên đánh giá sáu bản nhạc. Những người tham gia không được cho biết trước liệu các bản nhạc do con người hay máy tính sáng tác, nhưng được yêu cầu đoán và sau đó đánh giá mức độ yêu thích của họ đối với từng bản\".\n=> Thông tin được in đậm đồng nghĩa với đáp án B (...biết trước đó là tác phẩm của con người hay phần mềm).\n\nBước 4: Đáp án B",
+					"quotes": [
+						"A study by computer scientist David Moffat of Glasgow Caledonian University provides a clue. He asked both expert musicians and non-experts to assess six compositions.",
+						"A study by computer scientist David Moffat of Glasgow Caledonian University provides a clue. He asked both expert musicians and non-experts to assess six compositions. The participants weren’t told beforehand whether the tunes were composed by humans or computers, but were asked to guess, and then rate how much they liked each one. People who thought the composer was a computer tended to dislike the piece more than those who believed it was human."
+					]
+				}
+			]
+		},
+		{
+			"range": "38-40",
+			"type": "YES/NO/NOT GIVEN",
+			"instructions": "Do the following statements agree with the claims of the writer in Reading Passage 3?\nIn boxes 38-40 on your answer sheet, write\nYES if the statement agrees with the claims of the writer\nNO if the statement contradicts the claims of the writer\nNOT GIVEN if it is impossible to say what the writer thinks about this",
+			"questions": [
+				{
+					"number": 38,
+					"text": "Moffat’s research may help explain people’s reactions to EMI",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNghiên cứu của Moffat có thể giúp giải thích phản ứng của mọi người đối với EMI.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nA study by computer scientist David Moffat ~ Moffat’s research\nprovides a clue ~ may help explain\nrate how much they liked each one ~ people’s reactions to EMI\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Một nghiên cứu của nhà khoa học máy tính David Moffat của Đại học Glasgow Caledonian đã cung cấp manh mối [...].Những người cho rằng nhà soạn nhạc là một chiếc máy tính có xu hướng không thích tác phẩm đó hơn những người tin rằng đó là con người. Điều này đúng ngay cả với các chuyên gia, những người lẽ ra được kỳ vọng sẽ khách quan hơn trong các phân tích của họ\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi là \"Nghiên cứu của Moffat có thể giúp giải thích phản ứng của mọi người đối với EMI\"(Moffat’s research may help explain people’s reactions to EMI).\n\nBước 4: Đáp án: YES",
+					"quotes": [
+						"A study by computer scientist David Moffat of Glasgow Caledonian University provides a clue. He asked both expert musicians and non-experts to assess six compositions.",
+						"The participants weren’t told beforehand whether the tunes were composed by humans or computers, but were asked to guess, and then rate how much they liked each one. People who thought the composer was a computer tended to dislike the piece more than those who believed it was human. This was true even among the experts, who might have been expected to be more objective in their analyses."
+					]
+				},
+				{
+					"number": 39,
+					"text": "The non-experts in Moffat’s study all responded in a predictable way",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững người không phải là chuyên gia trong nghiên cứu của Moffat đều phản ứng theo cách có thể đoán trước được.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nnon-experts ~ the non-experts in Moffat’s study\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"Ông yêu cầu cả những nhạc sĩ chuyên nghiệp và những người không chuyên đánh giá sáu tác phẩm. Những người tham gia không được biết trước liệu các giai điệu đó được sáng tác bởi con người hay máy tính mà được yêu cầu đoán và sau đó đánh giá xem họ thích từng giai điệu đến mức nào\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"Những người không phải là chuyên gia trong nghiên cứu của Moffat đều phản ứng theo cách có thể đoán trước được\" (The non-experts in Moffat’s study all responded in a predictable way).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"A study by computer scientist David Moffat of Glasgow Caledonian University provides a clue. He asked both expert musicians and non-experts to assess six compositions. The participants weren’t told beforehand whether the tunes were composed by humans or computers, but were asked to guess, and then rate how much they liked each one. People who thought the composer was a computer tended to dislike the piece more than those who believed it was human."
+					]
+				},
+				{
+					"number": 40,
+					"text": "Justin Kruger’s findings cast doubt on Paul Bloom’s theory about people’s prejudice towards computer art",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NO",
+					"quotes": [
+						"Paul Bloom of Yale University has a suggestion: he reckons part of the pleasure we get from art stems from the creative process behind the work. This can give it an ‘irresistible essence’, says Bloom. Meanwhile, experiments by Justin Kruger of New York University have shown that people’s enjoyment of an artwork increases if they think more time and effort was needed to create it."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

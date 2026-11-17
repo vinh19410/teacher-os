@@ -1,0 +1,288 @@
+{
+	"id": "8ee3cd9c-7e1b-47d6-9e8d-31b67c26b313",
+	"url": "https://stepielts.com/student/reading/8ee3cd9c-7e1b-47d6-9e8d-31b67c26b313?mode=practice",
+	"title": "Game Theory",
+	"source": "Collection",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "27-40",
+	"passage": {
+		"title": "Game Theory",
+		"paragraphs": [
+			"Computer software that models human behaviour can make forecasts, outsmart rivals, and transform negotiations.",
+			"According to game theory, our chances of success in negotiations are based on the choices of others. Computer models have been developed to work out how events will unfold as people and organizations act in what they perceive to be their own best interests. Numerical values are placed on the goals, motivations, and influence of players, and likely options are considered. Game theory software then evaluates the ability of each of those players to influence others, and hence predicts the course of events. Although many individuals would feel uncomfortable having a computer make decisions for them, many organizations run such computer simulations for law firms, companies, and governments. But feeding software with accurate data on all the players involved is especially tricky for political matters. Reinier van Oosten of Decide, a Dutch firm that models political negotiations, notes that predictions may become unreliable when people unexpectedly give in to ‘non-rational’ emotions such as hatred, rather than pursuing what is apparently in their best interests. However, sorting out people’s motivations is much easier when making money is the main object. Accordingly, modeling behaviour using game theory is proving especially useful when applied to economics.",
+			"Using game theory software to model auctions can be very lucrative. Consulting firms are entering the market to help clients design profitable auctions, or to win them less expensively. In 2006, in the run-up to an online auction of radio-spectrum licenses by America’s Federal Communications Commission, Dr. Paul Milgrom, a consultant and Stanford University professor in the United States, customized his game theory software to assist a consortium of bidders. He was apprehensive at first, but the result was a triumph. When the auction began, Milgrom’s software tracked competitors’ bids to estimate their budgets for the 1,132 licenses on offer. Crucially, the software estimated the secret values bidders placed on specific licenses and determined that certain big licenses were being overvalued. Milgrom’s clients were then directed to obtain a collection of smaller, less expensive licenses instead. Two of his clients paid about a third less than their competitors for an equivalent amount of spectrum, saving almost $1.2 billion. Such a saving makes one wonder why everyone isn’t using game theory software. And, if they were, how would that affect the game?",
+			"PA Consulting, a British firm, designs models for software based on game theory to help its clients solve specific problems in areas from pharmaceuticals to the production of television shows. British government agencies have asked PA Consulting to build models to test scenarios that address how many of a type of business should be allowed to operate in a particular area. A simple example: if two competing ice-cream sellers share a long beach, they will set up stalls back-to-back in the middle and stay put, explains Dr. Stephen Black, a modeller for PA. Unfortunately for potential customers at the far ends of the beach, each seller prevents the other from relocating—no other spot would be closer to more people. Introduce a third seller, however, and the stifling equilibrium is broken as relocations and pricing changes energize the market.\nBy studying a chain of events such as this, software designers can assess the effect of change and see the patterns in possible outcomes that may occur.\nAs a result, the use of modelling makes clients more inclined to look at future repercussions when making business decisions, Black says.",
+			"Where is all this heading? Alongside the increasingly elaborate modelling software, there are also efforts to develop software that can assist in negotiation and mediation. Two decades ago, Dr. Clara Ponsati, a Spanish academic, came up with a clever idea. She accepted that, as negotiators everywhere know, the first side to disclose the maximum amount that it is willing to pay loses considerable bargaining power. Without leverage, it can be pushed backward in the bargaining process by a clever opponent. But if neither side reveals the concessions it is prepared to make, negotiations can become very slow or collapse. However, difficult negotiations can often be pushed along by neutral mediators, especially if they are entrusted with the secret bottom lines of all parties. Ponsati’s idea was that if a human mediator was not trusted, affordable, or available, a computer could do the job instead. Negotiating parties would update the software with the confidential information on their bargaining positions after each round of talks. Once positions on both sides were no longer mutually exclusive, the software would be used to split the difference and propose an agreement. Ponsati, now head of the Institute of Economic Analysis at the Autonomous University of Barcelona in Spain, says such “mediation machines” could be employed to push negotiations forward by unlocking information that would otherwise be withheld from an opponent.",
+			"Could mediation which has been achieved using software based on game theory spread from auction bids and utility pricing to resolving political and military disputes? Today’s game theory software is not yet sufficiently advanced to mediate between warring countries. But one day opponents on the brink of war might be tempted to use it to exchange information without having to engage in conflict. According to some game theorists, opponents could learn how a war would turn out, skip the fighting, and strike a deal. Over-optimistic, perhaps—but game theorists do have rather an impressive track record when it comes to predicting the future."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "27-31",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, C or D.",
+			"questions": [
+				{
+					"number": 27,
+					"text": "What does the writer suggest about game theory software in the first paragraph?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Traditional negotiating practices should be used to supplement the software."
+						},
+						{
+							"label": "B",
+							"text": "Success of the software depends on the accuracy of the assigned data."
+						},
+						{
+							"label": "C",
+							"text": "This software anticipates the outcome of future events."
+						},
+						{
+							"label": "D",
+							"text": "Future business negotiations will be dominated by this software."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Computer software that models human behaviour can make forecasts, outsmart rivals, and transform negotiations."
+					]
+				},
+				{
+					"number": 28,
+					"text": "Reinier van Oosten says predicting what people will do works best if",
+					"options": [
+						{
+							"label": "A",
+							"text": "participants are honest about how they feel."
+						},
+						{
+							"label": "B",
+							"text": "there is a good understanding of the client's culture."
+						},
+						{
+							"label": "C",
+							"text": "people strongly dislike the other party."
+						},
+						{
+							"label": "D",
+							"text": "profit is the primary motivator."
+						}
+					],
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nReinier van Oosten nói rằng việc dự đoán hành vi của mọi người hiệu quả nhất khi nào?\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"việc phân loại động cơ của mọi người dễ dàng hơn nhiều khi kiếm tiền là mục tiêu chính\".\n==> Thông tin được in đậm đồng nghĩa với câu D (lợi nhuận là động lực chính).\n\nBước 3: Đáp án: D\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Đoạn văn không nhắc đến việc \"các bên tham gia thành thật về cảm xúc của họ\".\nĐáp án B -> Đoạn văn không đề cập đến việc \"hiểu rõ văn hóa của khách hàng\".\nĐáp án C -> Đoạn văn thực ra nói điều ngược lại — khi người ta bị chi phối bởi cảm xúc như thù ghét, dự đoán trở nên kém tin cậy hơn.",
+					"quotes": [
+						"However, sorting out people’s motivations is much easier when making money is the main object."
+					]
+				},
+				{
+					"number": 29,
+					"text": "After using game theory software in 2006, Dr. Milgrom instructed his clients to",
+					"options": [
+						{
+							"label": "A",
+							"text": "buy big licenses."
+						},
+						{
+							"label": "B",
+							"text": "negotiate with the other parties directly."
+						},
+						{
+							"label": "C",
+							"text": "make one big offer at the end of the auction."
+						},
+						{
+							"label": "D",
+							"text": "purchase a mix of licenses."
+						}
+					],
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nSau khi sử dụng phần mềm lý thuyết trò chơi năm 2006, Tiến sĩ Milgrom đã hướng dẫn khách hàng của mình làm gì?\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Phần mềm xác định rằng một số giấy phép lớn đang bị định giá quá cao. Khách hàng của Milgrom sau đó được hướng dẫn để mua một tập hợp các giấy phép nhỏ hơn, ít tốn kém hơn\".\n==> Thông tin được in đậm đồng nghĩa với câu D (mua một tập hợp các loại giấy phép).\n\nBước 3: Đáp án: D\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Đoạn văn không nhắc đến việc \"mua các giấy phép lớn\" — thực tế là phần mềm xác định những giấy phép lớn bị định giá quá cao.\nĐáp án B -> Đoạn văn không đề cập đến việc \"đàm phán trực tiếp với các bên khác\".\nĐáp án C -> Đoạn văn không nói về việc \"đưa ra một đề nghị lớn duy nhất vào cuối phiên đấu giá\".",
+					"quotes": [
+						"Milgrom’s clients were then directed to obtain a collection of smaller, less expensive licenses instead."
+					]
+				},
+				{
+					"number": 30,
+					"text": "The writer refers to Stephen Black's ice-cream seller example in order to",
+					"options": [
+						{
+							"label": "A",
+							"text": "show the impact new competitors have on business."
+						},
+						{
+							"label": "B",
+							"text": "highlight the importance of location on business success."
+						},
+						{
+							"label": "C",
+							"text": "demonstrate that businesses must follow a strategy."
+						},
+						{
+							"label": "D",
+							"text": "clarify how pricing affects sales."
+						}
+					],
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nTác giả đề cập đến ví dụ người bán kem của Stephen Black nhằm mục đích gì?\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Hãy giới thiệu thêm một người bán thứ ba, sự cân bằng bị kìm hãm này sẽ bị phá vỡ khi các lần di chuyển và thay đổi giá cả tạo ra sức sống cho thị trường\".\n==> Thông tin được in đậm đồng nghĩa với câu A (cho thấy tác động mà các đối thủ cạnh tranh mới có đối với kinh doanh).\n\nBước 3: Đáp án: A\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án B -> Đoạn văn không nhắc đến việc \"tầm quan trọng của vị trí đối với sự thành công trong kinh doanh\" — vị trí chỉ là bối cảnh của ví dụ, không phải thông điệp chính.\nĐáp án C -> Đoạn văn không đề cập đến việc \"các doanh nghiệp phải tuân theo một chiến lược\".\nĐáp án D -> Đoạn văn không nói về việc \"giá cả ảnh hưởng đến doanh số\" là mục đích chính của ví dụ này.",
+					"quotes": [
+						"A simple example: if two competing ice-cream sellers share a long beach, they will set up stalls back-to-back in the middle and stay put, explains Dr. Stephen Black, a modeller for PA. Unfortunately for potential customers at the far ends of the beach, each seller prevents the other from relocating—no other spot would be closer to more people. Introduce a third seller, however, and the stifling equilibrium is broken as relocations and pricing changes energize the market."
+					]
+				},
+				{
+					"number": 31,
+					"text": "Ponsati believes business negotiations are more likely to progress if",
+					"options": [
+						{
+							"label": "A",
+							"text": "a solution is proposed by one of the interested parties."
+						},
+						{
+							"label": "B",
+							"text": "mediators or computers take over the bargaining process."
+						},
+						{
+							"label": "C",
+							"text": "both parties follow the rules of negotiating."
+						},
+						{
+							"label": "D",
+							"text": "sufficient time is allowed for the bargaining process."
+						}
+					],
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nPonsati tin rằng các cuộc đàm phán kinh doanh có nhiều khả năng tiến triển hơn nếu điều gì xảy ra?\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Ý tưởng của Ponsati là nếu một người trung gian là con người không được tin tưởng, không đủ khả năng chi trả, hoặc không có sẵn, một máy tính có thể thay thế\". Ngoài ra, bài đọc cũng đề cập \"các cuộc đàm phán khó khăn thường có thể được đẩy tiến bởi các trung gian trung lập\".\n==> Thông tin được in đậm đồng nghĩa với câu B (các trung gian hoặc máy tính tiếp quản quá trình thương lượng).\n\nBước 3: Đáp án: B\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Đoạn văn không nhắc đến việc \"một giải pháp được đề xuất bởi một trong các bên có liên quan\" — thực ra điều ngược lại được nhấn mạnh: bên tiết lộ thông tin trước sẽ mất lợi thế.\nĐáp án C -> Đoạn văn không đề cập đến việc \"cả hai bên tuân theo các quy tắc đàm phán\".\nĐáp án D -> Đoạn văn không nói về việc \"cho phép đủ thời gian cho quá trình thương lượng\".",
+					"quotes": [
+						"However, difficult negotiations can often be pushed along by neutral mediators, especially if they are entrusted with the secret bottom lines of all parties. Ponsati’s idea was that if a human mediator was not trusted, affordable, or available, a computer could do the job instead. Negotiating parties would update the software with the confidential information on their bargaining positions after each round of talks. Once positions on both sides were no longer mutually exclusive, the software would be used to split the difference and propose an agreement. Ponsati, now head of the Institute of Economic Analysis at the Autonomous University of Barcelona in Spain, says such “mediation machines” could be employed to push negotiations forward by unlocking information that would otherwise be withheld from an opponent."
+					]
+				}
+			]
+		},
+		{
+			"range": "32-35",
+			"type": "YES/NO/NOT GIVEN",
+			"instructions": "Do the following statements agree with the claims of the writer in Reading Passage 3? Questions 32-35",
+			"questions": [
+				{
+					"number": 32,
+					"text": "Game theory software may be unhelpful when dealing with political issues.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhần mềm lý thuyết trò chơi có thể không hữu ích khi xử lý các vấn đề chính trị.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\npredictions may become unreliable ~ unhelpful\npolitical matters ~ từ khóa giữ nguyên\nnon-rational emotions ~ dealing with political issues\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"các dự đoán có thể trở nên không đáng tin cậy khi mọi người bất ngờ nhường bộ trước các cảm xúc 'phi lý' như thù ghét, thay vì theo đuổi điều rõ ràng là lợi ích tốt nhất của họ — đặc biệt là đối với các vấn đề chính trị\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"phần mềm có thể không hữu ích với các vấn đề chính trị\".\n\nBước 4: Đáp án: YES",
+					"quotes": [
+						"But feeding software with accurate data on all the players involved is especially tricky for political matters. Reinier van Oosten of Decide, a Dutch firm that models political negotiations, notes that predictions may become unreliable when people unexpectedly give in to ‘non-rational’ emotions such as hatred, rather than pursuing what is apparently in their best interests."
+					]
+				},
+				{
+					"number": 33,
+					"text": "Dr. Milgrom was confident about applying his software to an auction in 2006.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NO",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTiến sĩ Milgrom tự tin khi áp dụng phần mềm của ông cho phiên đấu giá năm 2006.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nconfident >< apprehensive\napplying his software ~ customized his game theory software\nauction in 2006 ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Ông ấy lo lắng lúc đầu, nhưng kết quả là một thành công\".\n==> Điều này trái ngược với thông tin trong câu hỏi \"Milgrom tự tin\" (apprehensive có nghĩa là lo lắng, không tự tin).\n\nBước 4: Đáp án: NO",
+					"quotes": [
+						"He was apprehensive at first, but the result was a triumph."
+					]
+				},
+				{
+					"number": 34,
+					"text": "Dr. Ponsati believes 'mediation machines' are an inappropriate method of negotiation in areas other than business.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTiến sĩ Ponsati tin rằng 'máy trung gian' là phương pháp đàm phán không phù hợp trong các lĩnh vực ngoài kinh doanh.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nmediation machines ~ từ khóa giữ nguyên\ninappropriate ~ không được đề cập\nareas other than business ~ không được đề cập\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc Ponsati nói rằng \"các 'máy trung gian' có thể được sử dụng để đẩy các cuộc đàm phán tiến lên\".\n==> Tuy nhiên, bài đọc không hề nhắc đến thông tin về việc Ponsati cho rằng phương pháp này \"không phù hợp trong các lĩnh vực ngoài kinh doanh\".\n\nBước 4: Đáp án: NOT GIVEN"
+				},
+				{
+					"number": 35,
+					"text": "Military organizations refuse to accept that software based on game theory could prevent wars.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác tổ chức quân sự từ chối chấp nhận rằng phần mềm dựa trên lý thuyết trò chơi có thể ngăn chặn chiến tranh.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nmilitary organizations ~ warring countries / opponents on the brink of war\nrefuse to accept ~ không được đề cập\nprevent wars ~ skip the fighting, strike a deal\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"các đối thủ có thể học được kết quả của chiến tranh sẽ ra sao, bỏ qua giao tranh và đạt được thỏa thuận\".\n==> Tuy nhiên, bài đọc không hề nhắc đến thông tin về thái độ của \"các tổ chức quân sự\" hay việc họ \"từ chối chấp nhận\" điều này.\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Could mediation which has been achieved using software based on game theory spread from auction bids and utility pricing to resolving political and military disputes? Today’s game theory software is not yet sufficiently advanced to mediate between warring countries. But one day opponents on the brink of war might be tempted to use it to exchange information without having to engage in conflict. According to some game theorists, opponents could learn how a war would turn out, skip the fighting, and strike a deal. Over-optimistic, perhaps—but game theorists do have rather an impressive track record when it comes to predicting the future."
+					]
+				}
+			]
+		},
+		{
+			"range": "36-40",
+			"type": "MATCHING_ENDINGS",
+			"instructions": "Complete each sentence with the correct ending, A–F",
+			"options": [
+				{
+					"label": "A",
+					"text": "something is thought to be worth more than it really is."
+				},
+				{
+					"label": "B",
+					"text": "discussions between the parties begin to break down."
+				},
+				{
+					"label": "C",
+					"text": "too much information is given to the other parties early on."
+				},
+				{
+					"label": "D",
+					"text": "businesses consider possible future developments."
+				},
+				{
+					"label": "E",
+					"text": "people allow their feelings to influence decisions."
+				},
+				{
+					"label": "F",
+					"text": "a solution requires face-to-face negotiation."
+				}
+			],
+			"body": "According to Reinier van Oosten, game theory software fails when... ____ (36)\nDr. Milgrom's software is successful in detecting if... ____ (37)\nDr. Black's game theory software is a helpful tool when... ____ (38)\nAccording to Dr. Ponsati, negotiators fall behind if... ____ (39)\nDr. Ponsati's mediation machine is useful when... ____ (40)",
+			"body_html": "<ul><li>According to Reinier van Oosten, game theory software fails when... [36]</li><li>Dr. Milgrom's software is successful in detecting if... [37]</li><li>Dr. Black's game theory software is a helpful tool when... [38]</li><li>According to Dr. Ponsati, negotiators fall behind if... [39]</li><li>Dr. Ponsati's mediation machine is useful when... [40]</li></ul>",
+			"questions": [
+				{
+					"number": 36,
+					"text": "According to Reinier van Oosten, game theory software fails when...",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTheo Reinier van Oosten, phần mềm lý thuyết trò chơi thất bại khi điều gì xảy ra?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nfails ~ predictions may become unreliable\nnon-rational emotions such as hatred ~ feelings influence decisions\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"các dự đoán có thể trở nên không đáng tin cậy khi mọi người bất ngờ nhường bộ trước các cảm xúc 'phi lý' như thù ghét\"\n==> Thông tin được in đậm đồng nghĩa với đáp án E (\"mọi người để cảm xúc ảnh hưởng đến quyết định\").\n\nBước 4: Đáp án: E",
+					"quotes": [
+						"Reinier van Oosten of Decide, a Dutch firm that models political negotiations, notes that predictions may become unreliable when people unexpectedly give in to ‘non-rational’ emotions such as hatred, rather than pursuing what is apparently in their best interests."
+					]
+				},
+				{
+					"number": 37,
+					"text": "Dr. Milgrom's software is successful in detecting if...",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhần mềm của Tiến sĩ Milgrom thành công trong việc phát hiện điều gì?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ndetecting ~ estimated / determined\novervalued ~ worth more than it really is\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"phần mềm ước tính các giá trị bí mật mà người đấu giá đặt ra cho các giấy phép cụ thể và xác định rằng một số giấy phép lớn đang bị định giá quá cao\".\n==> Thông tin được in đậm đồng nghĩa với đáp án A (\"điều gì đó được cho là có giá trị hơn thực tế\").\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"Crucially, the software estimated the secret values bidders placed on specific licenses and determined that certain big licenses were being overvalued."
+					]
+				},
+				{
+					"number": 38,
+					"text": "Dr. Black's game theory software is a helpful tool when...",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhần mềm lý thuyết trò chơi của Tiến sĩ Black là một công cụ hữu ích khi nào?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nhelpful tool ~ more inclined to look at\nfuture developments ~ future repercussions\n\nBước 3: So sánh và đối chiếu: Bài đọc chỉ rõ \"việc sử dụng mô hình hóa khiến khách hàng có xu hướng xem xét các hậu quả trong tương lai hơn khi đưa ra quyết định kinh doanh\".\n==> Thông tin được in đậm đồng nghĩa với đáp án D (\"các doanh nghiệp xem xét các phát triển có thể xảy ra trong tương lai\").\n\nBước 4: Đáp án: D",
+					"quotes": [
+						"As a result, the use of modelling makes clients more inclined to look at future repercussions when making business decisions, Black says."
+					]
+				},
+				{
+					"number": 39,
+					"text": "According to Dr. Ponsati, negotiators fall behind if...",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTheo Tiến sĩ Ponsati, các nhà đàm phán bị tụt hậu khi điều gì xảy ra?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nfall behind ~ loses considerable bargaining power / pushed backward\ntoo much information given early ~ first side to disclose the maximum amount\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"bên đầu tiên tiết lộ số tiền tối đa mà họ sẵn sàng trả sẽ mất đáng kể sức mạnh thương lượng. Nếu không có đòn bẩy, họ có thể bị đẩy lùi trong quá trình thương lượng\".\n==> Thông tin được in đậm đồng nghĩa với đáp án C (\"quá nhiều thông tin được tiết lộ cho các bên kia quá sớm\").\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"She accepted that, as negotiators everywhere know, the first side to disclose the maximum amount that it is willing to pay loses considerable bargaining power."
+					]
+				},
+				{
+					"number": 40,
+					"text": "Dr. Ponsati's mediation machine is useful when...",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMáy trung gian của Tiến sĩ Ponsati hữu ích khi nào?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nuseful ~ pushed along / push negotiations forward\ndiscussions break down ~ negotiations can become very slow or collapse\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"nếu không bên nào tiết lộ các nhượng bộ mà họ sẵn sàng thực hiện, các cuộc đàm phán có thể trở nên rất chậm hoặc sụp đổ\". Ponsati đề xuất máy tính có thể giúp đẩy các cuộc đàm phán tiến lên trong những tình huống như vậy.\n==> Thông tin được in đậm đồng nghĩa với đáp án B (\"các cuộc thảo luận giữa các bên bắt đầu tan vỡ\").\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"But if neither side reveals the concessions it is prepared to make, negotiations can become very slow or collapse."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

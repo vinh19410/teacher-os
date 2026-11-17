@@ -1,0 +1,195 @@
+{
+	"id": "def59e40-677f-46ed-bcdc-d9376068da87",
+	"url": "https://stepielts.com/student/reading/def59e40-677f-46ed-bcdc-d9376068da87?mode=practice",
+	"title": "Saving the soil",
+	"source": "C13T4",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "14-26",
+	"passage": {
+		"title": "Saving the soil",
+		"paragraphs": [
+			"More than a third of the Earth’s top layer is at risk. Is there hope for our planet’s most precious resource?",
+			"A. More than a third of the world’s soil is endangered, according to a recent UN report. If we don’t slow the decline, all farmable soil could be gone in 60 years. Since soil grows 95% of our food, and sustains human life in other more surprising ways, that is a huge problem.",
+			"B. Peter Groffman, from the Cary Institute of Ecosystem Studies in New York, points out that soil scientists have been warning about the degradation of the world’s soil for decades. At the same time, our understanding of its importance to humans has grown. A single gram of healthy soil might contain 100 million bacteria, as well as other microorganisms such as viruses and fungi, living amid decomposing plants and various minerals.",
+			"That means soils do not just grow our food, but are the source of nearly all our existing antibiotics, and could be our best hope in the fight against antibiotic-resistant bacteria. Soil is also an ally against climate change: as microorganisms within soil digest dead animals and plants, they lock in their carbon content, holding three times the amount of carbon as does the entire atmosphere. Soils also store water, preventing flood damage: in the UK, damage to buildings, roads and bridges from floods caused by soil degradation costs £233 million every year.",
+			"C. If the soil loses its ability to perform these functions, the human race could be in big trouble. The danger is not that the soil will disappear completely, but that the microorganisms that give it its special properties will be lost. And once this has happened, it may take the soil thousands of years to recover.",
+			"Agriculture is by far the biggest problem. In the wild, when plants grow they remove nutrients from the soil, but then when the plants die and decay these nutrients are returned directly to the soil. Humans tend not to return unused parts of harvested crops directly to the soil to enrich it, meaning that the soil gradually becomes less fertile. In the past we developed strategies to get around the problem, such as regularly varying the types of crops grown, or leaving fields uncultivated for a season.",
+			"D. But these practices became inconvenient as populations grew and agriculture had to be run on more commercial lines. A solution came in the early 20th century with the Haber-Bosch process for manufacturing ammonium nitrate. Farmers have been putting this synthetic fertiliser on their fields ever since.",
+			"But over the past few decades, it has become clear this wasn’t such a bright idea. Chemical fertilisers can release polluting nitrous oxide into the atmosphere and excess is often washed away with the rain, releasing nitrogen into rivers. More recently, we have found that indiscriminate use of fertilisers hurts the soil itself, turning it acidic and salty, and degrading the soil they are supposed to nourish.",
+			"E. One of the people looking for a solution to his problem is Pius Floris, who started out running a tree-care business in the Netherlands, and now advises some of the world’s top soil scientists. He came to realise that the best way to ensure his trees flourished was to take care of the soil, and has developed a cocktail of beneficial bacteria, fungi and humus* to do this. Researchers at the University of Valladolid in Spain recently used this cocktail on soils destroyed by years of fertiliser overuse. When they applied Floris’s mix to the desert-like test plots, a good crop of plants emerged that were not just healthy at the surface, but had roots strong enough to pierce dirt as hard as rock. The few plants that grew in the control plots, fed with traditional fertilisers, were small and weak",
+			"F. However, measures like this are not enough to solve the global soil degradation problem. To assess our options on a global scale we first need an accurate picture of what types of soil are out there, and the problems they face. That’s not easy. For one thing, there is no agreed international system for classifying soil. In an attempt to unify the different approaches, the UN has created the Global Soil Map project. Researchers from nine countries are working together to create a map linked to a database that can be fed measurements from field surveys, drone surveys, satellite imagery, lad analyses and so on to provide real-time data on the state of the soil. Within the next four years, they aim to have mapped soils worldwide to a depth of 100 metres, with the results freely accessible to all.",
+			"G. But this is only a first step. We need ways of presenting the problem that bring it home to governments and the wider public, says Pamela Chasek at the International Institute for Sustainable Development, in Winnipeg, Canada. ‘Most scientists don’t speak language that policy-makers can understand, and vice versa.’ Chasek and her colleagues have proposed a goal of ‘zero net land degradation’. Like the idea of carbon neutrality, it is an easily understood target that can help shape expectations and encourage action.",
+			"For soils on the brink, that may be too late. Several researchers are agitating for the immediate creation of protected zones for endangered soils. One difficulty here is defining what these areas should conserve: areas where the greatest soil diversity is present? Or areas of unspoilt soils that could act as a future benchmark of quality?",
+			"Whatever we do, if we want our soils to survive, we need to take action now."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "14-17",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary below. Write ONE WORD ONLY from the passage for each answer.",
+			"body": "Why soil degradation could be a disaster for humans\nHealthy soil contains a large variety of bacteria and other microorganisms, as well as plant remains and ____ (14) It provides us with food and also with antibiotics, and its function in storing ____ (15) has a significant effect on the climate. In addition, it prevents damage to property and infrastructure because it holds ____ (16).\nIf these microorganisms are lost, soil may lose its special properties. The main factor contributing to soil degradation is the ____ (17) carried out by humans.",
+			"body_html": "<h3><strong>Why soil degradation could be a disaster for humans</strong></h3><p>Healthy soil contains a large variety of bacteria and other microorganisms, as well as plant remains and [14] It provides us with food and also with antibiotics, and its function in storing [15] has a significant effect on the climate. In addition, it prevents damage to property and infrastructure because it holds [16].</p><p>If these microorganisms are lost, soil may lose its special properties. The main factor contributing to soil degradation is the [17] carried out by humans.</p>",
+			"questions": [
+				{
+					"number": 14,
+					"text": "",
+					"answer": "minerals",
+					"quotes": [
+						"A single gram of healthy soil might contain 100 million bacteria, as well as other microorganisms such as viruses and fungi, living amid decomposing plants and various minerals."
+					]
+				},
+				{
+					"number": 15,
+					"text": "",
+					"answer": "carbon",
+					"quotes": [
+						"Soil is also an ally against climate change: as microorganisms within soil digest dead animals and plants, they lock in their carbon content, holding three times the amount of carbon as does the entire atmosphere."
+					]
+				},
+				{
+					"number": 16,
+					"text": "",
+					"answer": "water",
+					"quotes": [
+						"Soils also store water, preventing flood damage: in the UK, damage to buildings, roads and bridges from floods caused by soil degradation costs £233 million every year."
+					]
+				},
+				{
+					"number": 17,
+					"text": "If these microorganisms are lost, soil may lose its special properties. The main factor contributing to soil degradation is the ____ (17) carried out by humans.",
+					"answer": "agriculture",
+					"quotes": [
+						"Agriculture is by far the biggest problem.",
+						"In the wild, when plants grow they remove nutrients from the soil, but then when the plants die and decay these nutrients are returned directly to the soil. Humans tend not to return unused parts of harvested crops directly to the soil to enrich it, meaning that the soil gradually becomes less fertile. In the past we developed strategies to get around the problem, such as regularly varying the types of crops grown, or leaving fields uncultivated for a season."
+					]
+				}
+			]
+		},
+		{
+			"range": "18-21",
+			"type": "MATCHING_ENDINGS",
+			"instructions": "Complete each sentence with the correct ending, A-F, below.\nWrite the correct letter, A-F, in boxes 18-21 on your answer sheet.",
+			"options": [
+				{
+					"label": "A",
+					"text": "may improve the number and quality of plants growing there."
+				},
+				{
+					"label": "B",
+					"text": "may contain data from up to nine countries."
+				},
+				{
+					"label": "C",
+					"text": "may not be put back into the soil."
+				},
+				{
+					"label": "D",
+					"text": "may help governments to be more aware of soil-related issues."
+				},
+				{
+					"label": "E",
+					"text": "may cause damage to different aspects of the environment."
+				},
+				{
+					"label": "F",
+					"text": "may be better for use at a global level."
+				}
+			],
+			"body": "Nutrients contained in the unused parts of harvested crops ____ (18)\nSynthetic fertilisers produced with the Haber-Bosch process ____ (19)\nAddition of a mixture developed by Pius Floris to the soil ____ (20)\nThe idea of zero net soil degradation ____ (21)",
+			"body_html": "<p>Nutrients contained in the unused parts of harvested crops [18]</p><p>Synthetic fertilisers produced with the Haber-Bosch process [19]</p><p>Addition of a mixture developed by Pius Floris to the soil [20]</p><p>The idea of zero net soil degradation [21]</p>",
+			"questions": [
+				{
+					"number": 18,
+					"text": "Nutrients contained in the unused parts of harvested crops",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhần thông tin (Các chất dinh dưỡng có trong phần không sử dụng của cây trồng sau thu hoạch) sẽ phù hợp với ý nào?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nunused parts of harvested crops ~ nutrients contained in the unused parts of harvested crops\nnot ~ may not be\nreturned directly to the soil ~ put back into the soil\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ “Con người có xu hướng không trả lại trực tiếp các phần không sử dụng của cây trồng đã thu hoạch vào đất để làm giàu nó, điều này có nghĩa là đất dần trở nên ít màu mỡ hơn”\n=> Thông tin được in đậm đồng nghĩa với đáp án C (... có thể không được đưa trở lại vào đất).\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"In the wild, when plants grow they remove nutrients from the soil, but then when the plants die and decay these nutrients are returned directly to the soil. Humans tend not to return unused parts of harvested crops directly to the soil to enrich it, meaning that the soil gradually becomes less fertile. In the past we developed strategies to get around the problem, such as regularly varying the types of crops grown, or leaving fields uncultivated for a season."
+					]
+				},
+				{
+					"number": 19,
+					"text": "Synthetic fertilisers produced with the Haber-Bosch process",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhần thông tin (Phân bón tổng hợp được sản xuất bằng quy trình Haber-Bosch) sẽ phù hợp với ý nào?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nChemical fertilisers ~ Synthetic fertilisers produced with the Haber-Bosch process\nreleasing nitrogen into rivers~ may cause damage to different aspects of the environment\nhurts the soil itself, turning it acidic and salty~ may cause damage to different aspects of the environment\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ “Bài đọc chỉ rõ đoạn trích \"Phân bón hóa học có thể thải ra khí nitơ oxit gây ô nhiễm vào khí quyển và phần dư thừa thường bị rửa trôi theo mưa, thải nitơ vào sông ngòi. Gần đây hơn, chúng ta phát hiện ra rằng việc sử dụng phân bón bừa bãi làm tổn hại chính đất, khiến đất trở nên chua và mặn.”\n=> Thông tin được in đậm đồng nghĩa với đáp án E (... có thể gây thiệt hại môi trường ở nhiều khía cạnh khác nhau).\n\nBước 4: Đáp án: E",
+					"quotes": [
+						"Chemical fertilisers can release polluting nitrous oxide into the atmosphere and excess is often washed away with the rain, releasing nitrogen into rivers. More recently, we have found that indiscriminate use of fertilisers hurts the soil itself, turning it acidic and salty, and degrading the soil they are supposed to nourish."
+					]
+				},
+				{
+					"number": 20,
+					"text": "Addition of a mixture developed by Pius Floris to the soil",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhần thông tin (Việc bổ sung hỗn hợp do Pius Floris phát triển vào đất) sẽ phù hợp với ý nào?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nWhen they applied Floris's mix ~ Addition of a mixture developed by Pius Floris to the soil\na good crop of plants emerged ~ may improve the number and quality of plants growing there\nwere not just healthy at the surface, but had roots strong enough to pierce dirt as hard as rock ~ may improve the number and quality of plants growing there\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ “Khi họ áp dụng hỗn hợp của Floris vào các lô thử nghiệm giống như sa mạc, một vụ mùa tốt cây trồng đã thực sự diễn ra, không chỉ khỏe mạnh ở bề mặt mà còn có rễ đủ mạnh để xuyên qua đất cứng như đá.”\n=> Thông tin được in đậm đồng nghĩa với đáp án A (... có thể cải thiện số lượng và chất lượng cây trồng phát triển ở đó).\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"When they applied Floris’s mix to the desert-like test plots, a good crop of plants emerged that were not just healthy at the surface, but had roots strong enough to pierce dirt as hard as rock."
+					]
+				},
+				{
+					"number": 21,
+					"text": "The idea of zero net soil degradation",
+					"answer": "D",
+					"quotes": [
+						"We need ways of presenting the problem that bring it home to governments and the wider public, says Pamela Chasek at the International Institute for Sustainable Development, in Winnipeg, Canada. ‘Most scientists don’t speak language that policy-makers can understand, and vice versa.’ Chasek and her colleagues have proposed a goal of ‘zero net land degradation’. Like the idea of carbon neutrality, it is an easily understood target that can help shape expectations and encourage action."
+					]
+				}
+			]
+		},
+		{
+			"range": "22-26",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Reading Passage 2 has seven paragraphs, A-G.\nWhich section contains the following information?\nWrite the correct letter, A-G, in boxes 22-26 on your answer sheet.\nNB You may use any letter more than once.",
+			"options": ["A", "B", "C", "D", "E", "F", "G"],
+			"questions": [
+				{
+					"number": 22,
+					"text": "A reference to one person’s motivation for a soil-improvement project",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề cập đến động lực của một người nào đó trong dự án cải thiện đất.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nstarted out running ~ motivation\ntree-care business ~ soil-improvement project\n\nBước 3: So sánh và đối chiếu:\nĐoạn E chỉ rõ: \"Pius Floris, người bắt đầu bằng việc điều hành một doanh nghiệp chăm sóc cây cối ở Hà Lan và hiện đang tư vấn cho một số nhà khoa học đất hàng đầu thế giới. Anh ấy nhận ra rằng cách tốt nhất để đảm bảo cây cối của mình phát triển mạnh là chăm sóc đất, và đã phát triển một hỗn hợp các loại vi khuẩn, nấm và mùn hữu ích để làm điều này.\"\n=> Thông tin này cho thấy đoạn E đã \"đề cập đến động lực của Pius Floris trong việc phát triển dự án cải thiện đất\".\n\nBước 4: Đáp án: E",
+					"quotes": [
+						"E. One of the people looking for a solution to his problem is Pius Floris, who started out running a tree-care business in the Netherlands, and now advises some of the world’s top soil scientists. He came to realise that the best way to ensure his trees flourished was to take care of the soil, and has developed a cocktail of beneficial bacteria, fungi and humus* to do this."
+					]
+				},
+				{
+					"number": 23,
+					"text": "An explanation of how soil stayed healthy before the development of farming",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nGiải thích cách đất vẫn khỏe mạnh trước khi nông nghiệp phát triển.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nIn the wild ~ before the development of farming\nnutrients are returned directly to the soil ~ soil stayed healthy\n\nBước 3: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"Trong tự nhiên, khi cây cối phát triển, chúng lấy chất dinh dưỡng từ đất, nhưng sau đó khi cây chết và phân hủy, những chất dinh dưỡng này được trả lại trực tiếp cho đất, con người có xu hướng không trả lại các phần không sử dụng của cây trồng đã thu hoạch trực tiếp cho đất để làm giàu nó, điều này có nghĩa là đất dần dần trở nên ít màu mỡ hơn.\"\n=> Thông tin này cho thấy đoạn C đã \"giải thích cách đất vẫn duy trì sự màu mỡ trong tự nhiên trước khi có sự can thiệp của nông nghiệp\".\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"In the wild, when plants grow they remove nutrients from the soil, but then when the plants die and decay these nutrients are returned directly to the soil. Humans tend not to return unused parts of harvested crops directly to the soil to enrich it, meaning that the soil gradually becomes less fertile. In the past we developed strategies to get around the problem, such as regularly varying the types of crops grown, or leaving fields uncultivated for a season."
+					]
+				},
+				{
+					"number": 24,
+					"text": "Examples of different ways of collecting information on soil degradation",
+					"answer": "F",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nVí dụ về các cách khác nhau để thu thập thông tin về sự suy thoái đất.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nfield surveys, drone surveys, satellite imagery, lab analyses ~ different ways of collecting information\nstate of the soil ~ soil degradation\n\nBước 3: So sánh và đối chiếu:\nĐoạn F chỉ rõ: \"Các nhà nghiên cứu từ chín quốc gia đang làm việc cùng nhau để tạo ra một bản đồ liên kết với cơ sở dữ liệu có thể được cập nhật các phép đo từ khảo sát thực địa, khảo sát bằng máy bay không người lái, hình ảnh vệ tinh, phân tích phòng thí nghiệm và nhiều hơn nữa để cung cấp dữ liệu thời gian thực về tình trạng của đất.\"\n=> Thông tin này cho thấy đoạn F đã \"đưa ra các ví dụ về các phương pháp khác nhau để thu thập thông tin về tình trạng suy thoái đất\".\n\nBước 4: Đáp án: F",
+					"quotes": [
+						"Researchers from nine countries are working together to create a map linked to a database that can be fed measurements from field surveys, drone surveys, satellite imagery, lad analyses and so on to provide real-time data on the state of the soil."
+					]
+				},
+				{
+					"number": 25,
+					"text": "A suggestion for a way of keeping some types of soil safe in the near future",
+					"answer": "G",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề xuất cách giữ an toàn cho một số loại đất trong tương lai gần.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nimmediate creation of protected zones ~ way of keeping some types of soil safe\nendangered soils ~ in the near future\n\nBước 3: So sánh và đối chiếu:\nĐoạn G chỉ rõ: \"Đối với những vùng đất đang ở bờ vực, điều đó có thể là quá muộn. Một số nhà nghiên cứu đang kêu gọi việc tạo ra ngay lập tức các khu vực bảo vệ cho các loại đất đang bị đe dọa.\"\n=> Thông tin này cho thấy đoạn G đã \"đề xuất một cách để bảo vệ một số loại đất đang bị đe dọa trong tương lai gần\".\n\nBước 4: Đáp án: G",
+					"quotes": [
+						"For soils on the brink, that may be too late. Several researchers are agitating for the immediate creation of protected zones for endangered soils."
+					]
+				},
+				{
+					"number": 26,
+					"text": "A reason why it is difficult to provide an overview of soil degradation",
+					"answer": "F",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nLý do tại sao khó đưa ra một cái nhìn tổng quan về sự suy thoái đất.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nno agreed international system for classifying soil ~ difficult to provide an overview\nsoil degradation ~ soil degradation\n\nBước 3: So sánh và đối chiếu:\nĐoạn F chỉ rõ: \"Để đánh giá các lựa chọn của chúng ta trên quy mô toàn cầu, trước tiên chúng ta cần một bức tranh chính xác về các loại đất hiện có và những vấn đề mà chúng phải đối mặt. Điều đó không dễ dàng. Một trong những lý do là không có hệ thống phân loại đất quốc tế thống nhất.\"\n=> Thông tin này cho thấy đoạn F đã đề cập đến \"lý do tại sao khó cung cấp một cái nhìn tổng quan về sự suy thoái đất trên toàn cầu\".\n\nBước 4: Đáp án: F",
+					"quotes": [
+						"To assess our options on a global scale we first need an accurate picture of what types of soil are out there, and the problems they face. That’s not easy. For one thing, there is no agreed international system for classifying soil."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,212 @@
+{
+	"id": "97ddfe1b-37f6-4aa7-a77d-c41e9c8e1ecc",
+	"url": "https://stepielts.com/student/reading/97ddfe1b-37f6-4aa7-a77d-c41e9c8e1ecc?mode=practice",
+	"title": "The Adolescents",
+	"source": "Actual Test",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "The Adolescents",
+		"paragraphs": [
+			"A. The American Academy of Pediatrics recognizes three stages of adolescence. These are early, middle and late adolescence, and each has its own developmental tasks. Teenagers move through these tasks at their own speed depending on their physical development and hormone levels. Although these stages are common to all teenagers, each child will go through them in his or her own highly individual ways.",
+			"B. During the early years young people make the first attempts to leave the dependent, secure role of a child and to establish themselves as unique individuals, independent of their parents. Early adolescence is marked by rapid physical growth and maturation. The focus of adolescents’ self-concepts is thus often on their physical self and their evaluation of their physical acceptability. Early adolescence is also a period of intense conformity to peers. ‘Getting along,’ not being different, and being accepted seem somehow pressing to the early adolescent. The worst possibility, from the view of the early adolescent, is to be seen by peers as ‘different’.",
+			"C. Middle adolescence is marked by the emergence of new thinking skills. The intellectual world of the young person is suddenly greatly expanded. Their concerns about peers are more directed toward their opposite sexed peers. It is also during this period that the move to establish psychological independence from one’s parents accelerates. Delinquency behavior may emerge since parental views are no longer seen as absolutely correct by adolescents. Despite some delinquent behavior, middle adolescence is a period during which young people are oriented toward what is right and proper. They are developing a sense of behavioral maturity and learning to control their impulsiveness.",
+			"D. Late adolescence is marked by the final preparations for adult roles. The developmental demands of late adolescence often extend into the period that we think of as young adulthood. Late adolescents attempt to crystallize their vocational goals and to establish a sense of personal identity. Their needs for peer approval are diminished and they are largely psychologically independent from their parents. The shift to adulthood is nearly complete.",
+			"E. Some years ago, Professor Robert Havighurst of the University of Chicago proposed that stages in human development can best be thought of in terms of the developmental tasks that are part of the normal transition. He identified eleven developmental tasks associated with the adolescent transition. One developmental task an adolescent needs to achieve is to adjust to a new physical sense of self. At no other time since birth does an individual undergo such rapid and profound physical changes as during early adolescence. Puberty is marked by sudden rapid growth in height and weight. Also, the young person experiences the emergence and accentuation of those physical traits that make him or her a boy or girl. The effect of this rapid change is that young adolescent often becomes focused on his or her body.",
+			"F. Before adolescence, children’s thinking is dominated by a need to have a concrete example for any problem that they solve. Their thinking is constrained to what is real and physical. During adolescence, young people begin to recognize and understand abstractions. The adolescent must adjust to increased cognitive demands at school. Adults see high school in part as a place where adolescents prepare for adult roles and responsibilities and in part as preparatory for further education. School curricula are frequently dominated by the inclusion of more abstract, demanding material, regardless of whether the adolescents have achieved formal thought. Since not all adolescents make the intellectual transition at the same rate, 8-10demands for abstract thinking prior to achievement of that ability may be frustrating.",
+			"G. During adolescence, as teens develop increasingly complex knowledge systems and a sense of self, they also adopt an integrated set of values and morals. During the early stages of moral development, parents provide their child with a structured set of rules of what is right and wrong, what is acceptable and unacceptable. Eventually, the adolescent must assess the parents’ values as they come into conflict with values expressed by peers and other segments of society. To reconcile differences, the adolescent restructures those beliefs into a personal ideology.",
+			"H. The adolescent must develop expanded verbal skills. As adolescents mature intellectually, as they face increased school demands, and as they prepare for adult roles, they must develop new verbal skills to accommodate more complex concepts and tasks. Their limited language of childhood is no longer adequate. Adolescents may appear less competent because of their inability to express themselves meaningfully.",
+			"I. The adolescent must establish emotional and psychological independence from his or her parents. Childhood is marked by a strong dependence on one’s parents. Adolescents may yearn to keep that safe, secure, supportive, dependent relationship. Yet, to be an adult implies a sense of independence, of autonomy, of being one’s own person. Adolescents may vacillate between their desire for dependence and their need to be independent. In an attempt to assert their need for independence and individuality, adolescents may respond with what appears to be hostility and lack of cooperation.",
+			"J. Adolescents do not progress through these multiple developmental tasks separately. At any given time, adolescents may be dealing with several. Further, the centrality of specific developmental tasks varies with early, middle, and late periods of the transition."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Match the following characteristics with the correct stages of the adolescent.",
+			"options": [
+				{
+					"label": "A",
+					"text": "early adolescence"
+				},
+				{
+					"label": "B",
+					"text": "middle adolescence"
+				},
+				{
+					"label": "C",
+					"text": "later adolescence"
+				}
+			],
+			"body": "Interested in the opposite sex ____ (1)\nExposure to danger ____ (2)\nThe same as others ____ (3)\nBeginning to form individual thinking without family context ____ (4)\nLess need the approval of friends ____ (5)\nIntellectual booming ____ (6)",
+			"body_html": "<p>Interested in the opposite sex [1]</p><p>Exposure to danger [2]</p><p>The same as others [3]</p><p>Beginning to form individual thinking without family context [4]</p><p>Less need the approval of friends [5]</p><p>Intellectual booming [6]</p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Interested in the opposite sex",
+					"answer": "B",
+					"explanation": "B\n\n“interested in the opposite sex”: có hứng thú với người khác giới\n\nGiải thích: Thời điểm “middle adolescence” (ở giữa vị thành niên) thì bắt đầu có “emergence in new thinking skills” (thay đổi trong suy nghĩ) và sẽ “more directed toward their opposite sexed peers” (hướng đến bạn bè đồng trang lứa khác giới).",
+					"quotes": [
+						"Their concerns about peers are more directed toward their opposite sexed peers."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Exposure to danger",
+					"answer": "B",
+					"explanation": "B\n\n“exposure to danger”: tiếp xúc với nguy hiểm\n\nGiải thích: “Delinquency behaviors” (những hành vi nổi loạn // phạm pháp) sẽ xuất hiện ở giai đoạn giữa vị thành niên này → những hành vi này thường khiến người trẻ tiếp xúc với những tình huống rủi ro",
+					"quotes": [
+						"Delinquency behavior may emerge since parental views are no longer seen as absolutely correct by adolescents."
+					]
+				},
+				{
+					"number": 3,
+					"text": "The same as others",
+					"answer": "A",
+					"explanation": "A\n\n“the same as others”: có sự tương đồng với bạn bè\n\nGiải thích: việc phải hòa nhập (getting along), không tỏ ra khác biệt (not being different) rất là áp lực ở giai đoạn tiền vị thành niên",
+					"quotes": [
+						"‘Getting along,’ not being different, and being accepted seem somehow pressing to the early adolescent."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Beginning to form individual thinking without family context",
+					"answer": "A",
+					"explanation": "A\n\n“beginning to form individual thinking without family context”: bắt đầu có suy nghĩ độc lập ngoài người thân\n\nGiải thích: ở giai đoạn này, các bạn thiếu niên sẽ nỗ lực rời bỏ vị thế phụ thuộc, an toàn lúc còn làm trẻ em để mà “establish themselves as unique individuals (“chứng tỏ bản thân là những cá nhân độc nhất”) và independent of their parents (không phụ thuộc bố mẹ).",
+					"quotes": [
+						"During the early years young people make the first attempts to leave the dependent, secure role of a child and to establish themselves as unique individuals, independent of their parents."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Less need the approval of friends",
+					"answer": "C",
+					"explanation": "C\n\n“less need the approval of friends”: không cần thiết phải được bạn bè chấp nhận\n\nGiải thích: Ở giai đoạn sau của vị thành niên, nhu cầu phải được bạn bè đồng trang lứa chấp nhận sẽ “diminished” (giảm đi).",
+					"quotes": [
+						"Their needs for peer approval are diminished and they are largely psychologically independent from their parents."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Intellectual booming",
+					"answer": "B",
+					"explanation": "B\n\n“intellectual booming”: sự bùng nổ tri thức\n\nGiải thích: thế giới tri thức của người trẻ được mở mang vượt trội (greatly expanded)",
+					"quotes": [
+						"The intellectual world of the young person is suddenly greatly expanded."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "MATCHING_ENDINGS",
+			"instructions": "Complete each sentence with the correct ending, A-F, below.",
+			"options": [
+				{
+					"label": "A",
+					"text": "form personal identity with a set of morals and values"
+				},
+				{
+					"label": "B",
+					"text": "develops a stable and productive peer relationships"
+				},
+				{
+					"label": "C",
+					"text": "are designed to be more challenging than some can accept"
+				},
+				{
+					"label": "D",
+					"text": "varies from people to people"
+				},
+				{
+					"label": "E",
+					"text": "focuses on creating a self-image"
+				},
+				{
+					"label": "F",
+					"text": "become an extension of their parents"
+				}
+			],
+			"body": "One of Havighurst’s research ____ (7)\nHigh School Courses ____ (8)\nAdolescence is a time when young people ____ (9)\nThe developmental speed of thinking patterns ____ (10)",
+			"body_html": "<p>One of Havighurst’s research [7]</p><p>High School Courses [8]</p><p>Adolescence is a time when young people [9]</p><p>The developmental speed of thinking patterns [10]</p>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "One of Havighurst’s research",
+					"answer": "E",
+					"explanation": "E\n\n“One of Havighurst’s research”: một nghiên cứu của Havighurst\n\nGiải thích: người vị thành niên phải “adjust to a new physical sense of self” (điều chỉnh nhận thức mới về bản thân) → đưa thêm lí do là tăng trưởng chiều cao, cân nặng (rapid growth in height and weight), thay đổi ngoại hình (accentuation of physical traits) → người trẻ sẽ chú trọng về cơ thể mình hơn (becomes focused on his or her body) → chọn “focuses on creating a self-image”",
+					"quotes": [
+						"One developmental task an adolescent needs to achieve is to adjust to a new physical sense of self. At no other time since birth does an individual undergo such rapid and profound physical changes as during early adolescence. Puberty is marked by sudden rapid growth in height and weight. Also, the young person experiences the emergence and accentuation of those physical traits that make him or her a boy or girl. The effect of this rapid change is that young adolescent often becomes focused on his or her body."
+					]
+				},
+				{
+					"number": 8,
+					"text": "High School Courses",
+					"answer": "C",
+					"explanation": "C\n\n“High school courses”: những khóa học trong trường phổ thông\n\nGiải thích: “School curricula” (chương trình học) thường bị “dominated” (áp đảo) bởi những “abstract, demanding material” (học liệu quá trừu tượng, khó) → nhưng mà không phải ai cũng thay đổi nhận thức nhanh như nhau (not all adolescents make the intellectual transition at the same rate) → “frustrating” (gây ức chế cho người trẻ) → chọn C (more challenging than some can accept - khó hơn sức chịu đựng của một số người)",
+					"quotes": [
+						"School curricula are frequently dominated by the inclusion of more abstract, demanding material, regardless of whether the adolescents have achieved formal thought. Since not all adolescents make the intellectual transition at the same rate, 8-10demands for abstract thinking prior to achievement of that ability may be frustrating."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Adolescence is a time when young people",
+					"answer": "A",
+					"explanation": "A\n\n“Adolescence is a time when young people”: Vị thành niên là thời điểm mà nhiều người trẻ\n\nGiải thích: (1) Khi người trẻ phát triển nhận thức về bản thân (develop … a sense of self) → (2) họ cũng đồng thời quy nạp những giá trị, đạo đức cho mình (adopt an integrated set of values and morals) → chọn A vì có cả “form a personal identity” (1) lẫn “a set of moral and values” (2)",
+					"quotes": [
+						"G. During adolescence, as teens develop increasingly complex knowledge systems and a sense of self, they also adopt an integrated set of values and morals."
+					]
+				},
+				{
+					"number": 10,
+					"text": "The developmental speed of thinking patterns",
+					"answer": "D",
+					"explanation": "D\n\n“The developmental speed of thinking patterns”: tốc độ phát triển nhận thức\n\nGiải thích: Không phải ai cũng trải qua quá trình thay đổi suy nghĩ như nhau (not all adolescents make the intellectual transition at the same rate) → chọn D (khác biệt đối với từng người - varies from people to people)",
+					"quotes": [
+						"Since not all adolescents make the intellectual transition at the same rate, 8-10demands for abstract thinking prior to achievement of that ability may be frustrating."
+					]
+				}
+			]
+		},
+		{
+			"range": "11-13",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 1?\nIn boxes 11-13 on your answer sheet, write:\nTRUE if the statement is true\nFALSE if the statement is false\nNOT GIVEN if the information is not given in the passage",
+			"questions": [
+				{
+					"number": 11,
+					"text": "The adolescent lacks the ability to think abstractly.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "FALSE\n\n“The adolescent lacks the ability to think abstractly.”: Người vị thành niên không có khả năng suy nghĩ trừu tượng.\n\nGiải thích: Bài đề cập rõ là trong tuổi thành niên, người trẻ bắt đầu “RECOGNIZE and UNDERSTAND abstractions” (NHẬN BIẾT và THẤU HIỂU những sự trừu tượng)",
+					"quotes": [
+						"During adolescence, young people begin to recognize and understand abstractions."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Adolescents may have a deficit in their language ability.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "TRUE\n\n“Adolescents may have a deficit in their language ability.”: Người vị thành niên sẽ bị thiếu kém về khả năng ngôn ngữ.\n\nGiải thích: “Their limited language of childhood” (Lượng ngôn từ khi còn thơ ấu) is no longer adequate (giờ không còn đủ nữa).",
+					"quotes": [
+						"Their limited language of childhood is no longer adequate."
+					]
+				},
+				{
+					"number": 13,
+					"text": "The adolescent experiences a transition from reliance on his parents to independence.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "TRUE\n\n“The adolescent experiences a transition from reliance on his parents to independence.” Người vị thành niên trải qua sự chuyển đổi từ dựa dẫm bố mẹ sang sự tự lập.\n\nGiải thích: người vị thành niên phải củng cố cái “emotional and psychological independence” (sự tự chủ trong cảm xúc và tâm lý) khỏi ảnh hưởng của bố mẹ. Bài cũng khẳng định thêm là thời thơ ấu đánh dấu sự “a strong dependence on one’s parents” (sự phụ thuộc vào bố mẹ) → mình có đủ thông tin để confirm: dứt bỏ sự phụ thuộc + chuyển sang tự lập",
+					"quotes": [
+						"The adolescent must establish emotional and psychological independence from his or her parents. Childhood is marked by a strong dependence on one’s parents. Adolescents may yearn to keep that safe, secure, supportive, dependent relationship. Yet, to be an adult implies a sense of independence, of autonomy, of being one’s own person."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

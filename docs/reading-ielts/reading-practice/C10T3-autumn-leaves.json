@@ -1,0 +1,196 @@
+{
+	"id": "bfc93b90-213c-4be5-b33b-3e8852c0a1b5",
+	"url": "https://stepielts.com/student/reading/bfc93b90-213c-4be5-b33b-3e8852c0a1b5?mode=practice",
+	"title": "Autumn Leaves",
+	"source": "C10T3",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "14-26",
+	"passage": {
+		"title": "Autumn leaves",
+		"subtitle": "Canadian writer Jay Ingram investigates the mystery of why leaves turn red in the fall",
+		"paragraphs": [
+			"A. One of the most captivating natural events of the year in many areas throughout North America is the turning of the leaves in the fall. The colours are magnificent, but the question of exactly why some trees turn yellow or orange, and others red or purple, is something which has long puzzled scientists.",
+			"B. Summer leaves are green because they are full of chlorophyll, the molecule that captures sunlight and converts that energy into new building materials for the tree. As fall approaches in the northern hemisphere, the amount of solar energy available declines considerably. For many trees – evergreen conifers being an exception – the best strategy is to abandon photosynthesis* until the spring. So rather than maintaining the now redundant leaves throughout the winter, the tree saves its precious resources and discards them. But before letting its leaves go, the tree dismantles its chlorophyll molecules and ships its valuable nitrogen back into the twigs. As chlorophyll is depleted, other colours that have been dominated by it throughout the summer begin to be revealed. This unmasking explains the autumn colours of yellow and orange, but not the brilliant reds and purples of trees such as the maple or sumac.",
+			"C. The source of the red is widely known: it is created by anthocyanins, water-soluble plant pigments reflecting the red to blue range of the visible spectrum. They belong to a class of sugar-based chemical compounds also known as flavonoids. What’s puzzling is that anthocyanins are actually newly minted, made in the leaves at the same time as the tree is preparing to drop them. But it is hard to make sense of the manufacture of anthocyanins – why should a tree bother making new chemicals in its leaves when it’s already scrambling to withdraw and preserve the ones already there?",
+			"D. Some theories about anthocyanins have argued that they might act as a chemical defence against attacks by insects or fungi, or that they might attract fruit-eating birds or increase a leaf’s tolerance to freezing. However there are problems with each of these theories, including the fact that leaves are red for such a relatively short period that the expense of energy needed to manufacture the anthocyanins would outweigh any anti-fungal or anti-herbivore activity achieved.",
+			"E. It has also been proposed that trees may produce vivid red colours to convince herbivorous insects that they are healthy and robust and would be easily able to mount chemical defences against infestation. If insects paid attention to such advertisements, they might be prompted to lay their eggs on a duller, and presumably less resistant host.The flaw in this theory lies in the lack of proof to support it. No one has as yet ascertained whether more robust trees sport the brightest leaves, or whether insects make choices according to colour intensity.",
+			"F. Perhaps the most plausible suggestion as to why leaves would go to the trouble of making anthocyanins when they’re busy packing up for the winter is the theory known as the ‘light screen’ hypothesis. It sounds paradoxical, because the idea behind this hypothesis is that the red pigment is made in autumn leaves to protect chlorophyll, the light-absorbing chemical, from too much light. Why does chlorophyll need protection when it is the natural world’s supreme light absorber? Why protect chlorophyll at a time when the tree is breaking it down to salvage as much of it as possible?",
+			"G. Chlorophyll, although exquisitely evolved to capture the energy of sunlight, can sometimes be overwhelmed by it, especially in situations of drought, low temperatures, or nutrient deficiency. Moreover, the problem of oversensitivity to light is even more acute in the fall, when the leaf is busy preparing for winter by dismantling its internal machinery. The energy absorbed by the chlorophyll molecules of the unstable autumn leaf is not immediately channelled into useful products and processes, as it would be in an intact summer leaf. The weakened fall leaf then becomes vulnerable to the highly destructive effects of the oxygen created by the excited chlorophyll molecules.",
+			"H. Even if you had never suspected that this is what was going on when leaves turn red, there are clues out there. One is straightforward: on many trees, the leaves that are the reddest are those on the side of the tree which gets most sun.Not only that, but the red is brighter on the upper side of the leaf.It has also been recognised for decades that the best conditions for intense red colours are dry, sunny days and cool nights, conditions that nicely match those that make leaves susceptible to excess light.And finally, trees such as maples usually get much redder the more north you travel in the northern hemisphere.It’s colder there, they’re more stressed, their chlorophyll is more sensitive and they need more sunblock.",
+			"I. What is still not fully understood, however, is why some trees resort to producing red pigments while others don’t bother, and simply reveal their orange or yellow hues. Do these trees have other means at their disposal to prevent overexposure to light in autumn? Their story, though not as spectacular to the eye, will surely turn out to be as subtle and as complex.",
+			"*photosynthesis: the production of new material from sunlight, water and carbon dioxide."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "14-18",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Reading Passage 2 has nine paragraphs, A-l.\nWhich paragraph contains the following information?\nWrite the correct letter, A-l, in boxes 14-18 on your answer sheet.\nNB You may use any letter more than once.",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H", "I"],
+			"questions": [
+				{
+					"number": 14,
+					"text": "a description of the substance responsible for the red colouration of leaves.",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMô tả về chất tạo nên màu đỏ của lá cây.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nsource of the red ~ substance responsible for red coloration\nanthocyanins ~ substance\ncreated by ~ responsible for\n\nBước 3: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"Nguồn gốc của màu đỏ được biết rộng rãi: nó được tạo ra bởi anthocyanin, các sắc tố thực vật hòa tan trong nước phản chiếu phổ ánh sáng nhìn thấy từ đỏ đến xanh\".\n=> Thông tin này cho thấy đoạn C đã \"mô tả về chất anthocyanin tạo nên màu đỏ của lá cây\".\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"C. The source of the red is widely known: it is created by anthocyanins, water-soluble plant pigments reflecting the red to blue range of the visible spectrum."
+					]
+				},
+				{
+					"number": 15,
+					"text": "the reason why trees drop their leaves in the autumn.",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nLý do tại sao cây rụng lá vào mùa thu.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\ndiscards them ~ drop their leaves\nsaves its precious resources ~ reason why\n\nBước 3: So sánh và đối chiếu:\nĐoạn B chỉ rõ: \"Thay vì duy trì những chiếc lá không còn cần thiết trong suốt mùa đông, cây tiết kiệm các nguồn tài nguyên quý giá và loại bỏ chúng\".\n=> Thông tin này cho thấy đoạn B đã \"giải thích lý do tại sao cây rụng lá vào mùa thu\".\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"So rather than maintaining the now redundant leaves throughout the winter, the tree saves its precious resources and discards them."
+					]
+				},
+				{
+					"number": 16,
+					"text": "some evidence to confirm a theory about the purpose of the red leaves.",
+					"answer": "H",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột số bằng chứng để xác nhận lý thuyết về mục đích của lá đỏ.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nclues out there ~ evidence\nwhat was going on ~ purpose\nleaves turn red ~ red leaves\n\nBước 3: So sánh và đối chiếu:\nĐoạn H chỉ rõ: \"Ngay cả khi bạn chưa bao giờ nghi ngờ đây là những gì đang xảy ra khi lá chuyển sang màu đỏ, có những manh mối ở ngoài kia\".\n=> Thông tin này cho thấy đoạn H đã \"cung cấp các bằng chứng xác nhận lý thuyết về mục đích của lá đỏ\".\n\nBước 4: Đáp án: H",
+					"quotes": [
+						"H. Even if you had never suspected that this is what was going on when leaves turn red, there are clues out there."
+					]
+				},
+				{
+					"number": 17,
+					"text": "an explanation of the function of chlorophyll.",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nGiải thích về chức năng của chất diệp lục.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nchlorophyll ~ chlorophyll\ncaptures sunlight and converts ~ function\n\nBước 3: So sánh và đối chiếu:\nĐoạn B chỉ rõ: \"Lá mùa hè có màu xanh vì chúng chứa đầy chlorophyll, phân tử bắt giữ ánh sáng mặt trời và chuyển đổi năng lượng đó thành vật liệu xây dựng mới cho cây\"\n=> Thông tin này cho thấy đoạn B đã \"giải thích chức năng của chất diệp lục\".\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"Summer leaves are green because they are full of chlorophyll, the molecule that captures sunlight and converts that energy into new building materials for the tree."
+					]
+				},
+				{
+					"number": 18,
+					"text": "a suggestion that the red colouration in leaves could serve as a warning signal.",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nGợi ý rằng màu đỏ của lá có thể đóng vai trò như một tín hiệu cảnh báo.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nproduce vivid red colours ~ red coloration\nconvince herbivorous insects ~ warning\n\nBước 3: So sánh và đối chiếu:\nĐoạn E chỉ rõ: \"Người ta cũng đề xuất rằng cây có thể tạo ra màu đỏ rực rỡ để thuyết phục côn trùng ăn cỏ rằng chúng khỏe mạnh và mạnh mẽ và có thể dễ dàng tạo ra phòng thủ hóa học chống lại sự xâm nhập\".\n=> Thông tin này cho thấy đoạn E đã \"đề cập đến giả thuyết về việc màu đỏ của lá đóng vai trò như một tín hiệu cảnh báo\".\n\nBước 4: Đáp án: E",
+					"quotes": [
+						"E. It has also been proposed that trees may produce vivid red colours to convince herbivorous insects that they are healthy and robust and would be easily able to mount chemical defences against infestation. If insects paid attention to such advertisements, they might be prompted to lay their eggs on a duller, and presumably less resistant host.The flaw in this theory lies in the lack of proof to support it."
+					]
+				}
+			]
+		},
+		{
+			"range": "19-22",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the notes below. Choose ONE WORD ONLY from the passage for each answer. Write your answers in boxes 19-22 on your answer sheet.",
+			"body": "Why believe the ‘light screen’ hypothesis?\n● The most vividly coloured red leaves are found on the side of the tree facing the ____ (19).\n● The ____ (20) surfaces of leaves contain the most red pigment.\n● Red leaves are most abundant when daytime weather conditions are ____ (21) and sunny.\n● The intensity of the red colour of leaves increases as you go further ____ (22).",
+			"body_html": "<h4><strong>Why believe the ‘light screen’ hypothesis?</strong></h4><p>●   The most vividly coloured red leaves are found on the side of the tree facing the [19].</p><p>●   The [20] surfaces of leaves contain the most red pigment.</p><p>●   Red leaves are most abundant when daytime weather conditions are [21] and sunny.</p><p>●   The intensity of the red colour of leaves increases as you go further [22].</p>",
+			"questions": [
+				{
+					"number": 19,
+					"text": "● The most vividly coloured red leaves are found on the side of the tree facing the ____ (19).",
+					"answer": "sun",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nNhững chiếc lá đỏ rực rỡ nhất được tìm thấy ở phía ___ của cây.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: facing the + NOUN (NOUN làm Object của Transitive verb 'FACE)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nreddest leaves ~ most vividly coloured red leaves\nside of the tree ~ cụm từ giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"trên nhiều cây, những chiếc lá đỏ nhất là những chiếc lá ở phía cây nhận được nhiều ánh mặt trời nhất\" (on many trees, the leaves that are the reddest are those on the side of the tree which gets most sun).\n\nBước 5: Đáp án: sun\nNhững chiếc lá đỏ rực rỡ nhất được tìm thấy ở phía mặt trời của cây (The most vividly coloured red leaves are found on the side of the tree facing the sun).",
+					"quotes": [
+						"One is straightforward: on many trees, the leaves that are the reddest are those on the side of the tree which gets most sun.Not only that, but the red is brighter on the upper side of the leaf.It has also been recognised for decades that the best conditions for intense red colours are dry, sunny days and cool nights, conditions that nicely match those that make leaves susceptible to excess light.And finally, trees such as maples usually get much redder the more north you travel in the northern hemisphere.It’s colder there, they’re more stressed, their chlorophyll is more sensitive and they need more sunblock."
+					]
+				},
+				{
+					"number": 20,
+					"text": "● The ____ (20) surfaces of leaves contain the most red pigment.",
+					"answer": "upper",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nBề mặt _ của lá chứa nhiều sắc tố đỏ nhất.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: ADJECTIVE\nDấu hiệu: The + ADJECTIVE + noun (ADJECTIVE bổ nghĩa cho Noun 'SURFACE')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nred is brighter ~ most red pigment\nside ~ surfaces\nof the leaf ~ of leaves\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"màu đỏ sáng hơn ở mặt trên của lá\" (the red is brighter on the upper side of the leaf).\n\nBước 5: Đáp án: upper\nBề mặt trên của lá chứa nhiều sắc tố đỏ nhất (The upper surfaces of leaves contain the most red pigment).",
+					"quotes": [
+						"One is straightforward: on many trees, the leaves that are the reddest are those on the side of the tree which gets most sun.Not only that, but the red is brighter on the upper side of the leaf.It has also been recognised for decades that the best conditions for intense red colours are dry, sunny days and cool nights, conditions that nicely match those that make leaves susceptible to excess light.And finally, trees such as maples usually get much redder the more north you travel in the northern hemisphere.It’s colder there, they’re more stressed, their chlorophyll is more sensitive and they need more sunblock."
+					]
+				},
+				{
+					"number": 21,
+					"text": "● Red leaves are most abundant when daytime weather conditions are ____ (21) and sunny.",
+					"answer": "dry",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nLá đỏ phổ biến nhất khi điều kiện thời tiết là ngày _ và nắng.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: ADJECTIVE\nDấu hiệu: are + ADJECTIVE and sunny (ADJECTIVE nhất quán với Adjective 'SUNNY')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nbest conditions ~ daytime weather conditions\nintense red colours ~ red leaves are most abundant\nsunny days ~ sunny\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"điều kiện tốt nhất để có màu đỏ rực rỡ là những ngày khô, nắng và đêm mát mẻ\" (the best conditions for intense red colours are dry, sunny days and cool nights).\n\nBước 5: Đáp án: dry\nLá đỏ phổ biến nhất khi điều kiện thời tiết ban ngày khô và nắng (Red leaves are most abundant when daytime weather conditions are dry and sunny).",
+					"quotes": [
+						"One is straightforward: on many trees, the leaves that are the reddest are those on the side of the tree which gets most sun.Not only that, but the red is brighter on the upper side of the leaf.It has also been recognised for decades that the best conditions for intense red colours are dry, sunny days and cool nights, conditions that nicely match those that make leaves susceptible to excess light.And finally, trees such as maples usually get much redder the more north you travel in the northern hemisphere.It’s colder there, they’re more stressed, their chlorophyll is more sensitive and they need more sunblock."
+					]
+				},
+				{
+					"number": 22,
+					"text": "● The intensity of the red colour of leaves increases as you go further ____ (22).",
+					"answer": "north",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nCường độ màu đỏ của lá tăng lên khi bạn đi xa hơn về phía _______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: further + NOUN (NOUN làm Object của 'FURTHER')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nget much redder ~ intensity of the red colour increases\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"cây phong thường đỏ hơn nhiều khi bạn đi về phía bắc trong bán cầu bắc\" (trees such as maples usually get much redder the more north you travel in the northern hemisphere).\n\nBước 5: Đáp án: north\nCường độ màu đỏ của lá tăng lên khi bạn đi xa hơn về phía bắc (The intensity of the red colour of leaves increases as you go further north).",
+					"quotes": [
+						"One is straightforward: on many trees, the leaves that are the reddest are those on the side of the tree which gets most sun.Not only that, but the red is brighter on the upper side of the leaf.It has also been recognised for decades that the best conditions for intense red colours are dry, sunny days and cool nights, conditions that nicely match those that make leaves susceptible to excess light.And finally, trees such as maples usually get much redder the more north you travel in the northern hemisphere.It’s colder there, they’re more stressed, their chlorophyll is more sensitive and they need more sunblock."
+					]
+				}
+			]
+		},
+		{
+			"range": "23-25",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 2?\nIn boxes 23-25 on your answer sheet, write\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 23,
+					"text": "It is likely that the red pigments help to protect the leaf from freezing temperatures.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCó khả năng là sắc tố đỏ giúp bảo vệ lá khỏi nhiệt độ đóng băng.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nanthocyanins ~ red pigments\nincrease a leaf's tolerance to freezing ~ protect from freezing temperatures\ntheories ~ likely\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"một số lý thuyết cho rằng anthocyanin có thể tăng khả năng chống chịu lạnh của lá, tuy nhiên những lý thuyết này đều có vấn đề vì lá chỉ có màu đỏ trong một thời gian ngắn và năng lượng cần để tạo ra anthocyanin sẽ lớn hơn bất kỳ lợi ích nào\"\n=> Điều này trái ngược với thông tin trong câu hỏi \"sắc tố đỏ có khả năng giúp bảo vệ lá khỏi nhiệt độ đóng băng\" (It is likely that the red pigments help to protect the leaf from freezing temperatures).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"It sounds paradoxical, because the idea behind this hypothesis is that the red pigment is made in autumn leaves to protect chlorophyll, the light-absorbing chemical, from too much light. Why does chlorophyll need protection when it is the natural world’s supreme light absorber?"
+					]
+				},
+				{
+					"number": 24,
+					"text": "The ‘light screen’ hypothesis would initially seem to contradict what is known about chlorophyll.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nGiả thuyết 'màn chắn ánh sáng' thoạt đầu có vẻ mâu thuẫn với những gì chúng ta biết về chất diệp lục.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nlight screen hypothesis ~ thuật ngữ giữ nguyên\nsounds paradoxical ~ would initially seem to contradict\nchlorophyll ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Nó nghe có vẻ nghịch lý, bởi vì ý tưởng đằng sau giả thuyết này là sắc tố đỏ được tạo ra trong lá mùa thu để bảo vệ chlorophyll, chất hấp thụ ánh sáng, khỏi quá nhiều ánh sáng.\"\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"giả thuyết 'màn chắn ánh sáng' ban đầu có vẻ mâu thuẫn với những gì chúng ta biết về chất diệp lục\" (The 'light screen' hypothesis would initially seem to contradict what is known about chlorophyll).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"It sounds paradoxical, because the idea behind this hypothesis is that the red pigment is made in autumn leaves to protect chlorophyll, the light-absorbing chemical, from too much light. Why does chlorophyll need protection when it is the natural world’s supreme light absorber?"
+					]
+				},
+				{
+					"number": 25,
+					"text": "Leaves which turn colours other than red are more likely to be damaged by sunlight.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững chiếc lá chuyển sang màu khác ngoài màu đỏ dễ bị tổn thương bởi ánh sáng mặt trời hơn.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\norange or yellow hues ~ colours other than red\nprevent overexposure to light ~ damaged by sunlight\nother means ~ more likely\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"các cây không tạo ra sắc tố đỏ mà chỉ để lộ màu cam hoặc vàng. Liệu những cây này có cách khác để ngăn ngừa tiếp xúc quá nhiều với ánh sáng vào mùa thu không?\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"những lá màu khác ngoài đỏ dễ bị tổn thương bởi ánh sáng mặt trời hơn\" (Leaves which turn colours other than red are more likely to be damaged by sunlight).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"What is still not fully understood, however, is why some trees resort to producing red pigments while others don’t bother, and simply reveal their orange or yellow hues. Do these trees have other means at their disposal to prevent overexposure to light in autumn?"
+					]
+				}
+			]
+		},
+		{
+			"range": "26",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 26,
+					"text": "For which of the following question does the writer offer an explanation?",
+					"options": [
+						{
+							"label": "A",
+							"text": "why conifers remain green in winter"
+						},
+						{
+							"label": "B",
+							"text": "how leaves turn orange and yellow in autumn"
+						},
+						{
+							"label": "C",
+							"text": "how herbivorous insects choose which trees to lay their eggs in"
+						},
+						{
+							"label": "D",
+							"text": "why anthocyanins are restricted to certain trees"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"But before letting its leaves go, the tree dismantles its chlorophyll molecules and ships its valuable nitrogen back into the twigs. As chlorophyll is depleted, other colours that have been dominated by it throughout the summer begin to be revealed. This unmasking explains the autumn colours of yellow and orange, but not the brilliant reds and purples of trees such as the maple or sumac."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}
