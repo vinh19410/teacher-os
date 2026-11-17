@@ -19,10 +19,12 @@ export function ScheduleDayView({
 	data,
 	dateISO,
 	onOpenSession,
+	showEmptyDayNotice = true,
 }: {
 	data: KernelSlice;
 	dateISO: string;
 	onOpenSession: (session: ClassSessionModalRef) => void;
+	showEmptyDayNotice?: boolean;
 }) {
 	const items = useMemo(() => buildDayAgenda(data, dateISO), [data, dateISO]);
 	const classById = useMemo(() => {
@@ -40,7 +42,7 @@ export function ScheduleDayView({
 			<h2 className="font-medium text-muted-foreground text-sm">
 				{formatDayLabel(dateISO)}
 			</h2>
-			{items.length === 0 && (
+			{showEmptyDayNotice && items.length === 0 && (
 				<Card variant="white" className="p-8 text-center">
 					<p className="text-muted-foreground text-sm">
 						Không có ca học hay sự kiện nào trong ngày này.
@@ -78,7 +80,7 @@ export function ScheduleDayView({
 						</div>
 						<div className="min-w-0 flex-1">
 							<div
-								className={`font-semibold text-sm ${
+								className={`break-words font-semibold text-sm ${
 									item.status === "completed" || item.status === "cancelled"
 										? "line-through decoration-muted-foreground"
 										: ""
@@ -103,7 +105,7 @@ export function ScheduleDayView({
 					<div
 						key={item.id}
 						title="Buổi dự kiến từ lịch lớp — chưa có học viên"
-						className={`lesson-block flex items-start gap-3 rounded-lg border border-border border-l-3 border-l-solid px-3 py-2 opacity-75 ${classBlockClass(item.classId)}`}
+						className={`lesson-block flex w-full min-w-0 items-start gap-3 rounded-lg border border-border border-l-3 border-l-solid px-3 py-2 opacity-75 ${classBlockClass(item.classId)}`}
 						data-class-color={classColorIndex(item.classId)}
 					>
 						{block}
@@ -122,7 +124,7 @@ export function ScheduleDayView({
 								columnDateISO: dateISO,
 							})
 						}
-						className={`lesson-block flex w-full cursor-pointer items-start gap-3 rounded-lg border border-border border-l-3 border-l-solid px-3 py-2 text-left transition-colors hover:bg-muted/50 ${classBlockClass(item.classId)} ${
+						className={`lesson-block flex w-full min-w-0 cursor-pointer items-start gap-3 rounded-lg border border-border border-l-3 border-l-solid px-3 py-2 text-left transition-colors hover:bg-muted/50 ${classBlockClass(item.classId)} ${
 							item.status === "completed"
 								? "opacity-60"
 								: item.status === "cancelled"

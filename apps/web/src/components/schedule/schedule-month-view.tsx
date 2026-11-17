@@ -71,7 +71,7 @@ export function ScheduleMonthView({
 					<div
 						key={cell.date}
 						data-date={cell.date}
-						className={`month-cell flex min-h-20 flex-col rounded-lg border p-1.5 text-left max-sm:min-h-0 max-sm:items-center max-sm:justify-center max-sm:p-1 ${
+						className={`month-cell flex min-h-20 min-w-0 flex-col rounded-lg border p-1.5 text-left max-sm:min-h-0 max-sm:items-center max-sm:justify-center max-sm:p-1 ${
 							cell.inMonth
 								? "border-border bg-card"
 								: "border-border/50 bg-muted/40 text-muted-foreground"
@@ -121,7 +121,7 @@ export function ScheduleMonthView({
 									<div
 										key={item.id}
 										data-class-color={classColorIndex(item.classId)}
-										className={`month-item truncate rounded border-l-3 px-1 py-0.5 text-[11px] ${classBlockClass(item.classId)} ${
+										className={`month-item w-full min-w-0 truncate rounded border-l-3 px-1 py-0.5 text-[11px] ${classBlockClass(item.classId)} ${
 											item.status === "cancelled"
 												? "line-through opacity-35"
 												: ""

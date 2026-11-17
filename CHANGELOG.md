@@ -22,6 +22,7 @@ Quy ước khi cập nhật:
 - Gỡ bỏ tùy chọn đăng nhập bằng mã email (Email OTP) trên cổng học viên (`apps/student`) và toàn bộ plugin/endpoint `emailOTP` ở `packages/auth`: trang `/login` học viên chỉ còn 2 tab **Đăng nhập** (email + mật khẩu cũ) và **Đăng ký**, tự động fallback về tab Đăng nhập nếu trình duyệt còn lưu `"otp"` trong `localStorage`, đồng thời map lỗi `USER_ALREADY_EXISTS*` và `INVALID_EMAIL_OR_PASSWORD` sang hướng dẫn tiếng Việt gợi ý dùng `Quên mật khẩu?` cho tài khoản từng dùng mã email (#761).
 
 ### Fixed
+- **Trang `/schedule` (`apps/web`) luôn hiển thị lưới lịch khi chưa có lớp và hiển thị card buổi học full width cột ngày:** chuyển `schedule-empty-state` thành banner gọn phía trên lịch (không ẩn 3 view Tuần/Tháng/Ngày và không lặp thông báo trống bên dưới), đồng thời thêm `w-full min-w-0` / `flex-col` cho card buổi học, thẻ kỳ nghỉ và cột ngày (#769).
 - Căn chỉnh lại 3 thẻ ảnh mục `"Học viên nói gì"` (`#hoc-vien-noi-gi`) trên `apps/profile/public/index.html`: thay bằng ảnh chụp phản hồi sắc nét đã crop sạch chrome và loại metadata (`feedback-global-offer.png`, `feedback-po-le.png`, `feedback-ielts-70.png`), khôi phục `.proof-img-wrap img.chat-contain` dùng `object-fit: contain; object-position: center` kèm khoảng chừa `.zoom-pill`, đồng bộ quote/tác giả/lightbox và xóa hai ảnh cũ không còn dùng (#757).
 
 ### Changed
