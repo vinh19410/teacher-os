@@ -1,5 +1,11 @@
-import { cp, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
+import {
+	isProfileMaintenanceEnabled,
+	MAINTENANCE_HEADERS_FILE,
+	MAINTENANCE_HTML_PATHS,
+	renderMaintenanceHtml,
+} from "./maintenance.mjs";
 import { replaceLeadApiMeta, replaceStudentPortalHref } from "./serve.mjs";
 
 const defaultPublicUrl = new URL("./public", import.meta.url);
@@ -9,13 +15,29 @@ export async function buildProfile({
 	distUrl = defaultDistUrl,
 	leadApiUrl = process.env.LEAD_API_URL?.trim(),
 	studentPortalUrl = process.env.STUDENT_PORTAL_URL?.trim(),
+	maintenance = isProfileMaintenanceEnabled(),
 } = {}) {
 	await rm(distUrl, { recursive: true, force: true });
+	const distBaseHref = `${distUrl.href.replace(/\/?$/, "/")}`;
+
+	if (maintenance) {
+		const maintenanceHtml = renderMaintenanceHtml();
+		for (const relHtml of MAINTENANCE_HTML_PATHS) {
+			const targetUrl = new URL(relHtml, distBaseHref);
+			await mkdir(new URL("./", targetUrl), { recursive: true });
+			await writeFile(targetUrl, maintenanceHtml, "utf8");
+		}
+		await writeFile(
+			new URL("./_headers", distBaseHref),
+			MAINTENANCE_HEADERS_FILE,
+			"utf8",
+		);
+		return;
+	}
+
 	await cp(publicUrl, distUrl, {
 		recursive: true,
 	});
-
-	const distBaseHref = `${distUrl.href.replace(/\/?$/, "/")}`;
 	if (leadApiUrl) {
 		for (const relHtml of [
 			"./index.html",
