@@ -137,6 +137,7 @@ export default defineConfig({
 				PORT: String(profilePort),
 				LEAD_API_URL: `http://localhost:${apiPort}`,
 				STUDENT_PORTAL_URL: `http://localhost:${studentPort}`,
+				PROFILE_MAINTENANCE: "false",
 			},
 			reuseExistingServer: false,
 			timeout: 30_000,

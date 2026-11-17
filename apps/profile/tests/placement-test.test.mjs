@@ -519,7 +519,9 @@ test("lead-gate.js giữ catalog khóa học, validate form, chuẩn hóa SĐT V
 });
 
 test("serve.mjs thay meta lead-api ở trang chủ & /kiem-tra-dau-vao/, redirect 301 và chặn path traversal", async () => {
-	const server = createProfileServer("https://api.staging.test");
+	const server = createProfileServer("https://api.staging.test", undefined, {
+		maintenance: false,
+	});
 	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 	const { port } = server.address();
 	const base = `http://127.0.0.1:${port}`;
@@ -558,6 +560,7 @@ test("build.mjs copy public sang dist, không có questions.json và thay meta l
 		await buildProfile({
 			distUrl: pathToFileURL(distDir),
 			leadApiUrl: "https://api.prod.test",
+			maintenance: false,
 		});
 
 		const builtHome = readFileSync(join(distDir, "index.html"), "utf8");

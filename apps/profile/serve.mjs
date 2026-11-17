@@ -2,6 +2,10 @@ import { readFile, stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import { extname, join, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import {
+	isProfileMaintenanceEnabled,
+	renderMaintenanceHtml,
+} from "./maintenance.mjs";
 
 const root = fileURLToPath(new URL("./public", import.meta.url));
 const rootWithSep = root.endsWith(sep) ? root : `${root}${sep}`;
@@ -113,6 +117,7 @@ export function createProfileServer(
 	leadApiUrl = process.env.LEAD_API_URL || "http://localhost:8000",
 	// Use ?? (not ||) so explicit STUDENT_PORTAL_URL="" preserves the HTML prod default (#560).
 	studentPortalUrl = process.env.STUDENT_PORTAL_URL ?? "http://localhost:8003",
+	{ maintenance = isProfileMaintenanceEnabled() } = {},
 ) {
 	const validatedStudentPortalUrl = normalizeStudentPortalUrl(studentPortalUrl);
 	return createServer(async (req, res) => {
@@ -131,6 +136,30 @@ export function createProfileServer(
 		if (decodedPath.includes("\0")) {
 			res.writeHead(400, { "content-type": "text/plain; charset=utf-8" });
 			res.end("Bad request");
+			return;
+		}
+
+		if (maintenance) {
+			if (req.method !== "GET" && req.method !== "HEAD") {
+				res.writeHead(405, {
+					"content-type": "text/plain; charset=utf-8",
+					allow: "GET, HEAD",
+					"cache-control": "no-cache, no-store, must-revalidate",
+					"x-robots-tag": "noindex, nofollow",
+					"x-content-type-options": "nosniff",
+				});
+				res.end("Method Not Allowed");
+				return;
+			}
+			const buf = Buffer.from(renderMaintenanceHtml(), "utf8");
+			res.writeHead(200, {
+				"content-type": types[".html"],
+				"content-length": String(buf.length),
+				"cache-control": "no-cache, no-store, must-revalidate",
+				"x-robots-tag": "noindex, nofollow",
+				"x-content-type-options": "nosniff",
+			});
+			res.end(req.method === "HEAD" ? undefined : buf);
 			return;
 		}
 
