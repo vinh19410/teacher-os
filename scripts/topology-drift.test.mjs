@@ -238,8 +238,18 @@ test("workflow PROFILE_ORIGIN and profile smoke check match resolveDomainTopolog
 	assert.equal(DEFAULT_DEV_LEAD_ORIGINS, `http://localhost:${profilePort}`);
 
 	const run = read("../packages/infra/alchemy.run.ts");
+	assert.match(
+		run,
+		/apps\/profile\/maintenance\.json/,
+		"packages/infra/alchemy.run.ts must derive profile maintenance mode from apps/profile/maintenance.json",
+	);
 	const profileBlock = run.split('StaticSite("profile"')[1];
 	assert.ok(profileBlock, 'StaticSite("profile") found in alchemy.run.ts');
+	assert.match(
+		profileBlock,
+		/notFoundHandling:\s*profileDisabled\s*\?\s*"single-page-application"\s*:\s*"none"/,
+		'StaticSite("profile") must switch notFoundHandling from profileDisabled',
+	);
 	assert.match(
 		profileBlock,
 		new RegExp(`url:\\s*"http://localhost:${profilePort}"`),

@@ -394,6 +394,7 @@ test("createProfileServer and buildProfile wire studentPortalUrl only on root in
 	const server = createProfileServer(
 		"http://localhost:8100",
 		"http://localhost:8103",
+		{ maintenance: false },
 	);
 	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 	const { port } = server.address();
@@ -435,7 +436,9 @@ test("createProfileServer and buildProfile wire studentPortalUrl only on root in
 	}
 
 	// Empty string keeps HTML prod default even in serve.mjs
-	const emptyUrlServer = createProfileServer("http://localhost:8100", "");
+	const emptyUrlServer = createProfileServer("http://localhost:8100", "", {
+		maintenance: false,
+	});
 	await new Promise((resolve) =>
 		emptyUrlServer.listen(0, "127.0.0.1", resolve),
 	);
@@ -459,6 +462,7 @@ test("createProfileServer and buildProfile wire studentPortalUrl only on root in
 			distUrl: pathToFileURL(distDir),
 			leadApiUrl: "",
 			studentPortalUrl: "https://student.staging.teacheros.io.vn",
+			maintenance: false,
 		});
 		const builtHome = readFileSync(join(distDir, "index.html"), "utf8");
 		assert.match(
@@ -1595,7 +1599,9 @@ test("placement walkthrough mp4 is published as static asset with video/mp4 MIME
 		"video file must stay below 25 MiB Cloudflare Static Assets limit",
 	);
 
-	const server = createProfileServer("http://localhost:8100", "");
+	const server = createProfileServer("http://localhost:8100", "", {
+		maintenance: false,
+	});
 	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 	const base = `http://127.0.0.1:${server.address().port}`;
 	try {
@@ -1643,6 +1649,7 @@ test("placement walkthrough mp4 is published as static asset with video/mp4 MIME
 			distUrl: pathToFileURL(distDir),
 			leadApiUrl: "https://api.msmy.io.vn",
 			studentPortalUrl: "https://student.msmy.io.vn",
+			maintenance: false,
 		});
 		const builtVideoPath = join(distDir, "huong-dan-kiem-tra-dau-vao.mp4");
 		assert.equal(
