@@ -47,6 +47,18 @@ export const ADMIN_GATE_MESSAGES: Record<AdminGateErrorCode, string> = {
 	UNKNOWN: "Không xác thực được quyền quản trị. Vui lòng thử lại.",
 };
 
+/**
+ * Thông báo cho `?error=` trên /login. Giá trị đến từ hai nguồn: guard `_auth`
+ * (đã là mã gate, ví dụ `NOT_ADMIN`) và error callback OAuth của better-auth
+ * (`ROLE_MISMATCH` khi tài khoản role khác đăng nhập cổng admin). Cả hai đều
+ * là mã gate sẵn, nên tra thẳng thay vì map lại qua HTTP status.
+ */
+export function loginErrorMessage(error: string): string {
+	return Object.hasOwn(ADMIN_GATE_MESSAGES, error)
+		? ADMIN_GATE_MESSAGES[error as AdminGateErrorCode]
+		: ADMIN_GATE_MESSAGES.UNKNOWN;
+}
+
 /** Thông báo hiển thị cho một (status, code) của /api/admin/me. */
 export function adminGateMessage(status: number, code?: string): string {
 	return ADMIN_GATE_MESSAGES[adminGateErrorCode(status, code)];

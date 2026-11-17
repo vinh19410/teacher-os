@@ -5,7 +5,7 @@ import { AdminAuthShell } from "@/components/auth/admin-auth-shell";
 import { GoogleOAuthButton } from "@/components/auth/google-oauth-button";
 import { SignInForm } from "@/components/auth/sign-in-form";
 import { authClient } from "@/lib/auth-client";
-import { adminGateMessage } from "@/lib/auth-error";
+import { loginErrorMessage } from "@/lib/auth-error";
 import { validateReturnUrl } from "@/lib/validate-return-url";
 
 export const Route = createFileRoute("/login")({
@@ -29,7 +29,7 @@ export const Route = createFileRoute("/login")({
 
 function RouteComponent() {
 	const navigate = Route.useNavigate();
-	const { returnUrl, error, gateStatus } = Route.useSearch();
+	const { returnUrl, error } = Route.useSearch();
 	const { data: session, isPending } = authClient.useSession();
 
 	useEffect(() => {
@@ -40,11 +40,11 @@ function RouteComponent() {
 
 	useEffect(() => {
 		if (!error) return;
-		// Guard _auth đẩy về đây kèm mã gate (SESSION_EXPIRED/NOT_ADMIN/…);
-		// gateStatus giữ HTTP status gốc để map đúng thông báo.
-		toast.error(adminGateMessage(gateStatus ?? 0, error));
+		// Guard _auth (SESSION_EXPIRED/NOT_ADMIN/…) và error callback OAuth
+		// (ROLE_MISMATCH) đều đẩy về đây kèm mã gate đã chuẩn hoá.
+		toast.error(loginErrorMessage(error));
 		void navigate({ search: { returnUrl }, replace: true });
-	}, [error, gateStatus, returnUrl, navigate]);
+	}, [error, returnUrl, navigate]);
 
 	if (isPending) {
 		return null;

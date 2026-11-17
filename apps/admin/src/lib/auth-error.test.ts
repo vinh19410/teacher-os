@@ -3,6 +3,7 @@ import {
 	adminGateErrorCode,
 	adminGateMessage,
 	authErrorMessage,
+	loginErrorMessage,
 } from "@/lib/auth-error";
 
 describe("adminGateErrorCode", () => {
@@ -49,6 +50,26 @@ describe("adminGateMessage", () => {
 
 	it("mã không nhận diện được → thông báo fallback", () => {
 		expect(adminGateMessage(500)).toMatch(/Không xác thực được/);
+	});
+});
+
+describe("loginErrorMessage", () => {
+	it("mã gate từ guard _auth hiển thị đúng thông báo", () => {
+		expect(loginErrorMessage("NOT_ADMIN")).toMatch(/không có quyền quản trị/);
+		expect(loginErrorMessage("SESSION_EXPIRED")).toMatch(/hết hạn/);
+	});
+
+	it("ROLE_MISMATCH từ error callback OAuth (không kèm gateStatus)", () => {
+		expect(loginErrorMessage("ROLE_MISMATCH")).toMatch(
+			/không phải tài khoản quản trị/,
+		);
+	});
+
+	it("mã lạ hoặc key prototype → thông báo fallback", () => {
+		expect(loginErrorMessage("unable_to_create_user")).toMatch(
+			/Không xác thực được/,
+		);
+		expect(loginErrorMessage("toString")).toMatch(/Không xác thực được/);
 	});
 });
 
