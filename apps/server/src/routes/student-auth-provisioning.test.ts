@@ -15,7 +15,7 @@ const MIGRATIONS_DIR = fileURLToPath(
 	new URL("../../../../packages/db/src/migrations", import.meta.url).href,
 );
 
-describe("Student Email OTP Authentication & Profile Matching Integration (#578)", () => {
+describe("Student Email+Password Verification & Profile Matching Integration (#716)", () => {
 	let app: ReturnType<typeof buildApp>;
 	let raw: ReturnType<typeof createClient>;
 	let libsqlDb: ReturnType<typeof drizzle<typeof schema>>;
@@ -61,47 +61,47 @@ describe("Student Email OTP Authentication & Profile Matching Integration (#578)
 		});
 	});
 
-	async function loginWithOtp(email: string): Promise<string> {
+	async function signUpAndVerifyStudent(
+		email: string,
+		name = "Học Viên Mới",
+	): Promise<string> {
 		sentMails = [];
-		// 1. Send OTP
-		const sendRes = await app.request(
-			"/api/auth/email-otp/send-verification-otp",
-			{
-				method: "POST",
-				headers: { "content-type": "application/json", origin: PORTAL_ORIGIN },
-				body: JSON.stringify({ email, type: "sign-in" }),
-			},
-		);
-		expect(sendRes.status).toBe(200);
+		const signUpRes = await app.request("/api/auth/sign-up/email", {
+			method: "POST",
+			headers: { "content-type": "application/json", origin: PORTAL_ORIGIN },
+			body: JSON.stringify({
+				name,
+				email,
+				password: "password-123",
+				callbackURL: `${PORTAL_ORIGIN}/verify-email?verified=ok`,
+			}),
+		});
+		expect(signUpRes.status).toBe(200);
 
-		// Extract OTP from dispatched email
 		const mail = sentMails.find(
 			(m) => m.to.toLowerCase() === email.toLowerCase(),
 		);
 		expect(mail).toBeDefined();
-		const otp = mail?.text.match(/\b\d{6}\b/)?.[0] ?? "";
-		expect(otp).toBeTruthy();
+		const verifyUrl = mail?.text.match(/https?:\/\/\S+/)?.[0] ?? "";
+		expect(verifyUrl).toBeTruthy();
 
-		// 2. Sign in with OTP
-		const signInRes = await app.request("/api/auth/sign-in/email-otp", {
-			method: "POST",
-			headers: { "content-type": "application/json", origin: PORTAL_ORIGIN },
-			body: JSON.stringify({ email, otp }),
-		});
-		expect(signInRes.status).toBe(200);
+		const parsedVerifyUrl = new URL(verifyUrl);
+		const verifyRes = await app.request(
+			`${parsedVerifyUrl.pathname}${parsedVerifyUrl.search}`,
+		);
+		expect(verifyRes.status).toBe(302);
 
-		const cookieHeader = signInRes.headers
+		const cookieHeader = verifyRes.headers
 			.getSetCookie()
 			.find((c) => c.includes("better-auth.session_token="));
 		expect(cookieHeader).toBeDefined();
 		return (cookieHeader ? cookieHeader.split(";")[0] : undefined) ?? "";
 	}
 
-	test("Trường hợp A: Học viên được giáo viên tạo trước hồ sơ -> Đăng nhập OTP tự khớp ngay lập tức 200 OK", async () => {
+	test("Trường hợp A: Học viên được giáo viên tạo trước hồ sơ -> Xác thực email tự khớp ngay lập tức 200 OK", async () => {
 		const email = "pre-created-student@example.com";
 		const studentId = "stu-pre-created-1";
 
-		// Teacher creates student profile in advance
 		await raw.execute({
 			sql: "INSERT INTO student (id, org_id, name, email, phone, created_at) VALUES (?, ?, ?, ?, ?, ?)",
 			args: [
@@ -114,10 +114,8 @@ describe("Student Email OTP Authentication & Profile Matching Integration (#578)
 			],
 		});
 
-		// Student logs in via OTP
-		const cookie = await loginWithOtp(email);
+		const cookie = await signUpAndVerifyStudent(email, "Nguyễn Văn A");
 
-		// Access student me endpoint
 		const meRes = await app.request("/api/student/me", {
 			headers: {
 				origin: PORTAL_ORIGIN,
@@ -138,10 +136,8 @@ describe("Student Email OTP Authentication & Profile Matching Integration (#578)
 	test("Trường hợp B: Học viên mới tinh -> provisionStudentForUser tự tạo hồ sơ ở org sớm nhất và trả về 200 OK", async () => {
 		const email = "brand-new-student@example.com";
 
-		// Student logs in via OTP
-		const cookie = await loginWithOtp(email);
+		const cookie = await signUpAndVerifyStudent(email, "Học Viên Mới");
 
-		// Access student me endpoint
 		const meRes = await app.request("/api/student/me", {
 			headers: {
 				origin: PORTAL_ORIGIN,
@@ -157,10 +153,9 @@ describe("Student Email OTP Authentication & Profile Matching Integration (#578)
 		expect(body.student.email.toLowerCase()).toBe(email.toLowerCase());
 	});
 
-	test("Trường hợp C: Học viên có pending studentInvitation -> đăng nhập OTP tự tạo hồ sơ, tự accept lời mời và trả về 200 OK (#716)", async () => {
+	test("Trường hợp C: Học viên có pending studentInvitation -> xác thực email tự tạo hồ sơ, tự accept lời mời và trả về 200 OK (#716)", async () => {
 		const email = "invited-student@example.com";
 
-		// Create teacher user as inviter
 		const now = Date.now();
 		await raw.execute({
 			sql: "INSERT INTO user (id, name, email, email_verified, created_at, updated_at, role) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -175,16 +170,13 @@ describe("Student Email OTP Authentication & Profile Matching Integration (#578)
 			],
 		});
 
-		// Teacher sent invitation (pending in studentInvitation)
 		await raw.execute({
 			sql: "INSERT INTO student_invitation (id, org_id, inviter_user_id, email, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
 			args: ["inv-1", "org-default", "u-inviter", email, "pending", now, now],
 		});
 
-		// Student logs in via OTP
-		const cookie = await loginWithOtp(email);
+		const cookie = await signUpAndVerifyStudent(email, "Invited Student");
 
-		// Auth hook must already provision student and accept invitation BEFORE /api/student/me
 		const studentRes = await raw.execute({
 			sql: "SELECT id, org_id, email FROM student WHERE lower(trim(email)) = ?",
 			args: [email.toLowerCase()],
@@ -198,7 +190,6 @@ describe("Student Email OTP Authentication & Profile Matching Integration (#578)
 		});
 		expect(invRes.rows[0]?.status).toBe("accepted");
 
-		// Access student me endpoint -> 200 OK (never 403)
 		const meRes = await app.request("/api/student/me", {
 			headers: {
 				origin: PORTAL_ORIGIN,
