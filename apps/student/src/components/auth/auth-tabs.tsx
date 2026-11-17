@@ -2,7 +2,7 @@ import { useRef } from "react";
 
 import { cn } from "@/lib/cn";
 
-export type AuthMode = "otp" | "signin" | "signup";
+export type AuthMode = "signin" | "signup";
 
 interface AuthTabsProps {
 	mode: AuthMode;
@@ -13,29 +13,15 @@ interface AuthTabsProps {
 /** Tabs segmented v2 (pattern `Tabs` v2): track bg-muted, item active nổi
  * bg-background + shadow-sm. role/id giữ nguyên cho e2e (`#tab-signin`). */
 export function AuthTabs({ mode, onChange, disabled }: AuthTabsProps) {
-	const otpTabRef = useRef<HTMLButtonElement>(null);
 	const signInTabRef = useRef<HTMLButtonElement>(null);
 	const signUpTabRef = useRef<HTMLButtonElement>(null);
-
-	const TAB_ORDER: AuthMode[] = ["otp", "signin", "signup"];
 
 	function onKeyDown(event: React.KeyboardEvent) {
 		if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
 		event.preventDefault();
-		const currentIdx = TAB_ORDER.indexOf(mode);
-		const delta = event.key === "ArrowRight" ? 1 : -1;
-		const nextIdx = (currentIdx + delta + TAB_ORDER.length) % TAB_ORDER.length;
-		const next = TAB_ORDER[nextIdx] ?? "otp";
+		const next: AuthMode = event.key === "ArrowRight" ? "signup" : "signin";
 		onChange(next);
-		const refMap: Record<
-			AuthMode,
-			React.RefObject<HTMLButtonElement | null>
-		> = {
-			otp: otpTabRef,
-			signin: signInTabRef,
-			signup: signUpTabRef,
-		};
-		refMap[next]?.current?.focus();
+		(next === "signin" ? signInTabRef.current : signUpTabRef.current)?.focus();
 	}
 
 	const TABS: Array<{
@@ -43,8 +29,7 @@ export function AuthTabs({ mode, onChange, disabled }: AuthTabsProps) {
 		label: string;
 		ref: React.RefObject<HTMLButtonElement | null>;
 	}> = [
-		{ id: "otp", label: "Mã email", ref: otpTabRef },
-		{ id: "signin", label: "Mật khẩu", ref: signInTabRef },
+		{ id: "signin", label: "Đăng nhập", ref: signInTabRef },
 		{ id: "signup", label: "Đăng ký", ref: signUpTabRef },
 	];
 
@@ -53,7 +38,7 @@ export function AuthTabs({ mode, onChange, disabled }: AuthTabsProps) {
 			role="tablist"
 			aria-label="Đăng nhập hoặc tạo tài khoản"
 			onKeyDown={onKeyDown}
-			className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-[3px] text-muted-foreground"
+			className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-[3px] text-muted-foreground"
 		>
 			{TABS.map((tab) => (
 				<button

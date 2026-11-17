@@ -36,13 +36,13 @@ stateDiagram-v2
 ## State: MaXacThuc
 __Related entity__: MaXacThuc (CamelCase khớp ERD `srs/auth-signin-erd.md`)
 __Related UC__: [[../usecases/uc-reset-password.md]], [[../usecases/uc-signin-google-oauth.md]]
-__Related BR__: BR-auth-signin-008, BR-auth-signin-009
+__Related BR__: BR-auth-signin-008
 
 ```mermaid
 stateDiagram-v2
-    [*] --> ConHieuLuc : He thong phat sinh ma (dat lai mat khau 1 gio / OTP 5 phut / state giao dich)
-    ConHieuLuc --> DaSuDung : Doi mat khau thanh cong hoac xac minh OTP thanh cong
-    ConHieuLuc --> HetHan : Qua thoi han hieu luc hoac bi thay the khi cap ma moi
+    [*] --> ConHieuLuc : He thong phat sinh ma (dat lai mat khau 1 gio / state giao dich)
+    ConHieuLuc --> DaSuDung : Doi mat khau thanh cong
+    ConHieuLuc --> HetHan : Qua thoi han hieu luc 1 gio
     DaSuDung --> [*]
     HetHan --> [*]
 ```
@@ -51,9 +51,9 @@ stateDiagram-v2
 
 | Trạng thái | Ý nghĩa nghiệp vụ | Sự kiện đi vào (Trigger In) | Sự kiện đi ra (Trigger Out) | Xử lý khi người dùng thao tác lại |
 |------------|-------------------|-----------------------------|-----------------------------|-----------------------------------|
-| `ConHieuLuc` | Mã một lần đang chờ người dùng sử dụng trong khung thời gian cho phép | Gửi thư đặt lại mật khẩu (1 giờ), gửi mã OTP học viên (5 phút), hoặc tạo dấu cổng giao dịch Google | Người dùng sử dụng thành công, trôi qua thời điểm hết hạn, hoặc bị thay thế khi phát hành mã OTP mới cho cùng email | Nếu gặp lỗi mạng tạm thời lúc đổi mật khẩu (`E-auth-signin-023`), mã đặt lại mật khẩu vẫn giữ ở `ConHieuLuc` để người dùng bấm lưu lại |
-| `DaSuDung` | Mã một lần đã được tiêu thụ hoàn tất | Đổi mật khẩu thành công (đồng thời thu hồi mọi phiên cũ) hoặc xác minh OTP thành công | Trạng thái kết thúc | Bấm lại liên kết đặt lại mật khẩu đã dùng sẽ bị từ chối với `E-auth-signin-022` *(riêng liên kết xác thực email là liên kết tự chứa hạn 1 giờ nên bấm lại khi còn hạn vẫn xử lý êm — xem mục `NguoiDung`)* |
-| `HetHan` | Mã không còn giá trị do quá hạn hoặc đã bị thay thế | Quá 1 giờ (đặt lại mật khẩu), quá 5 phút (mã OTP), hoặc bị ghi đè khi cấp mã OTP mới | Trạng thái kết thúc | Hiển thị `E-auth-signin-022` và hướng dẫn người dùng yêu cầu mã mới |
+| `ConHieuLuc` | Mã một lần đang chờ người dùng sử dụng trong khung thời gian cho phép | Gửi thư đặt lại mật khẩu (1 giờ) hoặc tạo dấu cổng giao dịch Google | Người dùng sử dụng thành công hoặc trôi qua thời điểm hết hạn | Nếu gặp lỗi mạng tạm thời lúc đổi mật khẩu (`E-auth-signin-023`), mã đặt lại mật khẩu vẫn giữ ở `ConHieuLuc` để người dùng bấm lưu lại |
+| `DaSuDung` | Mã một lần đã được tiêu thụ hoàn tất | Đổi mật khẩu thành công (đồng thời thu hồi mọi phiên cũ) | Trạng thái kết thúc | Bấm lại liên kết đặt lại mật khẩu đã dùng sẽ bị từ chối với `E-auth-signin-022` *(riêng liên kết xác thực email là liên kết tự chứa hạn 1 giờ nên bấm lại khi còn hạn vẫn xử lý êm — xem mục `NguoiDung`)* |
+| `HetHan` | Mã không còn giá trị do quá hạn | Quá 1 giờ (đặt lại mật khẩu) hoặc quá hạn giao dịch Google | Trạng thái kết thúc | Hiển thị `E-auth-signin-022` và hướng dẫn người dùng yêu cầu mã mới |
 
 ---
 
