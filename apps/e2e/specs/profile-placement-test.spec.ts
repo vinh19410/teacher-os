@@ -1322,8 +1322,26 @@ test.describe
 					"Đã trả lời 0/45 câu",
 				);
 
+				const readingSection = page.locator('[data-skill="reading"]');
 				const passageCards = page.locator(".reading-passage-card");
 				await expect(passageCards).toHaveCount(6);
+				await expect(
+					page.locator(".reading-passage-card .question-tag"),
+				).toHaveCount(0);
+				for (const redundantLabel of [
+					"Biển báo / Thông báo",
+					"Tin nhắn / Email",
+					"Bài đọc hiểu",
+					"Đoạn văn điền từ",
+				]) {
+					await expect(readingSection).not.toContainText(redundantLabel);
+				}
+				await expect(
+					passageCards.nth(1).locator(".passage-header"),
+				).toHaveCount(0);
+				await expect(passageCards.nth(1).locator(".clip-badges")).toHaveCount(
+					0,
+				);
 				await expect(passageCards.first()).toContainText("CITY SWIMMING POOL");
 				await expect(passageCards.last()).toContainText("Working from home");
 				await expect(
@@ -1349,6 +1367,12 @@ test.describe
 						overflow,
 						`no reading horizontal overflow at ${vp.label}`,
 					).toBe(false);
+					if (potIssue && vp.label !== "reflow-320x568") {
+						await page.screenshot({
+							path: reportPath(`${potIssue}-profile-reading-${vp.label}.png`),
+							fullPage: false,
+						});
+					}
 				}
 
 				await page.setViewportSize({ width: 1440, height: 900 });

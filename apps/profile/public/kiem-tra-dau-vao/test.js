@@ -60,13 +60,6 @@ const OBJECTIVE_AND_WRITING_STEPS = new Set([
 	"writing",
 ]);
 
-const READING_KIND_LABELS = {
-	sign: "Biển báo / Thông báo",
-	message: "Tin nhắn / Email",
-	passage: "Bài đọc hiểu",
-	cloze: "Đoạn văn điền từ",
-};
-
 function resolveApiBase() {
 	const meta = document.querySelector('meta[name="lead-api"]');
 	const raw = meta?.getAttribute("content")?.trim() || DEFAULT_API_BASE;
@@ -534,11 +527,36 @@ export function buildGapPromptSegments(prompt) {
 	return segments;
 }
 
+function normalizeReadingKind(kind) {
+	return (
+		String(kind ?? "passage")
+			.trim()
+			.toLowerCase() || "passage"
+	);
+}
+
 export function shouldShowReadingTitle(passage) {
-	const kind = String(passage?.kind ?? "passage")
-		.trim()
-		.toLowerCase();
+	const kind = normalizeReadingKind(passage?.kind);
 	return kind !== "sign" && kind !== "message";
+}
+
+export function resolveReadingPassageHeaderState(passage, prevPassage) {
+	const headerState = resolvePartHeaderState(passage, prevPassage);
+	const displayTitle = shouldShowReadingTitle(passage)
+		? stripInlineCefrLabel(passage?.title)
+		: "";
+	const showBadges = headerState.showPartLabel;
+	const hasHeader =
+		showBadges || Boolean(displayTitle) || headerState.showInstruction;
+	return {
+		partLabel: headerState.partLabel,
+		instruction: headerState.instruction,
+		displayTitle,
+		showPartLabel: headerState.showPartLabel,
+		showInstruction: headerState.showInstruction,
+		showBadges,
+		hasHeader,
+	};
 }
 
 export function buildSkillReportCards(objective, bands = []) {
@@ -1964,12 +1982,13 @@ function createApp() {
 	}
 
 	function renderReadingBody(passage) {
+		const normalizedKind = normalizeReadingKind(passage?.kind);
 		const bodyText = String(passage.body ?? "");
 		const container = el("div", {
-			className: `reading-body kind-${passage.kind || "passage"}`,
+			className: `reading-body kind-${normalizedKind}`,
 		});
 
-		if (passage.kind === "cloze") {
+		if (normalizedKind === "cloze") {
 			const paragraphs = bodyText.split(/\n{2,}/);
 			for (const para of paragraphs) {
 				const pNode = el("p", { className: "reading-paragraph" });
@@ -2062,43 +2081,40 @@ function createApp() {
 				className: "card reading-passage-card",
 				dataset: {
 					passageId: passage.id,
-					passageKind: passage.kind || "passage",
+					passageKind: normalizeReadingKind(passage.kind),
 				},
 			});
 
-			const headerState = resolvePartHeaderState(passage, prevPassage);
-			const displayPassageTitle = shouldShowReadingTitle(passage)
-				? stripInlineCefrLabel(passage.title)
-				: "";
-
-			card.appendChild(
-				el("div", { className: "passage-header" }, [
-					el("div", { className: "clip-badges" }, [
-						headerState.showPartLabel
-							? el("span", {
-									className: "part-badge",
-									textContent: headerState.partLabel,
+			const headerState = resolveReadingPassageHeaderState(
+				passage,
+				prevPassage,
+			);
+			if (headerState.hasHeader) {
+				card.appendChild(
+					el("div", { className: "passage-header" }, [
+						headerState.showBadges
+							? el("div", { className: "clip-badges" }, [
+									el("span", {
+										className: "part-badge",
+										textContent: headerState.partLabel,
+									}),
+								])
+							: null,
+						headerState.displayTitle
+							? el("h2", {
+									className: "clip-title",
+									textContent: headerState.displayTitle,
 								})
 							: null,
-						el("span", {
-							className: "question-tag",
-							textContent: READING_KIND_LABELS[passage.kind] ?? "Bài đọc hiểu",
-						}),
+						headerState.showInstruction
+							? el("p", {
+									className: "clip-instruction",
+									textContent: headerState.instruction,
+								})
+							: null,
 					]),
-					displayPassageTitle
-						? el("h2", {
-								className: "clip-title",
-								textContent: displayPassageTitle,
-							})
-						: null,
-					headerState.showInstruction
-						? el("p", {
-								className: "clip-instruction",
-								textContent: headerState.instruction,
-							})
-						: null,
-				]),
-			);
+				);
+			}
 
 			card.appendChild(renderReadingBody(passage));
 
