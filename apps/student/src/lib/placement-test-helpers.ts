@@ -657,8 +657,8 @@ export const DEFAULT_PLACEMENT_BANDS: readonly PlacementPublishedBand[] = [
 		min: 85,
 		max: 100,
 		cefr: "B1 trở lên",
-		course: "ielts-pre",
-		courseLabel: LEAD_COURSE_LABELS["ielts-pre"],
+		course: "comm-3",
+		courseLabel: LEAD_COURSE_LABELS["comm-3"],
 		displayCourse: "Vượt Level 2",
 		advice: "Nên vào lớp B1+/IELTS nền tảng; Level 2 sẽ quá dễ.",
 	},
@@ -672,7 +672,8 @@ export interface PlacementPartGroup<T> {
 
 /**
  * Nhóm các mục liên tiếp có cùng `partLabel` (đã lược nhãn CEFR) để chỉ hiển
- * thị tiêu đề Part và `instruction` một lần ở đầu mỗi Part.
+ * thị tiêu đề Part và `instruction` một lần ở đầu mỗi Part (tách nhóm khi
+ * `instruction` thay đổi rõ rệt).
  */
 export function groupPlacementItemsByPart<
 	T extends { partLabel: string; instruction: string },
@@ -682,7 +683,12 @@ export function groupPlacementItemsByPart<
 		const partLabel = stripInlineCefrLabel(item.partLabel).trim();
 		const instruction = item.instruction.trim();
 		const prev = groups[groups.length - 1];
-		if (partLabel && prev && prev.partLabel === partLabel) {
+		const canMerge =
+			Boolean(partLabel) &&
+			Boolean(prev) &&
+			prev.partLabel === partLabel &&
+			(!instruction || !prev.instruction || prev.instruction === instruction);
+		if (canMerge && prev) {
 			prev.items.push({ item, index });
 			if (!prev.instruction && instruction) {
 				prev.instruction = instruction;

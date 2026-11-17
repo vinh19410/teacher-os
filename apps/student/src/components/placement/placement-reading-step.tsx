@@ -124,7 +124,7 @@ export function PlacementReadingStep({
 			) : (
 				partGroups.map((group, gIdx) => (
 					<section
-						key={`reading-part-${group.partLabel || gIdx}`}
+						key={`reading-part-${gIdx}-${group.partLabel}`}
 						className="space-y-4"
 					>
 						{group.partLabel || group.instruction ? (

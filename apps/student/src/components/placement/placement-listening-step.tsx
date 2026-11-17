@@ -369,7 +369,7 @@ export function PlacementListeningStep({
 			) : (
 				partGroups.map((group, gIdx) => (
 					<section
-						key={`listening-part-${group.partLabel || gIdx}`}
+						key={`listening-part-${gIdx}-${group.partLabel}`}
 						className="space-y-4"
 					>
 						{group.partLabel || group.instruction ? (

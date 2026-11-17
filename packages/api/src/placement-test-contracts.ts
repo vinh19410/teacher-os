@@ -1690,9 +1690,21 @@ export function matchPlacementBand(
 		};
 	}
 	const sorted = [...bands].sort((a, b) => a.min - b.min);
+	const firstBand = sorted[0];
+	if (!firstBand) {
+		return {
+			min: 0,
+			max: 100,
+			cefr: "A1",
+			course: "comm-1",
+			courseLabel: LEAD_COURSE_LABELS["comm-1"],
+			displayCourse: LEAD_COURSE_LABELS["comm-1"],
+			advice: "",
+		};
+	}
 	const safePct = Number.isFinite(pct) ? pct : 0;
 	// Khớp theo ngưỡng `min` trên số thực (giống `bandOf(total)` trong HTML gốc) để không làm tròn nhảy bậc sai ở biên.
-	let matched = sorted[0]!;
+	let matched = firstBand;
 	for (const band of sorted) {
 		if (safePct >= band.min) {
 			matched = band;

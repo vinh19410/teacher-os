@@ -382,22 +382,22 @@ function resolvePartEstimatedMinutes(part, fallback) {
 }
 
 export function buildIntroOverviewRows(snapshot) {
-	const listeningClips = Array.isArray(snapshot?.listening?.clips)
-		? snapshot.listening.clips
-		: [];
+	const hasListening = Array.isArray(snapshot?.listening?.clips);
+	const listeningClips = hasListening ? snapshot.listening.clips : [];
 	const listeningPartSet = new Set(
 		listeningClips
 			.map((clip) => stripInlineCefrLabel(clip?.partLabel))
 			.filter(Boolean),
 	);
-	const listeningParts = listeningPartSet.size > 0 ? listeningPartSet.size : 3;
+	const listeningParts = hasListening
+		? Math.max(1, listeningPartSet.size || listeningClips.length)
+		: 3;
 	const listeningQuestionCount = listeningClips.reduce(
 		(sum, clip) =>
 			sum + (Array.isArray(clip?.questions) ? clip.questions.length : 0),
 		0,
 	);
-	const listeningTotal =
-		listeningQuestionCount > 0 ? listeningQuestionCount : 13;
+	const listeningTotal = hasListening ? listeningQuestionCount : 13;
 	const firstClipMaxPlays = Number(
 		listeningClips.find((clip) => Number(clip?.maxPlays) > 0)?.maxPlays,
 	);
@@ -407,56 +407,64 @@ export function buildIntroOverviewRows(snapshot) {
 			: 2;
 	const listeningMinutes = resolvePartEstimatedMinutes(snapshot?.listening, 10);
 
-	const gvQuestions = Array.isArray(snapshot?.vocabGrammar?.questions)
-		? snapshot.vocabGrammar.questions
-		: [];
-	const gvTotal = gvQuestions.length > 0 ? gvQuestions.length : 12;
+	const hasGv = Array.isArray(snapshot?.vocabGrammar?.questions);
+	const gvQuestions = hasGv ? snapshot.vocabGrammar.questions : [];
+	const gvTotal = hasGv ? gvQuestions.length : 12;
 	const gvMinutes = resolvePartEstimatedMinutes(snapshot?.vocabGrammar, 6);
 
-	const readingPassages = Array.isArray(snapshot?.reading?.passages)
-		? snapshot.reading.passages
-		: [];
+	const hasReading = Array.isArray(snapshot?.reading?.passages);
+	const readingPassages = hasReading ? snapshot.reading.passages : [];
 	const readingPartSet = new Set(
 		readingPassages
 			.map((passage) => stripInlineCefrLabel(passage?.partLabel))
 			.filter(Boolean),
 	);
-	const readingParts = readingPartSet.size > 0 ? readingPartSet.size : 3;
+	const readingParts = hasReading
+		? Math.max(1, readingPartSet.size || readingPassages.length)
+		: 3;
 	const readingQuestionCount = readingPassages.reduce(
 		(sum, passage) =>
 			sum + (Array.isArray(passage?.questions) ? passage.questions.length : 0),
 		0,
 	);
-	const readingTotal = readingQuestionCount > 0 ? readingQuestionCount : 15;
+	const readingTotal = hasReading ? readingQuestionCount : 15;
 	const readingMinutes = resolvePartEstimatedMinutes(snapshot?.reading, 12);
 
 	const writingState = resolveWritingPromptState(snapshot?.writing);
 	const writingMinutes = resolvePartEstimatedMinutes(snapshot?.writing, 10);
 
-	const speakingTasks = Array.isArray(snapshot?.speaking?.tasks)
-		? snapshot.speaking.tasks
-		: [];
-	const speakingTotal = speakingTasks.length > 0 ? speakingTasks.length : 8;
+	const hasSpeaking = Array.isArray(snapshot?.speaking?.tasks);
+	const speakingTasks = hasSpeaking ? snapshot.speaking.tasks : [];
+	const speakingTotal = hasSpeaking ? speakingTasks.length : 8;
 	const speakingMinutes = resolvePartEstimatedMinutes(snapshot?.speaking, 7);
 
 	return [
 		{
 			id: "listening",
 			part: "1. Listening",
-			content: `${listeningParts} parts · ${listeningTotal} câu · mỗi đoạn nghe ${maxPlays} lần`,
-			time: `~${listeningMinutes} phút`,
+			content:
+				listeningTotal > 0
+					? `${listeningParts} parts · ${listeningTotal} câu · mỗi đoạn nghe ${maxPlays} lần`
+					: "Chưa có câu hỏi",
+			time: listeningTotal > 0 ? `~${listeningMinutes} phút` : "—",
 		},
 		{
 			id: "vocab-grammar",
 			part: "2. Grammar & Vocabulary",
-			content: `${gvTotal} câu trắc nghiệm, từ dễ đến khó`,
-			time: `~${gvMinutes} phút`,
+			content:
+				gvTotal > 0
+					? `${gvTotal} câu trắc nghiệm, từ dễ đến khó`
+					: "Chưa có câu hỏi",
+			time: gvTotal > 0 ? `~${gvMinutes} phút` : "—",
 		},
 		{
 			id: "reading",
 			part: "3. Reading",
-			content: `${readingParts} parts · ${readingTotal} câu`,
-			time: `~${readingMinutes} phút`,
+			content:
+				readingTotal > 0
+					? `${readingParts} parts · ${readingTotal} câu`
+					: "Chưa có câu hỏi",
+			time: readingTotal > 0 ? `~${readingMinutes} phút` : "—",
 		},
 		{
 			id: "writing",
@@ -467,8 +475,11 @@ export function buildIntroOverviewRows(snapshot) {
 		{
 			id: "speaking",
 			part: "5. Speaking",
-			content: `${speakingTotal} câu hỏi ghi âm qua micro`,
-			time: `~${speakingMinutes} phút`,
+			content:
+				speakingTotal > 0
+					? `${speakingTotal} câu hỏi ghi âm qua micro`
+					: "Không có phần Speaking",
+			time: speakingTotal > 0 ? `~${speakingMinutes} phút` : "—",
 		},
 	];
 }
@@ -970,15 +981,22 @@ function createApp() {
 	}
 
 	function renderGapPromptNodes(prompt) {
-		return buildGapPromptSegments(prompt).map((seg) =>
-			seg.type === "gap"
-				? el("span", {
+		const nodes = [];
+		for (const seg of buildGapPromptSegments(prompt)) {
+			if (seg.type === "gap") {
+				nodes.push(
+					el("span", {
 						className: "gapnum",
 						"aria-hidden": "true",
 						textContent: "[?]",
-					})
-				: seg.value,
-		);
+					}),
+					el("span", { className: "sr-only", textContent: " chỗ trống " }),
+				);
+			} else {
+				nodes.push(seg.value);
+			}
+		}
+		return nodes;
 	}
 
 	function renderClipNotesGapRow(q, currentValue, onInput) {
