@@ -81,6 +81,7 @@ export function ClozeEditor({
 	typeId,
 	items,
 	onApply,
+	maxBlanks,
 	initialMode = "visual",
 	initialStage = "paste",
 	initialSource = "",
@@ -91,6 +92,8 @@ export function ClozeEditor({
 	/** Current grid items — applying replaces them (with a confirm when composed). */
 	items: QuestionItem[];
 	onApply: (items: QuestionItem[]) => void;
+	/** Trần số chỗ trống cho nhóm/part hiện tại (mặc định CLOZE_MAX_BLANKS = 40). */
+	maxBlanks?: number;
 	/** The initial* props are a test/restore seam; the editor owns its state. */
 	initialMode?: "visual" | "raw";
 	initialStage?: "paste" | "tokens";
@@ -136,7 +139,7 @@ export function ClozeEditor({
 		[mode, stage, source, blanks],
 	);
 	const segments = mode === "raw" ? rawSegments : visualSegments;
-	const issues = clozeApplyIssues(segments);
+	const issues = clozeApplyIssues(segments, maxBlanks);
 	const canApply = segments.length > 0 && issues.length === 0;
 	const willReplace = items.some(hasItemContent);
 

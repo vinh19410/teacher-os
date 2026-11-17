@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import type { StudentQuizQuestion } from "@teacher-os/api/contracts";
+import { libraryPartToQuizView } from "@teacher-os/api/lib/library-quiz-preview";
 import { buildQuizParts } from "@teacher-os/api/lib/quiz-parts";
 import { act } from "react";
 import { createRoot } from "react-dom/client";
@@ -239,6 +240,175 @@ describe("TestPreviewOverlay (#433)", () => {
 			);
 		} finally {
 			await render6.unmount();
+		}
+	});
+
+	it("render mcq_many cụm multi-select, summary word bank >8 mục (A–P), headings >8 mục (i–xiii), diagram không pin", async () => {
+		const summaryBank = Array.from(
+			{ length: 16 },
+			(_, index) => `word-${index + 1}`,
+		);
+		const headingsBank = Array.from(
+			{ length: 13 },
+			(_, index) => `Heading ${index + 1}`,
+		);
+		const view = libraryPartToQuizView(
+			{
+				part: "p1",
+				type: "mcq_many",
+				title: "Reading Wave 3 Preview",
+				band: "7.0",
+				source: "",
+				intro: "",
+				passage: "<p>Passage text</p>",
+				transcript: "",
+				imageUrl: "https://cdn.example.com/diagram.png",
+				optionBank: [],
+				note: "",
+				audioName: "",
+				questions: [
+					{
+						stem: "Which TWO statements are true?",
+						opts: ["First", "Second", "Third", "Fourth", "Fifth"],
+						answer: "A",
+						alts: "",
+						type: null,
+						pin: null,
+						answerSet: "set-1",
+					},
+					{
+						stem: "Which TWO statements are true?",
+						opts: ["First", "Second", "Third", "Fourth", "Fifth"],
+						answer: "D",
+						alts: "",
+						type: null,
+						pin: null,
+						answerSet: "set-1",
+					},
+					{
+						stem: "Summary gap ____ here.",
+						opts: null,
+						answer: "P",
+						alts: "",
+						type: null,
+						pin: null,
+					},
+					{
+						stem: "Paragraph A",
+						opts: null,
+						answer: "xiii",
+						alts: "",
+						type: null,
+						pin: null,
+					},
+					{
+						stem: "Diagram label ____",
+						opts: null,
+						answer: "turbine",
+						alts: "",
+						type: null,
+						pin: null,
+					},
+				],
+				groups: [
+					{
+						id: "g-mcq",
+						type: "mcq_many",
+						instruction: "",
+						startIndex: 0,
+						count: 2,
+						optionBank: [],
+						answersInline: false,
+						splitContent: false,
+						dragDrop: false,
+					},
+					{
+						id: "g-sum",
+						type: "summary",
+						instruction: "",
+						startIndex: 2,
+						count: 1,
+						optionBank: summaryBank,
+						answersInline: false,
+						splitContent: false,
+						dragDrop: false,
+					},
+					{
+						id: "g-head",
+						type: "headings",
+						instruction: "",
+						startIndex: 3,
+						count: 1,
+						optionBank: headingsBank,
+						answersInline: false,
+						splitContent: false,
+						dragDrop: false,
+					},
+					{
+						id: "g-diag",
+						type: "diagram",
+						instruction: "",
+						startIndex: 4,
+						count: 1,
+						optionBank: [],
+						answersInline: false,
+						splitContent: false,
+						dragDrop: false,
+					},
+				],
+			},
+			{ skill: "reading", qOffset: 0 },
+		);
+
+		const previewTab: PreviewTab = {
+			part: "p1",
+			label: "Passage 1",
+			state: "ok",
+			qStart: 1,
+			questionCount: 5,
+			savedFallback: false,
+			corrupt: false,
+			view: {
+				detail: view.detail,
+				parts: view.parts,
+				unsupportedGroupFlags: view.unsupportedGroupFlags,
+			},
+		};
+
+		const render7 = await setup([previewTab], "p1");
+		try {
+			// mcq_many multi-select cluster
+			expect(render7.container.textContent).toContain("Questions 1–2");
+			expect(render7.container.textContent).toContain("Chọn 2 đáp án");
+			const checkboxA = render7.container.querySelector<HTMLInputElement>(
+				'input[type="checkbox"][aria-label="Questions 1–2 lựa chọn A"]',
+			);
+			expect(checkboxA).not.toBeNull();
+			await act(async () => {
+				checkboxA?.click();
+			});
+			expect(checkboxA?.checked).toBe(true);
+
+			// summary > 8 word bank items (A–P)
+			expect(render7.container.textContent).toContain("word-16");
+			expect(render7.container.textContent).toContain("P");
+
+			// headings > 8 items (i–xiii)
+			expect(render7.container.textContent).toContain("Heading 13");
+			expect(render7.container.textContent).toContain("xiii");
+
+			// diagram without pin renders image and cloze input
+			const img = render7.container.querySelector<HTMLImageElement>(
+				'img[src="https://cdn.example.com/diagram.png"]',
+			);
+			expect(img).not.toBeNull();
+			expect(
+				render7.container.querySelector(
+					'input[aria-label="Điền đáp án câu 5"]',
+				),
+			).not.toBeNull();
+		} finally {
+			await render7.unmount();
 		}
 	});
 });

@@ -1,4 +1,7 @@
-import { ASSIGNMENT_ANSWER_CHOICES } from "@teacher-os/api/contracts";
+import {
+	type ASSIGNMENT_ANSWER_CHOICES,
+	extendedAnswerChoices,
+} from "@teacher-os/api/contracts";
 
 /** Label kinds with positional bank labels (`text` rows carry none). */
 export type OptionBankKind = keyof typeof ASSIGNMENT_ANSWER_CHOICES | "text";
@@ -6,13 +9,12 @@ export type OptionBankKind = keyof typeof ASSIGNMENT_ANSWER_CHOICES | "text";
 /**
  * Positional display label for bank row `index` under `kind`: A… for the
  * letter kind, i… for the roman headings kind; "" beyond the bank or for
- * kinds without positional labels. Same rule as web's
- * `assignment-presets.bankLabel` (the editor's copy) — the label ARRAYS come
- * from the one api constant.
+ * kinds without positional labels. Supports extended library banks up to 20
+ * items (`A–T` / `i–xx`).
  */
 function bankLabel(kind: OptionBankKind, index: number): string {
 	if (kind !== "letter" && kind !== "roman") return "";
-	return ASSIGNMENT_ANSWER_CHOICES[kind][index] ?? "";
+	return extendedAnswerChoices(kind)[index] ?? "";
 }
 
 /**

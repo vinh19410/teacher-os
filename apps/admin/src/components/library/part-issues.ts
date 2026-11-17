@@ -24,7 +24,19 @@ const MESSAGE_LABELS: ReadonlyArray<[RegExp, string]> = [
 	],
 	[
 		/bank must have 2/i,
-		"Ngân hàng đáp án cần 2–8 mục và phủ mọi câu trùng khớp.",
+		"Ngân hàng đáp án cần 2–20 mục và phủ các câu trùng khớp.",
+	],
+	[
+		/mcq_many requires at least 2 options/i,
+		"Câu chọn nhiều đáp án cần ít nhất 2 lựa chọn.",
+	],
+	[
+		/mcq_many answer must be a/i,
+		"Đáp án chọn nhiều phải trỏ tới một lựa chọn A–H có nội dung.",
+	],
+	[
+		/mcq_many requires answerSet/i,
+		"Các câu chọn nhiều đáp án cần thuộc một cụm đáp án chung (answerSet).",
 	],
 	[
 		/answer must be a label/i,
@@ -96,6 +108,8 @@ const FIELD_LABELS: Record<string, string> = {
 	title: "Tiêu đề",
 	part: "Part",
 	source: "Nguồn",
+	opts: "Lựa chọn",
+	answerSet: "Cụm đáp án",
 };
 
 /**

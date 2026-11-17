@@ -171,4 +171,30 @@ describe("bulk key paste — map by parsed question number (FR7)", () => {
 		expect(result.errors).toEqual([]);
 		expect(result.items[0].answer).toBe("iii");
 	});
+
+	test("accepts extended bank values (J / xii) and summary with optionBank when maxBank=20", () => {
+		const letterBank = Array.from({ length: 12 }, (_, i) => `W${i}`);
+		const summaryRes = applyBulkKeyPaste({
+			raw: "1. j",
+			typeId: "summary",
+			qStart: 1,
+			items: items("summary", 1),
+			optionBank: letterBank,
+			maxBank: 20,
+		});
+		expect(summaryRes.errors).toEqual([]);
+		expect(summaryRes.items[0].answer).toBe("J");
+
+		const romanBank = Array.from({ length: 12 }, (_, i) => `H${i}`);
+		const headingRes = applyBulkKeyPaste({
+			raw: "14. xii",
+			typeId: "headings",
+			qStart: 14,
+			items: items("headings", 1),
+			optionBank: romanBank,
+			maxBank: 20,
+		});
+		expect(headingRes.errors).toEqual([]);
+		expect(headingRes.items[0].answer).toBe("xii");
+	});
 });

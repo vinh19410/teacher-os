@@ -1,6 +1,10 @@
 // @vitest-environment jsdom
 
-import type { LibraryPartDto } from "@teacher-os/api/library-contracts";
+import { quizTypeDisplay } from "@teacher-os/api/contracts";
+import {
+	LIBRARY_READING_TYPES,
+	type LibraryPartDto,
+} from "@teacher-os/api/library-contracts";
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -21,6 +25,7 @@ import {
 	reconcilePartDraftsOnSaveSuccess,
 	slotTypes,
 } from "./part-form";
+import { formatIssue } from "./part-issues";
 import type { PartFormHandle } from "./part-view-state";
 import {
 	firstIssueFocusPlan,
@@ -148,14 +153,15 @@ describe("reconcilePartDraftsOnSaveSuccess", () => {
 });
 
 describe("slotTypes / emptyPartValue", () => {
-	it("dạng bài theo catalog skill (p1 reading)", () => {
-		expect(slotTypes("reading", "p1")).toEqual([
-			"tfng",
-			"sent",
-			"note",
-			"shortans",
-			"diagram",
-		]);
+	it("dạng bài theo catalog skill (reading 15 dạng bỏ note/tablecomp/flowchart)", () => {
+		expect(slotTypes("reading", "p1")).toEqual([...LIBRARY_READING_TYPES]);
+		expect(slotTypes("reading", "p1")).toHaveLength(15);
+		for (const slot of ["p1", "p2", "p3"]) {
+			const types = slotTypes("reading", slot);
+			expect(types).not.toContain("note");
+			expect(types).not.toContain("tablecomp");
+			expect(types).not.toContain("flowchart");
+		}
 		expect(slotTypes("listening", "s1")).toEqual(["form", "mcq1"]);
 	});
 
@@ -286,6 +292,74 @@ describe("partReadyIssues (canSave = validatePartForReady)", () => {
 		};
 		expect(partReadyIssues("reading", "p1", ok)).toEqual([]);
 	});
+
+	it("reading diagram ready không cần pin; optionBank 21 mục lỗi đúng cap 20; dịch lỗi mcq_many", () => {
+		const diagramOk = {
+			...partValueFromDto(partDto),
+			type: "diagram",
+			passage: "<p>Đủ dài</p>",
+			imageUrl: "https://cdn.example.com/diagram.png",
+			questions: [
+				{
+					stem: "Label 1 ____",
+					opts: null,
+					answer: "wheel",
+					alts: "",
+					type: null,
+					pin: null,
+				},
+			],
+		};
+		expect(partReadyIssues("reading", "p1", diagramOk)).toEqual([]);
+
+		const tooManyBank = partInputFromValue("p1", {
+			...partValueFromDto(partDto),
+			type: "headings",
+			optionBank: Array.from({ length: 21 }, (_, i) => `Heading ${i + 1}`),
+		});
+		expect(tooManyBank.ok).toBe(false);
+		if (!tooManyBank.ok) {
+			expect(tooManyBank.errors.optionBank).toBe(
+				"Ngân hàng đáp án tối đa 20 mục.",
+			);
+		}
+
+		expect(
+			formatIssue(
+				{ path: "parts.p1.optionBank", message: "bank must have 2–20 items" },
+				"reading",
+			),
+		).toContain("Ngân hàng đáp án cần 2–20 mục và phủ các câu trùng khớp.");
+		expect(
+			formatIssue(
+				{
+					path: "parts.p1.questions.0.opts",
+					message: "mcq_many requires at least 2 options",
+				},
+				"reading",
+			),
+		).toContain("Câu chọn nhiều đáp án cần ít nhất 2 lựa chọn.");
+		expect(
+			formatIssue(
+				{
+					path: "parts.p1.questions.0.answer",
+					message: "mcq_many answer must be a non-empty choice A–H within opts",
+				},
+				"reading",
+			),
+		).toContain("Đáp án chọn nhiều phải trỏ tới một lựa chọn A–H có nội dung.");
+		expect(
+			formatIssue(
+				{
+					path: "parts.p1.questions.0.answerSet",
+					message: "mcq_many requires answerSet",
+				},
+				"reading",
+			),
+		).toContain(
+			"Các câu chọn nhiều đáp án cần thuộc một cụm đáp án chung (answerSet).",
+		);
+	});
 });
 
 describe("PartForm (render tĩnh)", () => {
@@ -310,10 +384,159 @@ describe("PartForm (render tĩnh)", () => {
 		expect(html).toContain("Dạng bài");
 		expect(html).toContain("Band điểm");
 		expect(html).toContain("Đoạn văn (Passage)");
-		expect(html).toContain('value="tfng"');
-		expect(html).toContain('value="diagram"');
+		const dom = document.createElement("div");
+		dom.innerHTML = html;
+		const typeSelect = dom.querySelector('select[id$="-type"]');
+		expect(typeSelect).not.toBeNull();
+		const optionValues = [
+			...(typeSelect?.querySelectorAll("option") ?? []),
+		].map((opt) => ({
+			value: opt.getAttribute("value"),
+			label: opt.textContent,
+		}));
+		expect(optionValues).toEqual(
+			LIBRARY_READING_TYPES.map((type) => ({
+				value: type,
+				label: quizTypeDisplay(type).label,
+			})),
+		);
+		expect(optionValues.some((o) => o.value === "note")).toBe(false);
+		expect(optionValues.some((o) => o.value === "tablecomp")).toBe(false);
+		expect(optionValues.some((o) => o.value === "flowchart")).toBe(false);
+		expect(html).not.toContain('value="note"');
+		expect(html).not.toContain('value="tablecomp"');
+		expect(html).not.toContain('value="flowchart"');
+		const rowTypeSelect = dom.querySelector(
+			'select[aria-label="Dạng bài câu 1"]',
+		);
+		expect(rowTypeSelect).not.toBeNull();
+		const rowTypeValues = [...(rowTypeSelect?.querySelectorAll("option") ?? [])]
+			.map((opt) => opt.getAttribute("value"))
+			.filter(Boolean);
+		expect(rowTypeValues).toEqual(
+			LIBRARY_READING_TYPES.filter((id) => id !== "mcq_many"),
+		);
+		expect(rowTypeValues).not.toContain("mcq_many");
 		// reading không có transcript/audio
 		expect(html).not.toContain("Transcript (Lời thoại)");
+	});
+
+	it("legacy saved DTO type='note' vẫn fallback hiển thị trong dropdown với nhãn thân thiện", () => {
+		const html = renderToStaticMarkup(
+			<PartForm
+				skill="reading"
+				slot="p1"
+				slotLabel="Passage 1"
+				testId="t1"
+				saved={{ ...partDto, type: "note" }}
+				testReady={false}
+				saving={false}
+				onDraftChange={vi.fn()}
+				onAudioChanged={vi.fn()}
+				onSave={vi.fn()}
+				onDelete={vi.fn()}
+				deleting={false}
+			/>,
+		);
+		const dom = document.createElement("div");
+		dom.innerHTML = html;
+		const typeSelect = dom.querySelector('select[id$="-type"]');
+		const noteOpt = typeSelect?.querySelector('option[value="note"]');
+		expect(noteOpt).not.toBeNull();
+		expect(noteOpt?.textContent).toBe(quizTypeDisplay("note").label);
+		expect(typeSelect?.querySelector('option[value="tfng"]')).not.toBeNull();
+	});
+
+	it("reading mode editors: McqManyEditor cho mcq_many, Word Bank + Cloze/Table cho summary, Cloze/Table cho fill_blank", () => {
+		const mcqManyHtml = renderToStaticMarkup(
+			<PartForm
+				skill="reading"
+				slot="p1"
+				slotLabel="Passage 1"
+				testId="t1"
+				saved={{
+					...partDto,
+					type: "mcq_many",
+					questions: [
+						{
+							stem: "Which TWO?",
+							opts: ["A1", "B1", "C1", "D1", "E1"],
+							answer: "A",
+							alts: "",
+							type: null,
+							pin: null,
+							answerSet: "set-1",
+						},
+						{
+							stem: "Which TWO?",
+							opts: ["A1", "B1", "C1", "D1", "E1"],
+							answer: "C",
+							alts: "",
+							type: null,
+							pin: null,
+							answerSet: "set-1",
+						},
+					],
+				}}
+				testReady={false}
+				saving={false}
+				onDraftChange={vi.fn()}
+				onAudioChanged={vi.fn()}
+				onSave={vi.fn()}
+				onDelete={vi.fn()}
+				deleting={false}
+			/>,
+		);
+		expect(mcqManyHtml).toContain("Soạn câu hỏi chọn nhiều đáp án");
+		expect(mcqManyHtml).toContain("+ Thêm cụm chọn nhiều");
+
+		const summaryHtml = renderToStaticMarkup(
+			<PartForm
+				skill="reading"
+				slot="p1"
+				slotLabel="Passage 1"
+				testId="t1"
+				saved={{
+					...partDto,
+					type: "summary",
+					optionBank: ["word 1", "word 2"],
+				}}
+				testReady={false}
+				saving={false}
+				onDraftChange={vi.fn()}
+				onAudioChanged={vi.fn()}
+				onSave={vi.fn()}
+				onDelete={vi.fn()}
+				deleting={false}
+			/>,
+		);
+		expect(summaryHtml).toContain("Dùng ngân hàng từ (Word Bank)");
+		expect(summaryHtml).toContain("Ngân hàng từ (Word Bank)");
+		expect(summaryHtml).toContain("Đoạn văn (Cloze)");
+		expect(summaryHtml).toContain("Bảng (Grid)");
+
+		const fillBlankHtml = renderToStaticMarkup(
+			<PartForm
+				skill="reading"
+				slot="p1"
+				slotLabel="Passage 1"
+				testId="t1"
+				saved={{
+					...partDto,
+					type: "fill_blank",
+				}}
+				testReady={false}
+				saving={false}
+				onDraftChange={vi.fn()}
+				onAudioChanged={vi.fn()}
+				onSave={vi.fn()}
+				onDelete={vi.fn()}
+				deleting={false}
+			/>,
+		);
+		expect(fillBlankHtml).toContain("Đoạn văn (Cloze)");
+		expect(fillBlankHtml).toContain("Bảng (Grid)");
+		expect(fillBlankHtml).not.toContain("Dùng ngân hàng từ (Word Bank)");
 	});
 
 	it("listening hiện transcript + audio", () => {
@@ -338,7 +561,7 @@ describe("PartForm (render tĩnh)", () => {
 		expect(html).toContain("Audio của part");
 	});
 
-	it("dạng image-based gợi ý đặt ghim", () => {
+	it("dạng image-based gợi ý đặt ghim (reading tùy chọn, listening bắt buộc; phát hiện cả ở nhóm)", () => {
 		const html = renderToStaticMarkup(
 			<PartForm
 				skill="reading"
@@ -360,6 +583,71 @@ describe("PartForm (render tĩnh)", () => {
 			/>,
 		);
 		expect(html).toContain("Dạng bài dùng ảnh");
+		expect(html).toContain("đặt ghim tùy chọn");
+
+		const multiGroupHtml = renderToStaticMarkup(
+			<PartForm
+				skill="reading"
+				slot="p1"
+				slotLabel="Passage 1"
+				testId="t1"
+				saved={{
+					...partDto,
+					type: "tfng",
+					questions: [
+						{
+							stem: "Q1",
+							opts: null,
+							answer: "True",
+							alts: "",
+							type: null,
+							pin: null,
+						},
+						{
+							stem: "Q2",
+							opts: null,
+							answer: "label",
+							alts: "",
+							type: null,
+							pin: null,
+						},
+					],
+					groups: [
+						{
+							id: "g1",
+							type: "tfng",
+							instruction: "",
+							startIndex: 0,
+							count: 1,
+							optionBank: [],
+							answersInline: false,
+							splitContent: false,
+							dragDrop: false,
+						},
+						{
+							id: "g2",
+							type: "diagram",
+							instruction: "",
+							startIndex: 1,
+							count: 1,
+							optionBank: [],
+							answersInline: false,
+							splitContent: false,
+							dragDrop: false,
+						},
+					],
+				}}
+				testReady={false}
+				saving={false}
+				onDraftChange={vi.fn()}
+				onAudioChanged={vi.fn()}
+				onSave={vi.fn()}
+				onDelete={vi.fn()}
+				deleting={false}
+			/>,
+		);
+		expect(multiGroupHtml).toContain("Dạng bài dùng ảnh");
+		expect(multiGroupHtml).toContain("đặt ghim tùy chọn");
 	});
 
 	it("đề ready khóa xóa part kèm giải thích", () => {
@@ -1397,6 +1685,91 @@ describe("#425 — groups corrupt banner + lối lưu đè", () => {
 		});
 		expect(container.textContent).toContain("Lưu đè nhóm hỏng");
 		expect(container.textContent).toContain("hỏng trên server");
+		await act(async () => {
+			root.unmount();
+		});
+		container.remove();
+	});
+
+	it("nhóm mcq_many trong PartGroupsPanel tôn trọng trần 40 câu toàn part", async () => {
+		const q37 = Array.from({ length: 37 }, (_, i) => ({
+			stem: `Claim ${i + 1}`,
+			opts: null,
+			answer: "TRUE",
+			alts: "",
+			type: null,
+			pin: null,
+		}));
+		const mcq2 = [
+			{
+				stem: "Choose TWO",
+				opts: ["Opt A", "Opt B", "Opt C", "Opt D", "Opt E"],
+				answer: "A",
+				alts: "",
+				type: null,
+				pin: null,
+				answerSet: "set-cap-check",
+			},
+			{
+				stem: "Choose TWO",
+				opts: ["Opt A", "Opt B", "Opt C", "Opt D", "Opt E"],
+				answer: "C",
+				alts: "",
+				type: null,
+				pin: null,
+				answerSet: "set-cap-check",
+			},
+		];
+		const dto39: LibraryPartDto = {
+			...partDto,
+			type: "tfng",
+			questions: [...q37, ...mcq2],
+			groups: [
+				{
+					id: "g1",
+					type: "tfng",
+					instruction: "",
+					startIndex: 0,
+					count: 37,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+				{
+					id: "g2",
+					type: "mcq_many",
+					instruction: "",
+					startIndex: 37,
+					count: 2,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+			],
+		};
+		const container = document.createElement("div");
+		document.body.appendChild(container);
+		const root = createRoot(container);
+		await act(async () => {
+			root.render(
+				<PartForm
+					{...formProps(dto39, vi.fn())}
+					initialView={{
+						partTab: "questions",
+						openGroup: 1,
+						groupTabs: { 1: "questions" },
+						openRowByGroup: {},
+					}}
+				/>,
+			);
+		});
+		const addClusterBtn = Array.from(container.querySelectorAll("button")).find(
+			(btn) => btn.textContent?.includes("+ Thêm cụm chọn nhiều"),
+		);
+		expect(addClusterBtn).toBeDefined();
+		expect(addClusterBtn?.disabled).toBe(true);
 		await act(async () => {
 			root.unmount();
 		});
