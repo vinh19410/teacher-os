@@ -12,6 +12,15 @@ Quy ước khi cập nhật:
 
 ## 2026-11-17
 
+### Added
+- **Bài kiểm tra đầu vào trong Student Portal** (`apps/student`, `apps/web`, `apps/server`): sau onboarding, học viên được gợi ý làm bài kiểm tra đầu vào miễn phí (có highlight trên nav khi chưa làm, ẩn được gợi ý) và làm đủ 5 kỹ năng ngay trong portal; giáo viên chấm bài nộp ở trang chi tiết học viên. Migration `0073` dựng lại bảng `placement_test_submission` để `lead_id` được phép null và thêm `student_id`, kèm cột `student.placement_prompt_dismissed_at` (#748).
+
+### Changed
+- Đồng bộ toàn diện bài entry test theo bản HTML gốc: seed đề và audio, rubric 5/3/1 cho Writing/Speaking, điểm thập phân, thẻ kết quả tạm tính trên `apps/profile` và `apps/student`, hướng dẫn rubric và nút nhập lại đề + phát hành một lần bấm tại `/placement-test` trong `apps/web` (#754).
+
+### CI/Infra
+- `deploy-staging.yml` đặt `PROFILE_MAINTENANCE: "false"` để staging luôn bật trang profile đầy đủ, trong khi production vẫn giữ trang bảo trì theo `apps/profile/maintenance.json`; smoke check profile của cả hai workflow đọc chế độ bảo trì qua `isProfileMaintenanceEnabled()` (#756).
+
 ### Fixed
 - Căn chỉnh lại 3 thẻ ảnh mục `"Học viên nói gì"` (`#hoc-vien-noi-gi`) trên `apps/profile/public/index.html`: thay bằng ảnh chụp phản hồi sắc nét đã crop sạch chrome và loại metadata (`feedback-global-offer.png`, `feedback-po-le.png`, `feedback-ielts-70.png`), khôi phục `.proof-img-wrap img.chat-contain` dùng `object-fit: contain; object-position: center` kèm khoảng chừa `.zoom-pill`, đồng bộ quote/tác giả/lightbox và xóa hai ảnh cũ không còn dùng (#757).
 
