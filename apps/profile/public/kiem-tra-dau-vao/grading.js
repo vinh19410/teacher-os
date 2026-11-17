@@ -63,20 +63,23 @@ export function countWords(text) {
 }
 
 /**
- * Matches a percentage score (0..100) to a placement band.
+ * Matches a percentage score (0..100) to a placement band using raw float thresholds (`>= min`),
+ * matching `bandOf(total)` in raw-data/placement-test-audio.html.
  */
 export function matchBandByPct(pct, bands) {
 	const list = Array.isArray(bands) ? bands : [];
 	if (list.length === 0) {
 		return { ...FALLBACK_BAND };
 	}
-	const rounded = Math.round(Number.isFinite(pct) ? pct : 0);
+	const safePct = Number.isFinite(pct) ? pct : 0;
 	const sorted = [...list].sort((a, b) => a.min - b.min);
-	const matched = sorted.find(
-		(band) => rounded >= band.min && rounded <= band.max,
-	);
-	if (matched) return matched;
-	return rounded < sorted[0].min ? sorted[0] : sorted[sorted.length - 1];
+	let matched = sorted[0];
+	for (const band of sorted) {
+		if (safePct >= band.min) {
+			matched = band;
+		}
+	}
+	return matched;
 }
 
 function createSectionScore(correct, total) {
@@ -177,18 +180,24 @@ export function scoreObjectiveTest(snapshot, answers = {}) {
 	const vocabGrammarScore = createSectionScore(vgCorrect, vgTotal);
 	const readingScore = createSectionScore(readingCorrect, readingTotal);
 
-	const sectionPcts = [
-		listeningScore.pct,
-		vocabGrammarScore.pct,
-		readingScore.pct,
+	const listeningExactPct =
+		listeningTotal > 0 ? (listeningCorrect / listeningTotal) * 100 : null;
+	const vgExactPct = vgTotal > 0 ? (vgCorrect / vgTotal) * 100 : null;
+	const readingExactPct =
+		readingTotal > 0 ? (readingCorrect / readingTotal) * 100 : null;
+
+	const sectionExactPcts = [
+		listeningExactPct,
+		vgExactPct,
+		readingExactPct,
 	].filter((pct) => pct !== null);
 
-	const averagePct =
-		sectionPcts.length > 0
-			? Math.round(
-					sectionPcts.reduce((sum, pct) => sum + pct, 0) / sectionPcts.length,
-				)
+	const exactAveragePct =
+		sectionExactPcts.length > 0
+			? sectionExactPcts.reduce((sum, pct) => sum + pct, 0) /
+				sectionExactPcts.length
 			: 0;
+	const averagePct = Math.round(exactAveragePct);
 
 	const orderedLevels = [
 		...PLACEMENT_LEVEL_ORDER.filter((lvl) => levelMap.has(lvl)),
@@ -208,12 +217,24 @@ export function scoreObjectiveTest(snapshot, answers = {}) {
 		};
 	});
 
-	const provisionalBand = matchBandByPct(averagePct, snapshot?.bands);
+	const provisionalBand = matchBandByPct(exactAveragePct, snapshot?.bands);
 
 	return {
-		listening: listeningScore,
+		listening: {
+			...listeningScore,
+			band:
+				listeningExactPct !== null
+					? matchBandByPct(listeningExactPct, snapshot?.bands)
+					: null,
+		},
 		vocabGrammar: vocabGrammarScore,
-		reading: readingScore,
+		reading: {
+			...readingScore,
+			band:
+				readingExactPct !== null
+					? matchBandByPct(readingExactPct, snapshot?.bands)
+					: null,
+		},
 		totalCorrect: listeningCorrect + vgCorrect + readingCorrect,
 		totalQuestions: listeningTotal + vgTotal + readingTotal,
 		averagePct,

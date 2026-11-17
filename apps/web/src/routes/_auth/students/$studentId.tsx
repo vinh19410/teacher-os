@@ -12,6 +12,7 @@ import {
 	studentSubmissionStatus,
 } from "@/components/assignments/assignment-status";
 import { StatusTag } from "@/components/assignments/status-tag";
+import { PlacementSubmissionPanel } from "@/components/leads/placement-submission-panel";
 import { CreateReportModal } from "@/components/modals/create-report-modal";
 import { InvoiceStatusCell } from "@/components/tuition/invoice-status-cell";
 import { StudentTuitionSummary } from "@/components/tuition/student-tuition-summary";
@@ -131,7 +132,7 @@ function StudentDetailRoute() {
 	const { studentId } = Route.useParams();
 	const navigate = useNavigate();
 	const { studentById } = useStudents();
-	const { data } = useData();
+	const { data, refresh } = useData();
 	const student = studentById(studentId);
 	const [tab, setTab] = useState("profile");
 	const [reportOpen, setReportOpen] = useState(false);
@@ -221,78 +222,104 @@ function StudentDetailRoute() {
 			/>
 
 			{tab === "profile" && (
-				<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
-					<Card variant="white">
-						<div className="mb-3 text-muted-foreground text-sm">Lớp học</div>
-						{studentClasses.length > 0 ? (
-							<div className="flex flex-col gap-4">
-								{studentClasses.map((c) => (
-									<div key={c.id}>
-										<div className="flex items-center gap-2">
-											<Link
-												to="/classes/$classId"
-												params={{ classId: c.id }}
-												className="font-medium text-primary hover:text-primary"
-											>
-												{c.name}
-											</Link>
-											{c.enrollmentStatus === "invited" && (
-												<Badge
-													variant="warn"
-													className="px-1.5 py-0 text-[10px]"
+				<div className="flex flex-col gap-5">
+					<div className="grid grid-cols-2 gap-5 max-app:grid-cols-1">
+						<Card variant="white">
+							<div className="mb-3 text-muted-foreground text-sm">Lớp học</div>
+							{studentClasses.length > 0 ? (
+								<div className="flex flex-col gap-4">
+									{studentClasses.map((c) => (
+										<div key={c.id}>
+											<div className="flex items-center gap-2">
+												<Link
+													to="/classes/$classId"
+													params={{ classId: c.id }}
+													className="font-medium text-primary hover:text-primary"
 												>
-													Đã mời
-												</Badge>
-											)}
-											{c.status === "paused" && (
-												<Badge
-													variant="muted"
-													className="px-1.5 py-0 text-[10px]"
-												>
-													Tạm dừng
-												</Badge>
-											)}
+													{c.name}
+												</Link>
+												{c.enrollmentStatus === "invited" && (
+													<Badge
+														variant="warn"
+														className="px-1.5 py-0 text-[10px]"
+													>
+														Đã mời
+													</Badge>
+												)}
+												{c.status === "paused" && (
+													<Badge
+														variant="muted"
+														className="px-1.5 py-0 text-[10px]"
+													>
+														Tạm dừng
+													</Badge>
+												)}
+											</div>
+											<div className="mt-1 text-muted-foreground text-xs">
+												{classMeta(c)}
+											</div>
 										</div>
-										<div className="mt-1 text-muted-foreground text-xs">
-											{classMeta(c)}
-										</div>
-									</div>
-								))}
+									))}
+								</div>
+							) : (
+								<p className="text-muted-foreground text-sm">
+									Chưa tham gia lớp học nào.
+								</p>
+							)}
+						</Card>
+						<Card variant="white">
+							<div className="mb-3 text-muted-foreground text-sm">
+								Điểm đầu vào
 							</div>
-						) : (
-							<p className="text-muted-foreground text-sm">
-								Chưa tham gia lớp học nào.
+							<p
+								data-testid="student-entry-score"
+								className="mb-5 font-medium text-sm"
+							>
+								{student.entryScore || "Chưa có"}
 							</p>
-						)}
-					</Card>
-					<Card variant="white">
+							<div className="mb-3 text-muted-foreground text-sm">
+								Phụ huynh
+							</div>
+							<div className="flex flex-col gap-4">
+								<div className="flex items-center justify-between">
+									<span className="text-muted-foreground text-xs">Tên</span>
+									<span className="font-medium text-sm">
+										{student.parent.name}
+									</span>
+								</div>
+								<div className="flex items-center justify-between">
+									<span className="text-muted-foreground text-xs">SĐT</span>
+									<span className="text-muted-foreground">
+										{student.parent.phone}
+									</span>
+								</div>
+							</div>
+							<div className="mt-5 mb-3 text-muted-foreground text-sm">
+								Ghi chú nội bộ
+							</div>
+							<p className="rounded-sm bg-muted/40 p-3 text-foreground text-sm leading-[1.5]">
+								{student.notes}
+							</p>
+						</Card>
+					</div>
+					<Card variant="white" data-testid="student-placement-section">
 						<div className="mb-3 text-muted-foreground text-sm">
-							Điểm đầu vào
+							Bài kiểm tra đầu vào
 						</div>
-						<p className="mb-5 font-medium text-sm">
-							{student.entryScore || "Chưa có"}
-						</p>
-						<div className="mb-3 text-muted-foreground text-sm">Phụ huynh</div>
-						<div className="flex flex-col gap-4">
-							<div className="flex items-center justify-between">
-								<span className="text-muted-foreground text-xs">Tên</span>
-								<span className="font-medium text-sm">
-									{student.parent.name}
-								</span>
-							</div>
-							<div className="flex items-center justify-between">
-								<span className="text-muted-foreground text-xs">SĐT</span>
-								<span className="text-muted-foreground">
-									{student.parent.phone}
-								</span>
-							</div>
-						</div>
-						<div className="mt-5 mb-3 text-muted-foreground text-sm">
-							Ghi chú nội bộ
-						</div>
-						<p className="rounded-sm bg-muted/40 p-3 text-foreground text-sm leading-[1.5]">
-							{student.notes}
-						</p>
+						<PlacementSubmissionPanel
+							studentId={student.id}
+							onGraded={() => {
+								void refresh();
+							}}
+							emptyFallback={
+								<p
+									data-testid="student-placement-empty"
+									className="text-muted-foreground text-sm"
+								>
+									Học viên chưa nộp bài kiểm tra đầu vào.
+								</p>
+							}
+						/>
 					</Card>
 				</div>
 			)}

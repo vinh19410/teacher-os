@@ -6,6 +6,7 @@ import {
 	countReadingQuestions,
 	countWords,
 	createInitialSpeakingSession,
+	matchBandByPct,
 	pickSupportedRecorderMime,
 	resolveReadingRenderState,
 	resolveRestoredAttemptStep,
@@ -374,6 +375,203 @@ function buildQuestionNumberMap(snapshot) {
 	return map;
 }
 
+function resolvePartEstimatedMinutes(part, fallback) {
+	const raw = part?.estimatedMinutes ?? part?.durationMinutes;
+	const num = Number(raw);
+	return Number.isFinite(num) && num > 0 ? Math.round(num) : fallback;
+}
+
+export function buildIntroOverviewRows(snapshot) {
+	const hasListening = Array.isArray(snapshot?.listening?.clips);
+	const listeningClips = hasListening ? snapshot.listening.clips : [];
+	const listeningPartSet = new Set(
+		listeningClips
+			.map((clip) => stripInlineCefrLabel(clip?.partLabel))
+			.filter(Boolean),
+	);
+	const listeningParts = hasListening
+		? Math.max(1, listeningPartSet.size || listeningClips.length)
+		: 3;
+	const listeningQuestionCount = listeningClips.reduce(
+		(sum, clip) =>
+			sum + (Array.isArray(clip?.questions) ? clip.questions.length : 0),
+		0,
+	);
+	const listeningTotal = hasListening ? listeningQuestionCount : 13;
+	const firstClipMaxPlays = Number(
+		listeningClips.find((clip) => Number(clip?.maxPlays) > 0)?.maxPlays,
+	);
+	const maxPlays =
+		Number.isFinite(firstClipMaxPlays) && firstClipMaxPlays > 0
+			? firstClipMaxPlays
+			: 2;
+	const listeningMinutes = resolvePartEstimatedMinutes(snapshot?.listening, 10);
+
+	const hasGv = Array.isArray(snapshot?.vocabGrammar?.questions);
+	const gvQuestions = hasGv ? snapshot.vocabGrammar.questions : [];
+	const gvTotal = hasGv ? gvQuestions.length : 12;
+	const gvMinutes = resolvePartEstimatedMinutes(snapshot?.vocabGrammar, 6);
+
+	const hasReading = Array.isArray(snapshot?.reading?.passages);
+	const readingPassages = hasReading ? snapshot.reading.passages : [];
+	const readingPartSet = new Set(
+		readingPassages
+			.map((passage) => stripInlineCefrLabel(passage?.partLabel))
+			.filter(Boolean),
+	);
+	const readingParts = hasReading
+		? Math.max(1, readingPartSet.size || readingPassages.length)
+		: 3;
+	const readingQuestionCount = readingPassages.reduce(
+		(sum, passage) =>
+			sum + (Array.isArray(passage?.questions) ? passage.questions.length : 0),
+		0,
+	);
+	const readingTotal = hasReading ? readingQuestionCount : 15;
+	const readingMinutes = resolvePartEstimatedMinutes(snapshot?.reading, 12);
+
+	const writingState = resolveWritingPromptState(snapshot?.writing);
+	const writingMinutes = resolvePartEstimatedMinutes(snapshot?.writing, 10);
+
+	const hasSpeaking = Array.isArray(snapshot?.speaking?.tasks);
+	const speakingTasks = hasSpeaking ? snapshot.speaking.tasks : [];
+	const speakingTotal = hasSpeaking ? speakingTasks.length : 8;
+	const speakingMinutes = resolvePartEstimatedMinutes(snapshot?.speaking, 7);
+
+	return [
+		{
+			id: "listening",
+			part: "1. Listening",
+			content:
+				listeningTotal > 0
+					? `${listeningParts} parts · ${listeningTotal} câu · mỗi đoạn nghe ${maxPlays} lần`
+					: "Chưa có câu hỏi",
+			time: listeningTotal > 0 ? `~${listeningMinutes} phút` : "—",
+		},
+		{
+			id: "vocab-grammar",
+			part: "2. Grammar & Vocabulary",
+			content:
+				gvTotal > 0
+					? `${gvTotal} câu trắc nghiệm, từ dễ đến khó`
+					: "Chưa có câu hỏi",
+			time: gvTotal > 0 ? `~${gvMinutes} phút` : "—",
+		},
+		{
+			id: "reading",
+			part: "3. Reading",
+			content:
+				readingTotal > 0
+					? `${readingParts} parts · ${readingTotal} câu`
+					: "Chưa có câu hỏi",
+			time: readingTotal > 0 ? `~${readingMinutes} phút` : "—",
+		},
+		{
+			id: "writing",
+			part: "4. Writing",
+			content: `1 email ${writingState.minWords}–${writingState.maxWords} từ`,
+			time: `~${writingMinutes} phút`,
+		},
+		{
+			id: "speaking",
+			part: "5. Speaking",
+			content:
+				speakingTotal > 0
+					? `${speakingTotal} câu hỏi ghi âm qua micro`
+					: "Không có phần Speaking",
+			time: speakingTotal > 0 ? `~${speakingMinutes} phút` : "—",
+		},
+	];
+}
+
+export function resolvePartHeaderState(item, prevItem) {
+	const partLabel = stripInlineCefrLabel(item?.partLabel);
+	const prevPartLabel = prevItem
+		? stripInlineCefrLabel(prevItem?.partLabel)
+		: "";
+	const instruction = String(item?.instruction ?? "").trim();
+	const prevInstruction = prevItem
+		? String(prevItem?.instruction ?? "").trim()
+		: "";
+	const isNewPart =
+		Boolean(partLabel) && (!prevItem || partLabel !== prevPartLabel);
+	const showPartLabel = isNewPart;
+	const showInstruction =
+		Boolean(instruction) &&
+		(!prevItem || isNewPart || instruction !== prevInstruction);
+	return {
+		partLabel,
+		instruction,
+		showPartLabel,
+		showInstruction,
+	};
+}
+
+export function resolveClipDisplayTitle(clip, clipIndex = 0) {
+	const partLabel = stripInlineCefrLabel(clip?.partLabel);
+	const neutralLabel = `Đoạn nghe ${clipIndex + 1}`;
+	if (partLabel) {
+		return neutralLabel;
+	}
+	return stripInlineCefrLabel(clip?.title) || neutralLabel;
+}
+
+export function buildGapPromptSegments(prompt) {
+	const text = String(prompt ?? "").trim();
+	if (!text) {
+		return [{ type: "text", value: "Điền thông tin nghe được vào chỗ trống:" }];
+	}
+	const parts = text.split(/(_{2,})/g);
+	const segments = [];
+	for (const part of parts) {
+		if (!part) continue;
+		if (/^_{2,}$/.test(part)) {
+			segments.push({ type: "gap" });
+		} else {
+			segments.push({ type: "text", value: part });
+		}
+	}
+	return segments;
+}
+
+export function shouldShowReadingTitle(passage) {
+	const kind = String(passage?.kind ?? "passage")
+		.trim()
+		.toLowerCase();
+	return kind !== "sign" && kind !== "message";
+}
+
+export function buildSkillReportCards(objective, bands = []) {
+	return [
+		{ key: "listening", label: "Listening" },
+		{ key: "reading", label: "Reading" },
+	].map(({ key, label }) => {
+		const sec = objective?.[key];
+		const hasScore =
+			Boolean(sec) &&
+			Number.isFinite(sec.correct) &&
+			Number.isFinite(sec.total) &&
+			sec.total > 0;
+		const rawPct = hasScore ? (sec.correct / sec.total) * 100 : 0;
+		const pct = hasScore
+			? Number.isFinite(sec.pct)
+				? Math.round(sec.pct)
+				: Math.round(rawPct)
+			: 0;
+		const band = hasScore ? (sec.band ?? matchBandByPct(rawPct, bands)) : null;
+		const cefr = band?.cefr || "—";
+		return {
+			key,
+			label,
+			cefr,
+			scoreText: hasScore
+				? `${sec.correct}/${sec.total} câu đúng · ${pct}%`
+				: "—",
+			progressPct: hasScore ? Math.max(0, Math.min(100, pct)) : 0,
+		};
+	});
+}
+
 function createApp() {
 	const appRoot = document.getElementById("appRoot");
 	if (!appRoot) return;
@@ -574,7 +772,7 @@ function createApp() {
 		const node = document.querySelector(".progress-counter");
 		if (!node || !snapshot) return;
 		const progress = countObjectiveProgress(snapshot, state.answers);
-		node.textContent = `Đã trả lời ${progress.answered}/${progress.total} câu khách quan`;
+		node.textContent = `Đã trả lời ${progress.answered}/${progress.total} câu`;
 	}
 
 	function navigateToStep(nextStep) {
@@ -658,7 +856,7 @@ function createApp() {
 			]),
 			el("div", { className: "test-topbar-stats" }, [
 				el("span", { className: "progress-counter" }, [
-					`Đã trả lời ${progress.answered}/${progress.total} câu khách quan`,
+					`Đã trả lời ${progress.answered}/${progress.total} câu`,
 				]),
 				el(
 					"span",
@@ -782,6 +980,59 @@ function createApp() {
 		return fieldset;
 	}
 
+	function renderGapPromptNodes(prompt) {
+		const nodes = [];
+		for (const seg of buildGapPromptSegments(prompt)) {
+			if (seg.type === "gap") {
+				nodes.push(
+					el("span", {
+						className: "gapnum",
+						"aria-hidden": "true",
+						textContent: "[?]",
+					}),
+					el("span", { className: "sr-only", textContent: " chỗ trống " }),
+				);
+			} else {
+				nodes.push(seg.value);
+			}
+		}
+		return nodes;
+	}
+
+	function renderClipNotesGapRow(q, currentValue, onInput) {
+		const num = questionNumbers.get(q.id) ?? 1;
+		const inputId = `gap-${q.id}`;
+		const input = el("input", {
+			type: "text",
+			id: inputId,
+			className: "gap-input gap-row-input",
+			value: typeof currentValue === "string" ? currentValue : "",
+			maxlength: "120",
+			autocomplete: "off",
+			spellcheck: "false",
+			placeholder: "Nhập từ hoặc số...",
+			dataset: { gapInput: q.id, questionId: q.id },
+		});
+		input.addEventListener("input", () => {
+			onInput(input.value);
+			updateProgressCounterDom();
+		});
+
+		const label = el("label", { for: inputId, className: "gap-row-label" }, [
+			el("span", { className: "question-num", textContent: `${num}.` }),
+			...renderGapPromptNodes(q.prompt),
+		]);
+
+		return el(
+			"div",
+			{
+				className: "gap-row",
+				dataset: { questionId: q.id },
+			},
+			[label, input],
+		);
+	}
+
 	function renderGapQuestionFieldset(q, currentValue, onInput) {
 		const num = questionNumbers.get(q.id) ?? 1;
 		const fieldset = el("fieldset", {
@@ -797,10 +1048,11 @@ function createApp() {
 		fieldset.appendChild(
 			el("legend", { className: "question-legend" }, [
 				meta,
-				el("span", {
-					className: "question-prompt",
-					textContent: q.prompt || "Điền thông tin nghe được vào chỗ trống:",
-				}),
+				el(
+					"span",
+					{ className: "question-prompt" },
+					renderGapPromptNodes(q.prompt),
+				),
 			]),
 		);
 
@@ -840,9 +1092,7 @@ function createApp() {
 	}
 
 	function renderIntroStep() {
-		const objectiveStats = countObjectiveProgress(snapshot, {});
-		const writing = snapshot.writing;
-		const speakingCount = snapshot.speaking.tasks.length;
+		const overviewRows = buildIntroOverviewRows(snapshot);
 
 		return el("section", { className: "card intro-card" }, [
 			el("p", { className: "kicker-pill" }, [
@@ -854,35 +1104,41 @@ function createApp() {
 			el("p", { className: "lead-copy" }, [
 				"Bài kiểm tra đánh giá toàn diện 5 kỹ năng để cô Đỗ Thục Mỹ xếp đúng lớp CEFR / IELTS và thiết kế lộ trình học sát năng lực thực tế của bạn.",
 			]),
-			el("div", { className: "intro-grid" }, [
-				el("div", { className: "intro-stat" }, [
-					el("strong", {}, [`${objectiveStats.total} câu khách quan`]),
-					el("span", {}, [
-						"Listening (có giới hạn lượt nghe), Grammar & Vocabulary, và Reading.",
+			el("div", { className: "intro-table-wrap" }, [
+				el("table", { className: "intro-overview-table" }, [
+					el("thead", {}, [
+						el("tr", {}, [
+							el("th", { scope: "col" }, ["Phần"]),
+							el("th", { scope: "col" }, ["Nội dung"]),
+							el("th", { scope: "col" }, ["Thời gian"]),
+						]),
 					]),
+					el(
+						"tbody",
+						{},
+						overviewRows.map((row) =>
+							el("tr", { dataset: { introPart: row.id } }, [
+								el("td", {}, [el("strong", { textContent: row.part })]),
+								el("td", { textContent: row.content }),
+								el("td", {
+									className: "intro-overview-time",
+									textContent: row.time,
+								}),
+							]),
+						),
+					),
 				]),
-				el("div", { className: "intro-stat" }, [
-					el("strong", {}, [
-						speakingCount > 0
-							? "Writing & Speaking thực tế"
-							: "Writing thực tế",
-					]),
-					el("span", {}, [
-						speakingCount > 0
-							? `1 bài viết (${writing.minWords}–${writing.maxWords} từ) và ${speakingCount} câu hỏi Speaking ghi âm qua micro (hoặc bỏ qua nếu thiếu mic).`
-							: `1 bài viết (${writing.minWords}–${writing.maxWords} từ).`,
-					]),
-				]),
-				el("div", { className: "intro-stat" }, [
-					el("strong", {}, ["Đồng hồ gợi ý 40 phút"]),
-					el("span", {}, [
-						"Áp dụng nhẹ nhàng cho 4 phần đầu; khi hết giờ hệ thống chỉ nhắc nhẹ, không làm mất bài.",
-					]),
+			]),
+			el("div", { className: "intro-rule-box" }, [
+				el("strong", {}, ["Lưu ý làm bài: "]),
+				"Câu hỏi có độ khó tăng dần — câu nào chưa biết, hãy chọn đáp án bạn thấy hợp lý nhất. ",
+				el("strong", {}, [
+					"Không dùng từ điển hay công cụ dịch để kết quả xếp lớp chính xác.",
 				]),
 			]),
 			el("div", { className: "provisional-notice-box" }, [
 				el("strong", {}, ["Cách nhận kết quả bài kiểm tra: "]),
-				"Sau khi nộp bài, bạn xem ngay số câu đúng phần ",
+				"Đồng hồ gợi ý 40 phút cho 4 phần đầu (hết giờ hệ thống chỉ nhắc nhẹ, không làm mất bài). Sau khi nộp bài, bạn xem ngay kết quả ",
 				el("strong", {}, ["Listening & Reading"]),
 				". Cô Đỗ Thục Mỹ sẽ chấm phần Writing & Speaking và gửi kết quả chi tiết qua email bạn đã đăng ký.",
 			]),
@@ -1303,7 +1559,8 @@ function createApp() {
 			]),
 		);
 
-		for (const clip of listening.clips) {
+		for (const [clipIdx, clip] of listening.clips.entries()) {
+			const prevClip = clipIdx > 0 ? listening.clips[clipIdx - 1] : null;
 			const maxPlays = Number(clip.maxPlays) > 0 ? Number(clip.maxPlays) : 2;
 			const playsUsed = Number(state.plays[clip.id] ?? 0);
 			const remaining = Math.max(0, maxPlays - playsUsed);
@@ -1314,17 +1571,17 @@ function createApp() {
 				dataset: { clipId: clip.id },
 			});
 
-			const partLabel = stripInlineCefrLabel(clip.partLabel);
-			const displayClipTitle = stripInlineCefrLabel(clip.title);
+			const headerState = resolvePartHeaderState(clip, prevClip);
+			const displayClipTitle = resolveClipDisplayTitle(clip, clipIdx);
 			const displayNotesTitle = stripInlineCefrLabel(clip.notesTitle);
 
 			clipCard.appendChild(
 				el("div", { className: "clip-header" }, [
-					partLabel
+					headerState.showPartLabel
 						? el("div", { className: "clip-badges" }, [
 								el("span", {
 									className: "part-badge",
-									textContent: partLabel,
+									textContent: headerState.partLabel,
 								}),
 							])
 						: null,
@@ -1334,10 +1591,10 @@ function createApp() {
 								textContent: displayClipTitle,
 							})
 						: null,
-					clip.instruction
+					headerState.showInstruction
 						? el("p", {
 								className: "clip-instruction",
-								textContent: clip.instruction,
+								textContent: headerState.instruction,
 							})
 						: null,
 				]),
@@ -1515,42 +1772,95 @@ function createApp() {
 				]),
 			);
 
-			if (displayNotesTitle) {
-				clipCard.appendChild(
-					el("div", { className: "clip-notes-header" }, [
-						el("span", { className: "notes-kicker" }, ["Phiếu ghi chú"]),
-						el("strong", { textContent: displayNotesTitle }),
-					]),
-				);
-			}
+			const clipQuestions = clip.questions ?? [];
+			const hasGapQuestions = clipQuestions.some((q) => q.type === "gap");
 
-			const qList = el("div", { className: "questions-stack" });
-			for (const q of clip.questions ?? []) {
-				if (q.type === "gap") {
-					qList.appendChild(
-						renderGapQuestionFieldset(
-							q,
-							state.answers.listening[q.id],
-							(val) => {
-								state.answers.listening[q.id] = val;
-								persist();
-							},
-						),
-					);
-				} else {
-					qList.appendChild(
-						renderMcqQuestionFieldset(
-							q,
-							state.answers.listening[q.id],
-							(optIdx) => {
-								state.answers.listening[q.id] = optIdx;
-								persist();
-							},
-						),
+			if (displayNotesTitle && hasGapQuestions) {
+				const mcqQuestions = clipQuestions.filter((q) => q.type !== "gap");
+				const gapQuestions = clipQuestions.filter((q) => q.type === "gap");
+
+				if (mcqQuestions.length > 0) {
+					const mcqStack = el("div", { className: "questions-stack" });
+					for (const q of mcqQuestions) {
+						mcqStack.appendChild(
+							renderMcqQuestionFieldset(
+								q,
+								state.answers.listening[q.id],
+								(optIdx) => {
+									state.answers.listening[q.id] = optIdx;
+									persist();
+								},
+							),
+						);
+					}
+					clipCard.appendChild(mcqStack);
+				}
+
+				const gapRowsList = el("div", { className: "gap-rows-list" });
+				for (const q of gapQuestions) {
+					gapRowsList.appendChild(
+						renderClipNotesGapRow(q, state.answers.listening[q.id], (val) => {
+							state.answers.listening[q.id] = val;
+							persist();
+						}),
 					);
 				}
+
+				clipCard.appendChild(
+					el("div", { className: "clip-notes-box" }, [
+						el("div", { className: "clip-notes-header" }, [
+							el("span", { className: "notes-kicker" }, ["Phiếu ghi chú"]),
+							el("h3", {
+								className: "clip-notes-title",
+								textContent: displayNotesTitle,
+							}),
+						]),
+						gapRowsList,
+						el(
+							"p",
+							{ className: "gap-hint" },
+							"Gợi ý: Viết ngắn gọn (không cần viết hoa hay ký tự phụ như $, p.m.).",
+						),
+					]),
+				);
+			} else {
+				if (displayNotesTitle) {
+					clipCard.appendChild(
+						el("div", { className: "clip-notes-header" }, [
+							el("span", { className: "notes-kicker" }, ["Phiếu ghi chú"]),
+							el("strong", { textContent: displayNotesTitle }),
+						]),
+					);
+				}
+
+				const qList = el("div", { className: "questions-stack" });
+				for (const q of clipQuestions) {
+					if (q.type === "gap") {
+						qList.appendChild(
+							renderGapQuestionFieldset(
+								q,
+								state.answers.listening[q.id],
+								(val) => {
+									state.answers.listening[q.id] = val;
+									persist();
+								},
+							),
+						);
+					} else {
+						qList.appendChild(
+							renderMcqQuestionFieldset(
+								q,
+								state.answers.listening[q.id],
+								(optIdx) => {
+									state.answers.listening[q.id] = optIdx;
+									persist();
+								},
+							),
+						);
+					}
+				}
+				clipCard.appendChild(qList);
 			}
-			clipCard.appendChild(qList);
 			wrapper.appendChild(clipCard);
 		}
 
@@ -1670,7 +1980,7 @@ function createApp() {
 						pNode.appendChild(
 							el("span", {
 								className: "cloze-blank-badge",
-								textContent: `(${match[1]})`,
+								textContent: `[${match[1]}]`,
 							}),
 						);
 					} else {
@@ -1745,7 +2055,9 @@ function createApp() {
 			);
 		}
 
-		for (const passage of reading.passages) {
+		for (const [passageIdx, passage] of reading.passages.entries()) {
+			const prevPassage =
+				passageIdx > 0 ? reading.passages[passageIdx - 1] : null;
 			const card = el("section", {
 				className: "card reading-passage-card",
 				dataset: {
@@ -1754,16 +2066,18 @@ function createApp() {
 				},
 			});
 
-			const displayPartLabel = stripInlineCefrLabel(passage.partLabel);
-			const displayPassageTitle = stripInlineCefrLabel(passage.title);
+			const headerState = resolvePartHeaderState(passage, prevPassage);
+			const displayPassageTitle = shouldShowReadingTitle(passage)
+				? stripInlineCefrLabel(passage.title)
+				: "";
 
 			card.appendChild(
 				el("div", { className: "passage-header" }, [
 					el("div", { className: "clip-badges" }, [
-						displayPartLabel
+						headerState.showPartLabel
 							? el("span", {
 									className: "part-badge",
-									textContent: displayPartLabel,
+									textContent: headerState.partLabel,
 								})
 							: null,
 						el("span", {
@@ -1777,10 +2091,10 @@ function createApp() {
 								textContent: displayPassageTitle,
 							})
 						: null,
-					passage.instruction
+					headerState.showInstruction
 						? el("p", {
 								className: "clip-instruction",
-								textContent: passage.instruction,
+								textContent: headerState.instruction,
 							})
 						: null,
 				]),
@@ -3073,7 +3387,7 @@ function createApp() {
 			const reminders = [];
 			if (unansweredConfirmState.unansweredObjective > 0) {
 				reminders.push(
-					`còn ${unansweredConfirmState.unansweredObjective} câu khách quan chưa trả lời`,
+					`còn ${unansweredConfirmState.unansweredObjective} câu chưa trả lời`,
 				);
 			}
 			if (unansweredConfirmState.writingEmpty) {
@@ -3176,14 +3490,7 @@ function createApp() {
 			objective.provisionalSummary || buildProvisionalSummary(objective);
 		const speakingStatus = submission?.speakingStatus ?? "skipped";
 		const registeredEmail = String(state.lead?.email ?? "").trim();
-
-		const formatCorrectCount = (sec) =>
-			sec &&
-			Number.isFinite(sec.correct) &&
-			Number.isFinite(sec.total) &&
-			sec.total > 0
-				? `${sec.correct}/${sec.total} câu đúng`
-				: "—";
+		const skillCards = buildSkillReportCards(objective, snapshot?.bands);
 
 		const resultCard = el("section", {
 			id: "testResultCard",
@@ -3206,33 +3513,45 @@ function createApp() {
 		);
 
 		resultCard.appendChild(
-			el("div", { className: "result-skills-grid" }, [
-				el(
-					"div",
-					{
-						className: "skill-score-tile",
-						dataset: { skillResult: "listening" },
-					},
-					[
-						el("span", { className: "tile-label" }, ["Listening"]),
-						el("strong", { className: "tile-value" }, [
-							formatCorrectCount(objective.listening),
-						]),
-					],
+			el(
+				"div",
+				{ className: "result-skills-grid" },
+				skillCards.map((card) =>
+					el(
+						"div",
+						{
+							className: "skill-score-tile",
+							dataset: { skillResult: card.key },
+						},
+						[
+							el("span", { className: "tile-label", textContent: card.label }),
+							el("div", { className: "tile-cefr", textContent: card.cefr }),
+							el("strong", {
+								className: "tile-value",
+								textContent: card.scoreText,
+							}),
+							el(
+								"div",
+								{
+									className: "skill-progress-track",
+									"aria-hidden": "true",
+								},
+								[
+									el("div", {
+										className: "skill-progress-fill",
+										style: `width: ${card.progressPct}%`,
+									}),
+								],
+							),
+						],
+					),
 				),
-				el(
-					"div",
-					{
-						className: "skill-score-tile",
-						dataset: { skillResult: "reading" },
-					},
-					[
-						el("span", { className: "tile-label" }, ["Reading"]),
-						el("strong", { className: "tile-value" }, [
-							formatCorrectCount(objective.reading),
-						]),
-					],
-				),
+			),
+		);
+
+		resultCard.appendChild(
+			el("p", { className: "result-skills-caption" }, [
+				"Đây là kết quả tự động của hai phần nghe và đọc. Cấp độ cuối cùng và lớp phù hợp sẽ được giáo viên báo sau khi chấm Writing và Speaking.",
 			]),
 		);
 
@@ -3617,4 +3936,6 @@ function createApp() {
 	void init();
 }
 
-createApp();
+if (typeof document !== "undefined" && typeof window !== "undefined") {
+	createApp();
+}

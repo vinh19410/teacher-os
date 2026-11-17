@@ -3,16 +3,18 @@ import {
 	buildPlacementZaloText,
 	computePlacementFinal,
 	locatePlacementErrors,
+	PLACEMENT_RUBRIC_INTERMEDIATE_NOTE,
 	PLACEMENT_SPEAKING_RUBRIC,
 	PLACEMENT_TEACHER_FEEDBACK_MAX,
 	PLACEMENT_WRITING_RUBRIC,
 	type PlacementError,
 	type PlacementSpeakingRubric,
 	type PlacementSubmissionDetail,
+	type PlacementTeacherGrade,
 	type PlacementWritingRubric,
 } from "@teacher-os/api/placement-test-contracts";
 import { Check, Copy, Link2, RefreshCw } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { StatusTag } from "@/components/assignments/status-tag";
 import { Button } from "@/components/ui/button";
@@ -20,13 +22,20 @@ import { inputCls } from "@/components/ui/field";
 import { isHttpError } from "@/lib/kernel-load-state";
 import { reauth } from "@/lib/reauth";
 import {
+	fetchLeadPlacementSubmission,
 	gradeLeadPlacementSubmission,
 	leadPlacementSubmissionQueryKey,
-	leadPlacementSubmissionQueryOptions,
 	leadsAllQueryKey,
 	resolvePlacementSubmissionMediaUrl,
 	retryLeadPlacementAi,
 } from "@/lib/repos/leads";
+import {
+	fetchStudentPlacementSubmission,
+	gradeStudentPlacementSubmission,
+	resolveStudentPlacementMediaUrl,
+	retryStudentPlacementAi,
+	studentPlacementSubmissionQueryKey,
+} from "@/lib/repos/student-placement";
 import { PlacementAiStatusBanner } from "./placement-ai-status-banner";
 import { PlacementErrorHighlighter } from "./placement-error-highlighter";
 
@@ -198,10 +207,101 @@ function RubricRow({
 	);
 }
 
-export function PlacementSubmissionPanel({ leadId }: { leadId: string }) {
+type RubricGuideItem = {
+	readonly key: string;
+	readonly label: string;
+	readonly levels: {
+		readonly 5: string;
+		readonly 3: string;
+		readonly 1: string;
+	};
+};
+
+function RubricGuideDetails({
+	items,
+	testId,
+}: {
+	items: readonly RubricGuideItem[];
+	testId: string;
+}) {
+	return (
+		<details
+			data-testid={testId}
+			className="rounded-md border border-border bg-muted/20"
+		>
+			<summary className="cursor-pointer px-3 py-2 font-medium text-foreground text-xs hover:bg-muted/40">
+				Xem thang mô tả 5 / 3 / 1
+			</summary>
+			<div className="space-y-2 border-border border-t px-3 py-2.5 text-xs">
+				<div className="overflow-x-auto rounded-md border border-border bg-background">
+					<table className="w-full min-w-[520px] text-left text-xs">
+						<thead className="bg-muted/50 text-muted-foreground">
+							<tr>
+								<th className="w-36 px-2.5 py-1.5 font-medium">Tiêu chí</th>
+								<th className="px-2.5 py-1.5 font-medium font-mono">5</th>
+								<th className="px-2.5 py-1.5 font-medium font-mono">3</th>
+								<th className="px-2.5 py-1.5 font-medium font-mono">1</th>
+							</tr>
+						</thead>
+						<tbody>
+							{items.map((item) => (
+								<tr key={item.key} className="border-border border-t align-top">
+									<td className="px-2.5 py-2 font-medium text-foreground">
+										{item.label}
+									</td>
+									<td className="px-2.5 py-2 text-muted-foreground">
+										{item.levels[5]}
+									</td>
+									<td className="px-2.5 py-2 text-muted-foreground">
+										{item.levels[3]}
+									</td>
+									<td className="px-2.5 py-2 text-muted-foreground">
+										{item.levels[1]}
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+				<p className="text-muted-foreground text-xs">
+					{PLACEMENT_RUBRIC_INTERMEDIATE_NOTE}
+				</p>
+			</div>
+		</details>
+	);
+}
+
+export type PlacementSubmissionSubject =
+	| { kind: "lead"; id: string }
+	| { kind: "student"; id: string };
+
+export type PlacementSubmissionPanelProps = {
+	onGraded?: (detail: PlacementSubmissionDetail) => void;
+	emptyFallback?: ReactNode;
+} & (
+	| { subject: PlacementSubmissionSubject; leadId?: never; studentId?: never }
+	| { leadId: string; studentId?: never; subject?: never }
+	| { studentId: string; leadId?: never; subject?: never }
+);
+
+export function PlacementSubmissionPanel(props: PlacementSubmissionPanelProps) {
+	const resolvedSubject: PlacementSubmissionSubject =
+		props.subject ??
+		(props.studentId !== undefined
+			? { kind: "student", id: props.studentId }
+			: { kind: "lead", id: props.leadId });
+
 	const queryClient = useQueryClient();
 	const query = useQuery({
-		...leadPlacementSubmissionQueryOptions(leadId),
+		queryKey:
+			resolvedSubject.kind === "student"
+				? studentPlacementSubmissionQueryKey(resolvedSubject.id)
+				: leadPlacementSubmissionQueryKey(resolvedSubject.id),
+		queryFn: ({ signal }) =>
+			resolvedSubject.kind === "student"
+				? fetchStudentPlacementSubmission(resolvedSubject.id, undefined, signal)
+				: fetchLeadPlacementSubmission(resolvedSubject.id, undefined, signal),
+		staleTime: resolvedSubject.kind === "student" ? 0 : undefined,
 		refetchInterval: (q) =>
 			q.state.data?.aiStatus === "processing" ? PLACEMENT_AI_POLL_MS : false,
 	});
@@ -222,7 +322,7 @@ export function PlacementSubmissionPanel({ leadId }: { leadId: string }) {
 
 	if (query.isError) {
 		if (isHttpError(query.error) && query.error.status === 404) {
-			return null;
+			return props.emptyFallback ?? null;
 		}
 		return (
 			<div
@@ -236,24 +336,43 @@ export function PlacementSubmissionPanel({ leadId }: { leadId: string }) {
 
 	return (
 		<PlacementSubmissionBody
+			subject={resolvedSubject}
 			submission={query.data}
-			onSaved={(updated) => {
-				queryClient.setQueryData(
-					leadPlacementSubmissionQueryKey(leadId),
-					updated,
-				);
-				void queryClient.invalidateQueries({ queryKey: leadsAllQueryKey });
+			onSaved={(updated, action) => {
+				if (resolvedSubject.kind === "student") {
+					queryClient.setQueryData(
+						studentPlacementSubmissionQueryKey(resolvedSubject.id),
+						updated,
+					);
+					void queryClient.invalidateQueries({
+						queryKey: studentPlacementSubmissionQueryKey(resolvedSubject.id),
+					});
+				} else {
+					queryClient.setQueryData(
+						leadPlacementSubmissionQueryKey(resolvedSubject.id),
+						updated,
+					);
+					void queryClient.invalidateQueries({ queryKey: leadsAllQueryKey });
+				}
+				if (action === "grade") {
+					props.onGraded?.(updated);
+				}
 			}}
 		/>
 	);
 }
 
 function PlacementSubmissionBody({
+	subject,
 	submission,
 	onSaved,
 }: {
+	subject: PlacementSubmissionSubject;
 	submission: PlacementSubmissionDetail;
-	onSaved: (updated: PlacementSubmissionDetail) => void;
+	onSaved: (
+		updated: PlacementSubmissionDetail,
+		action: "grade" | "retry",
+	) => void;
 }) {
 	const [initial] = useState(() => initialPlacementGrading(submission));
 	const [writingRubric, setWritingRubric] = useState<PlacementWritingRubric>(
@@ -345,9 +464,13 @@ function PlacementSubmissionBody({
 	};
 
 	useEffect(() => {
-		const resolved = resolvePlacementSubmissionMediaUrl(
-			submission.speakingMediaUrl,
-		);
+		const resolved =
+			subject.kind === "student"
+				? (resolvePlacementSubmissionMediaUrl(submission.speakingMediaUrl) ??
+					(submission.speakingStatus === "uploaded"
+						? resolveStudentPlacementMediaUrl(subject.id)
+						: null))
+				: resolvePlacementSubmissionMediaUrl(submission.speakingMediaUrl);
 		if (submission.speakingStatus !== "uploaded" || !resolved) {
 			setMediaBlobUrl(null);
 			setMediaError(null);
@@ -385,7 +508,13 @@ function PlacementSubmissionBody({
 				URL.revokeObjectURL(createdUrl);
 			}
 		};
-	}, [submission.speakingStatus, submission.speakingMediaUrl, mediaRetryTick]);
+	}, [
+		subject.kind,
+		subject.id,
+		submission.speakingStatus,
+		submission.speakingMediaUrl,
+		mediaRetryTick,
+	]);
 
 	const activeSpeakingRubric = includeSpeaking ? speakingRubric : null;
 	const previewFinal = computePlacementFinal({
@@ -396,17 +525,21 @@ function PlacementSubmissionBody({
 	});
 
 	const gradeMutation = useMutation({
-		mutationFn: () =>
-			gradeLeadPlacementSubmission(submission.leadId, {
+		mutationFn: () => {
+			const payload: PlacementTeacherGrade = {
 				writingRubric,
 				speakingRubric: activeSpeakingRubric,
 				teacherFeedback: teacherFeedback.trim(),
 				writingErrors,
 				speakingErrors: includeSpeaking ? speakingErrors : [],
-			}),
+			};
+			return subject.kind === "student"
+				? gradeStudentPlacementSubmission(subject.id, payload)
+				: gradeLeadPlacementSubmission(subject.id, payload);
+		},
 		onSuccess: (updated) => {
 			toast.success("Đã lưu kết quả chấm bài kiểm tra đầu vào.");
-			onSaved(updated);
+			onSaved(updated, "grade");
 		},
 		onError: (err) => {
 			if (isHttpError(err) && err.status === 401) {
@@ -418,10 +551,13 @@ function PlacementSubmissionBody({
 	});
 
 	const retryMutation = useMutation({
-		mutationFn: () => retryLeadPlacementAi(submission.leadId),
+		mutationFn: () =>
+			subject.kind === "student"
+				? retryStudentPlacementAi(subject.id)
+				: retryLeadPlacementAi(subject.id),
 		onSuccess: (updated) => {
 			toast.success("Đã gửi yêu cầu AI chấm.");
-			onSaved(updated);
+			onSaved(updated, "retry");
 		},
 		onError: (err) => {
 			if (isHttpError(err) && err.status === 401) {
@@ -503,7 +639,7 @@ function PlacementSubmissionBody({
 						Bài kiểm tra đầu vào 5 kỹ năng (v{submission.testVersion})
 					</h4>
 					<p className="text-muted-foreground text-xs">
-						Chấm tự động 3 phần khách quan • giáo viên chấm Writing & Speaking
+						Chấm tự động 3 phần • giáo viên chấm Writing & Speaking
 					</p>
 				</div>
 				<StatusTag tone={submission.status === "graded" ? "ok" : "warn"}>
@@ -663,6 +799,10 @@ function PlacementSubmissionBody({
 						/>
 					))}
 				</div>
+				<RubricGuideDetails
+					items={PLACEMENT_WRITING_RUBRIC}
+					testId="writing-rubric-guide"
+				/>
 			</div>
 
 			{/* Speaking */}
@@ -781,21 +921,30 @@ function PlacementSubmissionBody({
 				)}
 
 				{includeSpeaking && (
-					<div className="space-y-1.5">
-						{PLACEMENT_SPEAKING_RUBRIC.map((item) => (
-							<RubricRow
-								key={item.key}
-								label={item.label}
-								desc={item.desc}
-								value={speakingRubric[item.key]}
-								testIdPrefix={`speaking-${item.key}`}
-								onChange={(next) => {
-									touch();
-									setSpeakingRubric((prev) => ({ ...prev, [item.key]: next }));
-								}}
-							/>
-						))}
-					</div>
+					<>
+						<div className="space-y-1.5">
+							{PLACEMENT_SPEAKING_RUBRIC.map((item) => (
+								<RubricRow
+									key={item.key}
+									label={item.label}
+									desc={item.desc}
+									value={speakingRubric[item.key]}
+									testIdPrefix={`speaking-${item.key}`}
+									onChange={(next) => {
+										touch();
+										setSpeakingRubric((prev) => ({
+											...prev,
+											[item.key]: next,
+										}));
+									}}
+								/>
+							))}
+						</div>
+						<RubricGuideDetails
+							items={PLACEMENT_SPEAKING_RUBRIC}
+							testId="speaking-rubric-guide"
+						/>
+					</>
 				)}
 			</div>
 

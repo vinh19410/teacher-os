@@ -21,6 +21,11 @@ vi.mock("sonner", () => ({ toast: toastMock }));
 vi.mock("@/lib/reauth", () => ({ reauth: reauthMock }));
 
 import {
+	PLACEMENT_RUBRIC_INTERMEDIATE_NOTE,
+	PLACEMENT_SPEAKING_RUBRIC,
+	PLACEMENT_WRITING_RUBRIC,
+} from "@teacher-os/api/placement-test-contracts";
+import {
 	initialPlacementGrading,
 	PLACEMENT_AI_POLL_MS,
 	PlacementSubmissionPanel,
@@ -524,5 +529,169 @@ describe("PlacementSubmissionPanel — chấm nháp AI (#730)", () => {
 		);
 		// Copy Zalo vẫn còn.
 		expect(screen.getByTestId("copy-zalo-result-btn")).toBeTruthy();
+	});
+
+	it("student subject → tải từ /api/students/:id/placement-submission, fallback media URL, retry AI & gọi onGraded khi PATCH", async () => {
+		const origCreateObjectURL = URL.createObjectURL;
+		const origRevokeObjectURL = URL.revokeObjectURL;
+		Object.defineProperty(URL, "createObjectURL", {
+			configurable: true,
+			writable: true,
+			value: vi.fn(() => "blob:student-speaking"),
+		});
+		Object.defineProperty(URL, "revokeObjectURL", {
+			configurable: true,
+			writable: true,
+			value: vi.fn(),
+		});
+
+		let server = makeSub({
+			leadId: null,
+			studentId: "st-9",
+			speakingStatus: "uploaded",
+			speakingMediaUrl: null,
+			aiStatus: "failed",
+			aiErrorCode: "AI_GRADING_FAILED",
+		});
+		const calls = stubFetch((url, method) => {
+			if (url.endsWith("/api/students/st-9/placement-submission/media")) {
+				return new Response(new Uint8Array([1, 2, 3]), {
+					status: 200,
+					headers: { "content-type": "audio/webm" },
+				});
+			}
+			if (
+				url.endsWith("/api/students/st-9/placement-submission") &&
+				method === "GET"
+			) {
+				return server;
+			}
+			if (
+				url.endsWith("/api/students/st-9/placement-submission/ai-retry") &&
+				method === "POST"
+			) {
+				server = { ...server, aiStatus: "processing", aiErrorCode: null };
+				return server;
+			}
+			if (
+				url.endsWith("/api/students/st-9/placement-submission") &&
+				method === "PATCH"
+			) {
+				server = {
+					...server,
+					status: "graded",
+					gradedAt: "2026-11-17T05:10:00.000Z",
+				};
+				return server;
+			}
+			return undefined;
+		});
+
+		const onGraded = vi.fn();
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		render(
+			<QueryClientProvider client={client}>
+				<PlacementSubmissionPanel
+					subject={{ kind: "student", id: "st-9" }}
+					onGraded={onGraded}
+				/>
+			</QueryClientProvider>,
+		);
+
+		await screen.findByTestId("placement-submission-panel");
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("speaking-media-player").getAttribute("src"),
+			).toBe("blob:student-speaking");
+		});
+
+		fireEvent.click(screen.getByTestId("placement-ai-retry-btn"));
+		await waitFor(() =>
+			expect(screen.getByTestId("placement-ai-status").dataset.aiStatus).toBe(
+				"processing",
+			),
+		);
+		expect(onGraded).not.toHaveBeenCalled();
+
+		fireEvent.click(screen.getByTestId("save-placement-grade-btn"));
+		await waitFor(() => expect(onGraded).toHaveBeenCalledTimes(1));
+		expect(
+			calls.some(
+				(c) =>
+					c.method === "PATCH" &&
+					c.url.endsWith("/api/students/st-9/placement-submission"),
+			),
+		).toBe(true);
+
+		Object.defineProperty(URL, "createObjectURL", {
+			configurable: true,
+			writable: true,
+			value: origCreateObjectURL,
+		});
+		Object.defineProperty(URL, "revokeObjectURL", {
+			configurable: true,
+			writable: true,
+			value: origRevokeObjectURL,
+		});
+	});
+
+	it("404 với emptyFallback → render emptyFallback thay vì null", async () => {
+		stubFetch(() => undefined);
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		render(
+			<QueryClientProvider client={client}>
+				<PlacementSubmissionPanel
+					studentId="st-empty"
+					emptyFallback={<div>Chưa có bài nộp</div>}
+				/>
+			</QueryClientProvider>,
+		);
+		expect(await screen.findByText("Chưa có bài nộp")).toBeTruthy();
+	});
+
+	it("hiển thị hướng dẫn thang điểm 5 / 3 / 1 và ghi chú 4 / 2 / 0 cho Writing & Speaking", async () => {
+		stubFetch((url, method) => (isGet(url, method) ? makeSub() : undefined));
+		renderPanel();
+
+		const writingGuide = await screen.findByTestId("writing-rubric-guide");
+		const speakingGuide = screen.getByTestId("speaking-rubric-guide");
+
+		expect(writingGuide.textContent).toContain("Xem thang mô tả 5 / 3 / 1");
+		expect(speakingGuide.textContent).toContain("Xem thang mô tả 5 / 3 / 1");
+		expect(writingGuide.textContent).toContain(
+			PLACEMENT_RUBRIC_INTERMEDIATE_NOTE,
+		);
+		expect(speakingGuide.textContent).toContain(
+			PLACEMENT_RUBRIC_INTERMEDIATE_NOTE,
+		);
+
+		for (const item of PLACEMENT_WRITING_RUBRIC) {
+			expect(writingGuide.textContent).toContain(item.levels[5]);
+			expect(writingGuide.textContent).toContain(item.levels[3]);
+			expect(writingGuide.textContent).toContain(item.levels[1]);
+		}
+		for (const item of PLACEMENT_SPEAKING_RUBRIC) {
+			expect(speakingGuide.textContent).toContain(item.levels[5]);
+			expect(speakingGuide.textContent).toContain(item.levels[3]);
+			expect(speakingGuide.textContent).toContain(item.levels[1]);
+		}
+
+		// Bỏ tick Speaking → ẩn cả rubric lẫn thang mô tả Speaking.
+		fireEvent.click(screen.getByTestId("toggle-speaking-grading"));
+		expect(screen.queryByTestId("speaking-rubric-guide")).toBeNull();
+	});
+
+	it("hiển thị mô tả chấm tự động 3 phần không chứa chữ 'khách quan'", async () => {
+		stubFetch((url, method) => (isGet(url, method) ? makeSub() : undefined));
+		renderPanel();
+		const panel = await screen.findByTestId("placement-submission-panel");
+		expect(panel.textContent).toContain(
+			"Chấm tự động 3 phần • giáo viên chấm Writing & Speaking",
+		);
+		expect(panel.textContent).not.toContain("khách quan");
 	});
 });

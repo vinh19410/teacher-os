@@ -99,3 +99,4 @@ scripts/design-compare/.state/
 
 # Audit #663 cleanup dump (backup trước khi ghi; chứa internal id — KHÔNG commit)
 audit-663-apply-dump-*.json
+.claude/

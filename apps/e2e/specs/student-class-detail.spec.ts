@@ -321,6 +321,10 @@ test.describe("Student class card & class detail page", () => {
 		await nav.getByRole("link", { name: "Tổng quan" }).focus();
 		await expect(nav.getByRole("link", { name: "Tổng quan" })).toBeFocused();
 		await page.keyboard.press("Tab");
+		await expect(
+			nav.getByRole("link", { name: /^Kiểm tra đầu vào/ }),
+		).toBeFocused();
+		await page.keyboard.press("Tab");
 		await expect(nav.getByRole("link", { name: "Lớp học" })).toBeFocused();
 		const screenshots = new URL(
 			"../../../plans/261019-0648-student-portal-nav-menu/screenshots/",
