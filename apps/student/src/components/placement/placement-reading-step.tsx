@@ -1,0 +1,165 @@
+import {
+	type PlacementPublishedReadingPassage,
+	stripInlineCefrLabel,
+} from "@teacher-os/api/placement-test-contracts";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@teacher-os/ui/components/card";
+import { Fragment } from "react";
+import { PlacementMcqQuestionCard } from "@/components/placement/placement-question-card";
+import { cn } from "@/lib/cn";
+import { PLACEMENT_READING_KIND_LABELS } from "@/lib/placement-test-helpers";
+
+function ReadingPassageBody({
+	passage,
+}: {
+	passage: PlacementPublishedReadingPassage;
+}) {
+	const paragraphs = passage.body.split(/\n{2,}/);
+	const isSignOrMessage = passage.kind === "sign" || passage.kind === "message";
+
+	return (
+		<div
+			data-passage-kind={passage.kind}
+			className={cn(
+				"space-y-3 rounded-lg border p-4 text-foreground text-sm leading-[1.85]",
+				isSignOrMessage ? "bg-muted/40" : "bg-card",
+			)}
+		>
+			{paragraphs.map((para, pIdx) => {
+				if (passage.kind === "cloze") {
+					const segments = para.split(/(\[\d+\])/g);
+					return (
+						<p key={`p-${pIdx}`}>
+							{segments.map((seg, sIdx) => {
+								const match = /^\[(\d+)\]$/.exec(seg);
+								if (match) {
+									return (
+										<span
+											key={`b-${pIdx}-${sIdx}`}
+											className="mx-1 inline-flex items-center rounded border border-primary/40 bg-muted px-1.5 py-0.5 font-mono font-semibold text-foreground text-xs"
+										>
+											({match[1]})
+										</span>
+									);
+								}
+								return <Fragment key={`t-${pIdx}-${sIdx}`}>{seg}</Fragment>;
+							})}
+						</p>
+					);
+				}
+
+				const lines = para.split("\n");
+				return (
+					<p key={`p-${pIdx}`}>
+						{lines.map((line, lIdx) => (
+							<Fragment key={`l-${pIdx}-${lIdx}`}>
+								{lIdx > 0 ? <br /> : null}
+								{line}
+							</Fragment>
+						))}
+					</p>
+				);
+			})}
+		</div>
+	);
+}
+
+export function PlacementReadingStep({
+	title,
+	passages,
+	questionNumbers,
+	answers,
+	onAnswerChange,
+}: {
+	title: string;
+	passages: readonly PlacementPublishedReadingPassage[];
+	questionNumbers: ReadonlyMap<string, number>;
+	answers: Readonly<Record<string, number | null>>;
+	onAnswerChange: (questionId: string, optionIndex: number) => void;
+}) {
+	return (
+		<div className="space-y-6" data-testid="placement-step-reading">
+			<Card>
+				<CardHeader>
+					<CardDescription className="font-mono text-[11px] uppercase tracking-[0.16em]">
+						Phần 3 / 5 · Đọc hiểu
+					</CardDescription>
+					<CardTitle className="text-xl">
+						{stripInlineCefrLabel(title) || "Reading Comprehension"}
+					</CardTitle>
+					<CardDescription>
+						Đọc kỹ từng biển báo, tin nhắn, bài đọc và đoạn điền từ bên dưới rồi
+						chọn đáp án đúng.
+					</CardDescription>
+				</CardHeader>
+			</Card>
+
+			{passages.length === 0 ? (
+				<Card>
+					<CardContent>
+						<p className="text-muted-foreground text-sm">
+							Phần Reading hiện chưa có bài đọc nào. Bạn có thể chuyển sang bước
+							tiếp theo.
+						</p>
+					</CardContent>
+				</Card>
+			) : (
+				passages.map((passage) => {
+					const partLabel = stripInlineCefrLabel(passage.partLabel);
+					const passageTitle = stripInlineCefrLabel(passage.title);
+					const kindLabel =
+						PLACEMENT_READING_KIND_LABELS[passage.kind] ?? "Bài đọc hiểu";
+					return (
+						<Card key={passage.id} data-passage-id={passage.id}>
+							<CardHeader className="space-y-2">
+								<div className="flex flex-wrap items-center gap-2">
+									{partLabel ? (
+										<span className="inline-flex items-center rounded-md bg-muted px-2.5 py-0.5 font-medium text-foreground text-xs">
+											{partLabel}
+										</span>
+									) : null}
+									<span className="inline-flex items-center rounded-md border px-2 py-0.5 text-muted-foreground text-xs">
+										{kindLabel}
+									</span>
+								</div>
+								{passageTitle ? (
+									<CardTitle className="text-lg">{passageTitle}</CardTitle>
+								) : null}
+								{passage.instruction ? (
+									<CardDescription className="leading-relaxed">
+										{passage.instruction}
+									</CardDescription>
+								) : null}
+							</CardHeader>
+
+							<CardContent className="space-y-5">
+								{passage.body.trim() ? (
+									<ReadingPassageBody passage={passage} />
+								) : null}
+
+								<div className="space-y-4">
+									{passage.questions.map((q) => (
+										<PlacementMcqQuestionCard
+											key={q.id}
+											questionId={q.id}
+											questionNumber={questionNumbers.get(q.id) ?? 1}
+											prompt={q.prompt}
+											options={q.options}
+											value={answers[q.id] ?? null}
+											onChange={(optIdx) => onAnswerChange(q.id, optIdx)}
+										/>
+									))}
+								</div>
+							</CardContent>
+						</Card>
+					);
+				})
+			)}
+		</div>
+	);
+}
