@@ -104,10 +104,21 @@ export async function seedQuizFixture(opts: {
 		});
 		// onboarding_completed_at is set so the verified student lands straight
 		// on the overview instead of the wizard (wizard is not under test).
+		// placement_prompt_dismissed_at is set too: once any spec publishes the
+		// placement test on the fallback lead org, the prompt modal would cover
+		// the overview for every seeded student (prompt is not under test here).
 		await db.execute({
-			sql: `INSERT INTO student (id, org_id, name, email, onboarding_completed_at, created_at)
-				VALUES (?,?,?,?,?,?)`,
-			args: [studentId, orgId, opts.studentName, opts.studentEmail, now, now],
+			sql: `INSERT INTO student (id, org_id, name, email, onboarding_completed_at, placement_prompt_dismissed_at, created_at)
+				VALUES (?,?,?,?,?,?,?)`,
+			args: [
+				studentId,
+				orgId,
+				opts.studentName,
+				opts.studentEmail,
+				now,
+				now,
+				now,
+			],
 		});
 		const enrollmentId = crypto.randomUUID();
 		await db.execute({
