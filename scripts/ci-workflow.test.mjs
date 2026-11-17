@@ -884,7 +884,7 @@ test("prod deploy is gated on uncached quality and the reusable e2e workflow", (
 	assert.doesNotMatch(
 		code,
 		/seed-vocab-library|seedVocabLibrary|vocab_library|seed-study-packs|seedStudyPacks/,
-		"deploy.yml must never seed built-in vocab library or study packs while production license gate is closed (#573, #702)",
+		"deploy.yml must never seed built-in vocab library or study packs: prod vocab seeding is a manual --allow-prod run and the study-pack license gate stays closed (#573, #702)",
 	);
 	assert.match(
 		code,

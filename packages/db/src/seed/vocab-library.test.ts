@@ -361,6 +361,39 @@ describe("vocab-library seed pipeline (#361)", () => {
 			}),
 		).rejects.toThrow(/blocked by license gate/i);
 
+		// --allow-prod: opt-in tường minh, chỉ đi với --d1 + D1_DATABASE_ID
+		expect(parseArgs(["--d1", "--allow-prod", "--verify"]).allowProd).toBe(
+			true,
+		);
+		expect(parseArgs(["--d1", "--verify"]).allowProd).toBe(false);
+		expect(() => parseArgs(["--file", "x.db", "--allow-prod"])).toThrow(
+			/--allow-prod requires --d1/,
+		);
+		expect(() =>
+			parseArgs(["--d1", "--d1-stage", "staging", "--allow-prod"]),
+		).toThrow(/Cannot combine --allow-prod with --d1-stage/);
+		const prodLookup = vi.fn(async () => {
+			return new Response(
+				JSON.stringify({
+					success: true,
+					result: {
+						uuid: "prod-uuid-777",
+						name: "teacher-os-database-prod-abcdefghijklmnop",
+					},
+				}),
+				{ status: 200 },
+			);
+		});
+		await expect(
+			assertNonProdD1Database({
+				accountId: "acc-1",
+				databaseId: "prod-uuid-777",
+				apiToken: "secret-tok-999",
+				fetchImpl: prodLookup,
+				allowProd: true,
+			}),
+		).resolves.toBe("teacher-os-database-prod-abcdefghijklmnop");
+
 		// Column-0 ::add-mask:: before logs, 429 retry, and secret/UUID redaction on failure
 		const stagingUuid = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
 		const secretToken = "cf-super-secret-token-xyz";

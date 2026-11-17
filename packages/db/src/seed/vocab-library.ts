@@ -696,13 +696,20 @@ export async function resolveStagingD1DatabaseId(options: {
 	return match.uuid;
 }
 
+/**
+ * Tra tên D1 theo UUID và chặn DB production trừ khi caller opt-in `allowProd`.
+ * Chỉ CLI seed vocab library được truyền `allowProd` (gate giấy phép nội dung
+ * vocab đã được chủ dự án mở); seed study packs vẫn luôn bị chặn trên prod.
+ * Trả về tên DB để caller in ra target trước khi ghi.
+ */
 export async function assertNonProdD1Database(options: {
 	accountId: string;
 	databaseId: string;
 	apiToken: string;
 	fetchImpl?: typeof fetch;
 	timeoutMs?: number;
-}): Promise<void> {
+	allowProd?: boolean;
+}): Promise<string> {
 	const fetchFn = options.fetchImpl ?? fetch;
 	const timeoutMs = options.timeoutMs ?? 20_000;
 	const url = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(options.accountId)}/d1/database/${encodeURIComponent(options.databaseId)}`;
@@ -726,11 +733,12 @@ export async function assertNonProdD1Database(options: {
 			`HTTP ${res.status}`;
 		throw new Error(`D1 get database failed (${res.status}): ${errMsg}`);
 	}
-	if (PROD_D1_NAME_REGEX.test(payload.result.name)) {
+	if (PROD_D1_NAME_REGEX.test(payload.result.name) && !options.allowProd) {
 		throw new Error(
 			`Target D1 database "${payload.result.name}" is blocked by license gate: seeding production D1 requires written project-owner sign-off.`,
 		);
 	}
+	return payload.result.name;
 }
 
 export interface EnsureVocabLibrarySeedResult {

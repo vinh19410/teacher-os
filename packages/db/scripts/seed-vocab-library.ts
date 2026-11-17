@@ -11,6 +11,10 @@
  *   # Cloudflare D1 staging (auto-resolves staging DB fail-closed; PROD blocked by license gate):
  *   CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... \
  *     pnpm --filter @teacher-os/db exec tsx scripts/seed-vocab-library.ts --d1 --d1-stage staging --if-needed --verify
+ *
+ *   # Cloudflare D1 production (gate giấy phép đã mở; phải opt-in tường minh):
+ *   CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... D1_DATABASE_ID=<prod-uuid> \
+ *     pnpm --filter @teacher-os/db exec tsx scripts/seed-vocab-library.ts --d1 --allow-prod --if-needed --verify
  */
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -30,6 +34,7 @@ export interface CliArgs {
 	filePath: string | null;
 	d1: boolean;
 	d1Stage: string | null;
+	allowProd: boolean;
 	prune: boolean;
 	ifNeeded: boolean;
 	verify: boolean;
@@ -37,12 +42,13 @@ export interface CliArgs {
 }
 
 const USAGE_TEXT =
-	"usage: tsx packages/db/scripts/seed-vocab-library.ts (--file <sqlite-path> | --d1 [--d1-stage staging]) [--prune] [--if-needed] [--verify]\n";
+	"usage: tsx packages/db/scripts/seed-vocab-library.ts (--file <sqlite-path> | --d1 [--d1-stage staging | --allow-prod]) [--prune] [--if-needed] [--verify]\n";
 
 export function parseArgs(argv: readonly string[]): CliArgs {
 	let filePath: string | null = null;
 	let d1 = false;
 	let d1Stage: string | null = null;
+	let allowProd = false;
 	let prune = false;
 	let ifNeeded = false;
 	let verify = false;
@@ -70,6 +76,8 @@ export function parseArgs(argv: readonly string[]): CliArgs {
 			}
 			d1Stage = next;
 			i++;
+		} else if (arg === "--allow-prod") {
+			allowProd = true;
 		} else if (arg === "--prune") {
 			prune = true;
 		} else if (arg === "--if-needed") {
@@ -81,6 +89,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
 				filePath: null,
 				d1: false,
 				d1Stage: null,
+				allowProd: false,
 				prune: false,
 				ifNeeded: false,
 				verify: false,
@@ -102,11 +111,28 @@ export function parseArgs(argv: readonly string[]): CliArgs {
 	if (d1Stage && !d1) {
 		throw new Error("Flag --d1-stage requires --d1.");
 	}
+	if (allowProd && !d1) {
+		throw new Error("Flag --allow-prod requires --d1.");
+	}
+	if (allowProd && d1Stage) {
+		throw new Error(
+			"Cannot combine --allow-prod with --d1-stage; target production via D1_DATABASE_ID.",
+		);
+	}
 	if (ifNeeded && prune) {
 		throw new Error("Cannot combine --if-needed with --prune.");
 	}
 
-	return { filePath, d1, d1Stage, prune, ifNeeded, verify, help: false };
+	return {
+		filePath,
+		d1,
+		d1Stage,
+		allowProd,
+		prune,
+		ifNeeded,
+		verify,
+		help: false,
+	};
 }
 
 interface D1QueryResponse {
@@ -279,7 +305,12 @@ async function resolveD1Target(
 	env: Record<string, string | undefined>,
 	fetchImpl: typeof fetch,
 	timeoutMs: number,
-): Promise<{ accountId: string; databaseId: string; apiToken: string }> {
+): Promise<{
+	accountId: string;
+	databaseId: string;
+	apiToken: string;
+	databaseName: string;
+}> {
 	const accountId = env.CLOUDFLARE_ACCOUNT_ID?.trim();
 	const explicitDbId = env.D1_DATABASE_ID?.trim();
 	const apiToken = env.CLOUDFLARE_API_TOKEN?.trim();
@@ -310,17 +341,23 @@ async function resolveD1Target(
 				fetchImpl,
 				timeoutMs,
 			});
-			return { accountId, databaseId, apiToken };
+			return {
+				accountId,
+				databaseId,
+				apiToken,
+				databaseName: args.d1Stage,
+			};
 		}
 		const databaseId = explicitDbId ?? "";
-		await assertNonProdD1Database({
+		const databaseName = await assertNonProdD1Database({
 			accountId,
 			databaseId,
 			apiToken,
 			fetchImpl,
 			timeoutMs,
+			allowProd: args.allowProd,
 		});
-		return { accountId, databaseId, apiToken };
+		return { accountId, databaseId, apiToken, databaseName };
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
 		throw new Error(redactSensitive(msg, secrets));
@@ -370,7 +407,7 @@ export async function runSeedCli(
 			}
 		}
 		writeStdout(
-			`[vocab-library-seed] verified target D1 database (${args.d1Stage ?? "explicit-non-prod"})\n`,
+			`[vocab-library-seed] verified target D1 database (${target.databaseName}${args.allowProd ? ", --allow-prod" : ""})\n`,
 		);
 		runner = createD1RestRunner({
 			accountId: target.accountId,
