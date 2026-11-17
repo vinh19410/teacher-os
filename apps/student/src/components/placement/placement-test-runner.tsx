@@ -434,6 +434,10 @@ export function PlacementTestRunner({
 				</CardHeader>
 
 				<CardContent className="space-y-5">
+					<p className="text-muted-foreground text-xs leading-relaxed">
+						Tổng quan 5 phần ({progress.total} câu Listening, Grammar &amp;
+						Vocabulary, Reading cùng Writing và Speaking):
+					</p>
 					<div className="overflow-x-auto rounded-md border bg-card">
 						<table className="w-full border-collapse text-left text-sm">
 							<thead>
@@ -540,7 +544,7 @@ export function PlacementTestRunner({
 						data-testid="placement-progress-counter"
 						className="font-medium text-foreground text-sm tabular-nums"
 					>
-						Đã trả lời {progress.answered}/{progress.total} câu khách quan
+						Đã trả lời {progress.answered}/{progress.total} câu
 					</span>
 
 					<span
@@ -896,7 +900,7 @@ export function PlacementTestRunner({
 								Hiện tại bài làm của bạn{" "}
 								{[
 									confirmUnanswered.unansweredObjective > 0
-										? `còn ${confirmUnanswered.unansweredObjective} câu khách quan chưa trả lời`
+										? `còn ${confirmUnanswered.unansweredObjective} câu chưa trả lời`
 										: null,
 									confirmUnanswered.writingEmpty
 										? "phần Writing đang để trống"

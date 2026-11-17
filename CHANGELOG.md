@@ -10,6 +10,11 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-11-17
+
+### Changed
+- Bỏ toàn bộ chữ `"khách quan"` khỏi giao diện bài kiểm tra đầu vào (entry test) trên `apps/profile` (`40 câu`, `Đã trả lời X/Y câu`, `còn N câu chưa trả lời`), `apps/student` (`Đã trả lời X/Y câu`, tiêu đề `Điểm các kỹ năng` đồng bộ với trang kết quả công khai) và `apps/web` (`Chấm tự động 3 phần • giáo viên chấm Writing & Speaking`), kèm regression guard trong `apps/profile/tests/placement-test.test.mjs`, unit test và E2E specs (#751).
+
 ## 2026-11-16
 
 ### Added

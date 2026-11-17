@@ -639,7 +639,7 @@ function PlacementSubmissionBody({
 						Bài kiểm tra đầu vào 5 kỹ năng (v{submission.testVersion})
 					</h4>
 					<p className="text-muted-foreground text-xs">
-						Chấm tự động 3 phần khách quan • giáo viên chấm Writing & Speaking
+						Chấm tự động 3 phần • giáo viên chấm Writing & Speaking
 					</p>
 				</div>
 				<StatusTag tone={submission.status === "graded" ? "ok" : "warn"}>

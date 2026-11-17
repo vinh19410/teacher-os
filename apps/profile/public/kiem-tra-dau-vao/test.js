@@ -772,7 +772,7 @@ function createApp() {
 		const node = document.querySelector(".progress-counter");
 		if (!node || !snapshot) return;
 		const progress = countObjectiveProgress(snapshot, state.answers);
-		node.textContent = `Đã trả lời ${progress.answered}/${progress.total} câu khách quan`;
+		node.textContent = `Đã trả lời ${progress.answered}/${progress.total} câu`;
 	}
 
 	function navigateToStep(nextStep) {
@@ -856,7 +856,7 @@ function createApp() {
 			]),
 			el("div", { className: "test-topbar-stats" }, [
 				el("span", { className: "progress-counter" }, [
-					`Đã trả lời ${progress.answered}/${progress.total} câu khách quan`,
+					`Đã trả lời ${progress.answered}/${progress.total} câu`,
 				]),
 				el(
 					"span",
@@ -3387,7 +3387,7 @@ function createApp() {
 			const reminders = [];
 			if (unansweredConfirmState.unansweredObjective > 0) {
 				reminders.push(
-					`còn ${unansweredConfirmState.unansweredObjective} câu khách quan chưa trả lời`,
+					`còn ${unansweredConfirmState.unansweredObjective} câu chưa trả lời`,
 				);
 			}
 			if (unansweredConfirmState.writingEmpty) {

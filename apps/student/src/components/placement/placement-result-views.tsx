@@ -442,7 +442,7 @@ export function PlacementGradedResultView({
 							aria-hidden="true"
 							className="size-4 text-muted-foreground"
 						/>
-						Điểm các phần khách quan
+						Điểm các kỹ năng
 					</CardTitle>
 				</CardHeader>
 				<CardContent>

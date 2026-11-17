@@ -695,7 +695,7 @@ describe("placement-test-contracts v2", () => {
 		expect(validatePlacementForPublish(upgraded!)).toEqual([]);
 	});
 
-	it("tôn trọng trần 100 câu khách quan đối xứng giữa draft v1, snapshot v1 và snapshot v2", () => {
+	it("tôn trọng trần 100 câu đối xứng giữa draft v1, snapshot v1 và snapshot v2", () => {
 		const makeVg = (count: number) =>
 			Array.from({ length: count }, (_, idx) => ({
 				id: `vg-${idx + 1}`,

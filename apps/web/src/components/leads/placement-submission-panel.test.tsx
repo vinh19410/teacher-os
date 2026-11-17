@@ -684,4 +684,14 @@ describe("PlacementSubmissionPanel — chấm nháp AI (#730)", () => {
 		fireEvent.click(screen.getByTestId("toggle-speaking-grading"));
 		expect(screen.queryByTestId("speaking-rubric-guide")).toBeNull();
 	});
+
+	it("hiển thị mô tả chấm tự động 3 phần không chứa chữ 'khách quan'", async () => {
+		stubFetch((url, method) => (isGet(url, method) ? makeSub() : undefined));
+		renderPanel();
+		const panel = await screen.findByTestId("placement-submission-panel");
+		expect(panel.textContent).toContain(
+			"Chấm tự động 3 phần • giáo viên chấm Writing & Speaking",
+		);
+		expect(panel.textContent).not.toContain("khách quan");
+	});
 });
