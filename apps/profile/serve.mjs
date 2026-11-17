@@ -15,6 +15,7 @@ const types = {
 	".js": "text/javascript; charset=utf-8",
 	".json": "application/json; charset=utf-8",
 	".mp3": "audio/mpeg",
+	".mp4": "video/mp4",
 	".svg": "image/svg+xml",
 	".ico": "image/x-icon",
 	".png": "image/png",
@@ -78,6 +79,34 @@ export function replaceStudentPortalHref(html, studentPortalUrl) {
 	return html.replace(STUDENT_PORTAL_TAG_RE, (tag) =>
 		tag.replace(/\bhref="[^"]*"/, () => escapedHref),
 	);
+}
+
+function parseSingleByteRange(rangeHeader, total) {
+	const trimmed = String(rangeHeader ?? "").trim();
+	if (!/^bytes=/i.test(trimmed)) return { ignore: true };
+	const spec = trimmed.slice(6).trim();
+	if (spec.includes(",")) return { ignore: true };
+	const match = /^(\d*)-(\d*)$/.exec(spec);
+	if (!match || (match[1] === "" && match[2] === "") || total <= 0) {
+		return null;
+	}
+	if (match[1] === "") {
+		const suffixLen = Number(match[2]);
+		if (!Number.isSafeInteger(suffixLen) || suffixLen <= 0) return null;
+		return { start: Math.max(0, total - suffixLen), end: total - 1 };
+	}
+	const start = Number(match[1]);
+	const end =
+		match[2] === "" ? total - 1 : Math.min(Number(match[2]), total - 1);
+	if (
+		!Number.isSafeInteger(start) ||
+		!Number.isSafeInteger(end) ||
+		start >= total ||
+		start > end
+	) {
+		return null;
+	}
+	return { start, end };
 }
 
 export function createProfileServer(
@@ -164,11 +193,37 @@ export function createProfileServer(
 
 			const body = await readFile(file);
 			const total = body.length;
-			const contentType = types[extname(file)] ?? "application/octet-stream";
+			const contentType =
+				types[extname(file).toLowerCase()] ?? "application/octet-stream";
+			const rangeHeader = req.headers.range;
+
+			if (typeof rangeHeader === "string" && rangeHeader.trim() !== "") {
+				const range = parseSingleByteRange(rangeHeader, total);
+				if (range === null) {
+					res.writeHead(416, {
+						"content-range": `bytes */${total}`,
+						"accept-ranges": "bytes",
+					});
+					res.end();
+					return;
+				}
+				if (!range.ignore) {
+					const slice = body.subarray(range.start, range.end + 1);
+					res.writeHead(206, {
+						"content-type": contentType,
+						"content-length": String(slice.length),
+						"content-range": `bytes ${range.start}-${range.end}/${total}`,
+						"accept-ranges": "bytes",
+					});
+					res.end(req.method === "HEAD" ? undefined : slice);
+					return;
+				}
+			}
 
 			res.writeHead(200, {
 				"content-type": contentType,
 				"content-length": String(total),
+				"accept-ranges": "bytes",
 			});
 			res.end(req.method === "HEAD" ? undefined : body);
 		} catch {
