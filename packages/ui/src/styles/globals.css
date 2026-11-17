@@ -22,8 +22,9 @@
  * neutral oklch). LIGHT là mặc định (:root); `.dark` trên <html> là override.
  * Be Vietnam Pro (@fontsource/be-vietnam-pro) + Geist Mono Variable
  * (@fontsource-variable/geist-mono) self-host (CSP: font-src 'self').
- * Base font 14px (html), thang chữ = rem mặc định của Tailwind (không override
- * --text-* bằng px — override cũ làm font-size:14px vô hiệu).
+ * Base font = mặc định trình duyệt (1rem = 16px), thang chữ = rem mặc định của
+ * Tailwind (text-base 16px, text-sm 14px, text-xs 12px; không override
+ * --text-* bằng px). Input `text-base md:text-sm` = 16px mobile, chặn iOS zoom.
  *
  * Trạng thái: chấm emerald (--success) / amber (--warn) theo v2; quá hạn/lỗi
  * = --destructive (đỏ); --verdict-* chỉ cho màn soi bài/chấm quiz (kèm ✓/✗).
@@ -275,7 +276,6 @@
 	}
 	html {
 		@apply font-sans;
-		font-size: 14px;
 		-webkit-text-size-adjust: 100%;
 	}
 	body {
