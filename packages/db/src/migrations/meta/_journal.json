@@ -512,6 +512,13 @@
       "when": 1794786940807,
       "tag": "0072_placement_ai_background_jobs",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "6",
+      "when": 1794891355627,
+      "tag": "0073_shocking_absorbing_man",
+      "breakpoints": true
     }
   ]
 }

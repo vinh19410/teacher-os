@@ -30,6 +30,7 @@ import { studentRoutes } from "./routes/student";
 import { studentClassmatesRoutes } from "./routes/student-classmates";
 import { studentHistoryRoutes } from "./routes/student-history";
 import { studentMaterialRoutes } from "./routes/student-materials";
+import { studentPlacementTestRoutes } from "./routes/student-placement-test";
 import { studentPracticeRoutes } from "./routes/student-practice";
 import type { SessionUser } from "./session";
 
@@ -331,7 +332,9 @@ export function buildApp(deps: AppDeps) {
 		"/api/student/assignments/:assignmentId/audio",
 		"/api/grading/:attemptId/media",
 		"/api/placement-test/audio/:id",
+		"/api/student/placement-test/audio/:id",
 		"/api/leads/:id/placement-submission/media",
+		"/api/students/:id/placement-submission/media",
 		"/api/exam-imports/:id/file",
 		"/api/admin/library/tests/:testId/parts/:slot/audio",
 		"/api/student/vocab/audio/:wordId",
@@ -394,6 +397,9 @@ export function buildApp(deps: AppDeps) {
 			"Authorization",
 			"x-student-org-id",
 			"X-File-Name",
+			"X-Upload-Token",
+			"X-Media-Filename",
+			"X-Speaking-Duration",
 		],
 		credentials: true,
 	});
@@ -452,6 +458,9 @@ export function buildApp(deps: AppDeps) {
 	// Tài liệu buổi học (chỉ đọc): cùng mount point, guard học viên + kiểm
 	// enrollment tự gắn trong router.
 	app.route("/api/student", studentMaterialRoutes(deps));
+	// Kiểm tra đầu vào trong cổng học viên (#748): cùng mount point, guard học viên
+	// + Origin CSRF tự gắn trong router.
+	app.route("/api/student", studentPlacementTestRoutes(deps));
 	// Plan #413 phase 3: router thật của thư viện đề — requireAdmin +
 	// CSRF Origin(adminOrigins) tự gắn trong router; bootstrapMiddleware vẫn
 	// bypass /api/admin nên không session teacher nào bootstrap org qua

@@ -54,6 +54,10 @@ export const student = sqliteTable(
 		onboardingCompletedAt: integer("onboarding_completed_at", {
 			mode: "timestamp_ms",
 		}),
+		/** Thời điểm học viên chọn "Để sau / Bỏ qua" modal đề xuất làm bài kiểm tra đầu vào lần đầu (#748). */
+		placementPromptDismissedAt: integer("placement_prompt_dismissed_at", {
+			mode: "timestamp_ms",
+		}),
 		/** Thời điểm gửi email mời tham gia cổng học viên gần nhất (#570) — dùng cho CAS cooldown 60s khi gửi lại. */
 		lastInviteEmailAt: integer("last_invite_email_at", {
 			mode: "timestamp_ms",

@@ -24,6 +24,7 @@ import {
 	placementTestAudio,
 	placementTestSubmission,
 } from "@teacher-os/db/schema/placement-test";
+import { student } from "@teacher-os/db/schema/student";
 import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -965,9 +966,14 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 				: [targetOrgId];
 
 		const [row] = await db
-			.select({ sub: placementTestSubmission, studentName: lead.name })
+			.select({
+				sub: placementTestSubmission,
+				leadName: lead.name,
+				studentName: student.name,
+			})
 			.from(placementTestSubmission)
-			.innerJoin(lead, eq(lead.id, placementTestSubmission.leadId))
+			.leftJoin(lead, eq(lead.id, placementTestSubmission.leadId))
+			.leftJoin(student, eq(student.id, placementTestSubmission.studentId))
 			.where(
 				and(
 					eq(placementTestSubmission.resultToken, token),
@@ -1002,7 +1008,7 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 			)?.advice ?? "";
 
 		const view: PlacementPublicResultView = {
-			studentName: row.studentName,
+			studentName: row.leadName ?? row.studentName ?? "Học viên",
 			submittedAt: sub.submittedAt.toISOString(),
 			gradedAt: sub.gradedAt.toISOString(),
 			objective: {

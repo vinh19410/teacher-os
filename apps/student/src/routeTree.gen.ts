@@ -17,6 +17,7 @@ import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as AuthIndexRouteImport } from './routes/_auth/index'
 import { Route as AuthHistoryRouteImport } from './routes/_auth/history'
 import { Route as AuthOnboardingRouteImport } from './routes/_auth/onboarding'
+import { Route as AuthPlacementTestRouteImport } from './routes/_auth/placement-test'
 import { Route as AuthScheduleRouteImport } from './routes/_auth/schedule'
 import { Route as AuthAssignmentsIndexRouteImport } from './routes/_auth/assignments/index'
 import { Route as AuthClassesIndexRouteImport } from './routes/_auth/classes/index'
@@ -74,6 +75,11 @@ const AuthHistoryRoute = AuthHistoryRouteImport.update({
 const AuthOnboardingRoute = AuthOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => AuthRouteRoute,
+} as any)
+const AuthPlacementTestRoute = AuthPlacementTestRouteImport.update({
+  id: '/placement-test',
+  path: '/placement-test',
   getParentRoute: () => AuthRouteRoute,
 } as any)
 const AuthScheduleRoute = AuthScheduleRouteImport.update({
@@ -189,6 +195,7 @@ export interface FileRoutesByFullPath {
   '/verify-email': typeof VerifyEmailRoute
   '/history': typeof AuthHistoryRoute
   '/onboarding': typeof AuthOnboardingRoute
+  '/placement-test': typeof AuthPlacementTestRoute
   '/schedule': typeof AuthScheduleRoute
   '/classes/$classId': typeof AuthClassesClassIdRoute
   '/practice/$skill': typeof AuthPracticeSkillRoute
@@ -216,6 +223,7 @@ export interface FileRoutesByTo {
   '/verify-email': typeof VerifyEmailRoute
   '/history': typeof AuthHistoryRoute
   '/onboarding': typeof AuthOnboardingRoute
+  '/placement-test': typeof AuthPlacementTestRoute
   '/schedule': typeof AuthScheduleRoute
   '/': typeof AuthIndexRoute
   '/classes/$classId': typeof AuthClassesClassIdRoute
@@ -246,6 +254,7 @@ export interface FileRoutesById {
   '/verify-email': typeof VerifyEmailRoute
   '/_auth/history': typeof AuthHistoryRoute
   '/_auth/onboarding': typeof AuthOnboardingRoute
+  '/_auth/placement-test': typeof AuthPlacementTestRoute
   '/_auth/schedule': typeof AuthScheduleRoute
   '/_auth/': typeof AuthIndexRoute
   '/_auth/classes/$classId': typeof AuthClassesClassIdRoute
@@ -277,6 +286,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/history'
     | '/onboarding'
+    | '/placement-test'
     | '/schedule'
     | '/classes/$classId'
     | '/practice/$skill'
@@ -304,6 +314,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/history'
     | '/onboarding'
+    | '/placement-test'
     | '/schedule'
     | '/'
     | '/classes/$classId'
@@ -333,6 +344,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/_auth/history'
     | '/_auth/onboarding'
+    | '/_auth/placement-test'
     | '/_auth/schedule'
     | '/_auth/'
     | '/_auth/classes/$classId'
@@ -419,6 +431,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof AuthOnboardingRouteImport
+      parentRoute: typeof AuthRouteRoute
+    }
+    '/_auth/placement-test': {
+      id: '/_auth/placement-test'
+      path: '/placement-test'
+      fullPath: '/placement-test'
+      preLoaderRoute: typeof AuthPlacementTestRouteImport
       parentRoute: typeof AuthRouteRoute
     }
     '/_auth/schedule': {
@@ -590,6 +609,7 @@ const AuthLearnQuizzesAttemptAttemptIdRouteWithChildren =
 interface AuthRouteRouteChildren {
   AuthHistoryRoute: typeof AuthHistoryRoute
   AuthOnboardingRoute: typeof AuthOnboardingRoute
+  AuthPlacementTestRoute: typeof AuthPlacementTestRoute
   AuthScheduleRoute: typeof AuthScheduleRoute
   AuthIndexRoute: typeof AuthIndexRoute
   AuthClassesClassIdRoute: typeof AuthClassesClassIdRoute
@@ -613,6 +633,7 @@ interface AuthRouteRouteChildren {
 const AuthRouteRouteChildren: AuthRouteRouteChildren = {
   AuthHistoryRoute: AuthHistoryRoute,
   AuthOnboardingRoute: AuthOnboardingRoute,
+  AuthPlacementTestRoute: AuthPlacementTestRoute,
   AuthScheduleRoute: AuthScheduleRoute,
   AuthIndexRoute: AuthIndexRoute,
   AuthClassesClassIdRoute: AuthClassesClassIdRoute,

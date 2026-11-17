@@ -2007,6 +2007,46 @@ export function buildPlacementZaloText(params: {
 // API Schemas cho Public Submission & Teacher Grading
 // ---------------------------------------------------------------------------
 
+export const placementAnswersSchema = z.object({
+	listening: z
+		.record(
+			z.string().max(64),
+			z.union([z.string().max(120), z.number().int().min(0).max(3), z.null()]),
+		)
+		.default({}),
+	vocabGrammar: z
+		.record(
+			z.string().max(64),
+			z.union([z.number().int().min(0).max(3), z.null()]),
+		)
+		.default({}),
+	reading: z
+		.record(
+			z.string().max(64),
+			z.union([z.number().int().min(0).max(3), z.null()]),
+		)
+		.default({}),
+});
+
+export const studentPlacementSubmitSchema = z
+	.object({
+		answers: placementAnswersSchema,
+		writingText: z.string().max(PLACEMENT_WRITING_TEXT_MAX).default(""),
+		speakingMode: z.enum(["upload", "skipped", "none"]).default("none"),
+		speakingDurationSec: z
+			.number()
+			.int()
+			.min(0)
+			.max(3600)
+			.nullable()
+			.optional()
+			.default(null),
+	})
+	.strict();
+export type StudentPlacementSubmit = z.infer<
+	typeof studentPlacementSubmitSchema
+>;
+
 export const placementPublicSubmitSchema = z
 	.object({
 		lead: z.object({
@@ -2030,30 +2070,7 @@ export const placementPublicSubmitSchema = z
 			birthDate: z.string().trim().max(20).optional().default(""),
 			note: z.string().trim().max(LEAD_NOTE_MAX).optional().default(""),
 		}),
-		answers: z.object({
-			listening: z
-				.record(
-					z.string().max(64),
-					z.union([
-						z.string().max(120),
-						z.number().int().min(0).max(3),
-						z.null(),
-					]),
-				)
-				.default({}),
-			vocabGrammar: z
-				.record(
-					z.string().max(64),
-					z.union([z.number().int().min(0).max(3), z.null()]),
-				)
-				.default({}),
-			reading: z
-				.record(
-					z.string().max(64),
-					z.union([z.number().int().min(0).max(3), z.null()]),
-				)
-				.default({}),
-		}),
+		answers: placementAnswersSchema,
 		writingText: z.string().max(PLACEMENT_WRITING_TEXT_MAX).default(""),
 		speakingMode: z.enum(["upload", "skipped", "none"]).default("none"),
 		speakingDurationSec: z
@@ -2208,7 +2225,8 @@ export type PlacementTeacherGrade = z.infer<typeof placementTeacherGradeSchema>;
 
 export interface PlacementSubmissionDetail {
 	id: string;
-	leadId: string;
+	leadId: string | null;
+	studentId?: string | null;
 	studentName: string;
 	studentPhone: string;
 	testVersion: number;
@@ -2284,4 +2302,86 @@ export interface PlacementPublicResultView {
 	finalNote: string;
 	bandAdvice: string;
 	teacherFeedback: string;
+}
+
+const INLINE_CEFR_TAG_RE =
+	/\s*[([][\s]*(?:(?:level|cefr)\s+)?(?:pre-a1|a1|a2\+?|b1\+?|b2\+?|c1|c2)(?:\s*(?:[–—/-]|to)\s*(?:pre-a1|a1|a2\+?|b1\+?|b2\+?|c1|c2))?[\s]*[)\]]/gi;
+
+/**
+ * Lược nhãn cấp độ CEFR trong ngoặc trên tiêu đề/nhãn phần trước khi hiển thị
+ * cho thí sinh làm bài để không lộ độ khó câu hỏi (#726).
+ */
+export function stripInlineCefrLabel(rawTitle: string): string {
+	return String(rawTitle ?? "")
+		.replace(INLINE_CEFR_TAG_RE, " ")
+		.replace(/\s{2,}/g, " ")
+		.replace(/\s+([,:;!?])/g, "$1")
+		.trim();
+}
+
+export const STUDENT_PLACEMENT_STATUSES = [
+	"not_started",
+	"pending_grading",
+	"graded",
+	"exempt",
+	"unavailable",
+] as const;
+export type StudentPlacementStatus =
+	(typeof STUDENT_PLACEMENT_STATUSES)[number];
+
+export const studentPlacementStatusSchema = z.object({
+	status: z.enum(STUDENT_PLACEMENT_STATUSES),
+	hasEntryScore: z.boolean(),
+	entryScore: z.string().nullable(),
+	promptDismissedAt: z.string().nullable(),
+	submissionId: z.string().nullable(),
+	testAvailable: z.boolean(),
+	testVersion: z.number().int().nullable(),
+});
+export type StudentPlacementStatusResponse = z.infer<
+	typeof studentPlacementStatusSchema
+>;
+
+export interface StudentPlacementSubmissionView {
+	id: string;
+	testVersion: number;
+	status: "pending_grading" | "graded";
+	submittedAt: string;
+	gradedAt: string | null;
+	objective: Pick<
+		PlacementObjectiveResult,
+		"listening" | "vocabGrammar" | "reading"
+	>;
+	writingText: string;
+	writingWordCount: number;
+	writingRubric: PlacementWritingRubric | null;
+	writingScore: number | null;
+	writingErrors: PlacementError[];
+	speakingStatus: "none" | "pending_upload" | "uploaded" | "skipped";
+	speakingTranscript: string;
+	speakingRubric: PlacementSpeakingRubric | null;
+	speakingScore: number | null;
+	speakingErrors: PlacementError[];
+	finalBandLevel: string | null;
+	finalDisplayCourse: string | null;
+	finalScorePct: number | null;
+	finalNote: string;
+	bandAdvice: string;
+	teacherFeedback: string;
+}
+
+export interface StudentPlacementViewResponse
+	extends StudentPlacementStatusResponse {
+	snapshot: PlacementSnapshot | null;
+	submission: StudentPlacementSubmissionView | null;
+}
+
+export interface StudentPlacementSubmitResponse {
+	submissionId: string;
+	uploadToken: string | null;
+	uploadTokenExpiresAt: string | null;
+	objective: Pick<
+		PlacementObjectiveResult,
+		"listening" | "vocabGrammar" | "reading"
+	>;
 }

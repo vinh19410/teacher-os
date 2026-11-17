@@ -8,6 +8,7 @@ import {
 } from "drizzle-orm/sqlite-core";
 import { lead } from "./lead";
 import { organization } from "./organization";
+import { student } from "./student";
 
 /**
  * Bộ đề kiểm tra đầu vào (`/kiem-tra-dau-vao/`, issue #515) — một org một đề
@@ -79,9 +80,10 @@ export const placementTestSubmission = sqliteTable(
 		orgId: text("org_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
-		leadId: text("lead_id")
-			.notNull()
-			.references(() => lead.id, { onDelete: "cascade" }),
+		leadId: text("lead_id").references(() => lead.id, { onDelete: "cascade" }),
+		studentId: text("student_id").references(() => student.id, {
+			onDelete: "set null",
+		}),
 		testVersion: integer("test_version").notNull().default(0),
 		snapshotJson: text("snapshot_json").notNull(),
 		answersJson: text("answers_json").notNull(),
@@ -174,6 +176,11 @@ export const placementTestSubmission = sqliteTable(
 		index("placement_test_submission_org_lead_created_idx").on(
 			table.orgId,
 			table.leadId,
+			table.submittedAt,
+		),
+		index("placement_test_submission_org_student_created_idx").on(
+			table.orgId,
+			table.studentId,
 			table.submittedAt,
 		),
 		index("placement_test_submission_ip_created_idx").on(
