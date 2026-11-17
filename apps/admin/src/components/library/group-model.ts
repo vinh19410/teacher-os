@@ -66,17 +66,46 @@ export function splitIntoGroups(value: PartFormValue): PartFormValue {
 	};
 }
 
-/** Thêm nhóm mới (1 câu rỗng) cuối danh sách; nếu đang ngầm thì tách trước. */
+/** Chuẩn hóa item sau khi rời `mcq_many`: xóa `answerSet`, cắt/pad `opts` về 4 cho `mcq` hoặc `null` cho dạng khác. */
+export function normalizeQuestionAfterMcqMany(
+	question: QuestionItem,
+	nextType: string,
+): QuestionItem {
+	const next: QuestionItem = { ...question };
+	delete next.answerSet;
+	if (nextType === "mcq") {
+		next.opts = [0, 1, 2, 3].map((index) => next.opts?.[index] ?? "");
+		if (!["A", "B", "C", "D"].includes(next.answer.trim())) {
+			next.answer = "";
+		}
+	} else {
+		next.opts = null;
+	}
+	return next;
+}
+
+function createMcqManyPair(): QuestionItem[] {
+	const answerSet = `set-${crypto.randomUUID().slice(0, 12)}`;
+	return [
+		{ ...emptyItem("mcq_many"), answerSet },
+		{ ...emptyItem("mcq_many"), answerSet },
+	];
+}
+
+/** Thêm nhóm mới (1 câu rỗng, hoặc cụm 2 câu cho `mcq_many`) cuối danh sách; nếu đang ngầm thì tách trước. */
 export function addGroup(value: PartFormValue, type: string): PartFormValue {
 	const base = splitIntoGroups(value);
+	if (base.questions.length >= 40) return value;
+	if (type === "mcq_many" && base.questions.length + 2 > 40) return value;
 	const groups = [...base.groups];
 	const start = groups.reduce((sum, group) => sum + group.count, 0);
+	const added = type === "mcq_many" ? createMcqManyPair() : [emptyItem(type)];
 	groups.push({
 		id: crypto.randomUUID(),
 		type,
 		instruction: "",
 		startIndex: start,
-		count: 1,
+		count: added.length,
 		optionBank: [],
 		answersInline: false,
 		splitContent: false,
@@ -85,7 +114,7 @@ export function addGroup(value: PartFormValue, type: string): PartFormValue {
 	return {
 		...base,
 		groups: reindexGroups(groups),
-		questions: [...base.questions, emptyItem(type)],
+		questions: [...base.questions, ...added],
 		type: groups[0]?.type ?? base.type,
 	};
 }
@@ -211,6 +240,46 @@ export function patchGroup(
 ): PartFormValue {
 	const group = value.groups[gi];
 	if (!group) return value;
+	const switchingToMcqMany =
+		patch.type === "mcq_many" && group.type !== "mcq_many";
+	const switchingFromMcqMany =
+		patch.type !== undefined &&
+		patch.type !== "mcq_many" &&
+		group.type === "mcq_many";
+	const groupSlice = value.questions.slice(
+		group.startIndex,
+		group.startIndex + group.count,
+	);
+	const canExpandSingleEmpty =
+		switchingToMcqMany &&
+		group.count === 1 &&
+		!groupSlice[0]?.stem &&
+		!groupSlice[0]?.answer &&
+		value.questions.length + 1 <= 40;
+	if (switchingToMcqMany && group.count === 1 && value.questions.length >= 40) {
+		return value;
+	}
+
+	if (canExpandSingleEmpty) {
+		const pair = createMcqManyPair();
+		const groups = reindexGroups(
+			value.groups.map((entry, index) =>
+				index === gi ? { ...entry, ...patch, count: pair.length } : entry,
+			),
+		);
+		const questions = [
+			...value.questions.slice(0, group.startIndex),
+			...pair,
+			...value.questions.slice(group.startIndex + group.count),
+		];
+		return {
+			...value,
+			groups,
+			questions,
+			type: gi === 0 && patch.type !== undefined ? patch.type : value.type,
+		};
+	}
+
 	const groups = value.groups.map((entry, index) =>
 		index === gi ? { ...entry, ...patch } : entry,
 	);
@@ -221,10 +290,16 @@ export function patchGroup(
 					if (
 						index < group.startIndex ||
 						index >= group.startIndex + group.count
-					)
+					) {
 						return question;
-					if (!question.type) return question;
-					return { ...question, type: null };
+					}
+					const next: QuestionItem = question.type
+						? { ...question, type: null }
+						: { ...question };
+					if (switchingFromMcqMany && patch.type !== undefined) {
+						return normalizeQuestionAfterMcqMany(next, patch.type);
+					}
+					return next;
 				});
 	return {
 		...value,

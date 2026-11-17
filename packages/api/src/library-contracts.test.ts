@@ -1,16 +1,24 @@
 import { describe, expect, test } from "vitest";
+import { LIBRARY_ANSWER_CHOICES, LIBRARY_OPTION_BANK_MAX } from "./contracts";
 import type {
 	LibraryPartInput,
 	LibraryQuestionGroup,
 } from "./library-contracts";
 import {
 	countClozeMarkers,
+	isLibraryBankableType,
 	LIBRARY_AUDIO_MAX_BYTES,
 	LIBRARY_AUDIO_MIME,
+	LIBRARY_CLOZE_TYPES,
 	LIBRARY_ERROR_CODES,
+	LIBRARY_OPTION_BANK_TYPES,
+	LIBRARY_READING_TYPES,
 	LIBRARY_SKILLS,
+	libraryOptionBankKindFor,
 	libraryPartDtoSchema,
 	libraryPartUpsertSchema,
+	libraryQuestionGroupSchema,
+	librarySkillTypes,
 	libraryTestCreateSchema,
 	libraryTestUpdateSchema,
 	validatePartForReady,
@@ -91,15 +99,25 @@ describe("validatePartForReady", () => {
 		expect(issues.some((issue) => issue.path === "questions")).toBe(true);
 	});
 
-	test("image-based (reading diagram / listening map) cần imageUrl + pin mọi câu", () => {
-		const base = readingPart({
+	test("image-based: reading diagram chỉ cần imageUrl (pin tuỳ chọn); listening map vẫn cần imageUrl + pin mọi câu", () => {
+		const diagramWithPins = readingPart({
 			type: "diagram",
 			imageUrl: "https://cdn.example.com/d.png",
 			questions: [
 				{ stem: "q", answer: "TRUE", alts: "", pin: { x: 10, y: 20 } },
 			],
 		});
-		expect(validatePartForReady("reading", base)).toEqual([]);
+		expect(validatePartForReady("reading", diagramWithPins)).toEqual([]);
+
+		const diagramWithoutPins = readingPart({
+			type: "diagram",
+			imageUrl: "https://cdn.example.com/d.png",
+			questions: [
+				{ stem: "q1", answer: "engine", alts: "" },
+				{ stem: "q2", answer: "valve", alts: "" },
+			],
+		});
+		expect(validatePartForReady("reading", diagramWithoutPins)).toEqual([]);
 
 		const noImage = validatePartForReady(
 			"reading",
@@ -107,27 +125,29 @@ describe("validatePartForReady", () => {
 		);
 		expect(noImage.some((issue) => issue.path === "imageUrl")).toBe(true);
 
-		const missingPin = validatePartForReady(
-			"reading",
-			readingPart({
-				type: "diagram",
-				imageUrl: "https://cdn.example.com/d.png",
-				questions: [
-					{ stem: "q1", answer: "TRUE", alts: "", pin: { x: 10, y: 20 } },
-					{ stem: "q2", answer: "FALSE", alts: "" },
-				],
-			}),
-		);
-		expect(missingPin.some((issue) => issue.path === "questions.1.pin")).toBe(
-			true,
-		);
-
-		// listening map — image-based pair thứ hai.
-		const mapNoPin = validatePartForReady(
+		// listening map — vẫn bắt buộc imageUrl + pin mọi câu.
+		const mapNoImage = validatePartForReady(
 			"listening",
 			listeningPart({ type: "map", audioName: "s2.mp3" }),
 		);
-		expect(mapNoPin.some((issue) => issue.path === "imageUrl")).toBe(true);
+		expect(mapNoImage.some((issue) => issue.path === "imageUrl")).toBe(true);
+
+		const mapMissingPin = validatePartForReady(
+			"listening",
+			listeningPart({
+				type: "map",
+				audioName: "s2.mp3",
+				imageUrl: "https://cdn.example.com/map.png",
+				optionBank: ["Cafe", "Library"],
+				questions: [
+					{ stem: "q1", answer: "A", alts: "", pin: { x: 10, y: 20 } },
+					{ stem: "q2", answer: "B", alts: "" },
+				],
+			}),
+		);
+		expect(
+			mapMissingPin.some((issue) => issue.path === "questions.1.pin"),
+		).toBe(true);
 	});
 
 	test("type không thuộc catalog của part bị từ chối", () => {
@@ -356,7 +376,7 @@ function twoGroups(): [LibraryQuestionGroup, LibraryQuestionGroup] {
 		},
 		{
 			id: "g2",
-			type: "note",
+			type: "fill_blank",
 			instruction: "",
 			startIndex: 3,
 			count: 2,
@@ -552,6 +572,331 @@ describe("library question groups", () => {
 		expect(
 			issues.some((issue) => issue.message === "invalid type for part"),
 		).toBe(false);
+	});
+});
+
+describe("Issue #762 — 15 IELTS Reading types & validation rules", () => {
+	test("LIBRARY_READING_TYPES gồm đúng 15 dạng bắt đầu từ tfng và loại bỏ note/tablecomp/flowchart", () => {
+		expect(LIBRARY_READING_TYPES).toEqual([
+			"tfng",
+			"summary",
+			"info",
+			"mcq",
+			"ynng",
+			"headings",
+			"mcq_many",
+			"sent",
+			"match_names",
+			"features",
+			"sentend",
+			"fill_blank",
+			"shortans",
+			"diagram",
+			"matching",
+		]);
+		expect(LIBRARY_READING_TYPES).toHaveLength(15);
+		expect(librarySkillTypes("reading")).toEqual(LIBRARY_READING_TYPES);
+		expect(librarySkillTypes("listening")).toEqual([
+			"form",
+			"mcq1",
+			"map",
+			"match2",
+			"mcq3",
+			"flow",
+			"notes",
+			"sent4",
+		]);
+		for (const legacy of ["note", "tablecomp", "flowchart"]) {
+			const issues = validatePartForReady(
+				"reading",
+				readingPart({ type: legacy }),
+			);
+			expect(issues.some((i) => i.path === "type")).toBe(true);
+		}
+	});
+
+	test("LIBRARY_CLOZE_TYPES hỗ trợ fill_blank, diagram, summary, sent và giữ legacy cloze", () => {
+		expect(LIBRARY_CLOZE_TYPES.has("fill_blank")).toBe(true);
+		expect(LIBRARY_CLOZE_TYPES.has("diagram")).toBe(true);
+		expect(LIBRARY_CLOZE_TYPES.has("summary")).toBe(true);
+		expect(LIBRARY_CLOZE_TYPES.has("sent")).toBe(true);
+		expect(LIBRARY_CLOZE_TYPES.has("note")).toBe(true);
+
+		const inlineFillBlank = validatePartForReady(
+			"reading",
+			readingPart({
+				type: "fill_blank",
+				questions: [
+					{ stem: "Water boils at ____ degrees.", answer: "100", alts: "" },
+				],
+				groups: [
+					{
+						id: "g1",
+						type: "fill_blank",
+						instruction: "",
+						startIndex: 0,
+						count: 1,
+						optionBank: [],
+						answersInline: true,
+						splitContent: false,
+						dragDrop: false,
+					},
+				],
+			}),
+		);
+		expect(inlineFillBlank).toEqual([]);
+	});
+
+	test("summary optionBank tuỳ chọn: rỗng hợp lệ, có word bank thì kiểm nhãn A–T", () => {
+		expect(isLibraryBankableType("reading", "summary")).toBe(true);
+		expect(
+			libraryOptionBankKindFor("reading", "summary", [], []),
+		).toBeUndefined();
+		expect(
+			libraryOptionBankKindFor("reading", "summary", [], ["heat", "cold"]),
+		).toBe("letter");
+
+		// Summary không bank → đạt
+		expect(
+			validatePartForReady(
+				"reading",
+				readingPart({
+					type: "summary",
+					questions: [{ stem: "The ____ rises", answer: "tide", alts: "" }],
+					optionBank: [],
+				}),
+			),
+		).toEqual([]);
+
+		// Summary có word bank → đáp án phải nằm trong nhãn A..T của bank
+		expect(
+			validatePartForReady(
+				"reading",
+				readingPart({
+					type: "summary",
+					questions: [
+						{ stem: "q1 ____", answer: "A", alts: "" },
+						{ stem: "q2 ____", answer: "A", alts: "" },
+						{ stem: "q3 ____", answer: "B", alts: "" },
+					],
+					optionBank: ["sun", "moon"],
+				}),
+			),
+		).toEqual([]);
+
+		const outOfRange = validatePartForReady(
+			"reading",
+			readingPart({
+				type: "summary",
+				questions: [{ stem: "q1 ____", answer: "C", alts: "" }],
+				optionBank: ["sun", "moon"],
+			}),
+		);
+		expect(outOfRange.some((i) => i.path === "questions.0.answer")).toBe(true);
+	});
+
+	test("optionBank reading hỗ trợ tối đa 20 mục (A..T / i..xx) và cho phép tái dùng chữ ở info/features/match_names/matching", () => {
+		expect(LIBRARY_OPTION_BANK_MAX).toBe(20);
+		expect(LIBRARY_OPTION_BANK_TYPES.reading).toContain("match_names");
+		expect(LIBRARY_OPTION_BANK_TYPES.reading).toContain("matching");
+
+		const twentyOptions = Array.from({ length: 20 }, (_, i) => `Opt ${i + 1}`);
+		const twentyOneOptions = [...twentyOptions, "Opt 21"];
+
+		expect(
+			libraryQuestionGroupSchema.safeParse({
+				id: "g1",
+				type: "headings",
+				instruction: "",
+				startIndex: 0,
+				count: 1,
+				optionBank: twentyOptions,
+			}).success,
+		).toBe(true);
+		expect(
+			libraryQuestionGroupSchema.safeParse({
+				id: "g1",
+				type: "headings",
+				instruction: "",
+				startIndex: 0,
+				count: 1,
+				optionBank: twentyOneOptions,
+			}).success,
+		).toBe(false);
+		expect(
+			libraryPartUpsertSchema.safeParse(
+				readingPart({ optionBank: twentyOneOptions }),
+			).success,
+		).toBe(false);
+
+		// headings 20 mục với đáp án xx hợp lệ
+		expect(
+			validatePartForReady(
+				"reading",
+				readingPart({
+					type: "headings",
+					optionBank: twentyOptions,
+					questions: twentyOptions.map((_, idx) => ({
+						stem: `Paragraph ${idx + 1}`,
+						answer: LIBRARY_ANSWER_CHOICES.roman[idx] ?? "i",
+						alts: "",
+					})),
+				}),
+			),
+		).toEqual([]);
+
+		// match_names / matching / info / features: 4 câu trên 2 option (tái dùng chữ) → hợp lệ!
+		for (const reusableType of [
+			"info",
+			"features",
+			"match_names",
+			"matching",
+		] as const) {
+			expect(
+				validatePartForReady(
+					"reading",
+					readingPart({
+						type: reusableType,
+						optionBank: ["Dr. Smith", "Prof. Lee"],
+						questions: [
+							{ stem: "Statement 1", answer: "A", alts: "" },
+							{ stem: "Statement 2", answer: "B", alts: "" },
+							{ stem: "Statement 3", answer: "A", alts: "" },
+							{ stem: "Statement 4", answer: "B", alts: "" },
+						],
+					}),
+				),
+			).toEqual([]);
+		}
+
+		// headings / sentend vẫn bắt buộc đủ phủ số câu
+		const tooFewHeadings = validatePartForReady(
+			"reading",
+			readingPart({
+				type: "headings",
+				optionBank: ["i", "ii"],
+				questions: [
+					{ stem: "P1", answer: "i", alts: "" },
+					{ stem: "P2", answer: "ii", alts: "" },
+					{ stem: "P3", answer: "i", alts: "" },
+				],
+			}),
+		);
+		expect(tooFewHeadings.some((i) => i.path === "optionBank")).toBe(true);
+	});
+
+	test("mcq_many: cần ≥2 opts không rỗng, answer A–H trong phạm vi opts, và answerSet", () => {
+		const validMcqMany = readingPart({
+			type: "mcq_many",
+			questions: [
+				{
+					stem: "Choose TWO reasons (1)",
+					opts: ["Cost", "Speed", "Safety", "Noise", "Space"],
+					answer: "B",
+					alts: "",
+					answerSet: "set-1",
+				},
+				{
+					stem: "Choose TWO reasons (2)",
+					opts: ["Cost", "Speed", "Safety", "Noise", "Space"],
+					answer: "E",
+					alts: "",
+					answerSet: "set-1",
+				},
+			],
+		});
+		expect(validatePartForReady("reading", validMcqMany)).toEqual([]);
+
+		// Thiếu opts hoặc chỉ 1 opt không rỗng
+		const fewOpts = validatePartForReady(
+			"reading",
+			readingPart({
+				type: "mcq_many",
+				questions: [
+					{
+						stem: "q1",
+						opts: ["Only one", "  "],
+						answer: "A",
+						alts: "",
+						answerSet: "s1",
+					},
+					{
+						stem: "q2",
+						opts: ["A", "B"],
+						answer: "B",
+						alts: "",
+						answerSet: "s1",
+					},
+				],
+			}),
+		);
+		expect(fewOpts.some((i) => i.path === "questions.0.opts")).toBe(true);
+
+		// Đáp án ngoài phạm vi opts hoặc ngoài A–H
+		const badAnswer = validatePartForReady(
+			"reading",
+			readingPart({
+				type: "mcq_many",
+				questions: [
+					{
+						stem: "q1",
+						opts: ["One", "Two"],
+						answer: "C",
+						alts: "",
+						answerSet: "s1",
+					},
+					{
+						stem: "q2",
+						opts: ["One", "Two"],
+						answer: "A",
+						alts: "",
+						answerSet: "s1",
+					},
+				],
+			}),
+		);
+		expect(badAnswer.some((i) => i.path === "questions.0.answer")).toBe(true);
+
+		// Đáp án trỏ vào slot rỗng dù mảng opts đủ độ dài
+		const blankOptionAnswer = validatePartForReady(
+			"reading",
+			readingPart({
+				type: "mcq_many",
+				questions: [
+					{
+						stem: "q1",
+						opts: ["One", "Two", "   "],
+						answer: "C",
+						alts: "",
+						answerSet: "s1",
+					},
+					{
+						stem: "q2",
+						opts: ["One", "Two", "   "],
+						answer: "A",
+						alts: "",
+						answerSet: "s1",
+					},
+				],
+			}),
+		);
+		expect(blankOptionAnswer.some((i) => i.path === "questions.0.answer")).toBe(
+			true,
+		);
+
+		// Thiếu answerSet
+		const noSet = validatePartForReady(
+			"reading",
+			readingPart({
+				type: "mcq_many",
+				questions: [
+					{ stem: "q1", opts: ["One", "Two"], answer: "A", alts: "" },
+					{ stem: "q2", opts: ["One", "Two"], answer: "B", alts: "" },
+				],
+			}),
+		);
+		expect(noSet.some((i) => i.path === "questions.0.answerSet")).toBe(true);
+		expect(noSet.some((i) => i.path === "questions.1.answerSet")).toBe(true);
 	});
 });
 

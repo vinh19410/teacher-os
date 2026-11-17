@@ -550,6 +550,64 @@ export const ASSIGNMENT_ANSWER_CHOICES = {
 	letter: ["A", "B", "C", "D", "E", "F", "G", "H"],
 } as const;
 
+export const LIBRARY_OPTION_BANK_MAX = 20;
+export const LIBRARY_ANSWER_CHOICES = {
+	roman: [
+		"i",
+		"ii",
+		"iii",
+		"iv",
+		"v",
+		"vi",
+		"vii",
+		"viii",
+		"ix",
+		"x",
+		"xi",
+		"xii",
+		"xiii",
+		"xiv",
+		"xv",
+		"xvi",
+		"xvii",
+		"xviii",
+		"xix",
+		"xx",
+	],
+	letter: [
+		"A",
+		"B",
+		"C",
+		"D",
+		"E",
+		"F",
+		"G",
+		"H",
+		"I",
+		"J",
+		"K",
+		"L",
+		"M",
+		"N",
+		"O",
+		"P",
+		"Q",
+		"R",
+		"S",
+		"T",
+	],
+} as const;
+
+/** Extended answer choices for library option banks (up to 20 A–T / i–xx). */
+export function extendedAnswerChoices(
+	kind: keyof typeof ASSIGNMENT_ANSWER_CHOICES,
+): readonly string[] {
+	if (kind === "letter" || kind === "roman") {
+		return LIBRARY_ANSWER_CHOICES[kind];
+	}
+	return ASSIGNMENT_ANSWER_CHOICES[kind];
+}
+
 /**
  * Exported so the web catalog can sync its KIND map against this one —
  * without the export, a drifted web kind map ships silently (#269).
@@ -563,9 +621,12 @@ export const answerKindByType: Record<
 	info: "letter",
 	ynng: "ynng",
 	mcq: "mcq4",
+	mcq_many: "letter",
 	mcq1: "mcq3",
 	map: "letter",
 	match2: "letter",
+	match_names: "letter",
+	matching: "letter",
 	mcq3: "mcq3",
 	features: "letter",
 	sentend: "letter",
@@ -641,8 +702,12 @@ export const QUIZ_TYPE_DISPLAY: Record<
 			"Do the following statements agree with the views of the writer? Write YES / NO / NOT GIVEN.",
 	},
 	mcq: {
-		label: "Multiple choice",
+		label: "Multiple choice (One answer)",
 		instruction: "Choose the correct letter A, B, C or D.",
+	},
+	mcq_many: {
+		label: "Multiple choice (Multiple answers)",
+		instruction: "Choose the correct letters from the list.",
 	},
 	mcq1: {
 		label: "Multiple choice",
@@ -667,6 +732,14 @@ export const QUIZ_TYPE_DISPLAY: Record<
 		instruction:
 			"Match each statement with the correct person/place. Choose from the option bank.",
 	},
+	match_names: {
+		label: "Matching names",
+		instruction: "Match each statement with the correct person from the list.",
+	},
+	matching: {
+		label: "Matching",
+		instruction: "Match each item with the correct option from the list.",
+	},
 	sentend: {
 		label: "Matching sentence endings",
 		instruction: "Complete each sentence with the correct ending A–H.",
@@ -675,6 +748,11 @@ export const QUIZ_TYPE_DISPLAY: Record<
 		label: "Sentence completion",
 		instruction:
 			"Complete the sentences below. Choose NO MORE THAN THREE WORDS from the passage for each answer.",
+	},
+	fill_blank: {
+		label: "Fill in the blank",
+		instruction:
+			"Complete the text below. Choose NO MORE THAN THREE WORDS AND/OR A NUMBER from the passage for each answer.",
 	},
 	sent4: {
 		label: "Sentence completion",
@@ -697,9 +775,9 @@ export const QUIZ_TYPE_DISPLAY: Record<
 			"Answer the questions below. Choose NO MORE THAN THREE WORDS AND/OR A NUMBER from the passage.",
 	},
 	diagram: {
-		label: "Diagram label completion",
+		label: "Map / Diagram labelling",
 		instruction:
-			"Label the diagram below. Choose NO MORE THAN TWO WORDS from the passage for each answer.",
+			"Label the map or diagram below. Choose NO MORE THAN TWO WORDS from the passage for each answer.",
 	},
 	summary: {
 		label: "Summary completion",
@@ -816,7 +894,7 @@ function countPromptBlanks(stem: string): number {
 export const assignmentQuestionSchema = z
 	.object({
 		stem: z.string().trim().max(500),
-		opts: z.array(z.string().max(500)).max(6).nullish(),
+		opts: z.array(z.string().max(500)).max(8).nullish(),
 		answer: z.string().trim().max(200),
 		alts: z.string().max(500).default(""),
 		/**

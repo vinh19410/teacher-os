@@ -6,7 +6,12 @@ import { splitQuizIntro } from "./quiz-intro-sections";
 export interface QuizPartQuestion extends StudentQuizQuestion {
 	q: number;
 	number: number;
+	answerSet?: string | null;
 }
+
+type QuizPartSourceQuestion = StudentQuizQuestion & {
+	answerSet?: string | null;
+};
 
 /**
  * Part hiển thị trên take screen. Nguồn part: (1) cụm câu liên tiếp cùng
@@ -41,7 +46,7 @@ export interface QuizPart {
  * type hiệu dụng. `qStart`/`number` đánh theo q toàn cục (1-based) với offset
  * `qOffset` (0 cho take screen — hành vi cũ; >0 cho view multi-part #433). */
 function clusterByType(
-	questions: readonly StudentQuizQuestion[],
+	questions: readonly QuizPartSourceQuestion[],
 	fromQ: number,
 	toQ: number,
 	promptType: string,
@@ -92,7 +97,7 @@ function finalizeParts(parts: QuizPart[]): QuizPart[] {
  * đổi) cộng vào `q`/`number`/`qStart` SAU khi split (split tự quy số về
  * local — red-team R2). Section part mang `source: "intro"` (RT11). */
 export function buildQuizParts(
-	questions: readonly StudentQuizQuestion[],
+	questions: readonly QuizPartSourceQuestion[],
 	promptType: string,
 	intro = "",
 	qOffset = 0,

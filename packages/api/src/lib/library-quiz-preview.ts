@@ -94,6 +94,7 @@ export function libraryPartToQuizView(
 					opts: question.opts ?? null,
 					type: effective[index] ?? input.type,
 					pin: question.pin ?? null,
+					...(question.answerSet ? { answerSet: question.answerSet } : {}),
 				})),
 				input.type,
 				input.intro,
@@ -135,6 +136,7 @@ export function libraryPartToQuizView(
 				opts: question.opts ?? null,
 				type: effective[offset] ?? group.type,
 				pin: question.pin ?? null,
+				...(question.answerSet ? { answerSet: question.answerSet } : {}),
 			})),
 		});
 		const flags: UnsupportedGroupFlag[] = [];

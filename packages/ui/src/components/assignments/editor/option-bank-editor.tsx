@@ -1,8 +1,9 @@
-import { ASSIGNMENT_ANSWER_CHOICES } from "@teacher-os/api/contracts";
+import { extendedAnswerChoices } from "@teacher-os/api/contracts";
 import { Button } from "@teacher-os/ui/components/web-kit/button";
 import { Input } from "@teacher-os/ui/components/web-kit/field";
 import {
-	bankLabel,
+	type AnswerKind,
+	extendedBankLabel,
 	kindOf,
 	OPTION_BANK_MAX,
 	type QuestionItem,
@@ -10,16 +11,19 @@ import {
 
 /**
  * Option bank editor (phase-02 FR3). One input per bank row; labels are
- * POSITIONAL (A… / i… via `bankLabel`) — the contract stores bare strings
+ * POSITIONAL (A… / i… via `extendedBankLabel`) — the contract stores bare strings
  * and the label at index k is whatever sits at index k right now. That is
  * why deleting row i must reset every keyed answer whose label position is
  * >= i (`removeBankRow`): after renumbering, an old label would silently
  * point at a different option and auto-grading would mark wrong keys.
  */
 
-/** Bank rows needed so every question has a label + 2 spares, capped at 8. */
-export function bankTargetCount(items: QuestionItem[]): number {
-	return Math.min(items.length + 2, OPTION_BANK_MAX);
+/** Bank rows needed so every question has a label + 2 spares, capped at `maxBank`. */
+export function bankTargetCount(
+	items: QuestionItem[],
+	maxBank = OPTION_BANK_MAX,
+): number {
+	return Math.min(items.length + 2, maxBank);
 }
 
 /** Pad the bank with empty rows up to `count`; never shrinks. */
@@ -28,10 +32,14 @@ export function fillBankToCount(bank: string[], count: number): string[] {
 	return [...bank, ...Array<string>(count - bank.length).fill("")];
 }
 
+function bankKindOf(typeId: string): AnswerKind {
+	if (typeId === "summary") return "letter";
+	return kindOf(typeId);
+}
+
 const labelAlphabet = (typeId: string): readonly string[] => {
-	const kind = kindOf(typeId);
-	if (kind === "letter" || kind === "roman")
-		return ASSIGNMENT_ANSWER_CHOICES[kind];
+	const kind = bankKindOf(typeId);
+	if (kind === "letter" || kind === "roman") return extendedAnswerChoices(kind);
 	return [];
 };
 
@@ -65,6 +73,8 @@ export function OptionBankEditor({
 	items,
 	showErrors,
 	error,
+	maxBank = OPTION_BANK_MAX,
+	title = "Ngân hàng lựa chọn",
 	onBankChange,
 	onItemsChange,
 }: {
@@ -74,12 +84,14 @@ export function OptionBankEditor({
 	showErrors: boolean;
 	/** Pre-gated mirror of the contract rules — shown only with showErrors. */
 	error?: string;
+	maxBank?: number;
+	title?: string;
 	onBankChange: (bank: string[]) => void;
 	onItemsChange: (items: QuestionItem[]) => void;
 }) {
-	const kind = kindOf(typeId);
-	const target = bankTargetCount(items);
-	const atMax = bank.length >= OPTION_BANK_MAX;
+	const kind = bankKindOf(typeId);
+	const target = bankTargetCount(items, maxBank);
+	const atMax = bank.length >= maxBank;
 	const updateRow = (index: number, value: string) => {
 		onBankChange(
 			bank.map((row, rowIndex) => (rowIndex === index ? value : row)),
@@ -88,11 +100,9 @@ export function OptionBankEditor({
 	return (
 		<div className="flex flex-col gap-2 rounded-md border border-border bg-muted p-3">
 			<div className="flex flex-wrap items-center justify-between gap-2">
-				<p className="font-medium text-muted-foreground text-xs">
-					Ngân hàng lựa chọn
-				</p>
+				<p className="font-medium text-muted-foreground text-xs">{title}</p>
 				<span className="text-muted-foreground text-xs">
-					{bank.length}/{OPTION_BANK_MAX} mục
+					{bank.length}/{maxBank} mục
 				</span>
 			</div>
 			<p className="text-muted-foreground text-xs">
@@ -101,7 +111,7 @@ export function OptionBankEditor({
 				đáp án đã khóa từ vị trí đó — nhãn là vị trí, không dán theo nội dung.
 			</p>
 			{bank.map((row, index) => {
-				const label = bankLabel(kind, index);
+				const label = extendedBankLabel(kind, index);
 				return (
 					<div key={index} className="flex items-center gap-2">
 						<span

@@ -17,6 +17,7 @@ const question = (
 	alts: "",
 	...(overrides.type ? { type: overrides.type } : {}),
 	...(overrides.pin ? { pin: overrides.pin } : {}),
+	...(overrides.answerSet ? { answerSet: overrides.answerSet } : {}),
 	...(overrides.explanation ? { explanation: `CANARY-EXPLAIN-${stem}` } : {}),
 });
 
@@ -242,5 +243,80 @@ describe("libraryPartToQuizView — part có nhóm (groups)", () => {
 			{ skill: "reading", qOffset: 0 },
 		);
 		expect(view.detail.intro).toContain("Preamble giữ nguyên");
+	});
+
+	it("chỉ truyền answerSet khi khác rỗng (giữ shape cũ cho câu thường) và vẫn strip key", () => {
+		const groupedWithSet = partInput({
+			type: "mcq_many",
+			questions: [
+				{
+					...question("m1", {
+						type: "mcq_many",
+						answerSet: "pair-1",
+						explanation: "y",
+					}),
+					opts: ["Opt A", "Opt B", "Opt C"],
+				},
+				{
+					...question("m2", {
+						type: "mcq_many",
+						answerSet: "pair-1",
+					}),
+					opts: ["Opt A", "Opt B", "Opt C"],
+				},
+				question("t3", { type: "tfng" }),
+			],
+			groups: [
+				{
+					id: "g1",
+					type: "mcq_many",
+					instruction: "<p>Choose TWO</p>",
+					startIndex: 0,
+					count: 2,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+				{
+					id: "g2",
+					type: "tfng",
+					instruction: "",
+					startIndex: 2,
+					count: 1,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+			],
+		});
+		const view = libraryPartToQuizView(groupedWithSet, {
+			skill: "reading",
+			qOffset: 0,
+		});
+		expect(view.parts[0]?.questions[0]?.answerSet).toBe("pair-1");
+		expect(view.parts[0]?.questions[1]?.answerSet).toBe("pair-1");
+		expect("answerSet" in (view.parts[1]?.questions[0] ?? {})).toBe(false);
+
+		// Nhóm ngầm cũng truyền answerSet khi có và không thêm key khi thiếu
+		const ungroupedWithSet = partInput({
+			type: "mcq_many",
+			questions: [question("u1", { answerSet: "u-set" }), question("u2")],
+		});
+		const ungroupedView = libraryPartToQuizView(ungroupedWithSet, {
+			skill: "reading",
+			qOffset: 0,
+		});
+		expect(ungroupedView.parts[0]?.questions[0]?.answerSet).toBe("u-set");
+		expect("answerSet" in (ungroupedView.parts[0]?.questions[1] ?? {})).toBe(
+			false,
+		);
+
+		const json = opts(view);
+		expect(json).not.toContain("CANARY-KEY");
+		expect(json).not.toContain("CANARY-EXPLAIN");
+		expect(json).not.toContain("CANARY-TRANSCRIPT");
+		expect(json).not.toContain("CANARY-NOTE");
 	});
 });

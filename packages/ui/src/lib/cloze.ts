@@ -279,11 +279,15 @@ export function segmentsToItems(
  * a field-less "invalid body", so the editor must never rely on it. Returns
  * one human-readable message per breached cap.
  */
-export function clozeApplyIssues(segments: ClozeSegment[]): string[] {
+export function clozeApplyIssues(
+	segments: ClozeSegment[],
+	maxBlanks = CLOZE_MAX_BLANKS,
+): string[] {
 	const issues: string[] = [];
-	if (segments.length > CLOZE_MAX_BLANKS) {
+	const blankCap = Math.max(0, Math.min(CLOZE_MAX_BLANKS, maxBlanks));
+	if (segments.length > blankCap) {
 		issues.push(
-			`Tối đa ${CLOZE_MAX_BLANKS} chỗ trống cho một phần — đang có ${segments.length}. Bớt chỗ trống hoặc tách thành hai phần.`,
+			`Tối đa ${blankCap} chỗ trống cho ${blankCap < CLOZE_MAX_BLANKS ? "nhóm này" : "một phần"} — đang có ${segments.length}. Bớt chỗ trống hoặc tách thành hai phần.`,
 		);
 	}
 	segments.forEach((segment, index) => {
@@ -512,11 +516,15 @@ export function tableSegments(state: TableGridState): ClozeSegment[] {
 }
 
 /** Same caps as the cloze path, applied to the grid's blanks (FR2 parity). */
-export function tableApplyIssues(state: TableGridState): string[] {
+export function tableApplyIssues(
+	state: TableGridState,
+	maxBlanks = CLOZE_MAX_BLANKS,
+): string[] {
 	const issues: string[] = [];
-	if (state.blanks.length > CLOZE_MAX_BLANKS) {
+	const blankCap = Math.max(0, Math.min(CLOZE_MAX_BLANKS, maxBlanks));
+	if (state.blanks.length > blankCap) {
 		issues.push(
-			`Tối đa ${CLOZE_MAX_BLANKS} ô trống cho một phần — đang có ${state.blanks.length}.`,
+			`Tối đa ${blankCap} ô trống cho ${blankCap < CLOZE_MAX_BLANKS ? "nhóm này" : "một phần"} — đang có ${state.blanks.length}.`,
 		);
 	}
 	tableSegments(state).forEach((segment, index) => {

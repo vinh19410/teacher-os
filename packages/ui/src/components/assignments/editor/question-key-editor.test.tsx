@@ -1,9 +1,14 @@
+// @vitest-environment jsdom
+
+import { cleanup, fireEvent, render } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { emptyItem } from "./assignment-presets";
 import { hasItemContent } from "./cloze-editor";
 import { BulkKeyPastePanel, QuestionKeyEditor } from "./question-key-editor";
+
+afterEach(cleanup);
 
 describe("QuestionKeyEditor (#218 v5)", () => {
 	it("renders TFNG mode with choices chips and key-scan", () => {
@@ -490,5 +495,185 @@ describe("ClozeEditor.hasItemContent — bảo vệ explanation (#571)", () => {
 				explanation: "<p>   </p>",
 			}),
 		).toBe(false);
+	});
+});
+
+describe("QuestionKeyEditor — Wave 2A (mcq_many & libraryReadingMode)", () => {
+	const base = {
+		skill: "reading",
+		partId: "p1",
+		intro: "",
+		showErrors: false,
+		status: "ready" as const,
+		onIntroChange: vi.fn(),
+		onItemsChange: vi.fn(),
+		onBankChange: vi.fn(),
+		imageUrl: "",
+		onImageUrlChange: vi.fn(),
+	};
+
+	it("renders McqManyEditor instead of AnswerKeyGrid/BulkKeyPastePanel for mcq_many", () => {
+		const html = renderToStaticMarkup(
+			<QuestionKeyEditor
+				{...base}
+				typeId="mcq_many"
+				items={[emptyItem("mcq_many")]}
+			/>,
+		);
+		expect(html).toContain("Câu 1–2 · Chọn 2 đáp án đúng");
+		expect(html).toContain('aria-label="Nội dung câu hỏi chung"');
+		expect(html).not.toContain("Lưới đáp án");
+		expect(html).not.toContain("Thêm key hàng loạt");
+		expect(html).not.toContain("Thêm câu");
+	});
+
+	it("libraryReadingMode summary: cloze/table toggle defaults by stem and word bank toggle manages optionBank", () => {
+		const tableHtml = renderToStaticMarkup(
+			<QuestionKeyEditor
+				{...base}
+				typeId="summary"
+				libraryReadingMode
+				maxBank={20}
+				items={[
+					{
+						stem: "[table] r1 c1: Period / Event",
+						answer: "A",
+						opts: null,
+						alts: "",
+					},
+				]}
+				optionBank={["word1", "word2"]}
+			/>,
+		);
+		expect(tableHtml).toContain("Đoạn văn (Cloze)");
+		expect(tableHtml).toContain("Bảng (Grid)");
+		expect(tableHtml).toContain("Soạn bảng");
+		expect(tableHtml).toContain("Dùng ngân hàng từ (Word Bank)");
+		expect(tableHtml).toContain("Ngân hàng từ (Word Bank)");
+		expect(tableHtml).toContain("2/20 mục");
+		// Summary with word bank shows choice chips A, B instead of text inputs
+		expect(tableHtml).toContain('aria-label="Câu 1: A"');
+		expect(tableHtml).not.toContain('aria-label="Đáp án chấm tự động"');
+
+		// Interactive toggling
+		const onBankChange = vi.fn();
+		const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+		const { getByRole, getByLabelText, container, rerender } = render(
+			<QuestionKeyEditor
+				{...base}
+				typeId="summary"
+				libraryReadingMode
+				maxBank={20}
+				items={[{ stem: "Text ____", answer: "alpha", opts: null, alts: "" }]}
+				optionBank={[]}
+				onBankChange={onBankChange}
+			/>,
+		);
+		expect(container.textContent).toContain("Soạn đoạn hoàn thành");
+		expect(container.textContent).not.toContain("Ngân hàng từ (Word Bank)");
+
+		// Toggle to Table mode
+		fireEvent.click(getByRole("button", { name: "Bảng (Grid)" }));
+		expect(container.textContent).toContain("Soạn bảng");
+
+		// Enable Word Bank checkbox
+		const checkbox = getByLabelText(
+			"Dùng ngân hàng từ (Word Bank)",
+		) as HTMLInputElement;
+		expect(checkbox.checked).toBe(false);
+		fireEvent.click(checkbox);
+		expect(checkbox.checked).toBe(true);
+		expect(container.textContent).toContain("Ngân hàng từ (Word Bank)");
+
+		// With non-empty optionBank, unchecking triggers confirm and clears to []
+		rerender(
+			<QuestionKeyEditor
+				{...base}
+				typeId="summary"
+				libraryReadingMode
+				maxBank={20}
+				items={[{ stem: "Text ____", answer: "A", opts: null, alts: "" }]}
+				optionBank={["word1", "word2"]}
+				onBankChange={onBankChange}
+			/>,
+		);
+		fireEvent.click(getByLabelText("Dùng ngân hàng từ (Word Bank)"));
+		expect(confirmSpy).toHaveBeenCalledTimes(1);
+		expect(onBankChange).toHaveBeenCalledWith([]);
+		confirmSpy.mockRestore();
+	});
+
+	it("libraryReadingMode fill_blank: supports cloze and table toggle", () => {
+		const { getByRole, container } = render(
+			<QuestionKeyEditor
+				{...base}
+				typeId="fill_blank"
+				libraryReadingMode
+				items={[{ stem: "Fill ____", answer: "sun", opts: null, alts: "" }]}
+			/>,
+		);
+		expect(container.textContent).toContain("Soạn đoạn hoàn thành");
+		fireEvent.click(getByRole("button", { name: "Bảng (Grid)" }));
+		expect(container.textContent).toContain("Soạn bảng");
+	});
+
+	it("libraryReadingMode diagram: shows ClozeEditor with PinEditor and does not require pin on reading", () => {
+		const html = renderToStaticMarkup(
+			<QuestionKeyEditor
+				{...base}
+				skill="reading"
+				typeId="diagram"
+				libraryReadingMode
+				showErrors
+				status="ready"
+				imageUrl="https://example.com/diagram.png"
+				items={[
+					{
+						stem: "The ____ valve opens",
+						answer: "intake",
+						opts: null,
+						alts: "",
+						pin: null,
+					},
+				]}
+			/>,
+		);
+		expect(html).toContain("Soạn đoạn hoàn thành");
+		expect(html).toContain("Bấm lên ảnh để đặt ghim");
+		expect(html).not.toContain("Đặt ghim trên ảnh cho câu này.");
+
+		// Listening map still requires pin when ready
+		const mapHtml = renderToStaticMarkup(
+			<QuestionKeyEditor
+				{...base}
+				skill="listening"
+				typeId="map"
+				libraryReadingMode
+				showErrors
+				status="ready"
+				imageUrl="https://example.com/map.png"
+				items={[
+					{ stem: "Location 1", answer: "A", opts: null, alts: "", pin: null },
+				]}
+			/>,
+		);
+		expect(mapHtml).toContain("Đặt ghim trên ảnh cho câu này.");
+	});
+
+	it("libraryReadingMode match_names/matching show OptionBankEditor with maxBank=20", () => {
+		for (const typeId of ["match_names", "matching"]) {
+			const html = renderToStaticMarkup(
+				<QuestionKeyEditor
+					{...base}
+					typeId={typeId}
+					libraryReadingMode
+					maxBank={20}
+					optionBank={["Smith", "Jones"]}
+					items={[{ stem: "Statement", answer: "A", opts: null, alts: "" }]}
+				/>,
+			);
+			expect(html).toContain("2/20 mục");
+			expect(html).toContain('aria-label="Câu 1: A"');
+		}
 	});
 });

@@ -208,6 +208,66 @@ describe("patchGroup", () => {
 		expect(next.groups[1]?.instruction).toBe("<p>Hướng dẫn</p>");
 		expectParses(next);
 	});
+
+	it("addGroup('mcq_many') khởi tạo 2 câu chung answerSet; patchGroup rời mcq_many dọn answerSet và opts", () => {
+		const added = addGroup(baseValue(), "mcq_many");
+		expect(added.groups[1]?.count).toBe(2);
+		const setA = added.questions[3]?.answerSet;
+		const setB = added.questions[4]?.answerSet;
+		expect(setA).toBeTruthy();
+		expect(setB).toBe(setA);
+		expect(added.questions[3]?.opts).toHaveLength(5);
+		expectParses(added);
+
+		const switched = patchGroup(added, 1, { type: "tfng" });
+		expect(switched.questions[3]?.answerSet).toBeUndefined();
+		expect(switched.questions[4]?.answerSet).toBeUndefined();
+		expect(switched.questions[3]?.opts).toBeNull();
+		expectParses(switched);
+	});
+
+	it("patchGroup rời mcq_many sang mcq cắt/pad opts về đúng 4 phần tử và xóa đáp án E–H", () => {
+		const added = addGroup(baseValue(), "mcq_many");
+		const withSixOpts = {
+			...added,
+			questions: added.questions.map((question, index) =>
+				index >= 3
+					? {
+							...question,
+							stem: "Choose TWO",
+							opts: ["One", "Two", "Three", "Four", "Five", "Six"],
+							answer: index === 3 ? "B" : "F",
+						}
+					: question,
+			),
+		};
+		const toMcq = patchGroup(withSixOpts, 1, { type: "mcq" });
+		expect(toMcq.questions[3]?.opts).toEqual(["One", "Two", "Three", "Four"]);
+		expect(toMcq.questions[3]?.answer).toBe("B");
+		expect(toMcq.questions[3]?.answerSet).toBeUndefined();
+		expect(toMcq.questions[4]?.opts).toEqual(["One", "Two", "Three", "Four"]);
+		expect(toMcq.questions[4]?.answer).toBe("");
+		expectParses(toMcq);
+	});
+
+	it("addGroup / patchGroup không vượt trần 40 câu và không tạo cụm mcq_many 1 câu ở mốc 39–40", () => {
+		const at39 = {
+			...baseValue(),
+			questions: Array.from({ length: 39 }, (_, index) => ({
+				stem: `Câu ${index + 1}`,
+				opts: null,
+				answer: "TRUE",
+				alts: "",
+				pin: null,
+			})),
+		};
+		expect(addGroup(at39, "mcq_many")).toBe(at39);
+
+		const added40 = addGroup(at39, "tfng");
+		expect(added40.questions).toHaveLength(40);
+		expect(addGroup(added40, "tfng")).toBe(added40);
+		expect(patchGroup(added40, 1, { type: "mcq_many" })).toBe(added40);
+	});
 });
 
 describe("moveQuestion", () => {
