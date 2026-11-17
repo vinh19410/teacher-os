@@ -1,12 +1,15 @@
+import { LEAD_COURSE_LABELS } from "@teacher-os/api/lead-contracts";
 import {
 	locatePlacementErrors,
 	PLACEMENT_ERROR_CATEGORIES,
 	type PlacementError,
 	type PlacementErrorCategory,
+	type PlacementPublishedBand,
 	type PlacementPublishedSpeakingTask,
 	type PlacementReadingPassageKind,
 	type PlacementSnapshot,
 	type StudentPlacementSubmit,
+	stripInlineCefrLabel,
 } from "@teacher-os/api/placement-test-contracts";
 
 export const PLACEMENT_RECOMMENDED_TIMER_SECONDS = 40 * 60;
@@ -609,4 +612,94 @@ export function buildPlacementHighlightSegments(
 		segments.push({ kind: "text", start: cursor, text: text.slice(cursor) });
 	}
 	return { located, segments };
+}
+
+export const DEFAULT_PLACEMENT_BANDS: readonly PlacementPublishedBand[] = [
+	{
+		min: 0,
+		max: 29,
+		cefr: "Pre-A1",
+		course: "foundation-core",
+		courseLabel: LEAD_COURSE_LABELS["foundation-core"],
+		displayCourse: "Chưa đủ nền cho Level 1",
+		advice:
+			"Nên học lớp nền tảng / kèm 1-1 khoảng 1–2 tháng (phát âm, câu cơ bản) rồi vào Level 1; hoặc vào Level 1 với hỗ trợ thêm.",
+	},
+	{
+		min: 30,
+		max: 54,
+		cefr: "A1",
+		course: "comm-1",
+		courseLabel: LEAD_COURSE_LABELS["comm-1"],
+		displayCourse: "Communication English Level 1",
+		advice: "Học trọn khoá Level 1 từ Lesson 1.",
+	},
+	{
+		min: 55,
+		max: 67,
+		cefr: "A2",
+		course: "comm-1",
+		courseLabel: LEAD_COURSE_LABELS["comm-1"],
+		displayCourse: "Communication English Level 1",
+		advice:
+			"Học Level 1 để chắc nền, tập trung Speaking theo cấu trúc Answer → Reason → Example; tiến nhanh lên Level 2.",
+	},
+	{
+		min: 68,
+		max: 84,
+		cefr: "A2+ / B1 thấp",
+		course: "comm-2",
+		courseLabel: LEAD_COURSE_LABELS["comm-2"],
+		displayCourse: "Communication English Level 2",
+		advice: "Học trọn khoá Level 2 từ Lesson 1.",
+	},
+	{
+		min: 85,
+		max: 100,
+		cefr: "B1 trở lên",
+		course: "comm-3",
+		courseLabel: LEAD_COURSE_LABELS["comm-3"],
+		displayCourse: "Vượt Level 2",
+		advice: "Nên vào lớp B1+/IELTS nền tảng; Level 2 sẽ quá dễ.",
+	},
+];
+
+export interface PlacementPartGroup<T> {
+	partLabel: string;
+	instruction: string;
+	items: Array<{ item: T; index: number }>;
+}
+
+/**
+ * Nhóm các mục liên tiếp có cùng `partLabel` (đã lược nhãn CEFR) để chỉ hiển
+ * thị tiêu đề Part và `instruction` một lần ở đầu mỗi Part (tách nhóm khi
+ * `instruction` thay đổi rõ rệt).
+ */
+export function groupPlacementItemsByPart<
+	T extends { partLabel: string; instruction: string },
+>(items: readonly T[]): PlacementPartGroup<T>[] {
+	const groups: PlacementPartGroup<T>[] = [];
+	items.forEach((item, index) => {
+		const partLabel = stripInlineCefrLabel(item.partLabel).trim();
+		const instruction = item.instruction.trim();
+		const prev = groups[groups.length - 1];
+		const canMerge =
+			Boolean(partLabel) &&
+			Boolean(prev) &&
+			prev.partLabel === partLabel &&
+			(!instruction || !prev.instruction || prev.instruction === instruction);
+		if (canMerge && prev) {
+			prev.items.push({ item, index });
+			if (!prev.instruction && instruction) {
+				prev.instruction = instruction;
+			}
+		} else {
+			groups.push({
+				partLabel,
+				instruction,
+				items: [{ item, index }],
+			});
+		}
+	});
+	return groups;
 }

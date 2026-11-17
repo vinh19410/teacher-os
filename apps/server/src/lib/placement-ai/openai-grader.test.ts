@@ -104,6 +104,9 @@ describe("OpenAI placement grader (#730)", () => {
 		expect(body.background).toBe(true);
 		expect(body.store).toBe(true);
 		expect(body.input[0].role).toBe("system");
+		expect(body.input[0].content).toContain("Mức 5:");
+		expect(body.input[0].content).toContain("Mức 3:");
+		expect(body.input[0].content).toContain("Mức 1:");
 		expect(body.input[1].content).toContain(ESSAY);
 		expect(body.text.format.type).toBe("json_schema");
 		expect(body.text.format.name).toBe("placement_writing_grade");

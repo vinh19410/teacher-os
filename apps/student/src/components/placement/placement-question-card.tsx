@@ -1,6 +1,7 @@
 import { stripInlineCefrLabel } from "@teacher-os/api/placement-test-contracts";
 import { Input } from "@teacher-os/ui/components/input";
 import { Check } from "lucide-react";
+import { Fragment } from "react";
 import { cn } from "@/lib/cn";
 import { PLACEMENT_OPTION_LETTERS } from "@/lib/placement-test-helpers";
 
@@ -99,21 +100,75 @@ export function PlacementMcqQuestionCard({
 	);
 }
 
+function renderGapPrompt(cleanPrompt: string) {
+	const text = cleanPrompt || "Điền thông tin nghe được vào chỗ trống:";
+	const segments = text.split(/(_{2,})/g);
+	return segments.map((seg, idx) =>
+		/^_{2,}$/.test(seg) ? (
+			<span
+				key={`gap-mark-${idx}`}
+				className="mx-1 inline-flex items-center rounded border border-primary/30 bg-muted px-1.5 py-0.5 font-mono font-semibold text-foreground text-xs"
+			>
+				[?]
+			</span>
+		) : (
+			<Fragment key={`gap-txt-${idx}`}>{seg}</Fragment>
+		),
+	);
+}
+
 export function PlacementGapQuestionCard({
 	questionId,
 	questionNumber,
 	prompt,
 	value,
 	onChange,
+	inline = false,
 }: {
 	questionId: string;
 	questionNumber: number;
 	prompt: string;
 	value: string;
 	onChange: (next: string) => void;
+	inline?: boolean;
 }) {
 	const inputId = `gap-${questionId}`;
 	const cleanPrompt = stripInlineCefrLabel(prompt);
+	const accessiblePrompt = cleanPrompt
+		? cleanPrompt.replace(/_{2,}/g, "chỗ trống")
+		: "Điền đáp án";
+
+	if (inline) {
+		return (
+			<div
+				data-question-id={questionId}
+				className="flex flex-col gap-2.5 border-border border-t py-3 first:border-t-0 first:pt-1 last:pb-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+			>
+				<div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 text-foreground text-sm leading-relaxed">
+					<span className="inline-flex shrink-0 items-center rounded-md bg-muted px-2 py-0.5 font-mono font-semibold text-foreground text-xs tabular-nums">
+						Câu {questionNumber}
+					</span>
+					<span className="font-medium">{renderGapPrompt(cleanPrompt)}</span>
+				</div>
+
+				<div className="w-full shrink-0 sm:w-52">
+					<label htmlFor={inputId} className="sr-only">
+						Câu {questionNumber}: {accessiblePrompt}
+					</label>
+					<Input
+						id={inputId}
+						type="text"
+						value={value}
+						maxLength={120}
+						autoComplete="off"
+						spellCheck={false}
+						placeholder="Nhập từ hoặc số bạn nghe được..."
+						onChange={(e) => onChange(e.target.value)}
+					/>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<fieldset
@@ -130,13 +185,13 @@ export function PlacementGapQuestionCard({
 					</span>
 				</div>
 				<p className="font-medium text-foreground text-sm leading-relaxed">
-					{cleanPrompt || "Điền thông tin nghe được vào chỗ trống:"}
+					{renderGapPrompt(cleanPrompt)}
 				</p>
 			</legend>
 
 			<div className="space-y-1.5">
 				<label htmlFor={inputId} className="sr-only">
-					Câu {questionNumber}: {cleanPrompt || "Điền đáp án"}
+					Câu {questionNumber}: {accessiblePrompt}
 				</label>
 				<Input
 					id={inputId}
@@ -147,6 +202,7 @@ export function PlacementGapQuestionCard({
 					spellCheck={false}
 					placeholder="Nhập từ hoặc số bạn nghe được..."
 					onChange={(e) => onChange(e.target.value)}
+					className="sm:max-w-xs"
 				/>
 				<p className="text-muted-foreground text-xs">
 					Gợi ý: Viết ngắn gọn (không cần viết hoa hay ký tự phụ như $, p.m.).

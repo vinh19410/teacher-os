@@ -21,6 +21,11 @@ vi.mock("sonner", () => ({ toast: toastMock }));
 vi.mock("@/lib/reauth", () => ({ reauth: reauthMock }));
 
 import {
+	PLACEMENT_RUBRIC_INTERMEDIATE_NOTE,
+	PLACEMENT_SPEAKING_RUBRIC,
+	PLACEMENT_WRITING_RUBRIC,
+} from "@teacher-os/api/placement-test-contracts";
+import {
 	initialPlacementGrading,
 	PLACEMENT_AI_POLL_MS,
 	PlacementSubmissionPanel,
@@ -646,6 +651,38 @@ describe("PlacementSubmissionPanel — chấm nháp AI (#730)", () => {
 			</QueryClientProvider>,
 		);
 		expect(await screen.findByText("Chưa có bài nộp")).toBeTruthy();
+	});
+
+	it("hiển thị hướng dẫn thang điểm 5 / 3 / 1 và ghi chú 4 / 2 / 0 cho Writing & Speaking", async () => {
+		stubFetch((url, method) => (isGet(url, method) ? makeSub() : undefined));
+		renderPanel();
+
+		const writingGuide = await screen.findByTestId("writing-rubric-guide");
+		const speakingGuide = screen.getByTestId("speaking-rubric-guide");
+
+		expect(writingGuide.textContent).toContain("Xem thang mô tả 5 / 3 / 1");
+		expect(speakingGuide.textContent).toContain("Xem thang mô tả 5 / 3 / 1");
+		expect(writingGuide.textContent).toContain(
+			PLACEMENT_RUBRIC_INTERMEDIATE_NOTE,
+		);
+		expect(speakingGuide.textContent).toContain(
+			PLACEMENT_RUBRIC_INTERMEDIATE_NOTE,
+		);
+
+		for (const item of PLACEMENT_WRITING_RUBRIC) {
+			expect(writingGuide.textContent).toContain(item.levels[5]);
+			expect(writingGuide.textContent).toContain(item.levels[3]);
+			expect(writingGuide.textContent).toContain(item.levels[1]);
+		}
+		for (const item of PLACEMENT_SPEAKING_RUBRIC) {
+			expect(speakingGuide.textContent).toContain(item.levels[5]);
+			expect(speakingGuide.textContent).toContain(item.levels[3]);
+			expect(speakingGuide.textContent).toContain(item.levels[1]);
+		}
+
+		// Bỏ tick Speaking → ẩn cả rubric lẫn thang mô tả Speaking.
+		fireEvent.click(screen.getByTestId("toggle-speaking-grading"));
+		expect(screen.queryByTestId("speaking-rubric-guide")).toBeNull();
 	});
 
 	it("hiển thị mô tả chấm tự động 3 phần không chứa chữ 'khách quan'", async () => {

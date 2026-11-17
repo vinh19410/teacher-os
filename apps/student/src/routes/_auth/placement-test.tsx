@@ -134,6 +134,7 @@ export function StudentPlacementTestContent({
 		return (
 			<PlacementPendingResultView
 				submission={activeSubmission}
+				bands={view.snapshot?.bands}
 				canRetrySpeakingUpload={Boolean(pendingRetry)}
 				isRetryingSpeakingUpload={isRetryingUpload}
 				speakingUploadError={pendingRetry?.errorMessage}
@@ -153,6 +154,7 @@ export function StudentPlacementTestContent({
 		return (
 			<PlacementPendingResultView
 				submission={view.submission}
+				bands={view.snapshot?.bands}
 				canRetrySpeakingUpload={Boolean(pendingRetry)}
 				isRetryingSpeakingUpload={isRetryingUpload}
 				speakingUploadError={pendingRetry?.errorMessage}

@@ -16,7 +16,14 @@ import {
 	CardTitle,
 } from "@teacher-os/ui/components/card";
 import { Textarea } from "@teacher-os/ui/components/textarea";
-import { ArrowLeft, ArrowRight, Clock, Mic, Send } from "lucide-react";
+import {
+	ArrowLeft,
+	ArrowRight,
+	BookOpen,
+	Clock,
+	Mic,
+	Send,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PlacementListeningStep } from "@/components/placement/placement-listening-step";
 import { PlacementMcqQuestionCard } from "@/components/placement/placement-question-card";
@@ -337,7 +344,77 @@ export function PlacementTestRunner({
 	if (draft.step === "intro") {
 		const minWords = writingPart.minWords || 50;
 		const maxWords = Math.max(minWords, writingPart.maxWords || 80);
+		const listeningQuestionCount = listeningPart.clips.reduce(
+			(sum, clip) => sum + clip.questions.length,
+			0,
+		);
+		const listeningPartCount =
+			new Set(
+				listeningPart.clips
+					.map((clip) => stripInlineCefrLabel(clip.partLabel).trim())
+					.filter(Boolean),
+			).size || listeningPart.clips.length;
+		const playLimits = [
+			...new Set(
+				listeningPart.clips.map((clip) =>
+					clip.maxPlays > 0 ? clip.maxPlays : 2,
+				),
+			),
+		];
+		const maxPlaysSummary =
+			playLimits.length === 1
+				? `mỗi đoạn nghe ${playLimits[0]} lần`
+				: "giới hạn lượt nghe";
+
+		const vgQuestionCount = vgPart.questions.length;
+		const readingQuestionCount = readingPart.passages.reduce(
+			(sum, passage) => sum + passage.questions.length,
+			0,
+		);
+		const readingPartCount =
+			new Set(
+				readingPart.passages
+					.map((passage) => stripInlineCefrLabel(passage.partLabel).trim())
+					.filter(Boolean),
+			).size || readingPart.passages.length;
 		const speakingCount = speakingPart.tasks.length;
+
+		const summaryRows = [
+			{
+				part: "1. Listening",
+				content:
+					listeningPart.clips.length > 0
+						? `${listeningPartCount} parts · ${listeningQuestionCount} câu · ${maxPlaysSummary}`
+						: "Không có phần Listening",
+				duration: listeningPart.clips.length > 0 ? "~10 phút" : "—",
+			},
+			{
+				part: "2. Grammar & Vocabulary",
+				content: `${vgQuestionCount} câu trắc nghiệm`,
+				duration: vgQuestionCount > 0 ? "~6 phút" : "—",
+			},
+			{
+				part: "3. Reading",
+				content:
+					readingPart.passages.length > 0
+						? `${readingPartCount} parts · ${readingQuestionCount} câu`
+						: "Không có phần Reading",
+				duration: readingPart.passages.length > 0 ? "~12 phút" : "—",
+			},
+			{
+				part: "4. Writing",
+				content: `1 email ${minWords}–${maxWords} từ`,
+				duration: "~10 phút",
+			},
+			{
+				part: "5. Speaking",
+				content:
+					speakingCount > 0
+						? `${speakingCount} câu hỏi ghi âm`
+						: "Không có phần Speaking",
+				duration: speakingCount > 0 ? "~7 phút" : "—",
+			},
+		];
 
 		return (
 			<Card data-testid="placement-intro-card" className="mx-auto max-w-3xl">
@@ -357,39 +434,50 @@ export function PlacementTestRunner({
 				</CardHeader>
 
 				<CardContent className="space-y-5">
-					<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-						<div className="rounded-lg border bg-muted/30 p-4">
-							<div className="font-semibold text-foreground text-sm">
-								{progress.total} câu
-							</div>
-							<p className="mt-1 text-muted-foreground text-xs leading-relaxed">
-								Listening (có giới hạn lượt nghe), Grammar &amp; Vocabulary, và
-								Reading.
-							</p>
-						</div>
+					<p className="text-muted-foreground text-xs leading-relaxed">
+						Tổng quan 5 phần ({progress.total} câu Listening, Grammar &amp;
+						Vocabulary, Reading cùng Writing và Speaking):
+					</p>
+					<div className="overflow-x-auto rounded-md border bg-card">
+						<table className="w-full border-collapse text-left text-sm">
+							<thead>
+								<tr className="bg-muted/40 text-muted-foreground text-xs">
+									<th className="px-4 py-2.5 font-medium">Phần</th>
+									<th className="px-4 py-2.5 font-medium">Nội dung</th>
+									<th className="px-4 py-2.5 text-right font-medium">
+										Thời gian gợi ý
+									</th>
+								</tr>
+							</thead>
+							<tbody>
+								{summaryRows.map((row) => (
+									<tr key={row.part} className="border-border border-t">
+										<td className="px-4 py-2.5 font-medium text-foreground">
+											{row.part}
+										</td>
+										<td className="px-4 py-2.5 text-muted-foreground tabular-nums">
+											{row.content}
+										</td>
+										<td className="px-4 py-2.5 text-right text-muted-foreground tabular-nums">
+											{row.duration}
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
 
-						<div className="rounded-lg border bg-muted/30 p-4">
-							<div className="font-semibold text-foreground text-sm">
-								{speakingCount > 0
-									? "Writing & Speaking thực tế"
-									: "Writing thực tế"}
-							</div>
-							<p className="mt-1 text-muted-foreground text-xs leading-relaxed">
-								{speakingCount > 0
-									? `1 bài viết (${minWords}–${maxWords} từ) và ${speakingCount} câu hỏi Speaking ghi âm qua micro (có thể bỏ qua nếu thiếu mic).`
-									: `1 bài viết (${minWords}–${maxWords} từ).`}
-							</p>
-						</div>
-
-						<div className="rounded-lg border bg-muted/30 p-4">
-							<div className="font-semibold text-foreground text-sm">
-								Đồng hồ gợi ý 40 phút
-							</div>
-							<p className="mt-1 text-muted-foreground text-xs leading-relaxed">
-								Áp dụng nhẹ nhàng cho 4 phần đầu; hết giờ hệ thống chỉ nhắc nhẹ,
-								không làm mất bài.
-							</p>
-						</div>
+					<div className="flex items-start gap-2.5 rounded-lg border bg-muted/40 p-3.5 text-foreground text-xs leading-relaxed">
+						<BookOpen
+							aria-hidden="true"
+							className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+						/>
+						<span>
+							Câu hỏi khó dần. Bạn không cần làm được hết — câu nào chưa chắc,
+							hãy chọn đáp án thấy hợp lý nhất.{" "}
+							<strong>Không dùng từ điển hay công cụ dịch</strong> để kết quả
+							xếp lớp chính xác.
+						</span>
 					</div>
 
 					<div className="flex items-start gap-2.5 rounded-lg border bg-muted/40 p-3.5 text-muted-foreground text-xs leading-relaxed">
@@ -398,9 +486,11 @@ export function PlacementTestRunner({
 							className="mt-0.5 size-4 shrink-0 text-foreground"
 						/>
 						<span>
-							Phần Speaking sử dụng micro (audio-only, không cần camera). Nếu
-							thiết bị hiện chưa có micro, bạn vẫn có thể chọn bỏ qua phần
-							Speaking và nộp 4 kỹ năng còn lại.
+							Cần loa/tai nghe cho Listening và micro cho Speaking (ghi âm
+							audio-only, không cần camera, tự động tải lên sau khi nộp). Đồng
+							hồ gợi ý 40 phút áp dụng nhẹ nhàng cho 4 phần đầu — hết giờ chỉ
+							nhắc nhẹ, không làm mất bài. Nếu thiết bị chưa có micro, bạn vẫn
+							có thể bỏ qua phần Speaking.
 						</span>
 					</div>
 

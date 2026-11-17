@@ -70,7 +70,7 @@
 				{
 					"id": "clip-lb",
 					"partLabel": "Part 1",
-					"instruction": "For each question, choose the correct answer. You will hear each conversation twice.",
+					"instruction": "",
 					"title": "Conversation 2 · Going to work",
 					"notesTitle": "",
 					"transcript": "Male: Your car's at the garage this week, isn't it? Are you going to take the bus to work?\nFemale: The bus is so slow in the morning. It isn't raining today, so I'll ride my bike.",
@@ -91,7 +91,7 @@
 				{
 					"id": "clip-lc",
 					"partLabel": "Part 1",
-					"instruction": "For each question, choose the correct answer. You will hear each conversation twice.",
+					"instruction": "",
 					"title": "Conversation 3 · Ordering lunch",
 					"notesTitle": "",
 					"transcript": "Male: Can I have a ham sandwich, please?\nFemale: I'm sorry, we haven't got any ham left. We've got cheese or chicken.\nMale: Hmm, I don't really like cheese. Chicken, then. And a bottle of water, please.",
@@ -116,7 +116,7 @@
 				{
 					"id": "clip-ld",
 					"partLabel": "Part 1",
-					"instruction": "For each question, choose the correct answer. You will hear each conversation twice.",
+					"instruction": "",
 					"title": "Conversation 4 · Finding the phone",
 					"notesTitle": "",
 					"transcript": "Female: Have you seen my phone? It isn't in my bag.\nMale: Did you leave it on the kitchen table again?\nFemale: No, I looked there. Oh wait, here it is. It was in my coat pocket all the time!",
@@ -391,7 +391,7 @@
 					"id": "rb",
 					"partLabel": "Part 1",
 					"kind": "message",
-					"instruction": "For each question, choose the correct answer.",
+					"instruction": "",
 					"title": "Message from Mum",
 					"body": "Tuan,\nThe dentist phoned. Your appointment is now on Thursday at 4, not Wednesday. Call them if that's a problem.\nMum",
 					"questions": [
@@ -412,7 +412,7 @@
 					"id": "rc",
 					"partLabel": "Part 1",
 					"kind": "sign",
-					"instruction": "For each question, choose the correct answer.",
+					"instruction": "",
 					"title": "OFFICE KITCHEN",
 					"body": "OFFICE KITCHEN\nPlease take your food out of the fridge by 5 p.m. on Friday.\nAnything left after this time will be thrown away.",
 					"questions": [
@@ -433,7 +433,7 @@
 					"id": "rd",
 					"partLabel": "Part 1",
 					"kind": "message",
-					"instruction": "For each question, choose the correct answer.",
+					"instruction": "",
 					"title": "Message from Ben",
 					"body": "Hi Anna,\nThis week the English club is meeting in Room 12 because they're painting Room 8. Same time as usual!\nBen",
 					"questions": [

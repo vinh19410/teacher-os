@@ -1539,21 +1539,39 @@ export function extractReferencedAudioIds(
 // Rubric chấm Writing / Speaking & Hàm tính điểm dùng chung (HTML formula)
 // ---------------------------------------------------------------------------
 
+export const PLACEMENT_RUBRIC_INTERMEDIATE_NOTE =
+	"4 = giữa mô tả 5 và 3 · 2 = giữa mô tả 3 và 1 · 0 = không có bài / không đủ ngôn ngữ để đánh giá.";
+
 export const PLACEMENT_WRITING_RUBRIC = [
 	{
 		key: "ct",
 		label: "Content",
-		desc: "Đủ 3 ý (ở đâu/cùng ai, cuối tuần, thích/không & lý do)",
+		desc: "Đủ 3 ý, đúng yêu cầu",
+		levels: {
+			5: "Đủ cả 3 ý, ý 3 có lý do rõ ràng; người đọc hiểu đầy đủ.",
+			3: "Đủ 3 ý nhưng 1 ý sơ sài, hoặc thiếu 1 ý.",
+			1: "Chỉ có 1 ý / lạc đề một phần.",
+		},
 	},
 	{
 		key: "or",
 		label: "Organisation",
-		desc: "Bố cục email, từ nối (and, but, because…)",
+		desc: "Bố cục email, từ nối",
+		levels: {
+			5: "Có mở/kết email phù hợp; ý sắp xếp mạch lạc; dùng nhiều từ nối (because, so, but, also…).",
+			3: "Có bố cục cơ bản; dùng and, but, because.",
+			1: "Câu rời rạc, không có bố cục email.",
+		},
 	},
 	{
 		key: "lg",
 		label: "Language",
-		desc: "Ngữ pháp & từ vựng (thì, giới từ, từ vựng sinh hoạt)",
+		desc: "Ngữ pháp & từ vựng",
+		levels: {
+			5: "Dùng đúng hiện tại đơn, quá khứ, so sánh; có câu phức; từ vựng phong phú. Lỗi nhỏ.",
+			3: "Câu đơn khá chính xác; từ vựng cơ bản đủ dùng; lỗi không cản trở hiểu.",
+			1: "Lỗi cơ bản dày đặc (thiếu động từ, sai chia), từ vựng rất hạn chế.",
+		},
 	},
 ] as const;
 
@@ -1561,22 +1579,42 @@ export const PLACEMENT_SPEAKING_RUBRIC = [
 	{
 		key: "gv",
 		label: "Grammar & Vocabulary",
-		desc: "Ngữ pháp & từ vựng (thì, cấu trúc, từ diễn đạt)",
+		desc: "Ngữ pháp & từ vựng",
+		levels: {
+			5: "Dùng tốt câu đơn và một số câu phức (because, if, when, which). Từ vựng đủ để nói về chủ đề quen thuộc và nêu ý kiến; lỗi không gây hiểu lầm.",
+			3: "Kiểm soát khá tốt câu đơn (hiện tại, quá khứ, going to). Từ vựng đủ cho chủ đề hằng ngày; còn lỗi nhưng vẫn hiểu được.",
+			1: "Chỉ dùng từ đơn, cụm có sẵn (I'm…, My name is…). Lỗi cơ bản thường xuyên.",
+		},
 	},
 	{
 		key: "dm",
 		label: "Discourse Management",
 		desc: "Độ dài, mạch lạc, phát triển ý",
+		levels: {
+			5: "Nói gần hết thời gian cho phép; có lý do và ví dụ (Answer → Reason → Example); dùng từ nối (because, so, but, for example, in my opinion). Ít ngập ngừng.",
+			3: "Trả lời được 1–2 câu liên quan mỗi câu hỏi; có dùng and, but, because. Còn ngập ngừng nhưng không đứt mạch.",
+			1: "Câu trả lời rất ngắn, rời rạc; im lặng lâu, bỏ trống nhiều câu.",
+		},
 	},
 	{
 		key: "pr",
 		label: "Pronunciation",
-		desc: "Phát âm, trọng âm, ngữ điệu dễ hiểu",
+		desc: "Phát âm, trọng âm, ngữ điệu",
+		levels: {
+			5: "Dễ hiểu trong toàn bộ bài nói; âm cuối, trọng âm từ và ngữ điệu câu nhìn chung đúng.",
+			3: "Phần lớn dễ hiểu dù còn giọng Việt rõ; đôi khi mất âm cuối, sai trọng âm.",
+			1: "Thường khó hiểu; mất âm cuối, sai nguyên âm khiến người nghe phải đoán.",
+		},
 	},
 	{
 		key: "ic",
 		label: "Task Response",
-		desc: "Hiểu câu hỏi, trả lời đúng trọng tâm, phản xạ",
+		desc: "Hiểu và trả lời đúng câu hỏi (thay cho Interactive Communication)",
+		levels: {
+			5: "Hiểu và trả lời đúng trọng tâm tất cả câu hỏi, kể cả Part 3.",
+			3: "Trả lời đúng phần lớn câu hỏi Part 1–2; Part 3 còn chung chung hoặc lạc ý.",
+			1: "Chỉ trả lời được vài câu Part 1; nhiều câu hiểu sai hoặc bỏ trống.",
+		},
 	},
 ] as const;
 
@@ -1640,7 +1678,6 @@ export function matchPlacementBand(
 	pct: number,
 	bands: readonly PlacementPublishedBand[],
 ): PlacementPublishedBand {
-	const rounded = Math.round(pct);
 	if (bands.length === 0) {
 		return {
 			min: 0,
@@ -1653,10 +1690,27 @@ export function matchPlacementBand(
 		};
 	}
 	const sorted = [...bands].sort((a, b) => a.min - b.min);
-	return (
-		sorted.find((b) => rounded >= b.min && rounded <= b.max) ??
-		(rounded < sorted[0]!.min ? sorted[0]! : sorted[sorted.length - 1]!)
-	);
+	const firstBand = sorted[0];
+	if (!firstBand) {
+		return {
+			min: 0,
+			max: 100,
+			cefr: "A1",
+			course: "comm-1",
+			courseLabel: LEAD_COURSE_LABELS["comm-1"],
+			displayCourse: LEAD_COURSE_LABELS["comm-1"],
+			advice: "",
+		};
+	}
+	const safePct = Number.isFinite(pct) ? pct : 0;
+	// Khớp theo ngưỡng `min` trên số thực (giống `bandOf(total)` trong HTML gốc) để không làm tròn nhảy bậc sai ở biên.
+	let matched = firstBand;
+	for (const band of sorted) {
+		if (safePct >= band.min) {
+			matched = band;
+		}
+	}
+	return matched;
 }
 
 /**
@@ -1793,13 +1847,16 @@ export function gradePlacementObjective(
 	const vgScore = toSection(gvCorrect, gvTotal);
 	const readingScore = toSection(rCorrect, rTotal);
 
-	const activePcts = [listeningScore.pct, vgScore.pct, readingScore.pct].filter(
-		(v): v is number => v !== null,
-	);
-	const averagePct =
-		activePcts.length > 0
-			? Math.round(activePcts.reduce((s, v) => s + v, 0) / activePcts.length)
+	const exactActivePcts = [
+		lTotal > 0 ? (lCorrect / lTotal) * 100 : null,
+		gvTotal > 0 ? (gvCorrect / gvTotal) * 100 : null,
+		rTotal > 0 ? (rCorrect / rTotal) * 100 : null,
+	].filter((v): v is number => v !== null);
+	const exactAveragePct =
+		exactActivePcts.length > 0
+			? exactActivePcts.reduce((s, v) => s + v, 0) / exactActivePcts.length
 			: 0;
+	const averagePct = Math.round(exactAveragePct);
 
 	const levelOrder = new Map<string, number>(
 		PLACEMENT_LEVELS.map((lvl, idx) => [lvl, idx]),
@@ -1813,7 +1870,7 @@ export function gradePlacementObjective(
 			pct: stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : 0,
 		}));
 
-	const provisionalBand = matchPlacementBand(averagePct, snapshot.bands);
+	const provisionalBand = matchPlacementBand(exactAveragePct, snapshot.bands);
 	const totalCorrect = lCorrect + gvCorrect + rCorrect;
 	const totalQuestions = lTotal + gvTotal + rTotal;
 
@@ -1866,8 +1923,10 @@ export function computePlacementFinal(params: {
 			params.writingRubric.or +
 			params.writingRubric.lg
 		: null;
+	const exactWritingPct =
+		writingScore !== null ? (writingScore / 15) * 100 : null;
 	const writingPct =
-		writingScore !== null ? Math.round((writingScore / 15) * 100) : null;
+		exactWritingPct !== null ? Math.round(exactWritingPct) : null;
 
 	const speakingScore = params.speakingRubric
 		? params.speakingRubric.gv +
@@ -1875,25 +1934,35 @@ export function computePlacementFinal(params: {
 			params.speakingRubric.pr +
 			params.speakingRubric.ic
 		: null;
+	const exactSpeakingPct =
+		speakingScore !== null ? (speakingScore / 20) * 100 : null;
 	const speakingPct =
-		speakingScore !== null ? Math.round((speakingScore / 20) * 100) : null;
+		exactSpeakingPct !== null ? Math.round(exactSpeakingPct) : null;
 
-	const activePcts = [
-		params.objective.listening.pct,
-		params.objective.vocabGrammar.pct,
-		params.objective.reading.pct,
-		writingPct,
-		speakingPct,
+	const sectionExactPct = (sec: PlacementSectionScore): number | null => {
+		if (sec.total > 0) return (sec.correct / sec.total) * 100;
+		return sec.pct;
+	};
+
+	const activeExactPcts = [
+		sectionExactPct(params.objective.listening),
+		sectionExactPct(params.objective.vocabGrammar),
+		sectionExactPct(params.objective.reading),
+		exactWritingPct,
+		exactSpeakingPct,
 	].filter((v): v is number => v !== null);
 
-	const averagePct =
-		activePcts.length > 0
-			? Math.round(activePcts.reduce((s, v) => s + v, 0) / activePcts.length)
+	const exactTotalPct =
+		activeExactPcts.length > 0
+			? activeExactPcts.reduce((s, v) => s + v, 0) / activeExactPcts.length
 			: 0;
+	const averagePct = Math.round(exactTotalPct);
 
-	let band = matchPlacementBand(averagePct, sortedBands);
+	let band = matchPlacementBand(exactTotalPct, sortedBands);
 	const speakingBand =
-		speakingPct !== null ? matchPlacementBand(speakingPct, sortedBands) : null;
+		exactSpeakingPct !== null
+			? matchPlacementBand(exactSpeakingPct, sortedBands)
+			: null;
 
 	let note = "";
 	if (speakingBand && sortedBands.length > 0) {

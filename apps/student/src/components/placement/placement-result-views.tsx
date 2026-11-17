@@ -1,7 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import {
+	matchPlacementBand,
 	PLACEMENT_SPEAKING_RUBRIC,
 	PLACEMENT_WRITING_RUBRIC,
+	type PlacementPublishedBand,
 	type PlacementSectionScore,
 	type StudentPlacementSubmissionView,
 } from "@teacher-os/api/placement-test-contracts";
@@ -26,10 +28,64 @@ import {
 } from "lucide-react";
 import { PlacementAnnotatedText } from "@/components/placement/placement-error-highlights";
 import { Badge } from "@/components/ui/badge";
+import { DEFAULT_PLACEMENT_BANDS } from "@/lib/placement-test-helpers";
 
-function formatObjectiveCount(score: PlacementSectionScore): string {
-	if (!score || score.total <= 0) return "—";
-	return `${score.correct}/${score.total} câu đúng`;
+function PendingSkillReportCard({
+	label,
+	score,
+	bands,
+	scoreTestId,
+	cefrTestId,
+	progressTestId,
+}: {
+	label: string;
+	score: PlacementSectionScore;
+	bands: readonly PlacementPublishedBand[];
+	scoreTestId: string;
+	cefrTestId: string;
+	progressTestId: string;
+}) {
+	const hasQuestions = Boolean(score && score.total > 0);
+	const exactPct = hasQuestions ? (score.correct / score.total) * 100 : 0;
+	const roundedPct = hasQuestions ? Math.round(exactPct) : 0;
+	const matchedBand = hasQuestions ? matchPlacementBand(exactPct, bands) : null;
+	const cefrLabel = matchedBand?.cefr || "—";
+	const detailText = hasQuestions
+		? `${score.correct}/${score.total} câu đúng · ${roundedPct}%`
+		: "—";
+	const clampedPct = Math.max(0, Math.min(100, roundedPct));
+
+	return (
+		<div className="rounded-xl border bg-card p-4 shadow-xs">
+			<div className="font-medium text-muted-foreground text-xs">{label}</div>
+			<div
+				data-testid={cefrTestId}
+				className="mt-1.5 font-bold text-2xl text-foreground tracking-tight"
+			>
+				{cefrLabel}
+			</div>
+			<div
+				data-testid={scoreTestId}
+				className="mt-1 font-medium text-foreground text-sm tabular-nums"
+			>
+				{detailText}
+			</div>
+			<div
+				role="progressbar"
+				aria-label={`Tỉ lệ đúng phần ${label}`}
+				aria-valuemin={0}
+				aria-valuemax={100}
+				aria-valuenow={clampedPct}
+				data-testid={progressTestId}
+				className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted"
+			>
+				<div
+					className="h-full rounded-full bg-primary transition-[width]"
+					style={{ width: `${clampedPct}%` }}
+				/>
+			</div>
+		</div>
+	);
 }
 
 function formatObjectiveWithPct(score: PlacementSectionScore): string {
@@ -147,17 +203,22 @@ export function PlacementExemptCard({
 
 export function PlacementPendingResultView({
 	submission,
+	bands,
 	canRetrySpeakingUpload = false,
 	isRetryingSpeakingUpload = false,
 	speakingUploadError = "",
 	onRetrySpeakingUpload,
 }: {
 	submission: StudentPlacementSubmissionView;
+	bands?: readonly PlacementPublishedBand[];
 	canRetrySpeakingUpload?: boolean;
 	isRetryingSpeakingUpload?: boolean;
 	speakingUploadError?: string;
 	onRetrySpeakingUpload?: () => void;
 }) {
+	const effectiveBands =
+		bands && bands.length > 0 ? bands : DEFAULT_PLACEMENT_BANDS;
+
 	return (
 		<div
 			data-testid="placement-pending-view"
@@ -175,43 +236,40 @@ export function PlacementPendingResultView({
 						Đã nộp bài kiểm tra đầu vào
 					</CardTitle>
 					<CardDescription className="leading-relaxed">
-						Dưới đây là kết quả các phần trắc nghiệm tự động. Giáo viên sẽ chấm
-						bài viết Writing và bản ghi Speaking rồi gửi kết quả chính thức kèm
-						lộ trình học phù hợp cho bạn.
+						Dưới đây là kết quả tự động hai phần Listening và Reading. Giáo viên
+						sẽ chấm bài viết Writing và bản ghi Speaking rồi gửi kết quả chính
+						thức kèm lộ trình học phù hợp cho bạn.
 					</CardDescription>
 				</CardHeader>
 
 				<CardContent className="space-y-6">
-					<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-						<div className="rounded-lg border bg-muted/30 p-4">
-							<div className="text-muted-foreground text-xs">Listening</div>
-							<div
-								data-testid="pending-score-listening"
-								className="mt-1 font-bold text-foreground text-lg tabular-nums"
-							>
-								{formatObjectiveCount(submission.objective.listening)}
-							</div>
+					<div className="space-y-3">
+						<h3 className="font-semibold text-base text-foreground">
+							Kết quả Listening &amp; Reading (CEFR)
+						</h3>
+						<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+							<PendingSkillReportCard
+								label="Listening"
+								score={submission.objective.listening}
+								bands={effectiveBands}
+								scoreTestId="pending-score-listening"
+								cefrTestId="pending-cefr-listening"
+								progressTestId="pending-progress-listening"
+							/>
+							<PendingSkillReportCard
+								label="Reading"
+								score={submission.objective.reading}
+								bands={effectiveBands}
+								scoreTestId="pending-score-reading"
+								cefrTestId="pending-cefr-reading"
+								progressTestId="pending-progress-reading"
+							/>
 						</div>
-						<div className="rounded-lg border bg-muted/30 p-4">
-							<div className="text-muted-foreground text-xs">
-								Grammar &amp; Vocabulary
-							</div>
-							<div
-								data-testid="pending-score-vg"
-								className="mt-1 font-bold text-foreground text-lg tabular-nums"
-							>
-								{formatObjectiveCount(submission.objective.vocabGrammar)}
-							</div>
-						</div>
-						<div className="rounded-lg border bg-muted/30 p-4">
-							<div className="text-muted-foreground text-xs">Reading</div>
-							<div
-								data-testid="pending-score-reading"
-								className="mt-1 font-bold text-foreground text-lg tabular-nums"
-							>
-								{formatObjectiveCount(submission.objective.reading)}
-							</div>
-						</div>
+						<p className="text-muted-foreground text-xs leading-relaxed">
+							Đây là kết quả tự động của hai phần nghe và đọc. Cấp độ cuối cùng
+							và lớp phù hợp sẽ được giáo viên báo sau khi chấm Writing và
+							Speaking.
+						</p>
 					</div>
 
 					<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
