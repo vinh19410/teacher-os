@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
 import { LEAD_COURSE_LABELS } from "./lead-contracts";
 import {
@@ -9,10 +10,13 @@ import {
 	countPlacementWords,
 	extractReferencedAudioIds,
 	gradePlacementObjective,
+	matchPlacementBand,
 	normalizePlacementGapAnswer,
 	normalizePublishedPlacementSnapshot,
 	PLACEMENT_ID_REGEX,
 	PLACEMENT_MAX_QUESTIONS,
+	PLACEMENT_SPEAKING_RUBRIC,
+	PLACEMENT_WRITING_RUBRIC,
 	type PlacementContent,
 	placementContentSchema,
 	upgradeLegacyPlacementContent,
@@ -1090,6 +1094,211 @@ describe("placement-test-contracts v2", () => {
 		);
 		expect([...refs].sort()).toEqual(
 			[SAMPLE_AUDIO_ID, SAMPLE_AUDIO_ID_2].sort(),
+		);
+	});
+
+	it("matchPlacementBand và computePlacementFinal giữ số thực trước khi khớp band (không làm tròn nhảy bậc sai ở biên)", () => {
+		const content = makeValidContent();
+		expect(matchPlacementBand(67.6, content.bands).cefr).toBe("A2");
+		expect(matchPlacementBand(68.0, content.bands).cefr).toBe("A2+ / B1 thấp");
+
+		// L = 1/1 (100%), G&V = 1/1 (100%), R = 0/1 (0%), W = 6/15 (40%), S = 19/20 (95%)
+		// Exact avg = (100 + 100 + 0 + 40 + 95) / 5 = 67.0; chọn trường hợp ra 67.6%:
+		// L = 9/13 (69.23%), G&V = 8/12 (66.67%), R = 10/15 (66.67%), W = 10/15 (66.67%), S = 14/20 (70%) -> avg = 67.846%
+		const finalRes = computePlacementFinal({
+			objective: {
+				listening: { correct: 9, total: 13, pct: 69 },
+				vocabGrammar: { correct: 8, total: 12, pct: 67 },
+				reading: { correct: 10, total: 15, pct: 67 },
+			},
+			bands: content.bands,
+			writingRubric: { ct: 3, or: 4, lg: 3 },
+			speakingRubric: { gv: 4, dm: 3, pr: 4, ic: 3 },
+		});
+		expect(finalRes.averagePct).toBe(68);
+		// Số thực (69.2307 + 66.6667 + 66.6667 + 66.6667 + 70) / 5 = 67.846 < 68 -> vẫn thuộc A2!
+		expect(finalRes.band.cefr).toBe("A2");
+	});
+
+	it("questions.json và rubric khớp tuyệt đối với raw-data/placement-test-audio.html", () => {
+		const htmlPath = fileURLToPath(
+			new URL("../../../raw-data/placement-test-audio.html", import.meta.url)
+				.href,
+		);
+		const seedPath = fileURLToPath(
+			new URL(
+				"../../../apps/web/public/placement-seed/questions.json",
+				import.meta.url,
+			).href,
+		);
+		const html = readFileSync(htmlPath, "utf8");
+		const script = html.match(/<script[^>]*>([\s\S]*?)<\/script>/i)?.[1] ?? "";
+		const dataOnly = script.split(
+			"/* =====================================================================\n   ỨNG DỤNG",
+		)[0]!;
+		const sandbox: Record<string, unknown> = {};
+		runInNewContext(
+			`${dataOnly}\nthis.__OUT = { LISTENING, GV, READING, WRITING_PROMPT, SPEAKING_TASKS, WRITING_RUBRIC, SPEAKING_RUBRIC, BANDS };`,
+			sandbox,
+		);
+		const raw = sandbox.__OUT as {
+			LISTENING: Array<{
+				id: string;
+				part: string;
+				instr?: string;
+				notesTitle?: string;
+				items: Array<{
+					type?: string;
+					lvl: string;
+					q?: string;
+					label?: string;
+					opts?: string[];
+					a?: number;
+					accept?: string[];
+				}>;
+			}>;
+			GV: Array<{ lvl: string; q: string; opts: string[]; a: number }>;
+			READING: Array<{
+				id: string;
+				part: string;
+				instr?: string;
+				title?: string;
+				text: string;
+				items: Array<{ lvl: string; q: string; opts: string[]; a: number }>;
+			}>;
+			WRITING_PROMPT: { title: string; text: string };
+			SPEAKING_TASKS: Array<{
+				part: string;
+				lvl: string;
+				prep: number;
+				answer: number;
+				q: string;
+			}>;
+			WRITING_RUBRIC: Array<{
+				key: string;
+				name: string;
+				hint: string;
+				d: { 5: string; 3: string; 1: string };
+			}>;
+			SPEAKING_RUBRIC: Array<{
+				key: string;
+				name: string;
+				hint: string;
+				d: { 5: string; 3: string; 1: string };
+			}>;
+			BANDS: Array<{
+				min: number;
+				cefr: string;
+				course: string;
+				advice: string;
+			}>;
+		};
+
+		const seed = placementContentSchema.parse(
+			JSON.parse(readFileSync(seedPath, "utf8")),
+		);
+
+		expect(
+			seed.bands.map((b) => ({
+				min: b.min,
+				cefr: b.cefr,
+				displayCourse: b.displayCourse,
+				advice: b.advice,
+			})),
+		).toEqual(
+			raw.BANDS.map((b) => ({
+				min: b.min,
+				cefr: b.cefr,
+				displayCourse: b.course,
+				advice: b.advice,
+			})),
+		);
+
+		expect(seed.parts[0].clips).toHaveLength(raw.LISTENING.length);
+		seed.parts[0].clips.forEach((clip, idx) => {
+			const rc = raw.LISTENING[idx]!;
+			expect(clip.partLabel).toBe(rc.part);
+			expect(clip.instruction).toBe(rc.instr ?? "");
+			expect(clip.notesTitle).toBe(rc.notesTitle ?? "");
+			expect(clip.questions).toHaveLength(rc.items.length);
+			clip.questions.forEach((q, qIdx) => {
+				const ri = rc.items[qIdx]!;
+				expect(q.level).toBe(ri.lvl);
+				expect(q.prompt).toBe(ri.q ?? ri.label ?? "");
+				if (q.type === "gap") {
+					expect(q.accept).toEqual(ri.accept);
+				} else {
+					expect(q.options).toEqual(ri.opts);
+					expect(q.answer).toBe(ri.a);
+				}
+			});
+		});
+
+		expect(seed.parts[1].questions).toHaveLength(raw.GV.length);
+		seed.parts[1].questions.forEach((q, idx) => {
+			const rq = raw.GV[idx]!;
+			expect(q.level).toBe(rq.lvl);
+			expect(q.prompt).toBe(rq.q);
+			expect(q.options).toEqual(rq.opts);
+			expect(q.answer).toBe(rq.a);
+		});
+
+		expect(seed.parts[2].passages).toHaveLength(raw.READING.length);
+		seed.parts[2].passages.forEach((p, idx) => {
+			const rp = raw.READING[idx]!;
+			expect(p.partLabel).toBe(rp.part);
+			expect(p.instruction).toBe(rp.instr ?? "");
+			expect(p.body).toBe(rp.text);
+			expect(p.questions).toHaveLength(rp.items.length);
+			p.questions.forEach((q, qIdx) => {
+				const ri = rp.items[qIdx]!;
+				expect(q.level).toBe(ri.lvl);
+				expect(q.prompt).toBe(ri.q);
+				expect(q.options).toEqual(ri.opts);
+				expect(q.answer).toBe(ri.a);
+			});
+		});
+
+		expect(seed.parts[3].promptTitle).toBe(raw.WRITING_PROMPT.title);
+		expect(seed.parts[3].promptBody).toBe(raw.WRITING_PROMPT.text);
+
+		expect(seed.parts[4].tasks).toHaveLength(raw.SPEAKING_TASKS.length);
+		seed.parts[4].tasks.forEach((t, idx) => {
+			const rs = raw.SPEAKING_TASKS[idx]!;
+			expect(t.partLabel).toBe(rs.part);
+			expect(t.level).toBe(rs.lvl);
+			expect(t.prepSeconds).toBe(rs.prep);
+			expect(t.answerSeconds).toBe(rs.answer);
+			expect(t.prompt).toBe(rs.q);
+		});
+
+		expect(
+			PLACEMENT_WRITING_RUBRIC.map((r) => ({
+				key: r.key,
+				label: r.label,
+				desc: r.desc,
+				levels: r.levels,
+			})),
+		).toEqual(
+			raw.WRITING_RUBRIC.map((r) => ({
+				key: r.key,
+				label: r.name,
+				desc: r.hint,
+				levels: r.d,
+			})),
+		);
+		expect(
+			PLACEMENT_SPEAKING_RUBRIC.map((r) => ({
+				key: r.key,
+				label: r.label,
+				levels: r.levels,
+			})),
+		).toEqual(
+			raw.SPEAKING_RUBRIC.map((r) => ({
+				key: r.key,
+				label: r.name,
+				levels: r.d,
+			})),
 		);
 	});
 });

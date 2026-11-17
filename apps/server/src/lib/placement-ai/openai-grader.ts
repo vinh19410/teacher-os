@@ -1,6 +1,7 @@
 import {
 	PLACEMENT_AI_ERROR_CODES,
 	PLACEMENT_ERROR_CATEGORIES,
+	PLACEMENT_RUBRIC_INTERMEDIATE_NOTE,
 	PLACEMENT_SPEAKING_RUBRIC,
 	PLACEMENT_WRITING_RUBRIC,
 } from "@teacher-os/api/placement-test-contracts";
@@ -58,9 +59,20 @@ const CATEGORY_LINES = PLACEMENT_ERROR_CATEGORIES.map(
 ).join("\n");
 
 function rubricLines(
-	rubric: ReadonlyArray<{ key: string; label: string; desc: string }>,
+	rubric: ReadonlyArray<{
+		key: string;
+		label: string;
+		desc: string;
+		levels: { 5: string; 3: string; 1: string };
+	}>,
 ): string {
-	return rubric.map((r) => `- "${r.key}" (${r.label}): ${r.desc}`).join("\n");
+	return [
+		...rubric.map(
+			(r) =>
+				`- "${r.key}" (${r.label} — ${r.desc}):\n  + Mức 5: ${r.levels[5]}\n  + Mức 3: ${r.levels[3]}\n  + Mức 1: ${r.levels[1]}`,
+		),
+		PLACEMENT_RUBRIC_INTERMEDIATE_NOTE,
+	].join("\n");
 }
 
 const COMMON_RULES = [

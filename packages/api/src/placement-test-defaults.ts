@@ -31,7 +31,7 @@ const DEFAULT_READING_PASSAGES: ReadonlyArray<PlacementPublishedReadingPassage> 
 			id: "rb",
 			partLabel: "Part 1",
 			kind: "message",
-			instruction: "For each question, choose the correct answer.",
+			instruction: "",
 			title: "Message from Mum",
 			body: "Tuan,\nThe dentist phoned. Your appointment is now on Thursday at 4, not Wednesday. Call them if that's a problem.\nMum",
 			questions: [
@@ -52,7 +52,7 @@ const DEFAULT_READING_PASSAGES: ReadonlyArray<PlacementPublishedReadingPassage> 
 			id: "rc",
 			partLabel: "Part 1",
 			kind: "sign",
-			instruction: "For each question, choose the correct answer.",
+			instruction: "",
 			title: "OFFICE KITCHEN",
 			body: "OFFICE KITCHEN\nPlease take your food out of the fridge by 5 p.m. on Friday.\nAnything left after this time will be thrown away.",
 			questions: [
@@ -73,7 +73,7 @@ const DEFAULT_READING_PASSAGES: ReadonlyArray<PlacementPublishedReadingPassage> 
 			id: "rd",
 			partLabel: "Part 1",
 			kind: "message",
-			instruction: "For each question, choose the correct answer.",
+			instruction: "",
 			title: "Message from Ben",
 			body: "Hi Anna,\nThis week the English club is meeting in Room 12 because they're painting Room 8. Same time as usual!\nBen",
 			questions: [
