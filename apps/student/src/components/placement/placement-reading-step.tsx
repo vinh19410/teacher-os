@@ -12,34 +12,40 @@ import {
 import { Fragment, useMemo } from "react";
 import { PlacementMcqQuestionCard } from "@/components/placement/placement-question-card";
 import { cn } from "@/lib/cn";
-import {
-	groupPlacementItemsByPart,
-	PLACEMENT_READING_KIND_LABELS,
-} from "@/lib/placement-test-helpers";
+import { groupPlacementItemsByPart } from "@/lib/placement-test-helpers";
+
+function normalizeReadingKind(kind: unknown): string {
+	return (
+		String(kind ?? "passage")
+			.trim()
+			.toLowerCase() || "passage"
+	);
+}
 
 function ReadingPassageBody({
 	passage,
 }: {
 	passage: PlacementPublishedReadingPassage;
 }) {
+	const normalizedKind = normalizeReadingKind(passage.kind);
 	const paragraphs = passage.body.split(/\n{2,}/);
 	const bodyStyle =
-		passage.kind === "sign"
+		normalizedKind === "sign"
 			? "border-2 border-warn/40 bg-warn-soft/50"
-			: passage.kind === "message"
+			: normalizedKind === "message"
 				? "border-2 border-class-1/35 bg-class-1-soft/45"
 				: "border border-l-4 border-l-primary bg-card";
 
 	return (
 		<div
-			data-passage-kind={passage.kind}
+			data-passage-kind={normalizedKind}
 			className={cn(
 				"space-y-3 rounded-lg p-4 text-foreground text-sm leading-[1.85]",
 				bodyStyle,
 			)}
 		>
 			{paragraphs.map((para, pIdx) => {
-				if (passage.kind === "cloze") {
+				if (normalizedKind === "cloze") {
 					const segments = para.split(/(\[\d+\])/g);
 					return (
 						<p key={`p-${pIdx}`}>
@@ -146,25 +152,20 @@ export function PlacementReadingStep({
 
 						<div className="space-y-4">
 							{group.items.map(({ item: passage }) => {
+								const normalizedKind = normalizeReadingKind(passage.kind);
 								const isSignOrMessage =
-									passage.kind === "sign" || passage.kind === "message";
+									normalizedKind === "sign" || normalizedKind === "message";
 								const passageTitle = stripInlineCefrLabel(passage.title);
-								const kindLabel =
-									PLACEMENT_READING_KIND_LABELS[passage.kind] ?? "Bài đọc hiểu";
+								const showHeader = !isSignOrMessage && Boolean(passageTitle);
 								return (
 									<Card key={passage.id} data-passage-id={passage.id}>
-										<CardHeader className="space-y-2 pb-3">
-											<div className="flex flex-wrap items-center gap-2">
-												<span className="inline-flex items-center rounded-md border px-2 py-0.5 text-muted-foreground text-xs">
-													{kindLabel}
-												</span>
-											</div>
-											{!isSignOrMessage && passageTitle ? (
+										{showHeader ? (
+											<CardHeader className="pb-3">
 												<CardTitle className="text-lg">
 													{passageTitle}
 												</CardTitle>
-											) : null}
-										</CardHeader>
+											</CardHeader>
+										) : null}
 
 										<CardContent className="space-y-5">
 											{passage.body.trim() ? (

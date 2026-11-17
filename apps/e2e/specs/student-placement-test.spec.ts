@@ -277,9 +277,69 @@ test.describe
 				await studentPage
 					.getByRole("button", { name: /Tiếp tục: Reading/ })
 					.click();
+				const readingStep = studentPage.getByTestId("placement-step-reading");
+				await expect(readingStep).toBeVisible();
+				for (const redundantLabel of [
+					"Biển báo / Thông báo",
+					"Tin nhắn / Email",
+					"Bài đọc hiểu",
+					"Đoạn văn điền từ",
+				]) {
+					await expect(readingStep).not.toContainText(redundantLabel);
+				}
+				const firstSignCard = readingStep
+					.locator('[data-passage-id]:has([data-passage-kind="sign"])')
+					.first();
+				await expect(firstSignCard).toBeVisible();
 				await expect(
-					studentPage.getByTestId("placement-step-reading"),
-				).toBeVisible();
+					firstSignCard.locator('[data-slot="card-header"]'),
+				).toHaveCount(0);
+				const firstPassageCard = readingStep
+					.locator('[data-passage-id]:has([data-passage-kind="passage"])')
+					.first();
+				await expect(
+					firstPassageCard.locator('[data-slot="card-header"]'),
+				).toHaveCount(1);
+
+				const readingPotIssue = process.env.CAPTURE_POT_ISSUE?.trim();
+				for (const vp of VIEWPORTS) {
+					await studentPage.setViewportSize({
+						width: vp.width,
+						height: vp.height,
+					});
+					const noOverflow = await studentPage.evaluate(
+						() =>
+							document.documentElement.scrollWidth <=
+							document.documentElement.clientWidth,
+					);
+					expect(noOverflow, `Reading không tràn ngang ở ${vp.label}`).toBe(
+						true,
+					);
+					if (readingPotIssue) {
+						await firstSignCard.scrollIntoViewIfNeeded();
+						await studentPage.screenshot({
+							path: reportPath(
+								`${readingPotIssue}-student-reading-${vp.label}.png`,
+							),
+						});
+					}
+				}
+				if (readingPotIssue) {
+					await studentPage.setViewportSize({ width: 1440, height: 900 });
+					await firstSignCard.scrollIntoViewIfNeeded();
+					await studentPage.evaluate(() =>
+						document.documentElement.classList.add("dark"),
+					);
+					await studentPage.screenshot({
+						path: reportPath(
+							`${readingPotIssue}-student-reading-desktop-dark.png`,
+						),
+					});
+					await studentPage.evaluate(() =>
+						document.documentElement.classList.remove("dark"),
+					);
+				}
+				await studentPage.setViewportSize({ width: 1440, height: 900 });
 
 				// Chuyển Writing và viết bài ngắn
 				await studentPage

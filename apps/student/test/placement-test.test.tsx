@@ -562,8 +562,10 @@ describe("Student Portal Placement Test (#748)", () => {
 		// Step 3: Reading
 		fireEvent.click(screen.getByTestId("placement-tab-reading"));
 		expect(screen.getByTestId("placement-step-reading")).toBeTruthy();
-		expect(container.textContent).toContain("Biển báo / Thông báo");
-		expect(container.textContent).toContain("Đoạn văn điền từ");
+		expect(container.textContent).not.toContain("Biển báo / Thông báo");
+		expect(container.textContent).not.toContain("Tin nhắn / Email");
+		expect(container.textContent).not.toContain("Bài đọc hiểu");
+		expect(container.textContent).not.toContain("Đoạn văn điền từ");
 		expect(container.textContent).not.toContain("Museum Notice");
 		expect(container.textContent).toContain("Daily Routine");
 		expect(
@@ -955,7 +957,7 @@ describe("Student Portal Placement Test (#748)", () => {
 			{
 				id: "rb",
 				partLabel: "Part 1",
-				kind: "message" as const,
+				kind: " Message " as unknown as "message",
 				instruction: "For each question, choose the correct answer.",
 				title: "Message from Mum",
 				body: "Tuan,\nThe dentist phoned.",
@@ -986,12 +988,30 @@ describe("Student Portal Placement Test (#748)", () => {
 					},
 				],
 			},
+			{
+				id: "rf",
+				partLabel: "Part 3",
+				kind: "cloze" as const,
+				instruction: "Choose the best word.",
+				title: "(B1)",
+				body: "Read [1] carefully.",
+				questions: [
+					{
+						id: "rq-4",
+						level: "B1",
+						prompt: "Gap 1",
+						options: ["books", "cars", "trees"],
+						answer: 0,
+					},
+				],
+			},
 		];
 
 		const qMap = new Map([
 			["rq-1", 1],
 			["rq-2", 2],
 			["rq-3", 3],
+			["rq-4", 4],
 		]);
 
 		const { container } = render(
@@ -1010,14 +1030,41 @@ describe("Student Portal Placement Test (#748)", () => {
 			screen.getAllByText("For each question, choose the correct answer."),
 		).toHaveLength(1);
 
-		// Sign and message titles are NOT rendered outside body
+		// No redundant Vietnamese reading kind labels anywhere in reading step
+		for (const redundantLabel of [
+			"Biển báo / Thông báo",
+			"Tin nhắn / Email",
+			"Bài đọc hiểu",
+			"Đoạn văn điền từ",
+		]) {
+			expect(container.textContent).not.toContain(redundantLabel);
+		}
+
+		// Sign and message titles are NOT rendered outside body, and their cards omit CardHeader
 		expect(container.textContent).not.toContain("Pool Notice Secret Heading");
 		expect(container.textContent).not.toContain("Message from Mum");
+		const signCard = container.querySelector('[data-passage-id="ra"]');
+		const messageCard = container.querySelector('[data-passage-id="rb"]');
+		const passageCard = container.querySelector('[data-passage-id="re"]');
+		const untitledClozeCard = container.querySelector('[data-passage-id="rf"]');
+
+		expect(signCard?.querySelector('[data-slot="card-header"]')).toBeNull();
+		expect(messageCard?.querySelector('[data-slot="card-header"]')).toBeNull();
+		expect(
+			untitledClozeCard?.querySelector('[data-slot="card-header"]'),
+		).toBeNull();
+
+		const passageHeader = passageCard?.querySelector(
+			'[data-slot="card-header"]',
+		);
+		expect(passageHeader).not.toBeNull();
+		expect(passageHeader?.textContent?.trim()).toBe("A new start in Auckland");
+
 		// Body & passage title still render
 		expect(container.textContent).toContain("CITY SWIMMING POOL");
 		expect(container.textContent).toContain("A new start in Auckland");
 
-		expect(container.querySelector('[data-passage-id="ra"]')).not.toBeNull();
+		expect(signCard).not.toBeNull();
 		expect(
 			container.querySelector('[data-passage-kind="sign"]'),
 		).not.toBeNull();

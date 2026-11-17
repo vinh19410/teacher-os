@@ -6,7 +6,6 @@ import {
 	type PlacementErrorCategory,
 	type PlacementPublishedBand,
 	type PlacementPublishedSpeakingTask,
-	type PlacementReadingPassageKind,
 	type PlacementSnapshot,
 	type StudentPlacementSubmit,
 	stripInlineCefrLabel,
@@ -46,16 +45,6 @@ export const PLACEMENT_TIMED_STEPS = new Set<PlacementRunnerStep>([
 	"reading",
 	"writing",
 ]);
-
-export const PLACEMENT_READING_KIND_LABELS: Record<
-	PlacementReadingPassageKind,
-	string
-> = {
-	sign: "Biển báo / Thông báo",
-	message: "Tin nhắn / Email",
-	passage: "Bài đọc hiểu",
-	cloze: "Đoạn văn điền từ",
-};
 
 export interface PlacementDraftAnswers {
 	listening: Record<string, string | number | null>;

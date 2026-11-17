@@ -53,6 +53,7 @@ import {
 	buildSkillReportCards,
 	resolveClipDisplayTitle,
 	resolvePartHeaderState,
+	resolveReadingPassageHeaderState,
 	shouldShowReadingTitle,
 } from "../public/kiem-tra-dau-vao/test.js";
 import { createProfileServer } from "../serve.mjs";
@@ -367,6 +368,11 @@ test("Bất biến file tĩnh: không chứa '30 câu', không có questions.jso
 		"CEFR_EXPLORER_DATA",
 		"cefrExplorerBox",
 		"khách quan",
+		"READING_KIND_LABELS",
+		"Biển báo / Thông báo",
+		"Tin nhắn / Email",
+		"Bài đọc hiểu",
+		"Đoạn văn điền từ",
 	]) {
 		assert.ok(
 			!testJs.includes(forbiddenToken),
@@ -1178,4 +1184,72 @@ test("buildSkillReportCards chỉ hiển thị 2 thẻ Listening & Reading kèm 
 			progressPct: 33,
 		},
 	]);
+});
+
+test("resolveReadingPassageHeaderState ẩn .clip-badges và .passage-header khi không có partLabel, title hay instruction", () => {
+	const ra = {
+		id: "ra",
+		partLabel: "Part 1",
+		kind: "sign",
+		instruction: "For each question, choose the correct answer.",
+		title: "Pool Notice",
+	};
+	const rb = {
+		id: "rb",
+		partLabel: "Part 1",
+		kind: "message",
+		instruction: "For each question, choose the correct answer.",
+		title: "Message from Mum",
+	};
+	const re = {
+		id: "re",
+		partLabel: "Part 2",
+		kind: "passage",
+		instruction: "Read the article.",
+		title: "A new start in Auckland (A2)",
+	};
+	const rf = {
+		id: "rf",
+		partLabel: "Part 2",
+		kind: "cloze",
+		instruction: "Read the article.",
+		title: "(B1)",
+	};
+
+	assert.deepEqual(resolveReadingPassageHeaderState(ra, null), {
+		partLabel: "Part 1",
+		instruction: "For each question, choose the correct answer.",
+		displayTitle: "",
+		showPartLabel: true,
+		showInstruction: true,
+		showBadges: true,
+		hasHeader: true,
+	});
+	assert.deepEqual(resolveReadingPassageHeaderState(rb, ra), {
+		partLabel: "Part 1",
+		instruction: "For each question, choose the correct answer.",
+		displayTitle: "",
+		showPartLabel: false,
+		showInstruction: false,
+		showBadges: false,
+		hasHeader: false,
+	});
+	assert.deepEqual(resolveReadingPassageHeaderState(re, rb), {
+		partLabel: "Part 2",
+		instruction: "Read the article.",
+		displayTitle: "A new start in Auckland",
+		showPartLabel: true,
+		showInstruction: true,
+		showBadges: true,
+		hasHeader: true,
+	});
+	assert.deepEqual(resolveReadingPassageHeaderState(rf, re), {
+		partLabel: "Part 2",
+		instruction: "Read the article.",
+		displayTitle: "",
+		showPartLabel: false,
+		showInstruction: false,
+		showBadges: false,
+		hasHeader: false,
+	});
 });
