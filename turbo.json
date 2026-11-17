@@ -14,7 +14,8 @@
 				"VITE_SERVER_URL",
 				"VITE_AI_ENABLED",
 				"VITE_TEACHER_SIGNUP_ENABLED",
-				"LEAD_API_URL"
+				"LEAD_API_URL",
+				"PROFILE_MAINTENANCE"
 			]
 		},
 		"lint": {
@@ -26,7 +27,8 @@
 				"VITE_SERVER_URL",
 				"VITE_AI_ENABLED",
 				"VITE_TEACHER_SIGNUP_ENABLED",
-				"LEAD_API_URL"
+				"LEAD_API_URL",
+				"PROFILE_MAINTENANCE"
 			]
 		},
 		"test": {
@@ -37,7 +39,8 @@
 				"VITE_AI_ENABLED",
 				"VITE_TEACHER_SIGNUP_ENABLED",
 				"VITEST_SKIP_SLOW",
-				"VERIFY_DEPTH"
+				"VERIFY_DEPTH",
+				"PROFILE_MAINTENANCE"
 			],
 			"passThroughEnv": ["CI"]
 		},

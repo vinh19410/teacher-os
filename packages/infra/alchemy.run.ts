@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import * as Cloudflare from "@alchemy.run/cloudflare";
 import * as Alchemy from "alchemy";
 import { config } from "dotenv";
@@ -400,6 +402,44 @@ export default Alchemy.Stack(
 
 		// Plan #536: trang hồ sơ giảng viên cô Mỹ — StaticSite tại msmy.io.vn (+ www)
 		// trên prod, profile.<domain> trên staging, dev port 8005.
+		// Khi apps/profile/maintenance.json bật disabled=true (hoặc PROFILE_MAINTENANCE=true),
+		// fallback SPA để mọi đường dẫn con đều hiển thị trang đang phát triển.
+		const profileMaintenanceOverride = String(
+			process.env.PROFILE_MAINTENANCE ?? "",
+		)
+			.trim()
+			.toLowerCase();
+		const profileDisabled = (() => {
+			if (profileMaintenanceOverride === "") {
+				return Boolean(
+					JSON.parse(
+						readFileSync(
+							fileURLToPath(
+								new URL("../../apps/profile/maintenance.json", import.meta.url)
+									.href,
+							),
+							"utf8",
+						),
+					)?.disabled,
+				);
+			}
+			if (
+				profileMaintenanceOverride === "false" ||
+				profileMaintenanceOverride === "0"
+			) {
+				return false;
+			}
+			if (
+				profileMaintenanceOverride === "true" ||
+				profileMaintenanceOverride === "1"
+			) {
+				return true;
+			}
+			throw new Error(
+				`Invalid PROFILE_MAINTENANCE value "${process.env.PROFILE_MAINTENANCE}" (expected true, 1, false, or 0)`,
+			);
+		})();
+
 		const profileWorker = yield* Cloudflare.Website.StaticSite("profile", {
 			compatibility: { date: WORKER_COMPATIBILITY_DATE },
 			cwd: "../../apps/profile",
@@ -412,10 +452,13 @@ export default Alchemy.Stack(
 				STUDENT_PORTAL_URL: topology
 					? topology.studentOrigin
 					: studentWorker.url.as<string>(),
+				...(process.env.PROFILE_MAINTENANCE !== undefined && {
+					PROFILE_MAINTENANCE: process.env.PROFILE_MAINTENANCE,
+				}),
 			},
 			assets: {
 				htmlHandling: "auto-trailing-slash",
-				notFoundHandling: "none",
+				notFoundHandling: profileDisabled ? "single-page-application" : "none",
 			},
 			...(topology && {
 				domain: {

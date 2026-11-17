@@ -141,11 +141,52 @@ jobs:
           echo "stub smoke OK: /sw.js + /registerSW.js served as JS with network-first cache headers"
       - name: Smoke check profile
         if: ${{ !inputs.dry_run }}
-        # Plan #536: teacher profile StaticSite (msmy.io.vn + www). Poll up to
-        # ~10 minutes like landing; verify both HTML pages have the stage's
-        # lead-api meta, www alias responds 200 HTML, and /kiem-tra-dau-vao
-        # redirects to the trailing-slash directory URL.
+        # Plan #536: teacher profile StaticSite (msmy.io.vn + www). When
+        # apps/profile/maintenance.json sets disabled=true, verify all profile
+        # entrypoints serve the maintenance notice cleanly without leaking
+        # lead-api or placement test pages; otherwise run full site checks.
         run: |
+          if node -e 'process.exit(JSON.parse(require("node:fs").readFileSync("apps/profile/maintenance.json","utf8")).disabled ? 0 : 1)'; then
+            for attempt in $(seq 1 30); do
+              home_code=$(curl -sS --connect-timeout 5 --max-time 30 \
+                -D /tmp/profile-headers.txt -o /tmp/profile.html \
+                -w '%{http_code}' "$PROFILE_ORIGIN/" || true)
+              test_code=$(curl -sS --connect-timeout 5 --max-time 30 \
+                -D /tmp/profile-test-headers.txt -o /tmp/profile-test.html \
+                -w '%{http_code}' "$PROFILE_ORIGIN/kiem-tra-dau-vao/" || true)
+              internal_code=$(curl -sS --connect-timeout 5 --max-time 30 \
+                -D /tmp/profile-internal-headers.txt -o /tmp/profile-internal.html \
+                -w '%{http_code}' "$PROFILE_ORIGIN/noi-bo/" || true)
+              www_code=$(curl -sS --connect-timeout 5 --max-time 30 \
+                -D /tmp/profile-www-headers.txt -o /tmp/profile-www.html \
+                -w '%{http_code}' "https://www.msmy.io.vn/" || true)
+              if [ "$home_code" = "200" ] \
+                && grep -qi '^content-type: text/html' /tmp/profile-headers.txt \
+                && grep -qi '^cache-control:.*no-store' /tmp/profile-headers.txt \
+                && grep -qi '^x-robots-tag:.*noindex' /tmp/profile-headers.txt \
+                && grep -Fq "Trang web đang trong quá trình phát triển" /tmp/profile.html \
+                && ! grep -Fq "lead-api" /tmp/profile.html \
+                && [ "$test_code" = "200" ] \
+                && grep -qi '^content-type: text/html' /tmp/profile-test-headers.txt \
+                && grep -Fq "Trang web đang trong quá trình phát triển" /tmp/profile-test.html \
+                && ! grep -Fq "lead-api" /tmp/profile-test.html \
+                && [ "$internal_code" = "200" ] \
+                && grep -qi '^content-type: text/html' /tmp/profile-internal-headers.txt \
+                && grep -Fq "Trang web đang trong quá trình phát triển" /tmp/profile-internal.html \
+                && ! grep -Fq "Kịch bản tư vấn" /tmp/profile-internal.html \
+                && [ "$www_code" = "200" ] \
+                && grep -qi '^content-type: text/html' /tmp/profile-www-headers.txt \
+                && grep -Fq "Trang web đang trong quá trình phát triển" /tmp/profile-www.html \
+                && ! grep -Fq "lead-api" /tmp/profile-www.html; then
+                echo "profile maintenance smoke OK after attempt $attempt"
+                exit 0
+              fi
+              echo "attempt $attempt: home=$home_code test=$test_code internal=$internal_code www=$www_code, retrying in 20s"
+              sleep 20
+            done
+            echo "::error::profile maintenance page did not pass smoke checks within 10 minutes of deploy"
+            exit 1
+          fi
           for attempt in $(seq 1 30); do
             home_code=$(curl -sS --connect-timeout 5 --max-time 30 \
               -D /tmp/profile-headers.txt -o /tmp/profile.html \

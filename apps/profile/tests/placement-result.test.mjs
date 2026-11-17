@@ -151,6 +151,7 @@ test("buildProfile copies the result page and injects the lead API", async () =>
 			distUrl: new URL(`file://${dist}/dist/`),
 			leadApiUrl: "https://api.example.test",
 			studentPortalUrl: "",
+			maintenance: false,
 		});
 		const built = readFileSync(
 			join(dist, "dist", "kiem-tra-dau-vao", "ket-qua", "index.html"),
