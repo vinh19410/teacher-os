@@ -12,6 +12,9 @@ Quy ước khi cập nhật:
 
 ## 2026-11-17
 
+### Fixed
+- Căn chỉnh lại 3 thẻ ảnh mục `"Học viên nói gì"` (`#hoc-vien-noi-gi`) trên `apps/profile/public/index.html`: thay bằng ảnh chụp phản hồi sắc nét đã crop sạch chrome và loại metadata (`feedback-global-offer.png`, `feedback-po-le.png`, `feedback-ielts-70.png`), khôi phục `.proof-img-wrap img.chat-contain` dùng `object-fit: contain; object-position: center` kèm khoảng chừa `.zoom-pill`, đồng bộ quote/tác giả/lightbox và xóa hai ảnh cũ không còn dùng (#757).
+
 ### Changed
 - Bỏ toàn bộ chữ `"khách quan"` khỏi giao diện bài kiểm tra đầu vào (entry test) trên `apps/profile` (`40 câu`, `Đã trả lời X/Y câu`, `còn N câu chưa trả lời`), `apps/student` (`Đã trả lời X/Y câu`, tiêu đề `Điểm các kỹ năng` đồng bộ với trang kết quả công khai) và `apps/web` (`Chấm tự động 3 phần • giáo viên chấm Writing & Speaking`), kèm regression guard trong `apps/profile/tests/placement-test.test.mjs`, unit test và E2E specs (#751).
 

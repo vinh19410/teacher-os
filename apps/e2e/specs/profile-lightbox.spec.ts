@@ -158,4 +158,57 @@ test.describe("Profile certificate lightbox modal (#706)", () => {
 			await expect(vinschoolTrigger).toBeFocused();
 		});
 	}
+
+	for (const vp of VIEWPORTS) {
+		test(`renders student proof chat screenshots cleanly and opens proportional lightbox on ${vp.name}`, async ({
+			page,
+		}) => {
+			await page.setViewportSize({ width: vp.width, height: vp.height });
+			await page.goto(PROFILE_ORIGIN, { waitUntil: "domcontentloaded" });
+
+			const proofSection = page.locator("#hoc-vien-noi-gi");
+			await proofSection.scrollIntoViewIfNeeded();
+
+			const overflow = await page.evaluate(() => ({
+				scrollWidth: document.documentElement.scrollWidth,
+				clientWidth: document.documentElement.clientWidth,
+			}));
+			expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.clientWidth);
+
+			const triggers = proofSection.locator(".proof-img-wrap");
+			await expect(triggers).toHaveCount(3);
+
+			const imgModal = page.locator("#imgModal");
+			const modalImg = page.locator("#modalImg");
+
+			for (let i = 0; i < 3; i += 1) {
+				const trigger = triggers.nth(i);
+				await waitForTriggerThumbLoaded(trigger);
+
+				const thumbStyle = await trigger.evaluate((btn) => {
+					const img = btn.querySelector("img");
+					if (!img) throw new Error("Missing proof image");
+					const cs = getComputedStyle(img);
+					return {
+						objectFit: cs.objectFit,
+						naturalWidth: img.naturalWidth,
+					};
+				});
+				expect(thumbStyle.objectFit).toBe("contain");
+				expect(thumbStyle.naturalWidth).toBeGreaterThanOrEqual(450);
+
+				await trigger.click();
+				await expect(imgModal).toBeVisible();
+				await waitForModalImageLoaded(page);
+
+				const metrics = await measureLightbox(page);
+				expect(metrics.imgBox.width).toBeGreaterThanOrEqual(250);
+				expect(metrics.imgBox.height).toBeGreaterThanOrEqual(100);
+				assertContainedAndProportional(metrics);
+
+				await page.keyboard.press("Escape");
+				await expectModalReset(imgModal, modalImg);
+			}
+		});
+	}
 });

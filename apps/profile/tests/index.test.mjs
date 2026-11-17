@@ -1662,3 +1662,104 @@ test("placement walkthrough mp4 is published as static asset with video/mp4 MIME
 		rmSync(tmpRoot, { recursive: true, force: true });
 	}
 });
+
+test("student proof section uses crisp chat-contain feedback screenshots without clipping or stale assets", () => {
+	const styleMatch = html.match(/<style\b[^>]*>([\s\S]*?)<\/style>/i);
+	assert.ok(styleMatch, "expected inline <style> block");
+	const css = styleMatch[1];
+
+	assert.doesNotMatch(
+		css,
+		/\.proof-img-wrap\s+img\s*,\s*\.proof-img-wrap\s+img\.chat-contain\s*\{[^}]*object-fit:\s*cover/i,
+		".proof-img-wrap img.chat-contain must not be grouped under object-fit: cover",
+	);
+	const baseProofImgRule = css.match(/\.proof-img-wrap\s+img\s*\{([^}]*)\}/i);
+	assert.ok(baseProofImgRule, "expected .proof-img-wrap img base rule");
+	assert.match(baseProofImgRule[1], /position:\s*absolute;/i);
+	assert.match(baseProofImgRule[1], /inset:\s*0;/i);
+
+	const chatContainRule = css.match(
+		/\.proof-img-wrap\s+img\.chat-contain\s*\{([^}]*)\}/i,
+	);
+	assert.ok(chatContainRule, "expected .proof-img-wrap img.chat-contain rule");
+	assert.match(
+		chatContainRule[1],
+		/object-fit:\s*contain;/i,
+		".proof-img-wrap img.chat-contain must use object-fit: contain",
+	);
+	assert.match(
+		chatContainRule[1],
+		/object-position:\s*center;/i,
+		".proof-img-wrap img.chat-contain must use object-position: center",
+	);
+
+	const proofStart = html.indexOf('id="hoc-vien-noi-gi"');
+	const proofEnd = html.indexOf('id="vi-sao-khac"');
+	assert.ok(proofStart > -1 && proofEnd > proofStart);
+	const proofHtml = html.slice(proofStart, proofEnd);
+
+	const expectedAssets = [
+		"assets/teacher-profile/images/feedback-global-offer.png",
+		"assets/teacher-profile/images/feedback-po-le.png",
+		"assets/teacher-profile/images/feedback-ielts-70.png",
+	];
+	const cardMatches = [
+		...proofHtml.matchAll(
+			/<div class="proof-card">[\s\S]*?data-lightbox-src="([^"]+)"[\s\S]*?<img\b([^>]+)>/g,
+		),
+	];
+	assert.equal(
+		cardMatches.length,
+		3,
+		"all 3 proof cards must render an <img> inside .proof-card",
+	);
+	for (let i = 0; i < expectedAssets.length; i += 1) {
+		const imgAttrs = cardMatches[i][2];
+		const srcMatch = imgAttrs.match(/\bsrc="([^"]+)"/);
+		assert.ok(srcMatch, "proof <img> must have src attribute");
+		assert.match(
+			imgAttrs,
+			/\bclass="[^"]*\bchat-contain\b[^"]*"/,
+			"proof <img> must carry class='chat-contain'",
+		);
+		assert.equal(cardMatches[i][1], expectedAssets[i]);
+		assert.equal(srcMatch[1], expectedAssets[i]);
+
+		const pngBuf = readFileSync(new URL(expectedAssets[i], publicDir));
+		assert.equal(
+			pngBuf.subarray(0, 8).toString("hex"),
+			"89504e470d0a1a0a",
+			`${expectedAssets[i]} must be a valid PNG`,
+		);
+		const width = pngBuf.readUInt32BE(16);
+		assert.ok(
+			width >= 450,
+			`${expectedAssets[i]} width (${width}px) must be >= 450px`,
+		);
+	}
+
+	assert.equal(
+		existsSync(
+			new URL("assets/pinned-post-20-10/student-feedback.jpg", publicDir),
+		),
+		false,
+		"orphaned student-feedback.jpg must be removed",
+	);
+	assert.equal(
+		existsSync(
+			new URL(
+				"assets/teacher-profile/images/class-offline-selfie.png",
+				publicDir,
+			),
+		),
+		false,
+		"orphaned class-offline-selfie.png must be removed",
+	);
+
+	assert.doesNotMatch(proofHtml, /theo đúng JD/i);
+	assert.doesNotMatch(proofHtml, /Lớp CO2/i);
+	assert.doesNotMatch(proofHtml, /Học viên Phương Anh/i);
+	assert.match(proofHtml, /Bảo Hân/);
+	assert.match(proofHtml, /Po Le/);
+	assert.match(proofHtml, /Đỗ Anh Thư/);
+});
