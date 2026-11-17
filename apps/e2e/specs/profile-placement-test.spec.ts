@@ -652,12 +652,18 @@ test.describe
 			const listeningTile = page.locator('[data-skill-result="listening"]');
 			await expect(listeningTile).toContainText("Listening");
 			await expect(listeningTile).toContainText("13/13 câu đúng");
-			await expect(listeningTile).not.toContainText("%");
+			await expect(listeningTile).toContainText("100%");
+			await expect(listeningTile).toContainText("B1 trở lên");
+			await expect(
+				listeningTile.locator(".skill-progress-track"),
+			).toBeVisible();
 
 			const readingTile = page.locator('[data-skill-result="reading"]');
 			await expect(readingTile).toContainText("Reading");
 			await expect(readingTile).toContainText("12/15 câu đúng");
-			await expect(readingTile).not.toContainText("%");
+			await expect(readingTile).toContainText("80%");
+			await expect(readingTile).toContainText("A2+ / B1 thấp");
+			await expect(readingTile.locator(".skill-progress-track")).toBeVisible();
 
 			const emailNotice = page.getByTestId("email-grading-notice");
 			await expect(emailNotice).toBeVisible();

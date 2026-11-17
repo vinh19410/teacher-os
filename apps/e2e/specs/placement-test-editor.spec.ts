@@ -248,7 +248,9 @@ test.describe("placement test editor 5 kỹ năng (/placement-test -> /kiem-tra-
 				name: "Bài Kiểm Tra Đầu Vào Tiếng Anh (5 Kỹ Năng)",
 			}),
 		).toBeVisible();
-		await expect(profileTab.locator("body")).toContainText("39 câu khách quan");
+		await expect(profileTab.locator("body")).toContainText(
+			"11 câu trắc nghiệm",
+		);
 
 		await profileTab.locator("#startTestBtn").click();
 		await expect(
