@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import {
+	existsSync,
+	mkdtempSync,
+	readFileSync,
+	rmSync,
+	statSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -1562,5 +1568,90 @@ test("teacher-profile PDFs and thumbnails use Đỗ Thục Mỹ without Đỗ Th
 			expectedThumbDims[thumbName],
 			`${thumbName} must match expected dimensions`,
 		);
+	}
+});
+
+test("placement walkthrough mp4 is published as static asset with video/mp4 MIME, Range support, and dist copy", async () => {
+	const videoUrl = new URL("huong-dan-kiem-tra-dau-vao.mp4", publicDir);
+	const legacyReportVideoUrl = new URL(
+		"../../../plans/reports/huong-dan-kiem-tra-dau-vao.mp4",
+		import.meta.url,
+	);
+	assert.equal(
+		existsSync(videoUrl),
+		true,
+		"huong-dan-kiem-tra-dau-vao.mp4 must exist in apps/profile/public/",
+	);
+	assert.equal(
+		existsSync(legacyReportVideoUrl),
+		false,
+		"huong-dan-kiem-tra-dau-vao.mp4 must not remain duplicated in plans/reports/",
+	);
+
+	const expectedSize = statSync(videoUrl).size;
+	assert.ok(expectedSize > 0, "video file must not be empty");
+	assert.ok(
+		expectedSize < 25 * 1024 * 1024,
+		"video file must stay below 25 MiB Cloudflare Static Assets limit",
+	);
+
+	const server = createProfileServer("http://localhost:8100", "");
+	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+	const base = `http://127.0.0.1:${server.address().port}`;
+	try {
+		const headRes = await fetch(`${base}/huong-dan-kiem-tra-dau-vao.mp4`, {
+			method: "HEAD",
+		});
+		assert.equal(headRes.status, 200);
+		assert.equal(headRes.headers.get("content-type"), "video/mp4");
+		assert.equal(headRes.headers.get("accept-ranges"), "bytes");
+		assert.equal(Number(headRes.headers.get("content-length")), expectedSize);
+
+		const rangeRes = await fetch(`${base}/huong-dan-kiem-tra-dau-vao.mp4`, {
+			headers: { Range: "bytes=0-31" },
+		});
+		assert.equal(rangeRes.status, 206);
+		assert.equal(rangeRes.headers.get("content-type"), "video/mp4");
+		assert.equal(
+			rangeRes.headers.get("content-range"),
+			`bytes 0-31/${expectedSize}`,
+		);
+		const chunk = new Uint8Array(await rangeRes.arrayBuffer());
+		assert.equal(chunk.byteLength, 32);
+		assert.equal(
+			Buffer.from(chunk.subarray(4, 8)).toString("ascii"),
+			"ftyp",
+			"MP4 header must start with ftyp box",
+		);
+
+		const badRangeRes = await fetch(`${base}/huong-dan-kiem-tra-dau-vao.mp4`, {
+			headers: { Range: `bytes=${expectedSize + 100}-` },
+		});
+		assert.equal(badRangeRes.status, 416);
+		assert.equal(
+			badRangeRes.headers.get("content-range"),
+			`bytes */${expectedSize}`,
+		);
+	} finally {
+		await new Promise((resolve) => server.close(resolve));
+	}
+
+	const tmpRoot = mkdtempSync(join(tmpdir(), "profile-video-build-"));
+	try {
+		const distDir = join(tmpRoot, "dist");
+		await buildProfile({
+			distUrl: pathToFileURL(distDir),
+			leadApiUrl: "https://api.msmy.io.vn",
+			studentPortalUrl: "https://student.msmy.io.vn",
+		});
+		const builtVideoPath = join(distDir, "huong-dan-kiem-tra-dau-vao.mp4");
+		assert.equal(
+			existsSync(builtVideoPath),
+			true,
+			"buildProfile must copy huong-dan-kiem-tra-dau-vao.mp4 into dist/",
+		);
+		assert.equal(statSync(builtVideoPath).size, expectedSize);
+	} finally {
+		rmSync(tmpRoot, { recursive: true, force: true });
 	}
 });
