@@ -11,7 +11,7 @@ const NAV_ITEMS = [
 	},
 ] as const;
 
-/** Shell admin (DESIGN.md: token packages/ui globals.css, Geist, light):
+/** Shell admin (DESIGN.md: token packages/ui globals.css, Be Vietnam Pro, light):
  * sidebar một mục "Thư viện đề", header tên admin + nút đăng xuất. */
 export function AdminShell() {
 	const { admin } = useRouteContext({ from: "/_auth" });
