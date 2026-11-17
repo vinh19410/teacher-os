@@ -59,6 +59,8 @@ env:
   LANDING_ORIGIN: https://staging.teacheros.io.vn
   API_BASE_URL: https://api.staging.teacheros.io.vn
   PROFILE_ORIGIN: https://profile.staging.teacheros.io.vn
+  # Staging luôn bật trang profile đầy đủ để QA/kiểm thử; production kiểm soát qua apps/profile/maintenance.json.
+  PROFILE_MAINTENANCE: "false"
 
 jobs:
   quality:
@@ -262,11 +264,12 @@ jobs:
       - name: Smoke check profile
         if: ${{ !inputs.dry_run }}
         # Plan #536: teacher profile StaticSite on staging
-        # (profile.staging.teacheros.io.vn). When apps/profile/maintenance.json
-        # sets disabled=true, verify all profile entrypoints serve the
-        # maintenance notice cleanly; otherwise run full site checks.
+        # (profile.staging.teacheros.io.vn). Resolves effective maintenance mode
+        # from PROFILE_MAINTENANCE env override + apps/profile/maintenance.json
+        # via isProfileMaintenanceEnabled() so staging (PROFILE_MAINTENANCE=false)
+        # verifies full profile routes and assets.
         run: |
-          if node -e 'process.exit(JSON.parse(require("node:fs").readFileSync("apps/profile/maintenance.json","utf8")).disabled ? 0 : 1)'; then
+          if node --input-type=module -e 'import { isProfileMaintenanceEnabled } from "./apps/profile/maintenance.mjs"; process.exit(isProfileMaintenanceEnabled() ? 0 : 1)'; then
             for attempt in $(seq 1 30); do
               home_code=$(curl -sS --connect-timeout 5 --max-time 30 \
                 -D /tmp/profile-headers.txt -o /tmp/profile.html \
