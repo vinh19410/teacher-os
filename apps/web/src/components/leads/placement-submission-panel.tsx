@@ -9,10 +9,11 @@ import {
 	type PlacementError,
 	type PlacementSpeakingRubric,
 	type PlacementSubmissionDetail,
+	type PlacementTeacherGrade,
 	type PlacementWritingRubric,
 } from "@teacher-os/api/placement-test-contracts";
 import { Check, Copy, Link2, RefreshCw } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { StatusTag } from "@/components/assignments/status-tag";
 import { Button } from "@/components/ui/button";
@@ -20,13 +21,20 @@ import { inputCls } from "@/components/ui/field";
 import { isHttpError } from "@/lib/kernel-load-state";
 import { reauth } from "@/lib/reauth";
 import {
+	fetchLeadPlacementSubmission,
 	gradeLeadPlacementSubmission,
 	leadPlacementSubmissionQueryKey,
-	leadPlacementSubmissionQueryOptions,
 	leadsAllQueryKey,
 	resolvePlacementSubmissionMediaUrl,
 	retryLeadPlacementAi,
 } from "@/lib/repos/leads";
+import {
+	fetchStudentPlacementSubmission,
+	gradeStudentPlacementSubmission,
+	resolveStudentPlacementMediaUrl,
+	retryStudentPlacementAi,
+	studentPlacementSubmissionQueryKey,
+} from "@/lib/repos/student-placement";
 import { PlacementAiStatusBanner } from "./placement-ai-status-banner";
 import { PlacementErrorHighlighter } from "./placement-error-highlighter";
 
@@ -198,10 +206,37 @@ function RubricRow({
 	);
 }
 
-export function PlacementSubmissionPanel({ leadId }: { leadId: string }) {
+export type PlacementSubmissionSubject =
+	| { kind: "lead"; id: string }
+	| { kind: "student"; id: string };
+
+export type PlacementSubmissionPanelProps = {
+	onGraded?: (detail: PlacementSubmissionDetail) => void;
+	emptyFallback?: ReactNode;
+} & (
+	| { subject: PlacementSubmissionSubject; leadId?: never; studentId?: never }
+	| { leadId: string; studentId?: never; subject?: never }
+	| { studentId: string; leadId?: never; subject?: never }
+);
+
+export function PlacementSubmissionPanel(props: PlacementSubmissionPanelProps) {
+	const resolvedSubject: PlacementSubmissionSubject =
+		props.subject ??
+		(props.studentId !== undefined
+			? { kind: "student", id: props.studentId }
+			: { kind: "lead", id: props.leadId });
+
 	const queryClient = useQueryClient();
 	const query = useQuery({
-		...leadPlacementSubmissionQueryOptions(leadId),
+		queryKey:
+			resolvedSubject.kind === "student"
+				? studentPlacementSubmissionQueryKey(resolvedSubject.id)
+				: leadPlacementSubmissionQueryKey(resolvedSubject.id),
+		queryFn: ({ signal }) =>
+			resolvedSubject.kind === "student"
+				? fetchStudentPlacementSubmission(resolvedSubject.id, undefined, signal)
+				: fetchLeadPlacementSubmission(resolvedSubject.id, undefined, signal),
+		staleTime: resolvedSubject.kind === "student" ? 0 : undefined,
 		refetchInterval: (q) =>
 			q.state.data?.aiStatus === "processing" ? PLACEMENT_AI_POLL_MS : false,
 	});
@@ -222,7 +257,7 @@ export function PlacementSubmissionPanel({ leadId }: { leadId: string }) {
 
 	if (query.isError) {
 		if (isHttpError(query.error) && query.error.status === 404) {
-			return null;
+			return props.emptyFallback ?? null;
 		}
 		return (
 			<div
@@ -236,24 +271,43 @@ export function PlacementSubmissionPanel({ leadId }: { leadId: string }) {
 
 	return (
 		<PlacementSubmissionBody
+			subject={resolvedSubject}
 			submission={query.data}
-			onSaved={(updated) => {
-				queryClient.setQueryData(
-					leadPlacementSubmissionQueryKey(leadId),
-					updated,
-				);
-				void queryClient.invalidateQueries({ queryKey: leadsAllQueryKey });
+			onSaved={(updated, action) => {
+				if (resolvedSubject.kind === "student") {
+					queryClient.setQueryData(
+						studentPlacementSubmissionQueryKey(resolvedSubject.id),
+						updated,
+					);
+					void queryClient.invalidateQueries({
+						queryKey: studentPlacementSubmissionQueryKey(resolvedSubject.id),
+					});
+				} else {
+					queryClient.setQueryData(
+						leadPlacementSubmissionQueryKey(resolvedSubject.id),
+						updated,
+					);
+					void queryClient.invalidateQueries({ queryKey: leadsAllQueryKey });
+				}
+				if (action === "grade") {
+					props.onGraded?.(updated);
+				}
 			}}
 		/>
 	);
 }
 
 function PlacementSubmissionBody({
+	subject,
 	submission,
 	onSaved,
 }: {
+	subject: PlacementSubmissionSubject;
 	submission: PlacementSubmissionDetail;
-	onSaved: (updated: PlacementSubmissionDetail) => void;
+	onSaved: (
+		updated: PlacementSubmissionDetail,
+		action: "grade" | "retry",
+	) => void;
 }) {
 	const [initial] = useState(() => initialPlacementGrading(submission));
 	const [writingRubric, setWritingRubric] = useState<PlacementWritingRubric>(
@@ -345,9 +399,13 @@ function PlacementSubmissionBody({
 	};
 
 	useEffect(() => {
-		const resolved = resolvePlacementSubmissionMediaUrl(
-			submission.speakingMediaUrl,
-		);
+		const resolved =
+			subject.kind === "student"
+				? (resolvePlacementSubmissionMediaUrl(submission.speakingMediaUrl) ??
+					(submission.speakingStatus === "uploaded"
+						? resolveStudentPlacementMediaUrl(subject.id)
+						: null))
+				: resolvePlacementSubmissionMediaUrl(submission.speakingMediaUrl);
 		if (submission.speakingStatus !== "uploaded" || !resolved) {
 			setMediaBlobUrl(null);
 			setMediaError(null);
@@ -385,7 +443,13 @@ function PlacementSubmissionBody({
 				URL.revokeObjectURL(createdUrl);
 			}
 		};
-	}, [submission.speakingStatus, submission.speakingMediaUrl, mediaRetryTick]);
+	}, [
+		subject.kind,
+		subject.id,
+		submission.speakingStatus,
+		submission.speakingMediaUrl,
+		mediaRetryTick,
+	]);
 
 	const activeSpeakingRubric = includeSpeaking ? speakingRubric : null;
 	const previewFinal = computePlacementFinal({
@@ -396,17 +460,21 @@ function PlacementSubmissionBody({
 	});
 
 	const gradeMutation = useMutation({
-		mutationFn: () =>
-			gradeLeadPlacementSubmission(submission.leadId, {
+		mutationFn: () => {
+			const payload: PlacementTeacherGrade = {
 				writingRubric,
 				speakingRubric: activeSpeakingRubric,
 				teacherFeedback: teacherFeedback.trim(),
 				writingErrors,
 				speakingErrors: includeSpeaking ? speakingErrors : [],
-			}),
+			};
+			return subject.kind === "student"
+				? gradeStudentPlacementSubmission(subject.id, payload)
+				: gradeLeadPlacementSubmission(subject.id, payload);
+		},
 		onSuccess: (updated) => {
 			toast.success("Đã lưu kết quả chấm bài kiểm tra đầu vào.");
-			onSaved(updated);
+			onSaved(updated, "grade");
 		},
 		onError: (err) => {
 			if (isHttpError(err) && err.status === 401) {
@@ -418,10 +486,13 @@ function PlacementSubmissionBody({
 	});
 
 	const retryMutation = useMutation({
-		mutationFn: () => retryLeadPlacementAi(submission.leadId),
+		mutationFn: () =>
+			subject.kind === "student"
+				? retryStudentPlacementAi(subject.id)
+				: retryLeadPlacementAi(subject.id),
 		onSuccess: (updated) => {
 			toast.success("Đã gửi yêu cầu AI chấm.");
-			onSaved(updated);
+			onSaved(updated, "retry");
 		},
 		onError: (err) => {
 			if (isHttpError(err) && err.status === 401) {
