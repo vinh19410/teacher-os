@@ -28,13 +28,14 @@ export const student = sqliteTable(
 		zalo: text("zalo").notNull().default(""),
 		parentName: text("parent_name").notNull().default(""),
 		parentPhone: text("parent_phone").notNull().default(""),
-		/** Chứng chỉ học viên quan tâm ("ielts" | "toeic") — enum EXAM_INTERESTS ở packages/api.
+		/** Hướng học học viên quan tâm ("ielts" | "communication"; "toeic" chỉ còn ở dữ liệu cũ) —
+		 * EXAM_INTERESTS / STORED_EXAM_INTERESTS ở packages/api.
 		 * Ghi bởi: học viên hoàn thành wizard onboarding — POST /api/student/onboarding (bước 1). */
 		examInterest: text("exam_interest"),
 		/** Trình độ hiện tại tự khai ("beginner" | "basic" | "intermediate" | "upper-intermediate" | "advanced" | "unsure").
 		 * Ghi bởi: POST /api/student/onboarding (bước 2). Null với học viên cũ chưa có dữ liệu. */
 		currentLevel: text("current_level"),
-		/** Band/điểm mục tiêu (chuỗi hiển thị, vd "6.5" IELTS hoặc "750" TOEIC).
+		/** Band/điểm/trình độ mục tiêu (chuỗi hiển thị, vd "6.5" IELTS, "B2" CEFR Giao Tiếp, "750" TOEIC cũ).
 		 * Ghi bởi: POST /api/student/onboarding (bước 2, ràng buộc theo examInterest). */
 		targetScore: text("target_score"),
 		/** Điểm đầu vào — chuỗi tự do, tối đa 50 ký tự (vd "7.0 IELTS", "800 TOEIC", "B2"); null = chưa có.
