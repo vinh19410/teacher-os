@@ -1,6 +1,11 @@
-import { quizTypeDisplay } from "@teacher-os/api/contracts";
+import {
+	isImageBasedType,
+	LIBRARY_OPTION_BANK_MAX,
+	quizTypeDisplay,
+} from "@teacher-os/api/contracts";
 import {
 	countClozeMarkers,
+	LIBRARY_CLOZE_TYPES,
 	type LibraryQuestionGroup,
 	type LibrarySkill,
 	librarySkillTypes,
@@ -60,6 +65,7 @@ export function GroupCard({
 	showErrors,
 	status,
 	errorFor,
+	maxQuestions,
 	lockAddQuestion,
 }: {
 	skill: LibrarySkill;
@@ -103,6 +109,7 @@ export function GroupCard({
 	status: "draft" | "ready";
 	errorFor: (field: string) => string | undefined;
 	/** Tổng part đạt 40 câu — chặn thêm câu mới (schema chặn 40/PART). */
+	maxQuestions?: number;
 	lockAddQuestion?: boolean;
 }) {
 	const [confirmRemove, setConfirmRemove] = useState(false);
@@ -132,9 +139,10 @@ export function GroupCard({
 		(item) => countClozeMarkers(item.stem) === 1,
 	).length;
 	const blanksMismatch = group.answersInline && blankCount !== items.length;
+	const isImageGroup = isImageBasedType(skill, group.type);
 	const questionsTabError =
 		optionBankError !== undefined ||
-		errorFor("imageUrl") !== undefined ||
+		(isImageGroup && errorFor("imageUrl") !== undefined) ||
 		(showErrors &&
 			items.some((item) => !item.stem.trim() || !item.answer.trim()));
 
@@ -156,7 +164,13 @@ export function GroupCard({
 	const handleItemsChange = (next: QuestionItem[]) => {
 		// Part đã đủ 40 câu → từ chối thêm (QKE đếm per-nhóm; schema chặn
 		// 40/PART nên cửa chặn cuối nằm ở đây).
-		if (lockAddQuestion && next.length > items.length) return;
+		if (
+			(lockAddQuestion ||
+				(maxQuestions !== undefined && next.length > maxQuestions)) &&
+			next.length > items.length
+		) {
+			return;
+		}
 		// Hàng mới thêm tự mở (F6/A3) — appends luôn ở cuối dải.
 		if (next.length > items.length) onOpenRowChange(next.length - 1);
 		onItemsChange(next);
@@ -248,6 +262,10 @@ export function GroupCard({
 						collapsibleRows
 						openRow={openRow}
 						onOpenRowChange={onOpenRowChange}
+						maxBank={LIBRARY_OPTION_BANK_MAX}
+						libraryReadingMode={skill === "reading"}
+						maxQuestions={maxQuestions}
+						lockAddQuestion={lockAddQuestion}
 					/>
 				</div>
 				<div
@@ -269,8 +287,17 @@ export function GroupCard({
 							onChange={(event) => onPatch({ type: event.target.value })}
 						>
 							{typeOptions.map((type) => (
-								<option key={type} value={type}>
-									{type}
+								<option
+									key={type}
+									value={type}
+									disabled={
+										group.type !== "mcq_many" &&
+										type === "mcq_many" &&
+										maxQuestions !== undefined &&
+										maxQuestions < 2
+									}
+								>
+									{quizTypeDisplay(type).label}
 								</option>
 							))}
 						</Select>
@@ -280,7 +307,13 @@ export function GroupCard({
 							<input
 								type="checkbox"
 								checked={group.answersInline}
-								disabled={!CLOZE_EDITOR_TYPES.has(group.type)}
+								disabled={
+									!(
+										skill === "reading"
+											? LIBRARY_CLOZE_TYPES
+											: CLOZE_EDITOR_TYPES
+									).has(group.type)
+								}
 								onChange={(event) =>
 									onPatch({ answersInline: event.target.checked })
 								}

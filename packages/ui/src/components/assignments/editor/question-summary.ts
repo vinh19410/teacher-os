@@ -32,15 +32,20 @@ export function questionSummary(
 	item: QuestionItem,
 	typeId: string,
 	optionBank?: readonly string[],
+	maxBank?: number,
 ): QuestionSummary {
-	const kind = kindOf(item.type ?? typeId);
+	const effectiveType = item.type ?? typeId;
+	const kind = kindOf(effectiveType);
 	let choiceCount: number | null = null;
 	if (
 		optionBank &&
 		optionBank.length > 0 &&
-		(kind === "letter" || kind === "roman")
+		(kind === "letter" || kind === "roman" || effectiveType === "summary")
 	) {
-		choiceCount = optionBank.length;
+		choiceCount =
+			maxBank !== undefined
+				? Math.min(optionBank.length, maxBank)
+				: optionBank.length;
 	} else if (kind === "mcq4" || kind === "mcq3") {
 		const fallback = answerChoices(kind)?.length ?? 0;
 		choiceCount = item.opts?.length ?? fallback;

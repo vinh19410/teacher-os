@@ -1,4 +1,5 @@
 import { ASSIGNMENT_IMAGE_SRC_PATTERN } from "@teacher-os/api/contracts";
+import { isLibraryBankableType } from "@teacher-os/api/library-contracts";
 import { htmlToPlainText } from "@teacher-os/api/rich-text";
 import { Button } from "@teacher-os/ui/components/web-kit/button";
 import {
@@ -7,13 +8,19 @@ import {
 	Textarea,
 } from "@teacher-os/ui/components/web-kit/field";
 import { RichTextEditor } from "@teacher-os/ui/components/web-kit/rich-text-editor";
-import { CLOZE_EDITOR_TYPES, TABLECOMP_TYPE } from "@teacher-os/ui/lib/cloze";
-import { useEffect, useState } from "react";
+import {
+	CLOZE_EDITOR_TYPES,
+	parseTableStem,
+	TABLECOMP_TYPE,
+} from "@teacher-os/ui/lib/cloze";
+import { cn } from "@teacher-os/ui/lib/utils";
+import { useEffect, useRef, useState } from "react";
 import { AnswerKeyGrid, QUESTION_MAX_COUNT } from "./answer-key-grid";
 import {
 	emptyItem,
 	isBankableType,
 	isImageBased,
+	OPTION_BANK_MAX,
 	type QuestionItem,
 	qStartOf,
 	TYPE_HINTS,
@@ -23,6 +30,7 @@ import {
 	type BulkKeyPasteLineError,
 } from "./bulk-key-paste";
 import { ClozeEditor } from "./cloze-editor";
+import { McqManyEditor } from "./mcq-many-editor";
 import { OptionBankEditor } from "./option-bank-editor";
 import { PinEditor } from "./pin-editor";
 import { TableGridEditor } from "./table-grid-editor";
@@ -53,6 +61,10 @@ export function QuestionKeyEditor({
 	openRow = null,
 	onOpenRowChange,
 	imageId,
+	maxBank = OPTION_BANK_MAX,
+	libraryReadingMode = false,
+	maxQuestions = QUESTION_MAX_COUNT,
+	lockAddQuestion = false,
 }: {
 	skill: string;
 	partId: string;
@@ -87,16 +99,48 @@ export function QuestionKeyEditor({
 	openRow?: number | null;
 	onOpenRowChange?: (index: number | null) => void;
 	imageId?: string;
+	maxBank?: number;
+	libraryReadingMode?: boolean;
+	maxQuestions?: number;
+	lockAddQuestion?: boolean;
 }) {
 	const actualImageId = imageId ?? `assignment-field-image-${partId}`;
 	const qStart = qStartOverride ?? qStartOf(skill, partId);
+	const isMcqMany = typeId === "mcq_many";
+	const supportsLibraryToggle =
+		libraryReadingMode && (typeId === "summary" || typeId === "fill_blank");
+	const [summaryWordBankOpen, setSummaryWordBankOpen] = useState(false);
+	const wordBankChecked =
+		libraryReadingMode &&
+		typeId === "summary" &&
+		(optionBank.length > 0 || summaryWordBankOpen);
+	const [completionMode, setCompletionMode] = useState<"cloze" | "table">(() =>
+		items.some((item) => parseTableStem(item.stem) !== null)
+			? "table"
+			: "cloze",
+	);
+	const itemsRef = useRef(items);
+	itemsRef.current = items;
+
 	// Bank là prompt-level nhưng editor hiện khi type đề HOẶC bất kỳ câu
 	// bankable (đề trộn dạng) — không thì cụm bankable không có chỗ nhập bank
 	// mà instruction take screen vẫn nói "choose from the option bank".
-	const bankTypeId = isBankableType(skill, typeId)
-		? typeId
-		: (items.find((item) => item.type && isBankableType(skill, item.type))
-				?.type ?? null);
+	const bankableCheck = libraryReadingMode
+		? isLibraryBankableType
+		: isBankableType;
+	const bankTypeId =
+		typeId === "summary"
+			? wordBankChecked
+				? "summary"
+				: null
+			: bankableCheck(skill, typeId)
+				? typeId
+				: (items.find(
+						(item) =>
+							item.type &&
+							(item.type !== "summary" || optionBank.length > 0) &&
+							bankableCheck(skill, item.type),
+					)?.type ?? null);
 	// Phase-04 FR2/FR3 — image-based pairs (reading diagram + listening map,
 	// skill-qualified) surface the URL field + pin editor; `map` gains the
 	// field it never had while writing task1's shared `map` id stays clear.
@@ -109,13 +153,20 @@ export function QuestionKeyEditor({
 		safeImageUrl.length > 0 &&
 		ASSIGNMENT_IMAGE_SRC_PATTERN.test(safeImageUrl);
 	const hint = TYPE_HINTS[typeId];
-	const atMax = items.length >= QUESTION_MAX_COUNT;
+	const atMax = lockAddQuestion || items.length >= maxQuestions;
 	// Phase-03: the 8 cloze completion types get the click-to-blank editor,
 	// tablecomp gets the grid editor; `shortans` keeps the phase-01 text rows
 	// (no content block — coordinator scope note).
 	// `gap` (Grammar/Vocabulary) reuses the click-to-blank editor without being an IELTS completion type.
-	const showClozeEditor = CLOZE_EDITOR_TYPES.has(typeId) || typeId === "gap";
-	const showTableEditor = typeId === TABLECOMP_TYPE;
+	// Library Reading mode (#762): `summary`/`fill_blank` support cloze/table toggle, `diagram` shows ClozeEditor.
+	const showClozeEditor = supportsLibraryToggle
+		? completionMode === "cloze"
+		: CLOZE_EDITOR_TYPES.has(typeId) ||
+			typeId === "gap" ||
+			(libraryReadingMode && (typeId === "fill_blank" || typeId === "diagram"));
+	const showTableEditor = supportsLibraryToggle
+		? completionMode === "table"
+		: typeId === TABLECOMP_TYPE;
 	const [pasteOpen, setPasteOpen] = useState(false);
 	const [pasteRaw, setPasteRaw] = useState("");
 	const [pasteOutcome, setPasteOutcome] = useState<{
@@ -133,7 +184,31 @@ export function QuestionKeyEditor({
 		setPasteRaw("");
 		setPasteOutcome(null);
 		setSelectedPin(null);
+		setSummaryWordBankOpen(false);
+		setCompletionMode(
+			itemsRef.current.some((item) => parseTableStem(item.stem) !== null)
+				? "table"
+				: "cloze",
+		);
 	}, [skill, partId, typeId]);
+	const handleToggleSummaryWordBank = (checked: boolean) => {
+		if (checked) {
+			setSummaryWordBankOpen(true);
+			return;
+		}
+		if (
+			optionBank.length > 0 &&
+			!window.confirm(
+				"Tắt ngân hàng từ sẽ xóa toàn bộ các từ trong ngân hàng. Tiếp tục?",
+			)
+		) {
+			return;
+		}
+		setSummaryWordBankOpen(false);
+		if (optionBank.length > 0) {
+			onBankChange([]);
+		}
+	};
 	const addQuestion = () => {
 		if (atMax) return false;
 		onItemsChange([...items, emptyItem(typeId)]);
@@ -159,6 +234,8 @@ export function QuestionKeyEditor({
 			typeId,
 			qStart,
 			items,
+			optionBank,
+			maxBank,
 		});
 		onItemsChange(outcome.items);
 		if (outcome.errors.length > 0) {
@@ -176,6 +253,10 @@ export function QuestionKeyEditor({
 		setPasteOpen(false);
 		setPasteOutcome(null);
 	};
+	const requirePin =
+		isImage &&
+		status === "ready" &&
+		!(libraryReadingMode && skill === "reading");
 	return (
 		<div className="flex flex-col gap-4 rounded-md rounded-md bg-muted p-4">
 			<div>
@@ -203,12 +284,67 @@ export function QuestionKeyEditor({
 					/>
 				</Field>
 			</div>
-			<div hidden={view === "intro"}>
+			<div hidden={view === "intro"} className="flex flex-col gap-3">
+				{supportsLibraryToggle && (
+					<fieldset
+						aria-label="Chế độ soạn nội dung"
+						className="m-0 flex flex-wrap items-center gap-1.5 border-0 p-0"
+					>
+						<button
+							type="button"
+							aria-pressed={completionMode === "cloze"}
+							onClick={() => setCompletionMode("cloze")}
+							className={cn(
+								"rounded-full border px-[10px] py-[4px] font-medium text-xs focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+								completionMode === "cloze"
+									? "border-primary bg-primary text-primary-foreground"
+									: "border-border text-muted-foreground hover:border-primary",
+							)}
+						>
+							Đoạn văn (Cloze)
+						</button>
+						<button
+							type="button"
+							aria-pressed={completionMode === "table"}
+							onClick={() => setCompletionMode("table")}
+							className={cn(
+								"rounded-full border px-[10px] py-[4px] font-medium text-xs focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
+								completionMode === "table"
+									? "border-primary bg-primary text-primary-foreground"
+									: "border-border text-muted-foreground hover:border-primary",
+							)}
+						>
+							Bảng (Grid)
+						</button>
+					</fieldset>
+				)}
+				{libraryReadingMode && typeId === "summary" && (
+					<label className="flex cursor-pointer items-center gap-2 text-sm">
+						<input
+							type="checkbox"
+							checked={wordBankChecked}
+							onChange={(event) =>
+								handleToggleSummaryWordBank(event.target.checked)
+							}
+							className="size-4 shrink-0 accent-primary"
+						/>
+						<span>Dùng ngân hàng từ (Word Bank)</span>
+					</label>
+				)}
 				{showClozeEditor && (
-					<ClozeEditor typeId={typeId} items={items} onApply={onItemsChange} />
+					<ClozeEditor
+						typeId={typeId}
+						items={items}
+						maxBlanks={maxQuestions}
+						onApply={onItemsChange}
+					/>
 				)}
 				{showTableEditor && (
-					<TableGridEditor items={items} onApply={onItemsChange} />
+					<TableGridEditor
+						items={items}
+						maxBlanks={maxQuestions}
+						onApply={onItemsChange}
+					/>
 				)}
 				{showErrors && questionsError && (
 					<p role="alert" className="text-destructive text-xs">
@@ -222,6 +358,10 @@ export function QuestionKeyEditor({
 						items={items}
 						showErrors={showErrors}
 						error={optionBankError}
+						maxBank={maxBank}
+						title={
+							bankTypeId === "summary" ? "Ngân hàng từ (Word Bank)" : undefined
+						}
 						onBankChange={onBankChange}
 						onItemsChange={onItemsChange}
 					/>
@@ -257,76 +397,94 @@ export function QuestionKeyEditor({
 						)}
 					</div>
 				)}
-				<div className="flex flex-wrap items-center justify-between gap-2">
-					<span className="font-medium text-muted-foreground text-xs">
-						{items.length}/{QUESTION_MAX_COUNT} câu
-					</span>
-					<Button
-						type="button"
-						size="sm"
-						variant="secondary"
-						onClick={() => setPasteOpen(true)}
-					>
-						Thêm key hàng loạt
-					</Button>
-				</div>
-				{pasteOpen && (
-					<BulkKeyPastePanel
-						value={pasteRaw}
-						onValueChange={(next) => {
-							setPasteRaw(next);
-							// A stale outcome list must not linger over edited content.
-							if (pasteOutcome) setPasteOutcome(null);
-						}}
-						errors={pasteOutcome?.errors ?? []}
-						appliedCount={pasteOutcome?.appliedCount ?? 0}
-						onApply={applyPaste}
-						onClose={closePaste}
+				{isMcqMany ? (
+					<McqManyEditor
+						items={items}
+						qStart={qStart}
+						showErrors={showErrors}
+						requireFilled={status === "ready"}
+						showExplanation={showExplanation}
+						maxTotalQuestions={maxQuestions}
+						lockAddQuestion={lockAddQuestion}
+						onItemsChange={onItemsChange}
 					/>
-				)}
-				{/* Remount on skill/part/type change so the index-keyed blur flags
-			never leak across wipes (review #3). */}
-				<AnswerKeyGrid
-					key={`${skill}-${partId}-${typeId}`}
-					typeId={typeId}
-					skill={skill}
-					partId={partId}
-					items={items}
-					showErrors={showErrors}
-					requireFilled={status === "ready"}
-					requirePin={isImage && status === "ready"}
-					selectedIndex={selectedPin}
-					optionBank={optionBank}
-					onItemsChange={onItemsChange}
-					onAddQuestion={addQuestion}
-					qStartOverride={qStart}
-					showExplanation={showExplanation}
-					collapsible={collapsibleRows}
-					openRow={openRow}
-					onOpenRowChange={onOpenRowChange}
-				/>
-				<div className="flex flex-col gap-1">
-					<Button
-						type="button"
-						variant="secondary"
-						onClick={addQuestion}
-						disabled={atMax}
-					>
-						Thêm câu
-					</Button>
-					{atMax && (
-						<p className="text-muted-foreground text-xs">
-							Tối đa {QUESTION_MAX_COUNT} câu — khớp giới hạn của đề.
+				) : (
+					<>
+						<div className="flex flex-wrap items-center justify-between gap-2">
+							<span className="font-medium text-muted-foreground text-xs">
+								{items.length}/{QUESTION_MAX_COUNT} câu
+							</span>
+							<Button
+								type="button"
+								size="sm"
+								variant="secondary"
+								onClick={() => setPasteOpen(true)}
+							>
+								Thêm key hàng loạt
+							</Button>
+						</div>
+						{pasteOpen && (
+							<BulkKeyPastePanel
+								value={pasteRaw}
+								onValueChange={(next) => {
+									setPasteRaw(next);
+									// A stale outcome list must not linger over edited content.
+									if (pasteOutcome) setPasteOutcome(null);
+								}}
+								errors={pasteOutcome?.errors ?? []}
+								appliedCount={pasteOutcome?.appliedCount ?? 0}
+								onApply={applyPaste}
+								onClose={closePaste}
+							/>
+						)}
+						{/* Remount on skill/part/type change so the index-keyed blur flags
+					never leak across wipes (review #3). */}
+						<AnswerKeyGrid
+							key={`${skill}-${partId}-${typeId}`}
+							typeId={typeId}
+							skill={skill}
+							partId={partId}
+							items={items}
+							showErrors={showErrors}
+							requireFilled={status === "ready"}
+							requirePin={requirePin}
+							selectedIndex={selectedPin}
+							optionBank={optionBank}
+							maxBank={maxBank}
+							onItemsChange={onItemsChange}
+							onAddQuestion={addQuestion}
+							qStartOverride={qStart}
+							showExplanation={showExplanation}
+							collapsible={collapsibleRows}
+							openRow={openRow}
+							onOpenRowChange={onOpenRowChange}
+							libraryReadingMode={libraryReadingMode}
+						/>
+						<div className="flex flex-col gap-1">
+							<Button
+								type="button"
+								variant="secondary"
+								onClick={addQuestion}
+								disabled={atMax}
+							>
+								Thêm câu
+							</Button>
+							{atMax && (
+								<p className="text-muted-foreground text-xs">
+									Tối đa {QUESTION_MAX_COUNT} câu — khớp giới hạn của đề.
+								</p>
+							)}
+						</div>
+						<p className="text-right text-muted-foreground text-xs">
+							{items
+								.map(
+									(item, index) =>
+										`${qStart + index} ${item.answer.trim() || "—"}`,
+								)
+								.join(" · ")}
 						</p>
-					)}
-				</div>
-				<p className="text-right text-muted-foreground text-xs">
-					{items
-						.map(
-							(item, index) => `${qStart + index} ${item.answer.trim() || "—"}`,
-						)
-						.join(" · ")}
-				</p>
+					</>
+				)}
 			</div>
 		</div>
 	);

@@ -118,7 +118,11 @@ export function ClozeStemText({
 	const widthCh = interactive
 		? Math.max(MIN_BLANK_WIDTH_CH, (value ?? "").length + 2)
 		: Math.max((answer ?? "").trim().length, 2) + 4;
-	if (typeId === TABLECOMP_TYPE) {
+	const isTableStemType =
+		typeId === TABLECOMP_TYPE ||
+		typeId === "summary" ||
+		typeId === "fill_blank";
+	if (isTableStemType) {
 		const ref = parseTableStem(stem);
 		if (ref) {
 			const titles =

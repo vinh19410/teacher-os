@@ -1,5 +1,9 @@
-import { ASSIGNMENT_ANSWER_CHOICES } from "@teacher-os/api/contracts";
+import {
+	extendedAnswerChoices,
+	quizTypeDisplay,
+} from "@teacher-os/api/contracts";
 import { inferQuestionTypes } from "@teacher-os/api/lib/infer-question-types";
+import { LIBRARY_READING_TYPES } from "@teacher-os/api/library-contracts";
 import {
 	collapseWhitespace,
 	htmlToPlainText,
@@ -12,10 +16,12 @@ import { countBlanks } from "@teacher-os/ui/lib/cloze";
 import { cn } from "@teacher-os/ui/lib/utils";
 import { Fragment, memo, useCallback, useRef, useState } from "react";
 import {
+	type AnswerKind,
 	answerChoices,
 	emptyItem,
 	isImageBased,
 	kindOf,
+	OPTION_BANK_MAX,
 	partOf,
 	type QuestionItem,
 	qStartOf,
@@ -178,6 +184,7 @@ export function AnswerKeyGrid({
 	requirePin = false,
 	selectedIndex = null,
 	optionBank,
+	maxBank,
 	onItemsChange,
 	onAddQuestion,
 	qStartOverride,
@@ -186,6 +193,7 @@ export function AnswerKeyGrid({
 	openRow = null,
 	onOpenRowChange,
 	rowIdPrefix,
+	libraryReadingMode = false,
 }: {
 	typeId: string;
 	skill: string;
@@ -203,6 +211,7 @@ export function AnswerKeyGrid({
 	 * bank rows, the choice chips come from the bank's POSITIONAL labels —
 	 * only labels that exist in the bank are selectable. */
 	optionBank?: string[];
+	maxBank?: number;
 	onItemsChange: (items: QuestionItem[]) => void;
 	/** Enter-to-add comes from the editor so the max-40 gate stays in one
 	 * place; returns whether a row was actually added. */
@@ -218,23 +227,38 @@ export function AnswerKeyGrid({
 	openRow?: number | null;
 	onOpenRowChange?: (index: number | null) => void;
 	rowIdPrefix?: string;
+	libraryReadingMode?: boolean;
 }) {
 	// Per-question type: widget của TỪNG hàng key theo `item.type ?? typeId`
 	// (đề trộn dạng) — câu không khai type đi theo dạng đề như cũ.
-	const typeCatalog = partOf(skill, partId).types;
+	const typeCatalog = libraryReadingMode
+		? LIBRARY_READING_TYPES.filter((id) => id !== "mcq_many").map((id) => ({
+				id,
+				label: quizTypeDisplay(id).label,
+			}))
+		: partOf(skill, partId).types;
 	const rowTypeOf = (item: QuestionItem) => item.type ?? typeId;
+	const effectiveKind = (item: QuestionItem): AnswerKind => {
+		const rowType = rowTypeOf(item);
+		if (rowType === "summary" && optionBank && optionBank.length > 0) {
+			return "letter";
+		}
+		return kindOf(rowType);
+	};
 	const rowChoicesOf = (item: QuestionItem): readonly string[] | null => {
-		const kind = kindOf(rowTypeOf(item));
+		const rowType = rowTypeOf(item);
+		const kind = kindOf(rowType);
+		const effectiveCap = maxBank ?? OPTION_BANK_MAX;
 		// Bank-sourced chips (FR4): positional labels limited to the bank size.
 		// An empty bank falls back to the full alphabet so a draft can still be
 		// keyed before the teacher fills the bank.
 		const bankChips =
 			optionBank &&
 			optionBank.length > 0 &&
-			(kind === "letter" || kind === "roman")
-				? ASSIGNMENT_ANSWER_CHOICES[kind].slice(
+			(kind === "letter" || kind === "roman" || rowType === "summary")
+				? extendedAnswerChoices(kind === "roman" ? "roman" : "letter").slice(
 						0,
-						Math.min(optionBank.length, ASSIGNMENT_ANSWER_CHOICES[kind].length),
+						Math.min(optionBank.length, effectiveCap),
 					)
 				: null;
 		return bankChips ?? answerChoices(kind);
@@ -411,14 +435,14 @@ export function AnswerKeyGrid({
 		)
 			return;
 		const rowItem = items[index];
-		const rowKind = kindOf(rowTypeOf(rowItem));
+		const rowKind = effectiveKind(rowItem);
 		const choices = rowChoicesOf(rowItem);
 		if (!choices) return;
 		const wanted = event.key.toLowerCase();
 		const hit =
 			KEY_ANSWERS[rowKind]?.[wanted] ??
 			((rowKind === "mcq4" || rowKind === "mcq3" || rowKind === "letter") &&
-			/^[a-h]$/.test(wanted)
+			/^[a-t]$/.test(wanted)
 				? wanted.toUpperCase()
 				: rowKind === "roman" && /^[1-8]$/.test(wanted)
 					? DIGIT_ROMANS[Number(wanted) - 1]
@@ -445,7 +469,7 @@ export function AnswerKeyGrid({
 			</div>
 			{items.map((item, index) => {
 				const number = qStart + index;
-				const rowKind = kindOf(rowTypeOf(item));
+				const rowKind = effectiveKind(item);
 				const choices = rowChoicesOf(item);
 				// FR4 (sentend): labels keyed on another row are unusable here.
 				const enforceDistinct = rowTypeOf(item) === "sentend";
@@ -486,7 +510,7 @@ export function AnswerKeyGrid({
 				const forceOpen = collapsible && errorEntries.length > 0;
 				const isOpen = !collapsible || forceOpen || openRow === index;
 				const summary = collapsible
-					? questionSummary(item, typeId, optionBank)
+					? questionSummary(item, typeId, optionBank, maxBank)
 					: null;
 				const toggleRow = collapsible
 					? () => {
@@ -648,8 +672,16 @@ export function AnswerKeyGrid({
 											<option value="">
 												Theo dạng đề ·{" "}
 												{typeCatalog.find((entry) => entry.id === typeId)
-													?.label ?? typeId}
+													?.label ?? quizTypeDisplay(typeId).label}
 											</option>
+											{item.type &&
+												!typeCatalog.some(
+													(entry) => entry.id === item.type,
+												) && (
+													<option value={item.type}>
+														{quizTypeDisplay(item.type).label}
+													</option>
+												)}
 											{typeCatalog.map((entry) => (
 												<option key={entry.id} value={entry.id}>
 													{entry.label}

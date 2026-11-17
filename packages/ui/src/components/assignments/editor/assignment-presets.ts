@@ -7,6 +7,7 @@ import {
 	type AssignmentSkill,
 	isImageBasedType,
 	isOptionBankable,
+	LIBRARY_ANSWER_CHOICES,
 } from "@teacher-os/api/contracts";
 
 export type SkillId = AssignmentSkill;
@@ -49,6 +50,7 @@ export const KIND: Record<string, AnswerKind> = {
 	info: "letter",
 	ynng: "ynng",
 	mcq: "mcq4",
+	mcq_many: "letter",
 	note: "text",
 	shortans: "text",
 	diagram: "text",
@@ -56,6 +58,9 @@ export const KIND: Record<string, AnswerKind> = {
 	sentend: "letter",
 	tablecomp: "text",
 	features: "letter",
+	match_names: "letter",
+	matching: "letter",
+	fill_blank: "text",
 	flowchart: "text",
 	form: "text",
 	mcq1: "mcq3",
@@ -88,6 +93,11 @@ export const TYPE_HINTS: Record<string, string> = {
 		"Nối thông tin với đúng đối tượng. Chọn đáp án từ Ngân hàng lựa chọn bên dưới.",
 	sentend:
 		"Hoàn thành câu với phần kết đúng. Chọn đáp án từ Ngân hàng lựa chọn bên dưới.",
+	mcq_many: "Chọn nhiều đáp án đúng từ danh sách lựa chọn A–H.",
+	match_names:
+		"Nối mỗi phát biểu với đúng tên trong Ngân hàng lựa chọn bên dưới.",
+	matching: "Nối mỗi mục với đúng lựa chọn trong Ngân hàng lựa chọn bên dưới.",
+	fill_blank: "Điền vào chỗ trống. KHÔNG QUÁ BA TỪ VÀ/HOẶC SỐ · lấy từ bài đọc",
 };
 
 /**
@@ -128,6 +138,15 @@ export const OPTION_BANK_MAX = ASSIGNMENT_OPTION_BANK_MAX;
 export function bankLabel(kind: AnswerKind, index: number): string {
 	if (kind !== "letter" && kind !== "roman") return "";
 	return ASSIGNMENT_ANSWER_CHOICES[kind][index] ?? "";
+}
+
+/**
+ * Extended positional label for library option banks up to 20 items
+ * (`A–T` for letter kinds, `i–xx` for roman headings).
+ */
+export function extendedBankLabel(kind: AnswerKind, index: number): string {
+	if (kind !== "letter" && kind !== "roman") return "";
+	return LIBRARY_ANSWER_CHOICES[kind][index] ?? "";
 }
 
 export const SKILLS: SkillPreset[] = [
@@ -401,6 +420,15 @@ export function answerChoices(kind: AnswerKind): readonly string[] | null {
 	return kind === "text" ? null : ASSIGNMENT_ANSWER_CHOICES[kind];
 }
 export function emptyItem(typeId: string): QuestionItem {
+	if (typeId === "mcq_many") {
+		return {
+			stem: "",
+			opts: ["", "", "", "", ""],
+			answer: "",
+			alts: "",
+			pin: null,
+		};
+	}
 	const kind = kindOf(typeId);
 	return {
 		stem: "",

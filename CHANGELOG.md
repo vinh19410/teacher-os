@@ -12,6 +12,11 @@ Quy ước khi cập nhật:
 
 ## 2026-11-17
 
+### Changed
+- **Chuyển bộ tạo đề Reading trong Admin Library (`apps/admin`, `packages/api`, `packages/ui`, `apps/server`) sang 15 dạng câu hỏi IELTS Reading chuẩn mới** (`tfng`, `summary`, `info`, `mcq`, `ynng`, `headings`, `mcq_many`, `sent`, `match_names`, `features`, `sentend`, `fill_blank`, `shortans`, `diagram`, `matching`), gỡ `note`, `tablecomp`, `flowchart` khỏi danh mục tạo mới nhưng giữ fallback đọc/xem trước dữ liệu cũ và giữ nguyên bộ công cụ `apps/web` của giáo viên:
+  - Mở rộng `optionBank` của library lên tối đa 20 mục (`A–T` và chữ số La Mã `i–xx`), mở rộng `opts` lên tối đa 8 lựa chọn (`A–H`) và truyền `answerSet` cho `QuizPartQuestion` (`#762`, follow-up student wire `#764`).
+  - Bổ sung `McqManyEditor` và thẻ cụm chọn nhiều trên `QuizPaper` cho `mcq_many` (1 stem dùng chung + 2–8 lựa chọn + tick nhiều đáp án đúng), chế độ nhập Cloze/Bảng (`TableGridEditor`) cho `summary` và `fill_blank`, ngân hàng từ tùy chọn cho `summary`, và ghim ảnh tùy chọn cho Reading `diagram` (#762).
+
 ### Removed
 - Gỡ bỏ tùy chọn đăng nhập bằng mã email (Email OTP) trên cổng học viên (`apps/student`) và toàn bộ plugin/endpoint `emailOTP` ở `packages/auth`: trang `/login` học viên chỉ còn 2 tab **Đăng nhập** (email + mật khẩu cũ) và **Đăng ký**, tự động fallback về tab Đăng nhập nếu trình duyệt còn lưu `"otp"` trong `localStorage`, đồng thời map lỗi `USER_ALREADY_EXISTS*` và `INVALID_EMAIL_OR_PASSWORD` sang hướng dẫn tiếng Việt gợi ý dùng `Quên mật khẩu?` cho tài khoản từng dùng mã email (#761).
 

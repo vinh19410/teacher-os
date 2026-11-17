@@ -1008,4 +1008,35 @@ describe("AnswerKeyGrid — bảo vệ bàn phím và trần explanation (#571)"
 		fireEvent.keyDown(row2, { key: "Backspace" });
 		expect(onItemsChange).not.toHaveBeenCalled();
 	});
+
+	it("summary với optionBank > 8 hiển thị chip A–J thay vì input chữ", () => {
+		const bank = Array.from({ length: 10 }, (_, i) => `Word ${i + 1}`);
+		const html = renderGrid({
+			typeId: "summary",
+			skill: "reading",
+			partId: "p2",
+			items: [{ stem: "Summary ____", answer: "J", opts: null, alts: "" }],
+			optionBank: bank,
+			maxBank: 20,
+		});
+		expect(html).toContain('aria-label="Câu 14: A"');
+		expect(html).toContain('aria-label="Câu 14: J"');
+		expect(html).toMatch(/aria-pressed="true"[^>]*>J</);
+		expect(html).not.toContain('aria-label="Đáp án chấm tự động"');
+	});
+
+	it("headings với optionBank 12 mục và maxBank=20 hiển thị chip i–xii", () => {
+		const bank = Array.from({ length: 12 }, (_, i) => `Heading ${i + 1}`);
+		const html = renderGrid({
+			typeId: "headings",
+			skill: "reading",
+			partId: "p2",
+			items: [{ stem: "Para A", answer: "xii", opts: null, alts: "" }],
+			optionBank: bank,
+			maxBank: 20,
+		});
+		expect(html).toContain('aria-label="Câu 14: i"');
+		expect(html).toContain('aria-label="Câu 14: xii"');
+		expect(html).toMatch(/aria-pressed="true"[^>]*>xii</);
+	});
 });

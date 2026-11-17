@@ -14,6 +14,7 @@ import {
 	bankLabel,
 	emptyComposer,
 	emptyItem,
+	extendedBankLabel,
 	IMAGE_BASED_PAIRS,
 	isAutoSkill,
 	isBankableType,
@@ -366,5 +367,32 @@ describe("assignment presets catalog (#218 v5)", () => {
 		expect(wordCount("")).toBe(0);
 		expect(wordCount("   ")).toBe(0);
 		expect(wordCount("  a  b c ")).toBe(3);
+	});
+
+	test("Wave 2A: extendedBankLabel, mcq_many/match_names/matching/fill_blank KIND, TYPE_HINTS, emptyItem", () => {
+		expect(kindOf("mcq_many")).toBe("letter");
+		expect(kindOf("match_names")).toBe("letter");
+		expect(kindOf("matching")).toBe("letter");
+		expect(kindOf("fill_blank")).toBe("text");
+		expect(TYPE_HINTS.mcq_many).toBeTruthy();
+		expect(TYPE_HINTS.match_names).toBeTruthy();
+		expect(TYPE_HINTS.matching).toBeTruthy();
+		expect(TYPE_HINTS.fill_blank).toBeTruthy();
+
+		expect(extendedBankLabel("letter", 0)).toBe("A");
+		expect(extendedBankLabel("letter", 19)).toBe("T");
+		expect(extendedBankLabel("letter", 20)).toBe("");
+		expect(extendedBankLabel("roman", 0)).toBe("i");
+		expect(extendedBankLabel("roman", 19)).toBe("xx");
+		expect(extendedBankLabel("roman", 20)).toBe("");
+		expect(extendedBankLabel("text", 0)).toBe("");
+
+		expect(emptyItem("mcq_many")).toEqual({
+			stem: "",
+			opts: ["", "", "", "", ""],
+			answer: "",
+			alts: "",
+			pin: null,
+		});
 	});
 });

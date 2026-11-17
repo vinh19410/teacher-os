@@ -1,4 +1,10 @@
-import { answerChoices, kindOf, type QuestionItem } from "./assignment-presets";
+import { extendedAnswerChoices } from "@teacher-os/api/contracts";
+import {
+	answerChoices,
+	kindOf,
+	OPTION_BANK_MAX,
+	type QuestionItem,
+} from "./assignment-presets";
 
 /**
  * Bulk answer-key paste (phase-01 FR7): each line is `số. giá trị` or
@@ -28,6 +34,8 @@ export interface BulkKeyPasteInput {
 	typeId: string;
 	qStart: number;
 	items: QuestionItem[];
+	optionBank?: readonly string[];
+	maxBank?: number;
 }
 
 export interface BulkKeyPasteOutcome {
@@ -40,9 +48,18 @@ export interface BulkKeyPasteOutcome {
 export function applyBulkKeyPaste(
 	input: BulkKeyPasteInput,
 ): BulkKeyPasteOutcome {
-	const { raw, typeId, qStart, items } = input;
-	const kind = kindOf(typeId);
-	const choices = answerChoices(kind);
+	const { raw, typeId, qStart, items, optionBank, maxBank } = input;
+	const rawKind = kindOf(typeId);
+	const hasBank = Boolean(optionBank && optionBank.length > 0);
+	const kind = typeId === "summary" && hasBank ? "letter" : rawKind;
+	const bankCap = maxBank ?? OPTION_BANK_MAX;
+	const choices =
+		kind === "letter" || kind === "roman"
+			? extendedAnswerChoices(kind).slice(
+					0,
+					hasBank ? Math.min(optionBank?.length ?? 0, bankCap) : bankCap,
+				)
+			: answerChoices(kind);
 	const next = items.map((item) => ({ ...item }));
 	const errors: BulkKeyPasteLineError[] = [];
 	const seenNumbers = new Set<number>();

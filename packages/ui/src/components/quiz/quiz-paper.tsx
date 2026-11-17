@@ -1,7 +1,7 @@
 import {
+	ASSIGNMENT_ANSWER_CHOICES,
 	ASSIGNMENT_IMAGE_SRC_PATTERN,
 	isImageBasedType,
-	optionBankKindFor,
 	QUIZ_ESSAY_MAX,
 	type QuizVerdict,
 	quizTypeDisplay,
@@ -13,6 +13,7 @@ import type {
 	QuizPart,
 	QuizPartQuestion,
 } from "@teacher-os/api/lib/quiz-parts";
+import { libraryOptionBankKindFor } from "@teacher-os/api/library-contracts";
 import { isEmptyRichText } from "@teacher-os/api/rich-text";
 import { OptionBankList } from "@teacher-os/ui/components/assignments/option-bank-list";
 import { PinOverlay } from "@teacher-os/ui/components/assignments/pin-overlay";
@@ -21,9 +22,19 @@ import { QuizEssayInput } from "@teacher-os/ui/components/quiz/quiz-essay-input"
 import {
 	type QuizChoiceRow,
 	QuizQuestionItem,
+	questionAnchorId,
 	questionChoiceRows,
 } from "@teacher-os/ui/components/quiz/quiz-question-item";
-import type { QuizReviewInfo } from "@teacher-os/ui/components/quiz/quiz-review-item";
+import {
+	QuizReviewChip,
+	type QuizReviewInfo,
+} from "@teacher-os/ui/components/quiz/quiz-review-item";
+import {
+	VERDICT_ACCENT_CLASSES,
+	VERDICT_BLOCK_CLASSES,
+	VerdictIcon,
+} from "@teacher-os/ui/components/quiz/quiz-verdict";
+import { cn } from "@teacher-os/ui/lib/utils";
 
 /** Các field đề cần để render paper (subset của StudentQuizDetail). */
 export type QuizPaperDetail = Pick<
@@ -52,6 +63,347 @@ const SKILL_LABELS: Record<string, string> = {
 	grammar: "Grammar",
 	vocabulary: "Vocabulary",
 };
+
+type PartRenderUnit =
+	| { kind: "single"; question: QuizPartQuestion; effectiveType: string }
+	| { kind: "mcq_many"; questions: QuizPartQuestion[] };
+
+function canClusterMcqMany(
+	prev: QuizPartQuestion,
+	curr: QuizPartQuestion,
+): boolean {
+	const prevSet = prev.answerSet?.trim();
+	const currSet = curr.answerSet?.trim();
+	if (prevSet || currSet) {
+		return Boolean(prevSet && currSet && prevSet === currSet);
+	}
+	return (
+		prev.stem === curr.stem &&
+		JSON.stringify(prev.opts ?? null) === JSON.stringify(curr.opts ?? null)
+	);
+}
+
+function buildPartRenderUnits(
+	part: QuizPart,
+	promptType: string,
+): PartRenderUnit[] {
+	const units: PartRenderUnit[] = [];
+	for (const question of part.questions) {
+		const effectiveType =
+			question.type ?? (part.source === "group" ? part.typeId : promptType);
+		if (effectiveType === "mcq_many") {
+			const last = units[units.length - 1];
+			const prev =
+				last?.kind === "mcq_many"
+					? last.questions[last.questions.length - 1]
+					: undefined;
+			if (
+				last?.kind === "mcq_many" &&
+				prev &&
+				canClusterMcqMany(prev, question)
+			) {
+				last.questions.push(question);
+				continue;
+			}
+			units.push({ kind: "mcq_many", questions: [question] });
+			continue;
+		}
+		units.push({ kind: "single", question, effectiveType });
+	}
+	return units;
+}
+
+function QuizMcqManyCard({
+	questions,
+	answers,
+	onAnswer,
+	currentQuestion,
+	mode,
+	review,
+}: {
+	questions: QuizPartQuestion[];
+	answers: Record<number, string>;
+	onAnswer: (q: number, value: string) => void;
+	currentQuestion: number | null;
+	mode: "take" | "review";
+	review?: Record<number, QuizReviewInfo>;
+}) {
+	const reviewMode = mode === "review";
+	const firstQ = questions[0];
+	if (!firstQ) return null;
+	const k = questions.length;
+	const firstNum = firstQ.number;
+	const lastNum = questions[k - 1]?.number ?? firstNum;
+	const rangeLabel =
+		firstNum === lastNum
+			? `Question ${firstNum}`
+			: `Questions ${firstNum}–${lastNum}`;
+	const opts = firstQ.opts ?? [];
+	const optionLetters = ASSIGNMENT_ANSWER_CHOICES.letter.slice(0, opts.length);
+	const current =
+		currentQuestion !== null &&
+		questions.some((question) => question.q === currentQuestion);
+
+	const rawSelected = reviewMode
+		? questions.map((q) => (review?.[q.q]?.answer ?? answers[q.q] ?? "").trim())
+		: questions.map((q) => (answers[q.q] ?? "").trim());
+	const selectedLetters = new Set(
+		rawSelected.filter((letter) =>
+			optionLetters.includes(letter as (typeof optionLetters)[number]),
+		),
+	);
+	const atLimit = selectedLetters.size >= k;
+
+	const keyLetters = new Set(
+		questions
+			.map((q) => review?.[q.q]?.key?.trim() ?? "")
+			.filter((letter) => letter.length > 0),
+	);
+	const reviewInfos = questions
+		.map((q) => review?.[q.q])
+		.filter((info): info is QuizReviewInfo => Boolean(info));
+	const clusterVerdict: QuizVerdict | null =
+		reviewMode && reviewInfos.length > 0
+			? reviewInfos.every((info) => info.verdict === "correct")
+				? "correct"
+				: reviewInfos.every((info) => info.verdict === "skipped")
+					? "skipped"
+					: "wrong"
+			: null;
+
+	const ownExplanations = Array.from(
+		new Set(
+			reviewInfos
+				.map((info) => info.explanation?.trim() ?? "")
+				.filter((text) => text.length > 0 && !isEmptyRichText(text)),
+		),
+	);
+	const fallbackNote =
+		ownExplanations.length === 0
+			? (reviewInfos.find(
+					(info) => info.note.trim().length > 0 && !isEmptyRichText(info.note),
+				)?.note ?? null)
+			: null;
+	const explanations =
+		ownExplanations.length > 0
+			? ownExplanations
+			: fallbackNote
+				? [fallbackNote]
+				: [];
+
+	const toggleLetter = (letter: string) => {
+		if (reviewMode) return;
+		const nextSet = new Set(selectedLetters);
+		if (nextSet.has(letter)) {
+			nextSet.delete(letter);
+		} else {
+			if (nextSet.size >= k) return;
+			nextSet.add(letter);
+		}
+		const sorted = optionLetters.filter((item) => nextSet.has(item));
+		for (let index = 0; index < k; index += 1) {
+			const question = questions[index];
+			if (!question) continue;
+			const nextValue = sorted[index] ?? "";
+			if ((answers[question.q] ?? "") !== nextValue) {
+				onAnswer(question.q, nextValue);
+			}
+		}
+	};
+
+	const frameClass = clusterVerdict
+		? "border-transparent"
+		: current
+			? "border-primary bg-accent"
+			: "border-transparent bg-transparent";
+
+	return (
+		<fieldset
+			id={questionAnchorId(firstQ.q)}
+			tabIndex={-1}
+			aria-label={rangeLabel}
+			data-question={firstQ.q}
+			data-verdict={clusterVerdict ?? undefined}
+			disabled={reviewMode}
+			className={cn(
+				"scroll-mt-24 rounded-md border px-3 py-2.5 text-sm transition-colors focus-visible:outline-none",
+				frameClass,
+				clusterVerdict && VERDICT_BLOCK_CLASSES[clusterVerdict],
+				reviewMode && current && "outline-2 outline-primary outline-offset-2",
+			)}
+		>
+			{questions.slice(1).map((question) => (
+				<span
+					key={question.q}
+					id={questionAnchorId(question.q)}
+					aria-hidden="true"
+					className="sr-only"
+				/>
+			))}
+			<div className="flex flex-wrap items-center justify-between gap-2">
+				<strong className="font-semibold">{rangeLabel}</strong>
+				<span className="rounded-full border border-border px-2 py-0.5 font-medium text-muted-foreground text-xs">
+					Chọn {k} đáp án
+				</span>
+			</div>
+			{reviewMode && reviewInfos.length > 0 && (
+				<div className="mt-1.5 flex flex-wrap items-center gap-2">
+					{questions.map((question) => {
+						const info = review?.[question.q];
+						if (!info) return null;
+						return (
+							<span
+								key={question.q}
+								className="inline-flex items-center gap-1 text-xs"
+							>
+								<strong>{question.number}.</strong>
+								<QuizReviewChip info={info} />
+							</span>
+						);
+					})}
+				</div>
+			)}
+			<p className="mt-1 leading-[1.6]">{firstQ.stem}</p>
+			<div className="mt-2 flex flex-col gap-1.5">
+				{opts.map((optText, index) => {
+					const letter = ASSIGNMENT_ANSWER_CHOICES.letter[index];
+					if (!letter) return null;
+					const selected = selectedLetters.has(letter);
+					const isKey = keyLetters.has(letter);
+					const optionDisabled = reviewMode || (!selected && atLimit);
+
+					let reviewStyle: {
+						rowClass: string;
+						textClass: string;
+						accent: string;
+						mark: "check" | "you" | "key" | null;
+					} | null = null;
+					if (reviewMode) {
+						if (selected && isKey) {
+							reviewStyle = {
+								rowClass:
+									"border-verdict-correct/60 bg-verdict-correct-soft text-verdict-correct",
+								textClass: "text-verdict-correct",
+								accent: VERDICT_ACCENT_CLASSES.correct,
+								mark: "check",
+							};
+						} else if (selected && !isKey) {
+							reviewStyle = {
+								rowClass: "border-verdict-wrong/60 bg-verdict-wrong-soft",
+								textClass: "text-verdict-wrong line-through",
+								accent: VERDICT_ACCENT_CLASSES.wrong,
+								mark: "you",
+							};
+						} else if (!selected && isKey) {
+							reviewStyle = {
+								rowClass: "border-2 border-verdict-correct",
+								textClass: "text-verdict-correct",
+								accent: VERDICT_ACCENT_CLASSES.correct,
+								mark: "key",
+							};
+						} else {
+							reviewStyle = {
+								rowClass: "border-transparent text-muted-foreground",
+								textClass: "text-muted-foreground",
+								accent: VERDICT_ACCENT_CLASSES.skipped,
+								mark: null,
+							};
+						}
+					}
+
+					return (
+						<label
+							key={letter}
+							className={cn(
+								"flex items-center gap-2 rounded-md border px-2.5 py-1.5 transition-colors",
+								reviewMode ? "cursor-default" : "cursor-pointer",
+								reviewStyle
+									? reviewStyle.rowClass
+									: selected
+										? "border-primary bg-muted text-foreground ring-1 ring-primary"
+										: "border-input bg-transparent",
+								!reviewMode && !selected && !atLimit && "hover:border-primary",
+								!reviewMode &&
+									!selected &&
+									atLimit &&
+									"cursor-not-allowed opacity-50",
+							)}
+						>
+							<input
+								type="checkbox"
+								checked={selected}
+								disabled={optionDisabled}
+								aria-label={`${rangeLabel} lựa chọn ${letter}`}
+								onChange={() => toggleLetter(letter)}
+								className={cn(
+									"size-4 shrink-0",
+									reviewStyle ? reviewStyle.accent : "accent-primary",
+								)}
+							/>
+							<span className="w-5 shrink-0 text-center font-medium font-mono text-muted-foreground">
+								{letter}
+							</span>
+							<span
+								className={cn(
+									selected && "font-medium",
+									reviewStyle
+										? reviewStyle.textClass
+										: !selected && "text-foreground",
+								)}
+							>
+								{optText}
+							</span>
+							{reviewStyle?.mark && (
+								<span className="ml-auto inline-flex shrink-0 items-center gap-1 font-mono text-[10px] uppercase tracking-[0.08em]">
+									<VerdictIcon
+										verdict={reviewStyle.mark === "you" ? "wrong" : "correct"}
+										className="size-3"
+									/>
+									{reviewStyle.mark === "check" && "Đúng"}
+									{reviewStyle.mark === "you" && "Bạn chọn"}
+									{reviewStyle.mark === "key" && "Đáp án đúng"}
+								</span>
+							)}
+						</label>
+					);
+				})}
+			</div>
+			{reviewMode && (keyLetters.size > 0 || explanations.length > 0) && (
+				<div
+					data-testid="quiz-review-item"
+					className="mt-2 border-border border-t pt-2 text-[13px]"
+				>
+					{keyLetters.size > 0 && (
+						<p className="text-muted-foreground">
+							Đáp án:{" "}
+							<span className="font-medium font-mono text-verdict-correct">
+								{optionLetters
+									.filter((letter) => keyLetters.has(letter))
+									.join(", ") || [...keyLetters].join(", ")}
+							</span>
+						</p>
+					)}
+					{explanations.map((text, index) => (
+						<details
+							key={`${index}-${text.slice(0, 20)}`}
+							className="mt-1.5"
+							data-testid="quiz-review-explanation"
+						>
+							<summary className="cursor-pointer select-none rounded-sm font-medium text-primary focus-visible:outline-2 focus-visible:outline-ring">
+								Giải thích
+							</summary>
+							<RichTextBody
+								text={text}
+								legacyWhitespace="pre-wrap"
+								className="mt-1 text-muted-foreground leading-[1.55]"
+							/>
+						</details>
+					))}
+				</div>
+			)}
+		</fieldset>
+	);
+}
 
 export function QuizPaper({
 	detail,
@@ -133,10 +485,11 @@ export function QuizPaper({
 	// rỗng — schema cấm bank part-level khi có nhóm nên bank rỗng ở đây là
 	// hợp lệ, không phải dữ liệu hỏng (red-team RT2 — alert "Thiếu ngân hàng
 	// lựa chọn" chỉ dành cho đề không nhóm).
-	const bankKind = optionBankKindFor(
+	const bankKind = libraryOptionBankKindFor(
 		skill,
 		typeId,
 		questions.map((question) => question.type),
+		detail.optionBank,
 	);
 	const showDetailBank =
 		bankKind !== undefined && (!hasGroupSource || detail.optionBank.length > 0);
@@ -161,6 +514,8 @@ export function QuizPaper({
 	for (const part of parts) {
 		const partBank = part.optionBank ?? detail.optionBank;
 		for (const question of part.questions) {
+			const effectiveType =
+				question.type ?? (part.source === "group" ? part.typeId : typeId);
 			// Câu có pin trả lời qua input trên ảnh (PinOverlay) — không nhân đôi
 			// widget bằng radio pills dưới list. Widget key theo type HIỆU DỤNG
 			// của câu (đề trộn dạng), fallback type đề.
@@ -168,7 +523,7 @@ export function QuizPaper({
 				question.q,
 				usePinOverlay && question.pin != null
 					? []
-					: questionChoiceRows(question, question.type ?? typeId, partBank),
+					: questionChoiceRows(question, effectiveType, partBank),
 			);
 		}
 	}
@@ -265,7 +620,7 @@ export function QuizPaper({
 				<img
 					src={diagramImageUrl}
 					alt="Ảnh đề bài"
-					className="max-h-72 rounded-md border border-border"
+					className="block max-h-72 w-auto max-w-full rounded-md border border-border"
 					referrerPolicy="no-referrer"
 					loading="lazy"
 				/>
@@ -348,12 +703,14 @@ export function QuizPaper({
 					// Option bank riêng của nhóm — render ngay dưới header nhóm
 					// (red-team RT2/R5); part thường không có bank riêng.
 					const partBankKind = part.optionBank?.length
-						? optionBankKindFor(
+						? libraryOptionBankKindFor(
 								skill,
 								part.typeId,
 								part.questions.map((question) => question.type),
+								part.optionBank,
 							)
 						: undefined;
+					const renderUnits = buildPartRenderUnits(part, typeId);
 					return (
 						<section
 							key={part.id}
@@ -388,19 +745,31 @@ export function QuizPaper({
 								/>
 							)}
 							<div className="flex flex-col gap-2.5">
-								{part.questions.map((question) => (
-									<QuizQuestionItem
-										key={question.q}
-										question={question}
-										choiceRows={choiceRowsByQ.get(question.q) ?? []}
-										type={question.type ?? typeId}
-										answers={answers}
-										onAnswer={onAnswer}
-										current={currentQuestion === question.q}
-										mode={mode}
-										review={review?.[question.q]}
-									/>
-								))}
+								{renderUnits.map((unit) =>
+									unit.kind === "mcq_many" ? (
+										<QuizMcqManyCard
+											key={`mcq-many-${unit.questions[0]?.q ?? 0}`}
+											questions={unit.questions}
+											answers={answers}
+											onAnswer={onAnswer}
+											currentQuestion={currentQuestion}
+											mode={mode}
+											review={review}
+										/>
+									) : (
+										<QuizQuestionItem
+											key={unit.question.q}
+											question={unit.question}
+											choiceRows={choiceRowsByQ.get(unit.question.q) ?? []}
+											type={unit.effectiveType}
+											answers={answers}
+											onAnswer={onAnswer}
+											current={currentQuestion === unit.question.q}
+											mode={mode}
+											review={review?.[unit.question.q]}
+										/>
+									),
+								)}
 							</div>
 						</section>
 					);
