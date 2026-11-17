@@ -141,12 +141,13 @@ jobs:
           echo "stub smoke OK: /sw.js + /registerSW.js served as JS with network-first cache headers"
       - name: Smoke check profile
         if: ${{ !inputs.dry_run }}
-        # Plan #536: teacher profile StaticSite (msmy.io.vn + www). When
-        # apps/profile/maintenance.json sets disabled=true, verify all profile
-        # entrypoints serve the maintenance notice cleanly without leaking
-        # lead-api or placement test pages; otherwise run full site checks.
+        # Plan #536: teacher profile StaticSite (msmy.io.vn + www). Resolves
+        # effective maintenance mode from PROFILE_MAINTENANCE env override +
+        # apps/profile/maintenance.json via isProfileMaintenanceEnabled(): when
+        # active, verify all entrypoints serve the maintenance notice cleanly;
+        # otherwise run full site checks.
         run: |
-          if node -e 'process.exit(JSON.parse(require("node:fs").readFileSync("apps/profile/maintenance.json","utf8")).disabled ? 0 : 1)'; then
+          if node --input-type=module -e 'import { isProfileMaintenanceEnabled } from "./apps/profile/maintenance.mjs"; process.exit(isProfileMaintenanceEnabled() ? 0 : 1)'; then
             for attempt in $(seq 1 30); do
               home_code=$(curl -sS --connect-timeout 5 --max-time 30 \
                 -D /tmp/profile-headers.txt -o /tmp/profile.html \
