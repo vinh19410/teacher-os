@@ -12,7 +12,7 @@
  * Teacher OS — design v2 tokens (vinh19410/teacheros-design-v2@7a53fc0, shadcn
  * neutral oklch). LIGHT là mặc định (:root); `.dark` trên <html> là override.
  * Geist/Geist Mono self-host qua @fontsource-variable (CSP: font-src 'self').
- * Base font 14px (html), thang chữ = rem mặc định của Tailwind (không override
+ * Base font 16px (html), thang chữ = rem mặc định của Tailwind (không override
  * --text-* bằng px — override cũ làm font-size:14px vô hiệu).
  *
  * Trạng thái: chấm emerald (--success) / amber (--warn) theo v2; quá hạn/lỗi
@@ -265,7 +265,7 @@
 	}
 	html {
 		@apply font-sans;
-		font-size: 14px;
+		font-size: 16px;
 		-webkit-text-size-adjust: 100%;
 	}
 	body {

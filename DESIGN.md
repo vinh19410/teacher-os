@@ -45,7 +45,7 @@ giấy trên nền trắng (shadcn neutral), hành động chính = mực đậm
   `accent-hover/active` → nền accent xám / primary 75%. Mọi chỗ ý là "cam" đã đổi sang
   `primary`/`chart-1` cùng commit phase 2 (revenue-chart legend, checkbox class tab).
 - **Type:** **Geist Variable** + **Geist Mono Variable** self-host (`@fontsource-variable`,
-  CSP `font-src 'self'`). `html { font-size: 14px }`; thang chữ = rem mặc định Tailwind
+  CSP `font-src 'self'`). `html { font-size: 16px }`; thang chữ = rem mặc định Tailwind
   (không override px như v1). Tiêu đề trang: `text-2xl md:text-3xl font-semibold tracking-tight`;
   số liệu `tabular-nums`. Input `text-base md:text-sm` (16px mobile — tránh iOS zoom khi focus).
 - **Radius:** `--radius: 0.625rem`; sm/md/lg/xl derive từ đó (xl = card); `rounded-full` cho
