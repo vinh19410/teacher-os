@@ -159,6 +159,9 @@ jobs:
             www_code=$(curl -sS --connect-timeout 5 --max-time 30 \
               -D /tmp/profile-www-headers.txt -o /tmp/profile-www.html \
               -w '%{http_code}' "https://www.msmy.io.vn/" || true)
+            video_code=$(curl -sS --connect-timeout 5 --max-time 30 \
+              -I -D /tmp/profile-video-headers.txt -o /dev/null \
+              -w '%{http_code}' "$PROFILE_ORIGIN/huong-dan-kiem-tra-dau-vao.mp4" || true)
             if [ "$home_code" = "200" ] \
               && grep -qi '^content-type: text/html' /tmp/profile-headers.txt \
               && grep -Fq "<meta name=\"lead-api\" content=\"$API_BASE_URL\">" /tmp/profile.html \
@@ -168,11 +171,13 @@ jobs:
               && echo "$redir_code" | grep -Eq '^(301|307|308)$' \
               && grep -Eiq '^location:.*kiem-tra-dau-vao/' /tmp/profile-redir-headers.txt \
               && [ "$www_code" = "200" ] \
-              && grep -qi '^content-type: text/html' /tmp/profile-www-headers.txt; then
+              && grep -qi '^content-type: text/html' /tmp/profile-www-headers.txt \
+              && [ "$video_code" = "200" ] \
+              && grep -qi '^content-type: video/mp4' /tmp/profile-video-headers.txt; then
               echo "profile smoke OK after attempt $attempt"
               exit 0
             fi
-            echo "attempt $attempt: home=$home_code test=$test_code redir=$redir_code www=$www_code, retrying in 20s"
+            echo "attempt $attempt: home=$home_code test=$test_code redir=$redir_code www=$www_code video=$video_code, retrying in 20s"
             sleep 20
           done
           echo "::error::profile did not pass smoke checks within 10 minutes of deploy"
