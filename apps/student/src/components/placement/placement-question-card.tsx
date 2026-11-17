@@ -58,7 +58,7 @@ export function PlacementMcqQuestionCard({
 							key={inputId}
 							htmlFor={inputId}
 							className={cn(
-								"flex cursor-pointer items-center gap-3 rounded-lg border px-3.5 py-2.5 text-sm transition-colors",
+								"flex cursor-pointer items-center gap-3 rounded-lg border px-3.5 py-2.5 text-sm transition-colors has-[:focus-visible]:shadow-[var(--focus-ring)]",
 								isSelected
 									? "border-primary bg-muted text-foreground ring-1 ring-primary"
 									: "border-input bg-background text-foreground hover:bg-accent",

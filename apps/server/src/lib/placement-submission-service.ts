@@ -18,7 +18,7 @@ import type { Mailer } from "@teacher-os/auth/mail/mailer";
 import { lead } from "@teacher-os/db/schema/lead";
 import { placementTestSubmission } from "@teacher-os/db/schema/placement-test";
 import { student } from "@teacher-os/db/schema/student";
-import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Context } from "hono";
 import type { Db, KernelCtx } from "../app";
 import { parseByteRange } from "./byte-range";
@@ -143,36 +143,58 @@ export async function findLatestSubmissionForStudent(
 	orgId: string,
 	studentRow: typeof student.$inferSelect,
 ): Promise<typeof placementTestSubmission.$inferSelect | null> {
-	const normalizedEmail = studentRow.email.trim().toLowerCase();
-	const matchCondition =
-		normalizedEmail.length > 0
-			? or(
-					eq(placementTestSubmission.studentId, studentRow.id),
-					inArray(
-						placementTestSubmission.leadId,
-						db
-							.select({ id: lead.id })
-							.from(lead)
-							.where(
-								and(
-									eq(lead.orgId, orgId),
-									sql`lower(trim(${lead.email})) = ${normalizedEmail}`,
-								),
-							),
-					),
-				)
-			: eq(placementTestSubmission.studentId, studentRow.id);
-
-	const [sub] = await db
+	// Ưu tiên bài nộp đã gắn trực tiếp `studentId` trước — tránh bài lead công
+	// khai mới hơn (email chưa xác thực) che khuất bài làm thật của học viên.
+	const [directSub] = await db
 		.select()
 		.from(placementTestSubmission)
-		.where(and(eq(placementTestSubmission.orgId, orgId), matchCondition))
+		.where(
+			and(
+				eq(placementTestSubmission.orgId, orgId),
+				eq(placementTestSubmission.studentId, studentRow.id),
+			),
+		)
 		.orderBy(
 			desc(placementTestSubmission.submittedAt),
 			desc(placementTestSubmission.id),
 		)
 		.limit(1);
-	return sub ?? null;
+	if (directSub) {
+		return directSub;
+	}
+
+	const normalizedEmail = studentRow.email.trim().toLowerCase();
+	if (normalizedEmail.length === 0) {
+		return null;
+	}
+
+	const [leadSub] = await db
+		.select()
+		.from(placementTestSubmission)
+		.where(
+			and(
+				eq(placementTestSubmission.orgId, orgId),
+				isNull(placementTestSubmission.studentId),
+				inArray(
+					placementTestSubmission.leadId,
+					db
+						.select({ id: lead.id })
+						.from(lead)
+						.where(
+							and(
+								eq(lead.orgId, orgId),
+								sql`lower(trim(${lead.email})) = ${normalizedEmail}`,
+							),
+						),
+				),
+			),
+		)
+		.orderBy(
+			desc(placementTestSubmission.submittedAt),
+			desc(placementTestSubmission.id),
+		)
+		.limit(1);
+	return leadSub ?? null;
 }
 
 export function buildPlacementSubmissionDetail(

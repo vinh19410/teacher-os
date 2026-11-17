@@ -34,7 +34,10 @@ import {
 	transitionSpeakingNextTask,
 	transitionSpeakingToAnswer,
 } from "@/lib/placement-test-helpers";
-import { resolveStudentPlacementMediaSrc } from "@/lib/repos/placement-test";
+import {
+	resolveStudentPlacementMediaSrc,
+	useActiveStudentOrgId,
+} from "@/lib/repos/placement-test";
 
 export interface RecordedSpeakingAudio {
 	blob: Blob;
@@ -58,6 +61,7 @@ export function PlacementSpeakingStep({
 	onSkipSpeaking: () => void;
 	onBusyChange: (busy: boolean) => void;
 }) {
+	const activeOrgId = useActiveStudentOrgId();
 	const [session, setSession] = useState<SpeakingSessionState>(() =>
 		createInitialSpeakingSession(tasks.length),
 	);
@@ -314,7 +318,7 @@ export function PlacementSpeakingStep({
 			};
 
 			const taskAudioUrl = task.src
-				? resolveStudentPlacementMediaSrc(task.src)
+				? resolveStudentPlacementMediaSrc(task.src, activeOrgId)
 				: "";
 			if (taskAudioUrl) {
 				const audio = new Audio(taskAudioUrl);
@@ -347,7 +351,7 @@ export function PlacementSpeakingStep({
 
 			playTtsFallback();
 		},
-		[teardownPromptPlayback],
+		[teardownPromptPlayback, activeOrgId],
 	);
 
 	// Quản lý bộ đếm giây trong phase prep / answer và tự chuyển phase.

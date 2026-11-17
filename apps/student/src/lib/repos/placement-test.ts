@@ -7,9 +7,14 @@ import {
 	studentPlacementStatusSchema,
 	studentPlacementSubmitSchema,
 } from "@teacher-os/api/placement-test-contracts";
+import { useSyncExternalStore } from "react";
 import { resolveSpeakingUploadMeta } from "@/lib/placement-test-helpers";
 import { HttpError } from "@/lib/query-client";
 import { getApiBaseUrl, getStudentHeaders } from "@/lib/repos/student";
+import {
+	getActiveStudentOrgId,
+	subscribeActiveStudentOrg,
+} from "@/lib/student-org-storage";
 
 export const studentPlacementStatusQueryKey = [
 	"student",
@@ -230,21 +235,61 @@ export async function uploadStudentPlacementSpeaking(
 	return (await res.json()) as { ok: boolean; speakingStatus?: string };
 }
 
-export function resolveStudentPlacementAudioUrl(audioId: string): string {
-	return `${getApiBaseUrl()}/api/student/placement-test/audio/${encodeURIComponent(audioId)}`;
+export function useActiveStudentOrgId(): string | null {
+	return useSyncExternalStore(
+		subscribeActiveStudentOrg,
+		getActiveStudentOrgId,
+		() => null,
+	);
 }
 
-/** Chuẩn hóa `src` audio từ snapshot sang URL `/api/student/placement-test/audio/:audioId`. */
-export function resolveStudentPlacementMediaSrc(src: string): string {
+function appendStudentOrgQuery(
+	urlString: string,
+	orgId: string | null,
+): string {
+	if (!orgId) return urlString;
+	const [basePart, hashPart] = urlString.split("#");
+	const [pathPart, queryPart] = (basePart ?? "").split("?");
+	const params = new URLSearchParams(queryPart ?? "");
+	if (!params.has("org")) {
+		params.set("org", orgId);
+	}
+	const qs = params.toString();
+	const rebuilt = qs ? `${pathPart}?${qs}` : pathPart;
+	return hashPart !== undefined ? `${rebuilt}#${hashPart}` : rebuilt;
+}
+
+export function resolveStudentPlacementAudioUrl(
+	audioId: string,
+	explicitOrgId?: string | null,
+): string {
+	const orgId =
+		explicitOrgId !== undefined ? explicitOrgId : getActiveStudentOrgId();
+	return appendStudentOrgQuery(
+		`${getApiBaseUrl()}/api/student/placement-test/audio/${encodeURIComponent(audioId)}`,
+		orgId,
+	);
+}
+
+/** Chuẩn hóa `src` audio từ snapshot sang URL `/api/student/placement-test/audio/:audioId` (kèm `?org=` cho multi-org). */
+export function resolveStudentPlacementMediaSrc(
+	src: string,
+	explicitOrgId?: string | null,
+): string {
 	const trimmed = String(src ?? "").trim();
 	if (!trimmed) return "";
+	const orgId =
+		explicitOrgId !== undefined ? explicitOrgId : getActiveStudentOrgId();
 	if (/^https?:\/\//i.test(trimmed)) return trimmed;
 	if (trimmed.startsWith(PUBLIC_AUDIO_SRC_PREFIX)) {
 		const audioId = trimmed.slice(PUBLIC_AUDIO_SRC_PREFIX.length).trim();
-		return audioId ? resolveStudentPlacementAudioUrl(audioId) : "";
+		return audioId ? resolveStudentPlacementAudioUrl(audioId, orgId) : "";
 	}
 	if (trimmed.startsWith("/")) {
-		return `${getApiBaseUrl()}${trimmed}`;
+		const url = `${getApiBaseUrl()}${trimmed}`;
+		return trimmed.startsWith("/api/student/placement-test/audio/")
+			? appendStudentOrgQuery(url, orgId)
+			: url;
 	}
-	return resolveStudentPlacementAudioUrl(trimmed);
+	return resolveStudentPlacementAudioUrl(trimmed, orgId);
 }

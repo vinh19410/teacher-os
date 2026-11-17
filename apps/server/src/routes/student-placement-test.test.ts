@@ -1253,5 +1253,63 @@ describe("student portal placement test routes (#748)", () => {
 			.from(schema.placementTestSubmission)
 			.where(eq(schema.placementTestSubmission.id, "sub-minh-public"));
 		expect(backfilled?.studentId).toBe("stu-other");
+
+		// Case 3: Newer unverified public lead submission with same email must NOT shadow an existing studentId-linked submission
+		await db.insert(schema.lead).values({
+			id: "lead-spoof-hoa",
+			orgId: "org-1",
+			name: "Spoof Hoa",
+			phone: "0909888777",
+			email: "hoa@student.local",
+			source: "placement-test",
+			status: "new",
+		});
+		await db.insert(schema.placementTestSubmission).values({
+			id: "sub-spoof-hoa",
+			orgId: "org-1",
+			leadId: "lead-spoof-hoa",
+			studentId: null,
+			testVersion: 1,
+			snapshotJson: JSON.stringify(snapshot),
+			answersJson: JSON.stringify({
+				listening: {},
+				vocabGrammar: {},
+				reading: {},
+			}),
+			objectiveBreakdownJson: JSON.stringify({
+				listening: { correct: 0, total: 2, pct: 0 },
+				vocabGrammar: { correct: 0, total: 1, pct: 0 },
+				reading: { correct: 0, total: 1, pct: 0 },
+				totalCorrect: 0,
+				totalQuestions: 4,
+				averagePct: 0,
+				byLevel: [],
+				items: [],
+				provisionalBand: snapshot.bands[0],
+				provisionalSummary: "Tạm tính Pre-A1",
+			}),
+			writingText: "",
+			writingWordCount: 0,
+			speakingStatus: "none",
+			status: "pending_grading",
+			submittedAt: new Date(Date.now() + 60_000),
+		});
+
+		const hoaAfterSpoof = await app.request("/api/student/placement-test", {
+			headers: { "x-test-user": "hoa" },
+		});
+		expect(hoaAfterSpoof.status).toBe(200);
+		const hoaView =
+			(await hoaAfterSpoof.json()) as StudentPlacementViewResponse;
+		expect(hoaView.status).toBe("graded");
+		expect(hoaView.submission?.id).not.toBe("sub-spoof-hoa");
+
+		// Audio proxy must use private Cache-Control
+		const audioCheck = await app.request(
+			"/api/student/placement-test/audio/11111111-1111-4111-8111-111111111111",
+			{ headers: { "x-test-user": "hoa" } },
+		);
+		expect(audioCheck.status).toBe(200);
+		expect(audioCheck.headers.get("Cache-Control")).toContain("private");
 	});
 });

@@ -734,4 +734,27 @@ describe("Student Portal Placement Test (#748)", () => {
 			await screen.findByTestId("placement-unavailable-card"),
 		).toBeTruthy();
 	});
+
+	it("attaches active org query param on placement audio URLs for multi-org media playback", async () => {
+		const { resolveStudentPlacementMediaSrc } = await import(
+			"@/lib/repos/placement-test"
+		);
+		const { setActiveStudentOrgId, clearActiveStudentOrgId } = await import(
+			"@/lib/student-org-storage"
+		);
+
+		setActiveStudentOrgId("org-secondary");
+		try {
+			expect(
+				resolveStudentPlacementMediaSrc(
+					"/api/student/placement-test/audio/clip-1",
+				),
+			).toContain("/api/student/placement-test/audio/clip-1?org=org-secondary");
+			expect(
+				resolveStudentPlacementMediaSrc("/public/placement-test/audio/clip-2"),
+			).toContain("/api/student/placement-test/audio/clip-2?org=org-secondary");
+		} finally {
+			clearActiveStudentOrgId();
+		}
+	});
 });

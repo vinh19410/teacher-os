@@ -22,10 +22,22 @@ export function PlacementPromptModal({
 	const titleId = useId();
 	const descriptionId = useId();
 	const panelRef = useRef<HTMLDivElement>(null);
+	const previousFocusRef = useRef<HTMLElement | null>(null);
 
 	useEffect(() => {
 		if (!open) return;
+		previousFocusRef.current =
+			document.activeElement instanceof HTMLElement
+				? document.activeElement
+				: null;
 		panelRef.current?.focus();
+		return () => {
+			const prev = previousFocusRef.current;
+			previousFocusRef.current = null;
+			if (prev?.isConnected) {
+				prev.focus();
+			}
+		};
 	}, [open]);
 
 	if (!open) return null;

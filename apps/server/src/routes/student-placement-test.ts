@@ -464,7 +464,7 @@ export function studentPlacementTestRoutes(
 			"Accept-Ranges": "bytes",
 			"X-Content-Type-Options": "nosniff",
 			"Content-Security-Policy": "default-src 'none'; sandbox",
-			"Cache-Control": "public, max-age=31536000, immutable",
+			"Cache-Control": "private, max-age=31536000, immutable",
 		};
 
 		if (requestedRange && object.range) {

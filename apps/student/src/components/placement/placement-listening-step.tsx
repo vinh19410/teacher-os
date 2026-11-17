@@ -17,7 +17,10 @@ import {
 	PlacementMcqQuestionCard,
 } from "@/components/placement/placement-question-card";
 import { formatPlacementClock } from "@/lib/placement-test-helpers";
-import { resolveStudentPlacementMediaSrc } from "@/lib/repos/placement-test";
+import {
+	resolveStudentPlacementMediaSrc,
+	useActiveStudentOrgId,
+} from "@/lib/repos/placement-test";
 
 function ListeningClipCard({
 	clip,
@@ -46,9 +49,10 @@ function ListeningClipCard({
 	const [currentTime, setCurrentTime] = useState(0);
 	const [audioError, setAudioError] = useState("");
 
+	const activeOrgId = useActiveStudentOrgId();
 	const maxPlays = clip.maxPlays > 0 ? clip.maxPlays : 2;
 	const remaining = Math.max(0, maxPlays - playsUsed);
-	const audioSrc = resolveStudentPlacementMediaSrc(clip.src);
+	const audioSrc = resolveStudentPlacementMediaSrc(clip.src, activeOrgId);
 	const partLabel = stripInlineCefrLabel(clip.partLabel);
 	const displayTitle = stripInlineCefrLabel(clip.title);
 	const displayNotesTitle = stripInlineCefrLabel(clip.notesTitle);
