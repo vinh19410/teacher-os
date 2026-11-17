@@ -3,6 +3,7 @@ import {
 	buildPlacementZaloText,
 	computePlacementFinal,
 	locatePlacementErrors,
+	PLACEMENT_RUBRIC_INTERMEDIATE_NOTE,
 	PLACEMENT_SPEAKING_RUBRIC,
 	PLACEMENT_TEACHER_FEEDBACK_MAX,
 	PLACEMENT_WRITING_RUBRIC,
@@ -203,6 +204,70 @@ function RubricRow({
 				))}
 			</fieldset>
 		</div>
+	);
+}
+
+type RubricGuideItem = {
+	readonly key: string;
+	readonly label: string;
+	readonly levels: {
+		readonly 5: string;
+		readonly 3: string;
+		readonly 1: string;
+	};
+};
+
+function RubricGuideDetails({
+	items,
+	testId,
+}: {
+	items: readonly RubricGuideItem[];
+	testId: string;
+}) {
+	return (
+		<details
+			data-testid={testId}
+			className="rounded-md border border-border bg-muted/20"
+		>
+			<summary className="cursor-pointer px-3 py-2 font-medium text-foreground text-xs hover:bg-muted/40">
+				Xem thang mô tả 5 / 3 / 1
+			</summary>
+			<div className="space-y-2 border-border border-t px-3 py-2.5 text-xs">
+				<div className="overflow-x-auto rounded-md border border-border bg-background">
+					<table className="w-full min-w-[520px] text-left text-xs">
+						<thead className="bg-muted/50 text-muted-foreground">
+							<tr>
+								<th className="w-36 px-2.5 py-1.5 font-medium">Tiêu chí</th>
+								<th className="px-2.5 py-1.5 font-medium font-mono">5</th>
+								<th className="px-2.5 py-1.5 font-medium font-mono">3</th>
+								<th className="px-2.5 py-1.5 font-medium font-mono">1</th>
+							</tr>
+						</thead>
+						<tbody>
+							{items.map((item) => (
+								<tr key={item.key} className="border-border border-t align-top">
+									<td className="px-2.5 py-2 font-medium text-foreground">
+										{item.label}
+									</td>
+									<td className="px-2.5 py-2 text-muted-foreground">
+										{item.levels[5]}
+									</td>
+									<td className="px-2.5 py-2 text-muted-foreground">
+										{item.levels[3]}
+									</td>
+									<td className="px-2.5 py-2 text-muted-foreground">
+										{item.levels[1]}
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+				<p className="text-muted-foreground text-xs">
+					{PLACEMENT_RUBRIC_INTERMEDIATE_NOTE}
+				</p>
+			</div>
+		</details>
 	);
 }
 
@@ -734,6 +799,10 @@ function PlacementSubmissionBody({
 						/>
 					))}
 				</div>
+				<RubricGuideDetails
+					items={PLACEMENT_WRITING_RUBRIC}
+					testId="writing-rubric-guide"
+				/>
 			</div>
 
 			{/* Speaking */}
@@ -852,21 +921,30 @@ function PlacementSubmissionBody({
 				)}
 
 				{includeSpeaking && (
-					<div className="space-y-1.5">
-						{PLACEMENT_SPEAKING_RUBRIC.map((item) => (
-							<RubricRow
-								key={item.key}
-								label={item.label}
-								desc={item.desc}
-								value={speakingRubric[item.key]}
-								testIdPrefix={`speaking-${item.key}`}
-								onChange={(next) => {
-									touch();
-									setSpeakingRubric((prev) => ({ ...prev, [item.key]: next }));
-								}}
-							/>
-						))}
-					</div>
+					<>
+						<div className="space-y-1.5">
+							{PLACEMENT_SPEAKING_RUBRIC.map((item) => (
+								<RubricRow
+									key={item.key}
+									label={item.label}
+									desc={item.desc}
+									value={speakingRubric[item.key]}
+									testIdPrefix={`speaking-${item.key}`}
+									onChange={(next) => {
+										touch();
+										setSpeakingRubric((prev) => ({
+											...prev,
+											[item.key]: next,
+										}));
+									}}
+								/>
+							))}
+						</div>
+						<RubricGuideDetails
+							items={PLACEMENT_SPEAKING_RUBRIC}
+							testId="speaking-rubric-guide"
+						/>
+					</>
 				)}
 			</div>
 

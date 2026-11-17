@@ -212,7 +212,7 @@ describe("PlacementTestRoute (/placement-test)", () => {
 		return { fetchMock };
 	}
 
-	it("hiển thị trạng thái rỗng với nút Nhập đề gốc khi draft === null", async () => {
+	it("hiển thị trạng thái rỗng với nút Nhập đề gốc và nhãn audio en-GB khi draft === null", async () => {
 		renderEditor(
 			makeStateResponse({
 				draft: null,
@@ -227,6 +227,8 @@ describe("PlacementTestRoute (/placement-test)", () => {
 				screen.getByText("Nhập đề gốc 5 kỹ năng (40 câu, 6 audio)"),
 			).toBeTruthy();
 		});
+		expect(screen.getByText(/6 audio giọng chuẩn \(en-GB\)/)).toBeTruthy();
+		expect(screen.queryByText(/Kokoro/)).toBeNull();
 	});
 
 	it("chuyển tab 5 kỹ năng và chặn Phát hành khi ngưỡng % chưa kết thúc bằng 100%", async () => {
@@ -387,12 +389,35 @@ describe("PlacementTestRoute (/placement-test)", () => {
 		});
 	});
 
+	function stubMockAudioXhr() {
+		class MockXhr {
+			status = 200;
+			responseText = JSON.stringify({
+				audioId: AUDIO_ID,
+				name: "clip-la.mp3",
+				size: 4,
+				type: "audio/mpeg",
+			});
+			onload: (() => void) | null = null;
+			onerror: (() => void) | null = null;
+			onabort: (() => void) | null = null;
+			upload = { onprogress: null as ((e: unknown) => void) | null };
+			open() {}
+			setRequestHeader() {}
+			send() {
+				queueMicrotask(() => this.onload?.());
+			}
+		}
+		vi.stubGlobal("XMLHttpRequest", MockXhr);
+	}
+
 	it("nút Nhập lại đề gốc mẫu mở hộp xác nhận rồi tải seed + upload audio + lưu nháp", async () => {
 		const sampleSeed = makeSampleDraft();
 		sampleSeed.parts[0].clips[0]!.audioId = null;
 
 		const state = makeStateResponse();
 		let draftPutCalls = 0;
+		let publishCalls = 0;
 		const fetchMock = vi.fn(
 			async (input: RequestInfo | URL, init?: RequestInit) => {
 				const url = typeof input === "string" ? input : input.toString();
@@ -422,31 +447,14 @@ describe("PlacementTestRoute (/placement-test)", () => {
 						headers: { "content-type": "application/json" },
 					});
 				}
+				if (url.endsWith("/api/placement-test/publish") && method === "POST") {
+					publishCalls += 1;
+				}
 				return new Response("{}", { status: 200 });
 			},
 		);
 		vi.stubGlobal("fetch", fetchMock);
-
-		// uploadAudio uses XMLHttpRequest; mock minimal XHR for jsdom
-		class MockXhr {
-			status = 200;
-			responseText = JSON.stringify({
-				audioId: AUDIO_ID,
-				name: "clip-la.mp3",
-				size: 4,
-				type: "audio/mpeg",
-			});
-			onload: (() => void) | null = null;
-			onerror: (() => void) | null = null;
-			onabort: (() => void) | null = null;
-			upload = { onprogress: null as ((e: unknown) => void) | null };
-			open() {}
-			setRequestHeader() {}
-			send() {
-				queueMicrotask(() => this.onload?.());
-			}
-		}
-		vi.stubGlobal("XMLHttpRequest", MockXhr);
+		stubMockAudioXhr();
 
 		const client = new QueryClient({
 			defaultOptions: { queries: { retry: false } },
@@ -462,11 +470,249 @@ describe("PlacementTestRoute (/placement-test)", () => {
 		});
 
 		fireEvent.click(screen.getByTestId("reimport-seed-btn"));
-		const confirmBtn = await screen.findByTestId("confirm-reimport-btn");
+		const dialog = await screen.findByRole("dialog");
+		expect(dialog.textContent).toContain("6 audio giọng chuẩn (en-GB)");
+		expect(dialog.textContent).not.toContain("Kokoro");
+		expect(screen.getByTestId("confirm-reimport-publish-btn")).toBeTruthy();
+
+		const confirmBtn = screen.getByTestId("confirm-reimport-btn");
 		fireEvent.click(confirmBtn);
 
 		await waitFor(() => expect(draftPutCalls).toBe(1));
+		expect(publishCalls).toBe(0);
 		expect(toastMock.success).toHaveBeenCalled();
+	});
+
+	it("Nhập lại & Phát hành ngay: lưu nháp + upload audio rồi gọi publish với saved.revision", async () => {
+		const sampleSeed = makeSampleDraft();
+		const seedClip = sampleSeed.parts[0].clips[0];
+		if (seedClip) seedClip.audioId = null;
+
+		const state = makeStateResponse();
+		let draftPutCalls = 0;
+		let publishedRevisionPayload: number | null = null;
+		const fetchMock = vi.fn(
+			async (input: RequestInfo | URL, init?: RequestInit) => {
+				const url = typeof input === "string" ? input : input.toString();
+				const method = init?.method ?? "GET";
+				if (url.endsWith("/api/placement-test") && method === "GET") {
+					return new Response(JSON.stringify(state), {
+						status: 200,
+						headers: { "content-type": "application/json" },
+					});
+				}
+				if (url.includes("/placement-seed/questions.json")) {
+					return new Response(JSON.stringify(sampleSeed), {
+						status: 200,
+						headers: { "content-type": "application/json" },
+					});
+				}
+				if (url.includes("/placement-seed/clip-la.mp3")) {
+					return new Response(new Uint8Array([0x49, 0x44, 0x33, 0x03]), {
+						status: 200,
+						headers: { "content-type": "audio/mpeg" },
+					});
+				}
+				if (url.endsWith("/api/placement-test/draft") && method === "PUT") {
+					draftPutCalls += 1;
+					return new Response(JSON.stringify({ revision: 7, dirty: true }), {
+						status: 200,
+						headers: { "content-type": "application/json" },
+					});
+				}
+				if (url.endsWith("/api/placement-test/publish") && method === "POST") {
+					const parsed = JSON.parse(String(init?.body)) as { revision: number };
+					publishedRevisionPayload = parsed.revision;
+					return new Response(
+						JSON.stringify({
+							publishedVersion: 4,
+							publishedAt: "2026-11-17T07:30:00.000Z",
+							revision: 7,
+							dirty: false,
+						}),
+						{
+							status: 200,
+							headers: { "content-type": "application/json" },
+						},
+					);
+				}
+				return new Response("{}", { status: 200 });
+			},
+		);
+		vi.stubGlobal("fetch", fetchMock);
+		stubMockAudioXhr();
+
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		render(
+			<QueryClientProvider client={client}>
+				<PlacementTestRoute />
+			</QueryClientProvider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByTestId("reimport-seed-btn")).toBeTruthy();
+		});
+
+		fireEvent.click(screen.getByTestId("reimport-seed-btn"));
+		fireEvent.click(await screen.findByTestId("confirm-reimport-publish-btn"));
+
+		await waitFor(() => expect(publishedRevisionPayload).toBe(7));
+		expect(draftPutCalls).toBe(1);
+		await waitFor(() => {
+			expect(screen.getByText(/Đã phát hành v4/)).toBeTruthy();
+		});
+		expect(toastMock.success).toHaveBeenCalledWith(
+			"Đã nhập đề gốc và phát hành bộ đề v4.",
+		);
+	});
+
+	it("Nhập lại & Phát hành ngay: khi seed có lỗi validate client → lưu nháp, hiện banner lỗi và không gọi publish", async () => {
+		const invalidSeed = makeSampleDraft();
+		const seedClip = invalidSeed.parts[0].clips[0];
+		if (seedClip) seedClip.audioId = null;
+		const secondBand = invalidSeed.bands[1];
+		if (secondBand) secondBand.max = 90;
+
+		const state = makeStateResponse();
+		let draftPutCalls = 0;
+		let publishCalls = 0;
+		const fetchMock = vi.fn(
+			async (input: RequestInfo | URL, init?: RequestInit) => {
+				const url = typeof input === "string" ? input : input.toString();
+				const method = init?.method ?? "GET";
+				if (url.endsWith("/api/placement-test") && method === "GET") {
+					return new Response(JSON.stringify(state), {
+						status: 200,
+						headers: { "content-type": "application/json" },
+					});
+				}
+				if (url.includes("/placement-seed/questions.json")) {
+					return new Response(JSON.stringify(invalidSeed), {
+						status: 200,
+						headers: { "content-type": "application/json" },
+					});
+				}
+				if (url.includes("/placement-seed/clip-la.mp3")) {
+					return new Response(new Uint8Array([0x49, 0x44, 0x33, 0x03]), {
+						status: 200,
+						headers: { "content-type": "audio/mpeg" },
+					});
+				}
+				if (url.endsWith("/api/placement-test/draft") && method === "PUT") {
+					draftPutCalls += 1;
+					return new Response(JSON.stringify({ revision: 3, dirty: true }), {
+						status: 200,
+						headers: { "content-type": "application/json" },
+					});
+				}
+				if (url.endsWith("/api/placement-test/publish") && method === "POST") {
+					publishCalls += 1;
+				}
+				return new Response("{}", { status: 200 });
+			},
+		);
+		vi.stubGlobal("fetch", fetchMock);
+		stubMockAudioXhr();
+
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		render(
+			<QueryClientProvider client={client}>
+				<PlacementTestRoute />
+			</QueryClientProvider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByTestId("reimport-seed-btn")).toBeTruthy();
+		});
+
+		fireEvent.click(screen.getByTestId("reimport-seed-btn"));
+		fireEvent.click(await screen.findByTestId("confirm-reimport-publish-btn"));
+
+		const banner = await screen.findByTestId("publish-issues-banner");
+		expect(
+			within(banner).getByText(/Ngưỡng cuối cùng phải kết thúc đúng bằng 100%/),
+		).toBeTruthy();
+		expect(draftPutCalls).toBe(1);
+		expect(publishCalls).toBe(0);
+	});
+
+	it("Nhập lại & Phát hành ngay: hiển thị banner xung đột 409 nếu publish bị sửa trước ở tab khác", async () => {
+		const sampleSeed = makeSampleDraft();
+		const seedClip = sampleSeed.parts[0].clips[0];
+		if (seedClip) seedClip.audioId = null;
+
+		const state = makeStateResponse();
+		const fetchMock = vi.fn(
+			async (input: RequestInfo | URL, init?: RequestInit) => {
+				const url = typeof input === "string" ? input : input.toString();
+				const method = init?.method ?? "GET";
+				if (url.endsWith("/api/placement-test") && method === "GET") {
+					return new Response(JSON.stringify(state), {
+						status: 200,
+						headers: { "content-type": "application/json" },
+					});
+				}
+				if (url.includes("/placement-seed/questions.json")) {
+					return new Response(JSON.stringify(sampleSeed), {
+						status: 200,
+						headers: { "content-type": "application/json" },
+					});
+				}
+				if (url.includes("/placement-seed/clip-la.mp3")) {
+					return new Response(new Uint8Array([0x49, 0x44, 0x33, 0x03]), {
+						status: 200,
+						headers: { "content-type": "audio/mpeg" },
+					});
+				}
+				if (url.endsWith("/api/placement-test/draft") && method === "PUT") {
+					return new Response(JSON.stringify({ revision: 3, dirty: true }), {
+						status: 200,
+						headers: { "content-type": "application/json" },
+					});
+				}
+				if (url.endsWith("/api/placement-test/publish") && method === "POST") {
+					return new Response(
+						JSON.stringify({
+							error: "PLACEMENT_REVISION_CONFLICT",
+							code: "PLACEMENT_REVISION_CONFLICT",
+						}),
+						{
+							status: 409,
+							headers: { "content-type": "application/json" },
+						},
+					);
+				}
+				return new Response("{}", { status: 200 });
+			},
+		);
+		vi.stubGlobal("fetch", fetchMock);
+		stubMockAudioXhr();
+
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		render(
+			<QueryClientProvider client={client}>
+				<PlacementTestRoute />
+			</QueryClientProvider>,
+		);
+
+		await waitFor(() => {
+			expect(screen.getByTestId("reimport-seed-btn")).toBeTruthy();
+		});
+
+		fireEvent.click(screen.getByTestId("reimport-seed-btn"));
+		fireEvent.click(await screen.findByTestId("confirm-reimport-publish-btn"));
+
+		await waitFor(() => {
+			expect(
+				screen.getByText("Đề đã được sửa ở tab khác, tải lại để tiếp tục"),
+			).toBeTruthy();
+		});
 	});
 
 	it("cho phép gỡ audio tùy chọn trên câu hỏi Speaking trong tab 5 (#727)", async () => {
