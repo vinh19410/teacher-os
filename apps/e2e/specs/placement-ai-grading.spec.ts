@@ -142,7 +142,7 @@ async function publishSeedPlacementTest(page: Page) {
 	expect(pub.status()).toBe(200);
 }
 
-/** Đáp án đúng toàn bộ phần khách quan (dựng từ bộ đề seed). */
+/** Đáp án đúng toàn bộ 3 phần tự động (dựng từ bộ đề seed). */
 function correctAnswers() {
 	const listening: Record<string, string | number> = {};
 	for (const clip of questionsData.parts[0].clips) {

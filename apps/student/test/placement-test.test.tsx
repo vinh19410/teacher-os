@@ -491,12 +491,17 @@ describe("Student Portal Placement Test (#748)", () => {
 		// Intro renders without lead-gate form
 		const introCard = await screen.findByTestId("placement-intro-card");
 		expect(introCard).toBeTruthy();
+		expect(introCard.textContent).toContain("5 câu");
+		expect(introCard.textContent).not.toContain("khách quan");
 		expect(container.querySelector('input[name="phone"]')).toBeNull();
 		expect(container.textContent).not.toContain("Nhập thông tin trước khi vào");
 
 		// Start test -> Listening
 		fireEvent.click(screen.getByTestId("start-placement-test-btn"));
 		expect(screen.getByTestId("placement-step-listening")).toBeTruthy();
+		expect(screen.getByTestId("placement-progress-counter").textContent).toBe(
+			"Đã trả lời 0/5 câu",
+		);
 
 		// CEFR label stripped on clip title & part label
 		expect(container.textContent).toContain("Campus Library");
@@ -538,6 +543,9 @@ describe("Student Portal Placement Test (#748)", () => {
 		expect(container.textContent).toContain("Đoạn văn điền từ");
 		fireEvent.click(screen.getByLabelText(/Flash photos/));
 		fireEvent.click(screen.getByLabelText(/drink/));
+		expect(screen.getByTestId("placement-progress-counter").textContent).toBe(
+			"Đã trả lời 5/5 câu",
+		);
 
 		// Step 4: Writing
 		fireEvent.click(screen.getByTestId("placement-tab-writing"));
@@ -654,6 +662,8 @@ describe("Student Portal Placement Test (#748)", () => {
 
 		const view = await screen.findByTestId("placement-graded-view");
 		expect(view).toBeTruthy();
+		expect(view.textContent).toContain("Điểm các kỹ năng");
+		expect(view.textContent).not.toContain("khách quan");
 		expect(screen.getByTestId("graded-cefr-badge").textContent).toBe("B1+");
 		expect(screen.getByTestId("graded-display-course").textContent).toBe(
 			"IELTS Pre-Intermediate (4.5–5.5)",
@@ -756,5 +766,41 @@ describe("Student Portal Placement Test (#748)", () => {
 		} finally {
 			clearActiveStudentOrgId();
 		}
+	});
+
+	it("shows unanswered confirmation copy without 'khách quan' when submitting incomplete test", async () => {
+		const notStartedView: StudentPlacementViewResponse = {
+			status: "not_started",
+			hasEntryScore: false,
+			entryScore: null,
+			promptDismissedAt: null,
+			submissionId: null,
+			testAvailable: true,
+			testVersion: 3,
+			snapshot: SAMPLE_SNAPSHOT,
+			submission: null,
+		};
+		globalThis.fetch = vi.fn(async () => makeJsonResponse(notStartedView));
+
+		const queryClient = createTestQueryClient();
+		render(
+			<QueryClientProvider client={queryClient}>
+				<StudentPlacementTestContent studentId="stu-1" />
+			</QueryClientProvider>,
+		);
+
+		await screen.findByTestId("placement-intro-card");
+		fireEvent.click(screen.getByTestId("start-placement-test-btn"));
+		fireEvent.click(screen.getByTestId("placement-tab-speaking"));
+		fireEvent.click(
+			screen.getByRole("button", { name: /Bỏ qua phần Speaking/i }),
+		);
+		fireEvent.click(screen.getByTestId("submit-placement-test-btn"));
+
+		const confirmBox = await screen.findByTestId(
+			"placement-unanswered-confirm",
+		);
+		expect(confirmBox.textContent).toContain("còn 5 câu chưa trả lời");
+		expect(confirmBox.textContent).not.toContain("khách quan");
 	});
 });

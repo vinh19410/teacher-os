@@ -150,7 +150,7 @@ function makeSampleContent(): PlacementContent {
 }
 
 describe("placement-test content-model (5 skills)", () => {
-	it("đếm đúng từng phần và tổng số câu khách quan", () => {
+	it("đếm đúng từng phần và tổng số câu", () => {
 		const state = makeSampleContent();
 		expect(countListeningQuestions(state)).toBe(1);
 		expect(countVgQuestions(state)).toBe(2);

@@ -424,7 +424,7 @@ test.describe
 				}
 			}
 			await expect(page.locator(".progress-counter")).toContainText(
-				"Đã trả lời 13/40 câu khách quan",
+				"Đã trả lời 13/40 câu",
 			);
 
 			await page.reload();
@@ -432,7 +432,7 @@ test.describe
 			await expect(clipLaStatus).toContainText("Còn 0/2 lượt nghe");
 			await expect(clipLaBtn).toBeDisabled();
 			await expect(page.locator(".progress-counter")).toContainText(
-				"Đã trả lời 13/40 câu khách quan",
+				"Đã trả lời 13/40 câu",
 			);
 
 			// 4. Phần 2 Grammar & Vocab: đúng 9/12 (75%)
@@ -452,10 +452,10 @@ test.describe
 					.check();
 			}
 			await expect(page.locator(".progress-counter")).toContainText(
-				"Đã trả lời 25/40 câu khách quan",
+				"Đã trả lời 25/40 câu",
 			);
 
-			// 5. Phần 3 Reading: đúng 12/15 (80%) -> tổng 34/40 khách quan = 85%
+			// 5. Phần 3 Reading: đúng 12/15 (80%) -> tổng 34/40 = 85%
 			await page.locator("#nextToReadingBtn").click();
 			await expect(page.locator('[data-skill="reading"]')).toBeVisible();
 			await expect(page.locator(".question-level-pill")).toHaveCount(0);
@@ -472,7 +472,7 @@ test.describe
 					.check();
 			}
 			await expect(page.locator(".progress-counter")).toContainText(
-				"Đã trả lời 40/40 câu khách quan",
+				"Đã trả lời 40/40 câu",
 			);
 
 			// 6. Phần 4 Writing: 56 từ đạt chuẩn gợi ý 50–80 từ
@@ -1256,7 +1256,7 @@ test.describe
 
 				await expect(page.locator('[data-skill="listening"]')).toBeVisible();
 				await expect(page.locator(".progress-counter")).toContainText(
-					"Đã trả lời 0/45 câu khách quan",
+					"Đã trả lời 0/45 câu",
 				);
 				await expect(page.locator(".question-level-pill")).toHaveCount(0);
 				const firstListeningClip = page.locator(".listening-clip-card").first();
@@ -1313,7 +1313,7 @@ test.describe
 					.click();
 				await expect(page.locator('[data-skill="reading"]')).toBeVisible();
 				await expect(page.locator(".progress-counter")).toContainText(
-					"Đã trả lời 0/45 câu khách quan",
+					"Đã trả lời 0/45 câu",
 				);
 
 				const passageCards = page.locator(".reading-passage-card");
@@ -1328,7 +1328,7 @@ test.describe
 					.locator('fieldset[data-question-id="r-a1"] input[value="1"]')
 					.check();
 				await expect(page.locator(".progress-counter")).toContainText(
-					"Đã trả lời 1/45 câu khách quan",
+					"Đã trả lời 1/45 câu",
 				);
 
 				for (const vp of checkViewports) {
