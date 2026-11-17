@@ -1,5 +1,6 @@
 import {
 	type PlacementPublishedClip,
+	type PlacementPublishedListeningQuestion,
 	stripInlineCefrLabel,
 } from "@teacher-os/api/placement-test-contracts";
 import { Button } from "@teacher-os/ui/components/button";
@@ -11,12 +12,15 @@ import {
 	CardTitle,
 } from "@teacher-os/ui/components/card";
 import { Play, Volume2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	PlacementGapQuestionCard,
 	PlacementMcqQuestionCard,
 } from "@/components/placement/placement-question-card";
-import { formatPlacementClock } from "@/lib/placement-test-helpers";
+import {
+	formatPlacementClock,
+	groupPlacementItemsByPart,
+} from "@/lib/placement-test-helpers";
 import {
 	resolveStudentPlacementMediaSrc,
 	useActiveStudentOrgId,
@@ -24,6 +28,7 @@ import {
 
 function ListeningClipCard({
 	clip,
+	clipNumber,
 	playsUsed,
 	isActiveClip,
 	onRequestPlay,
@@ -34,6 +39,7 @@ function ListeningClipCard({
 	onAnswerChange,
 }: {
 	clip: PlacementPublishedClip;
+	clipNumber: number;
 	playsUsed: number;
 	isActiveClip: boolean;
 	onRequestPlay: (clipId: string) => void;
@@ -53,8 +59,6 @@ function ListeningClipCard({
 	const maxPlays = clip.maxPlays > 0 ? clip.maxPlays : 2;
 	const remaining = Math.max(0, maxPlays - playsUsed);
 	const audioSrc = resolveStudentPlacementMediaSrc(clip.src, activeOrgId);
-	const partLabel = stripInlineCefrLabel(clip.partLabel);
-	const displayTitle = stripInlineCefrLabel(clip.title);
 	const displayNotesTitle = stripInlineCefrLabel(clip.notesTitle);
 
 	// Khi một clip khác được phát thì tạm dừng clip này.
@@ -115,24 +119,30 @@ function ListeningClipCard({
 	const progressPct =
 		duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
 
+	const questionBlocks = useMemo(() => {
+		const blocks: Array<
+			| { kind: "notes"; questions: PlacementPublishedListeningQuestion[] }
+			| { kind: "single"; question: PlacementPublishedListeningQuestion }
+		> = [];
+		for (const q of clip.questions) {
+			if (q.type === "gap" && displayNotesTitle) {
+				const prev = blocks[blocks.length - 1];
+				if (prev?.kind === "notes") {
+					prev.questions.push(q);
+				} else {
+					blocks.push({ kind: "notes", questions: [q] });
+				}
+			} else {
+				blocks.push({ kind: "single", question: q });
+			}
+		}
+		return blocks;
+	}, [clip.questions, displayNotesTitle]);
+
 	return (
 		<Card data-clip-id={clip.id}>
-			<CardHeader className="space-y-2">
-				{partLabel ? (
-					<div>
-						<span className="inline-flex items-center rounded-md bg-muted px-2.5 py-0.5 font-medium text-foreground text-xs">
-							{partLabel}
-						</span>
-					</div>
-				) : null}
-				{displayTitle ? (
-					<CardTitle className="text-lg">{displayTitle}</CardTitle>
-				) : null}
-				{clip.instruction ? (
-					<CardDescription className="leading-relaxed">
-						{clip.instruction}
-					</CardDescription>
-				) : null}
+			<CardHeader className="pb-3">
+				<CardTitle className="text-base">Đoạn nghe {clipNumber}</CardTitle>
 			</CardHeader>
 
 			<CardContent className="space-y-5">
@@ -231,17 +241,51 @@ function ListeningClipCard({
 					) : null}
 				</div>
 
-				{displayNotesTitle ? (
-					<div className="rounded-md border bg-muted/20 px-3.5 py-2.5 text-sm">
-						<span className="mr-2 font-mono text-[11px] text-muted-foreground uppercase tracking-[0.14em]">
-							Phiếu ghi chú
-						</span>
-						<strong className="text-foreground">{displayNotesTitle}</strong>
-					</div>
-				) : null}
-
 				<div className="space-y-4">
-					{clip.questions.map((q) => {
+					{questionBlocks.map((block, bIdx) => {
+						if (block.kind === "notes") {
+							return (
+								<div
+									key={`notes-${clip.id}-${bIdx}`}
+									data-testid={`listening-notes-${clip.id}`}
+									className="rounded-xl border bg-muted/20 p-4"
+								>
+									<div className="mb-2 flex flex-wrap items-center gap-2 border-border border-b pb-2.5">
+										<span className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.14em]">
+											Phiếu ghi chú
+										</span>
+										<h4 className="font-semibold text-foreground text-sm">
+											{displayNotesTitle}
+										</h4>
+									</div>
+
+									<div>
+										{block.questions.map((q) => {
+											const qNum = questionNumbers.get(q.id) ?? 1;
+											const val = answers[q.id];
+											return (
+												<PlacementGapQuestionCard
+													key={q.id}
+													questionId={q.id}
+													questionNumber={qNum}
+													prompt={q.prompt}
+													value={typeof val === "string" ? val : ""}
+													onChange={(next) => onAnswerChange(q.id, next)}
+													inline
+												/>
+											);
+										})}
+									</div>
+
+									<p className="mt-2 border-border border-t pt-2.5 text-muted-foreground text-xs">
+										Gợi ý: Viết ngắn gọn (không cần viết hoa hay ký tự phụ như
+										$, p.m.).
+									</p>
+								</div>
+							);
+						}
+
+						const q = block.question;
 						const qNum = questionNumbers.get(q.id) ?? 1;
 						const val = answers[q.id];
 						if (q.type === "gap") {
@@ -294,6 +338,7 @@ export function PlacementListeningStep({
 	onAnswerChange: (questionId: string, value: string | number) => void;
 }) {
 	const [activeClipId, setActiveClipId] = useState<string | null>(null);
+	const partGroups = useMemo(() => groupPlacementItemsByPart(clips), [clips]);
 
 	return (
 		<div className="space-y-6" data-testid="placement-step-listening">
@@ -312,25 +357,63 @@ export function PlacementListeningStep({
 				</CardHeader>
 			</Card>
 
-			{clips.map((clip) => (
-				<ListeningClipCard
-					key={clip.id}
-					clip={clip}
-					playsUsed={plays[clip.id] ?? 0}
-					isActiveClip={activeClipId === clip.id}
-					onRequestPlay={(cid) => {
-						onRecordPlay(cid);
-						setActiveClipId(cid);
-					}}
-					onPlayStopped={(cid) => {
-						setActiveClipId((prev) => (prev === cid ? null : prev));
-					}}
-					onRefundPlay={onRefundPlay}
-					questionNumbers={questionNumbers}
-					answers={answers}
-					onAnswerChange={onAnswerChange}
-				/>
-			))}
+			{partGroups.length === 0 ? (
+				<Card>
+					<CardContent>
+						<p className="text-muted-foreground text-sm">
+							Phần Listening hiện chưa có đoạn nghe nào. Bạn có thể chuyển sang
+							bước tiếp theo.
+						</p>
+					</CardContent>
+				</Card>
+			) : (
+				partGroups.map((group, gIdx) => (
+					<section
+						key={`listening-part-${group.partLabel || gIdx}`}
+						className="space-y-4"
+					>
+						{group.partLabel || group.instruction ? (
+							<div className="space-y-1.5 px-1">
+								{group.partLabel ? (
+									<div>
+										<span className="inline-flex items-center rounded-md bg-muted px-2.5 py-0.5 font-semibold text-foreground text-xs">
+											{group.partLabel}
+										</span>
+									</div>
+								) : null}
+								{group.instruction ? (
+									<p className="text-muted-foreground text-sm leading-relaxed">
+										{group.instruction}
+									</p>
+								) : null}
+							</div>
+						) : null}
+
+						<div className="space-y-4">
+							{group.items.map(({ item: clip, index: clipIndex }) => (
+								<ListeningClipCard
+									key={clip.id}
+									clip={clip}
+									clipNumber={clipIndex + 1}
+									playsUsed={plays[clip.id] ?? 0}
+									isActiveClip={activeClipId === clip.id}
+									onRequestPlay={(cid) => {
+										onRecordPlay(cid);
+										setActiveClipId(cid);
+									}}
+									onPlayStopped={(cid) => {
+										setActiveClipId((prev) => (prev === cid ? null : prev));
+									}}
+									onRefundPlay={onRefundPlay}
+									questionNumbers={questionNumbers}
+									answers={answers}
+									onAnswerChange={onAnswerChange}
+								/>
+							))}
+						</div>
+					</section>
+				))
+			)}
 		</div>
 	);
 }

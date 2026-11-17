@@ -9,10 +9,13 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@teacher-os/ui/components/card";
-import { Fragment } from "react";
+import { Fragment, useMemo } from "react";
 import { PlacementMcqQuestionCard } from "@/components/placement/placement-question-card";
 import { cn } from "@/lib/cn";
-import { PLACEMENT_READING_KIND_LABELS } from "@/lib/placement-test-helpers";
+import {
+	groupPlacementItemsByPart,
+	PLACEMENT_READING_KIND_LABELS,
+} from "@/lib/placement-test-helpers";
 
 function ReadingPassageBody({
 	passage,
@@ -20,14 +23,19 @@ function ReadingPassageBody({
 	passage: PlacementPublishedReadingPassage;
 }) {
 	const paragraphs = passage.body.split(/\n{2,}/);
-	const isSignOrMessage = passage.kind === "sign" || passage.kind === "message";
+	const bodyStyle =
+		passage.kind === "sign"
+			? "border-2 border-warn/40 bg-warn-soft/50"
+			: passage.kind === "message"
+				? "border-2 border-class-1/35 bg-class-1-soft/45"
+				: "border border-l-4 border-l-primary bg-card";
 
 	return (
 		<div
 			data-passage-kind={passage.kind}
 			className={cn(
-				"space-y-3 rounded-lg border p-4 text-foreground text-sm leading-[1.85]",
-				isSignOrMessage ? "bg-muted/40" : "bg-card",
+				"space-y-3 rounded-lg p-4 text-foreground text-sm leading-[1.85]",
+				bodyStyle,
 			)}
 		>
 			{paragraphs.map((para, pIdx) => {
@@ -82,6 +90,11 @@ export function PlacementReadingStep({
 	answers: Readonly<Record<string, number | null>>;
 	onAnswerChange: (questionId: string, optionIndex: number) => void;
 }) {
+	const partGroups = useMemo(
+		() => groupPlacementItemsByPart(passages),
+		[passages],
+	);
+
 	return (
 		<div className="space-y-6" data-testid="placement-step-reading">
 			<Card>
@@ -99,7 +112,7 @@ export function PlacementReadingStep({
 				</CardHeader>
 			</Card>
 
-			{passages.length === 0 ? (
+			{partGroups.length === 0 ? (
 				<Card>
 					<CardContent>
 						<p className="text-muted-foreground text-sm">
@@ -109,56 +122,75 @@ export function PlacementReadingStep({
 					</CardContent>
 				</Card>
 			) : (
-				passages.map((passage) => {
-					const partLabel = stripInlineCefrLabel(passage.partLabel);
-					const passageTitle = stripInlineCefrLabel(passage.title);
-					const kindLabel =
-						PLACEMENT_READING_KIND_LABELS[passage.kind] ?? "Bài đọc hiểu";
-					return (
-						<Card key={passage.id} data-passage-id={passage.id}>
-							<CardHeader className="space-y-2">
-								<div className="flex flex-wrap items-center gap-2">
-									{partLabel ? (
-										<span className="inline-flex items-center rounded-md bg-muted px-2.5 py-0.5 font-medium text-foreground text-xs">
-											{partLabel}
+				partGroups.map((group, gIdx) => (
+					<section
+						key={`reading-part-${group.partLabel || gIdx}`}
+						className="space-y-4"
+					>
+						{group.partLabel || group.instruction ? (
+							<div className="space-y-1.5 px-1">
+								{group.partLabel ? (
+									<div>
+										<span className="inline-flex items-center rounded-md bg-muted px-2.5 py-0.5 font-semibold text-foreground text-xs">
+											{group.partLabel}
 										</span>
-									) : null}
-									<span className="inline-flex items-center rounded-md border px-2 py-0.5 text-muted-foreground text-xs">
-										{kindLabel}
-									</span>
-								</div>
-								{passageTitle ? (
-									<CardTitle className="text-lg">{passageTitle}</CardTitle>
+									</div>
 								) : null}
-								{passage.instruction ? (
-									<CardDescription className="leading-relaxed">
-										{passage.instruction}
-									</CardDescription>
+								{group.instruction ? (
+									<p className="text-muted-foreground text-sm leading-relaxed">
+										{group.instruction}
+									</p>
 								) : null}
-							</CardHeader>
+							</div>
+						) : null}
 
-							<CardContent className="space-y-5">
-								{passage.body.trim() ? (
-									<ReadingPassageBody passage={passage} />
-								) : null}
+						<div className="space-y-4">
+							{group.items.map(({ item: passage }) => {
+								const isSignOrMessage =
+									passage.kind === "sign" || passage.kind === "message";
+								const passageTitle = stripInlineCefrLabel(passage.title);
+								const kindLabel =
+									PLACEMENT_READING_KIND_LABELS[passage.kind] ?? "Bài đọc hiểu";
+								return (
+									<Card key={passage.id} data-passage-id={passage.id}>
+										<CardHeader className="space-y-2 pb-3">
+											<div className="flex flex-wrap items-center gap-2">
+												<span className="inline-flex items-center rounded-md border px-2 py-0.5 text-muted-foreground text-xs">
+													{kindLabel}
+												</span>
+											</div>
+											{!isSignOrMessage && passageTitle ? (
+												<CardTitle className="text-lg">
+													{passageTitle}
+												</CardTitle>
+											) : null}
+										</CardHeader>
 
-								<div className="space-y-4">
-									{passage.questions.map((q) => (
-										<PlacementMcqQuestionCard
-											key={q.id}
-											questionId={q.id}
-											questionNumber={questionNumbers.get(q.id) ?? 1}
-											prompt={q.prompt}
-											options={q.options}
-											value={answers[q.id] ?? null}
-											onChange={(optIdx) => onAnswerChange(q.id, optIdx)}
-										/>
-									))}
-								</div>
-							</CardContent>
-						</Card>
-					);
-				})
+										<CardContent className="space-y-5">
+											{passage.body.trim() ? (
+												<ReadingPassageBody passage={passage} />
+											) : null}
+
+											<div className="space-y-4">
+												{passage.questions.map((q) => (
+													<PlacementMcqQuestionCard
+														key={q.id}
+														questionId={q.id}
+														questionNumber={questionNumbers.get(q.id) ?? 1}
+														prompt={q.prompt}
+														options={q.options}
+														value={answers[q.id] ?? null}
+														onChange={(optIdx) => onAnswerChange(q.id, optIdx)}
+													/>
+												))}
+											</div>
+										</CardContent>
+									</Card>
+								);
+							})}
+						</div>
+					</section>
+				))
 			)}
 		</div>
 	);

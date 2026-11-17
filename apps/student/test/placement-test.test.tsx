@@ -488,20 +488,43 @@ describe("Student Portal Placement Test (#748)", () => {
 			</QueryClientProvider>,
 		);
 
-		// Intro renders without lead-gate form
+		// Intro renders without lead-gate form and displays 5-part summary table
 		const introCard = await screen.findByTestId("placement-intro-card");
 		expect(introCard).toBeTruthy();
 		expect(container.querySelector('input[name="phone"]')).toBeNull();
 		expect(container.textContent).not.toContain("Nhập thông tin trước khi vào");
+		expect(introCard.textContent).toContain("1. Listening");
+		expect(introCard.textContent).toContain(
+			"1 parts · 2 câu · mỗi đoạn nghe 2 lần",
+		);
+		expect(introCard.textContent).toContain("2. Grammar & Vocabulary");
+		expect(introCard.textContent).toContain("1 câu trắc nghiệm");
+		expect(introCard.textContent).toContain("3. Reading");
+		expect(introCard.textContent).toContain("2 parts · 2 câu");
+		expect(introCard.textContent).toContain("4. Writing");
+		expect(introCard.textContent).toContain("1 email 10–50 từ");
+		expect(introCard.textContent).toContain("5. Speaking");
+		expect(introCard.textContent).toContain("1 câu hỏi ghi âm");
+		expect(introCard.textContent).toContain(
+			"Không dùng từ điển hay công cụ dịch",
+		);
 
 		// Start test -> Listening
 		fireEvent.click(screen.getByTestId("start-placement-test-btn"));
 		expect(screen.getByTestId("placement-step-listening")).toBeTruthy();
 
-		// CEFR label stripped on clip title & part label
-		expect(container.textContent).toContain("Campus Library");
+		// CEFR label stripped on part label, clip title hidden (uses neutral label), notes box shown
+		expect(container.textContent).not.toContain("Campus Library");
+		expect(container.textContent).toContain("Đoạn nghe 1");
+		expect(container.textContent).toContain("Part 1");
 		expect(container.textContent).not.toContain("(Level A2)");
 		expect(container.textContent).not.toContain("Part 1 (A2)");
+		expect(screen.getByTestId("listening-notes-clip-1").textContent).toContain(
+			"Notes",
+		);
+		expect(
+			screen.getByTestId("listening-notes-clip-1").textContent,
+		).not.toContain("(A2)");
 
 		// Audio tag uses crossOrigin="use-credentials" and rewritten student audio URL
 		const audioEl = container.querySelector("audio");
@@ -536,6 +559,14 @@ describe("Student Portal Placement Test (#748)", () => {
 		expect(screen.getByTestId("placement-step-reading")).toBeTruthy();
 		expect(container.textContent).toContain("Biển báo / Thông báo");
 		expect(container.textContent).toContain("Đoạn văn điền từ");
+		expect(container.textContent).not.toContain("Museum Notice");
+		expect(container.textContent).toContain("Daily Routine");
+		expect(
+			container.querySelector('[data-passage-kind="sign"]'),
+		).not.toBeNull();
+		expect(
+			container.querySelector('[data-passage-kind="cloze"]'),
+		).not.toBeNull();
 		fireEvent.click(screen.getByLabelText(/Flash photos/));
 		fireEvent.click(screen.getByLabelText(/drink/));
 
@@ -561,19 +592,22 @@ describe("Student Portal Placement Test (#748)", () => {
 
 		fireEvent.click(screen.getByTestId("submit-placement-test-btn"));
 
-		// Pending result view renders immediately and draft is cleared
+		// Pending result view renders immediately with 2 CEFR cards and draft is cleared
 		const pendingView = await screen.findByTestId("placement-pending-view");
 		expect(pendingView.textContent).toContain(
 			"Đang chờ giáo viên chấm Writing & Speaking",
 		);
+		expect(screen.getByTestId("pending-cefr-listening").textContent).toBe("B1");
 		expect(screen.getByTestId("pending-score-listening").textContent).toBe(
-			"2/2 câu đúng",
+			"2/2 câu đúng · 100%",
 		);
-		expect(screen.getByTestId("pending-score-vg").textContent).toBe(
-			"1/1 câu đúng",
-		);
+		expect(screen.queryByTestId("pending-score-vg")).toBeNull();
+		expect(screen.getByTestId("pending-cefr-reading").textContent).toBe("B1");
 		expect(screen.getByTestId("pending-score-reading").textContent).toBe(
-			"2/2 câu đúng",
+			"2/2 câu đúng · 100%",
+		);
+		expect(pendingView.textContent).toContain(
+			"Đây là kết quả tự động của hai phần nghe và đọc. Cấp độ cuối cùng và lớp phù hợp sẽ được giáo viên báo sau khi chấm Writing và Speaking.",
 		);
 		expect(screen.getByTestId("pending-speaking-status").textContent).toBe(
 			"Đã bỏ qua",
@@ -756,5 +790,295 @@ describe("Student Portal Placement Test (#748)", () => {
 		} finally {
 			clearActiveStudentOrgId();
 		}
+	});
+
+	it("groups Listening by partLabel without leaking clip titles and wraps gap questions in Phiếu ghi chú with inline [?]", async () => {
+		const { PlacementListeningStep } = await import(
+			"@/components/placement/placement-listening-step"
+		);
+
+		const clips = [
+			{
+				id: "la",
+				partLabel: "Part 1",
+				instruction:
+					"For each question, choose the correct answer. You will hear each conversation twice.",
+				title: "Conversation 1 · Cinema time",
+				notesTitle: "",
+				src: "/public/placement-test/audio/11111111-1111-1111-1111-111111111111",
+				maxPlays: 2,
+				level: "A1",
+				questions: [
+					{
+						id: "lq-1",
+						type: "mcq" as const,
+						level: "A1",
+						prompt: "What time does the film start?",
+						options: ["7:00", "7:15", "7:45"],
+						answer: 1,
+					},
+				],
+			},
+			{
+				id: "lb",
+				partLabel: "Part 1",
+				instruction:
+					"For each question, choose the correct answer. You will hear each conversation twice.",
+				title: "Conversation 2 · Going to work",
+				notesTitle: "",
+				src: "/public/placement-test/audio/22222222-2222-2222-2222-222222222222",
+				maxPlays: 2,
+				level: "A1",
+				questions: [
+					{
+						id: "lq-2",
+						type: "mcq" as const,
+						level: "A1",
+						prompt: "How will the woman get to work today?",
+						options: ["by bike", "by bus", "by car"],
+						answer: 0,
+					},
+				],
+			},
+			{
+				id: "le",
+				partLabel: "Part 2",
+				instruction: "Write ONE word or a number.",
+				title: "Evening English Course",
+				notesTitle: "Evening English Course",
+				src: "/public/placement-test/audio/33333333-3333-3333-3333-333333333333",
+				maxPlays: 2,
+				level: "A2",
+				questions: [
+					{
+						id: "lq-3",
+						type: "gap" as const,
+						level: "A2",
+						prompt: "Start date: Monday ____ March",
+						accept: ["15"],
+					},
+					{
+						id: "lq-4",
+						type: "gap" as const,
+						level: "A2",
+						prompt: "Price: $ ____",
+						accept: ["240"],
+					},
+				],
+			},
+		];
+
+		const qMap = new Map([
+			["lq-1", 1],
+			["lq-2", 2],
+			["lq-3", 3],
+			["lq-4", 4],
+		]);
+
+		const { container } = render(
+			<PlacementListeningStep
+				title="Listening"
+				clips={clips}
+				plays={{}}
+				onRecordPlay={vi.fn()}
+				onRefundPlay={vi.fn()}
+				questionNumbers={qMap}
+				answers={{}}
+				onAnswerChange={vi.fn()}
+			/>,
+		);
+
+		// Part 1 header & instruction rendered exactly once across two clips
+		expect(screen.getAllByText("Part 1")).toHaveLength(1);
+		expect(
+			screen.getAllByText(
+				"For each question, choose the correct answer. You will hear each conversation twice.",
+			),
+		).toHaveLength(1);
+
+		// Neutral labels instead of context-leaking titles
+		expect(container.textContent).not.toContain("Cinema time");
+		expect(container.textContent).not.toContain("Going to work");
+		expect(container.textContent).toContain("Đoạn nghe 1");
+		expect(container.textContent).toContain("Đoạn nghe 2");
+		expect(container.textContent).toContain("Đoạn nghe 3");
+
+		// Test IDs & attributes preserved
+		expect(container.querySelector('[data-clip-id="la"]')).not.toBeNull();
+		expect(screen.getByTestId("play-clip-la")).toBeTruthy();
+		expect(screen.getByTestId("clip-plays-la").textContent).toContain(
+			"Còn 2/2 lượt nghe",
+		);
+
+		// Part 2 Phiếu ghi chú wraps gap questions and converts ____ to [?]
+		const notesBox = screen.getByTestId("listening-notes-le");
+		expect(notesBox.textContent).toContain("Phiếu ghi chú");
+		expect(notesBox.textContent).toContain("Evening English Course");
+		expect(notesBox.textContent).toContain("Start date: Monday");
+		expect(notesBox.textContent).toContain("[?]");
+		expect(notesBox.textContent).not.toContain("____");
+	});
+
+	it("groups Reading by partLabel once and hides title heading on sign/message passages", async () => {
+		const { PlacementReadingStep } = await import(
+			"@/components/placement/placement-reading-step"
+		);
+
+		const passages = [
+			{
+				id: "ra",
+				partLabel: "Part 1",
+				kind: "sign" as const,
+				instruction: "For each question, choose the correct answer.",
+				title: "Pool Notice Secret Heading",
+				body: "CITY SWIMMING POOL\nClosed every Monday.",
+				questions: [
+					{
+						id: "rq-1",
+						level: "A1",
+						prompt: "",
+						options: ["Option A", "Option B", "Option C"],
+						answer: 0,
+					},
+				],
+			},
+			{
+				id: "rb",
+				partLabel: "Part 1",
+				kind: "message" as const,
+				instruction: "For each question, choose the correct answer.",
+				title: "Message from Mum",
+				body: "Tuan,\nThe dentist phoned.",
+				questions: [
+					{
+						id: "rq-2",
+						level: "A2",
+						prompt: "",
+						options: ["Option A", "Option B", "Option C"],
+						answer: 0,
+					},
+				],
+			},
+			{
+				id: "re",
+				partLabel: "Part 2",
+				kind: "passage" as const,
+				instruction: "Read the article.",
+				title: "A new start in Auckland",
+				body: "Thu Ha moved to Auckland.",
+				questions: [
+					{
+						id: "rq-3",
+						level: "A2",
+						prompt: "Where did Thu Ha move?",
+						options: ["Auckland", "Hanoi", "Tokyo"],
+						answer: 0,
+					},
+				],
+			},
+		];
+
+		const qMap = new Map([
+			["rq-1", 1],
+			["rq-2", 2],
+			["rq-3", 3],
+		]);
+
+		const { container } = render(
+			<PlacementReadingStep
+				title="Reading"
+				passages={passages}
+				questionNumbers={qMap}
+				answers={{}}
+				onAnswerChange={vi.fn()}
+			/>,
+		);
+
+		// Part 1 label & instruction shown once
+		expect(screen.getAllByText("Part 1")).toHaveLength(1);
+		expect(
+			screen.getAllByText("For each question, choose the correct answer."),
+		).toHaveLength(1);
+
+		// Sign and message titles are NOT rendered outside body
+		expect(container.textContent).not.toContain("Pool Notice Secret Heading");
+		expect(container.textContent).not.toContain("Message from Mum");
+		// Body & passage title still render
+		expect(container.textContent).toContain("CITY SWIMMING POOL");
+		expect(container.textContent).toContain("A new start in Auckland");
+
+		expect(container.querySelector('[data-passage-id="ra"]')).not.toBeNull();
+		expect(
+			container.querySelector('[data-passage-kind="sign"]'),
+		).not.toBeNull();
+		expect(
+			container.querySelector('[data-passage-kind="message"]'),
+		).not.toBeNull();
+	});
+
+	it("renders PlacementPendingResultView with 2 CEFR cards using fallback HTML bands when bands are omitted", async () => {
+		const { PlacementPendingResultView } = await import(
+			"@/components/placement/placement-result-views"
+		);
+
+		const submission: StudentPlacementSubmissionView = {
+			id: "sub-pending",
+			testVersion: 3,
+			status: "pending_grading",
+			submittedAt: "2026-11-17T06:00:00Z",
+			gradedAt: null,
+			objective: {
+				listening: { correct: 7, total: 13, pct: 54 }, // 53.84% -> A1 (min 30)
+				vocabGrammar: { correct: 10, total: 12, pct: 83 },
+				reading: { correct: 13, total: 15, pct: 87 }, // 86.67% -> B1 trở lên (min 85)
+			},
+			writingText: "Hello friend",
+			writingWordCount: 2,
+			writingRubric: null,
+			writingScore: null,
+			writingErrors: [],
+			speakingStatus: "uploaded",
+			speakingTranscript: "",
+			speakingRubric: null,
+			speakingScore: null,
+			speakingErrors: [],
+			finalBandLevel: null,
+			finalDisplayCourse: null,
+			finalScorePct: null,
+			finalNote: "",
+			bandAdvice: "",
+			teacherFeedback: "",
+		};
+
+		const { container } = render(
+			<PlacementPendingResultView submission={submission} />,
+		);
+
+		expect(screen.queryByTestId("pending-score-vg")).toBeNull();
+		expect(screen.getByTestId("pending-cefr-listening").textContent).toBe("A1");
+		expect(screen.getByTestId("pending-score-listening").textContent).toBe(
+			"7/13 câu đúng · 54%",
+		);
+		expect(
+			screen
+				.getByTestId("pending-progress-listening")
+				.getAttribute("aria-valuenow"),
+		).toBe("54");
+
+		expect(screen.getByTestId("pending-cefr-reading").textContent).toBe(
+			"B1 trở lên",
+		);
+		expect(screen.getByTestId("pending-score-reading").textContent).toBe(
+			"13/15 câu đúng · 87%",
+		);
+		expect(
+			screen
+				.getByTestId("pending-progress-reading")
+				.getAttribute("aria-valuenow"),
+		).toBe("87");
+
+		expect(container.textContent).toContain(
+			"Đây là kết quả tự động của hai phần nghe và đọc. Cấp độ cuối cùng và lớp phù hợp sẽ được giáo viên báo sau khi chấm Writing và Speaking.",
+		);
 	});
 });
