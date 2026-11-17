@@ -2206,8 +2206,16 @@ export const ACCOUNT_ERROR_CODES = {
 export type AccountErrorCode =
 	(typeof ACCOUNT_ERROR_CODES)[keyof typeof ACCOUNT_ERROR_CODES];
 
-export const EXAM_INTERESTS = ["ielts", "toeic"] as const;
+/** Hướng học học viên được chọn ở wizard onboarding (TOEIC đã ngừng nhận mới). */
+export const EXAM_INTERESTS = ["ielts", "communication"] as const;
 export type ExamInterest = (typeof EXAM_INTERESTS)[number];
+/** Mọi giá trị có thể nằm trong DB — gồm "toeic" của học viên onboarding trước đây. */
+export const STORED_EXAM_INTERESTS = [
+	"ielts",
+	"toeic",
+	"communication",
+] as const;
+export type StoredExamInterest = (typeof STORED_EXAM_INTERESTS)[number];
 
 export const IELTS_TARGET_BANDS = [
 	"5.0",
@@ -2226,6 +2234,23 @@ export const TOEIC_TARGET_SCORES = [
 	"850",
 	"990",
 ] as const;
+/** Mục tiêu cho hướng Giao Tiếp — thang CEFR. */
+export const CEFR_TARGET_LEVELS = ["A2", "B1", "B2", "C1", "C2"] as const;
+
+const TARGET_SCORE_OPTIONS: Record<StoredExamInterest, readonly string[]> = {
+	ielts: IELTS_TARGET_BANDS,
+	toeic: TOEIC_TARGET_SCORES,
+	communication: CEFR_TARGET_LEVELS,
+};
+
+/** Các giá trị targetScore hợp lệ theo hướng học (IELTS khi không xác định). */
+export function getTargetScoreOptions(
+	examInterest: string | null | undefined,
+): readonly string[] {
+	return examInterest && Object.hasOwn(TARGET_SCORE_OPTIONS, examInterest)
+		? TARGET_SCORE_OPTIONS[examInterest as StoredExamInterest]
+		: IELTS_TARGET_BANDS;
+}
 
 export const LEARNING_GOAL_OPTIONS = [
 	"study-abroad",
@@ -2271,9 +2296,8 @@ const onboardingPayloadBase = z.object({
 });
 export const studentOnboardingPayloadSchema = onboardingPayloadBase.superRefine(
 	(value, ctx) => {
-		const allowed =
-			value.examInterest === "ielts" ? IELTS_TARGET_BANDS : TOEIC_TARGET_SCORES;
-		if (!(allowed as readonly string[]).includes(value.targetScore)) {
+		const allowed = getTargetScoreOptions(value.examInterest);
+		if (!allowed.includes(value.targetScore)) {
 			ctx.addIssue({
 				code: "custom",
 				path: ["targetScore"],

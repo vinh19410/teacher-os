@@ -5,10 +5,9 @@ import {
 	type DailyStudyHourOption,
 	EXAM_INTERESTS,
 	type ExamInterest,
-	IELTS_TARGET_BANDS,
+	getTargetScoreOptions,
 	type LearningGoalOption,
 	type StudentOnboardingPayload,
-	TOEIC_TARGET_SCORES,
 } from "@teacher-os/api/contracts";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { useState } from "react";
@@ -69,11 +68,7 @@ export function OnboardingWizard({
 	const isTargetStepValid =
 		answers.targetScore !== null &&
 		answers.examInterest !== null &&
-		(answers.examInterest === "ielts"
-			? (IELTS_TARGET_BANDS as readonly string[]).includes(answers.targetScore)
-			: (TOEIC_TARGET_SCORES as readonly string[]).includes(
-					answers.targetScore,
-				));
+		getTargetScoreOptions(answers.examInterest).includes(answers.targetScore);
 
 	const isGoalsStepValid =
 		answers.learningGoals.length >= 1 &&

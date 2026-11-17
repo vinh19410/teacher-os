@@ -13,7 +13,9 @@ vi.mock("@/lib/auth-client", () => ({
 
 import {
 	CurrentLevelStep,
+	EXAM_SCALE_LABELS,
 	ExamInterestStep,
+	getCurrentLevelLabel,
 	LearningGoalsStep,
 	OnboardingSummary,
 	StudyHoursStep,
@@ -29,12 +31,13 @@ describe("OnboardingStep Components", () => {
 		const html = renderToStaticMarkup(
 			<ExamInterestStep value={null} onSelect={vi.fn()} />,
 		);
-		expect(html).toContain("Bạn đang quan tâm chứng chỉ nào?");
+		expect(html).toContain("Bạn muốn học tiếng Anh theo hướng nào?");
 		expect(html).toContain("IELTS");
-		expect(html).toContain("TOEIC");
+		expect(html).toContain("Giao Tiếp");
+		expect(html).not.toContain("TOEIC");
 		expect(html).not.toContain("Bỏ qua");
 	});
-	it("CurrentLevelStep: renders IELTS or TOEIC level options appropriately", () => {
+	it("CurrentLevelStep: renders IELTS or CEFR communication level options appropriately", () => {
 		const ieltsHtml = renderToStaticMarkup(
 			<CurrentLevelStep
 				examInterest="ielts"
@@ -50,26 +53,34 @@ describe("OnboardingStep Components", () => {
 		expect(ieltsHtml).toContain("Điểm đầu vào (tùy chọn)");
 		expect(ieltsHtml).toContain("7.0 IELTS");
 
-		const toeicHtml = renderToStaticMarkup(
+		const communicationHtml = renderToStaticMarkup(
 			<CurrentLevelStep
-				examInterest="toeic"
+				examInterest="communication"
 				value={null}
 				onSelect={vi.fn()}
 				entryScore=""
 				onEntryScoreChange={vi.fn()}
 			/>,
 		);
-		expect(toeicHtml).toContain("350 – 550");
-		expect(toeicHtml).toContain("Dưới 350");
+		expect(communicationHtml).toContain("A1 – A2");
+		expect(communicationHtml).toContain("C1 trở lên");
+		expect(communicationHtml).not.toContain("4.5 – 5.5");
 	});
 
-	it("TargetScoreStep: renders IELTS bands or TOEIC scores appropriately", () => {
-		// TOEIC
-		const toeicHtml = renderToStaticMarkup(
-			<TargetScoreStep examInterest="toeic" value={null} onSelect={vi.fn()} />,
+	it("TargetScoreStep: renders IELTS bands or CEFR levels appropriately", () => {
+		// Giao Tiếp (CEFR)
+		const communicationHtml = renderToStaticMarkup(
+			<TargetScoreStep
+				examInterest="communication"
+				value={null}
+				onSelect={vi.fn()}
+			/>,
 		);
-		expect(toeicHtml).toContain("990");
-		expect(toeicHtml).not.toContain("8.0+");
+		for (const level of ["A2", "B1", "B2", "C1", "C2"]) {
+			expect(communicationHtml).toContain(level);
+		}
+		expect(communicationHtml).not.toContain("8.0+");
+		expect(communicationHtml).not.toContain("Band");
 
 		// IELTS
 		const ieltsHtml = renderToStaticMarkup(
@@ -99,6 +110,31 @@ describe("OnboardingStep Components", () => {
 		expect(html).toContain("Hơn 3 giờ");
 	});
 
+	it("legacy TOEIC answers keep their TOEIC labels on read", () => {
+		expect(getCurrentLevelLabel("intermediate", "toeic")).toBe("350 – 550");
+		expect(EXAM_SCALE_LABELS.toeic).toBe("Điểm TOEIC");
+		expect(getCurrentLevelLabel("intermediate", "communication")).toBe("B1");
+		expect(getCurrentLevelLabel("intermediate", null)).toBe("4.5 – 5.5");
+	});
+
+	it("OnboardingSummary: renders Giao Tiếp with CEFR labels", () => {
+		const html = renderToStaticMarkup(
+			<OnboardingSummary
+				answers={{
+					examInterest: "communication",
+					currentLevel: "upper-intermediate",
+					targetScore: "C1",
+					learningGoals: ["communication"],
+					dailyStudyHours: "1-2",
+				}}
+			/>,
+		);
+		expect(html).toContain("Giao Tiếp");
+		expect(html).toContain("B2");
+		expect(html).toContain("C1");
+		expect(html).not.toContain("Band");
+	});
+
 	it("OnboardingSummary: renders complete selection summary", () => {
 		const answers: StudentOnboardingPayload = {
 			examInterest: "ielts",
@@ -126,7 +162,7 @@ describe("OnboardingStep Components", () => {
 				<OnboardingWizard onCompleted={vi.fn()} />
 			</QueryClientProvider>,
 		);
-		expect(html).toContain("Bạn đang quan tâm chứng chỉ nào?");
+		expect(html).toContain("Bạn muốn học tiếng Anh theo hướng nào?");
 		expect(html).toContain("Bước 1/5");
 		expect(html).not.toContain("Hoàn thành");
 	});
@@ -234,11 +270,11 @@ describe("OnboardingStep Components", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
 		fireEvent.click(screen.getByRole("button", { name: "Quay lại" }));
 
-		// Change to TOEIC
-		fireEvent.click(screen.getByRole("button", { name: /TOEIC/i }));
+		// Change to Giao Tiếp
+		fireEvent.click(screen.getByRole("button", { name: /Giao Tiếp/i }));
 		fireEvent.click(screen.getByRole("button", { name: "Tiếp tục" }));
 
-		// On Step 1 (TOEIC), currentLevel should be reset (no button selected, continue disabled)
+		// On Step 1 (Giao Tiếp), currentLevel should be reset (no button selected, continue disabled)
 		const continueBtn = screen.getByRole<HTMLButtonElement>("button", {
 			name: "Tiếp tục",
 		});
@@ -250,7 +286,7 @@ describe("OnboardingStep Components", () => {
 			<ExamInterestStep value="ielts" onSelect={vi.fn()} />,
 		);
 		const ieltsBtn = screen.getByRole("button", { name: /IELTS/ });
-		const toeicBtn = screen.getByRole("button", { name: /TOEIC/ });
+		const communicationBtn = screen.getByRole("button", { name: /Giao Tiếp/ });
 		expect(ieltsBtn.getAttribute("aria-pressed")).toBe("true");
 		expect(ieltsBtn.classList.contains("border-primary")).toBe(true);
 		expect(ieltsBtn.classList.contains("bg-muted")).toBe(true);
@@ -261,14 +297,14 @@ describe("OnboardingStep Components", () => {
 		expect(ieltsBtn.classList.contains("border-transparent")).toBe(false);
 		expect(ieltsBtn.classList.contains("text-primary")).toBe(false);
 
-		expect(toeicBtn.getAttribute("aria-pressed")).toBe("false");
-		expect(toeicBtn.classList.contains("border-input")).toBe(true);
-		expect(toeicBtn.classList.contains("bg-transparent")).toBe(true);
-		expect(toeicBtn.classList.contains("hover:bg-accent")).toBe(true);
-		const toeicBadge = toeicBtn.lastElementChild;
-		expect(toeicBadge?.getAttribute("aria-hidden")).toBe("true");
-		expect(toeicBadge?.classList.contains("border-input")).toBe(true);
-		expect(toeicBadge?.classList.contains("border-border")).toBe(false);
+		expect(communicationBtn.getAttribute("aria-pressed")).toBe("false");
+		expect(communicationBtn.classList.contains("border-input")).toBe(true);
+		expect(communicationBtn.classList.contains("bg-transparent")).toBe(true);
+		expect(communicationBtn.classList.contains("hover:bg-accent")).toBe(true);
+		const communicationBadge = communicationBtn.lastElementChild;
+		expect(communicationBadge?.getAttribute("aria-hidden")).toBe("true");
+		expect(communicationBadge?.classList.contains("border-input")).toBe(true);
+		expect(communicationBadge?.classList.contains("border-border")).toBe(false);
 		unmountExam();
 
 		const { unmount: unmountBand } = render(
