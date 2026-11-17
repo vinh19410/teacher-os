@@ -333,10 +333,26 @@ test("Bất biến file tĩnh: không chứa '30 câu', không có questions.jso
 		"createCefrExplorer",
 		"CEFR_EXPLORER_DATA",
 		"cefrExplorerBox",
+		"khách quan",
 	]) {
 		assert.ok(
 			!testJs.includes(forbiddenToken),
 			`test.js must NOT include '${forbiddenToken}'`,
+		);
+	}
+	for (const staticRelPath of [
+		"index.html",
+		"grading.js",
+		"lead-gate.js",
+		"ket-qua/result.js",
+	]) {
+		const staticContent = readFileSync(
+			new URL(staticRelPath, placementDir),
+			"utf8",
+		);
+		assert.ok(
+			!staticContent.toLowerCase().includes("khách quan"),
+			`${staticRelPath} must NOT include 'khách quan'`,
 		);
 	}
 });

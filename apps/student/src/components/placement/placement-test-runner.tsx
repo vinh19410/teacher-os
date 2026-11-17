@@ -360,7 +360,7 @@ export function PlacementTestRunner({
 					<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
 						<div className="rounded-lg border bg-muted/30 p-4">
 							<div className="font-semibold text-foreground text-sm">
-								{progress.total} câu khách quan
+								{progress.total} câu
 							</div>
 							<p className="mt-1 text-muted-foreground text-xs leading-relaxed">
 								Listening (có giới hạn lượt nghe), Grammar &amp; Vocabulary, và
@@ -454,7 +454,7 @@ export function PlacementTestRunner({
 						data-testid="placement-progress-counter"
 						className="font-medium text-foreground text-sm tabular-nums"
 					>
-						Đã trả lời {progress.answered}/{progress.total} câu khách quan
+						Đã trả lời {progress.answered}/{progress.total} câu
 					</span>
 
 					<span
@@ -810,7 +810,7 @@ export function PlacementTestRunner({
 								Hiện tại bài làm của bạn{" "}
 								{[
 									confirmUnanswered.unansweredObjective > 0
-										? `còn ${confirmUnanswered.unansweredObjective} câu khách quan chưa trả lời`
+										? `còn ${confirmUnanswered.unansweredObjective} câu chưa trả lời`
 										: null,
 									confirmUnanswered.writingEmpty
 										? "phần Writing đang để trống"
