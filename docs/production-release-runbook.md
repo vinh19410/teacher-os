@@ -671,7 +671,7 @@ Cột `enrollment.status` là forward-only; không xóa cột hay sửa file mig
 
 1. **Cấu hình Domain trên Resend**:
    - Tạo tài khoản hoặc đăng nhập vào [Resend Dashboard](https://resend.com/domains).
-   - Thêm domain (ví dụ: `teacheros.io.vn`) và cấu hình các bản ghi DNS (DKIM, SPF, MX) theo hướng dẫn trên Cloudflare DNS.
+   - Thêm domain (ví dụ: `msmy.io.vn`) và cấu hình các bản ghi DNS (DKIM, SPF, MX) theo hướng dẫn trên Cloudflare DNS.
    - Chờ trạng thái domain chuyển sang `Verified`.
 2. **Cấu hình Secret**:
    - Tạo API Key tại Resend Dashboard với quyền `Sending access`.
@@ -679,8 +679,8 @@ Cột `enrollment.status` là forward-only; không xóa cột hay sửa file mig
      ```bash
      gh secret set RESEND_API_KEY --env production
      gh variable set MAILER_IMPL --env production --body "resend"
-     gh variable set MAIL_FROM --env production --body '"Cô Mỹ Dạy Tiếng Anh" <no-reply@teacheros.io.vn>'
-     gh variable set MAIL_FROM --env staging --body '"Cô Mỹ Dạy Tiếng Anh" <no-reply@teacheros.io.vn>'
+     gh variable set MAIL_FROM --env production --body '"Cô Mỹ Dạy Tiếng Anh" <no-reply@msmy.io.vn>'
+     gh variable set MAIL_FROM --env staging --body '"Cô Mỹ Dạy Tiếng Anh" <no-reply@msmy.io.vn>'
      ```
    - `MAIL_FROM` phải đủ cặp `< >`; thiếu `>` thì Resend từ chối địa chỉ người gửi.
    - Staging làm tương tự với `--env staging` (đã đặt `MAIL_FROM` đồng bộ thương hiệu Cô Mỹ Dạy Tiếng Anh).
