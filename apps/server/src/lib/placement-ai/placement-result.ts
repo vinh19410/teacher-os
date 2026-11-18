@@ -129,7 +129,7 @@ export function renderPlacementResultEmail(params: {
 	];
 	const skills: [string, string][] = [
 		["Listening", formatObjectiveWithPct(summary.listening)],
-		["Từ vựng & Ngữ pháp", formatObjectiveWithPct(summary.vocabGrammar)],
+		["Grammar & Vocabulary", formatObjectiveWithPct(summary.vocabGrammar)],
 		["Reading", formatObjectiveWithPct(summary.reading)],
 		[
 			"Writing",

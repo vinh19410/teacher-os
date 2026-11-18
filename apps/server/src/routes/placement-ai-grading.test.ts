@@ -801,7 +801,7 @@ describe("email kết quả: tóm tắt HTML + link chi tiết", () => {
 		expect(mail?.html).toContain(`>${graded.finalScorePct}%<`);
 		for (const row of [
 			"Listening",
-			"Từ vựng &amp; Ngữ pháp",
+			"Grammar &amp; Vocabulary",
 			"Reading",
 			"Writing",
 			"Speaking",
