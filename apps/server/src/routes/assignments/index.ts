@@ -26,12 +26,13 @@ import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { z } from "zod";
 import type { Db, KernelCtx } from "../../app";
+import type { MediaStore } from "../../lib/media-store";
 import {
 	emitNotifications,
 	notificationDepsFrom,
 } from "../../lib/notifications/emit";
 import { gradeReturnedEvent } from "../../lib/notifications/templates";
-import { streamStudyPackAudio } from "../../lib/study-pack-audio";
+import { serveStudyPackAudio } from "../../lib/study-pack-audio";
 import { loadSnapshot } from "../snapshot";
 import { parseQuizOptionBank } from "../student";
 import { testsRoutes } from "./tests";
@@ -62,6 +63,7 @@ export function assignmentRoutes(deps: {
 	notificationRetryDelaysMs?: number[];
 	/** #702: injectable fetch cho audio proxy của listening study-pack prompts. */
 	fetchExternalAudio?: typeof fetch;
+	getLibraryAudioStore?(): MediaStore | undefined;
 }) {
 	const routes = new Hono<Env>();
 	routes.use("*", async (c, next) => {
@@ -551,7 +553,11 @@ export function assignmentRoutes(deps: {
 		const promptId = c.req.param("id");
 		const [row] = await deps
 			.getDb()
-			.select({ audioUrl: assignmentPrompt.audioUrl })
+			.select({
+				audioUrl: assignmentPrompt.audioUrl,
+				audioKey: assignmentPrompt.audioKey,
+				audioName: assignmentPrompt.audioName,
+			})
 			.from(assignmentPrompt)
 			.where(
 				and(
@@ -560,10 +566,16 @@ export function assignmentRoutes(deps: {
 				),
 			)
 			.limit(1);
-		if (!row?.audioUrl) {
+		if (!row || (!row.audioUrl && !row.audioKey)) {
 			return c.json({ error: "audio not found" }, 404);
 		}
-		return streamStudyPackAudio(row.audioUrl, deps.fetchExternalAudio);
+		return serveStudyPackAudio({
+			audioKey: row.audioKey,
+			audioUrl: row.audioUrl,
+			audioName: row.audioName,
+			getLibraryAudioStore: deps.getLibraryAudioStore,
+			fetchExternalAudio: deps.fetchExternalAudio,
+		});
 	});
 
 	// Full-test builder CRUD — mount con để tự nằm trong kernel mount
