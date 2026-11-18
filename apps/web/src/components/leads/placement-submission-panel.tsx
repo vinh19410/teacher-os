@@ -24,6 +24,7 @@ import { StatusTag } from "@/components/assignments/status-tag";
 import { BandSlider } from "@/components/grading/band-slider";
 import { Button } from "@/components/ui/button";
 import { inputCls } from "@/components/ui/field";
+import { cn } from "@/lib/cn";
 import { isHttpError } from "@/lib/kernel-load-state";
 import { reauth } from "@/lib/reauth";
 import {
@@ -236,6 +237,7 @@ function IeltsBandField({
 					<BandSlider
 						id={sliderId}
 						value={value}
+						hideValue
 						onChange={(band) => onChange(band)}
 					/>
 				</div>
@@ -283,7 +285,10 @@ function IeltsBandField({
 							onChange(snapped);
 						}
 					}}
-					className={`${inputCls} w-20 shrink-0 text-right font-mono tabular-nums`}
+					className={cn(
+						inputCls,
+						"w-20 shrink-0 text-right font-mono tabular-nums",
+					)}
 				/>
 			</div>
 		</div>

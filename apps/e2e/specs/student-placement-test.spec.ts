@@ -543,7 +543,24 @@ test.describe
 					path: reportPath("748-web-student-grade-desktop-1440x900.png"),
 				});
 
-				// Chốt điểm bài làm trên trang chi tiết học viên
+				// Nhập điểm IELTS Writing & Speaking rồi chốt trên trang chi tiết học viên
+				await teacherPage.getByTestId("writing-task-input").fill("6.5");
+				await teacherPage.getByTestId("writing-coherence-input").fill("6.5");
+				await teacherPage.getByTestId("writing-lexical-input").fill("6");
+				await teacherPage.getByTestId("writing-grammar-input").fill("6");
+				if (
+					await teacherPage.getByTestId("toggle-speaking-grading").isChecked()
+				) {
+					await teacherPage.getByTestId("speaking-fluency-input").fill("6");
+					await teacherPage.getByTestId("speaking-lexical-input").fill("6");
+					await teacherPage.getByTestId("speaking-grammar-input").fill("6.5");
+					await teacherPage
+						.getByTestId("speaking-pronunciation-input")
+						.fill("6.5");
+				}
+				await expect(
+					teacherPage.getByTestId("save-placement-grade-btn"),
+				).toBeEnabled();
 				await Promise.all([
 					teacherPage.waitForResponse(
 						(res) =>

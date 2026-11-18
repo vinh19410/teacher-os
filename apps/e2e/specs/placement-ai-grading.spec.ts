@@ -245,7 +245,7 @@ test.describe
 			);
 			expect(uploadRes.status()).toBe(200);
 
-			// 2. Giáo viên mở lead → banner nháp AI, rubric điền sẵn 3, highlight lỗi AI.
+			// 2. Giáo viên mở lead → banner AI đã liệt kê lỗi, ô điểm IELTS trống (không đề xuất điểm/nhận xét), highlight lỗi AI.
 			await page.goto(`${WEB_ORIGIN}/leads`);
 			const table = page.getByTestId("leads-table");
 			await expect(table).toBeVisible();
@@ -257,15 +257,53 @@ test.describe
 			await expect(aiStatus).toHaveAttribute("data-ai-status", "drafted", {
 				timeout: 30_000,
 			});
-			await expect(aiStatus).toContainText("Bản nháp AI — chưa gửi học viên");
-			for (const key of ["ct", "or", "lg"]) {
-				await expect(page.getByTestId(`writing-${key}-3`)).toHaveAttribute(
-					"aria-pressed",
-					"true",
-				);
+			await expect(aiStatus).toContainText(
+				"Danh sách lỗi AI — chưa gửi học viên",
+			);
+			await expect(page.getByTestId("writing-ai-feedback")).toHaveCount(0);
+			await expect(page.getByTestId("speaking-ai-feedback")).toHaveCount(0);
+			for (const testId of [
+				"writing-task-input",
+				"writing-coherence-input",
+				"writing-lexical-input",
+				"writing-grammar-input",
+				"writing-overall-input",
+				"speaking-fluency-input",
+				"speaking-lexical-input",
+				"speaking-grammar-input",
+				"speaking-pronunciation-input",
+				"speaking-overall-input",
+			]) {
+				await expect(page.getByTestId(testId)).toHaveValue("");
 			}
+			const saveBtn = page.getByTestId("save-placement-grade-btn");
+			await expect(saveBtn).toBeDisabled();
+			await expect(page.getByTestId("save-placement-grade-hint")).toBeVisible();
+
+			// Nhập 4 tiêu chí IELTS Writing (auto-fill overall 6.5), thử sửa tay rồi trả về 6.5; nhập Speaking 6.5.
+			await page.getByTestId("writing-task-input").fill("6.5");
+			await page.getByTestId("writing-coherence-input").fill("6");
+			await page.getByTestId("writing-lexical-input").fill("6.5");
+			await page.getByTestId("writing-grammar-input").fill("6");
+			await expect(page.getByTestId("writing-overall-input")).toHaveValue(
+				"6.5",
+			);
+			await page.getByTestId("writing-overall-input").fill("7");
+			await expect(page.getByTestId("placement-score-summary")).toContainText(
+				"Writing Band 7.0/9",
+			);
+			await page.getByTestId("writing-overall-input").fill("6.5");
+
+			await page.getByTestId("speaking-fluency-input").fill("6");
+			await page.getByTestId("speaking-lexical-input").fill("6");
+			await page.getByTestId("speaking-grammar-input").fill("6.5");
+			await page.getByTestId("speaking-pronunciation-input").fill("6.5");
+			await expect(page.getByTestId("speaking-overall-input")).toHaveValue(
+				"6.5",
+			);
+			await expect(saveBtn).toBeEnabled();
+
 			const writingHighlighter = page.getByTestId("writing-error-highlighter");
-			await expect(page.getByTestId("writing-ai-feedback")).toBeVisible();
 			const marks = writingHighlighter.getByTestId("writing-error-mark");
 			await expect(marks).toHaveCount(1);
 			await expect(marks.first()).toHaveText(AI_ERROR_QUOTE);
@@ -299,21 +337,21 @@ test.describe
 			await page.getByTestId("writing-error-save-btn").click();
 			await expect(form).toBeHidden();
 
-			// Chụp POT panel giáo viên (đủ 2 highlight) trước khi xoá lỗi AI.
+			// Chụp POT panel giáo viên (đủ 2 highlight + IELTS grading) trước khi xoá lỗi AI.
 			await writingHighlighter.scrollIntoViewIfNeeded();
 			for (const vp of VIEWPORTS) {
 				await page.setViewportSize({ width: vp.width, height: vp.height });
 				await expectNoHorizontalOverflow(page, `/leads ${vp.label}`);
 				await writingHighlighter.scrollIntoViewIfNeeded();
 				await page.screenshot({
-					path: reportPath(`730-leads-ai-draft-${vp.label}.png`),
+					path: reportPath(`800-leads-grading-${vp.label}.png`),
 				});
 			}
 			await page.setViewportSize({ width: 1440, height: 900 });
 			await page.evaluate(() => document.documentElement.classList.add("dark"));
 			await writingHighlighter.scrollIntoViewIfNeeded();
 			await page.screenshot({
-				path: reportPath("730-leads-ai-draft-desktop-dark.png"),
+				path: reportPath("800-leads-grading-desktop-dark.png"),
 			});
 			await page.evaluate(() =>
 				document.documentElement.classList.remove("dark"),
@@ -330,7 +368,6 @@ test.describe
 			await expect(cards.first()).toContainText("I live.");
 
 			// 5. Chốt → link kết quả + trạng thái email.
-			const saveBtn = page.getByTestId("save-placement-grade-btn");
 			await expect(saveBtn).toHaveText("Chốt kết quả & gửi học viên");
 			const patch = page.waitForResponse(
 				(res) =>
@@ -363,7 +400,8 @@ test.describe
 				const writingSection = student.locator("section", {
 					has: student.locator("#secWriting"),
 				});
-				await expect(writingSection).toContainText("Writing: 9/15");
+				await expect(writingSection).toContainText("Writing: Band 6.5/9");
+				await expect(writingSection).toContainText("Task Response");
 				const resultMarks = writingSection.locator(".annotated-text mark");
 				await expect(resultMarks).toHaveCount(1);
 				await expect(resultMarks.first()).toHaveAttribute("id", "w-mark-1");
@@ -385,7 +423,7 @@ test.describe
 					await expectNoHorizontalOverflow(student, `kết quả ${vp.label}`);
 					await writingSection.scrollIntoViewIfNeeded();
 					await student.screenshot({
-						path: reportPath(`730-profile-result-${vp.label}.png`),
+						path: reportPath(`800-profile-result-${vp.label}.png`),
 					});
 				}
 			} finally {
