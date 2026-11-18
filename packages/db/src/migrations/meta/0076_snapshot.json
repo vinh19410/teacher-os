@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "dd8f4f59-5d48-48d9-b8d4-ff8aa0fef9c1",
+  "id": "60583fb4-3b30-4595-aa08-31ea08738fc1",
   "prevId": "86561bcd-b52c-4c9b-b17d-5ce6f03c8c5e",
   "tables": {
     "ai_grading_draft": {
@@ -446,6 +446,13 @@
           "notNull": true,
           "autoincrement": false,
           "default": "''"
+        },
+        "audio_key": {
+          "name": "audio_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         },
         "image_url": {
           "name": "image_url",
@@ -6835,6 +6842,13 @@
           "autoincrement": false,
           "default": "''"
         },
+        "audio_key": {
+          "name": "audio_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "transcript": {
           "name": "transcript",
           "type": "text",
@@ -7662,20 +7676,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "lesson_number": {
-          "name": "lesson_number",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "topic": {
-          "name": "topic",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "lang": {
           "name": "lang",
           "type": "text",
@@ -8044,23 +8044,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "entry_type": {
-          "name": "entry_type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'word'"
-        },
         "ipa": {
           "name": "ipa",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "pos": {
-          "name": "pos",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -8073,13 +8058,6 @@
           "notNull": true,
           "autoincrement": false,
           "default": "''"
-        },
-        "example": {
-          "name": "example",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
         },
         "audio_key": {
           "name": "audio_key",

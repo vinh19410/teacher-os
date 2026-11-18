@@ -502,17 +502,17 @@ describe("vocab_card polymorphic word_id & migration 0039 (#366)", () => {
 		}
 	});
 
-	it("rehearses 0076 additive migration on populated vocab_deck/vocab_word rows and supports lessonNumber/topic/entryType/pos/example", async () => {
+	it("rehearses 0077 additive migration on populated vocab_deck/vocab_word rows and supports lessonNumber/topic/entryType/pos/example", async () => {
 		const client = createClient({ url: "file::memory:" });
 		try {
 			const files = readdirSync(MIGRATIONS_DIR).filter((f) =>
 				f.endsWith(".sql"),
 			);
 			files.sort();
-			const idx0076 = files.findIndex((f) => f.startsWith("0076_"));
-			expect(idx0076).toBeGreaterThan(0);
+			const idx0077 = files.findIndex((f) => f.startsWith("0077_"));
+			expect(idx0077).toBeGreaterThan(0);
 
-			for (const file of files.slice(0, idx0076)) {
+			for (const file of files.slice(0, idx0077)) {
 				const rawSql = readFileSync(join(MIGRATIONS_DIR, file), "utf8");
 				for (const stmt of rawSql
 					.split("--> statement-breakpoint")
@@ -541,9 +541,9 @@ describe("vocab_card polymorphic word_id & migration 0039 (#366)", () => {
 				],
 			});
 
-			const file0076 = files[idx0076] as string;
-			const sql0076 = readFileSync(join(MIGRATIONS_DIR, file0076), "utf8");
-			for (const stmt of sql0076
+			const file0077 = files[idx0077] as string;
+			const sql0077 = readFileSync(join(MIGRATIONS_DIR, file0077), "utf8");
+			for (const stmt of sql0077
 				.split("--> statement-breakpoint")
 				.map((s) => s.trim())
 				.filter(Boolean)) {

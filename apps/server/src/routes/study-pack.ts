@@ -16,16 +16,18 @@ import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
+import type { MediaStore } from "../lib/media-store";
 import {
 	assignStudyPackToClass,
 	cancelClassStudyPack,
 	loadClassStudyPacks,
 } from "../lib/study-pack-assign";
-import { streamStudyPackAudio } from "../lib/study-pack-audio";
+import { serveStudyPackAudio } from "../lib/study-pack-audio";
 import {
 	buildPackItemTupleKey,
 	buildStudyPackItemInsertStatements,
 	D1_PACK_ITEM_INSERT_CHUNK,
+	extractAudioName,
 	loadStudyPackDetailFromRow,
 	loadStudyPackItemDetail,
 	loadStudyPackItemWithAudio,
@@ -38,6 +40,7 @@ type StudyPackContext = Context<Env>;
 
 export function studyPackRoutes(deps: {
 	getDb(): Db;
+	getLibraryAudioStore?(): MediaStore | undefined;
 	fetchExternalAudio?: typeof fetch;
 }) {
 	const routes = new Hono<Env>();
@@ -112,15 +115,27 @@ export function studyPackRoutes(deps: {
 		const db = deps.getDb();
 		const id = c.req.param("id");
 		const [row] = await db
-			.select({ audioUrl: libraryExercise.audioUrl })
+			.select({
+				audioUrl: libraryExercise.audioUrl,
+				audioKey: libraryExercise.audioKey,
+				title: libraryExercise.title,
+			})
 			.from(libraryExercise)
 			.where(
 				and(eq(libraryExercise.id, id), eq(libraryExercise.status, "ready")),
 			);
-		if (!row || !row.audioUrl.trim()) {
+		if (!row || (!row.audioUrl.trim() && !row.audioKey?.trim())) {
 			return c.json({ error: "audio not found" }, 404);
 		}
-		return streamStudyPackAudio(row.audioUrl, deps.fetchExternalAudio);
+		return serveStudyPackAudio({
+			audioKey: row.audioKey,
+			audioUrl: row.audioUrl,
+			audioName: row.title
+				? `${row.title}.mp3`
+				: extractAudioName(row.audioKey || row.audioUrl),
+			getLibraryAudioStore: deps.getLibraryAudioStore,
+			fetchExternalAudio: deps.fetchExternalAudio,
+		});
 	});
 
 	async function findReadableStudyPack(
@@ -191,10 +206,16 @@ export function studyPackRoutes(deps: {
 		}
 
 		const resolved = await loadStudyPackItemWithAudio(db, packId, itemId);
-		if (!resolved?.audioUrl) {
+		if (!resolved || (!resolved.audioUrl && !resolved.audioKey)) {
 			return c.json({ error: "audio not found" }, 404);
 		}
-		return streamStudyPackAudio(resolved.audioUrl, deps.fetchExternalAudio);
+		return serveStudyPackAudio({
+			audioKey: resolved.audioKey,
+			audioUrl: resolved.audioUrl,
+			audioName: resolved.detail.audioName,
+			getLibraryAudioStore: deps.getLibraryAudioStore,
+			fetchExternalAudio: deps.fetchExternalAudio,
+		});
 	});
 
 	routes.post("/study-packs", async (c) => {

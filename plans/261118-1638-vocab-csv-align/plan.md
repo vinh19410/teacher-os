@@ -8,7 +8,7 @@
 
 1. **Phase 1 — DB Schema, Migration & Shared API Contracts + CSV Parser** (`packages/db`, `packages/api`)
    - `packages/db/src/schema/vocab.ts`: add `lessonNumber`, `topic` to `vocabDeck`; add `entryType` (`'word' | 'chunk'`, default `'word'`), `pos`, `example` to `vocabWord`.
-   - Generate Drizzle migration `0076_*.sql` and add backward-compatible rehearsal test in `packages/db/src/schema/vocab.test.ts`.
+   - Generate Drizzle migration `0077_*.sql` and add backward-compatible rehearsal test in `packages/db/src/schema/vocab.test.ts`.
    - `packages/api/src/contracts.ts`: extend `KernelVocabDeckRow`, `vocabDeckCreateSchema`, `vocabDeckRenameSchema`, `vocabWordUpsertSchema`, `vocabTeacherWordSchema`, `vocabSessionDeckSchema`, `vocabSessionCardSchema`; add `vocabEntryTypeSchema`, `vocabDeckCsvImportSchema`, `vocabDeckWordsImportSchema`, `vocabCsvImportResponseSchema`.
    - `packages/api/src/lib/vocab-csv.ts` + `packages/api/src/lib/vocab-csv.test.ts`: pure RFC 4180 CSV parser/validator/formatter, sample CSV generator (`Lesson 01 – Friends & Introductions`), grouping by `(lessonNumber, topic)`, deck title formatter (`Lesson 01 – Topic`), tested directly against `docs/vocab-sample/Lesson 01 – Friends & Introductions.csv`.
 

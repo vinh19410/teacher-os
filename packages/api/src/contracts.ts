@@ -1082,6 +1082,7 @@ function validateQuestionChoices(
 		answer: string;
 	}>,
 	fallbackType: string,
+	allowExtendedBankChoices = false,
 ) {
 	for (const [index, question] of questions.entries()) {
 		const kind = answerKindByType[question.type ?? fallbackType] ?? null;
@@ -1094,10 +1095,14 @@ function validateQuestionChoices(
 				message: optsError,
 			});
 		}
-		if (
-			question.answer &&
-			!effectiveAnswerChoices(kind, question.opts).includes(question.answer)
-		) {
+		const allowed = allowExtendedBankChoices
+			? extendedAnswerChoices(kind)
+			: effectiveAnswerChoices(kind, question.opts);
+		const validChoices =
+			kind === "mcq4" || kind === "mcq3"
+				? effectiveAnswerChoices(kind, question.opts)
+				: allowed;
+		if (question.answer && !validChoices.includes(question.answer)) {
 			ctx.addIssue({
 				code: "custom",
 				path: ["questions", index, "answer"],
@@ -1303,7 +1308,12 @@ export const assignmentPromptCreateSchema =
 		}
 		// Answer-choice validation theo type HIỆU DỤNG của từng câu (type câu
 		// ?? type prompt) — đề trộn dạng chấm khớp kind của câu chứa nó.
-		validateQuestionChoices(ctx, value.questions, value.type);
+		validateQuestionChoices(
+			ctx,
+			value.questions,
+			value.type,
+			value.optionBank.length > 0,
+		);
 		// Phase-02 FR2 — option bank rules. Bankable is (skill, type)-qualified
 		// (red-team #1): writing task1 shares the `map` type id but is NOT
 		// bankable, so a bank arriving there is rejected outright. The 2..8 /
@@ -4861,6 +4871,18 @@ export const STUDY_PACK_AUDIO_HOSTS = [
 	"www.lingua.com",
 ] as const;
 
+export const STUDY_PACK_AUDIO_KEY_PATTERN =
+	/^study-packs\/[a-z0-9-]+\/[a-z0-9-]+\.mp3$/;
+
+export function isValidStudyPackAudioKey(raw: string): boolean {
+	const trimmed = raw.trim();
+	return (
+		trimmed.length > 0 &&
+		trimmed.length <= 500 &&
+		STUDY_PACK_AUDIO_KEY_PATTERN.test(trimmed)
+	);
+}
+
 export function isAllowedStudyPackAudioUrl(raw: string): boolean {
 	const trimmed = raw.trim();
 	if (!trimmed || trimmed.length > 500) return false;
@@ -4975,7 +4997,7 @@ const libraryExerciseBaseSchema = z
 		questions: z.array(assignmentQuestionSchema).max(40).default([]),
 		optionBank: z
 			.array(z.string().trim().min(1).max(200))
-			.max(ASSIGNMENT_OPTION_BANK_MAX)
+			.max(LIBRARY_OPTION_BANK_MAX)
 			.default([]),
 		note: richTextField(2000).default(""),
 		status: z.enum(["draft", "ready"]).default("draft"),
@@ -4987,12 +5009,21 @@ const libraryExerciseBaseSchema = z
 			ctx.addIssue({ code: "custom", path: ["part"], message: "invalid part" });
 			return;
 		}
-		const partTypes = config.types[value.part] ?? [];
-		if (!partTypes.includes(value.type)) {
+		const allowedTypes = [
+			...new Set([
+				...Object.values(config.types).flat(),
+				...(value.skill === "reading"
+					? ["mcq_many", "fill_blank", "match_names", "matching"]
+					: value.skill === "listening"
+						? ["mcq_many"]
+						: []),
+			]),
+		];
+		if (!allowedTypes.includes(value.type)) {
 			ctx.addIssue({ code: "custom", path: ["type"], message: "invalid type" });
 		}
 		for (const [index, question] of value.questions.entries()) {
-			if (question.type && !partTypes.includes(question.type)) {
+			if (question.type && !allowedTypes.includes(question.type)) {
 				ctx.addIssue({
 					code: "custom",
 					path: ["questions", index, "type"],
@@ -5072,7 +5103,12 @@ const libraryExerciseBaseSchema = z
 					});
 			}
 		}
-		validateQuestionChoices(ctx, value.questions, value.type);
+		validateQuestionChoices(
+			ctx,
+			value.questions,
+			value.type,
+			value.optionBank.length > 0,
+		);
 		const bankKind = optionBankKindFor(
 			value.skill,
 			value.type,
@@ -5092,16 +5128,29 @@ const libraryExerciseBaseSchema = z
 					({ question }) =>
 						answerKindByType[question.type ?? value.type] === bankKind,
 				);
+			const reusableTypes = new Set([
+				"info",
+				"features",
+				"match_names",
+				"matching",
+				"match2",
+				"summary",
+			]);
+			const allowsBankReuse = bankQuestions.every(({ question }) =>
+				reusableTypes.has(question.type ?? value.type),
+			);
 			if (
 				value.optionBank.length < 2 ||
-				value.optionBank.length < bankQuestions.length
+				(!allowsBankReuse && value.optionBank.length < bankQuestions.length)
 			)
 				ctx.addIssue({
 					code: "custom",
 					path: ["optionBank"],
-					message: `bank must have 2–${ASSIGNMENT_OPTION_BANK_MAX} items and cover every bankable question`,
+					message: allowsBankReuse
+						? `bank must have 2–${LIBRARY_OPTION_BANK_MAX} items`
+						: `bank must have 2–${LIBRARY_OPTION_BANK_MAX} items and cover every bankable question`,
 				});
-			const labels = ASSIGNMENT_ANSWER_CHOICES[bankKind];
+			const labels = extendedAnswerChoices(bankKind);
 			for (const { question, index } of bankQuestions) {
 				if (!question.answer.trim()) continue;
 				const labelIndex = labels.indexOf(question.answer as never);
