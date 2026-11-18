@@ -519,6 +519,13 @@
       "when": 1794891355627,
       "tag": "0073_shocking_absorbing_man",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "6",
+      "when": 1794980278820,
+      "tag": "0074_greedy_thanos",
+      "breakpoints": true
     }
   ]
 }
