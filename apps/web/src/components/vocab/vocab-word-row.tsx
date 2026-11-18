@@ -129,6 +129,7 @@ export function VocabWordRow({
 					</label>
 					<Input
 						id={`vocab-word-${row.id}`}
+						maxLength={200}
 						value={word}
 						onChange={(e) => setWord(e.target.value)}
 						placeholder="resilient"
@@ -144,6 +145,7 @@ export function VocabWordRow({
 					</label>
 					<Input
 						id={`vocab-ipa-${row.id}`}
+						maxLength={200}
 						value={ipa}
 						onChange={(e) => setIpa(e.target.value)}
 						placeholder="/rɪˈzɪl.i.ənt/"
@@ -163,6 +165,7 @@ export function VocabWordRow({
 					<Input
 						id={`vocab-pos-${row.id}`}
 						data-testid={`vocab-pos-${row.id}`}
+						maxLength={100}
 						value={pos}
 						onChange={(e) => setPos(e.target.value)}
 						placeholder="n., v., phr. v."
@@ -178,6 +181,7 @@ export function VocabWordRow({
 					</label>
 					<Input
 						id={`vocab-translation-${row.id}`}
+						maxLength={500}
 						value={translation}
 						onChange={(e) => setTranslation(e.target.value)}
 						placeholder="kiên cường"
@@ -194,6 +198,7 @@ export function VocabWordRow({
 					<Input
 						id={`vocab-example-${row.id}`}
 						data-testid={`vocab-example-${row.id}`}
+						maxLength={1000}
 						value={example}
 						onChange={(e) => setExample(e.target.value)}
 						placeholder="Can I introduce my friend Nam?"

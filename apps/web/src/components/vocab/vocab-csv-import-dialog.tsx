@@ -13,6 +13,7 @@ import { Modal } from "@/components/ui/modal";
 import { useData } from "@/lib/data-store";
 
 const PREVIEW_ROW_LIMIT = 20;
+const MAX_CSV_FILE_BYTES = 2 * 1024 * 1024;
 
 export type VocabCsvImportDialogProps =
 	| {
@@ -103,6 +104,13 @@ export function VocabCsvImportDialog(props: VocabCsvImportDialogProps) {
 		if (!file) return;
 		setSubmitError(null);
 		setSelectedFileName(file.name);
+		if (file.size > MAX_CSV_FILE_BYTES) {
+			setParseResult({
+				ok: false,
+				errors: ["Dung lượng file CSV vượt quá giới hạn 2 MB."],
+			});
+			return;
+		}
 		try {
 			const text = await readCsvFileText(file);
 			setParseResult(parseVocabCsv(text, { mode }));
@@ -260,7 +268,7 @@ export function VocabCsvImportDialog(props: VocabCsvImportDialogProps) {
 							accept=".csv,text/csv"
 							data-testid="vocab-csv-file-input"
 							onChange={(e) => void handleFileChange(e)}
-							className="block w-full cursor-pointer text-foreground text-sm file:mr-3 file:cursor-pointer file:rounded-md file:border file:border-input file:bg-secondary file:px-3 file:py-1.5 file:font-medium file:text-secondary-foreground file:text-xs hover:file:bg-accent"
+							className="block w-full cursor-pointer rounded-md text-foreground text-sm file:mr-3 file:cursor-pointer file:rounded-md file:border file:border-input file:bg-secondary file:px-3 file:py-1.5 file:font-medium file:text-secondary-foreground file:text-xs hover:file:bg-accent focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 						/>
 						{selectedFileName ? (
 							<p className="mt-1.5 flex items-center gap-1.5 text-muted-foreground text-xs">

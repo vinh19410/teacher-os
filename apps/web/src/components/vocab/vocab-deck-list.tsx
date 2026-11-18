@@ -31,11 +31,129 @@ function formatDeckLessonMeta(
 	return cleanTopic || null;
 }
 
+function DeckMetadataFields({
+	lessonNumber,
+	topic,
+	title,
+	lessonInvalid,
+	suggestedTitle,
+	onLessonChange,
+	onTopicChange,
+	onTitleChange,
+}: {
+	lessonNumber: string;
+	topic: string;
+	title: string;
+	lessonInvalid: boolean;
+	suggestedTitle: string;
+	onLessonChange: (value: string) => void;
+	onTopicChange: (value: string) => void;
+	onTitleChange: (value: string) => void;
+}) {
+	const lessonInputId = useId();
+	const topicInputId = useId();
+	const titleInputId = useId();
+
+	return (
+		<>
+			<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+				<div className="flex flex-col gap-1.5">
+					<label
+						htmlFor={lessonInputId}
+						className="font-medium text-foreground text-sm leading-none"
+					>
+						Buổi học (Lesson)
+					</label>
+					<Input
+						id={lessonInputId}
+						type="number"
+						min={1}
+						max={9999}
+						value={lessonNumber}
+						onChange={(e) => onLessonChange(e.target.value)}
+						placeholder="Ví dụ: 1"
+						aria-label="Số buổi học"
+						aria-invalid={lessonInvalid || undefined}
+					/>
+					{lessonInvalid ? (
+						<span className="text-destructive text-xs">
+							Số buổi học phải là số nguyên từ 1 đến 9999.
+						</span>
+					) : null}
+				</div>
+				<div className="flex flex-col gap-1.5">
+					<label
+						htmlFor={topicInputId}
+						className="font-medium text-foreground text-sm leading-none"
+					>
+						Chủ đề (Topic)
+					</label>
+					<Input
+						id={topicInputId}
+						maxLength={200}
+						value={topic}
+						onChange={(e) => onTopicChange(e.target.value)}
+						placeholder="Ví dụ: Friends & Introductions"
+						aria-label="Chủ đề"
+					/>
+				</div>
+			</div>
+			<div className="flex flex-col gap-1.5">
+				<label
+					htmlFor={titleInputId}
+					className="font-medium text-foreground text-sm leading-none"
+				>
+					Tiêu đề bộ từ
+				</label>
+				<Input
+					id={titleInputId}
+					maxLength={200}
+					value={title}
+					onChange={(e) => onTitleChange(e.target.value)}
+					placeholder={suggestedTitle || "Ví dụ: Topic 1: Environment"}
+					aria-label="Tiêu đề bộ từ"
+				/>
+			</div>
+		</>
+	);
+}
+
+function parseDeckMetaDraft(
+	lessonText: string,
+	topicText: string,
+	titleText: string,
+) {
+	const trimmedLesson = lessonText.trim();
+	let parsedLesson: number | null = null;
+	if (trimmedLesson.length > 0) {
+		if (!/^\d+$/.test(trimmedLesson)) {
+			parsedLesson = Number.NaN;
+		} else {
+			const num = Number.parseInt(trimmedLesson, 10);
+			parsedLesson = num >= 1 && num <= 9999 ? num : Number.NaN;
+		}
+	}
+	const lessonInvalid = parsedLesson !== null && Number.isNaN(parsedLesson);
+	const validLesson =
+		parsedLesson !== null && !Number.isNaN(parsedLesson) ? parsedLesson : null;
+	const cleanTopic = topicText.trim();
+	const suggestedTitle = formatVocabLessonDeckTitle(validLesson, cleanTopic);
+	const effectiveTitle = titleText.trim() || suggestedTitle;
+	return {
+		lessonInvalid,
+		validLesson,
+		cleanTopic,
+		suggestedTitle,
+		effectiveTitle,
+	};
+}
+
 function DeckListRow({
 	deck,
 	sourceBadgeLabel,
 	pendingCount,
 	onSuggest,
+	onRename,
 	onEdit,
 	onDelete,
 }: {
@@ -43,6 +161,7 @@ function DeckListRow({
 	sourceBadgeLabel: string;
 	pendingCount: number;
 	onSuggest: (deck: { id: string; title: string }) => void;
+	onRename: (deck: KernelVocabDeckRow) => void;
 	onEdit: (deckId: string) => void;
 	onDelete: (deck: { id: string; title: string }) => void;
 }) {
@@ -92,7 +211,7 @@ function DeckListRow({
 					{deck.wordCount} từ · {deck.lang}
 				</p>
 			</div>
-			<div className="flex flex-none items-center gap-2">
+			<div className="flex flex-none flex-wrap items-center gap-2">
 				<Button
 					size="sm"
 					variant="secondary"
@@ -100,6 +219,14 @@ function DeckListRow({
 					onClick={() => onSuggest({ id: deck.id, title: deck.title })}
 				>
 					Gợi ý
+				</Button>
+				<Button
+					size="sm"
+					variant="secondary"
+					data-testid={`vocab-rename-deck-${deck.id}`}
+					onClick={() => onRename(deck)}
+				>
+					Sửa
 				</Button>
 				<Button
 					size="sm"
@@ -166,9 +293,13 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 	const [newLessonNumber, setNewLessonNumber] = useState("");
 	const [newTopic, setNewTopic] = useState("");
 	const [createSaving, setCreateSaving] = useState(false);
-	const lessonInputId = useId();
-	const topicInputId = useId();
-	const titleInputId = useId();
+	const [renamingDeck, setRenamingDeck] = useState<KernelVocabDeckRow | null>(
+		null,
+	);
+	const [renameTitle, setRenameTitle] = useState("");
+	const [renameLessonNumber, setRenameLessonNumber] = useState("");
+	const [renameTopic, setRenameTopic] = useState("");
+	const [renameSaving, setRenameSaving] = useState(false);
 	const [editingDeckId, setEditingDeckId] = useState<string | null>(null);
 	const [suggestingDeck, setSuggestingDeck] = useState<{
 		id: string;
@@ -179,19 +310,14 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 		title: string;
 	} | null>(null);
 
-	const trimmedLesson = newLessonNumber.trim();
-	const parsedLesson = useMemo(() => {
-		if (trimmedLesson.length === 0) return null;
-		if (!/^\d+$/.test(trimmedLesson)) return Number.NaN;
-		const num = Number.parseInt(trimmedLesson, 10);
-		return num >= 1 && num <= 9999 ? num : Number.NaN;
-	}, [trimmedLesson]);
-	const lessonInvalid = parsedLesson !== null && Number.isNaN(parsedLesson);
-	const validLesson =
-		parsedLesson !== null && !Number.isNaN(parsedLesson) ? parsedLesson : null;
-	const cleanTopic = newTopic.trim();
-	const suggestedTitle = formatVocabLessonDeckTitle(validLesson, cleanTopic);
-	const effectiveTitle = newTitle.trim() || suggestedTitle;
+	const createDraft = useMemo(
+		() => parseDeckMetaDraft(newLessonNumber, newTopic, newTitle),
+		[newLessonNumber, newTopic, newTitle],
+	);
+	const renameDraft = useMemo(
+		() => parseDeckMetaDraft(renameLessonNumber, renameTopic, renameTitle),
+		[renameLessonNumber, renameTopic, renameTitle],
+	);
 
 	const resetCreateForm = () => {
 		setNewTitle("");
@@ -204,23 +330,78 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 		resetCreateForm();
 	};
 
+	const openRenameModal = (deck: KernelVocabDeckRow) => {
+		setRenamingDeck(deck);
+		setRenameTitle(deck.title);
+		setRenameLessonNumber(
+			deck.lessonNumber != null ? String(deck.lessonNumber) : "",
+		);
+		setRenameTopic(deck.topic ?? "");
+	};
+
+	const closeRenameModal = () => {
+		setRenamingDeck(null);
+		setRenameTitle("");
+		setRenameLessonNumber("");
+		setRenameTopic("");
+	};
+
 	const handleCreate = async () => {
-		if (effectiveTitle.length === 0 || lessonInvalid || createSaving) return;
+		if (
+			createDraft.effectiveTitle.length === 0 ||
+			createDraft.lessonInvalid ||
+			createSaving
+		) {
+			return;
+		}
 		setCreateSaving(true);
 		try {
 			const result = await dispatch({
 				type: "create-vocab-deck",
 				payload: {
 					classId: targetClassId,
-					title: effectiveTitle,
-					...(validLesson !== null ? { lessonNumber: validLesson } : {}),
-					...(cleanTopic.length > 0 ? { topic: cleanTopic } : {}),
+					title: createDraft.effectiveTitle,
+					...(createDraft.validLesson !== null
+						? { lessonNumber: createDraft.validLesson }
+						: {}),
+					...(createDraft.cleanTopic.length > 0
+						? { topic: createDraft.cleanTopic }
+						: {}),
 				},
 			});
 			if (result.kind !== "refreshed") return;
 			closeCreateModal();
 		} finally {
 			setCreateSaving(false);
+		}
+	};
+
+	const handleRename = async () => {
+		if (
+			!renamingDeck ||
+			renameDraft.effectiveTitle.length === 0 ||
+			renameDraft.lessonInvalid ||
+			renameSaving
+		) {
+			return;
+		}
+		setRenameSaving(true);
+		try {
+			const result = await dispatch({
+				type: "rename-vocab-deck",
+				payload: {
+					deckId: renamingDeck.id,
+					title: renameDraft.effectiveTitle,
+					lessonNumber: renameDraft.validLesson,
+					topic:
+						renameDraft.cleanTopic.length > 0 ? renameDraft.cleanTopic : null,
+				},
+			});
+			if (result.kind !== "refreshed") return;
+			toast.success(`Đã cập nhật bộ từ "${renameDraft.effectiveTitle}".`);
+			closeRenameModal();
+		} finally {
+			setRenameSaving(false);
 		}
 	};
 
@@ -283,6 +464,7 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 								sourceBadgeLabel={sourceBadgeLabel}
 								pendingCount={pendingCountByDeckId.get(deck.id) ?? 0}
 								onSuggest={setSuggestingDeck}
+								onRename={openRenameModal}
 								onEdit={setEditingDeckId}
 								onDelete={setDeletingDeck}
 							/>
@@ -308,7 +490,9 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 							type="button"
 							data-testid="vocab-create-deck-submit"
 							disabled={
-								effectiveTitle.length === 0 || lessonInvalid || createSaving
+								createDraft.effectiveTitle.length === 0 ||
+								createDraft.lessonInvalid ||
+								createSaving
 							}
 							onClick={() => void handleCreate()}
 						>
@@ -322,62 +506,56 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 						? "Bộ từ vựng độc lập thuộc trung tâm — bạn có thể gợi ý cho từng học viên bất kỳ lúc nào."
 						: "Học sinh trong lớp sẽ thấy bộ từ này trên cổng học viên."}
 				</p>
-				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-					<div className="flex flex-col gap-1.5">
-						<label
-							htmlFor={lessonInputId}
-							className="font-medium text-foreground text-sm leading-none"
+				<DeckMetadataFields
+					lessonNumber={newLessonNumber}
+					topic={newTopic}
+					title={newTitle}
+					lessonInvalid={createDraft.lessonInvalid}
+					suggestedTitle={createDraft.suggestedTitle}
+					onLessonChange={setNewLessonNumber}
+					onTopicChange={setNewTopic}
+					onTitleChange={setNewTitle}
+				/>
+			</Modal>
+
+			<Modal
+				open={renamingDeck !== null}
+				onClose={closeRenameModal}
+				title="Chỉnh sửa bộ từ vựng"
+				footer={
+					<>
+						<Button
+							variant="secondary"
+							onClick={closeRenameModal}
+							type="button"
 						>
-							Buổi học (Lesson)
-						</label>
-						<Input
-							id={lessonInputId}
-							type="number"
-							min={1}
-							max={9999}
-							value={newLessonNumber}
-							onChange={(e) => setNewLessonNumber(e.target.value)}
-							placeholder="Ví dụ: 1"
-							aria-label="Số buổi học"
-							aria-invalid={lessonInvalid || undefined}
-						/>
-						{lessonInvalid ? (
-							<span className="text-destructive text-xs">
-								Số buổi học phải là số nguyên từ 1 đến 9999.
-							</span>
-						) : null}
-					</div>
-					<div className="flex flex-col gap-1.5">
-						<label
-							htmlFor={topicInputId}
-							className="font-medium text-foreground text-sm leading-none"
+							Hủy
+						</Button>
+						<Button
+							type="button"
+							data-testid="vocab-rename-deck-submit"
+							disabled={
+								renameDraft.effectiveTitle.length === 0 ||
+								renameDraft.lessonInvalid ||
+								renameSaving
+							}
+							onClick={() => void handleRename()}
 						>
-							Chủ đề (Topic)
-						</label>
-						<Input
-							id={topicInputId}
-							value={newTopic}
-							onChange={(e) => setNewTopic(e.target.value)}
-							placeholder="Ví dụ: Friends & Introductions"
-							aria-label="Chủ đề"
-						/>
-					</div>
-				</div>
-				<div className="flex flex-col gap-1.5">
-					<label
-						htmlFor={titleInputId}
-						className="font-medium text-foreground text-sm leading-none"
-					>
-						Tiêu đề bộ từ
-					</label>
-					<Input
-						id={titleInputId}
-						value={newTitle}
-						onChange={(e) => setNewTitle(e.target.value)}
-						placeholder={suggestedTitle || "Ví dụ: Topic 1: Environment"}
-						aria-label="Tiêu đề bộ từ"
-					/>
-				</div>
+							{renameSaving ? "Đang lưu..." : "Lưu thay đổi"}
+						</Button>
+					</>
+				}
+			>
+				<DeckMetadataFields
+					lessonNumber={renameLessonNumber}
+					topic={renameTopic}
+					title={renameTitle}
+					lessonInvalid={renameDraft.lessonInvalid}
+					suggestedTitle={renameDraft.suggestedTitle}
+					onLessonChange={setRenameLessonNumber}
+					onTopicChange={setRenameTopic}
+					onTitleChange={setRenameTitle}
+				/>
 			</Modal>
 
 			<Modal

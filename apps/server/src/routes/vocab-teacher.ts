@@ -36,6 +36,7 @@ import {
 import { and, asc, eq, gte, isNull, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import type { z } from "zod";
 import type { Db, KernelCtx } from "../app";
 import { mediaObjectResponse } from "../lib/media-response";
@@ -239,7 +240,12 @@ export function vocabTeacherRoutes(deps: {
 		return c.json({ id: body.data.deckId } satisfies CreatedResponse);
 	});
 
-	routes.post("/decks/import-csv", async (c) => {
+	const csvImportBodyLimit = bodyLimit({
+		maxSize: 1024 * 1024,
+		onError: (bc) => bc.json({ error: "payload too large" }, 413),
+	});
+
+	routes.post("/decks/import-csv", csvImportBodyLimit, async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return c.json({ error: "unauthorized" }, 401);
 		const body = await readBody(c, vocabDeckCsvImportSchema);
@@ -323,7 +329,7 @@ export function vocabTeacherRoutes(deps: {
 		);
 	});
 
-	routes.post("/decks/:deckId/words/import", async (c) => {
+	routes.post("/decks/:deckId/words/import", csvImportBodyLimit, async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return c.json({ error: "unauthorized" }, 401);
 		const deckId = c.req.param("deckId");
@@ -873,7 +879,7 @@ export function vocabTeacherRoutes(deps: {
 					.set({
 						word: body.data.word,
 						entryType: body.data.entryType,
-						ipa: body.data.ipa ?? null,
+						ipa: normalizeOptionalText(body.data.ipa),
 						pos: normalizeOptionalText(body.data.pos),
 						translation: body.data.translation,
 						example: normalizeOptionalText(body.data.example),
@@ -891,7 +897,7 @@ export function vocabTeacherRoutes(deps: {
 			deckId: deck.id,
 			word: body.data.word,
 			entryType: body.data.entryType,
-			ipa: body.data.ipa ?? null,
+			ipa: normalizeOptionalText(body.data.ipa),
 			pos: normalizeOptionalText(body.data.pos),
 			translation: body.data.translation,
 			example: normalizeOptionalText(body.data.example),

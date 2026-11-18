@@ -353,9 +353,21 @@ describe("Teacher Vocab Hub, Suggestions & Progress (#363)", () => {
 						sourceLibraryDeckId: null,
 					});
 				});
+				const importedDeckIds = body.decks.map(
+					(_, index) => `deck-csv-${index + 1}`,
+				);
+				const importedWords = body.decks.reduce(
+					(sum, deck) => sum + deck.words.length,
+					0,
+				);
 				return {
 					status: 201,
-					body: { id: "deck-csv-1", updated: body.decks.length },
+					body: {
+						id: importedDeckIds[0] ?? "deck-csv-1",
+						deckIds: importedDeckIds,
+						importedDecks: importedDeckIds.length,
+						importedWords,
+					},
 				};
 			}
 			if (req.method === "POST" && req.path === "/api/kernel/vocab/decks") {
@@ -559,7 +571,15 @@ describe("Teacher Vocab Hub, Suggestions & Progress (#363)", () => {
 				});
 				const deck = srv.snapshot.vocabDecks.find((d) => d.id === "deck-1");
 				if (deck) deck.wordCount = deckWords.length;
-				return { status: 201, body: { updated: body.words.length } };
+				return {
+					status: 201,
+					body: {
+						id: "deck-1",
+						deckIds: ["deck-1"],
+						importedDecks: 0,
+						importedWords: body.words.length,
+					},
+				};
 			}
 			if (
 				req.method === "POST" &&
@@ -705,6 +725,83 @@ describe("Teacher Vocab Hub, Suggestions & Progress (#363)", () => {
 					example: "I make friends easily.",
 				},
 			],
+		});
+	});
+
+	it("allows editing title, lessonNumber, and topic on an existing deck via rename-vocab-deck", async () => {
+		const initialSnapshot = snapshotFixture({
+			vocabDecks: [
+				{
+					id: "deck-edit-1",
+					classId: null,
+					title: "Old Title",
+					lessonNumber: null,
+					topic: null,
+					lang: "en",
+					wordCount: 5,
+					createdAt: "2026-10-20T00:00:00.000Z",
+					sourceLibraryDeckId: null,
+				},
+			],
+		});
+
+		const server = startKernelServer(initialSnapshot, (req, srv) => {
+			if (
+				req.method === "POST" &&
+				req.path === "/api/kernel/vocab/decks/rename"
+			) {
+				const body = req.body as {
+					deckId: string;
+					title: string;
+					lessonNumber?: number | null;
+					topic?: string | null;
+				};
+				const target = srv.snapshot.vocabDecks.find(
+					(d) => d.id === body.deckId,
+				);
+				if (!target) return { status: 404, body: { error: "not found" } };
+				target.title = body.title;
+				target.lessonNumber = body.lessonNumber ?? null;
+				target.topic = body.topic ?? null;
+				return { status: 200, body: { id: target.id } };
+			}
+			return undefined;
+		});
+
+		renderWithKernel(<VocabHubRoute />);
+		await waitFor(() => {
+			expect(screen.getByTestId("vocab-rename-deck-deck-edit-1")).toBeDefined();
+		});
+
+		fireEvent.click(screen.getByTestId("vocab-rename-deck-deck-edit-1"));
+		fireEvent.change(screen.getByLabelText("Số buổi học"), {
+			target: { value: "2" },
+		});
+		fireEvent.change(screen.getByLabelText("Chủ đề"), {
+			target: { value: "Daily Life" },
+		});
+		fireEvent.change(screen.getByLabelText("Tiêu đề bộ từ"), {
+			target: { value: "Lesson 02 – Daily Life" },
+		});
+		fireEvent.click(screen.getByTestId("vocab-rename-deck-submit"));
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("vocab-deck-lesson-meta-deck-edit-1").textContent,
+			).toBe("Buổi 02 · Daily Life");
+		});
+		expect(
+			screen.getByTestId("vocab-deck-row-deck-edit-1").textContent,
+		).toContain("Lesson 02 – Daily Life");
+
+		const renameCall = server.writes.find(
+			(r) => r.method === "POST" && r.path === "/api/kernel/vocab/decks/rename",
+		);
+		expect(renameCall?.body).toEqual({
+			deckId: "deck-edit-1",
+			title: "Lesson 02 – Daily Life",
+			lessonNumber: 2,
+			topic: "Daily Life",
 		});
 	});
 });
