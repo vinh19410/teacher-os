@@ -20,7 +20,11 @@ import {
 	buildOrgInvitationEmail,
 	buildStudentPortalInviteEmail,
 } from "./invite-email";
-import { holidayCreatedEvents, tuitionReminderEvent } from "./templates";
+import {
+	holidayCreatedEvents,
+	placementSubmittedEvent,
+	tuitionReminderEvent,
+} from "./templates";
 
 const MIGRATIONS_DIR = fileURLToPath(
 	new URL("../../../../../packages/db/src/migrations", import.meta.url).href,
@@ -511,6 +515,75 @@ describe("notifications service (#454 phase 2)", () => {
 		expect(sent).toBe(true);
 		const row = await rowOf("stu-8");
 		expect(row.status).toBe("sent");
+	});
+
+	test("channels = in_app → sent ngay khi enqueue dù học viên có email; emitNotifications không gọi mailer hay log thiếu mailer", async () => {
+		await seedOrg("org-8b", "Academy Eight B");
+		await seedStudent("org-8b", "stu-8b", "stu8b@example.com");
+
+		const event = placementSubmittedEvent({
+			submissionId: "sub-8b",
+			studentId: "stu-8b",
+		});
+		const enqueueResult = await enqueueNotifications(db, "org-8b", [event]);
+		expect(enqueueResult.createdIds).toHaveLength(1);
+		expect(enqueueResult.queuedEmailIds).toEqual([]);
+
+		const row = await rowOf("stu-8b");
+		expect(row.eventType).toBe("placement_submitted");
+		expect(row.channels).toBe("in_app");
+		expect(row.status).toBe("sent");
+		expect(row.sentAt).not.toBeNull();
+		expect(row.recipientEmail).toBeNull();
+
+		// emitNotifications với mailer có mặt lẫn mailer vắng mặt đều không gửi thư hay cảnh báo
+		await seedStudent("org-8b", "stu-8c", "stu8c@example.com");
+		await seedStudent("org-8b", "stu-8d", "stu8d@example.com");
+		let mailerCalls = 0;
+		await emitNotifications(
+			{
+				db,
+				mailer: fakeMailer(async () => {
+					mailerCalls += 1;
+				}),
+			},
+			"org-8b",
+			[
+				placementSubmittedEvent({
+					submissionId: "sub-8c",
+					studentId: "stu-8c",
+				}),
+			],
+		);
+		expect(mailerCalls).toBe(0);
+		const row8c = await rowOf("stu-8c");
+		expect(row8c.channels).toBe("in_app");
+		expect(row8c.status).toBe("sent");
+		expect(row8c.recipientEmail).toBeNull();
+
+		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+		try {
+			await emitNotifications(
+				{
+					db,
+					mailer: undefined,
+				},
+				"org-8b",
+				[
+					placementSubmittedEvent({
+						submissionId: "sub-8d",
+						studentId: "stu-8d",
+					}),
+				],
+			);
+			expect(warnSpy).not.toHaveBeenCalled();
+		} finally {
+			warnSpy.mockRestore();
+		}
+		const row8d = await rowOf("stu-8d");
+		expect(row8d.channels).toBe("in_app");
+		expect(row8d.status).toBe("sent");
+		expect(row8d.recipientEmail).toBeNull();
 	});
 });
 
