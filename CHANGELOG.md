@@ -10,6 +10,11 @@ Quy ước khi cập nhật:
 
 ---
 
+## 2026-11-18
+
+### Changed
+- **Tinh gọn giao diện Speaking bài kiểm tra đầu vào (`apps/student`, `apps/profile`), bổ sung retry tối đa 2 lần/câu và tách nút Kết thúc phần Speaking:** bỏ đoạn mô tả dài ở header, danh sách 3 bước hướng dẫn (`<ol>`) và câu nhắc dài ở pha chuẩn bị; đưa bộ đếm giây chuẩn bị ra giữa màn hình; hiển thị nút tròn với icon Pause ở giữa màn hình khi đang ghi âm để dừng câu hiện tại, cho phép bấm `Ghi lại câu này` tối đa 2 lần/câu rồi tự ghép các segment cuối thành 1 file audio duy nhất (bỏ nút `Ghi lại từ đầu`); tách nút `Kết thúc phần Speaking` xuống footer riêng dưới đường kẻ phân cách kèm xác nhận ngắn trước khi kết thúc sớm (#780).
+
 ## 2026-11-17
 
 ### Changed

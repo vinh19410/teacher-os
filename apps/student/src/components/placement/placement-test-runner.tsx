@@ -164,7 +164,7 @@ export function PlacementTestRunner({
 		(nextStep: PlacementRunnerStep) => {
 			if (isSpeakingBusy) {
 				setStepSwitchError(
-					"Vui lòng hoàn thành hoặc bấm Kết thúc sớm phần ghi âm trước khi chuyển phần khác.",
+					"Vui lòng hoàn thành hoặc bấm Kết thúc phần Speaking trước khi chuyển phần khác.",
 				);
 				return;
 			}
@@ -302,7 +302,7 @@ export function PlacementTestRunner({
 	const handleRequestSubmit = () => {
 		if (isSpeakingBusy) {
 			setSubmitError(
-				"Vui lòng hoàn thành hoặc bấm Kết thúc sớm phần ghi âm trước khi nộp bài.",
+				"Vui lòng hoàn thành hoặc bấm Kết thúc phần Speaking trước khi nộp bài.",
 			);
 			return;
 		}
@@ -311,7 +311,7 @@ export function PlacementTestRunner({
 			recordedAudio.blob.size > PLACEMENT_SPEAKING_MAX_BYTES
 		) {
 			setSubmitError(
-				"File Speaking vượt quá giới hạn 50 MB. Vui lòng ghi lại ngắn hơn hoặc chọn Bỏ qua phần Speaking.",
+				"File Speaking vượt quá giới hạn 50 MB. Vui lòng chọn Bỏ qua phần Speaking hoặc liên hệ giáo viên hỗ trợ.",
 			);
 			return;
 		}

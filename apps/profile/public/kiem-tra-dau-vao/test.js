@@ -1,11 +1,13 @@
 import {
 	buildProvisionalSummary,
 	canReplaySpeakingPrompt,
+	canRetrySpeakingTask,
 	computeSpeechFallbackTimeoutMs,
 	countObjectiveProgress,
 	countReadingQuestions,
 	countWords,
 	createInitialSpeakingSession,
+	MAX_SPEAKING_RETRIES_PER_TASK,
 	matchBandByPct,
 	pickSupportedRecorderMime,
 	resolveReadingRenderState,
@@ -15,12 +17,14 @@ import {
 	resolveSpeakingUploadMeta,
 	resolveTaskTimings,
 	resolveWritingPromptState,
+	retrySpeakingCurrentTask,
 	scoreObjectiveTest,
 	startSpeakingTaskReading,
 	stripInlineCefrLabel,
 	transitionSpeakingAfterReading,
 	transitionSpeakingNextTask,
 	transitionSpeakingToAnswer,
+	transitionSpeakingToPaused,
 } from "./grading.js";
 import {
 	buildLeadPayload,
@@ -31,6 +35,7 @@ import {
 	PLACEMENT_STUDY_MODES,
 	validateLeadForm,
 } from "./lead-gate.js";
+import { mergeSpeakingAudioSegments } from "./speaking-audio.js";
 
 const DEFAULT_API_BASE = "https://api.msmy.io.vn";
 const ZALO_URL = "https://zalo.me/0929060994";
@@ -109,6 +114,31 @@ function el(tag, attrs = {}, children = []) {
 		}
 	}
 	return node;
+}
+
+function createPauseIconSvg() {
+	const svgNs = "http://www.w3.org/2000/svg";
+	const svg = document.createElementNS(svgNs, "svg");
+	svg.setAttribute("viewBox", "0 0 24 24");
+	svg.setAttribute("width", "28");
+	svg.setAttribute("height", "28");
+	svg.setAttribute("fill", "currentColor");
+	svg.setAttribute("aria-hidden", "true");
+	const leftBar = document.createElementNS(svgNs, "rect");
+	leftBar.setAttribute("x", "6");
+	leftBar.setAttribute("y", "5");
+	leftBar.setAttribute("width", "4");
+	leftBar.setAttribute("height", "14");
+	leftBar.setAttribute("rx", "1.5");
+	const rightBar = document.createElementNS(svgNs, "rect");
+	rightBar.setAttribute("x", "14");
+	rightBar.setAttribute("y", "5");
+	rightBar.setAttribute("width", "4");
+	rightBar.setAttribute("height", "14");
+	rightBar.setAttribute("rx", "1.5");
+	svg.appendChild(leftBar);
+	svg.appendChild(rightBar);
+	return svg;
 }
 
 function normalizeSnapshot(raw) {
@@ -619,12 +649,14 @@ function createApp() {
 	let preferredRecorderMime = "";
 	let isRequestingMic = false;
 	let speakingStartToken = 0;
+	let speakingSessionToken = 0;
 	let isStoppingMediaStream = false;
-	let activeAnswerMs = 0;
+	let recordedSegments = [];
 	let answerStartedAt = 0;
-	let hasRecordedAnyAnswer = false;
-	let speakingDiscardOnStop = false;
+	let activeRecorderStopPromise = null;
+	let isStoppingTaskRecorder = false;
 	let isFinalizingRecording = false;
+	let showEarlyFinishConfirm = false;
 	let speakingMediaError = "";
 	let speakingUploadError = "";
 	let speakingRetrySucceeded = false;
@@ -656,7 +688,11 @@ function createApp() {
 	}
 
 	function isSpeakingBusy() {
-		return speakingSession.status === "active" || isFinalizingRecording;
+		return (
+			speakingSession.status === "active" ||
+			isStoppingTaskRecorder ||
+			isFinalizingRecording
+		);
 	}
 
 	function teardownSpeakingPromptPlayback() {
@@ -713,20 +749,33 @@ function createApp() {
 		}
 	}
 
-	function abortSpeakingSessionWithError(message) {
+	function resetSpeakingSessionRuntime() {
 		speakingStartToken += 1;
+		speakingSessionToken += 1;
 		isRequestingMic = false;
+		isStoppingTaskRecorder = false;
 		isFinalizingRecording = false;
+		showEarlyFinishConfirm = false;
 		stopSpeakingIntervals();
+		if (mediaRecorder && mediaRecorder.state !== "inactive") {
+			try {
+				mediaRecorder.stop();
+			} catch {
+				// Ignore stop errors during reset
+			}
+		}
 		mediaRecorder = null;
 		stopMediaStream();
 		speakingSession = createInitialSpeakingSession(
 			snapshot?.speaking?.tasks?.length ?? 0,
 		);
-		activeAnswerMs = 0;
-		answerStartedAt = 0;
-		hasRecordedAnyAnswer = false;
+		recordedSegments = [];
 		recordedChunks = [];
+		answerStartedAt = 0;
+	}
+
+	function abortSpeakingSessionWithError(message) {
+		resetSpeakingSessionRuntime();
 		speakingMediaError = message;
 		render();
 	}
@@ -796,22 +845,12 @@ function createApp() {
 	function navigateToStep(nextStep) {
 		if (isSpeakingBusy()) {
 			speakingMediaError =
-				"Vui lòng hoàn thành hoặc bấm Kết thúc sớm phần ghi âm trước khi chuyển phần khác.";
+				"Vui lòng hoàn thành hoặc bấm Kết thúc phần Speaking trước khi chuyển phần khác.";
 			render();
 			return;
 		}
-		speakingStartToken += 1;
-		isRequestingMic = false;
 		stopActiveAudio();
-		stopMediaStream();
-		stopSpeakingIntervals();
-		speakingSession = createInitialSpeakingSession(
-			snapshot?.speaking?.tasks?.length ?? 0,
-		);
-		activeAnswerMs = 0;
-		answerStartedAt = 0;
-		hasRecordedAnyAnswer = false;
-		isFinalizingRecording = false;
+		resetSpeakingSessionRuntime();
 		unansweredConfirmState = null;
 		submitError = "";
 		speakingMediaError = "";
@@ -2448,13 +2487,13 @@ function createApp() {
 	function handleRequestSubmit() {
 		if (isSpeakingBusy()) {
 			speakingMediaError =
-				"Vui lòng hoàn thành hoặc bấm Kết thúc sớm phần ghi âm trước khi nộp bài.";
+				"Vui lòng hoàn thành hoặc bấm Kết thúc phần Speaking trước khi nộp bài.";
 			render();
 			return;
 		}
 		if (recordedBlob && recordedBlob.size > SPEAKING_MAX_BYTES) {
 			speakingMediaError =
-				"File Speaking vượt quá giới hạn 50 MB. Vui lòng ghi lại ngắn hơn hoặc chọn Bỏ qua phần Speaking.";
+				"File Speaking vượt quá giới hạn 50 MB. Vui lòng chọn Bỏ qua phần Speaking hoặc liên hệ cô Mỹ hỗ trợ.";
 			render();
 			return;
 		}
@@ -2565,48 +2604,108 @@ function createApp() {
 		playTtsFallback();
 	}
 
-	function ensureRecorderRecordingForAnswer() {
+	function startTaskRecorder() {
+		if (!mediaStream) {
+			abortSpeakingSessionWithError(
+				"Không thể bắt đầu ghi âm qua Micro. Vui lòng thử lại hoặc chọn Bỏ qua phần Speaking.",
+			);
+			return false;
+		}
+		const chunks = [];
+		recordedChunks = chunks;
+		activeRecorderStopPromise = null;
 		answerStartedAt = Date.now();
-		hasRecordedAnyAnswer = true;
-		if (!mediaRecorder) return;
-		if (mediaRecorder.state === "inactive") {
-			try {
-				mediaRecorder.start(250);
-			} catch {
-				abortSpeakingSessionWithError(
-					"Không thể bắt đầu ghi âm qua Micro. Vui lòng thử lại hoặc chọn Bỏ qua phần Speaking.",
-				);
-			}
-			return;
+		let recorder;
+		try {
+			recorder = preferredRecorderMime
+				? new window.MediaRecorder(mediaStream, {
+						mimeType: preferredRecorderMime,
+					})
+				: new window.MediaRecorder(mediaStream);
+		} catch {
+			abortSpeakingSessionWithError(
+				"Không thể bắt đầu ghi âm qua Micro. Vui lòng thử lại hoặc chọn Bỏ qua phần Speaking.",
+			);
+			return false;
 		}
-		if (
-			mediaRecorder.state === "paused" &&
-			typeof mediaRecorder.resume === "function"
-		) {
-			try {
-				mediaRecorder.resume();
-			} catch {
-				// Keep existing recorder if resume fails
+		mediaRecorder = recorder;
+		recorder.addEventListener("dataavailable", (evt) => {
+			if (evt.data && evt.data.size > 0) {
+				chunks.push(evt.data);
 			}
+		});
+		recorder.addEventListener("error", () => {
+			if (mediaRecorder !== recorder) return;
+			abortSpeakingSessionWithError(
+				"Trình duyệt gặp lỗi khi thu âm Micro. Vui lòng thử lại hoặc chọn Bỏ qua phần Speaking.",
+			);
+		});
+		try {
+			recorder.start(250);
+		} catch {
+			abortSpeakingSessionWithError(
+				"Không thể bắt đầu ghi âm qua Micro. Vui lòng thử lại hoặc chọn Bỏ qua phần Speaking.",
+			);
+			return false;
 		}
+		return true;
 	}
 
-	function pauseRecorderBetweenTasks() {
-		if (answerStartedAt > 0) {
-			activeAnswerMs += Math.max(0, Date.now() - answerStartedAt);
-			answerStartedAt = 0;
+	function stopCurrentTaskRecorder({ discard = false } = {}) {
+		if (activeRecorderStopPromise) {
+			return activeRecorderStopPromise;
 		}
-		if (
-			mediaRecorder &&
-			mediaRecorder.state === "recording" &&
-			typeof mediaRecorder.pause === "function"
-		) {
-			try {
-				mediaRecorder.pause();
-			} catch {
-				// Ignore pause errors on browsers lacking pause support
+		const recorder = mediaRecorder;
+		const chunks = recordedChunks;
+		const startedAt = answerStartedAt;
+		answerStartedAt = 0;
+		const durationMs = startedAt > 0 ? Math.max(0, Date.now() - startedAt) : 0;
+
+		if (!recorder || recorder.state === "inactive") {
+			mediaRecorder = null;
+			recordedChunks = [];
+			if (discard || chunks.length === 0) {
+				return Promise.resolve(null);
 			}
+			const rawMime =
+				recorder?.mimeType || preferredRecorderMime || "audio/webm";
+			const normalizedMime = resolveSpeakingUploadMeta(rawMime).contentType;
+			const blob = new Blob(chunks, { type: normalizedMime });
+			return Promise.resolve(blob.size > 0 ? { blob, durationMs } : null);
 		}
+
+		const stopPromise = new Promise((resolve) => {
+			let settled = false;
+			const finish = () => {
+				if (settled) return;
+				settled = true;
+				if (activeRecorderStopPromise === stopPromise) {
+					activeRecorderStopPromise = null;
+				}
+				if (mediaRecorder === recorder) {
+					mediaRecorder = null;
+				}
+				recordedChunks = [];
+				if (discard) {
+					resolve(null);
+					return;
+				}
+				const rawMime =
+					recorder.mimeType || preferredRecorderMime || "audio/webm";
+				const normalizedMime = resolveSpeakingUploadMeta(rawMime).contentType;
+				const blob = new Blob(chunks, { type: normalizedMime });
+				resolve(blob.size > 0 ? { blob, durationMs } : null);
+			};
+			recorder.addEventListener("stop", finish, { once: true });
+			recorder.addEventListener("error", finish, { once: true });
+			try {
+				recorder.stop();
+			} catch {
+				finish();
+			}
+		});
+		activeRecorderStopPromise = stopPromise;
+		return stopPromise;
 	}
 
 	function clearSpeakingPhaseTimer() {
@@ -2616,32 +2715,165 @@ function createApp() {
 		}
 	}
 
-	function finalizeSpeakingRecording({ discard = false } = {}) {
+	async function finalizeSpeakingSession({
+		discard = false,
+		allowEmptyDiscard = false,
+	} = {}) {
+		if (isFinalizingRecording) return;
+		const sessionToken = speakingSessionToken;
+		const totalTasks = snapshot?.speaking?.tasks?.length ?? 0;
 		stopSpeakingIntervals();
-		if (answerStartedAt > 0) {
-			activeAnswerMs += Math.max(0, Date.now() - answerStartedAt);
-			answerStartedAt = 0;
-		}
-		speakingDiscardOnStop = discard;
-		if (mediaRecorder && mediaRecorder.state !== "inactive") {
-			try {
-				isFinalizingRecording = true;
-				render();
-				mediaRecorder.stop();
+		showEarlyFinishConfirm = false;
+		isFinalizingRecording = true;
+		render();
+
+		try {
+			const activeTaskIdx = speakingSession.taskIndex;
+			if (
+				activeRecorderStopPromise ||
+				(mediaRecorder && mediaRecorder.state !== "inactive")
+			) {
+				const lastSeg = await stopCurrentTaskRecorder({ discard });
+				if (sessionToken !== speakingSessionToken) return;
+				if (!discard && lastSeg) {
+					recordedSegments[activeTaskIdx] = lastSeg;
+				}
+			}
+
+			stopMediaStream();
+
+			const validSegments = discard
+				? []
+				: recordedSegments.filter((seg) => seg?.blob && seg.blob.size > 0);
+
+			if (discard || (allowEmptyDiscard && validSegments.length === 0)) {
+				speakingSession = createInitialSpeakingSession(totalTasks);
+				recordedSegments = [];
+				recordedChunks = [];
+				answerStartedAt = 0;
 				return;
-			} catch {
-				// Fall through to cleanup if stop() throws on dead stream/recorder
+			}
+
+			if (validSegments.length === 0) {
+				speakingSession = createInitialSpeakingSession(totalTasks);
+				recordedSegments = [];
+				recordedChunks = [];
+				answerStartedAt = 0;
+				speakingMediaError =
+					"Không thu được dữ liệu âm thanh. Vui lòng thử ghi lại hoặc chọn Bỏ qua.";
+				return;
+			}
+
+			const mergedBlob = await mergeSpeakingAudioSegments(validSegments);
+			if (sessionToken !== speakingSessionToken) return;
+
+			if (mergedBlob && mergedBlob.size > 0) {
+				const totalDurationMs = validSegments.reduce(
+					(sum, seg) => sum + (Number(seg.durationMs) || 0),
+					0,
+				);
+				const finalDuration = Math.max(1, Math.round(totalDurationMs / 1000));
+				revokeRecordedUrl();
+				recordedBlob = mergedBlob;
+				recordedBlobUrl = URL.createObjectURL(mergedBlob);
+				state.speakingMode = "upload";
+				state.speakingDurationSec = finalDuration;
+				speakingSession = {
+					...speakingSession,
+					status: "completed",
+					phase: "done",
+					secondsLeft: 0,
+				};
+				persist();
+			} else {
+				speakingSession = createInitialSpeakingSession(totalTasks);
+				speakingMediaError =
+					"Không thu được dữ liệu âm thanh. Vui lòng thử ghi lại hoặc chọn Bỏ qua.";
+			}
+		} catch {
+			if (sessionToken !== speakingSessionToken) return;
+			stopMediaStream();
+			speakingSession = createInitialSpeakingSession(totalTasks);
+			speakingMediaError =
+				"Không thể ghép dữ liệu âm thanh. Vui lòng thử ghi lại hoặc chọn Bỏ qua.";
+		} finally {
+			if (sessionToken === speakingSessionToken) {
+				isFinalizingRecording = false;
+				render();
 			}
 		}
-		stopMediaStream();
-		mediaRecorder = null;
-		isFinalizingRecording = false;
-		const totalTasks = snapshot?.speaking?.tasks?.length ?? 0;
-		speakingSession = createInitialSpeakingSession(totalTasks);
-		activeAnswerMs = 0;
-		hasRecordedAnyAnswer = false;
-		recordedChunks = [];
+	}
+
+	async function pauseCurrentTaskAnswer() {
+		if (
+			speakingSession.status !== "active" ||
+			speakingSession.phase !== "answer" ||
+			isStoppingTaskRecorder ||
+			isFinalizingRecording
+		) {
+			return;
+		}
+		const sessionToken = speakingSessionToken;
+		const taskIdx = speakingSession.taskIndex;
+		clearSpeakingPhaseTimer();
+		isStoppingTaskRecorder = true;
 		render();
+
+		const segment = await stopCurrentTaskRecorder({ discard: false });
+		isStoppingTaskRecorder = false;
+
+		if (sessionToken !== speakingSessionToken || isFinalizingRecording) {
+			return;
+		}
+
+		if (segment) {
+			recordedSegments[taskIdx] = segment;
+		}
+		speakingSession = transitionSpeakingToPaused(speakingSession);
+		render();
+	}
+
+	function retryCurrentTaskAnswer(tasks) {
+		if (
+			!canRetrySpeakingTask(speakingSession) ||
+			isStoppingTaskRecorder ||
+			isFinalizingRecording
+		) {
+			return;
+		}
+		const nextSession = retrySpeakingCurrentTask(speakingSession, tasks);
+		if (nextSession.phase !== "answer") {
+			return;
+		}
+		showEarlyFinishConfirm = false;
+		speakingSession = nextSession;
+		if (!startTaskRecorder()) {
+			return;
+		}
+		startPhaseCountdown(tasks);
+		render();
+	}
+
+	function advanceFromPausedTask(tasks) {
+		if (
+			speakingSession.status !== "active" ||
+			speakingSession.phase !== "paused" ||
+			isStoppingTaskRecorder ||
+			isFinalizingRecording
+		) {
+			return;
+		}
+		showEarlyFinishConfirm = false;
+		const next = transitionSpeakingNextTask(speakingSession, tasks);
+		if (next.status === "completed") {
+			speakingSession = next;
+			void finalizeSpeakingSession({
+				discard: false,
+				allowEmptyDiscard: false,
+			});
+			return;
+		}
+		beginTaskReadingPhase(next.taskIndex, tasks);
 	}
 
 	function startPhaseCountdown(tasks) {
@@ -2672,7 +2904,7 @@ function createApp() {
 			if (speakingSession.phase === "prep") {
 				enterAnswerPhase(tasks);
 			} else if (speakingSession.phase === "answer") {
-				completeCurrentTaskAnswer(tasks);
+				void pauseCurrentTaskAnswer();
 			}
 		}, 1000);
 	}
@@ -2687,7 +2919,9 @@ function createApp() {
 		teardownSpeakingPromptPlayback();
 		speakingSession = transitionSpeakingAfterReading(speakingSession, tasks);
 		if (speakingSession.phase === "answer") {
-			ensureRecorderRecordingForAnswer();
+			if (!startTaskRecorder()) {
+				return;
+			}
 		}
 		if (speakingSession.status === "active") {
 			startPhaseCountdown(tasks);
@@ -2705,7 +2939,9 @@ function createApp() {
 		stopSpeakingIntervals();
 		speakingSession = transitionSpeakingToAnswer(speakingSession, tasks);
 		if (speakingSession.status === "active") {
-			ensureRecorderRecordingForAnswer();
+			if (!startTaskRecorder()) {
+				return;
+			}
 			startPhaseCountdown(tasks);
 		}
 		render();
@@ -2713,6 +2949,7 @@ function createApp() {
 
 	function beginTaskReadingPhase(taskIndex, tasks) {
 		clearSpeakingPhaseTimer();
+		showEarlyFinishConfirm = false;
 		speakingSession = startSpeakingTaskReading(
 			speakingSession,
 			taskIndex,
@@ -2725,18 +2962,6 @@ function createApp() {
 				onFinished: () => advanceAfterReading(tasks),
 			});
 		}
-	}
-
-	function completeCurrentTaskAnswer(tasks) {
-		stopSpeakingIntervals();
-		pauseRecorderBetweenTasks();
-		const next = transitionSpeakingNextTask(speakingSession, tasks);
-		if (next.status === "completed") {
-			speakingSession = next;
-			finalizeSpeakingRecording({ discard: false });
-			return;
-		}
-		beginTaskReadingPhase(next.taskIndex, tasks);
 	}
 
 	function renderSpeakingStep() {
@@ -2760,17 +2985,19 @@ function createApp() {
 		});
 		wrapper.appendChild(renderTestHeader("speaking"));
 
-		const introCard = el("section", { className: "card skill-intro-card" }, [
-			el("p", { className: "kicker-pill" }, ["Phần 5 / 5 · Nói (Speaking)"]),
-			el("h1", { className: "section-title" }, [
-				"Kiểm tra Speaking — Hệ thống đọc từng câu hỏi & thu âm qua Micro",
-			]),
-			el("p", { className: "muted-copy" }, [
-				speakingState.hasTasks
-					? "Hệ thống sẽ tự động đọc lần lượt từng câu hỏi, cho bạn thời gian chuẩn bị rồi ghi âm bằng micro (chỉ thu âm thanh, không cần camera) và ghép thành một bản ghi duy nhất."
-					: "Bài kiểm tra hiện tại chưa bao gồm câu hỏi Speaking. Bạn có thể kiểm tra lại các phần đã làm hoặc bấm Nộp bài ngay bên dưới.",
-			]),
-		]);
+		const introCard = el(
+			"section",
+			{ className: "card skill-intro-card" },
+			[
+				el("p", { className: "kicker-pill" }, ["Phần 5 / 5 · Nói (Speaking)"]),
+				el("h1", { className: "section-title" }, ["Kiểm tra Speaking"]),
+				!speakingState.hasTasks
+					? el("p", { className: "muted-copy" }, [
+							"Bài kiểm tra hiện tại chưa bao gồm câu hỏi Speaking. Bạn có thể kiểm tra lại các phần đã làm hoặc bấm Nộp bài ngay bên dưới.",
+						])
+					: null,
+			].filter(Boolean),
+		);
 		wrapper.appendChild(introCard);
 
 		if (!speakingState.hasTasks) {
@@ -2826,16 +3053,17 @@ function createApp() {
 				const phase = speakingSession.phase;
 
 				const phaseLabels = {
-					reading: "🔊 Hệ thống đang đọc câu hỏi...",
-					prep: "⏳ Thời gian chuẩn bị",
-					answer: "🔴 Đang ghi âm câu trả lời (Micro)",
+					reading: "Hệ thống đang đọc câu hỏi...",
+					prep: "Thời gian chuẩn bị",
+					answer: "Đang ghi âm câu trả lời (Micro)",
+					paused: "Đã dừng ghi âm câu hiện tại",
 				};
 				const phaseLabel = phaseLabels[phase] ?? "⏳ Đang xử lý phần ghi âm...";
-				const timerDisplay = isFinalizingRecording
+				const bannerTimerText = isFinalizingRecording
 					? "Đang hoàn tất..."
 					: phase === "reading"
 						? "Đang phát đề"
-						: formatClock(speakingSession.secondsLeft);
+						: "";
 
 				const activePartLabel = stripInlineCefrLabel(activeTask?.partLabel);
 				const sessionCard = el("div", {
@@ -2903,16 +3131,21 @@ function createApp() {
 									[phaseLabel],
 								),
 							]),
-							el(
-								"span",
-								{
-									id: "speakingTimerValue",
-									className: "speaking-timer-pill",
-									"aria-live": "polite",
-								},
-								[timerDisplay],
-							),
-						],
+							bannerTimerText
+								? el(
+										"span",
+										{
+											id:
+												phase === "reading" || isFinalizingRecording
+													? "speakingTimerValue"
+													: undefined,
+											className: "speaking-timer-pill",
+											"aria-live": "polite",
+										},
+										[bannerTimerText],
+									)
+								: null,
+						].filter(Boolean),
 					),
 				);
 
@@ -2932,6 +3165,99 @@ function createApp() {
 								}),
 							],
 						),
+					);
+				}
+
+				if (isFinalizingRecording) {
+					sessionCard.appendChild(
+						el("div", { className: "speaking-center-stage" }, [
+							el("span", { className: "speaking-stage-label" }, [
+								"Đang lưu và ghép bản ghi âm...",
+							]),
+						]),
+					);
+				} else if (phase === "prep") {
+					sessionCard.appendChild(
+						el("div", { className: "speaking-center-stage" }, [
+							el("span", { className: "speaking-stage-label" }, [
+								"Thời gian chuẩn bị",
+							]),
+							el(
+								"div",
+								{
+									id: "speakingTimerValue",
+									className: "speaking-center-clock",
+									"aria-live": "polite",
+								},
+								[formatClock(speakingSession.secondsLeft)],
+							),
+						]),
+					);
+				} else if (phase === "answer") {
+					const pauseBtn = el(
+						"button",
+						{
+							type: "button",
+							id: "speakingPauseBtn",
+							className: "speaking-pause-circle-btn",
+							"aria-label": "Dừng ghi âm câu hiện tại",
+							disabled: isStoppingTaskRecorder,
+						},
+						[createPauseIconSvg()],
+					);
+					pauseBtn.addEventListener("click", () => {
+						void pauseCurrentTaskAnswer();
+					});
+
+					sessionCard.appendChild(
+						el("div", { className: "speaking-center-stage" }, [
+							pauseBtn,
+							el("div", { className: "speaking-recording-indicator" }, [
+								el("span", {
+									className: "rec-dot is-pulsing",
+									"aria-hidden": "true",
+								}),
+								el("span", {}, [
+									isStoppingTaskRecorder
+										? "Đang lưu đoạn ghi âm..."
+										: "Đang ghi âm... Bấm để dừng",
+								]),
+							]),
+							el(
+								"div",
+								{
+									id: "speakingTimerValue",
+									className: "speaking-center-clock is-recording",
+									"aria-live": "polite",
+								},
+								[formatClock(speakingSession.secondsLeft)],
+							),
+						]),
+					);
+				} else if (phase === "paused") {
+					const currentSeg = recordedSegments[taskIdx];
+					const segDurationSec = currentSeg
+						? Math.max(1, Math.round((currentSeg.durationMs || 0) / 1000))
+						: 0;
+					sessionCard.appendChild(
+						el("div", { className: "speaking-center-stage" }, [
+							el("span", { className: "speaking-stage-label" }, [
+								`Đã ghi âm câu ${taskIdx + 1}`,
+							]),
+							el(
+								"div",
+								{
+									id: "speakingPausedDuration",
+									className: "speaking-center-clock",
+								},
+								[formatClock(segDurationSec)],
+							),
+							el("span", { className: "speaking-paused-duration" }, [
+								currentSeg
+									? `Thời lượng đã ghi: ${segDurationSec} giây`
+									: "Chưa có dữ liệu ghi âm cho câu này",
+							]),
+						]),
 					);
 				}
 
@@ -3007,45 +3333,60 @@ function createApp() {
 					controls.appendChild(startAnswerNowBtn);
 				}
 
-				if (phase === "answer" && !isFinalizingRecording) {
+				if (phase === "paused" && !isFinalizingRecording) {
+					const retriesUsed = speakingSession.retriesUsedForCurrentTask ?? 0;
+					const retriesLeft = Math.max(
+						0,
+						MAX_SPEAKING_RETRIES_PER_TASK - retriesUsed,
+					);
+					const canRetry = canRetrySpeakingTask(speakingSession);
+					const retryBtn = el(
+						"button",
+						{
+							type: "button",
+							id: "speakingRetryBtn",
+							className: "btn btn-ghost",
+							disabled: !canRetry || isStoppingTaskRecorder,
+						},
+						[
+							canRetry
+								? `Ghi lại câu này (còn ${retriesLeft}/2)`
+								: "Đã hết lượt ghi lại (0/2)",
+						],
+					);
+					retryBtn.addEventListener("click", () =>
+						retryCurrentTaskAnswer(tasks),
+					);
+					controls.appendChild(retryBtn);
+
 					const nextTaskBtn = el(
 						"button",
 						{
 							type: "button",
 							id: "speakingNextTaskBtn",
 							className: "btn btn-teal",
+							disabled: isStoppingTaskRecorder,
 						},
 						[
 							taskIdx < tasks.length - 1
-								? "✓ Xong câu này → Câu tiếp theo"
-								: "✓ Hoàn thành phần Speaking",
+								? "Câu tiếp theo →"
+								: "Hoàn thành phần Speaking",
 						],
 					);
 					nextTaskBtn.addEventListener("click", () =>
-						completeCurrentTaskAnswer(tasks),
+						advanceFromPausedTask(tasks),
 					);
 					controls.appendChild(nextTaskBtn);
 				}
 
-				const finishEarlyBtn = el(
-					"button",
-					{
-						type: "button",
-						id: "speakingFinishEarlyBtn",
-						className: "btn btn-danger",
-						disabled: isFinalizingRecording,
-					},
-					[isFinalizingRecording ? "Đang lưu bài nói..." : "■ Kết thúc sớm"],
-				);
-				finishEarlyBtn.addEventListener("click", () => {
-					const shouldDiscard =
-						!hasRecordedAnyAnswer && speakingSession.phase !== "answer";
-					finalizeSpeakingRecording({ discard: shouldDiscard });
-				});
-				controls.appendChild(finishEarlyBtn);
+				if (controls.childNodes.length > 0) {
+					sessionCard.appendChild(controls);
+				}
 
-				sessionCard.appendChild(controls);
-				if (phase === "prep") {
+				if (
+					phase === "prep" &&
+					(isPromptReplaying || speakingSession.replayUsedForCurrentTask)
+				) {
 					sessionCard.appendChild(
 						el(
 							"p",
@@ -3057,13 +3398,95 @@ function createApp() {
 							[
 								isPromptReplaying
 									? "Đang phát lại câu hỏi..."
-									: speakingSession.replayUsedForCurrentTask
-										? "Đã dùng lượt nghe lại cho câu này (1/1)."
-										: "Bạn có thể bấm Nghe lại câu hỏi tối đa 1 lần trước khi trả lời.",
+									: "Đã phát lại câu hỏi (1/1)",
 							],
 						),
 					);
 				}
+
+				const earlyFooter = el("div", { className: "speaking-early-footer" });
+				if (showEarlyFinishConfirm && !isFinalizingRecording) {
+					const hasAnyRecordedSegment =
+						recordedSegments.some((seg) => seg?.blob && seg.blob.size > 0) ||
+						speakingSession.phase === "answer";
+					const confirmBox = el(
+						"div",
+						{
+							id: "speakingFinishConfirmBox",
+							className: "speaking-finish-confirm-box",
+							role: "alertdialog",
+							"aria-labelledby": "speakingFinishConfirmTitle",
+						},
+						[
+							el("strong", { id: "speakingFinishConfirmTitle" }, [
+								"Kết thúc phần Speaking sớm?",
+							]),
+							el("p", { className: "muted-copy" }, [
+								hasAnyRecordedSegment
+									? "Các câu bạn đã ghi âm sẽ được lưu lại để nộp bài."
+									: "Bạn chưa ghi âm câu nào. Kết thúc ngay sẽ quay lại màn hình chờ Speaking.",
+							]),
+							el("div", { className: "confirm-actions" }, [
+								el(
+									"button",
+									{
+										type: "button",
+										id: "cancelFinishEarlyBtn",
+										className: "btn btn-ghost btn-sm",
+									},
+									["Tiếp tục làm bài"],
+								),
+								el(
+									"button",
+									{
+										type: "button",
+										id: "confirmFinishEarlyBtn",
+										className: "btn btn-danger btn-sm",
+										disabled: isFinalizingRecording || isStoppingTaskRecorder,
+									},
+									["Xác nhận kết thúc"],
+								),
+							]),
+						],
+					);
+					confirmBox
+						.querySelector("#cancelFinishEarlyBtn")
+						?.addEventListener("click", () => {
+							showEarlyFinishConfirm = false;
+							render();
+						});
+					confirmBox
+						.querySelector("#confirmFinishEarlyBtn")
+						?.addEventListener("click", () => {
+							void finalizeSpeakingSession({
+								discard: false,
+								allowEmptyDiscard: true,
+							});
+						});
+					earlyFooter.appendChild(confirmBox);
+				} else {
+					const finishEarlyBtn = el(
+						"button",
+						{
+							type: "button",
+							id: "speakingFinishEarlyBtn",
+							className: "btn btn-ghost btn-sm speaking-early-btn",
+							disabled: isFinalizingRecording || isStoppingTaskRecorder,
+						},
+						[
+							isFinalizingRecording
+								? "Đang lưu bài nói..."
+								: "Kết thúc phần Speaking",
+						],
+					);
+					finishEarlyBtn.addEventListener("click", () => {
+						showEarlyFinishConfirm = true;
+						render();
+					});
+					earlyFooter.appendChild(finishEarlyBtn);
+				}
+				sessionCard.appendChild(earlyFooter);
+
 				recorderCard.appendChild(sessionCard);
 			} else if (hasValidBlob) {
 				const sizeMb = (recordedBlob.size / (1024 * 1024)).toFixed(2);
@@ -3087,7 +3510,7 @@ function createApp() {
 				if (isTooLarge) {
 					reviewBox.appendChild(
 						el("p", { className: "form-error-banner", role: "alert" }, [
-							"Bản ghi vượt quá giới hạn 50 MB. Vui lòng bấm Ghi lại ngắn hơn hoặc chọn Bỏ qua phần Speaking.",
+							"Bản ghi vượt quá giới hạn 50 MB. Vui lòng chọn Bỏ qua phần Speaking hoặc liên hệ cô Mỹ hỗ trợ.",
 						]),
 					);
 				}
@@ -3104,36 +3527,6 @@ function createApp() {
 					);
 				}
 
-				const retakeBtn = el(
-					"button",
-					{
-						type: "button",
-						id: "retakeSpeakingBtn",
-						className: "btn btn-ghost",
-					},
-					["↺ Ghi lại từ đầu"],
-				);
-				retakeBtn.addEventListener("click", () => {
-					speakingStartToken += 1;
-					isRequestingMic = false;
-					stopSpeakingIntervals();
-					stopMediaStream();
-					revokeRecordedUrl();
-					recordedBlob = null;
-					recordedChunks = [];
-					speakingSession = createInitialSpeakingSession(tasks.length);
-					activeAnswerMs = 0;
-					answerStartedAt = 0;
-					hasRecordedAnyAnswer = false;
-					state.speakingMode = "none";
-					state.speakingDurationSec = null;
-					speakingMediaError = "";
-					persist();
-					render();
-				});
-				reviewBox.appendChild(
-					el("div", { className: "speaking-actions-row" }, [retakeBtn]),
-				);
 				recorderCard.appendChild(reviewBox);
 			} else {
 				const estimatedTotalSec = tasks.reduce((acc, task) => {
@@ -3177,19 +3570,6 @@ function createApp() {
 						]),
 					]),
 				);
-				overviewCard.appendChild(
-					el("ol", { className: "speaking-overview-steps" }, [
-						el("li", {}, [
-							"Cấp quyền micro một lần. Nội dung từng câu hỏi sẽ lần lượt xuất hiện khi bắt đầu thi (không hiện trước đề).",
-						]),
-						el("li", {}, [
-							`Hệ thống đọc từng câu từ câu 1 đến câu ${tasks.length}, đếm ngược chuẩn bị rồi tự bật ghi âm câu trả lời của bạn.`,
-						]),
-						el("li", {}, [
-							"Giữa các câu máy tự tạm dừng ghi và ghép thành một file âm thanh duy nhất khi hoàn thành.",
-						]),
-					]),
-				);
 				recorderCard.appendChild(overviewCard);
 
 				const actionRow = el("div", { className: "speaking-actions-row" });
@@ -3223,8 +3603,7 @@ function createApp() {
 						});
 						if (
 							startToken !== speakingStartToken ||
-							state.step !== "speaking" ||
-							state.speakingMode === "skipped"
+							state.step !== "speaking"
 						) {
 							for (const track of stream.getTracks()) {
 								try {
@@ -3241,29 +3620,25 @@ function createApp() {
 						isRequestingMic = false;
 						stopMediaStream();
 						mediaStream = stream;
+						speakingSessionToken += 1;
 
 						preferredRecorderMime = pickSupportedRecorderMime(
 							window.MediaRecorder,
 						);
-						const recorder = preferredRecorderMime
-							? new window.MediaRecorder(stream, {
-									mimeType: preferredRecorderMime,
-								})
-							: new window.MediaRecorder(stream);
-						mediaRecorder = recorder;
-
+						recordedSegments = [];
 						recordedChunks = [];
-						activeAnswerMs = 0;
 						answerStartedAt = 0;
-						hasRecordedAnyAnswer = false;
-						speakingDiscardOnStop = false;
+						isStoppingTaskRecorder = false;
 						isFinalizingRecording = false;
+						showEarlyFinishConfirm = false;
+						state.speakingMode = "none";
 
 						for (const track of stream.getAudioTracks()) {
 							track.addEventListener("ended", () => {
-								if (isStoppingMediaStream || mediaRecorder !== recorder) return;
+								if (isStoppingMediaStream || mediaStream !== stream) return;
 								if (
 									speakingSession.status === "active" ||
+									isStoppingTaskRecorder ||
 									isFinalizingRecording
 								) {
 									abortSpeakingSessionWithError(
@@ -3272,69 +3647,6 @@ function createApp() {
 								}
 							});
 						}
-
-						recorder.addEventListener("dataavailable", (evt) => {
-							if (evt.data && evt.data.size > 0) {
-								recordedChunks.push(evt.data);
-							}
-						});
-
-						recorder.addEventListener("error", () => {
-							if (mediaRecorder !== recorder) return;
-							abortSpeakingSessionWithError(
-								"Trình duyệt gặp lỗi khi thu âm Micro. Vui lòng thử lại hoặc chọn Bỏ qua phần Speaking.",
-							);
-						});
-
-						recorder.addEventListener("stop", () => {
-							if (mediaRecorder !== recorder) return;
-							mediaRecorder = null;
-							const discardNow = speakingDiscardOnStop;
-							speakingDiscardOnStop = false;
-							isFinalizingRecording = false;
-							stopSpeakingIntervals();
-							stopMediaStream();
-
-							if (discardNow) {
-								speakingSession = createInitialSpeakingSession(tasks.length);
-								activeAnswerMs = 0;
-								answerStartedAt = 0;
-								hasRecordedAnyAnswer = false;
-								recordedChunks = [];
-								render();
-								return;
-							}
-
-							const finalDuration = Math.max(
-								1,
-								Math.round(activeAnswerMs / 1000),
-							);
-							const rawMime =
-								recorder.mimeType || preferredRecorderMime || "audio/webm";
-							const normalizedMime =
-								resolveSpeakingUploadMeta(rawMime).contentType;
-
-							const blob = new Blob(recordedChunks, { type: normalizedMime });
-							if (blob.size > 0) {
-								revokeRecordedUrl();
-								recordedBlob = blob;
-								recordedBlobUrl = URL.createObjectURL(blob);
-								state.speakingMode = "upload";
-								state.speakingDurationSec = finalDuration;
-								speakingSession = {
-									...speakingSession,
-									status: "completed",
-									phase: "done",
-									secondsLeft: 0,
-								};
-							} else {
-								speakingSession = createInitialSpeakingSession(tasks.length);
-								speakingMediaError =
-									"Không thu được dữ liệu âm thanh. Vui lòng thử ghi lại hoặc chọn Bỏ qua.";
-							}
-							persist();
-							render();
-						});
 
 						beginTaskReadingPhase(0, tasks);
 					} catch {
@@ -3358,17 +3670,9 @@ function createApp() {
 					["Bỏ qua phần Speaking (nộp bài không kèm ghi âm)"],
 				);
 				skipBtn.addEventListener("click", () => {
-					speakingStartToken += 1;
-					isRequestingMic = false;
-					stopSpeakingIntervals();
-					stopMediaStream();
+					resetSpeakingSessionRuntime();
 					revokeRecordedUrl();
 					recordedBlob = null;
-					recordedChunks = [];
-					speakingSession = createInitialSpeakingSession(tasks.length);
-					activeAnswerMs = 0;
-					answerStartedAt = 0;
-					hasRecordedAnyAnswer = false;
 					state.speakingMode = "skipped";
 					state.speakingDurationSec = null;
 					speakingMediaError = "";
@@ -3772,19 +4076,10 @@ function createApp() {
 
 		ctaRow.querySelector("#retryTestBtn")?.addEventListener("click", () => {
 			stopActiveAudio();
-			stopMediaStream();
-			stopSpeakingIntervals();
+			resetSpeakingSessionRuntime();
 			stopPageTimer();
 			revokeRecordedUrl();
 			recordedBlob = null;
-			recordedChunks = [];
-			speakingSession = createInitialSpeakingSession(
-				snapshot?.speaking?.tasks?.length ?? 0,
-			);
-			activeAnswerMs = 0;
-			answerStartedAt = 0;
-			hasRecordedAnyAnswer = false;
-			isFinalizingRecording = false;
 			speakingUploadError = "";
 			speakingRetrySucceeded = false;
 			speakingMediaError = "";
@@ -3941,11 +4236,8 @@ function createApp() {
 	}
 
 	window.addEventListener("pagehide", () => {
-		speakingStartToken += 1;
-		isRequestingMic = false;
 		stopActiveAudio();
-		stopSpeakingIntervals();
-		stopMediaStream();
+		resetSpeakingSessionRuntime();
 		stopPageTimer();
 	});
 

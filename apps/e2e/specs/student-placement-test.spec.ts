@@ -227,6 +227,7 @@ test.describe
 						width: vp.width,
 						height: vp.height,
 					});
+					await studentPage.waitForTimeout(300);
 					const noOverflow = await studentPage.evaluate(
 						() =>
 							document.documentElement.scrollWidth <=
@@ -313,6 +314,7 @@ test.describe
 						width: vp.width,
 						height: vp.height,
 					});
+					await studentPage.waitForTimeout(300);
 					const noOverflow = await studentPage.evaluate(
 						() =>
 							document.documentElement.scrollWidth <=
@@ -360,10 +362,16 @@ test.describe
 						"I want to improve my English communication skills for university study and future career.",
 					);
 
-				// Chuyển Speaking, chọn Bỏ qua phần Speaking để nộp bài 4 phần
+				// Chuyển Speaking, kiểm tra đã bỏ hướng dẫn thừa rồi chọn Bỏ qua phần Speaking để nộp bài 4 phần
 				await studentPage
 					.getByRole("button", { name: /Tiếp tục: Speaking/ })
 					.click();
+				const speakingStep = studentPage.getByTestId("placement-step-speaking");
+				await expect(speakingStep).toBeVisible();
+				await expect(speakingStep.locator("ol")).toHaveCount(0);
+				await expect(speakingStep).not.toContainText(
+					"Hệ thống sẽ tự động đọc lần lượt từng câu hỏi",
+				);
 				await studentPage
 					.getByRole("button", { name: /Bỏ qua phần Speaking/ })
 					.click();
@@ -483,6 +491,215 @@ test.describe
 			} finally {
 				await studentContext.close();
 				await teacherContext.close();
+			}
+		});
+
+		test("Speaking UI tinh gọn, đếm giây giữa màn hình, nút tròn đỏ Pause, retry tối đa 2 lần/câu và xác nhận kết thúc sớm (#780)", async ({
+			browser,
+		}) => {
+			test.setTimeout(180_000);
+			const studentContext = await browser.newContext();
+			const studentPage = await studentContext.newPage();
+			const email = `e2e-speaking-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@test.local`;
+
+			await studentPage.addInitScript(() => {
+				const createSyntheticAudioStream = async () => {
+					const audioCtx = new AudioContext();
+					if (audioCtx.state === "suspended") {
+						await audioCtx.resume();
+					}
+					const osc = audioCtx.createOscillator();
+					const gain = audioCtx.createGain();
+					gain.gain.value = 0.01;
+					osc.connect(gain);
+					const dest = audioCtx.createMediaStreamDestination();
+					gain.connect(dest);
+					osc.start();
+					const tracks = [...dest.stream.getAudioTracks()];
+					const combined = new MediaStream(tracks);
+					for (const track of tracks) {
+						const origStop = track.stop.bind(track);
+						track.stop = () => {
+							audioCtx.close().catch(() => {});
+							origStop();
+						};
+					}
+					return combined;
+				};
+				Object.defineProperty(navigator, "mediaDevices", {
+					configurable: true,
+					value: { getUserMedia: () => createSyntheticAudioStream() },
+				});
+				class SyntheticUtterance {
+					text: string;
+					lang = "";
+					rate = 1;
+					onend: (() => void) | null = null;
+					onerror: (() => void) | null = null;
+					constructor(text = "") {
+						this.text = text;
+					}
+				}
+				Object.defineProperty(window, "SpeechSynthesisUtterance", {
+					configurable: true,
+					value: SyntheticUtterance,
+				});
+				Object.defineProperty(window, "speechSynthesis", {
+					configurable: true,
+					value: {
+						cancel: () => {},
+						speak: (utter: SyntheticUtterance) => {
+							window.setTimeout(() => utter.onend?.(), 60);
+						},
+					},
+				});
+			});
+
+			try {
+				await studentPage.goto(`${STUDENT_ORIGIN}/login`);
+				await studentPage.locator("#tab-signup").click();
+				await studentPage.locator("#signup-name").fill("Học Viên Speaking 780");
+				await studentPage.locator("#signup-email").fill(email);
+				await studentPage.locator("#signup-password").fill("password-8chars");
+				await studentPage
+					.locator("#panel-signup button[type='submit']")
+					.click();
+				await expect(
+					studentPage.getByText("Email chưa được xác thực"),
+				).toBeVisible({ timeout: 15_000 });
+				await verifyStudentEmailFromMailLog(studentPage, email);
+				await completeStudentOnboarding(studentPage);
+				await expect(studentPage).toHaveURL(/\/$/, { timeout: 20_000 });
+
+				await studentPage.goto(`${STUDENT_ORIGIN}/placement-test`);
+				await expect(
+					studentPage.getByTestId("placement-intro-card"),
+				).toBeVisible({ timeout: 15_000 });
+				await studentPage.getByTestId("start-placement-test-btn").click();
+				await studentPage.getByTestId("placement-tab-speaking").click();
+
+				const speakingStep = studentPage.getByTestId("placement-step-speaking");
+				await expect(speakingStep).toBeVisible();
+				await expect(speakingStep.locator("ol")).toHaveCount(0);
+
+				const potIssue = process.env.CAPTURE_POT_ISSUE?.trim();
+				await studentPage
+					.getByRole("button", { name: /Bắt đầu làm bài Speaking/ })
+					.click();
+
+				await expect(
+					studentPage.getByTestId("speaking-prep-stage"),
+				).toBeVisible({ timeout: 5000 });
+				await expect(
+					studentPage.getByTestId("speaking-prep-timer"),
+				).toBeVisible();
+				if (potIssue) {
+					await studentPage.setViewportSize({ width: 1440, height: 900 });
+					await studentPage.screenshot({
+						path: reportPath(
+							`${potIssue}-student-speaking-prep-desktop-1440x900.png`,
+						),
+					});
+				}
+
+				await studentPage.getByRole("button", { name: /Trả lời ngay/ }).click();
+				await expect(
+					studentPage.getByTestId("speaking-answer-stage"),
+				).toBeVisible();
+				const pauseBtn = studentPage.getByRole("button", {
+					name: "Dừng ghi âm câu hiện tại",
+				});
+				await expect(pauseBtn).toBeVisible();
+
+				// Kiểm tra xác nhận kết thúc sớm
+				await studentPage
+					.getByRole("button", { name: "Kết thúc phần Speaking" })
+					.click();
+				await expect(
+					studentPage.getByTestId("speaking-early-finish-confirm"),
+				).toBeVisible();
+				await studentPage
+					.getByRole("button", { name: "Tiếp tục làm bài" })
+					.click();
+
+				// Chụp 3 viewport + dark mode + reflow 320px ở trạng thái ghi âm
+				for (const vp of [
+					...VIEWPORTS,
+					{ width: 320, height: 568, label: "reflow-320x568" },
+				] as const) {
+					await studentPage.setViewportSize({
+						width: vp.width,
+						height: vp.height,
+					});
+					await studentPage.waitForTimeout(300);
+					const noOverflow = await studentPage.evaluate(
+						() =>
+							document.documentElement.scrollWidth <=
+							document.documentElement.clientWidth,
+					);
+					expect(
+						noOverflow,
+						`Student Speaking không tràn ngang ở ${vp.label}`,
+					).toBe(true);
+					if (potIssue && vp.label !== "reflow-320x568") {
+						await studentPage.screenshot({
+							path: reportPath(
+								`${potIssue}-student-speaking-answer-${vp.label}.png`,
+							),
+						});
+					}
+				}
+				if (potIssue) {
+					await studentPage.setViewportSize({ width: 1440, height: 900 });
+					await studentPage.evaluate(() =>
+						document.documentElement.classList.add("dark"),
+					);
+					await studentPage.screenshot({
+						path: reportPath(
+							`${potIssue}-student-speaking-answer-desktop-dark.png`,
+						),
+					});
+					await studentPage.evaluate(() =>
+						document.documentElement.classList.remove("dark"),
+					);
+				}
+				await studentPage.setViewportSize({ width: 1440, height: 900 });
+
+				// Dừng lượt ghi đầu & thử retry tối đa 2 lần
+				await studentPage.waitForTimeout(400);
+				await pauseBtn.click();
+				await expect(
+					studentPage.getByTestId("speaking-paused-stage"),
+				).toBeVisible();
+
+				const retryBtn = studentPage.getByRole("button", {
+					name: /Ghi lại câu này|Đã hết lượt ghi lại/,
+				});
+				await expect(retryBtn).toContainText("còn 2/2");
+				await retryBtn.click();
+				await studentPage.waitForTimeout(300);
+				await pauseBtn.click();
+				await expect(retryBtn).toContainText("còn 1/2");
+				await retryBtn.click();
+				await studentPage.waitForTimeout(300);
+				await pauseBtn.click();
+				await expect(retryBtn).toBeDisabled();
+				await expect(retryBtn).toContainText("0/2");
+
+				// Kết thúc sớm (có lưu bản ghi câu 1) -> review box không có "Ghi lại từ đầu"
+				await studentPage
+					.getByRole("button", { name: "Kết thúc phần Speaking" })
+					.click();
+				await studentPage
+					.getByRole("button", { name: "Xác nhận kết thúc sớm" })
+					.click();
+				const reviewBox = studentPage.getByTestId("speaking-review-box");
+				await expect(reviewBox).toBeVisible({ timeout: 10_000 });
+				await expect(
+					reviewBox.getByRole("button", { name: /Ghi lại từ đầu/ }),
+				).toHaveCount(0);
+			} finally {
+				await studentContext.close();
 			}
 		});
 	});
