@@ -2,13 +2,31 @@
 
 import type { LessonMaterialView } from "@teacher-os/api/material-contracts";
 import { cleanup, fireEvent, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionMaterialsModal } from "@/components/class-detail/session-materials-modal";
 import {
 	renderWithKernel,
 	snapshotFixture,
 	startKernelServer,
 } from "@/test/kernel-harness";
+
+vi.mock(
+	"@teacher-os/ui/components/document-preview/blob-document-view",
+	() => ({
+		BlobDocumentView: (props: {
+			blobUrl: string;
+			mimeType: string;
+			label: string;
+		}) => (
+			<div
+				data-testid="blob-document-view"
+				data-url={props.blobUrl}
+				data-mime={props.mimeType}
+				data-label={props.label}
+			/>
+		),
+	}),
+);
 
 const directRow: LessonMaterialView = {
 	id: "mat-direct",
@@ -28,7 +46,7 @@ const directRow: LessonMaterialView = {
 };
 
 function startSessionServer(body: unknown, role = "teacher") {
-	return startKernelServer(
+	const server = startKernelServer(
 		snapshotFixture({ viewer: { role, canAccessFinance: false } }),
 		(req) => {
 			if (
@@ -40,11 +58,39 @@ function startSessionServer(body: unknown, role = "teacher") {
 			return undefined;
 		},
 	);
+	const kernelFetch = globalThis.fetch;
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+			const url = new URL(String(input));
+			if (
+				(init?.method ?? "GET").toUpperCase() === "GET" &&
+				/^\/api\/materials\/[^/]+\/file$/.test(url.pathname)
+			) {
+				return new Response(new Blob(["%PDF"], { type: "application/pdf" }), {
+					status: 200,
+					headers: { "content-type": "application/pdf" },
+				});
+			}
+			return kernelFetch(input, init);
+		}),
+	);
+	return server;
 }
+
+const createObjectURL = vi.fn(() => "blob:session-preview");
+const revokeObjectURL = vi.fn();
+
+beforeEach(() => {
+	URL.createObjectURL = createObjectURL;
+	URL.revokeObjectURL = revokeObjectURL;
+});
 
 afterEach(() => {
 	cleanup();
 	vi.unstubAllGlobals();
+	createObjectURL.mockClear();
+	revokeObjectURL.mockClear();
 });
 
 function renderModal() {
@@ -59,7 +105,7 @@ function renderModal() {
 }
 
 describe("SessionMaterialsModal", () => {
-	it("lists direct materials with detach actions", async () => {
+	it("lists direct materials with inline preview and detach actions", async () => {
 		startSessionServer({ items: [directRow] });
 		renderModal();
 
@@ -73,16 +119,20 @@ describe("SessionMaterialsModal", () => {
 		expect(
 			within(list).getByRole("button", { name: "Gỡ Handout buổi 1" }),
 		).toBeTruthy();
+		// Inline preview tự hiển thị; nút «Xem trước» cũ không còn.
 		expect(
-			within(list).getByRole("button", { name: "Xem trước Handout buổi 1" }),
+			within(list).queryByRole("button", { name: /^Xem trước/ }),
+		).toBeNull();
+		expect(await within(list).findByTestId("blob-document-view")).toBeTruthy();
+		expect(
+			within(list).getByRole("button", { name: "Mở rộng Handout buổi 1" }),
 		).toBeTruthy();
-		// Không có danh sách giáo trình khi server không trả.
 		expect(
 			within(dialog).queryByRole("list", { name: "Tài liệu từ giáo trình" }),
 		).toBeNull();
 	});
 
-	it("renders curriculum materials read-only with a badge (#655)", async () => {
+	it("renders curriculum materials read-only with inline preview, download link, and badge (#655)", async () => {
 		startSessionServer({
 			items: [directRow],
 			curriculumMaterials: [
@@ -111,15 +161,18 @@ describe("SessionMaterialsModal", () => {
 			within(curriculum).getByText("Cam 15 Test 1 Passage 1"),
 		).toBeTruthy();
 		expect(within(curriculum).getByText("Từ giáo trình")).toBeTruthy();
-		// PDF giáo trình xem trước được ngay trong buổi học.
 		expect(
-			within(curriculum).getByRole("button", {
-				name: "Xem trước Cam 15 Test 1 Passage 1",
+			within(curriculum).queryByRole("button", { name: /^Xem trước/ }),
+		).toBeNull();
+		expect(
+			await within(curriculum).findByTestId("blob-document-view"),
+		).toBeTruthy();
+		expect(
+			within(curriculum).getByRole("link", {
+				name: "Tải xuống Cam 15 Test 1 Passage 1",
 			}),
 		).toBeTruthy();
-		// Chỉ đọc: KHÔNG có nút gỡ trong danh sách giáo trình.
 		expect(within(curriculum).queryByRole("button", { name: /Gỡ/ })).toBeNull();
-		// Danh sách đính kèm trực tiếp giữ nguyên hành vi.
 		expect(
 			within(dialog).getByRole("button", { name: "Gỡ Handout buổi 1" }),
 		).toBeTruthy();
@@ -224,7 +277,7 @@ describe("SessionMaterialsModal", () => {
 		expect(emptyEl.textContent).toBe("Chưa có tài liệu nào cho buổi này.");
 	});
 
-	it("closes only the preview dialog on Escape, keeping the session dialog open", async () => {
+	it("closes only the expanded preview dialog on Escape, keeping the session dialog open", async () => {
 		startSessionServer({ items: [directRow] });
 		renderModal();
 
@@ -233,7 +286,7 @@ describe("SessionMaterialsModal", () => {
 		});
 		fireEvent.click(
 			await within(dialog).findByRole("button", {
-				name: "Xem trước Handout buổi 1",
+				name: "Mở rộng Handout buổi 1",
 			}),
 		);
 		expect(

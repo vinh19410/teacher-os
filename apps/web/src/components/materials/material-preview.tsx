@@ -1,28 +1,28 @@
-import { Download, Eye } from "lucide-react";
+import {
+	InlineDocumentPreview,
+	isPreviewableDocumentMime,
+} from "@teacher-os/ui/components/document-preview/inline-document-preview";
+import { Download } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
 import type { MaterialRowItem } from "@/components/materials/material-item";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
+import { isHttpError } from "@/lib/kernel-load-state";
+import { reauth } from "@/lib/reauth";
 import {
 	fetchMaterialFileBlobUrl,
 	materialErrorMessage,
 	materialFileUrl,
 } from "@/lib/repos/materials";
 
-// pdfjs-dist nặng — chỉ tải khi giáo viên thực sự mở bản xem trước.
+// pdfjs-dist nặng — chỉ tải khi mở bản xem trước.
 const BlobDocumentView = lazy(() =>
-	import("@/components/document-preview/blob-document-view").then((m) => ({
-		default: m.BlobDocumentView,
-	})),
+	import("@teacher-os/ui/components/document-preview/blob-document-view").then(
+		(m) => ({
+			default: m.BlobDocumentView,
+		}),
+	),
 );
-
-/** MIME tài liệu xem trước được trong app (PDF qua pdfjs, ảnh qua <img>). */
-const PREVIEWABLE_MIMES: ReadonlySet<string> = new Set([
-	"application/pdf",
-	"image/png",
-	"image/jpeg",
-	"image/webp",
-]);
 
 /**
  * MIME dùng để xem trước, hoặc `null` khi tài liệu không xem trước được:
@@ -30,34 +30,43 @@ const PREVIEWABLE_MIMES: ReadonlySet<string> = new Set([
  * này giữ nguyên hiển thị tên file + tải xuống.
  */
 export function materialPreviewMime(item: MaterialRowItem): string | null {
-	if (item.kind !== "file" || !item.mimeType) return null;
-	return PREVIEWABLE_MIMES.has(item.mimeType) ? item.mimeType : null;
+	return isPreviewableDocumentMime(item.kind, item.mimeType);
 }
 
-/** Nút «Xem trước» + modal; không render gì khi định dạng không hỗ trợ. */
-export function MaterialPreviewButton({ item }: { item: MaterialRowItem }) {
-	const [open, setOpen] = useState(false);
+/**
+ * Khung xem trước inline ngay trong card tài liệu; tự lazy-load khi cuộn tới
+ * và có nút «Mở rộng <tiêu đề>» mở Modal tái sử dụng cùng `blob:` URL.
+ */
+export function MaterialInlinePreview({ item }: { item: MaterialRowItem }) {
 	const mimeType = materialPreviewMime(item);
 	if (!mimeType) return null;
+
 	return (
-		<>
-			<Button
-				variant="ghost"
-				size="sm"
-				aria-label={`Xem trước ${item.title}`}
-				onClick={() => setOpen(true)}
-			>
-				<Eye aria-hidden="true" />
-				<span className="max-sm:sr-only">Xem trước</span>
-			</Button>
-			{open && (
+		<InlineDocumentPreview
+			requestKey={item.id}
+			title={item.title}
+			mimeType={mimeType}
+			sizeBytes={item.sizeBytes}
+			loadBlobUrl={async (signal) => {
+				try {
+					return await fetchMaterialFileBlobUrl(item.id, signal);
+				} catch (err) {
+					if (isHttpError(err) && err.status === 401) {
+						reauth();
+					}
+					throw err;
+				}
+			}}
+			formatError={materialErrorMessage}
+			renderExpandedModal={({ blobUrl, onClose }) => (
 				<MaterialPreviewModal
 					item={item}
 					mimeType={mimeType}
-					onClose={() => setOpen(false)}
+					blobUrl={blobUrl}
+					onClose={onClose}
 				/>
 			)}
-		</>
+		/>
 	);
 }
 
@@ -67,24 +76,29 @@ type LoadState =
 	| { status: "error"; message: string };
 
 /**
- * Modal xem trước: tải file về blob URL (cookie phiên đi kèm), revoke khi
- * đóng/đổi tài liệu. Lỗi tải hiện thông báo kèm đường tải xuống.
+ * Modal xem trước mở rộng: tái sử dụng `blobUrl` đã tải từ inline preview khi
+ * có (không fetch/revoke lại), hoặc tự tải + revoke nếu mở độc lập.
  */
 export function MaterialPreviewModal({
 	item,
 	mimeType,
+	blobUrl: borrowedBlobUrl,
 	onClose,
 }: {
 	item: MaterialRowItem;
 	mimeType: string;
+	blobUrl?: string;
 	onClose: () => void;
 }) {
-	const [state, setState] = useState<LoadState>({ status: "loading" });
+	const [fetchedState, setFetchedState] = useState<LoadState>({
+		status: "loading",
+	});
 
 	useEffect(() => {
+		if (borrowedBlobUrl) return;
 		const controller = new AbortController();
 		let url: string | null = null;
-		setState({ status: "loading" });
+		setFetchedState({ status: "loading" });
 		fetchMaterialFileBlobUrl(item.id, controller.signal)
 			.then((u) => {
 				url = u;
@@ -92,18 +106,27 @@ export function MaterialPreviewModal({
 					URL.revokeObjectURL(u);
 					return;
 				}
-				setState({ status: "ready", url: u });
+				setFetchedState({ status: "ready", url: u });
 			})
 			.catch((err: unknown) => {
-				if (!controller.signal.aborted) {
-					setState({ status: "error", message: materialErrorMessage(err) });
+				if (controller.signal.aborted) return;
+				if (isHttpError(err) && err.status === 401) {
+					reauth();
 				}
+				setFetchedState({
+					status: "error",
+					message: materialErrorMessage(err),
+				});
 			});
 		return () => {
 			controller.abort();
 			if (url) URL.revokeObjectURL(url);
 		};
-	}, [item.id]);
+	}, [item.id, borrowedBlobUrl]);
+
+	const state: LoadState = borrowedBlobUrl
+		? { status: "ready", url: borrowedBlobUrl }
+		: fetchedState;
 
 	const loading = (
 		<p role="status" className="text-muted-foreground text-sm">
@@ -117,6 +140,7 @@ export function MaterialPreviewModal({
 			onClose={onClose}
 			title={item.title}
 			size="xl"
+			scrollableBody
 			footer={
 				<>
 					<a
@@ -133,7 +157,7 @@ export function MaterialPreviewModal({
 				</>
 			}
 		>
-			<div data-testid="material-preview">
+			<div data-testid="material-preview-modal" className="min-w-0">
 				{state.status === "loading" ? (
 					loading
 				) : state.status === "error" ? (

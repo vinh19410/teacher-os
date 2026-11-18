@@ -32,6 +32,7 @@
 		"cmdk": "^1.1.1",
 		"dompurify": "catalog:",
 		"lucide-react": "catalog:",
+		"pdfjs-dist": "^6.4.299",
 		"react": "catalog:",
 		"react-dom": "catalog:",
 		"shadcn": "^4.16.0",

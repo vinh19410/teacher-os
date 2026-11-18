@@ -6,7 +6,19 @@ export interface WorkerEnv {
 	ASSETS: WorkerAssetsBinding;
 }
 
-function applySecurityHeaders(headers: Headers): void {
+function isLocalHost(hostname: string): boolean {
+	return (
+		hostname === "localhost" ||
+		hostname === "127.0.0.1" ||
+		hostname === "0.0.0.0" ||
+		hostname === "[::1]" ||
+		hostname === "::1" ||
+		hostname.endsWith(".localhost") ||
+		hostname.endsWith(".local")
+	);
+}
+
+function applySecurityHeaders(request: Request, headers: Headers): void {
 	headers.set(
 		"Strict-Transport-Security",
 		"max-age=31536000; includeSubDomains",
@@ -15,6 +27,28 @@ function applySecurityHeaders(headers: Headers): void {
 	headers.set("X-Content-Type-Options", "nosniff");
 	headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
 	headers.set("Cross-Origin-Resource-Policy", "cross-origin");
+	headers.set(
+		"Permissions-Policy",
+		"camera=(), microphone=(self), geolocation=(), browsing-topics=()",
+	);
+	if (isLocalHost(new URL(request.url).hostname)) {
+		headers.delete("Content-Security-Policy");
+		return;
+	}
+	const rawApiUrl = import.meta.env.VITE_SERVER_URL as string | undefined;
+	let apiOrigin: string | null = null;
+	if (rawApiUrl) {
+		try {
+			apiOrigin = new URL(rawApiUrl).origin;
+		} catch {
+			apiOrigin = null;
+		}
+	}
+	const crossOrigin = apiOrigin ?? "'self'";
+	headers.set(
+		"Content-Security-Policy",
+		`default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; worker-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: ${crossOrigin}; font-src 'self' data:; connect-src 'self' blob: ${crossOrigin} https:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com;`,
+	);
 }
 
 function isDotFilePath(pathname: string): boolean {
@@ -25,16 +59,7 @@ function isDotFilePath(pathname: string): boolean {
 
 function shouldRedirectToHttps(request: Request): string | null {
 	const url = new URL(request.url);
-	const isLocal =
-		url.hostname === "localhost" ||
-		url.hostname === "127.0.0.1" ||
-		url.hostname === "0.0.0.0" ||
-		url.hostname === "[::1]" ||
-		url.hostname === "::1" ||
-		url.hostname.endsWith(".localhost") ||
-		url.hostname.endsWith(".local");
-
-	if (isLocal || url.protocol === "https:") {
+	if (isLocalHost(url.hostname) || url.protocol === "https:") {
 		return null;
 	}
 
@@ -75,7 +100,7 @@ export default {
 			const assetRes = await env.ASSETS.fetch(request);
 			if (assetRes.status !== 404) {
 				const response = new Response(assetRes.body, assetRes);
-				applySecurityHeaders(response.headers);
+				applySecurityHeaders(request, response.headers);
 				return response;
 			}
 		}
@@ -92,7 +117,7 @@ export default {
 				new Request(new URL("/", request.url), { method: request.method }),
 			);
 			const response = new Response(indexRes.body, indexRes);
-			applySecurityHeaders(response.headers);
+			applySecurityHeaders(request, response.headers);
 			return response;
 		}
 

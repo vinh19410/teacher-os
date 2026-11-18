@@ -9,6 +9,7 @@ import {
 	Paperclip,
 } from "lucide-react";
 import { useId, useState, useSyncExternalStore } from "react";
+import { StudentInlineMaterialPreview } from "@/components/class/student-material-preview";
 import { HttpError } from "@/lib/query-client";
 import {
 	getActiveStudentOrgId,
@@ -74,7 +75,7 @@ function MaterialRow({
 		<li
 			data-testid="lesson-material"
 			data-kind={material.kind}
-			className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0"
+			className="flex min-w-0 flex-col gap-2 py-3 first:pt-0 last:pb-0"
 		>
 			<div className="flex flex-wrap items-start gap-3">
 				<span
@@ -131,6 +132,11 @@ function MaterialRow({
 					)}
 				</div>
 			</div>
+			<StudentInlineMaterialPreview
+				material={material}
+				classId={classId}
+				date={date}
+			/>
 			{material.kind === "media" &&
 				(isVideo(material) ? (
 					// biome-ignore lint/a11y/useMediaCaption: tài liệu giáo viên tải lên, không có track phụ đề
@@ -207,7 +213,7 @@ export function LessonMaterialsDisclosure({
 	const [open, setOpen] = useState(false);
 	const panelId = useId();
 	return (
-		<div className="mt-2 w-full">
+		<div className="mt-2 w-full min-w-0">
 			<button
 				type="button"
 				aria-expanded={open}
