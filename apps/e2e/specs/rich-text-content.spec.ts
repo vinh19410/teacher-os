@@ -290,26 +290,26 @@ test("callsite min-height utilities override the layered ProseMirror base", asyn
 }) => {
 	await signUpViaApi(page);
 
-	// test-header-form "Mô tả" carries min-h-22 = 5.5rem = 77px @14px root.
+	// test-header-form "Mô tả" carries min-h-22 = 5.5rem = 88px @16px root.
 	await page.goto("/assignments/tests/new");
 	await expect(page.getByLabel("Mô tả")).toBeVisible();
 	expect(
 		await page
 			.getByLabel("Mô tả")
 			.evaluate((el) => getComputedStyle(el).minHeight),
-	).toBe("77px");
+	).toBe("88px");
 
-	// prompt-composer main prompt carries min-h-42 = 10.5rem = 147px.
+	// prompt-composer main prompt carries min-h-42 = 10.5rem = 168px.
 	await page.goto("/assignments/new");
 	await expect(page.getByLabel("Nội dung đề")).toBeVisible();
 	expect(
 		await page
 			.getByLabel("Nội dung đề")
 			.evaluate((el) => getComputedStyle(el).minHeight),
-	).toBe("147px");
+	).toBe("168px");
 
 	// Admin library part editor: PartContentFields "Ghi chú nội bộ" and
-	// AnswerKeyGrid "Giải thích câu 1" both carry min-h-16 = 4rem = 56px.
+	// AnswerKeyGrid "Giải thích câu 1" both carry min-h-16 = 4rem = 64px.
 	await ensureAdminAccount(request);
 	await adminOpenNewTestPage(page);
 	await page.getByLabel("Tiêu đề", { exact: true }).fill("QC-438 MinH16");
@@ -326,7 +326,7 @@ test("callsite min-height utilities override the layered ProseMirror base", asyn
 		await page
 			.getByLabel("Ghi chú nội bộ")
 			.evaluate((el) => getComputedStyle(el).minHeight),
-	).toBe("56px");
+	).toBe("64px");
 	await page
 		.getByRole("tablist", { name: "Các tab Passage 1" })
 		.getByRole("tab", { name: "Câu hỏi", exact: true })
@@ -336,5 +336,5 @@ test("callsite min-height utilities override the layered ProseMirror base", asyn
 		await page
 			.getByLabel("Giải thích câu 1")
 			.evaluate((el) => getComputedStyle(el).minHeight),
-	).toBe("56px");
+	).toBe("64px");
 });
