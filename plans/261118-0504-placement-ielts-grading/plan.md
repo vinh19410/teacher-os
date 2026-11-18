@@ -2,7 +2,7 @@
 
 - **Issue:** #800 (`https://github.com/vinh19410/teacher-os/issues/800`)
 - **Target branch:** `develop` (`--merge --beta`)
-- **Status:** In Progress
+- **Status:** Done
 
 ## Overview
 
@@ -15,10 +15,10 @@ Chuyển phần chấm Writing & Speaking trong Entry Test (Placement Test) sang
 
 | Phase | Scope | Ownership | Status |
 |---|---|---|---|
-| Phase 1 | DB schema + migration (`writing_band`, `speaking_band`), `@teacher-os/api` contracts & tests | `packages/db/**`, `packages/api/**` | Pending |
-| Phase 2 | Server AI pipeline (`grader`, `openai-grader`, `fake-grader`, `run-placement-grading`, `placement-result`, `placement-submission-service`, routes & tests) | `apps/server/**` | Pending (after Phase 1) |
-| Phase 3 | Teacher UI (`PlacementSubmissionPanel`, `PlacementAiStatusBanner`), Student portal (`placement-result-views`), Profile public result (`result.js`, `highlight.js`) & tests | `apps/web/**`, `apps/student/**`, `apps/profile/**` | Pending (after Phase 1, parallel with Phase 2) |
-| Phase 4 | E2E specs update & run, screenshots for POT, full local gates, isolated review, PR & merge to `develop` | `apps/e2e/**`, `plans/reports/**` | Pending (after Phase 2 & 3) |
+| Phase 1 | DB schema + migration (`writing_band`, `speaking_band`), `@teacher-os/api` contracts & tests | `packages/db/**`, `packages/api/**` | Done |
+| Phase 2 | Server AI pipeline (`grader`, `openai-grader`, `fake-grader`, `run-placement-grading`, `placement-result`, `placement-submission-service`, routes & tests) | `apps/server/**` | Done |
+| Phase 3 | Teacher UI (`PlacementSubmissionPanel`, `PlacementAiStatusBanner`), Student portal (`placement-result-views`), Profile public result (`result.js`, `highlight.js`) & tests | `apps/web/**`, `apps/student/**`, `apps/profile/**` | Done |
+| Phase 4 | E2E specs update & run, screenshots for POT, full local gates, isolated review, PR & merge to `develop` | `apps/e2e/**`, `plans/reports/**` | Done |
 
 ## Acceptance Criteria
 
