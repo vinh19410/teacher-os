@@ -9,7 +9,7 @@ import {
 } from "@teacher-os/api/placement-test-contracts";
 import type { Mailer, MailInput } from "@teacher-os/auth/mail/mailer";
 import * as schema from "@teacher-os/db/schema/index";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { describe, expect, test } from "vitest";
@@ -744,12 +744,18 @@ describe("email kết quả: tóm tắt HTML + link chi tiết", () => {
 		return (await res.json()) as PlacementSubmissionDetail;
 	}
 
-	async function addUser(h: Harness, email: string, role: string) {
+	async function addUser(
+		h: Harness,
+		email: string,
+		role: string,
+		emailVerified = true,
+	) {
 		await h.db.insert(schema.user).values({
 			id: `u-${role}-${email}`,
 			name: "Tài khoản",
 			email,
 			role,
+			emailVerified,
 		});
 	}
 
@@ -821,6 +827,8 @@ describe("email kết quả: tóm tắt HTML + link chi tiết", () => {
 		const { sent, mailer } = recordingMailer();
 		const h = await createHarness({ mailer, studentOrigin: STUDENT_ORIGIN });
 		await addUser(h, "gv@test.local", "teacher");
+		// Có dòng học viên cùng email để chứng minh lọc theo role tài khoản.
+		await addStudent(h, "stu-gv", "gv@test.local");
 
 		const noAccount = await gradeLead(h, "lead@test.local", {
 			...grade,
@@ -885,6 +893,58 @@ describe("email kết quả: tóm tắt HTML + link chi tiết", () => {
 		expect(sent[0]?.html).toContain(`href="${graded.resultUrl}"`);
 		expect(sent[0]?.html).not.toContain('/placement-test"');
 		expect(sent[0]?.text).toContain(graded.resultUrl ?? "-");
+	});
+
+	test("tài khoản học viên chưa xác minh email → link công khai", async () => {
+		const { sent, mailer } = recordingMailer();
+		const h = await createHarness({ mailer, studentOrigin: STUDENT_ORIGIN });
+		await addUser(h, "hocvien@test.local", "student", false);
+		await addStudent(h, "stu-a", "hocvien@test.local");
+
+		const graded = await gradeLead(h, "hocvien@test.local");
+		expect(sent[0]?.html).toContain(`href="${graded.resultUrl}"`);
+		expect(sent[0]?.html).not.toContain('/placement-test"');
+	});
+
+	test("dòng học viên demo bị bỏ qua → link công khai", async () => {
+		const { sent, mailer } = recordingMailer();
+		const h = await createHarness({ mailer, studentOrigin: STUDENT_ORIGIN });
+		await addUser(h, "hocvien@test.local", "student");
+		await addStudent(h, "demo-student:org-1", "hocvien@test.local");
+
+		const graded = await gradeLead(h, "hocvien@test.local");
+		expect(sent[0]?.html).toContain(`href="${graded.resultUrl}"`);
+		expect(sent[0]?.html).not.toContain('/placement-test"');
+	});
+
+	test("tóm tắt email lấy từ kết quả đã lưu (lượt chốt khác ghi sau vẫn thắng)", async () => {
+		const { sent, mailer } = recordingMailer();
+		const h = await createHarness({ mailer });
+		// Mô phỏng lượt chốt đồng thời ghi đè ngay khi lượt này thắng CAS.
+		await h.db.run(
+			sql.raw(`CREATE TRIGGER concurrent_finalize AFTER UPDATE OF result_published_at ON placement_test_submission
+			BEGIN
+				UPDATE placement_test_submission
+				SET final_band_level = 'B1', final_display_course = 'Khóa ghi sau',
+					final_score_pct = 41, writing_score = 7, speaking_score = 9
+				WHERE id = NEW.id;
+			END`),
+		);
+
+		await gradeLead(h, "hv@test.local");
+		const created = await h.db
+			.select()
+			.from(schema.placementTestSubmission)
+			.limit(1);
+		const row = created[0];
+		expect(row?.finalBandLevel).toBe("B1");
+		const mail = sent[0];
+		expect(mail?.html).toContain(">B1<");
+		expect(mail?.html).toContain("Khóa ghi sau");
+		expect(mail?.html).toContain(">41%<");
+		expect(mail?.html).toContain("7/15 điểm");
+		expect(mail?.html).toContain("9/20 điểm");
+		expect(mail?.text).toContain("Trình độ CEFR: B1");
 	});
 
 	test("dòng học viên chỉ có ở org khác → link công khai", async () => {

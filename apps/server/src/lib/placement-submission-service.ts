@@ -29,6 +29,7 @@ import type { PlacementAiGrader } from "./placement-ai/grader";
 import {
 	buildPlacementResultUrl,
 	type PlacementResultEmailStatus,
+	type PlacementResultEmailSummary,
 	parseAiSpeakingDraft,
 	parseAiWritingDraft,
 	parseStoredErrors,
@@ -69,7 +70,7 @@ const RESULT_EMAIL_STATUSES = new Set(["sent", "failed", "skipped"]);
  * Link nút "Xem chi tiết kết quả". Chỉ trỏ trang `/placement-test` của portal
  * khi chắc chắn portal hiển thị ĐÚNG bài vừa chốt: có `studentOrigin`, có dòng
  * học viên trong org khớp email người nhận (không phân biệt hoa/thường), có
- * tài khoản auth role `student` cùng email, và bài mới nhất portal chọn cho
+ * tài khoản auth role `student` cùng email đã xác minh, và bài mới nhất portal chọn cho
  * học viên đó chính là `submissionId`. Ngược lại (hoặc truy vấn lỗi) → link
  * kết quả công khai.
  */
@@ -93,6 +94,7 @@ export async function resolvePlacementResultLink(
 			.where(
 				and(
 					eq(user.role, "student"),
+					eq(user.emailVerified, true),
 					sql`lower(trim(${user.email})) = ${email}`,
 				),
 			)
@@ -666,20 +668,52 @@ export async function gradePlacementSubmissionResponse(
 			studentOrigin: deps.studentOrigin,
 			publicUrl: buildPlacementResultUrl(resultOrigin, resultToken),
 		});
+		// Lượt chốt đồng thời của giáo viên khác có thể ghi sau lượt này —
+		// tóm tắt lấy từ cột đã lưu; đọc lỗi → dùng giá trị vừa tính.
+		let stored: typeof placementTestSubmission.$inferSelect | undefined;
+		try {
+			[stored] = await db
+				.select()
+				.from(placementTestSubmission)
+				.where(
+					and(
+						eq(placementTestSubmission.id, updatedSub.id),
+						eq(placementTestSubmission.orgId, ctx.orgId),
+					),
+				)
+				.limit(1);
+		} catch (error) {
+			console.error(
+				"[placement-ai] result summary reload failed",
+				updatedSub.id,
+				error instanceof Error ? error.name : "unknown",
+			);
+		}
+		const summary: PlacementResultEmailSummary = {
+			cefr: final.band.cefr,
+			displayCourse: final.band.displayCourse || final.band.courseLabel,
+			scorePct: final.averagePct,
+			listening: objective.listening,
+			vocabGrammar: objective.vocabGrammar,
+			reading: objective.reading,
+			writingScore: final.writingScore,
+			speakingScore: final.speakingScore,
+		};
+		if (stored) {
+			summary.cefr = stored.finalBandLevel ?? summary.cefr;
+			summary.displayCourse =
+				stored.finalDisplayCourse ??
+				stored.finalCourse ??
+				summary.displayCourse;
+			summary.scorePct = stored.finalScorePct ?? summary.scorePct;
+			summary.writingScore = stored.writingScore;
+			summary.speakingScore = stored.speakingScore;
+		}
 		resultEmailStatus = await sendPlacementResultEmail({
 			getMailer: () => deps.mailer,
 			to: recipient,
 			studentName: subject.row.name,
-			summary: {
-				cefr: final.band.cefr,
-				displayCourse: final.band.displayCourse || final.band.courseLabel,
-				scorePct: final.averagePct,
-				listening: objective.listening,
-				vocabGrammar: objective.vocabGrammar,
-				reading: objective.reading,
-				writingScore: final.writingScore,
-				speakingScore: final.speakingScore,
-			},
+			summary,
 			resultUrl,
 			submissionId: updatedSub.id,
 		});
