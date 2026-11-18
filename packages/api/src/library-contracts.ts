@@ -649,25 +649,41 @@ export function validatePartForReady(
 }
 
 /**
- * Rule ready cho CẢ ĐỀ: đủ slot theo ASSIGNMENT_TEST_PRESETS[skill]
- * (reading 3, listening 4) và từng part đạt validatePartForReady.
+ * Rule ready cho CẢ ĐỀ: cần ít nhất 1 part thuộc `ASSIGNMENT_TEST_PRESETS[skill].slots`
+ * (không bắt buộc đủ mọi slot) và từng part hiện có đạt `validatePartForReady`,
+ * không trùng khóa `part`.
  */
 export function validateTestReady(
 	skill: LibrarySkill,
 	parts: LibraryPartInput[],
 ): LibraryPartIssue[] {
+	if (parts.length === 0) {
+		return [{ path: "parts", message: "at least one part is required" }];
+	}
+	const slotOrder = new Map(
+		ASSIGNMENT_TEST_PRESETS[skill].slots.map((slot, index) => [
+			slot.part,
+			index,
+		]),
+	);
+	const ordered = [...parts].sort(
+		(a, b) =>
+			(slotOrder.get(a.part) ?? Number.MAX_SAFE_INTEGER) -
+			(slotOrder.get(b.part) ?? Number.MAX_SAFE_INTEGER),
+	);
 	const issues: LibraryPartIssue[] = [];
-	const byPart = new Map(parts.map((part) => [part.part, part]));
-	for (const slot of ASSIGNMENT_TEST_PRESETS[skill].slots) {
-		const part = byPart.get(slot.part);
-		if (!part) {
+	const seen = new Set<string>();
+	const reportedDuplicates = new Set<string>();
+	for (const part of ordered) {
+		if (seen.has(part.part) && !reportedDuplicates.has(part.part)) {
+			reportedDuplicates.add(part.part);
 			issues.push({
-				path: `parts.${slot.part}`,
-				message: `missing part ${slot.part}`,
+				path: `parts.${part.part}`,
+				message: `duplicate part ${part.part}`,
 			});
-			continue;
 		}
-		issues.push(...partIssues(skill, part, `parts.${slot.part}`));
+		seen.add(part.part);
+		issues.push(...partIssues(skill, part, `parts.${part.part}`));
 	}
 	return issues;
 }

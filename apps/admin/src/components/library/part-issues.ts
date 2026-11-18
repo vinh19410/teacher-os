@@ -81,6 +81,11 @@ const MESSAGE_LABELS: ReadonlyArray<[RegExp, string]> = [
 		"Các câu cùng khóa tập đáp án phải nằm trong một nhóm.",
 	],
 	[/missing part/i, "Thiếu part — chưa có nội dung ở slot này."],
+	[
+		/at least one part is required/i,
+		"Cần ít nhất 1 part có nội dung để xuất bản bộ đề.",
+	],
+	[/duplicate part/i, "Part bị trùng lặp trong bộ đề."],
 ];
 
 /** Dịch message thô của schema sang tiếng Việt; null khi không khớp rule nào. */
