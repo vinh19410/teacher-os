@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import {
 	countPlacementWords,
+	hasPlacementSpeakingTasks,
 	PLACEMENT_WRITING_TEXT_MAX,
 	type PlacementSnapshot,
 	type StudentPlacementSubmissionView,
@@ -91,8 +92,7 @@ export function PlacementTestRunner({
 	const [confirmUnanswered, setConfirmUnanswered] = useState<{
 		unansweredObjective: number;
 		writingEmpty: boolean;
-		speakingUnrecorded: boolean;
-		resolvedSpeakingMode: "upload" | "skipped" | "none";
+		resolvedSpeakingMode: "upload" | "none";
 	} | null>(null);
 	const [nowMs, setNowMs] = useState(() => Date.now());
 
@@ -164,7 +164,7 @@ export function PlacementTestRunner({
 		(nextStep: PlacementRunnerStep) => {
 			if (isSpeakingBusy) {
 				setStepSwitchError(
-					"Vui lòng hoàn thành hoặc bấm Kết thúc sớm phần ghi âm trước khi chuyển phần khác.",
+					"Vui lòng hoàn thành hoặc bấm Kết thúc phần Speaking trước khi chuyển phần khác.",
 				);
 				return;
 			}
@@ -189,9 +189,7 @@ export function PlacementTestRunner({
 		[isSpeakingBusy],
 	);
 
-	const executeSubmission = async (
-		finalSpeakingMode: "upload" | "skipped" | "none",
-	) => {
+	const executeSubmission = async (finalSpeakingMode: "upload" | "none") => {
 		if (isSubmitting) return;
 		setIsSubmitting(true);
 		setSubmitError("");
@@ -215,11 +213,7 @@ export function PlacementTestRunner({
 			});
 
 			let speakingStatus: StudentPlacementSubmissionView["speakingStatus"] =
-				finalSpeakingMode === "upload"
-					? "pending_upload"
-					: finalSpeakingMode === "skipped"
-						? "skipped"
-						: "none";
+				finalSpeakingMode === "upload" ? "pending_upload" : "none";
 			let pendingRetry: PendingSpeakingRetry | null = null;
 
 			if (
@@ -260,6 +254,7 @@ export function PlacementTestRunner({
 			void queryClient.invalidateQueries({
 				queryKey: studentPlacementViewQueryKey,
 			});
+			void queryClient.invalidateQueries({ queryKey: ["student", "inbox"] });
 
 			const optimisticView: StudentPlacementSubmissionView = {
 				id: res.submissionId,
@@ -300,8 +295,9 @@ export function PlacementTestRunner({
 
 	const handleRequestSubmit = () => {
 		if (isSpeakingBusy) {
+			setConfirmUnanswered(null);
 			setSubmitError(
-				"Vui lòng hoàn thành hoặc bấm Kết thúc sớm phần ghi âm trước khi nộp bài.",
+				"Vui lòng hoàn thành hoặc bấm Kết thúc phần Speaking trước khi nộp bài.",
 			);
 			return;
 		}
@@ -309,29 +305,35 @@ export function PlacementTestRunner({
 			recordedAudio &&
 			recordedAudio.blob.size > PLACEMENT_SPEAKING_MAX_BYTES
 		) {
+			setConfirmUnanswered(null);
 			setSubmitError(
-				"File Speaking vượt quá giới hạn 50 MB. Vui lòng ghi lại ngắn hơn hoặc chọn Bỏ qua phần Speaking.",
+				"File Speaking vượt quá giới hạn 50 MB. Vui lòng xóa bản ghi và ghi lại hoặc liên hệ giáo viên hỗ trợ.",
 			);
 			return;
 		}
 
-		const hasSpeakingTasks = speakingPart.tasks.length > 0;
+		const hasSpeakingTasks = hasPlacementSpeakingTasks(snapshot);
 		const hasValidBlob = Boolean(
 			recordedAudio &&
 				recordedAudio.blob.size > 0 &&
 				recordedAudio.blob.size <= PLACEMENT_SPEAKING_MAX_BYTES,
 		);
-		const resolvedSpeakingMode: "upload" | "skipped" | "none" =
-			!hasSpeakingTasks ? "none" : hasValidBlob ? "upload" : "skipped";
-		const needsSpeakingDecision =
-			hasSpeakingTasks && !hasValidBlob && draft.speakingMode !== "skipped";
+		if (hasSpeakingTasks && !hasValidBlob) {
+			setConfirmUnanswered(null);
+			setSubmitError(
+				"Phần Speaking là bắt buộc. Vui lòng hoàn thành ghi âm bài nói trước khi nộp bài.",
+			);
+			return;
+		}
+		const resolvedSpeakingMode: "upload" | "none" = hasSpeakingTasks
+			? "upload"
+			: "none";
 
 		const wordCount = countPlacementWords(draft.writingText);
-		if (progress.unanswered > 0 || wordCount === 0 || needsSpeakingDecision) {
+		if (progress.unanswered > 0 || wordCount === 0) {
 			setConfirmUnanswered({
 				unansweredObjective: progress.unanswered,
 				writingEmpty: wordCount === 0,
-				speakingUnrecorded: needsSpeakingDecision,
 				resolvedSpeakingMode,
 			});
 			return;
@@ -488,9 +490,9 @@ export function PlacementTestRunner({
 						<span>
 							Cần loa/tai nghe cho Listening và micro cho Speaking (ghi âm
 							audio-only, không cần camera, tự động tải lên sau khi nộp). Đồng
-							hồ gợi ý 40 phút áp dụng nhẹ nhàng cho 4 phần đầu — hết giờ chỉ
-							nhắc nhẹ, không làm mất bài. Nếu thiết bị chưa có micro, bạn vẫn
-							có thể bỏ qua phần Speaking.
+							hồ 40 phút áp dụng nhẹ nhàng cho 4 phần đầu — hết giờ chỉ nhắc
+							nhẹ, không làm mất bài. Thiết bị cần có micro để hoàn thành phần
+							Speaking trước khi nộp bài.
 						</span>
 					</div>
 
@@ -531,10 +533,6 @@ export function PlacementTestRunner({
 					"Hãy viết một đoạn văn ngắn bằng tiếng Anh để giới thiệu bản thân, công việc hoặc sở thích của bạn trong đời sống hằng ngày.",
 				];
 
-	const effectiveSpeakingMode: "none" | "skipped" | "upload" = recordedAudio
-		? "upload"
-		: draft.speakingMode;
-
 	return (
 		<div data-testid="placement-runner" className="mx-auto max-w-4xl space-y-6">
 			{/* Header bar: progress + timer + step tabs */}
@@ -564,8 +562,8 @@ export function PlacementTestRunner({
 						{!isTimedStep
 							? "Speaking · Không tính vào 40 phút"
 							: remainingTimerSeconds > 0
-								? `Gợi ý: ${formatPlacementClock(remainingTimerSeconds)}`
-								: "Đã hết 40:00 gợi ý"}
+								? formatPlacementClock(remainingTimerSeconds)
+								: "Đã hết 40:00"}
 					</span>
 				</div>
 
@@ -604,8 +602,8 @@ export function PlacementTestRunner({
 						role="status"
 						className="rounded-lg border border-warn/40 bg-warn-soft px-3 py-2 text-foreground text-xs"
 					>
-						Đã hết 40 phút gợi ý cho 4 phần đầu — bạn vẫn có thể hoàn thành câu
-						trả lời và nộp bài bình thường.
+						Đã hết 40 phút cho 4 phần đầu — bạn vẫn có thể hoàn thành câu trả
+						lời và nộp bài bình thường.
 					</p>
 				) : null}
 
@@ -858,18 +856,10 @@ export function PlacementTestRunner({
 				<>
 					<PlacementSpeakingStep
 						tasks={speakingPart.tasks}
-						speakingMode={effectiveSpeakingMode}
 						recordedAudio={recordedAudio}
 						onRecordedAudioChange={(next) => {
 							setRecordedAudio(next);
-							if (next) {
-								setDraft((prev) => ({ ...prev, speakingMode: "none" }));
-							}
-						}}
-						onSkipSpeaking={() => {
-							setRecordedAudio(null);
-							setConfirmUnanswered(null);
-							setDraft((prev) => ({ ...prev, speakingMode: "skipped" }));
+							setSubmitError("");
 						}}
 						onBusyChange={setIsSpeakingBusy}
 					/>
@@ -904,9 +894,6 @@ export function PlacementTestRunner({
 										: null,
 									confirmUnanswered.writingEmpty
 										? "phần Writing đang để trống"
-										: null,
-									confirmUnanswered.speakingUnrecorded
-										? "phần Speaking chưa ghi âm"
 										: null,
 								]
 									.filter(Boolean)

@@ -1,0 +1,164 @@
+{
+	"id": "6913d4da-ee09-4000-9b7a-b48b4a1b95ec",
+	"url": "https://stepielts.com/student/reading/6913d4da-ee09-4000-9b7a-b48b4a1b95ec?mode=practice",
+	"title": "Why we need to protect polar bears?",
+	"source": "C16T1",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Why we need to protect polar bears",
+		"paragraphs": [
+			"Polar bears are being increasingly threatened by the effects of climate change, but their disappearance could have far-reaching consequences. They are uniquely adapted to the extreme conditions of the Arctic Circle, where temperatures can reach -40°C. One reason for this is that they have up to 11 centimetres of fat underneath their skin. Humans with comparative levels of adipose tissue would be considered obese and would be likely to suffer from diabetes and heart disease. Yet the polar bear experiences no such consequences.",
+			"A 2014 study by Shi Ping Liu and colleagues sheds light on this mystery. They compared the genetic structure of polar bears with that of their closest relatives from a warmer climate, the brown bears.This allowed them to determine the genes that have allowed polar bears to survive in one of the toughest environments on Earth. Liu and his colleagues found the polar bears had a gene known as APoB, which reduces levels of low-density lipoproteins (LDLs) – a form of ‘bad’ cholesterol.In humans, mutations of this gene are associated with increased risk of heart disease. Polar bears may therefore be an important study model to understand heart disease in humans.",
+			"The genome of the polar bear may also provide the solution for another condition, one that particularly affects our older generation: osteoporosis. This is a disease where bones show reduced density, usually caused by insufficient exercise, reduced calcium intake or food starvation. Bone tissue is constantly being remodelled, meaning that bone is added or removed, depending on nutrient availability and the stress that the bone is under. Female polar bears, however, undergo extreme conditions during every pregnancy. Once autumn comes around, these females will dig maternity dens in the snow and will remain there throughout the winter, both before and after the birth of their cubs. This process results in about six months of fasting, where the female bears have to keep themselves and their cubs alive,depleting their own calcium and calorie reserves. Despite this, their bones remain strong and dense.",
+			"Physiologists Alanda Lennox and Allen Goodship found an explanation for this paradox in 2008. They discovered that pregnant bears were able to increase the density of their bones before they started to build their dens. In addition, six months later, when they finally emerged from the den with their cubs, there was no evidence of significant loss of bone density. Hibernating brown bears do not have this capacity and must therefore resort to major bone reformation in the following spring. If the mechanism of bone remodelling in polar bears can be understood, many bedridden humans, and even astronauts, could potentially benefit.",
+			"The medical benefits of the polar bear for humanity certainly have their importance in our conservation efforts, but these should not be the only factors taken into consideration. We tend to want to protect animals we think are intelligent and possess emotions, such as elephants and primates. Bears, on the other hand, seem to be perceived as stupid and in many cases violent.And yet anecdotal evidence from the field challenges those assumptions, suggesting for example that polar bears have good problem-solving abilities. A male bear called GoGo in Tennoji Zoo, Osaka, has even been observed making use of a tool to manipulate his environment. The bear used a tree branch on multiple occasions to dislodge a piece of meat hung out of his reach. Problem-solving ability has also been witnessed in wild polar bears, although not as obviously as with GoGo. A calculated move by a male bear involved running and jumping onto barrels in an attempt to get to a photographer standing on a platform four metres high.",
+			"In other studies, such as one by Alison Ames in 2008, polar bears showed deliberate and focused manipulation. For example, Ames observed bears putting objects in piles and then knocking them over in what appeared to be a game.The study demonstrates that bears are capable of agile and thought-out behaviours. These examples suggest bears have greater creativity and problem-solving abilities than previously thought.",
+			"As for emotions, while the evidence is once again anecdotal, many bears have been seen to hit out at ice and snow – seemingly out of frustration – when they have just missed out on a kill.Moreover, polar bears can form unusual relationships with other species, including playing with the dogs used to pull sleds in the Arctic. Remarkably, one hand-raised polar bear called Agee has formed a close relationship with her owner Mark Dumas to the point where they even swim together. This is even more astonishing since polar bears are known to actively hunt humans in the wild.",
+			"If climate change were to lead to their extinction, this would mean not only the loss of potential breakthroughs in human medicine, but more importantly, the disappearance of an intelligent, majestic animal."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-7",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 1?\nIn boxes 1 - 7 on your answer sheet, write:\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Polar bears suffer from various health problems due to the build-up of fat under their skin.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nGấu Bắc Cực gặp nhiều vấn đề sức khỏe do tích tụ mỡ dưới da.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nPolar bears ~ từ khóa giữ nguyên\nDiabetes and heart disease ~ various health problems\n11 centimeters of fat underneath their skin ~ the build-up of fat under their skin\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ “Gấu Bắc Cực có lớp mỡ dưới da dày 11 cm. Con người với lớp mỡ dày tương đương sẽ được coi là béo phì và có khả năng mắc bệnh tiểu đường và bệnh tim. Tuy nhiên, gấu Bắc Cực không gặp phải những hậu quả như vậy.”\n\n=> Điều này trái ngược với nhận định trong câu hỏi “Gấu Bắc Cực gặp nhiều vấn đề sức khỏe do tích tụ mỡ dưới da.” (Polar bears suffer from various health problems due to the build-up of fat under their skin)\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"One reason for this is that they have up to 11 centimetres of fat underneath their skin. Humans with comparative levels of adipose tissue would be considered obese and would be likely to suffer from diabetes and heart disease. Yet the polar bear experiences no such consequences."
+					]
+				},
+				{
+					"number": 2,
+					"text": "The study done by Liu and his colleagues compared different groups of polar bears.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNghiên cứu của Liu và đồng nghiệp so sánh các nhóm gấu Bắc Cực khác nhau.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nLiu and his colleagues ~ tên riêng giữ nguyên\ncompared ~ từ khoá giữ nguyên\npolar bears ~ cụm từ giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: “Liu và đồng nghiệp so sánh cấu trúc gen của gấu Bắc Cực với cấu trúc gen của gấu nâu.”\n\n=> Điều này trái ngược với thông tin ở trong câu hỏi “Nghiên cứu của Liu và đồng nghiệp so sánh các nhóm gấu Bắc Cực khác nhau.” (The study done by Liu and his colleagues compared different groups of polar bears)\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"They compared the genetic structure of polar bears with that of their closest relatives from a warmer climate, the brown bears.This allowed them to determine the genes that have allowed polar bears to survive in one of the toughest environments on Earth."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Liu and colleagues were the first researchers to compare polar bears and brown bears genetically.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nLiu và đồng nghiệp là những nhà nghiên cứu đầu tiên so sánh gấu Bắc Cực và gấu nâu về mặt gen.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nLiu and his colleagues ~ tên riêng giữ nguyên\ncompare ~ từ khoá giữ nguyên\npolar bears ~ cụm từ giữ nguyên\nbrown bears ~ cụm từ giữ nguyên\ngenetic structure ~ genetically\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ đề cập đến việc “Liu và đồng nghiệp so sánh cấu trúc gen của gấu Bắc Cực với gấu Nâu.”\n\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin “Liu và đồng nghiệp là những nhà nghiên cứu đầu tiên thực hiện việc nghiên cứu này” (were the first researchers)\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"A 2014 study by Shi Ping Liu and colleagues sheds light on this mystery."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Polar bears are able to control their levels of ‘bad’ cholesterol by genetic means.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nGấu Bắc Cực có thể kiểm soát mức cholesterol \"xấu\" nhờ vào gen của chúng.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\npolar bears ~ từ khoá giữ nguyên\nreduce ~ control\n\"bad” cholesterol ~ cụm từ giữ nguyên\na gene known as aPoB ~ genetic means\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ “Gấu Bắc Cực có gen APoB giúp giảm mức độ LDL - một loại cholesterol xấu”\n\n=> Điều này đồng nghĩa với thông tin trong câu hỏi là “Gấu Bắc Cực có thể kiểm soát mức cholesterol \"xấu\" nhờ vào gen của chúng.” (Polar bears are able to control their levels of ‘bad’ cholesterol by genetic means)\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Liu and his colleagues found the polar bears had a gene known as APoB, which reduces levels of low-density lipoproteins (LDLs) – a form of ‘bad’ cholesterol.In humans, mutations of this gene are associated with increased risk of heart disease."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Female polar bears are able to survive for about six months without food.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nGấu Bắc Cực cái có thể sống khoảng 6 tháng mà không cần thức ăn.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nfemale polar bears ~ cụm từ giữ nguyên\nkeep themselves and their cubs alive ~ survive\nsix months ~ cụm từ giữ nguyên\nfasting (nhịn ăn) ~ without food\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ “Khi mùa thu đến, những con gấu Bắc Cực cái này sẽ đào hang đẻ trong tuyết và ở đó suốt mùa đông. Chúng trải qua khoảng 6 tháng nhịn ăn, và phải giữ cho bản thân chúng và con non của chúng sống sót.”\n\n=> Điều này đồng nghĩa với thông tin trong câu hỏi là “Gấu Bắc Cực cái có thể sinh tồn trong khoảng 6 tháng mà không cần thức ăn.” (Female polar bears are able to survive for about six months without food)\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"This process results in about six months of fasting, where the female bears have to keep themselves and their cubs alive,depleting their own calcium and calorie reserves."
+					]
+				},
+				{
+					"number": 6,
+					"text": "It was found that the bones of female polar bears were very weak when they came out of their dens in spring.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nXương của gấu Bắc Cực cái trở nên rất yếu khi chúng ra khỏi ổ vào mùa xuân.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nbone density ~ the bones of female polar\nemerged from the den with their cubs ~ came out of their dens\nremained there throughout the winter ~ in spring\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ “Sau 6 tháng (hết mùa đông), khi gấu Bắc Cực cái rời khỏi ổ cùng với gấu con, không có bằng chứng nào cho thấy có sự giảm mật độ xương đáng kể.”\n\n=> Điều này trái nghĩa với thông tin trong câu hỏi là “Xương của gấu Bắc Cực cái trở nên rất yếu khi chúng ra khỏi ổ vào mùa xuân” (It was found that the bones of female polar bears were very weak when they came out of their dens in spring).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Despite this, their bones remain strong and dense.",
+						"In addition, six months later, when they finally emerged from the den with their cubs, there was no evidence of significant loss of bone density."
+					]
+				},
+				{
+					"number": 7,
+					"text": "The polar bear’s mechanism for increasing bone density could also be used by people one day.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCơ chế tăng mật độ xương của gấu Bắc Cực có thể được sử dụng cho con người trong tương lai.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nmechanism ~ thuật ngữ giữ nguyên\nbone remodeling ~ increasing bone density\nbe understood ~ be used\npeople ~ humans, astronauts\n\nBước 3: So sánh và đối chiếu:\nBài đọc nêu rõ “Nếu hiểu được cơ chế tái tạo xương của gấu Bắc Cực, nhiều người nằm liệt giường, thậm chí là cả phi hành gia, có thể được hưởng lợi.”\n\n=> Điều này đồng nghĩa với thông tin trong câu hỏi là “Cơ chế tăng mật độ xương của gấu Bắc Cực có thể được sử dụng cho con người trong tương lai.” (The polar bear’s mechanism for increasing bone density could also be used by people one day)\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"If the mechanism of bone remodelling in polar bears can be understood, many bedridden humans, and even astronauts, could potentially benefit."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-13",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the table below. Choose ONE WORD ONLY from the passage for each answer. Write your answers in boxes 8 - 13 on your answer sheet.",
+			"body": "Reasons why polar bears should be protected\nPeople think of bears as unintelligent and ____ (8)\nHowever, this may not be correct. For example:\nIn Tennoji Zoo, a bear has been seen using a branch as a ____ (9) . This allowed him to knock down some ____ (10)\nA wild polar bear worked out a method of reaching a platform where a ____ (11) was located.\nPolar bears have displayed behaviour such as conscious manipulation of objects and activity similar to a ____ (12)\nBears may also display emotions. For example:\nThey may make movements suggesting ____ (13) if disappointed when hunting.\nThey may form relationships with other species.",
+			"body_html": "<h3><strong>Reasons why polar bears should be protected</strong></h3><p>People think of bears as unintelligent and [8] </p><p>However, this may not be correct. For example:</p><ul><li>In Tennoji Zoo, a bear has been seen using a branch as a [9] . This allowed him to knock down some [10] </li><li>A wild polar bear worked out a method of reaching a platform where a [11] was located.</li><li>Polar bears have displayed behaviour such as conscious manipulation of objects and activity similar to a [12] </li></ul><p>Bears may also display emotions. For example:</p><ul><li>They may make movements suggesting [13] if disappointed when hunting.</li><li>They may form relationships with other species.</li></ul>",
+			"questions": [
+				{
+					"number": 8,
+					"text": "People think of bears as unintelligent and ____ (8)",
+					"answer": "violent",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nMọi người nghĩ gấu là loài không thông minh và ____________.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: ADJECTIVE\nDấu hiệu: unintelligent and + ADJECTIVE (ADJECTIVE bổ nghĩa cho Noun ‘BEARS’)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nperceived ~ think\nstupid ~ unintelligent\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Gấu, mặt khác, dường như được coi là ngu ngốc và nhiều khi rất hung dữ\" (Bears, on the other hand, seem to be perceived as stupid and in many cases violent).\n\nBước 5: Đáp án: violent\nMọi người nghĩ gấu là loài không thông minh và hung dữ (People think of bears as unintelligent and violent).",
+					"quotes": [
+						"Bears, on the other hand, seem to be perceived as stupid and in many cases violent.And yet anecdotal evidence from the field challenges those assumptions, suggesting for example that polar bears have good problem-solving abilities."
+					]
+				},
+				{
+					"number": 9,
+					"text": "In Tennoji Zoo, a bear has been seen using a branch as a ____ (9) . This allowed him to knock down some ____ (10)",
+					"answer": "tool",
+					"quotes": [
+						"A male bear called GoGo in Tennoji Zoo, Osaka, has even been observed making use of a tool to manipulate his environment. The bear used a tree branch on multiple occasions to dislodge a piece of meat hung out of his reach."
+					]
+				},
+				{
+					"number": 10,
+					"text": "In Tennoji Zoo, a bear has been seen using a branch as a ____ (9) . This allowed him to knock down some ____ (10)",
+					"answer": "meat",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nĐiều này cho phép nó gỡ xuống một ít ____________.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: knock down + NOUN (NOUN làm Object của động từ 'KNOCK DOWN')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\ndislodge ~ knock down\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Con gấu đã sử dụng một cành cây nhiều lần để lấy xuống một miếng thịt treo ngoài tầm với của nó\" (The bear used a tree branch on multiple occasions to dislodge a piece of meat hung out of his reach).\n\nBước 5: Đáp án: meat\nĐiều này cho phép nó gỡ xuống một ít thịt (This allowed him to knock down some meat).",
+					"quotes": [
+						"A male bear called GoGo in Tennoji Zoo, Osaka, has even been observed making use of a tool to manipulate his environment. The bear used a tree branch on multiple occasions to dislodge a piece of meat hung out of his reach."
+					]
+				},
+				{
+					"number": 11,
+					"text": "A wild polar bear worked out a method of reaching a platform where a ____ (11) was located.",
+					"answer": "photographer",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nMột con gấu Bắc Cực hoang dã đã tìm ra cách tiếp cận một cái bục nơi mà một ____________ đang đứng.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: NOUN + was located (NOUN làm chủ ngữ của 'WAS LOCATED' trong mệnh đề tính từ)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\ncalculated move ~ worked out a method\nget to ~ reaching\nplatform ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Một con gấu đực đã tính toán đến việc chạy và nhảy lên mấy cái thùng để tiếp cận một nhiếp ảnh gia đang đứng trên một bục cao bốn mét\" (A calculated move by a male bear involved running and jumping onto barrels in an attempt to get to a photographer standing on a platform four metres high).\n\nBước 5: Đáp án: photographer\nMột con gấu Bắc Cực hoang dã đã tìm ra cách tiếp cận một cái bục nơi mà một nhiếp ảnh gia đang đứng (A wild polar bear worked out a method of reaching a platform where a photographer was located).",
+					"quotes": [
+						"A calculated move by a male bear involved running and jumping onto barrels in an attempt to get to a photographer standing on a platform four metres high."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Polar bears have displayed behaviour such as conscious manipulation of objects and activity similar to a ____ (12)",
+					"answer": "game",
+					"quotes": [
+						"In other studies, such as one by Alison Ames in 2008, polar bears showed deliberate and focused manipulation. For example, Ames observed bears putting objects in piles and then knocking them over in what appeared to be a game.The study demonstrates that bears are capable of agile and thought-out behaviours."
+					]
+				},
+				{
+					"number": 13,
+					"text": "They may make movements suggesting ____ (13) if disappointed when hunting.",
+					"answer": "frustration",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nChúng có thể có những cử chỉ biểu hiện ________ nếu cảm thấy thất vọng khi không săn được mồi.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: suggesting + NOUN (NOUN làm Object của động từ 'SUGGESTING')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nhit out ~ make movements\nfrustration ~ từ khóa giữ nguyên\nmissed out on a kill ~ disappointed when hunting\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"người ta đã nhìn thấy nhiều con gấu đập vào băng và tuyết - dường như là do ngao ngán - khi chúng vừa mới bỏ lỡ một con mồi\" (many bears have been seen to hit out at ice and snow – seemingly out of frustration – when they have just missed out on a kill).\n\nBước 5: Đáp án: frustration\nChúng có thể có những cử chỉ biểu hiện sự ngao ngán nếu cảm thấy thất vọng khi không săn được mồi. (They may make movements suggesting frustration if disappointed when hunting).",
+					"quotes": [
+						"As for emotions, while the evidence is once again anecdotal, many bears have been seen to hit out at ice and snow – seemingly out of frustration – when they have just missed out on a kill.Moreover, polar bears can form unusual relationships with other species, including playing with the dogs used to pull sleds in the Arctic."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

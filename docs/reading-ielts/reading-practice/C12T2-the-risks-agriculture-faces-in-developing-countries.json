@@ -1,0 +1,278 @@
+{
+	"id": "b2661373-2e0a-483e-90ac-9cecead844e1",
+	"url": "https://stepielts.com/student/reading/b2661373-2e0a-483e-90ac-9cecead844e1?mode=practice",
+	"title": "The risks agriculture faces in developing countries",
+	"source": "C12T2",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "The risks agriculture faces in developing countries",
+		"subtitle": "Synthesis of an online debate*",
+		"paragraphs": [
+			"A. Two things distinguish food production from all other productive activities: first, every single person needs food each day and has a right to it; and second, it is hugely dependent on nature. These two unique aspects, one political, the other natural, make food production highly vulnerable and different from any other business. At the same time, cultural values are highly entrenched in food and agricultural systems worldwide.",
+			"B. Farmers everywhere face major risks, including extreme weather, long-term climate change, and price volatility in input and product markets. However, smallholder farmers in developing countries must in addition deal with adverse environments, both natural, in terms of soil quality, rainfall, etc., and human, in terms of infrastructure, financial systems, markets, knowledge and technology. Counter-intuitively, hunger is prevalent among many smallholder farmers in the developing world.",
+			"C. Participants in the online debate argued that our biggest challenge is to address the underlying causes of the agricultural system’s inability to ensure sufficient food for all, and they identified as drivers of this problem our dependency on fossil fuels and unsupportive government policies.",
+			"D. On the question of mitigating the risks farmers face, most essayists called for greater state intervention. In his essay, Kanayo F. Nwanze, President of the International Fund for Agricultural Development, argued that governments can significantly reduce risks for farmers by providing basic services like roads to get produce more efficiently to markets, or water and food storage facilities to reduce losses. Sophia Murphy, senior advisor to the Institute for Agriculture and Trade Policy, suggested that the procurement and holding of stocks by governments can also help mitigate wild swings in food prices by alleviating uncertainties about market supply.",
+			"E. Shenggen Fan, Director General of the International Food Policy Research Institute, held up social safety nets and public welfare programmes in Ethiopia, Brazil and Mexico as valuable ways to address poverty among farming families and reduce their vulnerability to agriculture shocks. However, some commentators responded that cash transfers to poor families do not necessarily translate into increased food security, as these programmes do not always strengthen food production or raise incomes. Regarding state subsidies for agriculture, Rokeya Kabir, Executive Director of Bangladesh Nari Progati Sangha, commented in her essay that these ‘have not compensated for the stranglehold exercised by private traders. In fact, studies show that sixty percent of beneficiaries of subsidies are not poor, but rich landowners and non-farmer traders.’",
+			"F. Nwanze, Murphy and Fan argued that private risk management tools, like private insurance, commodity futures markets, and rural finance can help small-scale producers mitigate risk and allow for investment in improvements. Kabir warned that financial support schemes often encourage the adoption of high-input agricultural practices, which in the medium term may raise production costs beyond the value of their harvests. Murphy noted that when futures markets become excessively financialised they can contribute to short-term price volatility, which increases farmers’ food insecurity. Many participants and commentators emphasised that greater transparency in markets is needed to mitigate the impact of volatility, and make evident whether adequate stocks and supplies are available. Others contended that agribusiness companies should be held responsible for paying for negative side effects.",
+			"G. Many essayists mentioned climate change and its consequences for small-scale agriculture. Fan explained that ‘in addition to reducing crop yields, climate change increases the magnitude and frequency of extreme weather events, which increase smallholder vulnerability.’ The growing unpredictability of weather patterns increases farmers’ difficulty in managing weather-related risks. According to this author, one solution would be to develop crop varieties that are more resilient to new climate trends and extreme weather patterns. Accordingly, Pat Mooney, co-founder and executive director of the ETC Group, suggested that ‘if we are to survive climate change, we must adopt policies that let peasants diversify the plant and animal species and varieties/breeds that make up our menus.’",
+			"H. Some participating authors and commentators argued in favour of community-based and autonomous risk management strategies through collective action groups, co-operatives or producers’ groups. Such groups enhance market opportunities for small-scale producers, reduce marketing costs and synchronise buying and selling with seasonal price conditions. According to Murphy, ‘collective action offers an important way for farmers to strengthen their political and economic bargaining power, and to reduce their business risks.’ One commentator, Giel Ton, warned that collective action does not come as a free good. It takes time, effort and money to organise, build trust and to experiment. Others, like Marcel Vernooij and Marcel Beukeboom, suggested that in order to ‘apply what we already know’, all stakeholders, including business, government, scientists and civil society, must work together, starting at the beginning of the value chain.",
+			"I. Some participants explained that market price volatility is often worsened by the presence of intermediary purchasers who, taking advantage of farmers’ vulnerability, dictate prices. One commentator suggested farmers can gain greater control over prices and minimise price volatility by selling directly to consumers. Similarly, Sonali Bisht, founder and advisor to the Institute of Himalayan Environmental Research and Education (INHERE), India, wrote that community-supported agriculture, where consumers invest in local farmers by subscription and guarantee producers a fair price, is a risk-sharing model worth more attention. Direct food distribution systems not only encourage small-scale agriculture but also give consumers more control over the food they consume, she wrote.",
+			"* The personal names in the text refer to the authors of written contributions to the online debate"
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-3",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Reading Passage 1 has nine paragraphs, A-I.\nWhich paragraph contains the following information?\nWrite the correct letter, A-I, in boxes 1-3 on your answer sheet.",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H", "I"],
+			"questions": [
+				{
+					"number": 1,
+					"text": "a reference to characteristics that only apply to food production",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề cập đến các đặc điểm chỉ áp dụng cho việc sản xuất thực phẩm.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nTwo things distinguish ~ characteristics that only apply to\nfood production ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nĐoạn A chỉ rõ: \"Hai điều phân biệt sản xuất thực phẩm với tất cả các hoạt động sản xuất khác: thứ nhất, mọi người đều cần thực phẩm mỗi ngày và có quyền được hưởng; và thứ hai, nó phụ thuộc rất nhiều vào thiên nhiên.\"\n=> Thông tin này cho thấy đoạn A đã \"đề cập đến các đặc điểm chỉ áp dụng cho việc sản xuất thực phẩm\".\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"Two things distinguish food production from all other productive activities: first, every single person needs food each day and has a right to it; and second, it is hugely dependent on nature."
+					]
+				},
+				{
+					"number": 2,
+					"text": "a reference to challenges faced only by farmers in certain parts of the world",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề cập đến những thách thức mà chỉ nông dân ở một số nơi trên thế giới phải đối mặt.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nsmallholder farmers in developing countries ~ farmers in certain parts of the world\nmust in addition deal with ~ challenges faced only by\n\nBước 3: So sánh và đối chiếu:\nĐoạn B chỉ rõ: \"Tuy nhiên, nông dân quy mô nhỏ ở các nước đang phát triển còn phải đối mặt với môi trường bất lợi, cả về mặt tự nhiên, như chất lượng đất, lượng mưa, v.v., và con người, như cơ sở hạ tầng, hệ thống tài chính, thị trường, kiến thức và công nghệ.\"\n=> Thông tin này cho thấy đoạn B đã \"đề cập đến những thách thức mà chỉ nông dân ở một số nơi trên thế giới phải đối mặt\".\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"However, smallholder farmers in developing countries must in addition deal with adverse environments, both natural, in terms of soil quality, rainfall, etc., and human, in terms of infrastructure, financial systems, markets, knowledge and technology."
+					]
+				},
+				{
+					"number": 3,
+					"text": "a reference to difficulties in bringing about co-operation between farmers",
+					"answer": "H",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề cập đến những khó khăn trong việc tạo ra sự hợp tác giữa các nông dân.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\ncollective action does not come as a free good ~ difficulties in bringing about co-operation\nIt takes time, effort and money to organise, build trust and to experiment ~ difficulties in bringing about co-operation between farmers\n\nBước 3: So sánh và đối chiếu:\nĐoạn H chỉ rõ: \"Một người bình luận, Giel Ton, cảnh báo rằng hành động tập thể không phải là một lợi ích miễn phí. Nó cần thời gian, công sức và tiền bạc để tổ chức, xây dựng lòng tin và thử nghiệm\".\n=> Thông tin này cho thấy đoạn H đã \"đề cập đến những khó khăn trong việc tạo ra sự hợp tác giữa các nông dân\".\n\nBước 4: Đáp án: H",
+					"quotes": [
+						"According to Murphy, ‘collective action offers an important way for farmers to strengthen their political and economic bargaining power, and to reduce their business risks.’ One commentator, Giel Ton, warned that collective action does not come as a free good. It takes time, effort and money to organise, build trust and to experiment."
+					]
+				}
+			]
+		},
+		{
+			"range": "4-9",
+			"type": "MATCHING_FEATURES",
+			"instructions": "Look at the following statements (Question 4-9) and the list of people below.\nMatch each statement with the correct person, A-G.\nWrite the correct letter, A-G, in boxes 4-9 on your answer sheet.\nNB You may use any letter more than once.",
+			"options": [
+				{
+					"label": "A",
+					"text": "Kanayo F. Nwanze"
+				},
+				{
+					"label": "B",
+					"text": "Sophia Murphy"
+				},
+				{
+					"label": "C",
+					"text": "Shenggen Fan"
+				},
+				{
+					"label": "D",
+					"text": "Rokeya Kabir"
+				},
+				{
+					"label": "E",
+					"text": "Pat Mooney"
+				},
+				{
+					"label": "F",
+					"text": "Giel Ton"
+				},
+				{
+					"label": "G",
+					"text": "Sonali Bisht"
+				}
+			],
+			"body": "Financial assistance from the government does not always go to the farmers who most need it. ____ (4)\nFarmers can benefit from collaborating as a group. ____ (5)\nFinancial assistance from the government can improve the standard of living of farmers. ____ (6)\nFarmers may be helped if there is financial input by the same individuals who buy from them ____ (7)\nGovernments can help to reduce variation in prices. ____ (8)\nImprovements to infrastructure can have a major impact on risk for farmers. ____ (9)",
+			"body_html": "<p>Financial assistance from the government does not always go to the farmers who most need it. [4]</p><p>Farmers can benefit from collaborating as a group. [5]</p><p>Financial assistance from the government can improve the standard of living of farmers. [6]</p><p>Farmers may be helped if there is financial input by the same individuals who buy from them [7]</p><p>Governments can help to reduce variation in prices. [8]</p><p>Improvements to infrastructure can have a major impact on risk for farmers. [9]</p>",
+			"questions": [
+				{
+					"number": 4,
+					"text": "Financial assistance from the government does not always go to the farmers who most need it.",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Hỗ trợ tài chính từ chính phủ không phải lúc nào cũng đến được với những nông dân cần nó nhất\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nstate subsidies for agriculture ~ Financial assistance from the government\nhave not compensated for ~ does not always go to\nsixty percent of beneficiaries of subsidies are not poor, but rich landowners and non-farmer traders ~ farmers who most need it\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Rokeya Kabir \"Các khoản trợ cấp của nhà nước cho nông nghiệp không bù đắp được cho sự thống trị của các thương nhân tư nhân. Thực tế, các nghiên cứu cho thấy 60% người hưởng lợi từ trợ cấp không phải là người nghèo, mà là các chủ đất giàu có và thương nhân không phải nông dân\".\n\nBước 4: Đáp án: D",
+					"quotes": [
+						"Regarding state subsidies for agriculture, Rokeya Kabir, Executive Director of Bangladesh Nari Progati Sangha, commented in her essay that these ‘have not compensated for the stranglehold exercised by private traders. In fact, studies show that sixty percent of beneficiaries of subsidies are not poor, but rich landowners and non-farmer traders.’"
+					]
+				},
+				{
+					"number": 5,
+					"text": "Farmers can benefit from collaborating as a group.",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi: Đề hỏi ai là người đưa ra ý kiến này: \"Nông dân có thể được hưởng lợi từ việc hợp tác theo nhóm\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ncollective action ~ collaborating as a group\noffers an important way for farmers ~ Farmers can benefit from\nstrengthen their political and economic bargaining power, and to reduce their business risks ~ can benefit\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Sophia Murphy \"Hành động tập thể có tầm quan trọng để giúp nông dân tăng cường sức mạnh đàm phán chính trị và kinh tế, và giảm rủi ro kinh doanh của họ\".\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"According to Murphy, ‘collective action offers an important way for farmers to strengthen their political and economic bargaining power, and to reduce their business risks.’ One commentator, Giel Ton, warned that collective action does not come as a free good."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Financial assistance from the government can improve the standard of living of farmers.",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Hỗ trợ tài chính từ chính phủ có thể cải thiện mức sống của nông dân\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nsocial safety nets and public welfare programmes ~ Financial assistance from the government\nvaluable ways to address poverty among farming families ~ can improve the standard of living of farmers\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Shenggen Fan \"Mạng lưới an sinh xã hội và các chương trình phúc lợi công cộng ở Ethiopia, Brazil và Mexico là những cách có giá trị để giải quyết vấn đề nghèo đói trong các gia đình nông dân và giảm tính dễ bị tổn thương của họ trước các cú sốc nông nghiệp\".\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"E. Shenggen Fan, Director General of the International Food Policy Research Institute, held up social safety nets and public welfare programmes in Ethiopia, Brazil and Mexico as valuable ways to address poverty among farming families and reduce their vulnerability to agriculture shocks."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Farmers may be helped if there is financial input by the same individuals who buy from them",
+					"answer": "G",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Nông dân có thể được giúp đỡ nếu có sự đóng góp tài chính từ chính những người mua sản phẩm của họ\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ncommunity-supported agriculture ~ financial input by the same individuals who buy from them\nconsumers ~ individuals who buy from them\nguarantee producers a fair price ~ Farmers may be helped\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Sonali Bisht \"Nông nghiệp được cộng đồng hỗ trợ, nơi người tiêu dùng đầu tư vào nông dân địa phương bằng cách đăng ký và đảm bảo giá công bằng cho nhà sản xuất, là một mô hình chia sẻ rủi ro đáng được chú ý hơn\".\n\nBước 4: Đáp án: G",
+					"quotes": [
+						"Similarly, Sonali Bisht, founder and advisor to the Institute of Himalayan Environmental Research and Education (INHERE), India, wrote that community-supported agriculture, where consumers invest in local farmers by subscription and guarantee producers a fair price, is a risk-sharing model worth more attention. Direct food distribution systems not only encourage small-scale agriculture but also give consumers more control over the food they consume, she wrote."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Governments can help to reduce variation in prices.",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Chính phủ có thể giúp giảm sự biến động về giá cả\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nprocurement and holding of stocks by governments ~ Governments can help\nhelp mitigate wild swings in food prices ~ reduce variation in prices\nalleviating uncertainties about market supply ~ reduce variation in prices\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Sophia Murphy \"Việc chính phủ mua và dự trữ hàng hóa cũng có thể giúp giảm thiểu những biến động mạnh về giá lương thực bằng cách giảm bớt sự bất ổn về nguồn cung cấp thị trường\".\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"Sophia Murphy, senior advisor to the Institute for Agriculture and Trade Policy, suggested that the procurement and holding of stocks by governments can also help mitigate wild swings in food prices by alleviating uncertainties about market supply."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Improvements to infrastructure can have a major impact on risk for farmers.",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Cải thiện cơ sở hạ tầng có thể có tác động lớn đến rủi ro cho nông dân\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nproviding basic services like roads ~ Improvements to infrastructure\nsignificantly reduce risks for farmers ~ can have a major impact on risk for farmers\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Kanayo F. Nwanze \"Chính phủ có thể giảm đáng kể rủi ro cho nông dân bằng cách cung cấp các dịch vụ cơ bản như đường xá để đưa sản phẩm đến thị trường hiệu quả hơn, hoặc các cơ sở lưu trữ nước và thực phẩm để giảm tổn thất\".\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"In his essay, Kanayo F. Nwanze, President of the International Fund for Agricultural Development, argued that governments can significantly reduce risks for farmers by providing basic services like roads to get produce more efficiently to markets, or water and food storage facilities to reduce losses."
+					]
+				}
+			]
+		},
+		{
+			"range": "10-11",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers.",
+			"questions": [
+				{
+					"number": 10,
+					"text": "Which TWO problems are mentioned which affect farmers with small farms in developing countries?",
+					"options": [
+						{
+							"label": "A",
+							"text": "lack of demand for locally produced food"
+						},
+						{
+							"label": "B",
+							"text": "lack of irrigation programmes"
+						},
+						{
+							"label": "C",
+							"text": "being unable to get insurance"
+						},
+						{
+							"label": "D",
+							"text": "the effects of changing weather patterns"
+						},
+						{
+							"label": "E",
+							"text": "having to sell their goods to intermediary buyers"
+						}
+					],
+					"answer": "D"
+				},
+				{
+					"number": 11,
+					"text": "Which TWO problems are mentioned which affect farmers with small farms in developing countries?",
+					"options": [
+						{
+							"label": "A",
+							"text": "lack of demand for locally produced food"
+						},
+						{
+							"label": "B",
+							"text": "lack of irrigation programmes"
+						},
+						{
+							"label": "C",
+							"text": "being unable to get insurance"
+						},
+						{
+							"label": "D",
+							"text": "the effects of changing weather patterns"
+						},
+						{
+							"label": "E",
+							"text": "having to sell their goods to intermediary buyers"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "12-13",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers.",
+			"questions": [
+				{
+					"number": 12,
+					"text": "Which TWO actions are recommended for improving conditions for farmers?",
+					"options": [
+						{
+							"label": "A",
+							"text": "reducing the size of food stocks"
+						},
+						{
+							"label": "B",
+							"text": "attempting to ensure that prices rise at certain times of the year"
+						},
+						{
+							"label": "C",
+							"text": "organising co-operation between a wide range of interested parties"
+						},
+						{
+							"label": "D",
+							"text": "encouraging consumers to take a financial stake in farming"
+						},
+						{
+							"label": "E",
+							"text": "making customers aware of the reasons for changing food prices"
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 13,
+					"text": "Which TWO actions are recommended for improving conditions for farmers?",
+					"options": [
+						{
+							"label": "A",
+							"text": "reducing the size of food stocks"
+						},
+						{
+							"label": "B",
+							"text": "attempting to ensure that prices rise at certain times of the year"
+						},
+						{
+							"label": "C",
+							"text": "organising co-operation between a wide range of interested parties"
+						},
+						{
+							"label": "D",
+							"text": "encouraging consumers to take a financial stake in farming"
+						},
+						{
+							"label": "E",
+							"text": "making customers aware of the reasons for changing food prices"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		}
+	],
+	"images": []
+}

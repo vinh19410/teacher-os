@@ -1,0 +1,167 @@
+{
+	"id": "01c13b78-42ee-458c-b4d6-b0488d798574",
+	"url": "https://stepielts.com/student/reading/01c13b78-42ee-458c-b4d6-b0488d798574?mode=practice",
+	"title": "Coral Reefs",
+	"source": "Collection",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Coral Reefs",
+		"paragraphs": [
+			"Coral reefs are underwater structures made from calcium carbonate secreted by corals. Coral reefs are colonies of tiny living animals found in marine waters that contain few nutrients. Most coral reefs are built from stony corals, which in turn consist of polyps that cluster in groups.",
+			"A. Coral reefs are estimated to cover 284,300 km², just under 0.1% of the oceans’ surface area, about half the area of France. The Indo-Pacific region accounts for 91.9% of this total area. Southeast Asia accounts for 32.3% of that figure, while the Pacific including Australia accounts for 40.8%. Atlantic and Caribbean coral reefs account for 7.6%. Yet often called \"rainforests of the sea\", coral reefs form some of the most diverse ecosystems on Earth. They provide a home for 25% of all marine species, including fish, mollusks, worms, crustaceans, echinoderms, sponges, tunicates and other cnidarians. Paradoxically, coral reefs flourish even though they are surrounded by ocean waters that provide few nutrients. They are most commonly found at shallow depths in tropical waters, but deep water and cold water corals also exist on smaller scales in other areas. Although corals exist both in temperate and tropical waters, shallow-water reefs form only in a zone extending from 30°N to 30°S of the equator. Deepwater coral can exist at greater depths and colder temperatures at much higher latitudes, as far north as Norway. Coral reefs are rare along the American and African west coasts. This is due primarily to upwelling and strong cold coastal currents that reduce water temperatures in these areas (respectively the Peru, Benguela and Canary streams). Corals are seldom found along the coastline of South Asia from the eastern tip of India (Madras) to the Bangladesh and Myanmar borders. They are also rare along the coast around northeastern South America and Bangladesh due to the freshwater released from the Amazon and Ganges Rivers, respectively.",
+			"B. Coral reefs deliver ecosystem services to tourism, fisheries and coastline protection. The global economic value of coral reefs has been estimated at as much as $US375 billion per year. Coral reefs protect shorelines by absorbing wave energy, and many small islands would not exist without their reef to protect them.",
+			"C. The value of reefs in biodiverse regions can be even higher. In parts of Indonesia and the Caribbean where tourism is the main use, reefs are estimated to be worth US$1 million per square kilometer, based on the cost of maintaining sandy beaches and the value of attracting snorkelers and scuba divers. Meanwhile, a recent study of the Great Barrier Reef in Australia found that the reef is worth more to the country as an intact ecosystem than an extractive reserve for fishing. Each year more than 1.8 million tourists visit the reef, spending an estimated AU$4.3 billion (Australian dollars) on reef-related industries from diving to boat rental to posh island resort stays. In the Caribbean, says UNEP, the net annual benefits from diver tourism were US$2 billion in 2000 with US$625 million spent directly on diving on reefs. Further, reef tourism is an important source of employment, especially for some of the world’s poorest people. UNEP says that of the estimated 30 million small-scale fishers in the developing world, most are dependent to a greater or lesser extent on coral reefs. In the Philippines, for example, more than one million small-scale fishers depend directly on coral reefs for their livelihoods. The report estimates that reef fisheries were worth between $15,000 and $150,000 per square kilometer a year, while fish caught for aquariums were worth $500 a kilogram against $6 for fish caught as food. The aquarium fish export industry supports around 50,000 people and generates some US$5.5 million a year in Sri Lanka alone.",
+			"D. Unfortunately, coral reefs are dying around the world. In particular, coral mining, agricultural and urban runoff, pollution (organic and inorganic), disease, and the digging of canals and access into islands and bays are localized threats to coral ecosystems. Broader threats are sea temperature rise, sea-level rise and pH changes from ocean acidification, all associated with greenhouse gas emissions. Some current fishing practices are destructive and unsustainable. These include cyanide fishing, overfishing and blast fishing. Although cyanide fishing supplies live reef fish for the tropical aquarium market, most fish caught using this method are sold in restaurants, primarily in Asia, where live fish are prized for their freshness. To catch fish with cyanide, fishers dive down to the reef and squirt cyanide in coral crevices and on the fast-moving fish, to stun the fish making them easy to catch. Overfishing is another leading cause for coral reef degradation. Often, too many fish are taken from one reef to sustain a population in that area. Poor fishing practices, such as banging on the reef with sticks (muro-ami), destroy coral formations that normally function as fish habitat. In some instances, people fish with explosives (blast fishing), which blast apart the surrounding coral.",
+			"E. Tourist resorts that empty their sewage directly into the water surrounding coral reefs contribute to coral reef degradation. Wastes kept in poorly maintained septic tanks can also leak into surrounding groundwater, eventually seeping out to the reefs. Careless boating, diving, snorkeling and fishing can also damage coral reefs. Whenever people grab, kick, and walk on, or stir up sediment in the reefs, they contribute to coral reef destruction. Corals are also harmed or killed when people drop anchors on them or when people collect coral.",
+			"F. To find answers for these problems, scientists and researchers study the various factors that impact reefs. The list includes the ocean’s role as a carbon dioxide sink, atmospheric changes, ultraviolet light, ocean acidification, viruses, impacts of dust storms carrying agents to far-flung reefs, pollutants, algal blooms and others. Reefs are threatened well beyond coastal areas. General estimates show approximately 10% of the world’s coral reefs are dead. About 60% of the world’s reefs are at risk due to destructive, human-related activities. The threat to the health of reefs is particularly strong in Southeast Asia, where 80% of reefs are endangered.",
+			"G. In Australia, the Great Barrier Reef is protected by the Great Barrier Reef Marine Park Authority and is the subject of much legislation, including a biodiversity action plan. Inhabitants of Ahus Island, Manus Province, Papua New Guinea, have followed a generations-old practice of restricting fishing in six areas of their reef lagoon. Their cultural traditions allow line fishing, but not net or spearfishing. The result is both the biomass and individual fish sizes are significantly larger in these areas than in places where fishing is unrestricted."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "The reading Passage has seven paragraphs A-G.\nWhich paragraph contains the following information?\nNB You may use any letter more than once.",
+			"options": ["A", "B", "C", "D", "E", "F", "G"],
+			"questions": [
+				{
+					"number": 1,
+					"text": "Geographical location of the world‘s coral reef",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTìm đoạn văn chứa thông tin về vị trí địa lý của rạn san hô trên thế giới.\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\ngeographical location ~ Indo-Pacific region, Southeast Asia, Atlantic, 30°N to 30°S, west coasts\nBước 3: So sánh và đối chiếu:\nĐoạn A chỉ rõ: \"Khu vực Ấn Độ-Thái Bình Dương chiếm 91.9%... Đông Nam Á chiếm 32.3%... Rạn san hô Đại Tây Dương và Ca-ri-bê chiếm 7.6%.\" Đoạn văn cũng đề cập đến vĩ độ (\"từ 30°N đến 30°S\") và các khu vực hiếm thấy (\"dọc theo bờ biển phía tây châu Mỹ và châu Phi\").\n=> Thông tin này cho thấy đoạn A đã \"mô tả chi tiết vị trí địa lý của san hô\".\nBước 4: Đáp án: A"
+				},
+				{
+					"number": 2,
+					"text": "How does coral reef benefit economy locally",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTìm đoạn văn chứa thông tin về Rạn san hô mang lại lợi ích kinh tế cho địa phương như thế nào.\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nbenefit economy locally ~ Indonesia and the Caribbean, worth US$1 million... attracting snorkelers, Great Barrier Reef... 1.8 million tourists\nBước 3: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"Ở các vùng của Indonesia và Ca-ri-bê nơi du lịch là mục đích sử dụng chính, các rạn san hô được ước tính trị giá 1 triệu USD mỗi km vuông, dựa trên chi phí duy trì... và giá trị thu hút thợ lặn ống thở và thợ lặn bình khí.\" Đoạn văn cũng đề cập 1.8 triệu khách du lịch đến Great Barrier Reef.\n=> Thông tin này cho thấy đoạn C đã \"nói về lợi ích kinh tế ở các địa phương cụ thể\".\nBước 4: Đáp án: C"
+				},
+				{
+					"number": 3,
+					"text": "The statistics of coral reef‘s economic significance",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTìm đoạn văn chứa thông tin về Các số liệu thống kê về tầm quan trọng kinh tế của rạn san hô.\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nstatistics ~ US$1 million, 1.8 million tourists, AU$4.3 billion, US$2 billion, 30 million fishers, $15,000 and $150,000, US$5.5 million\nBước 3: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"...1,8 triệu khách du lịch... chi tiêu ước tính 4,3 tỷ đô la Úc...\" và \"...lợi ích ròng hàng năm từ du lịch lặn là 2 tỷ USD vào năm 2000...\" và \"...ngành thủy sản từ rạn san hô trị giá từ 15.000 đến 150.000 USD mỗi km vuông...\"\n=> Thông tin này cho thấy đoạn C đã \"cung cấp rất nhiều số liệu thống kê về giá trị kinh tế\".\nBước 4: Đáp án: C"
+				},
+				{
+					"number": 4,
+					"text": "The listed reasons for the declining number of coral reef",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTìm đoạn văn chứa thông tin về Các lý do được liệt kê cho sự suy giảm số lượng rạn san hô.\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nreasons for declining ~ threats, coral mining, runoff, pollution, disease, sea temperature rise, acidification\nBước 3: So sánh và đối chiếu:\nĐoạn D chỉ rõ: \"Đặc biệt, khai thác san hô, dòng chảy nông nghiệp và đô thị, ô nhiễm (hữu cơ và vô cơ), bệnh tật, và việc đào kênh... là các mối đe dọa cục bộ...\" và \"Các mối đe dọa rộng hơn là sự tăng nhiệt độ nước biển, tăng mực nước biển và thay đổi độ pH...\"\n=> Thông tin này cho thấy đoạn D đã \"liệt kê các lý do (mối đe dọa) gây suy giảm san hô\".\nBước 4: Đáp án: D",
+					"quotes": [
+						"In particular, coral mining, agricultural and urban runoff, pollution (organic and inorganic), disease, and the digging of canals and access into islands and bays are localized threats to coral ecosystems. Broader threats are sea temperature rise, sea-level rise and pH changes from ocean acidification, all associated with greenhouse gas emissions."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Physical approach to the coral reef by people",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTìm đoạn văn chứa thông tin về sự tiếp cận vật lý của con người đối với rạn san hô (cách con người tác động vật lý).\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nphysical approach ~ grab, kick, walk on, drop anchors\nBước 3: So sánh và đối chiếu:\nĐoạn E chỉ rõ: \"Bất cứ khi nào mọi người nắm, đá, và đi bộ lên, hoặc khuấy động trầm tích trong các rạn san hô, họ đều góp phần phá hủy rạn san hô. San hô cũng bị hại hoặc bị giết khi mọi người thả neo lên chúng...\"\n=> Thông tin này cho thấy đoạn E đã \"mô tả các hành động tiếp xúc vật lý gây hại của con người\".\nBước 4: Đáp án: E",
+					"quotes": [
+						"Whenever people grab, kick, and walk on, or stir up sediment in the reefs, they contribute to coral reef destruction. Corals are also harmed or killed when people drop anchors on them or when people collect coral."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Unsustainable fishing methods are applied in regions of the world",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTìm đoạn văn chứa thông tin về Các phương pháp đánh bắt không bền vững được áp dụng ở các khu vực trên thế giới.\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nunsustainable fishing methods ~ cyanide fishing, overfishing, blast fishing\nregions of the world ~ Asia\nBước 3: So sánh và đối chiếu:\nĐoạn D chỉ rõ: \"Một số hoạt động đánh bắt cá hiện nay mang tính hủy diệt và không bền vững. Chúng bao gồm đánh bắt bằng xyanua, đánh bắt quá mức và đánh bắt bằng chất nổ.\" Đoạn văn cũng đề cập \"chủ yếu ở châu Á (Asia), nơi cá sống được đánh giá cao\".\n=> Thông tin này cho thấy đoạn D đã \"nói về các phương pháp đánh bắt không bền vững và khu vực áp dụng\".\nBước 4: Đáp án: D",
+					"quotes": [
+						"Some current fishing practices are destructive and unsustainable. These include cyanide fishing, overfishing and blast fishing. Although cyanide fishing supplies live reef fish for the tropical aquarium market, most fish caught using this method are sold in restaurants, primarily in Asia, where live fish are prized for their freshness."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-12",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage? Write your answers in boxes 7-12 on your answer sheet.\nTRUE if the statement is true\nFALSE if the statement is false\nNOT GIVEN if the information is not given in the passage",
+			"questions": [
+				{
+					"number": 7,
+					"text": "Coral reefs provide habitat to a variety of marine life.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nRạn san hô cung cấp môi trường sống cho nhiều loại sinh vật biển.\nBước 2: Tìm các keywords được paraphrase trong bài:\nprovide habitat ~ provide a home\na variety of marine life ~ 25% of all marine species, including fish, mollusks...\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ (Đoạn A): \"Chúng cung cấp một mái nhà cho 25% tổng số loài sinh vật biển, bao gồm cá, động vật thân mềm, giun, động vật giáp xác, động vật da gai, bọt biển, động vật có bao và các loài cnidaria khác\" (They provide a home for 25% of all marine species, including fish, mollusks worms, crustaceans, echinoderms, sponges, tunicates and other cnidarians.).\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Rạn san hô cung cấp môi trường sống cho nhiều loại sinh vật biển\". (Coral reefs provide habitat to a variety of marine life.)\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"They provide a home for 25% of all marine species, including fish, mollusks, worms, crustaceans, echinoderms, sponges, tunicates and other cnidarians."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Coral reefs are distributed around the ocean disproportionally.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác rạn san hô phân bố không đồng đều quanh đại dương.\nBước 2: Tìm các keywords được paraphrase trong bài:\ndistributed ~ accounts for\ndisproportionally ~ 91.9%, 7.6% (các con số chênh lệch lớn)\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ (Đoạn A): \"Khu vực Ấn Độ-Thái Bình Dương chiếm 91.9% tổng diện tích này... Rạn san hô Đại Tây Dương và Ca-ri-bê chiếm 7.6%\" (The Indo-Pacific region accounts for 91.9% of this total area... Atlantic and Caribbean coral reefs account for 7.6%).\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Các rạn san hô phân bố không đồng đều\" (Coral reefs are distributed around the ocean disproportionally.)\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"The Indo-Pacific region accounts for 91.9% of this total area. Southeast Asia accounts for 32.3% of that figure, while the Pacific including Australia accounts for 40.8%. Atlantic and Caribbean coral reefs account for 7.6%."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Coral reefs are increasingly important for scientific purposes.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nRạn san hô đang ngày càng trở nên quan trọng cho các mục đích khoa học.\nBước 2: Tìm các keywords được paraphrase trong bài:\nscientific purposes ~ scientists and researchers study\nincreasingly important ~ (không tìm thấy)\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc (Đoạn F): \"các nhà khoa học và nhà nghiên cứu nghiên cứu các yếu tố khác nhau tác động đến rạn san hô\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"rạn san hô đang ngày càng trở nên quan trọng (increasingly important)\" cho mục đích khoa học. Bài đọc chỉ nói rằng các nhà khoa học đang nghiên cứu chúng.\nBước 4: Đáp án: NOT GIVEN"
+				},
+				{
+					"number": 10,
+					"text": "Coral reefs are greatly exchanged among and exported to other countries.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác rạn san hô được trao đổi và xuất khẩu rất nhiều sang các nước khác.\nBước 2: Tìm các keywords được paraphrase trong bài:\nexchanged/exported ~ (không tìm thấy)\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc (Đoạn C): \"cá bắt cho bể cá (aquarium fish export industry) ... tạo ra khoảng 5,5 triệu USD mỗi năm ở Sri Lanka\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"bản thân các rạn san hô (coral reefs) được trao đổi hoặc xuất khẩu\". Bài đọc chỉ nói về việc cá từ rạn san hô được xuất khẩu.\nBước 4: Đáp án: NOT GIVEN"
+				},
+				{
+					"number": 11,
+					"text": "Reef tourism is of economic essence generally for some poor people.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nDu lịch rạn san hô có tầm quan trọng kinh tế nói chung đối với một số người nghèo.\nBước 2: Tìm các keywords được paraphrase trong bài:\neconomic essence ~ important source of employment\npoor people ~ poorest people\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ (Đoạn C): \"Hơn nữa, du lịch rạn san hô là một nguồn việc làm quan trọng, đặc biệt là đối với một số người nghèo nhất thế giới\" (Further, reef tourism is an important source of employment, especially for some of the world's poorest people).\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Du lịch rạn san hô có tầm quan trọng kinh tế... đối với một số người nghèo\". (Reef tourism is of economic essence generally for some poor people.)\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"In the Caribbean, says UNEP, the net annual benefits from diver tourism were US$2 billion in 2000 with US$625 million spent directly on diving on reefs. Further, reef tourism is an important source of employment, especially for some of the world’s poorest people."
+					]
+				},
+				{
+					"number": 12,
+					"text": "As with other fishing business, coral fishery is not suitable for women and children.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCũng như các ngành đánh bắt cá khác, nghề cá san hô không phù hợp với phụ nữ và trẻ em.\nBước 2: Tìm các keywords được paraphrase trong bài:\nwomen and children ~ (không tìm thấy)\nnot suitable ~ (không tìm thấy)\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc (Đoạn C): \"30 triệu người đánh cá quy mô nhỏ (small-scale fishers)\" và \"hơn một triệu người đánh cá quy mô nhỏ ở Philippines\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"việc đánh cá này có phù hợp với phụ nữ và trẻ em hay không\".\nBước 4: Đáp án: NOT GIVEN"
+				}
+			]
+		},
+		{
+			"range": "13",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, C or D.\nWrite your answers in boxes 13 on your answer sheet.",
+			"questions": [
+				{
+					"number": 13,
+					"text": "What is the main purpose of this passage?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Demonstrate how coral reef growth in the ocean"
+						},
+						{
+							"label": "B",
+							"text": "To tell that coral reef is widely used as a scientific project"
+						},
+						{
+							"label": "C",
+							"text": "Present the general benefits and an alarming situation of coral reef"
+						},
+						{
+							"label": "D",
+							"text": "To show the vital efforts made to protect the coral reef in Australia"
+						}
+					],
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nMục đích chính của đoạn văn này là gì?\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc bắt đầu bằng định nghĩa và vị trí của san hô (Đoạn A). Sau đó, bài đọc trình bày các lợi ích (benefits) của chúng (Đoạn B, C). Tiếp theo, bài đọc mô tả hàng loạt các mối đe dọa và tình trạng đáng lo ngại (alarming situation) của chúng (Đoạn D, E, F). Cuối cùng, bài đọc đề cập ngắn gọn đến việc bảo vệ (Đoạn G).\n=> Thông tin tổng quan này đồng nghĩa với câu C (Trình bày những lợi ích chung và tình hình đáng báo động của rạn san hô).\nBước 3: Đáp án: C\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A (San hô phát triển như thế nào) -> Đoạn văn không giải thích cách chúng phát triển.\nĐáp án B (Được sử dụng rộng rãi như một dự án khoa học) -> Đoạn văn chỉ nhắc đến các nhà khoa học đang nghiên cứu các mối đe dọa (Đoạn F), đây không phải là mục đích chính.\nĐáp án D (Nỗ lực bảo vệ ở Úc) -> Đây chỉ là một ví dụ nhỏ ở Đoạn G, không phải mục đích chính của cả bài."
+				}
+			]
+		}
+	],
+	"images": []
+}

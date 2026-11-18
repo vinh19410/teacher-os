@@ -6,11 +6,12 @@ import {
 	ENTRY_SCORE_MAX_LENGTH,
 	EXAM_INTERESTS,
 	type ExamInterest,
-	IELTS_TARGET_BANDS,
+	getTargetScoreOptions,
 	LEARNING_GOAL_OPTIONS,
 	type LearningGoalOption,
+	STORED_EXAM_INTERESTS,
+	type StoredExamInterest,
 	type StudentOnboardingPayload,
-	TOEIC_TARGET_SCORES,
 } from "@teacher-os/api/contracts";
 import { Input } from "@teacher-os/ui/components/input";
 import { Textarea } from "@teacher-os/ui/components/textarea";
@@ -18,12 +19,17 @@ import { Check } from "lucide-react";
 import type * as React from "react";
 import { cn } from "@/lib/cn";
 
-export const EXAM_LABELS: Record<ExamInterest, string> = {
+export const EXAM_LABELS: Record<StoredExamInterest, string> = {
 	ielts: "IELTS",
 	toeic: "TOEIC",
+	communication: "Giao Tiếp",
+};
+const EXAM_DESCRIPTIONS: Record<ExamInterest, string> = {
+	ielts: "Academic & General Training",
+	communication: "Nghe nói tự tin theo khung CEFR",
 };
 export const CURRENT_LEVEL_LABELS: Record<
-	ExamInterest,
+	StoredExamInterest,
 	Record<CurrentLevelOption, { label: string; sub?: string }>
 > = {
 	ielts: {
@@ -42,18 +48,57 @@ export const CURRENT_LEVEL_LABELS: Record<
 		advanced: { label: "750 trở lên", sub: "Thành thạo trong công việc" },
 		unsure: { label: "Chưa rõ", sub: "Chưa từng thi hoặc tự đánh giá" },
 	},
+	communication: {
+		beginner: { label: "Mới bắt đầu", sub: "Chưa giao tiếp được tiếng Anh" },
+		basic: { label: "A1 – A2", sub: "Câu đơn giản, chủ đề quen thuộc" },
+		intermediate: { label: "B1", sub: "Trao đổi được tình huống hằng ngày" },
+		"upper-intermediate": {
+			label: "B2",
+			sub: "Trò chuyện trôi chảy, tự nhiên",
+		},
+		advanced: {
+			label: "C1 trở lên",
+			sub: "Linh hoạt trong học tập & công việc",
+		},
+		unsure: { label: "Chưa rõ", sub: "Chưa từng kiểm tra trình độ" },
+	},
 };
+
+/** Thang đo hiển thị ở thẻ thống kê dashboard theo hướng học. */
+export const EXAM_SCALE_LABELS: Record<StoredExamInterest, string> = {
+	ielts: "Band IELTS",
+	toeic: "Điểm TOEIC",
+	communication: "Trình độ CEFR",
+};
+
+export function toStoredExamInterest(
+	examInterest: string | null | undefined,
+): StoredExamInterest {
+	return (STORED_EXAM_INTERESTS as readonly string[]).includes(
+		examInterest ?? "",
+	)
+		? (examInterest as StoredExamInterest)
+		: "ielts";
+}
+
+/** Nhãn hiển thị targetScore: IELTS thêm tiền tố "Band", các hướng khác giữ nguyên. */
+export function formatTargetScore(
+	targetScore: string,
+	examInterest: string | null | undefined,
+): string {
+	return toStoredExamInterest(examInterest) === "ielts"
+		? `Band ${targetScore}`
+		: targetScore;
+}
 
 export function getCurrentLevelLabel(
 	level: string | null | undefined,
 	examInterest?: string | null,
 ): string {
 	if (!level) return "";
-	const examKey = (
-		examInterest === "toeic" ? "toeic" : "ielts"
-	) as ExamInterest;
 	const levelKey = level as CurrentLevelOption;
-	const item = CURRENT_LEVEL_LABELS[examKey]?.[levelKey];
+	const item =
+		CURRENT_LEVEL_LABELS[toStoredExamInterest(examInterest)]?.[levelKey];
 	return item ? item.label : level;
 }
 
@@ -133,10 +178,10 @@ export function ExamInterestStep({
 		<div className="space-y-4">
 			<div>
 				<h2 className="font-semibold text-foreground text-lg">
-					Bạn đang quan tâm chứng chỉ nào?
+					Bạn muốn học tiếng Anh theo hướng nào?
 				</h2>
 				<p className="mt-1 text-muted-foreground text-xs">
-					Chọn bài thi bạn muốn ôn luyện để xây dựng mục tiêu học tập rõ ràng.
+					Chọn hướng học để xây dựng mục tiêu học tập rõ ràng.
 				</p>
 			</div>
 			<div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-2">
@@ -145,11 +190,7 @@ export function ExamInterestStep({
 						key={interest}
 						selected={value === interest}
 						label={EXAM_LABELS[interest]}
-						description={
-							interest === "ielts"
-								? "Academic & General Training"
-								: "Listening & Reading"
-						}
+						description={EXAM_DESCRIPTIONS[interest]}
 						onClick={() => onSelect(interest)}
 					/>
 				))}
@@ -179,7 +220,7 @@ export function CurrentLevelStep({
 					Trình độ hiện tại của bạn?
 				</h2>
 				<p className="mt-1 text-muted-foreground text-xs">
-					Ước lượng trình độ của bạn trước khi bắt đầu luyện thi{" "}
+					Ước lượng trình độ của bạn trước khi bắt đầu luyện{" "}
 					{EXAM_LABELS[examInterest]}.
 				</p>
 			</div>
@@ -250,23 +291,24 @@ export function TargetScoreStep({
 	value: string | null;
 	onSelect: (v: string) => void;
 }) {
-	const options =
-		examInterest === "ielts" ? IELTS_TARGET_BANDS : TOEIC_TARGET_SCORES;
+	const options = getTargetScoreOptions(examInterest);
+	const isIelts = examInterest === "ielts";
 
 	return (
 		<div className="space-y-4">
 			<div>
 				<h2 className="font-semibold text-foreground text-lg">
-					Điểm mục tiêu của bạn?
+					{isIelts ? "Điểm mục tiêu của bạn?" : "Trình độ mục tiêu của bạn?"}
 				</h2>
 				<p className="mt-1 text-muted-foreground text-xs">
-					Mục tiêu điểm số bạn muốn đạt được trong kỳ thi{" "}
-					{EXAM_LABELS[examInterest]}.
+					{isIelts
+						? "Mục tiêu điểm số bạn muốn đạt được trong kỳ thi IELTS."
+						: "Trình độ giao tiếp theo khung CEFR bạn muốn đạt được."}
 				</p>
 			</div>
 			<div className="grid grid-cols-2 gap-2.5 pt-2 sm:grid-cols-3">
 				{options.map((opt) => {
-					const displayLabel = examInterest === "ielts" ? `Band ${opt}` : opt;
+					const displayLabel = formatTargetScore(opt, examInterest);
 					const selected = value === opt;
 					return (
 						<button
@@ -406,10 +448,10 @@ export function OnboardingSummary({
 }: {
 	answers: StudentOnboardingPayload;
 }) {
-	const targetDisplay =
-		answers.examInterest === "ielts"
-			? `Band ${answers.targetScore}`
-			: answers.targetScore;
+	const targetDisplay = formatTargetScore(
+		answers.targetScore,
+		answers.examInterest,
+	);
 	const goalsDisplay = answers.learningGoals
 		.map((g) => GOAL_LABELS[g] ?? g)
 		.join(", ");
@@ -427,7 +469,7 @@ export function OnboardingSummary({
 			</div>
 			<div className="divide-y divide-line rounded-xl border bg-card text-sm shadow-sm">
 				<div className="flex items-center justify-between p-3.5">
-					<span className="text-muted-foreground">Chứng chỉ quan tâm</span>
+					<span className="text-muted-foreground">Hướng học</span>
 					<span className="font-medium text-foreground">
 						{EXAM_LABELS[answers.examInterest]}
 					</span>
@@ -447,7 +489,7 @@ export function OnboardingSummary({
 					</div>
 				) : null}
 				<div className="flex items-center justify-between p-3.5">
-					<span className="text-muted-foreground">Điểm mục tiêu</span>
+					<span className="text-muted-foreground">Mục tiêu</span>
 					<span className="font-medium text-foreground">{targetDisplay}</span>
 				</div>
 				<div className="flex flex-col gap-1 p-3.5">

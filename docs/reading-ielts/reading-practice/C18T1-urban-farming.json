@@ -1,0 +1,187 @@
+{
+	"id": "2af13245-9d04-456a-b30d-f04af0c616bc",
+	"url": "https://stepielts.com/student/reading/2af13245-9d04-456a-b30d-f04af0c616bc?mode=practice",
+	"title": "Urban farming",
+	"source": "C18T1",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Urban farming",
+		"paragraphs": [
+			"In Paris, urban farmers are trying a soil-free approach to agriculture that uses less space and fewer resources. Could it help cities face the threats to our food supplies?",
+			"On top of a striking new exhibition hall in southern Paris, the world’s largest urban rooftop farm has started to bear fruit. Strawberries that are small, intensely flavoured and resplendently red sprout abundantly from large plastic tubes. Peer inside and you see the tubes are completely hollow, the roots of dozens of strawberry plants dangling down inside them. From identical vertical tubes nearby burst row upon row of lettuces; near those are aromatic herbs, such as basil, sage and peppermint. Opposite, in narrow, horizontal trays packed not with soil but with coconut fibre, grow cherry tomatoes, shiny aubergines and brightly coloured chards.",
+			"Pascal Hardy, an engineer and sustainable development consultant, began experimenting with vertical farming and aeroponic growing towers- as the soil-free plastic tubes are known – on his Paris apartment block roof five years ago. The urban rooftop space above the exhibition hall is somewhat bigger: 14,000 square metres and almost exactly the size of a couple of football pitches. Already, the team of young urban farmers who tend it have picked, in one day, 3,000 lettuces and 150 punnets of strawberries. When the remaining two thirds of the vast open area are in production, 20 staff will harvest up to 1,000 kg of perhaps 35 different varieties of fruit and vegetables, every day. ‘We’re not ever, obviously, going to feed the whole city this way,’ cautions Hardy. ‘In the urban environment you’re working with very significant practical constraints, clearly, on what you can do and where. But if enough unused space can be developed like this, there’s no reason why you shouldn’t eventually target maybe between 5% and 10% of consumption.’",
+			"Perhaps most significantly, however, this is a real-life showcase for the work of Hardy’s flourishing urban agriculture consultancy, Agripolis, which is currently fielding enquiries from around the world to design, build and equip a new breed of soil-free inner-city farm. ‘The method’s advantages are many,’ he says. ‘First, I don’t much like the fact that most of the fruit and vegetables we eat have been treated with something like 17 different pesticides, or that the intensive farming techniques that produced them are such huge generators of greenhouse gases. I don’t much like the fact, either, that they’ve travelled an average of 2,000 refrigerated kilometres to my plate, that their quality is so poor, because the varieties are selected for their capacity to withstand such substantial journeys, or that 80% of the price I pay goes to wholesalers and transport companies, not the producers.",
+			"Produce grown using this soil-free method, on the other hand- which relies solely on a small quantity of water, enriched with organic nutrients, pumped around a closed circuit of pipes, towers and trays- is ‘produced up here, and sold locally, just down there. It barely travels at all,’ Hardy says. ‘You can select crop varieties for their flavour, not their resistance to the transport and storage chain, and you can pick them when they’re really at their best, and not before.’ No soil is exhausted, and the water that gently showers the plants’ roots every 12 minutes is recycled, so the method uses 90% less water than a classic intensive farm for the same yield.",
+			"Urban farming is not, of course, a new phenomenon. Inner-city agriculture is booming from Shanghai to Detroit and Tokyo to Bangkok. Strawberries are being grown in disused shipping containers, mushrooms in underground carparks. Aeroponic farming, he says, is ‘virtuous’. The equipment weighs little, can be installed on almost any flat surface and is cheap to buy: roughly 100 to 150 per square metre. It is cheap to run, too, consuming a tiny fraction of the electricity used by some techniques.",
+			"Produce grown this way typically sells at prices that, while generally higher than those of classic intensive agriculture, are lower than soil-based organic growers. There are limits to what farmers can grow this way, of course, and much of the produce is suited to the summer months. ‘Root vegetables we cannot do, at least not yet,’ he says. ‘Radishes are OK, but carrots, potatoes, that kind of thing- the roots are simply too long. Fruit trees are obviously not an option. And beans tend to take up a lot of space for not much return.’ Nevertheless, urban farming of the kind being practised in Paris is one part of a bigger and fast-changing picture that is bringing food production closer to our lives."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-3",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the sentences below. Choose NO MORE THAN TWO WORDS AND / OR A NUMBER from the passage for each answer. Write your answers in boxes 1-3 on your answer sheet.",
+			"body": "Urban farming in Paris\nVertical tubes are used to grow strawberries, ____ (1) and herbs.\nThere will eventually be a daily harvest of as much as ____ (2) in weight of fruit and vegetables.\nIt may be possible that the farm’s produce will account for as much as 10% of the city’s ____ (3) overall.",
+			"body_html": "<h3><strong>Urban farming in Paris</strong></h3><ul><li>Vertical tubes are used to grow strawberries, [1] and herbs.</li><li>There will eventually be a daily harvest of as much as [2] in weight of fruit and vegetables.</li><li>It may be possible that the farm’s produce will account for as much as 10% of the city’s [3] overall.</li></ul>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Vertical tubes are used to grow strawberries, ____ (1) and herbs.",
+					"answer": "lettuces",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nCác ống theo phương dọc được dùng để trồng dâu,___ và các loại thảo dược.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: grow strawberries, NOUN and herbs (NOUN, strawberries, herbs cùng là Object của Transitive Verb 'GROW')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nVertical tubes ~ cụm từ giữ nguyên\nStrawberry plants ~ Strawberries\nAromatic herbs ~ Herbs\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Từ những ống thẳng đứng giống hệt nhau gần đó bùng nổ từng hàng rau diếp\"(From identical vertical tubes nearby burst row upon row of lettuces).\n\nBước 5: Đáp án: lettuces\nCác ống theo phương dọc được dùng để trồng dâu, rau diếp và các loại thảo dược (Vertical tubes are used to grow strawberries, lettuces and herbs).",
+					"quotes": [
+						"Peer inside and you see the tubes are completely hollow, the roots of dozens of strawberry plants dangling down inside them. From identical vertical tubes nearby burst row upon row of lettuces; near those are aromatic herbs, such as basil, sage and peppermint."
+					]
+				},
+				{
+					"number": 2,
+					"text": "There will eventually be a daily harvest of as much as ____ (2) in weight of fruit and vegetables.",
+					"answer": "1000 kg",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nLượng thu hoạch trái cây và rau củ hằng ngày sau cùng sẽ đạt ___ tính theo cân nặng.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: of + NOUN (NOUN là Object của Preposition 'OF').\nLưu ý: NOUN ở đây chỉ số lượng, vì theo sau 'AS MUCH AS' (lên đến)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nEvery day ~ daily\nharvest ~ từ khóa giữ nguyên\nfruit and vegetables ~ cụm từ giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...20 nhân viên sẽ thu hoạch tới 1.000 kg khoảng 35 loại trái cây và rau quả khác nhau mỗi ngày\"(staff will harvest up to 1,000 kg of perhaps 35 different varieties of fruit and vegetables, every day).\n\nBước 5: Đáp án: 1000 kg\nLượng thu hoạch trái cây và rau củ hằng ngày sau cùng sẽ đạt 1000 kg tính theo cân nặng (There will eventually be a daily harvest of as much as 1000 kg in weight of fruit and vegetables).",
+					"quotes": [
+						"When the remaining two thirds of the vast open area are in production, 20 staff will harvest up to 1,000 kg of perhaps 35 different varieties of fruit and vegetables, every day."
+					]
+				},
+				{
+					"number": 3,
+					"text": "It may be possible that the farm’s produce will account for as much as 10% of the city’s ____ (3) overall.",
+					"answer": "consumption",
+					"quotes": [
+						"‘We’re not ever, obviously, going to feed the whole city this way,’ cautions Hardy. ‘In the urban environment you’re working with very significant practical constraints, clearly, on what you can do and where. But if enough unused space can be developed like this, there’s no reason why you shouldn’t eventually target maybe between 5% and 10% of consumption."
+					]
+				}
+			]
+		},
+		{
+			"range": "4-7",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the table below. Choose ONE WORD ONLY from the passage for each answer. Write your answers in boxes 4-7 on your answer sheet.",
+			"body": "Intensive farming versus aeroponic urban farming\n\nGrowth\nSelection\nSale\nIntensive farming\n● wide range of ____ (4) used\n● techniques pollute air\n● quality not good\n● varieties of fruit and vegetables chosen that can survive long ____ (5)\n● ____ (6) receive very little of overall income\nAeroponic urban farming\n● no soil used\n● nutrients added to water, which is recycled\n● produce chosen because of its ____ (7)",
+			"body_table": [
+				["Intensive farming versus aeroponic urban farming"],
+				["", "Growth", "Selection", "Sale"],
+				[
+					"Intensive farming",
+					"● wide range of ____ (4) used\n● techniques pollute air",
+					"● quality not good\n● varieties of fruit and vegetables chosen that can survive long ____ (5)",
+					"● ____ (6) receive very little of overall income"
+				],
+				[
+					"Aeroponic urban farming",
+					"● no soil used\n● nutrients added to water, which is recycled",
+					"● produce chosen because of its ____ (7)",
+					""
+				]
+			],
+			"body_html": "<table><tbody><tr><td colspan=\"4\"><h3><strong>Intensive farming versus aeroponic urban farming</strong></h3></td></tr><tr><td><h3><strong></strong></h3></td><td><p><strong>Growth</strong></p></td><td><p><strong>Selection</strong></p></td><td><p><strong>Sale</strong></p></td></tr><tr><td><p><strong>Intensive farming</strong></p></td><td><p>●   wide range of [4] used</p><p>●   techniques pollute air</p></td><td><p>●   quality not good</p><p>●   varieties of fruit and vegetables chosen that can survive long [5]</p></td><td><p>●   [6] receive very little of overall income</p></td></tr><tr><td><p><strong>Aeroponic urban farming</strong></p></td><td><p>●   no soil used</p><p>●   nutrients added to water, which is recycled</p></td><td><p>●   produce chosen because of its [7]</p></td><td><p></p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 4,
+					"text": "● wide range of ____ (4) used",
+					"answer": "pesticides",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nMột lượng ___đa dạng được sử dụng.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: wide range of + NOUN (NOUN làm object của Preposition ‘OF')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nthe intensive farming techniques ~ Intensive farming\n17 different ~ wide range of\nhave been treated with ~ used\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Đầu tiên, tôi không thích thực tế là hầu hết trái cây và rau quả chúng ta ăn đều đã được xử lý bằng 17 loại thuốc trừ sâu khác nhau\" (First, I don’t much like the fact that most of the fruit and vegetables we eat have been treated with something like 17 different pesticides).\n\nBước 5: Đáp án: pesticides\nMột lượng thuốc trừ sâu đa dạng được sử dụng (wide range of pesticides used).",
+					"quotes": [
+						"‘First, I don’t much like the fact that most of the fruit and vegetables we eat have been treated with something like 17 different pesticides, or that the intensive farming techniques that produced them are such huge generators of greenhouse gases."
+					]
+				},
+				{
+					"number": 5,
+					"text": "● varieties of fruit and vegetables chosen that can survive long ____ (5)",
+					"answer": "journeys",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nNhiều loại trái cây và rau củ được chọn có thể tồn tại qua ___dài.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: long + NOUN (NOUN được bổ nghĩa bởi ADJECTIVE 'long')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nthe varieties are selected ~ varieties of fruit and vegetables chosen\ntheir capacity to withstand ~ can survive\nlong ~ substantial\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...bởi vì các giống được chọn lọc dựa trên khả năng chịu được những chuyến đi dài\" (...because the varieties are selected for their capacity to withstand such substantial journeys).\n\nBước 5: Đáp án: journeys\nNhiều loại trái cây và rau củ được chọn có thể tồn tại qua những chuyến đi dài (varieties of fruit and vegetables chosen that can survive long journeys).",
+					"quotes": [
+						"I don’t much like the fact, either, that they’ve travelled an average of 2,000 refrigerated kilometres to my plate, that their quality is so poor, because the varieties are selected for their capacity to withstand such substantial journeys, or that 80% of the price I pay goes to wholesalers and transport companies, not the producers."
+					]
+				},
+				{
+					"number": 6,
+					"text": "● ____ (6) receive very little of overall income",
+					"answer": "producers",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\n___ nhận rất ít trên tổng thu nhập.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: NOUN + receive ... (NOUN là chủ ngữ trong câu)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nthe price I pay ~ overall income\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"80% giá tôi trả sẽ thuộc về người bán buôn và công ty vận tải chứ không phải người sản xuất\" *suy ra người sản xuất nhận được rất ít trên tổng tiền thu được.(80% of the price I pay goes to wholesalers and transport companies, not the producers).\n\nBước 5: Đáp án: producers\nNgười sản xuất nhận rất ít trên tổng thu nhập (producers receive very little of overall income).",
+					"quotes": [
+						"I don’t much like the fact, either, that they’ve travelled an average of 2,000 refrigerated kilometres to my plate, that their quality is so poor, because the varieties are selected for their capacity to withstand such substantial journeys, or that 80% of the price I pay goes to wholesalers and transport companies, not the producers."
+					]
+				},
+				{
+					"number": 7,
+					"text": "● produce chosen because of its ____ (7)",
+					"answer": "flavour",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nNông sản được chọn vì ___ của nó.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: Its + NOUN (NOUN là NOUN là object của Possessive pronoun (đại từ sở hữu) 'ITS').\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nCrop varieties ~ Produce\nSelect ~ Chosen\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Bạn có thể chọn các giống cây trồng vì hương vị của chúng chứ không phải vì khả năng chống chịu của chúng đối với chuỗi vận chuyển và bảo quản\"(You can select crop varieties for their flavour, not their resistance to the transport and storage chain).\n\nBước 5: Đáp án: flavour\nNông sản được chọn vì hương vị của nó (produce chosen because of its flavour).",
+					"quotes": [
+						"‘You can select crop varieties for their flavour, not their resistance to the transport and storage chain, and you can pick them when they’re really at their best, and not before."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-13",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 1?\nIn boxes 8-13 on your answer sheet, write\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 8,
+					"text": "Urban farming can take place above or below ground.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNông nghiệp đô thị có thể diễn ra ở trên hoặc dưới mặt đất.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nUrban farming ~ thuật ngữ giữ nguyên\ntake place ~ being grown in\nshipping containers ~ above ground\nunderground car parks ~ below ground\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"dâu tây được trồng trong container vận chuyển bỏ hoang, nấm (thì được trồng) trong bãi đỗ xe dưới lòng đất\", là một ví dụ của urban farming ở một số thành phố như Thượng Hải, Tokyo hay Bangkok. Dâu được trồng trong các container bỏ trống (ý chỉ trên mặt đất), còn nấm được trồng ở các bãi giữ xe dưới lòng đất (ý chỉ dưới mặt đất).\n=> Điều này đồng nghĩa với thông tin trong câu hỏi “Nông nghiệp đô thị có thể diễn ra ở trên hoặc dưới mặt đất” (Urban farming can take place above or below ground).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Urban farming is not, of course, a new phenomenon. Inner-city agriculture is booming from Shanghai to Detroit and Tokyo to Bangkok. Strawberries are being grown in disused shipping containers, mushrooms in underground carparks."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Some of the equipment used in aeroponic farming can be made by hand.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột số dụng cụ được sử dụng trong canh tác khí canh có thể được làm bằng tay.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nAeroponic farming ~ thuật ngữ giữ nguyên\nSome of the equipment ~ the equipment\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"các dụng cụ dùng để canh tác khí canh khá nhẹ, có thể được lắp đặt trên bất cứ bề mặt nào, và giá khá rẻ\"\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"các dụng cụ này có thể được làm bằng tay\" (can be made by hand).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Aeroponic farming, he says, is ‘virtuous’. The equipment weighs little, can be installed on almost any flat surface and is cheap to buy: roughly 100 to 150 per square metre. It is cheap to run, too, consuming a tiny fraction of the electricity used by some techniques."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Urban farming relies more on electricity than some other types of farming.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCanh tác nông nghiệp ở thành thị phụ thuộc vào năng lượng điện nhiều hơn các loại canh tác nông nghiệp khác.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nUrban farming ~ Aeroponic farming\nrelies on ~ consuming\nelectricity ~ a fraction of the electricity\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"canh tác khí canh (một kiểu canh tác ở thành thị) chỉ tiêu thụ một lượng rất nhỏ điện năng được dùng bởi một số kĩ thuật\",\n=> Điều này ngược lại với thông tin trong câu hỏi là \"Canh tác khí canh phụ thuộc vào năng lượng điện nhiều hơn các loại canh tác nông nghiệp khác\" (Urban farming relies more on electricity than some other types of farming).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Aeroponic farming, he says, is ‘virtuous’. The equipment weighs little, can be installed on almost any flat surface and is cheap to buy: roughly 100 to 150 per square metre. It is cheap to run, too, consuming a tiny fraction of the electricity used by some techniques."
+					]
+				},
+				{
+					"number": 11,
+					"text": "Fruit and vegetables grown on an aeroponic urban farm are cheaper than traditionally grown organic produce.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTrái cây và rau củ được trồng trên các trang trại khí canh thì rẻ hơn các loại nông sản hữu cơ được trồng theo phương pháp truyền thống.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nProduce ~ Fruit and vegetables\nGrown this way ~ Grown on an aeroponic urban farm\nSoil-based organic growers ~ Traditionally grown organic produce\nLower ~ Cheaper\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Nông sản được trồng theo phương pháp này thường được bán với giá, mặc dù cao hơn nông sản trồng theo phương pháp thâm canh (intensive agriculture), thấp hơn các loại nông sản được trồng dưới đất\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Trái cây và rau củ được trồng trên các trang trại khí canh thì rẻ hơn các loại nông sản hữu cơ được trồng theo phương pháp truyền thống\" (Fruit and vegetables grown on an aeroponic urban farm are cheaper than traditionally grown organic produce).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Produce grown this way typically sells at prices that, while generally higher than those of classic intensive agriculture, are lower than soil-based organic growers."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Most produce can be grown on an aeroponic urban farm at any time of the year.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐa số nông sản có thể được trồng trên các trang trại khí canh ở thành thị ở bất cứ thời điểm nào trong năm.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nMuch of the produce ~ Most produce\nGrow this way ~ Grown on an aeroponic urban farm\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Có những giới hạn về các loại nông sản mà nông dân có thể canh tác theo phương pháp này, và nhiều loại nông sản chỉ thích hợp để trồng vào các tháng hè\".\n=> Điều này trái ngược với thông tin trong câu hỏi là \"Đa số nông sản có thể được trồng trên các trang trại khí canh ở thành thị ở bất cứ thời điểm nào trong năm\" (Most produce can be grown on an aeroponic urban farm at any time of the year).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"There are limits to what farmers can grow this way, of course, and much of the produce is suited to the summer months. ‘Root vegetables we cannot do, at least not yet,’ he says."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Beans take longer to grow on an urban farm than other vegetables.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nThời gian để đậu phát triển trên các trang trại canh tác ở thành thị không kéo dài hơn những loại thực vật khác.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nBeans ~ từ khoá giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"trồng đậu theo phương pháp khí canh thì tốn nhiều diện tích mà không mang lại nhiều kết quả\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"Thời gian để đậu phát triển trên các trang trại canh tác ở thành thị lâu hơn những loại thực vật khác\" (Beans take longer to grow on an urban farm than other vegetables).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"And beans tend to take up a lot of space for not much return."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,186 @@
+{
+	"id": "4f51c123-5563-4e6c-b557-d4783e839be5",
+	"url": "https://stepielts.com/student/reading/4f51c123-5563-4e6c-b557-d4783e839be5?mode=practice",
+	"title": "The coconut palm",
+	"source": "C13T3",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "The coconut palm",
+		"paragraphs": [
+			"For millennia, the coconut has been central to the lives of Polynesian and Asian peoples. In the western world, on the other hand, coconuts have always been exotic and unusual, sometimes rare. The Italian merchant traveller Marco Polo apparently saw coconuts in South Asia in the late 13th century, and among the mid-14th-century travel writings of Sir John Mandeville there is mention of ‘great Notes of Ynde’ (great Nuts of India). Today, images of palm-fringed tropical beaches are clichés in the west to sell holidays, chocolate bars, fizzy drinks and even romance.",
+			"Typically, we envisage coconuts as brown cannonballs that, when opened, provide sweet white flesh. But we see only part of the fruit and none of the plant from which they come. The coconut palm has a smooth, slender, grey trunk, up to 30 metres tall. This is an important source of timber for building houses, and is increasingly being used as a replacement for endangered hardwoods in the furniture construction industry. The trunk is surmounted by a rosette of leaves, each of which may be up to six metres long. The leaves have hard veins in their centres which, in many parts of the world, are used as brushes after the green part of the leaf has been stripped away. Immature coconut flowers are tightly clustered together among the leaves at the top of the trunk. The flower stems may be tapped for their sap to produce a drink, and the sap can also be reduced by boiling to produce a type of sugar used for cooking.",
+			"Coconut palms produce as many as seventy fruits per year, weighing more than a kilogram each. The wall of the fruit has three layers: a waterproof outer layer, a fibrous middle layer and a hard, inner layer. The thick fibrous middle layer produces coconut fibre, ‘coir’, which has numerous uses and is particularly important in manufacturing ropes. The woody innermost layer, the shell, with its three prominent ‘eyes’, surrounds the seed. An important product obtained from the shell is charcoal, which is widely used in various industries as well as in the home as a cooking fuel. When broken in half, the shells are also used as bowls in many parts of Asia.",
+			"Inside the shell are the nutrients (endosperm) needed by the developing seed. Initially, the endosperm is a sweetish liquid, coconut water, which is enjoyed as a drink, but also provides the hormones which encourage other plants to grow more rapidly and produce higher yields. As the fruit matures, the coconut water gradually solidifies to form the brilliant white, fat-rich, edible flesh or meat. Dried coconut flesh, ‘copra’, is made into coconut oil and coconut milk, which are widely used in cooking in different parts of the world, as well as in cosmetics. A derivative of coconut fat, glycerine, acquired strategic importance in a quite different sphere, as Alfred Nobel introduced the world to his nitroglycerine-based invention: dynamite.",
+			"Their biology would appear to make coconuts the great maritime voyagers and coastal colonizers of the plant world. The large, energy-rich fruits are able to float in water and tolerate salt, but cannot remain viable indefinitely; studies suggest after about 110 days at sea they are no longer able to germinate. Literally cast onto desert island shores, with little more than sand to grow in and exposed to the full glare of the tropical sun, coconut seeds are able to germinate and root. The air pocket in the seed, created as the endosperm solidifies, protects the embryo. In addition, the fibrous fruit wall that helped it to float during the voyage stores moisture that can be taken up by the roots of the coconut seedling as it starts to grow.",
+			"There have been centuries of academic debate over the origins of the coconut. There were no coconut palms in West Africa, the Caribbean or the east coast of the Americans before the voyages of the European explorers Vasco da Gama and Columbus in the late 15th and early 16th centuries. 16th century trade and human migration patterns reveal that Arab traders and European sailors are likely to have moved coconuts from South and Southeast Asia to Africa and then across the Atlantic to the east coast of America. But the origin of coconuts discovered along the west coast of America by 16th century sailors has been the subject of centuries of discussion. Two diametrically opposed origins have been proposed: that they came from Asia, or that they were native to America. Both suggestions have problems. In Asia, there is a large degree of coconut diversity and evidence of millennia of human use – but there are no relatives growing in the wild.In America, there are close coconut relatives, but no evidence that coconuts are indigenous. These problems have led to the intriguing suggestion that coconuts originated on coral islands in the Pacific and were dispersed from there."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-8",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the table below. Choose ONE WORD ONLY from the passage for each answer. Write your answers in boxes 1-8 on your answer sheet.",
+			"body": "THE COCONUT PALM\nPart\nDescription\nUses\ntrunk\nup to 30 metres\ntimber for houses and the making of ____ (1)\nleaves\nup to 6 metres long\nto make brushes\nflowers\nat the top of the trunk\nstems provide sap, used as a drink or a source of ____ (2)\nfruits\nouter layer\n\nmiddle layer (coir fibres)\nused for ____ (3),\nInner layer (shell)\na source of ____ (4)\n(when halved) for ____ (5)\ncoconut water\na drink\na source of ____ (6) for other plants\ncoconut flesh\noil and milk for cooking and ____ (7)\nglycerine (an ingredient in ____ (8))",
+			"body_table": [
+				["THE COCONUT PALM"],
+				["Part", "Description", "Uses"],
+				[
+					"trunk",
+					"up to 30 metres",
+					"timber for houses and the making of ____ (1)"
+				],
+				["leaves", "up to 6 metres long", "to make brushes"],
+				[
+					"flowers",
+					"at the top of the trunk",
+					"stems provide sap, used as a drink or a source of ____ (2)"
+				],
+				["fruits", "outer layer", ""],
+				["middle layer (coir fibres)", "used for ____ (3),"],
+				[
+					"Inner layer (shell)",
+					"a source of ____ (4)\n(when halved) for ____ (5)"
+				],
+				["coconut water", "a drink\na source of ____ (6) for other plants"],
+				[
+					"coconut flesh",
+					"oil and milk for cooking and ____ (7)\nglycerine (an ingredient in ____ (8))"
+				]
+			],
+			"questions": [
+				{
+					"number": 1,
+					"text": "timber for houses and the making of ____ (1)",
+					"answer": "furniture",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nThân cây dừa cao tới 30 mét được sử dụng làm gỗ để xây nhà và làm ______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: making of + NOUN (NOUN làm Object của Preposition 'OF')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n30 metres tall ~ up to 30 metres\nTimber for building houses ~ timber for houses\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Thân cây là nguồn gỗ quan trọng để xây dựng nhà cửa, và ngày càng được sử dụng như một vật liệu thay thế cho gỗ cứng quý hiếm trong ngành công nghiệp sản xuất đồ nội thất\"\n(This is an important source of timber for building houses, and is increasingly being used as a replacement for endangered hardwoods in the furniture construction industry).\n\nBước 5: Đáp án: furniture\nThân cây dừa cao tới 30 mét được sử dụng làm gỗ để xây nhà và làm đồ nội thất (The coconut palm trunk up to 30 metres tall is used as timber for houses and the making of furniture).",
+					"quotes": [
+						"This is an important source of timber for building houses, and is increasingly being used as a replacement for endangered hardwoods in the furniture construction industry."
+					]
+				},
+				{
+					"number": 2,
+					"text": "stems provide sap, used as a drink or a source of ____ (2)",
+					"answer": "sugar",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nThân hoa cung cấp nhựa cây, được sử dụng làm đồ uống hoặc nguồn cung cấp ______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: source of + NOUN (NOUN làm Object của Preposition 'FOR')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nProduce a drink ~ used as a drink\nTapped for their sap ~ stems provide sap\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Thân hoa có thể được lấy nhựa để sản xuất đồ uống, và nhựa cây này cũng có thể được cô đặc bằng cách đun sôi để tạo ra một loại đường dùng để nấu ăn\"\n(The flower stems may be tapped for their sap to produce a drink, and the sap can also be reduced by boiling to produce a type of sugar used for cooking).\n\nBước 5: Đáp án: sugar\nThân hoa cung cấp nhựa cây, được sử dụng làm đồ uống hoặc nguồn cung cấp đường (The flower stems provide sap, used as a drink or a source of sugar).",
+					"quotes": [
+						"The flower stems may be tapped for their sap to produce a drink, and the sap can also be reduced by boiling to produce a type of sugar used for cooking."
+					]
+				},
+				{
+					"number": 3,
+					"text": "used for ____ (3),",
+					"answer": "ropes",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nLớp giữa (sợi xơ dừa) được sử dụng để làm ______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: used for + NOUN (NOUN làm Object của Preposition 'FOR')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nFibre, ‘coir’, ~ middle layer (coir fibres)\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Lớp giữa dày và xơ tạo ra sợi dừa, 'xơ dừa', có nhiều công dụng và đặc biệt quan trọng trong sản xuất dây thừng\"\n(The thick fibrous middle layer produces coconut fibre, 'coir', which has numerous uses and is particularly important in manufacturing ropes).\n\nBước 5: Đáp án: ropes\nLớp giữa (sợi xơ dừa) được sử dụng để làm dây thừng (The middle layer (coir fibres) is used for ropes).",
+					"quotes": [
+						"The thick fibrous middle layer produces coconut fibre, ‘coir’, which has numerous uses and is particularly important in manufacturing ropes."
+					]
+				},
+				{
+					"number": 4,
+					"text": "a source of ____ (4)",
+					"answer": "charcoal",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nLớp trong (vỏ) là nguồn cung cấp ______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: source of + NOUN (NOUN làm Object của Preposition 'OF')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nInner layer ~ từ khóa giữ nguyên\nShell ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Một sản phẩm quan trọng thu được từ vỏ dừa là than củi, được sử dụng rộng rãi trong nhiều ngành công nghiệp cũng như trong gia đình làm nhiên liệu nấu ăn\"\n(An important product obtained from the shell is charcoal, which is widely used in various industries as well as in the home as a cooking fuel).\n\nBước 5: Đáp án: charcoal\nLớp trong (vỏ) là nguồn của than củi (The inner layer (shell) is a source of charcoal).",
+					"quotes": [
+						"An important product obtained from the shell is charcoal, which is widely used in various industries as well as in the home as a cooking fuel."
+					]
+				},
+				{
+					"number": 5,
+					"text": "(when halved) for ____ (5)",
+					"answer": "bowls",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\n(Khi được bổ đôi) lớp trong được dùng làm ______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: for + NOUN (NOUN làm Object của Preposition 'FOR')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nbroken in half ~ when halved\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Khi bị bẻ đôi, vỏ dừa cũng được sử dụng làm bát ở nhiều nơi ở châu Á\"\n(When broken in half, the shells are also used as bowls in many parts of Asia).\n\nBước 5: Đáp án: bowls\n(Khi được bổ đôi) lớp trong được dùng làm bát ((when halved) the inner layer is used for bowls).",
+					"quotes": [
+						"When broken in half, the shells are also used as bowls in many parts of Asia."
+					]
+				},
+				{
+					"number": 6,
+					"text": "a source of ____ (6) for other plants",
+					"answer": "hormones",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nNước dừa là một loại đồ uống và nguồn cung cấp ______ cho các loại cây khác.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: source of + NOUN (NOUN làm Object của Preposition 'OF')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nCoconut water ~ từ khóa giữ nguyên\nOther plants ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Ban đầu, nội nhũ là một chất lỏng ngọt, nước dừa, được thưởng thức như một loại đồ uống, nhưng cũng cung cấp các hoóc-môn giúp các loại cây khác phát triển nhanh hơn và cho năng suất cao hơn\"\n(Initially, the endosperm is a sweetish liquid, coconut water, which is enjoyed as a drink, but also provides the hormones which encourage other plants to grow more rapidly and produce higher yields).\n\nBước 5: Đáp án: hormones\nNước dừa là một loại đồ uống và nguồn cung cấp hoóc-môn cho các loại cây khác (Coconut water is a drink and a source of hormones for other plants).",
+					"quotes": [
+						"Initially, the endosperm is a sweetish liquid, coconut water, which is enjoyed as a drink, but also provides the hormones which encourage other plants to grow more rapidly and produce higher yields."
+					]
+				},
+				{
+					"number": 7,
+					"text": "oil and milk for cooking and ____ (7)",
+					"answer": "cosmetics",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nCơm dừa được dùng làm dầu và sữa để nấu ăn và làm ______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: cooking and + NOUN (NOUN nhất quán loại từ với 'COOKING' , được kết nối bằng 'AND')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nOil and coconut milk ~ oil and milk\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Cơm dừa khô, 'copra', được chế biến thành dầu dừa và sữa dừa, được sử dụng rộng rãi trong nấu ăn ở các vùng khác nhau trên thế giới, cũng như trong mỹ phẩm\"\n(Dried coconut flesh, 'copra', is made into coconut oil and coconut milk, which are widely used in cooking in different parts of the world, as well as in cosmetics).\n\nBước 5: Đáp án: cosmetics\nCơm dừa được dùng làm dầu và sữa để nấu ăn và làm mỹ phẩm (Coconut flesh is used for oil and milk for cooking and cosmetics).",
+					"quotes": [
+						"Dried coconut flesh, ‘copra’, is made into coconut oil and coconut milk, which are widely used in cooking in different parts of the world, as well as in cosmetics."
+					]
+				},
+				{
+					"number": 8,
+					"text": "glycerine (an ingredient in ____ (8))",
+					"answer": "dynamite",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nGlycerine (một thành phần trong ______).\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: an ingredient in + NOUN (NOUN làm Object của Preposition 'IN')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nGlycerine ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Một dẫn xuất của chất béo dừa, glycerine, đã có tầm quan trọng chiến lược trong một lĩnh vực hoàn toàn khác, khi Alfred Nobel giới thiệu với thế giới phát minh của ông dựa trên nitroglycerine: thuốc nổ\"\n(A derivative of coconut fat, glycerine, acquired strategic importance in a quite different sphere, as Alfred Nobel introduced the world to his nitroglycerine-based invention: dynamite).\n\nBước 5: Đáp án: dynamite\nGlycerine (một thành phần trong thuốc nổ) (Glycerine (an ingredient in dynamite)).",
+					"quotes": [
+						"A derivative of coconut fat, glycerine, acquired strategic importance in a quite different sphere, as Alfred Nobel introduced the world to his nitroglycerine-based invention: dynamite."
+					]
+				}
+			]
+		},
+		{
+			"range": "9-13",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 1?\nIn boxes 9 - 13 on your answer sheet, write\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 9,
+					"text": "Coconut seeds need shade in order to germinate",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nHạt dừa cần bóng râm để nảy mầm.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nCoconut seeds ~ từ khóa giữ nguyên\nGerminate ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Bị ném lên bờ biển hoang vắng, với không gì nhiều hơn ngoài cát để mọc và tiếp xúc trực tiếp với ánh nắng mặt trời nhiệt đới chói chang, hạt dừa vẫn có thể nảy mầm và bén rễ\"\n=> Điều này trái ngược với thông tin trong câu hỏi \"Hạt dừa cần bóng râm để nảy mầm\" (Coconut seeds need shade in order to germinate).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Literally cast onto desert island shores, with little more than sand to grow in and exposed to the full glare of the tropical sun, coconut seeds are able to germinate and root."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Coconuts were probably transported to Asia from America in the 16th century",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nDừa có khả năng đã được vận chuyển từ Châu Mỹ sang Châu Á vào thế kỷ 16.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n16th century ~ từ khóa giữ nguyên\nHave moved coconuts ~ transported to\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Các mô hình thương mại và di cư của con người vào thế kỷ 16 cho thấy rằng các thương nhân Ả Rập và thủy thủ châu Âu có khả năng đã di chuyển dừa từ Nam và Đông Nam Á đến châu Phi và sau đó qua Đại Tây Dương đến bờ biển phía đông của Mỹ\"\n=> Điều này trái ngược với thông tin trong câu hỏi \"Dừa có khả năng đã được vận chuyển từ Châu Mỹ sang Châu Á vào thế kỷ 16\" (Coconuts were probably transported to Asia from America in the 16th century).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"16th century trade and human migration patterns reveal that Arab traders and European sailors are likely to have moved coconuts from South and Southeast Asia to Africa and then across the Atlantic to the east coast of America."
+					]
+				},
+				{
+					"number": 11,
+					"text": "Coconuts found on the west coast of America were a different type from those found on the east coast",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững quả dừa được tìm thấy ở bờ biển phía tây của Châu Mỹ là một loại khác với những quả được tìm thấy ở bờ biển phía đông.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nAlong the west coast of America ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Nguồn gốc của những quả dừa được phát hiện dọc theo bờ biển phía tây của Châu Mỹ bởi các thủy thủ thế kỷ 16 đã là chủ đề của hàng thế kỷ thảo luận\"\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"Những quả dừa này khác loại với những quả được tìm thấy ở bờ biển phía đông\" (Coconuts found on the west coast of America were a different type from those found on the east coast).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"But the origin of coconuts discovered along the west coast of America by 16th century sailors has been the subject of centuries of discussion."
+					]
+				},
+				{
+					"number": 12,
+					"text": "All the coconuts found in Asia are cultivated varieties.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTất cả các quả dừa được tìm thấy ở Châu Á đều là giống được trồng trọt.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nAlong the west coast of America ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Ở châu Á, có một mức độ đa dạng lớn về dừa và bằng chứng về việc con người sử dụng nó trong hàng thiên niên kỷ - nhưng không có họ hàng nào mọc trong tự nhiên\"\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Tất cả các quả dừa được tìm thấy ở Châu Á đều là giống được trồng trọt\"(có ý nhấn mạnh rằng dừa ở đây là do con người can thiệp) (All the coconuts found in Asia are cultivated varieties).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"In Asia, there is a large degree of coconut diversity and evidence of millennia of human use – but there are no relatives growing in the wild.In America, there are close coconut relatives, but no evidence that coconuts are indigenous."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Coconuts are cultivated in different ways in America and the Pacific.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nDừa được trồng theo những cách khác nhau ở Châu Mỹ và Thái Bình Dương.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nAmerica ~ tên riêng giữ nguyên\nthe Pacific ~ tên riêng giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Ở Châu Mỹ, có những họ hàng gần của dừa, nhưng không có bằng chứng cho thấy dừa là bản địa. Những vấn đề này đã dẫn đến một giả thuyết thú vị rằng dừa có nguồn gốc từ các đảo san hô ở Thái Bình Dương và được phân tán từ đó.\"\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"Dừa được trồng theo những cách khác nhau ở Châu Mỹ và Thái Bình Dương\" (Coconuts are cultivated in different ways in America and the Pacific).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"In Asia, there is a large degree of coconut diversity and evidence of millennia of human use – but there are no relatives growing in the wild.In America, there are close coconut relatives, but no evidence that coconuts are indigenous. These problems have led to the intriguing suggestion that coconuts originated on coral islands in the Pacific and were dispersed from there."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

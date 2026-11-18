@@ -1,0 +1,166 @@
+{
+	"id": "a47507e3-4756-4021-942f-567657a842a6",
+	"url": "https://stepielts.com/student/reading/a47507e3-4756-4021-942f-567657a842a6?mode=practice",
+	"title": "Frozen Food",
+	"source": "C20T3",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Frozen Food",
+		"paragraphs": [
+			"A US perspective on the development of the frozen food industry",
+			"At some point in history, humans discovered that ice preserved food. There is evidence that winter ice was stored to preserve food in the summer as far back as 10,000 years ago. Two thousand years ago, the inhabitants of South America’s Andean mountains had a unique means of conserving potatoes for later consumption. They froze them overnight, then trampled them to squeeze out the moisture, then dried them in the sun. This preserved their nutritional value—if not their aesthetic appeal.",
+			"Natural ice remained the main form of refrigeration until late in the 19th century. In the early 1800s, ship owners from Boston, USA, had enormous blocks of Arctic ice towed all over the Atlantic for the purpose of food preservation. In 1851, railroads first began putting blocks of ice in insulated rail cars to send butter from Ogdensburg, New York, to Boston.",
+			"Finally, in 1870, Australian inventors found a way to make ’mechanical ice’. They used a compressor to force a gas - ammonia at first and later Freon—through a condenser. The compressed gas gave up some of its heat as it moved through the condenser. Then the gas was released quickly into a low-pressure evaporator coil where it became liquid and cold. Air was blown over the evaporator coil and then this cooled air passed into an insulated compartment, lowering its temperature to freezing point.",
+			"Initially, this process was invented to keep Australian beer cool even in hot weather. But Australian cattlemen were quick to realize that, if they could put this new invention on a ship, they could export meat across the oceans. In 1880, a shipment of Australian beef and mutton was sent, frozen, to England. While the food frozen this way was still palatable, there was some deterioration. During the freezing process, crystals formed within the cells of the food, and when the ice expanded and the cells burst, this spoilt the flavor and texture of the food.",
+			"The modern frozen food industry began with the indigenous Inuit people of Canada. In 1912, a biology student in Massachusetts, USA, named Clarence Birdseye, ran out of money and went to Labrador in Canada to trap and trade furs. While he was there, he became fascinated with how the Inuit would quickly freeze fish in the Arctic air. The fish looked and tasted fresh even months later.",
+			"Birdseye returned to the USA in 1917 and began developing mechanical freezers capable of quick-freezing food. Birdseye methodically kept inventing better freezers and gradually built a business selling frozen fish from Gloucester, Massachusetts. In 1929, his business was sold and became General Foods, but he stayed with the company as director of research, and his division continued to innovate.",
+			"Birdseye was responsible for several key innovations that made the frozen food industry possible. He developed quick-freezing techniques that reduced the damage that crystals caused, as well as the technique of freezing the product in the package it was to be sold in. He also introduced the use of cellophane, the first transparent material for food packaging, which allowed consumers to see the quality of the product. Birdseye products also came in convenient size packages that could be prepared with a minimum of effort.",
+			"But there were still obstacles. In the 1930s, few grocery stores could afford to buy freezers for a market that wasn’t established yet. So, Birdseye leased inexpensive freezer cases to them. He also leased insulated railroad cars so that he could ship his products nationwide. However, few consumers had freezers large enough or efficient enough to take advantage of the products.",
+			"Sales increased in the early 1940s, when World War II gave a boost to the frozen food industry because tin was being used for munitions. Canned foods were rationed to save tin for the war effort, while frozen foods were abundant and cheap. Finally, by the 1950s, refrigerator technology had developed far enough to make these appliances affordable for the average family.\nBy 1953, 33 million US families owned a refrigerator, and manufacturers were gradually increasing the size of the freezer compartments in them.",
+			"1950s families were also looking for convenience at mealtimes, so the moment was right for the arrival of the ’TV Dinner’. Swanson Foods was a large, nationally recognized producer of canned and frozen poultry. In 1954, the company adapted some of Birdseye’s freezing techniques, and with the help of a clever name and a huge advertising budget, it launched the first ’TV Dinner’. This consisted of frozen turkey, potatoes and vegetables served in the same segmented aluminum tray that was used by airlines. The product was an instant success. Within a year, Swanson had sold 13 million TV dinners. American consumers couldn’t resist the combination of a trusted brand name, a single-serving package and the convenience of a meal that could be ready after only 25 minutes in a hot oven.\nBy 1959, Americans were spending $2.7 billion annually on frozen foods, and half a billion of that was spent on ready-prepared meals such as the TV Dinner.",
+			"Today, the US frozen food industry has a turnover of over $67 billion annually, with $26.6 billion of that sold to consumers for home consumption. The remaining $40 billion in frozen food sales come through restaurants, cafeterias, hospitals and schools, and that represents a third of the total food service sales."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-7",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Choose ONE WORD ONLY from the passage for each answer.",
+			"body": "The history of frozen food\n2,000 years ago, South America\nPeople conserved the nutritional value of ____ (1) using a method of freezing then drying.\n1851, USA\n____ (2) was kept cool by ice during transportation in specially adapted trains.\n1880, Australia\nTwo kinds of ____ (3) were the first frozen food shipped to England.\n1917 onwards, USA\nClarence Birdseye introduced innovations including:\nquick-freezing methods, so that ____ (4) did not spoil the food.\npackaging products with ____ (5), so the product was visible.\nEarly 1940s, USA\nFrozen food became popular because of a shortage of ____ (6).\n1950s, USA\nA large number of homes now had a ____ (7).",
+			"body_html": "<h3>The history of frozen food</h3><h3>2,000 years ago, South America</h3><ul><li><p>People conserved the nutritional value of [1] using a method of freezing then drying.</p></li></ul><h3>1851, USA</h3><ul><li><p>[2] was kept cool by ice during transportation in specially adapted trains.</p></li></ul><h3>1880, Australia</h3><ul><li><p>Two kinds of [3] were the first frozen food shipped to England.</p></li></ul><h3>1917 onwards, USA</h3><ul><li><p>Clarence Birdseye introduced innovations including:</p></li><ul><li><p>quick-freezing methods, so that [4] did not spoil the food.</p></li><li><p>packaging products with [5], so the product was visible.</p></li></ul></ul><h3>Early 1940s, USA</h3><ul><li><p>Frozen food became popular because of a shortage of [6].</p></li></ul><h3>1950s, USA</h3><ul><li><p>A large number of homes now had a [7].</p></li></ul>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "People conserved the nutritional value of ____ (1) using a method of freezing then drying.",
+					"answer": "potatoes",
+					"quotes": [
+						"They froze them overnight, then trampled them to squeeze out the moisture, then dried them in the sun."
+					]
+				},
+				{
+					"number": 2,
+					"text": "____ (2) was kept cool by ice during transportation in specially adapted trains.",
+					"answer": "butter",
+					"explanation": "Bước 1: Hiểu câu hỏi và giải thích ngữ pháp\nNăm 1851, tại Mỹ, ... được giữ lạnh bằng đá trong quá trình vận chuyển trên các đoàn tàu được thiết kế đặc biệt.\nBước 2: Xác định loại từ dựa trên các dấu hiệu\nLoại từ: NOUN (danh từ)\nDấu hiệu: NOUN + was kept cool (NOUN là chủ ngữ của câu bị động)\nBước 3: Tìm các keywords được paraphrase trong bài\n1851, USA ~ In 1851\nwas kept cool by ice ~ putting blocks of ice in insulated rail cars to send\nduring transportation in specially adapted trains ~ in insulated rail cars\nBước 4: So sánh và đối chiếu\nBài đọc chỉ rõ: \"Năm 1851, các công ty đường sắt lần đầu tiên bắt đầu đặt các khối đá vào các toa tàu cách nhiệt để gửi bơ từ Ogdensburg, New York, đến Boston.\" (In 1851, railroads first began putting blocks of ice in insulated rail cars to send butter from Ogdensburg, New York, to Boston.)\nBước 5: Đáp án: butter",
+					"quotes": [
+						"In 1851, railroads first began putting blocks of ice in insulated rail cars to send butter from Ogdensburg, New York, to Boston."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Two kinds of ____ (3) were the first frozen food shipped to England.",
+					"answer": "meat",
+					"explanation": "Bước 1: Hiểu câu hỏi và giải thích ngữ pháp\nNăm 1880, tại Úc, hai loại ... là thực phẩm đông lạnh đầu tiên được vận chuyển đến Anh.\nBước 2: Xác định loại từ dựa trên các dấu hiệu\nLoại từ: NOUN (danh từ)\nDấu hiệu: two kinds of + NOUN\nBước 3: Tìm các keywords được paraphrase trong bài\n1880, Australia ~ In 1880\nTwo kinds of... were the first frozen food ~ a shipment of Australian beef and mutton was sent, frozen\nshipped to England ~ sent... to England\nBước 4: So sánh và đối chiếu\nBài đọc chỉ rõ: \"Năm 1880, một lô hàng thịt bò và thịt cừu của Úc đã được gửi, đông lạnh, đến Anh.\" (In 1880, a shipment of Australian beef and mutton was sent, frozen, to England.) Thịt bò và thịt cừu là hai loại thịt.\nBước 5: Đáp án: meat",
+					"quotes": [
+						"But Australian cattlemen were quick to realize that, if they could put this new invention on a ship, they could export meat across the oceans. In 1880, a shipment of Australian beef and mutton was sent, frozen, to England."
+					]
+				},
+				{
+					"number": 4,
+					"text": "quick-freezing methods, so that ____ (4) did not spoil the food.",
+					"answer": "crystals",
+					"explanation": "Bước 1: Hiểu câu hỏi và giải thích ngữ pháp\n...phương pháp đông lạnh nhanh, để ... không làm hỏng thực phẩm.\nBước 2: Xác định loại từ dựa trên các dấu hiệu\nLoại từ: NOUN (danh từ)\nDấu hiệu: so that + NOUN + did not spoil (NOUN là chủ ngữ của mệnh đề 'so that')\nBước 3: Tìm các keywords được paraphrase trong bài\nquick-freezing methods ~ quick-freezing techniques\ndid not spoil the food ~ reduced the damage that... caused\nBước 4: So sánh và đối chiếu\nBài đọc chỉ rõ: \"Ông đã phát triển các kỹ thuật đông lạnh nhanh giúp giảm thiểu thiệt hại do các tinh thể gây ra.\" (He developed quick-freezing techniques that reduced the damage that crystals caused...)\nBước 5: Đáp án: crystals",
+					"quotes": [
+						"He developed quick-freezing techniques that reduced the damage that crystals caused, as well as the technique of freezing the product in the package it was to be sold in."
+					]
+				},
+				{
+					"number": 5,
+					"text": "packaging products with ____ (5), so the product was visible.",
+					"answer": "cellophane",
+					"explanation": "Bước 1: Hiểu câu hỏi và giải thích ngữ pháp\n...đóng gói sản phẩm bằng ..., để sản phẩm có thể nhìn thấy được.\nBước 2: Xác định loại từ dựa trên các dấu hiệu\nLoại từ: NOUN (danh từ)\nDấu hiệu: with + NOUN (NOUN làm tân ngữ của giới từ 'with')\nBước 3: Tìm các keywords được paraphrase trong bài\npackaging products with ~ introduced the use of\nso the product was visible ~ allowed consumers to see the quality of the product\nBước 4: So sánh và đối chiếu\nBài đọc chỉ rõ: \"Ông cũng giới thiệu việc sử dụng giấy bóng kính, vật liệu trong suốt đầu tiên để đóng gói thực phẩm, cho phép người tiêu dùng nhìn thấy chất lượng của sản phẩm.\" (He also introduced the use of cellophane, the first transparent material for food packaging, which allowed consumers to see the quality of the product.)\nBước 5: Đáp án: cellophane",
+					"quotes": [
+						"He also introduced the use of cellophane, the first transparent material for food packaging, which allowed consumers to see the quality of the product."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Frozen food became popular because of a shortage of ____ (6).",
+					"answer": "tin",
+					"quotes": [
+						"Sales increased in the early 1940s, when World War II gave a boost to the frozen food industry because tin was being used for munitions. Canned foods were rationed to save tin for the war effort, while frozen foods were abundant and cheap."
+					]
+				},
+				{
+					"number": 7,
+					"text": "A large number of homes now had a ____ (7).",
+					"answer": "refrigerator",
+					"explanation": "Bước 1: Hiểu câu hỏi và giải thích ngữ pháp\nNhững năm 1950, tại Mỹ, một số lượng lớn các gia đình giờ đây đã có một cái ....\nBước 2: Xác định loại từ dựa trên các dấu hiệu\nLoại từ: NOUN (danh từ)\nDấu hiệu: had a + NOUN (NOUN làm tân ngữ của động từ 'had')\nBước 3: Tìm các keywords được paraphrase trong bài\n1950s, USA ~ by the 1950s\nA large number of homes now had a ~ 33 million US families owned a\nBước 4: So sánh và đối chiếu\nBài đọc chỉ rõ: \"Đến năm 1953, 33 triệu gia đình ở Mỹ đã sở hữu một chiếc tủ lạnh, và các nhà sản xuất đang dần tăng kích thước của các ngăn đông lạnh trong đó.\" (By 1953, 33 million US families owned a refrigerator, and manufacturers were gradually increasing the size of the freezer compartments in them.)\nBước 5: Đáp án: refrigerator",
+					"quotes": [
+						"By 1953, 33 million US families owned a refrigerator, and manufacturers were gradually increasing the size of the freezer compartments in them."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-13",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 1?\nWrite\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 8,
+					"text": "The ice transportation business made some Boston ship owners very wealthy in the early 1800s.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nKinh doanh vận chuyển băng đã giúp một số chủ tàu ở Boston trở nên rất giàu có vào đầu những năm 1800.\nBước 2: Tìm các keywords được paraphrase trong bài:\nearly 1800s ~ từ khóa giữ nguyên\nBoston ship owners ~ từ khóa giữ nguyên\nice transportation business ~ had enormous blocks of Arctic ice towed all over the Atlantic for the purpose of food preservation\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"vào đầu những năm 1800, các chủ tàu từ Boston, Mỹ, đã cho kéo những khối băng Bắc Cực khổng lồ đi khắp Đại Tây Dương với mục đích bảo quản thực phẩm\" (In the early 1800s, ship owners from Boston, USA, had enormous blocks of Arctic ice towed all over the Atlantic for the purpose of food preservation).\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin việc kinh doanh này có giúp họ \"trở nên rất giàu có\" (very wealthy) hay không.\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"In the early 1800s, ship owners from Boston, USA, had enormous blocks of Arctic ice towed all over the Atlantic for the purpose of food preservation."
+					]
+				},
+				{
+					"number": 9,
+					"text": "A disadvantage of the freezing process invented in Australia was that it affected the taste of food.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột nhược điểm của quy trình đông lạnh được phát minh ở Úc là nó ảnh hưởng đến hương vị của thực phẩm.\nBước 2: Tìm các keywords được paraphrase trong bài:\nA disadvantage ~ there was some deterioration\nfreezing process invented in Australia ~ the food frozen this way\naffected the taste of food ~ spoilt the flavor and texture of the food\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Trong quá trình đông lạnh, các tinh thể hình thành bên trong các tế bào của thực phẩm, và khi băng nở ra và các tế bào vỡ, điều này làm hỏng hương vị và kết cấu của thực phẩm\" (During the freezing process, crystals formed within the cells of the food, and when the ice expanded and the cells burst, this spoilt the flavor and texture of the food).\n=> Điều này đồng nghĩa với thông tin trong câu hỏi.\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"While the food frozen this way was still palatable, there was some deterioration. During the freezing process, crystals formed within the cells of the food, and when the ice expanded and the cells burst, this spoilt the flavor and texture of the food."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Clarence Birdseye travelled to Labrador in order to learn how the Inuit people froze fish.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nClarence Birdseye đã đến Labrador để tìm hiểu cách người Inuit đông lạnh cá.\nBước 2: Tìm các keywords được paraphrase trong bài:\nClarence Birdseye ~ từ khóa giữ nguyên\ntravelled to Labrador ~ went to Labrador in Canada\nin order to ~ (mục đích của chuyến đi)\nlearn how the Inuit people froze fish ~ to trap and trade furs\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"vào năm 1912, một sinh viên sinh học ở Massachusetts, Mỹ, tên là Clarence Birdseye, hết tiền và đến Labrador ở Canada để bẫy và buôn bán lông thú\" (In 1912, a biology student in Massachusetts, USA, named Clarence Birdseye, ran out of money and went to Labrador in Canada to trap and trade furs).\n=> Điều này trái ngược với thông tin trong câu hỏi. Mục đích chuyến đi của ông là để buôn bán lông thú, không phải để học cách đông lạnh cá. Việc ông bị cuốn hút bởi cách đông lạnh cá của người Inuit là một khám phá tình cờ trong chuyến đi.\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"In 1912, a biology student in Massachusetts, USA, named Clarence Birdseye, ran out of money and went to Labrador in Canada to trap and trade furs."
+					]
+				},
+				{
+					"number": 11,
+					"text": "Swanson Foods invested a great deal of money in the promotion of the TV Dinner.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSwanson Foods đã đầu tư rất nhiều tiền vào việc quảng bá TV Dinner.\nBước 2: Tìm các keywords được paraphrase trong bài:\nSwanson Foods ~ từ khóa giữ nguyên\ninvested a great deal of money in the promotion ~ with the help of... a huge advertising budget\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"...với sự trợ giúp của một cái tên thông minh và một ngân sách quảng cáo khổng lồ, họ đã ra mắt 'TV Dinner' đầu tiên\" (with the help of a clever name and a huge advertising budget, it launched the first 'TV Dinner').\n=> Điều này đồng nghĩa với thông tin trong câu hỏi. \"Ngân sách quảng cáo khổng lồ\" (a huge advertising budget) chính là \"đầu tư rất nhiều tiền vào việc quảng bá\".\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"In 1954, the company adapted some of Birdseye’s freezing techniques, and with the help of a clever name and a huge advertising budget, it launched the first ’TV Dinner’."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Swanson Foods developed a new style of container for the launch of the TV Dinner.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSwanson Foods đã phát triển một kiểu hộp đựng mới cho việc ra mắt TV Dinner.\nBước 2: Tìm các keywords được paraphrase trong bài:\nSwanson Foods ~ The product\na new style of container ~ the same segmented aluminum tray that was used by airlines\nfor the launch of the TV Dinner ~ This consisted of...\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Sản phẩm này bao gồm gà tây, khoai tây và rau đông lạnh được phục vụ trong cùng một khay nhôm chia ngăn mà các hãng hàng không đã sử dụng\" (This consisted of frozen turkey, potatoes and vegetables served in the same segmented aluminum tray that was used by airlines).\n=> Điều này trái ngược với thông tin trong câu hỏi. Họ đã sử dụng một loại khay đã có sẵn (\"the same... tray that was used by airlines\"), chứ không phải phát triển một kiểu mới.\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"This consisted of frozen turkey, potatoes and vegetables served in the same segmented aluminum tray that was used by airlines."
+					]
+				},
+				{
+					"number": 13,
+					"text": "The US frozen food industry is currently the largest in the world.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNgành công nghiệp thực phẩm đông lạnh của Mỹ hiện là lớn nhất thế giới.\nBước 2: Tìm các keywords được paraphrase trong bài:\nThe US frozen food industry ~ từ khóa giữ nguyên\nis currently the largest in the world ~ has a turnover of over $67 billion annually\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"Ngày nay, ngành công nghiệp thực phẩm đông lạnh của Mỹ có doanh thu hơn 67 tỷ đô la hàng năm\" (Today, the US frozen food industry has a turnover of over $67 billion annually).\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin so sánh ngành công nghiệp này của Mỹ với các nước khác trên thế giới để xác định nó có phải là \"lớn nhất thế giới\" hay không.\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Today, the US frozen food industry has a turnover of over $67 billion annually, with $26.6 billion of that sold to consumers for home consumption. The remaining $40 billion in frozen food sales come through restaurants, cafeterias, hospitals and schools, and that represents a third of the total food service sales."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

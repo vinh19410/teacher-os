@@ -1,0 +1,190 @@
+{
+	"id": "5e2c0ae7-2283-46b7-8da9-855046daa7cb",
+	"url": "https://stepielts.com/student/reading/5e2c0ae7-2283-46b7-8da9-855046daa7cb?mode=practice",
+	"title": "Who wrote Shakespeare's plays?",
+	"source": "Collection",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "14-26",
+	"passage": {
+		"title": "Who wrote Shakespeare's plays?",
+		"paragraphs": [
+			"Experts suggest 'Shakespeare' may have been a pseudonym - a pen-name - for another writer.\n- Robert Matthews investigates",
+			"A. Even today, almost 400 years after his death, the works of the famous English dramatist William Shakespeare have lost none of their appeal, nor have questions about the source of his genius. For is it really credible that an ordinary actor from the small town of Stratford-upon-Avon should metamorphose into so extraordinary a dramatist? For some, the answer is Obvious: Shakespeare was a genius whose gift is no more suspicious than that of the physicist Albert Einstein, the German salesman's son who devised the theory of relativity. But others have insisted that a mere school leaver simply could not have penned such sophisticated works. They believe that Shakespeare was a pseudonym for someone with far more impressive qualifications who wrote the plays that still play to packed theatres today. But after long and largely fruitless debate, researchers are now turning to scientific methods to resolve the controversies surrounding Shakespeare. Ways of identifying the literary fingerprint of writers are currently being developed using computers. This analysis of features of literary style is known as 'stylometry', and with it, researchers can recognise the work of Shakespeare and his contemporaries with impressive reliability.",
+			"B. The idea of using these basic scientific techniques to probe questions of authorship dates back to 1851, when the Victorian mathematician Augustus de Morgan suggested that different authors might be identified through the frequency with which they used words of different lengths. His idea attracted the attention of Thomas Mendenhall, an American physicist who decided to use word length to investigate one of the oldest controversies about the works of Shakespeare: were they actually written by someone else?",
+			"C. As long ago as 1785, the Elizabethan writer and philosopher Sir Francis Bacon was identified as a possible contender for having written Shakespeare's works. Bacon's possible motivation for not wanting to be known as the author of such masterpieces is far from clear, but Mendenhall believed his methods might at least reveal telltale signs of Bacon's hand in the plays. However, his results, published in 1901, revealed Bacon's writing style to be quite unlike that of Shakespeare. But Mendenhall's methods also revealed some key concerns. Recognising the need to include large samples of writing from both authors, Mendenhall lumped all their works together, despite the fact that literary style can vary enormously between plays, poetry and philosophy, for example. His focus on word length as the sole 'fingerprint of writing style was also questionable - for how could he be sure that some other characteristics would not give different results? But Mendenhall's biggest fault was perhaps simply that he was too far ahead of his time - he was attempting a task that cried out for the kind of computers not even conceivable over 100 years ago. More recently with their development scholars have been able to look for subtle peculiarities among the complete works of authors, which, in Shakespeare's case, amount to over 800,000 words.",
+			"D. One of the key controversies now being probed is Shakespeare's relationship with other dramatists. Was he a lone genius or was his work the result of collaboration? Traditional methods of investigating such questions have relied on traits like the use of metaphor, but these may be shared by different authors simply on cultural grounds. In contrast, modem stylometry focuses on far more fundamental characteristics which are less likely to be shared by others. The text-crunching power of computers allows researchers to pinpoint phrases, words or even individual letters by their frequency in the work of different authors. Pattern recognition techniques are then used to develop a 'fingerprint' for each author.",
+			"E. Stylometry has come up with little to encourage the continual number of experts who insist Shakespeare was simply too uneducated to create works of enduring brilliance. In 1996, literary scholar Ward Elliott and mathematician Robert Valenza of Claremont McKenna College, California, published the results of a stvlometric comparison of the works of Shakespeare with those of over 30 of the proposed 'real' authors. Elliott and Valenza applied a battery of 51 tests to computerised texts and found that none of the claimants had a stylometric 'fingerprint similar to that of Shakespeare.'I think these claims were driven initially by a sense that Shakespeare is too \"important\" to be an ordinary person', says Professor Kate Mcluskie, director of the Shakespeare Institute at the University of Birmingham.",
+			"F. Elliott and Valenza's research found something else too. Some of the earliest plays, notably Henry VI and the notoriously violent Titus Andronicus, seem to be a combination of Shakespeare and his brilliant contemporary the playwright Christopher Marlowe, who was born in the same year as Shakespeare.'Traditional scholars accept that Marlowe influenced Shakespeare's early work,' says Dr Thomas Merriam, one of Britain's leading stylometry experts. He explains that, provisionally at least, stylometric studies suggest some of Marlowe's actual text exists within the early plays of Shakespeare.",
+			"G. Some scholars remain cautious about basing new views of Shakespeare's career on stylometric analysis of centuries-old texts: If they have been edited, amended or shortened, then the data from them is highly compromised,' says Dr Markus Dahl of London University. Even so the results to date are in line with the growing view of Shakespeare as a hardworking professional who perfected his skills throughout his career."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "14-19",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Reading Passage 2 has seven paragraphs, A-G.\nWhich paragraph contains the following information?\nNB: You may use any letter more than once.",
+			"options": ["A", "B", "C", "D", "E", "F", "G"],
+			"questions": [
+				{
+					"number": 14,
+					"text": "uncertainty why an author would wish to remain anonymous",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSự không chắc chắn về lý do tại sao một tác giả muốn giữ danh tính ẩn danh.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nuncertainty ~ far from clear\nauthor ~ Bacon\nremain anonymous ~ not wanting to be known as the author\nwish ~ motivation\n\nBước 3: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"Động cơ có thể có của Bacon để không muốn được biết đến là tác giả của những kiệt tác như vậy thì không rõ ràng chút nào\".\n==> Thông tin này cho thấy đoạn C đã đề cập đến \"sự không chắc chắn về lý do tại sao một tác giả muốn giữ danh tính ẩn danh\".\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"Bacon's possible motivation for not wanting to be known as the author of such masterpieces is far from clear, but Mendenhall believed his methods might at least reveal telltale signs of Bacon's hand in the plays."
+					]
+				},
+				{
+					"number": 15,
+					"text": "a reference to the continuing popularity of Shakespeare's work",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột đề cập đến sự phổ biến liên tục của tác phẩm Shakespeare.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\ncontinuing popularity ~ lost none of their appeal\nShakespeare's work ~ the works of the famous English dramatist William Shakespeare\nreference ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nĐoạn A chỉ rõ: \"Ngay cả ngày nay, gần 400 năm sau khi ông qua đời, các tác phẩm của nhà viết kịch nổi tiếng người Anh William Shakespeare không hề mất đi sức hấp dẫn\".\n==> Thông tin này cho thấy đoạn A đã đề cập đến \"sự phổ biến liên tục của tác phẩm Shakespeare\".\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"Even today, almost 400 years after his death, the works of the famous English dramatist William Shakespeare have lost none of their appeal, nor have questions about the source of his genius."
+					]
+				},
+				{
+					"number": 16,
+					"text": "the reasons why a particular researcher's approach proved unsatisfactory",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi: Những lý do tại sao phương pháp của một nhà nghiên cứu cụ thể tỏ ra không thỏa đáng.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nreasons why ~ key concerns / faults\nparticular researcher ~ Mendenhall\napproach proved unsatisfactory ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"Nhưng phương pháp của Mendenhall cũng bộc lộ một số mối quan ngại chính... lỗi lớn nhất của Mendenhall có lẽ đơn giản là ông đi trước thời đại quá xa\".\n==> Thông tin này cho thấy đoạn C đã giải thích \"những lý do tại sao phương pháp của Mendenhall tỏ ra không thỏa đáng\".\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"But Mendenhall's methods also revealed some key concerns. Recognising the need to include large samples of writing from both authors, Mendenhall lumped all their works together, despite the fact that literary style can vary enormously between plays, poetry and philosophy, for example. His focus on word length as the sole 'fingerprint of writing style was also questionable - for how could he be sure that some other characteristics would not give different results? But Mendenhall's biggest fault was perhaps simply that he was too far ahead of his time - he was attempting a task that cried out for the kind of computers not even conceivable over 100 years ago."
+					]
+				},
+				{
+					"number": 17,
+					"text": "mention of the time when the use of stylometry was first proposed",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi: Đề cập đến thời điểm khi việc sử dụng stylometry lần đầu tiên được đề xuất.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\ntime when ~ dates back to 1851\nstylometry ~ từ khóa giữ nguyên\nfirst proposed ~ suggested\n\nBước 3: So sánh và đối chiếu:\nĐoạn B chỉ rõ: \"Ý tưởng sử dụng các kỹ thuật khoa học cơ bản này để điều tra các câu hỏi về quyền tác giả có từ năm 1851, khi nhà toán học thời Victoria Augustus de Morgan đề xuất\".\n==> Thông tin này cho thấy đoạn B đã \"đề cập đến thời điểm khi việc sử dụng stylometry lần đầu tiên được đề xuất\".\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"The idea of using these basic scientific techniques to probe questions of authorship dates back to 1851, when the Victorian mathematician Augustus de Morgan suggested that different authors might be identified through the frequency with which they used words of different lengths."
+					]
+				},
+				{
+					"number": 18,
+					"text": "support for the opinion that Shakespeare became more skilful as he grew older",
+					"answer": "G",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSự ủng hộ cho quan điểm rằng Shakespeare trở nên khéo léo hơn khi ông già đi.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nsupport ~ in line with\nbecame more skilful ~ perfected his skills\ngrew older ~ throughout his career\n\nBước 3: So sánh và đối chiếu:\nĐoạn G chỉ rõ: \"Tuy nhiên, các kết quả cho đến nay phù hợp với quan điểm ngày càng phổ biến về Shakespeare như một người chuyên nghiệp làm việc chăm chỉ, người đã hoàn thiện các kỹ năng của mình trong suốt sự nghiệp\".\n==> Thông tin này cho thấy đoạn G đã \"ủng hộ cho quan điểm rằng Shakespeare trở nên khéo léo hơn khi ông già đi\".\n\nBước 4: Đáp án: G",
+					"quotes": [
+						"Even so the results to date are in line with the growing view of Shakespeare as a hardworking professional who perfected his skills throughout his career."
+					]
+				},
+				{
+					"number": 19,
+					"text": "a similarity between Shakespeare and a scientist with exceptional ability",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột sự tương đồng giữa Shakespeare và một nhà khoa học có khả năng đặc biệt.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nsimilarity ~ no more suspicious than\nscientist with exceptional ability ~ physicist Albert Einstein\nShakespeare ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nĐoạn A chỉ rõ: \"Shakespeare là một thiên tài có tài năng không đáng nghi ngờ hơn tài năng của nhà vật lý Albert Einstein\".\n==> Thông tin này cho thấy đoạn A đã đề cập đến \"một sự tương đồng giữa Shakespeare và một nhà khoa học có khả năng đặc biệt\".\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"For some, the answer is Obvious: Shakespeare was a genius whose gift is no more suspicious than that of the physicist Albert Einstein, the German salesman's son who devised the theory of relativity."
+					]
+				}
+			]
+		},
+		{
+			"range": "20-22",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary below.\nChoose ONE WORD ONLY from the passage for each answer.",
+			"body": "Stylometry\nA key controversy is Shakespeare's relationships with other writers. It has always been uncertain whether he worked in ____ with others or not. To investigate this issue, literary experts traditionally looked at stylistic features such as the writer's choice of metaphor, although it was recognised that this choice may have been influenced by cultural factors.\nCurrent stylometric analysis has been made possible by the invention of ____. These can identify different features of writing such as the frequency with which particular letters, words or phrases are used by different writers. By using stylometric analysis of particular characteristics and pattern recognition systems a so-called ____ of a writer can be identified.",
+			"body_html": "<table><tbody><tr><td><p><strong>Stylometry</strong></p><p>A key controversy is Shakespeare's relationships with other writers. It has always been uncertain whether he worked in ______ with others or not. To investigate this issue, literary experts traditionally looked at stylistic features such as the writer's choice of metaphor, although it was recognised that this choice may have been influenced by cultural factors.</p><p>Current stylometric analysis has been made possible by the invention of ______. These can identify different features of writing such as the frequency with which particular letters, words or phrases are used by different writers. By using stylometric analysis of particular characteristics and pattern recognition systems a so-called ______ of a writer can be identified.</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 20,
+					"text": "It has always been uncertain whether he worked in ____ (20) with others or not.",
+					"answer": "collaboration",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nLuôn không chắc chắn liệu ông có làm việc trong ______ với những người khác hay không.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: \"in _____ with others\" (giới từ \"in\" + NOUN tạo thành cụm giới từ)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nworked ~ từ khóa giữ nguyên\nwith others ~ từ khóa giữ nguyên\nuncertain ~ controversy\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Một trong những tranh cãi chính hiện đang được điều tra là mối quan hệ của Shakespeare với các nhà viết kịch khác. Ông có phải là một thiên tài độc lập hay công việc của ông là kết quả của sự hợp tác?\"\n\nBước 5: Đáp án: collaboration",
+					"quotes": [
+						"Was he a lone genius or was his work the result of collaboration?"
+					]
+				},
+				{
+					"number": 21,
+					"text": "Current stylometric analysis has been made possible by the invention of ____ (21).",
+					"answer": "computers",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nPhân tích stylometric hiện tại đã được thực hiện nhờ phát minh ra ______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: \"the invention of _____\" (giới từ \"of\" + NOUN)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\ncurrent stylometric analysis ~ modern stylometry\nmade possible ~ allows\ninvention ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Sức mạnh xử lý văn bản của máy tính cho phép các nhà nghiên cứu xác định chính xác các cụm từ, từ hoặc thậm chí các chữ cái riêng lẻ theo tần suất của chúng trong tác phẩm của các tác giả khác nhau\".\n\nBước 5: Đáp án: computers",
+					"quotes": [
+						"The text-crunching power of computers allows researchers to pinpoint phrases, words or even individual letters by their frequency in the work of different authors."
+					]
+				},
+				{
+					"number": 22,
+					"text": "By using stylometric analysis of particular characteristics and pattern recognition systems a so-called ____ (22) of a writer can be identified.",
+					"answer": "fingerprint",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nMột cái gọi là ______ của một nhà văn có thể được xác định.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: \"a so-called _____ of a writer\" (mạo từ \"a\" + NOUN)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nwriter ~ author\nidentified ~ develop\nso-called ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Các kỹ thuật nhận dạng mẫu sau đó được sử dụng để phát triển một 'dấu vân tay' cho mỗi tác giả\".\n\nBước 5: Đáp án: fingerprint",
+					"quotes": [
+						"Pattern recognition techniques are then used to develop a 'fingerprint' for each author."
+					]
+				}
+			]
+		},
+		{
+			"range": "23-26",
+			"type": "MATCHING",
+			"instructions": "Look at the following statements (Questions 23-26) and the list of people below.\nMatch each statement with the correct person, A-E.",
+			"options": [
+				{
+					"label": "A",
+					"text": "Thomas Mendenhall"
+				},
+				{
+					"label": "B",
+					"text": "Ward Elliot and Robert Valenza"
+				},
+				{
+					"label": "C",
+					"text": "Professor Kate Mcluskie"
+				},
+				{
+					"label": "D",
+					"text": "Dr Thomas Merriam"
+				},
+				{
+					"label": "E",
+					"text": "Dr Markus Dahl"
+				}
+			],
+			"body": "People search for a more distinguished author because they cannot accept that a normal individual could write such brilliant plays ____\nIt should be possible to recognise writers by examining the number of letters in the words they use. ____\nThe fact that Shakespeare's works are likely to have been altered over the years raises doubts about any stylometric analysis. ____\nAnalysis proves that Shakespeare's style differs from those of writers who have been suggested as the authors of the plays. ____",
+			"body_html": "<ol><li>People search for a more distinguished author because they cannot accept that a normal individual could write such brilliant plays ______</li><li>It should be possible to recognise writers by examining the number of letters in the words they use. ______</li><li>The fact that Shakespeare's works are likely to have been altered over the years raises doubts about any stylometric analysis. ______</li><li>Analysis proves that Shakespeare's style differs from those of writers who have been suggested as the authors of the plays. ______</li></ol>",
+			"questions": [
+				{
+					"number": 23,
+					"text": "People search for a more distinguished author because they cannot accept that a normal individual could write such brilliant plays",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Mọi người tìm kiếm một tác giả nổi tiếng hơn vì họ không thể chấp nhận rằng một cá nhân bình thường có thể viết những vở kịch xuất sắc như vậy\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nsearch for ~ claims\nmore distinguished author ~ từ khóa giữ nguyên\ncannot accept ~ từ khóa giữ nguyên\nnormal individual ~ ordinary person\nbrilliant plays ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Professor Kate Mcluskie: \"'Tôi nghĩ những tuyên bố này ban đầu được thúc đẩy bởi cảm giác rằng Shakespeare quá \"quan trọng\" để trở thành một người bình thường'\".\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"'I think these claims were driven initially by a sense that Shakespeare is too \"important\" to be an ordinary person', says Professor Kate Mcluskie, director of the Shakespeare Institute at the University of Birmingham."
+					]
+				},
+				{
+					"number": 24,
+					"text": "It should be possible to recognise writers by examining the number of letters in the words they use.",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Có thể nhận ra các nhà văn bằng cách kiểm tra số lượng chữ cái trong các từ họ sử dụng\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nrecognise writers ~ identify authors\nexamining the number of letters ~ word length\nwords they use ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Augustus de Morgan (được Thomas Mendenhall sử dụng ý tưởng): \"nhà toán học thời Victoria Augustus de Morgan đề xuất rằng các tác giả khác nhau có thể được xác định thông qua tần suất mà họ sử dụng các từ có độ dài khác nhau\" Tuy nhiên, người thực sự áp dụng ý tưởng này là Thomas Mendenhall.\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"The idea of using these basic scientific techniques to probe questions of authorship dates back to 1851, when the Victorian mathematician Augustus de Morgan suggested that different authors might be identified through the frequency with which they used words of different lengths. His idea attracted the attention of Thomas Mendenhall, an American physicist who decided to use word length to investigate one of the oldest controversies about the works of Shakespeare: were they actually written by someone else?"
+					]
+				},
+				{
+					"number": 25,
+					"text": "The fact that Shakespeare's works are likely to have been altered over the years raises doubts about any stylometric analysis.",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Thực tế là các tác phẩm của Shakespeare có khả năng đã được thay đổi theo thời gian làm dấy lên nghi ngờ về bất kỳ phân tích stylometric nào\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nworks ~ texts\naltered over the years ~ edited, amended or shortened\nraises doubts ~ cautious / highly compromised\nstylometric analysis ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Dr Markus Dahl: \"'Nếu chúng đã được chỉnh sửa, sửa đổi hoặc rút ngắn, thì dữ liệu từ chúng bị ảnh hưởng nghiêm trọng'\".\n\nBước 4: Đáp án: E",
+					"quotes": [
+						"G. Some scholars remain cautious about basing new views of Shakespeare's career on stylometric analysis of centuries-old texts: If they have been edited, amended or shortened, then the data from them is highly compromised,' says Dr Markus Dahl of London University."
+					]
+				},
+				{
+					"number": 26,
+					"text": "Analysis proves that Shakespeare's style differs from those of writers who have been suggested as the authors of the plays.",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Phân tích chứng minh rằng phong cách của Shakespeare khác với phong cách của những nhà văn đã được đề xuất là tác giả của các vở kịch\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nanalysis proves ~ published the results\nShakespeare's style differs ~ none of the claimants had a similar fingerprint\nsuggested as the authors ~ proposed 'real' authors\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Ward Elliott and Robert Valenza: \"Elliott và Valenza đã công bố kết quả của một so sánh stylometric giữa các tác phẩm của Shakespeare với hơn 30 tác giả 'thực' được đề xuất... và phát hiện rằng không ai trong số những người tuyên bố có 'dấu vân tay' stylometric tương tự như của Shakespeare\".\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"In 1996, literary scholar Ward Elliott and mathematician Robert Valenza of Claremont McKenna College, California, published the results of a stvlometric comparison of the works of Shakespeare with those of over 30 of the proposed 'real' authors. Elliott and Valenza applied a battery of 51 tests to computerised texts and found that none of the claimants had a stylometric 'fingerprint similar to that of Shakespeare."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

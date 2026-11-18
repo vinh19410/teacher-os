@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 
 import type { TestAnswerKind, TestAnswerRange } from "./test-answer-key";
 import {
+	answerKeyMatches,
 	compareAnswerKey,
 	normalizeAlts,
 	parseTestAnswerKey,
@@ -223,5 +224,32 @@ describe("normalizeAlts", () => {
 		expect(normalizeAlts(" Cars ")).toBe("Cars");
 		expect(normalizeAlts("north/n")).toBe("north / n");
 		expect(normalizeAlts("a // b")).toBe("a / b");
+	});
+});
+
+describe("parseTestAnswerKey với mcq 3 lựa chọn theo từng câu", () => {
+	test("từ chối đáp án D trên câu mcq 3 lựa chọn và chấp nhận C", () => {
+		const { entries, errors } = parseTestAnswerKey("27. D\n28. C", [
+			{
+				...range("p3", 27, 2, "mcq4"),
+				questionOpts: [
+					["A", "B", "C"],
+					["A", "B", "C", "D"],
+				],
+			},
+		]);
+		expect(entries).toEqual([{ number: 28, answer: "C", alts: "" }]);
+		expect(errors).toHaveLength(1);
+		expect(errors[0]).toMatchObject({ line: 1, reason: "invalid-choice" });
+		expect(errors[0].message).toContain("(A, B, C)");
+
+		expect(
+			answerKeyMatches(
+				{ number: 27, answer: "D", alts: "" },
+				{ answer: "D", alts: "" },
+				"mcq4",
+				["A", "B", "C"],
+			),
+		).toBe(false);
 	});
 });

@@ -1,6 +1,7 @@
 import {
 	type AssignmentQuestion,
 	assignmentQuestionSchema,
+	LIBRARY_OPTION_BANK_MAX,
 	STUDY_PACK_SKILLS,
 	type StudyPackDetailView,
 	type StudyPackItemDetailView,
@@ -232,7 +233,7 @@ function flattenLibraryTestPart(
 							group.optionBank.map((item) => item.trim()).filter(Boolean),
 						),
 					),
-				].slice(0, 8);
+				].slice(0, LIBRARY_OPTION_BANK_MAX);
 
 	const resolvedType = part.type.trim() || groups[0]?.type || "tfng";
 

@@ -1,0 +1,167 @@
+{
+	"id": "cf7eb94f-e927-4ff2-9b9e-0e81380185a8",
+	"url": "https://stepielts.com/student/reading/cf7eb94f-e927-4ff2-9b9e-0e81380185a8?mode=practice",
+	"title": "The kākāpō",
+	"source": "C20T1",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "The kākāpō",
+		"subtitle": "The kākāpō is a nocturnal, flightless parrot that is critically endangered and one of New Zealand’s unique treasures",
+		"paragraphs": [
+			"The kākāpō, also known as the owl parrot, is a large, forest-dwelling bird, with a pale owl-like face. Up to 64 cm in length, it has predominantly yellow-green feathers, forward-facing eyes, a large grey beak, large blue feet, and relatively short wings and tail. It is the world’s only flightless parrot, and is also possibly one of the world’s longest-living birds, with a reported lifespan of up to 100 years.",
+			"Kākāpō are solitary birds and tend to occupy the same home range for many years. They forage on the ground and climb high into trees. They often leap from trees and flap their wings, but at best manage a controlled descent to the ground. They are entirely vegetarian, with their diet including the leaves, roots and bark of trees as well as bulbs, and fern fronds.",
+			"Kākāpō breed in summer and autumn, but only in years when food is plentiful. Males play no part in incubation or chick-rearing – females alone incubate eggs and feed the chicks. The 1–4 eggs are laid in soil, which is repeatedly turned over before and during incubation. The female kākāpō has to spend long periods away from the nest searching for food, which leaves the unattended eggs and chicks particularly vulnerable to predators.",
+			"Before humans arrived, kākāpō were common throughout New Zealand’s forests. However, this all changed with the arrival of the first Polynesian settlers about 700 years ago. For the early settlers, the flightless kākāpō was easy prey. They ate its meat and used its feathers to make soft cloaks. With them came the Polynesian dog and rat, which also preyed on kākāpō.\nBy the time European colonisers arrived in the early 1800s, kākāpō had become confined to the central North Island and forested parts of the South Island.\nThe fall in kākāpō numbers was accelerated by European colonisation. A great deal of habitat was lost through forest clearance, and introduced species such as deer depleted the remaining forests of food. Other predators such as cats, stoats and two more species of rat were also introduced. The kākāpō were in serious trouble.",
+			"In 1894, the New Zealand government launched its first attempt to save the kākāpō. Conservationist Richard Henry led an effort to relocate several hundred of the birds to predator-free Resolution Island in Fiordland. Unfortunately, the island didn’t remain predator free – stoats arrived within six years, eventually destroying the kākāpō population.\nBy the mid-1900s, the kākāpō was practically a lost species.\nOnly a few clung to life in the most isolated parts of New Zealand.",
+			"From 1949 to 1973, the newly formed New Zealand Wildlife Service made over 60 expeditions to find kākāpō, focusing mainly on Fiordland. Six were caught, but there were no females amongst them and all but one died within a few months of captivity. In 1974, a new initiative was launched, and by 1977, 18 more kākāpō were found in Fiordland. However, there were still no females. In 1977, a large population of males was spotted in Rakiura – a large island free from stoats, ferrets and weasels. There were about 200 individuals, and in 1980 it was confirmed females were also present. These birds have been the foundation of all subsequent work in managing the species.",
+			"Unfortunately, predation by feral cats on Rakiura Island led to a rapid decline in kākāpō numbers. As a result, during 1980-97, the surviving population was evacuated to three island sanctuaries: Codfish Island, Maud Island and Little Barrier Island. However, breeding success was hard to achieve. Rats were found to be a major predator of kākāpō chicks and an insufficient number of chicks survived to offset adult mortality.\nBy 1995, although at least 12 chicks had been produced on the islands, only three had survived.\nThe kākāpō population had dropped to 51 birds. The critical situation prompted an urgent review of kākāpō management in New Zealand.",
+			"In 1996, a new Recovery Plan was launched, together with a specialist advisory group called the Kākāpō Scientific and Technical Advisory Committee and a higher amount of funding. Renewed steps were taken to control predators on the three islands. Cats were eradicated from Little Barrier Island in 1980, and possums were eradicated from Codfish Island by 1986. However, the population did not start to increase until rats were removed from all three islands, and the birds were more intensively managed. This involved moving the birds between islands, supplementary feeding of adults and rescuing and hand-raising any failing chicks.",
+			"After the first five years of the Recovery Plan, the population was on target.\nBy 2000, five new females had been produced, and the total population had grown to 62 birds.\nFor the first time, there was cautious optimism for the future of kākāpō and by June 2020, a total of 210 birds was recorded.",
+			"Today, kākāpō management continues to be guided by the kākāpō Recovery Plan. Its key goals are: minimise the loss of genetic diversity in the kākāpō population, restore or maintain sufficient habitat to accommodate the expected increase in the kākāpō population, and ensure stakeholders continue to be fully engaged in the preservation of the species."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 1?\nIn boxes 1-6 on your answer sheet, write\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 1,
+					"text": "There are other parrots that share the kākāpō's inability to fly.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCó những loài vẹt khác cũng không có khả năng bay giống như vẹt kākāpō.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nother parrots that share the inability to fly ~ the world's only flightless parrot\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Đây là loài vẹt không biết bay duy nhất trên thế giới\" (\"It is the world's only flightless parrot\").\n==> Điều này trái ngược với thông tin trong câu hỏi \"có những loài vẹt khác cũng không biết bay\".\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"It is the world’s only flightless parrot, and is also possibly one of the world’s longest-living birds, with a reported lifespan of up to 100 years."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Adult kākāpō produce chicks every year.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nVẹt kākāpō trưởng thành sinh sản con non hàng năm.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nevery year ~ only in years when food is plentiful\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Kākāpō sinh sản vào mùa hè và mùa thu, nhưng chỉ vào những năm có nhiều thức ăn\" (\"Kākāpō breed in summer and autumn, but only in years when food is plentiful\").\n==> Điều này trái ngược với thông tin trong câu hỏi \"sinh sản hàng năm\".\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Kākāpō breed in summer and autumn, but only in years when food is plentiful."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Adult male kākāpō bring food back to nesting females.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nVẹt kākāpō đực trưởng thành mang thức ăn về cho con cái đang làm tổ.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nmale kakapo bring food back ~ Males play no part in incubation or chick-rearing\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Con đực không tham gia vào việc ấp trứng hay nuôi con\" (\"Males play no part in incubation or chick-rearing\"). ==> Điều này trái ngược với thông tin trong câu hỏi \"con đực mang thức ăn về\".\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Males play no part in incubation or chick-rearing – females alone incubate eggs and feed the chicks."
+					]
+				},
+				{
+					"number": 4,
+					"text": "The Polynesian rat was a greater threat to the kākāpō than Polynesian settlers.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nChuột Polynesia là mối đe dọa lớn hơn đối với vẹt kākāpō so với những người định cư Polynesia.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ngreater threat ~ từ khóa giữ nguyên\nPolynesian rat, Polynesian settlers ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"Đối với những người định cư đầu tiên, vẹt kākāpō không biết bay là con mồi dễ dàng... Cùng với họ là chó và chuột Polynesia, cũng săn mồi kākāpō\" (\"For the early settlers, the flightless kākāpō was easy prey... With them came the Polynesian dog and rat, which also preyed on kākāpō\").\n==> Tuy nhiên, bài đọc không hề so sánh mức độ đe dọa giữa chuột và người định cư.\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"With them came the Polynesian dog and rat, which also preyed on kākāpō."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Kākāpō were transferred from Rakiura Island to other locations because they were at risk from feral cats.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nVẹt Kākāpō được chuyển từ đảo Rakiura đến các địa điểm khác vì chúng gặp nguy hiểm từ mèo hoang.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ntransferred ~ evacuated\nother locations ~ three island sanctuaries\nat risk from feral cats ~ predation by feral cats\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"việc bị mèo hoang săn mồi trên đảo Rakiura đã dẫn đến sự suy giảm nhanh chóng số lượng kākāpō. Kết quả là, trong giai đoạn 1980–97, quần thể còn sót lại đã được sơ tán đến ba khu bảo tồn trên đảo\" (\"predation by feral cats on Rakiura Island led to a rapid decline in kākāpō numbers. As a result, during 1980–97, the surviving population was evacuated to three island sanctuaries\").\n==> Điều này đồng nghĩa với thông tin trong câu hỏi.\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Unfortunately, predation by feral cats on Rakiura Island led to a rapid decline in kākāpō numbers. As a result, during 1980-97, the surviving population was evacuated to three island sanctuaries: Codfish Island, Maud Island and Little Barrier Island."
+					]
+				},
+				{
+					"number": 6,
+					"text": "One Recovery Plan initiative that helped increase the kākāpō population size was caring for struggling young birds.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột sáng kiến của Kế hoạch Phục hồi giúp tăng số lượng quần thể kākāpō là chăm sóc những con chim non đang gặp khó khăn.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ncaring for struggling young birds ~ rescuing and hand-raising any failing chicks\nRecovery Plan initiative ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ, trong Kế hoạch Phục hồi, việc quản lý các loài chim được tăng cường hơn, \"Điều này bao gồm... giải cứu và nuôi bộ bất kỳ con non nào yếu ớt\" (\"This involved... rescuing and hand-raising any failing chicks\").\n==> Điều này đồng nghĩa với thông tin trong câu hỏi.\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"This involved moving the birds between islands, supplementary feeding of adults and rescuing and hand-raising any failing chicks."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-13",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the notes below. Choose ONE WORD AND/OR A NUMBER from the passage for each answer.",
+			"body": "New Zealand's kākāpō\nA type of parrot:\ndiet consists of fern fronds, various parts of a tree and ____ (7)\nnests are created in ____ (8) where eggs are laid.\nArrival of Polynesian settlers\nthe ____ (9) of the kākāpō were used to make clothes.\nArrival of European colonisers\n____ (10) were an animal which they introduced that ate the kākāpō's food sources.\nProtecting kākāpō\nRichard Henry, a conservationist, tried to protect the kākāpō.\na definite sighting of female kākāpō on Rakiura Island was reported in the year ____ (11)\nthe Recovery Plan included an increase in ____ (12)\na current goal of the Recovery Plan is to maintain the involvement of ____ (13) in kākāpō protection.",
+			"body_html": "<h3><strong>New Zealand's kākāpō</strong></h3><h4><strong>A type of parrot:</strong></h4><ul><li>\ndiet consists of fern fronds, various parts of a tree and [7]\n</li><li>\nnests are created in [8] where eggs are laid.\n</li></ul><h4><strong>Arrival of Polynesian settlers</strong></h4><ul><li>\nthe [9] of the kākāpō were used to make clothes.\n</li></ul><h4><strong>Arrival of European colonisers</strong></h4><ul><li>\n[10] were an animal which they introduced that ate the kākāpō's food sources.\n</li></ul><h4><strong>Protecting kākāpō</strong></h4><ul><li>\nRichard Henry, a conservationist, tried to protect the kākāpō.\n</li><li>\na definite sighting of female kākāpō on Rakiura Island was reported in the year [11]\n</li><li>\nthe Recovery Plan included an increase in [12]\n</li><li>\na current goal of the Recovery Plan is to maintain the involvement of [13] in kākāpō protection.\n</li></ul>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "diet consists of fern fronds, various parts of a tree and ____ (7)",
+					"answer": "bulbs",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nchế độ ăn bao gồm lá dương xỉ, các bộ phận khác của cây và ____.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: Noun (danh từ)\nDấu hiệu: Đây là một danh từ trong danh sách các loại thức ăn (leaves, roots, bark, ...).\n\nBước 3: Tìm các keywords được paraphrase trong bài:\ndiet ~ từ khóa giữ nguyên\nfern fronds, various parts of a tree ~ leaves, roots and bark of trees, fern fronds\n\nBước 4: So sánh và đối chiếu: Bài đọc chỉ rõ: \"chế độ ăn của chúng bao gồm lá, rễ và vỏ cây cũng như củ, và lá dương xỉ\" (\"their diet including the leaves, roots and bark of trees as well as bulbs, and fern fronds\").\n\nBước 5: Đáp án: bulbs\nchế độ ăn bao gồm lá dương xỉ, các bộ phận khác của cây và củ (diet consists of fern fronds, various parts of a tree and bulbs).",
+					"quotes": [
+						"They are entirely vegetarian, with their diet including the leaves, roots and bark of trees as well as bulbs, and fern fronds."
+					]
+				},
+				{
+					"number": 8,
+					"text": "nests are created in ____ (8) where eggs are laid.",
+					"answer": "soil",
+					"explanation": "Bước 1: Hiểu câu hỏi:\ntổ được tạo ra trong ____ nơi trứng được đẻ.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: Noun (danh từ)\nDấu hiệu: \"in\" + Noun (giới từ chỉ nơi chốn).\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nnests are created in ~ eggs are laid in\neggs are laid ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"1-4 quả trứng được đẻ trong đất, nơi được xới đi xới lại nhiều lần trước và trong quá trình ấp\" (\"The 1–4 eggs are laid in soil, which is repeatedly turned over before and during incubation\").\n\nBước 5: Đáp án: soil\ntổ được tạo ra trong đất nơi trứng được đẻ (nests are created in soil where eggs are laid).",
+					"quotes": [
+						"The 1–4 eggs are laid in soil, which is repeatedly turned over before and during incubation."
+					]
+				},
+				{
+					"number": 9,
+					"text": "the ____ (9) of the kākāpō were used to make clothes.",
+					"answer": "feathers",
+					"explanation": "Bước 1: Hiểu câu hỏi:\n____ của kākāpō được sử dụng để làm quần áo.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: Noun (danh từ)\nDấu hiệu: The + Noun + of (cấu trúc sở hữu).\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nused to make clothes ~ used ... to make soft cloaks\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Họ ăn thịt nó và dùng lông của nó để làm áo choàng mềm\" (\"They ate its meat and used its feathers to make soft cloaks\").\n\nBước 5: Đáp án: feathers\nlông của kākāpō được sử dụng để làm quần áo (the feathers of the kākāpō were used to make clothes).",
+					"quotes": [
+						"They ate its meat and used its feathers to make soft cloaks."
+					]
+				},
+				{
+					"number": 10,
+					"text": "____ (10) were an animal which they introduced that ate the kākāpō's food sources.",
+					"answer": "deer",
+					"explanation": "Bước 1: Hiểu câu hỏi:\n____ là một loài động vật mà họ đã du nhập và ăn nguồn thức ăn của kākāpō.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: Noun (danh từ)\nDấu hiệu: Chủ ngữ của câu, chỉ một loài động vật.\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nate the kākāpō's food sources ~ depleted the remaining forests of food\nintroduced ~ introduced species\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"các loài được du nhập như hươu nai đã làm cạn kiệt nguồn thức ăn trong các khu rừng còn lại\" (\"introduced species such as deer depleted the remaining forests of food\").\n\nBước 5: Đáp án: deer\nHươu nai là một loài động vật mà họ đã du nhập và ăn nguồn thức ăn của kākāpō (\"Deer were an animal which they introduced that ate the kākāpō's food sources.\").",
+					"quotes": [
+						"A great deal of habitat was lost through forest clearance, and introduced species such as deer depleted the remaining forests of food."
+					]
+				},
+				{
+					"number": 11,
+					"text": "a definite sighting of female kākāpō on Rakiura Island was reported in the year ____ (11)",
+					"answer": "1980",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nmột cuộc nhìn thấy chắc chắn về vẹt kākāpō mái trên đảo Rakiura đã được báo cáo vào năm ____.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: Number (year)\nDấu hiệu: in the year + number.\n\nBước 3: Tìm các keywords được paraphrase trong bài:\ndefinite sighting of female ~ it was confirmed females were also present\nRakiura Island ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"vào năm 1980, người ta đã xác nhận rằng con cái cũng có mặt\" (\"in 1980 it was confirmed females were also present\").\n\nBước 5: Đáp án: 1980\nmột cuộc nhìn thấy chắc chắn về vẹt kākāpō mái trên đảo Rakiura đã được báo cáo vào năm 1980 (a definite sighting of female kākāpō on Rakiura Island was reported in the year 1980).",
+					"quotes": [
+						"There were about 200 individuals, and in 1980 it was confirmed females were also present."
+					]
+				},
+				{
+					"number": 12,
+					"text": "the Recovery Plan included an increase in ____ (12)",
+					"answer": "funding",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nKế hoạch Phục hồi bao gồm việc tăng ____.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: Noun (danh từ)\nDấu hiệu: an increase in + Noun.\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nincrease in ~ a higher amount of\nRecovery Plan ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"một Kế hoạch Phục hồi mới đã được khởi động... và một lượng kinh phí cao hơn\" (\"a new Recovery Plan was launched... and a higher amount of funding\").\n\nBước 5: Đáp án: funding\nKế hoạch Phục hồi bao gồm việc tăng kinh phí (the Recovery Plan included an increase in funding).",
+					"quotes": [
+						"In 1996, a new Recovery Plan was launched, together with a specialist advisory group called the Kākāpō Scientific and Technical Advisory Committee and a higher amount of funding."
+					]
+				},
+				{
+					"number": 13,
+					"text": "a current goal of the Recovery Plan is to maintain the involvement of ____ (13) in kākāpō protection.",
+					"answer": "stakeholders",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nmột mục tiêu hiện tại của Kế hoạch Phục hồi là duy trì sự tham gia của ____ trong việc bảo vệ kākāpō.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: Noun (danh từ, số nhiều)\nDấu hiệu: the involvement of + Noun.\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nmaintain the involvement of ~ ensure ... continue to be fully engaged in\nkākāpō protection ~ preservation of the species\ncurrent goal ~ Today... key goals are\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"đảm bảo các bên liên quan tiếp tục tham gia đầy đủ vào việc bảo tồn loài này\" (\"ensure stakeholders continue to be fully engaged in the preservation of the species\").\n\nBước 5: Đáp án: stakeholders\nmột mục tiêu hiện tại của Kế hoạch Phục hồi là duy trì sự tham gia của các bên liên quan trong việc bảo vệ kākāpō (a current goal of the Recovery Plan is to maintain the involvement of stakeholders in kākāpō protection).",
+					"quotes": [
+						"Its key goals are: minimise the loss of genetic diversity in the kākāpō population, restore or maintain sufficient habitat to accommodate the expected increase in the kākāpō population, and ensure stakeholders continue to be fully engaged in the preservation of the species."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,167 @@
+{
+	"id": "a86c6e49-0814-4917-a02a-2139b0647da8",
+	"url": "https://stepielts.com/student/reading/a86c6e49-0814-4917-a02a-2139b0647da8?mode=practice",
+	"title": "The thylacine",
+	"source": "C17T3",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "The thylacine",
+		"paragraphs": [
+			"The extinct thylacine, also known as the Tasmanian tiger, was a marsupial* that bore a superficial resemblance to a dog. Its most distinguishing feature was the dark brown stripes over its back, beginning at the rear of the body and extending onto the tail. The thylacine’s average nose-to-tail length for adult males was 162. 6 cm, compared to 153. 7 cm for females.",
+			"The thylacine appeared to occupy most types of terrain except dense rainforest, with open eucalyptus forest thought to be its prime habitat. In terms of feeding, it was exclusively carnivorous, and its stomach was muscular with an ability to distend so that it could eat large amounts of food at one time, probably an adaptation to compensate for long periods when hunting was unsuccessful and food scarce. The thylacine was not a fast runner and probably caught its prey by exhausting it during a long pursuit. During long-distance chases, thylacines were likely to have relied more on scent than any other sense. They emerged to hunt during the evening, night and early morning and tended to retreat to the hills and forest for shelter during the day. Despite the common name ‘tiger’, the thylacine had a shy, nervous temperament. Although mainly nocturnal, it was sighted moving during the day and some individuals were even recorded basking in the sun.",
+			"The thylacine had an extended breeding season from winter to spring, with indications that some breeding took place throughout the year. The thylacine, like all marsupials, was tiny and hairless when born. Newborns crawled into the pouch on the belly of their mother, and attached themselves to one of the four teats, remaining there for up to three months. When old enough to leave the pouch, the young stayed in a lair such as a deep rocky cave, well-hidden nest or hollow log, whilst the mother hunted.",
+			"Approximately 4,000 years ago, the thylacine was widespread throughout New Guinea and most of mainland Australia, as well as the island of Tasmania. The most recent, well-dated occurrence of a thylacine on the mainland is a carbon-dated fossil from Murray Cave in Western Australia, which is around 3,100 years old. Its extinction coincided closely with the arrival of wild dogs called dingoes in Australia and a similar predator in New Guinea. Dingoes never reached Tasmania, and most scientists see this as the main reason for the thylacine’s survival there.",
+			"The dramatic decline of the thylacine in Tasmania, which began in the 1830s and continued for a century, is generally attributed to the relentless efforts of sheep farmers and bounty hunters** with shotguns. While this determined campaign undoubtedly played a large part, it is likely that various other factors also contributed to the decline and eventual extinction of the species. These include competition with wild dogs introduced by European settlers, loss of habitat along with the disappearance of prey species, and a distemper-like disease which may also have affected the thylacine.",
+			"There was only one successful attempt to breed a thylacine in captivity, at Melbourne Zoo in 1899. This was despite the large numbers that went through some zoos, particularly London Zoo and Tasmania’s Hobart Zoo. The famous naturalist John Gould foresaw the thylacine’s demise when he published his Mammals of Australia between 1848 and 1863, writing, ‘The numbers of this singular animal will speedily diminish, extermination will have its full sway, and it will then, like the wolf of England and Scotland, be recorded as an animal of the past.’",
+			"However, there seems to have been little public pressure to preserve the thylacine, nor was much concern expressed by scientists at the decline of this species in the decades that followed. A notable exception was T. T. Flynn, Professor of Biology at the University of Tasmania. In 1914, he was sufficiently concerned about the scarcity of the thylacine to suggest that some should be captured and placed on a small island. But it was not until 1929, with the species on the very edge of extinction, that Tasmania’s Animals and Birds Protection Board passed a motion protecting thylacines only for the month of December, which was thought to be their prime breeding season. The last known wild thylacine to be killed was shot by a farmer in the north-east of Tasmania in 1930, leaving just captive specimens. Official protection of the species by the Tasmanian government was introduced in July 1936, 59 days before the last known individual died in Hobart Zoo on 7th September, 1936.",
+			"There have been numerous expeditions and searches for the thylacine over the years, none of which has produced definitive evidence that thylacines still exist. The species was declared extinct by the Tasmanian government in 1986.",
+			"———-",
+			"* marsupial: a mammal, such as a kangaroo, whose young are born incompletely developed and are typically carried and suckled in a pouch on the mother’s belly",
+			"**bounty hunters: people who are paid a reward for killing a wild animal"
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the notes below. Choose ONE WORD ONLY from the passage for each answer. Write your answers in boxes 1-5 on your answer sheet.",
+			"body": "The thylacine\nAppearance and behaviour\nlooked rather like a dog\nhad a series of stripes along its body and tail\nate an entirely ____ (1) diet\nprobably depended mainly on ____ (2) when hunting\nyoung spent first months of life inside its mother’s ____ (3)\nDecline and extinction\nlast evidence in mainland Australia is a 3,100-year-old ____ (4)\nprobably went extinct in mainland Australia due to animals known as dingoes\nreduction in ____ (5) and available sources of food were partly responsible for decline in Tasmania",
+			"body_html": "<h3><strong>The thylacine</strong></h3><h4><strong>Appearance and behaviour</strong></h4><ul><li>looked rather like a dog</li><li>had a series of stripes along its body and tail</li><li>ate an entirely [1] diet</li><li>probably depended mainly on [2] when hunting</li><li>young spent first months of life inside its mother’s [3]</li></ul><h4><strong>Decline and extinction</strong></h4><ul><li>last evidence in mainland Australia is a 3,100-year-old [4]</li><li>probably went extinct in mainland Australia due to animals known as dingoes</li><li></li><li>reduction in [5] and available sources of food were partly responsible for decline in Tasmania</li></ul>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "ate an entirely ____ (1) diet",
+					"answer": "carnivarous",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nThylacine có chế độ dinh dưỡng hoàn toàn là _______\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: ADJECTIVE\nDấu hiệu: ADJECTIVE + diet (ADJECTIVE bổ nghĩa cho Noun 'DIET')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nexclusively ~ entirely\nfeeding ~ diet\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Khoản ăn uống của Thylacine hoàn toàn chỉ là thụ thịt\" (In terms of feeding, it was exclusively carnivorous).\n\nBước 5: Đáp án: carnivarous\nThylacine có chế độ dinh dưỡng hoàn toàn là thụ thịt. (The thylacine ate an entirely carnivorous diet).",
+					"quotes": [
+						"In terms of feeding, it was exclusively carnivorous, and its stomach was muscular with an ability to distend so that it could eat large amounts of food at one time, probably an adaptation to compensate for long periods when hunting was unsuccessful and food scarce."
+					]
+				},
+				{
+					"number": 2,
+					"text": "probably depended mainly on ____ (2) when hunting",
+					"answer": "scent",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nThylacine có lẽ chủ yếu dựa vào ________ khi săn mồi.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: depended mainly on + NOUN (NOUN làm Object của Preposition 'ON')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nrelied more on ~ depended mainly on\nlong-distance chase ~ when hunting\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"trong các cuộc săn đuổi đường dài, thylacine có lẽ đã dựa nhiều hơn vào khứu giác hơn bất kỳ giác quan nào khác\" (During long-distance chases, thylacines were likely to have relied more on scent than any other sense).\n\nBước 5: Đáp án: scent\nThylacine có lẽ chủ yếu dựa vào khứu giác khi săn mồi. (The thylacine probably depended mainly on scent when hunting).",
+					"quotes": [
+						"The thylacine was not a fast runner and probably caught its prey by exhausting it during a long pursuit. During long-distance chases, thylacines were likely to have relied more on scent than any other sense."
+					]
+				},
+				{
+					"number": 3,
+					"text": "young spent first months of life inside its mother’s ____ (3)",
+					"answer": "pouch",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nThylacine con dành những tháng đầu đời của mình trong ________ của mẹ.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: mother's + NOUN (NOUN theo sau Possessive 'S)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nnew borns ~ young\nremaining ... for up to three months ~ spent first months of life inside ...\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"thylacine sơ sinh bò vào túi trên bụng của mẹ chúng, bám vào một trong bốn cái đầu ti, và ở trong đó lên tới 3 tháng\" (Newborns crawled into the pouch on the belly of their mother, and attached themselves to one of the four teats, remaining there for up to three months.).\n\nBước 5: Đáp án: pouch\nThylacine con dành những tháng đầu đời của mình trong túi của mẹ. (Young thylacines spent the first months of life inside their mother's pouch).",
+					"quotes": [
+						"Newborns crawled into the pouch on the belly of their mother, and attached themselves to one of the four teats, remaining there for up to three months."
+					]
+				},
+				{
+					"number": 4,
+					"text": "last evidence in mainland Australia is a 3,100-year-old ____ (4)",
+					"answer": "fossil",
+					"quotes": [
+						"The most recent, well-dated occurrence of a thylacine on the mainland is a carbon-dated fossil from Murray Cave in Western Australia, which is around 3,100 years old."
+					]
+				},
+				{
+					"number": 5,
+					"text": "reduction in ____ (5) and available sources of food were partly responsible for decline in Tasmania",
+					"answer": "habitat",
+					"quotes": [
+						"The dramatic decline of the thylacine in Tasmania, which began in the 1830s and continued for a century, is generally attributed to the relentless efforts of sheep farmers and bounty hunters** with shotguns.",
+						"While this determined campaign undoubtedly played a large part, it is likely that various other factors also contributed to the decline and eventual extinction of the species. These include competition with wild dogs introduced by European settlers, loss of habitat along with the disappearance of prey species, and a distemper-like disease which may also have affected the thylacine."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-13",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 1?\nIn boxes 6-13 on your answer sheet, write:\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 6,
+					"text": "Significant numbers of thylacines were killed by humans from the 1830s onwards.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nsố lượng lớn thylacine đã bị con người săn giết từ những năm 1830 trở đi.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nbegan in the 1830s and continued for a century ~ from 1830s onwards\ndramatic decline ~ significant numbers\nsheep farmers and bounty hunters ~ humans\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Sự tuyệt chủng nhanh chóng của loài thylacine tại Tasmania, khởi đầu từ thập niên 1830 và kéo dài cả trăm năm, phần lớn là do các chiến dịch săn đuổi không thương tiếc của những người chăn cừu và thợ săn tiền thưởng với súng săn trong tay\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi là \" số lượng lớn thylacine đã bị con người săn giết\" (Significant numbers of thylacines were killed by humans).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"The dramatic decline of the thylacine in Tasmania, which began in the 1830s and continued for a century, is generally attributed to the relentless efforts of sheep farmers and bounty hunters** with shotguns."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Several thylacines were born in zoos during the late 1800s.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột số con thylacine được sinh ra trong các sở thú vào cuối những năm 1800.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nzoos ~ từ khóa không đổi\n1899 ~ late 1800s\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Chỉ có một lần duy nhất việc nhân giống thylacine trong điều kiện nuôi nhốt được diễn ra thành công, đó là tại Sở thú Melbourne vào năm 1899. Dù cho trước đó, có rất nhiều cá thể thylacine được đưa vào các sở thú, đặc biệt là Sở thú London và Sở thú Hobart ở Tasmania\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"một số con thylacine được sinh ra trong các vườn thú\" (Several thylacines were born in zoos).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"There was only one successful attempt to breed a thylacine in captivity, at Melbourne Zoo in 1899. This was despite the large numbers that went through some zoos, particularly London Zoo and Tasmania’s Hobart Zoo."
+					]
+				},
+				{
+					"number": 8,
+					"text": "John Gould’s prediction about the thylacine surprised some biologists.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nDự đoán của John Gould về thylacine đã làm một số nhà sinh học ngạc nhiên.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nJohn Gould ~ từ khóa giữ nguyên\nforesaw ~ prediction\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ đề cập đến việc \"Nhà tự nhiên học lừng danh John Gould đã đoán trước được số phận của loài thylacine khi ông cho xuất bản tác phẩm \"Các loài thú có vú của Úc\" trong giai đoạn 1848-1863. Ông viết: \"Số lượng của loài thú này sẽ suy giảm nhanh chóng, sự tuyệt chủng sớm muộn gì cũng sẽ xảy ra, và rồi, như số phận của loài sói ở Anh và Scotland, loài động vật này sẽ chỉ còn là dĩ vãng\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin trong câu hỏi \"Dự đoán của John Gould về thylacine đã làm một số nhà sinh học cảm thấy ngạc nhiên.\" (John Gould’s prediction about the thylacine surprised some biologists).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"The famous naturalist John Gould foresaw the thylacine’s demise when he published his Mammals of Australia between 1848 and 1863, writing, ‘The numbers of this singular animal will speedily diminish, extermination will have its full sway, and it will then, like the wolf of England and Scotland, be recorded as an animal of the past."
+					]
+				},
+				{
+					"number": 9,
+					"text": "In the early 1900s, many scientists became worried about the possible extinction of the thylacine.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nVào đầu những năm 1900, nhiều nhà khoa học trở nên lo ngại về khả năng tuyệt chủng của thylacine.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nscientists ~ từ khoá giữ nguyên\nthe decline of this species ~ the possible extinction of the thylacine.\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Tuy nhiên, trong những thập kỷ sau đó, dường như công chúng không mấy bận tâm lắm trong việc bảo vệ loài thylacine, và giới khoa học cũng không tỏ ra đặc biệt quan ngại về sự suy giảm của loài này\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"Vào đầu những năm 1900, nhiều nhà khoa học trở nên lo ngại về khả năng tuyệt chủng của thylacine\" (In the early 1900s, many scientists became worried about the possible extinction of the thylacine)\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"However, there seems to have been little public pressure to preserve the thylacine, nor was much concern expressed by scientists at the decline of this species in the decades that followed."
+					]
+				},
+				{
+					"number": 10,
+					"text": "T.T. Flynn’s proposal to rehome captive thylacines on an island proved to be impractical.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề xuất của T.T. Flynn về việc đưa hổ túi được nuôi nhốt về lại một hòn đảo đã được chứng minh là không khả thi.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nT.T. Flynn ~ tên riêng giữ nguyên\nsuggest that some should be captured and placed on a small island ~ proposal to rehome captive thylacines on an island\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ đề cập đến việc \"Có một người đã có cái nhìn khác biệt, đó là giáo sư sinh học T.T. Flynn thuộc Đại học Tasmania. Năm 1914, khi thấy số lượng hổ túi ngày càng hiếm, ông đã đề xuất bắt một số con thả lên một hòn đảo nhỏ.\"\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin trong câu hỏi \"Đề xuất của T.T. Flynn được chứng minh là không khả thi\" (T.T. Flynn’s proposal to rehome captive thylacines on an island proved to be impractical).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"A notable exception was T. T. Flynn, Professor of Biology at the University of Tasmania. In 1914, he was sufficiently concerned about the scarcity of the thylacine to suggest that some should be captured and placed on a small island."
+					]
+				},
+				{
+					"number": 11,
+					"text": "There were still reasonable numbers of thylacines in existence when a piece of legislation protecting the species during their breeding season was passed.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"quotes": [
+						"But it was not until 1929, with the species on the very edge of extinction, that Tasmania’s Animals and Birds Protection Board passed a motion protecting thylacines only for the month of December, which was thought to be their prime breeding season."
+					]
+				},
+				{
+					"number": 12,
+					"text": "From 1930 to 1936, the only known living thylacines were all in captivity.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTừ năm 1930 đến 1936, mấy con thylacine còn sót lại duy nhất đều đang ở trong điều kiện nuôi nhốt.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n1930 / 1936 ~ từ khóa không đổi\nleaving just captive specimens ~ were all in captivity\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"con thylacine hoang dã cuối cùng được biết đến bị một nông dân ở phía đông bắc Tasmania bắn chết vào năm 1930, chỉ còn lại những cá thể bị nuôi nhốt\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Từ năm 1930 đến 1936, mấy con thylacine còn sót lại duy nhất đều đang ở trong điều kiện nuôi nhốt\" (From 1930 to 1936, the only known living thylacines were all in captivity).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"The last known wild thylacine to be killed was shot by a farmer in the north-east of Tasmania in 1930, leaving just captive specimens. Official protection of the species by the Tasmanian government was introduced in July 1936, 59 days before the last known individual died in Hobart Zoo on 7th September, 1936."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Attempts to find living thylacines are now rarely made.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững nỗ lực tìm kiếm thylacine còn sống hiện nay hiếm khi được thực hiện.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nexpeditions and searches for the thylacine ~ attempts to find living thylacines\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"đã có nhiều cuộc thám hiểm và tìm kiếm thylacine qua nhiều năm, không có cuộc nào đưa ra được bằng chứng xác định rằng thylacine vẫn còn tồn tại\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin trong câu hỏi \"Những nỗ lực tìm kiếm thylacine còn sống hiện nay hiếm khi được thực hiện\" (Attempts to find living thylacines are now rarely made).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"There have been numerous expeditions and searches for the thylacine over the years, none of which has produced definitive evidence that thylacines still exist. The species was declared extinct by the Tasmanian government in 1986."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

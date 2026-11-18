@@ -21,6 +21,8 @@ export interface NotificationEvent {
 	linkPath: string;
 	refType: string;
 	refId: string;
+	/** Mặc định enqueue theo email học viên ("email,in_app" nếu có email); đặt "in_app" để chỉ gửi inbox. */
+	channels?: "in_app" | "email,in_app";
 }
 
 export function eventGroupOf(
@@ -190,4 +192,22 @@ export function holidayCreatedEvents(input: {
 		refType: "holiday",
 		refId: input.holidayId,
 	}));
+}
+
+/** Sự kiện in-app khi học viên nộp bài kiểm tra đầu vào thành công. */
+export function placementSubmittedEvent(input: {
+	submissionId: string;
+	studentId: string;
+}): NotificationEvent {
+	return {
+		studentId: input.studentId,
+		eventType: "placement_submitted",
+		idempotencyKey: `placement_submitted:${input.submissionId}`,
+		title: "Nộp bài kiểm tra đầu vào thành công",
+		body: "Bài làm của bạn đã được ghi nhận và đang chờ giáo viên chấm điểm. Bấm để xem trạng thái và kết quả.",
+		linkPath: "/placement-test",
+		refType: "placement_submission",
+		refId: input.submissionId,
+		channels: "in_app",
+	};
 }

@@ -1,6 +1,5 @@
 import type { CreatedResponse } from "@teacher-os/api/contracts";
 import {
-	ASSIGNMENT_ANSWER_CHOICES,
 	ASSIGNMENT_PART_TYPES,
 	ASSIGNMENT_PROMPT_ERROR_CODES,
 	type AssignmentSkill,
@@ -9,6 +8,8 @@ import {
 	assignmentPromptCreateSchema,
 	assignmentPromptUpdateSchema,
 	assignmentQuestionSchema,
+	effectiveAnswerChoices,
+	mcqOptionsIssue,
 } from "@teacher-os/api/contracts";
 import { isAutoGradableSkill } from "@teacher-os/api/lib/ielts-band";
 import { assignment } from "@teacher-os/db/schema/assignment";
@@ -274,14 +275,18 @@ export function assignmentRoutes(deps: {
 					);
 				const kind =
 					answerKindByType[question.type ?? effectivePromptType] ?? null;
-				if (kind) {
-					const choices = ASSIGNMENT_ANSWER_CHOICES[kind];
-					if (question.answer && !choices.includes(question.answer as never)) {
-						return c.json(
-							{ error: "invalid answer choice", question: index },
-							400,
-						);
-					}
+				if (!kind) continue;
+				if (mcqOptionsIssue(kind, question.opts)) {
+					return c.json({ error: "invalid mcq options", question: index }, 400);
+				}
+				if (
+					question.answer &&
+					!effectiveAnswerChoices(kind, question.opts).includes(question.answer)
+				) {
+					return c.json(
+						{ error: "invalid answer choice", question: index },
+						400,
+					);
 				}
 			}
 		}

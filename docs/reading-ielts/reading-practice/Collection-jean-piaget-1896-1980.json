@@ -1,0 +1,311 @@
+{
+	"id": "bd9e3e03-a326-4027-b40d-7d24d35ba599",
+	"url": "https://stepielts.com/student/reading/bd9e3e03-a326-4027-b40d-7d24d35ba599?mode=practice",
+	"title": "Jean Piaget (1896-1980)",
+	"source": "Collection",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "1-14",
+	"passage": {
+		"title": "Jean Piaget (1896-1980)",
+		"subtitle": "Seymour Papert looks at the work of the pioneering Swiss philosopher and psychologist",
+		"paragraphs": [
+			"Jean Piaget spent much of his professional life listening to children, watching children and poring over reports of researchers around the world who were doing the same. He found, to put it most succinctly, that children don’t think like grown-ups. After thousands of interactions with young people often barely old enough to talk, Piaget began to suspect that behind their cute and seemingly irrational utterances were thought processes that had their own kind of order and their own special logic. Einstein called it a discovery ’so simple that only a genius could have thought of it.’",
+			"Although not an educational reformer, Piaget championed a way of thinking about children that provided the foundation for today’s education-reform movements. It was a shift comparable to the way modern anthropology displaced stories of primitive tribes being ’noble savages’ and ’cannibals’. One might say that Piaget was the first to take children’s thinking seriously.",
+			"He has been revered by generations of teachers inspired by the belief that children are not empty vessels to be filled with knowledge (as traditional pedagogical theory had it) but active builders of knowledge — little scientists who are constantly creating and testing their own hypotheses about the world. And though he may not be as famous as Sigmund Freud or even B F Skinner, his influence on psychology may be longer lasting.",
+			"In 1920, while doing research in a child-psychology laboratory in Paris, Piaget noticed that children of the same age made similar errors on intelligence tests. Fascinated by their reasoning processes, he began to suspect that the key to human knowledge might be discovered by observing how the child’s mind develops. On his return to Switzerland he began watching children play, scrupulously recording their words and actions as their minds raced to find reasons for why things are the way they are.",
+			"In one of his most famous experiments, Piaget asked children, ’What makes the wind?’. A typical dialogue would be:",
+			"- Piaget: What makes the wind?",
+			"- Julia: The trees.",
+			"- Piaget: How do you know?",
+			"- Julia: I saw them waving their arms.",
+			"- Piaget: How does that make the wind?",
+			"- Julia: (waving her hand in front of his face): Like this. Only they are bigger. And there are lots of trees.",
+			"Piaget recognized that five-year-old Julia’s beliefs, while not correct by any adult criterion, are not ’incorrect’ either. They are entirely sensible and coherent within the framework of the child’s way of knowing. Classifying them as ’true’ or ’false’ misses the point and shows a lack of respect for the child. What Piaget was after was a theory that the wind dialogue demonstrates coherence, ingenuity and the practice of a kind of explanatory principle (in this case by referring to body actions) that stands young children in very good stead when they don’t know enough or don’t have enough skill to handle the kind of explanation that grown-ups prefer.",
+			"Piaget was not an educator and never laid down rules about how to intervene in such situations. But his work strongly suggests that the automatic reaction of putting the child right may well be counter-productive. If their theories are always greeted by ’Nice try, but this is how it really is...’, they might give up after a while on making theories. As Piaget put it, ’children have real understanding only of that which they invent themselves, and each time that we try to teach them something too quickly, we keep them from inventing it themselves.’",
+			"Disciples of Piaget have a tolerance for — indeed a fascination with — children’s primitive laws of physics: that things disappear when they are out of sight; that the moon and the sun follow you around; that big things float and small things sink. Einstein was intrigued by Piaget’s findings, especially by the idea that seven-year-olds insist that going faster can take more time — perhaps because this, like Einstein’s own theories of relativity, runs so contrary to common sense.",
+			"Although every teacher in training still memorises Piaget’s successive stages of childhood development, the greater part of Piaget’s work is less well known, perhaps because schools of education regard it as ’too deep’ for teachers. Piaget never thought of himself as a child psychologist. His real interest was epistemology — the theory of knowledge — which, like physics, was considered a branch of philosophy until Piaget came along and made it a science.",
+			"Through epistemology, Piaget explored multiple ways of knowing. He acknowledged them and examined them non-judgementally, yet with a philosopher’s analytic rigour. Since Piaget, the territory has been widely colonised by those who write about women’s ways of knowing, Afrocentric ways of knowing, even the computer’s ways of knowing. Indeed, artificial intelligence and the information-processing model of the mind owe more to Piaget than its proponents may realise.",
+			"The core of Piaget is his belief that looking carefully at how knowledge develops in children will elucidate the nature of knowledge in general. Whether this has in fact led to deeper understanding remains, like everything about Piaget, controversial. In the past decade, Piaget has been vigorously challenged by the current fashion of viewing knowledge as an intrinsic property of the brain. Ingenious experiments have demonstrated that newborn infants already have some of the knowledge that Piaget believed children constructed. But for those, like me, who still see Piaget as the giant in the field of cognitive theory, the difference between what the baby brings and what the adult has is so immense that the new discoveries do not significantly reduce the gap, but only increase the mystery."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter A, B, C or D.\nWrite the correct letter in boxes 1-5 on your answer sheet.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "In the second paragraph the writer mentions the example of modern anthropology to illustrate",
+					"options": [
+						{
+							"label": "A",
+							"text": "the universality of Piaget's insights into the workings of the mind."
+						},
+						{
+							"label": "B",
+							"text": "the similarity between children's thought processing in different cultures."
+						},
+						{
+							"label": "C",
+							"text": "how Piaget's work represents a crucial turning-point in our approach to education."
+						},
+						{
+							"label": "D",
+							"text": "how Piaget's work has aided our understanding of man's evolution from primitive origins."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"It was a shift comparable to the way modern anthropology displaced stories of primitive tribes being ’noble savages’ and ’cannibals’."
+					]
+				},
+				{
+					"number": 2,
+					"text": "According to the writer, what point is illustrated by the dialogue about the wind?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The factual accuracy of what children say is of minor significance."
+						},
+						{
+							"label": "B",
+							"text": "Children want to learn about scientific principles."
+						},
+						{
+							"label": "C",
+							"text": "Children’s reasoning processes can be amusing to adults."
+						},
+						{
+							"label": "D",
+							"text": "Children often pretend that they know the answers to questions."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"Piaget recognized that five-year-old Julia’s beliefs, while not correct by any adult criterion, are not ’incorrect’ either. They are entirely sensible and coherent within the framework of the child’s way of knowing. Classifying them as ’true’ or ’false’ misses the point and shows a lack of respect for the child."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Piaget believed in the importance of",
+					"options": [
+						{
+							"label": "A",
+							"text": "preventing children from making false assumptions."
+						},
+						{
+							"label": "B",
+							"text": "giving children honest feedback on their hypotheses."
+						},
+						{
+							"label": "C",
+							"text": "showing children how to formulate their own ideas about the world."
+						},
+						{
+							"label": "D",
+							"text": "maintaining children’s confidence in their ability to interpret the world."
+						}
+					],
+					"answer": "D",
+					"quotes": [
+						"But his work strongly suggests that the automatic reaction of putting the child right may well be counter-productive. If their theories are always greeted by ’Nice try, but this is how it really is...’, they might give up after a while on making theories."
+					]
+				},
+				{
+					"number": 4,
+					"text": "What does the writer suggest in the seventh paragraph?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Children’s sense of their surroundings changes as they get older."
+						},
+						{
+							"label": "B",
+							"text": "Children are able to grasp certain complex ideas as well as adults are."
+						},
+						{
+							"label": "C",
+							"text": "Even apparently irrational ideas can be worthy of interest."
+						},
+						{
+							"label": "D",
+							"text": "Sometimes the simplest explanations are the best."
+						}
+					],
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nTác giả gợi ý điều gì trong đoạn văn này?\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ (Đoạn 8): \"Einstein was intrigued by Piaget's findings... seven-year-olds insist that going faster can take more time... runs so contrary to common sense.\"\n==> Ngay cả một thiên tài như Einstein cũng thấy hứng thú với những ý tưởng ngây ngô/phi lý của trẻ. Điều này đồng nghĩa với câu C (Even apparently irrational ideas can be worthy of interest - Ngay cả những ý tưởng có vẻ phi lý cũng có thể đáng được quan tâm).\n\nBước 3: Đáp án: C\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Đoạn này tập trung vào sự hứng thú của người lớn với suy nghĩ của trẻ, không nhấn mạnh quá trình \"thay đổi theo tuổi tác\".\nĐáp án B -> Bài nói suy nghĩ của trẻ \"contrary to common sense\" (trái thường thức), tức là khác biệt/sai so với người lớn, chứ không phải \"hiểu tốt ngang người lớn\".\nĐáp án D -> Không đề cập đến việc so sánh giải thích nào tốt nhất.",
+					"quotes": [
+						"Einstein was intrigued by Piaget’s findings, especially by the idea that seven-year-olds insist that going faster can take more time — perhaps because this, like Einstein’s own theories of relativity, runs so contrary to common sense."
+					]
+				},
+				{
+					"number": 5,
+					"text": "The writer’s main purpose is to",
+					"options": [
+						{
+							"label": "A",
+							"text": "outline Piaget’s contribution to a range of scientific fields."
+						},
+						{
+							"label": "B",
+							"text": "summarise how education has benefited from Piaget’s findings."
+						},
+						{
+							"label": "C",
+							"text": "discuss Piaget’s role in the development of 20th-century psychology."
+						},
+						{
+							"label": "D",
+							"text": "express doubts about a number of Piaget’s theories."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"And though he may not be as famous as Sigmund Freud or even B F Skinner, his influence on psychology may be longer lasting."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary below.",
+			"options": [
+				{
+					"label": "A",
+					"text": "correct"
+				},
+				{
+					"label": "B",
+					"text": "theories"
+				},
+				{
+					"label": "C",
+					"text": "simple"
+				},
+				{
+					"label": "D",
+					"text": "teachers"
+				},
+				{
+					"label": "E",
+					"text": "psychology"
+				},
+				{
+					"label": "F",
+					"text": "logical"
+				},
+				{
+					"label": "G",
+					"text": "philosophers"
+				},
+				{
+					"label": "H",
+					"text": "thought"
+				},
+				{
+					"label": "I",
+					"text": "brain"
+				}
+			],
+			"body": "Piaget maintained that children’s mental processes were far more ____ (6) than they might appear. He encouraged the view that a child was not a ‘blank slate’ waiting to be filled with information, but rather a systematic builder of knowledge who regularly tries out his or her own ____ (7) about the world.\nPiaget’s impact on the area of ____ (8) could well outlast that of more celebrated pioneers of this discipline. Despite doubts cast over his ideas by the current view associating knowledge exclusively with the ____ (9), the effects of his work are still strong today. His principles are still widely used in the professional development of ____ (10).",
+			"body_html": "<table><tbody><tr><td><p>Piaget maintained that children’s mental processes were far more [6] than they might appear. He encouraged the view that a child was not a ‘blank slate’ waiting to be filled with information, but rather a systematic builder of knowledge who regularly tries out his or her own [7] about the world.</p><p>Piaget’s impact on the area of [8] could well outlast that of more celebrated pioneers of this discipline. Despite doubts cast over his ideas by the current view associating knowledge exclusively with the [9], the effects of his work are still strong today. His principles are still widely used in the professional development of [10].</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "Piaget maintained that children’s mental processes were far more ____ (6) than they might appear. He encouraged the view that a child was not a ‘blank slate’ waiting to be filled with information, but rather a systematic builder of knowledge who regularly tries out his or her own ____ (7) about the world.",
+					"answer": "F",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nQuá trình tư duy của trẻ em thì _______ hơn nhiều so với vẻ bề ngoài.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: ADJECTIVE (Tính từ)\nDấu hiệu: were far more + ADJECTIVE + than (cấu trúc so sánh hơn)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nmental processes ~ thought processes\nmore... than they might appear ~ behind their cute and seemingly irrational utterances\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ (Đoạn 1): \"...behind their cute and seemingly irrational utterances were thought processes that had their own kind of order and their own special logic.\"\n==> Tư duy của trẻ có trật tự và logic riêng ==> Tương ứng với từ \"logical\".\n\nBước 5: Đáp án: F",
+					"quotes": [
+						"After thousands of interactions with young people often barely old enough to talk, Piaget began to suspect that behind their cute and seemingly irrational utterances were thought processes that had their own kind of order and their own special logic."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Piaget maintained that children’s mental processes were far more ____ (6) than they might appear. He encouraged the view that a child was not a ‘blank slate’ waiting to be filled with information, but rather a systematic builder of knowledge who regularly tries out his or her own ____ (7) about the world.",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nThường xuyên thử nghiệm những _______ của riêng mình về thế giới.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (Danh từ)\nDấu hiệu: own + NOUN (sở hữu cách)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\ntries out ~ testing\nabout the world ~ about the world\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ (Đoạn 3): \"...creating and testing their own hypotheses about the world.\"\n==> \"Hypotheses\" (giả thuyết) đồng nghĩa với \"theories\" (lý thuyết).\n\nBước 5: Đáp án: B",
+					"quotes": [
+						"He has been revered by generations of teachers inspired by the belief that children are not empty vessels to be filled with knowledge (as traditional pedagogical theory had it) but active builders of knowledge — little scientists who are constantly creating and testing their own hypotheses about the world."
+					]
+				},
+				{
+					"number": 8,
+					"text": "",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nTác động của Piaget trong lĩnh vực _______ có thể kéo dài hơn những người tiên phong nổi tiếng khác.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (Danh từ chỉ lĩnh vực)\nDấu hiệu: area of + NOUN\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nimpact ~ influence\noutlast ~ longer lasting\ncelebrated pioneers ~ Sigmund Freud or even B F Skinner\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ (Đoạn 3): \"...his influence on psychology may be longer lasting.\"\n\nBước 5: Đáp án: E",
+					"quotes": [
+						"And though he may not be as famous as Sigmund Freud or even B F Skinner, his influence on psychology may be longer lasting."
+					]
+				},
+				{
+					"number": 9,
+					"text": "",
+					"answer": "I",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\n...gắn kết kiến thức duy nhất với _______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (Danh từ)\nDấu hiệu: with the + NOUN\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nassociating knowledge ~ viewing knowledge\nexclusively with ~ intrinsic property of\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ (Đoạn 10): \"...viewing knowledge as an intrinsic property of the brain.\"\n\nBước 5: Đáp án: I",
+					"quotes": [
+						"In the past decade, Piaget has been vigorously challenged by the current fashion of viewing knowledge as an intrinsic property of the brain."
+					]
+				},
+				{
+					"number": 10,
+					"text": "",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCác nguyên tắc vẫn được sử dụng rộng rãi trong sự phát triển chuyên môn của _______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (Danh từ chỉ người/nhóm người)\nDấu hiệu: development of + NOUN\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nstill widely used ~ revered by / still memorises\nprofessional development ~ training\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ (Đoạn 8): \"Although every teacher in training still memorises Piaget's...\"\n==> Đối tượng được đào tạo (training/professional development) là giáo viên.\n\nBước 5: Đáp án: D",
+					"quotes": [
+						"Although every teacher in training still memorises Piaget’s successive stages of childhood development, the greater part of Piaget’s work is less well known, perhaps because schools of education regard it as ’too deep’ for teachers."
+					]
+				}
+			]
+		},
+		{
+			"range": "11-14",
+			"type": "YES/NO/NOT GIVEN",
+			"instructions": "Do the following statements agree with the claims of the writer in Reading Passage 3?\nWrite\nYES if the statement agrees with the writer\nNO if the statement contradicts the writer\nNOT GIVEN if it is impossible to say what the writer thinks about this",
+			"questions": [
+				{
+					"number": 11,
+					"text": "Piaget’s early work in Paris involved innovative research techniques.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"quotes": [
+						"In 1920, while doing research in a child-psychology laboratory in Paris, Piaget noticed that children of the same age made similar errors on intelligence tests."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Piaget gave clear guidelines as to how adults should give information to children.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NO",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPiaget đưa ra các hướng dẫn rõ ràng về cách người lớn nên cung cấp thông tin cho trẻ em.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nclear guidelines ~ laid down rules\nhow adults should give information ~ how to intervene\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ (Đoạn 7): \"Piaget was not an educator and never laid down rules about how to intervene in such situations.\"\n==> Điều này trái ngược với thông tin trong câu hỏi \"gave clear guidelines\" (đưa hướng dẫn rõ ràng).\n\nBước 4: Đáp án: NO",
+					"quotes": [
+						"Piaget was not an educator and never laid down rules about how to intervene in such situations."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Piaget made a significant contribution to the field of epistemology.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPiaget đã đóng góp đáng kể cho lĩnh vực nhận thức luận (epistemology).\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nsignificant contribution ~ made it a science / giant in the field • epistemology ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ (Đoạn 9): \"His real interest was epistemology... which... was considered a branch of philosophy until Piaget came along and made it a science.\" (Ông biến nó thành một môn khoa học).\n==> Điều này đồng nghĩa với thông tin trong câu hỏi về việc đóng góp đáng kể.\n\nBước 4: Đáp án: YES",
+					"quotes": [
+						"His real interest was epistemology — the theory of knowledge — which, like physics, was considered a branch of philosophy until Piaget came along and made it a science."
+					]
+				},
+				{
+					"number": 14,
+					"text": "We still have much to learn about the nature of knowledge.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nChúng ta vẫn còn nhiều điều phải học về bản chất của kiến thức.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nmuch to learn ~ increase the mystery\nnature of knowledge ~ what the baby brings and what the adult has\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ (Đoạn cuối): \"...the difference between what the baby brings and what the adult has is so immense that the new discoveries... only increase the mystery.\"\n==> \"Increase the mystery\" (tăng sự bí ẩn) đồng nghĩa với việc chúng ta chưa hiểu hết, vẫn còn nhiều điều phải tìm hiểu (\"much to learn\").\n\nBước 4: Đáp án: YES",
+					"quotes": [
+						"But for those, like me, who still see Piaget as the giant in the field of cognitive theory, the difference between what the baby brings and what the adult has is so immense that the new discoveries do not significantly reduce the gap, but only increase the mystery."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

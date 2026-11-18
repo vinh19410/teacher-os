@@ -1,4 +1,7 @@
-import { ASSIGNMENT_ANSWER_CHOICES } from "@teacher-os/api/contracts";
+import {
+	type ASSIGNMENT_ANSWER_CHOICES,
+	effectiveAnswerChoices,
+} from "@teacher-os/api/contracts";
 import type { TestRange } from "@/lib/test-ranges";
 
 /**
@@ -25,6 +28,10 @@ export type TestAnswerKind = keyof typeof ASSIGNMENT_ANSWER_CHOICES | "text";
 /** Range của part + kind đáp án (từ kindOf(prompt.type ?? genre)). */
 export interface TestAnswerRange extends TestRange {
 	kind?: TestAnswerKind;
+	/** Kind từng câu theo offset 0..count-1 (đề trộn dạng). */
+	questionKinds?: ReadonlyArray<TestAnswerKind | undefined>;
+	/** Tùy chọn từng câu theo offset 0..count-1 (dùng cho mcq 3 vs 4 lựa chọn). */
+	questionOpts?: ReadonlyArray<readonly string[] | null | undefined>;
 }
 
 export interface TestAnswerKeyEntry {
@@ -52,6 +59,7 @@ export interface TestAnswerCell {
 	number: number;
 	part: string;
 	kind: TestAnswerKind;
+	opts?: readonly string[] | null;
 	answer: string;
 	alts: string;
 }
@@ -72,19 +80,38 @@ export interface TestAnswerSlot {
 	part: string;
 	qStart: number;
 	kind?: TestAnswerKind;
-	questions: { answer: string; alts: string }[];
+	questions: {
+		answer: string;
+		alts: string;
+		opts?: readonly string[] | null;
+		kind?: TestAnswerKind;
+	}[];
+}
+
+function choicesForQuestion(
+	kind: TestAnswerKind,
+	opts?: readonly string[] | null,
+): readonly string[] | null {
+	return kind === "text" ? null : effectiveAnswerChoices(kind, opts);
+}
+
+function matchChoice(
+	value: string,
+	choices: readonly string[] | null,
+): string | null {
+	if (!choices) return null;
+	const needle = value.trim().toLowerCase();
+	return choices.find((choice) => choice.toLowerCase() === needle) ?? null;
 }
 
 /** Case-insensitive lookup về dạng canonical (TRUE/NOT GIVEN/A/i…); null =
  * không thuộc bộ đáp án của kind. */
-function canonicalChoice(value: string, kind: TestAnswerKind): string | null {
-	const choices = kind === "text" ? null : ASSIGNMENT_ANSWER_CHOICES[kind];
-	if (!choices) return null;
-	return (
-		choices.find(
-			(choice) => choice.toLowerCase() === value.trim().toLowerCase(),
-		) ?? null
-	);
+function canonicalChoice(
+	value: string,
+	kind: TestAnswerKind,
+	opts?: readonly string[] | null,
+): string | null {
+	return matchChoice(value, choicesForQuestion(kind, opts));
 }
 
 /** Alts so sánh/hiển thị cùng một dạng spacing: split `/` → trim → join " / ". */
@@ -107,9 +134,17 @@ export function parseTestAnswerKey(
 	ranges: TestAnswerRange[],
 ): { entries: TestAnswerKeyEntry[]; errors: TestKeyLineError[] } {
 	const kindByNumber = new Map<number, TestAnswerKind>();
+	const optsByNumber = new Map<number, readonly string[] | null | undefined>();
 	for (const range of ranges) {
-		for (let offset = 0; offset < range.count; offset += 1)
-			kindByNumber.set(range.qStart + offset, range.kind ?? "text");
+		for (let offset = 0; offset < range.count; offset += 1) {
+			kindByNumber.set(
+				range.qStart + offset,
+				range.questionKinds?.[offset] ?? range.kind ?? "text",
+			);
+			if (range.questionOpts) {
+				optsByNumber.set(range.qStart + offset, range.questionOpts[offset]);
+			}
+		}
 	}
 	const entries: TestAnswerKeyEntry[] = [];
 	const errors: TestKeyLineError[] = [];
@@ -163,13 +198,14 @@ export function parseTestAnswerKey(
 			});
 			continue;
 		}
-		const canonical = canonicalChoice(segments[0], kind);
+		const rowChoices = choicesForQuestion(kind, optsByNumber.get(number));
+		const canonical = matchChoice(segments[0], rowChoices);
 		if (!canonical) {
 			errors.push({
 				line: lineNumber,
 				raw: line,
 				reason: "invalid-choice",
-				message: `Q${number}: “${segments[0]}” không thuộc bộ đáp án (${ASSIGNMENT_ANSWER_CHOICES[kind].join(", ")}).`,
+				message: `Q${number}: “${segments[0]}” không thuộc bộ đáp án (${rowChoices?.join(", ") ?? ""}).`,
 			});
 			continue;
 		}
@@ -188,7 +224,8 @@ export function testAnswerCells(slots: TestAnswerSlot[]): TestAnswerCell[] {
 			cells.push({
 				number: slot.qStart + index,
 				part: slot.part,
-				kind: slot.kind ?? "text",
+				kind: question.kind ?? slot.kind ?? "text",
+				opts: question.opts,
 				answer: question.answer,
 				alts: question.alts,
 			});
@@ -218,7 +255,7 @@ export function compareAnswerKey(
 		if (expected && cell) {
 			return {
 				number,
-				status: answerKeyMatches(expected, cell, cell.kind)
+				status: answerKeyMatches(expected, cell, cell.kind, cell.opts)
 					? ("match" as const)
 					: ("mismatch" as const),
 				expected,
@@ -237,6 +274,7 @@ export function answerKeyMatches(
 	expected: TestAnswerKeyEntry,
 	actual: { answer: string; alts: string },
 	kind: TestAnswerKind,
+	opts?: readonly string[] | null,
 ): boolean {
 	if (kind === "text") {
 		return (
@@ -245,7 +283,8 @@ export function answerKeyMatches(
 		);
 	}
 	// Actual từ server vốn canonical — canonicalize lại để phòng legacy row.
-	return canonicalChoice(actual.answer, kind) === expected.answer;
+	const canonicalActual = canonicalChoice(actual.answer, kind, opts);
+	return canonicalActual !== null && canonicalActual === expected.answer;
 }
 
 /** Đếm theo trạng thái cho dòng tóm tắt "38 match, 2 mismatch". */

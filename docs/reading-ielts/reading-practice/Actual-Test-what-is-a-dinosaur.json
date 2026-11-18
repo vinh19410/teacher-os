@@ -1,0 +1,257 @@
+{
+	"id": "27dc3644-bffb-46ab-a6e1-758ed5b638e4",
+	"url": "https://stepielts.com/student/reading/27dc3644-bffb-46ab-a6e1-758ed5b638e4?mode=practice",
+	"title": "What is a dinosaur?",
+	"source": "Actual Test",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "1-14",
+	"passage": {
+		"title": "What is a dinosaur?",
+		"paragraphs": [
+			"A. Although the name dinosaur is derived from the Greek for \"terrible lizard\", dinosaurs were not, in fact, lizards at all. Like lizards, dinosaurs are included in the class Reptilia, or reptiles, one of the five main classes of Vertebrata, animals with backbones. However, at the next level of classification, within reptiles, significant differences in the skeletal anatomy of lizards and dinosaurs have led scientists to place these groups of animals into two different superorders: Lepidosauria, or lepidosaurs, and Archosauria, or archosaurs.",
+			"B. Classified as lepidosaurs are lizards and snakes and their prehistoric ancestors. Included among the archosaurs, or \"ruling reptiles\", are prehistoric and modern crocodiles, and the now extinct thecodonts, pterosaurs and dinosaurs. Palaeontologists believe that both dinosaurs and crocodiles evolved, in the later years of the Triassic Period (c. 248-208 million years ago), from creatures called pseudosuchian thecodonts. Lizards, snakes and different types of thecodont are believed to have evolved earlier in the Triassic Period from reptiles known as eosuchians.",
+			"C. The most important skeletal differences between dinosaurs and other archosaurs are in the bones of the skull, pelvis and limbs. Dinosaur skulls are found in a great range of shapes and sizes, reflecting the different eating habits and lifestyles of a large and varied group of animals that dominated life on Earth for an extraordinary 165 million years. However, unlike the skulls of any other known animals, the skulls of dinosaurs had two long bones known as vomers. These bones extended on either side of the head, from the front of the snout to the level of the holes on the skull known as the antorbital fenestra, situated in front of the dinosaur’s orbits or eyesockets.",
+			"D. All dinosaurs, whether large or small, quadrupedal or bipedal, fleet-footed or slow-moving, shared a common body plan. Identification of this plan makes it possible to differentiate dinosaurs from any other types of animal, even other archosaurs. Most significantly, in dinosaurs, the pelvis and femur had evolved so that the hind limbs were held vertically beneath the body, rather than sprawling out to the sides like the limbs of a lizard. The femur of a dinosaur had a sharply in-turned neck and a ball-shaped head, which slotted into a fully open acetabulum or hip socket. A supra-acetabular crest helped prevent dislocation of the femur. The position of the knee joint, aligned below the acetabulum, made it possible for the whole hind limb to swing backwards and forwards. This unique combination of features gave dinosaurs what is known as a \"fully improved gait\". Evolution of this highly efficient method of walking also developed in mammals, but among reptiles it occurred only in dinosaurs.",
+			"E. For the purpose of further classification, dinosaurs are divided into two orders: Saurischia, or saurischian dinosaurs, and Ornithischia, or ornithischian dinosaurs. This division is made on the basis of their pelvic anatomy. All dinosaurs had a pelvic girdle with each side comprised of three bones: the pubis, ilium and ischium. However, the orientation of these bones follows one of two patterns. In saurischian dinosaurs, also known as lizard-hipped dinosaurs, the pubis points forwards, as is usual in most types of reptile.\nBy contrast, in ornithischian, or bird-hipped, dinosaurs, the pubis points backwards towards the rear of the animal, which is also true of birds.",
+			"F. Of the two orders of dinosaurs, the Saurischia was the larger and the first to evolve. It is divided into two suborders: Therapoda, or therapods, and Sauropodomorpha, or sauropodomorphs. The therapods, or \"beast feet\", were bipedal, predatory carnivores. They ranged in size from the mighty Tyrannosaurus rex, 12m long, 5.6m tall and weighing an estimated 6.4 tonnes, to the smallest known dinosaur, Compsognathus, a mere 1.4m long and estimated 3kg in weight when fully grown.The sauropodomorphs, or \"lizard feet forms\", included both bipedal and quadrupedal dinosaurs. Some sauropodomorphs were carnivorous or omnivorous but later species were typically herbivorous. They included some of the largest and best-known of all dinosaurs, such as Diplodocus, a huge quadruped with an elephant-like body, a long, thin tail and neck that gave it a total length of 27m, and a tiny head.",
+			"G. Ornithischian dinosaurs were bipedal or quadrupedal herbivores. They are now usually divided into three suborders: Ornithipoda, Thyreophora and Marginocephalia. The ornithopods, or \"bird feet\", both large and small, could walk or run on their long hind legs, balancing their body by holding their tails stiffly off the ground behind them. An example is Iguanodon, up to 9m long, 5m tall and weighing 4.5 tonnes. The thyreophorans, or \"shield bearers\", also known as armoured dinosaurs, were quadrupeds with rows of protective bony spikes, studs, or plates along their backs and tails. They included Stegosaurus, 9m long and weighing 2 tonnes.",
+			"H. The marginocephalians, or \"margined heads\", were bipedal or quadrupedal ornithischians with a deep bony frill or narrow shelf at the back of the skull. An example is Triceratops, a rhinoceros-like dinosaur, 9m long, weighing 5.4 tonnes and bearing a prominent neck frill and three large horns."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-7",
+			"type": "MATCHING_HEADINGS",
+			"instructions": "Choose the most suitable heading for each paragraph from the List of headings below.\nOne of the headings has been done for you as an example.\nNB. There are more headings than paragraphs, so you will not use all of them.\nExample: Paragraph H → Answer: x",
+			"options": [
+				{
+					"label": "i",
+					"text": "165 million years"
+				},
+				{
+					"label": "ii",
+					"text": "The body plan of archosaurs"
+				},
+				{
+					"label": "iii",
+					"text": "Dinosaurs - terrible lizards"
+				},
+				{
+					"label": "iv",
+					"text": "Classification according to pelvic anatomy"
+				},
+				{
+					"label": "v",
+					"text": "The suborders of Saurischia"
+				},
+				{
+					"label": "vi",
+					"text": "Lizards and dinosaurs - two distinct superorders"
+				},
+				{
+					"label": "vii",
+					"text": "Unique body plan helps identify dinosaurs from other animals"
+				},
+				{
+					"label": "viii",
+					"text": "Herbivore dinosaurs"
+				},
+				{
+					"label": "ix",
+					"text": "Lepidosaurs"
+				},
+				{
+					"label": "x",
+					"text": "Frills and shelves"
+				},
+				{
+					"label": "xi",
+					"text": "The origins of dinosaurs and lizards"
+				},
+				{
+					"label": "xii",
+					"text": "Bird-hipped dinosaurs"
+				},
+				{
+					"label": "xiii",
+					"text": "Skull bones distinguish dinosaurs from other archosaurs"
+				}
+			],
+			"questions": [
+				{
+					"number": 1,
+					"text": "Paragraph A",
+					"answer": "vi",
+					"quotes": [
+						"However, at the next level of classification, within reptiles, significant differences in the skeletal anatomy of lizards and dinosaurs have led scientists to place these groups of animals into two different superorders: Lepidosauria, or lepidosaurs, and Archosauria, or archosaurs."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Paragraph B",
+					"answer": "xi",
+					"quotes": [
+						"Palaeontologists believe that both dinosaurs and crocodiles evolved, in the later years of the Triassic Period (c. 248-208 million years ago), from creatures called pseudosuchian thecodonts. Lizards, snakes and different types of thecodont are believed to have evolved earlier in the Triassic Period from reptiles known as eosuchians."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Paragraph C",
+					"answer": "xiii",
+					"quotes": [
+						"C. The most important skeletal differences between dinosaurs and other archosaurs are in the bones of the skull, pelvis and limbs. Dinosaur skulls are found in a great range of shapes and sizes, reflecting the different eating habits and lifestyles of a large and varied group of animals that dominated life on Earth for an extraordinary 165 million years. However, unlike the skulls of any other known animals, the skulls of dinosaurs had two long bones known as vomers. These bones extended on either side of the head, from the front of the snout to the level of the holes on the skull known as the antorbital fenestra, situated in front of the dinosaur’s orbits or eyesockets."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Paragraph D",
+					"answer": "vii",
+					"quotes": [
+						"D. All dinosaurs, whether large or small, quadrupedal or bipedal, fleet-footed or slow-moving, shared a common body plan. Identification of this plan makes it possible to differentiate dinosaurs from any other types of animal, even other archosaurs."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Paragraph E",
+					"answer": "iv",
+					"quotes": [
+						"E. For the purpose of further classification, dinosaurs are divided into two orders: Saurischia, or saurischian dinosaurs, and Ornithischia, or ornithischian dinosaurs. This division is made on the basis of their pelvic anatomy. All dinosaurs had a pelvic girdle with each side comprised of three bones: the pubis, ilium and ischium. However, the orientation of these bones follows one of two patterns. In saurischian dinosaurs, also known as lizard-hipped dinosaurs, the pubis points forwards, as is usual in most types of reptile. By contrast, in ornithischian, or bird-hipped, dinosaurs, the pubis points backwards towards the rear of the animal, which is also true of birds."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Paragraph F",
+					"answer": "v",
+					"quotes": [
+						"F. Of the two orders of dinosaurs, the Saurischia was the larger and the first to evolve. It is divided into two suborders: Therapoda, or therapods, and Sauropodomorpha, or sauropodomorphs."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Paragraph G",
+					"answer": "xii",
+					"explanation": "Bước 1: Đọc và hiểu đoạn G:\nKhủng long Ornithischian là loài ăn cỏ hai chân hoặc bốn chân. Chúng hiện thường được chia thành ba phân bộ: Ornithipoda, Thyreophora và Marginocephalia.\n\nBước 2: Tóm tắt nội dung chính của đoạn G:\nĐoạn G có nội dung chính là \"Khủng long ăn cỏ Ornithischian và các phân bộ của chúng, bao gồm loài ornithopods - khủng long chân chim\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề xii \"Bird-hipped dinosaurs\" (Khủng long hông chim).\n\nBước 4: Đáp án: xii\n\nBước 5: Giải thích đáp án gây nhiễu:\nTiêu đề viii (Herbivore dinosaurs) → Mặc dù đoạn G có nhắc tới việc Ornithischia là loài ăn cỏ, nhưng trọng tâm chính là tính chất cơ thể của chúng, không phải là về thức ăn của chúng.\nTiêu đề v (The suborders of Saurischia) → Đoạn G nói về các phân bộ của Ornithischia, không phải Saurischia.\nTiêu đề iv (Classification according to pelvic anatomy) → Đoạn G không tập trung vào phân loại theo xương chậu mà về đặc điểm cấu trúc cơ thể của chúng.",
+					"quotes": [
+						"G. Ornithischian dinosaurs were bipedal or quadrupedal herbivores."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-10",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the sentences below. Use NO MORE THAN THREE WORDS from the passage for each blank space.",
+			"body": "Lizards and dinosaurs are classified into two different superorders because of the difference in their ____ (8)\nIn the Triassic Period, ____ (9) evolved into thecodonts, for example, lizards and snakes.\nDinosaur skulls differed from those of any other known animals because of the presence of vomers: ____ (10)",
+			"body_html": "<table><tbody><tr><td><ul><li>Lizards and dinosaurs are classified into two different superorders because of the difference in their [8]</li></ul><ul><li>In the Triassic Period, [9] evolved into thecodonts, for example, lizards and snakes.</li></ul><ul><li>Dinosaur skulls differed from those of any other known animals because of the presence of vomers: [10]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 8,
+					"text": "Lizards and dinosaurs are classified into two different superorders because of the difference in their ____ (8)",
+					"answer": "skeletal anatomy",
+					"quotes": [
+						"However, at the next level of classification, within reptiles, significant differences in the skeletal anatomy of lizards and dinosaurs have led scientists to place these groups of animals into two different superorders: Lepidosauria, or lepidosaurs, and Archosauria, or archosaurs."
+					]
+				},
+				{
+					"number": 9,
+					"text": "In the Triassic Period, ____ (9) evolved into thecodonts, for example, lizards and snakes.",
+					"answer": "eosuchians",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nTrong kỷ Tam Điệp, __________ tiến hóa thành thecodonts, ví dụ như thằn lằn và rắn.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (tên loài bò sát)\nDấu hiệu: Subject + evolved into (cần một danh từ làm chủ ngữ chỉ loài sinh vật tiến hóa)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nTriassic Period ~ từ khóa giữ nguyên\nevolved into thecodonts ~ từ khóa giữ nguyên\nlizards and snakes ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Thằn lằn, rắn và các loại thecodont khác nhau được cho là đã tiến hóa sớm hơn trong kỷ Tam Điệp từ các loài bò sát được gọi là eosuchians\" (Lizards, snakes and different types of thecodont are believed to have evolved earlier in the Triassic Period from reptiles known as eosuchians).\n\nBước 5: Đáp án: eosuchians",
+					"quotes": [
+						"Lizards, snakes and different types of thecodont are believed to have evolved earlier in the Triassic Period from reptiles known as eosuchians."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Dinosaur skulls differed from those of any other known animals because of the presence of vomers: ____ (10)",
+					"answer": "two long bones",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nHộp sọ khủng long khác với hộp sọ của bất kỳ động vật nào đã biết khác vì sự hiện diện của vomers: __________\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN PHRASE (mô tả đặc điểm của vomers)\nDấu hiệu: colon (:) sau vomers cho thấy cần thông tin bổ sung mô tả vomers là gì\n\nBước 3: Tìm các keywords được paraphrase trong bài:\ndinosaur skulls ~ từ khóa giữ nguyên\ndiffered from ~ unlike\nvomers ~ từ khóa giữ nguyên\npresence of ~ had\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Tuy nhiên, không giống như hộp sọ của bất kỳ động vật nào đã biết khác, hộp sọ của khủng long có hai xương dài được gọi là vomers\" (However, unlike the skulls of any other known animals, the skulls of dinosaurs had two long bones known as vomers).\n\nBước 5: Đáp án: two long bones",
+					"quotes": [
+						"However, unlike the skulls of any other known animals, the skulls of dinosaurs had two long bones known as vomers. These bones extended on either side of the head, from the front of the snout to the level of the holes on the skull known as the antorbital fenestra, situated in front of the dinosaur’s orbits or eyesockets."
+					]
+				}
+			]
+		},
+		{
+			"range": "11-14",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "The information in the completed sentences should be an accurate summary of the points made by the writer.\nYou may use each phrase once only.\nDinosaurs",
+			"options": [
+				{
+					"label": "A",
+					"text": "are both divided into two orders"
+				},
+				{
+					"label": "B",
+					"text": "the former had a \"fully improved gait\""
+				},
+				{
+					"label": "C",
+					"text": "were not usually very heavy"
+				},
+				{
+					"label": "D",
+					"text": "could walk or run on their back legs"
+				},
+				{
+					"label": "E",
+					"text": "their hind limbs sprawled out to the side"
+				},
+				{
+					"label": "F",
+					"text": "walked or ran on four legs, rather than two"
+				},
+				{
+					"label": "G",
+					"text": "both had a pelvic girdle comprising six bones"
+				},
+				{
+					"label": "H",
+					"text": "did not always eat meat"
+				}
+			],
+			"body": "Dinosaurs differed from lizards, because ____ (11)\nSaurischian and ornithischian dinosaurs ____ (12)\nUnlike therapods, sauropodomorphs ____ (13)\nSome dinosaurs used their tails to balance and could walk ____ (14)",
+			"body_html": "<p>Dinosaurs differed from lizards, because [11]</p><p>Saurischian and ornithischian dinosaurs [12]</p><p>Unlike therapods, sauropodomorphs [13]</p><p>Some dinosaurs used their tails to balance and could walk [14]</p>",
+			"questions": [
+				{
+					"number": 11,
+					"text": "Dinosaurs differed from lizards, because",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi khủng long khác với thằn lằn vì lý do gì.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ndinosaurs differed from lizards ~ differentiate dinosaurs from any other types of animal\nbecause ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến sự khác biệt: \"Quan trọng nhất, ở khủng long, xương chậu và xương đùi đã tiến hóa sao cho các chi sau được giữ thẳng đứng bên dưới cơ thể, thay vì dang ra hai bên như chi của thằn lằn. [...] Sự kết hợp độc đáo các đặc điểm này đã cho khủng long cái được gọi là 'dáng đi được cải thiện hoàn toàn'. Sự tiến hóa của phương pháp đi bộ hiệu quả cao này cũng phát triển ở động vật có vú, nhưng trong số các loài bò sát nó chỉ xảy ra ở khủng long.\"\n==> Thông tin này đồng nghĩa với đáp án B (the former had a \"fully improved gait\" - khủng long có \"dáng đi được cải thiện hoàn toàn\").\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"Most significantly, in dinosaurs, the pelvis and femur had evolved so that the hind limbs were held vertically beneath the body, rather than sprawling out to the sides like the limbs of a lizard. The femur of a dinosaur had a sharply in-turned neck and a ball-shaped head, which slotted into a fully open acetabulum or hip socket. A supra-acetabular crest helped prevent dislocation of the femur. The position of the knee joint, aligned below the acetabulum, made it possible for the whole hind limb to swing backwards and forwards. This unique combination of features gave dinosaurs what is known as a \"fully improved gait\". Evolution of this highly efficient method of walking also developed in mammals, but among reptiles it occurred only in dinosaurs."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Saurischian and ornithischian dinosaurs",
+					"answer": "G",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nKhủng long Saurischian và ornithischian có đặc điểm gì?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nSaurischian and ornithischian dinosaurs ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến hai loại khủng long: \"Tất cả khủng long đều có đai xương chậu với mỗi bên bao gồm ba xương: xương mu, xương chậu và xương ngồi. Tuy nhiên, hướng của những xương này tuân theo một trong hai mô hình\" - điều này cho thấy cả hai loại đều có cấu trúc xương chậu khác nhau, phản ánh thói quen ăn uống khác nhau. *Note: each side comprised of three bones\" (mỗi bên có 3 xương), tức là tổng cộng 6 xương cho cả hai bên.\n==> Thông tin này đồng nghĩa với đáp án G (both had a pelvic girdle comprising six bones).\n\nBước 4: Đáp án: G",
+					"quotes": [
+						"All dinosaurs had a pelvic girdle with each side comprised of three bones: the pubis, ilium and ischium."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Unlike therapods, sauropodomorphs",
+					"answer": "H",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nKhông giống như therapods, sauropodomorphs có đặc điểm gì?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ntherapods ~ từ khóa giữ nguyên\nsauropodomorphs ~ từ khóa giữ nguyên\nunlike ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích: \"Các therapods, hay 'chân thú', là loài ăn thịt hai chân săn mồi\" và \"Các sauropodomorphs, hay 'hình thức chân thằn lằn', bao gồm khủng long hai chân và bốn chân. Một số sauropodomorphs là loài ăn thịt hoặc ăn tạp nhưng các loài sau này thường ăn cỏ.\"\n==> Không giống therapods (chỉ hai chân), sauropodomorphs có cả loài hai chân và bốn chân, đồng nghĩa với đáp án H (did not always eat meat - không phải lúc nào cũng ăn thịt - vì có cả loài ăn thịt, ăn tạp và ăn cỏ).\n\nBước 4: Đáp án: H",
+					"quotes": [
+						"Some sauropodomorphs were carnivorous or omnivorous but later species were typically herbivorous."
+					]
+				},
+				{
+					"number": 14,
+					"text": "Some dinosaurs used their tails to balance and could walk",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột số khủng long sử dụng đuôi để cân bằng và có thể đi như thế nào?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nused their tails to balance ~ balancing their body by holding their tails\ncould walk ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích: \"Các ornithopods, hay 'chân chim', cả lớn và nhỏ, có thể đi hoặc chạy bằng chân sau dài của chúng, cân bằng cơ thể bằng cách giữ đuôi cứng nhắc khỏi mặt đất phía sau chúng.\"\n==> Thông tin này đồng nghĩa với đáp án D \"could walk or run on their back legs\" (có thể đi hoặc chạy bằng chân sau của chúngchúng).\n\nBước 4: Đáp án: D",
+					"quotes": [
+						"The ornithopods, or \"bird feet\", both large and small, could walk or run on their long hind legs, balancing their body by holding their tails stiffly off the ground behind them."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

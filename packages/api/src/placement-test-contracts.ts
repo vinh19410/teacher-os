@@ -6,6 +6,7 @@ import {
 	type LeadCourse,
 	normalizeVietnamPhone,
 } from "./lead-contracts";
+import { criterionLabel, formatBand, isBandStep } from "./lib/ielts-band";
 import {
 	createDefaultPlacementReadingPart,
 	createDefaultPlacementSpeakingPart,
@@ -412,6 +413,14 @@ export function normalizePlacementGapAnswer(raw: unknown): string {
 		.toLowerCase()
 		.replace(/p\.?m\.?|\$|dollars?|o'clock/g, "")
 		.replace(/[^a-z0-9]/g, "");
+}
+
+/** Kiểm tra snapshot đề đầu vào đã phát hành có ít nhất 1 câu hỏi Speaking hay không. */
+export function hasPlacementSpeakingTasks(
+	snapshot: Pick<PlacementSnapshot, "parts">,
+): boolean {
+	const speakingPart = snapshot.parts.find((part) => part.id === "speaking");
+	return Array.isArray(speakingPart?.tasks) && speakingPart.tasks.length > 0;
 }
 
 /** Đếm số từ trong bài Writing. */
@@ -1539,10 +1548,11 @@ export function extractReferencedAudioIds(
 // Rubric chấm Writing / Speaking & Hàm tính điểm dùng chung (HTML formula)
 // ---------------------------------------------------------------------------
 
+/** Rubric kiểu cũ (0–5 nguyên) — giữ để đọc & hiển thị bài đã chấm trước đây. */
 export const PLACEMENT_RUBRIC_INTERMEDIATE_NOTE =
 	"4 = giữa mô tả 5 và 3 · 2 = giữa mô tả 3 và 1 · 0 = không có bài / không đủ ngôn ngữ để đánh giá.";
 
-export const PLACEMENT_WRITING_RUBRIC = [
+export const PLACEMENT_LEGACY_WRITING_RUBRIC = [
 	{
 		key: "ct",
 		label: "Content",
@@ -1575,7 +1585,7 @@ export const PLACEMENT_WRITING_RUBRIC = [
 	},
 ] as const;
 
-export const PLACEMENT_SPEAKING_RUBRIC = [
+export const PLACEMENT_LEGACY_SPEAKING_RUBRIC = [
 	{
 		key: "gv",
 		label: "Grammar & Vocabulary",
@@ -1618,24 +1628,150 @@ export const PLACEMENT_SPEAKING_RUBRIC = [
 	},
 ] as const;
 
-export const placementWritingRubricSchema = z.object({
+export const legacyPlacementWritingRubricSchema = z.object({
 	ct: z.number().int().min(0).max(5),
 	or: z.number().int().min(0).max(5),
 	lg: z.number().int().min(0).max(5),
 });
-export type PlacementWritingRubric = z.infer<
-	typeof placementWritingRubricSchema
+export type PlacementLegacyWritingRubric = z.infer<
+	typeof legacyPlacementWritingRubricSchema
 >;
 
-export const placementSpeakingRubricSchema = z.object({
+export const legacyPlacementSpeakingRubricSchema = z.object({
 	gv: z.number().int().min(0).max(5),
 	dm: z.number().int().min(0).max(5),
 	pr: z.number().int().min(0).max(5),
 	ic: z.number().int().min(0).max(5),
 });
+export type PlacementLegacySpeakingRubric = z.infer<
+	typeof legacyPlacementSpeakingRubricSchema
+>;
+
+/** 4 tiêu chí Writing theo chuẩn IELTS (thang 0–9, bước 0.5). */
+export const PLACEMENT_WRITING_RUBRIC = [
+	{
+		key: "task",
+		label: criterionLabel("writing", "task", "task2"),
+		desc: "Mức độ hoàn thành & trả lời đúng yêu cầu đề bài",
+	},
+	{
+		key: "coherence",
+		label: criterionLabel("writing", "coherence", "task2"),
+		desc: "Mạch lạc, liên kết câu và bố cục bài viết",
+	},
+	{
+		key: "lexical",
+		label: criterionLabel("writing", "lexical", "task2"),
+		desc: "Độ đa dạng và chính xác của từ vựng",
+	},
+	{
+		key: "grammar",
+		label: criterionLabel("writing", "grammar", "task2"),
+		desc: "Độ đa dạng và chính xác ngữ pháp",
+	},
+] as const;
+
+/** 4 tiêu chí Speaking theo chuẩn IELTS (thang 0–9, bước 0.5). */
+export const PLACEMENT_SPEAKING_RUBRIC = [
+	{
+		key: "fluency",
+		label: criterionLabel("speaking", "fluency", ""),
+		desc: "Độ trôi chảy và mạch lạc khi nói",
+	},
+	{
+		key: "lexical",
+		label: criterionLabel("speaking", "lexical", ""),
+		desc: "Độ đa dạng và chính xác của từ vựng",
+	},
+	{
+		key: "grammar",
+		label: criterionLabel("speaking", "grammar", ""),
+		desc: "Độ đa dạng và chính xác ngữ pháp",
+	},
+	{
+		key: "pronunciation",
+		label: criterionLabel("speaking", "pronunciation", ""),
+		desc: "Phát âm, trọng âm và ngữ điệu",
+	},
+] as const;
+
+export const placementIeltsBandSchema = z
+	.number()
+	.refine(isBandStep, "Điểm IELTS phải từ 0 đến 9 theo bước 0.5.");
+
+export const placementWritingRubricSchema = z
+	.object({
+		task: placementIeltsBandSchema,
+		coherence: placementIeltsBandSchema,
+		lexical: placementIeltsBandSchema,
+		grammar: placementIeltsBandSchema,
+	})
+	.strict();
+export type PlacementWritingRubric = z.infer<
+	typeof placementWritingRubricSchema
+>;
+
+export const placementSpeakingRubricSchema = z
+	.object({
+		fluency: placementIeltsBandSchema,
+		lexical: placementIeltsBandSchema,
+		grammar: placementIeltsBandSchema,
+		pronunciation: placementIeltsBandSchema,
+	})
+	.strict();
 export type PlacementSpeakingRubric = z.infer<
 	typeof placementSpeakingRubricSchema
 >;
+
+export type PlacementStoredWritingRubric =
+	| PlacementWritingRubric
+	| PlacementLegacyWritingRubric;
+export type PlacementStoredSpeakingRubric =
+	| PlacementSpeakingRubric
+	| PlacementLegacySpeakingRubric;
+
+export function isIeltsWritingRubric(
+	rubric: PlacementStoredWritingRubric | null | undefined,
+): rubric is PlacementWritingRubric {
+	return Boolean(rubric && "task" in rubric);
+}
+
+export function isIeltsSpeakingRubric(
+	rubric: PlacementStoredSpeakingRubric | null | undefined,
+): rubric is PlacementSpeakingRubric {
+	return Boolean(rubric && "fluency" in rubric);
+}
+
+function parseRawJson(raw: string | null): unknown {
+	if (!raw) return null;
+	try {
+		return JSON.parse(raw);
+	} catch {
+		return null;
+	}
+}
+
+export function parseStoredWritingRubric(
+	raw: string | null,
+): PlacementStoredWritingRubric | null {
+	const parsed = parseRawJson(raw);
+	if (!parsed) return null;
+	const ielts = placementWritingRubricSchema.safeParse(parsed);
+	if (ielts.success) return ielts.data;
+	const legacy = legacyPlacementWritingRubricSchema.safeParse(parsed);
+	return legacy.success ? legacy.data : null;
+}
+
+export function parseStoredSpeakingRubric(
+	raw: string | null,
+): PlacementStoredSpeakingRubric | null {
+	const parsed = parseRawJson(raw);
+	if (!parsed) return null;
+	const ielts = placementSpeakingRubricSchema.safeParse(parsed);
+	if (ielts.success) return ielts.data;
+	const legacy = legacyPlacementSpeakingRubricSchema.safeParse(parsed);
+	return legacy.success ? legacy.data : null;
+}
 
 export interface PlacementObjectiveItemResult {
 	id: string;
@@ -1902,8 +2038,12 @@ export interface PlacementFinalResult {
 	finalSummary: string;
 }
 
+export type PlacementGradingScale = "ielts" | "legacy";
+
 /**
- * Công thức tính kết quả cuối cùng sau khi giáo viên chấm Writing (0–15) & Speaking (0–20):
+ * Công thức tính kết quả cuối cùng sau khi giáo viên chấm Writing & Speaking:
+ * - Mặc định theo thang IELTS (0–9, bước 0.5): quy đổi `(band / 9) * 100%`.
+ * - Hỗ trợ `scale = "legacy"` (`/15` Writing, `/20` Speaking) cho dữ liệu cũ.
  * - Trung bình % trên các kỹ năng đã có điểm (Listening, G&V, Reading, Writing?, Speaking?).
  * - Áp dụng quy tắc sàn Speaking: nếu bậc Speaking thấp hơn bậc tổng thể >= 2 bậc
  *   thì hạ kết quả 1 bậc kèm giải thích; nếu cao hơn >= 2 bậc thì gắn gợi ý lớp cao hơn.
@@ -1914,28 +2054,26 @@ export function computePlacementFinal(params: {
 		"listening" | "vocabGrammar" | "reading"
 	>;
 	bands: readonly PlacementPublishedBand[];
-	writingRubric: PlacementWritingRubric | null;
-	speakingRubric: PlacementSpeakingRubric | null;
+	writingScore: number | null;
+	speakingScore: number | null;
+	writingScale?: PlacementGradingScale;
+	speakingScale?: PlacementGradingScale;
 }): PlacementFinalResult {
 	const sortedBands = [...params.bands].sort((a, b) => a.min - b.min);
-	const writingScore = params.writingRubric
-		? params.writingRubric.ct +
-			params.writingRubric.or +
-			params.writingRubric.lg
-		: null;
+	const writingScale = params.writingScale ?? "ielts";
+	const speakingScale = params.speakingScale ?? "ielts";
+	const writingMax = writingScale === "legacy" ? 15 : 9;
+	const speakingMax = speakingScale === "legacy" ? 20 : 9;
+
+	const writingScore = params.writingScore;
 	const exactWritingPct =
-		writingScore !== null ? (writingScore / 15) * 100 : null;
+		writingScore !== null ? (writingScore / writingMax) * 100 : null;
 	const writingPct =
 		exactWritingPct !== null ? Math.round(exactWritingPct) : null;
 
-	const speakingScore = params.speakingRubric
-		? params.speakingRubric.gv +
-			params.speakingRubric.dm +
-			params.speakingRubric.pr +
-			params.speakingRubric.ic
-		: null;
+	const speakingScore = params.speakingScore;
 	const exactSpeakingPct =
-		speakingScore !== null ? (speakingScore / 20) * 100 : null;
+		speakingScore !== null ? (speakingScore / speakingMax) * 100 : null;
 	const speakingPct =
 		exactSpeakingPct !== null ? Math.round(exactSpeakingPct) : null;
 
@@ -1987,12 +2125,24 @@ export function computePlacementFinal(params: {
 		}
 	}
 
+	const formatSummaryScore = (
+		prefix: string,
+		score: number | null,
+		scale: PlacementGradingScale,
+		max: number,
+	) => {
+		if (score === null) return null;
+		return scale === "legacy"
+			? `${prefix} ${score}/${max}`
+			: `${prefix} ${formatBand(score)}/9`;
+	};
+
 	const partsSummary = [
 		`L ${params.objective.listening.correct}/${params.objective.listening.total}`,
 		`G&V ${params.objective.vocabGrammar.correct}/${params.objective.vocabGrammar.total}`,
 		`R ${params.objective.reading.correct}/${params.objective.reading.total}`,
-		writingScore !== null ? `W ${writingScore}/15` : null,
-		speakingScore !== null ? `S ${speakingScore}/20` : null,
+		formatSummaryScore("W", writingScore, writingScale, 15),
+		formatSummaryScore("S", speakingScore, speakingScale, 20),
 	]
 		.filter(Boolean)
 		.join(" · ");
@@ -2017,7 +2167,7 @@ export function computePlacementFinal(params: {
 }
 
 /**
- * Xuất tin nhắn kết quả chuẩn gửi Zalo cho học viên (khớp template HTML).
+ * Xuất tin nhắn kết quả chuẩn gửi Zalo cho học viên.
  */
 export function buildPlacementZaloText(params: {
 	studentName: string;
@@ -2030,15 +2180,23 @@ export function buildPlacementZaloText(params: {
 	averagePct: number;
 	note: string;
 	teacherFeedback: string;
+	writingScale?: PlacementGradingScale;
+	speakingScale?: PlacementGradingScale;
 }): string {
 	const fmtPct = (v: number | null) => (v === null ? "—" : `${v}%`);
+	const writingScale = params.writingScale ?? "ielts";
+	const speakingScale = params.speakingScale ?? "ielts";
 	const wText =
 		params.writingScore !== null
-			? `${params.writingScore}/15 (${Math.round((params.writingScore / 15) * 100)}%)`
+			? writingScale === "legacy"
+				? `${params.writingScore}/15 (${Math.round((params.writingScore / 15) * 100)}%)`
+				: `Band ${formatBand(params.writingScore)}/9 (${Math.round((params.writingScore / 9) * 100)}%)`
 			: "chưa chấm";
 	const sText =
 		params.speakingScore !== null
-			? `${params.speakingScore}/20 (${Math.round((params.speakingScore / 20) * 100)}%)`
+			? speakingScale === "legacy"
+				? `${params.speakingScore}/20 (${Math.round((params.speakingScore / 20) * 100)}%)`
+				: `Band ${formatBand(params.speakingScore)}/9 (${Math.round((params.speakingScore / 9) * 100)}%)`
 			: params.speakingStatus === "skipped"
 				? "bỏ qua"
 				: params.speakingStatus === "none"
@@ -2101,7 +2259,7 @@ export const studentPlacementSubmitSchema = z
 	.object({
 		answers: placementAnswersSchema,
 		writingText: z.string().max(PLACEMENT_WRITING_TEXT_MAX).default(""),
-		speakingMode: z.enum(["upload", "skipped", "none"]).default("none"),
+		speakingMode: z.enum(["upload", "none"]).default("none"),
 		speakingDurationSec: z
 			.number()
 			.int()
@@ -2141,7 +2299,7 @@ export const placementPublicSubmitSchema = z
 		}),
 		answers: placementAnswersSchema,
 		writingText: z.string().max(PLACEMENT_WRITING_TEXT_MAX).default(""),
-		speakingMode: z.enum(["upload", "skipped", "none"]).default("none"),
+		speakingMode: z.enum(["upload", "none"]).default("none"),
 		speakingDurationSec: z
 			.number()
 			.int()
@@ -2273,23 +2431,33 @@ export const PLACEMENT_AI_ERROR_CODES = {
 	NO_TRANSCRIPT: "AI_GRADING_NO_TRANSCRIPT",
 } as const;
 
-/** Bản nháp AI cho một kỹ năng — rubric theo đúng thang 0–5 hiện có. */
-export interface PlacementAiSkillDraft<R> {
-	rubric: R;
-	feedback: string;
+/** Bản nháp AI cho một kỹ năng — chỉ liệt kê lỗi, không đề xuất điểm hay nhận xét. */
+export interface PlacementAiSkillDraft {
 	errors: PlacementError[];
 }
 
 export const placementTeacherGradeSchema = z
 	.object({
 		writingRubric: placementWritingRubricSchema,
+		writingScore: placementIeltsBandSchema,
 		speakingRubric: placementSpeakingRubricSchema.nullable().default(null),
+		speakingScore: placementIeltsBandSchema.nullable().default(null),
 		teacherFeedback: z.string().max(PLACEMENT_TEACHER_FEEDBACK_MAX).default(""),
 		/** #730: lỗi giáo viên chốt cho bài viết / transcript (đã sửa/xoá/thêm). */
 		writingErrors: placementErrorListSchema.default([]),
 		speakingErrors: placementErrorListSchema.default([]),
 	})
-	.strict();
+	.strict()
+	.superRefine((val, ctx) => {
+		if ((val.speakingRubric === null) !== (val.speakingScore === null)) {
+			ctx.addIssue({
+				code: "custom",
+				path: [val.speakingScore === null ? "speakingScore" : "speakingRubric"],
+				message:
+					"Điểm tổng và điểm tiêu chí Speaking phải cùng được nhập hoặc cùng bỏ trống.",
+			});
+		}
+	});
 export type PlacementTeacherGrade = z.infer<typeof placementTeacherGradeSchema>;
 
 export interface PlacementSubmissionDetail {
@@ -2315,9 +2483,9 @@ export interface PlacementSubmissionDetail {
 	speakingMediaMime: string | null;
 	speakingMediaSize: number | null;
 	speakingDurationSec: number | null;
-	writingRubric: PlacementWritingRubric | null;
+	writingRubric: PlacementStoredWritingRubric | null;
 	writingScore: number | null;
-	speakingRubric: PlacementSpeakingRubric | null;
+	speakingRubric: PlacementStoredSpeakingRubric | null;
 	speakingScore: number | null;
 	teacherFeedback: string;
 	finalBandLevel: string | null;
@@ -2327,12 +2495,12 @@ export interface PlacementSubmissionDetail {
 	finalNote: string;
 	gradedAt: string | null;
 	zaloText: string;
-	/** #730: trạng thái chấm nháp AI + bản nháp (chỉ giáo viên thấy). */
+	/** #730: trạng thái phân tích lỗi AI + danh sách lỗi (chỉ giáo viên thấy). */
 	aiStatus: PlacementAiStatus;
 	aiErrorCode: string | null;
 	aiDraftedAt: string | null;
-	aiWriting: PlacementAiSkillDraft<PlacementWritingRubric> | null;
-	aiSpeaking: PlacementAiSkillDraft<PlacementSpeakingRubric> | null;
+	aiWriting: PlacementAiSkillDraft | null;
+	aiSpeaking: PlacementAiSkillDraft | null;
 	/** Transcript Speaking AI chuyển từ audio ("" = chưa có). */
 	speakingTranscript: string;
 	/** Lỗi đã chốt (null = chưa chốt lần nào) — offset đã định vị lại. */
@@ -2357,12 +2525,12 @@ export interface PlacementPublicResultView {
 		"listening" | "vocabGrammar" | "reading"
 	>;
 	writingText: string;
-	writingRubric: PlacementWritingRubric | null;
+	writingRubric: PlacementStoredWritingRubric | null;
 	writingScore: number | null;
 	writingErrors: PlacementError[];
 	speakingStatus: "none" | "pending_upload" | "uploaded" | "skipped";
 	speakingTranscript: string;
-	speakingRubric: PlacementSpeakingRubric | null;
+	speakingRubric: PlacementStoredSpeakingRubric | null;
 	speakingScore: number | null;
 	speakingErrors: PlacementError[];
 	finalBandLevel: string | null;
@@ -2423,12 +2591,12 @@ export interface StudentPlacementSubmissionView {
 	>;
 	writingText: string;
 	writingWordCount: number;
-	writingRubric: PlacementWritingRubric | null;
+	writingRubric: PlacementStoredWritingRubric | null;
 	writingScore: number | null;
 	writingErrors: PlacementError[];
 	speakingStatus: "none" | "pending_upload" | "uploaded" | "skipped";
 	speakingTranscript: string;
-	speakingRubric: PlacementSpeakingRubric | null;
+	speakingRubric: PlacementStoredSpeakingRubric | null;
 	speakingScore: number | null;
 	speakingErrors: PlacementError[];
 	finalBandLevel: string | null;

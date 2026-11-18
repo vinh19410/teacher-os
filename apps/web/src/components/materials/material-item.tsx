@@ -61,8 +61,8 @@ export function materialMeta(item: MaterialRowItem): string {
 
 /**
  * Nút mở/tải theo loại: link mở tab mới; audio/video phát inline + tải về;
- * tài liệu (server luôn trả attachment) chỉ có Tải xuống. Accessible name
- * kèm tiêu đề để phân biệt giữa nhiều dòng.
+ * tài liệu (server luôn trả attachment) có Tải xuống, cộng «Xem trước» trong
+ * app khi là PDF/ảnh. Accessible name kèm tiêu đề để phân biệt giữa nhiều dòng.
  */
 export function MaterialOpenActions({ item }: { item: MaterialRowItem }) {
 	const linkCls = buttonVariants({ variant: "ghost", size: "sm" });
@@ -111,12 +111,15 @@ export function MaterialItem({
 	item,
 	detail,
 	actions,
+	leading,
 	className,
 }: {
 	item: MaterialRowItem;
 	/** Dòng phụ thêm (thư mục, số buổi dùng…). */
 	detail?: ReactNode;
 	actions?: ReactNode;
+	/** Thumbnail xem trước đặt ở đầu hàng thay icon tĩnh (PDF/ảnh). */
+	leading?: ReactNode;
 	className?: string;
 }) {
 	const Icon = KIND_ICONS[item.kind];
@@ -124,16 +127,18 @@ export function MaterialItem({
 		<li
 			data-testid="material-item"
 			className={cn(
-				"flex flex-wrap items-start gap-3 rounded-lg border bg-card p-3",
+				"flex min-w-0 flex-wrap items-start gap-3 rounded-lg border bg-card p-3",
 				className,
 			)}
 		>
-			<span
-				aria-hidden="true"
-				className="grid size-9 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground"
-			>
-				<Icon className="size-4" />
-			</span>
+			{leading ?? (
+				<span
+					aria-hidden="true"
+					className="grid size-9 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground"
+				>
+					<Icon className="size-4" />
+				</span>
+			)}
 			<div className="min-w-0 flex-1">
 				<p className="break-words font-medium text-sm">{item.title}</p>
 				{item.description && (

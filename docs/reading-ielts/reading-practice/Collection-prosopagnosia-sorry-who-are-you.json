@@ -1,0 +1,163 @@
+{
+	"id": "0448a4b3-ade6-4f23-b521-e18011491e02",
+	"url": "https://stepielts.com/student/reading/0448a4b3-ade6-4f23-b521-e18011491e02?mode=practice",
+	"title": "Prosopagnosia (Sorry... who are you?)",
+	"source": "Collection",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Prosopagnosia (Sorry... who are you?)",
+		"paragraphs": [
+			"Prosopagnosia is a medical condition that stops people from recognizing people’s faces. But how common is it and why does it happen?",
+			"It was Jacob Hodes’ first day at college. He can still recall spending an enjoyable afternoon being shown around campus by a second year student named Daniel Byrne, who happened to be from his hometown. Hodes then spent the rest of the year ignoring him.\"I never saw him again. Well, I’m sure I walked past him plenty of times, but I just didn’t see him.\" This behavior wasn’t intentional. Jacob just couldn’t recollect what his fellow student looked like. He had had the same trouble all his life. Friends and relatives would greet him and he would have no idea who they were.",
+			"It wasn’t until five years ago that it all made sense. That was when Hodes was diagnosed with prosopagnosia, a condition that means he is unable to recognise faces. According to researchers, he is far from alone. In fact the condition is not that uncommon but until a few years ago only a few dozen cases had ever been described, and all of these had been caused by brain injury. Recently, though, researchers identified a second form of face blindness - developmental prosopagnosia, which is either present from birth or develops very early in life.",
+			"In May, a team from Harvard University in the US and University College London (UCL) announced the results of a web survey of 1600 people, suggesting that up to 2 percent of people have some degree of face blindness. Then in August, Martina Gruter and colleagues at the Institute for Human Genetics in Munster, Germany, similarly reported that 2.5 percent of 700 secondary school pupils they had tested had trouble recognising faces. The results of the survey took everyone by surprise.",
+			"Prosopagnosics almost always know that they have trouble recognising people, but they often don’t realise that other people have better recognition skills than they do, says Brad Duchaine, a researcher at UCL.",
+			"Despite these issues, the majority of developmental prosopagnosics possess strategies that allow them to get around their difficulty, for instance, by recognising hair, clothing or a person’s way of speaking so, unless they see a familiar person out of context, with a new hairstyle or in different clothes, they can recognise people just fine. Even so, the discovery of developmental prosopagnosia has attracted attention from neuroscientists keen to discover what is different about the brain of face-blind people. This difference, they believe, could help solve the problem of how the brain deals with information in general: not just visual data. In other words, it may show whether the brain has specialised parts for specific tasks or is more of a general-purpose information processor.",
+			"One issue, however, that will present challenges for researchers is that no two prosopagnosics are the same. Some have problems only with faces, while others have trouble with ordinary everyday objects and, so it turns out, animals which would normally be familiar as well. Some prosopagnosics can train themselves to recognise specific faces others can’t even recognise their own in a mirror. When some have been tested they could identify the emotion which was conveyed on another’s face, even though the face itself seemed unfamiliar, while for other subjects this was an impossibility. Some cannot recognise the faces of old friends or fellow students but have no trouble telling whether a particular face from such groups would be attractive to most people. Because of this diversity, working out the cause of prosopagnosia will not be easy.",
+			"In Martina Gruter’s study, the prosopagnosics who agreed to have their parents and relatives tested reported at least one with the condition. Having looked at 38 cases in seven families, the German team believe they have good evidence that a single gene could be responsible. Duchaine also has some evidence that face blindness could be inherited but thinks other factors might be more significant. He refers to studies of babies born with a condition which means the eye’s lens is not clear, and when it’s the left one, being unable to see through this eye during the first two months of life is a major risk factor for prosopagnosia.",
+			"Whatever the cause, what most prosopagnosics want to know is whether they can do anything to improve their face recognition skills. Joseph Degutis, a graduate student at the University of California, recently reported successfully training a severe developmental prosopagnosic to recognise faces during tests carried out in the laboratory. The subject also reported that recognising faces in everyday life became easier due to the training. Duchaine now plans to attempt to train sufferers to recognise the five people that they most need to know, maybe their immediate family, for example, and essential colleagues. Thomas Gruter, Martina Gruter’s husband, who also works on her team, however, is not convinced it will work.\"I don’t know how you can have more training than you have already had,\" he says.\"Humans already spend all day looking at faces.\" He also points out that cheating is a possibility during tests and provides an example. One person we studied said that when she was doing the face-recognition test, she memorised the distance between nose and upper lip. She wasn’t the only one. So you can perform well in the test and not do so well in real life."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-7",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 1?\nIn boxes 1-7 on your answer sheet, write\nTRUE If the statement agrees with the information\nFALSE If the statement contradicts the information\nNOT GIVEN If there is no information on this",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Before attending college Jacob was capable of recognising people he knew well.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTrước khi vào đại học Jacob có khả năng nhận ra người mà anh ta biết rõ.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nJacob ~ từ khóa giữ nguyên\nsame trouble all his life ~ Before attending college\nno idea who they were ~ capable of recognising people he knew well\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Jacob đã gặp vấn đề tương tự suốt cả cuộc đời. Bạn bè và người thân sẽ chào anh ấy và anh ấy không biết họ là ai.\"\n=> Điều này trái ngược với thông tin trong câu hỏi \"trước khi vào đại học Jacob có khả năng nhận ra người mà anh ta biết rõ\" (Before attending college Jacob was capable of recognising people he knew well).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"He had had the same trouble all his life. Friends and relatives would greet him and he would have no idea who they were."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Researchers believe that prosopagnosia may be a growing problem.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác nhà nghiên cứu tin rằng chứng prosopagnosia có thể là một vấn đề ngày càng phổ biến.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nresearchers ~ từ khóa giữ nguyên\nprosopagnosia ~ từ khóa giữ nguyên\ngrowing problem ~ không có từ tương đương trong bài đọc\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập việc \"Kết quả của cuộc khảo sát khiến mọi người bất ngờ\" khi phát hiện ra rằng có tới 2-2,5% dân số có thể mắc chứng khiếm thị khuôn mặt ở mức độ nào đó.\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"các nhà nghiên cứu tin rằng chứng prosopagnosia có thể là một vấn đề ngày càng phổ biến\" (Researchers believe that prosopagnosia may be a growing problem).\nBài chỉ nêu rõ tỷ lệ hiện tại của người mắc bệnh này nhưng không đề cập đến xu hướng tăng lên hay giảm đi của vấn đề này theo thời gian.\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"In May, a team from Harvard University in the US and University College London (UCL) announced the results of a web survey of 1600 people, suggesting that up to 2 percent of people have some degree of face blindness. Then in August, Martina Gruter and colleagues at the Institute for Human Genetics in Munster, Germany, similarly reported that 2.5 percent of 700 secondary school pupils they had tested had trouble recognising faces.",
+						"The results of the survey took everyone by surprise."
+					]
+				},
+				{
+					"number": 3,
+					"text": "It is harder to identify developmental prosopagnosia in babies than in young children.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi: Việc xác định chứng prosopagnosia phát triển ở trẻ sơ sinh khó hơn ở trẻ nhỏ.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ndevelopmental prosopagnosia ~ từ khóa giữ nguyên\nbabies ~ từ khóa giữ nguyên\nyoung children ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu: Bài đọc đề cập việc \"Gần đây, các nhà nghiên cứu đã xác định hình thức thứ hai của bệnh mù khuôn mặt - chứng prosopagnosia phát triển, có thể hiện diện từ khi sinh ra hoặc phát triển rất sớm trong cuộc sống.\"\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"việc xác định bệnh này ở trẻ sơ sinh khó hơn ở trẻ nhỏ\" (it is harder to identify developmental prosopagnosia in babies than in young children).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Recently, though, researchers identified a second form of face blindness - developmental prosopagnosia, which is either present from birth or develops very early in life."
+					]
+				},
+				{
+					"number": 4,
+					"text": "A German study seems to support the Harvard and UCL research findings.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi: Một nghiên cứu của Đức dường như ủng hộ những phát hiện nghiên cứu của Harvard và UCL.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nHarvard and UCL ~ từ khóa giữ nguyên\nGerman study ~ từ khóa giữ nguyên\nsimilarly reported ~ seems to support research findings\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Sau đó vào tháng 8, Martina Gruter và các đồng nghiệp tại Viện Di truyền học Con người ở Munster, Đức, đã báo cáo tương tự rằng 2,5% trong số 700 học sinh trung học mà họ đã kiểm tra gặp khó khăn trong việc nhận diện khuôn mặt.\"\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"một nghiên cứu của Đức dường như ủng hộ những phát hiện nghiên cứu của Harvard và UCL\" (A German study seems to support the Harvard and UCL research findings).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"In May, a team from Harvard University in the US and University College London (UCL) announced the results of a web survey of 1600 people, suggesting that up to 2 percent of people have some degree of face blindness. Then in August, Martina Gruter and colleagues at the Institute for Human Genetics in Munster, Germany, similarly reported that 2.5 percent of 700 secondary school pupils they had tested had trouble recognising faces."
+					]
+				},
+				{
+					"number": 5,
+					"text": "In general, prosopagnosics are aware that other people can recognise faces more easily than they can.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhìn chung, những người mắc chứng prosopagnosia nhận thức được rằng người khác có thể nhận diện khuôn mặt dễ dàng hơn họ.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nprosopagnosics ~ từ khóa giữ nguyên\naware ~ realize\nother people can recognise faces more easily ~ other people have better recognition skills\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Người mắc chứng prosopagnosia hầu như luôn biết rằng họ gặp khó khăn trong việc nhận ra người khác, nhưng họ thường không nhận ra rằng người khác có kỹ năng nhận diện tốt hơn họ.\"\n=> Điều này trái ngược với thông tin trong câu hỏi \"nhìn chung, những người mắc chứng prosopagnosia nhận thức được rằng người khác có thể nhận diện khuôn mặt dễ dàng hơn họ\" (In general, prosopagnosics are aware that other people can recognise faces more easily than they can).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Prosopagnosics almost always know that they have trouble recognising people, but they often don’t realise that other people have better recognition skills than they do, says Brad Duchaine, a researcher at UCL."
+					]
+				},
+				{
+					"number": 6,
+					"text": "In most cases, prosopagnosics have developed ways to deal with their problem.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTrong hầu hết các trường hợp, những người mắc chứng prosopagnosia đã phát triển các cách để đối phó với vấn đề của họ.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nmajority of developmental prosopagnosics ~ In most cases, prosopagnosics\npossess strategies ~ have developed ways\nget around their difficulty ~ to deal with their problem\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Mặc dù có những vấn đề này, đa số những người mắc chứng prosopagnosia phát triển có những chiến lược cho phép họ vượt qua khó khăn của mình.\"\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"trong hầu hết các trường hợp, những người mắc chứng prosopagnosia đã phát triển các cách để đối phó với vấn đề của họ\" (In most cases, prosopagnosics have developed ways to deal with their problem).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Despite these issues, the majority of developmental prosopagnosics possess strategies that allow them to get around their difficulty, for instance, by recognising hair, clothing or a person’s way of speaking so, unless they see a familiar person out of context, with a new hairstyle or in different clothes, they can recognise people just fine."
+					]
+				},
+				{
+					"number": 7,
+					"text": "The study of prosopagnosia may help neuroscientists to treat different kinds of brain injury.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nViệc nghiên cứu chứng prosopagnosia có thể giúp các nhà thần kinh học điều trị các loại tổn thương não khác nhau.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nstudy of prosopagnosia ~ từ khóa giữ nguyên\nneuroscientists ~ từ khóa giữ nguyên\nbrain injury ~ different kinds of brain injury\ncould help solve the problem ~ may help to treat\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập việc \"việc khám phá ra chứng prosopagnosia phát triển đã thu hút sự chú ý của các nhà thần kinh học đang muốn khám phá điều gì khác biệt về não của những người mù khuôn mặt. Sự khác biệt này, họ tin rằng, có thể giúp giải quyết vấn đề về cách não xử lý thông tin nói chung.\"\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"việc nghiên cứu này có thể giúp điều trị các loại tổn thương não khác nhau\" (may help neuroscientists to treat different kinds of brain injury).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Even so, the discovery of developmental prosopagnosia has attracted attention from neuroscientists keen to discover what is different about the brain of face-blind people. This difference, they believe, could help solve the problem of how the brain deals with information in general: not just visual data. In other words, it may show whether the brain has specialised parts for specific tasks or is more of a general-purpose information processor."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-13",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the notes below. Choose ONE WORD ONLY from the passage for each answer. Write your answer in boxes 8-13 on your answer sheet.",
+			"body": "The challenges for prosopagnosia researchers\nDifferences in prosopagnosics\nAs well as being unable to recognize facial features prosopagnosics may also have problems recognizing:\ncommonly seen ____ (8) and objects.\nThe ____ (9) on someone else's face.\nSome prosopagnosics can recognize that people are regarded as attractive by others.\n\nCauses of prosopagnosia\nProsopagnosia may be caused by:\njust one ____ (10) according to Martina Gruter\na defect in the ____ (11) eye according to Brad Duchaine\n\nTreatment for prosopagnosia\nJoseph Degutis patient proved he had been successfully trained to recognize faces inside the ____ (12) and in the outside world.\nDuchaine's training may allow prosopagnosics to recognise faces belonging to family and workmates.\nThomas Gruter doubts that training will work and mentions that ____ (13) by some subjects can affect research results.",
+			"questions": [
+				{
+					"number": 8,
+					"text": "commonly seen ____ (8) and objects.",
+					"answer": "Animals",
+					"quotes": [
+						"Some have problems only with faces, while others have trouble with ordinary everyday objects and, so it turns out, animals which would normally be familiar as well."
+					]
+				},
+				{
+					"number": 9,
+					"text": "The ____ (9) on someone else's face.",
+					"answer": "Emotion",
+					"explanation": "Bước 1: Hiểu câu hỏi:\n_____ trên khuôn mặt người khác.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: The + NOUN (NOUN theo sau Article \"The\")\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nidentify ~ từ khóa giữ nguyên\non another's face ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Khi một số người được kiểm tra, họ có thể xác định cảm xúc được thể hiện trên khuôn mặt người khác, mặc dù chính khuôn mặt đó dường như không quen thuộc.\"\n\nBước 5: Đáp án: Emotion\nCảm xúc trên khuôn mặt người khác. (The emotion on someone else face.)",
+					"quotes": [
+						"When some have been tested they could identify the emotion which was conveyed on another’s face, even though the face itself seemed unfamiliar, while for other subjects this was an impossibility."
+					]
+				},
+				{
+					"number": 10,
+					"text": "just one ____ (10) according to Martina Gruter",
+					"answer": "gene",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nChứng prosopagnosia có thể do chỉ một _____ gây ra theo Martina Gruter.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: a single + NOUN (NOUN theo sau Determiner + Adjective \"a single\")\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nMartina Gruter ~ từ khóa giữ nguyên\na single ~ từ khóa giữ nguyên\ncould be responsible ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Sau khi xem xét 38 trường hợp trong bảy gia đình, nhóm nghiên cứu Đức tin rằng họ có bằng chứng tốt cho thấy một gen đơn lẻ có thể là nguyên nhân.\"\n\nBước 5: Đáp án:\nGene Chứng prosopagnosia có thể do chỉ một gen gây ra theo Martina Gruter. (Prosopagnosia may be caused by just one gene according to Martina Gruter.)",
+					"quotes": [
+						"Having looked at 38 cases in seven families, the German team believe they have good evidence that a single gene could be responsible."
+					]
+				},
+				{
+					"number": 11,
+					"text": "a defect in the ____ (11) eye according to Brad Duchaine",
+					"answer": "Left",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột khiếm khuyết ở _____ theo Brad Duchaine.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: in the + NOUN (NOUN làm Object của Preposition \"in the\")\n\nBước 3: Tìm các keywords được paraphrase trong bài:\ndefect ~ từ khóa giữ nguyên\nBrad Duchaine ~ từ khóa giữ nguyên\neye ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Ông đề cập đến các nghiên cứu về trẻ sơ sinh sinh ra với tình trạng có nghĩa là thủy tinh thể của mắt không rõ ràng, và khi đó là mắt trái, không thể nhìn thấy qua mắt này trong hai tháng đầu đời là một yếu tố nguy cơ chính cho chứng prosopagnosia.\"\n\nBước 5: Đáp án: Left\nMột khiếm khuyết ở mắt bên trái theo Brad Duchaine. (A defect in the left eye according to Brad Duchaine.)",
+					"quotes": [
+						"He refers to studies of babies born with a condition which means the eye’s lens is not clear, and when it’s the left one, being unable to see through this eye during the first two months of life is a major risk factor for prosopagnosia."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Joseph Degutis patient proved he had been successfully trained to recognize faces inside the ____ (12) and in the outside world.",
+					"answer": "laboratory",
+					"quotes": [
+						"Joseph Degutis, a graduate student at the University of California, recently reported successfully training a severe developmental prosopagnosic to recognise faces during tests carried out in the laboratory."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Thomas Gruter doubts that training will work and mentions that ____ (13) by some subjects can affect research results.",
+					"answer": "Cheating",
+					"quotes": [
+						"He also points out that cheating is a possibility during tests and provides an example."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

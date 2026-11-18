@@ -1,0 +1,247 @@
+{
+	"id": "f147635e-d949-4af2-99f6-852323aed286",
+	"url": "https://stepielts.com/student/reading/f147635e-d949-4af2-99f6-852323aed286?mode=practice",
+	"title": "E-training",
+	"source": "Forecast Quý 2-2025",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "E-training",
+		"paragraphs": [
+			"A. E-learning is the unifying term to describe the fields of online learning, web-based training, and technology-delivered instruction, which can be a great benefit to corporate e-learning. IBM, for instance, claims that the institution of its e-training program, Basic Blue, whose purpose is to train new managers, saved the company in the range of $200 million in 1999. Cutting the travel expenses required to bring employees and instructors to a central classroom accounts for the lion’s share of the savings. With an online course, employees can learn from any Internet-connected PC, anywhere in the world. Ernst and Young reduced training costs by 35 percent while improving consistency and scalability.",
+			"B. In addition to generally positive economic benefits, other advantages such as convenience, standardized delivery, self-paced learning, and variety of available content, have made e-learning a high priority for many corporations. E-learning is widely believed to offer flexible ’any time, any place’ learning. The claim for ’any place’ is valid in principle and is a great development. Many people can engage with rich learning materials that simply were not possible in a paper or broadcast distance learning era. For teaching specific information and skills, e-training holds great promise. It can be especially effective at helping employees prepare for IT certification programs. E-learning also seems to effectively address topics such as sexual harassment education, safety training and management training — all areas where a clear set of objectives can be identified. Ultimately, training experts recommend a ’blended’ approach that combines both online and in-person training as the instruction requires. E-learning is not an end-all solution. But if it helps decrease costs and windowless classrooms filled with snoring students, it definitely has its advantages.",
+			"C. Much of the discussion about implementing e-learning has focused on the technology, but as Driscoll and others have reminded us, e-learning is not just about the technology, but also many human factors. As any capable manager knows, teaching employees new skills is critical to a smoothly run business. Having said that, however, the traditional route of classroom instruction runs the risk of being expensive, slow and, often times, ineffective. Perhaps the classroom’s greatest disadvantage is the fact that it takes employees out of their jobs. Every minute an employee is sitting in a classroom training session is a minute they’re not out on the floor working. It now looks as if there is a way to circumvent these traditional training drawbacks. E-training promises more effective teaching techniques by integrating audio, video, animation, text and interactive materials with the intent of teaching each student at his or her own pace. In addition to higher performance results, there are other immediate benefits to students such as increased time on task, higher levels of motivation, and reduced test anxiety for many learners. A California State University Northridge study reported that e-learners performed 20 percent better than traditional learners. Nelson reported a significant difference between the mean grades of 406 university students earned in traditional and distance education classes, where the distance learners outperformed the traditional learners.",
+			"D. On the other hand, nobody said E-training technology would be cheap. E-training service providers, on the average, charge from $10,000 to $60,000 to develop one hour of online instruction. This price varies depending on the complexity of the training topic and the media used. HTML pages are a little cheaper to develop while streaming-video presentations or flash animations cost more. Course content is just the starting place for cost. A complete e-learning solution also includes the technology platform (the computers, applications and network connections that are used to deliver the courses). This technology platform, known as a learning management system (LMS), can either be installed onsite or outsourced. Add to that cost the necessary investments in network bandwidth to deliver multimedia courses, and you’re left holding one heck of a bill. For the LMS infrastructure and a dozen or so online courses, costs can top $500,000 in the first year. These kinds of costs mean that custom e-training is, for the time being, an option only for large organizations. For those companies that have a large enough staff, the e-training concept pays for itself. Aware of this fact, large companies are investing heavily in online training. Today, over half of the 400-plus courses that Rockwell Collins offers are delivered instantly to its clients in an e-learning format, a change that has reduced its annual training costs by 40%. Many other success stories exist.",
+			"E. E-learning isn’t expected to replace the classroom entirely. For one thing, bandwidth limitations are still an issue in presenting multimedia over the Internet. Furthermore, e-training isn’t suited to every mode of instruction or topic. For instance, it’s rather ineffective imparting cultural values or building teams. If your company has a unique corporate culture it would be difficult to convey that to first time employees through a computer monitor. Group training sessions are more ideal for these purposes. In addition, there is a perceived loss of research time because of the work involved in developing and teaching online classes. Professor Wallin estimated that it required between 500 and 1,000 person-hours, that is, Wallin-hours, to keep the course at the appropriate level of currency and usefulness. (Distance learning instructors often need technical skills, no matter how advanced the courseware system.) That amounts to between a quarter and half of a person-year. Finally, teaching materials require computer literacy and access to equipment. Any e-Learning system involves basic equipment and a minimum level of computer knowledge in order to perform the tasks required by the system. A student that does not possess these skills, or have access to these tools, cannot succeed in an e-Learning program.",
+			"F. While few people debate the obvious advantages of e-learning, systematic research is needed to confirm that learners are actually acquiring and using the skills that are being taught online, and that e-learning is the best way to achieve the outcomes in a corporate environment. Nowadays, a go-between style of the Blended learning, which refers to a mixing of different learning environments, is gaining popularity. It combines traditional face-to-face classroom methods with more modem computer-mediated activities. According to its proponents, the strategy creates a more integrated approach for both instructors and learners. Formerly, technology-based materials played a supporting role to face-to-face instruction. Through a blended learning approach, technology will play an increasingly important role over the next 50 years."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "MATCHING_HEADINGS",
+			"instructions": "The reading passage has six paragraphs, A-F\nChoose the correct heading for paragraphs A-F from the list below.",
+			"options": [
+				{
+					"label": "I",
+					"text": "Overview of the benefits for the application of E-training"
+				},
+				{
+					"label": "II",
+					"text": "IBM's successful choice of training"
+				},
+				{
+					"label": "III",
+					"text": "Future modes of teaching and learning"
+				},
+				{
+					"label": "IV",
+					"text": "Learners' achievement and advanced teaching materials"
+				},
+				{
+					"label": "IX",
+					"text": "Non-economic benefits"
+				},
+				{
+					"label": "V",
+					"text": "Limitations of E-training"
+				},
+				{
+					"label": "VI",
+					"text": "Multimedia over the Internet can be a solution"
+				},
+				{
+					"label": "VII",
+					"text": "The financial burden behind e-training"
+				},
+				{
+					"label": "VIII",
+					"text": "The distance learners outperformed the students in traditional classroom"
+				},
+				{
+					"label": "X",
+					"text": "Training offered to help people become technology-wise"
+				}
+			],
+			"questions": [
+				{
+					"number": 1,
+					"text": "Paragraph A",
+					"answer": "I",
+					"quotes": [
+						"A. E-learning is the unifying term to describe the fields of online learning, web-based training, and technology-delivered instruction, which can be a great benefit to corporate e-learning. IBM, for instance, claims that the institution of its e-training program, Basic Blue, whose purpose is to train new managers, saved the company in the range of $200 million in 1999. Cutting the travel expenses required to bring employees and instructors to a central classroom accounts for the lion’s share of the savings. With an online course, employees can learn from any Internet-connected PC, anywhere in the world. Ernst and Young reduced training costs by 35 percent while improving consistency and scalability."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Paragraph B",
+					"answer": "IX",
+					"quotes": [
+						"B. In addition to generally positive economic benefits, other advantages such as convenience, standardized delivery, self-paced learning, and variety of available content, have made e-learning a high priority for many corporations. E-learning is widely believed to offer flexible ’any time, any place’ learning."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Paragraph C",
+					"answer": "IV",
+					"quotes": [
+						"E-training promises more effective teaching techniques by integrating audio, video, animation, text and interactive materials with the intent of teaching each student at his or her own pace. In addition to higher performance results, there are other immediate benefits to students such as increased time on task, higher levels of motivation, and reduced test anxiety for many learners. A California State University Northridge study reported that e-learners performed 20 percent better than traditional learners. Nelson reported a significant difference between the mean grades of 406 university students earned in traditional and distance education classes, where the distance learners outperformed the traditional learners."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Paragraph D",
+					"answer": "VII"
+				},
+				{
+					"number": 5,
+					"text": "Paragraph E",
+					"answer": "V"
+				},
+				{
+					"number": 6,
+					"text": "Paragraph F",
+					"answer": "III",
+					"explanation": "Câu 6:\n\nBước 1: Đọc và hiểu đoạn F:\nMặc dù ít người tranh luận về những lợi thế rõ ràng của e-learning, nhưng cần nghiên cứu hệ thống để xác nhận hiệu quả. Hiện nay, phong cách trung gian của Blended learning (học tập kết hợp), kết hợp phương pháp lớp học truyền thống với hoạt động máy tính hiện đại, đang được ưa chuộng. Theo người ủng hộ, chiến lược này tạo ra phương pháp tích hợp hơn cho cả giảng viên và người học. Trước đây, tài liệu dựa trên công nghệ đóng vai trò hỗ trợ cho giảng dạy trực tiếp. Thông qua phương pháp học tập kết hợp, công nghệ sẽ đóng vai trò ngày càng quan trọng trong 50 năm tới.\n\nBước 2: Tóm tắt nội dung chính của đoạn F:\nĐoạn F có nội dung chính là \"Sự nổi lên của Blended learning (học tập kết hợp) - phương pháp kết hợp lớp học truyền thống và công nghệ hiện đại, với vai trò ngày càng tăng của công nghệ trong tương lai\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề III \"Phương thức giảng dạy và học tập trong tương lai\"\n\nBước 4: Đáp án: III",
+					"quotes": [
+						"Nowadays, a go-between style of the Blended learning, which refers to a mixing of different learning environments, is gaining popularity. It combines traditional face-to-face classroom methods with more modem computer-mediated activities. According to its proponents, the strategy creates a more integrated approach for both instructors and learners. Formerly, technology-based materials played a supporting role to face-to-face instruction. Through a blended learning approach, technology will play an increasingly important role over the next 50 years."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-10",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "The reading passage has six paragraphs A-F.\nWhich paragraph contains the following information?",
+			"options": ["A", "B", "C", "D", "E", "F"],
+			"questions": [
+				{
+					"number": 7,
+					"text": "Projected Basic Blue in IBM achieved a great success.",
+					"answer": "A",
+					"explanation": "Câu 7:\n\nBước 1: Hiểu câu hỏi:\nĐề cập đến việc dự án Basic Blue của IBM đã đạt được thành công lớn.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nIBM ~ từ khóa giữ nguyên\ne-training program, Basic Blue ~ Projected Basic Blue in IBM\nsaved the company in the range of $200 million ~ achieved a great success\n\nBước 3: So sánh và đối chiếu:\nĐoạn A chỉ rõ: \"IBM, ví dụ, tuyên bố rằng việc triển khai chương trình e-training của họ, Basic Blue, với mục đích đào tạo các quản lý mới, đã tiết kiệm cho công ty khoảng 200 triệu đô la vào năm 1999.\"\n=> Thông tin này cho thấy đoạn A đã \"đề cập đến việc dự án Basic Blue của IBM đạt được thành công lớn thông qua tiết kiệm khoảng 200 triệu đô la\".\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"IBM, for instance, claims that the institution of its e-training program, Basic Blue, whose purpose is to train new managers, saved the company in the range of $200 million in 1999. Cutting the travel expenses required to bring employees and instructors to a central classroom accounts for the lion’s share of the savings."
+					]
+				},
+				{
+					"number": 8,
+					"text": "E-learning wins as a priority for many corporations as its flexibility.",
+					"answer": "B",
+					"explanation": "Câu 8:\n\nBước 1: Hiểu câu hỏi:\nĐề cập đến việc E-learning trở thành ưu tiên cho nhiều công ty nhờ tính linh hoạt của nó.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nhigh priority for many corporations ~ wins as a priority for many corporations\nflexibility ~ từ khóa không tìm thấy tương đương trực tiếp\nflexible 'any time, any place' learning ~ its flexibility\n\nBước 3: So sánh và đối chiếu:\nĐoạn B chỉ rõ: \"Ngoài các lợi ích kinh tế tích cực, những ưu điểm khác như sự tiện lợi, cung cấp chuẩn hóa, học tập theo tốc độ cá nhân, và đa dạng nội dung, đã làm cho e-learning trở thành ưu tiên cao cho nhiều công ty. E-learning được tin rằng cung cấp học tập linh hoạt 'bất cứ lúc nào, bất cứ nơi đâu'.\"\n=> Thông tin này cho thấy đoạn B đã \"đề cập đến việc E-learning trở thành ưu tiên cao cho nhiều công ty nhờ vào tính linh hoạt và những lợi ích khác của nó\".\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"B. In addition to generally positive economic benefits, other advantages such as convenience, standardized delivery, self-paced learning, and variety of available content, have made e-learning a high priority for many corporations. E-learning is widely believed to offer flexible ’any time, any place’ learning."
+					]
+				},
+				{
+					"number": 9,
+					"text": "The combination of the traditional and e-training environments may prevail.",
+					"answer": "F",
+					"explanation": "Câu 9:\n\nBước 1: Hiểu câu hỏi:\nĐề cập đến sự kết hợp giữa môi trường đào tạo truyền thống và e-training có thể chiếm ưu thế.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nBlended learning ~ combination of the traditional and e-training\ncombines traditional face-to-face classroom methods with more modem computer-mediated activities ~ traditional and e-training environments\ngaining popularity ~ may prevail\n\nBước 3: So sánh và đối chiếu:\nĐoạn F chỉ rõ: \"Hiện nay, phong cách trung gian của Blended learning (học tập kết hợp), kết hợp phương pháp lớp học truyền thống với hoạt động máy tính hiện đại, đang được ưa chuộng. Thông qua phương pháp học tập kết hợp, công nghệ sẽ đóng vai trò ngày càng quan trọng trong 50 năm tới.\"\n=> Thông tin này cho thấy đoạn F đã \"đề cập đến sự kết hợp giữa phương pháp lớp học truyền thống và đào tạo trực tuyến (blended learning) đang được ưa chuộng và sẽ phát triển trong tương lai\".\n\nBước 4: Đáp án: F",
+					"quotes": [
+						"Nowadays, a go-between style of the Blended learning, which refers to a mixing of different learning environments, is gaining popularity. It combines traditional face-to-face classroom methods with more modem computer-mediated activities. According to its proponents, the strategy creates a more integrated approach for both instructors and learners."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Example of the fast delivery of online courses.",
+					"answer": "D",
+					"explanation": "Câu 10:\n\nBước 1: Hiểu câu hỏi:\nĐề cập đến ví dụ về việc cung cấp nhanh chóng các khóa học trực tuyến.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nRockwell Collins ~ từ khóa không tìm thấy tương đương trực tiếp\ndelivered instantly ~ fast delivery\ne-learning format ~ online courses\n\nBước 3: So sánh và đối chiếu:\nĐoạn D chỉ rõ: \"Ngày nay, hơn một nửa trong số hơn 400 khóa học mà Rockwell Collins cung cấp được phân phối ngay lập tức đến khách hàng của họ trong định dạng e-learning, một sự thay đổi đã giảm chi phí đào tạo hàng năm của họ xuống 40%.\"\n=> Thông tin này cho thấy đoạn D đã \"đề cập đến ví dụ về việc cung cấp nhanh chóng các khóa học trực tuyến của Rockwell Collins\".\n\nBước 4: Đáp án: D",
+					"quotes": [
+						"Today, over half of the 400-plus courses that Rockwell Collins offers are delivered instantly to its clients in an e-learning format, a change that has reduced its annual training costs by 40%."
+					]
+				}
+			]
+		},
+		{
+			"range": "11-13",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose THREE correct letters, among A-E.\nWrite your answers in boxes 11-13 on your answer sheet.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "What are the drawbacks of e-training?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Technical facilities are hardly obtained."
+						},
+						{
+							"label": "B",
+							"text": "Presenting multimedia over the Internet is restricted due to the bandwidth limit."
+						},
+						{
+							"label": "C",
+							"text": "It is ineffective imparting a unique corporate value to fresh employees."
+						},
+						{
+							"label": "D",
+							"text": "Employees need block a long time leaving their position attending training."
+						},
+						{
+							"label": "E",
+							"text": "More preparation time is needed to keep the course at the suitable level."
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 12,
+					"text": "What are the drawbacks of e-training?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Technical facilities are hardly obtained."
+						},
+						{
+							"label": "B",
+							"text": "Presenting multimedia over the Internet is restricted due to the bandwidth limit."
+						},
+						{
+							"label": "C",
+							"text": "It is ineffective imparting a unique corporate value to fresh employees."
+						},
+						{
+							"label": "D",
+							"text": "Employees need block a long time leaving their position attending training."
+						},
+						{
+							"label": "E",
+							"text": "More preparation time is needed to keep the course at the suitable level."
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 13,
+					"text": "What are the drawbacks of e-training?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Technical facilities are hardly obtained."
+						},
+						{
+							"label": "B",
+							"text": "Presenting multimedia over the Internet is restricted due to the bandwidth limit."
+						},
+						{
+							"label": "C",
+							"text": "It is ineffective imparting a unique corporate value to fresh employees."
+						},
+						{
+							"label": "D",
+							"text": "Employees need block a long time leaving their position attending training."
+						},
+						{
+							"label": "E",
+							"text": "More preparation time is needed to keep the course at the suitable level."
+						}
+					],
+					"answer": "E"
+				}
+			]
+		}
+	],
+	"images": []
+}

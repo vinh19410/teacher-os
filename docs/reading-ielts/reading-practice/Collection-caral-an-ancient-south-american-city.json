@@ -1,0 +1,163 @@
+{
+	"id": "18e3da4c-9ec7-4000-8836-34c2a65f4701",
+	"url": "https://stepielts.com/student/reading/18e3da4c-9ec7-4000-8836-34c2a65f4701?mode=practice",
+	"title": "Caral: An Ancient South American City",
+	"source": "Collection",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Caral: An Ancient South American City",
+		"paragraphs": [
+			"Huge earth and rock mounds rise out of the desert of the Supe Valley near the coast of Peru in South America. These immense mounds appear simply to be part of the geographical landscape in this arid region squeezed between the Pacific Ocean and the Andes mountains. But looks deceive. These are actually human-made pyramids strong evidence indicates they are the remains of a city known as Caral that flourished nearly 5,000 years ago. If true, it would be the oldest known urban center in the Americas and among the most ancient in the world.",
+			"Research undertaken by Peruvian archaeologist Ruth Shady suggests that the 150-acre complex of pyramids, plazas and residential buildings was a thriving metropolis when Egypt's great pyramids were still being built. Though discovered in 1905, for years Caral attracted little attention, largely because archaeologists believed the structures were fairly recent. But the monumental scale of the pyramids had long interested Shady, who began excavations at the site in 1996, about 22 kilometers from the coast and 190 kilometers north of Peru's capital city of Lima.",
+			"Shady and her crew searched for broken remains of the pots and containers that most such sites contain. Not finding any only made her more excited: it meant Caral could be what archaeologists term pre-ceramic, that is, existing before the advent in the area of pot-firing techniques. Shady's team undertook the task of excavating Piramide Mayor, the largest of the pyramids. After carefully clearing away many hundreds of years' worth of rubble and sand, they identified staircases, walls covered with remnants of colored plaster, and brickwork. In the foundations, they found the remains of grass-like reeds woven into bags. The original workers, she surmised, must have filled these bags with stones from a nearby quarry and laid them atop one another inside retaining walls, gradually giving rise to the pyramid's immense structure. Shady had samples of the reeds subjected to radiocarbon dating and found that the reeds were 4,600 years old. This evidence indicated that Caral was, in fact, more than 1,000 years older than what had previously been thought to be the oldest urban center in the Americas.",
+			"What amazed archaeologists was not just the age, but the complexity and scope of Caral. Piramide Mayor alone covers an area nearly the size of four football fields and is 18 meters tall. A nine-meter-wide staircase rises from a circular plaza at the foot of the pyramid, passing over three terraced levels until it reaches the top. Thousands of manual laborers would have been needed to build such a project, not counting the many architects, craftsmen, and managers. Shady's team found the remains of a large amphitheater, containing almost 70 musical instruments made of bird and deer bones. Clearly music played an important role in Caral's society. Around the perimeter of Caral are a series of smaller mounds and various buildings. These indicate a hierarchy of living arrangements: large, well-kept rooms atop pyramids for the elite, ground-level quarters for craftsmen, and shabbier outlying dwellings for workers.",
+			"But why had Caral been built in the first place? Her excavations convinced Shady that Caral once served as a trade center for the region, which extends from the rainforests of the Amazon to the high forests of the Andes. Shady found evidence of a rich trading environment, including seeds of the cocoa bush and necklaces of shells, neither of which was native to the immediate Caral area. This environment gave rise to people who did not take part in the production of food, allowing them to become priests and planners, builders and designers. Thus occupational specialization, elemental to an urban society, emerged.",
+			"But what sustained such a trading center and drew travelers to it? Was it food? Shady and her team found the bones of small edible fish, which must have come from the Pacific coast to the west, in the excavations. But they also found evidence of squash, sweet potatoes and beans having been grown locally. Shady theorized that Caral's early farmers diverted the area's rivers into canals, which still cross the Supe Valley today, to irrigate their fields. But because she found no traces of maize, which can be traded or stored and used in times of crop failure, she concluded that Caral's trade leverage was not based on stockpiling food supplies.",
+			"It was evidence of another crop in the excavations that gave Shady the best clue to Caral's success. In nearly every excavated building, her team discovered evidence of cotton – seeds, fibers and textiles. Her theory fell into place when a large fishing net made of those fibers, unearthed in an unrelated dig on Peru's coast, turned out to be as old as Caral.'The farmers of Caral grew the cotton that the fishermen needed to make their nets,' Shady speculates.'And the fishermen gave them shellfish and dried fish in exchange for these nets.' In essence, the people of Caral enabled fishermen to work with larger and more effective nets, which made the resources of the sea more readily available, and the fishermen probably used dried squash grown by the Caral people as flotation devices for their nets."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage? Write\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Caral was built at the same time as the construction of the Egyptian pyramids.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCaral được xây dựng cùng thời điểm với việc xây dựng các kim tự tháp Ai Cập.\nBước 2: Tìm các keywords được paraphrase trong bài:\nCaral... was a thriving metropolis ~ Caral was built\nwhen ~ at the same time\nEgypt's great pyramids were still being built ~ construction of the Egyptian pyramids\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Caral là một đô thị thịnh vượng khi các kim tự tháp vĩ đại của Ai Cập vẫn đang được xây dựng\" (...was a thriving metropolis when Egypt's great pyramids were still being built).\n==> Điều này trái ngược với thông tin trong câu hỏi \"Caral được xây dựng cùng thời điểm với việc xây dựng các kim tự tháp Ai Cập\" (Caral was built at the same time as the construction of the Egyptian pyramids). Việc Caral đã là một \"đô thị thịnh vượng\" trong khi các kim tự tháp vẫn \"đang được xây dựng\" ngụ ý rằng Caral đã được xây dựng từ trước đó.\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Research undertaken by Peruvian archaeologist Ruth Shady suggests that the 150-acre complex of pyramids, plazas and residential buildings was a thriving metropolis when Egypt's great pyramids were still being built."
+					]
+				},
+				{
+					"number": 2,
+					"text": "The absence of pottery at the archaeological dig gave Shady a significant clue to the age of the site.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSự vắng mặt của đồ gốm tại cuộc khai quật khảo cổ đã cho Shady một manh mối quan trọng về tuổi của địa điểm.\nBước 2: Tìm các keywords được paraphrase trong bài:\nNot finding any [pots] / pre-ceramic ~ absence of pottery\nexisting before the advent... of pot-firing techniques / meant Caral could be... ~ clue to the age\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Việc không tìm thấy bất kỳ thứ gì [đồ gốm] chỉ làm bà ấy phấn khích hơn: điều đó có nghĩa là Caral có thể là... tiền gốm sứ, nghĩa là, tồn tại trước khi kỹ thuật nung gốm ra đời\" (Not finding any only made her more excited: it meant Caral... could be... pre-ceramic, existing before the advent... of pot-firing techniques).\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"Sự vắng mặt của đồ gốm... đã cho Shady một manh mối quan trọng về tuổi của địa điểm\" (The absence of pottery... gave Shady a significant clue to the age of the site).\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Shady and her crew searched for broken remains of the pots and containers that most such sites contain. Not finding any only made her more excited: it meant Caral could be what archaeologists term pre-ceramic, that is, existing before the advent in the area of pot-firing techniques."
+					]
+				},
+				{
+					"number": 3,
+					"text": "The stones used to build Piramide Mayor came from a location far away.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững viên đá được sử dụng để xây dựng Piramide Mayor đến từ một địa điểm ở rất xa.\nBước 2: Tìm các keywords được paraphrase trong bài:\nfilled these bags with stones ~ stones used to build\nnearby ~ far away (Trái nghĩa)\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...lấp đầy những chiếc túi này bằng đá từ một mỏ đá gần đó\" (...filled these bags with stones from a nearby quarry).\n==> Điều này trái ngược với thông tin trong câu hỏi \"đến từ một địa điểm ở rất xa\" (came from a location far away).\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"The original workers, she surmised, must have filled these bags with stones from a nearby quarry and laid them atop one another inside retaining walls, gradually giving rise to the pyramid's immense structure."
+					]
+				},
+				{
+					"number": 4,
+					"text": "The huge and complicated structures of Piramide Mayor suggest that its construction required an organised team of builders.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác cấu trúc khổng lồ và phức tạp của Piramide Mayor cho thấy việc xây dựng nó đòi hỏi một đội ngũ xây dựng có tổ chức.\nBước 2: Tìm các keywords được paraphrase trong bài:\nhuge earth and rock mounds / complexity and scope ~ huge and complicated structures\nmanual laborers... architects, craftsmen, and managers ~ organised team of builders\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Hàng ngàn lao động chân tay sẽ là cần thiết... chưa kể đến nhiều kiến trúc sư, thợ thủ công và người quản lý\" (Thousands of manual laborers... not counting the many architects, craftsmen, and managers).\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"đòi hỏi một đội ngũ xây dựng có tổ chức\" (required an organised team of builders).\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Thousands of manual laborers would have been needed to build such a project, not counting the many architects, craftsmen, and managers."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Archaeological evidence shows that the residents of Caral were highly skilled musicians.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nBằng chứng khảo cổ cho thấy cư dân Caral là những nhạc sĩ có kỹ năng cao.\nBước 2: Tìm các keywords được paraphrase trong bài:\nCaral's society ~ residents of Caral\nhighly skilled musicians ~ từ khóa cần tìm\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc tìm thấy \"gần 70 nhạc cụ\" và kết luận rằng \"âm nhạc đóng một vai trò quan trọng\".\n==> Tuy nhiên, bài đọc không hề đề cập đến việc họ có \"kỹ năng cao\" (highly skilled) hay không.\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Shady's team found the remains of a large amphitheater, containing almost 70 musical instruments made of bird and deer bones. Clearly music played an important role in Caral's society."
+					]
+				},
+				{
+					"number": 6,
+					"text": "The remains of housing areas at Caral suggest that there were no class distinctions in residential areas.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTàn tích của các khu nhà ở tại Caral cho thấy không có sự phân biệt giai cấp trong các khu dân cư.\nBước 2: Tìm các keywords được paraphrase trong bài:\nliving arrangements / rooms / quarters / dwellings ~ housing areas\nhierarchy / elite / workers ~ no class distinctions (Trái nghĩa)\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Những điều này chỉ ra một hệ thống phân cấp trong sắp xếp sinh hoạt: phòng lớn... cho giới tinh hoa, khu vực... cho thợ thủ công, và những nơi ở tồi tàn hơn... cho công nhân\" (These indicate a hierarchy... large rooms... for the elite... shabbier quarters... for workers).\n==> Điều này trái ngược với thông tin trong câu hỏi \"không có sự phân biệt giai cấp\" (no class distinctions).\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"These indicate a hierarchy of living arrangements: large, well-kept rooms atop pyramids for the elite, ground-level quarters for craftsmen, and shabbier outlying dwellings for workers."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-13",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the notes below.\nChoose ONE WORD ONLY from the passage for each answer.",
+			"body": "Caral as a trading centre\nItems discovered at Caral but not naturally occurring in the area\nthe ____ (7) of a certain plant\n____ (8) used to make jewellery\nthe remains of certain food such as ____ (9)\nClues to farming around Caral\n____ (10) still in existence today indicate water diverted from rivers\nno evidence that ____ (11) was grown\nEvidence of relationship with fishing communities\nthe excavation findings and fishing nets found on the coast suggest Caral farmers traded ____ (12)\ndried squash may have been used to aid ____ (13)",
+			"body_html": "<table><tbody><tr><td><h4><strong>Caral as a trading centre</strong></h4><p><strong>Items discovered at Caral but not naturally occurring in the area</strong></p><ul><li>the [7] of a certain plant</li><li>[8] used to make jewellery</li><li>the remains of certain food such as [9]</li></ul><p><strong>Clues to farming around Caral</strong></p><ul><li>[10] still in existence today indicate water diverted from rivers</li><li>no evidence that [11] was grown</li></ul><p><strong>Evidence of relationship with fishing communities</strong></p><ul><li>the excavation findings and fishing nets found on the coast suggest Caral farmers traded [12]</li><li>dried squash may have been used to aid [13]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "the ____ (7) of a certain plant",
+					"answer": "seeds",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCần tìm một danh từ chỉ bộ phận của cây, là vật phẩm được phát hiện tại Caral nhưng không có tự nhiên ở khu vực này.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: the + NOUN + of (Sau mạo từ 'the' và trước giới từ 'of').\nBước 3: Tìm các keywords được paraphrase trong bài:\nfound evidence ~ discovered at Caral\nneither of which was native ~ not naturally occurring\ncocoa bush ~ certain plant\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...bao gồm hạt của cây bụi ca cao\" (...including seeds of the cocoa bush).\nBước 5: Đáp án: seeds.\n...hạt của một loại cây nhất định (...the seeds of a certain plant).",
+					"quotes": [
+						"Shady found evidence of a rich trading environment, including seeds of the cocoa bush and necklaces of shells, neither of which was native to the immediate Caral area."
+					]
+				},
+				{
+					"number": 8,
+					"text": "____ (8) used to make jewellery",
+					"answer": "shells",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCần tìm một danh từ chỉ vật liệu được dùng để làm đồ trang sức.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (số nhiều)\nDấu hiệu: NOUN + used to... (Làm chủ ngữ của mệnh đề rút gọn).\nBước 3: Tìm các keywords được paraphrase trong bài:\nnecklaces ~ make jewellery\nneither of which was native ~ not naturally occurring\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...và những chiếc vòng cổ bằng vỏ sò\" (...and necklaces of shells).\nBước 5: Đáp án: shells.\nVỏ sò được dùng để làm đồ trang sức (Shells used to make jewellery).",
+					"quotes": [
+						"Shady found evidence of a rich trading environment, including seeds of the cocoa bush and necklaces of shells, neither of which was native to the immediate Caral area."
+					]
+				},
+				{
+					"number": 9,
+					"text": "the remains of certain food such as ____ (9)",
+					"answer": "fish",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCần tìm một danh từ chỉ loại thực phẩm cụ thể mà tàn tích của nó được tìm thấy.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: such as + NOUN (Sau 'such as').\nBước 3: Tìm các keywords được paraphrase trong bài:\nbones ~ remains\nedible... ~ certain food\ncome from the Pacific coast ~ not naturally occurring\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...tìm thấy xương của những con cá nhỏ ăn được, thứ chắc chắn phải đến từ bờ biển Thái Bình Dương\" (...found bones of small edible fish, which must have come from the Pacific coast).\nBước 5: Đáp án: fish.\n...tàn tích của một số loại thực phẩm như cá (...the remains of certain food such as fish).",
+					"quotes": [
+						"Shady and her team found the bones of small edible fish, which must have come from the Pacific coast to the west, in the excavations."
+					]
+				},
+				{
+					"number": 10,
+					"text": "____ (10) still in existence today indicate water diverted from rivers",
+					"answer": "canals",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCần tìm một danh từ chỉ công trình thủy lợi vẫn còn tồn tại đến ngày nay.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (số nhiều)\nDấu hiệu: NOUN + still in existence... (Làm chủ ngữ của câu).\nBước 3: Tìm các keywords được paraphrase trong bài:\nstill cross the Supe Valley today ~ still in existence today\ndiverted the area's rivers into ~ water diverted from rivers\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...dẫn nước sông của khu vực vào các kênh rạch, thứ vẫn cắt ngang Thung lũng Supe ngày nay\" (...diverted the area's rivers into canals, which still cross the Supe Valley today).\nBước 5: Đáp án: canals.\nKênh rạch vẫn còn tồn tại đến ngày nay... (Canals still in existence today...).",
+					"quotes": [
+						"Shady theorized that Caral's early farmers diverted the area's rivers into canals, which still cross the Supe Valley today, to irrigate their fields."
+					]
+				},
+				{
+					"number": 11,
+					"text": "no evidence that ____ (11) was grown",
+					"answer": "maize",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCần tìm danh từ chỉ loại cây trồng mà không có bằng chứng là đã được trồng tại Caral.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: that + NOUN + was grown (Làm chủ ngữ cho mệnh đề phụ).\nBước 3: Tìm các keywords được paraphrase trong bài:\nfound no traces of ~ no evidence\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Nhưng bởi vì bà ấy không tìm thấy dấu vết nào của ngô...\" (But because she found no traces of maize).\nBước 5: Đáp án: maize.\n...không có bằng chứng rằng ngô đã được trồng (...no evidence that maize was grown).",
+					"quotes": [
+						"But because she found no traces of maize, which can be traded or stored and used in times of crop failure, she concluded that Caral's trade leverage was not based on stockpiling food supplies."
+					]
+				},
+				{
+					"number": 12,
+					"text": "the excavation findings and fishing nets found on the coast suggest Caral farmers traded ____ (12)",
+					"answer": "cotton",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCần tìm danh từ chỉ vật phẩm mà nông dân Caral đã buôn bán/trao đổi.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: traded + NOUN (Sau động từ 'traded').\nBước 3: Tìm các keywords được paraphrase trong bài:\nfishing nets ~ từ khóa giữ nguyên\nfarmers... grew... that fishermen needed ~ farmers... traded\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"'Nông dân Caral đã trồng bông mà ngư dân cần để làm lưới của họ'\" ('The farmers of Caral grew the cotton that the fishermen needed for their nets').\nBước 5: Đáp án: cotton.\n...nông dân Caral đã buôn bán bông (...Caral farmers traded cotton).",
+					"quotes": [
+						"'The farmers of Caral grew the cotton that the fishermen needed to make their nets,' Shady speculates."
+					]
+				},
+				{
+					"number": 13,
+					"text": "dried squash may have been used to aid ____ (13)",
+					"answer": "flotation",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nBí khô có thể đã được sử dụng để hỗ trợ [việc gì/cái gì].\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: aid + NOUN (Sau động từ 'aid').\nBước 3: Tìm các keywords được paraphrase trong bài:\ndried squash ~ từ khóa giữ nguyên\nused... as... devices ~ used to aid\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...ngư dân có lẽ đã sử dụng bí khô... làm thiết bị nổi cho lưới của họ\" (...fishermen probably used dried squash... as flotation devices for their nets).\nBước 5: Đáp án: flotation.\n...bí khô có thể đã được sử dụng để hỗ trợ sự nổi (...dried squash may have been used to aid flotation).",
+					"quotes": [
+						"In essence, the people of Caral enabled fishermen to work with larger and more effective nets, which made the resources of the sea more readily available, and the fishermen probably used dried squash grown by the Caral people as flotation devices for their nets."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

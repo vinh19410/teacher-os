@@ -3,6 +3,8 @@ import {
 	ASSIGNMENT_PART_TYPES,
 	ASSIGNMENT_TEST_PRESETS,
 	assignmentQuestionSchema,
+	LIBRARY_OPTION_BANK_MAX,
+	quizTypeDisplay,
 } from "@teacher-os/api/contracts";
 import {
 	type LibraryPartDto,
@@ -12,8 +14,10 @@ import {
 	type LibrarySkill,
 	libraryPartUpsertSchema,
 	libraryQuestionGroupSchema,
+	librarySkillTypes,
 	validatePartForReady,
 } from "@teacher-os/api/library-contracts";
+import { QUESTION_MAX_COUNT } from "@teacher-os/ui/components/assignments/editor/answer-key-grid";
 import {
 	emptyItem,
 	type QuestionItem,
@@ -41,6 +45,7 @@ import type { GroupCardTab } from "./group-card";
 import {
 	addGroup,
 	moveGroup,
+	normalizeQuestionAfterMcqMany,
 	patchGroup,
 	removeGroup,
 	setGroupItems,
@@ -83,6 +88,7 @@ export function slotTypes(
 	skill: LibrarySkill,
 	slot: string,
 ): readonly string[] {
+	if (skill === "reading") return librarySkillTypes("reading");
 	return ASSIGNMENT_PART_TYPES[skill]?.types[slot] ?? [];
 }
 
@@ -268,7 +274,7 @@ const FIELD_ERROR_TEXT: Record<string, string> = {
 	note: "Ghi chú tối đa 2000 ký tự.",
 	imageUrl: "Ảnh phải là URL https hợp lệ (tối đa 500 ký tự).",
 	questions: "Tối đa 40 câu hỏi.",
-	optionBank: "Ngân hàng đáp án tối đa 8 mục.",
+	optionBank: `Ngân hàng đáp án tối đa ${LIBRARY_OPTION_BANK_MAX} mục.`,
 	groups: "Dữ liệu nhóm câu không hợp lệ.",
 };
 
@@ -642,9 +648,21 @@ export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
 				openGroup: previous.openGroup === gi ? null : gi,
 			}));
 
+		const nextGroupDefaultType = () => {
+			const candidate = value.groups.at(-1)?.type ?? value.type;
+			if (
+				candidate === "mcq_many" &&
+				value.questions.length + 2 > QUESTION_MAX_COUNT
+			) {
+				return slotTypes(skill, slot)[0] ?? "tfng";
+			}
+			return candidate;
+		};
+
 		const handleAddGroup = () => {
-			const type = value.groups.at(-1)?.type ?? value.type;
-			const next = addGroup(value, type);
+			if (value.questions.length >= QUESTION_MAX_COUNT) return;
+			const next = addGroup(value, nextGroupDefaultType());
+			if (next === value) return;
 			const gi = next.groups.length - 1;
 			setValue(next);
 			// Nhóm mới tự mở ở tab Câu hỏi, hàng đầu mở sẵn.
@@ -685,6 +703,11 @@ export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
 		};
 
 		const hasGroups = value.groups.length > 0;
+		const flatTypes = slotTypes(skill, slot);
+		const flatTypeOptions =
+			value.type && !flatTypes.includes(value.type)
+				? [value.type, ...flatTypes]
+				: flatTypes;
 
 		return (
 			<section className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4">
@@ -837,21 +860,43 @@ export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
 									value={value.type}
 									onChange={(event) => {
 										const type = event.target.value;
+										const switchingFromMcqMany =
+											value.type === "mcq_many" && type !== "mcq_many";
+										if (
+											type === "mcq_many" &&
+											value.type !== "mcq_many" &&
+											value.questions.length === 1 &&
+											!value.questions[0]?.stem &&
+											!value.questions[0]?.answer
+										) {
+											const answerSet = `set-${crypto.randomUUID().slice(0, 12)}`;
+											patch({
+												type,
+												questions: [
+													{ ...emptyItem("mcq_many"), answerSet },
+													{ ...emptyItem("mcq_many"), answerSet },
+												],
+											});
+											return;
+										}
 										// Đổi dạng: câu giữ nội dung (stem/answer), chỉ câu
-										// rỗng mới nhận shape của dạng mới (same as web composer).
+										// rỗng mới nhận shape của dạng mới (same as web composer);
+										// rời `mcq_many` dọn `answerSet` ẩn để tránh kẹt save.
 										patch({
 											type,
-											questions: value.questions.map((question) =>
-												question.stem || question.answer
-													? question
-													: emptyItem(type),
-											),
+											questions: value.questions.map((question) => {
+												if (question.stem || question.answer) {
+													if (!switchingFromMcqMany) return question;
+													return normalizeQuestionAfterMcqMany(question, type);
+												}
+												return emptyItem(type);
+											}),
 										});
 									}}
 								>
-									{slotTypes(skill, slot).map((type) => (
+									{flatTypeOptions.map((type) => (
 										<option key={type} value={type}>
-											{type}
+											{quizTypeDisplay(type).label}
 										</option>
 									))}
 								</Select>
@@ -879,12 +924,17 @@ export const PartForm = forwardRef<PartFormHandle, PartFormProps>(
 								}
 								qStartOverride={partQStart}
 								showExplanation
+								maxBank={LIBRARY_OPTION_BANK_MAX}
+								libraryReadingMode={skill === "reading"}
 							/>
 							<div>
 								<Button
 									type="button"
 									variant="outline"
-									onClick={() => setValue(addGroup(value, value.type))}
+									disabled={value.questions.length >= QUESTION_MAX_COUNT}
+									onClick={() =>
+										setValue(addGroup(value, nextGroupDefaultType()))
+									}
 								>
 									Chia thành nhiều nhóm câu
 								</Button>

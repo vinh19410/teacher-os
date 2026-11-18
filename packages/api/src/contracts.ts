@@ -550,6 +550,64 @@ export const ASSIGNMENT_ANSWER_CHOICES = {
 	letter: ["A", "B", "C", "D", "E", "F", "G", "H"],
 } as const;
 
+export const LIBRARY_OPTION_BANK_MAX = 20;
+export const LIBRARY_ANSWER_CHOICES = {
+	roman: [
+		"i",
+		"ii",
+		"iii",
+		"iv",
+		"v",
+		"vi",
+		"vii",
+		"viii",
+		"ix",
+		"x",
+		"xi",
+		"xii",
+		"xiii",
+		"xiv",
+		"xv",
+		"xvi",
+		"xvii",
+		"xviii",
+		"xix",
+		"xx",
+	],
+	letter: [
+		"A",
+		"B",
+		"C",
+		"D",
+		"E",
+		"F",
+		"G",
+		"H",
+		"I",
+		"J",
+		"K",
+		"L",
+		"M",
+		"N",
+		"O",
+		"P",
+		"Q",
+		"R",
+		"S",
+		"T",
+	],
+} as const;
+
+/** Extended answer choices for library option banks (up to 20 A–T / i–xx). */
+export function extendedAnswerChoices(
+	kind: keyof typeof ASSIGNMENT_ANSWER_CHOICES,
+): readonly string[] {
+	if (kind === "letter" || kind === "roman") {
+		return LIBRARY_ANSWER_CHOICES[kind];
+	}
+	return ASSIGNMENT_ANSWER_CHOICES[kind];
+}
+
 /**
  * Exported so the web catalog can sync its KIND map against this one —
  * without the export, a drifted web kind map ships silently (#269).
@@ -563,14 +621,48 @@ export const answerKindByType: Record<
 	info: "letter",
 	ynng: "ynng",
 	mcq: "mcq4",
+	mcq_many: "letter",
 	mcq1: "mcq3",
 	map: "letter",
 	match2: "letter",
+	match_names: "letter",
+	matching: "letter",
 	mcq3: "mcq3",
 	features: "letter",
 	sentend: "letter",
 	match: "letter",
 };
+
+/**
+ * Resolve valid answer choices for a question. For single-choice MCQ (`mcq4` /
+ * `mcq3`), slice the choice labels to `opts.length` when options are provided
+ * (supporting 2–4 choices on `mcq`), keeping legacy fallback when `opts` is
+ * null/empty.
+ */
+export function effectiveAnswerChoices(
+	kind: keyof typeof ASSIGNMENT_ANSWER_CHOICES,
+	opts?: readonly string[] | null,
+): readonly string[] {
+	const base = ASSIGNMENT_ANSWER_CHOICES[kind];
+	if ((kind !== "mcq4" && kind !== "mcq3") || !opts?.length) {
+		return base;
+	}
+	return base.slice(0, Math.min(opts.length, base.length));
+}
+
+/** Validate `opts` length bounds for `mcq4`/`mcq3` when `opts` is provided. */
+export function mcqOptionsIssue(
+	kind: keyof typeof ASSIGNMENT_ANSWER_CHOICES,
+	opts?: readonly string[] | null,
+): string | null {
+	if ((kind !== "mcq4" && kind !== "mcq3") || !opts?.length) {
+		return null;
+	}
+	const max = ASSIGNMENT_ANSWER_CHOICES[kind].length;
+	return opts.length < 2 || opts.length > max
+		? `mcq options must have 2–${max} items`
+		: null;
+}
 
 /**
  * Structured option bank (phase-02 FR2) — the (skill, type) pairs whose
@@ -641,8 +733,12 @@ export const QUIZ_TYPE_DISPLAY: Record<
 			"Do the following statements agree with the views of the writer? Write YES / NO / NOT GIVEN.",
 	},
 	mcq: {
-		label: "Multiple choice",
+		label: "Multiple choice (One answer)",
 		instruction: "Choose the correct letter A, B, C or D.",
+	},
+	mcq_many: {
+		label: "Multiple choice (Multiple answers)",
+		instruction: "Choose the correct letters from the list.",
 	},
 	mcq1: {
 		label: "Multiple choice",
@@ -667,6 +763,14 @@ export const QUIZ_TYPE_DISPLAY: Record<
 		instruction:
 			"Match each statement with the correct person/place. Choose from the option bank.",
 	},
+	match_names: {
+		label: "Matching names",
+		instruction: "Match each statement with the correct person from the list.",
+	},
+	matching: {
+		label: "Matching",
+		instruction: "Match each item with the correct option from the list.",
+	},
 	sentend: {
 		label: "Matching sentence endings",
 		instruction: "Complete each sentence with the correct ending A–H.",
@@ -675,6 +779,11 @@ export const QUIZ_TYPE_DISPLAY: Record<
 		label: "Sentence completion",
 		instruction:
 			"Complete the sentences below. Choose NO MORE THAN THREE WORDS from the passage for each answer.",
+	},
+	fill_blank: {
+		label: "Fill in the blank",
+		instruction:
+			"Complete the text below. Choose NO MORE THAN THREE WORDS AND/OR A NUMBER from the passage for each answer.",
 	},
 	sent4: {
 		label: "Sentence completion",
@@ -697,9 +806,9 @@ export const QUIZ_TYPE_DISPLAY: Record<
 			"Answer the questions below. Choose NO MORE THAN THREE WORDS AND/OR A NUMBER from the passage.",
 	},
 	diagram: {
-		label: "Diagram label completion",
+		label: "Map / Diagram labelling",
 		instruction:
-			"Label the diagram below. Choose NO MORE THAN TWO WORDS from the passage for each answer.",
+			"Label the map or diagram below. Choose NO MORE THAN TWO WORDS from the passage for each answer.",
 	},
 	summary: {
 		label: "Summary completion",
@@ -816,7 +925,7 @@ function countPromptBlanks(stem: string): number {
 export const assignmentQuestionSchema = z
 	.object({
 		stem: z.string().trim().max(500),
-		opts: z.array(z.string().max(500)).max(6).nullish(),
+		opts: z.array(z.string().max(500)).max(8).nullish(),
 		answer: z.string().trim().max(200),
 		alts: z.string().max(500).default(""),
 		/**
@@ -964,6 +1073,39 @@ const assignmentPromptBaseSchema = z
 		writing: assignmentWritingSectionSchema.nullable().optional(),
 	})
 	.strict();
+
+function validateQuestionChoices(
+	ctx: z.RefinementCtx,
+	questions: ReadonlyArray<{
+		type?: string | null;
+		opts?: readonly string[] | null;
+		answer: string;
+	}>,
+	fallbackType: string,
+) {
+	for (const [index, question] of questions.entries()) {
+		const kind = answerKindByType[question.type ?? fallbackType] ?? null;
+		if (!kind) continue;
+		const optsError = mcqOptionsIssue(kind, question.opts);
+		if (optsError) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["questions", index, "opts"],
+				message: optsError,
+			});
+		}
+		if (
+			question.answer &&
+			!effectiveAnswerChoices(kind, question.opts).includes(question.answer)
+		) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["questions", index, "answer"],
+				message: "invalid answer choice",
+			});
+		}
+	}
+}
 
 export const assignmentPromptCreateSchema =
 	assignmentPromptBaseSchema.superRefine((value, ctx) => {
@@ -1161,17 +1303,7 @@ export const assignmentPromptCreateSchema =
 		}
 		// Answer-choice validation theo type HIỆU DỤNG của từng câu (type câu
 		// ?? type prompt) — đề trộn dạng chấm khớp kind của câu chứa nó.
-		for (const [index, question] of value.questions.entries()) {
-			const kind = answerKindByType[question.type ?? value.type];
-			if (!kind) continue;
-			const choices = ASSIGNMENT_ANSWER_CHOICES[kind];
-			if (question.answer && !choices.includes(question.answer as never))
-				ctx.addIssue({
-					code: "custom",
-					path: ["questions", index, "answer"],
-					message: "invalid answer choice",
-				});
-		}
+		validateQuestionChoices(ctx, value.questions, value.type);
 		// Phase-02 FR2 — option bank rules. Bankable is (skill, type)-qualified
 		// (red-team #1): writing task1 shares the `map` type id but is NOT
 		// bankable, so a bank arriving there is rejected outright. The 2..8 /
@@ -1270,18 +1402,7 @@ export const assignmentPromptUpdateSchema = assignmentPromptBaseSchema
 				message: "invalid listening audioUrl",
 			});
 		if (value.questions) {
-			for (const [index, question] of value.questions.entries()) {
-				const kind =
-					answerKindByType[question.type ?? value.type ?? ""] ?? null;
-				if (!kind) continue;
-				const choices = ASSIGNMENT_ANSWER_CHOICES[kind];
-				if (question.answer && !choices.includes(question.answer as never))
-					ctx.addIssue({
-						code: "custom",
-						path: ["questions", index, "answer"],
-						message: "invalid answer choice",
-					});
-			}
+			validateQuestionChoices(ctx, value.questions, value.type ?? "");
 		}
 	});
 export type AssignmentPromptUpdate = z.infer<
@@ -2128,8 +2249,16 @@ export const ACCOUNT_ERROR_CODES = {
 export type AccountErrorCode =
 	(typeof ACCOUNT_ERROR_CODES)[keyof typeof ACCOUNT_ERROR_CODES];
 
-export const EXAM_INTERESTS = ["ielts", "toeic"] as const;
+/** Hướng học học viên được chọn ở wizard onboarding (TOEIC đã ngừng nhận mới). */
+export const EXAM_INTERESTS = ["ielts", "communication"] as const;
 export type ExamInterest = (typeof EXAM_INTERESTS)[number];
+/** Mọi giá trị có thể nằm trong DB — gồm "toeic" của học viên onboarding trước đây. */
+export const STORED_EXAM_INTERESTS = [
+	"ielts",
+	"toeic",
+	"communication",
+] as const;
+export type StoredExamInterest = (typeof STORED_EXAM_INTERESTS)[number];
 
 export const IELTS_TARGET_BANDS = [
 	"5.0",
@@ -2148,6 +2277,23 @@ export const TOEIC_TARGET_SCORES = [
 	"850",
 	"990",
 ] as const;
+/** Mục tiêu cho hướng Giao Tiếp — thang CEFR. */
+export const CEFR_TARGET_LEVELS = ["A2", "B1", "B2", "C1", "C2"] as const;
+
+const TARGET_SCORE_OPTIONS: Record<StoredExamInterest, readonly string[]> = {
+	ielts: IELTS_TARGET_BANDS,
+	toeic: TOEIC_TARGET_SCORES,
+	communication: CEFR_TARGET_LEVELS,
+};
+
+/** Các giá trị targetScore hợp lệ theo hướng học (IELTS khi không xác định). */
+export function getTargetScoreOptions(
+	examInterest: string | null | undefined,
+): readonly string[] {
+	return examInterest && Object.hasOwn(TARGET_SCORE_OPTIONS, examInterest)
+		? TARGET_SCORE_OPTIONS[examInterest as StoredExamInterest]
+		: IELTS_TARGET_BANDS;
+}
 
 export const LEARNING_GOAL_OPTIONS = [
 	"study-abroad",
@@ -2193,9 +2339,8 @@ const onboardingPayloadBase = z.object({
 });
 export const studentOnboardingPayloadSchema = onboardingPayloadBase.superRefine(
 	(value, ctx) => {
-		const allowed =
-			value.examInterest === "ielts" ? IELTS_TARGET_BANDS : TOEIC_TARGET_SCORES;
-		if (!(allowed as readonly string[]).includes(value.targetScore)) {
+		const allowed = getTargetScoreOptions(value.examInterest);
+		if (!allowed.includes(value.targetScore)) {
 			ctx.addIssue({
 				code: "custom",
 				path: ["targetScore"],
@@ -4032,6 +4177,7 @@ export const NOTIFICATION_EVENT_TYPES = [
 	"class_enrolled",
 	"assignment_published",
 	"grade_returned",
+	"placement_submitted",
 	"invoice_issued",
 	"tuition_reminder",
 	"schedule_changed",
@@ -4057,6 +4203,7 @@ export const NOTIFICATION_EVENT_GROUP_BY_TYPE: Record<
 	class_enrolled: "class_invite",
 	assignment_published: "assignment",
 	grade_returned: "assignment",
+	placement_submitted: "assignment",
 	invoice_issued: "tuition",
 	tuition_reminder: "tuition",
 	schedule_changed: "schedule",
@@ -4824,17 +4971,7 @@ const libraryExerciseBaseSchema = z
 					});
 			}
 		}
-		for (const [index, question] of value.questions.entries()) {
-			const kind = answerKindByType[question.type ?? value.type];
-			if (!kind) continue;
-			const choices = ASSIGNMENT_ANSWER_CHOICES[kind];
-			if (question.answer && !choices.includes(question.answer as never))
-				ctx.addIssue({
-					code: "custom",
-					path: ["questions", index, "answer"],
-					message: "invalid answer choice",
-				});
-		}
+		validateQuestionChoices(ctx, value.questions, value.type);
 		const bankKind = optionBankKindFor(
 			value.skill,
 			value.type,

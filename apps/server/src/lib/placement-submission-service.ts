@@ -5,20 +5,24 @@ import {
 import {
 	buildPlacementZaloText,
 	computePlacementFinal,
+	hasPlacementSpeakingTasks,
+	isIeltsSpeakingRubric,
+	isIeltsWritingRubric,
 	locatePlacementErrors,
 	PLACEMENT_AI_ERROR_CODES,
 	type PlacementObjectiveResult,
 	type PlacementSnapshot,
-	type PlacementSpeakingRubric,
 	type PlacementSubmissionDetail,
-	type PlacementWritingRubric,
+	parseStoredSpeakingRubric,
+	parseStoredWritingRubric,
 	type placementTeacherGradeSchema,
 } from "@teacher-os/api/placement-test-contracts";
 import type { Mailer } from "@teacher-os/auth/mail/mailer";
+import { user } from "@teacher-os/db/schema/auth";
 import { lead } from "@teacher-os/db/schema/lead";
 import { placementTestSubmission } from "@teacher-os/db/schema/placement-test";
 import { student } from "@teacher-os/db/schema/student";
-import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, notLike, sql } from "drizzle-orm";
 import type { Context } from "hono";
 import type { Db, KernelCtx } from "../app";
 import { parseByteRange } from "./byte-range";
@@ -28,6 +32,7 @@ import type { PlacementAiGrader } from "./placement-ai/grader";
 import {
 	buildPlacementResultUrl,
 	type PlacementResultEmailStatus,
+	type PlacementResultEmailSummary,
 	parseAiSpeakingDraft,
 	parseAiWritingDraft,
 	parseStoredErrors,
@@ -56,11 +61,78 @@ export interface PlacementSubmissionServiceDeps {
 	mailer?: Mailer;
 	/** #730: origin profile đầu tiên dựng link kết quả tuyệt đối. */
 	leadOrigins?: string[];
+	/** Origin portal học viên — có thì email trỏ về `/placement-test` khi người nhận đã có tài khoản học viên. */
+	studentOrigin?: string;
 }
 
 type KernelContext = Context<{ Variables: { kernelCtx: KernelCtx } }>;
 
 const RESULT_EMAIL_STATUSES = new Set(["sent", "failed", "skipped"]);
+
+/**
+ * Link nút "Xem chi tiết kết quả". Chỉ trỏ trang `/placement-test` của portal
+ * khi chắc chắn portal hiển thị ĐÚNG bài vừa chốt: có `studentOrigin`, có dòng
+ * học viên trong org khớp email người nhận (không phân biệt hoa/thường), có
+ * tài khoản auth role `student` cùng email đã xác minh, và bài mới nhất portal chọn cho
+ * học viên đó chính là `submissionId`. Ngược lại (hoặc truy vấn lỗi) → link
+ * kết quả công khai.
+ */
+export async function resolvePlacementResultLink(
+	db: Db,
+	params: {
+		orgId: string;
+		submissionId: string;
+		recipientEmail: string;
+		studentOrigin: string | undefined;
+		publicUrl: string;
+	},
+): Promise<string> {
+	const email = params.recipientEmail.trim().toLowerCase();
+	const origin = (params.studentOrigin ?? "").trim().replace(/\/+$/, "");
+	if (!email || !origin) return params.publicUrl;
+	try {
+		const [account] = await db
+			.select({ id: user.id })
+			.from(user)
+			.where(
+				and(
+					eq(user.role, "student"),
+					eq(user.emailVerified, true),
+					sql`lower(trim(${user.email})) = ${email}`,
+				),
+			)
+			.limit(1);
+		if (!account) return params.publicUrl;
+		// Cùng thứ tự chọn dòng học viên với guard portal.
+		const [studentRow] = await db
+			.select()
+			.from(student)
+			.where(
+				and(
+					eq(student.orgId, params.orgId),
+					sql`lower(trim(${student.email})) = ${email}`,
+					notLike(student.id, "demo-student:%"),
+				),
+			)
+			.orderBy(desc(student.createdAt), asc(student.id))
+			.limit(1);
+		if (!studentRow) return params.publicUrl;
+		const latest = await findLatestSubmissionForStudent(
+			db,
+			params.orgId,
+			studentRow,
+		);
+		return latest?.id === params.submissionId
+			? `${origin}/placement-test`
+			: params.publicUrl;
+	} catch (error) {
+		console.error(
+			"[placement-ai] portal account lookup failed",
+			error instanceof Error ? error.name : "unknown",
+		);
+		return params.publicUrl;
+	}
+}
 
 export function parseJsonOr<T>(raw: string | null, fallback: T): T {
 	if (!raw) return fallback;
@@ -211,12 +283,20 @@ export function buildPlacementSubmissionDetail(
 	const objective = JSON.parse(
 		sub.objectiveBreakdownJson,
 	) as PlacementObjectiveResult;
-	const writingRubric = sub.writingRubricJson
-		? (JSON.parse(sub.writingRubricJson) as PlacementWritingRubric)
-		: null;
-	const speakingRubric = sub.speakingRubricJson
-		? (JSON.parse(sub.speakingRubricJson) as PlacementSpeakingRubric)
-		: null;
+	const writingRubric = parseStoredWritingRubric(sub.writingRubricJson);
+	const speakingRubric = parseStoredSpeakingRubric(sub.speakingRubricJson);
+	const writingScore = sub.writingBand ?? sub.writingScore;
+	const speakingScore = sub.speakingBand ?? sub.speakingScore;
+	const writingScale = isIeltsWritingRubric(writingRubric)
+		? "ielts"
+		: sub.writingScore !== null
+			? "legacy"
+			: "ielts";
+	const speakingScale = isIeltsSpeakingRubric(speakingRubric)
+		? "ielts"
+		: sub.speakingScore !== null
+			? "legacy"
+			: "ielts";
 
 	const activeBand =
 		sub.finalBandLevel && sub.finalCourse
@@ -238,13 +318,15 @@ export function buildPlacementSubmissionDetail(
 		studentName: subject.row.name,
 		phone: subject.row.phone,
 		objective,
-		writingScore: sub.writingScore,
-		speakingScore: sub.speakingScore,
+		writingScore,
+		speakingScore,
 		speakingStatus: sub.speakingStatus,
 		band: activeBand,
 		averagePct: activePct,
 		note: sub.finalNote,
 		teacherFeedback: sub.teacherFeedback,
+		writingScale,
+		speakingScale,
 	});
 
 	const speakingMediaUrl = sub.speakingMediaKey
@@ -273,9 +355,9 @@ export function buildPlacementSubmissionDetail(
 		speakingMediaSize: sub.speakingMediaSize,
 		speakingDurationSec: sub.speakingDurationSec,
 		writingRubric,
-		writingScore: sub.writingScore,
+		writingScore,
 		speakingRubric,
-		speakingScore: sub.speakingScore,
+		speakingScore,
 		teacherFeedback: sub.teacherFeedback,
 		finalBandLevel: sub.finalBandLevel,
 		finalCourse: sub.finalCourse,
@@ -481,8 +563,8 @@ export async function gradePlacementSubmissionResponse(
 	const final = computePlacementFinal({
 		objective,
 		bands: snapshot.bands,
-		writingRubric: parsedBody.writingRubric,
-		speakingRubric: parsedBody.speakingRubric,
+		writingScore: parsedBody.writingScore,
+		speakingScore: parsedBody.speakingScore,
 	});
 
 	// #730: lỗi giáo viên chốt — server luôn định vị lại offset.
@@ -501,11 +583,13 @@ export async function gradePlacementSubmissionResponse(
 		.set({
 			status: "graded",
 			writingRubricJson: JSON.stringify(parsedBody.writingRubric),
-			writingScore: final.writingScore,
+			writingScore: null,
+			writingBand: final.writingScore,
 			speakingRubricJson: parsedBody.speakingRubric
 				? JSON.stringify(parsedBody.speakingRubric)
 				: null,
-			speakingScore: final.speakingScore,
+			speakingScore: null,
+			speakingBand: final.speakingScore,
 			teacherFeedback: parsedBody.teacherFeedback,
 			finalBandLevel: final.band.cefr,
 			finalCourse: final.band.course,
@@ -591,11 +675,79 @@ export async function gradePlacementSubmissionResponse(
 	if (firstPublish) {
 		// Gửi link kết quả đồng bộ (timeout ngắn trong mailer) để response
 		// phản ánh đúng trạng thái; lỗi gửi không làm hỏng lượt chốt.
+		const recipient = leadEmail.trim() || studentEmail.trim();
+		const resultUrl = await resolvePlacementResultLink(db, {
+			orgId: ctx.orgId,
+			submissionId: updatedSub.id,
+			recipientEmail: recipient,
+			studentOrigin: deps.studentOrigin,
+			publicUrl: buildPlacementResultUrl(resultOrigin, resultToken),
+		});
+		// Lượt chốt đồng thời của giáo viên khác có thể ghi sau lượt này —
+		// tóm tắt lấy từ cột đã lưu; đọc lỗi → dùng giá trị vừa tính.
+		let stored: typeof placementTestSubmission.$inferSelect | undefined;
+		try {
+			[stored] = await db
+				.select()
+				.from(placementTestSubmission)
+				.where(
+					and(
+						eq(placementTestSubmission.id, updatedSub.id),
+						eq(placementTestSubmission.orgId, ctx.orgId),
+					),
+				)
+				.limit(1);
+		} catch (error) {
+			console.error(
+				"[placement-ai] result summary reload failed",
+				updatedSub.id,
+				error instanceof Error ? error.name : "unknown",
+			);
+		}
+		const summary: PlacementResultEmailSummary = {
+			cefr: final.band.cefr,
+			displayCourse: final.band.displayCourse || final.band.courseLabel,
+			scorePct: final.averagePct,
+			listening: objective.listening,
+			vocabGrammar: objective.vocabGrammar,
+			reading: objective.reading,
+			writingScore: final.writingScore,
+			speakingScore: final.speakingScore,
+			writingScale: "ielts",
+			speakingScale: "ielts",
+		};
+		if (stored) {
+			const storedWritingRubric = parseStoredWritingRubric(
+				stored.writingRubricJson,
+			);
+			const storedSpeakingRubric = parseStoredSpeakingRubric(
+				stored.speakingRubricJson,
+			);
+			summary.cefr = stored.finalBandLevel ?? summary.cefr;
+			summary.displayCourse =
+				stored.finalDisplayCourse ??
+				stored.finalCourse ??
+				summary.displayCourse;
+			summary.scorePct = stored.finalScorePct ?? summary.scorePct;
+			summary.writingScore = stored.writingBand ?? stored.writingScore;
+			summary.speakingScore = stored.speakingBand ?? stored.speakingScore;
+			summary.writingScale = isIeltsWritingRubric(storedWritingRubric)
+				? "ielts"
+				: stored.writingScore !== null
+					? "legacy"
+					: "ielts";
+			summary.speakingScale = isIeltsSpeakingRubric(storedSpeakingRubric)
+				? "ielts"
+				: stored.speakingScore !== null
+					? "legacy"
+					: "ielts";
+		}
 		resultEmailStatus = await sendPlacementResultEmail({
 			getMailer: () => deps.mailer,
-			to: leadEmail.trim() || studentEmail.trim(),
+			to: recipient,
 			studentName: subject.row.name,
-			resultUrl: buildPlacementResultUrl(resultOrigin, resultToken),
+			summary,
+			resultUrl,
 			submissionId: updatedSub.id,
 		});
 		await db
@@ -617,4 +769,50 @@ export async function gradePlacementSubmissionResponse(
 			resultOrigin,
 		),
 	);
+}
+
+/**
+ * Kiểm tra `speakingMode` khớp cấu trúc phần Speaking của đề phát hành:
+ * đề có câu Speaking bắt buộc `"upload"`, đề không có Speaking chỉ nhận `"none"`.
+ */
+export function validatePlacementSpeakingModeForSnapshot(
+	snapshot: PlacementSnapshot,
+	speakingMode: "upload" | "none",
+):
+	| { ok: true; speakingStatus: "pending_upload" | "none" }
+	| {
+			ok: false;
+			body: {
+				error: string;
+				code: string;
+				message?: string;
+				fields?: string[];
+			};
+	  } {
+	const hasSpeaking = hasPlacementSpeakingTasks(snapshot);
+	if (hasSpeaking && speakingMode !== "upload") {
+		return {
+			ok: false,
+			body: {
+				error: "PLACEMENT_SPEAKING_REQUIRED",
+				code: "PLACEMENT_SPEAKING_REQUIRED",
+				message:
+					"Bài kiểm tra đầu vào yêu cầu hoàn thành phần Speaking trước khi nộp.",
+			},
+		};
+	}
+	if (!hasSpeaking && speakingMode === "upload") {
+		return {
+			ok: false,
+			body: {
+				error: "PLACEMENT_SUBMIT_INVALID",
+				code: "PLACEMENT_SUBMIT_INVALID",
+				fields: ["speakingMode"],
+			},
+		};
+	}
+	return {
+		ok: true,
+		speakingStatus: speakingMode === "upload" ? "pending_upload" : "none",
+	};
 }

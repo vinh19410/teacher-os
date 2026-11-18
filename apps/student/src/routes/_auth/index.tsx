@@ -10,7 +10,11 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { StudentShell } from "@/components/layout/student-shell";
 import Loader from "@/components/loader";
-import { getCurrentLevelLabel } from "@/components/onboarding/onboarding-steps";
+import {
+	EXAM_SCALE_LABELS,
+	getCurrentLevelLabel,
+	toStoredExamInterest,
+} from "@/components/onboarding/onboarding-steps";
 import { AssignmentList } from "@/components/overview/assignment-list";
 import { ClassCard } from "@/components/overview/class-card";
 import { OverviewEmptyState } from "@/components/overview/empty-state";
@@ -120,6 +124,7 @@ export function StudentOverviewPage() {
 		return <Loader />;
 	}
 
+	const examKey = toStoredExamInterest(me.student.examInterest);
 	const placementStatus = placementStatusQuery.isError
 		? undefined
 		: placementStatusQuery.data;
@@ -171,22 +176,14 @@ export function StudentOverviewPage() {
 							me.student.currentLevel,
 							me.student.examInterest,
 						)}
-						sub={
-							me.student.examInterest === "toeic"
-								? "Điểm TOEIC tự đánh giá"
-								: "Band IELTS tự đánh giá"
-						}
+						sub={`${EXAM_SCALE_LABELS[examKey]} tự đánh giá`}
 					/>
 				) : null}
 				{me.student.targetScore ? (
 					<StatCard
-						label="Band mục tiêu"
+						label={examKey === "ielts" ? "Band mục tiêu" : "Mục tiêu"}
 						value={me.student.targetScore}
-						sub={
-							me.student.examInterest === "toeic"
-								? "Điểm TOEIC mục tiêu"
-								: "Band IELTS mục tiêu"
-						}
+						sub={`${EXAM_SCALE_LABELS[examKey]} mục tiêu`}
 					/>
 				) : null}
 				<StatCard

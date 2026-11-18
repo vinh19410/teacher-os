@@ -43,7 +43,9 @@ export function PartContentFields({
 	onAudioChanged: () => void;
 }) {
 	const isListening = skill === "listening";
-	const isImage = isImageBasedType(skill, value.type);
+	const isImage =
+		isImageBasedType(skill, value.type) ||
+		value.groups.some((group) => isImageBasedType(skill, group.type));
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -123,8 +125,9 @@ export function PartContentFields({
 
 			{isImage && (
 				<p className="text-muted-foreground text-xs">
-					Dạng bài dùng ảnh — nhập URL ảnh và đặt ghim cho từng câu ở khối «Câu
-					hỏi và đáp án đúng» bên dưới.
+					{skill === "reading"
+						? "Dạng bài dùng ảnh — nhập URL ảnh (và đặt ghim tùy chọn) ở khối «Câu hỏi và đáp án đúng» bên dưới."
+						: "Dạng bài dùng ảnh — nhập URL ảnh và đặt ghim cho từng câu ở khối «Câu hỏi và đáp án đúng» bên dưới."}
 				</p>
 			)}
 

@@ -1,0 +1,221 @@
+{
+	"id": "d4217194-4fa4-4c5b-8237-2469c767d268",
+	"url": "https://stepielts.com/student/reading/d4217194-4fa4-4c5b-8237-2469c767d268?mode=practice",
+	"title": "Plant ‘thermometer’ triggers springtime growth by measuring night-time heat",
+	"source": "C16T3",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "27-40",
+	"passage": {
+		"title": "Plant ‘thermometer’ triggers springtime growth by measuring night-time heat",
+		"paragraphs": [
+			"A photoreceptor molecule in plant cells has been found to have a second job as a thermometer after dark – allowing plants to read seasonal temperature changes. Scientists say the discovery could help breed crops that are more resilient to the temperatures expected to result from climate change",
+			"A. An international team of scientists led by the University of Cambridge has discovered that the ‘thermometer’ molecule in plants enables them to develop according to seasonal temperature changes. Researchers have revealed that molecules called phytochromes – used by plants to detect light during the day – actually change their function in darkness to become cellular temperature gauges that measure the heat of the night.",
+			"The new findings, published in the journal Science, show that phytochromes control genetic switches in response to temperature as well as light to dictate plant development.",
+			"B. At night, these molecules change states, and the pace at which they change is ‘directly proportional to temperature’, say scientists, who compare phytochromes to mercury in a thermometer. The warmer it is, the faster the molecular change – stimulating plant growth.",
+			"C. Farmers and gardeners have known for hundreds of years how responsive plants are to temperature: warm winters cause many trees and flowers to bud early, something humans have long used to predict weather and harvest times for the coming year. The latest research pinpoints for the first time a molecular mechanism in plants that reacts to temperature – often triggering the buds of spring we long to see at the end of winter.",
+			"D. With weather and temperatures set to become ever more unpredictable due to climate change, researchers say the discovery that this light-sensing molecule also functions as the internal thermometer in plant cells could help us breed tougher crops. ‘It is estimated that agricultural yields will need to double by 2050, but climate change is a major threat to achieving this. Key crops such as wheat and rice are sensitive to high temperatures. Thermal stress reduces crop yields by around 10% for every one degree increase in temperature,’ says lead researcher Dr Philip Wigge from Cambridge’s Sainsbury Laboratory. ‘Discovering the molecules that allow plants to sense temperature has the potential to accelerate the breeding of crops resilient to thermal stress and climate change.’",
+			"E. In their active state, phytochrome molecules bind themselves to DNA to restrict plant growth. During the day, sunlight activates the molecules, slowing down growth. If a plant finds itself in shade, phytochromes are quickly inactivated – enabling it to grow faster to find sunlight again. This is how plants compete to escape each other’s shade. ‘Light-driven changes to phytochrome activity occur very fast, in less than a second,’ says Wigge.",
+			"At night, however, it’s a different story. Instead of a rapid deactivation following sundown, the molecules gradually change from their active to inactive state. This is called ‘dark reversion’. ‘Just as mercury rises in a thermometer, the rate at which phytochromes revert to their inactive state during the night is a direct measure of temperature,’ says Wigge.",
+			"F. ‘The lower the temperature, the slower the rate at which phytochromes revert to inactivity, so the molecules spend more time in their active, growth-suppressing state. This is why plants are slower to grow in winter. Warm temperatures accelerate dark reversion, so that phytochromes rapidly reach an inactive state and detach themselves from the plant’s DNA – allowing genes to be expressed and plant growth to resume.’ Wigge believes phytochrome thermo-sensing evolved at a later stage, and co-opted the biological network already used for light-based growth during the downtime of night.",
+			"G. Some plants mainly use day length as an indicator of the reason. Other species, such as daffodils, have considerable temperature sensitivity, and can flower months in advance during a warm winter. In fact, the discovery of the dual role of phytochromes provides the science behind a well-known rhyme long used to predict the coming season: oak before ash we’ll have a splash, ash before oak we’re in for a soak.",
+			"Wigge explains: ‘Oak trees rely much more on temperature, likely using phytochromes as thermometers to dictate development, whereas ash trees rely on measuring day length to determine their seasonal timing. A warmer spring, and consequently a higher likeliness of a hot summer, will result in oak leafing before ash. A cold spring will see the opposite. As the British know only too well, a colder summer is likely to be a rain-soaked one.’",
+			"H. The new findings are the culmination of twelve years of research involving scientists from Germany, Argentina and the US, as well as the Cambridge team. The work was done in a model system, using a mustard plant called Arabidopsis, but Wigge says the phytochrome genes necessary for temperature sensing are found in crop plants as well. ‘Recent advances in plant genetics now mean that scientists are able to rapidly identify the genes controlling these processes in crop plants, and even alter their activity using precise molecular “scalpels”,’ adds Wigge. ‘Cambridge is uniquely well-positioned to do this kind of research as we have outstanding collaborators nearby who work on more applied aspects of plant biology, and can help us transfer this new knowledge into the field.’"
+		]
+	},
+	"question_groups": [
+		{
+			"range": "27-32",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 3?\nIn boxes 27 - 32 on your answer sheet, write:\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 27,
+					"text": "The Cambridge scientists’ discovery of the ‘thermometer molecule’ caused surprise among other scientists.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhát hiện của các nhà khoa học ở Cambridge về \"phân tử nhiệt kế\" (thermometer) gây ngạc nhiên cho các nhà khoa học khác.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nCambridge ~ từ khóa giữ nguyên\nScientists' ~ từ khóa giữ nguyên\nDiscovery ~ từ khóa giữ nguyên\n'thermometer molecule' ~ thuật ngữ giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"Một nhóm các nhà khoa học quốc tế do Đại học Cambridge dẫn đầu đã phát hiện ra rằng trong thực vật có \"thermometer\", và sở hữu đặc điểm này cho phép chúng phát triển theo những thay đổi nhiệt độ theo mùa\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"phát hiện này gây ngạc nhiên cho các nhà khoa học khác\" (caused surprise among other scientists).\n\nBước 4: Đáp án: NOT GIVEN.",
+					"quotes": [
+						"An international team of scientists led by the University of Cambridge has discovered that the ‘thermometer’ molecule in plants enables them to develop according to seasonal temperature changes."
+					]
+				},
+				{
+					"number": 28,
+					"text": "The target for agricultural production by 2050 could be missed.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMục tiêu sản xuất nông nghiệp đến năm 2050 có thể bị bỏ lỡ.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nNăm 2050 ~ thời gian giữ nguyên\nagricultural yields ~ agricultural production\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"mục tiêu cho năm 2050 là sản lượng nông nghiệp sẽ tăng gấp đôi, nhưng biến đổi khí hậu có thể là một mối đe dọa, khiến cho mục tiêu đó không đạt được\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Mục tiêu sản xuất nông nghiệp đến năm 2050 có thể bị bỏ lỡ\" (The target for agricultural production by 2050 could be missed).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"‘It is estimated that agricultural yields will need to double by 2050, but climate change is a major threat to achieving this."
+					]
+				},
+				{
+					"number": 29,
+					"text": "Wheat and rice suffer from a rise in temperatures.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCây lúa mì và cây lúa đều phải chịu ảnh hưởng xấu từ sự gia tăng nhiệt độ\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nWheat and rice ~ cụm từ giữ nguyên\nHigh temperatures ~ a rise in temperatures\nSuffer ~ reduce crop yields\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Các cây trồng chính như lúa mì và lúa gạo rất nhạy cảm với nhiệt độ cao. Cứ tăng một độ sẽ dẫn tới năng suất cây trồng giảm khoảng 10%\"\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Lúa mì và gạo chịu ảnh hưởng xấu bởi sự tăng nhiệt độ\" (Wheat and rice suffer from a rise in temperatures).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Key crops such as wheat and rice are sensitive to high temperatures. Thermal stress reduces crop yields by around 10% for every one degree increase in temperature,’ says lead researcher Dr Philip Wigge from Cambridge’s Sainsbury Laboratory."
+					]
+				},
+				{
+					"number": 30,
+					"text": "It may be possible to develop crops that require less water.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\n(Chúng ta) có thể phát triển các loại cây trồng mà cần ít nước hơn.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nDevelop crops ~ accelerate the breeding of crops\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"Việc phát hiện ra các phân tử giúp thực vật cảm nhận nhiệt độ có tiềm năng đẩy nhanh quá trình lai tạo ra các loại cây trồng chống chịu được stress nhiệt và biến đổi khí hậu\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"phát triển các loại cây trồng cần ít nước hơn\" (develop crops that require less water).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"‘Discovering the molecules that allow plants to sense temperature has the potential to accelerate the breeding of crops resilient to thermal stress and climate change."
+					]
+				},
+				{
+					"number": 31,
+					"text": "Plants grow faster in sunlight than in shade.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCây cối phát triển nhanh hơn dưới ánh nắng mặt trời so với trong bóng râm.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nIn sunlight ~ find sunlight\nIn shade ~ cụm từ giữ nguyên\ngrow faster ~ cụm từ giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"khi cây đang ở trong bóng râm, các phytochrome nhanh chóng bị vô hiệu hóa - điều này cho phép cây phát triển nhanh hơn để tiếp tục tìm ánh sáng mặt trời\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"Cây phát triển nhanh hơn dưới ánh sáng mặt trời so với trong bóng râm\" (Plants grow faster in sunlight than in shade).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"During the day, sunlight activates the molecules, slowing down growth."
+					]
+				},
+				{
+					"number": 32,
+					"text": "Phytochromes change their state at the same speed day and night.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhytochrome thay đổi trạng thái của chúng với cùng một tốc độ vào ban ngày và ban đêm.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nday ~ during the day\nnight ~ at night\nphytochromes ~ thuật ngữ giữ nguyên\nChange their states ~ change from their active to inactive state\nSpeed ~ quickly/ gradually\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"vào ban ngày, ánh sáng mặt trời kích hoạt các phân tử; trong bóng râm, các phytochrome bị vô hiệu hóa nhanh chóng. Tuy nhiên, vào ban đêm, các phân tử chầm chậm chuyển từ trạng thái hoạt động sang không hoạt động\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"Phytochrome thay đổi trạng thái của chúng với cùng một tốc độ vào ban ngày và ban đêm\" (Phytochromes change their state at the same speed day and night).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"During the day, sunlight activates the molecules, slowing down growth.",
+						"At night, however, it’s a different story. Instead of a rapid deactivation following sundown, the molecules gradually change from their active to inactive state."
+					]
+				}
+			]
+		},
+		{
+			"range": "33-37",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Reading Passage 3 has eight sections, A-H. Which section contains the following information?\nWrite the correct letter, A-H, in boxes 33 - 37 on your answer sheet.",
+			"options": [
+				{
+					"label": "A",
+					"text": "Paragraph A"
+				},
+				{
+					"label": "B",
+					"text": "Paragraph B"
+				},
+				{
+					"label": "C",
+					"text": "Paragraph C"
+				},
+				{
+					"label": "D",
+					"text": "Paragraph D"
+				},
+				{
+					"label": "E",
+					"text": "Paragraph E"
+				},
+				{
+					"label": "F",
+					"text": "Paragraph F"
+				},
+				{
+					"label": "G",
+					"text": "Paragraph G"
+				},
+				{
+					"label": "H",
+					"text": "Paragraph H"
+				}
+			],
+			"body": "Mention of specialists who can make use of the research findings ____ (33)\nA reference to a potential benefit of the research findings ____ (34)\nScientific support for a traditional saying ____ (35)\nA reference to people traditionally making plans based on plant behaviour ____ (36)\nA reference to where the research has been reported ____ (37)",
+			"body_html": "<p>Mention of specialists who can make use of the research findings [33]</p><p>A reference to a potential benefit of the research findings [34]</p><p>Scientific support for a traditional saying [35]</p><p>A reference to people traditionally making plans based on plant behaviour [36]</p><p>A reference to where the research has been reported [37]</p>",
+			"questions": [
+				{
+					"number": 33,
+					"text": "Mention of specialists who can make use of the research findings",
+					"answer": "H",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề cập đến các chuyên gia có thể tận dụng được kết quả nghiên cứu.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nFarmers and gardeners ~ specialists\nlong used ~ make use of\n\nBước 3: So sánh và đối chiếu:\nĐoạn H chỉ rõ: \"Những tiến bộ gần đây trong di truyền học ở thực vật đồng nghĩa nghĩa với việc các nhà khoa học có thể nhanh chóng xác định các gen kiểm soát những quá trình này trong cây trồng, và thậm chí thay đổi hoạt động của chúng bằng cách sử dụng \"dao mổ\" phân tử chuẩn xác\".\n=> Thông tin này cho thấy đoạn H đã \"đề cập đến các nhà khoa học có thể tận dụng được kết quả nghiên cứu để xác định và thay đổi các gen trong cây trồng\".\n\nBước 4: Đáp án: H",
+					"quotes": [
+						"‘Recent advances in plant genetics now mean that scientists are able to rapidly identify the genes controlling these processes in crop plants, and even alter their activity using precise molecular “scalpels”,’ adds Wigge."
+					]
+				},
+				{
+					"number": 34,
+					"text": "A reference to a potential benefit of the research findings",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề cập đến một lợi ích tiềm năng của kết quả nghiên cứu.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\npotential to accelerate ~ potential benefit\nbreeding of crops resilient to thermal stress and climate change ~ research findings\n\nBước 3: So sánh và đối chiếu:\nĐoạn D chỉ rõ: \"Việc khám phá ra các phân tử cho phép thực vật cảm nhận nhiệt độ phù hợp cho việc đẩy nhanh quá trình lai tạo các loại cây trồng có khả năng chống chịu với stress nhiệt và biến đổi khí hậu\".\n=> Thông tin này cho thấy đoạn D đã \"đề cập đến lợi ích tiềm năng của nghiên cứu, là có thể đẩy nhanh quá trình lai tạo cây trồng chống chịu được với stress nhiệt và biến đổi khí hậu\".\n\nBước 4: Đáp án: D",
+					"quotes": [
+						"D. With weather and temperatures set to become ever more unpredictable due to climate change, researchers say the discovery that this light-sensing molecule also functions as the internal thermometer in plant cells could help us breed tougher crops."
+					]
+				},
+				{
+					"number": 35,
+					"text": "Scientific support for a traditional saying",
+					"answer": "G",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề cập đến một minh chứng khoa học làm cơ sở cho câu nói truyền miệng từ thời xưa.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\ndiscovery of the dual role of phytochromes provides the science behind ~ Scientific support for\na well-known rhyme long used ~ a traditional saying\n\nBước 3: So sánh và đối chiếu:\nĐoạn G chỉ rõ: \"Thực tế, việc phát hiện ra vai trò kép của phytochrome cung cấp cơ sở khoa học cho một câu tục ngữ nổi tiếng từ lâu được sử dụng để dự đoán mùa sắp tới: \"Sồi trước tần bì ta sẽ có mưa nhỏ, tần bì trước sồi ta sẽ gặp mưa to\"\".\n=> Thông tin này cho thấy đoạn G đã \"cung cấp cơ sở khoa học cho một câu nói truyền miệng về việc dự đoán thời tiết dựa trên sự phát triển của cây sồi và cây tần bì\".\n\nBước 4: Đáp án: G",
+					"quotes": [
+						"In fact, the discovery of the dual role of phytochromes provides the science behind a well-known rhyme long used to predict the coming season: oak before ash we’ll have a splash, ash before oak we’re in for a soak."
+					]
+				},
+				{
+					"number": 36,
+					"text": "A reference to people traditionally making plans based on plant behaviour",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề cập đến việc con người từ ngày xưa thường lập kế hoạch dựa trên sự thay đổi của cây.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nFarmers and gardeners ~ people\nhave known for hundreds of years ~ traditionally\nused to predict weather and harvest times ~ making plans based on plant behaviour\n\nBước 3: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"Những người nông dân và những người làm vườn đã biết trong hàng trăm năm rằng cây cối nhạy cảm với nhiệt độ như thế nào: mùa đông với nhiệt độ ấm áp đã khiến nhiều cây và hoa nở sớm, điều mà con người đã tận dụng từ xưa để dự đoán thời tiết và thời gian thu hoạch cho năm tới\".\n=> Thông tin này cho thấy đoạn C đã \"đề cập đến việc nông dân và người làm vườn truyền thống đã sử dụng phản ứng của cây với nhiệt độ để dự đoán thời tiết và thời gian thu hoạch\".\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"C. Farmers and gardeners have known for hundreds of years how responsive plants are to temperature: warm winters cause many trees and flowers to bud early, something humans have long used to predict weather and harvest times for the coming year."
+					]
+				},
+				{
+					"number": 37,
+					"text": "A reference to where the research has been reported",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề cập đến nơi mà kết quả nghiên cứu đã được báo cáo.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\npublished in the journal Science ~ where the research has been reported\n\nBước 3: So sánh và đối chiếu:\nĐoạn A chỉ rõ: \"Những phát hiện mới, mà đã được công bố trên tạp chí Science, cho thấy phytochrome có vai trò là dựa vào những điều kiện ngoại cảnh (ánh sáng và nhiệt độ) và quyết định xem những đặc điểm quan trọng về gen của cây có được di truyền lại cho các thế hệ sau hay không.\n=> Thông tin này cho thấy đoạn A đã \"đề cập đến việc kết quả nghiên cứu mới đã được công bố trên tạp chí Science\".\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"The new findings, published in the journal Science, show that phytochromes control genetic switches in response to temperature as well as light to dictate plant development."
+					]
+				}
+			]
+		},
+		{
+			"range": "38-40",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the sentences below. Choose NO MORE THAN TWO WORDS from the passage for each answer. Write your answers in boxes 38 - 40 on your answer sheet.",
+			"body": "Daffodils are likely to flower early in response to ____ (38) weather.\nIf ash trees come into leaf before oak trees, the weather in ____ (39) will probably be wet.\nThe research was carried out using a particular species of ____ (40)",
+			"body_html": "<ul><li>Daffodils are likely to flower early in response to [38] weather.</li><li>If ash trees come into leaf before oak trees, the weather in [39] will probably be wet.</li><li>The research was carried out using a particular species of [40] </li></ul>",
+			"questions": [
+				{
+					"number": 38,
+					"text": "Daffodils are likely to flower early in response to ____ (38) weather.",
+					"answer": "warm",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nHoa thủy tiên có khả năng nở sớm để đáp ứng với thời tiết __________.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: ADJECTIVE\nDấu hiệu: ADJECTIVE + weather (ADJECTIVE bổ nghĩa cho Noun 'WEATHER')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\ndaffodils ~ từ khóa giữ nguyên\nflower months in advance ~ flower early\nwinter ~ weather\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Các loài khác, như hoa thủy tiên, rất nhạy cảm với nhiệt độ, và loài này có thể nở hoa sớm hơn nhiều tháng trong mùa đông ấm áp\" (Other species, such as daffodils, have considerable temperature sensitivity, and can flower months in advance during a warm winter).\n\nBước 5: Đáp án: warm\nHoa thủy tiên có khả năng nở sớm khi thời tiết ấm áp (Daffodils are likely to flower early in response to warm weather).",
+					"quotes": [
+						"Other species, such as daffodils, have considerable temperature sensitivity, and can flower months in advance during a warm winter."
+					]
+				},
+				{
+					"number": 39,
+					"text": "If ash trees come into leaf before oak trees, the weather in ____ (39) will probably be wet.",
+					"answer": "summer",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nNếu cây tần bì ra lá trước cây sồi, thời tiết trong __________ có thể sẽ ẩm ướt.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: weather in + NOUN (NOUN làm Object của Preposition 'IN')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nash trees ~ từ khóa giữ nguyên\noak ~ từ khóa giữ nguyên\ncolder summer ~ wet weather\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Một mùa xuân lạnh sẽ thấy điều ngược lại. Như người Anh đã biết quá rõ, một mùa hè lạnh hơn có khả năng là một mùa hè ướt át\" (A cold spring will see the opposite. As the British know only too well, a colder summer is likely to be a rain-soaked one).\n\nBước 5: Đáp án: summer\nNếu cây tần bì ra lá trước cây sồi, thời tiết vào lúc mùa hè có thể sẽ ẩm ướt (If ash trees come into leaf before oak trees, the weather in summer will probably be wet).",
+					"quotes": [
+						"As the British know only too well, a colder summer is likely to be a rain-soaked one."
+					]
+				},
+				{
+					"number": 40,
+					"text": "The research was carried out using a particular species of ____ (40)",
+					"answer": "mustard / mustard plant / mustard plants",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nNghiên cứu được thực hiện bằng cách sử dụng một loài __________.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: species of + NOUN (NOUN làm Object của Preposition 'OF')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nresearch ~ từ khóa giữ nguyên\nusing ~ từ khóa giữ nguyên\nplant called Arabidopsis ~ particular species\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Công việc được thực hiện trong một hệ thống mô hình, sử dụng một loài cây cải mù tạt có tên là Arabidopsis\"\n(The work was done in a model system, using a mustard plant called Arabidopsis, but Wigge says the phytochrome genes necessary for temperature sensing are found in crop plants as well).\n\nBước 5: Đáp án: mustard | mustard plant | mustard plants\nNghiên cứu được thực hiện bằng cách sử dụng một loài cải mù tạt (The research was carried out using a particular species of mustard plant).",
+					"quotes": [
+						"The work was done in a model system, using a mustard plant called Arabidopsis, but Wigge says the phytochrome genes necessary for temperature sensing are found in crop plants as well."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

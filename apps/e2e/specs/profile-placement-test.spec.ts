@@ -325,6 +325,7 @@ test.describe
 		test("làm trọn bộ 5 kỹ năng, Speaking audio-only tuần tự đọc-trả lời từng câu, hợp nhất tư vấn trang chủ và giáo viên chấm W&S + phạt sàn Speaking (-1 band) tại /leads (#727)", async ({
 			page,
 		}) => {
+			test.setTimeout(180_000);
 			await clearRateLimits();
 			await installSyntheticMediaRecorder(page);
 
@@ -501,6 +502,12 @@ test.describe
 			await expect(page.locator("#speakingOverviewCard")).toContainText(
 				"8 câu tuần tự",
 			);
+			await expect(
+				page.locator("#speakingOverviewCard .speaking-overview-steps"),
+			).toHaveCount(0);
+			await expect(page.locator('[data-skill="speaking"]')).not.toContainText(
+				"Hệ thống sẽ tự động đọc lần lượt từng câu hỏi",
+			);
 			// Trước khi bấm bắt đầu, ẩn đề từng câu hỏi và không có Camera + Micro / <video>
 			await expect(page.locator("#speakingSessionCard")).toHaveCount(0);
 			await expect(page.locator("#speakingActivePrompt")).toHaveCount(0);
@@ -530,7 +537,7 @@ test.describe
 				expect(c.video).toBe(false);
 			}
 
-			// Câu 1: auto đọc -> chuyển sang prep -> thử Nghe lại câu hỏi (tối đa 1 lần) -> Trả lời ngay
+			// Câu 1: auto đọc -> chuyển sang prep (đồng hồ giữa màn hình) -> thử Nghe lại câu hỏi (tối đa 1 lần) -> Trả lời ngay
 			const sessionCard = page.locator("#speakingSessionCard");
 			await expect(sessionCard).toBeVisible();
 			await expect(sessionCard).toContainText("Câu 1 / 8");
@@ -539,6 +546,20 @@ test.describe
 			).toHaveCount(0);
 			const phaseBanner = page.locator("#speakingPhaseBanner");
 			await expect(phaseBanner).toHaveClass(/\bis-prep\b/, { timeout: 5000 });
+			await expect(
+				page.locator(".speaking-center-stage #speakingTimerValue"),
+			).toBeVisible();
+
+			const speakingPotIssue = process.env.CAPTURE_POT_ISSUE?.trim();
+			if (speakingPotIssue) {
+				await page.setViewportSize({ width: 1440, height: 900 });
+				await page.screenshot({
+					path: reportPath(
+						`${speakingPotIssue}-profile-speaking-prep-desktop-1440x900.png`,
+					),
+					fullPage: false,
+				});
+			}
 
 			const replayBtn = page.locator("#speakingReplayPromptBtn");
 			await expect(replayBtn).toBeEnabled();
@@ -554,6 +575,18 @@ test.describe
 			await expect(page.locator("#speakingPhaseBadge")).toContainText(
 				"Đang ghi âm câu trả lời (Micro)",
 			);
+			await expect(
+				page.locator(".speaking-center-stage #speakingPauseBtn"),
+			).toBeVisible();
+			await expect(
+				page.locator(".speaking-early-footer #speakingFinishEarlyBtn"),
+			).toBeVisible();
+
+			// Kiểm tra xác nhận kết thúc sớm tách riêng ở footer (bấm rồi hủy để làm tiếp)
+			await page.locator("#speakingFinishEarlyBtn").click();
+			await expect(page.locator("#speakingFinishConfirmBox")).toBeVisible();
+			await page.locator("#cancelFinishEarlyBtn").click();
+			await expect(page.locator("#speakingFinishConfirmBox")).toHaveCount(0);
 
 			// Chụp 3 viewport + reflow 320px trong lúc đang ghi âm tuần tự câu Speaking
 			for (const vp of [
@@ -569,25 +602,51 @@ test.describe
 				expect(overflow, `no speaking horizontal overflow at ${vp.label}`).toBe(
 					false,
 				);
-				if (vp.label !== "reflow-320x568") {
+				if (vp.label !== "reflow-320x568" && speakingPotIssue) {
 					await page.screenshot({
-						path: reportPath(`727-profile-speaking-active-${vp.label}.png`),
+						path: reportPath(
+							`${speakingPotIssue}-profile-speaking-active-${vp.label}.png`,
+						),
 						fullPage: false,
 					});
 				}
 			}
 			await page.setViewportSize({ width: 1440, height: 900 });
-			// Đợi đủ >250ms để MediaRecorder nhả ít nhất 1 audio chunk thực
+			// Đợi đủ >250ms để MediaRecorder nhả ít nhất 1 audio chunk thực, rồi bấm nút tròn Pause
 			await page.waitForTimeout(400);
+			await page.locator("#speakingPauseBtn").click();
+			await expect(phaseBanner).toHaveClass(/\bis-paused\b/);
+
+			// Kiểm tra retry tối đa 2 lần cho Câu 1: còn 2/2 -> retry #1 -> còn 1/2 -> retry #2 -> 0/2 disabled
+			const retryBtn = page.locator("#speakingRetryBtn");
+			await expect(retryBtn).toBeEnabled();
+			await expect(retryBtn).toContainText("còn 2/2");
+			await retryBtn.click();
+			await expect(phaseBanner).toHaveClass(/\bis-answer\b/);
+			await page.waitForTimeout(300);
+			await page.locator("#speakingPauseBtn").click();
+			await expect(phaseBanner).toHaveClass(/\bis-paused\b/);
+			await expect(retryBtn).toBeEnabled();
+			await expect(retryBtn).toContainText("còn 1/2");
+			await retryBtn.click();
+			await expect(phaseBanner).toHaveClass(/\bis-answer\b/);
+			await page.waitForTimeout(300);
+			await page.locator("#speakingPauseBtn").click();
+			await expect(phaseBanner).toHaveClass(/\bis-paused\b/);
+			await expect(retryBtn).toBeDisabled();
+			await expect(retryBtn).toContainText("0/2");
+
 			await page.locator("#speakingNextTaskBtn").click();
 
-			// Câu 2..8: tự đọc xong chuyển sang prep -> Trả lời ngay -> Xong câu này
+			// Câu 2..8: tự đọc xong chuyển sang prep -> Trả lời ngay -> bấm Pause -> Câu tiếp theo
 			for (let idx = 1; idx < 8; idx += 1) {
 				await expect(sessionCard).toContainText(`Câu ${idx + 1} / 8`);
 				await expect(phaseBanner).toHaveClass(/\bis-prep\b/, { timeout: 5000 });
 				await page.locator("#speakingStartAnswerNowBtn").click();
 				await expect(phaseBanner).toHaveClass(/\bis-answer\b/);
-				await page.waitForTimeout(120);
+				await page.waitForTimeout(300);
+				await page.locator("#speakingPauseBtn").click();
+				await expect(phaseBanner).toHaveClass(/\bis-paused\b/);
 				await page.locator("#speakingNextTaskBtn").click();
 			}
 
@@ -595,6 +654,7 @@ test.describe
 			await expect(page.locator("#speakingReviewBox")).toContainText(
 				"Đã ghi âm hoàn tất (sẵn sàng nộp)",
 			);
+			await expect(page.locator("#retakeSpeakingBtn")).toHaveCount(0);
 			const playbackAudio = page.locator("#speakingPlaybackAudio");
 			await expect(playbackAudio).toBeVisible();
 			await expect(playbackAudio).toHaveAttribute("src", /^blob:/);
@@ -612,14 +672,19 @@ test.describe
 			});
 			expect(recorderStateChecks.spokenCount).toBeGreaterThanOrEqual(9);
 			expect(recorderStateChecks.eventTypes).toContain("start");
-			expect(recorderStateChecks.eventTypes).toContain("pause");
-			expect(recorderStateChecks.eventTypes).toContain("resume");
 			expect(recorderStateChecks.eventTypes).toContain("stop");
+			expect(
+				recorderStateChecks.eventTypes.filter((t) => t === "start").length,
+			).toBeGreaterThanOrEqual(10);
 
-			await page.screenshot({
-				path: reportPath("727-profile-speaking-review-desktop-1440x900.png"),
-				fullPage: false,
-			});
+			if (speakingPotIssue) {
+				await page.screenshot({
+					path: reportPath(
+						`${speakingPotIssue}-profile-speaking-review-desktop-1440x900.png`,
+					),
+					fullPage: false,
+				});
+			}
 
 			// 8. Nộp bài -> POST /submissions (201) + PUT /speaking-media (200) -> màn Kết quả tạm tính
 			const submitPromise = page.waitForResponse(
@@ -855,13 +920,14 @@ test.describe
 					document.documentElement.classList.remove("dark"),
 				);
 
-				await teacherPage.getByTestId("writing-ct-5").click();
-				await teacherPage.getByTestId("writing-or-5").click();
-				await teacherPage.getByTestId("writing-lg-5").click();
-				await teacherPage.getByTestId("speaking-gv-0").click();
-				await teacherPage.getByTestId("speaking-dm-0").click();
-				await teacherPage.getByTestId("speaking-pr-0").click();
-				await teacherPage.getByTestId("speaking-ic-0").click();
+				await teacherPage.getByTestId("writing-task-input").fill("9");
+				await teacherPage.getByTestId("writing-coherence-input").fill("9");
+				await teacherPage.getByTestId("writing-lexical-input").fill("9");
+				await teacherPage.getByTestId("writing-grammar-input").fill("9");
+				await teacherPage.getByTestId("speaking-fluency-input").fill("0");
+				await teacherPage.getByTestId("speaking-lexical-input").fill("0");
+				await teacherPage.getByTestId("speaking-grammar-input").fill("0");
+				await teacherPage.getByTestId("speaking-pronunciation-input").fill("0");
 
 				await expect(
 					teacherPage.getByTestId("speaking-floor-note"),
@@ -1002,10 +1068,11 @@ test.describe
 			expect(savedAfterEdit).not.toBeNull();
 		});
 
-		test("3 viewport không tràn ngang, điều hướng bàn phím, hoàn lượt khi audio clip-lb lỗi, hộp xác nhận trống và bỏ qua Speaking (#721)", async ({
+		test("3 viewport không tràn ngang, điều hướng bàn phím, hoàn lượt khi audio clip-lb lỗi, chặn bỏ qua Speaking và hộp xác nhận câu trống (#721)", async ({
 			page,
 		}) => {
 			await clearRateLimits();
+			await installSyntheticMediaRecorder(page);
 			await page.goto(`${PROFILE_ORIGIN}/kiem-tra-dau-vao/`);
 
 			for (const vp of VIEWPORTS) {
@@ -1100,32 +1167,43 @@ test.describe
 			expect(savedPlaysClipLb).toBe(0);
 			await page.unroute(`**${clipLbSrc}`);
 
-			// Nhảy sang tab Speaking, kiểm tra hộp xác nhận câu trống + Bỏ qua phần Speaking
+			// Nhảy sang tab Speaking: không có nút bỏ qua, chặn nộp nếu chưa ghi âm, ghi âm xong vẫn hiện hộp xác nhận câu trắc nghiệm/Writing trống
 			await page
 				.locator('nav.skill-stepper button[data-skill-step="speaking"]')
 				.click();
 			await expect(page.locator('[data-skill="speaking"]')).toBeVisible();
+			await expect(page.locator("#skipSpeakingBtn")).toHaveCount(0);
 
 			await page.locator("#submitTestBtn").click();
+			await expect(page.locator("#speakingErrorBanner")).toContainText(
+				"Phần Speaking là bắt buộc",
+			);
 			const confirmBox = page.locator("#unansweredConfirmBox");
+			await expect(confirmBox).toHaveCount(0);
+
+			// Ghi âm nhanh 1 câu rồi kết thúc sớm để có bản ghi hợp lệ
+			await page.locator("#startSpeakingBtn").click();
+			await page.locator("#speakingStartAnswerNowBtn").click();
+			await page.waitForTimeout(350);
+			await page.locator("#speakingFinishEarlyBtn").click();
+			await page.locator("#confirmFinishEarlyBtn").click();
+			await expect(page.locator("#speakingReviewBox")).toBeVisible();
+
+			await page.locator("#submitTestBtn").click();
 			await expect(confirmBox).toBeVisible();
+			await expect(confirmBox).not.toContainText("Speaking chưa ghi âm");
 			await page.locator("#cancelSubmitBtn").click();
 			await expect(confirmBox).toBeHidden();
-
-			await page.locator("#skipSpeakingBtn").click();
-			await expect(
-				page.getByText("Đã chọn bỏ qua phần Speaking"),
-			).toBeVisible();
 
 			await page.locator("#submitTestBtn").click();
 			await expect(confirmBox).toBeVisible();
 			await page.locator("#confirmSubmitBtn").click();
 
-			const skippedResultCard = page.locator("#testResultCard");
-			await expect(skippedResultCard).toBeVisible();
-			await expect(skippedResultCard.locator(".skill-score-tile")).toHaveCount(
-				2,
-			);
+			const resultCardAfterConfirm = page.locator("#testResultCard");
+			await expect(resultCardAfterConfirm).toBeVisible();
+			await expect(
+				resultCardAfterConfirm.locator(".skill-score-tile"),
+			).toHaveCount(2);
 			await expect(
 				page.locator('[data-skill-result="listening"]'),
 			).toContainText("0/13 câu đúng");
@@ -1140,7 +1218,7 @@ test.describe
 
 			await page.locator("#retryTestBtn").click();
 			await expect(page.locator("#startTestBtn")).toBeVisible();
-			await expect(skippedResultCard).toHaveCount(0);
+			await expect(resultCardAfterConfirm).toHaveCount(0);
 		});
 
 		test("snapshot v1 cũ tự backfill 6 bài đọc Reading (15 câu), Writing và 8 câu Speaking trên 3 viewport", async ({
@@ -1322,8 +1400,26 @@ test.describe
 					"Đã trả lời 0/45 câu",
 				);
 
+				const readingSection = page.locator('[data-skill="reading"]');
 				const passageCards = page.locator(".reading-passage-card");
 				await expect(passageCards).toHaveCount(6);
+				await expect(
+					page.locator(".reading-passage-card .question-tag"),
+				).toHaveCount(0);
+				for (const redundantLabel of [
+					"Biển báo / Thông báo",
+					"Tin nhắn / Email",
+					"Bài đọc hiểu",
+					"Đoạn văn điền từ",
+				]) {
+					await expect(readingSection).not.toContainText(redundantLabel);
+				}
+				await expect(
+					passageCards.nth(1).locator(".passage-header"),
+				).toHaveCount(0);
+				await expect(passageCards.nth(1).locator(".clip-badges")).toHaveCount(
+					0,
+				);
 				await expect(passageCards.first()).toContainText("CITY SWIMMING POOL");
 				await expect(passageCards.last()).toContainText("Working from home");
 				await expect(
@@ -1349,6 +1445,12 @@ test.describe
 						overflow,
 						`no reading horizontal overflow at ${vp.label}`,
 					).toBe(false);
+					if (potIssue && vp.label !== "reflow-320x568") {
+						await page.screenshot({
+							path: reportPath(`${potIssue}-profile-reading-${vp.label}.png`),
+							fullPage: false,
+						});
+					}
 				}
 
 				await page.setViewportSize({ width: 1440, height: 900 });

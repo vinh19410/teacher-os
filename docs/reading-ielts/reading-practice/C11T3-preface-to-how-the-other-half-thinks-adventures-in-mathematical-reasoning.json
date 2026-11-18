@@ -1,0 +1,173 @@
+{
+	"id": "cc5d2ed0-63b0-4967-bff6-2c6abb3b8c21",
+	"url": "https://stepielts.com/student/reading/cc5d2ed0-63b0-4967-bff6-2c6abb3b8c21?mode=practice",
+	"title": "Preface to ‘How the other half thinks: Adventures in mathematical reasoning’",
+	"source": "C11T3",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "27-40",
+	"passage": {
+		"title": "Preface to ‘How the other half thinks: Adventures in mathematical reasoning’",
+		"paragraphs": [
+			"A. Occasionally, in some difficult musical compositions, there are beautiful, but easy parts – parts so simple a beginner could play them. So it is with mathematics as well. There are some discoveries in advanced mathematics that do not depend on specialized knowledge, not even on algebra, geometry, or trigonometry. Instead they may involve, at most, a little arithmetic, such as ‘the sum of two odd numbers is even’, and common sense. Each of the eight chapters in this book illustrates this phenomenon. Anyone can understand every step in the reasoning.",
+			"The thinking in each chapter uses at most only elementary arithmetic, and sometimes not even that. Thus all readers will have the chance to participate in a mathematical experience, to appreciate the beauty of mathematics, and to become familiar with its logical, yet intuitive, style of thinking.",
+			"B. One of my purposes in writing this book is to give readers who haven’t had the opportunity to see and enjoy real mathematics the chance to appreciate the mathematical way of thinking. I want to reveal not only some of the fascinating discoveries, but, more importantly, the reasoning behind them.",
+			"In that respect, this book differs from most books on mathematics written for the general public. Some present the lives of colorful mathematicians. Others describe important applications of mathematics. Yet others go into mathematical procedures, but assume that the reader is adept in using algebra.",
+			"C. I hope this book will help bridge that notorious gap that separates the two cultures: the humanities and the sciences, or should I say the right brain (intuitive) and the left brain (analytical, numerical). As the chapters will illustrate, mathematics is not restricted to the analytical and numerical; intuition plays a significant role. The alleged gap can be narrowed or completely overcome by anyone, in part because each of us is far from using the full capacity of either side of the brain. To illustrate our human potential, I cite a structural engineer who is an artist, an electrical engineer who is an opera singer, an opera singer who published mathematical research, and a mathematician who publishes short stories.",
+			"D. Other scientists have written books to explain their fields to non-scientists, but have necessarily had to omit the mathematics, although it provides the foundation of their theories. The reader must remain a tantalized spectator rather than an involved participant, since the appropriate language for describing the details in much of science is mathematics, whether the subject is expanding universe, subatomic particles, or chromosomes. Though the broad outline of a scientific theory can be sketched intuitively, when a part of the physical universe is finally understood, its description often looks like a page in a mathematics text.",
+			"E. Still, the non-mathematical reader can go far in understanding mathematical reasoning. This book presents the details that illustrate the mathematical style of thinking, which involves sustained, step-by-step analysis, experiments, and insights. You will turn these pages much more slowly than when reading a novel or a newspaper. It may help to have a pencil and paper ready to check claims and carry out experiments.",
+			"F. As I wrote, I kept in mind two types of readers: those who enjoyed mathematics until they were turned off by an unpleasant episode, usually around fifth grade, and mathematics aficionados, who will find much that is new throughout the book.",
+			"This book also serves readers who simply want to sharpen their analytical skills. Many careers, such as law and medicine, require extended, precise analysis. Each chapter offers practice in following a sustained and closely argued line of thought. That mathematics can develop this skill is shown by these two testimonials:",
+			"G. A physician wrote, ‘The discipline of analytical thought processes in mathematics prepared me extremely well for medical school. In medicine one is faced with a problem which must be thoroughly analyzed before a solution can be found. The process is similar to doing mathematics.’",
+			"A lawyer made the same point, “Although I had no background in law – not even one political science course — I did well at one of the best law schools. I attribute much of my success there to having learned, through the study of mathematics, and, in particular, theorems, how to analyze complicated principles. Lawyers who have studied mathematics can master the legal principles in a way that most others cannot.’",
+			"I hope you will share my delight in watching as simple, even naive, questions lead to remarkable solutions and purely theoretical discoveries find unanticipated applications."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "27-34",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Reading Passage has seven sections, A-G.\nWhich section contains the following information?\nWrite the correct letter, A-G, in boxes 27 - 34 on your answer sheet.\nNB You may use any letter more than once.",
+			"options": ["A", "B", "C", "D", "E", "F", "G"],
+			"questions": [
+				{
+					"number": 27,
+					"text": "a reference to books that assume a lack of mathematical knowledge",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐạon nào đề cập đến những cuốn sách giả định độc giả thiếu kiến thức toán học.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nbooks ~ từ khóa giữ nguyên\nomit the mathematics ~ assume a lack of mathematical knowledge\n\nBước 3: So sánh và đối chiếu:\nĐoạn D chỉ rõ: \"Các nhà khoa học khác đã viết sách để giải thích lĩnh vực của họ cho người không chuyên, nhưng buộc phải bỏ qua toán học, dù nó là nền tảng cho các lý thuyết của họ\".\n=> Thông tin này cho thấy đoạn D đã \"đề cập đến những cuốn sách giả định độc giả thiếu kiến thức toán học\".\n\nBước 4: Đáp án: D",
+					"quotes": [
+						"D. Other scientists have written books to explain their fields to non-scientists, but have necessarily had to omit the mathematics, although it provides the foundation of their theories. The reader must remain a tantalized spectator rather than an involved participant, since the appropriate language for describing the details in much of science is mathematics, whether the subject is expanding universe, subatomic particles, or chromosomes."
+					]
+				},
+				{
+					"number": 28,
+					"text": "the way in which this is not a typical book about mathematics",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nThứ làm cho đây không phải là một cuốn sách điển hình về toán học.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nthis book differs from most books on mathematics ~ not a typical book about mathematics\n\nBước 3: So sánh và đối chiếu:\nĐoạn B chỉ rõ: \"Về mặt này, cuốn sách này khác với hầu hết các sách về toán học viết cho công chúng. Một số trình bày cuộc đời của các nhà toán học sắc sảo. Những cuốn khác mô tả các ứng dụng quan trọng của toán học. Một số khác đi sâu vào các thủ tục toán học, nhưng giả định rằng người đọc thành thạo trong việc sử dụng đại số\".\n=> Thông tin này cho thấy đoạn B đã \"chỉ ra cách mà cuốn sách này không phải là một cuốn sách điển hình về toán học\".\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"In that respect, this book differs from most books on mathematics written for the general public.",
+						"Some present the lives of colorful mathematicians. Others describe important applications of mathematics. Yet others go into mathematical procedures, but assume that the reader is adept in using algebra."
+					]
+				},
+				{
+					"number": 29,
+					"text": "personal examples of being helped by mathematics",
+					"answer": "G",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nVí dụ cá nhân về việc được giúp đỡ bởi toán học.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nphysician wrote ~ personal examples\nlawyer made the same point ~ personal examples\nprepared me extremely well ~ being helped by mathematics\n\nBước 3: So sánh và đối chiếu:\nĐoạn G chỉ rõ: \"Một bác sĩ viết, 'Kỷ luật của quá trình tư duy phân tích đã chuẩn bị cho tôi cực kỳ tốt cho trường y.' Một luật sư cũng đưa ra quan điểm tương tự, 'Mặc dù tôi không có kiến thức nền trong luật pháp - cũng như chưa bao giờ tham gia khóa học nào về khoa học chính trị - tôi đã học khá tốt ở một trong những trừng luật giỏi nhất. Tôi cho rằng phần lớn thành công của mình ở đó là nhờ đã học được, thông qua việc nghiên cứu toán học, và đặc biệt là các định lý, cách phân tích các nguyên tắc phức tạp'\".\n=> Thông tin này cho thấy đoạn G đã \"đưa ra ví dụ cá nhân về việc được giúp đỡ bởi toán học\".\n\nBước 4: Đáp án: G",
+					"quotes": [
+						"G. A physician wrote, ‘The discipline of analytical thought processes in mathematics prepared me extremely well for medical school.",
+						"A lawyer made the same point, “Although I had no background in law – not even one political science course — I did well at one of the best law schools. I attribute much of my success there to having learned, through the study of mathematics, and, in particular, theorems, how to analyze complicated principles. Lawyers who have studied mathematics can master the legal principles in a way that most others cannot.’"
+					]
+				},
+				{
+					"number": 30,
+					"text": "examples of people who each had abilities that seemed incompatible",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nVí dụ về những người có khả năng dường như không tương thích.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nstructural engineer who is an artist ~ people who had abilities that seemed incompatible\nelectrical engineer who is an opera singer ~ people who had abilities that seemed incompatible\nopera singer who published mathematical research ~ people who had abilities that seemed incompatible\nmathematician who publishes short stories ~ people who had abilities that seemed incompatible\n\nBước 3: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"Để minh họa tiềm năng con người của chúng ta, tôi đã lấy ví dụ từ một kỹ sư kết cấu là một nghệ sĩ, một kỹ sư điện là ca sĩ opera, một ca sĩ opera đã công bố nghiên cứu toán học, và một nhà toán học xuất bản truyện ngắn\".\n=> Thông tin này cho thấy đoạn C đã \"đưa ra ví dụ về những người có khả năng dường như không tương thích\".\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"To illustrate our human potential, I cite a structural engineer who is an artist, an electrical engineer who is an opera singer, an opera singer who published mathematical research, and a mathematician who publishes short stories."
+					]
+				},
+				{
+					"number": 31,
+					"text": "mention of different focuses of books about mathematics",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề cập đến các trọng tâm khác nhau của sách về toán học.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\npresent the lives of colorful mathematicians ~ different focuses of books about mathematics\ndescribe important applications of mathematics ~ different focuses of books about mathematics\ngo into mathematical procedures ~ different focuses of books about mathematics\n\nBước 3: So sánh và đối chiếu:\nĐoạn B chỉ rõ: \"Một số trình bày cuộc đời của các nhà toán học sắc sảo. Những cuốn khác mô tả các ứng dụng quan trọng của toán học. Một số khác đi sâu vào các thủ tục toán học, nhưng giả định rằng người đọc thành thạo trong việc sử dụng đại số\".\n=> Thông tin này cho thấy đoạn B đã \"đề cập đến các trọng tâm khác nhau của sách về toán học\".\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"Some present the lives of colorful mathematicians. Others describe important applications of mathematics. Yet others go into mathematical procedures, but assume that the reader is adept in using algebra."
+					]
+				},
+				{
+					"number": 32,
+					"text": "a contrast between reading this book and reading other kinds of publication",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSự tương phản giữa việc đọc cuốn sách này và đọc các loại ấn phẩm khác.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nturn these pages much more slowly ~ contrast between reading this book\nreading a novel or a newspaper ~ reading other kinds of publication\n\nBước 3: So sánh và đối chiếu:\nĐoạn E chỉ rõ: \"Bạn sẽ lật những trang sách này chậm hơn nhiều so với khi đọc tiểu thuyết hay báo chí. Có thể sẽ hữu ích nếu bạn chuẩn bị sẵn bút chì và giấy để kiểm tra các nhận định và thực hiện các thí nghiệm\".\n=> Thông tin này cho thấy đoạn E đã \"chỉ ra sự tương phản giữa việc đọc cuốn sách này và đọc các loại ấn phẩm khác\".\n\nBước 4: Đáp án: E",
+					"quotes": [
+						"You will turn these pages much more slowly than when reading a novel or a newspaper.",
+						"It may help to have a pencil and paper ready to check claims and carry out experiments."
+					]
+				},
+				{
+					"number": 33,
+					"text": "a claim that the whole of the book is accessible to everybody",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTuyên bố rằng toàn bộ cuốn sách có thể tiếp cận được với tất cả mọi người.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nAnyone can understand every step in the reasoning ~ the whole of the book is accessible to everybody\nall readers will have the chance to participate ~ the whole of the book is accessible to everybody\n\nBước 3: So sánh và đối chiếu:\nĐoạn A chỉ rõ: \"Ai cũng có thể hiểu được từng bước trong lập luận. Việc suy nghĩ trong mỗi chương sử dụng nhiều nhất chỉ là số học cơ bản, và đôi khi thậm chí không cần dùng đến. Do đó, tất cả độc giả sẽ có cơ hội tham gia vào một trải nghiệm toán học, đánh giá cao vẻ đẹp của toán học, và làm quen với phong cách tư duy logic nhưng trực quan của nó.\"\n=> Thông tin này cho thấy đoạn A đã \"đưa ra tuyên bố rằng toàn bộ cuốn sách có thể tiếp cận được với tất cả mọi người\".\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"Anyone can understand every step in the reasoning.",
+						"The thinking in each chapter uses at most only elementary arithmetic, and sometimes not even that. Thus all readers will have the chance to participate in a mathematical experience, to appreciate the beauty of mathematics, and to become familiar with its logical, yet intuitive, style of thinking."
+					]
+				},
+				{
+					"number": 34,
+					"text": "a reference to different categories of intended readers of this book",
+					"answer": "F",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề cập đến các tuýp độc giả với dự định khác nhau khi tiếp cận cuốn sách này.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\ntwo types of readers ~ different categories of intended readers\nthose who enjoyed mathematics until they were turned off ~ different categories of intended readers\nmathematics aficionados ~ different categories of intended readers\n\nBước 3: So sánh và đối chiếu:\nĐoạn F chỉ rõ: \"Khi viết, tôi luôn nghĩ đến hai loại độc giả: những người đã từng thích toán học cho đến khi họ bị bị làm mất hứng bởi một sự kiện không vui, thường là học sinh lớp năm, và những người đam mê toán học, những người sẽ tìm thấy nhiều điều mới mẻ xuyên suốt cuốn sách.\"\n=> Thông tin này cho thấy đoạn F đã \"đề cập đến các loại độc giả dự định khác nhau của cuốn sách này\".\n\nBước 4: Đáp án: F",
+					"quotes": [
+						"F. As I wrote, I kept in mind two types of readers: those who enjoyed mathematics until they were turned off by an unpleasant episode, usually around fifth grade, and mathematics aficionados, who will find much that is new throughout the book."
+					]
+				}
+			]
+		},
+		{
+			"range": "35-40",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the sentences below. Choose ONE WORD ONLY from the passage for each answer. Write your answers in boxes 35 - 40 on your answer sheet.",
+			"body": "Some areas of both music and mathematics are suitable for someone who is a ____ (35)\nIt is sometimes possible to understand advanced mathematics using no more than a limited knowledge of ____ (36).\nThe writer intends to show that mathematics requires ____ (37) thinking, as well as analytical skills.\nSome books written by ____ (38) have had to leave out the mathematics that is central to their theories.\nThe writer advises non-mathematical readers to perform ____ (39) while reading.\nA lawyer found that studying ____ (40) helped even more than other areas of mathematics in the study of law.",
+			"body_html": "<ul><li>Some areas of both music and mathematics are suitable for someone who is a [35]</li><li>It is sometimes possible to understand advanced mathematics using no more than a limited knowledge of [36].</li><li>The writer intends to show that mathematics requires [37] thinking, as well as analytical skills.</li><li>Some books written by [38] have had to leave out the mathematics that is central to their theories.</li><li>The writer advises non-mathematical readers to perform [39] while reading.</li><li>A lawyer found that studying [40] helped even more than other areas of mathematics in the study of law.</li></ul>",
+			"questions": [
+				{
+					"number": 35,
+					"text": "Some areas of both music and mathematics are suitable for someone who is a ____ (35)",
+					"answer": "beginner",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nMột số lĩnh vực của cả âm nhạc và toán học đều phù hợp cho _______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: a + NOUN (NOUN theo sau Article 'A')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nmusical compositions ~ music\nmathematics ~ từ khóa giữ nguyên\nparts so simple ~ suitable for\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Thỉnh thoảng, trong một số tác phẩm âm nhạc khó, có những phần đẹp nhưng dễ - những phần đơn giản đến mức một người mới bắt đầu cũng có thể chơi được\" (Occasionally, in some difficult musical compositions, there are beautiful, but easy parts – parts so simple a beginner could play them).\n\nBước 5: Đáp án: beginner\nMột số lĩnh vực của cả âm nhạc và toán học đều phù hợp cho người là người mới bắt đầu (Some areas of both music and mathematics are suitable for someone who is a beginner).",
+					"quotes": [
+						"Occasionally, in some difficult musical compositions, there are beautiful, but easy parts – parts so simple a beginner could play them."
+					]
+				},
+				{
+					"number": 36,
+					"text": "It is sometimes possible to understand advanced mathematics using no more than a limited knowledge of ____ (36).",
+					"answer": "arithmetic",
+					"quotes": [
+						"There are some discoveries in advanced mathematics that do not depend on specialized knowledge, not even on algebra, geometry, or trigonometry. Instead they may involve, at most, a little arithmetic, such as ‘the sum of two odd numbers is even’, and common sense."
+					]
+				},
+				{
+					"number": 37,
+					"text": "The writer intends to show that mathematics requires ____ (37) thinking, as well as analytical skills.",
+					"answer": "intuitive",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nTác giả muốn chỉ ra rằng toán học đòi hỏi tư duy _______, cũng như kỹ năng phân tích.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: ADJECTIVE\nDấu hiệu: ADJECTIVE + thinking (ADJECTIVE bổ nghĩa cho Noun 'THINKING')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nmathematics ~ từ khóa giữ nguyên\nanalytical ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Như các chương sẽ minh họa, toán học không bị giới hạn ở phân tích và số học; trực giác đóng một vai trò quan trọng\" (As the chapters will illustrate, mathematics is not restricted to the analytical and numerical; intuition plays a significant role).\n\nBước 5: Đáp án: intuitive\nTác giả muốn chỉ ra rằng toán học đòi hỏi tư duy trực giác, cũng như kỹ năng phân tích (The writer intends to show that mathematics requires intuitive thinking, as well as analytical skills).",
+					"quotes": [
+						"As the chapters will illustrate, mathematics is not restricted to the analytical and numerical; intuition plays a significant role."
+					]
+				},
+				{
+					"number": 38,
+					"text": "Some books written by ____ (38) have had to leave out the mathematics that is central to their theories.",
+					"answer": "scientists",
+					"quotes": [
+						"D. Other scientists have written books to explain their fields to non-scientists, but have necessarily had to omit the mathematics, although it provides the foundation of their theories. The reader must remain a tantalized spectator rather than an involved participant, since the appropriate language for describing the details in much of science is mathematics, whether the subject is expanding universe, subatomic particles, or chromosomes."
+					]
+				},
+				{
+					"number": 39,
+					"text": "The writer advises non-mathematical readers to perform ____ (39) while reading.",
+					"answer": "experiments",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nTác giả khuyên độc giả không chuyên về toán học nên thực hiện ___ trong khi đọc.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: perform + NOUN (NOUN làm Object của Transitive verb 'PERFORM')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nIt may help to ~ the writer advises\ncarry out ~ perform\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Có thể sẽ hữu ích nếu bạn chuẩn bị sẵn bút chì và giấy để kiểm tra các nhận định và thực hiện các thí nghiệm\" (It may help to have a pencil and paper ready to check claims and carry out experiments).\n\nBước 5: Đáp án: experiments\nTác giả khuyên độc giả không chuyên về toán học nên thực hiện các thí nghiệm trong khi đọc (The writer advises non-mathematical readers to perform experiments while reading).",
+					"quotes": [
+						"It may help to have a pencil and paper ready to check claims and carry out experiments."
+					]
+				},
+				{
+					"number": 40,
+					"text": "A lawyer found that studying ____ (40) helped even more than other areas of mathematics in the study of law.",
+					"answer": "theorems",
+					"quotes": [
+						"A lawyer made the same point, “Although I had no background in law – not even one political science course — I did well at one of the best law schools. I attribute much of my success there to having learned, through the study of mathematics, and, in particular, theorems, how to analyze complicated principles. Lawyers who have studied mathematics can master the legal principles in a way that most others cannot.’"
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

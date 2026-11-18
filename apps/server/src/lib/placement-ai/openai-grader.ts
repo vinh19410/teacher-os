@@ -1,14 +1,10 @@
 import {
 	PLACEMENT_AI_ERROR_CODES,
 	PLACEMENT_ERROR_CATEGORIES,
-	PLACEMENT_RUBRIC_INTERMEDIATE_NOTE,
-	PLACEMENT_SPEAKING_RUBRIC,
-	PLACEMENT_WRITING_RUBRIC,
 } from "@teacher-os/api/placement-test-contracts";
 import {
 	normalizeKindDraft,
 	PLACEMENT_AI_ERRORS_MAX,
-	PLACEMENT_AI_KIND_CONFIG,
 	type PlacementAiGrader,
 	PlacementAiGradingError,
 	type PlacementAiPollResult,
@@ -58,32 +54,15 @@ const CATEGORY_LINES = PLACEMENT_ERROR_CATEGORIES.map(
 	(c) => `- "${c.key}": ${c.label}`,
 ).join("\n");
 
-function rubricLines(
-	rubric: ReadonlyArray<{
-		key: string;
-		label: string;
-		desc: string;
-		levels: { 5: string; 3: string; 1: string };
-	}>,
-): string {
-	return [
-		...rubric.map(
-			(r) =>
-				`- "${r.key}" (${r.label} — ${r.desc}):\n  + Mức 5: ${r.levels[5]}\n  + Mức 3: ${r.levels[3]}\n  + Mức 1: ${r.levels[1]}`,
-		),
-		PLACEMENT_RUBRIC_INTERMEDIATE_NOTE,
-	].join("\n");
-}
-
 const COMMON_RULES = [
-	"Mỗi tiêu chí rubric chấm một SỐ NGUYÊN từ 0 đến 5 (5 = rất tốt so với trình độ A1–B1).",
-	'"feedback": 2–4 câu tiếng Việt: nêu điểm mạnh, điểm cần cải thiện và một gợi ý luyện tập cụ thể.',
+	"Nhiệm vụ DUY NHẤT của bạn là liệt kê các lỗi ngôn ngữ thực sự có trong bài làm của học viên.",
+	"TUYỆT ĐỐI KHÔNG chấm điểm, KHÔNG gợi ý band hay trình độ, và KHÔNG viết nhận xét tổng quan.",
 	`"errors": tối đa ${PLACEMENT_AI_ERRORS_MAX} lỗi, ưu tiên lỗi quan trọng nhất. Mỗi lỗi gồm:`,
 	'  - "category": một trong các key sau:',
 	CATEGORY_LINES,
 	'  - "quote": đoạn NGUYÊN VĂN NGẮN NHẤT chứa lỗi, chép y hệt từ bài (giữ nguyên hoa/thường, dấu câu) — không sửa, không thêm dấu ba chấm.',
 	'  - "correction": cách viết/nói đúng cho đoạn đó (tiếng Anh).',
-	'  - "explanation": giải thích tiếng Việt 1–2 câu, dễ hiểu cho học viên trình độ A1–B1.',
+	'  - "explanation": giải thích tiếng Việt 1–2 câu, ngắn gọn, dễ hiểu cho học viên.',
 	"Không bịa lỗi; bài không có lỗi thì trả errors rỗng.",
 ].join("\n");
 
@@ -92,9 +71,7 @@ function writingMessages(input: { prompt: string; text: string }) {
 		{
 			role: "system",
 			content: [
-				"Bạn là giáo viên tiếng Anh chấm bài kiểm tra đầu vào (trình độ A1–B1) cho học viên người Việt.",
-				"Chấm phần WRITING theo rubric:",
-				rubricLines(PLACEMENT_WRITING_RUBRIC),
+				"Bạn là trợ lý phân tích lỗi bài WRITING trong bài kiểm tra đầu vào tiếng Anh cho học viên người Việt.",
 				COMMON_RULES,
 			].join("\n"),
 		},
@@ -110,11 +87,9 @@ function speakingMessages(input: { prompts: string[]; transcript: string }) {
 		{
 			role: "system",
 			content: [
-				"Bạn là giáo viên tiếng Anh chấm bài kiểm tra đầu vào (trình độ A1–B1) cho học viên người Việt.",
-				"Chấm phần SPEAKING theo rubric:",
-				rubricLines(PLACEMENT_SPEAKING_RUBRIC),
-				"Bạn CHỈ có transcript (văn bản do máy chuyển từ giọng nói), không nghe được audio: chấm Pronunciation (pr) thận trọng, chỉ dựa trên dấu hiệu trong transcript (từ bị nhận sai, câu đứt quãng), và nói rõ hạn chế này trong feedback.",
-				"Lỗi category pronunciation chỉ đánh dấu khi transcript cho thấy rõ từ bị nói sai.",
+				"Bạn là trợ lý phân tích lỗi bài SPEAKING trong bài kiểm tra đầu vào tiếng Anh cho học viên người Việt.",
+				"Bạn CHỈ có transcript (văn bản do máy chuyển từ giọng nói), không nghe được audio.",
+				'Lỗi category "pronunciation" chỉ đánh dấu khi transcript cho thấy rõ từ bị nói sai hoặc bị nhận diện lệch rõ ràng; tránh suy đoán khi không chắc chắn.',
 				COMMON_RULES,
 			].join("\n"),
 		},
@@ -125,27 +100,15 @@ function speakingMessages(input: { prompts: string[]; transcript: string }) {
 	];
 }
 
-function draftJsonSchema(name: string, rubricKeys: readonly string[]) {
+function draftJsonSchema(name: string) {
 	return {
 		name,
 		strict: true,
 		schema: {
 			type: "object",
 			additionalProperties: false,
-			required: ["rubric", "feedback", "errors"],
+			required: ["errors"],
 			properties: {
-				rubric: {
-					type: "object",
-					additionalProperties: false,
-					required: [...rubricKeys],
-					properties: Object.fromEntries(
-						rubricKeys.map((k) => [
-							k,
-							{ type: "integer", minimum: 0, maximum: 5 },
-						]),
-					),
-				},
-				feedback: { type: "string" },
 				errors: {
 					type: "array",
 					items: {
@@ -350,10 +313,7 @@ export function createOpenAiPlacementGrader(
 		startWriting(input, signal) {
 			return startJob(
 				writingMessages(input),
-				draftJsonSchema(
-					"placement_writing_grade",
-					PLACEMENT_AI_KIND_CONFIG.writing.rubricKeys,
-				),
+				draftJsonSchema("placement_writing_grade"),
 				signal,
 			);
 		},
@@ -361,10 +321,7 @@ export function createOpenAiPlacementGrader(
 		startSpeaking(input, signal) {
 			return startJob(
 				speakingMessages(input),
-				draftJsonSchema(
-					"placement_speaking_grade",
-					PLACEMENT_AI_KIND_CONFIG.speaking.rubricKeys,
-				),
+				draftJsonSchema("placement_speaking_grade"),
 				signal,
 			);
 		},

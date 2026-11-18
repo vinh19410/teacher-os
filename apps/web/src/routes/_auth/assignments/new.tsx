@@ -27,6 +27,7 @@ import {
 	hasAuthoringContent,
 	hasPrimaryAuthoringContent,
 	imagePinIssue,
+	invalidMcqChoiceIssue,
 	optionBankIssue,
 	structuralChangeKind,
 } from "@/components/assignments/composer-transitions";
@@ -289,6 +290,14 @@ export function missingRequirementsFor(
 	}
 
 	// 7. Đáp án chấm tự động
+	const choiceIssue = invalidMcqChoiceIssue(value);
+	if (choiceIssue) {
+		missing.push({
+			id: "answers-choice",
+			label: choiceIssue,
+			fieldId: "assignment-field-questions",
+		});
+	}
 	if (
 		isAutoSkill(value.skill) &&
 		status === "ready" &&
@@ -356,6 +365,12 @@ export function actionCopyFor(value: ComposerValue, status: "draft" | "ready") {
 		return {
 			title: "Câu hỏi chưa hợp lệ",
 			sub: stemIssue,
+		};
+	const choiceIssue = invalidMcqChoiceIssue(value);
+	if (choiceIssue)
+		return {
+			title: "Đáp án trắc nghiệm chưa hợp lệ",
+			sub: choiceIssue,
 		};
 	if (auto && status === "ready" && countAnswers(value) !== value.items.length)
 		return {
@@ -741,6 +756,10 @@ export function NewAssignmentRoute() {
 	// Phase-04 FR2 mirror — image-based pairs gate ready on image + pins.
 	const pinIssue = imagePinIssue(value, status);
 	if (pinIssue && !stemIssue) fieldErrors.questions = pinIssue;
+	const choiceIssue = invalidMcqChoiceIssue(value);
+	if (choiceIssue && !stemIssue && !pinIssue) {
+		fieldErrors.questions = choiceIssue;
+	}
 	const missingRequirements = missingRequirementsFor(value, status);
 	const canSave = missingRequirements.length === 0;
 	const actionCopy = actionCopyFor(value, status);

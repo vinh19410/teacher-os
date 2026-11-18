@@ -5,8 +5,7 @@ import {
 	CURRENT_LEVEL_OPTIONS,
 	DAILY_STUDY_HOUR_OPTIONS,
 	type EssayAnnotation,
-	EXAM_INTERESTS,
-	IELTS_TARGET_BANDS,
+	getTargetScoreOptions,
 	LEARNING_GOAL_OPTIONS,
 	type LearningGoalOption,
 	QUIZ_ESSAY_BODY_MAX,
@@ -18,6 +17,7 @@ import {
 	quizAnswerPatchSchema,
 	quizAttemptActionSchema,
 	quizEssayPatchSchema,
+	STORED_EXAM_INTERESTS,
 	STUDENT_ERROR_CODES,
 	STUDENT_INVITATION_ERROR_CODES,
 	type StudentClassDetail,
@@ -28,7 +28,6 @@ import {
 	type StudentScheduleLesson,
 	type StudentScheduleResponse,
 	studentOnboardingPayloadSchema,
-	TOEIC_TARGET_SCORES,
 } from "@teacher-os/api/contracts";
 import { essayToPlain } from "@teacher-os/api/lib/essay-plain";
 import { gradeQuiz } from "@teacher-os/api/lib/grade-quiz";
@@ -286,9 +285,7 @@ function parseTargetScore(
 	examInterest: string | null,
 	raw: string | null,
 ): string | null {
-	const allowed =
-		examInterest === "toeic" ? TOEIC_TARGET_SCORES : IELTS_TARGET_BANDS;
-	return parseEnum(raw, allowed);
+	return parseEnum(raw, getTargetScoreOptions(examInterest));
 }
 
 /** Snapshot/prompt questions JSON → guarded AssignmentQuestion[] (same
@@ -395,7 +392,7 @@ function buildStudentMe(
 	sessionUser: { userName: string; email: string },
 	s: typeof student.$inferSelect,
 ): StudentMe {
-	const examInterest = parseEnum(s.examInterest ?? null, EXAM_INTERESTS);
+	const examInterest = parseEnum(s.examInterest ?? null, STORED_EXAM_INTERESTS);
 	return {
 		user: { name: sessionUser.userName, email: sessionUser.email },
 		student: {

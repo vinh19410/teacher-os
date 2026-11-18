@@ -1,0 +1,224 @@
+{
+	"id": "b8927676-3e2d-441d-97a7-12199ef4f2ba",
+	"url": "https://stepielts.com/student/reading/b8927676-3e2d-441d-97a7-12199ef4f2ba?mode=practice",
+	"title": "Investment in shares versus investment in other assets - which gives the greater Investment in shares versus investment in other assets - which gives the greater gain?",
+	"source": "Collection",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "14-26",
+	"passage": {
+		"title": "Investment in shares versus investment in other assets",
+		"subtitle": "How one university collected the data to try and answer this question",
+		"paragraphs": [
+			"A. It all began in 1958 with a phone call from Louis Engel, a banker at Merrill Lynch, a US-based financial management company, who wanted to know how investors in shares had performed relative to investors in other assets such as low risk investments with guaranteed returns.'I don't know, but if you gave me $50,000 I could find out,' replied Jim Lorie, a dean at the University of Chicago's business school. Louis Engel soon agreed to provide the funding, and more. The result, in 1960, was the launch of the University's Center for Research in Security Prices. Half a century later CRSP (pronounced 'crisp') data are everywhere. They provided the foundation of at least one-third of all empirical research in finance over the past 40 years, according to a presentation at a symposium held this month. They probably influenced much of the rest.",
+			"B. Getting the CRSP data together was a tough process in what were then the early days of computers. Up to three million pieces of information on all the shares traded on the New York Stock Exchange between 1926 and 1960 were transferred from paper in the exchange's archive to magnetic tape. A lot of time was spent adjusting prices to take account of complexities in the market. Lorie and his co-researcher, Lawrence Fisher, chose January 1926 as the start date because they wanted the data to span at least one complete business cycle from boom to bust, or vice versa.",
+			"C. When these two economists published the first study based on the CRSP data in 1964, they reported that the annual compound return on the shares over the entire 35-year period was (depending on the tax status of the investor) between 6.8% and 9%.",
+			"Acknowledging that good data on the performance of other assets were not available, the study claimed that the rate of return on shares was 'substantially higher than for alternative investment media, providing the first empirical support for the still popular idea that shares outperform other investments over the long run. Fisher and Lorie also observed that many people chose to invest in assets with lower returns because they were cautious by nature, and were concerned about the risk of loss inherent in investing in the stock market.",
+			"Economists today call the amount of extra return that investors need to compensate them for this additional risk the 'equity risk premium', although they differ greatly on how big investors should expect it to be.",
+			"D. After Fisher and Lorie's 1964 report there was no stopping the love affair between financial economists and the data that studying these numbers produced. Myron Scholes, now a Nobel laureate, became director of CRSP in 1974, and ensured the database was both kept up to date and made readily available to academic economists everywhere. In turn, this resource became ever more useful as computing power became more affordable. The CRSP database has since been expanded to include a full range of different types of investments. It has been replicated across the world.",
+			"E. One of the earliest uses of CRSP data was by Eugene Fama, an economist at the University of Chicago, to support his \"efficient-market hypothesis.\" He found that over a lengthy period share prices tended to rise and fall randomly, without showing much of a pattern. Markets are efficient, he said, because all relevant information is reflected in share prices at any given moment, meaning there are no predictable movements in prices for smart investors to exploit. Fama did concede that there was some evidence of temporary short-term predictability in share prices, however. That stipulation has resulted in a vast number of papers based on discovering such anomalies through data mining. In theory, such anomalies are potentially lucrative for investors, but as believers in efficient markets observe with satisfaction, it seems that no sooner are such anomalies discovered and reported in journals than they typically disappear.",
+			"F. However, the sheer volume of material means that financial economists are becoming increasingly specialized, which may have costs as well as benefits.",
+			"Some economists worry that much of this statistical analysis is creating some interference that drowns out serious thinking about the big questions, such as why the financial system nearly collapsed in 2008 and how a repeat can be avoided. Robert Shiller, an economist at Yale University and a long-time sceptic about the efficient-market hypothesis, feels that with the creation of the CRSP database economists suddenly believed that finance had become scientific. According to Shiller, conventional ideas about investing and financial markets - and about their vulnerabilities - seemed out-of-date to the new empiricists. He worries that academic departments are full of economists who are so specialized in data analysis that they fail to see and understand the whole. They get a sense of authority from work that contains lots of data.",
+			"To have seen the 2008 global financial crisis coming, he argues, it would have been better to \"go back to old-fashioned readings of history, studying institutions and laws. We should have talked to grandpa.\"",
+			"G. Scholes responds to this criticism with the contention that the usefulness of this empirical analysis is proven by the fact that demand for it continues to grow. At CRSP's 50th anniversary symposium, plans were unveiled to publish indicators on an expanding range of investments, as well as for growth and value stocks. These indicators, CRSP claims, will be more academically rigorous and cheaper than existing ones. For believers in the efficiency of markets, that should be enough to ensure CRSP's continuing success."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "14-20",
+			"type": "MATCHING_HEADINGS",
+			"instructions": "Reading Passage 2 has seven paragraphs, A-G.\nChoose the correct heading for each paragraph from the list of headings below.\nWrite the correct number, i-viii, in boxes 14-20 on your answer sheet.",
+			"options": [
+				{
+					"label": "i",
+					"text": "Technological developments improve CRSP data"
+				},
+				{
+					"label": "ii",
+					"text": "Initial findings of the CRSP project"
+				},
+				{
+					"label": "iii",
+					"text": "A request and a far-reaching result"
+				},
+				{
+					"label": "iv",
+					"text": "Difficulties in collecting CRSP data"
+				},
+				{
+					"label": "v",
+					"text": "What the future holds"
+				},
+				{
+					"label": "vi",
+					"text": "Too much data for people to have an overall understanding"
+				},
+				{
+					"label": "vii",
+					"text": "Other university departments which depend on CRSP"
+				},
+				{
+					"label": "viii",
+					"text": "CRSP data not always being a useful basis for investment"
+				}
+			],
+			"questions": [
+				{
+					"number": 14,
+					"text": "Paragraph A",
+					"answer": "iii",
+					"quotes": [
+						"It all began in 1958 with a phone call from Louis Engel, a banker at Merrill Lynch, a US-based financial management company, who wanted to know how investors in shares had performed relative to investors in other assets such as low risk investments with guaranteed returns.",
+						"They provided the foundation of at least one-third of all empirical research in finance over the past 40 years, according to a presentation at a symposium held this month. They probably influenced much of the rest."
+					]
+				},
+				{
+					"number": 15,
+					"text": "Paragraph B",
+					"answer": "iv",
+					"explanation": "Bước 1: Đọc và hiểu đoạn B:\nĐoạn B mô tả quá trình thu thập dữ liệu là một \"quá trình khó khăn\" (tough process), bao gồm việc chuyển 3 triệu mẩu thông tin từ giấy sang băng từ trong \"những ngày đầu của máy tính\" và mất nhiều thời gian để điều chỉnh giá.\nBước 2: Tóm tắt nội dung chính của đoạn B:\nĐoạn B tập trung vào những thách thức và khó khăn trong giai đoạn đầu thu thập dữ liệu.\nBước 3: So sánh và đối chiếu:\nThông tin này phù hợp với tiêu đề iv \"Difficulties in collecting CRSP data\" (Những khó khăn trong việc thu thập dữ liệu CRSP).\nBước 4: Loại trừ các tiêu đề dễ gây nhầm lẫn:\ni. Technological developments: Tiêu đề này không phù hợp vì đoạn này đề cập đến \"những ngày đầu của máy tính\" như một nguồn gốc của sự khó khăn, chứ không phải là những \"phát triển công nghệ\" giúp cải thiện dữ liệu.\nii. Initial findings: Tiêu đề này sai vì đoạn B chỉ mô tả quá trình thu thập dữ liệu, chưa hề công bố bất kỳ kết quả nghiên cứu nào.\nBước 5: Đáp án: iv",
+					"quotes": [
+						"Getting the CRSP data together was a tough process in what were then the early days of computers."
+					]
+				},
+				{
+					"number": 16,
+					"text": "Paragraph C",
+					"answer": "ii",
+					"explanation": "Bước 1: Đọc và hiểu đoạn C:\nĐoạn C trình bày kết quả của nghiên cứu đầu tiên (\"first study\") dựa trên dữ liệu CRSP, báo cáo rằng lợi nhuận hàng năm từ cổ phiếu là từ 6.8% đến 9%.\nBước 2: Tóm tắt nội dung chính của đoạn C:\nĐoạn C công bố những phát hiện ban đầu từ dự án.\nBước 3: So sánh và đối chiếu:\nThông tin này phù hợp với tiêu đề ii \"Initial findings of the CRSP project\" (Những phát hiện ban đầu của dự án CRSP).\nBước 4: Loại trừ các tiêu đề dễ gây nhầm lẫn:\nviii. CRSP data not always being a useful basis...: Tiêu đề này chưa phù hợp vì đoạn C chỉ đơn thuần đưa ra con số lợi nhuận thực tế (6.8%-9%), chưa bàn luận sâu về việc liệu dữ liệu này có hữu ích cho việc đầu tư hay không.\nBước 5: Đáp án: ii",
+					"quotes": [
+						"C. When these two economists published the first study based on the CRSP data in 1964, they reported that the annual compound return on the shares over the entire 35-year period was (depending on the tax status of the investor) between 6.8% and 9%."
+					]
+				},
+				{
+					"number": 17,
+					"text": "Paragraph D",
+					"answer": "i",
+					"explanation": "Bước 1: Đọc và hiểu đoạn D:\nĐoạn D giải thích rằng Myron Scholes đã đảm bảo cơ sở dữ liệu luôn được cập nhật. Đặc biệt, \"nguồn tài nguyên này trở nên hữu ích hơn bao giờ hết khi sức mạnh máy tính trở nên có giá cả phải chăng hơn\" (this resource became ever more useful as computing power became more affordable). Sau đó, cơ sở dữ liệu đã được mở rộng.\nBước 2: Tóm tắt nội dung chính của đoạn D:\nĐoạn D mô tả cách sự tiến bộ của máy tính (công nghệ) đã làm cho dữ liệu CRSP trở nên tốt hơn, hữu ích hơn và được mở rộng hơn.\nBước 3: So sánh và đối chiếu:\nThông tin này phù hợp với tiêu đề i \"Technological developments improve CRSP data\" (Những phát triển công nghệ cải thiện dữ liệu CRSP).\nBước 4: Loại trừ các tiêu đề dễ gây nhầm lẫn:\nvii. Other university departments which depend on CRSP: Bài đọc nhắc đến \"academic economists everywhere\" (các nhà kinh tế học ở khắp nơi) sử dụng nó, nhưng không tập trung liệt kê \"các khoa khác của trường đại học\".\nBước 5: Đáp án: i",
+					"quotes": [
+						"In turn, this resource became ever more useful as computing power became more affordable. The CRSP database has since been expanded to include a full range of different types of investments. It has been replicated across the world."
+					]
+				},
+				{
+					"number": 18,
+					"text": "Paragraph E",
+					"answer": "viii",
+					"quotes": [
+						"Markets are efficient, he said, because all relevant information is reflected in share prices at any given moment, meaning there are no predictable movements in prices for smart investors to exploit."
+					]
+				},
+				{
+					"number": 19,
+					"text": "Paragraph F",
+					"answer": "vi",
+					"explanation": "Bước 1: Đọc và hiểu đoạn F:\nĐoạn F cảnh báo rằng khối lượng tài liệu khổng lồ khiến các nhà kinh tế học trở nên quá chuyên môn hóa (increasingly specialized). Shiller lo lắng rằng họ chuyên sâu vào phân tích dữ liệu đến mức \"thất bại trong việc nhìn nhận và hiểu được toàn cảnh\" (fail to see and understand the whole).\nBước 2: Tóm tắt nội dung chính của đoạn F:\nĐoạn F phê phán việc có quá nhiều dữ liệu phân tích thống kê đã làm mờ đi tư duy tổng thể và cái nhìn bao quát về kinh tế.\nBước 3: So sánh và đối chiếu:\nThông tin này phù hợp với tiêu đề vi \"Too much data for people to have an overall understanding\" (Quá nhiều dữ liệu khiến người ta không có được sự hiểu biết toàn diện).\nBước 4: Loại trừ các tiêu đề dễ gây nhầm lẫn:\nviii. CRSP data not always being a useful basis...: Trọng tâm của đoạn F là phê phán \"các nhà kinh tế học học thuật\" (academic departments) mất đi cái nhìn toàn cảnh, chứ không tập trung vào \"nhà đầu tư\" (investment).\nBước 5: Đáp án: vi",
+					"quotes": [
+						"F. However, the sheer volume of material means that financial economists are becoming increasingly specialized, which may have costs as well as benefits.",
+						"He worries that academic departments are full of economists who are so specialized in data analysis that they fail to see and understand the whole."
+					]
+				},
+				{
+					"number": 20,
+					"text": "Paragraph G",
+					"answer": "v",
+					"explanation": "Bước 1: Đọc và hiểu đoạn G:\nĐoạn G đề cập đến phản hồi của Scholes, nói rằng nhu cầu sử dụng dữ liệu này vẫn tiếp tục tăng. Đoạn văn cũng tiết lộ \"các kế hoạch đã được công bố để xuất bản các chỉ số trên một phạm vi đầu tư mở rộng\" (plans were unveiled to publish indicators on an expanding range of investments) và tin tưởng vào thành công liên tục của nó (continuing success).\nBước 2: Tóm tắt nội dung chính của đoạn G:\nĐoạn G hướng về phía trước, trình bày các kế hoạch mở rộng sắp tới và dự đoán sự thành công trong tương lai của dự án.\nBước 3: So sánh và đối chiếu:\nThông tin này phù hợp với tiêu đề v \"What the future holds\" (Tương lai sẽ ra sao).\nBước 4: Loại trừ các tiêu đề dễ gây nhầm lẫn:\ni. Technological developments...: Đoạn G nói về kế hoạch mới, không nhắc đến công nghệ máy tính.\nBước 5: Đáp án: v",
+					"quotes": [
+						"At CRSP's 50th anniversary symposium, plans were unveiled to publish indicators on an expanding range of investments, as well as for growth and value stocks. These indicators, CRSP claims, will be more academically rigorous and cheaper than existing ones. For believers in the efficiency of markets, that should be enough to ensure CRSP's continuing success."
+					]
+				}
+			]
+		},
+		{
+			"range": "21-23",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Look at the following statements and the list of economists below.\nMatch each statement with the correct economist, A, B, C or D, in boxes 21-23.",
+			"options": [
+				{
+					"label": "A",
+					"text": "Fisher and Lorie"
+				},
+				{
+					"label": "B",
+					"text": "Myron Scholes"
+				},
+				{
+					"label": "C",
+					"text": "Eugene Fama"
+				},
+				{
+					"label": "D",
+					"text": "Robert Shiller"
+				}
+			],
+			"body": "____ (21) A traditional approach may have helped predict a financial downturn.\n____ (22) Some people invest conservatively and as a result make less money.\n____ (23) It may be possible to forecast share prices but not over the long term.",
+			"body_html": "<p>[21] A traditional approach may have helped predict a financial downturn.</p><p>[22] Some people invest conservatively and as a result make less money.</p><p>[23] It may be possible to forecast share prices but not over the long term.</p>",
+			"questions": [
+				{
+					"number": 21,
+					"text": "A traditional approach may have helped predict a financial downturn.",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột cách tiếp cận truyền thống có thể đã giúp dự đoán một đợt suy thoái tài chính.\nBước 2: Tìm các keywords được paraphrase trong bài:\npredict a financial downturn ~ To have seen the 2008 global financial crisis coming\nA traditional approach ~ go back to old-fashioned readings of history... We should have talked to grandpa\nBước 3: So sánh và đối chiếu:\nTrong Đoạn F, Robert Shiller lập luận rằng để thấy trước được cuộc khủng hoảng tài chính toàn cầu 2008, lẽ ra nên \"quay lại với cách đọc lịch sử kiểu cũ... Lẽ ra chúng ta nên nói chuyện với ông nội\" (To have seen the 2008 global financial crisis coming, he argues, it would have been better to \"go back to old-fashioned readings of history... We should have talked to grandpa\").\n==> Tức là một cách tiếp cận truyền thống có thể giúp ích.\nBước 4: Đáp án: D (Robert Shiller)",
+					"quotes": [
+						"To have seen the 2008 global financial crisis coming, he argues, it would have been better to \"go back to old-fashioned readings of history, studying institutions and laws.",
+						"We should have talked to grandpa.\""
+					]
+				},
+				{
+					"number": 22,
+					"text": "Some people invest conservatively and as a result make less money.",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột số người đầu tư một cách bảo thủ (cẩn trọng) và kết quả là kiếm được ít tiền hơn.\nBước 2: Tìm các keywords được paraphrase trong bài:\ninvest conservatively ~ cautious by nature, and were concerned about the risk of loss\nmake less money ~ invest in assets with lower returns\nBước 3: So sánh và đối chiếu:\nTrong Đoạn C, Fisher and Lorie đã quan sát thấy rằng \"nhiều người chọn đầu tư vào các tài sản có lợi nhuận thấp hơn vì bản chất họ cẩn trọng, và lo ngại về rủi ro thua lỗ...\" (Fisher and Lorie also observed that many people chose to invest in assets with lower returns because they were cautious by nature, and were concerned about the risk of loss...).\nBước 4: Đáp án: A (Fischer and Lorie)",
+					"quotes": [
+						"Fisher and Lorie also observed that many people chose to invest in assets with lower returns because they were cautious by nature, and were concerned about the risk of loss inherent in investing in the stock market."
+					]
+				},
+				{
+					"number": 23,
+					"text": "It may be possible to forecast share prices but not over the long term.",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCó thể dự đoán được những biến động ngắn hạn của giá cổ phiếu nhưng không thể dự đoán trong dài hạn.\nBước 2: Tìm các keywords được paraphrase trong bài:\npredict short-term movements ~ some evidence of temporary short-term predictability\nnot over the long term ~ over a lengthy period share prices tended to rise and fall randomly\nBước 3: So sánh và đối chiếu:\nTrong Đoạn E, Eugene Fama phát hiện ra rằng trong một khoảng thời gian dài, giá cổ phiếu tăng giảm ngẫu nhiên (không dự đoán được dài hạn). Tuy nhiên, \"Fama đã thừa nhận rằng có một số bằng chứng về khả năng dự đoán trong ngắn hạn mang tính tạm thời\" (Fama did concede that there was some evidence of temporary short-term predictability in share prices, however).\nBước 4: Đáp án: C (Eugene Fama)",
+					"quotes": [
+						"Fama did concede that there was some evidence of temporary short-term predictability in share prices, however. That stipulation has resulted in a vast number of papers based on discovering such anomalies through data mining."
+					]
+				}
+			]
+		},
+		{
+			"range": "24-26",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary below.\nChoose ONE WORD ONLY from the passage for each answer.\nWrite your answers in boxes 24-26 on your answer sheet.",
+			"body": "The beginnings of CRSP\nIn 1958, a ____ (24) working for a financial management company telephoned Jim Lorie to ask how well investments in shares performed in comparison to investments in low risk assets. Lorie offered to find out and as a result the University of Chicago's Center for Research in Security Prices (CRSP) was launched. Compiling the CRSP data was difficult because ____ (25) were still being developed and information that had previously been on ____ (26) needed to be put onto magnetic tape.",
+			"body_html": "<table><tbody><tr><td><h4><strong>The beginnings of CRSP</strong></h4><p>In 1958, a [24] working for a financial management company telephoned Jim Lorie to ask how well investments in shares performed in comparison to investments in low risk assets. Lorie offered to find out and as a result the University of Chicago's Center for Research in Security Prices (CRSP) was launched. Compiling the CRSP data was difficult because [25] were still being developed and information that had previously been on [26] needed to be put onto magnetic tape.</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 24,
+					"text": "In 1958 a ____ (24) working for a financial management company telephoned Jim Lorie to ask how well investments in shares performed in comparison to investments in low risk assets.",
+					"answer": "banker",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nVào năm 1958, một ___ làm việc cho một công ty quản lý tài chính đã gọi điện đến Chicago...\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (Chỉ nghề nghiệp)\nDấu hiệu: a + NOUN + working for a financial management company (Cần điền một danh từ chỉ người số ít)\nBước 3: Tìm các keywords được paraphrase trong bài:\ntelephoned ~ phone call\nfinancial management company ~ financial management company\nBước 4: So sánh và đối chiếu:\nBài đọc (Đoạn A) chỉ rõ: \"Tất cả bắt đầu vào năm 1958 với một cuộc điện thoại từ Louis Engel, một nhân viên ngân hàng tại Merrill Lynch, một công ty quản lý tài chính...\" (It all began in 1958 with a phone call from Louis Engel, a banker at Merrill Lynch, a US-based financial management company).\nBước 5: Đáp án: banker\nVào năm 1958, một nhân viên ngân hàng làm việc cho công ty quản lý tài chính... (In 1958, a banker working for a financial management company...)",
+					"quotes": [
+						"It all began in 1958 with a phone call from Louis Engel, a banker at Merrill Lynch, a US-based financial management company, who wanted to know how investors in shares had performed relative to investors in other assets such as low risk investments with guaranteed returns."
+					]
+				},
+				{
+					"number": 25,
+					"text": "Compiling the CRSP data was difficult because ____ (25) were still being developed and information that had previously been on paper needed to be put onto magnetic tape.",
+					"answer": "computers",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nViệc biên soạn dữ liệu CRSP rất khó khăn vì ___ vẫn đang trong quá trình được phát triển...\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (Số nhiều)\nDấu hiệu: NOUN + were still being developed (Cần điền một danh từ số nhiều)\nBước 3: Tìm các keywords được paraphrase trong bài:\nCompiling the CRSP data was difficult ~ Getting the CRSP data together was a tough process\nstill being developed ~ early days of\nBước 4: So sánh và đối chiếu:\nBài đọc (Đoạn B) chỉ rõ: \"Việc thu thập dữ liệu CRSP lại với nhau là một quá trình khó khăn trong những ngày đầu của máy tính\" (Getting the CRSP data together was a tough process in what were then the early days of computers). \"Những ngày đầu\" đồng nghĩa với việc chúng vẫn đang được phát triển.\nBước 5: Đáp án: computers\n...vì máy tính vẫn đang được phát triển... (...because computers were still being developed...)",
+					"quotes": [
+						"Getting the CRSP data together was a tough process in what were then the early days of computers."
+					]
+				},
+				{
+					"number": 26,
+					"text": "Compiling the CRSP data was difficult because computers were still being developed and information that had previously been on ____ (26) needed to be put onto magnetic tape.",
+					"answer": "paper",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\n...và thông tin mà trước đây đã từng ở trên ____ cần phải được đưa vào băng từ (magnetic tape).\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: on + NOUN (Cần điền một danh từ chỉ vật liệu lưu trữ.)\nBước 3: Tìm các keywords được paraphrase trong bài:\nput onto magnetic tape ~ transferred... to magnetic tape\ninformation ~ pieces of information\nBước 4: So sánh và đối chiếu:\nBài đọc (Đoạn B) chỉ rõ: \"Lên đến ba triệu thông tin... đã được chuyển từ giấy trong kho lưu trữ của sàn giao dịch sang băng từ\" (Up to three million pieces of information... were transferred from paper in the exchange's archive to magnetic tape).\nBước 5: Đáp án: paper\n...thông tin mà trước đây đã từng ở trên giấy cần phải được đưa vào băng từ. (...information that had previously been on paper needed to be put onto magnetic tape.)",
+					"quotes": [
+						"Up to three million pieces of information on all the shares traded on the New York Stock Exchange between 1926 and 1960 were transferred from paper in the exchange's archive to magnetic tape."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

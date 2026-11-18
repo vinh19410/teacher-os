@@ -1,0 +1,176 @@
+{
+	"id": "646b0ec7-ed24-4e7d-b3e6-d9c8c69fdfaa",
+	"url": "https://stepielts.com/student/reading/646b0ec7-ed24-4e7d-b3e6-d9c8c69fdfaa?mode=practice",
+	"title": "An Important Language Development",
+	"source": "Collection",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "An Important Language Development",
+		"paragraphs": [
+			"Cuneiform, the world's first known system of handwriting, originated some 6,000 years ago in Sumer in what is now southern Iraq. It was most often inscribed on palm-sized, rectangular clay tablets measuring several centimetres across, although occasionally, larger tablets or cylinders were used. Clay was an excellent medium for writing. Other surfaces which have been employed — for example, parchment, papyrus and paper — are not long-lasting and are easily destroyed by fire and water. But clay has proved to be resistant to those particular kinds of damage.",
+			"The word 'cuneiform' actually refers to the marks or signs inscribed in the clay. The original cuneiform signs consisted of a series of lines — triangular, vertical, diagonal and horizontal. Sumerian writers would impress these lines into the wet clay with a stylus — a long, thin, pointed instrument which looked somewhat like a pen. Oddly, the signs were often almost too small to see with the naked eye. Cuneiform signs were used for the writing of at least a dozen languages. This is similar to how the Latin alphabet is used today for writing English, French, Spanish and German.",
+			"Before the development of cuneiform, tokens were used by the Sumerians to record certain information. For example, they might take small stones and use them as tokens or representations of something else, like a goat. A number of tokens, then, might mean a herd of goats. These tokens might then be placed in a cloth container and provided to a buyer as a receipt for a transaction, perhaps five tokens for five animals. It was not that different from what we do today when we buy some bread and the clerk gives us back a piece of paper with numbers on it to confirm the exchange.",
+			"By the 4th century BCE, the Sumerians had adapted this system to a form of writing.\nThey began putting tokens in a container resembling an envelope, and now made of clay instead of cloth. They then stamped the outside to indicate the number and type of tokens inside. A person could then 'read' what was stamped on the container and know what was inside. Gradually, Sumerians developed symbols for words. When first developed, each symbol looked like the concrete thing it represented. For example, an image which resembled the drawing of a sheep meant just that. Then another level of abstraction was introduced when symbols were developed for intangible ideas such as 'female', 'hot' or 'God'. Cuneiform, in other words, evolved from a way used primarily to track and store information into a way to represent the world symbolically. Over the centuries, the marks became ever more abstract, finally evolving into signs that looked nothing like what they referred to, just as the letters 'h-o-u-s-e' have no visual connection to the place we live in. At this last stage in the evolution of cuneiform, the signs took the form of triangles, which became common cuneiform signs.",
+			"As the marks became more abstract, the system became more efficient because there were fewer marks a 'reader' needed to learn. But cuneiform also became more complex because society itself was becoming more complex, so there were more ideas and concepts that needed to be expressed. However, most linguists and historians agree cuneiform developed primarily as a tool for accounting. Of the cuneiform tablets that have been discovered, excavated and translated, about 75 percent contain this type of practical information, rather than artistic or imaginative work.",
+			"Cuneiform writing was used for thousands of years, but it eventually ceased to be used in everyday life. In fact, it died out and remained unintelligible for almost 2,000 years. In the late 19th century, a British army officer, Henry Rawlinson, discovered cuneiform inscriptions which had been carved in the surface of rocks in the Behistun mountains in what is present-day Iran. Rawlinson made impressions of the marks on large pieces of paper, as he balanced dangerously on the surrounding rocks.",
+			"Rawlinson took his copies home to Britain and studied them for years to determine what each line stood for, and what each group of symbols meant. He found that in the writing on those particular rocks every word was repeated three times in three languages: Old Persian, Elamite and Babylonian. Since the meanings in these languages were already known to linguists, he could thus translate the cuneiform. Eventually, he fully decoded the cuneiform marks and he discovered that they described the life of Darius, a king of the Persian Empire in the 5th century BCE."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 1?\nIn boxes 1-5 on your answer sheet, write\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Cuneiform tablets were produced in different shapes and sizes.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác bảng chữ Tiết hình (Cuneiform) được sản xuất với nhiều hình dạng và kích thước khác nhau.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• different shapes and sizes ~ palm-sized, rectangular... larger tablets or cylinders\n• Cuneiform tablets ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Nó thường được khắc trên các bảng đất sét hình chữ nhật, kích thước bằng lòng bàn tay... mặc dù thỉnh thoảng, các bảng lớn hơn hoặc các khối trụ cũng được sử dụng\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"được sản xuất với nhiều hình dạng và kích thước khác nhau\" (It was most often inscribed on palm-sized, rectangular clay tablets... although occasionally, larger tablets or cylinders were used).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"It was most often inscribed on palm-sized, rectangular clay tablets measuring several centimetres across, although occasionally, larger tablets or cylinders were used."
+					]
+				},
+				{
+					"number": 2,
+					"text": "When Sumerian writers marked on the clay tablets, the tablets were dry.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nKhi các thợ viết người Sumer khắc dấu lên các bảng đất sét, các bảng này đang ở trạng thái khô.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• marked ~ impress these lines\n• dry ~ wet (trái ngược)\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Các thợ viết người Sumer sẽ ấn những đường này vào đất sét ướt\".\n==> Điều này trái ngược với thông tin trong câu hỏi \"các bảng này đang ở trạng thái khô\" (Sumerian writers would impress these lines into the wet clay).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Sumerian writers would impress these lines into the wet clay with a stylus — a long, thin, pointed instrument which looked somewhat like a pen."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Cuneiform was often difficult to read because of its size.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nChữ Tiết hình thường khó đọc vì kích thước của nó.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• difficult to read ~ almost too small to see with the naked eye\n• size ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Kỳ lạ thay, các ký tự này thường nhỏ đến mức gần như không thể nhìn thấy bằng mắt thường\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"khó đọc vì kích thước (quá nhỏ)\" (the signs were often almost too small to see with the naked eye).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Oddly, the signs were often almost too small to see with the naked eye."
+					]
+				},
+				{
+					"number": 4,
+					"text": "A number of languages adopted cuneiform.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột số ngôn ngữ đã áp dụng chữ Tiết hình.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• a number of languages ~ at least a dozen languages\n• adopted ~ used for the writing of\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Ký tự Tiết hình được sử dụng để viết cho ít nhất mười hai ngôn ngữ\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"Một số ngôn ngữ đã áp dụng chữ Tiết hình\" (Cuneiform signs were used for the writing of at least a dozen languages).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Cuneiform signs were used for the writing of at least a dozen languages."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Cuneiform signs can be found in some modern alphabets.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác ký tự Tiết hình có thể được tìm thấy trong một số bảng chữ cái hiện đại.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• Cuneiform signs ~ từ khóa giữ nguyên\n• modern alphabets ~ Latin alphabet (được nhắc đến như một ví dụ so sánh)\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc cách sử dụng chữ Tiết hình cho nhiều ngôn ngữ tương tự như cách bảng chữ cái Latin được dùng cho tiếng Anh, Pháp hiện nay.\n==> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"ký tự Tiết hình có còn tồn tại hay nằm trong các bảng chữ cái hiện đại hay không\".\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Cuneiform signs were used for the writing of at least a dozen languages. This is similar to how the Latin alphabet is used today for writing English, French, Spanish and German."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-13",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the notes below. Choose ONE WORD ONLY from the passage for each answer.",
+			"body": "The development and translation of cuneiform\nBefore cuneiform\ntokens, for example, ____ (6) were often used\nthe first tokens were kept in containers made of ____ (7)\ntokens were used as a ____ (8) to give when selling something\nBy 4th century BCE\ntokens were put in a container that looked like a clay ____ (9)\nComplex, abstract symbols developed\nat first, signs looked like what they indicated, e.g. ____ (10)\nthen signs became more abstract\neventually, cuneiform signs shaped like ____ (11) were developed\naccording to experts, cuneiform was mainly used for ____ (12)\n19th-century translation of cuneiform inscriptions by Henry Rawlinson\nRawlinson found cuneiform inscriptions in the Behistun mountains\nRawlinson copied inscriptions onto ____ (13)\nRawlinson realised that each word of the inscriptions appeared in different languages\nWhen translated, Rawlinson found the writings were about a 5th-century BCE king",
+			"body_table": [
+				["The development and translation of cuneiform"],
+				[
+					"Before cuneiform\ntokens, for example, ____ (6) were often used\nthe first tokens were kept in containers made of ____ (7)\ntokens were used as a ____ (8) to give when selling something"
+				],
+				[
+					"By 4th century BCE\ntokens were put in a container that looked like a clay ____ (9)"
+				],
+				[
+					"Complex, abstract symbols developed\nat first, signs looked like what they indicated, e.g. ____ (10)\nthen signs became more abstract\neventually, cuneiform signs shaped like ____ (11) were developed\naccording to experts, cuneiform was mainly used for ____ (12)"
+				],
+				[
+					"19th-century translation of cuneiform inscriptions by Henry Rawlinson\nRawlinson found cuneiform inscriptions in the Behistun mountains\nRawlinson copied inscriptions onto ____ (13)\nRawlinson realised that each word of the inscriptions appeared in different languages\nWhen translated, Rawlinson found the writings were about a 5th-century BCE king"
+				]
+			],
+			"questions": [
+				{
+					"number": 6,
+					"text": "tokens, for example, 6. ____ (6) were often used",
+					"answer": "stones",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCác vật chứng (tokens), ví dụ như ______, thường được sử dụng.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN (số nhiều)\n• Dấu hiệu: for example + NOUN (liệt kê ví dụ cho tokens)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• tokens ~ từ khóa giữ nguyên\n• for example ~ they might take\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Ví dụ, họ có thể lấy những viên đá nhỏ và sử dụng chúng như các vật chứng\" (For example, they might take small stones and use them as tokens).\n\nBước 5: Đáp án: stones\nCác vật chứng (tokens), ví dụ như đá, thường được sử dụng.",
+					"quotes": [
+						"For example, they might take small stones and use them as tokens or representations of something else, like a goat."
+					]
+				},
+				{
+					"number": 7,
+					"text": "the first tokens were kept in containers made of 7. ____ (7)",
+					"answer": "cloth",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nNhững vật chứng đầu tiên được giữ trong các vật chứa làm bằng ______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN (chỉ chất liệu)\n• Dấu hiệu: containers made of + NOUN\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• kept in ~ placed in\n• containers ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Những vật chứng này sau đó có thể được đặt trong một vật chứa bằng vải\" (These tokens might then be placed in a cloth container).\n\nBước 5: Đáp án: cloth\nNhững vật chứng đầu tiên được giữ trong các vật chứa làm bằng vải (the first tokens were kept in containers made of cloth).",
+					"quotes": [
+						"These tokens might then be placed in a cloth container and provided to a buyer as a receipt for a transaction, perhaps five tokens for five animals."
+					]
+				},
+				{
+					"number": 8,
+					"text": "tokens were used as a 8. ____ (8) to give when selling something",
+					"answer": "receipt",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCác vật chứng được sử dụng như một ______ để đưa khi bán thứ gì đó.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN (số ít)\n• Dấu hiệu: a + NOUN (chỉ mục đích của token trong giao dịch)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• selling something ~ transaction / buyer\n• give ~ provided to\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...và cung cấp cho người mua như một biên lai cho một giao dịch\" (...and provided to a buyer as a receipt for a transaction).\n\nBước 5: Đáp án: receipt\nCác vật chứng được sử dụng như một biên lai để đưa khi bán thứ gì đó (tokens were used as a receipt to give when selling something).",
+					"quotes": [
+						"These tokens might then be placed in a cloth container and provided to a buyer as a receipt for a transaction, perhaps five tokens for five animals."
+					]
+				},
+				{
+					"number": 9,
+					"text": "tokens were put in a container that looked like a clay 9. ____ (9)",
+					"answer": "envelope",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCác vật chứng được đặt trong một vật chứa trông giống như một ______ bằng đất sét.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN (số ít)\n• Dấu hiệu: looked like a clay + NOUN\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• container ~ từ khóa giữ nguyên\n• 4th century BCE ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Họ bắt đầu đặt các vật chứng vào một vật chứa giống như một chiếc phong bì, và giờ đây được làm bằng đất sét\" (They began putting tokens in a container resembling an envelope, and now made of clay).\n\nBước 5: Đáp án: envelope\nCác vật chứng được đặt trong một vật chứa trông giống như một chiếc phong bì bằng đất sét (tokens were put in a container that looked like a clay envelope).",
+					"quotes": [
+						"They began putting tokens in a container resembling an envelope, and now made of clay instead of cloth."
+					]
+				},
+				{
+					"number": 10,
+					"text": "at first, signs looked like what they indicated, e.g. 10. ____ (10)",
+					"answer": "sheep",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nLúc đầu, các ký tự trông giống như những gì chúng biểu thị, ví dụ: ______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN (số ít)\n• Dấu hiệu: e.g. + NOUN (ví dụ về một vật cụ thể)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• at first ~ When first developed\n• looked like what they indicated ~ looked like the concrete thing it represented\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Ví dụ, một hình ảnh giống như hình vẽ một con cừu có nghĩa chính là nó\" (For example, an image which resembled the drawing of a sheep meant just that).\n\nBước 5: Đáp án: sheep\nLúc đầu, các ký tự trông giống như những gì chúng biểu thị, ví dụ: cừu (at first, signs looked like what they indicated, e.g. sheep).",
+					"quotes": [
+						"For example, an image which resembled the drawing of a sheep meant just that."
+					]
+				},
+				{
+					"number": 11,
+					"text": "eventually, cuneiform signs shaped like 11. ____ (11) were developed",
+					"answer": "triangles",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCuối cùng, các ký tự Tiết hình có hình dạng như ______ đã được phát triển.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN (số nhiều)\n• Dấu hiệu: shaped like + NOUN\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• eventually ~ At this last stage\n• shaped like ~ took the form of\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Ở giai đoạn cuối cùng này... các ký tự có hình dạng là các hình tam giác\" (At this last stage... the signs took the form of triangles).\n\nBước 5: Đáp án: triangles\nCuối cùng, các ký tự Tiết hình có hình dạng như những hình tam giác đã được phát triển (eventually, cuneiform signs shaped like triangles were developed).",
+					"quotes": [
+						"At this last stage in the evolution of cuneiform, the signs took the form of triangles, which became common cuneiform signs."
+					]
+				},
+				{
+					"number": 12,
+					"text": "according to experts, cuneiform was mainly used for 12. ____ (12)",
+					"answer": "accounting",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nTheo các chuyên gia, chữ Tiết hình chủ yếu được sử dụng cho ______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN\n• Dấu hiệu: used for + NOUN (chỉ mục đích sử dụng chính)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• experts ~ linguists and historians\n• mainly ~ primarily\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...hầu hết các nhà ngôn ngữ học và sử học đồng ý rằng chữ Tiết hình phát triển chủ yếu như một công cụ để kế toán\" (...most linguists and historians agree cuneiform developed primarily as a tool for accounting).\n\nBước 5: Đáp án: accounting\nTheo các chuyên gia, chữ Tiết hình chủ yếu được sử dụng cho việc kế toán (according to experts, cuneiform was mainly used for accounting).",
+					"quotes": [
+						"However, most linguists and historians agree cuneiform developed primarily as a tool for accounting."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Rawlinson copied inscriptions onto 13. ____ (13)",
+					"answer": "paper",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nRawlinson đã sao chép các bản khắc lên ______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN (chỉ vật liệu)\n• Dấu hiệu: onto + NOUN\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• copied inscriptions ~ made impressions of the marks\n• Rawlinson ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Rawlinson đã tạo ra các bản in của các ký tự trên những tờ giấy lớn\" (Rawlinson made impressions of the marks on large pieces of paper).\n\nBước 5: Đáp án: paper\nRawlinson đã sao chép các bản khắc lên giấy (Rawlinson copied inscriptions onto paper).",
+					"quotes": [
+						"Rawlinson made impressions of the marks on large pieces of paper, as he balanced dangerously on the surrounding rocks."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

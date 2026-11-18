@@ -1,0 +1,153 @@
+{
+	"id": "07f59e57-a1ac-4616-8e30-c433f0d2edcf",
+	"url": "https://stepielts.com/student/reading/07f59e57-a1ac-4616-8e30-c433f0d2edcf?mode=practice",
+	"title": "A Brief History of Humans and Food",
+	"source": "Collection",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "A Brief History of Humans and Food",
+		"paragraphs": [
+			"During the journey from our hunter-gatherer ancestors to the present day there have been three seismic changes that have had an impact on the food we eat: the discovery of cooking, the emergence of agriculture and the invention of methods of preserving food.",
+			"The 19th-century scientist Charles Darwin thought that cooking, after language, was the greatest discovery made by man. All of us eat some raw food, for instance fruit and vegetables, but the great majority of food we eat is cooked. Cooking can turn plants that are inedible into edible food by destroying toxic chemicals that plants often manufacture to protect themselves against attack by insects or other herbivorous animals. These toxic chemicals are referred to as 'plant secondary compounds', because they are not directly involved in the plant's normal growth, development and reproduction, and are produced purely as chemical defences. They give many of the plants we consume, such as coffee or brussels sprouts, their bitter taste.",
+			"Cooked food is often more digestible, because heat breaks down tough cellulose cell walls in plants or tough connective tissue in animals. Chewing raw turnip, a plate of uncooked rice, or a raw leg of lamb is much harder work than eating the cooked equivalent. The energy expended in chewing to break down the tough material is replaced by energy from the fuel that is used in cooking the food, so the ratio of energy gained to energy expended by the body is greater when food is cooked.",
+			"Until the development of agriculture, hunter-gatherers spent up to seven hours a day gathering food. This all began to change around 10,500 years ago with the advent of farming, which led to some dramatic changes in human societies. People began to create a variety of new tools to help with survival, and in turn populations increased in size. These changes led to the possibility of specialisation of different tasks within society. It was around this time that writing became more sophisticated and allowed people to maintain records of the harvest and taxes. Eventually, formalised structures of government were established as people settled in one area.",
+			"The arrival of agriculture meant that, for the first time, our ancestors had more food than they could eat immediately. This, combined with the seasonality of production, led them to discover methods of preserving food: smoking, drying, adding acid by fermentation or adding salt. These four methods all share one feature in common: they make the food a more hostile environment for bacteria that can cause it to spoil. They also tend to slow down any natural chemical reactions in the food that would cause decay.",
+			"Although foods today are still preserved in the ancient ways, two more recent methods of preserving food have become more common: canning and freezing. Canning was invented by a Frenchman, Nicholas Appert, in the early-19th century. He sealed food in bottles fabricated from glass and then heated them in boiling water to cook the contents. Appert's method had great advantages over older methods of food preservation: it could be applied to a wide range of foods, and the flavour of the food as well as the texture were similar to the freshly cooked product. His idea was soon copied by Englishman, Peter Durand. Until this point, containers had weighed too much to be widely used, but he produced the first ones which were light and resistant to damage. Two years later, in 1812, two Englishmen, Bryan Donkin and John Hall, started the commercial canning of food, although the real take-off in popularity of canning had to wait until the can opener was invented in 1855. Up to this time, cans were opened with a chisel which was used to break open the top when hit with a hammer. Canning is an extremely effective way of preserving food: one can which contained meat dating from 1824 was opened in 1939 and the contents were still in good condition.",
+			"In the 21st century, the dominance of canning as a method of food preservation has been overtaken by another technology: freezing. Chilling food to keep it fresh is an old idea. The earliest mentions of icehouses, thick-walled buildings, half underground, date back to 1,700BC in northwest Iran. In early 16th-century Italy, water was mixed with chemicals to lower its freezing point to -18 degrees Celsius, and several centuries later frozen fish and other goods were transported by ship from Australia to England. But the modern frozen food industry was started in the 1920s by an American, Clarence Birdseye. While Birdseye was on a fishing trip with the Inuit in the Canadian Arctic, he observed that very rapid freezing creates smaller ice crystals and therefore causes less damage to food. This was something he had not expected. Nevertheless, the big growth in demand for frozen food came about with the arrival of freezers in the homes of ordinary people. The advantages of frozen over canned food include the fact that the flavour and consistency are often identical to the equivalent fresh product, and that freezing can be used to preserve a huge variety of foods."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 1?\nIn boxes 1-5, write\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 1,
+					"text": "According to Darwin, cooking was the most significant development in human history.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTheo Darwin, nấu ăn là sự phát triển quan trọng nhất trong lịch sử loài người.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nCharles Darwin ~ Darwin\nthe greatest discovery made by man ~ the most significant development in human history\ncooking ~ cụm từ giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"nhà khoa học thế kỷ 19 Charles Darwin nghĩ rằng nấu ăn, sau ngôn ngữ, là phát hiện vĩ đại nhất do con người tạo ra.\" (The 19th-century scientist Charles Darwin thought that cooking, after language, was the greatest discovery made by man.)\n=> Điều này trái ngược với thông tin trong câu hỏi \"Theo Darwin, nấu ăn là sự phát triển quan trọng nhất trong lịch sử loài người\" (According to Darwin, cooking was the most significant development in human history).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"The 19th-century scientist Charles Darwin thought that cooking, after language, was the greatest discovery made by man."
+					]
+				},
+				{
+					"number": 2,
+					"text": "The process of cooking gets rid of some plant poisons.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nQuá trình nấu ăn loại bỏ một số chất độc của thực vật.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nCooking ~ cooking\ndestroying toxic chemicals ~ gets rid of ... poisons\nplants ~ plant (trong \"plant poisons\")\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Nấu ăn có thể biến những loại cây không ăn được thành thức ăn ăn được bằng cách phá hủy các hóa chất độc hại mà thực vật thường tạo ra để tự bảo vệ khỏi sự tấn công của côn trùng hoặc các động vật ăn cỏ khác.\" (Cooking can turn plants that are inedible into edible food by destroying toxic chemicals that plants often manufacture to protect themselves against attack by insects or other herbivorous animals.)\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Quá trình nấu ăn loại bỏ một số chất độc của thực vật\" (The process of cooking gets rid of some plant poisons).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Cooking can turn plants that are inedible into edible food by destroying toxic chemicals that plants often manufacture to protect themselves against attack by insects or other herbivorous animals."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Eating cooked food is more energy efficient than eating raw food.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĂn thức ăn đã nấu chín tiết kiệm năng lượng hơn so với ăn đồ sống.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nfood is cooked ~ cooked food\nratio of energy gained to energy expended by the body is greater ~ more energy efficient\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"...năng lượng tiêu hao khi nhai để làm mềm nguyên liệu cứng được thay thế bằng năng lượng từ nhiên liệu dùng để nấu thức ăn, do đó tỷ lệ năng lượng thu được so với năng lượng cơ thể tiêu hao sẽ lớn hơn khi thức ăn được nấu chín.\" (The energy expended in chewing to break down the tough material is replaced by energy from the fuel that is used in cooking the food, so the ratio of energy gained to energy expended by the body is greater when food is cooked.)\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Ăn thức ăn đã nấu chín tiết kiệm năng lượng hơn so với ăn đồ sống\" (Eating cooked food is more energy efficient than eating raw food).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"The energy expended in chewing to break down the tough material is replaced by energy from the fuel that is used in cooking the food, so the ratio of energy gained to energy expended by the body is greater when food is cooked."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Clarence Birdseye had previously worked in the Australian food industry.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN"
+				},
+				{
+					"number": 5,
+					"text": "Birdseye's trip with the Inuit confirmed what he already believed about rapid freezing.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"quotes": ["This was something he had not expected."]
+				}
+			]
+		},
+		{
+			"range": "6-13",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the notes below. Choose ONE WORD ONLY from the passage for each answer.",
+			"body": "The development of agriculture and food preservation\nThe changes agriculture brought about were:\nthe development of equipment and larger ____ (6)\nthe ability to keep ____ (7) as writing developed\nthe setting up of organised government\nFood preservation\nearly methods of food preservation included: smoking, drying and combining food with acid or ____ (8)\ncanning\nNicholas Appert put food into containers made of ____ (9)\nAppert's method resulted in preserved food that had the same taste and ____ (10) as fresh food\nPeter Durand introduced cans which had the advantage of being ____ (11) and hard to break\nin 1855, the metal can opener replaced the ____ (12) which had been used with a hammer to open cans\nsome food was still found to be edible after more than a hundred years, e.g. an old can of ____ (13)",
+			"body_html": "<table><tbody><tr><td><h3>The development of agriculture and food preservation</h3><h4>The changes agriculture brought about were:</h4><ul><li>the development of equipment and larger [6]</li><li>the ability to keep [7] as writing developed</li><li>the setting up of organised government</li></ul><h4>Food preservation</h4><ul><li>early methods of food preservation included: smoking, drying and combining food with acid or [8]</li><li>canning<ul><li>Nicholas Appert put food into containers made of [9]</li><li>Appert's method resulted in preserved food that had the same taste and [10] as fresh food</li><li>Peter Durand introduced cans which had the advantage of being [11] and hard to break</li><li>in 1855, the metal can opener replaced the [12] which had been used with a hammer to open cans</li><li>some food was still found to be edible after more than a hundred years, e.g. an old can of [13]</li></ul></li></ul><p></p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 6,
+					"text": "the development of equipment and larger ____ (6)",
+					"answer": "populations",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững thay đổi mà nông nghiệp mang lại là: sự phát triển của thiết bị và _____ lớn hơn.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: larger + NOUN (NOUN theo sau tính từ 'larger' và là một phần của cụm danh từ song song với \"equipment\". 'Larger' là tính từ so sánh hơn, bổ nghĩa cho danh từ theo sau nó.)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\npopulations increased in size ~ larger populations\nnew tools ~ equipment\nadvent of farming ~ development of agriculture\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Con người bắt đầu tạo ra nhiều công cụ mới để giúp sinh tồn, và đổi lại, dân số tăng về quy mô.\" (People began to create a variety of new tools to help with survival, and in turn populations increased in size).\n\nBước 5: Đáp án: populations\nNhững thay đổi mà nông nghiệp mang lại là: sự phát triển của thiết bị và dân số lớn hơn. (The changes agriculture brought about were: the development of equipment and larger populations).",
+					"quotes": [
+						"People began to create a variety of new tools to help with survival, and in turn populations increased in size."
+					]
+				},
+				{
+					"number": 7,
+					"text": "the ability to keep ____ (7) as writing developed",
+					"answer": "records",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nKhả năng lưu giữ _____ khi chữ viết phát triển.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: keep + NOUN (NOUN làm Object của Transitive verb 'keep')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nmaintain records ~ keep records\nwriting became more sophisticated ~ writing developed\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Vào khoảng thời gian này, chữ viết trở nên tinh vi hơn và cho phép mọi người duy trì hồ sơ về thu hoạch và thuế.\" (It was around this time that writing became more sophisticated and allowed people to maintain records of the harvest and taxes).\n\nBước 5: Đáp án: records\nKhả năng lưu giữ hồ sơ khi chữ viết phát triển. (the ability to keep records as writing developed).",
+					"quotes": [
+						"It was around this time that writing became more sophisticated and allowed people to maintain records of the harvest and taxes."
+					]
+				},
+				{
+					"number": 8,
+					"text": "early methods of food preservation included: smoking, drying and combining food with acid or ____ (8)",
+					"answer": "salt",
+					"quotes": [
+						"This, combined with the seasonality of production, led them to discover methods of preserving food: smoking, drying, adding acid by fermentation or adding salt."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Nicholas Appert put food into containers made of ____ (9)",
+					"answer": "glass",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNicholas Appert đã cho thực phẩm vào các hộp đựng làm bằng _____.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: made of + NOUN (NOUN làm Object của Preposition 'OF')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nbottles fabricated from glass ~ containers made of glass\nNicholas Appert ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Ông đã niêm phong thực phẩm trong các chai được làm từ thủy tinh và sau đó đun nóng chúng trong nước sôi để nấu chín bên trong.\" (He sealed food in bottles fabricated from glass and then heated them in boiling water to cook the contents.)\n\nBước 5: Đáp án: glass\nNicholas Appert đã cho thực phẩm vào các hộp đựng làm bằng thủy tinh. (Nicholas Appert put food into containers made of glass).",
+					"quotes": [
+						"He sealed food in bottles fabricated from glass and then heated them in boiling water to cook the contents."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Appert's method resulted in preserved food that had the same taste and ____ (10) as fresh food",
+					"answer": "texture",
+					"quotes": [
+						"Appert's method had great advantages over older methods of food preservation: it could be applied to a wide range of foods, and the flavour of the food as well as the texture were similar to the freshly cooked product."
+					]
+				},
+				{
+					"number": 11,
+					"text": "Peter Durand introduced cans which had the advantage of being ____ (11) and hard to break",
+					"answer": "light",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPeter Durand đã giới thiệu những chiếc hộp có ưu điểm là _____ và khó vỡ.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: ADJECTIVE\nDấu hiệu: being + ADJECTIVE (ADJECTIVE theo sau động từ 'to be' (ở dạng 'being') và song song với 'hard to break')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nlight and resistant to damage ~ light and hard to break\ncontainers ~ cans\nPeter Durand ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Cho đến thời điểm này, các hộp đựng quá nặng để được sử dụng rộng rãi, nhưng ông đã sản xuất những chiếc đầu tiên nhẹ và chống hư hại.\" (Until this point, containers had weighed too much to be widely used, but he produced the first ones which were light and resistant to damage.)\n\nBước 5: Đáp án: light\nPeter Durand đã giới thiệu những chiếc hộp có ưu điểm là nhẹ và khó vỡ. (Peter Durand introduced cans which had the advantage of being light and hard to break).",
+					"quotes": [
+						"Until this point, containers had weighed too much to be widely used, but he produced the first ones which were light and resistant to damage."
+					]
+				},
+				{
+					"number": 12,
+					"text": "in 1855, the metal can opener replaced the ____ (12) which had been used with a hammer to open cans",
+					"answer": "chisel",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nVào năm 1855, dụng cụ mở hộp kim loại đã thay thế _____ vốn được sử dụng cùng với búa để mở hộp.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: the + NOUN (NOUN theo sau Article 'THE')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nchisel which was used ... with a hammer ~ the chisel which had been used with a hammer\ncan opener was invented in 1855 ~ in 1855, the metal can opener (replaced)\ncans were opened ~ to open cans\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Cho đến thời điểm này, các hộp được mở bằng một cái đục được sử dụng để phá vỡ nắp trên khi dùng búa đập.\" (Up to this time, cans were opened with a chisel which was used to break open the top when hit with a hammer.)\n\nBước 5: Đáp án: chisel\nVào năm 1855, dụng cụ mở hộp kim loại đã thay thế cái đục vốn được sử dụng cùng với búa để mở hộp. (in 1855, the metal can opener replaced the chisel which had been used with a hammer to open cans).",
+					"quotes": [
+						"Up to this time, cans were opened with a chisel which was used to break open the top when hit with a hammer."
+					]
+				},
+				{
+					"number": 13,
+					"text": "some food was still found to be edible after more than a hundred years, e.g. an old can of ____ (13)",
+					"answer": "meat",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột số thực phẩm vẫn được phát hiện là có thể ăn được sau hơn một trăm năm, ví dụ: một hộp _____ cũ.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: of + NOUN (NOUN làm Object của Preposition 'OF')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\ncan which contained meat ~ can of meat\ndating from 1824 was opened in 1939 (115 years) ~ after more than a hundred years\nstill in good condition ~ found to be edible\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Một hộp chứa thịt có từ năm 1824 đã được mở vào năm 1939 và bên trong vẫn còn trong tình trạng tốt.\" (one can which contained meat dating from 1824 was opened in 1939 and the contents were still in good condition.)\n\nBước 5: Đáp án: meat\nMột số thực phẩm vẫn được phát hiện là có thể ăn được sau hơn một trăm năm, ví dụ: một hộp thịt cũ. (some food was still found to be edible after more than a hundred years, e.g. an old can of meat).",
+					"quotes": [
+						"Canning is an extremely effective way of preserving food: one can which contained meat dating from 1824 was opened in 1939 and the contents were still in good condition."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

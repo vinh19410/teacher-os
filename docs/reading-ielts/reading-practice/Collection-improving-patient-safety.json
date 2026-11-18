@@ -1,0 +1,280 @@
+{
+	"id": "7e62d427-8c8a-4e69-b45f-205b54f68c91",
+	"url": "https://stepielts.com/student/reading/7e62d427-8c8a-4e69-b45f-205b54f68c91?mode=practice",
+	"title": "Improving Patient Safety",
+	"source": "Collection",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "1-14",
+	"passage": {
+		"title": "Improving Patient Safety",
+		"paragraphs": [
+			"One of the most prominent design issues in pharmacy is that of drag packaging and patient information leaflets (Pits). Many letters have appeared in The Journal’s letters pages over the years from pharmacists dismayed at the designs of packaging that are “accidents waiting to happen”.",
+			"Packaging design in the pharmaceutical industry is handled by either in-house teams or design agencies. Designs for over-the-counter medicines, where characteristics such as attractiveness and distinguish-ability are regarded as significant, are usually commissioned from design agencies. A marketing team will prepare a brief and the designers will come up with perhaps six or seven designs. These are whittled down to two or three that might be tested on a consumer group. In contrast, most designs for prescription-only products are created in-house. In some cases, this may simply involve applying a company’s house design (ie, logo, colour, font, etc). The chosen design is then handed over to design engineers who work out how the packaging will be produced.",
+			"The author of the recently published “Information design for patient safety,” Thea Swayne, tracked the journey of a medicine from manufacturing plant, through distribution warehouses, pharmacies and hospital wards, to patients’ homes. Her book highlights a multitude of design problems with current packaging, such as look-alikes and sound-alikes, small type sizes and glare on blister foils. Situations in which medicines are used include a parent giving a cough medicine to a child in the middle of the night and a busy pharmacist selecting one box from hundreds. It is argued that packaging should be designed for moments such as these. “Manufacturers are not aware of the complex situations into which products go. As designers, we are interested in not what is supposed to happen in hospital wards, but what happens in the real world,” Ms Swayne said.",
+			"Incidents where vein has been injected intrathecally instead of spine are a classic example of how poor design can contribute to harm. Investigations following these tragedies have attributed some blame to poor typescript.",
+			"Child protection is another area that gives designers opportunities to improve safety. According to the Child Accident Prevention Trust, seven out of 10 children admitted to hospital with suspected poisoning have swallowed medicines. Although child-resistant closures have reduced the number of incidents, they are not: fully child-proof. The definition of such a closure is one that not more than 15 percent of children aged between 42 and 51 months can open within five minutes. There is scope for improving what is currently available, according to Richard Mawle, a freelance product designer. “Many child-resistant packs are based on strength. They do not necessarily prevent a child from access, but may prevent people with a disability,” he told The Journal. “The legal requirements are there for a good reason, but they are not good enough in terms of the users,” he said. “Older people, especially those with arthritis, may have the same level of strength as a child,” he explained, and suggested that better designs could rely on cognitive skills (eg, making the opening of a container a three-step process) or be based on the physical size of hands.",
+			"Mr. Mawle worked with GlaxoSmithKline on a project to improve compliance through design, which involved applying his skills to packaging and PILs. Commenting on the information presented, he said: “There can be an awful lot of junk at the beginning of PILs. For example, why are company details listed towards the beginning of a leaflet when what might be more important for the patient is that the medicine should not be taken with alcohol?”",
+			"Look-alike boxes present a potential for picking errors and an obvious solution would be to use colours to highlight different strengths. However, according to Ms.Swayne, colour differentiation needs to be approached with care. Not only should strong colour contrasts be used, but designating a colour to a particular strength (colour coding) is not recommended because this could lead to the user not reading the text on a box.",
+			"Design features can provide the basis for lengthy debates. For example, one argument is that if all packaging is white with black lettering, people would have no choice but to read every box carefully. The problem is that trials of drug packaging design are few—common studies of legibility and comprehensibility concern road traffic signs and visual display units. Although some designers take results from such studies into account, proving that a particular feature is beneficial can be difficult. For example, EU legislation requires that packaging must now include the name of the medicine in Braille but, according to Karel van der Waarde, a design consultant to the pharmaceutical industry, “it is not known how much visually impaired patients will benefit nor how much the reading of visually able patients will be impaired”.",
+			"More evidence might, however, soon be available. EU legislation requires PILs to reflect consultations with target patient groups to ensure they are legible, clear and easy to use. This implies that industry will have to start conducting tests. Dr. van der Waarde has performed readability studies on boxes and PILs for industry. A typical study involves showing a leaflet or package to a small group and asking them questions to test understanding. Results and comments are used to modify the material, which is then tested on a larger group. A third group is used to show that any further changes made are an improvement. Dr. van der Waarde is, however, sceptical about the legal requirements and says that many regulatory authorities do not have the resources to handle packaging information properly. “They do not look at the use of packaging in a practical context—they only see one box at a time and not several together as pharmacists would do,” he said.",
+			"The RCA innovation exhibition this year revealed designs for a number of innovative objects. “The popper”, by Hugo Glover, aims to help arthritis sufferers remove tablets from blister packs, and “pluspoint”, by James Cobb, is an adrenaline auto-injector that aims to overcome the fact that many patients do not carry their auto-injectors due to their prohibitive size. The aim of good design, according Roger Coleman, professor of inclusive design at the RCA, is to try to make things more user-friendly as well as safer. Surely, in a patient-centred health system, that can only be a good thing. “Information design for patient safety” is not intended to be mandatory. Rather, its purpose is to create a basic design standard and to stimulate innovation. The challenge for the pharmaceutical industry, as a whole, is to adopt such a standard."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "MATCHING_NAMES",
+			"instructions": "Look at the following statements (Questions 1-6) and the list of people or organisation below.\nNB: You may use any letter more than once.",
+			"options": [
+				{
+					"label": "A",
+					"text": "Thea Swayne"
+				},
+				{
+					"label": "B",
+					"text": "Children Accident Prevention Trust"
+				},
+				{
+					"label": "C",
+					"text": "Richard Mawle"
+				},
+				{
+					"label": "D",
+					"text": "Karel van der Waarde"
+				}
+			],
+			"body": "Elderly people may have the same problem with children if the lids of containers require too much strength to open ____ (1)\nAdapting packaging for the blind may disadvantage the sighted people ____ (2)\nSpecially designed lids cannot eliminate the possibility of children swallowing pills accidentally ____ (3)\nContainer design should consider situations, such as drug used at home ____ (4)\nGoverning bodies should investigate many different container cases rather than individual ones ____ (5)\nInformation on the list of a leaflet hasn’t been in the right order ____ (6)",
+			"body_html": "<p>Elderly people may have the same problem with children if the lids of containers require too much strength to open [1]</p><p>Adapting packaging for the blind may disadvantage the sighted people [2]</p><p>Specially designed lids cannot eliminate the possibility of children swallowing pills accidentally [3]</p><p>Container design should consider situations, such as drug used at home [4]</p><p>Governing bodies should investigate many different container cases rather than individual ones [5]</p><p>Information on the list of a leaflet hasn’t been in the right order [6]</p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Elderly people may have the same problem with children if the lids of containers require too much strength to open",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNgười cao tuổi có thể gặp vấn đề tương tự như trẻ em nếu nắp hộp yêu cầu quá nhiều sức mạnh để mở.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nelderly people ~ older people\nsame problem ~ same level of strength\nchildren ~ từ khóa giữ nguyên\ntoo much strength ~ based on strength\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ Richard Mawle đã nói: \"Người cao tuổi, đặc biệt là những người bị viêm khớp, có thể có cùng mức độ sức mạnh như một đứa trẻ\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"người cao tuổi có thể gặp vấn đề tương tự như trẻ em\".\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"“Older people, especially those with arthritis, may have the same level of strength as a child,” he explained, and suggested that better designs could rely on cognitive skills (eg, making the opening of a container a three-step process) or be based on the physical size of hands."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Adapting packaging for the blind may disadvantage the sighted people",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nViệc điều chỉnh bao bì cho người mù có thể gây bất lợi cho người có thị lực.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nadapting packaging ~ packaging must now include\nfor the blind ~ in Braille\ndisadvantage ~ will be impaired\nsighted people ~ visually able patients\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ Karel van der Waarde đã nói: \"Không rõ bệnh nhân khiếm thị sẽ được hưởng lợi bao nhiêu cũng như khả năng đọc của bệnh nhân có thị lực sẽ bị suy giảm bao nhiêu\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"có thể gây bất lợi cho người có thị lực\".\n\nBước 4: Đáp án: D",
+					"quotes": [
+						"For example, EU legislation requires that packaging must now include the name of the medicine in Braille but, according to Karel van der Waarde, a design consultant to the pharmaceutical industry, “it is not known how much visually impaired patients will benefit nor how much the reading of visually able patients will be impaired”."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Specially designed lids cannot eliminate the possibility of children swallowing pills accidentally",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác nắp được thiết kế đặc biệt không thể loại bỏ khả năng trẻ em nuốt thuốc một cách vô tình.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nspecially designed lids ~ child-resistant closures\ncannot eliminate ~ are not fully child-proof\nswallowing pills ~ từ khóa giữ nguyên\nchildren ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ thông tin từ Child Accident Prevention Trust: \"Mặc dù các nắp chống trẻ em đã giảm số lượng sự cố, chúng không hoàn toàn chống trẻ em\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"không thể loại bỏ khả năng\".\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"Although child-resistant closures have reduced the number of incidents, they are not: fully child-proof."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Container design should consider situations, such as drug used at home",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nThiết kế hộp đựng nên xem xét các tình huống, chẳng hạn như thuốc được sử dụng tại nhà.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ncontainer design ~ packaging\nshould consider ~ should be designed for\nsituations ~ từ khóa giữ nguyên\ndrug used at home ~ patients' homes\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ Thea Swayne đã theo dõi \"hành trình của một loại thuốc từ nhà máy sản xuất, qua kho phân phối, hiệu thuốc và các bệnh viện, đến tận nhà của bệnh nhân\" và lập luận rằng \"bao bì nên được thiết kế cho những khoảnh khắc như thế này\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"nên xem xét các tình huống như thuốc được sử dụng tại nhà\".\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"The author of the recently published “Information design for patient safety,” Thea Swayne, tracked the journey of a medicine from manufacturing plant, through distribution warehouses, pharmacies and hospital wards, to patients’ homes. Her book highlights a multitude of design problems with current packaging, such as look-alikes and sound-alikes, small type sizes and glare on blister foils. Situations in which medicines are used include a parent giving a cough medicine to a child in the middle of the night and a busy pharmacist selecting one box from hundreds. It is argued that packaging should be designed for moments such as these."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Governing bodies should investigate many different container cases rather than individual ones",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác cơ quan quản lý nên điều tra nhiều trường hợp hộp đựng khác nhau thay vì các trường hợp riêng lẻ.\nBước 2: Tìm các keywords được paraphrase trong bài:\ngoverning bodies ~ regulatory authorities\ninvestigate ~ look at\nmany different container cases ~ several together\nindividual ones ~ one box at a time\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ Karel van der Waarde đã nói: \"Họ không nhìn vào việc sử dụng bao bì trong bối cảnh thực tế—họ chỉ nhìn thấy một hộp tại một thời điểm chứ không phải nhiều hộp cùng nhau như các dược sĩ làm\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"nên điều tra nhiều trường hợp khác nhau thay vì riêng lẻ\".\n\nBước 4: Đáp án: D",
+					"quotes": [
+						"“They do not look at the use of packaging in a practical context—they only see one box at a time and not several together as pharmacists would do,” he said."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Information on the list of a leaflet hasn’t been in the right order",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nThông tin trên danh sách của tờ thông tin không được sắp xếp đúng thứ tự.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ninformation ~ từ khóa giữ nguyên\nleaflet ~ PILs\nhasn't been in the right order ~ listed towards the beginning / at the beginning\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ Richard Mawle đã nhận xét: \"Có thể có rất nhiều thông tin rác ở đầu PILs. Ví dụ, tại sao chi tiết công ty lại được liệt kê ở phần đầu của tờ thông tin khi điều quan trọng hơn đối với bệnh nhân là thuốc không nên được dùng với rượu?\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"thông tin không được sắp xếp đúng thứ tự\".\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"Commenting on the information presented, he said: “There can be an awful lot of junk at the beginning of PILs. For example, why are company details listed towards the beginning of a leaflet when what might be more important for the patient is that the medicine should not be taken with alcohol?”"
+					]
+				}
+			]
+		},
+		{
+			"range": "7-11",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary below.",
+			"options": [
+				{
+					"label": "A",
+					"text": "consumers"
+				},
+				{
+					"label": "B",
+					"text": "marketing teams"
+				},
+				{
+					"label": "C",
+					"text": "pharmaceutical industry"
+				},
+				{
+					"label": "D",
+					"text": "external designers"
+				},
+				{
+					"label": "E",
+					"text": "in-house designers"
+				},
+				{
+					"label": "F",
+					"text": "design engineers"
+				},
+				{
+					"label": "G",
+					"text": "pharmacist"
+				}
+			],
+			"body": "Packaging in pharmaceutical industry\nDesigns for over-the-counter medicines\nFirst, ____ (7) make the proposal, then pass them to the ____ (8)\nFinally, these designs will be tested by ____ (9)\nPrescription-only\nFirst, the design is made by ____ (10) and then subjected to ____ (11)",
+			"body_html": "<table><tbody><tr><td><h3><strong>Packaging in pharmaceutical industry</strong></h3><h4><strong>Designs for over-the-counter medicines</strong></h4><ul><li>First, [7] make the proposal, then pass them to the [8]</li><li>Finally, these designs will be tested by [9]</li></ul><h4><strong>Prescription-only</strong></h4><ul><li>First, the design is made by [10] and then subjected to<strong></strong>[11]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "First, ____ (7) make the proposal, then pass them to the ____ (8)",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nĐầu tiên, _______ đưa ra đề xuất.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (chủ ngữ số nhiều hoặc danh từ đếm được)\nDấu hiệu: Vị trí chủ ngữ trước động từ \"make\" (người hoặc nhóm người thực hiện hành động)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nmake the proposal ~ prepare a brief\nover-the-counter medicines ~ từ khóa giữ nguyên\nfirst ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Nhóm marketing sẽ chuẩn bị một bản tóm tắt\".\n\nBước 5: Đáp án: B (marketing teams)",
+					"quotes": [
+						"A marketing team will prepare a brief and the designers will come up with perhaps six or seven designs. These are whittled down to two or three that might be tested on a consumer group."
+					]
+				},
+				{
+					"number": 8,
+					"text": "First, ____ (7) make the proposal, then pass them to the ____ (8)",
+					"answer": "D",
+					"explanation": "______\nBước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nSau đó chuyển chúng cho _______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (tân ngữ)\nDấu hiệu: Sau giới từ \"to\" + \"the\" (người hoặc nhóm người nhận thiết kế)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nover-the-counter medicines ~ từ khóa giữ nguyên\ndesigns ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Thiết kế cho thuốc không kê đơn thường được đặt hàng từ các công ty thiết kế\" và \"các nhà thiết kế sẽ đưa ra có lẽ sáu hoặc bảy thiết kế\".\n\nBước 5: Đáp án: D (external designers)",
+					"quotes": [
+						"A marketing team will prepare a brief and the designers will come up with perhaps six or seven designs. These are whittled down to two or three that might be tested on a consumer group."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Finally, these designs will be tested by ____ (9)",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCuối cùng, những thiết kế này sẽ được kiểm tra bởi _______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (tân ngữ trong câu bị động)\nDấu hiệu: Sau \"by\" trong câu bị động (người hoặc nhóm người thực hiện kiểm tra)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\ntested by ~ tested on\ndesigns ~ từ khóa giữ nguyên\nover-the-counter medicines ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Những thiết kế này được thu hẹp xuống còn hai hoặc ba có thể được kiểm tra trên một nhóm người tiêu dùng\".\n\nBước 5: Đáp án: A (consumers)",
+					"quotes": [
+						"A marketing team will prepare a brief and the designers will come up with perhaps six or seven designs. These are whittled down to two or three that might be tested on a consumer group."
+					]
+				},
+				{
+					"number": 10,
+					"text": "First, the design is made by ____ (10) and then subjected to ____ (11)",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nĐầu tiên, thiết kế được tạo ra bởi _______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (tân ngữ trong câu bị động)\nDấu hiệu: Sau \"by\" trong câu bị động (người hoặc nhóm người tạo ra thiết kế)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\ndesign is made by ~ designs are created\nprescription-only ~ từ khóa giữ nguyên\nfirst ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Ngược lại, hầu hết các thiết kế cho sản phẩm chỉ theo đơn được tạo ra trong nội bộ\".\n\nBước 5: Đáp án: E (in-house designers)",
+					"quotes": [
+						"In contrast, most designs for prescription-only products are created in-house."
+					]
+				},
+				{
+					"number": 11,
+					"text": "First, the design is made by ____ (10) and then subjected to ____ (11)",
+					"answer": "F",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nVà sau đó được chuyển cho _______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (tân ngữ)\nDấu hiệu: Sau \"subjected to\" (người hoặc nhóm người xử lý tiếp)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nsubjected to ~ handed over to\nprescription-only ~ từ khóa giữ nguyên\nthen ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Thiết kế được chọn sau đó được chuyển giao cho các kỹ sư thiết kế, những người tính toán cách bao bì sẽ được sản xuất\".\n\nBước 5: Đáp án: F (design engineers)",
+					"quotes": [
+						"The chosen design is then handed over to design engineers who work out how the packaging will be produced."
+					]
+				}
+			]
+		},
+		{
+			"range": "12-14",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, C or D.",
+			"questions": [
+				{
+					"number": 12,
+					"text": "What may cause the accident in “design container”?",
+					"options": [
+						{
+							"label": "A",
+							"text": "a print error"
+						},
+						{
+							"label": "B",
+							"text": "style of print"
+						},
+						{
+							"label": "C",
+							"text": "wrong label"
+						},
+						{
+							"label": "D",
+							"text": "the shape of the bottle"
+						}
+					],
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nĐiều gì có thể gây ra tai nạn trong \"thiết kế hộp đựng\"?\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Các sự cố khi thuốc tĩnh mạch bị tiêm vào ống sống thay vì tĩnh mạch là một ví dụ điển hình về cách thiết kế kém có thể gây ra tổn hại. Các cuộc điều tra sau những bi kịch này đã quy một phần lỗi cho kiểu chữ kém\".\n==> Thông tin được in đậm đồng nghĩa với câu B (kiểu in ấn).\n\nBước 3: Đáp án: B\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Đoạn văn không nhắc đến việc \"lỗi in ấn (print error)\".\nĐáp án C -> Đoạn văn không đề cập đến việc \"nhãn sai (wrong label)\".\nĐáp án D -> Đoạn văn không nói về việc \"hình dạng chai (shape of the bottle)\".",
+					"quotes": [
+						"Investigations following these tragedies have attributed some blame to poor typescript."
+					]
+				},
+				{
+					"number": 13,
+					"text": "What do people think about the black and white only print?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Consumers dislike these products"
+						},
+						{
+							"label": "B",
+							"text": "People have to pay more attention to the information"
+						},
+						{
+							"label": "C",
+							"text": "That makes all products look alike"
+						},
+						{
+							"label": "D",
+							"text": "Sighted people may feel it more helpful"
+						}
+					],
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nMọi người nghĩ gì về in ấn chỉ màu đen và trắng?\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Ví dụ, một lập luận là nếu tất cả bao bì đều màu trắng với chữ đen, mọi người sẽ không có lựa chọn nào khác ngoài việc đọc kỹ mọi hộp\".\n==> Thông tin được in đậm đồng nghĩa với câu B (Mọi người phải chú ý nhiều hơn đến thông tin).\n\nBước 3: Đáp án: B\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Đoạn văn không nhắc đến việc \"người tiêu dùng không thích những sản phẩm này\".\nĐáp án C -> Đoạn văn không đề cập đến việc \"làm cho tất cả sản phẩm trông giống nhau\".\nĐáp án D -> Đoạn văn không nói về việc \"người có thị lực có thể cảm thấy nó hữu ích hơn\".",
+					"quotes": [
+						"For example, one argument is that if all packaging is white with black lettering, people would have no choice but to read every box carefully."
+					]
+				},
+				{
+					"number": 14,
+					"text": "Why does the writer mention “popper” and “pluspoint”?",
+					"options": [
+						{
+							"label": "A",
+							"text": "to show that container design has made some progress"
+						},
+						{
+							"label": "B",
+							"text": "to illustrate an example of inappropriate design which can lead to accidents"
+						},
+						{
+							"label": "C",
+							"text": "to show that the industry still needs more to improve"
+						},
+						{
+							"label": "D",
+							"text": "to point out that consumers should be more informed about the information"
+						}
+					],
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nTại sao tác giả đề cập đến \"popper\" và \"pluspoint\"?\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Triển lãm đổi mới RCA năm nay đã tiết lộ các thiết kế cho một số đồ vật sáng tạo\", với \"popper\" và \"pluspoint\" là hai ví dụ về các thiết kế đổi mới nhằm giúp cải thiện tính thân thiện với người dùng và an toàn.\n==> Thông tin này cho thấy tác giả muốn chỉ ra rằng thiết kế hộp đựng đã có một số tiến bộ.\n\nBước 3: Đáp án: A\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án B -> Đoạn văn không đề cập đến việc \"minh họa ví dụ về thiết kế không phù hợp có thể dẫn đến tai nạn\".\nĐáp án C -> Đoạn văn không nói rõ về việc \"ngành công nghiệp vẫn cần cải thiện nhiều hơn\" mà chỉ cho thấy những đổi mới đã được thực hiện.\nĐáp án D -> Đoạn văn không đề cập đến việc \"người tiêu dùng nên được thông báo nhiều hơn về thông tin\".",
+					"quotes": [
+						"The RCA innovation exhibition this year revealed designs for a number of innovative objects. “The popper”, by Hugo Glover, aims to help arthritis sufferers remove tablets from blister packs, and “pluspoint”, by James Cobb, is an adrenaline auto-injector that aims to overcome the fact that many patients do not carry their auto-injectors due to their prohibitive size. The aim of good design, according Roger Coleman, professor of inclusive design at the RCA, is to try to make things more user-friendly as well as safer."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

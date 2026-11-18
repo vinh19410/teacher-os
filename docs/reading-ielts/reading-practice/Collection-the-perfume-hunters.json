@@ -1,0 +1,192 @@
+{
+	"id": "404c29d9-7e91-4996-bbb2-4a8822bf1ca5",
+	"url": "https://stepielts.com/student/reading/404c29d9-7e91-4996-bbb2-4a8822bf1ca5?mode=practice",
+	"title": "The perfume hunters",
+	"source": "Collection",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "14-26",
+	"passage": {
+		"title": "Perfume Hunter",
+		"paragraphs": [
+			"A. Ever since the unguentari plied their trade in ancient Rome, perfumers have had to keep abreast of changing fashions. These days they have several thousand ingredients to choose from when creating new scents, but there is always a demand for new combinations. The bigger the “palette” of smells, the better the perfumer’s chance of creating something new and fashionable. Even with everyday products such as shampoo and soap, consumers are becoming increasingly fussy. Cheap, synthetic smells are out. Fresh, natural smells are in. And many of today’s fragrances have to survive tougher treatment than ever before, resisting the destructive power of bleach or a high temperature wash cycle. Chemists can now create new smells from synthetic molecules, but nature has been in the business far longer. Plants produce countless fragrant chemicals. Many are intended to attract pollinators. Others are produced for quite different purposes. The fragrant resins that ooze from wounds in a tree, for example, defend it against infection.",
+			"B. The island of Madagascar is an evolutionary hot spot; 85% of its plants are unique, making it an ideal source for novel fragrances. Last October, Quest International, a company that develops fragrances for everything from the most delicate perfumes to cleaning products, sent an expedition to Madagascar in pursuit of some of nature’s most novel fragrances. With some simple technology, borrowed from the pollution monitoring industry, and a fair amount of ingenuity, the perfume hunters bagged 20 promising new aromas in the Madagascan rainforest. Each day the team set out from their “hotel” - a wooden hut lit by kerosene lamps, and trailed up and down paths and animal tracks, exploring the thick vegetation up to 10 meters on either side of the trail. Some smells came from obvious places, often big showy flowers within easy reach. Others were harder to pin down. “Often it was the very small flowers that were much more interesting,” says Clery. After the luxuriance of the rainforest, the little - known island of Nosy Hara was a stark, dry place - geologically and biologically very different from the mainland. “Apart from two beaches, the rest of the island is impenetrable, except by hacking through the bush,” says Clery. One of the biggest prizes here was a sweet - smelling sap weeping from the gnarled branches of some ancient shrubby trees in the parched interior. So far no one has been able to identify the plant.",
+			"C. With most flowers or fruits, the hunters used a technique originally designed to trap and identify air pollutants. The technique itself is relatively simple. A glass bell jar or flask is fitted over the flower. The fragrance molecules are trapped in this “headspace” and can be extracted by pumping the air out over a series of filters which absorb different types of volatile molecules. Back home in the laboratory, the molecules are flushed out of the filters and injected into a gas chromatograph for analysis. If it is impossible to attach the headspace gear, hunters fix an absorbent probe close to the source of the smell. The probe looks something like a hypodermic syringe, except that the “needle” is made of silicone rubber which soaks up molecules from the air. After a few hours, the hunters retract the rubber needle and seal the tube, keeping the odour molecules inside until they can be injected into the gas chromatograph in the laboratory.",
+			"D. Some of the most promising fragrances were those given off by resins that oozed from the bark of trees. Resins are the source of many traditional perfumes, including frankincense and myrrh. The most exciting resin came from a Calophyllum tree, which produces a strongly scented medicinal oil. The sap of this Calophyllum smelt rich and aromatic, a little like church incense. But it also smelt of something the fragrance industry has learnt to live without, castoreum, a substance extracted from the musk glands of beavers and once a key ingredient in many perfumes. The company does not use animal products any longer, but it was wonderful to find a tree with an animal smell.",
+			"E. The group also set out from the island to capture the smell of coral reefs. Odors that conjure up sunkissed seas are highly sought after by the perfume industry. “From the ocean, the only thing we have is seaweed, and that has a dark and heavy aroma. We hope to find something unique among the corals,” says Dir. The challenge for the hunters was to extract a smell from water rather than air. This was an opportunity to try Clery’s new “aquaspace” apparatus - a set of filters that work underwater. On Nosy Hara, jars were fixed over knobs of coral about 2 meters down and water pumped out over the absorbent filters. So what does coral smell like? “It’s a bit like lobster and crab,” says Clery. The team’s task now is to recreate the best of their captured smells. First they must identify the molecules that make up each fragrance. Some ingredients may be quite common chemicals. But some may be completely novel, or they may be too complex or expensive to make in the lab. The challenge then is to conjure up the fragrances with more readily available materials. “We can avoid the need to import plants from the rainforest by creating the smell with a different set of chemicals from those in the original material,” says Clery. “If we get it right, you can sniff the sample and it will transport you straight back to the moment you smelt it in the rainforest.”"
+		]
+	},
+	"question_groups": [
+		{
+			"range": "14-18",
+			"type": "MATCHING_HEADINGS",
+			"instructions": "The reading passage has paragraphs A-E. Choose the correct heading for each paragraph from the list below.",
+			"options": [
+				{
+					"label": "i",
+					"text": "Natural scent remains though artificial odours rises"
+				},
+				{
+					"label": "ii",
+					"text": "Traditional aromas are not in fashion"
+				},
+				{
+					"label": "iii",
+					"text": "Madagascar: the best spot for finding surviving plants"
+				},
+				{
+					"label": "iv",
+					"text": "Design of a simple yet ingenious device"
+				},
+				{
+					"label": "v",
+					"text": "A substitute for substance extracted from animal was found"
+				},
+				{
+					"label": "vi",
+					"text": "Exploration in Madagascar chasing new fragrances"
+				},
+				{
+					"label": "vii",
+					"text": "One company's great success in market"
+				},
+				{
+					"label": "viii",
+					"text": "the new challenges and tasks"
+				}
+			],
+			"questions": [
+				{
+					"number": 14,
+					"text": "Paragraph A",
+					"answer": "i",
+					"quotes": [
+						"Cheap, synthetic smells are out. Fresh, natural smells are in. And many of today’s fragrances have to survive tougher treatment than ever before, resisting the destructive power of bleach or a high temperature wash cycle. Chemists can now create new smells from synthetic molecules, but nature has been in the business far longer. Plants produce countless fragrant chemicals."
+					]
+				},
+				{
+					"number": 15,
+					"text": "Paragraph B",
+					"answer": "vi",
+					"quotes": [
+						"The island of Madagascar is an evolutionary hot spot; 85% of its plants are unique, making it an ideal source for novel fragrances. Last October, Quest International, a company that develops fragrances for everything from the most delicate perfumes to cleaning products, sent an expedition to Madagascar in pursuit of some of nature’s most novel fragrances. With some simple technology, borrowed from the pollution monitoring industry, and a fair amount of ingenuity, the perfume hunters bagged 20 promising new aromas in the Madagascan rainforest."
+					]
+				},
+				{
+					"number": 16,
+					"text": "Paragraph C",
+					"answer": "iv",
+					"quotes": [
+						"C. With most flowers or fruits, the hunters used a technique originally designed to trap and identify air pollutants. The technique itself is relatively simple. A glass bell jar or flask is fitted over the flower. The fragrance molecules are trapped in this “headspace” and can be extracted by pumping the air out over a series of filters which absorb different types of volatile molecules. Back home in the laboratory, the molecules are flushed out of the filters and injected into a gas chromatograph for analysis. If it is impossible to attach the headspace gear, hunters fix an absorbent probe close to the source of the smell. The probe looks something like a hypodermic syringe, except that the “needle” is made of silicone rubber which soaks up molecules from the air."
+					]
+				},
+				{
+					"number": 17,
+					"text": "Paragraph D",
+					"answer": "v",
+					"quotes": [
+						"D. Some of the most promising fragrances were those given off by resins that oozed from the bark of trees. Resins are the source of many traditional perfumes, including frankincense and myrrh. The most exciting resin came from a Calophyllum tree, which produces a strongly scented medicinal oil. The sap of this Calophyllum smelt rich and aromatic, a little like church incense. But it also smelt of something the fragrance industry has learnt to live without, castoreum, a substance extracted from the musk glands of beavers and once a key ingredient in many perfumes. The company does not use animal products any longer, but it was wonderful to find a tree with an animal smell."
+					]
+				},
+				{
+					"number": 18,
+					"text": "Paragraph E",
+					"answer": "viii",
+					"quotes": [
+						"E. The group also set out from the island to capture the smell of coral reefs. Odors that conjure up sunkissed seas are highly sought after by the perfume industry. “From the ocean, the only thing we have is seaweed, and that has a dark and heavy aroma. We hope to find something unique among the corals,” says Dir. The challenge for the hunters was to extract a smell from water rather than air. This was an opportunity to try Clery’s new “aquaspace” apparatus - a set of filters that work underwater. On Nosy Hara, jars were fixed over knobs of coral about 2 meters down and water pumped out over the absorbent filters. So what does coral smell like? “It’s a bit like lobster and crab,” says Clery. The team’s task now is to recreate the best of their captured smells."
+					]
+				}
+			]
+		},
+		{
+			"range": "19-23",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in the passage? Write\nTRUE if the statement agrees with the information,\nFALSE if the statement contradicts the information,\nNOT GIVEN if there is no information on this.",
+			"questions": [
+				{
+					"number": 19,
+					"text": "Manufactures can choose to use synthetic odours for the perfume nowadays.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"quotes": [
+						"Chemists can now create new smells from synthetic molecules, but nature has been in the business far longer."
+					]
+				},
+				{
+					"number": 20,
+					"text": "Madagascar is chosen to be a place for hunting plants which are rare in other parts of the world.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"quotes": [
+						"The island of Madagascar is an evolutionary hot spot; 85% of its plants are unique, making it an ideal source for novel fragrances. Last October, Quest International, a company that develops fragrances for everything from the most delicate perfumes to cleaning products, sent an expedition to Madagascar in pursuit of some of nature’s most novel fragrances."
+					]
+				},
+				{
+					"number": 21,
+					"text": "Capturing the smell is one of the most important things for creating new aromas.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"quotes": [
+						"C. With most flowers or fruits, the hunters used a technique originally designed to trap and identify air pollutants."
+					]
+				},
+				{
+					"number": 22,
+					"text": "The technique the hunters used to trap fragrance molecules is totally out of their ingenuity.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"quotes": [
+						"With some simple technology, borrowed from the pollution monitoring industry, and a fair amount of ingenuity, the perfume hunters bagged 20 promising new aromas in the Madagascan rainforest."
+					]
+				},
+				{
+					"number": 23,
+					"text": "Most customers prefer the perfume made of substance extracted from the musk glands of animals.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"quotes": [
+						"But it also smelt of something the fragrance industry has learnt to live without, castoreum, a substance extracted from the musk glands of beavers and once a key ingredient in many perfumes. The company does not use animal products any longer, but it was wonderful to find a tree with an animal smell."
+					]
+				}
+			]
+		},
+		{
+			"range": "24-26",
+			"type": "FILL_BLANK",
+			"instructions": "Fill the blanks. Write ONE WORD for each answer.",
+			"instructions_html": "<p>Fill the blanks. Write <strong>ONE WORD</strong> for each answer.</p><img src=\"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/reading-images/727dbc7b-83c4-4bd6-80c8-2ed0b820f2e1.png\">",
+			"body": "____ (24) of the flask or a glass jar.\n____ (25) collecting fragrance.\n____ (26) made of silicone rubber.",
+			"body_html": "<p>[24] of the flask or a glass jar.</p><p>[25] collecting fragrance.</p><p>[26] made of silicone rubber.</p>",
+			"questions": [
+				{
+					"number": 24,
+					"text": "____ (24) of the flask or a glass jar.",
+					"answer": "Headspace",
+					"quotes": [
+						"The fragrance molecules are trapped in this “headspace” and can be extracted by pumping the air out over a series of filters which absorb different types of volatile molecules."
+					]
+				},
+				{
+					"number": 25,
+					"text": "____ (25) collecting fragrance.",
+					"answer": "filters",
+					"quotes": [
+						"The fragrance molecules are trapped in this “headspace” and can be extracted by pumping the air out over a series of filters which absorb different types of volatile molecules.",
+						"Back home in the laboratory, the molecules are flushed out of the filters and injected into a gas chromatograph for analysis."
+					]
+				},
+				{
+					"number": 26,
+					"text": "____ (26) made of silicone rubber.",
+					"answer": "needle",
+					"quotes": [
+						"The probe looks something like a hypodermic syringe, except that the “needle” is made of silicone rubber which soaks up molecules from the air."
+					]
+				}
+			]
+		}
+	],
+	"images": [
+		"https://qbgycaftkmlmbfsfwzhm.supabase.co/storage/v1/object/public/reading-images/727dbc7b-83c4-4bd6-80c8-2ed0b820f2e1.png"
+	]
+}

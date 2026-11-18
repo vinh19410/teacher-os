@@ -1,0 +1,197 @@
+{
+	"id": "ad559e68-b43a-4c84-8de5-96d7cc0f9d61",
+	"url": "https://stepielts.com/student/reading/ad559e68-b43a-4c84-8de5-96d7cc0f9d61?mode=practice",
+	"title": "Growing more for less",
+	"source": "Collection",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Growing more for less",
+		"subtitle": "Satellite technology is helping farmers boost crop yields",
+		"paragraphs": [
+			"A. For farmers, working out the optimal amount of seed, fertiliser, pesticide and water to scatter on a field can make or break the subsequent harvest. Regular laboratory analyses of soil and plant samples from various parts of the field can help – but such expertise is costly, and often unavailable. However, a new and cheaper method of doing this analysis is now on offer. Better prescriptions for growing crops can be obtained quickly, and less expensively, by calculating the amount of electron-magnetic radiation reflected from agricultural land. The data is collected by orbiting satellites.",
+			"B. Examining the wavelength of the radiation that is reflected can reveal, with surprising precision, the properties of the soil, the quantity of crop being grown, and the levels in those crops of chlorophyll, various minerals, moisture and other indicators of their vitality. If recent and frequent weather data is added to the mix, detailed maps can be produced showing exactly how, where and when crops should be grown. The service usually costs less than US $15 per hectare for a handful of readings a year, and can increase yields by almost 10%.",
+			"C. Such precision farming using satellite-based intelligence is a relatively new technique. Even so, it is catching on quickly. Five times a year, for example, a French cereal-growers’ co-operative called Sevep purchases satellite data and makes it available to its members in the form of maps of their fields, divided into three or four colour-coded zones per hectare. For each zone, one of about 50 fertilizer formulas is recommended. On top of this, if the wheat in the field has already grown quite high early in the season, and heavy showers are expected, an appropriate dose of growth regulator is recommended for each zone. (Lone, fragile stems break more easily in downpours.) Then, farm vehicles equipped with global-positioning system locators automatically map and apply the prescribed dose to each area.",
+			"D. France is the pioneer in this sort of surveillance. More farmland is analysed by satellite there than in any other country, according to Infoterra (a subsidiary of EADS Astrium), the firm that is France’s biggest provider of such information, supplying data to companies such as Sevep. Moreover, Henri Doulce, head of Infoterra’s agriculture sales in Toulouse, reckons that one monitored formula will increase as weather patterns change and farmers can no longer rely on the past as a guide to the future. When confounded by the yield variations that these new weather patterns will bring, even farmers who are afraid of new technology may be tempted.",
+			"E. Inexpensive data on the productivity of land is advantageous to governments, too. Areas where fertilisers and seeds are subsidised by the state can be more precisely pinpointed, studied and regulated by environment and land-use agencies. Guy Lallement of Ceresia, an agricultural wholesaler in north-eastern France, gives an example: satellite data in picture form is especially useful in regions where poor record-keeping has made analysis difficult. The data may also help determine whether over-use of nitrate fertilisers (which are also a source of greenhouse gases) appears partly responsible. And according to RapidEye, a German satellite operator, insurance companies are also studying satellite data with a view to selling insurance policies to governments of famine-prone countries that might be threatened by crop failure.",
+			"F. In March, RapidEye began selling data that helps forecast harvest. ‘Too often, farmers limit their fertilizing and managing fields uniformly,’ says Fredrick Jung-Rothenhauser, head of product development at the firm’s headquarters in Brandenburg an der Havel. ‘Our satellites are the first commercial satellites to include the Red-Edge band of the light spectrum, which is sensitive to changes in chlorophyll content. More research will be necessary to realise the full potential of the Red-Edge band. However, this band can assist in monitoring vegetation health, improving species separation and also help in measuring protein and nitrogen content in biomass.’ The company’s date, which comes from both Europe and the Americas, breaks fields productively down into plots just five metres square.",
+			"G. The advantage that satellite technology provides in terms of precision farming do not have to be restricted to rich countries. In Africa, where many soils have become badly depleted of nutrients, better fertiliser management would greatly improve the situation. As a consequence, the charitable trust World Agroforestry Centre, in the city of Nairobi in Kenya, has begun to build a catalogue of the radiation patterns derived from around 10,000 samples of African soils. The information is the key to understanding the potential of those soils to be more agriculturally productive. Once passed on to the International Centre for Tropical Agriculture, based in Cali, Colombia, South America, it is intended that the information be used to build a database called the ‘Digital Soil Map’. When ready, this will provide farmers with free forecasts, and will regularly be updated using satellite imagery, across farmland in a number of countries in Africa. This is information which will almost certainly assist in improving crop yield. For a hunger-ravaged continent, that is good news indeed."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-7",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Reading Passage 2 has seven paragraphs, A–G.\nWhich paragraph contains the following information?\nNB: You may use any letter more than once.",
+			"options": ["A", "B", "C", "D", "E", "F", "G"],
+			"questions": [
+				{
+					"number": 1,
+					"text": "An example of how farmers in one country are now using satellite data to determine fertiliser use.",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột ví dụ về cách nông dân ở một quốc gia đang sử dụng dữ liệu vệ tinh để xác định việc sử dụng phân bón.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nFrench cereal-growers' co-operative ~ farmers in one country\npurchases satellite data ~ using satellite data\nfertilizer formulas is recommended ~ determine fertiliser use\n\nBước 3: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"Năm lần một năm, ví dụ, một hợp tác xã trồng ngũ cốc Pháp có tên Sevep mua dữ liệu vệ tinh và cung cấp cho các thành viên dưới dạng bản đồ các cánh đồng của họ, được chia thành ba hoặc bốn vùng được mã hóa màu cho mỗi hecta. Đối với mỗi vùng, một trong khoảng 50 công thức phân bón được khuyến nghị.\"\n=> Thông tin này cho thấy đoạn C đã \"đề cập đến một ví dụ về cách nông dân ở một quốc gia (Pháp) hiện đang sử dụng dữ liệu vệ tinh để xác định việc sử dụng phân bón\".\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"Five times a year, for example, a French cereal-growers’ co-operative called Sevep purchases satellite data and makes it available to its members in the form of maps of their fields, divided into three or four colour-coded zones per hectare. For each zone, one of about 50 fertilizer formulas is recommended."
+					]
+				},
+				{
+					"number": 2,
+					"text": "A reference to climate change and its effects.",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề cập đến biến đổi khí hậu và các tác động của nó.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nweather patterns change ~ climate change\ncan no longer rely on the past ~ effects\nyield variations that these new weather patterns will bring ~ effects\n\nBước 3: So sánh và đối chiếu:\nĐoạn D chỉ rõ: \"Henri Doulce, trưởng bộ phận kinh doanh nông nghiệp của Infoterra ở Toulouse, nhận định rằng một công thức được giám sát sẽ tăng lên khi mô hình thời tiết thay đổi và nông dân không còn có thể dựa vào quá khứ làm hướng dẫn cho tương lai. Khi bối rối trước những biến động về năng suất mà những mô hình thời tiết mới này sẽ mang lại, thậm chí những nông dân sợ công nghệ mới cũng có thể bị cám dỗ.\"\n=> Thông tin này cho thấy đoạn D đã \"đề cập đến biến đổi khí hậu (thay đổi mô hình thời tiết) và tác động của nó (nông dân không còn có thể dựa vào quá khứ, biến động về năng suất)\".\n\nBước 4: Đáp án: D",
+					"quotes": [
+						"More farmland is analysed by satellite there than in any other country, according to Infoterra (a subsidiary of EADS Astrium), the firm that is France’s biggest provider of such information, supplying data to companies such as Sevep. Moreover, Henri Doulce, head of Infoterra’s agriculture sales in Toulouse, reckons that one monitored formula will increase as weather patterns change and farmers can no longer rely on the past as a guide to the future. When confounded by the yield variations that these new weather patterns will bring, even farmers who are afraid of new technology may be tempted."
+					]
+				},
+				{
+					"number": 3,
+					"text": "A reference to the effect on the soil of using too much fertiliser.",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề cập đến tác động lên đất khi sử dụng quá nhiều phân bón.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nover-use of nitrate fertilisers ~ using too much fertiliser\nsource of greenhouse gases ~ effect on the soil\n\nBước 3: So sánh và đối chiếu:\nĐoạn E chỉ rõ: \"Dữ liệu này cũng có thể giúp xác định liệu việc sử dụng quá nhiều phân bón nitrat (cũng là nguồn khí nhà kính) có phần chịu trách nhiệm hay không.\"\n=> Thông tin này cho thấy đoạn E đã \"đề cập đến tác động của việc sử dụng quá nhiều phân bón, cụ thể là làm gia tăng khí nhà kính.\"\n\nBước 4: Đáp án: E",
+					"quotes": [
+						"The data may also help determine whether over-use of nitrate fertilisers (which are also a source of greenhouse gases) appears partly responsible."
+					]
+				},
+				{
+					"number": 4,
+					"text": "An example of information that will be shared between different countries.",
+					"answer": "G",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột ví dụ về thông tin sẽ được chia sẻ giữa các quốc gia khác nhau.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\npassed on to the International Centre ~ information that will be shared\nbased in Cali, Colombia ~ different countries\nacross farmland in a number of countries in Africa ~ different countries\n\nBước 3: So sánh và đối chiếu:\nĐoạn G chỉ rõ: \"Một khi được chuyển cho Trung tâm Quốc tế về Nông nghiệp Nhiệt đới, có trụ sở tại Cali, Colombia, Nam Mỹ, thông tin này được dự định sẽ được sử dụng để xây dựng một cơ sở dữ liệu có tên 'Bản đồ Đất kỹ thuật số'. Khi sẵn sàng, nó sẽ cung cấp cho nông dân các dự báo miễn phí và sẽ được cập nhật thường xuyên bằng hình ảnh vệ tinh, trên các vùng đất nông nghiệp ở một số quốc gia châu Phi.\"\n=> Thông tin này cho thấy đoạn G đã \"đề cập đến một ví dụ về thông tin sẽ được chia sẻ giữa các quốc gia khác nhau (Kenya, Colombia và nhiều nước châu Phi).\"\n\nBước 4: Đáp án: G",
+					"quotes": [
+						"Once passed on to the International Centre for Tropical Agriculture, based in Cali, Colombia, South America, it is intended that the information be used to build a database called the ‘Digital Soil Map’. When ready, this will provide farmers with free forecasts, and will regularly be updated using satellite imagery, across farmland in a number of countries in Africa."
+					]
+				},
+				{
+					"number": 5,
+					"text": "A mention of the country which is the leader in agricultural technology.",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề cập đến quốc gia dẫn đầu trong công nghệ nông nghiệp.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nFrance is the pioneer ~ the country which is the leader\nMore farmland is analysed by satellite there than in any other country ~ leader in agricultural technology\n\nBước 3: So sánh và đối chiếu:\nĐoạn D chỉ rõ: \"Pháp là người tiên phong trong loại giám sát này. Đất nông nghiệp được phân tích bằng vệ tinh ở đó nhiều hơn bất kỳ quốc gia nào khác, theo Infoterra (một công ty con của EADS Astrium), công ty cung cấp thông tin lớn nhất của Pháp, cung cấp dữ liệu cho các công ty như Sevep.\"\n=> Thông tin này cho thấy đoạn D đã \"đề cập đến quốc gia (Pháp) là người dẫn đầu trong công nghệ nông nghiệp (giám sát vệ tinh).\"\n\nBước 4: Đáp án: D",
+					"quotes": ["D. France is the pioneer in this sort of surveillance."]
+				},
+				{
+					"number": 6,
+					"text": "A description of an innovation in satellite imaging which requires further study.",
+					"answer": "F",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMô tả về một đổi mới trong chụp ảnh vệ tinh cần được nghiên cứu thêm.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nRed-Edge band of the light spectrum ~ innovation in satellite imaging\nMore research will be necessary ~ requires further study\n\nBước 3: So sánh và đối chiếu:\nĐoạn F chỉ rõ: \"Vệ tinh của chúng tôi là những vệ tinh thương mại đầu tiên bao gồm dải Red-Edge của quang phổ ánh sáng, nhạy cảm với những thay đổi trong hàm lượng diệp lục. Nhiều nghiên cứu hơn sẽ cần thiết để nhận ra tiềm năng đầy đủ của dải Red-Edge.\"\n=> Thông tin này cho thấy đoạn F đã \"đề cập đến một đổi mới trong chụp ảnh vệ tinh (dải Red-Edge) cần được nghiên cứu thêm.\"\n\nBước 4: Đáp án: F",
+					"quotes": [
+						"‘Our satellites are the first commercial satellites to include the Red-Edge band of the light spectrum, which is sensitive to changes in chlorophyll content. More research will be necessary to realise the full potential of the Red-Edge band. However, this band can assist in monitoring vegetation health, improving species separation and also help in measuring protein and nitrogen content in biomass.’ The company’s date, which comes from both Europe and the Americas, breaks fields productively down into plots just five metres square."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Evidence of the cost effectiveness of using satellite technology in agriculture.",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nBằng chứng về hiệu quả chi phí khi sử dụng công nghệ vệ tinh trong nông nghiệp.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\ncosts less than US $15 per hectare ~ cost effectiveness\ncan increase yields by almost 10% ~ cost effectiveness\n\nBước 3: So sánh và đối chiếu:\nĐoạn B chỉ rõ: \"Dịch vụ thường có giá chưa đến 15 đô la Mỹ cho mỗi hecta cho một vài lần đọc mỗi năm, và có thể tăng năng suất lên gần 10%.\"\n=> Thông tin này cho thấy đoạn B đã \"đề cập đến bằng chứng về hiệu quả chi phí của việc sử dụng công nghệ vệ tinh trong nông nghiệp (chi phí thấp với sự gia tăng đáng kể về năng suất).\"\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"The service usually costs less than US $15 per hectare for a handful of readings a year, and can increase yields by almost 10%."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-9",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A–E.",
+			"questions": [
+				{
+					"number": 8,
+					"text": "Which TWO companies obtain information directly from satellites?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Sevepi"
+						},
+						{
+							"label": "B",
+							"text": "Infoterra"
+						},
+						{
+							"label": "C",
+							"text": "Agricultural and AgriFood Canada"
+						},
+						{
+							"label": "D",
+							"text": "RapidEye"
+						},
+						{
+							"label": "E",
+							"text": "World Agroforestry Centre"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 9,
+					"text": "Which TWO companies obtain information directly from satellites?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Sevepi"
+						},
+						{
+							"label": "B",
+							"text": "Infoterra"
+						},
+						{
+							"label": "C",
+							"text": "Agricultural and AgriFood Canada"
+						},
+						{
+							"label": "D",
+							"text": "RapidEye"
+						},
+						{
+							"label": "E",
+							"text": "World Agroforestry Centre"
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "10-13",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the sentences below.\nChoose NO MORE THAN TWO WORDS from the passage for each answer.",
+			"body": "Initially, orbiting satellites were used to measure ____ (10) coming from farmland.\n____ (11) believes that confusion about irregular weather will cause more farmers use satellite technology.\nAs a result of satellite technology, it may become possible to insure against the risk of ____ (12)\nIn Africa, much of the soil suffers from the loss of ____ (13)",
+			"body_html": "<ul><li>Initially, orbiting satellites were used to measure [10] coming from farmland.</li><li>[11] believes that confusion about irregular weather will cause more farmers use satellite technology.</li><li>As a result of satellite technology, it may become possible to insure against the risk of [12]</li><li>In Africa, much of the soil suffers from the loss of [13]</li></ul>",
+			"questions": [
+				{
+					"number": 10,
+					"text": "Initially, orbiting satellites were used to measure ____ (10) coming from farmland.",
+					"answer": "electron-magnetic radiation",
+					"quotes": [
+						"Better prescriptions for growing crops can be obtained quickly, and less expensively, by calculating the amount of electron-magnetic radiation reflected from agricultural land."
+					]
+				},
+				{
+					"number": 11,
+					"text": "____ (11) believes that confusion about irregular weather will cause more farmers use satellite technology.",
+					"answer": "Henri Doulce",
+					"quotes": [
+						"More farmland is analysed by satellite there than in any other country, according to Infoterra (a subsidiary of EADS Astrium), the firm that is France’s biggest provider of such information, supplying data to companies such as Sevep. Moreover, Henri Doulce, head of Infoterra’s agriculture sales in Toulouse, reckons that one monitored formula will increase as weather patterns change and farmers can no longer rely on the past as a guide to the future."
+					]
+				},
+				{
+					"number": 12,
+					"text": "As a result of satellite technology, it may become possible to insure against the risk of ____ (12)",
+					"answer": "crop failure",
+					"quotes": [
+						"And according to RapidEye, a German satellite operator, insurance companies are also studying satellite data with a view to selling insurance policies to governments of famine-prone countries that might be threatened by crop failure."
+					]
+				},
+				{
+					"number": 13,
+					"text": "In Africa, much of the soil suffers from the loss of ____ (13)",
+					"answer": "nutrients",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nỞ châu Phi, phần lớn đất đai phải chịu sự mất mát của __________.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: loss of + NOUN (NOUN làm Object của giới từ \"of\")\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nAfrica ~ Africa\nsoils ~ soil\ndepleted of nutrients ~ loss of\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Ở châu Phi, nơi nhiều vùng đất đã bị cạn kiệt chất dinh dưỡng nghiêm trọng, quản lý phân bón tốt hơn sẽ cải thiện đáng kể tình hình.\" (In Africa, where many soils have become badly depleted of nutrients, better fertiliser management would greatly improve the situation).\n\nBước 5: Đáp án: nutrients\nỞ châu Phi, phần lớn đất đai phải chịu sự mất mát của chất dinh dưỡng. (In Africa, much of the soil suffers from the loss of nutrients).",
+					"quotes": [
+						"In Africa, where many soils have become badly depleted of nutrients, better fertiliser management would greatly improve the situation."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

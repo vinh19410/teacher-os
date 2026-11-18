@@ -59,7 +59,7 @@ test.describe("Student Portal Email Verification", () => {
 		await verifyStudentEmailFromMailLog(page, email);
 		await expect(page).toHaveURL(/\/onboarding/, { timeout: 20_000 });
 		await expect(
-			page.getByText("Bạn đang quan tâm chứng chỉ nào?"),
+			page.getByText("Bạn muốn học tiếng Anh theo hướng nào?"),
 		).toBeVisible();
 		await expect(page.getByText("Email chưa được xác thực")).not.toBeVisible();
 

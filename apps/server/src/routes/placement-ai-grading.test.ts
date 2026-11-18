@@ -9,7 +9,7 @@ import {
 } from "@teacher-os/api/placement-test-contracts";
 import type { Mailer, MailInput } from "@teacher-os/auth/mail/mailer";
 import * as schema from "@teacher-os/db/schema/index";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { describe, expect, test } from "vitest";
@@ -31,6 +31,7 @@ import {
 	PLACEMENT_AI_STALE_AFTER_MS,
 	runPlacementAiGrading,
 } from "../lib/placement-ai/run-placement-grading";
+import { resolvePlacementResultLink } from "../lib/placement-submission-service";
 import { webmBytes } from "../lib/test-media-fixtures";
 
 const CORS_ORIGIN = "http://localhost:8001";
@@ -200,7 +201,11 @@ interface Harness {
 	flush(): Promise<void>;
 	submit(input: {
 		writingText?: string;
-		speakingMode?: "upload" | "skipped" | "none";
+		speakingMode?: "upload" | "none";
+		email?: string;
+	}): Promise<{ submissionId: string; leadId: string; uploadToken: string }>;
+	submitAndUpload(input?: {
+		writingText?: string;
 		email?: string;
 	}): Promise<{ submissionId: string; leadId: string; uploadToken: string }>;
 	upload(submissionId: string, uploadToken: string): Promise<void>;
@@ -213,6 +218,7 @@ async function createHarness(
 		grader?: "none" | FakePlacementAiGraderOptions;
 		mailer?: Mailer;
 		brokenMailer?: boolean;
+		studentOrigin?: string;
 	} = {},
 ): Promise<Harness> {
 	const client = createClient({ url: "file::memory:" });
@@ -261,6 +267,7 @@ async function createHarness(
 		getPlacementAiGrader: () => grader,
 		runInBackground,
 		...(opts.mailer ? { mailer: opts.mailer } : {}),
+		...(opts.studentOrigin ? { studentOrigin: opts.studentOrigin } : {}),
 		authHandler: async () => new Response("unused", { status: 404 }),
 		getSessionUser: async (headers) =>
 			headers.get("x-test-user") === "t1"
@@ -278,6 +285,53 @@ async function createHarness(
 	const app = buildApp(deps);
 
 	let phoneSeq = 0;
+	const submit: Harness["submit"] = async (input) => {
+		phoneSeq += 1;
+		const res = await app.request("/public/placement-test/submissions", {
+			method: "POST",
+			headers: { origin: PROFILE_ORIGIN, "content-type": "application/json" },
+			body: JSON.stringify({
+				lead: {
+					name: "Học viên A",
+					phone: `090555${String(phoneSeq).padStart(4, "0")}`,
+					email: input.email ?? "",
+				},
+				answers: {
+					listening: { "l-a1": 1 },
+					vocabGrammar: { "gv-01": 1 },
+					reading: { "r-a1": 1 },
+				},
+				writingText: input.writingText ?? ESSAY,
+				speakingMode: input.speakingMode ?? "upload",
+				speakingDurationSec: 30,
+			}),
+		});
+		expect(res.status).toBe(201);
+		return (await res.json()) as {
+			submissionId: string;
+			leadId: string;
+			uploadToken: string;
+		};
+	};
+	const upload: Harness["upload"] = async (submissionId, uploadToken) => {
+		const bytes = webmBytes();
+		const res = await app.request(
+			`/public/placement-test/submissions/${submissionId}/speaking-media`,
+			{
+				method: "PUT",
+				headers: {
+					origin: PROFILE_ORIGIN,
+					"x-upload-token": uploadToken,
+					"x-media-filename": "speaking.webm",
+					"content-type": "audio/webm",
+					"content-length": String(bytes.byteLength),
+				},
+				body: bytes,
+			},
+		);
+		expect(res.status).toBe(200);
+	};
+
 	return {
 		app,
 		db,
@@ -293,52 +347,13 @@ async function createHarness(
 				await Promise.all(pending.splice(0));
 			}
 		},
-		async submit(input) {
-			phoneSeq += 1;
-			const res = await app.request("/public/placement-test/submissions", {
-				method: "POST",
-				headers: { origin: PROFILE_ORIGIN, "content-type": "application/json" },
-				body: JSON.stringify({
-					lead: {
-						name: "Học viên A",
-						phone: `090555${String(phoneSeq).padStart(4, "0")}`,
-						email: input.email ?? "",
-					},
-					answers: {
-						listening: { "l-a1": 1 },
-						vocabGrammar: { "gv-01": 1 },
-						reading: { "r-a1": 1 },
-					},
-					writingText: input.writingText ?? ESSAY,
-					speakingMode: input.speakingMode ?? "skipped",
-					speakingDurationSec: 30,
-				}),
-			});
-			expect(res.status).toBe(201);
-			return (await res.json()) as {
-				submissionId: string;
-				leadId: string;
-				uploadToken: string;
-			};
+		submit,
+		async submitAndUpload(input = {}) {
+			const created = await submit({ ...input, speakingMode: "upload" });
+			await upload(created.submissionId, created.uploadToken);
+			return created;
 		},
-		async upload(submissionId, uploadToken) {
-			const bytes = webmBytes();
-			const res = await app.request(
-				`/public/placement-test/submissions/${submissionId}/speaking-media`,
-				{
-					method: "PUT",
-					headers: {
-						origin: PROFILE_ORIGIN,
-						"x-upload-token": uploadToken,
-						"x-media-filename": "speaking.webm",
-						"content-type": "audio/webm",
-						"content-length": String(bytes.byteLength),
-					},
-					body: bytes,
-				},
-			);
-			expect(res.status).toBe(200);
-		},
+		upload,
 		async detail(leadId) {
 			const res = await app.request(
 				`/api/leads/${leadId}/placement-submission`,
@@ -363,15 +378,19 @@ function teacherPost(app: ServerApp, path: string, body?: unknown) {
 }
 
 describe("placement AI grading pipeline (#730)", () => {
-	test("writing-only: nộp bài (không upload) → nháp Writing, lỗi định vị trên bài", async () => {
+	test("writing-only (bản ghi legacy không có audio): chấm nháp Writing, lỗi định vị trên bài", async () => {
 		const h = await createHarness();
-		const { leadId } = await h.submit({ speakingMode: "skipped" });
-		await h.flush();
-		const d = await h.detail(leadId);
+		const created = await h.submit({ speakingMode: "upload" });
+		await h.db
+			.update(schema.placementTestSubmission)
+			.set({ speakingStatus: "skipped", uploadTokenHash: null })
+			.where(eq(schema.placementTestSubmission.id, created.submissionId));
+		await runPlacementAiGrading(h.pipelineDeps, created.submissionId);
+		const d = await h.detail(created.leadId);
 		expect(d.aiStatus).toBe("drafted");
 		expect(d.aiErrorCode).toBeNull();
 		expect(d.aiDraftedAt).not.toBeNull();
-		expect(d.aiWriting?.rubric).toEqual({ ct: 3, or: 3, lg: 3 });
+		expect(Object.keys(d.aiWriting ?? {})).toEqual(["errors"]);
 		expect(d.aiWriting?.errors[0]).toMatchObject({
 			id: "w1",
 			quote: "Hello",
@@ -401,8 +420,9 @@ describe("placement AI grading pipeline (#730)", () => {
 		const d = await h.detail(created.leadId);
 		expect(d.aiStatus).toBe("drafted");
 		expect(d.speakingTranscript).toBe(FAKE_PLACEMENT_TRANSCRIPT);
-		expect(d.aiWriting?.rubric.ct).toBe(3);
-		expect(d.aiSpeaking?.rubric).toEqual({ gv: 3, dm: 3, pr: 3, ic: 3 });
+		expect(Object.keys(d.aiWriting ?? {})).toEqual(["errors"]);
+		expect(Object.keys(d.aiSpeaking ?? {})).toEqual(["errors"]);
+		expect(d.aiWriting?.errors).toHaveLength(1);
 		expect(d.aiSpeaking?.errors[0]).toMatchObject({
 			id: "s1",
 			quote: "I",
@@ -419,18 +439,18 @@ describe("placement AI grading pipeline (#730)", () => {
 
 	test("không có gì để chấm → giữ none, không gọi grader", async () => {
 		const h = await createHarness();
-		const { leadId } = await h.submit({
+		const { submissionId, leadId } = await h.submit({
 			writingText: "   ",
-			speakingMode: "skipped",
+			speakingMode: "upload",
 		});
-		await h.flush();
+		await runPlacementAiGrading(h.pipelineDeps, submissionId);
 		expect((await h.detail(leadId)).aiStatus).toBe("none");
 		expect(h.calls.writing).toBe(0);
 	});
 
 	test("grader vắng → failed AI_GRADING_DISABLED; retry trả 503", async () => {
 		const h = await createHarness({ grader: "none" });
-		const { leadId } = await h.submit({ speakingMode: "none" });
+		const { leadId } = await h.submitAndUpload();
 		await h.flush();
 		const d = await h.detail(leadId);
 		expect(d.aiStatus).toBe("failed");
@@ -451,14 +471,16 @@ describe("placement AI grading pipeline (#730)", () => {
 		const d = await h.detail(created.leadId);
 		expect(d.aiStatus).toBe("failed");
 		expect(d.aiErrorCode).toBe(PLACEMENT_AI_ERROR_CODES.NO_TRANSCRIPT);
-		expect(d.aiWriting?.rubric.lg).toBe(3);
+		expect(d.aiWriting?.errors).toHaveLength(1);
 		expect(d.aiSpeaking).toBeNull();
 		expect(h.calls.speaking).toBe(0);
 	});
 
 	test("grader lỗi → failed AI_GRADING_FAILED", async () => {
 		const h = await createHarness();
-		const { leadId } = await h.submit({ writingText: "ai-fail essay" });
+		const { leadId } = await h.submitAndUpload({
+			writingText: "ai-fail essay",
+		});
 		await h.flush();
 		const d = await h.detail(leadId);
 		expect(d.aiStatus).toBe("failed");
@@ -509,7 +531,7 @@ describe("POST /api/leads/:id/placement-submission/ai-retry (#730)", () => {
 		);
 		expect(conflict.status).toBe(409);
 
-		const { leadId } = await h.submit({ speakingMode: "skipped" });
+		const { leadId } = await h.submitAndUpload();
 		await h.flush();
 		expect(h.calls.writing).toBe(1);
 
@@ -553,8 +575,15 @@ describe("PATCH chốt + kết quả công khai (#730)", () => {
 		writingErrors: unknown[] = [],
 		speakingErrors: unknown[] = [],
 	) => ({
-		writingRubric: { ct: 4, or: 4, lg: 3 },
-		speakingRubric: { gv: 3, dm: 3, pr: 3, ic: 3 },
+		writingRubric: { task: 6.5, coherence: 6.5, lexical: 6.5, grammar: 6.5 },
+		writingScore: 6.5,
+		speakingRubric: {
+			fluency: 6,
+			lexical: 6,
+			grammar: 6,
+			pronunciation: 6,
+		},
+		speakingScore: 6,
 		teacherFeedback: "Cố gắng chia động từ đúng.",
 		writingErrors,
 		speakingErrors,
@@ -636,7 +665,14 @@ describe("PATCH chốt + kết quả công khai (#730)", () => {
 			Record<string, unknown>;
 		expect(view.studentName).toBe("Học viên A");
 		expect(view.writingText).toBe(ESSAY);
-		expect(view.writingRubric).toEqual({ ct: 4, or: 4, lg: 3 });
+		expect(view.writingRubric).toEqual({
+			task: 6.5,
+			coherence: 6.5,
+			lexical: 6.5,
+			grammar: 6.5,
+		});
+		expect(view.writingScore).toBe(6.5);
+		expect(view.speakingScore).toBe(6);
 		expect(view.speakingTranscript).toBe(FAKE_PLACEMENT_TRANSCRIPT);
 		expect(view.teacherFeedback).toBe("Cố gắng chia động từ đúng.");
 		expect(view.bandAdvice).toMatch(/^Học Level/);
@@ -656,7 +692,7 @@ describe("PATCH chốt + kết quả công khai (#730)", () => {
 
 	test("public results 404 khi token sai định dạng / không tồn tại / chưa chốt", async () => {
 		const h = await createHarness();
-		const created = await h.submit({ speakingMode: "skipped" });
+		const created = await h.submit({ speakingMode: "upload" });
 		await h.flush();
 		const bad = await h.app.request("/public/placement-test/results/abc");
 		expect(bad.status).toBe(404);
@@ -680,7 +716,7 @@ describe("PATCH chốt + kết quả công khai (#730)", () => {
 	test("email skipped khi lead không có email; failed khi mailer lỗi", async () => {
 		const ok = recordingMailer();
 		const h1 = await createHarness({ mailer: ok.mailer });
-		const noEmail = await h1.submit({ speakingMode: "skipped" });
+		const noEmail = await h1.submitAndUpload();
 		await h1.flush();
 		const r1 = await teacherPost(
 			h1.app,
@@ -694,8 +730,7 @@ describe("PATCH chốt + kết quả công khai (#730)", () => {
 
 		const broken = recordingMailer(true);
 		const h2 = await createHarness({ mailer: broken.mailer });
-		const withEmail = await h2.submit({
-			speakingMode: "skipped",
+		const withEmail = await h2.submitAndUpload({
 			email: "hv@test.local",
 		});
 		await h2.flush();
@@ -712,6 +747,287 @@ describe("PATCH chốt + kết quả công khai (#730)", () => {
 		expect((await h2.detail(withEmail.leadId)).resultEmailStatus).toBe(
 			"failed",
 		);
+	});
+});
+
+describe("email kết quả: tóm tắt HTML + link chi tiết", () => {
+	const STUDENT_ORIGIN = "https://hoc.msmy.io.vn/";
+	const grade = {
+		writingRubric: { task: 6.5, coherence: 6.5, lexical: 6.5, grammar: 6.5 },
+		writingScore: 6.5,
+		speakingRubric: {
+			fluency: 6,
+			lexical: 6,
+			grammar: 6,
+			pronunciation: 6,
+		},
+		speakingScore: 6,
+		teacherFeedback: "",
+		writingErrors: [],
+		speakingErrors: [],
+	};
+
+	async function gradeLead(
+		h: Harness,
+		email: string,
+		body: unknown = grade,
+	): Promise<PlacementSubmissionDetail> {
+		const created = await h.submitAndUpload({ email });
+		await h.flush();
+		const res = await teacherPost(
+			h.app,
+			`/api/leads/${created.leadId}/placement-submission`,
+			body,
+		);
+		expect(res.status).toBe(200);
+		return (await res.json()) as PlacementSubmissionDetail;
+	}
+
+	async function addUser(
+		h: Harness,
+		email: string,
+		role: string,
+		emailVerified = true,
+	) {
+		await h.db.insert(schema.user).values({
+			id: `u-${role}-${email}`,
+			name: "Tài khoản",
+			email,
+			role,
+			emailVerified,
+		});
+	}
+
+	async function addStudent(
+		h: Harness,
+		id: string,
+		email: string,
+		orgId = "org-1",
+	) {
+		if (orgId !== "org-1") {
+			await h.db
+				.insert(schema.organization)
+				.values({ id: orgId, name: orgId })
+				.onConflictDoNothing();
+		}
+		await h.db.insert(schema.student).values({
+			id,
+			orgId,
+			name: "Học viên A",
+			email,
+			phone: "0901234567",
+		});
+	}
+
+	test("người nhận có tài khoản học viên và portal hiển thị đúng bài vừa chốt → nút trỏ portal /placement-test; chốt lại không gửi lần hai", async () => {
+		const { sent, mailer } = recordingMailer();
+		const h = await createHarness({ mailer, studentOrigin: STUDENT_ORIGIN });
+		await addUser(h, "hocvien@test.local", "student");
+		await addStudent(h, "stu-a", "hocvien@test.local");
+
+		const graded = await gradeLead(h, " HocVien@Test.local ");
+		expect(graded.resultEmailStatus).toBe("sent");
+		expect(sent).toHaveLength(1);
+		const mail = sent[0];
+		const portal = "https://hoc.msmy.io.vn/placement-test";
+		expect(mail?.html).toContain(`href="${portal}"`);
+		expect(mail?.html).not.toContain("?t=");
+		expect(mail?.text).toContain(portal);
+		// Tóm tắt khớp kết quả đã chốt (cùng nguồn với portal).
+		expect(graded.finalBandLevel).toBe("A2");
+		expect(mail?.html).toContain(">A2<");
+		expect(mail?.html).toContain("Communication English Level 2");
+		expect(mail?.html).toContain(`>${graded.finalScorePct}%<`);
+		for (const row of [
+			"Listening",
+			"Grammar &amp; Vocabulary",
+			"Reading",
+			"Writing",
+			"Speaking",
+		]) {
+			expect(mail?.html).toContain(`>${row}<`);
+		}
+		expect(mail?.html).toContain("1/1 (100%)");
+		expect(mail?.html).toContain("Band 6.5/9");
+		expect(mail?.html).toContain("Band 6.0/9");
+		expect(mail?.text).toContain(`Điểm tổng hợp: ${graded.finalScorePct}%`);
+		expect(mail?.text).not.toContain("0905");
+
+		const regrade = await teacherPost(
+			h.app,
+			`/api/leads/${graded.leadId}/placement-submission`,
+			grade,
+		);
+		expect(regrade.status).toBe(200);
+		expect(sent).toHaveLength(1);
+	});
+
+	test("lead chưa có tài khoản (hoặc chỉ có tài khoản giáo viên) → link kết quả công khai; bỏ dòng Speaking khi không chấm", async () => {
+		const { sent, mailer } = recordingMailer();
+		const h = await createHarness({ mailer, studentOrigin: STUDENT_ORIGIN });
+		await addUser(h, "gv@test.local", "teacher");
+		// Có dòng học viên cùng email để chứng minh lọc theo role tài khoản.
+		await addStudent(h, "stu-gv", "gv@test.local");
+
+		const noAccount = await gradeLead(h, "lead@test.local", {
+			...grade,
+			speakingRubric: null,
+			speakingScore: null,
+		});
+		const teacherOnly = await gradeLead(h, "gv@test.local");
+		expect(sent).toHaveLength(2);
+		for (const [i, detail] of [noAccount, teacherOnly].entries()) {
+			expect(detail.resultUrl).toMatch(/\?t=[0-9a-f]{64}$/);
+			expect(sent[i]?.html).toContain(
+				`href="${(detail.resultUrl ?? "").replaceAll("&", "&amp;")}"`,
+			);
+			expect(sent[i]?.text).toContain(detail.resultUrl ?? "-");
+			expect(sent[i]?.html).not.toContain('/placement-test"');
+		}
+		expect(sent[0]?.html).not.toContain("Speaking");
+		expect(sent[1]?.html).toContain(">Speaking<");
+	});
+
+	test("chấm qua trang học viên → nút trỏ portal /placement-test", async () => {
+		const { sent, mailer } = recordingMailer();
+		const h = await createHarness({ mailer, studentOrigin: STUDENT_ORIGIN });
+		await addUser(h, "hv.portal@test.local", "student");
+		await addStudent(h, "stu-p", "hv.portal@test.local");
+		const created = await h.submitAndUpload();
+		await h.flush();
+		await h.db
+			.update(schema.placementTestSubmission)
+			.set({ studentId: "stu-p" })
+			.where(eq(schema.placementTestSubmission.id, created.submissionId));
+
+		const res = await teacherPost(
+			h.app,
+			"/api/students/stu-p/placement-submission",
+			grade,
+		);
+		expect(res.status).toBe(200);
+		const graded = (await res.json()) as PlacementSubmissionDetail;
+		expect(graded.resultEmailStatus).toBe("sent");
+		expect(sent).toHaveLength(1);
+		expect(sent[0]?.to).toBe("hv.portal@test.local");
+		expect(sent[0]?.html).toContain(
+			'href="https://hoc.msmy.io.vn/placement-test"',
+		);
+		expect(sent[0]?.text).toContain("https://hoc.msmy.io.vn/placement-test");
+	});
+
+	test("portal đang hiển thị bài khác (bài gắn học viên mới hơn) → link công khai của bài vừa chốt", async () => {
+		const { sent, mailer } = recordingMailer();
+		const h = await createHarness({ mailer, studentOrigin: STUDENT_ORIGIN });
+		await addUser(h, "hocvien@test.local", "student");
+		await addStudent(h, "stu-a", "hocvien@test.local");
+		const portalSub = await h.submitAndUpload();
+		await h.flush();
+		await h.db
+			.update(schema.placementTestSubmission)
+			.set({ studentId: "stu-a" })
+			.where(eq(schema.placementTestSubmission.id, portalSub.submissionId));
+
+		const graded = await gradeLead(h, "hocvien@test.local");
+		expect(graded.id).not.toBe(portalSub.submissionId);
+		expect(sent[0]?.html).toContain(`href="${graded.resultUrl}"`);
+		expect(sent[0]?.html).not.toContain('/placement-test"');
+		expect(sent[0]?.text).toContain(graded.resultUrl ?? "-");
+	});
+
+	test("tài khoản học viên chưa xác minh email → link công khai", async () => {
+		const { sent, mailer } = recordingMailer();
+		const h = await createHarness({ mailer, studentOrigin: STUDENT_ORIGIN });
+		await addUser(h, "hocvien@test.local", "student", false);
+		await addStudent(h, "stu-a", "hocvien@test.local");
+
+		const graded = await gradeLead(h, "hocvien@test.local");
+		expect(sent[0]?.html).toContain(`href="${graded.resultUrl}"`);
+		expect(sent[0]?.html).not.toContain('/placement-test"');
+	});
+
+	test("dòng học viên demo bị bỏ qua → link công khai", async () => {
+		const { sent, mailer } = recordingMailer();
+		const h = await createHarness({ mailer, studentOrigin: STUDENT_ORIGIN });
+		await addUser(h, "hocvien@test.local", "student");
+		await addStudent(h, "demo-student:org-1", "hocvien@test.local");
+
+		const graded = await gradeLead(h, "hocvien@test.local");
+		expect(sent[0]?.html).toContain(`href="${graded.resultUrl}"`);
+		expect(sent[0]?.html).not.toContain('/placement-test"');
+	});
+
+	test("tóm tắt email lấy từ kết quả đã lưu (lượt chốt khác ghi sau vẫn thắng)", async () => {
+		const { sent, mailer } = recordingMailer();
+		const h = await createHarness({ mailer });
+		// Mô phỏng lượt chốt đồng thời ghi đè ngay khi lượt này thắng CAS.
+		await h.db.run(
+			sql.raw(`CREATE TRIGGER concurrent_finalize AFTER UPDATE OF result_published_at ON placement_test_submission
+			BEGIN
+				UPDATE placement_test_submission
+				SET final_band_level = 'B1', final_display_course = 'Khóa ghi sau',
+					final_score_pct = 41, writing_band = 5.5, speaking_band = 4.5,
+					writing_score = NULL, speaking_score = NULL
+				WHERE id = NEW.id;
+			END`),
+		);
+
+		await gradeLead(h, "hv@test.local");
+		const created = await h.db
+			.select()
+			.from(schema.placementTestSubmission)
+			.limit(1);
+		const row = created[0];
+		expect(row?.finalBandLevel).toBe("B1");
+		const mail = sent[0];
+		expect(mail?.html).toContain(">B1<");
+		expect(mail?.html).toContain("Khóa ghi sau");
+		expect(mail?.html).toContain(">41%<");
+		expect(mail?.html).toContain("Band 5.5/9");
+		expect(mail?.html).toContain("Band 4.5/9");
+		expect(mail?.text).toContain("Trình độ CEFR: B1");
+	});
+
+	test("dòng học viên chỉ có ở org khác → link công khai", async () => {
+		const { sent, mailer } = recordingMailer();
+		const h = await createHarness({ mailer, studentOrigin: STUDENT_ORIGIN });
+		await addUser(h, "hocvien@test.local", "student");
+		await addStudent(h, "stu-x", "hocvien@test.local", "org-2");
+
+		const graded = await gradeLead(h, "hocvien@test.local");
+		expect(sent[0]?.html).toContain(`href="${graded.resultUrl}"`);
+		expect(sent[0]?.html).not.toContain('/placement-test"');
+	});
+
+	test("không cấu hình studentOrigin → luôn dùng link công khai", async () => {
+		const { sent, mailer } = recordingMailer();
+		const h = await createHarness({ mailer });
+		await addUser(h, "hocvien@test.local", "student");
+		await addStudent(h, "stu-a", "hocvien@test.local");
+
+		const graded = await gradeLead(h, "hocvien@test.local");
+		expect(graded.resultEmailStatus).toBe("sent");
+		expect(sent[0]?.html).toContain(`href="${graded.resultUrl}"`);
+		expect(sent[0]?.text).toContain(graded.resultUrl ?? "-");
+	});
+
+	test("tra cứu tài khoản lỗi → fail-open về link công khai", async () => {
+		const publicUrl = "https://msmy.io.vn/kiem-tra-dau-vao/ket-qua/?t=x";
+		// Test double: chỉ cần `select` ném lỗi để kiểm tra fail-open.
+		const brokenDb = {
+			select() {
+				throw new Error("db down");
+			},
+		} as unknown as Db;
+		await expect(
+			resolvePlacementResultLink(brokenDb, {
+				orgId: "org-1",
+				submissionId: "sub-1",
+				recipientEmail: "hocvien@test.local",
+				studentOrigin: STUDENT_ORIGIN,
+				publicUrl,
+			}),
+		).resolves.toBe(publicUrl);
 	});
 });
 
@@ -735,8 +1051,15 @@ function makeStale(h: Harness, submissionId: string) {
 }
 
 const finalGrade = {
-	writingRubric: { ct: 4, or: 4, lg: 3 },
-	speakingRubric: { gv: 3, dm: 3, pr: 3, ic: 3 },
+	writingRubric: { task: 6.5, coherence: 6.5, lexical: 6.5, grammar: 6.5 },
+	writingScore: 6.5,
+	speakingRubric: {
+		fluency: 6,
+		lexical: 6,
+		grammar: 6,
+		pronunciation: 6,
+	},
+	speakingScore: 6,
 	teacherFeedback: "Cố gắng chia động từ đúng.",
 	writingErrors: [],
 	speakingErrors: [],
@@ -745,9 +1068,7 @@ const finalGrade = {
 describe("chấm nền qua job OpenAI background + finalize lười (#730)", () => {
 	test("poll lỗi tạm thời kéo dài quá trần cứng → failed TIMEOUT, không treo mãi", async () => {
 		const h = await createHarness({ grader: { transientPoll: true } });
-		const { submissionId, leadId } = await h.submit({
-			speakingMode: "skipped",
-		});
+		const { submissionId, leadId } = await h.submitAndUpload();
 		await h.flush();
 		await h.db
 			.update(schema.placementTestSubmission)
@@ -874,8 +1195,10 @@ describe("chấm nền qua job OpenAI background + finalize lười (#730)", () 
 		const second = await h.detail(created.leadId);
 		expect(second.aiStatus).toBe("drafted");
 		expect(second.aiErrorCode).toBeNull();
-		expect(second.aiWriting?.rubric).toEqual({ ct: 3, or: 3, lg: 3 });
-		expect(second.aiSpeaking?.rubric).toEqual({ gv: 3, dm: 3, pr: 3, ic: 3 });
+		expect(Object.keys(second.aiWriting ?? {})).toEqual(["errors"]);
+		expect(Object.keys(second.aiSpeaking ?? {})).toEqual(["errors"]);
+		expect(second.aiWriting?.errors).toHaveLength(1);
+		expect(second.aiSpeaking?.errors).toHaveLength(1);
 		const done = await rowOf(h, created.submissionId);
 		expect(done.aiWritingResponseId).toBeNull();
 		expect(done.aiSpeakingResponseId).toBeNull();
@@ -895,7 +1218,7 @@ describe("chấm nền qua job OpenAI background + finalize lười (#730)", () 
 
 		const partial = await h.detail(created.leadId);
 		expect(partial.aiStatus).toBe("processing");
-		expect(partial.aiWriting?.rubric.ct).toBe(3);
+		expect(partial.aiWriting?.errors).toHaveLength(1);
 		expect(partial.aiSpeaking).toBeNull();
 		const row = await rowOf(h, created.submissionId);
 		expect(row.aiWritingResponseId).toBeNull();
@@ -903,26 +1226,24 @@ describe("chấm nền qua job OpenAI background + finalize lười (#730)", () 
 
 		const done = await h.detail(created.leadId);
 		expect(done.aiStatus).toBe("drafted");
-		expect(done.aiSpeaking?.rubric.gv).toBe(3);
+		expect(done.aiSpeaking?.errors).toHaveLength(1);
 		// Writing không bị poll lại sau khi đã có kết quả.
 		expect(h.calls.poll).toBe(3);
 	});
 
 	test("hai lượt mở bài đồng thời không ghi chồng (CAS trên id job)", async () => {
 		const h = await createHarness();
-		const { leadId } = await h.submit({ speakingMode: "skipped" });
+		const { leadId } = await h.submitAndUpload();
 		await h.flush();
 		const [a, b] = await Promise.all([h.detail(leadId), h.detail(leadId)]);
 		expect(a.aiStatus).toBe("drafted");
 		expect(b.aiStatus).toBe("drafted");
-		expect(b.aiWriting?.rubric).toEqual({ ct: 3, or: 3, lg: 3 });
+		expect(b.aiWriting?.errors).toHaveLength(1);
 	});
 
 	test("poll lỗi mạng tạm thời → giữ processing kể cả quá 15 phút; sweep không đụng lượt có job", async () => {
 		const h = await createHarness({ grader: { transientPoll: true } });
-		const { submissionId, leadId } = await h.submit({
-			speakingMode: "skipped",
-		});
+		const { submissionId, leadId } = await h.submitAndUpload();
 		await h.flush();
 		expect((await h.detail(leadId)).aiStatus).toBe("processing");
 		await makeStale(h, submissionId);
@@ -945,15 +1266,13 @@ describe("chấm nền qua job OpenAI background + finalize lười (#730)", () 
 		const d = await h.detail(created.leadId);
 		expect(d.aiStatus).toBe("failed");
 		expect(d.aiErrorCode).toBe(PLACEMENT_AI_ERROR_CODES.TIMEOUT);
-		expect(d.aiWriting?.rubric.ct).toBe(3);
+		expect(d.aiWriting?.errors).toHaveLength(1);
 		expect(d.aiSpeaking).toBeNull();
 	});
 
 	test("lỗi khi tạo job (không job nào chạy) → failed ngay, không poll", async () => {
 		const h = await createHarness({ grader: { error: new Error("boom") } });
-		const { submissionId, leadId } = await h.submit({
-			speakingMode: "skipped",
-		});
+		const { submissionId, leadId } = await h.submitAndUpload();
 		await h.flush();
 		const row = await rowOf(h, submissionId);
 		expect(row.aiStatus).toBe("failed");
@@ -983,7 +1302,7 @@ describe("chấm nền qua job OpenAI background + finalize lười (#730)", () 
 describe("ai-retry: content-type, bài đã chốt, bài bỏ ngang (#730)", () => {
 	test("POST thiếu Content-Type JSON → 415; có JSON body → 200", async () => {
 		const h = await createHarness();
-		const { leadId } = await h.submit({ speakingMode: "skipped" });
+		const { leadId } = await h.submitAndUpload();
 		await h.flush();
 		const path = `/api/leads/${leadId}/placement-submission/ai-retry`;
 		const bare = await h.app.request(path, {
@@ -1005,7 +1324,7 @@ describe("ai-retry: content-type, bài đã chốt, bài bỏ ngang (#730)", () 
 
 	test("kết quả đã chốt → 409, không chấm lại", async () => {
 		const h = await createHarness();
-		const { leadId } = await h.submit({ speakingMode: "skipped" });
+		const { leadId } = await h.submitAndUpload();
 		await h.flush();
 		await h.detail(leadId);
 		const patch = await teacherPost(
@@ -1041,14 +1360,12 @@ describe("ai-retry: content-type, bài đã chốt, bài bỏ ngang (#730)", () 
 		await h.flush();
 		const d = await h.detail(leadId);
 		expect(d.aiStatus).toBe("drafted");
-		expect(d.aiWriting?.rubric.ct).toBe(3);
+		expect(d.aiWriting?.errors).toHaveLength(1);
 	});
 
 	test("retry lưu kết quả lượt cũ đã xong rồi mới claim lượt mới", async () => {
 		const h = await createHarness();
-		const { submissionId, leadId } = await h.submit({
-			speakingMode: "skipped",
-		});
+		const { submissionId, leadId } = await h.submitAndUpload();
 		await h.flush();
 		expect((await rowOf(h, submissionId)).aiStatus).toBe("processing");
 		const res = await teacherPost(
@@ -1066,8 +1383,7 @@ describe("chốt kết quả: token và email (#730)", () => {
 	test("hai lượt chốt đầu đồng thời dùng chung một token, chỉ một email", async () => {
 		const { sent, mailer } = recordingMailer();
 		const h = await createHarness({ mailer });
-		const { leadId } = await h.submit({
-			speakingMode: "skipped",
+		const { leadId } = await h.submitAndUpload({
 			email: "hv@test.local",
 		});
 		await h.flush();
@@ -1088,8 +1404,7 @@ describe("chốt kết quả: token và email (#730)", () => {
 	test("chốt lại không gửi email nữa và giữ trạng thái email cũ", async () => {
 		const { sent, mailer } = recordingMailer();
 		const h = await createHarness({ mailer });
-		const { leadId } = await h.submit({
-			speakingMode: "skipped",
+		const { leadId } = await h.submitAndUpload({
 			email: "hv@test.local",
 		});
 		await h.flush();
@@ -1120,8 +1435,7 @@ describe("chốt kết quả: token và email (#730)", () => {
 			},
 		};
 		const h = await createHarness({ mailer });
-		const { leadId } = await h.submit({
-			speakingMode: "skipped",
+		const { leadId } = await h.submitAndUpload({
 			email: "hv@test.local",
 		});
 		await h.flush();
@@ -1136,8 +1450,7 @@ describe("chốt kết quả: token và email (#730)", () => {
 
 	test("getter mailer throw → email failed, chốt vẫn 200", async () => {
 		const h = await createHarness({ brokenMailer: true });
-		const { leadId } = await h.submit({
-			speakingMode: "skipped",
+		const { leadId } = await h.submitAndUpload({
 			email: "hv@test.local",
 		});
 		await h.flush();
@@ -1151,5 +1464,75 @@ describe("chốt kết quả: token và email (#730)", () => {
 		expect(d.status).toBe("graded");
 		expect(d.resultUrl).not.toBeNull();
 		expect(d.resultEmailStatus).toBe("failed");
+	});
+
+	test("tương thích ngược: bản nháp ai_writing_json / ai_speaking_json cũ có rubric & feedback vẫn đọc được errors", async () => {
+		const h = await createHarness();
+		const created = await h.submit({ speakingMode: "upload" });
+		await h.db
+			.update(schema.placementTestSubmission)
+			.set({
+				aiStatus: "drafted",
+				speakingTranscript: FAKE_PLACEMENT_TRANSCRIPT,
+				aiWritingJson: JSON.stringify({
+					rubric: { ct: 3, or: 3, lg: 3 },
+					feedback: "Nhận xét cũ.",
+					errors: [
+						{
+							id: "w1",
+							category: "grammar",
+							quote: "I lives",
+							start: null,
+							end: null,
+							correction: "I live",
+							explanation: "Chia động từ.",
+						},
+					],
+				}),
+				aiSpeakingJson: JSON.stringify({
+					rubric: { gv: 3, dm: 3, pr: 3, ic: 3 },
+					feedback: "Nói rõ.",
+					errors: [
+						{
+							id: "s1",
+							category: "vocabulary",
+							quote: "beach",
+							start: null,
+							end: null,
+							correction: "seaside",
+							explanation: "Từ đồng nghĩa.",
+						},
+					],
+				}),
+			})
+			.where(eq(schema.placementTestSubmission.id, created.submissionId));
+
+		const d = await h.detail(created.leadId);
+		expect(d.aiWriting).toEqual({
+			errors: [
+				{
+					id: "w1",
+					category: "grammar",
+					quote: "I lives",
+					start: ESSAY.indexOf("I lives"),
+					end: ESSAY.indexOf("I lives") + 7,
+					correction: "I live",
+					explanation: "Chia động từ.",
+				},
+			],
+		});
+		expect(d.aiSpeaking).toEqual({
+			errors: [
+				{
+					id: "s1",
+					category: "vocabulary",
+					quote: "beach",
+					start: FAKE_PLACEMENT_TRANSCRIPT.indexOf("beach"),
+					end: FAKE_PLACEMENT_TRANSCRIPT.indexOf("beach") + 5,
+					correction: "seaside",
+					explanation: "Từ đồng nghĩa.",
+				},
+			],
+		});
 	});
 });

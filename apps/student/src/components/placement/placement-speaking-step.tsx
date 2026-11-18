@@ -10,34 +10,34 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@teacher-os/ui/components/card";
-import {
-	Mic,
-	MicOff,
-	RotateCcw,
-	SkipForward,
-	Square,
-	Volume2,
-} from "lucide-react";
+import { Mic, Pause, RotateCcw, Volume2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { cn } from "@/lib/cn";
 import {
+	canRetrySpeakingTask,
 	computeSpeechFallbackTimeoutMs,
 	createInitialSpeakingSession,
 	formatPlacementClock,
+	MAX_SPEAKING_RETRIES_PER_TASK,
 	PLACEMENT_SPEAKING_MAX_BYTES,
 	pickSupportedRecorderMime,
 	resolveSpeakingTaskTimings,
 	resolveSpeakingUploadMeta,
+	retrySpeakingCurrentTask,
 	type SpeakingSessionState,
 	startSpeakingTaskReading,
 	transitionSpeakingAfterReading,
 	transitionSpeakingNextTask,
 	transitionSpeakingToAnswer,
+	transitionSpeakingToPaused,
 } from "@/lib/placement-test-helpers";
 import {
 	resolveStudentPlacementMediaSrc,
 	useActiveStudentOrgId,
 } from "@/lib/repos/placement-test";
+import {
+	mergeSpeakingAudioSegments,
+	type SpeakingAudioSegment,
+} from "@/lib/speaking-audio-merger";
 
 export interface RecordedSpeakingAudio {
 	blob: Blob;
@@ -46,19 +46,21 @@ export interface RecordedSpeakingAudio {
 	durationSec: number;
 }
 
+interface ActiveRecorderHandle {
+	recorder: MediaRecorder;
+	taskIndex: number;
+	stop: (discard?: boolean) => Promise<SpeakingAudioSegment | null>;
+}
+
 export function PlacementSpeakingStep({
 	tasks,
-	speakingMode,
 	recordedAudio,
 	onRecordedAudioChange,
-	onSkipSpeaking,
 	onBusyChange,
 }: {
 	tasks: readonly PlacementPublishedSpeakingTask[];
-	speakingMode: "none" | "skipped" | "upload";
 	recordedAudio: RecordedSpeakingAudio | null;
 	onRecordedAudioChange: (next: RecordedSpeakingAudio | null) => void;
-	onSkipSpeaking: () => void;
 	onBusyChange: (busy: boolean) => void;
 }) {
 	const activeOrgId = useActiveStudentOrgId();
@@ -66,22 +68,28 @@ export function PlacementSpeakingStep({
 		createInitialSpeakingSession(tasks.length),
 	);
 	const [isRequestingMic, setIsRequestingMic] = useState(false);
+	const [isTransitioning, setIsTransitioning] = useState(false);
 	const [isFinalizing, setIsFinalizing] = useState(false);
 	const [isPromptReplaying, setIsPromptReplaying] = useState(false);
+	const [confirmEarlyFinish, setConfirmEarlyFinish] = useState(false);
+	const [segmentDurationsSec, setSegmentDurationsSec] = useState<
+		Record<number, number>
+	>({});
 	const [mediaError, setMediaError] = useState("");
 
 	const sessionRef = useRef(session);
 	sessionRef.current = session;
 
 	const mediaStreamRef = useRef<MediaStream | null>(null);
-	const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-	const recordedChunksRef = useRef<Blob[]>([]);
-	const activeAnswerMsRef = useRef(0);
-	const answerStartedAtRef = useRef(0);
-	const hasRecordedAnyAnswerRef = useRef(false);
-	const discardOnStopRef = useRef(false);
+	const activeRecorderRef = useRef<ActiveRecorderHandle | null>(null);
+	const recordedSegmentsRef = useRef<Array<SpeakingAudioSegment | undefined>>(
+		[],
+	);
 	const isStoppingStreamRef = useRef(false);
-	const startTokenRef = useRef(0);
+	const isTransitioningRef = useRef(false);
+	const isFinalizingRef = useRef(false);
+	const unmountedRef = useRef(false);
+	const sessionTokenRef = useRef(0);
 	const promptTokenRef = useRef(0);
 	const activePromptAudioRef = useRef<HTMLAudioElement | null>(null);
 	const readingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -94,7 +102,11 @@ export function PlacementSpeakingStep({
 		typeof window !== "undefined" &&
 		typeof window.MediaRecorder === "function";
 
-	const isBusy = session.status === "active" || isFinalizing || isRequestingMic;
+	const isBusy =
+		session.status === "active" ||
+		isFinalizing ||
+		isRequestingMic ||
+		isTransitioning;
 
 	useEffect(() => {
 		onBusyChange(isBusy);
@@ -156,20 +168,37 @@ export function PlacementSpeakingStep({
 		}
 	}, []);
 
+	const stopActiveRecorder = useCallback(
+		async (discard = false): Promise<SpeakingAudioSegment | null> => {
+			const handle = activeRecorderRef.current;
+			if (!handle) return null;
+			return handle.stop(discard);
+		},
+		[],
+	);
+
 	const abortWithError = useCallback(
 		(message: string) => {
-			startTokenRef.current += 1;
+			sessionTokenRef.current += 1;
+			isTransitioningRef.current = false;
+			isFinalizingRef.current = false;
 			setIsRequestingMic(false);
+			setIsTransitioning(false);
 			setIsFinalizing(false);
+			setConfirmEarlyFinish(false);
 			clearPhaseTimer();
 			teardownPromptPlayback();
-			mediaRecorderRef.current = null;
+			const handle = activeRecorderRef.current;
+			activeRecorderRef.current = null;
+			if (handle) {
+				void handle.stop(true);
+			}
 			stopMediaStream();
-			setSession(createInitialSpeakingSession(tasks.length));
-			activeAnswerMsRef.current = 0;
-			answerStartedAtRef.current = 0;
-			hasRecordedAnyAnswerRef.current = false;
-			recordedChunksRef.current = [];
+			recordedSegmentsRef.current = [];
+			setSegmentDurationsSec({});
+			const resetState = createInitialSpeakingSession(tasks.length);
+			sessionRef.current = resetState;
+			setSession(resetState);
 			setMediaError(message);
 		},
 		[clearPhaseTimer, stopMediaStream, tasks.length, teardownPromptPlayback],
@@ -177,15 +206,17 @@ export function PlacementSpeakingStep({
 
 	// Cleanup toàn bộ thiết bị ghi âm & timer khi rời màn Speaking.
 	useEffect(() => {
+		unmountedRef.current = false;
 		return () => {
-			startTokenRef.current += 1;
+			unmountedRef.current = true;
+			sessionTokenRef.current += 1;
 			clearPhaseTimer();
 			teardownPromptPlayback();
-			const rec = mediaRecorderRef.current;
-			mediaRecorderRef.current = null;
-			if (rec && rec.state !== "inactive") {
+			const handle = activeRecorderRef.current;
+			activeRecorderRef.current = null;
+			if (handle && handle.recorder.state !== "inactive") {
 				try {
-					rec.stop();
+					handle.recorder.stop();
 				} catch {
 					// Ignore stop error on unmount
 				}
@@ -194,84 +225,267 @@ export function PlacementSpeakingStep({
 		};
 	}, [clearPhaseTimer, stopMediaStream, teardownPromptPlayback]);
 
-	const ensureRecorderRecordingForAnswer = useCallback(() => {
-		answerStartedAtRef.current = Date.now();
-		hasRecordedAnyAnswerRef.current = true;
-		const recorder = mediaRecorderRef.current;
-		if (!recorder) return;
-		if (recorder.state === "inactive") {
+	const startTaskRecorder = useCallback(
+		(taskIndex: number): boolean => {
+			const stream = mediaStreamRef.current;
+			if (!stream || typeof window === "undefined" || !window.MediaRecorder) {
+				abortWithError(
+					"Không tìm thấy nguồn Micro đang hoạt động. Vui lòng kiểm tra Micro và thử lại.",
+				);
+				return false;
+			}
+
+			if (activeRecorderRef.current) {
+				void activeRecorderRef.current.stop(true);
+				activeRecorderRef.current = null;
+			}
+
+			const token = sessionTokenRef.current;
+			const mime = preferredMimeRef.current;
+			let recorder: MediaRecorder;
 			try {
-				recorder.start(250);
+				recorder = mime
+					? new window.MediaRecorder(stream, { mimeType: mime })
+					: new window.MediaRecorder(stream);
 			} catch {
 				abortWithError(
-					"Không thể bắt đầu ghi âm qua Micro. Vui lòng thử lại hoặc chọn Bỏ qua phần Speaking.",
+					"Không thể khởi tạo bộ ghi âm cho câu hiện tại. Vui lòng kiểm tra Micro và thử lại.",
 				);
+				return false;
 			}
-			return;
-		}
-		if (recorder.state === "paused" && typeof recorder.resume === "function") {
-			try {
-				recorder.resume();
-			} catch {
-				// Keep existing recorder if resume throws
-			}
-		}
-	}, [abortWithError]);
 
-	const pauseRecorderBetweenTasks = useCallback(() => {
-		if (answerStartedAtRef.current > 0) {
-			activeAnswerMsRef.current += Math.max(
-				0,
-				Date.now() - answerStartedAtRef.current,
-			);
-			answerStartedAtRef.current = 0;
-		}
-		const recorder = mediaRecorderRef.current;
-		if (
-			recorder &&
-			recorder.state === "recording" &&
-			typeof recorder.pause === "function"
-		) {
-			try {
-				recorder.pause();
-			} catch {
-				// Ignore pause errors on browsers lacking pause support
-			}
-		}
-	}, []);
+			const chunks: Blob[] = [];
+			const startedAt = Date.now();
+			let settled = false;
+			let discardThis = false;
+			let stopPromise: Promise<SpeakingAudioSegment | null> | null = null;
+			let resolveStop: ((seg: SpeakingAudioSegment | null) => void) | null =
+				null;
 
-	const finalizeRecording = useCallback(
-		(discard: boolean) => {
+			const finishStop = (seg: SpeakingAudioSegment | null) => {
+				if (settled) return;
+				settled = true;
+				if (activeRecorderRef.current?.recorder === recorder) {
+					activeRecorderRef.current = null;
+				}
+				resolveStop?.(seg);
+			};
+
+			recorder.addEventListener("dataavailable", (evt) => {
+				if (evt.data && evt.data.size > 0) {
+					chunks.push(evt.data);
+				}
+			});
+
+			recorder.addEventListener("error", () => {
+				if (token !== sessionTokenRef.current || unmountedRef.current) {
+					finishStop(null);
+					return;
+				}
+				finishStop(null);
+				abortWithError(
+					"Trình duyệt gặp lỗi khi thu âm Micro. Vui lòng thử lại hoặc liên hệ giáo viên hỗ trợ.",
+				);
+			});
+
+			recorder.addEventListener("stop", () => {
+				if (token !== sessionTokenRef.current || unmountedRef.current) {
+					finishStop(null);
+					return;
+				}
+				const durationMs = Math.max(0, Date.now() - startedAt);
+				const rawMime =
+					recorder.mimeType || preferredMimeRef.current || "audio/webm";
+				const normalizedMime = resolveSpeakingUploadMeta(rawMime).contentType;
+				const blob = new Blob(chunks, { type: normalizedMime });
+				const seg = !discardThis && blob.size > 0 ? { blob, durationMs } : null;
+				if (seg) {
+					recordedSegmentsRef.current[taskIndex] = seg;
+					const sec = Math.max(1, Math.round(durationMs / 1000));
+					setSegmentDurationsSec((prev) => ({ ...prev, [taskIndex]: sec }));
+				} else if (!discardThis) {
+					recordedSegmentsRef.current[taskIndex] = undefined;
+					setSegmentDurationsSec((prev) => ({ ...prev, [taskIndex]: 0 }));
+				}
+				finishStop(seg);
+			});
+
+			const handle: ActiveRecorderHandle = {
+				recorder,
+				taskIndex,
+				stop: (discard = false) => {
+					if (discard) discardThis = true;
+					if (settled) {
+						return Promise.resolve(
+							discardThis
+								? null
+								: (recordedSegmentsRef.current[taskIndex] ?? null),
+						);
+					}
+					if (!stopPromise) {
+						stopPromise = new Promise<SpeakingAudioSegment | null>(
+							(resolve) => {
+								resolveStop = resolve;
+							},
+						);
+						if (recorder.state === "inactive") {
+							finishStop(
+								discardThis
+									? null
+									: (recordedSegmentsRef.current[taskIndex] ?? null),
+							);
+						} else {
+							try {
+								recorder.stop();
+							} catch {
+								finishStop(null);
+							}
+						}
+					}
+					return stopPromise;
+				},
+			};
+
+			activeRecorderRef.current = handle;
+
+			try {
+				recorder.start(250);
+				return true;
+			} catch {
+				activeRecorderRef.current = null;
+				abortWithError(
+					"Không thể bắt đầu ghi âm qua Micro. Vui lòng kiểm tra quyền Micro và thử lại.",
+				);
+				return false;
+			}
+		},
+		[abortWithError],
+	);
+
+	const finalizeSession = useCallback(
+		async (discardAll = false) => {
+			if (isFinalizingRef.current) return;
+			const token = sessionTokenRef.current;
+			isFinalizingRef.current = true;
+			setIsFinalizing(true);
+			setConfirmEarlyFinish(false);
 			clearPhaseTimer();
 			teardownPromptPlayback();
-			if (answerStartedAtRef.current > 0) {
-				activeAnswerMsRef.current += Math.max(
-					0,
-					Date.now() - answerStartedAtRef.current,
-				);
-				answerStartedAtRef.current = 0;
-			}
-			discardOnStopRef.current = discard;
-			const recorder = mediaRecorderRef.current;
-			if (recorder && recorder.state !== "inactive") {
-				try {
-					setIsFinalizing(true);
-					recorder.stop();
+
+			try {
+				await stopActiveRecorder(discardAll);
+				if (token !== sessionTokenRef.current || unmountedRef.current) return;
+
+				const orderedSegments: SpeakingAudioSegment[] = [];
+				if (!discardAll) {
+					for (let i = 0; i < tasks.length; i++) {
+						const seg = recordedSegmentsRef.current[i];
+						if (seg && seg.blob.size > 0) {
+							orderedSegments.push(seg);
+						}
+					}
+				}
+
+				stopMediaStream();
+
+				if (discardAll || orderedSegments.length === 0) {
+					recordedSegmentsRef.current = [];
+					setSegmentDurationsSec({});
+					const resetState = createInitialSpeakingSession(tasks.length);
+					sessionRef.current = resetState;
+					setSession(resetState);
+					if (!discardAll) {
+						setMediaError(
+							"Không thu được dữ liệu âm thanh. Vui lòng kiểm tra Micro và thử ghi lại.",
+						);
+					}
 					return;
-				} catch {
-					// Fall through to cleanup
+				}
+
+				const merged = await mergeSpeakingAudioSegments(orderedSegments);
+				if (token !== sessionTokenRef.current || unmountedRef.current) return;
+
+				if (merged.blob.size > 0) {
+					const url =
+						typeof URL !== "undefined" &&
+						typeof URL.createObjectURL === "function"
+							? URL.createObjectURL(merged.blob)
+							: "";
+					onRecordedAudioChange({
+						blob: merged.blob,
+						url,
+						mimeType: merged.mimeType,
+						durationSec: merged.durationSec,
+					});
+					const doneState: SpeakingSessionState = {
+						...sessionRef.current,
+						status: "completed",
+						phase: "done",
+						secondsLeft: 0,
+					};
+					sessionRef.current = doneState;
+					setSession(doneState);
+				} else {
+					recordedSegmentsRef.current = [];
+					setSegmentDurationsSec({});
+					const resetState = createInitialSpeakingSession(tasks.length);
+					sessionRef.current = resetState;
+					setSession(resetState);
+					setMediaError(
+						"Không thu được dữ liệu âm thanh. Vui lòng kiểm tra Micro và thử ghi lại.",
+					);
+				}
+			} finally {
+				if (token === sessionTokenRef.current && !unmountedRef.current) {
+					isFinalizingRef.current = false;
+					setIsFinalizing(false);
 				}
 			}
-			stopMediaStream();
-			mediaRecorderRef.current = null;
-			setIsFinalizing(false);
-			setSession(createInitialSpeakingSession(tasks.length));
-			activeAnswerMsRef.current = 0;
-			hasRecordedAnyAnswerRef.current = false;
-			recordedChunksRef.current = [];
 		},
-		[clearPhaseTimer, stopMediaStream, tasks.length, teardownPromptPlayback],
+		[
+			clearPhaseTimer,
+			onRecordedAudioChange,
+			stopActiveRecorder,
+			stopMediaStream,
+			tasks.length,
+			teardownPromptPlayback,
+		],
 	);
+
+	const pauseCurrentAnswer = useCallback(async () => {
+		const current = sessionRef.current;
+		if (
+			current.status !== "active" ||
+			current.phase !== "answer" ||
+			isTransitioningRef.current ||
+			isFinalizingRef.current
+		) {
+			return;
+		}
+		const token = sessionTokenRef.current;
+		isTransitioningRef.current = true;
+		setIsTransitioning(true);
+		clearPhaseTimer();
+		teardownPromptPlayback();
+		try {
+			await stopActiveRecorder(false);
+			if (
+				token !== sessionTokenRef.current ||
+				unmountedRef.current ||
+				isFinalizingRef.current
+			) {
+				return;
+			}
+			const nextState = transitionSpeakingToPaused(sessionRef.current);
+			sessionRef.current = nextState;
+			setSession(nextState);
+		} finally {
+			if (token === sessionTokenRef.current && !unmountedRef.current) {
+				isTransitioningRef.current = false;
+				setIsTransitioning(false);
+			}
+		}
+	}, [clearPhaseTimer, stopActiveRecorder, teardownPromptPlayback]);
 
 	const playPrompt = useCallback(
 		(task: PlacementPublishedSpeakingTask, onFinished?: () => void) => {
@@ -354,9 +568,6 @@ export function PlacementSpeakingStep({
 		[teardownPromptPlayback, activeOrgId],
 	);
 
-	// Quản lý bộ đếm giây trong phase prep / answer và tự chuyển phase.
-	const beginTaskReadingRef = useRef<(idx: number) => void>(() => {});
-
 	const startPhaseCountdown = useCallback(
 		(initialState: SpeakingSessionState) => {
 			clearPhaseTimer();
@@ -373,10 +584,12 @@ export function PlacementSpeakingStep({
 					return;
 				}
 				if (current.secondsLeft > 1) {
-					setSession((prev) => ({
-						...prev,
-						secondsLeft: Math.max(0, prev.secondsLeft - 1),
-					}));
+					const updated: SpeakingSessionState = {
+						...current,
+						secondsLeft: Math.max(0, current.secondsLeft - 1),
+					};
+					sessionRef.current = updated;
+					setSession(updated);
 					return;
 				}
 				clearPhaseTimer();
@@ -386,28 +599,19 @@ export function PlacementSpeakingStep({
 					sessionRef.current = nextState;
 					setSession(nextState);
 					if (nextState.status === "active") {
-						ensureRecorderRecordingForAnswer();
-						startPhaseCountdown(nextState);
+						if (startTaskRecorder(nextState.taskIndex)) {
+							startPhaseCountdown(nextState);
+						}
 					}
 				} else if (current.phase === "answer") {
-					teardownPromptPlayback();
-					pauseRecorderBetweenTasks();
-					const nextState = transitionSpeakingNextTask(current, tasks);
-					if (nextState.status === "completed") {
-						sessionRef.current = nextState;
-						setSession(nextState);
-						finalizeRecording(false);
-					} else {
-						beginTaskReadingRef.current(nextState.taskIndex);
-					}
+					void pauseCurrentAnswer();
 				}
 			}, 1000);
 		},
 		[
 			clearPhaseTimer,
-			ensureRecorderRecordingForAnswer,
-			finalizeRecording,
-			pauseRecorderBetweenTasks,
+			pauseCurrentAnswer,
+			startTaskRecorder,
 			tasks,
 			teardownPromptPlayback,
 		],
@@ -421,17 +625,12 @@ export function PlacementSpeakingStep({
 		sessionRef.current = nextState;
 		setSession(nextState);
 		if (nextState.phase === "answer") {
-			ensureRecorderRecordingForAnswer();
+			if (!startTaskRecorder(nextState.taskIndex)) return;
 		}
 		if (nextState.status === "active") {
 			startPhaseCountdown(nextState);
 		}
-	}, [
-		ensureRecorderRecordingForAnswer,
-		startPhaseCountdown,
-		tasks,
-		teardownPromptPlayback,
-	]);
+	}, [startPhaseCountdown, startTaskRecorder, tasks, teardownPromptPlayback]);
 
 	const beginTaskReading = useCallback(
 		(taskIndex: number) => {
@@ -451,13 +650,13 @@ export function PlacementSpeakingStep({
 		[advanceAfterReading, clearPhaseTimer, playPrompt, tasks],
 	);
 
-	beginTaskReadingRef.current = beginTaskReading;
-
 	const enterAnswerNow = () => {
 		const current = sessionRef.current;
 		if (
 			current.status !== "active" ||
-			(current.phase !== "prep" && current.phase !== "reading")
+			(current.phase !== "prep" && current.phase !== "reading") ||
+			isFinalizingRef.current ||
+			isTransitioningRef.current
 		) {
 			return;
 		}
@@ -467,37 +666,78 @@ export function PlacementSpeakingStep({
 		sessionRef.current = nextState;
 		setSession(nextState);
 		if (nextState.status === "active") {
-			ensureRecorderRecordingForAnswer();
-			startPhaseCountdown(nextState);
+			if (startTaskRecorder(nextState.taskIndex)) {
+				startPhaseCountdown(nextState);
+			}
 		}
 	};
 
-	const completeCurrentTask = () => {
+	const retryCurrentTask = () => {
+		const current = sessionRef.current;
+		if (
+			isFinalizingRef.current ||
+			isTransitioningRef.current ||
+			!canRetrySpeakingTask(current)
+		) {
+			return;
+		}
+		setConfirmEarlyFinish(false);
 		clearPhaseTimer();
 		teardownPromptPlayback();
-		pauseRecorderBetweenTasks();
-		const nextState = transitionSpeakingNextTask(sessionRef.current, tasks);
+		const nextState = retrySpeakingCurrentTask(current, tasks);
+		sessionRef.current = nextState;
+		setSession(nextState);
+		if (nextState.status === "active" && nextState.phase === "answer") {
+			if (startTaskRecorder(nextState.taskIndex)) {
+				startPhaseCountdown(nextState);
+			}
+		}
+	};
+
+	const advanceFromPaused = () => {
+		const current = sessionRef.current;
+		if (
+			current.status !== "active" ||
+			(current.phase !== "paused" && current.phase !== "answer") ||
+			isFinalizingRef.current ||
+			isTransitioningRef.current
+		) {
+			return;
+		}
+		setConfirmEarlyFinish(false);
+		clearPhaseTimer();
+		teardownPromptPlayback();
+		const nextState = transitionSpeakingNextTask(current, tasks);
 		if (nextState.status === "completed") {
-			sessionRef.current = nextState;
-			setSession(nextState);
-			finalizeRecording(false);
+			void finalizeSession(false);
 			return;
 		}
 		beginTaskReading(nextState.taskIndex);
 	};
 
+	const confirmEndEarly = () => {
+		const hasAnyRecordedOrRecording =
+			sessionRef.current.phase === "answer" ||
+			Boolean(activeRecorderRef.current) ||
+			recordedSegmentsRef.current.some((seg) =>
+				Boolean(seg && seg.blob.size > 0),
+			);
+		void finalizeSession(!hasAnyRecordedOrRecording);
+	};
+
 	const handleStartSpeaking = async () => {
 		if (!hasMediaApi || isRequestingMic || session.status === "active") return;
 		setMediaError("");
+		setConfirmEarlyFinish(false);
 		setIsRequestingMic(true);
-		const token = ++startTokenRef.current;
+		const token = ++sessionTokenRef.current;
 
 		try {
 			const stream = await navigator.mediaDevices.getUserMedia({
 				audio: true,
 				video: false,
 			});
-			if (token !== startTokenRef.current) {
+			if (token !== sessionTokenRef.current || unmountedRef.current) {
 				for (const track of stream.getTracks()) {
 					try {
 						track.stop();
@@ -512,147 +752,50 @@ export function PlacementSpeakingStep({
 			setIsRequestingMic(false);
 			stopMediaStream();
 			mediaStreamRef.current = stream;
-
-			const mime = pickSupportedRecorderMime(window.MediaRecorder);
-			preferredMimeRef.current = mime;
-			const recorder = mime
-				? new window.MediaRecorder(stream, { mimeType: mime })
-				: new window.MediaRecorder(stream);
-			mediaRecorderRef.current = recorder;
-
-			recordedChunksRef.current = [];
-			activeAnswerMsRef.current = 0;
-			answerStartedAtRef.current = 0;
-			hasRecordedAnyAnswerRef.current = false;
-			discardOnStopRef.current = false;
+			preferredMimeRef.current = pickSupportedRecorderMime(
+				window.MediaRecorder,
+			);
+			recordedSegmentsRef.current = [];
+			setSegmentDurationsSec({});
+			isTransitioningRef.current = false;
+			isFinalizingRef.current = false;
+			setIsTransitioning(false);
 			setIsFinalizing(false);
 
 			for (const track of stream.getAudioTracks()) {
 				track.addEventListener("ended", () => {
 					if (
 						isStoppingStreamRef.current ||
-						mediaRecorderRef.current !== recorder
+						token !== sessionTokenRef.current ||
+						unmountedRef.current
 					) {
 						return;
 					}
 					if (sessionRef.current.status === "active") {
 						abortWithError(
-							"Kết nối Micro bị gián đoạn giữa chừng. Vui lòng thử ghi lại hoặc chọn Bỏ qua phần Speaking.",
+							"Kết nối Micro bị gián đoạn giữa chừng. Vui lòng kiểm tra Micro và thử ghi lại.",
 						);
 					}
 				});
 			}
 
-			recorder.addEventListener("dataavailable", (evt) => {
-				if (evt.data && evt.data.size > 0) {
-					recordedChunksRef.current.push(evt.data);
-				}
-			});
-
-			recorder.addEventListener("error", () => {
-				if (mediaRecorderRef.current !== recorder) return;
-				abortWithError(
-					"Trình duyệt gặp lỗi khi thu âm Micro. Vui lòng thử lại hoặc chọn Bỏ qua phần Speaking.",
-				);
-			});
-
-			recorder.addEventListener("stop", () => {
-				if (mediaRecorderRef.current !== recorder) return;
-				mediaRecorderRef.current = null;
-				const shouldDiscard = discardOnStopRef.current;
-				discardOnStopRef.current = false;
-				setIsFinalizing(false);
-				clearPhaseTimer();
-				teardownPromptPlayback();
-				stopMediaStream();
-
-				if (shouldDiscard) {
-					setSession(createInitialSpeakingSession(tasks.length));
-					activeAnswerMsRef.current = 0;
-					answerStartedAtRef.current = 0;
-					hasRecordedAnyAnswerRef.current = false;
-					recordedChunksRef.current = [];
-					return;
-				}
-
-				const finalDuration = Math.max(
-					1,
-					Math.round(activeAnswerMsRef.current / 1000),
-				);
-				const rawMime =
-					recorder.mimeType || preferredMimeRef.current || "audio/webm";
-				const normalizedMime = resolveSpeakingUploadMeta(rawMime).contentType;
-				const blob = new Blob(recordedChunksRef.current, {
-					type: normalizedMime,
-				});
-
-				if (blob.size > 0) {
-					const url =
-						typeof URL !== "undefined" &&
-						typeof URL.createObjectURL === "function"
-							? URL.createObjectURL(blob)
-							: "";
-					onRecordedAudioChange({
-						blob,
-						url,
-						mimeType: normalizedMime,
-						durationSec: finalDuration,
-					});
-					setSession((prev) => ({
-						...prev,
-						status: "completed",
-						phase: "done",
-						secondsLeft: 0,
-					}));
-				} else {
-					setSession(createInitialSpeakingSession(tasks.length));
-					setMediaError(
-						"Không thu được dữ liệu âm thanh. Vui lòng thử ghi lại hoặc chọn Bỏ qua.",
-					);
-				}
-			});
-
 			beginTaskReading(0);
 		} catch {
+			if (token !== sessionTokenRef.current || unmountedRef.current) return;
 			setIsRequestingMic(false);
-			mediaRecorderRef.current = null;
 			stopMediaStream();
-			setSession(createInitialSpeakingSession(tasks.length));
+			const resetState = createInitialSpeakingSession(tasks.length);
+			sessionRef.current = resetState;
+			setSession(resetState);
 			setMediaError(
-				"Không thể truy cập Micro (thiếu quyền hoặc không có micro). Bạn có thể cấp quyền lại hoặc chọn Bỏ qua phần Speaking.",
+				"Không thể truy cập Micro (thiếu quyền hoặc không có micro). Vui lòng cấp quyền Micro và thử lại.",
 			);
 		}
 	};
 
-	const handleRetake = () => {
-		startTokenRef.current += 1;
-		setIsRequestingMic(false);
-		clearPhaseTimer();
-		teardownPromptPlayback();
-		stopMediaStream();
-		recordedChunksRef.current = [];
-		activeAnswerMsRef.current = 0;
-		answerStartedAtRef.current = 0;
-		hasRecordedAnyAnswerRef.current = false;
-		setMediaError("");
-		setSession(createInitialSpeakingSession(tasks.length));
+	const handleResetOversizedRecording = () => {
+		abortWithError("");
 		onRecordedAudioChange(null);
-	};
-
-	const handleSkip = () => {
-		startTokenRef.current += 1;
-		setIsRequestingMic(false);
-		clearPhaseTimer();
-		teardownPromptPlayback();
-		stopMediaStream();
-		recordedChunksRef.current = [];
-		activeAnswerMsRef.current = 0;
-		answerStartedAtRef.current = 0;
-		hasRecordedAnyAnswerRef.current = false;
-		setMediaError("");
-		setSession(createInitialSpeakingSession(tasks.length));
-		onRecordedAudioChange(null);
-		onSkipSpeaking();
 	};
 
 	const estimatedTotalSec = tasks.reduce((acc, task) => {
@@ -669,7 +812,7 @@ export function PlacementSpeakingStep({
 						<CardDescription className="font-mono text-[11px] uppercase tracking-[0.16em]">
 							Phần 5 / 5 · Nói (Speaking)
 						</CardDescription>
-						<CardTitle className="text-xl">Phần Speaking</CardTitle>
+						<CardTitle className="text-xl">Kiểm tra Speaking</CardTitle>
 						<CardDescription>
 							Đề kiểm tra hiện tại không có câu hỏi Speaking. Bạn có thể bấm nộp
 							bài ngay bên dưới.
@@ -688,6 +831,12 @@ export function PlacementSpeakingStep({
 	const activePartLabel = activeTask
 		? stripInlineCefrLabel(activeTask.partLabel)
 		: "";
+	const remainingRetries = Math.max(
+		0,
+		MAX_SPEAKING_RETRIES_PER_TASK - session.retriesUsedForCurrentTask,
+	);
+	const canRetryCurrent = canRetrySpeakingTask(session);
+	const currentTaskDurationSec = segmentDurationsSec[session.taskIndex] ?? 0;
 
 	return (
 		<div className="space-y-6" data-testid="placement-step-speaking">
@@ -696,14 +845,7 @@ export function PlacementSpeakingStep({
 					<CardDescription className="font-mono text-[11px] uppercase tracking-[0.16em]">
 						Phần 5 / 5 · Nói (Speaking)
 					</CardDescription>
-					<CardTitle className="text-xl">
-						Kiểm tra Speaking — Hệ thống đọc từng câu hỏi &amp; thu âm qua Micro
-					</CardTitle>
-					<CardDescription className="leading-relaxed">
-						Hệ thống sẽ tự động đọc lần lượt từng câu hỏi, đếm ngược thời gian
-						chuẩn bị rồi ghi âm bằng micro (chỉ thu âm thanh, không cần camera)
-						và ghép thành một bản ghi duy nhất.
-					</CardDescription>
+					<CardTitle className="text-xl">Kiểm tra Speaking</CardTitle>
 				</CardHeader>
 			</Card>
 
@@ -721,8 +863,9 @@ export function PlacementSpeakingStep({
 					{!hasMediaApi ? (
 						<div className="rounded-lg border border-warn/40 bg-warn-soft p-3.5 text-foreground text-sm">
 							Trình duyệt hoặc thiết bị hiện tại chưa hỗ trợ ghi âm
-							(MediaRecorder). Bạn có thể bấm{" "}
-							<strong>Bỏ qua phần Speaking</strong> bên dưới để nộp bài ngay.
+							(MediaRecorder). Vui lòng sử dụng trình duyệt/thiết bị có Micro
+							(Chrome, Safari, Edge) để hoàn thành phần Speaking trước khi nộp
+							bài.
 						</div>
 					) : null}
 
@@ -764,43 +907,6 @@ export function PlacementSpeakingStep({
 								/>
 							</div>
 
-							<div
-								className={cn(
-									"flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3.5 py-2.5 text-sm",
-									session.phase === "answer"
-										? "border-destructive/40 bg-destructive-soft text-destructive"
-										: "border-border bg-card text-foreground",
-								)}
-							>
-								<span className="inline-flex items-center gap-2 font-medium">
-									{session.phase === "answer" ? (
-										<span
-											aria-hidden="true"
-											className="size-2.5 animate-pulse rounded-full bg-destructive"
-										/>
-									) : (
-										<Volume2 aria-hidden="true" className="size-4" />
-									)}
-									{isFinalizing
-										? "Đang hoàn tất bản ghi..."
-										: session.phase === "reading"
-											? "Hệ thống đang đọc câu hỏi..."
-											: session.phase === "prep"
-												? "Thời gian chuẩn bị"
-												: "Đang ghi âm câu trả lời (Micro)"}
-								</span>
-								<span
-									aria-live="polite"
-									className="font-mono font-semibold tabular-nums"
-								>
-									{isFinalizing
-										? "Đang lưu..."
-										: session.phase === "reading"
-											? "Đang phát đề"
-											: formatPlacementClock(session.secondsLeft)}
-								</span>
-							</div>
-
 							<div className="rounded-lg border bg-card p-4">
 								<p className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.14em]">
 									Câu hỏi {session.taskIndex + 1}/{tasks.length}
@@ -811,15 +917,44 @@ export function PlacementSpeakingStep({
 								</p>
 							</div>
 
-							<div className="flex flex-wrap items-center gap-2">
-								{session.phase === "reading" && !isFinalizing ? (
+							{isFinalizing ? (
+								<div
+									aria-live="polite"
+									className="flex flex-col items-center justify-center gap-2 rounded-lg border bg-card px-4 py-6 text-center"
+								>
+									<p className="font-medium text-foreground text-sm">
+										Đang hoàn tất bản ghi...
+									</p>
+								</div>
+							) : session.phase === "reading" ? (
+								<div className="flex flex-col items-center justify-center gap-4 rounded-lg border bg-card px-4 py-6 text-center">
+									<div className="inline-flex items-center gap-2 font-medium text-foreground text-sm">
+										<Volume2 aria-hidden="true" className="size-4" />
+										<span>Hệ thống đang đọc câu hỏi...</span>
+									</div>
 									<Button type="button" size="sm" onClick={advanceAfterReading}>
 										Chuẩn bị ngay →
 									</Button>
-								) : null}
+								</div>
+							) : session.phase === "prep" ? (
+								<div
+									data-testid="speaking-prep-stage"
+									className="flex flex-col items-center justify-center gap-4 rounded-lg border bg-card px-4 py-6 text-center"
+								>
+									<div className="space-y-1">
+										<p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+											Thời gian chuẩn bị
+										</p>
+										<div
+											aria-live="polite"
+											data-testid="speaking-prep-timer"
+											className="font-bold font-mono text-4xl text-foreground tabular-nums"
+										>
+											{formatPlacementClock(session.secondsLeft)}
+										</div>
+									</div>
 
-								{session.phase === "prep" && !isFinalizing ? (
-									<>
+									<div className="flex flex-wrap items-center justify-center gap-2">
 										<Button
 											type="button"
 											variant="outline"
@@ -827,10 +962,12 @@ export function PlacementSpeakingStep({
 											disabled={session.replayUsedForCurrentTask}
 											onClick={() => {
 												if (session.replayUsedForCurrentTask) return;
-												setSession((prev) => ({
-													...prev,
+												const nextState: SpeakingSessionState = {
+													...sessionRef.current,
 													replayUsedForCurrentTask: true,
-												}));
+												};
+												sessionRef.current = nextState;
+												setSession(nextState);
 												setIsPromptReplaying(true);
 												playPrompt(activeTask, () =>
 													setIsPromptReplaying(false),
@@ -848,45 +985,151 @@ export function PlacementSpeakingStep({
 											<Mic aria-hidden="true" className="size-4" />
 											<span>Trả lời ngay →</span>
 										</Button>
-									</>
-								) : null}
+									</div>
 
-								{session.phase === "answer" && !isFinalizing ? (
-									<Button type="button" size="sm" onClick={completeCurrentTask}>
-										{session.taskIndex < tasks.length - 1
-											? "✓ Xong câu này → Câu tiếp theo"
-											: "✓ Hoàn thành phần Speaking"}
-									</Button>
-								) : null}
-
-								<Button
-									type="button"
-									variant="destructive"
-									size="sm"
-									disabled={isFinalizing}
-									onClick={() => {
-										const shouldDiscard =
-											!hasRecordedAnyAnswerRef.current &&
-											session.phase !== "answer";
-										finalizeRecording(shouldDiscard);
-									}}
+									{isPromptReplaying ? (
+										<p
+											aria-live="polite"
+											className="text-muted-foreground text-xs"
+										>
+											Đang phát lại câu hỏi...
+										</p>
+									) : session.replayUsedForCurrentTask ? (
+										<p
+											aria-live="polite"
+											className="text-muted-foreground text-xs"
+										>
+											Đã dùng lượt nghe lại (1/1)
+										</p>
+									) : null}
+								</div>
+							) : session.phase === "answer" ? (
+								<div
+									data-testid="speaking-answer-stage"
+									className="flex flex-col items-center justify-center gap-3 rounded-lg border bg-card px-4 py-6 text-center"
 								>
-									<Square aria-hidden="true" className="size-3.5" />
-									<span>
-										{isFinalizing ? "Đang lưu bài nói..." : "Kết thúc sớm"}
-									</span>
-								</Button>
-							</div>
+									<Button
+										type="button"
+										variant="destructive"
+										size="icon-lg"
+										disabled={isFinalizing || isTransitioning}
+										aria-label="Dừng ghi âm câu hiện tại"
+										className="size-16 rounded-full shadow-md focus-visible:shadow-[var(--focus-ring)]"
+										onClick={() => void pauseCurrentAnswer()}
+									>
+										<Pause aria-hidden="true" className="size-6" />
+									</Button>
 
-							{session.phase === "prep" ? (
-								<p aria-live="polite" className="text-muted-foreground text-xs">
-									{isPromptReplaying
-										? "Đang phát lại câu hỏi..."
-										: session.replayUsedForCurrentTask
-											? "Đã dùng lượt nghe lại cho câu này (1/1)."
-											: "Bạn có thể bấm Nghe lại câu hỏi tối đa 1 lần trước khi trả lời."}
-								</p>
+									<div className="inline-flex items-center gap-2 font-medium text-destructive text-sm">
+										<span
+											aria-hidden="true"
+											className="size-2 animate-pulse rounded-full bg-destructive"
+										/>
+										<span>Đang ghi âm câu trả lời</span>
+									</div>
+
+									<div
+										aria-live="polite"
+										data-testid="speaking-answer-timer"
+										className="font-bold font-mono text-2xl text-foreground tabular-nums"
+									>
+										{formatPlacementClock(session.secondsLeft)}
+									</div>
+								</div>
+							) : session.phase === "paused" ? (
+								<div
+									data-testid="speaking-paused-stage"
+									className="flex flex-col items-center justify-center gap-4 rounded-lg border bg-card px-4 py-6 text-center"
+								>
+									<p className="text-muted-foreground text-sm tabular-nums">
+										Đã ghi âm câu này:{" "}
+										<span className="font-semibold text-foreground">
+											{currentTaskDurationSec}s
+										</span>
+									</p>
+									<div className="flex flex-wrap items-center justify-center gap-2">
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											disabled={
+												!canRetryCurrent || isFinalizing || isTransitioning
+											}
+											onClick={retryCurrentTask}
+										>
+											<RotateCcw aria-hidden="true" className="size-4" />
+											<span>
+												{canRetryCurrent
+													? `Ghi lại câu này (còn ${remainingRetries}/${MAX_SPEAKING_RETRIES_PER_TASK})`
+													: `Đã hết lượt ghi lại (0/${MAX_SPEAKING_RETRIES_PER_TASK})`}
+											</span>
+										</Button>
+										<Button
+											type="button"
+											size="sm"
+											disabled={isFinalizing || isTransitioning}
+											onClick={advanceFromPaused}
+										>
+											<span>
+												{session.taskIndex < tasks.length - 1
+													? "Câu tiếp theo →"
+													: "Hoàn thành phần Speaking"}
+											</span>
+										</Button>
+									</div>
+								</div>
 							) : null}
+
+							<div className="border-t pt-3">
+								{confirmEarlyFinish ? (
+									<div
+										role="alertdialog"
+										aria-label="Xác nhận kết thúc sớm phần Speaking"
+										data-testid="speaking-early-finish-confirm"
+										className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+									>
+										<p className="text-muted-foreground text-sm">
+											Bạn chưa hoàn thành tất cả câu Speaking. Dừng và kết thúc
+											sớm?
+										</p>
+										<div className="flex flex-wrap items-center gap-2">
+											<Button
+												type="button"
+												variant="destructive"
+												size="sm"
+												disabled={isFinalizing}
+												onClick={confirmEndEarly}
+											>
+												{isFinalizing
+													? "Đang lưu bài nói..."
+													: "Xác nhận kết thúc sớm"}
+											</Button>
+											<Button
+												type="button"
+												variant="outline"
+												size="sm"
+												disabled={isFinalizing}
+												onClick={() => setConfirmEarlyFinish(false)}
+											>
+												Tiếp tục làm bài
+											</Button>
+										</div>
+									</div>
+								) : (
+									<div className="flex justify-end">
+										<Button
+											type="button"
+											variant="ghost"
+											size="sm"
+											disabled={isFinalizing}
+											className="text-muted-foreground hover:text-destructive"
+											onClick={() => setConfirmEarlyFinish(true)}
+										>
+											Kết thúc phần Speaking
+										</Button>
+									</div>
+								)}
+							</div>
 						</div>
 					) : recordedAudio ? (
 						<div
@@ -894,9 +1137,15 @@ export function PlacementSpeakingStep({
 							className="space-y-4 rounded-lg border bg-muted/20 p-4"
 						>
 							<div className="flex flex-wrap items-center justify-between gap-2">
-								<span className="inline-flex items-center rounded-full bg-success-soft px-2.5 py-0.5 font-medium text-success text-xs">
-									Đã ghi âm hoàn tất (sẵn sàng nộp)
-								</span>
+								{recordedAudio.blob.size > PLACEMENT_SPEAKING_MAX_BYTES ? (
+									<span className="inline-flex items-center rounded-full bg-destructive-soft px-2.5 py-0.5 font-medium text-destructive text-xs">
+										Bản ghi vượt quá giới hạn dung lượng
+									</span>
+								) : (
+									<span className="inline-flex items-center rounded-full bg-success-soft px-2.5 py-0.5 font-medium text-success text-xs">
+										Đã ghi âm hoàn tất (sẵn sàng nộp)
+									</span>
+								)}
 								<span className="text-muted-foreground text-xs tabular-nums">
 									Thời lượng trả lời: {recordedAudio.durationSec}s ·{" "}
 									{(recordedAudio.blob.size / (1024 * 1024)).toFixed(2)} MB / 50
@@ -905,10 +1154,21 @@ export function PlacementSpeakingStep({
 							</div>
 
 							{recordedAudio.blob.size > PLACEMENT_SPEAKING_MAX_BYTES ? (
-								<p role="alert" className="text-destructive text-sm">
-									Bản ghi vượt quá giới hạn 50 MB. Vui lòng ghi lại ngắn hơn
-									hoặc chọn Bỏ qua phần Speaking.
-								</p>
+								<div className="space-y-2">
+									<p role="alert" className="text-destructive text-sm">
+										Bản ghi vượt quá giới hạn 50 MB. Vui lòng xóa bản ghi để ghi
+										lại hoặc liên hệ giáo viên để được hỗ trợ.
+									</p>
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										onClick={handleResetOversizedRecording}
+									>
+										<RotateCcw aria-hidden="true" className="size-4" />
+										<span>Xóa bản ghi &amp; ghi lại</span>
+									</Button>
+								</div>
 							) : null}
 
 							{recordedAudio.url ? (
@@ -920,37 +1180,9 @@ export function PlacementSpeakingStep({
 									className="w-full"
 								/>
 							) : null}
-
-							<div>
-								<Button
-									type="button"
-									variant="outline"
-									size="sm"
-									onClick={handleRetake}
-								>
-									<RotateCcw aria-hidden="true" className="size-4" />
-									<span>Ghi lại từ đầu</span>
-								</Button>
-							</div>
 						</div>
 					) : (
 						<div className="space-y-4">
-							{speakingMode === "skipped" ? (
-								<div
-									data-testid="speaking-skipped-notice"
-									className="rounded-lg border bg-muted/40 p-3.5 text-sm"
-								>
-									<span className="inline-flex items-center gap-1.5 font-medium text-foreground">
-										<MicOff aria-hidden="true" className="size-4" />
-										Đã chọn bỏ qua phần Speaking
-									</span>
-									<p className="mt-1 text-muted-foreground text-xs">
-										Bạn có thể bấm Nộp bài ngay bên dưới (chỉ chấm 4 kỹ năng đã
-										làm), hoặc bấm Bắt đầu làm bài Speaking nếu đổi ý.
-									</p>
-								</div>
-							) : null}
-
 							<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
 								<div className="rounded-lg border bg-muted/30 p-3.5">
 									<div className="text-muted-foreground text-xs">
@@ -978,21 +1210,6 @@ export function PlacementSpeakingStep({
 								</div>
 							</div>
 
-							<ol className="list-decimal space-y-1.5 pl-5 text-muted-foreground text-sm leading-relaxed">
-								<li>
-									Cấp quyền micro một lần. Nội dung từng câu hỏi sẽ lần lượt
-									xuất hiện khi bắt đầu thi.
-								</li>
-								<li>
-									Hệ thống đọc từng câu từ câu 1 đến câu {tasks.length}, đếm
-									ngược chuẩn bị rồi tự bật ghi âm câu trả lời của bạn.
-								</li>
-								<li>
-									Giữa các câu máy tự tạm dừng ghi và ghép thành một file âm
-									thanh duy nhất khi hoàn thành.
-								</li>
-							</ol>
-
 							<div className="flex flex-wrap items-center gap-3 pt-1">
 								<Button
 									type="button"
@@ -1005,10 +1222,6 @@ export function PlacementSpeakingStep({
 											? "Đang xin quyền micro..."
 											: "Bắt đầu làm bài Speaking"}
 									</span>
-								</Button>
-								<Button type="button" variant="outline" onClick={handleSkip}>
-									<SkipForward aria-hidden="true" className="size-4" />
-									<span>Bỏ qua phần Speaking</span>
 								</Button>
 							</div>
 						</div>

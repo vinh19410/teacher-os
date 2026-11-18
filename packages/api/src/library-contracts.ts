@@ -2,13 +2,17 @@ import { z } from "zod";
 import {
 	ASSIGNMENT_ANSWER_CHOICES,
 	ASSIGNMENT_BANDS,
-	ASSIGNMENT_OPTION_BANK_MAX,
+	ASSIGNMENT_OPTION_BANK_TYPES,
 	ASSIGNMENT_PART_TYPES,
 	ASSIGNMENT_TEST_PRESETS,
 	answerKindByType,
 	assignmentQuestionSchema,
+	effectiveAnswerChoices,
+	extendedAnswerChoices,
 	isAssignmentImageUrl,
 	isImageBasedType,
+	LIBRARY_OPTION_BANK_MAX,
+	mcqOptionsIssue,
 	optionBankKindFor,
 } from "./contracts";
 import {
@@ -113,8 +117,106 @@ export function countClozeMarkers(stem: string): number {
 	return stem.split(new RegExp(CLOZE_MARKER_SOURCE)).length - 1;
 }
 
+/** 15 dạng bài IELTS Reading cho thư viện đề Admin (loại note/tablecomp/flowchart). */
+export const LIBRARY_READING_TYPES = [
+	"tfng",
+	"summary",
+	"info",
+	"mcq",
+	"ynng",
+	"headings",
+	"mcq_many",
+	"sent",
+	"match_names",
+	"features",
+	"sentend",
+	"fill_blank",
+	"shortans",
+	"diagram",
+	"matching",
+] as const;
+
+/** Dạng bài dùng được inline cloze trong thư viện (`CLOZE_EDITOR_TYPES` + `fill_blank`, `diagram`). */
+export const LIBRARY_CLOZE_TYPES: ReadonlySet<string> = new Set([
+	...CLOZE_EDITOR_TYPES,
+	"fill_blank",
+	"diagram",
+]);
+
+const READING_REQUIRED_BANK_KIND: Readonly<Record<string, "roman" | "letter">> =
+	{
+		headings: "roman",
+		info: "letter",
+		features: "letter",
+		match_names: "letter",
+		matching: "letter",
+		sentend: "letter",
+	};
+
+const REUSABLE_READING_BANK_TYPES: ReadonlySet<string> = new Set([
+	"info",
+	"features",
+	"match_names",
+	"matching",
+	"summary",
+]);
+
+/** Dạng bài hỗ trợ optionBank trong thư viện (reading gồm `summary` tuỳ chọn). */
+export const LIBRARY_OPTION_BANK_TYPES: Record<
+	LibrarySkill,
+	readonly string[]
+> = {
+	reading: [
+		"headings",
+		"info",
+		"features",
+		"match_names",
+		"matching",
+		"sentend",
+		"summary",
+	],
+	listening: ASSIGNMENT_OPTION_BANK_TYPES.listening,
+};
+
+export function isLibraryBankableType(skill: string, type: string): boolean {
+	return (LIBRARY_OPTION_BANK_TYPES[skill as LibrarySkill] ?? []).includes(
+		type,
+	);
+}
+
+/**
+ * Kind option bank cho thư viện: `reading` `summary` chỉ trả `"letter"` khi
+ * `optionBank.length > 0` (word bank tuỳ chọn); các dạng reading bắt buộc trả
+ * `"roman"`/`"letter"`; `listening` giữ nguyên `optionBankKindFor`.
+ */
+export function libraryOptionBankKindFor(
+	skill: string,
+	groupType: string,
+	questionTypes: readonly (string | null | undefined)[],
+	optionBank: readonly string[] = [],
+): keyof typeof ASSIGNMENT_ANSWER_CHOICES | undefined {
+	if (skill !== "reading") {
+		return optionBankKindFor(skill, groupType, questionTypes);
+	}
+	const groupKind = READING_REQUIRED_BANK_KIND[groupType];
+	if (groupKind) return groupKind;
+
+	let hasSummary = groupType === "summary";
+	for (const type of questionTypes) {
+		const effective = type ?? groupType;
+		const kind = READING_REQUIRED_BANK_KIND[effective];
+		if (kind) return kind;
+		if (effective === "summary") hasSummary = true;
+	}
+	if (hasSummary && optionBank.length > 0) {
+		return "letter";
+	}
+	return undefined;
+}
+
 /** Thư viện bỏ khóa dạng-bài-theo-slot: mọi dạng của skill dùng được ở mọi slot. */
 export function librarySkillTypes(skill: LibrarySkill): readonly string[] {
+	if (skill === "reading") return LIBRARY_READING_TYPES;
 	return [...new Set(Object.values(ASSIGNMENT_PART_TYPES[skill].types).flat())];
 }
 
@@ -131,7 +233,7 @@ export const libraryQuestionGroupSchema = z
 		count: z.number().int().min(1).max(40),
 		optionBank: z
 			.array(z.string().trim().min(1).max(200))
-			.max(ASSIGNMENT_OPTION_BANK_MAX)
+			.max(LIBRARY_OPTION_BANK_MAX)
 			.default([]),
 		answersInline: z.boolean().default(false),
 		splitContent: z.boolean().default(false),
@@ -139,6 +241,30 @@ export const libraryQuestionGroupSchema = z
 	})
 	.strict();
 export type LibraryQuestionGroup = z.infer<typeof libraryQuestionGroupSchema>;
+
+/** Validate `opts` bounds and `answer` membership for single-choice MCQ (`mcq4`/`mcq3`). */
+function mcqQuestionIssues(
+	question: {
+		type?: string | null;
+		opts?: readonly string[] | null;
+		answer: string;
+	},
+	groupType: string,
+): Array<{ field: "opts" | "answer"; message: string }> {
+	const kind = answerKindByType[question.type ?? groupType];
+	if (kind !== "mcq4" && kind !== "mcq3") return [];
+	const out: Array<{ field: "opts" | "answer"; message: string }> = [];
+	const optsError = mcqOptionsIssue(kind, question.opts);
+	if (optsError) out.push({ field: "opts", message: optsError });
+	const trimmed = question.answer.trim();
+	if (
+		trimmed &&
+		!effectiveAnswerChoices(kind, question.opts).includes(trimmed)
+	) {
+		out.push({ field: "answer", message: "mcq answer must be within opts" });
+	}
+	return out;
+}
 
 export const libraryPartUpsertSchema = z
 	.object({
@@ -154,7 +280,7 @@ export const libraryPartUpsertSchema = z
 		questions: z.array(assignmentQuestionSchema).max(40),
 		optionBank: z
 			.array(z.string().trim().min(1).max(200))
-			.max(ASSIGNMENT_OPTION_BANK_MAX)
+			.max(LIBRARY_OPTION_BANK_MAX)
 			.default([]),
 		note: richTextField(2000),
 		audioName: z.string().trim().max(200).default(""),
@@ -211,6 +337,20 @@ export const libraryPartUpsertSchema = z
 					gi >= 0 ? ["groups", gi] : ["groups"],
 					"answer set must stay inside one group",
 				);
+			}
+		}
+
+		// Single-choice MCQ (`mcq`/`mcq1`/`mcq3`): khóa `opts` (2–4 hoặc 2–3) và
+		// đáp án hợp lệ ngay cả khi lưu nháp.
+		for (const [index, question] of value.questions.entries()) {
+			const ownerGroup = value.groups.find(
+				(g) => index >= g.startIndex && index < g.startIndex + g.count,
+			);
+			for (const issue of mcqQuestionIssues(
+				question,
+				ownerGroup?.type ?? value.type,
+			)) {
+				addIssue(["questions", index, issue.field], issue.message);
 			}
 		}
 
@@ -322,46 +462,64 @@ function partIssues(
 		);
 		const abs = (offset: number) => group.startIndex + offset;
 
-		// Image-based (reading `diagram` + listening `map`): ảnh cấp part,
-		// pin trên MỌI câu trong dải — câu không pin là mất chỗ trên hình.
+		// Image-based (reading `diagram` + listening `map`): ảnh cấp part;
+		// listening `map` bắt buộc pin trên mỗi câu, reading `diagram` cho phép pin tuỳ chọn.
 		if (isImageBasedType(skill, group.type)) {
 			if (!part.imageUrl.trim() || !isAssignmentImageUrl(part.imageUrl)) {
 				add("imageUrl", "https image required for image-based part");
 			}
-			for (const [offset, question] of questions.entries()) {
-				if (!question.pin) add(`questions.${abs(offset)}.pin`, "pin required");
+			if (skill !== "reading") {
+				for (const [offset, question] of questions.entries()) {
+					if (!question.pin)
+						add(`questions.${abs(offset)}.pin`, "pin required");
+				}
 			}
 		}
 
-		// OptionBank khớp dạng bankable — cùng luật ready của assignment:
-		// đề không bankable thì bank phải rỗng; đề bankable thì bank ≥ 2,
-		// đủ phủ câu bankable và mọi answer là nhãn trong bank.
-		const bankKind = optionBankKindFor(
+		// OptionBank khớp dạng bankable thư viện (`libraryOptionBankKindFor`):
+		// reading matching tái dùng chữ (`info`, `features`, `match_names`, `matching`, `summary`)
+		// chỉ cần ≥ 2 mục; `headings`/`sentend`/`listening` cần đủ phủ số câu.
+		const bankKind = libraryOptionBankKindFor(
 			skill,
 			group.type,
 			questions.map((q) => q.type),
+			group.optionBank,
 		);
 		if (!bankKind) {
 			if (group.optionBank.length > 0) {
 				add(bankPath, "optionBank only applies to bankable matching types");
 			}
 		} else {
+			const isSummaryWithBank =
+				skill === "reading" &&
+				group.optionBank.length > 0 &&
+				bankKind === "letter";
 			const bankQuestions = questions
 				.map((question, offset) => ({ question, offset }))
-				.filter(
-					({ question }) =>
-						answerKindByType[question.type ?? group.type] === bankKind,
+				.filter(({ question }) => {
+					const effective = question.type ?? group.type;
+					return (
+						answerKindByType[effective] === bankKind ||
+						(isSummaryWithBank && effective === "summary")
+					);
+				});
+			const allowsBankReuse =
+				skill === "reading" &&
+				bankQuestions.every(({ question }) =>
+					REUSABLE_READING_BANK_TYPES.has(question.type ?? group.type),
 				);
 			if (
 				group.optionBank.length < 2 ||
-				group.optionBank.length < bankQuestions.length
+				(!allowsBankReuse && group.optionBank.length < bankQuestions.length)
 			) {
 				add(
 					bankPath,
-					`bank must have 2–${ASSIGNMENT_OPTION_BANK_MAX} items and cover every bankable question`,
+					allowsBankReuse
+						? `bank must have 2–${LIBRARY_OPTION_BANK_MAX} items`
+						: `bank must have 2–${LIBRARY_OPTION_BANK_MAX} items and cover every bankable question`,
 				);
 			}
-			const labels = ASSIGNMENT_ANSWER_CHOICES[bankKind];
+			const labels = extendedAnswerChoices(bankKind);
 			bankQuestions.forEach(({ question, offset }) => {
 				if (!question.answer.trim()) return;
 				const labelIndex = labels.indexOf(question.answer as never);
@@ -372,6 +530,45 @@ function partIssues(
 					);
 				}
 			});
+		}
+
+		// mcq_many: tối thiểu 2 lựa chọn không rỗng, đáp án A–H trong phạm vi opts, và bắt buộc answerSet.
+		for (const [offset, question] of questions.entries()) {
+			if ((question.type ?? group.type) !== "mcq_many") continue;
+			const opts = question.opts ?? [];
+			if (opts.filter((o) => o.trim().length > 0).length < 2) {
+				add(
+					`questions.${abs(offset)}.opts`,
+					"mcq_many requires at least 2 options",
+				);
+			}
+			const answerIndex = ASSIGNMENT_ANSWER_CHOICES.letter.indexOf(
+				question.answer.trim() as never,
+			);
+			if (
+				answerIndex < 0 ||
+				answerIndex >= opts.length ||
+				(opts[answerIndex] ?? "").trim().length === 0
+			) {
+				add(
+					`questions.${abs(offset)}.answer`,
+					"mcq_many answer must be a non-empty choice A–H within opts",
+				);
+			}
+			if (!question.answerSet) {
+				add(
+					`questions.${abs(offset)}.answerSet`,
+					"mcq_many requires answerSet",
+				);
+			}
+		}
+
+		// Single-choice MCQ (`mcq`/`mcq1`/`mcq3`): kiểm tra `opts` và `answer`
+		// khớp số lựa chọn thực tế (2–4 cho mcq, 2–3 cho mcq1/mcq3).
+		for (const [offset, question] of questions.entries()) {
+			for (const issue of mcqQuestionIssues(question, group.type)) {
+				add(`questions.${abs(offset)}.${issue.field}`, issue.message);
+			}
 		}
 
 		// Chỉ nhóm thật mới có các rule tầng nhóm.
@@ -387,7 +584,7 @@ function partIssues(
 				);
 			}
 		}
-		if (group.answersInline && !CLOZE_EDITOR_TYPES.has(group.type)) {
+		if (group.answersInline && !LIBRARY_CLOZE_TYPES.has(group.type)) {
 			add(
 				`${groupPath}.answersInline`,
 				"inline answers need a completion type",

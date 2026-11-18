@@ -32,11 +32,14 @@ import { hasItemContent } from "./cloze-editor";
 export function TableGridEditor({
 	items,
 	onApply,
+	maxBlanks,
 	initialGrid,
 	initialActiveCell = null,
 }: {
 	items: QuestionItem[];
 	onApply: (items: QuestionItem[]) => void;
+	/** Trần số ô trống cho nhóm/part hiện tại (mặc định CLOZE_MAX_BLANKS = 40). */
+	maxBlanks?: number;
 	/** Test/restore seam — the editor owns its state after mount. */
 	initialGrid?: TableGridState;
 	initialActiveCell?: [number, number] | null;
@@ -49,7 +52,7 @@ export function TableGridEditor({
 	);
 
 	const segments = tableSegments(grid);
-	const issues = tableApplyIssues(grid);
+	const issues = tableApplyIssues(grid, maxBlanks);
 	const canApply = grid.blanks.length > 0 && issues.length === 0;
 	const willReplace = items.some(hasItemContent);
 	const activeBlank = activeCell

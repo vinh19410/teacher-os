@@ -206,4 +206,54 @@ describe("OptionBankEditor render", () => {
 		expect(many).toContain('aria-label="Xóa mục A"');
 		expect(many).toContain('aria-label="Xóa mục B"');
 	});
+
+	it("supports maxBank=20 with extended labels I–T / ix–xx and custom title", () => {
+		const tenLetters = Array.from({ length: 10 }, (_, i) => `Opt ${i + 1}`);
+		const letterHtml = renderToStaticMarkup(
+			<OptionBankEditor
+				typeId="summary"
+				bank={tenLetters}
+				items={items(["A", "J"])}
+				showErrors={false}
+				maxBank={20}
+				title="Ngân hàng từ (Word Bank)"
+				onBankChange={vi.fn()}
+				onItemsChange={vi.fn()}
+			/>,
+		);
+		expect(letterHtml).toContain("Ngân hàng từ (Word Bank)");
+		expect(letterHtml).toContain("10/20 mục");
+		expect(letterHtml).toContain('aria-label="Mục I"');
+		expect(letterHtml).toContain('aria-label="Mục J"');
+		expect(letterHtml).toContain("Điền đủ 4 mục");
+
+		const tenRomans = Array.from({ length: 10 }, (_, i) => `Heading ${i + 1}`);
+		const romanHtml = renderToStaticMarkup(
+			<OptionBankEditor
+				typeId="headings"
+				bank={tenRomans}
+				items={items(Array(10).fill(""))}
+				showErrors={false}
+				maxBank={20}
+				onBankChange={vi.fn()}
+				onItemsChange={vi.fn()}
+			/>,
+		);
+		expect(romanHtml).toContain("10/20 mục");
+		expect(romanHtml).toContain('aria-label="Mục ix"');
+		expect(romanHtml).toContain('aria-label="Mục x"');
+		expect(romanHtml).toContain("Điền đủ 12 mục");
+
+		expect(bankTargetCount(items(Array(10).fill("")), 20)).toBe(12);
+		expect(bankTargetCount(items(Array(25).fill("")), 20)).toBe(20);
+
+		const removed = removeBankRow(
+			tenLetters,
+			items(["A", "I", "J"]),
+			"summary",
+			8,
+		);
+		expect(removed.bank).toHaveLength(9);
+		expect(removed.items.map((item) => item.answer)).toEqual(["A", "", ""]);
+	});
 });

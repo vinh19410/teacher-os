@@ -14,6 +14,7 @@ import {
 	type PracticeCatalogResponse,
 	type PracticeSkill,
 	practiceCatalogResponseSchema,
+	STUDENT_ERROR_CODES,
 	type StartPracticeResponse,
 	type StudentClass,
 	type StudentClassDetail,
@@ -37,8 +38,14 @@ import type {
 	StudentLessonMaterialView,
 } from "@teacher-os/api/material-contracts";
 import { env } from "@teacher-os/env/web";
+import { isPreviewableContentType } from "@teacher-os/ui/components/document-preview/inline-document-preview";
 import { useSyncExternalStore } from "react";
-import { HttpError, isHttpError } from "@/lib/query-client";
+import {
+	HttpError,
+	isHttpError,
+	reauth,
+	studentQueryClient,
+} from "@/lib/query-client";
 import {
 	clearActiveStudentOrgId,
 	getActiveStudentOrgId,
@@ -409,6 +416,81 @@ export function lessonMaterialFileUrl(
 	if (orgId) params.set("org", orgId);
 	const query = params.toString();
 	return `${lessonMaterialsPath(classId, date)}/${encodeURIComponent(materialId)}/file${query ? `?${query}` : ""}`;
+}
+
+/**
+ * Tải file tài liệu buổi học về `blob:` URL để xem trước inline trong app
+ * (server trả `attachment` + CSP khoá cứng). Xử lý 401 `reauth()`, 403
+ * `STUDENT_ORG_MISMATCH` tự xoá org stale và thử lại 1 lần, và kiểm
+ * `Content-Type` allowlist trước `URL.createObjectURL`.
+ */
+export async function fetchLessonMaterialBlobUrl(
+	classId: string,
+	date: string,
+	materialId: string,
+	signal?: AbortSignal,
+): Promise<string> {
+	const url = `${lessonMaterialsPath(classId, date)}/${encodeURIComponent(materialId)}/file`;
+	const headers = getStudentHeaders({ Accept: "*/*" });
+	const sentOrgId = headers["x-student-org-id"];
+	let res = await fetch(url, {
+		method: "GET",
+		headers,
+		credentials: "include",
+		signal,
+	});
+	if (!res.ok) {
+		let code: string | undefined;
+		try {
+			const body = (await res.clone().json()) as {
+				code?: string;
+				error?: string;
+			};
+			code = body.code ?? body.error;
+		} catch {
+			// Non-JSON body
+		}
+		if (
+			res.status === 403 &&
+			code === STUDENT_ERROR_CODES.ORG_MISMATCH &&
+			sentOrgId
+		) {
+			if (getActiveStudentOrgId() === sentOrgId) {
+				clearActiveStudentOrgId();
+				void studentQueryClient.invalidateQueries({
+					queryKey: ["student", "orgs"],
+					exact: true,
+				});
+			}
+			res = await fetch(url, {
+				method: "GET",
+				headers: getStudentHeaders({ Accept: "*/*" }, null),
+				credentials: "include",
+				signal,
+			});
+			if (!res.ok) {
+				if (res.status === 401) reauth();
+				await throwStudentHttpError(res, undefined);
+			}
+		} else {
+			if (res.status === 401) reauth();
+			throw new HttpError(
+				res.status,
+				`Request failed with status ${res.status}`,
+				{
+					code,
+					sentOrgId,
+				},
+			);
+		}
+	}
+	if (!isPreviewableContentType(res.headers.get("content-type"))) {
+		void res.body?.cancel().catch(() => {});
+		throw new HttpError(415, "Unsupported preview media type", {
+			code: "UNSUPPORTED_FILE_TYPE",
+		});
+	}
+	return URL.createObjectURL(await res.blob());
 }
 
 export async function fetchLessonMaterials(

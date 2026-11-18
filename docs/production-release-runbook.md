@@ -31,7 +31,7 @@ environment — never editing this runbook.
 | Google redirect URI | `https://api.<domain>/api/auth/callback/google` | derived from the Better Auth base URL |
 | Session cookies | cross-subdomain, `Domain=.<domain>`, `SameSite=None; Secure; HttpOnly` | `COOKIE_DOMAIN` binding → `crossSubDomainCookieDomain()` in `packages/auth/src/topology.ts` |
 | Auth cookie namespace | default `better-auth` on prod; `teacheros-staging` on any other member of the prod (`msmy.io.vn`) or former prod (`teacheros.io.vn`) cookie zone (staging) | `BETTER_AUTH_COOKIE_PREFIX` binding → `resolveDomainTopology().authCookiePrefix` in `packages/infra/src/topology.ts`, validated by `authCookiePrefix()` in `packages/auth/src/topology.ts` |
-| `VITE_SERVER_URL` (web build) | `https://api.<domain>` | derived from `APP_DOMAIN`; server worker URL otherwise |
+| `VITE_SERVER_URL` (web, student & admin builds) | `https://api.<domain>` | derived from `APP_DOMAIN`; server worker URL otherwise (also stamps `media-src`/`connect-src` CSP in `apps/student/src/worker.ts`) |
 | `LEAD_API_URL` (profile build) | `https://api.<domain>` | derived from `APP_DOMAIN` (`topology.apiOrigin`); server worker URL otherwise (#536) |
 | `STUDENT_PORTAL_URL` (profile build) | `https://student.<domain>` | derived from `APP_DOMAIN` (`topology.studentOrigin`); `studentWorker.url` otherwise, dev default `http://localhost:8003` (#560) |
 

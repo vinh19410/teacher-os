@@ -1,0 +1,193 @@
+{
+	"id": "389eeb7f-7560-4606-8679-e020e1d0f365",
+	"url": "https://stepielts.com/student/reading/389eeb7f-7560-4606-8679-e020e1d0f365?mode=practice",
+	"title": "Mechanisms of Linguistic Change",
+	"source": "Collection",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "1-14",
+	"passage": {
+		"title": "Mechanisms of Linguistic Change",
+		"paragraphs": [
+			"A. The changes that have caused the most disagreement are those in pronunciation. We have various sources of evidence for the pronunciations of earlier times, such as the spellings, the treatment of words borrowed from other languages or borrowed by them, the descriptions of contemporary grammarians and spelling-reformers, and the modern pronunciations in all the languages and dialects concerned. From the middle of the sixteenth century, there are, in England, writers who attempt to describe the position of the speech-organs for the production of English phonemes, and who invent what are in effect systems of phonetic symbols. These various kinds of evidence, combined with a knowledge of the mechanisms of speech-production, can often give us a very good idea of the pronunciation of an earlier age, though absolute certainty is never possible.",
+			"B. When we study the pronunciation of a language over any period of a few generations or more, we find there are always large-scale regularities in the changes: for example, over a certain period of time, just about all the long a: vowels in a language may change into long e: vowels, or all the \"b\" consonants in a certain position (for example at the end of a word) may change into \"p\" consonants. Such regular changes are often called sound laws. There are no universal sound laws (even though sound laws often reflect universal tendencies), but simply particular sound laws for one given language (or dialect) at one given period.",
+			"C. It is also possible that fashion plays a part in the process of change. It certainly plays a part in the spread of change: one person imitates another, and people with the most prestige are most likely to be imitated, so that a change that takes place in one social group may be imitated (more or less accurately) by speakers in another group. When a social group goes up or down in the world, its pronunciation may gain or lose prestige. It is said that, after the Russian Revolution of 1917, the upper-class pronunciation of Russian, which had formerly been considered desirable, became on the contrary an undesirable kind of accent to have, so that people tried to disguise it. Some of the changes in accepted English pronunciation in the seventeenth and eighteenth centuries have been shown to consist in the replacement of one style of pronunciation by another style already existing, and it is likely that such substitutions were a result of the great social changes of the period: the increased power and wealth of the middle classes, and their steady infiltration upwards into the ranks of the landed gentry, probably carried elements of middle-class pronunciation into upper-class speech.",
+			"D. A less specific variant of the argument is that the imitation of children is imperfect: they copy their parents’ speech, but never reproduce it exactly. This is true, but it is also true that such deviations from adult speech are usually corrected in later childhood. Perhaps it is more significant that even adults show a certain amount of random variation in their pronunciation of a given phoneme, even if the phonetic context is kept unchanged. This, however, cannot explain changes in pronunciation unless it can be shown that there is some systematic trend in the failures of imitation: if they are merely random deviations they will cancel one another out and there will be no net change in the language.",
+			"E. One such force which is often invoked is the principle of ease, or minimization of effort. The change from fussy to fuzzy would be an example of assimilation, which is a very common kind of change. Assimilation is the changing of a sound under the influence of a neighboring one. For example, the word scant was once skamt, but the /m/ has been changed to /n/ under the influence of the following /t/. Greater efficiency has hereby been achieved, because /n/ and /t/ are articulated in the same place (with the tip of the tongue against the teeth-ridge), whereas /m/ is articulated elsewhere (with the two lips). So the place of articulation of the nasal consonant has been changed to conform with that of the following plosive. A more recent example of the same kind of thing is the common pronunciation of football as foopball.",
+			"F. Assimilation is not the only way in which we change our pronunciation in order to increase efficiency. It is very common for consonants to be lost at the end of a word: in Middle English, word-final -n was often lost in unstressed syllables, so that baken ‘to bake’ changed from ba:kən to ba:kə, and later to ba:k. Consonant-clusters are often simplified. At one time there was a \"t\" in words like castle and Christmas, and an initial \"k\" in words like knight and know. Sometimes a whole syllable is dropped out when two successive syllables begin with the same consonant (haplology): a recent example is temporary, which in Britain is often pronounced as if it were tempory."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary below. Choose NO MORE THAN THREE WORDS from the passage for each answer. Write your answers in boxes 1-4 on your answer sheet.",
+			"body": "The pronunciation of living language undergoes changes throughout thousands of years. Large scale regular changes are usually called ____ (1). There are three reasons for these changes. Firstly, the influence of one language on another; when one person imitates another pronunciation (the most prestige’s), the imitation always partly involving factor of ____ (2) . Secondly, the imitations of children from adults’ language sometimes are ____ (3), and may also contribute to this change if there are insignificant deviations which later may be corrected. Finally, for those random variations in pronunciation, the deeper evidence lies in the ____ (4) or minimization of effort.",
+			"body_html": "<p>The pronunciation of living language undergoes changes throughout thousands of years. Large scale regular changes are usually called [1]. There are three reasons for these changes. Firstly, the influence of one language on another; when one person imitates another pronunciation (the most prestige’s), the imitation always partly involving factor of [2] . Secondly, the imitations of children from adults’ language sometimes are  [3], and may also contribute to this change if there are insignificant deviations which later may be corrected. Finally, for those random variations in pronunciation, the deeper evidence lies in the [4] or minimization of effort.</p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "",
+					"answer": "sound laws",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững thay đổi quy mô lớn mang tính quy luật thường được gọi là _________.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN PHRASE\nDấu hiệu: are called + NOUN PHRASE (NOUN PHRASE làm Complement của động từ \"are called\")\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nlarge-scale regular changes ~ large scale regular changes\nare called ~ are usually called\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"những thay đổi quy mô lớn mang tính quy luật thường được gọi là luật âm thanh\" (When we study the pronunciation of a language over any period of a few generations or more, we find there are always large-scale regularities in the changes... Such regular changes are often called sound laws)\n\nBước 5: Đáp án: sound laws\nNhững thay đổi quy mô lớn mang tính quy luật thường được gọi là luật âm thanh (Large scale regular changes are usually called sound laws)",
+					"quotes": ["Such regular changes are often called sound laws."]
+				},
+				{
+					"number": 2,
+					"text": "",
+					"answer": "fashion",
+					"quotes": [
+						"C. It is also possible that fashion plays a part in the process of change."
+					]
+				},
+				{
+					"number": 3,
+					"text": "",
+					"answer": "imperfect",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSự bắt chước của trẻ em từ ngôn ngữ của người lớn đôi khi là _________.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: ADJECTIVE\nDấu hiệu: are + ADJECTIVE (ADJECTIVE làm Complement của động từ \"BE\")\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nimitations ~ copy\nchildren ~ từ khóa giữ nguyên\nadults' language ~ parents' speech\nimperfect ~ từ khóa được tìm thấy trong bài\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"sự bắt chước của trẻ em không hoàn hảo: chúng bắt chước cách nói của cha mẹ, nhưng không bao giờ lặp lại chính xác\" (A less specific variant of the argument is that the imitation of children is imperfect: they copy their parents' speech, but never reproduce it exactly)\n\nBước 5: Đáp án: imperfect\nSự bắt chước của trẻ em từ ngôn ngữ của người lớn đôi khi là không hoàn hảo (the imitations of children from adults' language sometimes are imperfect)",
+					"quotes": [
+						"D. A less specific variant of the argument is that the imitation of children is imperfect: they copy their parents’ speech, but never reproduce it exactly. This is true, but it is also true that such deviations from adult speech are usually corrected in later childhood."
+					]
+				},
+				{
+					"number": 4,
+					"text": "",
+					"answer": "principle of ease",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐối với những biến thể ngẫu nhiên trong phát âm, bằng chứng sâu xa nằm ở _________ hoặc việc giảm thiểu nỗ lực.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: in the + NOUN (NOUN làm Object của Preposition 'IN')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nrandom variations ~ random variation\npronunciation ~ từ khóa giữ nguyên\nprinciple of ease ~ từ khóa được tìm thấy trong bài\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Một lực như vậy thường được viện dẫn là nguyên tắc dễ dàng, hay sự tối thiểu hóa nỗ lực\" (One such force which is often invoked is the principle of ease, or minimization of effort)\n\nBước 5: Đáp án: principle of ease\nĐối với những biến thể ngẫu nhiên trong phát âm, bằng chứng sâu xa nằm ở sự dễ dàng hoặc việc giảm thiểu nỗ lực (for those random variations in pronunciation, the deeper evidence lies in the ease or minimization of effort)",
+					"quotes": [
+						"E. One such force which is often invoked is the principle of ease, or minimization of effort."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-11",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 3?\nIn boxes 5-11 on your answer sheet, write\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 5,
+					"text": "It is impossible for modern people to find pronunciation of words in an earlier age.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNgười hiện đại không thể tìm ra cách phát âm của từ ngữ trong thời kỳ trước đây.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\npronunciation of an earlier age ~ pronunciation of words in an earlier age\ncan often give us a very good idea ~ impossible to find\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"chúng ta có nhiều nguồn bằng chứng về cách phát âm từ thời xưa, như cách viết chính tả, cách xử lý các từ mượn từ ngôn ngữ khác hoặc được các ngôn ngữ khác mượn\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"người hiện đại không thể tìm ra cách phát âm của từ ngữ trong thời kỳ trước đây\" (It is impossible for modern people to find pronunciation of words in an earlier age).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"These various kinds of evidence, combined with a knowledge of the mechanisms of speech-production, can often give us a very good idea of the pronunciation of an earlier age, though absolute certainty is never possible."
+					]
+				},
+				{
+					"number": 6,
+					"text": "The great change of language in Russian history is related to the rising status and fortune of middle classes.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSự thay đổi lớn của ngôn ngữ trong lịch sử Nga có liên quan đến sự gia tăng địa vị và của cải của tầng lớp trung lưu.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nRussian Revolution of 1917 ~ Russian history\nupper-class pronunciation ~ language change\nbecame undesirable ~ status\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"sau Cách mạng Nga 1917, cách phát âm của tầng lớp thượng lưu, vốn trước đây được coi là đáng mong muốn, đã trở thành một loại giọng không mong muốn\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"sự thay đổi này liên quan đến sự gia tăng địa vị và của cải của tầng lớp trung lưu\" (the great change of language in Russian history is related to the rising status and fortune of middle classes).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"It is said that, after the Russian Revolution of 1917, the upper-class pronunciation of Russian, which had formerly been considered desirable, became on the contrary an undesirable kind of accent to have, so that people tried to disguise it. Some of the changes in accepted English pronunciation in the seventeenth and eighteenth centuries have been shown to consist in the replacement of one style of pronunciation by another style already existing, and it is likely that such substitutions were a result of the great social changes of the period: the increased power and wealth of the middle classes, and their steady infiltration upwards into the ranks of the landed gentry, probably carried elements of middle-class pronunciation into upper-class speech."
+					]
+				},
+				{
+					"number": 7,
+					"text": "All the children learn speeches from adults while they assume that certain language is difficult to imitate exactly.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTất cả trẻ em đều học cách nói từ người lớn trong khi chúng cho rằng một số ngôn ngữ khó bắt chước chính xác.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nchildren ~ thuật ngữ giữ nguyên\ncopy their parents' speech ~ learn speeches from adults\nnever reproduce it exactly ~ difficult to imitate exactly\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"trẻ em bắt chước cách nói của cha mẹ, nhưng không bao giờ tái tạo chính xác\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"trẻ em cho rằng một số ngôn ngữ khó bắt chước\" (while they assume that certain language is difficult to imitate exactly).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"D. A less specific variant of the argument is that the imitation of children is imperfect: they copy their parents’ speech, but never reproduce it exactly. This is true, but it is also true that such deviations from adult speech are usually corrected in later childhood."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Pronunciation with causal inaccuracy will not exert big influence on language changes.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững sai lệch ngẫu nhiên trong phát âm sẽ không gây ảnh hưởng lớn đến sự thay đổi ngôn ngữ.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nrandom variation ~ casual inaccuracy\ncannot explain changes ~ will not exert big influence\npronunciation ~ thuật ngữ giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"tuy nhiên, điều này không thể giải thích những thay đổi trong phát âm trừ khi có thể chứng minh được xu hướng có hệ thống trong những thất bại của sự bắt chước: nếu chúng chỉ là những sai lệch ngẫu nhiên, chúng sẽ triệt tiêu lẫn nhau và sẽ không có sự thay đổi thực sự nào trong ngôn ngữ\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"những sai lệch ngẫu nhiên trong phát âm sẽ không gây ảnh hưởng lớn đến sự thay đổi ngôn ngữ\" (Pronunciation with causal inaccuracy will not exert big influence on language changes).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"This, however, cannot explain changes in pronunciation unless it can be shown that there is some systematic trend in the failures of imitation: if they are merely random deviations they will cancel one another out and there will be no net change in the language."
+					]
+				},
+				{
+					"number": 9,
+					"text": "The link of 'mt' can be influenced being pronounced as 'nt'.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSự kết nối 'mt' có thể bị ảnh hưởng và được phát âm thành 'nt'.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nskamt ~ mt\nchanged to /n/ ~ pronounced as nt\nunder the influence ~ can be influenced\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"ví dụ, từ scant từng là skamt, nhưng âm /m/ đã bị thay đổi thành /n/ dưới ảnh hưởng của âm /t/ theo sau\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"sự kết nối 'mt' có thể bị ảnh hưởng và được phát âm thành 'nt'\" (The link of 'mt' can be influenced being pronounced as 'nt').\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"For example, the word scant was once skamt, but the /m/ has been changed to /n/ under the influence of the following /t/."
+					]
+				},
+				{
+					"number": 10,
+					"text": "The [g] in gnat not being pronounced will not be spelt out in the future.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nÂm [g] trong từ gnat không được phát âm sẽ không được đánh vần ra trong tương lai.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nknight and know ~ gnat\ninitial [k] ~ [g]\nnot being pronounced ~ thuật ngữ giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"có một âm [k] ban đầu trong các từ như knight và know\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"âm [g] trong từ gnat không được phát âm sẽ không được đánh vần ra trong tương lai\" (The [g] in gnat not being pronounced will not be spelt out in the future).\n\nBước 4: Đáp án: NOT GIVEN"
+				},
+				{
+					"number": 11,
+					"text": "The sound of ‘temporary’ cannot wholly present its spelling.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nÂm của từ 'temporary' không thể hiện đầy đủ cách đánh vần của nó.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ntemporary ~ thuật ngữ giữ nguyên\npronounced as if it were tempory ~ cannot wholly present its spelling\nin Britain ~ thuật ngữ giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"ví dụ gần đây là từ temporary, ở Anh thường được phát âm như thể nó là tempory\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"âm của từ 'temporary' không thể hiện đầy đủ cách đánh vần của nó\" (The sound of 'temporary' cannot wholly present its spelling).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"At one time there was a \"t\" in words like castle and Christmas, and an initial \"k\" in words like knight and know. Sometimes a whole syllable is dropped out when two successive syllables begin with the same consonant (haplology): a recent example is temporary, which in Britain is often pronounced as if it were tempory."
+					]
+				}
+			]
+		},
+		{
+			"range": "12-14",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Look at the following sentences and the list of statements below. Match each statement with the correct sentence.",
+			"options": [
+				{
+					"label": "A",
+					"text": "Since the speakers can pronounce it with less effort"
+				},
+				{
+					"label": "B",
+					"text": "Assimilation of a sound under the influence of a neighbouring one"
+				},
+				{
+					"label": "C",
+					"text": "It is a trend for changes in pronunciation in a large scale in a given period"
+				},
+				{
+					"label": "D",
+					"text": "Because the speaker can pronounce [n] and [t] both in the same time"
+				}
+			],
+			"body": "As a consequence, ‘b’ will be pronounced as ‘p’ ____ (12)\nThe pronunciation of [mt] changed to [nt] ____ (13)\nThe omit of T in the sound of Christmas ____ (14)",
+			"body_html": "<p>As a consequence, ‘b’ will be pronounced as ‘p’ [12]</p><p>The pronunciation of [mt] changed to [nt] [13]</p><p>The omit of T in the sound of Christmas [14]</p>",
+			"questions": [
+				{
+					"number": 12,
+					"text": "As a consequence, ‘b’ will be pronounced as ‘p’",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nDo vậy, 'b' sẽ được phát âm thành 'p'.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\n[b] consonants ~ 'b'\nchange into [p] consonants ~ pronounced as 'p'\n\nBước 3: So sánh và đối chiếu:\nĐoạn B chỉ rõ: \"tất cả các phụ âm [b] ở một vị trí nhất định (ví dụ như ở cuối từ) có thể chuyển thành phụ âm [p]\".\n=> Thông tin này cho thấy đoạn B đã \"đề cập đến việc âm 'b' sẽ được phát âm thành 'p' do xu hướng thay đổi quy mô lớn trong một giai đoạn nhất định\".\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"B. When we study the pronunciation of a language over any period of a few generations or more, we find there are always large-scale regularities in the changes: for example, over a certain period of time, just about all the long a: vowels in a language may change into long e: vowels, or all the \"b\" consonants in a certain position (for example at the end of a word) may change into \"p\" consonants."
+					]
+				},
+				{
+					"number": 13,
+					"text": "The pronunciation of [mt] changed to [nt]",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nViệc phát âm [mt] thay đổi thành [nt].\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nskamt ~ [mt]\nchanged to /n/ ~ changed to [nt]\nunder the influence ~ thuật ngữ giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nĐoạn E chỉ rõ: \"ví dụ, từ scant từng là skamt, nhưng âm /m/ đã bị thay đổi thành /n/ dưới ảnh hưởng của âm /t/ theo sau, vì /n/ và /t/ được phát âm cùng một vị trí (với đầu lưỡi chạm vào răng)\".\n=> Thông tin này cho thấy đoạn E đã \"đề cập đến việc âm [mt] thay đổi thành [nt] do ảnh hưởng của âm gần kề\".\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"For example, the word scant was once skamt, but the /m/ has been changed to /n/ under the influence of the following /t/."
+					]
+				},
+				{
+					"number": 14,
+					"text": "The omit of T in the sound of Christmas",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nViệc bỏ âm T trong từ Christmas.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\ncastle and Christmas ~ Christmas\nthere was a [t] ~ T sound\nomit ~ was lost/removed\n\nBước 3: So sánh và đối chiếu:\nĐoạn F chỉ rõ: \"các phụ âm ghép thường được đơn giản hóa. Đã từng có âm [t] trong các từ như castle và Christmas, và một âm [k] ban đầu trong các từ như knight và know. Điều này xảy ra vì người nói có thể phát âm dễ dàng hơn\".\n=> Thông tin này cho thấy đoạn F đã \"đề cập đến việc âm T trong từ Christmas đã bị bỏ đi do người nói muốn phát âm dễ dàng hơn\".\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"At one time there was a \"t\" in words like castle and Christmas, and an initial \"k\" in words like knight and know. Sometimes a whole syllable is dropped out when two successive syllables begin with the same consonant (haplology): a recent example is temporary, which in Britain is often pronounced as if it were tempory."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

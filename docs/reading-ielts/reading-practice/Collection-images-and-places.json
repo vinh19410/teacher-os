@@ -1,0 +1,277 @@
+{
+	"id": "8292786a-7f08-47ff-b248-92a12ec00e86",
+	"url": "https://stepielts.com/student/reading/8292786a-7f08-47ff-b248-92a12ec00e86?mode=practice",
+	"title": "Images and Places",
+	"source": "Collection",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "27-40",
+	"passage": {
+		"title": "Images and Places",
+		"paragraphs": [
+			"A new research method uses photography to try to explain why people form an attachment to certain places",
+			"A. Human beings naturally become attached to places they visit or inhabit and these emotional attachments have become increasingly important in research on recreation sites and activities. Research into this phenomenon is called ‘sense-of-place research’. This research has employed a variety of approaches to gauge people’s feelings toward a place, including surveys and personal interviews, but so far has not used photo-based methods. However, Visitor Employed Photography (VEP), used to capture visitor perceptions of landscape and recreational quality, represents a potential innovation in sense-of-place research.",
+			"B. A ‘place’ is a setting that we give meaning to based on the personal experiences, relationships and feelings we associate with it. A crucial distinction that needs to be made is between the more subjective concept of attachment and the symbolic ‘meanings’ or labels we use to describe the type of place a setting represents. Is, for example, a multiple-use forest area a wilderness? A playground? A workplace? Symbolic meanings are important in that they form the basis of our attachment to a place: we attribute meaning to our settings, and in turn become attached to the meanings (Stedman, 2003).",
+			"All settings can have multiple meanings depending on how we encounter them. Some researchers suggest that, because meaning emerges through individual experience, for example ‘my camping trip’, place meanings are completely individualistic: a given setting such as a park will contain as many different meanings as there are people using the setting (Meinig, 1979). Others, however, (e.g. Greider & Garkovich, 1994) assert that meanings are based on social categories and therefore are shared by others within these categories. For example, farmers share certain meanings for a plot of land that are distinct from those of real-estate developers or hunters.",
+			"C. Clearly, place attachment is built through familiarity with a place over a period of months or even years. Relph (1976) describes sense-of-place attachment as the steady accumulation of events within a setting; this creates ‘home places’. According to this view, those who have participated fully in the life of the home or community, or have accumulated a series of everyday events in a setting, will have the strongest attachment to it. Extended residence in a place tends to make us feel toward it almost as a living thing, affecting our emotions in the same way as a family would (Ryden, 1993). However, Tuan (1977) notes that a sense of place may also develop quite rapidly in ‘chosen places’, where dramatic landscapes and intense experiences can lead to an immediate attachment.",
+			"Indeed, many settings, especially those that attract visitors, may simultaneously exist as home places and chosen places.",
+			"D. Clearly we are dealing with a complex phenomenon and photo-based research methods may help us to understand it better. In VEP, tourists are asked to take photographs. This technique has primarily been used to assess the perceptions of visitors to parks and recreation places. Haywood (1990) describes several benefits of VEP. Photography is an enjoyable, familiar activity to tourists which helps to sharpen observation and identify specific locations that are important. It can give clearer ideas on elements that are liked or disliked and also facilitates comparisons between places.",
+			"E. However, several methodological issues need to be taken into account. First, who should take the photographs? VEP research typically involves visitors or tourists but, when applied to questions of attachment to a community, this approach has potential pitfalls. Chenoweth (1984) notes that research subjects may take photos that represent only a part of their entire recreational experience. This tendency probably relates to unfamiliarity with the setting. For example, when researchers assign the task of photographing a travel route with which respondents are not familiar, participants may save too many pictures and then use them all up at the end of their visit, even if there is no suitable material.",
+			"Markwell (1997) noted an opposite tendency in his study of pictures taken on a nature tour: beginnings of excursions were over-represented, due perhaps to the initial novelty of the trip. Furthermore, Haywood (1990) suggests that compressing the photo-taking period into a single day (as he did in his work) may result in an over-representation of tourist icons rather than ordinary places.",
+			"In contrast, Yamashita (2002), when focusing on local residents’ perceptions of the qualities of the water around them, noted that residents may have more difficulty expressing visual appeal than visitors, precisely because they are insiders and less conscious of aesthetic qualities. When addressing complex attachment to landscape, we would expect, however, that familiarity ought to increase the validity of the items selected to represent sources of attachment.",
+			"We also expect that photographs taken by local residents will represent a wider range of phenomena than pictures taken by transient visitors.",
+			"F. But how should the photographs be interpreted? Goin (2001) notes that with every photo taken ‘a fiction is created … but presents to the uninformed an overwhelming conviction of fact’ (p. 363).\nBy implication, what photos appear to be and what they really represent may be very different things, and some follow-up helps to uncover the intended meanings of the participant.\nYamashita (2002) notes the utility of asking respondents to provide descriptions of each photo in a notebook or diary. These elaborations are helpful, but in cases of complex phenomena, an interview may help participants clarify their intentions (Markwell, 1997)."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "27-32",
+			"type": "MATCHING_HEADINGS",
+			"instructions": "Reading Passage 3 has six sections, A-F.\nChoose the correct heading for each section from the list of headings below, i–viii, in boxes 27–32 on your answer sheet.",
+			"options": [
+				{
+					"label": "i",
+					"text": "The relevance of time to the sense of belonging to a place"
+				},
+				{
+					"label": "ii",
+					"text": "Making sense of photographic studies"
+				},
+				{
+					"label": "iii",
+					"text": "The advantages of photography in sense-of-place research"
+				},
+				{
+					"label": "iv",
+					"text": "Reasons for weak attachments"
+				},
+				{
+					"label": "v",
+					"text": "A new approach to sense-of-place research"
+				},
+				{
+					"label": "vi",
+					"text": "Defining the significance of places"
+				},
+				{
+					"label": "vii",
+					"text": "Important considerations when using VEP"
+				},
+				{
+					"label": "viii",
+					"text": "Local residents' feelings towards visitors"
+				}
+			],
+			"questions": [
+				{
+					"number": 27,
+					"text": "Section A",
+					"answer": "v",
+					"quotes": [
+						"Human beings naturally become attached to places they visit or inhabit and these emotional attachments have become increasingly important in research on recreation sites and activities. Research into this phenomenon is called ‘sense-of-place research’. This research has employed a variety of approaches to gauge people’s feelings toward a place, including surveys and personal interviews, but so far has not used photo-based methods. However, Visitor Employed Photography (VEP), used to capture visitor perceptions of landscape and recreational quality, represents a potential innovation in sense-of-place research."
+					]
+				},
+				{
+					"number": 28,
+					"text": "Section B",
+					"answer": "vi",
+					"quotes": [
+						"B. A ‘place’ is a setting that we give meaning to based on the personal experiences, relationships and feelings we associate with it. A crucial distinction that needs to be made is between the more subjective concept of attachment and the symbolic ‘meanings’ or labels we use to describe the type of place a setting represents. Is, for example, a multiple-use forest area a wilderness? A playground? A workplace? Symbolic meanings are important in that they form the basis of our attachment to a place: we attribute meaning to our settings, and in turn become attached to the meanings (Stedman, 2003)."
+					]
+				},
+				{
+					"number": 29,
+					"text": "Section C",
+					"answer": "i",
+					"explanation": "Bước 1: Đọc và hiểu đoạn C:\nĐoạn C đối chiếu hai quan điểm: sự gắn kết với địa điểm được xây dựng qua nhiều tháng hoặc nhiều năm tích lũy kinh nghiệm (Relph, Ryden), nhưng Tuan (1977) lại cho rằng sự gắn kết cũng có thể hình thành rất nhanh ở những \"chosen places\" với cảnh quan ấn tượng.\n\nBước 2: Tóm tắt nội dung chính của đoạn C:\nĐoạn C có nội dung chính là \"Mối quan hệ giữa thời gian và sự gắn kết với địa điểm — có thể hình thành dần dần qua nhiều năm hoặc ngay lập tức\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề i \"The relevance of time to the sense of belonging to a place\" (Tầm quan trọng của thời gian đối với cảm giác thuộc về một nơi).\n\nBước 4: Loại trừ các tiêu đề dễ gây nhầm lẫn:\nv \"A new approach\": Đoạn C đề cập đến các nhà nghiên cứu, nhưng chủ đề chính không phải phương pháp nghiên cứu → Tiêu đề không phù hợp.\niii \"Advantages of photography\": Đoạn C không nhắc đến VEP hay nhiếp ảnh → Tiêu đề không phù hợp.\n\nBước 5: Đáp án: i",
+					"quotes": [
+						"C. Clearly, place attachment is built through familiarity with a place over a period of months or even years. Relph (1976) describes sense-of-place attachment as the steady accumulation of events within a setting; this creates ‘home places’. According to this view, those who have participated fully in the life of the home or community, or have accumulated a series of everyday events in a setting, will have the strongest attachment to it. Extended residence in a place tends to make us feel toward it almost as a living thing, affecting our emotions in the same way as a family would (Ryden, 1993). However, Tuan (1977) notes that a sense of place may also develop quite rapidly in ‘chosen places’, where dramatic landscapes and intense experiences can lead to an immediate attachment."
+					]
+				},
+				{
+					"number": 30,
+					"text": "Section D",
+					"answer": "iii",
+					"explanation": "Bước 1: Đọc và hiểu đoạn D:\nĐoạn D trình bày các lợi ích cụ thể của VEP theo Haywood (1990): nhiếp ảnh là hoạt động quen thuộc và thú vị với du khách, giúp quan sát sắc bén hơn, xác định địa điểm quan trọng, làm rõ những gì thích hoặc không thích, và tạo điều kiện so sánh giữa các địa điểm.\n\nBước 2: Tóm tắt nội dung chính của đoạn D:\nĐoạn D có nội dung chính là \"Những lợi thế của nhiếp ảnh (VEP) trong nghiên cứu sense-of-place theo Haywood\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề iii \"The advantages of photography in sense-of-place research\" (Những lợi thế của nhiếp ảnh trong nghiên cứu sense-of-place).\n\nBước 4: Loại trừ các tiêu đề dễ gây nhầm lẫn:\nv \"A new approach\": Phương pháp mới đã được giới thiệu ở đoạn A, đoạn D chỉ nói về lợi ích cụ thể → Tiêu đề không phù hợp.\nvii \"Important considerations when using VEP\": Các lưu ý khi dùng VEP nằm ở đoạn E, không phải D → Tiêu đề không phù hợp.\n\nBước 5: Đáp án: iii",
+					"quotes": [
+						"D. Clearly we are dealing with a complex phenomenon and photo-based research methods may help us to understand it better. In VEP, tourists are asked to take photographs. This technique has primarily been used to assess the perceptions of visitors to parks and recreation places. Haywood (1990) describes several benefits of VEP. Photography is an enjoyable, familiar activity to tourists which helps to sharpen observation and identify specific locations that are important. It can give clearer ideas on elements that are liked or disliked and also facilitates comparisons between places."
+					]
+				},
+				{
+					"number": 31,
+					"text": "Section E",
+					"answer": "vii",
+					"explanation": "Bước 1: Đọc và hiểu đoạn E:\nĐoạn E nêu ra nhiều vấn đề về mặt phương pháp luận khi sử dụng VEP: ai nên chụp ảnh? Người tham gia có thể chỉ chụp một phần trải nghiệm; thời gian chụp bị giới hạn dẫn đến hình ảnh thiên lệch; du khách và cư dân địa phương có xu hướng chụp ảnh khác nhau.\n\nBước 2: Tóm tắt nội dung chính của đoạn E:\nĐoạn E có nội dung chính là \"Các lưu ý quan trọng về mặt phương pháp luận khi áp dụng VEP trong nghiên cứu\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề vii \"Important considerations when using VEP\" (Những lưu ý quan trọng khi sử dụng VEP).\n\nBước 4: Loại trừ các tiêu đề dễ gây nhầm lẫn:\niii \"Advantages of photography\": Đoạn E không nói về ưu điểm — đây là những hạn chế và lưu ý cần lưu tâm → Tiêu đề không phù hợp.\nviii \"Local residents' feelings towards visitors\": Đoạn E có so sánh du khách và cư dân địa phương, nhưng chủ đề là sự khác biệt trong cách chụp ảnh, không phải cảm xúc của cư dân với du khách → Tiêu đề không phù hợp.\n\nBước 5: Đáp án: vii",
+					"quotes": [
+						"E. However, several methodological issues need to be taken into account. First, who should take the photographs? VEP research typically involves visitors or tourists but, when applied to questions of attachment to a community, this approach has potential pitfalls.",
+						"In contrast, Yamashita (2002), when focusing on local residents’ perceptions of the qualities of the water around them, noted that residents may have more difficulty expressing visual appeal than visitors, precisely because they are insiders and less conscious of aesthetic qualities.",
+						"Furthermore, Haywood (1990) suggests that compressing the photo-taking period into a single day (as he did in his work) may result in an over-representation of tourist icons rather than ordinary places."
+					]
+				},
+				{
+					"number": 32,
+					"text": "Section F",
+					"answer": "ii",
+					"explanation": "Bước 1: Đọc và hiểu đoạn F:\nĐoạn F đặt ra câu hỏi: ảnh chụp nên được giải thích như thế nào? Goin (2001) lưu ý rằng mỗi bức ảnh là một \"hư cấu\" — những gì ảnh thể hiện có thể rất khác với thực tế. Do đó cần có thêm phỏng vấn hoặc nhật ký để làm rõ ý định của người chụp.\n\nBước 2: Tóm tắt nội dung chính của đoạn F:\nĐoạn F có nội dung chính là \"Cách giải mã và hiểu đúng ý nghĩa của các bức ảnh trong nghiên cứu VEP\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề ii \"Making sense of photographic studies\" (Giải mã các nghiên cứu nhiếp ảnh).\n\nBước 4: Loại trừ các tiêu đề dễ gây nhầm lẫn:\ni \"The relevance of time\": Đoạn F không nói về thời gian → Tiêu đề không phù hợp.\nvii \"Important considerations when using VEP\": Các lưu ý phương pháp đã được trình bày ở đoạn E, đoạn F tập trung vào cách diễn giải ảnh → Tiêu đề không phù hợp.\n\nBước 5: Đáp án: ii",
+					"quotes": [
+						"F. But how should the photographs be interpreted? Goin (2001) notes that with every photo taken ‘a fiction is created … but presents to the uninformed an overwhelming conviction of fact’ (p. 363). By implication, what photos appear to be and what they really represent may be very different things, and some follow-up helps to uncover the intended meanings of the participant. Yamashita (2002) notes the utility of asking respondents to provide descriptions of each photo in a notebook or diary. These elaborations are helpful, but in cases of complex phenomena, an interview may help participants clarify their intentions (Markwell, 1997)."
+					]
+				}
+			]
+		},
+		{
+			"range": "33-38",
+			"type": "MATCHING_NAMES",
+			"instructions": "Match each observation with the correct person, A-G.",
+			"options": [
+				{
+					"label": "A",
+					"text": "A. Meinig"
+				},
+				{
+					"label": "B",
+					"text": "B. Greider and Garkovich"
+				},
+				{
+					"label": "C",
+					"text": "C. Ryden"
+				},
+				{
+					"label": "D",
+					"text": "D. Tuan"
+				},
+				{
+					"label": "E",
+					"text": "E. Haywood"
+				},
+				{
+					"label": "F",
+					"text": "F. Markwell"
+				},
+				{
+					"label": "G",
+					"text": "G. Yamashita"
+				}
+			],
+			"body": "Our attachment to a place can happen quickly. ____\nLimiting the amount of time for taking photographs may produce a narrow range of images. ____\nMembers of a group will hold a similar view about a place. ____\nGiven time, a place can have the same impact on us as people do. ____\nTourists should keep a written account of their photographs. ____\nEach place means something different to each visitor. ____",
+			"body_html": "<ol><li>Our attachment to a place can happen quickly. ______</li><li>Limiting the amount of time for taking photographs may produce a narrow range of images. ______</li><li>Members of a group will hold a similar view about a place. ______</li><li>Given time, a place can have the same impact on us as people do. ______</li><li>Tourists should keep a written account of their photographs. ______</li><li>Each place means something different to each visitor. ______</li></ol>",
+			"questions": [
+				{
+					"number": 33,
+					"text": "Our attachment to a place can happen quickly.",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Sự gắn kết của chúng ta với một địa điểm có thể xảy ra nhanh chóng\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• attachment can happen quickly ~ sense of place may develop quite rapidly\n• chosen places ~ dramatic landscapes and intense experiences\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Tuan: \"Tuan (1977) lưu ý rằng cảm giác gắn kết với địa điểm cũng có thể phát triển khá nhanh ở những 'chosen places', nơi cảnh quan ấn tượng và trải nghiệm mạnh mẽ có thể dẫn đến sự gắn kết ngay lập tức\" (Tuan (1977) notes that a sense of place may also develop quite rapidly in 'chosen places').\n\nBước 4: Đáp án: D",
+					"quotes": [
+						"However, Tuan (1977) notes that a sense of place may also develop quite rapidly in ‘chosen places’, where dramatic landscapes and intense experiences can lead to an immediate attachment."
+					]
+				},
+				{
+					"number": 34,
+					"text": "Limiting the amount of time for taking photographs may produce a narrow range of images.",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Giới hạn thời gian chụp ảnh có thể tạo ra một phạm vi hình ảnh hẹp\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• limiting amount of time ~ compressing the photo-taking period into a single day\n• narrow range of images ~ over-representation of tourist icons rather than ordinary places\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Haywood: \"Haywood (1990) gợi ý rằng việc nén thời gian chụp ảnh vào một ngày duy nhất có thể dẫn đến việc các biểu tượng du lịch được thể hiện quá mức thay vì các địa điểm bình thường\" (Haywood (1990) suggests that compressing the photo-taking period into a single day may result in an over-representation of tourist icons rather than ordinary places).\n\nBước 4: Đáp án: E",
+					"quotes": [
+						"Furthermore, Haywood (1990) suggests that compressing the photo-taking period into a single day (as he did in his work) may result in an over-representation of tourist icons rather than ordinary places."
+					]
+				},
+				{
+					"number": 35,
+					"text": "Members of a group will hold a similar view about a place.",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Các thành viên trong một nhóm sẽ có quan điểm tương tự về một địa điểm\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• members of a group hold similar view ~ meanings are shared by others within these categories\n• social categories ~ e.g., farmers share certain meanings\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Greider & Garkovich: \"Ý nghĩa dựa trên các nhóm xã hội và do đó được chia sẻ bởi những người khác trong cùng nhóm — ví dụ, nông dân chia sẻ những ý nghĩa nhất định về một mảnh đất\" (meanings are based on social categories and therefore are shared by others within these categories... farmers share certain meanings).\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"Others, however, (e.g. Greider & Garkovich, 1994) assert that meanings are based on social categories and therefore are shared by others within these categories. For example, farmers share certain meanings for a plot of land that are distinct from those of real-estate developers or hunters."
+					]
+				},
+				{
+					"number": 36,
+					"text": "Given time, a place can have the same impact on us as people do.",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Theo thời gian, một địa điểm có thể tác động lên chúng ta như con người vậy\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• given time ~ Extended residence\n• same impact as people ~ affecting our emotions in the same way as a family would\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Ryden: \"Việc cư trú lâu dài tại một nơi khiến chúng ta cảm thấy gần gũi với nó như một sinh vật sống, tác động lên cảm xúc của chúng ta theo cách giống như gia đình vậy\" (Extended residence... makes us feel toward it almost as a living thing, affecting our emotions in the same way as a family would).\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"Extended residence in a place tends to make us feel toward it almost as a living thing, affecting our emotions in the same way as a family would (Ryden, 1993)."
+					]
+				},
+				{
+					"number": 37,
+					"text": "Tourists should keep a written account of their photographs.",
+					"answer": "G",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Du khách nên lưu lại ghi chép bằng văn bản về các bức ảnh của họ\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• keep a written account ~ provide descriptions of each photo in a notebook or diary\n• tourists ~ respondents\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Yamashita: \"Yamashita (2002) lưu ý tính hữu ích của việc yêu cầu người tham gia cung cấp mô tả về từng bức ảnh trong sổ tay hoặc nhật ký\" (Yamashita (2002) notes the utility of asking respondents to provide descriptions of each photo in a notebook or diary).\n\nBước 4: Đáp án: G",
+					"quotes": [
+						"Yamashita (2002) notes the utility of asking respondents to provide descriptions of each photo in a notebook or diary."
+					]
+				},
+				{
+					"number": 38,
+					"text": "Each place means something different to each visitor.",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Mỗi địa điểm có ý nghĩa khác nhau đối với mỗi du khách\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• each place means something different ~ place meanings are completely individualistic\n• each visitor ~ as many different meanings as there are people using the setting\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Meinig: \"Ý nghĩa của địa điểm là hoàn toàn mang tính cá nhân: một công viên sẽ chứa đựng nhiều ý nghĩa khác nhau tùy theo số lượng người sử dụng nó\" (place meanings are completely individualistic: a given setting such as a park will contain as many different meanings as there are people using the setting).\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"Some researchers suggest that, because meaning emerges through individual experience, for example ‘my camping trip’, place meanings are completely individualistic: a given setting such as a park will contain as many different meanings as there are people using the setting (Meinig, 1979)."
+					]
+				}
+			]
+		},
+		{
+			"range": "39-40",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, C or D.",
+			"questions": [
+				{
+					"number": 39,
+					"text": "The 2002 study by Yamashita shows that local residents",
+					"options": [
+						{
+							"label": "A",
+							"text": "appreciate the beauty of their surroundings."
+						},
+						{
+							"label": "B",
+							"text": "know their surroundings too well to appreciate them."
+						},
+						{
+							"label": "C",
+							"text": "consider water the most important aspect of their surroundings."
+						},
+						{
+							"label": "D",
+							"text": "dislike the negative impact of visitors on their surroundings."
+						}
+					],
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nNghiên cứu năm 2002 của Yamashita cho thấy cư dân địa phương như thế nào?\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Yamashita (2002) lưu ý rằng cư dân địa phương có thể gặp khó khăn hơn trong việc diễn đạt vẻ đẹp thị giác so với du khách, chính xác vì họ là người trong cuộc và ít ý thức hơn về các phẩm chất thẩm mỹ\".\n==> Thông tin được in đậm đồng nghĩa với câu B (know their surroundings too well to appreciate them — biết môi trường xung quanh quá rõ nên không còn thưởng thức được nữa).\n\nBước 3: Đáp án: B\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A → Đoạn văn không nhắc đến việc \"cư dân đánh giá cao vẻ đẹp của môi trường\" — thực tế bài nói họ khó diễn đạt vẻ đẹp thị giác.\nĐáp án C → Đoạn văn không đề cập đến việc \"coi nước là khía cạnh quan trọng nhất\" — bài chỉ nói Yamashita tập trung vào chất lượng nước xung quanh.\nĐáp án D → Đoạn văn không nói về việc \"cư dân không thích tác động tiêu cực của du khách\" — toàn văn không có thông tin này.",
+					"quotes": [
+						"In contrast, Yamashita (2002), when focusing on local residents’ perceptions of the qualities of the water around them, noted that residents may have more difficulty expressing visual appeal than visitors, precisely because they are insiders and less conscious of aesthetic qualities."
+					]
+				},
+				{
+					"number": 40,
+					"text": "In the final paragraph, the writer states that photographs present",
+					"options": [
+						{
+							"label": "A",
+							"text": "a factual account of a visit."
+						},
+						{
+							"label": "B",
+							"text": "an unreliable source for research."
+						},
+						{
+							"label": "C",
+							"text": "a clear picture of the visitor's feelings."
+						},
+						{
+							"label": "D",
+							"text": "an image that needs to be explained to others."
+						}
+					],
+					"answer": "D",
+					"quotes": [
+						"By implication, what photos appear to be and what they really represent may be very different things, and some follow-up helps to uncover the intended meanings of the participant. Yamashita (2002) notes the utility of asking respondents to provide descriptions of each photo in a notebook or diary. These elaborations are helpful, but in cases of complex phenomena, an interview may help participants clarify their intentions (Markwell, 1997)."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

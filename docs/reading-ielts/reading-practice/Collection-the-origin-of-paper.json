@@ -1,0 +1,190 @@
+{
+	"id": "3e08e8f0-d743-4997-91db-f770bf7db8c9",
+	"url": "https://stepielts.com/student/reading/3e08e8f0-d743-4997-91db-f770bf7db8c9?mode=practice",
+	"title": "The Origin of Paper",
+	"source": "Collection",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "The Origin of Paper",
+		"paragraphs": [
+			"The word paper derives from the Greek term for the ancient Egyptian writing material called papyrus. In about 2400 BC, the Egyptians discovered how to make a writing surface out of papyrus, a type of reed that grows along waterways in southern Europe and North Africa. The Egyptians cut the plant into strips which they softened in water. Papyrus was cross-woven into a mat and then pounded into a hard thin sheet. As the papyrus plant requires subtropical conditions to grow, papyrus was not much used in Europe at that time; instead, the main material used for writing was parchment. This was made from animal skin and was extremely expensive. In fact, it has been estimated that a single book written on parchment required the skins of 300 sheep. The skins had to be specifically prepared by drying them and they were then stretched on a special frame. It is not known when parchment was first introduced, but it was the main writing material in Europe for hundreds of years. Paper, which is made from pulp, rags, and fibers of plants, seems to have been invented in China and is considered to be one of the Four Great Inventions of Ancient China. In 105 AD, under the Han Dynasty emperor Ho-Ti, a government official in China named Ts’ai Lun was the first to start a papermaking industry. Ts’ai Lun seems to have made his paper by mixing finely chopped mulberry bark and hemp rags with water, mashing the mixture flat with a stone mortar, and then pressing out the water and letting it dry in the sun. He may have based his idea on bark cloth, which was very common in China and also made from mulberry.",
+			"Previously, during the Shang (1600-1050 BC) and Zhou (1050-256 BC) dynasties of Ancient China, documents were ordinarily written on bone or bamboo (on tablets or on bamboo strips sewn and rolled together into scrolls), making them very heavy and awkward to transport. The light material of silk was sometimes used, but was normally too expensive to consider. When it was first invented, paper was used for purposes of wrapping or padding p rotection for delicate bronze mirrors. Although paper used for writing became popular by the 3rd century AD, it continued to be used for wrapping and other purposes. During the Tang Dynasty (618-907 AD) paper was folded and sewn into square bags to preserve the flavor of tea. During the same period, according to a written account, tea was served from baskets with multi-colored paper cups and paper n apkins of different sizes and shapes. During the Chinese Song Dynasty (960-1279 AD) not only did the government pr oduce the world’s first known printed paper money, or banknote, but paper money bestowed as gifts was wrapped in specia l paper envelopes. Paper spread slowly outside of China; other Asian cultures, even after seeing paper, could not make it themsel ves. Ins truction in the manufacturing process was required, and the Chinese were reluctant to share their secrets. It made its tru e push westward in 751 AD when the Tang Dynasty was at war with the Islamic world. During a battle on the banks of the Tarus river, a Chinese caravan was captured which happened to include several papermakers. They were taken away to Samarkand, which was a good place to make paper bec ause it had an abundant supply of hemp and flax.",
+			"Samarkanders changed the technology of man ufacturing pap er. They began to prepare it in stone mills and Samarkand became an important papermaking center. The rudim entary and laborious process of papermaking was refined and bulk manufacturing of paper began in Iran, where they inven ted a method to make a thicker sheet of paper, which helped transform papermaking from an art into an important business. Gradually papermakers made their way further west through the Arab world - to Baghdad, Damascus and Cairo. Finally , when the Moors from North Africa invaded Spain and Portugal the y brought the technology with them and so it was that papermaking entered Europe in the 12th century.",
+			"In Europe, the preferred medium for the artists and literati of the time was still the smooth and lustrous parchment. The notion of paper being used as a practical everyday item did not occur until the 15th century when Johannes Gutenberg perfected movable type printing, which included the use of metal molds and alloys, a special press, and oil-based inks, allowing the mass producti on of printed books. The birth of the modern paper and printing industry is commonly marked from this date. Printi ng technology rapidly developed a nd created an ever-increasing demand for paper. The early European papers were made from recycled cotton and linen - and a huge trade quickly developed around the trading of old rags. It is said that the disease known as ’the Black Death’ entered England from Europe on these old rags. Yet soon this source became insufficient and some curious attempts were made to find new materials. Experiments with fibers such as straw, cabbage, wasp ne sts and finally wood, resulted in inexpensive - and replaceable - materials for papermaking. Today, the long soft fibers of softwoods such as spruce have become the most suitable source of pulp for the mass production of paper."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-7",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 1?\nIn boxes 1-7 on your answer sheet, write:\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 1,
+					"text": "In Ancient China, writing was occasionally done on silk.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nỞ Trung Quốc cổ đại, việc viết lách thỉnh thoảng được thực hiện trên lụa.\nBước 2: Tìm các keywords được paraphrase trong bài:\nThe light material of silk was sometimes used ~ writing was occasionally done\nsilk ~ từ khóa giữ nguyên\nAncient China ~ từ khóa giữ nguyên\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Chất liệu nhẹ là lụa đôi khi được sử dụng, nhưng thường là quá đắt đỏ để xem xét\" (The light material of silk was sometimes used, but was normally too expensive to consider).\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"việc viết thỉnh thoảng được thực hiện trên lụa\".\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"The light material of silk was sometimes used, but was normally too expensive to consider."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Coloured paper was invented during the Tang Dynasty.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nGiấy màu được phát minh dưới thời nhà Đường.\nBước 2: Tìm các keywords được paraphrase trong bài:\nTang Dynasty ~ từ khóa giữ nguyên\nmulti-colored paper cups ~ Coloured paper\ninvented ~ từ khóa cần tìm\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"trong cùng thời kỳ này (nhà Đường)... trà được phục vụ từ các giỏ với những chiếc cốc giấy nhiều màu\" (During the same period, according to a written account, tea was served from baskets with multi-colored paper cups).\n==> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"giấy màu được phát minh\" vào thời kỳ này, chỉ nói rằng nó đã được sử dụng.\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"During the same period, according to a written account, tea was served from baskets with multi-colored paper cups and paper n apkins of different sizes and shapes."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Papermakers from Samarkand were captured by the Chinese.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững người làm giấy từ Samarkand đã bị người Trung Quốc bắt giữ.\nBước 2: Tìm các keywords được paraphrase trong bài:\nPapermakers ~ từ khóa giữ nguyên\ncaptured ~ từ khóa giữ nguyên\nChinese ~ từ khóa giữ nguyên\nSamarkand ~ từ khóa giữ nguyên\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Trong một trận chiến... một đoàn lữ hành Trung Quốc đã bị bắt giữ, trong đó tình cờ bao gồm một số thợ làm giấy. Họ bị đưa đến Samarkand...\" (During a battle... a Chinese caravan was captured which happened to include several papermakers. They were taken away to Samarkand...).\n==> Điều này trái ngược với thông tin trong câu hỏi. Bài đọc nói thợ làm giấy người Trung Quốc bị bắt và bị đưa đến Samarkand.\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"During a battle on the banks of the Tarus river, a Chinese caravan was captured which happened to include several papermakers. They were taken away to Samarkand, which was a good place to make paper bec ause it had an abundant supply of hemp and flax."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Papermaking as a large-scale industry originated in Iran.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNghề làm giấy như một ngành công nghiệp quy mô lớn bắt nguồn từ Iran.\nBước 2: Tìm các keywords được paraphrase trong bài:\nbulk manufacturing / important business ~ large-scale industry\nbegan ~ originated\nIran ~ từ khóa giữ nguyên\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...việc sản xuất giấy số lượng lớn bắt đầu ở Iran... giúp biến nghề làm giấy từ một nghệ thuật thành một ngành kinh doanh quan trọng\" (...bulk manufacturing of paper began in Iran... which helped transform papermaking from an art into an important business).\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"ngành công nghiệp quy mô lớn bắt nguồn từ Iran\".\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"The rudim entary and laborious process of papermaking was refined and bulk manufacturing of paper began in Iran, where they inven ted a method to make a thicker sheet of paper, which helped transform papermaking from an art into an important business."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Papermaking skills were brought to Europe via North Africa.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nKỹ năng làm giấy được đưa đến châu Âu thông qua Bắc Phi.\nBước 2: Tìm các keywords được paraphrase trong bài:\nthe technology ~ Papermaking skills\nentered Europe ~ brought to Europe\nMoors from North Africa... brought the technology with them ~ via North Africa\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...khi người Moor từ Bắc Phi xâm chiếm Tây Ban Nha và Bồ Đào Nha, họ đã mang theo công nghệ này và nhờ đó nghề làm giấy đã du nhập vào châu Âu\" (...when the Moors from North Africa invaded Spain and Portugal they brought the technology with them and so it was that papermaking entered Europe).\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"được đưa đến châu Âu thông qua Bắc Phi\".\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Finally , when the Moors from North Africa invaded Spain and Portugal the y brought the technology with them and so it was that papermaking entered Europe in the 12th century."
+					]
+				},
+				{
+					"number": 6,
+					"text": "When Gutenberg invented movable type, paper materials were very expensive.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nKhi Gutenberg phát minh ra loại hình in động (movable type), nguyên liệu giấy rất đắt đỏ.\nBước 2: Tìm các keywords được paraphrase trong bài:\nJohannes Gutenberg ~ Gutenberg\nperfected movable type printing ~ invented movable type\nvery expensive ~ từ khóa cần tìm\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc Gutenberg hoàn thiện in ấn kiểu chữ động và giấy châu Âu thời kỳ đầu được làm từ cotton và vải lanh tái chế.\n==> Tuy nhiên, bài đọc không hề nhắc đến thông tin về việc nguyên liệu giấy có \"rất đắt đỏ\" hay không vào thời điểm đó.\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"The notion of paper being used as a practical everyday item did not occur until the 15th century when Johannes Gutenberg perfected movable type printing, which included the use of metal molds and alloys, a special press, and oil-based inks, allowing the mass producti on of printed books. The birth of the modern paper and printing industry is commonly marked from this date. Printi ng technology rapidly developed a nd created an ever-increasing demand for paper. The early European papers were made from recycled cotton and linen - and a huge trade quickly developed around the trading of old rags."
+					]
+				},
+				{
+					"number": 7,
+					"text": "The end of the trade in rags was brought about by the difficulty of transporting them.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nViệc chấm dứt buôn bán giẻ rách (rags) là do khó khăn trong việc vận chuyển chúng.\nBước 2: Tìm các keywords được paraphrase trong bài:\nsource became insufficient ~ từ khoá gốc (nguyên nhân end of trade)\nrags ~ từ khóa giữ nguyên\ndifficulty of transporting ~ từ khóa đề bài\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...nguồn này sớm trở nên không đủ và một số nỗ lực tò mò đã được thực hiện để tìm kiếm các vật liệu mới\" (...this source soon became insufficient and some curious attempts were made to find new materials).\n==> Điều này trái ngược với thông tin trong câu hỏi. Nguyên nhân là do thiếu hụt nguồn cung, không phải do khó khăn vận chuyển.\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Yet soon this source became insufficient and some curious attempts were made to find new materials."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-13",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the table below. Choose ONE WORD ONLY from the passage for each answer.",
+			"body": "The development of paper\nPlace\nDate of introduction\nMaterials used\nMethod of production\nEgypt\nabout 2400 BC\na plant called papyrus\n____ (8) of the plant were softened in water, woven and pounded\nEurope\nunknown\nparchment made from the skin of animals such as ____ (9)\nskin was dried and ____ (10)\nChina\n105 AD\n____ (11) of a mulberry tree and hemp rags\ningredients were mixed with water, pressed and put outside in the sun\n____ (12)\n751 AD\nflax and hemp\nmills made of ____ (13) were used",
+			"body_table": [
+				[
+					"Place",
+					"Date of introduction",
+					"Materials used",
+					"Method of production"
+				],
+				[
+					"Egypt",
+					"about 2400 BC",
+					"a plant called papyrus",
+					"____ (8) of the plant were softened in water, woven and pounded"
+				],
+				[
+					"Europe",
+					"unknown",
+					"parchment made from the skin of animals such as ____ (9)",
+					"skin was dried and ____ (10)"
+				],
+				[
+					"China",
+					"105 AD",
+					"____ (11) of a mulberry tree and hemp rags",
+					"ingredients were mixed with water, pressed and put outside in the sun"
+				],
+				[
+					"____ (12)",
+					"751 AD",
+					"flax and hemp",
+					"mills made of ____ (13) were used"
+				]
+			],
+			"body_html": "<h3>The development of paper</h3><table><thead><tr><th>Place</th><th>Date of introduction</th><th>Materials used</th><th>Method of production</th></tr></thead><tbody><tr><td>Egypt</td><td>about 2400 BC</td><td>a plant called papyrus</td><td>[8] of the plant were softened in water, woven and pounded</td></tr><tr><td>Europe</td><td>unknown</td><td>parchment made from the skin of animals such as [9]</td><td>skin was dried and [10]</td></tr><tr><td>China</td><td>105 AD</td><td>[11] of a mulberry tree and hemp rags</td><td>ingredients were mixed with water, pressed and put outside in the sun</td></tr><tr><td>[12]</td><td>751 AD</td><td>flax and hemp</td><td>mills made of [13] were used</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 8,
+					"text": "____ (8) of the plant were softened in water, woven and pounded",
+					"answer": "strips",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nỞ Ai Cập (2400 BC), cây papyrus được sử dụng. ____ của cây được làm mềm trong nước, dệt và đập.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: ... of the plant (Cần một danh từ chỉ một bộ phận của cây).\nBước 3: Tìm các keywords được paraphrase trong bài:\nsoftened in water ~ từ khóa giữ nguyên\ncross-woven... and then pounded ~ woven and pounded\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Người Ai Cập cắt cây thành các dải mà họ làm mềm trong nước\" (The Egyptians cut the plant into strips which they softened in water).\nBước 5: Đáp án: strips\nCác dải của cây được làm mềm trong nước, dệt và đập. (strips of the plant were softened in water, woven and pounded).",
+					"quotes": [
+						"The Egyptians cut the plant into strips which they softened in water."
+					]
+				},
+				{
+					"number": 9,
+					"text": "parchment made from the skin of animals such as ____ (9)",
+					"answer": "sheep",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nỞ Châu Âu, giấy da (parchment) được làm từ da của các loài động vật như ____.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: animals such as + NOUN (Cần một danh từ chỉ tên loài động vật).\nBước 3: Tìm các keywords được paraphrase trong bài:\nparchment ~ từ khóa giữ nguyên\nanimal skin ~ skin of animals\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...một cuốn sách viết trên giấy da cần da của 300 con cừu\" (...a single book written on parchment required the skins of 300 sheep).\nBước 5: Đáp án: sheep\nGiấy da được làm từ da của các loài động vật như cừu. (parchment made from the skin of animals such as sheep).",
+					"quotes": [
+						"In fact, it has been estimated that a single book written on parchment required the skins of 300 sheep."
+					]
+				},
+				{
+					"number": 10,
+					"text": "skin was dried and ____ (10)",
+					"answer": "stretched",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nDa được làm khô và ____.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: VERB (past participle)\nDấu hiệu: was dried and... (Cần một động từ ở dạng V3/ed do cấu trúc bị động song song).\nBước 3: Tìm các keywords được paraphrase trong bài:\nskins had to be specifically prepared by drying them ~ skin was dried\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Da phải được chuẩn bị đặc biệt bằng cách làm khô chúng và sau đó chúng được kéo căng trên một khung đặc biệt\" (The skins had to be specifically prepared by drying them and they were then stretched on a special frame).\nBước 5: Đáp án: stretched\nDa được làm khô và kéo căng. (Skin was dried and stretched).",
+					"quotes": [
+						"The skins had to be specifically prepared by drying them and they were then stretched on a special frame."
+					]
+				},
+				{
+					"number": 11,
+					"text": "____ (11) of a mulberry tree and hemp rags",
+					"answer": "bark",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nỞ Trung Quốc (105 AD): ____ của một cây dâu tằm và giẻ gai.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: ... of a mulberry tree (Cần một danh từ chỉ một bộ phận của cây dâu tằm).\nBước 3: Tìm các keywords được paraphrase trong bài:\nmulberry ~ mulberry tree\nhemp rags ~ từ khóa giữ nguyên\nmixing... with water ~ mixed with water\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Ts'ai Lun dường như đã làm giấy của mình bằng cách trộn vỏ dâu tằm băm nhỏ và giẻ gai với nước\" (Ts'ai Lun seems to have made his paper by mixing finely chopped mulberry bark and hemp rags with water).\nBước 5: Đáp án: bark\nVỏ của một cây dâu tằm và giẻ gai. (bark of a mulberry tree and hemp rags)."
+				},
+				{
+					"number": 12,
+					"text": "",
+					"answer": "Samarkand",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nĐịa điểm: ____, Năm 751 AD.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (Proper Noun)\nDấu hiệu: Place (Cần một tên địa danh).\nBước 3: Tìm các keywords được paraphrase trong bài:\n751 AD ~ từ khóa giữ nguyên\nhemp and flax ~ flax and hemp\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Họ bị đưa đến Samarkand, nơi là một địa điểm tốt để làm giấy vì có nguồn cung cấp gai và lanh dồi dào\" (They were taken away to Samarkand, which was a good place to make paper because it had an abundant supply of hemp and flax).\nBước 5: Đáp án: Samarkand\nĐịa điểm: Samarkand. (Place: Samarkand).",
+					"quotes": [
+						"They were taken away to Samarkand, which was a good place to make paper bec ause it had an abundant supply of hemp and flax."
+					]
+				},
+				{
+					"number": 13,
+					"text": "mills made of ____ (13) were used",
+					"answer": "stone",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCác cối xay làm bằng ____ đã được sử dụng.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: made of + NOUN (Cần một danh từ chỉ chất liệu).\nBước 3: Tìm các keywords được paraphrase trong bài:\nmills ~ từ khóa giữ nguyên\nThey began to prepare it in... ~ used were\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Họ bắt đầu chuẩn bị nó trong các cối xay đá\" (They began to prepare it in stone mills).\nBước 5: Đáp án: stone\nCác cối xay làm bằng đá đã được sử dụng. (mills made of stone used were).",
+					"quotes": [
+						"They began to prepare it in stone mills and Samarkand became an important papermaking center."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

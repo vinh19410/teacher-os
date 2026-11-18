@@ -1,0 +1,213 @@
+{
+	"id": "6b020b16-2fbb-41ea-95b5-a27bfeb814c6",
+	"url": "https://stepielts.com/student/reading/6b020b16-2fbb-41ea-95b5-a27bfeb814c6?mode=practice",
+	"title": "Research using twins",
+	"source": "C11T4",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Research using twins",
+		"paragraphs": [
+			"To biomedical researchers all over the world, twins offer a precious opportunity to untangle the influence of genes and the environment – of nature and nurture. Because identical twins come from a single fertilized egg that splits into two, they share virtually the same genetic code. Any differences between them -one twin having younger looking skin, for example – must be due to environmental factors such as less time spent in the sun.",
+			"Alternatively, by comparing the experiences of identical twins with those of fraternal twins, who come from separate eggs and share on average half their DNA, researchers can quantify the extent to which our genes affect our lives. If identical twins are more similar to each other with respect to an ailment than fraternal twins are, then vulnerability to the disease must be rooted at least in part in heredity.",
+			"These two lines of research – studying the differences between identical twins to pinpoint the influence of environment, and comparing identical twins with fraternal ones to measure the role of inheritance – have been crucial to understanding the interplay of nature and nurture in determining our personalities, behavior, and vulnerability to disease.",
+			"The idea of using twins to measure the influence of heredity dates back to 1875, when the English scientist Francis Galton first suggested the approach (and coined the phrase ‘nature and nurture’). But twin studies took a surprising twist in the 1980s, with the arrival of studies into identical twins who had been separated at birth and reunited as adults. Over two decades 137 sets of twins eventually visited Thomas Bouchard’s lab in what became known as the Minnesota Study of Twins Reared Apart. Numerous tests were carried out on the twins, and they were each asked more than 15,000 questions.",
+			"Bouchard and his colleagues used this mountain of data to identify how far twins were affected by their genetic makeup. The key to their approach was a statistical concept called heritability. in broad terms, the heritability of a trait measures the extent to which differences among members of a population can be explained by differences in their genetics. And wherever Bouchard and other scientists looked, it seemed, they found the invisible hand of genetic influence helping to shape our lives.",
+			"Lately, however, twin studies have helped lead scientists to a radical new conclusion: that nature and nurture are not the only elemental forces at work. According to a recent field called epigenetics, there is a third factor also in play, one that in some cases serves as a bridge between the environment and our genes, and in others operates on its own to shape who we are.",
+			"Epigenetic processes are chemical reactions tied to neither nature nor nurture but representing what researchers have called a ‘third component’. These reactions influence how our genetic code is expressed: how each gene is strengthened or weakened, even turned on or off, to build our bones, brains and all the other parts of our bodies.",
+			"If you think of our DNA as an immense piano keyboard and our genes as the keys – each key symbolizing a segment of DNA responsible for a particular note, or trait, and all the keys combining to make us who we are – then epigenetic processes determine when and how each key can be struck, changing the tune being played.",
+			"One way the study of epigenetics is revolutionizing our understanding of biology is by revealing a mechanism by which the environment directly impacts on genes. Studies of animals, for example, have shown that when a rat experiences stress during pregnancy, it can cause epigenetic changes in a fetus that lead to behavioral problems as the rodent grows up. Other epigenetic processes appear to occur randomly, while others are normal, such as those that guide embryonic cells as they become heart, brain, or liver cells, for example.",
+			"Geneticist Danielle Reed has worked with many twins over the years and thought deeply about what twin studies have taught us. ‘It’s very clear when you look at twins that much of what they share is hardwired,’ she says. ‘Many things about them are absolutely the same and unalterable. But it’s also clear, when you get to know them, that other things about them are different. Epigenetics is the origin of a lot of those differences, in my view.’",
+			"Reed credits Thomas Bouchard’s work for today’s surge in twin studies. ‘He was the trailblazer,’ she says. ‘We forget that 50 years ago things like heart disease were thought to be caused entirely by lifestyle. Schizophrenia was thought to be due to poor mothering. Twin studies have allowed us to be more reflective about what people are actually born with and what’s caused by experience.’",
+			"Having said that, Reed adds, the latest work in epigenetics promises to take our understanding even further. ‘What I like to say is that nature writes some things in pencil and some things in pen,’ she says. ‘Things written in pen you can’t change. That’s DNA. But things written in pencil you can. That’s epigenetics. Now that we’re actually able to look at the DNA and see where the pencil writings are, it’s sort of a whole new world.’"
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage?\nIn boxes 1-4 on your answer sheet, write\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 1,
+					"text": "There may be genetic causes for the differences in how young the skin of identical twins looks.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCó thể có nguyên nhân di truyền dẫn đến sự khác biệt về độ trẻ trung của làn da giữa các cặp song sinh giống hệt nhau.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nGenetic code ~ genetic causes\nDifferences ~ từ khoá giữ nguyên\nOne twin having younger looking skin ~ how young the skin of identical twins looks\n\nBước 3: So sánh và đối chiếu: Bài đọc chỉ rõ: \"Bởi vì cặp song sinh giống hệt nhau đến từ một trứng thụ tinh duy nhất phân chia thành hai, chúng chia sẻ hầu như cùng một mã di truyền. Bất kỳ sự khác biệt nào giữa chúng - ví dụ, một cặp song sinh có làn da trông trẻ hơn - phải là do các yếu tố môi trường như ít dành thời gian dưới ánh nắng mặt trời\".\n=> Điều này trái ngược với thông tin trong câu hỏi “Có thể có nguyên nhân di truyền dẫn đến sự khác biệt về độ trẻ trung của làn da” (There may be genetic causes for the differences in how young the skin of identical twins looks).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Because identical twins come from a single fertilized egg that splits into two, they share virtually the same genetic code."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Twins are at greater risk of developing certain illnesses than non-twins.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác cặp song sinh có nguy cơ mắc một số bệnh cao hơn so với những người không phải là song sinh.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nAilment ~ certain illnesses\n\nBước 3: So sánh và đối chiếu: Bài đọc chỉ rõ: \"Nếu các cặp song sinh giống hệt nhau có nhiều điểm tương đồng với nhau hơn so với các cặp song sinh khác trứng về một căn bệnh nào đó, thì sự dễ bị tổn thương đối với bệnh đó ít nhất phải có một phần là do di truyền\". => Tuy nhiên, bài đọc không hề nhắc đến thông tin “Các cặp song sinh có nguy cơ mắc một số bệnh cao hơn so với những người không phải là song sinh” (Twins are at greater risk of developing certain illnesses than non-twins).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"If identical twins are more similar to each other with respect to an ailment than fraternal twins are, then vulnerability to the disease must be rooted at least in part in heredity."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Bouchard advertised in newspapers for twins who had been separated at birth.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nBouchard đã quảng cáo trên báo chí để tìm những cặp song sinh bị tách ra từ khi sinh.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nBouchard ~ tên riêng giữ nguyên\nSeparated at birth ~ cụm từ giữ nguyên\n\nBước 3: So sánh và đối chiếu: Bài đọc chỉ rõ: \"Nhưng các nghiên cứu về cặp song sinh đã có bước ngoặt đáng ngạc nhiên vào những năm 1980, với sự xuất hiện của các nghiên cứu về những cặp song sinh giống hệt nhau bị tách ra lúc mới sinh và đoàn tụ khi trưởng thành\". => Tuy nhiên, bài đọc không hề nhắc đến thông tin “Bouchard đã quảng cáo trên báo chí để tìm những cặp song sinh bị tách ra từ khi sinh” (Bouchard advertised in newspapers for twins who had been separated at birth).\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"But twin studies took a surprising twist in the 1980s, with the arrival of studies into identical twins who had been separated at birth and reunited as adults."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Epigenetic processes are different from both genetic and environmental processes",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác quá trình biểu sinh khác với cả quá trình di truyền và môi trường.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nEpigenetics ~ epigenetic processes\nThe environment and our genes ~ genetic and environmental processes\n\nBước 3: So sánh và đối chiếu: Bài đọc chỉ rõ: \"Theo một lĩnh vực mới được gọi là di truyền học biểu sinh, còn có một yếu tố thứ ba cũng đóng vai trò quan trọng, trong một số trường hợp, yếu tố này đóng vai trò là cầu nối giữa môi trường và gen của chúng ta, và trong những trường hợp khác, yếu tố này hoạt động độc lập để định hình nên con người chúng ta’\". => Điều này đồng nghĩa với thông tin trong câu hỏi “Các quá trình biểu sinh khác với cả quá trình di truyền và môi trường” (Epigenetic processes are different from both genetic and environmental processes).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"According to a recent field called epigenetics, there is a third factor also in play, one that in some cases serves as a bridge between the environment and our genes, and in others operates on its own to shape who we are."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-9",
+			"type": "MATCHING_FEATURES",
+			"instructions": "Look at the following statements (Questions 5-9) and the list of researchers below.\nMatch each statement with the correct researcher, A, B or C.\nWrite the correct letter, A, B or C, in boxes 5-9 on your answer sheet.\nNB You may use any letter more than once.",
+			"options": [
+				{
+					"label": "A",
+					"text": "Francis Galton"
+				},
+				{
+					"label": "B",
+					"text": "Thomas Bouchard"
+				},
+				{
+					"label": "C",
+					"text": "Danielie Reed"
+				}
+			],
+			"body": "invented a term used to distinguish two factors affecting human characteristics. ____ (5)\nexpressed the view that the study of epigenetics will increase our knowledge ____ (6)\ndeveloped a mathematical method of measuring genetic influences. ____ (7)\npioneered research into genetics using twins ____ (8)\ncarried out research into twins who had lived apart. ____ (9)",
+			"body_html": "<p>invented a term used to distinguish two factors affecting human characteristics. [5]</p><p>expressed the view that the study of epigenetics will increase our knowledge [6]</p><p>developed a mathematical method of measuring genetic influences. [7]</p><p>pioneered research into genetics using twins [8]</p><p>carried out research into twins who had lived apart. [9]</p>",
+			"questions": [
+				{
+					"number": 5,
+					"text": "invented a term used to distinguish two factors affecting human characteristics.",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người phát minh ra một thuật ngữ dùng để phân biệt hai yếu tố ảnh hưởng đến đặc điểm của con người.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nCoined a phrase ~ invented a term\nNature and nurture ~ two factors\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Francis Galton “Ý tưởng sử dụng cặp song sinh để đo lường ảnh hưởng của yếu tố di truyền có từ năm 1875, khi nhà khoa học người Anh Francis Galton lần đầu tiên đề xuất phương pháp này (và đặt ra cụm từ 'bản chất và sự nuôi dưỡng')”.\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"The idea of using twins to measure the influence of heredity dates back to 1875, when the English scientist Francis Galton first suggested the approach (and coined the phrase ‘nature and nurture’)."
+					]
+				},
+				{
+					"number": 6,
+					"text": "expressed the view that the study of epigenetics will increase our knowledge",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người bày tỏ quan điểm rằng nghiên cứu về epigenetics sẽ giúp mở rộng kiến thức của con người.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nThe latest work in epigenetics ~ study of epigenetics\nPromises ~ từ khoá giữ nguyên\nTake our understanding even further ~ increase knowledge\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Danielle Reed \"Mặc dù nói như vậy, Reed nói thêm, nghiên cứu mới nhất về biểu sinh học hứa hẹn sẽ đưa sự hiểu biết của chúng ta đi xa hơn nữa.\"\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"Having said that, Reed adds, the latest work in epigenetics promises to take our understanding even further."
+					]
+				},
+				{
+					"number": 7,
+					"text": "developed a mathematical method of measuring genetic influences.",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người phát triển một phương pháp toán học để đo lường ảnh hưởng của di truyền.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nStatistical concept called heritability ~ mathematical method\nMeasures the extent to which genetics ~ genetic influences\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Thomas Bouchard \"Chìa khóa cho cách tiếp cận của họ là một khái niệm thống kê gọi là tính di truyền. Nói chung, tính di truyền của một đặc điểm đo lường mức độ mà sự khác biệt giữa các thành viên của một quần thể có thể được giải thích bằng sự khác biệt về mặt di truyền của họ\".\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"The key to their approach was a statistical concept called heritability. in broad terms, the heritability of a trait measures the extent to which differences among members of a population can be explained by differences in their genetics."
+					]
+				},
+				{
+					"number": 8,
+					"text": "pioneered research into genetics using twins",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi: Đề hỏi ai là người tiên phong trong việc nghiên cứu di truyền học sử dụng cặp song sinh.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nFirst suggested the approach ~ pioneered\nusing twins to measure the influence of heredity ~ genetics using twins\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Francis Galton \"Ý tưởng sử dụng cặp song sinh để nghiên cứu sức ảnh hưởng của di truyền đã có từ năm 1875, khi nhà khoa học người Anh Francis Galton lần đầu đề xuất cách tiếp cận này và cũng là người đặt ra cụm từ 'nature and nurture' (tức 'bẩm sinh và nuôi dưỡng')\".\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"The idea of using twins to measure the influence of heredity dates back to 1875, when the English scientist Francis Galton first suggested the approach (and coined the phrase ‘nature and nurture’)."
+					]
+				},
+				{
+					"number": 9,
+					"text": "carried out research into twins who had lived apart.",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người thực hiện nghiên cứu về các cặp song sinh đã sống xa nhau.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nTwins reared apart ~ twins who had lived apart\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Thomas Bouchard \"Trong hơn hai thập kỷ, 137 cặp song sinh cuối cùng đã đến phòng thí nghiệm của Thomas Bouchard trong nghiên cứu được gọi là Nghiên cứu về những cặp song sinh được nuôi tách biệt ở Minnesota\".\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"Over two decades 137 sets of twins eventually visited Thomas Bouchard’s lab in what became known as the Minnesota Study of Twins Reared Apart."
+					]
+				}
+			]
+		},
+		{
+			"range": "10-13",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary using the list of words, A-F, below. Write the correct letter, A-F, in boxes 10-13 on your answer sheet.",
+			"options": [
+				{
+					"label": "A",
+					"text": "nurture"
+				},
+				{
+					"label": "B",
+					"text": "organs"
+				},
+				{
+					"label": "C",
+					"text": "code"
+				},
+				{
+					"label": "D",
+					"text": "chemicals"
+				},
+				{
+					"label": "E",
+					"text": "environment"
+				},
+				{
+					"label": "F",
+					"text": "behaviour/behavior"
+				}
+			],
+			"body": "Epigenetic processes\nIn epigenetic processes, ____ (10) influence the activity of our genes, for example in creating our internal ____ (11). The study of epigenetic processes is uncovering a way in which our genes can be affected by our ____ (12). One example is that if a pregnant rat suffers stress, the new-born rat may later show problems in its ____ (13).",
+			"body_html": "<h3><strong>Epigenetic processes</strong></h3><p>In epigenetic processes, [10] influence the activity of our genes, for example in creating our internal [11]. The study of epigenetic processes is uncovering a way in which our genes can be affected by our [12]. One example is that if a pregnant rat suffers stress, the new-born rat may later show problems in its [13].</p>",
+			"questions": [
+				{
+					"number": 10,
+					"text": "",
+					"answer": "D",
+					"quotes": [
+						"Epigenetic processes are chemical reactions tied to neither nature nor nurture but representing what researchers have called a ‘third component’.",
+						"These reactions influence how our genetic code is expressed: how each gene is strengthened or weakened, even turned on or off, to build our bones, brains and all the other parts of our bodies."
+					]
+				},
+				{
+					"number": 11,
+					"text": "",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nVí dụ như trong việc tạo ra các ___________ bên trong cơ thể chúng ta.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: creating + NOUN (NOUN làm Object của Transitive Verb 'CREATING')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nBuild ~ create\nOf your bodies ~ internal\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: “Những phản ứng này ảnh hưởng đến cách mã di truyền của chúng ta được biểu hiện: cách mỗi gen được tăng cường hoặc suy yếu, thậm chí được bật hoặc tắt, để xây dựng xương, não và mọi bộ phận khác trong cơ thể chúng ta”.\n(These reactions influence how our genetic code is expressed: how each gene is strengthened or weakened, even turned on or off , to build our bones, brains and all the other parts of our bodies).\n\nBước 5: Đáp án: B. organs Ví dụ như trong việc tạo ra các cơ quan bên trong cơ thể chúng ta (For example in creating our internal organs).",
+					"quotes": [
+						"These reactions influence how our genetic code is expressed: how each gene is strengthened or weakened, even turned on or off, to build our bones, brains and all the other parts of our bodies."
+					]
+				},
+				{
+					"number": 12,
+					"text": "",
+					"answer": "E",
+					"quotes": [
+						"One way the study of epigenetics is revolutionizing our understanding of biology is by revealing a mechanism by which the environment directly impacts on genes."
+					]
+				},
+				{
+					"number": 13,
+					"text": "",
+					"answer": "F",
+					"quotes": [
+						"Studies of animals, for example, have shown that when a rat experiences stress during pregnancy, it can cause epigenetic changes in a fetus that lead to behavioral problems as the rodent grows up."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,177 @@
+{
+	"id": "819b374b-8409-4a31-aefc-04af54a7fa6f",
+	"url": "https://stepielts.com/student/reading/819b374b-8409-4a31-aefc-04af54a7fa6f?mode=practice",
+	"title": "Timekeeper: Invention of Marine Chronometer",
+	"source": "Actual Test",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-14",
+	"passage": {
+		"title": "Timekeeper: Invention of Marine Chronometer",
+		"paragraphs": [
+			"A. Up to the middle of the 18th century, the navigators were still unable to exactly identify the position at sea, so they might face a great number of risks such as the shipwreck or running out of supplies before arriving at the destination. Knowing one’s position on the earth requires two simple but essential coordinates, one of which is the longitude.",
+			"B. The longitude is a term that can be used to measure the distance that one has covered from one’s home to another place around the world without the limitations of naturally occurring baseline like the equator. To determine longitude, navigators had no choice but to measure the angle with the naval sextant between Moon centre and a specific star-lunar distance-along with the height of both heavenly bodies. Together with the nautical almanac, Greenwich Mean Time (GMT) was determined, which could be adopted to calculate longitude because one hour in GMT means 15-degree longitude. Unfortunately, this approach laid great reliance on the weather conditions, which brought great inconvenience to the crew members. Therefore, another method was proposed, that is, the time difference between the home time and the local time served for the measurement. Theoretically, knowing the longitude position was quite simple, even for the people in the middle of the sea with no land in sight. The key element for calculating the distance travelled was to know, at the very moment, the accurate home time. But the greatest problem is: how can a sailor know the home time at sea?",
+			"C. The simple and again obvious answer is that one takes an accurate clock with him, which he sets to the home time before leaving. A comparison with the local time (easily identified by checking the position of the Sun) would indicate the time difference between the home time and the local time, and thus the distance from home was obtained. The truth was that nobody in the 18th century had ever managed to create a clock that could endure the violent shaking of a ship and the fluctuating temperature while still maintaining the accuracy of time for navigation.",
+			"D. After 1714, as an attempt to find a solution to the problem, the British government offered a tremendous amount of £20,000, which were to be managed by the magnificently named ’Board of Longitude’. If timekeeper was the answer (and there could be other proposed solutions, since the money wasn’t only offered for timekeeper), then the error of the required timekeeping for achieving this goal needed to be within 2.8 seconds a day, which was considered impossible for any clock or watch at sea, even when they were in their finest conditions.",
+			"E. This award, worth about £2 million today, inspired the self-taught Yorkshire carpenter John Harrison to attempt a design for a practical marine clock. In the later stage of his early career, he worked alongside his younger brother James. The first big project of theirs was to build a turret clock for the stables at Brockelsby Park, which was revolutionary because it required no lubrication. Harrison designed a marine clock in 1730, and he travelled to London in seek of financial aid. He explained his ideas to Edmond Halley, the Astronomer Royal, who then introduced him to George Graham, Britain’s first-class clockmaker. Graham provided him with financial aid for his early-stage work on sea clocks. It took Harrison five years to build Harrison Number One or HI. Later, he sought the improvement from alternate design and produced H4 with the giant clock appearance. Remarkable as it was, the Board of Longitude wouldn’t grant him the prize for some time until it was adequately satisfied.",
+			"F. Harrison had a principal contestant for the tempting prize at that time, an English mathematician called John Hadley, who developed sextant. The sextant is the tool that people adopt to measure angles, such as the one between the Sun and the horizon, for a calculation of the location of ships or planes. In addition, his invention is significant since it can help determine longitude.",
+			"G. Most chronometer forerunners of that particular generation were English, but that doesn’t mean every achievement was made by them. One wonderful figure in the history is the Lancastrian Thomas Earnshaw, who created the ultimate form of chronometer escapement-the spring detent escapement-and made the final decision on format and productions system for the marine chronometer, which turns it into a genuine modern commercial product, as well as a safe and pragmatic way of navigation at sea over the next century and half."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Reading Passage 1 has seven paragraphs, A-G.\nWhich paragraph contains the following information?\nNB: You may use any letter more than once.",
+			"options": ["A", "B", "C", "D", "E", "F", "G"],
+			"questions": [
+				{
+					"number": 1,
+					"text": "a description of Harrison's background",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTìm đoạn văn chứa thông tin mô tả về xuất thân, nghề nghiệp hoặc tiểu sử của John Harrison.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nself-taught Yorkshire carpenter ~ Harrison's background\nworked alongside his younger brother ~ Harrison's background\n\nBước 3: So sánh và đối chiếu:\nĐoạn E chỉ rõ: \"Người thợ mộc tự học đến từ Yorkshire, John Harrison... đã làm việc cùng với em trai James của mình\".\n==> Thông tin này cho thấy đoạn E đã \"mô tả về xuất thân và nghề nghiệp của Harrison\" (...the self-taught Yorkshire carpenter John Harrison... worked alongside his younger brother James).\n\nBước 4: Đáp án: E",
+					"quotes": [
+						"E. This award, worth about £2 million today, inspired the self-taught Yorkshire carpenter John Harrison to attempt a design for a practical marine clock. In the later stage of his early career, he worked alongside his younger brother James."
+					]
+				},
+				{
+					"number": 2,
+					"text": "problems caused by poor ocean navigation",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTìm đoạn văn nhắc đến những vấn đề hoặc rủi ro nảy sinh do việc định hướng trên đại dương kém hoặc không chính xác.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nrisks ~ problems • shipwreck or running out of supplies ~ problems\nunable to exactly identify the position ~ poor ocean navigation\n\nBước 3: So sánh và đối chiếu:\nĐoạn A chỉ rõ: \"Các nhà hàng hải vẫn không thể xác định chính xác vị trí trên biển, vì vậy họ có thể phải đối mặt với một số lượng lớn các rủi ro như đắm tàu hoặc cạn kiệt nguồn cung nhu yếu phẩm\".\n==> Thông tin này cho thấy đoạn A đã \"liệt kê các vấn đề gây ra bởi việc định hướng kém\" (...navigators were still unable to exactly identify the position at sea, so they might face a great number of risks such as the shipwreck or running out of supplies).\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"Up to the middle of the 18th century, the navigators were still unable to exactly identify the position at sea, so they might face a great number of risks such as the shipwreck or running out of supplies before arriving at the destination."
+					]
+				},
+				{
+					"number": 3,
+					"text": "the person who gave financial support to Harrison",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTìm đoạn văn nhắc đến cá nhân cụ thể đã hỗ trợ tiền bạc/tài chính cho Harrison.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nfinancial aid ~ financial support\nprovided ~ gave\nGeorge Graham ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nĐoạn E chỉ rõ: \"George Graham... đã cung cấp cho ông hỗ trợ tài chính cho công việc ở giai đoạn đầu của ông về đồng hồ biển\".\n==> Thông tin này cho thấy đoạn E đã \"nêu tên người cung cấp hỗ trợ tài chính cho Harrison\" (...George Graham... provided him with financial aid for his early-stage work on sea clocks).\n\nBước 4: Đáp án: E",
+					"quotes": [
+						"Graham provided him with financial aid for his early-stage work on sea clocks."
+					]
+				},
+				{
+					"number": 4,
+					"text": "an analysis of the long-term importance of sea clock invention",
+					"answer": "G",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTìm đoạn văn phân tích về tầm quan trọng mang tính lâu dài, xuyên thế kỷ của việc phát minh ra đồng hồ biển.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nover the next century and half ~ long-term\nsafe and pragmatic way of navigation ~ importance\nmarine chronometer ~ sea clock invention\n\nBước 3: So sánh và đối chiếu:\nĐoạn G chỉ rõ: \"Thiết bị này trở thành một phương pháp định hướng an toàn và thực dụng trên biển trong suốt một thế kỷ rưỡi tiếp theo\".\n==> Thông tin này cho thấy đoạn G đã \"phân tích giá trị sử dụng lâu dài của phát minh này đối với hàng hải\" (...a safe and pragmatic way of navigation at sea over the next century and half).\n\nBước 4: Đáp án: G",
+					"quotes": [
+						"One wonderful figure in the history is the Lancastrian Thomas Earnshaw, who created the ultimate form of chronometer escapement-the spring detent escapement-and made the final decision on format and productions system for the marine chronometer, which turns it into a genuine modern commercial product, as well as a safe and pragmatic way of navigation at sea over the next century and half."
+					]
+				},
+				{
+					"number": 5,
+					"text": "the practical usage of longitude",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTìm đoạn văn mô tả công dụng thực tế hoặc chức năng mà kinh độ được dùng để đo đạc.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\ncan be used to measure the distance ~ practical usage\ncovered from one's home to another place ~ practical usage\n\nBước 3: So sánh và đối chiếu:\nĐoạn B chỉ rõ: \"Kinh độ là một thuật ngữ có thể được sử dụng để đo khoảng cách mà một người đã đi từ nhà mình đến một nơi khác trên thế giới\".\n==> Thông tin này cho thấy đoạn B đã \"giải thích cách kinh độ được áp dụng thực tế để đo khoảng cách\" (The longitude is a term that can be used to measure the distance that one has covered from one's home to another place).\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"The longitude is a term that can be used to measure the distance that one has covered from one’s home to another place around the world without the limitations of naturally occurring baseline like the equator."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-8",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 1?\nIn boxes 6-8 on your answer sheet, write\nTRUE if the statement is true\nFALSE if the statement is false\nNOT GIVEN if the information is not given in the passage",
+			"questions": [
+				{
+					"number": 6,
+					"text": "In theory, sailors can easily calculate their longitude position at sea.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nVề mặt lý thuyết, các thủy thủ có thể dễ dàng tính toán vị trí kinh độ của họ khi ở trên biển.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nTheoretically ~ In theory\nquite simple ~ easily calculate\nlongitude position ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Về mặt lý thuyết, việc biết vị trí kinh độ là khá đơn giản, ngay cả đối với những người ở giữa biển khơi mà không nhìn thấy đất liền\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"thủy thủ có thể dễ dàng tính toán kinh độ về mặt lý thuyết\" (In theory, sailors can easily calculate their longitude position at sea) (Theoretically, knowing the longitude position was quite simple, even for the people in the middle of the sea with no land in sight).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Theoretically, knowing the longitude position was quite simple, even for the people in the middle of the sea with no land in sight."
+					]
+				},
+				{
+					"number": 7,
+					"text": "To determine longitude, the measurement of the distance from the Moon to the given star is a must.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐể xác định kinh độ, việc đo khoảng cách từ Mặt Trăng đến một ngôi sao nhất định là điều bắt buộc.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nhad no choice but ~ a must\nmeasure the angle... between Moon centre and a specific star ~ measurement of the distance from the Moon to the given star\ndetermine longitude ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"để xác định kinh độ, các nhà hàng hải không có sự lựa chọn nào khác ngoài việc đo góc bằng kính lục phân giữa tâm Mặt Trăng và một ngôi sao cụ thể\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"việc đo khoảng cách từ Mặt Trăng đến ngôi sao là điều bắt buộc\" (To determine longitude, navigators had no choice but to measure the angle with the naval sextant between Moon centre and a specific star-lunar distance...).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"To determine longitude, navigators had no choice but to measure the angle with the naval sextant between Moon centre and a specific star-lunar distance-along with the height of both heavenly bodies."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Greenwich Mean Time was set up by the English navigators.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nGiờ trung bình Greenwich (GMT) được thiết lập/tạo ra bởi các nhà hàng hải người Anh.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nGreenwich Mean Time (GMT) ~ từ khóa giữ nguyên\nEnglish navigators ~ navigators (đoạn A)\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"GMT được sử dụng để tính toán kinh độ vì mỗi giờ tại GMT tương ứng với 15 độ kinh độ\".\n==> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"ai là người đã thiết lập hay tạo ra hệ thống giờ GMT này\" (Greenwich Mean Time was set up by the English navigators) (Together with the nautical almanac, Greenwich Mean Time (GMT) was determined, which could be adopted to calculate longitude).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Together with the nautical almanac, Greenwich Mean Time (GMT) was determined, which could be adopted to calculate longitude because one hour in GMT means 15-degree longitude."
+					]
+				}
+			]
+		},
+		{
+			"range": "9-14",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the sentences below. Choose NO MORE THAN TWO WORDS AND/OR A NUMBER from the passage for each answer.",
+			"body": "Sailors were able to use the position of the Sun to calculate ____ (9)\nAn invention that could win the competition would lose no more than ____ (10) every day.\nJohn and James Harrison's clock worked accurately without ____ (11)\nHarrison's main competitor's invention was known as ____ (12)\nHadley's instrument can use ____ (13) to make a calculation of location of ships or planes.\nThe modern version of Harrison's invention is called ____ (14)",
+			"body_html": "<table><tbody><tr><td><ul><li>Sailors were able to use the position of the Sun to calculate [9]</li><li>An invention that could win the competition would lose no more than [10] every day.</li><li>John and James Harrison's clock worked accurately without [11]</li><li>Harrison's main competitor's invention was known as [12]</li><li>Hadley's instrument can use [13] to make a calculation of location of ships or planes.</li><li>The modern version of Harrison's invention is called [14]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 9,
+					"text": "Sailors were able to use the position of the Sun to calculate ____ (9)",
+					"answer": "local time",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nThủy thủ có thể sử dụng vị trí của Mặt Trời để tính toán ________.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN / NOUN PHRASE\nDấu hiệu: calculate + NOUN (cần một tân ngữ cho động từ 'calculate' để chỉ cái được tính toán)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nchecking the position of the Sun ~ use the position of the Sun\neasily identified ~ were able to... calculate\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Sự so sánh với giờ địa phương (dễ dàng xác định bằng cách kiểm tra vị trí của Mặt Trời) sẽ chỉ ra sự chênh lệch thời gian\".\n==> (A comparison with the local time (easily identified by checking the position of the Sun)...)\n\nBước 5: Đáp án: local time",
+					"quotes": [
+						"A comparison with the local time (easily identified by checking the position of the Sun) would indicate the time difference between the home time and the local time, and thus the distance from home was obtained."
+					]
+				},
+				{
+					"number": 10,
+					"text": "An invention that could win the competition would lose no more than ____ (10) every day.",
+					"answer": "2.8 seconds",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nMột phát minh có thể chiến thắng cuộc thi sẽ mất (sai số) không quá ________ mỗi ngày.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NUMBER + TIME UNIT\nDấu hiệu: no more than + NUMBER (sau \"không quá\" là một con số cụ thể chỉ giới hạn sai sót)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nwithin 2.8 seconds ~ no more than _______\na day ~ every day\nerror of the required timekeeping ~ lose\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"sai số của việc giữ thời gian cần thiết để đạt được mục tiêu này cần phải trong vòng 2,8 giây một ngày\".\n==> (...the error of the required timekeeping for achieving this goal needed to be within 2.8 seconds a day)\n\nBước 5: Đáp án: 2.8 seconds",
+					"quotes": [
+						"If timekeeper was the answer (and there could be other proposed solutions, since the money wasn’t only offered for timekeeper), then the error of the required timekeeping for achieving this goal needed to be within 2.8 seconds a day, which was considered impossible for any clock or watch at sea, even when they were in their finest conditions."
+					]
+				},
+				{
+					"number": 11,
+					"text": "John and James Harrison's clock worked accurately without ____ (11)",
+					"answer": "lubrication",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nChiếc đồng hồ của John và James Harrison hoạt động chính xác mà không cần dùng đến ________.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: without + NOUN (sau giới từ 'without' là một danh từ chỉ thứ không cần sử dụng)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nrequired no lubrication ~ without _______\nrevolutionary ~ worked accurately\nJohn... alongside his younger brother James ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Dự án lớn đầu tiên của họ là xây dựng một chiếc đồng hồ tháp... nó mang tính cách mạng vì không yêu cầu bôi trơn\".\n==> (The first big project of theirs was to build a turret clock... which was revolutionary because it required no lubrication)\n\nBước 5: Đáp án: lubrication",
+					"quotes": [
+						"The first big project of theirs was to build a turret clock for the stables at Brockelsby Park, which was revolutionary because it required no lubrication."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Harrison's main competitor's invention was known as ____ (12)",
+					"answer": "sextant",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nPhát minh của đối thủ chính của Harrison được biết đến với tên gọi là ________.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (Name of a tool)\nDấu hiệu: known as + NOUN (cấu trúc dùng để nêu tên gọi của một thiết bị)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nprincipal contestant ~ main competitor\ndeveloped ~ invention\nJohn Hadley ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Harrison có một đối thủ chính... John Hadley, người đã phát triển chiếc kính lục phân\".\n==> (Harrison had a principal contestant... John Hadley, who developed sextant)\n\nBước 5: Đáp án: sextant",
+					"quotes": [
+						"F. Harrison had a principal contestant for the tempting prize at that time, an English mathematician called John Hadley, who developed sextant."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Hadley's instrument can use ____ (13) to make a calculation of location of ships or planes.",
+					"answer": "angles",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCông cụ của Hadley có thể sử dụng ________ để tính toán vị trí của tàu thuyền hoặc máy bay.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (Plural)\nDấu hiệu: use + NOUN (sử dụng cái gì đó làm phương tiện hoặc dữ liệu)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nadopt to measure ~ can use\ncalculation of the location ~ từ khóa giữ nguyên\nships or planes ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Kính lục phân là công cụ mà mọi người sử dụng để đo các góc, chẳng hạn như góc giữa Mặt Trời và đường chân trời\".\n==> (The sextant is the tool that people adopt to measure angles... for a calculation of the location of ships or planes)\n\nBước 5: Đáp án: angles",
+					"quotes": [
+						"The sextant is the tool that people adopt to measure angles, such as the one between the Sun and the horizon, for a calculation of the location of ships or planes."
+					]
+				},
+				{
+					"number": 14,
+					"text": "The modern version of Harrison's invention is called ____ (14)",
+					"answer": "marine chronometer",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nPhiên bản hiện đại của phát minh của Harrison được gọi là ________.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN PHRASE\nDấu hiệu: called + NOUN (dùng để nêu tên gọi chính thức của phiên bản hiện đại)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\ngenuine modern commercial product ~ modern version\nmarine chronometer ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...hệ thống sản xuất cho máy đo thời gian hàng hải, thứ đã biến nó thành một sản phẩm thương mại hiện đại thực sự\".\n==> (...productions system for the marine chronometer, which turns it into a genuine modern commercial product)\n\nBước 5: Đáp án: marine chronometer",
+					"quotes": [
+						"One wonderful figure in the history is the Lancastrian Thomas Earnshaw, who created the ultimate form of chronometer escapement-the spring detent escapement-and made the final decision on format and productions system for the marine chronometer, which turns it into a genuine modern commercial product, as well as a safe and pragmatic way of navigation at sea over the next century and half."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

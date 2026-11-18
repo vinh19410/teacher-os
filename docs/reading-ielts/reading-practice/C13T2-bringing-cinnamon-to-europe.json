@@ -1,0 +1,170 @@
+{
+	"id": "4c0abbb9-fb3f-494d-93f6-47ca82518d27",
+	"url": "https://stepielts.com/student/reading/4c0abbb9-fb3f-494d-93f6-47ca82518d27?mode=practice",
+	"title": "Bringing cinnamon to Europe",
+	"source": "C13T2",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Bringing cinnamon to Europe",
+		"paragraphs": [
+			"Cinnamon is a sweet, fragrant spice produced from the inner bark of trees of the genus Cinnamomum, which is native to the Indian sub-continent. It was known in biblical times, and is mentioned in several books of the Bible, both as an ingredient that was mixed with oils for anointing people’s bodies, and also as a token indicating friendship among lovers and friends. In ancient Rome, mourners attending funerals burnt cinnamon to create a pleasant scent. Most often, however, the spice found its primary use as an additive to food and drink. In the Middle Ages, Europeans who could afford the spice used it to flavor food, particularly meat, and to impress those around them with their ability to purchase an expensive condiment from the ‘exotic’ East. At a banquet, a host would offer guests a plate with various spices piled upon it as a sign of the wealth at his or her disposal. Cinnamon was also reported to have health benefits, and was thought to cure various ailments, such as indigestion.",
+			"Toward the end of the Middle Ages, the European middle classes began to desire the lifestyle of the elite, including their consumption of spices. This led to a growth in demand for cinnamon and other spices. At that time, cinnamon was transported by Arab merchants, who closely guarded the secret of the source of the spice from potential rivals. They took it from India, where it was grown, on camels via an overland route to the Mediterranean. Their journey ended when they reached Alexandria. European traders sailed there to purchase their supply of cinnamon, then brought it back to Venice. The spice then travelled from that great trading city to markets all around Europe. Because the overland trade route allowed for only small quantities of the spice to reach Europe, and because Venice had a virtual monopoly of the trade, the Venetians could set the price of cinnamon exorbitantly high. These prices, coupled with the increasing demand, spurred the search for new routes to Asia by Europeans eager to take part in the spice trade.",
+			"Seeking the high profits promised by the cinnamon market, Portuguese traders arrived on the island of Ceylon in the Indian Ocean toward the end of the 15th century. Before Europeans arrived on the island, the state had organized the cultivation of cinnamon. People belonging to the ethnic group called the Salagama would peel the bark off young shoots of the cinnamon plant in the rainy season, when the wet bark was more pliable. During the peeling process, they curled the bark into the ‘stick’ shape still associated with the spice today. The Salagama then gave the finished product to the king as a form of tribute. When the Portuguese arrived, they needed to increase production significantly, and so enslaved many other members of the Ceylonese native population, forcing them to work in cinnamon harvesting. In 1518, the Portuguese built a fort on Ceylon, which enabled them to protect the island, so helping them to develop a monopoly in the cinnamon trade and generate very high profits. In the late 16th century, for example, they enjoyed a tenfold profit when shipping cinnamon over a journey of eight days from Ceylon to India.",
+			"When the Dutch arrived off the coast of southern Asia at the very beginning of the 17th century, the set their sights on displacing the Portuguese as kings of cinnamon. The Dutch allied themselves with Kandy, an inland kingdom on Ceylon. In return for payments of elephants and cinnamon, they protected the native king from the Portuguese.\nBy 1649, the Dutch broke the 150-year Portuguese monopoly when they overran and occupied their factories.\nBy 1658, they had permanently expelled the Portuguese from the island, thereby gaining control of the lucrative cinnamon trade.",
+			"In order to protect their hold on the market, the Dutch, like the Portuguese before them, treated the native inhabitants harshly. Because of the need to boost production and satisfy Europe’s ever-increasing appetite for cinnamon, the Dutch began to alter the harvesting practices of the Ceylonese. Over time, the supply of cinnamon trees on the island became nearly exhausted, due to systematic stripping of the bark. Eventually, the Dutch began cultivating their own cinnamon trees to supplement the diminishing number of wild trees available for use.",
+			"Then, in 1996, the English arrived on Ceylon, thereby displacing the Dutch from their control of the cinnamon monopoly.\nBy the middle of the 19th century, production of cinnamon reached 1,000 tons a year, after a lower grade quality of the spice became acceptable to European tastes.\nBy that time, cinnamon was being grown in other parts of the Indian Ocean region and in the West Indies, Brazil, and Guyana.\nNot only was a monopoly of cinnamon becoming impossible, but the spice trade overall was diminishing in economic potential, and was eventually superseded by the rise of trade in coffee, tea, chocolate, and sugar."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-9",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the notes below. Choose ONE WORD ONLY from the passage for each answer. Write your answers in boxes 1 - 9 on your answer sheet.",
+			"body": "The Early History of Cinnamon\nBiblical times:\nadded to ____ (1).\nused to show ____ (2). Between people\nAncient Rome:\nused for its sweet smell at ____ (3).\nMiddle Ages:\nadded to food, especially meat\nwas an indication of a person’s ____ (4).\nknown as a treatment for ____ (5) and other health problems\ngrown in ____ (6).\nmerchants used ____ (7) to bring it to the Mediterranean\narrived in the Mediterranean at ____ (8).\ntraders took it to ____ (9) and sold it to destinations around Europe.",
+			"body_table": [
+				[
+					"Biblical times:",
+					"added to ____ (1).\nused to show ____ (2). Between people"
+				],
+				["Ancient Rome:", "used for its sweet smell at ____ (3)."],
+				[
+					"Middle Ages:",
+					"added to food, especially meat\nwas an indication of a person’s ____ (4).\nknown as a treatment for ____ (5) and other health problems\ngrown in ____ (6).\nmerchants used ____ (7) to bring it to the Mediterranean\narrived in the Mediterranean at ____ (8).\ntraders took it to ____ (9) and sold it to destinations around Europe."
+				]
+			],
+			"body_html": "<p><strong>The Early History of Cinnamon</strong></p><table><tbody><tr><td><p><strong>Biblical times:</strong></p></td><td><p>added to [1].</p><p>used to show [2]. Between people</p></td></tr><tr><td><p><strong>Ancient Rome:</strong></p></td><td><p>used for its sweet smell at [3].</p></td></tr><tr><td><p><strong>Middle Ages:</strong></p></td><td><p>added to food, especially meat</p><p>was an indication of a person’s [4].</p><p>known as a treatment for [5] and other health problems</p><p>grown in [6].</p><p>merchants used [7] to bring it to the Mediterranean</p><p>arrived in the Mediterranean at [8].</p><p>traders took it to [9] and sold it to destinations around Europe.</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "added to ____ (1).",
+					"answer": "oils",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nTrong thời Kinh Thánh, quế được thêm vào ______\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: added to + NOUN (NOUN làm Object của Preposition 'TO')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nbiblical times ~ từ khóa giữ nguyên\nmixed with ~ added to\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"nó được nhắc đến trong một số cuốn sách của Kinh Thánh, như một thành phần được trộn với dầu để bôi lên cơ thể\" (It was known in biblical times, and is mentioned in several books of the Bible, both as an ingredient that was mixed with oils for anointing people's bodies).\n\nBước 5: Đáp án: oils\nTrong thời Kinh Thánh, quế được thêm vào dầu (In biblical times, cinnamon was added to oils).",
+					"quotes": [
+						"It was known in biblical times, and is mentioned in several books of the Bible, both as an ingredient that was mixed with oils for anointing people’s bodies, and also as a token indicating friendship among lovers and friends."
+					]
+				},
+				{
+					"number": 2,
+					"text": "used to show ____ (2). Between people",
+					"answer": "friendship",
+					"quotes": [
+						"It was known in biblical times, and is mentioned in several books of the Bible, both as an ingredient that was mixed with oils for anointing people’s bodies, and also as a token indicating friendship among lovers and friends."
+					]
+				},
+				{
+					"number": 3,
+					"text": "used for its sweet smell at ____ (3).",
+					"answer": "funerals",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nỞ La Mã cổ đại, quế được sử dụng vì mùi hương ngọt ngào của nó tại các ______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: at + NOUN (NOUN làm Object của Preposition 'AT')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nAncient Rome ~ từ khóa giữ nguyên\nburnt to create a pleasant scent ~ used for its sweet smell\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Ở La Mã cổ đại, những người đưa tiễn đốt quế tại các đám tang để tạo ra một mùi hương dễ chịu\" (In ancient Rome, mourners attending funerals burnt cinnamon to create a pleasant scent).\n\nBước 5: Đáp án: funerals\nỞ La Mã cổ đại, quế được sử dụng vì mùi hương ngọt ngào của nó tại các đám tang (In ancient Rome, cinnamon was used for its sweet smell at funerals).",
+					"quotes": [
+						"In ancient Rome, mourners attending funerals burnt cinnamon to create a pleasant scent."
+					]
+				},
+				{
+					"number": 4,
+					"text": "was an indication of a person’s ____ (4).",
+					"answer": "wealth",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nVào thời Trung cổ, quế là một dấu hiệu cho thấy ______ của một người.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: a person's + NOUN (NOUN làm Object của Possessive 's)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nMiddle Ages ~ từ khóa giữ nguyên\nindication of ~ sign of\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Tại một bữa tiệc, chủ nhà sẽ mời khách một đĩa với các loại gia vị chất đống trên đó như một dấu hiệu của sự giàu có mà người đó có thể chi trả\" (At a banquet, a host would offer guests a plate with various spices piled upon it as a sign of the wealth at his or her disposal).\n\nBước 5: Đáp án: wealth\nVào thời Trung cổ, quế là một dấu hiệu cho thấy sự giàu có của một người (In the Middle Ages, cinnamon was an indication of a person's wealth).",
+					"quotes": [
+						"At a banquet, a host would offer guests a plate with various spices piled upon it as a sign of the wealth at his or her disposal."
+					]
+				},
+				{
+					"number": 5,
+					"text": "known as a treatment for ____ (5) and other health problems",
+					"answer": "indigestion",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nQuế được biết đến như một phương pháp điều trị cho ______ và các vấn đề sức khỏe khác.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: treatment for + NOUN (NOUN làm Object của Preposition 'FOR')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nthought to cure ~ known as a treatment for\nailments ~ health problems\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Quế cũng được cho là có lợi cho sức khỏe, và được nghĩ là có thể chữa được nhiều bệnh tật, chẳng hạn như chứng khó tiêu\" (Cinnamon was also reported to have health benefits, and was thought to cure various ailments, such as indigestion).\n\nBước 5: Đáp án: indigestion\nQuế được biết đến như một phương pháp điều trị cho chứng khó tiêu và các vấn đề sức khỏe khác (Cinnamon was known as a treatment for indigestion and other health problems).",
+					"quotes": [
+						"Cinnamon was also reported to have health benefits, and was thought to cure various ailments, such as indigestion."
+					]
+				},
+				{
+					"number": 6,
+					"text": "grown in ____ (6).",
+					"answer": "India",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nQuế được trồng ở ______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: grown in + NOUN (NOUN làm Object của Preposition 'IN')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\ngrown in ~ it was grown\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Họ đưa nó từ Ấn Độ, nơi nó được trồng, bằng lạc đà qua một tuyến đường trên bộ đến Địa Trung Hải\" (They took it from India, where it was grown, on camels via an overland route to the Mediterranean).\n\nBước 5: Đáp án: India\nQuế được trồng ở Ấn Độ (Cinnamon was grown in India).",
+					"quotes": [
+						"They took it from India, where it was grown, on camels via an overland route to the Mediterranean. Their journey ended when they reached Alexandria."
+					]
+				},
+				{
+					"number": 7,
+					"text": "merchants used ____ (7) to bring it to the Mediterranean",
+					"answer": "camels",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nThương nhân sử dụng ______ để mang quế đến Địa Trung Hải.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: used + NOUN (NOUN làm Object của Verb 'USED')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nmerchants ~ từ khóa giữ nguyên\ntook it to ~ bring it to\nMediterranean ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Họ đưa nó từ Ấn Độ, nơi nó được trồng, bằng lạc đà qua một tuyến đường trên bộ đến Địa Trung Hải\" (They took it from India, where it was grown, on camels via an overland route to the Mediterranean).\n\nBước 5: Đáp án: camels\nThương nhân sử dụng lạc đà để mang quế đến Địa Trung Hải (Merchants used camels to bring cinnamon to the Mediterranean).",
+					"quotes": [
+						"They took it from India, where it was grown, on camels via an overland route to the Mediterranean. Their journey ended when they reached Alexandria."
+					]
+				},
+				{
+					"number": 8,
+					"text": "arrived in the Mediterranean at ____ (8).",
+					"answer": "Alexandria",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nQuế đến Địa Trung Hải tại ______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: at + NOUN (NOUN làm Object của Preposition 'AT')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nreached ~ arrived in the Mediterranean\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Hành trình của họ kết thúc khi họ đến Alexandria. Các thương nhân châu Âu đi thuyền đến đó để mua quế của họ\" (Their journey ended when they reached Alexandria. European traders sailed there to purchase their supply of cinnamon).\n\nBước 5: Đáp án: Alexandria\nQuế đến Địa Trung Hải tại Alexandria (Cinnamon arrived in the Mediterranean at Alexandria).",
+					"quotes": [
+						"They took it from India, where it was grown, on camels via an overland route to the Mediterranean. Their journey ended when they reached Alexandria.",
+						"European traders sailed there to purchase their supply of cinnamon, then brought it back to Venice."
+					]
+				},
+				{
+					"number": 9,
+					"text": "traders took it to ____ (9) and sold it to destinations around Europe.",
+					"answer": "Venice",
+					"quotes": [
+						"European traders sailed there to purchase their supply of cinnamon, then brought it back to Venice.",
+						"European traders sailed there to purchase their supply of cinnamon, then brought it back to Venice. The spice then travelled from that great trading city to markets all around Europe."
+					]
+				}
+			]
+		},
+		{
+			"range": "10-13",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 1?\nIn boxes 10 - 13 on your answer sheet, write\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 10,
+					"text": "The Portuguese had control over the cinnamon trade in Ceylon throughout the 16th century.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNgười Bồ Đào Nha kiểm soát hoàn toàn việc buôn bán quế ở Ceylon trong suốt thế kỷ 16.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nPortuguese ~ từ khóa giữ nguyên\ndevelop a monopoly in the cinnamon trade ~ control over the cinnamon trade\nIn 1518, the Portuguese built a fort on Ceylon ~ throughout the 16th century\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Năm 1518, người Bồ Đào Nha xây dựng một pháo đài trên Ceylon, điều này giúp họ bảo vệ hòn đảo, từ đó phát triển độc quyền trong việc buôn bán quế và tạo ra lợi nhuận rất cao\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Người Bồ Đào Nha kiểm soát hoàn toàn việc buôn bán quế trong suốt thế kỷ 16\" (The Portuguese had control over the cinnamon trade in Ceylon throughout the 16th century).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"In 1518, the Portuguese built a fort on Ceylon, which enabled them to protect the island, so helping them to develop a monopoly in the cinnamon trade and generate very high profits."
+					]
+				},
+				{
+					"number": 11,
+					"text": "The Dutch took over the cinnamon trade from the Portuguese as soon as they arrived in Ceylon.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"quotes": [
+						"When the Dutch arrived off the coast of southern Asia at the very beginning of the 17th century, the set their sights on displacing the Portuguese as kings of cinnamon. The Dutch allied themselves with Kandy, an inland kingdom on Ceylon. In return for payments of elephants and cinnamon, they protected the native king from the Portuguese. By 1649, the Dutch broke the 150-year Portuguese monopoly when they overran and occupied their factories."
+					]
+				},
+				{
+					"number": 12,
+					"text": "The trees planted by the Dutch produced larger quantities of cinnamon than the wild trees.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững cây quế do người Hà Lan trồng cho sản lượng quế lớn hơn so với cây mọc tự nhiên.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nthe Dutch began cultivating their own cinnamon trees ~ trees planted by the Dutch\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Cuối cùng, người Hà Lan bắt đầu trồng cây quế của riêng họ để bổ sung cho số lượng cây hoang dã ngày càng giảm có sẵn để sử dụng\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"Những cây quế do người Hà Lan trồng cho sản lượng quế lớn hơn so với cây mọc tự nhiên\" (The trees planted by the Dutch produced larger quantities of cinnamon than the wild trees).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Eventually, the Dutch began cultivating their own cinnamon trees to supplement the diminishing number of wild trees available for use."
+					]
+				},
+				{
+					"number": 13,
+					"text": "The spice trade maintained its economic importance during the 19th century.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nViệc buôn bán gia vị vẫn duy trì tầm quan trọng kinh tế trong suốt thế kỷ 19.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nspice trade ~ từ khóa giữ nguyên\nthe spice trade overall was diminishing in economic potential ~ maintained its economic importance\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"việc buôn bán gia vị nói chung đang giảm dần về tiềm năng kinh tế, và cuối cùng đã bị thay thế bởi sự gia tăng của việc buôn bán cà phê, trà, sô cô la và đường\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"Việc buôn bán gia vị vẫn duy trì tầm quan trọng kinh tế trong suốt thế kỷ 19\" (The spice trade maintained its economic importance during the 19th century).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"By the middle of the 19th century, production of cinnamon reached 1,000 tons a year, after a lower grade quality of the spice became acceptable to European tastes. By that time, cinnamon was being grown in other parts of the Indian Ocean region and in the West Indies, Brazil, and Guyana. Not only was a monopoly of cinnamon becoming impossible, but the spice trade overall was diminishing in economic potential, and was eventually superseded by the rise of trade in coffee, tea, chocolate, and sugar."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -10,10 +10,6 @@ import {
 /** Transcript cố định của fake grader — e2e/test kiểm highlight trên đó. */
 export const FAKE_PLACEMENT_TRANSCRIPT =
 	"I like to go to the beach with my family.";
-export const FAKE_PLACEMENT_WRITING_FEEDBACK =
-	"Bài viết đủ ý chính, bố cục email rõ ràng. Cần chú ý chia động từ và dùng thêm từ nối.";
-export const FAKE_PLACEMENT_SPEAKING_FEEDBACK =
-	"Trả lời đúng trọng tâm, câu ngắn gọn. Phát âm chỉ đánh giá sơ bộ qua transcript.";
 
 export interface FakePlacementAiGraderOptions {
 	/** Transcript trả về (mặc định `FAKE_PLACEMENT_TRANSCRIPT`; "" để thử NO_TRANSCRIPT). */
@@ -57,8 +53,9 @@ interface FakeJob {
 /**
  * Fake grader deterministic hai pha cho test node + e2e (boot.ts inject qua
  * `getPlacementAiGrader`): `start*` trả id giả, `poll` trả nháp ngay (hoặc
- * sau `pendingPolls` lần). Rubric 3 cho mọi tiêu chí, đánh dấu từ đầu tiên
- * của bài là lỗi ngữ pháp. Bài chứa `ai-fail` → job lỗi AI_GRADING_FAILED.
+ * sau `pendingPolls` lần). Đánh dấu từ đầu tiên của bài là lỗi ngữ pháp (chỉ
+ * trả danh sách lỗi, không chấm điểm hay nhận xét). Bài chứa `ai-fail` → job
+ * lỗi AI_GRADING_FAILED.
  */
 export function createFakePlacementAiGrader(
 	options: FakePlacementAiGraderOptions = {},
@@ -86,14 +83,6 @@ export function createFakePlacementAiGrader(
 		const label = kind === "writing" ? "Writing" : "Speaking";
 		return normalizeKindDraft(
 			{
-				rubric:
-					kind === "writing"
-						? { ct: 3, or: 3, lg: 3 }
-						: { gv: 3, dm: 3, pr: 3, ic: 3 },
-				feedback:
-					kind === "writing"
-						? FAKE_PLACEMENT_WRITING_FEEDBACK
-						: FAKE_PLACEMENT_SPEAKING_FEEDBACK,
 				errors: word
 					? [
 							{

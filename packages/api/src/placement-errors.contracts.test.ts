@@ -84,17 +84,42 @@ describe("locatePlacementErrors", () => {
 });
 
 describe("placementTeacherGradeSchema errors", () => {
-	it("defaults error lists to empty for legacy clients", () => {
+	it("defaults error lists to empty and validates IELTS bands", () => {
 		const parsed = placementTeacherGradeSchema.parse({
-			writingRubric: { ct: 3, or: 3, lg: 3 },
+			writingRubric: { task: 6.5, coherence: 6, lexical: 6.5, grammar: 6 },
+			writingScore: 6.5,
 		});
 		expect(parsed.writingErrors).toEqual([]);
 		expect(parsed.speakingErrors).toEqual([]);
+		expect(parsed.speakingRubric).toBeNull();
+		expect(parsed.speakingScore).toBeNull();
 	});
 
-	it("rejects unknown categories", () => {
+	it("rejects mismatched speakingRubric and speakingScore", () => {
 		const parsed = placementTeacherGradeSchema.safeParse({
-			writingRubric: { ct: 3, or: 3, lg: 3 },
+			writingRubric: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
+			writingScore: 6,
+			speakingRubric: {
+				fluency: 6,
+				lexical: 6,
+				grammar: 6,
+				pronunciation: 6,
+			},
+			speakingScore: null,
+		});
+		expect(parsed.success).toBe(false);
+	});
+
+	it("rejects invalid IELTS band step or unknown categories", () => {
+		const badBand = placementTeacherGradeSchema.safeParse({
+			writingRubric: { task: 6.3, coherence: 6, lexical: 6, grammar: 6 },
+			writingScore: 6,
+		});
+		expect(badBand.success).toBe(false);
+
+		const parsed = placementTeacherGradeSchema.safeParse({
+			writingRubric: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
+			writingScore: 6,
 			writingErrors: [{ id: "1", category: "style", quote: "x" }],
 		});
 		expect(parsed.success).toBe(false);

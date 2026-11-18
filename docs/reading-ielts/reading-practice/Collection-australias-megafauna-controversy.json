@@ -1,0 +1,301 @@
+{
+	"id": "0ca7d0dd-2fc1-4d23-b4b1-3b47595dda77",
+	"url": "https://stepielts.com/student/reading/0ca7d0dd-2fc1-4d23-b4b1-3b47595dda77?mode=practice",
+	"title": "Australia’s Megafauna Controversy",
+	"source": "Collection",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "27-40",
+	"passage": {
+		"title": "Australia’s Megafauna Controversy",
+		"paragraphs": [
+			"Just how long did humans live side by side with megafauna in Australia? Barry Brook, Richard Gillespie and Paul Martin dispute previous claims of a lengthy coexistence.",
+			"Over the past 50 millennia, Australia has witnessed the extinction of many species of large animals, including rhinoceros-sized wombat and goannas the size of crocodiles. Debate about the possible cause of these extinctions has continued for more than 150 years and one of the crucial questions raised is how long humans and megafauna coexisted in Australia. We need to know the overlap of time to make an informed choice between the two main theories regarding the causes of these extinctions. If humans and megafauna coexisted for a protracted period then climate change is the more likely cause. However, if the megafauna became extinct shortly after the arrival of humans, then humans are the likely culprits.",
+			"The archaeological site at Cuddie Springs in eastern Australia appears to be well preserved. This dusty claypan holds within its sediments a rich cache of flaked stone and seed-grinding tools, and side by side with these clear signals of human culture are the bones of a dozen or more species of megafauna. Drs Judith Field and Stephen Wroe of the University of Sydney, who excavated the site, claim that it provides unequivocal evidence of a long overlap of humans and megafauna, and conclude that aridity leading up to the last Ice Age brought about their eventual demise. In the long-standing explanation of this site, artefacts such as stone tools and extinct animal remains were deposited over many thousands of years in an ephemeral lake – a body of water existing for a relatively short time – and remained in place and undisturbed until the present day.",
+			"There is no disputing the close association of bones and stones at Cuddie Springs, as both are found 1 to 1.7 metres below the modern surface. The dating of these layers is accurate: ages for the sediments were obtained through radiocarbon dating of charcoal fragments and luminescence dating of sand grains from the same levels (revealing when a sample was last exposed to sunlight). Intriguingly, some of the stone tools show surface features indicating their use for processing plants, and a few even have well-preserved blood and hair residues suggesting they were used in butchering animals.",
+			"But is the case proposed by Field and Wroe clear-cut? We carried out a reanalysis of the scientific data from Cuddie Springs that brings into question their conclusions. The amount of anthropological evidence found at the site is remarkable: we estimate there are more than 3 tonnes of charcoal and more than 300 tonnes of stone buried there. Field and Wroe estimate that there are approximately 20 million artefacts. This plethora of tools is hard to reconcile with a site that was only available for occupation when the lake was dry. Furthermore, no cultural features such as oven pits have been discovered. If the sediment layers have remained undisturbed since being laid down, as Field and Wroe contend, then the ages of those sediments should increase with depth. However, our analysis revealed a number of inconsistencies.",
+			"First, the charcoal samples are all roughly 36,000 years old. Second, sand in the two upper levels is considerably younger than charcoal from the same levels. Third, Field and Wroe say that the tools and seed-grinding stones used for plant and animal processing are ancient, yet they are very similar to implements found elsewhere that were in use only a few thousand years ago. Also of interest is the fact that a deep drill core made a mere 60 metres from the site recovered no stone artefacts or fossil bones whatsoever. These points suggest strongly that the sediments have been moved about and some of the old charcoal has been re-deposited in younger layers. Indeed, one sample of cow bone found 1 metre below the surface came from sediments where charcoal dated at 6,000 and 23,000 years old is mixed with 17,000-year-old sand. The megafauna bones themselves have not yet been dated, although new technological developments make this a possibility in the near future.",
+			"We propose that the archaeologists have actually been sampling the debris carried by ancient flood channels beneath the site, including charcoal transported from bushfires that intermittently occurred within the catchment. Flood events more likely explain the accumulation of megafauna remains, and could have mixed old bones with fresh deposits. European graziers also disturbed the site in 1876 by constructing a well to provide water for their cattle. Given the expense of well-digging, we speculate that the graziers made sure it was protected from the damage caused by cattle hooves by lining the surface with small stones collected from further afield, including prehistoric quarries. This idea is consistent with the thin layer of stones spread over a large area, with cattle occasionally breaking through the gravel surface and forcing the stone and even cattle bones deeper into the waterlogged soil.",
+			"The lack of conclusive evidence that humans and megafauna coexisted for a lengthy period casts doubt on Field and Wroe's assertion that climate change was responsible for the extinction of Australia's megafauna. However, we do not suggest that newly arrived, well-armed hunters systematically slaughtered all the large beasts they encountered. Recent studies based on the biology of modern-day large mammals, combined with observations of people who still practise a traditional hunter-gatherer lifestyle, reveal an unexpected paradox and suggest a further possible explanation as to what happened. Using a mathematical model, it was found that a group of 10 people killing only one juvenile Diprotodon each year would be sufficient to bring about the extinction of that species within 1,000 years. This suggests that here, as in in other parts of the world, the arrival of humans in lands previously inhabited only by animals created a volatile combination in which large animals fared badly."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "27-30",
+			"type": "YES/NO/NOT GIVEN",
+			"instructions": "Do the following statements agree with the claims of the writer in Reading Passage 3?\nWrite\nYES if the statement agrees with the claims of the writer\nNO if the statement contradicts the claims of the writer\nNOT GIVEN if it is impossible to say what the writer thinks about this",
+			"questions": [
+				{
+					"number": 27,
+					"text": "Field and Wroe argue that findings at the Cuddie Springs site show that people lived in this area at the same time as megafauna.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"quotes": [
+						"Drs Judith Field and Stephen Wroe of the University of Sydney, who excavated the site, claim that it provides unequivocal evidence of a long overlap of humans and megafauna, and conclude that aridity leading up to the last Ice Age brought about their eventual demise."
+					]
+				},
+				{
+					"number": 28,
+					"text": "Field and Wroe believe it is likely that smaller megafauna species survived the last Ice Age.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi\nField và Wroe tin rằng có khả năng các loài động vật khổng lồ có kích thước nhỏ hơn đã sống sót qua Kỷ băng hà cuối cùng.\nBước 2: Tìm các keywords được paraphrase trong bài\nsmaller megafauna species ~ từ khóa cần tìm\nsurvived the last Ice Age ~ từ khóa cần tìm\nBước 3: So sánh và đối chiếu\nBài đọc đề cập đến việc \"sự khô hạn dẫn đến Kỷ băng hà cuối cùng đã gây ra sự diệt vong cuối cùng của họ\".\n==> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"các loài động vật khổng lồ có kích thước nhỏ hơn đã sống sót qua Kỷ băng hà cuối cùng\" (Field and Wroe believe it is likely that smaller megafauna species survived the last Ice Age).\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Drs Judith Field and Stephen Wroe of the University of Sydney, who excavated the site, claim that it provides unequivocal evidence of a long overlap of humans and megafauna, and conclude that aridity leading up to the last Ice Age brought about their eventual demise."
+					]
+				},
+				{
+					"number": 29,
+					"text": "The writers believe that the dating of earth up to 1.7m below the present surface Cuddie Springs is unreliable.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NO",
+					"explanation": "Bước 1: Hiểu câu hỏi\nCác tác giả tin rằng việc xác định niên đại của các lớp đất sâu tới 1,7m dưới bề mặt hiện tại ở Cuddie Springs là không đáng tin cậy.\nBước 2: Tìm các keywords được paraphrase trong bài\ndating of earth up to 1.7m below the present surface ~ dating of these layers\naccurate ~ unreliable (Trái nghĩa)\nBước 3: So sánh và đối chiếu\nBài đọc chỉ rõ: \"Việc xác định niên đại của các lớp này là chính xác\".\n==> Điều này trái ngược với thông tin trong câu hỏi \"các tác giả tin rằng việc xác định niên đại của các lớp đất sâu tới 1,7m dưới bề mặt hiện tại ở Cuddie Springs là không đáng tin cậy\" (The dating of these layers is accurate).\nBước 4: Đáp án: NO",
+					"quotes": [
+						"There is no disputing the close association of bones and stones at Cuddie Springs, as both are found 1 to 1.7 metres below the modern surface. The dating of these layers is accurate: ages for the sediments were obtained through radiocarbon dating of charcoal fragments and luminescence dating of sand grains from the same levels (revealing when a sample was last exposed to sunlight)."
+					]
+				},
+				{
+					"number": 30,
+					"text": "Some artefacts found at Cuddie Springs were preserved well enough to reveal that function.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi\nMột số hiện vật được tìm thấy ở Cuddie Springs được bảo tồn đủ tốt để tiết lộ chức năng của chúng.\nBước 2: Tìm các keywords được paraphrase trong bài\nSome of the stone ~ Some artefacts\nwell-preserved ~ preserved well enough\nindicating their use / suggesting they were used ~ reveal their function\nBước 3: So sánh và đối chiếu\nBài đọc chỉ rõ: \"Thú vị là, một số viên đá cho thấy các đặc điểm bề mặt biểu thị việc sử dụng chúng để chế biến thực vật, và một vài viên thậm chí còn có vết máu và lông được bảo tồn tốt gợi ý chúng được sử dụng để mổ thịt động vật\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"một số hiện vật được tìm thấy ở Cuddie Springs được bảo tồn đủ tốt để tiết lộ chức năng của chúng\" (Intriguingly, some of the stone show surface features indicating their use for processing plants, and a few even have well-preserved blood and hair residues suggesting they were used in butchering animals).\nBước 4: Đáp án: YES",
+					"quotes": [
+						"Intriguingly, some of the stone tools show surface features indicating their use for processing plants, and a few even have well-preserved blood and hair residues suggesting they were used in butchering animals."
+					]
+				}
+			]
+		},
+		{
+			"range": "31-35",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Complete the summary below using the list of words, A-I, below.\nWrite the correct letter, A-I, in boxes 31-35 on your answer sheet.",
+			"options": [
+				{
+					"label": "A",
+					"text": "seeds"
+				},
+				{
+					"label": "B",
+					"text": "stone"
+				},
+				{
+					"label": "C",
+					"text": "sand"
+				},
+				{
+					"label": "D",
+					"text": "cooking"
+				},
+				{
+					"label": "E",
+					"text": "deep drill core"
+				},
+				{
+					"label": "F",
+					"text": "water"
+				},
+				{
+					"label": "G",
+					"text": "fossil bones"
+				},
+				{
+					"label": "H",
+					"text": "sediment"
+				},
+				{
+					"label": "I",
+					"text": "storage"
+				}
+			],
+			"body": "The writers' arguments against Field and Wroe's analysis of the scientific data from Cuddie Springs\nOne objection to Field and Wroe's interpretation is the large quantity of charcoal, ____ (31) and artefacts found at Cuddie Springs. Such large numbers of artefacts would be impossible if the area had been covered with ____ (32) for a period. There is also a complete lack of man-made structures, for instance those used for ____ (33). Other evidence that casts doubt on Field and Wroe's claim is the fact that while some material in the highest levels of sediment is 36,000 years old, the ____ (34) in the same levels is much more recent. The tools used to process plants and animals may also be newer than Field and Wroe believe. Further evidence against human occupation of the area is the absence of tools and ____ (35) just a short distance away.",
+			"body_html": "<table><tbody><tr><td><p><strong>The writers' arguments against Field and Wroe's analysis of the scientific data from Cuddie Springs</strong></p><p>One objection to Field and Wroe's interpretation is the large quantity of charcoal, [31] and artefacts found at Cuddie Springs. Such large numbers of artefacts would be impossible if the area had been covered with [32] for a period. There is also a complete lack of man-made structures, for instance those used for [33]. Other evidence that casts doubt on Field and Wroe's claim is the fact that while some material in the highest levels of sediment is 36,000 years old, the [34] in the same levels is much more recent. The tools used to process plants and animals may also be newer than Field and Wroe believe. Further evidence against human occupation of the area is the absence of tools and [35] just a short distance away.</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 31,
+					"text": "One objection to Field and Wroe's interpretation is the large quantity of charcoal, ____ (31) and artefacts found at Cuddie Springs.",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp\nMột sự phản đối đối với cách giải thích của Field và Wroe là lượng lớn than củi, ____ và hiện vật được tìm thấy tại Cuddie Springs.\nBước 2: Xác định loại từ dựa trên các dấu hiệu\n• Loại từ: NOUN\n• Dấu hiệu: quantity of charcoal, NOUN and artefacts (Danh từ song song được bổ nghĩa bởi cụm 'large quantity of')\nBước 3: Tìm các keywords được paraphrase trong bài\n• large quantity ~ more than 3 tonnes / more than 300 tonnes\n• buried there ~ found at Cuddie Springs\nBước 4: So sánh và đối chiếu\nBài đọc chỉ rõ: \"...chúng tôi ước tính có hơn 3 tấn than củi và hơn 300 tấn đá được chôn ở đó\" (...we estimate there are more than 3 tonnes of charcoal and more than 300 tonnes of stone buried there).\nBước 5: Đáp án: B. stone\nMột sự phản đối đối với cách giải thích của Field và Wroe là lượng lớn than củi, đá và hiện vật được tìm thấy tại Cuddie Springs. (One objection to Field and Wroe's interpretation is the large quantity of charcoal, stone and artefacts found at Cuddie Springs.)",
+					"quotes": [
+						"The amount of anthropological evidence found at the site is remarkable: we estimate there are more than 3 tonnes of charcoal and more than 300 tonnes of stone buried there."
+					]
+				},
+				{
+					"number": 32,
+					"text": "Such large numbers of artefacts would be impossible if the area had been covered with ____ (32) for a period.",
+					"answer": "F",
+					"quotes": [
+						"In the long-standing explanation of this site, artefacts such as stone tools and extinct animal remains were deposited over many thousands of years in an ephemeral lake – a body of water existing for a relatively short time – and remained in place and undisturbed until the present day.",
+						"This plethora of tools is hard to reconcile with a site that was only available for occupation when the lake was dry."
+					]
+				},
+				{
+					"number": 33,
+					"text": "There is also a complete lack of man-made structures, for instance those used for ____ (33).",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp\nNgoài ra cũng hoàn toàn thiếu các cấu trúc nhân tạo, chẳng hạn như những cấu trúc được sử dụng để ____.\nBước 2: Xác định loại từ dựa trên các dấu hiệu\n• Loại từ: NOUN / V-ING\n• Dấu hiệu: used for + NOUN/V-ING (Cấu trúc chỉ mục đích)\nBước 3: Tìm các keywords được paraphrase trong bài\n• no cultural features... have been discovered ~ complete lack of man-made structures\n• oven pits ~ those used for...\nBước 4: So sánh và đối chiếu\nBài đọc chỉ rõ: \"Hơn nữa, không có đặc điểm văn hóa nào như hố lò được phát hiện\" (Furthermore, no cultural features such as oven pits have been discovered). Hố lò dùng cho mục đích nấu ăn (cooking).\nBước 5: Đáp án: D. cooking\nNgoài ra cũng hoàn toàn thiếu các cấu trúc nhân tạo, chẳng hạn như những cấu trúc được sử dụng để nấu ăn. (There is also a complete lack of man-made structures, for instance those used for cooking.)",
+					"quotes": [
+						"Furthermore, no cultural features such as oven pits have been discovered."
+					]
+				},
+				{
+					"number": 34,
+					"text": "Other evidence that casts doubt on Field and Wroe's claim is the fact that while some material in the highest levels of sediment is 36,000 years old, the ____ (34) in the same levels is much more recent.",
+					"answer": "C",
+					"quotes": [
+						"Second, sand in the two upper levels is considerably younger than charcoal from the same levels."
+					]
+				},
+				{
+					"number": 35,
+					"text": "Further evidence against human occupation of the area is the absence of tools and ____ (35) just a short distance away.",
+					"answer": "G",
+					"quotes": [
+						"Also of interest is the fact that a deep drill core made a mere 60 metres from the site recovered no stone artefacts or fossil bones whatsoever."
+					]
+				}
+			]
+		},
+		{
+			"range": "36-40",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, C or D. Write the correct letter in boxes 36-40 on your answer sheet.",
+			"questions": [
+				{
+					"number": 36,
+					"text": "What conclusions did the writers reach about the inconsistencies in the data from Cuddie Springs?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The different layers of sediment have been mixed over time."
+						},
+						{
+							"label": "B",
+							"text": "The sand evidence is unhelpful and should be disregarded."
+						},
+						{
+							"label": "C",
+							"text": "The area needs to be re-examined when technology improves."
+						},
+						{
+							"label": "D",
+							"text": "The charcoal found in the area cannot be dated."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"These points suggest strongly that the sediments have been moved about and some of the old charcoal has been re-deposited in younger layers."
+					]
+				},
+				{
+					"number": 37,
+					"text": "According to the writers, what impact could a natural phenomenon have had on this site?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Floods could have caused the death of the megafauna."
+						},
+						{
+							"label": "B",
+							"text": "Floods could have disturbed the archaeological evidence."
+						},
+						{
+							"label": "C",
+							"text": "Bushfires could have prevented humans from settling in the area for any length of time."
+						},
+						{
+							"label": "D",
+							"text": "Bushfires could have destroyed much of the evidence left by megafauna and humans."
+						}
+					],
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi\nTheo các nhà văn, hiện tượng tự nhiên nào có thể đã có tác động đến địa điểm này?\nBước 2: Tìm thông tin dựa trên keywords\nBài đọc chỉ rõ \"Các trận lũ lụt có nhiều khả năng giải thích cho sự tích tụ tàn tích của động vật khổng lồ, và có thể đã trộn lẫn các xương cũ với các trầm tích mới\" (Flood events more likely explain the accumulation of megafauna remains, and could have mixed old bones with fresh deposits).\n==> Việc lũ lụt làm xáo trộn và trộn lẫn các tàn tích khảo cổ đồng nghĩa với câu B (Lũ lụt có thể đã làm xáo trộn bằng chứng khảo cổ).\nBước 3: Đáp án: B\nBước 4: Giải thích đáp án gây nhiễu\nĐáp án A -> Lũ lụt không được nói là nguyên nhân trực tiếp gây ra cái chết của động vật khổng lồ, mà nó chỉ là tác nhân tích tụ và xáo trộn xương.\nĐáp án C -> Đoạn văn không đề cập đến việc cháy rừng ngăn cản con người định cư.\nĐáp án D -> Đoạn văn không nói về việc cháy rừng phá hủy phần lớn bằng chứng.",
+					"quotes": [
+						"Flood events more likely explain the accumulation of megafauna remains, and could have mixed old bones with fresh deposits."
+					]
+				},
+				{
+					"number": 38,
+					"text": "What did the writers speculate about the people who lived at this site in 1876?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They bred cattle whose bones could have been confused with megafauna."
+						},
+						{
+							"label": "B",
+							"text": "They found that the soil was too waterlogged for farming."
+						},
+						{
+							"label": "C",
+							"text": "They allowed cattle to move around freely at the site."
+						},
+						{
+							"label": "D",
+							"text": "They brought stones there from another area."
+						}
+					],
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi\nCác nhà văn đã suy đoán gì về những người sống tại địa điểm này vào năm 1876?\nBước 2: Tìm thông tin dựa trên keywords\nBài đọc chỉ rõ: \"...chúng tôi suy đoán rằng những người chăn thả gia súc đã đảm bảo nó được bảo vệ... bằng cách lót bề mặt bằng những viên đá nhỏ được thu thập từ những nơi xa hơn\" (...we speculate that the graziers made sure it was protected... by lining the surface with small stones collected from further afield).\n==> Việc thu thập đá từ những nơi xa mang về lót bề mặt đồng nghĩa với câu D (Họ mang đá đến đó từ một khu vực khác).\nBước 3: Đáp án: D\nBước 4: Giải thích đáp án gây nhiễu\nĐáp án A -> Đoạn văn không nói họ nuôi gia súc có xương dễ bị nhầm lẫn với động vật khổng lồ.\nĐáp án B -> Đoạn văn không đề cập đến việc họ nhận thấy đất quá ngập nước để trồng trọt.\nĐáp án C -> Đoạn văn không nói họ cho phép gia súc di chuyển tự do xung quanh địa điểm.",
+					"quotes": [
+						"European graziers also disturbed the site in 1876 by constructing a well to provide water for their cattle. Given the expense of well-digging, we speculate that the graziers made sure it was protected from the damage caused by cattle hooves by lining the surface with small stones collected from further afield, including prehistoric quarries."
+					]
+				},
+				{
+					"number": 39,
+					"text": "In the final paragraph, what suggestion do the writers make about Australia's megafauna?",
+					"options": [
+						{
+							"label": "A",
+							"text": "A rapid change in climate may have been responsible for the extinction of the megafauna."
+						},
+						{
+							"label": "B",
+							"text": "Megafauna could have died out as a result of small numbers being killed year after year."
+						},
+						{
+							"label": "C",
+							"text": "The population of humans at that time was probably insufficient to cause the extinction of the megafauna."
+						},
+						{
+							"label": "D",
+							"text": "The extinction of ancient animals should not be compared to that of modern-day species."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Using a mathematical model, it was found that a group of 10 people killing only one juvenile Diprotodon each year would be sufficient to bring about the extinction of that species within 1,000 years."
+					]
+				},
+				{
+					"number": 40,
+					"text": "Which of the following best represents the writer's criticism of Field and Wroe?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Their methods were not well thought out."
+						},
+						{
+							"label": "B",
+							"text": "Their excavations did not go deep enough."
+						},
+						{
+							"label": "C",
+							"text": "Their technology failed to obtain precise data."
+						},
+						{
+							"label": "D",
+							"text": "Their conclusions were based on inconsistent data."
+						}
+					],
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi\nĐiều nào sau đây thể hiện rõ nhất lời phê bình của các nhà văn đối với Field và Wroe?\nBước 2: Tìm thông tin dựa trên keywords\nBài đọc chỉ rõ nhóm tác giả đã tiến hành \"phân tích lại dữ liệu khoa học từ Cuddie Springs\" và chỉ ra một loạt các sự không nhất quán (inconsistencies) về niên đại của cát, than củi và hiện vật.\n==> Việc chỉ ra hàng loạt mâu thuẫn trong kết quả của Field và Wroe đồng nghĩa với câu D (Kết luận của họ dựa trên dữ liệu không nhất quán).\nBước 3: Đáp án: D\nBước 4: Giải thích đáp án gây nhiễu\nĐáp án A -> Phương pháp khai quật và đo đạc không bị phê phán, chỉ có cách diễn giải dữ liệu mâu thuẫn bị bác bỏ.\nĐáp án B -> Đoạn văn không đề cập đến độ sâu của cuộc khai quật như một lời phê bình.\nĐáp án C -> Đoạn văn không nói công nghệ của họ thất bại trong việc thu thập dữ liệu chính xác.",
+					"quotes": [
+						"The lack of conclusive evidence that humans and megafauna coexisted for a lengthy period casts doubt on Field and Wroe's assertion that climate change was responsible for the extinction of Australia's megafauna."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -9,6 +9,7 @@ This is the navigation surface for the repository. It points to the owning files
 - [apps/web/src/lib/query-client.ts](../apps/web/src/lib/query-client.ts) - QueryClient defaults and global 401 reauth
 - [apps/web/src/lib/repos/kernel.ts](../apps/web/src/lib/repos/kernel.ts) - kernel transport, snapshot query options, and snapshot mapping
 - [apps/web/src/worker.ts](../apps/web/src/worker.ts) - web asset worker entry: static assets, SPA routes, and branded HTTP 404
+- [apps/student/src/worker.ts](../apps/student/src/worker.ts) - student portal asset worker entry: static assets, SPA routes, and security/CSP headers
 - [apps/landing/public/index.html](../apps/landing/public/index.html) - static marketing landing page entry (zero-framework, served at apex)
 - [apps/profile/public/index.html](../apps/profile/public/index.html) - static teacher profile and placement-test site entry (`Cloudflare.Website.StaticSite("profile")`, served at `msmy.io.vn` + `www` on prod and `profile.<domain>` on staging, #536)
 - [apps/admin/src/routes/_auth/route.tsx](../apps/admin/src/routes/_auth/route.tsx) - admin console auth gate (`GET /api/admin/me`, plan #413)
@@ -44,7 +45,7 @@ This is the navigation surface for the repository. It points to the owning files
 - `packages/api` - Zod request schemas and wire DTOs
 - `packages/db` - Drizzle schema definitions and migrations
 - `packages/infra` - Alchemy stack definition for local dev and deployment
-- `packages/ui` - shared shadcn/ui primitives plus the cross-app render surfaces: the shared quiz paper/review components and the rich-text/cloze renderers used by both the web app and the student portal
+- `packages/ui` - shared shadcn/ui primitives plus the cross-app render surfaces: the shared quiz paper/review components, rich-text/cloze renderers, and inline PDF/image document preview (`document-preview`) used by both the web app and the student portal
 - `scripts` - node:test contract tests enforcing CI workflow shape and topology consistency
 - `open-design/v1` - visual handoff input for the UI
 - `plans` - stateful execution records and past implementation plans

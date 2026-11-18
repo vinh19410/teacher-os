@@ -1,0 +1,169 @@
+{
+	"id": "ed7b9514-0a76-4a5c-8299-b8e39e7d04b0",
+	"url": "https://stepielts.com/student/reading/ed7b9514-0a76-4a5c-8299-b8e39e7d04b0?mode=practice",
+	"title": "Archaeologists discover evidence of prehistoric island settlers",
+	"source": "C19T3",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Archaeologists discover evidence of prehistoric island settlers",
+		"paragraphs": [
+			"In early April 2019, Dr Ceri Shipton and his colleagues from Australian National University became the first archaeologists to explore Obi, one of many tropical islands in Indonesia's Maluku Utara province. The research team's discoveries suggest that the prehistoric people who lived on Obi were adept on both land and sea, hunting in the dense rainforest, foraging on the seashore, and possibly even voyaging between islands.",
+			"The excavations were part of a project to learn more about how people first dispersed from mainland Asia, through the Indonesian archipelago and into the prehistoric continent that once connected Australia and New Guinea. The team's earlier research suggested that the northernmost islands in the group, known as the Wallacean islands, including Obi, would have offered the easiest migration route. It also seemed likely that these islands were crucial 'stepping stones' on humans' island-hopping voyages through this region millennia ago. But to support this idea, they needed archaeological evidence for humans living in this remote area in the ancient past. So, they travelled to Obi to look for sites that might reveal evidence of early occupation.",
+			"Just inland from the village of Keio on Obi's northern coast, Shipton and his colleagues found two caves containing prehistoric rock shelters that were suitable for excavation. With the permission and help of the local people of Keio, they dug a small test excavation in each shelter. There they found numerous artefacts, including fragments of axes, some dating to about 14,000 years ago. The earliest axes at Keio were made using clam shells. Axes made from clam shells from roughly the same time had also previously been found elsewhere in this region, including on the nearby island of Gebe to the northeast. As on Gebe, it is highly likely that Obi's axes were used in the construction of canoes, thus allowing these early peoples to maintain connections between communities on neighbouring islands.",
+			"The oldest cultural layers from the Keio site provided the team with the earliest record for human occupation on Obi, dating back around 18,000 years. At this time the climate was drier and colder than today, and the island's dense rainforests would likely have been much less impenetrable than they are now. Sea levels were about 120 metres lower, meaning Obi was a much larger island, encompassing what is today the separate island of Bisa, as well as several other small islands nearby.",
+			"Roughly 11,700 years ago, as the most recent ice age ended, the climate became significantly warmer and wetter, no doubt making Obi's jungle much thicker. According to the researchers, it is no coincidence that around this time the first axes crafted from stone rather than sea shells appear, likely in response to their heavy-duty use for clearing and modification of the increasingly dense rainforest. While stone takes about twice as long to grind into an axe compared to shell, the harder material keeps its sharp edge for longer.",
+			"Judging by the bones which the researchers unearthed in the Keio caves, people living there mainly hunted the Rothschild's cuscus, a possum-like creature that still lives on Obi today. As the forest grew more dense, people probably used axes to clear patches of forest and make hunting easier.",
+			"Shipton's team's excavation of the shelters at the Keio site unearthed a volcanic glass substance called obsidian, which must have been brought over from another island, as there is no known source on Obi. It also revealed particular types of beads, similar to those previously found on islands in southern Wallacea. These finds again support the idea that Obi islanders routinely travelled to other islands.",
+			"The excavations suggest people successfully lived in the two Keio shelters for about 10,000 years. But then, about 8,000 years ago, both were abandoned. Did the residents leave Obi completely, or move elsewhere on the island? Perhaps the jungle had grown so thick that axes were no longer a match for the dense undergrowth. Perhaps people simply moved to the coast and turned to fishing rather than hunting as a means of survival.",
+			"Whatever the reason for the departure, there is no evidence for use of the Keio shelters after this time, until about 1,000 years ago, when they were re-occupied by people who owned pottery as well as items made out of gold and silver. It seems likely, in view of Obi's location, that this final phase of occupation also saw the Keio shelters used by people involved in the historic trade in spices between the Maluku islands and the rest of the world."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-7",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 1?\nIn boxes 1 - 7 on your answer sheet, write\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Archaeological research had taken place on the island of Obi before the arrival of Ceri Shipton and his colleagues.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNghiên cứu khảo cổ đã diễn ra trên đảo Obi trước khi Ceri Shipton và các đồng nghiệp của ông đến.\nBước 2: Tìm các keywords được paraphrase trong bài:\nCeri Shipton and his colleagues ~ cụm từ giữ nguyên\nexplore Obi ~ cụm từ giữ nguyên\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Ceri Shipton và các cộng sự là những nhà khảo cổ học đầu tiên khám phá đảo Obi”. Điều này trái ngược với thông tin trong câu hỏi \"nghiên cứu khảo cổ đã diễn ra trên đảo Obi trước khi Ceri Shipton và các công sự của ông đến\" (Archaeological research had taken place on the island of Obi before the arrival of Ceri Shipton and his colleagues).\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"In early April 2019, Dr Ceri Shipton and his colleagues from Australian National University became the first archaeologists to explore Obi, one of many tropical islands in Indonesia's Maluku Utara province."
+					]
+				},
+				{
+					"number": 2,
+					"text": "At the Keio sites, the researchers found the first clam shell axes ever to be discovered in the region.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTại các địa điểm Keio, các nhà nghiên cứu đã tìm thấy những chiếc rìu vỏ sò đầu tiên từng được phát hiện trong khu vực.\nBước 2: Tìm các keywords được paraphrase trong bài:\nKeio ~ Keio sites\nAxes made from clam shells ~ clam shell axes\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"những chiếc rìu làm từ vỏ sò cũng đã được tìm thấy trước đó ở nơi khác trong khu vực này\". Điều này trái ngược với thông tin trong câu hỏi “Tại các địa điểm Keio, các nhà nghiên cứu đã tìm thấy những chiếc rìu vỏ sò đầu tiên từng được phát hiện trong khu vực (At the Keio sites, the researchers found the first clam shell axes ever to be discovered in the region).\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"The earliest axes at Keio were made using clam shells. Axes made from clam shells from roughly the same time had also previously been found elsewhere in this region, including on the nearby island of Gebe to the northeast."
+					]
+				},
+				{
+					"number": 3,
+					"text": "The size of Obi today is less than it was 18,000 years ago.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nDiện tích của đảo Obi ngày nay nhỏ hơn so với 18.000 năm trước.\nBước 2: Tìm các keywords được paraphrase trong bài:\nDating back around 18,000 years ~ 18,000 years ago\nObi was a much larger island ~ the size of Obi\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Mực nước biển khi đó thấp hơn khoảng 120 mét so với hiện tại, điều này có nghĩa là Obi từng là một hòn đảo lớn hơn nhiều, bao gồm cả phần hiện nay là đảo Bisa riêng biệt, cũng như một số hòn đảo nhỏ khác gần đó\". Điều này đồng nghĩa với thông tin trong câu hỏi “Diện tích của đảo Obi ngày nay nhỏ hơn so với 18.000 năm trước (The size of Obi today is less than it was 18,000 years ago).\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"The oldest cultural layers from the Keio site provided the team with the earliest record for human occupation on Obi, dating back around 18,000 years.",
+						"Sea levels were about 120 metres lower, meaning Obi was a much larger island, encompassing what is today the separate island of Bisa, as well as several other small islands nearby."
+					]
+				},
+				{
+					"number": 4,
+					"text": "A change in the climate around 11,700 years ago had a greater impact on Obi than on the surrounding islands.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSự thay đổi khí hậu khoảng 11.700 năm trước đã có tác động lớn hơn đến Obi so với các đảo xung quanh.\nBước 2: Tìm các keywords được paraphrase trong bài:\nclimate became significantly warmer and wetter ~ a change in the climate\n11,700 years ago ~ cụm từ giữ nguyên\nBước 3: So sánh và đối chiếu\nBài đọc đề cập đến việc \"khí hậu trở nên ấm hơn và ẩm ướt hơn đáng kể, chắc chắn làm cho rừng rậm của Obi dày đặc hơn\". Tuy nhiên, bài đọc không hề nhắc đến thông tin \"Sự thay đổi khí hậu khoảng 11.700 năm trước đã có tác động lớn hơn đến Obi so với các đảo xung quanh” (had a greater impact on Obi than on the surrounding islands).\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Roughly 11,700 years ago, as the most recent ice age ended, the climate became significantly warmer and wetter, no doubt making Obi's jungle much thicker."
+					]
+				},
+				{
+					"number": 5,
+					"text": "The researchers believe there is a connection between warmer, wetter weather and a change in the material used to make axes.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác nhà nghiên cứu tin rằng có mối liên hệ giữa thời tiết ấm hơn, ẩm ướt hơn và sự thay đổi trong vật liệu được sử dụng để làm rìu.\nBước 2: Tìm các keywords được paraphrase trong bài:\nAccording to the researchers ~ researchers believe\nthe climate became significantly warmer and wetter ~ warmer, wetter weather\nBước 3: Giải thích:\nBài đọc chỉ rõ \"theo các nhà nghiên cứu, không phải ngẫu nhiên mà vào thời điểm này, những chiếc rìu đầu tiên được chế tác từ đá thay vì vỏ sò xuất hiện, có thể là để đáp ứng việc sử dụng nặng nề để phá rừng và cải tạo rừng mưa ngày càng dày đặc\". Điều này đồng nghĩa với thông tin trong câu hỏi \"các nhà nghiên cứu tin rằng có mối liên hệ giữa thời tiết ấm hơn, ẩm ướt hơn và sự thay đổi trong vật liệu được sử dụng để làm rìu\" (The researchers believe there is a connection between warmer, wetter weather and a change in the material used to make axes).\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"According to the researchers, it is no coincidence that around this time the first axes crafted from stone rather than sea shells appear, likely in response to their heavy-duty use for clearing and modification of the increasingly dense rainforest."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Shipton's team were surprised to find evidence of the Obi islanders' hunting practices.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhóm của Shipton đã rất ngạc nhiên khi tìm thấy bằng chứng về các hoạt động săn bắn của cư dân đảo Obi.\nBước 2: Tìm các keywords được paraphrase trong bài:\nThe researchers ~ Shipton’s team\nhunting ~ hunting practices\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"Dựa vào những bộ xương mà các nhà nghiên cứu khai quật được trong các hang động Keio, người dân sống ở đó chủ yếu săn bắt loài chuột túi Rothschild, một loài động vật giống chuột túi vẫn còn sinh sống trên đảo Obi ngày nay. Khi rừng trở nên dày đặc hơn, người dân có lẽ đã sử dụng rìu để phát quang những khu rừng nhỏ và làm cho việc săn bắn dễ dàng hơn\"\nTuy nhiên, bài đọc không hề nhắc đến thông tin \"nhóm của shipton đã ngạc nhiên khi tìm thấy bằng chứng\" (were surprised to find evidence).\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Judging by the bones which the researchers unearthed in the Keio caves, people living there mainly hunted the Rothschild's cuscus, a possum-like creature that still lives on Obi today.",
+						"Judging by the bones which the researchers unearthed in the Keio caves, people living there mainly hunted the Rothschild's cuscus, a possum-like creature that still lives on Obi today. As the forest grew more dense, people probably used axes to clear patches of forest and make hunting easier."
+					]
+				},
+				{
+					"number": 7,
+					"text": "It is thought that the Keio shelters were occupied continuously until about 1,000 years ago.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNgười ta cho rằng các nơi trú ẩn Keio đã được sử dụng liên tục cho đến khoảng 1.000 năm trước.\nBước 2: Tìm các keywords được paraphrase trong bài:\nKeio shelters ~ cụm từ giữ nguyên\nSuccessfully lived ~ were occupied continuously\nUntil about 1,000 years ago ~ cụm từ giữ nguyên\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Các cuộc khai quật cho thấy con người đã sinh sống thành công trong hai nơi trú ẩn Keio trong khoảng 10.000 năm. Nhưng sau đó, cách đây khoảng 8.000 năm, cả hai nơi này đều bị bỏ hoang. [...] Bất kể lý do gì khiến họ rời đi, không có bằng chứng nào cho thấy các nơi trú ẩn Keio được sử dụng sau thời điểm này, cho đến khoảng 1.000 năm trước.\". Điều này trái ngược với thông tin trong câu hỏi \"các nơi trú ẩn Keio đã được sử dụng liên tục cho đến khoảng 1.000 năm trước\" (the Keio shelters were occupied continuously until about 1,000 years ago).\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"The excavations suggest people successfully lived in the two Keio shelters for about 10,000 years. But then, about 8,000 years ago, both were abandoned.",
+						"Whatever the reason for the departure, there is no evidence for use of the Keio shelters after this time, until about 1,000 years ago, when they were re-occupied by people who owned pottery as well as items made out of gold and silver."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-13",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the notes below. Choose ONE WORD ONLY from the passage for each answer. Write your answers in boxes 8 - 13 on your answer sheet.",
+			"body": "Archaeological findings on Obi\nExcavations of rock shelters inside ____ (8) near the village of Keio revealed:\n• axes from around 14,000 years ago, probably used to make canoes\n• axes made out of ____ (9), dating from around 11,700 years ago\n• ____ (10) of an animal: evidence of what ancient islanders ate\n• evidence of travel between islands:\n- obsidian: a material that is not found naturally on Obi\n-____ (11) which resembled ones found on other islands.\n\nIt is thought that from 8,000 years ago, Obi islanders:\n• may have switched from hunting to fishing\n• had ____ (12) as well as items made out of metal\n• probably took part in the production and sale of ____ (13)",
+			"body_html": "<h3>Archaeological findings on Obi</h3><table><tbody><tr><td><p>Excavations of rock shelters inside [8] near the village of Keio revealed:</p><p>• axes from around 14,000 years ago, probably used to make canoes</p><p>• axes made out of [9], dating from around 11,700 years ago</p><p>• [10] of an animal: evidence of what ancient islanders ate</p><p>• evidence of travel between islands:</p><p>        - obsidian: a material that is not found naturally on Obi</p><p>        -[11] which resembled ones found on other islands.</p><p></p><p>It is thought that from 8,000 years ago, Obi islanders:</p><p>• may have switched from hunting to fishing</p><p>• had [12] as well as items made out of metal</p><p>• probably took part in the production and sale of [13]</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 8,
+					"text": "Excavations of rock shelters inside ____ (8) near the village of Keio revealed:",
+					"answer": "caves",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nCác cuộc khai quật ở các nơi trú ẩn trong ________ gần làng Keio đã tiết lộ rằng:\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: in + NOUN (NOUN dùng làm Object của Preposition 'IN')\nBước 3: Tìm các keywords được paraphrase trong bài:\nThe village of Keio ~ cụm từ giữ nguyên\nrock shelters ~ cụm từ giữ nguyên\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: “Ngay trong đất liền từ làng Keio trên bờ biển phía bắc của Obi, Shipton và các đồng nghiệp của ông đã phát hiện hai hang động chứa các nơi trú ẩn bằng đá thời tiền sử thích hợp để khai quật” (Just inland from the village of Keio on Obi's northern coast, Shipton and his colleagues found two caves containing prehistoric rock shelters that were suitable for excavation).\nBước 5: Đáp án: caves\nCác cuộc khai quật ở các nơi trú ẩn trong hang động gần làng Keio đã tiết lộ rằng (Excavations of rock shelters inside caves near the village of Keio revealed)",
+					"quotes": [
+						"Just inland from the village of Keio on Obi's northern coast, Shipton and his colleagues found two caves containing prehistoric rock shelters that were suitable for excavation."
+					]
+				},
+				{
+					"number": 9,
+					"text": "• axes made out of ____ (9), dating from around 11,700 years ago",
+					"answer": "stone",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nrìu làm bằng ________, có niên đại từ khoảng 11.700 năm trước\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: made out of + NOUN (NOUN dùng làm Object của Preposition 'OF')\nBước 3: Tìm các keywords được paraphrase trong bài:\nAxes ~ từ khóa giữ nguyên\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"theo các nhà nghiên cứu, không phải ngẫu nhiên mà vào thời điểm này, những chiếc rìu đầu tiên được chế tác từ đá thay vì vỏ sò xuất hiện\" (it is no coincidence that around this time the first axes crafted from stone rather than sea shells appear).\nBước 5: Đáp án: stone\nrìu làm bằng đá, có niên đại từ khoảng 11.700 năm trước (axes made out of stone, dating from around 11,700 years ago).",
+					"quotes": [
+						"According to the researchers, it is no coincidence that around this time the first axes crafted from stone rather than sea shells appear, likely in response to their heavy-duty use for clearing and modification of the increasingly dense rainforest."
+					]
+				},
+				{
+					"number": 10,
+					"text": "• ____ (10) of an animal: evidence of what ancient islanders ate",
+					"answer": "bones",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\n________ của một loài động vật: bằng chứng về thức ăn của cư dân đảo cổ đại.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: NOUN + of an animal (NOUN được bổ nghĩa bởi Prepositional Phrase 'OF AN ANIMAL’)\nBước 3: Tìm các keywords được paraphrase trong bài:\ncuscus ~ an animal\nPeople living there ~ ancient islanders\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Dựa vào những bộ xương mà các nhà nghiên cứu khai quật được trong các hang động Keio, người dân sống ở đó chủ yếu săn bắt loài chuột túi Rothschild\" (Judging by the bones which the researchers unearthed in the Keio caves, people living there mainly hunted the Rothschild's cuscus).\nBước 5: Đáp án: bones\nBộ xương của một loài động vật: bằng chứng về thức ăn của cư dân đảo cổ đại (bones of an animal: evidence of what ancient islanders ate).",
+					"quotes": [
+						"Judging by the bones which the researchers unearthed in the Keio caves, people living there mainly hunted the Rothschild's cuscus, a possum-like creature that still lives on Obi today."
+					]
+				},
+				{
+					"number": 11,
+					"text": "-____ (11) which resembled ones found on other islands.",
+					"answer": "beads",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\n________ giống với những cái được tìm thấy trên các đảo khác.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: NOUN + which resembled (NOUN được thay thế và đại diện bởi Relative Pronoun ‘WHICH’)\nBước 3: Tìm các keywords được paraphrase trong bài:\nresembled ~ similar to\nIslands in southern Wallacea ~ other islands\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Cuộc khai quật cũng cho thấy một số loại hạt chuỗi đặc biệt, tương tự như những loại đã được phát hiện trước đó trên các đảo ở nam Wallacea\" (It also revealed particular types of beads, similar to those previously found on islands in southern Wallacea).\nBước 5: Đáp án: beads\nhạt chuỗi, giống với những cái được tìm thấy trên các đảo khác (beads which resembled ones found on other islands).",
+					"quotes": [
+						"It also revealed particular types of beads, similar to those previously found on islands in southern Wallacea."
+					]
+				},
+				{
+					"number": 12,
+					"text": "• had ____ (12) as well as items made out of metal",
+					"answer": "pottery",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\n(cư dân đảo Obi) có ________ và các vật dụng làm bằng kim loại\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: had + NOUN (NOUN làm Object của Transitive Verb ‘HAD’)\nBước 3: Tìm các keywords được paraphrase trong bài:\nowned ~ had\nGold and silver ~ metal\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"cho đến khoảng 1.000 năm trước, khi chúng được tái sử dụng bởi những người sở hữu đồ gốm cũng như các vật dụng làm từ vàng và bạc\" (until about 1,000 years ago, when they were re-occupied by people who owned pottery as well as items made out of gold and silver).\nBước 5: Đáp án: pottery\n(cư dân đảo Obi) có đồ gốm và các vật dụng làm bằng kim loại (had pottery as well as items made out of metal).",
+					"quotes": [
+						"Whatever the reason for the departure, there is no evidence for use of the Keio shelters after this time, until about 1,000 years ago, when they were re-occupied by people who owned pottery as well as items made out of gold and silver."
+					]
+				},
+				{
+					"number": 13,
+					"text": "• probably took part in the production and sale of ____ (13)",
+					"answer": "spices",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\n(cư dân đảo Obi) có lẽ đã tham gia vào việc sản xuất và bán ________..\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: sale of + NOUN (NOUN làm Object của Preposition 'OF’')\nBước 3: Tìm các keywords được paraphrase trong bài:\nInvolved in ~ took part in\nTrade in ~ Production and sale of\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Giai đoạn cuối cùng của thời kỳ định cư này cũng chứng kiến các nơi trú ẩn Keio trở thành điểm dừng chân của những thương nhân tham gia vào tuyến đường buôn bán gia vị quan trọng trong lịch sử, nối liền quần đảo Maluku với phần còn lại của thế giới (this final phase of occupation also saw the Keio shelters used by people involved in the historic trade in spices between the Maluku islands and the rest of the world).\nBước 5: Đáp án: spices\n(cư dân đảo Obi) có lẽ đã tham gia vào việc sản xuất và bán gia vị (probably took part in the production and sale of spices).",
+					"quotes": [
+						"It seems likely, in view of Obi's location, that this final phase of occupation also saw the Keio shelters used by people involved in the historic trade in spices between the Maluku islands and the rest of the world."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

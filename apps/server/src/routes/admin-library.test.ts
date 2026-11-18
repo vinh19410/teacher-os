@@ -1,6 +1,12 @@
 import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
-import { LIBRARY_ERROR_CODES } from "@teacher-os/api/library-contracts";
+import {
+	LIBRARY_ERROR_CODES,
+	LIBRARY_READING_TYPES,
+	type LibraryPartInput,
+	libraryPartUpsertSchema,
+	validatePartForReady,
+} from "@teacher-os/api/library-contracts";
 import * as schema from "@teacher-os/db/schema/index";
 import {
 	libraryTest,
@@ -463,7 +469,7 @@ describe("admin library CRUD (/api/admin/library)", () => {
 					questions: [
 						{
 							stem: "Q1",
-							answer: slot === "s2" ? "A" : "1",
+							answer: slot === "s2" || slot === "s3" ? "A" : "1",
 							alts: "",
 						},
 					],
@@ -782,7 +788,7 @@ describe("admin library CRUD (/api/admin/library)", () => {
 			});
 		}
 
-		/** Reading p1: tfng 0..2 + note inline 3..4 — mọi luật tầng nhóm
+		/** Reading p1: tfng 0..2 + summary inline 3..4 — mọi luật tầng nhóm
 		 * (contiguous, cover, type khớp nhóm đầu, cloze marker) đều đạt. */
 		function groupsPartBody(
 			overrides: Record<string, unknown> = {},
@@ -819,9 +825,9 @@ describe("admin library CRUD (/api/admin/library)", () => {
 						count: 3,
 					},
 					{
-						id: "g-note",
-						type: "note",
-						instruction: "<p>Complete the notes</p>",
+						id: "g-summary",
+						type: "summary",
+						instruction: "<p>Complete the summary</p>",
 						startIndex: 3,
 						count: 2,
 						answersInline: true,
@@ -1652,5 +1658,517 @@ describe("admin library exercises & study packs (#533)", () => {
 			status: 404,
 			error: "study pack not found",
 		});
+	});
+});
+
+describe("15 IELTS Reading types & validation (#762)", () => {
+	let app: ServerApp;
+	let db: Db;
+
+	beforeAll(async () => {
+		const client = createClient({ url: "file::memory:" });
+		const libsql = drizzle(client, { schema });
+		await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
+		db = libsql as unknown as Db;
+
+		app = buildApp({
+			getDb: () => db,
+			authHandler: () => new Response(null, { status: 404 }),
+			corsOrigin: [TEACHER_ORIGIN],
+			getSessionUser: async (headers) => {
+				const key = headers.get("x-test-user");
+				return key ? (SESSIONS[key] ?? null) : null;
+			},
+			adminEmails: ADMIN_EMAILS,
+			adminOrigins: [ADMIN_ORIGIN],
+		});
+	});
+
+	function readingPartBody(
+		type: string,
+		part = "p1",
+		overrides: Record<string, unknown> = {},
+	): Record<string, unknown> {
+		const base = {
+			part,
+			type,
+			title: `Passage ${part.toUpperCase()} (${type})`,
+			band: "7.0",
+			source: "",
+			intro: "",
+			passage: "<p>Academic reading passage content.</p>",
+			transcript: "",
+			imageUrl: "",
+			optionBank: [] as string[],
+			note: "",
+			groups: [] as unknown[],
+		};
+
+		switch (type) {
+			case "tfng":
+				return {
+					...base,
+					questions: [{ stem: "Claim 1", answer: "TRUE", alts: "" }],
+					...overrides,
+				};
+			case "ynng":
+				return {
+					...base,
+					questions: [{ stem: "Writer view 1", answer: "YES", alts: "" }],
+					...overrides,
+				};
+			case "mcq":
+				return {
+					...base,
+					questions: [
+						{
+							stem: "Choose one",
+							opts: ["Option A", "Option B", "Option C", "Option D"],
+							answer: "A",
+							alts: "",
+						},
+					],
+					...overrides,
+				};
+			case "mcq_many":
+				return {
+					...base,
+					questions: [
+						{
+							stem: "Pick two (1)",
+							opts: ["Opt A", "Opt B", "Opt C", "Opt D", "Opt E", "Opt F"],
+							answer: "A",
+							alts: "",
+							answerSet: "set-1",
+						},
+						{
+							stem: "Pick two (2)",
+							opts: ["Opt A", "Opt B", "Opt C", "Opt D", "Opt E", "Opt F"],
+							answer: "F",
+							alts: "",
+							answerSet: "set-1",
+						},
+					],
+					...overrides,
+				};
+			case "headings":
+				return {
+					...base,
+					optionBank: ["Heading 1", "Heading 2", "Heading 3"],
+					questions: [{ stem: "Paragraph A", answer: "i", alts: "" }],
+					...overrides,
+				};
+			case "info":
+			case "features":
+			case "match_names":
+			case "matching":
+			case "sentend":
+				return {
+					...base,
+					optionBank: ["Item A", "Item B", "Item C"],
+					questions: [{ stem: `Stem for ${type}`, answer: "A", alts: "" }],
+					...overrides,
+				};
+			case "diagram":
+				return {
+					...base,
+					imageUrl: "https://cdn.example.com/reading-diagram.png",
+					questions: [{ stem: "Top valve", answer: "inlet", alts: "" }],
+					...overrides,
+				};
+			case "summary":
+			case "sent":
+			case "fill_blank":
+				return {
+					...base,
+					questions: [
+						{ stem: "The process ____ in winter.", answer: "stops", alts: "" },
+					],
+					...overrides,
+				};
+			default:
+				return {
+					...base,
+					questions: [
+						{ stem: "Where did it start?", answer: "London", alts: "" },
+					],
+					...overrides,
+				};
+		}
+	}
+
+	async function createReadingTest(
+		id: string,
+		status: "draft" | "ready" = "draft",
+	) {
+		await db.insert(libraryTest).values({
+			id,
+			title: `Reading ${id}`,
+			skill: "reading",
+			status,
+			createdBy: "u-admin",
+		});
+	}
+
+	test("tất cả 15 LIBRARY_READING_TYPES được chấp nhận ở draft và ready", async () => {
+		expect(LIBRARY_READING_TYPES).toEqual([
+			"tfng",
+			"summary",
+			"info",
+			"mcq",
+			"ynng",
+			"headings",
+			"mcq_many",
+			"sent",
+			"match_names",
+			"features",
+			"sentend",
+			"fill_blank",
+			"shortans",
+			"diagram",
+			"matching",
+		]);
+		expect(LIBRARY_READING_TYPES).toHaveLength(15);
+
+		await createReadingTest("lt-r15-draft", "draft");
+		await createReadingTest("lt-r15-ready", "ready");
+
+		for (const type of LIBRARY_READING_TYPES) {
+			const payload = readingPartBody(type, "p1");
+			const parsed = libraryPartUpsertSchema.parse(payload) as LibraryPartInput;
+			expect(validatePartForReady("reading", parsed), type).toEqual([]);
+
+			const draftRes = await makeRequest(
+				app,
+				"PUT",
+				"/api/admin/library/tests/lt-r15-draft/parts/p1",
+			)({ user: "admin", body: payload });
+			expect(draftRes.status, `draft ${type}`).toBe(200);
+
+			const readyRes = await makeRequest(
+				app,
+				"PUT",
+				"/api/admin/library/tests/lt-r15-ready/parts/p1",
+			)({ user: "admin", body: payload });
+			expect(readyRes.status, `ready ${type}`).toBe(200);
+		}
+	});
+
+	test("note / tablecomp / flowchart bị chặn ở validatePartForReady & publish ready nhưng vẫn load được qua GET DTO", async () => {
+		const legacyTypes = ["note", "tablecomp", "flowchart"] as const;
+		await createReadingTest("lt-r-legacy", "draft");
+		await createReadingTest("lt-r-legacy-ready", "ready");
+
+		const slots = ["p1", "p2", "p3"] as const;
+		for (const [idx, legacyType] of legacyTypes.entries()) {
+			const slot = slots[idx] ?? "p1";
+			const parsed = libraryPartUpsertSchema.parse(
+				readingPartBody(legacyType, slot),
+			) as LibraryPartInput;
+			const issues = validatePartForReady("reading", parsed);
+			expect(
+				issues.some(
+					(i) => i.path === "type" && i.message === "invalid type for part",
+				),
+				legacyType,
+			).toBe(true);
+
+			// Seed row cũ trực tiếp trong DB.
+			await db.insert(libraryTestPart).values({
+				id: `ltp-legacy-${slot}`,
+				testId: "lt-r-legacy",
+				part: slot,
+				type: legacyType,
+				title: `Legacy ${legacyType}`,
+				band: "6.5",
+				passage: "<p>Legacy passage</p>",
+				questions: JSON.stringify([
+					{ stem: "Legacy ____", opts: null, answer: "word", alts: "" },
+				]),
+				optionBank: "[]",
+				groups: "[]",
+				updatedAt: new Date(1000),
+			});
+
+			// PUT trực tiếp vào test đang ready cũng bị chặn 400 NOT_READY.
+			const readyPut = await makeRequest(
+				app,
+				"PUT",
+				"/api/admin/library/tests/lt-r-legacy-ready/parts/p1",
+			)({ user: "admin", body: readingPartBody(legacyType, "p1") });
+			expect(readyPut.status, `ready PUT ${legacyType}`).toBe(400);
+			const readyPutJson = (await readyPut.json()) as {
+				code?: string;
+				issues?: Array<{ path: string }>;
+			};
+			expect(readyPutJson.code).toBe("NOT_READY");
+			expect(readyPutJson.issues?.some((i) => i.path === "type")).toBe(true);
+		}
+
+		// GET DTO vẫn tải các row legacy bình thường.
+		const getRes = await app.request("/api/admin/library/tests/lt-r-legacy", {
+			headers: authHeaders("admin"),
+		});
+		expect(getRes.status).toBe(200);
+		const detail = (await getRes.json()) as {
+			parts: Array<{ part: string; type: string }>;
+		};
+		expect(detail.parts.map((p) => p.type)).toEqual([
+			"note",
+			"tablecomp",
+			"flowchart",
+		]);
+
+		// Publish ready bị chặn với NOT_READY cho cả 3 slot p1/p2/p3.
+		const publishRes = await makeRequest(
+			app,
+			"PATCH",
+			"/api/admin/library/tests/lt-r-legacy",
+		)({ user: "admin", body: { status: "ready" } });
+		expect(publishRes.status).toBe(400);
+		const publishJson = (await publishRes.json()) as {
+			code?: string;
+			issues?: Array<{ path: string; message: string }>;
+		};
+		expect(publishJson.code).toBe("NOT_READY");
+		const paths = new Set((publishJson.issues ?? []).map((i) => i.path));
+		expect(paths.has("parts.p1.type")).toBe(true);
+		expect(paths.has("parts.p2.type")).toBe(true);
+		expect(paths.has("parts.p3.type")).toBe(true);
+	});
+
+	test("headings 13 mục (i–xiii) & summary word bank 16 mục (A–P) lưu và publish ready thành công", async () => {
+		await createReadingTest("lt-r-banks", "draft");
+
+		const headings13 = Array.from({ length: 13 }, (_, i) => `Heading ${i + 1}`);
+		const summary16 = Array.from({ length: 16 }, (_, i) => `word${i + 1}`);
+
+		const p1Res = await makeRequest(
+			app,
+			"PUT",
+			"/api/admin/library/tests/lt-r-banks/parts/p1",
+		)({
+			user: "admin",
+			body: readingPartBody("headings", "p1", {
+				optionBank: headings13,
+				questions: [
+					{ stem: "Section A", answer: "i", alts: "" },
+					{ stem: "Section B", answer: "xiii", alts: "" },
+				],
+			}),
+		});
+		expect(p1Res.status).toBe(200);
+
+		const p2Res = await makeRequest(
+			app,
+			"PUT",
+			"/api/admin/library/tests/lt-r-banks/parts/p2",
+		)({
+			user: "admin",
+			body: readingPartBody("summary", "p2", {
+				optionBank: summary16,
+				questions: [
+					{ stem: "First ____ gap.", answer: "A", alts: "" },
+					{ stem: "Second ____ gap.", answer: "P", alts: "" },
+					{ stem: "Reused ____ gap.", answer: "P", alts: "" },
+				],
+			}),
+		});
+		expect(p2Res.status).toBe(200);
+
+		const p3Res = await makeRequest(
+			app,
+			"PUT",
+			"/api/admin/library/tests/lt-r-banks/parts/p3",
+		)({
+			user: "admin",
+			body: readingPartBody("summary", "p3", { optionBank: [] }),
+		});
+		expect(p3Res.status).toBe(200);
+
+		const publishRes = await makeRequest(
+			app,
+			"PATCH",
+			"/api/admin/library/tests/lt-r-banks",
+		)({ user: "admin", body: { status: "ready" } });
+		expect(publishRes.status).toBe(200);
+
+		const getRes = await app.request("/api/admin/library/tests/lt-r-banks", {
+			headers: authHeaders("admin"),
+		});
+		expect(getRes.status).toBe(200);
+		const detail = (await getRes.json()) as {
+			status: string;
+			parts: Array<{ part: string; optionBank: string[] }>;
+		};
+		expect(detail.status).toBe("ready");
+		expect(detail.parts.find((p) => p.part === "p1")?.optionBank).toHaveLength(
+			13,
+		);
+		expect(detail.parts.find((p) => p.part === "p2")?.optionBank).toHaveLength(
+			16,
+		);
+
+		// Đáp án vượt phạm vi bank (xiv trên 13 headings, Q trên 16 summary) → 400 NOT_READY.
+		const badHeading = await makeRequest(
+			app,
+			"PUT",
+			"/api/admin/library/tests/lt-r-banks/parts/p1",
+		)({
+			user: "admin",
+			body: readingPartBody("headings", "p1", {
+				optionBank: headings13,
+				questions: [{ stem: "Section A", answer: "xiv", alts: "" }],
+			}),
+		});
+		expect(badHeading.status).toBe(400);
+
+		const badSummary = await makeRequest(
+			app,
+			"PUT",
+			"/api/admin/library/tests/lt-r-banks/parts/p2",
+		)({
+			user: "admin",
+			body: readingPartBody("summary", "p2", {
+				optionBank: summary16,
+				questions: [{ stem: "Gap ____.", answer: "Q", alts: "" }],
+			}),
+		});
+		expect(badSummary.status).toBe(400);
+	});
+
+	test("mcq_many (6–8 opts + answerSet), diagram (imageUrl, không pin), match_names, matching, fill_blank lưu & ready", async () => {
+		await createReadingTest("lt-r-specials", "draft");
+
+		// p1: mcq_many với 8 lựa chọn (A–H) + answerSet
+		const opts8 = ["A1", "B1", "C1", "D1", "E1", "F1", "G1", "H1"];
+		const p1Res = await makeRequest(
+			app,
+			"PUT",
+			"/api/admin/library/tests/lt-r-specials/parts/p1",
+		)({
+			user: "admin",
+			body: readingPartBody("mcq_many", "p1", {
+				questions: [
+					{
+						stem: "Choose two (1)",
+						opts: opts8,
+						answer: "A",
+						alts: "",
+						answerSet: "pair-8",
+					},
+					{
+						stem: "Choose two (2)",
+						opts: opts8,
+						answer: "H",
+						alts: "",
+						answerSet: "pair-8",
+					},
+				],
+			}),
+		});
+		expect(p1Res.status).toBe(200);
+
+		// p2: diagram có imageUrl và KHÔNG có pin
+		const p2Res = await makeRequest(
+			app,
+			"PUT",
+			"/api/admin/library/tests/lt-r-specials/parts/p2",
+		)({
+			user: "admin",
+			body: readingPartBody("diagram", "p2", {
+				imageUrl: "https://cdn.example.com/engine-diagram.png",
+				questions: [
+					{ stem: "Part 1", answer: "piston", alts: "" },
+					{ stem: "Part 2", answer: "cylinder", alts: "" },
+				],
+			}),
+		});
+		expect(p2Res.status).toBe(200);
+
+		// p3: nhóm hỗn hợp match_names + matching (tái dùng bank ≥ 2 mục) + fill_blank inline
+		const p3Res = await makeRequest(
+			app,
+			"PUT",
+			"/api/admin/library/tests/lt-r-specials/parts/p3",
+		)({
+			user: "admin",
+			body: readingPartBody("match_names", "p3", {
+				optionBank: [],
+				questions: [
+					{ stem: "Researcher quote 1", answer: "A", alts: "" },
+					{ stem: "Researcher quote 2", answer: "B", alts: "" },
+					{ stem: "Researcher quote 3", answer: "A", alts: "" },
+					{ stem: "Category match 1", answer: "B", alts: "" },
+					{ stem: "Category match 2", answer: "A", alts: "" },
+					{ stem: "Water boils at ____ degrees.", answer: "100", alts: "" },
+				],
+				groups: [
+					{
+						id: "g-names",
+						type: "match_names",
+						instruction: "<p>Match each researcher</p>",
+						startIndex: 0,
+						count: 3,
+						optionBank: ["Dr. Smith", "Prof. Lee"],
+					},
+					{
+						id: "g-matching",
+						type: "matching",
+						instruction: "<p>Match each category</p>",
+						startIndex: 3,
+						count: 2,
+						optionBank: ["Type X", "Type Y"],
+					},
+					{
+						id: "g-fill",
+						type: "fill_blank",
+						instruction: "<p>Fill in the blank</p>",
+						startIndex: 5,
+						count: 1,
+						answersInline: true,
+					},
+				],
+			}),
+		});
+		expect(p3Res.status).toBe(200);
+
+		const publishRes = await makeRequest(
+			app,
+			"PATCH",
+			"/api/admin/library/tests/lt-r-specials",
+		)({ user: "admin", body: { status: "ready" } });
+		expect(publishRes.status).toBe(200);
+
+		// mcq_many thiếu answerSet trên test ready → 400 NOT_READY
+		const missingAnswerSet = await makeRequest(
+			app,
+			"PUT",
+			"/api/admin/library/tests/lt-r-specials/parts/p1",
+		)({
+			user: "admin",
+			body: readingPartBody("mcq_many", "p1", {
+				questions: [
+					{
+						stem: "Missing set",
+						opts: ["A", "B", "C", "D", "E", "F"],
+						answer: "A",
+						alts: "",
+					},
+				],
+			}),
+		});
+		expect(missingAnswerSet.status).toBe(400);
+
+		// diagram thiếu imageUrl trên test ready → 400 NOT_READY
+		const missingImage = await makeRequest(
+			app,
+			"PUT",
+			"/api/admin/library/tests/lt-r-specials/parts/p2",
+		)({
+			user: "admin",
+			body: readingPartBody("diagram", "p2", { imageUrl: "" }),
+		});
+		expect(missingImage.status).toBe(400);
 	});
 });

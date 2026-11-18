@@ -201,6 +201,7 @@ export function useSubmitStudentPlacement() {
 			void queryClient.invalidateQueries({
 				queryKey: studentPlacementViewQueryKey,
 			});
+			void queryClient.invalidateQueries({ queryKey: ["student", "inbox"] });
 		},
 	});
 }

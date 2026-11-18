@@ -171,4 +171,81 @@ describe("bulk key paste — map by parsed question number (FR7)", () => {
 		expect(result.errors).toEqual([]);
 		expect(result.items[0].answer).toBe("iii");
 	});
+
+	test("accepts extended bank values (J / xii) and summary with optionBank when maxBank=20", () => {
+		const letterBank = Array.from({ length: 12 }, (_, i) => `W${i}`);
+		const summaryRes = applyBulkKeyPaste({
+			raw: "1. j",
+			typeId: "summary",
+			qStart: 1,
+			items: items("summary", 1),
+			optionBank: letterBank,
+			maxBank: 20,
+		});
+		expect(summaryRes.errors).toEqual([]);
+		expect(summaryRes.items[0].answer).toBe("J");
+
+		const romanBank = Array.from({ length: 12 }, (_, i) => `H${i}`);
+		const headingRes = applyBulkKeyPaste({
+			raw: "14. xii",
+			typeId: "headings",
+			qStart: 14,
+			items: items("headings", 1),
+			optionBank: romanBank,
+			maxBank: 20,
+		});
+		expect(headingRes.errors).toEqual([]);
+		expect(headingRes.items[0].answer).toBe("xii");
+	});
+
+	test("mcq 3 options rejects D with (A, B, C) and mixed-type row resolves per-question type", () => {
+		const threeOptResult = applyBulkKeyPaste({
+			raw: "1. D\n2. C",
+			typeId: "mcq",
+			qStart: 1,
+			items: [
+				{ stem: "Q1", opts: ["A", "B", "C"], answer: "", alts: "" },
+				{ stem: "Q2", opts: ["A", "B", "C"], answer: "", alts: "" },
+			],
+		});
+		expect(threeOptResult.appliedCount).toBe(1);
+		expect(threeOptResult.items[1].answer).toBe("C");
+		expect(threeOptResult.errors).toHaveLength(1);
+		expect(threeOptResult.errors[0]).toMatchObject({
+			line: 1,
+			reason: "invalid-choice",
+		});
+		expect(threeOptResult.errors[0].message).toContain("(A, B, C)");
+
+		const mixedResult = applyBulkKeyPaste({
+			raw: "1. word\n2. D\n3. C",
+			typeId: "note",
+			qStart: 1,
+			items: [
+				{ stem: "Note ____", opts: null, answer: "", alts: "" },
+				{
+					stem: "Q2",
+					opts: ["A", "B", "C"],
+					answer: "",
+					alts: "",
+					type: "mcq",
+				},
+				{
+					stem: "Q3",
+					opts: ["A", "B", "C"],
+					answer: "",
+					alts: "",
+					type: "mcq",
+				},
+			],
+		});
+		expect(mixedResult.appliedCount).toBe(2);
+		expect(mixedResult.items[0].answer).toBe("word");
+		expect(mixedResult.items[2].answer).toBe("C");
+		expect(mixedResult.errors).toHaveLength(1);
+		expect(mixedResult.errors[0]).toMatchObject({
+			line: 2,
+			reason: "invalid-choice",
+		});
+	});
 });

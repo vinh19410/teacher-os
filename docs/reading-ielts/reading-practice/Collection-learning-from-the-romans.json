@@ -1,0 +1,156 @@
+{
+	"id": "263d71d2-61d4-45dc-8dfd-c7381b3b5b76",
+	"url": "https://stepielts.com/student/reading/263d71d2-61d4-45dc-8dfd-c7381b3b5b76?mode=practice",
+	"title": "Learning from the Romans",
+	"source": "Collection",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "14-26",
+	"passage": {
+		"title": "Learning from the Romans",
+		"paragraphs": [
+			"A. In a quest to make concrete more durable and sustainable, an international team of geologists and engineers has found inspiration in the concrete used by the ancient Romans. The chemical secrets of Roman concrete have been uncovered in samples taken from a concrete Roman breakwater. A breakwater is a barrier that is built out into the sea to protect coasts and harbours from the force of waves. This particular breakwater has spent the last 2,000 years submerged in seawater. The international team of researchers that collected the samples was led by Paulo Monteiro, a professor of civil and environmental engineering at the University of California, Berkeley. Analysis of samples from the ancient underwater site in Pozzuoli Bay near Naples in Italy pinpointed why the best Roman concrete was superior to most modern concrete.",
+			"B. Concrete was the Roman Empire’s construction material of choice. It was used in land monuments such as the Pantheon in Rome, as well as in underwater and partially underwater coastal and harbour structures. Monteiro and his team were particularly interested in how the coastal and harbour structures endured the corrosive saltwater environment. Chemical analysis of Roman concrete showed that it differs from the modern kind in several ways. One is the content of the cement that binds the material in the concrete. The most commonly used cement in recent decades has been Portland cement. Portland cement is a compound of calcium, silicon, and hydrates (C-S-H). However, analysis of Roman concrete shows that it contains a significantly different cement. Roman cement contains aluminum, which is not found in Portland cement, and less silicon than is found in Portland cement. The resulting calcium-aluminum-silicate-hydrate (C-A-S-H) is an exceptionally stable cement.",
+			"C. The recipe for the contents of Roman concrete was first described around 30 BC by Vitruvius, an engineer for the Roman Emperor Augustus. Volcanic ash was one of the ingredients, and it is now understood that this is crucial, as it is volcanic ash that contains the aluminum that ultimately gives Roman concrete its great durability. The Romans devised an efficient method of making concrete for coastal structures. They combined volcanic ash with lime, which added the calcium to the mix. This was then packed, together with stones and chunks of rock, into wooden molds, which were then immersed in seawater. The seawater instantly triggered a hot chemical reaction. The lime was hydrated by the seawater, which means that it incorporated water molecules into its structure, and reacted with the volcanic ash to cement the whole mixture together. This reaction formed the concrete that was used to build some of the most enduring structures in human civilisation.",
+			"D. The analysis by Monteiro’s team revealed that the Roman method of immersing the concrete in seawater was a key factor in its longevity. The seawater reacting with the volcanic ash and lime caused the growth of rare minerals, such as Al-tobermorite and phillipsite, within the concrete. These mineral crystals, which are not found in modern concrete, helped to reinforce the material, making it stronger over time. In contrast, modern Portland cement concrete breaks down when exposed to seawater, as the saltwater corrodes the compounds and weakens the structure.",
+			"E. The implications of this research are significant for modern construction.\nBy understanding and adapting the Roman recipe, engineers could develop a new, more durable, and environmentally friendly concrete.\nModern concrete production is a major source of carbon emissions, primarily due to the high temperatures required to produce Portland cement. The Roman method, which uses less lime and incorporates volcanic ash, requires significantly less heat, suggesting a potential reduction in the carbon footprint of future concrete production. This ancient technology offers a promising path towards creating marine structures, such as seawalls and piers, that can last for centuries without requiring frequent and costly repairs."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "14-19",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "The reading passage has five paragraphs, A–E.\nWhich paragraph contains the following information?\nNB You may use any letter more than once.",
+			"options": ["A", "B", "C", "D", "E"],
+			"body": "14. A description of the chemical process that strengthened the Roman concrete over time.\n15. The name of the person who first recorded the composition of Roman concrete.\n16. The main environmental advantage of adopting the Roman concrete-making method today.\n17. The specific location where the research samples were collected.\n18. A comparison of how modern and Roman concrete behave in seawater.\n19. The two key minerals that contributed to the strength of the Roman concrete.",
+			"questions": [
+				{
+					"number": 14,
+					"text": "A description of the chemical process that strengthened the Roman concrete over time.",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột mô tả về quá trình hóa học đã củng cố (làm mạnh thêm) bê tông La Mã theo thời gian.\nBước 2: Tìm các keywords được paraphrase trong bài:\nreacting / growth of rare minerals ~ chemical process\nreinforce the material, making it stronger over time ~ strengthened... over time\nBước 3: So sánh và đối chiếu:\nĐoạn D chỉ rõ: \"Nước biển phản ứng với tro núi lửa và vôi gây ra sự phát triển của các khoáng chất quý hiếm... giúp củng cố vật liệu, làm cho nó mạnh hơn theo thời gian\" (The seawater reacting with the volcanic ash and lime caused the growth of rare minerals... helped to reinforce the material, making it stronger over time).\nBước 4: Đáp án: D",
+					"quotes": [
+						"The seawater reacting with the volcanic ash and lime caused the growth of rare minerals, such as Al-tobermorite and phillipsite, within the concrete. These mineral crystals, which are not found in modern concrete, helped to reinforce the material, making it stronger over time."
+					]
+				},
+				{
+					"number": 15,
+					"text": "The name of the person who first recorded the composition of Roman concrete.",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTên của người đầu tiên ghi chép lại thành phần của bê tông La Mã.\nBước 2: Tìm các keywords được paraphrase trong bài:\nVitruvius ~ name of the person\nfirst described ~ first recorded\nrecipe for the contents ~ composition\nBước 3: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"Công thức cho nội dung của bê tông La Mã được mô tả lần đầu tiên vào khoảng năm 30 trước Công nguyên bởi Vitruvius\" (The recipe for the contents of Roman concrete was first described around 30 BC by Vitruvius).\nBước 4: Đáp án: C",
+					"quotes": [
+						"C. The recipe for the contents of Roman concrete was first described around 30 BC by Vitruvius, an engineer for the Roman Emperor Augustus."
+					]
+				},
+				{
+					"number": 16,
+					"text": "The main environmental advantage of adopting the Roman concrete-making method today.",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nLợi ích môi trường chính của việc áp dụng phương pháp làm bê tông của La Mã ngày nay.\nBước 2: Tìm các keywords được paraphrase trong bài:\nreduction in the carbon footprint ~ environmental advantage\nThe Roman method... requires significantly less heat ~ adopting the Roman... method\nBước 3: So sánh và đối chiếu:\nĐoạn E chỉ rõ: \"Phương pháp của La Mã... đòi hỏi ít nhiệt độ hơn đáng kể, cho thấy khả năng giảm lượng khí thải carbon của việc sản xuất bê tông trong tương lai\" (The Roman method... requires significantly less heat, suggesting a potential reduction in the carbon footprint of future concrete production).\nBước 4: Đáp án: E",
+					"quotes": [
+						"By understanding and adapting the Roman recipe, engineers could develop a new, more durable, and environmentally friendly concrete. Modern concrete production is a major source of carbon emissions, primarily due to the high temperatures required to produce Portland cement. The Roman method, which uses less lime and incorporates volcanic ash, requires significantly less heat, suggesting a potential reduction in the carbon footprint of future concrete production."
+					]
+				},
+				{
+					"number": 17,
+					"text": "The specific location where the research samples were collected.",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐịa điểm cụ thể nơi các mẫu nghiên cứu được thu thập.\nBước 2: Tìm các keywords được paraphrase trong bài:\nPozzuoli Bay near Naples in Italy ~ specific location\nAnalysis of samples from the ancient underwater site... ~ research samples were collected\nBước 3: So sánh và đối chiếu:\nĐoạn A chỉ rõ: \"Phân tích các mẫu từ địa điểm dưới nước cổ đại ở Vịnh Pozzuoli gần Naples, Ý đã chỉ ra lý do tại sao...\" (Analysis of samples from the ancient underwater site in Pozzuoli Bay near Naples in Italy).\nBước 4: Đáp án: A",
+					"quotes": [
+						"Analysis of samples from the ancient underwater site in Pozzuoli Bay near Naples in Italy pinpointed why the best Roman concrete was superior to most modern concrete."
+					]
+				},
+				{
+					"number": 18,
+					"text": "A comparison of how modern and Roman concrete behave in seawater.",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSự so sánh về việc bê tông hiện đại và bê tông La Mã phản ứng thế nào trong nước biển.\nBước 2: Tìm các keywords được paraphrase trong bài:\nIn contrast ~ comparison\nbreaks down when exposed to seawater / stronger over time ~ behave in seawater\nBước 3: So sánh và đối chiếu:\nĐoạn D mô tả bê tông La Mã mạnh hơn, sau đó so sánh: \"Ngược lại, bê tông xi măng Portland hiện đại bị phá vỡ khi tiếp xúc với nước biển...\" (* In contrast, modern Portland cement concrete breaks down when exposed to seawater...*).\nBước 4: Đáp án: D",
+					"quotes": [
+						"The seawater reacting with the volcanic ash and lime caused the growth of rare minerals, such as Al-tobermorite and phillipsite, within the concrete. These mineral crystals, which are not found in modern concrete, helped to reinforce the material, making it stronger over time. In contrast, modern Portland cement concrete breaks down when exposed to seawater, as the saltwater corrodes the compounds and weakens the structure."
+					]
+				},
+				{
+					"number": 19,
+					"text": "The two key minerals that contributed to the strength of the Roman concrete.",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nHai khoáng chất quan trọng đã đóng góp vào độ bền của bê tông La Mã.\nBước 2: Tìm các keywords được paraphrase trong bài:\nrare minerals, such as Al-tobermorite and phillipsite ~ two key minerals\nhelped to reinforce the material ~ contributed to the strength\nBước 3: So sánh và đối chiếu:\nĐoạn D chỉ rõ tên của hai loại khoáng chất này: \"...gây ra sự phát triển của các khoáng chất quý hiếm, chẳng hạn như Al-tobermorite và phillipsite...\" (...caused the growth of rare minerals, such as Al-tobermorite and phillipsite).\nBước 4: Đáp án: D",
+					"quotes": [
+						"The seawater reacting with the volcanic ash and lime caused the growth of rare minerals, such as Al-tobermorite and phillipsite, within the concrete. These mineral crystals, which are not found in modern concrete, helped to reinforce the material, making it stronger over time."
+					]
+				}
+			]
+		},
+		{
+			"range": "20-26",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary below. Choose NO MORE THAN TWO WORDS from the passage for each answer.",
+			"body": "Roman Concrete vs. Modern Concrete\nResearch into an ancient Roman ____ (20) has provided new insights into concrete. The study, led by Paulo Monteiro, analyzed samples that had been submerged in seawater for two millennia.\nThe analysis showed that Roman concrete uses a different binding cement. While modern ____ (21) cement is a compound of calcium, silicon, and hydrates, Roman cement includes ____ (22) and less silicon, forming a very stable compound called C-A-S-H.\nA key ingredient in the Roman recipe was ____ (23), which provided the aluminum. The Romans made their concrete for coastal structures by mixing this with lime, placing the mixture in ____ (24), and then immersing it in seawater. This immersion caused a hot chemical reaction.\nA significant finding was that this process led to the growth of rare minerals within the concrete, which reinforced it. In contrast, seawater ____ (25) modern concrete. Adopting the Roman method today could lead to the creation of more ____ (26) marine structures.",
+			"questions": [
+				{
+					"number": 20,
+					"text": "Research into an ancient Roman ____ (20) has provided new insights into concrete.",
+					"answer": "breakwater",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCần tìm một danh từ chỉ đối tượng cổ đại của La Mã được nghiên cứu.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: Roman + NOUN (Sau tính từ 'Roman').\nBước 3: Tìm các keywords được paraphrase trong bài:\nuncovered in samples taken from ~ Research into\nconcrete Roman ~ ancient Roman\nBước 4: So sánh và đối chiếu:\nĐoạn A chỉ rõ: \"...các mẫu lấy từ một đê chắn sóng bằng bê tông của La Mã\" (...samples taken from a concrete Roman breakwater).\nBước 5: Đáp án: breakwater.\nNghiên cứu về một đê chắn sóng cổ đại của La Mã... (Research into an ancient Roman breakwater...)",
+					"quotes": [
+						"The chemical secrets of Roman concrete have been uncovered in samples taken from a concrete Roman breakwater."
+					]
+				},
+				{
+					"number": 21,
+					"text": "While modern ____ (21) cement is a compound of calcium, silicon, and hydrates...",
+					"answer": "Portland",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCần tìm danh từ/tên riêng bổ nghĩa cho từ \"cement\" trong thời hiện đại.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (Proper Noun)\nDấu hiệu: modern + NOUN + cement.\nBước 3: Tìm các keywords được paraphrase trong bài:\nmost commonly used cement in recent decades ~ modern... cement\nis a compound of calcium, silicon... ~ is a compound of calcium...\nBước 4: So sánh và đối chiếu:\nĐoạn B chỉ rõ: \"Xi măng được sử dụng phổ biến nhất trong những thập kỷ gần đây là xi măng Portland\" (The most commonly used cement in recent decades has been Portland cement).\nBước 5: Đáp án: Portland.\n...xi măng Portland hiện đại là một hợp chất... (...modern Portland cement is a compound...)",
+					"quotes": [
+						"Portland cement is a compound of calcium, silicon, and hydrates (C-S-H)."
+					]
+				},
+				{
+					"number": 22,
+					"text": "Roman cement includes ____ (22) and less silicon, forming a very stable compound called C-A-S-H.",
+					"answer": "aluminum",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCần tìm một danh từ chỉ một thành phần có trong xi măng La Mã.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: includes + NOUN (Sau động từ 'includes').\nBước 3: Tìm các keywords được paraphrase trong bài:\nRoman cement contains ~ Roman cement includes\nless silicon ~ từ khóa giữ nguyên\nBước 4: So sánh và đối chiếu:\nĐoạn B chỉ rõ: \"Xi măng La Mã chứa nhôm, thứ không có trong xi măng Portland, và ít silicon hơn...\" (Roman cement contains aluminum, which is not found in Portland cement, and less silicon...).\nBước 5: Đáp án: aluminum.\n...xi măng La Mã bao gồm nhôm và ít silicon hơn... (...Roman cement includes aluminum and less silicon...)",
+					"quotes": [
+						"Roman cement contains aluminum, which is not found in Portland cement, and less silicon than is found in Portland cement."
+					]
+				},
+				{
+					"number": 23,
+					"text": "A key ingredient in the Roman recipe was ____ (23), which provided the aluminum.",
+					"answer": "volcanic ash",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCần tìm danh từ chỉ nguyên liệu quan trọng cung cấp nhôm.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN PHRASE\nDấu hiệu: was + NOUN PHRASE.\nBước 3: Tìm các keywords được paraphrase trong bài:\none of the ingredients... crucial ~ key ingredient\ncontains the aluminum ~ provided the aluminum\nBước 4: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"Tro núi lửa là một trong những thành phần... vì chính tro núi lửa có chứa nhôm...\" (Volcanic ash was one of the ingredients... as it is volcanic ash that contains the aluminum).\nBước 5: Đáp án: volcanic ash.\n...một thành phần quan trọng... là tro núi lửa... (...a key ingredient... was volcanic ash...)",
+					"quotes": [
+						"Volcanic ash was one of the ingredients, and it is now understood that this is crucial, as it is volcanic ash that contains the aluminum that ultimately gives Roman concrete its great durability."
+					]
+				},
+				{
+					"number": 24,
+					"text": "The Romans made their concrete for coastal structures by mixing this with lime, placing the mixture in ____ (24), and then immersing it in seawater.",
+					"answer": "wooden molds",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCần tìm danh từ chỉ vật/nơi chứa đựng hỗn hợp.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN PHRASE\nDấu hiệu: in + NOUN PHRASE.\nBước 3: Tìm các keywords được paraphrase trong bài:\npacked... into ~ placing the mixture in\nimmersed in seawater ~ từ khóa giữ nguyên\nBước 4: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"...được đóng gói... vào khuôn gỗ, thứ sau đó được ngâm trong nước biển\" (...packed... into wooden molds, which were then immersed in seawater).\nBước 5: Đáp án: wooden molds.\n...đặt hỗn hợp vào khuôn gỗ... (...placing the mixture in wooden molds...)",
+					"quotes": [
+						"This was then packed, together with stones and chunks of rock, into wooden molds, which were then immersed in seawater."
+					]
+				},
+				{
+					"number": 25,
+					"text": "In contrast, seawater ____ (25) modern concrete.",
+					"answer": "breaks down",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCần tìm một động từ chỉ tác động tiêu cực của nước biển lên bê tông hiện đại.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: VERB\nDấu hiệu: seawater + VERB.\nBước 3: Tìm các keywords được paraphrase trong bài:\nsaltwater ~ seawater\nmodern Portland cement concrete / compounds ~ modern concrete\nBước 4: So sánh và đối chiếu:\nĐoạn D chỉ rõ: \"...nước mặn ăn mòn các hợp chất...\" (...the saltwater corrodes the compounds).\nBước 5: Đáp án: corrodes.\n...nước biển ăn mòn bê tông hiện đại. (...seawater corrodes modern concrete.)",
+					"quotes": [
+						"In contrast, modern Portland cement concrete breaks down when exposed to seawater, as the saltwater corrodes the compounds and weakens the structure."
+					]
+				},
+				{
+					"number": 26,
+					"text": "Adopting the Roman method today could lead to the creation of more ____ (26) marine structures.",
+					"answer": "durable",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCần tìm một tính từ mô tả chất lượng của các cấu trúc biển.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: ADJECTIVE\nDấu hiệu: more + ADJECTIVE.\nBước 3: Tìm các keywords được paraphrase trong bài:\nadapting the Roman recipe ~ Adopting the Roman method\ndevelop / creating ~ creation of\nmarine structures ~ từ khóa giữ nguyên\nBước 4: So sánh và đối chiếu:\nĐoạn E chỉ rõ: \"...các kỹ sư có thể phát triển một loại bê tông mới, bền bỉ hơn... để tạo ra các cấu trúc biển...\" (...engineers could develop a new, more durable... concrete... towards creating marine structures).\nBước 5: Đáp án: durable.\n...tạo ra các cấu trúc biển bền bỉ hơn. (...creation of more durable marine structures.)",
+					"quotes": [
+						"By understanding and adapting the Roman recipe, engineers could develop a new, more durable, and environmentally friendly concrete."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

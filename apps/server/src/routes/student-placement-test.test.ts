@@ -1,6 +1,10 @@
 import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import {
+	NOTIFICATION_EVENT_TYPES,
+	studentInboxResponseSchema,
+} from "@teacher-os/api/contracts";
+import {
 	buildPlacementSnapshot,
 	type PlacementContent,
 	type PlacementPublicResultView,
@@ -247,8 +251,6 @@ function createFakeAiGrader(): PlacementAiGrader {
 				return {
 					state: "draft",
 					draft: {
-						rubric: { ct: 4, or: 4, lg: 4 },
-						feedback: "Bài viết rõ ý.",
 						errors: [
 							{
 								id: "we-1",
@@ -266,8 +268,6 @@ function createFakeAiGrader(): PlacementAiGrader {
 			return {
 				state: "draft",
 				draft: {
-					rubric: { gv: 3, dm: 3, pr: 3, ic: 3 },
-					feedback: "Phát âm ổn.",
 					errors: [
 						{
 							id: "se-1",
@@ -840,7 +840,7 @@ describe("student portal placement test routes (#748)", () => {
 				body: JSON.stringify({
 					answers: { listening: {}, vocabGrammar: {}, reading: {} },
 					writingText: "",
-					speakingMode: "none",
+					speakingMode: "upload",
 				}),
 			},
 		);
@@ -981,7 +981,8 @@ describe("student portal placement test routes (#748)", () => {
 			"/api/students/stu-hoa/placement-submission/media",
 		);
 		expect(detail.aiStatus).toBe("drafted");
-		expect(detail.aiWriting?.feedback).toBe("Bài viết rõ ý.");
+		expect(Object.keys(detail.aiWriting ?? {})).toEqual(["errors"]);
+		expect(detail.aiWriting?.errors[0]?.quote).toBe("go cycling");
 		expect(detail.speakingTranscript).toBe(
 			"Hello I live in District 9 with my sister.",
 		);
@@ -1019,7 +1020,7 @@ describe("student portal placement test routes (#748)", () => {
 		await drainBackgroundTasks();
 
 		// Teacher grades via PATCH /api/students/stu-hoa/placement-submission
-		// L/G&V/R = 100%, W = 12/15 (80%), S = 16/20 (80%) -> avg = 92% -> "B1 trở lên"
+		// L/G&V/R = 100%, W = Band 7.5/9 (83.3%), S = Band 7.5/9 (83.3%) -> avg = 93% -> "B1 trở lên"
 		const gradeRes = await app.request(
 			"/api/students/stu-hoa/placement-submission",
 			{
@@ -1030,8 +1031,20 @@ describe("student portal placement test routes (#748)", () => {
 					"content-type": "application/json",
 				},
 				body: JSON.stringify({
-					writingRubric: { ct: 4, or: 4, lg: 4 },
-					speakingRubric: { gv: 4, dm: 4, pr: 4, ic: 4 },
+					writingRubric: {
+						task: 7.5,
+						coherence: 7.5,
+						lexical: 7.5,
+						grammar: 7.5,
+					},
+					writingScore: 7.5,
+					speakingRubric: {
+						fluency: 7.5,
+						lexical: 7.5,
+						grammar: 7.5,
+						pronunciation: 7.5,
+					},
+					speakingScore: 7.5,
 					teacherFeedback: "Làm bài rất tốt!",
 					writingErrors: [
 						{
@@ -1083,6 +1096,14 @@ describe("student portal placement test routes (#748)", () => {
 		const gradedView =
 			(await gradedViewRes.json()) as StudentPlacementViewResponse;
 		expect(gradedView.submission?.status).toBe("graded");
+		expect(gradedView.submission?.writingScore).toBe(7.5);
+		expect(gradedView.submission?.speakingScore).toBe(7.5);
+		expect(gradedView.submission?.writingRubric).toEqual({
+			task: 7.5,
+			coherence: 7.5,
+			lexical: 7.5,
+			grammar: 7.5,
+		});
 		expect(gradedView.submission?.finalBandLevel).toBe("B1 trở lên");
 		expect(gradedView.submission?.teacherFeedback).toBe("Làm bài rất tốt!");
 		expect(gradedView.submission?.bandAdvice).toBe("Học B1+.");
@@ -1132,13 +1153,31 @@ describe("student portal placement test routes (#748)", () => {
 						reading: { "r-a1": 1 },
 					},
 					writingText: "Short essay for AI draft.",
-					speakingMode: "skipped",
+					speakingMode: "upload",
+					speakingDurationSec: 20,
 				}),
 			},
 		);
 		expect(submitRes.status).toBe(201);
 		const submitted =
 			(await submitRes.json()) as StudentPlacementSubmitResponse;
+		const webm = validWebmBytes();
+		const uploadRes = await app.request(
+			`/api/student/placement-test/submissions/${submitted.submissionId}/speaking`,
+			{
+				method: "PUT",
+				headers: {
+					"x-test-user": "hoa",
+					origin: STUDENT_ORIGIN,
+					"x-upload-token": submitted.uploadToken ?? "",
+					"x-media-filename": "speaking.webm",
+					"content-type": "audio/webm",
+					"content-length": String(webm.byteLength),
+				},
+				body: webm,
+			},
+		);
+		expect(uploadRes.status).toBe(200);
 		await drainBackgroundTasks();
 
 		const [subRow] = await db
@@ -1168,8 +1207,10 @@ describe("student portal placement test routes (#748)", () => {
 					"content-type": "application/json",
 				},
 				body: JSON.stringify({
-					writingRubric: { ct: 3, or: 3, lg: 3 },
+					writingRubric: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
+					writingScore: 6,
 					speakingRubric: null,
+					speakingScore: null,
 					teacherFeedback: "Ổn.",
 					writingErrors: [],
 					speakingErrors: [],
@@ -1311,5 +1352,211 @@ describe("student portal placement test routes (#748)", () => {
 		);
 		expect(audioCheck.status).toBe(200);
 		expect(audioCheck.headers.get("Cache-Control")).toContain("private");
+	});
+
+	test("POST /placement-test/submissions từ chối speakingMode='skipped' (400 PLACEMENT_SUBMIT_INVALID) và speakingMode='none' khi đề có Speaking (400 PLACEMENT_SPEAKING_REQUIRED)", async () => {
+		await seedPublishedTest("org-1");
+
+		const skippedRes = await app.request(
+			"/api/student/placement-test/submissions",
+			{
+				method: "POST",
+				headers: {
+					"x-test-user": "hoa",
+					origin: STUDENT_ORIGIN,
+					"content-type": "application/json",
+				},
+				body: JSON.stringify({
+					answers: { listening: {}, vocabGrammar: {}, reading: {} },
+					writingText: "Hello",
+					speakingMode: "skipped",
+				}),
+			},
+		);
+		expect(skippedRes.status).toBe(400);
+		expect(((await skippedRes.json()) as { code: string }).code).toBe(
+			"PLACEMENT_SUBMIT_INVALID",
+		);
+
+		const noneRes = await app.request(
+			"/api/student/placement-test/submissions",
+			{
+				method: "POST",
+				headers: {
+					"x-test-user": "hoa",
+					origin: STUDENT_ORIGIN,
+					"content-type": "application/json",
+				},
+				body: JSON.stringify({
+					answers: { listening: {}, vocabGrammar: {}, reading: {} },
+					writingText: "Hello",
+					speakingMode: "none",
+				}),
+			},
+		);
+		expect(noneRes.status).toBe(400);
+		expect(((await noneRes.json()) as { code: string }).code).toBe(
+			"PLACEMENT_SPEAKING_REQUIRED",
+		);
+
+		const subs = await db.select().from(schema.placementTestSubmission);
+		expect(subs).toHaveLength(0);
+	});
+
+	test("POST /placement-test/submissions emits 1 in-app-only placement_submitted notification visible in inbox and markable as read", async () => {
+		await seedPublishedTest("org-1");
+
+		const submitRes = await app.request(
+			"/api/student/placement-test/submissions",
+			{
+				method: "POST",
+				headers: {
+					"x-test-user": "hoa",
+					origin: STUDENT_ORIGIN,
+					"content-type": "application/json",
+				},
+				body: JSON.stringify({
+					answers: {
+						listening: { "l-a1": 1, "l-gap-1": "$12" },
+						vocabGrammar: { "gv-01": 1 },
+						reading: { "r-a1": 1 },
+					},
+					writingText: "",
+					speakingMode: "upload",
+					speakingDurationSec: 15,
+				}),
+			},
+		);
+		expect(submitRes.status).toBe(201);
+		const submitted =
+			(await submitRes.json()) as StudentPlacementSubmitResponse;
+
+		// In-app only: no email sent on submission
+		expect(sentEmails).toHaveLength(0);
+
+		const records = await db
+			.select()
+			.from(schema.notificationRecord)
+			.where(eq(schema.notificationRecord.studentId, "stu-hoa"));
+		expect(records).toHaveLength(1);
+		const record = records[0];
+		if (!record) throw new Error("expected placement_submitted notification");
+		expect(record.eventType).toBe("placement_submitted");
+		expect(NOTIFICATION_EVENT_TYPES).toContain(record.eventType);
+		expect(record.channels).toBe("in_app");
+		expect(record.status).toBe("sent");
+		expect(record.recipientEmail).toBeNull();
+		expect(record.linkPath).toBe("/placement-test");
+		expect(record.refType).toBe("placement_submission");
+		expect(record.refId).toBe(submitted.submissionId);
+
+		// Appears in GET /api/student/inbox with unread >= 1
+		const inboxRes = await app.request("/api/student/inbox", {
+			headers: { "x-test-user": "hoa" },
+		});
+		expect(inboxRes.status).toBe(200);
+		const inbox = studentInboxResponseSchema.parse(await inboxRes.json());
+		expect(inbox.unread).toBeGreaterThanOrEqual(1);
+		const item = inbox.items.find((i) => i.id === record.id);
+		expect(item).toBeDefined();
+		expect(item?.eventType).toBe("placement_submitted");
+		expect(item?.linkPath).toBe("/placement-test");
+		expect(item?.status).toBe("sent");
+		expect(item?.readAt).toBeNull();
+
+		// Snapshot placement_test_submission before mark-read
+		const [subBefore] = await db
+			.select()
+			.from(schema.placementTestSubmission)
+			.where(eq(schema.placementTestSubmission.id, submitted.submissionId));
+
+		// POST /api/student/inbox/:id/read marks notification read without changing submission
+		const readRes = await app.request(`/api/student/inbox/${record.id}/read`, {
+			method: "POST",
+			headers: {
+				"x-test-user": "hoa",
+				origin: STUDENT_ORIGIN,
+				"content-type": "application/json",
+			},
+		});
+		expect(readRes.status).toBe(200);
+
+		const [updatedRecord] = await db
+			.select()
+			.from(schema.notificationRecord)
+			.where(eq(schema.notificationRecord.id, record.id));
+		expect(updatedRecord?.status).toBe("read");
+		expect(updatedRecord?.readAt).not.toBeNull();
+
+		const [subAfter] = await db
+			.select()
+			.from(schema.placementTestSubmission)
+			.where(eq(schema.placementTestSubmission.id, submitted.submissionId));
+		expect(subAfter).toEqual(subBefore);
+	});
+
+	test("tương thích ngược: student view đọc được bài đã chấm theo thang cũ (/15, /20)", async () => {
+		await seedPublishedTest("org-1");
+		const snapshot = buildPlacementSnapshot(
+			makeSampleContent("11111111-1111-4111-8111-111111111111"),
+			1,
+		);
+		await db.insert(schema.placementTestSubmission).values({
+			id: "sub-legacy-hoa",
+			orgId: "org-1",
+			leadId: null,
+			studentId: "stu-hoa",
+			testVersion: 1,
+			snapshotJson: JSON.stringify(snapshot),
+			answersJson: JSON.stringify({
+				listening: {},
+				vocabGrammar: {},
+				reading: {},
+			}),
+			objectiveBreakdownJson: JSON.stringify({
+				listening: { correct: 1, total: 1, pct: 100 },
+				vocabGrammar: { correct: 1, total: 1, pct: 100 },
+				reading: { correct: 1, total: 1, pct: 100 },
+				totalCorrect: 3,
+				totalQuestions: 3,
+				averagePct: 100,
+				byLevel: [],
+				items: [],
+				provisionalBand: snapshot.bands[1],
+				provisionalSummary: "Tạm tính",
+			}),
+			writingText: "Hello Ben.",
+			writingWordCount: 2,
+			speakingStatus: "uploaded",
+			speakingTranscript: "Hi there.",
+			status: "graded",
+			writingRubricJson: JSON.stringify({ ct: 4, or: 4, lg: 4 }),
+			writingScore: 12,
+			writingBand: null,
+			speakingRubricJson: JSON.stringify({ gv: 4, dm: 3, pr: 4, ic: 3 }),
+			speakingScore: 14,
+			speakingBand: null,
+			finalBandLevel: "A2",
+			finalCourse: "comm-2",
+			finalDisplayCourse: "Communication English Level 2",
+			finalScorePct: 84,
+			teacherFeedback: "Kết quả cũ.",
+			gradedAt: new Date(),
+		});
+
+		const viewRes = await app.request("/api/student/placement-test", {
+			headers: { "x-test-user": "hoa" },
+		});
+		expect(viewRes.status).toBe(200);
+		const view = (await viewRes.json()) as StudentPlacementViewResponse;
+		expect(view.submission?.writingRubric).toEqual({ ct: 4, or: 4, lg: 4 });
+		expect(view.submission?.writingScore).toBe(12);
+		expect(view.submission?.speakingRubric).toEqual({
+			gv: 4,
+			dm: 3,
+			pr: 4,
+			ic: 3,
+		});
+		expect(view.submission?.speakingScore).toBe(14);
 	});
 });

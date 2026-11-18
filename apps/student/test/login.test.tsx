@@ -23,6 +23,7 @@ import { AuthTabs } from "@/components/auth/auth-tabs";
 import { GoogleOAuthButton } from "@/components/auth/google-oauth-button";
 import { SignInForm } from "@/components/auth/sign-in-form";
 import { SignUpForm } from "@/components/auth/sign-up-form";
+import { authErrorMessage } from "@/lib/auth-error";
 import { validateReturnUrl } from "@/lib/validate-return-url";
 
 describe("validateReturnUrl", () => {
@@ -46,16 +47,59 @@ describe("validateReturnUrl", () => {
 });
 
 describe("AuthTabs", () => {
-	it("renders both tabs with correct aria-selected", () => {
+	it("renders only Đăng nhập and Đăng ký tabs in a 2-column grid with correct aria-selected", () => {
 		const html = renderToStaticMarkup(
 			<AuthTabs mode="signin" onChange={() => {}} />,
 		);
-		expect(html).toContain('id="tab-signin"');
-		expect(html).toContain('aria-selected="true"');
-		expect(html).toContain("Đăng nhập");
-		expect(html).toContain('id="tab-signup"');
-		expect(html).toContain('aria-selected="false"');
-		expect(html).toContain("Đăng ký");
+		expect(html).toContain("grid-cols-2");
+		expect(html).toMatch(
+			/<button[^>]*id="tab-signin"[^>]*aria-selected="true"[^>]*>Đăng nhập<\/button>/,
+		);
+		expect(html).toMatch(
+			/<button[^>]*id="tab-signup"[^>]*aria-selected="false"[^>]*>Đăng ký<\/button>/,
+		);
+		expect(html).not.toContain("tab-otp");
+		expect(html).not.toContain("Mã email");
+		expect(html).not.toContain("Mật khẩu");
+	});
+});
+
+describe("authErrorMessage", () => {
+	it("maps USER_ALREADY_EXISTS and USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL to Vietnamese guidance", () => {
+		const expected =
+			"Email này đã có tài khoản. Vui lòng chuyển sang tab Đăng nhập hoặc dùng Quên mật khẩu? để đặt mật khẩu.";
+		expect(
+			authErrorMessage(
+				{
+					code: "USER_ALREADY_EXISTS",
+					message: "User already exists.",
+				},
+				"fallback",
+			),
+		).toBe(expected);
+		expect(
+			authErrorMessage(
+				{
+					code: "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL",
+					message: "User already exists. Use another email.",
+				},
+				"fallback",
+			),
+		).toBe(expected);
+	});
+
+	it("maps INVALID_EMAIL_OR_PASSWORD to Vietnamese guidance", () => {
+		expect(
+			authErrorMessage(
+				{
+					code: "INVALID_EMAIL_OR_PASSWORD",
+					message: "Invalid email or password",
+				},
+				"fallback",
+			),
+		).toBe(
+			"Email hoặc mật khẩu chưa đúng. Nếu trước đây bạn đăng nhập bằng mã email, hãy chọn Quên mật khẩu? để đặt mật khẩu.",
+		);
 	});
 });
 

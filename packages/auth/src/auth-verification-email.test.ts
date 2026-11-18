@@ -188,6 +188,14 @@ describe("auth email verification wiring", () => {
 		});
 
 		const email = "verify-student@example.com";
+		await libsql.insert(schema.studentInvitation).values({
+			id: "inv-verify-1",
+			orgId: "org-teacher-active",
+			inviterUserId: "u-teacher-owner",
+			email,
+			status: "pending",
+		});
+
 		const signUpRes = await auth.handler(
 			new Request(`${apiOrigin}/api/auth/sign-up/email`, {
 				method: "POST",
@@ -239,5 +247,67 @@ describe("auth email verification wiring", () => {
 			name: "Verify Student",
 			email,
 		});
+
+		const [acceptedInvitation] = await libsql
+			.select()
+			.from(schema.studentInvitation)
+			.where(eq(schema.studentInvitation.id, "inv-verify-1"));
+		expect(acceptedInvitation?.status).toBe("accepted");
+	});
+
+	test("all Email OTP endpoints are disabled (return 404 across student, teacher, and no-origin requests)", async () => {
+		const client = createClient({ url: "file::memory:" });
+		const libsql = drizzle(client, { schema });
+		await migrate(libsql, { migrationsFolder: MIGRATIONS_DIR });
+
+		const apiOrigin = "http://api.test";
+		const teacherOrigin = "http://teacher.test";
+		const studentOrigin = "http://student.test";
+		const auth = createAuth({
+			db: libsql,
+			corsOrigin: [teacherOrigin, studentOrigin],
+			studentOrigins: [studentOrigin],
+			secret: "test-secret-0123456789abcdef0123456789abcdef",
+			baseURL: apiOrigin,
+			googleClientId: "test-dummy",
+			googleClientSecret: "test-dummy",
+			mailer: { send: vi.fn().mockResolvedValue(undefined) },
+		});
+
+		const otpPaths = [
+			"/api/auth/email-otp/send-verification-otp",
+			"/api/auth/sign-in/email-otp",
+			"/api/auth/email-otp/request-password-reset",
+			"/api/auth/email-otp/reset-password",
+			"/api/auth/forget-password/email-otp",
+			"/api/auth/email-otp/change-email",
+			"/api/auth/email-otp/request-email-change",
+			"/api/auth/email-otp/verify-email",
+			"/api/auth/email-otp/check-verification-otp",
+		];
+
+		const origins: Array<string | null> = [studentOrigin, teacherOrigin, null];
+
+		for (const path of otpPaths) {
+			for (const origin of origins) {
+				const headers: Record<string, string> = {
+					"content-type": "application/json",
+				};
+				if (origin) headers.origin = origin;
+
+				const res = await auth.handler(
+					new Request(`${apiOrigin}${path}`, {
+						method: "POST",
+						headers,
+						body: JSON.stringify({
+							email: "student@example.com",
+							otp: "123456",
+							type: "sign-in",
+						}),
+					}),
+				);
+				expect(res.status, `${origin ?? "no-origin"} ${path}`).toBe(404);
+			}
+		}
 	});
 });

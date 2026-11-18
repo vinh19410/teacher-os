@@ -24,7 +24,7 @@ Người dùng thực hiện đăng nhập tại cổng không khớp với vai 
 
 ## Guarantees
 
-* __Minimal Guarantee:__ Không rò rỉ bất kỳ dữ liệu nghiệp vụ nào của cổng bị truy cập nhầm; không tự động khởi tạo trung tâm hoặc tư cách thành viên cho tài khoản Học viên/Quản trị trên ứng dụng giáo viên; không gửi mã OTP đăng nhập cho tài khoản Giáo viên/Quản trị.
+* __Minimal Guarantee:__ Không rò rỉ bất kỳ dữ liệu nghiệp vụ nào của cổng bị truy cập nhầm; không tự động khởi tạo trung tâm hoặc tư cách thành viên cho tài khoản Học viên/Quản trị trên ứng dụng giáo viên.
 * __Success Guarantee:__ Yêu cầu sai vai trò bị từ chối nhất quán ở cả bước tạo phiên lẫn bước truy xuất dữ liệu; người dùng trên ứng dụng giáo viên (khi vướng phiên Học viên, ngoài danh sách cho phép hoặc chưa xác thực email) được chuyển sang màn hình bị chặn ổn định (không lặp vô hạn) và có thể chủ động đăng xuất.
 
 ## Main Success Scenario
@@ -54,7 +54,6 @@ __1d. Quản trị viên truy cập ứng dụng giáo viên:__
 __1e. Giáo viên hoặc Quản trị viên đăng nhập hoặc gọi dữ liệu tại cổng học viên:__
 * 1e1. Nếu đăng nhập trực tiếp tại cổng học viên: hệ thống từ chối tạo phiên và báo `E-auth-signin-007` (với Giáo viên) hoặc `E-auth-signin-008` (với Quản trị viên).
 * 1e2. Nếu mang phiên sẵn gọi dữ liệu cổng học viên: cổng học viên từ chối truy cập (`E-auth-signin-014`).
-* 1e3. Nếu gọi phương thức đăng nhập bằng mã OTP từ ngoài cổng học viên hoặc dùng đường dẫn OTP không hỗ trợ: hệ thống từ chối trực tiếp (`E-auth-signin-028`); nếu nhập email Giáo viên/Quản trị trên biểu mẫu gửi OTP cổng học viên thì vẫn trả phản hồi trung tính nhưng không gửi mã (chống dò email).
 
 __1f. Tài khoản không thỏa điều kiện truy cập cổng quản trị:__
 * 1f1. Nếu tài khoản Học viên hoặc Giáo viên đăng nhập tại cổng quản trị: hệ thống từ chối tạo phiên và báo `E-auth-signin-008`.
@@ -62,10 +61,10 @@ __1f. Tài khoản không thỏa điều kiện truy cập cổng quản trị:_
 
 ## Related Requirements
 
-* **Functional Requirements:** `FR-auth-signin-008`, `FR-auth-signin-009`, `FR-auth-signin-010`, `FR-auth-signin-011`, `FR-auth-signin-012`, `FR-auth-signin-013`, `FR-auth-signin-017`
-* **Business Rules:** `BR-auth-signin-001`, `BR-auth-signin-004`, `BR-auth-signin-005`, `BR-auth-signin-006`, `BR-auth-signin-009`
+* **Functional Requirements:** `FR-auth-signin-008`, `FR-auth-signin-009`, `FR-auth-signin-010`, `FR-auth-signin-011`, `FR-auth-signin-012`, `FR-auth-signin-013`
+* **Business Rules:** `BR-auth-signin-001`, `BR-auth-signin-004`, `BR-auth-signin-005`, `BR-auth-signin-006`
 * **Non-Functional Requirements:** `NFR-auth-signin-005`, `NFR-auth-signin-010`, `NFR-auth-signin-012`
-* **Errors:** `E-auth-signin-006`, `E-auth-signin-007`, `E-auth-signin-008`, `E-auth-signin-010`, `E-auth-signin-011`, `E-auth-signin-012`, `E-auth-signin-013`, `E-auth-signin-014`, `E-auth-signin-015`, `E-auth-signin-028`
+* **Errors:** `E-auth-signin-006`, `E-auth-signin-007`, `E-auth-signin-008`, `E-auth-signin-010`, `E-auth-signin-011`, `E-auth-signin-012`, `E-auth-signin-013`, `E-auth-signin-014`, `E-auth-signin-015`
 
 <!-- wm:c3e3a8b9c06f46427bf9089e2fdafa48 -->
 <sub>Tài liệu thuộc bộ AI4BA BA-Kit — bản quyền ai4ba.com</sub>

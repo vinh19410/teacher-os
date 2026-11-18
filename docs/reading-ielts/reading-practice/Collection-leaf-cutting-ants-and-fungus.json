@@ -1,0 +1,216 @@
+{
+	"id": "b245ab73-be41-4b3e-adcf-aa6d9093a835",
+	"url": "https://stepielts.com/student/reading/b245ab73-be41-4b3e-adcf-aa6d9093a835?mode=practice",
+	"title": "Leaf-Cutting ants and fungus",
+	"source": "Collection",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Leaf-Cutting ants and fungus",
+		"paragraphs": [
+			"A. The ants and their agriculture have been extensively studied over the years, but the recent research has uncovered intriguing new findings about the fungus they cultivate, how they domesticated it and how they cultivate it and preserve it from pathogens. For example, the fungus farms, which the ants were thought to keep free of pathogens, turn out to be vulnerable to a devastating mold, found nowhere else but in ants’ nests. To keep the mold in check, the ants long ago made a discovery that would do credit to any pharmaceutical laboratory.",
+			"B. Leaf-cutting ants and their fungus farms are a marvel of nature and perhaps the best known example of symbiosis, the mutual dependence of two species. The ants’ achievement is remarkable — the biologist Edward O. Wilson has called it \"one of the major breakthroughs in animal evolution\" — because it allows them to eat, courtesy of their mushroom’s digestive powers, the otherwise poisoned harvest of tropical forests whose leaves are laden with terpenoids, alkaloids and other chemicals designed to sicken browsers.",
+			"C. Fungus growing seems to have originated only once in evolution, because all gardening ants belong to a single tribe, the descendants of the first fungus farmer. There are more than 200 known species of the attine ant tribe, divided into 12 groups, or genera. The leaf-cutters use fresh vegetation; the other groups, known as the lower attines because their nests are smaller and their techniques more primitive, feed their gardens with detritus like dead leaves, insects and feces. In 1994 a team of four biologists, Ulrich G. Mueller and Ted R. Schultz from Cornell University and Ignacio H. Chapela and Stephen A. Rehner from the United States Department of Agriculture, analyzed the DNA of ant funguses. The common assumption that the funguses are all derived from a single strain, they found, was only half true.",
+			"D. The leaf-cutters’ fungus was indeed descended from a single strain, propagated clonally, or just by budding, for at least 23 million years. But the lower attine ants used different variet-ies of the fungus, and in one case a quite separate species, the four biologists discovered. Cameron R. Currie, a Ph.D. student in the University of Toronto, it seemed to Mr. Currie, resembled the monocultures of various human crops, that are very productive for a while and then succumb to some disastrous pathogen, such as the Irish potato blight. Monocultures, which lack the genetic diversity to respond to changing environmental threats, are sitting ducks for parasites. Mr. Currie felt there had to be a parasite in the ant-fungus system. But a century of ant research offered no support for the idea. Textbooks describe how leaf-cutter ants scrupulously weed their gardens of all foreign organisms.\"People kept telling me, ’You know the ants keep their gardens free of parasites, don’t you?’\" Mr. Currie said of his efforts to find a hidden interloper.",
+			"E. But after three years of sifting through attine ant gardens, Mr. Currie discovered they are far from free of infections. In last month’s issue of the Proceedings of the National Academy of Sciences, he and two colleagues, Dr. Mueller and David Mairouch, isolated several alien organisms, particularly a family of parasitic molds called Escovopsis. Escovopsis turns out to be a highly virulent pathogen that can devastate a fungus garden in a couple of days. It blooms like a white cloud, with the garden dimly visible underneath. In a day or two the whole garden is enveloped.\"Other ants won’t go near it and the ants associated with the garden just starve to death,\" Dr. Rehner said.\"They just seem to give up, except for those that have rescued their larvae.\"",
+			"F. Evidently the ants usually manage to keep Escovopsis and other parasites in control. But with any lapse in control, or if the ants are removed, Escovopsis will quickly burst forth. Although new leaf-cutter gardens start off free of Escovopsis, within two years some 60 percent become infected. The discovery of Escovopsis’s role brings a new level of understanding to the evolution of the attine ants.\"In the last decade, evolutionary biologists have been increasingly aware of the role of parasites as driving forces in evolution,\" Dr. Schultz said. There is now a possible reason why the lower attine species keep changing the variety of fungus in their mushroom gardens, and occasionally domesticating new ones — to stay one step ahead of the relentless Escovopsis.",
+			"G. Interestingly, Mr. Currie found that the leaf-cutters had in general fewer alien molds in their gardens than the lower attines, yet they had more Escovopsis infections. It seems that the price they pay for cultivating a pure variety of fungus is a higher risk from Escovopsis. But the leaf-cutters may have little alternative: they cultivate a special variety of fungus which, unlike those grown by the lower attines, produces nutritious swollen tips for the ants to eat.",
+			"H. Discovery of a third partner in the ant-fungus symbiosis raises the question of how the attine ants, especially the leaf-cutters, keep this dangerous interloper under control. Amazingly enough, Mr. Currie has again provided the answer.\"People have known for a hundred years that ants have a whitish growth on the cuticle,\" said Dr. Mueller, referring to the insects’ body surface.\"People would say this is like a cuticular wax. But Cameron was the first one in a hundred years to put these things under a microscope. He saw it was not inert wax. It is alive.\" Mr. Currie discovered a specialised patch on the ants’ cuticle that harbours a particular kind of bacterium, one well known to the pharmaceutical industry, because it is the source of half the antibiotics used in medicine. From each of 22 species of attine ant studied, Mr. Cameron and colleagues isolated a species of Streptomyces bacterium, they reported in Nature in April. The Streptomyces does not have much effect on ordinary laboratory funguses. But it is a potent poisoner of Escovopsis, inhibiting its growth and suppressing spore formation. Because both the leaf-cutters and the lower attines use Streptomyces, the bacterium may have been part of their symbiosis for almost as long as the Escovopsis mold. If so, some Alexander Fleming of an ant discovered antibiotics millions of years before people did. Even now, the ants are accomplishing two feats beyond the powers of human technology. The leaf-cutters are growing a monocultural crop year after year without disaster, and they are using antibiotics apparently so wisely and prudently that, unlike people, they are not provoking antibiotic resistance in the target pathogen."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "MATCHING_NAMES",
+			"instructions": "Use the information in the passage to match the options with activities or features of ants below.\nNB You may use any letter more than once",
+			"options": [
+				{
+					"label": "A",
+					"text": "Leaf-cutting ants"
+				},
+				{
+					"label": "B",
+					"text": "Lower attines"
+				},
+				{
+					"label": "C",
+					"text": "Both"
+				}
+			],
+			"body": "Use toxic leaves to feed the fungus ____ (1)\nBuild small nests and live with different foreign fungus ____ (2)\nUse dead vegetation to feed fungus ____ (3)\nRaise a single fungus which do not live with other variety of foreigners ____ (4)\nNormally keep a highly dangerous parasite under control ____ (5)\nUse special strategies to fight against Escovopsis ____ (6)",
+			"body_html": "<p>Use toxic leaves to feed the fungus [1]</p><p>Build small nests and live with different foreign fungus [2]</p><p>Use dead vegetation to feed fungus [3]</p><p>Raise a single fungus which do not live with other variety of foreigners [4]</p><p>Normally keep a highly dangerous parasite under control [5]</p><p>Use special strategies to fight against Escovopsis [6]</p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Use toxic leaves to feed the fungus",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSử dụng lá có độc để nuôi nấm.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ntoxic leaves ~ poisoned harvest of tropical forests whose leaves are laden with terpenoids, alkaloids and other chemicals\nfeed the fungus ~ eat, courtesy of their mushroom's digestive powers\n\nBước 3: So sánh và đối chiếu:\nBài đọc đoạn B chỉ rõ: \"Thành tựu của kiến cắt lá rất đáng chú ý vì nó cho phép chúng ăn, nhờ vào sức tiêu hóa của nấm, những lá nhiệt đới có chất độc như terpenoid, alkaloid và các hóa chất khác\".\n==> Đây là đặc điểm của kiến cắt lá (leaf-cutting ants) vì chỉ có chúng mới sử dụng lá tươi (fresh vegetation) - tức là lá có độc từ rừng nhiệt đới.\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"The ants’ achievement is remarkable — the biologist Edward O. Wilson has called it \"one of the major breakthroughs in animal evolution\" — because it allows them to eat, courtesy of their mushroom’s digestive powers, the otherwise poisoned harvest of tropical forests whose leaves are laden with terpenoids, alkaloids and other chemicals designed to sicken browsers."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Build small nests and live with different foreign fungus",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nXây tổ nhỏ và sống với nhiều loại nấm khác nhau từ bên ngoài.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nsmall nests ~ their nests are smaller\ndifferent foreign fungus ~ used different varieties of the fungus\n\nBước 3: So sánh và đối chiếu:\nBài đọc đoạn C chỉ rõ: \"Các nhóm khác, được gọi là lower attines vì tổ của chúng nhỏ hơn và kỹ thuật nguyên thủy hơn\".\nBài đọc đoạn D chỉ rõ: \"Nhưng kiến lower attine sử dụng nhiều loại nấm khác nhau, và trong một trường hợp là một loài hoàn toàn riêng biệt\".\n==> Đây là đặc điểm của lower attines.\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"The leaf-cutters use fresh vegetation; the other groups, known as the lower attines because their nests are smaller and their techniques more primitive, feed their gardens with detritus like dead leaves, insects and feces.",
+						"But the lower attine ants used different variet-ies of the fungus, and in one case a quite separate species, the four biologists discovered."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Use dead vegetation to feed fungus",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSử dụng thực vật chết để nuôi nấm.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ndead vegetation ~ detritus like dead leaves, insects and feces\nfeed fungus ~ feed their gardens with\n\nBước 3: So sánh và đối chiếu:\nBài đọc đoạn C chỉ rõ: \"Kiến cắt lá sử dụng thực vật tươi; các nhóm khác, được gọi là lower attines, nuôi vườn nấm của chúng bằng mảnh vụn như lá chết, côn trùng và phân\".\n==> Đây là đặc điểm của lower attines.\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"The leaf-cutters use fresh vegetation; the other groups, known as the lower attines because their nests are smaller and their techniques more primitive, feed their gardens with detritus like dead leaves, insects and feces."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Raise a single fungus which do not live with other variety of foreigners",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNuôi một loại nấm duy nhất không sống chung với các loại khác từ bên ngoài.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nsingle fungus ~ descended from a single strain, propagated clonally\ndo not live with other variety ~ pure variety of fungus\n\nBước 3: So sánh và đối chiếu:\nBài đọc đoạn D chỉ rõ: \"Nấm của kiến cắt lá thực sự là dòng dõi từ một chủng duy nhất, nhân bản vô tính, hoặc chỉ bằng cách nảy chồi, trong ít nhất 23 triệu năm\". Bài đọc đoạn G chỉ rõ: \"Kiến cắt lá trồng một giống nấm thuần khiết\".\n==> Đây là đặc điểm của leaf-cutting ants.\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"D. The leaf-cutters’ fungus was indeed descended from a single strain, propagated clonally, or just by budding, for at least 23 million years.",
+						"It seems that the price they pay for cultivating a pure variety of fungus is a higher risk from Escovopsis."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Normally keep a highly dangerous parasite under control",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nThường xuyên giữ một loại ký sinh trùng rất nguy hiểm dưới sự kiểm soát.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nhighly dangerous parasite ~ alien molds\nkeep under control ~ weed their gardens of all foreign organisms\n\nBước 3: So sánh và đối chiếu:\nBài đọc đoạn D chỉ rõ: \"Sách giáo khoa mô tả cách loài kiến cắt lá cẩn thận loại bỏ khỏi “khu vườn” của chúng tất cả các sinh vật ngoại lai\".\nBài đọc đoạn G chỉ rõ: \"Kiến cắt lá có ít nấm ngoại lai trong “khu vườn” của chúng hơn so với các loài attine bậc thấp\".\n=>Kiến cắt lá thường loại bỏ các loại nấm mốc bên ngoài có nguy cơ gây nguy hiểm cho chúng.\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"To keep the mold in check, the ants long ago made a discovery that would do credit to any pharmaceutical laboratory."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Use special strategies to fight against Escovopsis",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSử dụng các chiến lược đặc biệt để chống lại Escovopsis.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nspecial strategies ~ use Streptomyces bacterium\nfight against Escovopsis ~ potent poisoner of Escovopsis, inhibiting its growth\n\nBước 3: So sánh và đối chiếu:\nBài đọc đoạn H chỉ rõ: \"Ông Currie phát hiện một mảng chuyên biệt trên lớp biểu bì của kiến chứa một loại vi khuẩn đặc biệt... Vi khuẩn Streptomyces là chất độc mạnh đối với Escovopsis, ức chế sự phát triển của nó\". Bài đọc cũng nói: \"Vì cả kiến cắt lá và lower attines đều sử dụng Streptomyces\".\n==> Đây là chiến lược của cả hai loại kiến.\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"Mr. Currie discovered a specialised patch on the ants’ cuticle that harbours a particular kind of bacterium, one well known to the pharmaceutical industry, because it is the source of half the antibiotics used in medicine. From each of 22 species of attine ant studied, Mr. Cameron and colleagues isolated a species of Streptomyces bacterium, they reported in Nature in April. The Streptomyces does not have much effect on ordinary laboratory funguses. But it is a potent poisoner of Escovopsis, inhibiting its growth and suppressing spore formation. Because both the leaf-cutters and the lower attines use Streptomyces, the bacterium may have been part of their symbiosis for almost as long as the Escovopsis mold."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-11",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "The Reading Passage has eight paragraphs A-H.\nWhich paragraph contains the following information?",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H"],
+			"questions": [
+				{
+					"number": 7,
+					"text": "Dangerous outcome of Escovopsis",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nKết quả nguy hiểm của Escovopsis.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\ndangerous outcome ~ devastate a fungus garden, starve to death\nEscovopsis ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nĐoạn E chỉ rõ: \"Escovopsis hóa ra là một mầm bệnh cực kỳ độc hại có thể tàn phá một vườn nấm trong vài ngày. Nó nở hoa như một đám mây trắng... Các con kiến khác sẽ không đến gần nó và những con kiến liên quan đến khu vườn chỉ chết đói\".\n==> Thông tin này cho thấy đoạn E đã mô tả kết quả nguy hiểm của Escovopsis.\n\nBước 4: Đáp án: E",
+					"quotes": [
+						"Escovopsis turns out to be a highly virulent pathogen that can devastate a fungus garden in a couple of days. It blooms like a white cloud, with the garden dimly visible underneath. In a day or two the whole garden is enveloped. \"Other ants won’t go near it and the ants associated with the garden just starve to death,\" Dr. Rehner said."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Risk of growing single fungus",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nRủi ro của việc trồng một loại nấm duy nhất.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nrisk ~ succumb to some disastrous pathogen\ngrowing single fungus ~ monocultures\n\nBước 3: So sánh và đối chiếu:\nĐoạn D chỉ rõ: \"Nó giống với các vụ trồng đơn canh của các loại cây trồng khác nhau của con người, rất năng suất trong một thời gian rồi sau đó chịu thua trước một số mầm bệnh thảm khốc, chẳng hạn như bệnh khoai tây Ireland. Các vụ trồng đơn canh, thiếu sự đa dạng di truyền để đáp ứng với các mối đe dọa môi trường thay đổi, là con mồi dễ dàng cho ký sinh trùng\".\n==> Thông tin này cho thấy đoạn D đã giải thích rủi ro của việc trồng một loại nấm duy nhất.\n\nBước 4: Đáp án: D",
+					"quotes": [
+						"Cameron R. Currie, a Ph.D. student in the University of Toronto, it seemed to Mr. Currie, resembled the monocultures of various human crops, that are very productive for a while and then succumb to some disastrous pathogen, such as the Irish potato blight. Monocultures, which lack the genetic diversity to respond to changing environmental threats, are sitting ducks for parasites."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Comparison of the features of two different nests for feeding gardens",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSo sánh các đặc điểm của hai loại tổ khác nhau để nuôi vườn nấm.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\ncomparison ~ The leaf-cutters use... the other groups... feed\ntwo different nests ~ leaf-cutters vs lower attines\nfeeding gardens ~ use fresh vegetation vs feed with detritus\n\nBước 3: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"Kiến cắt lá sử dụng thực vật tươi; các nhóm khác, được gọi là lower attines vì tổ của chúng nhỏ hơn và kỹ thuật nguyên thủy hơn, nuôi vườn của chúng bằng mảnh vụn như lá chết, côn trùng và phân\".\n==> Thông tin này cho thấy đoạn C đã so sánh đặc điểm của hai loại tổ khác nhau trong cách nuôi vườn nấm.\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"The leaf-cutters use fresh vegetation; the other groups, known as the lower attines because their nests are smaller and their techniques more primitive, feed their gardens with detritus like dead leaves, insects and feces."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Discovery of significant achievements made by ants earlier than human",
+					"answer": "H",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhát hiện về những thành tựu quan trọng mà kiến đạt được sớm hơn con người.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nsignificant achievements ~ discovered antibiotics\nearlier than human ~ millions of years before people did\n\nBước 3: So sánh và đối chiếu:\nĐoạn H chỉ rõ: \"Ông Currie phát hiện một mảng chuyên biệt trên lớp biểu bì của kiến chứa một loại vi khuẩn đặc biệt, một loại nổi tiếng với ngành dược phẩm, vì nó là nguồn gốc của một nửa số kháng sinh được sử dụng trong y học... Nếu vậy, một Alexander Fleming nào đó của loài kiến đã phát hiện ra kháng sinh hàng triệu năm trước khi con người làm điều đó\".\n==> Thông tin này cho thấy đoạn H đã nói về phát hiện rằng kiến đạt được thành tựu sớm hơn con người.\n\nBước 4: Đáp án: H",
+					"quotes": [
+						"If so, some Alexander Fleming of an ant discovered antibiotics millions of years before people did."
+					]
+				},
+				{
+					"number": 11,
+					"text": "Advantages of growing a new breed of fungus in the ant farm",
+					"answer": "F",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nLợi ích của việc trồng một giống nấm mới trong nông trại kiến.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nadvantages ~ a possible reason\nnew breed of fungus ~ changing the variety of fungus\nbenefits ~ stay one step ahead of the relentless Escovopsis\n\nBước 3: So sánh và đối chiếu:\nĐoạn F chỉ rõ: \"Hiện nay đã có một lời giải thích khả dĩ cho việc vì sao các loài attine bậc thấp thường xuyên thay đổi chủng loại nấm trong “vườn nấm” của chúng, và thỉnh thoảng thuần hóa những loài mới — đó là để luôn đi trước nấm Escovopsis không ngừng tấn công một bước.\".\n==> Thông tin này cho thấy đoạn F đã giải thích lợi ích của việc trồng một giống nấm đặc biệt.\n\nBước 4: Đáp án: F",
+					"quotes": [
+						"There is now a possible reason why the lower attine species keep changing the variety of fungus in their mushroom gardens, and occasionally domesticating new ones — to stay one step ahead of the relentless Escovopsis."
+					]
+				}
+			]
+		},
+		{
+			"range": "12-13",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, C or D.",
+			"questions": [
+				{
+					"number": 12,
+					"text": "How does the author think of Currie’s opinion on the saying \"ants keep their garden free of of parasites\"?",
+					"options": [
+						{
+							"label": "A",
+							"text": "His viewpoint was verified later"
+						},
+						{
+							"label": "B",
+							"text": "Earlier study has sufficient evidence immediately"
+						},
+						{
+							"label": "C",
+							"text": "There is no details mentioned in the article"
+						},
+						{
+							"label": "D",
+							"text": "His opinion was proved to be wrong"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But a century of ant research offered no support for the idea. Textbooks describe how leaf-cutter ants scrupulously weed their gardens of all foreign organisms. \"People kept telling me, ’You know the ants keep their gardens free of parasites, don’t you?’\" Mr. Currie said of his efforts to find a hidden interloper. E. But after three years of sifting through attine ant gardens, Mr. Currie discovered they are far from free of infections."
+					]
+				},
+				{
+					"number": 13,
+					"text": "What did scientists find on the skin of ants under a microscope?",
+					"options": [
+						{
+							"label": "A",
+							"text": "some white cloud mold embed in their skin"
+						},
+						{
+							"label": "B",
+							"text": "that Wax is all over their skin"
+						},
+						{
+							"label": "C",
+							"text": "a substance which is useful to humans"
+						},
+						{
+							"label": "D",
+							"text": "a substance which suppresses the growth of all fungus"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Mr. Currie discovered a specialised patch on the ants’ cuticle that harbours a particular kind of bacterium, one well known to the pharmaceutical industry, because it is the source of half the antibiotics used in medicine."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}
