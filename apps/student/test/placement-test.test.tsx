@@ -1175,3 +1175,560 @@ describe("Student Portal Placement Test (#748)", () => {
 		expect(confirmBox.textContent).not.toContain("khách quan");
 	});
 });
+
+describe("Placement Speaking state machine, audio merger & UI (#780)", () => {
+	const SPEAKING_TASKS = [
+		{
+			id: "sp-1",
+			partLabel: "Part 1 (A2)",
+			level: "A2",
+			prompt: "Describe your favorite hobby.",
+			prepSeconds: 5,
+			answerSeconds: 20,
+		},
+		{
+			id: "sp-2",
+			partLabel: "Part 2",
+			level: "B1",
+			prompt: "Describe a memorable trip.",
+			prepSeconds: 10,
+			answerSeconds: 30,
+		},
+	] as const;
+
+	const originalMediaDevices = navigator.mediaDevices;
+	const originalMediaRecorder = window.MediaRecorder;
+	const originalAudioContext = window.AudioContext;
+	const originalCreateObjectURL = URL.createObjectURL;
+
+	afterEach(() => {
+		cleanup();
+		Object.defineProperty(navigator, "mediaDevices", {
+			configurable: true,
+			value: originalMediaDevices,
+		});
+		window.MediaRecorder = originalMediaRecorder;
+		window.AudioContext = originalAudioContext;
+		URL.createObjectURL = originalCreateObjectURL;
+		vi.restoreAllMocks();
+	});
+
+	it("transitions speaking state machine through paused, up to 2 retries per task, and resets retries on next task", async () => {
+		const {
+			MAX_SPEAKING_RETRIES_PER_TASK,
+			canRetrySpeakingTask,
+			createInitialSpeakingSession,
+			retrySpeakingCurrentTask,
+			startSpeakingTaskReading,
+			transitionSpeakingAfterReading,
+			transitionSpeakingNextTask,
+			transitionSpeakingToPaused,
+		} = await import("@/lib/placement-test-helpers");
+
+		expect(MAX_SPEAKING_RETRIES_PER_TASK).toBe(2);
+
+		let state = createInitialSpeakingSession(SPEAKING_TASKS.length);
+		expect(state.retriesUsedForCurrentTask).toBe(0);
+		expect(canRetrySpeakingTask(state)).toBe(false);
+
+		state = startSpeakingTaskReading(state, 0, SPEAKING_TASKS);
+		expect(state.phase).toBe("reading");
+		expect(state.retriesUsedForCurrentTask).toBe(0);
+
+		state = transitionSpeakingAfterReading(state, SPEAKING_TASKS);
+		expect(state.phase).toBe("prep");
+
+		// Cannot pause or retry before answer
+		expect(transitionSpeakingToPaused(state)).toEqual(state);
+		expect(canRetrySpeakingTask(state)).toBe(false);
+
+		const { transitionSpeakingToAnswer } = await import(
+			"@/lib/placement-test-helpers"
+		);
+		state = transitionSpeakingToAnswer(state, SPEAKING_TASKS);
+		expect(state.phase).toBe("answer");
+		expect(state.secondsLeft).toBe(20);
+
+		state = transitionSpeakingToPaused(state);
+		expect(state.phase).toBe("paused");
+		expect(state.secondsLeft).toBe(0);
+		expect(canRetrySpeakingTask(state)).toBe(true);
+
+		// Retry 1
+		state = retrySpeakingCurrentTask(state, SPEAKING_TASKS);
+		expect(state.phase).toBe("answer");
+		expect(state.secondsLeft).toBe(20);
+		expect(state.retriesUsedForCurrentTask).toBe(1);
+
+		state = transitionSpeakingToPaused(state);
+		expect(canRetrySpeakingTask(state)).toBe(true);
+
+		// Retry 2
+		state = retrySpeakingCurrentTask(state, SPEAKING_TASKS);
+		expect(state.phase).toBe("answer");
+		expect(state.retriesUsedForCurrentTask).toBe(2);
+
+		state = transitionSpeakingToPaused(state);
+		expect(state.phase).toBe("paused");
+		expect(canRetrySpeakingTask(state)).toBe(false);
+
+		// 3rd retry is blocked
+		const blockedState = retrySpeakingCurrentTask(state, SPEAKING_TASKS);
+		expect(blockedState).toEqual(state);
+
+		// Advancing to next task resets retriesUsedForCurrentTask to 0
+		state = transitionSpeakingNextTask(state, SPEAKING_TASKS);
+		expect(state.status).toBe("active");
+		expect(state.taskIndex).toBe(1);
+		expect(state.phase).toBe("reading");
+		expect(state.retriesUsedForCurrentTask).toBe(0);
+
+		// Advancing from last task (answer or paused) completes session
+		state = transitionSpeakingToAnswer(state, SPEAKING_TASKS);
+		state = transitionSpeakingToPaused(state);
+		state = transitionSpeakingNextTask(state, SPEAKING_TASKS);
+		expect(state.status).toBe("completed");
+		expect(state.phase).toBe("done");
+		expect(state.secondsLeft).toBe(0);
+	});
+
+	it("encodePcm16Wav writes valid 16 kHz mono 16-bit PCM WAV header and mergeSpeakingAudioSegments handles AudioContext + fallbacks", async () => {
+		const { encodePcm16Wav, mergeSpeakingAudioSegments } = await import(
+			"@/lib/speaking-audio-merger"
+		);
+
+		const samples = new Float32Array([0, 0.5, -0.5, 1]);
+		const wavBlob = encodePcm16Wav(samples, 16_000);
+		expect(wavBlob.type).toBe("audio/wav");
+		expect(wavBlob.size).toBe(44 + samples.length * 2);
+
+		const wavBuf = await new Promise<ArrayBuffer>((resolve, reject) => {
+			if (typeof wavBlob.arrayBuffer === "function") {
+				wavBlob.arrayBuffer().then(resolve, reject);
+				return;
+			}
+			const reader = new FileReader();
+			reader.onload = () => resolve(reader.result as ArrayBuffer);
+			reader.onerror = () => reject(reader.error);
+			reader.readAsArrayBuffer(wavBlob);
+		});
+		const view = new DataView(wavBuf);
+		const riff = String.fromCharCode(
+			view.getUint8(0),
+			view.getUint8(1),
+			view.getUint8(2),
+			view.getUint8(3),
+		);
+		const wave = String.fromCharCode(
+			view.getUint8(8),
+			view.getUint8(9),
+			view.getUint8(10),
+			view.getUint8(11),
+		);
+		expect(riff).toBe("RIFF");
+		expect(wave).toBe("WAVE");
+		expect(view.getUint16(22, true)).toBe(1); // mono
+		expect(view.getUint32(24, true)).toBe(16_000); // 16 kHz
+		expect(view.getUint16(34, true)).toBe(16); // 16-bit PCM
+		expect(view.getUint32(40, true)).toBe(samples.length * 2);
+
+		// Fallback when AudioContext is unavailable
+		Object.defineProperty(window, "AudioContext", {
+			configurable: true,
+			value: undefined,
+		});
+		const seg1 = {
+			blob: new Blob([new Uint8Array([1, 2, 3])], { type: "audio/webm" }),
+			durationMs: 2_000,
+		};
+		const seg2 = {
+			blob: new Blob([new Uint8Array([4, 5, 6, 7])], { type: "audio/webm" }),
+			durationMs: 3_000,
+		};
+
+		const singleFallback = await mergeSpeakingAudioSegments([seg1]);
+		expect(singleFallback.blob).toBe(seg1.blob);
+		expect(singleFallback.mimeType).toBe("audio/webm");
+		expect(singleFallback.durationSec).toBe(2);
+
+		const multiFallback = await mergeSpeakingAudioSegments([seg1, seg2]);
+		expect(multiFallback.mimeType).toBe("audio/webm");
+		expect(multiFallback.blob.size).toBe(7);
+		expect(multiFallback.durationSec).toBe(5);
+
+		// Mocked AudioContext merges decoded segments into audio/wav
+		class MockAudioContext {
+			async decodeAudioData(_buf: ArrayBuffer) {
+				return {
+					sampleRate: 48_000,
+					numberOfChannels: 1,
+					length: 48_000,
+					getChannelData: () => new Float32Array(48_000).fill(0.25),
+				} as unknown as AudioBuffer;
+			}
+			async close() {}
+		}
+		Object.defineProperty(window, "AudioContext", {
+			configurable: true,
+			value: MockAudioContext,
+		});
+
+		const mergedWav = await mergeSpeakingAudioSegments([seg1, seg2]);
+		expect(mergedWav.mimeType).toBe("audio/wav");
+		expect(mergedWav.durationSec).toBe(2);
+		expect(mergedWav.blob.size).toBe(44 + 32_000 * 2);
+
+		// Fallback when decodeAudioData throws
+		class FailingAudioContext {
+			async decodeAudioData() {
+				throw new Error("decode failed");
+			}
+			async close() {}
+		}
+		Object.defineProperty(window, "AudioContext", {
+			configurable: true,
+			value: FailingAudioContext,
+		});
+		const decodeFallback = await mergeSpeakingAudioSegments([seg1, seg2]);
+		expect(decodeFallback.mimeType).toBe("audio/webm");
+		expect(decodeFallback.blob.size).toBe(7);
+	});
+
+	it("PlacementSpeakingStep omits redundant instructions/retake and supports per-task pause, max 2 retries, and confirmed early finish", async () => {
+		const { PlacementSpeakingStep } = await import(
+			"@/components/placement/placement-speaking-step"
+		);
+
+		const trackStop = vi.fn();
+		const fakeStream = {
+			getTracks: () => [{ stop: trackStop }],
+			getAudioTracks: () => [{ addEventListener: vi.fn(), stop: trackStop }],
+		} as unknown as MediaStream;
+		const getUserMediaMock = vi.fn().mockResolvedValue(fakeStream);
+		Object.defineProperty(navigator, "mediaDevices", {
+			configurable: true,
+			value: { getUserMedia: getUserMediaMock },
+		});
+
+		const recorderInstances: MockMediaRecorder[] = [];
+		class MockMediaRecorder {
+			static isTypeSupported(mime: string) {
+				return mime === "audio/webm";
+			}
+			state: RecordingState = "inactive";
+			mimeType = "audio/webm";
+			private listeners = new Map<string, Set<(evt: unknown) => void>>();
+
+			constructor(_stream: MediaStream, _opts?: MediaRecorderOptions) {
+				recorderInstances.push(this);
+			}
+			addEventListener(type: string, cb: (evt: unknown) => void) {
+				if (!this.listeners.has(type)) this.listeners.set(type, new Set());
+				this.listeners.get(type)?.add(cb);
+			}
+			private emit(type: string, evt: unknown) {
+				for (const cb of this.listeners.get(type) ?? []) cb(evt);
+			}
+			start() {
+				this.state = "recording";
+			}
+			stop() {
+				this.state = "inactive";
+				const attemptIndex = recorderInstances.length;
+				this.emit("dataavailable", {
+					data: new Blob([new Uint8Array([attemptIndex, 2, 3, 4])], {
+						type: "audio/webm",
+					}),
+				});
+				this.emit("stop", {});
+			}
+		}
+
+		Object.defineProperty(window, "MediaRecorder", {
+			configurable: true,
+			value: MockMediaRecorder,
+		});
+		Object.defineProperty(window, "AudioContext", {
+			configurable: true,
+			value: undefined,
+		});
+		URL.createObjectURL = vi.fn(() => "blob:mock-speaking");
+
+		const onRecordedAudioChange = vi.fn();
+		const { container, rerender } = render(
+			<PlacementSpeakingStep
+				tasks={SPEAKING_TASKS}
+				speakingMode="none"
+				recordedAudio={null}
+				onRecordedAudioChange={onRecordedAudioChange}
+				onSkipSpeaking={vi.fn()}
+				onBusyChange={vi.fn()}
+			/>,
+		);
+
+		// Idle view: concise title, no long description, no 3-step <ol>
+		expect(container.textContent).toContain("Phần 5 / 5 · Nói (Speaking)");
+		expect(container.textContent).toContain("Kiểm tra Speaking");
+		expect(container.textContent).not.toContain(
+			"Hệ thống sẽ tự động đọc lần lượt từng câu hỏi",
+		);
+		expect(container.querySelector("ol")).toBeNull();
+		expect(container.textContent).toContain("Số câu hỏi");
+		expect(container.textContent).toContain("Thời lượng ước tính");
+		expect(container.textContent).toContain("Phương thức");
+
+		// Start speaking -> single getUserMedia call
+		fireEvent.click(
+			screen.getByRole("button", { name: /Bắt đầu làm bài Speaking/i }),
+		);
+		await waitFor(() => {
+			expect(
+				screen.getByRole("button", { name: "Chuẩn bị ngay →" }),
+			).toBeTruthy();
+		});
+		expect(getUserMediaMock).toHaveBeenCalledTimes(1);
+
+		// Reading -> Prep: centered countdown & concise buttons without long hint
+		fireEvent.click(screen.getByRole("button", { name: "Chuẩn bị ngay →" }));
+		const prepStage = screen.getByTestId("speaking-prep-stage");
+		expect(prepStage.textContent).toContain("Thời gian chuẩn bị");
+		expect(screen.getByTestId("speaking-prep-timer").textContent).toBe("00:05");
+		expect(container.textContent).not.toContain(
+			"Bạn có thể bấm Nghe lại câu hỏi tối đa 1 lần trước khi trả lời.",
+		);
+
+		// Early finish button in separated footer opens inline confirmation instead of ending immediately
+		const footerBtn = screen.getByRole("button", {
+			name: "Kết thúc phần Speaking",
+		});
+		expect(footerBtn.closest(".border-t")).not.toBeNull();
+		fireEvent.click(footerBtn);
+		expect(screen.getByTestId("speaking-early-finish-confirm")).toBeTruthy();
+		expect(onRecordedAudioChange).not.toHaveBeenCalled();
+
+		// Cancel early finish confirmation
+		fireEvent.click(screen.getByRole("button", { name: "Tiếp tục làm bài" }));
+		expect(screen.queryByTestId("speaking-early-finish-confirm")).toBeNull();
+
+		// Prep -> Answer: centered round red Pause button & live timer
+		fireEvent.click(screen.getByRole("button", { name: /Trả lời ngay/i }));
+		expect(recorderInstances).toHaveLength(1);
+		const pauseBtn = screen.getByRole("button", {
+			name: "Dừng ghi âm câu hiện tại",
+		});
+		expect(pauseBtn.className).toContain("rounded-full");
+		expect(pauseBtn.className).toContain("bg-destructive");
+		expect(screen.getByTestId("speaking-answer-timer").textContent).toBe(
+			"00:20",
+		);
+
+		// Pause -> Paused state with 2 retries remaining
+		fireEvent.click(pauseBtn);
+		await waitFor(() => {
+			expect(screen.getByTestId("speaking-paused-stage")).toBeTruthy();
+		});
+		expect(
+			screen.getByRole("button", { name: "Ghi lại câu này (còn 2/2)" }),
+		).toBeTruthy();
+
+		// Retry 1 -> creates fresh MediaRecorder (#2)
+		fireEvent.click(
+			screen.getByRole("button", { name: "Ghi lại câu này (còn 2/2)" }),
+		);
+		expect(recorderInstances).toHaveLength(2);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Dừng ghi âm câu hiện tại" }),
+		);
+		await waitFor(() => {
+			expect(
+				screen.getByRole("button", { name: "Ghi lại câu này (còn 1/2)" }),
+			).toBeTruthy();
+		});
+
+		// Retry 2 -> creates fresh MediaRecorder (#3), then retry button is exhausted & disabled
+		fireEvent.click(
+			screen.getByRole("button", { name: "Ghi lại câu này (còn 1/2)" }),
+		);
+		expect(recorderInstances).toHaveLength(3);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Dừng ghi âm câu hiện tại" }),
+		);
+		await waitFor(() => {
+			const exhaustedBtn = screen.getByRole("button", {
+				name: "Đã hết lượt ghi lại (0/2)",
+			}) as HTMLButtonElement;
+			expect(exhaustedBtn.disabled).toBe(true);
+		});
+
+		// Advance to Question 2 (retries reset to 2/2) -> answer -> pause -> finish
+		fireEvent.click(screen.getByRole("button", { name: "Câu tiếp theo →" }));
+		fireEvent.click(screen.getByRole("button", { name: "Chuẩn bị ngay →" }));
+		fireEvent.click(screen.getByRole("button", { name: /Trả lời ngay/i }));
+		expect(recorderInstances).toHaveLength(4);
+		fireEvent.click(
+			screen.getByRole("button", { name: "Dừng ghi âm câu hiện tại" }),
+		);
+		await waitFor(() => {
+			expect(
+				screen.getByRole("button", { name: "Ghi lại câu này (còn 2/2)" }),
+			).toBeTruthy();
+		});
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Hoàn thành phần Speaking" }),
+		);
+
+		await waitFor(() => {
+			expect(onRecordedAudioChange).toHaveBeenCalledTimes(1);
+		});
+		const recorded = onRecordedAudioChange.mock.calls[0]?.[0];
+		expect(recorded).toBeTruthy();
+		// Only 2 segments merged (task 1's 3rd attempt + task 2's 1st attempt, 4 bytes each = 8 bytes)
+		expect(recorded.blob.size).toBe(8);
+		expect(getUserMediaMock).toHaveBeenCalledTimes(1);
+
+		// Review view renders without "Ghi lại từ đầu"
+		rerender(
+			<PlacementSpeakingStep
+				tasks={SPEAKING_TASKS}
+				speakingMode="none"
+				recordedAudio={recorded}
+				onRecordedAudioChange={onRecordedAudioChange}
+				onSkipSpeaking={vi.fn()}
+				onBusyChange={vi.fn()}
+			/>,
+		);
+		expect(screen.getByTestId("speaking-review-box")).toBeTruthy();
+		expect(
+			screen.queryByRole("button", { name: /Ghi lại từ đầu/i }),
+		).toBeNull();
+	});
+
+	it("transitions to paused when answer timer hits 0 and merges active recording on confirmed early finish", async () => {
+		vi.useFakeTimers();
+		try {
+			const { PlacementSpeakingStep } = await import(
+				"@/components/placement/placement-speaking-step"
+			);
+
+			const shortTasks = [
+				{
+					id: "sp-short-1",
+					partLabel: "Part 1",
+					level: "A2",
+					prompt: "Short question 1",
+					prepSeconds: 0,
+					answerSeconds: 5,
+				},
+				{
+					id: "sp-short-2",
+					partLabel: "Part 1",
+					level: "A2",
+					prompt: "Short question 2",
+					prepSeconds: 0,
+					answerSeconds: 5,
+				},
+			] as const;
+
+			const fakeStream = {
+				getTracks: () => [{ stop: vi.fn() }],
+				getAudioTracks: () => [{ addEventListener: vi.fn(), stop: vi.fn() }],
+			} as unknown as MediaStream;
+			Object.defineProperty(navigator, "mediaDevices", {
+				configurable: true,
+				value: { getUserMedia: vi.fn().mockResolvedValue(fakeStream) },
+			});
+
+			class MockMediaRecorder {
+				static isTypeSupported(mime: string) {
+					return mime === "audio/webm";
+				}
+				state: RecordingState = "inactive";
+				mimeType = "audio/webm";
+				private listeners = new Map<string, Set<(evt: unknown) => void>>();
+
+				addEventListener(type: string, cb: (evt: unknown) => void) {
+					if (!this.listeners.has(type)) this.listeners.set(type, new Set());
+					this.listeners.get(type)?.add(cb);
+				}
+				private emit(type: string, evt: unknown) {
+					for (const cb of this.listeners.get(type) ?? []) cb(evt);
+				}
+				start() {
+					this.state = "recording";
+				}
+				stop() {
+					this.state = "inactive";
+					this.emit("dataavailable", {
+						data: new Blob([new Uint8Array([9, 8, 7])], { type: "audio/webm" }),
+					});
+					this.emit("stop", {});
+				}
+			}
+
+			Object.defineProperty(window, "MediaRecorder", {
+				configurable: true,
+				value: MockMediaRecorder,
+			});
+			Object.defineProperty(window, "AudioContext", {
+				configurable: true,
+				value: undefined,
+			});
+			URL.createObjectURL = vi.fn(() => "blob:mock-early-finish");
+
+			const onRecordedAudioChange = vi.fn();
+			render(
+				<PlacementSpeakingStep
+					tasks={shortTasks}
+					speakingMode="none"
+					recordedAudio={null}
+					onRecordedAudioChange={onRecordedAudioChange}
+					onSkipSpeaking={vi.fn()}
+					onBusyChange={vi.fn()}
+				/>,
+			);
+
+			fireEvent.click(
+				screen.getByRole("button", { name: /Bắt đầu làm bài Speaking/i }),
+			);
+			await vi.waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: "Chuẩn bị ngay →" }),
+				).toBeTruthy();
+			});
+
+			// prepSeconds is 0 -> reading advances directly to answer
+			fireEvent.click(screen.getByRole("button", { name: "Chuẩn bị ngay →" }));
+			expect(screen.getByTestId("speaking-answer-stage")).toBeTruthy();
+			expect(screen.getByTestId("speaking-answer-timer").textContent).toBe(
+				"00:05",
+			);
+
+			// Advance 5 seconds so answer timer hits 0 -> transitions to paused
+			await vi.advanceTimersByTimeAsync(5_000);
+			await vi.waitFor(() => {
+				expect(screen.getByTestId("speaking-paused-stage")).toBeTruthy();
+			});
+
+			// Advance to task 2, start answer, then confirm early finish while recording
+			fireEvent.click(screen.getByRole("button", { name: "Câu tiếp theo →" }));
+			fireEvent.click(screen.getByRole("button", { name: "Chuẩn bị ngay →" }));
+			expect(screen.getByTestId("speaking-answer-stage")).toBeTruthy();
+
+			fireEvent.click(
+				screen.getByRole("button", { name: "Kết thúc phần Speaking" }),
+			);
+			fireEvent.click(
+				screen.getByRole("button", { name: "Xác nhận kết thúc sớm" }),
+			);
+
+			await vi.waitFor(() => {
+				expect(onRecordedAudioChange).toHaveBeenCalledTimes(1);
+			});
+			const merged = onRecordedAudioChange.mock.calls[0]?.[0];
+			expect(merged.blob.size).toBe(6);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+});
