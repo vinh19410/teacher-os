@@ -1,4 +1,5 @@
 import type { StudentLessonMaterialView } from "@teacher-os/api/material-contracts";
+import { isPreviewableDocumentMime } from "@teacher-os/ui/components/document-preview/inline-document-preview";
 import {
 	Download,
 	ExternalLink,
@@ -71,6 +72,8 @@ function MaterialRow({
 	const size = formatFileSize(material.sizeBytes);
 	const fileUrl = lessonMaterialFileUrl(classId, date, material.id);
 	const downloadUrl = lessonMaterialFileUrl(classId, date, material.id, true);
+	const hasThumbnail =
+		isPreviewableDocumentMime(material.kind, material.mimeType) !== null;
 	return (
 		<li
 			data-testid="lesson-material"
@@ -78,12 +81,20 @@ function MaterialRow({
 			className="flex min-w-0 flex-col gap-2 py-3 first:pt-0 last:pb-0"
 		>
 			<div className="flex flex-wrap items-start gap-3">
-				<span
-					aria-hidden="true"
-					className="grid size-8 flex-none place-items-center rounded-md bg-muted text-muted-foreground"
-				>
-					<KindIcon material={material} />
-				</span>
+				{hasThumbnail ? (
+					<StudentInlineMaterialPreview
+						material={material}
+						classId={classId}
+						date={date}
+					/>
+				) : (
+					<span
+						aria-hidden="true"
+						className="grid size-8 flex-none place-items-center rounded-md bg-muted text-muted-foreground"
+					>
+						<KindIcon material={material} />
+					</span>
+				)}
 				<div className="min-w-0 flex-1">
 					<p className="break-words font-medium text-sm">{material.title}</p>
 					{material.description && (
@@ -97,7 +108,13 @@ function MaterialRow({
 						</p>
 					)}
 				</div>
-				<div className="flex basis-full gap-2 pl-11 sm:flex-none sm:basis-auto sm:pl-0">
+				<div
+					className={
+						hasThumbnail
+							? "flex basis-full gap-2 pl-27 sm:flex-none sm:basis-auto sm:pl-0"
+							: "flex basis-full gap-2 pl-11 sm:flex-none sm:basis-auto sm:pl-0"
+					}
+				>
 					{material.kind === "link" && material.url ? (
 						<a
 							href={material.url}
@@ -132,11 +149,6 @@ function MaterialRow({
 					)}
 				</div>
 			</div>
-			<StudentInlineMaterialPreview
-				material={material}
-				classId={classId}
-				date={date}
-			/>
 			{material.kind === "media" &&
 				(isVideo(material) ? (
 					// biome-ignore lint/a11y/useMediaCaption: tài liệu giáo viên tải lên, không có track phụ đề

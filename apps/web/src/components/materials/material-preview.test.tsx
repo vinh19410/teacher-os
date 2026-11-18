@@ -22,6 +22,18 @@ vi.mock("@/lib/reauth", () => ({ reauth: reauthMock }));
 vi.mock(
 	"@teacher-os/ui/components/document-preview/blob-document-view",
 	() => ({
+		BlobDocumentThumbnail: (props: {
+			blobUrl: string;
+			mimeType: string;
+			label: string;
+		}) => (
+			<div
+				data-testid="blob-document-thumbnail"
+				data-url={props.blobUrl}
+				data-mime={props.mimeType}
+				data-label={props.label}
+			/>
+		),
 		BlobDocumentView: (props: {
 			blobUrl: string;
 			mimeType: string;
@@ -127,13 +139,10 @@ describe("MaterialInlinePreview", () => {
 			<MaterialInlinePreview item={row({ mimeType: "image/png" })} />,
 		);
 
-		const inlineView = await screen.findByTestId("blob-document-view");
-		expect(inlineView.getAttribute("data-url")).toBe("blob:preview-1");
-		expect(inlineView.getAttribute("data-mime")).toBe("image/png");
-		expect(inlineView.getAttribute("data-label")).toBe("Nội dung Đề Reading");
-		expect(inlineView.getAttribute("data-viewport-class")).toContain(
-			"max-h-80",
-		);
+		const inlineThumb = await screen.findByTestId("blob-document-thumbnail");
+		expect(inlineThumb.getAttribute("data-url")).toBe("blob:preview-1");
+		expect(inlineThumb.getAttribute("data-mime")).toBe("image/png");
+		expect(inlineThumb.getAttribute("data-label")).toBe("Nội dung Đề Reading");
 		expect(fetchMock).toHaveBeenCalledTimes(1);
 
 		const [url, init] = fetchMock.mock.calls[0] as unknown as [
@@ -144,7 +153,9 @@ describe("MaterialInlinePreview", () => {
 		expect(init.credentials).toBe("include");
 
 		// Mở rộng sang modal: dùng lại cùng blob URL, không fetch lại và không revoke khi đóng modal.
-		fireEvent.click(screen.getByRole("button", { name: "Mở rộng Đề Reading" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Xem trước Đề Reading" }),
+		);
 		const dialog = await screen.findByRole("dialog", { name: "Đề Reading" });
 		const modalView = await within(dialog).findByTestId("blob-document-view");
 		expect(modalView.getAttribute("data-url")).toBe("blob:preview-1");

@@ -50,6 +50,105 @@ export function BlobDocumentView({
 	);
 }
 
+/**
+ * Thumbnail thu gọn (mặc định 96×72px) không toolbar dùng cho danh sách tài liệu:
+ * PDF render trang đầu bằng pdfjs, ảnh dùng `<img className="object-cover">`.
+ */
+export function BlobDocumentThumbnail({
+	blobUrl,
+	mimeType,
+	label,
+	width = 96,
+	height = 72,
+}: {
+	blobUrl: string;
+	mimeType: string;
+	label: string;
+	width?: number;
+	height?: number;
+}) {
+	return mimeType === PDF_MIME ? (
+		<PdfThumbnailCanvas
+			blobUrl={blobUrl}
+			label={label}
+			width={width}
+			height={height}
+		/>
+	) : (
+		<ImageThumbnail blobUrl={blobUrl} label={label} />
+	);
+}
+
+/** Tải PDFDocumentProxy từ blob URL và hủy an toàn khi unmount / đổi URL. */
+function usePdfDocument(blobUrl: string) {
+	const [doc, setDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
+	const [failed, setFailed] = useState(false);
+
+	useEffect(() => {
+		let cancelled = false;
+		setFailed(false);
+		const task = pdfjsLib.getDocument({
+			url: blobUrl,
+			// Blob URL không hỗ trợ range request theo nghĩa network; tắt
+			// auto-fetch và giới hạn ảnh nhúng tối đa 16 MP chống OOM.
+			disableAutoFetch: true,
+			maxImageSize: MAX_CANVAS_SIDE * MAX_CANVAS_SIDE,
+		});
+		task.promise
+			.then((loaded) => {
+				if (!cancelled) setDoc(loaded);
+			})
+			.catch(() => {
+				if (!cancelled) setFailed(true);
+			});
+		return () => {
+			cancelled = true;
+			void task.destroy();
+			setDoc(null);
+		};
+	}, [blobUrl]);
+
+	return { doc, failed };
+}
+
+/** Render một trang PDF lên canvas với clamp kích thước và giữ sắc nét HiDPI. */
+function renderPdfPageToCanvas(
+	pdfPage: pdfjsLib.PDFPageProxy,
+	canvas: HTMLCanvasElement,
+	scale: number,
+	minDpr: number,
+	onUnexpectedError: () => void,
+) {
+	const viewport = pdfPage.getViewport({ scale });
+	const context = canvas.getContext("2d");
+	if (!context) return null;
+	const rawDpr =
+		typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+	const dpr = Math.max(rawDpr, minDpr);
+	const maxRaw = Math.max(viewport.width * dpr, viewport.height * dpr);
+	const clampFactor = maxRaw > MAX_CANVAS_SIDE ? MAX_CANVAS_SIDE / maxRaw : 1;
+	const effectiveScale = dpr * clampFactor;
+	canvas.width = Math.max(1, Math.floor(viewport.width * effectiveScale));
+	canvas.height = Math.max(1, Math.floor(viewport.height * effectiveScale));
+	canvas.style.width = `${Math.floor(viewport.width)}px`;
+	canvas.style.height = `${Math.floor(viewport.height)}px`;
+	const task = pdfPage.render({
+		canvas,
+		canvasContext: context,
+		viewport,
+		transform:
+			effectiveScale !== 1
+				? [effectiveScale, 0, 0, effectiveScale, 0, 0]
+				: undefined,
+	});
+	task.promise.catch((err: unknown) => {
+		if (!(err instanceof Error && err.name === "RenderingCancelledException")) {
+			onUnexpectedError();
+		}
+	});
+	return task;
+}
+
 /** Thanh điều khiển zoom dùng chung cho PDF và ảnh. */
 function ViewerToolbar({
 	page,
@@ -156,85 +255,37 @@ function PdfCanvas({
 	const [page, setPage] = useState(1);
 	const [totalPages, setTotalPages] = useState(1);
 	const [zoom, setZoom] = useState(100);
-	const [doc, setDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
-	const [failed, setFailed] = useState(false);
+	const { doc, failed: docFailed } = usePdfDocument(blobUrl);
+	const [renderFailed, setRenderFailed] = useState(false);
 
 	useEffect(() => {
-		let cancelled = false;
-		setFailed(false);
+		void blobUrl;
+		setRenderFailed(false);
 		setPage(1);
 		setTotalPages(1);
-		const task = pdfjsLib.getDocument({
-			url: blobUrl,
-			// Blob URL không hỗ trợ range request theo nghĩa network; tắt
-			// auto-fetch và giới hạn ảnh nhúng tối đa 16 MP chống OOM.
-			disableAutoFetch: true,
-			maxImageSize: MAX_CANVAS_SIDE * MAX_CANVAS_SIDE,
-		});
-		task.promise
-			.then((loaded) => {
-				if (cancelled) return;
-				setDoc(loaded);
-			})
-			.catch(() => {
-				if (!cancelled) setFailed(true);
-			});
-		return () => {
-			cancelled = true;
-			void task.destroy();
-			setDoc(null);
-		};
 	}, [blobUrl]);
 
 	useEffect(() => {
 		const canvas = canvasRef.current;
 		if (!doc || !canvas) return;
 		let cancelled = false;
-		let renderTask: { cancel: () => void; promise: Promise<void> } | null =
-			null;
+		let renderTask: { cancel: () => void } | null = null;
 		doc
 			.getPage(page)
 			.then((pdfPage) => {
 				if (cancelled) return;
-				const viewport = pdfPage.getViewport({ scale: zoom / 100 });
-				const context = canvas.getContext("2d");
-				if (!context) return;
-				const dpr =
-					typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
-				const maxRaw = Math.max(viewport.width * dpr, viewport.height * dpr);
-				const clampFactor =
-					maxRaw > MAX_CANVAS_SIDE ? MAX_CANVAS_SIDE / maxRaw : 1;
-				const effectiveScale = dpr * clampFactor;
-				canvas.width = Math.max(1, Math.floor(viewport.width * effectiveScale));
-				canvas.height = Math.max(
-					1,
-					Math.floor(viewport.height * effectiveScale),
-				);
-				canvas.style.width = `${Math.floor(viewport.width)}px`;
-				canvas.style.height = `${Math.floor(viewport.height)}px`;
-				const task = pdfPage.render({
+				renderTask = renderPdfPageToCanvas(
+					pdfPage,
 					canvas,
-					canvasContext: context,
-					viewport,
-					transform:
-						effectiveScale !== 1
-							? [effectiveScale, 0, 0, effectiveScale, 0, 0]
-							: undefined,
-				});
-				renderTask = task;
-				task.promise.catch((err: unknown) => {
-					if (
-						!cancelled &&
-						!(
-							err instanceof Error && err.name === "RenderingCancelledException"
-						)
-					) {
-						setFailed(true);
-					}
-				});
+					zoom / 100,
+					1,
+					() => {
+						if (!cancelled) setRenderFailed(true);
+					},
+				);
 			})
 			.catch(() => {
-				if (!cancelled) setFailed(true);
+				if (!cancelled) setRenderFailed(true);
 			});
 		return () => {
 			cancelled = true;
@@ -246,7 +297,7 @@ function PdfCanvas({
 		if (doc) setTotalPages(doc.numPages);
 	}, [doc]);
 
-	if (failed) {
+	if (docFailed || renderFailed) {
 		return (
 			<p role="alert" className="text-muted-foreground text-sm">
 				Không đọc được nội dung PDF này. Hãy tải xuống để mở bằng ứng dụng khác.
@@ -273,6 +324,114 @@ function PdfCanvas({
 				<canvas ref={canvasRef} className="mx-auto block" aria-label={label} />
 			</div>
 		</div>
+	);
+}
+
+/** PDF thumbnail: chỉ render trang 1 vừa khung cover, không toolbar. */
+function PdfThumbnailCanvas({
+	blobUrl,
+	label,
+	width,
+	height,
+}: {
+	blobUrl: string;
+	label: string;
+	width: number;
+	height: number;
+}) {
+	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const { doc, failed: docFailed } = usePdfDocument(blobUrl);
+	const [renderFailed, setRenderFailed] = useState(false);
+
+	useEffect(() => {
+		void blobUrl;
+		setRenderFailed(false);
+	}, [blobUrl]);
+
+	useEffect(() => {
+		const canvas = canvasRef.current;
+		if (!doc || !canvas) return;
+		let cancelled = false;
+		let renderTask: { cancel: () => void } | null = null;
+		doc
+			.getPage(1)
+			.then((pdfPage) => {
+				if (cancelled) return;
+				const base = pdfPage.getViewport({ scale: 1 });
+				const coverScale = Math.max(
+					width / Math.max(1, base.width),
+					height / Math.max(1, base.height),
+				);
+				renderTask = renderPdfPageToCanvas(
+					pdfPage,
+					canvas,
+					coverScale,
+					2,
+					() => {
+						if (!cancelled) setRenderFailed(true);
+					},
+				);
+			})
+			.catch(() => {
+				if (!cancelled) setRenderFailed(true);
+			});
+		return () => {
+			cancelled = true;
+			renderTask?.cancel();
+		};
+	}, [doc, width, height]);
+
+	if (docFailed || renderFailed) {
+		return (
+			<span
+				role="alert"
+				className="flex size-full items-center justify-center px-1 text-center text-[10px] text-destructive leading-tight"
+			>
+				Lỗi PDF
+			</span>
+		);
+	}
+
+	return (
+		<span className="flex size-full items-start justify-center overflow-hidden bg-background">
+			<canvas ref={canvasRef} className="block shrink-0" aria-label={label} />
+		</span>
+	);
+}
+
+/** Ảnh thumbnail: lấp đầy khung theo tỉ lệ cover, không toolbar. */
+function ImageThumbnail({
+	blobUrl,
+	label,
+}: {
+	blobUrl: string;
+	label: string;
+}) {
+	const [failed, setFailed] = useState(false);
+
+	useEffect(() => {
+		void blobUrl;
+		setFailed(false);
+	}, [blobUrl]);
+
+	if (failed) {
+		return (
+			<span
+				role="alert"
+				className="flex size-full items-center justify-center px-1 text-center text-[10px] text-destructive leading-tight"
+			>
+				Lỗi ảnh
+			</span>
+		);
+	}
+
+	return (
+		<img
+			src={blobUrl}
+			alt={label}
+			onError={() => setFailed(true)}
+			className="size-full object-cover"
+		/>
 	);
 }
 

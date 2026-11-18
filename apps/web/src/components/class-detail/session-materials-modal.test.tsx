@@ -13,6 +13,18 @@ import {
 vi.mock(
 	"@teacher-os/ui/components/document-preview/blob-document-view",
 	() => ({
+		BlobDocumentThumbnail: (props: {
+			blobUrl: string;
+			mimeType: string;
+			label: string;
+		}) => (
+			<div
+				data-testid="blob-document-thumbnail"
+				data-url={props.blobUrl}
+				data-mime={props.mimeType}
+				data-label={props.label}
+			/>
+		),
 		BlobDocumentView: (props: {
 			blobUrl: string;
 			mimeType: string;
@@ -119,13 +131,12 @@ describe("SessionMaterialsModal", () => {
 		expect(
 			within(list).getByRole("button", { name: "Gỡ Handout buổi 1" }),
 		).toBeTruthy();
-		// Inline preview tự hiển thị; nút «Xem trước» cũ không còn.
+		// Thumbnail inline tự hiển thị ở đầu hàng và bấm vào mở modal phóng to.
 		expect(
-			within(list).queryByRole("button", { name: /^Xem trước/ }),
-		).toBeNull();
-		expect(await within(list).findByTestId("blob-document-view")).toBeTruthy();
+			await within(list).findByTestId("blob-document-thumbnail"),
+		).toBeTruthy();
 		expect(
-			within(list).getByRole("button", { name: "Mở rộng Handout buổi 1" }),
+			within(list).getByRole("button", { name: "Xem trước Handout buổi 1" }),
 		).toBeTruthy();
 		expect(
 			within(dialog).queryByRole("list", { name: "Tài liệu từ giáo trình" }),
@@ -162,10 +173,12 @@ describe("SessionMaterialsModal", () => {
 		).toBeTruthy();
 		expect(within(curriculum).getByText("Từ giáo trình")).toBeTruthy();
 		expect(
-			within(curriculum).queryByRole("button", { name: /^Xem trước/ }),
-		).toBeNull();
+			await within(curriculum).findByTestId("blob-document-thumbnail"),
+		).toBeTruthy();
 		expect(
-			await within(curriculum).findByTestId("blob-document-view"),
+			within(curriculum).getByRole("button", {
+				name: "Xem trước Cam 15 Test 1 Passage 1",
+			}),
 		).toBeTruthy();
 		expect(
 			within(curriculum).getByRole("link", {
@@ -286,7 +299,7 @@ describe("SessionMaterialsModal", () => {
 		});
 		fireEvent.click(
 			await within(dialog).findByRole("button", {
-				name: "Mở rộng Handout buổi 1",
+				name: "Xem trước Handout buổi 1",
 			}),
 		);
 		expect(

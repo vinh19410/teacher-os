@@ -183,8 +183,8 @@ function StudentPreviewDialog({
 }
 
 /**
- * Khung xem trước PDF/ảnh inline cho tài liệu buổi học ở portal học viên;
- * hỗ trợ nút «Mở rộng» portal ra `document.body` để thoát `opacity-60`.
+ * Thumbnail xem trước PDF/ảnh ở đầu hàng tài liệu buổi học tại portal học viên;
+ * bấm vào để mở modal portal ra `document.body` (thoát `opacity-60`).
  */
 export function StudentInlineMaterialPreview({
 	material,

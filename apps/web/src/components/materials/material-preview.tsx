@@ -34,8 +34,8 @@ export function materialPreviewMime(item: MaterialRowItem): string | null {
 }
 
 /**
- * Khung xem trước inline ngay trong card tài liệu; tự lazy-load khi cuộn tới
- * và có nút «Mở rộng <tiêu đề>» mở Modal tái sử dụng cùng `blob:` URL.
+ * Thumbnail xem trước inline ở đầu hàng tài liệu; tự lazy-load khi cuộn tới
+ * và bấm vào để mở Modal tái sử dụng cùng `blob:` URL.
  */
 export function MaterialInlinePreview({ item }: { item: MaterialRowItem }) {
 	const mimeType = materialPreviewMime(item);
