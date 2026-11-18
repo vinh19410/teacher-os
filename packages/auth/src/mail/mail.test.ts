@@ -298,15 +298,13 @@ describe("replyTo + fromName (plan TOS-21 D5)", () => {
 	test("composeFrom tách địa chỉ trần từ Display <addr> và lọc ký tự điều khiển (#570)", () => {
 		expect(
 			composeFrom(
-				'"Cô Mỹ Dạy Tiếng Anh" <no-reply@teacheros.io.vn>',
+				'"Cô Mỹ Dạy Tiếng Anh" <no-reply@msmy.io.vn>',
 				"Alpha Academy qua Cô Mỹ Dạy Tiếng Anh",
 			),
-		).toBe(
-			'"Alpha Academy qua Cô Mỹ Dạy Tiếng Anh" <no-reply@teacheros.io.vn>',
+		).toBe('"Alpha Academy qua Cô Mỹ Dạy Tiếng Anh" <no-reply@msmy.io.vn>');
+		expect(composeFrom("no-reply@msmy.io.vn", "Evil\\\r\nBcc: x@y.z")).toBe(
+			'"Evil\\\\Bcc: x@y.z" <no-reply@msmy.io.vn>',
 		);
-		expect(
-			composeFrom("no-reply@teacheros.io.vn", "Evil\\\r\nBcc: x@y.z"),
-		).toBe('"Evil\\\\Bcc: x@y.z" <no-reply@teacheros.io.vn>');
 	});
 
 	test("createResendMailer gắn Idempotency-Key và không treo khi Retry-After > 2s (#570)", async () => {
@@ -327,7 +325,7 @@ describe("replyTo + fromName (plan TOS-21 D5)", () => {
 
 		const mailer = createResendMailer({
 			apiKey: "test-api-key",
-			from: '"Cô Mỹ Dạy Tiếng Anh" <no-reply@teacheros.io.vn>',
+			from: '"Cô Mỹ Dạy Tiếng Anh" <no-reply@msmy.io.vn>',
 		});
 
 		await mailer.send({
@@ -349,7 +347,7 @@ describe("replyTo + fromName (plan TOS-21 D5)", () => {
 		});
 		const firstBody = JSON.parse(String(firstInit.body));
 		expect(firstBody.from).toBe(
-			'"Alpha Academy qua Cô Mỹ Dạy Tiếng Anh" <no-reply@teacheros.io.vn>',
+			'"Alpha Academy qua Cô Mỹ Dạy Tiếng Anh" <no-reply@msmy.io.vn>',
 		);
 		expect(firstBody.subject).toBe("Lời mờiInjected");
 
