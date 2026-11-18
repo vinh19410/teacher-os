@@ -83,12 +83,12 @@ test("Modal 'Tạo syllabus mới' spacing và DOM measurements trên 3 viewport
 		expect(metrics).not.toBeNull();
 		if (!metrics) return;
 
-		// Root font-size là 14px (globals.css:222) -> gap-4 = 1rem = 14px chuẩn
+		// Root font-size là 16px (mặc định trình duyệt) -> gap-4 = 1rem = 16px chuẩn
 		for (const g of metrics.gaps) {
-			expect(g.gap).toBe(14);
+			expect(g.gap).toBe(16);
 		}
-		// Label -> control trong Field: gap-2 = 0.5rem = 7px chuẩn
-		expect(metrics.labelToControl).toBe(7);
+		// Label -> control trong Field: gap-2 = 0.5rem = 8px chuẩn
+		expect(metrics.labelToControl).toBe(8);
 	}
 	// 1. Khi chưa có lỗi/notice: wrapper trạng thái rỗng và bị ẩn hoàn toàn (empty:hidden)
 	const emptyHiddenState = await dialog.evaluate((d) => {
@@ -107,8 +107,8 @@ test("Modal 'Tạo syllabus mới' spacing và DOM measurements trên 3 viewport
 	const alert = dialog.getByRole("alert").first();
 	await expect(alert).toBeVisible();
 
-	// 3. Khi có lỗi: Field error nằm trong Field (gap-2 = 7px dưới input, 14px đến field sau)
-	// Và wrapper lỗi submit (div.empty:hidden) hiện ra cách field trước 14px (gap-4)
+	// 3. Khi có lỗi: Field error nằm trong Field (gap-2 = 8px dưới input, 16px đến field sau)
+	// Và wrapper lỗi submit (div.empty:hidden) hiện ra cách field trước 16px (gap-4)
 	const errorMetrics = await dialog.evaluate((d) => {
 		const firstField = d.querySelector("form")?.firstElementChild;
 		const input = firstField?.querySelector("input");
@@ -146,10 +146,10 @@ test("Modal 'Tạo syllabus mới' spacing và DOM measurements trên 3 viewport
 
 	expect(errorMetrics).not.toBeNull();
 	if (errorMetrics) {
-		expect(errorMetrics.inputToAlert).toBe(7);
-		expect(errorMetrics.alertToNextField).toBe(14);
+		expect(errorMetrics.inputToAlert).toBe(8);
+		expect(errorMetrics.alertToNextField).toBe(16);
 		expect(errorMetrics.wrapperDisplay).toBe("flex");
-		expect(errorMetrics.wrapperGap).toBe(14);
+		expect(errorMetrics.wrapperGap).toBe(16);
 	}
 
 	await dialog.screenshot({
@@ -202,8 +202,8 @@ test("Modal 'Tạo lớp mới' TemplatePicker 'Lớp trống' không bị kho�
 
 		expect(templateGap).not.toBeNull();
 		if (templateGap) {
-			// gap-4 = 1rem = 14px (root font-size 14px)
-			expect(templateGap.gap).toBe(14);
+			// gap-4 = 1rem = 16px (root font-size 16px)
+			expect(templateGap.gap).toBe(16);
 		}
 	}
 
@@ -211,7 +211,7 @@ test("Modal 'Tạo lớp mới' TemplatePicker 'Lớp trống' không bị kho�
 	await expect(dialog).toBeHidden();
 });
 
-test("Modal 'Thêm học viên mới' trên /students nhận đúng gap-4 = 14px từ Modal body wrapper (#716)", async ({
+test("Modal 'Thêm học viên mới' trên /students nhận đúng gap-4 = 16px từ Modal body wrapper (#716)", async ({
 	page,
 }, testInfo) => {
 	await signUpViaApi(page);
@@ -253,10 +253,10 @@ test("Modal 'Thêm học viên mới' trên /students nhận đúng gap-4 = 14px
 
 		expect(metrics).not.toBeNull();
 		if (metrics) {
-			// Modal body wrapper ([&>form]:gap-4) ép form nhận gap-4 = 1rem = 14px (root font-size 14px)
-			expect(metrics.rowGap).toBe("14px");
+			// Modal body wrapper ([&>form]:gap-4) ép form nhận gap-4 = 1rem = 16px (root font-size 16px)
+			expect(metrics.rowGap).toBe("16px");
 			for (const gap of metrics.gaps) {
-				expect(gap).toBe(14);
+				expect(gap).toBe(16);
 			}
 		}
 	}
