@@ -81,7 +81,19 @@ export function AnswersCheckingPanel({
 	const [applyError, setApplyError] = useState<string | null>(null);
 
 	// Compare live từ keyText — mọi phép tính đều pure lib đã test riêng.
-	const cells = useMemo(() => testAnswerCells(slots), [slots]);
+	const cells = useMemo(
+		() =>
+			testAnswerCells(
+				slots.map((slot) => ({
+					...slot,
+					questions: slot.questions.map((question) => ({
+						...question,
+						kind: question.type ? kindOf(question.type) : slot.kind,
+					})),
+				})),
+			),
+		[slots],
+	);
 	const parsed = useMemo(
 		() =>
 			parseTestAnswerKey(

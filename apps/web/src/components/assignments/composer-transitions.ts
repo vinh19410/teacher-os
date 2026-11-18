@@ -302,7 +302,8 @@ export function invalidMcqChoiceIssue(value: ComposerValue): string | null {
 		const kind = answerKindByType[item.type ?? value.type];
 		if (!kind) continue;
 		if (mcqOptionsIssue(kind, item.opts)) {
-			return "Câu trắc nghiệm cần từ 2 đến 4 lựa chọn.";
+			const bounds = kind === "mcq3" ? "2 đến 3" : "2 đến 4";
+			return `Câu trắc nghiệm cần từ ${bounds} lựa chọn.`;
 		}
 		const answer = item.answer.trim();
 		if (!answer) continue;
