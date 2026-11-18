@@ -37,6 +37,8 @@ export interface LeadRouteDeps {
 	mailer?: Mailer;
 	/** #730: origin profile đầu tiên dựng link kết quả tuyệt đối. */
 	leadOrigins?: string[];
+	/** Origin portal học viên cho link chi tiết trong email kết quả. */
+	studentOrigin?: string;
 }
 
 /**
