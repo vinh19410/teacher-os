@@ -1,6 +1,6 @@
 # Plan: Move Placement Test Sidemenu Entry to Post-Submit Notification (#781)
 
-Status: in_progress
+Status: completed
 Issue: #781 (https://github.com/vinh19410/teacher-os/issues/781)
 Target branch: `develop` (`--merge --beta`)
 
