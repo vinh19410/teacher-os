@@ -37,7 +37,7 @@ describe("renderPlacementResultEmail", () => {
 		expect(html).toContain("Communication English Level 2");
 		expect(html).toContain(">72%<");
 		expect(html).toContain("3/4 (75%)");
-		expect(html).toContain("Từ vựng &amp; Ngữ pháp");
+		expect(html).toContain("Grammar &amp; Vocabulary");
 		expect(html).toContain("7/10 (70%)");
 		expect(html).toContain("5/8 (63%)");
 		expect(html).toContain("11/15 điểm");
@@ -90,7 +90,7 @@ describe("renderPlacementResultEmail", () => {
 			"Khóa học đề xuất: Communication English Level 2",
 			"Điểm tổng hợp: 72%",
 			"- Listening: 3/4 (75%)",
-			"- Từ vựng & Ngữ pháp: 7/10 (70%)",
+			"- Grammar & Vocabulary: 7/10 (70%)",
 			"- Reading: 5/8 (63%)",
 			"- Writing: 11/15 điểm",
 			"- Speaking: 12/20 điểm",
