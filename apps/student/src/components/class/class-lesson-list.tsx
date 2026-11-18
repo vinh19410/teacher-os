@@ -150,7 +150,7 @@ export function ClassLessonList({
 							key={lesson.id}
 							aria-current={isNext ? "true" : undefined}
 							className={cn(
-								"relative grid grid-cols-[2rem_1fr] gap-4 pb-5 last:pb-0",
+								"relative grid grid-cols-[2rem_minmax(0,1fr)] gap-4 pb-5 last:pb-0",
 								future && "opacity-60",
 							)}
 						>
@@ -185,7 +185,7 @@ export function ClassLessonList({
 							</span>
 							<div
 								className={cn(
-									"flex flex-wrap items-start justify-between gap-x-4 gap-y-1 pt-1",
+									"flex min-w-0 flex-wrap items-start justify-between gap-x-4 gap-y-1 pt-1",
 									isNext && "-mt-1 rounded-lg border bg-muted/40 p-3",
 								)}
 							>

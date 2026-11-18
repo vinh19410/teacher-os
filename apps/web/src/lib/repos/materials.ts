@@ -27,6 +27,7 @@ import {
 	type SyllabusBankMaterialRef,
 } from "@teacher-os/api/material-contracts";
 import { canWriteMaterials } from "@teacher-os/auth/role";
+import { isPreviewableContentType } from "@teacher-os/ui/components/document-preview/inline-document-preview";
 import { useCallback, useSyncExternalStore } from "react";
 import { HttpError } from "@/lib/kernel-load-state";
 import { getApiBaseUrl } from "./api-base-url";
@@ -207,6 +208,9 @@ export function materialErrorMessage(error: unknown): string {
 	// Phủ phản hồi 413 có CORS nhưng không kèm JSON FILE_TOO_LARGE (trần 95 MiB
 	// ở prepareMaterialUpload đã chặn trước nhánh 413 thiếu CORS của Cloudflare edge).
 	if (error.status === 413) return "File quá lớn so với giới hạn cho phép.";
+	if (error.status === 415) return "Định dạng tài liệu không hỗ trợ xem trước.";
+	if (error.status === 401)
+		return "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
 	if (error.status === 403) return "Bạn không có quyền thực hiện thao tác này.";
 	if (error.status === 400)
 		return "Dữ liệu không hợp lệ. Kiểm tra lại rồi thử lại.";
@@ -418,6 +422,10 @@ export async function fetchMaterialFileBlobUrl(
 		{ credentials: "include", signal },
 	);
 	if (!res.ok) throw await toMaterialError(res);
+	if (!isPreviewableContentType(res.headers.get("content-type"))) {
+		void res.body?.cancel().catch(() => {});
+		throw new MaterialRequestError(415, null);
+	}
 	return URL.createObjectURL(await res.blob());
 }
 

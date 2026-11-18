@@ -11,25 +11,33 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MaterialRowItem } from "@/components/materials/material-item";
 import {
-	MaterialPreviewButton,
+	MaterialInlinePreview,
 	materialPreviewMime,
 } from "@/components/materials/material-preview";
 
-// pdfjs-dist không chạy trong jsdom — viewer thật được kiểm ở màn import đề.
-vi.mock("@/components/document-preview/blob-document-view", () => ({
-	BlobDocumentView: (props: {
-		blobUrl: string;
-		mimeType: string;
-		label: string;
-	}) => (
-		<div
-			data-testid="blob-document-view"
-			data-url={props.blobUrl}
-			data-mime={props.mimeType}
-			data-label={props.label}
-		/>
-	),
-}));
+const reauthMock = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/reauth", () => ({ reauth: reauthMock }));
+
+// pdfjs-dist không chạy trong jsdom — viewer thật được kiểm ở màn import đề và E2E.
+vi.mock(
+	"@teacher-os/ui/components/document-preview/blob-document-view",
+	() => ({
+		BlobDocumentView: (props: {
+			blobUrl: string;
+			mimeType: string;
+			label: string;
+			viewportClassName?: string;
+		}) => (
+			<div
+				data-testid="blob-document-view"
+				data-url={props.blobUrl}
+				data-mime={props.mimeType}
+				data-label={props.label}
+				data-viewport-class={props.viewportClassName ?? ""}
+			/>
+		),
+	}),
+);
 
 function row(overrides: Partial<MaterialRowItem> = {}): MaterialRowItem {
 	return {
@@ -49,9 +57,9 @@ const createObjectURL = vi.fn(() => "blob:preview-1");
 const revokeObjectURL = vi.fn();
 
 beforeEach(() => {
-	// jsdom không có object URL — gắn spy trực tiếp lên URL toàn cục.
 	URL.createObjectURL = createObjectURL;
 	URL.revokeObjectURL = revokeObjectURL;
+	reauthMock.mockReset();
 });
 
 afterEach(() => {
@@ -93,10 +101,10 @@ describe("materialPreviewMime", () => {
 	});
 });
 
-describe("MaterialPreviewButton", () => {
+describe("MaterialInlinePreview", () => {
 	it("renders nothing for a format that cannot be previewed", () => {
 		const { container } = render(
-			<MaterialPreviewButton
+			<MaterialInlinePreview
 				item={row({
 					mimeType:
 						"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -106,24 +114,27 @@ describe("MaterialPreviewButton", () => {
 		expect(container.innerHTML).toBe("");
 	});
 
-	it("loads the file as a blob with credentials and shows it in a dialog", async () => {
+	it("loads the file inline as a blob with credentials and reuses it in the expand modal without re-fetching", async () => {
 		const fetchMock = vi.fn(
 			async () =>
 				new Response(new Blob(["png"], { type: "image/png" }), {
 					status: 200,
+					headers: { "content-type": "image/png" },
 				}),
 		);
 		vi.stubGlobal("fetch", fetchMock);
-		render(<MaterialPreviewButton item={row({ mimeType: "image/png" })} />);
-
-		fireEvent.click(
-			screen.getByRole("button", { name: "Xem trước Đề Reading" }),
+		const { unmount } = render(
+			<MaterialInlinePreview item={row({ mimeType: "image/png" })} />,
 		);
-		const dialog = await screen.findByRole("dialog", { name: "Đề Reading" });
-		const view = await within(dialog).findByTestId("blob-document-view");
-		expect(view.getAttribute("data-url")).toBe("blob:preview-1");
-		expect(view.getAttribute("data-mime")).toBe("image/png");
-		expect(view.getAttribute("data-label")).toBe("Nội dung Đề Reading");
+
+		const inlineView = await screen.findByTestId("blob-document-view");
+		expect(inlineView.getAttribute("data-url")).toBe("blob:preview-1");
+		expect(inlineView.getAttribute("data-mime")).toBe("image/png");
+		expect(inlineView.getAttribute("data-label")).toBe("Nội dung Đề Reading");
+		expect(inlineView.getAttribute("data-viewport-class")).toContain(
+			"max-h-80",
+		);
+		expect(fetchMock).toHaveBeenCalledTimes(1);
 
 		const [url, init] = fetchMock.mock.calls[0] as unknown as [
 			string,
@@ -131,6 +142,13 @@ describe("MaterialPreviewButton", () => {
 		];
 		expect(url).toMatch(/\/api\/materials\/mat-1\/file$/);
 		expect(init.credentials).toBe("include");
+
+		// Mở rộng sang modal: dùng lại cùng blob URL, không fetch lại và không revoke khi đóng modal.
+		fireEvent.click(screen.getByRole("button", { name: "Mở rộng Đề Reading" }));
+		const dialog = await screen.findByRole("dialog", { name: "Đề Reading" });
+		const modalView = await within(dialog).findByTestId("blob-document-view");
+		expect(modalView.getAttribute("data-url")).toBe("blob:preview-1");
+		expect(fetchMock).toHaveBeenCalledTimes(1);
 		expect(
 			within(dialog)
 				.getByRole("link", { name: "Tải xuống Đề Reading" })
@@ -139,10 +157,34 @@ describe("MaterialPreviewButton", () => {
 
 		fireEvent.click(within(dialog).getAllByRole("button", { name: "Đóng" })[0]);
 		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		expect(revokeObjectURL).not.toHaveBeenCalled();
+
+		unmount();
 		expect(revokeObjectURL).toHaveBeenCalledWith("blob:preview-1");
 	});
 
-	it("shows an error with the download link when the file cannot be loaded", async () => {
+	it("rejects unexpected Content-Type responses such as text/html without creating a blob URL", async () => {
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(
+				async () =>
+					new Response("<html>bad</html>", {
+						status: 200,
+						headers: { "content-type": "text/html; charset=utf-8" },
+					}),
+			),
+		);
+		render(<MaterialInlinePreview item={row()} />);
+
+		const alert = await screen.findByRole("alert");
+		expect(alert.textContent).toContain("Không xem trước được tài liệu này.");
+		expect(alert.textContent).toContain(
+			"Định dạng tài liệu không hỗ trợ xem trước.",
+		);
+		expect(createObjectURL).not.toHaveBeenCalled();
+	});
+
+	it("shows an error alert when the file cannot be loaded and triggers reauth on 401", async () => {
 		vi.stubGlobal(
 			"fetch",
 			vi.fn(
@@ -153,23 +195,24 @@ describe("MaterialPreviewButton", () => {
 					}),
 			),
 		);
-		render(<MaterialPreviewButton item={row()} />);
+		const { unmount } = render(<MaterialInlinePreview item={row()} />);
 
-		fireEvent.click(
-			screen.getByRole("button", { name: "Xem trước Đề Reading" }),
-		);
-		const dialog = await screen.findByRole("dialog", { name: "Đề Reading" });
-		const alert = await within(dialog).findByRole("alert");
+		const alert = await screen.findByRole("alert");
 		expect(alert.textContent).toContain("Không xem trước được tài liệu này.");
 		expect(alert.textContent).toContain("Tài liệu không còn tồn tại");
-		expect(within(dialog).queryByTestId("blob-document-view")).toBeNull();
-		expect(
-			within(dialog).getByRole("link", { name: "Tải xuống Đề Reading" }),
-		).toBeTruthy();
+		expect(screen.queryByTestId("blob-document-view")).toBeNull();
 		expect(createObjectURL).not.toHaveBeenCalled();
+		unmount();
+
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () => new Response("Unauthorized", { status: 401 })),
+		);
+		render(<MaterialInlinePreview item={row({ id: "mat-401" })} />);
+		await waitFor(() => expect(reauthMock).toHaveBeenCalledTimes(1));
 	});
 
-	it("revokes a blob that arrives after the dialog was closed mid-load", async () => {
+	it("revokes a blob that arrives after unmount mid-load", async () => {
 		let resolveFetch: (res: Response) => void = () => {};
 		vi.stubGlobal(
 			"fetch",
@@ -180,21 +223,18 @@ describe("MaterialPreviewButton", () => {
 					}),
 			),
 		);
-		render(<MaterialPreviewButton item={row()} />);
+		const { unmount } = render(<MaterialInlinePreview item={row()} />);
 
-		fireEvent.click(
-			screen.getByRole("button", { name: "Xem trước Đề Reading" }),
-		);
-		const dialog = await screen.findByRole("dialog", { name: "Đề Reading" });
-		expect(within(dialog).getByRole("status").textContent).toBe(
+		expect(screen.getByRole("status").textContent).toBe(
 			"Đang tải bản xem trước…",
 		);
-		fireEvent.click(within(dialog).getAllByRole("button", { name: "Đóng" })[0]);
-		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+		unmount();
 
 		resolveFetch(
 			new Response(new Blob(["%PDF"], { type: "application/pdf" }), {
 				status: 200,
+				headers: { "content-type": "application/pdf" },
 			}),
 		);
 		await waitFor(() =>

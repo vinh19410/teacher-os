@@ -11,7 +11,6 @@ import {
 	PlayCircle,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { MaterialPreviewButton } from "@/components/materials/material-preview";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { formatBytes, materialFileUrl } from "@/lib/repos/materials";
@@ -83,7 +82,6 @@ export function MaterialOpenActions({ item }: { item: MaterialRowItem }) {
 	}
 	return (
 		<>
-			<MaterialPreviewButton item={item} />
 			{item.kind === "media" && (
 				<a
 					href={materialFileUrl(item.id)}
@@ -113,12 +111,15 @@ export function MaterialItem({
 	item,
 	detail,
 	actions,
+	preview,
 	className,
 }: {
 	item: MaterialRowItem;
 	/** Dòng phụ thêm (thư mục, số buổi dùng…). */
 	detail?: ReactNode;
 	actions?: ReactNode;
+	/** Khung xem trước inline (chỉ truyền khi định dạng hỗ trợ xem trước). */
+	preview?: ReactNode;
 	className?: string;
 }) {
 	const Icon = KIND_ICONS[item.kind];
@@ -126,7 +127,7 @@ export function MaterialItem({
 		<li
 			data-testid="material-item"
 			className={cn(
-				"flex flex-wrap items-start gap-3 rounded-lg border bg-card p-3",
+				"flex min-w-0 flex-wrap items-start gap-3 rounded-lg border bg-card p-3",
 				className,
 			)}
 		>
@@ -153,6 +154,7 @@ export function MaterialItem({
 					{actions}
 				</div>
 			)}
+			{preview && <div className="w-full min-w-0 basis-full">{preview}</div>}
 		</li>
 	);
 }

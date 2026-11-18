@@ -50,4 +50,23 @@ describe("SPA deep links (#489)", () => {
 		const res = await get("/assets/app.js");
 		expect(await res.text()).toBe("js");
 	});
+
+	test("sets Content-Security-Policy with blob: and worker-src on non-localhost", async () => {
+		const res = await get("/some/deep/route");
+		const csp = res.headers.get("Content-Security-Policy") ?? "";
+		expect(csp).toContain("script-src 'self'");
+		expect(csp).toContain("worker-src 'self'");
+		expect(csp).toContain("object-src 'none'");
+		expect(csp).toContain("blob:");
+	});
+
+	test("omits Content-Security-Policy on localhost for Vite dev HMR", async () => {
+		const res = await worker.fetch(
+			new Request("http://localhost:8003/some/deep/route", {
+				headers: { accept: "text/html" },
+			}),
+			{ ASSETS },
+		);
+		expect(res.headers.get("Content-Security-Policy")).toBeNull();
+	});
 });

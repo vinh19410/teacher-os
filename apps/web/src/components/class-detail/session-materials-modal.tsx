@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Library, Unlink, Upload } from "lucide-react";
+import { ArrowLeft, Download, Library, Unlink, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { UPLOAD_HELP } from "@/components/materials/material-dialogs";
@@ -8,9 +8,12 @@ import {
 	MaterialOpenActions,
 } from "@/components/materials/material-item";
 import { MaterialBankBrowser } from "@/components/materials/material-picker";
-import { MaterialPreviewButton } from "@/components/materials/material-preview";
+import {
+	MaterialInlinePreview,
+	materialPreviewMime,
+} from "@/components/materials/material-preview";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { isHttpError } from "@/lib/kernel-load-state";
 import { reauth } from "@/lib/reauth";
@@ -19,6 +22,7 @@ import {
 	detachSessionMaterial,
 	fetchSessionMaterials,
 	materialErrorMessage,
+	materialFileUrl,
 	materialsAllQueryKey,
 	prepareMaterialUpload,
 	sessionMaterialsQueryKey,
@@ -232,6 +236,11 @@ export function SessionMaterialsModal({
 										<MaterialItem
 											key={item.id}
 											item={item}
+											preview={
+												materialPreviewMime(item) ? (
+													<MaterialInlinePreview item={item} />
+												) : undefined
+											}
 											actions={
 												<>
 													<MaterialOpenActions item={item} />
@@ -267,9 +276,24 @@ export function SessionMaterialsModal({
 											<MaterialItem
 												key={item.id}
 												item={item}
+												preview={
+													materialPreviewMime(item) ? (
+														<MaterialInlinePreview item={item} />
+													) : undefined
+												}
 												actions={
 													<>
-														<MaterialPreviewButton item={item} />
+														<a
+															href={materialFileUrl(item.id, true)}
+															className={buttonVariants({
+																variant: "ghost",
+																size: "sm",
+															})}
+															aria-label={`Tải xuống ${item.title}`}
+														>
+															<Download aria-hidden="true" />
+															<span className="max-sm:sr-only">Tải xuống</span>
+														</a>
 														<Badge variant="secondary">Từ giáo trình</Badge>
 													</>
 												}
