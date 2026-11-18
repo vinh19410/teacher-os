@@ -1,5 +1,6 @@
 import type { KernelVocabDeckRow } from "@teacher-os/api/contracts";
-import { useMemo, useState } from "react";
+import { formatVocabLessonDeckTitle } from "@teacher-os/api/lib/vocab-csv";
+import { useId, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -7,9 +8,28 @@ import { Input } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { SectionLabel } from "@/components/ui/section-label";
 import { useData } from "@/lib/data-store";
+import { VocabCsvImportDialog } from "./vocab-csv-import-dialog";
 import { VocabDeckEditorDialog } from "./vocab-deck-editor";
 import { VocabLibraryDialog } from "./vocab-library-dialog";
 import { VocabSuggestDialog } from "./vocab-suggest-dialog";
+
+function formatDeckLessonMeta(
+	lessonNumber: number | null | undefined,
+	topic: string | null | undefined,
+): string | null {
+	const cleanTopic = topic?.trim() ?? "";
+	const hasLesson =
+		typeof lessonNumber === "number" &&
+		Number.isInteger(lessonNumber) &&
+		lessonNumber >= 1;
+	if (hasLesson && cleanTopic) {
+		return `Buổi ${String(lessonNumber).padStart(2, "0")} · ${cleanTopic}`;
+	}
+	if (hasLesson) {
+		return `Buổi ${String(lessonNumber).padStart(2, "0")}`;
+	}
+	return cleanTopic || null;
+}
 
 function DeckListRow({
 	deck,
@@ -26,6 +46,7 @@ function DeckListRow({
 	onEdit: (deckId: string) => void;
 	onDelete: (deck: { id: string; title: string }) => void;
 }) {
+	const lessonMeta = formatDeckLessonMeta(deck.lessonNumber, deck.topic);
 	return (
 		<div
 			data-testid={`vocab-deck-row-${deck.id}`}
@@ -56,6 +77,14 @@ function DeckListRow({
 							className="rounded rounded-md border border-input bg-transparent px-1.5 py-0.5 font-mono text-[10px] text-primary uppercase tracking-widest"
 						>
 							{pendingCount} chờ
+						</span>
+					) : null}
+					{lessonMeta ? (
+						<span
+							data-testid={`vocab-deck-lesson-meta-${deck.id}`}
+							className="rounded-md bg-muted px-1.5 py-0.5 text-muted-foreground text-xs"
+						>
+							{lessonMeta}
 						</span>
 					) : null}
 				</div>
@@ -132,8 +161,14 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 
 	const [createOpen, setCreateOpen] = useState(false);
 	const [libraryOpen, setLibraryOpen] = useState(false);
+	const [csvImportOpen, setCsvImportOpen] = useState(false);
 	const [newTitle, setNewTitle] = useState("");
+	const [newLessonNumber, setNewLessonNumber] = useState("");
+	const [newTopic, setNewTopic] = useState("");
 	const [createSaving, setCreateSaving] = useState(false);
+	const lessonInputId = useId();
+	const topicInputId = useId();
+	const titleInputId = useId();
 	const [editingDeckId, setEditingDeckId] = useState<string | null>(null);
 	const [suggestingDeck, setSuggestingDeck] = useState<{
 		id: string;
@@ -143,18 +178,47 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 		id: string;
 		title: string;
 	} | null>(null);
+
+	const trimmedLesson = newLessonNumber.trim();
+	const parsedLesson = useMemo(() => {
+		if (trimmedLesson.length === 0) return null;
+		if (!/^\d+$/.test(trimmedLesson)) return Number.NaN;
+		const num = Number.parseInt(trimmedLesson, 10);
+		return num >= 1 && num <= 9999 ? num : Number.NaN;
+	}, [trimmedLesson]);
+	const lessonInvalid = parsedLesson !== null && Number.isNaN(parsedLesson);
+	const validLesson =
+		parsedLesson !== null && !Number.isNaN(parsedLesson) ? parsedLesson : null;
+	const cleanTopic = newTopic.trim();
+	const suggestedTitle = formatVocabLessonDeckTitle(validLesson, cleanTopic);
+	const effectiveTitle = newTitle.trim() || suggestedTitle;
+
+	const resetCreateForm = () => {
+		setNewTitle("");
+		setNewLessonNumber("");
+		setNewTopic("");
+	};
+
+	const closeCreateModal = () => {
+		setCreateOpen(false);
+		resetCreateForm();
+	};
+
 	const handleCreate = async () => {
-		const title = newTitle.trim();
-		if (title.length === 0 || createSaving) return;
+		if (effectiveTitle.length === 0 || lessonInvalid || createSaving) return;
 		setCreateSaving(true);
 		try {
 			const result = await dispatch({
 				type: "create-vocab-deck",
-				payload: { classId: targetClassId, title },
+				payload: {
+					classId: targetClassId,
+					title: effectiveTitle,
+					...(validLesson !== null ? { lessonNumber: validLesson } : {}),
+					...(cleanTopic.length > 0 ? { topic: cleanTopic } : {}),
+				},
 			});
 			if (result.kind !== "refreshed") return;
-			setNewTitle("");
-			setCreateOpen(false);
+			closeCreateModal();
 		} finally {
 			setCreateSaving(false);
 		}
@@ -177,6 +241,14 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 			<div className="flex flex-wrap items-center justify-between gap-3">
 				<SectionLabel>Từ vựng SRS</SectionLabel>
 				<div className="flex flex-wrap items-center gap-2">
+					<Button
+						size="sm"
+						variant="secondary"
+						data-testid="vocab-import-csv-btn"
+						onClick={() => setCsvImportOpen(true)}
+					>
+						Import CSV
+					</Button>
 					<Button
 						size="sm"
 						variant="secondary"
@@ -221,13 +293,13 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 
 			<Modal
 				open={createOpen}
-				onClose={() => setCreateOpen(false)}
+				onClose={closeCreateModal}
 				title="Tạo bộ từ vựng mới"
 				footer={
 					<>
 						<Button
 							variant="secondary"
-							onClick={() => setCreateOpen(false)}
+							onClick={closeCreateModal}
 							type="button"
 						>
 							Hủy
@@ -235,7 +307,9 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 						<Button
 							type="button"
 							data-testid="vocab-create-deck-submit"
-							disabled={newTitle.trim().length === 0 || createSaving}
+							disabled={
+								effectiveTitle.length === 0 || lessonInvalid || createSaving
+							}
 							onClick={() => void handleCreate()}
 						>
 							{createSaving ? "Đang tạo..." : "Tạo bộ từ"}
@@ -248,12 +322,62 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 						? "Bộ từ vựng độc lập thuộc trung tâm — bạn có thể gợi ý cho từng học viên bất kỳ lúc nào."
 						: "Học sinh trong lớp sẽ thấy bộ từ này trên cổng học viên."}
 				</p>
-				<Input
-					value={newTitle}
-					onChange={(e) => setNewTitle(e.target.value)}
-					placeholder="Ví dụ: Topic 1: Environment"
-					aria-label="Tiêu đề bộ từ"
-				/>
+				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+					<div className="flex flex-col gap-1.5">
+						<label
+							htmlFor={lessonInputId}
+							className="font-medium text-foreground text-sm leading-none"
+						>
+							Buổi học (Lesson)
+						</label>
+						<Input
+							id={lessonInputId}
+							type="number"
+							min={1}
+							max={9999}
+							value={newLessonNumber}
+							onChange={(e) => setNewLessonNumber(e.target.value)}
+							placeholder="Ví dụ: 1"
+							aria-label="Số buổi học"
+							aria-invalid={lessonInvalid || undefined}
+						/>
+						{lessonInvalid ? (
+							<span className="text-destructive text-xs">
+								Số buổi học phải là số nguyên từ 1 đến 9999.
+							</span>
+						) : null}
+					</div>
+					<div className="flex flex-col gap-1.5">
+						<label
+							htmlFor={topicInputId}
+							className="font-medium text-foreground text-sm leading-none"
+						>
+							Chủ đề (Topic)
+						</label>
+						<Input
+							id={topicInputId}
+							value={newTopic}
+							onChange={(e) => setNewTopic(e.target.value)}
+							placeholder="Ví dụ: Friends & Introductions"
+							aria-label="Chủ đề"
+						/>
+					</div>
+				</div>
+				<div className="flex flex-col gap-1.5">
+					<label
+						htmlFor={titleInputId}
+						className="font-medium text-foreground text-sm leading-none"
+					>
+						Tiêu đề bộ từ
+					</label>
+					<Input
+						id={titleInputId}
+						value={newTitle}
+						onChange={(e) => setNewTitle(e.target.value)}
+						placeholder={suggestedTitle || "Ví dụ: Topic 1: Environment"}
+						aria-label="Tiêu đề bộ từ"
+					/>
+				</div>
 			</Modal>
 
 			<Modal
@@ -289,6 +413,9 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 			{editingDeckId ? (
 				<VocabDeckEditorDialog
 					deckId={editingDeckId}
+					deckTitle={
+						decks.find((deck) => deck.id === editingDeckId)?.title ?? undefined
+					}
 					onClose={() => setEditingDeckId(null)}
 				/>
 			) : null}
@@ -303,6 +430,12 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 				open={libraryOpen}
 				classId={targetClassId}
 				onClose={() => setLibraryOpen(false)}
+			/>
+			<VocabCsvImportDialog
+				open={csvImportOpen}
+				mode="create-decks"
+				classId={targetClassId}
+				onClose={() => setCsvImportOpen(false)}
 			/>
 		</Card>
 	);
