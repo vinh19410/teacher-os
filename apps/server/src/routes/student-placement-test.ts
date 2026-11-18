@@ -16,8 +16,8 @@ import {
 	PLACEMENT_UPLOAD_TOKEN_TTL_MS,
 	type PlacementObjectiveResult,
 	type PlacementSnapshot,
-	type PlacementSpeakingRubric,
-	type PlacementWritingRubric,
+	parseStoredSpeakingRubric,
+	parseStoredWritingRubric,
 	type StudentPlacementStatus,
 	type StudentPlacementStatusResponse,
 	type StudentPlacementSubmissionView,
@@ -214,21 +214,18 @@ function toStudentPlacementSubmissionView(
 		writingText: sub.writingText,
 		writingWordCount: sub.writingWordCount,
 		writingRubric: isGraded
-			? parseJsonOr<PlacementWritingRubric | null>(sub.writingRubricJson, null)
+			? parseStoredWritingRubric(sub.writingRubricJson)
 			: null,
-		writingScore: isGraded ? sub.writingScore : null,
+		writingScore: isGraded ? (sub.writingBand ?? sub.writingScore) : null,
 		writingErrors: isGraded
 			? (parseStoredErrors(sub.writingErrorsJson, sub.writingText) ?? [])
 			: [],
 		speakingStatus: sub.speakingStatus,
 		speakingTranscript: isGraded ? sub.speakingTranscript : "",
 		speakingRubric: isGraded
-			? parseJsonOr<PlacementSpeakingRubric | null>(
-					sub.speakingRubricJson,
-					null,
-				)
+			? parseStoredSpeakingRubric(sub.speakingRubricJson)
 			: null,
-		speakingScore: isGraded ? sub.speakingScore : null,
+		speakingScore: isGraded ? (sub.speakingBand ?? sub.speakingScore) : null,
 		speakingErrors: isGraded
 			? (parseStoredErrors(sub.speakingErrorsJson, sub.speakingTranscript) ??
 				[])

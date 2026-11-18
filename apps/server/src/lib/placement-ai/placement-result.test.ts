@@ -1,6 +1,8 @@
 import { describe, expect, test } from "vitest";
 import {
 	type PlacementResultEmailSummary,
+	parseAiSpeakingDraft,
+	parseAiWritingDraft,
 	renderPlacementResultEmail,
 } from "./placement-result";
 
@@ -16,14 +18,14 @@ function summary(
 		listening: { correct: 3, total: 4, pct: 75 },
 		vocabGrammar: { correct: 7, total: 10, pct: 70 },
 		reading: { correct: 5, total: 8, pct: 62.5 },
-		writingScore: 11,
-		speakingScore: 12,
+		writingScore: 6.5,
+		speakingScore: 7,
 		...overrides,
 	};
 }
 
 describe("renderPlacementResultEmail", () => {
-	test("HTML có lời chào, CEFR, khóa học, điểm tổng hợp và đủ các dòng kỹ năng", () => {
+	test("HTML có lời chào, CEFR, khóa học, điểm tổng hợp và đủ các dòng kỹ năng (mặc định IELTS)", () => {
 		const { subject, html } = renderPlacementResultEmail({
 			studentName: "Học viên A",
 			summary: summary(),
@@ -40,13 +42,30 @@ describe("renderPlacementResultEmail", () => {
 		expect(html).toContain("Grammar &amp; Vocabulary");
 		expect(html).toContain("7/10 (70%)");
 		expect(html).toContain("5/8 (63%)");
-		expect(html).toContain("11/15 điểm");
+		expect(html).toContain("Band 6.5/9");
 		expect(html).toContain(">Speaking<");
-		expect(html).toContain("12/20 điểm");
+		expect(html).toContain("Band 7.0/9");
 		expect(html).toContain(`href="${LINK}"`);
 		expect(html).toContain("Xem chi tiết kết quả");
 		// Không tài nguyên ngoài.
 		expect(html).not.toMatch(/<img|<link|<style|@import/i);
+	});
+
+	test("thang legacy giữ định dạng /15 điểm và /20 điểm", () => {
+		const { html, text } = renderPlacementResultEmail({
+			studentName: "Học viên B",
+			summary: summary({
+				writingScore: 11,
+				speakingScore: 12,
+				writingScale: "legacy",
+				speakingScale: "legacy",
+			}),
+			linkUrl: LINK,
+		});
+		expect(html).toContain("11/15 điểm");
+		expect(html).toContain("12/20 điểm");
+		expect(text).toContain("- Writing: 11/15 điểm");
+		expect(text).toContain("- Speaking: 12/20 điểm");
 	});
 
 	test("không có điểm Speaking → bỏ dòng Speaking", () => {
@@ -92,8 +111,8 @@ describe("renderPlacementResultEmail", () => {
 			"- Listening: 3/4 (75%)",
 			"- Grammar & Vocabulary: 7/10 (70%)",
 			"- Reading: 5/8 (63%)",
-			"- Writing: 11/15 điểm",
-			"- Speaking: 12/20 điểm",
+			"- Writing: Band 6.5/9",
+			"- Speaking: Band 7.0/9",
 			LINK,
 			"Chúc bạn học tốt!",
 		]) {
@@ -108,5 +127,75 @@ describe("renderPlacementResultEmail", () => {
 			linkUrl: LINK,
 		});
 		expect(text).toContain("- Listening: —");
+	});
+});
+
+describe("parseAiWritingDraft / parseAiSpeakingDraft", () => {
+	test("đọc được cả bản nháp errors-only mới lẫn bản nháp legacy có rubric/feedback", () => {
+		const text = "I lives in Hanoi.";
+		const modern = parseAiWritingDraft(
+			JSON.stringify({
+				errors: [
+					{
+						id: "w1",
+						category: "grammar",
+						quote: "I lives",
+						start: null,
+						end: null,
+						correction: "I live",
+						explanation: "Chia động từ.",
+					},
+				],
+			}),
+			text,
+		);
+		expect(modern).toEqual({
+			errors: [
+				{
+					id: "w1",
+					category: "grammar",
+					quote: "I lives",
+					start: 0,
+					end: 7,
+					correction: "I live",
+					explanation: "Chia động từ.",
+				},
+			],
+		});
+
+		const legacyTranscript = "I go yesterday.";
+		const legacy = parseAiSpeakingDraft(
+			JSON.stringify({
+				rubric: { gv: 3, dm: 3, pr: 3, ic: 3 },
+				feedback: "Tốt.",
+				errors: [
+					{
+						id: "s1",
+						category: "grammar",
+						quote: "go",
+						start: null,
+						end: null,
+						correction: "went",
+						explanation: "Quá khứ.",
+					},
+				],
+			}),
+			legacyTranscript,
+		);
+		expect(legacy).toEqual({
+			errors: [
+				{
+					id: "s1",
+					category: "grammar",
+					quote: "go",
+					start: 2,
+					end: 4,
+					correction: "went",
+					explanation: "Quá khứ.",
+				},
+			],
+		});
+		expect(parseAiWritingDraft("not json", text)).toBeNull();
+		expect(parseAiWritingDraft(null, text)).toBeNull();
 	});
 });

@@ -251,8 +251,6 @@ function createFakeAiGrader(): PlacementAiGrader {
 				return {
 					state: "draft",
 					draft: {
-						rubric: { ct: 4, or: 4, lg: 4 },
-						feedback: "Bài viết rõ ý.",
 						errors: [
 							{
 								id: "we-1",
@@ -270,8 +268,6 @@ function createFakeAiGrader(): PlacementAiGrader {
 			return {
 				state: "draft",
 				draft: {
-					rubric: { gv: 3, dm: 3, pr: 3, ic: 3 },
-					feedback: "Phát âm ổn.",
 					errors: [
 						{
 							id: "se-1",
@@ -985,7 +981,8 @@ describe("student portal placement test routes (#748)", () => {
 			"/api/students/stu-hoa/placement-submission/media",
 		);
 		expect(detail.aiStatus).toBe("drafted");
-		expect(detail.aiWriting?.feedback).toBe("Bài viết rõ ý.");
+		expect(Object.keys(detail.aiWriting ?? {})).toEqual(["errors"]);
+		expect(detail.aiWriting?.errors[0]?.quote).toBe("go cycling");
 		expect(detail.speakingTranscript).toBe(
 			"Hello I live in District 9 with my sister.",
 		);
@@ -1023,7 +1020,7 @@ describe("student portal placement test routes (#748)", () => {
 		await drainBackgroundTasks();
 
 		// Teacher grades via PATCH /api/students/stu-hoa/placement-submission
-		// L/G&V/R = 100%, W = 12/15 (80%), S = 16/20 (80%) -> avg = 92% -> "B1 trở lên"
+		// L/G&V/R = 100%, W = Band 7.5/9 (83.3%), S = Band 7.5/9 (83.3%) -> avg = 93% -> "B1 trở lên"
 		const gradeRes = await app.request(
 			"/api/students/stu-hoa/placement-submission",
 			{
@@ -1034,8 +1031,20 @@ describe("student portal placement test routes (#748)", () => {
 					"content-type": "application/json",
 				},
 				body: JSON.stringify({
-					writingRubric: { ct: 4, or: 4, lg: 4 },
-					speakingRubric: { gv: 4, dm: 4, pr: 4, ic: 4 },
+					writingRubric: {
+						task: 7.5,
+						coherence: 7.5,
+						lexical: 7.5,
+						grammar: 7.5,
+					},
+					writingScore: 7.5,
+					speakingRubric: {
+						fluency: 7.5,
+						lexical: 7.5,
+						grammar: 7.5,
+						pronunciation: 7.5,
+					},
+					speakingScore: 7.5,
 					teacherFeedback: "Làm bài rất tốt!",
 					writingErrors: [
 						{
@@ -1087,6 +1096,14 @@ describe("student portal placement test routes (#748)", () => {
 		const gradedView =
 			(await gradedViewRes.json()) as StudentPlacementViewResponse;
 		expect(gradedView.submission?.status).toBe("graded");
+		expect(gradedView.submission?.writingScore).toBe(7.5);
+		expect(gradedView.submission?.speakingScore).toBe(7.5);
+		expect(gradedView.submission?.writingRubric).toEqual({
+			task: 7.5,
+			coherence: 7.5,
+			lexical: 7.5,
+			grammar: 7.5,
+		});
 		expect(gradedView.submission?.finalBandLevel).toBe("B1 trở lên");
 		expect(gradedView.submission?.teacherFeedback).toBe("Làm bài rất tốt!");
 		expect(gradedView.submission?.bandAdvice).toBe("Học B1+.");
@@ -1190,8 +1207,10 @@ describe("student portal placement test routes (#748)", () => {
 					"content-type": "application/json",
 				},
 				body: JSON.stringify({
-					writingRubric: { ct: 3, or: 3, lg: 3 },
+					writingRubric: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
+					writingScore: 6,
 					speakingRubric: null,
+					speakingScore: null,
 					teacherFeedback: "Ổn.",
 					writingErrors: [],
 					speakingErrors: [],
@@ -1474,5 +1493,70 @@ describe("student portal placement test routes (#748)", () => {
 			.from(schema.placementTestSubmission)
 			.where(eq(schema.placementTestSubmission.id, submitted.submissionId));
 		expect(subAfter).toEqual(subBefore);
+	});
+
+	test("tương thích ngược: student view đọc được bài đã chấm theo thang cũ (/15, /20)", async () => {
+		await seedPublishedTest("org-1");
+		const snapshot = buildPlacementSnapshot(
+			makeSampleContent("11111111-1111-4111-8111-111111111111"),
+			1,
+		);
+		await db.insert(schema.placementTestSubmission).values({
+			id: "sub-legacy-hoa",
+			orgId: "org-1",
+			leadId: null,
+			studentId: "stu-hoa",
+			testVersion: 1,
+			snapshotJson: JSON.stringify(snapshot),
+			answersJson: JSON.stringify({
+				listening: {},
+				vocabGrammar: {},
+				reading: {},
+			}),
+			objectiveBreakdownJson: JSON.stringify({
+				listening: { correct: 1, total: 1, pct: 100 },
+				vocabGrammar: { correct: 1, total: 1, pct: 100 },
+				reading: { correct: 1, total: 1, pct: 100 },
+				totalCorrect: 3,
+				totalQuestions: 3,
+				averagePct: 100,
+				byLevel: [],
+				items: [],
+				provisionalBand: snapshot.bands[1],
+				provisionalSummary: "Tạm tính",
+			}),
+			writingText: "Hello Ben.",
+			writingWordCount: 2,
+			speakingStatus: "uploaded",
+			speakingTranscript: "Hi there.",
+			status: "graded",
+			writingRubricJson: JSON.stringify({ ct: 4, or: 4, lg: 4 }),
+			writingScore: 12,
+			writingBand: null,
+			speakingRubricJson: JSON.stringify({ gv: 4, dm: 3, pr: 4, ic: 3 }),
+			speakingScore: 14,
+			speakingBand: null,
+			finalBandLevel: "A2",
+			finalCourse: "comm-2",
+			finalDisplayCourse: "Communication English Level 2",
+			finalScorePct: 84,
+			teacherFeedback: "Kết quả cũ.",
+			gradedAt: new Date(),
+		});
+
+		const viewRes = await app.request("/api/student/placement-test", {
+			headers: { "x-test-user": "hoa" },
+		});
+		expect(viewRes.status).toBe(200);
+		const view = (await viewRes.json()) as StudentPlacementViewResponse;
+		expect(view.submission?.writingRubric).toEqual({ ct: 4, or: 4, lg: 4 });
+		expect(view.submission?.writingScore).toBe(12);
+		expect(view.submission?.speakingRubric).toEqual({
+			gv: 4,
+			dm: 3,
+			pr: 4,
+			ic: 3,
+		});
+		expect(view.submission?.speakingScore).toBe(14);
 	});
 });

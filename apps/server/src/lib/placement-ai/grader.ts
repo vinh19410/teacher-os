@@ -4,17 +4,13 @@ import {
 	PLACEMENT_ERROR_CATEGORIES,
 	PLACEMENT_ERROR_EXPLANATION_MAX,
 	PLACEMENT_ERROR_QUOTE_MAX,
-	PLACEMENT_SPEAKING_RUBRIC,
-	PLACEMENT_WRITING_RUBRIC,
 	type PlacementAiSkillDraft,
 	type PlacementError,
-	type PlacementSpeakingRubric,
-	type PlacementWritingRubric,
 	placementErrorListSchema,
 } from "@teacher-os/api/placement-test-contracts";
 
 /**
- * Chấm nháp AI Writing/Speaking của bài test đầu vào (#730) — interface
+ * Phân tích lỗi nháp AI Writing/Speaking của bài test đầu vào (#730) — interface
  * THUẦN (không type Cloudflare) để e2e type-check được qua `server/app`.
  * Cài thật: OpenAI (`openai-grader.ts`); cài giả: `fake-grader.ts`.
  */
@@ -26,10 +22,8 @@ export interface PlacementAiAudio {
 
 export type PlacementAiSkillKind = "writing" | "speaking";
 
-/** Nháp một kỹ năng (rubric Writing hoặc Speaking) — lưu nguyên JSON. */
-export type PlacementAiAnyDraft =
-	| PlacementAiSkillDraft<PlacementWritingRubric>
-	| PlacementAiSkillDraft<PlacementSpeakingRubric>;
+/** Nháp một kỹ năng (chỉ liệt kê lỗi) — lưu nguyên JSON. */
+export type PlacementAiAnyDraft = PlacementAiSkillDraft;
 
 /**
  * Kết quả poll một job chấm nền:
@@ -87,23 +81,10 @@ export class PlacementAiGradingError extends Error {
 
 /** Mỗi lượt AI tối đa ~25 lỗi — ưu tiên lỗi quan trọng, đỡ rối học viên. */
 export const PLACEMENT_AI_ERRORS_MAX = 25;
-/** Giới hạn độ dài nhận xét AI (2–4 câu là đủ; chặn model lan man). */
-export const PLACEMENT_AI_FEEDBACK_MAX = 2000;
 
 const CATEGORY_KEYS = new Set<string>(
 	PLACEMENT_ERROR_CATEGORIES.map((c) => c.key),
 );
-
-/** Điểm rubric LLM → số nguyên 0–5 (không phải số → lỗi FAILED). */
-function clampRubricScore(value: unknown): number {
-	if (typeof value !== "number" || !Number.isFinite(value)) {
-		throw new PlacementAiGradingError(
-			PLACEMENT_AI_ERROR_CODES.FAILED,
-			"grader returned incomplete rubric",
-		);
-	}
-	return Math.min(5, Math.max(0, Math.round(value)));
-}
 
 function asRecord(value: unknown): Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value)
@@ -112,23 +93,27 @@ function asRecord(value: unknown): Record<string, unknown> {
 }
 
 /**
- * Chuẩn hoá đầu ra LLM thành `PlacementAiSkillDraft`: kẹp rubric 0–5 nguyên,
- * lọc lỗi sai loại/quote rỗng, cắt độ dài theo schema, gán id ổn định
- * (`w1`, `s1`…), validate zod rồi định vị lại offset trên `sourceText`.
+ * Chuẩn hoá đầu ra LLM thành `PlacementAiSkillDraft` (chỉ danh sách lỗi):
+ * kiểm tra có mảng `errors`, lọc lỗi sai loại/quote rỗng, cắt độ dài theo
+ * schema, gán id ổn định (`w1`, `s1`…), validate zod rồi định vị lại offset
+ * trên `sourceText`.
  */
-export function normalizeSkillDraft<K extends string>(
+export function normalizeSkillDraft(
 	raw: unknown,
-	params: { rubricKeys: readonly K[]; idPrefix: string; sourceText: string },
-): PlacementAiSkillDraft<Record<K, number>> {
+	params: { idPrefix: string; sourceText: string },
+): PlacementAiSkillDraft {
+	if (
+		typeof raw !== "object" ||
+		raw === null ||
+		Array.isArray(raw) ||
+		!Array.isArray((raw as Record<string, unknown>).errors)
+	) {
+		throw new PlacementAiGradingError(
+			PLACEMENT_AI_ERROR_CODES.FAILED,
+			"grader returned incomplete errors",
+		);
+	}
 	const obj = asRecord(raw);
-	const rubricRaw = asRecord(obj.rubric);
-	const rubric = Object.fromEntries(
-		params.rubricKeys.map((key) => [key, clampRubricScore(rubricRaw[key])]),
-	) as Record<K, number>;
-	const feedback =
-		typeof obj.feedback === "string"
-			? obj.feedback.trim().slice(0, PLACEMENT_AI_FEEDBACK_MAX)
-			: "";
 	const rawErrors = Array.isArray(obj.errors) ? obj.errors : [];
 	const errors: PlacementError[] = [];
 	for (const item of rawErrors) {
@@ -165,34 +150,24 @@ export function normalizeSkillDraft<K extends string>(
 		);
 	}
 	return {
-		rubric,
-		feedback,
 		errors: locatePlacementErrors(params.sourceText, parsed.data),
 	};
 }
 
-/** Key rubric + tiền tố id lỗi theo kỹ năng. */
-export const PLACEMENT_AI_KIND_CONFIG = {
-	writing: {
-		rubricKeys: PLACEMENT_WRITING_RUBRIC.map((r) => r.key),
-		idPrefix: "w",
-	},
-	speaking: {
-		rubricKeys: PLACEMENT_SPEAKING_RUBRIC.map((r) => r.key),
-		idPrefix: "s",
-	},
-} as const;
+/** Tiền tố id lỗi theo kỹ năng. */
+const PLACEMENT_AI_KIND_ID_PREFIX: Record<PlacementAiSkillKind, string> = {
+	writing: "w",
+	speaking: "s",
+};
 
-/** `normalizeSkillDraft` theo kỹ năng (rubric Writing hoặc Speaking). */
+/** `normalizeSkillDraft` theo kỹ năng (Writing hoặc Speaking). */
 export function normalizeKindDraft(
 	raw: unknown,
 	kind: PlacementAiSkillKind,
 	sourceText: string,
 ): PlacementAiAnyDraft {
-	const config = PLACEMENT_AI_KIND_CONFIG[kind];
 	return normalizeSkillDraft(raw, {
-		rubricKeys: config.rubricKeys,
-		idPrefix: config.idPrefix,
+		idPrefix: PLACEMENT_AI_KIND_ID_PREFIX[kind],
 		sourceText,
-	}) as PlacementAiAnyDraft;
+	});
 }

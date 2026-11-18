@@ -1,6 +1,11 @@
 import { Link } from "@tanstack/react-router";
+import { formatBand } from "@teacher-os/api/lib/ielts-band";
 import {
+	isIeltsSpeakingRubric,
+	isIeltsWritingRubric,
 	matchPlacementBand,
+	PLACEMENT_LEGACY_SPEAKING_RUBRIC,
+	PLACEMENT_LEGACY_WRITING_RUBRIC,
 	PLACEMENT_SPEAKING_RUBRIC,
 	PLACEMENT_WRITING_RUBRIC,
 	type PlacementPublishedBand,
@@ -365,6 +370,15 @@ export function PlacementGradedResultView({
 }: {
 	submission: StudentPlacementSubmissionView;
 }) {
+	const writingIsIelts = isIeltsWritingRubric(submission.writingRubric);
+	const writingRubricItems = writingIsIelts
+		? PLACEMENT_WRITING_RUBRIC
+		: PLACEMENT_LEGACY_WRITING_RUBRIC;
+	const speakingIsIelts = isIeltsSpeakingRubric(submission.speakingRubric);
+	const speakingRubricItems = speakingIsIelts
+		? PLACEMENT_SPEAKING_RUBRIC
+		: PLACEMENT_LEGACY_SPEAKING_RUBRIC;
+
 	return (
 		<div
 			data-testid="placement-graded-view"
@@ -483,27 +497,46 @@ export function PlacementGradedResultView({
 						</CardTitle>
 						{submission.writingScore !== null ? (
 							<Badge variant="default" className="tabular-nums">
-								{submission.writingScore}/15 điểm
+								{writingIsIelts
+									? `Band ${formatBand(submission.writingScore)}/9`
+									: `${submission.writingScore}/15 điểm`}
 							</Badge>
 						) : null}
 					</div>
 				</CardHeader>
 				<CardContent className="space-y-4">
 					{submission.writingRubric ? (
-						<div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-							{PLACEMENT_WRITING_RUBRIC.map((item) => (
-								<div
-									key={item.key}
-									className="rounded-lg border bg-muted/30 px-3 py-2.5"
-								>
-									<div className="text-muted-foreground text-xs">
-										{item.label}
+						<div
+							className={
+								writingIsIelts
+									? "grid grid-cols-2 gap-2.5 sm:grid-cols-4"
+									: "grid grid-cols-1 gap-2.5 sm:grid-cols-3"
+							}
+						>
+							{writingRubricItems.map((item) => {
+								const raw = (
+									submission.writingRubric as Record<string, number> | null
+								)?.[item.key];
+								const display =
+									raw !== undefined
+										? writingIsIelts
+											? `${formatBand(raw)}/9`
+											: `${raw}/5`
+										: "—";
+								return (
+									<div
+										key={item.key}
+										className="rounded-lg border bg-muted/30 px-3 py-2.5"
+									>
+										<div className="text-muted-foreground text-xs">
+											{item.label}
+										</div>
+										<div className="mt-0.5 font-semibold text-foreground text-sm tabular-nums">
+											{display}
+										</div>
 									</div>
-									<div className="mt-0.5 font-semibold text-foreground text-sm tabular-nums">
-										{submission.writingRubric?.[item.key] ?? "—"}/5
-									</div>
-								</div>
-							))}
+								);
+							})}
 						</div>
 					) : null}
 
@@ -533,7 +566,9 @@ export function PlacementGradedResultView({
 						</CardTitle>
 						{submission.speakingScore !== null ? (
 							<Badge variant="default" className="tabular-nums">
-								{submission.speakingScore}/20 điểm
+								{speakingIsIelts
+									? `Band ${formatBand(submission.speakingScore)}/9`
+									: `${submission.speakingScore}/20 điểm`}
 							</Badge>
 						) : (
 							<Badge variant="outline">
@@ -545,19 +580,30 @@ export function PlacementGradedResultView({
 				<CardContent className="space-y-4">
 					{submission.speakingRubric ? (
 						<div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-							{PLACEMENT_SPEAKING_RUBRIC.map((item) => (
-								<div
-									key={item.key}
-									className="rounded-lg border bg-muted/30 px-3 py-2.5"
-								>
-									<div className="text-muted-foreground text-xs">
-										{item.label}
+							{speakingRubricItems.map((item) => {
+								const raw = (
+									submission.speakingRubric as Record<string, number> | null
+								)?.[item.key];
+								const display =
+									raw !== undefined
+										? speakingIsIelts
+											? `${formatBand(raw)}/9`
+											: `${raw}/5`
+										: "—";
+								return (
+									<div
+										key={item.key}
+										className="rounded-lg border bg-muted/30 px-3 py-2.5"
+									>
+										<div className="text-muted-foreground text-xs">
+											{item.label}
+										</div>
+										<div className="mt-0.5 font-semibold text-foreground text-sm tabular-nums">
+											{display}
+										</div>
 									</div>
-									<div className="mt-0.5 font-semibold text-foreground text-sm tabular-nums">
-										{submission.speakingRubric?.[item.key] ?? "—"}/5
-									</div>
-								</div>
-							))}
+								);
+							})}
 						</div>
 					) : null}
 

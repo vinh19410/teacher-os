@@ -390,7 +390,7 @@ describe("placement AI grading pipeline (#730)", () => {
 		expect(d.aiStatus).toBe("drafted");
 		expect(d.aiErrorCode).toBeNull();
 		expect(d.aiDraftedAt).not.toBeNull();
-		expect(d.aiWriting?.rubric).toEqual({ ct: 3, or: 3, lg: 3 });
+		expect(Object.keys(d.aiWriting ?? {})).toEqual(["errors"]);
 		expect(d.aiWriting?.errors[0]).toMatchObject({
 			id: "w1",
 			quote: "Hello",
@@ -420,8 +420,9 @@ describe("placement AI grading pipeline (#730)", () => {
 		const d = await h.detail(created.leadId);
 		expect(d.aiStatus).toBe("drafted");
 		expect(d.speakingTranscript).toBe(FAKE_PLACEMENT_TRANSCRIPT);
-		expect(d.aiWriting?.rubric.ct).toBe(3);
-		expect(d.aiSpeaking?.rubric).toEqual({ gv: 3, dm: 3, pr: 3, ic: 3 });
+		expect(Object.keys(d.aiWriting ?? {})).toEqual(["errors"]);
+		expect(Object.keys(d.aiSpeaking ?? {})).toEqual(["errors"]);
+		expect(d.aiWriting?.errors).toHaveLength(1);
 		expect(d.aiSpeaking?.errors[0]).toMatchObject({
 			id: "s1",
 			quote: "I",
@@ -470,7 +471,7 @@ describe("placement AI grading pipeline (#730)", () => {
 		const d = await h.detail(created.leadId);
 		expect(d.aiStatus).toBe("failed");
 		expect(d.aiErrorCode).toBe(PLACEMENT_AI_ERROR_CODES.NO_TRANSCRIPT);
-		expect(d.aiWriting?.rubric.lg).toBe(3);
+		expect(d.aiWriting?.errors).toHaveLength(1);
 		expect(d.aiSpeaking).toBeNull();
 		expect(h.calls.speaking).toBe(0);
 	});
@@ -574,8 +575,15 @@ describe("PATCH chốt + kết quả công khai (#730)", () => {
 		writingErrors: unknown[] = [],
 		speakingErrors: unknown[] = [],
 	) => ({
-		writingRubric: { ct: 4, or: 4, lg: 3 },
-		speakingRubric: { gv: 3, dm: 3, pr: 3, ic: 3 },
+		writingRubric: { task: 6.5, coherence: 6.5, lexical: 6.5, grammar: 6.5 },
+		writingScore: 6.5,
+		speakingRubric: {
+			fluency: 6,
+			lexical: 6,
+			grammar: 6,
+			pronunciation: 6,
+		},
+		speakingScore: 6,
 		teacherFeedback: "Cố gắng chia động từ đúng.",
 		writingErrors,
 		speakingErrors,
@@ -657,7 +665,14 @@ describe("PATCH chốt + kết quả công khai (#730)", () => {
 			Record<string, unknown>;
 		expect(view.studentName).toBe("Học viên A");
 		expect(view.writingText).toBe(ESSAY);
-		expect(view.writingRubric).toEqual({ ct: 4, or: 4, lg: 3 });
+		expect(view.writingRubric).toEqual({
+			task: 6.5,
+			coherence: 6.5,
+			lexical: 6.5,
+			grammar: 6.5,
+		});
+		expect(view.writingScore).toBe(6.5);
+		expect(view.speakingScore).toBe(6);
 		expect(view.speakingTranscript).toBe(FAKE_PLACEMENT_TRANSCRIPT);
 		expect(view.teacherFeedback).toBe("Cố gắng chia động từ đúng.");
 		expect(view.bandAdvice).toMatch(/^Học Level/);
@@ -738,8 +753,15 @@ describe("PATCH chốt + kết quả công khai (#730)", () => {
 describe("email kết quả: tóm tắt HTML + link chi tiết", () => {
 	const STUDENT_ORIGIN = "https://hoc.msmy.io.vn/";
 	const grade = {
-		writingRubric: { ct: 4, or: 4, lg: 3 },
-		speakingRubric: { gv: 3, dm: 3, pr: 3, ic: 3 },
+		writingRubric: { task: 6.5, coherence: 6.5, lexical: 6.5, grammar: 6.5 },
+		writingScore: 6.5,
+		speakingRubric: {
+			fluency: 6,
+			lexical: 6,
+			grammar: 6,
+			pronunciation: 6,
+		},
+		speakingScore: 6,
 		teacherFeedback: "",
 		writingErrors: [],
 		speakingErrors: [],
@@ -826,8 +848,8 @@ describe("email kết quả: tóm tắt HTML + link chi tiết", () => {
 			expect(mail?.html).toContain(`>${row}<`);
 		}
 		expect(mail?.html).toContain("1/1 (100%)");
-		expect(mail?.html).toContain("11/15 điểm");
-		expect(mail?.html).toContain("12/20 điểm");
+		expect(mail?.html).toContain("Band 6.5/9");
+		expect(mail?.html).toContain("Band 6.0/9");
 		expect(mail?.text).toContain(`Điểm tổng hợp: ${graded.finalScorePct}%`);
 		expect(mail?.text).not.toContain("0905");
 
@@ -850,6 +872,7 @@ describe("email kết quả: tóm tắt HTML + link chi tiết", () => {
 		const noAccount = await gradeLead(h, "lead@test.local", {
 			...grade,
 			speakingRubric: null,
+			speakingScore: null,
 		});
 		const teacherOnly = await gradeLead(h, "gv@test.local");
 		expect(sent).toHaveLength(2);
@@ -943,7 +966,8 @@ describe("email kết quả: tóm tắt HTML + link chi tiết", () => {
 			BEGIN
 				UPDATE placement_test_submission
 				SET final_band_level = 'B1', final_display_course = 'Khóa ghi sau',
-					final_score_pct = 41, writing_score = 7, speaking_score = 9
+					final_score_pct = 41, writing_band = 5.5, speaking_band = 4.5,
+					writing_score = NULL, speaking_score = NULL
 				WHERE id = NEW.id;
 			END`),
 		);
@@ -959,8 +983,8 @@ describe("email kết quả: tóm tắt HTML + link chi tiết", () => {
 		expect(mail?.html).toContain(">B1<");
 		expect(mail?.html).toContain("Khóa ghi sau");
 		expect(mail?.html).toContain(">41%<");
-		expect(mail?.html).toContain("7/15 điểm");
-		expect(mail?.html).toContain("9/20 điểm");
+		expect(mail?.html).toContain("Band 5.5/9");
+		expect(mail?.html).toContain("Band 4.5/9");
 		expect(mail?.text).toContain("Trình độ CEFR: B1");
 	});
 
@@ -1027,8 +1051,15 @@ function makeStale(h: Harness, submissionId: string) {
 }
 
 const finalGrade = {
-	writingRubric: { ct: 4, or: 4, lg: 3 },
-	speakingRubric: { gv: 3, dm: 3, pr: 3, ic: 3 },
+	writingRubric: { task: 6.5, coherence: 6.5, lexical: 6.5, grammar: 6.5 },
+	writingScore: 6.5,
+	speakingRubric: {
+		fluency: 6,
+		lexical: 6,
+		grammar: 6,
+		pronunciation: 6,
+	},
+	speakingScore: 6,
 	teacherFeedback: "Cố gắng chia động từ đúng.",
 	writingErrors: [],
 	speakingErrors: [],
@@ -1164,8 +1195,10 @@ describe("chấm nền qua job OpenAI background + finalize lười (#730)", () 
 		const second = await h.detail(created.leadId);
 		expect(second.aiStatus).toBe("drafted");
 		expect(second.aiErrorCode).toBeNull();
-		expect(second.aiWriting?.rubric).toEqual({ ct: 3, or: 3, lg: 3 });
-		expect(second.aiSpeaking?.rubric).toEqual({ gv: 3, dm: 3, pr: 3, ic: 3 });
+		expect(Object.keys(second.aiWriting ?? {})).toEqual(["errors"]);
+		expect(Object.keys(second.aiSpeaking ?? {})).toEqual(["errors"]);
+		expect(second.aiWriting?.errors).toHaveLength(1);
+		expect(second.aiSpeaking?.errors).toHaveLength(1);
 		const done = await rowOf(h, created.submissionId);
 		expect(done.aiWritingResponseId).toBeNull();
 		expect(done.aiSpeakingResponseId).toBeNull();
@@ -1185,7 +1218,7 @@ describe("chấm nền qua job OpenAI background + finalize lười (#730)", () 
 
 		const partial = await h.detail(created.leadId);
 		expect(partial.aiStatus).toBe("processing");
-		expect(partial.aiWriting?.rubric.ct).toBe(3);
+		expect(partial.aiWriting?.errors).toHaveLength(1);
 		expect(partial.aiSpeaking).toBeNull();
 		const row = await rowOf(h, created.submissionId);
 		expect(row.aiWritingResponseId).toBeNull();
@@ -1193,7 +1226,7 @@ describe("chấm nền qua job OpenAI background + finalize lười (#730)", () 
 
 		const done = await h.detail(created.leadId);
 		expect(done.aiStatus).toBe("drafted");
-		expect(done.aiSpeaking?.rubric.gv).toBe(3);
+		expect(done.aiSpeaking?.errors).toHaveLength(1);
 		// Writing không bị poll lại sau khi đã có kết quả.
 		expect(h.calls.poll).toBe(3);
 	});
@@ -1205,7 +1238,7 @@ describe("chấm nền qua job OpenAI background + finalize lười (#730)", () 
 		const [a, b] = await Promise.all([h.detail(leadId), h.detail(leadId)]);
 		expect(a.aiStatus).toBe("drafted");
 		expect(b.aiStatus).toBe("drafted");
-		expect(b.aiWriting?.rubric).toEqual({ ct: 3, or: 3, lg: 3 });
+		expect(b.aiWriting?.errors).toHaveLength(1);
 	});
 
 	test("poll lỗi mạng tạm thời → giữ processing kể cả quá 15 phút; sweep không đụng lượt có job", async () => {
@@ -1233,7 +1266,7 @@ describe("chấm nền qua job OpenAI background + finalize lười (#730)", () 
 		const d = await h.detail(created.leadId);
 		expect(d.aiStatus).toBe("failed");
 		expect(d.aiErrorCode).toBe(PLACEMENT_AI_ERROR_CODES.TIMEOUT);
-		expect(d.aiWriting?.rubric.ct).toBe(3);
+		expect(d.aiWriting?.errors).toHaveLength(1);
 		expect(d.aiSpeaking).toBeNull();
 	});
 
@@ -1327,7 +1360,7 @@ describe("ai-retry: content-type, bài đã chốt, bài bỏ ngang (#730)", () 
 		await h.flush();
 		const d = await h.detail(leadId);
 		expect(d.aiStatus).toBe("drafted");
-		expect(d.aiWriting?.rubric.ct).toBe(3);
+		expect(d.aiWriting?.errors).toHaveLength(1);
 	});
 
 	test("retry lưu kết quả lượt cũ đã xong rồi mới claim lượt mới", async () => {
@@ -1431,5 +1464,75 @@ describe("chốt kết quả: token và email (#730)", () => {
 		expect(d.status).toBe("graded");
 		expect(d.resultUrl).not.toBeNull();
 		expect(d.resultEmailStatus).toBe("failed");
+	});
+
+	test("tương thích ngược: bản nháp ai_writing_json / ai_speaking_json cũ có rubric & feedback vẫn đọc được errors", async () => {
+		const h = await createHarness();
+		const created = await h.submit({ speakingMode: "upload" });
+		await h.db
+			.update(schema.placementTestSubmission)
+			.set({
+				aiStatus: "drafted",
+				speakingTranscript: FAKE_PLACEMENT_TRANSCRIPT,
+				aiWritingJson: JSON.stringify({
+					rubric: { ct: 3, or: 3, lg: 3 },
+					feedback: "Nhận xét cũ.",
+					errors: [
+						{
+							id: "w1",
+							category: "grammar",
+							quote: "I lives",
+							start: null,
+							end: null,
+							correction: "I live",
+							explanation: "Chia động từ.",
+						},
+					],
+				}),
+				aiSpeakingJson: JSON.stringify({
+					rubric: { gv: 3, dm: 3, pr: 3, ic: 3 },
+					feedback: "Nói rõ.",
+					errors: [
+						{
+							id: "s1",
+							category: "vocabulary",
+							quote: "beach",
+							start: null,
+							end: null,
+							correction: "seaside",
+							explanation: "Từ đồng nghĩa.",
+						},
+					],
+				}),
+			})
+			.where(eq(schema.placementTestSubmission.id, created.submissionId));
+
+		const d = await h.detail(created.leadId);
+		expect(d.aiWriting).toEqual({
+			errors: [
+				{
+					id: "w1",
+					category: "grammar",
+					quote: "I lives",
+					start: ESSAY.indexOf("I lives"),
+					end: ESSAY.indexOf("I lives") + 7,
+					correction: "I live",
+					explanation: "Chia động từ.",
+				},
+			],
+		});
+		expect(d.aiSpeaking).toEqual({
+			errors: [
+				{
+					id: "s1",
+					category: "vocabulary",
+					quote: "beach",
+					start: FAKE_PLACEMENT_TRANSCRIPT.indexOf("beach"),
+					end: FAKE_PLACEMENT_TRANSCRIPT.indexOf("beach") + 5,
+					correction: "seaside",
+					explanation: "Từ đồng nghĩa.",
+				},
+			],
+		});
 	});
 });

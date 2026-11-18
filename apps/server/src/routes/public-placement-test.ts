@@ -14,8 +14,8 @@ import {
 	type PlacementPublicResultView,
 	type PlacementPublicSubmit,
 	type PlacementSnapshot,
-	type PlacementSpeakingRubric,
-	type PlacementWritingRubric,
+	parseStoredSpeakingRubric,
+	parseStoredWritingRubric,
 	placementPublicSubmitSchema,
 } from "@teacher-os/api/placement-test-contracts";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
@@ -1020,20 +1020,14 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 				reading: objective.reading ?? emptySection,
 			},
 			writingText: sub.writingText,
-			writingRubric: parseJsonOr<PlacementWritingRubric | null>(
-				sub.writingRubricJson,
-				null,
-			),
-			writingScore: sub.writingScore,
+			writingRubric: parseStoredWritingRubric(sub.writingRubricJson),
+			writingScore: sub.writingBand ?? sub.writingScore,
 			writingErrors:
 				parseStoredErrors(sub.writingErrorsJson, sub.writingText) ?? [],
 			speakingStatus: sub.speakingStatus,
 			speakingTranscript: sub.speakingTranscript,
-			speakingRubric: parseJsonOr<PlacementSpeakingRubric | null>(
-				sub.speakingRubricJson,
-				null,
-			),
-			speakingScore: sub.speakingScore,
+			speakingRubric: parseStoredSpeakingRubric(sub.speakingRubricJson),
+			speakingScore: sub.speakingBand ?? sub.speakingScore,
 			speakingErrors:
 				parseStoredErrors(sub.speakingErrorsJson, sub.speakingTranscript) ?? [],
 			finalBandLevel: sub.finalBandLevel,

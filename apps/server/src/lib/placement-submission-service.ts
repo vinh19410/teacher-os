@@ -6,13 +6,15 @@ import {
 	buildPlacementZaloText,
 	computePlacementFinal,
 	hasPlacementSpeakingTasks,
+	isIeltsSpeakingRubric,
+	isIeltsWritingRubric,
 	locatePlacementErrors,
 	PLACEMENT_AI_ERROR_CODES,
 	type PlacementObjectiveResult,
 	type PlacementSnapshot,
-	type PlacementSpeakingRubric,
 	type PlacementSubmissionDetail,
-	type PlacementWritingRubric,
+	parseStoredSpeakingRubric,
+	parseStoredWritingRubric,
 	type placementTeacherGradeSchema,
 } from "@teacher-os/api/placement-test-contracts";
 import type { Mailer } from "@teacher-os/auth/mail/mailer";
@@ -281,12 +283,20 @@ export function buildPlacementSubmissionDetail(
 	const objective = JSON.parse(
 		sub.objectiveBreakdownJson,
 	) as PlacementObjectiveResult;
-	const writingRubric = sub.writingRubricJson
-		? (JSON.parse(sub.writingRubricJson) as PlacementWritingRubric)
-		: null;
-	const speakingRubric = sub.speakingRubricJson
-		? (JSON.parse(sub.speakingRubricJson) as PlacementSpeakingRubric)
-		: null;
+	const writingRubric = parseStoredWritingRubric(sub.writingRubricJson);
+	const speakingRubric = parseStoredSpeakingRubric(sub.speakingRubricJson);
+	const writingScore = sub.writingBand ?? sub.writingScore;
+	const speakingScore = sub.speakingBand ?? sub.speakingScore;
+	const writingScale = isIeltsWritingRubric(writingRubric)
+		? "ielts"
+		: sub.writingScore !== null
+			? "legacy"
+			: "ielts";
+	const speakingScale = isIeltsSpeakingRubric(speakingRubric)
+		? "ielts"
+		: sub.speakingScore !== null
+			? "legacy"
+			: "ielts";
 
 	const activeBand =
 		sub.finalBandLevel && sub.finalCourse
@@ -308,13 +318,15 @@ export function buildPlacementSubmissionDetail(
 		studentName: subject.row.name,
 		phone: subject.row.phone,
 		objective,
-		writingScore: sub.writingScore,
-		speakingScore: sub.speakingScore,
+		writingScore,
+		speakingScore,
 		speakingStatus: sub.speakingStatus,
 		band: activeBand,
 		averagePct: activePct,
 		note: sub.finalNote,
 		teacherFeedback: sub.teacherFeedback,
+		writingScale,
+		speakingScale,
 	});
 
 	const speakingMediaUrl = sub.speakingMediaKey
@@ -343,9 +355,9 @@ export function buildPlacementSubmissionDetail(
 		speakingMediaSize: sub.speakingMediaSize,
 		speakingDurationSec: sub.speakingDurationSec,
 		writingRubric,
-		writingScore: sub.writingScore,
+		writingScore,
 		speakingRubric,
-		speakingScore: sub.speakingScore,
+		speakingScore,
 		teacherFeedback: sub.teacherFeedback,
 		finalBandLevel: sub.finalBandLevel,
 		finalCourse: sub.finalCourse,
@@ -551,8 +563,8 @@ export async function gradePlacementSubmissionResponse(
 	const final = computePlacementFinal({
 		objective,
 		bands: snapshot.bands,
-		writingRubric: parsedBody.writingRubric,
-		speakingRubric: parsedBody.speakingRubric,
+		writingScore: parsedBody.writingScore,
+		speakingScore: parsedBody.speakingScore,
 	});
 
 	// #730: lỗi giáo viên chốt — server luôn định vị lại offset.
@@ -571,11 +583,13 @@ export async function gradePlacementSubmissionResponse(
 		.set({
 			status: "graded",
 			writingRubricJson: JSON.stringify(parsedBody.writingRubric),
-			writingScore: final.writingScore,
+			writingScore: null,
+			writingBand: final.writingScore,
 			speakingRubricJson: parsedBody.speakingRubric
 				? JSON.stringify(parsedBody.speakingRubric)
 				: null,
-			speakingScore: final.speakingScore,
+			speakingScore: null,
+			speakingBand: final.speakingScore,
 			teacherFeedback: parsedBody.teacherFeedback,
 			finalBandLevel: final.band.cefr,
 			finalCourse: final.band.course,
@@ -699,16 +713,34 @@ export async function gradePlacementSubmissionResponse(
 			reading: objective.reading,
 			writingScore: final.writingScore,
 			speakingScore: final.speakingScore,
+			writingScale: "ielts",
+			speakingScale: "ielts",
 		};
 		if (stored) {
+			const storedWritingRubric = parseStoredWritingRubric(
+				stored.writingRubricJson,
+			);
+			const storedSpeakingRubric = parseStoredSpeakingRubric(
+				stored.speakingRubricJson,
+			);
 			summary.cefr = stored.finalBandLevel ?? summary.cefr;
 			summary.displayCourse =
 				stored.finalDisplayCourse ??
 				stored.finalCourse ??
 				summary.displayCourse;
 			summary.scorePct = stored.finalScorePct ?? summary.scorePct;
-			summary.writingScore = stored.writingScore;
-			summary.speakingScore = stored.speakingScore;
+			summary.writingScore = stored.writingBand ?? stored.writingScore;
+			summary.speakingScore = stored.speakingBand ?? stored.speakingScore;
+			summary.writingScale = isIeltsWritingRubric(storedWritingRubric)
+				? "ielts"
+				: stored.writingScore !== null
+					? "legacy"
+					: "ielts";
+			summary.speakingScale = isIeltsSpeakingRubric(storedSpeakingRubric)
+				? "ielts"
+				: stored.speakingScore !== null
+					? "legacy"
+					: "ielts";
 		}
 		resultEmailStatus = await sendPlacementResultEmail({
 			getMailer: () => deps.mailer,

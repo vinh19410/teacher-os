@@ -920,13 +920,14 @@ test.describe
 					document.documentElement.classList.remove("dark"),
 				);
 
-				await teacherPage.getByTestId("writing-ct-5").click();
-				await teacherPage.getByTestId("writing-or-5").click();
-				await teacherPage.getByTestId("writing-lg-5").click();
-				await teacherPage.getByTestId("speaking-gv-0").click();
-				await teacherPage.getByTestId("speaking-dm-0").click();
-				await teacherPage.getByTestId("speaking-pr-0").click();
-				await teacherPage.getByTestId("speaking-ic-0").click();
+				await teacherPage.getByTestId("writing-task-input").fill("9");
+				await teacherPage.getByTestId("writing-coherence-input").fill("9");
+				await teacherPage.getByTestId("writing-lexical-input").fill("9");
+				await teacherPage.getByTestId("writing-grammar-input").fill("9");
+				await teacherPage.getByTestId("speaking-fluency-input").fill("0");
+				await teacherPage.getByTestId("speaking-lexical-input").fill("0");
+				await teacherPage.getByTestId("speaking-grammar-input").fill("0");
+				await teacherPage.getByTestId("speaking-pronunciation-input").fill("0");
 
 				await expect(
 					teacherPage.getByTestId("speaking-floor-note"),

@@ -458,10 +458,10 @@ describe("màn /leads (#506 phase 4)", () => {
 						JSON.stringify({
 							...sampleSub,
 							status: "graded",
-							writingScore: 15,
+							writingScore: 9,
 							speakingScore: 0,
 							finalBandLevel: "A2",
-							finalScorePct: 50,
+							finalScorePct: 70,
 						}),
 						{
 							status: 200,
@@ -498,15 +498,32 @@ describe("màn /leads (#506 phase 4)", () => {
 			expect(player.getAttribute("src")).toBe("blob:mock-speaking");
 		});
 
-		// Chấm Writing 5/5/5 (100%) và Speaking 0/0/0/0 (0%, A1) -> trung bình (85+83+80+100+0)/5 = 70% (B1),
+		// Chấm Writing Band 9.0 (100%) và Speaking Band 0.0 (0%, A1) -> trung bình (85+83+80+100+0)/5 = 70% (B1),
 		// Speaking bậc 0 (A1) thấp hơn B1 >= 2 bậc => hạ 1 bậc xuống A2 + cảnh báo speaking-floor-note!
-		fireEvent.click(screen.getByTestId("writing-ct-5"));
-		fireEvent.click(screen.getByTestId("writing-or-5"));
-		fireEvent.click(screen.getByTestId("writing-lg-5"));
-		fireEvent.click(screen.getByTestId("speaking-gv-0"));
-		fireEvent.click(screen.getByTestId("speaking-dm-0"));
-		fireEvent.click(screen.getByTestId("speaking-pr-0"));
-		fireEvent.click(screen.getByTestId("speaking-ic-0"));
+		fireEvent.change(screen.getByTestId("writing-task-input"), {
+			target: { value: "9" },
+		});
+		fireEvent.change(screen.getByTestId("writing-coherence-input"), {
+			target: { value: "9" },
+		});
+		fireEvent.change(screen.getByTestId("writing-lexical-input"), {
+			target: { value: "9" },
+		});
+		fireEvent.change(screen.getByTestId("writing-grammar-input"), {
+			target: { value: "9" },
+		});
+		fireEvent.change(screen.getByTestId("speaking-fluency-input"), {
+			target: { value: "0" },
+		});
+		fireEvent.change(screen.getByTestId("speaking-lexical-input"), {
+			target: { value: "0" },
+		});
+		fireEvent.change(screen.getByTestId("speaking-grammar-input"), {
+			target: { value: "0" },
+		});
+		fireEvent.change(screen.getByTestId("speaking-pronunciation-input"), {
+			target: { value: "0" },
+		});
 
 		await screen.findByTestId("speaking-floor-note");
 		expect(screen.getByTestId("final-band-preview").textContent).toContain(
@@ -523,8 +540,15 @@ describe("màn /leads (#506 phase 4)", () => {
 		fireEvent.click(screen.getByTestId("save-placement-grade-btn"));
 		await waitFor(() => expect(gradePatchBody).not.toBeNull());
 		expect(gradePatchBody).toEqual({
-			writingRubric: { ct: 5, or: 5, lg: 5 },
-			speakingRubric: { gv: 0, dm: 0, pr: 0, ic: 0 },
+			writingRubric: { task: 9, coherence: 9, lexical: 9, grammar: 9 },
+			writingScore: 9,
+			speakingRubric: {
+				fluency: 0,
+				lexical: 0,
+				grammar: 0,
+				pronunciation: 0,
+			},
+			speakingScore: 0,
 			teacherFeedback: "Cần luyện nói thêm",
 			writingErrors: [],
 			speakingErrors: [],

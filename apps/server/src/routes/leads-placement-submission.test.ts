@@ -402,9 +402,9 @@ describe("leads placement-submission routes (#721)", () => {
 		expect((await rangeMedia.arrayBuffer()).byteLength).toBe(8);
 	});
 
-	test("PATCH /placement-submission lưu rubric Writing & Speaking, áp dụng quy tắc hạ 1 bậc Speaking và cập nhật Lead", async () => {
-		// Listening/G&V/Reading = 100%, Writing = 12/15 (80%), Speaking = 2/20 (10% -> Pre-A1, index 0)
-		// Trung bình = (100+100+100+80+10)/5 = 78% (band index 3: A2+/B1 thấp) -> bi-si=3 >= 2 => hạ xuống index 2 (A2)!
+	test("PATCH /placement-submission lưu rubric IELTS Writing & Speaking, áp dụng quy tắc hạ 1 bậc Speaking và cập nhật Lead", async () => {
+		// Listening/G&V/Reading = 100%, Writing = Band 7.0/9 (77.8%), Speaking = Band 1.0/9 (11.1% -> Pre-A1, index 0)
+		// Trung bình = (100+100+100+77.78+11.11)/5 = 78% (band index 3: A2+/B1 thấp) -> bi-si=3 >= 2 => hạ xuống index 2 (A2)!
 		const gradeRes = await app.request(
 			`/api/leads/${leadId}/placement-submission`,
 			{
@@ -415,8 +415,15 @@ describe("leads placement-submission routes (#721)", () => {
 					"content-type": "application/json",
 				},
 				body: JSON.stringify({
-					writingRubric: { ct: 4, or: 4, lg: 4 },
-					speakingRubric: { gv: 1, dm: 0, pr: 1, ic: 0 },
+					writingRubric: { task: 7, coherence: 7, lexical: 7, grammar: 7 },
+					writingScore: 7,
+					speakingRubric: {
+						fluency: 1,
+						lexical: 1,
+						grammar: 1,
+						pronunciation: 1,
+					},
+					speakingScore: 1,
 					teacherFeedback: "Cần phản xạ nói nhanh hơn.",
 				}),
 			},
@@ -424,13 +431,36 @@ describe("leads placement-submission routes (#721)", () => {
 		expect(gradeRes.status).toBe(200);
 		const graded = (await gradeRes.json()) as PlacementSubmissionDetail;
 		expect(graded.status).toBe("graded");
-		expect(graded.writingScore).toBe(12);
-		expect(graded.speakingScore).toBe(2);
+		expect(graded.writingRubric).toEqual({
+			task: 7,
+			coherence: 7,
+			lexical: 7,
+			grammar: 7,
+		});
+		expect(graded.speakingRubric).toEqual({
+			fluency: 1,
+			lexical: 1,
+			grammar: 1,
+			pronunciation: 1,
+		});
+		expect(graded.writingScore).toBe(7);
+		expect(graded.speakingScore).toBe(1);
 		expect(graded.finalBandLevel).toBe("A2");
 		expect(graded.finalNote).toContain("hạ 1 bậc");
+		expect(graded.zaloText).toContain("Band 7.0/9");
+		expect(graded.zaloText).toContain("Band 1.0/9");
 		expect(graded.zaloText).toContain(
 			"Nhan xet cua Co My: Cần phản xạ nói nhanh hơn.",
 		);
+
+		const [subRow] = await db
+			.select()
+			.from(schema.placementTestSubmission)
+			.where(eq(schema.placementTestSubmission.id, graded.id));
+		expect(subRow?.writingBand).toBe(7);
+		expect(subRow?.writingScore).toBeNull();
+		expect(subRow?.speakingBand).toBe(1);
+		expect(subRow?.speakingScore).toBeNull();
 
 		const [updatedLead] = await db
 			.select()
@@ -438,6 +468,8 @@ describe("leads placement-submission routes (#721)", () => {
 			.where(eq(schema.lead.id, leadId));
 		expect(updatedLead?.course).toBe("comm-1");
 		expect(updatedLead?.placement).toContain("CEFR A2 (78%");
+		expect(updatedLead?.placement).toContain("W 7.0/9");
+		expect(updatedLead?.placement).toContain("S 1.0/9");
 
 		const listRes = await app.request("/api/leads", {
 			headers: { "x-test-user": "t1" },
@@ -446,6 +478,56 @@ describe("leads placement-submission routes (#721)", () => {
 		expect(
 			list.rows.find((r) => r.id === leadId)?.placementSubmissionStatus,
 		).toBe("graded");
+	});
+
+	test("tương thích ngược: đọc được bài đã chấm theo thang cũ (/15, /20) ở detail và public result", async () => {
+		const token = "c".repeat(64);
+		await db
+			.update(schema.placementTestSubmission)
+			.set({
+				status: "graded",
+				writingRubricJson: JSON.stringify({ ct: 4, or: 4, lg: 4 }),
+				writingScore: 12,
+				writingBand: null,
+				speakingRubricJson: JSON.stringify({ gv: 4, dm: 3, pr: 4, ic: 3 }),
+				speakingScore: 14,
+				speakingBand: null,
+				finalBandLevel: "A2+ / B1 thấp",
+				finalCourse: "comm-2",
+				finalDisplayCourse: "Communication English Level 2",
+				finalScorePct: 80,
+				teacherFeedback: "Bài cũ.",
+				resultToken: token,
+				resultPublishedAt: new Date(),
+				gradedAt: new Date(),
+			})
+			.where(eq(schema.placementTestSubmission.leadId, leadId));
+
+		const detailRes = await app.request(
+			`/api/leads/${leadId}/placement-submission`,
+			{ headers: { "x-test-user": "t1" } },
+		);
+		expect(detailRes.status).toBe(200);
+		const detail = (await detailRes.json()) as PlacementSubmissionDetail;
+		expect(detail.writingRubric).toEqual({ ct: 4, or: 4, lg: 4 });
+		expect(detail.writingScore).toBe(12);
+		expect(detail.speakingRubric).toEqual({ gv: 4, dm: 3, pr: 4, ic: 3 });
+		expect(detail.speakingScore).toBe(14);
+		expect(detail.zaloText).toContain("Writing: 12/15 (80%)");
+		expect(detail.zaloText).toContain("Speaking: 14/20 (70%)");
+
+		const pubRes = await app.request(`/public/placement-test/results/${token}`);
+		expect(pubRes.status).toBe(200);
+		const pub = (await pubRes.json()) as {
+			writingRubric: unknown;
+			writingScore: number | null;
+			speakingRubric: unknown;
+			speakingScore: number | null;
+		};
+		expect(pub.writingRubric).toEqual({ ct: 4, or: 4, lg: 4 });
+		expect(pub.writingScore).toBe(12);
+		expect(pub.speakingRubric).toEqual({ gv: 4, dm: 3, pr: 4, ic: 3 });
+		expect(pub.speakingScore).toBe(14);
 	});
 });
 
@@ -636,8 +718,15 @@ describe("TEACHER_EMAILS org drift cho public placement & leads (#742)", () => {
 					"content-type": "application/json",
 				},
 				body: JSON.stringify({
-					writingRubric: { ct: 4, or: 4, lg: 4 },
-					speakingRubric: { gv: 4, dm: 4, pr: 4, ic: 4 },
+					writingRubric: { task: 7, coherence: 7, lexical: 7, grammar: 7 },
+					writingScore: 7,
+					speakingRubric: {
+						fluency: 7,
+						lexical: 7,
+						grammar: 7,
+						pronunciation: 7,
+					},
+					speakingScore: 7,
 					teacherFeedback: "Tốt.",
 				}),
 			},
