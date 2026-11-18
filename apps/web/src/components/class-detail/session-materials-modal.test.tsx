@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import type { LessonMaterialView } from "@teacher-os/api/material-contracts";
-import { cleanup, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SessionMaterialsModal } from "@/components/class-detail/session-materials-modal";
 import {
@@ -73,6 +73,9 @@ describe("SessionMaterialsModal", () => {
 		expect(
 			within(list).getByRole("button", { name: "Gỡ Handout buổi 1" }),
 		).toBeTruthy();
+		expect(
+			within(list).getByRole("button", { name: "Xem trước Handout buổi 1" }),
+		).toBeTruthy();
 		// Không có danh sách giáo trình khi server không trả.
 		expect(
 			within(dialog).queryByRole("list", { name: "Tài liệu từ giáo trình" }),
@@ -108,6 +111,12 @@ describe("SessionMaterialsModal", () => {
 			within(curriculum).getByText("Cam 15 Test 1 Passage 1"),
 		).toBeTruthy();
 		expect(within(curriculum).getByText("Từ giáo trình")).toBeTruthy();
+		// PDF giáo trình xem trước được ngay trong buổi học.
+		expect(
+			within(curriculum).getByRole("button", {
+				name: "Xem trước Cam 15 Test 1 Passage 1",
+			}),
+		).toBeTruthy();
 		// Chỉ đọc: KHÔNG có nút gỡ trong danh sách giáo trình.
 		expect(within(curriculum).queryByRole("button", { name: /Gỡ/ })).toBeNull();
 		// Danh sách đính kèm trực tiếp giữ nguyên hành vi.
@@ -213,5 +222,28 @@ describe("SessionMaterialsModal", () => {
 			"session-materials-empty",
 		);
 		expect(emptyEl.textContent).toBe("Chưa có tài liệu nào cho buổi này.");
+	});
+
+	it("closes only the preview dialog on Escape, keeping the session dialog open", async () => {
+		startSessionServer({ items: [directRow] });
+		renderModal();
+
+		const dialog = await screen.findByRole("dialog", {
+			name: "Tài liệu buổi 10/11",
+		});
+		fireEvent.click(
+			await within(dialog).findByRole("button", {
+				name: "Xem trước Handout buổi 1",
+			}),
+		);
+		expect(
+			await screen.findByRole("dialog", { name: "Handout buổi 1" }),
+		).toBeTruthy();
+
+		fireEvent.keyDown(document, { key: "Escape" });
+		expect(screen.queryByRole("dialog", { name: "Handout buổi 1" })).toBeNull();
+		expect(
+			screen.getByRole("dialog", { name: "Tài liệu buổi 10/11" }),
+		).toBeTruthy();
 	});
 });

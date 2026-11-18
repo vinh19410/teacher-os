@@ -11,6 +11,7 @@ import {
 	PlayCircle,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import { MaterialPreviewButton } from "@/components/materials/material-preview";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { formatBytes, materialFileUrl } from "@/lib/repos/materials";
@@ -61,8 +62,8 @@ export function materialMeta(item: MaterialRowItem): string {
 
 /**
  * Nút mở/tải theo loại: link mở tab mới; audio/video phát inline + tải về;
- * tài liệu (server luôn trả attachment) chỉ có Tải xuống. Accessible name
- * kèm tiêu đề để phân biệt giữa nhiều dòng.
+ * tài liệu (server luôn trả attachment) có Tải xuống, cộng «Xem trước» trong
+ * app khi là PDF/ảnh. Accessible name kèm tiêu đề để phân biệt giữa nhiều dòng.
  */
 export function MaterialOpenActions({ item }: { item: MaterialRowItem }) {
 	const linkCls = buttonVariants({ variant: "ghost", size: "sm" });
@@ -82,6 +83,7 @@ export function MaterialOpenActions({ item }: { item: MaterialRowItem }) {
 	}
 	return (
 		<>
+			<MaterialPreviewButton item={item} />
 			{item.kind === "media" && (
 				<a
 					href={materialFileUrl(item.id)}

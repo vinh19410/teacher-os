@@ -104,6 +104,10 @@ describe("applySecurityHeaders (issue #203)", () => {
 		expect(headers.get("content-security-policy")).toContain(
 			"media-src 'self' blob:",
 		);
+		// pdfjs nạp PDF xem trước từ blob URL bằng fetch → cần connect-src blob:.
+		expect(headers.get("content-security-policy")).toContain(
+			"connect-src 'self' blob: https:",
+		);
 	});
 });
 
