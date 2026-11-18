@@ -150,7 +150,7 @@ async function completeStudentOnboarding(page: Page): Promise<void> {
 
 test.describe
 	.serial("Student Portal Placement Test (#748)", () => {
-		test("onboarding -> modal đề xuất -> Để sau -> highlight Dashboard & Sidebar -> làm bài 5 kỹ năng -> giáo viên chấm tại /students/$studentId -> đồng bộ entryScore", async ({
+		test("onboarding -> modal đề xuất -> Để sau -> highlight Dashboard (không có trên Sidebar) -> làm bài 5 kỹ năng -> thông báo chuông -> giáo viên chấm tại /students/$studentId -> đồng bộ entryScore", async ({
 			browser,
 		}) => {
 			test.setTimeout(180_000);
@@ -193,7 +193,7 @@ test.describe
 					path: reportPath("748-student-placement-modal-desktop-1440x900.png"),
 				});
 
-				// Bấm "Để sau" -> modal ẩn, lưu DB, nhưng Dashboard banner + Sidebar badge "Chưa làm" vẫn hiện
+				// Bấm "Để sau" -> modal ẩn, lưu DB, nhưng Dashboard banner vẫn hiện và sidemenu không có "Kiểm tra đầu vào"
 				await Promise.all([
 					studentPage.waitForResponse(
 						(res) =>
@@ -211,9 +211,15 @@ test.describe
 				await expect(
 					studentPage.getByTestId("placement-highlight-banner"),
 				).toBeVisible({ timeout: 15_000 });
-				const navBadge = studentPage.getByTestId("nav-placement-badge");
-				await expect(navBadge).toBeVisible();
-				await expect(navBadge).toHaveText("Chưa làm");
+				const studentNav = studentPage.getByRole("navigation", {
+					name: "Điều hướng học viên",
+				});
+				await expect(
+					studentNav.getByRole("link", { name: "Kiểm tra đầu vào" }),
+				).toHaveCount(0);
+				await expect(
+					studentPage.getByTestId("nav-placement-badge"),
+				).toHaveCount(0);
 
 				// Chụp POT 3 viewport + dark desktop cho Dashboard highlight
 				for (const vp of VIEWPORTS) {
@@ -376,9 +382,49 @@ test.describe
 				await expect(
 					studentPage.getByTestId("placement-pending-view"),
 				).toBeVisible({ timeout: 20_000 });
-				await expect(studentPage.getByTestId("nav-placement-badge")).toHaveText(
-					"Chờ chấm",
+
+				// Chuông thông báo có unread >= 1, bấm thông báo nộp bài -> đánh dấu đã đọc và mở /placement-test
+				const notificationBadge = studentPage.getByTestId("notification-badge");
+				await expect(notificationBadge).toBeVisible({ timeout: 15_000 });
+				const unreadCount = Number(
+					(await notificationBadge.textContent())?.trim() ?? "0",
 				);
+				expect(unreadCount).toBeGreaterThanOrEqual(1);
+
+				await studentPage.goto(`${STUDENT_ORIGIN}/`);
+				await expect(notificationBadge).toBeVisible({ timeout: 15_000 });
+				await studentPage.getByRole("button", { name: /Thông báo/ }).click();
+				const notificationDialog = studentPage.getByRole("dialog", {
+					name: "Danh sách thông báo",
+				});
+				await expect(notificationDialog).toBeVisible();
+				const placementNotificationItem = notificationDialog
+					.getByTestId("inbox-item")
+					.filter({ hasText: "Nộp bài kiểm tra đầu vào thành công" })
+					.first();
+				await expect(placementNotificationItem).toBeVisible({
+					timeout: 15_000,
+				});
+				await Promise.all([
+					studentPage.waitForResponse(
+						(res) =>
+							/\/api\/student\/inbox\/[^/]+\/read$/.test(res.url()) &&
+							res.request().method() === "POST" &&
+							res.status() === 200,
+					),
+					placementNotificationItem.click(),
+				]);
+				await expect(studentPage).toHaveURL(/\/placement-test/, {
+					timeout: 15_000,
+				});
+				await expect(
+					studentPage.getByTestId("placement-pending-view"),
+				).toBeVisible({ timeout: 15_000 });
+				if (unreadCount === 1) {
+					await expect(notificationBadge).toHaveCount(0);
+				} else {
+					await expect(notificationBadge).toHaveText(String(unreadCount - 1));
+				}
 
 				// 5. Lấy studentId từ DB để mở trang giáo viên /students/$studentId
 				const db = await openDb();
@@ -426,9 +472,6 @@ test.describe
 				await expect(
 					studentPage.getByTestId("placement-graded-view"),
 				).toBeVisible({ timeout: 20_000 });
-				await expect(
-					studentPage.getByTestId("nav-placement-badge"),
-				).not.toBeVisible();
 				await studentPage.setViewportSize({ width: 1440, height: 900 });
 				await studentPage.screenshot({
 					path: reportPath("748-student-placement-graded-desktop-1440x900.png"),

@@ -260,6 +260,7 @@ export function PlacementTestRunner({
 			void queryClient.invalidateQueries({
 				queryKey: studentPlacementViewQueryKey,
 			});
+			void queryClient.invalidateQueries({ queryKey: ["student", "inbox"] });
 
 			const optimisticView: StudentPlacementSubmissionView = {
 				id: res.submissionId,

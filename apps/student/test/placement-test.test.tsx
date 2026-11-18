@@ -279,7 +279,7 @@ describe("Student Portal Placement Test (#748)", () => {
 		globalThis.fetch = originalFetch;
 	});
 
-	it("shows first-time modal when status=not_started and promptDismissedAt=null; 'Để sau' calls /dismiss while banner and sidebar badge stay visible", async () => {
+	it("shows first-time modal when status=not_started and promptDismissedAt=null; 'Để sau' calls /dismiss while banner stays visible and sidebar has no entry", async () => {
 		let dismissedAt: string | null = null;
 		const dismissCalls: string[] = [];
 
@@ -320,9 +320,8 @@ describe("Student Portal Placement Test (#748)", () => {
 			"Kiểm tra đầu vào miễn phí (5 kỹ năng)",
 		);
 		expect(screen.getByTestId("placement-highlight-banner")).toBeTruthy();
-		expect(screen.getByTestId("nav-placement-badge").textContent).toBe(
-			"Chưa làm",
-		);
+		expect(screen.queryByTestId("nav-placement-badge")).toBeNull();
+		expect(screen.queryByRole("link", { name: "Kiểm tra đầu vào" })).toBeNull();
 
 		fireEvent.click(screen.getByRole("button", { name: "Để sau" }));
 
@@ -331,11 +330,10 @@ describe("Student Portal Placement Test (#748)", () => {
 			expect(screen.queryByTestId("placement-prompt-modal")).toBeNull();
 		});
 
-		// Highlight banner and sidebar "Chưa làm" badge remain visible after dismissing modal
+		// Highlight banner remains visible after dismissing modal, without sidebar placement entry
 		expect(screen.getByTestId("placement-highlight-banner")).toBeTruthy();
-		expect(screen.getByTestId("nav-placement-badge").textContent).toBe(
-			"Chưa làm",
-		);
+		expect(screen.queryByTestId("nav-placement-badge")).toBeNull();
+		expect(screen.queryByRole("link", { name: "Kiểm tra đầu vào" })).toBeNull();
 	});
 
 	it.each<{
@@ -482,6 +480,7 @@ describe("Student Portal Placement Test (#748)", () => {
 		});
 
 		const queryClient = createTestQueryClient();
+		const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
 		const { container } = render(
 			<QueryClientProvider client={queryClient}>
 				<StudentPlacementTestContent studentId="stu-1" />
@@ -624,6 +623,9 @@ describe("Student Portal Placement Test (#748)", () => {
 		);
 		expect(submittedBody).not.toBeNull();
 		expect(window.localStorage.getItem(draftKey)).toBeNull();
+		expect(invalidateSpy).toHaveBeenCalledWith({
+			queryKey: ["student", "inbox"],
+		});
 	});
 
 	it("renders graded result view with CEFR badge, rubrics, highlighted errors, bandAdvice and teacherFeedback", async () => {

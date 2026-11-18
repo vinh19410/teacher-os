@@ -4,7 +4,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 const mockOrgs = vi.fn();
-const mockPlacementStatus = vi.fn();
 
 vi.mock("@tanstack/react-router", () => ({
 	Link: ({
@@ -41,17 +40,11 @@ vi.mock("@/lib/repos/student", () => ({
 	useMarkInboxRead: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
-vi.mock("@/lib/repos/placement-test", () => ({
-	useStudentPlacementStatus: (enabled?: boolean) =>
-		mockPlacementStatus(enabled),
-}));
-
 import { StudentShell } from "@/components/layout/student-shell";
 
 // Mặc định chưa có org — các test về org ghi đè trong từng case.
 beforeAll(() => {
 	mockOrgs.mockReturnValue({ data: [], isLoading: false });
-	mockPlacementStatus.mockReturnValue({ data: undefined, isError: false });
 });
 
 function renderShell() {
@@ -108,28 +101,11 @@ describe("StudentShell v2", () => {
 		expect(html).toContain("minh@student.vn");
 	});
 
-	it("renders placement badge 'Chưa làm' for not_started and 'Chờ chấm' for pending_grading", () => {
-		mockPlacementStatus.mockReturnValueOnce({
-			data: { status: "not_started" },
-			isError: false,
-		});
-		const notStartedHtml = renderShell();
-		expect(notStartedHtml).toContain("Kiểm tra đầu vào");
-		expect(notStartedHtml).toContain("Chưa làm");
-
-		mockPlacementStatus.mockReturnValueOnce({
-			data: { status: "pending_grading" },
-			isError: false,
-		});
-		const pendingHtml = renderShell();
-		expect(pendingHtml).toContain("Chờ chấm");
-
-		mockPlacementStatus.mockReturnValueOnce({
-			data: undefined,
-			isError: true,
-		});
-		const errorHtml = renderShell();
-		expect(errorHtml).not.toContain("Chưa làm");
-		expect(errorHtml).not.toContain("Chờ chấm");
+	it("does not render placement test link or status badges in sidebar", () => {
+		const html = renderShell();
+		expect(html).not.toContain("Kiểm tra đầu vào");
+		expect(html).not.toContain('data-testid="nav-placement-badge"');
+		expect(html).not.toContain("Chưa làm");
+		expect(html).not.toContain("Chờ chấm");
 	});
 });
