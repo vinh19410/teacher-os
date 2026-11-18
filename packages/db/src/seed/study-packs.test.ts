@@ -6,7 +6,10 @@ import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { afterEach, describe, expect, it } from "vitest";
-import { runSeedStudyPacksCli } from "../../scripts/seed-study-packs";
+import {
+	parseStudyPackArgs,
+	runSeedStudyPacksCli,
+} from "../../scripts/seed-study-packs";
 import * as schema from "../schema/index";
 import {
 	EXPECTED_STUDY_PACK_COUNTS,
@@ -38,12 +41,19 @@ describe("study-packs seed pipeline (#702)", () => {
 		}
 	});
 
-	it("loads foun-gt1-discipline bundle with 1 pack, 69 exercises, 69 items", () => {
+	it("loads foun-gt1-discipline and first-step-gt2 bundles with 2 packs, 131 exercises, 131 items", () => {
 		const data = loadStudyPackSeedData();
 		expect(data.packs).toHaveLength(EXPECTED_STUDY_PACK_COUNTS.pack);
 		expect(data.exercises).toHaveLength(EXPECTED_STUDY_PACK_COUNTS.exercise);
 		expect(data.items).toHaveLength(EXPECTED_STUDY_PACK_COUNTS.item);
-		expect(data.packs[0]?.level).toBe("IELTS Foundation");
+		expect(data.packs.map((p) => p.id)).toEqual([
+			"syspack-first-step-gt2",
+			"syspack-foun-gt1-discipline",
+		]);
+		expect(data.packs.map((p) => p.level)).toEqual([
+			"IELTS First Step",
+			"IELTS Foundation",
+		]);
 	});
 
 	it("seeds idempotently, preserves non-seeded packs, and detects content drift", async () => {
@@ -73,7 +83,7 @@ describe("study-packs seed pipeline (#702)", () => {
 			expect(skipped.statementsExecuted).toBe(0);
 			expect(skipped.verification?.ok).toBe(true);
 
-			// Mutate seeded title to simulate drift
+			// Mutate seeded title and audio_key to simulate drift
 			await client.execute(
 				"UPDATE study_pack SET title = 'Drifted title' WHERE id = 'syspack-foun-gt1-discipline';",
 			);
@@ -84,6 +94,17 @@ describe("study-packs seed pipeline (#702)", () => {
 				verify: true,
 			});
 			expect(repaired.seeded).toBe(true);
+			expect(await verifyStudyPackContentParity(client)).toBe(true);
+
+			await client.execute(
+				"UPDATE study_pack_exercise SET audio_key = 'study-packs/first-step-gt2/drifted.mp3' WHERE id = 'sysex-first-step-gt2-b02';",
+			);
+			expect(await verifyStudyPackContentParity(client)).toBe(false);
+			const repairedAudioKey = await ensureStudyPacksSeeded(client, {
+				ifNeeded: true,
+				verify: true,
+			});
+			expect(repairedAudioKey.seeded).toBe(true);
 			expect(await verifyStudyPackContentParity(client)).toBe(true);
 
 			// Prune only scopes syspackitem-foun-gt1-* / sysex-foun-gt1-*, never custom rows
@@ -125,9 +146,21 @@ describe("study-packs seed pipeline (#702)", () => {
 				},
 			);
 			expect(stdout).toContain("already seeded and content-verified");
-			expect(stdout).toContain("pack 1/1, exercise 69/69, item 69/69");
+			expect(stdout).toContain("pack 2/2, exercise 131/131, item 131/131");
 		} finally {
 			client.close();
 		}
 	}, 30_000);
+
+	it("validates --allow-prod flag rules on seed-study-packs CLI", () => {
+		expect(() =>
+			parseStudyPackArgs(["--file", "local.db", "--allow-prod"]),
+		).toThrow("--allow-prod requires --d1");
+		expect(() =>
+			parseStudyPackArgs(["--d1", "--d1-stage", "staging", "--allow-prod"]),
+		).toThrow("Cannot combine --allow-prod with --d1-stage");
+		expect(
+			parseStudyPackArgs(["--d1", "--allow-prod", "--verify"]).allowProd,
+		).toBe(true);
+	});
 });

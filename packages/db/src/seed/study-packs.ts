@@ -24,14 +24,32 @@ export {
 	STAGING_D1_NAME_REGEX,
 };
 
-export const SYSTEM_PACK_ID_PREFIX = "syspack-foun-gt1-";
-export const SYSTEM_EXERCISE_ID_PREFIX = "sysex-foun-gt1-";
-export const SYSTEM_ITEM_ID_PREFIX = "syspackitem-foun-gt1-";
+export const SYSTEM_PACK_ID_PREFIX = "syspack-";
+export const SYSTEM_EXERCISE_ID_PREFIX = "sysex-";
+export const SYSTEM_ITEM_ID_PREFIX = "syspackitem-";
+
+/**
+ * Only prefixes listed here are managed, verified, and pruned by the study-pack
+ * seed pipeline, so admin-created system rows (`syspack-admin-custom`, etc.)
+ * are never modified or deleted.
+ */
+export const MANAGED_PACK_ID_PREFIXES = [
+	"syspack-foun-gt1-",
+	"syspack-first-step-gt2",
+] as const;
+export const MANAGED_EXERCISE_ID_PREFIXES = [
+	"sysex-foun-gt1-",
+	"sysex-first-step-gt2-",
+] as const;
+export const MANAGED_ITEM_ID_PREFIXES = [
+	"syspackitem-foun-gt1-",
+	"syspackitem-first-step-gt2-",
+] as const;
 
 export const EXPECTED_STUDY_PACK_COUNTS = {
-	pack: 1,
-	exercise: 69,
-	item: 69,
+	pack: 2,
+	exercise: 131,
+	item: 131,
 } as const;
 
 export const DEFAULT_STUDY_PACK_DATA_DIR = resolve(
@@ -53,6 +71,23 @@ const ALLOWED_STUDY_PACK_AUDIO_HOSTS = new Set([
 	"www.lingua.com",
 ]);
 
+const STUDY_PACK_AUDIO_KEY_REGEX = /^study-packs\/[a-z0-9-]+\/[a-z0-9-]+\.mp3$/;
+
+function isValidSeedAudioKey(raw: string): boolean {
+	const trimmed = raw.trim();
+	return (
+		trimmed.length > 0 &&
+		trimmed.length <= 500 &&
+		STUDY_PACK_AUDIO_KEY_REGEX.test(trimmed)
+	);
+}
+
+function buildManagedPrefixClause(
+	column: string,
+	prefixes: readonly string[],
+): string {
+	return `(${prefixes.map((p) => `${column} LIKE '${p}%'`).join(" OR ")})`;
+}
 function isValidSeedAudioUrl(raw: string): boolean {
 	const trimmed = raw.trim();
 	if (!trimmed || trimmed.length > 500) return false;
@@ -74,7 +109,7 @@ function isValidSeedAudioUrl(raw: string): boolean {
 const seedQuestionSchema = z
 	.object({
 		stem: z.string().trim().min(1),
-		opts: z.array(z.string()).max(6).nullable().optional(),
+		opts: z.array(z.string()).max(8).nullable().optional(),
 		answer: z.string().trim().min(1),
 		alts: z.string().optional(),
 		type: z.string().trim().min(1).optional(),
@@ -92,7 +127,7 @@ const seedQuestionSchema = z
 
 const seedExerciseSchema = z
 	.object({
-		id: z.string().startsWith(SYSTEM_EXERCISE_ID_PREFIX),
+		id: z.string().regex(/^sysex-[a-z0-9-]+$/),
 		skill: z.enum(["reading", "listening", "grammar", "vocabulary"]),
 		part: z.string(),
 		type: z.string().min(1),
@@ -102,6 +137,7 @@ const seedExerciseSchema = z
 		intro: z.string(),
 		passage: z.string(),
 		audioUrl: z.string(),
+		audioKey: z.string().trim().max(500).optional().default(""),
 		transcript: z.string(),
 		questions: z.array(seedQuestionSchema).min(1),
 		optionBank: z.array(z.string()),
@@ -109,8 +145,18 @@ const seedExerciseSchema = z
 		status: z.enum(["draft", "ready"]),
 	})
 	.superRefine((exercise, ctx) => {
+		const hasUrl = exercise.audioUrl.trim() !== "";
+		const hasKey = exercise.audioKey.trim() !== "";
 		if (exercise.skill === "listening") {
-			if (!isValidSeedAudioUrl(exercise.audioUrl)) {
+			if (!hasUrl && !hasKey) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["audioUrl"],
+					message:
+						"listening seed exercise requires valid allowlisted https mp3 audioUrl or R2 audioKey",
+				});
+			}
+			if (hasUrl && !isValidSeedAudioUrl(exercise.audioUrl)) {
 				ctx.addIssue({
 					code: "custom",
 					path: ["audioUrl"],
@@ -118,12 +164,29 @@ const seedExerciseSchema = z
 						"listening seed exercise requires valid allowlisted https mp3 audioUrl",
 				});
 			}
-		} else if (exercise.audioUrl.trim() !== "") {
-			ctx.addIssue({
-				code: "custom",
-				path: ["audioUrl"],
-				message: "non-listening seed exercise must have empty audioUrl",
-			});
+			if (hasKey && !isValidSeedAudioKey(exercise.audioKey)) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["audioKey"],
+					message:
+						"listening seed exercise audioKey must match study-packs/<pack>/<id>.mp3",
+				});
+			}
+		} else {
+			if (hasUrl) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["audioUrl"],
+					message: "non-listening seed exercise must have empty audioUrl",
+				});
+			}
+			if (hasKey) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["audioKey"],
+					message: "non-listening seed exercise must have empty audioKey",
+				});
+			}
 		}
 	});
 
@@ -177,7 +240,10 @@ export function loadStudyPackSeedData(
 	dataDir: string = DEFAULT_STUDY_PACK_DATA_DIR,
 ): ParsedStudyPackSeedData {
 	const fileNames = readdirSync(dataDir)
-		.filter((name) => name.endsWith(".json"))
+		.filter(
+			(name) =>
+				name.endsWith(".json") && !name.endsWith(".audio-manifest.json"),
+		)
 		.sort((a, b) => a.localeCompare(b));
 	if (fileNames.length === 0) {
 		throw new Error(`[study-packs] No JSON seed files found in ${dataDir}`);
@@ -283,11 +349,11 @@ export function buildStudyPackUpsertStatements(
 
 	statements.push(
 		...chunkInsertStatements(
-			"INSERT INTO study_pack_exercise (id, skill, part, type, title, band, level, intro, passage, audio_url, transcript, questions, option_bank, note, status, created_by, created_at, updated_at) VALUES ",
-			" ON CONFLICT(id) DO UPDATE SET skill = excluded.skill, part = excluded.part, type = excluded.type, title = excluded.title, band = excluded.band, level = excluded.level, intro = excluded.intro, passage = excluded.passage, audio_url = excluded.audio_url, transcript = excluded.transcript, questions = excluded.questions, option_bank = excluded.option_bank, note = excluded.note, status = excluded.status, updated_at = (cast(unixepoch('subsecond') * 1000 as integer));",
+			"INSERT INTO study_pack_exercise (id, skill, part, type, title, band, level, intro, passage, audio_url, audio_key, transcript, questions, option_bank, note, status, created_by, created_at, updated_at) VALUES ",
+			" ON CONFLICT(id) DO UPDATE SET skill = excluded.skill, part = excluded.part, type = excluded.type, title = excluded.title, band = excluded.band, level = excluded.level, intro = excluded.intro, passage = excluded.passage, audio_url = excluded.audio_url, audio_key = excluded.audio_key, transcript = excluded.transcript, questions = excluded.questions, option_bank = excluded.option_bank, note = excluded.note, status = excluded.status, updated_at = (cast(unixepoch('subsecond') * 1000 as integer));",
 			data.exercises.map(
 				(ex) =>
-					`(${sqlQuoteString(ex.id)}, ${sqlQuoteString(ex.skill)}, ${sqlQuoteString(ex.part)}, ${sqlQuoteString(ex.type)}, ${sqlQuoteString(ex.title)}, ${sqlQuoteString(ex.band)}, ${sqlQuoteString(ex.level)}, ${sqlQuoteString(ex.intro)}, ${sqlQuoteString(ex.passage)}, ${sqlQuoteString(ex.audioUrl)}, ${sqlQuoteString(ex.transcript)}, ${sqlQuoteString(JSON.stringify(ex.questions))}, ${sqlQuoteString(JSON.stringify(ex.optionBank))}, ${sqlQuoteString(ex.note)}, ${sqlQuoteString(ex.status)}, NULL, ${nowExpr}, ${nowExpr})`,
+					`(${sqlQuoteString(ex.id)}, ${sqlQuoteString(ex.skill)}, ${sqlQuoteString(ex.part)}, ${sqlQuoteString(ex.type)}, ${sqlQuoteString(ex.title)}, ${sqlQuoteString(ex.band)}, ${sqlQuoteString(ex.level)}, ${sqlQuoteString(ex.intro)}, ${sqlQuoteString(ex.passage)}, ${sqlQuoteString(ex.audioUrl)}, ${ex.audioKey ? sqlQuoteString(ex.audioKey) : "NULL"}, ${sqlQuoteString(ex.transcript)}, ${sqlQuoteString(JSON.stringify(ex.questions))}, ${sqlQuoteString(JSON.stringify(ex.optionBank))}, ${sqlQuoteString(ex.note)}, ${sqlQuoteString(ex.status)}, NULL, ${nowExpr}, ${nowExpr})`,
 			),
 			maxChunkBytes,
 		),
@@ -321,12 +387,20 @@ export function buildStudyPackUpsertStatements(
 
 	if (options?.prune) {
 		const itemIds = data.items.map((i) => sqlQuoteString(i.id)).join(", ");
+		const managedItemClause = buildManagedPrefixClause(
+			"id",
+			MANAGED_ITEM_ID_PREFIXES,
+		);
 		statements.push(
-			`DELETE FROM study_pack_item WHERE id LIKE '${SYSTEM_ITEM_ID_PREFIX}%'${itemIds ? ` AND id NOT IN (${itemIds})` : ""};`,
+			`DELETE FROM study_pack_item WHERE ${managedItemClause}${itemIds ? ` AND id NOT IN (${itemIds})` : ""};`,
 		);
 		const exIds = data.exercises.map((e) => sqlQuoteString(e.id)).join(", ");
+		const managedExClause = buildManagedPrefixClause(
+			"id",
+			MANAGED_EXERCISE_ID_PREFIXES,
+		);
 		statements.push(
-			`DELETE FROM study_pack_exercise WHERE id LIKE '${SYSTEM_EXERCISE_ID_PREFIX}%'${exIds ? ` AND id NOT IN (${exIds})` : ""} AND NOT EXISTS (SELECT 1 FROM study_pack_item WHERE study_pack_item.source_kind = 'library_exercise' AND study_pack_item.source_id = study_pack_exercise.id);`,
+			`DELETE FROM study_pack_exercise WHERE ${managedExClause}${exIds ? ` AND id NOT IN (${exIds})` : ""} AND NOT EXISTS (SELECT 1 FROM study_pack_item WHERE study_pack_item.source_kind = 'library_exercise' AND study_pack_item.source_id = study_pack_exercise.id);`,
 		);
 	}
 
@@ -410,13 +484,13 @@ export async function verifyStudyPackCounts(
 	const data = options?.data ?? loadStudyPackSeedData(options?.dataDir);
 	const [packRows, exerciseRows, itemRows] = await Promise.all([
 		runner.queryRows(
-			`SELECT id FROM study_pack WHERE id LIKE '${SYSTEM_PACK_ID_PREFIX}%'`,
+			`SELECT id FROM study_pack WHERE ${buildManagedPrefixClause("id", MANAGED_PACK_ID_PREFIXES)}`,
 		),
 		runner.queryRows(
-			`SELECT id FROM study_pack_exercise WHERE id LIKE '${SYSTEM_EXERCISE_ID_PREFIX}%'`,
+			`SELECT id FROM study_pack_exercise WHERE ${buildManagedPrefixClause("id", MANAGED_EXERCISE_ID_PREFIXES)}`,
 		),
 		runner.queryRows(
-			`SELECT id FROM study_pack_item WHERE id LIKE '${SYSTEM_ITEM_ID_PREFIX}%'`,
+			`SELECT id FROM study_pack_item WHERE ${buildManagedPrefixClause("id", MANAGED_ITEM_ID_PREFIXES)}`,
 		),
 	]);
 
@@ -466,6 +540,7 @@ function canonicalHashOfSeedData(data: ParsedStudyPackSeedData): string {
 				ex.intro,
 				ex.passage,
 				ex.audioUrl,
+				ex.audioKey,
 				ex.transcript,
 				JSON.stringify(ex.questions),
 				JSON.stringify(ex.optionBank),
@@ -509,7 +584,7 @@ export async function verifyStudyPackContentParity(
 
 	const actualHash = createHash("sha256");
 	const packRows = await runner.queryRows(
-		`SELECT id, title, description, level, status FROM study_pack WHERE id LIKE '${SYSTEM_PACK_ID_PREFIX}%' ORDER BY id ASC;`,
+		`SELECT id, title, description, level, status FROM study_pack WHERE ${buildManagedPrefixClause("id", MANAGED_PACK_ID_PREFIXES)} ORDER BY id ASC;`,
 	);
 	for (const r of packRows) {
 		actualHash.update(
@@ -525,7 +600,7 @@ export async function verifyStudyPackContentParity(
 	}
 
 	const exerciseRows = await runner.queryRows(
-		`SELECT id, skill, part, type, title, band, level, intro, passage, audio_url, transcript, questions, option_bank, note, status FROM study_pack_exercise WHERE id LIKE '${SYSTEM_EXERCISE_ID_PREFIX}%' ORDER BY id ASC;`,
+		`SELECT id, skill, part, type, title, band, level, intro, passage, audio_url, audio_key, transcript, questions, option_bank, note, status FROM study_pack_exercise WHERE ${buildManagedPrefixClause("id", MANAGED_EXERCISE_ID_PREFIXES)} ORDER BY id ASC;`,
 	);
 	for (const r of exerciseRows) {
 		actualHash.update(
@@ -541,6 +616,7 @@ export async function verifyStudyPackContentParity(
 				String(r.intro),
 				String(r.passage),
 				String(r.audio_url),
+				String(r.audio_key ?? ""),
 				String(r.transcript),
 				String(r.questions),
 				String(r.option_bank),
@@ -551,7 +627,7 @@ export async function verifyStudyPackContentParity(
 	}
 
 	const itemRows = await runner.queryRows(
-		`SELECT id, pack_id, day_index, source_kind, source_id, note FROM study_pack_item WHERE id LIKE '${SYSTEM_ITEM_ID_PREFIX}%' ORDER BY id ASC;`,
+		`SELECT id, pack_id, day_index, source_kind, source_id, note FROM study_pack_item WHERE ${buildManagedPrefixClause("id", MANAGED_ITEM_ID_PREFIXES)} ORDER BY id ASC;`,
 	);
 	for (const r of itemRows) {
 		actualHash.update(
@@ -568,6 +644,91 @@ export async function verifyStudyPackContentParity(
 	}
 
 	return expectedDigest === actualHash.digest("hex");
+}
+
+export const PROD_D1_LOOKUP_REGEX = /^teacher-os-database-prod-[a-z2-7]{16}$/;
+
+async function cfD1GetJson<T>(options: {
+	url: string;
+	apiToken: string;
+	fetchImpl?: typeof fetch;
+	timeoutMs?: number;
+}): Promise<T> {
+	const fetchFn = options.fetchImpl ?? fetch;
+	const timeoutMs = options.timeoutMs ?? 20_000;
+	const res = await fetchFn(options.url, {
+		method: "GET",
+		headers: { authorization: `Bearer ${options.apiToken}` },
+		signal: AbortSignal.timeout(timeoutMs),
+	});
+	const raw = await res.text();
+	let payload: {
+		success?: boolean;
+		errors?: Array<{ message?: string }>;
+		result?: T;
+	};
+	try {
+		payload = JSON.parse(raw) as typeof payload;
+	} catch {
+		throw new Error(`D1 API failed (${res.status}): invalid JSON`);
+	}
+	if (!res.ok || payload.success !== true || !payload.result) {
+		const errMsg =
+			payload.errors?.map((e) => e.message ?? "error").join("; ") ??
+			`HTTP ${res.status}`;
+		throw new Error(`D1 API failed (${res.status}): ${errMsg}`);
+	}
+	return payload.result;
+}
+
+/**
+ * Resolves the single production D1 database matching `teacher-os-database-prod-*`
+ * fail-closed. Only used when the caller explicitly passes `--allow-prod`.
+ */
+export async function resolveProdD1DatabaseId(options: {
+	accountId: string;
+	apiToken: string;
+	fetchImpl?: typeof fetch;
+	timeoutMs?: number;
+}): Promise<{ uuid: string; name: string }> {
+	const list = await cfD1GetJson<Array<{ uuid?: string; name?: string }>>({
+		url: `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(options.accountId)}/d1/database?name=teacher-os-database-prod-&per_page=100`,
+		apiToken: options.apiToken,
+		fetchImpl: options.fetchImpl,
+		timeoutMs: options.timeoutMs,
+	});
+	const matches = list.filter(
+		(db): db is { uuid: string; name: string } =>
+			typeof db.uuid === "string" &&
+			typeof db.name === "string" &&
+			PROD_D1_LOOKUP_REGEX.test(db.name),
+	);
+	const [match] = matches;
+	if (matches.length !== 1 || !match) {
+		throw new Error(
+			`Expected exactly 1 prod D1 database matching ${PROD_D1_LOOKUP_REGEX}, found ${matches.length}.`,
+		);
+	}
+	return match;
+}
+
+export async function inspectD1DatabaseName(options: {
+	accountId: string;
+	databaseId: string;
+	apiToken: string;
+	fetchImpl?: typeof fetch;
+	timeoutMs?: number;
+}): Promise<string> {
+	const result = await cfD1GetJson<{ name?: string }>({
+		url: `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(options.accountId)}/d1/database/${encodeURIComponent(options.databaseId)}`,
+		apiToken: options.apiToken,
+		fetchImpl: options.fetchImpl,
+		timeoutMs: options.timeoutMs,
+	});
+	if (!result.name) {
+		throw new Error("D1 get database returned empty name");
+	}
+	return result.name;
 }
 
 export async function ensureStudyPacksSeeded(
