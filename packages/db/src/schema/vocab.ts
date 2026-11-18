@@ -30,6 +30,8 @@ export const vocabDeck = sqliteTable(
 			onDelete: "cascade",
 		}),
 		title: text("title").notNull(),
+		lessonNumber: integer("lesson_number"),
+		topic: text("topic"),
 		lang: text("lang").notNull().default("en"),
 		/**
 		 * Con trỏ provenance tới `vocab_library_deck.id` khi bộ từ được clone từ thư viện (#361).
@@ -66,8 +68,14 @@ export const vocabWord = sqliteTable(
 			.notNull()
 			.references(() => vocabDeck.id, { onDelete: "cascade" }),
 		word: text("word").notNull(),
+		entryType: text("entry_type")
+			.$type<"word" | "chunk">()
+			.notNull()
+			.default("word"),
 		ipa: text("ipa"),
+		pos: text("pos"),
 		translation: text("translation").notNull().default(""),
+		example: text("example"),
 		audioKey: text("audio_key"),
 		audioUrl: text("audio_url"),
 		sortOrder: integer("sort_order").notNull().default(0),

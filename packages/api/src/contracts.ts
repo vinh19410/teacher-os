@@ -3399,10 +3399,15 @@ export const VOCAB_ERROR_CODES = {
 export type VocabErrorCode =
 	(typeof VOCAB_ERROR_CODES)[keyof typeof VOCAB_ERROR_CODES];
 
+export const vocabEntryTypeSchema = z.enum(["word", "chunk"]);
+export type VocabEntryType = z.infer<typeof vocabEntryTypeSchema>;
+
 export interface KernelVocabDeckRow {
 	id: string;
 	classId: string | null;
 	title: string;
+	lessonNumber?: number | null;
+	topic?: string | null;
 	lang: string;
 	wordCount: number;
 	createdAt: string;
@@ -3432,6 +3437,8 @@ export const vocabDeckCreateSchema = z
 			.optional(),
 		classId: z.string().min(1).nullable().optional().default(null),
 		title: z.string().trim().min(1).max(200),
+		lessonNumber: z.number().int().min(1).max(9999).nullable().optional(),
+		topic: z.string().trim().max(200).nullable().optional(),
 		lang: z.string().trim().min(1).max(16).default("en"),
 	})
 	.strict();
@@ -3441,6 +3448,8 @@ export const vocabDeckRenameSchema = z
 	.object({
 		deckId: z.string().min(1),
 		title: z.string().trim().min(1).max(200),
+		lessonNumber: z.number().int().min(1).max(9999).nullable().optional(),
+		topic: z.string().trim().max(200).nullable().optional(),
 		lang: z.string().trim().min(1).max(16).optional(),
 	})
 	.strict();
@@ -3471,8 +3480,11 @@ export const vocabWordUpsertSchema = z
 			.optional(),
 		deckId: z.string().min(1),
 		word: z.string().trim().min(1).max(200),
+		entryType: vocabEntryTypeSchema.default("word"),
 		ipa: z.string().trim().max(200).nullable().optional(),
+		pos: z.string().trim().max(100).nullable().optional(),
 		translation: z.string().trim().max(500).default(""),
+		example: z.string().trim().max(1000).nullable().optional(),
 		sortOrder: z.number().int().min(0).default(0),
 	})
 	.strict();
@@ -3490,14 +3502,98 @@ export const vocabTeacherWordSchema = z
 		id: z.string().min(1),
 		deckId: z.string().min(1),
 		word: z.string(),
+		entryType: vocabEntryTypeSchema.optional(),
 		ipa: z.string().nullable(),
+		pos: z.string().nullable().optional(),
 		translation: z.string(),
+		example: z.string().nullable().optional(),
 		audioKey: z.string().nullable(),
 		audioUrl: z.string().nullable(),
 		sortOrder: z.number().int(),
 	})
 	.strict();
 export type VocabTeacherWord = z.infer<typeof vocabTeacherWordSchema>;
+
+export const VOCAB_CSV_IMPORT_MAX_DECKS = 50;
+export const VOCAB_CSV_IMPORT_MAX_WORDS_PER_REQUEST = 500;
+
+export const vocabWordImportItemSchema = z
+	.object({
+		word: z.string().trim().min(1).max(200),
+		entryType: vocabEntryTypeSchema.default("word"),
+		ipa: z.string().trim().max(200).nullable().optional().default(null),
+		pos: z.string().trim().max(100).nullable().optional().default(null),
+		translation: z.string().trim().max(500).default(""),
+		example: z.string().trim().max(1000).nullable().optional().default(null),
+	})
+	.strict();
+export type VocabWordImportItem = z.infer<typeof vocabWordImportItemSchema>;
+
+export const vocabDeckCsvImportItemSchema = z
+	.object({
+		title: z.string().trim().min(1).max(200),
+		lessonNumber: z
+			.number()
+			.int()
+			.min(1)
+			.max(9999)
+			.nullable()
+			.optional()
+			.default(null),
+		topic: z.string().trim().max(200).nullable().optional().default(null),
+		lang: z.string().trim().min(1).max(16).default("en"),
+		words: z
+			.array(vocabWordImportItemSchema)
+			.min(1)
+			.max(VOCAB_CSV_IMPORT_MAX_WORDS_PER_REQUEST),
+	})
+	.strict();
+export type VocabDeckCsvImportItem = z.infer<
+	typeof vocabDeckCsvImportItemSchema
+>;
+
+export const vocabDeckCsvImportSchema = z
+	.object({
+		classId: z.string().min(1).nullable().optional().default(null),
+		decks: z
+			.array(vocabDeckCsvImportItemSchema)
+			.min(1)
+			.max(VOCAB_CSV_IMPORT_MAX_DECKS),
+	})
+	.strict()
+	.refine(
+		(data) =>
+			data.decks.reduce((sum, d) => sum + d.words.length, 0) <=
+			VOCAB_CSV_IMPORT_MAX_WORDS_PER_REQUEST,
+		{
+			message: `Total imported words must not exceed ${VOCAB_CSV_IMPORT_MAX_WORDS_PER_REQUEST}`,
+		},
+	);
+export type VocabDeckCsvImportInput = z.infer<typeof vocabDeckCsvImportSchema>;
+
+export const vocabDeckWordsImportSchema = z
+	.object({
+		words: z
+			.array(vocabWordImportItemSchema)
+			.min(1)
+			.max(VOCAB_CSV_IMPORT_MAX_WORDS_PER_REQUEST),
+	})
+	.strict();
+export type VocabDeckWordsImportInput = z.infer<
+	typeof vocabDeckWordsImportSchema
+>;
+
+export const vocabCsvImportResponseSchema = z
+	.object({
+		id: z.string().min(1),
+		deckIds: z.array(z.string().min(1)),
+		importedDecks: z.number().int().min(0),
+		importedWords: z.number().int().min(0),
+	})
+	.strict();
+export type VocabCsvImportResponse = z.infer<
+	typeof vocabCsvImportResponseSchema
+>;
 
 export const vocabTeacherWordsResponseSchema = z
 	.object({
@@ -3820,6 +3916,8 @@ export const vocabSessionDeckSchema = z
 	.object({
 		id: z.string().min(1),
 		title: z.string(),
+		lessonNumber: z.number().int().nullable().optional(),
+		topic: z.string().nullable().optional(),
 		lang: z.string(),
 	})
 	.strict();
@@ -3830,8 +3928,11 @@ export const vocabSessionCardSchema = z
 		id: z.string().min(1),
 		wordId: z.string().min(1),
 		word: z.string(),
+		entryType: vocabEntryTypeSchema.optional(),
 		translation: z.string(),
 		ipa: z.string().nullable(),
+		pos: z.string().nullable().optional(),
+		example: z.string().nullable().optional(),
 		audioKey: z.string().nullable(),
 		hasAudio: z.boolean().default(false),
 		level: z.number().int().min(1).max(5),

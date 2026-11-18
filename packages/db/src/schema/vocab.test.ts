@@ -86,9 +86,16 @@ describe("vocab schema & migration 0038 (#363)", () => {
 
 			const db = drizzle(client, { schema });
 
-			// 1. Existing deck, word, card preserved
+			// 1. Existing deck, word, card preserved (query columns that existed at 0038)
 			const [existingDeck] = await db
-				.select()
+				.select({
+					id: schema.vocabDeck.id,
+					orgId: schema.vocabDeck.orgId,
+					classId: schema.vocabDeck.classId,
+					title: schema.vocabDeck.title,
+					lang: schema.vocabDeck.lang,
+					sourceLibraryDeckId: schema.vocabDeck.sourceLibraryDeckId,
+				})
 				.from(schema.vocabDeck)
 				.where(eq(schema.vocabDeck.id, "deck-existing"));
 			expect(existingDeck).toMatchObject({
@@ -101,7 +108,10 @@ describe("vocab schema & migration 0038 (#363)", () => {
 			});
 
 			const [existingWord] = await db
-				.select()
+				.select({
+					id: schema.vocabWord.id,
+					word: schema.vocabWord.word,
+				})
 				.from(schema.vocabWord)
 				.where(eq(schema.vocabWord.id, "word-1"));
 			expect(existingWord?.word).toBe("resilient");
@@ -128,16 +138,16 @@ describe("vocab schema & migration 0038 (#363)", () => {
 				]),
 			);
 
-			// 3. Insert independent deck with classId = null
-			await db.insert(schema.vocabDeck).values({
-				id: "deck-independent",
-				orgId: "org-1",
-				classId: null,
-				title: "Independent TOEIC Deck",
-				lang: "en",
+			// 3. Insert independent deck with classId = null (at 0038 schema columns)
+			await client.execute({
+				sql: "INSERT INTO vocab_deck (id, org_id, class_id, title, lang, created_at, updated_at) VALUES (?, ?, NULL, ?, ?, 1700000000000, 1700000000000)",
+				args: ["deck-independent", "org-1", "Independent TOEIC Deck", "en"],
 			});
 			const [indepDeck] = await db
-				.select()
+				.select({
+					id: schema.vocabDeck.id,
+					classId: schema.vocabDeck.classId,
+				})
 				.from(schema.vocabDeck)
 				.where(eq(schema.vocabDeck.id, "deck-independent"));
 			expect(indepDeck?.classId).toBeNull();
@@ -487,6 +497,113 @@ describe("vocab_card polymorphic word_id & migration 0039 (#366)", () => {
 				"card-lib-1",
 				"card-org-1",
 			]);
+		} finally {
+			client.close();
+		}
+	});
+
+	it("rehearses 0076 additive migration on populated vocab_deck/vocab_word rows and supports lessonNumber/topic/entryType/pos/example", async () => {
+		const client = createClient({ url: "file::memory:" });
+		try {
+			const files = readdirSync(MIGRATIONS_DIR).filter((f) =>
+				f.endsWith(".sql"),
+			);
+			files.sort();
+			const idx0076 = files.findIndex((f) => f.startsWith("0076_"));
+			expect(idx0076).toBeGreaterThan(0);
+
+			for (const file of files.slice(0, idx0076)) {
+				const rawSql = readFileSync(join(MIGRATIONS_DIR, file), "utf8");
+				for (const stmt of rawSql
+					.split("--> statement-breakpoint")
+					.map((s) => s.trim())
+					.filter(Boolean)) {
+					await client.execute(stmt);
+				}
+			}
+
+			await client.execute({
+				sql: "INSERT INTO organization (id, name, created_at) VALUES (?, ?, 1700000000000)",
+				args: ["org-legacy", "Legacy Org"],
+			});
+			await client.execute({
+				sql: "INSERT INTO vocab_deck (id, org_id, class_id, title, lang, created_at, updated_at) VALUES (?, ?, NULL, ?, 'en', 1700000000000, 1700000000000)",
+				args: ["deck-legacy", "org-legacy", "Legacy Deck"],
+			});
+			await client.execute({
+				sql: "INSERT INTO vocab_word (id, deck_id, word, ipa, translation, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 0, 1700000000000, 1700000000000)",
+				args: [
+					"word-legacy",
+					"deck-legacy",
+					"resilient",
+					"/rɪˈzɪl.i.ənt/",
+					"kiên cường",
+				],
+			});
+
+			const file0076 = files[idx0076] as string;
+			const sql0076 = readFileSync(join(MIGRATIONS_DIR, file0076), "utf8");
+			for (const stmt of sql0076
+				.split("--> statement-breakpoint")
+				.map((s) => s.trim())
+				.filter(Boolean)) {
+				await client.execute(stmt);
+			}
+
+			const db = drizzle(client, { schema });
+			const [legacyDeck] = await db
+				.select()
+				.from(schema.vocabDeck)
+				.where(eq(schema.vocabDeck.id, "deck-legacy"));
+			expect(legacyDeck).toMatchObject({
+				id: "deck-legacy",
+				title: "Legacy Deck",
+				lessonNumber: null,
+				topic: null,
+			});
+
+			const [legacyWord] = await db
+				.select()
+				.from(schema.vocabWord)
+				.where(eq(schema.vocabWord.id, "word-legacy"));
+			expect(legacyWord).toMatchObject({
+				id: "word-legacy",
+				word: "resilient",
+				entryType: "word",
+				pos: null,
+				example: null,
+			});
+
+			await db.insert(schema.vocabDeck).values({
+				id: "deck-lesson-1",
+				orgId: "org-legacy",
+				classId: null,
+				title: "Lesson 01 – Friends & Introductions",
+				lessonNumber: 1,
+				topic: "Friends & Introductions",
+				lang: "en",
+			});
+			await db.insert(schema.vocabWord).values({
+				id: "chunk-1",
+				deckId: "deck-lesson-1",
+				word: "be from + (city / country)",
+				entryType: "chunk",
+				ipa: null,
+				pos: null,
+				translation: "đến từ …",
+				example: "I'm from Hue, in the centre of Vietnam.",
+				sortOrder: 0,
+			});
+
+			const [chunkRow] = await db
+				.select()
+				.from(schema.vocabWord)
+				.where(eq(schema.vocabWord.id, "chunk-1"));
+			expect(chunkRow).toMatchObject({
+				entryType: "chunk",
+				pos: null,
+				example: "I'm from Hue, in the centre of Vietnam.",
+			});
 		} finally {
 			client.close();
 		}

@@ -5,6 +5,8 @@ import {
 	VOCAB_ERROR_CODES,
 	vocabAnswerSchema,
 	vocabDeckCreateSchema,
+	vocabDeckCsvImportSchema,
+	vocabDeckWordsImportSchema,
 	vocabLearnCommitSchema,
 	vocabLibraryCloneSchema,
 	vocabLibraryCourseSchema,
@@ -660,5 +662,85 @@ describe("vocab contracts (.strict() and boundary validation)", () => {
 			expect(progressParsed.data.decks[0]?.className).toBe("1000 Từ Cơ Bản");
 			expect(progressParsed.data.decks[0]?.source).toBe("library");
 		}
+	});
+
+	it("validates lessonNumber/topic on deck create, entryType/pos/example on word upsert, and strict CSV bulk import limits", () => {
+		expect(
+			vocabDeckCreateSchema.safeParse({
+				classId: null,
+				title: "Lesson 01 – Friends & Introductions",
+				lessonNumber: 1,
+				topic: "Friends & Introductions",
+			}).success,
+		).toBe(true);
+
+		const upsertedChunk = vocabWordUpsertSchema.safeParse({
+			deckId: "deck-1",
+			word: "hang out",
+			entryType: "chunk",
+			ipa: "/hæŋ ˈaʊt/",
+			pos: "phr. v.",
+			translation: "đi chơi, tụ tập",
+			example: "We hang out at a café on Sundays.",
+			sortOrder: 0,
+		});
+		expect(upsertedChunk.success).toBe(true);
+
+		expect(
+			vocabWordUpsertSchema.safeParse({
+				deckId: "deck-1",
+				word: "bad",
+				entryType: "idiom",
+			}).success,
+		).toBe(false);
+
+		expect(
+			vocabDeckCsvImportSchema.safeParse({
+				classId: "cl-1",
+				decks: [
+					{
+						title: "Lesson 01 – Friends & Introductions",
+						lessonNumber: 1,
+						topic: "Friends & Introductions",
+						words: [
+							{
+								word: "introduce",
+								entryType: "word",
+								ipa: "/ˌɪntrəˈdjuːs/",
+								pos: "v.",
+								translation: "giới thiệu",
+								example: "Can I introduce my friend Nam?",
+							},
+						],
+					},
+				],
+			}).success,
+		).toBe(true);
+
+		expect(
+			vocabDeckWordsImportSchema.safeParse({
+				words: [
+					{
+						word: "make friends with sb",
+						entryType: "chunk",
+						translation: "kết bạn với ai",
+					},
+				],
+			}).success,
+		).toBe(true);
+
+		// Reject >500 total words across decks
+		const bigWords = Array.from({ length: 251 }, (_, i) => ({
+			word: `word${i}`,
+			translation: "nghĩa",
+		}));
+		expect(
+			vocabDeckCsvImportSchema.safeParse({
+				decks: [
+					{ title: "D1", words: bigWords },
+					{ title: "D2", words: bigWords },
+				],
+			}).success,
+		).toBe(false);
 	});
 });
