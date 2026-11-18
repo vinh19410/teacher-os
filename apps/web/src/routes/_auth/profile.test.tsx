@@ -168,7 +168,95 @@ describe("Google link card", () => {
 			provider: "google",
 			callbackURL: profileUrl,
 			errorCallbackURL: profileUrl,
+			scopes: [
+				"https://www.googleapis.com/auth/calendar.events",
+				"https://www.googleapis.com/auth/meetings.space.created",
+				"https://www.googleapis.com/auth/meetings.space.readonly",
+				"https://www.googleapis.com/auth/drive",
+			],
 		});
+	});
+
+	it("prompts to grant Meet & Drive permissions when linked without Meet scopes", async () => {
+		const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					linked: true,
+					hasMeetScopes: false,
+					hasRefreshToken: false,
+					scopes: ["openid", "email"],
+					email: "lan@example.com",
+				}),
+				{ status: 200 },
+			),
+		);
+		auth.listAccounts.mockResolvedValue({
+			data: [{ providerId: "google" }],
+			error: null,
+		});
+		try {
+			render(<Profile />);
+			const grantBtn = await screen.findByRole("button", {
+				name: "Cấp quyền Google Meet & Drive",
+			});
+			fireEvent.click(grantBtn);
+			await waitFor(() => expect(auth.linkSocial).toHaveBeenCalledTimes(1));
+		} finally {
+			fetchSpy.mockRestore();
+		}
+	});
+
+	it("exposes re-consent action both when Meet is ready and when refresh token is missing/revoked", async () => {
+		const fetchSpy = vi
+			.spyOn(globalThis, "fetch")
+			.mockResolvedValueOnce(
+				new Response(
+					JSON.stringify({
+						linked: true,
+						hasMeetScopes: true,
+						hasRefreshToken: true,
+						scopes: ["openid", "email"],
+						email: "lan@example.com",
+					}),
+					{ status: 200 },
+				),
+			)
+			.mockResolvedValueOnce(
+				new Response(
+					JSON.stringify({
+						linked: true,
+						hasMeetScopes: true,
+						hasRefreshToken: false,
+						scopes: ["openid", "email"],
+						email: "lan@example.com",
+					}),
+					{ status: 200 },
+				),
+			);
+		auth.listAccounts.mockResolvedValue({
+			data: [{ providerId: "google" }],
+			error: null,
+		});
+		try {
+			const first = render(<Profile />);
+			expect(await screen.findByText("Sẵn sàng Meet")).toBeTruthy();
+			const refreshBtn = await screen.findByRole("button", {
+				name: "Cấp lại / làm mới quyền Google",
+			});
+			fireEvent.click(refreshBtn);
+			await waitFor(() => expect(auth.linkSocial).toHaveBeenCalledTimes(1));
+			first.unmount();
+
+			render(<Profile />);
+			expect(await screen.findByText("Cần cấp lại quyền")).toBeTruthy();
+			const reconnectBtn = await screen.findByRole("button", {
+				name: "Kết nối lại Google",
+			});
+			fireEvent.click(reconnectBtn);
+			await waitFor(() => expect(auth.linkSocial).toHaveBeenCalledTimes(2));
+		} finally {
+			fetchSpy.mockRestore();
+		}
 	});
 
 	it("surfaces a failed link start and lets the user try again", async () => {

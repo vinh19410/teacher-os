@@ -20,4 +20,5 @@ export const emptyKernelData: KernelHydratedData = {
 	holidayShifts: [],
 	holidayCancels: [],
 	events: [],
+	sessionMeetings: [],
 };

@@ -13,6 +13,7 @@ import {
 	type BankHubContext,
 	createBankHubContext,
 } from "./lib/bank-hub/bank-hub-client";
+import { runRecordingSyncCron } from "./lib/google-meet/session-meet-service";
 import type { PlacementAiGrader } from "./lib/placement-ai/grader";
 import { createPlacementAiGrader } from "./lib/placement-ai/openai-grader";
 import { createR2MediaStore } from "./lib/r2-media-store";
@@ -181,7 +182,29 @@ const app = buildApp({
 	leadOrigins: parseCORSOrigins(env.LEAD_ORIGINS),
 	leadIpSecret: env.BETTER_AUTH_SECRET,
 	appOrigin: parseCORSOrigins(env.CORS_ORIGIN)[0],
+	googleClientId: env.GOOGLE_CLIENT_ID,
+	googleClientSecret: env.GOOGLE_CLIENT_SECRET,
 	runInBackground: (promise) => waitUntil(promise),
 });
 
-export default app;
+export default {
+	fetch: app.fetch,
+	scheduled(
+		_controller: { cron: string; scheduledTime: number },
+		_env: unknown,
+		ctx: { waitUntil: (promise: Promise<unknown>) => void },
+	) {
+		if (!db) {
+			db = createDb() as unknown as Db;
+		}
+		ctx.waitUntil(
+			runRecordingSyncCron({
+				db,
+				googleClientId: env.GOOGLE_CLIENT_ID,
+				googleClientSecret: env.GOOGLE_CLIENT_SECRET,
+			}).catch((err) => {
+				console.error("[google-meet] recording sync cron failed", err);
+			}),
+		);
+	},
+};

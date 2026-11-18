@@ -5,6 +5,7 @@ import {
 	LessonEditForm,
 	type LessonEditValues,
 } from "@/components/schedule/lesson-edit-form";
+import { SessionMeetPanel } from "@/components/schedule/session-meet-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -36,7 +37,8 @@ export function ClassSessionModal({
 	sessionRef: ClassSessionModalRef | null;
 	onClose: () => void;
 }) {
-	const { data, studentById, classById } = useData();
+	const { data, studentById, classById, refresh, sessionMeetingByClassDate } =
+		useData();
 	const { run, isPending, busy } = useDirectKernelAction();
 	const {
 		saving,
@@ -157,16 +159,27 @@ export function ClassSessionModal({
 						</div>
 					)}
 
-					{firstRow.zoom && (
-						<div className="flex flex-col gap-1">
-							<span className="font-medium text-muted-foreground text-xs">
-								Link Zoom/Meet
-							</span>
-							<div className="break-all text-muted-foreground text-xs">
-								{firstRow.zoom}
-							</div>
-						</div>
-					)}
+					<SessionMeetPanel
+						classId={sessionRef.classId}
+						dateISO={firstRow.date ?? sessionRef.dateISO ?? null}
+						zoom={rows.find((r) => r.zoom)?.zoom ?? firstRow.zoom}
+						status={
+							rows.every(
+								(r) => r.status === "cancelled" || r.status === "holiday",
+							)
+								? firstRow.status
+								: "upcoming"
+						}
+						meeting={
+							(firstRow.date ?? sessionRef.dateISO)
+								? sessionMeetingByClassDate?.(
+										sessionRef.classId,
+										(firstRow.date ?? sessionRef.dateISO) as string,
+									)
+								: undefined
+						}
+						onRefreshed={() => refresh?.() ?? Promise.resolve(true)}
+					/>
 				</div>
 
 				{/* Dated edits apply to the whole occurrence; legacy edits target one row. */}

@@ -2213,6 +2213,9 @@ export interface KernelSnapshot {
 	/** TOS-17 (#451): quyền tài chính của thành viên đang xem. Optional để
 	 * tương thích ngược với snapshot fixture cũ trong test. */
 	viewer?: KernelViewer;
+	/** Metadata Google Meet & Recording theo buổi (classId, date). Optional để
+	 * tương thích ngược với snapshot fixture cũ trong test. */
+	sessionMeetings?: KernelSessionMeetingRow[];
 }
 
 export interface CreatedResponse {
@@ -2393,6 +2396,7 @@ export const studentNextSessionSchema = z.object({
 	date: z.string(),
 	time: z.string(),
 	topic: z.string(),
+	meetUrl: z.string().nullable().optional(),
 });
 export type StudentNextSession = z.infer<typeof studentNextSessionSchema>;
 
@@ -2470,6 +2474,14 @@ export const studentOverviewSchema = z.object({
 });
 export type StudentOverview = z.infer<typeof studentOverviewSchema>;
 
+export const RECORDING_STATUSES = [
+	"none",
+	"pending",
+	"ready",
+	"failed",
+] as const;
+export type RecordingStatus = (typeof RECORDING_STATUSES)[number];
+
 /** Buổi học của chính học viên trong lớp (GET /api/student/classes/:classId). */
 export const studentClassLessonSchema = z.object({
 	id: z.string(),
@@ -2481,6 +2493,9 @@ export const studentClassLessonSchema = z.object({
 	dur: z.number().int(),
 	status: z.string(),
 	topic: z.string(),
+	meetUrl: z.string().nullable().optional(),
+	recordingUrl: z.string().nullable().optional(),
+	recordingStatus: z.enum(RECORDING_STATUSES).optional(),
 });
 export type StudentClassLesson = z.infer<typeof studentClassLessonSchema>;
 
@@ -5307,3 +5322,103 @@ export interface ClassStudyPacksResponse {
 	packs: ClassStudyPackView[];
 	holidays: { date: string; name: string }[];
 }
+
+export const GOOGLE_MEET_SCOPES = [
+	"https://www.googleapis.com/auth/calendar.events",
+	"https://www.googleapis.com/auth/meetings.space.created",
+	"https://www.googleapis.com/auth/meetings.space.readonly",
+	"https://www.googleapis.com/auth/drive",
+] as const;
+
+export interface KernelSessionMeetingRow {
+	id: string;
+	classId: string;
+	date: string;
+	meetUrl: string;
+	googleCalendarEventId: string | null;
+	googleMeetCode: string | null;
+	recordingUrl: string;
+	recordingStatus: RecordingStatus | string;
+	recordingError: string | null;
+	recordingSyncedAt: string | null;
+}
+
+export const GOOGLE_MEET_ERROR_CODES = {
+	NOT_CONNECTED: "GOOGLE_NOT_CONNECTED",
+	INSUFFICIENT_SCOPES: "GOOGLE_INSUFFICIENT_SCOPES",
+	REAUTH_REQUIRED: "GOOGLE_REAUTH_REQUIRED",
+	API_ERROR: "GOOGLE_API_ERROR",
+} as const;
+
+export const googleIntegrationStatusSchema = z.object({
+	linked: z.boolean(),
+	hasMeetScopes: z.boolean(),
+	hasRefreshToken: z.boolean(),
+	scopes: z.array(z.string()),
+	email: z.string().nullable(),
+});
+export type GoogleIntegrationStatus = z.infer<
+	typeof googleIntegrationStatusSchema
+>;
+
+export const sessionMeetCreateResponseSchema = z.object({
+	meetUrl: z.string(),
+	googleCalendarEventId: z.string().nullable(),
+	googleMeetCode: z.string().nullable(),
+	warning: z.string().nullable().optional(),
+});
+export type SessionMeetCreateResponse = z.infer<
+	typeof sessionMeetCreateResponseSchema
+>;
+
+export const classMeetBulkCreateResponseSchema = z.object({
+	created: z.number().int().nonnegative(),
+	skipped: z.number().int().nonnegative(),
+	failed: z.number().int().nonnegative(),
+	errors: z.array(
+		z.object({
+			date: z.string(),
+			message: z.string(),
+		}),
+	),
+});
+export type ClassMeetBulkCreateResponse = z.infer<
+	typeof classMeetBulkCreateResponseSchema
+>;
+
+export const sessionRecordingSyncResponseSchema = z.object({
+	status: z.enum(RECORDING_STATUSES),
+	recordingUrl: z.string(),
+	syncedAt: z.string().nullable(),
+	message: z.string().nullable().optional(),
+});
+export type SessionRecordingSyncResponse = z.infer<
+	typeof sessionRecordingSyncResponseSchema
+>;
+
+export const sessionRecordingUpdateSchema = z
+	.object({
+		recordingUrl: z
+			.string()
+			.max(2000)
+			.refine(
+				(val) => {
+					const trimmed = val.trim();
+					if (!trimmed) return true;
+					if (/\s/.test(trimmed)) return false;
+					try {
+						const parsed = new URL(trimmed);
+						return parsed.protocol === "https:" && parsed.hostname.length > 0;
+					} catch {
+						return false;
+					}
+				},
+				{
+					message: "Link recording phải là URL https:// hợp lệ hoặc để trống",
+				},
+			),
+	})
+	.strict();
+export type SessionRecordingUpdateInput = z.infer<
+	typeof sessionRecordingUpdateSchema
+>;

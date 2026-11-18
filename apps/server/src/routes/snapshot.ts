@@ -26,6 +26,7 @@ import {
 	classAssignmentTarget,
 } from "@teacher-os/db/schema/class-assignment";
 import { classSession } from "@teacher-os/db/schema/class-session";
+import { classSessionMeeting } from "@teacher-os/db/schema/class-session-meeting";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { invoice } from "@teacher-os/db/schema/invoice";
 import { lesson } from "@teacher-os/db/schema/lesson";
@@ -262,6 +263,7 @@ export async function loadSnapshot(
 		holidayCancelRows,
 		eventRows,
 		classSessionRows,
+		classSessionMeetingRows,
 		bankMaterialLinkRows,
 	] = await Promise.all([
 		db
@@ -443,6 +445,11 @@ export async function loadSnapshot(
 			.from(classSession)
 			.where(eq(classSession.orgId, orgId))
 			.orderBy(asc(classSession.date)),
+		db
+			.select()
+			.from(classSessionMeeting)
+			.where(eq(classSessionMeeting.orgId, orgId))
+			.orderBy(asc(classSessionMeeting.date)),
 		// #655: links tài liệu ngân hàng trên bài học giáo trình — đọc một lần
 		// cho cả template lẫn copy của lớp, projection teacher-safe.
 		db
@@ -876,5 +883,19 @@ export async function loadSnapshot(
 			role: viewerRole,
 			canAccessFinance: financeAllowed,
 		},
+		sessionMeetings: classSessionMeetingRows.map((row) => ({
+			id: row.id,
+			classId: row.classId,
+			date: row.date,
+			meetUrl: row.meetUrl,
+			googleCalendarEventId: row.googleCalendarEventId ?? null,
+			googleMeetCode: row.googleMeetCode ?? null,
+			recordingUrl: row.recordingUrl,
+			recordingStatus: row.recordingStatus,
+			recordingError: row.recordingError ?? null,
+			recordingSyncedAt: row.recordingSyncedAt
+				? row.recordingSyncedAt.toISOString()
+				: null,
+		})),
 	};
 }

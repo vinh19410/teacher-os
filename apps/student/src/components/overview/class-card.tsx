@@ -5,6 +5,8 @@ import type {
 } from "@teacher-os/api/contracts";
 import { formatSchedule } from "@teacher-os/api/format-schedule";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
+import { buttonVariants } from "@teacher-os/ui/components/button";
+import { Video } from "lucide-react";
 import { TeacherAvatar } from "@/components/class/teacher-avatar";
 import { deriveAssignmentStatus } from "@/lib/assignment-status";
 import { cn } from "@/lib/cn";
@@ -125,6 +127,21 @@ export function ClassCard({
 						<p className="mt-3 truncate font-mono text-[12px] text-foreground">
 							{nextSessionText}
 						</p>
+
+						{!isPaused && cls.nextSession?.meetUrl && (
+							<a
+								href={cls.nextSession.meetUrl}
+								target="_blank"
+								rel="noopener noreferrer"
+								className={cn(
+									buttonVariants({ variant: "default" }),
+									"relative z-10 mt-3 w-full whitespace-normal text-center focus-visible:shadow-[var(--focus-ring)] focus-visible:ring-0",
+								)}
+							>
+								<Video aria-hidden="true" className="size-4" />
+								Vào lớp (Google Meet)
+							</a>
+						)}
 					</>
 				)}
 			</div>

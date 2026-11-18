@@ -4,7 +4,13 @@ import type {
 	StudentClass,
 	StudentScheduleLesson,
 } from "@teacher-os/api/contracts";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	within,
+} from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { StudentScheduleView } from "./student-schedule-view";
@@ -397,5 +403,222 @@ describe("StudentScheduleView component", () => {
 		);
 		expect(pausedRow.textContent).toContain("Tạm hoãn");
 		expect(pausedRow.textContent).not.toContain("Đã kết thúc");
+	});
+
+	it("12. Hiển thị link Google Meet trên thẻ lớp và buổi upcoming (ẩn khi paused/ended/cancelled/holiday)", () => {
+		const classesWithMeet: StudentClass[] = [
+			{
+				...MOCK_CLASSES[0],
+				nextSession: {
+					date: "2026-11-10",
+					time: "18:00",
+					topic: "Reading Task 1",
+					meetUrl: "https://meet.google.com/cls-1-room",
+				},
+			},
+			{
+				...MOCK_CLASSES[1],
+				status: "paused",
+				nextSession: {
+					date: "2026-11-12",
+					time: "09:00",
+					topic: "Paused class next",
+					meetUrl: "https://meet.google.com/cls-2-paused",
+				},
+			},
+		];
+
+		const lessonsWithMeet: StudentScheduleLesson[] = [
+			// Upcoming hợp lệ -> hiện Meet link
+			{
+				...MOCK_LESSONS[2],
+				meetUrl: "https://meet.google.com/les-upcoming-next",
+			},
+			// Upcoming nhưng lớp paused -> ẩn Meet link
+			{
+				...MOCK_LESSONS[3],
+				meetUrl: "https://meet.google.com/les-paused-hidden",
+			},
+			// Upcoming nhưng đã qua giờ kết thúc (ended) -> ẩn Meet link
+			{
+				id: "les-ended-meet",
+				classId: "cls-1",
+				className: "IELTS 6.5A",
+				date: "2026-11-03",
+				day: 2,
+				time: "18:00",
+				dur: 90,
+				status: "upcoming",
+				topic: "Ended session",
+				meetUrl: "https://meet.google.com/les-ended-hidden",
+			},
+			// Cancelled có meetUrl -> ẩn Meet link
+			{
+				...MOCK_LESSONS[4],
+				meetUrl: "https://meet.google.com/les-cancelled-hidden",
+			},
+			// Holiday tương lai có meetUrl -> ẩn Meet link
+			{
+				id: "les-holiday-meet",
+				classId: "cls-1",
+				className: "IELTS 6.5A",
+				date: "2026-11-18",
+				day: 3,
+				time: "18:00",
+				dur: 90,
+				status: "holiday",
+				topic: "Holiday session",
+				meetUrl: "https://meet.google.com/les-holiday-hidden",
+			},
+		];
+
+		render(
+			<StudentScheduleView
+				classes={classesWithMeet}
+				lessons={lessonsWithMeet}
+				now={FIXED_NOW}
+				selectedTab="all"
+			/>,
+		);
+
+		// Card lớp active hiện Meet link; card lớp paused ẩn Meet link
+		const card1 = screen.getByTestId("class-schedule-card-cls-1");
+		const card1Meet = within(card1).getByRole("link", {
+			name: "Vào lớp (Google Meet)",
+		});
+		expect(card1Meet.getAttribute("href")).toBe(
+			"https://meet.google.com/cls-1-room",
+		);
+		expect(card1Meet.getAttribute("target")).toBe("_blank");
+		expect(card1Meet.getAttribute("rel")).toBe("noopener noreferrer");
+
+		const card2 = screen.getByTestId("class-schedule-card-cls-2");
+		expect(
+			within(card2).queryByRole("link", { name: "Vào lớp (Google Meet)" }),
+		).toBeNull();
+
+		// Row upcoming hợp lệ hiện Meet link
+		const upcomingRow = screen.getByTestId("session-row-les-upcoming-next");
+		const rowMeet = within(upcomingRow).getByRole("link", {
+			name: "Vào lớp (Google Meet)",
+		});
+		expect(rowMeet.getAttribute("href")).toBe(
+			"https://meet.google.com/les-upcoming-next",
+		);
+		expect(rowMeet.getAttribute("target")).toBe("_blank");
+		expect(rowMeet.getAttribute("rel")).toBe("noopener noreferrer");
+
+		// Các row paused / ended / cancelled / holiday KHÔNG hiện Meet link
+		for (const rowId of [
+			"session-row-les-upcoming-future",
+			"session-row-les-ended-meet",
+			"session-row-les-cancelled",
+			"session-row-les-holiday-meet",
+		]) {
+			const row = screen.getByTestId(rowId);
+			expect(
+				within(row).queryByRole("link", { name: "Vào lớp (Google Meet)" }),
+			).toBeNull();
+		}
+	});
+
+	it("13. Hiển thị nút 'Xem recording' hoặc badge 'Đang chờ recording' đúng điều kiện", () => {
+		const lessonsWithRecordings: StudentScheduleLesson[] = [
+			// Completed có recordingUrl -> hiện "Xem recording"
+			{
+				...MOCK_LESSONS[0],
+				recordingUrl: "https://drive.google.com/file/d/rec-1/view",
+				recordingStatus: "ready",
+			},
+			// Absent không có recordingUrl, recordingStatus=pending -> hiện "Đang chờ recording"
+			{
+				...MOCK_LESSONS[1],
+				recordingUrl: null,
+				recordingStatus: "pending",
+			},
+			// Ended (upcoming quá giờ) không có recordingUrl, recordingStatus=pending -> hiện "Đang chờ recording"
+			{
+				id: "les-ended-pending",
+				classId: "cls-1",
+				className: "IELTS 6.5A",
+				date: "2026-11-03",
+				day: 2,
+				time: "18:00",
+				dur: 90,
+				status: "upcoming",
+				topic: "Ended pending rec",
+				recordingUrl: null,
+				recordingStatus: "pending",
+			},
+			// Upcoming chưa diễn ra có recordingStatus=pending -> KHÔNG hiện badge chờ
+			{
+				...MOCK_LESSONS[2],
+				recordingUrl: null,
+				recordingStatus: "pending",
+			},
+			// Cancelled có recordingUrl + recordingStatus=pending -> KHÔNG hiện nút hay badge
+			{
+				...MOCK_LESSONS[4],
+				recordingUrl: "https://drive.google.com/file/d/rec-cancelled/view",
+				recordingStatus: "pending",
+			},
+			// Holiday có recordingUrl -> KHÔNG hiện nút
+			{
+				id: "les-holiday-rec",
+				classId: "cls-1",
+				className: "IELTS 6.5A",
+				date: "2026-11-18",
+				day: 3,
+				time: "18:00",
+				dur: 90,
+				status: "holiday",
+				topic: "Holiday rec",
+				recordingUrl: "https://drive.google.com/file/d/rec-holiday/view",
+				recordingStatus: "ready",
+			},
+		];
+
+		render(
+			<StudentScheduleView
+				classes={MOCK_CLASSES}
+				lessons={lessonsWithRecordings}
+				now={FIXED_NOW}
+				selectedTab="all"
+			/>,
+		);
+
+		const pastRow = screen.getByTestId("session-row-les-past-1");
+		const recLink = within(pastRow).getByRole("link", {
+			name: "Xem recording",
+		});
+		expect(recLink.getAttribute("href")).toBe(
+			"https://drive.google.com/file/d/rec-1/view",
+		);
+		expect(recLink.getAttribute("target")).toBe("_blank");
+		expect(recLink.getAttribute("rel")).toBe("noopener noreferrer");
+		expect(within(pastRow).queryByText("Đang chờ recording")).toBeNull();
+
+		const absentRow = screen.getByTestId("session-row-les-past-absent");
+		expect(within(absentRow).getByText("Đang chờ recording")).toBeTruthy();
+		expect(
+			within(absentRow).queryByRole("link", { name: "Xem recording" }),
+		).toBeNull();
+
+		const endedRow = screen.getByTestId("session-row-les-ended-pending");
+		expect(within(endedRow).getByText("Đang chờ recording")).toBeTruthy();
+
+		const upcomingRow = screen.getByTestId("session-row-les-upcoming-next");
+		expect(within(upcomingRow).queryByText("Đang chờ recording")).toBeNull();
+
+		const cancelledRow = screen.getByTestId("session-row-les-cancelled");
+		expect(
+			within(cancelledRow).queryByRole("link", { name: "Xem recording" }),
+		).toBeNull();
+		expect(within(cancelledRow).queryByText("Đang chờ recording")).toBeNull();
+
+		const holidayRow = screen.getByTestId("session-row-les-holiday-rec");
+		expect(
+			within(holidayRow).queryByRole("link", { name: "Xem recording" }),
+		).toBeNull();
 	});
 });

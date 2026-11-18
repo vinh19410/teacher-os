@@ -1,6 +1,8 @@
 import {
 	type ClassStatus,
 	type EnrollmentStatus,
+	RECORDING_STATUSES,
+	type RecordingStatus,
 	type StudentAssignment,
 	type StudentClass,
 	type StudentClassLesson,
@@ -17,6 +19,7 @@ import {
 	assignmentPrompt,
 	classAssignment,
 	classAssignmentTarget,
+	classSessionMeeting,
 	classTable,
 	enrollment,
 	lesson,
@@ -86,6 +89,7 @@ export async function loadNextSession(
 	orgId: string,
 	classId: string,
 	now: Date,
+	enrollmentId?: string,
 ): Promise<StudentNextSession | null> {
 	const todayISO = vietnamTodayISO(now);
 	const rows = await db
@@ -94,12 +98,15 @@ export async function loadNextSession(
 			time: lesson.time,
 			dur: lesson.dur,
 			topic: lesson.topic,
+			status: lesson.status,
+			zoom: lesson.zoom,
 		})
 		.from(lesson)
 		.where(
 			and(
 				eq(lesson.orgId, orgId),
 				eq(lesson.classId, classId),
+				...(enrollmentId ? [eq(lesson.enrollmentId, enrollmentId)] : []),
 				isNotNull(lesson.date),
 				gte(lesson.date, todayISO),
 			),
@@ -111,7 +118,33 @@ export async function loadNextSession(
 		// time lệch format (end == null) → không đoán, coi là chưa kết thúc
 		// (phòng thủ invariant vỡ, nhất quán NaN→false với client #393).
 		if (end == null || end > now.getTime()) {
-			return { date: row.date, time: row.time, topic: row.topic };
+			let meetUrl: string | undefined;
+			if (row.status !== "cancelled" && row.status !== "holiday") {
+				if (row.zoom) {
+					meetUrl = row.zoom;
+				} else {
+					const [meeting] = await db
+						.select({ meetUrl: classSessionMeeting.meetUrl })
+						.from(classSessionMeeting)
+						.where(
+							and(
+								eq(classSessionMeeting.orgId, orgId),
+								eq(classSessionMeeting.classId, classId),
+								eq(classSessionMeeting.date, row.date),
+							),
+						)
+						.limit(1);
+					if (meeting?.meetUrl) {
+						meetUrl = meeting.meetUrl;
+					}
+				}
+			}
+			return {
+				date: row.date,
+				time: row.time,
+				topic: row.topic,
+				...(meetUrl ? { meetUrl } : {}),
+			};
 		}
 	}
 	return null;
@@ -278,4 +311,58 @@ export function orderStudentLessons(
 		}
 	}
 	return result;
+}
+
+export interface ClassSessionMeetingProjection {
+	classId: string;
+	date: string;
+	meetUrl: string;
+	recordingUrl: string;
+	recordingStatus: string;
+}
+
+const VALID_RECORDING_STATUSES = new Set<string>(RECORDING_STATUSES);
+
+/**
+ * Gắn `meetUrl` (ưu tiên `lesson.zoom`, fallback `class_session_meeting.meetUrl`)
+ * và `recordingUrl` / `recordingStatus` vào item buổi học của học viên.
+ * Buổi đã `cancelled` hoặc `holiday` không trả link Meet.
+ */
+export function toStudentClassLessonWithMeeting(
+	row: {
+		id: string;
+		date: string | null;
+		day: number;
+		time: string;
+		dur: number;
+		status: string;
+		topic: string;
+		zoom?: string;
+	},
+	meeting?: ClassSessionMeetingProjection,
+): StudentClassLesson {
+	const isInactive = row.status === "cancelled" || row.status === "holiday";
+	const meetUrl = !isInactive ? row.zoom || meeting?.meetUrl || "" : "";
+	const recordingUrl = !isInactive ? meeting?.recordingUrl || "" : "";
+	const rawRecStatus = meeting?.recordingStatus;
+	const recordingStatus =
+		!isInactive &&
+		rawRecStatus &&
+		rawRecStatus !== "none" &&
+		VALID_RECORDING_STATUSES.has(rawRecStatus)
+			? (rawRecStatus as RecordingStatus)
+			: undefined;
+
+	return {
+		id: row.id,
+		date: row.date,
+		day: row.day,
+		time: row.time,
+		dur: row.dur,
+		status: row.status,
+		topic: row.topic,
+		...(meetUrl ? { meetUrl } : {}),
+		...(recordingUrl ? { recordingUrl } : {}),
+		...(recordingStatus ? { recordingStatus } : {}),
+	};
 }

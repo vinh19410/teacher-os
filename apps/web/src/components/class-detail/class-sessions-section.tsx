@@ -1,6 +1,18 @@
-import type { KernelHolidayShiftRow } from "@teacher-os/api/contracts";
-import { ChevronDown, ChevronRight, Clock, Paperclip } from "lucide-react";
+import type {
+	KernelHolidayShiftRow,
+	KernelSessionMeetingRow,
+} from "@teacher-os/api/contracts";
+import {
+	ChevronDown,
+	ChevronRight,
+	Clock,
+	ExternalLink,
+	Film,
+	Paperclip,
+	Video,
+} from "lucide-react";
 import { type KeyboardEvent, useState } from "react";
+import { toast } from "sonner";
 import { AttendanceSummary } from "@/components/class-detail/attendance-summary";
 import {
 	type OccurrenceActionResult,
@@ -27,6 +39,7 @@ import {
 import { cn } from "@/lib/cn";
 import type { KernelAction } from "@/lib/data-actions";
 import { lessonDayLabel } from "@/lib/format-schedule";
+import { isHttpError } from "@/lib/kernel-load-state";
 import type {
 	ClassGroup,
 	ClassSessionItem,
@@ -34,6 +47,7 @@ import type {
 	Student,
 	Syllabus,
 } from "@/lib/mock-data";
+import { createClassMeetBulk } from "@/lib/repos/google-meet";
 import { makeupDateForShift } from "@/lib/repos/holidays";
 import type { KernelCommandResult } from "@/lib/repos/kernel";
 import { todayISOVietnam } from "@/lib/week-grid";
@@ -69,6 +83,8 @@ export function ClassSessionsSection({
 	onAddSession,
 	onImportSyllabus,
 	onDeleteOccurrence,
+	sessionMeetings = [],
+	onRefresh,
 }: {
 	cls: ClassGroup;
 	/** Class-scoped rows (`classId`), not the student-scoped `classLessons`. */
@@ -96,9 +112,12 @@ export function ClassSessionsSection({
 	onAddSession?: () => void;
 	onImportSyllabus?: () => void;
 	onDeleteOccurrence?: (dateISO: string) => Promise<OccurrenceActionResult>;
+	sessionMeetings?: KernelSessionMeetingRow[];
+	onRefresh?: () => Promise<boolean>;
 	isPending: (key: string) => boolean;
 	busy: boolean;
 }) {
+	const [bulkCreatingMeet, setBulkCreatingMeet] = useState(false);
 	const [expandedDetails, setExpandedDetails] = useState<Set<number>>(
 		new Set(),
 	);
@@ -221,16 +240,87 @@ export function ClassSessionsSection({
 	const supportsMaterials =
 		!isProjected && sessions.every((s) => s.mode === "v2");
 
+	const meetingByDate = new Map(
+		sessionMeetings.filter((m) => m.classId === cls.id).map((m) => [m.date, m]),
+	);
+	const hasMissingMeet =
+		cls.mode === "Online" &&
+		!(isProjected && cls.schedulingMode === "manual") &&
+		sessions.some((s) => {
+			if (!s.dateISO) return false;
+			const st = sessionStatus(s);
+			if (st === "cancelled" || st === "holiday") return false;
+			const m = meetingByDate.get(s.dateISO);
+			const url = s.zoom || s.rows[0]?.zoom || m?.meetUrl || "";
+			return url === "";
+		});
+
+	async function handleBulkCreateMeet() {
+		if (bulkCreatingMeet) return;
+		setBulkCreatingMeet(true);
+		try {
+			const res = await createClassMeetBulk(cls.id);
+			if (res.created > 0) {
+				toast.success(`Đã tạo ${res.created} link Google Meet cho lớp.`);
+			} else if (res.failed > 0) {
+				toast.error(
+					res.errors[0]?.message ?? "Không tạo được link Google Meet.",
+				);
+			} else {
+				toast.info("Các buổi học đã có link Google Meet.");
+			}
+			await onRefresh?.();
+		} catch (err) {
+			const code = isHttpError(err) ? err.code : undefined;
+			if (
+				code === "GOOGLE_NOT_CONNECTED" ||
+				code === "GOOGLE_INSUFFICIENT_SCOPES" ||
+				code === "GOOGLE_REAUTH_REQUIRED"
+			) {
+				toast.error(
+					err instanceof Error
+						? `${err.message} (Mở mục Hồ sơ để kết nối Google.)`
+						: "Cần kết nối Google Workspace ở trang Hồ sơ.",
+				);
+			} else {
+				toast.error(
+					err instanceof Error ? err.message : "Không tạo được Google Meet.",
+				);
+			}
+		} finally {
+			setBulkCreatingMeet(false);
+		}
+	}
+
+	const showAddSessionBtn =
+		!syllabus && (isManual || lessons.length === 0) && Boolean(onAddSession);
+
 	return (
 		<>
 			<Section
 				title="Sessions"
 				count={sessions.length}
 				action={
-					!syllabus && (isManual || lessons.length === 0) && onAddSession ? (
-						<Button variant="outline" size="sm" onClick={onAddSession}>
-							+ Thêm buổi
-						</Button>
+					showAddSessionBtn || hasMissingMeet ? (
+						<div className="flex flex-wrap items-center gap-2">
+							{hasMissingMeet && onRefresh && (
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									disabled={bulkCreatingMeet}
+									onClick={() => void handleBulkCreateMeet()}
+								>
+									<Video aria-hidden="true" className="size-3.5" />
+									{bulkCreatingMeet ? "Đang tạo Meet…" : "Tạo Meet hàng loạt"}
+								</Button>
+							)}
+							{showAddSessionBtn && onAddSession && (
+								<Button variant="outline" size="sm" onClick={onAddSession}>
+									+ Thêm buổi
+								</Button>
+							)}
+						</div>
 					) : undefined
 				}
 			>
@@ -288,6 +378,15 @@ export function ClassSessionsSection({
 						const shiftedAway =
 							s.rows.length === 0 &&
 							makeupDateForShift({ holidayShifts }, cls.id, s.dateISO) !== null;
+						const meeting = meetingByDate.get(s.dateISO);
+						const rowMeetUrl =
+							status !== "cancelled" && status !== "holiday" && !shiftedAway
+								? s.zoom || s.rows[0]?.zoom || meeting?.meetUrl || ""
+								: "";
+						const rowRecordingUrl =
+							status !== "cancelled" && status !== "holiday" && !shiftedAway
+								? meeting?.recordingUrl || ""
+								: "";
 
 						return (
 							<li
@@ -386,6 +485,34 @@ export function ClassSessionsSection({
 											</button>
 										)
 									}
+									{(rowMeetUrl || rowRecordingUrl) && (
+										<div className="mt-1 flex flex-wrap items-center gap-2.5">
+											{rowMeetUrl && (
+												<a
+													href={rowMeetUrl}
+													target="_blank"
+													rel="noopener noreferrer"
+													className="inline-flex items-center gap-1 whitespace-nowrap font-medium text-primary text-xs underline-offset-4 hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+												>
+													<Video aria-hidden="true" className="size-3.5" />
+													Vào Meet
+													<ExternalLink aria-hidden="true" className="size-3" />
+												</a>
+											)}
+											{rowRecordingUrl && (
+												<a
+													href={rowRecordingUrl}
+													target="_blank"
+													rel="noopener noreferrer"
+													className="inline-flex items-center gap-1 whitespace-nowrap font-medium text-foreground text-xs underline-offset-4 hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
+												>
+													<Film aria-hidden="true" className="size-3.5" />
+													Xem recording
+													<ExternalLink aria-hidden="true" className="size-3" />
+												</a>
+											)}
+										</div>
+									)}
 								</div>
 								{isProjected ? (
 									<span className="shrink-0 text-muted-foreground text-xs">
@@ -483,7 +610,12 @@ export function ClassSessionsSection({
 			/>
 			<SessionActionsModal
 				key={actionsDateISO ?? "no-session-actions"}
+				classId={cls.id}
 				session={actionsSession}
+				meeting={
+					actionsSession ? meetingByDate.get(actionsSession.dateISO) : undefined
+				}
+				onRefreshed={onRefresh}
 				studentById={studentById}
 				isPaused={isPaused}
 				onClose={() => setActionsDateISO(null)}
