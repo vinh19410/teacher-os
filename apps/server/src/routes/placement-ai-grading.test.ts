@@ -753,10 +753,32 @@ describe("email kết quả: tóm tắt HTML + link chi tiết", () => {
 		});
 	}
 
-	test("người nhận có tài khoản học viên → nút trỏ portal /placement-test; chốt lại không gửi lần hai", async () => {
+	async function addStudent(
+		h: Harness,
+		id: string,
+		email: string,
+		orgId = "org-1",
+	) {
+		if (orgId !== "org-1") {
+			await h.db
+				.insert(schema.organization)
+				.values({ id: orgId, name: orgId })
+				.onConflictDoNothing();
+		}
+		await h.db.insert(schema.student).values({
+			id,
+			orgId,
+			name: "Học viên A",
+			email,
+			phone: "0901234567",
+		});
+	}
+
+	test("người nhận có tài khoản học viên và portal hiển thị đúng bài vừa chốt → nút trỏ portal /placement-test; chốt lại không gửi lần hai", async () => {
 		const { sent, mailer } = recordingMailer();
 		const h = await createHarness({ mailer, studentOrigin: STUDENT_ORIGIN });
 		await addUser(h, "hocvien@test.local", "student");
+		await addStudent(h, "stu-a", "hocvien@test.local");
 
 		const graded = await gradeLead(h, " HocVien@Test.local ");
 		expect(graded.resultEmailStatus).toBe("sent");
@@ -818,10 +840,69 @@ describe("email kết quả: tóm tắt HTML + link chi tiết", () => {
 		expect(sent[1]?.html).toContain(">Speaking<");
 	});
 
+	test("chấm qua trang học viên → nút trỏ portal /placement-test", async () => {
+		const { sent, mailer } = recordingMailer();
+		const h = await createHarness({ mailer, studentOrigin: STUDENT_ORIGIN });
+		await addUser(h, "hv.portal@test.local", "student");
+		await addStudent(h, "stu-p", "hv.portal@test.local");
+		const created = await h.submit({ speakingMode: "skipped" });
+		await h.flush();
+		await h.db
+			.update(schema.placementTestSubmission)
+			.set({ studentId: "stu-p" })
+			.where(eq(schema.placementTestSubmission.id, created.submissionId));
+
+		const res = await teacherPost(
+			h.app,
+			"/api/students/stu-p/placement-submission",
+			grade,
+		);
+		expect(res.status).toBe(200);
+		const graded = (await res.json()) as PlacementSubmissionDetail;
+		expect(graded.resultEmailStatus).toBe("sent");
+		expect(sent).toHaveLength(1);
+		expect(sent[0]?.to).toBe("hv.portal@test.local");
+		expect(sent[0]?.html).toContain(
+			'href="https://hoc.msmy.io.vn/placement-test"',
+		);
+		expect(sent[0]?.text).toContain("https://hoc.msmy.io.vn/placement-test");
+	});
+
+	test("portal đang hiển thị bài khác (bài gắn học viên mới hơn) → link công khai của bài vừa chốt", async () => {
+		const { sent, mailer } = recordingMailer();
+		const h = await createHarness({ mailer, studentOrigin: STUDENT_ORIGIN });
+		await addUser(h, "hocvien@test.local", "student");
+		await addStudent(h, "stu-a", "hocvien@test.local");
+		const portalSub = await h.submit({ speakingMode: "skipped" });
+		await h.flush();
+		await h.db
+			.update(schema.placementTestSubmission)
+			.set({ studentId: "stu-a" })
+			.where(eq(schema.placementTestSubmission.id, portalSub.submissionId));
+
+		const graded = await gradeLead(h, "hocvien@test.local");
+		expect(graded.id).not.toBe(portalSub.submissionId);
+		expect(sent[0]?.html).toContain(`href="${graded.resultUrl}"`);
+		expect(sent[0]?.html).not.toContain('/placement-test"');
+		expect(sent[0]?.text).toContain(graded.resultUrl ?? "-");
+	});
+
+	test("dòng học viên chỉ có ở org khác → link công khai", async () => {
+		const { sent, mailer } = recordingMailer();
+		const h = await createHarness({ mailer, studentOrigin: STUDENT_ORIGIN });
+		await addUser(h, "hocvien@test.local", "student");
+		await addStudent(h, "stu-x", "hocvien@test.local", "org-2");
+
+		const graded = await gradeLead(h, "hocvien@test.local");
+		expect(sent[0]?.html).toContain(`href="${graded.resultUrl}"`);
+		expect(sent[0]?.html).not.toContain('/placement-test"');
+	});
+
 	test("không cấu hình studentOrigin → luôn dùng link công khai", async () => {
 		const { sent, mailer } = recordingMailer();
 		const h = await createHarness({ mailer });
 		await addUser(h, "hocvien@test.local", "student");
+		await addStudent(h, "stu-a", "hocvien@test.local");
 
 		const graded = await gradeLead(h, "hocvien@test.local");
 		expect(graded.resultEmailStatus).toBe("sent");
@@ -839,6 +920,8 @@ describe("email kết quả: tóm tắt HTML + link chi tiết", () => {
 		} as unknown as Db;
 		await expect(
 			resolvePlacementResultLink(brokenDb, {
+				orgId: "org-1",
+				submissionId: "sub-1",
 				recipientEmail: "hocvien@test.local",
 				studentOrigin: STUDENT_ORIGIN,
 				publicUrl,

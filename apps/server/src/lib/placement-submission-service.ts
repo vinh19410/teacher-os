@@ -19,7 +19,7 @@ import { user } from "@teacher-os/db/schema/auth";
 import { lead } from "@teacher-os/db/schema/lead";
 import { placementTestSubmission } from "@teacher-os/db/schema/placement-test";
 import { student } from "@teacher-os/db/schema/student";
-import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, notLike, sql } from "drizzle-orm";
 import type { Context } from "hono";
 import type { Db, KernelCtx } from "../app";
 import { parseByteRange } from "./byte-range";
@@ -66,14 +66,18 @@ type KernelContext = Context<{ Variables: { kernelCtx: KernelCtx } }>;
 const RESULT_EMAIL_STATUSES = new Set(["sent", "failed", "skipped"]);
 
 /**
- * Link nút "Xem chi tiết kết quả": người nhận có tài khoản portal (user role
- * `student`, email trùng không phân biệt hoa/thường) và có `studentOrigin` →
- * trang `/placement-test` của portal; ngược lại (hoặc truy vấn lỗi) → link
+ * Link nút "Xem chi tiết kết quả". Chỉ trỏ trang `/placement-test` của portal
+ * khi chắc chắn portal hiển thị ĐÚNG bài vừa chốt: có `studentOrigin`, có dòng
+ * học viên trong org khớp email người nhận (không phân biệt hoa/thường), có
+ * tài khoản auth role `student` cùng email, và bài mới nhất portal chọn cho
+ * học viên đó chính là `submissionId`. Ngược lại (hoặc truy vấn lỗi) → link
  * kết quả công khai.
  */
 export async function resolvePlacementResultLink(
 	db: Db,
 	params: {
+		orgId: string;
+		submissionId: string;
 		recipientEmail: string;
 		studentOrigin: string | undefined;
 		publicUrl: string;
@@ -93,7 +97,29 @@ export async function resolvePlacementResultLink(
 				),
 			)
 			.limit(1);
-		return account ? `${origin}/placement-test` : params.publicUrl;
+		if (!account) return params.publicUrl;
+		// Cùng thứ tự chọn dòng học viên với guard portal.
+		const [studentRow] = await db
+			.select()
+			.from(student)
+			.where(
+				and(
+					eq(student.orgId, params.orgId),
+					sql`lower(trim(${student.email})) = ${email}`,
+					notLike(student.id, "demo-student:%"),
+				),
+			)
+			.orderBy(desc(student.createdAt), asc(student.id))
+			.limit(1);
+		if (!studentRow) return params.publicUrl;
+		const latest = await findLatestSubmissionForStudent(
+			db,
+			params.orgId,
+			studentRow,
+		);
+		return latest?.id === params.submissionId
+			? `${origin}/placement-test`
+			: params.publicUrl;
 	} catch (error) {
 		console.error(
 			"[placement-ai] portal account lookup failed",
@@ -634,6 +660,8 @@ export async function gradePlacementSubmissionResponse(
 		// phản ánh đúng trạng thái; lỗi gửi không làm hỏng lượt chốt.
 		const recipient = leadEmail.trim() || studentEmail.trim();
 		const resultUrl = await resolvePlacementResultLink(db, {
+			orgId: ctx.orgId,
+			submissionId: updatedSub.id,
 			recipientEmail: recipient,
 			studentOrigin: deps.studentOrigin,
 			publicUrl: buildPlacementResultUrl(resultOrigin, resultToken),
