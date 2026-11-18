@@ -736,17 +736,23 @@ test("defensive helpers xử lý Reading/Writing/Speaking rỗng, speakingMode='
 		resolveSpeakingSubmitDecision({
 			hasSpeakingTasks: false,
 			hasValidBlob: true,
-			speakingMode: "upload",
 		}),
-		{ finalMode: "none", needsSpeakingDecision: false },
+		{
+			finalMode: "none",
+			needsSpeakingDecision: false,
+			blockedByMissingSpeaking: false,
+		},
 	);
 	assert.deepEqual(
 		resolveSpeakingSubmitDecision({
 			hasSpeakingTasks: true,
 			hasValidBlob: false,
-			speakingMode: "none",
 		}),
-		{ finalMode: "skipped", needsSpeakingDecision: true },
+		{
+			finalMode: null,
+			needsSpeakingDecision: false,
+			blockedByMissingSpeaking: true,
+		},
 	);
 	assert.deepEqual(
 		resolveSpeakingSubmitDecision({
@@ -754,15 +760,22 @@ test("defensive helpers xử lý Reading/Writing/Speaking rỗng, speakingMode='
 			hasValidBlob: false,
 			speakingMode: "skipped",
 		}),
-		{ finalMode: "skipped", needsSpeakingDecision: false },
+		{
+			finalMode: null,
+			needsSpeakingDecision: false,
+			blockedByMissingSpeaking: true,
+		},
 	);
 	assert.deepEqual(
 		resolveSpeakingSubmitDecision({
 			hasSpeakingTasks: true,
 			hasValidBlob: true,
-			speakingMode: "upload",
 		}),
-		{ finalMode: "upload", needsSpeakingDecision: false },
+		{
+			finalMode: "upload",
+			needsSpeakingDecision: false,
+			blockedByMissingSpeaking: false,
+		},
 	);
 
 	const noneDisplay = resolveSpeakingStatusDisplay("none");

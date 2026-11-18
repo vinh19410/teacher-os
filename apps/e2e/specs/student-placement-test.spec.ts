@@ -148,6 +148,61 @@ async function completeStudentOnboarding(page: Page): Promise<void> {
 	await page.getByRole("button", { name: "Hoàn thành" }).click();
 }
 
+async function installSyntheticSpeakingDevice(page: Page) {
+	await page.addInitScript(() => {
+		const createSyntheticAudioStream = async () => {
+			const audioCtx = new AudioContext();
+			if (audioCtx.state === "suspended") {
+				await audioCtx.resume();
+			}
+			const osc = audioCtx.createOscillator();
+			const gain = audioCtx.createGain();
+			gain.gain.value = 0.01;
+			osc.connect(gain);
+			const dest = audioCtx.createMediaStreamDestination();
+			gain.connect(dest);
+			osc.start();
+			const tracks = [...dest.stream.getAudioTracks()];
+			const combined = new MediaStream(tracks);
+			for (const track of tracks) {
+				const origStop = track.stop.bind(track);
+				track.stop = () => {
+					audioCtx.close().catch(() => {});
+					origStop();
+				};
+			}
+			return combined;
+		};
+		Object.defineProperty(navigator, "mediaDevices", {
+			configurable: true,
+			value: { getUserMedia: () => createSyntheticAudioStream() },
+		});
+		class SyntheticUtterance {
+			text: string;
+			lang = "";
+			rate = 1;
+			onend: (() => void) | null = null;
+			onerror: (() => void) | null = null;
+			constructor(text = "") {
+				this.text = text;
+			}
+		}
+		Object.defineProperty(window, "SpeechSynthesisUtterance", {
+			configurable: true,
+			value: SyntheticUtterance,
+		});
+		Object.defineProperty(window, "speechSynthesis", {
+			configurable: true,
+			value: {
+				cancel: () => {},
+				speak: (utter: SyntheticUtterance) => {
+					window.setTimeout(() => utter.onend?.(), 60);
+				},
+			},
+		});
+	});
+}
+
 test.describe
 	.serial("Student Portal Placement Test (#748)", () => {
 		test("onboarding -> modal đề xuất -> Để sau -> highlight Dashboard (không có trên Sidebar) -> làm bài 5 kỹ năng -> thông báo chuông -> giáo viên chấm tại /students/$studentId -> đồng bộ entryScore", async ({
@@ -163,6 +218,7 @@ test.describe
 			// 2. Học viên đăng ký mới trong Student Portal
 			const studentContext = await browser.newContext();
 			const studentPage = await studentContext.newPage();
+			await installSyntheticSpeakingDevice(studentPage);
 			const email = `e2e-placement-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@test.local`;
 			const studentName = "Học Viên Test Đầu Vào";
 
@@ -362,7 +418,7 @@ test.describe
 						"I want to improve my English communication skills for university study and future career.",
 					);
 
-				// Chuyển Speaking, kiểm tra đã bỏ hướng dẫn thừa rồi chọn Bỏ qua phần Speaking để nộp bài 4 phần
+				// Chuyển Speaking, kiểm tra đã bỏ hướng dẫn thừa & không có nút bỏ qua; chặn nộp khi chưa ghi âm rồi ghi âm 1 câu để nộp 5 kỹ năng
 				await studentPage
 					.getByRole("button", { name: /Tiếp tục: Speaking/ })
 					.click();
@@ -372,9 +428,35 @@ test.describe
 				await expect(speakingStep).not.toContainText(
 					"Hệ thống sẽ tự động đọc lần lượt từng câu hỏi",
 				);
+				await expect(
+					speakingStep.getByRole("button", { name: /Bỏ qua phần Speaking/ }),
+				).toHaveCount(0);
+
+				await studentPage.getByTestId("submit-placement-test-btn").click();
+				await expect(
+					studentPage.getByText("Phần Speaking là bắt buộc", { exact: false }),
+				).toBeVisible();
+				await expect(
+					studentPage.getByTestId("placement-unanswered-confirm"),
+				).toHaveCount(0);
+
 				await studentPage
-					.getByRole("button", { name: /Bỏ qua phần Speaking/ })
+					.getByRole("button", { name: /Bắt đầu làm bài Speaking/ })
 					.click();
+				await expect(
+					studentPage.getByTestId("speaking-prep-stage"),
+				).toBeVisible({ timeout: 5000 });
+				await studentPage.getByRole("button", { name: /Trả lời ngay/ }).click();
+				await studentPage.waitForTimeout(350);
+				await studentPage
+					.getByRole("button", { name: "Kết thúc phần Speaking" })
+					.click();
+				await studentPage
+					.getByRole("button", { name: "Xác nhận kết thúc sớm" })
+					.click();
+				await expect(
+					studentPage.getByTestId("speaking-review-box"),
+				).toBeVisible({ timeout: 10_000 });
 
 				await studentPage.getByTestId("submit-placement-test-btn").click();
 				// Nếu còn câu trắc nghiệm bỏ trống, xác nhận "Vẫn nộp bài ngay"
@@ -502,58 +584,7 @@ test.describe
 			const studentPage = await studentContext.newPage();
 			const email = `e2e-speaking-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@test.local`;
 
-			await studentPage.addInitScript(() => {
-				const createSyntheticAudioStream = async () => {
-					const audioCtx = new AudioContext();
-					if (audioCtx.state === "suspended") {
-						await audioCtx.resume();
-					}
-					const osc = audioCtx.createOscillator();
-					const gain = audioCtx.createGain();
-					gain.gain.value = 0.01;
-					osc.connect(gain);
-					const dest = audioCtx.createMediaStreamDestination();
-					gain.connect(dest);
-					osc.start();
-					const tracks = [...dest.stream.getAudioTracks()];
-					const combined = new MediaStream(tracks);
-					for (const track of tracks) {
-						const origStop = track.stop.bind(track);
-						track.stop = () => {
-							audioCtx.close().catch(() => {});
-							origStop();
-						};
-					}
-					return combined;
-				};
-				Object.defineProperty(navigator, "mediaDevices", {
-					configurable: true,
-					value: { getUserMedia: () => createSyntheticAudioStream() },
-				});
-				class SyntheticUtterance {
-					text: string;
-					lang = "";
-					rate = 1;
-					onend: (() => void) | null = null;
-					onerror: (() => void) | null = null;
-					constructor(text = "") {
-						this.text = text;
-					}
-				}
-				Object.defineProperty(window, "SpeechSynthesisUtterance", {
-					configurable: true,
-					value: SyntheticUtterance,
-				});
-				Object.defineProperty(window, "speechSynthesis", {
-					configurable: true,
-					value: {
-						cancel: () => {},
-						speak: (utter: SyntheticUtterance) => {
-							window.setTimeout(() => utter.onend?.(), 60);
-						},
-					},
-				});
-			});
+			await installSyntheticSpeakingDevice(studentPage);
 
 			try {
 				await studentPage.goto(`${STUDENT_ORIGIN}/login`);

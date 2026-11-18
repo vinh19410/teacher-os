@@ -10,14 +10,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@teacher-os/ui/components/card";
-import {
-	Mic,
-	MicOff,
-	Pause,
-	RotateCcw,
-	SkipForward,
-	Volume2,
-} from "lucide-react";
+import { Mic, Pause, RotateCcw, Volume2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	canRetrySpeakingTask,
@@ -61,17 +54,13 @@ interface ActiveRecorderHandle {
 
 export function PlacementSpeakingStep({
 	tasks,
-	speakingMode,
 	recordedAudio,
 	onRecordedAudioChange,
-	onSkipSpeaking,
 	onBusyChange,
 }: {
 	tasks: readonly PlacementPublishedSpeakingTask[];
-	speakingMode: "none" | "skipped" | "upload";
 	recordedAudio: RecordedSpeakingAudio | null;
 	onRecordedAudioChange: (next: RecordedSpeakingAudio | null) => void;
-	onSkipSpeaking: () => void;
 	onBusyChange: (busy: boolean) => void;
 }) {
 	const activeOrgId = useActiveStudentOrgId();
@@ -241,7 +230,7 @@ export function PlacementSpeakingStep({
 			const stream = mediaStreamRef.current;
 			if (!stream || typeof window === "undefined" || !window.MediaRecorder) {
 				abortWithError(
-					"Không tìm thấy nguồn Micro đang hoạt động. Vui lòng thử lại hoặc chọn Bỏ qua phần Speaking.",
+					"Không tìm thấy nguồn Micro đang hoạt động. Vui lòng kiểm tra Micro và thử lại.",
 				);
 				return false;
 			}
@@ -260,7 +249,7 @@ export function PlacementSpeakingStep({
 					: new window.MediaRecorder(stream);
 			} catch {
 				abortWithError(
-					"Không thể khởi tạo bộ ghi âm cho câu hiện tại. Vui lòng thử lại hoặc chọn Bỏ qua phần Speaking.",
+					"Không thể khởi tạo bộ ghi âm cho câu hiện tại. Vui lòng kiểm tra Micro và thử lại.",
 				);
 				return false;
 			}
@@ -295,7 +284,7 @@ export function PlacementSpeakingStep({
 				}
 				finishStop(null);
 				abortWithError(
-					"Trình duyệt gặp lỗi khi thu âm Micro. Vui lòng thử lại hoặc chọn Bỏ qua phần Speaking.",
+					"Trình duyệt gặp lỗi khi thu âm Micro. Vui lòng thử lại hoặc liên hệ giáo viên hỗ trợ.",
 				);
 			});
 
@@ -365,7 +354,7 @@ export function PlacementSpeakingStep({
 			} catch {
 				activeRecorderRef.current = null;
 				abortWithError(
-					"Không thể bắt đầu ghi âm qua Micro. Vui lòng thử lại hoặc chọn Bỏ qua phần Speaking.",
+					"Không thể bắt đầu ghi âm qua Micro. Vui lòng kiểm tra quyền Micro và thử lại.",
 				);
 				return false;
 			}
@@ -407,7 +396,7 @@ export function PlacementSpeakingStep({
 					setSession(resetState);
 					if (!discardAll) {
 						setMediaError(
-							"Không thu được dữ liệu âm thanh. Vui lòng thử ghi lại hoặc chọn Bỏ qua.",
+							"Không thu được dữ liệu âm thanh. Vui lòng kiểm tra Micro và thử ghi lại.",
 						);
 					}
 					return;
@@ -443,7 +432,7 @@ export function PlacementSpeakingStep({
 					sessionRef.current = resetState;
 					setSession(resetState);
 					setMediaError(
-						"Không thu được dữ liệu âm thanh. Vui lòng thử ghi lại hoặc chọn Bỏ qua.",
+						"Không thu được dữ liệu âm thanh. Vui lòng kiểm tra Micro và thử ghi lại.",
 					);
 				}
 			} finally {
@@ -784,7 +773,7 @@ export function PlacementSpeakingStep({
 					}
 					if (sessionRef.current.status === "active") {
 						abortWithError(
-							"Kết nối Micro bị gián đoạn giữa chừng. Vui lòng thử ghi lại hoặc chọn Bỏ qua phần Speaking.",
+							"Kết nối Micro bị gián đoạn giữa chừng. Vui lòng kiểm tra Micro và thử ghi lại.",
 						);
 					}
 				});
@@ -799,35 +788,14 @@ export function PlacementSpeakingStep({
 			sessionRef.current = resetState;
 			setSession(resetState);
 			setMediaError(
-				"Không thể truy cập Micro (thiếu quyền hoặc không có micro). Bạn có thể cấp quyền lại hoặc chọn Bỏ qua phần Speaking.",
+				"Không thể truy cập Micro (thiếu quyền hoặc không có micro). Vui lòng cấp quyền Micro và thử lại.",
 			);
 		}
 	};
 
-	const handleSkip = () => {
-		sessionTokenRef.current += 1;
-		isTransitioningRef.current = false;
-		isFinalizingRef.current = false;
-		setIsRequestingMic(false);
-		setIsTransitioning(false);
-		setIsFinalizing(false);
-		setConfirmEarlyFinish(false);
-		clearPhaseTimer();
-		teardownPromptPlayback();
-		const handle = activeRecorderRef.current;
-		activeRecorderRef.current = null;
-		if (handle) {
-			void handle.stop(true);
-		}
-		stopMediaStream();
-		recordedSegmentsRef.current = [];
-		setSegmentDurationsSec({});
-		setMediaError("");
-		const resetState = createInitialSpeakingSession(tasks.length);
-		sessionRef.current = resetState;
-		setSession(resetState);
+	const handleResetOversizedRecording = () => {
+		abortWithError("");
 		onRecordedAudioChange(null);
-		onSkipSpeaking();
 	};
 
 	const estimatedTotalSec = tasks.reduce((acc, task) => {
@@ -895,8 +863,9 @@ export function PlacementSpeakingStep({
 					{!hasMediaApi ? (
 						<div className="rounded-lg border border-warn/40 bg-warn-soft p-3.5 text-foreground text-sm">
 							Trình duyệt hoặc thiết bị hiện tại chưa hỗ trợ ghi âm
-							(MediaRecorder). Bạn có thể bấm{" "}
-							<strong>Bỏ qua phần Speaking</strong> bên dưới để nộp bài ngay.
+							(MediaRecorder). Vui lòng sử dụng trình duyệt/thiết bị có Micro
+							(Chrome, Safari, Edge) để hoàn thành phần Speaking trước khi nộp
+							bài.
 						</div>
 					) : null}
 
@@ -1168,9 +1137,15 @@ export function PlacementSpeakingStep({
 							className="space-y-4 rounded-lg border bg-muted/20 p-4"
 						>
 							<div className="flex flex-wrap items-center justify-between gap-2">
-								<span className="inline-flex items-center rounded-full bg-success-soft px-2.5 py-0.5 font-medium text-success text-xs">
-									Đã ghi âm hoàn tất (sẵn sàng nộp)
-								</span>
+								{recordedAudio.blob.size > PLACEMENT_SPEAKING_MAX_BYTES ? (
+									<span className="inline-flex items-center rounded-full bg-destructive-soft px-2.5 py-0.5 font-medium text-destructive text-xs">
+										Bản ghi vượt quá giới hạn dung lượng
+									</span>
+								) : (
+									<span className="inline-flex items-center rounded-full bg-success-soft px-2.5 py-0.5 font-medium text-success text-xs">
+										Đã ghi âm hoàn tất (sẵn sàng nộp)
+									</span>
+								)}
 								<span className="text-muted-foreground text-xs tabular-nums">
 									Thời lượng trả lời: {recordedAudio.durationSec}s ·{" "}
 									{(recordedAudio.blob.size / (1024 * 1024)).toFixed(2)} MB / 50
@@ -1179,10 +1154,21 @@ export function PlacementSpeakingStep({
 							</div>
 
 							{recordedAudio.blob.size > PLACEMENT_SPEAKING_MAX_BYTES ? (
-								<p role="alert" className="text-destructive text-sm">
-									Bản ghi vượt quá giới hạn 50 MB. Vui lòng chọn Bỏ qua phần
-									Speaking hoặc liên hệ giáo viên để được hỗ trợ.
-								</p>
+								<div className="space-y-2">
+									<p role="alert" className="text-destructive text-sm">
+										Bản ghi vượt quá giới hạn 50 MB. Vui lòng xóa bản ghi để ghi
+										lại hoặc liên hệ giáo viên để được hỗ trợ.
+									</p>
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										onClick={handleResetOversizedRecording}
+									>
+										<RotateCcw aria-hidden="true" className="size-4" />
+										<span>Xóa bản ghi &amp; ghi lại</span>
+									</Button>
+								</div>
 							) : null}
 
 							{recordedAudio.url ? (
@@ -1197,22 +1183,6 @@ export function PlacementSpeakingStep({
 						</div>
 					) : (
 						<div className="space-y-4">
-							{speakingMode === "skipped" ? (
-								<div
-									data-testid="speaking-skipped-notice"
-									className="rounded-lg border bg-muted/40 p-3.5 text-sm"
-								>
-									<span className="inline-flex items-center gap-1.5 font-medium text-foreground">
-										<MicOff aria-hidden="true" className="size-4" />
-										Đã chọn bỏ qua phần Speaking
-									</span>
-									<p className="mt-1 text-muted-foreground text-xs">
-										Bạn có thể bấm Nộp bài ngay bên dưới (chỉ chấm 4 kỹ năng đã
-										làm), hoặc bấm Bắt đầu làm bài Speaking nếu đổi ý.
-									</p>
-								</div>
-							) : null}
-
 							<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
 								<div className="rounded-lg border bg-muted/30 p-3.5">
 									<div className="text-muted-foreground text-xs">
@@ -1252,10 +1222,6 @@ export function PlacementSpeakingStep({
 											? "Đang xin quyền micro..."
 											: "Bắt đầu làm bài Speaking"}
 									</span>
-								</Button>
-								<Button type="button" variant="outline" onClick={handleSkip}>
-									<SkipForward aria-hidden="true" className="size-4" />
-									<span>Bỏ qua phần Speaking</span>
 								</Button>
 							</div>
 						</div>

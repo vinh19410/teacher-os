@@ -1250,8 +1250,7 @@ h3 {
 
 .speaking-overview-card,
 .speaking-session-card,
-.speaking-review-box,
-.speaking-skipped-box {
+.speaking-review-box {
 	display: flex;
 	flex-direction: column;
 	gap: var(--space-3);

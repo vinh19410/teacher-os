@@ -5,6 +5,7 @@ import {
 import {
 	buildPlacementZaloText,
 	computePlacementFinal,
+	hasPlacementSpeakingTasks,
 	locatePlacementErrors,
 	PLACEMENT_AI_ERROR_CODES,
 	type PlacementObjectiveResult,
@@ -736,4 +737,50 @@ export async function gradePlacementSubmissionResponse(
 			resultOrigin,
 		),
 	);
+}
+
+/**
+ * Kiểm tra `speakingMode` khớp cấu trúc phần Speaking của đề phát hành:
+ * đề có câu Speaking bắt buộc `"upload"`, đề không có Speaking chỉ nhận `"none"`.
+ */
+export function validatePlacementSpeakingModeForSnapshot(
+	snapshot: PlacementSnapshot,
+	speakingMode: "upload" | "none",
+):
+	| { ok: true; speakingStatus: "pending_upload" | "none" }
+	| {
+			ok: false;
+			body: {
+				error: string;
+				code: string;
+				message?: string;
+				fields?: string[];
+			};
+	  } {
+	const hasSpeaking = hasPlacementSpeakingTasks(snapshot);
+	if (hasSpeaking && speakingMode !== "upload") {
+		return {
+			ok: false,
+			body: {
+				error: "PLACEMENT_SPEAKING_REQUIRED",
+				code: "PLACEMENT_SPEAKING_REQUIRED",
+				message:
+					"Bài kiểm tra đầu vào yêu cầu hoàn thành phần Speaking trước khi nộp.",
+			},
+		};
+	}
+	if (!hasSpeaking && speakingMode === "upload") {
+		return {
+			ok: false,
+			body: {
+				error: "PLACEMENT_SUBMIT_INVALID",
+				code: "PLACEMENT_SUBMIT_INVALID",
+				fields: ["speakingMode"],
+			},
+		};
+	}
+	return {
+		ok: true,
+		speakingStatus: speakingMode === "upload" ? "pending_upload" : "none",
+	};
 }

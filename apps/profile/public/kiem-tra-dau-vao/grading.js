@@ -373,24 +373,32 @@ export function resolveSpeakingStepState(speaking) {
 }
 
 /**
- * Determines final speakingMode and whether submit needs confirmation.
+ * Determines final speakingMode and whether submit must be blocked for missing Speaking audio.
  * Checks `!hasSpeakingTasks` before `hasValidBlob` so no phantom upload is attempted.
  */
 export function resolveSpeakingSubmitDecision({
 	hasSpeakingTasks,
 	hasValidBlob,
-	speakingMode,
 }) {
 	if (!hasSpeakingTasks) {
-		return { finalMode: "none", needsSpeakingDecision: false };
+		return {
+			finalMode: "none",
+			needsSpeakingDecision: false,
+			blockedByMissingSpeaking: false,
+		};
 	}
 	if (hasValidBlob) {
-		return { finalMode: "upload", needsSpeakingDecision: false };
+		return {
+			finalMode: "upload",
+			needsSpeakingDecision: false,
+			blockedByMissingSpeaking: false,
+		};
 	}
-	if (speakingMode === "skipped") {
-		return { finalMode: "skipped", needsSpeakingDecision: false };
-	}
-	return { finalMode: "skipped", needsSpeakingDecision: true };
+	return {
+		finalMode: null,
+		needsSpeakingDecision: false,
+		blockedByMissingSpeaking: true,
+	};
 }
 
 /**

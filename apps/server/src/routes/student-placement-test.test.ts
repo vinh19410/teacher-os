@@ -844,7 +844,7 @@ describe("student portal placement test routes (#748)", () => {
 				body: JSON.stringify({
 					answers: { listening: {}, vocabGrammar: {}, reading: {} },
 					writingText: "",
-					speakingMode: "none",
+					speakingMode: "upload",
 				}),
 			},
 		);
@@ -1136,13 +1136,31 @@ describe("student portal placement test routes (#748)", () => {
 						reading: { "r-a1": 1 },
 					},
 					writingText: "Short essay for AI draft.",
-					speakingMode: "skipped",
+					speakingMode: "upload",
+					speakingDurationSec: 20,
 				}),
 			},
 		);
 		expect(submitRes.status).toBe(201);
 		const submitted =
 			(await submitRes.json()) as StudentPlacementSubmitResponse;
+		const webm = validWebmBytes();
+		const uploadRes = await app.request(
+			`/api/student/placement-test/submissions/${submitted.submissionId}/speaking`,
+			{
+				method: "PUT",
+				headers: {
+					"x-test-user": "hoa",
+					origin: STUDENT_ORIGIN,
+					"x-upload-token": submitted.uploadToken ?? "",
+					"x-media-filename": "speaking.webm",
+					"content-type": "audio/webm",
+					"content-length": String(webm.byteLength),
+				},
+				body: webm,
+			},
+		);
+		expect(uploadRes.status).toBe(200);
 		await drainBackgroundTasks();
 
 		const [subRow] = await db
@@ -1317,6 +1335,55 @@ describe("student portal placement test routes (#748)", () => {
 		expect(audioCheck.headers.get("Cache-Control")).toContain("private");
 	});
 
+	test("POST /placement-test/submissions từ chối speakingMode='skipped' (400 PLACEMENT_SUBMIT_INVALID) và speakingMode='none' khi đề có Speaking (400 PLACEMENT_SPEAKING_REQUIRED)", async () => {
+		await seedPublishedTest("org-1");
+
+		const skippedRes = await app.request(
+			"/api/student/placement-test/submissions",
+			{
+				method: "POST",
+				headers: {
+					"x-test-user": "hoa",
+					origin: STUDENT_ORIGIN,
+					"content-type": "application/json",
+				},
+				body: JSON.stringify({
+					answers: { listening: {}, vocabGrammar: {}, reading: {} },
+					writingText: "Hello",
+					speakingMode: "skipped",
+				}),
+			},
+		);
+		expect(skippedRes.status).toBe(400);
+		expect(((await skippedRes.json()) as { code: string }).code).toBe(
+			"PLACEMENT_SUBMIT_INVALID",
+		);
+
+		const noneRes = await app.request(
+			"/api/student/placement-test/submissions",
+			{
+				method: "POST",
+				headers: {
+					"x-test-user": "hoa",
+					origin: STUDENT_ORIGIN,
+					"content-type": "application/json",
+				},
+				body: JSON.stringify({
+					answers: { listening: {}, vocabGrammar: {}, reading: {} },
+					writingText: "Hello",
+					speakingMode: "none",
+				}),
+			},
+		);
+		expect(noneRes.status).toBe(400);
+		expect(((await noneRes.json()) as { code: string }).code).toBe(
+			"PLACEMENT_SPEAKING_REQUIRED",
+		);
+
+		const subs = await db.select().from(schema.placementTestSubmission);
+		expect(subs).toHaveLength(0);
+	});
+
 	test("POST /placement-test/submissions emits 1 in-app-only placement_submitted notification visible in inbox and markable as read", async () => {
 		await seedPublishedTest("org-1");
 
@@ -1336,7 +1403,8 @@ describe("student portal placement test routes (#748)", () => {
 						reading: { "r-a1": 1 },
 					},
 					writingText: "",
-					speakingMode: "none",
+					speakingMode: "upload",
+					speakingDurationSec: 15,
 				}),
 			},
 		);

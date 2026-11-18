@@ -252,6 +252,58 @@ test.describe
 				// 3. Học viên (context ẩn danh) làm & nộp bài tại /kiem-tra-dau-vao/ (fallback đề từ e2e-lead-org).
 				const studentCtx = await browser.newContext();
 				const studentPage = await studentCtx.newPage();
+				await studentPage.addInitScript(() => {
+					const createSyntheticAudioStream = async () => {
+						const audioCtx = new AudioContext();
+						if (audioCtx.state === "suspended") {
+							await audioCtx.resume();
+						}
+						const osc = audioCtx.createOscillator();
+						const gain = audioCtx.createGain();
+						gain.gain.value = 0.01;
+						osc.connect(gain);
+						const dest = audioCtx.createMediaStreamDestination();
+						gain.connect(dest);
+						osc.start();
+						const tracks = [...dest.stream.getAudioTracks()];
+						const combined = new MediaStream(tracks);
+						for (const track of tracks) {
+							const origStop = track.stop.bind(track);
+							track.stop = () => {
+								audioCtx.close().catch(() => {});
+								origStop();
+							};
+						}
+						return combined;
+					};
+					Object.defineProperty(navigator, "mediaDevices", {
+						configurable: true,
+						value: { getUserMedia: () => createSyntheticAudioStream() },
+					});
+					class SyntheticUtterance {
+						text: string;
+						lang = "";
+						rate = 1;
+						onend: (() => void) | null = null;
+						onerror: (() => void) | null = null;
+						constructor(text = "") {
+							this.text = text;
+						}
+					}
+					Object.defineProperty(window, "SpeechSynthesisUtterance", {
+						configurable: true,
+						value: SyntheticUtterance,
+					});
+					Object.defineProperty(window, "speechSynthesis", {
+						configurable: true,
+						value: {
+							cancel: () => {},
+							speak: (utter: SyntheticUtterance) => {
+								window.setTimeout(() => utter.onend?.(), 60);
+							},
+						},
+					});
+				});
 				try {
 					const publicTestRes = studentPage.waitForResponse(
 						(r) =>
@@ -273,7 +325,7 @@ test.describe
 					await expect(
 						studentPage.locator('[data-skill="listening"]'),
 					).toBeVisible();
-					// Đi thẳng tới Writing -> điền bài -> Speaking -> bỏ qua -> nộp bài.
+					// Đi thẳng tới Writing -> điền bài -> Speaking -> ghi âm 1 câu & kết thúc sớm -> nộp bài.
 					await studentPage.locator("#nextToVocabBtn").click();
 					await studentPage.locator("#nextToReadingBtn").click();
 					await studentPage.locator("#nextToWritingBtn").click();
@@ -283,12 +335,24 @@ test.describe
 							"Dear friend, I enjoy practicing English every evening after work so I can speak fluently in meetings.",
 						);
 					await studentPage.locator("#nextToSpeakingBtn").click();
-					await studentPage.locator("#skipSpeakingBtn").click();
+					await expect(studentPage.locator("#skipSpeakingBtn")).toHaveCount(0);
+					await studentPage.locator("#startSpeakingBtn").click();
+					await studentPage.locator("#speakingStartAnswerNowBtn").click();
+					await studentPage.waitForTimeout(350);
+					await studentPage.locator("#speakingFinishEarlyBtn").click();
+					await studentPage.locator("#confirmFinishEarlyBtn").click();
+					await expect(studentPage.locator("#speakingReviewBox")).toBeVisible();
 
 					const submitPromise = studentPage.waitForResponse(
 						(r) =>
 							r.url().endsWith("/public/placement-test/submissions") &&
 							r.request().method() === "POST",
+					);
+					const uploadPromise = studentPage.waitForResponse(
+						(r) =>
+							/\/public\/placement-test\/submissions\/[^/]+\/speaking-media$/.test(
+								r.url(),
+							) && r.request().method() === "PUT",
 					);
 					await studentPage.locator("#submitTestBtn").click();
 					await expect(
@@ -296,7 +360,9 @@ test.describe
 					).toBeVisible();
 					await studentPage.locator("#confirmSubmitBtn").click();
 					const submitRes = await submitPromise;
+					const uploadRes = await uploadPromise;
 					expect(submitRes.status()).toBe(201);
+					expect(uploadRes.status()).toBe(200);
 					await expect(studentPage.locator("#testResultCard")).toBeVisible();
 				} finally {
 					await studentCtx.close();
