@@ -410,7 +410,7 @@ describe("admin library CRUD (/api/admin/library)", () => {
 		expect(missing.status).toBe(404);
 	});
 
-	test("PATCH status ready khi đề thiếu → 400 NOT_READY kèm lý do theo part", async () => {
+	test("PATCH status ready khi đề rỗng (0 part) → 400 NOT_READY với issue parts", async () => {
 		const res = await makeRequest(
 			app,
 			"PATCH",
@@ -425,13 +425,10 @@ describe("admin library CRUD (/api/admin/library)", () => {
 			issues?: Array<{ path: string; message: string }>;
 		};
 		expect(payload.code).toBe("NOT_READY");
-		const paths = new Set((payload.issues ?? []).map((i) => i.path));
-		// Listening cần đủ 4 slot — thiếu slot báo đúng theo part.
-		for (const slot of ["s1", "s2", "s3", "s4"]) {
-			expect(paths.has(`parts.${slot}`), `missing path parts.${slot}`).toBe(
-				true,
-			);
-		}
+		expect(payload.issues).toContainEqual({
+			path: "parts",
+			message: "at least one part is required",
+		});
 		const [row] = await db
 			.select()
 			.from(libraryTest)
@@ -526,6 +523,187 @@ describe("admin library CRUD (/api/admin/library)", () => {
 			.from(libraryTest)
 			.where(eq(libraryTest.id, "lt-skill"));
 		expect(row2?.status).toBe("draft");
+	});
+
+	test("PATCH status ready đề reading chỉ có 1 part hợp lệ (p1 only hoặc p2 only) → 200 ready", async () => {
+		for (const slot of ["p1", "p2"] as const) {
+			const testId = `lt-read-1part-${slot}`;
+			await db.insert(libraryTest).values({
+				id: testId,
+				title: `Reading 1-part (${slot})`,
+				skill: "reading",
+				status: "draft",
+				createdBy: "u-admin",
+			});
+			const putRes = await makeRequest(
+				app,
+				"PUT",
+				`/api/admin/library/tests/${testId}/parts/${slot}`,
+			)({
+				user: "admin",
+				body: {
+					part: slot,
+					type: "tfng",
+					title: `Passage ${slot}`,
+					band: "6.5",
+					source: "",
+					intro: "",
+					passage: "<p>Valid reading passage</p>",
+					transcript: "",
+					imageUrl: "",
+					questions: [{ stem: "Statement 1", answer: "TRUE", alts: "" }],
+					optionBank: [],
+					note: "",
+				},
+			});
+			expect(putRes.status, `PUT ${slot}`).toBe(200);
+
+			const readyRes = await makeRequest(
+				app,
+				"PATCH",
+				`/api/admin/library/tests/${testId}`,
+			)({
+				user: "admin",
+				body: { status: "ready" },
+			});
+			expect(readyRes.status, `PATCH ready ${slot}`).toBe(200);
+			const detail = (await readyRes.json()) as { status?: string };
+			expect(detail.status).toBe("ready");
+
+			const [row] = await db
+				.select()
+				.from(libraryTest)
+				.where(eq(libraryTest.id, testId));
+			expect(row?.status).toBe("ready");
+		}
+	});
+
+	test("PATCH status ready đề listening chỉ có 1 part hợp lệ (s1 + audio + câu hỏi) → 200 ready", async () => {
+		const testId = "lt-listen-1part-s1";
+		await db.insert(libraryTest).values({
+			id: testId,
+			title: "Listening 1-part (s1)",
+			skill: "listening",
+			status: "draft",
+			createdBy: "u-admin",
+		});
+		const putRes = await makeRequest(
+			app,
+			"PUT",
+			`/api/admin/library/tests/${testId}/parts/s1`,
+		)({
+			user: "admin",
+			body: validPartBody("s1"),
+		});
+		expect(putRes.status).toBe(200);
+		await db
+			.update(libraryTestPart)
+			.set({
+				audioKey: `library/${testId}/s1/seed`,
+				audioName: "s1.mp3",
+				audioContentType: "audio/mpeg",
+				audioSize: 1,
+			})
+			.where(
+				and(eq(libraryTestPart.testId, testId), eq(libraryTestPart.part, "s1")),
+			);
+
+		const readyRes = await makeRequest(
+			app,
+			"PATCH",
+			`/api/admin/library/tests/${testId}`,
+		)({
+			user: "admin",
+			body: { status: "ready" },
+		});
+		expect(readyRes.status).toBe(200);
+		const detail = (await readyRes.json()) as { status?: string };
+		expect(detail.status).toBe("ready");
+
+		const [row] = await db
+			.select()
+			.from(libraryTest)
+			.where(eq(libraryTest.id, testId));
+		expect(row?.status).toBe("ready");
+	});
+
+	test("PATCH status ready đề reading có p1 hợp lệ + p2 thiếu passage → 400 NOT_READY với parts.p2.passage", async () => {
+		const testId = "lt-read-partial-invalid";
+		await db.insert(libraryTest).values({
+			id: testId,
+			title: "Reading partial invalid",
+			skill: "reading",
+			status: "draft",
+			createdBy: "u-admin",
+		});
+		const p1Res = await makeRequest(
+			app,
+			"PUT",
+			`/api/admin/library/tests/${testId}/parts/p1`,
+		)({
+			user: "admin",
+			body: {
+				part: "p1",
+				type: "tfng",
+				title: "Passage 1",
+				band: "6.5",
+				source: "",
+				intro: "",
+				passage: "<p>Valid passage 1</p>",
+				transcript: "",
+				imageUrl: "",
+				questions: [{ stem: "Q1", answer: "TRUE", alts: "" }],
+				optionBank: [],
+				note: "",
+			},
+		});
+		expect(p1Res.status).toBe(200);
+
+		const p2Res = await makeRequest(
+			app,
+			"PUT",
+			`/api/admin/library/tests/${testId}/parts/p2`,
+		)({
+			user: "admin",
+			body: {
+				part: "p2",
+				type: "tfng",
+				title: "Passage 2",
+				band: "6.5",
+				source: "",
+				intro: "",
+				passage: "",
+				transcript: "",
+				imageUrl: "",
+				questions: [{ stem: "Q2", answer: "FALSE", alts: "" }],
+				optionBank: [],
+				note: "",
+			},
+		});
+		expect(p2Res.status).toBe(200);
+
+		const readyRes = await makeRequest(
+			app,
+			"PATCH",
+			`/api/admin/library/tests/${testId}`,
+		)({
+			user: "admin",
+			body: { status: "ready" },
+		});
+		expect(readyRes.status).toBe(400);
+		const payload = (await readyRes.json()) as {
+			code?: string;
+			issues?: Array<{ path: string; message: string }>;
+		};
+		expect(payload.code).toBe("NOT_READY");
+		expect((payload.issues ?? []).map((i) => i.path)).toContain(
+			"parts.p2.passage",
+		);
+		const [row] = await db
+			.select()
+			.from(libraryTest)
+			.where(eq(libraryTest.id, testId));
+		expect(row?.status).toBe("draft");
 	});
 
 	test("PATCH status ready với cột questions corrupt → 400 NOT_READY kèm lý do, không 500", async () => {
@@ -1207,7 +1385,7 @@ describe("groups corrupt guard (#425)", () => {
 		expect(await groupsColumn("lt-gc-ready")).toBe("{broken json");
 	});
 
-	test("publish đề có part corrupt → 409 GROUPS_CORRUPT; sửa part xong guard nhường chỗ luật slot", async () => {
+	test("publish đề có part corrupt → 409 GROUPS_CORRUPT; sửa part xong publish ready thành công", async () => {
 		await seedGuardFixture("lt-gc-publish");
 		const patch = makeRequest(
 			app,
@@ -1228,26 +1406,16 @@ describe("groups corrupt guard (#425)", () => {
 			...guardPartBody({ groups: [] }),
 			discardCorruptGroups: true,
 		});
-		// Guard corrupt không còn chặn: lỗi duy nhất còn lại là thiếu các
-		// slot preset khác (p2, p3) — luật ready riêng, không phải corrupt.
+		// Guard corrupt không còn chặn và p1 đã hợp lệ → đề 1-part publish ready được.
 		const afterFix = await patch({ user: "admin", body: { status: "ready" } });
-		expect(afterFix.status).toBe(400);
-		const afterPayload = (await afterFix.json()) as {
-			code?: string;
-			issues?: Array<{ path: string; message: string }>;
-		};
-		expect(afterPayload.code).toBe("NOT_READY");
-		expect(
-			afterPayload.issues?.some((issue) => issue.message.includes("corrupt")),
-		).toBe(false);
-		expect(
-			afterPayload.issues?.every((issue) => issue.path.startsWith("parts.")),
-		).toBe(true);
+		expect(afterFix.status).toBe(200);
+		const afterDetail = (await afterFix.json()) as { status?: string };
+		expect(afterDetail.status).toBe("ready");
 		const [statusAfter] = await db
 			.select({ status: libraryTest.status })
 			.from(libraryTest)
 			.where(eq(libraryTest.id, "lt-gc-publish"));
-		expect(statusAfter?.status).toBe("draft");
+		expect(statusAfter?.status).toBe("ready");
 	});
 });
 
