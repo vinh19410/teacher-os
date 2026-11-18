@@ -137,9 +137,9 @@ export const placementTestSubmission = sqliteTable(
 		aiErrorCode: text("ai_error_code"),
 		aiStartedAt: integer("ai_started_at", { mode: "timestamp_ms" }),
 		aiDraftedAt: integer("ai_drafted_at", { mode: "timestamp_ms" }),
-		/** JSON `PlacementAiSkillDraft` Writing (rubric + nhận xét + lỗi). */
+		/** JSON `PlacementAiSkillDraft` Writing (chỉ danh sách lỗi). */
 		aiWritingJson: text("ai_writing_json"),
-		/** JSON `PlacementAiSkillDraft` Speaking. */
+		/** JSON `PlacementAiSkillDraft` Speaking (chỉ danh sách lỗi). */
 		aiSpeakingJson: text("ai_speaking_json"),
 		/**
 		 * Id job OpenAI Responses (background mode) đang chạy cho lượt chấm

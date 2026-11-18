@@ -676,6 +676,11 @@ describe("PlacementSubmissionPanel — phân tích lỗi AI & chấm IELTS (#730
 		fireEvent.blur(taskInput);
 		expect(taskInput.value).toBe("9.0");
 
+		fireEvent.focus(taskInput);
+		fireEvent.change(taskInput, { target: { value: "-1" } });
+		fireEvent.blur(taskInput);
+		expect(taskInput.value).toBe("0.0");
+
 		setBandInput("writing-coherence-input", "7");
 		setBandInput("writing-lexical-input", "7");
 		setBandInput("writing-grammar-input", "7");
@@ -689,7 +694,13 @@ describe("PlacementSubmissionPanel — phân tích lỗi AI & chấm IELTS (#730
 		expect(saveBtn.disabled).toBe(true);
 	});
 
-	it("bài đã chấm thang cũ (legacy) → hiện banner điểm cũ, input IELTS rỗng", async () => {
+	it("bài đã chấm thang cũ (legacy) → hiện banner điểm cũ, input IELTS rỗng và copy Zalo giữ nguyên kết quả cũ", async () => {
+		const clipboardWriteMock = vi.fn().mockResolvedValue(undefined);
+		Object.defineProperty(navigator, "clipboard", {
+			configurable: true,
+			value: { writeText: clipboardWriteMock },
+		});
+		const legacyZalo = "Writing: 11/15 (73%)\nSpeaking: 17/20 (85%)";
 		stubFetch((url, method) =>
 			isGet(url, method)
 				? makeSub({
@@ -701,6 +712,7 @@ describe("PlacementSubmissionPanel — phân tích lỗi AI & chấm IELTS (#730
 						speakingScore: 17,
 						writingErrors: [],
 						speakingErrors: [],
+						zaloText: legacyZalo,
 					})
 				: undefined,
 		);
@@ -716,6 +728,11 @@ describe("PlacementSubmissionPanel — phân tích lỗi AI & chấm IELTS (#730
 			(screen.getByTestId("save-placement-grade-btn") as HTMLButtonElement)
 				.disabled,
 		).toBe(true);
+
+		fireEvent.click(screen.getByTestId("copy-zalo-result-btn"));
+		await waitFor(() =>
+			expect(clipboardWriteMock).toHaveBeenCalledWith(legacyZalo),
+		);
 	});
 
 	it("student subject → tải từ /api/students/:id/placement-submission, fallback media URL, retry AI & gọi onGraded khi PATCH", async () => {

@@ -743,9 +743,17 @@ function PlacementSubmissionBody({
 		teacherFeedback,
 	});
 
+	const isLegacyGraded =
+		submission.gradedAt !== null &&
+		!isIeltsWritingRubric(submission.writingRubric);
+	const zaloTextToCopy =
+		isLegacyGraded && !dirty && submission.zaloText
+			? submission.zaloText
+			: liveZaloText;
+
 	const handleCopyZalo = async () => {
 		try {
-			await navigator.clipboard.writeText(liveZaloText);
+			await navigator.clipboard.writeText(zaloTextToCopy);
 			setCopiedZalo(true);
 			toast.success("Đã sao chép kết quả gửi Zalo.");
 			setTimeout(() => setCopiedZalo(false), 2000);
@@ -802,20 +810,19 @@ function PlacementSubmissionBody({
 				onApplyDraft={draftPending ? applyAiDraft : undefined}
 			/>
 
-			{submission.gradedAt !== null &&
-				!isIeltsWritingRubric(submission.writingRubric) && (
-					<div
-						role="note"
-						data-testid="legacy-score-banner"
-						className="rounded-md border border-border bg-muted/40 px-3 py-2 text-muted-foreground text-xs"
-					>
-						Điểm cũ: Writing {submission.writingScore ?? "—"}/15
-						{submission.speakingScore !== null
-							? ` · Speaking ${submission.speakingScore}/20`
-							: ""}{" "}
-						— nhập điểm IELTS (0–9) để cập nhật.
-					</div>
-				)}
+			{isLegacyGraded && (
+				<div
+					role="note"
+					data-testid="legacy-score-banner"
+					className="rounded-md border border-border bg-muted/40 px-3 py-2 text-muted-foreground text-xs"
+				>
+					Điểm cũ: Writing {submission.writingScore ?? "—"}/15
+					{submission.speakingScore !== null
+						? ` · Speaking ${submission.speakingScore}/20`
+						: ""}{" "}
+					— nhập điểm IELTS (0–9) để cập nhật.
+				</div>
+			)}
 
 			{/* 3 điểm tự động */}
 			<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
