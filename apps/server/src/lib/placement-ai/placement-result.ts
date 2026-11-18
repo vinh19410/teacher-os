@@ -1,11 +1,11 @@
+import { formatBand } from "@teacher-os/api/lib/ielts-band";
 import {
 	locatePlacementErrors,
 	type PlacementAiSkillDraft,
 	type PlacementError,
+	type PlacementGradingScale,
 	type PlacementSectionScore,
 	placementErrorListSchema,
-	placementSpeakingRubricSchema,
-	placementWritingRubricSchema,
 } from "@teacher-os/api/placement-test-contracts";
 import type { Mailer } from "@teacher-os/auth/mail/mailer";
 import { z } from "zod";
@@ -50,36 +50,28 @@ export function parseStoredErrors(
 	return parsed.success ? locatePlacementErrors(text, parsed.data) : [];
 }
 
-const writingDraftSchema = z.object({
-	rubric: placementWritingRubricSchema,
-	feedback: z.string(),
-	errors: placementErrorListSchema,
-});
-const speakingDraftSchema = z.object({
-	rubric: placementSpeakingRubricSchema,
-	feedback: z.string(),
+/** Non-strict để đọc được cả nháp AI cũ trong DB (có thêm `rubric`/`feedback`). */
+const aiDraftSchema = z.object({
 	errors: placementErrorListSchema,
 });
 
-function parseDraft<R>(
-	schema: z.ZodType<PlacementAiSkillDraft<R>>,
+function parseDraft(
 	raw: string | null,
 	text: string,
-): PlacementAiSkillDraft<R> | null {
-	const parsed = schema.safeParse(parseJson(raw));
+): PlacementAiSkillDraft | null {
+	const parsed = aiDraftSchema.safeParse(parseJson(raw));
 	if (!parsed.success) return null;
 	return {
-		...parsed.data,
 		errors: locatePlacementErrors(text, parsed.data.errors),
 	};
 }
 
 export function parseAiWritingDraft(raw: string | null, text: string) {
-	return parseDraft(writingDraftSchema, raw, text);
+	return parseDraft(raw, text);
 }
 
 export function parseAiSpeakingDraft(raw: string | null, transcript: string) {
-	return parseDraft(speakingDraftSchema, raw, transcript);
+	return parseDraft(raw, transcript);
 }
 
 export type PlacementResultEmailStatus = "sent" | "failed" | "skipped";
@@ -95,6 +87,8 @@ export interface PlacementResultEmailSummary {
 	writingScore: number | null;
 	/** null → bỏ dòng Speaking. */
 	speakingScore: number | null;
+	writingScale?: PlacementGradingScale;
+	speakingScale?: PlacementGradingScale;
 }
 
 /** `correct/total (pct%)` như portal; không có câu hỏi → "—". */
@@ -102,6 +96,17 @@ function formatObjectiveWithPct(score: PlacementSectionScore): string {
 	if (!score || score.total <= 0) return "—";
 	const pct = score.pct !== null ? ` (${Math.round(score.pct)}%)` : "";
 	return `${score.correct}/${score.total}${pct}`;
+}
+
+function formatSkillScore(
+	score: number | null,
+	scale: PlacementGradingScale,
+	legacyMax: number,
+): string {
+	if (score === null) return "—";
+	return scale === "legacy"
+		? `${score}/${legacyMax} điểm`
+		: `Band ${formatBand(score)}/9`;
 }
 
 const EMAIL_FONT =
@@ -122,6 +127,8 @@ export function renderPlacementResultEmail(params: {
 	const name = params.studentName.trim();
 	const greeting = name ? `Chào ${name},` : "Chào bạn,";
 	const intro = "Cô Mỹ đã chấm xong bài kiểm tra đầu vào tiếng Anh của bạn.";
+	const writingScale = summary.writingScale ?? "ielts";
+	const speakingScale = summary.speakingScale ?? "ielts";
 	const overview: [string, string][] = [
 		["Trình độ CEFR", summary.cefr || "—"],
 		["Khóa học đề xuất", summary.displayCourse || "—"],
@@ -131,13 +138,13 @@ export function renderPlacementResultEmail(params: {
 		["Listening", formatObjectiveWithPct(summary.listening)],
 		["Grammar & Vocabulary", formatObjectiveWithPct(summary.vocabGrammar)],
 		["Reading", formatObjectiveWithPct(summary.reading)],
-		[
-			"Writing",
-			summary.writingScore !== null ? `${summary.writingScore}/15 điểm` : "—",
-		],
+		["Writing", formatSkillScore(summary.writingScore, writingScale, 15)],
 	];
 	if (summary.speakingScore !== null) {
-		skills.push(["Speaking", `${summary.speakingScore}/20 điểm`]);
+		skills.push([
+			"Speaking",
+			formatSkillScore(summary.speakingScore, speakingScale, 20),
+		]);
 	}
 
 	const text = [
