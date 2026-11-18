@@ -2,11 +2,14 @@ import {
 	type CreatedResponse,
 	QUIZ_MEDIA_MAX_BYTES,
 	VOCAB_ERROR_CODES,
+	type VocabCsvImportResponse,
 	type VocabStudentProgressResponse,
 	type VocabTeacherSuggestionsResponse,
 	vocabDeckCreateSchema,
+	vocabDeckCsvImportSchema,
 	vocabDeckDeleteSchema,
 	vocabDeckRenameSchema,
+	vocabDeckWordsImportSchema,
 	vocabRevokeSuggestionSchema,
 	vocabSuggestDeckSchema,
 	vocabWordRemoveSchema,
@@ -45,6 +48,26 @@ import {
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type VocabTeacherContext = Context<Env>;
+
+/**
+ * Giới hạn số dòng `vocab_word` mỗi câu INSERT khi bulk import CSV (8 * 11 = 88 < 100 biến bind của D1).
+ */
+const MAX_WORD_INSERT_CHUNK = 8;
+
+function normalizeOptionalText(
+	value: string | null | undefined,
+): string | null {
+	return value && value.length > 0 ? value : null;
+}
+
+function chunkItems<T>(items: readonly T[], chunkSize: number): T[][] {
+	if (items.length === 0) return [];
+	const chunks: T[][] = [];
+	for (let i = 0; i < items.length; i += chunkSize) {
+		chunks.push(items.slice(i, i + chunkSize));
+	}
+	return chunks;
+}
 
 /**
  * Teacher vocabulary CRUD & audio upload sub-router (#359).
@@ -100,8 +123,11 @@ export function vocabTeacherRoutes(deps: {
 				id: vocabWord.id,
 				deckId: vocabWord.deckId,
 				word: vocabWord.word,
+				entryType: vocabWord.entryType,
 				ipa: vocabWord.ipa,
+				pos: vocabWord.pos,
 				translation: vocabWord.translation,
+				example: vocabWord.example,
 				audioKey: vocabWord.audioKey,
 				audioUrl: vocabWord.audioUrl,
 				sortOrder: vocabWord.sortOrder,
@@ -119,8 +145,12 @@ export function vocabTeacherRoutes(deps: {
 				id: w.id,
 				deckId: w.deckId,
 				word: w.word,
+				entryType:
+					w.entryType === "chunk" ? ("chunk" as const) : ("word" as const),
 				ipa: w.ipa ?? null,
+				pos: w.pos ?? null,
 				translation: w.translation,
+				example: w.example ?? null,
 				audioKey: w.audioKey ?? null,
 				audioUrl: w.audioUrl ?? null,
 				sortOrder: w.sortOrder,
@@ -159,6 +189,8 @@ export function vocabTeacherRoutes(deps: {
 				orgId: ctx.orgId,
 				classId: body.data.classId,
 				title: body.data.title,
+				lessonNumber: body.data.lessonNumber ?? null,
+				topic: normalizeOptionalText(body.data.topic),
 				lang: body.data.lang,
 				createdAt: now,
 				updatedAt: now,
@@ -180,6 +212,12 @@ export function vocabTeacherRoutes(deps: {
 			title: body.data.title,
 			updatedAt: new Date(),
 		};
+		if (body.data.lessonNumber !== undefined) {
+			updates.lessonNumber = body.data.lessonNumber;
+		}
+		if (body.data.topic !== undefined) {
+			updates.topic = normalizeOptionalText(body.data.topic);
+		}
 		if (body.data.lang !== undefined) {
 			updates.lang = body.data.lang;
 		}
@@ -199,6 +237,157 @@ export function vocabTeacherRoutes(deps: {
 			);
 		}
 		return c.json({ id: body.data.deckId } satisfies CreatedResponse);
+	});
+
+	routes.post("/decks/import-csv", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return c.json({ error: "unauthorized" }, 401);
+		const body = await readBody(c, vocabDeckCsvImportSchema);
+		if (!body.ok) return body.response;
+		const db = deps.getDb();
+
+		if (body.data.classId !== null) {
+			const [cls] = await db
+				.select({ id: classTable.id })
+				.from(classTable)
+				.where(
+					and(
+						eq(classTable.id, body.data.classId),
+						eq(classTable.orgId, ctx.orgId),
+					),
+				)
+				.limit(1);
+			if (!cls) {
+				return c.json({ error: "class not found" }, 404);
+			}
+		}
+
+		const baseNowMs = Date.now();
+		const deckIds: string[] = [];
+		const batchOps: BatchItem<"sqlite">[] = [];
+		let importedWords = 0;
+
+		for (const [deckIdx, deckItem] of body.data.decks.entries()) {
+			const deckId = crypto.randomUUID();
+			const deckNow = new Date(baseNowMs + deckIdx);
+			deckIds.push(deckId);
+
+			batchOps.push(
+				db.insert(vocabDeck).values({
+					id: deckId,
+					orgId: ctx.orgId,
+					classId: body.data.classId,
+					title: deckItem.title,
+					lessonNumber: deckItem.lessonNumber ?? null,
+					topic: normalizeOptionalText(deckItem.topic),
+					lang: deckItem.lang,
+					createdAt: deckNow,
+					updatedAt: deckNow,
+				}),
+			);
+
+			const wordValues = deckItem.words.map((item, wordIdx) => ({
+				id: crypto.randomUUID(),
+				deckId,
+				word: item.word,
+				entryType: item.entryType,
+				ipa: normalizeOptionalText(item.ipa),
+				pos: normalizeOptionalText(item.pos),
+				translation: item.translation,
+				example: normalizeOptionalText(item.example),
+				sortOrder: wordIdx,
+				createdAt: deckNow,
+				updatedAt: deckNow,
+			}));
+
+			for (const chunk of chunkItems(wordValues, MAX_WORD_INSERT_CHUNK)) {
+				batchOps.push(db.insert(vocabWord).values(chunk));
+			}
+			importedWords += wordValues.length;
+		}
+
+		const [firstBatchOp, ...restBatchOps] = batchOps;
+		if (firstBatchOp) {
+			await db.batch([firstBatchOp, ...restBatchOps]);
+		}
+
+		const firstDeckId = deckIds[0] ?? "";
+		return c.json<VocabCsvImportResponse>(
+			{
+				id: firstDeckId,
+				deckIds,
+				importedDecks: deckIds.length,
+				importedWords,
+			},
+			201,
+		);
+	});
+
+	routes.post("/decks/:deckId/words/import", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return c.json({ error: "unauthorized" }, 401);
+		const deckId = c.req.param("deckId");
+		const body = await readBody(c, vocabDeckWordsImportSchema);
+		if (!body.ok) return body.response;
+		const db = deps.getDb();
+
+		const [deck] = await db
+			.select({ id: vocabDeck.id })
+			.from(vocabDeck)
+			.where(and(eq(vocabDeck.id, deckId), eq(vocabDeck.orgId, ctx.orgId)))
+			.limit(1);
+
+		if (!deck) {
+			return c.json(
+				{ error: "deck not found", code: VOCAB_ERROR_CODES.DECK_NOT_FOUND },
+				404,
+			);
+		}
+
+		const [maxSortRow] = await db
+			.select({
+				maxSort: sql<number>`coalesce(max(${vocabWord.sortOrder}), -1)`,
+			})
+			.from(vocabWord)
+			.where(eq(vocabWord.deckId, deck.id));
+		const parsedMaxSort = Number(maxSortRow?.maxSort ?? -1);
+		const startSortOrder = Number.isFinite(parsedMaxSort)
+			? parsedMaxSort + 1
+			: 0;
+
+		const now = new Date();
+		const wordValues = body.data.words.map((item, idx) => ({
+			id: crypto.randomUUID(),
+			deckId: deck.id,
+			word: item.word,
+			entryType: item.entryType,
+			ipa: normalizeOptionalText(item.ipa),
+			pos: normalizeOptionalText(item.pos),
+			translation: item.translation,
+			example: normalizeOptionalText(item.example),
+			sortOrder: startSortOrder + idx,
+			createdAt: now,
+			updatedAt: now,
+		}));
+
+		const batchOps: BatchItem<"sqlite">[] = chunkItems(
+			wordValues,
+			MAX_WORD_INSERT_CHUNK,
+		).map((chunk) => db.insert(vocabWord).values(chunk));
+		const [firstBatchOp, ...restBatchOps] = batchOps;
+		if (firstBatchOp) {
+			await db.batch([firstBatchOp, ...restBatchOps]);
+		}
+
+		return c.json<VocabCsvImportResponse>(
+			{
+				id: deck.id,
+				deckIds: [deck.id],
+				importedDecks: 0,
+				importedWords: wordValues.length,
+			},
+			201,
+		);
 	});
 
 	/**
@@ -683,8 +872,11 @@ export function vocabTeacherRoutes(deps: {
 					.update(vocabWord)
 					.set({
 						word: body.data.word,
+						entryType: body.data.entryType,
 						ipa: body.data.ipa ?? null,
+						pos: normalizeOptionalText(body.data.pos),
 						translation: body.data.translation,
+						example: normalizeOptionalText(body.data.example),
 						sortOrder: body.data.sortOrder,
 						updatedAt: now,
 					})
@@ -698,8 +890,11 @@ export function vocabTeacherRoutes(deps: {
 			id: wordId,
 			deckId: deck.id,
 			word: body.data.word,
+			entryType: body.data.entryType,
 			ipa: body.data.ipa ?? null,
+			pos: normalizeOptionalText(body.data.pos),
 			translation: body.data.translation,
+			example: normalizeOptionalText(body.data.example),
 			sortOrder: body.data.sortOrder,
 			createdAt: now,
 			updatedAt: now,
