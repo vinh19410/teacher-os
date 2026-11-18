@@ -6,6 +6,7 @@ import {
 	clozeStemIssue,
 	hasAuthoringContent,
 	imagePinIssue,
+	invalidMcqChoiceIssue,
 	optionBankIssue,
 	structuralChangeKind,
 } from "./composer-transitions";
@@ -698,5 +699,39 @@ describe("hybrid writing section transitions (#574)", () => {
 			type: "discuss",
 		});
 		expect(toWriting.writing).toBeNull();
+	});
+});
+
+describe("invalidMcqChoiceIssue", () => {
+	test("chặn đáp án D trên câu mcq 3 lựa chọn và opts ngoài biên 2–4; chấp nhận C", () => {
+		expect(
+			invalidMcqChoiceIssue(
+				composer({
+					part: "p3",
+					type: "mcq",
+					items: [{ stem: "Q1", opts: ["A", "B", "C"], answer: "C", alts: "" }],
+				}),
+			),
+		).toBeNull();
+
+		expect(
+			invalidMcqChoiceIssue(
+				composer({
+					part: "p3",
+					type: "mcq",
+					items: [{ stem: "Q1", opts: ["A", "B", "C"], answer: "D", alts: "" }],
+				}),
+			),
+		).toContain("A, B, C");
+
+		expect(
+			invalidMcqChoiceIssue(
+				composer({
+					part: "p3",
+					type: "mcq",
+					items: [{ stem: "Q1", opts: ["Only 1"], answer: "A", alts: "" }],
+				}),
+			),
+		).toContain("2 đến 4 lựa chọn");
 	});
 });

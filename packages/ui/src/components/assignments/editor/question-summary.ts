@@ -1,5 +1,6 @@
+import { effectiveAnswerChoices } from "@teacher-os/api/contracts";
 import { htmlToPlainText } from "@teacher-os/api/rich-text";
-import { answerChoices, kindOf, type QuestionItem } from "./assignment-presets";
+import { kindOf, type QuestionItem } from "./assignment-presets";
 
 /** Độ rút gọn tối đa của excerpt (Task 1.5). */
 export const QUESTION_SUMMARY_EXCERPT_MAX = 90;
@@ -47,8 +48,7 @@ export function questionSummary(
 				? Math.min(optionBank.length, maxBank)
 				: optionBank.length;
 	} else if (kind === "mcq4" || kind === "mcq3") {
-		const fallback = answerChoices(kind)?.length ?? 0;
-		choiceCount = item.opts?.length ?? fallback;
+		choiceCount = effectiveAnswerChoices(kind, item.opts).length;
 	}
 	return {
 		excerpt: toExcerpt(item.stem),

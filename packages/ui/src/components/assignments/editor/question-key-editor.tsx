@@ -211,7 +211,12 @@ export function QuestionKeyEditor({
 	};
 	const addQuestion = () => {
 		if (atMax) return false;
-		onItemsChange([...items, emptyItem(typeId)]);
+		const fresh = emptyItem(typeId);
+		const lastItem = items.at(-1);
+		if (typeId === "mcq" && lastItem?.opts?.length === 3) {
+			fresh.opts = ["", "", ""];
+		}
+		onItemsChange([...items, fresh]);
 		return true;
 	};
 	const insertPresetIntro = () => {

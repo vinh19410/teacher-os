@@ -1,5 +1,6 @@
 import type { AssignmentQuestion } from "@teacher-os/api/contracts";
 import { useMemo, useState } from "react";
+import { kindOf } from "@/components/assignments/assignment-presets";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/field";
 import {
@@ -90,6 +91,10 @@ export function AnswersCheckingPanel({
 					qStart: slot.qStart,
 					count: slot.questions.length,
 					kind: slot.kind,
+					questionKinds: slot.questions.map((question) =>
+						question.type ? kindOf(question.type) : slot.kind,
+					),
+					questionOpts: slot.questions.map((question) => question.opts),
 				})),
 			),
 		[keyText, slots],

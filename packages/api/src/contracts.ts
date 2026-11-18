@@ -634,6 +634,37 @@ export const answerKindByType: Record<
 };
 
 /**
+ * Resolve valid answer choices for a question. For single-choice MCQ (`mcq4` /
+ * `mcq3`), slice the choice labels to `opts.length` when options are provided
+ * (supporting 2–4 choices on `mcq`), keeping legacy fallback when `opts` is
+ * null/empty.
+ */
+export function effectiveAnswerChoices(
+	kind: keyof typeof ASSIGNMENT_ANSWER_CHOICES,
+	opts?: readonly string[] | null,
+): readonly string[] {
+	const base = ASSIGNMENT_ANSWER_CHOICES[kind];
+	if ((kind !== "mcq4" && kind !== "mcq3") || !opts?.length) {
+		return base;
+	}
+	return base.slice(0, Math.min(opts.length, base.length));
+}
+
+/** Validate `opts` length bounds for `mcq4`/`mcq3` when `opts` is provided. */
+export function mcqOptionsIssue(
+	kind: keyof typeof ASSIGNMENT_ANSWER_CHOICES,
+	opts?: readonly string[] | null,
+): string | null {
+	if ((kind !== "mcq4" && kind !== "mcq3") || !opts?.length) {
+		return null;
+	}
+	const max = ASSIGNMENT_ANSWER_CHOICES[kind].length;
+	return opts.length < 2 || opts.length > max
+		? `mcq options must have 2–${max} items`
+		: null;
+}
+
+/**
  * Structured option bank (phase-02 FR2) — the (skill, type) pairs whose
  * prompts carry `optionBank`. Skill-qualified ON PURPOSE: `map` is shared
  * with writing task1 (a prompt-only type with no questions), which is NOT
@@ -1043,6 +1074,39 @@ const assignmentPromptBaseSchema = z
 	})
 	.strict();
 
+function validateQuestionChoices(
+	ctx: z.RefinementCtx,
+	questions: ReadonlyArray<{
+		type?: string | null;
+		opts?: readonly string[] | null;
+		answer: string;
+	}>,
+	fallbackType: string,
+) {
+	for (const [index, question] of questions.entries()) {
+		const kind = answerKindByType[question.type ?? fallbackType] ?? null;
+		if (!kind) continue;
+		const optsError = mcqOptionsIssue(kind, question.opts);
+		if (optsError) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["questions", index, "opts"],
+				message: optsError,
+			});
+		}
+		if (
+			question.answer &&
+			!effectiveAnswerChoices(kind, question.opts).includes(question.answer)
+		) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["questions", index, "answer"],
+				message: "invalid answer choice",
+			});
+		}
+	}
+}
+
 export const assignmentPromptCreateSchema =
 	assignmentPromptBaseSchema.superRefine((value, ctx) => {
 		const config = ASSIGNMENT_PART_TYPES[value.skill];
@@ -1239,17 +1303,7 @@ export const assignmentPromptCreateSchema =
 		}
 		// Answer-choice validation theo type HIỆU DỤNG của từng câu (type câu
 		// ?? type prompt) — đề trộn dạng chấm khớp kind của câu chứa nó.
-		for (const [index, question] of value.questions.entries()) {
-			const kind = answerKindByType[question.type ?? value.type];
-			if (!kind) continue;
-			const choices = ASSIGNMENT_ANSWER_CHOICES[kind];
-			if (question.answer && !choices.includes(question.answer as never))
-				ctx.addIssue({
-					code: "custom",
-					path: ["questions", index, "answer"],
-					message: "invalid answer choice",
-				});
-		}
+		validateQuestionChoices(ctx, value.questions, value.type);
 		// Phase-02 FR2 — option bank rules. Bankable is (skill, type)-qualified
 		// (red-team #1): writing task1 shares the `map` type id but is NOT
 		// bankable, so a bank arriving there is rejected outright. The 2..8 /
@@ -1348,18 +1402,7 @@ export const assignmentPromptUpdateSchema = assignmentPromptBaseSchema
 				message: "invalid listening audioUrl",
 			});
 		if (value.questions) {
-			for (const [index, question] of value.questions.entries()) {
-				const kind =
-					answerKindByType[question.type ?? value.type ?? ""] ?? null;
-				if (!kind) continue;
-				const choices = ASSIGNMENT_ANSWER_CHOICES[kind];
-				if (question.answer && !choices.includes(question.answer as never))
-					ctx.addIssue({
-						code: "custom",
-						path: ["questions", index, "answer"],
-						message: "invalid answer choice",
-					});
-			}
+			validateQuestionChoices(ctx, value.questions, value.type ?? "");
 		}
 	});
 export type AssignmentPromptUpdate = z.infer<
@@ -4928,17 +4971,7 @@ const libraryExerciseBaseSchema = z
 					});
 			}
 		}
-		for (const [index, question] of value.questions.entries()) {
-			const kind = answerKindByType[question.type ?? value.type];
-			if (!kind) continue;
-			const choices = ASSIGNMENT_ANSWER_CHOICES[kind];
-			if (question.answer && !choices.includes(question.answer as never))
-				ctx.addIssue({
-					code: "custom",
-					path: ["questions", index, "answer"],
-					message: "invalid answer choice",
-				});
-		}
+		validateQuestionChoices(ctx, value.questions, value.type);
 		const bankKind = optionBankKindFor(
 			value.skill,
 			value.type,

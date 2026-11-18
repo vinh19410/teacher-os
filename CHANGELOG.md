@@ -12,6 +12,12 @@ Quy ước khi cập nhật:
 
 ## 2026-11-18
 
+### Added
+- **Hỗ trợ tùy chọn 3 hoặc 4 lựa chọn cho dạng bài `mcq` (`packages/api`, `packages/ui`, `apps/admin`, `apps/web`, `apps/server`):**
+  - Thêm nút chuyển `3 lựa chọn` / `4 lựa chọn` trực tiếp trên từng câu `mcq` trong `AnswerKeyGrid` (mặc định giữ 4 lựa chọn `A–D`; thu về 3 lựa chọn cắt `opts` còn 3 phần tử `A–C`, xóa đáp án `"D"` nếu đang chọn, bỏ qua `Enter` trên nút chuyển và tự kế thừa 3 lựa chọn khi bấm `Thêm câu`).
+  - Đồng bộ `BulkKeyPaste` (hỗ trợ cả `item.type` từng câu), `questionSummary`, `QuizPaper` (instruction tự động `A, B or C` / trung tính khi trộn 3 và 4 lựa chọn), panel `Soát đáp án` (`test-answer-key.ts`, `answers-checking-panel.tsx`) và save-gate ở `apps/web` (`composer-transitions.ts`, `new.tsx`, `test-builder-shell.tsx`).
+  - Đồng bộ helper `effectiveAnswerChoices` và `mcqOptionsIssue` trên `contracts.ts`, `library-contracts.ts` (cả bản nháp lẫn xuất bản) và `assignments/index.ts` (#792).
+
 ### Fixed
 - Khắc phục lỗi chuyển menu sidebar cổng học viên (`apps/student`) bị trễ: `/_auth.beforeLoad` gọi `authClient.getSession()` không cache ở mỗi lượt chuyển trang (và mỗi lượt hover do `defaultPreload: "intent"`), khiến mỗi cú bấm chờ một round-trip `/api/auth/get-session` truy vấn D1. Port cơ chế của cổng giáo viên (#575): `getCachedSession` cache 10 giây, gộp request đồng thời, timeout 5 giây, dọn cache khi đăng xuất/`reauth()`; router đặt `defaultPendingMs: 200` + `defaultPendingComponent: Loader` để hiện loader thay vì đứng hình.
 
