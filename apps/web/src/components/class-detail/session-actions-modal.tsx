@@ -1,5 +1,9 @@
-import { CLASS_ERROR_CODES } from "@teacher-os/api/contracts";
+import {
+	CLASS_ERROR_CODES,
+	type KernelSessionMeetingRow,
+} from "@teacher-os/api/contracts";
 import { useState } from "react";
+import { SessionMeetPanel } from "@/components/schedule/session-meet-panel";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
@@ -46,7 +50,10 @@ export type OccurrenceEditPayload = Partial<{
 }>;
 
 export interface SessionActionsModalProps {
+	classId?: string;
 	session: ClassSession | null;
+	meeting?: KernelSessionMeetingRow;
+	onRefreshed?: () => Promise<boolean>;
 	studentById: (id: string) => { name: string } | undefined;
 	isPaused?: boolean;
 	onClose: () => void;
@@ -66,7 +73,10 @@ function bucketHead(
 }
 
 export function SessionActionsModal({
+	classId,
 	session,
+	meeting,
+	onRefreshed,
 	studentById,
 	isPaused = false,
 	onClose,
@@ -316,6 +326,25 @@ export function SessionActionsModal({
 				</section>
 
 				<section className="space-y-3 border-border border-t pt-4">
+					{classId && (
+						<SessionMeetPanel
+							classId={classId}
+							dateISO={session.dateISO}
+							zoom={baseZoom}
+							status={
+								session.rows.some((r) => r.status === "holiday")
+									? "holiday"
+									: session.rows.length > 0 &&
+											session.rows.every((r) => r.status === "cancelled")
+										? "cancelled"
+										: session.rows.some((r) => r.status === "completed")
+											? "completed"
+											: "upcoming"
+							}
+							meeting={meeting}
+							onRefreshed={() => onRefreshed?.() ?? Promise.resolve(true)}
+						/>
+					)}
 					<h3 className="font-medium text-sm">Chỉnh sửa buổi</h3>
 					<Field label="Chủ đề">
 						<Input

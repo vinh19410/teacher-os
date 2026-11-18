@@ -10,6 +10,7 @@ import {
 import { addDaysISO, vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { classTable } from "@teacher-os/db/schema/class";
 import { classSession } from "@teacher-os/db/schema/class-session";
+import { classSessionMeeting } from "@teacher-os/db/schema/class-session-meeting";
 import { enrollment } from "@teacher-os/db/schema/enrollment";
 import { lesson } from "@teacher-os/db/schema/lesson";
 import { lessonMaterial } from "@teacher-os/db/schema/material";
@@ -485,6 +486,27 @@ export async function materializeScheduleForEnrollment(
 						}
 					}
 				}
+			}
+		}
+
+		const meetingRows = await db
+			.select({
+				date: classSessionMeeting.date,
+				meetUrl: classSessionMeeting.meetUrl,
+			})
+			.from(classSessionMeeting)
+			.where(
+				and(
+					eq(classSessionMeeting.orgId, orgId),
+					eq(classSessionMeeting.classId, cls.id),
+				),
+			);
+		const meetByDate = new Map(
+			meetingRows.filter((m) => m.meetUrl).map((m) => [m.date, m.meetUrl]),
+		);
+		for (const row of rows) {
+			if (row.date && !row.zoom) {
+				row.zoom = meetByDate.get(row.date) ?? "";
 			}
 		}
 

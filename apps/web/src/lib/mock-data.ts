@@ -316,6 +316,7 @@ export type KernelHydratedData = Pick<
 	/** TOS-17 (#451): ngữ cảnh quyền tài chính của thành viên hiện tại. */
 	viewer?: KernelViewer;
 	classSessions?: ClassSessionItem[];
+	sessionMeetings?: import("@teacher-os/api/contracts").KernelSessionMeetingRow[];
 };
 
 export const dayNames = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];

@@ -203,6 +203,7 @@ export const server = Cloudflare.Worker("server", {
 		date: WORKER_COMPATIBILITY_DATE,
 		flags: ["nodejs_compat"],
 	},
+	crons: ["*/10 * * * *"],
 	...(topology && { domain: topology.apiHost, workersDev: false }),
 	env: {
 		DB: db,

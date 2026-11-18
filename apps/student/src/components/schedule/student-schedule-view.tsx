@@ -8,13 +8,16 @@ import {
 	vietnamSessionEndMs,
 	vietnamTodayISO,
 } from "@teacher-os/api/vietnam-date";
+import { buttonVariants } from "@teacher-os/ui/components/button";
 import {
 	Check,
 	CircleDashed,
 	Clock,
 	GraduationCap,
+	PlayCircle,
 	Sparkles,
 	UserRound,
+	Video,
 	X,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -328,13 +331,13 @@ export function StudentScheduleView({
 											</div>
 										</div>
 
-										<div className="mt-4 border-border border-t pt-3 text-xs">
+										<div className="mt-4 space-y-2.5 border-border border-t pt-3 text-xs">
 											{cls.status === "paused" ? (
-												<span className="text-muted-foreground">
+												<span className="block text-muted-foreground">
 													Lớp đang tạm dừng
 												</span>
 											) : cls.nextSession?.date ? (
-												<span className="text-muted-foreground">
+												<span className="block text-muted-foreground">
 													Buổi tới:{" "}
 													<strong className="font-semibold text-foreground">
 														{formatVietnamDateFromISO(cls.nextSession.date)}
@@ -344,9 +347,23 @@ export function StudentScheduleView({
 													</strong>
 												</span>
 											) : (
-												<span className="text-muted-foreground">
+												<span className="block text-muted-foreground">
 													Chưa có lịch buổi tới
 												</span>
+											)}
+											{cls.status !== "paused" && cls.nextSession?.meetUrl && (
+												<a
+													href={cls.nextSession.meetUrl}
+													target="_blank"
+													rel="noopener noreferrer"
+													className={cn(
+														buttonVariants({ variant: "default", size: "sm" }),
+														"w-full whitespace-normal text-center focus-visible:shadow-[var(--focus-ring)] focus-visible:ring-0",
+													)}
+												>
+													<Video aria-hidden="true" className="size-3.5" />
+													Vào lớp (Google Meet)
+												</a>
 											)}
 										</div>
 									</div>
@@ -530,6 +547,22 @@ export function StudentScheduleView({
 														? Clock
 														: CircleDashed;
 
+										const showMeetLink =
+											displayStatus === "upcoming" && Boolean(lesson.meetUrl);
+										const canShowRecording =
+											lesson.status !== "cancelled" &&
+											lesson.status !== "holiday";
+										const showRecordingLink =
+											canShowRecording && Boolean(lesson.recordingUrl);
+										const showPendingRecording =
+											!lesson.recordingUrl &&
+											lesson.recordingStatus === "pending" &&
+											(isEnded ||
+												lesson.status === "completed" ||
+												lesson.status === "absent");
+										const hasActions =
+											showMeetLink || showRecordingLink || showPendingRecording;
+
 										return (
 											<div
 												key={lesson.id}
@@ -541,7 +574,7 @@ export function StudentScheduleView({
 														: "border-border bg-card",
 												)}
 											>
-												<div className="flex items-start gap-3 sm:items-center">
+												<div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
 													<span
 														aria-hidden="true"
 														className={cn(
@@ -590,25 +623,84 @@ export function StudentScheduleView({
 													</div>
 												</div>
 
-												{/* Right Side: Thời gian và Badge trạng thái */}
-												<div className="flex items-center justify-between gap-4 border-border/50 border-t pt-2 sm:border-t-0 sm:pt-0">
-													<div className="text-left sm:text-right">
-														<span className="block font-medium text-foreground text-sm tabular-nums">
-															{lessonWeekdayOrDate(lesson)}
-														</span>
-														<span className="block text-muted-foreground text-xs tabular-nums">
-															{lesson.time} · {lesson.dur} phút
-														</span>
+												{/* Right Side: Thời gian, Badge trạng thái & Meet/Recording */}
+												<div className="flex flex-col gap-2.5 border-border/50 border-t pt-2 sm:flex-row sm:items-center sm:gap-4 sm:border-t-0 sm:pt-0">
+													<div className="flex items-center justify-between gap-4 sm:justify-end">
+														<div className="text-left sm:text-right">
+															<span className="block font-medium text-foreground text-sm tabular-nums">
+																{lessonWeekdayOrDate(lesson)}
+															</span>
+															<span className="block text-muted-foreground text-xs tabular-nums">
+																{lesson.time} · {lesson.dur} phút
+															</span>
+														</div>
+
+														<div className="flex-none">
+															<Badge
+																variant={statusConfig.variant}
+																className={statusConfig.badgeClass}
+															>
+																{statusConfig.label}
+															</Badge>
+														</div>
 													</div>
 
-													<div className="flex-none">
-														<Badge
-															variant={statusConfig.variant}
-															className={statusConfig.badgeClass}
-														>
-															{statusConfig.label}
-														</Badge>
-													</div>
+													{hasActions && (
+														<div className="flex flex-wrap items-center gap-2 sm:justify-end">
+															{showMeetLink && lesson.meetUrl && (
+																<a
+																	href={lesson.meetUrl}
+																	target="_blank"
+																	rel="noopener noreferrer"
+																	className={cn(
+																		buttonVariants({
+																			variant: isNext ? "default" : "outline",
+																			size: "sm",
+																		}),
+																		"max-w-full whitespace-normal text-center focus-visible:shadow-[var(--focus-ring)] focus-visible:ring-0",
+																	)}
+																>
+																	<Video
+																		aria-hidden="true"
+																		className="size-3.5"
+																	/>
+																	Vào lớp (Google Meet)
+																</a>
+															)}
+															{showRecordingLink && lesson.recordingUrl && (
+																<a
+																	href={lesson.recordingUrl}
+																	target="_blank"
+																	rel="noopener noreferrer"
+																	className={cn(
+																		buttonVariants({
+																			variant: "outline",
+																			size: "sm",
+																		}),
+																		"max-w-full whitespace-normal text-center focus-visible:shadow-[var(--focus-ring)] focus-visible:ring-0",
+																	)}
+																>
+																	<PlayCircle
+																		aria-hidden="true"
+																		className="size-3.5"
+																	/>
+																	Xem recording
+																</a>
+															)}
+															{showPendingRecording && (
+																<Badge
+																	variant="outline"
+																	className="text-muted-foreground"
+																>
+																	<Clock
+																		aria-hidden="true"
+																		className="size-3"
+																	/>
+																	Đang chờ recording
+																</Badge>
+															)}
+														</div>
+													)}
 												</div>
 											</div>
 										);

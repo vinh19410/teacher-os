@@ -86,6 +86,13 @@ import type { Db, KernelCtx } from "../app";
 import type { AiGrader } from "../lib/ai-grading/grader";
 import { formatSenderName } from "../lib/brand";
 import { isManualClass } from "../lib/class-mode";
+import {
+	autoProvisionMeetingsForNewClass,
+	ensureSessionMeeting,
+	syncCalendarAttendeesForClass,
+	syncCalendarOnSessionCancelOrDelete,
+	syncCalendarOnSessionEdit,
+} from "../lib/google-meet/session-meet-service";
 import type { MediaStore } from "../lib/media-store";
 import {
 	deliverNotifications,
@@ -142,6 +149,7 @@ import {
 } from "./dashboard-reminders";
 import { activateEnrollment } from "./enrollment-activation";
 import { eventRoutes } from "./events";
+import { googleMeetDepsFrom, runGoogleSyncTask } from "./google-meet";
 import { gradingRoutes } from "./grading";
 import { holidayRoutes, isRollbackableConstraintError } from "./holidays";
 import { leadRoutes } from "./leads";
@@ -190,6 +198,12 @@ export function kernelRoutes(deps: {
 	aiRetryDelaysMs?: number[];
 	aiGradingTimeoutMs?: number;
 	fetchExternalAudio?: typeof fetch;
+	googleClientId?: string;
+	googleClientSecret?: string;
+	googleFetch?: typeof fetch;
+	getGoogleWorkspaceClient?: import("../lib/google-meet/google-workspace-client").GoogleWorkspaceClient extends infer T
+		? (userId: string) => Promise<T> | T
+		: never;
 	now?: () => Date;
 }) {
 	const kernel = new Hono<Env>();
@@ -742,6 +756,12 @@ export function kernelRoutes(deps: {
 					}
 					return c.json({ error: "enrollment activation failed" }, 500);
 				}
+				await runGoogleSyncTask(deps, () =>
+					syncCalendarAttendeesForClass(googleMeetDepsFrom(deps), {
+						orgId: ctx.orgId,
+						classId: cls.id,
+					}),
+				);
 				await acceptPendingInvitation();
 				const inviteEmailSent = await sendDirectPortalInviteBestEffort(
 					cls.name,
@@ -1759,6 +1779,12 @@ export function kernelRoutes(deps: {
 				}
 				return c.json({ error: "enrollment activation failed" }, 500);
 			}
+			await runGoogleSyncTask(deps, () =>
+				syncCalendarAttendeesForClass(googleMeetDepsFrom(deps), {
+					orgId: ctx.orgId,
+					classId: cls.id,
+				}),
+			);
 		} else {
 			const clsBeforeNotify = await findClass(db, cls.id, ctx.orgId);
 			if (clsBeforeNotify?.status !== "active") {
@@ -1804,6 +1830,21 @@ export function kernelRoutes(deps: {
 
 		const result = await activateEnrollment(db, ctx.orgId, enrollmentId);
 		if (result.ok) {
+			const [enrRow] = await db
+				.select({ classId: enrollment.classId })
+				.from(enrollment)
+				.where(
+					and(eq(enrollment.id, enrollmentId), eq(enrollment.orgId, ctx.orgId)),
+				)
+				.limit(1);
+			if (enrRow) {
+				await runGoogleSyncTask(deps, () =>
+					syncCalendarAttendeesForClass(googleMeetDepsFrom(deps), {
+						orgId: ctx.orgId,
+						classId: enrRow.classId,
+					}),
+				);
+			}
 			return c.json({ ok: true });
 		}
 		if (result.error === "class-paused") {
@@ -2035,6 +2076,10 @@ export function kernelRoutes(deps: {
 		const schedulingMode =
 			input.templateId !== "" ? "auto" : (input.schedulingMode ?? "manual");
 
+		const scheduleJson = JSON.stringify({
+			...input.schedule,
+			days: [...new Set(input.schedule.days)].sort((a, b) => a - b),
+		});
 		const classInsert = db.insert(classTable).values({
 			id: classId,
 			orgId: ctx.orgId,
@@ -2044,10 +2089,7 @@ export function kernelRoutes(deps: {
 			skills: JSON.stringify(input.skills),
 			mode: input.mode,
 			syllabusId: imported?.copyId ?? null,
-			schedule: JSON.stringify({
-				...input.schedule,
-				days: [...new Set(input.schedule.days)].sort((a, b) => a - b),
-			}),
+			schedule: scheduleJson,
 			sessionsTotal: schedulingMode === "manual" ? 0 : input.sessionsTotal,
 			sessionsDone: 0,
 			status: "active",
@@ -2060,6 +2102,23 @@ export function kernelRoutes(deps: {
 			? [...imported.statements, classInsert]
 			: [classInsert];
 		await db.batch(statements);
+		if (
+			schedulingMode === "auto" &&
+			input.mode === "Online" &&
+			input.sessionsTotal > 0
+		) {
+			await runGoogleSyncTask(deps, () =>
+				autoProvisionMeetingsForNewClass(googleMeetDepsFrom(deps), {
+					orgId: ctx.orgId,
+					classId,
+					actorUserId: ctx.userId,
+					mode: input.mode,
+					schedule: scheduleJson,
+					startDate: input.startDate,
+					sessionsTotal: input.sessionsTotal,
+				}),
+			);
+		}
 		return c.json({ id: classId } satisfies CreatedResponse, 201);
 	});
 
@@ -2647,6 +2706,29 @@ export function kernelRoutes(deps: {
 				}),
 			]);
 		}
+		if (nextStatus === "cancelled" && row.date !== null) {
+			const cancelledDate = row.date;
+			await runGoogleSyncTask(deps, async () => {
+				const counts = await bucketCounts(
+					db,
+					row.classId,
+					cancelledDate,
+					ctx.orgId,
+				);
+				if (counts.upcoming === 0) {
+					await syncCalendarOnSessionCancelOrDelete(googleMeetDepsFrom(deps), {
+						orgId: ctx.orgId,
+						classId: row.classId,
+						dateISO: cancelledDate,
+					});
+				} else {
+					await syncCalendarAttendeesForClass(googleMeetDepsFrom(deps), {
+						orgId: ctx.orgId,
+						classId: row.classId,
+					});
+				}
+			});
+		}
 		return c.json({ ok: true });
 	}
 
@@ -2743,6 +2825,19 @@ export function kernelRoutes(deps: {
 					}),
 				);
 			}
+			const editedDate = pre.date;
+			await runGoogleSyncTask(deps, () =>
+				syncCalendarOnSessionEdit(googleMeetDepsFrom(deps), {
+					orgId: ctx.orgId,
+					classId: pre.classId,
+					oldDateISO: editedDate,
+					newDateISO: editedDate,
+					time: body.data.time,
+					dur: body.data.dur,
+					topic: body.data.topic,
+					...(body.data.zoom !== pre.zoom ? { zoom: body.data.zoom } : {}),
+				}),
+			);
 			return c.json({ ok: true });
 		}
 
@@ -3097,6 +3192,18 @@ export function kernelRoutes(deps: {
 					}),
 				);
 			}
+			await runGoogleSyncTask(deps, () =>
+				syncCalendarOnSessionEdit(googleMeetDepsFrom(deps), {
+					orgId: ctx.orgId,
+					classId,
+					oldDateISO: dateISO,
+					newDateISO: moveDateISO ?? dateISO,
+					time: body.data.time,
+					dur: body.data.dur,
+					topic: body.data.topic,
+					...(body.data.zoom !== undefined ? { zoom: body.data.zoom } : {}),
+				}),
+			);
 			return c.json({
 				updated: Math.max(rows.length, existingClassSession.length),
 				skipped: Math.max(0, before.total - rows.length),
@@ -3364,6 +3471,16 @@ export function kernelRoutes(deps: {
 			}
 			throw err;
 		}
+		if (cls.mode === "Online" && body.data.zoom.trim() === "") {
+			await runGoogleSyncTask(deps, async () => {
+				await ensureSessionMeeting(googleMeetDepsFrom(deps), {
+					orgId: kernelCtx.orgId,
+					classId,
+					dateISO,
+					actorUserId: kernelCtx.userId,
+				});
+			});
+		}
 		return c.json({ ok: true, id: newId, date: dateISO }, 201);
 	});
 
@@ -3538,6 +3655,14 @@ export function kernelRoutes(deps: {
 			}
 			throw err;
 		}
+		await runGoogleSyncTask(deps, () =>
+			syncCalendarOnSessionCancelOrDelete(googleMeetDepsFrom(deps), {
+				orgId: ctx.orgId,
+				classId,
+				dateISO,
+				deleteMeetingRow: true,
+			}),
+		);
 		return c.json({ ok: true, deleted: true, date: dateISO });
 	});
 
@@ -3600,6 +3725,15 @@ export function kernelRoutes(deps: {
 					date: dateISO,
 					editedAtMs: Date.now(),
 					studentIds: notifyStudentIds,
+				}),
+			);
+		}
+		if (nextStatus === "cancelled" && rows.length > 0) {
+			await runGoogleSyncTask(deps, () =>
+				syncCalendarOnSessionCancelOrDelete(googleMeetDepsFrom(deps), {
+					orgId,
+					classId,
+					dateISO,
 				}),
 			);
 		}

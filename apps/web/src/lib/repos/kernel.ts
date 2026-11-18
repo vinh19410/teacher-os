@@ -401,6 +401,7 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 		holidayCancels: snapshot.holidayCancels ?? [],
 		events: snapshot.events ?? [],
 		classSessions: snapshot.classSessions ?? [],
+		sessionMeetings: snapshot.sessionMeetings ?? [],
 		viewer: snapshot.viewer ?? { role: "teacher", canAccessFinance: true },
 	};
 }
@@ -596,6 +597,7 @@ const OPTIONAL_SNAPSHOT_COLLECTION_KEYS = [
 	// không làm trắng workspace, precedent vocabSuggestions #363 RT-F8.
 	"events",
 	"classSessions",
+	"sessionMeetings",
 ] as const satisfies ReadonlyArray<keyof KernelSnapshot>;
 
 // Compile-time completeness: every KernelSnapshot collection must appear in
