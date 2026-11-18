@@ -69,11 +69,16 @@ export async function emitNotifications(
 	events: NotificationEvent[],
 ): Promise<void> {
 	try {
-		const { createdIds } = await enqueueNotifications(deps.db, orgId, events);
+		const { queuedEmailIds } = await enqueueNotifications(
+			deps.db,
+			orgId,
+			events,
+		);
+		if (queuedEmailIds.length === 0) return;
 		const delivery = deliverNotifications(
 			deps.db,
 			deps.mailer,
-			createdIds,
+			queuedEmailIds,
 			deps.studentOrigin,
 			deps.retryDelaysMs ? { retryDelaysMs: deps.retryDelaysMs } : undefined,
 		);

@@ -1,0 +1,165 @@
+{
+	"id": "c8ee935e-df9e-4e1d-8f06-ddd97cc2f4c3",
+	"url": "https://stepielts.com/student/reading/c8ee935e-df9e-4e1d-8f06-ddd97cc2f4c3?mode=practice",
+	"title": "The life of Beatrix Potter",
+	"source": "Collection",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "The life of Beatrix Potter",
+		"subtitle": "The children’s author and illustrator who created Peter Rabbit",
+		"paragraphs": [
+			"Beatrix Potter is one of the best-selling children’s authors of all time. Her popular series of books that includes The Tale of Peter Rabbit was first published over one hundred years ago and has never been out of print. Generations of children have enjoyed her many stories and illustrations, all of which celebrate the English way of life and rural landscape through the adventures of animals.",
+			"Born into a comfortable middle-class family in London in 1866, Potter spent much of her early life in her own company. She was educated at home by a governess and rarely saw her brother, Bertram, who was sent to boarding school. Having little social contact with children of her own age, Potter was drawn into a private world of writing. When she was 15, she began to keep a diary written in a secret code of her own invention. Even Beatrix herself, when she read back over it in later life, found it difficult to understand. It was not until 15 years after her death that the code was cracked. To the outside world Beatrix seemed shy and reserved, but in her diary she expressed herself freely and was critical of the work of several contemporary artists.",
+			"Potter was a naturally gifted artist, and with the aid of some art lessons she also learned the technical side of drawing. Throughout her childhood she looked after many animals—rabbits, frogs and even bats—and sketched them constantly, gradually improving her work by sketching in museums. She was also interested in natural history. She would spend many hours drawing wildlife such as fungi and flowers, and at one time she had an ambition to develop this scientific interest. An uncle tried to help her enrol at the Royal Botanic Gardens at Kew in London, but she was rejected because of her gender. Nevertheless, she won respect from the scientific establishment for her illustrations and her contribution to mycology, the study of fungi.",
+			"When Potter was in her early twenties, her parents tried to arrange a husband for her. Many suitable suitors were found; however, Potter turned them all down. Fiercely independent, she disliked the idea of being tied to a domestic life that, at that time, consisted mostly of staying at home and raising children. Thus—unusually for British women of the period—she remained single and lived in her parents’ home.",
+			"For several years Potter tried to get her first children’s book, The Tale of Peter Rabbit, published. Her initial attempts were unsuccessful, but she persevered, and eventually Frederick Warne & Co. accepted the book. It was finally published in 1902, when Potter was 36, though the publishers did not expect it to sell many copies. The project was given to the youngest brother in the firm, Norman Warne, as his first assignment—essentially a test. Luckily, he warmed to both the book and its author. Determined to make it a success, he worked closely with Potter, poring over every detail. It was Norman who insisted that each illustration should be in colour, while Potter insisted the book remain small enough for children to hold easily.\nBy the end of the year, 28,000 copies were in print.",
+			"The relationship between Warne and Potter blossomed, and they eventually became engaged. However, Potter’s parents disapproved because of his occupation. They relented only on condition that the couple live apart for six months to give Potter time to reconsider. Tragically, before the wedding could take place, Warne developed pernicious anaemia, a blood disease, and passed away. Potter was devastated and wrote to his sister, Millie, “He did not live long, but he fulfilled a useful, happy life. I must try to make a fresh beginning next year.”",
+			"After Warne’s death, Potter moved to the Lake District in northern England. In 1905 she bought a small farm there, and for the next eight years she busied herself writing more books, some set in or around the area. She remained there for the rest of her life, but failing eyesight eventually forced her to stop writing children’s books. Instead, she devoted herself to breeding sheep and helping to conserve farms in the district. Thanks to the proceeds from her successful books and a later inheritance, Potter was able to buy many working farms. On her death she left more than 4,000 acres to the National Trust, an organisation that protects historic buildings and countryside in England. As a result, her beloved landscape is now accessible to countless visitors."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the notes below.\nChoose ONE WORD ONLY from the passage for each answer.",
+			"body": "Beatrix Potter\nSuccess as an author\nHer books have been in print for more than 100 years.\nChildhood\nShe received lessons at home from a ____ (1).\nShe wrote in her ____ (2) in code.\nShe disliked the work of some ____ (3) of the time.\nShe took lessons in drawing.\nShe practised drawing things she saw when she visited ____ (4).\nLife as a young adult\nHer ____ (5) to have a career in natural history was not realised.\nHer illustrations were recognised as assisting research into ____ (6).",
+			"body_html": "<table><tbody><tr><td><p><strong>Beatrix Potter</strong></p><p><strong>Success as an author</strong></p><ul><li>Her books have been in print for more than 100 years.</li></ul><p><strong>Childhood</strong></p><ul><li>She received lessons at home from a [1].</li><li>She wrote in her [2] in code.</li><li>She disliked the work of some [3] of the time.</li><li>She took lessons in drawing.</li><li>She practised drawing things she saw when she visited [4].</li></ul><p><strong>Life as a young adult</strong></p><ul><li>Her [5] to have a career in natural history was not realised.</li><li>Her illustrations were recognised as assisting research into [6].</li></ul></td></tr></tbody></table><p></p>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "She received lessons at home from a ____ (1).",
+					"answer": "governess",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCô ấy nhận các bài học ở nhà từ một ____.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: from a + NOUN.\nBước 3: Tìm các keywords được paraphrase trong bài:\neducated at home ~ received lessons at home\nby a ~ from a\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Cô được giáo dục tại nhà bởi một gia sư\" (She was educated at home by a governess).\nBước 5: Đáp án: governess.\nCô ấy nhận các bài học ở nhà từ một gia sư. (She received lessons at home from a governess).",
+					"quotes": [
+						"She was educated at home by a governess and rarely saw her brother, Bertram, who was sent to boarding school."
+					]
+				},
+				{
+					"number": 2,
+					"text": "She wrote in her ____ (2) in code.",
+					"answer": "diary",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCô ấy viết trong ____ của mình bằng mật mã.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: in her + NOUN.\nBước 3: Tìm các keywords được paraphrase trong bài:\nbegan to keep a diary written ~ wrote in her\nin a secret code ~ in code\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...cô bắt đầu giữ một nhật ký được viết bằng một mật mã bí mật...\" (...she began to keep a diary written in a secret code...).\nBước 5: Đáp án: diary.\nCô ấy viết trong nhật ký của mình bằng mật mã. (She wrote in her diary in code.).",
+					"quotes": [
+						"When she was 15, she began to keep a diary written in a secret code of her own invention."
+					]
+				},
+				{
+					"number": 3,
+					"text": "She disliked the work of some ____ (3) of the time.",
+					"answer": "artists",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCô ấy không thích tác phẩm của một số ____ cùng thời.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (số nhiều)\nDấu hiệu: some + NOUN.\nBước 3: Tìm các keywords được paraphrase trong bài:\nwas critical of the work of ~ disliked the work of\ncontemporary ~ of the time\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...và chỉ trích tác phẩm của một số nghệ sĩ đương thời\" (...was critical of the work of several contemporary artists).\nBước 5: Đáp án: artists.\nCô ấy không thích tác phẩm của một số nghệ sĩ cùng thời. (She disliked the work of some artists of the time.).",
+					"quotes": [
+						"To the outside world Beatrix seemed shy and reserved, but in her diary she expressed herself freely and was critical of the work of several contemporary artists."
+					]
+				},
+				{
+					"number": 4,
+					"text": "She practised drawing things she saw when she visited ____ (4).",
+					"answer": "museums",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCô ấy luyện vẽ những thứ cô thấy khi đến thăm ____.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (số nhiều)\nDấu hiệu: visited + NOUN.\nBước 3: Tìm các keywords được paraphrase trong bài:\nimproving her work by sketching ~ practised drawing things she saw\nin ~ visited\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...dần dần cải thiện tác phẩm của mình bằng cách phác thảo trong các bảo tàng\" (...gradually improving her work by sketching in museums).\nBước 5: Đáp án: museums.\nCô ấy luyện vẽ những thứ cô thấy khi đến thăm các bảo tàng. (She practised drawing things she saw when she visited museums).",
+					"quotes": [
+						"Throughout her childhood she looked after many animals—rabbits, frogs and even bats—and sketched them constantly, gradually improving her work by sketching in museums."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Her ____ (5) to have a career in natural history was not realised.",
+					"answer": "ambition",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\n____ của cô ấy để có một sự nghiệp trong lịch sử tự nhiên đã không được thực hiện.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: Her + NOUN.\nBước 3: Tìm các keywords được paraphrase trong bài:\ndevelop this scientific interest ~ have a career in natural history\nrejected ~ not realised\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...tại một thời điểm cô ấy có một tham vọng để phát triển mối quan tâm khoa học này... nhưng cô đã bị từ chối...\" (...at one time she had an ambition to develop this scientific interest... but she was rejected...).\nBước 5: Đáp án: ambition.\nTham vọng của cô ấy để có một sự nghiệp... (Her ambition to have a career...).",
+					"quotes": [
+						"She would spend many hours drawing wildlife such as fungi and flowers, and at one time she had an ambition to develop this scientific interest."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Her illustrations were recognised as assisting research into ____ (6).",
+					"answer": "mycology",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCác minh họa của cô ấy được công nhận là hỗ trợ nghiên cứu về ____.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: research into + NOUN.\nBước 3: Tìm các keywords được paraphrase trong bài:\nwon respect... for her illustrations and her contribution to ~ illustrations were recognised as assisting research\nthe study of fungi ~ research into\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...cô đã giành được sự tôn trọng... vì các minh họa của mình và đóng góp của mình cho nấm học, tức là việc nghiên cứu nấm.\" (...she won respect... for her illustrations and her contribution to mycology, the study of fungi.).\nBước 5: Đáp án: mycology.\n...hỗ trợ nghiên cứu về nấm học. (...assisting research into mycology).",
+					"quotes": [
+						"Nevertheless, she won respect from the scientific establishment for her illustrations and her contribution to mycology, the study of fungi."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-13",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 1?\nWrite\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 7,
+					"text": "The life of a typical married woman at that time appealed to Potter.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCuộc sống của một phụ nữ đã kết hôn điển hình vào thời điểm đó hấp dẫn Potter.\nBước 2: Tìm các keywords được paraphrase trong bài:\ndisliked the idea ~ appealed to (Trái nghĩa)\ndomestic life that... consisted mostly of staying at home and raising children ~ life of a typical married woman\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...cô không thích ý tưởng bị ràng buộc vào một cuộc sống gia đình mà... chủ yếu bao gồm việc ở nhà và nuôi con\".\n==> Điều này trái ngược với thông tin trong câu hỏi \"hấp dẫn Potter\" (appealed to Potter).\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Fiercely independent, she disliked the idea of being tied to a domestic life that, at that time, consisted mostly of staying at home and raising children."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Potter's publishers insisted on changing the title of her first book.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác nhà xuất bản của Potter khăng khăng đòi thay đổi tiêu đề cuốn sách đầu tiên của cô.\nBước 2: Tìm các keywords được paraphrase trong bài:\ninsisted on changing the title ~ từ khóa cần tìm\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc Norman Warne \"khăng khăng\" (insisted) về việc minh họa phải có màu, và Potter \"khăng khăng\" về kích thước.\n==> Tuy nhiên, bài đọc không hề nhắc đến thông tin về việc nhà xuất bản có \"khăng khăng đòi thay đổi tiêu đề\".\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"It was Norman who insisted that each illustration should be in colour, while Potter insisted the book remain small enough for children to hold easily."
+					]
+				},
+				{
+					"number": 9,
+					"text": "The publishers doubted whether Potter's first book would be successful.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác nhà xuất bản nghi ngờ liệu cuốn sách đầu tiên của Potter có thành công hay không.\nBước 2: Tìm các keywords được paraphrase trong bài:\ndid not expect it to sell many copies ~ doubted whether... would be successful\nfirst book ~ The Tale of Peter Rabbit\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...mặc dù các nhà xuất bản không mong đợi nó sẽ bán được nhiều bản\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"nghi ngờ liệu... có thành công hay không\" (doubted whether... would be successful).\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"It was finally published in 1902, when Potter was 36, though the publishers did not expect it to sell many copies."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Norman Warne suggested Potter include black-and-white illustrations in her first book.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNorman Warne gợi ý Potter đưa các minh họa đen trắng vào cuốn sách đầu tiên của mình.\nBước 2: Tìm các keywords được paraphrase trong bài:\ninsisted that each illustration should be in colour ~ suggested... include black-and-white illustrations (Trái nghĩa)\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Chính Norman khăng khăng rằng mỗi hình minh họa nên có màu\".\n==> Điều này trái ngược với thông tin trong câu hỏi gợi ý \"minh họa đen trắng\".\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"It was Norman who insisted that each illustration should be in colour, while Potter insisted the book remain small enough for children to hold easily."
+					]
+				},
+				{
+					"number": 11,
+					"text": "At first, Potter's parents disapproved of Norman Warne as a potential husband.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nBan đầu, cha mẹ của Potter không chấp thuận Norman Warne làm chồng tương lai.\nBước 2: Tìm các keywords được paraphrase trong bài:\nPotter's parents disapproved ~ từ khóa giữ nguyên\nbecame engaged ~ potential husband\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Tuy nhiên, cha mẹ của Potter không chấp thuận vì nghề nghiệp của anh ấy.\" (However, Potter's parents disapproved because of his occupation.).\n==> Điều này đồng nghĩa với thông tin trong câu hỏi.\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"However, Potter’s parents disapproved because of his occupation."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Potter continued writing children's books until her death.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPotter tiếp tục viết sách thiếu nhi cho đến khi qua đời.\nBước 2: Tìm các keywords được paraphrase trong bài:\nforced her to stop writing ~ continued writing (Trái nghĩa)\nfor the rest of her life ~ until her death\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...thị lực kém cuối cùng đã buộc cô phải ngừng viết sách thiếu nhi\" (...failing eyesight eventually forced her to stop writing children's books).\n==> Điều này trái ngược với thông tin trong câu hỏi \"tiếp tục viết... cho đến khi qua đời\" (continued writing... until her death).\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"She remained there for the rest of her life, but failing eyesight eventually forced her to stop writing children’s books."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Potter's gift to the National Trust was the largest in recent times.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMón quà của Potter cho National Trust là lớn nhất trong thời gian gần đây.\nBước 2: Tìm các keywords được paraphrase trong bài:\nshe left more than 4,000 acres to the National Trust ~ Potter's gift\nlargest in recent times ~ từ khóa cần tìm\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ số lượng đất cô để lại.\n==> Tuy nhiên, bài đọc không hề so sánh nó với các món quà khác hay khẳng định nó là \"lớn nhất trong thời gian gần đây\".\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"On her death she left more than 4,000 acres to the National Trust, an organisation that protects historic buildings and countryside in England."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

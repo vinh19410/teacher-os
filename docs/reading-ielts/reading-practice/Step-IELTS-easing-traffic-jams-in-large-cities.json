@@ -1,0 +1,103 @@
+{
+	"id": "b18b2037-1acc-4db2-aa71-33283364c6cc",
+	"url": "https://stepielts.com/student/reading/b18b2037-1acc-4db2-aa71-33283364c6cc?mode=practice",
+	"title": "Easing Traffic Jams in Large Cities",
+	"source": "Step IELTS",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-5",
+	"passage": {
+		"title": "Easing Traffic Jams in Large Cities",
+		"paragraphs": [
+			"Traffic jams are becoming more and more common in large cities across the world. As populations grow, more people travel to work and school every day, and the streets become crowded, especially during rush hour. Daily commuters can lose hours stuck in traffic, and finding a lasting solution has become a major challenge for city planners.",
+			"One common approach is to build more roads and expand the road network. Supporters argue that when a city improves road infrastructure, cars can move more freely, which helps to relieve pressure on existing roads. Critics disagree, however. They claim that wider roads simply attract more drivers, so the number of private vehicles keeps rising, and within a few years the new roads become just as congested as before.",
+			"As a result, many transport planners argue that the wiser choice is to invest in public transport, developing a modern public transport system that people are happy to use. When buses and trains offer affordable fares, this can encourage people to use buses and trains rather than drive their own cars. A reliable public transport system can also save travel time, since dedicated bus lanes allow vehicles to avoid the worst of the congestion.",
+			"Beyond easing congestion, better public transport brings wider benefits. Fewer cars on the road help to reduce traffic congestion and cut down on air pollution, making cities more pleasant and healthier places to live. Choosing public transport over private cars is therefore a way to be environmentally friendly. For these reasons, many experts see investment in public transport, rather than simply building more roads, as a long-term solution to urban traffic problems."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-3",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information in the passage?\nWrite\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 1,
+					"text": "People who travel to work or school every day can lose a significant amount of time because of congested streets.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững người đi làm hoặc đi học mỗi ngày có thể mất một lượng thời gian đáng kể vì đường phố đông đúc.\nBước 2: Tìm các keywords được paraphrase trong bài:\npeople who travel to work or school every day ~ daily commuters\na significant amount of time ~ hours\ncongested streets ~ stuck in traffic\nBước 3: So sánh và đối chiếu:\nBài đọc viết \"Daily commuters can lose hours stuck in traffic\" (Những người đi lại hằng ngày có thể mất hàng giờ đồng hồ vì kẹt xe).\n=> Bài khẳng định đúng ý câu hỏi.\nBước 4: Đáp án: TRUE",
+					"quotes": ["Daily commuters can lose hours stuck in traffic"]
+				},
+				{
+					"number": 2,
+					"text": "Everyone agrees that constructing extra roads is the most effective way to end traffic problems for good.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTất cả mọi người đều đồng ý rằng xây thêm đường là cách hiệu quả nhất để chấm dứt hoàn toàn các vấn đề giao thông.\nBước 2: Tìm các keywords được paraphrase trong bài:\neveryone agrees ~ critics disagree (trái nghĩa)\nend traffic problems for good ~ the new roads become just as congested as before (mâu thuẫn)\nBước 3: So sánh và đối chiếu:\nBài đọc viết \"Critics disagree, however. They claim that wider roads simply attract more drivers, so the number of private vehicles keeps rising, and within a few years the new roads become just as congested as before\" (Tuy nhiên, những người phản đối lại không đồng tình. Họ cho rằng những con đường rộng hơn chỉ đơn giản thu hút thêm tài xế, khiến số lượng xe cá nhân tiếp tục tăng, và chỉ trong vài năm, những con đường mới cũng trở nên đông đúc như trước).\n=> Câu hỏi dùng từ tuyệt đối \"Everyone agrees\", nhưng bài nói rõ có người phản đối và vấn đề không hề chấm dứt.\nBước 4: Đáp án: FALSE",
+					"quotes": ["the new roads become just as congested as before"]
+				},
+				{
+					"number": 3,
+					"text": "The passage compares how much it costs to travel by train with the cost of owning a car.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nBài đọc so sánh chi phí đi tàu với chi phí sở hữu một chiếc ô tô.\nBước 2: Tìm các keywords được paraphrase trong bài:\ncosts to travel by train ~ affordable fares\ncost of owning a car ~ phép so sánh này KHÔNG xuất hiện trong bài\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ viết \"When buses and trains offer affordable fares, this can encourage people to use buses and trains rather than drive their own cars\" (Khi xe buýt và tàu có giá vé phải chăng, điều này có thể khuyến khích mọi người sử dụng xe buýt và tàu thay vì tự lái xe).\n=> Bài chỉ nói vé phải chăng, không hề đưa ra bất kỳ phép so sánh nào giữa chi phí đi tàu và chi phí sở hữu xe → không đủ thông tin để kết luận.\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": ["affordable fares"]
+				}
+			]
+		},
+		{
+			"range": "4-5",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B or C.",
+			"questions": [
+				{
+					"number": 4,
+					"text": "According to the passage, why are some people against the plan to expand the road network?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It costs too much money for the government to carry out."
+						},
+						{
+							"label": "B",
+							"text": "It tends to attract even more drivers, so the roads become crowded again."
+						},
+						{
+							"label": "C",
+							"text": "It makes buses and trains run less often."
+						}
+					],
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTheo bài đọc, vì sao một số người phản đối kế hoạch mở rộng mạng lưới đường sá?\nBước 2: Tìm các keywords được paraphrase trong bài:\ntends to attract even more drivers ~ simply attract more drivers\nroads become crowded again ~ the new roads become just as congested as before\nBước 3: So sánh và đối chiếu:\nBài đọc viết \"They claim that wider roads simply attract more drivers, so the number of private vehicles keeps rising\" (Họ cho rằng những con đường rộng hơn chỉ đơn giản thu hút thêm tài xế, khiến số lượng xe cá nhân tiếp tục tăng lên).\n=> Khớp phương án B. Phương án A (tốn quá nhiều tiền) và C (làm xe buýt/tàu chạy ít hơn) không được bài nhắc tới → loại.\nBước 4: Đáp án: B",
+					"quotes": ["wider roads simply attract more drivers"]
+				},
+				{
+					"number": 5,
+					"text": "What does the writer suggest is one benefit of low-cost public transport tickets?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They persuade more people to travel by bus or train instead of driving."
+						},
+						{
+							"label": "B",
+							"text": "They allow transport companies to make a bigger profit."
+						},
+						{
+							"label": "C",
+							"text": "They make it cheaper for people to buy their own vehicles."
+						}
+					],
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTác giả gợi ý rằng lợi ích của vé giao thông công cộng giá rẻ là gì?\nBước 2: Tìm các keywords được paraphrase trong bài:\nlow-cost tickets ~ affordable fares\npersuade more people to travel by bus or train instead of driving ~ encourage people to use buses and trains rather than drive their own cars\nBước 3: So sánh và đối chiếu:\nBài đọc viết \"When buses and trains offer affordable fares, this can encourage people to use buses and trains rather than drive their own cars\" (Khi xe buýt và tàu có giá vé phải chăng, điều này có thể khuyến khích mọi người sử dụng xe buýt và tàu thay vì tự lái xe).\n=> Khớp phương án A. Phương án B (công ty vận tải có lợi nhuận lớn hơn) và C (mua xe rẻ hơn) không có trong bài → loại.\nBước 4: Đáp án: A",
+					"quotes": [
+						"affordable fares, this can encourage people to use buses and trains rather than drive their own cars"
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

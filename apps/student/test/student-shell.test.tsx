@@ -100,4 +100,12 @@ describe("StudentShell v2", () => {
 		expect(html).toContain("Nguyễn Minh");
 		expect(html).toContain("minh@student.vn");
 	});
+
+	it("does not render placement test link or status badges in sidebar", () => {
+		const html = renderShell();
+		expect(html).not.toContain("Kiểm tra đầu vào");
+		expect(html).not.toContain('data-testid="nav-placement-badge"');
+		expect(html).not.toContain("Chưa làm");
+		expect(html).not.toContain("Chờ chấm");
+	});
 });

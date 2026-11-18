@@ -1188,11 +1188,11 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 
 		test("idempotent overwrite: successive POST updates answers and refreshes timestamp", async () => {
 			const payload2 = {
-				examInterest: "toeic",
+				examInterest: "communication",
 				currentLevel: "advanced",
-				targetScore: "850",
+				targetScore: "B2",
 				learningGoals: ["communication"],
-				learningGoalsNote: "Need TOEIC for graduation",
+				learningGoalsNote: "Need fluent speaking for work",
 				dailyStudyHours: "3-plus",
 			};
 			const res = await app.request("/api/student/onboarding", {
@@ -1207,11 +1207,13 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 
 			expect(res.status).toBe(200);
 			const body = (await res.json()) as StudentMe;
-			expect(body.student.examInterest).toBe("toeic");
+			expect(body.student.examInterest).toBe("communication");
 			expect(body.student.currentLevel).toBe("advanced");
-			expect(body.student.targetScore).toBe("850");
+			expect(body.student.targetScore).toBe("B2");
 			expect(body.student.learningGoals).toEqual(["communication"]);
-			expect(body.student.learningGoalsNote).toBe("Need TOEIC for graduation");
+			expect(body.student.learningGoalsNote).toBe(
+				"Need fluent speaking for work",
+			);
 			expect(body.student.dailyStudyHours).toBe("3-plus");
 
 			// Assert DB row updated
@@ -1219,10 +1221,49 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 				.select()
 				.from(schema.student)
 				.where(eq(schema.student.email, "newportal@test.local"));
-			expect(row?.examInterest).toBe("toeic");
+			expect(row?.examInterest).toBe("communication");
 			expect(row?.currentLevel).toBe("advanced");
-			expect(row?.targetScore).toBe("850");
-			expect(row?.learningGoalsNote).toBe("Need TOEIC for graduation");
+			expect(row?.targetScore).toBe("B2");
+			expect(row?.learningGoalsNote).toBe("Need fluent speaking for work");
+		});
+
+		test("TOEIC is no longer selectable and communication only accepts CEFR targets", async () => {
+			const post = (body: Record<string, unknown>) =>
+				app.request("/api/student/onboarding", {
+					method: "POST",
+					headers: {
+						"x-test-user": "provisioning-user",
+						Origin: "http://localhost:8003",
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						currentLevel: "intermediate",
+						learningGoals: ["career"],
+						dailyStudyHours: "1-2",
+						...body,
+					}),
+				});
+			const toeic = await post({ examInterest: "toeic", targetScore: "750" });
+			expect(toeic.status).toBe(400);
+			const bandForCommunication = await post({
+				examInterest: "communication",
+				targetScore: "6.5",
+			});
+			expect(bandForCommunication.status).toBe(400);
+		});
+
+		test("GET /me keeps legacy TOEIC answers readable", async () => {
+			await libsql
+				.update(schema.student)
+				.set({ examInterest: "toeic", targetScore: "750" })
+				.where(eq(schema.student.email, "newportal@test.local"));
+			const meRes = await app.request("/api/student/me", {
+				headers: { "x-test-user": "provisioning-user" },
+			});
+			expect(meRes.status).toBe(200);
+			const me = (await meRes.json()) as StudentMe;
+			expect(me.student.examInterest).toBe("toeic");
+			expect(me.student.targetScore).toBe("750");
 		});
 
 		test("invalid body returns 400 with { error: 'invalid body' }", async () => {

@@ -1,0 +1,173 @@
+{
+	"id": "5a832e96-8e78-42be-a9b3-6a80fbd2ed07",
+	"url": "https://stepielts.com/student/reading/5a832e96-8e78-42be-a9b3-6a80fbd2ed07?mode=practice",
+	"title": "Science and Filmmaking",
+	"source": "Collection",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "27-40",
+	"passage": {
+		"title": "Science and Filmmaking",
+		"subtitle": "Academics are now working more with filmmakers who are impressed by the results of their research in computer generated imagery (CGI)",
+		"paragraphs": [
+			"Every year the film academy in the USA celebrates the outstanding achievements of the year in a ceremony known as the Oscars. In 2004 a notable event took place: the academic world met the cinematographic world when researchers from Stanford University in the USA were awarded an Oscar. These researchers, led by Steve Marschner, were from the field of Computer Graphics at Stanford. They were part of a growing cohort of computer scientists that has become fundamental to moviemaking. Films have demonstrated that CGI can be used to alter an actor's appearance - making them seem younger, older, more fragile, or more powerful - while still looking surprisingly real. However, this effect only works well if the modified actors are not shown in extreme close-up shots. This is because replicating the detailed textures of skin and fabric is difficult, and the illusion becomes less convincing at close range. Marschner and his team made major progress in accurately and realistically reproducing both skin and cloth. They identified that one of the key problems in making believable computer-generated characters is that CGI often treats skin as opaque and flat (two-dimensional), whereas real skin is translucent and has depth (three-dimensional), meaning it lets some light pass through.",
+			"The group won an Oscar for successfully creating a CGI system that mimics translucency when light enters the skin, scatters underneath, and then exits again. This process, known as subsurface scattering, is based on mathematical concepts that date back decades to their use in astrophysics. Since human skin naturally possesses translucency, it had to be artificially simulated to capture the soft, realistic quality of actual skin. Earlier CGI systems that assumed skin was fully opaque resulted in characters looking artificial and plastic-like. The breakthrough was so important for giving life to digital characters that, within two years of their research being published, every major visual effects company had adopted it in their rendering software.",
+			"Even after receiving their award, the researchers remained determined to perfect their work, believing that the fine details of light reflection still were not reproduced convincingly. They examined closely how skin and fabrics reflect light in different ways depending on their physical structure - the precise arrangement of fibers in cloth and the network of fibers in skin. To investigate this, Marschner's team used computerized tomography, a medical imaging technique most familiar for viewing internal organs. Like traditional X-rays, it uses radiation, but instead of producing a single photographic exposure, it combines images taken from multiple angles in a computer, allowing it to capture subtle details invisible in conventional radiographs.",
+			"This advanced imaging provided a highly detailed, three-dimensional map of the microstructure of various materials.\nBy analyzing these maps, the researchers could develop new algorithms that accurately simulate how light interacts with the complex geometry of skin pores and fabric weaves.\nTheir subsequent work focused on replicating the phenomenon of specular reflection, where light glints off individual fibers or skin oils, and diffuse reflection, where light is scattered evenly from a rough surface. This dual approach was crucial for overcoming the final hurdle of achieving photorealism in extreme close-ups, ensuring that a digital character's skin would show pores and fine wrinkles just like real human skin, and that cloth would exhibit the intricate play of light across its woven threads."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "27-31",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 3?\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 27,
+					"text": "The Oscar awarded in 2004 was the first one ever given for an achievement in CGI.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nGiải Oscar được trao vào năm 2004 là giải thưởng đầu tiên từng được trao cho một thành tựu trong CGI.\nBước 2: Tìm các keywords được paraphrase trong bài:\n• Oscar awarded in 2004 ~ In 2004 a notable event took place... researchers... were awarded an Oscar\n• first one ever given ~ từ khóa cần tìm\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc: \"Vào năm 2004, một sự kiện đáng chú ý đã diễn ra: thế giới học thuật đã gặp gỡ thế giới điện ảnh khi các nhà nghiên cứu từ Đại học Stanford ở Mỹ được trao giải Oscar\".\n==> Tuy nhiên, bài đọc không hề nhắc đến thông tin giải thưởng này có phải là \"giải thưởng đầu tiên từng được trao\" cho thành tựu về CGI hay không (The Oscar awarded in 2004 was the first one ever given for an achievement in CGI).\nBước 4: Đáp án: NOT GIVEN"
+				},
+				{
+					"number": 28,
+					"text": "CGI is most effective for altering an actor's appearance in wide shots rather than close-ups.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCGI là hiệu quả nhất để thay đổi diện mạo của một diễn viên trong các cảnh quay rộng thay vì cận cảnh.\nBước 2: Tìm các keywords được paraphrase trong bài:\n• most effective... wide shots rather than close-ups ~ only works well if... not shown in extreme close-up shots\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Tuy nhiên, hiệu ứng này chỉ hoạt động tốt nếu các diễn viên đã được chỉnh sửa không được chiếu trong các cảnh quay cận cảnh cực độ\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi là kỹ thuật này hoạt động hiệu quả nhất ở các cảnh quay rộng (không phải cận cảnh) (CGI is most effective for altering an actor's appearance in wide shots rather than close-ups).\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Films have demonstrated that CGI can be used to alter an actor's appearance - making them seem younger, older, more fragile, or more powerful - while still looking surprisingly real. However, this effect only works well if the modified actors are not shown in extreme close-up shots. This is because replicating the detailed textures of skin and fabric is difficult, and the illusion becomes less convincing at close range."
+					]
+				},
+				{
+					"number": 29,
+					"text": "Marschner's team was the first group to identify that human skin is translucent.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhóm của Marschner là nhóm đầu tiên xác định rằng da người có tính trong mờ.\nBước 2: Tìm các keywords được paraphrase trong bài:\n• Marschner's team ~ Marschner and his team\n• first group to identify ~ (không có)\n• human skin is translucent ~ real skin is translucent\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc nhóm của Marschner xác định vấn đề trong CGI là da thật có tính trong mờ trong khi CGI coi nó là mờ đục.\n==> Tuy nhiên, bài đọc không hề nhắc đến thông tin nhóm của Marschner có phải là \"nhóm đầu tiên\" xác định được đặc tính sinh học này hay không (Marschner's team was the first group to identify that human skin is translucent).\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"They identified that one of the key problems in making believable computer-generated characters is that CGI often treats skin as opaque and flat (two-dimensional), whereas real skin is translucent and has depth (three-dimensional), meaning it lets some light pass through."
+					]
+				},
+				{
+					"number": 30,
+					"text": "The mathematical principles behind subsurface scattering were originally developed for filmmaking.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác nguyên lý toán học đằng sau sự tán xạ dưới bề mặt ban đầu được phát triển để làm phim.\nBước 2: Tìm các keywords được paraphrase trong bài:\n• mathematical principles ~ mathematical concepts\n• originally developed for filmmaking ~ date back decades to their use in astrophysics\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Quá trình này, được gọi là sự tán xạ dưới bề mặt, dựa trên các khái niệm toán học đã có từ nhiều thập kỷ trước để sử dụng trong vật lý thiên văn\".\n==> Điều này trái ngược với thông tin trong câu hỏi là chúng ban đầu được phát triển \"để làm phim\" (The mathematical principles behind subsurface scattering were originally developed for filmmaking).\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"This process, known as subsurface scattering, is based on mathematical concepts that date back decades to their use in astrophysics."
+					]
+				},
+				{
+					"number": 31,
+					"text": "All major visual effects companies started using the new subsurface scattering technique before the research was officially published.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTất cả các công ty hiệu ứng hình ảnh lớn đã bắt đầu sử dụng kỹ thuật tán xạ dưới bề mặt mới trước khi nghiên cứu được công bố chính thức.\nBước 2: Tìm các keywords được paraphrase trong bài:\n• All major visual effects companies ~ every major visual effects company\n• started using ~ had adopted it\n• before the research was officially published ~ within two years of their research being published\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"trong vòng hai năm sau khi nghiên cứu của họ được công bố, mọi công ty hiệu ứng hình ảnh lớn đều đã áp dụng nó\".\n==> Điều này trái ngược với thông tin trong câu hỏi là họ bắt đầu sử dụng \"trước khi\" nghiên cứu được công bố (All major visual effects companies started using the new subsurface scattering technique before the research was officially published).\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"The breakthrough was so important for giving life to digital characters that, within two years of their research being published, every major visual effects company had adopted it in their rendering software."
+					]
+				}
+			]
+		},
+		{
+			"range": "32-36",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary below.\nChoose NO MORE THAN TWO WORDS from the passage for each answer.",
+			"body": "After winning the Oscar, the researchers wanted to improve how light ____ (32) is shown. They studied how the physical composition of skin and cloth affects this. To do this, they employed ____ (33), a method from medical science. This technique uses ____ (34) to create composite images from various angles, revealing minute details. The data from this process was used to create a detailed ____ (35) of material structures. The team then created ____ (36) to simulate the interaction of light with these tiny structures.",
+			"body_html": "<table><tbody><tr><td>After winning the Oscar, the researchers wanted to improve how light [32] is shown. They studied how the physical composition of skin and cloth affects this. To do this, they employed [33], a method from medical science. This technique uses [34] to create composite images from various angles, revealing minute details. The data from this process was used to create a detailed [35] of material structures. The team then created [36] to simulate the interaction of light with these tiny structures.</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 32,
+					"text": "After winning the Oscar, the researchers wanted to improve how light ____ (32) is shown.",
+					"answer": "reflection",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nSau khi giành giải Oscar, các nhà nghiên cứu muốn cải thiện cách mà ____ của ánh sáng được thể hiện.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN\n• Dấu hiệu: how light + NOUN + is shown. (Cần một danh từ làm tân ngữ).\nBước 3: Tìm các keywords được paraphrase trong bài:\n• After winning the Oscar ~ Even after receiving their award\n• improve ~ perfect their work\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Ngay cả sau khi nhận được giải thưởng của mình, các nhà nghiên cứu vẫn quyết tâm hoàn thiện công việc của họ, tin rằng các chi tiết tinh tế của sự phản xạ ánh sáng vẫn chưa được tái tạo một cách thuyết phục\" (...believing that the fine details of light reflection still were not reproduced convincingly).\nBước 5: Đáp án: reflection\nSau khi giành giải Oscar, các nhà nghiên cứu muốn cải thiện cách mà sự phản xạ ánh sáng được thể hiện. (After winning the Oscar, the researchers wanted to improve how light reflection is shown).",
+					"quotes": [
+						"Even after receiving their award, the researchers remained determined to perfect their work, believing that the fine details of light reflection still were not reproduced convincingly."
+					]
+				},
+				{
+					"number": 33,
+					"text": "They employed ____ (33), a method from medical science.",
+					"answer": "computerized tomography",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nĐể làm điều này, họ đã sử dụng ____, một phương pháp từ khoa học y tế.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN PHRASE\n• Dấu hiệu: they employed + NOUN PHRASE (Cần một cụm danh từ làm tân ngữ).\nBước 3: Tìm các keywords được paraphrase trong bài:\n• employed ~ used\n• method from medical science ~ medical imaging technique\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Để điều tra điều này, nhóm của Marschner đã sử dụng chụp cắt lớp vi tính (computerized tomography), một kỹ thuật chẩn đoán hình ảnh y tế...\" (To investigate this, Marschner's team used computerized tomography, a medical imaging technique...).\nBước 5: Đáp án: computerized tomography\nĐể làm điều này, họ đã sử dụng chụp cắt lớp vi tính, một phương pháp từ khoa học y tế. (To do this, they employed computerized tomography, a method from medical science).",
+					"quotes": [
+						"To investigate this, Marschner's team used computerized tomography, a medical imaging technique most familiar for viewing internal organs."
+					]
+				},
+				{
+					"number": 34,
+					"text": "This technique uses ____ (34) to create composite images from various angles, revealing minute details.",
+					"answer": "radiation",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nKỹ thuật này sử dụng ____ để tạo ra các hình ảnh tổng hợp từ nhiều góc độ khác nhau.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN\n• Dấu hiệu: This technique uses + NOUN (Cần một danh từ làm tân ngữ).\nBước 3: Tìm các keywords được paraphrase trong bài:\n• This technique uses ~ it uses\n• composite images from various angles ~ combines images taken from multiple angles\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Giống như tia X truyền thống, nó sử dụng bức xạ (radiation), nhưng... nó kết hợp các hình ảnh được chụp từ nhiều góc độ...\" (Like traditional X-rays, it uses radiation, but... it combines images taken from multiple angles).\nBước 5: Đáp án: radiation\nKỹ thuật này sử dụng bức xạ để tạo ra các hình ảnh tổng hợp từ nhiều góc độ khác nhau. (This technique uses radiation to create composite images from various angles).",
+					"quotes": [
+						"Like traditional X-rays, it uses radiation, but instead of producing a single photographic exposure, it combines images taken from multiple angles in a computer, allowing it to capture subtle details invisible in conventional radiographs."
+					]
+				},
+				{
+					"number": 35,
+					"text": "The data from this process was used to create a detailed ____ (35) of material structures.",
+					"answer": "map",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nDữ liệu từ quá trình này đã được sử dụng để tạo ra một ____ chi tiết về cấu trúc vật liệu.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN PHRASE\n• Dấu hiệu: a detailed NOUN of material structures.\nBước 3: Tìm các keywords được paraphrase trong bài:\n• provided a highly detailed ~ create a detailed\n• microstructure of various materials ~ material structures\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Hình ảnh tiên tiến này đã cung cấp một bản đồ ba chiều cực kỳ chi tiết về cấu trúc vi mô của các vật liệu khác nhau\" (This advanced imaging provided a highly detailed, three-dimensional map of the microstructure of various materials).\nBước 5: Đáp án: three-dimensional map\nDữ liệu từ quá trình này đã được sử dụng để tạo ra một bản đồ ba chiều chi tiết về cấu trúc vật liệu. (The data from this process was used to create a detailed three-dimensional map of material structures).",
+					"quotes": [
+						"This advanced imaging provided a highly detailed, three-dimensional map of the microstructure of various materials."
+					]
+				},
+				{
+					"number": 36,
+					"text": "The team then created ____ (36) to simulate the interaction of light with these tiny structures.",
+					"answer": "algorithms",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nSau đó, nhóm nghiên cứu đã tạo ra các ____ để mô phỏng sự tương tác của ánh sáng với các cấu trúc cực nhỏ này.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN\n• Dấu hiệu: created NOUN to simulate (Cần một danh từ làm tân ngữ).\nBước 3: Tìm các keywords được paraphrase trong bài:\n• develop ~ created\n• interaction of light ~ how light interacts with...\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Bằng cách phân tích các bản đồ này, các nhà nghiên cứu có thể phát triển các thuật toán (algorithms) mới mô phỏng chính xác cách ánh sáng tương tác...\" (By analyzing these maps, the researchers could develop new algorithms that accurately simulate how light interacts with...).\nBước 5: Đáp án: algorithms\nSau đó, nhóm nghiên cứu đã tạo ra các thuật toán để mô phỏng sự tương tác của ánh sáng với các cấu trúc cực nhỏ này. (The team then created algorithms to simulate the interaction of light with these tiny structures).",
+					"quotes": [
+						"By analyzing these maps, the researchers could develop new algorithms that accurately simulate how light interacts with the complex geometry of skin pores and fabric weaves."
+					]
+				}
+			]
+		},
+		{
+			"range": "37-40",
+			"type": "FILL_BLANK",
+			"instructions": "Answer the questions below.\nChoose NO MORE THAN TWO WORDS from the passage for each answer.",
+			"body": "What did early CGI systems incorrectly assume about human skin?\n____ (37)\nWhat scientific field provided the original mathematical concepts for simulating skin translucency?\n____ (38)\nWhat specific visual problem did the researchers address after winning the Oscar to achieve realism in close-ups?\n____ (39)\nWhich two types of reflection did the researchers' later work focus on replicating?\n____ (40)",
+			"body_html": "<table><tbody><tr><td><ul><li>What did early CGI systems incorrectly assume about human skin?<br>[37]</li><li>What scientific field provided the original mathematical concepts for simulating skin translucency?<br>[38]</li><li>What specific visual problem did the researchers address after winning the Oscar to achieve realism in close-ups?<br>[39]</li><li>Which two types of reflection did the researchers' later work focus on replicating?<br>[40]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 37,
+					"text": "What did early CGI systems incorrectly assume about human skin?",
+					"answer": "fully opaque",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác hệ thống CGI sơ khai đã giả định sai điều gì về da người?\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: ADJECTIVE PHRASE\n• Dấu hiệu: What did early CGI systems incorrectly assume... (Cần tìm cụm từ mô tả tính chất).\nBước 3: Tìm các keywords được paraphrase trong bài:\n• early CGI systems ~ Earlier CGI systems\n• incorrectly assume ~ assumed\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Các hệ thống CGI trước đây giả định da là hoàn toàn mờ đục (fully opaque) dẫn đến kết quả là các nhân vật trông nhân tạo...\" (Earlier CGI systems that assumed skin was fully opaque resulted in characters looking artificial).\nBước 5: Đáp án: fully opaque\nCác hệ thống CGI sơ khai đã giả định sai rằng da người hoàn toàn mờ đục. (What did early CGI systems incorrectly assume about human skin? - fully opaque).",
+					"quotes": [
+						"Earlier CGI systems that assumed skin was fully opaque resulted in characters looking artificial and plastic-like."
+					]
+				},
+				{
+					"number": 38,
+					"text": "What scientific field provided the original mathematical concepts for simulating skin translucency?",
+					"answer": "astrophysics",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nLĩnh vực khoa học nào đã cung cấp các khái niệm toán học ban đầu để mô phỏng tính trong mờ của da?\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN (Lĩnh vực khoa học)\n• Dấu hiệu: What scientific field.\nBước 3: Tìm các keywords được paraphrase trong bài:\n• original mathematical concepts ~ mathematical concepts that date back decades\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Quá trình này... dựa trên các khái niệm toán học đã có từ nhiều thập kỷ trước để sử dụng trong vật lý thiên văn (astrophysics)\" (...mathematical concepts that date back decades to their use in astrophysics).\nBước 5: Đáp án: astrophysics\nLĩnh vực khoa học đã cung cấp các khái niệm toán học ban đầu để mô phỏng tính trong mờ của da là vật lý thiên văn. (What scientific field provided the original mathematical concepts for simulating skin translucency? - astrophysics).",
+					"quotes": [
+						"This process, known as subsurface scattering, is based on mathematical concepts that date back decades to their use in astrophysics."
+					]
+				},
+				{
+					"number": 39,
+					"text": "What specific visual problem did the researchers address after winning the Oscar to achieve realism in close-ups?",
+					"answer": "light reflection",
+					"quotes": [
+						"Even after receiving their award, the researchers remained determined to perfect their work, believing that the fine details of light reflection still were not reproduced convincingly."
+					]
+				},
+				{
+					"number": 40,
+					"text": "Which two types of reflection did the researchers' later work focus on replicating?",
+					"answer": "specular reflection and diffuse reflection",
+					"quotes": [
+						"Their subsequent work focused on replicating the phenomenon of specular reflection, where light glints off individual fibers or skin oils, and diffuse reflection, where light is scattered evenly from a rough surface."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

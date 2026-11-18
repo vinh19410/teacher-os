@@ -1,0 +1,202 @@
+{
+	"id": "8cc9e963-7b1a-47a1-ade9-6d05d63f575d",
+	"url": "https://stepielts.com/student/reading/8cc9e963-7b1a-47a1-ade9-6d05d63f575d?mode=practice",
+	"title": "Great Migrations",
+	"source": "C11T3",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "14-26",
+	"passage": {
+		"title": "Great Migrations",
+		"paragraphs": [
+			"Animal migration, however it is defined, is far more than just the movement of animals. It can loosely be described as travel that takes place at regular intervals – often in an annual cycle – that may involve many members of a species, and is rewarded only after a long journey. It suggests inherited instinct. The biologist Hugh Dingle has identified five characteristics that apply, in varying degrees and combinations, to all migrations. They are prolonged movements that carry animals outside familiar habitats; they tend to be linear, not zigzaggy; they involve special behaviours concerning preparation (such as overfeeding) and arrival; they demand special allocations of energy. And one more: migrating animals maintain an intense attentiveness to the greater mission, which keeps them undistracted by temptations and undeterred by challenges that would turn other animals aside.",
+			"An arctic tern, on its 20,000 km flight from the extreme south of South America to the Arctic circle, will take no notice of a nice smelly herring offered from a bird-watcher’s boat along the way. While local gulls will dive voraciously for such handouts, the tern flies on. Why? The arctic tern resists distraction because it is driven at that moment by an instinctive sense of something we humans find admirable: larger purpose. In other words, it is determined to reach its destination. The bird senses that it can eat, rest and mate later. Right now it is totally focused on the journey; its undivided intent is arrival.",
+			"Reaching some gravelly coastline in the Arctic, upon which other arctic terns have converged, will serve its larger purpose as shaped by evolution: finding a place, a time, and a set of circumstances in which it can successfully hatch and rear offspring.",
+			"But migration is a complex issue, and biologists define it differently, depending in part on what sorts of animals they study. Joe! Berger, of the University of Montana, who works on the American pronghorn and other large terrestrial mammals, prefers what he calls a simple, practical definition suited to his beasts: ‘movements from a seasonal home area away to another home area and back again’. Generally the reason for such seasonal back-and-forth movement is to seek resources that aren’t available within a single area year-round.",
+			"But daily vertical movements by zooplankton in the ocean – upward by night to seek food, downward by day to escape predators – can also be considered migration. So can the movement of aphids when, having depleted the young leaves on one food plant, their offspring then fly onward to a different host plant, with no one aphid ever returning to where it started.",
+			"Dingle is an evolutionary biologist who studies insects. His definition is more intricate than Berger’s, citing those five features that distinguish migration from other forms of movement. They allow for the fact that, for example, aphids will become sensitive to blue light (from the sky) when it’s time for takeoff on their big journey, and sensitive to yellow light (reflected from tender young leaves) when it’s appropriate to land. Birds will fatten themselves with heavy feeding in advance of a long migrational flight. The value of his definition, Dingle argues, is that it focuses attention on what the phenomenon of wildebeest migration shares with the phenomenon of the aphids, and therefore helps guide researchers towards understanding how evolution has produced them all.",
+			"Human behaviour, however, is having a detrimental impact on animal migration. The pronghorn, which resembles an antelope, though they are unrelated, is the fastest land mammal of the New World. One population, which spends the summer in the mountainous Grand Teton National Park of the western USA, follows a narrow route from its summer range in the mountains, across a river, and down onto the plains. Here they wait out the frozen months, feeding mainly on sagebrush blown clear of snow. These pronghorns are notable for the invariance of their migration route and the severity of its constriction at three bottlenecks. If they can’t pass through each of the three during their spring migration, they can’t reach their bounty of summer grazing; if they can’t pass through again in autumn, escaping south onto those windblown plains, they are likely to die trying to overwinter in the deep snow. Pronghorn, dependent on distance vision and speed to keep safe from predators, traverse high, open shoulders of land, where they can see and run. At one of the bottlenecks, forested hills rise to form a V, leaving a corridor of open ground only about 150 metres wide, filled with private homes. Increasing development is leading toward a crisis for the pronghorn, threatening to choke off their passageway.",
+			"Conservation scientists, along with some biologists and land managers within the USA’s National Park Service and other agencies, are now working to preserve migrational behaviours, not just species and habitats. A National Forest has recognised the path of the pronghorn, much of which passes across its land, as a protected migration corridor. But neither the Forest Service nor the Park Service can control what happens on private land at a bottleneck. And with certain other migrating species, the challenge is complicated further – by vastly greater distances traversed, more jurisdictions, more borders, more dangers along the way. We will require wisdom and resoluteness to ensure that migrating species can continue their journeying a while longer."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "14-18",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage2?\nIn boxes 14 - 18 on your answer sheet, write\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 14,
+					"text": "Local gulls and migrating arctic terns behave in the same way when offered food.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nChim hải âu địa phương và chim nhạn cực có hành vi giống nhau khi được cho ăn.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nlocal gulls ~ từ khóa giữ nguyên\narctic tern ~ từ khóa giữ nguyên\ndive voraciously ~ behave in the same way\nflies on ~ behave in the same way\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Trong khi chim hải âu địa phương sẽ lao xuống một cách thèm thuồng để nhận thức ăn từ tay người, thì chim nhạn cực tiếp tục bay đi\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"chim hải âu địa phương và chim nhạn cực có hành vi giống nhau khi được cho ăn\" (Local gulls and migrating arctic terns behave in the same way when offered food).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"While local gulls will dive voraciously for such handouts, the tern flies on. Why?"
+					]
+				},
+				{
+					"number": 15,
+					"text": "Experts’ definitions of migration tend to vary according to their area of study.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐịnh nghĩa của các chuyên gia về di cư thường khác nhau tùy theo lĩnh vực nghiên cứu của họ.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nbiologists define it differently ~ Experts' definitions of migration tend to vary\ndepending in part on what sorts of animals they study ~ according to their area of study\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Nhưng di cư là một vấn đề phức tập, và các nhà sinh học định nghĩa nó khác nhau, phụ thuộc một phần vào loài động vật họ nghiên cứu\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Định nghĩa của các chuyên gia về di cư thường khác nhau tùy theo lĩnh vực nghiên cứu của họ\" (Experts' definitions of migration tend to vary according to their area of study).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"But migration is a complex issue, and biologists define it differently, depending in part on what sorts of animals they study."
+					]
+				},
+				{
+					"number": 16,
+					"text": "Very few experts agree that the movement of aphids can be considered migration.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nRất ít chuyên gia đồng ý rằng sự di chuyển của rệp có thể được coi là di cư.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nmovement of aphids ~ cụm từ giữ nguyên\nso can ~ can be considered migration\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"Sự di chuyển của rệp khi chúng đã làm cạn kiệt các lá non trên một cây thức ăn, và con cháu của chúng bay đến một cây chủ khác, mà không có con rệp nào quay trở lại nơi nó bắt đầu, cũng có thể được coi là di cư\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"có rất ít chuyên gia đồng ý với quan điểm này\" (Very few experts agree that the movement of aphids can be considered migration).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"So can the movement of aphids when, having depleted the young leaves on one food plant, their offspring then fly onward to a different host plant, with no one aphid ever returning to where it started."
+					]
+				},
+				{
+					"number": 17,
+					"text": "Aphids’ journeys are affected by changes in the light that they perceive.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nHành trình của rệp bị ảnh hưởng bởi những thay đổi trong ánh sáng mà chúng nhận thấy.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\naphids will become sensitive to blue light ~ Aphids' journeys are affected\nsensitive to yellow light ~ changes in the light that they perceive\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Rệp sẽ trở nên nhạy cảm với ánh sáng xanh (từ bầu trời) khi đến lúc cất cánh cho chuyến đi lớn của chúng, và nhạy cảm với ánh sáng vàng (phản chiếu từ những lá non mềm) khi thích hợp để hạ cánh\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Hành trình của rệp bị ảnh hưởng bởi những thay đổi trong ánh sáng mà chúng nhận thấy\" (Aphids' journeys are affected by changes in the light that they perceive).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"They allow for the fact that, for example, aphids will become sensitive to blue light (from the sky) when it’s time for takeoff on their big journey, and sensitive to yellow light (reflected from tender young leaves) when it’s appropriate to land."
+					]
+				},
+				{
+					"number": 18,
+					"text": "Dingles aim is to distinguish between the migratory behaviours of different species.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMục tiêu của Dingle là phân biệt giữa các hành vi di cư của các loài khác nhau.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nDingle's definition ~ Dingle's aim\nfocuses attention on what the phenomenon of wildebeest migration shares with the phenomenon of the aphids ~ distinguish between the migratory behaviours of different species\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Giá trị của định nghĩa của Dingle, theo ông lập luận, là nó tập trung sự chú ý vào những điểm chung giữa hiện tượng di cư của linh dương đầu bò và hiện tượng của rệp, và từ đó giúp hướng dẫn các nhà nghiên cứu tiến tới hiểu được cách mà quá trình tiến hóa đã tạo ra tất cả chúng\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"Mục tiêu của Dingle là phân biệt hành vi di cư của các loài khác nhau\" (Dingle's aim is to distinguish between the migratory behaviours of different species).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"The value of his definition, Dingle argues, is that it focuses attention on what the phenomenon of wildebeest migration shares with the phenomenon of the aphids, and therefore helps guide researchers towards understanding how evolution has produced them all."
+					]
+				}
+			]
+		},
+		{
+			"range": "19-22",
+			"type": "MATCHING_ENDINGS",
+			"instructions": "Complete each sentence with the correct ending, A-G, below.\nWrite the correct letter, A-G, in boxes 19 - 22 on your answer sheet.",
+			"options": [
+				{
+					"label": "A",
+					"text": "be discouraged by difficulties."
+				},
+				{
+					"label": "B",
+					"text": "travel on open land where they can look out for predators."
+				},
+				{
+					"label": "C",
+					"text": "eat more than they need for immediate purposes."
+				},
+				{
+					"label": "D",
+					"text": "be repeated daily."
+				},
+				{
+					"label": "E",
+					"text": "ignore distractions."
+				},
+				{
+					"label": "F",
+					"text": "be governed by the availability of water."
+				},
+				{
+					"label": "G",
+					"text": "follow a straight line."
+				}
+			],
+			"body": "According to Dingle, migratory routes are likely to ____ (19)\nTo prepare for migration, animals are likely to ____ (20)\nDuring migration, animals are unlikely to ____ (21)\nArctic terns illustrate migrating animals’ ability to ____ (22)",
+			"body_html": "<p>According to Dingle, migratory routes are likely to [19]</p><p>To prepare for migration, animals are likely to [20]</p><p>During migration, animals are unlikely to [21]</p><p>Arctic terns illustrate migrating animals’ ability to [22]</p>",
+			"questions": [
+				{
+					"number": 19,
+					"text": "According to Dingle, migratory routes are likely to",
+					"answer": "G",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhần thông tin (Theo Dingle, các tuyến đường di cư thường) sẽ phù hợp với ý nào?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nmigrations ~ migratory routes\ntend to ~ are likely to\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ “Nhà sinh học Hugh Dingle đã xác định năm đặc điểm áp dụng cho tất cả các cuộc di cư. Đó là những cuộc di chuyển kéo dài đưa động vật ra khỏi môi trường sống quen thuộc; chúng có xu hướng thẳng, không zigzag”\n=> Thông tin được in đậm đồng nghĩa với đáp án G (... theo một đường thẳng).\n\nBước 4: Đáp án G",
+					"quotes": [
+						"The biologist Hugh Dingle has identified five characteristics that apply, in varying degrees and combinations, to all migrations. They are prolonged movements that carry animals outside familiar habitats; they tend to be linear, not zigzaggy; they involve special behaviours concerning preparation (such as overfeeding) and arrival; they demand special allocations of energy."
+					]
+				},
+				{
+					"number": 20,
+					"text": "To prepare for migration, animals are likely to",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhần thông tin (Để chuẩn bị cho việc di cư, động vật có khả năng sẽ) sẽ phù hợp với ý nào?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nconcerning preparation ~ To prepare for migration\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ “(Các cuộc di cư) bao gồm các hành vi đặc biệt về khâu chuẩn bị (như ăn quá nhiều) và đến nơi”\n=> Thông tin được in đậm đồng nghĩa với đáp án C (... ăn nhiều hơn mức cần thiết để chuẩn bị cho mục đích trước mắt).\n\nBước 4: Đáp án C",
+					"quotes": [
+						"They are prolonged movements that carry animals outside familiar habitats; they tend to be linear, not zigzaggy; they involve special behaviours concerning preparation (such as overfeeding) and arrival; they demand special allocations of energy."
+					]
+				},
+				{
+					"number": 21,
+					"text": "During migration, animals are unlikely to",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhần thông tin (Trong quá trình di cư, động vật ít có khả năng) sẽ phù hợp với ý nào?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nmigrating animals ~ during migration, animals\nundistracted... and undeterred... ~ unlikely to\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ “Động vật di cư duy trì sự tập trung cao độ vào nhiệm vụ lớn hơn, điều này giúp chúng không bị phân tâm bởi những cám dỗ và không bị nản lòng bởi những thách thức mà có thể khiến các động vật khác bỏ cuộc.”\n=> Thông tin được in đậm đồng nghĩa với đáp án A (... bị nản lòng trước khó khăn).\n\nBước 4: Đáp án A",
+					"quotes": [
+						"And one more: migrating animals maintain an intense attentiveness to the greater mission, which keeps them undistracted by temptations and undeterred by challenges that would turn other animals aside."
+					]
+				},
+				{
+					"number": 22,
+					"text": "Arctic terns illustrate migrating animals’ ability to",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhần thông tin (Chim cốc biển Bắc Cực minh họa cho việc động vật di cư có thể) sẽ phù hợp với ý nào?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nartic tern ~ artic terns\non its 20,000 km flight from the extreme south of South America to the Arctic circle ~ migrating animals\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ “Chim cốc biển Bắc Cực, trong chuyến bay 20,000 km từ cực nam Nam Mỹ đến Bắc Cực, sẽ không chú ý đến một con cá trích thơm ngon được đưa ra từ thuyền của người quan sát chim dọc đường đi. Trong khi những con mòng biển địa phương sẽ lao xuống tham lam để nhận những món quà như vậy, chim cốc biển vẫn tiếp tục bay. Tại sao? Chim cốc biển Bắc Cực kháng cự sự phân tâm vì nó được thúc đẩy bởi một ý thức bản năng về điều mà con người chúng ta thấy đáng ngưỡng mộ: mục đích lớn hơn.”\n=> Thông tin được in đậm đồng nghĩa với đáp án E (... bỏ qua những điều gây phân tâm).\n\nBước 4: Đáp án E",
+					"quotes": [
+						"An arctic tern, on its 20,000 km flight from the extreme south of South America to the Arctic circle, will take no notice of a nice smelly herring offered from a bird-watcher’s boat along the way.",
+						"While local gulls will dive voraciously for such handouts, the tern flies on. Why?",
+						"While local gulls will dive voraciously for such handouts, the tern flies on. Why? The arctic tern resists distraction because it is driven at that moment by an instinctive sense of something we humans find admirable: larger purpose."
+					]
+				}
+			]
+		},
+		{
+			"range": "23-26",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary below. Choose ONE WORD ONLY from the passage for each answer. Write your answers in boxes 23 - 26 on your answer sheet.",
+			"body": "The migration of pronghorns\nPronghorns rely on their eyesight and ____ (23) to avoid predators. One particular population’s summer habitat is a national park, and their winter home is on the ____ (24) where they go to avoid the danger presented by the snow at that time of year. However, their route between these two areas contains three ____ (25) One problem is the construction of new homes in a narrow ____ (26) of land on the pronghorns’ route.",
+			"body_html": "<h4><strong>The migration of pronghorns</strong></h4><p>Pronghorns rely on their eyesight and [23] to avoid predators. One particular population’s summer habitat is a national park, and their winter home is on the [24] where they go to avoid the danger presented by the snow at that time of year. However, their route between these two areas contains three [25] One problem is the construction of new homes in a narrow [26] of land on the pronghorns’ route.</p>",
+			"questions": [
+				{
+					"number": 23,
+					"text": "",
+					"answer": "speed",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nLinh dương sừng dài dựa vào thị giác và ______ của chúng để tránh kẻ thù săn mồi.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: eyesight and + NOUN (NOUN kết hợp với \"EYESIGHT\" bởi liên từ \"AND\")\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nPronghorns ~ từ khóa giữ nguyên\nvision ~ eyesight\nkeep safe from predators ~ avoid predators\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Linh dương sừng dài, phụ thuộc vào tầm nhìn xa và tốc độ để giữ an toàn khỏi kẻ thù săn mồi\" (Pronghorn, dependent on distance vision and speed to keep safe from predators).\n\nBước 5: Đáp án: speed\nLinh dương sừng dài dựa vào thị giác và tốc độ của chúng để tránh kẻ thù săn mồi.\n(Pronghorns rely on their eyesight and speed to avoid predators.)",
+					"quotes": [
+						"Pronghorn, dependent on distance vision and speed to keep safe from predators, traverse high, open shoulders of land, where they can see and run."
+					]
+				},
+				{
+					"number": 24,
+					"text": "",
+					"answer": "plains",
+					"quotes": [
+						"One population, which spends the summer in the mountainous Grand Teton National Park of the western USA, follows a narrow route from its summer range in the mountains, across a river, and down onto the plains."
+					]
+				},
+				{
+					"number": 25,
+					"text": "",
+					"answer": "bottlenecks",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần): Tuy nhiên, tuyến đường của chúng giữa hai khu vực này chứa ba ______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: three + NOUN (NOUN theo sau số đếm \"THREE\")\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nroute ~ từ khóa giữ nguyên\nfrom its summer range in the mountains, across a river, and down onto the plains ~ between these two areas\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Những con linh dương sừng dài này nổi tiếng vì tính bất biến của tuyến đường di cư và mức độ nghiêm trọng của việc thu hẹp tại ba điểm thắt cổ chai\"\n(These pronghorns are notable for the invariance of their migration route and the severity of its constriction at three bottlenecks).\n\nBước 5: Đáp án: bottlenecks\nTuy nhiên, tuyến đường của chúng giữa hai khu vực này chứa ba điểm thắt cổ chai.\n(However, their route between these two areas contains three bottlenecks.)",
+					"quotes": [
+						"These pronghorns are notable for the invariance of their migration route and the severity of its constriction at three bottlenecks."
+					]
+				},
+				{
+					"number": 26,
+					"text": "",
+					"answer": "corridor",
+					"quotes": [
+						"At one of the bottlenecks, forested hills rise to form a V, leaving a corridor of open ground only about 150 metres wide, filled with private homes. Increasing development is leading toward a crisis for the pronghorn, threatening to choke off their passageway."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

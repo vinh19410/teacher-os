@@ -1,0 +1,307 @@
+{
+	"id": "498d538d-8fe1-4cee-9245-87b1fcccbcdf",
+	"url": "https://stepielts.com/student/reading/498d538d-8fe1-4cee-9245-87b1fcccbcdf?mode=practice",
+	"title": "Building the Skyline: The Birth and Growth of Manhattan’s Skyscrapers",
+	"source": "C17T3",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "27-40",
+	"passage": {
+		"title": "Building the Skyline: The Birth and Growth of Manhattan’s Skyscrapers",
+		"paragraphs": [
+			"Katharine L. Shester reviews a book by Jason Barr about the development of New York City",
+			"In Building the Skyline, Jason Barr takes the reader through a detailed history of New York City. The book combines geology, history, economics, and a lot of data to explain why business clusters developed where they did and how the early decisions of workers and firms shaped the skyline we see today. Building the Skyline is organized into two distinct parts. The first is primarily historical and addresses New York’s settlement and growth from 1609 to 1900; the second deals primarily with the 20th century and is a compilation of chapters commenting on different aspects of New York’s urban development. The tone and organization of the book changes somewhat between the first and second parts, as the latter chapters incorporate aspects of Barr’s related research papers.",
+			"Barr begins chapter one by taking the reader on a ‘helicopter time-machine’ ride – giving a fascinating account of how the New York landscape in 1609 might have looked from the sky. He then moves on to a subterranean walking tour of the city, indicating the location of rock and water below the subsoil, before taking the reader back to the surface. His love of the city comes through as he describes various fun facts about the location of the New York residence of early 19th-century vice-president Aaron Burr as well as a number of legends about the city.",
+			"Chapters two and three take the reader up to the Civil War (1861-1865), with chapter two focusing on the early development of land and the implementation of a grid system in 1811. Chapter three focuses on land use before the Civil War. Both chapters are informative and well researched and set the stage for the economic analysis that comes later in the book. I would have liked Barr to expand upon his claim that existing tenements* prevented skyscrapers in certain neighborhoods because ‘likely no skyscraper developer was interested in performing the necessary “slum clearance”’. Later in the book, Barr makes the claim that the depth of bedrock** was not a limiting factor for developers, as foundation costs were a small fraction of the cost of development. At first glance, it is not obvious why slum clearance would be limiting, while more expensive foundations would not.",
+			"Chapter four focuses on immigration and the location of neighborhoods and tenements in the late 19th century. Barr identifies four primary immigrant enclaves and analyses their locations in terms of the amenities available in the area. Most of these enclaves were located on the least valuable land, between the industries located on the waterfront and the wealthy neighborhoods bordering Central Park.",
+			"Part two of the book begins with a discussion of the economics of skyscraper height.\nIn chapter five, Barr distinguishes between engineering height, economic height, and developer height – where engineering height is the tallest building that can be safely made at a given time, economic height is the height that is most efficient from society’s point of view, and developer height is the actual height chosen by the developer, who is attempting to maximize return on investment.",
+			"Chapter five also has an interesting discussion of the technological advances that led to the construction of skyscrapers. For example, the introduction of iron and steel skeletal frames made thick, load-bearing walls unnecessary, expanding the usable square footage of buildings and increasing the use of windows and availability of natural light. Chapter six then presents data on building height throughout the 20th century and uses regression analysis to ‘predict’ building construction. While less technical than the research paper on which the chapter is based, it is probably more technical than would be preferred by a general audience.",
+			"Chapter seven tackles the ‘bedrock myth’, the assumption that the absence of bedrock close to the surface between Downtown and Midtown New York is the reason for skyscrapers not being built between the two urban centers. Rather, Barr argues that while deeper bedrock does increase foundation costs, these costs were neither prohibitively high nor were they large compared to the overall cost of building a skyscraper. What I enjoyed the most about this chapter was Barr’s discussion of how foundations are actually built. He describes the use of caissons, which enable workers to dig down for considerable distances, often below the water table, until they reach bedrock. Barr’s thorough technological history discusses not only how caissons work, but also the dangers involved. While this chapter references empirical research papers, it is a relatively easy read.",
+			"Chapters eight and nine focus on the birth of Midtown and the building boom of the 1920s. Chapter eight contains lengthy discussions of urban economic theory that may serve as a distraction to readers primarily interested in New York. However, they would be well-suited for undergraduates learning about the economics of cities. In the next chapter, Barr considers two of the primary explanations for the building boom of the 1920s – the first being exuberance, and the second being financing. He uses data to assess the viability of these two explanations and finds that supply and demand factors explain much of the development of the 1920s; though it enable the boom, cheap credit was not, he argues, the primary cause.",
+			"In the final chapter (chapter 10), Barr discusses another of his empirical papers that estimates Manhattan land values from the mid-19th century to the present day. The data work that went into these estimations is particularly impressive. Toward the end of the chapter, Barr assesses ‘whether skyscrapers are a cause or an effect of high land values’. He finds that changes in land values predict future building height, but the reverse is not true. The book ends with an epilogue, in which Barr discusses the impact of climate change on the city and makes policy suggestions for New York going forward.",
+			"* a tenement: a multi-occupancy building of any sort, but particularly a run-down apartment building or slum building",
+			"** bedrock: the solid, hard rock in the ground that lies under a loose layer of soil"
+		]
+	},
+	"question_groups": [
+		{
+			"range": "27-31",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 27,
+					"text": "What point does Shester make about Barr’s book in the first paragraph?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It gives a highly original explanation for urban development."
+						},
+						{
+							"label": "B",
+							"text": "Elements of Barr’s research papers are incorporated throughout the book."
+						},
+						{
+							"label": "C",
+							"text": "Other books that are available on the subject have taken a different approach."
+						},
+						{
+							"label": "D",
+							"text": "It covers a range of factors that affected the development of New York."
+						}
+					],
+					"answer": "D",
+					"quotes": [
+						"The book combines geology, history, economics, and a lot of data to explain why business clusters developed where they did and how the early decisions of workers and firms shaped the skyline we see today."
+					]
+				},
+				{
+					"number": 28,
+					"text": "How does Shester respond to the information in the book about tenements?",
+					"options": [
+						{
+							"label": "A",
+							"text": "She describes the reasons for Barr’s interest."
+						},
+						{
+							"label": "B",
+							"text": "She indicates a potential problem with Barr’s analysis."
+						},
+						{
+							"label": "C",
+							"text": "She compares Barr’s conclusion with that of other writers."
+						},
+						{
+							"label": "D",
+							"text": "She provides details about the sources Barr used for his research."
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"I would have liked Barr to expand upon his claim that existing tenements* prevented skyscrapers in certain neighborhoods because ‘likely no skyscraper developer was interested in performing the necessary “slum clearance”’. Later in the book, Barr makes the claim that the depth of bedrock** was not a limiting factor for developers, as foundation costs were a small fraction of the cost of development. At first glance, it is not obvious why slum clearance would be limiting, while more expensive foundations would not."
+					]
+				},
+				{
+					"number": 29,
+					"text": "What does Shester say about chapter six of the book?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It contains conflicting data."
+						},
+						{
+							"label": "B",
+							"text": "It focuses too much on possible trends."
+						},
+						{
+							"label": "C",
+							"text": "It is too specialised for most readers."
+						},
+						{
+							"label": "D",
+							"text": "It draws on research that is out of date."
+						}
+					],
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nShester nói gì về chương 6 (chapter six) của cuốn sách?\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ quan điểm của Shester \"Chương sáu trình bày dữ liệu về chiều cao của các tòa nhà trong suốt thế kỷ 20 và sử dụng phân tích hồi quy để \"dự đoán\" quá trình xây dựng. Mặc dù không quá là hàn lâm như bài báo nghiên cứu gốc, nhưng có lẽ nội dung vẫn mang tính hàn lâm cao hơn mức độ phù hợp với đại đa số độc giả phổ thông\".\n\n=> Thông tin được in đậm đồng nghĩa với câu C (Nội dung mang tính chuyên môn quá cao so với đại đa số độc giả).\n\nBước 3: Đáp án: C\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Không có thông tin về việc \"chương 6 chứa các dữ liệu bị mâu thuẫn với nhau\".\nĐáp án B -> Không có đề cập đến việc \"chương này tập trung quá nhiều vào các xu hướng có thể xảy ra\"\nĐáp án D -> Không có thông tin cho thấy \"nghiên cứu được sử dụng đã bị lỗi thời\"",
+					"quotes": [
+						"Chapter six then presents data on building height throughout the 20th century and uses regression analysis to ‘predict’ building construction. While less technical than the research paper on which the chapter is based, it is probably more technical than would be preferred by a general audience."
+					]
+				},
+				{
+					"number": 30,
+					"text": "What does Shester suggest about the chapters focusing on the 1920s building boom?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The information should have been organised differently."
+						},
+						{
+							"label": "B",
+							"text": "More facts are needed about the way construction was financed."
+						},
+						{
+							"label": "C",
+							"text": "The explanation that is given for the building boom is unlikely."
+						},
+						{
+							"label": "D",
+							"text": "Some parts will have limited appeal to certain people."
+						}
+					],
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nShester nói gì về các chương tập trung vào làn sóng xây dựng ô ạt những năm 1920 (1920s building boom)?\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ quan điểm của Shester \"Chương tám và chín đề cập đến sự hình thành của khu Midtown và làn sóng xây dựng ồ ạt những năm 1920. Trong chương tám, tác giả dành khá nhiều nội dung để bàn về lý thuyết kinh tế đô thị, điều này có thể không hấp dẫn lắm đối với những độc giả chỉ quan tâm đến New York\".\n\n=> Thông tin được in đậm đồng nghĩa với câu D (Vài phần sách có thể không hấp dẫn lắm đối với một số độc giả).\n\nBước 3: Đáp án: D\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Tác giả không đề cập đến việc \"cần sắp xếp lại thông tin\".\nĐáp án B -> Tác giả không nhắc đến việc \"cần bổ sung thông tin về phương thức tài trợ cho các dự án xây dựng\"\nĐáp án C -> Tác giả không cho rằng \"cách giải thích về giai đoạn bùng nổ xây dựng là thiếu thuyết phục\".",
+					"quotes": [
+						"Chapters eight and nine focus on the birth of Midtown and the building boom of the 1920s. Chapter eight contains lengthy discussions of urban economic theory that may serve as a distraction to readers primarily interested in New York."
+					]
+				},
+				{
+					"number": 31,
+					"text": "What impresses Shester the most about the chapter on land values?",
+					"options": [
+						{
+							"label": "A",
+							"text": "the broad time period that is covered"
+						},
+						{
+							"label": "B",
+							"text": "the interesting questions that Barr asks"
+						},
+						{
+							"label": "C",
+							"text": "the nature of the research into the topic"
+						},
+						{
+							"label": "D",
+							"text": "the recommendations Barr makes for the future"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"In the final chapter (chapter 10), Barr discusses another of his empirical papers that estimates Manhattan land values from the mid-19th century to the present day. The data work that went into these estimations is particularly impressive."
+					]
+				}
+			]
+		},
+		{
+			"range": "32-35",
+			"type": "YES/NO/NOT GIVEN",
+			"instructions": "Do the following statements agree with the claims of the writer in Reading Passage 3?\nIn boxes 32-35 on your answer sheet, write:\nYES if the statement agrees with the claims of the writer\nNO if the statement contradicts the claims of the writer\nNOT GIVEN if it is impossible to say what the writer thinks about this",
+			"questions": [
+				{
+					"number": 32,
+					"text": "The description in the first chapter of how New York probably looked from the air in the early 1600s lacks interest.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NO",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững mô tả trong chương đầu tiên rằng New York có thể trông như thế nào từ trên không vào đầu những năm 1600 không có gì thú vị, hấp dẫn.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nCác cụm trong câu hỏi được paraphrase tương ứng trong bài là:\nNew York ~ tên riêng giữ nguyên\nChapter one ~ first chapter\nLooked from the sky ~ looked from the air\n1609 ~ in the early 1600s\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ “Barr mở đầu chương một bằng việc đưa người đọc đến một chuyến hành trình bằng \"máy bay trực thăng thời gian\", dẫn ra một câu chuyện hấp dẫn về cảnh quan New York vào năm 1609 có thể trông như thế nào khi nhìn từ trên không”.\n=> Điiều này trái ngược với thông tin trong câu hỏi “Những mô tả trong chương đầu tiên rằng New York có thể trông như thế nào từ trên không vào đầu những năm 1600 không có gì thú vị, hấp dẫn\" (The description in the first chapter of how New York probably looked from the air in the early 1600s lacks interest)\n\nBước 4: Đáp án: NO",
+					"quotes": [
+						"Barr begins chapter one by taking the reader on a ‘helicopter time-machine’ ride – giving a fascinating account of how the New York landscape in 1609 might have looked from the sky."
+					]
+				},
+				{
+					"number": 33,
+					"text": "Chapters two and three prepare the reader well for material yet to come.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nChương hai và ba giúp người đọc dễ dàng tiếp cận nội dung trong những phần tiếp theo.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nChapters two and three ~ cụm từ giữ nguyên\nSet the stage for the economic analysis that comes later in the book ~ prepare the reader for material yet to come\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ “Cả hai chương đều cung cấp nhiều thông tin bổ ích, được nghiên cứu kỹ lưỡng, tạo tiền đề cho phần phân tích kinh tế chi tiết hơn ở các chương sau”.\n=> Điều này đồng nghĩa với thông tin trong câu hỏi “Chương hai và ba giúp người đọc sẵn sàng cho những nội dung sắp tới\" (Chapters two and three prepare the reader well for material yet to come).\n\nBước 4: Đáp án: YES",
+					"quotes": [
+						"Chapters two and three take the reader up to the Civil War (1861-1865), with chapter two focusing on the early development of land and the implementation of a grid system in 1811. Chapter three focuses on land use before the Civil War. Both chapters are informative and well researched and set the stage for the economic analysis that comes later in the book."
+					]
+				},
+				{
+					"number": 34,
+					"text": "The biggest problem for many nineteenth-century New York immigrant neighbourhoods was a lack of amenities.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nVấn đề lớn nhất đối với nhiều khu dân cư nhập cư ở New York thế kỷ 19 là thiếu tiện nghi sinh hoạt.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nNineteenth-century ~ in the late 19th century\nImmigration and the location of neighborhoods ~ immigrant neighborhoods\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ “Chương bốn tập trung vào vấn đề nhập cư và vị trí của các khu dân cư cùng nhà ở tập thể vào cuối thế kỷ 19. Barr xác định bốn khu vực nhập cư chính và phân tích vị trí của chúng dựa trên các tiện nghi sinh hoạt trong khu vực”.\n=> Tuy nhiên bài đọc không hề nhắc đến thông tin “Vấn đề lớn nhất đối với nhiều khu dân cư nhập cư ở New York thế kỷ 19 là thiếu tiện nghi sinh hoạt.\" (The biggest problem).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Chapter four focuses on immigration and the location of neighborhoods and tenements in the late 19th century. Barr identifies four primary immigrant enclaves and analyses their locations in terms of the amenities available in the area. Most of these enclaves were located on the least valuable land, between the industries located on the waterfront and the wealthy neighborhoods bordering Central Park."
+					]
+				},
+				{
+					"number": 35,
+					"text": "In the nineteenth century, New York’s immigrant neighbourhoods tended to concentrate around the harbour.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NO",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTrong thế kỷ 19, các khu dân cư nhập cư ở New York có xu hướng tập trung xung quanh cảng.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nIn the late 19th century ~ In the nineteenth century\nEnclaves ~ immigrant neighborhoods\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ “Đa số các khu định cư này tọa lạc trên những mảnh đất rẻ tiền nhất, nằm lọt thỏm giữa khu công nghiệp ven sông và khu phố sang trọng cạnh Công viên Trung tâm”.\n=> Điều này trái ngược với thông tin trong câu hỏi “Trong thế kỷ 19, các khu dân cư nhập cư ở New York có xu hướng tập trung xung quanh cảng\" (In the nineteenth century, New York’s immigrant neighbourhoods tended to concentrate around the harbour).\n\nBước 4: Đáp án: NO",
+					"quotes": [
+						"Chapter four focuses on immigration and the location of neighborhoods and tenements in the late 19th century. Barr identifies four primary immigrant enclaves and analyses their locations in terms of the amenities available in the area. Most of these enclaves were located on the least valuable land, between the industries located on the waterfront and the wealthy neighborhoods bordering Central Park."
+					]
+				}
+			]
+		},
+		{
+			"range": "36-40",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary using the list of phrases, A-J, below. Write the correct letter, A-J, in boxes 36-40 on your answer sheet.",
+			"options": [
+				{
+					"label": "A",
+					"text": "development plans"
+				},
+				{
+					"label": "B",
+					"text": "deep excavations"
+				},
+				{
+					"label": "C",
+					"text": "great distance"
+				},
+				{
+					"label": "D",
+					"text": "excessive expense"
+				},
+				{
+					"label": "E",
+					"text": "impossible tasks"
+				},
+				{
+					"label": "F",
+					"text": "associated risks"
+				},
+				{
+					"label": "G",
+					"text": "water level"
+				},
+				{
+					"label": "H",
+					"text": "specific areas"
+				},
+				{
+					"label": "I",
+					"text": "total expenditure"
+				},
+				{
+					"label": "J",
+					"text": "construction guidelines"
+				}
+			],
+			"body": "The bedrock myth\nIn chapter seven, Barr indicates how the lack of bedrock close to the surface does not explain why skyscrapers are absent from ____ (36) . He points out that although the cost of foundations increases when bedrock is deep below the surface, this cannot be regarded as ____ (37) , especially when compared to ____ (38)\nA particularly enjoyable part of the chapter was Barr’s account of how foundations are built. He describes not only how ____ (39) are made possible by the use of caissons, but he also discusses their ____ (40) . The chapter is well researched but relatively easy to understand.",
+			"body_html": "<h3><strong>The bedrock myth</strong></h3><p>In chapter seven, Barr indicates how the lack of bedrock close to the surface does not explain why skyscrapers are absent from [36] . He points out that although the cost of foundations increases when bedrock is deep below the surface, this cannot be regarded as [37] , especially when compared to [38]</p><p>A particularly enjoyable part of the chapter was Barr’s account of how foundations are built. He describes not only how [39] are made possible by the use of caissons, but he also discusses their [40] . The chapter is well researched but relatively easy to understand.</p>",
+			"questions": [
+				{
+					"number": 36,
+					"text": "",
+					"answer": "H",
+					"quotes": [
+						"Chapter seven tackles the ‘bedrock myth’, the assumption that the absence of bedrock close to the surface between Downtown and Midtown New York is the reason for skyscrapers not being built between the two urban centers."
+					]
+				},
+				{
+					"number": 37,
+					"text": "",
+					"answer": "D",
+					"quotes": [
+						"Rather, Barr argues that while deeper bedrock does increase foundation costs, these costs were neither prohibitively high nor were they large compared to the overall cost of building a skyscraper."
+					]
+				},
+				{
+					"number": 38,
+					"text": "",
+					"answer": "I",
+					"quotes": [
+						"Rather, Barr argues that while deeper bedrock does increase foundation costs, these costs were neither prohibitively high nor were they large compared to the overall cost of building a skyscraper."
+					]
+				},
+				{
+					"number": 39,
+					"text": "A particularly enjoyable part of the chapter was Barr’s account of how foundations are built. He describes not only how ____ (39) are made possible by the use of caissons, but he also discusses their ____ (40) . The chapter is well researched but relatively easy to understand.",
+					"answer": "B",
+					"quotes": [
+						"He describes the use of caissons, which enable workers to dig down for considerable distances, often below the water table, until they reach bedrock."
+					]
+				},
+				{
+					"number": 40,
+					"text": "A particularly enjoyable part of the chapter was Barr’s account of how foundations are built. He describes not only how ____ (39) are made possible by the use of caissons, but he also discusses their ____ (40) . The chapter is well researched but relatively easy to understand.",
+					"answer": "F",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nÔng không chỉ giải thích việc đào đất sâu đã được thực hiện như thế nào nhờ việc sử dụng các giếng chìm, mà còn bàn về ______ của chúng.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: their + NOUN (NOUN làm Object của tính từ sở hữu 'THEIR')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nDiscusses ~ từ khóa giữ nguyên\nBut also ~ but he also\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \" \" (Barr’s thorough technological history discusses not only how caissons work, but also the dangers involved).\n\nBước 5: Đáp án: F. Associated risks\nÔng không chỉ giải thích việc đào đất sâu đã được thực hiện như thế nào nhờ việc sử dụng các giếng chìm, mà còn bàn về ______ của chúng (He describes not only how deep excavations are made possible by the use of caissons, but he also discusses their associated risks).",
+					"quotes": [
+						"Barr’s thorough technological history discusses not only how caissons work, but also the dangers involved."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

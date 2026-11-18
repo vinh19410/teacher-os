@@ -33,6 +33,7 @@ export function StudentShell({
 	const team = useStudentTeam();
 	const activeKey = useStudentActiveKey();
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
+
 	const displayName = userName || "Học viên";
 	const initials = displayName.trim().charAt(0).toUpperCase() || "H";
 	const crumbs = [team?.name, STUDENT_PAGE_LABEL[activeKey]].filter(

@@ -142,7 +142,7 @@ async function publishSeedPlacementTest(page: Page) {
 	expect(pub.status()).toBe(200);
 }
 
-/** Đáp án đúng toàn bộ phần khách quan (dựng từ bộ đề seed). */
+/** Đáp án đúng toàn bộ 3 phần tự động (dựng từ bộ đề seed). */
 function correctAnswers() {
 	const listening: Record<string, string | number> = {};
 	for (const clip of questionsData.parts[0].clips) {
@@ -200,7 +200,7 @@ test.describe
 			await publishSeedPlacementTest(page);
 			await clearRateLimits();
 
-			// 1. Học viên nộp bài (Writing có nội dung, bỏ qua Speaking) qua API công khai.
+			// 1. Học viên nộp bài (Writing + upload Speaking WebM) qua API công khai.
 			const phone = uniquePhone();
 			const submitRes = await page.request.post(
 				`${API_ORIGIN}/public/placement-test/submissions`,
@@ -217,13 +217,35 @@ test.describe
 						},
 						answers: correctAnswers(),
 						writingText: WRITING_TEXT,
-						speakingMode: "skipped",
+						speakingMode: "upload",
+						speakingDurationSec: 12,
 					},
 				},
 			);
 			expect(submitRes.status()).toBe(201);
+			const created = (await submitRes.json()) as {
+				submissionId: string;
+				uploadToken: string;
+			};
+			const webmBytes = Buffer.from([
+				0x1a, 0x45, 0xdf, 0xa3, 0x9f, 0x42, 0x86, 0x81, 0x01, 0x42, 0x82, 0x84,
+				0x77, 0x65, 0x62, 0x6d, 0x00, 0x00,
+			]);
+			const uploadRes = await page.request.put(
+				`${API_ORIGIN}/public/placement-test/submissions/${created.submissionId}/speaking-media`,
+				{
+					headers: {
+						Origin: PROFILE_ORIGIN,
+						"X-Upload-Token": created.uploadToken,
+						"X-Media-Filename": "speaking.webm",
+						"Content-Type": "audio/webm",
+					},
+					data: webmBytes,
+				},
+			);
+			expect(uploadRes.status()).toBe(200);
 
-			// 2. Giáo viên mở lead → banner nháp AI, rubric điền sẵn 3, highlight lỗi AI.
+			// 2. Giáo viên mở lead → banner AI đã liệt kê lỗi, ô điểm IELTS trống (không đề xuất điểm/nhận xét), highlight lỗi AI.
 			await page.goto(`${WEB_ORIGIN}/leads`);
 			const table = page.getByTestId("leads-table");
 			await expect(table).toBeVisible();
@@ -235,15 +257,54 @@ test.describe
 			await expect(aiStatus).toHaveAttribute("data-ai-status", "drafted", {
 				timeout: 30_000,
 			});
-			await expect(aiStatus).toContainText("Bản nháp AI — chưa gửi học viên");
-			for (const key of ["ct", "or", "lg"]) {
-				await expect(page.getByTestId(`writing-${key}-3`)).toHaveAttribute(
-					"aria-pressed",
-					"true",
-				);
+			await expect(aiStatus).toContainText(
+				"Danh sách lỗi AI — chưa gửi học viên",
+			);
+			await expect(page.getByTestId("writing-ai-feedback")).toHaveCount(0);
+			await expect(page.getByTestId("speaking-ai-feedback")).toHaveCount(0);
+			for (const testId of [
+				"writing-task-input",
+				"writing-coherence-input",
+				"writing-lexical-input",
+				"writing-grammar-input",
+				"writing-overall-input",
+				"speaking-fluency-input",
+				"speaking-lexical-input",
+				"speaking-grammar-input",
+				"speaking-pronunciation-input",
+				"speaking-overall-input",
+			]) {
+				await expect(page.getByTestId(testId)).toHaveValue("");
 			}
-			await expect(page.getByTestId("writing-ai-feedback")).toBeVisible();
-			const marks = page.getByTestId("writing-error-mark");
+			const saveBtn = page.getByTestId("save-placement-grade-btn");
+			await expect(saveBtn).toBeDisabled();
+			await expect(page.getByTestId("save-placement-grade-hint")).toBeVisible();
+
+			// Nhập 4 tiêu chí IELTS Writing (auto-fill overall 6.5), thử sửa tay rồi trả về 6.5; nhập Speaking 6.5.
+			await page.getByTestId("writing-task-input").fill("6.5");
+			await page.getByTestId("writing-coherence-input").fill("6");
+			await page.getByTestId("writing-lexical-input").fill("6.5");
+			await page.getByTestId("writing-grammar-input").fill("6");
+			await expect(page.getByTestId("writing-overall-input")).toHaveValue(
+				"6.5",
+			);
+			await page.getByTestId("writing-overall-input").fill("7");
+			await expect(page.getByTestId("placement-score-summary")).toContainText(
+				"Writing Band 7.0/9",
+			);
+			await page.getByTestId("writing-overall-input").fill("6.5");
+
+			await page.getByTestId("speaking-fluency-input").fill("6");
+			await page.getByTestId("speaking-lexical-input").fill("6");
+			await page.getByTestId("speaking-grammar-input").fill("6.5");
+			await page.getByTestId("speaking-pronunciation-input").fill("6.5");
+			await expect(page.getByTestId("speaking-overall-input")).toHaveValue(
+				"6.5",
+			);
+			await expect(saveBtn).toBeEnabled();
+
+			const writingHighlighter = page.getByTestId("writing-error-highlighter");
+			const marks = writingHighlighter.getByTestId("writing-error-mark");
 			await expect(marks).toHaveCount(1);
 			await expect(marks.first()).toHaveText(AI_ERROR_QUOTE);
 			await expect(marks.first()).toHaveAttribute("data-category", "grammar");
@@ -266,7 +327,9 @@ test.describe
 			await expect(marks.nth(1)).toHaveText(ADDED_ERROR_QUOTE);
 
 			// 4. Sửa lỗi vừa thêm (đổi giải thích), xoá lỗi AI "Dear".
-			await page.getByRole("button", { name: "Sửa lỗi 2" }).click();
+			await writingHighlighter
+				.getByRole("button", { name: "Sửa lỗi 2" })
+				.click();
 			await expect(form).toContainText("Sửa lỗi");
 			await form
 				.getByLabel("Giải thích")
@@ -274,42 +337,37 @@ test.describe
 			await page.getByTestId("writing-error-save-btn").click();
 			await expect(form).toBeHidden();
 
-			// Chụp POT panel giáo viên (đủ 2 highlight) trước khi xoá lỗi AI.
-			await page
-				.getByTestId("writing-error-highlighter")
-				.scrollIntoViewIfNeeded();
+			// Chụp POT panel giáo viên (đủ 2 highlight + IELTS grading) trước khi xoá lỗi AI.
+			await writingHighlighter.scrollIntoViewIfNeeded();
 			for (const vp of VIEWPORTS) {
 				await page.setViewportSize({ width: vp.width, height: vp.height });
 				await expectNoHorizontalOverflow(page, `/leads ${vp.label}`);
-				await page
-					.getByTestId("writing-error-highlighter")
-					.scrollIntoViewIfNeeded();
+				await writingHighlighter.scrollIntoViewIfNeeded();
 				await page.screenshot({
-					path: reportPath(`730-leads-ai-draft-${vp.label}.png`),
+					path: reportPath(`800-leads-grading-${vp.label}.png`),
 				});
 			}
 			await page.setViewportSize({ width: 1440, height: 900 });
 			await page.evaluate(() => document.documentElement.classList.add("dark"));
-			await page
-				.getByTestId("writing-error-highlighter")
-				.scrollIntoViewIfNeeded();
+			await writingHighlighter.scrollIntoViewIfNeeded();
 			await page.screenshot({
-				path: reportPath("730-leads-ai-draft-desktop-dark.png"),
+				path: reportPath("800-leads-grading-desktop-dark.png"),
 			});
 			await page.evaluate(() =>
 				document.documentElement.classList.remove("dark"),
 			);
 
-			await page.getByRole("button", { name: "Xoá lỗi 1" }).click();
+			await writingHighlighter
+				.getByRole("button", { name: "Xoá lỗi 1" })
+				.click();
 			await expect(marks).toHaveCount(1);
 			await expect(marks.first()).toHaveText(ADDED_ERROR_QUOTE);
-			const cards = page.getByTestId("writing-error-card");
+			const cards = writingHighlighter.getByTestId("writing-error-card");
 			await expect(cards).toHaveCount(1);
 			await expect(cards.first()).toContainText("live");
 			await expect(cards.first()).toContainText("I live.");
 
 			// 5. Chốt → link kết quả + trạng thái email.
-			const saveBtn = page.getByTestId("save-placement-grade-btn");
 			await expect(saveBtn).toHaveText("Chốt kết quả & gửi học viên");
 			const patch = page.waitForResponse(
 				(res) =>
@@ -342,7 +400,8 @@ test.describe
 				const writingSection = student.locator("section", {
 					has: student.locator("#secWriting"),
 				});
-				await expect(writingSection).toContainText("Writing: 9/15");
+				await expect(writingSection).toContainText("Writing: Band 6.5/9");
+				await expect(writingSection).toContainText("Task Response");
 				const resultMarks = writingSection.locator(".annotated-text mark");
 				await expect(resultMarks).toHaveCount(1);
 				await expect(resultMarks.first()).toHaveAttribute("id", "w-mark-1");
@@ -364,7 +423,7 @@ test.describe
 					await expectNoHorizontalOverflow(student, `kết quả ${vp.label}`);
 					await writingSection.scrollIntoViewIfNeeded();
 					await student.screenshot({
-						path: reportPath(`730-profile-result-${vp.label}.png`),
+						path: reportPath(`800-profile-result-${vp.label}.png`),
 					});
 				}
 			} finally {

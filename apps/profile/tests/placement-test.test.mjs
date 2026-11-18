@@ -15,11 +15,13 @@ import { buildProfile } from "../build.mjs";
 import {
 	buildProvisionalSummary,
 	canReplaySpeakingPrompt,
+	canRetrySpeakingTask,
 	computeSpeechFallbackTimeoutMs,
 	countObjectiveProgress,
 	countWords,
 	createInitialSpeakingSession,
 	LEAD_PLACEMENT_MAX,
+	MAX_SPEAKING_RETRIES_PER_TASK,
 	matchBandByPct,
 	normalizeGapAnswer,
 	resolveReadingRenderState,
@@ -29,13 +31,24 @@ import {
 	resolveSpeakingSubmitDecision,
 	resolveTaskTimings,
 	resolveWritingPromptState,
+	retrySpeakingCurrentTask,
 	scoreObjectiveTest,
 	startSpeakingTaskReading,
 	stripInlineCefrLabel,
 	transitionSpeakingAfterReading,
 	transitionSpeakingNextTask,
 	transitionSpeakingToAnswer,
+	transitionSpeakingToPaused,
 } from "../public/kiem-tra-dau-vao/grading.js";
+import {
+	buildSkillRubricDisplay,
+	isIeltsSpeakingRubric,
+	isIeltsWritingRubric,
+	PLACEMENT_LEGACY_SPEAKING_RUBRIC,
+	PLACEMENT_LEGACY_WRITING_RUBRIC,
+	PLACEMENT_SPEAKING_RUBRIC,
+	PLACEMENT_WRITING_RUBRIC,
+} from "../public/kiem-tra-dau-vao/ket-qua/highlight.js";
 import {
 	buildLeadPayload,
 	buildPlacementSubmissionLead,
@@ -47,6 +60,20 @@ import {
 	PLACEMENT_STUDY_MODES,
 	validateLeadForm,
 } from "../public/kiem-tra-dau-vao/lead-gate.js";
+import {
+	encodeWavPcm16,
+	mergeSpeakingAudioSegments,
+	TARGET_SPEAKING_SAMPLE_RATE,
+} from "../public/kiem-tra-dau-vao/speaking-audio.js";
+import {
+	buildGapPromptSegments,
+	buildIntroOverviewRows,
+	buildSkillReportCards,
+	resolveClipDisplayTitle,
+	resolvePartHeaderState,
+	resolveReadingPassageHeaderState,
+	shouldShowReadingTitle,
+} from "../public/kiem-tra-dau-vao/test.js";
 import { createProfileServer } from "../serve.mjs";
 
 const publicDir = new URL("../public/", import.meta.url);
@@ -313,12 +340,51 @@ test("Bất biến file tĩnh: không chứa '30 câu', không có questions.jso
 		"registerWithResultBtn",
 		"speakingPlaybackAudio",
 		"video: false",
+		"speakingPauseBtn",
+		"speakingRetryBtn",
+		"speakingNextTaskBtn",
 		"speakingFinishEarlyBtn",
+		"speakingFinishConfirmBox",
+		"confirmFinishEarlyBtn",
+		"cancelFinishEarlyBtn",
 		"speakingReplayPromptBtn",
+		"speaking-center-stage",
+		"speaking-early-footer",
+		"Dừng ghi âm câu hiện tại",
+		"Kết thúc phần Speaking",
+		"Không dùng từ điển hay công cụ dịch",
+		"clip-notes-box",
+		"gap-row",
+		"skill-progress-track",
+		"skill-progress-fill",
+		"Đây là kết quả tự động của hai phần nghe và đọc. Cấp độ cuối cùng và lớp phù hợp sẽ được giáo viên báo sau khi chấm Writing và Speaking.",
 	]) {
 		assert.ok(
 			testJs.includes(requiredToken),
 			`test.js must include '${requiredToken}'`,
+		);
+	}
+	const testCss = readFileSync(new URL("test.css", placementDir), "utf8");
+	for (const requiredCssToken of [
+		".intro-overview-table",
+		".clip-notes-box",
+		".gap-row",
+		".reading-body.kind-sign",
+		".reading-body.kind-message",
+		".skill-progress-track",
+		".skill-progress-fill",
+		".speaking-center-stage",
+		".speaking-pause-circle-btn",
+		".speaking-early-footer",
+		".speaking-finish-confirm-box",
+		"var(--butter)",
+		"var(--amber-line)",
+		"var(--sky)",
+		"var(--blue-line)",
+	]) {
+		assert.ok(
+			testCss.includes(requiredCssToken),
+			`test.css must include '${requiredCssToken}'`,
 		);
 	}
 	for (const forbiddenToken of [
@@ -326,6 +392,10 @@ test("Bất biến file tĩnh: không chứa '30 câu', không có questions.jso
 		"speakingPlaybackVideo",
 		"speakingLiveVideo",
 		"Camera + Micro",
+		"retakeSpeakingBtn",
+		"speaking-overview-steps",
+		"Hệ thống sẽ tự động đọc lần lượt từng câu hỏi",
+		"Bạn có thể bấm Nghe lại câu hỏi tối đa 1 lần trước khi trả lời.",
 		"Phân tích theo từng cấp độ câu hỏi",
 		"level-breakdown-section",
 		"provisional-hero-grid",
@@ -333,10 +403,31 @@ test("Bất biến file tĩnh: không chứa '30 câu', không có questions.jso
 		"createCefrExplorer",
 		"CEFR_EXPLORER_DATA",
 		"cefrExplorerBox",
+		"khách quan",
+		"READING_KIND_LABELS",
+		"Biển báo / Thông báo",
+		"Tin nhắn / Email",
+		"Bài đọc hiểu",
+		"Đoạn văn điền từ",
 	]) {
 		assert.ok(
 			!testJs.includes(forbiddenToken),
 			`test.js must NOT include '${forbiddenToken}'`,
+		);
+	}
+	for (const staticRelPath of [
+		"index.html",
+		"grading.js",
+		"lead-gate.js",
+		"ket-qua/result.js",
+	]) {
+		const staticContent = readFileSync(
+			new URL(staticRelPath, placementDir),
+			"utf8",
+		);
+		assert.ok(
+			!staticContent.toLowerCase().includes("khách quan"),
+			`${staticRelPath} must NOT include 'khách quan'`,
 		);
 	}
 });
@@ -398,9 +489,19 @@ test("scoreObjectiveTest chấm cả Listening (MCQ + Gap), Grammar & Vocab, Rea
 		},
 	});
 
-	assert.deepEqual(fullScore.listening, { correct: 3, total: 3, pct: 100 });
+	assert.deepEqual(fullScore.listening, {
+		correct: 3,
+		total: 3,
+		pct: 100,
+		band: matchBandByPct(100, snapshot.bands),
+	});
 	assert.deepEqual(fullScore.vocabGrammar, { correct: 2, total: 2, pct: 100 });
-	assert.deepEqual(fullScore.reading, { correct: 2, total: 2, pct: 100 });
+	assert.deepEqual(fullScore.reading, {
+		correct: 2,
+		total: 2,
+		pct: 100,
+		band: matchBandByPct(100, snapshot.bands),
+	});
 	assert.equal(fullScore.totalCorrect, 7);
 	assert.equal(fullScore.totalQuestions, 7);
 	assert.equal(fullScore.averagePct, 100);
@@ -423,13 +524,23 @@ test("scoreObjectiveTest chấm cả Listening (MCQ + Gap), Grammar & Vocab, Rea
 		},
 	});
 
-	assert.deepEqual(partialScore.listening, { correct: 2, total: 3, pct: 67 });
+	assert.deepEqual(partialScore.listening, {
+		correct: 2,
+		total: 3,
+		pct: 67,
+		band: matchBandByPct((2 / 3) * 100, snapshot.bands),
+	});
 	assert.deepEqual(partialScore.vocabGrammar, {
 		correct: 1,
 		total: 2,
 		pct: 50,
 	});
-	assert.deepEqual(partialScore.reading, { correct: 1, total: 2, pct: 50 });
+	assert.deepEqual(partialScore.reading, {
+		correct: 1,
+		total: 2,
+		pct: 50,
+		band: matchBandByPct(50, snapshot.bands),
+	});
 	assert.equal(partialScore.totalCorrect, 4);
 	assert.equal(partialScore.totalQuestions, 7);
 	assert.equal(partialScore.averagePct, 56);
@@ -519,7 +630,9 @@ test("lead-gate.js giữ catalog khóa học, validate form, chuẩn hóa SĐT V
 });
 
 test("serve.mjs thay meta lead-api ở trang chủ & /kiem-tra-dau-vao/, redirect 301 và chặn path traversal", async () => {
-	const server = createProfileServer("https://api.staging.test");
+	const server = createProfileServer("https://api.staging.test", undefined, {
+		maintenance: false,
+	});
 	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 	const { port } = server.address();
 	const base = `http://127.0.0.1:${port}`;
@@ -558,6 +671,7 @@ test("build.mjs copy public sang dist, không có questions.json và thay meta l
 		await buildProfile({
 			distUrl: pathToFileURL(distDir),
 			leadApiUrl: "https://api.prod.test",
+			maintenance: false,
 		});
 
 		const builtHome = readFileSync(join(distDir, "index.html"), "utf8");
@@ -631,17 +745,23 @@ test("defensive helpers xử lý Reading/Writing/Speaking rỗng, speakingMode='
 		resolveSpeakingSubmitDecision({
 			hasSpeakingTasks: false,
 			hasValidBlob: true,
-			speakingMode: "upload",
 		}),
-		{ finalMode: "none", needsSpeakingDecision: false },
+		{
+			finalMode: "none",
+			needsSpeakingDecision: false,
+			blockedByMissingSpeaking: false,
+		},
 	);
 	assert.deepEqual(
 		resolveSpeakingSubmitDecision({
 			hasSpeakingTasks: true,
 			hasValidBlob: false,
-			speakingMode: "none",
 		}),
-		{ finalMode: "skipped", needsSpeakingDecision: true },
+		{
+			finalMode: null,
+			needsSpeakingDecision: false,
+			blockedByMissingSpeaking: true,
+		},
 	);
 	assert.deepEqual(
 		resolveSpeakingSubmitDecision({
@@ -649,15 +769,22 @@ test("defensive helpers xử lý Reading/Writing/Speaking rỗng, speakingMode='
 			hasValidBlob: false,
 			speakingMode: "skipped",
 		}),
-		{ finalMode: "skipped", needsSpeakingDecision: false },
+		{
+			finalMode: null,
+			needsSpeakingDecision: false,
+			blockedByMissingSpeaking: true,
+		},
 	);
 	assert.deepEqual(
 		resolveSpeakingSubmitDecision({
 			hasSpeakingTasks: true,
 			hasValidBlob: true,
-			speakingMode: "upload",
 		}),
-		{ finalMode: "upload", needsSpeakingDecision: false },
+		{
+			finalMode: "upload",
+			needsSpeakingDecision: false,
+			blockedByMissingSpeaking: false,
+		},
 	);
 
 	const noneDisplay = resolveSpeakingStatusDisplay("none");
@@ -849,4 +976,643 @@ test("sequential Speaking state machine chuyển pha reading -> prep -> answer 1
 	assert.equal(session.status, "completed");
 	assert.equal(session.phase, "done");
 	assert.equal(canReplaySpeakingPrompt(session), false);
+});
+
+test("Speaking state machine hỗ trợ pha paused và tối đa 2 lượt ghi lại mỗi câu", () => {
+	assert.equal(MAX_SPEAKING_RETRIES_PER_TASK, 2);
+	const tasks = [
+		{ id: "s-1", prompt: "Q1", prepSeconds: 10, answerSeconds: 30 },
+		{ id: "s-2", prompt: "Q2", prepSeconds: 0, answerSeconds: 45 },
+	];
+
+	let session = createInitialSpeakingSession(tasks.length);
+	assert.equal(session.retriesUsedForCurrentTask, 0);
+	assert.equal(canRetrySpeakingTask(session), false);
+
+	session = startSpeakingTaskReading(session, 0, tasks);
+	session = transitionSpeakingToAnswer(session, tasks);
+	assert.equal(session.phase, "answer");
+	assert.equal(canRetrySpeakingTask(session), false);
+
+	// Dừng ghi âm câu 1 -> paused
+	session = transitionSpeakingToPaused(session);
+	assert.equal(session.phase, "paused");
+	assert.equal(session.secondsLeft, 0);
+	assert.equal(session.retriesUsedForCurrentTask, 0);
+	assert.equal(canRetrySpeakingTask(session), true);
+
+	// Retry lần 1/2
+	session = retrySpeakingCurrentTask(session, tasks);
+	assert.equal(session.phase, "answer");
+	assert.equal(session.secondsLeft, 30);
+	assert.equal(session.retriesUsedForCurrentTask, 1);
+	assert.equal(canRetrySpeakingTask(session), false);
+
+	session = transitionSpeakingToPaused(session);
+	assert.equal(session.phase, "paused");
+	assert.equal(canRetrySpeakingTask(session), true);
+
+	// Retry lần 2/2
+	session = retrySpeakingCurrentTask(session, tasks);
+	assert.equal(session.phase, "answer");
+	assert.equal(session.retriesUsedForCurrentTask, 2);
+
+	session = transitionSpeakingToPaused(session);
+	assert.equal(session.phase, "paused");
+	assert.equal(canRetrySpeakingTask(session), false);
+
+	// Lần 3 bị chặn, state giữ nguyên ở paused
+	const blocked = retrySpeakingCurrentTask(session, tasks);
+	assert.deepEqual(blocked, session);
+
+	// Sang câu 2 từ paused -> reset retriesUsedForCurrentTask về 0
+	session = transitionSpeakingNextTask(session, tasks);
+	assert.equal(session.taskIndex, 1);
+	assert.equal(session.phase, "reading");
+	assert.equal(session.retriesUsedForCurrentTask, 0);
+
+	session = transitionSpeakingAfterReading(session, tasks);
+	assert.equal(session.phase, "answer");
+	assert.equal(session.secondsLeft, 45);
+	session = transitionSpeakingToPaused(session);
+	assert.equal(canRetrySpeakingTask(session), true);
+
+	// Hoàn thành từ paused ở câu cuối -> completed
+	session = transitionSpeakingNextTask(session, tasks);
+	assert.equal(session.status, "completed");
+	assert.equal(session.phase, "done");
+	assert.equal(canRetrySpeakingTask(session), false);
+});
+
+test("mergeSpeakingAudioSegments trả về null/single blob, fallback Blob khi thiếu AudioContext và encode WAV 16kHz mono PCM", async () => {
+	assert.equal(await mergeSpeakingAudioSegments([]), null);
+	assert.equal(
+		await mergeSpeakingAudioSegments([
+			{ blob: new Blob([], { type: "audio/webm" }), durationMs: 0 },
+		]),
+		null,
+	);
+
+	const singleBlob = new Blob([new Uint8Array([1, 2, 3, 4])], {
+		type: "audio/webm",
+	});
+	const singleResult = await mergeSpeakingAudioSegments([
+		{ blob: singleBlob, durationMs: 1200 },
+	]);
+	assert.equal(singleResult, singleBlob);
+
+	// Fallback khi globalThis.AudioContext không tồn tại
+	const prevAudioContext = globalThis.AudioContext;
+	const prevWebkitAudioContext = globalThis.webkitAudioContext;
+	delete globalThis.AudioContext;
+	delete globalThis.webkitAudioContext;
+
+	try {
+		const b1 = new Blob([new Uint8Array([10, 20])], { type: "audio/webm" });
+		const b2 = new Blob([new Uint8Array([30, 40, 50])], { type: "audio/webm" });
+		const fallbackBlob = await mergeSpeakingAudioSegments([
+			{ blob: b1, durationMs: 500 },
+			{ blob: b2, durationMs: 500 },
+		]);
+		assert.ok(fallbackBlob instanceof Blob);
+		assert.equal(fallbackBlob.type, "audio/webm");
+		assert.equal(fallbackBlob.size, 5);
+
+		// WAV encoding trực tiếp
+		const wavBuf = encodeWavPcm16(
+			new Float32Array([0, 0.5, -0.5, 1, -1]),
+			TARGET_SPEAKING_SAMPLE_RATE,
+		);
+		const view = new DataView(wavBuf);
+		assert.equal(String.fromCharCode(...new Uint8Array(wavBuf, 0, 4)), "RIFF");
+		assert.equal(String.fromCharCode(...new Uint8Array(wavBuf, 8, 4)), "WAVE");
+		assert.equal(String.fromCharCode(...new Uint8Array(wavBuf, 12, 4)), "fmt ");
+		assert.equal(view.getUint16(20, true), 1); // PCM
+		assert.equal(view.getUint16(22, true), 1); // mono
+		assert.equal(view.getUint32(24, true), 16000);
+		assert.equal(view.getUint16(34, true), 16);
+		assert.equal(String.fromCharCode(...new Uint8Array(wavBuf, 36, 4)), "data");
+		assert.equal(view.getUint32(40, true), 10);
+
+		// Khi AudioContext khả dụng -> decode & merge thành audio/wav
+		let closedCount = 0;
+		let decodeCallCount = 0;
+		globalThis.AudioContext = class MockAudioContext {
+			async decodeAudioData() {
+				decodeCallCount += 1;
+				if (decodeCallCount === 1) {
+					return {
+						sampleRate: 16000,
+						numberOfChannels: 1,
+						length: 4,
+						duration: 4 / 16000,
+						getChannelData: () => new Float32Array([0.1, 0.2, 0.3, 0.4]),
+					};
+				}
+				return {
+					sampleRate: 32000,
+					numberOfChannels: 2,
+					length: 4,
+					duration: 4 / 32000,
+					getChannelData: (ch) =>
+						ch === 0
+							? new Float32Array([0.2, 0.2, 0.4, 0.4])
+							: new Float32Array([0.4, 0.4, 0.6, 0.6]),
+				};
+			}
+			async close() {
+				closedCount += 1;
+			}
+		};
+
+		const wavBlob = await mergeSpeakingAudioSegments([
+			{ blob: b1, durationMs: 1000 },
+			{ blob: b2, durationMs: 1000 },
+		]);
+		assert.equal(wavBlob.type, "audio/wav");
+		assert.equal(closedCount, 1);
+		const mergedBytes = await wavBlob.arrayBuffer();
+		const mergedView = new DataView(mergedBytes);
+		assert.equal(
+			String.fromCharCode(...new Uint8Array(mergedBytes, 0, 4)),
+			"RIFF",
+		);
+		assert.equal(mergedView.getUint32(24, true), 16000);
+		// 4 samples + 2 resampled samples (4 @ 32kHz -> 2 @ 16kHz) = 6 samples = 12 bytes
+		assert.equal(mergedView.getUint32(40, true), 12);
+
+		// Khi decodeAudioData lỗi -> fallback an toàn & vẫn đóng AudioContext
+		globalThis.AudioContext = class FailingAudioContext {
+			async decodeAudioData() {
+				throw new Error("decode error");
+			}
+			async close() {
+				closedCount += 1;
+			}
+		};
+		const safeFallback = await mergeSpeakingAudioSegments([
+			{ blob: b1, durationMs: 500 },
+			{ blob: b2, durationMs: 500 },
+		]);
+		assert.equal(safeFallback.type, "audio/webm");
+		assert.equal(safeFallback.size, 5);
+		assert.equal(closedCount, 2);
+	} finally {
+		if (prevAudioContext === undefined) {
+			delete globalThis.AudioContext;
+		} else {
+			globalThis.AudioContext = prevAudioContext;
+		}
+		if (prevWebkitAudioContext === undefined) {
+			delete globalThis.webkitAudioContext;
+		} else {
+			globalThis.webkitAudioContext = prevWebkitAudioContext;
+		}
+	}
+});
+
+test("buildIntroOverviewRows trả về bảng 5 phần theo snapshot và fallback chuẩn", () => {
+	const fallbackRows = buildIntroOverviewRows({});
+	assert.deepEqual(fallbackRows, [
+		{
+			id: "listening",
+			part: "1. Listening",
+			content: "3 parts · 13 câu · mỗi đoạn nghe 2 lần",
+			time: "~10 phút",
+		},
+		{
+			id: "vocab-grammar",
+			part: "2. Grammar & Vocabulary",
+			content: "12 câu trắc nghiệm, từ dễ đến khó",
+			time: "~6 phút",
+		},
+		{
+			id: "reading",
+			part: "3. Reading",
+			content: "3 parts · 15 câu",
+			time: "~12 phút",
+		},
+		{
+			id: "writing",
+			part: "4. Writing",
+			content: "1 email 50–80 từ",
+			time: "~10 phút",
+		},
+		{
+			id: "speaking",
+			part: "5. Speaking",
+			content: "8 câu hỏi ghi âm qua micro",
+			time: "~7 phút",
+		},
+	]);
+
+	const customFixture = createFiveSkillSnapshotFixture();
+	const customSnapshot = {
+		listening: {
+			...customFixture.parts[0],
+			estimatedMinutes: 8,
+		},
+		vocabGrammar: {
+			...customFixture.parts[1],
+			estimatedMinutes: 5,
+		},
+		reading: {
+			...customFixture.parts[2],
+			estimatedMinutes: 9,
+		},
+		writing: {
+			...customFixture.parts[3],
+			minWords: 60,
+			maxWords: 100,
+			estimatedMinutes: 11,
+		},
+		speaking: {
+			...customFixture.parts[4],
+			estimatedMinutes: 4,
+		},
+	};
+	const dynamicRows = buildIntroOverviewRows(customSnapshot);
+	assert.deepEqual(dynamicRows, [
+		{
+			id: "listening",
+			part: "1. Listening",
+			content: "2 parts · 3 câu · mỗi đoạn nghe 2 lần",
+			time: "~8 phút",
+		},
+		{
+			id: "vocab-grammar",
+			part: "2. Grammar & Vocabulary",
+			content: "2 câu trắc nghiệm, từ dễ đến khó",
+			time: "~5 phút",
+		},
+		{
+			id: "reading",
+			part: "3. Reading",
+			content: "2 parts · 2 câu",
+			time: "~9 phút",
+		},
+		{
+			id: "writing",
+			part: "4. Writing",
+			content: "1 email 60–100 từ",
+			time: "~11 phút",
+		},
+		{
+			id: "speaking",
+			part: "5. Speaking",
+			content: "1 câu hỏi ghi âm qua micro",
+			time: "~4 phút",
+		},
+	]);
+});
+
+test("resolvePartHeaderState, resolveClipDisplayTitle, buildGapPromptSegments và shouldShowReadingTitle đồng bộ hiển thị Listening & Reading", () => {
+	const clip1 = {
+		id: "clip-la",
+		partLabel: "Part 1",
+		instruction: "For each question, choose the correct answer.",
+		title: "Conversation 1 · Cinema time",
+	};
+	const clip2 = {
+		id: "clip-lb",
+		partLabel: "Part 1",
+		instruction: "",
+		title: "Conversation 2 · Going to work",
+	};
+	const clip2SameInstr = {
+		id: "clip-lc",
+		partLabel: "Part 1",
+		instruction: "For each question, choose the correct answer.",
+		title: "Conversation 3 · Ordering lunch",
+	};
+	const clip2DiffInstr = {
+		id: "clip-ld",
+		partLabel: "Part 1",
+		instruction: "Listen carefully to the announcement.",
+		title: "Conversation 4",
+	};
+	const clipPart2 = {
+		id: "clip-le",
+		partLabel: "Part 2",
+		instruction: "Write ONE word or a number.",
+		title: "Phone message · Evening English Course",
+	};
+
+	assert.deepEqual(resolvePartHeaderState(clip1, null), {
+		partLabel: "Part 1",
+		instruction: "For each question, choose the correct answer.",
+		showPartLabel: true,
+		showInstruction: true,
+	});
+	assert.deepEqual(resolvePartHeaderState(clip2, clip1), {
+		partLabel: "Part 1",
+		instruction: "",
+		showPartLabel: false,
+		showInstruction: false,
+	});
+	assert.deepEqual(resolvePartHeaderState(clip2SameInstr, clip1), {
+		partLabel: "Part 1",
+		instruction: "For each question, choose the correct answer.",
+		showPartLabel: false,
+		showInstruction: false,
+	});
+	assert.deepEqual(resolvePartHeaderState(clip2DiffInstr, clip1), {
+		partLabel: "Part 1",
+		instruction: "Listen carefully to the announcement.",
+		showPartLabel: false,
+		showInstruction: true,
+	});
+	assert.deepEqual(resolvePartHeaderState(clipPart2, clip2), {
+		partLabel: "Part 2",
+		instruction: "Write ONE word or a number.",
+		showPartLabel: true,
+		showInstruction: true,
+	});
+
+	// Neutral clip label when partLabel is present; preserve legacy title when partLabel is absent
+	assert.equal(resolveClipDisplayTitle(clip1, 0), "Đoạn nghe 1");
+	assert.equal(resolveClipDisplayTitle(clipPart2, 4), "Đoạn nghe 5");
+	assert.equal(
+		resolveClipDisplayTitle(
+			{ id: "v1-1", partLabel: "", title: "Đoạn nghe 1 (A2) – Thư viện" },
+			0,
+		),
+		"Đoạn nghe 1 – Thư viện",
+	);
+
+	assert.deepEqual(buildGapPromptSegments("Start date: Monday ____ March"), [
+		{ type: "text", value: "Start date: Monday " },
+		{ type: "gap" },
+		{ type: "text", value: " March" },
+	]);
+	assert.deepEqual(buildGapPromptSegments("Price: $ ____"), [
+		{ type: "text", value: "Price: $ " },
+		{ type: "gap" },
+	]);
+	assert.deepEqual(buildGapPromptSegments(""), [
+		{ type: "text", value: "Điền thông tin nghe được vào chỗ trống:" },
+	]);
+
+	assert.equal(
+		shouldShowReadingTitle({ kind: "sign", title: "CITY POOL" }),
+		false,
+	);
+	assert.equal(
+		shouldShowReadingTitle({ kind: "message", title: "Message from Mum" }),
+		false,
+	);
+	assert.equal(
+		shouldShowReadingTitle({
+			kind: "passage",
+			title: "A new start in Auckland",
+		}),
+		true,
+	);
+	assert.equal(
+		shouldShowReadingTitle({ kind: "cloze", title: "Working from home" }),
+		true,
+	);
+});
+
+test("buildSkillReportCards chỉ hiển thị 2 thẻ Listening & Reading kèm CEFR riêng, % đúng và thanh tiến độ", () => {
+	const bands = createFiveSkillSnapshotFixture().bands;
+
+	// Case 1: objective from client scoreObjectiveTest (already has .band)
+	const clientObjective = scoreObjectiveTest(createFiveSkillSnapshotFixture(), {
+		listening: { "l-q1": 1, "l-q2": "7:30 p.m.", "l-q3": "wrong" }, // 2/3 -> 66.67% -> A2+
+		vocabGrammar: { "gv-q1": 1, "gv-q2": 0 },
+		reading: { "r-q1": 1, "r-q2": 3 }, // 1/2 -> 50% -> A2
+	});
+	const clientCards = buildSkillReportCards(clientObjective, bands);
+	assert.equal(clientCards.length, 2);
+	assert.deepEqual(clientCards, [
+		{
+			key: "listening",
+			label: "Listening",
+			cefr: "A2+",
+			scoreText: "2/3 câu đúng · 67%",
+			progressPct: 67,
+		},
+		{
+			key: "reading",
+			label: "Reading",
+			cefr: "A2",
+			scoreText: "1/2 câu đúng · 50%",
+			progressPct: 50,
+		},
+	]);
+
+	// Case 2: objective from server submission response (without .band on listening/reading)
+	const serverObjective = {
+		listening: { correct: 13, total: 13, pct: 100 },
+		vocabGrammar: { correct: 9, total: 12, pct: 75 },
+		reading: { correct: 5, total: 15, pct: 33 },
+	};
+	const serverCards = buildSkillReportCards(serverObjective, bands);
+	assert.equal(serverCards.length, 2);
+	assert.deepEqual(serverCards, [
+		{
+			key: "listening",
+			label: "Listening",
+			cefr: "B1+",
+			scoreText: "13/13 câu đúng · 100%",
+			progressPct: 100,
+		},
+		{
+			key: "reading",
+			label: "Reading",
+			cefr: "A1",
+			scoreText: "5/15 câu đúng · 33%",
+			progressPct: 33,
+		},
+	]);
+});
+
+test("resolveReadingPassageHeaderState ẩn .clip-badges và .passage-header khi không có partLabel, title hay instruction", () => {
+	const ra = {
+		id: "ra",
+		partLabel: "Part 1",
+		kind: "sign",
+		instruction: "For each question, choose the correct answer.",
+		title: "Pool Notice",
+	};
+	const rb = {
+		id: "rb",
+		partLabel: "Part 1",
+		kind: "message",
+		instruction: "For each question, choose the correct answer.",
+		title: "Message from Mum",
+	};
+	const re = {
+		id: "re",
+		partLabel: "Part 2",
+		kind: "passage",
+		instruction: "Read the article.",
+		title: "A new start in Auckland (A2)",
+	};
+	const rf = {
+		id: "rf",
+		partLabel: "Part 2",
+		kind: "cloze",
+		instruction: "Read the article.",
+		title: "(B1)",
+	};
+
+	assert.deepEqual(resolveReadingPassageHeaderState(ra, null), {
+		partLabel: "Part 1",
+		instruction: "For each question, choose the correct answer.",
+		displayTitle: "",
+		showPartLabel: true,
+		showInstruction: true,
+		showBadges: true,
+		hasHeader: true,
+	});
+	assert.deepEqual(resolveReadingPassageHeaderState(rb, ra), {
+		partLabel: "Part 1",
+		instruction: "For each question, choose the correct answer.",
+		displayTitle: "",
+		showPartLabel: false,
+		showInstruction: false,
+		showBadges: false,
+		hasHeader: false,
+	});
+	assert.deepEqual(resolveReadingPassageHeaderState(re, rb), {
+		partLabel: "Part 2",
+		instruction: "Read the article.",
+		displayTitle: "A new start in Auckland",
+		showPartLabel: true,
+		showInstruction: true,
+		showBadges: true,
+		hasHeader: true,
+	});
+	assert.deepEqual(resolveReadingPassageHeaderState(rf, re), {
+		partLabel: "Part 2",
+		instruction: "Read the article.",
+		displayTitle: "",
+		showPartLabel: false,
+		showInstruction: false,
+		showBadges: false,
+		hasHeader: false,
+	});
+});
+
+test("ket-qua/highlight.js hỗ trợ hiển thị cả IELTS 0–9 lẫn fallback legacy /15 & /20", () => {
+	assert.deepEqual(
+		PLACEMENT_WRITING_RUBRIC.map((r) => r.key),
+		["task", "coherence", "lexical", "grammar"],
+	);
+	assert.deepEqual(
+		PLACEMENT_SPEAKING_RUBRIC.map((r) => r.key),
+		["fluency", "lexical", "grammar", "pronunciation"],
+	);
+	assert.deepEqual(
+		PLACEMENT_LEGACY_WRITING_RUBRIC.map((r) => r.key),
+		["ct", "or", "lg"],
+	);
+	assert.deepEqual(
+		PLACEMENT_LEGACY_SPEAKING_RUBRIC.map((r) => r.key),
+		["gv", "dm", "pr", "ic"],
+	);
+
+	assert.equal(
+		isIeltsWritingRubric({
+			task: 6.5,
+			coherence: 6,
+			lexical: 6.5,
+			grammar: 6,
+		}),
+		true,
+	);
+	assert.equal(isIeltsWritingRubric({ ct: 4, or: 4, lg: 3 }), false);
+	assert.equal(
+		isIeltsSpeakingRubric({
+			fluency: 7,
+			lexical: 6.5,
+			grammar: 6,
+			pronunciation: 7,
+		}),
+		true,
+	);
+	assert.equal(isIeltsSpeakingRubric({ gv: 4, dm: 4, pr: 4, ic: 5 }), false);
+
+	const ieltsWriting = buildSkillRubricDisplay("writing", 6.5, {
+		task: 6.5,
+		coherence: 6,
+		lexical: 6.5,
+		grammar: 6,
+	});
+	assert.equal(ieltsWriting.isIelts, true);
+	assert.equal(ieltsWriting.totalText, "Writing: Band 6.5/9");
+	assert.deepEqual(
+		ieltsWriting.criteria.map((c) => [c.label, c.valueText]),
+		[
+			["Task Response", "6.5/9"],
+			["Coherence & Cohesion", "6.0/9"],
+			["Lexical Resource", "6.5/9"],
+			["Grammatical Range & Accuracy", "6.0/9"],
+		],
+	);
+
+	const legacyWriting = buildSkillRubricDisplay("writing", 11, {
+		ct: 4,
+		or: 4,
+		lg: 3,
+	});
+	assert.equal(legacyWriting.isIelts, false);
+	assert.equal(legacyWriting.totalText, "Writing: 11/15");
+	assert.deepEqual(
+		legacyWriting.criteria.map((c) => [c.label, c.valueText]),
+		[
+			["Content", "4/5"],
+			["Organisation", "4/5"],
+			["Language", "3/5"],
+		],
+	);
+
+	const ieltsSpeaking = buildSkillRubricDisplay("speaking", 7, {
+		fluency: 7,
+		lexical: 6.5,
+		grammar: 7,
+		pronunciation: 7,
+	});
+	assert.equal(ieltsSpeaking.isIelts, true);
+	assert.equal(ieltsSpeaking.totalText, "Speaking: Band 7.0/9");
+	assert.deepEqual(
+		ieltsSpeaking.criteria.map((c) => [c.label, c.valueText]),
+		[
+			["Fluency & Coherence", "7.0/9"],
+			["Lexical Resource", "6.5/9"],
+			["Grammatical Range & Accuracy", "7.0/9"],
+			["Pronunciation", "7.0/9"],
+		],
+	);
+
+	const legacySpeaking = buildSkillRubricDisplay("speaking", 17, {
+		gv: 4,
+		dm: 4,
+		pr: 4,
+		ic: 5,
+	});
+	assert.equal(legacySpeaking.isIelts, false);
+	assert.equal(legacySpeaking.totalText, "Speaking: 17/20");
+	assert.deepEqual(
+		legacySpeaking.criteria.map((c) => [c.label, c.valueText]),
+		[
+			["Grammar & Vocabulary", "4/5"],
+			["Discourse Management", "4/5"],
+			["Pronunciation", "4/5"],
+			["Task Response", "5/5"],
+		],
+	);
+
+	const resultJs = readFileSync(
+		new URL("ket-qua/result.js", placementDir),
+		"utf8",
+	);
+	assert.ok(resultJs.includes("buildSkillRubricDisplay"));
+	const highlightJs = readFileSync(
+		new URL("ket-qua/highlight.js", placementDir),
+		"utf8",
+	);
+	assert.ok(!highlightJs.toLowerCase().includes("khách quan"));
 });

@@ -235,7 +235,7 @@ test.describe("placement test editor 5 kỹ năng (/placement-test -> /kiem-tra-
 		});
 		await page.getByRole("switch", { name: "Giao diện tối" }).click();
 
-		// 6. Tải lại trang profile -> thấy đề 39 câu khách quan, điền cổng thông tin và vào Listening thấy nội dung câu 1 mới
+		// 6. Tải lại trang profile -> thấy đề 39 câu, điền cổng thông tin và vào Listening thấy nội dung câu 1 mới
 		const dbClean = openDb();
 		try {
 			await dbClean.execute("UPDATE lead SET ip_hash = '' WHERE ip_hash != ''");
@@ -248,7 +248,9 @@ test.describe("placement test editor 5 kỹ năng (/placement-test -> /kiem-tra-
 				name: "Bài Kiểm Tra Đầu Vào Tiếng Anh (5 Kỹ Năng)",
 			}),
 		).toBeVisible();
-		await expect(profileTab.locator("body")).toContainText("39 câu khách quan");
+		await expect(profileTab.locator("body")).toContainText(
+			"11 câu trắc nghiệm",
+		);
 
 		await profileTab.locator("#startTestBtn").click();
 		await expect(
@@ -267,7 +269,7 @@ test.describe("placement test editor 5 kỹ năng (/placement-test -> /kiem-tra-
 			profileTab.locator('fieldset[data-question-id="l-a1"]'),
 		).toContainText(updatedPrompt);
 		await expect(profileTab.locator(".progress-counter")).toContainText(
-			"Đã trả lời 0/39 câu khách quan",
+			"Đã trả lời 0/39 câu",
 		);
 
 		// 7. Quay lại tab Listening, thay audio đoạn 1 (clip-la), nghe thử (blob:), Phát hành v2 và kiểm Range 206

@@ -1,0 +1,158 @@
+{
+	"id": "d526f2c0-4c23-4a69-914d-5e5b299e6621",
+	"url": "https://stepielts.com/student/reading/d526f2c0-4c23-4a69-914d-5e5b299e6621?mode=practice",
+	"title": "Roman shipbuilding and navigation",
+	"source": "C16T3",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Roman shipbuilding and navigation",
+		"paragraphs": [
+			"Shipbuilding today is based on science and ships are built using computers and sophisticated tools. Shipbuilding in ancient Rome, however, was more of an art relying on estimation, inherited techniques and personal experience. The Romans were not traditionally sailors but mostly land-based people, who learned to build ships from the people that they conquered, namely the Greeks and the Egyptians.",
+			"There are a few surviving written documents that give descriptions and representations of ancient Roman ships, including the sails and rigging. Excavated vessels also provide some clues about ancient shipbuilding techniques. Studies of these have taught us that ancient Roman shipbuilders built the outer hull first, then proceeded with the frame and the rest of the ship. Planks used to build the outer hull were initially sewn together. Starting from the 6th century BCE, they were fixed using a method called mortise and tenon, whereby one plank locked into another without the need for stitching. Then in the first centuries of the current era, Mediterranean shipbuilders shifted to another shipbuilding method, still in use today, which consisted of building the frame first and then proceeding with the hull and the other components of the ship. This method was more systematic and dramatically shortened ship construction times. The ancient Romans built large merchant ships and warships whose size and technology were unequaled until the 16th century CE.",
+			"Warships were built to be lightweight and very speedy. They had to be able to sail near the coast which is why they had no ballast or excess load and were built with a long, narrow hull. They did not sink when damaged and often would lie crippled on the sea’s surface following naval battles. They had a bronze battering ram, which was used to pierce the timber hulls or break the oars of enemy vessels. Warships used both wind (sails) and human power (oarsmen) and were therefore very fast. Eventually, Rome’s navy became the largest and most powerful in the Mediterranean, and the Romans had control over what they therefore called Mare Nostrum meaning ‘our sea’.",
+			"There were many kinds of warship. The ‘trireme’ was the dominant warship from the 7th to 4th century BCE. It had rowers in the top, middle and lower levels, and approximately 50 rowers in each bank. The rowers at the bottom had the most uncomfortable position as they were under the other rowers and were exposed to the water entering through the oar-holes. It is worth noting that contrary to popular perception, rowers were not slaves but mostly Roman citizens enrolled in the military. The trireme was superseded by larger ships with even more rowers.",
+			"Merchant ships were built to transport lots of cargo over long distances and at a reasonable cost. They had a wider hull, double planking and a solid interior for added stability. Unlike warships, their V-shaped hull was deep underwater, meaning that they could not sail too close to the coast. They usually had two huge side rudders located off the stern and controlled by a small tiller bar connected to a system of cables. They had from one to three masts with large square sails and a small triangular sail at the bow. Just like warships, merchant ships used oarsmen, but coordinating the hundreds of rowers in both types of ship was not an easy task. In order to assist them, music would be played on an instrument, and oars would then keep time with this.",
+			"The cargo on merchant ships included raw materials (e. g. iron bars, copper, marble and granite), and agricultural products (e. g. grain from Egypt’s Nile valley). During the Empire, Rome was a huge city by ancient standards of about one million inhabitants. Goods from all over the world would come to the city through the port of Pozzuoli situated west of the bay of Naples in Italy and through the gigantic port of Ostia situated at the mouth of the Tiber River. Large merchant ships would approach the destination port and, just like today, be intercepted by a number of towboats that would drag them to the quay.",
+			"The time of travel along the many sailing routes could vary widely. Navigation in ancient Rome did not rely on sophisticated instruments such as compasses but on experience, local knowledge and observation of natural phenomena. In conditions of good visibility, seamen in the Mediterranean often had the mainland or islands in sight, which greatly facilitated navigation. They sailed by noting their position relative to a succession of recognisable landmarks. When weather conditions were not good or where land was no longer visible, Roman mariners estimated directions from the pole star or, with less accuracy, from the Sun at noon. They also estimated directions relative to the wind and swell. Overall, shipping in ancient Roman times resembled shipping today with large vessels regularly crossing the seas and bringing supplies from their Empire."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 1?\nIn boxes 1 - 5 on your answer sheet, write:\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 1,
+					"text": "The Romans’ shipbuilding skills were passed on to the Greeks and the Egyptians.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nKỹ năng đóng tàu của người La Mã được truyền lại cho người Hy Lạp và Ai Cập.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nRomans ~ từ khóa giữ nguyên\nGreeks and the Egyptians ~ cụm từ giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"người La Mã học cách đóng tàu từ những dân tộc họ xâm lược, cụ thể là người Hy Lạp và Ai Cập\"\n=> Điều này trái ngược với thông tin trong câu hỏi \"kỹ năng đóng tàu của người La Mã được truyền lại cho người Hy Lạp và Ai Cập\" (Romans' shipbuilding skills were passed on to the Greeks and the Egyptians).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"The Romans were not traditionally sailors but mostly land-based people, who learned to build ships from the people that they conquered, namely the Greeks and the Egyptians."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Skilled craftsmen were needed for the mortise and tenon method of fixing planks.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNgười ta cần những người thợ giỏi để gắn các tấm ván bằng phương pháp \"mộng và chốt\" (Phương pháp \"mộng và chốt\" là cách gắn các tấm ván bằng cách tạo một lỗ (mộng) trên tấm ván này và một phần nhô ra (chốt) trên tấm ván kia, rồi khớp chúng vào nhau để tạo kết nối chắc chắn mà không cần dùng đinh hoặc keo dán).\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nmortise and tenon ~ cụm từ giữ nguyên\nfixing planks ~ fixed\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc sử dụng \"phương pháp mộng và chốt để gắn các tấm ván\"\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"Người ta cần những người thợ giỏi\" (Skilled craftsmen were needed).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Starting from the 6th century BCE, they were fixed using a method called mortise and tenon, whereby one plank locked into another without the need for stitching."
+					]
+				},
+				{
+					"number": 3,
+					"text": "The later practice used by Mediterranean shipbuilders involved building the hull before the frame.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác thợ đóng tàu người Địa Trung Hải sử dụng phương pháp đóng tàu khác bao gồm đóng thân tàu trước khung tàu.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nMediterranean shipbuilders ~ cụm từ giữ nguyên\nlater practice ~ shifted to another shipbuilding method\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"phương pháp đóng tàu khác bao gồm việc đóng khung tàu trước, sau đó mới đến thân tàu và các bộ phận khác của tàu\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"đóng thân tàu trước khung tàu\" (building the hull before the frame).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Then in the first centuries of the current era, Mediterranean shipbuilders shifted to another shipbuilding method, still in use today, which consisted of building the frame first and then proceeding with the hull and the other components of the ship."
+					]
+				},
+				{
+					"number": 4,
+					"text": "The Romans called the Mediterranean Sea Mare Nostrum because they dominated its use.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNgười La Mã gọi Địa Trung Hải là Mare Nostrum vì họ đã thống trị vùng biển này.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nMare Nostrum ~ cụm từ giữ nguyên\nRomans ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"người La Mã đã thống trị Địa Trung Hải và gọi nó là Mare Nostrum, có nghĩa là 'biển của chúng ta'\"\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Người La Mã gọi Địa Trung Hải là Mare Nostrum vì họ đã thống trị nó\" (The Romans called the Mediterranean Sea Mare Nostrum because they dominated its use).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Eventually, Rome’s navy became the largest and most powerful in the Mediterranean, and the Romans had control over what they therefore called Mare Nostrum meaning ‘our sea’."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Most rowers on ships were people from the Roman army.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nHầu hết các người chèo thuyền trên tàu thuộc đội quân La Mã.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nrowers ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"những người chèo thuyền chủ yếu là người La Mã mà đã đăng ký vào quân đội\"\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Hầu hết các người chèo thuyền trên tàu thuộc đội quân La Mã\" (Most rowers on ships were people from the Roman army).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"It is worth noting that contrary to popular perception, rowers were not slaves but mostly Roman citizens enrolled in the military."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-13",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary below. Choose ONE WORD ONLY from the passage for each answer. Write your answers in boxes 6 - 13 on your answer sheet.",
+			"questions": [
+				{
+					"number": 6,
+					"text": "",
+					"answer": "lightweight",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nTàu chiến được thiết kế để chúng ________ và di chuyển nhanh.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: ADJECTIVE\nDấu hiệu: were + ADJECTIVE (ADJECTIVE theo sau động từ to be \"WERE)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nWarships ~ từ khóa giữ nguyên\ndesigned ~ built\nmoved quickly ~ very speedy\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"tàu chiến được thiết kế để chúng nhẹ và nhanh\" (Warships were built to be lightweight and very speedy).\n\nBước 5: Đáp án: lightweight\nTàu chiến được thiết kế để chúng nhẹ và di chuyển nhanh. (Warships were designed so that they were lightweight and moved quickly).",
+					"quotes": ["Warships were built to be lightweight and very speedy."]
+				},
+				{
+					"number": 7,
+					"text": "",
+					"answer": "bronze",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nMột cái chạc tàu làm bằng ________ được thiết kế để tấn công tàu địch (chạc tàu: là phần ở múi tàu thường được dùng làm vũ khí).\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: made of + NOUN (NOUN làm Object của Preposition 'OF')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nbattering ram ~ chạc tàu\nmade of ~ cụm từ giữ nguyên\nattacking and damaging ~ pierce, break\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Có một cái chạc tàu bằng đồng, được dùng để đâm thủng vỏ gỗ hoặc phá vỡ mái chèo của tàu địch\" (They had a bronze battering ram, which was used to pierce the timber hulls or break the oars of enemy vessels).\n\nBước 5: Đáp án: bronze\nMột cái chạc tàu làm bằng đồng được thiết kế để tấn công tàu địch. (A battering ram made of bronze was included in the design for attacking and damaging the timber and oars of enemy ships).",
+					"quotes": [
+						"They had a bronze battering ram, which was used to pierce the timber hulls or break the oars of enemy vessels."
+					]
+				},
+				{
+					"number": 8,
+					"text": "",
+					"answer": "levels",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nTàu chiến, như là 'trireme', có người chèo ở ba ________ khác nhau.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: three different + NOUN (NOUN được bổ nghĩa bởi Adjective 'DIFFERENT')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nwarships ~ từ khóa giữ nguyên\ntrireme ~ từ khóa giữ nguyên\nrowers ~ từ khóa giữ nguyên\nthree different ~ top, middle and lower\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Nó có người chèo ở tầng trên, giữa và dưới\" (It had rowers in the top, middle and lower levels).\n\nBước 5: Đáp án: levels\nTàu chiến, như là 'trireme', có người chèo ở ba tầng khác nhau. (Warships, such as the 'trireme', had rowers on three different levels).",
+					"quotes": [
+						"The ‘trireme’ was the dominant warship from the 7th to 4th century BCE. It had rowers in the top, middle and lower levels, and approximately 50 rowers in each bank."
+					]
+				},
+				{
+					"number": 9,
+					"text": "",
+					"answer": "hull",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nKhông giống tàu chiến, tàu buôn có một ________ rộng và nằm sâu dưới mặt nước biển.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: a broad + NOUN (NOUN được bổ nghĩa bởi Adjective 'BROAD')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nUnlike warships ~ cụm từ giữ nguyên\nmerchant ships ~ cụm từ giữ nguyên\nbroad ~ wider\nfar below the surface of the sea ~ deep underwater\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Không giống tàu chiến, vỏ tàu hình chữ V của tàu buôn nằm sâu dưới nước\" (Unlike warships, their V-shaped hull was deep underwater).\n\nBước 5: Đáp án: hull\nKhông giống tàu chiến, tàu buôn có một vỏ tàu rộng và nằm sâu dưới mặt nước biển. (Unlike warships, merchant ships had a broad hull that lay far below the surface of the sea).",
+					"quotes": [
+						"Unlike warships, their V-shaped hull was deep underwater, meaning that they could not sail too close to the coast."
+					]
+				},
+				{
+					"number": 10,
+					"text": "",
+					"answer": "triangular",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nTàu buôn có cả buồm hình vuông và buồm hình ________.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: ADJECTIVE\nDấu hiệu: NOUN + and + ADJECTIVE + sails (ADJECTIVE bổ nghĩa cho Noun 'SAILS')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nsquare ~ từ khóa giữ nguyên\nsails ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Chúng có từ một đến ba cột buồm với buồm hình vuông lớn và một buồm hình tam giác nhỏ ở mũi tàu\" (They had from one to three masts with large square sails and a small triangular sail at the bow).\n\nBước 5: Đáp án: triangular\nTàu buôn có cả buồm hình vuông và buồm hình tam giác. (They had both square and triangular sails).",
+					"quotes": [
+						"They had from one to three masts with large square sails and a small triangular sail at the bow."
+					]
+				},
+				{
+					"number": 11,
+					"text": "",
+					"answer": "music",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nTrên tàu buôn và tàu chiến, ________ được sử dụng để đảm bảo người chèo di chuyển mái chèo cùng một lúc.\nBước 2: Xác định loại từ dựa trên các dấu hiệu\nLoại từ: NOUN\nDấu hiệu: NOUN + was used to (NOUN làm chủ ngữ của động từ 'WAS USED')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nmerchant ships and warships ~ cụm từ giữ nguyên\nrowers ~ từ khóa giữ nguyên\nat the same time ~ keep time\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Để hỗ trợ người chèo thuyền, âm nhạc sẽ được chơi, và mái chèo sẽ giữ nhịp theo\" (In order to assist them, music would be played on an instrument, and oars would then keep time with this).\n\nBước 5: Đáp án: music\nTrên tàu buôn và tàu chiến, âm nhạc được sử dụng để đảm bảo người chèo di chuyển mái chèo cùng một lúc (On merchant ships and warships, music was used to ensure rowers moved their oars in and out of the water at the same time).",
+					"quotes": [
+						"Just like warships, merchant ships used oarsmen, but coordinating the hundreds of rowers in both types of ship was not an easy task. In order to assist them, music would be played on an instrument, and oars would then keep time with this."
+					]
+				},
+				{
+					"number": 12,
+					"text": "",
+					"answer": "grain",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nHàng hóa nông nghiệp như ________ được vận chuyển bằng tàu buôn đến hai cảng chính ở Ý.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: such as + NOUN (NOUN làm ví dụ cho 'AGRICULTURAL GOODS')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nagricultural goods ~ agricultural products\ntransported ~ từ khóa giữ nguyên\nmerchant ships ~ cụm từ giữ nguyên\ntwo main ports in Italy ~ port of Pozzuoli, port of Ostia\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"và các sản phẩm nông nghiệp (ví dụ: ngũ cốc từ thung lũng sông Nile của Ai Cập)\" (and agricultural products (e.g. grain from Egypt's Nile valley)).\n\nBước 5: Đáp án: grain\nHàng hóa nông nghiệp như ngũ cốc được vận chuyển bằng tàu buôn đến hai cảng chính ở Ý. (Quantities of agricultural goods such as grain were transported by merchant ships to two main ports in Italy).",
+					"quotes": [
+						"The cargo on merchant ships included raw materials (e. g. iron bars, copper, marble and granite), and agricultural products (e. g. grain from Egypt’s Nile valley)."
+					]
+				},
+				{
+					"number": 13,
+					"text": "",
+					"answer": "towboats",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nCác tàu được kéo vào bờ bởi ________.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: by + NOUN (NOUN làm Object của Preposition 'BY')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\npulled to the shore ~ drag them to the quay\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Các tàu buôn lớn sẽ tiếp cận cảng đích và một số tàu kéo sẽ kéo chúng vào bến\" (Large merchant ships would approach the destination port and, just like today, be intercepted by a number of towboats that would drag them to the quay).\n\nBước 5: Đáp án: towboats\nCác tàu được kéo vào bờ bởi tàu kéo. (The ships were pulled to the shore by towboats).",
+					"quotes": [
+						"Large merchant ships would approach the destination port and, just like today, be intercepted by a number of towboats that would drag them to the quay."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

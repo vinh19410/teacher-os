@@ -17,6 +17,7 @@ export function BandSlider({
 	onChange,
 	className,
 	disabled,
+	hideValue = false,
 	...aria
 }: {
 	id?: string;
@@ -24,6 +25,7 @@ export function BandSlider({
 	onChange(value: number): void;
 	className?: string;
 	disabled?: boolean;
+	hideValue?: boolean;
 	"aria-describedby"?: string;
 	"aria-invalid"?: boolean;
 }) {
@@ -71,12 +73,14 @@ export function BandSlider({
 					))}
 				</div>
 			</div>
-			<span
-				aria-hidden
-				className="w-10 text-right font-medium text-sm tabular-nums"
-			>
-				{label}
-			</span>
+			{!hideValue && (
+				<span
+					aria-hidden
+					className="w-10 text-right font-medium text-sm tabular-nums"
+				>
+					{label}
+				</span>
+			)}
 		</div>
 	);
 }

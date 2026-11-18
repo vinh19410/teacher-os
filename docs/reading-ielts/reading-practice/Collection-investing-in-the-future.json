@@ -1,0 +1,163 @@
+{
+	"id": "a1f723ff-9c04-40c9-8200-7df67cc7aef6",
+	"url": "https://stepielts.com/student/reading/a1f723ff-9c04-40c9-8200-7df67cc7aef6?mode=practice",
+	"title": "Investing in the Future",
+	"source": "Collection",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Investing in the Future",
+		"subtitle": "History has shown the value of giving money to the University of Auckland",
+		"paragraphs": [
+			"The founding and development of many universities has been dependent on philanthropy. This has been true from some of the oldest universities such as Bologna, Oxford and Cambridge in the twelfth century, to relative newcomers like the universities of Harvard and Yale in the seventeenth century. Wealthy merchants gave young institutions money, land, libraries and rare items. Their belief in the value of higher learning is echoed by the growing number of philanthropists whose gifts have helped transform the University of Auckland, the largest university in New Zealand.",
+			"In 1884 Mr Justice Gillies made history when he gave $3,000 to the then very young University of Auckland, and so became its original philanthropist. Gillies' gift was more generous even than those regularly given to New Zealand's older University of Otago, and was exceptional because Auckland had a smaller population and was less wealthy than the other university cities at that time. However, from the 1930s privately funded prizes and scholarships began to be seen more frequently in Auckland. In that decade, a local engineer and former lecturer in engineering, Samuel Crookes, launched a fund to save the engineering school in Auckland, which the state was determined to see discontinued, and raised over $6,500 in three years. Another significant philanthropist, Sir William Goodfellow, made his initial gift to the University in 1947 - $50,000 to build the Maclaurin Chapel. Since then, he and succeeding generations of the family have given numerous scholarships and fellowships and established a school within the University bearing the family's name.",
+			"The University had a difficult decade in the 1950s as it was short of equipment, buildings and money. It also had its first taste of international rivalry, when universities in many parts of the world competed to attract first class lecturers. In Auckland the problem largely resulted from the fact that academic salaries had slipped well behind those available in Britain and Australia, so the strongest candidates tended to be recruited to those countries. But when the new Medical School opened in 1968, it attracted significant gifts for academic positions and equipment from an unusually wide range of donors, including individuals, trusts, charitable foundations, societies and community groups. It also became the permanent home of the Philson Library, which by then consisted of some 8,000 books.",
+			"The first of the modern public appeals for funds took place in the 1960s, when Alan Highet built the Student Union complex. This was followed by another appeal in 1983 under the then Chancellor Henry Cooper who raised $800,000 to celebrate the University's centenary. These modern campaigns built on the successful campaigns of the past but included a number of new features. There was of course the familiar emphasis on donations from individuals, but the modern approach also stressed the importance of bringing the University and business closer together and specifically seeking donations from that sector.",
+			"Building on this success, the current 'Leading the Way' campaign was launched. It is intended as a drive to secure support for the whole University, with a focus on generating funds to recruit, support and retain the very best staff for the University. The current campaign has raised the whole process of philanthropy to a new level, and changed expectations. The University is investing considerable time and energy in devising new methods of fund-raising both within its local communities and remembering that New Zealanders love to travel - by looking at campaigns in other parts of the world, and targeting alumni, or former students now living overseas.",
+			"'What it taught us,' says John Taylor, Director of External Relations, 'was that the campaign had to fit into the Strategic Plan of the University. As we kept talking, we realised that we could have a transformative effect on the future of New Zealand by highlighting the potential benefits of high quality research.' The example Taylor gives is the $4.5 million gift to establish an information centre at the University's Marine Science laboratory on the coast at Leigh. He stresses that the fund-raising drive was so successful in part because the publicity used at the time highlighted the public benefit from the project.",
+			"On the financial side, the University's Vice-Chancellor, Stuart McCutcheon, explains that a fault they found in their campaigns actually turned out to be a stroke of good fortune.'In the course of developing these new fund-raising systems,' he says, 'we have come to realise that there has been considerable giving to the University that has not been previously recorded through our Advancement Office... This has been in the order of $10 million per year over the campaign period.' The good news from this error is that at the recent Chancellor's dinner it was announced that the campaign target was now being increased from $100 million to $150 million, and would recognise all sources of philanthropic support. It's a long way from Gillies' first $3,000 gift."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-8",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in the passage?\nIn boxes 1-8 on your answer sheet, write\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Harvard and Yale were the first universities to benefit from philanthropy.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"quotes": [
+						"This has been true from some of the oldest universities such as Bologna, Oxford and Cambridge in the twelfth century, to relative newcomers like the universities of Harvard and Yale in the seventeenth century."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Merchants liked to donate to the same universities they attended themselves.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi\nCác thương nhân thích quyên góp cho chính những trường đại học mà bản thân họ đã từng theo học.\nBước 2: Tìm các keywords được paraphrase trong bài\nWealthy merchants ~ Merchants\ngave money, land, libraries and rare items ~ donate\nsame universities they attended themselves ~ từ khóa cần tìm\nBước 3: So sánh và đối chiếu\nBài đọc chỉ rõ: \"Các thương gia giàu có đã trao tặng cho các tổ chức non trẻ tiền bạc, đất đai, thư viện và những vật phẩm quý hiếm\" (Wealthy merchants gave young institutions money, land, libraries and rare items).\n==> Tuy nhiên, bài đọc không hề nhắc đến thông tin về việc các thương nhân thích quyên góp cho chính những trường đại học mà họ đã từng theo học hay không (Merchants liked to donate to the same universities they attended themselves).\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Wealthy merchants gave young institutions money, land, libraries and rare items."
+					]
+				},
+				{
+					"number": 3,
+					"text": "The first gift to the University of Auckland came in 1884.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi\nMón quà quyên góp đầu tiên cho trường Đại học Auckland được gửi đến vào năm 1884.\nBước 2: Tìm các keywords được paraphrase trong bài\noriginal philanthropist / gave $3,000 ~ The first gift\nUniversity of Auckland ~ từ khóa giữ nguyên\nIn 1884 ~ came in 1884\nBước 3: So sánh và đối chiếu\nBài đọc chỉ rõ: \"Vào năm 1884, Thẩm phán Gillies đã làm nên lịch sử khi ông trao tặng 3.000 đô la cho Đại học Auckland khi đó còn rất non trẻ, và do đó trở thành nhà từ thiện đầu tiên của trường\" (In 1884 Mr Justice Gillies made history when he gave $3,000 to the then very young University of Auckland, and so became its original philanthropist).\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"món quà quyên góp đầu tiên cho trường Đại học Auckland được gửi đến vào năm 1884\" (The first gift to the University of Auckland came in 1884).\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"In 1884 Mr Justice Gillies made history when he gave $3,000 to the then very young University of Auckland, and so became its original philanthropist."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Otago University often received larger gifts than Gillies' gift to Auckland.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi\nTrường Đại học Otago thường nhận được những món quà quyên góp lớn hơn so với món quà của Gillies tặng cho Auckland.\nBước 2: Tìm các keywords được paraphrase trong bài\nmore generous ~ larger gifts\ngiven ~ received\nUniversity of Otago ~ Otago University\nGillies’ gift ~ Gillies' gift\nBước 3: So sánh và đối chiếu\nBài đọc chỉ rõ: \"Món quà của ông Gillies thậm chí còn hào phóng hơn cả những khoản tiền thường xuyên được trao tặng cho trường Đại học Otago lâu đời hơn của New Zealand\" (Gillies’ gift was more generous even than those regularly given to New Zealand’s older University of Otago).\n==> Điều này trái ngược với thông tin trong câu hỏi \"Trường Đại học Otago thường nhận được những món quà quyên góp lớn hơn so với món quà của Gillies tặng cho Auckland\" (Otago University often received larger gifts than Gillies' gift to Auckland). Thực tế món quà của Gillies dành cho Auckland lớn hơn và hào phóng hơn những món quà thường lệ được trao cho Otago.\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Gillies' gift was more generous even than those regularly given to New Zealand's older University of Otago, and was exceptional because Auckland had a smaller population and was less wealthy than the other university cities at that time."
+					]
+				},
+				{
+					"number": 5,
+					"text": "In the 1930s the government wanted to close Auckland's engineering school.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi\nVào những năm 1930, chính phủ muốn đóng cửa trường đào tạo kỹ thuật của Auckland.\nBước 2: Tìm các keywords được paraphrase trong bài\nIn that decade ~ In the 1930s\nthe state ~ the government\ndetermined to see discontinued ~ wanted to close\nengineering school ~ từ khóa giữ nguyên\nBước 3: So sánh và đối chiếu\nBài đọc chỉ rõ: \"Trong thập kỷ đó, một kỹ sư địa phương kiêm cựu giảng viên ngành kỹ thuật, Samuel Crookes, đã thành lập một quỹ để cứu trường kỹ thuật ở Auckland, nơi mà nhà nước đã quyết tâm cho ngừng hoạt động\" (Samuel Crookes, launched a fund to save the engineering school in Auckland, which the state was determined to see discontinued).\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"vào những năm 1930, chính phủ muốn đóng cửa trường đào tạo kỹ thuật của Auckland\" (In the 1930s the government wanted to close Auckland's engineering school).\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"In that decade, a local engineer and former lecturer in engineering, Samuel Crookes, launched a fund to save the engineering school in Auckland, which the state was determined to see discontinued, and raised over $6,500 in three years."
+					]
+				},
+				{
+					"number": 6,
+					"text": "After raising $6,500, Crookes returned to academic life.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi\nSau khi quyên góp được 6.500 đô la, Crookes đã quay trở lại với công việc học thuật.\nBước 2: Tìm các keywords được paraphrase trong bài\nraised over $6,500 ~ raising $6,500\nSamuel Crookes ~ Crookes\nreturned to academic life ~ từ khóa cần tìm\nBước 3: So sánh và đối chiếu\nBài đọc chỉ đề cập đến việc: \"...Samuel Crookes, đã thành lập một quỹ để cứu trường kỹ thuật ở Auckland... và quyên góp được hơn 6.500 đô la trong ba năm\" (...Samuel Crookes, launched a fund to save the engineering school in Auckland... and raised over $6,500 in three years).\n==> Tuy nhiên, bài đọc không hề nhắc đến thông tin về việc sau khi quyên góp được tiền, Crookes quay trở lại với công việc học thuật hay không (After raising $6,500, Crookes returned to academic life).\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"In that decade, a local engineer and former lecturer in engineering, Samuel Crookes, launched a fund to save the engineering school in Auckland, which the state was determined to see discontinued, and raised over $6,500 in three years."
+					]
+				},
+				{
+					"number": 7,
+					"text": "In the 1950s the best lecturers chose to work in Britain or Australia rather than Auckland.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"quotes": [
+						"In Auckland the problem largely resulted from the fact that academic salaries had slipped well behind those available in Britain and Australia, so the strongest candidates tended to be recruited to those countries."
+					]
+				},
+				{
+					"number": 8,
+					"text": "A single philanthropist was responsible for the new Medical School.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"quotes": [
+						"But when the new Medical School opened in 1968, it attracted significant gifts for academic positions and equipment from an unusually wide range of donors, including individuals, trusts, charitable foundations, societies and community groups."
+					]
+				}
+			]
+		},
+		{
+			"range": "9-13",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the notes below. Choose ONE WORD ONLY from the passage for each answer.",
+			"body": "Fund-raising campaigns\nThe first modern appeals\nan appeal was made in the 1960s to help build the Student Union buildings\nHenry Cooper's campaign marked the ____ (9) of the University\nmodern campaigns have focused on raising money from businesses and individuals\n'Leading the Way'\nthis appeal is raising money to invest in the University's ____ (10)\ngifts are being sought from graduates who are located ____ (11)\nJohn Taylor believes research at the University helps the whole country\nFinancial matters\nsome donations had not been ____ (12) by the University\nthere is a new financial ____ (13) for the campaign",
+			"body_html": "<table><tbody><tr><td><h4><strong>Fund-raising campaigns</strong></h4><p><strong>The first modern appeals</strong></p><ul><li>an appeal was made in the 1960s to help build the Student Union buildings</li><li>Henry Cooper's campaign marked the [9] of the University</li><li>modern campaigns have focused on raising money from businesses and individuals</li></ul><p><strong>'Leading the Way'</strong></p><ul><li>this appeal is raising money to invest in the University's [10]</li><li>gifts are being sought from graduates who are located [11]</li><li>John Taylor believes research at the University helps the whole country</li></ul><p><strong>Financial matters</strong></p><ul><li>some donations had not been [12] by the University</li><li>there is a new financial [13] for the campaign</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 9,
+					"text": "Henry Cooper's campaign marked the ____ (9) of the University",
+					"answer": "centenary",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp\nChiến dịch của Henry Cooper đã đánh dấu sự kỷ niệm ____ của trường Đại học.\nBước 2: Xác định loại từ dựa trên các dấu hiệu\nLoại từ: NOUN (Danh từ số ít)\nDấu hiệu: \"the\" + NOUN + \"of the University\" (Cần một danh từ chỉ một sự kiện mốc thời gian lớn của trường).\nBước 3: Tìm các keywords được paraphrase trong bài\nHenry Cooper's campaign ~ appeal... under the then Chancellor Henry Cooper\nmarked / celebrate ~ celebrate\nBước 4: So sánh và đối chiếu\nBài đọc chỉ rõ: \"Tiếp theo là một lời kêu gọi khác vào năm 1983 dưới thời Hiệu trưởng lúc bấy giờ là Henry Cooper, người đã quyên góp được 800.000 đô la để kỷ niệm lễ kỷ niệm một trăm năm của trường\" (...followed by another appeal in 1983 under the then Chancellor Henry Cooper who raised $800,000 to celebrate the University’s centenary).\nBước 5: Đáp án: centenary\nChiến dịch của Henry Cooper đã đánh dấu lễ kỷ niệm một trăm năm của trường Đại học. (Henry Cooper's campaign marked the centenary of the University.)",
+					"quotes": [
+						"This was followed by another appeal in 1983 under the then Chancellor Henry Cooper who raised $800,000 to celebrate the University's centenary."
+					]
+				},
+				{
+					"number": 10,
+					"text": "this appeal is raising money to invest in the University's ____ (10)",
+					"answer": "staff",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp\nLời kêu gọi này đang gây quỹ để đầu tư vào ____ của trường Đại học.\nBước 2: Xác định loại từ dựa trên các dấu hiệu\nLoại từ: NOUN\nDấu hiệu: \"University's\" + NOUN (Danh từ đứng sau sở hữu cách để chỉ đối tượng được đầu tư).\nBước 3: Tìm các keywords được paraphrase trong bài\nraising money to invest ~ generating funds to recruit, support and retain\nthis appeal ~ the current ‘Leading the Way’ campaign\nBước 4: So sánh và đối chiếu\nBài đọc chỉ rõ: \"Nó được dự định như một động lực để đảm bảo sự hỗ trợ cho toàn bộ trường Đại học, tập trung vào việc tạo nguồn kinh phí để tuyển dụng, hỗ trợ và giữ chân những nhân viên tốt nhất cho trường\" (...with a focus on generating funds to recruit, support and retain the very best staff for the University).\nBước 5: Đáp án: staff\nLời kêu gọi này đang gây quỹ để đầu tư vào đội ngũ nhân viên của trường Đại học. (this appeal is raising money to invest in the University's staff.)",
+					"quotes": [
+						"It is intended as a drive to secure support for the whole University, with a focus on generating funds to recruit, support and retain the very best staff for the University."
+					]
+				},
+				{
+					"number": 11,
+					"text": "gifts are being sought from graduates who are located ____ (11)",
+					"answer": "overseas",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp\nCác món quà quyên góp đang được tìm kiếm từ những sinh viên tốt nghiệp sinh sống ở ____.\nBước 2: Xác định loại từ dựa trên các dấu hiệu\nLoại từ: ADVERB / PREPOSITIONAL PHRASE (Trạng từ hoặc cụm từ chỉ vị trí)\nDấu hiệu: \"located\" + ADVERB/PREPOSITIONAL PHRASE (chỉ vị trí nơi chốn sinh sống của cựu sinh viên).\nBước 3: Tìm các keywords được paraphrase trong bài\ngifts are being sought ~ targeting\ngraduates ~ alumni, or former students\nlocated ~ now living\nBước 4: So sánh và đối chiếu\nBài đọc chỉ rõ: \"...và nhắm vào các cựu sinh viên, hoặc những sinh viên cũ hiện đang sống ở nước ngoài\" (...and targeting alumni, or former students now living overseas).\nBước 5: Đáp án: overseas\nCác món quà quyên góp đang được tìm kiếm từ những sinh viên tốt nghiệp sinh sống ở nước ngoài. (gifts are being sought from graduates who are located overseas.)",
+					"quotes": [
+						"The University is investing considerable time and energy in devising new methods of fund-raising both within its local communities and remembering that New Zealanders love to travel - by looking at campaigns in other parts of the world, and targeting alumni, or former students now living overseas."
+					]
+				},
+				{
+					"number": 12,
+					"text": "some donations had not been ____ (12) by the University",
+					"answer": "recorded",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nMột số khoản quyên góp đã không được ____ bởi trường Đại học.\nBước 2: Xác định loại từ dựa trên các dấu hiệu\nLoại từ: VERB (Động từ phân từ hai V-ed/V3)\nDấu hiệu: \"had not been\" + VERB-ed/V3 + \"by the University\" (cấu trúc bị động của thì quá khứ hoàn thành).\nBước 3: Tìm các keywords được paraphrase trong bài\nsome donations ~ considerable giving\nnot been... by the University ~ not been previously recorded through our Advancement Office\nBước 4: So sánh và đối chiếu\nBài đọc chỉ rõ: \"...chúng tôi nhận ra rằng đã có những khoản quyên góp đáng kể cho trường Đại học mà chưa từng được ghi nhận trước đây thông qua Văn phòng Phát triển của chúng tôi\" (...we have come to realise that there has been considerable giving to the University that has not been previously recorded through our Advancement Office).\nBước 5: Đáp án: recorded\nMột số khoản quyên góp đã không được ghi nhận bởi trường Đại học. (some donations had not been recorded by the University.)",
+					"quotes": [
+						"'In the course of developing these new fund-raising systems,' he says, 'we have come to realise that there has been considerable giving to the University that has not been previously recorded through our Advancement Office..."
+					]
+				},
+				{
+					"number": 13,
+					"text": "there is a new financial ____ (13) for the campaign",
+					"answer": "system",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp\nCó một ____ tài chính mới cho chiến dịch.\nBước 2: Xác định loại từ dựa trên các dấu hiệu\nLoại từ: NOUN\nDấu hiệu: \"new financial\" + NOUN (Danh từ đứng sau tính từ bổ nghĩa).\nBước 3: Tìm các keywords được paraphrase trong bài\nfinancial... for the campaign ~ campaign target was now being increased from $100 million to $150 million\nnew ~ increased\nBước 4: So sánh và đối chiếu\nBài đọc chỉ rõ: \"...người ta đã công bố rằng mục tiêu chiến dịch hiện đang được tăng từ 100 triệu đô la lên 150 triệu đô la\" (...it was announced that the campaign target was now being increased from $100 million to $150 million).\nBước 5: Đáp án: target\nCó một mục tiêu tài chính mới cho chiến dịch. (there is a new financial target for the campaign.)",
+					"quotes": [
+						"The good news from this error is that at the recent Chancellor's dinner it was announced that the campaign target was now being increased from $100 million to $150 million, and would recognise all sources of philanthropic support."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

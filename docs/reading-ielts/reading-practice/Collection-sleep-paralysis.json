@@ -1,0 +1,365 @@
+{
+	"id": "f97135d4-c967-4762-9737-893476ff1f9c",
+	"url": "https://stepielts.com/student/reading/f97135d4-c967-4762-9737-893476ff1f9c?mode=practice",
+	"title": "Sleep Paralysis",
+	"source": "Collection",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Sleep Paralysis",
+		"paragraphs": [
+			"Most nights, people experience dreams, partly due to a phase of the sleep cycle known as REM (Rapid Eye Movement) sleep, during which the brain is highly active and dreams are particularly vivid and complex.Throughout this state, our bodies are still except for the muscles needed to move the eyes and to breathe, perhaps in order to stop dreamers from acting out and being put in harm’s way. This almost complete paralysis is called atonia and is caused by motor neurons, small nerve endings located in the spinal cord. Although this is entirely normal during sleep, atonia can occur while a person is awake. This phenomenon is called sleep paralysis.",
+			"An infrequent but perfectly safe condition, during sleep paralysis the mind is awake but, due to atonia, the body is paralyzed for up to several minutes. This can result in an inability to move or speak, a feeling of pressure on the chest, difficulty breathing and an inexplicable fear or feeling of dread. In some, the inability to move their eyes can occur, whereas others find that these are the only part of the body they can move. Many also experience hallucinations during sleep paralysis, varying from believing a malevolent presence to be in the room, to more complex hallucinations including hearing, smelling or feeling things that are not there. In more extreme cases, people have reported forced or wilful out-of-body experiences. Understandably, these effects can be very frightening for the individual, even though there is no danger.",
+			"Documented interest in sleep paralysis goes back as far as Ancient Greece, but has not always been thought of as a medical issue. Paulus Aegineta, a Byzantine Greek physician, wrote about a disorder called ’ephialtes’ in his medical encyclopaedia Medical Compendium in Seven Books. According to Paulus, the sufferer of ephialtes experiences the sensation of being suffocated and unable to move as a demon presses down on them. The being may speak while attempting to suffocate them, then flees when they strive to grasp it. Aegineta believed such an affliction was a forerunner of another disease and that the demon behind it would return every night during its initial visit to torment the sleeper. This perception of sleep paralysis is mirrored across many cultures.",
+			"British folklore talks of the Old Hag, an entity who sits on people’s chests while they sleep and causes them to have nightmares. When the sleeper awakes, the Old Hag disappears, leaving the person unable to speak or move temporarily. The Old Hag also appears in other European cultures, commonly known as ’mara’ and causing similar effects on its victims. Beyond these broad similarities, further details differ from culture to culture. In Japan, evil spirits - known as ’kanashibari’ - tie up victims with iron ropes, whereas the Inuit attribute the phenomena to a shaman placing a curse upon the victim. Despite these differences, it is clear that most pre-Enlightenment cultures believed that rather than a natural occurrence in the human body, sleep paralysis was attributed to an external threat, someone or something that wished to harm them. 18th-Century artist Henry Fuseli is well known for oil painting ’The Nightmare’, depicting a woman with a demonic creature sitting on her chest, and a possessed horse skulking near the bed. This painting is commonly perceived as depicting sleep paralysis, as the incubus puts pressure on the chest, causing the shortness of breath typical of the condition. Furthermore, the woman is painted as lying on her back, a position which even in modern medicine is considered to lead to or exacerbate sleep paralysis. It is believed that Fuseli was inspired by Germanic tales of hags and mara in his creation of this artwork.",
+			"Given that people in the past attributed sleep paralysis to supernatural causes, it is unsurprising that they also believed it was a precursor to illness or could even lead to death. Even when a rational, medical explanation for the condition exists, some people still believe it is more than just an anomaly in sleeping patterns. Some theories attribute sleep paralysis to ‘shadow people’ – entities with a human form found in the shadows watching over victims while they sleep. Those who have ‘met’ these gloomy figures, often hallucinate about long shadows and strange shapes. The widely documented nature of these hallucinations gives many consider proof of the shadow people’s existence. Alternatively, many conspiracy theorists believe sleep paralysis is caused by alien activity, as the majority of those claiming to be victims of alien abduction describe the encounter as being similar to sleep paralysis: inexplicable anxiety, hearing buzzing or humming sounds and sensing a potentially harmful presence.",
+			"It appears some aspect of the human psyche has always been attracted to bizarre and supernatural explanations for an affliction that, although potentially alarming, is entirely benign. Although the mechanics are now understood by modern medicine, the root causes of sleep paralysis still remain vague and unconfirmed. It has been known to narcolepsy, its likelihood increasing through irregular sleeping patterns or insomnia. Nonetheless, a definitive cause has yet to be determined and this strange phenomenon is likely to continue to attract supernatural speculation until we discover what exactly provokes it."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-3",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose THREE letters, A–G.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "According to the passage, what is true of normal REM sleep?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Our eyes can be sometimes open"
+						},
+						{
+							"label": "B",
+							"text": "We only dream if we are completely free from harm"
+						},
+						{
+							"label": "C",
+							"text": "All but the most essential muscles do not function"
+						},
+						{
+							"label": "D",
+							"text": "Our bodies attempt to act out our dreams"
+						},
+						{
+							"label": "E",
+							"text": "Our dreams are more animated"
+						},
+						{
+							"label": "F",
+							"text": "Motor neurons in the spinal cord cause a condition called atonia"
+						},
+						{
+							"label": "G",
+							"text": "Atonia can cause sleepers to wake up"
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 2,
+					"text": "According to the passage, what is true of normal REM sleep?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Our eyes can be sometimes open"
+						},
+						{
+							"label": "B",
+							"text": "We only dream if we are completely free from harm"
+						},
+						{
+							"label": "C",
+							"text": "All but the most essential muscles do not function"
+						},
+						{
+							"label": "D",
+							"text": "Our bodies attempt to act out our dreams"
+						},
+						{
+							"label": "E",
+							"text": "Our dreams are more animated"
+						},
+						{
+							"label": "F",
+							"text": "Motor neurons in the spinal cord cause a condition called atonia"
+						},
+						{
+							"label": "G",
+							"text": "Atonia can cause sleepers to wake up"
+						}
+					],
+					"answer": "E"
+				},
+				{
+					"number": 3,
+					"text": "According to the passage, what is true of normal REM sleep?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Our eyes can be sometimes open"
+						},
+						{
+							"label": "B",
+							"text": "We only dream if we are completely free from harm"
+						},
+						{
+							"label": "C",
+							"text": "All but the most essential muscles do not function"
+						},
+						{
+							"label": "D",
+							"text": "Our bodies attempt to act out our dreams"
+						},
+						{
+							"label": "E",
+							"text": "Our dreams are more animated"
+						},
+						{
+							"label": "F",
+							"text": "Motor neurons in the spinal cord cause a condition called atonia"
+						},
+						{
+							"label": "G",
+							"text": "Atonia can cause sleepers to wake up"
+						}
+					],
+					"answer": "F"
+				}
+			]
+		},
+		{
+			"range": "4-6",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose THREE letters, A–G.",
+			"questions": [
+				{
+					"number": 4,
+					"text": "What can happen to people during an attack of sleep paralysis?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Their minds suddenly go to sleep"
+						},
+						{
+							"label": "B",
+							"text": "They sense something pushing on their body"
+						},
+						{
+							"label": "C",
+							"text": "They often feel afraid for no reason"
+						},
+						{
+							"label": "D",
+							"text": "They experience physical pain"
+						},
+						{
+							"label": "E",
+							"text": "They are able to move their eyes"
+						},
+						{
+							"label": "F",
+							"text": "Their bodies develop a strange smell"
+						},
+						{
+							"label": "G",
+							"text": "They sense things which are not present"
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 5,
+					"text": "What can happen to people during an attack of sleep paralysis?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Their minds suddenly go to sleep"
+						},
+						{
+							"label": "B",
+							"text": "They sense something pushing on their body"
+						},
+						{
+							"label": "C",
+							"text": "They often feel afraid for no reason"
+						},
+						{
+							"label": "D",
+							"text": "They experience physical pain"
+						},
+						{
+							"label": "E",
+							"text": "They are able to move their eyes"
+						},
+						{
+							"label": "F",
+							"text": "Their bodies develop a strange smell"
+						},
+						{
+							"label": "G",
+							"text": "They sense things which are not present"
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 6,
+					"text": "What can happen to people during an attack of sleep paralysis?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Their minds suddenly go to sleep"
+						},
+						{
+							"label": "B",
+							"text": "They sense something pushing on their body"
+						},
+						{
+							"label": "C",
+							"text": "They often feel afraid for no reason"
+						},
+						{
+							"label": "D",
+							"text": "They experience physical pain"
+						},
+						{
+							"label": "E",
+							"text": "They are able to move their eyes"
+						},
+						{
+							"label": "F",
+							"text": "Their bodies develop a strange smell"
+						},
+						{
+							"label": "G",
+							"text": "They sense things which are not present"
+						}
+					],
+					"answer": "G"
+				}
+			]
+		},
+		{
+			"range": "7-12",
+			"type": "MATCHING_NAMES",
+			"instructions": "Look at the following statements and the list of figures below. Choose the correct figure and put them in boxes 7-12.",
+			"options": [
+				{
+					"label": "CT",
+					"text": "Conspiracy theorists"
+				},
+				{
+					"label": "HF",
+					"text": "Henry Fuseli"
+				},
+				{
+					"label": "OH",
+					"text": "The Old Hag"
+				},
+				{
+					"label": "PA",
+					"text": "Paulus Aegineta"
+				},
+				{
+					"label": "SP",
+					"text": "Shadow People"
+				}
+			],
+			"body": "Can draw parallels between a personal experience and the symptoms of sleep paralysis ____ (7)\nBelieved sleep paralysis to be a sign of underlying health problems ____ (8)\nCan be referred to by an alternative name depending on which country you are in ____ (9)\nIs/are believed by many to exist due to the extensive recording of visions ____ (10)\nReceived inspiration from folklore ____ (11)\nIs/are thought to cause bad dreams ____ (12)",
+			"body_html": "<p>Can draw parallels between a personal experience and the symptoms of sleep paralysis [7]</p><p> Believed sleep paralysis to be a sign of underlying health problems [8]</p><p>Can be referred to by an alternative name depending on which country you are in [9]</p><p>Is/are believed by many to exist due to the extensive recording of visions [10]</p><p>Received inspiration from folklore [11]</p><p>Is/are thought to cause bad dreams [12]</p>",
+			"questions": [
+				{
+					"number": 7,
+					"text": "Can draw parallels between a personal experience and the symptoms of sleep paralysis",
+					"answer": "CT",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người có thể rút ra những điểm tương đồng giữa trải nghiệm cá nhân và các triệu chứng của liệt cơ khi ngủ.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ndraw parallels ~ depicting\npersonal experience ~ victims of alien abduction\nsymptoms of sleep paralysis ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến người theo thuyết âm mưu tin rằng chứng bóng đè là do hoạt động của người ngoài hành tinh gây ra, vì phần lớn những người cho rằng mình là nạn nhân của việc bị người ngoài hành tinh bắt cóc mô tả trải nghiệm đó giống với bóng đè: lo âu khó giải thích, nghe tiếng vo ve hoặc ù ù, và cảm nhận một sự hiện diện có thể gây hại.\".\n\nBước 4: Đáp án: CT",
+					"quotes": [
+						"Alternatively, many conspiracy theorists believe sleep paralysis is caused by alien activity, as the majority of those claiming to be victims of alien abduction describe the encounter as being similar to sleep paralysis: inexplicable anxiety, hearing buzzing or humming sounds and sensing a potentially harmful presence."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Believed sleep paralysis to be a sign of underlying health problems",
+					"answer": "PA",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người tin rằng bóng đè là dấu hiệu của các vấn đề sức khỏe tiềm ẩn.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nbelieved ~ từ khóa giữ nguyên\nsign of underlying health problems ~ forerunner of another disease\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Paulus Aegineta \"Aegineta tin rằng một chứng bệnh như vậy là tiền thân của một căn bệnh khác\".\n\nBước 4: Đáp án: PA",
+					"quotes": [
+						"Aegineta believed such an affliction was a forerunner of another disease and that the demon behind it would return every night during its initial visit to torment the sleeper."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Can be referred to by an alternative name depending on which country you are in",
+					"answer": "OH",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai/cái gì có thể được gọi bằng một tên thay thế tùy thuộc vào quốc gia bạn ở.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nalternative name ~ commonly known as\ndepending on which country ~ other European cultures\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến The Old Hag \"The Old Hag cũng xuất hiện ở các nền văn hóa châu Âu khác, thường được biết đến với tên 'mara'\". Ngoài những điểm tương đồng rộng lớn này, các chi tiết cụ thể lại khác nhau giữa các nền văn hóa. Ở Nhật Bản, các linh hồn xấu – được gọi là ‘kanashibari’ – trói nạn nhân bằng những sợi dây sắt, trong khi người Inuit cho rằng hiện tượng này là do một pháp sư nguyền rủa nạn nhân.\n\nBước 4: Đáp án: OH",
+					"quotes": [
+						"The Old Hag also appears in other European cultures, commonly known as ’mara’ and causing similar effects on its victims. Beyond these broad similarities, further details differ from culture to culture. In Japan, evil spirits - known as ’kanashibari’ - tie up victims with iron ropes, whereas the Inuit attribute the phenomena to a shaman placing a curse upon the victim."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Is/are believed by many to exist due to the extensive recording of visions",
+					"answer": "SP",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai/cái gì được nhiều người tin là tồn tại do việc ghi chép rộng rãi các tầm nhìn.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nbelieved by many to exist ~ many consider proof\nextensive recording of visions ~ widely documented nature of hallucinations\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Một số lý thuyết gán liệt cơ khi ngủ cho 'shadow people' - các thực thể có hình dạng con người được tìm thấy trong bóng tối theo dõi nạn nhân khi họ ngủ. Bản chất được ghi chép rộng rãi của những ảo giác này khiến nhiều người coi đó là bằng chứng về sự tồn tại của shadow people\".\n\nBước 4: Đáp án: SP",
+					"quotes": [
+						"The widely documented nature of these hallucinations gives many consider proof of the shadow people’s existence."
+					]
+				},
+				{
+					"number": 11,
+					"text": "Received inspiration from folklore",
+					"answer": "HF",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người nhận cảm hứng từ văn hóa dân gian.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nreceived inspiration from folklore ~ inspired by Germanic tales\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Henry Fuseli \"Fuseli được truyền cảm hứng từ những câu chuyện của người Germanic về các bà phù thủy và mara trong việc sáng tạo tác phẩm nghệ thuật này\".\n\nBước 4: Đáp án: HF",
+					"quotes": [
+						"It is believed that Fuseli was inspired by Germanic tales of hags and mara in his creation of this artwork."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Is/are thought to cause bad dreams",
+					"answer": "OH",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai/cái gì được cho là gây ra những cơn ác mộng.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nthought to cause bad dreams ~ causes them to have nightmares\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến The Old Hag \"Văn hóa dân gian Anh nói về Old Hag, một thực thể ngồi lên ngực mọi người khi họ ngủ và khiến họ có những cơn ác mộng\".\n\nBước 4: Đáp án: OH",
+					"quotes": [
+						"British folklore talks of the Old Hag, an entity who sits on people’s chests while they sleep and causes them to have nightmares."
+					]
+				}
+			]
+		},
+		{
+			"range": "13",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, C, or D.",
+			"questions": [
+				{
+					"number": 13,
+					"text": "What is the most appropriate title for this text?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The role of folklore in dreams"
+						},
+						{
+							"label": "B",
+							"text": "The physical symptoms and effects of sleep paralysis"
+						},
+						{
+							"label": "C",
+							"text": "Investigating the source of irregular sleep patterns"
+						},
+						{
+							"label": "D",
+							"text": "Paranormal theories for an unexplained phenomenon"
+						}
+					],
+					"answer": "D",
+					"quotes": [
+						"It appears some aspect of the human psyche has always been attracted to bizarre and supernatural explanations for an affliction that, although potentially alarming, is entirely benign. Although the mechanics are now understood by modern medicine, the root causes of sleep paralysis still remain vague and unconfirmed."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

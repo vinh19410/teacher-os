@@ -1,0 +1,314 @@
+{
+	"id": "072c9f8d-9c70-4bac-b1a9-68cdb9057e40",
+	"url": "https://stepielts.com/student/reading/072c9f8d-9c70-4bac-b1a9-68cdb9057e40?mode=practice",
+	"title": "Biology of Bitterness",
+	"source": "Forecast Quý 2-2025",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "1-14",
+	"passage": {
+		"title": "Biology of Bitterness",
+		"paragraphs": [
+			"A. Have you ever wondered why grapefruit juice is often served in small glasses? It is because most people like to drink it only in small doses, as they find it somewhat bitter. Naringin, a natural chemical found in grapefruit, has a bitter taste. Although some people like that bitterness, there are other people who want nothing to do with it. So juice companies often decide to use grapefruit with lower naringin content, despite the fact that naringin has antioxidant properties that can help prevent cancer and arteriosclerosis.",
+			"B. A New Jersey biotech company, the Linguagen Corporation, has found a way to eliminate the bitter taste in grapefruit juice. In a taste test, the company had participants drink grapefruit juice from two different sets of white paper cups, labeled 304 and 305. Each participant drank from one cup and then the other, cleansing their palates between tastings with water and a soda cracker. Even the smallest sip from the 304 cups was determined to have the bitter taste commonly associated with grapefruit. The 305 cups were found to be different, however. They still had the sour taste of citrus, but the bitter taste of naringin was gone. The 305 batch had been treated with adenosine monophosphate, also called AMP, a compound that blocks the bitter taste in foods without affecting the nutrition value of those foods.",
+			"C. Taste research has become commonplace these days. Food biologists are researching all five basic tastes：sweet, bitter, sour, salty and umami a Japanese term referring to savoriness. Food biologists are especially interested in bitterness, because there are thousands of bitter-tasting natural compounds that are not currently used as foods. Biologists view these bitter foods as an untapped potential food source for our future needs. Some bitter foods, such as grapefruit and cruciferous vegetables such as cabbage, kale, broccoli, and cauliflower are nutritious despite，and sometimes because of, their bitter-tasting components. Over time, many people have acquired a taste for bitter foods.",
+			"D. It is important to note that people taste bitterness at different levels. These variances appear to be mostly genetic. About three-fourths of people are sensitive to the taste of the bitter compounds phenylthiocarbamide and 6-n-propylthiouracil. Those people who are sensitive to phenylthiocarbamide seem to be less likely than others to eat cruciferous vegetables, according to Stephen Wooding, a geneticist at the University of Utah. Some people, known as supertasters, are especially sensitive to 6-n-propylthiouracil because they have an unusually high number of taste buds. It is not unusual for supertasters to avoid all kinds of bitter-tasting foods and drinks, including some vegetables, coffee, and dark chocolate. Supertasters, possibly because of their taste proclivities, tend to be thin. They also tend to be less fond of alcoholic drinks, which are often slightly bitter. A research study found that super tasters consume alcoholic beverages, on average, only two to three times a week, compared with five or six times for the average tasters.",
+			"E. In describing a taste bud, each taste bud contains a small group of receptors that capture the taste molecules. These taste molecules are known as tastants. When a person tastes something bitter, the receptors relay a signal through proteins called G proteins. These G proteins are involved in the perception of bitterness, sweetness, and umami, and were identified and labeled in the 1990s by Linguagen founder Robert Margolskee at the Mount Sinai School of Medicine in New York. This G protein is known as gustducin and it triggers a cascade of chemical reactions that lead to ion changes within the cell. As this happens, the brain gets a signal that the person is eating something bitter.",
+			"F. In 2000, a group of researchers identified some 30 different kinds of genes that code for bitter-taste receptors. No matter which tastant enters the mouth or which receptor it attaches to, bitterness always tastes the same. The only things that vary are the intensity of the bitterness and the ways our sense of taste identifies the flavor.",
+			"G. After determining how the taste mechanism works, scientists started to research how to interfere with it. As Margolskee noted, AMP contains no bitterness of its own, however, when it is added to foods, it attaches to bitter taste receptors. As effective as it is, it has been determined that AMP cannot block every type of bitter taste, probably because it does not attach itself to all 30 of the bitter-taste receptors. As a result, researchers continue to look for other bitter blockers, using a technology called high-throughput screening.",
+			"H. Taste researchers are excited about the idea that compounds like AMP will eventually make processed foods healthier. For example, a single cup of Campbell’s chicken noodle soup contains 850 milligrams of sodium chloride (table salt) , more than a third of the recommended daily allowance. All the salt in the soup masks the bitterness created in the canning process.\nPart of the salt that is currently used in the soup could be replaced by a different kind of salt，potassium chloride, which tends to be scarce in some diets.\nPotassium chloride has a bitter aftertaste that could be easily eliminated with a dose of AMP. Bitter blockers could a lobe used to take the bitterness out of things like children’s cough syrup and they can also be used to reduce the bitterness which is frequent in other drugs and medications."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-7",
+			"type": "MATCHING_HEADINGS",
+			"instructions": "Reading Passage 2 has eight paragraphs, A-H.\nChoose the correct heading for paragraphs B-H from the list of headings below.\nExample answer\nParagraph A i",
+			"options": [
+				{
+					"label": "i",
+					"text": "A bitter compound from a fruit"
+				},
+				{
+					"label": "ii",
+					"text": "Bitterness-reducing process"
+				},
+				{
+					"label": "iii",
+					"text": "Biological reasons of sensitivity to bitterness"
+				},
+				{
+					"label": "iv",
+					"text": "The variety in intensity"
+				},
+				{
+					"label": "ix",
+					"text": "A blocker of bitterness"
+				},
+				{
+					"label": "v",
+					"text": "Practical applications of bitter blockers"
+				},
+				{
+					"label": "vi",
+					"text": "Possible use of bitter food in the future"
+				},
+				{
+					"label": "vii",
+					"text": "A new research method"
+				},
+				{
+					"label": "viii",
+					"text": "A stimulus of chemical reactions"
+				},
+				{
+					"label": "x",
+					"text": "Limits of a substance"
+				}
+			],
+			"questions": [
+				{
+					"number": 1,
+					"text": "Paragraph B",
+					"answer": "ix",
+					"explanation": "Bước 1: Đọc và hiểu đoạn B:\nCông ty công nghệ sinh học Linguagen đã tìm ra cách loại bỏ vị đắng trong nước ép bưởi. Họ tổ chức một thử nghiệm với 2 loại cốc giấy (304 và 305), trong đó cốc 305 được xử lý bằng adenosine monophosphate (AMP) - một hợp chất có khả năng chặn vị đắng mà không làm ảnh hưởng đến giá trị dinh dưỡng của thực phẩm.\n\nBước 2: Tóm tắt nội dung chính của đoạn B:\nĐoạn B nói về hợp chất loại bỏ vị đắng trong nước ép bưởi của công ty Linguagen.\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề ix \"hợp chất chặn vị đắng\"\n\nBước 4: Đáp án: ix",
+					"quotes": [
+						"A New Jersey biotech company, the Linguagen Corporation, has found a way to eliminate the bitter taste in grapefruit juice. In a taste test, the company had participants drink grapefruit juice from two different sets of white paper cups, labeled 304 and 305. Each participant drank from one cup and then the other, cleansing their palates between tastings with water and a soda cracker. Even the smallest sip from the 304 cups was determined to have the bitter taste commonly associated with grapefruit. The 305 cups were found to be different, however. They still had the sour taste of citrus, but the bitter taste of naringin was gone. The 305 batch had been treated with adenosine monophosphate, also called AMP, a compound that blocks the bitter taste in foods without affecting the nutrition value of those foods."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Paragraph C",
+					"answer": "vi",
+					"explanation": "Bước 1: Đọc và hiểu đoạn C:\nNghiên cứu về vị giác đã trở nên phổ biến. Các nhà sinh học thực phẩm nghiên cứu 5 vị cơ bản, đặc biệt quan tâm đến vị đắng vì có hàng nghìn hợp chất tự nhiên có vị đắng chưa được sử dụng làm thực phẩm. Các nhà sinh học xem những thực phẩm đắng này như nguồn thực phẩm tiềm năng cho nhu cầu trong tương lai.\n\nBước 2: Tóm tắt nội dung chính của đoạn C:\nĐoạn C nói về tiềm năng của các hợp chất có vị đắng trong nghiên cứu thực phẩm và khả năng ứng dụng trong tương lai.\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề vi \"khả năng sử dụng thực phẩm đắng trong tương lai\"\n\nBước 4: Đáp án: vi",
+					"quotes": [
+						"Food biologists are especially interested in bitterness, because there are thousands of bitter-tasting natural compounds that are not currently used as foods. Biologists view these bitter foods as an untapped potential food source for our future needs. Some bitter foods, such as grapefruit and cruciferous vegetables such as cabbage, kale, broccoli, and cauliflower are nutritious despite，and sometimes because of, their bitter-tasting components."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Paragraph D",
+					"answer": "iii",
+					"explanation": "Bước 1: Đọc và hiểu đoạn D:\nCon người cảm nhận vị đắng ở các mức độ khác nhau, chủ yếu do di truyền. Khoảng 3/4 số người nhạy cảm với các hợp chất đắng. Những người siêu nhạy cảm thường tránh các thực phẩm đắng và thường có xu hướng gầy.\n\nBước 2: Tóm tắt nội dung chính của đoạn D:\nĐoạn D giải thích về sự khác biệt trong việc cảm nhận vị đắng do yếu tố sinh học và ảnh hưởng của nó.\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề iii \"lý do sinh học của độ nhạy cảm với vị đắng\"\n\nBước 4: Đáp án: iii"
+				},
+				{
+					"number": 4,
+					"text": "Paragraph E",
+					"answer": "viii",
+					"explanation": "Bước 1: Đọc và hiểu đoạn E:\nNụ vị giác chứa các thụ thể bắt các phân tử vị giác (tastants). Khi người ta nếm vị đắng, các thụ thể truyền tín hiệu qua protein G. Protein G được xác định vào những năm 1990 và liên quan đến cảm nhận vị đắng, ngọt và umami.\n\nBước 2: Tóm tắt nội dung chính của đoạn E:\nĐoạn E mô tả quá trình kích thích phản ứng hóa học khi con người cảm nhận vị đắng.\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề viii \"kích thích phản ứng hóa học\"\n\nBước 4: Đáp án: viii",
+					"quotes": [
+						"E. In describing a taste bud, each taste bud contains a small group of receptors that capture the taste molecules. These taste molecules are known as tastants. When a person tastes something bitter, the receptors relay a signal through proteins called G proteins. These G proteins are involved in the perception of bitterness, sweetness, and umami, and were identified and labeled in the 1990s by Linguagen founder Robert Margolskee at the Mount Sinai School of Medicine in New York. This G protein is known as gustducin and it triggers a cascade of chemical reactions that lead to ion changes within the cell. As this happens, the brain gets a signal that the person is eating something bitter."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Paragraph F",
+					"answer": "iv",
+					"explanation": "Bước 1: Đọc và hiểu đoạn F:\nNăm 2000, các nhà nghiên cứu xác định khoảng 30 loại gen mã hóa thụ thể vị đắng. Điều duy nhất thay đổi là cường độ của vị đắng và cách thức giác quan của chúng ta nhận biết hương vị.\n\nBước 2: Tóm tắt nội dung chính của đoạn F:\nĐoạn F nói về sự đa dạng trong cường độ của vị đắng mà con người cảm nhận được.\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề iv \"sự đa dạng trong cường độ\"\n\nBước 4: Đáp án: iv",
+					"quotes": [
+						"The only things that vary are the intensity of the bitterness and the ways our sense of taste identifies the flavor."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Paragraph G",
+					"answer": "x",
+					"explanation": "Bước 1: Đọc và hiểu đoạn G:\nCác nhà khoa học nghiên cứu cách can thiệp vào cơ chế vị giác. AMP hiệu quả nhưng không thể chặn mọi loại vị đắng, có thể do không gắn được với tất cả 30 thụ thể vị đắng.\n\nBước 2: Tóm tắt nội dung chính của đoạn G:\nĐoạn G thảo luận về giới hạn của chất AMP trong việc chặn vị đắng.\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề x \"giới hạn của một chất\"\n\nBước 4: Đáp án: x",
+					"quotes": [
+						"G. After determining how the taste mechanism works, scientists started to research how to interfere with it. As Margolskee noted, AMP contains no bitterness of its own, however, when it is added to foods, it attaches to bitter taste receptors. As effective as it is, it has been determined that AMP cannot block every type of bitter taste, probably because it does not attach itself to all 30 of the bitter-taste receptors. As a result, researchers continue to look for other bitter blockers, using a technology called high-throughput screening."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Paragraph H",
+					"answer": "v",
+					"explanation": "Bước 1: Đọc và hiểu đoạn H:\nCác nhà nghiên cứu vị giác hào hứng với ý tưởng các hợp chất như AMP cuối cùng sẽ làm cho thực phẩm chế biến lành mạnh hơn. Họ có thể dùng nó để giảm vị đắng trong xi-rô ho cho trẻ em và các loại thuốc khác.\n\nBước 2: Tóm tắt nội dung chính của đoạn H:\nĐoạn H thảo luận về các ứng dụng thực tế của chất chặn vị đắng trong thực phẩm và dược phẩm.\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề v \"ứng dụng thực tế của chất chặn vị đắng\"\n\nBước 4: Đáp án: v",
+					"quotes": [
+						"H. Taste researchers are excited about the idea that compounds like AMP will eventually make processed foods healthier. For example, a single cup of Campbell’s chicken noodle soup contains 850 milligrams of sodium chloride (table salt) , more than a third of the recommended daily allowance. All the salt in the soup masks the bitterness created in the canning process. Part of the salt that is currently used in the soup could be replaced by a different kind of salt，potassium chloride, which tends to be scarce in some diets. Potassium chloride has a bitter aftertaste that could be easily eliminated with a dose of AMP. Bitter blockers could a lobe used to take the bitterness out of things like children’s cough syrup and they can also be used to reduce the bitterness which is frequent in other drugs and medications."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-9",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 8,
+					"text": "Which TWO of the following elements contribute to bitterness in foods?",
+					"options": [
+						{
+							"label": "A",
+							"text": "sodium"
+						},
+						{
+							"label": "B",
+							"text": "gustducin"
+						},
+						{
+							"label": "C",
+							"text": "naringin"
+						},
+						{
+							"label": "D",
+							"text": "adenosine monophosphate"
+						},
+						{
+							"label": "E",
+							"text": "phenylthiocarbamide"
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 9,
+					"text": "Which TWO of the following elements contribute to bitterness in foods?",
+					"options": [
+						{
+							"label": "A",
+							"text": "sodium"
+						},
+						{
+							"label": "B",
+							"text": "gustducin"
+						},
+						{
+							"label": "C",
+							"text": "naringin"
+						},
+						{
+							"label": "D",
+							"text": "adenosine monophosphate"
+						},
+						{
+							"label": "E",
+							"text": "phenylthiocarbamide"
+						}
+					],
+					"answer": "E"
+				}
+			]
+		},
+		{
+			"range": "10-11",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO letters, A-E.",
+			"questions": [
+				{
+					"number": 10,
+					"text": "Which TWO characteristics are mentioned that distinguish supertasters from average ones?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They eat foods of all kinds of flavour except salty food."
+						},
+						{
+							"label": "B",
+							"text": "They are unwilling to purchase foods like coffee or dark chocolate."
+						},
+						{
+							"label": "C",
+							"text": "They may develop allergic reactions to alcoholic drinks."
+						},
+						{
+							"label": "D",
+							"text": "They are less likely to be overweight."
+						},
+						{
+							"label": "E",
+							"text": "They rarely include vegetables in their diets."
+						}
+					],
+					"answer": "B"
+				},
+				{
+					"number": 11,
+					"text": "Which TWO characteristics are mentioned that distinguish supertasters from average ones?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They eat foods of all kinds of flavour except salty food."
+						},
+						{
+							"label": "B",
+							"text": "They are unwilling to purchase foods like coffee or dark chocolate."
+						},
+						{
+							"label": "C",
+							"text": "They may develop allergic reactions to alcoholic drinks."
+						},
+						{
+							"label": "D",
+							"text": "They are less likely to be overweight."
+						},
+						{
+							"label": "E",
+							"text": "They rarely include vegetables in their diets."
+						}
+					],
+					"answer": "D"
+				}
+			]
+		},
+		{
+			"range": "12-14",
+			"type": "MATCHING_ENDINGS",
+			"instructions": "",
+			"options": [
+				{
+					"label": "A",
+					"text": "basic elements that influence our sense of taste on a daily basis."
+				},
+				{
+					"label": "B",
+					"text": "different kinds of bitter blockers that may function independently."
+				},
+				{
+					"label": "C",
+					"text": "most kinds of bitter-blocking elements that contain no bitterness of their own."
+				},
+				{
+					"label": "D",
+					"text": "more bitter things in nature which may contribute to the variety of food in our life."
+				},
+				{
+					"label": "E",
+					"text": "an element which does good to people's health for the sake of better taste."
+				}
+			],
+			"body": "The production of grapefruit juice usually sacrifices ____ (12)\nFood scientists have great passion towards discovering ____ (13)\nThe bitter-taste receptors are believed to be sensitive to ____ (14)",
+			"body_html": "<p>The production of grapefruit juice usually sacrifices [12]</p><p>Food scientists have great passion towards discovering [13]</p><p>The bitter-taste receptors are believed to be sensitive to [14]</p>",
+			"questions": [
+				{
+					"number": 12,
+					"text": "The production of grapefruit juice usually sacrifices",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\n\"Trong sản xuất nước ép bưởi thường phải hy sinh điều gì?\"\n\nBước 2: Tìm các keywords được paraphrase trong bài:\njuice companies ~ production of grapefruit juice\nlower naringin content ~ sacrifices\nantioxidant properties that can help prevent cancer ~ element which does good to people's health\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến việc \"các công ty nước ép thường chọn bưởi có hàm lượng naringin thấp, mặc dù naringin có đặc tính chống oxy hóa có thể giúp ngăn ngừa ung thư và xơ vữa động mạch\"\n\nBước 4: Đáp án: E",
+					"quotes": [
+						"So juice companies often decide to use grapefruit with lower naringin content, despite the fact that naringin has antioxidant properties that can help prevent cancer and arteriosclerosis."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Food scientists have great passion towards discovering",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\n\"Các nhà khoa học thực phẩm rất đam mê việc khám phá điều gì?\"\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nFood biologists are especially interested in ~ Food scientists have great passion towards discovering\nthousands of bitter-tasting natural compounds ~ more bitter things in nature\nuntapped potential food source ~ contribute to the variety of food\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến việc \"các nhà sinh học thực phẩm đặc biệt quan tâm đến vị đắng vì có hàng nghìn hợp chất tự nhiên có vị đắng chưa được sử dụng làm thực phẩm\"\n\nBước 4: Đáp án: D",
+					"quotes": [
+						"Food biologists are especially interested in bitterness, because there are thousands of bitter-tasting natural compounds that are not currently used as foods."
+					]
+				},
+				{
+					"number": 14,
+					"text": "The bitter-taste receptors are believed to be sensitive to",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\n\"Các thụ thể vị đắng được cho là nhạy cảm với điều gì?\"\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nbitter taste receptors ~ từ khóa giữ nguyên\nAMP cannot block every type of bitter taste ~ sensitive to different kinds of bitter blockers\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến việc \"AMP không thể chặn mọi loại vị đắng, có thể do không gắn được với tất cả 30 thụ thể vị đắng\"\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"As effective as it is, it has been determined that AMP cannot block every type of bitter taste, probably because it does not attach itself to all 30 of the bitter-taste receptors. As a result, researchers continue to look for other bitter blockers, using a technology called high-throughput screening."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

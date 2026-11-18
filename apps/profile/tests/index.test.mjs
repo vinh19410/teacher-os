@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import {
+	existsSync,
+	mkdtempSync,
+	readFileSync,
+	rmSync,
+	statSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -388,6 +394,7 @@ test("createProfileServer and buildProfile wire studentPortalUrl only on root in
 	const server = createProfileServer(
 		"http://localhost:8100",
 		"http://localhost:8103",
+		{ maintenance: false },
 	);
 	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 	const { port } = server.address();
@@ -429,7 +436,9 @@ test("createProfileServer and buildProfile wire studentPortalUrl only on root in
 	}
 
 	// Empty string keeps HTML prod default even in serve.mjs
-	const emptyUrlServer = createProfileServer("http://localhost:8100", "");
+	const emptyUrlServer = createProfileServer("http://localhost:8100", "", {
+		maintenance: false,
+	});
 	await new Promise((resolve) =>
 		emptyUrlServer.listen(0, "127.0.0.1", resolve),
 	);
@@ -453,6 +462,7 @@ test("createProfileServer and buildProfile wire studentPortalUrl only on root in
 			distUrl: pathToFileURL(distDir),
 			leadApiUrl: "",
 			studentPortalUrl: "https://student.staging.teacheros.io.vn",
+			maintenance: false,
 		});
 		const builtHome = readFileSync(join(distDir, "index.html"), "utf8");
 		assert.match(
@@ -1563,4 +1573,193 @@ test("teacher-profile PDFs and thumbnails use Đỗ Thục Mỹ without Đỗ Th
 			`${thumbName} must match expected dimensions`,
 		);
 	}
+});
+
+test("placement walkthrough mp4 is published as static asset with video/mp4 MIME, Range support, and dist copy", async () => {
+	const videoUrl = new URL("huong-dan-kiem-tra-dau-vao.mp4", publicDir);
+	const legacyReportVideoUrl = new URL(
+		"../../../plans/reports/huong-dan-kiem-tra-dau-vao.mp4",
+		import.meta.url,
+	);
+	assert.equal(
+		existsSync(videoUrl),
+		true,
+		"huong-dan-kiem-tra-dau-vao.mp4 must exist in apps/profile/public/",
+	);
+	assert.equal(
+		existsSync(legacyReportVideoUrl),
+		false,
+		"huong-dan-kiem-tra-dau-vao.mp4 must not remain duplicated in plans/reports/",
+	);
+
+	const expectedSize = statSync(videoUrl).size;
+	assert.ok(expectedSize > 0, "video file must not be empty");
+	assert.ok(
+		expectedSize < 25 * 1024 * 1024,
+		"video file must stay below 25 MiB Cloudflare Static Assets limit",
+	);
+
+	const server = createProfileServer("http://localhost:8100", "", {
+		maintenance: false,
+	});
+	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+	const base = `http://127.0.0.1:${server.address().port}`;
+	try {
+		const headRes = await fetch(`${base}/huong-dan-kiem-tra-dau-vao.mp4`, {
+			method: "HEAD",
+		});
+		assert.equal(headRes.status, 200);
+		assert.equal(headRes.headers.get("content-type"), "video/mp4");
+		assert.equal(headRes.headers.get("accept-ranges"), "bytes");
+		assert.equal(Number(headRes.headers.get("content-length")), expectedSize);
+
+		const rangeRes = await fetch(`${base}/huong-dan-kiem-tra-dau-vao.mp4`, {
+			headers: { Range: "bytes=0-31" },
+		});
+		assert.equal(rangeRes.status, 206);
+		assert.equal(rangeRes.headers.get("content-type"), "video/mp4");
+		assert.equal(
+			rangeRes.headers.get("content-range"),
+			`bytes 0-31/${expectedSize}`,
+		);
+		const chunk = new Uint8Array(await rangeRes.arrayBuffer());
+		assert.equal(chunk.byteLength, 32);
+		assert.equal(
+			Buffer.from(chunk.subarray(4, 8)).toString("ascii"),
+			"ftyp",
+			"MP4 header must start with ftyp box",
+		);
+
+		const badRangeRes = await fetch(`${base}/huong-dan-kiem-tra-dau-vao.mp4`, {
+			headers: { Range: `bytes=${expectedSize + 100}-` },
+		});
+		assert.equal(badRangeRes.status, 416);
+		assert.equal(
+			badRangeRes.headers.get("content-range"),
+			`bytes */${expectedSize}`,
+		);
+	} finally {
+		await new Promise((resolve) => server.close(resolve));
+	}
+
+	const tmpRoot = mkdtempSync(join(tmpdir(), "profile-video-build-"));
+	try {
+		const distDir = join(tmpRoot, "dist");
+		await buildProfile({
+			distUrl: pathToFileURL(distDir),
+			leadApiUrl: "https://api.msmy.io.vn",
+			studentPortalUrl: "https://student.msmy.io.vn",
+			maintenance: false,
+		});
+		const builtVideoPath = join(distDir, "huong-dan-kiem-tra-dau-vao.mp4");
+		assert.equal(
+			existsSync(builtVideoPath),
+			true,
+			"buildProfile must copy huong-dan-kiem-tra-dau-vao.mp4 into dist/",
+		);
+		assert.equal(statSync(builtVideoPath).size, expectedSize);
+	} finally {
+		rmSync(tmpRoot, { recursive: true, force: true });
+	}
+});
+
+test("student proof section uses crisp chat-contain feedback screenshots without clipping or stale assets", () => {
+	const styleMatch = html.match(/<style\b[^>]*>([\s\S]*?)<\/style>/i);
+	assert.ok(styleMatch, "expected inline <style> block");
+	const css = styleMatch[1];
+
+	assert.doesNotMatch(
+		css,
+		/\.proof-img-wrap\s+img\s*,\s*\.proof-img-wrap\s+img\.chat-contain\s*\{[^}]*object-fit:\s*cover/i,
+		".proof-img-wrap img.chat-contain must not be grouped under object-fit: cover",
+	);
+	const baseProofImgRule = css.match(/\.proof-img-wrap\s+img\s*\{([^}]*)\}/i);
+	assert.ok(baseProofImgRule, "expected .proof-img-wrap img base rule");
+	assert.match(baseProofImgRule[1], /position:\s*absolute;/i);
+	assert.match(baseProofImgRule[1], /inset:\s*0;/i);
+
+	const chatContainRule = css.match(
+		/\.proof-img-wrap\s+img\.chat-contain\s*\{([^}]*)\}/i,
+	);
+	assert.ok(chatContainRule, "expected .proof-img-wrap img.chat-contain rule");
+	assert.match(
+		chatContainRule[1],
+		/object-fit:\s*contain;/i,
+		".proof-img-wrap img.chat-contain must use object-fit: contain",
+	);
+	assert.match(
+		chatContainRule[1],
+		/object-position:\s*center;/i,
+		".proof-img-wrap img.chat-contain must use object-position: center",
+	);
+
+	const proofStart = html.indexOf('id="hoc-vien-noi-gi"');
+	const proofEnd = html.indexOf('id="vi-sao-khac"');
+	assert.ok(proofStart > -1 && proofEnd > proofStart);
+	const proofHtml = html.slice(proofStart, proofEnd);
+
+	const expectedAssets = [
+		"assets/teacher-profile/images/feedback-global-offer.png",
+		"assets/teacher-profile/images/feedback-po-le.png",
+		"assets/teacher-profile/images/feedback-ielts-70.png",
+	];
+	const cardMatches = [
+		...proofHtml.matchAll(
+			/<div class="proof-card">[\s\S]*?data-lightbox-src="([^"]+)"[\s\S]*?<img\b([^>]+)>/g,
+		),
+	];
+	assert.equal(
+		cardMatches.length,
+		3,
+		"all 3 proof cards must render an <img> inside .proof-card",
+	);
+	for (let i = 0; i < expectedAssets.length; i += 1) {
+		const imgAttrs = cardMatches[i][2];
+		const srcMatch = imgAttrs.match(/\bsrc="([^"]+)"/);
+		assert.ok(srcMatch, "proof <img> must have src attribute");
+		assert.match(
+			imgAttrs,
+			/\bclass="[^"]*\bchat-contain\b[^"]*"/,
+			"proof <img> must carry class='chat-contain'",
+		);
+		assert.equal(cardMatches[i][1], expectedAssets[i]);
+		assert.equal(srcMatch[1], expectedAssets[i]);
+
+		const pngBuf = readFileSync(new URL(expectedAssets[i], publicDir));
+		assert.equal(
+			pngBuf.subarray(0, 8).toString("hex"),
+			"89504e470d0a1a0a",
+			`${expectedAssets[i]} must be a valid PNG`,
+		);
+		const width = pngBuf.readUInt32BE(16);
+		assert.ok(
+			width >= 450,
+			`${expectedAssets[i]} width (${width}px) must be >= 450px`,
+		);
+	}
+
+	assert.equal(
+		existsSync(
+			new URL("assets/pinned-post-20-10/student-feedback.jpg", publicDir),
+		),
+		false,
+		"orphaned student-feedback.jpg must be removed",
+	);
+	assert.equal(
+		existsSync(
+			new URL(
+				"assets/teacher-profile/images/class-offline-selfie.png",
+				publicDir,
+			),
+		),
+		false,
+		"orphaned class-offline-selfie.png must be removed",
+	);
+
+	assert.doesNotMatch(proofHtml, /theo đúng JD/i);
+	assert.doesNotMatch(proofHtml, /Lớp CO2/i);
+	assert.doesNotMatch(proofHtml, /Học viên Phương Anh/i);
+	assert.match(proofHtml, /Bảo Hân/);
+	assert.match(proofHtml, /Po Le/);
+	assert.match(proofHtml, /Đỗ Anh Thư/);
 });

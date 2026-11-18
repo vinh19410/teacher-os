@@ -1,0 +1,281 @@
+{
+	"id": "3a33dd44-355f-4c68-8276-6fc754a491d9",
+	"url": "https://stepielts.com/student/reading/3a33dd44-355f-4c68-8276-6fc754a491d9?mode=practice",
+	"title": "Bring back the big cats",
+	"source": "C12T4",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "14-26",
+	"passage": {
+		"title": "Bring back the big cats",
+		"subtitle": "It’s time to start returning vanished native animals to Britain, says John Vesty",
+		"paragraphs": [
+			"There is a poem, written around 598 AD, which describes hunting a mystery animal called a llewyn. But what was it? Nothing seemed to fit, until 2006, when an animal bone, dating from around the same period, was found in the Kinsey Cave in northern England. Until this discovery, the lynx – a large spotted cat with tasselled ears – was presumed to have died out in Britain at least 6,000 years ago, before the inhabitants of these islands took up farming. But the 2006 find, together with three others in Yorkshire and Scotland, is compelling evidence that the lynx and the mysterious llewyn were in fact one and the same animal. If this is so, it would bring forward the tassel-eared cat’s estimated extinction date by roughly 5,000 years.",
+			"However, this is not quite the last glimpse of the animal in British culture. A 9th-century stone cross from the Isle of Eigg shows, alongside the deer, boar and aurochs pursued by a mounted hunter, a speckled cat with tasselled ears. Were it not for the animal’s backside having worn away with time, we could have been certain, as the lynx’s stubby tail is unmistakable. But even without this key feature, it’s hard to see what else the creature could have been. The lynx is now becoming the totemic animal of a movement that is transforming British environmentalism: rewilding.",
+			"Rewilding means the mass restoration of damaged ecosystems. It involves letting trees return to places that have been denuded, allowing parts of the seabed to recover from trawling and dredging, permitting rivers to flow freely again. Above all, it means bringing back missing species. One of the most striking findings of modern ecology is that ecosystems without large predators behave in completely different ways from those that retain them. Some of them drive dynamic processes that resonate through the whole food chain, creating niches for hundreds of species that might otherwise struggle to survive. The killers turn out to be bringers of life.",
+			"Such findings present a big challenge to British conservation, which has often selected arbitrary assemblages of plants and animals and sought, at great effort and expense, to prevent them from changing. It has tried to preserve the living world as if it were a jar of pickles, letting nothing in and nothing out, keeping nature in a state of arrested development. But ecosystems are not merely collections of species; they are also the dynamic and ever-shifting relationships between them. And this dynamism often depends on large predators.",
+			"At sea the potential is even greater: by protecting large areas from commercial fishing, we could once more see what 18th-century literature describes: vast shoals of fish being chased by fin and sperm whales, within sight of the English shore. This policy would also greatly boost catches in the surrounding seas; the fishing industry’s insistence on scouring every inch of seabed, leaving no breeding reserves, could not be more damaging to its own interests.",
+			"Rewilding is a rare example of an environmental movement in which campaigners articulate what they are for rather than only what they are against. One of the reasons why the enthusiasm for rewilding is spreading so quickly in Britain is that it helps to create a more inspiring vision than the green movement’s usual promise of ‘Follow us and the world will be slightly less awful than it would otherwise have been.’",
+			"The lynx presents no threat to human beings: there is no known instance of one preying on people. It is a specialist predator of roe deer, a species that has exploded in Britain in recent decades, holding back, by intensive browsing, attempts to re-establish forests. It will also winkle out sika deer: an exotic species that is almost impossible for human beings to control, as it hides in impenetrable plantations of young trees. The attempt to reintroduce this predator marries well with the aim of bringing forests back to parts of our bare and barren uplands. The lynx requires deep cover, and as such presents little risk to sheep and other livestock, which are supposed, as a condition of farm subsidies, to be kept out of the woods.",
+			"On a recent trip to the Cairngorm Mountains, I heard several conservationists suggest that the lynx could be reintroduced there within 20 years. If trees return to the bare hills elsewhere in Britain, the big cats could soon follow. There is nothing extraordinary about these proposals, seen from the perspective of anywhere else in Europe. The lynx has now been reintroduced to the Jura Mountains, the Alps, the Vosges in eastern France and the Harz mountains in Germany, and has re-established itself in many more places. The European population has tripled since 1970 to roughly 10,000. As with wolves, bears, beavers, boar, bison, moose and many other species, the lynx has been able to spread as farming has left the hills and people discover that it is more lucrative to protect charismatic wildlife than to hunt it, as tourists will pay for the chance to see it. Large-scale rewilding is happening almost everywhere – except Britain.",
+			"Here, attitudes are just beginning to change. Conservationists are starting to accept that the old preservation-jar model is failing, even on its own terms. Already, projects such as Trees for Life in the Highlands provide a hint of what might be coming. An organisation is being set up that will seek to catalyse the rewilding of land and sea across Britain, its aim being to reintroduce that rarest of species to British ecosystems: hope."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "14-18",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 14,
+					"text": "What did the 2006 discovery of the animal bone reveal about the lynx?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Its physical appearance was very distinctive."
+						},
+						{
+							"label": "B",
+							"text": "Its extinction was linked to the spread of farming."
+						},
+						{
+							"label": "C",
+							"text": "It vanished from Britain several thousand years ago."
+						},
+						{
+							"label": "D",
+							"text": "It survived in Britain longer than was previously thought."
+						}
+					],
+					"answer": "D",
+					"quotes": [
+						"But the 2006 find, together with three others in Yorkshire and Scotland, is compelling evidence that the lynx and the mysterious llewyn were in fact one and the same animal. If this is so, it would bring forward the tassel-eared cat’s estimated extinction date by roughly 5,000 years."
+					]
+				},
+				{
+					"number": 15,
+					"text": "What point does the writer make about large predators in the third paragraph?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Their presence can increase biodiversity."
+						},
+						{
+							"label": "B",
+							"text": "They may cause damage to local ecosystems."
+						},
+						{
+							"label": "C",
+							"text": "Their behaviour can alter according to the environment."
+						},
+						{
+							"label": "D",
+							"text": "They should be reintroduced only to areas where they were native."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"One of the most striking findings of modern ecology is that ecosystems without large predators behave in completely different ways from those that retain them. Some of them drive dynamic processes that resonate through the whole food chain, creating niches for hundreds of species that might otherwise struggle to survive. The killers turn out to be bringers of life."
+					]
+				},
+				{
+					"number": 16,
+					"text": "What does the writer suggest about British conservation in the fourth paragraph?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It has failed to achieve its aims."
+						},
+						{
+							"label": "B",
+							"text": "It is beginning to change direction."
+						},
+						{
+							"label": "C",
+							"text": "It has taken a misguided approach."
+						},
+						{
+							"label": "D",
+							"text": "It has focused on the most widespread species."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Such findings present a big challenge to British conservation, which has often selected arbitrary assemblages of plants and animals and sought, at great effort and expense, to prevent them from changing. It has tried to preserve the living world as if it were a jar of pickles, letting nothing in and nothing out, keeping nature in a state of arrested development. But ecosystems are not merely collections of species; they are also the dynamic and ever-shifting relationships between them. And this dynamism often depends on large predators."
+					]
+				},
+				{
+					"number": 17,
+					"text": "Protecting large areas of the sea from commercial fishing would result in",
+					"options": [
+						{
+							"label": "A",
+							"text": "practical benefits for the fishing industry."
+						},
+						{
+							"label": "B",
+							"text": "some short-term losses to the fishing industry."
+						},
+						{
+							"label": "C",
+							"text": "widespread opposition from the fishing industry."
+						},
+						{
+							"label": "D",
+							"text": "certain changes to techniques within the fishing industry."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"At sea the potential is even greater: by protecting large areas from commercial fishing, we could once more see what 18th-century literature describes: vast shoals of fish being chased by fin and sperm whales, within sight of the English shore. This policy would also greatly boost catches in the surrounding seas; the fishing industry’s insistence on scouring every inch of seabed, leaving no breeding reserves, could not be more damaging to its own interests."
+					]
+				},
+				{
+					"number": 18,
+					"text": "According to the author, what distinguishes rewilding from other environmental campaigns?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Its objective is more achievable."
+						},
+						{
+							"label": "B",
+							"text": "Its supporters are more articulate."
+						},
+						{
+							"label": "C",
+							"text": "Its positive message is more appealing."
+						},
+						{
+							"label": "D",
+							"text": "It is based on sounder scientific principles."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"One of the reasons why the enthusiasm for rewilding is spreading so quickly in Britain is that it helps to create a more inspiring vision than the green movement’s usual promise of ‘Follow us and the world will be slightly less awful than it would otherwise have been.’"
+					]
+				}
+			]
+		},
+		{
+			"range": "19-22",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary using the list of words and phrases A-F below. Write the correct letter, A-F, in boxes 19-22 on your answer sheet.",
+			"options": [
+				{
+					"label": "A",
+					"text": "trees"
+				},
+				{
+					"label": "B",
+					"text": "endangered species"
+				},
+				{
+					"label": "C",
+					"text": "hillsides"
+				},
+				{
+					"label": "D",
+					"text": "wild animals"
+				},
+				{
+					"label": "E",
+					"text": "humans"
+				},
+				{
+					"label": "F",
+					"text": "farm animals"
+				}
+			],
+			"body": "Reintroducing the lynx to Britain\nThere would be many advantages to reintroducing the lynx to Britain. While there is no evidence that the lynx has ever put ____ (19) in danger, it would reduce the numbers of certain ____ (20) whose populations have increased enormously in recent decades. It would present only a minimal threat to ____ (21), provided these were kept away from lynx habitats. Furthermore, the reintroduction programme would also link efficiently with initiatives to return native ____ (22) to certain areas of the country.",
+			"body_html": "<h3><strong>Reintroducing the lynx to Britain</strong></h3><p>There would be many advantages to reintroducing the lynx to Britain. While there is no evidence that the lynx has ever put [19] in danger, it would reduce the numbers of certain [20] whose populations have increased enormously in recent decades. It would present only a minimal threat to [21], provided these were kept away from lynx habitats. Furthermore, the reintroduction programme would also link efficiently with initiatives to return native [22] to certain areas of the country.</p>",
+			"questions": [
+				{
+					"number": 19,
+					"text": "",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nSẽ có nhiều lợi thế khi đưa loài linh miêu trở lại Anh. Mặc dù không có bằng chứng nào cho thấy loài linh miêu từng gây nguy hiểm cho _\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: put + NOUN (NOUN làm Object của Transitive Verb ‘PUT’)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nPresents no threat to ~ put … in danger\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Linh miêu không gây nguy hiểm cho con người: không có trường hợp nào ghi nhận chúng săn mồi đối với con người\" (The lynx presents no threat to human beings: there is no known instance of one preying on people).\n\nBước 5: Đáp án: E. humans Không có bằng chứng nào cho thấy loài linh miêu gây nguy hiểm cho con người. (There is no evidence that the lynx has ever put humans in danger).",
+					"quotes": [
+						"The lynx presents no threat to human beings: there is no known instance of one preying on people."
+					]
+				},
+				{
+					"number": 20,
+					"text": "",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần): Nó sẽ làm giảm số lượng một số loài _ mà có số lượng tăng lên rất nhiều trong những thập kỷ gần đây.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: certain + NOUN (NOUN theo sau Adjective ‘CERTAIN')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nA specialist predator of ~ reduce the numbers of\nExploded ~ increased enormously\n\nBước 4: So sánh và đối chiếu: Bài đọc chỉ rõ \"Linh miêu là kẻ săn mồi chuyên biệt của loài hươu sao, một loài có số lượng bùng nổ tại Anh trong những thập kỷ gần đây\". (The lynx is a specialist predator of roe deer, a species that has exploded in Britain in recent decades).\n\nBước 5: Đáp án: D. wild animals Nó sẽ giúp giảm số lượng các loài động vật hoang dã nhất định mà số lượng đã tăng lên đáng kể trong những thập kỷ gần đây. (It would reduce the numbers of certain wild animals whose populations have increased enormously in recent decades).",
+					"quotes": [
+						"It is a specialist predator of roe deer, a species that has exploded in Britain in recent decades, holding back, by intensive browsing, attempts to re-establish forests. It will also winkle out sika deer: an exotic species that is almost impossible for human beings to control, as it hides in impenetrable plantations of young trees."
+					]
+				},
+				{
+					"number": 21,
+					"text": "",
+					"answer": "F",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần): Nó chỉ gây ra mối đe dọa tối thiểu đối với _______, với điều kiện là chúng được giữ tránh xa môi trường sống của loài linh miêu.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: threat to + NOUN (NOUN làm Object của Preposition ‘TO')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nPresents little risk to ~ minimal threat to farm animals\n\nBước 4: So sánh và đối chiếu: Bài đọc chỉ rõ: \"Linh miêu yêu cầu môi trường sống dày đặc, và do đó gần như không gây nguy hiểm cho cừu và các loài gia súc khác\" (The lynx requires deep cover, and as such presents little risk to sheep and other livestock).\nBước 5: Đáp án: F. farm animals Nó chỉ gây ra một mối đe dọa tối thiểu đối với vật nuôi trong trang trại, miễn là chúng được giữ xa khỏi môi trường sống của linh miêu. (It would present only a minimal threat to farm animals, provided these were kept away from lynx habitats).",
+					"quotes": [
+						"The lynx requires deep cover, and as such presents little risk to sheep and other livestock, which are supposed, as a condition of farm subsidies, to be kept out of the woods."
+					]
+				},
+				{
+					"number": 22,
+					"text": "",
+					"answer": "A",
+					"quotes": [
+						"On a recent trip to the Cairngorm Mountains, I heard several conservationists suggest that the lynx could be reintroduced there within 20 years. If trees return to the bare hills elsewhere in Britain, the big cats could soon follow."
+					]
+				}
+			]
+		},
+		{
+			"range": "23-26",
+			"type": "YES/NO/NOT GIVEN",
+			"instructions": "Do the following statements agree with the claims of the writer in Reading Passage 2?\nIn boxes 23-26 on your answer sheet, write\nYES if the statement agrees with the claims of the writer\nNO if the statement contradicts the claims of the writer\nNOT GIVEN if it is impossible to say what the writer thinks about this",
+			"questions": [
+				{
+					"number": 23,
+					"text": "Britain could become the first European country to reintroduce the lynx.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NO",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNước Anh có thể trở thành quốc gia châu Âu đầu tiên tái du nhập loài linh miêu.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nReintroduce the lynx ~ cụm từ giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: “Linh miêu có thể được đưa trở lại đó trong vòng 20 năm. Nếu cây cối quay trở lại những ngọn đồi trọc ở những nơi khác tại Anh, những chú mèo lớn có thể sớm theo sau. Không có gì phi thường về những đề xuất này, khi nhìn từ góc nhìn của bất kỳ nơi nào khác ở Châu Âu. Linh miêu hiện đã được đưa trở lại Dãy núi, dãy Alps, ở miền đông nước Pháp và những ngọn núi ở Đức, và đã tái lập bản thân ở nhiều nơi khác”.\n=> Điều này trái ngược với thông tin trong câu hỏi “Nước Anh có thể trở thành quốc gia châu Âu đầu tiên tái du nhập loài linh miêu” (Britain could become the first European country to reintroduce the lynx).\n\nBước 4: Đáp án: NO",
+					"quotes": [
+						"The lynx has now been reintroduced to the Jura Mountains, the Alps, the Vosges in eastern France and the Harz mountains in Germany, and has re-established itself in many more places."
+					]
+				},
+				{
+					"number": 24,
+					"text": "The large growth in the European lynx population since 1970 has exceeded conservationists’ expectations.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSự gia tăng lớn về số lượng loài linh miêu ở châu Âu từ năm 1970 đã vượt qua kỳ vọng của các nhà bảo tồn.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nTripled ~ large growth\nSince 1970 ~ thời gian giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: “Dân số loài linh miêu ở châu Âu đã tăng gấp ba lần kể từ năm 1970, hiện đạt khoảng 10.000 con”.\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin “Sự gia tăng lớn về số lượng loài linh miêu ở châu Âu từ năm 1970 đã vượt qua kỳ vọng của các nhà bảo tồn” (The large growth in the European lynx population since 1970 has exceeded conservationists’ expectations).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"The European population has tripled since 1970 to roughly 10,000."
+					]
+				},
+				{
+					"number": 25,
+					"text": "Changes in agricultural practices have extended the habitat of the lynx in Europe.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững thay đổi trong hoạt động nông nghiệp đã mở rộng môi trường sống của loài linh miêu ở châu Âu.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nFarming ~ agricultural practices\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: “Loài linh miêu này có thể lan rộng khi nghề nông không còn phát triển trên đồi núi nữa và mọi người nhận ra rằng bảo vệ động vật hoang dã có sức hấp dẫn có lợi hơn là săn bắt chúng, vì khách du lịch sẽ trả tiền để có cơ hội nhìn thấy chúng”.\n=> Điều này đồng nghĩa với thông tin trong câu hỏi “Những thay đổi trong hoạt động nông nghiệp đã mở rộng môi trường sống của loài linh miêu” (Changes in agricultural practices have extended the habitat of the lynx).\n\nBước 4: Đáp án: YES",
+					"quotes": [
+						"As with wolves, bears, beavers, boar, bison, moose and many other species, the lynx has been able to spread as farming has left the hills and people discover that it is more lucrative to protect charismatic wildlife than to hunt it, as tourists will pay for the chance to see it. Large-scale rewilding is happening almost everywhere – except Britain."
+					]
+				},
+				{
+					"number": 26,
+					"text": "It has become apparent that species reintroduction has commercial advantages.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nRõ ràng rằng việc tái du nhập các loài có lợi thế về mặt thương mại.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nLucrative ~ commercial advantages\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: “Bảo vệ động vật hoang dã có sức hấp dẫn sẽ có lợi hơn là săn bắt chúng, vì khách du lịch sẽ trả tiền để có cơ hội được nhìn thấy chúng”.\n=> Điều này đồng nghĩa với thông tin trong câu hỏi “Rõ ràng rằng việc tái du nhập các loài có lợi thế về mặt thương mại” (It has become apparent that species reintroduction has commercial advantages).\n\nBước 4: Đáp án: YES",
+					"quotes": [
+						"As with wolves, bears, beavers, boar, bison, moose and many other species, the lynx has been able to spread as farming has left the hills and people discover that it is more lucrative to protect charismatic wildlife than to hunt it, as tourists will pay for the chance to see it. Large-scale rewilding is happening almost everywhere – except Britain."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

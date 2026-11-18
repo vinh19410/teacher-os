@@ -104,15 +104,16 @@ describe("OpenAI placement grader (#730)", () => {
 		expect(body.background).toBe(true);
 		expect(body.store).toBe(true);
 		expect(body.input[0].role).toBe("system");
+		expect(body.input[0].content).toContain("KHÔNG chấm điểm");
+		expect(body.input[0].content).toContain("KHÔNG gợi ý band");
+		expect(body.input[0].content).toContain("KHÔNG viết nhận xét");
+		expect(body.input[0].content).not.toContain("Mức 5:");
 		expect(body.input[1].content).toContain(ESSAY);
 		expect(body.text.format.type).toBe("json_schema");
 		expect(body.text.format.name).toBe("placement_writing_grade");
 		expect(body.text.format.strict).toBe(true);
-		expect(body.text.format.schema.properties.rubric.required).toEqual([
-			"ct",
-			"or",
-			"lg",
-		]);
+		expect(body.text.format.schema.required).toEqual(["errors"]);
+		expect(Object.keys(body.text.format.schema.properties)).toEqual(["errors"]);
 	});
 
 	test("timeout mỗi lượt HTTP mặc định 25 giây", () => {
@@ -130,11 +131,9 @@ describe("OpenAI placement grader (#730)", () => {
 		);
 	});
 
-	test("poll completed: GET /responses/{id}, kẹp rubric, gán id, định vị lỗi", async () => {
+	test("poll completed: GET /responses/{id}, chỉ trả errors, gán id, định vị lỗi", async () => {
 		const { calls, fetchImpl } = recordingFetch(() =>
 			completedResponse({
-				rubric: { ct: 7, or: 2.6, lg: -1 },
-				feedback: "  Bài viết tốt.  ",
 				errors: [
 					{
 						category: "grammar",
@@ -171,8 +170,7 @@ describe("OpenAI placement grader (#730)", () => {
 		expect(calls[0]?.init.method).toBe("GET");
 		expect(calls[0]?.init.body).toBeUndefined();
 		const draft = draftOf(result);
-		expect(draft.rubric).toEqual({ ct: 5, or: 3, lg: 0 });
-		expect(draft.feedback).toBe("Bài viết tốt.");
+		expect(Object.keys(draft)).toEqual(["errors"]);
 		expect(draft.errors.map((e) => e.id)).toEqual(["w1", "w2", "w3"]);
 		const lives = draft.errors.find((e) => e.quote === "I lives");
 		expect(lives?.start).toBe(ESSAY.indexOf("I lives"));
@@ -192,8 +190,6 @@ describe("OpenAI placement grader (#730)", () => {
 		}));
 		const { fetchImpl } = recordingFetch(() =>
 			completedResponse({
-				rubric: { ct: 1, or: 1, lg: 1 },
-				feedback: "",
 				errors,
 			}),
 		);
@@ -226,7 +222,7 @@ describe("OpenAI placement grader (#730)", () => {
 		}
 	});
 
-	test("poll completed nhưng output không phải JSON / thiếu output_text / rubric thiếu key → error FAILED", async () => {
+	test("poll completed nhưng output không phải JSON / thiếu output_text / thiếu errors → error FAILED", async () => {
 		const responses = [
 			() => completedResponse("not json {"),
 			() =>
@@ -236,7 +232,7 @@ describe("OpenAI placement grader (#730)", () => {
 						{ type: "message", content: [{ type: "refusal", refusal: "no" }] },
 					],
 				}),
-			() => completedResponse({ rubric: { ct: 3 }, feedback: "", errors: [] }),
+			() => completedResponse({ foo: "bar" }),
 		];
 		for (const respond of responses) {
 			const { fetchImpl } = recordingFetch(respond);
@@ -338,14 +334,12 @@ describe("OpenAI placement grader (#730)", () => {
 		);
 	});
 
-	test("startSpeaking dùng model env; poll speaking prefix id s và định vị trên transcript", async () => {
+	test("startSpeaking dùng model env, giữ cảnh báo transcript cho pronunciation; poll speaking prefix id s và định vị trên transcript", async () => {
 		const transcript = "I go to school yesterday.";
 		const { calls, fetchImpl } = recordingFetch((url) =>
 			url.endsWith("/responses")
 				? Response.json({ id: "resp_s", status: "queued" })
 				: completedResponse({
-						rubric: { gv: 2, dm: 3, pr: 4, ic: 5 },
-						feedback: "Phát âm chỉ đánh giá qua transcript.",
 						errors: [
 							{
 								category: "grammar",
@@ -367,10 +361,15 @@ describe("OpenAI placement grader (#730)", () => {
 		});
 		const body = JSON.parse(String(calls[0]?.init.body));
 		expect(body.model).toBe("custom-model");
+		expect(body.input[0].content).toContain("transcript");
+		expect(body.input[0].content).toContain("pronunciation");
+		expect(body.input[0].content).toContain("KHÔNG chấm điểm");
 		expect(body.text.format.name).toBe("placement_speaking_grade");
+		expect(body.text.format.schema.required).toEqual(["errors"]);
+		expect(Object.keys(body.text.format.schema.properties)).toEqual(["errors"]);
 		const draft = draftOf(await grader.poll(id, "speaking", transcript));
 		expect(calls[1]?.url).toBe("https://api.openai.com/v1/responses/resp_s");
-		expect(draft.rubric).toEqual({ gv: 2, dm: 3, pr: 4, ic: 5 });
+		expect(Object.keys(draft)).toEqual(["errors"]);
 		expect(draft.errors[0]).toMatchObject({ id: "s1", start: 2, end: 4 });
 	});
 });

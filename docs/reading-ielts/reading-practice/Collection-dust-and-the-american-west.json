@@ -1,0 +1,163 @@
+{
+	"id": "bb6dd2b6-9a83-4fa8-a358-043a57af93e0",
+	"url": "https://stepielts.com/student/reading/bb6dd2b6-9a83-4fa8-a358-043a57af93e0?mode=practice",
+	"title": "Dust and the American West",
+	"source": "Collection",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Dust and the American West",
+		"paragraphs": [
+			"A. Images of deserts in the United States show dusty, barren landscapes, but the land may not always have been this way. Ever since settlers moved west across the US there has been dust-clouds of it everywhere. It was part of the landscape, or so it seemed to them. But there were no records of the landscape of the West until the settlers arrived. Now evidence is starting to emerge which suggests that before the settlers, there was very little dust.",
+			"B. The evidence comes from the San Juan mountains of southwest Colorado, downwind of Arizona and New Mexico. There Jason Neff, a geochemist from the University of Colorado, has been analyzing sediments, the sand, stones and mud, laid down over the past 5000 years. Atmospheric dust was minimal throughout those five millennia until the mid-19th century, he says, but then, 'from about 1860 to 1900, dust deposition rates shot up.'",
+			"C. This is surprising because usually dry means dusty, and the American West has almost always been dry-often drier than today. There was a near-permanent drought between 900 and 1300 which was so intense that it destroyed a series of native American civilizations, including the Anasazi, whose cliff homes are now US national treasures. Yet the evidence from the San Juan lakes is that it was not dusty. Even as their civilization was collapsing, the Anasazi seem to have protected their soils from erosion.",
+			"D. This was not the case with the European settlers once they brought their cows. The landscape the cattle were introduced to was remarkably ill-equipped to cope with grazing animals, says Neff.'Unlike most other parts of the US, there were few grazers in the American Southwest until the Europeans came. No bison and few antelope or deer.'",
+			"E. In the Great Plains to the east and north, bison roamed in vast herds. Their regular grazing had created tough grass, while the herds manured the soil. In the Southwest, the land had few defenses against a sudden invasion of millions of livestock, whose teeth stripped the grass and whose hooves punctured the hard crust of desert soils that protected them from the wind. The invasion was sudden, funded by a bubble of speculative investment, much of it from Britain. The money went into railroads, and herds of cattle and sheep that rode the rails to the wide open pastures.\nBy 1900, when sedimentation rates peaked, there were 20 million cattle and 25 million sheep in the West.",
+			"F. One of the biggest ranches was owned by the Aztec Land and Cattle Company, which owned a million acres of land by 1884. Each acre had cost the company a mere 50 cents, and like many other speculators, it was only interested in quick profits and had little incentive to protect the soils from overgrazing.\nBy the time Aztec sold the ranch in 1901, it was barren, with cattle carcasses scattered across the exhausted land.\nSuch was the damage to the grasslands that even now few of the pastures have recovered. The parched and exposed soil simply blew away. The 1862 Homestead Act was passed in order to encourage the populating of the West. Any family willing to make the journey was entitled to claim 160 acres and farm it. Yet by the time people moved west in large numbers, the cattle companies had taken most of the land and surrounded it with barbed wire. The water sources were therefore cut off, and were aggressively guarded. It was only in the 1930s, with the passage of the Taylor Grazing Act, that federal authorities finally sought to limit cattle herds.",
+			"G. Soil scientists have known for a while about the importance of the hard crust that forms on arid soils.'These crusts can survive winds of up to a hundred miles an hour, but cattle hooves break the crust,' says Jayne Belnap, a soil ecologist at the US Geographical Survey, Utah. The scale of the dust clouds created by the livestock invasion has until now been largely unknown. When Neff first discovered dust in Colorado lake sediments laid down in the 19th century, he was initially unsure where it came from. Maybe it had crossed the Pacific from China's Gobi Desert.",
+			"H. But after investigating the size and chemical composition of the dust, Neff was clear that it mostly came from the American Southwest, mainly Arizona and New Mexico. Now, with the soil crusts gone, dust clouds still head north and are having significant ecological effects in the Colorado mountains. They carry nutrients with them into areas which previously evolved and survived without them. But perhaps the most dramatic impact of the dust has been on snowfields in the Rocky Mountain Range. Even a thin sprinkling of dark material means snow absorbs more solar radiation, meaning that snowmelt occurs far more rapidly during springtime. The impact on the ski tourism industry is obvious.",
+			"I. The loss of snow and the shrinking of glaciers across the American West in the past century has been dramatic. Glacier National Park in Montana, for example, has lost three quarters of its snow cover since 1910. All this is frequently attributed to global warming. While this almost certainly plays a role, Neff's findings suggest that dust may also contribute."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-7",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Choose\n\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Jason Neff discovered there had been a dramatic rise in dust levels in the second half of the nineteenth century.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi: Jason Neff đã phát hiện ra rằng mức độ bụi đã tăng đột biến vào nửa sau của thế kỷ XIX.\nBước 2: Tìm các keywords được paraphrase trong bài:\ndramatic rise ~ dust deposition rates shot up (tốc độ lắng đọng bụi tăng vọt)\nsecond half of the nineteenth century ~ from about 1860 to 1900 (1860–1900 chính là nửa sau thế kỷ XIX)\nJason Neff ~ từ khóa giữ nguyên\nBước 3: So sánh và đối chiếu: Bài đọc chỉ rõ \"Jason Neff nói rằng bụi trong khí quyển rất ít trong suốt 5000 năm cho đến giữa thế kỷ 19, nhưng sau đó, từ khoảng năm 1860 đến năm 1900, tốc độ lắng đọng bụi tăng vọt\". ==> Điều này đồng nghĩa với thông tin trong câu hỏi \"mức độ bụi tăng đột biến vào nửa sau thế kỷ XIX\" (from about 1860 to 1900, dust deposition rates shot up).\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Atmospheric dust was minimal throughout those five millennia until the mid-19th century, he says, but then, 'from about 1860 to 1900, dust deposition rates shot up.'"
+					]
+				},
+				{
+					"number": 2,
+					"text": "The Anasazi civilization disappeared due to the impact of dust in the atmosphere.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi: Nền văn minh Anasazi biến mất do tác động của bụi trong khí quyển.\nBước 2: Tìm các keywords được paraphrase trong bài:\ndisappeared ~ destroying / civilization collapsing (văn minh sụp đổ)\ndue to the impact of dust >< drought (hạn hán – nguyên nhân thực sự)\nAnasazi ~ từ khóa giữ nguyên\nBước 3: So sánh và đối chiếu: Bài đọc chỉ rõ \"Có một đợt hạn hán gần như kéo dài từ năm 900 đến năm 1300, đủ mạnh để phá hủy một loạt nền văn minh người Mỹ bản địa, bao gồm cả người Anasazi. Tuy nhiên, bằng chứng cho thấy lúc đó không hề có nhiều bụi\". ==> Điều này trái ngược với thông tin trong câu hỏi \"Anasazi biến mất vì bụi\" (it destroyed a series of native American civilizations, including the Anasazi — caused by drought, not dust).\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"There was a near-permanent drought between 900 and 1300 which was so intense that it destroyed a series of native American civilizations, including the Anasazi, whose cliff homes are now US national treasures. Yet the evidence from the San Juan lakes is that it was not dusty. Even as their civilization was collapsing, the Anasazi seem to have protected their soils from erosion."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Before cattle were introduced to the American Southwest, large numbers of bison occupied the area.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi: Trước khi gia súc được đưa vào vùng Tây Nam nước Mỹ, một số lượng lớn bò rừng bison đã sinh sống ở đó.\nBước 2: Tìm các keywords được paraphrase trong bài:\nbefore cattle were introduced ~ until the Europeans came (trước khi người châu Âu đến)\nAmerican Southwest ~ từ khóa giữ nguyên\nlarge numbers of bison >< No bison (không có bison)\nBước 3: So sánh và đối chiếu: Bài đọc chỉ rõ \"Không giống như hầu hết các vùng khác của Hoa Kỳ, không có bò rừng và rất ít linh dương hay hươu nai ở vùng Tây Nam nước Mỹ cho đến khi người châu Âu đến\".\n==> Điều này trái ngược với thông tin trong câu hỏi \"số lượng lớn bison sinh sống ở Tây Nam\" (Unlike most other parts of the US, there were few grazers in the American Southwest. No bison and few antelope or deer).\nBước 4: Đáp án: FALSE",
+					"quotes": ["No bison and few antelope or deer.'"]
+				},
+				{
+					"number": 4,
+					"text": "The bison population in the Great Plains diminished because European settlers found it easy to hunt them.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi: Quần thể bò rừng bison ở vùng Great Plains suy giảm vì những người định cư châu Âu thấy việc săn bắn chúng rất dễ dàng.\nBước 2: Tìm các keywords được paraphrase trong bài:\nbison ~ từ khóa giữ nguyên\nGreat Plains ~ từ khóa giữ nguyên\ndiminished / easy to hunt ~ (không tìm thấy thông tin liên quan)\nBước 3: So sánh và đối chiếu: Bài đọc đề cập đến việc \"Ở vùng Great Plains, bò rừng bison lang thang trong các đàn lớn. Việc chúng thường xuyên gặm cỏ đã tạo ra thảm cỏ dai chắc, trong khi các đàn thú cũng bón phân cho đất\". ==> Tuy nhiên, bài đọc không hề nhắc đến thông tin về việc quần thể bison suy giảm hay người định cư châu Âu săn bắn chúng (The bison population diminished because European settlers found it easy to hunt them).\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"E. In the Great Plains to the east and north, bison roamed in vast herds. Their regular grazing had created tough grass, while the herds manured the soil."
+					]
+				},
+				{
+					"number": 5,
+					"text": "The development of railroads across the US was more expensive than originally expected.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi: Việc phát triển đường sắt trên khắp nước Mỹ tốn kém hơn so với dự kiến ban đầu.\nBước 2: Tìm các keywords được paraphrase trong bài:\nrailroads ~ từ khóa giữ nguyên\nmore expensive than originally expected ~ (không tìm thấy thông tin liên quan)\nBước 3: So sánh và đối chiếu: Bài đọc đề cập đến việc \"Tiền được đầu tư vào đường sắt, và các đàn gia súc và cừu đi theo đường sắt đến các đồng cỏ rộng lớn\". ==> Tuy nhiên, bài đọc không hề nhắc đến thông tin về chi phí xây dựng đường sắt so với dự kiến ban đầu (railroads were more expensive than originally expected).\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"The invasion was sudden, funded by a bubble of speculative investment, much of it from Britain. The money went into railroads, and herds of cattle and sheep that rode the rails to the wide open pastures. By 1900, when sedimentation rates peaked, there were 20 million cattle and 25 million sheep in the West.",
+						"The invasion was sudden, funded by a bubble of speculative investment, much of it from Britain."
+					]
+				},
+				{
+					"number": 6,
+					"text": "The Aztec Land and Cattle Company worked hard to take care of the grazing land it owned.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi: Công ty Aztec Land and Cattle Company đã nỗ lực chăm sóc vùng đất chăn thả mà họ sở hữu.\nBước 2: Tìm các keywords được paraphrase trong bài:\nworked hard to take care >< little incentive to protect (ít động lực để bảo vệ)\ngrazing land ~ soils from overgrazing (đất đai khỏi tình trạng chăn thả quá mức)\nAztec Land and Cattle Company ~ từ khóa giữ nguyên\nBước 3: So sánh và đối chiếu: Bài đọc chỉ rõ \"Nó (công ty Aztec) chỉ quan tâm đến lợi nhuận nhanh chóng và hầu như không có động lực để bảo vệ đất khỏi tình trạng chăn thả quá mức. Đến khi Aztec bán trang trại vào năm 1901, đất đã trở nên cằn cỗi, với xác gia súc rải rác khắp vùng đất kiệt sức\". ==> Điều này trái ngược với thông tin trong câu hỏi \"công ty nỗ lực chăm sóc đất đai\" (it was only interested in quick profits and had little incentive to protect the soils from overgrazing).\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Each acre had cost the company a mere 50 cents, and like many other speculators, it was only interested in quick profits and had little incentive to protect the soils from overgrazing. By the time Aztec sold the ranch in 1901, it was barren, with cattle carcasses scattered across the exhausted land."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Most of the land once owned by the Aztec Land and Cattle Company remains infertile today.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi: Phần lớn đất đai mà Công ty Aztec Land and Cattle Company từng sở hữu vẫn còn cằn cỗi cho đến ngày nay.\nBước 2: Tìm các keywords được paraphrase trong bài:\nremains infertile ~ few of the pastures have recovered (rất ít đồng cỏ phục hồi được)\ntoday ~ even now (ngay cả đến bây giờ)\nAztec ~ từ khóa giữ nguyên\nBước 3: So sánh và đối chiếu: Bài đọc chỉ rõ \"Thiệt hại đối với các đồng cỏ lớn đến mức cho đến nay vẫn có rất ít đồng cỏ nào phục hồi được\". ==> Điều này đồng nghĩa với thông tin trong câu hỏi \"phần lớn đất đai vẫn còn cằn cỗi đến ngày nay\" (Such was the damage to the grasslands that even now few of the pastures have recovered).\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"By the time Aztec sold the ranch in 1901, it was barren, with cattle carcasses scattered across the exhausted land. Such was the damage to the grasslands that even now few of the pastures have recovered."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-13",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the notes below. Write NO MORE THAN TWO WORDS from the passage for each answer.",
+			"body": "American Southwest: 1860s to present day\n1862 – American Homestead Act was passed to encourage settlement in the West.\n1930s – Laws were passed to control the size of ____ (8)\nToday Jayne Belnap believes:\nsoil was not affected by high ____ (9)\nsoil was seriously affected by cattle hooves.\nJason Neff:\nfound that ____ (10) in the Colorado region contained dust\nexamined the dust for its chemical content as well as its ____ (11)\nconcluded that the dust was from the American Southwest\nfound that dust affects mountain environments by bringing in ____ (12) that are not normally found there causing faster seasonal snowmelt\nargues that dust is partly to blame for the gradual disappearance of some ____ (13) and snow.",
+			"body_html": "<p><strong>American Southwest: 1860s to present day</strong></p><p>1862 – American Homestead Act was passed to encourage settlement in the West.</p><p>1930s – Laws were passed to control the size of [8]</p><p><strong>Today Jayne Belnap believes:</strong></p><ul><li>soil was not affected by high [9]</li><li>soil was seriously affected by cattle hooves.</li></ul><p><strong>Jason Neff:</strong></p><ul><li>found that [10] in the Colorado region contained dust</li><li>examined the dust for its chemical content as well as its [11]</li><li>concluded that the dust was from the American Southwest</li><li>found that dust affects mountain environments by bringing in [12] that are not normally found there causing faster seasonal snowmelt</li><li>argues that dust is partly to blame for the gradual disappearance of some [13] and snow.</li></ul>",
+			"questions": [
+				{
+					"number": 8,
+					"text": "Laws were passed to control the size of ____ (8)",
+					"answer": "cattle herds",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp: Vào những năm 1930, các đạo luật được thông qua để kiểm soát quy mô của _______.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN PHRASE\nDấu hiệu: \"control the size of\" + NOUN PHRASE (cụm danh từ chỉ đối tượng bị kiểm soát về quy mô)\nBước 3: Tìm các keywords được paraphrase trong bài:\n1930s ~ từ khóa giữ nguyên\nlaws were passed ~ Taylor Grazing Act (đạo luật được thông qua)\ncontrol the size of ~ limit (giới hạn)\nBước 4: So sánh và đối chiếu: Bài đọc chỉ rõ: \"Chỉ đến những năm 1930, với việc thông qua Đạo luật Taylor Grazing Act, các cơ quan liên bang mới tìm cách giới hạn số lượng đàn gia súc\" (It was only in the 1930s, with the passage of the Taylor Grazing Act, that federal authorities finally sought to limit cattle herds).\nBước 5: Đáp án: cattle herds Vào những năm 1930, các đạo luật được thông qua để kiểm soát quy mô của đàn gia súc (Laws were passed to control the size of cattle herds).",
+					"quotes": [
+						"It was only in the 1930s, with the passage of the Taylor Grazing Act, that federal authorities finally sought to limit cattle herds."
+					]
+				},
+				{
+					"number": 9,
+					"text": "soil was not affected by high ____ (9)",
+					"answer": "winds",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp: Jayne Belnap tin rằng đất không bị ảnh hưởng bởi _______ cao.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: \"high\" + NOUN (danh từ chỉ hiện tượng tự nhiên có thể ở mức \"cao\")\nBước 3: Tìm các keywords được paraphrase trong bài:\nnot affected ~ can survive (có thể chịu đựng được)\nhigh ~ up to a hundred miles an hour (lên đến 100 dặm/giờ — mức rất cao)\nJayne Belnap ~ từ khóa giữ nguyên\nBước 4: So sánh và đối chiếu: Bài đọc chỉ rõ: \"Những lớp vỏ này có thể chịu đựng được gió lên đến một trăm dặm một giờ, nhưng móng gia súc phá vỡ lớp vỏ\" (These crusts can survive winds of up to a hundred miles an hour, but cattle hooves break the crust).\nBước 5: Đáp án: winds Jayne Belnap tin rằng đất không bị ảnh hưởng bởi gió cao (soil was not affected by high winds).",
+					"quotes": [
+						"'These crusts can survive winds of up to a hundred miles an hour, but cattle hooves break the crust,' says Jayne Belnap, a soil ecologist at the US Geographical Survey, Utah."
+					]
+				},
+				{
+					"number": 10,
+					"text": "found that ____ (10) in the Colorado region contained dust",
+					"answer": "lake sediments",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp: Jason Neff phát hiện ra rằng _______ trong khu vực Colorado có chứa bụi.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN PHRASE\nDấu hiệu: \"found that\" + NOUN PHRASE + \"contained dust\" (danh từ chỉ đối tượng chứa bụi)\nBước 3: Tìm các keywords được paraphrase trong bài:\nColorado region ~ Colorado ~ từ khóa giữ nguyên\ncontained dust ~ discovered dust in (phát hiện bụi trong)\nJason Neff ~ từ khóa giữ nguyên\nBước 4: So sánh và đối chiếu: Bài đọc chỉ rõ: \"Khi Neff lần đầu tiên phát hiện bụi trong các trầm tích hồ ở Colorado được hình thành vào thế kỷ 19, ông ban đầu không chắc chúng đến từ đâu\" (When Neff first discovered dust in Colorado lake sediments laid down in the 19th century, he was initially unsure where it came from).\nBước 5: Đáp án: lake sediments Jason Neff phát hiện ra rằng trầm tích hồ trong khu vực Colorado có chứa bụi (found that lake sediments in the Colorado region contained dust).",
+					"quotes": [
+						"When Neff first discovered dust in Colorado lake sediments laid down in the 19th century, he was initially unsure where it came from."
+					]
+				},
+				{
+					"number": 11,
+					"text": "examined the dust for its chemical content as well as its ____ (11)",
+					"answer": "size",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp: Neff đã kiểm tra bụi về thành phần hóa học cũng như _______ của nó.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: \"as well as its\" + NOUN (danh từ song song với \"chemical content\")\nBước 3: Tìm các keywords được paraphrase trong bài:\nchemical content ~ chemical composition (thành phần hóa học)\nexamined ~ investigating (điều tra, kiểm tra)\ndust ~ từ khóa giữ nguyên\nBước 4: So sánh và đối chiếu: Bài đọc chỉ rõ: \"Sau khi điều tra về kích thước và thành phần hóa học của bụi, Neff kết luận rằng bụi chủ yếu đến từ Tây Nam nước Mỹ\" (after investigating the size and chemical composition of the dust, Neff was clear that it mostly came from the American Southwest).\nBước 5: Đáp án: size Neff đã kiểm tra bụi về thành phần hóa học cũng như kích thước của nó (examined the dust for its chemical content as well as its size).",
+					"quotes": [
+						"H. But after investigating the size and chemical composition of the dust, Neff was clear that it mostly came from the American Southwest, mainly Arizona and New Mexico."
+					]
+				},
+				{
+					"number": 12,
+					"text": "dust affects mountain environments by bringing in ____ (12) that are not normally found there",
+					"answer": "nutrients",
+					"quotes": [
+						"They carry nutrients with them into areas which previously evolved and survived without them."
+					]
+				},
+				{
+					"number": 13,
+					"text": "argues that dust is partly to blame for the gradual disappearance of some ____ (13) and snow",
+					"answer": "glaciers",
+					"quotes": [
+						"The loss of snow and the shrinking of glaciers across the American West in the past century has been dramatic."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

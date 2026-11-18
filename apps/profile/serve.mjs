@@ -2,6 +2,10 @@ import { readFile, stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import { extname, join, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import {
+	isProfileMaintenanceEnabled,
+	renderMaintenanceHtml,
+} from "./maintenance.mjs";
 
 const root = fileURLToPath(new URL("./public", import.meta.url));
 const rootWithSep = root.endsWith(sep) ? root : `${root}${sep}`;
@@ -15,6 +19,7 @@ const types = {
 	".js": "text/javascript; charset=utf-8",
 	".json": "application/json; charset=utf-8",
 	".mp3": "audio/mpeg",
+	".mp4": "video/mp4",
 	".svg": "image/svg+xml",
 	".ico": "image/x-icon",
 	".png": "image/png",
@@ -80,10 +85,39 @@ export function replaceStudentPortalHref(html, studentPortalUrl) {
 	);
 }
 
+function parseSingleByteRange(rangeHeader, total) {
+	const trimmed = String(rangeHeader ?? "").trim();
+	if (!/^bytes=/i.test(trimmed)) return { ignore: true };
+	const spec = trimmed.slice(6).trim();
+	if (spec.includes(",")) return { ignore: true };
+	const match = /^(\d*)-(\d*)$/.exec(spec);
+	if (!match || (match[1] === "" && match[2] === "") || total <= 0) {
+		return null;
+	}
+	if (match[1] === "") {
+		const suffixLen = Number(match[2]);
+		if (!Number.isSafeInteger(suffixLen) || suffixLen <= 0) return null;
+		return { start: Math.max(0, total - suffixLen), end: total - 1 };
+	}
+	const start = Number(match[1]);
+	const end =
+		match[2] === "" ? total - 1 : Math.min(Number(match[2]), total - 1);
+	if (
+		!Number.isSafeInteger(start) ||
+		!Number.isSafeInteger(end) ||
+		start >= total ||
+		start > end
+	) {
+		return null;
+	}
+	return { start, end };
+}
+
 export function createProfileServer(
 	leadApiUrl = process.env.LEAD_API_URL || "http://localhost:8000",
 	// Use ?? (not ||) so explicit STUDENT_PORTAL_URL="" preserves the HTML prod default (#560).
 	studentPortalUrl = process.env.STUDENT_PORTAL_URL ?? "http://localhost:8003",
+	{ maintenance = isProfileMaintenanceEnabled() } = {},
 ) {
 	const validatedStudentPortalUrl = normalizeStudentPortalUrl(studentPortalUrl);
 	return createServer(async (req, res) => {
@@ -102,6 +136,30 @@ export function createProfileServer(
 		if (decodedPath.includes("\0")) {
 			res.writeHead(400, { "content-type": "text/plain; charset=utf-8" });
 			res.end("Bad request");
+			return;
+		}
+
+		if (maintenance) {
+			if (req.method !== "GET" && req.method !== "HEAD") {
+				res.writeHead(405, {
+					"content-type": "text/plain; charset=utf-8",
+					allow: "GET, HEAD",
+					"cache-control": "no-cache, no-store, must-revalidate",
+					"x-robots-tag": "noindex, nofollow",
+					"x-content-type-options": "nosniff",
+				});
+				res.end("Method Not Allowed");
+				return;
+			}
+			const buf = Buffer.from(renderMaintenanceHtml(), "utf8");
+			res.writeHead(200, {
+				"content-type": types[".html"],
+				"content-length": String(buf.length),
+				"cache-control": "no-cache, no-store, must-revalidate",
+				"x-robots-tag": "noindex, nofollow",
+				"x-content-type-options": "nosniff",
+			});
+			res.end(req.method === "HEAD" ? undefined : buf);
 			return;
 		}
 
@@ -164,11 +222,37 @@ export function createProfileServer(
 
 			const body = await readFile(file);
 			const total = body.length;
-			const contentType = types[extname(file)] ?? "application/octet-stream";
+			const contentType =
+				types[extname(file).toLowerCase()] ?? "application/octet-stream";
+			const rangeHeader = req.headers.range;
+
+			if (typeof rangeHeader === "string" && rangeHeader.trim() !== "") {
+				const range = parseSingleByteRange(rangeHeader, total);
+				if (range === null) {
+					res.writeHead(416, {
+						"content-range": `bytes */${total}`,
+						"accept-ranges": "bytes",
+					});
+					res.end();
+					return;
+				}
+				if (!range.ignore) {
+					const slice = body.subarray(range.start, range.end + 1);
+					res.writeHead(206, {
+						"content-type": contentType,
+						"content-length": String(slice.length),
+						"content-range": `bytes ${range.start}-${range.end}/${total}`,
+						"accept-ranges": "bytes",
+					});
+					res.end(req.method === "HEAD" ? undefined : slice);
+					return;
+				}
+			}
 
 			res.writeHead(200, {
 				"content-type": contentType,
 				"content-length": String(total),
+				"accept-ranges": "bytes",
 			});
 			res.end(req.method === "HEAD" ? undefined : body);
 		} catch {

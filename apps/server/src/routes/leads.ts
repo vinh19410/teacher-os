@@ -6,46 +6,23 @@ import {
 	leadPatchSchema,
 	leadQuerySchema,
 } from "@teacher-os/api/lead-contracts";
-import { normalizeMediaType } from "@teacher-os/api/lib/quiz-media";
-import {
-	buildPlacementZaloText,
-	computePlacementFinal,
-	locatePlacementErrors,
-	PLACEMENT_AI_ERROR_CODES,
-	type PlacementObjectiveResult,
-	type PlacementSnapshot,
-	type PlacementSpeakingRubric,
-	type PlacementSubmissionDetail,
-	type PlacementWritingRubric,
-	placementTeacherGradeSchema,
-} from "@teacher-os/api/placement-test-contracts";
+import { placementTeacherGradeSchema } from "@teacher-os/api/placement-test-contracts";
 import type { Mailer } from "@teacher-os/auth/mail/mailer";
 import { canAccessFinance } from "@teacher-os/auth/role";
 import { lead } from "@teacher-os/db/schema/lead";
 import { placementTestSubmission } from "@teacher-os/db/schema/placement-test";
-import { and, count, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import type { Db, KernelCtx } from "../app";
-import { parseByteRange } from "../lib/byte-range";
-import { mediaObjectResponse } from "../lib/media-response";
 import type { MediaStore } from "../lib/media-store";
 import type { PlacementAiGrader } from "../lib/placement-ai/grader";
 import {
-	buildPlacementResultUrl,
-	type PlacementResultEmailStatus,
-	parseAiSpeakingDraft,
-	parseAiWritingDraft,
-	parseStoredErrors,
-	randomResultToken,
-	sendPlacementResultEmail,
-} from "../lib/placement-ai/placement-result";
-import {
-	claimPlacementAiGrading,
-	finalizePlacementAiGrading,
-	hasPlacementAiWork,
-	runClaimedPlacementAiGrading,
-	schedulePlacementAiTask,
-} from "../lib/placement-ai/run-placement-grading";
+	findLatestSubmissionForLead,
+	getPlacementSubmissionDetailResponse,
+	getPlacementSubmissionMediaResponse,
+	gradePlacementSubmissionResponse,
+	retryPlacementSubmissionAiResponse,
+} from "../lib/placement-submission-service";
 
 type Env = { Variables: { kernelCtx: KernelCtx } };
 type LeadContext = Context<Env>;
@@ -60,114 +37,8 @@ export interface LeadRouteDeps {
 	mailer?: Mailer;
 	/** #730: origin profile đầu tiên dựng link kết quả tuyệt đối. */
 	leadOrigins?: string[];
-}
-
-const RESULT_EMAIL_STATUSES = new Set(["sent", "failed", "skipped"]);
-
-function buildSubmissionDetail(
-	sub: typeof placementTestSubmission.$inferSelect,
-	leadRow: typeof lead.$inferSelect,
-	resultOrigin: string | undefined,
-): PlacementSubmissionDetail {
-	const snapshot = JSON.parse(sub.snapshotJson) as PlacementSnapshot;
-	const answers = JSON.parse(sub.answersJson) as {
-		listening: Record<string, string | number | null>;
-		vocabGrammar: Record<string, number | null>;
-		reading: Record<string, number | null>;
-	};
-	const objective = JSON.parse(
-		sub.objectiveBreakdownJson,
-	) as PlacementObjectiveResult;
-	const writingRubric = sub.writingRubricJson
-		? (JSON.parse(sub.writingRubricJson) as PlacementWritingRubric)
-		: null;
-	const speakingRubric = sub.speakingRubricJson
-		? (JSON.parse(sub.speakingRubricJson) as PlacementSpeakingRubric)
-		: null;
-
-	const activeBand =
-		sub.finalBandLevel && sub.finalCourse
-			? {
-					min: objective.provisionalBand.min,
-					max: objective.provisionalBand.max,
-					cefr: sub.finalBandLevel,
-					course: sub.finalCourse as typeof objective.provisionalBand.course,
-					courseLabel: sub.finalDisplayCourse ?? sub.finalCourse,
-					displayCourse: sub.finalDisplayCourse ?? sub.finalCourse,
-					advice:
-						snapshot.bands.find((b) => b.cefr === sub.finalBandLevel)?.advice ??
-						objective.provisionalBand.advice,
-				}
-			: objective.provisionalBand;
-
-	const activePct = sub.finalScorePct ?? objective.averagePct;
-	const zaloText = buildPlacementZaloText({
-		studentName: leadRow.name,
-		phone: leadRow.phone,
-		objective,
-		writingScore: sub.writingScore,
-		speakingScore: sub.speakingScore,
-		speakingStatus: sub.speakingStatus,
-		band: activeBand,
-		averagePct: activePct,
-		note: sub.finalNote,
-		teacherFeedback: sub.teacherFeedback,
-	});
-
-	return {
-		id: sub.id,
-		leadId: leadRow.id,
-		studentName: leadRow.name,
-		studentPhone: leadRow.phone,
-		testVersion: sub.testVersion,
-		status: sub.status,
-		submittedAt: sub.submittedAt.toISOString(),
-		snapshot,
-		answers,
-		objective,
-		writingText: sub.writingText,
-		writingWordCount: sub.writingWordCount,
-		speakingStatus: sub.speakingStatus,
-		speakingMediaUrl: sub.speakingMediaKey
-			? `/api/leads/${leadRow.id}/placement-submission/media`
-			: null,
-		speakingMediaMime: sub.speakingMediaMime,
-		speakingMediaSize: sub.speakingMediaSize,
-		speakingDurationSec: sub.speakingDurationSec,
-		writingRubric,
-		writingScore: sub.writingScore,
-		speakingRubric,
-		speakingScore: sub.speakingScore,
-		teacherFeedback: sub.teacherFeedback,
-		finalBandLevel: sub.finalBandLevel,
-		finalCourse: sub.finalCourse,
-		finalDisplayCourse: sub.finalDisplayCourse,
-		finalScorePct: sub.finalScorePct,
-		finalNote: sub.finalNote,
-		gradedAt: sub.gradedAt ? sub.gradedAt.toISOString() : null,
-		zaloText,
-		aiStatus: sub.aiStatus,
-		aiErrorCode: sub.aiErrorCode,
-		aiDraftedAt: sub.aiDraftedAt ? sub.aiDraftedAt.toISOString() : null,
-		aiWriting: parseAiWritingDraft(sub.aiWritingJson, sub.writingText),
-		aiSpeaking: parseAiSpeakingDraft(
-			sub.aiSpeakingJson,
-			sub.speakingTranscript,
-		),
-		speakingTranscript: sub.speakingTranscript,
-		writingErrors: parseStoredErrors(sub.writingErrorsJson, sub.writingText),
-		speakingErrors: parseStoredErrors(
-			sub.speakingErrorsJson,
-			sub.speakingTranscript,
-		),
-		resultUrl: sub.resultToken
-			? buildPlacementResultUrl(resultOrigin, sub.resultToken)
-			: null,
-		resultEmailStatus:
-			sub.resultEmailStatus && RESULT_EMAIL_STATUSES.has(sub.resultEmailStatus)
-				? (sub.resultEmailStatus as PlacementResultEmailStatus)
-				: null,
-	};
+	/** Origin portal học viên cho link chi tiết trong email kết quả. */
+	studentOrigin?: string;
 }
 
 /**
@@ -178,7 +49,6 @@ function buildSubmissionDetail(
  */
 export function leadRoutes(deps: LeadRouteDeps) {
 	const routes = new Hono<Env>();
-	const resultOrigin = deps.leadOrigins?.[0];
 
 	routes.use("*", async (c, next) => {
 		const ctx = c.get("kernelCtx");
@@ -232,22 +102,8 @@ export function leadRoutes(deps: LeadRouteDeps) {
 			.limit(1);
 		if (!leadRow) return null;
 
-		const [sub] = await db
-			.select()
-			.from(placementTestSubmission)
-			.where(
-				and(
-					eq(placementTestSubmission.orgId, orgId),
-					eq(placementTestSubmission.leadId, leadRow.id),
-				),
-			)
-			.orderBy(
-				desc(placementTestSubmission.submittedAt),
-				desc(placementTestSubmission.id),
-			)
-			.limit(1);
-
-		return { leadRow, sub: sub ?? null };
+		const sub = await findLatestSubmissionForLead(db, orgId, leadRow.id);
+		return { leadRow, sub };
 	}
 
 	routes.get("/", async (c: LeadContext) => {
@@ -323,7 +179,7 @@ export function leadRoutes(deps: LeadRouteDeps) {
 					desc(placementTestSubmission.id),
 				);
 			for (const sr of subRows) {
-				if (!subMetaByLeadId.has(sr.leadId)) {
+				if (sr.leadId && !subMetaByLeadId.has(sr.leadId)) {
 					subMetaByLeadId.set(sr.leadId, { status: sr.status });
 				}
 			}
@@ -423,11 +279,12 @@ export function leadRoutes(deps: LeadRouteDeps) {
 			);
 		}
 
-		// Job chấm nền xong thì lưu nháp ngay lúc giáo viên mở bài; lượt treo
-		// quá hạn của chính bài này được đánh TIMEOUT tại đây.
-		const sub = await finalizePlacementAiGrading(deps, loaded.sub);
-		c.header("Cache-Control", "no-store");
-		return c.json(buildSubmissionDetail(sub, loaded.leadRow, resultOrigin));
+		return getPlacementSubmissionDetailResponse(
+			c,
+			deps,
+			{ kind: "lead", row: loaded.leadRow },
+			loaded.sub,
+		);
 	});
 
 	/**
@@ -457,50 +314,12 @@ export function leadRoutes(deps: LeadRouteDeps) {
 				404,
 			);
 		}
-		const retryConflict = () =>
-			c.json(
-				{
-					error: "PLACEMENT_AI_RETRY_CONFLICT",
-					code: "PLACEMENT_AI_RETRY_CONFLICT",
-				},
-				409,
-			);
-		if (loaded.sub.status === "graded") return retryConflict();
-		if (!deps.getPlacementAiGrader?.()) {
-			return c.json(
-				{
-					error: PLACEMENT_AI_ERROR_CODES.DISABLED,
-					code: PLACEMENT_AI_ERROR_CODES.DISABLED,
-				},
-				503,
-			);
-		}
-		if (!hasPlacementAiWork(loaded.sub)) return retryConflict();
-		// Lượt cũ có thể đã xong ở OpenAI nhưng chưa được lưu → chốt trước.
-		await finalizePlacementAiGrading(deps, loaded.sub);
-		const startedAt = await claimPlacementAiGrading(
-			db,
-			loaded.sub.id,
-			["none", "failed", "drafted"],
-			new Date(),
-			{ notGraded: true },
-		);
-		if (!startedAt) {
-			return retryConflict();
-		}
-		schedulePlacementAiTask(
-			deps,
-			runClaimedPlacementAiGrading(deps, loaded.sub.id, startedAt),
-		);
 
-		const [fresh] = await db
-			.select()
-			.from(placementTestSubmission)
-			.where(eq(placementTestSubmission.id, loaded.sub.id))
-			.limit(1);
-		c.header("Cache-Control", "no-store");
-		return c.json(
-			buildSubmissionDetail(fresh ?? loaded.sub, loaded.leadRow, resultOrigin),
+		return retryPlacementSubmissionAiResponse(
+			c,
+			deps,
+			{ kind: "lead", row: loaded.leadRow },
+			loaded.sub,
 		);
 	});
 
@@ -517,81 +336,11 @@ export function leadRoutes(deps: LeadRouteDeps) {
 		if (!loaded) {
 			return c.json({ error: "LEAD_NOT_FOUND", code: "LEAD_NOT_FOUND" }, 404);
 		}
-		if (!loaded.sub?.speakingMediaKey) {
+		if (!loaded.sub) {
 			return c.json({ error: "not found" }, 404);
 		}
 
-		const store = deps.getMediaStore?.();
-		if (!store) {
-			return c.json({ error: "media storage unavailable" }, 503);
-		}
-
-		const total = loaded.sub.speakingMediaSize ?? 0;
-		const rangeHeader = c.req.header("Range");
-		let requestedRange: { start: number; end: number } | null = null;
-		if (
-			total > 0 &&
-			typeof rangeHeader === "string" &&
-			rangeHeader.trim().startsWith("bytes=") &&
-			!rangeHeader.includes(",")
-		) {
-			requestedRange = parseByteRange(rangeHeader, total);
-			if (!requestedRange) {
-				return new Response("Range Not Satisfiable", {
-					status: 416,
-					headers: {
-						"Content-Type": "text/plain; charset=utf-8",
-						"Content-Range": `bytes */${total}`,
-						"Accept-Ranges": "bytes",
-						"X-Content-Type-Options": "nosniff",
-						"Content-Security-Policy": "default-src 'none'; sandbox",
-					},
-				});
-			}
-		}
-
-		const object = await store.get(
-			loaded.sub.speakingMediaKey,
-			requestedRange
-				? {
-						offset: requestedRange.start,
-						length: requestedRange.end - requestedRange.start + 1,
-					}
-				: undefined,
-		);
-		if (!object) {
-			return c.json({ error: "not found" }, 404);
-		}
-
-		if (requestedRange && object.range) {
-			const normalized = normalizeMediaType(
-				loaded.sub.speakingMediaMime ?? object.contentType ?? "",
-			);
-			const safeType =
-				normalized.startsWith("audio/") || normalized.startsWith("video/")
-					? normalized
-					: "application/octet-stream";
-			return new Response(object.body, {
-				status: 206,
-				headers: {
-					"Content-Type": safeType,
-					"Content-Range": `bytes ${requestedRange.start}-${requestedRange.end}/${total}`,
-					"Content-Length": String(object.range.length),
-					"Accept-Ranges": "bytes",
-					"X-Content-Type-Options": "nosniff",
-					"Cross-Origin-Opener-Policy": "same-origin",
-					"Content-Security-Policy": "default-src 'none'; sandbox",
-					"Cache-Control": "private, no-store",
-				},
-			});
-		}
-
-		const res = mediaObjectResponse(object, {
-			mediaType: loaded.sub.speakingMediaMime,
-			mediaName: `speaking-${loaded.sub.id}`,
-		});
-		res.headers.set("Accept-Ranges", "bytes");
-		return res;
+		return getPlacementSubmissionMediaResponse(c, deps, loaded.sub);
 	});
 
 	routes.patch("/:id/placement-submission", async (c: LeadContext) => {
@@ -629,122 +378,13 @@ export function leadRoutes(deps: LeadRouteDeps) {
 			);
 		}
 
-		const snapshot = JSON.parse(loaded.sub.snapshotJson) as PlacementSnapshot;
-		const objective = JSON.parse(
-			loaded.sub.objectiveBreakdownJson,
-		) as PlacementObjectiveResult;
-
-		const final = computePlacementFinal({
-			objective,
-			bands: snapshot.bands,
-			writingRubric: parsedBody.data.writingRubric,
-			speakingRubric: parsedBody.data.speakingRubric,
-		});
-
-		// #730: lỗi giáo viên chốt — server luôn định vị lại offset.
-		const writingErrors = locatePlacementErrors(
-			loaded.sub.writingText,
-			parsedBody.data.writingErrors,
-		);
-		const speakingErrors = locatePlacementErrors(
-			loaded.sub.speakingTranscript,
-			parsedBody.data.speakingErrors,
-		);
-
-		const now = new Date();
-		const [updatedSub] = await db
-			.update(placementTestSubmission)
-			.set({
-				status: "graded",
-				writingRubricJson: JSON.stringify(parsedBody.data.writingRubric),
-				writingScore: final.writingScore,
-				speakingRubricJson: parsedBody.data.speakingRubric
-					? JSON.stringify(parsedBody.data.speakingRubric)
-					: null,
-				speakingScore: final.speakingScore,
-				teacherFeedback: parsedBody.data.teacherFeedback,
-				finalBandLevel: final.band.cefr,
-				finalCourse: final.band.course,
-				finalDisplayCourse: final.band.displayCourse || final.band.courseLabel,
-				finalScorePct: final.averagePct,
-				finalNote: final.note,
-				writingErrorsJson: JSON.stringify(writingErrors),
-				speakingErrorsJson: JSON.stringify(speakingErrors),
-				// Token sinh một lần ở lần chốt đầu, giữ nguyên khi chốt lại —
-				// coalesce trong UPDATE để hai lượt chốt đồng thời dùng chung token.
-				resultToken: sql`coalesce(${placementTestSubmission.resultToken}, ${randomResultToken()})`,
-				gradedBy: ctx.userId,
-				gradedAt: now,
-				updatedAt: now,
-			})
-			.where(
-				and(
-					eq(placementTestSubmission.id, loaded.sub.id),
-					eq(placementTestSubmission.orgId, ctx.orgId),
-				),
-			)
-			.returning();
-
-		if (!updatedSub) {
-			return c.json({ error: "not found" }, 404);
-		}
-
-		await db
-			.update(lead)
-			.set({
-				placement: final.finalSummary,
-				course: final.band.course,
-				updatedAt: now,
-			})
-			.where(and(eq(lead.id, loaded.leadRow.id), eq(lead.orgId, ctx.orgId)));
-
-		const resultToken = updatedSub.resultToken;
-		if (!resultToken) {
-			return c.json({ error: "not found" }, 404);
-		}
-		// Lần chốt đầu = lượt thắng CAS đặt `result_published_at`; chỉ lần đó
-		// gửi email. Chốt lại giữ nguyên trạng thái email cũ.
-		const [firstPublish] = await db
-			.update(placementTestSubmission)
-			.set({ resultPublishedAt: now })
-			.where(
-				and(
-					eq(placementTestSubmission.id, updatedSub.id),
-					eq(placementTestSubmission.orgId, ctx.orgId),
-					isNull(placementTestSubmission.resultPublishedAt),
-				),
-			)
-			.returning({ id: placementTestSubmission.id });
-
-		let resultEmailStatus = updatedSub.resultEmailStatus;
-		if (firstPublish) {
-			// Gửi link kết quả đồng bộ (timeout ngắn trong mailer) để response
-			// phản ánh đúng trạng thái; lỗi gửi không làm hỏng lượt chốt.
-			resultEmailStatus = await sendPlacementResultEmail({
-				getMailer: () => deps.mailer,
-				to: loaded.leadRow.email,
-				studentName: loaded.leadRow.name,
-				resultUrl: buildPlacementResultUrl(resultOrigin, resultToken),
-				submissionId: updatedSub.id,
-			});
-			await db
-				.update(placementTestSubmission)
-				.set({ resultEmailStatus })
-				.where(
-					and(
-						eq(placementTestSubmission.id, updatedSub.id),
-						eq(placementTestSubmission.orgId, ctx.orgId),
-					),
-				);
-		}
-
-		c.header("Cache-Control", "no-store");
-		return c.json(
-			buildSubmissionDetail(
-				{ ...updatedSub, resultEmailStatus },
-				loaded.leadRow,
-				resultOrigin,
-			),
+		return gradePlacementSubmissionResponse(
+			c,
+			deps,
+			ctx,
+			{ kind: "lead", row: loaded.leadRow },
+			loaded.sub,
+			parsedBody.data,
 		);
 	});
 

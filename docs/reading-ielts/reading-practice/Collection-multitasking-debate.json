@@ -1,0 +1,225 @@
+{
+	"id": "3d31c18b-6a50-4c2e-9f22-b04c2260239a",
+	"url": "https://stepielts.com/student/reading/3d31c18b-6a50-4c2e-9f22-b04c2260239a?mode=practice",
+	"title": "Multitasking Debate",
+	"source": "Collection",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Multitasking Debate",
+		"subtitle": "Can you do them at the same time?",
+		"paragraphs": [
+			"A. Talking on the phone while driving isn’t the only situation where we’re worse at multitasking than we might like to think we are. New studies have identified a bottleneck in our brains that some say means we are fundamentally incapable of true multitasking. If experimental findings reflect real-world performance, people who think they are multitasking are probably just underperforming in all – or at best, all but one – of their parallel pursuits. Practice might improve your performance, but you will never be as good as when focusing on one task at a time.",
+			"B. The problem, according to René Marois, a psychologist at Vanderbilt University in Nashville, Tennessee, is that there’s a sticking point in the brain. To demonstrate this, Marois devised an experiment to locate it. Volunteers watch a screen and when a particular image appears, a red circle, say, they have to press a key with their index finger. Different coloured circles require presses from different fingers. Typical response time is about half a second, and the volunteers quickly reach their peak performance. Then they learn to listen to different recordings and respond by making a specific sound. For instance, when they hear a bird chirp, they have to say “ba”; an electronic sound should elicit a “ko”, and so on. Again, no problem. A normal person can do that in about half a second, with almost no effort.",
+			"C. The trouble comes when Marois shows the volunteers an image, and then almost immediately plays them a sound. Now they’re flummoxed. “If you show an image and play a sound at the same time, one task is postponed,” he says. In fact, if the second task is introduced within the half-second or so it takes to process and react to the first, it will simply be delayed until the first one is done. The largest dual-task delays occur when the two tasks are presented simultaneously; delays progressively shorten as the interval between presenting the tasks lengthens.",
+			"D. There are at least three points where we seem to get stuck, says Marois. The first is in simply identifying what we’re looking at. This can take a few tenths of a second, during which time we are not able to see and recognise a second item. This limitation is known as the “attentional blink”: experiments have shown that if you’re watching out for a particular event and a second one shows up unexpectedly any time within this crucial window of concentration, it may register in your visual cortex but you will be unable to act upon it. Interestingly, if you don’t expect the first event, you have no trouble to respond to the second. What exactly causes the attentional blink is still a matter for debate.",
+			"E. A second limitation is in our short-term visual memory. It’s estimated that we can keep track of about four items at a time, fewer if they are complex. This capacity shortage is thought to explain, in part, our astonishing inability to detect even huge changes in scenes that are otherwise identical, so-called “change blindness”. Show people pairs of near-identical photos – say, aircraft engines in one picture have disappeared in the other – and they will fail to spot the differences. Here again, though, there is disagreement about what the essential limiting factor really is. Does it come down to a dearth of storage capacity, or is it about how much attention a viewer is paying?",
+			"F. A third limitation is that choosing a response to a stimulus – braking when you see a child in the road, for instance, or replying when your mother tells you over the phone that she’s thinking of leaving your dad – also takes brainpower. Selecting a response to one of these things will delay by some tenths of a second your ability to respond to the other. This is called the “response selection bottleneck” theory, first proposed in 1952.",
+			"G. But David Meyer, a psychologist at the University of Michigan, Ann Arbor, doesn’t buy the bottleneck idea. He thinks dual-task interference is just evidence of a strategy used by the brain to prioritise multiple activities. Meyer is known as something of an optimist by his peers. He has written papers with titles like “Virtually perfect time-sharing in dual-task performance: Uncorking the central cognitive bottleneck”. His experiments have shown that with enough practice – at least 2000 tries – some people can execute two tasks simultaneously as competently as if they were doing them one after the other. He suggests that there is a central cognitive processor that coordinates all this and, what’s more, he thinks it used discretion: sometimes it chooses to delay one task while completing another.",
+			"H. Marois agrees that practice can sometimes erase interference effects. He has found that with just 1 hour of practice each day for two weeks, volunteers show a huge improvement at managing both his tasks at once. Where he disagrees with Meyer is in what the brain is doing to achieve this. Marois speculates that practice might give us the chance to find less congested circuits to execute a task – rather like finding trusty back streets to avoid heavy traffic on main roads – effectively making our response to the task subconscious. After all, there are plenty of examples of subconscious multitasking that most of us routinely manage: walking and talking, eating and reading, watching TV and folding the laundry.",
+			"I. It probably comes as no surprise that, generally speaking, we get worse at multitasking as we age. According to Art Kramer at the University of Illinois at Urbana- Champaign, who studies how ageing affects our cognitive abilities, we peak in our 20s. Though the decline is slow through our 30s and on into our 50s, it is there; and after 55, it becomes more precipitous. In one study, he and his colleagues had both young and old participants do a simulated driving task while carrying on a conversation. He found that while young drivers tended to miss background changes, older drivers failed to notice things that were highly relevant. Likewise, older subjects had more trouble paying attention to the more important parts of a scene than young drivers.",
+			"J. It’s not all bad news for over-55s, though. Kramer also found that older people can benefit from the practice. Not only did they learn to perform better, but brain scans also showed that underlying that improvement was a change in the way their brains become active. While it’s clear that practice can often make a difference, especially as we age, the basic facts remain sobering. “We have this impression of an almighty complex brain,” says Marois, “and yet we have very humbling and crippling limits.” For most of our history, we probably never needed to do more than one thing at a time, he says, and so we haven’t evolved to be able to. Perhaps we will in future, though. We might yet look back one day on people like Debbie and Alun as ancestors of a new breed of true multitaskers."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "The Reading Passage has ten paragraphs A-J.\nWhich paragraph contains the following information?",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"],
+			"questions": [
+				{
+					"number": 1,
+					"text": "A theory explained delay happens when selecting one reaction",
+					"answer": "F",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột lý thuyết giải thích sự chậm trễ xảy ra khi lựa chọn một phản ứng.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ntheory ~ \"response selection bottleneck\" theory\ndelay ~ delay by some tenths of a second\nselecting one reaction ~ Selecting a response to one of these things / choosing a response\n\nBước 3: So sánh và đối chiếu:\nĐoạn F chỉ rõ: \"Việc lựa chọn một phản ứng cho một trong những điều này sẽ làm chậm khả năng phản ứng với điều kia... Điều này được gọi là lý thuyết 'nút thắt cổ chai trong lựa chọn phản ứng'...\" (Selecting a response to one of these things will delay... This is called the \"response selection bottleneck\" theory).\n\nBước 4: Đáp án: F",
+					"quotes": [
+						"F. A third limitation is that choosing a response to a stimulus – braking when you see a child in the road, for instance, or replying when your mother tells you over the phone that she’s thinking of leaving your dad – also takes brainpower. Selecting a response to one of these things will delay by some tenths of a second your ability to respond to the other. This is called the “response selection bottleneck” theory, first proposed in 1952."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Different age group responds to important things differently",
+					"answer": "I",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác nhóm tuổi khác nhau phản ứng với những điều quan trọng một cách khác nhau.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nDifferent age group ~ young and old participants / young drivers... older drivers\nresponds ~ notice / paying attention\nimportant things ~ things that were highly relevant / more important parts\n\nBước 3: So sánh và đối chiếu:\nĐoạn I chỉ rõ: \"Trong khi tài xế trẻ có xu hướng bỏ lỡ các thay đổi ở nền, tài xế lớn tuổi lại không nhận thấy những thứ có tính liên quan cao (quan trọng)...\" (young drivers tended to miss background changes, older drivers failed to notice things that were highly relevant).\n\nBước 4: Đáp án: I",
+					"quotes": [
+						"He found that while young drivers tended to miss background changes, older drivers failed to notice things that were highly relevant. Likewise, older subjects had more trouble paying attention to the more important parts of a scene than young drivers."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Conflicts happened when visual and audio element emerge simultaneously",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nXung đột xảy ra khi yếu tố hình ảnh và âm thanh xuất hiện đồng thời.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nConflicts ~ trouble / flummoxed / postponed (bị trì hoãn - biểu hiện của xung đột tài nguyên não)\nvisual and audio element ~ show an image and play a sound\nsimultaneously ~ at the same time\n\nBước 3: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"Nếu bạn hiển thị một hình ảnh và phát một âm thanh cùng một lúc, một nhiệm vụ sẽ bị hoãn lại\" (If you show an image and play a sound at the same time, one task is postponed).\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"C. The trouble comes when Marois shows the volunteers an image, and then almost immediately plays them a sound. Now they’re flummoxed. “If you show an image and play a sound at the same time, one task is postponed,” he says. In fact, if the second task is introduced within the half-second or so it takes to process and react to the first, it will simply be delayed until the first one is done. The largest dual-task delays occur when the two tasks are presented simultaneously; delays progressively shorten as the interval between presenting the tasks lengthens."
+					]
+				},
+				{
+					"number": 4,
+					"text": "An experiment designed to demonstrates the critical part of the brain for multitasking",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột thí nghiệm được thiết kế để chứng minh phần quan trọng của não bộ đối với việc đa nhiệm.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nexperiment ~ experiment\ndemonstrates ~ demonstrate / locate\ncritical part of the brain ~ sticking point in the brain\n\nBước 3: So sánh và đối chiếu:\nĐoạn B chỉ rõ: \"Để chứng minh điều này, Marois đã thiết kế một thí nghiệm để định vị nó [điểm nghẽn trong não]\" (To demonstrate this, Marois devised an experiment to locate it).\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"To demonstrate this, Marois devised an experiment to locate it."
+					]
+				},
+				{
+					"number": 5,
+					"text": "A viewpoint favors the optimistic side of multitasking performance",
+					"answer": "G",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột quan điểm ủng hộ khía cạnh lạc quan của hiệu suất đa nhiệm.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nviewpoint ~ thinks / suggests\noptimistic side ~ optimist / Virtually perfect time-sharing\nmultitasking performance ~ dual-task performance\n\nBước 3: So sánh và đối chiếu:\nĐoạn G chỉ rõ: \"Meyer được biết đến như là một người lạc quan... Ông đã viết các bài báo với tiêu đề như 'Chia sẻ thời gian ảo như hoàn hảo trong hiệu suất nhiệm vụ kép'...\" (Meyer is known as something of an optimist... \"Virtually perfect time-sharing in dual-task performance...\").\n\nBước 4: Đáp án: G",
+					"quotes": [
+						"Meyer is known as something of an optimist by his peers. He has written papers with titles like “Virtually perfect time-sharing in dual-task performance: Uncorking the central cognitive bottleneck”. His experiments have shown that with enough practice – at least 2000 tries – some people can execute two tasks simultaneously as competently as if they were doing them one after the other."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-8",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter A, B, C or D.\nWrite your answers in boxes 6-8 on your answer sheet.",
+			"questions": [
+				{
+					"number": 6,
+					"text": "Which one is correct about the experiment conducted by René Marois?",
+					"options": [
+						{
+							"label": "A",
+							"text": "participants performed poorly on the listening task solely"
+						},
+						{
+							"label": "B",
+							"text": "volunteers press a different key on different color"
+						},
+						{
+							"label": "C",
+							"text": "participants need to use different fingers on the different colored object"
+						},
+						{
+							"label": "D",
+							"text": "they did a better job on Mixed image and sound information"
+						}
+					],
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nĐiều nào đúng về thí nghiệm được thực hiện bởi René Marois?\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ trong Đoạn B: \"Các vòng tròn màu khác nhau yêu cầu ấn bằng các ngón tay khác nhau\" (Different coloured circles require presses from different fingers).\n==> Thông tin này đồng nghĩa với câu C (participants need to use different fingers on the different colored object).\n\nBước 3: Đáp án: C\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Đoạn B nói làm nhiệm vụ nghe thì \"no problem\" (không vấn đề gì/làm tốt), không phải \"poorly\".\nĐáp án B -> Bài nói dùng \"different fingers\" (ngón tay khác nhau), câu B nói \"different key\" (phím khác nhau). Dù ngón khác nhau thường ấn phím khác nhau, nhưng câu C sát nghĩa với từ \"fingers\" trong bài hơn.\nĐáp án D -> Đoạn C nói khi kết hợp (Mixed) họ bị \"flummoxed\" (bối rối), không phải làm tốt hơn (\"better job\").",
+					"quotes": [
+						"Different coloured circles require presses from different fingers."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Which statement is correct about the first limitation of Marois’s experiment?",
+					"options": [
+						{
+							"label": "A",
+							"text": "“attentional blink” takes about ten seconds"
+						},
+						{
+							"label": "B",
+							"text": "lag occurs if we concentrate on one object while the second one appears"
+						},
+						{
+							"label": "C",
+							"text": "we always have trouble in reaching the second one"
+						},
+						{
+							"label": "D",
+							"text": "first limitation can be avoided by certain measures"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"This limitation is known as the “attentional blink”: experiments have shown that if you’re watching out for a particular event and a second one shows up unexpectedly any time within this crucial window of concentration, it may register in your visual cortex but you will be unable to act upon it."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Which one is NOT correct about Meyer’s experiments and statements?",
+					"options": [
+						{
+							"label": "A",
+							"text": "just after failure in several attempts can people execute dual-task"
+						},
+						{
+							"label": "B",
+							"text": "Practice can overcome dual-task interference"
+						},
+						{
+							"label": "C",
+							"text": "Meyer holds a different opinion on Marois’s theory"
+						},
+						{
+							"label": "D",
+							"text": "an existing processor decides whether to delay another task or not"
+						}
+					],
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nĐiều nào KHÔNG đúng về các thí nghiệm và phát biểu của Meyer? (Tìm thông tin sai).\n\nBước 2: Tìm thông tin dựa trên keywords:\nTrong Đoạn G, bài đọc nói: \"...với đủ sự luyện tập – ít nhất 2000 lần thử...\" (with enough practice – at least 2000 tries).\n==> Câu A nói \"chỉ sau khi thất bại trong vài lần thử (several attempts)\" là trái ngược với \"ít nhất 2000 lần\". \"Several\" thường chỉ số lượng nhỏ (3-5 lần), trong khi thực tế cần hàng nghìn lần.\n\nBước 3: Đáp án: A\n\nBước 4: Giải thích đáp án gây nhiễu (Các câu đúng):\nĐáp án B: Practice can overcome... -> Đúng, bài nói \"practice... execute two tasks simultaneously as competently\".\nĐáp án C: Different opinion... -> Đúng, bài nói \"doesn’t buy the bottleneck idea\".\nĐáp án D: Processor decides... -> Đúng, bài nói \"central cognitive processor... chooses to delay one task\".",
+					"quotes": [
+						"His experiments have shown that with enough practice – at least 2000 tries – some people can execute two tasks simultaneously as competently as if they were doing them one after the other."
+					]
+				}
+			]
+		},
+		{
+			"range": "9-13",
+			"type": "YES/NO/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage?\nIn boxes 9-13 on your answer sheet, write\nYES if the statement is true\nNO if the statement is false\nNOT GIVEN if the information is not given in the passage",
+			"questions": [
+				{
+					"number": 9,
+					"text": "The longer gap between two presenting tasks means shorter delay toward the second one.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nKhoảng cách dài hơn giữa hai nhiệm vụ được trình bày đồng nghĩa với độ trễ ngắn hơn đối với nhiệm vụ thứ hai.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nlonger gap ~ interval between presenting the tasks lengthens\nshorter delay ~ delays progressively shorten\n\nBước 3: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"độ trễ ngắn dần khi khoảng thời gian giữa việc trình bày các nhiệm vụ dài ra\" (delays progressively shorten as the interval between presenting the tasks lengthens).\n=> Điều này đồng nghĩa với thông tin trong câu hỏi.\n\nBước 4: Đáp án: YES",
+					"quotes": [
+						"The largest dual-task delays occur when the two tasks are presented simultaneously; delays progressively shorten as the interval between presenting the tasks lengthens."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Incapable of human memory cause people to sometimes miss the differences when presented two similar images.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSự hạn chế của bộ nhớ con người khiến mọi người đôi khi bỏ lỡ những điểm khác biệt khi được xem hai hình ảnh tương tự.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nIncapable of human memory ~ limitation is in our short-term visual memory / capacity shortage\nmiss the differences ~ fail to spot the differences / change blindness\ntwo similar images ~ pairs of near-identical photos\n\nBước 3: So sánh và đối chiếu:\nĐoạn E chỉ rõ: \"Sự thiếu hụt dung lượng này được cho là giải thích... sự bất lực đáng kinh ngạc trong việc phát hiện các thay đổi... cho mọi người xem các cặp ảnh gần giống hệt nhau... và họ sẽ không phát hiện ra sự khác biệt\" (capacity shortage is thought to explain... inability to detect even huge changes... fail to spot the differences).\n==> Điều này đồng nghĩa với thông tin trong câu hỏi.\n\nBước 4: Đáp án: YES",
+					"quotes": [
+						"E. A second limitation is in our short-term visual memory. It’s estimated that we can keep track of about four items at a time, fewer if they are complex. This capacity shortage is thought to explain, in part, our astonishing inability to detect even huge changes in scenes that are otherwise identical, so-called “change blindness”. Show people pairs of near-identical photos – say, aircraft engines in one picture have disappeared in the other – and they will fail to spot the differences."
+					]
+				},
+				{
+					"number": 11,
+					"text": "Marois has a different opinion on the claim that training removes the bottleneck effect.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NO",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMarois có ý kiến khác về khẳng định rằng việc huấn luyện sẽ loại bỏ hiệu ứng nút thắt cổ chai.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nMarois ~ Marois\ntraining removes the bottleneck effect ~ practice can sometimes erase interference effects\n\nBước 3: So sánh và đối chiếu:\nĐoạn H chỉ rõ: \"Marois đồng ý rằng thực hành đôi khi có thể xóa bỏ các hiệu ứng gây nhiễu\" (Marois agrees that practice can sometimes erase interference effects).\n==> Câu hỏi nói ông ấy có ý kiến khác (tức là không đồng ý), nhưng bài đọc nói ông ấy \"agrees\" (đồng ý) rằng thực hành xóa bỏ được hiệu ứng này (kết quả). Sự bất đồng chỉ nằm ở cơ chế hoạt động của não (\"what the brain is doing\"), chứ không phải ở khẳng định hiệu ứng bị loại bỏ. Do đó, câu hỏi trái ngược với thông tin bài đọc.\n\nBước 4: Đáp án: NO",
+					"quotes": [
+						"H. Marois agrees that practice can sometimes erase interference effects. He has found that with just 1 hour of practice each day for two weeks, volunteers show a huge improvement at managing both his tasks at once. Where he disagrees with Meyer is in what the brain is doing to achieve this."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Art Kramer proved there is a correlation between multitasking performance and genders.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nArt Kramer đã chứng minh có mối tương quan giữa hiệu suất đa nhiệm và giới tính.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nArt Kramer ~ Art Kramer (Đoạn I)\nmultitasking performance ~ multitasking / simulated driving task\ngenders ~ (Tìm thông tin về nam/nữ)\n\nBước 3: So sánh và đối chiếu:\nĐoạn I và J nói về Art Kramer và nghiên cứu của ông về tuổi tác (young and old participants), nhưng không hề nhắc đến giới tính (genders/male/female).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"According to Art Kramer at the University of Illinois at Urbana- Champaign, who studies how ageing affects our cognitive abilities, we peak in our 20s. Though the decline is slow through our 30s and on into our 50s, it is there; and after 55, it becomes more precipitous. In one study, he and his colleagues had both young and old participants do a simulated driving task while carrying on a conversation. He found that while young drivers tended to miss background changes, older drivers failed to notice things that were highly relevant. Likewise, older subjects had more trouble paying attention to the more important parts of a scene than young drivers."
+					]
+				},
+				{
+					"number": 13,
+					"text": "The author doesn’t believe that the effect of practice could bring any variation.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NO",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTác giả không tin rằng hiệu quả của việc luyện tập có thể mang lại bất kỳ sự thay đổi nào.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nauthor ~ (Quan điểm chung của bài)\ndoesn’t believe ~ (Tìm ý phủ định)\npractice could bring any variation ~ Practice might improve / practice can often make a difference\n\nBước 3: So sánh và đối chiếu:\nĐoạn A nói: \"Thực hành có thể cải thiện hiệu suất của bạn\" (Practice might improve your performance). Đoạn J nói: \"Rõ ràng là thực hành thường có thể tạo ra sự khác biệt\" (While it’s clear that practice can often make a difference).\n==> Tác giả tin rằng thực hành CÓ tạo ra sự thay đổi (cải thiện), điều này trái ngược với thông tin \"doesn't believe\" trong câu hỏi.\n\nBước 4: Đáp án: NO",
+					"quotes": [
+						"While it’s clear that practice can often make a difference, especially as we age, the basic facts remain sobering."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

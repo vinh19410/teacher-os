@@ -1,0 +1,165 @@
+{
+	"id": "8dcc703f-fd81-4da4-ab7e-deaa0763eba7",
+	"url": "https://stepielts.com/student/reading/8dcc703f-fd81-4da4-ab7e-deaa0763eba7?mode=practice",
+	"title": "The development of the London underground railway",
+	"source": "C17T1",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "The development of the London underground railway",
+		"paragraphs": [
+			"In the first half of the 1800s, London’s population grew at an astonishing rate, and the central area became increasingly congested. In addition, the expansion of the overground railway network resulted in more and more passengers arriving in the capital. However, in 1846, a Royal Commission decided that the railways should not be allowed to enter the City, the capital’s historic and business centre. The result was that the overground railway stations formed a ring around the City. The area within consisted of poorly built, overcrowded slums and the streets were full of horse-drawn traffic. Crossing the City became a nightmare. It could take an hour and a half to travel 8 km by horse-drawn carriage or bus. Numerous schemes were proposed to resolve these problems, but few succeeded.",
+			"Amongst the most vocal advocates for a solution to London’s traffic problems was Charles Pearson, who worked as a solicitor for the City of London. He saw both social and economic advantages in building an underground railway that would link the overground railway stations together and clear London slums at the same time. His idea was to relocate the poor workers who lived in the inner-city slums to newly constructed suburbs, and to provide cheap rail travel for them to get to work. Pearson’s ideas gained support amongst some businessmen and in 1851 he submitted a plan to Parliament. It was rejected, but coincided with a proposal from another group for an underground connecting line, which Parliament passed.",
+			"The two groups merged and established the Metropolitan Railway Company in August 1854. The company’s plan was to construct an underground railway line from the Great Western Railway’s (GWR) station at Paddington to the edge of the City at Farringdon Street – a distance of almost 5 km. The organisation had difficulty in raising the funding for such a radical and expensive scheme, not least because of the critical articles printed by the press. Objectors argued that the tunnels would collapse under the weight of traffic overhead, buildings would be shaken and passengers would be poisoned by the emissions from the train engines. However, Pearson and his partners persisted.",
+			"The GWR, aware that the new line would finally enable them to run trains into the heart of the City, invested almost £250,000 in the scheme. Eventually, over a five-year period, £1m was raised. The chosen route ran beneath existing main roads to minimise the expense of demolishing buildings. Originally scheduled to be completed in 21 months, the construction of the underground line took three years. It was built just below street level using a technique known as ‘cut and cover’. A trench about ten metres wide and six metres deep was dug, and the sides temporarily help up with timber beams. Brick walls were then constructed, and finally a brick arch was added to create a tunnel. A two-metre-deep layer of soil was laid on top of the tunnel and the road above rebuilt.",
+			"The Metropolitan line, which opened on 10 January 1863, was the world’s first underground railway. On its first day, almost 40,000 passengers were carried between Paddington and Farringdon, the journey taking about 18 minutes.\nBy the end of the Metropolitan’s first year of operation, 9.\n5 million journeys had been made.",
+			"Even as the Metropolitan began operation, the first extensions to the line were being authorised; these were built over the next five years, reaching Moorgate in the east to London and Hammersmith in the west. The original plan was to pull the trains with steam locomotives, using firebricks in the boilers to provide steam, but these engines were never introduced. Instead, the line used specially designed locomotives that were fitted with water tanks in which steam could be condensed. However, smoke and fumes remained a problem, even though ventilation shafts were added to the tunnels.",
+			"Despite the extension of the underground railway, by the 1880s, congestion on London’s streets had become worse. The problem was partly that the existing underground lines formed a circuit around the centre of London and extended to the suburbs, but did not cross the capital’s centre. The ‘cut and cover’ method of construction was not an option in this part of the capital. The only alternative was to tunnel deep underground.",
+			"Although the technology to create these tunnels existed, steam locomotives could not be used in such a confined space. It wasn’t until the development of a reliable electric motor, and a means of transferring power from the generator to a moving train, that the world’s first deep-level electric railway, the City & South London, became possible. The line opened in 1890, and ran from the City to Stockwell, south of the River Thames. The trains were made up of three carriages and driven by electric engines. The carriages were narrow and had tiny windows just below the roof because it was thought that passengers would not want to look out at the tunnel walls. The line was not without its problems, mainly caused by an unreliable power supply, Although the City & South London Railway was a great technical achievement, it did not make a profit. Then, in 1900, the Central London Railway, known as the ‘Tuppenny Tube’, began operation using new electric locomotives. It was very popular and soon afterwards new railways and extensions were added to the growing tube network.\nBy 1907, the heart of today’s Underground system was in place."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the notes below. Choose ONE WORD ONLY from the passage for each answer. Write your answers in boxes 1-6 on your answer sheet.",
+			"body": "The London underground railway\nThe problem\nThe ____ (1) of London increased rapidly between 1800 and 1850\nThe streets were full of horse-drawn vehicles\nThe proposed solution\nCharles Pearson, a solicitor, suggested building an underground railway\nBuilding the railway would make it possible to move people to better housing in the ____ (2)\nA number of ____ (3) agreed with Pearson’s idea\nThe company initially had problems getting the ____ (4) needed for the project\nNegative articles about the project appeared in the ____ (5)\nThe construction\nThe chosen route did not require many buildings to be pulled down\nThe ‘cut and cover’ method was used to construct the tunnels\nWith the completion of the brick arch, the tunnel was covered with ____ (6)",
+			"body_html": "<h3><strong>The London underground railway</strong></h3><h4><strong>The problem</strong></h4><ul><li>The [1] of London increased rapidly between 1800 and 1850</li><li>The streets were full of horse-drawn vehicles</li></ul><p><strong>The proposed solution</strong></p><ul><li>Charles Pearson, a solicitor, suggested building an underground railway</li><li>Building the railway would make it possible to move people to better housing in the [2]</li><li>A number of [3] agreed with Pearson’s idea</li><li>The company initially had problems getting the [4] needed for the project</li><li>Negative articles about the project appeared in the [5]</li></ul><h4><strong>The construction</strong></h4><ul><li>The chosen route did not require many buildings to be pulled down</li><li>The ‘cut and cover’ method was used to construct the tunnels</li><li>With the completion of the brick arch, the tunnel was covered with [6]</li></ul>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "The ____ (1) of London increased rapidly between 1800 and 1850",
+					"answer": "population",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\n___của London tăng nhanh từ năm 1800 tới 1850.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: the + NOUN + of London (NOUN theo sau Article 'THE' để tạo thành cụm danh từ xác định)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nIn the first half of the 1800s ~ between 1800 and 1850\ngrew at an astonishing rate ~ increased rapidly\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Trong nửa đầu những năm 1800, dân số London tăng với tốc độ đáng kinh ngạc...\" (In the first half of the 1800s, London’s population grew at an astonishing rate...).\n\nBước 5: Đáp án: population\nDân số của London tăng nhanh từ năm 1800 tới 1850 (The population of London increased rapidly between 1800 and 1850).",
+					"quotes": [
+						"In the first half of the 1800s, London’s population grew at an astonishing rate, and the central area became increasingly congested."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Building the railway would make it possible to move people to better housing in the ____ (2)",
+					"answer": "suburbs",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nXây dựng đường sắt sẽ giúp cho việc di chuyển một số người tới khu nhà tốt hơn ở ___.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: in the + NOUN (NOUN theo sau Article 'THE')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nrelocate ~ move\nnewly constructed ~ better housing\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Ý tưởng của ông là di dời những công nhân nghèo sống trong khu ổ chuột nội thành đến các vùng ngoại ô mới được xây dựng...\" (His idea was to relocate the poor workers who lived in the inner-city slums to newly constructed suburbs...).\n\nBước 5: Đáp án:suburbs\nXây dựng đường sắt sẽ giúp cho việc di chuyển một số người tới khu nhà tốt hơn ở các vùng ngoại ô (Building the railway would make it possible to move people to better housing in the suburbs).",
+					"quotes": [
+						"His idea was to relocate the poor workers who lived in the inner-city slums to newly constructed suburbs, and to provide cheap rail travel for them to get to work."
+					]
+				},
+				{
+					"number": 3,
+					"text": "A number of ____ (3) agreed with Pearson’s idea",
+					"answer": "businessmen",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nMột số ___ đồng ý với ý tưởng của Pearson.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: a number of + NOUN (NOUN theo sau 'A NUMBER OF' để tạo thành một cụm danh từ số nhiều)\nLưu ý: NOUN là danh từ đếm được số nhiều\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nPearson’s ideas ~ cụm từ giữ nguyên\ngained support ~ agreed with\nsome ~ a number of\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Ý tưởng của Pearson đã nhận được sự ủng hộ của một số doanh nhân\" (Pearson’s ideas gained support amongst some businessmen).\n\nBước 5: Đáp án: businessmen\nMột số doanh nhân đồng ý với ý tưởng của Pearson (A number of businessmen agreed with Pearson’s idea).",
+					"quotes": [
+						"Pearson’s ideas gained support amongst some businessmen and in 1851 he submitted a plan to Parliament."
+					]
+				},
+				{
+					"number": 4,
+					"text": "The company initially had problems getting the ____ (4) needed for the project",
+					"answer": "funding",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nBan đầu công ty gặp một số vấn đề về việc kiếm ___ cần thiết cho dự án.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: the + NOUN (NOUN theo sau Article 'THE' để tạo thành cụm danh từ xác định)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nThe organisation had difficulty in ~ The company initially had problems\nfor such a radical and expensive scheme ~ for the project\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Tổ chức này gặp khó khăn trong việc huy động vốn cho một kế hoạch triệt để và tốn kém như vậy...\" (The organisation had difficulty in raising the funding for such a radical and expensive scheme...).\n\nBước 5: Đáp án: funding\nBan đầu công ty gặp một số vấn đề về việc kiếm vốn cần thiết cho dự án (The company initially had problems getting the funding needed for the project).",
+					"quotes": [
+						"The organisation had difficulty in raising the funding for such a radical and expensive scheme, not least because of the critical articles printed by the press."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Negative articles about the project appeared in the ____ (5)",
+					"answer": "press",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nNhững bài đăng tiêu cực về dự án xuất hiện trên ___.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: in the + NOUN (NOUN theo sau Article 'THE' để tạo thành cụm danh từ xác định)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nthe critical articles ~ negative articles about the project\nprinted by ~ appeared in\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...đặc biệt là vì các bài báo phê bình được báo chí đăng tải\" (...not least because of the critical articles printed by the press).\n\nBước 5: Đáp án: press\nNhững bài đăng tiêu cực về dự án xuất hiện trên báo chí (Negative articles about the project appeared in the press).",
+					"quotes": [
+						"The organisation had difficulty in raising the funding for such a radical and expensive scheme, not least because of the critical articles printed by the press."
+					]
+				},
+				{
+					"number": 6,
+					"text": "With the completion of the brick arch, the tunnel was covered with ____ (6)",
+					"answer": "soil",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nSau khi hoàn thành vòm gạch, đường hầm được bao phủ bởi___.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: covered with + NOUN (NOUN là Object của preposition 'WITH')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nFinally, a brick arch was added ~ with the completion of the brick arch\nlaid on top of the tunnel ~ the tunnel was covered with\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Một lớp đất sâu 2 mét được trải lên trên đường hầm...\" (A two-metre-deep layer of soil was laid on top of the tunnel...).\n\nBước 5: Đáp án: soil\nSau khi hoàn thành vòm gạch, đường hầm được bao phủ bởi đất (With the completion of the brick arch, the tunnel was covered with soil).",
+					"quotes": [
+						"Brick walls were then constructed, and finally a brick arch was added to create a tunnel. A two-metre-deep layer of soil was laid on top of the tunnel and the road above rebuilt."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-13",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 1?\nIn boxes 7-13 on your answer sheet, write:\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 7,
+					"text": "Other countries had built underground railways before the Metropolitan line opened.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững nước khác đã xây dựng đường sắt trước khi đường sắt Metropolitan được mở.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nthe Metropolitan line ~ cụm từ giữ nguyên\nopened ~ từ khóa giữ nguyên\nunderground railway ~ cụm từ giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Tuyến Metropolitan, khai trương vào ngày 10 tháng 1 năm 1863, là tuyến đường sắt ngầm đầu tiên trên thế giới\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"Những nước khác đã xây dựng đường sắt trước khi đường sắt Metropolitan được mở\" (Other countries had built underground railways before the Metropolitan line opened).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"The Metropolitan line, which opened on 10 January 1863, was the world’s first underground railway. On its first day, almost 40,000 passengers were carried between Paddington and Farringdon, the journey taking about 18 minutes. By the end of the Metropolitan’s first year of operation, 9. 5 million journeys had been made."
+					]
+				},
+				{
+					"number": 8,
+					"text": "More people than predicted travelled on the Metropolitan line on the first day.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCó nhiều người đi tàu Metropolitan vào ngày đầu tiên hơn dự kiến.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nOn its first day ~ on the first day\nwere carried ~ travelled on\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"On its first day, almost 40,000 passengers were carried between Paddington and Farringdon, the journey taking about 18 minutes\".\n=> Tuy nhiên bài đọc không hề nhắc đến thông tin \"Có nhiều người đi tàu Metropolitan vào ngày đầu tiên hơn dự kiến”(More people than predicted travelled on the Metropolitan line on the first day).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"The Metropolitan line, which opened on 10 January 1863, was the world’s first underground railway. On its first day, almost 40,000 passengers were carried between Paddington and Farringdon, the journey taking about 18 minutes. By the end of the Metropolitan’s first year of operation, 9. 5 million journeys had been made."
+					]
+				},
+				{
+					"number": 9,
+					"text": "The use of ventilation shafts failed to prevent pollution in the tunnels.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nViệc sử dụng hầm thông gió không tránh khỏi vấn đề ô nhiễm trong đường hầm.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nventilation shafts were added ~ the use of ventilation shafts\nsmoke and fumes remained a problem ~ failed to prevent pollution\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Tuy nhiên, khói bụi và khí thải vẫn là một vấn đề nan giải, mặc dù các hầm thông gió đã được bổ sung vào đường hầm\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Việc sử dụng hầm thông gió cũng không tránh khỏi được vấn đề ô nhiễm trong đường hầm\" (The use of ventilation shafts failed to prevent pollution in the tunnels).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"However, smoke and fumes remained a problem, even though ventilation shafts were added to the tunnels."
+					]
+				},
+				{
+					"number": 10,
+					"text": "A different approach from the ‘cut and cover’ technique was required in London’s central area.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột cách tiếp cận khác với phương pháp “cắt và phủ” là cần thiết cho khu vực trung tâm London.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n'cut and cover' method ~ the ‘cut and cover’ technique\nthe only alternative ~ a different approach\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Phương pháp xây dựng 'cắt và che' không phải là một lựa chọn ở khu vực thủ đô này. Giải pháp thay thế duy nhất là đào đường hầm sâu dưới lòng đất\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Một cách tiếp cận khác với phương pháp “cắt và phủ” là cần thiết cho khu vực trung tâm London\" (A different approach from the ‘cut and cover’ technique was required in London’s central area).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"The ‘cut and cover’ method of construction was not an option in this part of the capital. The only alternative was to tunnel deep underground."
+					]
+				},
+				{
+					"number": 11,
+					"text": "The windows on City & South London trains were at eye level.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác cửa sổ trong tàu lửa ở trong thành phố và phía nam London thì ở ngang tầm mắt.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nThe carriages were narrow and had tiny windows ~ the windows on City & South London trains\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Các toa tàu rất hẹp và có cửa sổ nhỏ ngay dưới mái nhà vì người ta cho rằng hành khách sẽ không muốn nhìn ra các bức tường của đường hầm\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"Các cửa sổ trong tàu lửa ở trong thành phố và phía nam London thì ở ngang tầm mắt\" (The windows on City & South London trains were at eye level).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"The carriages were narrow and had tiny windows just below the roof because it was thought that passengers would not want to look out at the tunnel walls."
+					]
+				},
+				{
+					"number": 12,
+					"text": "The City & South London Railway was a financial success.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐường sắt thành phố và phía nam London là một sự thành công về mặt tài chính.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nthe City & South London Railway ~ cụm từ giữ nguyên\nmake a profit ~ a financial success\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Mặc dù tuyến đường sắt này là một thành công về mặt kĩ thuật, nó không mang lại lợi nhuận\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"Đường sắt thành phố và phía nam London là một sự thành công về mặt tài chính\" (The City & South London Railway was a financial success).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"The line was not without its problems, mainly caused by an unreliable power supply, Although the City & South London Railway was a great technical achievement, it did not make a profit."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Trains on the ‘Tuppenny Tube’ nearly always ran on time.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững chuyến tàu trên “Tuppenny Tube” gần như luôn chạy đúng giờ.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nthe ‘Tuppenny Tube’ ~ tên riêng giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Sau đó, vào năm 1900, Đường sắt Trung tâm Luân Đôn, được gọi là 'Tuppenny Tube', bắt đầu hoạt động bằng cách sử dụng đầu máy điện mới. Nó rất phổ biến và ngay sau đó các tuyến đường sắt mới và phần mở rộng đã được thêm vào mạng lưới đường sắt đang phát triển.\n=> Tuy nhiên bài đọc không hề nhắc đến thông tin \"Những chuyến tàu trên 'Tuppenny Tube' gần như luôn chạy đúng giờ\" (Trains on the ‘Tuppenny Tube’ nearly always ran on time).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Then, in 1900, the Central London Railway, known as the ‘Tuppenny Tube’, began operation using new electric locomotives. It was very popular and soon afterwards new railways and extensions were added to the growing tube network. By 1907, the heart of today’s Underground system was in place."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

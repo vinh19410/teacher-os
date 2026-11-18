@@ -1,6 +1,7 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import ReactDOM from "react-dom/client";
+import Loader from "./components/loader";
 import NotFoundPage from "./components/not-found";
 import { studentQueryClient } from "./lib/query-client";
 import { routeTree } from "./routeTree.gen";
@@ -8,6 +9,8 @@ import { routeTree } from "./routeTree.gen";
 const router = createRouter({
 	routeTree,
 	defaultPreload: "intent",
+	defaultPendingMs: 200,
+	defaultPendingComponent: () => <Loader />,
 	scrollRestoration: true,
 	defaultNotFoundComponent: NotFoundPage,
 	context: {},

@@ -176,4 +176,32 @@ describe("AnswersCheckingPanel — Apply (phase-05 Task 5.3)", () => {
 		expect(html).toContain("Key khớp toàn bộ — không có gì để ghi.");
 		expect(html).not.toContain("Áp dụng");
 	});
+
+	it("slot trộn dạng giữ đúng kind của từng câu khi hiển thị và compare", () => {
+		const slots: AnswersPanelSlot[] = [
+			{
+				part: "p1",
+				label: "Passage 1",
+				promptId: "prompt-p1",
+				qStart: 1,
+				kind: "tfng",
+				questions: [
+					{ stem: "Q1", opts: null, answer: "TRUE", alts: "", pin: null },
+					{
+						stem: "Q2",
+						type: "mcq",
+						opts: ["A", "B", "C"],
+						answer: "B",
+						alts: "",
+						pin: null,
+					},
+				],
+			},
+		];
+		const html = render("1. TRUE\n2. B", slots);
+		expect(html.match(/>TFNG</g)?.length).toBe(1);
+		expect(html.match(/>MCQ</g)?.length).toBe(1);
+		expect(html).toContain("Compare — 2 match, 0 mismatch");
+		expect(html).toContain("Key khớp toàn bộ — không có gì để ghi.");
+	});
 });

@@ -35,6 +35,7 @@ describe("STUDENT_NAV v2", () => {
 			STUDENT_NAV[0].items.map((item) => [item.href, item]),
 		);
 		expect(ITEM_BY_HREF["/"]?.label).toBe("Tổng quan");
+		expect(ITEM_BY_HREF["/placement-test"]).toBeUndefined();
 		expect(ITEM_BY_HREF["/classes"]?.label).toBe("Lớp học");
 		expect(ITEM_BY_HREF["/schedule"]?.label).toBe("Lịch học");
 		expect(ITEM_BY_HREF["/assignments"]?.label).toBe("Bài tập");
@@ -77,6 +78,8 @@ describe("STUDENT_NAV v2", () => {
 			expect(STUDENT_PAGE_LABEL[item.key]).toBe(item.label);
 		}
 		expect(STUDENT_PAGE_LABEL.vocab).toBeUndefined();
+		expect(ACTIVE_KEY_BY_PREFIX["/placement-test"]).toBe("placement-test");
+		expect(STUDENT_PAGE_LABEL["placement-test"]).toBe("Kiểm tra đầu vào");
 		expect(ACTIVE_KEY_BY_PREFIX["/schedule"]).toBe("schedule");
 	});
 });

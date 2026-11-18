@@ -1,0 +1,245 @@
+{
+	"id": "d95d15a5-d04a-46fa-8d53-886028cad396",
+	"url": "https://stepielts.com/student/reading/d95d15a5-d04a-46fa-8d53-886028cad396?mode=practice",
+	"title": "The growth mindset",
+	"source": "C18T4",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "14-26",
+	"passage": {
+		"title": "The growth mindset",
+		"paragraphs": [
+			"Over the past century, a powerful idea has taken root in the educational landscape. The concept of intelligence as something innate has been supplanted by the idea that intelligence is not fixed, and that, with the right training, we can be the authors of our own cognitive capabilities. Psychologist Alfred Binet, the developer of the first intelligence tests, was one of many 19th-century scientists who held that earlier view and sought to quantify cognitive ability. Then, in the early 20th century, progressive thinkers revolted against the notion that inherent ability is destiny. Instead, educators such as John Dewey argued that every child’s intelligence could be developed, given the right environment.",
+			"‘Growth mindset theory’ is a relatively new – and extremely popular – version of this idea. In many schools today you will see hallways covered in motivational posters and hear speeches on the mindset of great sporting heroes who simply believed their way to the top. A major focus of the growth mindset in schools is coaxing students away from seeing failure as an indication of their ability, and towards seeing it as a chance to improve that ability. As educationalist Jeff Howard noted several decades ago: ‘Smart is not something that you just are, smart is something that you can get.’",
+			"The idea of the growth mindset is based on the work of psychologist Carol Dweck in California in the 1990s. In one key experiment, Dweck divided a group of 10- to 12-year-olds into two groups. All were told that they had achieved a high score on a test but the first group were praised for their intelligence in achieving this, while the others were praised for their effort. The second group – those who had been instilled with a ‘growth mindset’ – were subsequently far more likely to put effort into future tasks. Meanwhile, the former took on only those tasks that would not risk their sense of worth. This group had inferred that success or failure is due to innate ability, and this ‘fixed mindset’ had led them to fear of failure and lack of effort. Praising ability actually made the students perform worse, while praising effort emphasised that change was possible.",
+			"One of the greatest impediments to successfully implementing a growth mindset, however, is the education system itself: in many parts of the world, the school climate is obsessed with performance in the form of constant testing, analysing and ranking of students – a key characteristic of the fixed mindset. Nor is it unusual for schools to create a certain cognitive dissonance, when they applaud the benefits of a growth mindset but then hand out fixed target grades in lessons based on performance.",
+			"Aside from the implementation problem, the original growth mindset research has also received harsh criticism. The statistician Andrew Gelman claims that ‘their research designs have enough degrees of freedom that they could take their data to support just about any theory at all’. Professor of Psychology Timothy Bates, who has been trying to replicate Dweck’s work, is finding that the results are repeatedly null. He notes that: ‘People with a growth mindset don’t cope any better with failure … Kids with the growth mindset aren’t getting better grades, either before or after our intervention study.’",
+			"Much of this criticism is not lost on Dweck, and she deserves great credit for responding to it and adapting her work accordingly. In fact, she argues that her work has been misunderstood and misapplied in a range of ways. She has also expressed concerns that her theories are being misappropriated in schools by being conflated with the self-esteem movement: ‘For me the growth mindset is a tool for learning and improvement. It’s not just a vehicle for making children feel good.",
+			"But there is another factor at work here. The failure to translate the growth mindset into the classroom might reflect a misunderstanding of the nature of teaching and learning itself. Growth mindset supporters David Yeager and Gregory Walton claim that interventions should be delivered in a subtle way to maximise their effectiveness. They say that if adolescents perceive a teacher’s intervention as conveying that they are in need of help, this could undo its intended effects.",
+			"A lot of what drives students is their innate beliefs and how they perceive themselves. There is a strong correlation between self-perception and achievement, but there is evidence to suggest that the actual effect of achievement on self-perception is stronger than the other way round. To stand up in a classroom and successfully deliver a good speech is a genuine achievement, and that is likely to be more powerfully motivating than vague notions of ‘motivation’ itself.",
+			"Recent evidence would suggest that growth mindset interventions are not the elixir of student learning that its proponents claim it to be. The growth mindset appears to be a viable construct in the lab, which, when administered in the classroom via targeted interventions, doesn’t seem to work. It is hard to dispute that having faith in the capacity to change is a good attribute for students. Paradoxically, however, that aspiration is not well served by direct interventions that try to instill it.",
+			"Motivational posters and talks are often a waste of time, and might well give students a deluded notion of what success actually means. Teaching concrete skills such as how to write an effective introduction to an essay then praising students’ effort in getting there is probably a far better way of improving confidence than telling them how unique they are, or indeed how capable they are of changing their own brains. Perhaps growth mindset works best as a philosophy and not an intervention."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "14-16",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 14,
+					"text": "What can we learn from the first paragraph?",
+					"options": [
+						{
+							"label": "A",
+							"text": "where the notion of innate intelligence first began"
+						},
+						{
+							"label": "B",
+							"text": "when ideas about the nature of intelligence began to shift"
+						},
+						{
+							"label": "C",
+							"text": "how scientists have responded to changing views of intelligence"
+						},
+						{
+							"label": "D",
+							"text": "why thinkers turned away from the idea of intelligence being fixed"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"Then, in the early 20th century, progressive thinkers revolted against the notion that inherent ability is destiny. Instead, educators such as John Dewey argued that every child’s intelligence could be developed, given the right environment."
+					]
+				},
+				{
+					"number": 15,
+					"text": "The second paragraph describes how schools encourage students to",
+					"options": [
+						{
+							"label": "A",
+							"text": "identify their personal ambitions."
+						},
+						{
+							"label": "B",
+							"text": "help each other to realise their goals."
+						},
+						{
+							"label": "C",
+							"text": "have confidence in their potential to succeed."
+						},
+						{
+							"label": "D",
+							"text": "concentrate on where their particular strengths lie."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"A major focus of the growth mindset in schools is coaxing students away from seeing failure as an indication of their ability, and towards seeing it as a chance to improve that ability."
+					]
+				},
+				{
+					"number": 16,
+					"text": "In the third paragraph, the writer suggests that students with a fixed mindset",
+					"options": [
+						{
+							"label": "A",
+							"text": "tend to be less competitive."
+						},
+						{
+							"label": "B",
+							"text": "generally have a low sense of self-esteem."
+						},
+						{
+							"label": "C",
+							"text": "will only work hard if they are given constant encouragement."
+						},
+						{
+							"label": "D",
+							"text": "are afraid to push themselves beyond what they see as their limitations."
+						}
+					],
+					"answer": "D",
+					"quotes": [
+						"The second group – those who had been instilled with a ‘growth mindset’ – were subsequently far more likely to put effort into future tasks. Meanwhile, the former took on only those tasks that would not risk their sense of worth. This group had inferred that success or failure is due to innate ability, and this ‘fixed mindset’ had led them to fear of failure and lack of effort."
+					]
+				}
+			]
+		},
+		{
+			"range": "17-22",
+			"type": "MATCHING_FEATURES",
+			"instructions": "Look at the following statements (Questions 17-22) and the list of people below. Match each statement with the correct person or people, A-E.\nWrite the correct letter, A-E, in boxes 17-22 on your answer sheet.\nNB You may use any letter more than once.",
+			"options": [
+				{
+					"label": "A",
+					"text": "Alfred Binet"
+				},
+				{
+					"label": "B",
+					"text": "Carol Dweck"
+				},
+				{
+					"label": "C",
+					"text": "Andrew Gelman"
+				},
+				{
+					"label": "D",
+					"text": "Timothy Bates"
+				},
+				{
+					"label": "E",
+					"text": "David Yeager and Gregory Walton"
+				}
+			],
+			"body": "The methodology behind the growth mindset studies was not strict enough. ____ (17)\nThe idea of the growth mindset has been incorrectly interpreted. ____ (18)\nIntellectual ability is an unchangeable feature of each individual. ____ (19)\nThe growth mindset should be promoted without students being aware of it. ____ (20)\nThe growth mindset is not simply about boosting students’ morale. ____ (21)\nResearch shows that the growth mindset has no effect on academic achievement. ____ (22)",
+			"body_html": "<p></p><p>The methodology behind the growth mindset studies was not strict enough. [17]</p><p>The idea of the growth mindset has been incorrectly interpreted. [18]</p><p>Intellectual ability is an unchangeable feature of each individual. [19]</p><p>The growth mindset should be promoted without students being aware of it. [20]</p><p>The growth mindset is not simply about boosting students’ morale. [21]</p><p>Research shows that the growth mindset has no effect on academic achievement. [22]</p><p></p>",
+			"questions": [
+				{
+					"number": 17,
+					"text": "The methodology behind the growth mindset studies was not strict enough.",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Phương pháp nghiên cứu về tư duy phát triển không đủ chặt chẽ\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nresearch designs ~ methodology\ndegrees of freedom ~ not strict enough\nsupport just about any theory ~ not strict enough\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Andrew Gelman \"nghiên cứu của họ quá mở, có thể dùng số liệu để ủng hộ gần như bất cứ giả thuyết nào”.\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"The statistician Andrew Gelman claims that ‘their research designs have enough degrees of freedom that they could take their data to support just about any theory at all’."
+					]
+				},
+				{
+					"number": 18,
+					"text": "The idea of the growth mindset has been incorrectly interpreted.",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Quan niệm về tư duy phát triển chưa được giải thích một cách chính xác\"\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nwork has been misunderstood ~ idea has been incorrectly interpreted\nmisapplied ~ incorrectly interpreted\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Carol Dweck \"Thực ra, bà cho rằng người ta đã hiểu sai và vận dụng không đúng cách công trình của bà. Bà cũng lo ngại rằng giả thuyết của mình đang bị dùng sai ở trường học, bị nhầm lẫn với phong trào nâng cao lòng tự trọng: 'Với tôi, tư duy phát triển là công cụ để học hỏi và tiến bộ. Nó không chỉ đơn giản là cách làm cho trẻ cảm thấy vui'\".\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"In fact, she argues that her work has been misunderstood and misapplied in a range of ways.",
+						"She has also expressed concerns that her theories are being misappropriated in schools by being conflated with the self-esteem movement: ‘For me the growth mindset is a tool for learning and improvement. It’s not just a vehicle for making children feel good."
+					]
+				},
+				{
+					"number": 19,
+					"text": "Intellectual ability is an unchangeable feature of each individual.",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Khả năng trí tuệ là một đặc điểm không thể thay đổi của mỗi cá nhân\"\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nintelligence as something innate ~ Intellectual ability is an unchangeable feature\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Alfred Binet \"Quan niệm cho rằng trí thông minh là urộng sinh đã bị thay thế bởi quan điểm trí thông minh không phải là bất biến, và với sự rèn luyện phù hợp, chúng ta có thể tự định hình khả năng nhận thức của mình. Các nhà khoa học thế kỷ 19 như Alfred Binet - người phát triển bài kiểm tra IQ đầu tiên - đã từng ủng hộ quan điểm trí thông minh bẩm sinh (the earlier view) và tìm cách đo lường nó”.\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"The concept of intelligence as something innate has been supplanted by the idea that intelligence is not fixed, and that, with the right training, we can be the authors of our own cognitive capabilities. Psychologist Alfred Binet, the developer of the first intelligence tests, was one of many 19th-century scientists who held that earlier view and sought to quantify cognitive ability."
+					]
+				},
+				{
+					"number": 20,
+					"text": "The growth mindset should be promoted without students being aware of it.",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Tư duy phát triển nên được khuyến khích mà không để học sinh nhận ra điều đó\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ninterventions should be delivered in a subtle way ~ should be promoted without students being aware of it\nto maximise their effectiveness ~ should be promoted\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến David Yeager and Gregory Walton \"Những người ủng hộ tư duy phát triển David Yeager và Gregory Walton cho rằng nên áp dụng các biện pháp can thiệp một cách tinh tế để đạt hiệu quả tối đa. Họ nói rằng nếu học sinh nhận thấy sự can thiệp của giáo viên như thể các em cần được giúp đỡ, điều này có thể phản tác dụng\".\n\nBước 4: Đáp án: E",
+					"quotes": [
+						"Growth mindset supporters David Yeager and Gregory Walton claim that interventions should be delivered in a subtle way to maximise their effectiveness."
+					]
+				},
+				{
+					"number": 21,
+					"text": "The growth mindset is not simply about boosting students’ morale.",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Tư duy phát triển không chỉ đơn thuần là nâng cao tinh thần của học sinh\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ngrowth mindset is a tool for learning and improvement ~ not simply about boosting students' morale\nnot just a vehicle for making children feel good ~ not simply about boosting students' morale\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Carol Dweck \"Với tôi, tư duy phát triển là công cụ để học hỏi và tiến bộ. Nó không chỉ đơn giản là cách làm cho trẻ cảm thấy vui”.\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"She has also expressed concerns that her theories are being misappropriated in schools by being conflated with the self-esteem movement: ‘For me the growth mindset is a tool for learning and improvement. It’s not just a vehicle for making children feel good."
+					]
+				},
+				{
+					"number": 22,
+					"text": "Research shows that the growth mindset has no effect on academic achievement.",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Nghiên cứu cho thấy tư duy phát triển không có tác động gì đến thành tích học tập\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nKids with the growth mindset aren't getting better grades ~ growth mindset has no effect on academic achievement\neither before or after our intervention study ~ Research shows\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Timothy Bates \"Học sinh có tư duy phát triển không cải thiện được điểm số, dù là trước hay sau khi chúng tôi thực hiện nghiên cứu can thiệp”.\n\nBước 4: Đáp án: D",
+					"quotes": [
+						"He notes that: ‘People with a growth mindset don’t cope any better with failure … Kids with the growth mindset aren’t getting better grades, either before or after our intervention study."
+					]
+				}
+			]
+		},
+		{
+			"range": "23-26",
+			"type": "YES/NO/NOT GIVEN",
+			"instructions": "Do the following statements agree with the views of the writer in Reading Passage 2?\nIn boxes 23-26 on your answer sheet, write\nYES if the statement agrees with the views of the writer\nNO if the statement contradicts the views of the writer\nNOT GIVEN if it is impossible to say what the writer thinks about this",
+			"questions": [
+				{
+					"number": 23,
+					"text": "Dweck has handled criticisms of her work in an admirable way.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nDweck đã đối phó với những lời chỉ trích về công trình nghiên cứu của mình một cách đáng ngưỡng mộ.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nDweck ~ tên riêng giữ nguyên\ncriticism ~ criticisms\ndeserves great credit ~ admirable way\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Dweck xứng đáng nhận được nhiều lời khen ngợi vì đã phản hồi những lời chỉ trích và điều chỉnh công việc của mình sao cho phù hợp nhất\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Dweck đã đối phó với những lời chỉ trích về công trình nghiên cứu của mình một cách đáng ngưỡng mộ\" (Dweck has handled criticisms of her work in an admirable way).\n\nBước 4: Đáp án: YES",
+					"quotes": [
+						"Much of this criticism is not lost on Dweck, and she deserves great credit for responding to it and adapting her work accordingly."
+					]
+				},
+				{
+					"number": 24,
+					"text": "Students’ self-perception is a more effective driver of self-confidence than actual achievement is.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NO",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhận thức của học sinh về bản thân là yếu tố hiệu quả hơn để thúc đẩy sự tự tin so với thành tích thực tế.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nself-perception ~ Students' self-perception\nachievement ~ actual achievement\nstronger ~ more effective\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"\"Có mối tương quan chặt chẽ giữa nhận thức về bản thân và thành tích, nhưng có bằng chứng cho thấy tác động của thành tích lên nhận thức bản thân mạnh hơn so với chiều ngược lại\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"Nhận thức của học sinh về bản thân là yếu tố hiệu quả hơn để thúc đẩy sự tự tin so với thành tích thực tế.\" (Students’ self-perception is a more effective driver of self-confidence than actual achievement is).\n\nBước 4: Đáp án: NO",
+					"quotes": [
+						"There is a strong correlation between self-perception and achievement, but there is evidence to suggest that the actual effect of achievement on self-perception is stronger than the other way round."
+					]
+				},
+				{
+					"number": 25,
+					"text": "Recent evidence about growth mindset interventions has attracted unfair coverage in the media.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác bằng chứng gần đây về biện pháp can thiệp theo tư duy phát triển đã bị truyền thông đưa tin thất thiệt.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nRecent evidence ~ cụm từ giữa nguyên\ngrowth mindset interventions ~ cụm từ giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Các nghiên cứu gần đây cho thấy việc áp dụng tư duy phát triển không phải là giải pháp thần kỳ cho việc học tập như những người ủng hộ nó vẫn khẳng định. Mặc dù tư duy phát triển có vẻ hiệu quả trong phòng thí nghiệm, nhưng khi đem vào thực tế lớp học thông qua các hoạt động can thiệp cụ thể, nó dường như không mang lại kết quả như mong đợi\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"bị truyền thông đưa tin thất thiệt\" (unfair coverage in the media) trong câu hỏi\".\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Recent evidence would suggest that growth mindset interventions are not the elixir of student learning that its proponents claim it to be. The growth mindset appears to be a viable construct in the lab, which, when administered in the classroom via targeted interventions, doesn’t seem to work."
+					]
+				},
+				{
+					"number": 26,
+					"text": "Deliberate attempts to encourage students to strive for high achievement may have a negative effect.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững nỗ lực có chủ đích nhằm thúc đẩy học sinh phấn đấu đạt thành tích cao có thể dẫn đến kết quả tiêu cực.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ndirect interventions ~ Deliberate attempts\ntry to instill it ~ encourage students to strive for high achievement\nnot well served ~ negative effect\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Khó có thể phủ nhận rằng khả năng tự hoàn thiện bản thân là một phẩm chất tốt của học sinh. Tuy nhiên, nghịch lý thay, Nhưng trớ trêu, những can thiệp trực tiếp nhằm nuôi dưỡng khát vọng này lại không đem lại kết quả tốt\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Những nỗ lực có chủ đích nhằm thúc đẩy học sinh phấn đấu đạt thành tích cao có thể dẫn đến kết quả tiêu cực\" (Deliberate attempts to encourage students to strive for high achievement may have a negative effect).\n\nBước 4: Đáp án: YES",
+					"quotes": [
+						"It is hard to dispute that having faith in the capacity to change is a good attribute for students. Paradoxically, however, that aspiration is not well served by direct interventions that try to instill it."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

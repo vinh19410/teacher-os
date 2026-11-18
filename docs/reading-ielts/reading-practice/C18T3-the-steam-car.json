@@ -1,0 +1,251 @@
+{
+	"id": "e6748b4f-5976-4850-903d-8b97e9a60a95",
+	"url": "https://stepielts.com/student/reading/e6748b4f-5976-4850-903d-8b97e9a60a95?mode=practice",
+	"title": "The steam car",
+	"source": "C18T3",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "14-26",
+	"passage": {
+		"title": "The steam car",
+		"subtitle": "The successes and failures of the Doble brothers and their steam cars",
+		"paragraphs": [
+			"A. When primitive automobiles first began to appear in the 1800s, their engines were based on steam power. Steam had already enjoyed a long and successful career in the railways, so it was only natural that the technology evolved into a miniaturized version which was separate from the trains. But these early cars inherited steam’s weaknesses along with its strengths. The boilers had to be lit by hand, and they required about twenty minutes to build up pressure before they could be driven. Furthermore, their water reservoirs only lasted for about thirty miles before needing replenishment. Despite such shortcomings, these newly designed self-propelled carriages offered quick transportation, and by the early 1900s it was not uncommon to see such machines shuttling wealthy citizens around town.",
+			"B. But the glory days of steam cars were few. A new technology called the Internal Combustion Engine soon appeared, which offered the ability to drive down the road just moments after starting up. At first, these noisy gasoline cars were unpopular because they were more complicated to operate and they had difficult hand-crank starters, which were known to break arms when the engines backfired. But in 1912 General Motors introduced the electric starter, and over the following few years steam power was gradually phased out.",
+			"C. Even as the market was declining, four brothers made one last effort to rekindle the technology. Between 1906 and 1909, while still attending high school, Abner Doble and his three brothers built their first steam car in their parents’ basement. It comprised parts taken from a wrecked early steam car but reconfigured to drive an engine of their own design. Though it did not run well, the Doble brothers went on to build a second and third prototype in the following years. Though the Doble boys’ third prototype, nicknamed the Model B, still lacked the convenience of an internal combustion engine, it drew the attention of automobile trade magazines due to its numerous improvements over previous steam cars. The Model B proved to be superior to gasoline automobiles in many ways. Its high-pressure steam drove the engine pistons in virtual silence, in contrast to clattering gas engines which emitted the aroma of burned hydrocarbons. Perhaps most impressively, the Model B was amazingly swift. It could accelerate from zero to sixty miles per hour in just fifteen seconds, a feat described as ‘remarkable acceleration’ by Automobile magazine in 1914.",
+			"D. The following year Abner Doble drove the Model B from Massachusetts to Detroit in order to seek investment in his automobile design, which he used to open the General Engineering Company. He and his brothers immediately began working on the Model C, which was intended to expand upon the innovations of the Model B. The brothers added features such as a key-based ignition in the cabin, eliminating the need for the operator to manually ignite the boiler. With these enhancements, the Dobles’ new car company promised a steam vehicle which would provide all of the convenience of a gasoline car, but with much greater speed, much simpler driving controls, and a virtually silent powerplant.\nBy the following April, the General Engineering Company had received 5,390 deposits for Doble Detroits, which were scheduled for delivery in early 1918.",
+			"E. Later that year Abner Doble delivered unhappy news to those eagerly awaiting the delivery of their modem new cars. Those buyers who received the handful of completed cars complained that the vehicles were sluggish and erratic, sometimes going in reverse when they should go forward. The new engine design, though innovative, was still plagued with serious glitches.",
+			"F. The brothers made one final attempt to produce a viable steam automobile. In early 1924, the Doble brothers shipped a Model E to New York City to be road-tested by the Automobile Club of America. After sitting overnight in freezing temperatures, the car was pushed out into the road and left to sit for over an hour in the frosty morning air. At the turn of the key, the boiler lit and reached its operating pressure inside of forty seconds. As they drove the test vehicle further, they found that its evenly distributed weight lent it surprisingly good handling, even though it was so heavy. As the new Doble steamer was further developed and tested, its maximum speed was pushed to over a hundred miles per hour, and it achieved about fifteen miles per gallon of kerosene with negligible emissions.",
+			"G. Sadly, the Dobles’ brilliant steam car never was a financial success. Priced at around $18,000 in 1924, it was popular only among the very wealthy. Plus, it is said that no two Model Es were quite the same, because Abner Doble tinkered endlessly with the design.\nBy the time the company folded in 1931, fewer than fifty of the amazing Model E steam cars had been produced.\nFor his whole career, until his death in 1961, Abner Doble remained adamant that steam-powered automobiles were at least equal to gasoline cars, if not superior. Given the evidence, he may have been right. Many of the Model E Dobles which have survived are still in good working condition, some having been driven over half a million miles with only normal maintenance. Astonishingly, an unmodified Doble Model E runs clean enough to pass the emissions laws in California today, and they are pretty strict. It is true that the technology poses some difficult problems, but you cannot help but wonder how efficient a steam car might be with the benefit of modem materials and computers. Under the current pressure to improve automotive performance and reduce emissions, it is not unthinkable that the steam car may rise again."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "14-20",
+			"type": "MATCHING_HEADINGS",
+			"instructions": "Reading Passage 2 has seven paragraphs, A-G. Choose the correct heading for each paragraph from the list of headings below.\nWrite the correct number, i-viii, in boxes 14-20 on your answer sheet.",
+			"options": [
+				{
+					"label": "i",
+					"text": "A period in cold conditions before the technology is assessed"
+				},
+				{
+					"label": "ii",
+					"text": "Marketing issues lead to failure"
+				},
+				{
+					"label": "iii",
+					"text": "Good and bad aspects of steam technology are passed on"
+				},
+				{
+					"label": "iv",
+					"text": "A possible solution to the issues of today"
+				},
+				{
+					"label": "v",
+					"text": "Further improvements lead to commercial orders"
+				},
+				{
+					"label": "vi",
+					"text": "Positive publicity at last for this quiet, clean, fast vehicle"
+				},
+				{
+					"label": "vii",
+					"text": "A disappointing outcome for customers"
+				},
+				{
+					"label": "viii",
+					"text": "A better option than the steam car arises"
+				}
+			],
+			"questions": [
+				{
+					"number": 14,
+					"text": "Paragraph A",
+					"answer": "iii",
+					"explanation": "Bước 1: Đọc và hiểu đoạn A:\nXe hơi đầu tiên xuất hiện vào những năm 1800 với động cơ hơi nước thu nhỏ từ công nghệ đường sắt. Tuy vậy, những ưu khuyết điểm đến từ động cơ hơi nước vẫn được giữ lại: di chuyển nhanh, nhưng cần đốt thủ công, mất thời gian tạo áp suất, và phạm vi hoạt động ngắn. Nhưng, đến đầu những năm 1900, loại xe này đã trở nên phổ biến trong việc đưa đón người giàu trong thành phố.\n\nBước 2: Tóm tắt nội dung chính của đoạn A:\nĐoạn A có nội dung chính là \"Sự phát triển của xe hơi hơi nước từ 1800 đến 1900: ưu nhược điểm kế thừa từ động cơ hơi nước, và độ phổ biến trong giới giàu\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề iii \"các đặc điểm tốt và xấu của công nghệ hơi nước được kế thừa\"\n\nBước 4: Đáp án: iii",
+					"quotes": [
+						"But these early cars inherited steam’s weaknesses along with its strengths."
+					]
+				},
+				{
+					"number": 15,
+					"text": "Paragraph B",
+					"answer": "viii",
+					"explanation": "Bước 1: Đọc và hiểu đoạn B:\nThời kỳ hoàng kim của xe hơi chạy bằng hơi nước không được bao lâu. Đó là vì không lâu sau đó động cơ đốt trong ra đời, khởi động nhanh hơn, dù bộ tay quay khởi động khá là phức tạp và gây nguy hiểm cho người lái. Tuy nhiên, năm 1912, General Motors đã cho ra mắt bộ tay quay khởi động chạy bằng điện thay thế, đánh dấu sự kết thúc của kỷ nguyên xe hơi nước.\n\nBước 2: Tóm tắt nội dung chính của đoạn B:\nĐoạn B có nội dung chính là \"Xe hơi nước nhanh chóng bị thay thế bởi xe chạy bằng động cơ đốt trong\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề viii \"Một sự lựa chọn tốt hơn xe hơi chạy bằng hơi nước xuất hiện.\"\n\nBước 4: Đáp án: viii",
+					"quotes": [
+						"But the glory days of steam cars were few. A new technology called the Internal Combustion Engine soon appeared, which offered the ability to drive down the road just moments after starting up. At first, these noisy gasoline cars were unpopular because they were more complicated to operate and they had difficult hand-crank starters, which were known to break arms when the engines backfired. But in 1912 General Motors introduced the electric starter, and over the following few years steam power was gradually phased out."
+					]
+				},
+				{
+					"number": 16,
+					"text": "Paragraph C",
+					"answer": "vi",
+					"explanation": "Bước 1: Đọc và hiểu đoạn C:\nBốn anh em họ Doble cố gắng hồi sinh công nghệ xe hơi nước khi thị trường đang suy giảm. Từ 1906 đến 1909, họ chế tạo chiếc xe đầu tiên, sau đó tiếp tục cải tiến. Nguyên mẫu thứ ba, Model B, mặc dù chưa tiện lợi như động cơ đốt trong, nhưng thu hút sự chú ý nhờ nhiều cải tiến. Model B chạy êm hơn, không mùi và tăng tốc nhanh đến kinh ngạc, và mẫu này cuối cùng đã được ca ngợi trên tạp chí Automobile năm 1914.\n\nBước 2: Tóm tắt nội dung chính của đoạn C:\nĐoạn C có nội dung chính là \"Anh em Doble cải tiến xe hơi nước. Dù chưa tiện như xe xăng, Model B nhanh, êm, không mùi, thu hút sự chú ý của truyền thông\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề vi \"Truyền thông tích cực cuối cùng cũng đã dành trọn cho mẫu xe êm ái, sạch sẽ và nhanh nhẹn này\"\n\nBước 4: Đáp án: vi",
+					"quotes": [
+						"The Model B proved to be superior to gasoline automobiles in many ways. Its high-pressure steam drove the engine pistons in virtual silence, in contrast to clattering gas engines which emitted the aroma of burned hydrocarbons. Perhaps most impressively, the Model B was amazingly swift. It could accelerate from zero to sixty miles per hour in just fifteen seconds, a feat described as ‘remarkable acceleration’ by Automobile magazine in 1914."
+					]
+				},
+				{
+					"number": 17,
+					"text": "Paragraph D",
+					"answer": "v",
+					"explanation": "Bước 1: Đọc và hiểu đoạn D:\nNăm tiếp theo, Abner Doble lái Model B đến Detroit để gọi vốn đầu tư, sau đó thành lập General Engineering Company. Anh em nhà Doble đã cho ra mắt Model C với nhiều tính năng mới, trong đó có hệ thống khởi động bằng chìa khóa ngay trong khoang lái. Xe hơi nước mới này hứa hẹn sẽ tiện lợi như xe xăng, nhưng nhanh hơn, điều khiển đơn giản hơn và gần như không gây tiếng ồn. Đến tháng 4 năm sau, công ty nhận được 5,390 đơn đặt hàng Doble Detroits, dự kiến giao vào đầu năm 1918.\n\nBước 2: Tóm tắt nội dung chính của đoạn D:\nĐoạn D có nội dung chính là \"Anh em Doble cải tiến xe hơi nước, cho ra Model C tiện lợi, nhanh, êm hơn, và cuối cùng nhận nhiều đơn đặt hàng\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề v \"Nhờ cải tiến vượt trội mà nhận được nhiều đơn đặt hàng.\"\n\nBước 4: Đáp án: v",
+					"quotes": [
+						"The brothers added features such as a key-based ignition in the cabin, eliminating the need for the operator to manually ignite the boiler.",
+						"With these enhancements, the Dobles’ new car company promised a steam vehicle which would provide all of the convenience of a gasoline car, but with much greater speed, much simpler driving controls, and a virtually silent powerplant. By the following April, the General Engineering Company had received 5,390 deposits for Doble Detroits, which were scheduled for delivery in early 1918."
+					]
+				},
+				{
+					"number": 18,
+					"text": "Paragraph E",
+					"answer": "vii",
+					"explanation": "Bước 1: Đọc và hiểu đoạn E:\nCuối năm đó, Abner Doble buộc phải thông báo tin buồn cho những khách hàng đang nóng lòng chờ mẫu xe mới. Số ít người đã nhận được xe phàn nàn rằng xe chạy ì ạch và thất thường, có khi còn lùi thay vì tiến. Mặc dù có nhiều cải tiến, thiết kế động cơ mới còn đầy những lỗi nghiêm trọng.\n\nBước 2: Tóm tắt nội dung chính của đoạn E:\nĐoạn D có nội dung chính là \"Khách hàng nhận tin buồn từ Abner Doble. Xe mới giao có nhiều lỗi: chạy chậm, thất thường, đôi khi lùi thay vì tiến.\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề vii \"Một kết cục gây thất vọng cho khách hàng\".\n\nBước 4: Đáp án: vii",
+					"quotes": [
+						"E. Later that year Abner Doble delivered unhappy news to those eagerly awaiting the delivery of their modem new cars. Those buyers who received the handful of completed cars complained that the vehicles were sluggish and erratic, sometimes going in reverse when they should go forward. The new engine design, though innovative, was still plagued with serious glitches."
+					]
+				},
+				{
+					"number": 19,
+					"text": "Paragraph F",
+					"answer": "i",
+					"explanation": "Bước 1: Đọc và hiểu đoạn F:\nAnh em Doble thử sức lần cuối với Model E. Năm 1924, họ đem xe đi thử ở New York giữa tiết trời lạnh giá. Kết quả, Model E khởi động nhanh và chạy êm ru luôn dù khá nặng. Qua nhiều lần cải tiến, Model E đạt tốc độ trên 160 km/h, tiêu thụ khoảng 6,4 km/lít dầu hỏa và gần như không gây ô nhiễm.\n\nBước 2: Tóm tắt nội dung chính của đoạn F:\nĐoạn E có nội dung chính là \"Model E, một sản phẩm tân tiến được thử nghiệm giữ trời lạnh giá của anh em Doble: khởi động nhanh, chạy êm, tốc độ cao và tiết kiệm nhiên liệu\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề i \"Giai đoạn thử nghiệm trong tiết trời giá lạnh trước khi kiểm chứng hiệu quả của mẫu công nghệ\".\n\nBước 4: Đáp án: i",
+					"quotes": [
+						"F. The brothers made one final attempt to produce a viable steam automobile. In early 1924, the Doble brothers shipped a Model E to New York City to be road-tested by the Automobile Club of America. After sitting overnight in freezing temperatures, the car was pushed out into the road and left to sit for over an hour in the frosty morning air. At the turn of the key, the boiler lit and reached its operating pressure inside of forty seconds. As they drove the test vehicle further, they found that its evenly distributed weight lent it surprisingly good handling, even though it was so heavy."
+					]
+				},
+				{
+					"number": 20,
+					"text": "Paragraph G",
+					"answer": "iv",
+					"explanation": "Bước 1: Đọc và hiểu đoạn G:\nXe hơi nước Doble, dù công nghệ vượt trội, lại thất bại về mặt tài chính do giá cao và lượng sản xuất bị hạn chế. Công ty đóng cửa năm 1931, chỉ sản xuất được 50 chiếc Model E. Tuy vậy, nhiều xe vẫn chạy tốt sau hàng trăm nghìn dặm và đạt chuẩn khí thải khắt khe của California hiện nay. Với công nghệ hiện đại, xe hơi nước có thể sẽ được tái sinh và phát triển hơn nữa để đáp ứng nhu cầu tiết kiệm nhiên liệu và giảm ô nhiễm trong tương lai.\n\nBước 2: Tóm tắt nội dung chính của đoạn G:\nĐoạn G có nội dung chính là \"Mẫu xe mới: công nghệ vượt trội, nhưng thất bại. Tuy nhiên, nhiều xe vẫn chạy tốt sau nhiều năm, và với công nghệ hiện đại, có thể phát triển hơn nữa để đáp ứng nhu cầu hiện nay.\"\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề iv \"Một giải pháp tiềm năng cho các vấn đề hiện nay..\n\nBước 4: Đáp án: iv",
+					"quotes": [
+						"Under the current pressure to improve automotive performance and reduce emissions, it is not unthinkable that the steam car may rise again."
+					]
+				}
+			]
+		},
+		{
+			"range": "21-23",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "What point does the writer make about the steam car in Paragraph B?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Its success was short-lived."
+						},
+						{
+							"label": "B",
+							"text": "Not enough cars were made."
+						},
+						{
+							"label": "C",
+							"text": "Car companies found them hard to sell."
+						},
+						{
+							"label": "D",
+							"text": "People found them hard to drive."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"But the glory days of steam cars were few. A new technology called the Internal Combustion Engine soon appeared, which offered the ability to drive down the road just moments after starting up. At first, these noisy gasoline cars were unpopular because they were more complicated to operate and they had difficult hand-crank starters, which were known to break arms when the engines backfired. But in 1912 General Motors introduced the electric starter, and over the following few years steam power was gradually phased out."
+					]
+				},
+				{
+					"number": 22,
+					"text": "When building their first steam car, the Doble brothers",
+					"options": [
+						{
+							"label": "A",
+							"text": "constructed all the parts themselves."
+						},
+						{
+							"label": "B",
+							"text": "made written notes at each stage of the construction."
+						},
+						{
+							"label": "C",
+							"text": "needed several attempts to achieve a competitive model."
+						},
+						{
+							"label": "D",
+							"text": "sought the advice of experienced people in the car industry."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Between 1906 and 1909, while still attending high school, Abner Doble and his three brothers built their first steam car in their parents’ basement. It comprised parts taken from a wrecked early steam car but reconfigured to drive an engine of their own design. Though it did not run well, the Doble brothers went on to build a second and third prototype in the following years. Though the Doble boys’ third prototype, nicknamed the Model B, still lacked the convenience of an internal combustion engine, it drew the attention of automobile trade magazines due to its numerous improvements over previous steam cars."
+					]
+				},
+				{
+					"number": 23,
+					"text": "In order to produce the Model C, the Doble brothers",
+					"options": [
+						{
+							"label": "A",
+							"text": "moved production to a different city."
+						},
+						{
+							"label": "B",
+							"text": "raised financial capital."
+						},
+						{
+							"label": "C",
+							"text": "employed an additional worker."
+						},
+						{
+							"label": "D",
+							"text": "abandoned their earlier designs."
+						}
+					],
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nĐể sản xuất Model C, anh em nhà Doble (Doble brothers) đã làm gì?\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Năm tiếp theo, Abner Doble lái chiếc Model B từ Massachusetts đến Detroit để tìm nhà đầu tư cho mẫu thiết kế xe mình. Kiếm được mớ tiền, anh liền thành lập luôn General Engineering Company. Ngay lập tức, anh em nhà Doble bắt tay vào chế tạo Model C, nhằm phát triển thêm từ những cải tiến của Model B (loại đáp án D). Họ bổ sung nhiều tính năng mới, như hệ thống khởi động bằng chìa khóa ngay trong khoang lái, giúp người lái không cần phải tự tay đốt nồi hơi nữa.\".\n=> Thông tin được in đậm đồng nghĩa với câu B (Huy động vốn tài chính).\n\nBước 3: Đáp án B\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Đoạn văn không đề cập đến việc \"chuyển địa điểm sản xuất\".\nĐáp án C -> Đoạn văn không đề cập đến việc \"tuyển thêm nhân công\".",
+					"quotes": [
+						"D. The following year Abner Doble drove the Model B from Massachusetts to Detroit in order to seek investment in his automobile design, which he used to open the General Engineering Company. He and his brothers immediately began working on the Model C, which was intended to expand upon the innovations of the Model B.",
+						"The brothers added features such as a key-based ignition in the cabin, eliminating the need for the operator to manually ignite the boiler."
+					]
+				}
+			]
+		},
+		{
+			"range": "24-26",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary below. Choose ONE WORD AND/OR A NUMBER from the passage for each answer. Write your answers in boxes 24-26 on your answer sheet.",
+			"body": "The Model E\nThe Model E was road-tested in 1924 by the Automobile Club of America. They found it easy to drive, despite its weight, and it impressed the spectators. A later version of the Model E raised its ____ (24), while keeping its emissions extremely low.\nThe steam car was too expensive for many people and its design was constantly being altered. Under ____ (25) cars were produced before the company went out of business. However, even today, there are Model Es on the road in the US. They are straightforward to maintain, and they satisfy California’s ____ (26) emissions laws. Perhaps today’s technology and materials would help us revive the steam car.",
+			"body_html": "<h3><strong>The Model E</strong></h3><p>The Model E was road-tested in 1924 by the Automobile Club of America. They found it easy to drive, despite its weight, and it impressed the spectators. A later version of the Model E raised its [24], while keeping its emissions extremely low.</p><p>The steam car was too expensive for many people and its design was constantly being altered. Under [25] cars were produced before the company went out of business. However, even today, there are Model Es on the road in the US. They are straightforward to maintain, and they satisfy California’s [26] emissions laws. Perhaps today’s technology and materials would help us revive the steam car.</p>",
+			"questions": [
+				{
+					"number": 24,
+					"text": "The Model E was road-tested in 1924 by the Automobile Club of America. They found it easy to drive, despite its weight, and it impressed the spectators. A later version of the Model E raised its ____ (24), while keeping its emissions extremely low.",
+					"answer": "speed",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nMột phiên bản sau của Model E đã nâng cao _______ của nó, trong khi vẫn giữ lượng khí thải ở mức cực kỳ thấp.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: raised its + NOUN (NOUN làm Object của Transitive verb 'RAISED')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nfurther developed and tested ~ later version\npushed to over ~ raised its\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"khi chiếc xe hơi chạy bằng hơi nước mới của Doble được phát triển và thử nghiệm thêm, tốc độ tối đa của nó được đẩy lên trên một trăm dặm một giờ\" (As the new Doble steamer was further developed and tested, its maximum speed was pushed to over a hundred miles per hour).\n\nBước 5: Đáp án: speed\nMột phiên bản sau của Model E đã nâng cao tốc độ của nó, trong khi vẫn giữ lượng khí thải ở mức cực kỳ thấp. (A later version of the Model E raised its speed, while keeping its emissions extremely low).",
+					"quotes": [
+						"As the new Doble steamer was further developed and tested, its maximum speed was pushed to over a hundred miles per hour, and it achieved about fifteen miles per gallon of kerosene with negligible emissions."
+					]
+				},
+				{
+					"number": 25,
+					"text": "",
+					"answer": "fifty",
+					"quotes": [
+						"By the time the company folded in 1931, fewer than fifty of the amazing Model E steam cars had been produced."
+					]
+				},
+				{
+					"number": 26,
+					"text": "",
+					"answer": "strict",
+					"quotes": [
+						"Astonishingly, an unmodified Doble Model E runs clean enough to pass the emissions laws in California today, and they are pretty strict."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

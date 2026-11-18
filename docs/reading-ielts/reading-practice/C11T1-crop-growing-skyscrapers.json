@@ -1,0 +1,161 @@
+{
+	"id": "086da469-a0b8-4fb5-964d-8c1724b6e0a5",
+	"url": "https://stepielts.com/student/reading/086da469-a0b8-4fb5-964d-8c1724b6e0a5?mode=practice",
+	"title": "Crop-growing Skyscrapers",
+	"source": "C11T1",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Crop-growing skyscrapers",
+		"paragraphs": [
+			"By the year 2050, nearly 80% of the Earth’s population will live in urban centres.\nApplying the most conservative estimates to current demographic trends, the human population will increase by about three billion people by then.An estimated 109 hectares of new land (about 20% larger than Brazil) will be needed to grow enough food to feed them, if traditional farming methods continue as they are practised today. At present, throughout the world, over 80% of the land that is suitable for raising crops is in use. Historically, some 15% of that has been laid waste by poor management practices.What can be done to ensure enough food for the world’s population to live on?",
+			"The concept of indoor farming is not new, since hothouse production of tomatoes and other produce has been in vogue for some time.What is new is the urgent need to scale up this technology to accommodate another three billion people. Many believe an entirely new approach to indoor farming is required, employing cutting-edge technologies. One such proposal is for the ‘Vertical Farm’. The concept is of multi-storey buildings in which food crops are grown in environmentally controlled conditions. Situated in the heart of urban centres, they would drastically reduce the amount of transportation required to bring food to consumers.Vertical farms would need to be efficient, cheap to construct and safe to operate. If successfully implemented, proponents claim, vertical farms offer the promise of urban renewal, sustainable production of a safe and varied food supply (through year-round production of all crops), and the eventual repair of ecosystems that have been sacrificed for horizontal farming.",
+			"It took humans 10,000 years to learn how to grow most of the crops we now take for granted. Along the way, we despoiled most of the land we worked, often turning verdant, natural eco-zones into semi-arid deserts. Within that same time frame, we evolved into an urban species, in which 60% of the human population now lives vertically in cities. This means that, for the majority, we humans have shelter from the elements, yet we subject our food-bearing plants to the rigours of the great outdoors and can do no more than hope for a good weather year. However, more often than not now, due to a rapidly changing climate, that is not what happens. Massive floods, long droughts, hurricanes and severe monsoons take their toll each year, destroying millions of tons of valuable crops.",
+			"The supporters of vertical farming claim many potential advantages for the system. For instance, crops would be produced all year round,as they would be kept in artificially controlled, optimum growing conditions. There would be no weather-related crop failures due to droughts, floods or pests. All the food could be grown organically, eliminating the need for herbicides, pesticides and fertilisers.The system would greatly reduce the incidence of many infectious diseases that are acquired at the agricultural interface.Although the system would consume energy, it would return energy to the grid via methane generation from composting non-edible parts of plants.It would also dramatically reduce fossil fuel use, by cutting out the need for tractors, ploughs and shipping.",
+			"A major drawback of vertical farming, however, is that the plants would require artificial light.Without it, those plants nearest the windows would be exposed to more sunlight and grow more quickly, reducing the efficiency of the system. Single-storey greenhouses have the benefit of natural overhead light; even so, many still need artificial lighting. A multi-story facility with no natural overhead light would require far more. Generating enough light could be prohibitively expensive, unless cheap, renewable energy is available, and this appears to be rather a future aspiration than a likelihood for the near future.",
+			"One variation on vertical farming that has been developed is to grow plants in stacked trays that move on rails. Moving the trays allows the plants to get enough sunlight. This system is already in operation, and works well within a single-story greenhouse with light reaching it from above: it is not certain, however, that it can be made to work without that overhead natural light.",
+			"Vertical farming is an attempt to address the undoubted problems that we face in producing enough food for a growing population. At the moment, though, more needs to be done to reduce the detrimental impact it would have on the environment, particularly as regards the use of energy. While it is possible that much of our food will be grown in skyscrapers in future, most experts currently believe it is far more likely that we will simply use the space available on urban rooftops."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-7",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the sentences below. Choose NO MORE THAN TWO WORDS from the passage for each answer. Write your answers in boxes 1-7 on your answer sheet.",
+			"body": "Indoor farming\nSome food plants, including ____ (1) are already grown indoors.\nVertical farms would be located in ____ (2), meaning that there would be less need to take them long distances to customers.\nVertical farms could use methane from plants and animals to produce ____ (3)\nThe consumption of ____ (4) would be cut because agricultural vehicles would be unnecessary.\nThe fact that vertical farms would need ____ (5) light is a disadvantage.\nOne form of vertical farming involves planting in ____ (6) which are not fixed.\nThe most probable development is that food will be grown on ____ (7)in towns and cities.",
+			"body_html": "<h4><strong>Indoor farming</strong></h4><ul><li>Some food plants, including [1] are already grown indoors.</li><li>Vertical farms would be located in [2], meaning that there would be less need to take them long distances to customers.</li><li>Vertical farms could use methane from plants and animals to produce [3]</li><li>The consumption of [4] would be cut because agricultural vehicles would be unnecessary.</li><li>The fact that vertical farms would need [5] light is a disadvantage.</li><li>One form of vertical farming involves planting in [6] which are not fixed.</li><li>The most probable development is that food will be grown on [7]in towns and cities.  </li></ul>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Some food plants, including ____ (1) are already grown indoors.",
+					"answer": "tomatoes",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nMột số cây trồng thực phẩm, bao gồm ___ đã được trồng trong nhà.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: including + NOUN (NOUN làm Object của Preposition 'INCLUDING')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nProduce ~ food plants\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"khái niệm canh tác trong nhà không phải là mới, vì việc sản xuất cà chua và các loại nông sản khác trong nhà kính đã phổ biến từ lâu\"\n(The concept of indoor farming is not new, since hothouse production of tomatoes and other produce has been in vogue for some time).\n\nBước 5: Đáp án: tomatoes\nMột số cây trồng thực phẩm, bao gồm cà chua đã được trồng trong nhà (Some food plants, including tomatoes are already grown indoors).",
+					"quotes": [
+						"The concept of indoor farming is not new, since hothouse production of tomatoes and other produce has been in vogue for some time.What is new is the urgent need to scale up this technology to accommodate another three billion people."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Vertical farms would be located in ____ (2), meaning that there would be less need to take them long distances to customers.",
+					"answer": "urban centres",
+					"quotes": [
+						"One such proposal is for the ‘Vertical Farm’. The concept is of multi-storey buildings in which food crops are grown in environmentally controlled conditions. Situated in the heart of urban centres, they would drastically reduce the amount of transportation required to bring food to consumers.Vertical farms would need to be efficient, cheap to construct and safe to operate."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Vertical farms could use methane from plants and animals to produce ____ (3)",
+					"answer": "energy",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nCác trang trại thẳng đứng có thể sử dụng khí metan từ thực vật và động vật để sản xuất _____.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: produce + NOUN (NOUN làm Object của động từ 'PRODUCE')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nThe system ~ Vertical farms\nMethane ~ Từ khoá giữ nguyên\nConsumers ~ customers\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Mặc dù hệ thống này sẽ tiêu thụ năng lượng, nhưng nó sẽ trả lại năng lượng cho lưới điện thông qua việc tạo ra khí metan từ việc ủ phân các phần không ăn được của cây trồng\"\n(Although the system would consume energy, it would return energy to the grid via methane generation from composting non-edible parts of plants).\n\nBước 5: Đáp án: energy\nCác trang trại thẳng đứng có thể sử dụng khí metan từ thực vật và động vật để sản xuất năng lượng (Vertical farms could use methane from plants and animals to produce energy).",
+					"quotes": [
+						"All the food could be grown organically, eliminating the need for herbicides, pesticides and fertilisers.The system would greatly reduce the incidence of many infectious diseases that are acquired at the agricultural interface.Although the system would consume energy, it would return energy to the grid via methane generation from composting non-edible parts of plants.It would also dramatically reduce fossil fuel use, by cutting out the need for tractors, ploughs and shipping."
+					]
+				},
+				{
+					"number": 4,
+					"text": "The consumption of ____ (4) would be cut because agricultural vehicles would be unnecessary.",
+					"answer": "fossil fuel",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nViệc tiêu thụ ___ sẽ được cắt giảm vì các phương tiện nông nghiệp sẽ không cần thiết.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: The consumption of + NOUN (NOUN làm Object của 'OF')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nUse ~ consumption\nTractors, ploughs ~ agricultural vehicles\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Nó cũng sẽ giảm đáng kể việc sử dụng nhiên liệu hóa thạch, bằng cách cắt giảm nhu cầu về máy kéo, máy cày và vận chuyển\" (It would also dramatically reduce fossil fuel use, by cutting out the need for tractors, ploughs and shipping).\n\nBước 5: Đáp án: fossil fuel\nViệc tiêu thụ nhiên liệu hóa thạch sẽ được cắt giảm vì các phương tiện nông nghiệp sẽ không cần thiết (The consumption of fossil fuel would be cut because agricultural vehicles would be unnecessary).",
+					"quotes": [
+						"All the food could be grown organically, eliminating the need for herbicides, pesticides and fertilisers.The system would greatly reduce the incidence of many infectious diseases that are acquired at the agricultural interface.Although the system would consume energy, it would return energy to the grid via methane generation from composting non-edible parts of plants.It would also dramatically reduce fossil fuel use, by cutting out the need for tractors, ploughs and shipping."
+					]
+				},
+				{
+					"number": 5,
+					"text": "The fact that vertical farms would need ____ (5) light is a disadvantage.",
+					"answer": "artificial",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nThực tế là các trang trại thẳng đứng sẽ cần ánh sáng ____ là một bất lợi.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: ADJECTIVE\nDấu hiệu: need + ADJECTIVE + light (ADJECTIVE bổ nghĩa cho NOUN 'LIGHT')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nDrawback ~ disadvantage\nLight ~ từ khoá giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Một hạn chế lớn của canh tác thẳng đứng, tuy nhiên, là các cây trồng sẽ cần ánh sáng nhân tạo\" (A major drawback of vertical farming, however, is that the plants would require artificial light).\n\nBước 5: Đáp án: artificial\nThực tế là các trang trại thẳng đứng sẽ cần ánh sáng nhân tạo là một bất lợi (The fact that vertical farms would need artificial light is a disadvantage).",
+					"quotes": [
+						"A major drawback of vertical farming, however, is that the plants would require artificial light.Without it, those plants nearest the windows would be exposed to more sunlight and grow more quickly, reducing the efficiency of the system."
+					]
+				},
+				{
+					"number": 6,
+					"text": "One form of vertical farming involves planting in ____ (6) which are not fixed.",
+					"answer": "stacked trays",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nMột hình thức canh tác thẳng đứng liên quan đến việc trồng cây trong _____ không cố định.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: planting in + NOUN (NOUN làm Object của Preposition 'IN')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nOne variation on vertical farming ~ One form of vertical farming\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Một biến thể của canh tác thẳng đứng đã được phát triển là trồng cây trong các khay xếp chồng di chuyển trên đường ray\"\n(One variation on vertical farming that has been developed is to grow plants in stacked trays that move on rails).\n\nBước 5: Đáp án: stacked trays\nMột hình thức canh tác thẳng đứng liên quan đến việc trồng cây trong các khay xếp chồng không cố định (One form of vertical farming involves planting in stacked trays which are not fixed).",
+					"quotes": [
+						"One variation on vertical farming that has been developed is to grow plants in stacked trays that move on rails."
+					]
+				},
+				{
+					"number": 7,
+					"text": "The most probable development is that food will be grown on ____ (7)in towns and cities.",
+					"answer": "rooftops",
+					"quotes": [
+						"While it is possible that much of our food will be grown in skyscrapers in future, most experts currently believe it is far more likely that we will simply use the space available on urban rooftops."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-13",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage?\nIn boxes 8-13 on your answer sheet, write\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 8,
+					"text": "Methods for predicting the Earth’s population have recently changed.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác phương pháp dự đoán dân số Trái đất gần đây đã thay đổi.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nConservative estimates ~ Methods for predicting\nEarth's population ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Áp dụng các ước tính bảo thủ nhất cho xu hướng nhân khẩu học hiện tại, dân số loài người sẽ tăng thêm khoảng ba tỷ người vào thời điểm đó\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"các phương pháp dự đoán dân số Trái đất gần đây đã thay đổi\" (Methods for predicting the Earth's population have recently changed).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Applying the most conservative estimates to current demographic trends, the human population will increase by about three billion people by then.An estimated 109 hectares of new land (about 20% larger than Brazil) will be needed to grow enough food to feed them, if traditional farming methods continue as they are practised today."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Human beings are responsible for some of the destruction to food-producing land.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác phương pháp dự đoán dân số Trái đất gần đây đã thay đổi.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nPoor management practices ~ Human beings are responsible\nLaid waste ~ destruction to food-producing land\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Trong lịch sử, khoảng 15% đất đã bị lãng phí do các phương pháp quản lý kém\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Con người chịu trách nhiệm cho một số sự phá hủy đối với đất trồng trọt\" (Human beings are responsible for some of the destruction to food-producing land).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Historically, some 15% of that has been laid waste by poor management practices.What can be done to ensure enough food for the world’s population to live on?"
+					]
+				},
+				{
+					"number": 10,
+					"text": "The crops produced in vertical farms will depend on the season",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác loại cây trồng được sản xuất trong các trang trại thẳng đứng sẽ phụ thuộc vào mùa.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nCrops would be produced all year round ~ crops produced in vertical farms will depend on the season\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Các loại cây trồng sẽ được sản xuất quanh năm, vì chúng sẽ được giữ trong điều kiện sinh trưởng tối ưu được kiểm soát nhân tạo\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"Các loại cây trồng được sản xuất trong các trang trại thẳng đứng sẽ phụ thuộc vào mùa\" (The crops produced in vertical farms will depend on the season).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"The supporters of vertical farming claim many potential advantages for the system."
+					]
+				},
+				{
+					"number": 11,
+					"text": "Some damage to food crops is caused by climate change.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột số thiệt hại đối với cây trồng là do biến đổi khí hậu gây ra.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nMassive floods, long droughts, hurricanes and severe monsoons ~ climate change\nDestroying millions of tons of valuable crops ~ Some damage to food crops is caused\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Lũ lụt lớn, hạn hán kéo dài, bão và gió mùa nghiêm trọng gây thiệt hại mỗi năm, phá hủy hàng triệu tấn cây trồng có giá trị\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Một số thiệt hại đối với cây trồng là do biến đổi khí hậu gây ra\" (Some damage to food crops is caused by climate change).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Massive floods, long droughts, hurricanes and severe monsoons take their toll each year, destroying millions of tons of valuable crops."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Fertilisers will be needed for certain crops in vertical farms.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhân bón sẽ cần thiết cho một số loại cây trồng trong các trang trại thẳng đứng.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nEliminating the need for herbicides, pesticides and fertilisers ~ Fertilisers will be needed for certain crops in vertical farms\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Tất cả thực phẩm có thể được trồng theo phương pháp hữu cơ, loại bỏ nhu cầu về thuốc diệt cỏ, thuốc trừ sâu và phân bón\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"Phân bón sẽ cần thiết cho một số loại cây trồng trong các trang trại thẳng đứng\" (Fertilisers will be needed for certain crops in vertical farms).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"All the food could be grown organically, eliminating the need for herbicides, pesticides and fertilisers.The system would greatly reduce the incidence of many infectious diseases that are acquired at the agricultural interface.Although the system would consume energy, it would return energy to the grid via methane generation from composting non-edible parts of plants.It would also dramatically reduce fossil fuel use, by cutting out the need for tractors, ploughs and shipping."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Vertical farming will make plants less likely to be affected by infectious diseases.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCanh tác thẳng đứng sẽ làm cho thực vật ít bị ảnh hưởng bởi các bệnh truyền nhiễm.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nGreatly reduce the incidence of many infectious diseases ~ less likely to be affected by infectious diseases\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Hệ thống này sẽ giảm đáng kể tỷ lệ mắc nhiều bệnh truyền nhiễm lây lan tại khu vực tiếp xúc nông nghiệp\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Canh tác thẳng đứng sẽ làm cho thực vật ít bị ảnh hưởng bởi các bệnh truyền nhiễm\" (Vertical farming will make plants less likely to be affected by infectious diseases).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"All the food could be grown organically, eliminating the need for herbicides, pesticides and fertilisers.The system would greatly reduce the incidence of many infectious diseases that are acquired at the agricultural interface.Although the system would consume energy, it would return energy to the grid via methane generation from composting non-edible parts of plants.It would also dramatically reduce fossil fuel use, by cutting out the need for tractors, ploughs and shipping."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

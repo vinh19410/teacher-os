@@ -1,6 +1,6 @@
 import {
-	ASSIGNMENT_ANSWER_CHOICES,
 	answerKindByType,
+	extendedAnswerChoices,
 	type QuizVerdict,
 	type StudentQuizQuestion,
 } from "@teacher-os/api/contracts";
@@ -17,6 +17,7 @@ import {
 	VERDICT_BLOCK_CLASSES,
 	VerdictIcon,
 } from "@teacher-os/ui/components/quiz/quiz-verdict";
+import { parseTableStem } from "@teacher-os/ui/lib/cloze";
 import { cn } from "@teacher-os/ui/lib/utils";
 
 /** Một hàng lựa chọn: label vị trí (A/i…) hoặc text thuần (TRUE/FALSE…). */
@@ -37,9 +38,12 @@ export function questionChoiceRows(
 	type: string,
 	optionBank: readonly string[],
 ): QuizChoiceRow[] {
-	const kind = answerKindByType[type];
+	const kind =
+		type === "summary" && optionBank.length > 0
+			? "letter"
+			: answerKindByType[type];
 	if (!kind) return [];
-	const alphabet = ASSIGNMENT_ANSWER_CHOICES[kind];
+	const alphabet = extendedAnswerChoices(kind);
 	if (question.opts && question.opts.length > 0) {
 		return question.opts.map((text, index) => {
 			const label = alphabet[index] ?? String(index + 1);
@@ -192,7 +196,20 @@ export function QuizQuestionItem({
 						verdict={reviewMode ? review?.verdict : undefined}
 					/>
 				) : (
-					question.stem
+					(() => {
+						const tableRef =
+							type === "summary" ||
+							type === "fill_blank" ||
+							type === "tablecomp"
+								? parseTableStem(question.stem)
+								: null;
+						if (!tableRef) return question.stem;
+						const titles =
+							tableRef.rowTitle || tableRef.colTitle
+								? ` ${tableRef.rowTitle} / ${tableRef.colTitle}`
+								: "";
+						return `Hàng ${tableRef.row} — Cột ${tableRef.col}:${titles}`;
+					})()
 				)}
 			</div>
 			{choiceRows.length > 0 && (

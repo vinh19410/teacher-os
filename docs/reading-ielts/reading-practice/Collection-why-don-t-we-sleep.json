@@ -1,0 +1,189 @@
+{
+	"id": "3d116512-a855-42c5-a0c0-1bae57b8ba9a",
+	"url": "https://stepielts.com/student/reading/3d116512-a855-42c5-a0c0-1bae57b8ba9a?mode=practice",
+	"title": "Why don't we sleep?",
+	"source": "Collection",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "14-26",
+	"passage": {
+		"title": "Why don't we sleep?",
+		"paragraphs": [
+			"A. Fifty-six million prescriptions for sleeping medication were handed out by doctors in America last year. Yet remarkably little is being done to understand insomnia's root causes. Socially and economically, the undertreatment of sleeplessness is hugely expensive. The Institute of Medicine, an independent scientific advisory group, estimates nearly 20 percent of all major accidents on the road are associated with driver sleepiness. The loss in terms of productivity within the workplace is even higher, costing billions. Then there are the softer costs which remain unmeasured but still exist; for example, the damaged relationships with others. If other medical problems were causing such widespread harm, governments would act, but US authorities contribute only about $230 million a year for the funding of sleep research, comparable to the amount that the manufacturers of popular sleeping pills spent in three months on advertising. Currently most medical school students get no more than four hours of training on sleep disorders; some get none.",
+			"B. If we don't know why we can't sleep, it's in part because we don't really know why we need to sleep in the first place. We know that we divide it between periods of deep-wave sleep and rapid eye movement (REM) sleep, when the brain is as active as when we're awake, but our voluntary muscles are paralyzed. We know that all mammals sleep, and that there are some insects and reptiles that only half sleep, in order to remain aware of their environment and predators.",
+			"C. The predominant theory of sleep is that the brain demands it. Recently, researchers at Harvard, led by Robert Stickgold, tested undergraduates on various aptitude tests, allowed them to nap, then tested them again. They found that those who had engaged in REM sleep subsequently performed better in pattern recognition tasks, such as grammar, while those who slept deeply were better at memorization.",
+			"D. Such studies suggest that memory consolidation may be one function of sleep. Giulio Tononi, a sleep researcher at the University of Wisconsin, published an interesting twist on this theory a few years ago. His study showed that the sleeping brain seems to delete redundant or unnecessary synapses or connections. So the purpose of sleep may be to help us remember what's important, by letting us forget what's not.",
+			"E. Sleep is likely to have physiological purposes too. Some researchers have found that sleep deprivation impedes wound healing in rats, and others have suggested that sleep helps boost the immune system and control infection. But these studies are not conclusive. At Stanford University, William Dement, co-founder of the Stanford Sleep Medicine Center, explains what he knows after 50 years of research, about the reason we sleep.'As far as I know,' he said, 'the only reason we need to sleep that is really, really solid is because we get sleepy.'",
+			"F. The Stanford clinic does more than 3,000 overnight sleep studies a year. Their main diagnostic tool is the polysomnogram, the main element of which is the electroencephalograph (EEG), which captures the electrical output from a patient's brain. As the EEG records a person's sleep patterns, the polysomnogram technicians also measure body temperature, muscle activity, eye movement, and breathing. Then they look over the data for signs of abnormal sleep. When a person has narcolepsy, for instance, they plunge from wakefulness into REM sleep without any intermediate steps. However, Clete Kushida, the clinic director, told me he can spot most people's sleep problems right at the intake interview.'There are those who cannot keep their eyes open, and those who just speak of their exhaustion but don't actually fall asleep. The former often have sleep apnea where they stop breathing. The latter have true insomnia.'",
+			"G. In sleep apnea, muscle relaxation allows the soft tissue of the throat to close, shutting off the sleeper's air passage. When the brain realizes it is not getting oxygen, it sends a signal to the body to wake up. The sleeper awakes, inhales, and sleep returns. Apnea is a serious problem but only indirectly a sleep disease. True insomniacs are people who either can't get to, or can't stay asleep for any evident reason.",
+			"H. While apnea can be treated with a device that forces air down the sleeper's throat to keep the airways open, the treatment of classic insomnia is not so clear cut. Acupuncture may help. It has long had this role in Asian medicine and is being studied at the University of Pittsburgh sleep center now. Typically in the US, insomnia is treated in two ways. First come the sleeping pills. Though safer than they once were, they can still lead to psychological addiction.'Many users complain that their sleeping-pill sleep seems different, and they feel unfocussed on waking. Sleeping pills are not a natural way to sleep,' points out Charles Czeisler, director of the Harvard Health and Safety Group.",
+			"I. The second step in treating insomniacs is usually cognitive behavioral therapy (CBT). In CBT, a psychologist teaches insomniacs to think about sleep problems as manageable, and to practice good 'sleep hygiene': sleep in a dark room, go to bed only when you are sleepy, don't exercise beforehand. Studies have shown that CBT is more effective than sleeping pills at treating long-term insomnia, but many sufferers aren't convinced.'Some people continue in my experience to struggle,' says John Winkelman, another sleep center director.'They're not super-satisfied with their sleep.'"
+		]
+	},
+	"question_groups": [
+		{
+			"range": "14-17",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary below. Write ONE WORD ONLY from the passage for each answer.",
+			"body": "Insomnia in the USA\nLast year the high number of ____ (14) doctors gave their patients highlights the fact that insomnia is a serious issue in the USA. It is evidently responsible for a number of serious traffic ____ (15) and has a considerable effect on company ____ (16). A lack of sleep can also have a harmful effect on different relationships, although there are no statistics on this. Unfortunately, there is insufficient official funding given to research into sleep problems, and the ____ (17) given at medical school is also insufficient to deal with insomnia.",
+			"body_html": "<table><tbody><tr><td><p><strong>Insomnia in the USA</strong></p><p>Last year the high number of [14] doctors gave their patients highlights the fact that insomnia is a serious issue in the USA. It is evidently responsible for a number of serious traffic [15] and has a considerable effect on company [16]. A lack of sleep can also have a harmful effect on different relationships, although there are no statistics on this. Unfortunately, there is insufficient official funding given to research into sleep problems, and the [17] given at medical school is also insufficient to deal with insomnia.</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 14,
+					"text": "Fifty-six million ____ (14) for sleeping medication were handed out by doctors in America last year.",
+					"answer": "prescriptions",
+					"quotes": [
+						"A. Fifty-six million prescriptions for sleeping medication were handed out by doctors in America last year."
+					]
+				},
+				{
+					"number": 15,
+					"text": "The Institute of Medicine estimates nearly 20 percent of all major ____ (15) on the road are associated with driver sleepiness.",
+					"answer": "accidents",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nMất ngủ rõ ràng chịu trách nhiệm cho một số ________ giao thông nghiêm trọng và có tác động đáng kể đến năng suất công ty.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (danh từ)\nDấu hiệu: serious traffic + NOUN → tính từ serious và danh từ traffic đứng trước ô trống, cần một NOUN bổ nghĩa sau cụm này\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nserious traffic ~ major accidents on the road\nevidently responsible for ~ associated with\ndriver sleepiness ~ từ khóa liên quan đến mất ngủ\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Gần 20% tất cả các tai nạn nghiêm trọng trên đường có liên quan đến tình trạng buồn ngủ của tài xế\" (nearly 20 percent of all major accidents on the road are associated with driver sleepiness).\n\nBước 5: Đáp án: accidents\nMất ngủ rõ ràng chịu trách nhiệm cho một số tai nạn giao thông nghiêm trọng (It is evidently responsible for a number of serious traffic accidents).",
+					"quotes": [
+						"The Institute of Medicine, an independent scientific advisory group, estimates nearly 20 percent of all major accidents on the road are associated with driver sleepiness."
+					]
+				},
+				{
+					"number": 16,
+					"text": "The loss in terms of ____ (16) within the workplace is even higher, costing billions.",
+					"answer": "productivity",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp: Mất ngủ có tác động đáng kể đến ________ của công ty.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (danh từ)\nDấu hiệu: company + NOUN → danh từ company đứng trước ô trống như một noun modifier, cần một NOUN đứng sau\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nconsiderable effect ~ loss\ncompany ~ workplace\nproductivity ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Sự mất mát về năng suất trong môi trường làm việc thậm chí còn cao hơn, tiêu tốn hàng tỷ đô la\" (The loss in terms of productivity within the workplace is even higher, costing billions).\n\nBước 5: Đáp án: productivity\nMất ngủ có tác động đáng kể đến năng suất của công ty (has a considerable effect on company productivity).",
+					"quotes": [
+						"The loss in terms of productivity within the workplace is even higher, costing billions."
+					]
+				},
+				{
+					"number": 17,
+					"text": "Currently most medical school students get no more than four hours of ____ (17) on sleep disorders; some get none.",
+					"answer": "training",
+					"quotes": [
+						"Currently most medical school students get no more than four hours of training on sleep disorders; some get none."
+					]
+				}
+			]
+		},
+		{
+			"range": "18-23",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Reading Passage 2 has nine paragraphs, A-I.\nWhich paragraph contains the following information?",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H", "I"],
+			"questions": [
+				{
+					"number": 18,
+					"text": "a mention of different cultural approaches to dealing with insomnia",
+					"answer": "H",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTìm đoạn văn đề cập đến các phương pháp điều trị mất ngủ khác nhau theo văn hóa.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\n• different cultural approaches ~ Asian medicine / acupuncture\n• dealing with insomnia ~ treatment of classic insomnia\n\nBước 3: So sánh và đối chiếu:\nĐoạn H chỉ rõ: \"Châm cứu có thể giúp ích. Phương pháp này đã có vai trò lâu dài trong y học châu Á và hiện đang được nghiên cứu tại Đại học Pittsburgh\" (Acupuncture may help. It has long had this role in Asian medicine).\n==> Thông tin này cho thấy đoạn H đã đề cập đến phương pháp điều trị theo văn hóa khác nhau.\n\nBước 4: Đáp án: H",
+					"quotes": [
+						"Acupuncture may help. It has long had this role in Asian medicine and is being studied at the University of Pittsburgh sleep center now."
+					]
+				},
+				{
+					"number": 19,
+					"text": "indications that sleep has a positive effect on health",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTìm đoạn văn chỉ ra rằng giấc ngủ có tác động tích cực đến sức khỏe.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\n• positive effect on health ~ boost the immune system / wound healing\n• indications ~ researchers have found / suggested\n\nBước 3: So sánh và đối chiếu:\nĐoạn E chỉ rõ: \"Một số nhà nghiên cứu phát hiện thiếu ngủ cản trở lành vết thương ở chuột, và những người khác cho rằng giấc ngủ giúp tăng cường hệ miễn dịch và kiểm soát nhiễm trùng\" (sleep helps boost the immune system and control infection).\n==> Thông tin này cho thấy đoạn E đã chỉ ra tác động tích cực của giấc ngủ đến sức khỏe.\n\nBước 4: Đáp án: E",
+					"quotes": [
+						"Some researchers have found that sleep deprivation impedes wound healing in rats, and others have suggested that sleep helps boost the immune system and control infection."
+					]
+				},
+				{
+					"number": 20,
+					"text": "the effects of different kinds of sleep on mental performance",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTìm đoạn văn nói về tác động của các loại giấc ngủ khác nhau lên hiệu suất tâm thần.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\n• different kinds of sleep ~ REM sleep / deep sleep\n• mental performance ~ pattern recognition / memorization\n\nBước 3: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"Những người ngủ REM thực hiện tốt hơn trong nhận dạng mẫu như ngữ pháp, trong khi những người ngủ sâu thì giỏi ghi nhớ hơn\" (those who had engaged in REM sleep subsequently performed better in pattern recognition... those who slept deeply were better at memorization).\n==> Thông tin này cho thấy đoạn C đã nói về tác động của các loại giấc ngủ khác nhau lên hiệu suất tâm thần.\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"They found that those who had engaged in REM sleep subsequently performed better in pattern recognition tasks, such as grammar, while those who slept deeply were better at memorization."
+					]
+				},
+				{
+					"number": 21,
+					"text": "reasons why various species of animal sleep in different ways",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTìm đoạn văn giải thích lý do các loài động vật khác nhau ngủ theo những cách khác nhau.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\n• various species of animal ~ mammals / insects / reptiles\n• sleep in different ways ~ only half sleep / in order to remain aware\n\nBước 3: So sánh và đối chiếu:\nĐoạn B chỉ rõ: \"Tất cả các loài động vật có vú đều ngủ, và có một số loài côn trùng và bò sát chỉ ngủ một nửa, để duy trì nhận thức về môi trường và kẻ săn mồi\" (there are some insects and reptiles that only half sleep, in order to remain aware of their environment and predators).\n==> Thông tin này cho thấy đoạn B đã giải thích lý do các loài động vật ngủ khác nhau.\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"We know that all mammals sleep, and that there are some insects and reptiles that only half sleep, in order to remain aware of their environment and predators."
+					]
+				},
+				{
+					"number": 22,
+					"text": "the suggestion that sleep allows us to get rid of insignificant information",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTìm đoạn văn gợi ý rằng giấc ngủ giúp loại bỏ thông tin không quan trọng.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\n• get rid of insignificant information ~ delete redundant or unnecessary synapses\n• sleep allows us to ~ the purpose of sleep may be\n\nBước 3: So sánh và đối chiếu:\nĐoạn D chỉ rõ: \"Não khi ngủ dường như xóa các synapse dư thừa hoặc không cần thiết. Mục đích của giấc ngủ có thể là giúp chúng ta nhớ điều quan trọng bằng cách để quên điều không quan trọng\" (the sleeping brain seems to delete redundant or unnecessary synapses).\n==> Thông tin này cho thấy đoạn D đã gợi ý giấc ngủ giúp loại bỏ thông tin không quan trọng.\n\nBước 4: Đáp án: D",
+					"quotes": [
+						"His study showed that the sleeping brain seems to delete redundant or unnecessary synapses or connections. So the purpose of sleep may be to help us remember what's important, by letting us forget what's not."
+					]
+				},
+				{
+					"number": 23,
+					"text": "a description of how the brain responds when a person stops breathing",
+					"answer": "G",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTìm đoạn văn mô tả não phản ứng như thế nào khi người ngủ ngừng thở.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\n• stops breathing ~ shutting off the sleeper's air passage\n• brain responds ~ brain realizes it is not getting oxygen, sends a signal\n\nBước 3: So sánh và đối chiếu:\nĐoạn G chỉ rõ: \"Khi não nhận ra rằng nó không nhận được oxy, nó gửi tín hiệu đến cơ thể để thức dậy. Người ngủ thức dậy, hít thở, và giấc ngủ trở lại\" (When the brain realizes it is not getting oxygen, it sends a signal to the body to wake up).\n==> Thông tin này cho thấy đoạn G đã mô tả phản ứng của não khi người ngủ ngừng thở.\n\nBước 4: Đáp án: G",
+					"quotes": [
+						"When the brain realizes it is not getting oxygen, it sends a signal to the body to wake up."
+					]
+				}
+			]
+		},
+		{
+			"range": "24-26",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Look at the following statements and the list of people below.\nMatch each statement with the correct person, A-E.\nChoose the correct letter, A-E, in boxes 24-26 on your answer sheet.",
+			"options": [
+				{
+					"label": "A",
+					"text": "A. Giulio Tononi"
+				},
+				{
+					"label": "B",
+					"text": "B. William Dement"
+				},
+				{
+					"label": "C",
+					"text": "C. Clete Kushida"
+				},
+				{
+					"label": "D",
+					"text": "D. Charles Czeisler"
+				},
+				{
+					"label": "E",
+					"text": "E. John Winkelman"
+				}
+			],
+			"body": "24. Research tells us that we sleep as reaction to our body's signals. ____\n25. People suffering from insomnia are easily recognisable. ____\n26. Therapy does not always enable people to achieve good quality sleep. ____",
+			"body_html": "<p><strong>24.</strong> Research tells us that we sleep as reaction to our body's signals. ______</p><p><strong>25.</strong> People suffering from insomnia are easily recognisable. ______</p><p><strong>26.</strong> Therapy does not always enable people to achieve good quality sleep. ______</p>",
+			"questions": [
+				{
+					"number": 24,
+					"text": "Research tells us that we sleep as reaction to our body's signals.",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Nghiên cứu cho chúng ta biết rằng chúng ta ngủ như một phản ứng với tín hiệu của cơ thể\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• reaction to body's signals ~ because we get sleepy\n• research tells us ~ after 50 years of research\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến William Dement: \"Theo tôi biết, lý do duy nhất thực sự vững chắc để chúng ta cần ngủ là vì chúng ta buồn ngủ\" ('the only reason we need to sleep that is really, really solid is because we get sleepy').\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"'As far as I know,' he said, 'the only reason we need to sleep that is really, really solid is because we get sleepy.'"
+					]
+				},
+				{
+					"number": 25,
+					"text": "People suffering from insomnia are easily recognisable.",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Người mắc chứng mất ngủ có thể dễ dàng nhận ra\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• easily recognisable ~ can spot most people's sleep problems right at the intake interview\n• people suffering from insomnia ~ those who cannot keep their eyes open / those who speak of exhaustion\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Clete Kushida: \"Ông ấy có thể nhận ra hầu hết các vấn đề về giấc ngủ ngay tại buổi phỏng vấn tiếp nhận\" (he can spot most people's sleep problems right at the intake interview).\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"However, Clete Kushida, the clinic director, told me he can spot most people's sleep problems right at the intake interview."
+					]
+				},
+				{
+					"number": 26,
+					"text": "Therapy does not always enable people to achieve good quality sleep.",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Liệu pháp không phải lúc nào cũng giúp mọi người đạt được giấc ngủ chất lượng tốt\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• therapy does not always enable ~ Some people continue to struggle\n• good quality sleep ~ not super-satisfied with their sleep\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến John Winkelman: \"Theo kinh nghiệm của tôi, một số người vẫn tiếp tục vật lộn. Họ không thực sự hài lòng với giấc ngủ của mình\" ('Some people continue in my experience to struggle... They're not super-satisfied with their sleep').\n\nBước 4: Đáp án: E",
+					"quotes": [
+						"'Some people continue in my experience to struggle,' says John Winkelman, another sleep center director. 'They're not super-satisfied with their sleep.'"
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

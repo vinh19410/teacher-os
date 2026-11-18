@@ -1,0 +1,272 @@
+{
+	"id": "297eceaf-9b64-41ff-a6ff-79f8b5caad6c",
+	"url": "https://stepielts.com/student/reading/297eceaf-9b64-41ff-a6ff-79f8b5caad6c?mode=practice",
+	"title": "Sea Change for Salinity",
+	"source": "Collection",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-14",
+	"passage": {
+		"title": "Sea Change for Salinity",
+		"paragraphs": [
+			"One of the most serious problems facing Australian farmers is an increase in the salt content in the soil. However, new weapons are emerging in the fight against salinity.",
+			"A. Beneath the flat, impassive surface of Australia lie hidden mountains, valleys, and gorges - ancient traps and channels for the deadly salt that is stealthily killing so much of the Australian landscape. The war on salt is calling forth new weapons.",
+			"A suite of high technologies used by geologists to see underground and prospect for gold and minerals is now being used to pinpoint the presence of salt beneath the landscape and predict where it might move.",
+			"B. Unless this process is clearly understood, warns Chief of Exploration and Mining Dr. Neil Phillips, the hard work now underway - such as planning and tree-planting on the surface — may be rendered ineffective. Salt can still sneak past and erupt, following one of the ancient river channels formed millions of years ago.",
+			"The use of airborne electromagnetic technology to detect salt hidden beneath the landscape has been around for a decade, but the past two years have seen a major development in its precision and powers of detection. Like the use of radar in battles, it has the potential to turn the tide of the struggle in favor of the defense by helping to pinpoint, plot, and predict the movements of the foe.",
+			"C. Angus Howell, who farms near Warrenbayne in Southeast Australia, saw his first outbreak of salt in 1948. Over the ensuing decades, the patches spread and multiplied until they consumed almost 100 hectares.\nBy the late 1970s, Howell and his fellow farmers decided it was time for action and established a government-funded 'Landcare' group in a bid to save Australia's farmland.",
+			"But despite a mounting effort by scientists, farmers, and governments, the 'white death' continued to encroach. Small successes were eclipsed by larger defeats and fresh outbreaks.",
+			"D. 'The technical solutions just aren't there yet for dealing with broadacre salinity, nor are the social and economic solutions. How do you introduce the land-use changes that are needed when people still need to make a living?' Howell asks.",
+			"There is no satisfactory solution yet.\nPart of the problem lies in salt's ability to mount ambushes, emerging somewhere new, sometimes unexpectedly and inexplicably, beating plans to intercept it.\nOnly now are scientists starting to truly disclose its secret subterranean stores and passages.",
+			"E. The need for such knowledge is pressing. Salt has already afflicted six million hectares of once-productive land. At present rates, it is predicted that by 2050, it will have sterilized a total of 17 million hectares, and the waters of Australia's Murray River will regularly exceed the World Health Organization's salt limits for drinking water. Defeating this assault may take centuries, not decades.",
+			"F. Electromagnetic surveys measure the electrical conductivity of soil to reveal the distribution of salt and the nature and variability of the regolith - the weathered rock and sediment that may lie above the bedrock.",
+			"Magnetic surveys measure small differences in the Earth's magnetic field, enabling scientists to probe the deep past and reconstruct ancient landscapes - rivers, basins, and faults now buried under tens of meters of sediments. These features help to reveal where groundwater is stored, dictate the direction of groundwater movement, and are critical to predicting or ruling out salinity hot-spots.",
+			"G. Radiometric analysis is based on the detection of radiation emitted by elements contained in rocks and soils, allowing scientists to delineate landforms. These factors influence the mobility of salt through the soil profile and help determine where to plant particular crop species to tackle the problem.",
+			"Using data from the Murray River region, scientists have revealed a network of ancient drainage channels buried meters beneath the current landscape. These buried channels may carry salt and sometimes run at right angles to channels on the surface. This implies that the salt could move underground in quite a different direction than what one would expect by looking at surface slope and drainage.",
+			"H. One of the biggest advances in detection, says Professor Neil Phillips, has come with the integration of different techniques such as magnetics, electromagnetics, radiomagnetics, and ground mapping. Individually, these technologies only gave clues to what was going on underground. Together, they provide a far more revealing picture of the subsurface landscape, several hundred meters deep.",
+			"Advanced airborne electromagnetics, in particular, enables scientists to take 'slices' of the landscape at depths of five meters, ten meters, fifteen meters, and so on, to determine where salt may be stored at depth. This is building up a four-dimensional picture of the subsurface landscape, enabling researchers to understand movements of salt in width, depth, breadth, and time.",
+			"From such technologies, it will be possible to locate salt stores, identify how saline they are, look at man-made and natural changes to the landscape that may cause it to mobilize, and then predict where it will head to and over what time span. This, in turn, will give the 'salt warriors' time to model various ways of containing or curbing the menace, see what works best, and then try it out on the ground."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-7",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Reading Passage has eight sections, A–H.\nWhich section contains the following information?\nNB You may use any letter more than once.",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H"],
+			"questions": [
+				{
+					"number": 1,
+					"text": "A prediction of the future risk of salt to water supplies.",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột dự đoán về nguy cơ của muối đối với nguồn cung cấp nước trong tương lai.\nBước 2: Tìm các keywords được paraphrase trong bài:\npredicted that by 2050 / exceed salt limits ~ prediction / future risk\ndrinking water ~ water supplies\nBước 3: So sánh và đối chiếu:\nĐoạn E chỉ rõ: \"Ở tỷ lệ hiện tại, người ta dự đoán rằng đến năm 2050... vùng nước của sông Murray ở Úc sẽ thường xuyên vượt quá giới hạn muối của Tổ chức Y tế Thế giới đối với nước uống\".\n==> Thông tin này cho thấy đoạn E đã đề cập đến một dự đoán về nguy cơ của muối đối với nguồn cung cấp nước trong tương lai.\nBước 4: Đáp án: E",
+					"quotes": [
+						"At present rates, it is predicted that by 2050, it will have sterilized a total of 17 million hectares, and the waters of Australia's Murray River will regularly exceed the World Health Organization's salt limits for drinking water."
+					]
+				},
+				{
+					"number": 2,
+					"text": "The reason why technologies must be combined to be effective.",
+					"answer": "H",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nLý do tại sao các công nghệ phải được kết hợp để đạt hiệu quả.\nBước 2: Tìm các keywords được paraphrase trong bài:\nintegration of different techniques / Together ~ technologies must be combined\nprovide a far more revealing picture ~ effective\nBước 3: So sánh và đối chiếu:\nĐoạn H chỉ rõ: \"Nói riêng lẻ, các công nghệ này chỉ đưa ra manh mối... Cùng với nhau, chúng cung cấp một bức tranh bộc lộ rõ hơn nhiều về cảnh quan dưới bề mặt\".\n==> Thông tin này cho thấy đoạn H đã giải thích lý do các công nghệ phải kết hợp lại mới có thể cho kết quả đầy đủ và hiệu quả.\nBước 4: Đáp án: H",
+					"quotes": [
+						"Individually, these technologies only gave clues to what was going on underground. Together, they provide a far more revealing picture of the subsurface landscape, several hundred meters deep."
+					]
+				},
+				{
+					"number": 3,
+					"text": "A reference to the recent improvements in the accuracy of airborne electromagnetics.",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột tham chiếu đến những cải tiến gần đây về độ chính xác của công nghệ điện từ trên không.\nBước 2: Tìm các keywords được paraphrase trong bài:\npast two years have seen a major development ~ recent improvements\nprecision ~ accuracy\nairborne electromagnetic technology ~ airborne electromagnetics\nBước 3: So sánh và đối chiếu:\nĐoạn B chỉ rõ: \"Việc sử dụng công nghệ điện từ trên không... hai năm qua đã chứng kiến một sự phát triển lớn về độ chính xác và khả năng phát hiện của nó\".\n==> Thông tin này cho thấy đoạn B đã nhắc đến sự cải tiến gần đây về độ chính xác của hệ thống.\nBước 4: Đáp án: B",
+					"quotes": [
+						"The use of airborne electromagnetic technology to detect salt hidden beneath the landscape has been around for a decade, but the past two years have seen a major development in its precision and powers of detection."
+					]
+				},
+				{
+					"number": 4,
+					"text": "The organization of concerned farmers into an official body.",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nViệc tổ chức các nông dân có cùng mối quan tâm thành một cơ quan chính thức.\nBước 2: Tìm các keywords được paraphrase trong bài:\nHowell and his fellow farmers ~ concerned farmers\nestablished a government-funded 'Landcare' group ~ organization / official body\nBước 3: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"... Howell và các nông dân đồng nghiệp của ông đã quyết định đến lúc phải hành động và thành lập một nhóm 'Landcare' do chính phủ tài trợ\".\n==> Thông tin này cho thấy đoạn C đã đề cập đến việc tổ chức nông dân thành một cơ quan chính thức.\nBước 4: Đáp án: C",
+					"quotes": [
+						"By the late 1970s, Howell and his fellow farmers decided it was time for action and established a government-funded 'Landcare' group in a bid to save Australia's farmland."
+					]
+				},
+				{
+					"number": 5,
+					"text": "The estimated length of time salinity is likely to be a problem.",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nKhoảng thời gian ước tính mà độ mặn có thể sẽ là một vấn đề.\nBước 2: Tìm các keywords được paraphrase trong bài:\ntake centuries, not decades ~ estimated length of time\nDefeating this assault ~ salinity is likely to be a problem\nBước 3: So sánh và đối chiếu:\nĐoạn E chỉ rõ: \"Việc đánh bại cuộc tấn công này có thể mất hàng thế kỷ, chứ không phải hàng thập kỷ\".\n==> Thông tin này cho thấy đoạn E đã ước tính về khoảng thời gian mà vấn đề độ mặn sẽ còn tiếp diễn.\nBước 4: Đáp án: E",
+					"quotes": ["Defeating this assault may take centuries, not decades."]
+				},
+				{
+					"number": 6,
+					"text": "A summary of stages in a proposed plan of action to combat the salt problem.",
+					"answer": "H",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTóm tắt các giai đoạn trong một kế hoạch hành động được đề xuất để chống lại vấn đề muối.\nBước 2: Tìm các keywords được paraphrase trong bài:\nlocate... identify... look at... predict... model... try it out ~ stages\nways of containing or curbing the menace ~ plan of action\nBước 3: So sánh và đối chiếu:\nĐoạn H chỉ rõ: \"Từ các công nghệ như vậy, sẽ có thể xác định vị trí... xác định... xem xét... và sau đó dự đoán... cho 'các chiến binh muối' thời gian để lập mô hình... xem cách nào hiệu quả nhất và sau đó thử nghiệm thực tế\".\n==> Thông tin này cho thấy đoạn H đã liệt kê rõ ràng các bước trong kế hoạch hành động.\nBước 4: Đáp án: H",
+					"quotes": [
+						"From such technologies, it will be possible to locate salt stores, identify how saline they are, look at man-made and natural changes to the landscape that may cause it to mobilize, and then predict where it will head to and over what time span. This, in turn, will give the 'salt warriors' time to model various ways of containing or curbing the menace, see what works best, and then try it out on the ground."
+					]
+				},
+				{
+					"number": 7,
+					"text": "The possibility that current re-vegetation practices are a waste of time.",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nKhả năng các thực hành tái trồng thảm thực vật hiện tại là một sự lãng phí thời gian.\nBước 2: Tìm các keywords được paraphrase trong bài:\nmay be ~ possibility\nhard work now underway... tree-planting on the surface ~ current re-vegetation practices\nrendered ineffective ~ waste of time\nBước 3: So sánh và đối chiếu:\nĐoạn B chỉ rõ: \"...công việc khó khăn hiện đang được tiến hành — chẳng hạn như lập kế hoạch và trồng cây trên bề mặt — có thể trở nên vô hiệu/vô ích\".\n==> Thông tin này cho thấy đoạn B đã chỉ ra khả năng việc trồng cây hiện tại sẽ trở nên lãng phí.\nBước 4: Đáp án: B",
+					"quotes": [
+						"Unless this process is clearly understood, warns Chief of Exploration and Mining Dr. Neil Phillips, the hard work now underway - such as planning and tree-planting on the surface — may be rendered ineffective."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-10",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Match each technique with the correct use.",
+			"options": [
+				{
+					"label": "A",
+					"text": "Can help farmers choose the best location for plants."
+				},
+				{
+					"label": "B",
+					"text": "Can show the composition of the top layer of the ground."
+				},
+				{
+					"label": "C",
+					"text": "Can detect how far below ground the salt is."
+				},
+				{
+					"label": "D",
+					"text": "Can determine how old the salt is in a particular area."
+				}
+			],
+			"body": "List of Techniques\nElectromagnetic surveys ____ (8)\nRadiometric analysis ____ (9)\nAirborne electromagnetics ____ (10)",
+			"body_html": "<table><tbody><tr><td><p><strong>List of Techniques</strong></p><ul><li>Electromagnetic surveys [8]</li><li>Radiometric analysis [9]</li><li>Airborne electromagnetics [10]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 8,
+					"text": "Electromagnetic surveys",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi các khảo sát điện từ (Electromagnetic surveys) có công dụng gì?\nBước 2: Tìm các keywords được paraphrase trong bài:\nmeasure... to reveal... the regolith ~ show the composition of the top layer\nBước 3: So sánh và đối chiếu:\nĐoạn F chỉ rõ: \"Các khảo sát điện từ đo độ dẫn điện của đất để tiết lộ... bản chất cùng sự biến đổi của tầng phong hóa — lớp đá và trầm tích bị phong hóa có thể nằm phía trên lớp đá gốc\" (Electromagnetic surveys measure... to reveal... the nature and variability of the regolith - the weathered rock and sediment that may lie above the bedrock).\n==> Thông tin được in đậm đồng nghĩa với câu B (Có thể hiển thị thành phần của lớp trên cùng của mặt đất).\nBước 4: Đáp án: B",
+					"quotes": [
+						"F. Electromagnetic surveys measure the electrical conductivity of soil to reveal the distribution of salt and the nature and variability of the regolith - the weathered rock and sediment that may lie above the bedrock."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Radiometric analysis",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi phân tích đo bức xạ (Radiometric analysis) có công dụng gì?\nBước 2: Tìm các keywords được paraphrase trong bài:\nhelp determine where to plant particular crop species ~ help farmers choose the best location for plants\nBước 3: So sánh và đối chiếu:\nĐoạn G chỉ rõ: \"Phân tích đo bức xạ... giúp xác định nơi trồng các loài cây trồng cụ thể để giải quyết vấn đề\" (Radiometric analysis... help determine where to plant particular crop species to tackle the problem).\n==> Thông tin được in đậm đồng nghĩa với câu A (Có thể giúp nông dân lựa chọn vị trí tốt nhất để trồng cây).\nBước 4: Đáp án: A",
+					"quotes": [
+						"These factors influence the mobility of salt through the soil profile and help determine where to plant particular crop species to tackle the problem."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Airborne electromagnetics",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi công nghệ điện từ trên không (Airborne electromagnetics) có công dụng gì?\nBước 2: Tìm các keywords được paraphrase trong bài:\nat depths of five meters, ten meters, fifteen meters... to determine where salt may be stored at depth ~ detect how far below ground the salt is\nBước 3: So sánh và đối chiếu:\nĐoạn H chỉ rõ: \"Cụ thể, điện từ trên không tiên tiến cho phép các nhà khoa học lấy 'các lát cắt' của cảnh quan ở độ sâu năm mét, mười mét, mười lăm mét, v.v., để xác định nơi muối có thể được lưu trữ ở dưới sâu\" (Advanced airborne electromagnetics... enables scientists to take 'slices' of the landscape at depths of five meters, ten meters, fifteen meters... to determine where salt may be stored at depth).\n==> Thông tin được in đậm đồng nghĩa với câu C (Có thể phát hiện muối nằm dưới mặt đất bao xa).\nBước 4: Đáp án: C",
+					"quotes": [
+						"Advanced airborne electromagnetics, in particular, enables scientists to take 'slices' of the landscape at depths of five meters, ten meters, fifteen meters, and so on, to determine where salt may be stored at depth."
+					]
+				}
+			]
+		},
+		{
+			"range": "11-14",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, C or D.",
+			"questions": [
+				{
+					"number": 11,
+					"text": "What link does the writer make between salt and gold?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They can both be found in the same locations."
+						},
+						{
+							"label": "B",
+							"text": "Both have been found to have an impact on the landscape."
+						},
+						{
+							"label": "C",
+							"text": "The same techniques can be used to find both."
+						},
+						{
+							"label": "D",
+							"text": "Neither are present in mountainous areas."
+						}
+					],
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nTác giả tạo ra mối liên hệ nào giữa muối và vàng?\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Một bộ công nghệ cao được các nhà địa chất sử dụng để... tìm kiếm vàng và khoáng sản hiện đang được sử dụng để xác định chính xác sự hiện diện của muối\".\n==> Thông tin được in đậm đồng nghĩa với câu C (Các kỹ thuật giống nhau có thể được sử dụng để tìm cả hai).\nBước 3: Đáp án: C\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Bài không nói chúng ở cùng vị trí.\nĐáp án B -> Chỉ có muối được mô tả là đang phá hủy cảnh quan.\nĐáp án D -> Bài không nói về các khu vực miền núi.",
+					"quotes": [
+						"A suite of high technologies used by geologists to see underground and prospect for gold and minerals is now being used to pinpoint the presence of salt beneath the landscape and predict where it might move."
+					]
+				},
+				{
+					"number": 12,
+					"text": "What does Dr. Neil Phillips suggest about surface re-vegetation efforts?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They may prove ineffective if underground salt movement is not understood."
+						},
+						{
+							"label": "B",
+							"text": "They have already succeeded in reducing salinity in many areas."
+						},
+						{
+							"label": "C",
+							"text": "They are the most cost-effective method available."
+						},
+						{
+							"label": "D",
+							"text": "They should be abandoned in favour of new technologies."
+						}
+					],
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nTiến sĩ Neil Phillips gợi ý điều gì về các nỗ lực tái trồng thảm thực vật trên bề mặt?\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Trừ khi quá trình này sự di chuyển của muối được hiểu rõ... công việc khó khăn hiện đang được tiến hành — chẳng hạn như... trồng cây trên bề mặt - có thể trở nên vô hiệu\".\n==> Thông tin được in đậm đồng nghĩa với câu A (Chúng có thể tỏ ra không hiệu quả nếu chuyển động của muối dưới lòng đất không được hiểu rõ).\nBước 3: Đáp án: A\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án B -> Bài không nói các nỗ lực này đã thành công.\nĐáp án C -> Bài không nói đây là phương pháp tiết kiệm chi phí nhất.\nĐáp án D -> Ông chỉ cảnh báo chứ không đề nghị từ bỏ.",
+					"quotes": [
+						"Unless this process is clearly understood, warns Chief of Exploration and Mining Dr. Neil Phillips, the hard work now underway - such as planning and tree-planting on the surface — may be rendered ineffective."
+					]
+				},
+				{
+					"number": 13,
+					"text": "What was the outcome of the 'Landcare' group's efforts in the late 1970s?",
+					"options": [
+						{
+							"label": "A",
+							"text": "They completely eliminated the salt problem in their region."
+						},
+						{
+							"label": "B",
+							"text": "Their limited achievements were outweighed by ongoing losses."
+						},
+						{
+							"label": "C",
+							"text": "They persuaded the government to invest in new technology."
+						},
+						{
+							"label": "D",
+							"text": "They successfully identified the source of underground salt."
+						}
+					],
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nKết quả của những nỗ lực của nhóm 'Landcare' vào cuối những năm 1970 là gì?\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ nhóm Landcare được thành lập, \"Nhưng bất chấp nỗ lực ngày càng tăng... 'cái chết trắng' vẫn tiếp tục xâm lấn. Những thành công nhỏ đã bị lu mờ bởi những thất bại lớn hơn và những đợt bùng phát mới\".\n==> Thông tin được in đậm đồng nghĩa với câu B (Những thành tựu hạn chế của họ đã bị lấn át bởi những tổn thất đang diễn ra).\nBước 3: Đáp án: B\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Bài không nói họ đã loại bỏ hoàn toàn vấn đề.\nĐáp án C -> Bài không đề cập đến việc họ thuyết phục chính phủ đầu tư công nghệ mới.\nĐáp án D -> Bài không nói họ đã xác định được nguồn muối.",
+					"quotes": [
+						"Small successes were eclipsed by larger defeats and fresh outbreaks."
+					]
+				},
+				{
+					"number": 14,
+					"text": "What does the writer suggest is the main advantage of integrating multiple detection technologies?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It reduces the overall cost of salinity research."
+						},
+						{
+							"label": "B",
+							"text": "It allows scientists to study the surface landscape more effectively."
+						},
+						{
+							"label": "C",
+							"text": "It enables faster collection of data about salt movement."
+						},
+						{
+							"label": "D",
+							"text": "It gives a much clearer picture of what is happening below the surface."
+						}
+					],
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nTác giả cho rằng lợi thế chính của việc tích hợp nhiều công nghệ phát hiện là gì?\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ về việc tích hợp các kỹ thuật: \"Nói riêng lẻ, các công nghệ này chỉ đưa ra manh mối... Cùng với nhau, chúng cung cấp một bức tranh bộc lộ rõ hơn nhiều về cảnh quan dưới bề mặt\".\n==> Thông tin được in đậm đồng nghĩa với câu D (Nó cung cấp một bức tranh rõ ràng hơn nhiều về những gì đang diễn ra bên dưới bề mặt).\nBước 3: Đáp án: D\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Bài không nói về chi phí.\nĐáp án B -> Trọng tâm là bề mặt dưới lòng đất (subsurface), không phải bề mặt trên (surface).\nĐáp án C -> Bài không nói về tốc độ thu thập dữ liệu.",
+					"quotes": [
+						"Together, they provide a far more revealing picture of the subsurface landscape, several hundred meters deep."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

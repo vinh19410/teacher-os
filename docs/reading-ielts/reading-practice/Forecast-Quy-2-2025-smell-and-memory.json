@@ -1,0 +1,216 @@
+{
+	"id": "f5cef4d5-24ef-43bb-b924-2bb941609fa3",
+	"url": "https://stepielts.com/student/reading/f5cef4d5-24ef-43bb-b924-2bb941609fa3?mode=practice",
+	"title": "Smell and Memory",
+	"source": "Forecast Quý 2-2025",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Smell and Memory",
+		"paragraphs": [
+			"A. In recent years, the Proustian phenomenon in which specific odours can trigger or evoke specific memories has become a major talking point among scientists. For example, Rachel Herz, a cognitive neuroscientist at Brown University in Providence, Rhode Island, has discovered how sensory memories are shared across the brain, with different brain regions remembering the sights, smells, tastes and sounds of a particular experience.\"There is this unique connection between the sense of smell and the part of the brain that processes emotion,\" says Herz. Studies have shown that memories triggered by smells can be more emotional, as we have more detail, than memories not related to smells. When you inhale, odour molecules set brain cells dancing within a region known as the amygdala, a part of the brain that helps control emotion. Comparatively, other senses like taste or touch travel indirectly through other parts of the brain before they reach the amygdala. The direct link between odours and the amygdala may help explain the emotional potency of smells.",
+			"B. But the links don’t stop there.The memory of smells has influence on other brain regions as well.In recent experiments, neuroscientists at University College London (UCL) asked 15 volunteers to view specific pictures at the same time they were exposed to unrelated odors. For instance, the subjects might see a photo of a duck paired with the scent of a rose, and then be asked to create a story linking the picture with the odour. Brain scans taken at the time revealed that the volunteers’ brains were particularly active in a region known as the olfactory cortex, which is known to be involved in processing smells. A few minutes later, the volunteers were shown the same photo with no exposure to the rose smell. And in their brains, the olfactory cortex lit up again, even in the absence of the rose scent. The fact that this happened gives evidence to the idea that people’s sensory memory is distributed and retained by multiple regions of the brain. “Imagine going on a seaside holiday,\" says UCL team leader, Jay Gottfried.\"The sight of the waves becomes stored in one area, whereas the crash of the surf goes elsewhere, and the smell of seaweed in yet another place. There could be advantages of having memories spread around the brain. You can re-awake that memory from anyone of the sensory triggers.\"",
+			"C. Remembered smells may also carry extra emotional baggage, according to Herz. According to her research, memories evoked by odors are more emotional than memories evoked by other senses. In one recent study, Herz recruited 232 volunteers who had vivid memories associated with a particular perfume, such as Opium for women and Juniper Breeze from Bath and Body Works. She monitored the brainwaves of the volunteers as they sniffed that perfume and an unrelated perfume without knowing which was which. They were also shown photos of each perfume bottle. The act of smelling the specified perfume maximizes the level of brain activity with the volunteers, in a region called the hippocampus, which aids in the forming of memories.",
+			"D. Not only may odour-induced memories be more emotional, they are likely to be more detailed and vivid. Working with colleague John Downes, psychologist Simon Chu from the University of Liverpool started researching odour and memory partly because of his grandmother’s stories about Chinese culture. He had noticed that as generations gathered to share oral histories, they would pass a small pot of spice or incense around; later, when they wanted to remember a story in as much detail as possible, they would pass the same smell around again. “It kind of fits with a lot of anecdotal evidence on how smells can be really good reminders of past experiences,\" Chu says. The claim has been backed up by scientific research. In one experiment, Chu and Downes asked 42 volunteers to tell a life story, then tested to see whether odours such as coffee and cinnamon could help them remember more detail in the story. The outcome was satisfying.",
+			"E. Despite such studies, not everyone is convinced that Proust can be scientifically analysed. In the June issue of Chemical Senses, Chu and Downes exchanged critiques with renowned perfumer and chemist Joseph Stephan Jellinek. Jellinek chided the Liverpool researchers for, among other things, presenting the smells and asking the volunteers to think of memories, rather than seeing what memories were spontaneously evoked by the odours. Chu defends his position, saying that it is difficult to statistically measure people’s memories. Meanwhile, Jellinek has also been collecting anecdotal accounts of Proustian experiences, hoping to find out the sensory stimulus which elicits the experience. “I think there is a case to be made that surprise may be a major aspect of the Proust phenomenon,\" he says, “that’s why people are so struck by these memories.\" We cannot be sure whether Marcel Proust ever experienced such a transcendental moment. Even so, his ideas regarding memory, written as fiction almost 100 years ago, continue to engage scientists today."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "MATCHING_HEADINGS",
+			"instructions": "Reading Passage 1 has five paragraphs, A-E.\nChoose the correct heading for paragraphs B-E from the list of headings below.\nExample:\nParagraph A - Relationship between smell and emotion",
+			"options": [
+				{
+					"label": "I",
+					"text": "An idea inspired by a fiction writer"
+				},
+				{
+					"label": "II",
+					"text": "Emotional control"
+				},
+				{
+					"label": "III",
+					"text": "Research on how fragrance affects brain activity"
+				},
+				{
+					"label": "IV",
+					"text": "Relationship between smell and emotion"
+				},
+				{
+					"label": "IX",
+					"text": "Smell aids to recall details"
+				},
+				{
+					"label": "V",
+					"text": "Sensory memory in many parts of human's brain"
+				},
+				{
+					"label": "VI",
+					"text": "Comparing olfactory senses with audio visuals senses"
+				},
+				{
+					"label": "VII",
+					"text": "Volunteer assistance"
+				},
+				{
+					"label": "VIII",
+					"text": "Odours trigger memories"
+				}
+			],
+			"questions": [
+				{
+					"number": 1,
+					"text": "Paragraph B",
+					"answer": "V",
+					"quotes": [
+						"The fact that this happened gives evidence to the idea that people’s sensory memory is distributed and retained by multiple regions of the brain."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Paragraph C",
+					"answer": "III",
+					"explanation": "Câu 2:\n\nBước 1: Đọc và hiểu đoạn C:\nTheo Herz, ký ức được gợi lại từ mùi hương có thể mang nhiều cảm xúc hơn ký ức từ các giác quan khác. Trong một nghiên cứu, cô tuyển 232 tình nguyện viên có ký ức sống động liên quan đến một loại nước hoa cụ thể. Cô theo dõi sóng não khi họ ngửi nước hoa đó và một loại không liên quan mà không biết loại nào là loại nào. Hành động ngửi nước hoa cụ thể tối đa hóa mức độ hoạt động não ở vùng hải mã, nơi giúp hình thành ký ức.\n\nBước 2: Tóm tắt nội dung chính của đoạn C:\nĐoạn C có nội dung chính là \"nghiên cứu về việc mùi hương gợi ký ức mang nhiều cảm xúc hơn và làm tăng hoạt động não ở vùng hải mã liên quan đến hình thành ký ức.\"\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề III \"Nghiên cứu về cách hương thơm ảnh hưởng đến hoạt động não\"\n\nBước 4: Đáp án: III",
+					"quotes": [
+						"In one recent study, Herz recruited 232 volunteers who had vivid memories associated with a particular perfume, such as Opium for women and Juniper Breeze from Bath and Body Works. She monitored the brainwaves of the volunteers as they sniffed that perfume and an unrelated perfume without knowing which was which. They were also shown photos of each perfume bottle. The act of smelling the specified perfume maximizes the level of brain activity with the volunteers, in a region called the hippocampus, which aids in the forming of memories."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Paragraph D",
+					"answer": "IX",
+					"quotes": [
+						"D. Not only may odour-induced memories be more emotional, they are likely to be more detailed and vivid."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Paragraph E",
+					"answer": "I",
+					"quotes": [
+						"We cannot be sure whether Marcel Proust ever experienced such a transcendental moment. Even so, his ideas regarding memory, written as fiction almost 100 years ago, continue to engage scientists today."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-9",
+			"type": "MATCHING_NAMES",
+			"instructions": "Look at the following findings (Questions 5-9) and the list of researchers below.\nMatch each ending with the correct researcher, A-D.\nNB you may use any letter more than once.",
+			"options": [
+				{
+					"label": "A",
+					"text": "Rachel Herz"
+				},
+				{
+					"label": "B",
+					"text": "Jay Gottfried"
+				},
+				{
+					"label": "C",
+					"text": "Simon Chu"
+				},
+				{
+					"label": "D",
+					"text": "Joseph Stephan Jellinek"
+				}
+			],
+			"body": "Smell makes memories of the past clear. ____ (5)\nThe odour-evoked memories can be associated with stronger feelings of being brought back in time. ____ (6)\nSensory triggers can activate a specific memory. ____ (7)\nThe correlation between smell and the function of amygdala exists. ____ (8)\nThe result of an experiment can be inaccurate due to wrong process. ____ (9)",
+			"body_html": "<p>Smell makes memories of the past clear. [5]</p><p>The odour-evoked memories can be associated with stronger feelings of being brought back in time. [6]</p><p>Sensory triggers can activate a specific memory. [7]</p><p>The correlation between smell and the function of amygdala exists. [8]</p><p>The result of an experiment can be inaccurate due to wrong process. [9]</p>",
+			"questions": [
+				{
+					"number": 5,
+					"text": "Smell makes memories of the past clear.",
+					"answer": "C",
+					"explanation": "Câu 5:\n\nBước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra phát hiện này: \"Mùi làm cho ký ức về quá khứ trở nên rõ ràng\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nwhen they wanted to remember a story in as much detail as possible ~ makes memories of the past clear\nsmells can be really good reminders of past experiences ~ makes memories of the past clear\nChu says ~ Simon Chu\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Simon Chu \"Khi các thế hệ muốn nhớ lại một câu chuyện càng chi tiết càng tốt, họ sẽ truyền cùng một mùi hương xung quanh. Điều này phù hợp với nhiều bằng chứng giai thoại về cách mùi hương có thể là những gợi nhớ rất tốt về những trải nghiệm trong quá khứ.\"\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"He had noticed that as generations gathered to share oral histories, they would pass a small pot of spice or incense around; later, when they wanted to remember a story in as much detail as possible, they would pass the same smell around again. “It kind of fits with a lot of anecdotal evidence on how smells can be really good reminders of past experiences,\" Chu says."
+					]
+				},
+				{
+					"number": 6,
+					"text": "The odour-evoked memories can be associated with stronger feelings of being brought back in time.",
+					"answer": "A",
+					"explanation": "Câu 6:\n\nBước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra phát hiện này: \"Ký ức được gợi lên bởi mùi hương có thể liên kết với cảm giác mạnh mẽ hơn về việc được đưa trở lại thời gian quá khứ\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nmemories evoked by odors are more emotional ~ odour-evoked memories can be associated with stronger feelings\nAccording to her research ~ Rachel Herz\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Rachel Herz \"Theo nghiên cứu của cô ấy, những ký ức được gợi lên bởi mùi hương mang nhiều cảm xúc hơn so với ký ức được gợi lên bởi các giác quan khác.\"\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"According to her research, memories evoked by odors are more emotional than memories evoked by other senses."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Sensory triggers can activate a specific memory.",
+					"answer": "B",
+					"explanation": "Câu 7:\n\nBước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra phát hiện này: \"Các tác nhân kích thích giác quan có thể kích hoạt một ký ức cụ thể\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nYou can re-awake that memory from anyone of the sensory triggers ~ sensory triggers can activate a specific memory\nsays UCL team leader, Jay Gottfried ~ Jay Gottfried\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Jay Gottfried \"Có thể có lợi ích của việc có những ký ức lan truyền khắp não. Bạn có thể đánh thức lại ký ức đó từ bất kỳ tác nhân kích thích giác quan nào.\"\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"You can re-awake that memory from anyone of the sensory triggers.\""
+					]
+				},
+				{
+					"number": 8,
+					"text": "The correlation between smell and the function of amygdala exists.",
+					"answer": "A",
+					"explanation": "Câu 8:\n\nBước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra phát hiện này: \"Mối tương quan giữa khứu giác và chức năng của hạch hạnh nhân tồn tại\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ndirect link between odours and the amygdala ~ correlation between smell and the function of amygdala\nsays Herz ~ Rachel Herz\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Rachel Herz \"Có một kết nối độc đáo giữa khứu giác và phần não xử lý cảm xúc. Liên kết trực tiếp giữa mùi hương và hạch hạnh nhân có thể giúp giải thích sức mạnh cảm xúc của mùi hương.\"\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"The direct link between odours and the amygdala may help explain the emotional potency of smells."
+					]
+				},
+				{
+					"number": 9,
+					"text": "The result of an experiment can be inaccurate due to wrong process.",
+					"answer": "D",
+					"explanation": "Câu 9:\n\nBước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra phát hiện này: \"Kết quả của một thí nghiệm có thể không chính xác do quy trình sai\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nJellinek chided the Liverpool researchers for, among other things, presenting the smells and asking the volunteers to think of memories, rather than seeing what memories were spontaneously evoked by the odours ~ result of an experiment can be inaccurate due to wrong process\nJoseph Stephan Jellinek ~ Joseph Stephan Jellinek\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Joseph Stephan Jellinek \"Jellinek chỉ trích các nhà nghiên cứu Liverpool vì, trong số những điều khác, đã trình bày mùi hương và yêu cầu tình nguyện viên nghĩ về ký ức, thay vì xem những ký ức nào được gợi lên một cách tự nhiên bởi các mùi hương.\"\n\nBước 4: Đáp án: D",
+					"quotes": [
+						"Jellinek chided the Liverpool researchers for, among other things, presenting the smells and asking the volunteers to think of memories, rather than seeing what memories were spontaneously evoked by the odours."
+					]
+				}
+			]
+		},
+		{
+			"range": "10-13",
+			"type": "FILL_BLANK",
+			"instructions": "Answer the questions below. Choose NO MORE THAN THREE WORDS from the passage for each answer. Write your answers in boxes 10-13 on your answer sheet.",
+			"body": "Which part of the brain provides emotion management? ____ (10)\nWhich region of the brain processes smells? ____ (11)\nWhich part of the brain helps generate memories? ____ (12)\nWhat is Jellinek looking for by collecting information on Proustian experiences? ____ (13)",
+			"body_html": "<ul><li>Which part of the brain provides emotion management? [10]</li><li>Which region of the brain processes smells? [11]</li><li>Which part of the brain helps generate memories? [12]</li><li>What is Jellinek looking for by collecting information on Proustian experiences? [13]</li></ul>",
+			"questions": [
+				{
+					"number": 10,
+					"text": "Which part of the brain provides emotion management? ____ (10)",
+					"answer": "amygdala",
+					"explanation": "Câu 10:\n\nBước 1: Hiểu câu hỏi:\nPhần nào của não cung cấp khả năng quản lý cảm xúc?\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: provides + NOUN (NOUN làm Object của động từ \"provides\")\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nthe amygdala, a part of the brain that helps control emotion ~ part of the brain provides emotion management\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Khi bạn hít vào, các phân tử mùi kích hoạt các tế bào não nhảy múa trong một vùng được gọi là hạch hạnh nhân, một phần của não giúp kiểm soát cảm xúc\" (When you inhale, odour molecules set brain cells dancing within a region known as the amygdala, a part of the brain that helps control emotion).\n\nBước 5: Đáp án: amygdala\nPhần hạch hạnh nhân của não cung cấp khả năng quản lý cảm xúc. (Which part of the brain provides emotion management? The amygdala.)",
+					"quotes": [
+						"When you inhale, odour molecules set brain cells dancing within a region known as the amygdala, a part of the brain that helps control emotion."
+					]
+				},
+				{
+					"number": 11,
+					"text": "Which region of the brain processes smells? ____ (11)",
+					"answer": "olfactory cortex",
+					"explanation": "Câu 11:\n\nBước 1: Hiểu câu hỏI:\nVùng nào của não xử lý mùi?\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN PHRASE\nDấu hiệu: processes + NOUN PHRASE (NOUN PHRASE làm Object của động từ \"processes\")\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nthe olfactory cortex, which is known to be involved in processing smells ~ region of the brain processes smells\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Các bức ảnh chụp não được thực hiện tại thời điểm đó cho thấy não của các tình nguyện viên đặc biệt hoạt động ở một khu vực được gọi là vỏ não khứu giác, vốn được biết đến là tham gia vào việc xử lý mùi\" (Brain scans taken at the time revealed that the volunteers' brains were particularly active in a region known as the olfactory cortex, which is known to be involved in processing smells).\n\nBước 5: Đáp án: olfactory cortex\nVùng vỏ não khứu giác của não xử lý mùi. (Which region of the brain processes smells? The olfactory cortex.)",
+					"quotes": [
+						"Brain scans taken at the time revealed that the volunteers’ brains were particularly active in a region known as the olfactory cortex, which is known to be involved in processing smells."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Which part of the brain helps generate memories? ____ (12)",
+					"answer": "hippocampus",
+					"explanation": "Câu 12:\n\nBước 1: Hiểu câu hỏi:\nPhần nào của não giúp tạo ra ký ức?\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: helps generate + NOUN (NOUN làm Object của cụm động từ \"helps generate\")\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nthe hippocampus, which aids in the forming of memories ~ part of the brain helps generate memories\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Hành động ngửi nước hoa cụ thể tối đa hóa mức độ hoạt động não với các tình nguyện viên, trong một vùng gọi là hải mã, giúp hình thành ký ức\" (The act of smelling the specified perfume maximizes the level of brain activity with the volunteers, in a region called the hippocampus, which aids in the forming of memories).\n\nBước 5: Đáp án: hippocampus\nPhần hải mã của não giúp tạo ra ký ức. (Which part of the brain helps generate memories? The hippocampus.)",
+					"quotes": [
+						"The act of smelling the specified perfume maximizes the level of brain activity with the volunteers, in a region called the hippocampus, which aids in the forming of memories."
+					]
+				},
+				{
+					"number": 13,
+					"text": "What is Jellinek looking for by collecting information on Proustian experiences? ____ (13)",
+					"answer": "sensory stimulus",
+					"quotes": [
+						"Meanwhile, Jellinek has also been collecting anecdotal accounts of Proustian experiences, hoping to find out the sensory stimulus which elicits the experience."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

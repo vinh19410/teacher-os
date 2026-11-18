@@ -330,7 +330,7 @@ test.describe("Student Portal Onboarding Wizard", () => {
 		await verifyStudentEmailFromMailLog(page, email);
 		await expect(page).toHaveURL(/\/onboarding/, { timeout: 20_000 });
 		await expect(
-			page.getByText("Bạn đang quan tâm chứng chỉ nào?"),
+			page.getByText("Bạn muốn học tiếng Anh theo hướng nào?"),
 		).toBeVisible();
 		await expect(page.getByRole("heading", { name: /Chào/ })).not.toBeVisible();
 
@@ -341,14 +341,14 @@ test.describe("Student Portal Onboarding Wizard", () => {
 		await assertButtonContrastAcrossThemesAndViewports(page, continueBtn);
 
 		const ieltsBtn = page.getByRole("button", { name: /IELTS/ });
-		const toeicBtn = page.getByRole("button", { name: /TOEIC/ });
+		const communicationBtn = page.getByRole("button", { name: /Giao Tiếp/ });
 		await ieltsBtn.click();
 		await expect(ieltsBtn).toHaveAttribute("aria-pressed", "true");
-		await expect(toeicBtn).toHaveAttribute("aria-pressed", "false");
+		await expect(communicationBtn).toHaveAttribute("aria-pressed", "false");
 		await assertSelectionDistinctionAcrossThemesAndViewports(
 			page,
 			ieltsBtn,
-			toeicBtn,
+			communicationBtn,
 			"card-border",
 		);
 		await expect(continueBtn).toBeEnabled();
@@ -424,7 +424,7 @@ test.describe("Student Portal Onboarding Wizard", () => {
 		await page.waitForTimeout(1500);
 		await expect(page).toHaveURL(/\/$/);
 		await expect(
-			page.getByText("Bạn đang quan tâm chứng chỉ nào?"),
+			page.getByText("Bạn muốn học tiếng Anh theo hướng nào?"),
 		).not.toBeVisible();
 
 		// 7. Assert DB
@@ -490,7 +490,7 @@ test.describe("Student Portal Onboarding Wizard", () => {
 			page.getByRole("button", { name: "Gửi lại email" }),
 		).toBeVisible();
 		await expect(
-			page.getByText("Bạn đang quan tâm chứng chỉ nào?"),
+			page.getByText("Bạn muốn học tiếng Anh theo hướng nào?"),
 		).not.toBeVisible();
 	});
 });

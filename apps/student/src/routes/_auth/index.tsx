@@ -1,10 +1,20 @@
-import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
+import {
+	createFileRoute,
+	Link,
+	Navigate,
+	useNavigate,
+} from "@tanstack/react-router";
 import { STUDENT_ERROR_CODES } from "@teacher-os/api/contracts";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
+import { useState } from "react";
 import { toast } from "sonner";
 import { StudentShell } from "@/components/layout/student-shell";
 import Loader from "@/components/loader";
-import { getCurrentLevelLabel } from "@/components/onboarding/onboarding-steps";
+import {
+	EXAM_SCALE_LABELS,
+	getCurrentLevelLabel,
+	toStoredExamInterest,
+} from "@/components/onboarding/onboarding-steps";
 import { AssignmentList } from "@/components/overview/assignment-list";
 import { ClassCard } from "@/components/overview/class-card";
 import { OverviewEmptyState } from "@/components/overview/empty-state";
@@ -13,12 +23,18 @@ import { StatCard } from "@/components/overview/stat-card";
 import { StudentErrorView } from "@/components/overview/student-error-view";
 import { TuitionList } from "@/components/overview/tuition-list";
 import { UpcomingSessions } from "@/components/overview/upcoming-sessions";
+import { PlacementHighlightBanner } from "@/components/placement/placement-highlight-banner";
+import { PlacementPromptModal } from "@/components/placement/placement-prompt-modal";
 import {
 	deriveVocabLibrarySummary,
 	type VocabLibrarySummary,
 } from "@/components/vocab/vocab-courses-cta";
 import { deriveAssignmentStatus } from "@/lib/assignment-status";
 import { isHttpError } from "@/lib/query-client";
+import {
+	useDismissPlacementPrompt,
+	useStudentPlacementStatus,
+} from "@/lib/repos/placement-test";
 import {
 	countActiveEnrolledClasses,
 	resolveAcceptEnrollmentErrorMessage,
@@ -32,12 +48,17 @@ export const Route = createFileRoute("/_auth/")({
 	component: StudentOverviewPage,
 });
 
-function StudentOverviewPage() {
+export function StudentOverviewPage() {
+	const navigate = useNavigate();
 	const { session } = Route.useRouteContext();
 	const sessionEmail = session?.data?.user?.email;
 	const meQuery = useStudentMe();
 	const overviewQuery = useStudentOverview();
 	const acceptEnrollmentMutation = useAcceptClassEnrollment();
+	const isOnboarded = Boolean(meQuery.data?.student.onboardingCompletedAt);
+	const placementStatusQuery = useStudentPlacementStatus(isOnboarded);
+	const dismissPromptMutation = useDismissPlacementPrompt();
+	const [promptDismissedLocally, setPromptDismissedLocally] = useState(false);
 	const isLoading = meQuery.isLoading || overviewQuery.isLoading;
 
 	const handleAcceptEnrollment = (enrollmentId: string) => {
@@ -103,11 +124,45 @@ function StudentOverviewPage() {
 		return <Loader />;
 	}
 
+	const examKey = toStoredExamInterest(me.student.examInterest);
+	const placementStatus = placementStatusQuery.isError
+		? undefined
+		: placementStatusQuery.data;
+	const showPlacementHighlight =
+		placementStatus?.status === "not_started" && placementStatus.testAvailable;
+	const showPlacementModal =
+		Boolean(showPlacementHighlight) &&
+		placementStatus?.promptDismissedAt === null &&
+		!promptDismissedLocally;
+
+	const handleDismissPlacementPrompt = () => {
+		setPromptDismissedLocally(true);
+		dismissPromptMutation.mutate(undefined, {
+			onError: () => {
+				// Modal đóng cục bộ để không chặn thao tác; server đồng bộ lại ở lần tải sau.
+			},
+		});
+	};
+
+	const handleStartPlacementTest = () => {
+		setPromptDismissedLocally(true);
+		void navigate({ to: "/placement-test" });
+	};
+
 	return (
 		<StudentShell userName={me.student.name} userEmail={me.user.email}>
 			<GreetingHeader
 				studentName={me.student.name}
 				dueSoonCount={dueSoonCount}
+			/>
+
+			{showPlacementHighlight ? <PlacementHighlightBanner /> : null}
+
+			<PlacementPromptModal
+				open={showPlacementModal}
+				isDismissing={dismissPromptMutation.isPending}
+				onStart={handleStartPlacementTest}
+				onDismiss={handleDismissPlacementPrompt}
 			/>
 
 			{/* Dải stat 4 cột (design-v2 Dashboard): chỉ hiển thị số liệu CÓ dữ
@@ -121,22 +176,14 @@ function StudentOverviewPage() {
 							me.student.currentLevel,
 							me.student.examInterest,
 						)}
-						sub={
-							me.student.examInterest === "toeic"
-								? "Điểm TOEIC tự đánh giá"
-								: "Band IELTS tự đánh giá"
-						}
+						sub={`${EXAM_SCALE_LABELS[examKey]} tự đánh giá`}
 					/>
 				) : null}
 				{me.student.targetScore ? (
 					<StatCard
-						label="Band mục tiêu"
+						label={examKey === "ielts" ? "Band mục tiêu" : "Mục tiêu"}
 						value={me.student.targetScore}
-						sub={
-							me.student.examInterest === "toeic"
-								? "Điểm TOEIC mục tiêu"
-								: "Band IELTS mục tiêu"
-						}
+						sub={`${EXAM_SCALE_LABELS[examKey]} mục tiêu`}
 					/>
 				) : null}
 				<StatCard

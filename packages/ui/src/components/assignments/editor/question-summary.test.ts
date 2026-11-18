@@ -99,4 +99,36 @@ describe("questionSummary (#424 Task 1.5)", () => {
 				.hasExplanation,
 		).toBe(false);
 	});
+
+	it("summary có optionBank > 8 đếm choiceCount theo độ dài bank", () => {
+		const bank = Array.from({ length: 12 }, (_, i) => `word-${i}`);
+		expect(
+			questionSummary(
+				{ stem: "s ____", answer: "J", opts: null, alts: "" },
+				"summary",
+				bank,
+				20,
+			).choiceCount,
+		).toBe(12);
+		expect(
+			questionSummary(
+				{ stem: "s ____", answer: "word", opts: null, alts: "" },
+				"summary",
+				[],
+			).choiceCount,
+		).toBeNull();
+	});
+
+	it("MCQ với opts rỗng [] fallback 4; opts > 4 bị giới hạn 4", () => {
+		expect(
+			questionSummary({ stem: "Q?", answer: "", opts: [], alts: "" }, "mcq")
+				.choiceCount,
+		).toBe(4);
+		expect(
+			questionSummary(
+				{ stem: "Q?", answer: "A", opts: ["1", "2", "3", "4", "5"], alts: "" },
+				"mcq",
+			).choiceCount,
+		).toBe(4);
+	});
 });

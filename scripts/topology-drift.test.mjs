@@ -213,6 +213,16 @@ test("workflow PROFILE_ORIGIN and profile smoke check match resolveDomainTopolog
 		"https://www.msmy.io.vn",
 	]);
 	assert.match(prodYaml, /- name: Smoke check profile\b/);
+	assert.doesNotMatch(
+		prodYaml,
+		/^\s*PROFILE_MAINTENANCE:\s*"?(false|0)"?\s*$/m,
+		"deploy.yml must not force PROFILE_MAINTENANCE=false on production",
+	);
+	assert.match(
+		prodYaml,
+		/isProfileMaintenanceEnabled\(\)/,
+		"deploy.yml Smoke check profile must resolve mode via isProfileMaintenanceEnabled()",
+	);
 
 	const stagingYaml = read("../.github/workflows/deploy-staging.yml");
 	const stagingAppDomain = stagingYaml.match(
@@ -229,6 +239,16 @@ test("workflow PROFILE_ORIGIN and profile smoke check match resolveDomainTopolog
 	]);
 	assert.doesNotMatch(stagingTopology.profileOrigins.join(","), /msmy\.io\.vn/);
 	assert.match(stagingYaml, /- name: Smoke check profile\b/);
+	assert.match(
+		stagingYaml,
+		/^\s*PROFILE_MAINTENANCE:\s*"false"\s*$/m,
+		'deploy-staging.yml must set PROFILE_MAINTENANCE: "false" so staging profile stays enabled while production uses maintenance.json',
+	);
+	assert.match(
+		stagingYaml,
+		/isProfileMaintenanceEnabled\(\)/,
+		"deploy-staging.yml Smoke check profile must resolve mode via isProfileMaintenanceEnabled()",
+	);
 
 	const profileServe = read("../apps/profile/serve.mjs");
 	const profilePort = profileServe.match(
@@ -238,8 +258,18 @@ test("workflow PROFILE_ORIGIN and profile smoke check match resolveDomainTopolog
 	assert.equal(DEFAULT_DEV_LEAD_ORIGINS, `http://localhost:${profilePort}`);
 
 	const run = read("../packages/infra/alchemy.run.ts");
+	assert.match(
+		run,
+		/apps\/profile\/maintenance\.json/,
+		"packages/infra/alchemy.run.ts must derive profile maintenance mode from apps/profile/maintenance.json",
+	);
 	const profileBlock = run.split('StaticSite("profile"')[1];
 	assert.ok(profileBlock, 'StaticSite("profile") found in alchemy.run.ts');
+	assert.match(
+		profileBlock,
+		/notFoundHandling:\s*profileDisabled\s*\?\s*"single-page-application"\s*:\s*"none"/,
+		'StaticSite("profile") must switch notFoundHandling from profileDisabled',
+	);
 	assert.match(
 		profileBlock,
 		new RegExp(`url:\\s*"http://localhost:${profilePort}"`),

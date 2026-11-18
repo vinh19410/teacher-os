@@ -25,6 +25,8 @@ export type NavItem = {
 	href: string;
 	/** false = ẩn item khi route chưa tồn tại (flag theo phase). Mặc định hiện. */
 	enabled?: boolean;
+	/** Badge trạng thái nhỏ ở bên phải nhãn (vd. "Chưa làm"). */
+	badge?: ReactNode;
 	children?: NavChild[];
 };
 
@@ -101,7 +103,7 @@ function NavEntry({
 	collapsed: boolean;
 }) {
 	const Link = useContext(ShellLinkContext);
-	const { key, label, icon: Icon, href, children } = item;
+	const { key, label, icon: Icon, href, badge, children } = item;
 	// Đang trong mục này (kể cả đang ở trang con) → highlight cha + mở nhóm.
 	const inSection = activeKey === key || activeKey.startsWith(`${key}/`);
 	const [open, setOpen] = useState(inSection);
@@ -118,6 +120,9 @@ function NavEntry({
 				>
 					<Icon aria-hidden="true" />
 					<span className={cn("truncate", labelCls)}>{label}</span>
+					{badge && !collapsed ? (
+						<span className="ml-auto shrink-0">{badge}</span>
+					) : null}
 				</Link>
 			</li>
 		);

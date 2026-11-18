@@ -8,6 +8,7 @@ import {
 	QUIZ_TYPE_DISPLAY,
 	quizTypeDisplay,
 } from "@teacher-os/api/contracts";
+import { LIBRARY_READING_TYPES } from "@teacher-os/api/library-contracts";
 import { describe, expect, it } from "vitest";
 
 const writingReady = {
@@ -299,17 +300,20 @@ describe("QUIZ_TYPE_DISPLAY — shared display metadata", () => {
 		expect(quizTypeDisplay("nope")).toEqual({ label: "nope", instruction: "" });
 	});
 
-	it("covers every answer-kind and option-bank type used by the catalog", () => {
+	it("covers every answer-kind, option-bank, and library reading type used by the catalog", () => {
 		const knownTypes = [
 			...Object.keys(answerKindByType),
 			...ASSIGNMENT_OPTION_BANK_TYPES.reading,
 			...ASSIGNMENT_OPTION_BANK_TYPES.listening,
 			...ASSIGNMENT_OPTION_BANK_TYPES.vocabulary,
+			...LIBRARY_READING_TYPES,
 			"gap",
 			"transform",
 		];
 		for (const type of knownTypes) {
-			expect(QUIZ_TYPE_DISPLAY[type], type).toBeDefined();
+			const entry = QUIZ_TYPE_DISPLAY[type];
+			expect(entry, type).toBeDefined();
+			expect(entry?.label.trim().length, type).toBeGreaterThan(0);
 		}
 	});
 });

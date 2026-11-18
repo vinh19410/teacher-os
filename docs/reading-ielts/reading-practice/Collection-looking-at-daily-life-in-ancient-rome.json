@@ -1,0 +1,236 @@
+{
+	"id": "b087757d-c17b-40ae-96f5-a193fb9b205d",
+	"url": "https://stepielts.com/student/reading/b087757d-c17b-40ae-96f5-a193fb9b205d?mode=practice",
+	"title": "Looking at daily life in ancient Rome",
+	"source": "Collection",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "27-40",
+	"passage": {
+		"title": "Looking at daily life in ancient Rome",
+		"paragraphs": []
+	},
+	"question_groups": [
+		{
+			"range": "27-30",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, C or D.",
+			"questions": [
+				{
+					"number": 27,
+					"text": "What does the writer say about the period mentioned in the second paragraph?",
+					"options": [
+						{
+							"label": "A",
+							"text": "There was a high level of immigration into Rome."
+						},
+						{
+							"label": "B",
+							"text": "The export of minerals made Rome rich."
+						},
+						{
+							"label": "C",
+							"text": "Rome sent armies to control trade with India and East Asia."
+						},
+						{
+							"label": "D",
+							"text": "The Roman standard of living reached its highest level."
+						}
+					],
+					"answer": "D",
+					"explanation": "Đáp án: D\nBước 1: Hiểu và tìm keywords trong câu hỏi:\nTác giả nói gì về thời kỳ được nhắc đến trong đoạn văn thứ hai?\n\nBước 2: Tìm thông tin dựa trên keywords:\nĐoạn 2 chỉ rõ \"This generation saw the Roman Empire at its most powerful and prosperous... In the material domain, this generation attained the pinnacle of ancient civilisation.\" (Tạm dịch: Thế hệ này chứng kiến Đế chế La Mã hùng mạnh và thịnh vượng nhất... Về mặt vật chất, thế hệ này đã đạt đến đỉnh cao của nền văn minh cổ đại.)\n==> Mức sống vật chất đạt đỉnh điểm đồng nghĩa với việc tiêu chuẩn sống của người La Mã đạt mức cao nhất.\n\nBước 3: Giải thích đáp án gây nhiễu:\nĐáp án A -> Bài đọc không hề nhắc đến việc có lượng lớn người nhập cư.\nĐáp án B -> Bài đọc nhắc đến việc chinh phục Dacia mang lại khoáng sản, không phải xuất khẩu làm La Mã giàu có.\nĐáp án C -> Việc chinh phục Ả Rập giúp mang lại của cải từ Ấn Độ và Đông Á, không phải gửi quân đội đi kiểm soát thương mại."
+				},
+				{
+					"number": 28,
+					"text": "Ostia is mentioned as",
+					"options": [
+						{
+							"label": "A",
+							"text": "a city which often features in literature."
+						},
+						{
+							"label": "B",
+							"text": "an important area for archaeological research."
+						},
+						{
+							"label": "C",
+							"text": "the birthplace of a Roman Emperor."
+						},
+						{
+							"label": "D",
+							"text": "a city whose layout was similar to that of Rome."
+						}
+					],
+					"answer": "B",
+					"explanation": "Đáp án: B\nBước 1: Hiểu và tìm keywords trong câu hỏi:\nOstia được nhắc đến như là\n\nBước 2: Tìm thông tin dựa trên keywords:\nĐoạn 3 chỉ rõ \"Later excavations have also restored to us the ruins of the city of Ostia...\" (Tạm dịch: Những cuộc khai quật sau này cũng đã phục hồi cho chúng ta tàn tích của thành phố Ostia...).\n==> Việc khai quật và phục hồi tàn tích cho thấy đây là một khu vực quan trọng cho nghiên cứu khảo cổ học.\n\nBước 3: Giải thích đáp án gây nhiễu:\nĐáp án A -> Không có thông tin về việc Ostia thường xuyên xuất hiện trong văn học.\nĐáp án C -> Hoàng đế Hadrian đã tạo ra thành phố này, nhưng không có thông tin xác nhận đây là nơi sinh của ông.\nĐáp án D -> Không có bất kỳ sự so sánh nào về bố cục của Ostia với Rome."
+				},
+				{
+					"number": 29,
+					"text": "The statement that 'Fortune has favoured the historian of this time' refers to the fact that",
+					"options": [
+						{
+							"label": "A",
+							"text": "historians of this period have become wealthy as a result of their discoveries."
+						},
+						{
+							"label": "B",
+							"text": "works on this period are popular among the reading public."
+						},
+						{
+							"label": "C",
+							"text": "a wide range of sources is available for this period."
+						},
+						{
+							"label": "D",
+							"text": "this period has been less studied than many others."
+						}
+					],
+					"answer": "C"
+				},
+				{
+					"number": 30,
+					"text": "In comparing urban and rural life in the Roman Empire, the writer states that",
+					"options": [
+						{
+							"label": "A",
+							"text": "rural Romans were largely illiterate."
+						},
+						{
+							"label": "B",
+							"text": "rural life and urban life had little in common."
+						},
+						{
+							"label": "C",
+							"text": "little information is available concerning rural life."
+						},
+						{
+							"label": "D",
+							"text": "most readers of history are more interested in city life."
+						}
+					],
+					"answer": "B"
+				}
+			]
+		},
+		{
+			"range": "31-36",
+			"type": "YES/NO/NOT GIVEN",
+			"instructions": "Do the following statements agree with the views of the writer in Reading Passage 3?\nIn boxes 31-36 on your answer sheet, write:\nYES if the statement agrees with the views of the writer,\nNO if the statement contradicts the views of the writer,\nNOT GIVEN if it is impossible to say what the writer thinks about this.",
+			"questions": [
+				{
+					"number": 31,
+					"text": "Rome's conquest of Arabia resulted in large-scale immigration from the east into Rome.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Đáp án: NOT GIVEN\nBước 1: Hiểu câu hỏi: Cuộc chinh phục Ả Rập của Rome dẫn đến làn sóng nhập cư quy mô lớn từ phương đông vào Rome.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nconquest of Arabia ~ từ khóa giữ nguyên\ninto Rome ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc nêu \"...the conquest of Arabia, which helped to bring the riches of India and East Asia flooding into Rome.\" (Tạm dịch: ...cuộc chinh phục Ả Rập, giúp mang lại sự giàu có của Ấn Độ và Đông Á đổ dồn vào Rome.)\n==> NOT GIVEN: Bài đọc có nhắc đến cuộc chinh phục Ả Rập và sự xuất hiện của cải vật chất nhưng KHÔNG đưa ra thông tin về việc có làn sóng nhập cư quy mô lớn."
+				},
+				{
+					"number": 32,
+					"text": "More can be learned about Roman life from the literature of the period studied in this book than from later Latin literature.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES"
+				},
+				{
+					"number": 33,
+					"text": "Discoveries at Herculaneum and Pompeii showed that certain beliefs about Roman life were wrong.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Đáp án: NOT GIVEN\nBước 1: Hiểu câu hỏi:\nNhững khám phá tại Herculaneum và Pompeii cho thấy một số niềm tin về cuộc sống La Mã là sai lầm.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nHerculaneum and Pompeii ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc nêu \"In addition... the ruins of Herculaneum and Pompeii... supply an immense fund of archaeological evidence.\" (Tạm dịch: Thêm vào đó... tàn tích của Herculaneum và Pompeii... cung cấp một nguồn bằng chứng khảo cổ học khổng lồ.)\n==> NOT GIVEN: Bài đọc có nhắc đến những khám phá tại Herculaneum và Pompeii cung cấp bằng chứng khảo cổ nhưng KHÔNG đưa ra thông tin về việc chúng chứng minh những niềm tin trước đó là sai lầm."
+				},
+				{
+					"number": 34,
+					"text": "Roman peasants provided assistance to the Empire when it was attacked.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NO",
+					"explanation": "Đáp án: NO\nBước 1: Hiểu câu hỏi: Nông dân La Mã đã cung cấp sự hỗ trợ cho Đế chế khi bị tấn công.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nbarbarian forces began to invade ~ when it was attacked\npeasants ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu: Bài đọc nêu \"When the barbarian forces began to invade Roman territory, the peasants decided to fight alongside them.\" (Tạm dịch: Khi các lực lượng dã man bắt đầu xâm lược lãnh thổ La Mã, những người nông dân đã quyết định chiến đấu sát cánh cùng chúng.)\n==> NO: Điều này trái ngược với thông tin trong câu hỏi vì nông dân đã quyết định chiến đấu cùng phe với kẻ xâm lược chứ không hề hỗ trợ hay bảo vệ Đế chế."
+				},
+				{
+					"number": 35,
+					"text": "Rural inhabitants of the Roman Empire had a difficult life.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Đáp án: YES\nBước 1: Hiểu câu hỏi: Cư dân nông thôn của Đế chế La Mã có một cuộc sống khó khăn.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nunending labour without profit ~ difficult life\npeasant ~ rural inhabitants\n\nBước 3: So sánh và đối chiếu: Bài đọc nêu \"The peasant knew nothing but unending labour without profit...\" (Tạm dịch: Người nông dân không biết gì ngoài lao động không ngừng nghỉ mà không có lợi nhuận...)\n==> YES: Việc phải lao động vất vả, kéo dài mà không có lợi ích rõ ràng chứng tỏ cuộc sống của họ vô cùng khó khăn."
+				},
+				{
+					"number": 36,
+					"text": "Entertainment facilities were limited to the city of Rome itself.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NO",
+					"explanation": "Đáp án: NO\nBước 1: Hiểu câu hỏi: Cơ sở vật chất giải trí bị giới hạn chỉ ở riêng thành phố Rome.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nthe liveliness of the sports field, the warmth of the public baths... ~ entertainment facilities\ncity of Rome ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu: Bài đọc nêu \"...unable to enjoy the activities available in even the poorest of cities: the liveliness of the sports field, the warmth of the public baths and the magnificence of public spectacles.\" (Tạm dịch: ...không thể tận hưởng các hoạt động có sẵn ở ngay cả những thành phố nghèo nhất: sự sống động của sân thể thao, sự ấm áp của nhà tắm công cộng và sự tráng lệ của các buổi trình diễn công cộng.)\n==> NO: Điều này trái ngược với thông tin trong câu hỏi vì bài đọc khẳng định các hoạt động giải trí có mặt ở \"ngay cả những thành phố nghèo nhất\", chứ không bị giới hạn tại mỗi thủ đô Rome."
+				}
+			]
+		},
+		{
+			"range": "37-40",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary using the list of words below.",
+			"options": [
+				{
+					"label": "A",
+					"text": "emperors"
+				},
+				{
+					"label": "B",
+					"text": "setting"
+				},
+				{
+					"label": "C",
+					"text": "values"
+				},
+				{
+					"label": "D",
+					"text": "peasants"
+				},
+				{
+					"label": "E",
+					"text": "city-dwellers"
+				},
+				{
+					"label": "F",
+					"text": "social classes"
+				},
+				{
+					"label": "G",
+					"text": "myths"
+				},
+				{
+					"label": "H",
+					"text": "period"
+				},
+				{
+					"label": "I",
+					"text": "investigation"
+				}
+			],
+			"body": "The scope of the writer's study\nIt was important for the writer to limit several aspects of his ____ (37) . He decided to focus on a limited ____ (38) in Roman history, and to concentrate on the section of the population who were ____ (39) . The writer was interested in the physical environment, the people that ruled the country and the ____ (40) that contributed both to Rome's strength and to its weaknesses.",
+			"body_html": "<p><strong>The scope of the writer's study</strong></p><p>It was important for the writer to limit several aspects of his [37] . He decided to focus on a limited [38] in Roman history, and to concentrate on the section of the population who were [39] . The writer was interested in the physical environment, the people that ruled the country and the [40] that contributed both to Rome's strength and to its weaknesses.</p>",
+			"questions": [
+				{
+					"number": 37,
+					"text": "It was important for the writer to limit several aspects of his ____ (37).",
+					"answer": "I",
+					"explanation": "Đáp án: I (investigation)\nBước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nĐiều quan trọng là tác giả phải giới hạn một vài khía cạnh trong [câu 37] của ông.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: Danh từ (Noun)\nDấu hiệu: Tính từ sở hữu \"his\" + Noun. Cần một danh từ chỉ công việc của tác giả.\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nscope of his study ~ aspects of his investigation\n\nBước 4: So sánh và đối chiếu: Bài đọc nêu \"In this preface to a history, the writer explains the factors affecting the scope of his study.\" (Tạm dịch: Trong lời tựa của lịch sử này, người viết giải thích các yếu tố ảnh hưởng đến phạm vi nghiên cứu của mình.)\n==> Cụm từ \"nghiên cứu\" (study) trong ngữ cảnh này mang nét nghĩa tương đồng trực tiếp với \"sự khảo sát, điều tra\" (investigation - Đáp án I)."
+				},
+				{
+					"number": 38,
+					"text": "He decided to focus on a limited ____ (38) in Roman history.",
+					"answer": "H",
+					"explanation": "Đáp án: H (period)\nBước 1: Hiểu câu hỏi và Giải thích ngữ pháp: Ông quyết định tập trung vào một [câu 38] giới hạn trong lịch sử La Mã...\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: Danh từ (Noun)\nDấu hiệu: Cụm \"a limited\" + Noun. Cần một danh từ nói về sự giới hạn của khoảng thời gian.\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nstrictly defined time ~ limited period\nhistory ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu: Bài đọc nêu \"If our ideas on Roman life are not to become lost in confusion, we must study it within a strictly defined time.\" (Tạm dịch: Nếu những ý tưởng của chúng ta về cuộc sống La Mã không muốn bị chìm trong sự nhầm lẫn, chúng ta phải nghiên cứu nó trong một khoảng thời gian được xác định chặt chẽ.)\n==> Khoảng thời gian (\"time\") tương đồng trực tiếp với \"giai đoạn, thời kỳ\" (\"period\" - Đáp án H)."
+				},
+				{
+					"number": 39,
+					"text": "and to concentrate on the section of the population who were ____ (39).",
+					"answer": "E",
+					"explanation": "Đáp án: E (city-dwellers)\nBước 1: Hiểu câu hỏi và Giải thích ngữ pháp: ...và tập trung vào bộ phận dân cư những người là [câu 39].\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: Danh từ chỉ người (Noun - People)\nDấu hiệu: Động từ \"to be\" ở thì quá khứ \"were\" + Noun chỉ một nhóm người.\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nspent their time exclusively in the town ~ city-dwellers\n\nBước 4: So sánh và đối chiếu: Bài đọc nêu \"The time which we have chosen to describe day by day is that of those Roman subjects who spent their time exclusively in the town...\" (Tạm dịch: Thời gian mà chúng tôi chọn để mô tả qua từng ngày là của những thần dân La Mã những người chỉ dành thời gian của họ ở trong thành thị...)\n==> Những người sống và dành thời gian độc quyền ở khu vực thành thị được gọi chung là \"cư dân thành thị\" (city-dwellers - Đáp án E)."
+				},
+				{
+					"number": 40,
+					"text": "The writer was interested in the physical environment, the people that ruled the country and the ____ (40) that contributed both to Rome's strength and to its weaknesses.",
+					"answer": "C",
+					"explanation": "Đáp án: C (values)\nBước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nTác giả quan tâm đến môi trường vật lý, những người cai trị đất nước và [câu 40] đã đóng góp vào cả điểm mạnh và điểm yếu của Rome.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: Danh từ (Noun)\nDấu hiệu: Cụm \"and the\" + Noun + mệnh đề quan hệ \"that contributed...\".\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nmoral background of thought and sentiment ~ values\nstrength and its weaknesses ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu: Bài đọc nêu \"We must also investigate the moral background of thought and sentiment which can help explain both its strength and its weaknesses.\" (Tạm dịch: Chúng ta cũng phải điều tra nền tảng đạo đức của tư tưởng và tình cảm cái mà có thể giúp giải thích cả điểm mạnh và điểm yếu của nó.)\n==> \"Nền tảng đạo đức của tư tưởng và tình cảm\" được dùng để giải thích cho hệ thống các \"giá trị quan\" (values - Đáp án C) của xã hội La Mã."
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -23,8 +23,8 @@ export function SeedEmptyState({
 					Chưa có bản nháp bộ đề kiểm tra đầu vào
 				</h2>
 				<p className="max-w-[65ch] text-muted-foreground text-sm">
-					Bạn có thể nhập bộ đề gốc 5 kỹ năng (Listening 13 câu • 6 audio
-					Kokoro, Grammar & Vocabulary 12 câu, Reading 15 câu, Writing và
+					Bạn có thể nhập bộ đề gốc 5 kỹ năng (Listening 13 câu • 6 audio giọng
+					chuẩn (en-GB), Grammar & Vocabulary 12 câu, Reading 15 câu, Writing và
 					Speaking 8 câu) để chỉnh sửa và phát hành ngay, hoặc tự tạo bộ đề mới
 					từ đầu.
 				</p>

@@ -1,0 +1,179 @@
+{
+	"id": "e50cf822-7ee1-4fa0-a614-2f16cf230cab",
+	"url": "https://stepielts.com/student/reading/e50cf822-7ee1-4fa0-a614-2f16cf230cab?mode=practice",
+	"title": "Mercator the Map Maker",
+	"source": "Actual Test",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "27-40",
+	"passage": {
+		"title": "Mercator the Map Maker",
+		"paragraphs": [
+			"Maps codify the miracle of existence. And the man who wrote the codes for the maps we use today was Gerard Mercator, a cobbler's son born 500 years ago on a muddy floodplain in northern Europe.",
+			"Mercator was a humble man with a universal vision. In his own time he was 'the prince of modern geographers'; his depictions of the planet and its regions unsurpassed in accuracy, clarity and consistency. More recently, he was crowned by the American scholar Robert W Karrow as 'the first modern, scientific cartographer.' Where his predecessors had adopted a piecemeal approach to cartography, Mercator sought to wrap the world in systematic overlapping maps. Along the way he erected a number of historic milestones. He participated in the naming and mapping of America, he constructed the two most important globes of the 16th century, and the title of his pioneering modern geography, the Atlas, became the standard term for a volume of maps. Mercator also devised a new method — 'a projection' — of converting the spherical world into a two-dimensional map.",
+			"Mercator was born in 1512 and died in 1594. His world was one of military conflict, social upheaval, religious revolution — and geographical discovery. He was ten years old when the survivors of the world's first circumnavigation returned to Spain in their leaking caravel. No better example is required of genius arising from turmoil. He knew poverty, plague, war and persecution. He was imprisoned for his ideas yet patronised by an emperor. His life was one of brilliant breakthroughs and abrupt reversals. In its telling, his is the story of the poor boy made good: the pauper who embraced the world, found fame, faced death, yet triumphed through fortitude. Variously described by his peers as honest, calm, candid, sincere and peaceable, Mercator wore an aura of calm in troubled times. His attitude to his geographical calling was described by his friend and neighbour, William Ghim, as 'indefatigable'. Some 40 or so of Mercator's letters have survived, together with examples of virtually all of his printed maps and globes.",
+			"Mercator's most significant work was a project of cosmic proportions. A multi-part cosmography, the work would include a section on astronomy, a chronology of world events and a modern geography, which would eventually contain over 100 maps.",
+			"Before he commenced the great work, Mercator produced in 1569 an enormous world map on a new projection. His method for converting the spherical globe into a two-dimensional map helped to solve the greatest cartographic riddle of the day: how could the course of a ship following a constant compass bearing be represented as a straight line on a map which had been constructed on a grid of latitude and longitude?",
+			"Mercator's solution was to progressively increase the space between his lines of latitude, away from the equator. The effect was to straighten the lines of constant compass bearing (also known as rhumbs or loxodromes). Unfortunately, straightening the rhumbs caused areal distortion: at the map's northern and southern extremities, the polar regions occupied the full width of the map, while North America appeared to fill half the circumference of the world.",
+			"Few of Mercator's contemporaries understood what he was up to, despite the map's title explaining that it was intended 'for use in navigation'. Mercator knew that his projection was unsuitable as an areal description of the world, but it would be several decades before the map's true navigational value would be recognised.",
+			"Meanwhile, Mercator was marshalling and editing all the geographical data he needed for his modern regional maps of the world. His sources were wide-ranging and multitudinous, including an imperial physician in Vienna and his competitor, the Viceroy of Holstein. He was still working on these maps when he died. The great cosmography that Mercator had already titled 'Atlas' would never be finished.",
+			"In the Atlas, Mercator had embodied the principles of future mapmaking: his italic lettering, his identical map overlaps, his complete coverage of regions at more than one scale, his consistent use of grids of latitude and longitude, his singular editorial control, were all adopted as cartographic standards.'Atlas', the cosmography, became 'atlas', the Oxford English Dictionary term for 'a collection of maps in a volume.'",
+			"The projection assumed a life of its own. So powerful a cartographic tool did it become that Mercator the man became subsumed by his own device.\nBy the 20th century, Mercator's Projection had been adopted by state cartographers to map the land that he had named 'North America'.\nIn 1938, Mercator's Projection was selected by the Ordnance Survey to map Britain anew. And in 1974, the American cartographer Alden P Colvocoresses used the Space Oblique Mercator Projection for the first satellite map of the USA. When the Jet Propulsion Laboratory sent Mariner 8 and Mariner 9 to map Mars, they undertook their Martian cartography on a standard Mercator Projection. One by one, the mappable orbs of our solar system are appearing on the worldwide web, flattened for our screens according to Mercator's cartographic principles.",
+			"Mercator's Projection succeeded in reconciling the sphere and the plane, while his Atlas enveloped the world with an integrated system of maps.",
+			"* areal: of an area"
+		]
+	},
+	"question_groups": [
+		{
+			"range": "27-34",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 3?\nIn boxes 27–34 on your answer sheet, choose:\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 27,
+					"text": "Cartographers before Mercator had tended to produce separate, individual maps.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác nhà vẽ bản đồ trước Mercator có xu hướng tạo ra các bản đồ riêng biệt, cá nhân.\nBước 2: Tìm các keywords được paraphrase trong bài:\nCartographers before Mercator ~ his predecessors\nseparate, individual maps ~ piecemeal approach\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Trong khi những người đi trước ông đã áp dụng một cách tiếp cận chắp vá (từng phần) đối với bản đồ học, Mercator tìm cách bao bọc thế giới bằng các bản đồ chồng chéo có hệ thống\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"có xu hướng tạo ra các bản đồ riêng biệt, cá nhân\" (Where his predecessors had adopted a piecemeal approach to cartography).\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Where his predecessors had adopted a piecemeal approach to cartography, Mercator sought to wrap the world in systematic overlapping maps."
+					]
+				},
+				{
+					"number": 28,
+					"text": "Mercator was critical of the work of his contemporaries.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMercator đã chỉ trích công việc của những người cùng thời với ông.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nMercator ~ từ khóa giữ nguyên\ncontemporaries ~ từ khóa giữ nguyên\ncritical of the work ~ từ khóa không xuất hiện\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"Rất ít người cùng thời với Mercator hiểu được ông đang làm gì\".\n==> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"Mercator đã chỉ trích công việc của họ\" (Few of Mercator's contemporaries understood what he was up to).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Few of Mercator's contemporaries understood what he was up to, despite the map's title explaining that it was intended 'for use in navigation'."
+					]
+				},
+				{
+					"number": 29,
+					"text": "During his life, Mercator experienced great changes of fortune.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTrong suốt cuộc đời mình, Mercator đã trải qua những thay đổi lớn về vận mệnh.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nDuring his life ~ His life was one of\ngreat changes of fortune ~ brilliant breakthroughs and abrupt reversals / poor boy made good / found fame, faced death\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Cuộc đời ông là một chuỗi những đột phá rực rỡ và những sự đảo ngược (thăng trầm) bất ngờ... câu chuyện về cậu bé nghèo làm nên nghiệp lớn: người nghèo khổ đã ôm trọn thế giới, tìm thấy danh tiếng, đối mặt với cái chết, nhưng đã chiến thắng\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"đã trải qua những thay đổi lớn về vận mệnh\" (His life was one of brilliant breakthroughs and abrupt reversals).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"His life was one of brilliant breakthroughs and abrupt reversals."
+					]
+				},
+				{
+					"number": 30,
+					"text": "Most of Mercator's published work remains intact today.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhần lớn các tác phẩm đã xuất bản của Mercator vẫn còn nguyên vẹn cho đến ngày nay.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nMost of ~ virtually all of\npublished work ~ printed maps and globes\nremains intact today ~ have survived\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Khoảng 40 bức thư của Mercator đã tồn tại, cùng với các bản sao của hầu như tất cả các bản đồ và quả địa cầu đã in của ông\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"Phần lớn các tác phẩm đã xuất bản của Mercator vẫn còn nguyên vẹn\" (together with examples of virtually all of his printed maps and globes).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Some 40 or so of Mercator's letters have survived, together with examples of virtually all of his printed maps and globes."
+					]
+				},
+				{
+					"number": 31,
+					"text": "Mercator started work on his projection shortly after embarking on his cosmography.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMercator bắt đầu thực hiện phép chiếu của mình ngay sau khi bắt tay vào nghiên cứu vũ trụ học của mình.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nMercator started work on his projection ~ Mercator produced... a new projection\nshortly after embarking ~ trái ngược với Before he commenced\ncosmography ~ the great work / A multi-part cosmography\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Trước khi ông bắt đầu công trình vĩ đại (vũ trụ học), Mercator đã sản xuất vào năm 1569 một bản đồ thế giới khổng lồ trên một phép chiếu mới\".\n==> Điều này trái ngược với thông tin trong câu hỏi \"ngay sau khi bắt tay vào\" (Before he commenced the great work, Mercator produced... a new projection).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Before he commenced the great work, Mercator produced in 1569 an enormous world map on a new projection."
+					]
+				},
+				{
+					"number": 32,
+					"text": "Mercator's Projection was immediately seen as a major breakthrough.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nPhép chiếu của Mercator ngay lập tức được coi là một bước đột phá lớn.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nMercator's Projection ~ từ khóa giữ nguyên\nimmediately seen ~ trái ngược với several decades before... would be recognised\nmajor breakthrough ~ true navigational value\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"sẽ mất vài thập kỷ trước khi giá trị điều hướng thực sự của bản đồ được công nhận\".\n==> Điều này trái ngược với thông tin trong câu hỏi \"ngay lập tức được coi là một bước đột phá lớn\" (it would be several decades before the map's true navigational value would be recognised).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Few of Mercator's contemporaries understood what he was up to, despite the map's title explaining that it was intended 'for use in navigation'. Mercator knew that his projection was unsuitable as an areal description of the world, but it would be several decades before the map's true navigational value would be recognised."
+					]
+				},
+				{
+					"number": 33,
+					"text": "Mercator produced an accurate areal description of the world.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMercator đã tạo ra một mô tả diện tích chính xác của thế giới.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\naccurate ~ trái ngược với caused areal distortion / unsuitable\nareal description of the world ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Thật không may, việc nắn thẳng các đường rhumb đã gây ra sự biến dạng về diện tích... Mercator biết rằng phép chiếu của ông là không phù hợp như một mô tả diện tích của thế giới\".\n==> Điều này trái ngược với thông tin trong câu hỏi \"tạo ra một mô tả diện tích chính xác\" (straightening the rhumbs caused areal distortion... his projection was unsuitable as an areal description of the world).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Mercator knew that his projection was unsuitable as an areal description of the world, but it would be several decades before the map's true navigational value would be recognised."
+					]
+				},
+				{
+					"number": 34,
+					"text": "Mercator consulted the work of various people when producing his maps.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMercator đã tham khảo công việc của nhiều người khác nhau khi sản xuất bản đồ của mình.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nconsulted the work of various people ~ His sources were wide-ranging and multitudinous, including...\nproducing his maps ~ working on these maps\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Các nguồn tài liệu của ông rất đa dạng và phong phú, bao gồm một bác sĩ hoàng gia ở Vienna và đối thủ cạnh tranh của ông, Phó vương của Holstein\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"tham khảo công việc của nhiều người khác nhau\" (His sources were wide-ranging and multitudinous, including an imperial physician...).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Meanwhile, Mercator was marshalling and editing all the geographical data he needed for his modern regional maps of the world. His sources were wide-ranging and multitudinous, including an imperial physician in Vienna and his competitor, the Viceroy of Holstein."
+					]
+				}
+			]
+		},
+		{
+			"range": "35-40",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the notes below.\nChoose NO MORE THAN TWO WORDS from the passage for each answer.",
+			"body": "Mercator's Projection\nHis aim\nHis attempt to represent the globe as a ____ (35) map.\nProblem\nWhen sailors used a map based on lines of latitude and longitude and kept to a constant compass bearing, the course of the ship could not be shown as a ____ (36) on a map.\nSolution\nTo increase the space separating the lines of latitude the further they are from the equator.\nResult\nWhen Mercator straightened the 'rhumbs' as intended, this produced ____ (37) at the northern and southern extremities, with the full width of the map being taken up by the ____ (38).\nOriginal intention\nMercator originally designed the map for ____ (39) purposes.\nUses up to the present day\nVarious uses including the mapping of ____ (40) by state cartographers. Also used to portray planets in our solar system on the web.",
+			"body_html": "<table><tbody><tr><td><h3>Mercator's Projection</h3><p><strong>His aim</strong><br>His attempt to represent the globe as a [35] map.</p><p><strong>Problem</strong><br>When sailors used a map based on lines of latitude and longitude and kept to a constant compass bearing, the course of the ship could not be shown as a [36] on a map.</p><p><strong>Solution</strong><br>To increase the space separating the lines of latitude the further they are from the equator.</p><p><strong>Result</strong><br>When Mercator straightened the 'rhumbs' as intended, this produced [37] at the northern and southern extremities, with the full width of the map being taken up by the [38].</p><p><strong>Original intention</strong><br>Mercator originally designed the map for [39] purposes.</p><p><strong>Uses up to the present day</strong><br>Various uses including the mapping of [40] by state cartographers. Also used to portray planets in our solar system on the web.</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 35,
+					"text": "His attempt to represent the globe as a ____ (35) map.",
+					"answer": "two-dimensional",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nNỗ lực của ông để thể hiện quả địa cầu như một bản đồ _________. Cần điền một tính từ bổ nghĩa cho danh từ 'map'.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: ADJECTIVE\nDấu hiệu: a + ADJECTIVE + map (Tính từ bổ nghĩa cho danh từ 'map')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nHis attempt to represent ~ His method for converting\nthe globe ~ the spherical globe • map ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Phương pháp của ông để chuyển đổi quả địa cầu hình cầu thành một bản đồ hai chiều\" (His method for converting the spherical globe into a two-dimensional map).\n\nBước 5: Đáp án: two-dimensional",
+					"quotes": [
+						"Mercator also devised a new method — 'a projection' — of converting the spherical world into a two-dimensional map.",
+						"His method for converting the spherical globe into a two-dimensional map helped to solve the greatest cartographic riddle of the day: how could the course of a ship following a constant compass bearing be represented as a straight line on a map which had been constructed on a grid of latitude and longitude?"
+					]
+				},
+				{
+					"number": 36,
+					"text": "When sailors used a map based on lines of latitude and longitude and kept to a constant compass bearing, the course of the ship could not be shown as a ____ (36) on a map.",
+					"answer": "straight line",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\n...lộ trình của con tàu không thể được hiển thị như một _________ trên bản đồ. Cần điền một cụm danh từ đếm được số ít.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN PHRASE\nDấu hiệu: a + NOUN PHRASE (Danh từ số ít đi sau mạo từ 'a')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nthe course of the ship ~ the course of a ship\ncould not be shown as ~ how could... be represented as\non a map ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...làm thế nào lộ trình của một con tàu tuân theo một hướng la bàn không đổi có thể được thể hiện như một đường thẳng trên bản đồ...\" (...how could the course of a ship following a constant compass bearing be represented as a straight line on a map...).\n\nBước 5: Đáp án: straight line",
+					"quotes": [
+						"His method for converting the spherical globe into a two-dimensional map helped to solve the greatest cartographic riddle of the day: how could the course of a ship following a constant compass bearing be represented as a straight line on a map which had been constructed on a grid of latitude and longitude?"
+					]
+				},
+				{
+					"number": 37,
+					"text": "When Mercator straightened the 'rhumbs' as intended, this produced ____ (37) at the northern and southern extremities",
+					"answer": "areal distortion",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nKhi Mercator nắn thẳng các 'đường rhumb' như dự định, điều này tạo ra _________ tại... Cần điền một danh từ/cụm danh từ chỉ kết quả của hành động nắn thẳng.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN PHRASE\nDấu hiệu: produced + NOUN PHRASE (Đóng vai trò tân ngữ trực tiếp cho động từ 'produced')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nWhen Mercator straightened the 'rhumbs' ~ straightening the rhumbs\nproduced ~ caused\nat the northern and southern extremities ~ at the map's northern and southern extremities\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Thật không may, việc nắn thẳng các đường rhumb đã gây ra sự biến dạng về diện tích: ở các cực bắc và nam của bản đồ...\" (Unfortunately, straightening the rhumbs caused areal distortion: at the map's northern and southern extremities...).\n\nBước 5: Đáp án: areal distortion",
+					"quotes": [
+						"Unfortunately, straightening the rhumbs caused areal distortion: at the map's northern and southern extremities, the polar regions occupied the full width of the map, while North America appeared to fill half the circumference of the world."
+					]
+				},
+				{
+					"number": 38,
+					"text": "with the full width of the map being taken up by the ____ (38).",
+					"answer": "polar regions",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\n...với toàn bộ chiều rộng của bản đồ bị chiếm bởi _________. Cần điền một cụm danh từ chỉ một khu vực địa lý.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN PHRASE\nDấu hiệu: by the + NOUN PHRASE (Danh từ đứng sau mạo từ 'the' trong cấu trúc bị động)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nfull width of the map ~ từ khóa giữ nguyên\nbeing taken up by ~ occupied\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...các vùng cực chiếm toàn bộ chiều rộng của bản đồ...\" (...the polar regions occupied the full width of the map...).\n\nBước 5: Đáp án: polar regions",
+					"quotes": [
+						"Unfortunately, straightening the rhumbs caused areal distortion: at the map's northern and southern extremities, the polar regions occupied the full width of the map, while North America appeared to fill half the circumference of the world."
+					]
+				},
+				{
+					"number": 39,
+					"text": "Mercator originally designed the map for ____ (39) purposes.",
+					"answer": "navigation",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nMercator ban đầu đã thiết kế bản đồ cho mục đích _________. Cần điền một danh từ/tính từ bổ nghĩa cho từ 'purposes'.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (dùng như Adjective) / ADJECTIVE\nDấu hiệu: for + NOUN/ADJECTIVE + purposes (Từ bổ nghĩa cho danh từ 'purposes')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\noriginally designed the map for ~ the map's title explaining that it was intended 'for use in\npurposes ~ for use in\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...mặc dù tiêu đề của bản đồ giải thích rằng nó được dự định 'để sử dụng trong hàng hải/điều hướng'\" (...despite the map's title explaining that it was intended 'for use in navigation').\n\nBước 5: Đáp án: navigation",
+					"quotes": [
+						"Few of Mercator's contemporaries understood what he was up to, despite the map's title explaining that it was intended 'for use in navigation'."
+					]
+				},
+				{
+					"number": 40,
+					"text": "Various uses including the mapping of ____ (40) by state cartographers.",
+					"answer": "North America",
+					"quotes": [
+						"By the 20th century, Mercator's Projection had been adopted by state cartographers to map the land that he had named 'North America'."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

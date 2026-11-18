@@ -3,9 +3,11 @@ import { describe, expect, it } from "vitest";
 import {
 	buildClozeSegments,
 	type ClozeBlankEntry,
+	clozeApplyIssues,
 	emptyTableGrid,
 	parseClozeRaw,
 	segmentsToItems,
+	tableApplyIssues,
 	tableSegments,
 } from "./cloze";
 
@@ -316,5 +318,23 @@ describe("segmentsToItems answer-key merge (#425 — metadata theo nội dung, k
 				(item) => item.explanation,
 			),
 		).toEqual(["grid-1", "grid-2"]);
+	});
+
+	it("clozeApplyIssues + tableApplyIssues tôn trọng maxBlanks tùy chỉnh của nhóm", () => {
+		const rawSegments = parseClozeRaw("A *one* and *two* and *three* end.");
+		expect(clozeApplyIssues(rawSegments, 3)).toEqual([]);
+		expect(clozeApplyIssues(rawSegments, 2)).toHaveLength(1);
+
+		const gridState = {
+			...emptyTableGrid(2, 1),
+			rowTitles: ["R1", "R2"],
+			colTitles: ["C1"],
+			blanks: [
+				{ row: 0, col: 0, answer: "one", alts: "" },
+				{ row: 1, col: 0, answer: "two", alts: "" },
+			],
+		};
+		expect(tableApplyIssues(gridState, 2)).toEqual([]);
+		expect(tableApplyIssues(gridState, 1)).toHaveLength(1);
 	});
 });

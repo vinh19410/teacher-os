@@ -1,0 +1,233 @@
+{
+	"id": "a0d976bf-87c9-4445-a78e-2c596952bde5",
+	"url": "https://stepielts.com/student/reading/a0d976bf-87c9-4445-a78e-2c596952bde5?mode=practice",
+	"title": "The Voynich Manuscript",
+	"source": "Collection",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "1-14",
+	"passage": {
+		"title": "The Voynich Manuscript",
+		"paragraphs": [
+			"The starkly modern Beinecke Library at Yale University is home to some of the most valuable books in the world: first folios of Shakespeare, Gutenberg Bibles, and manuscripts from the early Middle Ages. Yet the library’s most controversial possession is an unprepossessing vellum manuscript about the size of a hardback book, containing 240-odd pages of drawings and text of unknown age and authorship. Catalogued as MS408, the manuscript would attract little attention were it not for the fact that the drawings hint at esoteric knowledge, while the text seems to be some sort of code - one that no one has been able to break. It is known to scholars as the Voynich manuscript, after the American book dealer Wilfrid Voynich, who bought the manuscript from a Jesuit college in Italy in 1912.",
+			"Over the years, the manuscript has attracted the attention of everyone, from amateur dabblers to professional codebreakers, all determined to succeed where countless others have failed. Academic research papers, books, and websites are devoted to making sense of the contents of the manuscript, which are freely available to all.\"Most other mysteries involve secondhand reports,\" says Dr. Gordon Rugg of Keele University, a leading Voynich expert.\"But this is one that you can see for yourself.\"",
+			"It is certainly strange: page after page of drawings of wild plants, astrological symbolism, and human figures, accompanied by a script that looks like some form of shorthand. What does it say, and what are the drawings about? Voynich himself believed that the manuscript was the work of the 13th-century English monk Roger Bacon, famed for his knowledge of alchemy, philosophy, and science. In 1921, Voynich’s view that Bacon was the writer appeared to win support from the work of William Newbold, a professor of philosophy at the University of Pennsylvania, who claimed to have found the key to the cipher system used by Bacon. According to Newbold, the manuscript proved that Bacon had access to a microscope centuries before they were supposedly first invented. The claim that this medieval monk had observed living cells created a sensation. It soon became clear, however, that Newbold had fallen victim to wishful thinking. Other scholars showed that his \"decoding\" methods produced a host of possible interpretations.",
+			"The Voynich manuscript has continued to defy the efforts of world-class experts. In 1944, a team was assembled to tackle the mystery, led by William Friedman, the renowned American codebreaker. They began with the most basic codebreaking task: analyzing the relative frequencies of the characters making up the text, looking for signs of an underlying structure. Yet Friedman’s team soon found themselves in deep water. The precise size of the ’alphabet’ of the Voynich manuscript was unclear: it is possible to make out more than 70 distinct symbols among the 170,000-character text. Furthermore, Friedman discovered that some words and phrases appeared more often than expected in a standard language, casting doubt on claims that the manuscript concealed a real language, as encryption typically reduces word frequencies.",
+			"Friedman concluded that the most plausible resolution of this paradox was that ’Voynichese’ is some sort of specially created artificial language, whose words are devised from concepts rather than linguistics. So, could the Voynich manuscript be the earliest known example of an artificial language? Friedman’s hypothesis commands respect because of his lifetime of cryptanalytical expertise, but it still leaves a host of questions unanswered - such as the identity of the author and the meaning of the bizarre drawings.\"It does little to advance our understanding of the manuscript as a whole,\" says Rob Churchill, co-author of The Voynich Manuscript.",
+			"Even though Friedman was working more than 60 years ago, he suspected that major insights would come from using the device that had already transformed codebreaking: the computer. In this, he was right - it is now the key tool for uncovering clues about the manuscript’s language.",
+			"The insights so far have been perplexing. For example, in 2001, another leading Voynich scholar, Dr. Gabriel Landini of Birmingham University (UK), published the results of his study of the manuscript using a pattern-detecting method called spectral analysis. This revealed evidence that the manuscript contains genuine words, rather than random nonsense - consistent with the existence of some underlying natural language. Yet the following year, Voynich expert Ren Zandbergen of the European Space Agency in Darmstadt, Germany, showed that the entropy of the text (a measure of the rate of transfer of information) was consistent with Friedman’s suspicions that an artificial language had been used.",
+			"Many are convinced that the Voynich manuscript isn’t a hoax. For how could a medieval hoaxer create so many telltale signs of a message from random nonsense? Yet even this has been challenged in new research by Rugg. Using a system first published by the Italian mathematician Girolamo Cardano in 1150, in which a specially constructed grille is used to pick out symbols from a table, Rugg found he could rapidly generate text with many of the basic traits of the Voynich manuscript. Publishing his results in 2004, Rugg stresses that he hadn’t set out to prove the manuscript a hoax.\"I simply demonstrated that it’s feasible to hoax something this complex in a few months,\" he says. Inevitably, others beg to differ. Some scholars, such as Zandbergen, still suspect the text has genuine meaning, though they believe it may never be decipherable. Others, such as Churchill, have suggested that the sheer weirdness of the illustrations and text hint at an author who had lost touch with reality. What is clear is that the book-sized manuscript, kept under lock and key at Yale University, has lost none of its fascination.\"Many derive great intellectual pleasure from solving puzzles,\" says Rugg. The Voynich manuscript is as challenging a puzzle as anyone could ask for."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 3?\nIn boxes 1-4 on your answer sheet, write:\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 1,
+					"text": "It is uncertain when the Voynich manuscript was written.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nKhông chắc chắn khi nào bản thảo Voynich được viết.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nunknown age and authorship ~ uncertain when...was written\nVoynich manuscript ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"bản thảo vellum không bắt mắt có kích thước khoảng một cuốn sách bìa cứng, chứa khoảng 240 trang hình vẽ và văn bản có tuổi tác và tác giả không xác định\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"không chắc chắn khi nào bản thảo Voynich được viết\" (It is uncertain when the Voynich manuscript was written).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Yet the library’s most controversial possession is an unprepossessing vellum manuscript about the size of a hardback book, containing 240-odd pages of drawings and text of unknown age and authorship."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Wilfrid Voynich donated the manuscript to the Beinecke Library.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nWilfrid Voynich đã tặng bản thảo cho Thư viện Beinecke.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nWilfrid Voynich, who bought the manuscript ~ Wilfrid Voynich\nBeinecke Library at Yale University ~ Beinecke Library\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"bản thảo được các học giả biết đến với tên gọi bản thảo Voynich, theo tên của nhà buôn sách người Mỹ Wilfrid Voynich, người đã mua bản thảo từ một trường đại học Dòng Tên ở Ý vào năm 1912\" và \"Thư viện Beinecke tại Đại học Yale là nơi lưu giữ bản thảo này.\"\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"Wilfrid Voynich đã tặng bản thảo cho Thư viện Beinecke\" (Wilfrid Voynich donated the manuscript to the Beinecke Library).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"The starkly modern Beinecke Library at Yale University is home to some of the most valuable books in the world: first folios of Shakespeare, Gutenberg Bibles, and manuscripts from the early Middle Ages. Yet the library’s most controversial possession is an unprepossessing vellum manuscript about the size of a hardback book, containing 240-odd pages of drawings and text of unknown age and authorship. Catalogued as MS408, the manuscript would attract little attention were it not for the fact that the drawings hint at esoteric knowledge, while the text seems to be some sort of code - one that no one has been able to break. It is known to scholars as the Voynich manuscript, after the American book dealer Wilfrid Voynich, who bought the manuscript from a Jesuit college in Italy in 1912."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Interest in the Voynich manuscript extends beyond that of academics and professional codebreakers.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSự quan tâm đến bản thảo Voynich vượt ra ngoài phạm vi của các học giả và chuyên gia giải mã chuyên nghiệp.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nthe manuscript has attracted the attention of everyone, from amateur dabblers to professional codebreakers ~ Interest in the Voynich manuscript extends beyond that of academics and professional codebreakers\nVoynich manuscript ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Qua nhiều năm, bản thảo đã thu hút sự chú ý của mọi người, từ những người nghiệp dư đến những chuyên gia giải mã chuyên nghiệp, tất cả đều quyết tâm thành công nơi vô số người khác đã thất bại.\"\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Sự quan tâm đến bản thảo Voynich vượt ra ngoài phạm vi của các học giả và chuyên gia giải mã chuyên nghiệp\" (Interest in the Voynich manuscript extends beyond that of academics and professional codebreakers).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Over the years, the manuscript has attracted the attention of everyone, from amateur dabblers to professional codebreakers, all determined to succeed where countless others have failed. Academic research papers, books, and websites are devoted to making sense of the contents of the manuscript, which are freely available to all."
+					]
+				},
+				{
+					"number": 4,
+					"text": "The text of the Voynich manuscript contains just under 70 symbols.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nVăn bản của bản thảo Voynich chứa chưa đến 70 ký hiệu.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nmore than 70 distinct symbols ~ just under 70 symbols\nVoynich manuscript ~ từ khóa giữ nguyên\ntext ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Kích thước chính xác của 'bảng chữ cái' của bản thảo Voynich còn chưa rõ ràng: có thể nhận ra hơn 70 ký hiệu riêng biệt trong văn bản gồm 170.000 ký tự.\"\n=> Điều này trái ngược với thông tin trong câu hỏi \"văn bản của bản thảo Voynich chứa chỉ dưới 70 ký hiệu\" (The text of the Voynich manuscript contains just under 70 symbols).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"The precise size of the ’alphabet’ of the Voynich manuscript was unclear: it is possible to make out more than 70 distinct symbols among the 170,000-character text."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-8",
+			"type": "MATCHING_NAMES",
+			"instructions": "Look at the following statements (Questions 5-8) and the list of people below.\nMatch each statement with the correct person.\nWrite the correct letter in boxes 5-8 on your answer sheet.",
+			"options": [
+				{
+					"label": "A",
+					"text": "Gordon Rugg"
+				},
+				{
+					"label": "B",
+					"text": "Roger Bacon"
+				},
+				{
+					"label": "C",
+					"text": "William Newbold"
+				},
+				{
+					"label": "D",
+					"text": "William Friedman"
+				},
+				{
+					"label": "E",
+					"text": "Rob Churchill"
+				},
+				{
+					"label": "F",
+					"text": "Gabriel Landini"
+				},
+				{
+					"label": "G",
+					"text": "Ren Zandbergen"
+				},
+				{
+					"label": "H",
+					"text": "Girolamo Cardano"
+				}
+			],
+			"body": "The number of times that some words occur makes it unlikely that the manuscript is based on an authentic language. ____ (5)\nUnlike some other similar objects of fascination, people can gain direct access to the Voynich manuscript. ____ (6)\nThe person who wrote the manuscript may not have been entirely sane. ____ (7)\nIt is likely that the author of the manuscript is the same person as suggested by Wilfrid Voynich. ____ (8)",
+			"body_html": "<p>The number of times that some words occur makes it unlikely that the manuscript is based on an authentic language. [5]</p><p>Unlike some other similar objects of fascination, people can gain direct access to the Voynich manuscript. [6]</p><p>The person who wrote the manuscript may not have been entirely sane. [7]</p><p>It is likely that the author of the manuscript is the same person as suggested by Wilfrid Voynich. [8]</p>",
+			"questions": [
+				{
+					"number": 5,
+					"text": "The number of times that some words occur makes it unlikely that the manuscript is based on an authentic language.",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Số lần xuất hiện của một số từ khiến khó có thể tin rằng bản thảo dựa trên một ngôn ngữ xác thực.\"\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nsome words and phrases appeared more often than expected ~ The number of times that some words occur\ncasting doubt on claims that the manuscript concealed a real language ~ makes it unlikely that the manuscript is based on an authentic language\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến William Friedman \"Friedman phát hiện ra rằng một số từ và cụm từ xuất hiện thường xuyên hơn dự kiến trong một ngôn ngữ tiêu chuẩn, gây nghi ngờ về tuyên bố rằng bản thảo che giấu một ngôn ngữ thực, vì mã hóa thường làm giảm tần suất từ.\"\n\nBước 4: Đáp án: D",
+					"quotes": [
+						"Furthermore, Friedman discovered that some words and phrases appeared more often than expected in a standard language, casting doubt on claims that the manuscript concealed a real language, as encryption typically reduces word frequencies."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Unlike some other similar objects of fascination, people can gain direct access to the Voynich manuscript.",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Không giống như một số đối tượng gây say mê tương tự khác, mọi người có thể tiếp cận trực tiếp với bản thảo Voynich.\"\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nMost other mysteries involve secondhand reports ~ Unlike some other similar objects of fascination\nthis is one that you can see for yourself ~ people can gain direct access to the Voynich manuscript\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Dr. Gordon Rugg \"Hầu hết các bí ẩn khác liên quan đến các báo cáo từ người khác, nhưng đây là một bí ẩn mà bạn có thể tự mình nhìn thấy.\"\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"\"Most other mysteries involve secondhand reports,\" says Dr. Gordon Rugg of Keele University, a leading Voynich expert. \"But this is one that you can see for yourself.\""
+					]
+				},
+				{
+					"number": 7,
+					"text": "The person who wrote the manuscript may not have been entirely sane.",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Người đã viết bản thảo có thể không hoàn toàn tỉnh táo.\"\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nan author who had lost touch with reality ~ the person who wrote the manuscript may not have been entirely sane\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Rob Churchill \"Một số học giả, chẳng hạn như Churchill, đã gợi ý rằng sự kỳ quặc của các hình minh họa và văn bản ám chỉ về một tác giả đã mất liên lạc với thực tế.\"\n\nBước 4: Đáp án: E",
+					"quotes": [
+						"Others, such as Churchill, have suggested that the sheer weirdness of the illustrations and text hint at an author who had lost touch with reality."
+					]
+				},
+				{
+					"number": 8,
+					"text": "It is likely that the author of the manuscript is the same person as suggested by Wilfrid Voynich.",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Có khả năng tác giả của bản thảo là cùng một người như được đề xuất bởi Wilfrid Voynich.\"\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nVoynich's view that Bacon was the writer appeared to win support ~ It is likely that the author of the manuscript is the same person as suggested by Wilfrid Voynich\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến William Newbold \"Vào năm 1921, quan điểm của Voynich rằng Bacon là tác giả dường như đã nhận được sự ủng hộ từ công trình của William Newbold, một giáo sư triết học tại Đại học Pennsylvania, người tuyên bố đã tìm thấy chìa khóa của hệ thống mật mã được Bacon sử dụng.\"\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"In 1921, Voynich’s view that Bacon was the writer appeared to win support from the work of William Newbold, a professor of philosophy at the University of Pennsylvania, who claimed to have found the key to the cipher system used by Bacon."
+					]
+				}
+			]
+		},
+		{
+			"range": "9-13",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary below. Choose NO MORE THAN TWO WORDS from the passage for each answer. Write your answers in boxes 9-13 on your answer sheet.",
+			"body": "Voynich Researchers\nWilliam Newbold believed that the author of the Voynich manuscript had been able to look at cells through a ____ (9), Other researchers later demonstrated that there were flaws in his argument.\nWilliam Friedman concluded that the manuscript was written in an artificial language that was based on ____ (10). He couldn't find out the meaning of this language but he believed that the ____ (11) would continue to bring advances in codebreaking.\nDr. Gabriel Landini used a system known as ____ (12) in his research and claimed to have demonstrated the presence of genuine words.\nDr. Gordon Rugg’s system involved a grille, which made it possible to quickly select symbols that appeared in a ____ (13). Rugg's conclusion was that the manuscript lacked genuine meaning.",
+			"body_html": "<h3>Voynich Researchers</h3><p>William Newbold believed that the author of the Voynich manuscript had been able to look at cells through a [9], Other researchers later demonstrated that there were flaws in his argument.</p><p>William Friedman concluded that the manuscript was written in an artificial language that was based on [10]. He couldn't find out the meaning of this language but he believed that the [11] would continue to bring advances in codebreaking.</p><p>Dr. Gabriel Landini used a system known as [12] in his research and claimed to have demonstrated the presence of genuine words.</p><p>Dr. Gordon Rugg’s system involved a grille, which made it possible to quickly select symbols that appeared in a [13]. Rugg's conclusion was that the manuscript lacked genuine meaning.</p>",
+			"questions": [
+				{
+					"number": 9,
+					"text": "William Newbold believed that the author of the Voynich manuscript had been able to look at cells through a ____ (9), Other researchers later demonstrated that there were flaws in his argument.",
+					"answer": "microscope",
+					"quotes": [
+						"According to Newbold, the manuscript proved that Bacon had access to a microscope centuries before they were supposedly first invented."
+					]
+				},
+				{
+					"number": 10,
+					"text": "William Friedman concluded that the manuscript was written in an artificial language that was based on ____ (10). He couldn't find out the meaning of this language but he believed that the ____ (11) would continue to bring advances in codebreaking.",
+					"answer": "concepts",
+					"quotes": [
+						"Friedman concluded that the most plausible resolution of this paradox was that ’Voynichese’ is some sort of specially created artificial language, whose words are devised from concepts rather than linguistics."
+					]
+				},
+				{
+					"number": 11,
+					"text": "William Friedman concluded that the manuscript was written in an artificial language that was based on ____ (10). He couldn't find out the meaning of this language but he believed that the ____ (11) would continue to bring advances in codebreaking.",
+					"answer": "computer",
+					"quotes": [
+						"Even though Friedman was working more than 60 years ago, he suspected that major insights would come from using the device that had already transformed codebreaking: the computer."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Dr. Gabriel Landini used a system known as ____ (12) in his research and claimed to have demonstrated the presence of genuine words.",
+					"answer": "spectral analysis",
+					"quotes": [
+						"For example, in 2001, another leading Voynich scholar, Dr. Gabriel Landini of Birmingham University (UK), published the results of his study of the manuscript using a pattern-detecting method called spectral analysis."
+					]
+				},
+				{
+					"number": 13,
+					"text": "Dr. Gordon Rugg’s system involved a grille, which made it possible to quickly select symbols that appeared in a ____ (13). Rugg's conclusion was that the manuscript lacked genuine meaning.",
+					"answer": "table",
+					"quotes": [
+						"Using a system first published by the Italian mathematician Girolamo Cardano in 1150, in which a specially constructed grille is used to pick out symbols from a table, Rugg found he could rapidly generate text with many of the basic traits of the Voynich manuscript."
+					]
+				}
+			]
+		},
+		{
+			"range": "14",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, C, or D.\nWrite the correct letter in box 14 on your answer sheet.",
+			"questions": [
+				{
+					"number": 14,
+					"text": "The writer’s main aim in this passage is to:",
+					"options": [
+						{
+							"label": "A",
+							"text": "explain the meaning of the manuscript."
+						},
+						{
+							"label": "B",
+							"text": "determine the true identity of the manuscript’s author."
+						},
+						{
+							"label": "C",
+							"text": "describe the numerous attempts to decode the manuscript."
+						},
+						{
+							"label": "D",
+							"text": "identify which research into the manuscript has had the most media coverage."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Over the years, the manuscript has attracted the attention of everyone, from amateur dabblers to professional codebreakers, all determined to succeed where countless others have failed. Academic research papers, books, and websites are devoted to making sense of the contents of the manuscript, which are freely available to all."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,197 @@
+{
+	"id": "12a14cdf-f5c5-438b-b745-29ef2bfa470a",
+	"url": "https://stepielts.com/student/reading/12a14cdf-f5c5-438b-b745-29ef2bfa470a?mode=practice",
+	"title": "A second attempt at domesticating the tomato",
+	"source": "C17T2",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "14-26",
+	"passage": {
+		"title": "A second attempt at domesticating the tomato",
+		"paragraphs": [
+			"A. It took at least 3,000 years for humans to learn how to domesticate the wild tomato and cultivate it for food. Now two separate teams in Brazil and China have done it all over again in less than three years. And they have done it better in some ways, as the re-domesticated tomatoes are more nutritious than the ones we eat at present.",
+			"This approach relies on the revolutionary CRISPR genome editing technique, in which changes are deliberately made to the DNA of a living cell, allowing genetic material to be added, removed or altered. The technique could not only improve existing crops, but could also be used to turn thousands of wild plants into useful and appealing foods. In fact, a third team in the US has already begun to do this with a relative of the tomato called the groundcherry.",
+			"This fast-track domestication could help make the world’s food supply healthier and far more resistant to diseases, such as the rust fungus devastating wheat crops.",
+			"‘This could transform what we eat,’ says Jorg Kudla at the University of Munster in Germany, a member of the Brazilian team. ‘There are 50,000 edible plants in the world, but 90 percent of our energy comes from just 15 crops.’",
+			"‘We can now mimic the known domestication course of major crops like rice, maize, sorghum or others,’ says Caixia Gao of the Chinese Academy of Sciences in Beijing. ‘Then we might try to domesticate plants that have never been domesticated.’",
+			"B. Wild tomatoes, which are native to the Andes region in South America, produce pea-sized fruits. Over many generations, peoples such as the Aztecs and Incas transformed the plant by selecting and breeding plants with mutations* in their genetic structure, which resulted in desirable traits such as larger fruit.",
+			"But every time a single plant with a mutation is taken from a larger population for breeding, much genetic diversity is lost. And sometimes the desirable mutations come with less desirable traits. For instance, the tomato strains grown for supermarkets have lost much of their flavour.",
+			"By comparing the genomes of modern plants to those of their wild relatives, biologists have been working out what genetic changes occurred as plants were domesticated.\nThe teams in Brazil and China have now used this knowledge to reintroduce these changes from scratch while maintaining or even enhancing the desirable traits of wild strains.",
+			"C. Kudla’s team made six changes altogether. For instance, they tripled the size of fruit by editing a gene called FRUIT WEIGHT, and increased the number of tomatoes per truss by editing another called MULTIFLORA.",
+			"While the historical domestication of tomatoes reduced levels of the red pigment lycopene – thought to have potential health benefits – the team in Brazil managed to boost it instead. The wild tomato has twice as much lycopene as cultivated ones; the newly domesticated one has five times as much.",
+			"‘They are quite tasty,’ says Kudla. ‘A little bit strong. And very aromatic.’The team in China re-domesticated several strains of wild tomatoes with desirable traits lost in domesticated tomatoes. In this way they managed to create a strain resistant to a common disease called bacterial spot race, which can devastate yields. They also created another strain that is more salt tolerant – and has higher levels of vitamin C.",
+			"D. Meanwhile, Joyce Van Eck at the Boyce Thompson Institute in New York state decided to use the same approach to domesticate the groundcherry or goldenberry (Physalis pruinosa) for the first time. This fruit looks similar to the closely related Cape gooseberry (Physalis peruviana).",
+			"Groundcherries are already sold to a limited extent in the US but they are hard to produce because the plant has a sprawling growth habit and the small fruits fall off the branches when ripe. Van Eck’s team has edited the plants to increase fruit size, make their growth more compact and to stop fruits dropping. ‘There’s potential for this to be a commercial crop,’ says Van Eck. But she adds that taking the work further would be expensive because of the need to pay for a licence for the CRISPR technology and get regulatory approval.",
+			"E. This approach could boost the use of many obscure plants, says Jonathan Jones of the Sainsbury Lab in the UK. But it will be hard for new foods to grow so popular with farmers and consumers that they become new staple crops, he thinks.",
+			"The three teams already have their eye on other plants that could be ‘catapulted into the mainstream’, including foxtail, oat-grass and cowpea.\nBy choosing wild plants that are drought or heat tolerant, says Gao, we could create crops that will thrive even as the planet warms.",
+			"But Kudla didn’t want to reveal which species were in his team’s sights, because CRISPR has made the process so easy. ‘Any one with the right skills could go to their lab and do this.’",
+			"———————-",
+			"* mutations: changes in an organism’s genetic structure that can be passed down to later generations"
+		]
+	},
+	"question_groups": [
+		{
+			"range": "14-18",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Reading Passage 2 has five paragraphs, A-E. Which section contains the following information?\nWrite the correct letter, A-E, in boxes 14-18 on your answer sheet.\nNB You may use any letter more than once.",
+			"options": ["A", "B", "C", "D", "E"],
+			"questions": [
+				{
+					"number": 14,
+					"text": "A reference to a type of tomato that can resist a dangerous infection.",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nĐề cập đến một loại cà chua có thể kháng lại một loại bệnh nhiễm trùng nguy hiểm.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nresistant to a common disease ~ can resist a dangerous infection\nbacterial spot race ~ dangerous infection\n\nBước 3: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"Nhóm nghiên cứu bên Trung Quốc đã \"thuần hóa lại\" vài giống cà chua hoang dã có những đặc tính tốt mà cà chua nhà đã đánh mất. Nhờ vậy, họ tạo ra được một giống cà chua kháng được bệnh đốm vi khuẩn, một loại bệnh phổ biến có thể phá nát cả vụ mùa\".\n=> Thông tin này cho thấy đoạn C đã \"đề cập đến một loại cà chua có thể kháng lại một bệnh nhiễm trùng nguy hiểm (bệnh đốm vi khuẩn)\".\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"’The team in China re-domesticated several strains of wild tomatoes with desirable traits lost in domesticated tomatoes. In this way they managed to create a strain resistant to a common disease called bacterial spot race, which can devastate yields.",
+						"In this way they managed to create a strain resistant to a common disease called bacterial spot race, which can devastate yields."
+					]
+				},
+				{
+					"number": 15,
+					"text": "An explanation of how problems can arise from focusing only on a certain type of tomato plant.",
+					"answer": "B",
+					"quotes": [
+						"Over many generations, peoples such as the Aztecs and Incas transformed the plant by selecting and breeding plants with mutations* in their genetic structure, which resulted in desirable traits such as larger fruit.",
+						"But every time a single plant with a mutation is taken from a larger population for breeding, much genetic diversity is lost. And sometimes the desirable mutations come with less desirable traits. For instance, the tomato strains grown for supermarkets have lost much of their flavour."
+					]
+				},
+				{
+					"number": 16,
+					"text": "A number of examples of plants that are not cultivated at present but could be useful as food sources.",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nĐưa ra một số ví dụ về các loại cây hiện không được trồng nhưng có thể trở thành nguồn thực phẩm hữu ích.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nfoxtail, oat-grass and cowpea ~ examples of plants that are not cultivated at present\ncould create crops that will thrive ~ could be useful as food sources\n\nBước 3: So sánh và đối chiếu:\nĐoạn E chỉ rõ: \"Ba nhóm nghiên cứu đã để mắt đến vài loại cây khác, có thể chọn làm \"hàng hot\" trong tương lai, trong đó có cỏ đuôi cáo, cỏ yến mạch và đậu đũa. Bằng cách chọn những cây hoang dã chịu được hạn hán hoặc nhiệt độ cao, chúng ta có thể tạo ra những cây trồng sẽ phát triển mạnh ngay cả khi trái đất đang dần nóng lên.\"\n=> Thông tin này cho thấy đoạn E đã \"đưa ra một số ví dụ về các loại cây hiện không được trồng nhưng có thể trở thành nguồn thực phẩm hữu ích\".\n\nBước 4: Đáp án: E",
+					"quotes": [
+						"The three teams already have their eye on other plants that could be ‘catapulted into the mainstream’, including foxtail, oat-grass and cowpea."
+					]
+				},
+				{
+					"number": 17,
+					"text": "A comparison between the early domestication of the tomato and more recent research.",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nSo sánh giữa quá trình thuần hóa cà chua đời đầu và nghiên cứu gần đây hơn.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n3,000 years for humans to learn how to domesticate ~ early domestication of the tomato\ndone it all over again in less than three years ~ more recent research\n\nBước 3: So sánh và đối chiếu:\nĐoạn A chỉ rõ: \"Ngày xưa, con người mất ít nhất 3000 năm mới thuần hóa được cà chua hoang dã để trồng làm thức ăn. Ấy vậy mà giờ đây, hai nhóm nghiên cứu bên Brazil và Trung Quốc chỉ mất có ba năm đã làm lại từ đầu đến cuối\".\n=> Thông tin này cho thấy đoạn A đã \"so sánh giữa quá trình thuần hóa cà chua đời đầu và nghiên cứu gần đây hơn\".\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"It took at least 3,000 years for humans to learn how to domesticate the wild tomato and cultivate it for food. Now two separate teams in Brazil and China have done it all over again in less than three years. And they have done it better in some ways, as the re-domesticated tomatoes are more nutritious than the ones we eat at present."
+					]
+				},
+				{
+					"number": 18,
+					"text": "A personal reaction to the flavour of a tomato that has been genetically edited.",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nĐưa ra một phản ứng cá nhân về hương vị của một loại cà chua đã được chỉnh sửa gen.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nThey are quite tasty ~ personal reaction to the flavour\nthe newly domesticated one ~ tomato that has been genetically edited\n\nBước 3: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"'Chúng khá ngon,' Kudla nói. 'Hơi đậm vị một chút. Và rất thơm.'\"\n=> Thông tin này cho thấy đoạn C đã \"đưa ra phản ứng cá nhân về hương vị của một loại cà chua đã được chỉnh sửa gen\".\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"‘They are quite tasty,’ says Kudla. ‘A little bit strong. And very aromatic."
+					]
+				}
+			]
+		},
+		{
+			"range": "19-23",
+			"type": "MATCHING_FEATURES",
+			"instructions": "Look at the following statements (Questions 19 - 23) and the list of researchers below. Match each statement with the correct researcher, A-D.\nWrite the correct letter, A-D, in boxes 19-23 on your answer sheet.\nNB You may use any letter more than once.",
+			"options": [
+				{
+					"label": "A",
+					"text": "Jorg Kudla"
+				},
+				{
+					"label": "B",
+					"text": "Caixia Gao"
+				},
+				{
+					"label": "C",
+					"text": "Joyce Van Eck"
+				},
+				{
+					"label": "D",
+					"text": "Jonathan Jones"
+				}
+			],
+			"body": "Domestication of certain plants could allow them to adapt to future environmental challenges. ____ (19)\nThe idea of growing and eating unusual plants may not be accepted on a large scale. ____ (20)\nIt is not advisable for the future direction of certain research to be made public. ____ (21)\nPresent efforts to domesticate one wild fruit are limited by the costs involved. ____ (22)\nHumans only make use of a small proportion of the plant food available on Earth. ____ (23)",
+			"body_html": "<p>   Domestication of certain plants could allow them to adapt to future environmental challenges. [19]</p><p>   The idea of growing and eating unusual plants may not be accepted on a large scale. [20]</p><p>   It is not advisable for the future direction of certain research to be made public. [21]</p><p>   Present efforts to domesticate one wild fruit are limited by the costs involved. [22]</p><p>   Humans only make use of a small proportion of the plant food available on Earth. [23]</p><p></p>",
+			"questions": [
+				{
+					"number": 19,
+					"text": "Domestication of certain plants could allow them to adapt to future environmental challenges.",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"Việc thuần hóa một số loài thực vật có thể giúp chúng thích nghi với những thách thức môi trường trong tương lai\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nChoosing wild plants that are drought or heat-tolerant ~ domestication of certain plants\ncreate crops that will thrive even as the planet warms ~ adapt to future environmental challenges\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Caixia Gao \"Bằng cách chọn những cây hoang dã chịu được hạn hán hoặc nhiệt độ cao, chúng ta có thể tạo ra những cây trồng sẽ tăng trưởng mạnh ngay cả khi hành tinh nóng lên”.\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"By choosing wild plants that are drought or heat tolerant, says Gao, we could create crops that will thrive even as the planet warms."
+					]
+				},
+				{
+					"number": 20,
+					"text": "The idea of growing and eating unusual plants may not be accepted on a large scale.",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"việc trồng và sử dụng các loại cây lạ làm thực phẩm có thể sẽ khó được chấp nhận trên diện rộng\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nhard for new foods to grow so popular ~ may not be accepted on a large scale\nboost the use of many obscure plants ~ the idea of growing and eating unusual plants\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Jonathan Jones \"Phương pháp này có thể thúc đẩy việc sử dụng nhiều loại cây ít được biết đến. Tuy nhiên, ông cho rằng sẽ khó để những loại thực phẩm mới này trở nên phổ biến với nông dân và người tiêu dùng và trở thành cây lương thực chính”.\n\nBước 4: Đáp án: D",
+					"quotes": [
+						"E. This approach could boost the use of many obscure plants, says Jonathan Jones of the Sainsbury Lab in the UK. But it will be hard for new foods to grow so popular with farmers and consumers that they become new staple crops, he thinks."
+					]
+				},
+				{
+					"number": 21,
+					"text": "It is not advisable for the future direction of certain research to be made public.",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"một số thiên hướng nghiên cứu trong tương lai không nên được tiết lộ công khai\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ndidn't want to reveal ~ It is not advisable for ... to be made public\nwhich species were in his team's sights ~ future direction of certain research\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Jorg Kudla \"Tuy nhiên, Kudla không muốn tiết lộ nhóm nghiên cứu của ông đang nhắm tới những loài cây nào, bởi công nghệ CRISPR đã khiến quá trình này trở nên quá dễ dàng. Ông nói: 'Bất cứ ai có kỹ năng phù hợp đều có thể tham gia vào nghiên cứu trong phòng thí nghiệm của họ'.\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"But Kudla didn’t want to reveal which species were in his team’s sights, because CRISPR has made the process so easy. ‘Any one with the right skills could go to their lab and do this."
+					]
+				},
+				{
+					"number": 22,
+					"text": "Present efforts to domesticate one wild fruit are limited by the costs involved.",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"việc thuần hóa một loại quả hoang dã hiện đang gặp khó khăn vì vấn đề chi phí\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nexpensive ~ limited by the costs involved\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Joyce Van Eck \"Loại cây này có thể trở thành cây trồng thương mại'. Tuy nhiên, bà cũng nói thêm rằng để tiếp tục nghiên cứu sẽ tốn kém, do phải trả tiền bản quyền công nghệ CRISPR và xin phép cơ quan quản lý'.\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"Groundcherries are already sold to a limited extent in the US but they are hard to produce because the plant has a sprawling growth habit and the small fruits fall off the branches when ripe. Van Eck’s team has edited the plants to increase fruit size, make their growth more compact and to stop fruits dropping. ‘There’s potential for this to be a commercial crop,’ says Van Eck. But she adds that taking the work further would be expensive because of the need to pay for a licence for the CRISPR technology and get regulatory approval."
+					]
+				},
+				{
+					"number": 23,
+					"text": "Humans only make use of a small proportion of the plant food available on Earth.",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề hỏi ai là người đưa ra ý kiến này: \"chúng ta chỉ đang tiêu thụ một phần rất nhỏ trong số lượng lớn các loại cây có thể ăn được trên Trái Đất\".\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n50,000 edible plants ~ plant food available on Earth\n90 percent of our energy comes from just 15 crops ~ Humans only make use of a small proportion\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Jorg Kudla \"Điều này có thể thay đổi những gì chúng ta tiêu thụ. Trên thế giới có tới 50.000 loài thực vật ăn được, nhưng 90% năng lượng của chúng ta chỉ đến từ 15 loại cây trồng'.\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"‘This could transform what we eat,’ says Jorg Kudla at the University of Munster in Germany, a member of the Brazilian team. ‘There are 50,000 edible plants in the world, but 90 percent of our energy comes from just 15 crops."
+					]
+				}
+			]
+		},
+		{
+			"range": "24-26",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the sentences below. Choose ONE WORD ONLY from the passage for each answer. Write your answers in boxes 24-26 on your answer sheet.",
+			"body": "An undesirable trait such as loss of ____ (24) may be caused by a mutation in a tomato gene.\nBy modifying one gene in a tomato plant, researchers made the tomato three times its original ____ (25)\nA type of tomato which was not badly affected by ____ (26) , and was rich in vitamin C, was produced by a team of researchers in China.",
+			"body_html": "<ul><li>An undesirable trait such as loss of [24] may be caused by a mutation in a tomato gene.</li><li>By modifying one gene in a tomato plant, researchers made the tomato three times its original [25]</li><li>A type of tomato which was not badly affected by [26] , and was rich in vitamin C, was produced by a team of researchers in China.</li></ul>",
+			"questions": [
+				{
+					"number": 24,
+					"text": "An undesirable trait such as loss of ____ (24) may be caused by a mutation in a tomato gene.",
+					"answer": "flavour",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nMột đặc điểm không mong muốn như là mất đi ____________ có thể bị gây ra bởi sự đột biến trong gen của cây cà chua.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: loss of + NOUN (NOUN làm Object của Preposition 'OF')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nless desirable traits~ undesirable trait\nfor example ~ such as\nloss ~ lost\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"các giống cà chua được trồng cho các siêu thị đã mất đi phần lớn hương vị của chúng\" (the tomato strains grown for supermarkets have lost much of their flavour).\n\nBước 5: Đáp án: flavour\nMột đặc điểm không mong muốn như là mất đi hương vị có thể bị gây ra bởi sự đột biến trong gen của cây cà chua. (An undesirable trait such as loss of flavour may be caused by a mutation in a tomato gene).",
+					"quotes": [
+						"But every time a single plant with a mutation is taken from a larger population for breeding, much genetic diversity is lost. And sometimes the desirable mutations come with less desirable traits. For instance, the tomato strains grown for supermarkets have lost much of their flavour."
+					]
+				},
+				{
+					"number": 25,
+					"text": "By modifying one gene in a tomato plant, researchers made the tomato three times its original ____ (25)",
+					"answer": "size",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nBằng cách chỉnh sửa một gen trong cây cà chua, các nhà nghiên cứu đã làm cho cà chua có kích thước gấp ba lần so với ____________ ban đầu.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: its original + NOUN (NOUN theo sau tính từ 'ORIGINAL')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nKudla's team ~ researchers\ntripled ~ three times\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"họ đã tăng gấp ba lần kích thước của quả bằng cách chỉnh sửa một gen được gọi là FRUIT WEIGHT\" (they tripled the size of fruit by editing a gene called fruit weight).\n\nBước 5: Đáp án: size\nBằng cách chỉnh sửa một gen trong cây cà chua, các nhà nghiên cứu đã làm cho cà chua có kích thước gấp ba lần so với kích thước ban đầu. (By modifying one gene in a tomato plant, researchers made the tomato three times its original size).",
+					"quotes": [
+						"C. Kudla’s team made six changes altogether. For instance, they tripled the size of fruit by editing a gene called FRUIT WEIGHT, and increased the number of tomatoes per truss by editing another called MULTIFLORA.",
+						"’The team in China re-domesticated several strains of wild tomatoes with desirable traits lost in domesticated tomatoes. In this way they managed to create a strain resistant to a common disease called bacterial spot race, which can devastate yields."
+					]
+				},
+				{
+					"number": 26,
+					"text": "A type of tomato which was not badly affected by ____ (26) , and was rich in vitamin C, was produced by a team of researchers in China.",
+					"answer": "salt",
+					"quotes": [
+						"They also created another strain that is more salt tolerant – and has higher levels of vitamin C."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

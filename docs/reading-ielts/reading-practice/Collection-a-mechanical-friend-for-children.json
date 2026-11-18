@@ -1,0 +1,185 @@
+{
+	"id": "1b593989-3c94-4a19-a434-ebc2b80351f0",
+	"url": "https://stepielts.com/student/reading/1b593989-3c94-4a19-a434-ebc2b80351f0?mode=practice",
+	"title": "A Mechanical Friend for Children",
+	"source": "Collection",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "14-26",
+	"passage": {
+		"title": "A Mechanical Friend for Children",
+		"paragraphs": [
+			"A. The development of robots that interact socially with people and assist them in everyday life has been an elusive goal of modern science. Despite impressive advances in the mechanical aspects of this problem, producing robots that bond and socialize with people for sustained periods of time has proven difficult. The most successful robots so far have been storytellers, but they have only been able to maintain human interest for a limited time and typically rely on roles telling stories that change over time. In practice, commercially available robots seldom cross the 10-hour barrier (i.e. individual users tend to spend less than a combined total of 10 hours with the robots before losing interest). This observation is in sharp contrast to the long-term interactions and bonding that commonly develop between humans and their pets.",
+			"B. In a recent study, researchers from the Institute for Neural Computation in California introduced a state-of-the-art social robot into a classroom of 16 24-month-olds for five months as a way of studying human-robot interactions. The researchers, including Fumihide Tanaka and Xavier R. Movellan, introduced a toddler-sized humanoid robot into a classroom of a childhood education center. One of the QRIO series of robots, the 58cm machine, was originally developed by Sony. Children of toddler age were chosen because they have no preconceived notions of robots, according to Tanaka. One of the goals of the study was to establish whether it was possible for social robots to maintain the interest of children beyond the 10-hour barrier.",
+			"C. The researchers sent instructions to the robot about every two minutes to do things like giggle, dance, sit down, fall down or walk in a certain direction. The 45 sessions were videotaped, and interactions between toddlers and the robot were later analyzed. The results showed that the quality of those interactions improved steadily over 27 sessions. The interactions deteriorated quickly over the next 15 sessions, when the robot was ordered to behave in a more limited, predictable manner. Finally, the human-robot relations improved in the last three sessions, after the robot had been instructed to display its full repertory of behaviors.",
+			"D. 'Initially the children treated the robot very differently from the way they treated each other,' Tanaka said.'Early in the study some children cried when QRIO fell. But a month into the study, the toddlers helped QRIO stand up by pushing it back on its hands.' The most important aspect of interaction was touch, Tanaka said. At first the toddlers would touch the robot on its face, but later on they would touch it on its hands and arms, like they would with other humans. Another robot-like toy named Robby, which resembled QRIO but did not move, was used as a control in the study. While hugging of QRIO increased, hugging of Robby decreased throughout the study. Furthermore, when QRIO laid down on the floor as its batteries ran down, a toddler would put a blanket over his silver-colored 'friend' and say 'night-night'. Care-taking behaviors were frequently observed toward QRIO but seldom toward Robby.",
+			"E. The study concluded that after 45 days of immersion in a childcare center over a period of five months, long-term bonding and socialization occurred between toddlers and a state-of-the-art social robot. Overall, the interaction between children and the robot improved over time and the children progressively treated it more as a peer than a plaything.'To my knowledge, this is the first long-term study of this sort,' said Ronald Arkin, a roboticist at the Georgia Institute of Technology in the US.",
+			"F. Tanaka and Movellan are now developing autonomous robots for the toddler classroom.'It could have great potential in educational settings assisting teachers and emiching the classroom environment,' Tanaka said. The researchers hope that more advanced versions of robots like QRIO could become personalized tutors to assist teachers in classrooms. A robotic tutor could react on the spot to social cues and approximate social skills like facial expression and eye gaze, they said.'It is becoming clear that, to achieve this goal, we are going to [need to] endow machines with something similar to emotion, not just traditional forms of intelligence,' said Movellan.",
+			"G. Associate professor David Powers, an expert in artificial intelligence and cognitive science at Flinders University in South Australia, commented, 'In this study it is clearly demonstrated that limited range of robot behaviors, however impressive, is nowhere near as important to human-robot interaction as being able to make appropriate responses from a broad repertoire of behaviors'. Ronald Arkin was not surprised by the affection demonstrated by the toddlers toward the robot.'Humans have a tremendous propensity to bond with artifacts, whether it be a car, a doll, or a robot,' he said. But he also cautioned that researchers do not yet understand the consequences of increased human-robot interaction.'Studying how robots and humans work together can give us insight into whether this is a good thing or a bad thing for society,' Arkin said.'We need to find out what the consequences are of introducing a robot into a cadre of children. How will that enhance, or potentially interfere with, their social development? Do we really understand the long-term impact of having a robot as a childhood friend?'"
+		]
+	},
+	"question_groups": [
+		{
+			"range": "14-18",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Which paragraph contains the following information?\nChoose the correct letter, A-G.",
+			"options": ["A", "B", "C", "D", "E", "F", "G"],
+			"questions": [
+				{
+					"number": 14,
+					"text": "a comparison of children's reactions to two different robots",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột sự so sánh về phản ứng của trẻ em đối với hai robot khác nhau.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\ncomparison ~ While hugging of QRIO increased, hugging of Robby decreased\ntwo different robots ~ QRIO và Robby\n\nBước 3: So sánh và đối chiếu:\nĐoạn D chỉ rõ: \"Một món đồ chơi giống robot khác tên là Robby... được sử dụng làm đối chứng... Trong khi việc ôm QRIO tăng lên, việc ôm Robby giảm xuống... Các hành vi chăm sóc thường xuyên được quan sát thấy đối với QRIO nhưng hiếm khi đối với Robby\".\n==> Thông tin này cho thấy đoạn D đã \"so sánh phản ứng của trẻ em với hai robot là QRIO và Robby\".\n\nBước 4: Đáp án: D",
+					"quotes": [
+						"Another robot-like toy named Robby, which resembled QRIO but did not move, was used as a control in the study. While hugging of QRIO increased, hugging of Robby decreased throughout the study. Furthermore, when QRIO laid down on the floor as its batteries ran down, a toddler would put a blanket over his silver-colored 'friend' and say 'night-night'. Care-taking behaviors were frequently observed toward QRIO but seldom toward Robby."
+					]
+				},
+				{
+					"number": 15,
+					"text": "speculation about future ways robots may communicate",
+					"answer": "F",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSự suy đoán về các cách thức tương lai mà robot có thể giao tiếp.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nspeculation about future ~ researchers hope that more advanced versions\nways robots may communicate ~ react on the spot to social cues / facial expression and eye gaze\n\nBước 3: So sánh và đối chiếu:\nĐoạn F chỉ rõ: \"Các nhà nghiên cứu hy vọng rằng các phiên bản tiên tiến hơn... Một gia sư robot có thể phản ứng ngay tại chỗ với các tín hiệu xã hội và mô phỏng các kỹ năng xã hội như biểu cảm khuôn mặt và ánh mắt\".\n==> Thông tin này cho thấy đoạn F đã \"đưa ra suy đoán về khả năng giao tiếp của robot trong tương lai\".\n\nBước 4: Đáp án: F",
+					"quotes": [
+						"The researchers hope that more advanced versions of robots like QRIO could become personalized tutors to assist teachers in classrooms. A robotic tutor could react on the spot to social cues and approximate social skills like facial expression and eye gaze, they said. 'It is becoming clear that, to achieve this goal, we are going to [need to] endow machines with something similar to emotion, not just traditional forms of intelligence,' said Movellan."
+					]
+				},
+				{
+					"number": 16,
+					"text": "changes in how children physically interacted with a robot",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững thay đổi trong cách trẻ em tương tác vật lý với một robot.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\nchanges ~ At first... but later on\nphysically interacted ~ touch / touch it on its hands and arms\n\nBước 3: So sánh và đối chiếu:\nĐoạn D chỉ rõ: \"Khía cạnh quan trọng nhất của sự tương tác là xúc giác (touch)... Lúc đầu, những đứa trẻ sẽ chạm vào robot trên mặt, nhưng sau đó chúng sẽ chạm vào tay và cánh tay của nó\".\n==> Thông tin này cho thấy đoạn D đã \"mô tả sự thay đổi trong cách tương tác vật lý (chạm)\".\n\nBước 4: Đáp án: D",
+					"quotes": [
+						"D. 'Initially the children treated the robot very differently from the way they treated each other,' Tanaka said. 'Early in the study some children cried when QRIO fell. But a month into the study, the toddlers helped QRIO stand up by pushing it back on its hands.' The most important aspect of interaction was touch, Tanaka said. At first the toddlers would touch the robot on its face, but later on they would touch it on its hands and arms, like they would with other humans. Another robot-like toy named Robby, which resembled QRIO but did not move, was used as a control in the study. While hugging of QRIO increased, hugging of Robby decreased throughout the study. Furthermore, when QRIO laid down on the floor as its batteries ran down, a toddler would put a blanket over his silver-colored 'friend' and say 'night-night'. Care-taking behaviors were frequently observed toward QRIO but seldom toward Robby."
+					]
+				},
+				{
+					"number": 17,
+					"text": "a comparison between human relationships with animals and robots",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột sự so sánh giữa mối quan hệ của con người với động vật và robot.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\ncomparison ~ This observation is in sharp contrast to\nanimals ~ pets\n\nBước 3: So sánh và đối chiếu:\nĐoạn A chỉ rõ: \"Quan sát này hoàn toàn trái ngược với các tương tác và gắn kết lâu dài thường phát triển giữa con người và thú cưng (pets) của họ\".\n==> Thông tin này cho thấy đoạn A đã \"so sánh sự gắn kết với robot (ngắn hạn) và thú cưng (dài hạn)\".\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"This observation is in sharp contrast to the long-term interactions and bonding that commonly develop between humans and their pets."
+					]
+				},
+				{
+					"number": 18,
+					"text": "a description of how a robot's behaviour was controlled",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột mô tả về cách hành vi của robot được kiểm soát.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\ncontrolled ~ sent instructions\nbehaviour ~ do things like giggle, dance...\n\nBước 3: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"Các nhà nghiên cứu đã gửi hướng dẫn cho robot khoảng hai phút một lần để làm những việc như cười khúc khích, nhảy múa...\".\n==> Thông tin này cho thấy đoạn C đã \"mô tả cách điều khiển robot thông qua việc gửi lệnh\".\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"C. The researchers sent instructions to the robot about every two minutes to do things like giggle, dance, sit down, fall down or walk in a certain direction."
+					]
+				}
+			]
+		},
+		{
+			"range": "19-23",
+			"type": "MATCHING_FEATURES",
+			"instructions": "Match each statement with the correct person, A-D.\nNB: You may use any letter more than once.",
+			"options": [
+				{
+					"label": "A",
+					"text": "Fumihide Tanaka"
+				},
+				{
+					"label": "B",
+					"text": "Xavier R. Movellan"
+				},
+				{
+					"label": "C",
+					"text": "Ronald Arkin"
+				},
+				{
+					"label": "D",
+					"text": "David Powers"
+				}
+			],
+			"body": "____ (19) Robots may need emotional qualities as well as intelligence.\n____ (20) It is unclear whether increased human-robot interaction will be beneficial.\n____ (21) Toddlers have no pre-existing ideas about robots.\n____ (22) A wide range of behaviours is essential for effective interaction.\n____ (23) Robots could play a valuable role in education.",
+			"body_html": "<p>[19] Robots may need emotional qualities as well as intelligence.</p><p>[20] It is unclear whether increased human-robot interaction will be beneficial.</p><p>[21] Toddlers have no pre-existing ideas about robots.</p><p>[22] A wide range of behaviours is essential for effective interaction.</p><p>[23] Robots could play a valuable role in education.</p>",
+			"questions": [
+				{
+					"number": 19,
+					"text": "Robots may need emotional qualities as well as intelligence.",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nRobot có thể cần những phẩm chất cảm xúc cũng như trí thông minh.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nemotional qualities ~ something similar to emotion\nintelligence ~ traditional forms of intelligence\n\nBước 3: So sánh và đối chiếu:\nĐoạn F trích dẫn lời Movellan: \"...chúng ta sẽ [cần] ban cho máy móc thứ gì đó tương tự như cảm xúc, không chỉ là các hình thức trí thông minh truyền thống\" (...endow machines with something similar to emotion, not just traditional forms of intelligence, said Movellan).\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"'It is becoming clear that, to achieve this goal, we are going to [need to] endow machines with something similar to emotion, not just traditional forms of intelligence,' said Movellan."
+					]
+				},
+				{
+					"number": 20,
+					"text": "It is unclear whether increased human-robot interaction will be beneficial.",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nKhông rõ liệu sự tương tác giữa người và robot gia tăng có mang lại lợi ích hay không.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nunclear ~ do not yet understand / We need to find out\nbeneficial ~ good thing or a bad thing\n\nBước 3: So sánh và đối chiếu:\nĐoạn G trích dẫn lời Ronald Arkin: \"Nghiên cứu cách robot và con người làm việc cùng nhau có thể cho chúng ta cái nhìn sâu sắc về việc liệu đây là một điều tốt hay điều xấu cho xã hội\" (...insight into whether this is a good thing or a bad thing for society, Arkin said).\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"But he also cautioned that researchers do not yet understand the consequences of increased human-robot interaction. 'Studying how robots and humans work together can give us insight into whether this is a good thing or a bad thing for society,' Arkin said."
+					]
+				},
+				{
+					"number": 21,
+					"text": "Toddlers have no pre-existing ideas about robots.",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTrẻ mới biết đi không có ý tưởng tồn tại từ trước về robot.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\npre-existing ideas ~ preconceived notions\nToddlers ~ Children of toddler age\n\nBước 3: So sánh và đối chiếu:\nĐoạn B chỉ rõ: \"Trẻ em ở độ tuổi mới biết đi được chọn vì chúng không có định kiến (preconceived notions) về robot, theo Tanaka\".\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"Children of toddler age were chosen because they have no preconceived notions of robots, according to Tanaka."
+					]
+				},
+				{
+					"number": 22,
+					"text": "A wide range of behaviours is essential for effective interaction.",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột loạt các hành vi rộng là cần thiết cho sự tương tác hiệu quả.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nwide range of behaviours ~ broad repertoire of behaviors\nessential ~ important\n\nBước 3: So sánh và đối chiếu:\nĐoạn G trích dẫn lời David Powers: \"...phạm vi hành vi hạn chế của robot... không quan trọng bằng khả năng đưa ra phản ứng thích hợp từ một kho danh mục hành vi rộng lớn (broad repertoire of behaviors)\".\n\nBước 4: Đáp án: D",
+					"quotes": [
+						"G. Associate professor David Powers, an expert in artificial intelligence and cognitive science at Flinders University in South Australia, commented, 'In this study it is clearly demonstrated that limited range of robot behaviors, however impressive, is nowhere near as important to human-robot interaction as being able to make appropriate responses from a broad repertoire of behaviors'."
+					]
+				},
+				{
+					"number": 23,
+					"text": "Robots could play a valuable role in education.",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nRobot có thể đóng một vai trò có giá trị trong giáo dục.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nvaluable role ~ great potential\neducation ~ educational settings / assisting teachers\n\nBước 3: So sánh và đối chiếu:\nĐoạn F trích dẫn lời Tanaka: \"Nó có thể có tiềm năng lớn trong môi trường giáo dục hỗ trợ giáo viên...\" (It could have great potential in educational settings assisting teachers..., Tanaka said).\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"'It could have great potential in educational settings assisting teachers and emiching the classroom environment,' Tanaka said."
+					]
+				}
+			]
+		},
+		{
+			"range": "24-26",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Complete the sentences below.\nWrite ONE WORD ONLY from the passage for each answer.",
+			"body": "Robots that best maintained people's attention previously acted as ____ (24)\nChildren treated QRIO more as a ____ (25) than a toy.\nArkin expected children to show ____ (26) towards the robot.",
+			"body_html": "<table><tbody><tr><td><ul><li>Robots that best maintained people's attention previously acted as [24]</li><li>Children treated QRIO more as a [25] than a toy.</li><li>Arkin expected children to show [26] towards the robot.</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 24,
+					"text": "Robots that best maintained people's attention previously acted as ____ (24)",
+					"answer": "storytellers",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nNhững robot duy trì sự chú ý của mọi người tốt nhất trước đây đóng vai trò là những _______. Cần điền một danh từ chỉ vai trò/nghề nghiệp (số nhiều).\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: PLURAL NOUN (Role)\nDấu hiệu: acted as + NOUN\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nbest maintained people's attention ~ The most successful robots so far\npreviously ~ so far\n\nBước 4: So sánh và đối chiếu:\nĐoạn A chỉ rõ: \"Những robot thành công nhất cho đến nay là những người kể chuyện\" (The most successful robots so far have been storytellers).\n\nBước 5: Đáp án: storytellers",
+					"quotes": [
+						"The most successful robots so far have been storytellers, but they have only been able to maintain human interest for a limited time and typically rely on roles telling stories that change over time."
+					]
+				},
+				{
+					"number": 25,
+					"text": "Children treated QRIO more as a ____ (25) than a toy.",
+					"answer": "peer",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nTrẻ em đối xử với QRIO giống như một _______ hơn là một món đồ chơi. Cần điền một danh từ chỉ người hoặc vai trò xã hội.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: as a + NOUN\n\nBước 3: Tìm các keywords được paraphrase trong bài:\ntreated ~ treated it\ntoy ~ plaything\n\nBước 4: So sánh và đối chiếu:\nĐoạn E chỉ rõ: \"...và những đứa trẻ dần dần đối xử với nó giống như một người bạn đồng trang lứa hơn là một món đồ chơi\" (...treated it more as a peer than a plaything).\n\nBước 5: Đáp án: peer",
+					"quotes": [
+						"Overall, the interaction between children and the robot improved over time and the children progressively treated it more as a peer than a plaything."
+					]
+				},
+				{
+					"number": 26,
+					"text": "Arkin expected children to show ____ (26) towards the robot.",
+					"answer": "affection",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nArkin mong đợi trẻ em sẽ thể hiện _______ đối với robot. Cần điền một danh từ chỉ cảm xúc hoặc hành vi.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (Emotion/Behavior)\nDấu hiệu: show + NOUN\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nArkin expected ~ Arkin was not surprised (không ngạc nhiên = đã mong đợi/đoán trước)\nshow ~ demonstrated\n\nBước 4: So sánh và đối chiếu:\nĐoạn G chỉ rõ: \"Ronald Arkin không ngạc nhiên trước tình cảm (affection) mà những đứa trẻ mới biết đi thể hiện đối với robot\" (Ronald Arkin was not surprised by the affection demonstrated by the toddlers).\n\nBước 5: Đáp án: affection",
+					"quotes": [
+						"Ronald Arkin was not surprised by the affection demonstrated by the toddlers toward the robot."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

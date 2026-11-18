@@ -1,0 +1,256 @@
+{
+	"id": "7c1dc780-c962-4fc9-8a4e-87ad2f903ccf",
+	"url": "https://stepielts.com/student/reading/7c1dc780-c962-4fc9-8a4e-87ad2f903ccf?mode=practice",
+	"title": "Listening to the Ocean",
+	"source": "Collection",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Listening to the Ocean",
+		"subtitle": "The results of some recent research answer some long-standing questions",
+		"paragraphs": [
+			"A. The oceans cover more than 70 per cent of the planet’s surface, yet until quite recently we knew less about their depths than about the surface of the Moon. The Moon has been far more accessible to study because astronomers have long been able to look at its surface, first with the naked eye and then with the telescope, both instruments that focus light. Until the twentieth century, however, no instruments were available for the study of Earth’s oceans: light, which can travel trillions of kilometers through the vast vacuum of space, cannot penetrate very far in seawater.",
+			"B. It turns out that for penetrating water the best instrument is sound. Curious investigators have long been fascinated by sound and the way it travels in water. As early as 1490, the artist and scientist Leonardo da Vinci observed: ’If you cause your ship to stop and place the head of a long tube in the water and place the outer extremity to your ear, you will hear ships at a great distance from you.’ It was not until 1826 that two scientists, Colladon and Sturm, accurately measured the speed of sound in water. Using a long tube to listen under water (as da Vinci had suggested), they recorded how fast the sound of a submerged bell traveled across Lake Geneva in Switzerland. What these investigators demonstrated was that water is an excellent medium for sound, transmitting it almost five times faster than its speed in air.",
+			"C. A number of factors influence how far sound travels under water and how long it lasts, including particles, salinity, temperature and pressure. Particles in seawater can reflect, scatter and absorb certain frequencies of sound, just as certain wavelengths of light may be reflected, scattered and absorbed by specific types of particles in the atmosphere. In 1943, Maurice Ewing and J L Worzel conducted an experiment to test the theory that low frequency waves, which are less vulnerable than higher frequencies to scattering and absorption, should be able to travel great distances, if the sound source is placed correctly. The researchers set off an underwater explosion and learned that it was detected easily by receivers 3,200 kilometers away. In analyzing the results of this test, they discovered a kind of ’sound pipeline’, known as the ’deep sound channel’. Sound introduced into this channel of water could travel thousands of kilometers with minimal loss of signal.",
+			"D. The US Navy was quick to appreciate the usefulness of low-frequency sound and the deep sound channel. They developed the Sound Surveillance System (SOSUS), which involved underwater microphones, called hydrophones, that were placed on the ocean bottom and connected by cables to onshore processing centers. It was Christopher Clark of Cornell University who soon realised that SOSUS could be used to listen to whales. Using a SOSUS receiver in the West Indies, he could hear whales that were 1,770 kilometers away.",
+			"E. Whales are the biggest of Earth’s creatures, yet these animals are also remarkably elusive. Scientists wishing to observe blue whales must simply wait in their ships for the whales to surface. A few whales have been tracked briefly in the wild in this way but not for very great distances, and much about them remains unknown. But by using SOSUS, scientists can track the whales and position them on a map. Moreover, they can track not just one whale at a time, but many creatures simultaneously. They can also learn to distinguish whale calls; researchers have detected changes in the calls of finback whales as the seasons change, and have found that blue whales in different regions of the Pacific Ocean have different calls.",
+			"F. SOSUS has also proved instrumental in obtaining information crucial to our understanding of climate. The system has enabled researchers to begin making ocean temperature measurements on a global scale, measurements that are key to understanding the workings of heat transfer between the ocean and the atmosphere. The ocean plays an enormous role in determining air temperature - the heat capacity in only the upper few meters of ocean is thought to be equal to all of the heat in the entire atmosphere. For sound waves traveling horizontally in the ocean, speed is largely a function of temperature. Thus, the travel time of a wave of sound between two points is a sensitive indicator of the average temperature along its path. Transmitting sound in numerous directions through the deep sound channel can give scientists measurements spanning vast areas of the globe. Thousands of sound paths in the ocean can be pieced together into a map of global ocean temperatures, and by repeating measurements along the same paths over time, scientists can track changes in temperature over months or years.",
+			"G. Researchers are also using other acoustic techniques to monitor climate. Oceanographer Jeff Nystuen, for example, has explored the use of sound to measure rainfall over the ocean. Monitoring changing global rainfall patterns will contribute to understanding major climate change as well as the weather phenomenon known as El Niño. Since 1985, Nystuen has used hydrophones to listen to rain over the ocean, acoustically measuring not only the rainfall rate but also the rainfall type, ranging from drizzle to thunderstorms. By using the sound of rain under water as a ’natural’ rain gauge, the measurement of rainfall over the oceans will become available to climatologists. In this way, modern society continues to benefit from the investigations of those who, like Leonardo da Vinci, pursued the answers to some basic questions of Nature."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 1?\nIn boxes 1-4 on your answer sheet, write\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 1,
+					"text": "In the past, it was easier for scientists to study the Moon than the oceans.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTrong quá khứ, các nhà khoa học nghiên cứu Mặt trăng dễ dàng hơn so với nghiên cứu đại dương.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• More accessible to study ~ easier to study\n• Moon ~ từ khóa giữ nguyên\n• Oceans ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Mặt trăng đã dễ dàng tiếp cận để nghiên cứu hơn nhiều... cho đến gần đây chúng ta biết ít về độ sâu của đại dương hơn là về bề mặt của Mặt trăng\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"Trong quá khứ, nghiên cứu Mặt trăng dễ dàng hơn\" (*The Moon has been far more accessible to study... we knew less about their depths than about the surface of the Moon).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"The Moon has been far more accessible to study because astronomers have long been able to look at its surface, first with the naked eye and then with the telescope, both instruments that focus light. Until the twentieth century, however, no instruments were available for the study of Earth’s oceans: light, which can travel trillions of kilometers through the vast vacuum of space, cannot penetrate very far in seawater."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Techniques for investigating the Moon are the same as techniques for researching the ocean.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác kỹ thuật để điều tra Mặt trăng giống với các kỹ thuật để nghiên cứu đại dương.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• Techniques ~ instruments\n• Investigating the Moon ~ study of the Moon\n• Researching the ocean ~ study of Earth's oceans\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đối với Mặt trăng thì sử dụng \"ánh sáng\" (focus light), trong khi đó đối với đại dương thì ánh sáng không thể xuyên qua và \"công cụ tốt nhất là âm thanh\".\n==> Điều này trái ngược với thông tin trong câu hỏi \"Kỹ thuật giống nhau\" (light... cannot penetrate very far in seawater... for penetrating water the best instrument is sound).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"The Moon has been far more accessible to study because astronomers have long been able to look at its surface, first with the naked eye and then with the telescope, both instruments that focus light. Until the twentieth century, however, no instruments were available for the study of Earth’s oceans: light, which can travel trillions of kilometers through the vast vacuum of space, cannot penetrate very far in seawater.",
+						"It turns out that for penetrating water the best instrument is sound."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Measuring temperature changes in the ocean using sound is more time-consuming than other methods",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐo sự thay đổi nhiệt độ trong đại dương bằng âm thanh tốn nhiều thời gian hơn các phương pháp khác.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• Measuring temperature changes ~ track changes in temperature\n• Sound ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc sử dụng âm thanh để đo nhiệt độ (making ocean temperature measurements).\n==> Tuy nhiên, bài đọc không hề nhắc đến thông tin so sánh thời gian với \"các phương pháp khác\" hay việc nó tốn thời gian hơn.\n\nBước 4: Đáp án: NOT GIVEN"
+				},
+				{
+					"number": 4,
+					"text": "Hydrophones can distinguish different kinds of rain.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nHydrophones (thiết bị nghe dưới nước) có thể phân biệt các loại mưa khác nhau.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• Hydrophones ~ từ khóa giữ nguyên\n• Distinguish ~ measuring... ranging from... to (phân loại từ... đến...)\n• Different kinds of rain ~ rainfall type\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Nystuen đã sử dụng hydrophones để... đo lường bằng âm thanh không chỉ lượng mưa mà còn cả loại mưa, từ mưa phùn đến giông bão\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"Hydrophones có thể phân biệt các loại mưa khác nhau\" (used hydrophones to... acoustically measuring not only the rainfall rate but also the rainfall type).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Since 1985, Nystuen has used hydrophones to listen to rain over the ocean, acoustically measuring not only the rainfall rate but also the rainfall type, ranging from drizzle to thunderstorms. By using the sound of rain under water as a ’natural’ rain gauge, the measurement of rainfall over the oceans will become available to climatologists."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-8",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Reading Passage 1 has seven paragraphs, A-G.\nWhich paragraph contains the following information?\nNB You may use any letter more than once.",
+			"options": ["A", "B", "C", "D", "E", "F", "G"],
+			"questions": [
+				{
+					"number": 5,
+					"text": "examples of things that affect the distance sound can travel in water",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác ví dụ về những thứ ảnh hưởng đến khoảng cách âm thanh có thể truyền đi trong nước.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\n• Things that affect ~ factors influence\n• Distance sound can travel ~ how far sound travels\n\nBước 3: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"Một số yếu tố ảnh hưởng đến việc âm thanh truyền đi bao xa dưới nước... bao gồm các hạt, độ mặn, nhiệt độ và áp suất\".\n==> Thông tin này cho thấy đoạn C đã \"đưa ra các ví dụ về những thứ ảnh hưởng đến khoảng cách âm thanh\".\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"C. A number of factors influence how far sound travels under water and how long it lasts, including particles, salinity, temperature and pressure."
+					]
+				},
+				{
+					"number": 6,
+					"text": "details of the connection between ocean temperatures and climate",
+					"answer": "F",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nChi tiết về mối liên hệ giữa nhiệt độ đại dương và khí hậu.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\n• Connection ~ heat transfer (sự truyền nhiệt - mối liên kết vật lý)\n• Ocean temperatures ~ ocean temperature measurements\n• Climate ~ climate/atmosphere\n\nBước 3: So sánh và đối chiếu:\nĐoạn F chỉ rõ: \"Hệ thống đã cho phép các nhà nghiên cứu bắt đầu thực hiện các phép đo nhiệt độ đại dương... những phép đo này là chìa khóa để hiểu hoạt động của sự truyền nhiệt giữa đại dương và khí quyển\".\n==> Thông tin này cho thấy đoạn F đã \"cung cấp chi tiết về mối liên hệ giữa nhiệt độ đại dương và khí hậu\".\n\nBước 4: Đáp án: F",
+					"quotes": [
+						"The system has enabled researchers to begin making ocean temperature measurements on a global scale, measurements that are key to understanding the workings of heat transfer between the ocean and the atmosphere."
+					]
+				},
+				{
+					"number": 7,
+					"text": "details of ways in which light and sound are similar",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nChi tiết về các cách mà ánh sáng và âm thanh tương tự nhau.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\n• Similar ~ just as\n• Light ~ wavelengths of light\n• Sound ~ frequencies of sound\n\nBước 3: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"Các hạt trong nước biển có thể phản xạ, tán xạ và hấp thụ một số tần số âm thanh, giống như một số bước sóng ánh sáng có thể bị phản xạ, tán xạ và hấp thụ...\".\n==> Thông tin này cho thấy đoạn C đã \"nêu chi tiết cách ánh sáng và âm thanh tương tự nhau\".\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"Particles in seawater can reflect, scatter and absorb certain frequencies of sound, just as certain wavelengths of light may be reflected, scattered and absorbed by specific types of particles in the atmosphere."
+					]
+				},
+				{
+					"number": 8,
+					"text": "reference to a long-term study of different types of weather",
+					"answer": "G",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐề cập đến một nghiên cứu dài hạn về các loại thời tiết khác nhau.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\n• Long-term study ~ Since 1985 (Từ năm 1985 - chỉ thời gian dài)\n• Different types of weather ~ rainfall type / El Niño / climate change\n\nBước 3: So sánh và đối chiếu:\nĐoạn G chỉ rõ: \"Việc giám sát các mô hình lượng mưa toàn cầu đang thay đổi sẽ góp phần hiểu rõ biến đổi khí hậu lớn cũng như hiện tượng thời tiết được gọi là El Niño. Kể từ năm 1985, Nystuen đã sử dụng hydrophones để nghe tiếng mưa...\".\n==> Thông tin này cho thấy đoạn G đã \"đề cập đến một nghiên cứu dài hạn về thời tiết\".\n\nBước 4: Đáp án: G",
+					"quotes": [
+						"Monitoring changing global rainfall patterns will contribute to understanding major climate change as well as the weather phenomenon known as El Niño. Since 1985, Nystuen has used hydrophones to listen to rain over the ocean, acoustically measuring not only the rainfall rate but also the rainfall type, ranging from drizzle to thunderstorms. By using the sound of rain under water as a ’natural’ rain gauge, the measurement of rainfall over the oceans will become available to climatologists."
+					]
+				}
+			]
+		},
+		{
+			"range": "9-13",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, C or D.\nWrite the correct letter in boxes 9-13 on your answer sheet.",
+			"questions": [
+				{
+					"number": 9,
+					"text": "According to the passage, who conducted research into the rate at which sound travels in water?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Leonardo da Vinci"
+						},
+						{
+							"label": "B",
+							"text": "Colladon and Sturm"
+						},
+						{
+							"label": "C",
+							"text": "Ewing and Worzel"
+						},
+						{
+							"label": "D",
+							"text": "Jeff Nystuen"
+						}
+					],
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nTheo bài đọc, ai là người đã tiến hành nghiên cứu về tốc độ âm thanh truyền trong nước?\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\n• conducted research ~ measured (hành động đo đạc chính xác là một phần của nghiên cứu)\n• rate ~ speed\n• water ~ từ khóa giữ nguyên\n\nBước 3: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Mãi đến năm 1826, hai nhà khoa học, Colladon và Sturm, mới đo lường chính xác tốc độ của âm thanh trong nước\".\n==> Thông tin được in đậm đồng nghĩa với câu B.\n\nBước 4: Đáp án: B\n\nBước 5: Giải thích đáp án gây nhiễu:\nĐáp án A -> Leonardo da Vinci chỉ quan sát khả năng nghe thấy tàu từ xa, không đo tốc độ.\nĐáp án C -> Ewing và Worzel nghiên cứu về khoảng cách truyền âm (deep sound channel), không phải người đầu tiên đo tốc độ.\nĐáp án D -> Jeff Nystuen nghiên cứu về việc sử dụng âm thanh dưới nước để đo lượng mưa (rainfall) hoặc biến đổi khí hậu, không phải đo tốc độ âm thanh",
+					"quotes": [
+						"It was not until 1826 that two scientists, Colladon and Sturm, accurately measured the speed of sound in water."
+					]
+				},
+				{
+					"number": 10,
+					"text": "According to the passage, who conducted research into the distances certain types of sound waves travel in water?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Leonardo da Vinci"
+						},
+						{
+							"label": "B",
+							"text": "Colladon and Sturm"
+						},
+						{
+							"label": "C",
+							"text": "Ewing and Worzel"
+						},
+						{
+							"label": "D",
+							"text": "Christopher Clark"
+						}
+					],
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nTheo bài đọc, ai đã tiến hành nghiên cứu về khoảng cách mà một số loại sóng âm thanh nhất định truyền đi trong nước?\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\n• Distances ~ travel great distances\n• Certain types of sound waves ~ low frequency waves\n\nBước 3: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Vào năm 1943, Maurice Ewing và J L Worzel đã tiến hành một thí nghiệm để kiểm tra lý thuyết rằng sóng tần số thấp... sẽ có thể truyền đi khoảng cách rất xa\".\n==> Thông tin được in đậm đồng nghĩa với câu C.\n\nBước 4: Đáp án: C\n\nBước 5: Giải thích đáp án gây nhiễu:\nĐáp án A -> Leonardo da Vinci chỉ quan sát việc nghe tiếng tàu qua ống không khí cắm xuống nước, không nghiên cứu về khoảng cách truyền âm của các tần số cụ thể.\nĐáp án B -> Colladon và Sturm đo tốc độ, không phải khoảng cách của sóng tần số thấp cụ thể.\nĐáp án D -> Christopher Clark sử dụng công nghệ có sẵn để nghe cá voi, không phải người nghiên cứu lý thuyết truyền âm ban đầu này.",
+					"quotes": [
+						"In 1943, Maurice Ewing and J L Worzel conducted an experiment to test the theory that low frequency waves, which are less vulnerable than higher frequencies to scattering and absorption, should be able to travel great distances, if the sound source is placed correctly."
+					]
+				},
+				{
+					"number": 11,
+					"text": "SOSUS allows whale researchers to",
+					"options": [
+						{
+							"label": "A",
+							"text": "follow a number of whales at the same time."
+						},
+						{
+							"label": "B",
+							"text": "protect whales as they migrate."
+						},
+						{
+							"label": "C",
+							"text": "imitate whale calls of different species."
+						},
+						{
+							"label": "D",
+							"text": "change the whales' direction of travel."
+						}
+					],
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nSOSUS cho phép các nhà nghiên cứu cá voi làm gì?\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\n• follow ~ track\n• a number of whales ~ not just one whale... but many creatures\n• at the same time ~ simultaneously\n\nBước 3: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Hơn nữa, họ có thể theo dõi không chỉ một con cá voi cùng một lúc, mà nhiều sinh vật cùng một lúc\".\n==> Thông tin được in đậm đồng nghĩa với câu A (theo dõi một số lượng cá voi cùng một lúc).\n\nBước 4: Đáp án: A\n\nBước 5: Giải thích đáp án gây nhiễu:\nĐáp án B -> Đoạn văn không nhắc đến việc \"bảo vệ cá voi\".\nĐáp án C -> Đoạn văn không đề cập đến việc \"bắt chước tiếng gọi của cá voi\".\nĐáp án D -> Đoạn văn không nói về việc \"thay đổi hướng đi của cá voi\".",
+					"quotes": [
+						"Moreover, they can track not just one whale at a time, but many creatures simultaneously."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Finback whale calls change",
+					"options": [
+						{
+							"label": "A",
+							"text": "when scientists track them."
+						},
+						{
+							"label": "B",
+							"text": "at different times of year."
+						},
+						{
+							"label": "C",
+							"text": "when whales communicate with other species."
+						},
+						{
+							"label": "D",
+							"text": "when whales come to the surface."
+						}
+					],
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nTiếng gọi của cá voi lưng xám (finback whale) thay đổi khi nào?\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\n• Finback whale calls change ~ changes in the calls of finback whales\n• at different times of year ~ as the seasons change\n\nBước 3: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"các nhà nghiên cứu đã phát hiện ra những thay đổi trong tiếng gọi của cá voi lưng xám khi các mùa thay đổi\".\n==> Thông tin được in đậm đồng nghĩa với câu B (vào các thời điểm khác nhau trong năm).\n\nBước 4: Đáp án: B\n\nBước 5: Giải thích đáp án gây nhiễu:\nĐáp án A -> Không có thông tin tiếng gọi thay đổi do bị theo dõi.\nĐáp án C -> Không đề cập đến việc giao tiếp với loài khác.\nĐáp án D -> Không đề cập đến việc thay đổi khi trồi lên mặt nước.",
+					"quotes": [
+						"They can also learn to distinguish whale calls; researchers have detected changes in the calls of finback whales as the seasons change, and have found that blue whales in different regions of the Pacific Ocean have different calls."
+					]
+				},
+				{
+					"number": 13,
+					"text": "SOSUS allows scientists to",
+					"options": [
+						{
+							"label": "A",
+							"text": "make accurate maps of the ocean floor."
+						},
+						{
+							"label": "B",
+							"text": "measure water level changes."
+						},
+						{
+							"label": "C",
+							"text": "investigate ocean currents."
+						},
+						{
+							"label": "D",
+							"text": "measure variations in temperature."
+						}
+					],
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nSOSUS cho phép các nhà khoa học làm gì?\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\n• measure ~ measurements\n• variations ~ changes\n• measure variations in temperature ~ track changes in temperature\n\nBước 3: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Bằng cách lặp lại các phép đo dọc theo cùng một đường dẫn theo thời gian, các nhà khoa học có thể theo dõi sự thay đổi nhiệt độ qua nhiều tháng hoặc nhiều năm\".\n==> Thông tin được in đậm đồng nghĩa với câu D (đo lường sự biến động nhiệt độ).\n\nBước 4: Đáp án: D\n\nBước 5: Giải thích đáp án gây nhiễu:\nĐáp án A -> Đoạn văn nói về bản đồ nhiệt độ đại dương, không phải bản đồ đáy đại dương.\nĐáp án B -> Không nhắc đến đo thay đổi mực nước.\nĐáp án C -> Không nhắc đến nghiên cứu dòng hải lưu.",
+					"quotes": [
+						"Thousands of sound paths in the ocean can be pieced together into a map of global ocean temperatures, and by repeating measurements along the same paths over time, scientists can track changes in temperature over months or years."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,5 +1,17 @@
 import { describe, expect, test } from "vitest";
-import { assignmentQuestionSchema } from "./contracts";
+import {
+	ASSIGNMENT_ANSWER_CHOICES,
+	ASSIGNMENT_OPTION_BANK_MAX,
+	answerKindByType,
+	assignmentPromptCreateSchema,
+	assignmentPromptUpdateSchema,
+	assignmentQuestionSchema,
+	extendedAnswerChoices,
+	LIBRARY_ANSWER_CHOICES,
+	LIBRARY_OPTION_BANK_MAX,
+	libraryExerciseCreateSchema,
+	QUIZ_TYPE_DISPLAY,
+} from "./contracts";
 
 describe("assignmentQuestionSchema — explanation/answerSet", () => {
 	test("câu cũ parse ok và KHÔNG sinh key explanation/answerSet", () => {
@@ -42,5 +54,179 @@ describe("assignmentQuestionSchema — explanation/answerSet", () => {
 			feedback: "x",
 		});
 		expect(parsed.success).toBe(false);
+	});
+
+	test("opts hỗ trợ tối đa 8 lựa chọn (A–H cho mcq_many), từ chối 9 lựa chọn", () => {
+		const eightOpts = ["A", "B", "C", "D", "E", "F", "G", "H"];
+		expect(
+			assignmentQuestionSchema.safeParse({
+				stem: "Choose TWO",
+				opts: eightOpts,
+				answer: "H",
+			}).success,
+		).toBe(true);
+
+		expect(
+			assignmentQuestionSchema.safeParse({
+				stem: "Too many",
+				opts: [...eightOpts, "I"],
+				answer: "A",
+			}).success,
+		).toBe(false);
+	});
+});
+
+describe("library extended choices & new IELTS reading types metadata", () => {
+	test("giữ nguyên hằng số assignment bank (8 mục)", () => {
+		expect(ASSIGNMENT_OPTION_BANK_MAX).toBe(8);
+		expect(ASSIGNMENT_ANSWER_CHOICES.letter).toHaveLength(8);
+		expect(ASSIGNMENT_ANSWER_CHOICES.roman).toHaveLength(8);
+	});
+
+	test("LIBRARY_OPTION_BANK_MAX = 20 và LIBRARY_ANSWER_CHOICES đủ A..T và i..xx", () => {
+		expect(LIBRARY_OPTION_BANK_MAX).toBe(20);
+		expect(LIBRARY_ANSWER_CHOICES.letter).toHaveLength(20);
+		expect(LIBRARY_ANSWER_CHOICES.letter[0]).toBe("A");
+		expect(LIBRARY_ANSWER_CHOICES.letter[19]).toBe("T");
+		expect(LIBRARY_ANSWER_CHOICES.roman).toHaveLength(20);
+		expect(LIBRARY_ANSWER_CHOICES.roman[0]).toBe("i");
+		expect(LIBRARY_ANSWER_CHOICES.roman[19]).toBe("xx");
+	});
+
+	test("extendedAnswerChoices trả về 20 nhãn cho letter/roman và fallback assignment cho kind khác", () => {
+		expect(extendedAnswerChoices("letter")).toEqual(
+			LIBRARY_ANSWER_CHOICES.letter,
+		);
+		expect(extendedAnswerChoices("roman")).toEqual(
+			LIBRARY_ANSWER_CHOICES.roman,
+		);
+		expect(extendedAnswerChoices("tfng")).toEqual(
+			ASSIGNMENT_ANSWER_CHOICES.tfng,
+		);
+		expect(extendedAnswerChoices("ynng")).toEqual(
+			ASSIGNMENT_ANSWER_CHOICES.ynng,
+		);
+		expect(extendedAnswerChoices("mcq4")).toEqual(
+			ASSIGNMENT_ANSWER_CHOICES.mcq4,
+		);
+		expect(extendedAnswerChoices("mcq3")).toEqual(
+			ASSIGNMENT_ANSWER_CHOICES.mcq3,
+		);
+	});
+
+	test("answerKindByType và QUIZ_TYPE_DISPLAY phủ 4 dạng mới + giữ legacy", () => {
+		expect(answerKindByType.mcq_many).toBe("letter");
+		expect(answerKindByType.match_names).toBe("letter");
+		expect(answerKindByType.matching).toBe("letter");
+		expect(answerKindByType.fill_blank).toBeUndefined();
+
+		expect(QUIZ_TYPE_DISPLAY.mcq?.label).toBe("Multiple choice (One answer)");
+		expect(QUIZ_TYPE_DISPLAY.mcq_many?.label).toBe(
+			"Multiple choice (Multiple answers)",
+		);
+		expect(QUIZ_TYPE_DISPLAY.diagram?.label).toBe("Map / Diagram labelling");
+		for (const id of [
+			"mcq_many",
+			"match_names",
+			"matching",
+			"fill_blank",
+			"note",
+			"tablecomp",
+			"flowchart",
+		]) {
+			expect(QUIZ_TYPE_DISPLAY[id]?.label).toBeTruthy();
+			expect(QUIZ_TYPE_DISPLAY[id]?.instruction).toBeTruthy();
+		}
+	});
+});
+
+describe("mcq 3 or 4 options validation", () => {
+	function readingPrompt(
+		questions: Array<{ stem: string; opts?: string[] | null; answer: string }>,
+	) {
+		return {
+			skill: "reading" as const,
+			part: "p3",
+			type: "mcq",
+			title: "Reading MCQ",
+			band: "6.5" as const,
+			source: "",
+			prompt: "",
+			passage: "<p>Passage text</p>",
+			intro: "",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			questions,
+			note: "",
+			status: "ready" as const,
+		};
+	}
+
+	test("chấp nhận mcq 3 lựa chọn (A–C) và từ chối đáp án D khi opts chỉ có 3 mục", () => {
+		expect(
+			assignmentPromptCreateSchema.safeParse(
+				readingPrompt([
+					{ stem: "Q1", opts: ["Opt A", "Opt B", "Opt C"], answer: "C" },
+				]),
+			).success,
+		).toBe(true);
+
+		const invalidAnswer = assignmentPromptCreateSchema.safeParse(
+			readingPrompt([
+				{ stem: "Q1", opts: ["Opt A", "Opt B", "Opt C"], answer: "D" },
+			]),
+		);
+		expect(invalidAnswer.success).toBe(false);
+
+		const invalidPatch = assignmentPromptUpdateSchema.safeParse({
+			type: "mcq",
+			questions: [
+				{ stem: "Q1", opts: ["Opt A", "Opt B", "Opt C"], answer: "D" },
+			],
+		});
+		expect(invalidPatch.success).toBe(false);
+
+		const invalidExercise = libraryExerciseCreateSchema.safeParse({
+			skill: "grammar",
+			part: "g1",
+			type: "mcq",
+			title: "Grammar MCQ",
+			questions: [
+				{ stem: "Q1", opts: ["Opt A", "Opt B", "Opt C"], answer: "D" },
+			],
+			status: "ready",
+		});
+		expect(invalidExercise.success).toBe(false);
+	});
+
+	test("từ chối mcq có ít hơn 2 hoặc nhiều hơn 4 lựa chọn khi đã khai opts", () => {
+		expect(
+			assignmentPromptCreateSchema.safeParse(
+				readingPrompt([{ stem: "Q1", opts: ["Only one"], answer: "A" }]),
+			).success,
+		).toBe(false);
+
+		expect(
+			assignmentPromptCreateSchema.safeParse(
+				readingPrompt([
+					{ stem: "Q1", opts: ["1", "2", "3", "4", "5"], answer: "A" },
+				]),
+			).success,
+		).toBe(false);
+	});
+
+	test("giữ tương thích ngược cho opts null hoặc 4 lựa chọn trống khi ready", () => {
+		expect(
+			assignmentPromptCreateSchema.safeParse(
+				readingPrompt([{ stem: "Q1", opts: null, answer: "D" }]),
+			).success,
+		).toBe(true);
+		expect(
+			assignmentPromptCreateSchema.safeParse(
+				readingPrompt([{ stem: "Q1", opts: ["", "", "", ""], answer: "A" }]),
+			).success,
+		).toBe(true);
 	});
 });

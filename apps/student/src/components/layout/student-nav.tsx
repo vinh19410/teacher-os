@@ -101,6 +101,7 @@ export function StudentShellLink({
 }
 
 export const ACTIVE_KEY_BY_PREFIX: Record<string, string> = {
+	"/placement-test": "placement-test",
 	"/classes": "classes",
 	"/schedule": "schedule",
 	"/assignments": "assignments",
@@ -122,6 +123,7 @@ export function useStudentActiveKey(): string {
 /** Nhãn crumb theo activeKey ("tổ chức › mục"). */
 export const STUDENT_PAGE_LABEL: Record<string, string> = {
 	overview: "Tổng quan",
+	"placement-test": "Kiểm tra đầu vào",
 	classes: "Lớp học",
 	schedule: "Lịch học",
 	assignments: "Bài tập",

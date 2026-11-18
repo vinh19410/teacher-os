@@ -1,0 +1,294 @@
+{
+	"id": "e9ae142d-211a-4621-b4c5-ef8a9efa73f2",
+	"url": "https://stepielts.com/student/reading/e9ae142d-211a-4621-b4c5-ef8a9efa73f2?mode=practice",
+	"title": "Charles Darwin",
+	"source": "Collection",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "1-14",
+	"passage": {
+		"title": "Charles Darwin",
+		"paragraphs": [
+			"Charles Darwin, the brilliant anthropologist and creator of the theory of evolution, is not normally associated with the modern business world. Nevertheless, Darwinian evolutionary theory is the foundation of a new wave of ideas about human behaviour in general and particularly the way people behave in the workplace; these ideas have given the title of evolutionary psychology. Evolutionary psychology revolves around the notion that our brains, like our bodies, have an inherited evolutionary design that has scarcely changed for 10,000 years, as respected evolutionary psychology experts Leda Cosmides and John Tooby comment, our modern skulls house a Stone Age mind. The US biologist Edward O Wilson sees evolutionary psychology as being a discipline which is based on both socio-biology, which is the study of the biological basis of social behaviour, and psychology, which is the systematic study of human behaviour.",
+			"Nigel Nicholson, an organisational psychologist from the London Business School, is a strong supporter of evolutionary psychology and on this subject has published Managing the Human Animal. His book takes the reader on a journey from the Stone Age plains of the savannah to the modern office, and includes a discussion of Darwinism and behavioural psychology together with a dissection of dysfunctional organisational behaviour. It is an effective approach explaining why people behave as they do, particularly at work. Evolutionary psychology is increasingly being cited in management circles, where managers are trying to understand puzzling aspects of human behaviour and by doing so improve the workplace. Nicholson believes that evolutionary psychology can help managers understand what goes wrong in organisational life and what they can do about it.",
+			"Nicholson maintains that evolutionary psychology dismisses the long-held assumption that our minds are like blank pages just waiting for culture and experience to write on them and shape our nature. He points out that sophisticated research shows the brain actually houses a store of knowledge when we are born, and now genetic research is establishing there are certain genes that account for abilities, tastes and tendencies. The stored knowledge in the human brain has not changed much since the Stone Age. As Tooby and Cosmides stress, there have not been enough generations for a brain that is well adapted to our post-industrial life to evolve through natural selection.",
+			"The evolutionary psychology version of human nature revolves around some key elements which we have inherited from our hunter-gatherer minds. One key element is emotion. Emotion was originally essential to keep early man alive and safe from predators. Emotion was, and continues to be our radar, guiding us throughout today’s techno defined business world. Despite this, the business world emphasises rational not emotional behaviour, and does not admit the importance of emotion. We still use the emotional part of our minds to make sense other people’s behaviour and to create an impression, so we can often be taken in by appearances. This mental predisposition actually works best in small communities (the tribe), not in much larger environments filled with people we barely know (the modern workplace). Our minds naturally try to re-create our ancestral communities with networks of no more than 150 people, where there are clear hierarchies and leaders. As a consequence, it takes very little to trigger people’s innate distrust of others because our safety in antiquity depended on supporting our near family and friends whom we valued more than other people.",
+			"So what advice does Nicholson have for the corporate world? He thinks that by knowing the reasons for people’s behaviour it is possible to mould corporate environments into places that have more chance of working efficiently and being pleasant places to work in. Nicholson admits that not everybody in the business world agrees with his belief in the effectiveness of evolutionary psychology in the workplace. One group that resists the theory of evolutionary psychology is young MBA graduates who are just beginning their careers and feel that evolutionary psychology will make their lives at work more difficult. Older and wiser executives point out that they still tend to cling to the idea of a magic formula to bring people into line with corporate strategy. But that is back-to-front thinking according to Nicholson, who contends that we should be reinventing our business structures, not our fundamental human nature.",
+			"At the end of his book, Nicholson gives his forecast of what will and will not change in the business world. He believes that most people will still prefer more traditional forms of work and throughout their lives will continue to aim at lifelong status advancement. He also maintains that the line between work and home will be less defined, but that people will prefer traditional working patterns if working from home leaves them isolated from their work community. He doubts that the high-tech ideas of virtual companies will ever be very successful because people will still want to meet each other face-to-face. Nicholson describes his ideal organisation in the future: it would be decentralized, with small sub-units: the staff would be from diverse backgrounds and be allowed a high degree of self determination. New endeavours and creativity would replace systems and rationality. Nicholson acknowledges that there is a long way to go in terms of the translation of his ideas of evolutionary psychology into practical propositions, but he is confident more and more people will come round to his way of thinking."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter A, B, C, or D.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "The writer's purpose in the first paragraph is to",
+					"options": [
+						{
+							"label": "A",
+							"text": "oppose the views of Charles Darwin"
+						},
+						{
+							"label": "B",
+							"text": "compare experts' opinions of Darwin's theory"
+						},
+						{
+							"label": "C",
+							"text": "explain the theory of evolutionary psychology"
+						},
+						{
+							"label": "D",
+							"text": "name experts in the field of evolutionary psychology"
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Charles Darwin, the brilliant anthropologist and creator of the theory of evolution, is not normally associated with the modern business world. Nevertheless, Darwinian evolutionary theory is the foundation of a new wave of ideas about human behaviour in general and particularly the way people behave in the workplace; these ideas have given the title of evolutionary psychology. Evolutionary psychology revolves around the notion that our brains, like our bodies, have an inherited evolutionary design that has scarcely changed for 10,000 years, as respected evolutionary psychology experts Leda Cosmides and John Tooby comment, our modern skulls house a Stone Age mind. The US biologist Edward O Wilson sees evolutionary psychology as being a discipline which is based on both socio-biology, which is the study of the biological basis of social behaviour, and psychology, which is the systematic study of human behaviour."
+					]
+				},
+				{
+					"number": 2,
+					"text": "In the third paragraph, which view about evolutionary psychology matches Nicholson's opinion?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Our characters determine our career choices"
+						},
+						{
+							"label": "B",
+							"text": "We begin life without any preconceived notions"
+						},
+						{
+							"label": "C",
+							"text": "Our interests and skills depend on our environment"
+						},
+						{
+							"label": "D",
+							"text": "We inherit ideas and characteristics from our ancestors"
+						}
+					],
+					"answer": "D",
+					"quotes": [
+						"Nicholson maintains that evolutionary psychology dismisses the long-held assumption that our minds are like blank pages just waiting for culture and experience to write on them and shape our nature. He points out that sophisticated research shows the brain actually houses a store of knowledge when we are born, and now genetic research is establishing there are certain genes that account for abilities, tastes and tendencies."
+					]
+				},
+				{
+					"number": 3,
+					"text": "The writer discusses the key element of emotion in order to",
+					"options": [
+						{
+							"label": "A",
+							"text": "criticise primitive survival strategies"
+						},
+						{
+							"label": "B",
+							"text": "explain attitudes and actions at work"
+						},
+						{
+							"label": "C",
+							"text": "demonstrate the slowness of evolution"
+						},
+						{
+							"label": "D",
+							"text": "suggest companies today are poorly structured"
+						}
+					],
+					"answer": "B",
+					"quotes": [
+						"One key element is emotion. Emotion was originally essential to keep early man alive and safe from predators. Emotion was, and continues to be our radar, guiding us throughout today’s techno defined business world. Despite this, the business world emphasises rational not emotional behaviour, and does not admit the importance of emotion. We still use the emotional part of our minds to make sense other people’s behaviour and to create an impression, so we can often be taken in by appearances. This mental predisposition actually works best in small communities (the tribe), not in much larger environments filled with people we barely know (the modern workplace)."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Which of the following does Nicholson predict will happen in the business world?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Companies will remain in city centres"
+						},
+						{
+							"label": "B",
+							"text": "Promotion will no longer motivate people"
+						},
+						{
+							"label": "C",
+							"text": "Employees will be less independent than now"
+						},
+						{
+							"label": "D",
+							"text": "Social interaction will remain important to workers"
+						}
+					],
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nNicholson dự đoán điều nào sau đây sẽ xảy ra trong thế giới kinh doanh?\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Vào cuối cuốn sách của mình, Nicholson đưa ra dự báo của ông... Ông nghĩ rằng những ý tưởng công nghệ cao về các công ty ảo sẽ không thành công lắm bởi vì mọi người vẫn sẽ muốn gặp nhau trực tiếp\".\n==> Thông tin được in đậm đồng nghĩa với câu D (Tương tác xã hội sẽ vẫn quan trọng đối với người lao động).\n\nBước 3: Đáp án: D\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Đoạn văn không đề cập đến việc \"các công ty sẽ vẫn ở trung tâm thành phố\".\nĐáp án B -> Ngược lại, bài viết nói \"throughout their lives will continue to aim at lifelong status advancement\", nghĩa là thăng tiến vẫn sẽ thúc đẩy mọi người.\nĐáp án C -> Bài viết nói \"be allowed a high degree of self determination\", nghĩa là nhân viên sẽ độc lập hơn, không phải ít độc lập hơn.",
+					"quotes": [
+						"He doubts that the high-tech ideas of virtual companies will ever be very successful because people will still want to meet each other face-to-face."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Which of the following is the most suitable title for Reading Passage 3?",
+					"options": [
+						{
+							"label": "A",
+							"text": "How successful companies manage change"
+						},
+						{
+							"label": "B",
+							"text": "Understanding the origins of workplace behaviour"
+						},
+						{
+							"label": "C",
+							"text": "Darwin's theories rejected by modern management"
+						},
+						{
+							"label": "D",
+							"text": "Why post-industrial organisations need to evolve more quickly"
+						}
+					],
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nTiêu đề nào phù hợp nhất cho Bài đọc 3?\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ toàn bộ bài viết tập trung vào \"evolutionary psychology... the way people behave in the workplace\", \"explaining why people behave as they do, particularly at work\", \"the reasons for people's behaviour\".\n==> Nội dung chính của bài là giải thích nguồn gốc tiến hóa của hành vi tại nơi làm việc, đồng nghĩa với câu B (Hiểu nguồn gốc của hành vi tại nơi làm việc).\n\nBước 3: Đáp án: B\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Bài viết không tập trung vào \"cách các công ty thành công quản lý thay đổi\".\nĐáp án C -> Ngược lại với tiêu đề này, lý thuyết Darwin được chấp nhận và áp dụng trong quản lý hiện đại, không bị bác bỏ.\nĐáp án D -> Bài viết không nói về \"tại sao các tổ chức hậu công nghiệp cần tiến hóa nhanh hơn\". Nicholson cho rằng nên thay đổi cấu trúc kinh doanh, không phải bản chất con người.",
+					"quotes": [
+						"It is an effective approach explaining why people behave as they do, particularly at work."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-9",
+			"type": "YES/NO/NOT GIVEN",
+			"instructions": "Do the following statements agree with the claims of the writer in Reading Passage 3? In boxes 6-9, choose:\nYES if the statement agrees with the claims of the writer\nNO if the statement contradicts with the claims of the writer\nNOT GIVEN if it is impossible to say what the writer thinks about this",
+			"questions": [
+				{
+					"number": 6,
+					"text": "Nicholson makes a persuasive argument in his book",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNicholson đưa ra lập luận thuyết phục trong cuốn sách của mình.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\npersuasive argument ~ effective approach\nhis book ~ từ khóa giữ nguyên\nmakes ~ từ khóa liên quan\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Cuốn sách của ông đưa người đọc vào một cuộc hành trình từ những đồng bằng thời kỳ đồ đá của thảo nguyên savannah đến văn phòng hiện đại, và bao gồm một cuộc thảo luận về chủ nghĩa Darwin và tâm lý học hành vi cùng với sự phân tích về hành vi tổ chức không hiệu quả. Đây là một cách tiếp cận hiệu quả giải thích tại sao mọi người cư xử như họ làm, đặc biệt là tại nơi làm việc\".\n==> Điều này đồng nghĩa với thông tin trong câu hỏi (It is an effective approach explaining why people behave as they do, particularly at work).\n\nBước 4: Đáp án: YES",
+					"quotes": [
+						"It is an effective approach explaining why people behave as they do, particularly at work."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Tooby and Cosmides believe natural selection through the generations has prepared our brains for post-industrial life",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NO",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTooby và Cosmides tin rằng chọn lọc tự nhiên qua các thế hệ đã chuẩn bị não bộ cho cuộc sống hậu công nghiệp.\nBước 2: Tìm các keywords được paraphrase trong bài:\nTooby and Cosmides ~ từ khóa giữ nguyên\nnatural selection ~ từ khóa giữ nguyên\nthrough the generations ~ từ khóa giữ nguyên\nhas prepared ~ well adapted\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Như Tooby và Cosmides nhấn mạnh, đã không có đủ các thế hệ để một bộ não thích nghi tốt với cuộc sống hậu công nghiệp của chúng ta tiến hóa thông qua chọn lọc tự nhiên\".\nBài viết nói chưa có đủ thế hệ để não bộ thích nghi với cuộc sống hậu công nghiệp.\n==> Điều này trái ngược với thông tin trong câu hỏi (As Tooby and Cosmides stress, there have not been enough generations for a brain that is well adapted to our post-industrial life to evolve through natural selection).\nBước 4: Đáp án: NO",
+					"quotes": [
+						"As Tooby and Cosmides stress, there have not been enough generations for a brain that is well adapted to our post-industrial life to evolve through natural selection."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Our reliance on technology causes emotional problems in the workplace",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSự phụ thuộc quá mức vào công nghệ gây ra vấn đề cảm xúc tại nơi làm việc.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\noverreliance on technology ~ techno defined business world\ncauses emotional problems ~ từ khóa liên quan\nworkplace ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến \"Cảm xúc đã, và tiếp tục là radar của chúng ta, hướng dẫn chúng ta trong suốt thế giới kinh doanh được định nghĩa bởi công nghệ ngày nay\" và \"thế giới kinh doanh nhấn mạnh hành vi lý trí chứ không phải hành vi cảm xúc\".\n==> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"sự phụ thuộc quá mức vào công nghệ gây ra vấn đề cảm xúc\".\n\nBước 4: Đáp án: NOT GIVEN"
+				},
+				{
+					"number": 9,
+					"text": "People today are more trusting than they used to be",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMọi người ngày nay tin tưởng hơn so với trước đây.\nBước 2: Tìm các keywords được paraphrase trong bài:\npeople today ~ từ khóa giữ nguyên\nmore trusting ~ innate distrust\nused to be ~ in antiquity\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"chỉ cần rất ít để kích hoạt sự không tin tưởng bẩm sinh của mọi người đối với người khác bởi vì sự an toàn của chúng ta trong thời cổ đại phụ thuộc vào việc hỗ trợ gia đình gần và bạn bè của chúng ta\". Bài viết nói mọi người có sự ngờ vực bẩm sinh đối với người khác, và điều này dễ bị kích hoạt.==> Tuy nhiên, bài không hề nói “ngày nay con người tin tưởng hơn / ít tin tưởng hơn trước đây”. Việc bài nhắc “in antiquity” chỉ nhằm giải thích lý do lịch sử/tiến hoá của sự ngờ vực, không cung cấp số liệu hay khẳng định rằng mức độ tin tưởng đã tăng hoặc giảm theo thời gian.Bước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"As a consequence, it takes very little to trigger people’s innate distrust of others because our safety in antiquity depended on supporting our near family and friends whom we valued more than other people."
+					]
+				}
+			]
+		},
+		{
+			"range": "10-14",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary using the list of words below.",
+			"options": [
+				{
+					"label": "A",
+					"text": "business leaders"
+				},
+				{
+					"label": "B",
+					"text": "MBA graduates"
+				},
+				{
+					"label": "C",
+					"text": "promotion structures"
+				},
+				{
+					"label": "D",
+					"text": "reward strategy"
+				},
+				{
+					"label": "E",
+					"text": "magic formula"
+				},
+				{
+					"label": "F",
+					"text": "strategic planning"
+				},
+				{
+					"label": "G",
+					"text": "back-to-front thinking"
+				},
+				{
+					"label": "H",
+					"text": "corporate environments"
+				},
+				{
+					"label": "I",
+					"text": "human nature"
+				}
+			],
+			"body": "Nicholson's advice to the corporate world\nNicholson believes that if we know why people act the way they do, we can change ____ (10) so employees will work more efficiently. Nicholson's ideas are unwelcome to ____ (11) but some executives are more open to what evolutionary psychology says. However, these executives still believe that there is a ____ (12) that will make employees act according to the company's practices. According to Nicholson, these senior executives are engaging in ____ (13) and we should not try to change ____ (14) but instead we should change our business structures.",
+			"body_html": "<table><tbody><tr><td><h4><strong>Nicholson's advice to the corporate world</strong></h4><p>Nicholson believes that if we know why people act the way they do, we can change [10] so employees will work more efficiently. Nicholson's ideas are unwelcome to [11] but some executives are more open to what evolutionary psychology says. However, these executives still believe that there is a [12] that will make employees act according to the company's practices. According to Nicholson, these senior executives are engaging in [13] and we should not try to change [14] but instead we should change our business structures.</p></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 10,
+					"text": "",
+					"answer": "H",
+					"quotes": [
+						"He thinks that by knowing the reasons for people’s behaviour it is possible to mould corporate environments into places that have more chance of working efficiently and being pleasant places to work in. Nicholson admits that not everybody in the business world agrees with his belief in the effectiveness of evolutionary psychology in the workplace."
+					]
+				},
+				{
+					"number": 11,
+					"text": "",
+					"answer": "B",
+					"quotes": [
+						"One group that resists the theory of evolutionary psychology is young MBA graduates who are just beginning their careers and feel that evolutionary psychology will make their lives at work more difficult."
+					]
+				},
+				{
+					"number": 12,
+					"text": "",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nTuy nhiên, những giám đốc điều hành này vẫn tin rằng có một _____ sẽ khiến nhân viên hành động theo thực hành của công ty.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: there is a + NOUN (mạo từ \"a\" đi với danh từ đếm được số ít)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nexecutives ~ từ khóa giữ nguyên\nmake employees act according to ~ bring people into line with\ncompany's practices ~ corporate strategy\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Older and wiser executives point out that they still tend to cling to the idea of a magic formula to bring people into line with corporate strategy\" (Các giám đốc điều hành lớn tuổi và khôn ngoan hơn chỉ ra rằng họ vẫn có xu hướng bám vào ý tưởng về một công thức ma thuật để đưa mọi người vào đúng hướng với chiến lược công ty). \"Magic formula\" có trong danh sách.\n\nBước 5: Đáp án: E (magic formula)",
+					"quotes": [
+						"Older and wiser executives point out that they still tend to cling to the idea of a magic formula to bring people into line with corporate strategy."
+					]
+				},
+				{
+					"number": 13,
+					"text": "",
+					"answer": "G",
+					"quotes": [
+						"But that is back-to-front thinking according to Nicholson, who contends that we should be reinventing our business structures, not our fundamental human nature."
+					]
+				},
+				{
+					"number": 14,
+					"text": "",
+					"answer": "I",
+					"quotes": [
+						"But that is back-to-front thinking according to Nicholson, who contends that we should be reinventing our business structures, not our fundamental human nature."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,167 @@
+{
+	"id": "9e973f0c-f74b-42a7-b027-b7629f323e99",
+	"url": "https://stepielts.com/student/reading/9e973f0c-f74b-42a7-b027-b7629f323e99?mode=practice",
+	"title": "Computer Games",
+	"source": "Collection",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Computer Games",
+		"paragraphs": [
+			"It's not whether you win or lose, but how you play the game. In the age of computers, that statement takes on new meanings. A video game cannot ever really be defeated because, no matter how high the score, it is always the human who tires first or makes the fatal error. But millions of people continue to play, because microelectronic technology has enabled game designers to conveniently and inexpensively transform plain screens into playfields of extraordinary capability. At the same time, a multi-billion dollar industry has grown from very humble beginnings in just a few decades.",
+			"The technological roots of video games can be traced back to 1962, when an MIT (Massachusetts Institute of Technology) graduate student demonstrated Spacewar, a science-fiction fantasy game played on a mainframe computer and a large screen. That game immediately attracted a wide cult following among computer buffs. The next important step came in 1968, when a console was developed that could be used to play games on ordinary televisions. But it was not until the early 1970s that a young University of Utah engineer brought the concept to the point that the adaptation of Spacewar from a large computer into a coin-operated format, for use in video game arcades, was becoming economically feasible. Bushnell and his associates began working on such a machine in a converted bedroom workshop, but were unsuccessful. What they ultimately developed instead was a simple tennis-like game that they named Pong. Pong took the industry by storm and quickly became the first coin-operated video game hit. And soon thereafter, commercial Pong-style home video games also appeared. Yet despite early enthusiasm, consumer interest in this area proved less sustained than had been anticipated, and as prices started to drop and losses mounted, most of the early manufacturers withdrew from the field.",
+			"Profits proved to be just as elusive at Bushnell's company, Atari, where a rapidly growing market presence in coin-operated machines and home video required greater injections of capital and more professional management than the company was able to provide. In 1976, the founders of Atari sold their share of the company for a sum that was only equivalent to their sales in that year.",
+			"At that point, coin-operated video games seemed just another passing fad. But the introduction of Space Invaders, an arcade model produced by the Japanese manufacturer Taito, proved otherwise. With its vibrant graphics, it was so different from the previous black-and-white games that Space Invaders immediately captured public interest. There soon followed a rush of popular video games that employed the same or better hardware and even more imaginative software. Of these, Pac-Man (1980) was especially significant, because now females began to take an interest.",
+			"By this time, the same software improvements and technological advances (faster microprocessors and larger memories) that permitted designers to produce spectacular audio and visual effects for coin-operated machines were also being applied to home video units.\nIt was thus only a short while before the programmable consoles that had been unpopular for lack of software suddenly began to sell in large numbers: consumers had discovered that they could finally play a reasonable version of their favorite arcade games in the comfort of their own home. The impact on Atari was astounding. Unprofitable for the first three years, Atari had, by the end of 1979, become a success.\nBy either self-designing or licensing the most popular arcade concepts for cartridge format for use at home, the company had captured some 80 percent of the worldwide market for home video games.",
+			"All of this, however, was too good to last.\nBy late 1982, the public's fascination with arcade games had begun to slow down, and fewer potential best-sellers were becoming available for conversion to cartridges that could be used on an Atari machine.\nAt the same time, the market was flooded with illegal software of all types. It was thus not until the late 1980s that the unstructured nature of the industry, at least on the software side, had stabilized and become restructured in a manner similar, in many respects, to the book publishing business.",
+			"Until 1986, when Japan-based Nintendo introduced a more technologically sophisticated and user-friendly game console, the hardware side was also in disarray. But with tight control of software development and marketing, Nintendo was able to revive and then capture up to 80 percent of a once-again booming market in which no significant competition appeared until the early 1990s.\nBy that point, the annual operating profits of Nintendo had already grown to over $1 billion - an amount exceeding the 1991 profits of all the major Hollywood film studios combined.\nIn 1999, sales of game hardware and software, led by Playstation, were equal in size (around $57 billion) to US domestic box office revenue.",
+			"With change the only constant, the game industry has moved on to become what it is today. However, no matter what the technology or the format, the essence of a successful game will always be the same: it is simple to understand and to play on an elementary level, but it is compulsive and maddeningly difficult - in fact, forever impossible to master fully."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the notes below.\nChoose ONE WORD ONLY from the passage for each answer.",
+			"body": "A History of Video Games\n1960s\nSpacewar was first played on a computer and special screen.\n1970s\nAdvances in technology led to cheaper ____ (1) operated video games.\nThe first successful coin-operated video game was ____ (2)\n____ (3) was bought from its original owners and the possibility of coin-operated video games was growing.\nSpace Invaders was successful because of its colourful ____ (4)\n1980s\nPac-Man was the first game to attract ____ (5)\n1990s\n____ (6) had become the biggest selling home entertainment product.\nAt first, one company dominated the market.",
+			"body_html": "<table><tbody><tr><td><h4><strong>A History of Video Games</strong></h4><h4><strong>1960s</strong></h4><ul><li>Spacewar was first played on a computer and special screen.</li></ul><h4><strong>1970s</strong></h4><ul><li>Advances in technology led to cheaper [1] operated video games.</li><li>The first successful coin-operated video game was [2]</li><li>[3] was bought from its original owners and the possibility of coin-operated video games was growing.</li><li>Space Invaders was successful because of its colourful [4]</li></ul><h4><strong>1980s</strong></h4><ul><li>Pac-Man was the first game to attract [5]</li></ul><h4><strong>1990s</strong></h4><ul><li>[6] had become the biggest selling home entertainment product.</li><li>At first, one company dominated the market.</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "Advances in technology led to cheaper 1 ____ (1) operated video games.",
+					"answer": "coin",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nNhững tiến bộ trong công nghệ đã dẫn đến sự ____ rẻ hơn.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: cheaper + NOUN (Sau tính từ so sánh 'cheaper').\n\nBước 3: Tìm các keywords được paraphrase trong bài:\neconomically feasible ~ cheaper\nbrought the concept to the point that ~ Advances in technology led to\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...mang khái niệm này đến mức mà việc chuyển thể Spacewar từ một máy tính lớn sang định dạng hoạt động bằng tiền xu... trở nên khả thi về mặt kinh tế\" (...brought the concept to the point that the adaptation of Spacewar... into a coin-operated format ...was becoming economically feasible).\n\nBước 5: Đáp án: coin\n...đã dẫn đến định dạng hoạt động bằng tiền xu rẻ hơn. (...led to cheaper coin-operated format).",
+					"quotes": [
+						"But it was not until the early 1970s that a young University of Utah engineer brought the concept to the point that the adaptation of Spacewar from a large computer into a coin-operated format, for use in video game arcades, was becoming economically feasible."
+					]
+				},
+				{
+					"number": 2,
+					"text": "The first successful coin-operated video game was 2 ____ (2).",
+					"answer": "Pong",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nTrò chơi điện tử hoạt động bằng tiền xu thành công đầu tiên là...\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (Proper Noun)\nDấu hiệu: was + NOUN (Sau động từ 'was').\nBước 3: Tìm các keywords được paraphrase trong bài:\nfirst coin-operated video game hit ~ first successful coin-operated video game\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Pong đã gây bão trong ngành và nhanh chóng trở thành trò chơi điện tử hoạt động bằng tiền xu thành công đầu tiên\" (* Pong took the industry by storm and quickly became the first coin-operated video game hit*).\nBước 5: Đáp án: Pong.\n...thành công đầu tiên là Pong. (...successful... was Pong)",
+					"quotes": [
+						"Pong took the industry by storm and quickly became the first coin-operated video game hit."
+					]
+				},
+				{
+					"number": 3,
+					"text": "3 ____ (3) was bought from its original owners and the possibility of coin-operated video games was growing.",
+					"answer": "Atari",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCông ty/sản phẩm [cái gì đó] đã được mua lại từ những người chủ ban đầu của nó.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (Proper Noun)\nDấu hiệu: NOUN + was bought (Làm chủ ngữ cho động từ bị động 'was bought').\nBước 3: Tìm các keywords được paraphrase trong bài:\nfounders of ... sold their share ~ was bought from its original owners\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Năm 1976, những người sáng lập Atari đã bán cổ phần của họ tại công ty\" (In 1976, the founders of Atari sold their share of the company).\nBước 5: Đáp án: Atari.\nAtari đã được mua lại từ những người chủ ban đầu... (Atari was bought from its original owners...)",
+					"quotes": [
+						"In 1976, the founders of Atari sold their share of the company for a sum that was only equivalent to their sales in that year."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Space Invaders was successful because of its colourful 4 ____ (4).",
+					"answer": "graphics",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nSpace Invaders thành công nhờ vào [cái gì đó] đầy màu sắc của nó.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: its colourful + NOUN (Sau tính từ 'colourful').\nBước 3: Tìm các keywords được paraphrase trong bài:\ncaptured public interest ~ was successful\nvibrant ~ colourful\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Với đồ họa sống động của nó, nó khác biệt đến mức so với các trò chơi đen trắng trước đây mà Space Invaders ngay lập tức chiếm được sự quan tâm của công chúng\" (With its vibrant graphics, it was so different from the previous black-and-white games that Space Invaders immediately captured public interest).\nBước 5: Đáp án: graphics.\n...nhờ vào đồ họa đầy màu sắc của nó. (...because of its colourful graphics)",
+					"quotes": [
+						"With its vibrant graphics, it was so different from the previous black-and-white games that Space Invaders immediately captured public interest."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Pac-Man was the first game to attract 5 ____ (5).",
+					"answer": "females",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nPac-Man là trò chơi đầu tiên thu hút được [đối tượng nào đó].\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (số nhiều)\nDấu hiệu: attract + NOUN (Sau động từ 'attract').\nBước 3: Tìm các keywords được paraphrase trong bài:\nbegan to take an interest ~ attract\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Trong số này, Pac-Man (1980) đặc biệt quan trọng, vì giờ đây phụ nữ đã bắt đầu quan tâm\" (Of these, Pac-Man (1980) was especially significant, because now females began to take an interest).\nBước 5: Đáp án: females.\n...thu hút được phụ nữ. (...to attract females)",
+					"quotes": [
+						"Of these, Pac-Man (1980) was especially significant, because now females began to take an interest."
+					]
+				},
+				{
+					"number": 6,
+					"text": "6 ____ (6) had become the biggest selling home entertainment product.",
+					"answer": "Nintendo",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nVào những năm 1990, [sản phẩm gì] đã trở thành sản phẩm giải trí gia đình bán chạy nhất.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (Proper Noun)\nDấu hiệu: NOUN + had become (Làm chủ ngữ của câu).\nBước 3: Tìm các keywords được paraphrase trong bài:\nIn 1999 ~ 1990s\nled by / equal in size to US domestic box office revenue ~ biggest selling\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Năm 1999, doanh số phần cứng và phần mềm trò chơi, dẫn đầu bởi Playstation, có quy mô tương đương... doanh thu phòng vé nội địa Mỹ\" (In 1999, sales of game hardware and software, led by Playstation, were equal in size... to US domestic box office revenue).\nBước 5: Đáp án: Playstation.\nPlaystation đã trở thành... (Playstation had become...)",
+					"quotes": [
+						"But with tight control of software development and marketing, Nintendo was able to revive and then capture up to 80 percent of a once-again booming market in which no significant competition appeared until the early 1990s.",
+						"By that point, the annual operating profits of Nintendo had already grown to over $1 billion - an amount exceeding the 1991 profits of all the major Hollywood film studios combined. In 1999, sales of game hardware and software, led by Playstation, were equal in size (around $57 billion) to US domestic box office revenue."
+					]
+				}
+			]
+		},
+		{
+			"range": "7-13",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 1?\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 7,
+					"text": "Spacewar was unpopular at first.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSpacewar ban đầu không được ưa chuộng.\nBước 2: Tìm các keywords được paraphrase trong bài:\nattracted a wide cult following ~ unpopular (Trái nghĩa)\nBước 3: So sánh và đối chiếu:\nBài đọc cho biết: \"Trò chơi đó ngay lập tức thu hút được một lượng lớn người hâm mộ...\" (That game immediately attracted a wide cult following...).\n==> Điều này trái ngược với thông tin trong câu hỏi \"Spacewar ban đầu không được ưa chuộng\" (Spacewar was unpopular at first).\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"That game immediately attracted a wide cult following among computer buffs."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Bushnell and his team failed to create a coin-operated version of Spacewar.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nBushnell và nhóm của ông đã thất bại trong việc tạo ra một phiên bản hoạt động bằng tiền xu của trò Spacewar.\nBước 2: Tìm các keywords được paraphrase trong bài:\nwere unsuccessful ~ failed\nworking on such a machine ~ create a coin-operated version of Spacewar\nBước 3: So sánh và đối chiếu:\nBài đọc viết: \"Bushnell và các cộng sự của ông bắt đầu làm việc trên một cỗ máy như vậy... nhưng đã không thành công\" (Bushnell and his associates began working on such a machine... but were unsuccessful).\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"Bushnell và nhóm của ông đã thất bại\" (Bushnell and his team failed).\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Bushnell and his associates began working on such a machine in a converted bedroom workshop, but were unsuccessful."
+					]
+				},
+				{
+					"number": 9,
+					"text": "From the beginning, the home video game market has been commercially successful.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNgay từ đầu, thị trường trò chơi điện tử gia đình đã thành công về mặt thương mại.\nBước 2: Tìm các keywords được paraphrase trong bài:\nlosses mounted / withdrew ~ commercially successful (Trái nghĩa)\nearly manufacturers ~ From the beginning\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...thua lỗ chồng chất, hầu hết các nhà sản xuất ban đầu đã rút khỏi lĩnh vực này\" (...losses mounted, most of the early manufacturers withdrew from the field).\n==> Điều này trái ngược với thông tin trong câu hỏi \"đã thành công về mặt thương mại\" (has been commercially successful).\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Unprofitable for the first three years, Atari had, by the end of 1979, become a success.",
+						"Yet despite early enthusiasm, consumer interest in this area proved less sustained than had been anticipated, and as prices started to drop and losses mounted, most of the early manufacturers withdrew from the field."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Atari was successful for the first time in 1979.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nAtari đã thành công lần đầu tiên vào năm 1979.\nBước 2: Tìm các keywords được paraphrase trong bài:\nUnprofitable for the first three years... become a success ~ successful for the first time\nby the end of 1979 ~ in 1979\nBước 3: So sánh và đối chiếu:\nBài đọc xác nhận: \"Không có lãi trong ba năm đầu tiên, Atari đã, vào cuối năm 1979, trở thành một sự thành công\" (Unprofitable for the first three years, Atari had, by the end of 1979, become a success).\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"thành công lần đầu tiên vào năm 1979\" (successful for the first time in 1979).\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Unprofitable for the first three years, Atari had, by the end of 1979, become a success."
+					]
+				},
+				{
+					"number": 11,
+					"text": "Video arcade game usage continued strongly in the 1980s.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nViệc sử dụng trò chơi điện tử thùng (arcade game) tiếp tục diễn ra mạnh mẽ vào những năm 1980.\nBước 2: Tìm các keywords được paraphrase trong bài:\nbegun to slow down ~ continued strongly (Trái nghĩa)\nlate 1982 ~ 1980s\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Vào cuối năm 1982, niềm đam mê của công chúng đối với các trò chơi điện tử thùng đã bắt đầu chậm lại\" (By late 1982, the public's fascination with arcade games had begun to slow down).\n==> Điều này trái ngược với thông tin trong câu hỏi \"tiếp tục diễn ra mạnh mẽ\" (continued strongly).\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"By late 1982, the public's fascination with arcade games had begun to slow down, and fewer potential best-sellers were becoming available for conversion to cartridges that could be used on an Atari machine."
+					]
+				},
+				{
+					"number": 12,
+					"text": "The time taken to produce a video game can be compared to producing a book.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nThời gian để sản xuất một trò chơi điện tử có thể được so sánh với việc sản xuất một cuốn sách.\nBước 2: Tìm các keywords được paraphrase trong bài:\ntime taken to produce ~ từ khóa cần tìm\nbook publishing business ~ producing a book\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ nói rằng cấu trúc của ngành đã \"được tái cấu trúc theo một cách tương tự... với ngành kinh doanh xuất bản sách\".\n==> Bài đọc không hề so sánh thời gian sản xuất (time taken to produce) giữa trò chơi điện tử và sách.\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"It was thus not until the late 1980s that the unstructured nature of the industry, at least on the software side, had stabilized and become restructured in a manner similar, in many respects, to the book publishing business."
+					]
+				},
+				{
+					"number": 13,
+					"text": "The qualities needed for a video game to become successful have been researched thoroughly.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững phẩm chất cần thiết để một trò chơi điện tử trở nên thành công đã được nghiên cứu kỹ lưỡng.\nBước 2: Tìm các keywords được paraphrase trong bài:\nessence of a successful game ~ qualities needed for a video game to become successful\nresearched thoroughly ~ từ khóa cần tìm\nBước 3: So sánh và đối chiếu:\nĐoạn cuối bài đọc có tổng kết bản chất của một trò chơi thành công.\n==> Tuy nhiên, bài viết không hề đề cập đến việc những yếu tố này đã được \"nghiên cứu kỹ lưỡng\" (researched thoroughly) hay chưa.\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"However, no matter what the technology or the format, the essence of a successful game will always be the same: it is simple to understand and to play on an elementary level, but it is compulsive and maddeningly difficult - in fact, forever impossible to master fully."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,207 @@
+{
+	"id": "4b45e51d-46eb-472d-938b-0a34786872d7",
+	"url": "https://stepielts.com/student/reading/4b45e51d-46eb-472d-938b-0a34786872d7?mode=practice",
+	"title": "Intelligent Behaviour in Birds",
+	"source": "Collection",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Intelligent Behaviour in Birds",
+		"paragraphs": [
+			"Many people are aware of the intelligence of chimpanzees and other mammals. However, birds also demonstrate intelligent behaviour.",
+			"A. For centuries, many scholars maintained that humans were the only intelligent organism on Earth. Many traits were considered to be exclusively human examples of acumen for example, language, tool use, deception, awareness of self and others. However, exciting new research on a number of animals, particularly birds, has called into question the uniqueness of these traits, forcing us to reconsider this opinion. In 1964, people were amazed when naturalist Jane Goodall first discovered chimpanzees making and using tools. But ornithologists, people who study birds, were not overly surprised. Almost 20 years earlier, a renowned ornithologist had shown that tool use was commonplace in populations of woodpecker finches residing on the Galápagos Islands. These tiny birds routinely used twigs to extract grubs from under bark.",
+			"B. Since then, the catalogue of tool-using animals has grown. At least three Australian bird species make tools similar to those of the woodpecker finch, and when white-winged choughs come across shellfish they have been known to use rocks as hammers to crack open the recalcitrant shells. Other birds show a more sophisticated level of insight. For example, black kites have been reported dropping bait into lakes to bring fish to the surface of the water, thereby making them easier to catch. A kite may also pick up a smouldering stick from an area recently burned by a bushfire and drop the stick on a patch of unburned grass. The bird then feasts on the small animals that flee from the subsequent fire.",
+			"C. Most tool-using behaviours are a means of extracting food, which may provide a clue as to how the mental abilities needed for tool use evolved. The predominant explanation is based on the proverb that ’necessity is the mother of invention’. Essentially, brain tissue is energetically expensive, so animals should have evolved only the necessary intellectual capabilities required to overcome the challenges they face in their environment. Consider a hypothetical duck grazing on a seemingly endless supply of grass. Being particularly intelligent will not help the duck eat more grass. In contrast, other species, such as birds of prey, live in a more challenging environment, where food may be distributed erratically, hidden from view or highly mobile. The food itself may be quite intelligent. So, if there are not enough resources to feed all individuals, then only the smartest in each generation will live and reproduce.",
+			"D. New Caledonian crows boast many different tools in their tool kit. They use a hooked tool made by removing all but one of the side branches from a twig. They fashion serrated rakes (using their beaks as scissors) from stiff, leathery pandanus leaves. They also make probes by modifying their own moulted feathers. Each tool is used in slightly different ways to pull grubs from deep within tree trunks. The crows carry their favourite tool from one foraging site to the next. They also store their tools for later re-use in a secure place on their perch. Problem-solving abilities have traditionally been thought to be beyond the reach of animals. Nevertheless, birds are coming up with innovative solutions all the time. Recently, New Caledonian crows were observed moulding a piece of wire, something they had never seen before, into a hook and then using it to retrieve food.",
+			"E. Literally hundreds of such reports have accumulated in back copies of scientific journals. Recently, a team of biologists from McGill University in Canada collated them and compared the frequency and size of innovations with the size of the birds’ forebrain (the brain-area responsible for higher-order information processing) relative to the hindbrain. The team uncovered a clear relationship: birds with relatively large forebrains are able to invent fresh solutions to ecological challenges, and to exploit the discoveries and inventions of others, more often than birds with relatively small forebrains.",
+			"F. Intelligence in birds may also arise as a result of selection to overcome the dynamic challenges of communal living. Since this involves competition between group members, to be successful, a social animal may need to be able to reflect on its own intentions, as well as those of others. The consequence of being part of a community may be the evolution of a distinctly ’political’ brain.",
+			"G. What better way to exercise a political brain than to be deceitful! Perhaps the best example of deception among birds comes from the white-winged choughs. Choughs are cooperative breeders -that is, they form a communal group consisting of one breeding-pair and up to 15 non-breeding ’helpers’. However, because young choughs have so little enthusiasm for foraging, or gathering food, they are often too hungry to help. And because it is socially unacceptable to be part of a group and provide little help, young choughs often act deceptively. For example, when an adult is watching, a young chough will place some food in the mouth of a hungry chick but it does not release the food. Instead, it waits until the adult departs and then eats it. A chough can also help the group by preening the chicks. Interestingly, it is more likely to preen the chicks if another bird can see it do so. A chough that has been sitting totally still on the nest while the rest of the group is foraging out of sight will comically spring up and frantically start to preen the chicks as soon as some of its group members come into view. It is likely that these young choughs are only motivated to help when others are watching because they are concerned about their social status. Choughs need other choughs to like them as they cannot breed without them."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-7",
+			"type": "MATCHING_HEADINGS",
+			"instructions": "Reading Passage 2 has seven paragraphs, A–G.\nChoose the correct heading for each paragraph from the list of headings below.",
+			"options": [
+				{
+					"label": "i",
+					"text": "The theory linking capacity for tool use in birds and survival"
+				},
+				{
+					"label": "ii",
+					"text": "The influence of humans on tool use"
+				},
+				{
+					"label": "iii",
+					"text": "The theory linking cognitive ability and living in a society"
+				},
+				{
+					"label": "iv",
+					"text": "Reviewing long-held beliefs"
+				},
+				{
+					"label": "v",
+					"text": "Intelligence helps birds to remember"
+				},
+				{
+					"label": "vi",
+					"text": "How some birds trick each other"
+				},
+				{
+					"label": "vii",
+					"text": "Physiological evidence of birds' intelligence"
+				},
+				{
+					"label": "viii",
+					"text": "Several examples of birds who use tools"
+				},
+				{
+					"label": "ix",
+					"text": "One species' multiple tool-using techniques"
+				}
+			],
+			"questions": [
+				{
+					"number": 1,
+					"text": "Paragraph A",
+					"answer": "iv",
+					"explanation": "Bước 1: Đọc và hiểu đoạn A:\nTrong nhiều thế kỷ, các học giả cho rằng con người là sinh vật thông minh duy nhất. Các đặc điểm như ngôn ngữ, sử dụng công cụ... được coi là độc quyền của con người. Tuy nhiên, nghiên cứu mới về động vật, đặc biệt là chim, đã đặt câu hỏi về tính độc đáo này, buộc chúng ta phải xem xét lại ý kiến này.\n\nBước 2: Tóm tắt nội dung chính của đoạn A:\nĐoạn A có nội dung chính là \"Việc xem xét lại các quan điểm cũ cho rằng trí thông minh là độc quyền của con người\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề iv \"Reviewing long-held beliefs\" (Xem xét lại những niềm tin đã có từ lâu).\n\nBước 4: Đáp án: iv",
+					"quotes": [
+						"For centuries, many scholars maintained that humans were the only intelligent organism on Earth. Many traits were considered to be exclusively human examples of acumen for example, language, tool use, deception, awareness of self and others. However, exciting new research on a number of animals, particularly birds, has called into question the uniqueness of these traits, forcing us to reconsider this opinion. In 1964, people were amazed when naturalist Jane Goodall first discovered chimpanzees making and using tools. But ornithologists, people who study birds, were not overly surprised. Almost 20 years earlier, a renowned ornithologist had shown that tool use was commonplace in populations of woodpecker finches residing on the Galápagos Islands. These tiny birds routinely used twigs to extract grubs from under bark."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Paragraph B",
+					"answer": "viii",
+					"explanation": "Bước 1: Đọc và hiểu đoạn B:\nDanh mục động vật sử dụng công cụ đã tăng lên. Liệt kê các ví dụ: loài chim Úc, quạ cánh trắng (dùng đá làm búa), diều hâu đen (dùng mồi bắt cá, dùng lửa).\n\nBước 2: Tóm tắt nội dung chính của đoạn B:\nĐoạn B có nội dung chính là \"Đưa ra nhiều ví dụ cụ thể về các loài chim khác nhau sử dụng công cụ\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề viii \"Several examples of birds who use tools\" (Một vài ví dụ về các loài chim sử dụng công cụ).\n\nBước 4: Đáp án: viii",
+					"quotes": [
+						"Since then, the catalogue of tool-using animals has grown. At least three Australian bird species make tools similar to those of the woodpecker finch, and when white-winged choughs come across shellfish they have been known to use rocks as hammers to crack open the recalcitrant shells. Other birds show a more sophisticated level of insight. For example, black kites have been reported dropping bait into lakes to bring fish to the surface of the water, thereby making them easier to catch. A kite may also pick up a smouldering stick from an area recently burned by a bushfire and drop the stick on a patch of unburned grass. The bird then feasts on the small animals that flee from the subsequent fire."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Paragraph C",
+					"answer": "i",
+					"explanation": "Bước 1: Đọc và hiểu đoạn C:\nHầu hết hành vi dùng công cụ là để kiếm thức ăn. Giải thích dựa trên sự cần thiết (\"cái khó ló cái khôn\"). Não bộ tốn năng lượng nên trí thông minh chỉ phát triển khi cần vượt qua thử thách môi trường (ví dụ chim săn mồi vs vịt).\n\nBước 2: Tóm tắt nội dung chính của đoạn C:\nĐoạn C có nội dung chính là \"Lý thuyết giải thích tại sao khả năng dùng công cụ phát triển để phục vụ sự sinh tồn/kiếm ăn trong môi trường khó khăn\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề i \"The theory linking capacity for tool use in birds and survival\" (Lý thuyết liên kết khả năng sử dụng công cụ ở chim và sự sinh tồn).\n\nBước 4: Đáp án: i",
+					"quotes": [
+						"C. Most tool-using behaviours are a means of extracting food, which may provide a clue as to how the mental abilities needed for tool use evolved. The predominant explanation is based on the proverb that ’necessity is the mother of invention’. Essentially, brain tissue is energetically expensive, so animals should have evolved only the necessary intellectual capabilities required to overcome the challenges they face in their environment. Consider a hypothetical duck grazing on a seemingly endless supply of grass. Being particularly intelligent will not help the duck eat more grass. In contrast, other species, such as birds of prey, live in a more challenging environment, where food may be distributed erratically, hidden from view or highly mobile. The food itself may be quite intelligent. So, if there are not enough resources to feed all individuals, then only the smartest in each generation will live and reproduce."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Paragraph D",
+					"answer": "ix",
+					"explanation": "Bước 1: Đọc và hiểu đoạn D:\nQuạ New Caledonian có nhiều công cụ khác nhau: móc, cào răng cưa, que thăm dò. Chúng mang theo công cụ yêu thích và cất giữ để dùng sau. Chúng cũng có khả năng giải quyết vấn đề (uốn cong dây kẽm).\n\nBước 2: Tóm tắt nội dung chính của đoạn D:\nĐoạn D có nội dung chính là \"Tập trung vào một loài cụ thể (quạ New Caledonian) và các kỹ thuật sử dụng nhiều loại công cụ khác nhau của chúng\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề ix \"One species' multiple tool-using techniques\" (Các kỹ thuật sử dụng công cụ đa dạng của một loài).\n\nBước 4: Đáp án: ix",
+					"quotes": [
+						"D. New Caledonian crows boast many different tools in their tool kit. They use a hooked tool made by removing all but one of the side branches from a twig. They fashion serrated rakes (using their beaks as scissors) from stiff, leathery pandanus leaves. They also make probes by modifying their own moulted feathers. Each tool is used in slightly different ways to pull grubs from deep within tree trunks."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Paragraph E",
+					"answer": "vii",
+					"explanation": "Bước 1: Đọc và hiểu đoạn E:\nCác báo cáo khoa học so sánh sự đổi mới với kích thước não trước (forebrain) so với não sau (hindbrain). Kết quả cho thấy mối quan hệ rõ ràng: chim có não trước lớn hơn thì có khả năng sáng tạo giải pháp tốt hơn.\n\nBước 2: Tóm tắt nội dung chính của đoạn E:\nĐoạn E có nội dung chính là \"Bằng chứng sinh lý học (kích thước não) liên quan đến trí thông minh của loài chim\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề vii \"Physiological evidence of birds' intelligence\" (Bằng chứng sinh lý học về trí thông minh của loài chim).\n\nBước 4: Đáp án: vii",
+					"quotes": [
+						"E. Literally hundreds of such reports have accumulated in back copies of scientific journals. Recently, a team of biologists from McGill University in Canada collated them and compared the frequency and size of innovations with the size of the birds’ forebrain (the brain-area responsible for higher-order information processing) relative to the hindbrain. The team uncovered a clear relationship: birds with relatively large forebrains are able to invent fresh solutions to ecological challenges, and to exploit the discoveries and inventions of others, more often than birds with relatively small forebrains."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Paragraph F",
+					"answer": "iii",
+					"explanation": "Bước 1: Đọc và hiểu đoạn F:\nTrí thông minh cũng có thể nảy sinh từ việc sống chung (communal living). Điều này liên quan đến cạnh tranh giữa các thành viên, cần suy ngẫm về ý định của mình và người khác => bộ não \"chính trị\".\n\nBước 2: Tóm tắt nội dung chính của đoạn F:\nĐoạn F có nội dung chính là \"Lý thuyết liên kết giữa khả năng nhận thức và việc sống trong một xã hội/cộng đồng\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề iii \"The theory linking cognitive ability and living in a society\" (Lý thuyết liên kết khả năng nhận thức và việc sống trong một xã hội).\nBước 4: Đáp án: iii",
+					"quotes": [
+						"F. Intelligence in birds may also arise as a result of selection to overcome the dynamic challenges of communal living. Since this involves competition between group members, to be successful, a social animal may need to be able to reflect on its own intentions, as well as those of others. The consequence of being part of a community may be the evolution of a distinctly ’political’ brain."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Paragraph G",
+					"answer": "vi",
+					"explanation": "Bước 1: Đọc và hiểu đoạn G:\nCách tốt nhất để rèn luyện bộ não chính trị là lừa dối. Ví dụ về quạ cánh trắng (white-winged choughs): chim non giả vờ cho chim con ăn nhưng lại tự ăn khi chim lớn đi khuất, hoặc giả vờ chải lông khi có chim khác nhìn thấy để giữ địa vị xã hội.\n\nBước 2: Tóm tắt nội dung chính của đoạn G:\nĐoạn G có nội dung chính là \"Mô tả cách một số loài chim lừa dối lẫn nhau để đạt lợi ích xã hội\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề vi \"How some birds trick each other\" (Cách một số loài chim lừa dối lẫn nhau).\n\nBước 4: Đáp án: vi"
+				}
+			]
+		},
+		{
+			"range": "8-13",
+			"type": "MATCHING_NAMES",
+			"instructions": "Match each of the following characteristics with the bird from the list of birds below.",
+			"options": [
+				{
+					"label": "A",
+					"text": "white-winged choughs"
+				},
+				{
+					"label": "B",
+					"text": "black kites"
+				},
+				{
+					"label": "C",
+					"text": "New Caledonian crows"
+				}
+			],
+			"body": "keeping tools that they like to use ____ (8)\ndrawing out their prey by frightening it ____ (9)\nthe use of tools to remove the outer covering from food ____ (10)\nusing food to attract their prey ____ (11)\nthe use of unfamiliar materials to make tools ____ (12)\nengaging in certain activities for the benefit of observers ____ (13)",
+			"body_html": "<p>keeping tools that they like to use [8]</p><p>drawing out their prey by frightening it [9]</p><p>the use of tools to remove the outer covering from food [10]</p><p>using food to attract their prey [11]</p><p>the use of unfamiliar materials to make tools [12]</p><p>engaging in certain activities for the benefit of observers [13]</p>",
+			"questions": [
+				{
+					"number": 8,
+					"text": "keeping tools that they like to use",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nGiữ lại những công cụ mà chúng thích sử dụng.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nkeeping tools ~ carry their favourite tool / store their tools\nlike to use ~ favourite tool\n\nBước 3: So sánh và đối chiếu:\nĐoạn D chỉ rõ về New Caledonian crows: \"Những con quạ mang theo công cụ yêu thích của chúng từ nơi kiếm ăn này sang nơi khác. Chúng cũng cất giữ công cụ của mình để tái sử dụng sau này\" (The crows carry their favourite tool... also store their tools for later re-use).\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"The crows carry their favourite tool from one foraging site to the next. They also store their tools for later re-use in a secure place on their perch."
+					]
+				},
+				{
+					"number": 9,
+					"text": "drawing out their prey by frightening it",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nLùa con mồi ra bằng cách làm nó sợ hãi.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ndrawing out ~ flee (chạy trốn ra)\nfrightening it ~ bushfire / fire (lửa làm sợ)\n\nBước 3: So sánh và đối chiếu:\nĐoạn B chỉ rõ về black kites: \"Một con diều hâu có thể nhặt một que củi đang cháy... và thả xuống đám cỏ chưa cháy... Chim sau đó ăn những con vật nhỏ bỏ chạy khỏi đám cháy\" (feasts on the small animals that flee from the subsequent fire).\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"A kite may also pick up a smouldering stick from an area recently burned by a bushfire and drop the stick on a patch of unburned grass. The bird then feasts on the small animals that flee from the subsequent fire."
+					]
+				},
+				{
+					"number": 10,
+					"text": "the use of tools to remove the outer covering from food",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nViệc sử dụng công cụ để loại bỏ lớp vỏ bên ngoài của thức ăn.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nuse of tools ~ use rocks as hammers\nremove outer covering ~ crack open the recalcitrant shells (đập vỡ vỏ cứng)\n\nBước 3: So sánh và đối chiếu:\nĐoạn B chỉ rõ về white-winged choughs: \"...khi quạ cánh trắng gặp động vật có vỏ, chúng được biết đến là sử dụng đá làm búa để đập vỡ những chiếc vỏ cứng đầu\" (crack open the recalcitrant shells).\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"At least three Australian bird species make tools similar to those of the woodpecker finch, and when white-winged choughs come across shellfish they have been known to use rocks as hammers to crack open the recalcitrant shells."
+					]
+				},
+				{
+					"number": 11,
+					"text": "using food to attract their prey",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSử dụng thức ăn để thu hút con mồi.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nusing food ~ dropping bait (thả mồi)\nattract their prey ~ bring fish to the surface (dụ cá lên mặt nước)\n\nBước 3: So sánh và đối chiếu:\nĐoạn B chỉ rõ về black kites: \"...diều hâu đen đã được báo cáo là thả mồi xuống hồ để dụ cá lên mặt nước, nhờ đó dễ bắt hơn\" (dropping bait into lakes to bring fish to the surface).\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"For example, black kites have been reported dropping bait into lakes to bring fish to the surface of the water, thereby making them easier to catch."
+					]
+				},
+				{
+					"number": 12,
+					"text": "the use of unfamiliar materials to make tools",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nViệc sử dụng các vật liệu lạ/không quen thuộc để làm công cụ.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nunfamiliar materials ~ something they had never seen before (thứ chúng chưa từng thấy bao giờ) / piece of wire (dây kẽm - vật liệu nhân tạo)\n\nBước 3: So sánh và đối chiếu:\nĐoạn D chỉ rõ về New Caledonian crows: \"Gần đây, quạ New Caledonian được quan sát thấy đang uốn một mảnh dây kẽm, thứ mà chúng chưa từng thấy bao giờ, thành một cái móc\" (moulding a piece of wire, something they had never seen before).\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"Recently, New Caledonian crows were observed moulding a piece of wire, something they had never seen before, into a hook and then using it to retrieve food."
+					]
+				},
+				{
+					"number": 13,
+					"text": "engaging in certain activities for the benefit of observers",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTham gia vào các hoạt động nhất định vì lợi ích của người quan sát (làm màu/diễn cho người khác xem).\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nbenefit of observers ~ if another bird can see it do so / when others are watching\nengaging in activities ~ preen the chicks (chải lông cho chim con)\n\nBước 3: So sánh và đối chiếu:\nĐoạn G chỉ rõ về white-winged choughs: \"...nó có nhiều khả năng chải lông cho chim con hơn nếu một con chim khác có thể nhìn thấy nó làm vậy... có khả năng những con quạ non này chỉ có động lực giúp đỡ khi những con khác đang quan sát\" (if another bird can see it do so... when others are watching).\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"Interestingly, it is more likely to preen the chicks if another bird can see it do so. A chough that has been sitting totally still on the nest while the rest of the group is foraging out of sight will comically spring up and frantically start to preen the chicks as soon as some of its group members come into view. It is likely that these young choughs are only motivated to help when others are watching because they are concerned about their social status."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

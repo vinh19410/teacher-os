@@ -1,0 +1,214 @@
+{
+	"id": "f142b7d7-aa58-4223-8f64-ac954fe570ca",
+	"url": "https://stepielts.com/student/reading/f142b7d7-aa58-4223-8f64-ac954fe570ca?mode=practice",
+	"title": "Delivering The Goods",
+	"source": "Other sources",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Delivering The Goods",
+		"paragraphs": [
+			"A. International trade is growing at a startling pace. While the global economy has been expanding at a bit over 3% a year, the volume of trade has been rising at a compound annual rate of about twice that. Foreign products, from meat to machinery, play a more important role in almost every economy in the world, and foreign markets now tempt businesses that never much worried about sales beyond their nation’s borders.",
+			"B. What lies behind this explosion in international commerce? The general worldwide decline in trade barriers, such as customs duties and import quotas, is surely one explanation. The economic opening of countries that have traditionally been minor players is another. But one force behind the import-export boom has passed all but unnoticed: the rapidly falling cost of getting goods to market. Theoretically, in the world of trade, shipping costs do not matter. Goods, once they have been made, are assumed to move instantly and at no cost from place to place. The real world, however, is full of frictions. Cheap labour may make Chinese clothing competitive in America, but if delays in shipment lie up working capital and cause winter coats to arrive in spring, trade may lose its advantages.",
+			"C. At the turn of the 20th century, agriculture and manufacturing were the two most important sectors almost everywhere, accounting for about 70% of total output in Germany, Italy and France, and 40-50% in America, Britain and Japan. International commerce was therefore dominated by raw materials, such as wheat, wood and iron ore, or processed commodities, such as meat and steel. But these sorts of products are heavy and bulky and the cost of transporting them relatively high.",
+			"D. Countries still trade disproportionately with their geographic neighbours. Over time, however, world output has shifted into goods whose worth is unrelated to their size and weight. Today, it is finished manufactured products that dominate the flow of trade, and, thanks to technological advances such as lightweight components, manufactured goods themselves have tended to become lighter and less bulky. As a result, less transportation is required for every dollar’s worth of imports or exports.",
+			"E. To see how this influences trade, consider the business of making disk drives for computers. Most of the world’s disk-drive manufacturing is concentrated in South-east Asia. This is possible only because disk drives, while valuable, are small and light and so cost little to ship. Computer manufacturers in Japan or Texas will not face hugely bigger freight bills if they import drives from Singapore rather than purchasing them on the domestic market. Distance therefore poses no obstacle to the globalisation of the disk-drive industry.",
+			"F. This is even more true of the fast-growing information industries. Films and compact discs cost little to transport, even by aeroplane. Computer software can be ’exported’ without ever loading it onto a ship, simply by transmitting it over telephone lines from one country to another, so freight rates and cargo-handling schedules become insignificant factors in deciding where to make the product. Businesses can locate based on other considerations, such as the availability of labour, while worrying less about the cost of delivering their output.",
+			"G. In many countries deregulation has helped to drive the process along. But, behind the scenes, a series of technological innovations known broadly as containerisation and inter-modal transportation has led to swift productivity improvements in cargo-handling. Forty years ago, the process of exporting or importing involved a great many stages of handling, which risked portions of the shipment being damaged or stolen along the way. The invention of the container crane made it possible to load and unload containers without capsizing the ship and the adoption of standard container sizes allowed almost any box to be transported on any ship.\nBy 1967, dual-purpose ships, carrying loose cargo in the hold and containers on the deck, were giving way to all-container vessels that moved thousands of boxes at a time.",
+			"H. The shipping container transformed ocean shipping into a highly efficient, intensely competitive business. But getting the cargo to and from the dock was a different story. National governments, by and large, kept a much firmer hand on truck and railroad tariffs than on charges for ocean freight. This started changing, however, in the mid-1970s, when America began to deregulate its transportation industry. First airlines, then road haulers and railways, were freed from restrictions on what they could carry, where they could haul it and what price they could charge. Big productivity gains resulted. Between 1985 and 1996, for example, America’s freight railways dramatically reduced their employment, trackage, and their fleets of locomotives - while increasing the amount of cargo they hauled. Europe’s railways have also shown marked, albeit smaller, productivity improvements.",
+			"I. In America the period of huge productivity gains in transportation may be almost over, but in most countries the process still has far to go. State ownership of railways and airlines, regulation of freight rates and toleration of anti-competitive practices, such as cargo-handling monopolies, all keep the cost of shipping unnecessarily high and deter international trade. Bringing these barriers down would help the world’s economies grow even closer."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Which paragraph contains the following information?",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H", "I"],
+			"questions": [
+				{
+					"number": 1,
+					"text": "the effects of the introduction of electronic delivery",
+					"answer": "F",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐoạn nào chứa thông tin về ảnh hưởng của việc giới thiệu hình thức giao hàng điện tử?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• electronic delivery ~ transmitting it over telephone lines\n• effects ~ become insignificant factors in deciding where to make the product\n\nBước 3: So sánh và đối chiếu:\nĐoạn F chỉ rõ: \"Phần mềm máy tính có thể được 'xuất khẩu' mà không cần tải lên tàu, chỉ đơn giản bằng cách truyền tải qua đường dây điện thoại từ quốc gia này sang quốc gia khác, do đó cước vận chuyển và lịch trình xử lý hàng hóa trở thành những yếu tố không đáng kể trong việc quyết định nơi sản xuất sản phẩm.\"\n==> Thông tin này cho thấy đoạn F đã đề cập đến \"ảnh hưởng của việc giới thiệu hình thức giao hàng điện tử\".\n\nBước 4: Đáp án: F",
+					"quotes": [
+						"Computer software can be ’exported’ without ever loading it onto a ship, simply by transmitting it over telephone lines from one country to another, so freight rates and cargo-handling schedules become insignificant factors in deciding where to make the product."
+					]
+				},
+				{
+					"number": 2,
+					"text": "the similar cost involved in transporting a product from abroad or from a local supplier",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐoạn nào chứa thông tin về chi phí tương tự khi vận chuyển sản phẩm từ nước ngoài hoặc từ nhà cung cấp địa phương?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• similar cost ~ not face hugely bigger freight bills\n• transporting a product from abroad ~ import drives from Singapore\n• local supplier ~ purchasing them on the domestic market\n\nBước 3: So sánh và đối chiếu:\nĐoạn E chỉ rõ: \"Các nhà sản xuất máy tính ở Nhật Bản hoặc Texas sẽ không phải đối mặt với hóa đơn vận chuyển lớn hơn nhiều nếu họ nhập ổ đĩa từ Singapore thay vì mua chúng trên thị trường nội địa.\"\n==> Thông tin này cho thấy đoạn E đã đề cập đến \"chi phí tương tự khi vận chuyển sản phẩm từ nước ngoài hoặc từ nhà cung cấp địa phương\".\n\nBước 4: Đáp án: E",
+					"quotes": [
+						"Computer manufacturers in Japan or Texas will not face hugely bigger freight bills if they import drives from Singapore rather than purchasing them on the domestic market. Distance therefore poses no obstacle to the globalisation of the disk-drive industry."
+					]
+				},
+				{
+					"number": 3,
+					"text": "the weakening relationship between the value of goods and the cost of their delivery",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐoạn nào chứa thông tin về mối quan hệ ngày càng yếu đi giữa giá trị hàng hóa và chi phí giao hàng?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• weakening relationship ~ unrelated to their size and weight, less transportation is required for every dollar's worth of imports or exports\n• value of goods ~ worth\n• cost of their delivery ~ transportation is required\n\nBước 3: So sánh và đối chiếu:\nĐoạn D chỉ rõ: \"Theo thời gian, sản lượng thế giới đã chuyển sang các mặt hàng có giá trị không liên quan đến kích thước và trọng lượng của chúng. Kết quả là, cần ít vận chuyển hơn cho mỗi đô la giá trị nhập khẩu hoặc xuất khẩu.\"\n==> Thông tin này cho thấy đoạn D đã đề cập đến \"mối quan hệ ngày càng yếu đi giữa giá trị hàng hóa và chi phí giao hàng\".\n\nBước 4: Đáp án: D",
+					"quotes": [
+						"D. Countries still trade disproportionately with their geographic neighbours. Over time, however, world output has shifted into goods whose worth is unrelated to their size and weight. Today, it is finished manufactured products that dominate the flow of trade, and, thanks to technological advances such as lightweight components, manufactured goods themselves have tended to become lighter and less bulky. As a result, less transportation is required for every dollar’s worth of imports or exports."
+					]
+				},
+				{
+					"number": 4,
+					"text": "the rate of industry growth",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐoạn nào chứa thông tin về tốc độ tăng trưởng của ngành?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• rate of industry growth ~ rising at a compound annual rate\n\nBước 3: So sánh và đối chiếu:\nĐoạn A chỉ rõ: \"Thương mại quốc tế đang tăng trưởng với tốc độ đáng kinh ngạc. Trong khi nền kinh tế toàn cầu đã mở rộng hơn 3% mỗi năm, khối lượng thương mại đã tăng với tốc độ kép hàng năm khoảng gấp đôi con số đó.\"\n==> Thông tin này cho thấy đoạn A đã đề cập đến \"tốc độ tăng trưởng của ngành\".\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"While the global economy has been expanding at a bit over 3% a year, the volume of trade has been rising at a compound annual rate of about twice that. Foreign products, from meat to machinery, play a more important role in almost every economy in the world, and foreign markets now tempt businesses that never much worried about sales beyond their nation’s borders."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-9",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 2?\nIn boxes 5-9 on your answer sheet, write\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 5,
+					"text": "International trade is increasing at a greater rate than the world economy",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nThương mại quốc tế đang tăng với tốc độ lớn hơn nền kinh tế thế giới.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• International trade ~ The volume of trade\n• greater rate than ~ about twice that\n• world economy ~ global economy\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Trong khi nền kinh tế toàn cầu đã mở rộng hơn 3% mỗi năm, khối lượng thương mại đã tăng với tốc độ kép hàng năm khoảng gấp đôi con số đó.\"\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"thương mại quốc tế đang tăng với tốc độ lớn hơn nền kinh tế thế giới\" (International trade is increasing at a greater rate than the world economy.).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"While the global economy has been expanding at a bit over 3% a year, the volume of trade has been rising at a compound annual rate of about twice that. Foreign products, from meat to machinery, play a more important role in almost every economy in the world, and foreign markets now tempt businesses that never much worried about sales beyond their nation’s borders."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Cheap labour guarantees effective trade conditions",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nLao động giá rẻ đảm bảo các điều kiện thương mại hiệu quả.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• Cheap labour ~ từ khóa giữ nguyên\n• guarantees effective trade conditions ~ if delays in shipment lie up working capital and cause winter coats to arrive in spring, trade may lose its advantages\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Lao động giá rẻ có thể làm cho quần áo Trung Quốc có tính cạnh tranh ở Mỹ, nhưng nếu việc chậm trễ trong vận chuyển làm đình trệ vốn lưu động và khiến áo khoác mùa đông đến vào mùa xuân, thương mại có thể mất đi lợi thế của nó.\"\n==> Điều này trái ngược với thông tin trong câu hỏi \"lao động giá rẻ đảm bảo các điều kiện thương mại hiệu quả\" (Cheap labour guarantees effective trade conditions).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Cheap labour may make Chinese clothing competitive in America, but if delays in shipment lie up working capital and cause winter coats to arrive in spring, trade may lose its advantages."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Japan imports more meat and steel than France",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhật Bản nhập khẩu thịt và thép nhiều hơn Pháp.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• Japan imports more meat and steel than France ~ từ khóa giữ nguyên (cụ thể so sánh Nhật Bản và Pháp về nhập khẩu thịt và thép).\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"Vào đầu thế kỷ 20, nông nghiệp và sản xuất là hai lĩnh vực quan trọng nhất hầu hết ở mọi nơi, chiếm khoảng 70% tổng sản lượng ở Đức, Ý và Pháp, và 40-50% ở Mỹ, Anh và Nhật Bản. Thương mại quốc tế do đó bị chi phối bởi nguyên liệu thô, như lúa mì, gỗ và quặng sắt, hoặc hàng hóa đã qua chế biến, như thịt và thép.\"\n==> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"Nhật Bản nhập khẩu thịt và thép nhiều hơn Pháp\" (Japan imports more meat and steel than France).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"C. At the turn of the 20th century, agriculture and manufacturing were the two most important sectors almost everywhere, accounting for about 70% of total output in Germany, Italy and France, and 40-50% in America, Britain and Japan. International commerce was therefore dominated by raw materials, such as wheat, wood and iron ore, or processed commodities, such as meat and steel."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Most countries continue to prefer to trade with nearby nations",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nHầu hết các quốc gia tiếp tục ưa chuộng giao dịch với các quốc gia lân cận.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• Most countries ~ Countries\n• continue to prefer to trade with nearby nations ~ still trade disproportionately with their geographic neighbours\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Các quốc gia vẫn giao dịch không cân xứng với các nước láng giềng về địa lý của họ.\"\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"hầu hết các quốc gia tiếp tục ưa chuộng giao dịch với các quốc gia lân cận\" (Most countries continue to prefer to trade with nearby nations).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"D. Countries still trade disproportionately with their geographic neighbours. Over time, however, world output has shifted into goods whose worth is unrelated to their size and weight."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Small computer components are manufactured in Germany",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác bộ phận máy tính nhỏ được sản xuất tại Đức.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• Small computer components ~ disk drives for computers, disk-drive manufacturing\n• manufactured in Germany ~ concentrated in South-east Asia\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"Hầu hết việc sản xuất ổ đĩa máy tính trên thế giới tập trung ở Đông Nam Á.\"\n==> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"các bộ phận máy tính nhỏ được sản xuất tại Đức\" (Small computer components are manufactured in Germany).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Most of the world’s disk-drive manufacturing is concentrated in South-east Asia."
+					]
+				}
+			]
+		},
+		{
+			"range": "10-13",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "",
+			"options": [
+				{
+					"label": "A",
+					"text": "tariffs"
+				},
+				{
+					"label": "B",
+					"text": "employees"
+				},
+				{
+					"label": "C",
+					"text": "fares"
+				},
+				{
+					"label": "D",
+					"text": "components"
+				},
+				{
+					"label": "E",
+					"text": "insurance costs"
+				},
+				{
+					"label": "F",
+					"text": "software"
+				},
+				{
+					"label": "G",
+					"text": "container ships"
+				},
+				{
+					"label": "H",
+					"text": "trade"
+				},
+				{
+					"label": "I",
+					"text": "output"
+				},
+				{
+					"label": "J",
+					"text": "freight"
+				},
+				{
+					"label": "K",
+					"text": "international standards"
+				}
+			],
+			"body": "THE TRANSPORT REVOLUTION\nModern cargo-handling methods have had a significant effect on ____ (10) as the business of moving freight around the world becomes increasingly streamlined. Manufacturers of computers, for instance, are able to import ____ (11) from overseas, rather than having to rely on a local supplier. The introduction of ____ (12) has meant that bulk cargo can be safely and efficiently moved over long distances. While international shipping is now efficient, there is still a need for governments to reduce ____ (13) in order to free up the domestic cargo sector.",
+			"body_html": "<h3><strong>THE TRANSPORT REVOLUTION</strong></h3>\nModern cargo-handling methods have had a significant effect on [10] as the business of moving freight around the world becomes increasingly streamlined. Manufacturers of computers, for instance, are able to import [11] from overseas, rather than having to rely on a local supplier. The introduction of [12] has meant that bulk cargo can be safely and efficiently moved over long distances. While international shipping is now efficient, there is still a need for governments to reduce [13] in order to free up the domestic cargo sector.",
+			"questions": [
+				{
+					"number": 10,
+					"text": "",
+					"answer": "H",
+					"quotes": [
+						"While the global economy has been expanding at a bit over 3% a year, the volume of trade has been rising at a compound annual rate of about twice that. Foreign products, from meat to machinery, play a more important role in almost every economy in the world, and foreign markets now tempt businesses that never much worried about sales beyond their nation’s borders."
+					]
+				},
+				{
+					"number": 11,
+					"text": "",
+					"answer": "D",
+					"quotes": [
+						"Today, it is finished manufactured products that dominate the flow of trade, and, thanks to technological advances such as lightweight components, manufactured goods themselves have tended to become lighter and less bulky."
+					]
+				},
+				{
+					"number": 12,
+					"text": "",
+					"answer": "G",
+					"quotes": [
+						"By 1967, dual-purpose ships, carrying loose cargo in the hold and containers on the deck, were giving way to all-container vessels that moved thousands of boxes at a time."
+					]
+				},
+				{
+					"number": 13,
+					"text": "",
+					"answer": "A",
+					"quotes": [
+						"National governments, by and large, kept a much firmer hand on truck and railroad tariffs than on charges for ocean freight."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -1,0 +1,301 @@
+{
+	"id": "43aa6ca0-afc8-4cb6-b52f-5305add4f2ab",
+	"url": "https://stepielts.com/student/reading/43aa6ca0-afc8-4cb6-b52f-5305add4f2ab?mode=practice",
+	"title": "Living with artificial intelligence",
+	"source": "C18T2",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "14-26",
+	"passage": {
+		"title": "Living with artificial intelligence",
+		"subtitle": "Powerful artificial intelligence (AI) needs to be reliably aligned with human values, but does this mean AI will eventually have to police those values?",
+		"paragraphs": [
+			"This has been the decade of AI, with one astonishing feat after another. A chess-playing AI that can defeat not only all human chess players, but also all previous human-programmed chess machines, after learning the game in just four hours? That’s yesterday’s news, what’s next? True, these prodigious accomplishments are all in so-called narrow AI, where machines perform highly specialised tasks. But many experts believe this restriction is very temporary.\nBy mid-century, we may have artificial general intelligence (AGI) – machines that can achieve human-level performance on the full range of tasks that we ourselves can tackle.",
+			"If so, there’s little reason to think it will stop there. Machines will be free of many of the physical constraints on human intelligence. Our brains run at slow biochemical processing speeds on the power of a light bulb, and their size is restricted by the dimensions of the human birth canal. It is remarkable what they accomplish, given these handicaps. But they may be as far from the physical limits of thought as our eyes are from the incredibly powerful Webb Space Telescope.",
+			"Once machines are better than us at designing even smarter machines, progress towards these limits could accelerate. What would this mean for us? Could we ensure a safe and worthwhile coexistence with such machines? On the plus side, AI is already useful and profitable for many things, and super AI might be expected to be super useful and super profitable. But the more powerful AI becomes, the more important it will be to specify its goals with great care. Folklore is full of tales of people who ask for the wrong thing, with disastrous consequences- King Midas, for example, might have wished that everything he touched turned to gold, but didn’t really intend this to apply to his breakfast.",
+			"So we need to create powerful AI machines that are ‘human-friendly’- that have goals reliably aligned with our own values. One thing that makes this task difficult is that we are far from reliably human-friendly ourselves. We do many terrible things to each other and to many other creatures with whom we share the planet. If superintendent machines don’t do a lot better than us, we’ll be in deep trouble. We’ll have powerful new intelligence amplifying the dark sides of our own fallible natures.",
+			"For safety’s sake, then, we want the machines to be ethically as well as cognitively superhuman. We want them to aim for the moral high ground, not for the troughs in which many of us spend some of our time. Luckily they’ll be smart enough for the job. If there are routes to the moral high ground, they’ll be better than us at finding them, and steering us in the right direction.",
+			"However, there are two big problems with this utopian vision. One is how we get the machines started on the journey, the other is what it would mean to reach this destination. The ‘getting started’ problem is that we need to tell the machines what they’re looking for with sufficient clarity that we can be confident they will find it – whatever ‘it’ actually turns out to be. This won’t be easy, given that we are tribal creatures and conflicted about the ideals ourselves. We often ignore the suffering of strangers, and even contribute to it, at least indirectly. How then, do we point machines in the direction of something better?",
+			"As for the ‘destination’ problem, we might, by putting ourselves in the hands of these moral guides and gatekeepers, be sacrificing our own autonomy – an important part of what makes us human. Machines who are better than us at sticking to the moral high ground may be expected to discourage some of the lapses we presently take for granted. We might lose our freedom to discriminate in favour of our own communities, for example.",
+			"Loss of freedom to behave badly isn’t always a bad thing, of course: denying ourselves the freedom to put children to work in factories, or to smoke in restaurants are signs of progress. But are we ready for ethical silicon police limiting our options? They might be so good at doing it that we won’t notice them; but few of us are likely to welcome such a future.",
+			"These issues might seem far-fetched, but they are to some extent already here. AI already has some input into how resources are used in our National Health Service (NHS) here in the UK, for example. If it was given a greater role, it might do so much more efficiently than humans can manage, and act in the interests of taxpayers and those who use the health system. However, we’d be depriving some humans (e. g. senior doctors) of the control they presently enjoy. Since we’d want to ensure that people are treated equally and that policies are fair, the goals of AI would need to be specified correctly.",
+			"We have a new powerful technology to deal with- itself, literally, a new way of thinking. For our own safety, we need to point these new thinkers in the right direction, and get them to act well for us. It is not yet clear whether this is possible, but if it is, it will require a cooperative spirit, and a willingness to set aside self-interest.",
+			"Both general intelligence and moral reasoning are often thought to be uniquely human capacities. But safety seems to require that we think of them as a package: if we are to give general intelligence to machines, we’ll need to give them moral authority, too. And where exactly would that leave human beings? All the more reason to think about the destination now, and to be careful about what we wish for."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "14-19",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct answer.",
+			"questions": [
+				{
+					"number": 14,
+					"text": "What point does the writer make about AI in the first paragraph?",
+					"options": [
+						{
+							"label": "A",
+							"text": "It is difficult to predict how quickly AI will progress."
+						},
+						{
+							"label": "B",
+							"text": "Much can be learned about the use of AI in chess machines."
+						},
+						{
+							"label": "C",
+							"text": "The future is unlikely to see limitations on the capabilities of AI."
+						},
+						{
+							"label": "D",
+							"text": "Experts disagree on which specialised tasks AI will be able to perform."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"This has been the decade of AI, with one astonishing feat after another."
+					]
+				},
+				{
+					"number": 15,
+					"text": "What is the writer doing in the second paragraph?",
+					"options": [
+						{
+							"label": "A",
+							"text": "explaining why machines will be able to outperform humans"
+						},
+						{
+							"label": "B",
+							"text": "describing the characteristics that humans and machines share"
+						},
+						{
+							"label": "C",
+							"text": "giving information about the development of machine intelligence"
+						},
+						{
+							"label": "D",
+							"text": "indicating which aspects of humans are the most advanced"
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"If so, there’s little reason to think it will stop there. Machines will be free of many of the physical constraints on human intelligence."
+					]
+				},
+				{
+					"number": 16,
+					"text": "Why does the writer mention the story of King Midas?",
+					"options": [
+						{
+							"label": "A",
+							"text": "to compare different visions of progress"
+						},
+						{
+							"label": "B",
+							"text": "to illustrate that poorly defined objectives can go wrong"
+						},
+						{
+							"label": "C",
+							"text": "to emphasise the need for cooperation"
+						},
+						{
+							"label": "D",
+							"text": "to point out the financial advantages of a course of action"
+						}
+					],
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nTác giả đề cập đến câu chuyện về Vua Midas (King Midas) để làm gì?\n\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Trong dân gian có nhiều chuyện kể về những kẻ vì có những điều ước sai lầm mà rước họa vào thân. Như chuyện vua Midas chẳng hạn - ông ước gì sờ vào đâu cũng thành vàng, nhưng mà ông đâu có ngờ điều đó lại áp dụng cho cả bữa ăn sáng của ông đâu\".\n=> Thông tin được in đậm đồng nghĩa với câu B (để minh họa rằng việc đặt ra mục tiêu không rõ ràng có thể gây ra hậu quả).\n\nBước 3: Đáp án B\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A -> Câu chuyện không được sử dụng để so sánh \"các quan điểm khác nhau về sự tiến bộ\".\nĐáp án C -> Câu chuyện không nhấn mạnh vào \"nhu cầu chung tay hợp sức\"\nĐáp án D -> Câu chuyện không chỉ ra \"lợi ích tài chính của một hành động nào đó\".",
+					"quotes": [
+						"On the plus side, AI is already useful and profitable for many things, and super AI might be expected to be super useful and super profitable. But the more powerful AI becomes, the more important it will be to specify its goals with great care. Folklore is full of tales of people who ask for the wrong thing, with disastrous consequences- King Midas, for example, might have wished that everything he touched turned to gold, but didn’t really intend this to apply to his breakfast."
+					]
+				},
+				{
+					"number": 17,
+					"text": "What challenge does the writer refer to in the fourth paragraph?",
+					"options": [
+						{
+							"label": "A",
+							"text": "encouraging humans to behave in a more principled way"
+						},
+						{
+							"label": "B",
+							"text": "deciding which values we want AI to share with us"
+						},
+						{
+							"label": "C",
+							"text": "creating a better world for all creatures on the planet"
+						},
+						{
+							"label": "D",
+							"text": "ensuring AI is more human-friendly than we are ourselves"
+						}
+					],
+					"answer": "D",
+					"quotes": [
+						"So we need to create powerful AI machines that are ‘human-friendly’- that have goals reliably aligned with our own values. One thing that makes this task difficult is that we are far from reliably human-friendly ourselves. We do many terrible things to each other and to many other creatures with whom we share the planet. If superintendent machines don’t do a lot better than us, we’ll be in deep trouble. We’ll have powerful new intelligence amplifying the dark sides of our own fallible natures."
+					]
+				},
+				{
+					"number": 18,
+					"text": "What does the writer suggest about the future of AI in the fifth paragraph?",
+					"options": [
+						{
+							"label": "A",
+							"text": "The safety of machines will become a key issue."
+						},
+						{
+							"label": "B",
+							"text": "It is hard to know what impact machines will have on the world."
+						},
+						{
+							"label": "C",
+							"text": "Machines will be superior to humans in certain respects."
+						},
+						{
+							"label": "D",
+							"text": "Many humans will oppose machines having a wider role."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"For safety’s sake, then, we want the machines to be ethically as well as cognitively superhuman. We want them to aim for the moral high ground, not for the troughs in which many of us spend some of our time. Luckily they’ll be smart enough for the job. If there are routes to the moral high ground, they’ll be better than us at finding them, and steering us in the right direction."
+					]
+				},
+				{
+					"number": 19,
+					"text": "Which of the following best summarises the writer’s argument in the sixth paragraph?",
+					"options": [
+						{
+							"label": "A",
+							"text": "More intelligent machines will result in greater abuses of power."
+						},
+						{
+							"label": "B",
+							"text": "Machine learning will share very few features with human learning."
+						},
+						{
+							"label": "C",
+							"text": "There are a limited number of people with the knowledge to program machines."
+						},
+						{
+							"label": "D",
+							"text": "Human shortcomings will make creating the machines we need more difficult."
+						}
+					],
+					"answer": "D",
+					"quotes": [
+						"This won’t be easy, given that we are tribal creatures and conflicted about the ideals ourselves. We often ignore the suffering of strangers, and even contribute to it, at least indirectly. How then, do we point machines in the direction of something better?"
+					]
+				}
+			]
+		},
+		{
+			"range": "20-23",
+			"type": "YES/NO/NOT GIVEN",
+			"instructions": "Do the following statements agree with the claims of the writer in Reading Passage 2?\nIn boxes 20-23 on your answer sheet, write\nYES if the statement agrees with the claims of the writer\nNO if the statement contradicts the claims of the writer\nNOT GIVEN if it is impossible to say what the writer thinks about this",
+			"questions": [
+				{
+					"number": 20,
+					"text": "Machines with the ability to make moral decisions may prevent us from promoting the interests of our communities.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững loại máy móc mà có khả năng đưa ra quyết định theo quy chuẩn đạo đức có thể sẽ cản trở chúng ta trong việc đề cao lợi ích của cộng đồng mình.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nmachines that are 'human-friendly' ~ machines with the ability to make moral decisions\nlose our freedom to discriminate in favour of our own communities ~ prevent us from promoting the interests of our communities\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Con người có thể sẽ không còn được tự do ưu ái hay thiên vị cộng đồng của mình nữa\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Những loại máy móc mà có khả năng đưa ra quyết định theo quy chuẩn đạo đức có thể sẽ cản trở chúng ta trong việc đề cao lợi ích của cộng đồng mình\" (Machines with the ability to make moral decisions may prevent us from promoting the interests of our communities).\n\nBước 4: Đáp án: YES",
+					"quotes": [
+						"Machines who are better than us at sticking to the moral high ground may be expected to discourage some of the lapses we presently take for granted. We might lose our freedom to discriminate in favour of our own communities, for example."
+					]
+				},
+				{
+					"number": 21,
+					"text": "Silicon police would need to exist in large numbers in order to be effective.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCảnh sát silicon (silicon police) sẽ cần tồn tại với số lượng lớn để hoạt động hiệu quả.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nethical silicon police ~ Silicon police\nlose our freedom to discriminate in favour of our own communities ~ prevent us from promoting the interests of our communities\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"cảnh sát silicon có đạo đức có thể giới hạn các lựa chọn của chúng ta\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"Cảnh sát silicon (silicon police) sẽ cần số lượng lớn để hoạt động hiệu quả\" (need to exist in large numbers in order to be effective) trong câu hỏi.\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Loss of freedom to behave badly isn’t always a bad thing, of course: denying ourselves the freedom to put children to work in factories, or to smoke in restaurants are signs of progress. But are we ready for ethical silicon police limiting our options?"
+					]
+				},
+				{
+					"number": 22,
+					"text": "Many people are comfortable with the prospect of their independence being restricted by machines.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NO",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhiều người cảm thấy ổn với việc máy móc sẽ hạn chế quyền tự do của họ.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nfew of us are likely to welcome ~ people are comfortable\nsuch a future ~ independence being restricted by machines\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Mất một số quyền tự do không phải lúc nào cũng xấu. Ví dụ, chúng ta không được phép bắt trẻ em làm việc trong nhà máy hay hút thuốc trong nhà hàng nữa. Đó là điều tốt. Nhưng nếu cảnh sát silicon kiểm soát chúng ta thì sao? Chúng có thể ảnh hưởng đến (quyết định và hành động của) chúng ta mà ta không hề hay biết. Tuy nhiên, hầu hết chúng ta có lẽ sẽ không thích một tương lai như vậy\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"Nhiều người cảm thấy ổn với việc máy móc sẽ hạn chế quyền tự do của họ\" (Many people are comfortable with the prospect of their independence being restricted by machines).\n\nBước 4: Đáp án: NO",
+					"quotes": [
+						"They might be so good at doing it that we won’t notice them; but few of us are likely to welcome such a future."
+					]
+				},
+				{
+					"number": 23,
+					"text": "If we want to ensure that machines act in our best interests, we all need to work together.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNếu muốn máy móc hoạt động vì lợi ích của con người, chúng ta cần phải chung tay hợp tác với nhau.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\npoint these new thinkers in the right direction, and get them to act well for us ~ ensure that machines act in our best interests\nrequire a cooperative spirit ~ we all need to work together\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Để bảo vệ chính mình, ta cần hướng những \"bộ não\" mới này đi đúng hướng và khiến chúng hành động có lợi cho ta. Liệu điều này có thể làm được hay không vẫn còn là một dấu hỏi lớn, nhưng nếu muốn làm được, chúng ta sẽ cần một tinh thần chung tay chung sức và sẵn sàng đặt lợi ích chung lên lợi ích cá nhân\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Nếu muốn máy móc hoạt động vì lợi ích của con người, chúng ta cần phải chung tay hợp tác với nhau\"\n(To ensure that machines act in our best interests, we all need to work together)\n\nBước 4: Đáp án: YES",
+					"quotes": [
+						"AI already has some input into how resources are used in our National Health Service (NHS) here in the UK, for example. If it was given a greater role, it might do so much more efficiently than humans can manage, and act in the interests of taxpayers and those who use the health system.",
+						"For our own safety, we need to point these new thinkers in the right direction, and get them to act well for us. It is not yet clear whether this is possible, but if it is, it will require a cooperative spirit, and a willingness to set aside self-interest."
+					]
+				}
+			]
+		},
+		{
+			"range": "24-26",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary using the list of phrases, A-F, below.\nWrite the correct letter, A-F, in boxes 24-26 on your answer sheet.",
+			"options": [
+				{
+					"label": "A",
+					"text": "medical practitioners"
+				},
+				{
+					"label": "B",
+					"text": "specialised tasks"
+				},
+				{
+					"label": "C",
+					"text": "available resources"
+				},
+				{
+					"label": "D",
+					"text": "reduced illness"
+				},
+				{
+					"label": "E",
+					"text": "professional authority"
+				},
+				{
+					"label": "F",
+					"text": "technology experts"
+				}
+			],
+			"body": "Using AI in the UK health system\nAI currently has a limited role in the way ____ (24). are allocated in the health service. The positive aspect of AI having a bigger role is that it would be more efficient and lead to patient benefits. However, such a change would result, for example, in certain ____ (25) not having their current level of ____ (26) . It is therefore important that AI goals are appropriate so that discriminatory practices could be avoided.",
+			"body_html": "<h3><strong>Using AI in the UK health system</strong></h3><p>AI currently has a limited role in the way [24]. are allocated in the health service. The positive aspect of AI having a bigger role is that it would be more efficient and lead to patient benefits. However, such a change would result, for example, in certain [25] not having their current level of [26] . It is therefore important that AI goals are appropriate so that discriminatory practices could be avoided.</p>",
+			"questions": [
+				{
+					"number": 24,
+					"text": "",
+					"answer": "C",
+					"quotes": [
+						"AI already has some input into how resources are used in our National Health Service (NHS) here in the UK, for example. If it was given a greater role, it might do so much more efficiently than humans can manage, and act in the interests of taxpayers and those who use the health system."
+					]
+				},
+				{
+					"number": 25,
+					"text": "",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nTuy nhiên, một sự thay đổi như vậy sẽ dẫn đến việc, ví dụ, một số ________ không còn mức độ thẩm quyền chuyên môn hiện tại của họ.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: certain + NOUN (NOUN được bổ nghĩa bởi Adjective 'CERTAIN')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\npresently enjoy ~ current level\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Tuy nhiên, chúng ta sẽ tước đoạt khỏi một số người (ví dụ: các bác sĩ cao cấp) quyền kiểm soát mà họ hiện đang có\" (However, we'd be depriving some humans (e.g. senior doctors) of the control they presently enjoy).\n\nBước 5: Đáp án: A. medical practitioners\nTuy nhiên, một sự thay đổi như vậy sẽ dẫn đến, ví dụ, một số chuyên viên y khoa không còn mức độ thẩm quyền chuyên môn hiện tại của họ. (However, such a change would result, for example, in certain medical practitioners not having their current level of professional authority).",
+					"quotes": [
+						"However, we’d be depriving some humans (e. g. senior doctors) of the control they presently enjoy."
+					]
+				},
+				{
+					"number": 26,
+					"text": "",
+					"answer": "E",
+					"quotes": [
+						"However, we’d be depriving some humans (e. g. senior doctors) of the control they presently enjoy."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

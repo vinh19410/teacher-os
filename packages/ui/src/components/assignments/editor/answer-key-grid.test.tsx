@@ -1008,4 +1008,143 @@ describe("AnswerKeyGrid — bảo vệ bàn phím và trần explanation (#571)"
 		fireEvent.keyDown(row2, { key: "Backspace" });
 		expect(onItemsChange).not.toHaveBeenCalled();
 	});
+
+	it("summary với optionBank > 8 hiển thị chip A–J thay vì input chữ", () => {
+		const bank = Array.from({ length: 10 }, (_, i) => `Word ${i + 1}`);
+		const html = renderGrid({
+			typeId: "summary",
+			skill: "reading",
+			partId: "p2",
+			items: [{ stem: "Summary ____", answer: "J", opts: null, alts: "" }],
+			optionBank: bank,
+			maxBank: 20,
+		});
+		expect(html).toContain('aria-label="Câu 14: A"');
+		expect(html).toContain('aria-label="Câu 14: J"');
+		expect(html).toMatch(/aria-pressed="true"[^>]*>J</);
+		expect(html).not.toContain('aria-label="Đáp án chấm tự động"');
+	});
+
+	it("headings với optionBank 12 mục và maxBank=20 hiển thị chip i–xii", () => {
+		const bank = Array.from({ length: 12 }, (_, i) => `Heading ${i + 1}`);
+		const html = renderGrid({
+			typeId: "headings",
+			skill: "reading",
+			partId: "p2",
+			items: [{ stem: "Para A", answer: "xii", opts: null, alts: "" }],
+			optionBank: bank,
+			maxBank: 20,
+		});
+		expect(html).toContain('aria-label="Câu 14: i"');
+		expect(html).toContain('aria-label="Câu 14: xii"');
+		expect(html).toMatch(/aria-pressed="true"[^>]*>xii</);
+	});
+
+	it("mcq cho phép chuyển 3 ↔ 4 lựa chọn, đồng bộ chip A–C, reset D, không bị Enter cướp nút", () => {
+		const onItemsChange = vi.fn();
+		const onAddQuestion = vi.fn(() => true);
+		const { getByRole, queryByLabelText, queryByRole, rerender } = render(
+			<AnswerKeyGrid
+				typeId="mcq"
+				skill="reading"
+				partId="p1"
+				items={[
+					{
+						stem: "Why?",
+						opts: ["Opt A", "Opt B", "Opt C", "Opt D"],
+						answer: "D",
+						alts: "",
+					},
+				]}
+				showErrors={false}
+				onItemsChange={onItemsChange}
+				onAddQuestion={onAddQuestion}
+			/>,
+		);
+
+		const toggle3 = getByRole("button", { name: "3 lựa chọn" });
+		const toggle4 = getByRole("button", { name: "4 lựa chọn" });
+		expect(toggle4.getAttribute("aria-pressed")).toBe("true");
+		expect(toggle3.getAttribute("aria-pressed")).toBe("false");
+
+		// Enter trên nút chuyển không được gọi onAddQuestion
+		fireEvent.keyDown(toggle3, { key: "Enter" });
+		expect(onAddQuestion).not.toHaveBeenCalled();
+
+		fireEvent.click(toggle3);
+		expect(onItemsChange).toHaveBeenCalledWith([
+			{
+				stem: "Why?",
+				opts: ["Opt A", "Opt B", "Opt C"],
+				answer: "",
+				alts: "",
+			},
+		]);
+
+		// Re-render với 3 lựa chọn: ẩn Lựa chọn D + chip D, phím 'd' không gán D
+		onItemsChange.mockClear();
+		rerender(
+			<AnswerKeyGrid
+				typeId="mcq"
+				skill="reading"
+				partId="p1"
+				items={[
+					{
+						stem: "Why?",
+						opts: ["Opt A", "Opt B", "Opt C"],
+						answer: "B",
+						alts: "",
+					},
+				]}
+				showErrors={false}
+				onItemsChange={onItemsChange}
+				onAddQuestion={onAddQuestion}
+			/>,
+		);
+		expect(
+			getByRole("button", { name: "3 lựa chọn" }).getAttribute("aria-pressed"),
+		).toBe("true");
+		expect(queryByLabelText("Lựa chọn D câu 1")).toBeNull();
+		expect(queryByRole("button", { name: "Câu 1: D" })).toBeNull();
+		const fieldset = getByRole("group", { name: "Câu 1" });
+		fireEvent.keyDown(fieldset, { key: "d" });
+		expect(onItemsChange).not.toHaveBeenCalled();
+
+		// Chuyển lại 4 lựa chọn: giữ 3 text cũ + thêm slot D rỗng
+		fireEvent.click(getByRole("button", { name: "4 lựa chọn" }));
+		expect(onItemsChange).toHaveBeenCalledWith([
+			{
+				stem: "Why?",
+				opts: ["Opt A", "Opt B", "Opt C", ""],
+				answer: "B",
+				alts: "",
+			},
+		]);
+	});
+
+	it("mcq với opts rỗng [] fallback render đủ 4 ô A–D và opts >4 bị giới hạn tối đa 4 ô", () => {
+		const htmlEmpty = renderGrid({
+			typeId: "mcq",
+			skill: "reading",
+			partId: "p1",
+			items: [{ stem: "Q1", opts: [], answer: "", alts: "" }],
+		});
+		expect(htmlEmpty).toContain('aria-label="Lựa chọn A câu 1"');
+		expect(htmlEmpty).toContain('aria-label="Lựa chọn D câu 1"');
+
+		const htmlOver = renderGrid({
+			typeId: "mcq",
+			skill: "reading",
+			partId: "p1",
+			items: [
+				{
+					stem: "Q1",
+					opts: ["1", "2", "3", "4", "5"],
+					answer: "A",
+					alts: "",
+				},
+			],
+		});
+		expect(htmlOver).not.toContain("undefined");
+	});
 });

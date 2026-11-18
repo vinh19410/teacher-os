@@ -1,11 +1,14 @@
 import {
 	buildProvisionalSummary,
 	canReplaySpeakingPrompt,
+	canRetrySpeakingTask,
 	computeSpeechFallbackTimeoutMs,
 	countObjectiveProgress,
 	countReadingQuestions,
 	countWords,
 	createInitialSpeakingSession,
+	MAX_SPEAKING_RETRIES_PER_TASK,
+	matchBandByPct,
 	pickSupportedRecorderMime,
 	resolveReadingRenderState,
 	resolveRestoredAttemptStep,
@@ -14,12 +17,14 @@ import {
 	resolveSpeakingUploadMeta,
 	resolveTaskTimings,
 	resolveWritingPromptState,
+	retrySpeakingCurrentTask,
 	scoreObjectiveTest,
 	startSpeakingTaskReading,
 	stripInlineCefrLabel,
 	transitionSpeakingAfterReading,
 	transitionSpeakingNextTask,
 	transitionSpeakingToAnswer,
+	transitionSpeakingToPaused,
 } from "./grading.js";
 import {
 	buildLeadPayload,
@@ -30,6 +35,7 @@ import {
 	PLACEMENT_STUDY_MODES,
 	validateLeadForm,
 } from "./lead-gate.js";
+import { mergeSpeakingAudioSegments } from "./speaking-audio.js";
 
 const DEFAULT_API_BASE = "https://api.msmy.io.vn";
 const ZALO_URL = "https://zalo.me/0929060994";
@@ -58,13 +64,6 @@ const OBJECTIVE_AND_WRITING_STEPS = new Set([
 	"reading",
 	"writing",
 ]);
-
-const READING_KIND_LABELS = {
-	sign: "Biển báo / Thông báo",
-	message: "Tin nhắn / Email",
-	passage: "Bài đọc hiểu",
-	cloze: "Đoạn văn điền từ",
-};
 
 function resolveApiBase() {
 	const meta = document.querySelector('meta[name="lead-api"]');
@@ -115,6 +114,31 @@ function el(tag, attrs = {}, children = []) {
 		}
 	}
 	return node;
+}
+
+function createPauseIconSvg() {
+	const svgNs = "http://www.w3.org/2000/svg";
+	const svg = document.createElementNS(svgNs, "svg");
+	svg.setAttribute("viewBox", "0 0 24 24");
+	svg.setAttribute("width", "28");
+	svg.setAttribute("height", "28");
+	svg.setAttribute("fill", "currentColor");
+	svg.setAttribute("aria-hidden", "true");
+	const leftBar = document.createElementNS(svgNs, "rect");
+	leftBar.setAttribute("x", "6");
+	leftBar.setAttribute("y", "5");
+	leftBar.setAttribute("width", "4");
+	leftBar.setAttribute("height", "14");
+	leftBar.setAttribute("rx", "1.5");
+	const rightBar = document.createElementNS(svgNs, "rect");
+	rightBar.setAttribute("x", "14");
+	rightBar.setAttribute("y", "5");
+	rightBar.setAttribute("width", "4");
+	rightBar.setAttribute("height", "14");
+	rightBar.setAttribute("rx", "1.5");
+	svg.appendChild(leftBar);
+	svg.appendChild(rightBar);
+	return svg;
 }
 
 function normalizeSnapshot(raw) {
@@ -296,7 +320,7 @@ function loadAttemptState(testVersion) {
 			plays: parsed.plays ?? {},
 			writingText:
 				typeof parsed.writingText === "string" ? parsed.writingText : "",
-			speakingMode: parsed.speakingMode === "skipped" ? "skipped" : "none",
+			speakingMode: "none",
 			speakingDurationSec: null,
 			knownReadingCount:
 				typeof parsed.knownReadingCount === "number" &&
@@ -339,7 +363,7 @@ function saveAttemptState(testVersion, state) {
 				answers: state.answers,
 				plays: state.plays,
 				writingText: state.writingText,
-				speakingMode: state.speakingMode === "skipped" ? "skipped" : "none",
+				speakingMode: "none",
 				knownReadingCount:
 					typeof state.knownReadingCount === "number" &&
 					Number.isInteger(state.knownReadingCount) &&
@@ -374,6 +398,228 @@ function buildQuestionNumberMap(snapshot) {
 	return map;
 }
 
+function resolvePartEstimatedMinutes(part, fallback) {
+	const raw = part?.estimatedMinutes ?? part?.durationMinutes;
+	const num = Number(raw);
+	return Number.isFinite(num) && num > 0 ? Math.round(num) : fallback;
+}
+
+export function buildIntroOverviewRows(snapshot) {
+	const hasListening = Array.isArray(snapshot?.listening?.clips);
+	const listeningClips = hasListening ? snapshot.listening.clips : [];
+	const listeningPartSet = new Set(
+		listeningClips
+			.map((clip) => stripInlineCefrLabel(clip?.partLabel))
+			.filter(Boolean),
+	);
+	const listeningParts = hasListening
+		? Math.max(1, listeningPartSet.size || listeningClips.length)
+		: 3;
+	const listeningQuestionCount = listeningClips.reduce(
+		(sum, clip) =>
+			sum + (Array.isArray(clip?.questions) ? clip.questions.length : 0),
+		0,
+	);
+	const listeningTotal = hasListening ? listeningQuestionCount : 13;
+	const firstClipMaxPlays = Number(
+		listeningClips.find((clip) => Number(clip?.maxPlays) > 0)?.maxPlays,
+	);
+	const maxPlays =
+		Number.isFinite(firstClipMaxPlays) && firstClipMaxPlays > 0
+			? firstClipMaxPlays
+			: 2;
+	const listeningMinutes = resolvePartEstimatedMinutes(snapshot?.listening, 10);
+
+	const hasGv = Array.isArray(snapshot?.vocabGrammar?.questions);
+	const gvQuestions = hasGv ? snapshot.vocabGrammar.questions : [];
+	const gvTotal = hasGv ? gvQuestions.length : 12;
+	const gvMinutes = resolvePartEstimatedMinutes(snapshot?.vocabGrammar, 6);
+
+	const hasReading = Array.isArray(snapshot?.reading?.passages);
+	const readingPassages = hasReading ? snapshot.reading.passages : [];
+	const readingPartSet = new Set(
+		readingPassages
+			.map((passage) => stripInlineCefrLabel(passage?.partLabel))
+			.filter(Boolean),
+	);
+	const readingParts = hasReading
+		? Math.max(1, readingPartSet.size || readingPassages.length)
+		: 3;
+	const readingQuestionCount = readingPassages.reduce(
+		(sum, passage) =>
+			sum + (Array.isArray(passage?.questions) ? passage.questions.length : 0),
+		0,
+	);
+	const readingTotal = hasReading ? readingQuestionCount : 15;
+	const readingMinutes = resolvePartEstimatedMinutes(snapshot?.reading, 12);
+
+	const writingState = resolveWritingPromptState(snapshot?.writing);
+	const writingMinutes = resolvePartEstimatedMinutes(snapshot?.writing, 10);
+
+	const hasSpeaking = Array.isArray(snapshot?.speaking?.tasks);
+	const speakingTasks = hasSpeaking ? snapshot.speaking.tasks : [];
+	const speakingTotal = hasSpeaking ? speakingTasks.length : 8;
+	const speakingMinutes = resolvePartEstimatedMinutes(snapshot?.speaking, 7);
+
+	return [
+		{
+			id: "listening",
+			part: "1. Listening",
+			content:
+				listeningTotal > 0
+					? `${listeningParts} parts · ${listeningTotal} câu · mỗi đoạn nghe ${maxPlays} lần`
+					: "Chưa có câu hỏi",
+			time: listeningTotal > 0 ? `~${listeningMinutes} phút` : "—",
+		},
+		{
+			id: "vocab-grammar",
+			part: "2. Grammar & Vocabulary",
+			content:
+				gvTotal > 0
+					? `${gvTotal} câu trắc nghiệm, từ dễ đến khó`
+					: "Chưa có câu hỏi",
+			time: gvTotal > 0 ? `~${gvMinutes} phút` : "—",
+		},
+		{
+			id: "reading",
+			part: "3. Reading",
+			content:
+				readingTotal > 0
+					? `${readingParts} parts · ${readingTotal} câu`
+					: "Chưa có câu hỏi",
+			time: readingTotal > 0 ? `~${readingMinutes} phút` : "—",
+		},
+		{
+			id: "writing",
+			part: "4. Writing",
+			content: `1 email ${writingState.minWords}–${writingState.maxWords} từ`,
+			time: `~${writingMinutes} phút`,
+		},
+		{
+			id: "speaking",
+			part: "5. Speaking",
+			content:
+				speakingTotal > 0
+					? `${speakingTotal} câu hỏi ghi âm qua micro`
+					: "Không có phần Speaking",
+			time: speakingTotal > 0 ? `~${speakingMinutes} phút` : "—",
+		},
+	];
+}
+
+export function resolvePartHeaderState(item, prevItem) {
+	const partLabel = stripInlineCefrLabel(item?.partLabel);
+	const prevPartLabel = prevItem
+		? stripInlineCefrLabel(prevItem?.partLabel)
+		: "";
+	const instruction = String(item?.instruction ?? "").trim();
+	const prevInstruction = prevItem
+		? String(prevItem?.instruction ?? "").trim()
+		: "";
+	const isNewPart =
+		Boolean(partLabel) && (!prevItem || partLabel !== prevPartLabel);
+	const showPartLabel = isNewPart;
+	const showInstruction =
+		Boolean(instruction) &&
+		(!prevItem || isNewPart || instruction !== prevInstruction);
+	return {
+		partLabel,
+		instruction,
+		showPartLabel,
+		showInstruction,
+	};
+}
+
+export function resolveClipDisplayTitle(clip, clipIndex = 0) {
+	const partLabel = stripInlineCefrLabel(clip?.partLabel);
+	const neutralLabel = `Đoạn nghe ${clipIndex + 1}`;
+	if (partLabel) {
+		return neutralLabel;
+	}
+	return stripInlineCefrLabel(clip?.title) || neutralLabel;
+}
+
+export function buildGapPromptSegments(prompt) {
+	const text = String(prompt ?? "").trim();
+	if (!text) {
+		return [{ type: "text", value: "Điền thông tin nghe được vào chỗ trống:" }];
+	}
+	const parts = text.split(/(_{2,})/g);
+	const segments = [];
+	for (const part of parts) {
+		if (!part) continue;
+		if (/^_{2,}$/.test(part)) {
+			segments.push({ type: "gap" });
+		} else {
+			segments.push({ type: "text", value: part });
+		}
+	}
+	return segments;
+}
+
+function normalizeReadingKind(kind) {
+	return (
+		String(kind ?? "passage")
+			.trim()
+			.toLowerCase() || "passage"
+	);
+}
+
+export function shouldShowReadingTitle(passage) {
+	const kind = normalizeReadingKind(passage?.kind);
+	return kind !== "sign" && kind !== "message";
+}
+
+export function resolveReadingPassageHeaderState(passage, prevPassage) {
+	const headerState = resolvePartHeaderState(passage, prevPassage);
+	const displayTitle = shouldShowReadingTitle(passage)
+		? stripInlineCefrLabel(passage?.title)
+		: "";
+	const showBadges = headerState.showPartLabel;
+	const hasHeader =
+		showBadges || Boolean(displayTitle) || headerState.showInstruction;
+	return {
+		partLabel: headerState.partLabel,
+		instruction: headerState.instruction,
+		displayTitle,
+		showPartLabel: headerState.showPartLabel,
+		showInstruction: headerState.showInstruction,
+		showBadges,
+		hasHeader,
+	};
+}
+
+export function buildSkillReportCards(objective, bands = []) {
+	return [
+		{ key: "listening", label: "Listening" },
+		{ key: "reading", label: "Reading" },
+	].map(({ key, label }) => {
+		const sec = objective?.[key];
+		const hasScore =
+			Boolean(sec) &&
+			Number.isFinite(sec.correct) &&
+			Number.isFinite(sec.total) &&
+			sec.total > 0;
+		const rawPct = hasScore ? (sec.correct / sec.total) * 100 : 0;
+		const pct = hasScore
+			? Number.isFinite(sec.pct)
+				? Math.round(sec.pct)
+				: Math.round(rawPct)
+			: 0;
+		const band = hasScore ? (sec.band ?? matchBandByPct(rawPct, bands)) : null;
+		const cefr = band?.cefr || "—";
+		return {
+			key,
+			label,
+			cefr,
+			scoreText: hasScore
+				? `${sec.correct}/${sec.total} câu đúng · ${pct}%`
+				: "—",
+			progressPct: hasScore ? Math.max(0, Math.min(100, pct)) : 0,
+		};
+	});
+}
+
 function createApp() {
 	const appRoot = document.getElementById("appRoot");
 	if (!appRoot) return;
@@ -403,12 +649,14 @@ function createApp() {
 	let preferredRecorderMime = "";
 	let isRequestingMic = false;
 	let speakingStartToken = 0;
+	let speakingSessionToken = 0;
 	let isStoppingMediaStream = false;
-	let activeAnswerMs = 0;
+	let recordedSegments = [];
 	let answerStartedAt = 0;
-	let hasRecordedAnyAnswer = false;
-	let speakingDiscardOnStop = false;
+	let activeRecorderStopPromise = null;
+	let isStoppingTaskRecorder = false;
 	let isFinalizingRecording = false;
+	let showEarlyFinishConfirm = false;
 	let speakingMediaError = "";
 	let speakingUploadError = "";
 	let speakingRetrySucceeded = false;
@@ -440,7 +688,11 @@ function createApp() {
 	}
 
 	function isSpeakingBusy() {
-		return speakingSession.status === "active" || isFinalizingRecording;
+		return (
+			speakingSession.status === "active" ||
+			isStoppingTaskRecorder ||
+			isFinalizingRecording
+		);
 	}
 
 	function teardownSpeakingPromptPlayback() {
@@ -497,20 +749,33 @@ function createApp() {
 		}
 	}
 
-	function abortSpeakingSessionWithError(message) {
+	function resetSpeakingSessionRuntime() {
 		speakingStartToken += 1;
+		speakingSessionToken += 1;
 		isRequestingMic = false;
+		isStoppingTaskRecorder = false;
 		isFinalizingRecording = false;
+		showEarlyFinishConfirm = false;
 		stopSpeakingIntervals();
+		if (mediaRecorder && mediaRecorder.state !== "inactive") {
+			try {
+				mediaRecorder.stop();
+			} catch {
+				// Ignore stop errors during reset
+			}
+		}
 		mediaRecorder = null;
 		stopMediaStream();
 		speakingSession = createInitialSpeakingSession(
 			snapshot?.speaking?.tasks?.length ?? 0,
 		);
-		activeAnswerMs = 0;
-		answerStartedAt = 0;
-		hasRecordedAnyAnswer = false;
+		recordedSegments = [];
 		recordedChunks = [];
+		answerStartedAt = 0;
+	}
+
+	function abortSpeakingSessionWithError(message) {
+		resetSpeakingSessionRuntime();
 		speakingMediaError = message;
 		render();
 	}
@@ -574,28 +839,18 @@ function createApp() {
 		const node = document.querySelector(".progress-counter");
 		if (!node || !snapshot) return;
 		const progress = countObjectiveProgress(snapshot, state.answers);
-		node.textContent = `Đã trả lời ${progress.answered}/${progress.total} câu khách quan`;
+		node.textContent = `Đã trả lời ${progress.answered}/${progress.total} câu`;
 	}
 
 	function navigateToStep(nextStep) {
 		if (isSpeakingBusy()) {
 			speakingMediaError =
-				"Vui lòng hoàn thành hoặc bấm Kết thúc sớm phần ghi âm trước khi chuyển phần khác.";
+				"Vui lòng hoàn thành hoặc bấm Kết thúc phần Speaking trước khi chuyển phần khác.";
 			render();
 			return;
 		}
-		speakingStartToken += 1;
-		isRequestingMic = false;
 		stopActiveAudio();
-		stopMediaStream();
-		stopSpeakingIntervals();
-		speakingSession = createInitialSpeakingSession(
-			snapshot?.speaking?.tasks?.length ?? 0,
-		);
-		activeAnswerMs = 0;
-		answerStartedAt = 0;
-		hasRecordedAnyAnswer = false;
-		isFinalizingRecording = false;
+		resetSpeakingSessionRuntime();
 		unansweredConfirmState = null;
 		submitError = "";
 		speakingMediaError = "";
@@ -658,7 +913,7 @@ function createApp() {
 			]),
 			el("div", { className: "test-topbar-stats" }, [
 				el("span", { className: "progress-counter" }, [
-					`Đã trả lời ${progress.answered}/${progress.total} câu khách quan`,
+					`Đã trả lời ${progress.answered}/${progress.total} câu`,
 				]),
 				el(
 					"span",
@@ -782,6 +1037,59 @@ function createApp() {
 		return fieldset;
 	}
 
+	function renderGapPromptNodes(prompt) {
+		const nodes = [];
+		for (const seg of buildGapPromptSegments(prompt)) {
+			if (seg.type === "gap") {
+				nodes.push(
+					el("span", {
+						className: "gapnum",
+						"aria-hidden": "true",
+						textContent: "[?]",
+					}),
+					el("span", { className: "sr-only", textContent: " chỗ trống " }),
+				);
+			} else {
+				nodes.push(seg.value);
+			}
+		}
+		return nodes;
+	}
+
+	function renderClipNotesGapRow(q, currentValue, onInput) {
+		const num = questionNumbers.get(q.id) ?? 1;
+		const inputId = `gap-${q.id}`;
+		const input = el("input", {
+			type: "text",
+			id: inputId,
+			className: "gap-input gap-row-input",
+			value: typeof currentValue === "string" ? currentValue : "",
+			maxlength: "120",
+			autocomplete: "off",
+			spellcheck: "false",
+			placeholder: "Nhập từ hoặc số...",
+			dataset: { gapInput: q.id, questionId: q.id },
+		});
+		input.addEventListener("input", () => {
+			onInput(input.value);
+			updateProgressCounterDom();
+		});
+
+		const label = el("label", { for: inputId, className: "gap-row-label" }, [
+			el("span", { className: "question-num", textContent: `${num}.` }),
+			...renderGapPromptNodes(q.prompt),
+		]);
+
+		return el(
+			"div",
+			{
+				className: "gap-row",
+				dataset: { questionId: q.id },
+			},
+			[label, input],
+		);
+	}
+
 	function renderGapQuestionFieldset(q, currentValue, onInput) {
 		const num = questionNumbers.get(q.id) ?? 1;
 		const fieldset = el("fieldset", {
@@ -797,10 +1105,11 @@ function createApp() {
 		fieldset.appendChild(
 			el("legend", { className: "question-legend" }, [
 				meta,
-				el("span", {
-					className: "question-prompt",
-					textContent: q.prompt || "Điền thông tin nghe được vào chỗ trống:",
-				}),
+				el(
+					"span",
+					{ className: "question-prompt" },
+					renderGapPromptNodes(q.prompt),
+				),
 			]),
 		);
 
@@ -840,9 +1149,7 @@ function createApp() {
 	}
 
 	function renderIntroStep() {
-		const objectiveStats = countObjectiveProgress(snapshot, {});
-		const writing = snapshot.writing;
-		const speakingCount = snapshot.speaking.tasks.length;
+		const overviewRows = buildIntroOverviewRows(snapshot);
 
 		return el("section", { className: "card intro-card" }, [
 			el("p", { className: "kicker-pill" }, [
@@ -854,35 +1161,41 @@ function createApp() {
 			el("p", { className: "lead-copy" }, [
 				"Bài kiểm tra đánh giá toàn diện 5 kỹ năng để cô Đỗ Thục Mỹ xếp đúng lớp CEFR / IELTS và thiết kế lộ trình học sát năng lực thực tế của bạn.",
 			]),
-			el("div", { className: "intro-grid" }, [
-				el("div", { className: "intro-stat" }, [
-					el("strong", {}, [`${objectiveStats.total} câu khách quan`]),
-					el("span", {}, [
-						"Listening (có giới hạn lượt nghe), Grammar & Vocabulary, và Reading.",
+			el("div", { className: "intro-table-wrap" }, [
+				el("table", { className: "intro-overview-table" }, [
+					el("thead", {}, [
+						el("tr", {}, [
+							el("th", { scope: "col" }, ["Phần"]),
+							el("th", { scope: "col" }, ["Nội dung"]),
+							el("th", { scope: "col" }, ["Thời gian"]),
+						]),
 					]),
+					el(
+						"tbody",
+						{},
+						overviewRows.map((row) =>
+							el("tr", { dataset: { introPart: row.id } }, [
+								el("td", {}, [el("strong", { textContent: row.part })]),
+								el("td", { textContent: row.content }),
+								el("td", {
+									className: "intro-overview-time",
+									textContent: row.time,
+								}),
+							]),
+						),
+					),
 				]),
-				el("div", { className: "intro-stat" }, [
-					el("strong", {}, [
-						speakingCount > 0
-							? "Writing & Speaking thực tế"
-							: "Writing thực tế",
-					]),
-					el("span", {}, [
-						speakingCount > 0
-							? `1 bài viết (${writing.minWords}–${writing.maxWords} từ) và ${speakingCount} câu hỏi Speaking ghi âm qua micro (hoặc bỏ qua nếu thiếu mic).`
-							: `1 bài viết (${writing.minWords}–${writing.maxWords} từ).`,
-					]),
-				]),
-				el("div", { className: "intro-stat" }, [
-					el("strong", {}, ["Đồng hồ gợi ý 40 phút"]),
-					el("span", {}, [
-						"Áp dụng nhẹ nhàng cho 4 phần đầu; khi hết giờ hệ thống chỉ nhắc nhẹ, không làm mất bài.",
-					]),
+			]),
+			el("div", { className: "intro-rule-box" }, [
+				el("strong", {}, ["Lưu ý làm bài: "]),
+				"Câu hỏi có độ khó tăng dần — câu nào chưa biết, hãy chọn đáp án bạn thấy hợp lý nhất. ",
+				el("strong", {}, [
+					"Không dùng từ điển hay công cụ dịch để kết quả xếp lớp chính xác.",
 				]),
 			]),
 			el("div", { className: "provisional-notice-box" }, [
 				el("strong", {}, ["Cách nhận kết quả bài kiểm tra: "]),
-				"Sau khi nộp bài, bạn xem ngay số câu đúng phần ",
+				"Đồng hồ gợi ý 40 phút cho 4 phần đầu (hết giờ hệ thống chỉ nhắc nhẹ, không làm mất bài). Sau khi nộp bài, bạn xem ngay kết quả ",
 				el("strong", {}, ["Listening & Reading"]),
 				". Cô Đỗ Thục Mỹ sẽ chấm phần Writing & Speaking và gửi kết quả chi tiết qua email bạn đã đăng ký.",
 			]),
@@ -1303,7 +1616,8 @@ function createApp() {
 			]),
 		);
 
-		for (const clip of listening.clips) {
+		for (const [clipIdx, clip] of listening.clips.entries()) {
+			const prevClip = clipIdx > 0 ? listening.clips[clipIdx - 1] : null;
 			const maxPlays = Number(clip.maxPlays) > 0 ? Number(clip.maxPlays) : 2;
 			const playsUsed = Number(state.plays[clip.id] ?? 0);
 			const remaining = Math.max(0, maxPlays - playsUsed);
@@ -1314,17 +1628,17 @@ function createApp() {
 				dataset: { clipId: clip.id },
 			});
 
-			const partLabel = stripInlineCefrLabel(clip.partLabel);
-			const displayClipTitle = stripInlineCefrLabel(clip.title);
+			const headerState = resolvePartHeaderState(clip, prevClip);
+			const displayClipTitle = resolveClipDisplayTitle(clip, clipIdx);
 			const displayNotesTitle = stripInlineCefrLabel(clip.notesTitle);
 
 			clipCard.appendChild(
 				el("div", { className: "clip-header" }, [
-					partLabel
+					headerState.showPartLabel
 						? el("div", { className: "clip-badges" }, [
 								el("span", {
 									className: "part-badge",
-									textContent: partLabel,
+									textContent: headerState.partLabel,
 								}),
 							])
 						: null,
@@ -1334,10 +1648,10 @@ function createApp() {
 								textContent: displayClipTitle,
 							})
 						: null,
-					clip.instruction
+					headerState.showInstruction
 						? el("p", {
 								className: "clip-instruction",
-								textContent: clip.instruction,
+								textContent: headerState.instruction,
 							})
 						: null,
 				]),
@@ -1515,42 +1829,95 @@ function createApp() {
 				]),
 			);
 
-			if (displayNotesTitle) {
-				clipCard.appendChild(
-					el("div", { className: "clip-notes-header" }, [
-						el("span", { className: "notes-kicker" }, ["Phiếu ghi chú"]),
-						el("strong", { textContent: displayNotesTitle }),
-					]),
-				);
-			}
+			const clipQuestions = clip.questions ?? [];
+			const hasGapQuestions = clipQuestions.some((q) => q.type === "gap");
 
-			const qList = el("div", { className: "questions-stack" });
-			for (const q of clip.questions ?? []) {
-				if (q.type === "gap") {
-					qList.appendChild(
-						renderGapQuestionFieldset(
-							q,
-							state.answers.listening[q.id],
-							(val) => {
-								state.answers.listening[q.id] = val;
-								persist();
-							},
-						),
-					);
-				} else {
-					qList.appendChild(
-						renderMcqQuestionFieldset(
-							q,
-							state.answers.listening[q.id],
-							(optIdx) => {
-								state.answers.listening[q.id] = optIdx;
-								persist();
-							},
-						),
+			if (displayNotesTitle && hasGapQuestions) {
+				const mcqQuestions = clipQuestions.filter((q) => q.type !== "gap");
+				const gapQuestions = clipQuestions.filter((q) => q.type === "gap");
+
+				if (mcqQuestions.length > 0) {
+					const mcqStack = el("div", { className: "questions-stack" });
+					for (const q of mcqQuestions) {
+						mcqStack.appendChild(
+							renderMcqQuestionFieldset(
+								q,
+								state.answers.listening[q.id],
+								(optIdx) => {
+									state.answers.listening[q.id] = optIdx;
+									persist();
+								},
+							),
+						);
+					}
+					clipCard.appendChild(mcqStack);
+				}
+
+				const gapRowsList = el("div", { className: "gap-rows-list" });
+				for (const q of gapQuestions) {
+					gapRowsList.appendChild(
+						renderClipNotesGapRow(q, state.answers.listening[q.id], (val) => {
+							state.answers.listening[q.id] = val;
+							persist();
+						}),
 					);
 				}
+
+				clipCard.appendChild(
+					el("div", { className: "clip-notes-box" }, [
+						el("div", { className: "clip-notes-header" }, [
+							el("span", { className: "notes-kicker" }, ["Phiếu ghi chú"]),
+							el("h3", {
+								className: "clip-notes-title",
+								textContent: displayNotesTitle,
+							}),
+						]),
+						gapRowsList,
+						el(
+							"p",
+							{ className: "gap-hint" },
+							"Gợi ý: Viết ngắn gọn (không cần viết hoa hay ký tự phụ như $, p.m.).",
+						),
+					]),
+				);
+			} else {
+				if (displayNotesTitle) {
+					clipCard.appendChild(
+						el("div", { className: "clip-notes-header" }, [
+							el("span", { className: "notes-kicker" }, ["Phiếu ghi chú"]),
+							el("strong", { textContent: displayNotesTitle }),
+						]),
+					);
+				}
+
+				const qList = el("div", { className: "questions-stack" });
+				for (const q of clipQuestions) {
+					if (q.type === "gap") {
+						qList.appendChild(
+							renderGapQuestionFieldset(
+								q,
+								state.answers.listening[q.id],
+								(val) => {
+									state.answers.listening[q.id] = val;
+									persist();
+								},
+							),
+						);
+					} else {
+						qList.appendChild(
+							renderMcqQuestionFieldset(
+								q,
+								state.answers.listening[q.id],
+								(optIdx) => {
+									state.answers.listening[q.id] = optIdx;
+									persist();
+								},
+							),
+						);
+					}
+				}
+				clipCard.appendChild(qList);
 			}
-			clipCard.appendChild(qList);
 			wrapper.appendChild(clipCard);
 		}
 
@@ -1654,12 +2021,13 @@ function createApp() {
 	}
 
 	function renderReadingBody(passage) {
+		const normalizedKind = normalizeReadingKind(passage?.kind);
 		const bodyText = String(passage.body ?? "");
 		const container = el("div", {
-			className: `reading-body kind-${passage.kind || "passage"}`,
+			className: `reading-body kind-${normalizedKind}`,
 		});
 
-		if (passage.kind === "cloze") {
+		if (normalizedKind === "cloze") {
 			const paragraphs = bodyText.split(/\n{2,}/);
 			for (const para of paragraphs) {
 				const pNode = el("p", { className: "reading-paragraph" });
@@ -1670,7 +2038,7 @@ function createApp() {
 						pNode.appendChild(
 							el("span", {
 								className: "cloze-blank-badge",
-								textContent: `(${match[1]})`,
+								textContent: `[${match[1]}]`,
 							}),
 						);
 					} else {
@@ -1745,46 +2113,47 @@ function createApp() {
 			);
 		}
 
-		for (const passage of reading.passages) {
+		for (const [passageIdx, passage] of reading.passages.entries()) {
+			const prevPassage =
+				passageIdx > 0 ? reading.passages[passageIdx - 1] : null;
 			const card = el("section", {
 				className: "card reading-passage-card",
 				dataset: {
 					passageId: passage.id,
-					passageKind: passage.kind || "passage",
+					passageKind: normalizeReadingKind(passage.kind),
 				},
 			});
 
-			const displayPartLabel = stripInlineCefrLabel(passage.partLabel);
-			const displayPassageTitle = stripInlineCefrLabel(passage.title);
-
-			card.appendChild(
-				el("div", { className: "passage-header" }, [
-					el("div", { className: "clip-badges" }, [
-						displayPartLabel
-							? el("span", {
-									className: "part-badge",
-									textContent: displayPartLabel,
+			const headerState = resolveReadingPassageHeaderState(
+				passage,
+				prevPassage,
+			);
+			if (headerState.hasHeader) {
+				card.appendChild(
+					el("div", { className: "passage-header" }, [
+						headerState.showBadges
+							? el("div", { className: "clip-badges" }, [
+									el("span", {
+										className: "part-badge",
+										textContent: headerState.partLabel,
+									}),
+								])
+							: null,
+						headerState.displayTitle
+							? el("h2", {
+									className: "clip-title",
+									textContent: headerState.displayTitle,
 								})
 							: null,
-						el("span", {
-							className: "question-tag",
-							textContent: READING_KIND_LABELS[passage.kind] ?? "Bài đọc hiểu",
-						}),
+						headerState.showInstruction
+							? el("p", {
+									className: "clip-instruction",
+									textContent: headerState.instruction,
+								})
+							: null,
 					]),
-					displayPassageTitle
-						? el("h2", {
-								className: "clip-title",
-								textContent: displayPassageTitle,
-							})
-						: null,
-					passage.instruction
-						? el("p", {
-								className: "clip-instruction",
-								textContent: passage.instruction,
-							})
-						: null,
-				]),
-			);
+				);
+			}
 
 			card.appendChild(renderReadingBody(passage));
 
@@ -2041,7 +2410,9 @@ function createApp() {
 							: "Bạn thao tác quá nhanh. Vui lòng đợi ít phút rồi thử nộp lại.";
 				} else if (res.status === 400) {
 					submitError =
-						"Dữ liệu bài làm hoặc thông tin liên hệ chưa hợp lệ. Vui lòng kiểm tra lại SĐT / Họ tên rồi thử nộp lại.";
+						body?.error === "PLACEMENT_SPEAKING_REQUIRED"
+							? "Bài kiểm tra đầu vào yêu cầu hoàn thành phần Speaking trước khi nộp bài."
+							: "Dữ liệu bài làm hoặc thông tin liên hệ chưa hợp lệ. Vui lòng kiểm tra lại SĐT / Họ tên rồi thử nộp lại.";
 				} else if (res.status === 404 || res.status === 503) {
 					submitError =
 						"Hệ thống nộp bài tạm thời bảo trì. Vui lòng thử lại sau hoặc nhắn Zalo cô Mỹ.";
@@ -2111,21 +2482,36 @@ function createApp() {
 		} finally {
 			isSubmitting = false;
 			render();
-			window.scrollTo({ top: 0, behavior: "smooth" });
+			if (submitError) {
+				document
+					.getElementById("submitErrorBanner")
+					?.scrollIntoView({ behavior: "smooth", block: "center" });
+			} else {
+				window.scrollTo({ top: 0, behavior: "smooth" });
+			}
 		}
 	}
 
 	function handleRequestSubmit() {
-		if (isSpeakingBusy()) {
-			speakingMediaError =
-				"Vui lòng hoàn thành hoặc bấm Kết thúc sớm phần ghi âm trước khi nộp bài.";
+		const failSpeakingCheck = (message) => {
+			unansweredConfirmState = null;
+			speakingMediaError = message;
 			render();
+			document
+				.getElementById("speakingErrorBanner")
+				?.scrollIntoView({ behavior: "smooth", block: "center" });
+		};
+
+		if (isSpeakingBusy()) {
+			failSpeakingCheck(
+				"Vui lòng hoàn thành hoặc bấm Kết thúc phần Speaking trước khi nộp bài.",
+			);
 			return;
 		}
 		if (recordedBlob && recordedBlob.size > SPEAKING_MAX_BYTES) {
-			speakingMediaError =
-				"File Speaking vượt quá giới hạn 50 MB. Vui lòng ghi lại ngắn hơn hoặc chọn Bỏ qua phần Speaking.";
-			render();
+			failSpeakingCheck(
+				"File Speaking vượt quá giới hạn 50 MB. Vui lòng xóa bản ghi và ghi lại hoặc liên hệ cô Mỹ hỗ trợ.",
+			);
 			return;
 		}
 
@@ -2140,8 +2526,16 @@ function createApp() {
 		const speakingDecision = resolveSpeakingSubmitDecision({
 			hasSpeakingTasks: speakingState.hasTasks,
 			hasValidBlob,
-			speakingMode: state.speakingMode,
 		});
+		if (
+			speakingDecision.blockedByMissingSpeaking ||
+			!speakingDecision.finalMode
+		) {
+			failSpeakingCheck(
+				"Phần Speaking là bắt buộc. Vui lòng hoàn thành ghi âm bài nói trước khi nộp bài.",
+			);
+			return;
+		}
 		const speakingFinalMode = speakingDecision.finalMode;
 		const needsSpeakingDecision = speakingDecision.needsSpeakingDecision;
 
@@ -2235,48 +2629,108 @@ function createApp() {
 		playTtsFallback();
 	}
 
-	function ensureRecorderRecordingForAnswer() {
+	function startTaskRecorder() {
+		if (!mediaStream) {
+			abortSpeakingSessionWithError(
+				"Không thể bắt đầu ghi âm qua Micro. Vui lòng kiểm tra quyền Micro và thử lại.",
+			);
+			return false;
+		}
+		const chunks = [];
+		recordedChunks = chunks;
+		activeRecorderStopPromise = null;
 		answerStartedAt = Date.now();
-		hasRecordedAnyAnswer = true;
-		if (!mediaRecorder) return;
-		if (mediaRecorder.state === "inactive") {
-			try {
-				mediaRecorder.start(250);
-			} catch {
-				abortSpeakingSessionWithError(
-					"Không thể bắt đầu ghi âm qua Micro. Vui lòng thử lại hoặc chọn Bỏ qua phần Speaking.",
-				);
-			}
-			return;
+		let recorder;
+		try {
+			recorder = preferredRecorderMime
+				? new window.MediaRecorder(mediaStream, {
+						mimeType: preferredRecorderMime,
+					})
+				: new window.MediaRecorder(mediaStream);
+		} catch {
+			abortSpeakingSessionWithError(
+				"Không thể bắt đầu ghi âm qua Micro. Vui lòng kiểm tra quyền Micro và thử lại.",
+			);
+			return false;
 		}
-		if (
-			mediaRecorder.state === "paused" &&
-			typeof mediaRecorder.resume === "function"
-		) {
-			try {
-				mediaRecorder.resume();
-			} catch {
-				// Keep existing recorder if resume fails
+		mediaRecorder = recorder;
+		recorder.addEventListener("dataavailable", (evt) => {
+			if (evt.data && evt.data.size > 0) {
+				chunks.push(evt.data);
 			}
+		});
+		recorder.addEventListener("error", () => {
+			if (mediaRecorder !== recorder) return;
+			abortSpeakingSessionWithError(
+				"Trình duyệt gặp lỗi khi thu âm Micro. Vui lòng thử lại hoặc liên hệ cô Mỹ hỗ trợ.",
+			);
+		});
+		try {
+			recorder.start(250);
+		} catch {
+			abortSpeakingSessionWithError(
+				"Không thể bắt đầu ghi âm qua Micro. Vui lòng kiểm tra quyền Micro và thử lại.",
+			);
+			return false;
 		}
+		return true;
 	}
 
-	function pauseRecorderBetweenTasks() {
-		if (answerStartedAt > 0) {
-			activeAnswerMs += Math.max(0, Date.now() - answerStartedAt);
-			answerStartedAt = 0;
+	function stopCurrentTaskRecorder({ discard = false } = {}) {
+		if (activeRecorderStopPromise) {
+			return activeRecorderStopPromise;
 		}
-		if (
-			mediaRecorder &&
-			mediaRecorder.state === "recording" &&
-			typeof mediaRecorder.pause === "function"
-		) {
-			try {
-				mediaRecorder.pause();
-			} catch {
-				// Ignore pause errors on browsers lacking pause support
+		const recorder = mediaRecorder;
+		const chunks = recordedChunks;
+		const startedAt = answerStartedAt;
+		answerStartedAt = 0;
+		const durationMs = startedAt > 0 ? Math.max(0, Date.now() - startedAt) : 0;
+
+		if (!recorder || recorder.state === "inactive") {
+			mediaRecorder = null;
+			recordedChunks = [];
+			if (discard || chunks.length === 0) {
+				return Promise.resolve(null);
 			}
+			const rawMime =
+				recorder?.mimeType || preferredRecorderMime || "audio/webm";
+			const normalizedMime = resolveSpeakingUploadMeta(rawMime).contentType;
+			const blob = new Blob(chunks, { type: normalizedMime });
+			return Promise.resolve(blob.size > 0 ? { blob, durationMs } : null);
 		}
+
+		const stopPromise = new Promise((resolve) => {
+			let settled = false;
+			const finish = () => {
+				if (settled) return;
+				settled = true;
+				if (activeRecorderStopPromise === stopPromise) {
+					activeRecorderStopPromise = null;
+				}
+				if (mediaRecorder === recorder) {
+					mediaRecorder = null;
+				}
+				recordedChunks = [];
+				if (discard) {
+					resolve(null);
+					return;
+				}
+				const rawMime =
+					recorder.mimeType || preferredRecorderMime || "audio/webm";
+				const normalizedMime = resolveSpeakingUploadMeta(rawMime).contentType;
+				const blob = new Blob(chunks, { type: normalizedMime });
+				resolve(blob.size > 0 ? { blob, durationMs } : null);
+			};
+			recorder.addEventListener("stop", finish, { once: true });
+			recorder.addEventListener("error", finish, { once: true });
+			try {
+				recorder.stop();
+			} catch {
+				finish();
+			}
+		});
+		activeRecorderStopPromise = stopPromise;
+		return stopPromise;
 	}
 
 	function clearSpeakingPhaseTimer() {
@@ -2286,32 +2740,165 @@ function createApp() {
 		}
 	}
 
-	function finalizeSpeakingRecording({ discard = false } = {}) {
+	async function finalizeSpeakingSession({
+		discard = false,
+		allowEmptyDiscard = false,
+	} = {}) {
+		if (isFinalizingRecording) return;
+		const sessionToken = speakingSessionToken;
+		const totalTasks = snapshot?.speaking?.tasks?.length ?? 0;
 		stopSpeakingIntervals();
-		if (answerStartedAt > 0) {
-			activeAnswerMs += Math.max(0, Date.now() - answerStartedAt);
-			answerStartedAt = 0;
-		}
-		speakingDiscardOnStop = discard;
-		if (mediaRecorder && mediaRecorder.state !== "inactive") {
-			try {
-				isFinalizingRecording = true;
-				render();
-				mediaRecorder.stop();
+		showEarlyFinishConfirm = false;
+		isFinalizingRecording = true;
+		render();
+
+		try {
+			const activeTaskIdx = speakingSession.taskIndex;
+			if (
+				activeRecorderStopPromise ||
+				(mediaRecorder && mediaRecorder.state !== "inactive")
+			) {
+				const lastSeg = await stopCurrentTaskRecorder({ discard });
+				if (sessionToken !== speakingSessionToken) return;
+				if (!discard && lastSeg) {
+					recordedSegments[activeTaskIdx] = lastSeg;
+				}
+			}
+
+			stopMediaStream();
+
+			const validSegments = discard
+				? []
+				: recordedSegments.filter((seg) => seg?.blob && seg.blob.size > 0);
+
+			if (discard || (allowEmptyDiscard && validSegments.length === 0)) {
+				speakingSession = createInitialSpeakingSession(totalTasks);
+				recordedSegments = [];
+				recordedChunks = [];
+				answerStartedAt = 0;
 				return;
-			} catch {
-				// Fall through to cleanup if stop() throws on dead stream/recorder
+			}
+
+			if (validSegments.length === 0) {
+				speakingSession = createInitialSpeakingSession(totalTasks);
+				recordedSegments = [];
+				recordedChunks = [];
+				answerStartedAt = 0;
+				speakingMediaError =
+					"Không thu được dữ liệu âm thanh. Vui lòng thử ghi lại hoặc kiểm tra Micro.";
+				return;
+			}
+
+			const mergedBlob = await mergeSpeakingAudioSegments(validSegments);
+			if (sessionToken !== speakingSessionToken) return;
+
+			if (mergedBlob && mergedBlob.size > 0) {
+				const totalDurationMs = validSegments.reduce(
+					(sum, seg) => sum + (Number(seg.durationMs) || 0),
+					0,
+				);
+				const finalDuration = Math.max(1, Math.round(totalDurationMs / 1000));
+				revokeRecordedUrl();
+				recordedBlob = mergedBlob;
+				recordedBlobUrl = URL.createObjectURL(mergedBlob);
+				state.speakingMode = "upload";
+				state.speakingDurationSec = finalDuration;
+				speakingSession = {
+					...speakingSession,
+					status: "completed",
+					phase: "done",
+					secondsLeft: 0,
+				};
+				persist();
+			} else {
+				speakingSession = createInitialSpeakingSession(totalTasks);
+				speakingMediaError =
+					"Không thu được dữ liệu âm thanh. Vui lòng thử ghi lại hoặc kiểm tra Micro.";
+			}
+		} catch {
+			if (sessionToken !== speakingSessionToken) return;
+			stopMediaStream();
+			speakingSession = createInitialSpeakingSession(totalTasks);
+			speakingMediaError =
+				"Không thể ghép dữ liệu âm thanh. Vui lòng thử ghi lại hoặc liên hệ cô Mỹ hỗ trợ.";
+		} finally {
+			if (sessionToken === speakingSessionToken) {
+				isFinalizingRecording = false;
+				render();
 			}
 		}
-		stopMediaStream();
-		mediaRecorder = null;
-		isFinalizingRecording = false;
-		const totalTasks = snapshot?.speaking?.tasks?.length ?? 0;
-		speakingSession = createInitialSpeakingSession(totalTasks);
-		activeAnswerMs = 0;
-		hasRecordedAnyAnswer = false;
-		recordedChunks = [];
+	}
+
+	async function pauseCurrentTaskAnswer() {
+		if (
+			speakingSession.status !== "active" ||
+			speakingSession.phase !== "answer" ||
+			isStoppingTaskRecorder ||
+			isFinalizingRecording
+		) {
+			return;
+		}
+		const sessionToken = speakingSessionToken;
+		const taskIdx = speakingSession.taskIndex;
+		clearSpeakingPhaseTimer();
+		isStoppingTaskRecorder = true;
 		render();
+
+		const segment = await stopCurrentTaskRecorder({ discard: false });
+		isStoppingTaskRecorder = false;
+
+		if (sessionToken !== speakingSessionToken || isFinalizingRecording) {
+			return;
+		}
+
+		if (segment) {
+			recordedSegments[taskIdx] = segment;
+		}
+		speakingSession = transitionSpeakingToPaused(speakingSession);
+		render();
+	}
+
+	function retryCurrentTaskAnswer(tasks) {
+		if (
+			!canRetrySpeakingTask(speakingSession) ||
+			isStoppingTaskRecorder ||
+			isFinalizingRecording
+		) {
+			return;
+		}
+		const nextSession = retrySpeakingCurrentTask(speakingSession, tasks);
+		if (nextSession.phase !== "answer") {
+			return;
+		}
+		showEarlyFinishConfirm = false;
+		speakingSession = nextSession;
+		if (!startTaskRecorder()) {
+			return;
+		}
+		startPhaseCountdown(tasks);
+		render();
+	}
+
+	function advanceFromPausedTask(tasks) {
+		if (
+			speakingSession.status !== "active" ||
+			speakingSession.phase !== "paused" ||
+			isStoppingTaskRecorder ||
+			isFinalizingRecording
+		) {
+			return;
+		}
+		showEarlyFinishConfirm = false;
+		const next = transitionSpeakingNextTask(speakingSession, tasks);
+		if (next.status === "completed") {
+			speakingSession = next;
+			void finalizeSpeakingSession({
+				discard: false,
+				allowEmptyDiscard: false,
+			});
+			return;
+		}
+		beginTaskReadingPhase(next.taskIndex, tasks);
 	}
 
 	function startPhaseCountdown(tasks) {
@@ -2342,7 +2929,7 @@ function createApp() {
 			if (speakingSession.phase === "prep") {
 				enterAnswerPhase(tasks);
 			} else if (speakingSession.phase === "answer") {
-				completeCurrentTaskAnswer(tasks);
+				void pauseCurrentTaskAnswer();
 			}
 		}, 1000);
 	}
@@ -2357,7 +2944,9 @@ function createApp() {
 		teardownSpeakingPromptPlayback();
 		speakingSession = transitionSpeakingAfterReading(speakingSession, tasks);
 		if (speakingSession.phase === "answer") {
-			ensureRecorderRecordingForAnswer();
+			if (!startTaskRecorder()) {
+				return;
+			}
 		}
 		if (speakingSession.status === "active") {
 			startPhaseCountdown(tasks);
@@ -2375,7 +2964,9 @@ function createApp() {
 		stopSpeakingIntervals();
 		speakingSession = transitionSpeakingToAnswer(speakingSession, tasks);
 		if (speakingSession.status === "active") {
-			ensureRecorderRecordingForAnswer();
+			if (!startTaskRecorder()) {
+				return;
+			}
 			startPhaseCountdown(tasks);
 		}
 		render();
@@ -2383,6 +2974,7 @@ function createApp() {
 
 	function beginTaskReadingPhase(taskIndex, tasks) {
 		clearSpeakingPhaseTimer();
+		showEarlyFinishConfirm = false;
 		speakingSession = startSpeakingTaskReading(
 			speakingSession,
 			taskIndex,
@@ -2395,18 +2987,6 @@ function createApp() {
 				onFinished: () => advanceAfterReading(tasks),
 			});
 		}
-	}
-
-	function completeCurrentTaskAnswer(tasks) {
-		stopSpeakingIntervals();
-		pauseRecorderBetweenTasks();
-		const next = transitionSpeakingNextTask(speakingSession, tasks);
-		if (next.status === "completed") {
-			speakingSession = next;
-			finalizeSpeakingRecording({ discard: false });
-			return;
-		}
-		beginTaskReadingPhase(next.taskIndex, tasks);
 	}
 
 	function renderSpeakingStep() {
@@ -2430,17 +3010,19 @@ function createApp() {
 		});
 		wrapper.appendChild(renderTestHeader("speaking"));
 
-		const introCard = el("section", { className: "card skill-intro-card" }, [
-			el("p", { className: "kicker-pill" }, ["Phần 5 / 5 · Nói (Speaking)"]),
-			el("h1", { className: "section-title" }, [
-				"Kiểm tra Speaking — Hệ thống đọc từng câu hỏi & thu âm qua Micro",
-			]),
-			el("p", { className: "muted-copy" }, [
-				speakingState.hasTasks
-					? "Hệ thống sẽ tự động đọc lần lượt từng câu hỏi, cho bạn thời gian chuẩn bị rồi ghi âm bằng micro (chỉ thu âm thanh, không cần camera) và ghép thành một bản ghi duy nhất."
-					: "Bài kiểm tra hiện tại chưa bao gồm câu hỏi Speaking. Bạn có thể kiểm tra lại các phần đã làm hoặc bấm Nộp bài ngay bên dưới.",
-			]),
-		]);
+		const introCard = el(
+			"section",
+			{ className: "card skill-intro-card" },
+			[
+				el("p", { className: "kicker-pill" }, ["Phần 5 / 5 · Nói (Speaking)"]),
+				el("h1", { className: "section-title" }, ["Kiểm tra Speaking"]),
+				!speakingState.hasTasks
+					? el("p", { className: "muted-copy" }, [
+							"Bài kiểm tra hiện tại chưa bao gồm câu hỏi Speaking. Bạn có thể kiểm tra lại các phần đã làm hoặc bấm Nộp bài ngay bên dưới.",
+						])
+					: null,
+			].filter(Boolean),
+		);
 		wrapper.appendChild(introCard);
 
 		if (!speakingState.hasTasks) {
@@ -2478,9 +3060,7 @@ function createApp() {
 			if (!hasMediaApi) {
 				recorderCard.appendChild(
 					el("div", { className: "provisional-notice-box" }, [
-						"Trình duyệt hoặc thiết bị hiện tại không hỗ trợ API ghi âm (MediaRecorder). Bạn có thể bấm ",
-						el("strong", {}, ["Bỏ qua phần Speaking"]),
-						" bên dưới để hoàn tất nộp bài ngay.",
+						"Trình duyệt hoặc thiết bị hiện tại không hỗ trợ API ghi âm (MediaRecorder). Vui lòng sử dụng trình duyệt/thiết bị có Micro (Chrome, Safari, Edge) để hoàn thành phần Speaking trước khi nộp bài.",
 					]),
 				);
 			}
@@ -2496,16 +3076,17 @@ function createApp() {
 				const phase = speakingSession.phase;
 
 				const phaseLabels = {
-					reading: "🔊 Hệ thống đang đọc câu hỏi...",
-					prep: "⏳ Thời gian chuẩn bị",
-					answer: "🔴 Đang ghi âm câu trả lời (Micro)",
+					reading: "Hệ thống đang đọc câu hỏi...",
+					prep: "Thời gian chuẩn bị",
+					answer: "Đang ghi âm câu trả lời (Micro)",
+					paused: "Đã dừng ghi âm câu hiện tại",
 				};
 				const phaseLabel = phaseLabels[phase] ?? "⏳ Đang xử lý phần ghi âm...";
-				const timerDisplay = isFinalizingRecording
+				const bannerTimerText = isFinalizingRecording
 					? "Đang hoàn tất..."
 					: phase === "reading"
 						? "Đang phát đề"
-						: formatClock(speakingSession.secondsLeft);
+						: "";
 
 				const activePartLabel = stripInlineCefrLabel(activeTask?.partLabel);
 				const sessionCard = el("div", {
@@ -2573,16 +3154,21 @@ function createApp() {
 									[phaseLabel],
 								),
 							]),
-							el(
-								"span",
-								{
-									id: "speakingTimerValue",
-									className: "speaking-timer-pill",
-									"aria-live": "polite",
-								},
-								[timerDisplay],
-							),
-						],
+							bannerTimerText
+								? el(
+										"span",
+										{
+											id:
+												phase === "reading" || isFinalizingRecording
+													? "speakingTimerValue"
+													: undefined,
+											className: "speaking-timer-pill",
+											"aria-live": "polite",
+										},
+										[bannerTimerText],
+									)
+								: null,
+						].filter(Boolean),
 					),
 				);
 
@@ -2602,6 +3188,99 @@ function createApp() {
 								}),
 							],
 						),
+					);
+				}
+
+				if (isFinalizingRecording) {
+					sessionCard.appendChild(
+						el("div", { className: "speaking-center-stage" }, [
+							el("span", { className: "speaking-stage-label" }, [
+								"Đang lưu và ghép bản ghi âm...",
+							]),
+						]),
+					);
+				} else if (phase === "prep") {
+					sessionCard.appendChild(
+						el("div", { className: "speaking-center-stage" }, [
+							el("span", { className: "speaking-stage-label" }, [
+								"Thời gian chuẩn bị",
+							]),
+							el(
+								"div",
+								{
+									id: "speakingTimerValue",
+									className: "speaking-center-clock",
+									"aria-live": "polite",
+								},
+								[formatClock(speakingSession.secondsLeft)],
+							),
+						]),
+					);
+				} else if (phase === "answer") {
+					const pauseBtn = el(
+						"button",
+						{
+							type: "button",
+							id: "speakingPauseBtn",
+							className: "speaking-pause-circle-btn",
+							"aria-label": "Dừng ghi âm câu hiện tại",
+							disabled: isStoppingTaskRecorder,
+						},
+						[createPauseIconSvg()],
+					);
+					pauseBtn.addEventListener("click", () => {
+						void pauseCurrentTaskAnswer();
+					});
+
+					sessionCard.appendChild(
+						el("div", { className: "speaking-center-stage" }, [
+							pauseBtn,
+							el("div", { className: "speaking-recording-indicator" }, [
+								el("span", {
+									className: "rec-dot is-pulsing",
+									"aria-hidden": "true",
+								}),
+								el("span", {}, [
+									isStoppingTaskRecorder
+										? "Đang lưu đoạn ghi âm..."
+										: "Đang ghi âm... Bấm để dừng",
+								]),
+							]),
+							el(
+								"div",
+								{
+									id: "speakingTimerValue",
+									className: "speaking-center-clock is-recording",
+									"aria-live": "polite",
+								},
+								[formatClock(speakingSession.secondsLeft)],
+							),
+						]),
+					);
+				} else if (phase === "paused") {
+					const currentSeg = recordedSegments[taskIdx];
+					const segDurationSec = currentSeg
+						? Math.max(1, Math.round((currentSeg.durationMs || 0) / 1000))
+						: 0;
+					sessionCard.appendChild(
+						el("div", { className: "speaking-center-stage" }, [
+							el("span", { className: "speaking-stage-label" }, [
+								`Đã ghi âm câu ${taskIdx + 1}`,
+							]),
+							el(
+								"div",
+								{
+									id: "speakingPausedDuration",
+									className: "speaking-center-clock",
+								},
+								[formatClock(segDurationSec)],
+							),
+							el("span", { className: "speaking-paused-duration" }, [
+								currentSeg
+									? `Thời lượng đã ghi: ${segDurationSec} giây`
+									: "Chưa có dữ liệu ghi âm cho câu này",
+							]),
+						]),
 					);
 				}
 
@@ -2677,45 +3356,60 @@ function createApp() {
 					controls.appendChild(startAnswerNowBtn);
 				}
 
-				if (phase === "answer" && !isFinalizingRecording) {
+				if (phase === "paused" && !isFinalizingRecording) {
+					const retriesUsed = speakingSession.retriesUsedForCurrentTask ?? 0;
+					const retriesLeft = Math.max(
+						0,
+						MAX_SPEAKING_RETRIES_PER_TASK - retriesUsed,
+					);
+					const canRetry = canRetrySpeakingTask(speakingSession);
+					const retryBtn = el(
+						"button",
+						{
+							type: "button",
+							id: "speakingRetryBtn",
+							className: "btn btn-ghost",
+							disabled: !canRetry || isStoppingTaskRecorder,
+						},
+						[
+							canRetry
+								? `Ghi lại câu này (còn ${retriesLeft}/2)`
+								: "Đã hết lượt ghi lại (0/2)",
+						],
+					);
+					retryBtn.addEventListener("click", () =>
+						retryCurrentTaskAnswer(tasks),
+					);
+					controls.appendChild(retryBtn);
+
 					const nextTaskBtn = el(
 						"button",
 						{
 							type: "button",
 							id: "speakingNextTaskBtn",
 							className: "btn btn-teal",
+							disabled: isStoppingTaskRecorder,
 						},
 						[
 							taskIdx < tasks.length - 1
-								? "✓ Xong câu này → Câu tiếp theo"
-								: "✓ Hoàn thành phần Speaking",
+								? "Câu tiếp theo →"
+								: "Hoàn thành phần Speaking",
 						],
 					);
 					nextTaskBtn.addEventListener("click", () =>
-						completeCurrentTaskAnswer(tasks),
+						advanceFromPausedTask(tasks),
 					);
 					controls.appendChild(nextTaskBtn);
 				}
 
-				const finishEarlyBtn = el(
-					"button",
-					{
-						type: "button",
-						id: "speakingFinishEarlyBtn",
-						className: "btn btn-danger",
-						disabled: isFinalizingRecording,
-					},
-					[isFinalizingRecording ? "Đang lưu bài nói..." : "■ Kết thúc sớm"],
-				);
-				finishEarlyBtn.addEventListener("click", () => {
-					const shouldDiscard =
-						!hasRecordedAnyAnswer && speakingSession.phase !== "answer";
-					finalizeSpeakingRecording({ discard: shouldDiscard });
-				});
-				controls.appendChild(finishEarlyBtn);
+				if (controls.childNodes.length > 0) {
+					sessionCard.appendChild(controls);
+				}
 
-				sessionCard.appendChild(controls);
-				if (phase === "prep") {
+				if (
+					phase === "prep" &&
+					(isPromptReplaying || speakingSession.replayUsedForCurrentTask)
+				) {
 					sessionCard.appendChild(
 						el(
 							"p",
@@ -2727,13 +3421,95 @@ function createApp() {
 							[
 								isPromptReplaying
 									? "Đang phát lại câu hỏi..."
-									: speakingSession.replayUsedForCurrentTask
-										? "Đã dùng lượt nghe lại cho câu này (1/1)."
-										: "Bạn có thể bấm Nghe lại câu hỏi tối đa 1 lần trước khi trả lời.",
+									: "Đã phát lại câu hỏi (1/1)",
 							],
 						),
 					);
 				}
+
+				const earlyFooter = el("div", { className: "speaking-early-footer" });
+				if (showEarlyFinishConfirm && !isFinalizingRecording) {
+					const hasAnyRecordedSegment =
+						recordedSegments.some((seg) => seg?.blob && seg.blob.size > 0) ||
+						speakingSession.phase === "answer";
+					const confirmBox = el(
+						"div",
+						{
+							id: "speakingFinishConfirmBox",
+							className: "speaking-finish-confirm-box",
+							role: "alertdialog",
+							"aria-labelledby": "speakingFinishConfirmTitle",
+						},
+						[
+							el("strong", { id: "speakingFinishConfirmTitle" }, [
+								"Kết thúc phần Speaking sớm?",
+							]),
+							el("p", { className: "muted-copy" }, [
+								hasAnyRecordedSegment
+									? "Các câu bạn đã ghi âm sẽ được lưu lại để nộp bài."
+									: "Bạn chưa ghi âm câu nào. Kết thúc ngay sẽ quay lại màn hình chờ Speaking.",
+							]),
+							el("div", { className: "confirm-actions" }, [
+								el(
+									"button",
+									{
+										type: "button",
+										id: "cancelFinishEarlyBtn",
+										className: "btn btn-ghost btn-sm",
+									},
+									["Tiếp tục làm bài"],
+								),
+								el(
+									"button",
+									{
+										type: "button",
+										id: "confirmFinishEarlyBtn",
+										className: "btn btn-danger btn-sm",
+										disabled: isFinalizingRecording || isStoppingTaskRecorder,
+									},
+									["Xác nhận kết thúc"],
+								),
+							]),
+						],
+					);
+					confirmBox
+						.querySelector("#cancelFinishEarlyBtn")
+						?.addEventListener("click", () => {
+							showEarlyFinishConfirm = false;
+							render();
+						});
+					confirmBox
+						.querySelector("#confirmFinishEarlyBtn")
+						?.addEventListener("click", () => {
+							void finalizeSpeakingSession({
+								discard: false,
+								allowEmptyDiscard: true,
+							});
+						});
+					earlyFooter.appendChild(confirmBox);
+				} else {
+					const finishEarlyBtn = el(
+						"button",
+						{
+							type: "button",
+							id: "speakingFinishEarlyBtn",
+							className: "btn btn-ghost btn-sm speaking-early-btn",
+							disabled: isFinalizingRecording || isStoppingTaskRecorder,
+						},
+						[
+							isFinalizingRecording
+								? "Đang lưu bài nói..."
+								: "Kết thúc phần Speaking",
+						],
+					);
+					finishEarlyBtn.addEventListener("click", () => {
+						showEarlyFinishConfirm = true;
+						render();
+					});
+					earlyFooter.appendChild(finishEarlyBtn);
+				}
+				sessionCard.appendChild(earlyFooter);
+
 				recorderCard.appendChild(sessionCard);
 			} else if (hasValidBlob) {
 				const sizeMb = (recordedBlob.size / (1024 * 1024)).toFixed(2);
@@ -2745,9 +3521,19 @@ function createApp() {
 				});
 				reviewBox.appendChild(
 					el("div", { className: "speaking-review-meta" }, [
-						el("span", { className: "status-pill is-ok" }, [
-							"Đã ghi âm hoàn tất (sẵn sàng nộp)",
-						]),
+						el(
+							"span",
+							{
+								className: isTooLarge
+									? "status-pill is-warn"
+									: "status-pill is-ok",
+							},
+							[
+								isTooLarge
+									? "Bản ghi vượt quá giới hạn dung lượng"
+									: "Đã ghi âm hoàn tất (sẵn sàng nộp)",
+							],
+						),
 						el("span", {}, [
 							`Thời lượng trả lời: ${state.speakingDurationSec ?? 0}s · Dung lượng: ${sizeMb} MB / 50 MB`,
 						]),
@@ -2757,9 +3543,30 @@ function createApp() {
 				if (isTooLarge) {
 					reviewBox.appendChild(
 						el("p", { className: "form-error-banner", role: "alert" }, [
-							"Bản ghi vượt quá giới hạn 50 MB. Vui lòng bấm Ghi lại ngắn hơn hoặc chọn Bỏ qua phần Speaking.",
+							"Bản ghi vượt quá giới hạn 50 MB. Vui lòng xóa bản ghi để ghi lại hoặc liên hệ cô Mỹ hỗ trợ.",
 						]),
 					);
+					const resetOversizedBtn = el(
+						"button",
+						{
+							type: "button",
+							id: "resetOversizedSpeakingBtn",
+							className: "btn btn-ghost",
+						},
+						["Xóa bản ghi & ghi lại"],
+					);
+					resetOversizedBtn.addEventListener("click", () => {
+						resetSpeakingSessionRuntime();
+						revokeRecordedUrl();
+						recordedBlob = null;
+						state.speakingMode = "none";
+						state.speakingDurationSec = null;
+						speakingMediaError = "";
+						unansweredConfirmState = null;
+						persist();
+						render();
+					});
+					reviewBox.appendChild(resetOversizedBtn);
 				}
 
 				if (recordedBlobUrl) {
@@ -2774,36 +3581,6 @@ function createApp() {
 					);
 				}
 
-				const retakeBtn = el(
-					"button",
-					{
-						type: "button",
-						id: "retakeSpeakingBtn",
-						className: "btn btn-ghost",
-					},
-					["↺ Ghi lại từ đầu"],
-				);
-				retakeBtn.addEventListener("click", () => {
-					speakingStartToken += 1;
-					isRequestingMic = false;
-					stopSpeakingIntervals();
-					stopMediaStream();
-					revokeRecordedUrl();
-					recordedBlob = null;
-					recordedChunks = [];
-					speakingSession = createInitialSpeakingSession(tasks.length);
-					activeAnswerMs = 0;
-					answerStartedAt = 0;
-					hasRecordedAnyAnswer = false;
-					state.speakingMode = "none";
-					state.speakingDurationSec = null;
-					speakingMediaError = "";
-					persist();
-					render();
-				});
-				reviewBox.appendChild(
-					el("div", { className: "speaking-actions-row" }, [retakeBtn]),
-				);
 				recorderCard.appendChild(reviewBox);
 			} else {
 				const estimatedTotalSec = tasks.reduce((acc, task) => {
@@ -2811,19 +3588,6 @@ function createApp() {
 					return acc + prepSeconds + answerSeconds + 5;
 				}, 0);
 				const estimatedMinutes = Math.max(1, Math.ceil(estimatedTotalSec / 60));
-
-				if (state.speakingMode === "skipped") {
-					recorderCard.appendChild(
-						el("div", { className: "speaking-skipped-box" }, [
-							el("span", { className: "status-pill is-muted" }, [
-								"Đã chọn bỏ qua phần Speaking",
-							]),
-							el("p", {}, [
-								"Bạn có thể bấm Nộp bài ngay bên dưới (chỉ chấm 4 kỹ năng đã làm), hoặc bấm Bắt đầu làm bài Speaking nếu đổi ý.",
-							]),
-						]),
-					);
-				}
 
 				const overviewCard = el("div", {
 					id: "speakingOverviewCard",
@@ -2844,19 +3608,6 @@ function createApp() {
 						el("div", { className: "speaking-overview-stat" }, [
 							el("span", { className: "speaking-stat-label" }, ["Phương thức"]),
 							el("strong", {}, ["Audio-only (chỉ Micro)"]),
-						]),
-					]),
-				);
-				overviewCard.appendChild(
-					el("ol", { className: "speaking-overview-steps" }, [
-						el("li", {}, [
-							"Cấp quyền micro một lần. Nội dung từng câu hỏi sẽ lần lượt xuất hiện khi bắt đầu thi (không hiện trước đề).",
-						]),
-						el("li", {}, [
-							`Hệ thống đọc từng câu từ câu 1 đến câu ${tasks.length}, đếm ngược chuẩn bị rồi tự bật ghi âm câu trả lời của bạn.`,
-						]),
-						el("li", {}, [
-							"Giữa các câu máy tự tạm dừng ghi và ghép thành một file âm thanh duy nhất khi hoàn thành.",
 						]),
 					]),
 				);
@@ -2893,8 +3644,7 @@ function createApp() {
 						});
 						if (
 							startToken !== speakingStartToken ||
-							state.step !== "speaking" ||
-							state.speakingMode === "skipped"
+							state.step !== "speaking"
 						) {
 							for (const track of stream.getTracks()) {
 								try {
@@ -2911,100 +3661,33 @@ function createApp() {
 						isRequestingMic = false;
 						stopMediaStream();
 						mediaStream = stream;
+						speakingSessionToken += 1;
 
 						preferredRecorderMime = pickSupportedRecorderMime(
 							window.MediaRecorder,
 						);
-						const recorder = preferredRecorderMime
-							? new window.MediaRecorder(stream, {
-									mimeType: preferredRecorderMime,
-								})
-							: new window.MediaRecorder(stream);
-						mediaRecorder = recorder;
-
+						recordedSegments = [];
 						recordedChunks = [];
-						activeAnswerMs = 0;
 						answerStartedAt = 0;
-						hasRecordedAnyAnswer = false;
-						speakingDiscardOnStop = false;
+						isStoppingTaskRecorder = false;
 						isFinalizingRecording = false;
+						showEarlyFinishConfirm = false;
+						state.speakingMode = "none";
 
 						for (const track of stream.getAudioTracks()) {
 							track.addEventListener("ended", () => {
-								if (isStoppingMediaStream || mediaRecorder !== recorder) return;
+								if (isStoppingMediaStream || mediaStream !== stream) return;
 								if (
 									speakingSession.status === "active" ||
+									isStoppingTaskRecorder ||
 									isFinalizingRecording
 								) {
 									abortSpeakingSessionWithError(
-										"Kết nối Micro bị gián đoạn giữa chừng. Vui lòng thử ghi lại hoặc chọn Bỏ qua phần Speaking.",
+										"Kết nối Micro bị gián đoạn giữa chừng. Vui lòng kiểm tra Micro và thử ghi lại.",
 									);
 								}
 							});
 						}
-
-						recorder.addEventListener("dataavailable", (evt) => {
-							if (evt.data && evt.data.size > 0) {
-								recordedChunks.push(evt.data);
-							}
-						});
-
-						recorder.addEventListener("error", () => {
-							if (mediaRecorder !== recorder) return;
-							abortSpeakingSessionWithError(
-								"Trình duyệt gặp lỗi khi thu âm Micro. Vui lòng thử lại hoặc chọn Bỏ qua phần Speaking.",
-							);
-						});
-
-						recorder.addEventListener("stop", () => {
-							if (mediaRecorder !== recorder) return;
-							mediaRecorder = null;
-							const discardNow = speakingDiscardOnStop;
-							speakingDiscardOnStop = false;
-							isFinalizingRecording = false;
-							stopSpeakingIntervals();
-							stopMediaStream();
-
-							if (discardNow) {
-								speakingSession = createInitialSpeakingSession(tasks.length);
-								activeAnswerMs = 0;
-								answerStartedAt = 0;
-								hasRecordedAnyAnswer = false;
-								recordedChunks = [];
-								render();
-								return;
-							}
-
-							const finalDuration = Math.max(
-								1,
-								Math.round(activeAnswerMs / 1000),
-							);
-							const rawMime =
-								recorder.mimeType || preferredRecorderMime || "audio/webm";
-							const normalizedMime =
-								resolveSpeakingUploadMeta(rawMime).contentType;
-
-							const blob = new Blob(recordedChunks, { type: normalizedMime });
-							if (blob.size > 0) {
-								revokeRecordedUrl();
-								recordedBlob = blob;
-								recordedBlobUrl = URL.createObjectURL(blob);
-								state.speakingMode = "upload";
-								state.speakingDurationSec = finalDuration;
-								speakingSession = {
-									...speakingSession,
-									status: "completed",
-									phase: "done",
-									secondsLeft: 0,
-								};
-							} else {
-								speakingSession = createInitialSpeakingSession(tasks.length);
-								speakingMediaError =
-									"Không thu được dữ liệu âm thanh. Vui lòng thử ghi lại hoặc chọn Bỏ qua.";
-							}
-							persist();
-							render();
-						});
 
 						beginTaskReadingPhase(0, tasks);
 					} catch {
@@ -3013,42 +3696,12 @@ function createApp() {
 						stopMediaStream();
 						speakingSession = createInitialSpeakingSession(tasks.length);
 						speakingMediaError =
-							"Không thể truy cập Micro (thiếu quyền hoặc không có micro). Bạn có thể cấp quyền lại hoặc chọn Bỏ qua phần Speaking.";
+							"Không thể truy cập Micro (thiếu quyền hoặc không có micro). Vui lòng cấp quyền Micro và thử lại.";
 						render();
 					}
 				});
 
-				const skipBtn = el(
-					"button",
-					{
-						type: "button",
-						id: "skipSpeakingBtn",
-						className: "btn btn-ghost",
-					},
-					["Bỏ qua phần Speaking (nộp bài không kèm ghi âm)"],
-				);
-				skipBtn.addEventListener("click", () => {
-					speakingStartToken += 1;
-					isRequestingMic = false;
-					stopSpeakingIntervals();
-					stopMediaStream();
-					revokeRecordedUrl();
-					recordedBlob = null;
-					recordedChunks = [];
-					speakingSession = createInitialSpeakingSession(tasks.length);
-					activeAnswerMs = 0;
-					answerStartedAt = 0;
-					hasRecordedAnyAnswer = false;
-					state.speakingMode = "skipped";
-					state.speakingDurationSec = null;
-					speakingMediaError = "";
-					unansweredConfirmState = null;
-					persist();
-					render();
-				});
-
 				actionRow.appendChild(startBtn);
-				actionRow.appendChild(skipBtn);
 				recorderCard.appendChild(actionRow);
 			}
 
@@ -3073,14 +3726,11 @@ function createApp() {
 			const reminders = [];
 			if (unansweredConfirmState.unansweredObjective > 0) {
 				reminders.push(
-					`còn ${unansweredConfirmState.unansweredObjective} câu khách quan chưa trả lời`,
+					`còn ${unansweredConfirmState.unansweredObjective} câu chưa trả lời`,
 				);
 			}
 			if (unansweredConfirmState.writingEmpty) {
 				reminders.push("phần Writing đang để trống");
-			}
-			if (unansweredConfirmState.speakingUnrecorded) {
-				reminders.push("phần Speaking chưa ghi âm");
 			}
 
 			const confirmBox = el(
@@ -3174,16 +3824,9 @@ function createApp() {
 			submission?.objective ?? scoreObjectiveTest(snapshot, state.answers);
 		const summaryText =
 			objective.provisionalSummary || buildProvisionalSummary(objective);
-		const speakingStatus = submission?.speakingStatus ?? "skipped";
+		const speakingStatus = submission?.speakingStatus ?? "none";
 		const registeredEmail = String(state.lead?.email ?? "").trim();
-
-		const formatCorrectCount = (sec) =>
-			sec &&
-			Number.isFinite(sec.correct) &&
-			Number.isFinite(sec.total) &&
-			sec.total > 0
-				? `${sec.correct}/${sec.total} câu đúng`
-				: "—";
+		const skillCards = buildSkillReportCards(objective, snapshot?.bands);
 
 		const resultCard = el("section", {
 			id: "testResultCard",
@@ -3206,33 +3849,45 @@ function createApp() {
 		);
 
 		resultCard.appendChild(
-			el("div", { className: "result-skills-grid" }, [
-				el(
-					"div",
-					{
-						className: "skill-score-tile",
-						dataset: { skillResult: "listening" },
-					},
-					[
-						el("span", { className: "tile-label" }, ["Listening"]),
-						el("strong", { className: "tile-value" }, [
-							formatCorrectCount(objective.listening),
-						]),
-					],
+			el(
+				"div",
+				{ className: "result-skills-grid" },
+				skillCards.map((card) =>
+					el(
+						"div",
+						{
+							className: "skill-score-tile",
+							dataset: { skillResult: card.key },
+						},
+						[
+							el("span", { className: "tile-label", textContent: card.label }),
+							el("div", { className: "tile-cefr", textContent: card.cefr }),
+							el("strong", {
+								className: "tile-value",
+								textContent: card.scoreText,
+							}),
+							el(
+								"div",
+								{
+									className: "skill-progress-track",
+									"aria-hidden": "true",
+								},
+								[
+									el("div", {
+										className: "skill-progress-fill",
+										style: `width: ${card.progressPct}%`,
+									}),
+								],
+							),
+						],
+					),
 				),
-				el(
-					"div",
-					{
-						className: "skill-score-tile",
-						dataset: { skillResult: "reading" },
-					},
-					[
-						el("span", { className: "tile-label" }, ["Reading"]),
-						el("strong", { className: "tile-value" }, [
-							formatCorrectCount(objective.reading),
-						]),
-					],
-				),
+			),
+		);
+
+		resultCard.appendChild(
+			el("p", { className: "result-skills-caption" }, [
+				"Đây là kết quả tự động của hai phần nghe và đọc. Cấp độ cuối cùng và lớp phù hợp sẽ được giáo viên báo sau khi chấm Writing và Speaking.",
 			]),
 		);
 
@@ -3437,19 +4092,10 @@ function createApp() {
 
 		ctaRow.querySelector("#retryTestBtn")?.addEventListener("click", () => {
 			stopActiveAudio();
-			stopMediaStream();
-			stopSpeakingIntervals();
+			resetSpeakingSessionRuntime();
 			stopPageTimer();
 			revokeRecordedUrl();
 			recordedBlob = null;
-			recordedChunks = [];
-			speakingSession = createInitialSpeakingSession(
-				snapshot?.speaking?.tasks?.length ?? 0,
-			);
-			activeAnswerMs = 0;
-			answerStartedAt = 0;
-			hasRecordedAnyAnswer = false;
-			isFinalizingRecording = false;
 			speakingUploadError = "";
 			speakingRetrySucceeded = false;
 			speakingMediaError = "";
@@ -3606,15 +4252,14 @@ function createApp() {
 	}
 
 	window.addEventListener("pagehide", () => {
-		speakingStartToken += 1;
-		isRequestingMic = false;
 		stopActiveAudio();
-		stopSpeakingIntervals();
-		stopMediaStream();
+		resetSpeakingSessionRuntime();
 		stopPageTimer();
 	});
 
 	void init();
 }
 
-createApp();
+if (typeof document !== "undefined" && typeof window !== "undefined") {
+	createApp();
+}

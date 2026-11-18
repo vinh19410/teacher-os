@@ -1,0 +1,201 @@
+{
+	"id": "9f15bc01-0af9-4e52-a30b-b314c143b410",
+	"url": "https://stepielts.com/student/reading/9f15bc01-0af9-4e52-a30b-b314c143b410?mode=practice",
+	"title": "Playing with science",
+	"source": "Actual Test",
+	"passage_number": 2,
+	"time_minutes": 20,
+	"question_range": "14-26",
+	"passage": {
+		"title": "Playing with science",
+		"paragraphs": [
+			"A. The connection between science and play is not often discussed, perhaps because scientists take it for granted, or because they are a little self-conscious about it and therefore try to hide it. In this context, play might describe a number of different activities. Play might involve the exploration of new uses for everyday objects just for curiosity; it could also include word jokes, or the playing of jokes or tricks upon other scientists. The element of play in science is thus an elusive and difficult topic, but it is fundamental to the experience of scientists.",
+			"B. One example of this connection is the jigsaw puzzle. Such puzzles present their players with two-dimensional fragments, each with a characteristic shape, from which to reconstruct an overall picture. Guessing the solution of a scientific problem has many similarities to completing a jigsaw puzzle. The scientists inspect each piece of data for a possible fit with its neighbours and, bit by bit, construct a whole argument. People who are good at jigsaw puzzles are able to guess which piece will fit even before trying it. In the same way, the best scientists are those who make the best guesses.",
+			"C. But scientists do not play only at out-guessing each other, or at putting together pieces to complete a puzzle. They also regard their work as 'playing' with 'toys'. Joseph Lambert, a professor of chemistry at Northwestern University in the US, shed some light on this tendency. In a letter he wrote the following: When I grew up, every kid put in some serious sandbox time, and it often involved building... complex sand structures around which fantasies were composed... The organic chemistry labs at Yale... The odours were pleasant, and the were fun in the same way. We mixed things up. physical process of working with our hands, as with sand, was satisfying... by the end of the year, I knew that I wanted to be an organic chemist, as I realised one could play in the sandbox for a living. Indeed, many scientists amuse themselves by 'playing with various 'toys' of their trade perhaps coming up with ingenious devices to get a particular job done, or diverting a piece of commercial equipment for novel scientific purposes. The apparatus put together by Robert Millikan and Harvey Fletcher to measure the charge of the electron, which involved a perfume atomiser bought at a local pharmacy, is a classic example of such inspired tinkering.",
+			"D. Whereas society often keeps a lid on playfulness, science encourages and nurtures it. Take, for example, the funny names that scientists have given to various chemical substances: tristane, windowpane, penguinone or megaphone. Each class of organ molecules includes a few such humorous names. Similar fun is had in other fields of science.",
+			"E. Hoaxes are a further aspect of the playfulness of scientists. A relatively recent example concerns the 'Plate of Brasse', which stated England's claim to California and was supposedly left by the English navigator Sir Francis Drake during his visit in 1579. A brass plate thought to be Drake's was discovered in the 1930s. But in 1977, Helen Michel and Frank Asaro, of the Lawrence Berkeley National Laboratory, showed that the copper and zinc used in the plate were of a higher quality than would have been available in the 1500s. They concluded that Drake's plate was most likely crafted much closer to the time when it was first brought to light.",
+			"F. Shortly afterwards, staff at the University of California announced that the artefact was devised as a practical joke by a group of friends of Herbert E Bolton, who directed the Bancroft Library at the University's Berkeley campus. Bolton, it seems, was intrigued by tales of Drake having installed a plate to record his visit to California, and often urged his students to look for it. Some of Bolton's friends decided to play a joke on him, but things misfired after Bolton went public and announced that the relic was authentic before he could be told about the joke.",
+			"G. Sometimes hoaxes serve a useful purpose. Some years ago, Nathan Lewis, a professor of chemistry at California Institute of Technology, and a graduate student were doing experiments in the laboratory of a senior professor, Harry Gray. Another co-worker had the habit of going through their data and rushing to Gray with his interpretation. Lewis decided to set a trap for the co-worker. He recalls: I manufactured an NMR spectrum. We left it out as bait. [Our colleague] took it and wrote up a paper on how important this result was. He was ready to go right to [the Journal of the American Chemical Society]... We didn't let him mail it [but] this stopped him temporarily from taking our data and interpreting it before making sure that it was right.",
+			"H. But is the playfulness of science usually so helpful? One might argue that to play a practical joke is a waste of time. So why do it? Perhaps play is an inherent part of the human condition. The psychologist's answer might be that scientists tend to play because science presents them with too much seriousness. Another possibility might be that scientists like to play because they tend to be very young. Some disciplines, mathematics especially, have a reputation for the narrow window of creativity in youth. But it may also be that there is some cognitive value to the playful element in science. Playing with ideas, after all, is what science is all about. A playful, childlike attitude may be extremely fruitful, and scientists should not be too embarrassed to acknowledge that play is often what motivates them."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "14-20",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Reading Passage 2 has eight paragraphs, A-H.\nWhich paragraph contains the following information?\nChoose the correct letter, A-H, in boxes 14-20.",
+			"options": ["A", "B", "C", "D", "E", "F", "G", "H"],
+			"questions": [
+				{
+					"number": 14,
+					"text": "a description of how a test showed some evidence to be fake",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột mô tả về cách một thử nghiệm cho thấy một số bằng chứng là giả.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\n• test ~ showed\n• fake ~ crafted much closer to the time...\n\nBước 3: So sánh và đối chiếu:\nĐoạn E chỉ rõ: \"Nhưng vào năm 1977, Helen Michel và Frank Asaro... đã chỉ ra rằng đồng và kẽm được sử dụng trong tấm bảng có chất lượng cao hơn mức có sẵn vào những năm 1500. Họ kết luận rằng tấm bảng của Drake rất có thể được chế tác gần thời điểm nó được đưa ra ánh sáng\".\n==> Thông tin này cho thấy đoạn E đã \"mô tả quá trình kiểm tra vật liệu và chứng minh tấm bảng là giả\".\n\nBước 4: Đáp án: E",
+					"quotes": [
+						"But in 1977, Helen Michel and Frank Asaro, of the Lawrence Berkeley National Laboratory, showed that the copper and zinc used in the plate were of a higher quality than would have been available in the 1500s. They concluded that Drake's plate was most likely crafted much closer to the time when it was first brought to light."
+					]
+				},
+				{
+					"number": 15,
+					"text": "reasons why scientists may be unwilling to admit that they play",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhững lý do tại sao các nhà khoa học có thể không sẵn lòng thừa nhận rằng họ chơi đùa.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\n• unwilling to admit ~ try to hide it\n• reasons ~ because\n\nBước 3: So sánh và đối chiếu:\nĐoạn A chỉ rõ: \"Sự kết nối giữa khoa học và vui chơi không thường được thảo luận, có lẽ vì các nhà khoa học coi đó là điều hiển nhiên, hoặc vì họ hơi e ngại về điều đó và do đó cố gắng che giấu nó\".\n==> Thông tin này cho thấy đoạn A đã \"đưa ra các lý do khiến nhà khoa học ngần ngại thừa nhận và che giấu việc họ đùa giỡn\".\n\nBước 4: Đáp án: A",
+					"quotes": [
+						"The connection between science and play is not often discussed, perhaps because scientists take it for granted, or because they are a little self-conscious about it and therefore try to hide it."
+					]
+				},
+				{
+					"number": 16,
+					"text": "the result of a trick going wrong",
+					"answer": "F",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nKết quả của một trò đùa đi chệch hướng.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\n• trick ~ joke\n• going wrong ~ misfired\n\nBước 3: So sánh và đối chiếu:\nĐoạn F chỉ rõ: \"Một số người bạn của Bolton quyết định chơi khăm ông, nhưng mọi thứ đã phản tác dụng sau khi Bolton công khai và thông báo rằng di vật đó là đồ thật trước khi ông có thể được báo về trò đùa\".\n==> Thông tin này cho thấy đoạn F đã \"mô tả hậu quả khi một trò đùa không diễn ra như dự kiến ban đầu\".\n\nBước 4: Đáp án: F",
+					"quotes": [
+						"Some of Bolton's friends decided to play a joke on him, but things misfired after Bolton went public and announced that the relic was authentic before he could be told about the joke."
+					]
+				},
+				{
+					"number": 17,
+					"text": "the similarity between a skill used in play and one used in science",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSự tương đồng giữa một kỹ năng được sử dụng trong vui chơi và một kỹ năng trong khoa học.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\n• similarity ~ similarities\n• play ~ jigsaw puzzle\n• science ~ scientific problem\n\nBước 3: So sánh và đối chiếu:\nĐoạn B chỉ rõ: \"Việc đoán giải pháp của một vấn đề khoa học có nhiều điểm tương đồng với việc hoàn thành một trò chơi ghép hình... Những người giỏi trò chơi ghép hình có thể đoán mảnh nào sẽ vừa vặn ngay cả trước khi thử nó. Giống như vậy, những nhà khoa học giỏi nhất là những người đưa ra những dự đoán tốt nhất\".\n==> Thông tin này cho thấy đoạn B đã \"chỉ ra điểm giống nhau giữa kỹ năng chơi ghép hình và kỹ năng làm khoa học\".\n\nBước 4: Đáp án: B",
+					"quotes": [
+						"Guessing the solution of a scientific problem has many similarities to completing a jigsaw puzzle. The scientists inspect each piece of data for a possible fit with its neighbours and, bit by bit, construct a whole argument. People who are good at jigsaw puzzles are able to guess which piece will fit even before trying it. In the same way, the best scientists are those who make the best guesses."
+					]
+				},
+				{
+					"number": 18,
+					"text": "how a group of scientists stopped a colleague misusing their results",
+					"answer": "G",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCách một nhóm các nhà khoa học ngăn chặn một đồng nghiệp sử dụng sai kết quả của họ.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\n• stopped ~ stopped him temporarily\n• misusing their results ~ taking our data and interpreting it\n\nBước 3: So sánh và đối chiếu:\nĐoạn G chỉ rõ: \"...Chúng tôi đã không để anh ta gửi nó nhưng điều này đã tạm thời ngăn anh ta lấy dữ liệu của chúng tôi và giải thích nó trước khi đảm bảo rằng nó đúng\".\n==> Thông tin này cho thấy đoạn G đã \"kể lại cách các nhà khoa học dùng bẫy để ngăn đồng nghiệp ăn cắp và diễn dịch sai dữ liệu\".\n\nBước 4: Đáp án: G",
+					"quotes": [
+						"Some years ago, Nathan Lewis, a professor of chemistry at California Institute of Technology, and a graduate student were doing experiments in the laboratory of a senior professor, Harry Gray. Another co-worker had the habit of going through their data and rushing to Gray with his interpretation. Lewis decided to set a trap for the co-worker. He recalls: I manufactured an NMR spectrum. We left it out as bait. [Our colleague] took it and wrote up a paper on how important this result was. He was ready to go right to [the Journal of the American Chemical Society]... We didn't let him mail it [but] this stopped him temporarily from taking our data and interpreting it before making sure that it was right."
+					]
+				},
+				{
+					"number": 19,
+					"text": "some examples of the playful nature of scientific language",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột số ví dụ về bản chất vui nhộn của ngôn ngữ khoa học.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\n• examples ~ Take, for example\n• playful nature ~ funny / humorous\n• language ~ names\n\nBước 3: So sánh và đối chiếu:\nĐoạn D chỉ rõ: \"Ví dụ, hãy xem xét những cái tên hài hước mà các nhà khoa học đã đặt cho nhiều chất hóa học khác nhau: tristane, windowpane, penguinone hoặc megaphone\".\n==> Thông tin này cho thấy đoạn D đã \"liệt kê các từ ngữ mang tính đùa nghịch được dùng trong việc đặt tên khoa học\".\n\nBước 4: Đáp án: D",
+					"quotes": [
+						"Take, for example, the funny names that scientists have given to various chemical substances: tristane, windowpane, penguinone or megaphone. Each class of organ molecules includes a few such humorous names."
+					]
+				},
+				{
+					"number": 20,
+					"text": "an example of an everyday object put to a scientific use",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột ví dụ về một đồ vật hàng ngày được đưa vào sử dụng trong khoa học.\n\nBước 2: Tìm các keywords được paraphrase trong câu hỏi:\n• everyday object ~ perfume atomiser\n• scientific use ~ measure the charge of the electron\n\nBước 3: So sánh và đối chiếu:\nĐoạn C chỉ rõ: \"Thiết bị được lắp ráp bởi Robert Millikan và Harvey Fletcher để đo điện tích của electron, liên quan đến một bình xịt nước hoa được mua ở một hiệu thuốc địa phương, là một ví dụ kinh điển...\"\n==> Thông tin này cho thấy đoạn C đã \"chỉ ra việc dùng bình xịt nước hoa cho mục đích thí nghiệm khoa học\".\n\nBước 4: Đáp án: C",
+					"quotes": [
+						"The apparatus put together by Robert Millikan and Harvey Fletcher to measure the charge of the electron, which involved a perfume atomiser bought at a local pharmacy, is a classic example of such inspired tinkering."
+					]
+				}
+			]
+		},
+		{
+			"range": "21-22",
+			"type": "MULTIPLE_CHOICE_MANY",
+			"instructions": "Choose TWO correct answers.",
+			"questions": [
+				{
+					"number": 21,
+					"text": "Which TWO of the following reasons are given as possible explanations of scientists' play behaviour?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Play may provide relief from their work."
+						},
+						{
+							"label": "B",
+							"text": "Scientists sometimes spend time as teachers."
+						},
+						{
+							"label": "C",
+							"text": "The age of scientists predisposes them to play."
+						},
+						{
+							"label": "D",
+							"text": "Scientists get ideas from children's questions."
+						},
+						{
+							"label": "E",
+							"text": "Scientists are secretive about their work."
+						}
+					],
+					"answer": "A"
+				},
+				{
+					"number": 22,
+					"text": "Which TWO of the following reasons are given as possible explanations of scientists' play behaviour?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Play may provide relief from their work."
+						},
+						{
+							"label": "B",
+							"text": "Scientists sometimes spend time as teachers."
+						},
+						{
+							"label": "C",
+							"text": "The age of scientists predisposes them to play."
+						},
+						{
+							"label": "D",
+							"text": "Scientists get ideas from children's questions."
+						},
+						{
+							"label": "E",
+							"text": "Scientists are secretive about their work."
+						}
+					],
+					"answer": "C"
+				}
+			]
+		},
+		{
+			"range": "23-26",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary below. Write NO MORE THAN THREE WORDS from the passage for each answer.",
+			"body": "Scientists play tricks\nThe passage gives two examples of tricks arising from the playfulness of scientists.\nResearchers at Caltech found that a colleague had been stealing their ____ (23) and used a hoax involving a fake NMR spectrum to trap the offender.\nAnother story concerns a plate which a famous ____ (24) is said to have left behind on a visit to California.\nThe ____ (25) that the plate was made of later revealed that it was a fake, a hoax carried out by friends of the director of the ____ (26).",
+			"body_html": "<table><tbody><tr><td><p><strong>Scientists play tricks</strong></p><ul><li>The passage gives two examples of tricks arising from the playfulness of scientists.</li><li>Researchers at Caltech found that a colleague had been stealing their [23] and used a hoax involving a fake NMR spectrum to trap the offender.</li><li>Another story concerns a plate which a famous [24] is said to have left behind on a visit to California. </li><li>The [25] that the plate was made of later revealed that it was a fake, a hoax carried out by friends of the director of the [26].</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 23,
+					"text": "Researchers at Caltech found that a colleague had been stealing their ____ (23)",
+					"answer": "data",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCác nhà nghiên cứu tại Caltech phát hiện ra rằng một đồng nghiệp đã đánh cắp ____ của họ.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN\n• Dấu hiệu: stealing their + NOUN (danh từ chỉ đối tượng/sự vật bị đánh cắp)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• Caltech ~ California Institute of Technology\n• colleague ~ co-worker\n• stealing ~ going through... and rushing... with his interpretation\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Một đồng nghiệp khác có thói quen xem xét dữ liệu của họ và vội vã đến gặp Gray với cách giải thích của anh ta\" (Another co-worker had the habit of going through their data and rushing to Gray with his interpretation) .\n\nBước 5: Đáp án: data\nCác nhà nghiên cứu tại Caltech phát hiện ra rằng một đồng nghiệp đã đánh cắp dữ liệu của họ (Researchers at Caltech found that a colleague had been stealing their data).",
+					"quotes": [
+						"Another co-worker had the habit of going through their data and rushing to Gray with his interpretation."
+					]
+				},
+				{
+					"number": 24,
+					"text": "Another story concerns a plate which a famous ____ (24) is said to have left behind on a visit to California.",
+					"answer": "English navigator",
+					"quotes": [
+						"A relatively recent example concerns the 'Plate of Brasse', which stated England's claim to California and was supposedly left by the English navigator Sir Francis Drake during his visit in 1579."
+					]
+				},
+				{
+					"number": 25,
+					"text": "The ____ that the plate was made of later revealed that it was a fake, a hoax carried out by friends of the director of the ____.",
+					"answer": "copper and zinc",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\n____ mà tấm bảng được làm từ đó sau đó tiết lộ rằng nó là đồ giả.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN\n• Dấu hiệu: The + NOUN + that (Chỉ vật liệu hoặc chất liệu tạo nên đồ vật)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• plate was made of ~ used in the plate\n• revealed that it was a fake ~ showed... were of a higher quality... concluded... most likely crafted much closer to the time\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Nhưng vào năm 1977, Helen Michel và Frank Asaro... đã chỉ ra rằng đồng và kẽm được sử dụng trong tấm bảng có chất lượng cao hơn mức có sẵn vào những năm 1500\" (...showed that the copper and zinc used in the plate were of a higher quality...).\n\nBước 5: Đáp án: copper and zinc\nĐồng và kẽm mà tấm bảng được làm từ đó sau đó tiết lộ rằng nó là đồ giả (The copper and zinc that the plate was made of later revealed that it was a fake).",
+					"quotes": [
+						"But in 1977, Helen Michel and Frank Asaro, of the Lawrence Berkeley National Laboratory, showed that the copper and zinc used in the plate were of a higher quality than would have been available in the 1500s."
+					]
+				},
+				{
+					"number": 26,
+					"text": "The copper and zinc that the plate was made of later revealed that it was a fake, a hoax carried out by friends of the director of the ____ (26).",
+					"answer": "Bancroft Library",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nMột trò lừa đảo do những người bạn của giám đốc ____ thực hiện.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN (Tên riêng/Địa điểm)\n• Dấu hiệu: director of the + NOUN (Tổ chức, cơ quan do người này quản lý)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• hoax carried out by friends ~ devised as a practical joke by a group of friends\n• director ~ directed\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Đồ tạo tác này được nghĩ ra như một trò đùa thực tế bởi một nhóm bạn của Herbert E Bolton, người chỉ đạo Thư viện Bancroft tại khuôn viên Berkeley của trường Đại học\" (...devised as a practical joke by a group of friends of Herbert E Bolton, who directed the Bancroft Library at the University's Berkeley campus).\n\nBước 5: Đáp án: Bancroft Library\nMột trò lừa đảo do những người bạn của giám đốc Thư viện Bancroft thực hiện (a hoax carried out by friends of the director of the Bancroft Library).",
+					"quotes": [
+						"F. Shortly afterwards, staff at the University of California announced that the artefact was devised as a practical joke by a group of friends of Herbert E Bolton, who directed the Bancroft Library at the University's Berkeley campus."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -5,7 +5,7 @@ import { syncStudentSessionUser } from "@/lib/query-client";
 export const Route = createFileRoute("/_auth")({
 	component: AuthLayout,
 	beforeLoad: async ({ location }) => {
-		const session = await authClient.getSession();
+		const session = await authClient.getCachedSession();
 		if (!session.data) {
 			syncStudentSessionUser(null);
 			throw redirect({

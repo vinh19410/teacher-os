@@ -1,0 +1,198 @@
+{
+	"id": "d480f7bc-b4b7-49e7-a5ac-4a9202e13c95",
+	"url": "https://stepielts.com/student/reading/d480f7bc-b4b7-49e7-a5ac-4a9202e13c95?mode=practice",
+	"title": "Climate Change and the Inuit",
+	"source": "Other sources",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "1-14",
+	"passage": {
+		"title": "Climate Change and the Inuit",
+		"subtitle": "The threat posed by climate change in the Arctic and the problems faced by Canada’s Inuit people",
+		"paragraphs": [
+			"A. Unusual incidents are being reported across the Arctic. Inuit families going off on snowmobiles to prepare their summer hunting camps have found themselves cut off from home by a sea of mud, following early thaws. There are reports of igloos losing their insulating properties as the snow drips and refreezes, of lakes draining into the sea as permafrost melts, and sea ice breaking up earlier than usual, carrying seals beyond the reach of hunters. Climate change may still be a rather abstract idea to most of us, but in the Arctic it is already having dramatic effects - if summertime ice continues to shrink at its present rate, the Arctic Ocean could soon become virtually ice-free in summer. The knock-on effects are likely to include more warming, cloudier skies, increased precipitation and higher sea levels. Scientists are increasingly keen to find out what’s going on because they consider the Arctic the ’canary in the mine’ for global warming - a warning of what’s in store for the rest of the world.",
+			"B. For the Inuit the problem is urgent. They live in precarious balance with one of the toughest environments on earth. Climate change, whatever its causes, is a direct threat to their way of life.’Nobody knows the Arctic as well as the locals, which is why they are not content simply to stand back and let outside experts tell them what’s happening. In Canada, where the Inuit people are jealously guarding their hard-won autonomy in the country’s newest territory, Nunavut, they believe their best hope of survival in this changing environment lies in combining their ancestral knowledge with the best of modern science. This is a challenge in itself.’",
+			"C. ’The Canadian Arctic is a vast, treeless polar desert that’s covered with snow for most of the year. Venture into this terrain and you get some idea of the hardships facing anyone who calls this home. Farming is out of the question and nature offers meagre pickings. Humans first settled in the Arctic a mere 4,500 years ago, surviving by exploiting sea mammals and fish.’ The environment tested them to the limits: sometimes the colonists were successful, sometimes they failed and vanished. But around a thousand years ago, one group emerged that was uniquely well adapted to cope with the Arctic environment. These Thule people moved in from Alaska, bringing kayaks, sleds, dogs, pottery and iron tools. They are the ancestors of today’s Inuit people.",
+			"D. ’Life for the descendants of the Thule people is still harsh. Nunavut is 1.9 million square kilometres of rock and ice, and a handful of islands around the North Pole. It’s currently home to 2,500 people, all but a handful of them indigenous Inuit. Over the past 40 years, most have abandoned their nomadic ways and settled in the territory’s 28 isolated communities, but they still rely heavily on nature to provide food and clothing. Provisions available in local shops have to be flown into Nunavut on one of the most costly air networks in the world, or brought by supply ship during the few ice-free weeks of summer. It would cost a family around £7,000 a year to replace meat they obtained themselves through hunting with imported meat. Economic opportunities are scarce, and for many people state benefits are their only income.’",
+			"E. ’While the Inuit may not actually starve if hunting and trapping are curtailed by climate change, there has certainly been an impact on people’s health. Obesity, heart disease and diabetes are beginning to appear in a people for whom these have never before been problems. There has been a crisis of identity as the traditional skills of hunting, trapping and preparing skins have begun to disappear. In Nunavut’s ’igloo and email’ society, where adults who were born in igloos have children who may never have been out on the land, there’s a high incidence of depression.’",
+			"F. ’With so much at stake, the Inuit are determined to play a key role in teasing out the mysteries of climate change in the Arctic. Having survived there for centuries, they believe their wealth of traditional knowledge is vital to the task. And Western scientists are starting to draw on this wisdom, increasingly referred to as ’Inuit Qaujimajatuqangit’, or IQ.’In the early days scientists ignored us when they came up here to study anything. They just figured these people don’t know very much so we won’t ask them,’ says John Amagoalik, an Inuit leader and politician.’But in recent years IQ has had much more credibility and weight.’ In fact it is now a requirement for anyone hoping to get permission to do research that they consult the communities, who are helping to set the research agenda to reflect their most important concerns. They can turn down applications from scientists they believe will work against their interests, or research projects that will impinge too much on their daily lives and traditional activities.’",
+			"G. ’Some scientists doubt the value of traditional knowledge because the occupation of the Arctic doesn’t go back far enough. Others, however, point out that the first weather stations in the far north date back just 50 years. There are still huge gaps in our environmental knowledge, and despite the scientific onslaught, many predictions are no more than best guesses. IQ could help to bridge the gap and resolve the tremendous uncertainty about how much of what we’re seeing is natural capriciousness and how much is the consequence of human activity.’"
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-6",
+			"type": "MATCHING_HEADINGS",
+			"instructions": "Reading Passage has seven paragraphs, A-G.\nChoose the correct heading for paragraphs B-G from the list of headings below.",
+			"options": [
+				{
+					"label": "i",
+					"text": "The reaction of the Inuit community to climate change"
+				},
+				{
+					"label": "ii",
+					"text": "Understanding of climate change remains limited"
+				},
+				{
+					"label": "iii",
+					"text": "Alternative sources of essential supplies"
+				},
+				{
+					"label": "iv",
+					"text": "Respect for Inuit opinion grows"
+				},
+				{
+					"label": "v",
+					"text": "A healthier choice of food"
+				},
+				{
+					"label": "vi",
+					"text": "A difficult landscape"
+				},
+				{
+					"label": "vii",
+					"text": "Negative effects on well-being"
+				},
+				{
+					"label": "viii",
+					"text": "Alarm caused by unprecedented events in the Arctic"
+				},
+				{
+					"label": "ix",
+					"text": "The benefits of an easier existence"
+				}
+			],
+			"questions": [
+				{
+					"number": 1,
+					"text": "Paragraph B",
+					"answer": "i",
+					"quotes": [
+						"B. For the Inuit the problem is urgent. They live in precarious balance with one of the toughest environments on earth. Climate change, whatever its causes, is a direct threat to their way of life. ’Nobody knows the Arctic as well as the locals, which is why they are not content simply to stand back and let outside experts tell them what’s happening. In Canada, where the Inuit people are jealously guarding their hard-won autonomy in the country’s newest territory, Nunavut, they believe their best hope of survival in this changing environment lies in combining their ancestral knowledge with the best of modern science. This is a challenge in itself.’"
+					]
+				},
+				{
+					"number": 2,
+					"text": "Paragraph C",
+					"answer": "vi",
+					"explanation": "Bước 1: Đọc và hiểu đoạn C:\nBắc Cực Canada là một sa mạc địa cực rộng lớn, không có cây cối, bị bao phủ bởi tuyết hầu hết thời gian trong năm. 'Bước vào địa hình này, bạn sẽ hiểu được một phần những khó khăn mà bất kỳ ai gọi nơi này là nhà đều phải đối mặt. Việc trồng trọt là không thể và thiên nhiên chỉ cung cấp những thứ ít ỏi.\n\nBước 2: Tóm tắt nội dung chính của đoạn C:\nĐoạn C có nội dung chính là \"Mô tả về môi trường khắc nghiệt của Bắc Cực Canada, nơi việc trồng trọt là không thể, và những khó khăn mà những người đầu tiên định cư phải đối mặt\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề vi \"A difficult landscape\" (Một phong cảnh khó khăn).\n\nBước 4: Đáp án: vi",
+					"quotes": [
+						"C. ’The Canadian Arctic is a vast, treeless polar desert that’s covered with snow for most of the year. Venture into this terrain and you get some idea of the hardships facing anyone who calls this home. Farming is out of the question and nature offers meagre pickings."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Paragraph D",
+					"answer": "iii",
+					"quotes": [
+						"D. ’Life for the descendants of the Thule people is still harsh. Nunavut is 1.9 million square kilometres of rock and ice, and a handful of islands around the North Pole. It’s currently home to 2,500 people, all but a handful of them indigenous Inuit. Over the past 40 years, most have abandoned their nomadic ways and settled in the territory’s 28 isolated communities, but they still rely heavily on nature to provide food and clothing. Provisions available in local shops have to be flown into Nunavut on one of the most costly air networks in the world, or brought by supply ship during the few ice-free weeks of summer. It would cost a family around £7,000 a year to replace meat they obtained themselves through hunting with imported meat. Economic opportunities are scarce, and for many people state benefits are their only income.’"
+					]
+				},
+				{
+					"number": 4,
+					"text": "Paragraph E",
+					"answer": "vii",
+					"quotes": [
+						"E. ’While the Inuit may not actually starve if hunting and trapping are curtailed by climate change, there has certainly been an impact on people’s health. Obesity, heart disease and diabetes are beginning to appear in a people for whom these have never before been problems. There has been a crisis of identity as the traditional skills of hunting, trapping and preparing skins have begun to disappear. In Nunavut’s ’igloo and email’ society, where adults who were born in igloos have children who may never have been out on the land, there’s a high incidence of depression.’"
+					]
+				},
+				{
+					"number": 5,
+					"text": "Paragraph F",
+					"answer": "iv",
+					"quotes": [
+						"’In the early days scientists ignored us when they came up here to study anything. They just figured these people don’t know very much so we won’t ask them,’ says John Amagoalik, an Inuit leader and politician. ’But in recent years IQ has had much more credibility and weight.’ In fact it is now a requirement for anyone hoping to get permission to do research that they consult the communities, who are helping to set the research agenda to reflect their most important concerns."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Paragraph G",
+					"answer": "ii",
+					"quotes": [
+						"G. ’Some scientists doubt the value of traditional knowledge because the occupation of the Arctic doesn’t go back far enough. Others, however, point out that the first weather stations in the far north date back just 50 years. There are still huge gaps in our environmental knowledge, and despite the scientific onslaught, many predictions are no more than best guesses. IQ could help to bridge the gap and resolve the tremendous uncertainty about how much of what we’re seeing is natural capriciousness and how much is the consequence of human activity.’"
+					]
+				}
+			]
+		},
+		{
+			"range": "7-14",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary of paragraphs C and D below.\nChoose NO MORE THAN TWO WORDS from paragraphs C and D for each answer.\nWrite your answers in boxes 7-14 on your answer sheet.",
+			"body": "If you visit the Canadian Arctic, you immediately appreciate the problems faced by people for whom this is home. It would clearly be impossible for the people to engage in ____ (7) as a means of supporting themselves. For thousands of years they have had to rely on catching ____ (8) and ____ (9) as a means of sustenance. The harsh surroundings saw many who tried to settle there pushed to their limits, although some were successful. The ____ (10) people were an example of the latter and for them the environment did not prove unmanageable. For the present inhabitants, life continues to be a struggle. The territory of Nunavut consists of little more than ice, rock and a few ____ (11). In recent years, many of them have been obliged to give up their ____ (12) lifestyle, but they continue to depend mainly on ____ (13) for their food and clothes. ____ (14) produce is particularly expensive.",
+			"body_html": "If you visit the Canadian Arctic, you immediately appreciate the problems faced by people for whom this is home. It would clearly be impossible for the people to engage in [7] as a means of supporting themselves. For thousands of years they have had to rely on catching [8] and [9] as a means of sustenance. The harsh surroundings saw many who tried to settle there pushed to their limits, although some were successful. The [10] people were an example of the latter and for them the environment did not prove unmanageable. For the present inhabitants, life continues to be a struggle. The territory of Nunavut consists of little more than ice, rock and a few [11]. In recent years, many of them have been obliged to give up their [12] lifestyle, but they continue to depend mainly on [13] for their food and clothes. [14] produce is particularly expensive.",
+			"questions": [
+				{
+					"number": 7,
+					"text": "",
+					"answer": "farming",
+					"quotes": [
+						"Venture into this terrain and you get some idea of the hardships facing anyone who calls this home. Farming is out of the question and nature offers meagre pickings."
+					]
+				},
+				{
+					"number": 8,
+					"text": "",
+					"answer": "sea mammals",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nTrong hàng ngàn năm, họ đã phải dựa vào việc bắt _______ và _______ như một phương tiện sinh tồn. (Chỗ trống cần danh từ chỉ những thứ được bắt để ăn).\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN (số nhiều)\n• Dấu hiệu: \"catching\" + NOUN (bắt cái gì đó)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• rely on ~ surviving by exploiting\n• catching ~ exploiting\n• sustenance ~ surviving\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Humans first settled in the Arctic a mere 4,500 years ago, surviving by exploiting sea mammals and fish.\" (\"Con người lần đầu tiên định cư ở Bắc Cực chỉ 4.500 năm trước, sống sót bằng cách khai thác động vật có vú ở biển và cá.\").\n\nBước 5: Đáp án: sea mammals\nTrong hàng ngàn năm, họ đã phải dựa vào việc bắt động vật có vú ở biển và cá như một phương tiện sinh tồn. (For thousands of years they have had to rely on catching sea mammals and fish as a means of sustenance.)",
+					"quotes": [
+						"Humans first settled in the Arctic a mere 4,500 years ago, surviving by exploiting sea mammals and fish."
+					]
+				},
+				{
+					"number": 9,
+					"text": "",
+					"answer": "fish",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nTrong hàng ngàn năm, họ đã phải dựa vào việc bắt _______ và _______ như một phương tiện sinh tồn. (Chỗ trống cần danh từ chỉ những thứ được bắt để ăn, cùng loại với \"sea mammals\").\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN (số nhiều)\n• Dấu hiệu: \"catching\" + NOUN (bắt cái gì đó)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• rely on ~ surviving by exploiting\n• catching ~ exploiting\n• sustenance ~ surviving\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Humans first settled in the Arctic a mere 4,500 years ago, surviving by exploiting sea mammals and fish.\" (\"Con người lần đầu tiên định cư ở Bắc Cực chỉ 4.500 năm trước, sống sót bằng cách khai thác động vật có vú ở biển và cá.\").\n\nBước 5: Đáp án: fish\nTrong hàng ngàn năm, họ đã phải dựa vào việc bắt động vật có vú ở biển và cá như một phương tiện sinh tồn. (For thousands of years they have had to rely on catching sea mammals and fish as a means of sustenance.)",
+					"quotes": [
+						"Humans first settled in the Arctic a mere 4,500 years ago, surviving by exploiting sea mammals and fish."
+					]
+				},
+				{
+					"number": 10,
+					"text": "",
+					"answer": "Thule",
+					"quotes": [
+						"These Thule people moved in from Alaska, bringing kayaks, sleds, dogs, pottery and iron tools."
+					]
+				},
+				{
+					"number": 11,
+					"text": "",
+					"answer": "islands",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nLãnh thổ Nunavut chỉ bao gồm băng, đá và một vài _______. (Chỗ trống cần một danh từ số nhiều chỉ địa hình).\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN (số nhiều)\n• Dấu hiệu: \"a few\" + NOUN (một vài cái gì đó)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• ice, rock ~ rock and ice\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Life for the descendants of the Thule people is still harsh. Nunavut is 1.9 million square kilometres of rock and ice, and a handful of islands around the North Pole.\" (\"Nunavut là 1,9 triệu km vuông đá và băng, và một vài hòn đảo quanh Bắc Cực.\").\n\nBước 5: Đáp án: islands\nLãnh thổ Nunavut chỉ bao gồm băng, đá và một vài hòn đảo. (The territory of Nunavut consists of little more than ice, rock and a few islands.)",
+					"quotes": [
+						"Nunavut is 1.9 million square kilometres of rock and ice, and a handful of islands around the North Pole. It’s currently home to 2,500 people, all but a handful of them indigenous Inuit."
+					]
+				},
+				{
+					"number": 12,
+					"text": "",
+					"answer": "nomadic",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nTrong những năm gần đây, nhiều người trong số họ đã buộc phải từ bỏ lối sống _______ của mình. (Chỗ trống cần một tính từ bổ nghĩa cho \"lối sống\").\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: ADJECTIVE\n• Dấu hiệu: \"their\" + ADJECTIVE + \"lifestyle\" (lối sống _______ của họ)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• given up ~ abandoned\n• lifestyle ~ ways\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Over the past 40 years, most have abandoned their nomadic ways and settled in the territory's 28 isolated communities...\" (\"Trong 40 năm qua, hầu hết đã từ bỏ lối sống du mục của họ và định cư trong 28 cộng đồng biệt lập của lãnh thổ...\").\n\nBước 5: Đáp án: nomadic\nTrong những năm gần đây, nhiều người trong số họ đã buộc phải từ bỏ lối sống du mục của mình. (In recent years, many of them have been obliged to give up their nomadic lifestyle.)",
+					"quotes": [
+						"Over the past 40 years, most have abandoned their nomadic ways and settled in the territory’s 28 isolated communities, but they still rely heavily on nature to provide food and clothing. Provisions available in local shops have to be flown into Nunavut on one of the most costly air networks in the world, or brought by supply ship during the few ice-free weeks of summer."
+					]
+				},
+				{
+					"number": 13,
+					"text": "",
+					"answer": "nature",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\n...nhưng họ vẫn tiếp tục phụ thuộc chủ yếu vào _______ để có thức ăn và quần áo. (Chỗ trống cần một danh từ chỉ nguồn cung cấp).\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN\n• Dấu hiệu: \"depend mainly on\" + NOUN (phụ thuộc chủ yếu vào cái gì)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• depend mainly on ~ rely heavily on\n• for their food and clothes ~ to provide food and clothing\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"...but they still rely heavily on nature to provide food and clothing.\" (\"...nhưng họ vẫn phụ thuộc nhiều vào tự nhiên để cung cấp thức ăn và quần áo.\").\n\nBước 5: Đáp án: nature\n...nhưng họ vẫn tiếp tục phụ thuộc chủ yếu vào tự nhiên để có thức ăn và quần áo. (...but they continue to depend mainly on nature for their food and clothes.)",
+					"quotes": [
+						"Over the past 40 years, most have abandoned their nomadic ways and settled in the territory’s 28 isolated communities, but they still rely heavily on nature to provide food and clothing. Provisions available in local shops have to be flown into Nunavut on one of the most costly air networks in the world, or brought by supply ship during the few ice-free weeks of summer."
+					]
+				},
+				{
+					"number": 14,
+					"text": "",
+					"answer": "imported",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nSản phẩm _______ đặc biệt đắt đỏ. (Chỗ trống cần một tính từ bổ nghĩa cho \"sản phẩm\").\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: ADJECTIVE\n• Dấu hiệu: ADJECTIVE + \"produce\" (sản phẩm _______)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• particularly expensive ~ £7,000 a year\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"It would cost a family around £7,000 a year to replace meat they obtained themselves through hunting with imported meat.\" (\"Sẽ tốn khoảng 7.000 bảng Anh một năm để một gia đình thay thế thịt tự săn bắt bằng thịt nhập khẩu.\").\n\nBước 5: Đáp án: imported\nSản phẩm nhập khẩu đặc biệt đắt đỏ. ( Imported produce is particularly expensive.)",
+					"quotes": [
+						"It would cost a family around £7,000 a year to replace meat they obtained themselves through hunting with imported meat. Economic opportunities are scarce, and for many people state benefits are their only income.’"
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

@@ -279,8 +279,8 @@ flowchart TD
 ## Flow: F5 — Chặn chéo vai trò 3 lớp giữa các cổng ứng dụng
 __Trigger__: Người dùng đăng nhập tại cổng sai vai trò hoặc mở cổng ứng dụng khác bằng phiên dùng chung
 __Related UC__: [[../usecases/uc-role-cross-block.md]]
-__Related FR__: FR-auth-signin-008, FR-auth-signin-009, FR-auth-signin-010, FR-auth-signin-011, FR-auth-signin-012, FR-auth-signin-013, FR-auth-signin-017
-__Related E__: E-auth-signin-006, E-auth-signin-007, E-auth-signin-008, E-auth-signin-010, E-auth-signin-011, E-auth-signin-012, E-auth-signin-013, E-auth-signin-014, E-auth-signin-015, E-auth-signin-028
+__Related FR__: FR-auth-signin-008, FR-auth-signin-009, FR-auth-signin-010, FR-auth-signin-011, FR-auth-signin-012, FR-auth-signin-013
+__Related E__: E-auth-signin-006, E-auth-signin-007, E-auth-signin-008, E-auth-signin-010, E-auth-signin-011, E-auth-signin-012, E-auth-signin-013, E-auth-signin-014, E-auth-signin-015
 
 ### Sequence — F5 Chặn chéo vai trò (Học viên vào ứng dụng giáo viên & các cổng chéo)
 
@@ -322,8 +322,7 @@ sequenceDiagram
 ```mermaid
 flowchart TD
     A["Yêu cầu truy cập vào một trong 3 cổng ứng dụng"] --> B{"Đang ở bước tạo phiên hay gọi dữ liệu?"}
-    B -->|"Bước tạo phiên / gọi OTP"| C{"Phương thức và vai trò có khớp cổng?"}
-    C -->|"Giáo viên / Quản trị gọi OTP"| End1["Chặn gửi và xác minh OTP (E-auth-signin-028)"]
+    B -->|"Bước tạo phiên"| C{"Vai trò tài khoản có khớp cổng?"}
     C -->|"Lệch vai trò cổng"| End2["Từ chối tạo phiên, báo đúng cổng (E-auth-signin-006..008)"]
     C -->|"Khớp vai trò cổng"| End0["Cho phép khởi tạo phiên làm việc"]
     B -->|"Bước gọi dữ liệu khi đã có phiên"| D{"Cổng đích đang được gọi?"}

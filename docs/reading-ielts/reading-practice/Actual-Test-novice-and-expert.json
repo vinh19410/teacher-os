@@ -1,0 +1,173 @@
+{
+	"id": "733a1aa8-3336-4f75-bb3a-9ebdf68c706c",
+	"url": "https://stepielts.com/student/reading/733a1aa8-3336-4f75-bb3a-9ebdf68c706c?mode=practice",
+	"title": "Novice and Expert",
+	"source": "Actual Test",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Novice and Expert",
+		"paragraphs": [
+			"A. Expertise is commitment coupled with creativity. Specifically, it is the commitment of time, energy, and resource to a relatively narrow field of study and the creative energy necessary to generate new knowledge in that field. It takes a considerable amount of time and regular exposure to a large number of cases to become an expert.",
+			"B. An individual enters a field of study as a novice. The novice needs to learn the guiding principles and rules of a given task in order to perform that task. Concurrently, the novice needs to be exposed to specific cases, or instances, that test the boundaries of such principles. Generally, a novice will find a mentor to guide her through the process of acquiring new knowledge. A fairly simple example would be someone learning to play chess. The novice chess player seeks a mentor to teach her the object of the game, the number of spaces, the names of the pieces, the function of each piece, how each piece is moved, and the necessary conditions for winning or losing the game.",
+			"C. In time, and with much practice, the novice begins to recognize patterns of behavior within cases and, thus, becomes a journeyman. With more practice and exposure to increasingly complex cases, the journeyman finds patterns not only within cases but also between cases. More importantly, the journeyman learns that these patterns often repeat themselves over time. The journeyman still maintains regular contact with a mentor to solve specific problems and learn more complex strategies. Returning to the example of the chess player, the individual begins to learn patterns of opening moves, offensive and defensive game-playing strategies, and patterns of victory and defeat.",
+			"D. When a journeyman starts to make and test hypotheses about future behavior based on past experiences, she begins the next transition. Once she creatively generates knowledge, rather than simply matching superficial patterns, she becomes an expert. At this point, she is confident in her knowledge and no longer needs a mentor as a guide – she becomes responsible for her own knowledge.",
+			"E. The chess example is a rather short description of an apprenticeship model. Apprenticeship may seem like a restrictive 18th century mode of education, but it is still a standard method of training for many complex tasks. Academic doctoral programs are based on an apprenticeship model, as are fields like law, music, engineering, and medicine. Graduate students enter fields of study, find mentors, and begin the long process of becoming independent experts and generating new knowledge in their respective domains.",
+			"F. Psychologists and cognitive scientists agree that the time it takes to become an expert depends on the complexity of the task and the number of cases, or patterns, to which an individual is exposed. The more complex the task, the longer it takes to build expertise, or, more accurately, the longer it takes to experience and store a large number of cases or patterns.",
+			"The Power of Expertise",
+			"G. An expert perceives meaningful patterns in her domain better than non-experts. Where a novice perceives random or disconnected data points, an expert connects regular patterns within and between cases. This ability to identify patterns is not an innate perceptual skill; rather it reflects the organization of knowledge after exposure to and experience with thousands of cases. Experts have a deeper understanding of their domains than novices do, and utilize higher – order principles to solve problems. A novice, for example, might group objects together by color or size, whereas an expert would group the same objects according to their function or utility. Experts comprehend the meaning of data and weigh variables with different criteria within their domains better than novices. Experts recognized variables that have the largest influence on a particular problem and focus their attention on those variables.",
+			"H. Experts have better domain -specific short -term and long -term memory than novices do. Moreover, experts perform task in their domains faster than novices and commit fewer errors while problem solving. Interestingly, experts go about solving problems differently than novices. Experts spend more time thinking about a problem to fully understand it at the beginning of a task than do novices, who immediately seek to find a solution. Experts use their knowledge of previous cases as context for creating mental models to solve given problems.",
+			"I. Better at self-monitoring than novices, experts are more aware of instances where they have committed errors or failed to understand a problem. Experts check their solutions more often than novices and recognize when they are missing information necessary for solving a problem. Experts are aware of the limits of their domain knowledge and apply their domain’s heuristics to solve problems that fall outside of their experience base.",
+			"The Paradox of Expertise",
+			"J. The strengths of expertise can also be weaknesses. Although one would expect experts to be good forecasters, they are not particularly good at making predictions about the future. Since the 1930s, researchers have been testing the ability of experts to make forecasts. The performance of experts has been tested against actuarial tables to determine if they are better at making predictions than simple statistical models. Seventy years later, with more than two hundred experiments in different domains, it is clear that the answer is no. If supplied with an equal amount of data about a particular case, an actuarial table is as good, or better, than an expert at making calls about the future. Even if an expert is given more specific case information than is available to the statistical model, the expert does not tend to outperform the actuarial table.",
+			"K. Theorists and researchers differ when trying to explain why experts are less accurate forecasters than statistical models. Some have argued that experts, like all humans, are inconsistent when using mental models to make predictions. A number of researchers point to human biases to explain unreliable expert predictions. During the last 30 years, researchers have categorized, experimented, and theorized about the cognitive aspects of forecasting. Despite such efforts, the literature shows little consensus regarding the causes or manifestations of human bias."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-5",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the flow-chart below. Choose NO MORE THAN THREE WORDS from the passage for each answer. Write your answers in boxes 1-5 on your answer sheet.",
+			"body": "Novice:\nneeds to study ____ (1) under the guidance of a ____ (2)\n____ (3): starts to identify ____ (4) for cases within or between study more ____ (5) ways of doing things create new knowledge\nExpert:\nperforms task independently",
+			"body_html": "<table><tbody><tr><td><h3>Novice:</h3><ul><li>\nneeds to study [1] under the guidance of a [2]\n</li><li>\n[3]: starts to identify [4] for cases within or between study more [5] ways of doing things create new knowledge\n</li></ul><h3>Expert:</h3><ul><li>performs task independently</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 1,
+					"text": "needs to study ____ (1) under the guidance of a ____ (2)",
+					"answer": "principles and rules",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nNgười mới bắt đầu cần nghiên cứu ____ dưới sự hướng dẫn của ____.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN (số nhiều hoặc cụm danh từ)\n• Dấu hiệu: study + NOUN (NOUN là đối tượng của hành động 'study').\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• study ~ learn\n• Novice ~ từ khóa giữ nguyên\n• needs to ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"The novice needs to learn the guiding principles and rules of a given task\" (Người mới bắt đầu cần tìm hiểu các nguyên tắc và quy tắc hướng dẫn của một nhiệm vụ nhất định).\n\nBước 5: Đáp án: principles and rules\nNgười mới bắt đầu cần nghiên cứu principles and rules dưới sự hướng dẫn của ____.",
+					"quotes": [
+						"The novice needs to learn the guiding principles and rules of a given task in order to perform that task."
+					]
+				},
+				{
+					"number": 2,
+					"text": "needs to study ____ (1) under the guidance of a ____ (2)",
+					"answer": "mentor",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nNgười mới bắt đầu cần nghiên cứu ____ dưới sự hướng dẫn của ____.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN (số ít)\n• Dấu hiệu: under the guidance of a + NOUN (NOUN là người hướng dẫn, đứng sau mạo từ 'a').\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• guidance ~ guide\n• Novice ~ từ khóa giữ nguyên\n• mentor ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Generally, a novice will find a mentor to guide her through the process of acquiring new knowledge.\" (Thông thường, một người mới bắt đầu sẽ tìm một người cố vấn để hướng dẫn cô ấy trong quá trình tiếp thu kiến thức mới.).\n\nBước 5: Đáp án: mentor\nNgười mới bắt đầu cần nghiên cứu principles and rules dưới sự hướng dẫn của một mentor.",
+					"quotes": [
+						"Generally, a novice will find a mentor to guide her through the process of acquiring new knowledge."
+					]
+				},
+				{
+					"number": 3,
+					"text": "",
+					"answer": "journeyman",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\n____: bắt đầu xác định ____ cho các trường hợp trong hoặc giữa việc nghiên cứu nhiều cách ____ hơn để làm mọi việc tạo ra kiến thức mới.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN\n• Dấu hiệu: đứng trước dấu hai chấm, chỉ một giai đoạn hoặc cấp bậc.\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• starts to identify ~ begins to recognize\n• cases ~ từ khóa giữ nguyên\n• journeyman ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"In time, and with much practice, the novice begins to recognize patterns of behavior within cases and, thus, becomes a journeyman.\" (Theo thời gian, và với nhiều thực hành, người mới bắt đầu bắt đầu nhận ra các mô hình hành vi trong các trường hợp và, do đó, trở thành một người làm nghề.).\n\nBước 5: Đáp án: journeyman\nJourneyman: bắt đầu xác định ____ cho các trường hợp trong hoặc giữa việc nghiên cứu nhiều cách ____ hơn để làm mọi việc tạo ra kiến thức mới.",
+					"quotes": [
+						"In time, and with much practice, the novice begins to recognize patterns of behavior within cases and, thus, becomes a journeyman."
+					]
+				},
+				{
+					"number": 4,
+					"text": "",
+					"answer": "patterns of behavior",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\n____: bắt đầu xác định ____ cho các trường hợp trong hoặc giữa việc nghiên cứu nhiều cách ____ hơn để làm mọi việc tạo ra kiến thức mới.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN (cụm danh từ)\n• Dấu hiệu: identify + NOUN (NOUN là đối tượng của hành động 'identify').\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• identify ~ recognize\n• cases ~ từ khóa giữ nguyên\n• patterns of behavior ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"the novice begins to recognize patterns of behavior within cases\" (người mới bắt đầu bắt đầu nhận ra các mô hình hành vi trong các trường hợp).\n\nBước 5: Đáp án: patterns of behavior\nJourneyman: starts to identify patterns of behavior for cases within or between study more ____ ways of doing things create new knowledge.",
+					"quotes": [
+						"In time, and with much practice, the novice begins to recognize patterns of behavior within cases and, thus, becomes a journeyman."
+					]
+				},
+				{
+					"number": 5,
+					"text": "",
+					"answer": "complex",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\n____: bắt đầu xác định ____ cho các trường hợp trong hoặc giữa việc nghiên cứu nhiều cách ____ hơn để làm mọi việc tạo ra kiến thức mới.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: ADJECTIVE\n• Dấu hiệu: more + ADJECTIVE + ways (ADJECTIVE bổ nghĩa cho 'cases' hoặc 'ways').\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• study more ~ more practice and exposure\n• cases ~ từ khóa giữ nguyên\n• complex ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"With more practice and exposure to increasingly complex cases, the journeyman finds patterns not only within cases but also between cases.\" (Với nhiều thực hành hơn và tiếp xúc với các trường hợp ngày càng phức tạp, người làm nghề tìm thấy các mô hình không chỉ trong các trường hợp mà còn giữa các trường hợp.).\n\nBước 5: Đáp án: complex\nJourneyman: starts to identify patterns of behavior for cases within or between study",
+					"quotes": [
+						"With more practice and exposure to increasingly complex cases, the journeyman finds patterns not only within cases but also between cases."
+					]
+				}
+			]
+		},
+		{
+			"range": "6-10",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the claims of the writer in Reading Passage?\nOn your answer sheet please write\nTRUE if the statement agrees with the writer\nFALSE if the statement contradicts with the writer\nNOT GIVEN if there is no information about this in the passage.",
+			"questions": [
+				{
+					"number": 6,
+					"text": "Novices and experts use the same system of knowledge to comprehend and classify objects.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNgười mới bắt đầu và chuyên gia sử dụng cùng một hệ thống kiến thức để hiểu và phân loại các đối tượng.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• Novices and experts ~ từ khóa giữ nguyên\n• comprehend and classify objects ~ group objects together by color or size / according to their function or utility\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"A novice, for example, might group objects together by color or size, whereas an expert would group the same objects according to their function or utility.\" (Ví dụ, một người mới bắt đầu có thể nhóm các đối tượng lại với nhau theo màu sắc hoặc kích thước, trong khi một chuyên gia sẽ nhóm các đối tượng tương tự theo chức năng hoặc tiện ích của chúng.).\n==> Điều này trái ngược với thông tin trong câu hỏi \"người mới bắt đầu và chuyên gia sử dụng cùng một hệ thống kiến thức để hiểu và phân loại các đối tượng\" (Novices and experts use the same system of knowledge to comprehend and classify objects).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"A novice, for example, might group objects together by color or size, whereas an expert would group the same objects according to their function or utility."
+					]
+				},
+				{
+					"number": 7,
+					"text": "The focus of novices’ training is necessarily on long-term memory.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTrọng tâm đào tạo của người mới bắt đầu nhất thiết phải là trí nhớ dài hạn.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• Novices' training ~ từ khóa giữ nguyên\n• long-term memory ~ từ khóa giữ nguyên\n• focus ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"Experts have better domain-specific short-term and long-term memory than novices do.\" (Các chuyên gia có trí nhớ ngắn hạn và dài hạn chuyên biệt trong lĩnh vực của họ tốt hơn những người mới bắt đầu.).\n==> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"trọng tâm đào tạo của người mới bắt đầu nhất thiết phải là trí nhớ dài hạn\" (The focus of novices’ training is necessarily on long-term memory).\n\nBước 4: Đáp án: NOT GIVEN"
+				},
+				{
+					"number": 8,
+					"text": "When working out the problems, novices want to solve them straight away.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nKhi giải quyết vấn đề, người mới bắt đầu muốn giải quyết chúng ngay lập tức.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• Novices ~ từ khóa giữ nguyên\n• working out the problems ~ solving problems\n• straight away ~ immediately seek to find a solution\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Experts spend more time thinking about a problem to fully understand it at the beginning of a task than do novices, who immediately seek to find a solution.\" (Các chuyên gia dành nhiều thời gian hơn để suy nghĩ về một vấn đề để hiểu đầy đủ nó ở đầu nhiệm vụ so với những người mới bắt đầu, những người ngay lập tức tìm cách tìm ra giải pháp.).\n==> Điều này đồng nghĩa với thông tin trong câu hỏi \"khi giải quyết vấn đề, người mới bắt đầu muốn giải quyết chúng ngay lập tức\" (When working out the problems, novices want to solve them straight away).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Experts spend more time thinking about a problem to fully understand it at the beginning of a task than do novices, who immediately seek to find a solution."
+					]
+				},
+				{
+					"number": 9,
+					"text": "When handling problems, experts are always more efficient than novices in their fields.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nKhi xử lý vấn đề, các chuyên gia luôn hiệu quả hơn người mới bắt đầu trong lĩnh vực của họ.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\n• experts are always more efficient ~ experts perform task in their domains faster than novices and commit fewer errors\n• novices ~ từ khóa giữ nguyên\n• in their fields ~ in their domains\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Moreover, experts perform task in their domains faster than novices and commit fewer errors while problem solving.\" (Hơn nữa, các chuyên gia thực hiện nhiệm vụ trong lĩnh vực của họ nhanh hơn người mới bắt đầu và mắc ít lỗi hơn khi giải quyết vấn đề.).\n==> Mặc dù chuyên gia làm nhanh hơn và ít lỗi hơn, nhưng từ \"always\" trong câu hỏi là một sự khái quát hóa mạnh mẽ mà bài đọc không khẳng định. Câu này nói về việc chuyên gia \"hiệu quả hơn\" chứ không phải \"luôn luôn hiệu quả hơn\", và việc \"hiệu quả\" cũng không đồng nghĩa với \"always more efficient\".\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Moreover, experts perform task in their domains faster than novices and commit fewer errors while problem solving."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Expert tend to review more than novices on cases when flaws or limit on understanding took place",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"quotes": [
+						"Better at self-monitoring than novices, experts are more aware of instances where they have committed errors or failed to understand a problem. Experts check their solutions more often than novices and recognize when they are missing information necessary for solving a problem."
+					]
+				}
+			]
+		},
+		{
+			"range": "11-13",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the following summary of the paragraphs of Reading Passage 1, using NO MORE THAN TWO WORDS from the Reading Passage for each answer. Write your answers in boxes 11-13 on your answer sheet.",
+			"body": "While experts outperform novices and machines in pattern recognition and problem solving, expert predictions of future behavior or events are seldom as accurate as simple actuarial tables. Why? Some have tried to explain that experts differ when using cognitive ____ (11) to forecast. Researchers believe it is due to ____ (12). However attempting endeavour of finding answers did not yet produce ____ (13).",
+			"body_html": "<table><tbody><tr><td>\n\nWhile experts outperform novices and machines in pattern recognition and problem solving, expert predictions of future behavior or events are seldom as accurate as simple actuarial tables. Why? Some have tried to explain that experts differ when using cognitive [11] to forecast. Researchers believe it is due to [12]. However attempting endeavour of finding answers did not yet produce [13].\n\n</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 11,
+					"text": "",
+					"answer": "models",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nMột số người đã cố gắng giải thích rằng các chuyên gia khác nhau khi sử dụng các ____ nhận thức để dự báo.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN (số nhiều)\n• Dấu hiệu: cognitive + NOUN (NOUN là đối tượng nhận thức, đứng sau tính từ 'cognitive').\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• cognitive ~ từ khóa giữ nguyên\n• forecast ~ make predictions\n• experts differ when using ~ inconsistent when using\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Some have argued that experts, like all humans, are inconsistent when using mental models to make predictions.\" (Một số người đã lập luận rằng các chuyên gia, giống như tất cả con người, không nhất quán khi sử dụng các mô hình tinh thần để đưa ra dự đoán.).\n\nBước 5: Đáp án: models\nSome have tried to explain that experts differ when using cognitive models to forecast.",
+					"quotes": [
+						"Some have argued that experts, like all humans, are inconsistent when using mental models to make predictions."
+					]
+				},
+				{
+					"number": 12,
+					"text": "",
+					"answer": "human biases",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nCác nhà nghiên cứu tin rằng điều đó là do ____.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN (cụm danh từ hoặc danh từ số nhiều)\n• Dấu hiệu: due to + NOUN (NOUN là nguyên nhân).\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• Researchers believe ~ A number of researchers point to\n• due to ~ explain\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"A number of researchers point to human biases to explain unreliable expert predictions.\" (Một số nhà nghiên cứu chỉ ra những thành kiến của con người để giải thích các dự đoán không đáng tin cậy của chuyên gia.).\n\nBước 5: Đáp án: human biases\nResearchers believe it is due to human biases.",
+					"quotes": [
+						"A number of researchers point to human biases to explain unreliable expert predictions."
+					]
+				},
+				{
+					"number": 13,
+					"text": "",
+					"answer": "consensus",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nTuy nhiên, những nỗ lực tìm kiếm câu trả lời vẫn chưa tạo ra ____.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\n• Loại từ: NOUN (số ít)\n• Dấu hiệu: not yet produce + NOUN (NOUN là kết quả chưa đạt được).\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n• attempting endeavour of finding answers ~ such efforts\n• not yet produce ~ shows little consensus\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Despite such efforts, the literature shows little consensus regarding the causes or manifestations of human bias.\" (Bất chấp những nỗ lực đó, tài liệu cho thấy ít sự đồng thuận về nguyên nhân hoặc biểu hiện của thành kiến con người.).\n\nBước 5: Đáp án: consensus\nHowever attempting endeavour of finding answers did not yet produce consensus.",
+					"quotes": [
+						"Despite such efforts, the literature shows little consensus regarding the causes or manifestations of human bias."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

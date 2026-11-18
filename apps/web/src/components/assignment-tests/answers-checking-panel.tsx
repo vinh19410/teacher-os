@@ -1,5 +1,6 @@
 import type { AssignmentQuestion } from "@teacher-os/api/contracts";
 import { useMemo, useState } from "react";
+import { kindOf } from "@/components/assignments/assignment-presets";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/field";
 import {
@@ -80,7 +81,19 @@ export function AnswersCheckingPanel({
 	const [applyError, setApplyError] = useState<string | null>(null);
 
 	// Compare live từ keyText — mọi phép tính đều pure lib đã test riêng.
-	const cells = useMemo(() => testAnswerCells(slots), [slots]);
+	const cells = useMemo(
+		() =>
+			testAnswerCells(
+				slots.map((slot) => ({
+					...slot,
+					questions: slot.questions.map((question) => ({
+						...question,
+						kind: question.type ? kindOf(question.type) : slot.kind,
+					})),
+				})),
+			),
+		[slots],
+	);
 	const parsed = useMemo(
 		() =>
 			parseTestAnswerKey(
@@ -90,6 +103,10 @@ export function AnswersCheckingPanel({
 					qStart: slot.qStart,
 					count: slot.questions.length,
 					kind: slot.kind,
+					questionKinds: slot.questions.map((question) =>
+						question.type ? kindOf(question.type) : slot.kind,
+					),
+					questionOpts: slot.questions.map((question) => question.opts),
 				})),
 			),
 		[keyText, slots],

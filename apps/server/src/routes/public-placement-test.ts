@@ -14,8 +14,8 @@ import {
 	type PlacementPublicResultView,
 	type PlacementPublicSubmit,
 	type PlacementSnapshot,
-	type PlacementSpeakingRubric,
-	type PlacementWritingRubric,
+	parseStoredSpeakingRubric,
+	parseStoredWritingRubric,
 	placementPublicSubmitSchema,
 } from "@teacher-os/api/placement-test-contracts";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
@@ -24,6 +24,7 @@ import {
 	placementTestAudio,
 	placementTestSubmission,
 } from "@teacher-os/db/schema/placement-test";
+import { student } from "@teacher-os/db/schema/student";
 import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -40,6 +41,7 @@ import {
 	runPlacementAiGrading,
 	schedulePlacementAiTask,
 } from "../lib/placement-ai/run-placement-grading";
+import { validatePlacementSpeakingModeForSnapshot } from "../lib/placement-submission-service";
 import {
 	loadPublishedPlacementSnapshot,
 	resolveLeadTargetOrg,
@@ -172,7 +174,7 @@ async function tryInsertSubmissionAtomic(params: {
 	objectiveBreakdownJson: string;
 	submit: PlacementPublicSubmit;
 	wordCount: number;
-	speakingStatus: "none" | "pending_upload" | "skipped";
+	speakingStatus: "none" | "pending_upload";
 	uploadTokenHash: string | null;
 	uploadTokenExpiresAtMs: number | null;
 	ipHash: string;
@@ -541,18 +543,20 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 
 		const snapshot = loadedTest.snapshot;
 		const submit = parsed.data;
+		const speakingCheck = validatePlacementSpeakingModeForSnapshot(
+			snapshot,
+			submit.speakingMode,
+		);
+		if (!speakingCheck.ok) {
+			return c.json(speakingCheck.body, 400);
+		}
 		const objective = gradePlacementObjective(snapshot, submit.answers);
 		const normalizedSnapshotJson = JSON.stringify(snapshot);
 		const answersJson = JSON.stringify(submit.answers);
 		const objectiveBreakdownJson = JSON.stringify(objective);
 
 		const submissionId = crypto.randomUUID();
-		const speakingStatus =
-			submit.speakingMode === "upload"
-				? ("pending_upload" as const)
-				: submit.speakingMode === "skipped"
-					? ("skipped" as const)
-					: ("none" as const);
+		const speakingStatus = speakingCheck.speakingStatus;
 
 		const uploadToken =
 			speakingStatus === "pending_upload" ? randomTokenHex(32) : null;
@@ -965,9 +969,14 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 				: [targetOrgId];
 
 		const [row] = await db
-			.select({ sub: placementTestSubmission, studentName: lead.name })
+			.select({
+				sub: placementTestSubmission,
+				leadName: lead.name,
+				studentName: student.name,
+			})
 			.from(placementTestSubmission)
-			.innerJoin(lead, eq(lead.id, placementTestSubmission.leadId))
+			.leftJoin(lead, eq(lead.id, placementTestSubmission.leadId))
+			.leftJoin(student, eq(student.id, placementTestSubmission.studentId))
 			.where(
 				and(
 					eq(placementTestSubmission.resultToken, token),
@@ -1002,7 +1011,7 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 			)?.advice ?? "";
 
 		const view: PlacementPublicResultView = {
-			studentName: row.studentName,
+			studentName: row.leadName ?? row.studentName ?? "Học viên",
 			submittedAt: sub.submittedAt.toISOString(),
 			gradedAt: sub.gradedAt.toISOString(),
 			objective: {
@@ -1011,20 +1020,14 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 				reading: objective.reading ?? emptySection,
 			},
 			writingText: sub.writingText,
-			writingRubric: parseJsonOr<PlacementWritingRubric | null>(
-				sub.writingRubricJson,
-				null,
-			),
-			writingScore: sub.writingScore,
+			writingRubric: parseStoredWritingRubric(sub.writingRubricJson),
+			writingScore: sub.writingBand ?? sub.writingScore,
 			writingErrors:
 				parseStoredErrors(sub.writingErrorsJson, sub.writingText) ?? [],
 			speakingStatus: sub.speakingStatus,
 			speakingTranscript: sub.speakingTranscript,
-			speakingRubric: parseJsonOr<PlacementSpeakingRubric | null>(
-				sub.speakingRubricJson,
-				null,
-			),
-			speakingScore: sub.speakingScore,
+			speakingRubric: parseStoredSpeakingRubric(sub.speakingRubricJson),
+			speakingScore: sub.speakingBand ?? sub.speakingScore,
 			speakingErrors:
 				parseStoredErrors(sub.speakingErrorsJson, sub.speakingTranscript) ?? [],
 			finalBandLevel: sub.finalBandLevel,

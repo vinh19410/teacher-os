@@ -30,6 +30,35 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 vi.mock("sonner", () => ({ toast: toastMock }));
 vi.mock("@/lib/reauth", () => ({ reauth: vi.fn() }));
+vi.mock(
+	"@teacher-os/ui/components/document-preview/blob-document-view",
+	() => ({
+		BlobDocumentThumbnail: (props: {
+			blobUrl: string;
+			mimeType: string;
+			label: string;
+		}) => (
+			<div
+				data-testid="blob-document-thumbnail"
+				data-url={props.blobUrl}
+				data-mime={props.mimeType}
+				data-label={props.label}
+			/>
+		),
+		BlobDocumentView: (props: {
+			blobUrl: string;
+			mimeType: string;
+			label: string;
+		}) => (
+			<div
+				data-testid="blob-document-view"
+				data-url={props.blobUrl}
+				data-mime={props.mimeType}
+				data-label={props.label}
+			/>
+		),
+	}),
+);
 
 import { kernelQueryKey } from "@/lib/repos/kernel";
 import { Route, validateMaterialsSearch } from "./index";
@@ -78,6 +107,15 @@ function renderRoute(
 	fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
 		const url = new URL(String(input));
 		const method = (init?.method ?? "GET").toUpperCase();
+		if (
+			method === "GET" &&
+			/^\/api\/materials\/[^/]+\/file$/.test(url.pathname)
+		) {
+			return new Response(new Blob(["%PDF"], { type: "application/pdf" }), {
+				status: 200,
+				headers: { "content-type": "application/pdf" },
+			});
+		}
 		const custom = handler?.(method, url, init);
 		const reply: Reply =
 			custom ??
@@ -126,6 +164,8 @@ beforeEach(() => {
 	mockSearch.current = {};
 	toastMock.success.mockReset();
 	toastMock.error.mockReset();
+	URL.createObjectURL = vi.fn(() => "blob:list-preview");
+	URL.revokeObjectURL = vi.fn();
 });
 
 afterEach(() => {
@@ -416,6 +456,11 @@ describe("/materials writes", () => {
 		expect(await screen.findByText("Đề Writing Task 1")).toBeTruthy();
 		expect(
 			screen.getByRole("link", { name: "Tải xuống Đề Writing Task 1" }),
+		).toBeTruthy();
+		// Xem trước inline là thao tác đọc — trợ giảng vẫn dùng được.
+		expect(await screen.findByTestId("blob-document-thumbnail")).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: "Xem trước Đề Writing Task 1" }),
 		).toBeTruthy();
 		expect(screen.queryByRole("button", { name: "Thêm liên kết" })).toBeNull();
 		expect(screen.queryByRole("button", { name: "Tải file lên" })).toBeNull();

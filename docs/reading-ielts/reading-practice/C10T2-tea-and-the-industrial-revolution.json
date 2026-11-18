@@ -1,0 +1,207 @@
+{
+	"id": "76ddf960-70d3-4746-a324-62bb47d00284",
+	"url": "https://stepielts.com/student/reading/76ddf960-70d3-4746-a324-62bb47d00284?mode=practice",
+	"title": "Tea and the Industrial Revolution",
+	"source": "C10T2",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Tea and the Industrial Revolution",
+		"paragraphs": [
+			"A. Alan Macfarlane, professor of anthropological science at King’s College, Cambridge has, like other historians, spent decades wrestling with the enigma of the Industrial Revolution. Why did this particular Big Bang – the world-changing birth of industry-happen in Britain? And why did it strike at the end of the 18th century?",
+			"B. Macfarlane compares the puzzle to a combination lock. ‘There are about 20 different factors and all of them need to be present before the revolution can happen,’ he says. For industry to take off, there needs to be the technology and power to drive factories, large urban populations to provide cheap labour, easy transport to move goods around, an affluent middle-class willing to buy mass-produced objects, a market-driven economy and a political system that allows this to happen. While this was the case for England, other nations, such as Japan, the Netherlands and France also met some of these criteria but were not industrialising. All these factors must have been necessary. But not sufficient to cause the revolution, says Macfarlane. ‘After all, Holland had everything except coal while China also had many of these factors. Most historians are convinced there are one or two missing factors that you need to open the lock.’",
+			"C. The missing factors, he proposes, are to be found in almost even kitchen cupboard. Tea and beer, two of the nation’s favourite drinks, fuelled the revolution. The antiseptic properties of tannin, the active ingredient in tea, and of hops in beer – plus the fact that both are made with boiled water – allowed urban communities to flourish at close quarters without succumbing to water-borne diseases such as dysentery. The theory sounds eccentric but once he starts to explain the detective work that went into his deduction, the scepticism gives way to wary admiration. Macfarlanes case has been strengthened by support from notable quarters – Roy Porter, the distinguished medical historian, recently wrote a favourable appraisal of his research.",
+			"D. Macfarlane had wondered for a long time how the Industrial Revolution came about. Historians had alighted on one interesting factor around the mid-18th century that required explanation. Between about 1650 and 1740, the population in Britain was static. But then there was a burst in population growth. Macfarlane says: ‘The infant mortality rate halved in the space of 20 years, and this happened in both rural areas and cities, and across all classes. People suggested four possible causes. Was there a sudden change in the viruses and bacteria around? Unlikely. Was there a revolution in medical science? But this was a century before Lister’s revolution*. Was there a change in environmental conditions? There were improvements in agriculture that wiped out malaria, but these were small gains. Sanitation did not become widespread until the 19th century. The only option left is food. But the height and weight statistics show a decline. So the food must have got worse. Efforts to explain this sudden reduction in child deaths appeared to draw a blank.’",
+			"E. This population burst seemed to happen at just the right time to provide labour for the Industrial Revolution. ‘When you start moving towards an industrial revolution, it is economically efficient to have people living close together,’ says Macfarlane. ‘But then you get disease, particularly from human waste.’ Some digging around in historical records revealed that there was a change in the incidence of water-borne disease at that time, especially dysentery. Macfarlane deduced that whatever the British were drinking must have been important in regulating disease. He says, ‘We drank beer. For a long time, the English were protected by the strong antibacterial agent in hops, which were added to help preserve the beer. But in the late 17th century a tax was introduced on malt, the basic ingredient of beer. The poor turned to water and gin and in the 1720s the mortality rate began to rise again. Then it suddenly dropped again. What caused this?",
+			"F. Macfarlane looked to Japan, which was also developing large cities about the same time, and also had no sanitation. Water-borne diseases had a much looser grip on the Japanese population than those in Britain. Could it be the prevalence of tea in their culture? Macfarlane then noted that the history of tea in Britain provided an extraordinary coincidence of dates. Tea was relatively expensive until Britain started a direct clipper trade with China in the early 18th century.\nBy the 1740s, about the time that infant mortality was dipping, the drink was common.\nMacfarlane guessed that the fact that water had to be boiled, together with the stomach-purifying properties of tea meant that the breast milk provided by mothers was healthier than it had ever been. No other European nation sipped tea like the British, which, by Macfarlanes logic, pushed these other countries out of contention for the revolution.",
+			"G. But, if tea is a factor in the combination lock, why didn’t Japan forge ahead in a tea-soaked industrial revolution of its own? Macfarlane notes that even though 17th-century Japan had large cities, high literacy rates, even a futures market, it had turned its back on the essence of any work-based revolution by giving up labour-saving devices such as animals, afraid that they would put people out of work. So, the nation that we now think of as one of the most technologically advanced entered the 19th century having ‘abandoned the wheel’.",
+			"* Joseph Lister was the first doctor to use antiseptic techniques during surgical operations to prevent infections."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-7",
+			"type": "MATCHING_HEADINGS",
+			"instructions": "Reading Passage 1 has seven paragraphs, A-G.\nChoose the correct heading for each paragraph from the list of headings below.\nWrite the correct number, i-ix, in boxes 1-7 on your answer sheet",
+			"options": [
+				{
+					"label": "i",
+					"text": "The search for the reasons for an increase in population"
+				},
+				{
+					"label": "ii",
+					"text": "Industrialisation and the fear of unemployment"
+				},
+				{
+					"label": "iii",
+					"text": "The development of cities in Japan"
+				},
+				{
+					"label": "iv",
+					"text": "The time and place of the Industrial Revolution"
+				},
+				{
+					"label": "v",
+					"text": "The cases of Holland, France and China"
+				},
+				{
+					"label": "vi",
+					"text": "Changes in drinking habits in Britain"
+				},
+				{
+					"label": "vii",
+					"text": "Two keys to Britain’s industrial revolution"
+				},
+				{
+					"label": "viii",
+					"text": "Conditions required for industrialisation"
+				},
+				{
+					"label": "ix",
+					"text": "Comparisons with Japan lead to the answer"
+				}
+			],
+			"questions": [
+				{
+					"number": 1,
+					"text": "Paragraph A",
+					"answer": "iv",
+					"explanation": "Bước 1: Đọc và hiểu đoạn A:\nAlan Macfarlane, giáo sư khoa học nhân chủng học tại Đại học Cambridge, cùng các nhà sử học khác đã dành hàng thập kỷ để giải đáp câu hỏi về Cách mạng Công nghiệp. Tại sao cuộc Cách mạng này lại xảy ra ở Anh? Và tại sao nó lại diễn ra vào cuối thế kỷ 18?\n\nBước 2: Tóm tắt nội dung chính của đoạn A:\nĐoạn A có nội dung chính là \"các nhà sử học, đặc biệt là giáo sư Macfarlane, đã cố gắng tìm hiểu lý do và thời điểm xảy ra Cách mạng Công nghiệp ở Anh\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề iv \"Thời gian và địa điểm của Cách mạng Công nghiệp\".\n\nBước 4: Đáp án: iv",
+					"quotes": [
+						"A. Alan Macfarlane, professor of anthropological science at King’s College, Cambridge has, like other historians, spent decades wrestling with the enigma of the Industrial Revolution. Why did this particular Big Bang – the world-changing birth of industry-happen in Britain? And why did it strike at the end of the 18th century?"
+					]
+				},
+				{
+					"number": 2,
+					"text": "Paragraph B",
+					"answer": "viii",
+					"explanation": "Bước 1: Đọc và hiểu đoạn B:\nMacfarlane cho rằng cần khoảng 20 yếu tố khác nhau cùng hiện diện để cuộc cách mạng xảy ra. Những yếu tố này bao gồm công nghệ, nguồn lực, dân số đô thị, giao thông thuận lợi, tầng lớp trung lưu giàu có, nền kinh tế thị trường và hệ thống chính trị phù hợp. Tuy nhiên, một số quốc gia khác như Nhật Bản, Hà Lan và Pháp cũng đáp ứng được một số tiêu chí này nhưng không công nghiệp hóa. Macfarlane cho rằng vẫn còn thiếu một vài yếu tố quan trọng.\n\nBước 2: Tóm tắt nội dung chính của đoạn B:\nĐoạn B có nội dung chính là \"những điều kiện cần thiết cho công nghiệp hóa theo quan điểm của Macfarlane, và so sánh với các nước khác\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề viii \"Điều kiện cần thiết cho công nghiệp hóa\".\n\nBước 4: Đáp án: viii",
+					"quotes": [
+						"B. Macfarlane compares the puzzle to a combination lock. ‘There are about 20 different factors and all of them need to be present before the revolution can happen,’ he says. For industry to take off, there needs to be the technology and power to drive factories, large urban populations to provide cheap labour, easy transport to move goods around, an affluent middle-class willing to buy mass-produced objects, a market-driven economy and a political system that allows this to happen.",
+						"While this was the case for England, other nations, such as Japan, the Netherlands and France also met some of these criteria but were not industrialising.",
+						"‘After all, Holland had everything except coal while China also had many of these factors. Most historians are convinced there are one or two missing factors that you need to open the lock.’"
+					]
+				},
+				{
+					"number": 3,
+					"text": "Paragraph C",
+					"answer": "vii",
+					"explanation": "Bước 1: Đọc và hiểu đoạn C:\nMacfarlane đề xuất rằng yếu tố còn thiếu có thể tìm thấy trong gần như mọi tủ bếp: trà và bia. Tannin trong trà và hoa bia có tính kháng khuẩn, cùng với việc được pha chế bằng nước sôi, đã giúp cộng đồng đô thị phát triển mà không bị ảnh hưởng bởi các bệnh lây truyền qua nước như kiết lị. Mặc dù giả thuyết này có vẻ lạ lùng, nhưng sau khi giải thích quá trình nghiên cứu của mình, Macfarlane đã nhận được sự ủng hộ từ các chuyên gia như Roy Porter, một nhà sử học y khoa nổi tiếng.\n\nBước 2: Tóm tắt nội dung chính của đoạn C:\nĐoạn C có nội dung chính là \"hai yếu tố quan trọng là trà và bia, được Macfarlane cho là đã thúc đẩy Cách mạng Công nghiệp ở Anh\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề vii \"Hai yếu tố then chốt cho cuộc cách mạng công nghiệp của Anh\".\n\nBước 4: Đáp án: vii",
+					"quotes": [
+						"C. The missing factors, he proposes, are to be found in almost even kitchen cupboard. Tea and beer, two of the nation’s favourite drinks, fuelled the revolution.",
+						"The antiseptic properties of tannin, the active ingredient in tea, and of hops in beer – plus the fact that both are made with boiled water – allowed urban communities to flourish at close quarters without succumbing to water-borne diseases such as dysentery. The theory sounds eccentric but once he starts to explain the detective work that went into his deduction, the scepticism gives way to wary admiration.",
+						"Macfarlanes case has been strengthened by support from notable quarters – Roy Porter, the distinguished medical historian, recently wrote a favourable appraisal of his research."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Paragraph D",
+					"answer": "i",
+					"explanation": "Bước 1: Đọc và hiểu đoạn D:\nMacfarlane đã đặt ra dấu chấm hỏi về nguyên nhân của Cách mạng Công nghiệp trong thời gian dài. Các nhà sử học đã chú ý đến một yếu tố thú vị vào giữa thế kỷ 18 cần được giải thích. Từ khoảng 1650 đến 1740, dân số Anh ổn định. Nhưng sau đó dân số bùng nổ. Tỷ lệ tử vong ở trẻ sơ sinh giảm một nửa trong vòng 20 năm, điều này xảy ra ở cả nông thôn và thành thị, và trong mọi tầng lớp xã hội. Nhiều nguyên nhân được đưa ra như sự thay đổi về vi khuẩn, cách mạng y học, thay đổi môi trường, và sự thay đổi trong thực phẩm đều không thể giải thích được hiện tượng này.\n\nBước 2: Tóm tắt nội dung chính của đoạn D:\nĐoạn D có nội dung chính là \"Macfarlane tìm lý do cho sự gia tăng dân số đột ngột ở Anh vào giữa thế kỷ 18, một yếu tố quan trọng dẫn đến Cách mạng Công nghiệp\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề i \"Tìm lý do cho sự gia tăng dân số\".\n\nBước 4: Đáp án: i",
+					"quotes": [
+						"D. Macfarlane had wondered for a long time how the Industrial Revolution came about. Historians had alighted on one interesting factor around the mid-18th century that required explanation.",
+						"Between about 1650 and 1740, the population in Britain was static.",
+						"But then there was a burst in population growth. Macfarlane says: ‘The infant mortality rate halved in the space of 20 years, and this happened in both rural areas and cities, and across all classes. People suggested four possible causes. Was there a sudden change in the viruses and bacteria around? Unlikely. Was there a revolution in medical science? But this was a century before Lister’s revolution*. Was there a change in environmental conditions? There were improvements in agriculture that wiped out malaria, but these were small gains. Sanitation did not become widespread until the 19th century. The only option left is food. But the height and weight statistics show a decline. So the food must have got worse. Efforts to explain this sudden reduction in child deaths appeared to draw a blank.’"
+					]
+				},
+				{
+					"number": 5,
+					"text": "Paragraph E",
+					"answer": "vi",
+					"quotes": [
+						"E. This population burst seemed to happen at just the right time to provide labour for the Industrial Revolution. ‘When you start moving towards an industrial revolution, it is economically efficient to have people living close together,’ says Macfarlane. ‘But then you get disease, particularly from human waste.’ Some digging around in historical records revealed that there was a change in the incidence of water-borne disease at that time, especially dysentery.",
+						"Macfarlane deduced that whatever the British were drinking must have been important in regulating disease.",
+						"For a long time, the English were protected by the strong antibacterial agent in hops, which were added to help preserve the beer. But in the late 17th century a tax was introduced on malt, the basic ingredient of beer."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Paragraph F",
+					"answer": "ix",
+					"explanation": "Bước 1: Đọc và hiểu đoạn F:\nMacfarlane so sánh Anh với Nhật Bản, nơi cũng có các thành phố lớn không có hệ thống vệ sinh nhưng ít bị ảnh hưởng bởi bệnh lây qua đường nước. Ông cho rằng điều này có thể do văn hóa uống trà. Ở Anh, trà trở nên phổ biến vào những năm 1740, trùng với thời điểm tỷ lệ tử vong ở trẻ sơ sinh giảm. Macfarlane giả định rằng việc đun sôi nước và tính chất của trà đã cải thiện chất lượng sữa mẹ. Theo ông, điều này giải thích tại sao Anh, với thói quen uống trà độc đáo, đã dẫn đầu cuộc Cách mạng Công nghiệp.\n\nBước 2: Tóm tắt nội dung chính của đoạn F:\nĐoạn F có nội dung chính là \"so sánh với Nhật Bản và đưa ra giả thuyết về vai trò của trà trong việc cải thiện sức khỏe và thúc đẩy Cách mạng Công nghiệp ở Anh\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề ix \"So sánh với Nhật Bản dẫn đến câu trả lời\".\n\nBước 4: Đáp án: ix",
+					"quotes": [
+						"F. Macfarlane looked to Japan, which was also developing large cities about the same time, and also had no sanitation. Water-borne diseases had a much looser grip on the Japanese population than those in Britain. Could it be the prevalence of tea in their culture? Macfarlane then noted that the history of tea in Britain provided an extraordinary coincidence of dates. Tea was relatively expensive until Britain started a direct clipper trade with China in the early 18th century. By the 1740s, about the time that infant mortality was dipping, the drink was common. Macfarlane guessed that the fact that water had to be boiled, together with the stomach-purifying properties of tea meant that the breast milk provided by mothers was healthier than it had ever been. No other European nation sipped tea like the British, which, by Macfarlanes logic, pushed these other countries out of contention for the revolution."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Paragraph G",
+					"answer": "ii",
+					"explanation": "Bước 1: Đọc và hiểu đoạn G:\nMacfarlane giải thích rằng mặc dù Nhật Bản thế kỷ 17 có các thành phố lớn, tỷ lệ biết chữ cao và thậm chí có sàn giao dịch tương lai, nhưng họ đã từ bỏ cuộc cách mạng thông qua việc phụ thuộc vào việc lao động mà không cần đến những công cụ tiết kiệm công sức như động vật, vì sợ rằng chúng sẽ khiến người dân mất việc làm. Vì vậy, quốc gia mà chúng ta hiện nay coi là một trong những nước tiên tiến nhất về công nghệ đã bước vào thế kỷ 19 sau khi \"từ bỏ những công cụ tiết kiệm sức lao động đó\".\n\nBước 2: Tóm tắt nội dung chính của đoạn G:\nĐoạn G có nội dung chính là \"sự phát triển của các thành phố ở Nhật Bản và lý do tại sao họ không tiến hành công nghiệp hóa, do lo ngại về thất nghiệp\".\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề ii \"Công nghiệp hóa và nỗi lo về thất nghiệp\".\n\nBước 4: Đáp án: ii",
+					"quotes": [
+						"G. But, if tea is a factor in the combination lock, why didn’t Japan forge ahead in a tea-soaked industrial revolution of its own? Macfarlane notes that even though 17th-century Japan had large cities, high literacy rates, even a futures market, it had turned its back on the essence of any work-based revolution by giving up labour-saving devices such as animals, afraid that they would put people out of work. So, the nation that we now think of as one of the most technologically advanced entered the 19th century having ‘abandoned the wheel’."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-13",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 1?\nIn boxes 8 - 13 on your answer sheet, write\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 8,
+					"text": "China’s transport system was not suitable for industry in the 18th century.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nHệ thống giao thông của Trung Quốc không phù hợp cho công nghiệp vào thế kỷ 18.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nChina ~ tên riêng giữ nguyên\ntransport ~ từ khóa giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"Mặc dù điều này (các yếu tố dẫn đến công nghiệp hoá) đúng với nước Anh, nhưng các quốc gia khác như Nhật Bản, Hà Lan và Pháp cũng đáp ứng được một số tiêu chí này nhưng lại không tiến hành công nghiệp hóa được. Macfarlane cho rằng tất cả những yếu tố này chắc chắn là cần thiết, nhưng chưa đủ để gây ra cuộc cách mạng. Ông nói: \"Xét cho cùng, Hà Lan có tất cả mọi thứ trừ than đá, trong khi Trung Quốc cũng có nhiều yếu tố trong số này\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"hệ thống giao thông của Trung Quốc không phù hợp cho công nghiệp vào thế kỷ 18\" (China's transport system was not suitable for industry in the 18th century).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"While this was the case for England, other nations, such as Japan, the Netherlands and France also met some of these criteria but were not industrialising."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Tea and beer both helped to prevent dysentery in Britain.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTrà và bia đều giúp ngăn ngừa bệnh kiết lị ở Anh.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nTea and beer ~ cụm từ giữ nguyên\ndysentery ~ từ khoá giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Các tính chất kháng khuẩn của tanin, thành phần hoạt tính trong trà, và của hoa bia trong bia - cộng với việc cả hai đều được pha chế bằng nước đun sôi - đã giúp các cộng đồng đô thị phát triển mạnh mà không bị mắc các bệnh lây truyền qua đường nước như kiết lị\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Trà và bia đều giúp ngăn ngừa bệnh lị ở Anh\" (Tea and beer both helped to prevent dysentery in Britain).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"The antiseptic properties of tannin, the active ingredient in tea, and of hops in beer – plus the fact that both are made with boiled water – allowed urban communities to flourish at close quarters without succumbing to water-borne diseases such as dysentery. The theory sounds eccentric but once he starts to explain the detective work that went into his deduction, the scepticism gives way to wary admiration."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Roy Porter disagrees with Professor Macfarlane’s findings.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nRoy Porter không đồng ý với những phát hiện của Giáo sư Macfarlane.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nRoy Porter ~ tên riêng giữ nguyên\nhis research ~ Macfarlane's findings\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Giả thuyết của Macfarlane càng thêm thuyết phục khi nhận được sự ủng hộ từ nhiều nguồn đáng chú ý. Cụ thể, Roy Porter - một sử gia y học nổi tiếng - vừa có bài viết khen ngợi nghiên cứu của ông\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"Roy Porter không thuận ý với những phát hiện của Giáo sư Macfarlane\" (Roy Porter disagrees with Professor Macfarlane's findings).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Macfarlanes case has been strengthened by support from notable quarters – Roy Porter, the distinguished medical historian, recently wrote a favourable appraisal of his research."
+					]
+				},
+				{
+					"number": 11,
+					"text": "After 1740，there was a reduction in population in Britain.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nSau năm 1740, dân số ở Anh giảm xuống.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nBetween about 1650 and 1740 ~ After 1740\npopulation ~ từ khoá giữ nguyên\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Giữa khoảng năm 1650 và 1740, dân số ở Anh giữ nguyên. Nhưng sau đó có một sự bùng nổ trong tăng trưởng dân số (tức là tăng đột biến)\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"Sau năm 1740, dân số ở Anh giảm xuống\" (After 1740, there was a reduction in population in Britain).\n\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"Between about 1650 and 1740, the population in Britain was static."
+					]
+				},
+				{
+					"number": 12,
+					"text": "People in Britain used to make beer at home.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNgười dân ở Anh đã từng tự nấu bia ở nhà.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nthe English ~ Britain\ndrank beer ~ make beer at home\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Macfarlane kết luận rằng thức uống của người Anh hẳn đóng vai trò quan trọng trong việc kiểm soát bệnh tật. Ông nói: \"Chúng tôi uống bia. Trong một thời gian dài, người Anh được bảo vệ bởi chất kháng khuẩn mạnh có trong hoa bia, vốn được thêm vào để giúp bảo quản bia\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"Người dân ở Anh đã từng tự nấu bia ở nhà\" (People in Britain used to make beer at home).\n\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Macfarlane deduced that whatever the British were drinking must have been important in regulating disease."
+					]
+				},
+				{
+					"number": 13,
+					"text": "The tax on malt indirectly caused a rise in the death rate.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nThuế đánh vào mạch nha gián tiếp gây ra sự gia tăng tỷ lệ tử vong.\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nThe tax on malt ~ a tax was introduced to malt\nrise in the death rate ~ mortality rate began to rise again\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Nhưng vào cuối thế kỷ 17, một loại thuế được đánh vào mạch nha, nguyên liệu cơ bản của bia. Người nghèo chuyển sang uống nước và rượu gin và vào những năm 1720 tỷ lệ tử vong bắt đầu tăng trở lại\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Thuế đánh vào mạch nha gián tiếp gây ra sự gia tăng tỷ lệ tử vong\" (The tax on malt indirectly caused a rise in the death rate).\n\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"For a long time, the English were protected by the strong antibacterial agent in hops, which were added to help preserve the beer. But in the late 17th century a tax was introduced on malt, the basic ingredient of beer."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

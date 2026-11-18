@@ -129,6 +129,15 @@ export function ScheduleRoute() {
 		go(next, date);
 	};
 
+	const hasScheduleSource =
+		data.classes.some((c) => c.status === "active") ||
+		data.events.length > 0 ||
+		(data.holidays?.length ?? 0) > 0 ||
+		data.lessons.some(
+			(l) =>
+				l.date != null && (l.status === "completed" || l.status === "absent"),
+		);
+
 	return (
 		<div>
 			<PageHead
@@ -193,29 +202,27 @@ export function ScheduleRoute() {
 					→
 				</Button>
 			</div>
-			{!data.classes.some((c) => c.status === "active") &&
-			data.events.length === 0 &&
-			!data.lessons.some(
-				(l) =>
-					l.date != null && (l.status === "completed" || l.status === "absent"),
-			) ? (
+			{!hasScheduleSource && (
 				<Card
-					variant="white"
-					className="p-8 text-center"
+					className="mb-4 flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
 					data-testid="schedule-empty-state"
 				>
-					<h2 className="font-semibold text-lg">Chưa có lịch dạy nào</h2>
-					<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
-						Lịch dạy được tự động sắp xếp dựa trên các lớp học đang hoạt động.
-						Hãy tạo lớp học để bắt đầu theo dõi lịch dạy.
-					</p>
-					<div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-						<Button onClick={() => navigate({ to: "/classes" })}>
-							Quản lý lớp học
-						</Button>
+					<div className="min-w-0">
+						<h2 className="font-semibold text-base">Chưa có lịch dạy nào</h2>
+						<p className="mt-0.5 text-muted-foreground text-sm">
+							Lịch dạy được tự động sắp xếp dựa trên các lớp học đang hoạt động.
+							Hãy tạo lớp học để bắt đầu theo dõi lịch dạy.
+						</p>
 					</div>
+					<Button
+						className="shrink-0 self-start sm:self-center"
+						onClick={() => navigate({ to: "/classes" })}
+					>
+						Quản lý lớp học
+					</Button>
 				</Card>
-			) : view === "month" ? (
+			)}
+			{view === "month" ? (
 				<ScheduleMonthView
 					data={data}
 					anchor={date}
@@ -226,6 +233,7 @@ export function ScheduleRoute() {
 					data={data}
 					dateISO={date}
 					onOpenSession={setOpenSession}
+					showEmptyDayNotice={hasScheduleSource}
 				/>
 			) : (
 				weekModel && (
@@ -237,6 +245,7 @@ export function ScheduleRoute() {
 						onRefresh={() => {
 							void refresh();
 						}}
+						showEmptyWeekNotice={hasScheduleSource}
 					/>
 				)
 			)}

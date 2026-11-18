@@ -1,0 +1,237 @@
+{
+	"id": "bd6dbca6-acfc-4a49-8ec8-0108d5f9885d",
+	"url": "https://stepielts.com/student/reading/bd6dbca6-acfc-4a49-8ec8-0108d5f9885d?mode=practice",
+	"title": "Bovids",
+	"source": "Collection",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "Bovids",
+		"paragraphs": [
+			"The family of mammals called bovids belongs to the Artiodactyl class, which also includes giraffes. Bovids are a highly diverse group consisting of 137 species, some of which are man’s most important domestic animals.",
+			"Bovids are well represented in most parts of Eurasia and Southeast Asian islands, but they are by far the most numerous and diverse in the latter. Some species of bovid are solitary, but others live in large groups with complex social structures. Although bovids have adapted to a wide range of habitats, from arctic tundra to deep tropical forest, the majority of species favour open grassland, scrub or desert. This diversity of habitat is also matched by great diversity in size and form: at one extreme is the royal antelope of West Africa, which stands a mere 25 cm at the shoulder; at the other, the massively built bison of North America and Europe, growing to a shoulder height of 2.2m.",
+			"Despite differences in size and appearance, bovids are united by the possession of certain common features. All species are ruminants, which means that they retain undigested food in their stomachs, and regurgitate it as necessary. Bovids are almost exclusively herbivorous. Typically, their teeth are highly modified for browsing and grazing: grass or foliage is cropped with the upper lip and lower incisors (the upper incisors are usually absent), and then ground down by the cheek teeth. As well as having cloven, or split hooves, the males of all bovid species and the females of most carry horns. Bovid horns have bony cores covered in a sheath of horny material that is constantly renewed from within; they are unbranched and never shed. They vary in shape and size: the relatively simple horns of a large Indian buffalo may measure around 4 m from tip to tip along the outer curve, while the various gazelles have horns with a variety of elegant curves.",
+			"Five groups, or sub-families, may be distinguished: Bovinae, Antelope, Caprinae, Cephalophinae and Antilocapridae. The sub-family Bovinae comprises most of the larger bovids, including the African bongo, nilgai, eland, bison and cattle. Unlike most other bovids, they are all non-territorial. The ancestors of the various species of domestic cattle (such as banteng, gaur, yak and water buffalo) are generally rare and endangered in the wild, while the auroch (the ancestor of the domestic cattle of Europe) is extinct.",
+			"The term ‘antelope’ is not a very precise zoological name – it is used to loosely describe a number of bovids that have followed different lines of development. Antelopes are typically long-legged, fast-running species, often with long horns that may be laid along the back when the animal is in full flight. There are two main sub-groups of antelope: Hippotraginae, which includes the oryx and the addax, and Antilopinae, which generally contains slighter and more graceful animals such as gazelle and the springbok. Antelopes are mainly grassland species, but many have adapted to flooded grasslands: pukus, waterbucks and lechwes are all good at swimming, usually feeding in deep water, while the sitatunga has long, splayed hooves that enable it to walk freely on swampy ground.",
+			"The sub-family Caprinae includes the sheep and the goat, together with various relatives such as the goral and the tahr. Most are woolly or have long hair. Several species, such as wild goats, chamois and ibex, are agile cliff and mountain-dwellers. Tolerance of extreme conditions is most marked in this group: barbary and bighorn sheep have adapted to arid deserts, while Rocky Mountain sheep survive high up in mountains and musk oxen in arctic tundra.",
+			"The duiker of Africa belongs to the Cephalophinae sub-family. It is generally small and solitary, often living in thick forest. Although mainly feeding on grass and leaves, some duikers – unlike most other bovids – are believed to eat insects and feed on dead animal carcasses, and even to kill small animals.",
+			"The pronghorn is the sole survivor of a New World sub-family of herbivorous ruminants, the Antilocapridae in North America. It is similar in appearance and habits to the Old World antelope. Although greatly reduced in numbers since the arrival of Europeans, and the subsequent enclosure of grasslands, the pronghorn is still found in considerable numbers throughout North America, from Washington State to Mexico. When alarmed by the approach of wolves or other predators, hairs on the pronghorn’s rump stand erect, so showing and emphasising the white patch there. At this signal, the whole herd gallops off at speed of over 60 km per hour."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-3",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, C or D.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "In which region is the biggest range of bovids to be found?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Africa"
+						},
+						{
+							"label": "B",
+							"text": "Eurasia"
+						},
+						{
+							"label": "C",
+							"text": "North America"
+						},
+						{
+							"label": "D",
+							"text": "South-east Asia"
+						}
+					],
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nKhu vực nào có sự đa dạng bovid lớn nhất?\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Bovids are well represented in most parts of Eurasia and Southeast Asian islands, but they are by far the most numerous and diverse in the latter\".\n==> \"the latter\" chỉ \"Southeast Asian islands\" — đáp án D (South-east Asia).\n\nBước 3: Đáp án: D\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A (Africa) → Bài không nói Africa là nơi đa dạng nhất.\nĐáp án B (Eurasia) → Bài đề cập Eurasia nhưng xếp sau Southeast Asia.\nĐáp án C (North America) → Bài không đề cập North America là nơi đa dạng nhất.",
+					"quotes": [
+						"Bovids are well represented in most parts of Eurasia and Southeast Asian islands, but they are by far the most numerous and diverse in the latter."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Most bovids have a preference for living in",
+					"options": [
+						{
+							"label": "A",
+							"text": "isolation"
+						},
+						{
+							"label": "B",
+							"text": "small groups"
+						},
+						{
+							"label": "C",
+							"text": "tropical forest"
+						},
+						{
+							"label": "D",
+							"text": "wide open spaces"
+						}
+					],
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nĐa số bovid thích sống ở đâu/kiểu môi trường nào?\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"the majority of species favour open grassland, scrub or desert\".\n==> \"open grassland, scrub or desert\" đồng nghĩa với đáp án D (wide open spaces).\n\nBước 3: Đáp án: D\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A (isolation) → Bài có đề cập một số loài sống đơn độc, nhưng đó không phải đa số.\nĐáp án B (small groups) → Bài đề cập \"large groups\", không phải small groups.\nĐáp án C (tropical forest) → Bài nói bovid có thể sống ở tropical forest nhưng đó không phải môi trường được ưa thích nhất.",
+					"quotes": [
+						"Although bovids have adapted to a wide range of habitats, from arctic tundra to deep tropical forest, the majority of species favour open grassland, scrub or desert."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Which of the following features do all bovids have in common?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Their horns are shed"
+						},
+						{
+							"label": "B",
+							"text": "They have upper incisors"
+						},
+						{
+							"label": "C",
+							"text": "They store food in the body"
+						},
+						{
+							"label": "D",
+							"text": "Their hooves are undivided"
+						}
+					],
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nĐặc điểm nào là chung của TẤT CẢ bovid?\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"All species are ruminants, which means that they retain undigested food in their stomachs, and regurgitate it as necessary\".\n==> \"retain undigested food in their stomachs\" đồng nghĩa với đáp án C (They store food in the body).\n\nBước 3: Đáp án: C\n\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án A (Their horns are shed) → Bài nói rõ sừng bovid \"never shed\".\nĐáp án B (They have upper incisors) → Bài nói \"the upper incisors are usually absent\".\nĐáp án D (Their hooves are undivided) → Bài nói bovid có \"cloven, or split hooves\" — tức là móng chẻ đôi, không phải liền.",
+					"quotes": [
+						"All species are ruminants, which means that they retain undigested food in their stomachs, and regurgitate it as necessary."
+					]
+				}
+			]
+		},
+		{
+			"range": "4-8",
+			"type": "MATCHING_INFORMATION",
+			"instructions": "Look at the following characteristics and the list of sub-families below.\nMatch each characteristic with the correct sub-family, A, B, C or D.\nNB You may use any letter more than once",
+			"options": [
+				{
+					"label": "A",
+					"text": "Antelope"
+				},
+				{
+					"label": "B",
+					"text": "Bovinae"
+				},
+				{
+					"label": "C",
+					"text": "Caprinae"
+				},
+				{
+					"label": "D",
+					"text": "Cephalophinae"
+				}
+			],
+			"body": "4 can endure very harsh environments ____ (4)\n5 includes the ox and the cow ____ (5)\n6 may supplement its diet with meat ____ (6)\n7 can usually move at speed ____ (7)\n8 does not defend a particular area of land ____ (8)",
+			"body_html": "<p><strong>4</strong> can endure very harsh environments [4]</p><p><strong>5</strong> includes the ox and the cow [5]</p><p><strong>6</strong> may supplement its diet with meat [6]</p><p><strong>7</strong> can usually move at speed [7]</p><p><strong>8</strong> does not defend a particular area of land [8]</p>",
+			"questions": [
+				{
+					"number": 4,
+					"text": "can endure very harsh environments",
+					"answer": "C",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nHọ phụ nào có thể chịu đựng môi trường khắc nghiệt?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nendure very harsh environments ~ \"Tolerance of extreme conditions is most marked in this group\"\nharsh environments ~ \"arid deserts\", \"mountains\", \"arctic tundra\"\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Caprinae: \"Tolerance of extreme conditions is most marked in this group: barbary and bighorn sheep have adapted to arid deserts, while Rocky Mountain sheep survive high up in mountains and musk oxen in arctic tundra\".\n\nBước 4: Đáp án: C (Caprinae)",
+					"quotes": [
+						"Tolerance of extreme conditions is most marked in this group: barbary and bighorn sheep have adapted to arid deserts, while Rocky Mountain sheep survive high up in mountains and musk oxen in arctic tundra."
+					]
+				},
+				{
+					"number": 5,
+					"text": "includes the ox and the cow",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nHọ phụ nào bao gồm bò đực (ox) và bò cái (cow)?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nox and cow ~ \"bison and cattle\"\nincludes ~ \"comprises\"\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Bovinae: \"The sub-family Bovinae comprises most of the larger bovids, including the African bongo, nilgai, eland, bison and cattle\".\n==> Ox và cow đều thuộc \"cattle\" → Bovinae.\n\nBước 4: Đáp án: B (Bovinae)",
+					"quotes": [
+						"The sub-family Bovinae comprises most of the larger bovids, including the African bongo, nilgai, eland, bison and cattle."
+					]
+				},
+				{
+					"number": 6,
+					"text": "may supplement its diet with meat",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nHọ phụ nào có thể bổ sung thịt vào khẩu phần ăn?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nsupplement diet with meat ~ \"believed to eat insects and feed on dead animal carcasses, and even to kill small animals\"\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Cephalophinae: \"some duikers — unlike most other bovids — are believed to eat insects and feed on dead animal carcasses, and even to kill small animals\".\n\nBước 4: Đáp án: D (Cephalophinae)",
+					"quotes": [
+						"Although mainly feeding on grass and leaves, some duikers – unlike most other bovids – are believed to eat insects and feed on dead animal carcasses, and even to kill small animals."
+					]
+				},
+				{
+					"number": 7,
+					"text": "can usually move at speed",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nHọ phụ nào thường có thể di chuyển nhanh?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\nmove at speed ~ \"fast-running species\"\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Antelope: \"Antelopes are typically long-legged, fast-running species, often with long horns that may be laid along the back when the animal is in full flight\".\n\nBước 4: Đáp án: A (Antelope)",
+					"quotes": [
+						"Antelopes are typically long-legged, fast-running species, often with long horns that may be laid along the back when the animal is in full flight."
+					]
+				},
+				{
+					"number": 8,
+					"text": "does not defend a particular area of land",
+					"answer": "B",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nHọ phụ nào không bảo vệ lãnh thổ riêng?\n\nBước 2: Tìm các keywords được paraphrase trong bài:\ndoes not defend a particular area of land ~ \"non-territorial\"\n\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ đoạn trích liên quan đến Bovinae: \"Unlike most other bovids, they are all non-territorial\".\n\nBước 4: Đáp án: B (Bovinae)",
+					"quotes": ["Unlike most other bovids, they are all non-territorial."]
+				}
+			]
+		},
+		{
+			"range": "9-13",
+			"type": "FILL_BLANK",
+			"instructions": "Answer the questions below.\nChoose NO MORE THAN THREE WORDS from the passage for each answer.\nWrite your answers in boxes 9-13 on your answer sheet.",
+			"body": "9 What is the smallest species of Bovid called? ____ (9)\n10 Which species of Bovinae has now died out? ____ (10)\n11 What facilitates the movement of the sitatunga over wetland? ____ (11)\n12 What sort of terrain do barbary sheep live in? ____ (12)\n13 What is the only living member of the Antilocapridae sub-family? ____ (13)",
+			"body_html": "<p><strong>9</strong> What is the smallest species of Bovid called? [9]</p><p><strong>10</strong> Which species of Bovinae has now died out? [10]</p><p><strong>11</strong> What facilitates the movement of the sitatunga over wetland? [11]</p><p><strong>12</strong> What sort of terrain do barbary sheep live in? [12]</p><p><strong>13</strong> What is the only living member of the Antilocapridae sub-family? [13]</p>",
+			"questions": [
+				{
+					"number": 9,
+					"text": "What is the smallest species of Bovid called?",
+					"answer": "royal antelope",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nLoài bovid nhỏ nhất được gọi là gì?\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN PHRASE (tên loài)\nDấu hiệu: \"What is ... called?\" → cần tên riêng của loài.\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n- smallest ~ \"stands a mere 25 cm at the shoulder\"\n- species of Bovid ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"at one extreme is the royal antelope of West Africa, which stands a mere 25 cm at the shoulder\" (loài nhỏ nhất chỉ cao 25 cm tính từ vai).\n\nBước 5: Đáp án: royal antelope",
+					"quotes": [
+						"This diversity of habitat is also matched by great diversity in size and form: at one extreme is the royal antelope of West Africa, which stands a mere 25 cm at the shoulder; at the other, the massively built bison of North America and Europe, growing to a shoulder height of 2.2m."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Which species of Bovinae has now died out?",
+					"answer": "auroch",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nLoài nào thuộc Bovinae đã tuyệt chủng?\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN PHRASE (tên loài)\nDấu hiệu: \"which species ... has died out\" → cần tên loài đã tuyệt chủng.\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n- died out ~ \"is extinct\"\n- Bovinae ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"the auroch (the ancestor of the domestic cattle of Europe) is extinct\" (con auroch — tổ tiên của gia súc châu Âu — đã tuyệt chủng).\n\nBước 5: Đáp án: auroch",
+					"quotes": [
+						"The ancestors of the various species of domestic cattle (such as banteng, gaur, yak and water buffalo) are generally rare and endangered in the wild, while the auroch (the ancestor of the domestic cattle of Europe) is extinct."
+					]
+				},
+				{
+					"number": 11,
+					"text": "What facilitates the movement of the sitatunga over wetland?",
+					"answer": "long, splayed hooves",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐiều gì giúp con sitatunga di chuyển trên vùng đất ngập nước?\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN PHRASE\nDấu hiệu: \"What facilitates...\" → cần danh từ/cụm danh từ chỉ bộ phận cơ thể hoặc đặc điểm.\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n- facilitates movement ~ \"enable it to walk freely\"\n- wetland ~ \"swampy ground\"\n- sitatunga ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"the sitatunga has long, splayed hooves that enable it to walk freely on swampy ground\" (con sitatunga có móng dài, xòe ra giúp nó đi lại dễ dàng trên vùng đầm lầy).\n\nBước 5: Đáp án: splayed hooves",
+					"quotes": [
+						"Antelopes are mainly grassland species, but many have adapted to flooded grasslands: pukus, waterbucks and lechwes are all good at swimming, usually feeding in deep water, while the sitatunga has long, splayed hooves that enable it to walk freely on swampy ground."
+					]
+				},
+				{
+					"number": 12,
+					"text": "What sort of terrain do barbary sheep live in?",
+					"answer": "arid deserts",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCừu barbary sống ở loại địa hình nào?\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN PHRASE (chỉ loại địa hình)\nDấu hiệu: \"What sort of terrain\" → cần danh từ/cụm danh từ mô tả địa hình.\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n- barbary sheep ~ từ khóa giữ nguyên\n- terrain ~ \"adapted to\"\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"barbary and bighorn sheep have adapted to arid deserts\" (cừu barbary và bighorn đã thích nghi với sa mạc khô hạn).\n\nBước 5: Đáp án: arid deserts",
+					"quotes": [
+						"Tolerance of extreme conditions is most marked in this group: barbary and bighorn sheep have adapted to arid deserts, while Rocky Mountain sheep survive high up in mountains and musk oxen in arctic tundra."
+					]
+				},
+				{
+					"number": 13,
+					"text": "What is the only living member of the Antilocapridae sub-family?",
+					"answer": "pronghorn",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nThành viên duy nhất còn sống của họ phụ Antilocapridae là gì?\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (tên loài)\nDấu hiệu: \"only living member\" → cần tên loài duy nhất còn tồn tại.\n\nBước 3: Tìm các keywords được paraphrase trong bài:\n- only living member ~ \"sole survivor\"\n- Antilocapridae ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"The pronghorn is the sole survivor of a New World sub-family of herbivorous ruminants, the Antilocapridae in North America\" (Con pronghorn là thành viên duy nhất còn sống sót của họ phụ Antilocapridae).\n\nBước 5: Đáp án: pronghorn",
+					"quotes": [
+						"The pronghorn is the sole survivor of a New World sub-family of herbivorous ruminants, the Antilocapridae in North America."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

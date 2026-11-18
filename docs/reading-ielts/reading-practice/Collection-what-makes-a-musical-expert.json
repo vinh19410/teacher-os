@@ -1,0 +1,292 @@
+{
+	"id": "5218ae67-7c32-421e-92c4-d7dac108408b",
+	"url": "https://stepielts.com/student/reading/5218ae67-7c32-421e-92c4-d7dac108408b?mode=practice",
+	"title": "What makes a musical expert?",
+	"source": "Collection",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "1-14",
+	"passage": {
+		"title": "What makes a musical expert?",
+		"subtitle": "How does someone become an expert in music? And is it really possible to have a ’talent’ for music?",
+		"paragraphs": [
+			"Does that class of people acknowledged to be musical experts just have more of the same basic skills we are all endowed with, or do they have a set of abilities - or neural structures - that are totally different from those of the rest of us? Do we have levels of musical achievement simply the result of training and practice, or are they based on innate brain structures - what we refer to as ’talent’? Talent can be defined as something that originates in genetic structures and that is identifiable by trained people who can recognize its existence before a person has achieved exceptional levels of performance. The emphasis on early identification means that to investigate it, we study the development of skills in children.",
+			"It is evident that some children acquire skills more rapidly than others: the age of onset for walking and talking varies widely, even between children in the same household. There may be genetic factors at work, but these are closely linked with other factors - with a presumably environmental component - such as motivation and family dynamics. Similar factors can influence musical development and can mask the contribution of genetics to musical ability.",
+			"Brain studies, so far, haven’t been of much use in sorting out the issues. Gottfried Schlaug at Harvard collected brain scans of individuals with absolute pitch (AP) and showed that a region in the brain called the planum temporale is larger in these people than in others. This suggests that the planum is involved in AP, but it’s not clear if it starts out larger in people who eventually acquire AP, or if the acquisition of AP makes the planum increase in size.",
+			"Results of research into the areas of the brain involved in skilled motor movement are more conclusive. Studies of violin players have shown that the region of the brain responsible for controlling movement of the left hand (the hand that controls greater precision in violin playing) increases in size as a result of practice. We do not know yet if the propensity for increase pre-exists in some people or others.",
+			"The evidence against talent comes from research on how much training the experts do. Like experts in mathematics, chess, or sports, experts in music require lengthy periods of instruction and practice. In several studies, the very best music students were found to have practiced more than twice as much as the others. In another study, students were examined at a world-class music academy based on their current performance. Several years later, it was found that the students who achieved the highest performance ratings had practiced the most, irrespective of which ’talent’ group they had been assigned to, individuals with absolute pitch: people who can identify or sing any musical note correctly without help suggesting that practice does not merely correlate with achievement, but causes it.",
+			"Anders Ericsson, at Florida State University, approaches the topic of musical expertise as a general problem in cognitive psychology. He takes as a starting-point the assumption that there are certain issues involved in becoming an expert at anything that we can learn about musical expertise by studying expert chess players, athletes, artists, mathematicians, as well as the musicians themselves. The emerging picture from such studies is that ten thousand hours of practice is required to achieve the level of mastery associated with being a world-class expert in anything. In study after study, of composers, ice skaters, concert pianists, chess players and master criminals, this number comes up again and again. Someone would do this amount of practice if they practiced, for example, roughly 20 hours a week for ten years. Of course, this does not address why some people do not seem to get anywhere when they practice, and why some people get more out of their practice sessions than others. But no-one has yet found a case in which true world-class expertise was accomplished in less time. It seems that it takes the brain this long to assimilate all that it needs to know to achieve true mastery.",
+			"The ten-thousand-hour theory is consistent with what we know about how the brain learns. Learning involves the assimilation and consolidation of information in neural networks, and the more experiences we have with something, the stronger the memory/learning trace for that experience becomes. Although experts appear to be gifted, it may be that it takes them to consolidate information naturally, it remains true that increased practice leads to a greater number of neural traces, which create stronger memory representation.",
+			"The classic riposte to this theory goes something like this: What about Mozart? I hear that he composed his first symphony at the age of four! First, there is a factual error here: Mozart did not write it until he was eight. Still, this is unusual, to say the least. However, this early work received little acclaim, and was not performed very often. In fact, the only reason we know about it is because the child who wrote it grew up to become Mozart. And Mozart had an expert teacher in his father, who showed an absorbed interest in his son’s musical education from how much Mozart practiced, but if he started at age two and worked thirty- two hours a week (quite possible, given that his father was a stern taskmaster) he would have made his ten thousand hours by the time he composed his first symphony. This does not mean that the only ingredient in expertise is practice, but that practice may well be the most important, if not the only crucial case."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-4",
+			"type": "MULTIPLE_CHOICE_ONE",
+			"instructions": "Choose the correct letter, A, B, C or D. Write the correct letter in boxes 1-4 on your answer sheet.",
+			"questions": [
+				{
+					"number": 1,
+					"text": "In the first paragraph, the writer suggests that a musician who IS talented is someone",
+					"options": [
+						{
+							"label": "A",
+							"text": "who is aware of being set apart from other people."
+						},
+						{
+							"label": "B",
+							"text": "whose brain structure is unlike that of other people."
+						},
+						{
+							"label": "C",
+							"text": "who can perform extremely well in early childhood."
+						},
+						{
+							"label": "D",
+							"text": "whose essential skills are more varied than those of ordinary people."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"Talent can be defined as something that originates in genetic structures and that is identifiable by trained people who can recognize its existence before a person has achieved exceptional levels of performance. The emphasis on early identification means that to investigate it, we study the development of skills in children."
+					]
+				},
+				{
+					"number": 2,
+					"text": "According to the writer, what is unclear about the findings of Gottfried Schlaug?",
+					"options": [
+						{
+							"label": "A",
+							"text": "which part of the brain is linked to a particular musical skill."
+						},
+						{
+							"label": "B",
+							"text": "which type of musical skill leads to the greatest change in the brain."
+						},
+						{
+							"label": "C",
+							"text": "whether a feature of the brain is a cause or an effect of a musical skill."
+						},
+						{
+							"label": "D",
+							"text": "whether the acquisition of a musical skill is easier for some people than others."
+						}
+					],
+					"answer": "C",
+					"quotes": [
+						"This suggests that the planum is involved in AP, but it’s not clear if it starts out larger in people who eventually acquire AP, or if the acquisition of AP makes the planum increase in size."
+					]
+				},
+				{
+					"number": 3,
+					"text": "According to the writer, what has been established by studies of violin players?",
+					"options": [
+						{
+							"label": "A",
+							"text": "Changes may occur in the brain following violin practice."
+						},
+						{
+							"label": "B",
+							"text": "Left-handed violinists have a different brain structure from other people."
+						},
+						{
+							"label": "C",
+							"text": "A violinist's hand size is not due to practice but to genetic factors."
+						},
+						{
+							"label": "D",
+							"text": "Violinists are born with brains that have a particular structure."
+						}
+					],
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu và tìm keywords trong câu hỏi:\nTheo tác giả, điều gì đã được xác định (established) qua các nghiên cứu về người chơi violin?\nBước 2: Tìm thông tin dựa trên keywords:\nBài đọc chỉ rõ \"Các nghiên cứu về người chơi violin đã chỉ ra rằng vùng não chịu trách nhiệm kiểm soát chuyển động của tay trái ... tăng kích thước do kết quả của việc luyện tập.\"\n=> Thông tin được in đậm đồng nghĩa với câu A (Những thay đổi có thể xảy ra trong não sau khi luyện tập violin).\nBước 3: Đáp án: A\nBước 4: Giải thích đáp án gây nhiễu:\nĐáp án B -> Đoạn văn nói về vùng não điều khiển \"tay trái\", không phải về \"người chơi violin thuận tay trái\".\nĐáp án C -> Đoạn văn nói về kích thước \"vùng não\", không phải \"kích thước bàn tay\".\nĐáp án D -> Đoạn văn nói rõ rằng thay đổi là \"kết quả của việc luyện tập\" và chúng ta \"chưa biết\" liệu họ có \"sinh ra với bộ não có cấu trúc đặc biệt\" hay không.",
+					"quotes": [
+						"Studies of violin players have shown that the region of the brain responsible for controlling movement of the left hand (the hand that controls greater precision in violin playing) increases in size as a result of practice."
+					]
+				},
+				{
+					"number": 4,
+					"text": "According to the writer, findings on the amount of practices done by expert musicians suggest that",
+					"options": [
+						{
+							"label": "A",
+							"text": "talent may have little to do with expertise."
+						},
+						{
+							"label": "B",
+							"text": "practice may actually prevent the development of talent."
+						},
+						{
+							"label": "C",
+							"text": "talent may not be recognised by teachers."
+						},
+						{
+							"label": "D",
+							"text": "expertise may be related to quality of instruction."
+						}
+					],
+					"answer": "A",
+					"quotes": [
+						"The evidence against talent comes from research on how much training the experts do. Like experts in mathematics, chess, or sports, experts in music require lengthy periods of instruction and practice. In several studies, the very best music students were found to have practiced more than twice as much as the others. In another study, students were examined at a world-class music academy based on their current performance. Several years later, it was found that the students who achieved the highest performance ratings had practiced the most, irrespective of which ’talent’ group they had been assigned to, individuals with absolute pitch: people who can identify or sing any musical note correctly without help suggesting that practice does not merely correlate with achievement, but causes it."
+					]
+				}
+			]
+		},
+		{
+			"range": "5-10",
+			"type": "YES/NO/NOT GIVEN",
+			"instructions": "Do the following statements agree with the claims of the writer in Reading Passage 3? In boxes 5-10 on your answer sheet, write\nYES if the statement agrees with the claims of the writer\nNO if the statement contradicts the claims of the writer\nNOT GIVEN if it is impossible to say what the writer thinks about this",
+			"questions": [
+				{
+					"number": 5,
+					"text": "Anders Ericsson's work with cognitive psychology has influenced other researchers.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCông trình của Anders Ericsson về tâm lý học nhận thức đã ảnh hưởng đến các nhà nghiên cứu khác.\nBước 2: Tìm các keywords được paraphrase trong bài:\nAnders Ericsson ~ từ khóa giữ nguyên\ncognitive psychology ~ từ khóa giữ nguyên\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"Anders Ericsson, tại Đại học bang Florida, tiếp cận chủ đề chuyên môn âm nhạc như một vấn đề chung trong tâm lý học nhận thức\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"công trình của ông có ảnh hưởng đến các nhà nghiên cứu khác hay không\" (has influenced other researchers).\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Anders Ericsson, at Florida State University, approaches the topic of musical expertise as a general problem in cognitive psychology."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Different areas of expertise seem to have one specific thing in common.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCác lĩnh vực chuyên môn khác nhau dường như có một điểm chung cụ thể.\nBước 2: Tìm các keywords được paraphrase trong bài:\nin anything ~ Different areas of expertise\nten thousand hours of practice ~ one specific thing in common\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"mười nghìn giờ luyện tập là cần thiết để đạt đến trình độ bậc thầy liên quan đến việc trở thành một chuyên gia đẳng cấp thế giới trong bất cứ lĩnh vực nào. Trong hết nghiên cứu này đến nghiên cứu khác, về các nhà soạn nhạc, vận động viên trượt băng, nghệ sĩ piano hòa nhạc, kỳ thủ cờ vua và cả những tên tội phạm bậc thầy, con số này cứ lặp đi lặp lại\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Các lĩnh vực chuyên môn khác nhau dường như có một điểm chung cụ thể\" (Different areas of expertise seem to have one specific thing in common).\nBước 4: Đáp án: YES",
+					"quotes": [
+						"The emerging picture from such studies is that ten thousand hours of practice is required to achieve the level of mastery associated with being a world-class expert in anything. In study after study, of composers, ice skaters, concert pianists, chess players and master criminals, this number comes up again and again."
+					]
+				},
+				{
+					"number": 7,
+					"text": "In order to be useful, practice must be carried out regularly every day.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐể hữu ích, việc luyện tập phải được thực hiện đều đặn hàng ngày.\nBước 2: Tìm các keywords được paraphrase trong bài:\npracticed ... roughly 20 hours a week ~ practice must be carried out regularly\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"Ai đó sẽ thực hiện được lượng luyện tập này nếu họ tập, ví dụ, khoảng 20 giờ một tuần trong mười năm\".\n=> Tuy nhiên, bài đọc không hề nhắc đến thông tin \"việc luyện tập phải được thực hiện mỗi ngày\" (every day). Ví dụ \"20 giờ một tuần\" có thể được chia theo nhiều cách, không nhất thiết là ngày nào cũng tập.\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"Someone would do this amount of practice if they practiced, for example, roughly 20 hours a week for ten years."
+					]
+				},
+				{
+					"number": 8,
+					"text": "Anyone who practices for long enough can reach the level of a world-class expert.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NO",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nBất cứ ai luyện tập đủ lâu cũng có thể đạt đến trình độ của một chuyên gia đẳng cấp thế giới.\nBước 2: Tìm các keywords được paraphrase trong bài:\nsome people do not seem to get anywhere when they practice ~ anyone ... can reach the level\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Tất nhiên, điều này không giải quyết được tại sao một số người dường như không đi đến đâu khi họ luyện tập, và tại sao một số người lại thu được nhiều hơn từ các buổi tập của họ so với những người khác\".\n=> Điều này trái ngược với thông tin trong câu hỏi rằng \"bất kỳ ai\" (anyone) luyện tập cũng có thể thành chuyên gia. Bài đọc gợi ý rằng chỉ luyện tập thôi là chưa đủ đối với một số người.\nBước 4: Đáp án: NO",
+					"quotes": [
+						"Of course, this does not address why some people do not seem to get anywhere when they practice, and why some people get more out of their practice sessions than others."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Occasionally, someone can become an expert at a global level with fewer than 10,000 hours' practice.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "NO",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nThỉnh thoảng, có người có thể trở thành chuyên gia cấp độ toàn cầu với ít hơn 10.000 giờ luyện tập.\nBước 2: Tìm các keywords được paraphrase trong bài:\nno-one has yet found a case ~ Occasionally, someone can\nin less time ~ fewer than 10,000 hours' practice\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Nhưng chưa ai tìm thấy một trường hợp nào mà sự chuyên nghiệp đẳng cấp thế giới thực sự được hoàn thành trong thời gian ít hơn\".\n=> Điều này trái ngược với thông tin trong câu hỏi \"thỉnh thoảng, có người có thể trở thành chuyên gia với ít hơn 10,000 giờ luyện tập\" (Occasionally, someone can become an expert... with fewer than 10,000 hours' practice).\nBước 4: Đáp án: NO",
+					"quotes": [
+						"But no-one has yet found a case in which true world-class expertise was accomplished in less time."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Existing knowledge of learning and cognitive skills supports the importance of practice.",
+					"options": ["YES", "NO", "NOT GIVEN"],
+					"answer": "YES",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nKiến thức hiện có về học tập và kỹ năng nhận thức ủng hộ tầm quan trọng của việc luyện tập.\nBước 2: Tìm các keywords được paraphrase trong bài:\nwhat we know about how the brain learns ~ Existing knowledge of learning and cognitive skills\nis consistent with ~ supports\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Lý thuyết mười nghìn giờ phù hợp với những gì chúng ta biết về cách não bộ học hỏi... việc luyện tập gia tăng dẫn đến số lượng dấu vết thần kinh lớn hơn, tạo ra sự biểu thị trí nhớ mạnh mẽ hơn\".\n=> Điều này đồng nghĩa với thông tin trong câu hỏi \"Kiến thức hiện có về học tập và kỹ năng nhận thức ủng hộ tầm quan trọng của việc luyện tập\" (Existing knowledge of learning and cognitive skills supports the importance of practice).\nBước 4: Đáp án: YES",
+					"quotes": [
+						"The ten-thousand-hour theory is consistent with what we know about how the brain learns. Learning involves the assimilation and consolidation of information in neural networks, and the more experiences we have with something, the stronger the memory/learning trace for that experience becomes. Although experts appear to be gifted, it may be that it takes them to consolidate information naturally, it remains true that increased practice leads to a greater number of neural traces, which create stronger memory representation."
+					]
+				}
+			]
+		},
+		{
+			"range": "11-14",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the summary using the list of words below.",
+			"options": [
+				{
+					"label": "A",
+					"text": "popular"
+				},
+				{
+					"label": "B",
+					"text": "artistic"
+				},
+				{
+					"label": "C",
+					"text": "completed"
+				},
+				{
+					"label": "D",
+					"text": "eight"
+				},
+				{
+					"label": "E",
+					"text": "tuition"
+				},
+				{
+					"label": "F",
+					"text": "encouragement"
+				},
+				{
+					"label": "G",
+					"text": "inherited"
+				},
+				{
+					"label": "H",
+					"text": "four"
+				},
+				{
+					"label": "I",
+					"text": "practice"
+				},
+				{
+					"label": "J",
+					"text": "ten"
+				}
+			],
+			"body": "Mozart\nThe case of Mozart could be quoted as evidence against the 10,000-hour-practice theory. However, the writer points out that the young Mozart received a lot of ____ (11) from his father, and that the symphony he wrote at the age of ____ (12) was not ____ (13) and may be of only academic interest. The case therefore supports the view that expertise is not solely the result of ____ (14) characteristics.",
+			"body_html": "<h3>Mozart</h3><p>The case of Mozart could be quoted as evidence against the 10,000-hour-practice theory. However, the writer points out that the young Mozart received a lot of [11] from his father, and that the symphony he wrote at the age of [12] was not [13] and may be of only academic interest. The case therefore supports the view that expertise is not solely the result of [14] characteristics.</p>",
+			"questions": [
+				{
+					"number": 11,
+					"text": "",
+					"answer": "E",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTuy nhiên, tác giả chỉ ra rằng Mozart lúc nhỏ đã nhận được rất nhiều ______ từ cha của mình.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: of + NOUN (NOUN làm Object của Preposition 'OF')\nBước 3: Tìm các keywords được paraphrase trong bài:\nexpert teacher … absorbed interest … musical education ~ tuition\nhis father ~ từ khóa giữ nguyên\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Và Mozart đã có một người thầy chuyên nghiệp chính là cha mình, người đã thể hiện sự quan tâm sâu sắc đến việc giáo dục âm nhạc của con trai mình\" (And Mozart had an expert teacher in his father, who showed an absorbed interest in his son's musical education).\nBước 5: Đáp án: tuition\nTuy nhiên, tác giả chỉ ra rằng Mozart lúc nhỏ đã nhận được rất nhiều sự dạy dỗ từ cha của mình (the young Mozart received a lot of tuition).",
+					"quotes": [
+						"And Mozart had an expert teacher in his father, who showed an absorbed interest in his son’s musical education from how much Mozart practiced, but if he started at age two and worked thirty- two hours a week (quite possible, given that his father was a stern taskmaster) he would have made his ten thousand hours by the time he composed his first symphony."
+					]
+				},
+				{
+					"number": 12,
+					"text": "",
+					"answer": "D",
+					"explanation": "Bước 1: Hiểu câu hỏi:\n...và bản giao hưởng ông viết năm ______ tuổi...\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (chỉ con số)\nDấu hiệu: of + NOUN (NOUN làm Object của Preposition 'OF')\nBước 3: Tìm các keywords được paraphrase trong bài:\nwrite it ~ symphony he wrote\nhe was eight ~ at the age of\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Thứ nhất, có một lỗi sai sự thật ở đây: Mozart không viết nó cho đến khi ông tám tuổi\" (First, there is a factual error here: Mozart did not write it until he was eight).\nBước 5: Đáp án: eight\n...và bản giao hưởng ông viết năm tám tuổi... (and that the symphony he wrote at the age of eight...).",
+					"quotes": [
+						"First, there is a factual error here: Mozart did not write it until he was eight."
+					]
+				},
+				{
+					"number": 13,
+					"text": "",
+					"answer": "A",
+					"explanation": "Bước 1: Hiểu câu hỏi:\n...không hề ______ và có thể chỉ mang tính học thuật.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: ADJECTIVE\nDấu hiệu: was not + ADJECTIVE (ADJECTIVE làm bổ ngữ sau động từ 'to be')\nBước 3: Tìm các keywords được paraphrase trong bài:\nthis early work ~ the symphony\nreceived little acclaim ~ was not popular\nnot performed very often ~ was not popular\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Tuy nhiên, tác phẩm đầu tay này nhận được ít sự hoan nghênh, và không được trình diễn thường xuyên\" (However, this early work received little acclaim, and was not performed very often).\nBước 5: Đáp án: popular\n...không hề nổi tiếng và có thể chỉ mang tính học thuật (was not popular and may be of only academic interest).",
+					"quotes": [
+						"However, this early work received little acclaim, and was not performed very often."
+					]
+				},
+				{
+					"number": 14,
+					"text": "",
+					"answer": "G",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nTrường hợp này do đó ủng hộ quan điểm rằng sự chuyên nghiệp không chỉ đơn thuần là kết quả của những đặc điểm ______.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: ADJECTIVE\nDấu hiệu: [BLANK] + characteristics (ADJECTIVE bổ nghĩa cho Noun 'characteristics')\nBước 3: Tìm các keywords được paraphrase trong bài:\noriginates in genetic structures ~ inherited characteristics\ntalent ~ inherited characteristics\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Tài năng có thể được định nghĩa là một thứ bắt nguồn từ cấu trúc gen...\" (Talent can be defined as something that originates in genetic structures...). Cuối đoạn, tác giả kết luận luyện tập là quan trọng nhất, ngụ ý rằng tài năng (hay các đặc điểm di truyền) không phải là yếu tố duy nhất.\nBước 5: Đáp án: inherited\nTrường hợp này do đó ủng hộ quan điểm rằng sự chuyên nghiệp không chỉ đơn thuần là kết quả của những đặc điểm thừa hưởng (expertise is not solely the result of inherited characteristics).",
+					"quotes": [
+						"Talent can be defined as something that originates in genetic structures and that is identifiable by trained people who can recognize its existence before a person has achieved exceptional levels of performance."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

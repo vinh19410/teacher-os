@@ -1,0 +1,163 @@
+{
+	"id": "efb38c3c-591a-436d-acfa-d4f3e8152710",
+	"url": "https://stepielts.com/student/reading/efb38c3c-591a-436d-acfa-d4f3e8152710?mode=practice",
+	"title": "The Industrial Revolution in Britain",
+	"source": "C19T2",
+	"passage_number": 1,
+	"time_minutes": 20,
+	"question_range": "1-13",
+	"passage": {
+		"title": "The Industrial Revolution in Britain",
+		"paragraphs": [
+			"The Industrial Revolution began in Britain in the mid-1700s and by the 1830s and 1840s had spread to many other parts of the world, including the United States. In Britain, it was a period when a largely rural, agrarian* society was transformed into an industrialised, urban one. Goods that had once been crafted by hand started to be produced in mass quantities by machines in factories, thanks to the invention of steam power and the introduction of new machines and manufacturing techniques in textiles, iron-making and other industries.",
+			"The foundations of the Industrial Revolution date back to the early 1700s, when the English inventor Thomas Newcomen designed the first modern steam engine. Called the 'atmospheric steam engine', Newcomen's invention was originally used to power machines that pumped water out of mines. In the 1760s, the Scottish engineer James Watt started to adapt one of Newcomen's models, and succeeded in making it far more efficient. Watt later worked with the English manufacturer Matthew Boulton to invent a new steam engine driven by both the forward and backward strokes of the piston, while the gear mechanism it was connected to produced rotary motion. It was a key innovation that would allow steam power to spread across British industries.",
+			"The demand for coal, which was a relatively cheap energy source, grew rapidly during the Industrial Revolution, as it was needed to run not only the factories used to produce manufactured goods, but also steam-powered transportation. In the early 1800s, the English engineer Richard Trevithick built a steam-powered locomotive, and by 1830 goods and passengers were being transported between the industrial centres of Manchester and Liverpool. In addition, steam-powered boats and ships were widely used to carry goods along Britain's canals as well as across the Atlantic.",
+			"Britain had produced textiles like wool, linen and cotton, for hundreds of years, but prior to the Industrial Revolution, the British textile business was a true 'cottage industry', with the work performed in small workshops or even homes by individual spinners, weavers and dyers. Starting in the mid-1700s, innovations like the spinning jenny and the power loom made weaving cloth and spinning yarn and thread much easier. With these machines, relatively little labour was required to produce cloth, and the new, mechanised textile factories that opened around the country were quickly able to meet customer demand for cloth both at home and abroad.",
+			"The British iron industry also underwent major change as it adopted new innovations. Chief among the new techniques was the smelting of iron ore with coke (a material made by heating coal) instead of the traditional charcoal. This method was cheaper and produced metals that were of a higher quality, enabling Britain's iron and steel production to expand in response to demand created by the Napoleonic Wars (1803-15) and the expansion of the railways from the 1830s.",
+			"The latter part of the Industrial Revolution also saw key advances in communication methods, as people increasingly saw the need to communicate efficiently over long distances. In 1837, British inventors William Cooke and Charles Wheatstone patented the first commercial telegraphy system. In the 1830s and 1840s, Samuel Morse and other inventors worked on their own versions in the United States. Cooke and Wheatstone's system was soon used for railway signalling in the UK. As the speed of the new locomotives increased, it was essential to have a fast and effective means of avoiding collisions.",
+			"The impact of the Industrial Revolution on people's lives was immense. Although many people in Britain had begun moving to the cities from rural areas before the Industrial Revolution, this accelerated dramatically with industrialisation, as the rise of large factories turned smaller towns into major cities in just a few decades. This rapid urbanisation brought significant challenges, as overcrowded cities suffered from pollution and inadequate sanitation.",
+			"Although industrialisation increased the country's economic output overall and improved the standard of living for the middle and upper classes, many poor people continued to struggle. Factory workers had to work long hours in dangerous conditions for extremely low wages. These conditions along with the rapid pace of change fuelled opposition to industrialisation. A group of British workers who became known as 'Luddites' were British weavers and textile workers who objected to the increased use of mechanised looms and knitting frames. Many had spent years learning their craft, and they feared that unskilled machine operators were robbing them of their livelihood. A few desperate weavers began breaking into factories and smashing textile machines. They called themselves Luddites after Ned Ludd, a young apprentice who was rumoured to have wrecked a textile machine in 1779.",
+			"The first major instances of machine breaking took place in 1811 in the city of Nottingham, and the practice soon spread across the country. Machine-breaking Luddites attacked and burned factories, and in some cases they even exchanged gunfire with company guards and soldiers. The workers wanted employers to stop installing new machinery, but the British government responded to the uprisings by making machine-breaking punishable by death. The unrest finally reached its peak in April 1812, when a few Luddites were shot during an attack on a mill near Huddersfield. In the days that followed, other Luddites were arrested, and dozens were hanged or transported to Australia.\nBy 1813, the Luddite resistance had all but vanished.",
+			"* agrarian: relating to the land. especially the use of land for farming"
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-7",
+			"type": "SUMMARY_COMPLETION",
+			"instructions": "Complete the notes below. Choose ONE WORD ONLY from the passage for each answer. Write your answers in boxes 1-7 on your answer sheet.",
+			"body": "Britain's Industrial Revolution\nSteam power\n• Newcomen's steam engine was used in mines to remove water.\n• In Watt and Boulton's steam engine, the movement of the ____ (1) was linked to a gear system.\n• A greater supply of ____ (2) was required to power steam engines.\nTextile industry\n• Before the Industrial Revolution, spinners and weavers worked at home and in ____ (3)\n• Not as much ____ (4) was needed to produce cloth once the spinning jenny and power loom were invented.\nIron industry\n• Smelting of iron ore with coke resulted in material that was better ____ (5)\n• Demand for iron increased with the growth of the ____ (6)\nCommunications\n• Cooke and Wheatstone patented the first telegraphy system.\n• The telegraphy system was used to prevent locomotives colliding.\nUrbanisation\n• Small towns turned into cities very quickly.\n• The new cities were dirty. crowded and lacked sufficient ____ (7)",
+			"questions": [
+				{
+					"number": 1,
+					"text": "• In Watt and Boulton's steam engine, the movement of the ____ (1) was linked to a gear system.",
+					"answer": "piston",
+					"quotes": [
+						"Watt later worked with the English manufacturer Matthew Boulton to invent a new steam engine driven by both the forward and backward strokes of the piston, while the gear mechanism it was connected to produced rotary motion."
+					]
+				},
+				{
+					"number": 2,
+					"text": "• A greater supply of ____ (2) was required to power steam engines.",
+					"answer": "coal",
+					"quotes": [
+						"The demand for coal, which was a relatively cheap energy source, grew rapidly during the Industrial Revolution, as it was needed to run not only the factories used to produce manufactured goods, but also steam-powered transportation."
+					]
+				},
+				{
+					"number": 3,
+					"text": "• Before the Industrial Revolution, spinners and weavers worked at home and in ____ (3)",
+					"answer": "workshops",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nTrước Cuộc Cách Mạng Công nghiệp, các thợ kéo sợi và dệt vải làm việc ở nhà và trong _______.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: in + NOUN (NOUN làm Object của Preposition 'IN')\nBước 3: Tìm các keywords được paraphrase trong bài:\nBefore the Industrial Revolution ~ prior to the Industrial Revolution\nspinners and weavers ~ individual spinners, weavers\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"công việc được thực hiện trong các công xưởng hoặc thậm chí tại nhà bởi các thợ kéo sợi, dệt vải và nhuộm riêng lẻ\" (the work performed in small workshops or even homes by individual spinners, weavers and dyers).\nBước 5: Đáp án: workshops\nTrước Cách mạng Công nghiệp, các thợ kéo sợi và dệt vải làm việc ở nhà và trong công xưởng. (Before the Industrial Revolution, spinners and weavers worked at home and in workshops).",
+					"quotes": [
+						"Britain had produced textiles like wool, linen and cotton, for hundreds of years, but prior to the Industrial Revolution, the British textile business was a true 'cottage industry', with the work performed in small workshops or even homes by individual spinners, weavers and dyers."
+					]
+				},
+				{
+					"number": 4,
+					"text": "• Not as much ____ (4) was needed to produce cloth once the spinning jenny and power loom were invented.",
+					"answer": "labour",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nKhông cần nhiều _______ để sản xuất vải một khi máy kéo sợi và khung dệt máy đã được phát minh.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: require + NOUN (NOUN làm Object của Transitive Verb ‘REQUIRE’)\nBước 3: Tìm các keywords được paraphrase trong bài:\nspinning jenny and power loom ~ the spinning jenny and the power loom\nwere invented ~ made weaving cloth and spinning yarn and thread much easier\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"Với những máy móc này, chỉ cần một lực lượng lao động tương đối ít để sản xuất vải\" (With these machines, relatively little labour was required to produce cloth).\nBước 5: Đáp án: labour\nKhông cần nhiều lao động để sản xuất vải một khi máy kéo sợi và khung dệt máy đã được phát minh (Not as much labour was needed to produce cloth once the spinning jenny and power loom were invented).",
+					"quotes": [
+						"With these machines, relatively little labour was required to produce cloth, and the new, mechanised textile factories that opened around the country were quickly able to meet customer demand for cloth both at home and abroad."
+					]
+				},
+				{
+					"number": 5,
+					"text": "• Smelting of iron ore with coke resulted in material that was better ____ (5)",
+					"answer": "quality",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nViệc nấu chảy quặng sắt với than cốc tạo ra vật liệu có _______ tốt hơn.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: better + NOUN (NOUN được bổ nghĩa bởi Adjective ‘BETTER’)\nBước 3: Tìm các keywords được paraphrase trong bài:\nSmelting of iron ore with coke ~ cụm từ giữ nguyên\nBước 4: So sánh và đối chiếu: Bài đọc chỉ rõ \"Phương pháp này rẻ hơn và sản xuất ra kim loại có chất lượng cao hơn\" (This method was cheaper and produced metals that were of a higher quality).\nBước 5: Đáp án: quality\nViệc nấu chảy quặng sắt với than cốc tạo ra vật liệu có chất lượng tốt hơn. (Smelting of iron ore with coke resulted in material that was better quality).",
+					"quotes": [
+						"This method was cheaper and produced metals that were of a higher quality, enabling Britain's iron and steel production to expand in response to demand created by the Napoleonic Wars (1803-15) and the expansion of the railways from the 1830s."
+					]
+				},
+				{
+					"number": 6,
+					"text": "• Demand for iron increased with the growth of the ____ (6)",
+					"answer": "railways",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nNhu cầu về sắt tăng lên cùng với sự phát triển của _______.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: of the + NOUN (NOUN làm Object của Preposition 'OF')\nBước 3: Tìm các keywords được paraphrase trong bài:\nDemand for iron increased ~ iron and steel production to expand in response to demand\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"sản xuất sắt và thép của Anh mở rộng để đáp ứng nhu cầu tạo ra bởi Chiến tranh Napoleon (1803-15) và sự mở rộng của đường sắt từ những năm 1830\" (Britain's iron and steel production to expand in response to demand created by the Napoleonic Wars (1803-15) and the expansion of the railways from the 1830s).\nBước 5: Đáp án: railways\nNhu cầu về sắt tăng lên cùng với sự phát triển của đường sắt (Demand for iron increased with the growth of the railways).",
+					"quotes": [
+						"This method was cheaper and produced metals that were of a higher quality, enabling Britain's iron and steel production to expand in response to demand created by the Napoleonic Wars (1803-15) and the expansion of the railways from the 1830s."
+					]
+				},
+				{
+					"number": 7,
+					"text": "• The new cities were dirty. crowded and lacked sufficient ____ (7)",
+					"answer": "sanitation",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp (nếu cần):\nCác thành phố mới thì bẩn thỉu, đông đúc và thiếu thốn _______.\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: sufficient + NOUN (NOUN được bổ nghĩa bởi Adjective ‘SUFFICIENT’)\nBước 3: Tìm các keywords được paraphrase trong bài:\nnew cities ~ overcrowded cities\ndirty ~ suffered from pollution\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ \"các thành phố đông đúc bị ô nhiễm và thiếu vệ sinh đầy đủ\" (overcrowded cities suffered from pollution and inadequate sanitation).\nBước 5: Đáp án: sanitation\nCác thành phố mới bị ô nhiễm, đông đúc và thiếu vệ sinh đầy đủ. (The new cities were dirty, crowded and lacked sufficient sanitation).",
+					"quotes": [
+						"This rapid urbanisation brought significant challenges, as overcrowded cities suffered from pollution and inadequate sanitation."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-13",
+			"type": "TRUE/FALSE/NOT GIVEN",
+			"instructions": "Do the following statements agree with the information given in Reading Passage 1?\nIn boxes 8-13 on your answer sheet, write\nTRUE if the statement agrees with the information\nFALSE if the statement contradicts the information\nNOT GIVEN if there is no information on this",
+			"questions": [
+				{
+					"number": 8,
+					"text": "Britain's canal network grew rapidly so that more goods could be transported around the country.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMạng lưới kênh đào của Anh đã phát triển nhanh chóng để có thể vận chuyển nhiều hàng hóa hơn trong nước.\nBước 2: Tìm các keywords được paraphrase trong bài:\nBritain's canals ~ canal network\ncarry goods ~ goods could be transported\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"tàu thuyền chạy bằng hơi nước được sử dụng rộng rãi để vận chuyển hàng hóa dọc theo các kênh đào của Anh\". Tuy nhiên, bài đọc không hề nhắc đến thông tin \"mạng lưới kênh đào phát triển nhanh chóng\" (canal network grew rapidly).\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"In addition, steam-powered boats and ships were widely used to carry goods along Britain's canals as well as across the Atlantic."
+					]
+				},
+				{
+					"number": 9,
+					"text": "Costs in the iron industry rose when the technique of smelting iron ore with coke was introduced.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "FALSE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nChi phí trong ngành công nghiệp sắt tăng lên khi kỹ thuật luyện quặng sắt bằng than cốc được đưa vào sử dụng.\nBước 2: Tìm các keywords được paraphrase trong bài:\ncheaper ~ costs rose\nthis method ~ technique of smelting iron ore with coke\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"phương pháp này rẻ hơn và sản xuất ra kim loại có chất lượng cao hơn\". Điều này trái ngược với thông tin trong câu hỏi là \"Chi phí trong ngành công nghiệp sắt tăng lên khi kỹ thuật luyện quặng sắt bằng than cốc được đưa vào sử dụng\" (Costs in the iron industry rose when the technique of smelting iron ore with coke was introduced.).\nBước 4: Đáp án: FALSE",
+					"quotes": [
+						"This method was cheaper and produced metals that were of a higher quality, enabling Britain's iron and steel production to expand in response to demand created by the Napoleonic Wars (1803-15) and the expansion of the railways from the 1830s."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Samuel Morse's communication system was more reliable than that developed by William Cooke and Charles Wheatstone.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nHệ thống thông tin liên lạc của Samuel Morse đáng tin cậy hơn hệ thống do William Cooke và Charles Wheatstone phát triển.\nBước 2: Tìm các keywords được paraphrase trong bài:\nSamuel Morse ~ tên riêng giữ nguyên\nWilliam Cooke and Charles Wheatstone ~ tên riêng giữ nguyên\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc \"William Cooke và Charles Wheatstone đã có bằng sáng chế cho hệ thống điện báo thương mại đầu tiên\" và \"Samuel Morse cùng với các nhà phát minh khác đã phát triển phiên bản của riêng họ ở Hoa Kỳ”. Tuy nhiên, bài đọc không hề nhắc đến thông tin \"hệ thống của Morse đáng tin cậy hơn\" (Morse's system was more reliable).\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"In 1837, British inventors William Cooke and Charles Wheatstone patented the first commercial telegraphy system. In the 1830s and 1840s, Samuel Morse and other inventors worked on their own versions in the United States."
+					]
+				},
+				{
+					"number": 11,
+					"text": "The economic benefits of industrialisation were limited to certain sectors of society.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nLợi ích kinh tế của công nghiệp hóa chỉ giới hạn ở một số tầng lớp nhất định trong xã hội.\nBước 2: Tìm các keywords được paraphrase trong bài:\neconomic output ~ economic benefits\nimproved the standard of living for the middle and upper classes ~ limited to certain sectors of society\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"công nghiệp hóa tăng sản lượng kinh tế của đất nước nói chung và cải thiện mức sống cho tầng lớp trung lưu và thượng lưu, nhưng nhiều người nghèo thì vẫn còn gặp khó khăn\". Điều này đồng nghĩa với thông tin trong câu hỏi \"lợi ích kinh tế của công nghiệp hóa chỉ giới hạn ở một số tầng lớp nhất định trong xã hội\" (The economic benefits of industrialisation were limited to certain sectors of society).\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Although industrialisation increased the country's economic output overall and improved the standard of living for the middle and upper classes, many poor people continued to struggle."
+					]
+				},
+				{
+					"number": 12,
+					"text": "Some skilled weavers believed that the introduction of the new textile machines would lead to job losses.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "TRUE",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nMột số thợ dệt lành nghề tin rằng việc sử dụng các máy dệt mới sẽ dẫn đến hậu quả (nhiều người) mất việc làm.\nBước 2: Tìm các keywords được paraphrase trong bài:\nmany had spent years learning their craft ~ skilled weavers\nRobbing them of their livelihood ~ lead to job losses\nBước 3: So sánh và đối chiếu:\nBài đọc chỉ rõ \"nhiều người đã dành nhiều năm để học nghề, và họ lo sợ rằng những người vận hành máy móc không có tay nghề đang “đạp đổ miếng cơm” của họ\". Điều này đồng nghĩa với thông tin trong câu hỏi là \"một số thợ dệt lành nghề tin rằng “một số thợ dệt lành nghề tin rằng việc sử dụng các máy dệt mới sẽ dẫn đến hậu quả (nhiều người) mất việc làm\" (some skilled weavers believed that the introduction of the new textile machines would lead to job losses).\nBước 4: Đáp án: TRUE",
+					"quotes": [
+						"Many had spent years learning their craft, and they feared that unskilled machine operators were robbing them of their livelihood."
+					]
+				},
+				{
+					"number": 13,
+					"text": "There was some sympathy among local people for the Luddites who were arrested near Huddersfield.",
+					"options": ["TRUE", "FALSE", "NOT GIVEN"],
+					"answer": "NOT GIVEN",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNgười dân địa phương có sự cảm thông đối với những người Luddite bị bắt gần Huddersfield.\nBước 2: Tìm các keywords được paraphrase trong bài:\nLuddites were arrested ~ Luddites who were arrested\nnear Huddersfield ~ cụm từ giữ nguyên\nBước 3: So sánh và đối chiếu:\nBài đọc đề cập đến việc “một số người Luddite đã bị bắn trong một cuộc tấn công vào một nhà máy gần Huddersfield\" và \"những ngày sau đó, những người Luddite khác bị bắt\". Tuy nhiên, bài đọc không hề nhắc đến thông tin \"người dân địa phương có sự cảm thông\" (sympathy among local people).\nBước 4: Đáp án: NOT GIVEN",
+					"quotes": [
+						"The unrest finally reached its peak in April 1812, when a few Luddites were shot during an attack on a mill near Huddersfield. In the days that followed, other Luddites were arrested, and dozens were hanged or transported to Australia."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

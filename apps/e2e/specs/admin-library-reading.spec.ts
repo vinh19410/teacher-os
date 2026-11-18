@@ -242,7 +242,34 @@ test("tạo đề Reading 3 passage đa dạng → xuất bản → sửa → h�
 		"A",
 	);
 	await fillQuestionRow(page, "p3", 1, "What happens during deep sleep?", "B");
+	// Chuyển câu 2 của Passage 3 sang 3 lựa chọn (A–C) — ẩn lựa chọn D & chip D.
+	const p3q1 = page.locator("#p3-q1");
+	await p3q1.getByRole("button", { name: "3 lựa chọn" }).click();
+	await expect(p3q1.getByLabel(/^Lựa chọn D/)).toHaveCount(0);
+	await expect(p3q1.getByRole("button", { name: /: D$/ })).toHaveCount(0);
+	await p3q1.getByLabel(/^Lựa chọn A/).fill("Memory consolidation");
+	await p3q1.getByLabel(/^Lựa chọn B/).fill("Body repair");
+	await p3q1.getByLabel(/^Lựa chọn C/).fill("Rapid dreaming");
+	await p3q1.getByRole("button", { name: /: C$/ }).click();
 	await savePart(page);
+
+	// Kiểm tra Xem trước Passage 3: câu 3 lựa chọn chỉ hiện A, B, C (không có D)
+	await page
+		.getByRole("toolbar", { name: "Thao tác soạn đề" })
+		.getByRole("button", { name: "Xem trước" })
+		.click();
+	const previewDialog = page.getByRole("dialog", { name: /Xem trước bộ đề/ });
+	await expect(previewDialog).toBeVisible();
+	await previewDialog
+		.getByRole("tab", { name: "Passage 3", exact: true })
+		.click();
+	await expect(previewDialog.getByText("Memory consolidation")).toBeVisible();
+	await expect(previewDialog.getByText("Rapid dreaming")).toBeVisible();
+	await expect(
+		previewDialog.locator('input[name="q-1"][value="D"]'),
+	).toHaveCount(0);
+	await page.keyboard.press("Escape");
+	await expect(previewDialog).toHaveCount(0);
 
 	// --- Xuất bản ---
 	await page.getByRole("button", { name: "Xuất bản" }).click();
@@ -271,8 +298,8 @@ const GROUPS_TITLE = `E2E Reading Groups ${Date.now()}`;
 
 /**
  * #420 Task 5.1 + #424 phase 5 Task 5.2 — soạn passage 2 nhóm câu trên
- * layout Quiz Builder: nhóm ngầm tfng 3 câu → chia nhóm → nhóm 2 note
- * completion (answersInline + giải thích) → ClozeEditor apply giữ giải
+ * layout Quiz Builder: nhóm ngầm tfng 3 câu → chia nhóm → nhóm 2 fill_blank
+ * (answersInline + giải thích) → ClozeEditor apply giữ giải
  * thích → lưu/tải lại → điều hướng cây, giữ nháp khi đổi part, panel
  * "Kiểm tra đáp án", fold "Câu 6" cho p2, verify 3 viewport + bàn phím.
  */
@@ -317,7 +344,7 @@ test("soạn passage có 2 nhóm câu, lưu và tải lại", async ({
 		outline(page).getByRole("button", { name: "Nhóm câu 1", exact: true }),
 	).toBeVisible();
 
-	// --- 2. Nhóm 2: note completion, đáp án inline + giải thích ---
+	// --- 2. Nhóm 2: fill_blank, đáp án inline + giải thích ---
 	// Nút "Chia thành nhiều nhóm câu" gọi addGroup: nhóm 1 phủ 3 câu cũ,
 	// nhóm 2 (rỗng 1 câu) xuất hiện ngay nhưng ĐÓNG — mở qua cây điều hướng
 	// (cũng set tab Câu hỏi của nhóm).
@@ -328,7 +355,7 @@ test("soạn passage có 2 nhóm câu, lưu và tải lại", async ({
 		.click();
 	await expect(groupTab(page, "p1", 1, "Câu hỏi")).toBeVisible();
 	await groupTab(page, "p1", 1, "Thiết lập").click();
-	await g2.getByLabel("Dạng bài", { exact: true }).selectOption("note");
+	await g2.getByLabel("Dạng bài", { exact: true }).selectOption("fill_blank");
 	await g2.getByLabel("Ô trả lời nằm trong hướng dẫn").check();
 	await groupTab(page, "p1", 1, "Hướng dẫn").click();
 	const intro = g2.getByLabel("Hướng dẫn đề", { exact: true });

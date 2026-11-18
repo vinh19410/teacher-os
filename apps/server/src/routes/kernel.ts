@@ -41,6 +41,7 @@ import {
 	generatePaymentCode,
 	generatePayToken,
 } from "@teacher-os/api/lib/payment-code";
+import { placementTeacherGradeSchema } from "@teacher-os/api/placement-test-contracts";
 import {
 	isoToLessonWeekday,
 	parseStartDateStrict,
@@ -116,6 +117,13 @@ import {
 } from "../lib/payment-instructions";
 import { recordManualPayment } from "../lib/payments/record-manual-payment";
 import type { PlacementAiGrader } from "../lib/placement-ai/grader";
+import {
+	findLatestSubmissionForStudent,
+	getPlacementSubmissionDetailResponse,
+	getPlacementSubmissionMediaResponse,
+	gradePlacementSubmissionResponse,
+	retryPlacementSubmissionAiResponse,
+} from "../lib/placement-submission-service";
 import { requireFinanceRole } from "../lib/require-finance-role";
 import {
 	buildImportBatch,
@@ -230,6 +238,31 @@ export function kernelRoutes(deps: {
 
 	function canManageStudentInvites(role: string | undefined): boolean {
 		return role === undefined ? true : canPublishGrade(role);
+	}
+
+	function canGradeStudentPlacement(role: string | undefined): boolean {
+		return role === undefined ? true : canPublishGrade(role);
+	}
+
+	async function loadOwnedStudentAndPlacementSubmission(
+		db: Db,
+		orgId: string,
+		studentId: string,
+	) {
+		const [studentRow] = await db
+			.select()
+			.from(student)
+			.where(
+				and(
+					eq(student.id, studentId),
+					eq(student.orgId, orgId),
+					sql`${student.id} NOT LIKE 'demo-student:%'`,
+				),
+			)
+			.limit(1);
+		if (!studentRow) return null;
+		const sub = await findLatestSubmissionForStudent(db, orgId, studentRow);
+		return { studentRow, sub };
 	}
 
 	function canManageClassStatusInKernel(role: string | undefined): boolean {
@@ -4113,6 +4146,155 @@ export function kernelRoutes(deps: {
 			} satisfies BillingTimelineResponse);
 		},
 	);
+
+	// #748: xem, chấm, AI-retry và stream audio Speaking bài test đầu vào từ hồ sơ học viên.
+	kernel.get("/students/:id/placement-submission", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		if (!canGradeStudentPlacement(ctx.role)) {
+			return c.json(
+				{ error: "placement-forbidden", code: "placement-forbidden" },
+				403,
+			);
+		}
+		const loaded = await loadOwnedStudentAndPlacementSubmission(
+			deps.getDb(),
+			ctx.orgId,
+			c.req.param("id") ?? "",
+		);
+		if (!loaded) {
+			return c.json(
+				{ error: "STUDENT_NOT_FOUND", code: "STUDENT_NOT_FOUND" },
+				404,
+			);
+		}
+		if (!loaded.sub) {
+			return c.json(
+				{
+					error: "PLACEMENT_SUBMISSION_NOT_FOUND",
+					code: "PLACEMENT_SUBMISSION_NOT_FOUND",
+				},
+				404,
+			);
+		}
+		return getPlacementSubmissionDetailResponse(
+			c,
+			deps,
+			{ kind: "student", row: loaded.studentRow },
+			loaded.sub,
+		);
+	});
+
+	kernel.get("/students/:id/placement-submission/media", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		if (!canGradeStudentPlacement(ctx.role)) {
+			return c.json(
+				{ error: "placement-forbidden", code: "placement-forbidden" },
+				403,
+			);
+		}
+		const loaded = await loadOwnedStudentAndPlacementSubmission(
+			deps.getDb(),
+			ctx.orgId,
+			c.req.param("id") ?? "",
+		);
+		if (!loaded) {
+			return c.json(
+				{ error: "STUDENT_NOT_FOUND", code: "STUDENT_NOT_FOUND" },
+				404,
+			);
+		}
+		if (!loaded.sub) {
+			return c.json(
+				{
+					error: "PLACEMENT_SUBMISSION_NOT_FOUND",
+					code: "PLACEMENT_SUBMISSION_NOT_FOUND",
+				},
+				404,
+			);
+		}
+		return getPlacementSubmissionMediaResponse(c, deps, loaded.sub);
+	});
+
+	kernel.post("/students/:id/placement-submission/ai-retry", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		if (!canGradeStudentPlacement(ctx.role)) {
+			return c.json(
+				{ error: "placement-forbidden", code: "placement-forbidden" },
+				403,
+			);
+		}
+		const loaded = await loadOwnedStudentAndPlacementSubmission(
+			deps.getDb(),
+			ctx.orgId,
+			c.req.param("id") ?? "",
+		);
+		if (!loaded) {
+			return c.json(
+				{ error: "STUDENT_NOT_FOUND", code: "STUDENT_NOT_FOUND" },
+				404,
+			);
+		}
+		if (!loaded.sub) {
+			return c.json(
+				{
+					error: "PLACEMENT_SUBMISSION_NOT_FOUND",
+					code: "PLACEMENT_SUBMISSION_NOT_FOUND",
+				},
+				404,
+			);
+		}
+		return retryPlacementSubmissionAiResponse(
+			c,
+			deps,
+			{ kind: "student", row: loaded.studentRow },
+			loaded.sub,
+		);
+	});
+
+	kernel.patch("/students/:id/placement-submission", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return unauthorized(c);
+		if (!canGradeStudentPlacement(ctx.role)) {
+			return c.json(
+				{ error: "placement-forbidden", code: "placement-forbidden" },
+				403,
+			);
+		}
+		const body = await readBody(c, placementTeacherGradeSchema);
+		if (!body.ok) return body.response;
+
+		const loaded = await loadOwnedStudentAndPlacementSubmission(
+			deps.getDb(),
+			ctx.orgId,
+			c.req.param("id") ?? "",
+		);
+		if (!loaded) {
+			return c.json(
+				{ error: "STUDENT_NOT_FOUND", code: "STUDENT_NOT_FOUND" },
+				404,
+			);
+		}
+		if (!loaded.sub) {
+			return c.json(
+				{
+					error: "PLACEMENT_SUBMISSION_NOT_FOUND",
+					code: "PLACEMENT_SUBMISSION_NOT_FOUND",
+				},
+				404,
+			);
+		}
+		return gradePlacementSubmissionResponse(
+			c,
+			deps,
+			ctx,
+			{ kind: "student", row: loaded.studentRow },
+			loaded.sub,
+			body.data,
+		);
+	});
 
 	// TOS-18 (#452): gửi nhắc học phí hàng loạt cho học viên đang nợ qua hàng
 	// đợi thông báo Email + In-app của TOS-21 (#454). Gọi trực tiếp

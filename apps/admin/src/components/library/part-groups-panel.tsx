@@ -96,11 +96,20 @@ export function PartGroupsPanel({
 					showErrors={showErrors}
 					status={testReady ? "ready" : "draft"}
 					errorFor={errorFor}
+					maxQuestions={Math.max(
+						group.count,
+						QUESTION_MAX_COUNT - value.questions.length + group.count,
+					)}
 					lockAddQuestion={atPartMax}
 				/>
 			))}
 			<div>
-				<Button type="button" variant="outline" onClick={onAddGroup}>
+				<Button
+					type="button"
+					variant="outline"
+					disabled={atPartMax}
+					onClick={onAddGroup}
+				>
 					Thêm nhóm câu
 				</Button>
 			</div>

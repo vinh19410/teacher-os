@@ -1,0 +1,215 @@
+{
+	"id": "3493b73a-10bb-4fab-877d-e551b13ae3dc",
+	"url": "https://stepielts.com/student/reading/3493b73a-10bb-4fab-877d-e551b13ae3dc?mode=practice",
+	"title": "Living dunes",
+	"source": "Collection",
+	"passage_number": 3,
+	"time_minutes": 20,
+	"question_range": "1-14",
+	"passage": {
+		"title": "Living Dunes",
+		"paragraphs": [
+			"When you think of a sand dune, you probably picture a barren pile of lifeless sand. But sand dunes are actually dynamic natural structures. They grow, shift and travel. They crawl with living things. Some sand dunes even sing.",
+			"A. Although no more than a pile of wind-blown sand, dunes can roll over trees and buildings, march relentlessly across highways, devour vehicles on its path, and threaten crops and factories in Africa, the Middle East, and China. In some places, killer dunes even roll in and swallow up towns. Entire villages have disappeared under the sand. In a few instances the government built new villages for those displaced only to find that new villages themselves were buried several years later. Preventing sand dunes from overwhelming cities and agricultural areas has become a priority for the United Nations Environment Program.",
+			"B. Some of the most significant experimental measurements on sand movement were performed by Ralph Bagnold, a British engineer who worked in Egypt prior to World War I. Bagnold investigated the physics of particles moving through the atmosphere and deposited by wind. He recognised two basic dune types, the crescentic dune, which he called “barchan” and the linear dune, which he called longitudinal or “sief” (Arabic for “sword”). The crescentic barchan dune is the most common type of sand dune. As its name suggests, this dune is shaped like points at each end, and it is usually wider than it is long. Some types of barchan dunes move faster over desert surfaces than any other type of dune. The linear dune is straighter than the crescentic dune with ridges as its prominent feature. Unlike crescentic dunes, linear dunes are longer than they are wide-in fact, some are more than 100 miles (about 160 kilometers) long. Dunes can also be comprised of smaller dunes of different types, called a complex crescent moon with dunes.",
+			"C. Despite the complicated dynamics of dune formation, Bagnold noted that a sand dune generally needs the following three things to form: a large amount of loose sand in an area with little vegetation - usually on the coast or in a dried-up river, lake or sea bed; a wind or breeze to move the grains of sand and an obstacle, which could be as small as a rock or as big as a tree, that causes the sand to lose momentum and settle. Where these three variables merge, a sand dune forms.",
+			"D. As the wind picks up the sand, the sand travels, but generally only about an inch or two above the ground, until an obstacle causes it to stop. The heaviest grains settle against the obstacle, and a small ridge or bump forms. The lighter grains deposit themselves on the other side of the obstacle. Wind continues to move sand up to the top of the pile until the pile is so steep that it collapses under its own weight. The collapsing sand comes to rest when it reaches just the right steepness to keep the dune stable. The repeating cycle of sand inching up the windward side to the dune crest, then slipping down the dune’s slip face allows the dune to inch forward, migrating in the direction the wind blows.",
+			"E. Depending on the speed and direction of the wind and the weight of the local sand, dunes will develop into different shapes and sizes. Stronger winds tend to make taller dunes; gentler winds tend to spread them out. If the direction of the wind generally is the same over the years, dunes gradually shift in that direction. But a dune is ‘a curiously dynamic creature”, wrote Farouk El-Baz in National Geographic. Once formed, a dune can grow, change shape, move with the wind and even breed new dunes. Some of these offspring may be carried on the back of the mother dune. Others are born and race downwind, outpacing their parents.",
+			"F. Sand dunes even can be heard ‘singing’ in more than 30 locations worldwide, and in each place the sounds have their own characteristic frequency, or note. When the thirteenth century explorer Marco Polo encountered the weird and wonderful noises made by desert sand dunes, he attributed them to evil spirits. The sound is unearthly. The volume is also unnerving. Adding to the tones otherworldliness is the inability of the human ear to localise the source of the noise. Stéphane Douady of the French national research agency CNRS and his colleagues have been delving deeper into dunes in Morocco, Chile, China and Oman, and believe they can now explain the exact mechanism behind this acoustic phenomenon.",
+			"G. The group hauled sand back to the laboratory and set it up in channels with automated pushing plates. The sands still sang, proving that the dune itself was not needed to act as a resonating body for the sound, as some researchers had theorised. To make the booming sound, the grains have to be of a small range of sizes, all alike in shape: well-rounded. Douady’s key discovery was that this synchronised frequency-which determines the tone of sound-is the result of the grain size. The larger the grain, the lower the key. He has successfully predicted the notes emitted by dunes in Morocco, Chile and the US simply by measuring the size of the grains they contain. Douady also discovered that the singing grains had some kind of varnish or a smooth coating of various minerals: silicon, iron and manganese, which probably formed on the sand when the dunes once lay beneath an ancient ocean. But in the muted grains this coat had been worn away, which explains why only some dunes can sing. He admits he is unsure exactly what role the coating plays in producing the noise. The mysterious dunes, it seems, aren’t quite ready yet to give up all of their secrets."
+		]
+	},
+	"question_groups": [
+		{
+			"range": "1-7",
+			"type": "MATCHING_HEADINGS",
+			"instructions": "Reading passage has seven paragraphs, A-G. Match the correct headings with paragraphs A-G",
+			"options": [
+				{
+					"label": "i",
+					"text": "Shaping and reforming"
+				},
+				{
+					"label": "ii",
+					"text": "Causes of desertification"
+				},
+				{
+					"label": "iii",
+					"text": "Need combination of specific conditions"
+				},
+				{
+					"label": "iv",
+					"text": "Potential threat to industry and communication"
+				},
+				{
+					"label": "v",
+					"text": "An old superstition demystified"
+				},
+				{
+					"label": "vi",
+					"text": "Differences and similarities"
+				},
+				{
+					"label": "vii",
+					"text": "A continuous cycling process"
+				},
+				{
+					"label": "viii",
+					"text": "Habitat for rare species"
+				},
+				{
+					"label": "ix",
+					"text": "Replicating the process in laboratory"
+				},
+				{
+					"label": "x",
+					"text": "Commonest type of dune"
+				}
+			],
+			"questions": [
+				{
+					"number": 1,
+					"text": "Paragraph A",
+					"answer": "iv",
+					"quotes": [
+						"Although no more than a pile of wind-blown sand, dunes can roll over trees and buildings, march relentlessly across highways, devour vehicles on its path, and threaten crops and factories in Africa, the Middle East, and China. In some places, killer dunes even roll in and swallow up towns. Entire villages have disappeared under the sand. In a few instances the government built new villages for those displaced only to find that new villages themselves were buried several years later. Preventing sand dunes from overwhelming cities and agricultural areas has become a priority for the United Nations Environment Program."
+					]
+				},
+				{
+					"number": 2,
+					"text": "Paragraph B",
+					"answer": "x",
+					"explanation": "Bước 1: Tóm tắt nội dung chính của đoạn B:\nĐoạn B có nội dung chính là \"Giới thiệu về loại đụn cát phổ biến nhất - đụn barchan và các đặc điểm của nó\".\n\nBước 2: Đọc và hiểu đoạn B:\nÔng nhận ra hai loại đụn cơ bản, đụn hình lưỡi liềm, mà ông gọi là \"barchan\" và đụn tuyến tính. Đụn barchan hình lưỡi liềm là loại đụn cát phổ biến nhất. Như tên gọi của nó, đụn này có hình dạng như lưỡi liềm với các điểm ở mỗi đầu, và nó thường rộng hơn so với chiều dài. Một số loại đụn barchan di chuyển nhanh hơn trên bề mặt sa mạc so với bất kỳ loại đụn nào khác.\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề x \"Commonest type of dune\" (Loại đụn phổ biến nhất).\n\nBước 4: Đáp án: x\n\nBước 5: Giải thích đáp án gây nhiễu:\nĐáp án vi (Differences and similarities) -> Mặc dù đoạn văn có so sánh hai loại đụn (barchan và linear), nhưng trọng tâm chính của đoạn là giới thiệu đụn barchan là loại phổ biến nhất, không phải là so sánh sự khác biệt và giống nhau giữa các loại đụn.",
+					"quotes": [
+						"The crescentic barchan dune is the most common type of sand dune. As its name suggests, this dune is shaped like points at each end, and it is usually wider than it is long."
+					]
+				},
+				{
+					"number": 3,
+					"text": "Paragraph C",
+					"answer": "iii",
+					"explanation": "Bước 1: Tóm tắt nội dung chính của đoạn C:\nĐoạn C có nội dung chính là \"Ba điều kiện cụ thể cần thiết để hình thành đụn cát\".\n\nBước 2: Đọc và hiểu đoạn C:\nBagnold lưu ý rằng một đụn cát thường cần ba điều sau để hình thành: một lượng lớn cát rời trong một khu vực có ít thực vật - thường ở bờ biển hoặc trong lòng sông, hồ hoặc đáy biển khô cạn; một cơn gió hoặc làn gió để di chuyển các hạt cát và một chướng ngại vật, có thể nhỏ như một tảng đá hoặc lớn như một cái cây, khiến cát mất động lượng và lắng xuống. Nơi ba biến số này hợp nhất, một đụn cát hình thành.\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề iii \"Need combination of specific conditions\" (Cần sự kết hợp của các điều kiện cụ thể).\n\nBước 4: Đáp án: iii",
+					"quotes": [
+						"C. Despite the complicated dynamics of dune formation, Bagnold noted that a sand dune generally needs the following three things to form: a large amount of loose sand in an area with little vegetation - usually on the coast or in a dried-up river, lake or sea bed; a wind or breeze to move the grains of sand and an obstacle, which could be as small as a rock or as big as a tree, that causes the sand to lose momentum and settle. Where these three variables merge, a sand dune forms."
+					]
+				},
+				{
+					"number": 4,
+					"text": "Paragraph D",
+					"answer": "vii",
+					"quotes": [
+						"D. As the wind picks up the sand, the sand travels, but generally only about an inch or two above the ground, until an obstacle causes it to stop. The heaviest grains settle against the obstacle, and a small ridge or bump forms. The lighter grains deposit themselves on the other side of the obstacle. Wind continues to move sand up to the top of the pile until the pile is so steep that it collapses under its own weight. The collapsing sand comes to rest when it reaches just the right steepness to keep the dune stable. The repeating cycle of sand inching up the windward side to the dune crest, then slipping down the dune’s slip face allows the dune to inch forward, migrating in the direction the wind blows."
+					]
+				},
+				{
+					"number": 5,
+					"text": "Paragraph E",
+					"answer": "i",
+					"quotes": [
+						"E. Depending on the speed and direction of the wind and the weight of the local sand, dunes will develop into different shapes and sizes. Stronger winds tend to make taller dunes; gentler winds tend to spread them out. If the direction of the wind generally is the same over the years, dunes gradually shift in that direction. But a dune is ‘a curiously dynamic creature”, wrote Farouk El-Baz in National Geographic. Once formed, a dune can grow, change shape, move with the wind and even breed new dunes. Some of these offspring may be carried on the back of the mother dune. Others are born and race downwind, outpacing their parents."
+					]
+				},
+				{
+					"number": 6,
+					"text": "Paragraph F",
+					"answer": "v",
+					"explanation": "Bước 1: Tóm tắt nội dung chính của đoạn F: Đoạn F có nội dung chính là \"Giải thích khoa học về hiện tượng đụn cát hát, thay thế niềm tin mê tín cũ\".\n\nBước 2: Đọc và hiểu đoạn F:\nCác đụn cát thậm chí có thể được nghe thấy 'hát' ở hơn 30 địa điểm trên toàn thế giới. Khi nhà thám hiểm thế kỷ 13 Marco Polo gặp những âm thanh kỳ lạ và tuyệt vời do các đụn cát sa mạc tạo ra, ông cho rằng chúng là do các linh hồn ma quỷ. Stéphane Douady của cơ quan nghiên cứu quốc gia Pháp CNRS và các đồng nghiệp của ông đã đào sâu hơn vào các đụn ở Morocco, Chile, Trung Quốc và Oman, và tin rằng họ bây giờ có thể giải thích cơ chế chính xác đằng sau hiện tượng âm thanh này.\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề v \"An old superstition demystified\" (Một niềm tin mê tín cũ được làm sáng tỏ).\n\nBước 4: Đáp án: v",
+					"quotes": [
+						"F. Sand dunes even can be heard ‘singing’ in more than 30 locations worldwide, and in each place the sounds have their own characteristic frequency, or note. When the thirteenth century explorer Marco Polo encountered the weird and wonderful noises made by desert sand dunes, he attributed them to evil spirits. The sound is unearthly. The volume is also unnerving. Adding to the tones otherworldliness is the inability of the human ear to localise the source of the noise. Stéphane Douady of the French national research agency CNRS and his colleagues have been delving deeper into dunes in Morocco, Chile, China and Oman, and believe they can now explain the exact mechanism behind this acoustic phenomenon."
+					]
+				},
+				{
+					"number": 7,
+					"text": "Paragraph G",
+					"answer": "ix",
+					"explanation": "Bước 1: Tóm tắt nội dung chính của đoạn G:\nĐoạn G có nội dung chính là \"Tái tạo quá trình hát của đụn cát trong phòng thí nghiệm\".\n\nBước 2: Đọc và hiểu đoạn G:\nNhóm nghiên cứu đã kéo cát về phòng thí nghiệm và thiết lập nó trong các kênh với các tấm đẩy tự động. Cát vẫn hát, chứng minh rằng chính đụn không cần thiết để hoạt động như một cơ thể cộng hưởng cho âm thanh, như một số nhà nghiên cứu đã lý thuyết hóa. Để tạo ra âm thanh bùng nổ, các hạt phải có phạm vi kích thước nhỏ, tất cả giống nhau về hình dạng: tròn đều. Khám phá quan trọng của Douady là tần số đồng bộ này - xác định âm sắc của âm thanh - là kết quả của kích thước hạt.\n\nBước 3: So sánh và đối chiếu:\nThông tin được in đậm phù hợp với tiêu đề ix \"Replicating the process in laboratory\" (Tái tạo quá trình trong phòng thí nghiệm).\n\nBước 4: Đáp án: ix",
+					"quotes": [
+						"G. The group hauled sand back to the laboratory and set it up in channels with automated pushing plates. The sands still sang, proving that the dune itself was not needed to act as a resonating body for the sound, as some researchers had theorised."
+					]
+				}
+			]
+		},
+		{
+			"range": "8-10",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Choose ONE WORD ONLY from the passage for each answer.",
+			"body": "____ (8) dune is said to have long ridges that can extend hundreds of miles.\nAccording to Bagnold, an ____ (9) is needed to stop the sand from moving before a dune can form.\nStéphane Douady believes the singing of dunes is not a spiritual phenomenon, but purely ____ (10)",
+			"body_html": "<table><tbody><tr><td><ul><li>[8] dune is said to have long ridges that can extend hundreds of miles.</li><li>According to Bagnold, an [9] is needed to stop the sand from moving before a dune can form.</li><li>Stéphane Douady believes the singing of dunes is not a spiritual phenomenon, but purely [10]</li></ul></td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 8,
+					"text": "____ (8) dune is said to have long ridges that can extend hundreds of miles.",
+					"answer": "linear",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nĐụn _______ được cho là có những rặng dài có thể kéo dài hàng trăm dặm.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: ADJECTIVE\nDấu hiệu: _______ dune + ADJECTIVE (ADJECTIVE bổ nghĩa cho Noun 'dune')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nlong ridges ~ từ khóa giữ nguyên\nextend hundreds of miles ~ more than 100 miles long\ndune ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Đụn tuyến tính thẳng hơn đụn hình lưỡi liềm với các rặng là đặc điểm nổi bật của nó. Không giống như đụn hình lưỡi liềm, đụn tuyến tính dài hơn so với chiều rộng - thực tế, một số dài hơn 100 dặm (khoảng 160 km)\".\n\nBước 5: Đáp án: linear",
+					"quotes": [
+						"The linear dune is straighter than the crescentic dune with ridges as its prominent feature. Unlike crescentic dunes, linear dunes are longer than they are wide-in fact, some are more than 100 miles (about 160 kilometers) long."
+					]
+				},
+				{
+					"number": 9,
+					"text": "According to Bagnold, an ____ (9) is needed to stop the sand from moving before a dune can form.",
+					"answer": "obstacle",
+					"explanation": "Bước 1: Hiểu câu hỏi và Giải thích ngữ pháp:\nTheo Bagnold, một _______ là cần thiết để ngăn cát di chuyển trước khi một đụn có thể hình thành.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: an _______ + NOUN (mạo từ 'an' + NOUN)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nBagnold ~ từ khóa giữ nguyên\nstop the sand from moving ~ causes the sand to lose momentum and settle\nbefore a dune can form ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu: Bài đọc chỉ rõ: \"Bagnold lưu ý rằng một đụn cát thường cần ba điều sau để hình thành: một lượng lớn cát rời trong một khu vực có ít thực vật; một cơn gió hoặc làn gió để di chuyển các hạt cát và một chướng ngại vật, có thể nhỏ như một tảng đá hoặc lớn như một cái cây, khiến cát mất động lượng và lắng xuống\".\n\nBước 5: Đáp án: obstacle",
+					"quotes": [
+						"C. Despite the complicated dynamics of dune formation, Bagnold noted that a sand dune generally needs the following three things to form: a large amount of loose sand in an area with little vegetation - usually on the coast or in a dried-up river, lake or sea bed; a wind or breeze to move the grains of sand and an obstacle, which could be as small as a rock or as big as a tree, that causes the sand to lose momentum and settle. Where these three variables merge, a sand dune forms."
+					]
+				},
+				{
+					"number": 10,
+					"text": "Stéphane Douady believes the singing of dunes is not a spiritual phenomenon, but purely ____ (10)",
+					"answer": "acoustic",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nStéphane Douady tin rằng việc hát của các đụn không phải là một hiện tượng tâm linh, mà hoàn toàn là _______.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: ADJECTIVE\nDấu hiệu: purely _______ + ADJECTIVE (trạng từ 'purely' + ADJECTIVE)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nStéphane Douady ~ từ khóa giữ nguyên\nsinging of dunes ~ từ khóa giữ nguyên\nnot a spiritual phenomenon ~ từ khóa đối lập\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Stéphane Douady của cơ quan nghiên cứu quốc gia Pháp CNRS và các đồng nghiệp của ông đã đào sâu hơn vào các đụn ở Morocco, Chile, Trung Quốc và Oman, và tin rằng họ bây giờ có thể giải thích cơ chế chính xác đằng sau hiện tượng âm thanh này\".\n\nBước 5: Đáp án: acoustic",
+					"quotes": [
+						"Stéphane Douady of the French national research agency CNRS and his colleagues have been delving deeper into dunes in Morocco, Chile, China and Oman, and believe they can now explain the exact mechanism behind this acoustic phenomenon."
+					]
+				}
+			]
+		},
+		{
+			"range": "11-14",
+			"type": "SENTENCE_COMPLETION",
+			"instructions": "Choose ONE WORD ONLY from the passage for each answer.",
+			"body": "There are many different types of dunes, two of which are most commonly found in deserts throughout the world, the linear dune and the ____ (11) dune, some times also known as the crescentic dune. It’s been long known that in some places dunes can even sing and the answer lies in the sand itself. To produce singing sand in lab, all the sands must have similar ____ (12). And scientists have discovered that the size of the sand can affect the ____ (13) of the sound. But the function of the varnish composed by a mixture of ____ (14) still remains puzzling.",
+			"body_html": "<table><tbody><tr><td>\n\nThere are many different types of dunes, two of which are most commonly found in deserts throughout the world, the linear dune and the [11] dune, some times also known as the crescentic dune. It’s been long known that in some places dunes can even sing and the answer lies in the sand itself. To produce singing sand in lab, all the sands must have similar [12]. And scientists have discovered that the size of the sand can affect the [13] of the sound. But the function of the varnish composed by a mixture of [14] still remains puzzling.\n\n</td></tr></tbody></table>",
+			"questions": [
+				{
+					"number": 11,
+					"text": "",
+					"answer": "barchan",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nCó nhiều loại đụn khác nhau, hai trong số đó được tìm thấy phổ biến nhất ở các sa mạc trên khắp thế giới, đụn tuyến tính và đụn _______, đôi khi cũng được gọi là đụn hình lưỡi liềm.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (Proper name)\nDấu hiệu: the _______ dune + NOUN (tên riêng của loại đụn)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nlinear dune ~ từ khóa giữ nguyên\ncrescentic dune ~ từ khóa giữ nguyên\nalso known as ~ sometimes also known as\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Ông nhận ra hai loại đụn cơ bản, đụn hình lưỡi liềm, mà ông gọi là 'barchan' và đụn tuyến tính. Đụn barchan hình lưỡi liềm là loại đụn cát phổ biến nhất\".\n\nBước 5: Đáp án: barchan",
+					"quotes": [
+						"He recognised two basic dune types, the crescentic dune, which he called “barchan” and the linear dune, which he called longitudinal or “sief” (Arabic for “sword”)."
+					]
+				},
+				{
+					"number": 12,
+					"text": "",
+					"answer": "shape",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nĐể tạo ra cát hát trong phòng thí nghiệm, tất cả các hạt cát phải có _______ tương tự.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: similar _______ + NOUN (tính từ 'similar' + NOUN)\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nproduce singing sand ~ make the booming sound\nin lab ~ laboratory\nall the sands must have ~ từ khóa tương đương\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Nhóm nghiên cứu đã kéo cát về phòng thí nghiệm và thiết lập nó trong các kênh với các tấm đẩy tự động. Cát vẫn hát. Để tạo ra âm thanh bùng nổ, các hạt phải có phạm vi kích thước nhỏ, tất cả giống nhau về hình dạng: tròn đều\".\n\nBước 5: Đáp án: shape",
+					"quotes": [
+						"To make the booming sound, the grains have to be of a small range of sizes, all alike in shape: well-rounded."
+					]
+				},
+				{
+					"number": 13,
+					"text": "",
+					"answer": "tone",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nVà các nhà khoa học đã phát hiện ra rằng kích thước của cát có thể ảnh hưởng đến _______ của âm thanh.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN\nDấu hiệu: the _______ of the sound + NOUN (mạo từ 'the' + NOUN + 'of')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nsize of the sand ~ grain size\naffect ~ determines\nsound ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Khám phá quan trọng của Douady là tần số đồng bộ này - xác định âm sắc của âm thanh - là kết quả của kích thước hạt. Hạt càng lớn, âm sắc càng thấp\" .\n\nBước 5: Đáp án: tone",
+					"quotes": [
+						"Douady’s key discovery was that this synchronised frequency-which determines the tone of sound-is the result of the grain size."
+					]
+				},
+				{
+					"number": 14,
+					"text": "",
+					"answer": "minerals",
+					"explanation": "Bước 1: Hiểu câu hỏi:\nNhưng chức năng của lớp phủ được cấu thành bởi một hỗn hợp của _______ vẫn còn là bí ẩn.\n\nBước 2: Xác định loại từ dựa trên các dấu hiệu:\nLoại từ: NOUN (plural)\nDấu hiệu: a mixture of _______ + NOUN (danh từ số nhiều sau 'a mixture of')\n\nBước 3: Tìm các keywords được paraphrase trong bài:\nvarnish ~ coat/coating\ncomposed by ~ từ khóa giữ nguyên\nmixture ~ từ khóa giữ nguyên\n\nBước 4: So sánh và đối chiếu:\nBài đọc chỉ rõ: \"Douady cũng phát hiện ra rằng các hạt hát có một loại vecni hoặc một lớp phủ mịn của các khoáng chất khác nhau: silicon, sắt và mangan, có thể hình thành trên cát khi các đụn từng nằm dưới một đại dương cổ đại. Ông thừa nhận ông không chắc chắn chính xác vai trò của lớp phủ trong việc tạo ra âm \".\n\nBước 5: Đáp án: minerals",
+					"quotes": [
+						"Douady also discovered that the singing grains had some kind of varnish or a smooth coating of various minerals: silicon, iron and manganese, which probably formed on the sand when the dunes once lay beneath an ancient ocean."
+					]
+				}
+			]
+		}
+	],
+	"images": []
+}

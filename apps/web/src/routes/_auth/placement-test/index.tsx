@@ -439,17 +439,25 @@ export function PlacementTestRoute() {
 		setConfirmOpen(true);
 	};
 
-	const handleConfirmPublish = async () => {
+	const executePublish = async (
+		targetRevision: number,
+		onSuccessToast?: (version: number) => string,
+	) => {
 		setPublishing(true);
+		setConflictDetected(false);
 		try {
-			const res = await publishPlacementTest(revision);
+			const res = await publishPlacementTest(targetRevision);
 			setPublishedVersion(res.publishedVersion);
 			setPublishedAt(res.publishedAt);
 			setRevision(res.revision);
 			setServerDirty(false);
 			setPublishIssues([]);
 			setConfirmOpen(false);
-			toast.success(`Đã phát hành bộ đề v${res.publishedVersion}.`);
+			toast.success(
+				onSuccessToast
+					? onSuccessToast(res.publishedVersion)
+					: `Đã phát hành bộ đề v${res.publishedVersion}.`,
+			);
 			await queryClient.invalidateQueries({ queryKey: placementTestQueryKey });
 		} catch (error) {
 			setConfirmOpen(false);
@@ -478,9 +486,12 @@ export function PlacementTestRoute() {
 		}
 	};
 
-	const handleImportSeed = async () => {
+	const handleConfirmPublish = () => executePublish(revision);
+
+	const handleImportSeed = async (options?: { publishAfter?: boolean }) => {
 		setImportingSeed(true);
 		setSeedError(null);
+		setConflictDetected(false);
 		setReimportConfirmOpen(false);
 		setSeedProgress("Đang tải đề gốc 5 kỹ năng...");
 		try {
@@ -550,6 +561,28 @@ export function PlacementTestRoute() {
 							}
 						: prev,
 			);
+
+			if (options?.publishAfter) {
+				const clientIssues = validatePlacementForPublish(content);
+				if (clientIssues.length > 0) {
+					setPublishIssues(clientIssues);
+					toast.error(
+						`Đã lưu nháp đề gốc nhưng chưa thể phát hành: còn ${clientIssues.length} lỗi cần kiểm tra.`,
+					);
+					focusFirstIssue(clientIssues);
+					await queryClient.invalidateQueries({
+						queryKey: placementTestQueryKey,
+					});
+					return;
+				}
+				setSeedProgress("Đang phát hành bộ đề...");
+				await executePublish(
+					saved.revision,
+					(version) => `Đã nhập đề gốc và phát hành bộ đề v${version}.`,
+				);
+				return;
+			}
+
 			toast.success(
 				"Đã nhập đề gốc 5 kỹ năng (40 câu, Writing & Speaking, 6 đoạn nghe).",
 			);
@@ -1182,21 +1215,21 @@ export function PlacementTestRoute() {
 			<Modal
 				open={reimportConfirmOpen}
 				onClose={() => {
-					if (!importingSeed) setReimportConfirmOpen(false);
+					if (!importingSeed && !publishing) setReimportConfirmOpen(false);
 				}}
 				title="Xác nhận nhập lại đề gốc mẫu"
 				footer={
-					<div className="flex justify-end gap-2">
+					<div className="flex flex-wrap justify-end gap-2">
 						<Button
 							variant="outline"
-							disabled={importingSeed}
+							disabled={importingSeed || publishing}
 							onClick={() => setReimportConfirmOpen(false)}
 						>
 							Hủy
 						</Button>
 						<Button
-							variant="primary"
-							disabled={importingSeed}
+							variant="outline"
+							disabled={importingSeed || publishing}
 							onClick={() => void handleImportSeed()}
 							data-testid="confirm-reimport-btn"
 						>
@@ -1204,15 +1237,28 @@ export function PlacementTestRoute() {
 								? (seedProgress ?? "Đang nhập...")
 								: "Xác nhận ghi đè bản nháp"}
 						</Button>
+						<Button
+							variant="primary"
+							disabled={importingSeed || publishing}
+							onClick={() => void handleImportSeed({ publishAfter: true })}
+							data-testid="confirm-reimport-publish-btn"
+						>
+							{importingSeed || publishing
+								? (seedProgress ?? "Đang xử lý...")
+								: "Nhập lại & Phát hành ngay"}
+						</Button>
 					</div>
 				}
 			>
 				<p className="text-muted-foreground text-sm leading-relaxed">
 					Thao tác này sẽ thay thế toàn bộ câu hỏi và file âm thanh trong bản
 					nháp hiện tại bằng bộ đề gốc 5 kỹ năng (40 câu + Writing + Speaking, 6
-					audio Kokoro) rồi lưu lại ngay. Bạn vẫn cần bấm{" "}
-					<strong className="text-foreground">Phát hành</strong> để cập nhật lên
-					trang công khai.
+					audio giọng chuẩn (en-GB)) rồi lưu lại ngay. Bạn có thể chỉ lưu bản
+					nháp để chỉnh sửa tiếp hoặc chọn{" "}
+					<strong className="text-foreground">
+						Nhập lại &amp; Phát hành ngay
+					</strong>{" "}
+					để cập nhật thẳng lên trang công khai.
 				</p>
 			</Modal>
 		</div>

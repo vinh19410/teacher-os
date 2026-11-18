@@ -862,8 +862,7 @@
       overflow: hidden;
     }
 
-    .proof-img-wrap img,
-    .proof-img-wrap img.chat-contain {
+    .proof-img-wrap img {
       position: absolute;
       inset: 0;
       width: 100%;
@@ -871,6 +870,12 @@
       object-fit: cover;
       object-position: center top;
       padding: 0;
+    }
+
+    .proof-img-wrap img.chat-contain {
+      object-fit: contain;
+      object-position: center;
+      padding: var(--space-4) var(--space-4) 44px;
     }
 
     .zoom-pill {
@@ -1716,9 +1721,9 @@
         padding: 0;
       }
       .proof-split .proof-img-wrap {
-        height: 300px;
+        height: 360px;
         min-height: 0;
-        flex: 0 0 300px;
+        flex: 0 0 360px;
         border-right: 0;
         border-bottom: 1px solid var(--line);
       }
@@ -2002,46 +2007,46 @@
         </div>
         <div class="proof-split">
           <div class="proof-card">
-            <button type="button" class="proof-img-wrap" data-lightbox-src="assets/teacher-profile/images/feedback-global-offer.png" data-lightbox-caption="Tin nhắn học viên đi làm báo tin nhận offer từ công ty toàn cầu">
-              <img src="assets/teacher-profile/images/feedback-global-offer.png" class="chat-contain" alt="Tin nhắn học viên báo nhận offer từ công ty toàn cầu">
+            <button type="button" class="proof-img-wrap" data-lightbox-src="assets/teacher-profile/images/feedback-global-offer.png" data-lightbox-caption="Tin nhắn học viên Bảo Hân báo tin nhận offer từ công ty toàn cầu">
+              <img src="assets/teacher-profile/images/feedback-global-offer.png" class="chat-contain" alt="Tin nhắn học viên Bảo Hân báo tin nhận offer từ công ty toàn cầu">
               <span class="zoom-pill">Xem tin nhắn</span>
             </button>
             <div class="proof-body">
               <span class="proof-tag">Tiếng Anh công sở</span>
-              <p class="proof-quote">Hello teacher, I have received the new offer from a Global Company! Cảm ơn cô đã sửa từng câu trả lời phỏng vấn theo đúng JD.</p>
+              <p class="proof-quote">Hello teacher, I have received the new offer from Global company. I want to say thank you for your instruction in English class. It helps me a lot during my interview process.</p>
               <div class="proof-author">
-                <strong>Học viên người đi làm</strong>
+                <strong>Học viên Bảo Hân</strong>
                 <span>Nhận offer từ công ty toàn cầu</span>
               </div>
             </div>
           </div>
 
           <div class="proof-card">
-            <button type="button" class="proof-img-wrap" data-lightbox-src="assets/pinned-post-20-10/student-feedback.jpg" data-lightbox-caption="Phản hồi của học viên lớp bàn tròn online">
-              <img src="assets/pinned-post-20-10/student-feedback.jpg" class="chat-contain" alt="Phản hồi của học viên lớp bàn tròn online">
-              <span class="zoom-pill">Xem phản hồi</span>
+            <button type="button" class="proof-img-wrap" data-lightbox-src="assets/teacher-profile/images/feedback-po-le.png" data-lightbox-caption="Tin nhắn học viên Po Le phản hồi tiến bộ khi họp tiếng Anh">
+              <img src="assets/teacher-profile/images/feedback-po-le.png" class="chat-contain" alt="Tin nhắn học viên Po Le phản hồi tiến bộ khi họp tiếng Anh">
+              <span class="zoom-pill">Xem tin nhắn</span>
             </button>
             <div class="proof-body">
               <span class="proof-tag">Giao tiếp</span>
-              <p class="proof-quote">Dạo này em họp, em nói được... sếp em hiểu hết cái em muốn nói.</p>
+              <p class="proof-quote">Dạo này em họp em nói được liền lạc hơn, sếp em hiểu hết cái em muốn nói.</p>
               <div class="proof-author">
-                <strong>Học viên người đi làm</strong>
-                <span>Lớp CO2 · Giao tiếp đầu ra B2</span>
+                <strong>Học viên Po Le</strong>
+                <span>Lớp giao tiếp tiếng Anh</span>
               </div>
             </div>
           </div>
 
           <div class="proof-card">
-            <button type="button" class="proof-img-wrap" data-lightbox-src="assets/teacher-profile/images/class-offline-selfie.png" data-lightbox-caption="Lớp học thực tế cùng cô Thục Mỹ">
-              <img src="assets/teacher-profile/images/class-offline-selfie.png" alt="Lớp học thực tế cùng cô Thục Mỹ">
-              <span class="zoom-pill">Phóng to ảnh</span>
+            <button type="button" class="proof-img-wrap" data-lightbox-src="assets/teacher-profile/images/feedback-ielts-70.png" data-lightbox-caption="Tin nhắn học viên Đỗ Anh Thư cảm ơn cô Mỹ sau khi đạt IELTS 7.0">
+              <img src="assets/teacher-profile/images/feedback-ielts-70.png" class="chat-contain" alt="Tin nhắn học viên Đỗ Anh Thư cảm ơn cô Mỹ sau khi đạt IELTS 7.0">
+              <span class="zoom-pill">Xem tin nhắn</span>
             </button>
             <div class="proof-body">
               <span class="proof-tag">IELTS</span>
-              <p class="proof-quote">Cô dạy và chữa bài kỹ từng bài... chữa kỹ bài còn hơn là đi lướt nhanh mà không hiểu gì. Cô cũng hay đưa ra các tip giúp cả lớp có điểm cao.</p>
+              <p class="proof-quote">Em cảm ơn cô nhiều đã đồng hành cùng em trên hành trình chinh phục 7.0 IELTS. Cô không chỉ giúp em hiểu hơn về IELTS, hướng dẫn cách làm bài mà còn cho em nhiều lời khuyên có ích.</p>
               <div class="proof-author">
-                <strong>Học viên Phương Anh</strong>
-                <span>Lớp IELTS đầu ra 6.5+</span>
+                <strong>Học viên Đỗ Anh Thư</strong>
+                <span>Chinh phục IELTS 7.0</span>
               </div>
             </div>
           </div>

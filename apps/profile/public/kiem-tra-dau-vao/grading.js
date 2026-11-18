@@ -63,20 +63,23 @@ export function countWords(text) {
 }
 
 /**
- * Matches a percentage score (0..100) to a placement band.
+ * Matches a percentage score (0..100) to a placement band using raw float thresholds (`>= min`),
+ * matching `bandOf(total)` in raw-data/placement-test-audio.html.
  */
 export function matchBandByPct(pct, bands) {
 	const list = Array.isArray(bands) ? bands : [];
 	if (list.length === 0) {
 		return { ...FALLBACK_BAND };
 	}
-	const rounded = Math.round(Number.isFinite(pct) ? pct : 0);
+	const safePct = Number.isFinite(pct) ? pct : 0;
 	const sorted = [...list].sort((a, b) => a.min - b.min);
-	const matched = sorted.find(
-		(band) => rounded >= band.min && rounded <= band.max,
-	);
-	if (matched) return matched;
-	return rounded < sorted[0].min ? sorted[0] : sorted[sorted.length - 1];
+	let matched = sorted[0];
+	for (const band of sorted) {
+		if (safePct >= band.min) {
+			matched = band;
+		}
+	}
+	return matched;
 }
 
 function createSectionScore(correct, total) {
@@ -177,18 +180,24 @@ export function scoreObjectiveTest(snapshot, answers = {}) {
 	const vocabGrammarScore = createSectionScore(vgCorrect, vgTotal);
 	const readingScore = createSectionScore(readingCorrect, readingTotal);
 
-	const sectionPcts = [
-		listeningScore.pct,
-		vocabGrammarScore.pct,
-		readingScore.pct,
+	const listeningExactPct =
+		listeningTotal > 0 ? (listeningCorrect / listeningTotal) * 100 : null;
+	const vgExactPct = vgTotal > 0 ? (vgCorrect / vgTotal) * 100 : null;
+	const readingExactPct =
+		readingTotal > 0 ? (readingCorrect / readingTotal) * 100 : null;
+
+	const sectionExactPcts = [
+		listeningExactPct,
+		vgExactPct,
+		readingExactPct,
 	].filter((pct) => pct !== null);
 
-	const averagePct =
-		sectionPcts.length > 0
-			? Math.round(
-					sectionPcts.reduce((sum, pct) => sum + pct, 0) / sectionPcts.length,
-				)
+	const exactAveragePct =
+		sectionExactPcts.length > 0
+			? sectionExactPcts.reduce((sum, pct) => sum + pct, 0) /
+				sectionExactPcts.length
 			: 0;
+	const averagePct = Math.round(exactAveragePct);
 
 	const orderedLevels = [
 		...PLACEMENT_LEVEL_ORDER.filter((lvl) => levelMap.has(lvl)),
@@ -208,12 +217,24 @@ export function scoreObjectiveTest(snapshot, answers = {}) {
 		};
 	});
 
-	const provisionalBand = matchBandByPct(averagePct, snapshot?.bands);
+	const provisionalBand = matchBandByPct(exactAveragePct, snapshot?.bands);
 
 	return {
-		listening: listeningScore,
+		listening: {
+			...listeningScore,
+			band:
+				listeningExactPct !== null
+					? matchBandByPct(listeningExactPct, snapshot?.bands)
+					: null,
+		},
 		vocabGrammar: vocabGrammarScore,
-		reading: readingScore,
+		reading: {
+			...readingScore,
+			band:
+				readingExactPct !== null
+					? matchBandByPct(readingExactPct, snapshot?.bands)
+					: null,
+		},
 		totalCorrect: listeningCorrect + vgCorrect + readingCorrect,
 		totalQuestions: listeningTotal + vgTotal + readingTotal,
 		averagePct,
@@ -352,24 +373,32 @@ export function resolveSpeakingStepState(speaking) {
 }
 
 /**
- * Determines final speakingMode and whether submit needs confirmation.
+ * Determines final speakingMode and whether submit must be blocked for missing Speaking audio.
  * Checks `!hasSpeakingTasks` before `hasValidBlob` so no phantom upload is attempted.
  */
 export function resolveSpeakingSubmitDecision({
 	hasSpeakingTasks,
 	hasValidBlob,
-	speakingMode,
 }) {
 	if (!hasSpeakingTasks) {
-		return { finalMode: "none", needsSpeakingDecision: false };
+		return {
+			finalMode: "none",
+			needsSpeakingDecision: false,
+			blockedByMissingSpeaking: false,
+		};
 	}
 	if (hasValidBlob) {
-		return { finalMode: "upload", needsSpeakingDecision: false };
+		return {
+			finalMode: "upload",
+			needsSpeakingDecision: false,
+			blockedByMissingSpeaking: false,
+		};
 	}
-	if (speakingMode === "skipped") {
-		return { finalMode: "skipped", needsSpeakingDecision: false };
-	}
-	return { finalMode: "skipped", needsSpeakingDecision: true };
+	return {
+		finalMode: null,
+		needsSpeakingDecision: false,
+		blockedByMissingSpeaking: true,
+	};
 }
 
 /**
@@ -491,6 +520,8 @@ export function computeSpeechFallbackTimeoutMs(prompt) {
 	return Math.min(25000, Math.max(4000, wordCount * 550 + 2500));
 }
 
+export const MAX_SPEAKING_RETRIES_PER_TASK = 2;
+
 /**
  * Creates the initial idle state for sequential Speaking turn-taking.
  */
@@ -502,11 +533,12 @@ export function createInitialSpeakingSession(totalTasks = 0) {
 		phase: "idle",
 		secondsLeft: 0,
 		replayUsedForCurrentTask: false,
+		retriesUsedForCurrentTask: 0,
 	};
 }
 
 /**
- * Enters the `reading` phase for the given task index and resets per-task replay quota.
+ * Enters the `reading` phase for the given task index and resets per-task replay & retry quotas.
  */
 export function startSpeakingTaskReading(session, taskIndex, tasks = []) {
 	if (!Array.isArray(tasks) || tasks.length === 0) {
@@ -528,6 +560,7 @@ export function startSpeakingTaskReading(session, taskIndex, tasks = []) {
 		phase: "reading",
 		secondsLeft: 0,
 		replayUsedForCurrentTask: false,
+		retriesUsedForCurrentTask: 0,
 	};
 }
 
@@ -584,10 +617,68 @@ export function transitionSpeakingToAnswer(session, tasks = []) {
 }
 
 /**
- * Advances from the current task's `answer` phase to the next task's `reading`
- * phase, or completes the session after the final task.
+ * Transitions from the `answer` phase to `paused` after stopping the task's recorder.
+ */
+export function transitionSpeakingToPaused(session) {
+	if (session?.status !== "active" || session?.phase !== "answer") {
+		return session;
+	}
+	return {
+		...session,
+		phase: "paused",
+		secondsLeft: 0,
+	};
+}
+
+/**
+ * Allows at most MAX_SPEAKING_RETRIES_PER_TASK retries while in the `paused` phase.
+ */
+export function canRetrySpeakingTask(session) {
+	return Boolean(
+		session &&
+			session.status === "active" &&
+			session.phase === "paused" &&
+			(session.retriesUsedForCurrentTask ?? 0) < MAX_SPEAKING_RETRIES_PER_TASK,
+	);
+}
+
+/**
+ * Re-enters `answer` phase for the current task when retries remain, incrementing retry count.
+ */
+export function retrySpeakingCurrentTask(session, tasks = []) {
+	if (!canRetrySpeakingTask(session)) {
+		return session;
+	}
+	const task = Array.isArray(tasks) ? tasks[session?.taskIndex ?? 0] : null;
+	if (!task) {
+		return {
+			...session,
+			status: "completed",
+			phase: "done",
+			secondsLeft: 0,
+		};
+	}
+	const { answerSeconds } = resolveTaskTimings(task);
+	return {
+		...session,
+		status: "active",
+		phase: "answer",
+		secondsLeft: answerSeconds,
+		retriesUsedForCurrentTask: (session.retriesUsedForCurrentTask ?? 0) + 1,
+	};
+}
+
+/**
+ * Advances from the current task's `answer` or `paused` phase to the next task's
+ * `reading` phase, or completes the session after the final task.
  */
 export function transitionSpeakingNextTask(session, tasks = []) {
+	if (
+		session?.status !== "active" ||
+		(session.phase !== "answer" && session.phase !== "paused")
+	) {
+		return session;
+	}
 	const list = Array.isArray(tasks) ? tasks : [];
 	const nextIndex = (session?.taskIndex ?? 0) + 1;
 	if (nextIndex < list.length) {
@@ -599,6 +690,7 @@ export function transitionSpeakingNextTask(session, tasks = []) {
 		phase: "done",
 		secondsLeft: 0,
 		replayUsedForCurrentTask: false,
+		retriesUsedForCurrentTask: 0,
 	};
 }
 
