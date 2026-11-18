@@ -3,10 +3,13 @@ import {
 	ASSIGNMENT_ANSWER_CHOICES,
 	ASSIGNMENT_OPTION_BANK_MAX,
 	answerKindByType,
+	assignmentPromptCreateSchema,
+	assignmentPromptUpdateSchema,
 	assignmentQuestionSchema,
 	extendedAnswerChoices,
 	LIBRARY_ANSWER_CHOICES,
 	LIBRARY_OPTION_BANK_MAX,
+	libraryExerciseCreateSchema,
 	QUIZ_TYPE_DISPLAY,
 } from "./contracts";
 
@@ -134,5 +137,96 @@ describe("library extended choices & new IELTS reading types metadata", () => {
 			expect(QUIZ_TYPE_DISPLAY[id]?.label).toBeTruthy();
 			expect(QUIZ_TYPE_DISPLAY[id]?.instruction).toBeTruthy();
 		}
+	});
+});
+
+describe("mcq 3 or 4 options validation", () => {
+	function readingPrompt(
+		questions: Array<{ stem: string; opts?: string[] | null; answer: string }>,
+	) {
+		return {
+			skill: "reading" as const,
+			part: "p3",
+			type: "mcq",
+			title: "Reading MCQ",
+			band: "6.5" as const,
+			source: "",
+			prompt: "",
+			passage: "<p>Passage text</p>",
+			intro: "",
+			transcript: "",
+			cueTopic: "",
+			cuePoints: "",
+			audioName: "",
+			questions,
+			note: "",
+			status: "ready" as const,
+		};
+	}
+
+	test("chấp nhận mcq 3 lựa chọn (A–C) và từ chối đáp án D khi opts chỉ có 3 mục", () => {
+		expect(
+			assignmentPromptCreateSchema.safeParse(
+				readingPrompt([
+					{ stem: "Q1", opts: ["Opt A", "Opt B", "Opt C"], answer: "C" },
+				]),
+			).success,
+		).toBe(true);
+
+		const invalidAnswer = assignmentPromptCreateSchema.safeParse(
+			readingPrompt([
+				{ stem: "Q1", opts: ["Opt A", "Opt B", "Opt C"], answer: "D" },
+			]),
+		);
+		expect(invalidAnswer.success).toBe(false);
+
+		const invalidPatch = assignmentPromptUpdateSchema.safeParse({
+			type: "mcq",
+			questions: [
+				{ stem: "Q1", opts: ["Opt A", "Opt B", "Opt C"], answer: "D" },
+			],
+		});
+		expect(invalidPatch.success).toBe(false);
+
+		const invalidExercise = libraryExerciseCreateSchema.safeParse({
+			skill: "grammar",
+			part: "g1",
+			type: "mcq",
+			title: "Grammar MCQ",
+			questions: [
+				{ stem: "Q1", opts: ["Opt A", "Opt B", "Opt C"], answer: "D" },
+			],
+			status: "ready",
+		});
+		expect(invalidExercise.success).toBe(false);
+	});
+
+	test("từ chối mcq có ít hơn 2 hoặc nhiều hơn 4 lựa chọn khi đã khai opts", () => {
+		expect(
+			assignmentPromptCreateSchema.safeParse(
+				readingPrompt([{ stem: "Q1", opts: ["Only one"], answer: "A" }]),
+			).success,
+		).toBe(false);
+
+		expect(
+			assignmentPromptCreateSchema.safeParse(
+				readingPrompt([
+					{ stem: "Q1", opts: ["1", "2", "3", "4", "5"], answer: "A" },
+				]),
+			).success,
+		).toBe(false);
+	});
+
+	test("giữ tương thích ngược cho opts null hoặc 4 lựa chọn trống khi ready", () => {
+		expect(
+			assignmentPromptCreateSchema.safeParse(
+				readingPrompt([{ stem: "Q1", opts: null, answer: "D" }]),
+			).success,
+		).toBe(true);
+		expect(
+			assignmentPromptCreateSchema.safeParse(
+				readingPrompt([{ stem: "Q1", opts: ["", "", "", ""], answer: "A" }]),
+			).success,
+		).toBe(true);
 	});
 });

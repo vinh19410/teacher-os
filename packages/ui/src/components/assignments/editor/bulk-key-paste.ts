@@ -1,6 +1,8 @@
-import { extendedAnswerChoices } from "@teacher-os/api/contracts";
 import {
-	answerChoices,
+	effectiveAnswerChoices,
+	extendedAnswerChoices,
+} from "@teacher-os/api/contracts";
+import {
 	kindOf,
 	OPTION_BANK_MAX,
 	type QuestionItem,
@@ -49,17 +51,28 @@ export function applyBulkKeyPaste(
 	input: BulkKeyPasteInput,
 ): BulkKeyPasteOutcome {
 	const { raw, typeId, qStart, items, optionBank, maxBank } = input;
-	const rawKind = kindOf(typeId);
-	const hasBank = Boolean(optionBank && optionBank.length > 0);
-	const kind = typeId === "summary" && hasBank ? "letter" : rawKind;
 	const bankCap = maxBank ?? OPTION_BANK_MAX;
-	const choices =
-		kind === "letter" || kind === "roman"
-			? extendedAnswerChoices(kind).slice(
-					0,
-					hasBank ? Math.min(optionBank?.length ?? 0, bankCap) : bankCap,
-				)
-			: answerChoices(kind);
+	const bankSize = optionBank?.length ?? 0;
+	const bankLimit = bankSize > 0 ? Math.min(bankSize, bankCap) : bankCap;
+	const choicesForType = (
+		effectiveType: string,
+		opts?: readonly string[] | null,
+	) => {
+		const kind =
+			effectiveType === "summary" && bankSize > 0
+				? "letter"
+				: kindOf(effectiveType);
+		if (kind === "letter" || kind === "roman") {
+			return {
+				kind,
+				choices: extendedAnswerChoices(kind).slice(0, bankLimit),
+			};
+		}
+		return {
+			kind,
+			choices: kind === "text" ? null : effectiveAnswerChoices(kind, opts),
+		};
+	};
 	const next = items.map((item) => ({ ...item }));
 	const errors: BulkKeyPasteLineError[] = [];
 	const seenNumbers = new Set<number>();
@@ -116,9 +129,14 @@ export function applyBulkKeyPaste(
 			continue;
 		}
 
+		const target = next[index];
+		const { kind, choices } = choicesForType(
+			target?.type ?? typeId,
+			target?.opts,
+		);
 		if (kind === "text") {
 			next[index] = {
-				...next[index],
+				...target,
 				answer: segments[0],
 				alts: segments.slice(1).join(" / "),
 			};
@@ -136,7 +154,7 @@ export function applyBulkKeyPaste(
 				});
 				continue;
 			}
-			next[index] = { ...next[index], answer: canonical };
+			next[index] = { ...target, answer: canonical };
 		}
 		// Mark only lines that actually applied — an errored line for Qn must
 		// not block a later valid line for the same number (review #6).

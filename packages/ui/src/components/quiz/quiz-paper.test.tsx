@@ -402,4 +402,76 @@ describe("QuizPaper — Wave 2A (mcq_many, extended banks, summary word bank, di
 		expect(html).toContain("Hàng 1 — Cột 1: Input / State");
 		expect(html).not.toContain("[table]");
 	});
+
+	it("mcq 3 lựa chọn đồng nhất hiển thị instruction A, B or C; trộn 3 và 4 lựa chọn dùng instruction trung tính", () => {
+		const threeOnly = renderToStaticMarkup(
+			<QuizPaper
+				detail={baseDetail({ type: "mcq" })}
+				parts={[
+					{
+						id: "p1",
+						label: "Questions 1–2",
+						qStart: 1,
+						typeId: "mcq",
+						questions: [
+							{
+								q: 0,
+								number: 1,
+								stem: "Q1",
+								opts: ["Opt A", "Opt B", "Opt C"],
+								type: "mcq",
+							},
+							{
+								q: 1,
+								number: 2,
+								stem: "Q2",
+								opts: ["Opt A", "Opt B", "Opt C"],
+								type: "mcq",
+							},
+						],
+					},
+				]}
+				answers={{}}
+				onAnswer={vi.fn()}
+				currentQuestion={null}
+			/>,
+		);
+		expect(threeOnly).toContain("Choose the correct letter A, B or C.");
+		expect(threeOnly).not.toContain("Choose the correct letter A, B, C or D.");
+
+		const mixed = renderToStaticMarkup(
+			<QuizPaper
+				detail={baseDetail({ type: "mcq" })}
+				parts={[
+					{
+						id: "p1",
+						label: "Questions 1–2",
+						qStart: 1,
+						typeId: "mcq",
+						questions: [
+							{
+								q: 0,
+								number: 1,
+								stem: "Q1",
+								opts: ["Opt A", "Opt B", "Opt C"],
+								type: "mcq",
+							},
+							{
+								q: 1,
+								number: 2,
+								stem: "Q2",
+								opts: ["Opt A", "Opt B", "Opt C", "Opt D"],
+								type: "mcq",
+							},
+						],
+					},
+				]}
+				answers={{}}
+				onAnswer={vi.fn()}
+				currentQuestion={null}
+			/>,
+		);
+		expect(mixed).toContain("Choose the correct letter.");
+		expect(mixed).not.toContain("Choose the correct letter A, B, C or D.");
+	});
 });

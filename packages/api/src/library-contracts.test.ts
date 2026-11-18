@@ -996,3 +996,54 @@ describe("#425 — groups corrupt contract (DTO cờ + upsert cờ tường minh
 		expect(LIBRARY_ERROR_CODES).toContain("GROUPS_NOT_CORRUPT");
 	});
 });
+
+describe("mcq 3 or 4 options in library part contracts", () => {
+	test("chấp nhận mcq 3 lựa chọn (A–C) ở cả upsert và validatePartForReady", () => {
+		const input = readingPart({
+			type: "mcq",
+			questions: [
+				{
+					stem: "Q1",
+					opts: ["A text", "B text", "C text"],
+					answer: "C",
+					alts: "",
+				},
+			],
+		});
+		expect(libraryPartUpsertSchema.safeParse(input).success).toBe(true);
+		expect(validatePartForReady("reading", input)).toEqual([]);
+	});
+
+	test("từ chối đáp án D khi câu mcq chỉ có 3 lựa chọn ở cả upsert (draft) lẫn ready", () => {
+		const badDraft = readingPart({
+			type: "mcq",
+			questions: [
+				{
+					stem: "Q1",
+					opts: ["A text", "B text", "C text"],
+					answer: "D",
+					alts: "",
+				},
+			],
+		});
+		expect(libraryPartUpsertSchema.safeParse(badDraft).success).toBe(false);
+		expect(
+			validatePartForReady("reading", badDraft).some(
+				(issue) => issue.path === "questions.0.answer",
+			),
+		).toBe(true);
+	});
+
+	test("validatePartForReady từ chối đáp án sai dạng cho mcq ngay cả khi opts null", () => {
+		const badAnswer = readingPart({
+			type: "mcq",
+			questions: [{ stem: "Q1", opts: null, answer: "E", alts: "" }],
+		});
+		expect(libraryPartUpsertSchema.safeParse(badAnswer).success).toBe(false);
+		expect(
+			validatePartForReady("reading", badAnswer).some(
+				(issue) => issue.path === "questions.0.answer",
+			),
+		).toBe(true);
+	});
+});

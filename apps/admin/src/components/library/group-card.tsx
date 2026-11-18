@@ -1,6 +1,9 @@
 import {
+	answerKindByType,
+	effectiveAnswerChoices,
 	isImageBasedType,
 	LIBRARY_OPTION_BANK_MAX,
+	mcqOptionsIssue,
 	quizTypeDisplay,
 } from "@teacher-os/api/contracts";
 import {
@@ -144,7 +147,22 @@ export function GroupCard({
 		optionBankError !== undefined ||
 		(isImageGroup && errorFor("imageUrl") !== undefined) ||
 		(showErrors &&
-			items.some((item) => !item.stem.trim() || !item.answer.trim()));
+			items.some((item, offset) => {
+				if (!item.stem.trim() || !item.answer.trim()) return true;
+				const abs = group.startIndex + offset;
+				if (
+					errorFor(`questions.${abs}.answer`) !== undefined ||
+					errorFor(`questions.${abs}.opts`) !== undefined
+				) {
+					return true;
+				}
+				const kind = answerKindByType[item.type ?? group.type];
+				if (kind !== "mcq4" && kind !== "mcq3") return false;
+				return (
+					mcqOptionsIssue(kind, item.opts) !== null ||
+					!effectiveAnswerChoices(kind, item.opts).includes(item.answer.trim())
+				);
+			}));
 
 	const tabs = [
 		{ id: "intro" as const, label: "Hướng dẫn" },

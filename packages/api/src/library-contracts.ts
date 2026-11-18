@@ -7,10 +7,12 @@ import {
 	ASSIGNMENT_TEST_PRESETS,
 	answerKindByType,
 	assignmentQuestionSchema,
+	effectiveAnswerChoices,
 	extendedAnswerChoices,
 	isAssignmentImageUrl,
 	isImageBasedType,
 	LIBRARY_OPTION_BANK_MAX,
+	mcqOptionsIssue,
 	optionBankKindFor,
 } from "./contracts";
 import {
@@ -240,6 +242,30 @@ export const libraryQuestionGroupSchema = z
 	.strict();
 export type LibraryQuestionGroup = z.infer<typeof libraryQuestionGroupSchema>;
 
+/** Validate `opts` bounds and `answer` membership for single-choice MCQ (`mcq4`/`mcq3`). */
+function mcqQuestionIssues(
+	question: {
+		type?: string | null;
+		opts?: readonly string[] | null;
+		answer: string;
+	},
+	groupType: string,
+): Array<{ field: "opts" | "answer"; message: string }> {
+	const kind = answerKindByType[question.type ?? groupType];
+	if (kind !== "mcq4" && kind !== "mcq3") return [];
+	const out: Array<{ field: "opts" | "answer"; message: string }> = [];
+	const optsError = mcqOptionsIssue(kind, question.opts);
+	if (optsError) out.push({ field: "opts", message: optsError });
+	const trimmed = question.answer.trim();
+	if (
+		trimmed &&
+		!effectiveAnswerChoices(kind, question.opts).includes(trimmed)
+	) {
+		out.push({ field: "answer", message: "mcq answer must be within opts" });
+	}
+	return out;
+}
+
 export const libraryPartUpsertSchema = z
 	.object({
 		part: z.string().trim().min(1).max(20),
@@ -311,6 +337,20 @@ export const libraryPartUpsertSchema = z
 					gi >= 0 ? ["groups", gi] : ["groups"],
 					"answer set must stay inside one group",
 				);
+			}
+		}
+
+		// Single-choice MCQ (`mcq`/`mcq1`/`mcq3`): khóa `opts` (2–4 hoặc 2–3) và
+		// đáp án hợp lệ ngay cả khi lưu nháp.
+		for (const [index, question] of value.questions.entries()) {
+			const ownerGroup = value.groups.find(
+				(g) => index >= g.startIndex && index < g.startIndex + g.count,
+			);
+			for (const issue of mcqQuestionIssues(
+				question,
+				ownerGroup?.type ?? value.type,
+			)) {
+				addIssue(["questions", index, issue.field], issue.message);
 			}
 		}
 
@@ -520,6 +560,14 @@ function partIssues(
 					`questions.${abs(offset)}.answerSet`,
 					"mcq_many requires answerSet",
 				);
+			}
+		}
+
+		// Single-choice MCQ (`mcq`/`mcq1`/`mcq3`): kiểm tra `opts` và `answer`
+		// khớp số lựa chọn thực tế (2–4 cho mcq, 2–3 cho mcq1/mcq3).
+		for (const [offset, question] of questions.entries()) {
+			for (const issue of mcqQuestionIssues(question, group.type)) {
+				add(`questions.${abs(offset)}.${issue.field}`, issue.message);
 			}
 		}
 

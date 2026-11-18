@@ -32,6 +32,7 @@ import {
 	clozeStemIssue,
 	hasAuthoringContent,
 	imagePinIssue,
+	invalidMcqChoiceIssue,
 	optionBankIssue,
 	structuralChangeKind,
 } from "@/components/assignments/composer-transitions";
@@ -886,6 +887,8 @@ function composerFieldErrors(
 	if (stemIssue) errors.questions = stemIssue;
 	const pinIssue = imagePinIssue(value, status);
 	if (pinIssue && !stemIssue) errors.questions = pinIssue;
+	const choiceIssue = invalidMcqChoiceIssue(value);
+	if (choiceIssue && !stemIssue && !pinIssue) errors.questions = choiceIssue;
 	return errors;
 }
 

@@ -469,7 +469,7 @@ describe("admin library CRUD (/api/admin/library)", () => {
 					questions: [
 						{
 							stem: "Q1",
-							answer: slot === "s2" ? "A" : "1",
+							answer: slot === "s2" || slot === "s3" ? "A" : "1",
 							alts: "",
 						},
 					],

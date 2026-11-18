@@ -197,4 +197,55 @@ describe("bulk key paste — map by parsed question number (FR7)", () => {
 		expect(headingRes.errors).toEqual([]);
 		expect(headingRes.items[0].answer).toBe("xii");
 	});
+
+	test("mcq 3 options rejects D with (A, B, C) and mixed-type row resolves per-question type", () => {
+		const threeOptResult = applyBulkKeyPaste({
+			raw: "1. D\n2. C",
+			typeId: "mcq",
+			qStart: 1,
+			items: [
+				{ stem: "Q1", opts: ["A", "B", "C"], answer: "", alts: "" },
+				{ stem: "Q2", opts: ["A", "B", "C"], answer: "", alts: "" },
+			],
+		});
+		expect(threeOptResult.appliedCount).toBe(1);
+		expect(threeOptResult.items[1].answer).toBe("C");
+		expect(threeOptResult.errors).toHaveLength(1);
+		expect(threeOptResult.errors[0]).toMatchObject({
+			line: 1,
+			reason: "invalid-choice",
+		});
+		expect(threeOptResult.errors[0].message).toContain("(A, B, C)");
+
+		const mixedResult = applyBulkKeyPaste({
+			raw: "1. word\n2. D\n3. C",
+			typeId: "note",
+			qStart: 1,
+			items: [
+				{ stem: "Note ____", opts: null, answer: "", alts: "" },
+				{
+					stem: "Q2",
+					opts: ["A", "B", "C"],
+					answer: "",
+					alts: "",
+					type: "mcq",
+				},
+				{
+					stem: "Q3",
+					opts: ["A", "B", "C"],
+					answer: "",
+					alts: "",
+					type: "mcq",
+				},
+			],
+		});
+		expect(mixedResult.appliedCount).toBe(2);
+		expect(mixedResult.items[0].answer).toBe("word");
+		expect(mixedResult.items[2].answer).toBe("C");
+		expect(mixedResult.errors).toHaveLength(1);
+		expect(mixedResult.errors[0]).toMatchObject({
+			line: 2,
+			reason: "invalid-choice",
+		});
+	});
 });
