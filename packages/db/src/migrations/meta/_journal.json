@@ -526,6 +526,13 @@
       "when": 1794980278820,
       "tag": "0074_greedy_thanos",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "6",
+      "when": 1795013473440,
+      "tag": "0075_pretty_cammi",
+      "breakpoints": true
     }
   ]
 }
