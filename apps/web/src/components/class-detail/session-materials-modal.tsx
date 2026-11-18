@@ -236,7 +236,7 @@ export function SessionMaterialsModal({
 										<MaterialItem
 											key={item.id}
 											item={item}
-											preview={
+											leading={
 												materialPreviewMime(item) ? (
 													<MaterialInlinePreview item={item} />
 												) : undefined
@@ -276,7 +276,7 @@ export function SessionMaterialsModal({
 											<MaterialItem
 												key={item.id}
 												item={item}
-												preview={
+												leading={
 													materialPreviewMime(item) ? (
 														<MaterialInlinePreview item={item} />
 													) : undefined

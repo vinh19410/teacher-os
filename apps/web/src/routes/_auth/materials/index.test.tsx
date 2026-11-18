@@ -33,6 +33,18 @@ vi.mock("@/lib/reauth", () => ({ reauth: vi.fn() }));
 vi.mock(
 	"@teacher-os/ui/components/document-preview/blob-document-view",
 	() => ({
+		BlobDocumentThumbnail: (props: {
+			blobUrl: string;
+			mimeType: string;
+			label: string;
+		}) => (
+			<div
+				data-testid="blob-document-thumbnail"
+				data-url={props.blobUrl}
+				data-mime={props.mimeType}
+				data-label={props.label}
+			/>
+		),
 		BlobDocumentView: (props: {
 			blobUrl: string;
 			mimeType: string;
@@ -446,9 +458,9 @@ describe("/materials writes", () => {
 			screen.getByRole("link", { name: "Tải xuống Đề Writing Task 1" }),
 		).toBeTruthy();
 		// Xem trước inline là thao tác đọc — trợ giảng vẫn dùng được.
-		expect(await screen.findByTestId("blob-document-view")).toBeTruthy();
+		expect(await screen.findByTestId("blob-document-thumbnail")).toBeTruthy();
 		expect(
-			screen.getByRole("button", { name: "Mở rộng Đề Writing Task 1" }),
+			screen.getByRole("button", { name: "Xem trước Đề Writing Task 1" }),
 		).toBeTruthy();
 		expect(screen.queryByRole("button", { name: "Thêm liên kết" })).toBeNull();
 		expect(screen.queryByRole("button", { name: "Tải file lên" })).toBeNull();

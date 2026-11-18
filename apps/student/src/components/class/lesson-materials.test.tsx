@@ -16,6 +16,18 @@ import { formatFileSize, LessonMaterials } from "./lesson-materials";
 vi.mock(
 	"@teacher-os/ui/components/document-preview/blob-document-view",
 	() => ({
+		BlobDocumentThumbnail: (props: {
+			blobUrl: string;
+			mimeType: string;
+			label: string;
+		}) => (
+			<div
+				data-testid="blob-document-thumbnail"
+				data-url={props.blobUrl}
+				data-mime={props.mimeType}
+				data-label={props.label}
+			/>
+		),
 		BlobDocumentView: (props: {
 			blobUrl: string;
 			mimeType: string;
@@ -157,9 +169,9 @@ describe("LessonMaterials", () => {
 		const download = file?.querySelector("a[href*='download=1']");
 		expect(download).toBeTruthy();
 		expect(file?.querySelector("a[target='_blank']")).toBeNull();
-		// PDF có inline preview + blob fetch.
+		// PDF có inline thumbnail + blob fetch.
 		expect(
-			await within(file as HTMLElement).findByTestId("blob-document-view"),
+			await within(file as HTMLElement).findByTestId("blob-document-thumbnail"),
 		).toBeTruthy();
 		expect(fetchMock).toHaveBeenCalledWith(
 			expect.stringMatching(
@@ -220,20 +232,22 @@ describe("LessonMaterials", () => {
 		);
 
 		renderMaterials();
-		const view = await screen.findByTestId("blob-document-view");
-		expect(view.getAttribute("data-url")).toBe("blob:student-preview-1");
+		const thumb = await screen.findByTestId("blob-document-thumbnail");
+		expect(thumb.getAttribute("data-url")).toBe("blob:student-preview-1");
 		expect(fileCalls).toBe(2);
 		expect(localStorage.getItem("active_student_org_id")).toBeNull();
 	});
 
-	it("bấm «Mở rộng» portal dialog ra document.body, Escape đóng và trả focus, unmount revoke blob", async () => {
+	it("bấm thumbnail portal dialog ra document.body, Escape đóng và trả focus, unmount revoke blob", async () => {
 		stubFetch(200, {
 			items: [item({ id: "m1", title: "Đề cương" })],
 		});
 		const { container, unmount } = renderMaterials();
-		await screen.findByTestId("blob-document-view");
+		await screen.findByTestId("blob-document-thumbnail");
 
-		const expandBtn = screen.getByRole("button", { name: "Mở rộng Đề cương" });
+		const expandBtn = screen.getByRole("button", {
+			name: "Xem trước Đề cương",
+		});
 		expandBtn.focus();
 		fireEvent.click(expandBtn);
 
@@ -305,7 +319,9 @@ describe("LessonMaterials", () => {
 		expect(rows[1]?.textContent).toContain("Đề từ giáo trình");
 		expect(rows[1]?.querySelector("a[href*='download=1']")).toBeTruthy();
 		expect(
-			await within(rows[1] as HTMLElement).findByTestId("blob-document-view"),
+			await within(rows[1] as HTMLElement).findByTestId(
+				"blob-document-thumbnail",
+			),
 		).toBeTruthy();
 	});
 

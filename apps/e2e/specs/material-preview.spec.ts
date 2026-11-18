@@ -1,9 +1,9 @@
 /**
- * Xem trước tài liệu inline trong ngân hàng: PDF render trực tiếp qua pdfjs
- * (canvas có nội dung), ảnh hiển thị qua blob URL ngay trong card tài liệu
- * kèm nút «Mở rộng»; file Office (XLSX) không có khung xem trước và vẫn chỉ
- * hiện tên file + «Tải xuống». Server vẫn trả file dạng attachment — xem trước
- * chạy hoàn toàn phía client.
+ * Xem trước tài liệu inline trong ngân hàng: PDF render trang đầu thành
+ * thumbnail 96×72 qua pdfjs (canvas có nội dung), ảnh hiển thị thumbnail
+ * từ blob URL ở đầu card; bấm thumbnail mở modal xem đầy đủ; file Office
+ * (XLSX) giữ icon tĩnh + «Tải xuống». Server vẫn trả file dạng attachment —
+ * xem trước chạy hoàn toàn phía client.
  */
 import { readFileSync } from "node:fs";
 import { expect, type Page, test } from "@playwright/test";
@@ -80,13 +80,20 @@ test("xem trước PDF và ảnh inline trong ngân hàng; file Office chỉ hi�
 		officeRow.getByRole("link", { name: `Tải xuống ${XLSX_NAME}` }),
 	).toBeVisible();
 
-	// PDF: render inline ngay trong row (không cần bấm nút Xem trước trước).
+	// PDF: render thumbnail 96×72 ở đầu row (không có toolbar trang/zoom inline).
 	const pdfRow = rows.filter({ hasText: PDF_NAME });
-	const inlineCanvas = pdfRow.getByLabel(`Nội dung ${PDF_NAME}`);
+	const pdfThumbBtn = pdfRow.getByRole("button", {
+		name: `Xem trước ${PDF_NAME}`,
+	});
+	await expect(pdfThumbBtn).toBeVisible();
+	await expect(pdfRow.getByTestId("pdf-page-indicator")).toHaveCount(0);
+	const pdfBox = await pdfThumbBtn.boundingBox();
+	expect(pdfBox).not.toBeNull();
+	expect(Math.round(pdfBox?.width ?? 0)).toBe(96);
+	expect(Math.round(pdfBox?.height ?? 0)).toBe(72);
+
+	const inlineCanvas = pdfRow.locator("canvas");
 	await expect(inlineCanvas).toBeVisible();
-	await expect(pdfRow.getByTestId("pdf-page-indicator")).toHaveText(
-		"Trang 1 / 2",
-	);
 	await expect
 		.poll(() =>
 			inlineCanvas.evaluate((el) => {
@@ -103,11 +110,19 @@ test("xem trước PDF và ảnh inline trong ngân hàng; file Office chỉ hi�
 		)
 		.toBeGreaterThan(0);
 
-	// Ảnh: render inline <img> từ blob URL ngay trong row.
+	// Ảnh: render thumbnail <img> 96×72 từ blob URL ở đầu row.
 	const imgRow = rows.filter({ hasText: PNG_NAME });
-	const inlineImg = imgRow.getByRole("img", { name: `Nội dung ${PNG_NAME}` });
-	await inlineImg.scrollIntoViewIfNeeded();
-	await expect(inlineImg).toBeVisible();
+	const imgThumbBtn = imgRow.getByRole("button", {
+		name: `Xem trước ${PNG_NAME}`,
+	});
+	await imgThumbBtn.scrollIntoViewIfNeeded();
+	await expect(imgThumbBtn).toBeVisible();
+	const imgBox = await imgThumbBtn.boundingBox();
+	expect(imgBox).not.toBeNull();
+	expect(Math.round(imgBox?.width ?? 0)).toBe(96);
+	expect(Math.round(imgBox?.height ?? 0)).toBe(72);
+
+	const inlineImg = imgThumbBtn.locator("img");
 	await expect(inlineImg).toHaveAttribute("src", /^blob:/);
 	await expect
 		.poll(() =>
@@ -115,12 +130,7 @@ test("xem trước PDF và ảnh inline trong ngân hàng; file Office chỉ hi�
 		)
 		.toBeGreaterThan(0);
 
-	await page.screenshot({
-		path: testInfo.outputPath("material-preview-inline-list.png"),
-		fullPage: true,
-	});
-
-	// Bấm «Mở rộng» trên PDF để xem modal toàn khung và chụp 3 viewport.
+	// Kiểm tra responsive 3 viewport cho cả danh sách thumbnail lẫn modal phóng to.
 	const pdfDialog = page.getByRole("dialog", { name: PDF_NAME });
 	for (const [w, h] of [
 		[1440, 900],
@@ -132,7 +142,11 @@ test("xem trước PDF và ảnh inline trong ngân hàng; file Office chỉ hi�
 			() => document.documentElement.scrollWidth > window.innerWidth,
 		);
 		expect(overflow).toBe(false);
-		await pdfRow.getByRole("button", { name: `Mở rộng ${PDF_NAME}` }).click();
+		await page.screenshot({
+			path: testInfo.outputPath(`material-preview-inline-${w}.png`),
+			fullPage: true,
+		});
+		await pdfThumbBtn.click();
 		await expect(pdfDialog.getByTestId("pdf-page-indicator")).toHaveText(
 			"Trang 1 / 2",
 		);

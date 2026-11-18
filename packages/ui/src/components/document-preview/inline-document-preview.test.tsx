@@ -15,18 +15,16 @@ import {
 } from "./inline-document-preview";
 
 vi.mock("./blob-document-view", () => ({
-	BlobDocumentView: (props: {
+	BlobDocumentThumbnail: (props: {
 		blobUrl: string;
 		mimeType: string;
 		label: string;
-		viewportClassName?: string;
 	}) => (
 		<div
-			data-testid="blob-document-view"
+			data-testid="blob-document-thumbnail"
 			data-url={props.blobUrl}
 			data-mime={props.mimeType}
 			data-label={props.label}
-			data-viewport-class={props.viewportClassName ?? ""}
 		/>
 	),
 }));
@@ -120,7 +118,7 @@ describe("InlineDocumentPreview", () => {
 
 		expect(observe).toHaveBeenCalledTimes(1);
 		expect(loadBlobUrl).not.toHaveBeenCalled();
-		expect(container.innerHTML).toContain("min-h-48");
+		expect(container.innerHTML).toContain("h-[72px] w-24");
 
 		act(() => {
 			observerCb?.(
@@ -129,9 +127,8 @@ describe("InlineDocumentPreview", () => {
 			);
 		});
 
-		const view = await screen.findByTestId("blob-document-view");
-		expect(view.getAttribute("data-url")).toBe("blob:inline-1");
-		expect(view.getAttribute("data-viewport-class")).toContain("max-h-80");
+		const thumb = await screen.findByTestId("blob-document-thumbnail");
+		expect(thumb.getAttribute("data-url")).toBe("blob:inline-1");
 		expect(disconnect).toHaveBeenCalled();
 	});
 
@@ -149,11 +146,13 @@ describe("InlineDocumentPreview", () => {
 		);
 
 		expect(loadBlobUrl).not.toHaveBeenCalled();
-		const btn = screen.getByRole("button", { name: "Tải bản xem trước" });
+		const btn = screen.getByRole("button", {
+			name: "Tải bản xem trước Sách giáo trình",
+		});
 		fireEvent.click(btn);
 
-		const view = await screen.findByTestId("blob-document-view");
-		expect(view.getAttribute("data-url")).toBe("blob:large-1");
+		const thumb = await screen.findByTestId("blob-document-thumbnail");
+		expect(thumb.getAttribute("data-url")).toBe("blob:large-1");
 		expect(loadBlobUrl).toHaveBeenCalledTimes(1);
 	});
 
@@ -180,15 +179,15 @@ describe("InlineDocumentPreview", () => {
 		);
 
 		const { rerender, unmount } = render(renderInline("a"));
-		const view = await screen.findByTestId("blob-document-view");
-		expect(view.getAttribute("data-url")).toBe("blob:stable-1-a");
+		const thumb = await screen.findByTestId("blob-document-thumbnail");
+		expect(thumb.getAttribute("data-url")).toBe("blob:stable-1-a");
 
 		// Re-render với closure loadBlobUrl mới nhưng cùng requestKey: không abort/fetch lại.
 		rerender(renderInline("b"));
 		expect(callCount).toBe(1);
 		expect(revokeObjectURL).not.toHaveBeenCalled();
 
-		fireEvent.click(screen.getByRole("button", { name: "Mở rộng Handout" }));
+		fireEvent.click(screen.getByRole("button", { name: "Xem trước Handout" }));
 		const dialog = screen.getByRole("dialog", { name: "Handout" });
 		expect(dialog.getAttribute("data-url")).toBe("blob:stable-1-a");
 		expect(callCount).toBe(1);
@@ -259,25 +258,23 @@ describe("InlineDocumentPreview", () => {
 		);
 
 		const { rerender } = render(
-			<>
-				{["k1", "k2", "k3", "k4"].map((k) => (
-					<InlineDocumentPreview
-						key={k}
-						requestKey={k}
-						title={`Doc ${k}`}
-						mimeType="application/pdf"
-						loadBlobUrl={loadBlobUrl}
-						formatError={() => "Lỗi"}
-						renderExpandedModal={({ blobUrl, onClose }) => (
-							<div role="dialog" aria-label={`Doc ${k}`} data-url={blobUrl}>
-								<button type="button" onClick={onClose}>
-									Đóng
-								</button>
-							</div>
-						)}
-					/>
-				))}
-			</>,
+			["k1", "k2", "k3", "k4"].map((k) => (
+				<InlineDocumentPreview
+					key={k}
+					requestKey={k}
+					title={`Doc ${k}`}
+					mimeType="application/pdf"
+					loadBlobUrl={loadBlobUrl}
+					formatError={() => "Lỗi"}
+					renderExpandedModal={({ blobUrl, onClose }) => (
+						<div role="dialog" aria-label={`Doc ${k}`} data-url={blobUrl}>
+							<button type="button" onClick={onClose}>
+								Đóng
+							</button>
+						</div>
+					)}
+				/>
+			)),
 		);
 
 		await waitFor(() => expect(loadBlobUrl).toHaveBeenCalledTimes(3));
@@ -287,8 +284,8 @@ describe("InlineDocumentPreview", () => {
 		resolvers[2]?.("blob:k3");
 		resolvers[3]?.("blob:k4");
 
-		await screen.findByRole("button", { name: "Mở rộng Doc k1" });
-		fireEvent.click(screen.getByRole("button", { name: "Mở rộng Doc k1" }));
+		await screen.findByRole("button", { name: "Xem trước Doc k1" });
+		fireEvent.click(screen.getByRole("button", { name: "Xem trước Doc k1" }));
 		expect(screen.getByRole("dialog", { name: "Doc k1" })).toBeTruthy();
 
 		// Đổi requestKey của item đầu khi modal đang mở → đóng modal và revoke blob cũ.

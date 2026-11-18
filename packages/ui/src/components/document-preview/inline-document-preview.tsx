@@ -1,6 +1,5 @@
-import { Button } from "@teacher-os/ui/components/button";
 import { cn } from "@teacher-os/ui/lib/utils";
-import { Maximize2 } from "lucide-react";
+import { AlertCircle, Eye, Loader2, Maximize2 } from "lucide-react";
 import {
 	lazy,
 	type ReactNode,
@@ -10,10 +9,10 @@ import {
 	useState,
 } from "react";
 
-// pdfjs-dist nặng — chỉ tải khi khung preview vào viewport hoặc được bấm tải.
-const BlobDocumentView = lazy(() =>
+// pdfjs-dist nặng — chỉ tải khi thumbnail vào viewport hoặc được bấm tải.
+const BlobDocumentThumbnail = lazy(() =>
 	import("./blob-document-view").then((m) => ({
-		default: m.BlobDocumentView,
+		default: m.BlobDocumentThumbnail,
 	})),
 );
 
@@ -109,14 +108,13 @@ export interface InlineDocumentPreviewProps {
 		onClose: () => void;
 	}) => ReactNode;
 	className?: string;
-	heading?: string;
 }
 
 /**
- * Khung xem trước PDF/ảnh nhúng trực tiếp trong card tài liệu:
+ * Thumbnail xem trước PDF/ảnh (96×72px) đặt ở đầu hàng tài liệu:
  * lazy-load khi cuộn tới (`IntersectionObserver`), giới hạn song song,
  * chặn auto-fetch file > 10 MiB, giữ `blob:` URL ổn định theo `requestKey`
- * để tái sử dụng trong modal «Mở rộng» mà không fetch lại hoặc Use-After-Revoke.
+ * để bấm vào mở modal xem đầy đủ mà không fetch lại hoặc Use-After-Revoke.
  */
 export function InlineDocumentPreview({
 	requestKey,
@@ -127,7 +125,6 @@ export function InlineDocumentPreview({
 	formatError,
 	renderExpandedModal,
 	className,
-	heading = "Xem trước",
 }: InlineDocumentPreviewProps) {
 	const largeFileRequiresClick =
 		typeof sizeBytes === "number" && sizeBytes > INLINE_AUTO_PREVIEW_MAX_BYTES;
@@ -222,73 +219,100 @@ export function InlineDocumentPreview({
 		};
 	}, [triggered, requestKey]);
 
-	const loadingNode = (
-		<div className="flex min-h-48 items-center justify-center p-4">
-			<p role="status" className="text-muted-foreground text-sm">
-				Đang tải bản xem trước…
-			</p>
-		</div>
+	const loadingIcon = (
+		<>
+			<Loader2
+				className="size-4 animate-spin text-muted-foreground"
+				aria-hidden="true"
+			/>
+			<span className="sr-only">Đang tải bản xem trước…</span>
+		</>
+	);
+
+	const innerFallback = (
+		<span role="status" className="flex size-full items-center justify-center">
+			{loadingIcon}
+		</span>
 	);
 
 	return (
 		<div
 			ref={containerRef}
 			data-testid="material-preview"
-			className={cn("min-w-0 rounded-md border bg-muted/20 p-2.5", className)}
+			className={cn("relative h-[72px] w-24 shrink-0", className)}
 		>
-			<div className="mb-2 flex items-center justify-between gap-2">
-				<span className="font-medium text-muted-foreground text-xs">
-					{heading}
-				</span>
-				{state.status === "ready" && renderExpandedModal && (
-					<Button
-						type="button"
-						variant="ghost"
-						size="sm"
-						aria-label={`Mở rộng ${title}`}
-						onClick={() => setExpanded(true)}
-					>
-						<Maximize2 aria-hidden="true" />
-						<span>Mở rộng</span>
-					</Button>
-				)}
-			</div>
-
 			{largeFileRequiresClick && !triggered ? (
-				<div className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-4 text-center">
-					<p className="text-muted-foreground text-xs">
-						{`Tài liệu lớn (${formatSizeMb(sizeBytes ?? 0)}) — bấm để xem trước trực tiếp.`}
-					</p>
-					<Button
-						type="button"
-						variant="outline"
-						size="sm"
-						onClick={() => setManualKey(requestKey)}
-					>
-						Tải bản xem trước
-					</Button>
-				</div>
+				<button
+					type="button"
+					onClick={() => setManualKey(requestKey)}
+					aria-label={`Tải bản xem trước ${title}`}
+					title={`Tài liệu lớn (${formatSizeMb(sizeBytes ?? 0)}) — bấm để tải thumbnail`}
+					className="flex size-full flex-col items-center justify-center gap-0.5 rounded-md border border-dashed bg-muted/20 px-1 text-center text-[11px] text-muted-foreground leading-tight transition hover:border-foreground/30 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+				>
+					<Eye className="size-3.5 shrink-0" aria-hidden="true" />
+					<span>Xem trước</span>
+					<span className="text-[10px] tabular-nums">
+						{formatSizeMb(sizeBytes ?? 0)}
+					</span>
+				</button>
 			) : !triggered ? (
-				<div className="flex min-h-48 items-center justify-center p-4">
-					<p role="status" className="text-muted-foreground text-xs">
-						Đang chờ hiển thị bản xem trước…
-					</p>
+				<div
+					role="status"
+					className="flex size-full items-center justify-center rounded-md border bg-muted/40"
+				>
+					<span className="sr-only">Đang chờ hiển thị bản xem trước…</span>
 				</div>
 			) : state.status === "loading" || state.status === "idle" ? (
-				loadingNode
+				<div
+					role="status"
+					className="flex size-full items-center justify-center rounded-md border bg-muted/30"
+				>
+					{loadingIcon}
+				</div>
 			) : state.status === "error" ? (
-				<p role="alert" className="p-2 text-sm">
-					{`Không xem trước được tài liệu này. ${state.message} Bạn vẫn có thể tải xuống để mở.`}
-				</p>
+				<div
+					role="alert"
+					title={`Không xem trước được tài liệu này. ${state.message} Bạn vẫn có thể tải xuống để mở.`}
+					className="flex size-full flex-col items-center justify-center gap-0.5 rounded-md border border-destructive/30 bg-destructive/5 px-1 text-center text-[11px] text-destructive leading-tight"
+				>
+					<AlertCircle className="size-3.5 shrink-0" aria-hidden="true" />
+					<span>Lỗi</span>
+					<span className="sr-only">
+						{`Không xem trước được tài liệu này. ${state.message} Bạn vẫn có thể tải xuống để mở.`}
+					</span>
+				</div>
+			) : renderExpandedModal ? (
+				<button
+					type="button"
+					onClick={() => setExpanded(true)}
+					aria-label={`Xem trước ${title}`}
+					title={`Xem trước ${title}`}
+					className="group relative block size-full overflow-hidden rounded-md border bg-muted/30 text-left transition hover:border-foreground/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+				>
+					<Suspense fallback={innerFallback}>
+						<BlobDocumentThumbnail
+							blobUrl={state.url}
+							mimeType={mimeType}
+							label={`Nội dung ${title}`}
+						/>
+					</Suspense>
+					<span
+						aria-hidden="true"
+						className="pointer-events-none absolute right-1 bottom-1 grid size-5 place-items-center rounded bg-background/85 text-foreground shadow-xs backdrop-blur-xs transition-opacity sm:opacity-0 sm:group-focus-visible:opacity-100 sm:group-hover:opacity-100"
+					>
+						<Maximize2 className="size-3" />
+					</span>
+				</button>
 			) : (
-				<Suspense fallback={loadingNode}>
-					<BlobDocumentView
-						blobUrl={state.url}
-						mimeType={mimeType}
-						label={`Nội dung ${title}`}
-						viewportClassName="max-h-80"
-					/>
-				</Suspense>
+				<div className="size-full overflow-hidden rounded-md border bg-muted/30">
+					<Suspense fallback={innerFallback}>
+						<BlobDocumentThumbnail
+							blobUrl={state.url}
+							mimeType={mimeType}
+							label={`Nội dung ${title}`}
+						/>
+					</Suspense>
+				</div>
 			)}
 
 			{expanded &&
