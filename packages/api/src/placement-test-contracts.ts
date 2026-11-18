@@ -414,6 +414,14 @@ export function normalizePlacementGapAnswer(raw: unknown): string {
 		.replace(/[^a-z0-9]/g, "");
 }
 
+/** Kiểm tra snapshot đề đầu vào đã phát hành có ít nhất 1 câu hỏi Speaking hay không. */
+export function hasPlacementSpeakingTasks(
+	snapshot: Pick<PlacementSnapshot, "parts">,
+): boolean {
+	const speakingPart = snapshot.parts.find((part) => part.id === "speaking");
+	return Array.isArray(speakingPart?.tasks) && speakingPart.tasks.length > 0;
+}
+
 /** Đếm số từ trong bài Writing. */
 export function countPlacementWords(text: string): number {
 	const trimmed = text.trim();
@@ -2101,7 +2109,7 @@ export const studentPlacementSubmitSchema = z
 	.object({
 		answers: placementAnswersSchema,
 		writingText: z.string().max(PLACEMENT_WRITING_TEXT_MAX).default(""),
-		speakingMode: z.enum(["upload", "skipped", "none"]).default("none"),
+		speakingMode: z.enum(["upload", "none"]).default("none"),
 		speakingDurationSec: z
 			.number()
 			.int()
@@ -2141,7 +2149,7 @@ export const placementPublicSubmitSchema = z
 		}),
 		answers: placementAnswersSchema,
 		writingText: z.string().max(PLACEMENT_WRITING_TEXT_MAX).default(""),
-		speakingMode: z.enum(["upload", "skipped", "none"]).default("none"),
+		speakingMode: z.enum(["upload", "none"]).default("none"),
 		speakingDurationSec: z
 			.number()
 			.int()

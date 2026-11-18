@@ -10,6 +10,7 @@ import {
 	countPlacementWords,
 	extractReferencedAudioIds,
 	gradePlacementObjective,
+	hasPlacementSpeakingTasks,
 	matchPlacementBand,
 	normalizePlacementGapAnswer,
 	normalizePublishedPlacementSnapshot,
@@ -19,6 +20,8 @@ import {
 	PLACEMENT_WRITING_RUBRIC,
 	type PlacementContent,
 	placementContentSchema,
+	placementPublicSubmitSchema,
+	studentPlacementSubmitSchema,
 	upgradeLegacyPlacementContent,
 	validatePlacementForPublish,
 } from "./placement-test-contracts";
@@ -1340,4 +1343,45 @@ describe("placement-test-contracts v2", () => {
 			);
 		},
 	);
+
+	it("hasPlacementSpeakingTasks và submit schemas từ chối speakingMode='skipped'", () => {
+		const content = makeValidContent();
+		const snapshot = buildPlacementSnapshot(content, 1);
+		expect(hasPlacementSpeakingTasks(snapshot)).toBe(true);
+
+		const withoutSpeaking = {
+			...snapshot,
+			parts: [
+				snapshot.parts[0],
+				snapshot.parts[1],
+				snapshot.parts[2],
+				snapshot.parts[3],
+				{ ...snapshot.parts[4], tasks: [] },
+			] as typeof snapshot.parts,
+		};
+		expect(hasPlacementSpeakingTasks(withoutSpeaking)).toBe(false);
+
+		expect(
+			studentPlacementSubmitSchema.safeParse({
+				answers: { listening: {}, vocabGrammar: {}, reading: {} },
+				writingText: "",
+				speakingMode: "skipped",
+			}).success,
+		).toBe(false);
+		expect(
+			placementPublicSubmitSchema.safeParse({
+				lead: { name: "Học viên", phone: "0901234567" },
+				answers: { listening: {}, vocabGrammar: {}, reading: {} },
+				writingText: "",
+				speakingMode: "skipped",
+			}).success,
+		).toBe(false);
+		expect(
+			studentPlacementSubmitSchema.safeParse({
+				answers: { listening: {}, vocabGrammar: {}, reading: {} },
+				writingText: "",
+				speakingMode: "upload",
+			}).success,
+		).toBe(true);
+	});
 });

@@ -200,7 +200,7 @@ test.describe
 			await publishSeedPlacementTest(page);
 			await clearRateLimits();
 
-			// 1. Học viên nộp bài (Writing có nội dung, bỏ qua Speaking) qua API công khai.
+			// 1. Học viên nộp bài (Writing + upload Speaking WebM) qua API công khai.
 			const phone = uniquePhone();
 			const submitRes = await page.request.post(
 				`${API_ORIGIN}/public/placement-test/submissions`,
@@ -217,11 +217,33 @@ test.describe
 						},
 						answers: correctAnswers(),
 						writingText: WRITING_TEXT,
-						speakingMode: "skipped",
+						speakingMode: "upload",
+						speakingDurationSec: 12,
 					},
 				},
 			);
 			expect(submitRes.status()).toBe(201);
+			const created = (await submitRes.json()) as {
+				submissionId: string;
+				uploadToken: string;
+			};
+			const webmBytes = Buffer.from([
+				0x1a, 0x45, 0xdf, 0xa3, 0x9f, 0x42, 0x86, 0x81, 0x01, 0x42, 0x82, 0x84,
+				0x77, 0x65, 0x62, 0x6d, 0x00, 0x00,
+			]);
+			const uploadRes = await page.request.put(
+				`${API_ORIGIN}/public/placement-test/submissions/${created.submissionId}/speaking-media`,
+				{
+					headers: {
+						Origin: PROFILE_ORIGIN,
+						"X-Upload-Token": created.uploadToken,
+						"X-Media-Filename": "speaking.webm",
+						"Content-Type": "audio/webm",
+					},
+					data: webmBytes,
+				},
+			);
+			expect(uploadRes.status()).toBe(200);
 
 			// 2. Giáo viên mở lead → banner nháp AI, rubric điền sẵn 3, highlight lỗi AI.
 			await page.goto(`${WEB_ORIGIN}/leads`);
@@ -242,8 +264,9 @@ test.describe
 					"true",
 				);
 			}
+			const writingHighlighter = page.getByTestId("writing-error-highlighter");
 			await expect(page.getByTestId("writing-ai-feedback")).toBeVisible();
-			const marks = page.getByTestId("writing-error-mark");
+			const marks = writingHighlighter.getByTestId("writing-error-mark");
 			await expect(marks).toHaveCount(1);
 			await expect(marks.first()).toHaveText(AI_ERROR_QUOTE);
 			await expect(marks.first()).toHaveAttribute("data-category", "grammar");
@@ -266,7 +289,9 @@ test.describe
 			await expect(marks.nth(1)).toHaveText(ADDED_ERROR_QUOTE);
 
 			// 4. Sửa lỗi vừa thêm (đổi giải thích), xoá lỗi AI "Dear".
-			await page.getByRole("button", { name: "Sửa lỗi 2" }).click();
+			await writingHighlighter
+				.getByRole("button", { name: "Sửa lỗi 2" })
+				.click();
 			await expect(form).toContainText("Sửa lỗi");
 			await form
 				.getByLabel("Giải thích")
@@ -275,24 +300,18 @@ test.describe
 			await expect(form).toBeHidden();
 
 			// Chụp POT panel giáo viên (đủ 2 highlight) trước khi xoá lỗi AI.
-			await page
-				.getByTestId("writing-error-highlighter")
-				.scrollIntoViewIfNeeded();
+			await writingHighlighter.scrollIntoViewIfNeeded();
 			for (const vp of VIEWPORTS) {
 				await page.setViewportSize({ width: vp.width, height: vp.height });
 				await expectNoHorizontalOverflow(page, `/leads ${vp.label}`);
-				await page
-					.getByTestId("writing-error-highlighter")
-					.scrollIntoViewIfNeeded();
+				await writingHighlighter.scrollIntoViewIfNeeded();
 				await page.screenshot({
 					path: reportPath(`730-leads-ai-draft-${vp.label}.png`),
 				});
 			}
 			await page.setViewportSize({ width: 1440, height: 900 });
 			await page.evaluate(() => document.documentElement.classList.add("dark"));
-			await page
-				.getByTestId("writing-error-highlighter")
-				.scrollIntoViewIfNeeded();
+			await writingHighlighter.scrollIntoViewIfNeeded();
 			await page.screenshot({
 				path: reportPath("730-leads-ai-draft-desktop-dark.png"),
 			});
@@ -300,10 +319,12 @@ test.describe
 				document.documentElement.classList.remove("dark"),
 			);
 
-			await page.getByRole("button", { name: "Xoá lỗi 1" }).click();
+			await writingHighlighter
+				.getByRole("button", { name: "Xoá lỗi 1" })
+				.click();
 			await expect(marks).toHaveCount(1);
 			await expect(marks.first()).toHaveText(ADDED_ERROR_QUOTE);
-			const cards = page.getByTestId("writing-error-card");
+			const cards = writingHighlighter.getByTestId("writing-error-card");
 			await expect(cards).toHaveCount(1);
 			await expect(cards.first()).toContainText("live");
 			await expect(cards.first()).toContainText("I live.");

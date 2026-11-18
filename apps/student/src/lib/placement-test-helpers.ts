@@ -57,7 +57,7 @@ export interface PlacementDraftState {
 	answers: PlacementDraftAnswers;
 	plays: Record<string, number>;
 	writingText: string;
-	speakingMode: "none" | "skipped";
+	speakingMode: "none";
 	timerStartedAt: number | null;
 }
 
@@ -160,7 +160,7 @@ export function loadPlacementDraft(
 			plays,
 			writingText:
 				typeof parsed.writingText === "string" ? parsed.writingText : "",
-			speakingMode: parsed.speakingMode === "skipped" ? "skipped" : "none",
+			speakingMode: "none",
 			timerStartedAt:
 				typeof parsed.timerStartedAt === "number" &&
 				Number.isFinite(parsed.timerStartedAt)

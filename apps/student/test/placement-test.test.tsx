@@ -411,221 +411,349 @@ describe("Student Portal Placement Test (#748)", () => {
 		},
 	);
 
-	it("/placement-test renders without lead-gate, strips CEFR labels, counts words, persists/clears draft, submits and shows pending view", async () => {
+	it("/placement-test renders without lead-gate, strips CEFR labels, counts words, persists/clears draft, blocks missing speaking, submits with recording and shows pending view", async () => {
+		const originalMediaDevices = navigator.mediaDevices;
+		const originalMediaRecorder = window.MediaRecorder;
+		const originalAudioContext = window.AudioContext;
+		const originalCreateObjectURL = URL.createObjectURL;
+
+		const fakeStream = {
+			getTracks: () => [{ stop: vi.fn() }],
+			getAudioTracks: () => [{ addEventListener: vi.fn(), stop: vi.fn() }],
+		} as unknown as MediaStream;
+		Object.defineProperty(navigator, "mediaDevices", {
+			configurable: true,
+			value: { getUserMedia: vi.fn().mockResolvedValue(fakeStream) },
+		});
+		class SimpleMockRecorder {
+			static isTypeSupported(mime: string) {
+				return mime === "audio/webm";
+			}
+			state: RecordingState = "inactive";
+			mimeType = "audio/webm";
+			private listeners = new Map<string, Set<(evt: unknown) => void>>();
+			addEventListener(type: string, cb: (evt: unknown) => void) {
+				if (!this.listeners.has(type)) this.listeners.set(type, new Set());
+				this.listeners.get(type)?.add(cb);
+			}
+			private emit(type: string, evt: unknown) {
+				for (const cb of this.listeners.get(type) ?? []) cb(evt);
+			}
+			start() {
+				this.state = "recording";
+			}
+			stop() {
+				this.state = "inactive";
+				this.emit("dataavailable", {
+					data: new Blob([new Uint8Array([1, 2, 3, 4])], {
+						type: "audio/webm",
+					}),
+				});
+				this.emit("stop", {});
+			}
+		}
+		Object.defineProperty(window, "MediaRecorder", {
+			configurable: true,
+			writable: true,
+			value: SimpleMockRecorder,
+		});
+		Object.defineProperty(window, "AudioContext", {
+			configurable: true,
+			writable: true,
+			value: undefined,
+		});
+		URL.createObjectURL = vi.fn(() => "blob:mock-full-flow");
+
 		let submittedBody: Record<string, unknown> | null = null;
+		let uploadedSpeaking = false;
 		let currentStatus: StudentPlacementViewResponse["status"] = "not_started";
 		let currentSubmission: StudentPlacementSubmissionView | null = null;
 
-		globalThis.fetch = vi.fn(async (input, init) => {
-			const url = typeof input === "string" ? input : input.toString();
-			if (url.endsWith("/api/student/placement-test")) {
-				const view: StudentPlacementViewResponse = {
-					status: currentStatus,
-					hasEntryScore: false,
-					entryScore: null,
-					promptDismissedAt: null,
-					submissionId: currentSubmission?.id ?? null,
-					testAvailable: true,
-					testVersion: 3,
-					snapshot: SAMPLE_SNAPSHOT,
-					submission: currentSubmission,
-				};
-				return makeJsonResponse(view);
-			}
-			if (
-				url.endsWith("/api/student/placement-test/submissions") &&
-				init?.method === "POST"
-			) {
-				submittedBody = JSON.parse(String(init.body)) as Record<
-					string,
-					unknown
-				>;
-				currentStatus = "pending_grading";
-				currentSubmission = {
-					id: "sub-new",
-					testVersion: 3,
-					status: "pending_grading",
-					submittedAt: "2026-11-17T05:10:00Z",
-					gradedAt: null,
-					objective: {
-						listening: { correct: 2, total: 2, pct: 100 },
-						vocabGrammar: { correct: 1, total: 1, pct: 100 },
-						reading: { correct: 2, total: 2, pct: 100 },
-					},
-					writingText: String(submittedBody.writingText ?? ""),
-					writingWordCount: 11,
-					writingRubric: null,
-					writingScore: null,
-					writingErrors: [],
-					speakingStatus: "skipped",
-					speakingTranscript: "",
-					speakingRubric: null,
-					speakingScore: null,
-					speakingErrors: [],
-					finalBandLevel: null,
-					finalDisplayCourse: null,
-					finalScorePct: null,
-					finalNote: "",
-					bandAdvice: "",
-					teacherFeedback: "",
-				};
-				return makeJsonResponse({
-					submissionId: "sub-new",
-					uploadToken: null,
-					uploadTokenExpiresAt: null,
-					objective: currentSubmission.objective,
-				});
-			}
-			throw new Error(`Unexpected fetch: ${url}`);
-		});
+		try {
+			globalThis.fetch = vi.fn(async (input, init) => {
+				const url = typeof input === "string" ? input : input.toString();
+				if (url.endsWith("/api/student/placement-test")) {
+					const view: StudentPlacementViewResponse = {
+						status: currentStatus,
+						hasEntryScore: false,
+						entryScore: null,
+						promptDismissedAt: null,
+						submissionId: currentSubmission?.id ?? null,
+						testAvailable: true,
+						testVersion: 3,
+						snapshot: SAMPLE_SNAPSHOT,
+						submission: currentSubmission,
+					};
+					return makeJsonResponse(view);
+				}
+				if (
+					url.endsWith("/api/student/placement-test/submissions") &&
+					init?.method === "POST"
+				) {
+					submittedBody = JSON.parse(String(init.body)) as Record<
+						string,
+						unknown
+					>;
+					currentStatus = "pending_grading";
+					currentSubmission = {
+						id: "sub-new",
+						testVersion: 3,
+						status: "pending_grading",
+						submittedAt: "2026-11-17T05:10:00Z",
+						gradedAt: null,
+						objective: {
+							listening: { correct: 2, total: 2, pct: 100 },
+							vocabGrammar: { correct: 1, total: 1, pct: 100 },
+							reading: { correct: 2, total: 2, pct: 100 },
+						},
+						writingText: String(submittedBody.writingText ?? ""),
+						writingWordCount: 11,
+						writingRubric: null,
+						writingScore: null,
+						writingErrors: [],
+						speakingStatus: "pending_upload",
+						speakingTranscript: "",
+						speakingRubric: null,
+						speakingScore: null,
+						speakingErrors: [],
+						finalBandLevel: null,
+						finalDisplayCourse: null,
+						finalScorePct: null,
+						finalNote: "",
+						bandAdvice: "",
+						teacherFeedback: "",
+					};
+					return makeJsonResponse({
+						submissionId: "sub-new",
+						uploadToken: "tok-upload-1",
+						uploadTokenExpiresAt: "2026-11-18T00:00:00Z",
+						objective: currentSubmission.objective,
+					});
+				}
+				if (
+					url.endsWith(
+						"/api/student/placement-test/submissions/sub-new/speaking",
+					) &&
+					init?.method === "PUT"
+				) {
+					uploadedSpeaking = true;
+					if (currentSubmission) {
+						currentSubmission = {
+							...currentSubmission,
+							speakingStatus: "uploaded",
+						};
+					}
+					return makeJsonResponse({ ok: true, speakingStatus: "uploaded" });
+				}
+				throw new Error(`Unexpected fetch: ${url}`);
+			});
 
-		const queryClient = createTestQueryClient();
-		const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
-		const { container } = render(
-			<QueryClientProvider client={queryClient}>
-				<StudentPlacementTestContent studentId="stu-1" />
-			</QueryClientProvider>,
-		);
+			const queryClient = createTestQueryClient();
+			const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+			const { container } = render(
+				<QueryClientProvider client={queryClient}>
+					<StudentPlacementTestContent studentId="stu-1" />
+				</QueryClientProvider>,
+			);
 
-		// Intro renders without lead-gate form and displays 5-part summary table
-		const introCard = await screen.findByTestId("placement-intro-card");
-		expect(introCard).toBeTruthy();
-		expect(introCard.textContent).toContain("5 câu");
-		expect(introCard.textContent).not.toContain("khách quan");
-		expect(container.querySelector('input[name="phone"]')).toBeNull();
-		expect(container.textContent).not.toContain("Nhập thông tin trước khi vào");
-		expect(introCard.textContent).toContain("1. Listening");
-		expect(introCard.textContent).toContain(
-			"1 parts · 2 câu · mỗi đoạn nghe 2 lần",
-		);
-		expect(introCard.textContent).toContain("2. Grammar & Vocabulary");
-		expect(introCard.textContent).toContain("1 câu trắc nghiệm");
-		expect(introCard.textContent).toContain("3. Reading");
-		expect(introCard.textContent).toContain("2 parts · 2 câu");
-		expect(introCard.textContent).toContain("4. Writing");
-		expect(introCard.textContent).toContain("1 email 10–50 từ");
-		expect(introCard.textContent).toContain("5. Speaking");
-		expect(introCard.textContent).toContain("1 câu hỏi ghi âm");
-		expect(introCard.textContent).toContain(
-			"Không dùng từ điển hay công cụ dịch",
-		);
+			// Intro renders without lead-gate form and displays 5-part summary table
+			const introCard = await screen.findByTestId("placement-intro-card");
+			expect(introCard).toBeTruthy();
+			expect(introCard.textContent).toContain("5 câu");
+			expect(introCard.textContent).not.toContain("khách quan");
+			expect(introCard.textContent).not.toContain("bỏ qua phần Speaking");
+			expect(container.querySelector('input[name="phone"]')).toBeNull();
+			expect(container.textContent).not.toContain(
+				"Nhập thông tin trước khi vào",
+			);
+			expect(introCard.textContent).toContain("1. Listening");
+			expect(introCard.textContent).toContain(
+				"1 parts · 2 câu · mỗi đoạn nghe 2 lần",
+			);
+			expect(introCard.textContent).toContain("2. Grammar & Vocabulary");
+			expect(introCard.textContent).toContain("1 câu trắc nghiệm");
+			expect(introCard.textContent).toContain("3. Reading");
+			expect(introCard.textContent).toContain("2 parts · 2 câu");
+			expect(introCard.textContent).toContain("4. Writing");
+			expect(introCard.textContent).toContain("1 email 10–50 từ");
+			expect(introCard.textContent).toContain("5. Speaking");
+			expect(introCard.textContent).toContain("1 câu hỏi ghi âm");
+			expect(introCard.textContent).toContain(
+				"Không dùng từ điển hay công cụ dịch",
+			);
 
-		// Start test -> Listening
-		fireEvent.click(screen.getByTestId("start-placement-test-btn"));
-		expect(screen.getByTestId("placement-step-listening")).toBeTruthy();
-		expect(screen.getByTestId("placement-progress-counter").textContent).toBe(
-			"Đã trả lời 0/5 câu",
-		);
+			// Start test -> Listening
+			fireEvent.click(screen.getByTestId("start-placement-test-btn"));
+			expect(screen.getByTestId("placement-step-listening")).toBeTruthy();
+			expect(screen.getByTestId("placement-progress-counter").textContent).toBe(
+				"Đã trả lời 0/5 câu",
+			);
 
-		// CEFR label stripped on part label, clip title hidden (uses neutral label), notes box shown
-		expect(container.textContent).not.toContain("Campus Library");
-		expect(container.textContent).toContain("Đoạn nghe 1");
-		expect(container.textContent).toContain("Part 1");
-		expect(container.textContent).not.toContain("(Level A2)");
-		expect(container.textContent).not.toContain("Part 1 (A2)");
-		expect(screen.getByTestId("listening-notes-clip-1").textContent).toContain(
-			"Notes",
-		);
-		expect(
-			screen.getByTestId("listening-notes-clip-1").textContent,
-		).not.toContain("(A2)");
+			// CEFR label stripped on part label, clip title hidden (uses neutral label), notes box shown
+			expect(container.textContent).not.toContain("Campus Library");
+			expect(container.textContent).toContain("Đoạn nghe 1");
+			expect(container.textContent).toContain("Part 1");
+			expect(container.textContent).not.toContain("(Level A2)");
+			expect(container.textContent).not.toContain("Part 1 (A2)");
+			expect(
+				screen.getByTestId("listening-notes-clip-1").textContent,
+			).toContain("Notes");
+			expect(
+				screen.getByTestId("listening-notes-clip-1").textContent,
+			).not.toContain("(A2)");
 
-		// Audio tag uses crossOrigin="use-credentials" and rewritten student audio URL
-		const audioEl = container.querySelector("audio");
-		expect(audioEl).not.toBeNull();
-		expect(audioEl?.getAttribute("crossOrigin")).toBe("use-credentials");
-		expect(audioEl?.getAttribute("src")).toContain(
-			"/api/student/placement-test/audio/11111111-1111-1111-1111-111111111111",
-		);
-		expect(screen.getByTestId("clip-plays-clip-1").textContent).toContain(
-			"Còn 2/2 lượt nghe",
-		);
+			// Audio tag uses crossOrigin="use-credentials" and rewritten student audio URL
+			const audioEl = container.querySelector("audio");
+			expect(audioEl).not.toBeNull();
+			expect(audioEl?.getAttribute("crossOrigin")).toBe("use-credentials");
+			expect(audioEl?.getAttribute("src")).toContain(
+				"/api/student/placement-test/audio/11111111-1111-1111-1111-111111111111",
+			);
+			expect(screen.getByTestId("clip-plays-clip-1").textContent).toContain(
+				"Còn 2/2 lượt nghe",
+			);
 
-		// Answer Listening MCQ & gap-fill
-		fireEvent.click(screen.getByLabelText(/6 p\.m\./));
-		fireEvent.change(screen.getByPlaceholderText(/Nhập từ hoặc số/), {
-			target: { value: "204" },
-		});
+			// Answer Listening MCQ & gap-fill
+			fireEvent.click(screen.getByLabelText(/6 p\.m\./));
+			fireEvent.change(screen.getByPlaceholderText(/Nhập từ hoặc số/), {
+				target: { value: "204" },
+			});
 
-		// Draft persisted in localStorage under expected key
-		const draftKey = getPlacementDraftStorageKey("stu-1", 3);
-		expect(window.localStorage.getItem(draftKey)).toContain("204");
+			// Draft persisted in localStorage under expected key
+			const draftKey = getPlacementDraftStorageKey("stu-1", 3);
+			expect(window.localStorage.getItem(draftKey)).toContain("204");
 
-		// Step 2: Grammar & Vocab
-		fireEvent.click(screen.getByTestId("placement-tab-vocab-grammar"));
-		expect(screen.getByTestId("placement-step-vg")).toBeTruthy();
-		expect(container.textContent).toContain("She ____ to London last year.");
-		expect(container.textContent).not.toContain("(B1)");
-		fireEvent.click(screen.getByLabelText(/went/));
+			// Step 2: Grammar & Vocab
+			fireEvent.click(screen.getByTestId("placement-tab-vocab-grammar"));
+			expect(screen.getByTestId("placement-step-vg")).toBeTruthy();
+			expect(container.textContent).toContain("She ____ to London last year.");
+			expect(container.textContent).not.toContain("(B1)");
+			fireEvent.click(screen.getByLabelText(/went/));
 
-		// Step 3: Reading
-		fireEvent.click(screen.getByTestId("placement-tab-reading"));
-		expect(screen.getByTestId("placement-step-reading")).toBeTruthy();
-		expect(container.textContent).not.toContain("Biển báo / Thông báo");
-		expect(container.textContent).not.toContain("Tin nhắn / Email");
-		expect(container.textContent).not.toContain("Bài đọc hiểu");
-		expect(container.textContent).not.toContain("Đoạn văn điền từ");
-		expect(container.textContent).not.toContain("Museum Notice");
-		expect(container.textContent).toContain("Daily Routine");
-		expect(
-			container.querySelector('[data-passage-kind="sign"]'),
-		).not.toBeNull();
-		expect(
-			container.querySelector('[data-passage-kind="cloze"]'),
-		).not.toBeNull();
-		fireEvent.click(screen.getByLabelText(/Flash photos/));
-		fireEvent.click(screen.getByLabelText(/drink/));
-		expect(screen.getByTestId("placement-progress-counter").textContent).toBe(
-			"Đã trả lời 5/5 câu",
-		);
+			// Step 3: Reading
+			fireEvent.click(screen.getByTestId("placement-tab-reading"));
+			expect(screen.getByTestId("placement-step-reading")).toBeTruthy();
+			expect(container.textContent).not.toContain("Biển báo / Thông báo");
+			expect(container.textContent).not.toContain("Tin nhắn / Email");
+			expect(container.textContent).not.toContain("Bài đọc hiểu");
+			expect(container.textContent).not.toContain("Đoạn văn điền từ");
+			expect(container.textContent).not.toContain("Museum Notice");
+			expect(container.textContent).toContain("Daily Routine");
+			expect(
+				container.querySelector('[data-passage-kind="sign"]'),
+			).not.toBeNull();
+			expect(
+				container.querySelector('[data-passage-kind="cloze"]'),
+			).not.toBeNull();
+			fireEvent.click(screen.getByLabelText(/Flash photos/));
+			fireEvent.click(screen.getByLabelText(/drink/));
+			expect(screen.getByTestId("placement-progress-counter").textContent).toBe(
+				"Đã trả lời 5/5 câu",
+			);
 
-		// Step 4: Writing
-		fireEvent.click(screen.getByTestId("placement-tab-writing"));
-		const textarea = screen.getByTestId("placement-writing-textarea");
-		fireEvent.change(textarea, {
-			target: {
-				value:
-					"Last weekend I visited my grandparents and cooked dinner with my family.",
-			},
-		});
-		expect(
-			screen.getByTestId("placement-writing-word-count").textContent,
-		).toContain("12 / 10–50 từ");
+			// Step 4: Writing
+			fireEvent.click(screen.getByTestId("placement-tab-writing"));
+			const textarea = screen.getByTestId("placement-writing-textarea");
+			fireEvent.change(textarea, {
+				target: {
+					value:
+						"Last weekend I visited my grandparents and cooked dinner with my family.",
+				},
+			});
+			expect(
+				screen.getByTestId("placement-writing-word-count").textContent,
+			).toContain("12 / 10–50 từ");
 
-		// Step 5: Speaking -> skip & submit
-		fireEvent.click(screen.getByTestId("placement-tab-speaking"));
-		fireEvent.click(
-			screen.getByRole("button", { name: /Bỏ qua phần Speaking/i }),
-		);
-		expect(screen.getByTestId("speaking-skipped-notice")).toBeTruthy();
+			// Step 5: Speaking -> no skip button; submit blocked until recorded; record -> submit
+			fireEvent.click(screen.getByTestId("placement-tab-speaking"));
+			expect(
+				screen.queryByRole("button", { name: /Bỏ qua phần Speaking/i }),
+			).toBeNull();
 
-		fireEvent.click(screen.getByTestId("submit-placement-test-btn"));
+			fireEvent.click(screen.getByTestId("submit-placement-test-btn"));
+			expect(
+				await screen.findByText(/Phần Speaking là bắt buộc/i),
+			).toBeTruthy();
+			expect(screen.queryByTestId("placement-unanswered-confirm")).toBeNull();
+			expect(submittedBody).toBeNull();
 
-		// Pending result view renders immediately with 2 CEFR cards and draft is cleared
-		const pendingView = await screen.findByTestId("placement-pending-view");
-		expect(pendingView.textContent).toContain(
-			"Đang chờ giáo viên chấm Writing & Speaking",
-		);
-		expect(screen.getByTestId("pending-cefr-listening").textContent).toBe("B1");
-		expect(screen.getByTestId("pending-score-listening").textContent).toBe(
-			"2/2 câu đúng · 100%",
-		);
-		expect(screen.queryByTestId("pending-score-vg")).toBeNull();
-		expect(screen.getByTestId("pending-cefr-reading").textContent).toBe("B1");
-		expect(screen.getByTestId("pending-score-reading").textContent).toBe(
-			"2/2 câu đúng · 100%",
-		);
-		expect(pendingView.textContent).toContain(
-			"Đây là kết quả tự động của hai phần nghe và đọc. Cấp độ cuối cùng và lớp phù hợp sẽ được giáo viên báo sau khi chấm Writing và Speaking.",
-		);
-		expect(screen.getByTestId("pending-speaking-status").textContent).toBe(
-			"Đã bỏ qua",
-		);
-		expect(submittedBody).not.toBeNull();
-		expect(window.localStorage.getItem(draftKey)).toBeNull();
-		expect(invalidateSpy).toHaveBeenCalledWith({
-			queryKey: ["student", "inbox"],
-		});
+			// Record Speaking task
+			fireEvent.click(
+				screen.getByRole("button", { name: /Bắt đầu làm bài Speaking/i }),
+			);
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: "Chuẩn bị ngay →" }),
+				).toBeTruthy();
+			});
+			fireEvent.click(screen.getByRole("button", { name: "Chuẩn bị ngay →" }));
+			fireEvent.click(screen.getByRole("button", { name: /Trả lời ngay/i }));
+			fireEvent.click(
+				screen.getByRole("button", { name: "Dừng ghi âm câu hiện tại" }),
+			);
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: "Hoàn thành phần Speaking" }),
+				).toBeTruthy();
+			});
+			fireEvent.click(
+				screen.getByRole("button", { name: "Hoàn thành phần Speaking" }),
+			);
+			await waitFor(() => {
+				expect(screen.getByTestId("speaking-review-box")).toBeTruthy();
+				expect(
+					(screen.getByTestId("submit-placement-test-btn") as HTMLButtonElement)
+						.disabled,
+				).toBe(false);
+			});
+
+			fireEvent.click(screen.getByTestId("submit-placement-test-btn"));
+
+			// Pending result view renders immediately with 2 CEFR cards and draft is cleared
+			const pendingView = await screen.findByTestId("placement-pending-view");
+			expect(pendingView.textContent).toContain(
+				"Đang chờ giáo viên chấm Writing & Speaking",
+			);
+			expect(screen.getByTestId("pending-cefr-listening").textContent).toBe(
+				"B1",
+			);
+			expect(screen.getByTestId("pending-score-listening").textContent).toBe(
+				"2/2 câu đúng · 100%",
+			);
+			expect(screen.queryByTestId("pending-score-vg")).toBeNull();
+			expect(screen.getByTestId("pending-cefr-reading").textContent).toBe("B1");
+			expect(screen.getByTestId("pending-score-reading").textContent).toBe(
+				"2/2 câu đúng · 100%",
+			);
+			expect(pendingView.textContent).toContain(
+				"Đây là kết quả tự động của hai phần nghe và đọc. Cấp độ cuối cùng và lớp phù hợp sẽ được giáo viên báo sau khi chấm Writing và Speaking.",
+			);
+			expect(screen.getByTestId("pending-speaking-status").textContent).toBe(
+				"Đã gửi bài nói",
+			);
+			expect(submittedBody).toMatchObject({ speakingMode: "upload" });
+			expect(uploadedSpeaking).toBe(true);
+			expect(window.localStorage.getItem(draftKey)).toBeNull();
+			expect(invalidateSpy).toHaveBeenCalledWith({
+				queryKey: ["student", "inbox"],
+			});
+		} finally {
+			Object.defineProperty(navigator, "mediaDevices", {
+				configurable: true,
+				value: originalMediaDevices,
+			});
+			Object.defineProperty(window, "MediaRecorder", {
+				configurable: true,
+				writable: true,
+				value: originalMediaRecorder,
+			});
+			Object.defineProperty(window, "AudioContext", {
+				configurable: true,
+				writable: true,
+				value: originalAudioContext,
+			});
+			URL.createObjectURL = originalCreateObjectURL;
+		}
 	});
 
 	it("renders graded result view with CEFR badge, rubrics, highlighted errors, bandAdvice and teacherFeedback", async () => {
@@ -1141,40 +1269,140 @@ describe("Student Portal Placement Test (#748)", () => {
 		);
 	});
 
-	it("shows unanswered confirmation copy without 'khách quan' when submitting incomplete test", async () => {
-		const notStartedView: StudentPlacementViewResponse = {
-			status: "not_started",
-			hasEntryScore: false,
-			entryScore: null,
-			promptDismissedAt: null,
-			submissionId: null,
-			testAvailable: true,
-			testVersion: 3,
-			snapshot: SAMPLE_SNAPSHOT,
-			submission: null,
-		};
-		globalThis.fetch = vi.fn(async () => makeJsonResponse(notStartedView));
+	it("blocks submit without Speaking recording and shows unanswered confirmation copy without 'khách quan' once Speaking is recorded", async () => {
+		const originalMediaDevices = navigator.mediaDevices;
+		const originalMediaRecorder = window.MediaRecorder;
+		const originalAudioContext = window.AudioContext;
+		const originalCreateObjectURL = URL.createObjectURL;
 
-		const queryClient = createTestQueryClient();
-		render(
-			<QueryClientProvider client={queryClient}>
-				<StudentPlacementTestContent studentId="stu-1" />
-			</QueryClientProvider>,
-		);
+		const fakeStream = {
+			getTracks: () => [{ stop: vi.fn() }],
+			getAudioTracks: () => [{ addEventListener: vi.fn(), stop: vi.fn() }],
+		} as unknown as MediaStream;
+		Object.defineProperty(navigator, "mediaDevices", {
+			configurable: true,
+			value: { getUserMedia: vi.fn().mockResolvedValue(fakeStream) },
+		});
+		class IncompleteFlowRecorder {
+			static isTypeSupported(mime: string) {
+				return mime === "audio/webm";
+			}
+			state: RecordingState = "inactive";
+			mimeType = "audio/webm";
+			private listeners = new Map<string, Set<(evt: unknown) => void>>();
+			addEventListener(type: string, cb: (evt: unknown) => void) {
+				if (!this.listeners.has(type)) this.listeners.set(type, new Set());
+				this.listeners.get(type)?.add(cb);
+			}
+			private emit(type: string, evt: unknown) {
+				for (const cb of this.listeners.get(type) ?? []) cb(evt);
+			}
+			start() {
+				this.state = "recording";
+			}
+			stop() {
+				this.state = "inactive";
+				this.emit("dataavailable", {
+					data: new Blob([new Uint8Array([1, 2, 3])], { type: "audio/webm" }),
+				});
+				this.emit("stop", {});
+			}
+		}
+		Object.defineProperty(window, "MediaRecorder", {
+			configurable: true,
+			writable: true,
+			value: IncompleteFlowRecorder,
+		});
+		Object.defineProperty(window, "AudioContext", {
+			configurable: true,
+			writable: true,
+			value: undefined,
+		});
+		URL.createObjectURL = vi.fn(() => "blob:mock-incomplete");
 
-		await screen.findByTestId("placement-intro-card");
-		fireEvent.click(screen.getByTestId("start-placement-test-btn"));
-		fireEvent.click(screen.getByTestId("placement-tab-speaking"));
-		fireEvent.click(
-			screen.getByRole("button", { name: /Bỏ qua phần Speaking/i }),
-		);
-		fireEvent.click(screen.getByTestId("submit-placement-test-btn"));
+		try {
+			const notStartedView: StudentPlacementViewResponse = {
+				status: "not_started",
+				hasEntryScore: false,
+				entryScore: null,
+				promptDismissedAt: null,
+				submissionId: null,
+				testAvailable: true,
+				testVersion: 3,
+				snapshot: SAMPLE_SNAPSHOT,
+				submission: null,
+			};
+			globalThis.fetch = vi.fn(async () => makeJsonResponse(notStartedView));
 
-		const confirmBox = await screen.findByTestId(
-			"placement-unanswered-confirm",
-		);
-		expect(confirmBox.textContent).toContain("còn 5 câu chưa trả lời");
-		expect(confirmBox.textContent).not.toContain("khách quan");
+			const queryClient = createTestQueryClient();
+			render(
+				<QueryClientProvider client={queryClient}>
+					<StudentPlacementTestContent studentId="stu-1" />
+				</QueryClientProvider>,
+			);
+
+			await screen.findByTestId("placement-intro-card");
+			fireEvent.click(screen.getByTestId("start-placement-test-btn"));
+			fireEvent.click(screen.getByTestId("placement-tab-speaking"));
+			expect(
+				screen.queryByRole("button", { name: /Bỏ qua phần Speaking/i }),
+			).toBeNull();
+
+			// Record Speaking first so submit checks remaining objective/writing
+			fireEvent.click(
+				screen.getByRole("button", { name: /Bắt đầu làm bài Speaking/i }),
+			);
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: "Chuẩn bị ngay →" }),
+				).toBeTruthy();
+			});
+			fireEvent.click(screen.getByRole("button", { name: "Chuẩn bị ngay →" }));
+			fireEvent.click(screen.getByRole("button", { name: /Trả lời ngay/i }));
+			fireEvent.click(
+				screen.getByRole("button", { name: "Dừng ghi âm câu hiện tại" }),
+			);
+			await waitFor(() => {
+				expect(
+					screen.getByRole("button", { name: "Hoàn thành phần Speaking" }),
+				).toBeTruthy();
+			});
+			fireEvent.click(
+				screen.getByRole("button", { name: "Hoàn thành phần Speaking" }),
+			);
+			await waitFor(() => {
+				expect(screen.getByTestId("speaking-review-box")).toBeTruthy();
+				expect(
+					(screen.getByTestId("submit-placement-test-btn") as HTMLButtonElement)
+						.disabled,
+				).toBe(false);
+			});
+
+			fireEvent.click(screen.getByTestId("submit-placement-test-btn"));
+
+			const confirmBox = await screen.findByTestId(
+				"placement-unanswered-confirm",
+			);
+			expect(confirmBox.textContent).toContain("còn 5 câu chưa trả lời");
+			expect(confirmBox.textContent).not.toContain("khách quan");
+			expect(confirmBox.textContent).not.toContain("Speaking chưa ghi âm");
+		} finally {
+			Object.defineProperty(navigator, "mediaDevices", {
+				configurable: true,
+				value: originalMediaDevices,
+			});
+			Object.defineProperty(window, "MediaRecorder", {
+				configurable: true,
+				writable: true,
+				value: originalMediaRecorder,
+			});
+			Object.defineProperty(window, "AudioContext", {
+				configurable: true,
+				writable: true,
+				value: originalAudioContext,
+			});
+			URL.createObjectURL = originalCreateObjectURL;
+		}
 	});
 });
 
@@ -1460,10 +1688,8 @@ describe("Placement Speaking state machine, audio merger & UI (#780)", () => {
 		const { container, rerender } = render(
 			<PlacementSpeakingStep
 				tasks={SPEAKING_TASKS}
-				speakingMode="none"
 				recordedAudio={null}
 				onRecordedAudioChange={onRecordedAudioChange}
-				onSkipSpeaking={vi.fn()}
 				onBusyChange={vi.fn()}
 			/>,
 		);
@@ -1593,10 +1819,8 @@ describe("Placement Speaking state machine, audio merger & UI (#780)", () => {
 		rerender(
 			<PlacementSpeakingStep
 				tasks={SPEAKING_TASKS}
-				speakingMode="none"
 				recordedAudio={recorded}
 				onRecordedAudioChange={onRecordedAudioChange}
-				onSkipSpeaking={vi.fn()}
 				onBusyChange={vi.fn()}
 			/>,
 		);
@@ -1604,6 +1828,29 @@ describe("Placement Speaking state machine, audio merger & UI (#780)", () => {
 		expect(
 			screen.queryByRole("button", { name: /Ghi lại từ đầu/i }),
 		).toBeNull();
+
+		// Oversized (> 50 MB) recording provides reset button to avoid dead-end
+		const oversizedBlob = {
+			size: 51 * 1024 * 1024,
+			type: "audio/webm",
+		} as Blob;
+		rerender(
+			<PlacementSpeakingStep
+				tasks={SPEAKING_TASKS}
+				recordedAudio={{
+					blob: oversizedBlob,
+					url: "blob:mock-oversized",
+					mimeType: "audio/webm",
+					durationSec: 60,
+				}}
+				onRecordedAudioChange={onRecordedAudioChange}
+				onBusyChange={vi.fn()}
+			/>,
+		);
+		fireEvent.click(
+			screen.getByRole("button", { name: /Xóa bản ghi & ghi lại/i }),
+		);
+		expect(onRecordedAudioChange).toHaveBeenLastCalledWith(null);
 	});
 
 	it("transitions to paused when answer timer hits 0 and merges active recording on confirmed early finish", async () => {
@@ -1682,10 +1929,8 @@ describe("Placement Speaking state machine, audio merger & UI (#780)", () => {
 			render(
 				<PlacementSpeakingStep
 					tasks={shortTasks}
-					speakingMode="none"
 					recordedAudio={null}
 					onRecordedAudioChange={onRecordedAudioChange}
-					onSkipSpeaking={vi.fn()}
 					onBusyChange={vi.fn()}
 				/>,
 			);

@@ -55,6 +55,7 @@ import {
 	randomTokenHex,
 	safeSpeakingExtension,
 	sha256Hex,
+	validatePlacementSpeakingModeForSnapshot,
 } from "../lib/placement-submission-service";
 import {
 	type LoadedPlacementSnapshot,
@@ -596,18 +597,20 @@ export function studentPlacementTestRoutes(
 
 		const submit = parsed.data;
 		const snapshot = loadedTest.snapshot;
+		const speakingCheck = validatePlacementSpeakingModeForSnapshot(
+			snapshot,
+			submit.speakingMode,
+		);
+		if (!speakingCheck.ok) {
+			return c.json(speakingCheck.body, 400);
+		}
 		const objective = gradePlacementObjective(snapshot, submit.answers);
 		const snapshotJson = JSON.stringify(snapshot);
 		const answersJson = JSON.stringify(submit.answers);
 		const objectiveBreakdownJson = JSON.stringify(objective);
 		const wordCount = countPlacementWords(submit.writingText);
 
-		const speakingStatus =
-			submit.speakingMode === "upload"
-				? ("pending_upload" as const)
-				: submit.speakingMode === "skipped"
-					? ("skipped" as const)
-					: ("none" as const);
+		const speakingStatus = speakingCheck.speakingStatus;
 
 		const nowMs = Date.now();
 		const uploadToken =

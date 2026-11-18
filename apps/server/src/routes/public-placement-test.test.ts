@@ -16,6 +16,7 @@ import {
 	type MediaByteRange,
 	type MediaStore,
 } from "../app";
+import { validatePlacementSpeakingModeForSnapshot } from "../lib/placement-submission-service";
 import { mp3Id3Bytes } from "../lib/test-media-fixtures";
 import { PLACEMENT_SUBMISSION_IP_MAX } from "./public-placement-test";
 
@@ -464,7 +465,8 @@ describe("public-placement-test routes (#515, #721)", () => {
 					lead: { name: "Nguyễn Minh", phone: "0901234567" },
 					answers: { listening: {}, vocabGrammar: {}, reading: {} },
 					writingText: "",
-					speakingMode: "skipped",
+					speakingMode: "upload",
+					speakingDurationSec: 12,
 				}),
 			});
 			expect(okRes.status).toBe(201);
@@ -483,10 +485,87 @@ describe("public-placement-test routes (#515, #721)", () => {
 				lead: { name: "Spammer", phone: "0909998888" },
 				answers: { listening: {}, vocabGrammar: {}, reading: {} },
 				writingText: "",
-				speakingMode: "none",
+				speakingMode: "upload",
+				speakingDurationSec: 20,
 			}),
 		});
 		expect(cappedRes.status).toBe(429);
+	});
+
+	test("POST /submissions từ chối speakingMode='skipped' (400 PLACEMENT_SUBMIT_INVALID) và speakingMode='none' khi đề có Speaking (400 PLACEMENT_SPEAKING_REQUIRED) mà không tạo lead", async () => {
+		await seedPublishedOrgLead();
+		const app = createAppWithLeadOrg("org-lead");
+
+		const skippedRes = await app.request("/public/placement-test/submissions", {
+			method: "POST",
+			headers: {
+				origin: PROFILE_ORIGIN,
+				"content-type": "application/json",
+				"cf-connecting-ip": "9.9.9.1",
+			},
+			body: JSON.stringify({
+				lead: { name: "Skipper", phone: "0903334444" },
+				answers: { listening: {}, vocabGrammar: {}, reading: {} },
+				writingText: "Hello world",
+				speakingMode: "skipped",
+			}),
+		});
+		expect(skippedRes.status).toBe(400);
+		expect(((await skippedRes.json()) as { code: string }).code).toBe(
+			"PLACEMENT_SUBMIT_INVALID",
+		);
+
+		const noneRes = await app.request("/public/placement-test/submissions", {
+			method: "POST",
+			headers: {
+				origin: PROFILE_ORIGIN,
+				"content-type": "application/json",
+				"cf-connecting-ip": "9.9.9.2",
+			},
+			body: JSON.stringify({
+				lead: { name: "No Speaking", phone: "0903335555" },
+				answers: { listening: {}, vocabGrammar: {}, reading: {} },
+				writingText: "Hello world",
+				speakingMode: "none",
+			}),
+		});
+		expect(noneRes.status).toBe(400);
+		expect(((await noneRes.json()) as { code: string }).code).toBe(
+			"PLACEMENT_SPEAKING_REQUIRED",
+		);
+
+		const leads = await db.select().from(schema.lead);
+		expect(leads).toHaveLength(0);
+	});
+
+	test("validatePlacementSpeakingModeForSnapshot từ chối speakingMode='upload' khi đề không có Speaking và cho phép 'none'", () => {
+		const snapshot = buildPlacementSnapshot(makeSampleContent(), 1);
+		const withoutSpeaking = {
+			...snapshot,
+			parts: [
+				snapshot.parts[0],
+				snapshot.parts[1],
+				snapshot.parts[2],
+				snapshot.parts[3],
+				{ ...snapshot.parts[4], tasks: [] },
+			] as typeof snapshot.parts,
+		};
+		expect(
+			validatePlacementSpeakingModeForSnapshot(withoutSpeaking, "upload"),
+		).toEqual({
+			ok: false,
+			body: {
+				error: "PLACEMENT_SUBMIT_INVALID",
+				code: "PLACEMENT_SUBMIT_INVALID",
+				fields: ["speakingMode"],
+			},
+		});
+		expect(
+			validatePlacementSpeakingModeForSnapshot(withoutSpeaking, "none"),
+		).toEqual({
+			ok: true,
+			speakingStatus: "none",
+		});
 	});
 
 	test("PUT /submissions/:id/speaking-media kiểm tra uploadToken dùng 1 lần, từ chối sai magic bytes và chấp nhận WebM thật", async () => {
@@ -710,7 +789,8 @@ describe("public-placement-test routes (#515, #721)", () => {
 					reading: readingAnswers,
 				},
 				writingText: "",
-				speakingMode: "none",
+				speakingMode: "upload",
+				speakingDurationSec: 20,
 			}),
 		});
 		expect(subRes.status).toBe(201);
@@ -790,7 +870,8 @@ describe("public-placement-test routes (#515, #721)", () => {
 				lead: { name: "Trần Hoa", phone: "0907776655", note: "Làm lại" },
 				answers: { listening: {}, vocabGrammar: {}, reading: {} },
 				writingText: "",
-				speakingMode: "none",
+				speakingMode: "upload",
+				speakingDurationSec: 20,
 			}),
 		});
 		expect(retakeRes.status).toBe(201);

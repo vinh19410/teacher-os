@@ -320,7 +320,7 @@ function loadAttemptState(testVersion) {
 			plays: parsed.plays ?? {},
 			writingText:
 				typeof parsed.writingText === "string" ? parsed.writingText : "",
-			speakingMode: parsed.speakingMode === "skipped" ? "skipped" : "none",
+			speakingMode: "none",
 			speakingDurationSec: null,
 			knownReadingCount:
 				typeof parsed.knownReadingCount === "number" &&
@@ -363,7 +363,7 @@ function saveAttemptState(testVersion, state) {
 				answers: state.answers,
 				plays: state.plays,
 				writingText: state.writingText,
-				speakingMode: state.speakingMode === "skipped" ? "skipped" : "none",
+				speakingMode: "none",
 				knownReadingCount:
 					typeof state.knownReadingCount === "number" &&
 					Number.isInteger(state.knownReadingCount) &&
@@ -2410,7 +2410,9 @@ function createApp() {
 							: "Bạn thao tác quá nhanh. Vui lòng đợi ít phút rồi thử nộp lại.";
 				} else if (res.status === 400) {
 					submitError =
-						"Dữ liệu bài làm hoặc thông tin liên hệ chưa hợp lệ. Vui lòng kiểm tra lại SĐT / Họ tên rồi thử nộp lại.";
+						body?.error === "PLACEMENT_SPEAKING_REQUIRED"
+							? "Bài kiểm tra đầu vào yêu cầu hoàn thành phần Speaking trước khi nộp bài."
+							: "Dữ liệu bài làm hoặc thông tin liên hệ chưa hợp lệ. Vui lòng kiểm tra lại SĐT / Họ tên rồi thử nộp lại.";
 				} else if (res.status === 404 || res.status === 503) {
 					submitError =
 						"Hệ thống nộp bài tạm thời bảo trì. Vui lòng thử lại sau hoặc nhắn Zalo cô Mỹ.";
@@ -2480,21 +2482,36 @@ function createApp() {
 		} finally {
 			isSubmitting = false;
 			render();
-			window.scrollTo({ top: 0, behavior: "smooth" });
+			if (submitError) {
+				document
+					.getElementById("submitErrorBanner")
+					?.scrollIntoView({ behavior: "smooth", block: "center" });
+			} else {
+				window.scrollTo({ top: 0, behavior: "smooth" });
+			}
 		}
 	}
 
 	function handleRequestSubmit() {
-		if (isSpeakingBusy()) {
-			speakingMediaError =
-				"Vui lòng hoàn thành hoặc bấm Kết thúc phần Speaking trước khi nộp bài.";
+		const failSpeakingCheck = (message) => {
+			unansweredConfirmState = null;
+			speakingMediaError = message;
 			render();
+			document
+				.getElementById("speakingErrorBanner")
+				?.scrollIntoView({ behavior: "smooth", block: "center" });
+		};
+
+		if (isSpeakingBusy()) {
+			failSpeakingCheck(
+				"Vui lòng hoàn thành hoặc bấm Kết thúc phần Speaking trước khi nộp bài.",
+			);
 			return;
 		}
 		if (recordedBlob && recordedBlob.size > SPEAKING_MAX_BYTES) {
-			speakingMediaError =
-				"File Speaking vượt quá giới hạn 50 MB. Vui lòng chọn Bỏ qua phần Speaking hoặc liên hệ cô Mỹ hỗ trợ.";
-			render();
+			failSpeakingCheck(
+				"File Speaking vượt quá giới hạn 50 MB. Vui lòng xóa bản ghi và ghi lại hoặc liên hệ cô Mỹ hỗ trợ.",
+			);
 			return;
 		}
 
@@ -2509,8 +2526,16 @@ function createApp() {
 		const speakingDecision = resolveSpeakingSubmitDecision({
 			hasSpeakingTasks: speakingState.hasTasks,
 			hasValidBlob,
-			speakingMode: state.speakingMode,
 		});
+		if (
+			speakingDecision.blockedByMissingSpeaking ||
+			!speakingDecision.finalMode
+		) {
+			failSpeakingCheck(
+				"Phần Speaking là bắt buộc. Vui lòng hoàn thành ghi âm bài nói trước khi nộp bài.",
+			);
+			return;
+		}
 		const speakingFinalMode = speakingDecision.finalMode;
 		const needsSpeakingDecision = speakingDecision.needsSpeakingDecision;
 
@@ -2607,7 +2632,7 @@ function createApp() {
 	function startTaskRecorder() {
 		if (!mediaStream) {
 			abortSpeakingSessionWithError(
-				"Không thể bắt đầu ghi âm qua Micro. Vui lòng thử lại hoặc chọn Bỏ qua phần Speaking.",
+				"Không thể bắt đầu ghi âm qua Micro. Vui lòng kiểm tra quyền Micro và thử lại.",
 			);
 			return false;
 		}
@@ -2624,7 +2649,7 @@ function createApp() {
 				: new window.MediaRecorder(mediaStream);
 		} catch {
 			abortSpeakingSessionWithError(
-				"Không thể bắt đầu ghi âm qua Micro. Vui lòng thử lại hoặc chọn Bỏ qua phần Speaking.",
+				"Không thể bắt đầu ghi âm qua Micro. Vui lòng kiểm tra quyền Micro và thử lại.",
 			);
 			return false;
 		}
@@ -2637,14 +2662,14 @@ function createApp() {
 		recorder.addEventListener("error", () => {
 			if (mediaRecorder !== recorder) return;
 			abortSpeakingSessionWithError(
-				"Trình duyệt gặp lỗi khi thu âm Micro. Vui lòng thử lại hoặc chọn Bỏ qua phần Speaking.",
+				"Trình duyệt gặp lỗi khi thu âm Micro. Vui lòng thử lại hoặc liên hệ cô Mỹ hỗ trợ.",
 			);
 		});
 		try {
 			recorder.start(250);
 		} catch {
 			abortSpeakingSessionWithError(
-				"Không thể bắt đầu ghi âm qua Micro. Vui lòng thử lại hoặc chọn Bỏ qua phần Speaking.",
+				"Không thể bắt đầu ghi âm qua Micro. Vui lòng kiểm tra quyền Micro và thử lại.",
 			);
 			return false;
 		}
@@ -2760,7 +2785,7 @@ function createApp() {
 				recordedChunks = [];
 				answerStartedAt = 0;
 				speakingMediaError =
-					"Không thu được dữ liệu âm thanh. Vui lòng thử ghi lại hoặc chọn Bỏ qua.";
+					"Không thu được dữ liệu âm thanh. Vui lòng thử ghi lại hoặc kiểm tra Micro.";
 				return;
 			}
 
@@ -2788,14 +2813,14 @@ function createApp() {
 			} else {
 				speakingSession = createInitialSpeakingSession(totalTasks);
 				speakingMediaError =
-					"Không thu được dữ liệu âm thanh. Vui lòng thử ghi lại hoặc chọn Bỏ qua.";
+					"Không thu được dữ liệu âm thanh. Vui lòng thử ghi lại hoặc kiểm tra Micro.";
 			}
 		} catch {
 			if (sessionToken !== speakingSessionToken) return;
 			stopMediaStream();
 			speakingSession = createInitialSpeakingSession(totalTasks);
 			speakingMediaError =
-				"Không thể ghép dữ liệu âm thanh. Vui lòng thử ghi lại hoặc chọn Bỏ qua.";
+				"Không thể ghép dữ liệu âm thanh. Vui lòng thử ghi lại hoặc liên hệ cô Mỹ hỗ trợ.";
 		} finally {
 			if (sessionToken === speakingSessionToken) {
 				isFinalizingRecording = false;
@@ -3035,9 +3060,7 @@ function createApp() {
 			if (!hasMediaApi) {
 				recorderCard.appendChild(
 					el("div", { className: "provisional-notice-box" }, [
-						"Trình duyệt hoặc thiết bị hiện tại không hỗ trợ API ghi âm (MediaRecorder). Bạn có thể bấm ",
-						el("strong", {}, ["Bỏ qua phần Speaking"]),
-						" bên dưới để hoàn tất nộp bài ngay.",
+						"Trình duyệt hoặc thiết bị hiện tại không hỗ trợ API ghi âm (MediaRecorder). Vui lòng sử dụng trình duyệt/thiết bị có Micro (Chrome, Safari, Edge) để hoàn thành phần Speaking trước khi nộp bài.",
 					]),
 				);
 			}
@@ -3498,9 +3521,19 @@ function createApp() {
 				});
 				reviewBox.appendChild(
 					el("div", { className: "speaking-review-meta" }, [
-						el("span", { className: "status-pill is-ok" }, [
-							"Đã ghi âm hoàn tất (sẵn sàng nộp)",
-						]),
+						el(
+							"span",
+							{
+								className: isTooLarge
+									? "status-pill is-warn"
+									: "status-pill is-ok",
+							},
+							[
+								isTooLarge
+									? "Bản ghi vượt quá giới hạn dung lượng"
+									: "Đã ghi âm hoàn tất (sẵn sàng nộp)",
+							],
+						),
 						el("span", {}, [
 							`Thời lượng trả lời: ${state.speakingDurationSec ?? 0}s · Dung lượng: ${sizeMb} MB / 50 MB`,
 						]),
@@ -3510,9 +3543,30 @@ function createApp() {
 				if (isTooLarge) {
 					reviewBox.appendChild(
 						el("p", { className: "form-error-banner", role: "alert" }, [
-							"Bản ghi vượt quá giới hạn 50 MB. Vui lòng chọn Bỏ qua phần Speaking hoặc liên hệ cô Mỹ hỗ trợ.",
+							"Bản ghi vượt quá giới hạn 50 MB. Vui lòng xóa bản ghi để ghi lại hoặc liên hệ cô Mỹ hỗ trợ.",
 						]),
 					);
+					const resetOversizedBtn = el(
+						"button",
+						{
+							type: "button",
+							id: "resetOversizedSpeakingBtn",
+							className: "btn btn-ghost",
+						},
+						["Xóa bản ghi & ghi lại"],
+					);
+					resetOversizedBtn.addEventListener("click", () => {
+						resetSpeakingSessionRuntime();
+						revokeRecordedUrl();
+						recordedBlob = null;
+						state.speakingMode = "none";
+						state.speakingDurationSec = null;
+						speakingMediaError = "";
+						unansweredConfirmState = null;
+						persist();
+						render();
+					});
+					reviewBox.appendChild(resetOversizedBtn);
 				}
 
 				if (recordedBlobUrl) {
@@ -3534,19 +3588,6 @@ function createApp() {
 					return acc + prepSeconds + answerSeconds + 5;
 				}, 0);
 				const estimatedMinutes = Math.max(1, Math.ceil(estimatedTotalSec / 60));
-
-				if (state.speakingMode === "skipped") {
-					recorderCard.appendChild(
-						el("div", { className: "speaking-skipped-box" }, [
-							el("span", { className: "status-pill is-muted" }, [
-								"Đã chọn bỏ qua phần Speaking",
-							]),
-							el("p", {}, [
-								"Bạn có thể bấm Nộp bài ngay bên dưới (chỉ chấm 4 kỹ năng đã làm), hoặc bấm Bắt đầu làm bài Speaking nếu đổi ý.",
-							]),
-						]),
-					);
-				}
 
 				const overviewCard = el("div", {
 					id: "speakingOverviewCard",
@@ -3642,7 +3683,7 @@ function createApp() {
 									isFinalizingRecording
 								) {
 									abortSpeakingSessionWithError(
-										"Kết nối Micro bị gián đoạn giữa chừng. Vui lòng thử ghi lại hoặc chọn Bỏ qua phần Speaking.",
+										"Kết nối Micro bị gián đoạn giữa chừng. Vui lòng kiểm tra Micro và thử ghi lại.",
 									);
 								}
 							});
@@ -3655,34 +3696,12 @@ function createApp() {
 						stopMediaStream();
 						speakingSession = createInitialSpeakingSession(tasks.length);
 						speakingMediaError =
-							"Không thể truy cập Micro (thiếu quyền hoặc không có micro). Bạn có thể cấp quyền lại hoặc chọn Bỏ qua phần Speaking.";
+							"Không thể truy cập Micro (thiếu quyền hoặc không có micro). Vui lòng cấp quyền Micro và thử lại.";
 						render();
 					}
 				});
 
-				const skipBtn = el(
-					"button",
-					{
-						type: "button",
-						id: "skipSpeakingBtn",
-						className: "btn btn-ghost",
-					},
-					["Bỏ qua phần Speaking (nộp bài không kèm ghi âm)"],
-				);
-				skipBtn.addEventListener("click", () => {
-					resetSpeakingSessionRuntime();
-					revokeRecordedUrl();
-					recordedBlob = null;
-					state.speakingMode = "skipped";
-					state.speakingDurationSec = null;
-					speakingMediaError = "";
-					unansweredConfirmState = null;
-					persist();
-					render();
-				});
-
 				actionRow.appendChild(startBtn);
-				actionRow.appendChild(skipBtn);
 				recorderCard.appendChild(actionRow);
 			}
 
@@ -3712,9 +3731,6 @@ function createApp() {
 			}
 			if (unansweredConfirmState.writingEmpty) {
 				reminders.push("phần Writing đang để trống");
-			}
-			if (unansweredConfirmState.speakingUnrecorded) {
-				reminders.push("phần Speaking chưa ghi âm");
 			}
 
 			const confirmBox = el(
@@ -3808,7 +3824,7 @@ function createApp() {
 			submission?.objective ?? scoreObjectiveTest(snapshot, state.answers);
 		const summaryText =
 			objective.provisionalSummary || buildProvisionalSummary(objective);
-		const speakingStatus = submission?.speakingStatus ?? "skipped";
+		const speakingStatus = submission?.speakingStatus ?? "none";
 		const registeredEmail = String(state.lead?.email ?? "").trim();
 		const skillCards = buildSkillReportCards(objective, snapshot?.bands);
 

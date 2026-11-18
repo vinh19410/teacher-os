@@ -41,6 +41,7 @@ import {
 	runPlacementAiGrading,
 	schedulePlacementAiTask,
 } from "../lib/placement-ai/run-placement-grading";
+import { validatePlacementSpeakingModeForSnapshot } from "../lib/placement-submission-service";
 import {
 	loadPublishedPlacementSnapshot,
 	resolveLeadTargetOrg,
@@ -173,7 +174,7 @@ async function tryInsertSubmissionAtomic(params: {
 	objectiveBreakdownJson: string;
 	submit: PlacementPublicSubmit;
 	wordCount: number;
-	speakingStatus: "none" | "pending_upload" | "skipped";
+	speakingStatus: "none" | "pending_upload";
 	uploadTokenHash: string | null;
 	uploadTokenExpiresAtMs: number | null;
 	ipHash: string;
@@ -542,18 +543,20 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 
 		const snapshot = loadedTest.snapshot;
 		const submit = parsed.data;
+		const speakingCheck = validatePlacementSpeakingModeForSnapshot(
+			snapshot,
+			submit.speakingMode,
+		);
+		if (!speakingCheck.ok) {
+			return c.json(speakingCheck.body, 400);
+		}
 		const objective = gradePlacementObjective(snapshot, submit.answers);
 		const normalizedSnapshotJson = JSON.stringify(snapshot);
 		const answersJson = JSON.stringify(submit.answers);
 		const objectiveBreakdownJson = JSON.stringify(objective);
 
 		const submissionId = crypto.randomUUID();
-		const speakingStatus =
-			submit.speakingMode === "upload"
-				? ("pending_upload" as const)
-				: submit.speakingMode === "skipped"
-					? ("skipped" as const)
-					: ("none" as const);
+		const speakingStatus = speakingCheck.speakingStatus;
 
 		const uploadToken =
 			speakingStatus === "pending_upload" ? randomTokenHex(32) : null;

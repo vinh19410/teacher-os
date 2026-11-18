@@ -201,7 +201,11 @@ interface Harness {
 	flush(): Promise<void>;
 	submit(input: {
 		writingText?: string;
-		speakingMode?: "upload" | "skipped" | "none";
+		speakingMode?: "upload" | "none";
+		email?: string;
+	}): Promise<{ submissionId: string; leadId: string; uploadToken: string }>;
+	submitAndUpload(input?: {
+		writingText?: string;
 		email?: string;
 	}): Promise<{ submissionId: string; leadId: string; uploadToken: string }>;
 	upload(submissionId: string, uploadToken: string): Promise<void>;
@@ -281,6 +285,53 @@ async function createHarness(
 	const app = buildApp(deps);
 
 	let phoneSeq = 0;
+	const submit: Harness["submit"] = async (input) => {
+		phoneSeq += 1;
+		const res = await app.request("/public/placement-test/submissions", {
+			method: "POST",
+			headers: { origin: PROFILE_ORIGIN, "content-type": "application/json" },
+			body: JSON.stringify({
+				lead: {
+					name: "Học viên A",
+					phone: `090555${String(phoneSeq).padStart(4, "0")}`,
+					email: input.email ?? "",
+				},
+				answers: {
+					listening: { "l-a1": 1 },
+					vocabGrammar: { "gv-01": 1 },
+					reading: { "r-a1": 1 },
+				},
+				writingText: input.writingText ?? ESSAY,
+				speakingMode: input.speakingMode ?? "upload",
+				speakingDurationSec: 30,
+			}),
+		});
+		expect(res.status).toBe(201);
+		return (await res.json()) as {
+			submissionId: string;
+			leadId: string;
+			uploadToken: string;
+		};
+	};
+	const upload: Harness["upload"] = async (submissionId, uploadToken) => {
+		const bytes = webmBytes();
+		const res = await app.request(
+			`/public/placement-test/submissions/${submissionId}/speaking-media`,
+			{
+				method: "PUT",
+				headers: {
+					origin: PROFILE_ORIGIN,
+					"x-upload-token": uploadToken,
+					"x-media-filename": "speaking.webm",
+					"content-type": "audio/webm",
+					"content-length": String(bytes.byteLength),
+				},
+				body: bytes,
+			},
+		);
+		expect(res.status).toBe(200);
+	};
+
 	return {
 		app,
 		db,
@@ -296,52 +347,13 @@ async function createHarness(
 				await Promise.all(pending.splice(0));
 			}
 		},
-		async submit(input) {
-			phoneSeq += 1;
-			const res = await app.request("/public/placement-test/submissions", {
-				method: "POST",
-				headers: { origin: PROFILE_ORIGIN, "content-type": "application/json" },
-				body: JSON.stringify({
-					lead: {
-						name: "Học viên A",
-						phone: `090555${String(phoneSeq).padStart(4, "0")}`,
-						email: input.email ?? "",
-					},
-					answers: {
-						listening: { "l-a1": 1 },
-						vocabGrammar: { "gv-01": 1 },
-						reading: { "r-a1": 1 },
-					},
-					writingText: input.writingText ?? ESSAY,
-					speakingMode: input.speakingMode ?? "skipped",
-					speakingDurationSec: 30,
-				}),
-			});
-			expect(res.status).toBe(201);
-			return (await res.json()) as {
-				submissionId: string;
-				leadId: string;
-				uploadToken: string;
-			};
+		submit,
+		async submitAndUpload(input = {}) {
+			const created = await submit({ ...input, speakingMode: "upload" });
+			await upload(created.submissionId, created.uploadToken);
+			return created;
 		},
-		async upload(submissionId, uploadToken) {
-			const bytes = webmBytes();
-			const res = await app.request(
-				`/public/placement-test/submissions/${submissionId}/speaking-media`,
-				{
-					method: "PUT",
-					headers: {
-						origin: PROFILE_ORIGIN,
-						"x-upload-token": uploadToken,
-						"x-media-filename": "speaking.webm",
-						"content-type": "audio/webm",
-						"content-length": String(bytes.byteLength),
-					},
-					body: bytes,
-				},
-			);
-			expect(res.status).toBe(200);
-		},
+		upload,
 		async detail(leadId) {
 			const res = await app.request(
 				`/api/leads/${leadId}/placement-submission`,
@@ -366,11 +378,15 @@ function teacherPost(app: ServerApp, path: string, body?: unknown) {
 }
 
 describe("placement AI grading pipeline (#730)", () => {
-	test("writing-only: nộp bài (không upload) → nháp Writing, lỗi định vị trên bài", async () => {
+	test("writing-only (bản ghi legacy không có audio): chấm nháp Writing, lỗi định vị trên bài", async () => {
 		const h = await createHarness();
-		const { leadId } = await h.submit({ speakingMode: "skipped" });
-		await h.flush();
-		const d = await h.detail(leadId);
+		const created = await h.submit({ speakingMode: "upload" });
+		await h.db
+			.update(schema.placementTestSubmission)
+			.set({ speakingStatus: "skipped", uploadTokenHash: null })
+			.where(eq(schema.placementTestSubmission.id, created.submissionId));
+		await runPlacementAiGrading(h.pipelineDeps, created.submissionId);
+		const d = await h.detail(created.leadId);
 		expect(d.aiStatus).toBe("drafted");
 		expect(d.aiErrorCode).toBeNull();
 		expect(d.aiDraftedAt).not.toBeNull();
@@ -422,18 +438,18 @@ describe("placement AI grading pipeline (#730)", () => {
 
 	test("không có gì để chấm → giữ none, không gọi grader", async () => {
 		const h = await createHarness();
-		const { leadId } = await h.submit({
+		const { submissionId, leadId } = await h.submit({
 			writingText: "   ",
-			speakingMode: "skipped",
+			speakingMode: "upload",
 		});
-		await h.flush();
+		await runPlacementAiGrading(h.pipelineDeps, submissionId);
 		expect((await h.detail(leadId)).aiStatus).toBe("none");
 		expect(h.calls.writing).toBe(0);
 	});
 
 	test("grader vắng → failed AI_GRADING_DISABLED; retry trả 503", async () => {
 		const h = await createHarness({ grader: "none" });
-		const { leadId } = await h.submit({ speakingMode: "none" });
+		const { leadId } = await h.submitAndUpload();
 		await h.flush();
 		const d = await h.detail(leadId);
 		expect(d.aiStatus).toBe("failed");
@@ -461,7 +477,9 @@ describe("placement AI grading pipeline (#730)", () => {
 
 	test("grader lỗi → failed AI_GRADING_FAILED", async () => {
 		const h = await createHarness();
-		const { leadId } = await h.submit({ writingText: "ai-fail essay" });
+		const { leadId } = await h.submitAndUpload({
+			writingText: "ai-fail essay",
+		});
 		await h.flush();
 		const d = await h.detail(leadId);
 		expect(d.aiStatus).toBe("failed");
@@ -512,7 +530,7 @@ describe("POST /api/leads/:id/placement-submission/ai-retry (#730)", () => {
 		);
 		expect(conflict.status).toBe(409);
 
-		const { leadId } = await h.submit({ speakingMode: "skipped" });
+		const { leadId } = await h.submitAndUpload();
 		await h.flush();
 		expect(h.calls.writing).toBe(1);
 
@@ -659,7 +677,7 @@ describe("PATCH chốt + kết quả công khai (#730)", () => {
 
 	test("public results 404 khi token sai định dạng / không tồn tại / chưa chốt", async () => {
 		const h = await createHarness();
-		const created = await h.submit({ speakingMode: "skipped" });
+		const created = await h.submit({ speakingMode: "upload" });
 		await h.flush();
 		const bad = await h.app.request("/public/placement-test/results/abc");
 		expect(bad.status).toBe(404);
@@ -683,7 +701,7 @@ describe("PATCH chốt + kết quả công khai (#730)", () => {
 	test("email skipped khi lead không có email; failed khi mailer lỗi", async () => {
 		const ok = recordingMailer();
 		const h1 = await createHarness({ mailer: ok.mailer });
-		const noEmail = await h1.submit({ speakingMode: "skipped" });
+		const noEmail = await h1.submitAndUpload();
 		await h1.flush();
 		const r1 = await teacherPost(
 			h1.app,
@@ -697,8 +715,7 @@ describe("PATCH chốt + kết quả công khai (#730)", () => {
 
 		const broken = recordingMailer(true);
 		const h2 = await createHarness({ mailer: broken.mailer });
-		const withEmail = await h2.submit({
-			speakingMode: "skipped",
+		const withEmail = await h2.submitAndUpload({
 			email: "hv@test.local",
 		});
 		await h2.flush();
@@ -733,7 +750,7 @@ describe("email kết quả: tóm tắt HTML + link chi tiết", () => {
 		email: string,
 		body: unknown = grade,
 	): Promise<PlacementSubmissionDetail> {
-		const created = await h.submit({ speakingMode: "skipped", email });
+		const created = await h.submitAndUpload({ email });
 		await h.flush();
 		const res = await teacherPost(
 			h.app,
@@ -853,7 +870,7 @@ describe("email kết quả: tóm tắt HTML + link chi tiết", () => {
 		const h = await createHarness({ mailer, studentOrigin: STUDENT_ORIGIN });
 		await addUser(h, "hv.portal@test.local", "student");
 		await addStudent(h, "stu-p", "hv.portal@test.local");
-		const created = await h.submit({ speakingMode: "skipped" });
+		const created = await h.submitAndUpload();
 		await h.flush();
 		await h.db
 			.update(schema.placementTestSubmission)
@@ -881,7 +898,7 @@ describe("email kết quả: tóm tắt HTML + link chi tiết", () => {
 		const h = await createHarness({ mailer, studentOrigin: STUDENT_ORIGIN });
 		await addUser(h, "hocvien@test.local", "student");
 		await addStudent(h, "stu-a", "hocvien@test.local");
-		const portalSub = await h.submit({ speakingMode: "skipped" });
+		const portalSub = await h.submitAndUpload();
 		await h.flush();
 		await h.db
 			.update(schema.placementTestSubmission)
@@ -1020,9 +1037,7 @@ const finalGrade = {
 describe("chấm nền qua job OpenAI background + finalize lười (#730)", () => {
 	test("poll lỗi tạm thời kéo dài quá trần cứng → failed TIMEOUT, không treo mãi", async () => {
 		const h = await createHarness({ grader: { transientPoll: true } });
-		const { submissionId, leadId } = await h.submit({
-			speakingMode: "skipped",
-		});
+		const { submissionId, leadId } = await h.submitAndUpload();
 		await h.flush();
 		await h.db
 			.update(schema.placementTestSubmission)
@@ -1185,7 +1200,7 @@ describe("chấm nền qua job OpenAI background + finalize lười (#730)", () 
 
 	test("hai lượt mở bài đồng thời không ghi chồng (CAS trên id job)", async () => {
 		const h = await createHarness();
-		const { leadId } = await h.submit({ speakingMode: "skipped" });
+		const { leadId } = await h.submitAndUpload();
 		await h.flush();
 		const [a, b] = await Promise.all([h.detail(leadId), h.detail(leadId)]);
 		expect(a.aiStatus).toBe("drafted");
@@ -1195,9 +1210,7 @@ describe("chấm nền qua job OpenAI background + finalize lười (#730)", () 
 
 	test("poll lỗi mạng tạm thời → giữ processing kể cả quá 15 phút; sweep không đụng lượt có job", async () => {
 		const h = await createHarness({ grader: { transientPoll: true } });
-		const { submissionId, leadId } = await h.submit({
-			speakingMode: "skipped",
-		});
+		const { submissionId, leadId } = await h.submitAndUpload();
 		await h.flush();
 		expect((await h.detail(leadId)).aiStatus).toBe("processing");
 		await makeStale(h, submissionId);
@@ -1226,9 +1239,7 @@ describe("chấm nền qua job OpenAI background + finalize lười (#730)", () 
 
 	test("lỗi khi tạo job (không job nào chạy) → failed ngay, không poll", async () => {
 		const h = await createHarness({ grader: { error: new Error("boom") } });
-		const { submissionId, leadId } = await h.submit({
-			speakingMode: "skipped",
-		});
+		const { submissionId, leadId } = await h.submitAndUpload();
 		await h.flush();
 		const row = await rowOf(h, submissionId);
 		expect(row.aiStatus).toBe("failed");
@@ -1258,7 +1269,7 @@ describe("chấm nền qua job OpenAI background + finalize lười (#730)", () 
 describe("ai-retry: content-type, bài đã chốt, bài bỏ ngang (#730)", () => {
 	test("POST thiếu Content-Type JSON → 415; có JSON body → 200", async () => {
 		const h = await createHarness();
-		const { leadId } = await h.submit({ speakingMode: "skipped" });
+		const { leadId } = await h.submitAndUpload();
 		await h.flush();
 		const path = `/api/leads/${leadId}/placement-submission/ai-retry`;
 		const bare = await h.app.request(path, {
@@ -1280,7 +1291,7 @@ describe("ai-retry: content-type, bài đã chốt, bài bỏ ngang (#730)", () 
 
 	test("kết quả đã chốt → 409, không chấm lại", async () => {
 		const h = await createHarness();
-		const { leadId } = await h.submit({ speakingMode: "skipped" });
+		const { leadId } = await h.submitAndUpload();
 		await h.flush();
 		await h.detail(leadId);
 		const patch = await teacherPost(
@@ -1321,9 +1332,7 @@ describe("ai-retry: content-type, bài đã chốt, bài bỏ ngang (#730)", () 
 
 	test("retry lưu kết quả lượt cũ đã xong rồi mới claim lượt mới", async () => {
 		const h = await createHarness();
-		const { submissionId, leadId } = await h.submit({
-			speakingMode: "skipped",
-		});
+		const { submissionId, leadId } = await h.submitAndUpload();
 		await h.flush();
 		expect((await rowOf(h, submissionId)).aiStatus).toBe("processing");
 		const res = await teacherPost(
@@ -1341,8 +1350,7 @@ describe("chốt kết quả: token và email (#730)", () => {
 	test("hai lượt chốt đầu đồng thời dùng chung một token, chỉ một email", async () => {
 		const { sent, mailer } = recordingMailer();
 		const h = await createHarness({ mailer });
-		const { leadId } = await h.submit({
-			speakingMode: "skipped",
+		const { leadId } = await h.submitAndUpload({
 			email: "hv@test.local",
 		});
 		await h.flush();
@@ -1363,8 +1371,7 @@ describe("chốt kết quả: token và email (#730)", () => {
 	test("chốt lại không gửi email nữa và giữ trạng thái email cũ", async () => {
 		const { sent, mailer } = recordingMailer();
 		const h = await createHarness({ mailer });
-		const { leadId } = await h.submit({
-			speakingMode: "skipped",
+		const { leadId } = await h.submitAndUpload({
 			email: "hv@test.local",
 		});
 		await h.flush();
@@ -1395,8 +1402,7 @@ describe("chốt kết quả: token và email (#730)", () => {
 			},
 		};
 		const h = await createHarness({ mailer });
-		const { leadId } = await h.submit({
-			speakingMode: "skipped",
+		const { leadId } = await h.submitAndUpload({
 			email: "hv@test.local",
 		});
 		await h.flush();
@@ -1411,8 +1417,7 @@ describe("chốt kết quả: token và email (#730)", () => {
 
 	test("getter mailer throw → email failed, chốt vẫn 200", async () => {
 		const h = await createHarness({ brokenMailer: true });
-		const { leadId } = await h.submit({
-			speakingMode: "skipped",
+		const { leadId } = await h.submitAndUpload({
 			email: "hv@test.local",
 		});
 		await h.flush();

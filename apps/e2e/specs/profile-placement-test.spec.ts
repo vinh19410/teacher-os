@@ -1067,10 +1067,11 @@ test.describe
 			expect(savedAfterEdit).not.toBeNull();
 		});
 
-		test("3 viewport không tràn ngang, điều hướng bàn phím, hoàn lượt khi audio clip-lb lỗi, hộp xác nhận trống và bỏ qua Speaking (#721)", async ({
+		test("3 viewport không tràn ngang, điều hướng bàn phím, hoàn lượt khi audio clip-lb lỗi, chặn bỏ qua Speaking và hộp xác nhận câu trống (#721)", async ({
 			page,
 		}) => {
 			await clearRateLimits();
+			await installSyntheticMediaRecorder(page);
 			await page.goto(`${PROFILE_ORIGIN}/kiem-tra-dau-vao/`);
 
 			for (const vp of VIEWPORTS) {
@@ -1165,32 +1166,43 @@ test.describe
 			expect(savedPlaysClipLb).toBe(0);
 			await page.unroute(`**${clipLbSrc}`);
 
-			// Nhảy sang tab Speaking, kiểm tra hộp xác nhận câu trống + Bỏ qua phần Speaking
+			// Nhảy sang tab Speaking: không có nút bỏ qua, chặn nộp nếu chưa ghi âm, ghi âm xong vẫn hiện hộp xác nhận câu trắc nghiệm/Writing trống
 			await page
 				.locator('nav.skill-stepper button[data-skill-step="speaking"]')
 				.click();
 			await expect(page.locator('[data-skill="speaking"]')).toBeVisible();
+			await expect(page.locator("#skipSpeakingBtn")).toHaveCount(0);
 
 			await page.locator("#submitTestBtn").click();
+			await expect(page.locator("#speakingErrorBanner")).toContainText(
+				"Phần Speaking là bắt buộc",
+			);
 			const confirmBox = page.locator("#unansweredConfirmBox");
+			await expect(confirmBox).toHaveCount(0);
+
+			// Ghi âm nhanh 1 câu rồi kết thúc sớm để có bản ghi hợp lệ
+			await page.locator("#startSpeakingBtn").click();
+			await page.locator("#speakingStartAnswerNowBtn").click();
+			await page.waitForTimeout(350);
+			await page.locator("#speakingFinishEarlyBtn").click();
+			await page.locator("#confirmFinishEarlyBtn").click();
+			await expect(page.locator("#speakingReviewBox")).toBeVisible();
+
+			await page.locator("#submitTestBtn").click();
 			await expect(confirmBox).toBeVisible();
+			await expect(confirmBox).not.toContainText("Speaking chưa ghi âm");
 			await page.locator("#cancelSubmitBtn").click();
 			await expect(confirmBox).toBeHidden();
-
-			await page.locator("#skipSpeakingBtn").click();
-			await expect(
-				page.getByText("Đã chọn bỏ qua phần Speaking"),
-			).toBeVisible();
 
 			await page.locator("#submitTestBtn").click();
 			await expect(confirmBox).toBeVisible();
 			await page.locator("#confirmSubmitBtn").click();
 
-			const skippedResultCard = page.locator("#testResultCard");
-			await expect(skippedResultCard).toBeVisible();
-			await expect(skippedResultCard.locator(".skill-score-tile")).toHaveCount(
-				2,
-			);
+			const resultCardAfterConfirm = page.locator("#testResultCard");
+			await expect(resultCardAfterConfirm).toBeVisible();
+			await expect(
+				resultCardAfterConfirm.locator(".skill-score-tile"),
+			).toHaveCount(2);
 			await expect(
 				page.locator('[data-skill-result="listening"]'),
 			).toContainText("0/13 câu đúng");
@@ -1205,7 +1217,7 @@ test.describe
 
 			await page.locator("#retryTestBtn").click();
 			await expect(page.locator("#startTestBtn")).toBeVisible();
-			await expect(skippedResultCard).toHaveCount(0);
+			await expect(resultCardAfterConfirm).toHaveCount(0);
 		});
 
 		test("snapshot v1 cũ tự backfill 6 bài đọc Reading (15 câu), Writing và 8 câu Speaking trên 3 viewport", async ({
