@@ -403,6 +403,24 @@ export function materialFileUrl(id: string, download = false): string {
 	return download ? `${base}?download=1` : base;
 }
 
+/**
+ * Tải file tài liệu về blob URL để xem trước trong app: server luôn trả
+ * tài liệu dạng `attachment` + CSP khoá cứng nên không nhúng trực tiếp URL
+ * API được. Caller sở hữu URL trả về và phải `URL.revokeObjectURL` khi xong.
+ */
+export async function fetchMaterialFileBlobUrl(
+	id: string,
+	signal?: AbortSignal,
+	baseUrl: string = getApiBaseUrl(),
+): Promise<string> {
+	const res = await fetch(
+		`${baseUrl}/api/materials/${encodeURIComponent(id)}/file`,
+		{ credentials: "include", signal },
+	);
+	if (!res.ok) throw await toMaterialError(res);
+	return URL.createObjectURL(await res.blob());
+}
+
 // ---- Tài liệu của buổi học ----
 
 function sessionPath(classId: string, date: string): string {

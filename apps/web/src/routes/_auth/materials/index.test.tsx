@@ -417,6 +417,10 @@ describe("/materials writes", () => {
 		expect(
 			screen.getByRole("link", { name: "Tải xuống Đề Writing Task 1" }),
 		).toBeTruthy();
+		// Xem trước là thao tác đọc — trợ giảng vẫn dùng được.
+		expect(
+			screen.getByRole("button", { name: "Xem trước Đề Writing Task 1" }),
+		).toBeTruthy();
 		expect(screen.queryByRole("button", { name: "Thêm liên kết" })).toBeNull();
 		expect(screen.queryByRole("button", { name: "Tải file lên" })).toBeNull();
 		expect(screen.queryByRole("button", { name: "Thư mục mới" })).toBeNull();

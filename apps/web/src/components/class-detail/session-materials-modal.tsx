@@ -8,6 +8,7 @@ import {
 	MaterialOpenActions,
 } from "@/components/materials/material-item";
 import { MaterialBankBrowser } from "@/components/materials/material-picker";
+import { MaterialPreviewButton } from "@/components/materials/material-preview";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -267,7 +268,10 @@ export function SessionMaterialsModal({
 												key={item.id}
 												item={item}
 												actions={
-													<Badge variant="secondary">Từ giáo trình</Badge>
+													<>
+														<MaterialPreviewButton item={item} />
+														<Badge variant="secondary">Từ giáo trình</Badge>
+													</>
 												}
 											/>
 										))}
