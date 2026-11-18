@@ -1,12 +1,24 @@
 import type { AnswerResult } from "@teacher-os/api/srs/quiz-generator";
 import { Button } from "@teacher-os/ui/components/button";
 import { CheckIcon, XIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+
+function formatPos(pos?: string | null): string | null {
+	const trimmed = pos?.trim();
+	if (!trimmed) return null;
+	return trimmed.startsWith("(") && trimmed.endsWith(")")
+		? trimmed
+		: `(${trimmed})`;
+}
 
 export function VocabFeedbackPanel({
 	result,
 	word,
 	ipa,
 	translation,
+	entryType,
+	pos,
+	example,
 	persistStatus,
 	onContinue,
 	onRetryPersist,
@@ -16,6 +28,9 @@ export function VocabFeedbackPanel({
 	word: string;
 	ipa: string | null;
 	translation: string;
+	entryType?: "word" | "chunk";
+	pos?: string | null;
+	example?: string | null;
 	persistStatus: "idle" | "saving" | "error";
 	onContinue: () => void;
 	onRetryPersist: () => void;
@@ -23,6 +38,8 @@ export function VocabFeedbackPanel({
 }) {
 	const isCorrect = result === "correct";
 	const isContinueBlocked = persistStatus !== "idle";
+	const formattedPos = formatPos(pos);
+	const trimmedExample = example?.trim() || null;
 
 	return (
 		<div
@@ -63,15 +80,45 @@ export function VocabFeedbackPanel({
 						</span>
 					</div>
 
-					<p className="mt-2 font-extrabold text-foreground text-xl">
-						{word}
+					<div className="mt-2 flex flex-wrap items-center gap-2">
+						<span className="font-extrabold text-foreground text-xl">
+							{word}
+						</span>
+						{entryType === "chunk" ? (
+							<Badge
+								variant="secondary"
+								data-testid="vocab-feedback-entry-type"
+							>
+								Chunk
+							</Badge>
+						) : entryType === "word" ? (
+							<Badge variant="outline" data-testid="vocab-feedback-entry-type">
+								Word
+							</Badge>
+						) : null}
+						{formattedPos ? (
+							<span
+								data-testid="vocab-feedback-pos"
+								className="font-mono text-muted-foreground text-xs"
+							>
+								{formattedPos}
+							</span>
+						) : null}
 						{ipa ? (
-							<span className="ml-2 font-mono font-normal text-muted-foreground text-sm">
+							<span className="font-mono font-normal text-muted-foreground text-sm">
 								{ipa}
 							</span>
 						) : null}
-					</p>
+					</div>
 					<p className="mt-1 text-foreground text-sm">{translation}</p>
+					{trimmedExample ? (
+						<p
+							data-testid="vocab-feedback-example"
+							className="mt-1 text-muted-foreground text-xs italic"
+						>
+							Ví dụ: {trimmedExample}
+						</p>
+					) : null}
 				</div>
 
 				<Button
