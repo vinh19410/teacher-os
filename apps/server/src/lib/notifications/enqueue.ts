@@ -11,6 +11,8 @@ const INSERT_CHUNK = 50;
 export interface EnqueueResult {
 	/** id của các bản ghi MỚI được tạo (trùng khóa bị onConflictDoNothing bỏ). */
 	createdIds: string[];
+	/** id của các bản ghi mới có kênh email đang `queued` cần deliverNotifications gửi. */
+	queuedEmailIds: string[];
 }
 
 /**
@@ -22,7 +24,7 @@ export async function enqueueNotifications(
 	orgId: string,
 	events: NotificationEvent[],
 ): Promise<EnqueueResult> {
-	if (events.length === 0) return { createdIds: [] };
+	if (events.length === 0) return { createdIds: [], queuedEmailIds: [] };
 
 	const studentIds = [...new Set(events.map((e) => e.studentId))];
 	const emailByStudent = new Map<string, string>();
@@ -44,6 +46,7 @@ export async function enqueueNotifications(
 		.map((event) => {
 			const recipientEmail = (emailByStudent.get(event.studentId) ?? "").trim();
 			const hasEmail = recipientEmail.length > 0;
+			const shouldSendEmail = event.channels !== "in_app" && hasEmail;
 			return {
 				id: crypto.randomUUID(),
 				orgId,
@@ -56,25 +59,34 @@ export async function enqueueNotifications(
 				linkPath: event.linkPath,
 				refType: event.refType,
 				refId: event.refId,
-				channels: hasEmail ? "email,in_app" : "in_app",
-				recipientEmail: hasEmail ? recipientEmail : null,
+				channels: shouldSendEmail ? "email,in_app" : "in_app",
+				recipientEmail: shouldSendEmail ? recipientEmail : null,
 				senderName,
 				replyToEmail,
 				// Chỉ in-app → đã "gửi" ngay khi tạo, không có gì để deliver (D4).
-				status: hasEmail ? ("queued" as const) : ("sent" as const),
-				sentAt: hasEmail ? null : now,
+				status: shouldSendEmail ? ("queued" as const) : ("sent" as const),
+				sentAt: shouldSendEmail ? null : now,
 			};
 		});
 
 	const createdIds: string[] = [];
+	const queuedEmailIds: string[] = [];
 	for (let i = 0; i < rows.length; i += INSERT_CHUNK) {
 		const chunk = rows.slice(i, i + INSERT_CHUNK);
 		const inserted = await db
 			.insert(notificationRecord)
 			.values(chunk)
 			.onConflictDoNothing()
-			.returning({ id: notificationRecord.id });
-		createdIds.push(...inserted.map((r) => r.id));
+			.returning({
+				id: notificationRecord.id,
+				status: notificationRecord.status,
+			});
+		for (const row of inserted) {
+			createdIds.push(row.id);
+			if (row.status === "queued") {
+				queuedEmailIds.push(row.id);
+			}
+		}
 	}
-	return { createdIds };
+	return { createdIds, queuedEmailIds };
 }

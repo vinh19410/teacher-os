@@ -36,6 +36,11 @@ import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { parseByteRange } from "../lib/byte-range";
 import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
+import {
+	emitNotifications,
+	notificationDepsFrom,
+} from "../lib/notifications/emit";
+import { placementSubmittedEvent } from "../lib/notifications/templates";
 import { type PeekedStream, peekStream } from "../lib/peek-stream";
 import type { PlacementAiGrader } from "../lib/placement-ai/grader";
 import { parseStoredErrors } from "../lib/placement-ai/placement-result";
@@ -69,6 +74,9 @@ export interface StudentPlacementTestRouteDeps extends StudentRouteDeps {
 	leadOrgId?: string;
 	getLibraryAudioStore?(): MediaStore | undefined;
 	getPlacementAiGrader?(): PlacementAiGrader | undefined;
+	mailer?: Parameters<typeof emitNotifications>[0]["mailer"];
+	studentOrigin?: Parameters<typeof emitNotifications>[0]["studentOrigin"];
+	notificationRetryDelaysMs?: number[];
 }
 
 function toIsoTimestamp(
@@ -680,6 +688,10 @@ export function studentPlacementTestRoutes(
 				409,
 			);
 		}
+
+		await emitNotifications(notificationDepsFrom(deps), orgId, [
+			placementSubmittedEvent({ submissionId, studentId: s.id }),
+		]);
 
 		if (
 			submit.writingText.trim().length > 0 &&

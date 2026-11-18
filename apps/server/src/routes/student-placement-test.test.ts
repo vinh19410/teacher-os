@@ -1,6 +1,10 @@
 import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import {
+	NOTIFICATION_EVENT_TYPES,
+	studentInboxResponseSchema,
+} from "@teacher-os/api/contracts";
+import {
 	buildPlacementSnapshot,
 	type PlacementContent,
 	type PlacementPublicResultView,
@@ -1311,5 +1315,96 @@ describe("student portal placement test routes (#748)", () => {
 		);
 		expect(audioCheck.status).toBe(200);
 		expect(audioCheck.headers.get("Cache-Control")).toContain("private");
+	});
+
+	test("POST /placement-test/submissions emits 1 in-app-only placement_submitted notification visible in inbox and markable as read", async () => {
+		await seedPublishedTest("org-1");
+
+		const submitRes = await app.request(
+			"/api/student/placement-test/submissions",
+			{
+				method: "POST",
+				headers: {
+					"x-test-user": "hoa",
+					origin: STUDENT_ORIGIN,
+					"content-type": "application/json",
+				},
+				body: JSON.stringify({
+					answers: {
+						listening: { "l-a1": 1, "l-gap-1": "$12" },
+						vocabGrammar: { "gv-01": 1 },
+						reading: { "r-a1": 1 },
+					},
+					writingText: "",
+					speakingMode: "none",
+				}),
+			},
+		);
+		expect(submitRes.status).toBe(201);
+		const submitted =
+			(await submitRes.json()) as StudentPlacementSubmitResponse;
+
+		// In-app only: no email sent on submission
+		expect(sentEmails).toHaveLength(0);
+
+		const records = await db
+			.select()
+			.from(schema.notificationRecord)
+			.where(eq(schema.notificationRecord.studentId, "stu-hoa"));
+		expect(records).toHaveLength(1);
+		const record = records[0];
+		if (!record) throw new Error("expected placement_submitted notification");
+		expect(record.eventType).toBe("placement_submitted");
+		expect(NOTIFICATION_EVENT_TYPES).toContain(record.eventType);
+		expect(record.channels).toBe("in_app");
+		expect(record.status).toBe("sent");
+		expect(record.recipientEmail).toBeNull();
+		expect(record.linkPath).toBe("/placement-test");
+		expect(record.refType).toBe("placement_submission");
+		expect(record.refId).toBe(submitted.submissionId);
+
+		// Appears in GET /api/student/inbox with unread >= 1
+		const inboxRes = await app.request("/api/student/inbox", {
+			headers: { "x-test-user": "hoa" },
+		});
+		expect(inboxRes.status).toBe(200);
+		const inbox = studentInboxResponseSchema.parse(await inboxRes.json());
+		expect(inbox.unread).toBeGreaterThanOrEqual(1);
+		const item = inbox.items.find((i) => i.id === record.id);
+		expect(item).toBeDefined();
+		expect(item?.eventType).toBe("placement_submitted");
+		expect(item?.linkPath).toBe("/placement-test");
+		expect(item?.status).toBe("sent");
+		expect(item?.readAt).toBeNull();
+
+		// Snapshot placement_test_submission before mark-read
+		const [subBefore] = await db
+			.select()
+			.from(schema.placementTestSubmission)
+			.where(eq(schema.placementTestSubmission.id, submitted.submissionId));
+
+		// POST /api/student/inbox/:id/read marks notification read without changing submission
+		const readRes = await app.request(`/api/student/inbox/${record.id}/read`, {
+			method: "POST",
+			headers: {
+				"x-test-user": "hoa",
+				origin: STUDENT_ORIGIN,
+				"content-type": "application/json",
+			},
+		});
+		expect(readRes.status).toBe(200);
+
+		const [updatedRecord] = await db
+			.select()
+			.from(schema.notificationRecord)
+			.where(eq(schema.notificationRecord.id, record.id));
+		expect(updatedRecord?.status).toBe("read");
+		expect(updatedRecord?.readAt).not.toBeNull();
+
+		const [subAfter] = await db
+			.select()
+			.from(schema.placementTestSubmission)
+			.where(eq(schema.placementTestSubmission.id, submitted.submissionId));
+		expect(subAfter).toEqual(subBefore);
 	});
 });
