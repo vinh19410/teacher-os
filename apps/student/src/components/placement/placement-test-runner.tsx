@@ -490,9 +490,9 @@ export function PlacementTestRunner({
 						<span>
 							Cần loa/tai nghe cho Listening và micro cho Speaking (ghi âm
 							audio-only, không cần camera, tự động tải lên sau khi nộp). Đồng
-							hồ gợi ý 40 phút áp dụng nhẹ nhàng cho 4 phần đầu — hết giờ chỉ
-							nhắc nhẹ, không làm mất bài. Thiết bị cần có micro để hoàn thành
-							phần Speaking trước khi nộp bài.
+							hồ 40 phút áp dụng nhẹ nhàng cho 4 phần đầu — hết giờ chỉ nhắc
+							nhẹ, không làm mất bài. Thiết bị cần có micro để hoàn thành phần
+							Speaking trước khi nộp bài.
 						</span>
 					</div>
 
@@ -562,8 +562,8 @@ export function PlacementTestRunner({
 						{!isTimedStep
 							? "Speaking · Không tính vào 40 phút"
 							: remainingTimerSeconds > 0
-								? `Gợi ý: ${formatPlacementClock(remainingTimerSeconds)}`
-								: "Đã hết 40:00 gợi ý"}
+								? formatPlacementClock(remainingTimerSeconds)
+								: "Đã hết 40:00"}
 					</span>
 				</div>
 
@@ -602,8 +602,8 @@ export function PlacementTestRunner({
 						role="status"
 						className="rounded-lg border border-warn/40 bg-warn-soft px-3 py-2 text-foreground text-xs"
 					>
-						Đã hết 40 phút gợi ý cho 4 phần đầu — bạn vẫn có thể hoàn thành câu
-						trả lời và nộp bài bình thường.
+						Đã hết 40 phút cho 4 phần đầu — bạn vẫn có thể hoàn thành câu trả
+						lời và nộp bài bình thường.
 					</p>
 				) : null}
 
