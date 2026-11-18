@@ -13,7 +13,56 @@ export const PLACEMENT_ERROR_CATEGORIES = [
 	{ key: "pronunciation", label: "Phát âm" },
 ];
 
+/** 4 tiêu chí Writing theo chuẩn IELTS (thang 0–9, bước 0.5). */
 export const PLACEMENT_WRITING_RUBRIC = [
+	{
+		key: "task",
+		label: "Task Response",
+		desc: "Mức độ hoàn thành & trả lời đúng yêu cầu đề bài",
+	},
+	{
+		key: "coherence",
+		label: "Coherence & Cohesion",
+		desc: "Mạch lạc, liên kết câu và bố cục bài viết",
+	},
+	{
+		key: "lexical",
+		label: "Lexical Resource",
+		desc: "Độ đa dạng và chính xác của từ vựng",
+	},
+	{
+		key: "grammar",
+		label: "Grammatical Range & Accuracy",
+		desc: "Độ đa dạng và chính xác ngữ pháp",
+	},
+];
+
+/** 4 tiêu chí Speaking theo chuẩn IELTS (thang 0–9, bước 0.5). */
+export const PLACEMENT_SPEAKING_RUBRIC = [
+	{
+		key: "fluency",
+		label: "Fluency & Coherence",
+		desc: "Độ trôi chảy và mạch lạc khi nói",
+	},
+	{
+		key: "lexical",
+		label: "Lexical Resource",
+		desc: "Độ đa dạng và chính xác của từ vựng",
+	},
+	{
+		key: "grammar",
+		label: "Grammatical Range & Accuracy",
+		desc: "Độ đa dạng và chính xác ngữ pháp",
+	},
+	{
+		key: "pronunciation",
+		label: "Pronunciation",
+		desc: "Phát âm, trọng âm và ngữ điệu",
+	},
+];
+
+/** Rubric kiểu cũ (0–5 nguyên) — giữ để hiển thị bài đã chấm trước đây. */
+export const PLACEMENT_LEGACY_WRITING_RUBRIC = [
 	{
 		key: "ct",
 		label: "Content",
@@ -46,7 +95,7 @@ export const PLACEMENT_WRITING_RUBRIC = [
 	},
 ];
 
-export const PLACEMENT_SPEAKING_RUBRIC = [
+export const PLACEMENT_LEGACY_SPEAKING_RUBRIC = [
 	{
 		key: "gv",
 		label: "Grammar & Vocabulary",
@@ -88,6 +137,57 @@ export const PLACEMENT_SPEAKING_RUBRIC = [
 		},
 	},
 ];
+
+export function formatBand(band) {
+	return Number(band).toFixed(1);
+}
+
+export function isIeltsWritingRubric(rubric) {
+	return Boolean(rubric && typeof rubric === "object" && "task" in rubric);
+}
+
+export function isIeltsSpeakingRubric(rubric) {
+	return Boolean(rubric && typeof rubric === "object" && "fluency" in rubric);
+}
+
+/**
+ * Chuẩn hóa thông tin hiển thị điểm tổng + từng tiêu chí cho Writing/Speaking,
+ * tự động nhận diện thang IELTS mới hay thang legacy (/15, /20).
+ */
+export function buildSkillRubricDisplay(skill, score, rubric) {
+	const isWriting = skill === "writing";
+	const isIelts = isWriting
+		? isIeltsWritingRubric(rubric)
+		: isIeltsSpeakingRubric(rubric);
+	const def = isWriting
+		? isIelts
+			? PLACEMENT_WRITING_RUBRIC
+			: PLACEMENT_LEGACY_WRITING_RUBRIC
+		: isIelts
+			? PLACEMENT_SPEAKING_RUBRIC
+			: PLACEMENT_LEGACY_SPEAKING_RUBRIC;
+	const labelPrefix = isWriting ? "Writing" : "Speaking";
+	const legacyMax = isWriting ? 15 : 20;
+	const totalText = Number.isFinite(score)
+		? isIelts
+			? `${labelPrefix}: Band ${formatBand(score)}/9`
+			: `${labelPrefix}: ${score}/${legacyMax}`
+		: null;
+	const criteria = rubric
+		? def.map(({ key, label }) => ({
+				key,
+				label,
+				valueText: Number.isFinite(rubric[key])
+					? isIelts
+						? `${formatBand(rubric[key])}/9`
+						: `${rubric[key]}/5`
+					: isIelts
+						? "—/9"
+						: "—/5",
+			}))
+		: null;
+	return { isIelts, totalText, criteria };
+}
 
 const CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳";
 

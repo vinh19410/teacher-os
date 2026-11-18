@@ -256,24 +256,29 @@ describe("student detail", () => {
 					req.path === "/api/students/st-1/placement-submission"
 				) {
 					const body = req.body as {
-						writingRubric: { ct: number; or: number; lg: number };
+						writingRubric: {
+							task: number;
+							coherence: number;
+							lexical: number;
+							grammar: number;
+						};
+						writingScore: number;
 						speakingRubric: {
-							gv: number;
-							dm: number;
-							pr: number;
-							ic: number;
+							fluency: number;
+							lexical: number;
+							grammar: number;
+							pronunciation: number;
 						} | null;
+						speakingScore: number | null;
 						teacherFeedback: string;
 					};
 					submission = makeStudentSubmission({
 						status: "graded",
 						gradedAt: "2026-11-17T05:00:00.000Z",
 						writingRubric: body.writingRubric,
-						writingScore:
-							body.writingRubric.ct +
-							body.writingRubric.or +
-							body.writingRubric.lg,
+						writingScore: body.writingScore,
 						speakingRubric: body.speakingRubric,
+						speakingScore: body.speakingScore,
 						teacherFeedback: body.teacherFeedback,
 						finalBandLevel: "B1",
 						finalScorePct: 78,
@@ -300,9 +305,18 @@ describe("student detail", () => {
 		);
 		expect(screen.getByText("Chờ chấm W&S")).toBeTruthy();
 
-		fireEvent.click(screen.getByTestId("writing-ct-5"));
-		fireEvent.click(screen.getByTestId("writing-or-4"));
-		fireEvent.click(screen.getByTestId("writing-lg-4"));
+		fireEvent.change(screen.getByTestId("writing-task-input"), {
+			target: { value: "7" },
+		});
+		fireEvent.change(screen.getByTestId("writing-coherence-input"), {
+			target: { value: "6.5" },
+		});
+		fireEvent.change(screen.getByTestId("writing-lexical-input"), {
+			target: { value: "7" },
+		});
+		fireEvent.change(screen.getByTestId("writing-grammar-input"), {
+			target: { value: "6.5" },
+		});
 		fireEvent.change(screen.getByLabelText("Nhận xét bài kiểm tra đầu vào"), {
 			target: { value: "Nền tảng tốt" },
 		});
@@ -317,8 +331,10 @@ describe("student detail", () => {
 			);
 			expect(patchWrite).toBeDefined();
 			expect(patchWrite?.body).toEqual({
-				writingRubric: { ct: 5, or: 4, lg: 4 },
+				writingRubric: { task: 7, coherence: 6.5, lexical: 7, grammar: 6.5 },
+				writingScore: 7,
 				speakingRubric: null,
+				speakingScore: null,
 				teacherFeedback: "Nền tảng tốt",
 				writingErrors: [],
 				speakingErrors: [],
