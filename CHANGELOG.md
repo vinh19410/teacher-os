@@ -18,6 +18,15 @@ Quy ước khi cập nhật:
   - Đồng bộ `BulkKeyPaste` (hỗ trợ cả `item.type` từng câu), `questionSummary`, `QuizPaper` (instruction tự động `A, B or C` / trung tính khi trộn 3 và 4 lựa chọn), panel `Soát đáp án` (`test-answer-key.ts`, `answers-checking-panel.tsx`) và save-gate ở `apps/web` (`composer-transitions.ts`, `new.tsx`, `test-builder-shell.tsx`).
   - Đồng bộ helper `effectiveAnswerChoices` và `mcqOptionsIssue` trên `contracts.ts`, `library-contracts.ts` (cả bản nháp lẫn xuất bản) và `assignments/index.ts` (#792).
 
+### Added
+- **Bài kiểm tra đầu vào trong Student Portal** (`apps/student`, `apps/web`, `apps/server`): sau onboarding, học viên được gợi ý làm bài kiểm tra đầu vào miễn phí (có highlight trên nav khi chưa làm, ẩn được gợi ý) và làm đủ 5 kỹ năng ngay trong portal; giáo viên chấm bài nộp ở trang chi tiết học viên. Migration `0073` dựng lại bảng `placement_test_submission` để `lead_id` được phép null và thêm `student_id`, kèm cột `student.placement_prompt_dismissed_at` (#748).
+
+### Changed
+- Đồng bộ toàn diện bài entry test theo bản HTML gốc: seed đề và audio, rubric 5/3/1 cho Writing/Speaking, điểm thập phân, thẻ kết quả tạm tính trên `apps/profile` và `apps/student`, hướng dẫn rubric và nút nhập lại đề + phát hành một lần bấm tại `/placement-test` trong `apps/web` (#754).
+
+### CI/Infra
+- `deploy-staging.yml` đặt `PROFILE_MAINTENANCE: "false"` để staging luôn bật trang profile đầy đủ, trong khi production vẫn giữ trang bảo trì theo `apps/profile/maintenance.json`; smoke check profile của cả hai workflow đọc chế độ bảo trì qua `isProfileMaintenanceEnabled()` (#756).
+
 ### Fixed
 - Khắc phục lỗi chuyển menu sidebar cổng học viên (`apps/student`) bị trễ: `/_auth.beforeLoad` gọi `authClient.getSession()` không cache ở mỗi lượt chuyển trang (và mỗi lượt hover do `defaultPreload: "intent"`), khiến mỗi cú bấm chờ một round-trip `/api/auth/get-session` truy vấn D1. Port cơ chế của cổng giáo viên (#575): `getCachedSession` cache 10 giây, gộp request đồng thời, timeout 5 giây, dọn cache khi đăng xuất/`reauth()`; router đặt `defaultPendingMs: 200` + `defaultPendingComponent: Loader` để hiện loader thay vì đứng hình.
 
