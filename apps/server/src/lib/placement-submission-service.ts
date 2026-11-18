@@ -15,10 +15,11 @@ import {
 	type placementTeacherGradeSchema,
 } from "@teacher-os/api/placement-test-contracts";
 import type { Mailer } from "@teacher-os/auth/mail/mailer";
+import { user } from "@teacher-os/db/schema/auth";
 import { lead } from "@teacher-os/db/schema/lead";
 import { placementTestSubmission } from "@teacher-os/db/schema/placement-test";
 import { student } from "@teacher-os/db/schema/student";
-import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, notLike, sql } from "drizzle-orm";
 import type { Context } from "hono";
 import type { Db, KernelCtx } from "../app";
 import { parseByteRange } from "./byte-range";
@@ -28,6 +29,7 @@ import type { PlacementAiGrader } from "./placement-ai/grader";
 import {
 	buildPlacementResultUrl,
 	type PlacementResultEmailStatus,
+	type PlacementResultEmailSummary,
 	parseAiSpeakingDraft,
 	parseAiWritingDraft,
 	parseStoredErrors,
@@ -56,11 +58,78 @@ export interface PlacementSubmissionServiceDeps {
 	mailer?: Mailer;
 	/** #730: origin profile đầu tiên dựng link kết quả tuyệt đối. */
 	leadOrigins?: string[];
+	/** Origin portal học viên — có thì email trỏ về `/placement-test` khi người nhận đã có tài khoản học viên. */
+	studentOrigin?: string;
 }
 
 type KernelContext = Context<{ Variables: { kernelCtx: KernelCtx } }>;
 
 const RESULT_EMAIL_STATUSES = new Set(["sent", "failed", "skipped"]);
+
+/**
+ * Link nút "Xem chi tiết kết quả". Chỉ trỏ trang `/placement-test` của portal
+ * khi chắc chắn portal hiển thị ĐÚNG bài vừa chốt: có `studentOrigin`, có dòng
+ * học viên trong org khớp email người nhận (không phân biệt hoa/thường), có
+ * tài khoản auth role `student` cùng email đã xác minh, và bài mới nhất portal chọn cho
+ * học viên đó chính là `submissionId`. Ngược lại (hoặc truy vấn lỗi) → link
+ * kết quả công khai.
+ */
+export async function resolvePlacementResultLink(
+	db: Db,
+	params: {
+		orgId: string;
+		submissionId: string;
+		recipientEmail: string;
+		studentOrigin: string | undefined;
+		publicUrl: string;
+	},
+): Promise<string> {
+	const email = params.recipientEmail.trim().toLowerCase();
+	const origin = (params.studentOrigin ?? "").trim().replace(/\/+$/, "");
+	if (!email || !origin) return params.publicUrl;
+	try {
+		const [account] = await db
+			.select({ id: user.id })
+			.from(user)
+			.where(
+				and(
+					eq(user.role, "student"),
+					eq(user.emailVerified, true),
+					sql`lower(trim(${user.email})) = ${email}`,
+				),
+			)
+			.limit(1);
+		if (!account) return params.publicUrl;
+		// Cùng thứ tự chọn dòng học viên với guard portal.
+		const [studentRow] = await db
+			.select()
+			.from(student)
+			.where(
+				and(
+					eq(student.orgId, params.orgId),
+					sql`lower(trim(${student.email})) = ${email}`,
+					notLike(student.id, "demo-student:%"),
+				),
+			)
+			.orderBy(desc(student.createdAt), asc(student.id))
+			.limit(1);
+		if (!studentRow) return params.publicUrl;
+		const latest = await findLatestSubmissionForStudent(
+			db,
+			params.orgId,
+			studentRow,
+		);
+		return latest?.id === params.submissionId
+			? `${origin}/placement-test`
+			: params.publicUrl;
+	} catch (error) {
+		console.error(
+			"[placement-ai] portal account lookup failed",
+			error instanceof Error ? error.name : "unknown",
+		);
+		return params.publicUrl;
+	}
+}
 
 export function parseJsonOr<T>(raw: string | null, fallback: T): T {
 	if (!raw) return fallback;
@@ -591,11 +660,61 @@ export async function gradePlacementSubmissionResponse(
 	if (firstPublish) {
 		// Gửi link kết quả đồng bộ (timeout ngắn trong mailer) để response
 		// phản ánh đúng trạng thái; lỗi gửi không làm hỏng lượt chốt.
+		const recipient = leadEmail.trim() || studentEmail.trim();
+		const resultUrl = await resolvePlacementResultLink(db, {
+			orgId: ctx.orgId,
+			submissionId: updatedSub.id,
+			recipientEmail: recipient,
+			studentOrigin: deps.studentOrigin,
+			publicUrl: buildPlacementResultUrl(resultOrigin, resultToken),
+		});
+		// Lượt chốt đồng thời của giáo viên khác có thể ghi sau lượt này —
+		// tóm tắt lấy từ cột đã lưu; đọc lỗi → dùng giá trị vừa tính.
+		let stored: typeof placementTestSubmission.$inferSelect | undefined;
+		try {
+			[stored] = await db
+				.select()
+				.from(placementTestSubmission)
+				.where(
+					and(
+						eq(placementTestSubmission.id, updatedSub.id),
+						eq(placementTestSubmission.orgId, ctx.orgId),
+					),
+				)
+				.limit(1);
+		} catch (error) {
+			console.error(
+				"[placement-ai] result summary reload failed",
+				updatedSub.id,
+				error instanceof Error ? error.name : "unknown",
+			);
+		}
+		const summary: PlacementResultEmailSummary = {
+			cefr: final.band.cefr,
+			displayCourse: final.band.displayCourse || final.band.courseLabel,
+			scorePct: final.averagePct,
+			listening: objective.listening,
+			vocabGrammar: objective.vocabGrammar,
+			reading: objective.reading,
+			writingScore: final.writingScore,
+			speakingScore: final.speakingScore,
+		};
+		if (stored) {
+			summary.cefr = stored.finalBandLevel ?? summary.cefr;
+			summary.displayCourse =
+				stored.finalDisplayCourse ??
+				stored.finalCourse ??
+				summary.displayCourse;
+			summary.scorePct = stored.finalScorePct ?? summary.scorePct;
+			summary.writingScore = stored.writingScore;
+			summary.speakingScore = stored.speakingScore;
+		}
 		resultEmailStatus = await sendPlacementResultEmail({
 			getMailer: () => deps.mailer,
-			to: leadEmail.trim() || studentEmail.trim(),
+			to: recipient,
 			studentName: subject.row.name,
-			resultUrl: buildPlacementResultUrl(resultOrigin, resultToken),
+			summary,
+			resultUrl,
 			submissionId: updatedSub.id,
 		});
 		await db
