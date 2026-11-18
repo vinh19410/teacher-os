@@ -405,6 +405,10 @@ test.describe
 				await expect(placementNotificationItem).toBeVisible({
 					timeout: 15_000,
 				});
+				await studentPage.setViewportSize({ width: 1440, height: 900 });
+				await studentPage.screenshot({
+					path: reportPath("781-bell-placement-submitted-desktop-1440x900.png"),
+				});
 				await Promise.all([
 					studentPage.waitForResponse(
 						(res) =>
