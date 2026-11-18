@@ -680,9 +680,10 @@ Cột `enrollment.status` là forward-only; không xóa cột hay sửa file mig
      gh secret set RESEND_API_KEY --env production
      gh variable set MAILER_IMPL --env production --body "resend"
      gh variable set MAIL_FROM --env production --body '"Cô Mỹ Dạy Tiếng Anh" <no-reply@teacheros.io.vn>'
+     gh variable set MAIL_FROM --env staging --body '"Cô Mỹ Dạy Tiếng Anh" <no-reply@teacheros.io.vn>'
      ```
    - `MAIL_FROM` phải đủ cặp `< >`; thiếu `>` thì Resend từ chối địa chỉ người gửi.
-   - Staging làm tương tự với `--env staging`; để trống thì worker staging chạy log-only.
+   - Staging làm tương tự với `--env staging` (đã đặt `MAIL_FROM` đồng bộ thương hiệu Cô Mỹ Dạy Tiếng Anh).
 3. **Deploy & Kiểm tra**:
    - Deploy server worker.
    - Đăng ký thử 1 tài khoản học viên thật trên student portal (`https://student.<domain>` — portal origin derive từ `APP_DOMAIN`, xem bảng topology trên).
