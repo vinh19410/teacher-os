@@ -346,6 +346,16 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				path: "/api/kernel/vocab/words/upsert",
 				body: { ...action.payload },
 			};
+		case "import-vocab-csv-decks":
+			return {
+				path: "/api/kernel/vocab/decks/import-csv",
+				body: { ...action.payload },
+			};
+		case "import-vocab-deck-words":
+			return {
+				path: `/api/kernel/vocab/decks/${action.deckId}/words/import`,
+				body: { words: action.words },
+			};
 		case "remove-vocab-word":
 			return {
 				path: "/api/kernel/vocab/words/remove",

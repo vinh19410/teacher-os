@@ -91,7 +91,7 @@ import {
 	toPlainAnnotation,
 } from "../lib/quiz-annotation";
 import { toQuizAttemptGrade } from "../lib/quiz-grade";
-import { streamStudyPackAudio } from "../lib/study-pack-audio";
+import { serveStudyPackAudio } from "../lib/study-pack-audio";
 import type { SessionUser } from "../session";
 import { provisionStudentForUser } from "../student-provisioning";
 import { activateEnrollment } from "./enrollment-activation";
@@ -120,6 +120,8 @@ export interface StudentRouteDeps {
 	getAiGrader?(): AiGrader | undefined;
 	/** #702: injectable fetch cho audio proxy của listening study-pack prompts. */
 	fetchExternalAudio?: typeof fetch;
+	/** #814: kho audio R2 dùng chung cho study-pack prompts. */
+	getLibraryAudioStore?(): MediaStore | undefined;
 	/** Allowlist email giáo viên để định tuyến auto-join single-org (#716). */
 	teacherEmails?: string[];
 	googleClientId?: string;
@@ -1574,7 +1576,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			cueTopic: prompt.cueTopic,
 			cuePoints: prompt.cuePoints,
 			audioName: prompt.audioName,
-			...(prompt.audioUrl ? { hasAudio: true } : {}),
+			...(prompt.audioUrl || prompt.audioKey ? { hasAudio: true } : {}),
 			imageUrl: prompt.imageUrl,
 			optionBank: parseQuizOptionBank(prompt.optionBank),
 			// Speaking (#305) không có đáp án — "Hướng dẫn thêm" là hướng dẫn
@@ -1621,7 +1623,11 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const assignmentId = c.req.param("assignmentId");
 		const [row] = await deps
 			.getDb()
-			.select({ audioUrl: assignmentPrompt.audioUrl })
+			.select({
+				audioUrl: assignmentPrompt.audioUrl,
+				audioKey: assignmentPrompt.audioKey,
+				audioName: assignmentPrompt.audioName,
+			})
 			.from(classAssignment)
 			.innerJoin(
 				classAssignmentTarget,
@@ -1646,10 +1652,16 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				),
 			)
 			.limit(1);
-		if (!row?.audioUrl) {
+		if (!row || (!row.audioUrl && !row.audioKey)) {
 			return c.json({ error: "audio not found" }, 404);
 		}
-		return streamStudyPackAudio(row.audioUrl, deps.fetchExternalAudio);
+		return serveStudyPackAudio({
+			audioKey: row.audioKey,
+			audioUrl: row.audioUrl,
+			audioName: row.audioName,
+			getLibraryAudioStore: deps.getLibraryAudioStore,
+			fetchExternalAudio: deps.fetchExternalAudio,
+		});
 	});
 
 	/**
@@ -2320,6 +2332,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 						skill: assignmentTest.skill,
 						part: assignmentPrompt.part,
 						audioUrl: assignmentPrompt.audioUrl,
+						audioKey: assignmentPrompt.audioKey,
 						transcript: assignmentPrompt.transcript,
 					})
 					.from(assignmentTest)
@@ -2353,6 +2366,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 						skill: assignmentPrompt.skill,
 						part: assignmentPrompt.part,
 						audioUrl: assignmentPrompt.audioUrl,
+						audioKey: assignmentPrompt.audioKey,
 						transcript: assignmentPrompt.transcript,
 						writingPart: assignmentPrompt.writingPart,
 						writingType: assignmentPrompt.writingType,
@@ -2393,7 +2407,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			promptType: header[0]?.type ?? "",
 			skill: header[0]?.skill ?? "",
 			part: header[0]?.part ?? "",
-			hasAudio: Boolean(header[0]?.audioUrl),
+			hasAudio: Boolean(header[0]?.audioUrl || header[0]?.audioKey),
 			transcript: header[0]?.transcript ?? "",
 			writing:
 				attempt.mode !== "practice" &&

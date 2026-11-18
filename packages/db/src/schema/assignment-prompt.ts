@@ -39,6 +39,7 @@ export const assignmentPrompt = sqliteTable(
 		cuePoints: text("cue_points").notNull().default(""),
 		audioName: text("audio_name").notNull().default(""),
 		audioUrl: text("audio_url").notNull().default(""),
+		audioKey: text("audio_key"),
 		imageUrl: text("image_url").notNull().default(""),
 		questions: text("questions").notNull().default("[]"),
 		/**

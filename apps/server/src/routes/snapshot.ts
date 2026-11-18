@@ -846,6 +846,8 @@ export async function loadSnapshot(
 			id: row.id,
 			classId: row.classId,
 			title: row.title,
+			lessonNumber: row.lessonNumber ?? null,
+			topic: row.topic ?? null,
 			lang: row.lang,
 			wordCount: vocabWordDeckIds.filter((w) => w.deckId === row.id).length,
 			createdAt: row.createdAt.toISOString(),

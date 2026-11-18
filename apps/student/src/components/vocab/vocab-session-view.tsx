@@ -7,6 +7,7 @@ import {
 import type { RandomSource } from "@teacher-os/api/srs/rng";
 import { Button } from "@teacher-os/ui/components/button";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { isHttpError } from "@/lib/query-client";
 import {
 	fetchVocabAudioObjectUrl,
@@ -465,6 +466,9 @@ export function VocabSessionView({
 							word={currentCard.word}
 							ipa={currentCard.ipa}
 							translation={currentCard.translation}
+							entryType={currentCard.entryType}
+							pos={currentCard.pos}
+							example={currentCard.example}
 							isRevealed={isRevealed}
 							disabled={inputDisabled}
 							onReveal={() => {
@@ -482,6 +486,9 @@ export function VocabSessionView({
 							word={currentCard.word}
 							ipa={currentCard.ipa}
 							translation={currentCard.translation}
+							entryType={currentCard.entryType}
+							pos={currentCard.pos}
+							example={currentCard.example}
 							persistStatus={persistStatus}
 							onContinue={handleContinue}
 							onRetryPersist={() => void runPendingTasks(holder)}
@@ -500,6 +507,9 @@ export function VocabSessionView({
 							word={currentCard.word}
 							ipa={currentCard.ipa}
 							translation={currentCard.translation}
+							entryType={currentCard.entryType}
+							pos={currentCard.pos}
+							example={currentCard.example}
 							persistStatus={persistStatus}
 							onContinue={handleContinue}
 							onRetryPersist={() => void runPendingTasks(holder)}
@@ -588,6 +598,14 @@ export function VocabSessionView({
 	);
 }
 
+function formatPos(pos?: string | null): string | null {
+	const trimmed = pos?.trim();
+	if (!trimmed) return null;
+	return trimmed.startsWith("(") && trimmed.endsWith(")")
+		? trimmed
+		: `(${trimmed})`;
+}
+
 function LearnIntroCard({
 	card,
 	isRevealed,
@@ -604,6 +622,8 @@ function LearnIntroCard({
 	onContinue: () => void;
 }) {
 	const [audioUrl, setAudioUrl] = useState<string | null>(null);
+	const formattedPos = formatPos(card.pos);
+	const trimmedExample = card.example?.trim() || null;
 
 	useEffect(() => {
 		if (!card.audioKey && !card.hasAudio) {
@@ -640,6 +660,29 @@ function LearnIntroCard({
 				>
 					{card.word}
 				</p>
+				{card.entryType === "word" ||
+				card.entryType === "chunk" ||
+				formattedPos ? (
+					<div className="flex flex-wrap items-center justify-center gap-2">
+						{card.entryType === "chunk" ? (
+							<Badge variant="secondary" data-testid="vocab-intro-entry-type">
+								Chunk
+							</Badge>
+						) : card.entryType === "word" ? (
+							<Badge variant="outline" data-testid="vocab-intro-entry-type">
+								Word
+							</Badge>
+						) : null}
+						{formattedPos ? (
+							<span
+								data-testid="vocab-intro-pos"
+								className="font-mono text-muted-foreground text-xs"
+							>
+								{formattedPos}
+							</span>
+						) : null}
+					</div>
+				) : null}
 				{card.ipa ? (
 					<p className="font-mono text-muted-foreground text-sm">{card.ipa}</p>
 				) : null}
@@ -665,6 +708,19 @@ function LearnIntroCard({
 						>
 							{card.translation}
 						</p>
+						{trimmedExample ? (
+							<div className="mt-3">
+								<p className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.15em]">
+									Ví dụ
+								</p>
+								<p
+									data-testid="vocab-intro-example"
+									className="mt-1 text-muted-foreground text-sm italic"
+								>
+									{trimmedExample}
+								</p>
+							</div>
+						) : null}
 					</div>
 				) : (
 					<p className="pt-2 font-mono text-muted-foreground text-xs">

@@ -27,6 +27,7 @@ export const libraryExercise = sqliteTable(
 		intro: text("intro").notNull().default(""),
 		passage: text("passage").notNull().default(""),
 		audioUrl: text("audio_url").notNull().default(""),
+		audioKey: text("audio_key"),
 		transcript: text("transcript").notNull().default(""),
 		questions: text("questions").notNull().default("[]"),
 		optionBank: text("option_bank").notNull().default("[]"),

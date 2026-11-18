@@ -29,7 +29,7 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import type { Db } from "../app";
 
-/** 29 columns on assignment_prompt × 3 rows = 87 binds <= 100 D1 bind limit (#574, #702). */
+/** 30 columns on assignment_prompt × 3 rows = 90 binds <= 100 D1 bind limit (#574, #702, #814). */
 export const D1_PROMPT_CLONE_INSERT_CHUNK = 3;
 /** 7 columns × 10 rows = 70 binds <= 100 D1 bind limit. */
 export const D1_PACK_ITEM_INSERT_CHUNK = 10;
@@ -91,9 +91,13 @@ export function studyPackSourceKey(
 	return `${sourceKind}:${sourceId}`;
 }
 
-export function extractAudioName(audioUrl: string): string {
-	const trimmed = audioUrl.trim();
+export function extractAudioName(audioSource: string): string {
+	const trimmed = audioSource.trim();
 	if (!trimmed) return "";
+	if (!trimmed.includes("://")) {
+		const fileName = trimmed.split("/").filter(Boolean).pop();
+		return fileName || "listening.mp3";
+	}
 	try {
 		return new URL(trimmed).pathname.split("/").pop() || "listening.mp3";
 	} catch {
@@ -737,6 +741,7 @@ export async function materializePrompts(
 					cueTopic: "",
 					cuePoints: "",
 					audioName: partRow.audioName ?? "",
+					audioKey: partRow.audioKey ?? null,
 					imageUrl: partRow.imageUrl,
 					questions: JSON.stringify(flattened.questions),
 					optionBank: JSON.stringify(flattened.optionBank),
@@ -759,7 +764,8 @@ export async function materializePrompts(
 				const libraryRef = studyPackSourceKey("library_exercise", row.id);
 				libraryRefs.push(libraryRef);
 				const audioUrl = row.audioUrl.trim();
-				const audioName = extractAudioName(audioUrl);
+				const audioKey = row.audioKey?.trim() || null;
+				const audioName = extractAudioName(audioUrl || audioKey || "");
 				toInsert.push({
 					id: crypto.randomUUID(),
 					orgId,
@@ -780,6 +786,7 @@ export async function materializePrompts(
 					cuePoints: "",
 					audioName,
 					audioUrl,
+					audioKey,
 					imageUrl: "",
 					questions: row.questions,
 					optionBank: row.optionBank,
@@ -929,6 +936,7 @@ export async function loadStudyPackDetailFromRow(
 export interface StudyPackItemWithAudio {
 	detail: StudyPackItemDetailView;
 	audioUrl: string;
+	audioKey: string | null;
 }
 
 function buildStudyPackItemDetail(
@@ -943,6 +951,7 @@ function buildStudyPackItemDetail(
 		transcript: string;
 		audioName: string;
 		audioUrl: string;
+		audioKey?: string | null;
 		imageUrl: string;
 		questions: AssignmentQuestion[];
 		optionBank: string[];
@@ -950,7 +959,8 @@ function buildStudyPackItemDetail(
 	},
 ): StudyPackItemWithAudio {
 	const audioUrl = content.audioUrl.trim();
-	const hasAudio = Boolean(audioUrl);
+	const audioKey = content.audioKey?.trim() || null;
+	const hasAudio = Boolean(audioUrl || audioKey);
 	return {
 		detail: {
 			...toStudyPackItemView(item, meta),
@@ -961,7 +971,8 @@ function buildStudyPackItemDetail(
 			passage: content.passage,
 			transcript: content.transcript,
 			audioName: hasAudio
-				? content.audioName.trim() || extractAudioName(audioUrl)
+				? content.audioName.trim() ||
+					extractAudioName(audioUrl || audioKey || "")
 				: "",
 			hasAudio,
 			imageUrl: content.imageUrl,
@@ -970,6 +981,7 @@ function buildStudyPackItemDetail(
 			exerciseNote: content.exerciseNote,
 		},
 		audioUrl,
+		audioKey,
 	};
 }
 
@@ -1021,6 +1033,7 @@ export async function loadStudyPackItemWithAudio(
 				transcript: exercise.transcript,
 				audioName: "",
 				audioUrl: exercise.audioUrl,
+				audioKey: exercise.audioKey,
 				imageUrl: "",
 				questions: parseQuestions(exercise.questions),
 				optionBank: parseStringArray(exercise.optionBank),
@@ -1061,6 +1074,7 @@ export async function loadStudyPackItemWithAudio(
 				transcript: promptRow.transcript,
 				audioName: promptRow.audioName,
 				audioUrl: promptRow.audioUrl,
+				audioKey: promptRow.audioKey,
 				imageUrl: promptRow.imageUrl,
 				questions: parseQuestions(promptRow.questions),
 				optionBank: parseStringArray(promptRow.optionBank),
@@ -1100,8 +1114,9 @@ export async function loadStudyPackItemWithAudio(
 				intro: flattened.intro,
 				passage: joined.partRow.passage,
 				transcript: joined.partRow.transcript,
-				audioName: "",
+				audioName: joined.partRow.audioName ?? "",
 				audioUrl: "",
+				audioKey: joined.partRow.audioKey,
 				imageUrl: joined.partRow.imageUrl,
 				questions: flattened.questions,
 				optionBank: flattened.optionBank,

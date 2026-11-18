@@ -6,6 +6,8 @@ import {
 	LIBRARY_AUDIO_MAX_BYTES,
 	LIBRARY_AUDIO_MIME,
 } from "@teacher-os/api/library-contracts";
+import { mediaObjectResponse } from "./media-response";
+import type { MediaStore } from "./media-store";
 
 const STUDY_PACK_AUDIO_TIMEOUT_MS = 15_000;
 const MAX_AUDIO_REDIRECT_HOPS = 3;
@@ -224,4 +226,43 @@ export async function streamStudyPackAudio(
 		await cancelReader(activeReader);
 		return audioNotFoundResponse();
 	}
+}
+
+/**
+ * Serves study-pack / prompt listening audio from R2 (`audioKey`) when present,
+ * falling back to the allowlisted external `.mp3` proxy (`audioUrl`) for legacy
+ * built-in exercises.
+ */
+export async function serveStudyPackAudio(options: {
+	audioKey?: string | null;
+	audioUrl?: string | null;
+	audioName?: string | null;
+	getLibraryAudioStore?: () => MediaStore | undefined;
+	fetchExternalAudio?: typeof fetch;
+}): Promise<Response> {
+	const key = options.audioKey?.trim() ?? "";
+	if (key) {
+		const store = options.getLibraryAudioStore?.();
+		if (!store) {
+			return Response.json(
+				{ error: "audio store unavailable" },
+				{ status: 503 },
+			);
+		}
+		const object = await store.get(key);
+		if (!object) {
+			return audioNotFoundResponse();
+		}
+		return mediaObjectResponse(object, {
+			mediaType: object.contentType || "audio/mpeg",
+			mediaName:
+				options.audioName?.trim() || key.split("/").pop() || "listening.mp3",
+		});
+	}
+
+	const url = options.audioUrl?.trim() ?? "";
+	if (!url) {
+		return audioNotFoundResponse();
+	}
+	return streamStudyPackAudio(url, options.fetchExternalAudio);
 }
