@@ -15,6 +15,7 @@ import {
 	type placementTeacherGradeSchema,
 } from "@teacher-os/api/placement-test-contracts";
 import type { Mailer } from "@teacher-os/auth/mail/mailer";
+import { user } from "@teacher-os/db/schema/auth";
 import { lead } from "@teacher-os/db/schema/lead";
 import { placementTestSubmission } from "@teacher-os/db/schema/placement-test";
 import { student } from "@teacher-os/db/schema/student";
@@ -56,11 +57,51 @@ export interface PlacementSubmissionServiceDeps {
 	mailer?: Mailer;
 	/** #730: origin profile đầu tiên dựng link kết quả tuyệt đối. */
 	leadOrigins?: string[];
+	/** Origin portal học viên — có thì email trỏ về `/placement-test` khi người nhận đã có tài khoản học viên. */
+	studentOrigin?: string;
 }
 
 type KernelContext = Context<{ Variables: { kernelCtx: KernelCtx } }>;
 
 const RESULT_EMAIL_STATUSES = new Set(["sent", "failed", "skipped"]);
+
+/**
+ * Link nút "Xem chi tiết kết quả": người nhận có tài khoản portal (user role
+ * `student`, email trùng không phân biệt hoa/thường) và có `studentOrigin` →
+ * trang `/placement-test` của portal; ngược lại (hoặc truy vấn lỗi) → link
+ * kết quả công khai.
+ */
+export async function resolvePlacementResultLink(
+	db: Db,
+	params: {
+		recipientEmail: string;
+		studentOrigin: string | undefined;
+		publicUrl: string;
+	},
+): Promise<string> {
+	const email = params.recipientEmail.trim().toLowerCase();
+	const origin = (params.studentOrigin ?? "").trim().replace(/\/+$/, "");
+	if (!email || !origin) return params.publicUrl;
+	try {
+		const [account] = await db
+			.select({ id: user.id })
+			.from(user)
+			.where(
+				and(
+					eq(user.role, "student"),
+					sql`lower(trim(${user.email})) = ${email}`,
+				),
+			)
+			.limit(1);
+		return account ? `${origin}/placement-test` : params.publicUrl;
+	} catch (error) {
+		console.error(
+			"[placement-ai] portal account lookup failed",
+			error instanceof Error ? error.name : "unknown",
+		);
+		return params.publicUrl;
+	}
+}
 
 export function parseJsonOr<T>(raw: string | null, fallback: T): T {
 	if (!raw) return fallback;
@@ -591,11 +632,27 @@ export async function gradePlacementSubmissionResponse(
 	if (firstPublish) {
 		// Gửi link kết quả đồng bộ (timeout ngắn trong mailer) để response
 		// phản ánh đúng trạng thái; lỗi gửi không làm hỏng lượt chốt.
+		const recipient = leadEmail.trim() || studentEmail.trim();
+		const resultUrl = await resolvePlacementResultLink(db, {
+			recipientEmail: recipient,
+			studentOrigin: deps.studentOrigin,
+			publicUrl: buildPlacementResultUrl(resultOrigin, resultToken),
+		});
 		resultEmailStatus = await sendPlacementResultEmail({
 			getMailer: () => deps.mailer,
-			to: leadEmail.trim() || studentEmail.trim(),
+			to: recipient,
 			studentName: subject.row.name,
-			resultUrl: buildPlacementResultUrl(resultOrigin, resultToken),
+			summary: {
+				cefr: final.band.cefr,
+				displayCourse: final.band.displayCourse || final.band.courseLabel,
+				scorePct: final.averagePct,
+				listening: objective.listening,
+				vocabGrammar: objective.vocabGrammar,
+				reading: objective.reading,
+				writingScore: final.writingScore,
+				speakingScore: final.speakingScore,
+			},
+			resultUrl,
 			submissionId: updatedSub.id,
 		});
 		await db

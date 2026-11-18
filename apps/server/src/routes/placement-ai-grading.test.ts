@@ -31,6 +31,7 @@ import {
 	PLACEMENT_AI_STALE_AFTER_MS,
 	runPlacementAiGrading,
 } from "../lib/placement-ai/run-placement-grading";
+import { resolvePlacementResultLink } from "../lib/placement-submission-service";
 import { webmBytes } from "../lib/test-media-fixtures";
 
 const CORS_ORIGIN = "http://localhost:8001";
@@ -213,6 +214,7 @@ async function createHarness(
 		grader?: "none" | FakePlacementAiGraderOptions;
 		mailer?: Mailer;
 		brokenMailer?: boolean;
+		studentOrigin?: string;
 	} = {},
 ): Promise<Harness> {
 	const client = createClient({ url: "file::memory:" });
@@ -261,6 +263,7 @@ async function createHarness(
 		getPlacementAiGrader: () => grader,
 		runInBackground,
 		...(opts.mailer ? { mailer: opts.mailer } : {}),
+		...(opts.studentOrigin ? { studentOrigin: opts.studentOrigin } : {}),
 		authHandler: async () => new Response("unused", { status: 404 }),
 		getSessionUser: async (headers) =>
 			headers.get("x-test-user") === "t1"
@@ -712,6 +715,135 @@ describe("PATCH chốt + kết quả công khai (#730)", () => {
 		expect((await h2.detail(withEmail.leadId)).resultEmailStatus).toBe(
 			"failed",
 		);
+	});
+});
+
+describe("email kết quả: tóm tắt HTML + link chi tiết", () => {
+	const STUDENT_ORIGIN = "https://hoc.msmy.io.vn/";
+	const grade = {
+		writingRubric: { ct: 4, or: 4, lg: 3 },
+		speakingRubric: { gv: 3, dm: 3, pr: 3, ic: 3 },
+		teacherFeedback: "",
+		writingErrors: [],
+		speakingErrors: [],
+	};
+
+	async function gradeLead(
+		h: Harness,
+		email: string,
+		body: unknown = grade,
+	): Promise<PlacementSubmissionDetail> {
+		const created = await h.submit({ speakingMode: "skipped", email });
+		await h.flush();
+		const res = await teacherPost(
+			h.app,
+			`/api/leads/${created.leadId}/placement-submission`,
+			body,
+		);
+		expect(res.status).toBe(200);
+		return (await res.json()) as PlacementSubmissionDetail;
+	}
+
+	async function addUser(h: Harness, email: string, role: string) {
+		await h.db.insert(schema.user).values({
+			id: `u-${role}-${email}`,
+			name: "Tài khoản",
+			email,
+			role,
+		});
+	}
+
+	test("người nhận có tài khoản học viên → nút trỏ portal /placement-test; chốt lại không gửi lần hai", async () => {
+		const { sent, mailer } = recordingMailer();
+		const h = await createHarness({ mailer, studentOrigin: STUDENT_ORIGIN });
+		await addUser(h, "hocvien@test.local", "student");
+
+		const graded = await gradeLead(h, " HocVien@Test.local ");
+		expect(graded.resultEmailStatus).toBe("sent");
+		expect(sent).toHaveLength(1);
+		const mail = sent[0];
+		const portal = "https://hoc.msmy.io.vn/placement-test";
+		expect(mail?.html).toContain(`href="${portal}"`);
+		expect(mail?.html).not.toContain("?t=");
+		expect(mail?.text).toContain(portal);
+		// Tóm tắt khớp kết quả đã chốt (cùng nguồn với portal).
+		expect(graded.finalBandLevel).toBe("A2");
+		expect(mail?.html).toContain(">A2<");
+		expect(mail?.html).toContain("Communication English Level 2");
+		expect(mail?.html).toContain(`>${graded.finalScorePct}%<`);
+		for (const row of [
+			"Listening",
+			"Từ vựng &amp; Ngữ pháp",
+			"Reading",
+			"Writing",
+			"Speaking",
+		]) {
+			expect(mail?.html).toContain(`>${row}<`);
+		}
+		expect(mail?.html).toContain("1/1 (100%)");
+		expect(mail?.html).toContain("11/15 điểm");
+		expect(mail?.html).toContain("12/20 điểm");
+		expect(mail?.text).toContain(`Điểm tổng hợp: ${graded.finalScorePct}%`);
+		expect(mail?.text).not.toContain("0905");
+
+		const regrade = await teacherPost(
+			h.app,
+			`/api/leads/${graded.leadId}/placement-submission`,
+			grade,
+		);
+		expect(regrade.status).toBe(200);
+		expect(sent).toHaveLength(1);
+	});
+
+	test("lead chưa có tài khoản (hoặc chỉ có tài khoản giáo viên) → link kết quả công khai; bỏ dòng Speaking khi không chấm", async () => {
+		const { sent, mailer } = recordingMailer();
+		const h = await createHarness({ mailer, studentOrigin: STUDENT_ORIGIN });
+		await addUser(h, "gv@test.local", "teacher");
+
+		const noAccount = await gradeLead(h, "lead@test.local", {
+			...grade,
+			speakingRubric: null,
+		});
+		const teacherOnly = await gradeLead(h, "gv@test.local");
+		expect(sent).toHaveLength(2);
+		for (const [i, detail] of [noAccount, teacherOnly].entries()) {
+			expect(detail.resultUrl).toMatch(/\?t=[0-9a-f]{64}$/);
+			expect(sent[i]?.html).toContain(
+				`href="${(detail.resultUrl ?? "").replaceAll("&", "&amp;")}"`,
+			);
+			expect(sent[i]?.text).toContain(detail.resultUrl ?? "-");
+			expect(sent[i]?.html).not.toContain('/placement-test"');
+		}
+		expect(sent[0]?.html).not.toContain("Speaking");
+		expect(sent[1]?.html).toContain(">Speaking<");
+	});
+
+	test("không cấu hình studentOrigin → luôn dùng link công khai", async () => {
+		const { sent, mailer } = recordingMailer();
+		const h = await createHarness({ mailer });
+		await addUser(h, "hocvien@test.local", "student");
+
+		const graded = await gradeLead(h, "hocvien@test.local");
+		expect(graded.resultEmailStatus).toBe("sent");
+		expect(sent[0]?.html).toContain(`href="${graded.resultUrl}"`);
+		expect(sent[0]?.text).toContain(graded.resultUrl ?? "-");
+	});
+
+	test("tra cứu tài khoản lỗi → fail-open về link công khai", async () => {
+		const publicUrl = "https://msmy.io.vn/kiem-tra-dau-vao/ket-qua/?t=x";
+		// Test double: chỉ cần `select` ném lỗi để kiểm tra fail-open.
+		const brokenDb = {
+			select() {
+				throw new Error("db down");
+			},
+		} as unknown as Db;
+		await expect(
+			resolvePlacementResultLink(brokenDb, {
+				recipientEmail: "hocvien@test.local",
+				studentOrigin: STUDENT_ORIGIN,
+				publicUrl,
+			}),
+		).resolves.toBe(publicUrl);
 	});
 });
 
