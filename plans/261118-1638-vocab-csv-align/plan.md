@@ -1,6 +1,6 @@
 # Plan: Align Vocab Schema, CSV Import & UI with Lesson CSV (#815)
 
-- **Status:** In review (all phases implemented, review fixes verified)
+- **Status:** Completed (isolated review clean; ready to ship to `develop`)
 - **Issue:** https://github.com/vinh19410/teacher-os/issues/815
 - **Target branch:** `develop` (`--beta --merge`)
 
