@@ -1376,10 +1376,15 @@ describe("student vocab API (/api/student/vocab/*)", () => {
 		expect(sessionData.deck).toEqual({
 			id: "libdeck-366-1",
 			title: "Bài 1: Môi trường (15 từ)",
+			lessonNumber: null,
+			topic: null,
 			lang: "en",
 		});
 		expect(sessionData.cards).toHaveLength(15);
 		expect(sessionData.cards[0]?.wordId).toBe("libword-366-1");
+		expect(sessionData.cards[0]?.entryType).toBe("word");
+		expect(sessionData.cards[0]?.pos).toBe("n");
+		expect(sessionData.cards[0]?.example).toBe("Example sentence 1");
 		expect(sessionData.cards[0]?.hasAudio).toBe(true);
 		expect(sessionData.cards[1]?.hasAudio).toBe(false);
 		// Same-course fallback included "libword-366-b1" since pool had <20 words
@@ -1472,6 +1477,9 @@ describe("student vocab API (/api/student/vocab/*)", () => {
 			await answerRes.json(),
 		);
 		expect(answerBody.card.level).toBe(2);
+		expect(answerBody.card.entryType).toBe("word");
+		expect(answerBody.card.pos).toBe("n");
+		expect(answerBody.card.example).toBe("Example sentence 1");
 
 		// 8) Overview now includes libdeck-366-1 with source='library' and className='IELTS Academic Reading'
 		const postOvRes = await app.request("/api/student/vocab/overview", {
@@ -1497,5 +1505,122 @@ describe("student vocab API (/api/student/vocab/*)", () => {
 			{ headers: { "x-test-user": "studentZero" } },
 		);
 		expect(nullAudioRes.status).toBe(404);
+	});
+
+	test("session-data, learn-commit, and answer expose lessonNumber, topic, entryType, pos, and example on org decks", async () => {
+		const deckId = "deck-meta-1";
+		const nowDate = new Date("2026-10-15T00:00:00Z");
+		await libsql.insert(schema.vocabDeck).values({
+			id: deckId,
+			orgId: "org-1",
+			classId: "class-enrolled",
+			title: "Lesson 3: Collocations",
+			lessonNumber: 3,
+			topic: "Academic Writing",
+			lang: "en",
+			createdAt: nowDate,
+			updatedAt: nowDate,
+		});
+		await libsql.insert(schema.vocabWord).values([
+			{
+				id: "w-meta-1",
+				deckId,
+				word: "mitigate",
+				entryType: "word",
+				ipa: "/ˈmɪt.ɪ.ɡeɪt/",
+				pos: "v",
+				translation: "giảm thiểu",
+				example: "Policies can mitigate climate risk.",
+				sortOrder: 0,
+			},
+			{
+				id: "w-meta-2",
+				deckId,
+				word: "in the long run",
+				entryType: "chunk",
+				ipa: null,
+				pos: "phrase",
+				translation: "về lâu dài",
+				example: "In the long run, consistency matters.",
+				sortOrder: 1,
+			},
+		]);
+
+		const sessionRes = await app.request(
+			`/api/student/vocab/decks/${deckId}/session-data`,
+			{ headers: { "x-test-user": "studentA" } },
+		);
+		expect(sessionRes.status).toBe(200);
+		const sessionData = vocabSessionDataSchema.parse(await sessionRes.json());
+		expect(sessionData.deck).toEqual({
+			id: deckId,
+			title: "Lesson 3: Collocations",
+			lessonNumber: 3,
+			topic: "Academic Writing",
+			lang: "en",
+		});
+		expect(sessionData.cards).toHaveLength(2);
+		expect(sessionData.cards[0]).toMatchObject({
+			word: "mitigate",
+			entryType: "word",
+			pos: "v",
+			example: "Policies can mitigate climate risk.",
+		});
+		expect(sessionData.cards[1]).toMatchObject({
+			word: "in the long run",
+			entryType: "chunk",
+			pos: "phrase",
+			example: "In the long run, consistency matters.",
+		});
+
+		const chunkCard = sessionData.cards[1];
+		if (!chunkCard) throw new Error("expected chunk card");
+		const learnRes = await app.request("/api/student/vocab/learn-commit", {
+			method: "POST",
+			headers: headersFor("studentA"),
+			body: JSON.stringify({
+				clientLogId: crypto.randomUUID(),
+				cardId: chunkCard.id,
+				gradeGood: true,
+				durationMs: 950,
+			}),
+		});
+		expect(learnRes.status).toBe(200);
+		const learnBody = vocabCardMutationResponseSchema.parse(
+			await learnRes.json(),
+		);
+		expect(learnBody.card).toMatchObject({
+			id: chunkCard.id,
+			entryType: "chunk",
+			pos: "phrase",
+			example: "In the long run, consistency matters.",
+		});
+
+		await libsql
+			.update(schema.vocabCard)
+			.set({ dueAt: Date.now() - 5000 })
+			.where(eq(schema.vocabCard.id, chunkCard.id));
+
+		const answerRes = await app.request("/api/student/vocab/answer", {
+			method: "POST",
+			headers: headersFor("studentA"),
+			body: JSON.stringify({
+				clientLogId: crypto.randomUUID(),
+				cardId: chunkCard.id,
+				correct: true,
+				durationMs: 800,
+			}),
+		});
+		expect(answerRes.status).toBe(200);
+		const answerBody = vocabCardMutationResponseSchema.parse(
+			await answerRes.json(),
+		);
+		expect(answerBody.card).toMatchObject({
+			id: chunkCard.id,
+			level: 2,
+			entryType: "chunk",
+			pos: "phrase",
+			example: "In the long run, consistency matters.",
+		});
 	});
 });

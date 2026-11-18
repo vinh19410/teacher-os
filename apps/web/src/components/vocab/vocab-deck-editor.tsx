@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { useData } from "@/lib/data-store";
 import { getApiBaseUrl } from "@/lib/repos/api-base-url";
+import { VocabCsvImportDialog } from "./vocab-csv-import-dialog";
 import { VocabWordRow } from "./vocab-word-row";
 
 export function prepareVocabAudioUpload(
@@ -57,17 +58,24 @@ export function prepareVocabAudioUpload(
  */
 export function VocabDeckEditorDialog({
 	deckId,
+	deckTitle,
 	onClose,
 }: {
 	deckId: string;
+	deckTitle?: string;
 	onClose: () => void;
 }) {
-	const { dispatch } = useData();
+	const { data, dispatch } = useData();
+	const resolvedDeckTitle =
+		deckTitle ??
+		data.vocabDecks.find((deck) => deck.id === deckId)?.title ??
+		"Bộ từ vựng";
 	const [words, setWords] = useState<VocabTeacherWord[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [loadError, setLoadError] = useState(false);
 	const [savingId, setSavingId] = useState<string | null>(null);
 	const [uploadingWordId, setUploadingWordId] = useState<string | null>(null);
+	const [csvImportOpen, setCsvImportOpen] = useState(false);
 	const draftCounterRef = useRef(0);
 
 	const loadWords = useCallback(async () => {
@@ -103,8 +111,11 @@ export function VocabDeckEditorDialog({
 				id: draftId,
 				deckId,
 				word: "",
+				entryType: "word",
 				ipa: null,
+				pos: null,
 				translation: "",
+				example: null,
 				audioKey: null,
 				audioUrl: null,
 				sortOrder: prev.length,
@@ -122,14 +133,20 @@ export function VocabDeckEditorDialog({
 		setSavingId(row.id);
 		try {
 			const isDraft = row.id.startsWith("draft-");
+			const cleanIpa = row.ipa?.trim() ?? "";
+			const cleanPos = row.pos?.trim() ?? "";
+			const cleanExample = row.example?.trim() ?? "";
 			const action = {
 				type: "upsert-vocab-word" as const,
 				payload: {
 					deckId,
 					...(isDraft ? {} : { id: row.id }),
 					word,
-					ipa: row.ipa ? row.ipa : null,
+					entryType: row.entryType ?? "word",
+					ipa: cleanIpa.length > 0 ? cleanIpa : null,
+					pos: cleanPos.length > 0 ? cleanPos : null,
 					translation: row.translation,
+					example: cleanExample.length > 0 ? cleanExample : null,
 					sortOrder: row.sortOrder,
 				},
 			};
@@ -201,61 +218,85 @@ export function VocabDeckEditorDialog({
 	};
 
 	return (
-		<Modal
-			open
-			onClose={onClose}
-			title="Soạn từ vựng"
-			footer={
-				<Button type="button" onClick={onClose}>
-					Hoàn tất
-				</Button>
-			}
-		>
-			<p className="text-muted-foreground text-sm">
-				Thêm, sửa hoặc xoá từng từ. File âm thanh (MP3/M4A/WAV) dùng cho
-				minigame Listening.
-			</p>
-
-			{loading ? (
-				<p className="py-6 text-center text-muted-foreground text-sm">
-					Đang tải danh sách từ...
-				</p>
-			) : loadError ? (
-				<div className="space-y-3 py-6 text-center">
+		<>
+			<Modal
+				open
+				onClose={onClose}
+				size="xl"
+				scrollableBody
+				title="Soạn từ vựng"
+				description={resolvedDeckTitle}
+				footer={
+					<Button type="button" onClick={onClose}>
+						Hoàn tất
+					</Button>
+				}
+			>
+				<div className="flex flex-wrap items-center justify-between gap-3">
 					<p className="text-muted-foreground text-sm">
-						Không tải được danh sách từ vựng.
+						Thêm, sửa hoặc xoá từng từ/cụm từ. File âm thanh (MP3/M4A/WAV) dùng
+						cho minigame Listening.
 					</p>
 					<Button
+						type="button"
 						size="sm"
 						variant="secondary"
-						onClick={() => void loadWords()}
+						data-testid="vocab-editor-import-csv-btn"
+						onClick={() => setCsvImportOpen(true)}
 					>
-						Thử lại
+						Import CSV
 					</Button>
 				</div>
-			) : (
-				<div className="space-y-2">
-					{words.map((row) => (
-						<VocabWordRow
-							key={row.id}
-							row={row}
-							saving={savingId === row.id || uploadingWordId === row.id}
-							onSave={handleSaveRow}
-							onRemove={handleRemoveRow}
-							onUploadAudio={handleUploadAudio}
-						/>
-					))}
-					<Button
-						size="sm"
-						variant="secondary"
-						data-testid="vocab-add-word-btn"
-						onClick={handleAddRow}
-						className="mt-3 w-full"
-					>
-						+ Thêm từ
-					</Button>
-				</div>
-			)}
-		</Modal>
+
+				{loading ? (
+					<p className="py-6 text-center text-muted-foreground text-sm">
+						Đang tải danh sách từ...
+					</p>
+				) : loadError ? (
+					<div className="space-y-3 py-6 text-center">
+						<p className="text-muted-foreground text-sm">
+							Không tải được danh sách từ vựng.
+						</p>
+						<Button
+							size="sm"
+							variant="secondary"
+							onClick={() => void loadWords()}
+						>
+							Thử lại
+						</Button>
+					</div>
+				) : (
+					<div className="space-y-2">
+						{words.map((row) => (
+							<VocabWordRow
+								key={row.id}
+								row={row}
+								saving={savingId === row.id || uploadingWordId === row.id}
+								onSave={handleSaveRow}
+								onRemove={handleRemoveRow}
+								onUploadAudio={handleUploadAudio}
+							/>
+						))}
+						<Button
+							size="sm"
+							variant="secondary"
+							data-testid="vocab-add-word-btn"
+							onClick={handleAddRow}
+							className="mt-3 w-full"
+						>
+							+ Thêm từ
+						</Button>
+					</div>
+				)}
+			</Modal>
+			<VocabCsvImportDialog
+				open={csvImportOpen}
+				mode="append-words"
+				deckId={deckId}
+				deckTitle={resolvedDeckTitle}
+				onImported={loadWords}
+				onClose={() => setCsvImportOpen(false)}
+			/>
+		</>
 	);
 }
