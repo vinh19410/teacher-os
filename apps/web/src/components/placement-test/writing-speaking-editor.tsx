@@ -105,7 +105,7 @@ export function WritingEditorCard({
 						Phần 4: Viết (Writing)
 					</h2>
 					<p className="text-muted-foreground text-sm">
-						Giáo viên chấm bài trên 3 tiêu chí rubric (tối đa 15 điểm:{" "}
+						Giáo viên chấm bài theo 4 tiêu chí IELTS (thang 0–9, bước 0.5:{" "}
 						{PLACEMENT_WRITING_RUBRIC.map((r) => r.label).join(", ")}).
 					</p>
 				</div>
@@ -208,9 +208,8 @@ export function SpeakingEditorSection({
 					<p className="text-muted-foreground text-sm">
 						Hiện có <strong>{tasks.length}</strong> câu hỏi nói (hệ thống đọc
 						từng câu hỏi và học viên ghi âm trả lời qua micro — audio-only; giáo
-						viên chấm 4 tiêu chí{" "}
-						{PLACEMENT_SPEAKING_RUBRIC.map((r) => r.label).join(", ")} — 20
-						điểm).
+						viên chấm theo 4 tiêu chí IELTS (thang 0–9, bước 0.5:{" "}
+						{PLACEMENT_SPEAKING_RUBRIC.map((r) => r.label).join(", ")})).
 					</p>
 				</div>
 				<Button

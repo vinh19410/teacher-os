@@ -41,6 +41,15 @@ import {
 	transitionSpeakingToPaused,
 } from "../public/kiem-tra-dau-vao/grading.js";
 import {
+	buildSkillRubricDisplay,
+	isIeltsSpeakingRubric,
+	isIeltsWritingRubric,
+	PLACEMENT_LEGACY_SPEAKING_RUBRIC,
+	PLACEMENT_LEGACY_WRITING_RUBRIC,
+	PLACEMENT_SPEAKING_RUBRIC,
+	PLACEMENT_WRITING_RUBRIC,
+} from "../public/kiem-tra-dau-vao/ket-qua/highlight.js";
+import {
 	buildLeadPayload,
 	buildPlacementSubmissionLead,
 	isValidBirthDate,
@@ -1485,4 +1494,125 @@ test("resolveReadingPassageHeaderState ẩn .clip-badges và .passage-header khi
 		showBadges: false,
 		hasHeader: false,
 	});
+});
+
+test("ket-qua/highlight.js hỗ trợ hiển thị cả IELTS 0–9 lẫn fallback legacy /15 & /20", () => {
+	assert.deepEqual(
+		PLACEMENT_WRITING_RUBRIC.map((r) => r.key),
+		["task", "coherence", "lexical", "grammar"],
+	);
+	assert.deepEqual(
+		PLACEMENT_SPEAKING_RUBRIC.map((r) => r.key),
+		["fluency", "lexical", "grammar", "pronunciation"],
+	);
+	assert.deepEqual(
+		PLACEMENT_LEGACY_WRITING_RUBRIC.map((r) => r.key),
+		["ct", "or", "lg"],
+	);
+	assert.deepEqual(
+		PLACEMENT_LEGACY_SPEAKING_RUBRIC.map((r) => r.key),
+		["gv", "dm", "pr", "ic"],
+	);
+
+	assert.equal(
+		isIeltsWritingRubric({
+			task: 6.5,
+			coherence: 6,
+			lexical: 6.5,
+			grammar: 6,
+		}),
+		true,
+	);
+	assert.equal(isIeltsWritingRubric({ ct: 4, or: 4, lg: 3 }), false);
+	assert.equal(
+		isIeltsSpeakingRubric({
+			fluency: 7,
+			lexical: 6.5,
+			grammar: 6,
+			pronunciation: 7,
+		}),
+		true,
+	);
+	assert.equal(isIeltsSpeakingRubric({ gv: 4, dm: 4, pr: 4, ic: 5 }), false);
+
+	const ieltsWriting = buildSkillRubricDisplay("writing", 6.5, {
+		task: 6.5,
+		coherence: 6,
+		lexical: 6.5,
+		grammar: 6,
+	});
+	assert.equal(ieltsWriting.isIelts, true);
+	assert.equal(ieltsWriting.totalText, "Writing: Band 6.5/9");
+	assert.deepEqual(
+		ieltsWriting.criteria.map((c) => [c.label, c.valueText]),
+		[
+			["Task Response", "6.5/9"],
+			["Coherence & Cohesion", "6.0/9"],
+			["Lexical Resource", "6.5/9"],
+			["Grammatical Range & Accuracy", "6.0/9"],
+		],
+	);
+
+	const legacyWriting = buildSkillRubricDisplay("writing", 11, {
+		ct: 4,
+		or: 4,
+		lg: 3,
+	});
+	assert.equal(legacyWriting.isIelts, false);
+	assert.equal(legacyWriting.totalText, "Writing: 11/15");
+	assert.deepEqual(
+		legacyWriting.criteria.map((c) => [c.label, c.valueText]),
+		[
+			["Content", "4/5"],
+			["Organisation", "4/5"],
+			["Language", "3/5"],
+		],
+	);
+
+	const ieltsSpeaking = buildSkillRubricDisplay("speaking", 7, {
+		fluency: 7,
+		lexical: 6.5,
+		grammar: 7,
+		pronunciation: 7,
+	});
+	assert.equal(ieltsSpeaking.isIelts, true);
+	assert.equal(ieltsSpeaking.totalText, "Speaking: Band 7.0/9");
+	assert.deepEqual(
+		ieltsSpeaking.criteria.map((c) => [c.label, c.valueText]),
+		[
+			["Fluency & Coherence", "7.0/9"],
+			["Lexical Resource", "6.5/9"],
+			["Grammatical Range & Accuracy", "7.0/9"],
+			["Pronunciation", "7.0/9"],
+		],
+	);
+
+	const legacySpeaking = buildSkillRubricDisplay("speaking", 17, {
+		gv: 4,
+		dm: 4,
+		pr: 4,
+		ic: 5,
+	});
+	assert.equal(legacySpeaking.isIelts, false);
+	assert.equal(legacySpeaking.totalText, "Speaking: 17/20");
+	assert.deepEqual(
+		legacySpeaking.criteria.map((c) => [c.label, c.valueText]),
+		[
+			["Grammar & Vocabulary", "4/5"],
+			["Discourse Management", "4/5"],
+			["Pronunciation", "4/5"],
+			["Task Response", "5/5"],
+		],
+	);
+
+	const resultJs = readFileSync(
+		new URL("ket-qua/result.js", placementDir),
+		"utf8",
+	);
+	assert.ok(resultJs.includes("buildSkillRubricDisplay"));
+	const highlightJs = readFileSync(
+		new URL("ket-qua/highlight.js", placementDir),
+		"utf8",
+	);
+	assert.ok(!highlightJs.toLowerCase().includes("khách quan"));
 });

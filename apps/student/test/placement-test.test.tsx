@@ -756,11 +756,11 @@ describe("Student Portal Placement Test (#748)", () => {
 		}
 	});
 
-	it("renders graded result view with CEFR badge, rubrics, highlighted errors, bandAdvice and teacherFeedback", async () => {
+	it("renders graded result view with IELTS bands, rubrics, highlighted errors, bandAdvice and teacherFeedback", async () => {
 		const gradedView: StudentPlacementViewResponse = {
 			status: "graded",
 			hasEntryScore: true,
-			entryScore: "B1",
+			entryScore: "B1+",
 			promptDismissedAt: "2026-11-10T00:00:00Z",
 			submissionId: "sub-graded",
 			testAvailable: true,
@@ -779,8 +779,8 @@ describe("Student Portal Placement Test (#748)", () => {
 				},
 				writingText: "I go to school yesterday.",
 				writingWordCount: 5,
-				writingRubric: { ct: 4, or: 4, lg: 3 },
-				writingScore: 11,
+				writingRubric: { task: 6.5, coherence: 6, lexical: 6.5, grammar: 6 },
+				writingScore: 6.5,
 				writingErrors: [
 					{
 						id: "w-err-1",
@@ -794,8 +794,13 @@ describe("Student Portal Placement Test (#748)", () => {
 				],
 				speakingStatus: "uploaded",
 				speakingTranscript: "I am liking English very much.",
-				speakingRubric: { gv: 4, dm: 4, pr: 4, ic: 5 },
-				speakingScore: 17,
+				speakingRubric: {
+					fluency: 7,
+					lexical: 6.5,
+					grammar: 6,
+					pronunciation: 7,
+				},
+				speakingScore: 6.5,
 				speakingErrors: [
 					{
 						id: "s-err-1",
@@ -835,6 +840,19 @@ describe("Student Portal Placement Test (#748)", () => {
 			"IELTS Pre-Intermediate (4.5–5.5)",
 		);
 		expect(screen.getByTestId("graded-score-pct").textContent).toBe("77%");
+
+		const writingSection = screen.getByTestId("graded-writing-section");
+		expect(writingSection.textContent).toContain("Band 6.5/9");
+		expect(writingSection.textContent).toContain("Task Response");
+		expect(writingSection.textContent).toContain("6.5/9");
+		expect(writingSection.textContent).toContain("6.0/9");
+
+		const speakingSection = screen.getByTestId("graded-speaking-section");
+		expect(speakingSection.textContent).toContain("Band 6.5/9");
+		expect(speakingSection.textContent).toContain("Fluency & Coherence");
+		expect(speakingSection.textContent).toContain("7.0/9");
+		expect(speakingSection.textContent).toContain("6.5/9");
+
 		expect(screen.getByTestId("writing-annotated-text").textContent).toContain(
 			"I go",
 		);
@@ -853,6 +871,51 @@ describe("Student Portal Placement Test (#748)", () => {
 		expect(screen.getByTestId("graded-teacher-feedback").textContent).toContain(
 			"Em phát âm rõ ràng",
 		);
+	});
+
+	it("renders legacy graded result view with /15 and /20 fallback", async () => {
+		const { PlacementGradedResultView } = await import(
+			"@/components/placement/placement-result-views"
+		);
+		const legacySubmission: StudentPlacementSubmissionView = {
+			id: "sub-legacy",
+			testVersion: 2,
+			status: "graded",
+			submittedAt: "2026-10-15T00:00:00Z",
+			gradedAt: "2026-10-16T00:00:00Z",
+			objective: {
+				listening: { correct: 8, total: 10, pct: 80 },
+				vocabGrammar: { correct: 15, total: 20, pct: 75 },
+				reading: { correct: 7, total: 10, pct: 70 },
+			},
+			writingText: "Hello",
+			writingWordCount: 1,
+			writingRubric: { ct: 4, or: 4, lg: 3 },
+			writingScore: 11,
+			writingErrors: [],
+			speakingStatus: "uploaded",
+			speakingTranscript: "Hi",
+			speakingRubric: { gv: 4, dm: 4, pr: 4, ic: 5 },
+			speakingScore: 17,
+			speakingErrors: [],
+			finalBandLevel: "B1",
+			finalDisplayCourse: "Giao tiếp 2",
+			finalScorePct: 76,
+			finalNote: "",
+			bandAdvice: "",
+			teacherFeedback: "",
+		};
+
+		render(<PlacementGradedResultView submission={legacySubmission} />);
+		const writingSection = screen.getByTestId("graded-writing-section");
+		expect(writingSection.textContent).toContain("11/15 điểm");
+		expect(writingSection.textContent).toContain("Content");
+		expect(writingSection.textContent).toContain("4/5");
+
+		const speakingSection = screen.getByTestId("graded-speaking-section");
+		expect(speakingSection.textContent).toContain("17/20 điểm");
+		expect(speakingSection.textContent).toContain("Grammar & Vocabulary");
+		expect(speakingSection.textContent).toContain("5/5");
 	});
 
 	it("renders exempt card with entryScore and optional start button, and unavailable card cleanly", async () => {

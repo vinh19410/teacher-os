@@ -1,22 +1,27 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+	formatBand,
+	ieltsOverallBand,
+	isBandStep,
+} from "@teacher-os/api/lib/ielts-band";
+import {
 	buildPlacementZaloText,
 	computePlacementFinal,
+	isIeltsSpeakingRubric,
+	isIeltsWritingRubric,
 	locatePlacementErrors,
-	PLACEMENT_RUBRIC_INTERMEDIATE_NOTE,
 	PLACEMENT_SPEAKING_RUBRIC,
 	PLACEMENT_TEACHER_FEEDBACK_MAX,
 	PLACEMENT_WRITING_RUBRIC,
 	type PlacementError,
-	type PlacementSpeakingRubric,
 	type PlacementSubmissionDetail,
 	type PlacementTeacherGrade,
-	type PlacementWritingRubric,
 } from "@teacher-os/api/placement-test-contracts";
 import { Check, Copy, Link2, RefreshCw } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { StatusTag } from "@/components/assignments/status-tag";
+import { BandSlider } from "@/components/grading/band-slider";
 import { Button } from "@/components/ui/button";
 import { inputCls } from "@/components/ui/field";
 import { isHttpError } from "@/lib/kernel-load-state";
@@ -39,10 +44,8 @@ import {
 import { PlacementAiStatusBanner } from "./placement-ai-status-banner";
 import { PlacementErrorHighlighter } from "./placement-error-highlighter";
 
-/** Chu kỳ poll khi AI đang chấm nháp (#730). */
+/** Chu kỳ poll khi AI đang phân tích lỗi (#730, #800). */
 export const PLACEMENT_AI_POLL_MS = 4000;
-
-const SCORE_LEVELS = [0, 1, 2, 3, 4, 5] as const;
 
 const SECTION_LABELS = {
 	listening: "Listening",
@@ -50,13 +53,32 @@ const SECTION_LABELS = {
 	reading: "Reading",
 } as const;
 
-const DEFAULT_WRITING: PlacementWritingRubric = { ct: 3, or: 3, lg: 3 };
-const DEFAULT_SPEAKING: PlacementSpeakingRubric = {
-	gv: 3,
-	dm: 3,
-	pr: 3,
-	ic: 3,
+export type NullablePlacementWritingRubric = {
+	task: number | null;
+	coherence: number | null;
+	lexical: number | null;
+	grammar: number | null;
 };
+
+export type NullablePlacementSpeakingRubric = {
+	fluency: number | null;
+	lexical: number | null;
+	grammar: number | null;
+	pronunciation: number | null;
+};
+
+function emptyWritingRubric(): NullablePlacementWritingRubric {
+	return { task: null, coherence: null, lexical: null, grammar: null };
+}
+
+function emptySpeakingRubric(): NullablePlacementSpeakingRubric {
+	return {
+		fluency: null,
+		lexical: null,
+		grammar: null,
+		pronunciation: null,
+	};
+}
 
 function formatExpectedAnswer(expected: number | string[]): string {
 	if (typeof expected === "number") {
@@ -77,17 +99,22 @@ function formatStudentAnswer(
 }
 
 type GradingState = {
-	writingRubric: PlacementWritingRubric;
-	speakingRubric: PlacementSpeakingRubric;
+	writingRubric: NullablePlacementWritingRubric;
+	writingScore: number | null;
+	speakingRubric: NullablePlacementSpeakingRubric;
+	speakingScore: number | null;
 	includeSpeaking: boolean;
 	writingErrors: PlacementError[];
 	speakingErrors: PlacementError[];
 };
 
 /**
- * Trạng thái chấm khởi tạo (#730): đã chốt (`writingErrors !== null`) → lấy
- * rubric/lỗi đã lưu; chưa chốt mà có nháp AI → điền sẵn từ nháp AI; còn lại
- * → mặc định chấm tay. Lỗi luôn được định vị lại theo văn bản nguồn.
+ * Trạng thái chấm khởi tạo (#730, #800):
+ * - Lỗi: đã chốt (`writingErrors !== null`) → lấy lỗi đã lưu; chưa chốt → lấy
+ *   lỗi từ nháp AI (nếu có). Lỗi luôn được định vị lại theo văn bản nguồn.
+ * - Điểm IELTS: chỉ prefill khi bài đã chấm theo rubric IELTS; bài chưa chấm
+ *   hoặc bài cũ (thang legacy /15, /20) luôn khởi tạo rỗng (`null`) để giáo
+ *   viên tự chấm theo thang IELTS 0–9.
  */
 export function initialPlacementGrading(
 	submission: PlacementSubmissionDetail,
@@ -95,11 +122,31 @@ export function initialPlacementGrading(
 	const useAi = submission.writingErrors === null;
 	const aiWriting = useAi ? submission.aiWriting : null;
 	const aiSpeaking = useAi ? submission.aiSpeaking : null;
+	const ieltsWriting = isIeltsWritingRubric(submission.writingRubric)
+		? submission.writingRubric
+		: null;
+	const ieltsSpeaking = isIeltsSpeakingRubric(submission.speakingRubric)
+		? submission.speakingRubric
+		: null;
 	return {
-		writingRubric:
-			aiWriting?.rubric ?? submission.writingRubric ?? DEFAULT_WRITING,
-		speakingRubric:
-			aiSpeaking?.rubric ?? submission.speakingRubric ?? DEFAULT_SPEAKING,
+		writingRubric: ieltsWriting
+			? {
+					task: ieltsWriting.task,
+					coherence: ieltsWriting.coherence,
+					lexical: ieltsWriting.lexical,
+					grammar: ieltsWriting.grammar,
+				}
+			: emptyWritingRubric(),
+		writingScore: ieltsWriting ? (submission.writingScore ?? null) : null,
+		speakingRubric: ieltsSpeaking
+			? {
+					fluency: ieltsSpeaking.fluency,
+					lexical: ieltsSpeaking.lexical,
+					grammar: ieltsSpeaking.grammar,
+					pronunciation: ieltsSpeaking.pronunciation,
+				}
+			: emptySpeakingRubric(),
+		speakingScore: ieltsSpeaking ? (submission.speakingScore ?? null) : null,
 		includeSpeaking:
 			submission.gradedAt !== null
 				? submission.speakingRubric !== null
@@ -119,7 +166,7 @@ function hydrationKeyOf(s: PlacementSubmissionDetail): string {
 	return `${s.id}:${s.gradedAt ?? "pending"}:${s.aiDraftedAt ?? "no-ai"}`;
 }
 
-/** Bài có nguồn để AI chấm (bài viết hoặc file nói đã upload/transcript). */
+/** Bài có nguồn để AI phân tích lỗi (bài viết hoặc file nói đã upload/transcript). */
 function hasAiSourceOf(s: PlacementSubmissionDetail): boolean {
 	return (
 		s.writingText.trim().length > 0 ||
@@ -134,140 +181,160 @@ const EMAIL_STATUS_TEXT = {
 	skipped: "Học viên không có email — gửi link qua Zalo.",
 } as const;
 
-function AiFeedbackNote({
-	feedback,
-	onInsert,
-	testId,
-}: {
-	feedback: string;
-	onInsert: () => void;
-	testId: string;
-}) {
-	return (
-		<div
-			data-testid={testId}
-			className="space-y-1.5 rounded-md border border-border border-dashed bg-muted/30 px-3 py-2 text-xs"
-		>
-			<div className="flex flex-wrap items-center justify-between gap-2">
-				<span className="font-medium text-foreground">
-					Nhận xét của AI (tham khảo)
-				</span>
-				<Button variant="ghost" size="sm" onClick={onInsert}>
-					Chèn vào nhận xét
-				</Button>
-			</div>
-			<p className="whitespace-pre-wrap break-words text-muted-foreground">
-				{feedback}
-			</p>
-		</div>
-	);
-}
-
-function RubricRow({
+/**
+ * Một trường nhập band IELTS (0–9, bước 0.5) kết hợp `<BandSlider>` và ô nhập số
+ * đồng bộ hai chiều. Cho phép trống (`null`), commit giá trị hợp lệ ngay khi gõ
+ * và chuẩn hóa/hoàn nguyên giá trị không hợp lệ khi blur.
+ */
+function IeltsBandField({
 	label,
 	desc,
 	value,
 	onChange,
-	testIdPrefix,
+	sliderId,
+	inputTestId,
+	highlight = false,
 }: {
 	label: string;
-	desc: string;
-	value: number;
-	onChange: (next: number) => void;
-	testIdPrefix: string;
+	desc?: string;
+	value: number | null;
+	onChange: (next: number | null) => void;
+	sliderId: string;
+	inputTestId: string;
+	highlight?: boolean;
 }) {
+	const [draft, setDraft] = useState(() =>
+		value === null ? "" : formatBand(value),
+	);
+	const focusedRef = useRef(false);
+
+	useEffect(() => {
+		if (!focusedRef.current) {
+			setDraft(value === null ? "" : formatBand(value));
+		}
+	}, [value]);
+
 	return (
-		<div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-3 py-2">
-			<div className="min-w-[180px] flex-1">
-				<div className="font-medium text-foreground text-xs">{label}</div>
-				<div className="text-muted-foreground text-xs">{desc}</div>
+		<div
+			className={
+				highlight
+					? "space-y-1.5 rounded-md border border-primary/30 bg-muted/50 px-3 py-2.5"
+					: "space-y-1 rounded-md border border-border bg-muted/30 px-3 py-2"
+			}
+		>
+			<div className="flex flex-wrap items-baseline justify-between gap-2">
+				<label
+					htmlFor={sliderId}
+					className="font-medium text-foreground text-xs"
+				>
+					{label}
+				</label>
+				{desc && <span className="text-muted-foreground text-xs">{desc}</span>}
 			</div>
-			<fieldset
-				className="flex items-center gap-1 border-0 p-0"
-				aria-label={label}
-			>
-				{SCORE_LEVELS.map((n) => (
-					<button
-						key={n}
-						type="button"
-						data-testid={`${testIdPrefix}-${n}`}
-						aria-pressed={value === n}
-						onClick={() => onChange(n)}
-						className={`h-7 min-w-7 rounded border px-2 font-mono text-xs transition-colors ${
-							value === n
-								? "border-primary bg-primary text-primary-foreground"
-								: "border-border bg-background text-foreground hover:bg-muted"
-						}`}
-					>
-						{n}
-					</button>
-				))}
-			</fieldset>
+			<div className="flex items-center gap-3">
+				<div className="min-w-0 flex-1">
+					<BandSlider
+						id={sliderId}
+						value={value}
+						onChange={(band) => onChange(band)}
+					/>
+				</div>
+				<input
+					type="number"
+					min={0}
+					max={9}
+					step={0.5}
+					placeholder="—"
+					aria-label={`${label} (điểm IELTS)`}
+					data-testid={inputTestId}
+					value={draft}
+					onFocus={() => {
+						focusedRef.current = true;
+					}}
+					onChange={(e) => {
+						const raw = e.target.value;
+						setDraft(raw);
+						if (raw.trim() === "") {
+							onChange(null);
+							return;
+						}
+						const parsed = Number(raw);
+						if (isBandStep(parsed)) {
+							onChange(parsed);
+						}
+					}}
+					onBlur={() => {
+						focusedRef.current = false;
+						const trimmed = draft.trim();
+						if (trimmed === "") {
+							setDraft("");
+							if (value !== null) onChange(null);
+							return;
+						}
+						const parsed = Number(trimmed);
+						if (!Number.isFinite(parsed)) {
+							setDraft(value === null ? "" : formatBand(value));
+							return;
+						}
+						const snapped =
+							Math.round(Math.min(9, Math.max(0, parsed)) * 2) / 2;
+						setDraft(formatBand(snapped));
+						if (snapped !== value) {
+							onChange(snapped);
+						}
+					}}
+					className={`${inputCls} w-20 shrink-0 text-right font-mono tabular-nums`}
+				/>
+			</div>
 		</div>
 	);
 }
 
-type RubricGuideItem = {
-	readonly key: string;
-	readonly label: string;
-	readonly levels: {
-		readonly 5: string;
-		readonly 3: string;
-		readonly 1: string;
-	};
-};
-
-function RubricGuideDetails({
-	items,
-	testId,
+/** Khối nhập 4 tiêu chí IELTS + điểm tổng IELTS cho Writing hoặc Speaking. */
+function IeltsSkillGradingSection({
+	skill,
+	criteria,
+	rubric,
+	overall,
+	overallLabel,
+	onCriterionChange,
+	onOverallChange,
 }: {
-	items: readonly RubricGuideItem[];
-	testId: string;
+	skill: "writing" | "speaking";
+	criteria: readonly {
+		readonly key: string;
+		readonly label: string;
+		readonly desc: string;
+	}[];
+	rubric: Record<string, number | null>;
+	overall: number | null;
+	overallLabel: string;
+	onCriterionChange: (key: string, next: number | null) => void;
+	onOverallChange: (next: number | null) => void;
 }) {
 	return (
-		<details
-			data-testid={testId}
-			className="rounded-md border border-border bg-muted/20"
-		>
-			<summary className="cursor-pointer px-3 py-2 font-medium text-foreground text-xs hover:bg-muted/40">
-				Xem thang mô tả 5 / 3 / 1
-			</summary>
-			<div className="space-y-2 border-border border-t px-3 py-2.5 text-xs">
-				<div className="overflow-x-auto rounded-md border border-border bg-background">
-					<table className="w-full min-w-[520px] text-left text-xs">
-						<thead className="bg-muted/50 text-muted-foreground">
-							<tr>
-								<th className="w-36 px-2.5 py-1.5 font-medium">Tiêu chí</th>
-								<th className="px-2.5 py-1.5 font-medium font-mono">5</th>
-								<th className="px-2.5 py-1.5 font-medium font-mono">3</th>
-								<th className="px-2.5 py-1.5 font-medium font-mono">1</th>
-							</tr>
-						</thead>
-						<tbody>
-							{items.map((item) => (
-								<tr key={item.key} className="border-border border-t align-top">
-									<td className="px-2.5 py-2 font-medium text-foreground">
-										{item.label}
-									</td>
-									<td className="px-2.5 py-2 text-muted-foreground">
-										{item.levels[5]}
-									</td>
-									<td className="px-2.5 py-2 text-muted-foreground">
-										{item.levels[3]}
-									</td>
-									<td className="px-2.5 py-2 text-muted-foreground">
-										{item.levels[1]}
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
-				<p className="text-muted-foreground text-xs">
-					{PLACEMENT_RUBRIC_INTERMEDIATE_NOTE}
-				</p>
-			</div>
-		</details>
+		<div className="space-y-1.5">
+			{criteria.map((item) => (
+				<IeltsBandField
+					key={item.key}
+					label={item.label}
+					desc={item.desc}
+					value={rubric[item.key] ?? null}
+					sliderId={`${skill}-${item.key}-slider`}
+					inputTestId={`${skill}-${item.key}-input`}
+					onChange={(next) => onCriterionChange(item.key, next)}
+				/>
+			))}
+			<IeltsBandField
+				label={overallLabel}
+				desc="Tự động tính khi đủ 4 tiêu chí · có thể chỉnh tay"
+				value={overall}
+				sliderId={`${skill}-overall-slider`}
+				inputTestId={`${skill}-overall-input`}
+				highlight
+				onChange={onOverallChange}
+			/>
+		</div>
 	);
 }
 
@@ -375,14 +442,18 @@ function PlacementSubmissionBody({
 	) => void;
 }) {
 	const [initial] = useState(() => initialPlacementGrading(submission));
-	const [writingRubric, setWritingRubric] = useState<PlacementWritingRubric>(
-		initial.writingRubric,
+	const [writingRubric, setWritingRubric] =
+		useState<NullablePlacementWritingRubric>(initial.writingRubric);
+	const [writingScore, setWritingScore] = useState<number | null>(
+		initial.writingScore,
 	);
 	const [includeSpeaking, setIncludeSpeaking] = useState<boolean>(
 		initial.includeSpeaking,
 	);
-	const [speakingRubric, setSpeakingRubric] = useState<PlacementSpeakingRubric>(
-		initial.speakingRubric,
+	const [speakingRubric, setSpeakingRubric] =
+		useState<NullablePlacementSpeakingRubric>(initial.speakingRubric);
+	const [speakingScore, setSpeakingScore] = useState<number | null>(
+		initial.speakingScore,
 	);
 	const [writingErrors, setWritingErrors] = useState<PlacementError[]>(
 		initial.writingErrors,
@@ -393,9 +464,9 @@ function PlacementSubmissionBody({
 	const [teacherFeedback, setTeacherFeedback] = useState(
 		() => submission.teacherFeedback,
 	);
-	// Giáo viên đã sửa form (rubric/lỗi/nhận xét) kể từ lần hydrate gần nhất.
+	// Giáo viên đã sửa form (rubric/điểm/lỗi/nhận xét) kể từ lần hydrate gần nhất.
 	const [dirty, setDirty] = useState(false);
-	// Nháp AI mới về khi form đang sửa → chờ giáo viên bấm "Áp dụng nháp AI".
+	// Danh sách lỗi AI mới về khi form đang sửa → chờ giáo viên bấm "Áp dụng lỗi AI".
 	const [draftPending, setDraftPending] = useState(false);
 	const touch = () => setDirty(true);
 
@@ -407,8 +478,8 @@ function PlacementSubmissionBody({
 	const [copiedZalo, setCopiedZalo] = useState(false);
 	const [copiedLink, setCopiedLink] = useState(false);
 
-	// Khởi tạo lại form khi đổi bài, khi vừa chốt, hoặc khi nháp AI mới về.
-	// Nháp AI mới về lúc form đang sửa → KHÔNG ghi đè, chỉ mời áp dụng.
+	// Khởi tạo lại form khi đổi bài, khi vừa chốt, hoặc khi kết quả AI mới về.
+	// Kết quả AI mới về lúc form đang sửa → KHÔNG ghi đè, chỉ mời áp dụng lỗi.
 	const hydratedRef = useRef({
 		key: hydrationKeyOf(submission),
 		id: submission.id,
@@ -433,17 +504,18 @@ function PlacementSubmissionBody({
 		setDraftPending(false);
 		const next = initialPlacementGrading(submission);
 		setWritingRubric(next.writingRubric);
+		setWritingScore(next.writingScore);
 		setIncludeSpeaking(next.includeSpeaking);
 		setSpeakingRubric(next.speakingRubric);
+		setSpeakingScore(next.speakingScore);
 		setWritingErrors(next.writingErrors);
 		setSpeakingErrors(next.speakingErrors);
 		setTeacherFeedback(submission.teacherFeedback);
 	}, [submission, dirty]);
 
-	/** Thay toàn bộ rubric + lỗi bằng nháp AI, giữ nhận xét giáo viên. */
+	/** Chỉ cập nhật danh sách lỗi từ AI, KHÔNG chạm vào điểm hay nhận xét. */
 	const applyAiDraft = () => {
 		if (submission.aiWriting) {
-			setWritingRubric(submission.aiWriting.rubric);
 			setWritingErrors(
 				locatePlacementErrors(
 					submission.writingText,
@@ -452,7 +524,6 @@ function PlacementSubmissionBody({
 			);
 		}
 		if (submission.aiSpeaking) {
-			setSpeakingRubric(submission.aiSpeaking.rubric);
 			setSpeakingErrors(
 				locatePlacementErrors(
 					submission.speakingTranscript,
@@ -516,19 +587,101 @@ function PlacementSubmissionBody({
 		mediaRetryTick,
 	]);
 
-	const activeSpeakingRubric = includeSpeaking ? speakingRubric : null;
+	const handleWritingCriterionChange = (key: string, next: number | null) => {
+		touch();
+		const updated: NullablePlacementWritingRubric = {
+			...writingRubric,
+			[key]: next,
+		};
+		setWritingRubric(updated);
+		if (
+			updated.task !== null &&
+			updated.coherence !== null &&
+			updated.lexical !== null &&
+			updated.grammar !== null
+		) {
+			setWritingScore(
+				ieltsOverallBand([
+					updated.task,
+					updated.coherence,
+					updated.lexical,
+					updated.grammar,
+				]),
+			);
+		}
+	};
+
+	const handleSpeakingCriterionChange = (key: string, next: number | null) => {
+		touch();
+		const updated: NullablePlacementSpeakingRubric = {
+			...speakingRubric,
+			[key]: next,
+		};
+		setSpeakingRubric(updated);
+		if (
+			updated.fluency !== null &&
+			updated.lexical !== null &&
+			updated.grammar !== null &&
+			updated.pronunciation !== null
+		) {
+			setSpeakingScore(
+				ieltsOverallBand([
+					updated.fluency,
+					updated.lexical,
+					updated.grammar,
+					updated.pronunciation,
+				]),
+			);
+		}
+	};
+
+	const hasCompleteWriting =
+		writingRubric.task !== null &&
+		writingRubric.coherence !== null &&
+		writingRubric.lexical !== null &&
+		writingRubric.grammar !== null &&
+		writingScore !== null;
+
+	const hasCompleteSpeaking =
+		!includeSpeaking ||
+		(speakingRubric.fluency !== null &&
+			speakingRubric.lexical !== null &&
+			speakingRubric.grammar !== null &&
+			speakingRubric.pronunciation !== null &&
+			speakingScore !== null);
+
+	const canSave = hasCompleteWriting && hasCompleteSpeaking;
+	const activeSpeakingScore = includeSpeaking ? speakingScore : null;
+
 	const previewFinal = computePlacementFinal({
 		objective: submission.objective,
 		bands: submission.snapshot.bands,
-		writingRubric,
-		speakingRubric: activeSpeakingRubric,
+		writingScore,
+		speakingScore: activeSpeakingScore,
 	});
 
 	const gradeMutation = useMutation({
 		mutationFn: () => {
+			if (!canSave) {
+				throw new Error("INCOMPLETE_IELTS_GRADE");
+			}
 			const payload: PlacementTeacherGrade = {
-				writingRubric,
-				speakingRubric: activeSpeakingRubric,
+				writingRubric: {
+					task: writingRubric.task as number,
+					coherence: writingRubric.coherence as number,
+					lexical: writingRubric.lexical as number,
+					grammar: writingRubric.grammar as number,
+				},
+				writingScore: writingScore as number,
+				speakingRubric: includeSpeaking
+					? {
+							fluency: speakingRubric.fluency as number,
+							lexical: speakingRubric.lexical as number,
+							grammar: speakingRubric.grammar as number,
+							pronunciation: speakingRubric.pronunciation as number,
+						}
+					: null,
+				speakingScore: includeSpeaking ? (speakingScore as number) : null,
 				teacherFeedback: teacherFeedback.trim(),
 				writingErrors,
 				speakingErrors: includeSpeaking ? speakingErrors : [],
@@ -556,7 +709,7 @@ function PlacementSubmissionBody({
 				? retryStudentPlacementAi(subject.id)
 				: retryLeadPlacementAi(subject.id),
 		onSuccess: (updated) => {
-			toast.success("Đã gửi yêu cầu AI chấm.");
+			toast.success("Đã gửi yêu cầu AI phân tích lỗi.");
 			onSaved(updated, "retry");
 		},
 		onError: (err) => {
@@ -565,24 +718,12 @@ function PlacementSubmissionBody({
 				return;
 			}
 			if (isHttpError(err) && err.status === 503) {
-				toast.error("AI chấm điểm chưa được bật — vui lòng chấm tay.");
+				toast.error("Phân tích lỗi AI chưa được bật — vui lòng chấm tay.");
 				return;
 			}
-			toast.error("Không thể yêu cầu AI chấm. Vui lòng thử lại.");
+			toast.error("Không thể yêu cầu AI phân tích lỗi. Vui lòng thử lại.");
 		},
 	});
-
-	const insertFeedback = (text: string) => {
-		const addition = text.trim();
-		if (!addition) return;
-		touch();
-		setTeacherFeedback((prev) =>
-			(prev.trim() ? `${prev.trimEnd()}\n${addition}` : addition).slice(
-				0,
-				PLACEMENT_TEACHER_FEEDBACK_MAX,
-			),
-		);
-	};
 
 	const liveZaloText = buildPlacementZaloText({
 		studentName: submission.studentName,
@@ -655,6 +796,21 @@ function PlacementSubmissionBody({
 				hasAiSource={hasAiSourceOf(submission)}
 				onApplyDraft={draftPending ? applyAiDraft : undefined}
 			/>
+
+			{submission.gradedAt !== null &&
+				!isIeltsWritingRubric(submission.writingRubric) && (
+					<div
+						role="note"
+						data-testid="legacy-score-banner"
+						className="rounded-md border border-border bg-muted/40 px-3 py-2 text-muted-foreground text-xs"
+					>
+						Điểm cũ: Writing {submission.writingScore ?? "—"}/15
+						{submission.speakingScore !== null
+							? ` · Speaking ${submission.speakingScore}/20`
+							: ""}{" "}
+						— nhập điểm IELTS (0–9) để cập nhật.
+					</div>
+				)}
 
 			{/* 3 điểm tự động */}
 			<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -758,8 +914,11 @@ function PlacementSubmissionBody({
 			<div className="space-y-2.5 rounded-md border border-border bg-background p-3">
 				<div className="flex flex-wrap items-center justify-between gap-2">
 					<h5 className="font-semibold text-foreground text-xs uppercase tracking-wide">
-						Phần 4: Writing ({previewFinal.writingScore ?? 0}/15 điểm •{" "}
-						{previewFinal.writingPct ?? 0}%)
+						Phần 4: Writing (
+						{writingScore !== null
+							? `Band ${formatBand(writingScore)}/9 • ${previewFinal.writingPct ?? 0}%`
+							: "Chưa chấm"}
+						)
 					</h5>
 					<span className="rounded bg-muted px-2 py-0.5 font-mono text-muted-foreground text-xs">
 						{submission.writingWordCount} từ
@@ -775,33 +934,17 @@ function PlacementSubmissionBody({
 						setWritingErrors(next);
 					}}
 				/>
-				{submission.aiWriting?.feedback.trim() && (
-					<AiFeedbackNote
-						testId="writing-ai-feedback"
-						feedback={submission.aiWriting.feedback}
-						onInsert={() =>
-							insertFeedback(submission.aiWriting?.feedback ?? "")
-						}
-					/>
-				)}
-				<div className="space-y-1.5">
-					{PLACEMENT_WRITING_RUBRIC.map((item) => (
-						<RubricRow
-							key={item.key}
-							label={item.label}
-							desc={item.desc}
-							value={writingRubric[item.key]}
-							testIdPrefix={`writing-${item.key}`}
-							onChange={(next) => {
-								touch();
-								setWritingRubric((prev) => ({ ...prev, [item.key]: next }));
-							}}
-						/>
-					))}
-				</div>
-				<RubricGuideDetails
-					items={PLACEMENT_WRITING_RUBRIC}
-					testId="writing-rubric-guide"
+				<IeltsSkillGradingSection
+					skill="writing"
+					criteria={PLACEMENT_WRITING_RUBRIC}
+					rubric={writingRubric}
+					overall={writingScore}
+					overallLabel="Điểm tổng Writing (IELTS Band)"
+					onCriterionChange={handleWritingCriterionChange}
+					onOverallChange={(next) => {
+						touch();
+						setWritingScore(next);
+					}}
 				/>
 			</div>
 
@@ -810,8 +953,8 @@ function PlacementSubmissionBody({
 				<div className="flex flex-wrap items-center justify-between gap-2">
 					<h5 className="font-semibold text-foreground text-xs uppercase tracking-wide">
 						Phần 5: Speaking (
-						{previewFinal.speakingScore !== null
-							? `${previewFinal.speakingScore}/20 điểm • ${previewFinal.speakingPct}%`
+						{activeSpeakingScore !== null
+							? `Band ${formatBand(activeSpeakingScore)}/9 • ${previewFinal.speakingPct ?? 0}%`
 							: submission.speakingStatus === "skipped"
 								? "Học viên đã bỏ qua"
 								: "Chưa chấm"}
@@ -908,43 +1051,22 @@ function PlacementSubmissionBody({
 								setSpeakingErrors(next);
 							}}
 						/>
-						{submission.aiSpeaking?.feedback.trim() && (
-							<AiFeedbackNote
-								testId="speaking-ai-feedback"
-								feedback={submission.aiSpeaking.feedback}
-								onInsert={() =>
-									insertFeedback(submission.aiSpeaking?.feedback ?? "")
-								}
-							/>
-						)}
 					</div>
 				)}
 
 				{includeSpeaking && (
-					<>
-						<div className="space-y-1.5">
-							{PLACEMENT_SPEAKING_RUBRIC.map((item) => (
-								<RubricRow
-									key={item.key}
-									label={item.label}
-									desc={item.desc}
-									value={speakingRubric[item.key]}
-									testIdPrefix={`speaking-${item.key}`}
-									onChange={(next) => {
-										touch();
-										setSpeakingRubric((prev) => ({
-											...prev,
-											[item.key]: next,
-										}));
-									}}
-								/>
-							))}
-						</div>
-						<RubricGuideDetails
-							items={PLACEMENT_SPEAKING_RUBRIC}
-							testId="speaking-rubric-guide"
-						/>
-					</>
+					<IeltsSkillGradingSection
+						skill="speaking"
+						criteria={PLACEMENT_SPEAKING_RUBRIC}
+						rubric={speakingRubric}
+						overall={speakingScore}
+						overallLabel="Điểm tổng Speaking (IELTS Band)"
+						onCriterionChange={handleSpeakingCriterionChange}
+						onOverallChange={(next) => {
+							touch();
+							setSpeakingScore(next);
+						}}
+					/>
 				)}
 			</div>
 
@@ -970,9 +1092,11 @@ function PlacementSubmissionBody({
 					data-testid="placement-score-summary"
 					className="text-muted-foreground text-xs tabular-nums"
 				>
-					Writing {previewFinal.writingScore ?? 0}/15 · Speaking{" "}
-					{previewFinal.speakingScore !== null
-						? `${previewFinal.speakingScore}/20`
+					Writing{" "}
+					{writingScore !== null ? `Band ${formatBand(writingScore)}/9` : "—"} ·
+					Speaking{" "}
+					{activeSpeakingScore !== null
+						? `Band ${formatBand(activeSpeakingScore)}/9`
 						: "—"}{" "}
 					· Tổng {previewFinal.averagePct}% · CEFR {previewFinal.band.cefr}
 				</p>
@@ -1008,34 +1132,47 @@ function PlacementSubmissionBody({
 				/>
 			</label>
 
-			<div className="flex flex-wrap items-center justify-between gap-2">
-				<Button
-					variant="outline"
-					size="sm"
-					onClick={() => void handleCopyZalo()}
-					data-testid="copy-zalo-result-btn"
-				>
-					{copiedZalo ? (
-						<Check className="size-3.5" />
-					) : (
-						<Copy className="size-3.5" />
-					)}
-					{copiedZalo ? "Đã sao chép Zalo" : "Sao chép tin nhắn Zalo"}
-				</Button>
-				<Button
-					variant="primary"
-					size="sm"
-					disabled={gradeMutation.isPending}
-					aria-busy={gradeMutation.isPending}
-					onClick={() => gradeMutation.mutate()}
-					data-testid="save-placement-grade-btn"
-				>
-					{gradeMutation.isPending
-						? "Đang chốt kết quả..."
-						: submission.resultUrl
-							? "Cập nhật kết quả đã chốt"
-							: "Chốt kết quả & gửi học viên"}
-				</Button>
+			<div className="space-y-1.5">
+				<div className="flex flex-wrap items-center justify-between gap-2">
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => void handleCopyZalo()}
+						data-testid="copy-zalo-result-btn"
+					>
+						{copiedZalo ? (
+							<Check className="size-3.5" />
+						) : (
+							<Copy className="size-3.5" />
+						)}
+						{copiedZalo ? "Đã sao chép Zalo" : "Sao chép tin nhắn Zalo"}
+					</Button>
+					<Button
+						variant="primary"
+						size="sm"
+						disabled={gradeMutation.isPending || !canSave}
+						aria-busy={gradeMutation.isPending}
+						onClick={() => gradeMutation.mutate()}
+						data-testid="save-placement-grade-btn"
+					>
+						{gradeMutation.isPending
+							? "Đang chốt kết quả..."
+							: submission.resultUrl
+								? "Cập nhật kết quả đã chốt"
+								: "Chốt kết quả & gửi học viên"}
+					</Button>
+				</div>
+				{!canSave && (
+					<p
+						data-testid="save-placement-grade-hint"
+						className="text-right text-muted-foreground text-xs"
+					>
+						{!hasCompleteWriting
+							? "Nhập đủ 4 tiêu chí và điểm tổng IELTS cho Writing"
+							: "Nhập đủ 4 tiêu chí và điểm tổng IELTS cho Speaking (hoặc bỏ chọn Tính điểm Speaking)"}
+						{" để chốt kết quả."}
+					</p>
+				)}
 			</div>
 
 			{submission.resultUrl && (
