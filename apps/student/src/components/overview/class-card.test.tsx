@@ -114,3 +114,95 @@ describe("ClassCard — paused class state (#694)", () => {
 		expect(screen.getByText("Essay Practice")).toBeTruthy();
 	});
 });
+
+describe("ClassCard — Google Meet link (#816)", () => {
+	it("renders prominent 'Vào lớp (Google Meet)' link with z-10 above stretched card link when active and nextSession has meetUrl", () => {
+		render(
+			<ClassCard
+				cls={makeClass({
+					status: "active",
+					enrollmentStatus: "active",
+					nextSession: {
+						date: "2026-11-22",
+						time: "19:00",
+						topic: "Speaking Part 2",
+						meetUrl: "https://meet.google.com/abc-defg-hij",
+					},
+				})}
+			/>,
+		);
+
+		const meetLink = screen.getByRole("link", {
+			name: "Vào lớp (Google Meet)",
+		});
+		expect(meetLink.getAttribute("href")).toBe(
+			"https://meet.google.com/abc-defg-hij",
+		);
+		expect(meetLink.getAttribute("target")).toBe("_blank");
+		expect(meetLink.getAttribute("rel")).toBe("noopener noreferrer");
+		expect(meetLink.className).toContain("relative");
+		expect(meetLink.className).toContain("z-10");
+	});
+
+	it("does not render Meet link when nextSession.meetUrl is missing or null", () => {
+		render(
+			<ClassCard
+				cls={makeClass({
+					nextSession: {
+						date: "2026-11-22",
+						time: "19:00",
+						topic: "Speaking Part 2",
+						meetUrl: null,
+					},
+				})}
+			/>,
+		);
+
+		expect(
+			screen.queryByRole("link", { name: "Vào lớp (Google Meet)" }),
+		).toBeNull();
+	});
+
+	it("does not render Meet link when class is paused even if nextSession has meetUrl", () => {
+		render(
+			<ClassCard
+				cls={makeClass({
+					status: "paused",
+					enrollmentStatus: "active",
+					nextSession: {
+						date: "2026-11-22",
+						time: "19:00",
+						topic: "Speaking Part 2",
+						meetUrl: "https://meet.google.com/paused-cls",
+					},
+				})}
+			/>,
+		);
+
+		expect(
+			screen.queryByRole("link", { name: "Vào lớp (Google Meet)" }),
+		).toBeNull();
+	});
+
+	it("does not render Meet link when enrollmentStatus is invited", () => {
+		render(
+			<ClassCard
+				cls={makeClass({
+					status: "active",
+					enrollmentStatus: "invited",
+					nextSession: {
+						date: "2026-11-22",
+						time: "19:00",
+						topic: "Speaking Part 2",
+						meetUrl: "https://meet.google.com/invited-cls",
+					},
+				})}
+				onAccept={vi.fn()}
+			/>,
+		);
+
+		expect(
+			screen.queryByRole("link", { name: "Vào lớp (Google Meet)" }),
+		).toBeNull();
+	});
+});

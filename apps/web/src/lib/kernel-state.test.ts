@@ -21,6 +21,7 @@ describe("emptyKernelData", () => {
 			"lessons",
 			"notifs",
 			"reports",
+			"sessionMeetings",
 			"students",
 			"syllabi",
 			"vocabDecks",

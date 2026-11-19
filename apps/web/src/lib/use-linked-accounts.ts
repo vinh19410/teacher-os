@@ -1,9 +1,13 @@
+import type { GoogleIntegrationStatus } from "@teacher-os/api/contracts";
 import { useCallback, useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { fetchGoogleIntegrationStatus } from "@/lib/repos/google-meet";
 
 export interface LinkedAccountsState {
 	/** true/false once loaded; null while nothing is known yet. */
 	googleLinked: boolean | null;
+	/** Detailed Calendar/Meet/Drive integration state; null if unavailable. */
+	googleStatus: GoogleIntegrationStatus | null;
 	loading: boolean;
 	/** Set when listAccounts itself fails — the card must surface it (with a
 	 * retry) instead of sticking on an empty state forever. */
@@ -13,6 +17,8 @@ export interface LinkedAccountsState {
 
 export function useLinkedAccounts(): LinkedAccountsState {
 	const [googleLinked, setGoogleLinked] = useState<boolean | null>(null);
+	const [googleStatus, setGoogleStatus] =
+		useState<GoogleIntegrationStatus | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
@@ -29,10 +35,16 @@ export function useLinkedAccounts(): LinkedAccountsState {
 			setLoading(false);
 			return;
 		}
-		setGoogleLinked(
+		const linked =
 			Array.isArray(data) &&
-				data.some((account) => account.providerId === "google"),
-		);
+			data.some((account) => account.providerId === "google");
+		setGoogleLinked(linked);
+		if (linked) {
+			const status = await fetchGoogleIntegrationStatus().catch(() => null);
+			setGoogleStatus(status);
+		} else {
+			setGoogleStatus(null);
+		}
 		setLoading(false);
 	}, []);
 
@@ -40,5 +52,5 @@ export function useLinkedAccounts(): LinkedAccountsState {
 		void reload();
 	}, [reload]);
 
-	return { googleLinked, loading, error, reload };
+	return { googleLinked, googleStatus, loading, error, reload };
 }

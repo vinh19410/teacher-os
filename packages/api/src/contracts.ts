@@ -1082,6 +1082,7 @@ function validateQuestionChoices(
 		answer: string;
 	}>,
 	fallbackType: string,
+	allowExtendedBankChoices = false,
 ) {
 	for (const [index, question] of questions.entries()) {
 		const kind = answerKindByType[question.type ?? fallbackType] ?? null;
@@ -1094,10 +1095,14 @@ function validateQuestionChoices(
 				message: optsError,
 			});
 		}
-		if (
-			question.answer &&
-			!effectiveAnswerChoices(kind, question.opts).includes(question.answer)
-		) {
+		const allowed = allowExtendedBankChoices
+			? extendedAnswerChoices(kind)
+			: effectiveAnswerChoices(kind, question.opts);
+		const validChoices =
+			kind === "mcq4" || kind === "mcq3"
+				? effectiveAnswerChoices(kind, question.opts)
+				: allowed;
+		if (question.answer && !validChoices.includes(question.answer)) {
 			ctx.addIssue({
 				code: "custom",
 				path: ["questions", index, "answer"],
@@ -1303,7 +1308,12 @@ export const assignmentPromptCreateSchema =
 		}
 		// Answer-choice validation theo type HIỆU DỤNG của từng câu (type câu
 		// ?? type prompt) — đề trộn dạng chấm khớp kind của câu chứa nó.
-		validateQuestionChoices(ctx, value.questions, value.type);
+		validateQuestionChoices(
+			ctx,
+			value.questions,
+			value.type,
+			value.optionBank.length > 0,
+		);
 		// Phase-02 FR2 — option bank rules. Bankable is (skill, type)-qualified
 		// (red-team #1): writing task1 shares the `map` type id but is NOT
 		// bankable, so a bank arriving there is rejected outright. The 2..8 /
@@ -2203,6 +2213,9 @@ export interface KernelSnapshot {
 	/** TOS-17 (#451): quyền tài chính của thành viên đang xem. Optional để
 	 * tương thích ngược với snapshot fixture cũ trong test. */
 	viewer?: KernelViewer;
+	/** Metadata Google Meet & Recording theo buổi (classId, date). Optional để
+	 * tương thích ngược với snapshot fixture cũ trong test. */
+	sessionMeetings?: KernelSessionMeetingRow[];
 }
 
 export interface CreatedResponse {
@@ -2383,6 +2396,7 @@ export const studentNextSessionSchema = z.object({
 	date: z.string(),
 	time: z.string(),
 	topic: z.string(),
+	meetUrl: z.string().nullable().optional(),
 });
 export type StudentNextSession = z.infer<typeof studentNextSessionSchema>;
 
@@ -2460,6 +2474,14 @@ export const studentOverviewSchema = z.object({
 });
 export type StudentOverview = z.infer<typeof studentOverviewSchema>;
 
+export const RECORDING_STATUSES = [
+	"none",
+	"pending",
+	"ready",
+	"failed",
+] as const;
+export type RecordingStatus = (typeof RECORDING_STATUSES)[number];
+
 /** Buổi học của chính học viên trong lớp (GET /api/student/classes/:classId). */
 export const studentClassLessonSchema = z.object({
 	id: z.string(),
@@ -2471,6 +2493,9 @@ export const studentClassLessonSchema = z.object({
 	dur: z.number().int(),
 	status: z.string(),
 	topic: z.string(),
+	meetUrl: z.string().nullable().optional(),
+	recordingUrl: z.string().nullable().optional(),
+	recordingStatus: z.enum(RECORDING_STATUSES).optional(),
 });
 export type StudentClassLesson = z.infer<typeof studentClassLessonSchema>;
 
@@ -3399,10 +3424,15 @@ export const VOCAB_ERROR_CODES = {
 export type VocabErrorCode =
 	(typeof VOCAB_ERROR_CODES)[keyof typeof VOCAB_ERROR_CODES];
 
+export const vocabEntryTypeSchema = z.enum(["word", "chunk"]);
+export type VocabEntryType = z.infer<typeof vocabEntryTypeSchema>;
+
 export interface KernelVocabDeckRow {
 	id: string;
 	classId: string | null;
 	title: string;
+	lessonNumber?: number | null;
+	topic?: string | null;
 	lang: string;
 	wordCount: number;
 	createdAt: string;
@@ -3432,6 +3462,8 @@ export const vocabDeckCreateSchema = z
 			.optional(),
 		classId: z.string().min(1).nullable().optional().default(null),
 		title: z.string().trim().min(1).max(200),
+		lessonNumber: z.number().int().min(1).max(9999).nullable().optional(),
+		topic: z.string().trim().max(200).nullable().optional(),
 		lang: z.string().trim().min(1).max(16).default("en"),
 	})
 	.strict();
@@ -3441,6 +3473,8 @@ export const vocabDeckRenameSchema = z
 	.object({
 		deckId: z.string().min(1),
 		title: z.string().trim().min(1).max(200),
+		lessonNumber: z.number().int().min(1).max(9999).nullable().optional(),
+		topic: z.string().trim().max(200).nullable().optional(),
 		lang: z.string().trim().min(1).max(16).optional(),
 	})
 	.strict();
@@ -3471,8 +3505,11 @@ export const vocabWordUpsertSchema = z
 			.optional(),
 		deckId: z.string().min(1),
 		word: z.string().trim().min(1).max(200),
+		entryType: vocabEntryTypeSchema.default("word"),
 		ipa: z.string().trim().max(200).nullable().optional(),
+		pos: z.string().trim().max(100).nullable().optional(),
 		translation: z.string().trim().max(500).default(""),
+		example: z.string().trim().max(1000).nullable().optional(),
 		sortOrder: z.number().int().min(0).default(0),
 	})
 	.strict();
@@ -3490,14 +3527,98 @@ export const vocabTeacherWordSchema = z
 		id: z.string().min(1),
 		deckId: z.string().min(1),
 		word: z.string(),
+		entryType: vocabEntryTypeSchema.optional(),
 		ipa: z.string().nullable(),
+		pos: z.string().nullable().optional(),
 		translation: z.string(),
+		example: z.string().nullable().optional(),
 		audioKey: z.string().nullable(),
 		audioUrl: z.string().nullable(),
 		sortOrder: z.number().int(),
 	})
 	.strict();
 export type VocabTeacherWord = z.infer<typeof vocabTeacherWordSchema>;
+
+export const VOCAB_CSV_IMPORT_MAX_DECKS = 50;
+export const VOCAB_CSV_IMPORT_MAX_WORDS_PER_REQUEST = 500;
+
+export const vocabWordImportItemSchema = z
+	.object({
+		word: z.string().trim().min(1).max(200),
+		entryType: vocabEntryTypeSchema.default("word"),
+		ipa: z.string().trim().max(200).nullable().optional().default(null),
+		pos: z.string().trim().max(100).nullable().optional().default(null),
+		translation: z.string().trim().max(500).default(""),
+		example: z.string().trim().max(1000).nullable().optional().default(null),
+	})
+	.strict();
+export type VocabWordImportItem = z.infer<typeof vocabWordImportItemSchema>;
+
+export const vocabDeckCsvImportItemSchema = z
+	.object({
+		title: z.string().trim().min(1).max(200),
+		lessonNumber: z
+			.number()
+			.int()
+			.min(1)
+			.max(9999)
+			.nullable()
+			.optional()
+			.default(null),
+		topic: z.string().trim().max(200).nullable().optional().default(null),
+		lang: z.string().trim().min(1).max(16).default("en"),
+		words: z
+			.array(vocabWordImportItemSchema)
+			.min(1)
+			.max(VOCAB_CSV_IMPORT_MAX_WORDS_PER_REQUEST),
+	})
+	.strict();
+export type VocabDeckCsvImportItem = z.infer<
+	typeof vocabDeckCsvImportItemSchema
+>;
+
+export const vocabDeckCsvImportSchema = z
+	.object({
+		classId: z.string().min(1).nullable().optional().default(null),
+		decks: z
+			.array(vocabDeckCsvImportItemSchema)
+			.min(1)
+			.max(VOCAB_CSV_IMPORT_MAX_DECKS),
+	})
+	.strict()
+	.refine(
+		(data) =>
+			data.decks.reduce((sum, d) => sum + d.words.length, 0) <=
+			VOCAB_CSV_IMPORT_MAX_WORDS_PER_REQUEST,
+		{
+			message: `Total imported words must not exceed ${VOCAB_CSV_IMPORT_MAX_WORDS_PER_REQUEST}`,
+		},
+	);
+export type VocabDeckCsvImportInput = z.infer<typeof vocabDeckCsvImportSchema>;
+
+export const vocabDeckWordsImportSchema = z
+	.object({
+		words: z
+			.array(vocabWordImportItemSchema)
+			.min(1)
+			.max(VOCAB_CSV_IMPORT_MAX_WORDS_PER_REQUEST),
+	})
+	.strict();
+export type VocabDeckWordsImportInput = z.infer<
+	typeof vocabDeckWordsImportSchema
+>;
+
+export const vocabCsvImportResponseSchema = z
+	.object({
+		id: z.string().min(1),
+		deckIds: z.array(z.string().min(1)),
+		importedDecks: z.number().int().min(0),
+		importedWords: z.number().int().min(0),
+	})
+	.strict();
+export type VocabCsvImportResponse = z.infer<
+	typeof vocabCsvImportResponseSchema
+>;
 
 export const vocabTeacherWordsResponseSchema = z
 	.object({
@@ -3820,6 +3941,8 @@ export const vocabSessionDeckSchema = z
 	.object({
 		id: z.string().min(1),
 		title: z.string(),
+		lessonNumber: z.number().int().nullable().optional(),
+		topic: z.string().nullable().optional(),
 		lang: z.string(),
 	})
 	.strict();
@@ -3830,8 +3953,11 @@ export const vocabSessionCardSchema = z
 		id: z.string().min(1),
 		wordId: z.string().min(1),
 		word: z.string(),
+		entryType: vocabEntryTypeSchema.optional(),
 		translation: z.string(),
 		ipa: z.string().nullable(),
+		pos: z.string().nullable().optional(),
+		example: z.string().nullable().optional(),
 		audioKey: z.string().nullable(),
 		hasAudio: z.boolean().default(false),
 		level: z.number().int().min(1).max(5),
@@ -4760,6 +4886,18 @@ export const STUDY_PACK_AUDIO_HOSTS = [
 	"www.lingua.com",
 ] as const;
 
+export const STUDY_PACK_AUDIO_KEY_PATTERN =
+	/^study-packs\/[a-z0-9-]+\/[a-z0-9-]+\.mp3$/;
+
+export function isValidStudyPackAudioKey(raw: string): boolean {
+	const trimmed = raw.trim();
+	return (
+		trimmed.length > 0 &&
+		trimmed.length <= 500 &&
+		STUDY_PACK_AUDIO_KEY_PATTERN.test(trimmed)
+	);
+}
+
 export function isAllowedStudyPackAudioUrl(raw: string): boolean {
 	const trimmed = raw.trim();
 	if (!trimmed || trimmed.length > 500) return false;
@@ -4874,7 +5012,7 @@ const libraryExerciseBaseSchema = z
 		questions: z.array(assignmentQuestionSchema).max(40).default([]),
 		optionBank: z
 			.array(z.string().trim().min(1).max(200))
-			.max(ASSIGNMENT_OPTION_BANK_MAX)
+			.max(LIBRARY_OPTION_BANK_MAX)
 			.default([]),
 		note: richTextField(2000).default(""),
 		status: z.enum(["draft", "ready"]).default("draft"),
@@ -4886,12 +5024,21 @@ const libraryExerciseBaseSchema = z
 			ctx.addIssue({ code: "custom", path: ["part"], message: "invalid part" });
 			return;
 		}
-		const partTypes = config.types[value.part] ?? [];
-		if (!partTypes.includes(value.type)) {
+		const allowedTypes = [
+			...new Set([
+				...Object.values(config.types).flat(),
+				...(value.skill === "reading"
+					? ["mcq_many", "fill_blank", "match_names", "matching"]
+					: value.skill === "listening"
+						? ["mcq_many"]
+						: []),
+			]),
+		];
+		if (!allowedTypes.includes(value.type)) {
 			ctx.addIssue({ code: "custom", path: ["type"], message: "invalid type" });
 		}
 		for (const [index, question] of value.questions.entries()) {
-			if (question.type && !partTypes.includes(question.type)) {
+			if (question.type && !allowedTypes.includes(question.type)) {
 				ctx.addIssue({
 					code: "custom",
 					path: ["questions", index, "type"],
@@ -4971,7 +5118,12 @@ const libraryExerciseBaseSchema = z
 					});
 			}
 		}
-		validateQuestionChoices(ctx, value.questions, value.type);
+		validateQuestionChoices(
+			ctx,
+			value.questions,
+			value.type,
+			value.optionBank.length > 0,
+		);
 		const bankKind = optionBankKindFor(
 			value.skill,
 			value.type,
@@ -4991,16 +5143,29 @@ const libraryExerciseBaseSchema = z
 					({ question }) =>
 						answerKindByType[question.type ?? value.type] === bankKind,
 				);
+			const reusableTypes = new Set([
+				"info",
+				"features",
+				"match_names",
+				"matching",
+				"match2",
+				"summary",
+			]);
+			const allowsBankReuse = bankQuestions.every(({ question }) =>
+				reusableTypes.has(question.type ?? value.type),
+			);
 			if (
 				value.optionBank.length < 2 ||
-				value.optionBank.length < bankQuestions.length
+				(!allowsBankReuse && value.optionBank.length < bankQuestions.length)
 			)
 				ctx.addIssue({
 					code: "custom",
 					path: ["optionBank"],
-					message: `bank must have 2–${ASSIGNMENT_OPTION_BANK_MAX} items and cover every bankable question`,
+					message: allowsBankReuse
+						? `bank must have 2–${LIBRARY_OPTION_BANK_MAX} items`
+						: `bank must have 2–${LIBRARY_OPTION_BANK_MAX} items and cover every bankable question`,
 				});
-			const labels = ASSIGNMENT_ANSWER_CHOICES[bankKind];
+			const labels = extendedAnswerChoices(bankKind);
 			for (const { question, index } of bankQuestions) {
 				if (!question.answer.trim()) continue;
 				const labelIndex = labels.indexOf(question.answer as never);
@@ -5157,3 +5322,103 @@ export interface ClassStudyPacksResponse {
 	packs: ClassStudyPackView[];
 	holidays: { date: string; name: string }[];
 }
+
+export const GOOGLE_MEET_SCOPES = [
+	"https://www.googleapis.com/auth/calendar.events",
+	"https://www.googleapis.com/auth/meetings.space.created",
+	"https://www.googleapis.com/auth/meetings.space.readonly",
+	"https://www.googleapis.com/auth/drive",
+] as const;
+
+export interface KernelSessionMeetingRow {
+	id: string;
+	classId: string;
+	date: string;
+	meetUrl: string;
+	googleCalendarEventId: string | null;
+	googleMeetCode: string | null;
+	recordingUrl: string;
+	recordingStatus: RecordingStatus | string;
+	recordingError: string | null;
+	recordingSyncedAt: string | null;
+}
+
+export const GOOGLE_MEET_ERROR_CODES = {
+	NOT_CONNECTED: "GOOGLE_NOT_CONNECTED",
+	INSUFFICIENT_SCOPES: "GOOGLE_INSUFFICIENT_SCOPES",
+	REAUTH_REQUIRED: "GOOGLE_REAUTH_REQUIRED",
+	API_ERROR: "GOOGLE_API_ERROR",
+} as const;
+
+export const googleIntegrationStatusSchema = z.object({
+	linked: z.boolean(),
+	hasMeetScopes: z.boolean(),
+	hasRefreshToken: z.boolean(),
+	scopes: z.array(z.string()),
+	email: z.string().nullable(),
+});
+export type GoogleIntegrationStatus = z.infer<
+	typeof googleIntegrationStatusSchema
+>;
+
+export const sessionMeetCreateResponseSchema = z.object({
+	meetUrl: z.string(),
+	googleCalendarEventId: z.string().nullable(),
+	googleMeetCode: z.string().nullable(),
+	warning: z.string().nullable().optional(),
+});
+export type SessionMeetCreateResponse = z.infer<
+	typeof sessionMeetCreateResponseSchema
+>;
+
+export const classMeetBulkCreateResponseSchema = z.object({
+	created: z.number().int().nonnegative(),
+	skipped: z.number().int().nonnegative(),
+	failed: z.number().int().nonnegative(),
+	errors: z.array(
+		z.object({
+			date: z.string(),
+			message: z.string(),
+		}),
+	),
+});
+export type ClassMeetBulkCreateResponse = z.infer<
+	typeof classMeetBulkCreateResponseSchema
+>;
+
+export const sessionRecordingSyncResponseSchema = z.object({
+	status: z.enum(RECORDING_STATUSES),
+	recordingUrl: z.string(),
+	syncedAt: z.string().nullable(),
+	message: z.string().nullable().optional(),
+});
+export type SessionRecordingSyncResponse = z.infer<
+	typeof sessionRecordingSyncResponseSchema
+>;
+
+export const sessionRecordingUpdateSchema = z
+	.object({
+		recordingUrl: z
+			.string()
+			.max(2000)
+			.refine(
+				(val) => {
+					const trimmed = val.trim();
+					if (!trimmed) return true;
+					if (/\s/.test(trimmed)) return false;
+					try {
+						const parsed = new URL(trimmed);
+						return parsed.protocol === "https:" && parsed.hostname.length > 0;
+					} catch {
+						return false;
+					}
+				},
+				{
+					message: "Link recording phải là URL https:// hợp lệ hoặc để trống",
+				},
+			),
+	})
+	.strict();
+export type SessionRecordingUpdateInput = z.infer<
+	typeof sessionRecordingUpdateSchema
+>;

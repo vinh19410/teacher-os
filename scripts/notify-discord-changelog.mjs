@@ -8,7 +8,7 @@ export const DISCORD_EMBED_TITLE_LIMIT = 256;
 export const SINGLE_COMMIT_SUBJECT_MAX = 300;
 export const STAGING_COLOR = 0xf59e0b;
 export const PROD_COLOR = 0x22c55e;
-export const RELEASE_AUTHOR_NAME = "Teacher OS Releases";
+export const RELEASE_AUTHOR_NAME = "Cô Mỹ Dạy Tiếng Anh Releases";
 
 const ALLOWED_DISCORD_HOSTS = new Set([
 	"discord.com",

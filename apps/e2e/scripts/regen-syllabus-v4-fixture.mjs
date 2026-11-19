@@ -104,7 +104,7 @@ function fail(message) {
 const workbook = new ExcelJS.Workbook();
 workbook.created = new Date("2026-01-01T00:00:00.000Z");
 workbook.modified = new Date("2026-01-01T00:00:00.000Z");
-workbook.creator = "Teacher OS";
+workbook.creator = "Cô Mỹ Dạy Tiếng Anh";
 
 const sheet = workbook.addWorksheet("Syllabus", {
 	views: [{ state: "frozen", ySplit: 1 }],

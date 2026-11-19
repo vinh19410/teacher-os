@@ -8,6 +8,7 @@ import { formatInterval } from "@teacher-os/api/srs/format";
 import { buttonVariants } from "@teacher-os/ui/components/button";
 import { StudentShell } from "@/components/layout/student-shell";
 import Loader from "@/components/loader";
+import { Badge } from "@/components/ui/badge";
 import { useStudentMe } from "@/lib/repos/student";
 import { useVocabSessionData } from "@/lib/repos/vocab";
 
@@ -25,6 +26,14 @@ function VocabDeckRouteView() {
 	const hasChildMatch = useChildMatches().length > 0;
 	if (hasChildMatch) return <Outlet />;
 	return <VocabDeckDetailPage />;
+}
+
+function formatPos(pos?: string | null): string | null {
+	const trimmed = pos?.trim();
+	if (!trimmed) return null;
+	return trimmed.startsWith("(") && trimmed.endsWith(")")
+		? trimmed
+		: `(${trimmed})`;
 }
 
 function VocabDeckDetailPage() {
@@ -91,6 +100,15 @@ function VocabDeckDetailPage() {
 	const sessionSearch = (mode: "learn" | "review") =>
 		course ? { course, mode } : { mode };
 
+	const lessonLabel =
+		typeof data.deck.lessonNumber === "number"
+			? `Buổi ${String(data.deck.lessonNumber).padStart(2, "0")}`
+			: null;
+	const topicLabel = data.deck.topic?.trim() ? data.deck.topic.trim() : null;
+	const deckMetaLine = [lessonLabel, topicLabel]
+		.filter((part): part is string => Boolean(part))
+		.join(" · ");
+
 	return (
 		<StudentShell userName={me?.student.name} userEmail={me?.user.email}>
 			<div data-testid="vocab-deck-detail" className="space-y-8">
@@ -120,6 +138,14 @@ function VocabDeckDetailPage() {
 						>
 							{data.deck.title}
 						</h1>
+						{deckMetaLine ? (
+							<p
+								data-testid="vocab-deck-meta"
+								className="mt-2 font-mono text-muted-foreground text-xs"
+							>
+								{deckMetaLine}
+							</p>
+						) : null}
 						{nextReviewIntervalLabel ? (
 							<p
 								data-testid="vocab-next-review-hint"
@@ -190,31 +216,68 @@ function VocabDeckDetailPage() {
 							Bộ từ này chưa có từ vựng nào.
 						</p>
 					) : (
-						<div className="divide-y divide-line">
-							{data.cards.map((card) => (
-								<div
-									key={card.id}
-									data-testid="vocab-deck-word-row"
-									className="flex flex-wrap items-center justify-between gap-2 px-5 py-3.5 text-sm"
-								>
-									<div>
-										<span className="font-semibold text-foreground">
-											{card.word}
+						<div className="divide-y divide-border">
+							{data.cards.map((card) => {
+								const formattedPos = formatPos(card.pos);
+								const trimmedExample = card.example?.trim() || null;
+								return (
+									<div
+										key={card.id}
+										data-testid="vocab-deck-word-row"
+										className="flex flex-wrap items-center justify-between gap-2 px-5 py-3.5 text-sm"
+									>
+										<div className="min-w-0 flex-1">
+											<div className="flex flex-wrap items-center gap-2">
+												<span className="font-semibold text-foreground">
+													{card.word}
+												</span>
+												{card.entryType === "chunk" ? (
+													<Badge
+														variant="secondary"
+														data-testid="vocab-card-entry-type"
+													>
+														Chunk
+													</Badge>
+												) : card.entryType === "word" ? (
+													<Badge
+														variant="outline"
+														data-testid="vocab-card-entry-type"
+													>
+														Word
+													</Badge>
+												) : null}
+												{formattedPos ? (
+													<span
+														data-testid="vocab-card-pos"
+														className="font-mono text-muted-foreground text-xs"
+													>
+														{formattedPos}
+													</span>
+												) : null}
+												{card.ipa ? (
+													<span className="font-mono text-muted-foreground text-xs">
+														{card.ipa}
+													</span>
+												) : null}
+											</div>
+											<p className="mt-0.5 text-muted-foreground">
+												{card.translation}
+											</p>
+											{trimmedExample ? (
+												<p
+													data-testid="vocab-card-example"
+													className="mt-1 text-muted-foreground text-xs italic"
+												>
+													Ví dụ: {trimmedExample}
+												</p>
+											) : null}
+										</div>
+										<span className="rounded-full rounded-md bg-muted px-2.5 py-0.5 font-mono text-[10px] text-muted-foreground uppercase">
+											{card.state === "new" ? "Mới" : `Level ${card.level}`}
 										</span>
-										{card.ipa ? (
-											<span className="ml-2 font-mono text-muted-foreground text-xs">
-												{card.ipa}
-											</span>
-										) : null}
-										<p className="mt-0.5 text-muted-foreground">
-											{card.translation}
-										</p>
 									</div>
-									<span className="rounded-full rounded-md bg-muted px-2.5 py-0.5 font-mono text-[10px] text-muted-foreground uppercase">
-										{card.state === "new" ? "Mới" : `Level ${card.level}`}
-									</span>
-								</div>
-							))}
+								);
+							})}
 						</div>
 					)}
 				</section>

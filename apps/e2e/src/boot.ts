@@ -22,6 +22,8 @@ import { migrate } from "drizzle-orm/libsql/migrator";
 import { buildApp, type Db } from "server/app";
 import { createFakeAiGrader } from "server/lib/ai-grading/fake-grader";
 import { createFakeExamExtractor } from "server/lib/exam-import/fake-extractor";
+import { createFakeGoogleWorkspace } from "server/lib/google-meet/fake-client";
+import { runRecordingSyncCron } from "server/lib/google-meet/session-meet-service";
 import { createFakePlacementAiGrader } from "server/lib/placement-ai/fake-grader";
 import { isAllowedStudyPackAudioUrl } from "server/lib/study-pack-audio";
 import { getSessionUser } from "server/session";
@@ -198,6 +200,7 @@ const fakeBankHub = createFakeBankHub({
 });
 
 const placementAiGrader = createFakePlacementAiGrader();
+const fakeGoogleWorkspace = createFakeGoogleWorkspace();
 
 const app = buildApp({
 	getDb: () => libsql as unknown as Db,
@@ -218,6 +221,8 @@ const app = buildApp({
 	// #730: grader placement fake (rubric 3, lỗi = từ đầu tiên, transcript
 	// cố định) — E2E chấm nháp Writing/Speaking offline, không gọi OpenAI.
 	getPlacementAiGrader: () => placementAiGrader,
+	getGoogleWorkspaceClient: (userId) =>
+		fakeGoogleWorkspace.getClientForUser(libsql as unknown as Db, userId),
 	adminEmails: ADMIN_EMAILS,
 	teacherEmails: runtimeTeacherEmails,
 	adminOrigins: [
@@ -342,6 +347,33 @@ app.post("/__e2e/teacher-emails", async (c) => {
 	}
 	runtimeTeacherEmails.splice(0, runtimeTeacherEmails.length, ...emails);
 	return c.json({ ok: true, teacherEmails: [...runtimeTeacherEmails] });
+});
+
+app.post("/__e2e/google-meet-recording", async (c) => {
+	const raw: unknown = await c.req.json().catch(() => null);
+	const ready = Boolean(
+		raw && typeof raw === "object" && "ready" in raw && raw.ready === true,
+	);
+	fakeGoogleWorkspace.setRecordingReady(ready);
+	return c.json({ ok: true, ready });
+});
+
+app.post("/__e2e/run-recording-cron", async (c) => {
+	const raw: unknown = await c.req.json().catch(() => null);
+	const nowIso =
+		raw &&
+		typeof raw === "object" &&
+		"nowIso" in raw &&
+		typeof raw.nowIso === "string"
+			? raw.nowIso
+			: undefined;
+	const res = await runRecordingSyncCron({
+		db: libsql as unknown as Db,
+		getGoogleWorkspaceClient: (userId) =>
+			fakeGoogleWorkspace.getClientForUser(libsql as unknown as Db, userId),
+		now: () => (nowIso ? new Date(nowIso) : new Date()),
+	});
+	return c.json(res);
 });
 
 // Fake SePay hosted-link pages (#320) ride the same API server — the iframe

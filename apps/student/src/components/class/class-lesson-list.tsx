@@ -1,6 +1,7 @@
 import type { StudentClassLesson } from "@teacher-os/api/contracts";
 import { vietnamSessionEndMs } from "@teacher-os/api/vietnam-date";
-import { Check, CircleDashed, Clock, X } from "lucide-react";
+import { buttonVariants } from "@teacher-os/ui/components/button";
+import { Check, CircleDashed, Clock, PlayCircle, Video, X } from "lucide-react";
 import { LessonMaterialsDisclosure } from "@/components/class/lesson-materials";
 import { OverviewEmptyState } from "@/components/overview/empty-state";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
@@ -119,12 +120,27 @@ export function ClassLessonList({
 			<ol className="relative">
 				{lessons.map((lesson, i) => {
 					const isNext = lesson.id === nextId;
+					const isEnded = isLessonEnded(lesson, now);
 					const displayStatus =
 						isPaused && lesson.status === "upcoming"
 							? "paused_upcoming"
-							: isLessonEnded(lesson, now)
+							: isEnded
 								? "ended"
 								: lesson.status;
+					const showMeetLink =
+						displayStatus === "upcoming" && Boolean(lesson.meetUrl);
+					const canShowRecording =
+						lesson.status !== "cancelled" && lesson.status !== "holiday";
+					const showRecordingLink =
+						canShowRecording && Boolean(lesson.recordingUrl);
+					const showPendingRecording =
+						!lesson.recordingUrl &&
+						lesson.recordingStatus === "pending" &&
+						(isEnded ||
+							lesson.status === "completed" ||
+							lesson.status === "absent");
+					const hasActions =
+						showMeetLink || showRecordingLink || showPendingRecording;
 					const future =
 						nextId !== null &&
 						displayStatus === "upcoming" &&
@@ -212,6 +228,53 @@ export function ClassLessonList({
 									<Badge variant={status.variant} className={status.badgeClass}>
 										{status.label}
 									</Badge>
+								)}
+								{hasActions && (
+									<div className="mt-2 flex w-full min-w-0 flex-wrap items-center gap-2">
+										{showMeetLink && lesson.meetUrl && (
+											<a
+												href={lesson.meetUrl}
+												target="_blank"
+												rel="noopener noreferrer"
+												className={cn(
+													buttonVariants({
+														variant: isNext ? "default" : "outline",
+														size: "sm",
+													}),
+													"max-w-full whitespace-normal text-center focus-visible:shadow-[var(--focus-ring)] focus-visible:ring-0",
+												)}
+											>
+												<Video aria-hidden="true" className="size-3.5" />
+												Vào lớp (Google Meet)
+											</a>
+										)}
+										{showRecordingLink && lesson.recordingUrl && (
+											<a
+												href={lesson.recordingUrl}
+												target="_blank"
+												rel="noopener noreferrer"
+												className={cn(
+													buttonVariants({
+														variant: "outline",
+														size: "sm",
+													}),
+													"max-w-full whitespace-normal text-center focus-visible:shadow-[var(--focus-ring)] focus-visible:ring-0",
+												)}
+											>
+												<PlayCircle aria-hidden="true" className="size-3.5" />
+												Xem recording
+											</a>
+										)}
+										{showPendingRecording && (
+											<Badge
+												variant="outline"
+												className="text-muted-foreground"
+											>
+												<Clock aria-hidden="true" className="size-3" />
+												Đang chờ recording
+											</Badge>
+										)}
+									</div>
 								)}
 								{lesson.date != null &&
 									lesson.status !== "holiday" &&

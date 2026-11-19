@@ -444,6 +444,8 @@ function ClassDetailRoute() {
 								syllabus={sy}
 								classSessions={classSessionsForClass}
 								holidayShifts={data.holidayShifts}
+								sessionMeetings={data.sessionMeetings}
+								onRefresh={refresh}
 								studentById={studentById}
 								run={run}
 								onComplete={handleCompleteOccurrence}

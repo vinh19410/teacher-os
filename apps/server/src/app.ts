@@ -11,6 +11,7 @@ import { secureHeaders } from "hono/secure-headers";
 import type { AiGrader } from "./lib/ai-grading/grader";
 import type { BankHubContext } from "./lib/bank-hub/bank-hub-client";
 import type { ExamExtractor } from "./lib/exam-import/extractor";
+import type { GoogleWorkspaceClient } from "./lib/google-meet/google-workspace-client";
 import type { MediaStore } from "./lib/media-store";
 import type { PlacementAiGrader } from "./lib/placement-ai/grader";
 import { createAdminMeRoutes } from "./lib/require-admin";
@@ -21,6 +22,7 @@ import { bankHubWebhookRoutes } from "./routes/bank-hub-webhooks";
 import { creditRoutes } from "./routes/credits";
 import { examImportRoutes } from "./routes/exam-imports";
 import { githubWebhookRoutes } from "./routes/github-webhooks";
+import { googleMeetRoutes } from "./routes/google-meet";
 import { kernelRoutes } from "./routes/kernel";
 import { publicLeadRoutes } from "./routes/public-leads";
 import { publicPayRoutes } from "./routes/public-pay";
@@ -200,6 +202,14 @@ export interface AppDeps {
 	 * — production dùng `fetch` mặc định, E2E/test inject mock offline.
 	 */
 	fetchExternalAudio?: typeof fetch;
+	/** Google OAuth credentials cho Calendar / Meet / Drive API (#816). */
+	googleClientId?: string;
+	googleClientSecret?: string;
+	/** Optional fetch/client override cho Google Workspace API trong test/E2E. */
+	googleFetch?: typeof fetch;
+	getGoogleWorkspaceClient?: (
+		userId: string,
+	) => Promise<GoogleWorkspaceClient> | GoogleWorkspaceClient;
 }
 
 /** Better-Auth handles its own session bootstrapping under /api/auth. */
@@ -491,6 +501,7 @@ export function buildApp(deps: AppDeps) {
 	// để path riêng không bị kernel nuốt; guard 401/403 tự gắn trong router.
 	app.route("/api", examImportRoutes(deps));
 	app.route("/api", creditRoutes(deps));
+	app.route("/api", googleMeetRoutes(deps));
 	// TOS-33 (#481): grader + retry delays xuống routes chấm (ai-retry).
 	app.route("/api", kernelRoutes(deps));
 

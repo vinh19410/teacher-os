@@ -213,21 +213,42 @@ describe("validatePartForReady", () => {
 });
 
 describe("validateTestReady", () => {
-	test("reading cần đủ 3 slot p1..p3 và từng part đạt", () => {
-		const issues = validateTestReady("reading", [
-			readingPart(),
-			readingPart({ part: "p2" }),
+	test("reading cần tối thiểu 1 part hợp lệ và từng part hiện có đạt", () => {
+		expect(validateTestReady("reading", [])).toEqual([
+			{ path: "parts", message: "at least one part is required" },
 		]);
-		expect(issues.some((issue) => issue.path === "parts.p3")).toBe(true);
+
+		expect(validateTestReady("reading", [readingPart()])).toEqual([]);
+		expect(validateTestReady("reading", [readingPart({ part: "p2" })])).toEqual(
+			[],
+		);
 
 		const broken = validateTestReady("reading", [
 			readingPart(),
 			readingPart({ part: "p2", passage: "" }),
-			readingPart({ part: "p3" }),
 		]);
-		expect(broken.some((issue) => issue.path === "parts.p2.passage")).toBe(
-			true,
-		);
+		expect(broken).toEqual([
+			{ path: "parts.p2.passage", message: "passage required" },
+		]);
+
+		const orderedIssues = validateTestReady("reading", [
+			readingPart({ part: "s1" }),
+			readingPart({ part: "p3", passage: "" }),
+			readingPart({ part: "p1", passage: "" }),
+		]);
+		expect(orderedIssues.map((issue) => issue.path)).toEqual([
+			"parts.p1.passage",
+			"parts.p3.passage",
+			"parts.s1.part",
+		]);
+
+		const duplicates = validateTestReady("reading", [
+			readingPart(),
+			readingPart({ part: "p1" }),
+		]);
+		expect(duplicates).toEqual([
+			{ path: "parts.p1", message: "duplicate part p1" },
+		]);
 
 		expect(
 			validateTestReady("reading", [
@@ -247,21 +268,26 @@ describe("validateTestReady", () => {
 		).toEqual([]);
 	});
 
-	test("listening cần đủ 4 slot s1..s4, mỗi part có audio + câu", () => {
-		const issues = validateTestReady("listening", [
-			listeningPart(),
-			listeningPart({ part: "s2" }),
-			listeningPart({ part: "s3" }),
+	test("listening cần tối thiểu 1 part hợp lệ có audio + câu", () => {
+		expect(validateTestReady("listening", [])).toEqual([
+			{ path: "parts", message: "at least one part is required" },
 		]);
-		expect(issues.some((issue) => issue.path === "parts.s4")).toBe(true);
+
+		expect(validateTestReady("listening", [listeningPart()])).toEqual([]);
 
 		const noAudio = validateTestReady("listening", [
-			listeningPart(),
-			listeningPart({ part: "s2", audioName: "" }),
-			listeningPart({ part: "s3" }),
-			listeningPart({ part: "s4" }),
+			listeningPart({ audioName: "" }),
 		]);
-		expect(noAudio.some((issue) => issue.path === "parts.s2.audio")).toBe(true);
+		expect(noAudio.some((issue) => issue.path === "parts.s1.audio")).toBe(true);
+
+		expect(
+			validateTestReady("listening", [
+				listeningPart(),
+				listeningPart({ part: "s2" }),
+				listeningPart({ part: "s3" }),
+				listeningPart({ part: "s4" }),
+			]),
+		).toEqual([]);
 	});
 });
 

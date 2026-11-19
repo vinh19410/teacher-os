@@ -2,6 +2,8 @@ import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import {
 	type KernelSnapshot,
+	VOCAB_ERROR_CODES,
+	vocabCsvImportResponseSchema,
 	vocabStudentProgressResponseSchema,
 	vocabTeacherSuggestionsResponseSchema,
 	vocabTeacherWordsResponseSchema,
@@ -1004,5 +1006,351 @@ describe("teacher vocab kernel sub-routes (/api/kernel/vocab/* & snapshot)", () 
 			.from(schema.vocabWord)
 			.where(eq(schema.vocabWord.id, wordId));
 		expect(wordRowAfter?.audioKey ?? null).toBe(audioKeyBefore);
+	});
+
+	test("decks create/rename with lessonNumber/topic, words upsert/list with entryType/pos/example, and snapshot exposure", async () => {
+		const createRes = await app.request("/api/kernel/vocab/decks", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				classId: "class-t1",
+				title: "Lesson 5: Speaking",
+				lessonNumber: 5,
+				topic: "Technology",
+				lang: "en",
+			}),
+		});
+		expect(createRes.status).toBe(201);
+		const { id: deckId } = (await createRes.json()) as { id: string };
+
+		const snapRes1 = await app.request("/api/kernel", {
+			headers: { "x-test-user": "teacher" },
+		});
+		const snap1 = (await snapRes1.json()) as KernelSnapshot;
+		expect(snap1.vocabDecks.find((d) => d.id === deckId)).toMatchObject({
+			id: deckId,
+			title: "Lesson 5: Speaking",
+			lessonNumber: 5,
+			topic: "Technology",
+		});
+
+		// Update title, lessonNumber, and normalize empty topic "" -> null
+		const renameRes = await app.request("/api/kernel/vocab/decks/rename", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				deckId,
+				title: "Lesson 6: AI",
+				lessonNumber: 6,
+				topic: "   ",
+			}),
+		});
+		expect(renameRes.status).toBe(200);
+
+		const snapRes2 = await app.request("/api/kernel", {
+			headers: { "x-test-user": "teacher" },
+		});
+		const snap2 = (await snapRes2.json()) as KernelSnapshot;
+		expect(snap2.vocabDecks.find((d) => d.id === deckId)).toMatchObject({
+			id: deckId,
+			title: "Lesson 6: AI",
+			lessonNumber: 6,
+			topic: null,
+		});
+
+		// Upsert chunk word with pos & example
+		const upsertRes = await app.request("/api/kernel/vocab/words/upsert", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				deckId,
+				word: "break the ice",
+				entryType: "chunk",
+				ipa: "/breɪk ði aɪs/",
+				pos: "idiom",
+				translation: "phá vỡ bầu không khí ngượng ngùng",
+				example: "He told a joke to break the ice.",
+				sortOrder: 0,
+			}),
+		});
+		expect(upsertRes.status).toBe(201);
+		const { id: wordId } = (await upsertRes.json()) as { id: string };
+
+		// Update same word changing example to "" -> null
+		const updateRes = await app.request("/api/kernel/vocab/words/upsert", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				id: wordId,
+				deckId,
+				word: "break the ice",
+				entryType: "chunk",
+				pos: "phrase",
+				translation: "làm quen ban đầu",
+				example: "",
+				sortOrder: 0,
+			}),
+		});
+		expect(updateRes.status).toBe(200);
+
+		const wordsRes = await app.request(
+			`/api/kernel/vocab/decks/${deckId}/words`,
+			{ headers: { "x-test-user": "teacher" } },
+		);
+		expect(wordsRes.status).toBe(200);
+		const wordsData = vocabTeacherWordsResponseSchema.parse(
+			await wordsRes.json(),
+		);
+		expect(wordsData.words).toEqual([
+			{
+				id: wordId,
+				deckId,
+				word: "break the ice",
+				entryType: "chunk",
+				ipa: null,
+				pos: "phrase",
+				translation: "làm quen ban đầu",
+				example: null,
+				audioKey: null,
+				audioUrl: null,
+				sortOrder: 0,
+			},
+		]);
+
+		await app.request("/api/kernel/vocab/decks/delete", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({ deckId }),
+		});
+	});
+
+	test("POST /decks/import-csv bulk creates decks with chunked >8 word inserts, preserves order, and enforces IDOR on classId", async () => {
+		// IDOR negative: class-t2 belongs to org-t2 -> 404
+		const foreignRes = await app.request("/api/kernel/vocab/decks/import-csv", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				classId: "class-t2",
+				decks: [
+					{
+						title: "Unauthorized Deck",
+						words: [{ word: "hack", translation: "xâm nhập" }],
+					},
+				],
+			}),
+		});
+		expect(foreignRes.status).toBe(404);
+
+		// 28 words in deck 1 (exercises 4 chunks: 8+8+8+4) + 2 words in deck 2
+		const twentyEightWords = Array.from({ length: 28 }, (_, idx) => ({
+			word: idx % 3 === 0 ? `take part in ${idx}` : `word-${idx}`,
+			entryType: idx % 3 === 0 ? ("chunk" as const) : ("word" as const),
+			ipa: idx % 2 === 0 ? `/w${idx}/` : null,
+			pos: idx % 3 === 0 ? "phrase" : "n",
+			translation: `nghĩa ${idx}`,
+			example: `Example sentence ${idx}.`,
+		}));
+
+		const importRes = await app.request("/api/kernel/vocab/decks/import-csv", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				classId: "class-t1",
+				decks: [
+					{
+						title: "Lesson 1: Daily Life",
+						lessonNumber: 1,
+						topic: "Daily Life",
+						lang: "en",
+						words: twentyEightWords,
+					},
+					{
+						title: "Lesson 2: Travel",
+						lessonNumber: 2,
+						topic: "",
+						lang: "en",
+						words: [
+							{ word: "itinerary", translation: "lịch trình", pos: "n" },
+							{
+								word: "check in",
+								entryType: "chunk",
+								translation: "làm thủ tục nhận phòng",
+							},
+						],
+					},
+				],
+			}),
+		});
+		expect(importRes.status).toBe(201);
+		const importBody = vocabCsvImportResponseSchema.parse(
+			await importRes.json(),
+		);
+		expect(importBody.deckIds).toHaveLength(2);
+		expect(importBody.id).toBe(importBody.deckIds[0]);
+		expect(importBody.importedDecks).toBe(2);
+		expect(importBody.importedWords).toBe(30);
+
+		const [deck1Id, deck2Id] = importBody.deckIds;
+		if (!deck1Id || !deck2Id) throw new Error("expected 2 imported deck IDs");
+
+		const wordsRes = await app.request(
+			`/api/kernel/vocab/decks/${deck1Id}/words`,
+			{ headers: { "x-test-user": "teacher" } },
+		);
+		expect(wordsRes.status).toBe(200);
+		const wordsData = vocabTeacherWordsResponseSchema.parse(
+			await wordsRes.json(),
+		);
+		expect(wordsData.words).toHaveLength(28);
+		expect(wordsData.words.map((w) => w.sortOrder)).toEqual(
+			Array.from({ length: 28 }, (_, i) => i),
+		);
+		expect(wordsData.words[0]).toMatchObject({
+			word: "take part in 0",
+			entryType: "chunk",
+			pos: "phrase",
+			example: "Example sentence 0.",
+			sortOrder: 0,
+		});
+		expect(wordsData.words[27]).toMatchObject({
+			word: "take part in 27",
+			entryType: "chunk",
+			sortOrder: 27,
+		});
+
+		const snapRes = await app.request("/api/kernel", {
+			headers: { "x-test-user": "teacher" },
+		});
+		const snap = (await snapRes.json()) as KernelSnapshot;
+		expect(snap.vocabDecks.find((d) => d.id === deck1Id)).toMatchObject({
+			lessonNumber: 1,
+			topic: "Daily Life",
+			wordCount: 28,
+		});
+		expect(snap.vocabDecks.find((d) => d.id === deck2Id)).toMatchObject({
+			lessonNumber: 2,
+			topic: null,
+			wordCount: 2,
+		});
+
+		for (const dId of importBody.deckIds) {
+			await app.request("/api/kernel/vocab/decks/delete", {
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({ deckId: dId }),
+			});
+		}
+	});
+
+	test("POST /decks/:deckId/words/import appends after max(sortOrder), preserves existing words, and returns 404 on foreign deck", async () => {
+		// IDOR negative: deck-org2 belongs to org-t2 -> 404 VOCAB_DECK_NOT_FOUND
+		const foreignRes = await app.request(
+			"/api/kernel/vocab/decks/deck-org2/words/import",
+			{
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({
+					words: [{ word: "intrude", translation: "xâm nhập" }],
+				}),
+			},
+		);
+		expect(foreignRes.status).toBe(404);
+		expect(await foreignRes.json()).toMatchObject({
+			code: VOCAB_ERROR_CODES.DECK_NOT_FOUND,
+		});
+
+		// Create deck with 2 existing words (sortOrder 0 and 4)
+		const createRes = await app.request("/api/kernel/vocab/decks", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				classId: "class-t1",
+				title: "Append Target Deck",
+			}),
+		});
+		const { id: deckId } = (await createRes.json()) as { id: string };
+
+		await app.request("/api/kernel/vocab/words/upsert", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				deckId,
+				word: "initial-a",
+				translation: "ban đầu a",
+				sortOrder: 0,
+			}),
+		});
+		await app.request("/api/kernel/vocab/words/upsert", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				deckId,
+				word: "initial-b",
+				translation: "ban đầu b",
+				sortOrder: 4,
+			}),
+		});
+
+		// Append 10 words (>8 chunk limit) -> should start at sortOrder 5..14
+		const appendedWords = Array.from({ length: 10 }, (_, idx) => ({
+			word: `appended-${idx}`,
+			entryType: idx === 0 ? ("chunk" as const) : ("word" as const),
+			pos: "v",
+			translation: `bổ sung ${idx}`,
+			example: `Appended example ${idx}`,
+		}));
+
+		const appendRes = await app.request(
+			`/api/kernel/vocab/decks/${deckId}/words/import`,
+			{
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({ words: appendedWords }),
+			},
+		);
+		expect(appendRes.status).toBe(201);
+		const appendBody = vocabCsvImportResponseSchema.parse(
+			await appendRes.json(),
+		);
+		expect(appendBody).toEqual({
+			id: deckId,
+			deckIds: [deckId],
+			importedDecks: 0,
+			importedWords: 10,
+		});
+
+		const wordsRes = await app.request(
+			`/api/kernel/vocab/decks/${deckId}/words`,
+			{ headers: { "x-test-user": "teacher" } },
+		);
+		const wordsData = vocabTeacherWordsResponseSchema.parse(
+			await wordsRes.json(),
+		);
+		expect(wordsData.words).toHaveLength(12);
+		expect(wordsData.words[0]).toMatchObject({
+			word: "initial-a",
+			sortOrder: 0,
+		});
+		expect(wordsData.words[1]).toMatchObject({
+			word: "initial-b",
+			sortOrder: 4,
+		});
+		expect(wordsData.words[2]).toMatchObject({
+			word: "appended-0",
+			entryType: "chunk",
+			pos: "v",
+			example: "Appended example 0",
+			sortOrder: 5,
+		});
+		expect(wordsData.words[11]).toMatchObject({
+			word: "appended-9",
+			sortOrder: 14,
+		});
+
+		await app.request("/api/kernel/vocab/decks/delete", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({ deckId }),
+		});
 	});
 });

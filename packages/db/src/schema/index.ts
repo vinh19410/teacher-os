@@ -6,6 +6,7 @@ export * from "./auth";
 export * from "./class";
 export * from "./class-assignment";
 export * from "./class-session";
+export * from "./class-session-meeting";
 export * from "./comment-bank";
 export * from "./credit-wallet";
 export * from "./enrollment";

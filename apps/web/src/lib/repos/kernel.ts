@@ -346,6 +346,16 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				path: "/api/kernel/vocab/words/upsert",
 				body: { ...action.payload },
 			};
+		case "import-vocab-csv-decks":
+			return {
+				path: "/api/kernel/vocab/decks/import-csv",
+				body: { ...action.payload },
+			};
+		case "import-vocab-deck-words":
+			return {
+				path: `/api/kernel/vocab/decks/${action.deckId}/words/import`,
+				body: { words: action.words },
+			};
 		case "remove-vocab-word":
 			return {
 				path: "/api/kernel/vocab/words/remove",
@@ -401,6 +411,7 @@ export function mapKernelSnapshot(snapshot: KernelSnapshot): KernelSlice {
 		holidayCancels: snapshot.holidayCancels ?? [],
 		events: snapshot.events ?? [],
 		classSessions: snapshot.classSessions ?? [],
+		sessionMeetings: snapshot.sessionMeetings ?? [],
 		viewer: snapshot.viewer ?? { role: "teacher", canAccessFinance: true },
 	};
 }
@@ -596,6 +607,7 @@ const OPTIONAL_SNAPSHOT_COLLECTION_KEYS = [
 	// không làm trắng workspace, precedent vocabSuggestions #363 RT-F8.
 	"events",
 	"classSessions",
+	"sessionMeetings",
 ] as const satisfies ReadonlyArray<keyof KernelSnapshot>;
 
 // Compile-time completeness: every KernelSnapshot collection must appear in

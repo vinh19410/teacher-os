@@ -18,7 +18,9 @@ import {
 	assertNonProdD1Database,
 	createLibsqlRunner,
 	ensureStudyPacksSeeded,
+	inspectD1DatabaseName,
 	type ParsedStudyPackSeedData,
+	resolveProdD1DatabaseId,
 	resolveStagingD1DatabaseId,
 	type StudyPackSqlRunner,
 	type VerifyStudyPackCountsResult,
@@ -26,12 +28,41 @@ import {
 import {
 	type CliArgs,
 	createD1RestRunner,
-	parseArgs,
+	parseArgs as parseBaseArgs,
 	redactSensitive,
 } from "./seed-vocab-library";
 
+export interface StudyPackCliArgs extends CliArgs {
+	allowProd: boolean;
+}
+
 const USAGE_TEXT =
-	"usage: tsx packages/db/scripts/seed-study-packs.ts (--file <sqlite-path> | --d1 [--d1-stage staging]) [--prune] [--if-needed] [--verify]\n";
+	"usage: tsx packages/db/scripts/seed-study-packs.ts (--file <sqlite-path> | --d1 [--d1-stage staging | --allow-prod]) [--prune] [--if-needed] [--verify]\n";
+
+export function parseStudyPackArgs(argv: readonly string[]): StudyPackCliArgs {
+	let allowProd = false;
+	const filtered: string[] = [];
+	for (const arg of argv) {
+		if (arg === "--allow-prod") {
+			allowProd = true;
+		} else {
+			filtered.push(arg);
+		}
+	}
+	const base = parseBaseArgs(filtered);
+	if (base.help) {
+		return { ...base, allowProd: false };
+	}
+	if (allowProd && !base.d1) {
+		throw new Error("Flag --allow-prod requires --d1.");
+	}
+	if (allowProd && base.d1Stage) {
+		throw new Error(
+			"Cannot combine --allow-prod with --d1-stage; omit --d1-stage when targeting production via --allow-prod.",
+		);
+	}
+	return { ...base, allowProd };
+}
 
 async function assertLocalSchemaReady(filePath: string): Promise<void> {
 	const client = createClient({ url: `file:${filePath}` });
@@ -51,6 +82,17 @@ async function assertLocalSchemaReady(filePath: string): Promise<void> {
 				`Target SQLite file "${filePath}" is missing "study_pack.level" (migration 0069 not applied).`,
 			);
 		}
+		const exColsRes = await client.execute(
+			"PRAGMA table_info('study_pack_exercise');",
+		);
+		const hasAudioKey = exColsRes.rows.some(
+			(r) => String(r.name) === "audio_key",
+		);
+		if (!hasAudioKey) {
+			throw new Error(
+				`Target SQLite file "${filePath}" is missing "study_pack_exercise.audio_key" (migration 0076 not applied).`,
+			);
+		}
 	} finally {
 		client.close();
 	}
@@ -68,11 +110,16 @@ function formatVerifyReport(report: VerifyStudyPackCountsResult): string {
 }
 
 async function resolveD1Target(
-	args: CliArgs,
+	args: StudyPackCliArgs,
 	env: Record<string, string | undefined>,
 	fetchImpl: typeof fetch,
 	timeoutMs: number,
-): Promise<{ accountId: string; databaseId: string; apiToken: string }> {
+): Promise<{
+	accountId: string;
+	databaseId: string;
+	apiToken: string;
+	databaseName: string;
+}> {
 	const accountId = env.CLOUDFLARE_ACCOUNT_ID?.trim();
 	const explicitDbId = env.D1_DATABASE_ID?.trim();
 	const apiToken = env.CLOUDFLARE_API_TOKEN?.trim();
@@ -87,9 +134,9 @@ async function resolveD1Target(
 			"Missing required environment variables for --d1: CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN",
 		);
 	}
-	if (!args.d1Stage && !explicitDbId) {
+	if (!args.d1Stage && !explicitDbId && !args.allowProd) {
 		throw new Error(
-			"Missing target database for --d1: pass --d1-stage staging or set D1_DATABASE_ID.",
+			"Missing target database for --d1: pass --d1-stage staging, --allow-prod, or set D1_DATABASE_ID.",
 		);
 	}
 
@@ -103,17 +150,45 @@ async function resolveD1Target(
 				fetchImpl,
 				timeoutMs,
 			});
-			return { accountId, databaseId, apiToken };
+			return {
+				accountId,
+				databaseId,
+				apiToken,
+				databaseName: args.d1Stage,
+			};
+		}
+		if (args.allowProd && !explicitDbId) {
+			const prod = await resolveProdD1DatabaseId({
+				accountId,
+				apiToken,
+				fetchImpl,
+				timeoutMs,
+			});
+			return {
+				accountId,
+				databaseId: prod.uuid,
+				apiToken,
+				databaseName: prod.name,
+			};
 		}
 		const databaseId = explicitDbId ?? "";
-		await assertNonProdD1Database({
+		if (!args.allowProd) {
+			await assertNonProdD1Database({
+				accountId,
+				databaseId,
+				apiToken,
+				fetchImpl,
+				timeoutMs,
+			});
+		}
+		const databaseName = await inspectD1DatabaseName({
 			accountId,
 			databaseId,
 			apiToken,
 			fetchImpl,
 			timeoutMs,
 		});
-		return { accountId, databaseId, apiToken };
+		return { accountId, databaseId, apiToken, databaseName };
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
 		throw new Error(redactSensitive(msg, secrets));
@@ -133,7 +208,7 @@ export async function runSeedStudyPacksCli(
 ): Promise<void> {
 	const writeStdout =
 		deps?.writeStdout ?? ((chunk: string) => process.stdout.write(chunk));
-	const args = parseArgs(argv);
+	const args = parseStudyPackArgs(argv);
 	if (args.help) {
 		writeStdout(USAGE_TEXT);
 		return;
@@ -163,7 +238,7 @@ export async function runSeedStudyPacksCli(
 			}
 		}
 		writeStdout(
-			`[study-packs-seed] verified target D1 database (${args.d1Stage ?? "explicit-non-prod"})\n`,
+			`[study-packs-seed] verified target D1 database (${target.databaseName}${args.allowProd ? ", --allow-prod" : ""})\n`,
 		);
 		runner = createD1RestRunner({
 			accountId: target.accountId,
