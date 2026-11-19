@@ -132,22 +132,46 @@ export async function headR2Object(options: {
 }): Promise<{ exists: boolean; size: number | null }> {
 	const fetchFn = options.fetchImpl ?? fetch;
 	const timeoutMs = options.timeoutMs ?? 20_000;
-	const url = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(options.accountId)}/r2/buckets/${encodeURIComponent(options.bucketName)}/objects/${encodeR2ObjectPath(options.objectKey)}`;
+	// Cloudflare R2 REST API v4 returns 405 for HEAD /objects/{key} and ignores
+	// Range headers on GET /objects/{key}. Listing with prefix=objectKey&limit=1
+	// checks existence and size via metadata without downloading object bytes.
+	const url = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(options.accountId)}/r2/buckets/${encodeURIComponent(options.bucketName)}/objects?prefix=${encodeURIComponent(options.objectKey)}&limit=1`;
 	const res = await fetchFn(url, {
-		method: "HEAD",
+		method: "GET",
 		headers: { authorization: `Bearer ${options.apiToken}` },
 		signal: AbortSignal.timeout(timeoutMs),
 	});
-	if (res.status === 404) {
+	const raw = await res.text();
+	let payload: {
+		success?: boolean;
+		errors?: Array<{ message?: string }>;
+		result?: Array<{ key?: string; size?: number }>;
+	};
+	try {
+		payload = JSON.parse(raw) as typeof payload;
+	} catch {
+		throw new Error(
+			`R2 HEAD "${options.objectKey}" failed (${res.status}): invalid JSON`,
+		);
+	}
+	if (!res.ok || payload.success !== true) {
+		const errMsg =
+			payload.errors?.map((e) => e.message ?? "error").join("; ") ??
+			`HTTP ${res.status}`;
+		throw new Error(
+			`R2 HEAD "${options.objectKey}" failed (${res.status}): ${errMsg}`,
+		);
+	}
+	const match = (payload.result ?? []).find(
+		(entry) => entry.key === options.objectKey,
+	);
+	if (!match) {
 		return { exists: false, size: null };
 	}
-	if (!res.ok) {
-		throw new Error(`R2 HEAD "${options.objectKey}" failed (${res.status})`);
-	}
-	const rawLen = res.headers.get("content-length");
-	const size =
-		rawLen && /^\d+$/.test(rawLen) ? Number.parseInt(rawLen, 10) : null;
-	return { exists: true, size };
+	return {
+		exists: true,
+		size: typeof match.size === "number" ? match.size : null,
+	};
 }
 
 export async function getR2ObjectBytes(options: {

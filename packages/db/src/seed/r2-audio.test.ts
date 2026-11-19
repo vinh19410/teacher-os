@@ -7,7 +7,11 @@ import {
 	runPromoteStudyPacksProdCli,
 } from "../../scripts/promote-study-packs-prod";
 import { parseSyncAudioArgs } from "../../scripts/sync-study-pack-audio";
-import { resolveR2BucketName, syncStudyPackAudioToR2 } from "./r2-audio";
+import {
+	headR2Object,
+	resolveR2BucketName,
+	syncStudyPackAudioToR2,
+} from "./r2-audio";
 import type { ParsedStudyPackSeedData } from "./study-packs";
 
 function sampleSeedData(): ParsedStudyPackSeedData {
@@ -115,6 +119,69 @@ describe("study-pack R2 audio sync & prod promote CLI (#814)", () => {
 		).rejects.toThrow("Refusing staging-like bucket");
 	});
 
+	it("headR2Object checks metadata via R2 objects prefix list without HEAD and requires exact key match", async () => {
+		const mockFetch: typeof fetch = async (input, init) => {
+			const method = init?.method ?? "GET";
+			if (method === "HEAD") {
+				return new Response(null, { status: 405 });
+			}
+			const parsed = new URL(String(input));
+			const prefix = parsed.searchParams.get("prefix") ?? "";
+			expect(parsed.searchParams.get("limit")).toBe("1");
+			if (prefix === "study-packs/exact.mp3") {
+				return new Response(
+					JSON.stringify({
+						success: true,
+						result: [{ key: "study-packs/exact.mp3", size: 4096 }],
+					}),
+					{ status: 200 },
+				);
+			}
+			if (prefix === "study-packs/prefix-only.mp3") {
+				return new Response(
+					JSON.stringify({
+						success: true,
+						result: [{ key: "study-packs/prefix-only.mp3.bak", size: 123 }],
+					}),
+					{ status: 200 },
+				);
+			}
+			return new Response(JSON.stringify({ success: true, result: [] }), {
+				status: 200,
+			});
+		};
+
+		expect(
+			await headR2Object({
+				accountId: "acc-1",
+				bucketName: "bucket-1",
+				objectKey: "study-packs/exact.mp3",
+				apiToken: "tok-1",
+				fetchImpl: mockFetch,
+			}),
+		).toEqual({ exists: true, size: 4096 });
+
+		expect(
+			await headR2Object({
+				accountId: "acc-1",
+				bucketName: "bucket-1",
+				objectKey: "study-packs/prefix-only.mp3",
+				apiToken: "tok-1",
+				fetchImpl: mockFetch,
+			}),
+		).toEqual({ exists: false, size: null });
+
+		expect(
+			await headR2Object({
+				accountId: "acc-1",
+				bucketName: "bucket-1",
+				objectKey: "study-packs/missing.mp3",
+				apiToken: "tok-1",
+				fetchImpl: mockFetch,
+			}),
+		).toEqual({ exists: false, size: null });
+	});
+
 	it("supports dry-run and staging->prod R2 object copy with verification", async () => {
 		const objects = new Map<string, Uint8Array>([
 			[
@@ -123,23 +190,41 @@ describe("study-pack R2 audio sync & prod promote CLI (#814)", () => {
 			],
 		]);
 		const mockFetch: typeof fetch = async (input, init) => {
-			const url = String(input);
-			const match = url.match(/\/r2\/buckets\/([^/]+)\/objects\/(.+)$/);
+			const parsed = new URL(String(input));
+			const method = init?.method ?? "GET";
+			if (method === "HEAD") {
+				return new Response(null, { status: 405 });
+			}
+			const listMatch = parsed.pathname.match(
+				/\/r2\/buckets\/([^/]+)\/objects$/,
+			);
+			if (listMatch && method === "GET") {
+				const bucket = decodeURIComponent(listMatch[1] ?? "");
+				const prefix = parsed.searchParams.get("prefix") ?? "";
+				const limit = Number.parseInt(
+					parsed.searchParams.get("limit") ?? "100",
+					10,
+				);
+				const result = [...objects.entries()]
+					.filter(([fullKey]) => fullKey.startsWith(`${bucket}/${prefix}`))
+					.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+					.slice(0, limit)
+					.map(([fullKey, buf]) => ({
+						key: fullKey.slice(bucket.length + 1),
+						size: buf.byteLength,
+					}));
+				return new Response(JSON.stringify({ success: true, result }), {
+					status: 200,
+				});
+			}
+			const match = parsed.pathname.match(
+				/\/r2\/buckets\/([^/]+)\/objects\/(.+)$/,
+			);
 			if (!match) return new Response("bad url", { status: 400 });
 			const bucket = decodeURIComponent(match[1] ?? "");
 			const key = decodeURIComponent(match[2] ?? "");
 			const fullKey = `${bucket}/${key}`;
-			const method = init?.method ?? "GET";
 
-			if (method === "HEAD") {
-				const buf = objects.get(fullKey);
-				return buf
-					? new Response(null, {
-							status: 200,
-							headers: { "content-length": String(buf.byteLength) },
-						})
-					: new Response(null, { status: 404 });
-			}
 			if (method === "GET") {
 				const buf = objects.get(fullKey);
 				return buf
@@ -222,8 +307,15 @@ describe("study-pack R2 audio sync & prod promote CLI (#814)", () => {
 
 		const uploadedKeys: string[] = [];
 		const mockFetch: typeof fetch = async (input, init) => {
-			const url = String(input);
-			if (url.includes("/r2/buckets") && !url.includes("/objects/")) {
+			const parsed = new URL(String(input));
+			const method = init?.method ?? "GET";
+			if (method === "HEAD") {
+				return new Response(null, { status: 405 });
+			}
+			if (
+				parsed.pathname.includes("/r2/buckets") &&
+				!parsed.pathname.includes("/objects")
+			) {
 				return new Response(
 					JSON.stringify({
 						success: true,
@@ -237,17 +329,22 @@ describe("study-pack R2 audio sync & prod promote CLI (#814)", () => {
 					{ status: 200 },
 				);
 			}
-			const method = init?.method ?? "GET";
-			if (method === "HEAD") {
-				return uploadedKeys.includes(url)
-					? new Response(null, {
-							status: 200,
-							headers: { "content-length": "4" },
-						})
-					: new Response(null, { status: 404 });
+			if (parsed.pathname.endsWith("/objects") && method === "GET") {
+				const prefix = parsed.searchParams.get("prefix") ?? "";
+				const found = uploadedKeys.filter((key) => key.startsWith(prefix));
+				return new Response(
+					JSON.stringify({
+						success: true,
+						result: found.map((key) => ({ key, size: 4 })),
+					}),
+					{ status: 200 },
+				);
 			}
 			if (method === "PUT") {
-				uploadedKeys.push(url);
+				const objMatch = parsed.pathname.match(/\/objects\/(.+)$/);
+				if (objMatch?.[1]) {
+					uploadedKeys.push(decodeURIComponent(objMatch[1]));
+				}
 				return new Response(JSON.stringify({ success: true }), { status: 200 });
 			}
 			return new Response(null, { status: 404 });
@@ -276,7 +373,7 @@ describe("study-pack R2 audio sync & prod promote CLI (#814)", () => {
 			if (method === "PUT") {
 				writes.push(url);
 			}
-			if (url.includes("/r2/buckets") && !url.includes("/objects/")) {
+			if (url.includes("/r2/buckets") && !url.includes("/objects")) {
 				return new Response(
 					JSON.stringify({
 						success: true,
@@ -302,6 +399,11 @@ describe("study-pack R2 audio sync & prod promote CLI (#814)", () => {
 					}),
 					{ status: 200 },
 				);
+			}
+			if (url.includes("/objects?")) {
+				return new Response(JSON.stringify({ success: true, result: [] }), {
+					status: 200,
+				});
 			}
 			if (url.includes("/objects/")) {
 				return new Response(null, { status: 404 });
