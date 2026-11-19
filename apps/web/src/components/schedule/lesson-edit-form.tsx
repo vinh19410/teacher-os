@@ -41,6 +41,11 @@ export function LessonEditForm({
 	const [topic, setTopic] = useState(lesson.topic);
 	const [attempted, setAttempted] = useState(false);
 
+	const preservedZoom =
+		lesson.zoom.startsWith("https://") && lesson.zoom.length <= 2048
+			? lesson.zoom
+			: "";
+
 	const parsed = useMemo(
 		() =>
 			lessonEditSchema.safeParse({
@@ -48,9 +53,9 @@ export function LessonEditForm({
 				time: time.slice(0, 5),
 				dur: Number(dur),
 				topic,
-				zoom: lesson.zoom,
+				zoom: preservedZoom,
 			}),
-		[day, time, dur, topic, lesson.zoom],
+		[day, time, dur, topic, preservedZoom],
 	);
 	const valid = parsed.success;
 
