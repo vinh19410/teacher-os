@@ -1,15 +1,20 @@
-import type { KernelVocabDeckRow } from "@teacher-os/api/contracts";
+import type {
+	KernelVocabDeckRow,
+	KernelVocabGroupRow,
+} from "@teacher-os/api/contracts";
 import { formatVocabLessonDeckTitle } from "@teacher-os/api/lib/vocab-csv";
 import { useId, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/field";
+import { Input, Select } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { SectionLabel } from "@/components/ui/section-label";
 import { useData } from "@/lib/data-store";
 import { VocabCsvImportDialog } from "./vocab-csv-import-dialog";
 import { VocabDeckEditorDialog } from "./vocab-deck-editor";
+import { VocabGroupManagerModal } from "./vocab-group-manager-modal";
+import { VocabGroupSelectField } from "./vocab-group-select-field";
 import { VocabLibraryDialog } from "./vocab-library-dialog";
 import { VocabSuggestDialog } from "./vocab-suggest-dialog";
 
@@ -32,20 +37,30 @@ function formatDeckLessonMeta(
 }
 
 function DeckMetadataFields({
+	groups,
+	groupId,
 	lessonNumber,
 	topic,
 	title,
 	lessonInvalid,
 	suggestedTitle,
+	disabled = false,
+	groupTestIdPrefix,
+	onGroupChange,
 	onLessonChange,
 	onTopicChange,
 	onTitleChange,
 }: {
+	groups: ReadonlyArray<KernelVocabGroupRow>;
+	groupId: string;
 	lessonNumber: string;
 	topic: string;
 	title: string;
 	lessonInvalid: boolean;
 	suggestedTitle: string;
+	disabled?: boolean;
+	groupTestIdPrefix: string;
+	onGroupChange: (groupId: string) => void;
 	onLessonChange: (value: string) => void;
 	onTopicChange: (value: string) => void;
 	onTitleChange: (value: string) => void;
@@ -74,6 +89,7 @@ function DeckMetadataFields({
 						placeholder="Ví dụ: 1"
 						aria-label="Số buổi học"
 						aria-invalid={lessonInvalid || undefined}
+						disabled={disabled}
 					/>
 					{lessonInvalid ? (
 						<span className="text-destructive text-xs">
@@ -95,9 +111,17 @@ function DeckMetadataFields({
 						onChange={(e) => onTopicChange(e.target.value)}
 						placeholder="Ví dụ: Friends & Introductions"
 						aria-label="Chủ đề"
+						disabled={disabled}
 					/>
 				</div>
 			</div>
+			<VocabGroupSelectField
+				groups={groups}
+				value={groupId}
+				onChange={onGroupChange}
+				disabled={disabled}
+				testIdPrefix={groupTestIdPrefix}
+			/>
 			<div className="flex flex-col gap-1.5">
 				<label
 					htmlFor={titleInputId}
@@ -112,6 +136,7 @@ function DeckMetadataFields({
 					onChange={(e) => onTitleChange(e.target.value)}
 					placeholder={suggestedTitle || "Ví dụ: Topic 1: Environment"}
 					aria-label="Tiêu đề bộ từ"
+					disabled={disabled}
 				/>
 			</div>
 		</>
@@ -151,6 +176,7 @@ function parseDeckMetaDraft(
 function DeckListRow({
 	deck,
 	sourceBadgeLabel,
+	groupName,
 	pendingCount,
 	onSuggest,
 	onRename,
@@ -159,6 +185,7 @@ function DeckListRow({
 }: {
 	deck: KernelVocabDeckRow;
 	sourceBadgeLabel: string;
+	groupName: string | null;
 	pendingCount: number;
 	onSuggest: (deck: { id: string; title: string }) => void;
 	onRename: (deck: KernelVocabDeckRow) => void;
@@ -182,6 +209,14 @@ function DeckListRow({
 					>
 						{sourceBadgeLabel}
 					</span>
+					{groupName ? (
+						<span
+							data-testid={`vocab-deck-group-badge-${deck.id}`}
+							className="rounded-md border border-border bg-secondary px-1.5 py-0.5 text-foreground text-xs"
+						>
+							{groupName}
+						</span>
+					) : null}
 					{deck.sourceLibraryDeckId ? (
 						<span
 							data-testid={`vocab-deck-library-badge-${deck.id}`}
@@ -286,12 +321,63 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 		return map;
 	}, [data.vocabSuggestions]);
 
+	const sortedGroups = useMemo(
+		() =>
+			[...data.vocabGroups].sort((a, b) => a.name.localeCompare(b.name, "vi")),
+		[data.vocabGroups],
+	);
+
+	const groupNameById = useMemo(() => {
+		const map = new Map<string, string>();
+		for (const group of data.vocabGroups) {
+			map.set(group.id, group.name);
+		}
+		return map;
+	}, [data.vocabGroups]);
+
+	const { deckCountByGroupId, ungroupedCount } = useMemo(() => {
+		const counts = new Map<string, number>();
+		let ungrouped = 0;
+		for (const deck of decks) {
+			if (deck.groupId && groupNameById.has(deck.groupId)) {
+				counts.set(deck.groupId, (counts.get(deck.groupId) ?? 0) + 1);
+			} else {
+				ungrouped += 1;
+			}
+		}
+		return { deckCountByGroupId: counts, ungroupedCount: ungrouped };
+	}, [decks, groupNameById]);
+
+	const [groupFilter, setGroupFilter] = useState<string>("all");
+	const effectiveGroupFilter = useMemo(() => {
+		if (groupFilter === "all" || groupFilter === "ungrouped") {
+			return groupFilter;
+		}
+		return groupNameById.has(groupFilter) ? groupFilter : "all";
+	}, [groupFilter, groupNameById]);
+
+	const filteredDecks = useMemo(() => {
+		if (effectiveGroupFilter === "all") return decks;
+		if (effectiveGroupFilter === "ungrouped") {
+			return decks.filter(
+				(deck) => !deck.groupId || !groupNameById.has(deck.groupId),
+			);
+		}
+		return decks.filter((deck) => deck.groupId === effectiveGroupFilter);
+	}, [decks, effectiveGroupFilter, groupNameById]);
+
+	const showGroupFilter =
+		decks.length > 0 &&
+		(sortedGroups.length > 0 || effectiveGroupFilter !== "all");
+
 	const [createOpen, setCreateOpen] = useState(false);
 	const [libraryOpen, setLibraryOpen] = useState(false);
 	const [csvImportOpen, setCsvImportOpen] = useState(false);
+	const [groupManagerOpen, setGroupManagerOpen] = useState(false);
 	const [newTitle, setNewTitle] = useState("");
 	const [newLessonNumber, setNewLessonNumber] = useState("");
 	const [newTopic, setNewTopic] = useState("");
+	const [newGroupId, setNewGroupId] = useState("");
 	const [createSaving, setCreateSaving] = useState(false);
 	const [renamingDeck, setRenamingDeck] = useState<KernelVocabDeckRow | null>(
 		null,
@@ -299,6 +385,7 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 	const [renameTitle, setRenameTitle] = useState("");
 	const [renameLessonNumber, setRenameLessonNumber] = useState("");
 	const [renameTopic, setRenameTopic] = useState("");
+	const [renameGroupId, setRenameGroupId] = useState("");
 	const [renameSaving, setRenameSaving] = useState(false);
 	const [editingDeckId, setEditingDeckId] = useState<string | null>(null);
 	const [suggestingDeck, setSuggestingDeck] = useState<{
@@ -323,6 +410,7 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 		setNewTitle("");
 		setNewLessonNumber("");
 		setNewTopic("");
+		setNewGroupId("");
 	};
 
 	const closeCreateModal = () => {
@@ -337,6 +425,9 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 			deck.lessonNumber != null ? String(deck.lessonNumber) : "",
 		);
 		setRenameTopic(deck.topic ?? "");
+		setRenameGroupId(
+			deck.groupId && groupNameById.has(deck.groupId) ? deck.groupId : "",
+		);
 	};
 
 	const closeRenameModal = () => {
@@ -344,6 +435,7 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 		setRenameTitle("");
 		setRenameLessonNumber("");
 		setRenameTopic("");
+		setRenameGroupId("");
 	};
 
 	const handleCreate = async () => {
@@ -361,6 +453,7 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 				payload: {
 					classId: targetClassId,
 					title: createDraft.effectiveTitle,
+					...(newGroupId.length > 0 ? { groupId: newGroupId } : {}),
 					...(createDraft.validLesson !== null
 						? { lessonNumber: createDraft.validLesson }
 						: {}),
@@ -369,8 +462,17 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 						: {}),
 				},
 			});
-			if (result.kind !== "refreshed") return;
-			closeCreateModal();
+			if (result.kind === "refreshed") {
+				closeCreateModal();
+				return;
+			}
+			if (result.kind === "committed") {
+				toast.warning(
+					"Đã tạo bộ từ nhưng chưa đồng bộ danh sách — vui lòng tải lại trang.",
+				);
+				return;
+			}
+			toast.error("Không thể tạo bộ từ. Vui lòng thử lại.");
 		} finally {
 			setCreateSaving(false);
 		}
@@ -387,6 +489,11 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 		}
 		setRenameSaving(true);
 		try {
+			const initialGroupId =
+				renamingDeck.groupId && groupNameById.has(renamingDeck.groupId)
+					? renamingDeck.groupId
+					: "";
+			const groupChanged = renameGroupId !== initialGroupId;
 			const result = await dispatch({
 				type: "rename-vocab-deck",
 				payload: {
@@ -395,11 +502,23 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 					lessonNumber: renameDraft.validLesson,
 					topic:
 						renameDraft.cleanTopic.length > 0 ? renameDraft.cleanTopic : null,
+					...(groupChanged
+						? { groupId: renameGroupId.length > 0 ? renameGroupId : null }
+						: {}),
 				},
 			});
-			if (result.kind !== "refreshed") return;
-			toast.success(`Đã cập nhật bộ từ "${renameDraft.effectiveTitle}".`);
-			closeRenameModal();
+			if (result.kind === "refreshed") {
+				toast.success(`Đã cập nhật bộ từ "${renameDraft.effectiveTitle}".`);
+				closeRenameModal();
+				return;
+			}
+			if (result.kind === "committed") {
+				toast.warning(
+					"Đã lưu thay đổi nhưng chưa đồng bộ danh sách — vui lòng tải lại trang.",
+				);
+				return;
+			}
+			toast.error("Không thể cập nhật bộ từ. Vui lòng thử lại.");
 		} finally {
 			setRenameSaving(false);
 		}
@@ -413,6 +532,12 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 		});
 		if (result.kind === "refreshed") {
 			toast.success(`Đã xoá bộ từ "${deletingDeck.title}".`);
+		} else if (result.kind === "committed") {
+			toast.warning(
+				"Đã xoá bộ từ nhưng chưa đồng bộ danh sách — vui lòng tải lại trang.",
+			);
+		} else {
+			toast.error("Không thể xoá bộ từ. Vui lòng thử lại.");
 		}
 		setDeletingDeck(null);
 	};
@@ -422,6 +547,14 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 			<div className="flex flex-wrap items-center justify-between gap-3">
 				<SectionLabel>Từ vựng SRS</SectionLabel>
 				<div className="flex flex-wrap items-center gap-2">
+					<Button
+						size="sm"
+						variant="secondary"
+						data-testid="vocab-manage-groups-btn"
+						onClick={() => setGroupManagerOpen(true)}
+					>
+						Quản lý nhóm
+					</Button>
 					<Button
 						size="sm"
 						variant="secondary"
@@ -444,24 +577,90 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 				</div>
 			</div>
 
+			{showGroupFilter ? (
+				<div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+					<div className="flex flex-wrap items-center gap-2">
+						<Select
+							data-testid="vocab-deck-group-filter"
+							aria-label="Lọc bộ từ theo nhóm"
+							value={effectiveGroupFilter}
+							onChange={(e) => setGroupFilter(e.target.value)}
+							className="w-full sm:w-64"
+						>
+							<option value="all">Tất cả nhóm</option>
+							{sortedGroups.map((group) => (
+								<option key={group.id} value={group.id}>
+									{group.name} ({deckCountByGroupId.get(group.id) ?? 0})
+								</option>
+							))}
+							{ungroupedCount > 0 || effectiveGroupFilter === "ungrouped" ? (
+								<option value="ungrouped">
+									Chưa phân nhóm ({ungroupedCount})
+								</option>
+							) : null}
+						</Select>
+						{effectiveGroupFilter !== "all" ? (
+							<span
+								aria-live="polite"
+								data-testid="vocab-deck-group-filter-count"
+								className="text-muted-foreground text-xs tabular-nums"
+							>
+								Hiển thị {filteredDecks.length} / {decks.length} bộ từ
+							</span>
+						) : null}
+					</div>
+					{effectiveGroupFilter !== "all" && filteredDecks.length > 0 ? (
+						<Button
+							type="button"
+							size="sm"
+							variant="ghost"
+							data-testid="vocab-deck-group-filter-clear"
+							onClick={() => setGroupFilter("all")}
+						>
+							Xóa bộ lọc
+						</Button>
+					) : null}
+				</div>
+			) : null}
+
 			{decks.length === 0 ? (
 				<p className="mt-4 text-muted-foreground text-sm">
 					{isHubMode
 						? "Chưa có bộ từ vựng nào. Tạo bộ từ mới hoặc thêm từ thư viện để gợi ý cho học viên."
 						: "Chưa có bộ từ vựng nào cho lớp này. Tạo bộ từ để học sinh học và ôn tập theo 5 cấp độ trí nhớ."}
 				</p>
+			) : filteredDecks.length === 0 ? (
+				<div
+					data-testid="vocab-deck-group-filter-empty"
+					className="mt-4 flex flex-col items-start gap-2 rounded-md border border-border bg-muted/30 p-4 text-muted-foreground text-sm"
+				>
+					<p>Không có bộ từ nào trong nhóm đã chọn.</p>
+					<Button
+						type="button"
+						size="sm"
+						variant="secondary"
+						data-testid="vocab-deck-group-filter-clear"
+						onClick={() => setGroupFilter("all")}
+					>
+						Xóa bộ lọc
+					</Button>
+				</div>
 			) : (
 				<div className="mt-4 divide-y divide-border rounded-md border border-border">
-					{decks.map((deck) => {
+					{filteredDecks.map((deck) => {
 						const sourceBadgeLabel =
 							deck.classId === null
 								? "Riêng"
 								: `Lớp ${classNameById.get(deck.classId) ?? deck.classId}`;
+						const groupName = deck.groupId
+							? (groupNameById.get(deck.groupId) ?? null)
+							: null;
 						return (
 							<DeckListRow
 								key={deck.id}
 								deck={deck}
 								sourceBadgeLabel={sourceBadgeLabel}
+								groupName={groupName}
 								pendingCount={pendingCountByDeckId.get(deck.id) ?? 0}
 								onSuggest={setSuggestingDeck}
 								onRename={openRenameModal}
@@ -507,11 +706,16 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 						: "Học sinh trong lớp sẽ thấy bộ từ này trên cổng học viên."}
 				</p>
 				<DeckMetadataFields
+					groups={data.vocabGroups}
+					groupId={newGroupId}
 					lessonNumber={newLessonNumber}
 					topic={newTopic}
 					title={newTitle}
 					lessonInvalid={createDraft.lessonInvalid}
 					suggestedTitle={createDraft.suggestedTitle}
+					disabled={createSaving}
+					groupTestIdPrefix="vocab-create-deck-group"
+					onGroupChange={setNewGroupId}
 					onLessonChange={setNewLessonNumber}
 					onTopicChange={setNewTopic}
 					onTitleChange={setNewTitle}
@@ -547,11 +751,16 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 				}
 			>
 				<DeckMetadataFields
+					groups={data.vocabGroups}
+					groupId={renameGroupId}
 					lessonNumber={renameLessonNumber}
 					topic={renameTopic}
 					title={renameTitle}
 					lessonInvalid={renameDraft.lessonInvalid}
 					suggestedTitle={renameDraft.suggestedTitle}
+					disabled={renameSaving}
+					groupTestIdPrefix="vocab-edit-deck-group"
+					onGroupChange={setRenameGroupId}
 					onLessonChange={setRenameLessonNumber}
 					onTopicChange={setRenameTopic}
 					onTitleChange={setRenameTitle}
@@ -587,6 +796,11 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 					sinh trên bộ này sẽ bị xoá vĩnh viễn. Lịch sử ôn tập không bị mất.
 				</p>
 			</Modal>
+
+			<VocabGroupManagerModal
+				open={groupManagerOpen}
+				onClose={() => setGroupManagerOpen(false)}
+			/>
 
 			{editingDeckId ? (
 				<VocabDeckEditorDialog

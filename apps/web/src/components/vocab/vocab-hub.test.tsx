@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
-import type {
-	VocabTeacherSuggestion,
-	VocabTeacherWord,
+import {
+	normalizeVocabGroupName,
+	VOCAB_ERROR_CODES,
+	type VocabTeacherSuggestion,
+	type VocabTeacherWord,
 } from "@teacher-os/api/contracts";
 import { VOCAB_SAMPLE_CSV_CONTENT } from "@teacher-os/api/lib/vocab-csv";
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
@@ -802,6 +804,701 @@ describe("Teacher Vocab Hub, Suggestions & Progress (#363)", () => {
 			title: "Lesson 02 – Daily Life",
 			lessonNumber: 2,
 			topic: "Daily Life",
+		});
+	});
+
+	it("manages vocab groups (create, duplicate error, rename, delete preserving decks) via VocabGroupManagerModal", async () => {
+		const initialSnapshot = snapshotFixture({
+			vocabGroups: [],
+			vocabDecks: [
+				{
+					id: "deck-g-1",
+					classId: null,
+					groupId: null,
+					title: "Foundation Lesson 1",
+					lang: "en",
+					wordCount: 10,
+					createdAt: "2026-10-20T00:00:00.000Z",
+					sourceLibraryDeckId: null,
+				},
+			],
+		});
+
+		let groupSeq = 0;
+		const server = startKernelServer(initialSnapshot, (req, srv) => {
+			if (req.method === "POST" && req.path === "/api/kernel/vocab/groups") {
+				const body = req.body as { name: string };
+				const norm = normalizeVocabGroupName(body.name);
+				const groups = srv.snapshot.vocabGroups ?? [];
+				if (groups.some((g) => normalizeVocabGroupName(g.name) === norm)) {
+					return {
+						status: 409,
+						body: {
+							error: "group name already exists",
+							code: VOCAB_ERROR_CODES.GROUP_NAME_EXISTS,
+						},
+					};
+				}
+				groupSeq += 1;
+				const id = `grp-${groupSeq}`;
+				groups.push({
+					id,
+					name: body.name.trim(),
+					createdAt: "2026-10-20T00:00:00.000Z",
+					updatedAt: "2026-10-20T00:00:00.000Z",
+				});
+				srv.snapshot.vocabGroups = groups;
+				// Attach existing deck to the first created group to verify delete clears groupId
+				if (groupSeq === 1 && srv.snapshot.vocabDecks[0]) {
+					srv.snapshot.vocabDecks[0].groupId = id;
+				}
+				return { status: 201, body: { id } };
+			}
+			if (
+				req.method === "POST" &&
+				req.path === "/api/kernel/vocab/groups/rename"
+			) {
+				const body = req.body as { groupId: string; name: string };
+				const norm = normalizeVocabGroupName(body.name);
+				const groups = srv.snapshot.vocabGroups ?? [];
+				if (
+					groups.some(
+						(g) =>
+							g.id !== body.groupId && normalizeVocabGroupName(g.name) === norm,
+					)
+				) {
+					return {
+						status: 409,
+						body: {
+							error: "group name already exists",
+							code: VOCAB_ERROR_CODES.GROUP_NAME_EXISTS,
+						},
+					};
+				}
+				const target = groups.find((g) => g.id === body.groupId);
+				if (!target) return { status: 404, body: { error: "not found" } };
+				target.name = body.name.trim();
+				return { status: 200, body: { id: target.id } };
+			}
+			if (
+				req.method === "POST" &&
+				req.path === "/api/kernel/vocab/groups/delete"
+			) {
+				const body = req.body as { groupId: string };
+				srv.snapshot.vocabGroups = (srv.snapshot.vocabGroups ?? []).filter(
+					(g) => g.id !== body.groupId,
+				);
+				for (const deck of srv.snapshot.vocabDecks) {
+					if (deck.groupId === body.groupId) {
+						deck.groupId = null;
+					}
+				}
+				return { status: 200, body: { id: body.groupId } };
+			}
+			return undefined;
+		});
+
+		renderWithKernel(<VocabHubRoute />);
+		await waitFor(() => {
+			expect(screen.getByTestId("vocab-manage-groups-btn")).toBeDefined();
+		});
+
+		// 1) Open manager modal -> empty state
+		fireEvent.click(screen.getByTestId("vocab-manage-groups-btn"));
+		expect(screen.getByTestId("vocab-group-list").textContent).toContain(
+			"Chưa có nhóm nào",
+		);
+
+		// 2) Create first group
+		fireEvent.change(screen.getByTestId("vocab-group-create-input"), {
+			target: { value: "IELTS Foundation" },
+		});
+		fireEvent.click(screen.getByTestId("vocab-group-create-submit"));
+
+		await waitFor(() => {
+			expect(screen.getByTestId("vocab-group-row-grp-1")).toBeDefined();
+		});
+		expect(screen.getByTestId("vocab-group-row-grp-1").textContent).toContain(
+			"1 bộ từ",
+		);
+
+		// 3) Duplicate group name -> inline 409 error
+		fireEvent.change(screen.getByTestId("vocab-group-create-input"), {
+			target: { value: "ielts foundation" },
+		});
+		fireEvent.click(screen.getByTestId("vocab-group-create-submit"));
+
+		await waitFor(() => {
+			expect(screen.getByTestId("vocab-group-create-error").textContent).toBe(
+				"Tên nhóm đã tồn tại.",
+			);
+		});
+
+		// 4) Create second group, test duplicate rename error, then valid rename
+		fireEvent.change(screen.getByTestId("vocab-group-create-input"), {
+			target: { value: "Giao tiếp" },
+		});
+		fireEvent.click(screen.getByTestId("vocab-group-create-submit"));
+		await waitFor(() => {
+			expect(screen.getByTestId("vocab-group-row-grp-2")).toBeDefined();
+		});
+
+		fireEvent.click(screen.getByTestId("vocab-group-rename-btn-grp-2"));
+		fireEvent.change(screen.getByTestId("vocab-group-rename-input-grp-2"), {
+			target: { value: "IELTS Foundation" },
+		});
+		fireEvent.click(screen.getByTestId("vocab-group-rename-submit-grp-2"));
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("vocab-group-rename-error-grp-2").textContent,
+			).toBe("Tên nhóm đã tồn tại.");
+		});
+
+		fireEvent.change(screen.getByTestId("vocab-group-rename-input-grp-2"), {
+			target: { value: "Giao tiếp cơ bản" },
+		});
+		fireEvent.click(screen.getByTestId("vocab-group-rename-submit-grp-2"));
+		await waitFor(() => {
+			expect(screen.getByTestId("vocab-group-row-grp-2").textContent).toContain(
+				"Giao tiếp cơ bản",
+			);
+		});
+
+		// 5) Delete grp-1 -> shows affected deck warning, removes group, preserves deck without badge
+		fireEvent.click(screen.getByTestId("vocab-group-delete-btn-grp-1"));
+		expect(
+			screen.getByTestId("vocab-group-delete-panel-grp-1").textContent,
+		).toContain(
+			"1 bộ từ trong nhóm sẽ được giữ nguyên và chuyển về Chưa phân nhóm.",
+		);
+		fireEvent.click(screen.getByTestId("vocab-group-delete-confirm-grp-1"));
+
+		await waitFor(() => {
+			expect(screen.queryByTestId("vocab-group-row-grp-1")).toBeNull();
+		});
+		// Deck still exists without group badge
+		expect(screen.getByTestId("vocab-deck-row-deck-g-1")).toBeDefined();
+		expect(screen.queryByTestId("vocab-deck-group-badge-deck-g-1")).toBeNull();
+
+		const deleteCall = server.writes.find(
+			(r) =>
+				r.method === "POST" && r.path === "/api/kernel/vocab/groups/delete",
+		);
+		expect(deleteCall?.body).toEqual({ groupId: "grp-1" });
+	});
+
+	it("quick-creates a group inline inside Create Deck modal, auto-selects it, and sends groupId on deck creation", async () => {
+		const initialSnapshot = snapshotFixture({
+			vocabGroups: [
+				{
+					id: "grp-existing",
+					name: "IELTS 6.5",
+					createdAt: "2026-10-19T00:00:00.000Z",
+					updatedAt: "2026-10-19T00:00:00.000Z",
+				},
+			],
+			vocabDecks: [],
+		});
+
+		const server = startKernelServer(initialSnapshot, (req, srv) => {
+			if (req.method === "POST" && req.path === "/api/kernel/vocab/groups") {
+				const body = req.body as { name: string };
+				const groups = srv.snapshot.vocabGroups ?? [];
+				if (
+					groups.some(
+						(g) =>
+							normalizeVocabGroupName(g.name) ===
+							normalizeVocabGroupName(body.name),
+					)
+				) {
+					return {
+						status: 409,
+						body: {
+							error: "group name already exists",
+							code: VOCAB_ERROR_CODES.GROUP_NAME_EXISTS,
+						},
+					};
+				}
+				const created = {
+					id: "grp-quick-1",
+					name: body.name.trim(),
+					createdAt: "2026-10-20T00:00:00.000Z",
+					updatedAt: "2026-10-20T00:00:00.000Z",
+				};
+				groups.push(created);
+				srv.snapshot.vocabGroups = groups;
+				return { status: 201, body: { id: created.id } };
+			}
+			if (req.method === "POST" && req.path === "/api/kernel/vocab/decks") {
+				const body = req.body as {
+					classId: string | null;
+					title: string;
+					groupId?: string | null;
+				};
+				srv.snapshot.vocabDecks.push({
+					id: "deck-grouped-new",
+					classId: body.classId,
+					groupId: body.groupId ?? null,
+					title: body.title,
+					lang: "en",
+					wordCount: 0,
+					createdAt: "2026-10-20T01:00:00.000Z",
+					sourceLibraryDeckId: null,
+				});
+				return { status: 201, body: { id: "deck-grouped-new" } };
+			}
+			return undefined;
+		});
+
+		renderWithKernel(<VocabHubRoute />);
+		await waitFor(() => {
+			expect(screen.getByRole("button", { name: "Tạo bộ từ" })).toBeDefined();
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: "Tạo bộ từ" }));
+
+		// Open inline quick-create and test duplicate error
+		fireEvent.click(
+			screen.getByTestId("vocab-create-deck-group-quick-create-toggle"),
+		);
+		fireEvent.change(
+			screen.getByTestId("vocab-create-deck-group-quick-create-input"),
+			{ target: { value: "ielts 6.5" } },
+		);
+		fireEvent.click(
+			screen.getByTestId("vocab-create-deck-group-quick-create-submit"),
+		);
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("vocab-create-deck-group-quick-create-error")
+					.textContent,
+			).toBe("Tên nhóm đã tồn tại.");
+		});
+
+		// Escape cancels inline quick-create without closing parent Create Deck modal
+		fireEvent.keyDown(
+			screen.getByTestId("vocab-create-deck-group-quick-create-input"),
+			{ key: "Escape" },
+		);
+		expect(
+			screen.queryByTestId("vocab-create-deck-group-quick-create-input"),
+		).toBeNull();
+		expect(screen.getByTestId("vocab-create-deck-submit")).toBeDefined();
+
+		// Re-open inline quick-create, create new group -> auto-selected
+		fireEvent.click(
+			screen.getByTestId("vocab-create-deck-group-quick-create-toggle"),
+		);
+		fireEvent.change(
+			screen.getByTestId("vocab-create-deck-group-quick-create-input"),
+			{ target: { value: "TOEIC 750" } },
+		);
+		fireEvent.keyDown(
+			screen.getByTestId("vocab-create-deck-group-quick-create-input"),
+			{ key: "Enter" },
+		);
+
+		await waitFor(() => {
+			expect(
+				(screen.getByTestId("vocab-create-deck-group") as HTMLSelectElement)
+					.value,
+			).toBe("grp-quick-1");
+		});
+
+		// Create deck with the newly selected group
+		fireEvent.change(screen.getByLabelText("Tiêu đề bộ từ"), {
+			target: { value: "Lesson 01 – Office" },
+		});
+		fireEvent.click(screen.getByTestId("vocab-create-deck-submit"));
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("vocab-deck-group-badge-deck-grouped-new")
+					.textContent,
+			).toBe("TOEIC 750");
+		});
+
+		const createDeckCall = server.writes.find(
+			(r) => r.method === "POST" && r.path === "/api/kernel/vocab/decks",
+		);
+		expect(createDeckCall?.body).toEqual({
+			classId: null,
+			title: "Lesson 01 – Office",
+			groupId: "grp-quick-1",
+		});
+	});
+
+	it("assigns, changes, and clears a deck's group via Edit Deck modal", async () => {
+		const initialSnapshot = snapshotFixture({
+			vocabGroups: [
+				{
+					id: "grp-1",
+					name: "IELTS 6.5",
+					createdAt: "2026-10-19T00:00:00.000Z",
+					updatedAt: "2026-10-19T00:00:00.000Z",
+				},
+				{
+					id: "grp-2",
+					name: "Giao tiếp",
+					createdAt: "2026-10-19T00:00:00.000Z",
+					updatedAt: "2026-10-19T00:00:00.000Z",
+				},
+			],
+			vocabDecks: [
+				{
+					id: "deck-edit-grp",
+					classId: null,
+					groupId: null,
+					title: "Core Verbs",
+					lessonNumber: null,
+					topic: null,
+					lang: "en",
+					wordCount: 12,
+					createdAt: "2026-10-20T00:00:00.000Z",
+					sourceLibraryDeckId: null,
+				},
+			],
+		});
+
+		const server = startKernelServer(initialSnapshot, (req, srv) => {
+			if (
+				req.method === "POST" &&
+				req.path === "/api/kernel/vocab/decks/rename"
+			) {
+				const body = req.body as {
+					deckId: string;
+					title: string;
+					groupId?: string | null;
+					lessonNumber?: number | null;
+					topic?: string | null;
+				};
+				const target = srv.snapshot.vocabDecks.find(
+					(d) => d.id === body.deckId,
+				);
+				if (!target) return { status: 404, body: { error: "not found" } };
+				target.title = body.title;
+				target.lessonNumber = body.lessonNumber ?? null;
+				target.topic = body.topic ?? null;
+				if (body.groupId !== undefined) {
+					target.groupId = body.groupId;
+				}
+				return { status: 200, body: { id: target.id } };
+			}
+			return undefined;
+		});
+
+		renderWithKernel(<VocabHubRoute />);
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("vocab-rename-deck-deck-edit-grp"),
+			).toBeDefined();
+		});
+		expect(
+			screen.queryByTestId("vocab-deck-group-badge-deck-edit-grp"),
+		).toBeNull();
+
+		// 1) Assign grp-1
+		fireEvent.click(screen.getByTestId("vocab-rename-deck-deck-edit-grp"));
+		fireEvent.change(screen.getByTestId("vocab-edit-deck-group"), {
+			target: { value: "grp-1" },
+		});
+		fireEvent.click(screen.getByTestId("vocab-rename-deck-submit"));
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("vocab-deck-group-badge-deck-edit-grp").textContent,
+			).toBe("IELTS 6.5");
+		});
+
+		// 2) Change grp-1 -> grp-2
+		fireEvent.click(screen.getByTestId("vocab-rename-deck-deck-edit-grp"));
+		expect(
+			(screen.getByTestId("vocab-edit-deck-group") as HTMLSelectElement).value,
+		).toBe("grp-1");
+		fireEvent.change(screen.getByTestId("vocab-edit-deck-group"), {
+			target: { value: "grp-2" },
+		});
+		fireEvent.click(screen.getByTestId("vocab-rename-deck-submit"));
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("vocab-deck-group-badge-deck-edit-grp").textContent,
+			).toBe("Giao tiếp");
+		});
+
+		// 3) Clear group -> null
+		fireEvent.click(screen.getByTestId("vocab-rename-deck-deck-edit-grp"));
+		fireEvent.change(screen.getByTestId("vocab-edit-deck-group"), {
+			target: { value: "" },
+		});
+		fireEvent.click(screen.getByTestId("vocab-rename-deck-submit"));
+
+		await waitFor(() => {
+			expect(
+				screen.queryByTestId("vocab-deck-group-badge-deck-edit-grp"),
+			).toBeNull();
+		});
+
+		const renameCalls = server.writes.filter(
+			(r) => r.method === "POST" && r.path === "/api/kernel/vocab/decks/rename",
+		);
+		expect(
+			renameCalls.map((c) => (c.body as { groupId?: string | null }).groupId),
+		).toEqual(["grp-1", "grp-2", null]);
+	});
+
+	it("renders group badges and filters decks by group, ungrouped, and empty group in both hub and class mode", async () => {
+		const initialSnapshot = snapshotFixture({
+			classes: [classRow({ id: "cl-1", name: "IELTS 6.5" })],
+			vocabGroups: [
+				{
+					id: "grp-ielts",
+					name: "IELTS Foundation",
+					createdAt: "2026-10-19T00:00:00.000Z",
+					updatedAt: "2026-10-19T00:00:00.000Z",
+				},
+				{
+					id: "grp-empty",
+					name: "TOEIC 800",
+					createdAt: "2026-10-19T00:00:00.000Z",
+					updatedAt: "2026-10-19T00:00:00.000Z",
+				},
+			],
+			vocabDecks: [
+				{
+					id: "deck-hub-grouped",
+					classId: null,
+					groupId: "grp-ielts",
+					title: "Hub Grouped Deck",
+					lang: "en",
+					wordCount: 10,
+					createdAt: "2026-10-20T00:00:00.000Z",
+					sourceLibraryDeckId: null,
+				},
+				{
+					id: "deck-hub-ungrouped",
+					classId: null,
+					groupId: null,
+					title: "Hub Ungrouped Deck",
+					lang: "en",
+					wordCount: 8,
+					createdAt: "2026-10-20T01:00:00.000Z",
+					sourceLibraryDeckId: null,
+				},
+				{
+					id: "deck-class-grouped",
+					classId: "cl-1",
+					groupId: "grp-ielts",
+					title: "Class Grouped Deck",
+					lang: "en",
+					wordCount: 15,
+					createdAt: "2026-10-20T02:00:00.000Z",
+					sourceLibraryDeckId: null,
+				},
+			],
+		});
+
+		startKernelServer(initialSnapshot);
+
+		// 1) Hub mode
+		const hubRender = renderWithKernel(<VocabHubRoute />);
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("vocab-deck-row-deck-hub-grouped"),
+			).toBeDefined();
+		});
+
+		expect(
+			screen.getByTestId("vocab-deck-group-badge-deck-hub-grouped").textContent,
+		).toBe("IELTS Foundation");
+		expect(
+			screen.getByTestId("vocab-deck-group-badge-deck-class-grouped")
+				.textContent,
+		).toBe("IELTS Foundation");
+		expect(
+			screen.queryByTestId("vocab-deck-group-badge-deck-hub-ungrouped"),
+		).toBeNull();
+
+		// Filter by grp-ielts
+		fireEvent.change(screen.getByTestId("vocab-deck-group-filter"), {
+			target: { value: "grp-ielts" },
+		});
+		expect(screen.getByTestId("vocab-deck-row-deck-hub-grouped")).toBeDefined();
+		expect(
+			screen.getByTestId("vocab-deck-row-deck-class-grouped"),
+		).toBeDefined();
+		expect(
+			screen.queryByTestId("vocab-deck-row-deck-hub-ungrouped"),
+		).toBeNull();
+		expect(
+			screen.getByTestId("vocab-deck-group-filter-count").textContent,
+		).toContain("2 / 3");
+
+		// Filter by ungrouped
+		fireEvent.change(screen.getByTestId("vocab-deck-group-filter"), {
+			target: { value: "ungrouped" },
+		});
+		expect(
+			screen.getByTestId("vocab-deck-row-deck-hub-ungrouped"),
+		).toBeDefined();
+		expect(screen.queryByTestId("vocab-deck-row-deck-hub-grouped")).toBeNull();
+
+		// Filter by empty group -> empty state + clear button restores all
+		fireEvent.change(screen.getByTestId("vocab-deck-group-filter"), {
+			target: { value: "grp-empty" },
+		});
+		expect(
+			screen.getByTestId("vocab-deck-group-filter-empty").textContent,
+		).toContain("Không có bộ từ nào trong nhóm đã chọn.");
+		fireEvent.click(screen.getByTestId("vocab-deck-group-filter-clear"));
+		expect(screen.getByTestId("vocab-deck-row-deck-hub-grouped")).toBeDefined();
+		expect(
+			screen.getByTestId("vocab-deck-row-deck-hub-ungrouped"),
+		).toBeDefined();
+		expect(
+			screen.getByTestId("vocab-deck-row-deck-class-grouped"),
+		).toBeDefined();
+
+		hubRender.unmount();
+		cleanup();
+
+		// 2) Class mode shows class decks only with group badge and filter
+		renderWithKernel(<VocabDeckList classId="cl-1" />);
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("vocab-deck-row-deck-class-grouped"),
+			).toBeDefined();
+		});
+		expect(screen.queryByTestId("vocab-deck-row-deck-hub-grouped")).toBeNull();
+		expect(
+			screen.getByTestId("vocab-deck-group-badge-deck-class-grouped")
+				.textContent,
+		).toBe("IELTS Foundation");
+		fireEvent.change(screen.getByTestId("vocab-deck-group-filter"), {
+			target: { value: "grp-empty" },
+		});
+		expect(screen.getByTestId("vocab-deck-group-filter-empty")).toBeDefined();
+		fireEvent.click(screen.getByTestId("vocab-deck-group-filter-clear"));
+		expect(
+			screen.getByTestId("vocab-deck-row-deck-class-grouped"),
+		).toBeDefined();
+	});
+
+	it("imports CSV decks with a selected or quick-created groupId in create-decks mode", async () => {
+		const initialSnapshot = snapshotFixture({
+			vocabGroups: [],
+			vocabDecks: [],
+		});
+
+		const server = startKernelServer(initialSnapshot, (req, srv) => {
+			if (req.method === "POST" && req.path === "/api/kernel/vocab/groups") {
+				const body = req.body as { name: string };
+				const created = {
+					id: "grp-csv-1",
+					name: body.name.trim(),
+					createdAt: "2026-10-20T00:00:00.000Z",
+					updatedAt: "2026-10-20T00:00:00.000Z",
+				};
+				srv.snapshot.vocabGroups = [
+					...(srv.snapshot.vocabGroups ?? []),
+					created,
+				];
+				return { status: 201, body: { id: created.id } };
+			}
+			if (
+				req.method === "POST" &&
+				req.path === "/api/kernel/vocab/decks/import-csv"
+			) {
+				const body = req.body as {
+					classId: string | null;
+					groupId?: string | null;
+					decks: Array<{
+						title: string;
+						lessonNumber?: number | null;
+						topic?: string | null;
+						lang?: string;
+						words: unknown[];
+					}>;
+				};
+				body.decks.forEach((deck, index) => {
+					srv.snapshot.vocabDecks.push({
+						id: `deck-csv-grp-${index + 1}`,
+						classId: body.classId,
+						groupId: body.groupId ?? null,
+						title: deck.title,
+						lessonNumber: deck.lessonNumber ?? null,
+						topic: deck.topic ?? null,
+						lang: deck.lang ?? "en",
+						wordCount: deck.words.length,
+						createdAt: "2026-10-20T00:00:00.000Z",
+						sourceLibraryDeckId: null,
+					});
+				});
+				return {
+					status: 201,
+					body: {
+						id: "deck-csv-grp-1",
+						deckIds: ["deck-csv-grp-1"],
+						importedDecks: body.decks.length,
+						importedWords: body.decks.reduce((s, d) => s + d.words.length, 0),
+					},
+				};
+			}
+			return undefined;
+		});
+
+		renderWithKernel(<VocabHubRoute />);
+		await waitFor(() => {
+			expect(screen.getByTestId("vocab-import-csv-btn")).toBeDefined();
+		});
+
+		fireEvent.click(screen.getByTestId("vocab-import-csv-btn"));
+
+		// Quick-create group inside CSV import dialog
+		fireEvent.click(
+			screen.getByTestId("vocab-csv-group-select-quick-create-toggle"),
+		);
+		fireEvent.change(
+			screen.getByTestId("vocab-csv-group-select-quick-create-input"),
+			{ target: { value: "IELTS Foundation" } },
+		);
+		fireEvent.click(
+			screen.getByTestId("vocab-csv-group-select-quick-create-submit"),
+		);
+
+		await waitFor(() => {
+			expect(
+				(screen.getByTestId("vocab-csv-group-select") as HTMLSelectElement)
+					.value,
+			).toBe("grp-csv-1");
+		});
+
+		const sampleFile = new File([VOCAB_SAMPLE_CSV_CONTENT], "sample.csv", {
+			type: "text/csv",
+		});
+		fireEvent.change(screen.getByTestId("vocab-csv-file-input"), {
+			target: { files: [sampleFile] },
+		});
+
+		await waitFor(() => {
+			expect(screen.getByTestId("vocab-csv-preview")).toBeDefined();
+		});
+
+		fireEvent.click(screen.getByTestId("vocab-csv-submit-btn"));
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("vocab-deck-group-badge-deck-csv-grp-1").textContent,
+			).toBe("IELTS Foundation");
+		});
+
+		const importCall = server.writes.find(
+			(r) =>
+				r.method === "POST" && r.path === "/api/kernel/vocab/decks/import-csv",
+		);
+		expect(importCall?.body).toMatchObject({
+			classId: null,
+			groupId: "grp-csv-1",
 		});
 	});
 });
