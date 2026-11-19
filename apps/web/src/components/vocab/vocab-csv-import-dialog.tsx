@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { useData } from "@/lib/data-store";
+import { VocabGroupSelectField } from "./vocab-group-select-field";
 
 const PREVIEW_ROW_LIMIT = 20;
 const MAX_CSV_FILE_BYTES = 2 * 1024 * 1024;
@@ -65,9 +66,10 @@ function formatDeckLessonSummary(
 
 export function VocabCsvImportDialog(props: VocabCsvImportDialogProps) {
 	const { open, onClose, mode, onImported } = props;
-	const { dispatch } = useData();
+	const { data, dispatch } = useData();
 	const fileInputId = useId();
 	const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
+	const [selectedGroupId, setSelectedGroupId] = useState("");
 	const [parseResult, setParseResult] = useState<VocabCsvParseResult | null>(
 		null,
 	);
@@ -77,6 +79,7 @@ export function VocabCsvImportDialog(props: VocabCsvImportDialogProps) {
 	useEffect(() => {
 		if (!open) return;
 		setSelectedFileName(null);
+		setSelectedGroupId("");
 		setParseResult(null);
 		setSubmitError(null);
 		setSubmitting(false);
@@ -127,12 +130,20 @@ export function VocabCsvImportDialog(props: VocabCsvImportDialogProps) {
 		setSubmitting(true);
 		setSubmitError(null);
 		try {
+			const effectiveGroupId =
+				selectedGroupId.length > 0 &&
+				data.vocabGroups.some((g) => g.id === selectedGroupId)
+					? selectedGroupId
+					: "";
 			const result =
 				props.mode === "create-decks"
 					? await dispatch({
 							type: "import-vocab-csv-decks",
 							payload: {
 								classId: props.classId,
+								...(effectiveGroupId.length > 0
+									? { groupId: effectiveGroupId }
+									: {}),
 								decks: parseResult.decks,
 							},
 						})
@@ -248,6 +259,16 @@ export function VocabCsvImportDialog(props: VocabCsvImportDialogProps) {
 					Tải file mẫu
 				</Button>
 			</div>
+
+			{props.mode === "create-decks" ? (
+				<VocabGroupSelectField
+					groups={data.vocabGroups}
+					value={selectedGroupId}
+					onChange={setSelectedGroupId}
+					disabled={submitting}
+					testIdPrefix="vocab-csv-group-select"
+				/>
+			) : null}
 
 			<div className="space-y-2">
 				<label

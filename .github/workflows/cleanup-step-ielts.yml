@@ -1,0 +1,77 @@
+# Workflow audit và làm sạch các trường mô tả / bộ sưu tập liên quan đến Step IELTS trên staging.
+#
+# Ràng buộc an toàn:
+# - Chỉ chạy bằng manual workflow_dispatch; không trigger tự động.
+# - Mặc định ở chế độ audit (read-only); chế độ apply yêu cầu gõ xác nhận chính xác "staging" vào confirm_stage.
+# - Dùng đúng GitHub Environment "staging" (secrets Cloudflare).
+# - Serialize với deploy qua cùng concurrency group deploy-staging.
+# - Quyền contents: read ở cấp top-level.
+name: Cleanup Step IELTS Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: "Target stage (bảo vệ an toàn: chỉ cho phép staging)"
+        type: choice
+        options:
+          - staging
+        default: staging
+        required: true
+      mode:
+        description: "Chế độ thực thi: audit (chỉ đọc) hoặc apply (làm sạch dữ liệu)"
+        type: choice
+        options:
+          - audit
+          - apply
+        default: audit
+        required: true
+      confirm_stage:
+        description: "Gõ đúng chữ 'staging' để xác nhận khi chạy mode=apply"
+        type: string
+        required: false
+        default: ""
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: staging
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Confirm safety gate for apply mode
+        env:
+          CLEANUP_MODE: ${{ inputs.mode }}
+          STAGE: ${{ inputs.stage }}
+          CONFIRM_STAGE: ${{ inputs.confirm_stage }}
+        run: |
+          if [ "$CLEANUP_MODE" = "apply" ]; then
+            if [ "$CONFIRM_STAGE" != "staging" ]; then
+              echo "::error::Mode 'apply' bắt buộc phải gõ đúng chữ 'staging' trong confirm_stage (nhận được: '$CONFIRM_STAGE')"
+              exit 1
+            fi
+            echo "Đã xác nhận chính xác stage '$CONFIRM_STAGE'. Tiếp tục thực thi apply."
+          fi
+
+      - name: Run Step IELTS cleanup
+        working-directory: packages/db
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLEANUP_MODE: ${{ inputs.mode }}
+          CONFIRM_STAGE: ${{ inputs.confirm_stage }}
+        run: |
+          if [ "$CLEANUP_MODE" = "apply" ]; then
+            pnpm exec tsx scripts/cleanup-step-ielts.ts --d1 --d1-stage staging --mode apply --confirm-stage staging
+          else
+            pnpm exec tsx scripts/cleanup-step-ielts.ts --d1 --d1-stage staging --mode audit
+          fi

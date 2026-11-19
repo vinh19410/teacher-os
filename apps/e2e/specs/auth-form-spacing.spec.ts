@@ -1,17 +1,17 @@
 import { expect, test } from "@playwright/test";
 import { ADMIN_ORIGIN, STUDENT_ORIGIN } from "./origins";
 
-// gap-4 in Tailwind is 1rem. With base font-size 14px in globals.css, computed rowGap is 14px.
-const EXPECTED_ROW_GAPS = ["14px", "16px"];
+// gap-4 in Tailwind is 1rem. With base font-size 16px in globals.css, computed rowGap is 16px.
+const EXPECTED_ROW_GAPS = ["16px"];
 
 test.describe("Auth Form Field Spacing (#568)", () => {
-	test("Web auth forms: rowGap is 14px (1rem) and hidden tabs stay display:none", async ({
+	test("Web auth forms: rowGap is 16px (1rem) and hidden tabs stay display:none", async ({
 		page,
 	}) => {
 		// 1. Web login page
 		await page.goto("/login");
 
-		// Default active panel should have rowGap 14px/16px (1rem)
+		// Default active panel should have rowGap 16px (1rem)
 		const activeForm = page.locator("form:not([hidden])").first();
 		await expect(activeForm).toBeVisible();
 		const rowGapDefault = await activeForm.evaluate(
@@ -57,7 +57,7 @@ test.describe("Auth Form Field Spacing (#568)", () => {
 		expect(EXPECTED_ROW_GAPS).toContain(resetGap);
 	});
 
-	test("Student auth forms: rowGap is 14px (1rem) and hidden tabs stay display:none", async ({
+	test("Student auth forms: rowGap is 16px (1rem) and hidden tabs stay display:none", async ({
 		page,
 	}) => {
 		// 1. Student login page
@@ -108,7 +108,7 @@ test.describe("Auth Form Field Spacing (#568)", () => {
 		expect(EXPECTED_ROW_GAPS).toContain(resetGap);
 	});
 
-	test("Admin auth forms: rowGap is 14px (1rem)", async ({ page }) => {
+	test("Admin auth forms: rowGap is 16px (1rem)", async ({ page }) => {
 		// 1. Admin login page
 		await page.goto(`${ADMIN_ORIGIN}/login`);
 		const signinForm = page.locator("#panel-signin");

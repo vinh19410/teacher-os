@@ -320,22 +320,44 @@ export type KernelAction =
 			payload: AssignmentPromptUpdate;
 	  }
 	| {
+			/** Tạo nhóm bộ từ vựng ở cấp org. */
+			type: "create-vocab-group";
+			payload: {
+				name: string;
+			};
+	  }
+	| {
+			/** Đổi tên nhóm bộ từ vựng. */
+			type: "rename-vocab-group";
+			payload: {
+				groupId: string;
+				name: string;
+			};
+	  }
+	| {
+			/** Xoá nhóm bộ từ vựng (bộ từ thuộc nhóm được giữ lại với groupId = null). */
+			type: "delete-vocab-group";
+			groupId: string;
+	  }
+	| {
 			/** Student Vocab SRS (#359, #363): tạo bộ từ vựng cho lớp hoặc độc lập (classId = null). */
 			type: "create-vocab-deck";
 			payload: {
 				classId: string | null;
 				title: string;
+				groupId?: string | null;
 				lessonNumber?: number | null;
 				topic?: string | null;
 				lang?: string;
 			};
 	  }
 	| {
-			/** Đổi tên (và ngôn ngữ) bộ từ vựng. */
+			/** Đổi tên (và metadata) bộ từ vựng. */
 			type: "rename-vocab-deck";
 			payload: {
 				deckId: string;
 				title: string;
+				groupId?: string | null;
 				lessonNumber?: number | null;
 				topic?: string | null;
 				lang?: string;
@@ -366,6 +388,7 @@ export type KernelAction =
 			type: "import-vocab-csv-decks";
 			payload: {
 				classId: string | null;
+				groupId?: string | null;
 				decks: VocabDeckCsvImportItem[];
 			};
 	  }

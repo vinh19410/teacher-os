@@ -10,13 +10,23 @@ import { Modal } from "@/components/ui/modal";
 import { Tabs } from "@/components/ui/tabs";
 import { useData } from "@/lib/data-store";
 import { getApiBaseUrl } from "@/lib/repos/api-base-url";
+import {
+	MAX_VOCAB_CLONE_DECKS_PER_BATCH,
+	MAX_VOCAB_CLONE_STATEMENTS_PER_BATCH,
+	splitVocabCloneBatches,
+} from "./vocab-clone-batches";
 import { VocabTeacherDecksTab } from "./vocab-teacher-decks-tab";
 
-const MAX_CLONE_DECKS = 50;
-const MAX_CLONE_STATEMENTS = 500;
 const SEARCH_DEBOUNCE_MS = 300;
 
 type DialogTab = "library" | "teacher";
+
+interface CloneProgress {
+	doneDecks: number;
+	totalDecks: number;
+	currentBatch: number;
+	totalBatches: number;
+}
 
 const DIALOG_TABS: Array<{ id: DialogTab; label: string }> = [
 	{ id: "library", label: "Thư viện hệ thống" },
@@ -26,10 +36,10 @@ const DIALOG_TABS: Array<{ id: DialogTab; label: string }> = [
 /**
  * Dialog 2 tab "Thêm từ thư viện":
  * - Tab 1 ("Thư viện hệ thống"): duyệt khóa học có sẵn, chọn bài học và clone qua
- *   `clone-vocab-library-decks`.
+ *   `clone-vocab-library-decks` với giới hạn 1 lượt (`decks <= 50`, `decks + words <= 500`).
  * - Tab 2 ("Bộ từ đã tạo"): duyệt bộ từ do giáo viên tạo ở nguồn khác, lọc theo
- *   nguồn/tìm kiếm, chọn nhiều và clone qua `clone-vocab-teacher-decks`.
- * Cả hai tab dùng chung kiểm tra giới hạn `decks <= 50` và `decks + words <= 500` ở footer.
+ *   nguồn/nhóm/tìm kiếm, chọn cộng dồn không giới hạn 500 từ và tự động chia lượt gửi
+ *   tuần tự qua `clone-vocab-teacher-decks`.
  */
 export function VocabLibraryDialog({
 	open,
@@ -40,7 +50,7 @@ export function VocabLibraryDialog({
 	classId?: string | null;
 	onClose: () => void;
 }) {
-	const { data, dispatch } = useData();
+	const { data, dispatch, refresh } = useData();
 	const targetClassId = classId ?? null;
 	const isHubMode = targetClassId === null;
 	const existingLibraryDeckIds = useMemo(() => {
@@ -74,6 +84,9 @@ export function VocabLibraryDialog({
 	);
 	const [batchCapHint, setBatchCapHint] = useState<string | null>(null);
 	const [submitting, setSubmitting] = useState(false);
+	const [cloneProgress, setCloneProgress] = useState<CloneProgress | null>(
+		null,
+	);
 	const [statusNotice, setStatusNotice] = useState<string | null>(null);
 
 	const loadCourses = useCallback(async () => {
@@ -124,6 +137,7 @@ export function VocabLibraryDialog({
 		setSelectedDecks(new Map());
 		setBatchCapHint(null);
 		setStatusNotice(null);
+		setCloneProgress(null);
 		setSubmitting(false);
 		void loadCourses();
 	}, [open, loadCourses]);
@@ -165,9 +179,27 @@ export function VocabLibraryDialog({
 		return sum;
 	}, [selectedDecks]);
 
+	const teacherBatchPlan = useMemo(
+		() =>
+			splitVocabCloneBatches(
+				[...selectedDecks.entries()].map(([id, wordCount]) => ({
+					id,
+					wordCount,
+				})),
+			),
+		[selectedDecks],
+	);
+
 	const overCap =
-		selectedCount > MAX_CLONE_DECKS ||
-		selectedCount + totalWords > MAX_CLONE_STATEMENTS;
+		activeTab === "library"
+			? selectedCount > MAX_VOCAB_CLONE_DECKS_PER_BATCH ||
+				selectedCount + totalWords > MAX_VOCAB_CLONE_STATEMENTS_PER_BATCH
+			: teacherBatchPlan.oversizedDeckIds.length > 0;
+
+	const handleRequestClose = () => {
+		if (submitting) return;
+		onClose();
+	};
 
 	const handleTabChange = (nextTabId: string) => {
 		if (submitting) return;
@@ -176,10 +208,12 @@ export function VocabLibraryDialog({
 		setActiveTab(nextTabId);
 		setSelectedDecks(new Map());
 		setBatchCapHint(null);
+		setCloneProgress(null);
 		setStatusNotice(null);
 	};
 
 	const handleSelectCourse = (course: VocabLibraryCourse) => {
+		if (submitting) return;
 		setSelectedCourse(course);
 		setStep("decks");
 		setDeckQueryInput("");
@@ -191,6 +225,7 @@ export function VocabLibraryDialog({
 	};
 
 	const handleBackToCourses = () => {
+		if (submitting) return;
 		setStep("courses");
 		setSelectedCourse(null);
 		setDecks([]);
@@ -202,6 +237,7 @@ export function VocabLibraryDialog({
 	};
 
 	const handleToggleDeck = (deck: { id: string; wordCount: number }) => {
+		if (submitting) return;
 		setBatchCapHint(null);
 		setStatusNotice(null);
 		setSelectedDecks((prev) => {
@@ -219,6 +255,7 @@ export function VocabLibraryDialog({
 		items: ReadonlyArray<{ id: string; wordCount: number }>,
 		unitLabel: string,
 	) => {
+		if (submitting) return;
 		setStatusNotice(null);
 		const allFilteredSelected =
 			items.length > 0 && items.every((d) => selectedDecks.has(d.id));
@@ -236,8 +273,8 @@ export function VocabLibraryDialog({
 			const nextCount = next.size + 1;
 			const nextWords = runningWords + deck.wordCount;
 			if (
-				nextCount <= MAX_CLONE_DECKS &&
-				nextCount + nextWords <= MAX_CLONE_STATEMENTS
+				nextCount <= MAX_VOCAB_CLONE_DECKS_PER_BATCH &&
+				nextCount + nextWords <= MAX_VOCAB_CLONE_STATEMENTS_PER_BATCH
 			) {
 				next.set(deck.id, deck.wordCount);
 				runningWords = nextWords;
@@ -256,42 +293,191 @@ export function VocabLibraryDialog({
 		}
 	};
 
+	const handleToggleTeacherFilteredSelection = (
+		items: ReadonlyArray<{ id: string; wordCount: number }>,
+	) => {
+		if (submitting || items.length === 0) return;
+		setBatchCapHint(null);
+		setStatusNotice(null);
+		setSelectedDecks((prev) => {
+			const next = new Map(prev);
+			const allSelected = items.every((item) => next.has(item.id));
+			if (allSelected) {
+				for (const item of items) {
+					next.delete(item.id);
+				}
+			} else {
+				for (const item of items) {
+					next.set(item.id, item.wordCount);
+				}
+			}
+			return next;
+		});
+	};
+
+	const notifySuccessAndClose = (
+		addedCount: number,
+		dupCount: number,
+		dupUnitLabel: string,
+	) => {
+		if (dupCount > 0) {
+			toast.warning(
+				isHubMode
+					? `Đã thêm ${addedCount} bộ từ (${dupCount} ${dupUnitLabel} đã có trong hub từ trước).`
+					: `Đã thêm ${addedCount} bộ từ (${dupCount} ${dupUnitLabel} đã có trong lớp từ trước).`,
+			);
+		} else {
+			toast.success(
+				isHubMode
+					? `Đã thêm ${addedCount} bộ từ.`
+					: `Đã thêm ${addedCount} bộ từ vào lớp.`,
+			);
+		}
+		onClose();
+	};
+
 	const handleConfirmClone = async () => {
 		if (selectedCount === 0 || overCap || submitting) return;
 		setSubmitting(true);
 		setStatusNotice(null);
 		try {
-			const deckIds = [...selectedDecks.keys()];
-			const result = await dispatch(
-				activeTab === "teacher"
-					? {
+			if (activeTab === "teacher") {
+				const { batches } = teacherBatchPlan;
+				if (batches.length === 0) return;
+
+				if (batches.length === 1) {
+					const onlyBatch = batches[0];
+					if (!onlyBatch) return;
+					const result = await dispatch({
+						type: "clone-vocab-teacher-decks",
+						payload: { classId: targetClassId, deckIds: onlyBatch.deckIds },
+					});
+
+					if (result.kind === "refreshed") {
+						notifySuccessAndClose(
+							result.updated ?? onlyBatch.deckIds.length,
+							result.duplicates?.length ?? 0,
+							"bộ từ",
+						);
+						return;
+					}
+
+					if (result.kind === "committed") {
+						const msg =
+							"Đã lưu nhưng chưa xác nhận danh sách — vui lòng tải lại trang.";
+						toast.warning(msg);
+						setStatusNotice(msg);
+						return;
+					}
+
+					if (result.kind === "definite-failure") {
+						const msg = result.reason
+							? `Không thể thêm bộ từ (${result.reason}).`
+							: isHubMode
+								? "Không thể thêm bộ từ."
+								: "Không thể thêm bộ từ vào lớp.";
+						toast.error(msg);
+						setStatusNotice(msg);
+						return;
+					}
+
+					const unknownMsg =
+						"Không rõ kết quả mạng — hãy kiểm tra danh sách bộ từ trước khi thử lại.";
+					toast.error(unknownMsg);
+					setStatusNotice(unknownMsg);
+					return;
+				}
+
+				const totalTargetDecks = batches.reduce(
+					(sum, batch) => sum + batch.deckIds.length,
+					0,
+				);
+				let doneDecks = 0;
+				let totalAdded = 0;
+				const duplicateIds = new Set<string>();
+				const remaining = new Map(selectedDecks);
+
+				for (let i = 0; i < batches.length; i++) {
+					const batch = batches[i];
+					if (!batch) continue;
+					setCloneProgress({
+						doneDecks,
+						totalDecks: totalTargetDecks,
+						currentBatch: i + 1,
+						totalBatches: batches.length,
+					});
+
+					const res = await dispatch(
+						{
 							type: "clone-vocab-teacher-decks",
-							payload: { classId: targetClassId, deckIds },
-						}
-					: {
-							type: "clone-vocab-library-decks",
-							payload: { classId: targetClassId, deckIds },
+							payload: { classId: targetClassId, deckIds: batch.deckIds },
 						},
-			);
+						{ skipRefresh: true },
+					);
+
+					if (res.kind === "committed" || res.kind === "refreshed") {
+						totalAdded += res.updated ?? batch.deckIds.length;
+						for (const dup of res.duplicates ?? []) {
+							duplicateIds.add(dup);
+						}
+						for (const id of batch.deckIds) {
+							remaining.delete(id);
+						}
+						doneDecks += batch.deckIds.length;
+						setSelectedDecks(new Map(remaining));
+						continue;
+					}
+
+					setCloneProgress(null);
+					if (doneDecks > 0) {
+						await refresh();
+					}
+
+					const msg =
+						doneDecks > 0
+							? res.kind === "outcome-unknown"
+								? `Đã thêm ${totalAdded}/${totalTargetDecks} bộ, nhưng không rõ kết quả mạng ở lượt tiếp theo (${remaining.size} bộ còn lại) — hãy kiểm tra danh sách bộ từ trước khi thử lại.`
+								: `Đã thêm ${totalAdded}/${totalTargetDecks} bộ — còn ${remaining.size} bộ chưa thêm được${
+										res.reason ? ` (${res.reason})` : ""
+									}. Hãy bấm thêm lại cho phần còn lại.`
+							: res.kind === "definite-failure"
+								? res.reason
+									? `Không thể thêm bộ từ (${res.reason}).`
+									: isHubMode
+										? "Không thể thêm bộ từ."
+										: "Không thể thêm bộ từ vào lớp."
+								: "Không rõ kết quả mạng — hãy kiểm tra danh sách bộ từ trước khi thử lại.";
+					toast.error(msg);
+					setStatusNotice(msg);
+					return;
+				}
+
+				setCloneProgress(null);
+				const refreshed = await refresh();
+				if (!refreshed) {
+					const msg =
+						"Đã lưu nhưng chưa xác nhận danh sách — vui lòng tải lại trang.";
+					toast.warning(msg);
+					setStatusNotice(msg);
+					return;
+				}
+
+				notifySuccessAndClose(totalAdded, duplicateIds.size, "bộ từ");
+				return;
+			}
+
+			const deckIds = [...selectedDecks.keys()];
+			const result = await dispatch({
+				type: "clone-vocab-library-decks",
+				payload: { classId: targetClassId, deckIds },
+			});
 
 			if (result.kind === "refreshed") {
-				const addedCount = result.updated ?? deckIds.length;
-				const dupCount = result.duplicates?.length ?? 0;
-				const dupUnitLabel = activeTab === "teacher" ? "bộ từ" : "bài";
-				if (dupCount > 0) {
-					toast.warning(
-						isHubMode
-							? `Đã thêm ${addedCount} bộ từ (${dupCount} ${dupUnitLabel} đã có trong hub từ trước).`
-							: `Đã thêm ${addedCount} bộ từ (${dupCount} ${dupUnitLabel} đã có trong lớp từ trước).`,
-					);
-				} else {
-					toast.success(
-						isHubMode
-							? `Đã thêm ${addedCount} bộ từ.`
-							: `Đã thêm ${addedCount} bộ từ vào lớp.`,
-					);
-				}
-				onClose();
+				notifySuccessAndClose(
+					result.updated ?? deckIds.length,
+					result.duplicates?.length ?? 0,
+					"bài",
+				);
 				return;
 			}
 
@@ -319,6 +505,7 @@ export function VocabLibraryDialog({
 			toast.error(unknownMsg);
 			setStatusNotice(unknownMsg);
 		} finally {
+			setCloneProgress(null);
 			setSubmitting(false);
 		}
 	};
@@ -329,7 +516,7 @@ export function VocabLibraryDialog({
 	return (
 		<Modal
 			open={open}
-			onClose={onClose}
+			onClose={handleRequestClose}
 			title={
 				activeTab === "library" && step === "decks"
 					? `Thêm từ thư viện · ${selectedCourse?.name ?? ""}`
@@ -342,8 +529,9 @@ export function VocabLibraryDialog({
 							data-testid="vocab-library-cap-warning"
 							className="font-mono text-primary text-xs"
 						>
-							Vượt giới hạn 1 lượt (tối đa {MAX_CLONE_DECKS} bộ và tổng số bộ +
-							từ ≤ {MAX_CLONE_STATEMENTS}). Vui lòng bỏ chọn bớt bài.
+							{activeTab === "library"
+								? `Vượt giới hạn 1 lượt (tối đa ${MAX_VOCAB_CLONE_DECKS_PER_BATCH} bộ và tổng số bộ + từ ≤ ${MAX_VOCAB_CLONE_STATEMENTS_PER_BATCH}). Vui lòng bỏ chọn bớt bài.`
+								: "Có bộ từ vượt giới hạn 499 từ/bộ và không thể sao chép. Vui lòng bỏ chọn bộ từ đó."}
 						</p>
 					) : null}
 					{batchCapHint ? (
@@ -352,6 +540,17 @@ export function VocabLibraryDialog({
 							className="font-mono text-primary text-xs"
 						>
 							{batchCapHint}
+						</p>
+					) : null}
+					{submitting && cloneProgress ? (
+						<p
+							data-testid="vocab-library-batch-progress"
+							aria-live="polite"
+							className="font-mono text-muted-foreground text-xs tabular-nums"
+						>
+							Đang thêm {cloneProgress.doneDecks}/{cloneProgress.totalDecks} bộ
+							(lượt {cloneProgress.currentBatch}/{cloneProgress.totalBatches}
+							)...
 						</p>
 					) : null}
 					{statusNotice ? (
@@ -365,13 +564,21 @@ export function VocabLibraryDialog({
 					<div className="flex flex-wrap items-center justify-between gap-3">
 						<span
 							data-testid="vocab-library-selection-summary"
-							aria-live="polite"
+							aria-live={submitting && cloneProgress ? "off" : "polite"}
 							className="font-mono text-muted-foreground text-xs tabular-nums"
 						>
 							Đã chọn {selectedCount} bộ · {totalWords} từ
+							{activeTab === "teacher" && teacherBatchPlan.batches.length > 1
+								? ` (${teacherBatchPlan.batches.length} lượt gửi)`
+								: ""}
 						</span>
 						<div className="flex items-center gap-2">
-							<Button variant="secondary" type="button" onClick={onClose}>
+							<Button
+								variant="secondary"
+								type="button"
+								disabled={submitting}
+								onClick={handleRequestClose}
+							>
 								Hủy
 							</Button>
 							{showConfirmButton ? (
@@ -405,10 +612,12 @@ export function VocabLibraryDialog({
 					<VocabTeacherDecksTab
 						targetClassId={targetClassId}
 						vocabDecks={data.vocabDecks}
+						vocabGroups={data.vocabGroups}
 						classes={data.classes}
 						selectedDecks={selectedDecks}
+						disabled={submitting}
 						onToggleDeck={handleToggleDeck}
-						onSelectBatch={(items) => handleSelectBatch(items, "bộ từ")}
+						onToggleFilteredSelection={handleToggleTeacherFilteredSelection}
 					/>
 				) : step === "courses" ? (
 					<div className="space-y-3" data-testid="vocab-library-courses-step">

@@ -2203,6 +2203,7 @@ export interface KernelSnapshot {
 	commentBank: KernelCommentBankRow[];
 	classAssignments: KernelClassAssignmentRow[];
 	assignmentTests: KernelAssignmentTestRow[];
+	vocabGroups?: KernelVocabGroupRow[];
 	vocabDecks: KernelVocabDeckRow[];
 	vocabSuggestions?: KernelVocabSuggestionRow[];
 	/** TOS-11: lịch tuần vẽ nhãn kỳ nghỉ + "Đã dời sang dd/MM" không cần gọi thêm endpoint. Optional — fixtures cũ không gửi. */
@@ -3423,16 +3424,31 @@ export const VOCAB_ERROR_CODES = {
 	DECK_CLONE_DUPLICATE_DECK: "VOCAB_DECK_CLONE_DUPLICATE_DECK",
 	SUGGESTION_NOT_FOUND: "VOCAB_SUGGESTION_NOT_FOUND",
 	SUGGESTION_ALREADY_ACCEPTED: "VOCAB_SUGGESTION_ALREADY_ACCEPTED",
+	GROUP_NOT_FOUND: "VOCAB_GROUP_NOT_FOUND",
+	GROUP_NAME_EXISTS: "VOCAB_GROUP_NAME_EXISTS",
 } as const;
 export type VocabErrorCode =
 	(typeof VOCAB_ERROR_CODES)[keyof typeof VOCAB_ERROR_CODES];
 
+/** Chuẩn hoá tên nhóm bộ từ để kiểm tra trùng không phân biệt hoa/thường và tổ hợp dấu tiếng Việt. */
+export function normalizeVocabGroupName(name: string): string {
+	return name.trim().normalize("NFC").toLocaleLowerCase("vi");
+}
+
 export const vocabEntryTypeSchema = z.enum(["word", "chunk"]);
 export type VocabEntryType = z.infer<typeof vocabEntryTypeSchema>;
+
+export interface KernelVocabGroupRow {
+	id: string;
+	name: string;
+	createdAt: string;
+	updatedAt: string;
+}
 
 export interface KernelVocabDeckRow {
 	id: string;
 	classId: string | null;
+	groupId?: string | null;
 	title: string;
 	lessonNumber?: number | null;
 	topic?: string | null;
@@ -3450,6 +3466,29 @@ export interface KernelVocabSuggestionRow {
 	createdAt: string;
 }
 
+export const vocabGroupCreateSchema = z
+	.object({
+		id: z.string().min(1).max(128).optional(),
+		name: z.string().trim().min(1).max(100),
+	})
+	.strict();
+export type VocabGroupCreateInput = z.infer<typeof vocabGroupCreateSchema>;
+
+export const vocabGroupRenameSchema = z
+	.object({
+		groupId: z.string().min(1),
+		name: z.string().trim().min(1).max(100),
+	})
+	.strict();
+export type VocabGroupRenameInput = z.infer<typeof vocabGroupRenameSchema>;
+
+export const vocabGroupDeleteSchema = z
+	.object({
+		groupId: z.string().min(1),
+	})
+	.strict();
+export type VocabGroupDeleteInput = z.infer<typeof vocabGroupDeleteSchema>;
+
 export const RESERVED_LIBRARY_ID_PREFIX_REGEX =
 	/^(libcourse|libdeck|libword)-/i;
 
@@ -3465,6 +3504,7 @@ export const vocabDeckCreateSchema = z
 			)
 			.optional(),
 		classId: z.string().min(1).nullable().optional().default(null),
+		groupId: z.string().min(1).nullable().optional(),
 		title: z.string().trim().min(1).max(200),
 		lessonNumber: z.number().int().min(1).max(9999).nullable().optional(),
 		topic: z.string().trim().max(200).nullable().optional(),
@@ -3480,6 +3520,7 @@ export const vocabDeckRenameSchema = z
 		lessonNumber: z.number().int().min(1).max(9999).nullable().optional(),
 		topic: z.string().trim().max(200).nullable().optional(),
 		lang: z.string().trim().min(1).max(16).optional(),
+		groupId: z.string().min(1).nullable().optional(),
 	})
 	.strict();
 export type VocabDeckRenameInput = z.infer<typeof vocabDeckRenameSchema>;
@@ -3584,6 +3625,7 @@ export type VocabDeckCsvImportItem = z.infer<
 export const vocabDeckCsvImportSchema = z
 	.object({
 		classId: z.string().min(1).nullable().optional().default(null),
+		groupId: z.string().min(1).nullable().optional(),
 		decks: z
 			.array(vocabDeckCsvImportItemSchema)
 			.min(1)

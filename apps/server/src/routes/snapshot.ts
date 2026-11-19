@@ -50,6 +50,7 @@ import {
 } from "@teacher-os/db/schema/syllabus";
 import {
 	vocabDeck,
+	vocabGroup,
 	vocabSuggestion,
 	vocabWord,
 } from "@teacher-os/db/schema/vocab";
@@ -255,6 +256,7 @@ export async function loadSnapshot(
 		commentBankRows,
 		assignmentTestRows,
 		assignmentTestPartRows,
+		vocabGroupRows,
 		vocabDeckRows,
 		vocabWordDeckIds,
 		vocabSuggestionRows,
@@ -384,6 +386,11 @@ export async function loadSnapshot(
 				),
 			)
 			.orderBy(asc(assignmentTestPart.position)),
+		db
+			.select()
+			.from(vocabGroup)
+			.where(eq(vocabGroup.orgId, orgId))
+			.orderBy(asc(vocabGroup.createdAt), asc(vocabGroup.id)),
 		db
 			.select()
 			.from(vocabDeck)
@@ -842,9 +849,16 @@ export async function loadSnapshot(
 			status: row.status,
 			parts: partsByTest.get(row.id) ?? [],
 		})),
+		vocabGroups: vocabGroupRows.map((row) => ({
+			id: row.id,
+			name: row.name,
+			createdAt: row.createdAt.toISOString(),
+			updatedAt: row.updatedAt.toISOString(),
+		})),
 		vocabDecks: vocabDeckRows.map((row) => ({
 			id: row.id,
 			classId: row.classId,
+			groupId: row.groupId ?? null,
 			title: row.title,
 			lessonNumber: row.lessonNumber ?? null,
 			topic: row.topic ?? null,

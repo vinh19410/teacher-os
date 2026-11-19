@@ -1,13 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import {
+	normalizeVocabGroupName,
 	VOCAB_DURATION_MAX_MS,
 	VOCAB_ERROR_CODES,
 	vocabAnswerSchema,
 	vocabDeckCloneSchema,
 	vocabDeckCreateSchema,
 	vocabDeckCsvImportSchema,
+	vocabDeckRenameSchema,
 	vocabDeckWordsImportSchema,
+	vocabGroupCreateSchema,
+	vocabGroupDeleteSchema,
+	vocabGroupRenameSchema,
 	vocabLearnCommitSchema,
 	vocabLibraryCloneSchema,
 	vocabLibraryCourseSchema,
@@ -826,5 +831,178 @@ describe("vocab contracts (.strict() and boundary validation)", () => {
 		expect(VOCAB_ERROR_CODES.DECK_CLONE_DUPLICATE_DECK).toBe(
 			"VOCAB_DECK_CLONE_DUPLICATE_DECK",
 		);
+	});
+
+	it("validates vocab group schemas, strictness, normalizeVocabGroupName, and groupId on deck schemas", () => {
+		expect(VOCAB_ERROR_CODES.GROUP_NOT_FOUND).toBe("VOCAB_GROUP_NOT_FOUND");
+		expect(VOCAB_ERROR_CODES.GROUP_NAME_EXISTS).toBe("VOCAB_GROUP_NAME_EXISTS");
+
+		// normalizeVocabGroupName handles trimming, Vietnamese casing, and NFD/NFC equivalence
+		expect(normalizeVocabGroupName("  Giao Tiếp  ")).toBe("giao tiếp");
+		expect(normalizeVocabGroupName("GIAO TIẾP")).toBe(
+			normalizeVocabGroupName("giao tiếp"),
+		);
+		const nfdName = "Tiếng Việt".normalize("NFD");
+		const nfcName = "TIẾNG VIỆT".normalize("NFC");
+		expect(normalizeVocabGroupName(nfdName)).toBe(
+			normalizeVocabGroupName(nfcName),
+		);
+		expect(normalizeVocabGroupName("ĐẶC BIỆT")).toBe("đặc biệt");
+
+		// vocabGroupCreateSchema
+		const created = vocabGroupCreateSchema.safeParse({
+			name: "  IELTS Speaking  ",
+		});
+		expect(created.success).toBe(true);
+		if (created.success) {
+			expect(created.data.name).toBe("IELTS Speaking");
+		}
+		expect(
+			vocabGroupCreateSchema.safeParse({ id: "grp-1", name: "TOEIC" }).success,
+		).toBe(true);
+		expect(vocabGroupCreateSchema.safeParse({ name: "   " }).success).toBe(
+			false,
+		);
+		expect(
+			vocabGroupCreateSchema.safeParse({ name: "a".repeat(101) }).success,
+		).toBe(false);
+		expect(
+			vocabGroupCreateSchema.safeParse({ id: "", name: "TOEIC" }).success,
+		).toBe(false);
+		expect(
+			vocabGroupCreateSchema.safeParse({ id: "x".repeat(129), name: "TOEIC" })
+				.success,
+		).toBe(false);
+		expect(
+			vocabGroupCreateSchema.safeParse({ name: "TOEIC", extra: true }).success,
+		).toBe(false);
+
+		// vocabGroupRenameSchema
+		const renamed = vocabGroupRenameSchema.safeParse({
+			groupId: "grp-1",
+			name: "  Giao tiếp nâng cao  ",
+		});
+		expect(renamed.success).toBe(true);
+		if (renamed.success) {
+			expect(renamed.data.name).toBe("Giao tiếp nâng cao");
+		}
+		expect(
+			vocabGroupRenameSchema.safeParse({ groupId: "", name: "Valid" }).success,
+		).toBe(false);
+		expect(
+			vocabGroupRenameSchema.safeParse({ groupId: "grp-1", name: "   " })
+				.success,
+		).toBe(false);
+		expect(
+			vocabGroupRenameSchema.safeParse({
+				groupId: "grp-1",
+				name: "a".repeat(101),
+			}).success,
+		).toBe(false);
+		expect(
+			vocabGroupRenameSchema.safeParse({
+				groupId: "grp-1",
+				name: "Valid",
+				extra: 1,
+			}).success,
+		).toBe(false);
+
+		// vocabGroupDeleteSchema
+		expect(vocabGroupDeleteSchema.safeParse({ groupId: "grp-1" }).success).toBe(
+			true,
+		);
+		expect(vocabGroupDeleteSchema.safeParse({ groupId: "" }).success).toBe(
+			false,
+		);
+		expect(
+			vocabGroupDeleteSchema.safeParse({ groupId: "grp-1", extra: 1 }).success,
+		).toBe(false);
+
+		// groupId on vocabDeckCreateSchema
+		expect(
+			vocabDeckCreateSchema.safeParse({
+				title: "Deck A",
+				groupId: "grp-1",
+			}).success,
+		).toBe(true);
+		expect(
+			vocabDeckCreateSchema.safeParse({
+				title: "Deck A",
+				groupId: null,
+			}).success,
+		).toBe(true);
+		expect(
+			vocabDeckCreateSchema.safeParse({
+				title: "Deck A",
+				groupId: "",
+			}).success,
+		).toBe(false);
+
+		// groupId on vocabDeckRenameSchema
+		expect(
+			vocabDeckRenameSchema.safeParse({
+				deckId: "deck-1",
+				title: "Deck A",
+				groupId: "grp-1",
+			}).success,
+		).toBe(true);
+		expect(
+			vocabDeckRenameSchema.safeParse({
+				deckId: "deck-1",
+				title: "Deck A",
+				groupId: null,
+			}).success,
+		).toBe(true);
+		expect(
+			vocabDeckRenameSchema.safeParse({
+				deckId: "deck-1",
+				title: "Deck A",
+			}).success,
+		).toBe(true);
+		expect(
+			vocabDeckRenameSchema.safeParse({
+				deckId: "deck-1",
+				title: "Deck A",
+				groupId: "",
+			}).success,
+		).toBe(false);
+
+		// groupId on vocabDeckCsvImportSchema
+		expect(
+			vocabDeckCsvImportSchema.safeParse({
+				classId: null,
+				groupId: "grp-1",
+				decks: [
+					{
+						title: "Lesson 1",
+						words: [{ word: "hello", translation: "xin chào" }],
+					},
+				],
+			}).success,
+		).toBe(true);
+		expect(
+			vocabDeckCsvImportSchema.safeParse({
+				classId: null,
+				groupId: null,
+				decks: [
+					{
+						title: "Lesson 1",
+						words: [{ word: "hello", translation: "xin chào" }],
+					},
+				],
+			}).success,
+		).toBe(true);
+		expect(
+			vocabDeckCsvImportSchema.safeParse({
+				classId: null,
+				groupId: "",
+				decks: [
+					{
+						title: "Lesson 1",
+						words: [{ word: "hello", translation: "xin chào" }],
+					},
+				],
+			}).success,
+		).toBe(false);
 	});
 });

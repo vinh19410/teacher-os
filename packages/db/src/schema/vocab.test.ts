@@ -665,9 +665,17 @@ describe("vocab_card polymorphic word_id & migration 0039 (#366)", () => {
 
 			const db = drizzle(client, { schema });
 
-			// 1. Existing row preserved with sourceDeckId = null
+			// 1. Existing row preserved with sourceDeckId = null (query columns that existed at 0079)
 			const [existingDeck] = await db
-				.select()
+				.select({
+					id: schema.vocabDeck.id,
+					orgId: schema.vocabDeck.orgId,
+					classId: schema.vocabDeck.classId,
+					title: schema.vocabDeck.title,
+					lessonNumber: schema.vocabDeck.lessonNumber,
+					topic: schema.vocabDeck.topic,
+					sourceDeckId: schema.vocabDeck.sourceDeckId,
+				})
 				.from(schema.vocabDeck)
 				.where(eq(schema.vocabDeck.id, "deck-source"));
 			expect(existingDeck).toMatchObject({
@@ -687,16 +695,17 @@ describe("vocab_card polymorphic word_id & migration 0039 (#366)", () => {
 			const idxNames = idxRows.rows.map((r) => String(r.name));
 			expect(idxNames).toContain("vocab_deck_source_deck_idx");
 
-			// 3. New row can store sourceDeckId and survives when source deck is deleted
-			await db.insert(schema.vocabDeck).values({
-				id: "deck-cloned",
-				orgId: "org-clone",
-				classId: "class-clone",
-				title: "Hub Source Deck",
-				lessonNumber: 1,
-				topic: "Travel",
-				lang: "en",
-				sourceDeckId: "deck-source",
+			// 3. New row can store sourceDeckId and survives when source deck is deleted (0079 schema columns)
+			await client.execute({
+				sql: "INSERT INTO vocab_deck (id, org_id, class_id, title, lesson_number, topic, lang, source_deck_id, created_at, updated_at) VALUES (?, ?, ?, ?, 1, ?, 'en', ?, 1700000000000, 1700000000000)",
+				args: [
+					"deck-cloned",
+					"org-clone",
+					"class-clone",
+					"Hub Source Deck",
+					"Travel",
+					"deck-source",
+				],
 			});
 
 			await db
@@ -704,7 +713,12 @@ describe("vocab_card polymorphic word_id & migration 0039 (#366)", () => {
 				.where(eq(schema.vocabDeck.id, "deck-source"));
 
 			const [survivingClone] = await db
-				.select()
+				.select({
+					id: schema.vocabDeck.id,
+					classId: schema.vocabDeck.classId,
+					title: schema.vocabDeck.title,
+					sourceDeckId: schema.vocabDeck.sourceDeckId,
+				})
 				.from(schema.vocabDeck)
 				.where(eq(schema.vocabDeck.id, "deck-cloned"));
 			expect(survivingClone).toMatchObject({
@@ -712,6 +726,134 @@ describe("vocab_card polymorphic word_id & migration 0039 (#366)", () => {
 				classId: "class-clone",
 				title: "Hub Source Deck",
 				sourceDeckId: "deck-source",
+			});
+		} finally {
+			client.close();
+		}
+	});
+
+	it("rehearses 0080 additive migration on populated vocab_deck rows, enforces per-org unique normalized_name on vocab_group, and clears group_id on group delete", async () => {
+		const client = createClient({ url: "file::memory:" });
+		try {
+			const files = readdirSync(MIGRATIONS_DIR)
+				.filter((f) => f.endsWith(".sql"))
+				.sort();
+			const idx0080 = files.findIndex((f) => f.startsWith("0080_"));
+			expect(idx0080).toBeGreaterThan(0);
+
+			for (const file of files.slice(0, idx0080)) {
+				const rawSql = readFileSync(join(MIGRATIONS_DIR, file), "utf8");
+				for (const stmt of rawSql
+					.split("--> statement-breakpoint")
+					.map((s) => s.trim())
+					.filter(Boolean)) {
+					await client.execute(stmt);
+				}
+			}
+
+			await client.execute({
+				sql: "INSERT INTO organization (id, name, created_at) VALUES (?, ?, 1700000000000)",
+				args: ["org-a", "Org A"],
+			});
+			await client.execute({
+				sql: "INSERT INTO organization (id, name, created_at) VALUES (?, ?, 1700000000000)",
+				args: ["org-b", "Org B"],
+			});
+			await client.execute({
+				sql: "INSERT INTO vocab_deck (id, org_id, class_id, title, lesson_number, topic, lang, created_at, updated_at) VALUES (?, ?, NULL, ?, 1, ?, 'en', 1700000000000, 1700000000000)",
+				args: ["deck-pre-group", "org-a", "Pre-group Deck", "Daily"],
+			});
+
+			const file0080 = files[idx0080] as string;
+			const sql0080 = readFileSync(join(MIGRATIONS_DIR, file0080), "utf8");
+			for (const stmt of sql0080
+				.split("--> statement-breakpoint")
+				.map((s) => s.trim())
+				.filter(Boolean)) {
+				await client.execute(stmt);
+			}
+
+			await client.execute("PRAGMA foreign_keys = ON;");
+
+			const db = drizzle(client, { schema });
+
+			// 1. Existing vocab_deck row preserved with groupId = null
+			const [existingDeck] = await db
+				.select()
+				.from(schema.vocabDeck)
+				.where(eq(schema.vocabDeck.id, "deck-pre-group"));
+			expect(existingDeck).toMatchObject({
+				id: "deck-pre-group",
+				orgId: "org-a",
+				title: "Pre-group Deck",
+				groupId: null,
+			});
+
+			// 2. Verify vocab_group table and indexes on vocab_group & vocab_deck exist
+			const tableRows = await client.execute(
+				"SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'vocab_group'",
+			);
+			expect(tableRows.rows).toHaveLength(1);
+
+			const idxRows = await client.execute(
+				"SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name IN ('vocab_group', 'vocab_deck')",
+			);
+			const idxNames = idxRows.rows.map((r) => String(r.name));
+			expect(idxNames).toEqual(
+				expect.arrayContaining([
+					"vocab_group_org_idx",
+					"vocab_group_org_normalized_name_uq",
+					"vocab_deck_group_idx",
+				]),
+			);
+
+			// 3. Unique (org_id, normalized_name) blocks duplicates in same org, allows across orgs
+			await db.insert(schema.vocabGroup).values({
+				id: "grp-a1",
+				orgId: "org-a",
+				name: "Giao Tiếp",
+				normalizedName: "giao tiếp",
+			});
+
+			await expect(
+				db.insert(schema.vocabGroup).values({
+					id: "grp-a2",
+					orgId: "org-a",
+					name: "giao tiếp",
+					normalizedName: "giao tiếp",
+				}),
+			).rejects.toThrow();
+
+			await db.insert(schema.vocabGroup).values({
+				id: "grp-b1",
+				orgId: "org-b",
+				name: "Giao Tiếp",
+				normalizedName: "giao tiếp",
+			});
+
+			// 4. Deck referencing vocab_group gets groupId = null when group is deleted (ON DELETE SET NULL)
+			await db
+				.update(schema.vocabDeck)
+				.set({ groupId: "grp-a1" })
+				.where(eq(schema.vocabDeck.id, "deck-pre-group"));
+
+			const [groupedDeck] = await db
+				.select()
+				.from(schema.vocabDeck)
+				.where(eq(schema.vocabDeck.id, "deck-pre-group"));
+			expect(groupedDeck?.groupId).toBe("grp-a1");
+
+			await db
+				.delete(schema.vocabGroup)
+				.where(eq(schema.vocabGroup.id, "grp-a1"));
+
+			const [ungroupedDeck] = await db
+				.select()
+				.from(schema.vocabDeck)
+				.where(eq(schema.vocabDeck.id, "deck-pre-group"));
+			expect(ungroupedDeck).toMatchObject({
+				id: "deck-pre-group",
+				groupId: null,
 			});
 		} finally {
 			client.close();
