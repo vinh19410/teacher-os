@@ -38,6 +38,11 @@ const MESSAGE_LABELS: ReadonlyArray<[RegExp, string]> = [
 		/mcq_many requires answerSet/i,
 		"Các câu chọn nhiều đáp án cần thuộc một cụm đáp án chung (answerSet).",
 	],
+	[/mcq options must have/i, "Câu trắc nghiệm cần từ 2 đến 4 lựa chọn."],
+	[
+		/mcq answer must be within opts/i,
+		"Đáp án trắc nghiệm phải nằm trong số lựa chọn hiện có của câu.",
+	],
 	[
 		/answer must be a label/i,
 		"Đáp án phải là một nhãn nằm trong ngân hàng đáp án.",
@@ -76,6 +81,11 @@ const MESSAGE_LABELS: ReadonlyArray<[RegExp, string]> = [
 		"Các câu cùng khóa tập đáp án phải nằm trong một nhóm.",
 	],
 	[/missing part/i, "Thiếu part — chưa có nội dung ở slot này."],
+	[
+		/at least one part is required/i,
+		"Cần ít nhất 1 part có nội dung để xuất bản bộ đề.",
+	],
+	[/duplicate part/i, "Part bị trùng lặp trong bộ đề."],
 ];
 
 /** Dịch message thô của schema sang tiếng Việt; null khi không khớp rule nào. */
@@ -109,6 +119,7 @@ const FIELD_LABELS: Record<string, string> = {
 	part: "Part",
 	source: "Nguồn",
 	opts: "Lựa chọn",
+	answer: "Đáp án",
 	answerSet: "Cụm đáp án",
 };
 

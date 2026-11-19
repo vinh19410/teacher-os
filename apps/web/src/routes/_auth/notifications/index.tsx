@@ -117,6 +117,7 @@ const EVENT_TYPE_LABELS: Record<NotificationEventType, string> = {
 	class_enrolled: "Mời vào lớp",
 	assignment_published: "Giao bài",
 	grade_returned: "Trả điểm",
+	placement_submitted: "Nộp bài đầu vào",
 	invoice_issued: "Hóa đơn học phí",
 	tuition_reminder: "Nhắc học phí",
 	schedule_changed: "Đổi lịch",

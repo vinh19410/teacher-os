@@ -39,8 +39,12 @@ export function LessonEditForm({
 	const [time, setTime] = useState(lesson.time.slice(0, 5));
 	const [dur, setDur] = useState(String(lesson.dur));
 	const [topic, setTopic] = useState(lesson.topic);
-	const [zoom, setZoom] = useState(lesson.zoom);
 	const [attempted, setAttempted] = useState(false);
+
+	const preservedZoom =
+		lesson.zoom.startsWith("https://") && lesson.zoom.length <= 2048
+			? lesson.zoom
+			: "";
 
 	const parsed = useMemo(
 		() =>
@@ -49,9 +53,9 @@ export function LessonEditForm({
 				time: time.slice(0, 5),
 				dur: Number(dur),
 				topic,
-				zoom,
+				zoom: preservedZoom,
 			}),
-		[day, time, dur, topic, zoom],
+		[day, time, dur, topic, preservedZoom],
 	);
 	const valid = parsed.success;
 
@@ -64,7 +68,7 @@ export function LessonEditForm({
 
 	return (
 		<form onSubmit={submit} className="flex flex-col gap-4">
-			<div className="grid grid-cols-2 gap-3">
+			<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
 				<Field label="Thứ">
 					<Select
 						value={day}
@@ -94,15 +98,6 @@ export function LessonEditForm({
 						max="1440"
 						value={dur}
 						onChange={(e) => setDur(e.target.value)}
-						disabled={saving}
-					/>
-				</Field>
-				<Field label="Link Zoom/Meet">
-					<Input
-						type="text"
-						placeholder="https://… hoặc để trống"
-						value={zoom}
-						onChange={(e) => setZoom(e.target.value)}
 						disabled={saving}
 					/>
 				</Field>

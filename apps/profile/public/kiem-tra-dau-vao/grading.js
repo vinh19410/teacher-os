@@ -373,24 +373,32 @@ export function resolveSpeakingStepState(speaking) {
 }
 
 /**
- * Determines final speakingMode and whether submit needs confirmation.
+ * Determines final speakingMode and whether submit must be blocked for missing Speaking audio.
  * Checks `!hasSpeakingTasks` before `hasValidBlob` so no phantom upload is attempted.
  */
 export function resolveSpeakingSubmitDecision({
 	hasSpeakingTasks,
 	hasValidBlob,
-	speakingMode,
 }) {
 	if (!hasSpeakingTasks) {
-		return { finalMode: "none", needsSpeakingDecision: false };
+		return {
+			finalMode: "none",
+			needsSpeakingDecision: false,
+			blockedByMissingSpeaking: false,
+		};
 	}
 	if (hasValidBlob) {
-		return { finalMode: "upload", needsSpeakingDecision: false };
+		return {
+			finalMode: "upload",
+			needsSpeakingDecision: false,
+			blockedByMissingSpeaking: false,
+		};
 	}
-	if (speakingMode === "skipped") {
-		return { finalMode: "skipped", needsSpeakingDecision: false };
-	}
-	return { finalMode: "skipped", needsSpeakingDecision: true };
+	return {
+		finalMode: null,
+		needsSpeakingDecision: false,
+		blockedByMissingSpeaking: true,
+	};
 }
 
 /**
@@ -512,6 +520,8 @@ export function computeSpeechFallbackTimeoutMs(prompt) {
 	return Math.min(25000, Math.max(4000, wordCount * 550 + 2500));
 }
 
+export const MAX_SPEAKING_RETRIES_PER_TASK = 2;
+
 /**
  * Creates the initial idle state for sequential Speaking turn-taking.
  */
@@ -523,11 +533,12 @@ export function createInitialSpeakingSession(totalTasks = 0) {
 		phase: "idle",
 		secondsLeft: 0,
 		replayUsedForCurrentTask: false,
+		retriesUsedForCurrentTask: 0,
 	};
 }
 
 /**
- * Enters the `reading` phase for the given task index and resets per-task replay quota.
+ * Enters the `reading` phase for the given task index and resets per-task replay & retry quotas.
  */
 export function startSpeakingTaskReading(session, taskIndex, tasks = []) {
 	if (!Array.isArray(tasks) || tasks.length === 0) {
@@ -549,6 +560,7 @@ export function startSpeakingTaskReading(session, taskIndex, tasks = []) {
 		phase: "reading",
 		secondsLeft: 0,
 		replayUsedForCurrentTask: false,
+		retriesUsedForCurrentTask: 0,
 	};
 }
 
@@ -605,10 +617,68 @@ export function transitionSpeakingToAnswer(session, tasks = []) {
 }
 
 /**
- * Advances from the current task's `answer` phase to the next task's `reading`
- * phase, or completes the session after the final task.
+ * Transitions from the `answer` phase to `paused` after stopping the task's recorder.
+ */
+export function transitionSpeakingToPaused(session) {
+	if (session?.status !== "active" || session?.phase !== "answer") {
+		return session;
+	}
+	return {
+		...session,
+		phase: "paused",
+		secondsLeft: 0,
+	};
+}
+
+/**
+ * Allows at most MAX_SPEAKING_RETRIES_PER_TASK retries while in the `paused` phase.
+ */
+export function canRetrySpeakingTask(session) {
+	return Boolean(
+		session &&
+			session.status === "active" &&
+			session.phase === "paused" &&
+			(session.retriesUsedForCurrentTask ?? 0) < MAX_SPEAKING_RETRIES_PER_TASK,
+	);
+}
+
+/**
+ * Re-enters `answer` phase for the current task when retries remain, incrementing retry count.
+ */
+export function retrySpeakingCurrentTask(session, tasks = []) {
+	if (!canRetrySpeakingTask(session)) {
+		return session;
+	}
+	const task = Array.isArray(tasks) ? tasks[session?.taskIndex ?? 0] : null;
+	if (!task) {
+		return {
+			...session,
+			status: "completed",
+			phase: "done",
+			secondsLeft: 0,
+		};
+	}
+	const { answerSeconds } = resolveTaskTimings(task);
+	return {
+		...session,
+		status: "active",
+		phase: "answer",
+		secondsLeft: answerSeconds,
+		retriesUsedForCurrentTask: (session.retriesUsedForCurrentTask ?? 0) + 1,
+	};
+}
+
+/**
+ * Advances from the current task's `answer` or `paused` phase to the next task's
+ * `reading` phase, or completes the session after the final task.
  */
 export function transitionSpeakingNextTask(session, tasks = []) {
+	if (
+		session?.status !== "active" ||
+		(session.phase !== "answer" && session.phase !== "paused")
+	) {
+		return session;
+	}
 	const list = Array.isArray(tasks) ? tasks : [];
 	const nextIndex = (session?.taskIndex ?? 0) + 1;
 	if (nextIndex < list.length) {
@@ -620,6 +690,7 @@ export function transitionSpeakingNextTask(session, tasks = []) {
 		phase: "done",
 		secondsLeft: 0,
 		replayUsedForCurrentTask: false,
+		retriesUsedForCurrentTask: 0,
 	};
 }
 

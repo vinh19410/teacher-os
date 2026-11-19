@@ -32,6 +32,11 @@ export const assignmentTest = sqliteTable(
 		/** Nhóm đề trong bộ sưu tập, vd "TEST 5". */
 		testGroup: text("test_group"),
 		status: text("status").notNull().default("draft"), // "draft" | "ready"
+		/**
+		 * `library_test.id` khi đề này là bản sao từ thư viện toàn hệ thống
+		 * (đồng bộ lười khi học viên mở catalog practice); null = đề do org tự soạn.
+		 */
+		libraryRef: text("library_ref"),
 		createdAt: integer("created_at", { mode: "timestamp_ms" })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 			.notNull(),
@@ -40,7 +45,13 @@ export const assignmentTest = sqliteTable(
 			.$onUpdate(() => /* @__PURE__ */ new Date())
 			.notNull(),
 	},
-	(table) => [index("assignment_test_org_idx").on(table.orgId)],
+	(table) => [
+		index("assignment_test_org_idx").on(table.orgId),
+		uniqueIndex("assignment_test_org_library_ref_uq").on(
+			table.orgId,
+			table.libraryRef,
+		),
+	],
 );
 
 /**

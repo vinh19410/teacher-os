@@ -7,7 +7,7 @@ import { CalendarPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Field, inputCls } from "@/components/ui/field";
+import { Field, Input, inputCls } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { HttpError } from "@/lib/kernel-load-state";
 import { createEvent } from "@/lib/repos/events";
@@ -166,10 +166,9 @@ export function OrgEventModal({
 					htmlFor="org-event-date"
 					error={showError("date")}
 				>
-					<input
+					<Input
 						id="org-event-date"
 						type="date"
-						className={inputCls}
 						value={date}
 						onChange={(e) => setDate(e.target.value)}
 						aria-invalid={Boolean(showError("date"))}

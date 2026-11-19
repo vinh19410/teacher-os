@@ -1,11 +1,10 @@
 import {
 	buildHighlightSegments,
+	buildSkillRubricDisplay,
 	categoryLabel,
 	errorNumberLabel,
 	numberErrors,
 	PLACEMENT_ERROR_CATEGORIES,
-	PLACEMENT_SPEAKING_RUBRIC,
-	PLACEMENT_WRITING_RUBRIC,
 } from "./highlight.js";
 
 /**
@@ -14,8 +13,6 @@ import {
  */
 
 const root = document.getElementById("resultRoot");
-const WRITING_MAX = 15;
-const SPEAKING_MAX = 20;
 
 function el(tag, attrs = {}, children = []) {
 	const node = document.createElement(tag);
@@ -128,14 +125,12 @@ function statTile(label, value) {
 	]);
 }
 
-function rubricList(rubricDef, rubric) {
-	if (!rubric) return null;
+function rubricList(criteria) {
+	if (!criteria) return null;
 	return el(
 		"dl",
 		{ className: "result-rubric" },
-		rubricDef.map(({ key, label }) =>
-			statTile(label, `${Number.isFinite(rubric[key]) ? rubric[key] : "—"}/5`),
-		),
+		criteria.map(({ label, valueText }) => statTile(label, valueText)),
 	);
 }
 
@@ -314,20 +309,18 @@ function renderResult(view) {
 		),
 	);
 
-	const writingChildren = [];
-	if (Number.isFinite(view.writingScore)) {
-		writingChildren.push(
-			el(
-				"p",
-				{ className: "result-total" },
-				`Writing: ${view.writingScore}/${WRITING_MAX}`,
-			),
-		);
-	}
-	const writingRubric = rubricList(
-		PLACEMENT_WRITING_RUBRIC,
+	const writingDisplay = buildSkillRubricDisplay(
+		"writing",
+		view.writingScore,
 		view.writingRubric,
 	);
+	const writingChildren = [];
+	if (writingDisplay.totalText) {
+		writingChildren.push(
+			el("p", { className: "result-total" }, writingDisplay.totalText),
+		);
+	}
+	const writingRubric = rubricList(writingDisplay.criteria);
 	if (writingRubric) writingChildren.push(writingRubric);
 	if (view.writingText) {
 		writingChildren.push(
@@ -344,25 +337,23 @@ function renderResult(view) {
 		parts.push(section("Writing", writingChildren, "secWriting"));
 	}
 
+	const speakingDisplay = buildSkillRubricDisplay(
+		"speaking",
+		view.speakingScore,
+		view.speakingRubric,
+	);
 	const speakingChildren = [];
 	if (view.speakingStatus === "skipped") {
 		speakingChildren.push(
 			el("p", { className: "muted-copy" }, "Bạn đã bỏ qua phần Speaking."),
 		);
 	}
-	if (Number.isFinite(view.speakingScore)) {
+	if (speakingDisplay.totalText) {
 		speakingChildren.push(
-			el(
-				"p",
-				{ className: "result-total" },
-				`Speaking: ${view.speakingScore}/${SPEAKING_MAX}`,
-			),
+			el("p", { className: "result-total" }, speakingDisplay.totalText),
 		);
 	}
-	const speakingRubric = rubricList(
-		PLACEMENT_SPEAKING_RUBRIC,
-		view.speakingRubric,
-	);
+	const speakingRubric = rubricList(speakingDisplay.criteria);
 	if (speakingRubric) speakingChildren.push(speakingRubric);
 	if (view.speakingTranscript) {
 		speakingChildren.push(

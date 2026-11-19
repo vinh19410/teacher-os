@@ -16,8 +16,8 @@ import {
 	PLACEMENT_UPLOAD_TOKEN_TTL_MS,
 	type PlacementObjectiveResult,
 	type PlacementSnapshot,
-	type PlacementSpeakingRubric,
-	type PlacementWritingRubric,
+	parseStoredSpeakingRubric,
+	parseStoredWritingRubric,
 	type StudentPlacementStatus,
 	type StudentPlacementStatusResponse,
 	type StudentPlacementSubmissionView,
@@ -36,6 +36,11 @@ import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { parseByteRange } from "../lib/byte-range";
 import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
+import {
+	emitNotifications,
+	notificationDepsFrom,
+} from "../lib/notifications/emit";
+import { placementSubmittedEvent } from "../lib/notifications/templates";
 import { type PeekedStream, peekStream } from "../lib/peek-stream";
 import type { PlacementAiGrader } from "../lib/placement-ai/grader";
 import { parseStoredErrors } from "../lib/placement-ai/placement-result";
@@ -50,6 +55,7 @@ import {
 	randomTokenHex,
 	safeSpeakingExtension,
 	sha256Hex,
+	validatePlacementSpeakingModeForSnapshot,
 } from "../lib/placement-submission-service";
 import {
 	type LoadedPlacementSnapshot,
@@ -69,6 +75,9 @@ export interface StudentPlacementTestRouteDeps extends StudentRouteDeps {
 	leadOrgId?: string;
 	getLibraryAudioStore?(): MediaStore | undefined;
 	getPlacementAiGrader?(): PlacementAiGrader | undefined;
+	mailer?: Parameters<typeof emitNotifications>[0]["mailer"];
+	studentOrigin?: Parameters<typeof emitNotifications>[0]["studentOrigin"];
+	notificationRetryDelaysMs?: number[];
 }
 
 function toIsoTimestamp(
@@ -205,21 +214,18 @@ function toStudentPlacementSubmissionView(
 		writingText: sub.writingText,
 		writingWordCount: sub.writingWordCount,
 		writingRubric: isGraded
-			? parseJsonOr<PlacementWritingRubric | null>(sub.writingRubricJson, null)
+			? parseStoredWritingRubric(sub.writingRubricJson)
 			: null,
-		writingScore: isGraded ? sub.writingScore : null,
+		writingScore: isGraded ? (sub.writingBand ?? sub.writingScore) : null,
 		writingErrors: isGraded
 			? (parseStoredErrors(sub.writingErrorsJson, sub.writingText) ?? [])
 			: [],
 		speakingStatus: sub.speakingStatus,
 		speakingTranscript: isGraded ? sub.speakingTranscript : "",
 		speakingRubric: isGraded
-			? parseJsonOr<PlacementSpeakingRubric | null>(
-					sub.speakingRubricJson,
-					null,
-				)
+			? parseStoredSpeakingRubric(sub.speakingRubricJson)
 			: null,
-		speakingScore: isGraded ? sub.speakingScore : null,
+		speakingScore: isGraded ? (sub.speakingBand ?? sub.speakingScore) : null,
 		speakingErrors: isGraded
 			? (parseStoredErrors(sub.speakingErrorsJson, sub.speakingTranscript) ??
 				[])
@@ -588,18 +594,20 @@ export function studentPlacementTestRoutes(
 
 		const submit = parsed.data;
 		const snapshot = loadedTest.snapshot;
+		const speakingCheck = validatePlacementSpeakingModeForSnapshot(
+			snapshot,
+			submit.speakingMode,
+		);
+		if (!speakingCheck.ok) {
+			return c.json(speakingCheck.body, 400);
+		}
 		const objective = gradePlacementObjective(snapshot, submit.answers);
 		const snapshotJson = JSON.stringify(snapshot);
 		const answersJson = JSON.stringify(submit.answers);
 		const objectiveBreakdownJson = JSON.stringify(objective);
 		const wordCount = countPlacementWords(submit.writingText);
 
-		const speakingStatus =
-			submit.speakingMode === "upload"
-				? ("pending_upload" as const)
-				: submit.speakingMode === "skipped"
-					? ("skipped" as const)
-					: ("none" as const);
+		const speakingStatus = speakingCheck.speakingStatus;
 
 		const nowMs = Date.now();
 		const uploadToken =
@@ -680,6 +688,10 @@ export function studentPlacementTestRoutes(
 				409,
 			);
 		}
+
+		await emitNotifications(notificationDepsFrom(deps), orgId, [
+			placementSubmittedEvent({ submissionId, studentId: s.id }),
+		]);
 
 		if (
 			submit.writingText.trim().length > 0 &&

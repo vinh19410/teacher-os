@@ -39,6 +39,10 @@ import {
 	MaterialItem,
 	MaterialOpenActions,
 } from "@/components/materials/material-item";
+import {
+	MaterialInlinePreview,
+	materialPreviewMime,
+} from "@/components/materials/material-preview";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -394,6 +398,11 @@ function MaterialsRoute() {
 									<MaterialItem
 										key={item.id}
 										item={item}
+										leading={
+											materialPreviewMime(item) ? (
+												<MaterialInlinePreview item={item} />
+											) : undefined
+										}
 										detail={
 											<>
 												{path && (

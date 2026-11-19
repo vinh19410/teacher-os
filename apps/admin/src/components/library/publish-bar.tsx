@@ -109,7 +109,7 @@ export function PublishBar({
 				</p>
 			</div>
 			<p className="text-muted-foreground text-xs">
-				Xuất bản yêu cầu đủ part theo cấu trúc đề và mỗi part đạt điều kiện
+				Xuất bản yêu cầu tối thiểu 1 part và mỗi part đã tạo đạt điều kiện
 				(passage/audio, câu hỏi, ghim ảnh…). Đề đã xuất bản vẫn sửa được nội
 				dung, nhưng phải hạ về nháp để xóa part/audio.
 			</p>

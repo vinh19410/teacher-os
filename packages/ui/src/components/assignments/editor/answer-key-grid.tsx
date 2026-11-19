@@ -1,4 +1,5 @@
 import {
+	effectiveAnswerChoices,
 	extendedAnswerChoices,
 	quizTypeDisplay,
 } from "@teacher-os/api/contracts";
@@ -17,7 +18,6 @@ import { cn } from "@teacher-os/ui/lib/utils";
 import { Fragment, memo, useCallback, useRef, useState } from "react";
 import {
 	type AnswerKind,
-	answerChoices,
 	emptyItem,
 	isImageBased,
 	kindOf,
@@ -261,7 +261,8 @@ export function AnswerKeyGrid({
 						Math.min(optionBank.length, effectiveCap),
 					)
 				: null;
-		return bankChips ?? answerChoices(kind);
+		if (bankChips) return bankChips;
+		return kind === "text" ? null : effectiveAnswerChoices(kind, item.opts);
 	};
 	const qStart = qStartOverride ?? qStartOf(skill, partId);
 	const [blurred, setBlurred] = useState<ReadonlySet<number>>(new Set());
@@ -291,6 +292,23 @@ export function AnswerKeyGrid({
 				itemIndex === index ? { ...item, ...patch } : item,
 			),
 		);
+	};
+	const resizeMcqOptions = (
+		index: number,
+		currentOptions: readonly string[],
+		targetCount: 3 | 4,
+	) => {
+		const nextOpts = Array.from(
+			{ length: targetCount },
+			(_, optionIdx) => currentOptions[optionIdx] ?? "",
+		);
+		const answer = items[index]?.answer.trim();
+		const allowed = effectiveAnswerChoices("mcq4", nextOpts);
+		const clearAnswer = Boolean(answer && !allowed.includes(answer));
+		update(index, {
+			opts: nextOpts,
+			...(clearAnswer ? { answer: "" } : {}),
+		});
 	};
 	/** Đổi dạng bài của 1 câu: reset opts/answer theo kind mới (đáp án cũ có
 	 * thể sai kind) nhưng GIỮ stem; pin chỉ giữ khi type hiệu dụng vẫn là
@@ -411,6 +429,13 @@ export function AnswerKeyGrid({
 				target.closest?.('[contenteditable="true"], [role="toolbar"]'),
 		);
 		if (event.key === "Enter" && !editingRichText) {
+			if (
+				target.tagName === "BUTTON" ||
+				target.tagName === "SELECT" ||
+				target.closest?.("button, select")
+			) {
+				return;
+			}
 			event.preventDefault();
 			if (onAddQuestion()) focusRowAfterAdd(index + 1);
 			return;
@@ -495,7 +520,11 @@ export function AnswerKeyGrid({
 					: [];
 				const mcqChoices =
 					rowKind === "mcq4" || rowKind === "mcq3" ? choices : null;
-				const options = item.opts ?? mcqChoices?.map(() => "") ?? [];
+				const options = !mcqChoices
+					? []
+					: item.opts?.length
+						? item.opts.slice(0, mcqChoices.length)
+						: mcqChoices.map(() => "");
 				// FR4 (sentend): labels keyed on another row are unusable here.
 				const usedByOthers = new Set(
 					items
@@ -639,25 +668,55 @@ export function AnswerKeyGrid({
 											}
 										/>
 										{mcqChoices && mcqChoices.length > 0 && (
-											<div className="grid gap-2 pt-1 sm:grid-cols-2">
-												{options.map((option, optionIndex) => (
-													<Input
-														key={optionIndex}
-														value={option}
-														aria-label={`Lựa chọn ${mcqChoices[optionIndex]} câu ${number}`}
-														placeholder={`Lựa chọn ${mcqChoices[optionIndex]}`}
-														onChange={(event) =>
-															update(index, {
-																opts: options.map((value, idx) =>
-																	idx === optionIndex
-																		? event.target.value
-																		: value,
-																),
-															})
-														}
-													/>
-												))}
-											</div>
+											<>
+												{rowKind === "mcq4" && (
+													<fieldset
+														aria-label={`Số lựa chọn câu ${number}`}
+														className="m-0 flex flex-wrap items-center gap-1.5 border-0 p-0 pt-1"
+													>
+														{([3, 4] as const).map((count) => {
+															const active = options.length === count;
+															return (
+																<button
+																	key={count}
+																	type="button"
+																	aria-pressed={active}
+																	onClick={() =>
+																		resizeMcqOptions(index, options, count)
+																	}
+																	className={cn(
+																		"rounded-full border px-[10px] py-[2px] font-medium text-xs transition-all duration-[150ms]",
+																		active
+																			? "border-primary bg-primary text-primary-foreground"
+																			: "border-border bg-background text-muted-foreground hover:border-primary",
+																	)}
+																>
+																	{count} lựa chọn
+																</button>
+															);
+														})}
+													</fieldset>
+												)}
+												<div className="grid gap-2 pt-1 sm:grid-cols-2">
+													{options.map((option, optionIndex) => (
+														<Input
+															key={optionIndex}
+															value={option}
+															aria-label={`Lựa chọn ${mcqChoices[optionIndex]} câu ${number}`}
+															placeholder={`Lựa chọn ${mcqChoices[optionIndex]}`}
+															onChange={(event) =>
+																update(index, {
+																	opts: options.map((value, idx) =>
+																		idx === optionIndex
+																			? event.target.value
+																			: value,
+																	),
+																})
+															}
+														/>
+													))}
+												</div>
+											</>
 										)}
 									</div>
 									<div className="flex flex-col gap-1">

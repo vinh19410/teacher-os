@@ -1,5 +1,6 @@
 import type { KernelVocabDeckRow } from "@teacher-os/api/contracts";
-import { useMemo, useState } from "react";
+import { formatVocabLessonDeckTitle } from "@teacher-os/api/lib/vocab-csv";
+import { useId, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -7,15 +8,152 @@ import { Input } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { SectionLabel } from "@/components/ui/section-label";
 import { useData } from "@/lib/data-store";
+import { VocabCsvImportDialog } from "./vocab-csv-import-dialog";
 import { VocabDeckEditorDialog } from "./vocab-deck-editor";
 import { VocabLibraryDialog } from "./vocab-library-dialog";
 import { VocabSuggestDialog } from "./vocab-suggest-dialog";
+
+function formatDeckLessonMeta(
+	lessonNumber: number | null | undefined,
+	topic: string | null | undefined,
+): string | null {
+	const cleanTopic = topic?.trim() ?? "";
+	const hasLesson =
+		typeof lessonNumber === "number" &&
+		Number.isInteger(lessonNumber) &&
+		lessonNumber >= 1;
+	if (hasLesson && cleanTopic) {
+		return `Buổi ${String(lessonNumber).padStart(2, "0")} · ${cleanTopic}`;
+	}
+	if (hasLesson) {
+		return `Buổi ${String(lessonNumber).padStart(2, "0")}`;
+	}
+	return cleanTopic || null;
+}
+
+function DeckMetadataFields({
+	lessonNumber,
+	topic,
+	title,
+	lessonInvalid,
+	suggestedTitle,
+	onLessonChange,
+	onTopicChange,
+	onTitleChange,
+}: {
+	lessonNumber: string;
+	topic: string;
+	title: string;
+	lessonInvalid: boolean;
+	suggestedTitle: string;
+	onLessonChange: (value: string) => void;
+	onTopicChange: (value: string) => void;
+	onTitleChange: (value: string) => void;
+}) {
+	const lessonInputId = useId();
+	const topicInputId = useId();
+	const titleInputId = useId();
+
+	return (
+		<>
+			<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+				<div className="flex flex-col gap-1.5">
+					<label
+						htmlFor={lessonInputId}
+						className="font-medium text-foreground text-sm leading-none"
+					>
+						Buổi học (Lesson)
+					</label>
+					<Input
+						id={lessonInputId}
+						type="number"
+						min={1}
+						max={9999}
+						value={lessonNumber}
+						onChange={(e) => onLessonChange(e.target.value)}
+						placeholder="Ví dụ: 1"
+						aria-label="Số buổi học"
+						aria-invalid={lessonInvalid || undefined}
+					/>
+					{lessonInvalid ? (
+						<span className="text-destructive text-xs">
+							Số buổi học phải là số nguyên từ 1 đến 9999.
+						</span>
+					) : null}
+				</div>
+				<div className="flex flex-col gap-1.5">
+					<label
+						htmlFor={topicInputId}
+						className="font-medium text-foreground text-sm leading-none"
+					>
+						Chủ đề (Topic)
+					</label>
+					<Input
+						id={topicInputId}
+						maxLength={200}
+						value={topic}
+						onChange={(e) => onTopicChange(e.target.value)}
+						placeholder="Ví dụ: Friends & Introductions"
+						aria-label="Chủ đề"
+					/>
+				</div>
+			</div>
+			<div className="flex flex-col gap-1.5">
+				<label
+					htmlFor={titleInputId}
+					className="font-medium text-foreground text-sm leading-none"
+				>
+					Tiêu đề bộ từ
+				</label>
+				<Input
+					id={titleInputId}
+					maxLength={200}
+					value={title}
+					onChange={(e) => onTitleChange(e.target.value)}
+					placeholder={suggestedTitle || "Ví dụ: Topic 1: Environment"}
+					aria-label="Tiêu đề bộ từ"
+				/>
+			</div>
+		</>
+	);
+}
+
+function parseDeckMetaDraft(
+	lessonText: string,
+	topicText: string,
+	titleText: string,
+) {
+	const trimmedLesson = lessonText.trim();
+	let parsedLesson: number | null = null;
+	if (trimmedLesson.length > 0) {
+		if (!/^\d+$/.test(trimmedLesson)) {
+			parsedLesson = Number.NaN;
+		} else {
+			const num = Number.parseInt(trimmedLesson, 10);
+			parsedLesson = num >= 1 && num <= 9999 ? num : Number.NaN;
+		}
+	}
+	const lessonInvalid = parsedLesson !== null && Number.isNaN(parsedLesson);
+	const validLesson =
+		parsedLesson !== null && !Number.isNaN(parsedLesson) ? parsedLesson : null;
+	const cleanTopic = topicText.trim();
+	const suggestedTitle = formatVocabLessonDeckTitle(validLesson, cleanTopic);
+	const effectiveTitle = titleText.trim() || suggestedTitle;
+	return {
+		lessonInvalid,
+		validLesson,
+		cleanTopic,
+		suggestedTitle,
+		effectiveTitle,
+	};
+}
 
 function DeckListRow({
 	deck,
 	sourceBadgeLabel,
 	pendingCount,
 	onSuggest,
+	onRename,
 	onEdit,
 	onDelete,
 }: {
@@ -23,9 +161,11 @@ function DeckListRow({
 	sourceBadgeLabel: string;
 	pendingCount: number;
 	onSuggest: (deck: { id: string; title: string }) => void;
+	onRename: (deck: KernelVocabDeckRow) => void;
 	onEdit: (deckId: string) => void;
 	onDelete: (deck: { id: string; title: string }) => void;
 }) {
+	const lessonMeta = formatDeckLessonMeta(deck.lessonNumber, deck.topic);
 	return (
 		<div
 			data-testid={`vocab-deck-row-${deck.id}`}
@@ -58,12 +198,20 @@ function DeckListRow({
 							{pendingCount} chờ
 						</span>
 					) : null}
+					{lessonMeta ? (
+						<span
+							data-testid={`vocab-deck-lesson-meta-${deck.id}`}
+							className="rounded-md bg-muted px-1.5 py-0.5 text-muted-foreground text-xs"
+						>
+							{lessonMeta}
+						</span>
+					) : null}
 				</div>
 				<p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
 					{deck.wordCount} từ · {deck.lang}
 				</p>
 			</div>
-			<div className="flex flex-none items-center gap-2">
+			<div className="flex flex-none flex-wrap items-center gap-2">
 				<Button
 					size="sm"
 					variant="secondary"
@@ -71,6 +219,14 @@ function DeckListRow({
 					onClick={() => onSuggest({ id: deck.id, title: deck.title })}
 				>
 					Gợi ý
+				</Button>
+				<Button
+					size="sm"
+					variant="secondary"
+					data-testid={`vocab-rename-deck-${deck.id}`}
+					onClick={() => onRename(deck)}
+				>
+					Sửa
 				</Button>
 				<Button
 					size="sm"
@@ -132,8 +288,18 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 
 	const [createOpen, setCreateOpen] = useState(false);
 	const [libraryOpen, setLibraryOpen] = useState(false);
+	const [csvImportOpen, setCsvImportOpen] = useState(false);
 	const [newTitle, setNewTitle] = useState("");
+	const [newLessonNumber, setNewLessonNumber] = useState("");
+	const [newTopic, setNewTopic] = useState("");
 	const [createSaving, setCreateSaving] = useState(false);
+	const [renamingDeck, setRenamingDeck] = useState<KernelVocabDeckRow | null>(
+		null,
+	);
+	const [renameTitle, setRenameTitle] = useState("");
+	const [renameLessonNumber, setRenameLessonNumber] = useState("");
+	const [renameTopic, setRenameTopic] = useState("");
+	const [renameSaving, setRenameSaving] = useState(false);
 	const [editingDeckId, setEditingDeckId] = useState<string | null>(null);
 	const [suggestingDeck, setSuggestingDeck] = useState<{
 		id: string;
@@ -143,20 +309,99 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 		id: string;
 		title: string;
 	} | null>(null);
+
+	const createDraft = useMemo(
+		() => parseDeckMetaDraft(newLessonNumber, newTopic, newTitle),
+		[newLessonNumber, newTopic, newTitle],
+	);
+	const renameDraft = useMemo(
+		() => parseDeckMetaDraft(renameLessonNumber, renameTopic, renameTitle),
+		[renameLessonNumber, renameTopic, renameTitle],
+	);
+
+	const resetCreateForm = () => {
+		setNewTitle("");
+		setNewLessonNumber("");
+		setNewTopic("");
+	};
+
+	const closeCreateModal = () => {
+		setCreateOpen(false);
+		resetCreateForm();
+	};
+
+	const openRenameModal = (deck: KernelVocabDeckRow) => {
+		setRenamingDeck(deck);
+		setRenameTitle(deck.title);
+		setRenameLessonNumber(
+			deck.lessonNumber != null ? String(deck.lessonNumber) : "",
+		);
+		setRenameTopic(deck.topic ?? "");
+	};
+
+	const closeRenameModal = () => {
+		setRenamingDeck(null);
+		setRenameTitle("");
+		setRenameLessonNumber("");
+		setRenameTopic("");
+	};
+
 	const handleCreate = async () => {
-		const title = newTitle.trim();
-		if (title.length === 0 || createSaving) return;
+		if (
+			createDraft.effectiveTitle.length === 0 ||
+			createDraft.lessonInvalid ||
+			createSaving
+		) {
+			return;
+		}
 		setCreateSaving(true);
 		try {
 			const result = await dispatch({
 				type: "create-vocab-deck",
-				payload: { classId: targetClassId, title },
+				payload: {
+					classId: targetClassId,
+					title: createDraft.effectiveTitle,
+					...(createDraft.validLesson !== null
+						? { lessonNumber: createDraft.validLesson }
+						: {}),
+					...(createDraft.cleanTopic.length > 0
+						? { topic: createDraft.cleanTopic }
+						: {}),
+				},
 			});
 			if (result.kind !== "refreshed") return;
-			setNewTitle("");
-			setCreateOpen(false);
+			closeCreateModal();
 		} finally {
 			setCreateSaving(false);
+		}
+	};
+
+	const handleRename = async () => {
+		if (
+			!renamingDeck ||
+			renameDraft.effectiveTitle.length === 0 ||
+			renameDraft.lessonInvalid ||
+			renameSaving
+		) {
+			return;
+		}
+		setRenameSaving(true);
+		try {
+			const result = await dispatch({
+				type: "rename-vocab-deck",
+				payload: {
+					deckId: renamingDeck.id,
+					title: renameDraft.effectiveTitle,
+					lessonNumber: renameDraft.validLesson,
+					topic:
+						renameDraft.cleanTopic.length > 0 ? renameDraft.cleanTopic : null,
+				},
+			});
+			if (result.kind !== "refreshed") return;
+			toast.success(`Đã cập nhật bộ từ "${renameDraft.effectiveTitle}".`);
+			closeRenameModal();
+		} finally {
+			setRenameSaving(false);
 		}
 	};
 
@@ -177,6 +422,14 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 			<div className="flex flex-wrap items-center justify-between gap-3">
 				<SectionLabel>Từ vựng SRS</SectionLabel>
 				<div className="flex flex-wrap items-center gap-2">
+					<Button
+						size="sm"
+						variant="secondary"
+						data-testid="vocab-import-csv-btn"
+						onClick={() => setCsvImportOpen(true)}
+					>
+						Import CSV
+					</Button>
 					<Button
 						size="sm"
 						variant="secondary"
@@ -211,6 +464,7 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 								sourceBadgeLabel={sourceBadgeLabel}
 								pendingCount={pendingCountByDeckId.get(deck.id) ?? 0}
 								onSuggest={setSuggestingDeck}
+								onRename={openRenameModal}
 								onEdit={setEditingDeckId}
 								onDelete={setDeletingDeck}
 							/>
@@ -221,13 +475,13 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 
 			<Modal
 				open={createOpen}
-				onClose={() => setCreateOpen(false)}
+				onClose={closeCreateModal}
 				title="Tạo bộ từ vựng mới"
 				footer={
 					<>
 						<Button
 							variant="secondary"
-							onClick={() => setCreateOpen(false)}
+							onClick={closeCreateModal}
 							type="button"
 						>
 							Hủy
@@ -235,7 +489,11 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 						<Button
 							type="button"
 							data-testid="vocab-create-deck-submit"
-							disabled={newTitle.trim().length === 0 || createSaving}
+							disabled={
+								createDraft.effectiveTitle.length === 0 ||
+								createDraft.lessonInvalid ||
+								createSaving
+							}
 							onClick={() => void handleCreate()}
 						>
 							{createSaving ? "Đang tạo..." : "Tạo bộ từ"}
@@ -248,11 +506,55 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 						? "Bộ từ vựng độc lập thuộc trung tâm — bạn có thể gợi ý cho từng học viên bất kỳ lúc nào."
 						: "Học sinh trong lớp sẽ thấy bộ từ này trên cổng học viên."}
 				</p>
-				<Input
-					value={newTitle}
-					onChange={(e) => setNewTitle(e.target.value)}
-					placeholder="Ví dụ: Topic 1: Environment"
-					aria-label="Tiêu đề bộ từ"
+				<DeckMetadataFields
+					lessonNumber={newLessonNumber}
+					topic={newTopic}
+					title={newTitle}
+					lessonInvalid={createDraft.lessonInvalid}
+					suggestedTitle={createDraft.suggestedTitle}
+					onLessonChange={setNewLessonNumber}
+					onTopicChange={setNewTopic}
+					onTitleChange={setNewTitle}
+				/>
+			</Modal>
+
+			<Modal
+				open={renamingDeck !== null}
+				onClose={closeRenameModal}
+				title="Chỉnh sửa bộ từ vựng"
+				footer={
+					<>
+						<Button
+							variant="secondary"
+							onClick={closeRenameModal}
+							type="button"
+						>
+							Hủy
+						</Button>
+						<Button
+							type="button"
+							data-testid="vocab-rename-deck-submit"
+							disabled={
+								renameDraft.effectiveTitle.length === 0 ||
+								renameDraft.lessonInvalid ||
+								renameSaving
+							}
+							onClick={() => void handleRename()}
+						>
+							{renameSaving ? "Đang lưu..." : "Lưu thay đổi"}
+						</Button>
+					</>
+				}
+			>
+				<DeckMetadataFields
+					lessonNumber={renameLessonNumber}
+					topic={renameTopic}
+					title={renameTitle}
+					lessonInvalid={renameDraft.lessonInvalid}
+					suggestedTitle={renameDraft.suggestedTitle}
+					onLessonChange={setRenameLessonNumber}
+					onTopicChange={setRenameTopic}
+					onTitleChange={setRenameTitle}
 				/>
 			</Modal>
 
@@ -289,6 +591,9 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 			{editingDeckId ? (
 				<VocabDeckEditorDialog
 					deckId={editingDeckId}
+					deckTitle={
+						decks.find((deck) => deck.id === editingDeckId)?.title ?? undefined
+					}
 					onClose={() => setEditingDeckId(null)}
 				/>
 			) : null}
@@ -303,6 +608,12 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 				open={libraryOpen}
 				classId={targetClassId}
 				onClose={() => setLibraryOpen(false)}
+			/>
+			<VocabCsvImportDialog
+				open={csvImportOpen}
+				mode="create-decks"
+				classId={targetClassId}
+				onClose={() => setCsvImportOpen(false)}
 			/>
 		</Card>
 	);

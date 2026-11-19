@@ -21,6 +21,7 @@ import {
 import { and, asc, count, desc, eq, inArray, type SQL, sql } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import type { Db } from "../app";
+import { syncLibraryTestsToOrg } from "../lib/library-test-sync";
 import { toQuizAttemptMedia } from "../lib/media-response";
 import {
 	createQuizWriteGuard,
@@ -245,6 +246,9 @@ export function studentPracticeRoutes(deps: PracticeRouteDeps) {
 			return invalidParam(c, "invalid page");
 		}
 		const page = rawPage;
+
+		// Đề thư viện (admin xuất bản) chỉ vào catalog sau khi có bản sao org.
+		await syncLibraryTestsToOrg(db, orgId, skill);
 
 		const filters: SQL[] = [
 			eq(assignmentTest.orgId, orgId),

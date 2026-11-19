@@ -1,6 +1,5 @@
 import type { CreatedResponse } from "@teacher-os/api/contracts";
 import {
-	ASSIGNMENT_ANSWER_CHOICES,
 	ASSIGNMENT_PART_TYPES,
 	ASSIGNMENT_PROMPT_ERROR_CODES,
 	type AssignmentSkill,
@@ -9,6 +8,8 @@ import {
 	assignmentPromptCreateSchema,
 	assignmentPromptUpdateSchema,
 	assignmentQuestionSchema,
+	effectiveAnswerChoices,
+	mcqOptionsIssue,
 } from "@teacher-os/api/contracts";
 import { isAutoGradableSkill } from "@teacher-os/api/lib/ielts-band";
 import { assignment } from "@teacher-os/db/schema/assignment";
@@ -25,12 +26,13 @@ import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { z } from "zod";
 import type { Db, KernelCtx } from "../../app";
+import type { MediaStore } from "../../lib/media-store";
 import {
 	emitNotifications,
 	notificationDepsFrom,
 } from "../../lib/notifications/emit";
 import { gradeReturnedEvent } from "../../lib/notifications/templates";
-import { streamStudyPackAudio } from "../../lib/study-pack-audio";
+import { serveStudyPackAudio } from "../../lib/study-pack-audio";
 import { loadSnapshot } from "../snapshot";
 import { parseQuizOptionBank } from "../student";
 import { testsRoutes } from "./tests";
@@ -61,6 +63,7 @@ export function assignmentRoutes(deps: {
 	notificationRetryDelaysMs?: number[];
 	/** #702: injectable fetch cho audio proxy của listening study-pack prompts. */
 	fetchExternalAudio?: typeof fetch;
+	getLibraryAudioStore?(): MediaStore | undefined;
 }) {
 	const routes = new Hono<Env>();
 	routes.use("*", async (c, next) => {
@@ -274,14 +277,18 @@ export function assignmentRoutes(deps: {
 					);
 				const kind =
 					answerKindByType[question.type ?? effectivePromptType] ?? null;
-				if (kind) {
-					const choices = ASSIGNMENT_ANSWER_CHOICES[kind];
-					if (question.answer && !choices.includes(question.answer as never)) {
-						return c.json(
-							{ error: "invalid answer choice", question: index },
-							400,
-						);
-					}
+				if (!kind) continue;
+				if (mcqOptionsIssue(kind, question.opts)) {
+					return c.json({ error: "invalid mcq options", question: index }, 400);
+				}
+				if (
+					question.answer &&
+					!effectiveAnswerChoices(kind, question.opts).includes(question.answer)
+				) {
+					return c.json(
+						{ error: "invalid answer choice", question: index },
+						400,
+					);
 				}
 			}
 		}
@@ -546,7 +553,11 @@ export function assignmentRoutes(deps: {
 		const promptId = c.req.param("id");
 		const [row] = await deps
 			.getDb()
-			.select({ audioUrl: assignmentPrompt.audioUrl })
+			.select({
+				audioUrl: assignmentPrompt.audioUrl,
+				audioKey: assignmentPrompt.audioKey,
+				audioName: assignmentPrompt.audioName,
+			})
 			.from(assignmentPrompt)
 			.where(
 				and(
@@ -555,10 +566,16 @@ export function assignmentRoutes(deps: {
 				),
 			)
 			.limit(1);
-		if (!row?.audioUrl) {
+		if (!row || (!row.audioUrl && !row.audioKey)) {
 			return c.json({ error: "audio not found" }, 404);
 		}
-		return streamStudyPackAudio(row.audioUrl, deps.fetchExternalAudio);
+		return serveStudyPackAudio({
+			audioKey: row.audioKey,
+			audioUrl: row.audioUrl,
+			audioName: row.audioName,
+			getLibraryAudioStore: deps.getLibraryAudioStore,
+			fetchExternalAudio: deps.fetchExternalAudio,
+		});
 	});
 
 	// Full-test builder CRUD — mount con để tự nằm trong kernel mount

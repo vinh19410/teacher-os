@@ -63,6 +63,10 @@ interface DataStore {
 	classById(id: string): ClassGroup | undefined;
 	syllabusById(id: string): Syllabus | undefined;
 	classesForSyllabus(id: string): ClassGroup[];
+	sessionMeetingByClassDate(
+		classId: string,
+		dateISO: string,
+	): import("@teacher-os/api/contracts").KernelSessionMeetingRow | undefined;
 }
 
 const DataContext = createContext<DataStore | null>(null);
@@ -163,6 +167,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
 					.templateUsage.get(id)
 					?.map((classId) => data.classes.find((c) => c.id === classId))
 					.filter((c) => c !== undefined) ?? [],
+			sessionMeetingByClassDate: (classId, dateISO) =>
+				(data.sessionMeetings ?? []).find(
+					(m) => m.classId === classId && m.date === dateISO,
+				),
 		};
 	}, [data, dispatch, refresh]);
 

@@ -114,6 +114,7 @@ export function StudentPlacementTestContent({
 			void queryClient.invalidateQueries({
 				queryKey: studentPlacementViewQueryKey,
 			});
+			void queryClient.invalidateQueries({ queryKey: ["student", "inbox"] });
 		} catch (err) {
 			const msg =
 				err instanceof Error && err.message

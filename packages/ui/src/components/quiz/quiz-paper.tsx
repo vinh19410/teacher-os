@@ -55,6 +55,28 @@ export type QuizPaperDetail = Pick<
 	| "note"
 >;
 
+function resolvePartInstruction(
+	typeId: string,
+	questions: ReadonlyArray<{
+		type?: string | null;
+		opts?: readonly string[] | null;
+	}>,
+	fallback: string,
+): string {
+	if (typeId !== "mcq") return fallback;
+	const mcqQuestions = questions.filter((q) => (q.type ?? typeId) === "mcq");
+	if (mcqQuestions.length === 0) return fallback;
+	const counts = new Set(
+		mcqQuestions.map((q) => (q.opts?.length ? Math.min(q.opts.length, 4) : 4)),
+	);
+	if (counts.size === 1) {
+		if (counts.has(2)) return "Choose the correct letter A or B.";
+		if (counts.has(3)) return "Choose the correct letter A, B or C.";
+		return fallback;
+	}
+	return "Choose the correct letter.";
+}
+
 const SKILL_LABELS: Record<string, string> = {
 	reading: "Reading",
 	listening: "Listening",
@@ -692,6 +714,11 @@ export function QuizPaper({
 					// viện #433) hiển thị instruction đó thay 2 dòng chuẩn; chỉ có
 					// marker fallback về chuẩn.
 					const display = quizTypeDisplay(part.typeId);
+					const displayInstruction = resolvePartInstruction(
+						part.typeId,
+						part.questions,
+						display.instruction,
+					);
 					const hasOwnInstruction =
 						part.instructionHtml !== undefined &&
 						!isEmptyRichText(part.instructionHtml ?? "");
@@ -729,9 +756,9 @@ export function QuizPaper({
 									) : (
 										<>
 											<p className="font-medium text-[13px]">{display.label}</p>
-											{display.instruction && (
+											{displayInstruction && (
 												<p className="text-muted-foreground text-sm">
-													{display.instruction}
+													{displayInstruction}
 												</p>
 											)}
 										</>

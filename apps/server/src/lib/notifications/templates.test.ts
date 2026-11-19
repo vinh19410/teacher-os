@@ -6,6 +6,7 @@ import {
 	gradeReturnedEvent,
 	holidayCreatedEvents,
 	invoiceIssuedEvent,
+	placementSubmittedEvent,
 	scheduleChangedEvents,
 } from "./templates";
 
@@ -119,5 +120,24 @@ describe("notification template builders (phase 3 #454)", () => {
 			studentIds: ["s-1"],
 		});
 		expect(events[0]?.idempotencyKey).toBe("holiday_created:h-1:s-1");
+	});
+
+	test("placementSubmittedEvent — in-app only, khóa theo submissionId, nhóm assignment", () => {
+		const e = placementSubmittedEvent({
+			submissionId: "sub-1",
+			studentId: "s-1",
+		});
+		expect(e).toEqual({
+			studentId: "s-1",
+			eventType: "placement_submitted",
+			idempotencyKey: "placement_submitted:sub-1",
+			title: "Nộp bài kiểm tra đầu vào thành công",
+			body: "Bài làm của bạn đã được ghi nhận và đang chờ giáo viên chấm điểm. Bấm để xem trạng thái và kết quả.",
+			linkPath: "/placement-test",
+			refType: "placement_submission",
+			refId: "sub-1",
+			channels: "in_app",
+		});
+		expect(eventGroupOf(e.eventType)).toBe("assignment");
 	});
 });

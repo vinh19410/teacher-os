@@ -115,4 +115,12 @@ describe("OrgEventModal — tạo sự kiện vận hành (TOS-14)", () => {
 		).toBeTruthy();
 		expect(toast.error).not.toHaveBeenCalled();
 	});
+
+	it("renders the date input with block layout so the native calendar icon aligns right", () => {
+		renderModal();
+		const dateInput = screen.getByLabelText("Ngày *");
+		const tokens = dateInput.className.split(/\s+/).filter(Boolean);
+		expect(tokens).toContain("block");
+		expect(tokens).not.toContain("flex");
+	});
 });

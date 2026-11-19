@@ -9,6 +9,9 @@ import type {
 	InvoicePaymentCreate,
 	StudentCreateInput,
 	SyllabusModuleContent,
+	VocabDeckCsvImportItem,
+	VocabEntryType,
+	VocabWordImportItem,
 } from "@teacher-os/api/contracts";
 import type { Scores, SyllabusLesson } from "./mock-data";
 
@@ -319,12 +322,24 @@ export type KernelAction =
 	| {
 			/** Student Vocab SRS (#359, #363): tạo bộ từ vựng cho lớp hoặc độc lập (classId = null). */
 			type: "create-vocab-deck";
-			payload: { classId: string | null; title: string; lang?: string };
+			payload: {
+				classId: string | null;
+				title: string;
+				lessonNumber?: number | null;
+				topic?: string | null;
+				lang?: string;
+			};
 	  }
 	| {
 			/** Đổi tên (và ngôn ngữ) bộ từ vựng. */
 			type: "rename-vocab-deck";
-			payload: { deckId: string; title: string; lang?: string };
+			payload: {
+				deckId: string;
+				title: string;
+				lessonNumber?: number | null;
+				topic?: string | null;
+				lang?: string;
+			};
 	  }
 	| {
 			/** Xoá bộ từ vựng (deck + words + cards trong 1 db.batch server-side). */
@@ -338,10 +353,27 @@ export type KernelAction =
 				deckId: string;
 				id?: string;
 				word: string;
+				entryType?: VocabEntryType;
 				ipa?: string | null;
+				pos?: string | null;
 				translation?: string;
+				example?: string | null;
 				sortOrder?: number;
 			};
+	  }
+	| {
+			/** Import bộ từ vựng từ file CSV (tạo một hoặc nhiều bộ từ kèm từ/cụm từ). */
+			type: "import-vocab-csv-decks";
+			payload: {
+				classId: string | null;
+				decks: VocabDeckCsvImportItem[];
+			};
+	  }
+	| {
+			/** Import thêm từ/cụm từ vào một bộ từ đã có. */
+			type: "import-vocab-deck-words";
+			deckId: string;
+			words: VocabWordImportItem[];
 	  }
 	| {
 			/** Xoá một từ vựng (cards của từ cũng bị xoá server-side). */

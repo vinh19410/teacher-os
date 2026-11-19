@@ -1250,8 +1250,7 @@ h3 {
 
 .speaking-overview-card,
 .speaking-session-card,
-.speaking-review-box,
-.speaking-skipped-box {
+.speaking-review-box {
 	display: flex;
 	flex-direction: column;
 	gap: var(--space-3);
@@ -1283,16 +1282,6 @@ h3 {
 	color: var(--ink-3);
 	text-transform: uppercase;
 	letter-spacing: 0.03em;
-}
-
-.speaking-overview-steps {
-	margin: 0;
-	padding-left: 1.25rem;
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-	font-size: 0.92rem;
-	color: var(--ink-2);
 }
 
 .speaking-progress-header {
@@ -1349,6 +1338,127 @@ h3 {
 	border-color: var(--danger-line);
 }
 
+.speaking-phase-banner.is-paused {
+	background: var(--page);
+	border-color: var(--teal-line);
+}
+
+.speaking-center-stage {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	gap: var(--space-3);
+	padding: var(--space-5) var(--space-4);
+	border-radius: var(--radius-sm);
+	background: var(--page);
+	border: 1px solid var(--line);
+}
+
+.speaking-stage-label {
+	font-size: 0.88rem;
+	font-weight: 700;
+	color: var(--ink-2);
+}
+
+.speaking-center-clock {
+	font-family: var(--font-body);
+	font-size: clamp(2.1rem, 1.7rem + 1.6vw, 2.85rem);
+	font-weight: 800;
+	line-height: 1.1;
+	letter-spacing: -0.02em;
+	font-variant-numeric: tabular-nums;
+	color: var(--brand-deep);
+}
+
+.speaking-center-clock.is-recording {
+	font-size: clamp(1.45rem, 1.25rem + 0.8vw, 1.85rem);
+	color: var(--danger);
+}
+
+.speaking-pause-circle-btn {
+	width: 72px;
+	height: 72px;
+	border-radius: 999px;
+	border: 0;
+	background: var(--danger);
+	color: var(--on-fill);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	box-shadow: 0 6px 18px rgba(27, 42, 58, 0.16);
+	transition:
+		filter var(--dur-state) var(--ease-out),
+		transform var(--dur-press) var(--ease-out),
+		box-shadow var(--dur-state) var(--ease-out);
+}
+
+.speaking-pause-circle-btn:hover:not(:disabled) {
+	filter: brightness(0.92);
+	transform: scale(1.03);
+}
+
+.speaking-pause-circle-btn:active:not(:disabled) {
+	transform: scale(0.97);
+}
+
+.speaking-pause-circle-btn:disabled {
+	opacity: 0.56;
+	cursor: not-allowed;
+	transform: none;
+}
+
+.speaking-pause-circle-btn:focus-visible {
+	outline: 3px solid var(--blue);
+	outline-offset: 4px;
+}
+
+.speaking-recording-indicator {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	font-size: 0.9rem;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.speaking-paused-duration {
+	font-size: 0.9rem;
+	font-weight: 600;
+	color: var(--ink-2);
+	font-variant-numeric: tabular-nums;
+}
+
+.speaking-early-footer {
+	margin-top: var(--space-2);
+	padding-top: var(--space-3);
+	border-top: 1px solid var(--line);
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--space-3);
+}
+
+.speaking-early-btn {
+	color: var(--ink-3);
+	max-width: 100%;
+	white-space: normal;
+}
+
+.speaking-finish-confirm-box {
+	width: 100%;
+	background: var(--butter);
+	border: 1.5px solid var(--amber);
+	border-radius: var(--radius-sm);
+	padding: var(--space-3) var(--space-4);
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+}
+
 .speaking-phase-label-wrap {
 	display: inline-flex;
 	align-items: center;
@@ -1399,7 +1509,8 @@ h3 {
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.speaking-progress-fill {
+	.speaking-progress-fill,
+	.speaking-pause-circle-btn {
 		transition: none;
 	}
 	.rec-dot.is-pulsing {
@@ -1655,9 +1766,13 @@ h3 {
 	.step-nav-bar .btn,
 	.result-cta-row .btn,
 	.speaking-actions-row .btn,
+	.speaking-early-btn,
 	.intro-actions .btn,
 	.form-actions .btn,
 	.confirm-actions .btn {
 		width: 100%;
+	}
+	.speaking-center-stage {
+		padding: var(--space-4) var(--space-3);
 	}
 }

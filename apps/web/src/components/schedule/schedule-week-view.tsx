@@ -30,12 +30,14 @@ export function ScheduleWeekView({
 	model,
 	onOpenSession,
 	onRefresh,
+	showEmptyWeekNotice = true,
 }: {
 	data: KernelSlice;
 	dates: string[];
 	model: WeekModel;
 	onOpenSession: (session: ClassSessionModalRef) => void;
 	onRefresh?: () => void;
+	showEmptyWeekNotice?: boolean;
 }) {
 	const todayIso = todayISOVietnam();
 	const [undoHoliday, setUndoHoliday] = useState<KernelHolidaySummary | null>(
@@ -54,7 +56,7 @@ export function ScheduleWeekView({
 
 	return (
 		<>
-			{slotCount === 0 && (
+			{showEmptyWeekNotice && slotCount === 0 && (
 				<div className="mb-4 rounded-md border border-border bg-muted px-4 py-3 text-center text-muted-foreground text-sm">
 					Không có buổi học nào trong tuần này.
 				</div>
@@ -97,7 +99,7 @@ export function ScheduleWeekView({
 					return (
 						<div
 							key={dn}
-							className={`day-col flex min-h-[220px] flex-col rounded-xl border bg-card p-3 shadow-sm ${
+							className={`day-col flex min-h-[220px] min-w-0 flex-col rounded-xl border bg-card p-3 shadow-sm ${
 								isToday ? "border-ring ring-[3px] ring-ring/20" : ""
 							}`}
 							data-date={dateISO}
@@ -116,7 +118,7 @@ export function ScheduleWeekView({
 									</span>
 								)}
 							</div>
-							<div className="min-w-0 flex-1">
+							<div className="flex min-w-0 flex-1 flex-col">
 								{entries.length === 0 &&
 									dayEvents.length === 0 &&
 									dayHolidays.length === 0 && (
@@ -126,14 +128,14 @@ export function ScheduleWeekView({
 									entry.block ? (
 										<div
 											key={entry.key}
-											className={`lesson-block mt-2 rounded-lg border border-border border-l-3 border-l-solid px-2.5 py-2 text-left opacity-75 ${classBlockClass(entry.block.classId)}`}
+											className={`lesson-block mt-2 w-full min-w-0 rounded-lg border border-border border-l-3 border-l-solid px-2.5 py-2 text-left opacity-75 ${classBlockClass(entry.block.classId)}`}
 											title="Buổi dự kiến từ lịch lớp — chưa có học viên"
 											data-class-color={classColorIndex(entry.block.classId)}
 										>
 											<div className="text-[11px] text-muted-foreground tabular-nums">
 												{entry.block.time}
 											</div>
-											<div className="font-semibold text-sm">
+											<div className="break-words font-semibold text-sm">
 												{entry.block.className}
 											</div>
 											<div className="mt-px text-[11px] text-muted-foreground">
@@ -170,7 +172,7 @@ export function ScheduleWeekView({
 															columnDateISO: dateISO,
 														})
 													}
-													className={`lesson-block mt-2 cursor-pointer rounded-lg border border-border border-l-3 border-l-solid px-2.5 py-2 text-left transition-colors hover:bg-muted/50 ${classBlockClass(s.classId)} ${
+													className={`lesson-block mt-2 block w-full min-w-0 cursor-pointer rounded-lg border border-border border-l-3 border-l-solid px-2.5 py-2 text-left transition-colors hover:bg-muted/50 ${classBlockClass(s.classId)} ${
 														s.status === "completed"
 															? "opacity-60"
 															: s.status === "cancelled"
@@ -188,8 +190,8 @@ export function ScheduleWeekView({
 														className={
 															s.status === "completed" ||
 															s.status === "cancelled"
-																? "font-semibold text-sm line-through decoration-muted-foreground"
-																: "font-semibold text-sm"
+																? "break-words font-semibold text-sm line-through decoration-muted-foreground"
+																: "break-words font-semibold text-sm"
 														}
 													>
 														{className}
@@ -206,7 +208,7 @@ export function ScheduleWeekView({
 															) : null;
 														})()}
 													</div>
-													<div className="mt-px text-[11px] text-muted-foreground">
+													<div className="mt-px break-words text-[11px] text-muted-foreground">
 														{isHoliday ? (
 															<span className="font-medium text-warn">
 																Nghỉ lễ — Đã dời lịch
@@ -240,7 +242,7 @@ export function ScheduleWeekView({
 										(i === 0 && holiday.fromDate < dateISO);
 									return (
 										// TOS-14b + TOS-13: thẻ kỳ nghỉ đặt sau block buổi học, trước sự kiện.
-										<div key={holiday.id} className="mt-2">
+										<div key={holiday.id} className="mt-2 min-w-0">
 											<HolidayCalendarCard
 												name={holiday.name}
 												holiday={fullHoliday}

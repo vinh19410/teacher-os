@@ -1,14 +1,44 @@
 // @vitest-environment jsdom
 
 import type { LessonMaterialView } from "@teacher-os/api/material-contracts";
-import { cleanup, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, screen, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionMaterialsModal } from "@/components/class-detail/session-materials-modal";
 import {
 	renderWithKernel,
 	snapshotFixture,
 	startKernelServer,
 } from "@/test/kernel-harness";
+
+vi.mock(
+	"@teacher-os/ui/components/document-preview/blob-document-view",
+	() => ({
+		BlobDocumentThumbnail: (props: {
+			blobUrl: string;
+			mimeType: string;
+			label: string;
+		}) => (
+			<div
+				data-testid="blob-document-thumbnail"
+				data-url={props.blobUrl}
+				data-mime={props.mimeType}
+				data-label={props.label}
+			/>
+		),
+		BlobDocumentView: (props: {
+			blobUrl: string;
+			mimeType: string;
+			label: string;
+		}) => (
+			<div
+				data-testid="blob-document-view"
+				data-url={props.blobUrl}
+				data-mime={props.mimeType}
+				data-label={props.label}
+			/>
+		),
+	}),
+);
 
 const directRow: LessonMaterialView = {
 	id: "mat-direct",
@@ -28,7 +58,7 @@ const directRow: LessonMaterialView = {
 };
 
 function startSessionServer(body: unknown, role = "teacher") {
-	return startKernelServer(
+	const server = startKernelServer(
 		snapshotFixture({ viewer: { role, canAccessFinance: false } }),
 		(req) => {
 			if (
@@ -40,11 +70,39 @@ function startSessionServer(body: unknown, role = "teacher") {
 			return undefined;
 		},
 	);
+	const kernelFetch = globalThis.fetch;
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+			const url = new URL(String(input));
+			if (
+				(init?.method ?? "GET").toUpperCase() === "GET" &&
+				/^\/api\/materials\/[^/]+\/file$/.test(url.pathname)
+			) {
+				return new Response(new Blob(["%PDF"], { type: "application/pdf" }), {
+					status: 200,
+					headers: { "content-type": "application/pdf" },
+				});
+			}
+			return kernelFetch(input, init);
+		}),
+	);
+	return server;
 }
+
+const createObjectURL = vi.fn(() => "blob:session-preview");
+const revokeObjectURL = vi.fn();
+
+beforeEach(() => {
+	URL.createObjectURL = createObjectURL;
+	URL.revokeObjectURL = revokeObjectURL;
+});
 
 afterEach(() => {
 	cleanup();
 	vi.unstubAllGlobals();
+	createObjectURL.mockClear();
+	revokeObjectURL.mockClear();
 });
 
 function renderModal() {
@@ -59,7 +117,7 @@ function renderModal() {
 }
 
 describe("SessionMaterialsModal", () => {
-	it("lists direct materials with detach actions", async () => {
+	it("lists direct materials with inline preview and detach actions", async () => {
 		startSessionServer({ items: [directRow] });
 		renderModal();
 
@@ -73,13 +131,19 @@ describe("SessionMaterialsModal", () => {
 		expect(
 			within(list).getByRole("button", { name: "Gỡ Handout buổi 1" }),
 		).toBeTruthy();
-		// Không có danh sách giáo trình khi server không trả.
+		// Thumbnail inline tự hiển thị ở đầu hàng và bấm vào mở modal phóng to.
+		expect(
+			await within(list).findByTestId("blob-document-thumbnail"),
+		).toBeTruthy();
+		expect(
+			within(list).getByRole("button", { name: "Xem trước Handout buổi 1" }),
+		).toBeTruthy();
 		expect(
 			within(dialog).queryByRole("list", { name: "Tài liệu từ giáo trình" }),
 		).toBeNull();
 	});
 
-	it("renders curriculum materials read-only with a badge (#655)", async () => {
+	it("renders curriculum materials read-only with inline preview, download link, and badge (#655)", async () => {
 		startSessionServer({
 			items: [directRow],
 			curriculumMaterials: [
@@ -108,9 +172,20 @@ describe("SessionMaterialsModal", () => {
 			within(curriculum).getByText("Cam 15 Test 1 Passage 1"),
 		).toBeTruthy();
 		expect(within(curriculum).getByText("Từ giáo trình")).toBeTruthy();
-		// Chỉ đọc: KHÔNG có nút gỡ trong danh sách giáo trình.
+		expect(
+			await within(curriculum).findByTestId("blob-document-thumbnail"),
+		).toBeTruthy();
+		expect(
+			within(curriculum).getByRole("button", {
+				name: "Xem trước Cam 15 Test 1 Passage 1",
+			}),
+		).toBeTruthy();
+		expect(
+			within(curriculum).getByRole("link", {
+				name: "Tải xuống Cam 15 Test 1 Passage 1",
+			}),
+		).toBeTruthy();
 		expect(within(curriculum).queryByRole("button", { name: /Gỡ/ })).toBeNull();
-		// Danh sách đính kèm trực tiếp giữ nguyên hành vi.
 		expect(
 			within(dialog).getByRole("button", { name: "Gỡ Handout buổi 1" }),
 		).toBeTruthy();
@@ -213,5 +288,28 @@ describe("SessionMaterialsModal", () => {
 			"session-materials-empty",
 		);
 		expect(emptyEl.textContent).toBe("Chưa có tài liệu nào cho buổi này.");
+	});
+
+	it("closes only the expanded preview dialog on Escape, keeping the session dialog open", async () => {
+		startSessionServer({ items: [directRow] });
+		renderModal();
+
+		const dialog = await screen.findByRole("dialog", {
+			name: "Tài liệu buổi 10/11",
+		});
+		fireEvent.click(
+			await within(dialog).findByRole("button", {
+				name: "Xem trước Handout buổi 1",
+			}),
+		);
+		expect(
+			await screen.findByRole("dialog", { name: "Handout buổi 1" }),
+		).toBeTruthy();
+
+		fireEvent.keyDown(document, { key: "Escape" });
+		expect(screen.queryByRole("dialog", { name: "Handout buổi 1" })).toBeNull();
+		expect(
+			screen.getByRole("dialog", { name: "Tài liệu buổi 10/11" }),
+		).toBeTruthy();
 	});
 });

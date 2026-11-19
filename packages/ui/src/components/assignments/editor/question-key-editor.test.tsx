@@ -676,4 +676,28 @@ describe("QuestionKeyEditor — Wave 2A (mcq_many & libraryReadingMode)", () => 
 			expect(html).toContain('aria-label="Câu 1: A"');
 		}
 	});
+
+	it("mcq: thêm câu mới kế thừa 3 lựa chọn khi câu cuối đang có 3 lựa chọn", () => {
+		const onItemsChange = vi.fn();
+		const { getByRole } = render(
+			<QuestionKeyEditor
+				{...base}
+				typeId="mcq"
+				items={[
+					{
+						stem: "Q1",
+						opts: ["A", "B", "C"],
+						answer: "A",
+						alts: "",
+					},
+				]}
+				onItemsChange={onItemsChange}
+			/>,
+		);
+		fireEvent.click(getByRole("button", { name: "Thêm câu" }));
+		expect(onItemsChange).toHaveBeenCalledWith([
+			{ stem: "Q1", opts: ["A", "B", "C"], answer: "A", alts: "" },
+			{ stem: "", opts: ["", "", ""], answer: "", alts: "", pin: null },
+		]);
+	});
 });

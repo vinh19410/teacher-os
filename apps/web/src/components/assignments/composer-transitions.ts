@@ -1,6 +1,9 @@
 import {
 	ASSIGNMENT_ANSWER_CHOICES,
 	ASSIGNMENT_OPTION_BANK_MAX,
+	answerKindByType,
+	effectiveAnswerChoices,
+	mcqOptionsIssue,
 } from "@teacher-os/api/contracts";
 import {
 	collapseWhitespace,
@@ -288,6 +291,26 @@ export function imagePinIssue(
 	for (const [index, item] of value.items.entries()) {
 		if (!item.pin)
 			return `Câu ${qStart + index} chưa đặt ghim trên ảnh — bấm lên ảnh để đặt.`;
+	}
+	return null;
+}
+
+/** Validate `opts` bounds and choice answer membership for single-choice MCQ rows. */
+export function invalidMcqChoiceIssue(value: ComposerValue): string | null {
+	if (!isAutoSkill(value.skill)) return null;
+	for (const item of value.items) {
+		const kind = answerKindByType[item.type ?? value.type];
+		if (!kind) continue;
+		if (mcqOptionsIssue(kind, item.opts)) {
+			const bounds = kind === "mcq3" ? "2 đến 3" : "2 đến 4";
+			return `Câu trắc nghiệm cần từ ${bounds} lựa chọn.`;
+		}
+		const answer = item.answer.trim();
+		if (!answer) continue;
+		const choices = effectiveAnswerChoices(kind, item.opts);
+		if (!choices.includes(answer)) {
+			return `Đáp án “${item.answer}” không thuộc bộ đáp án (${choices.join(", ")}).`;
+		}
 	}
 	return null;
 }

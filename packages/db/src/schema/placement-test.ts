@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
 	index,
 	integer,
+	real,
 	sqliteTable,
 	text,
 	uniqueIndex,
@@ -113,9 +114,15 @@ export const placementTestSubmission = sqliteTable(
 			.notNull()
 			.default("pending_grading"),
 		writingRubricJson: text("writing_rubric_json"),
+		/** Điểm Writing kiểu cũ (0–15 nguyên). Null với bài chấm theo chuẩn IELTS. */
 		writingScore: integer("writing_score"),
+		/** Điểm tổng Writing theo IELTS (0–9, bước 0.5). Null với bài chấm kiểu cũ. */
+		writingBand: real("writing_band"),
 		speakingRubricJson: text("speaking_rubric_json"),
+		/** Điểm Speaking kiểu cũ (0–20 nguyên). Null với bài chấm theo chuẩn IELTS. */
 		speakingScore: integer("speaking_score"),
+		/** Điểm tổng Speaking theo IELTS (0–9, bước 0.5). Null với bài chấm kiểu cũ. */
+		speakingBand: real("speaking_band"),
 		teacherFeedback: text("teacher_feedback").notNull().default(""),
 		/**
 		 * Chấm nháp AI Writing/Speaking (#730). `ai_status`:
@@ -130,9 +137,9 @@ export const placementTestSubmission = sqliteTable(
 		aiErrorCode: text("ai_error_code"),
 		aiStartedAt: integer("ai_started_at", { mode: "timestamp_ms" }),
 		aiDraftedAt: integer("ai_drafted_at", { mode: "timestamp_ms" }),
-		/** JSON `PlacementAiSkillDraft` Writing (rubric + nhận xét + lỗi). */
+		/** JSON `PlacementAiSkillDraft` Writing (chỉ danh sách lỗi). */
 		aiWritingJson: text("ai_writing_json"),
-		/** JSON `PlacementAiSkillDraft` Speaking. */
+		/** JSON `PlacementAiSkillDraft` Speaking (chỉ danh sách lỗi). */
 		aiSpeakingJson: text("ai_speaking_json"),
 		/**
 		 * Id job OpenAI Responses (background mode) đang chạy cho lượt chấm

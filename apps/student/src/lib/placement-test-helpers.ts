@@ -6,7 +6,6 @@ import {
 	type PlacementErrorCategory,
 	type PlacementPublishedBand,
 	type PlacementPublishedSpeakingTask,
-	type PlacementReadingPassageKind,
 	type PlacementSnapshot,
 	type StudentPlacementSubmit,
 	stripInlineCefrLabel,
@@ -47,16 +46,6 @@ export const PLACEMENT_TIMED_STEPS = new Set<PlacementRunnerStep>([
 	"writing",
 ]);
 
-export const PLACEMENT_READING_KIND_LABELS: Record<
-	PlacementReadingPassageKind,
-	string
-> = {
-	sign: "Biển báo / Thông báo",
-	message: "Tin nhắn / Email",
-	passage: "Bài đọc hiểu",
-	cloze: "Đoạn văn điền từ",
-};
-
 export interface PlacementDraftAnswers {
 	listening: Record<string, string | number | null>;
 	vocabGrammar: Record<string, number | null>;
@@ -68,7 +57,7 @@ export interface PlacementDraftState {
 	answers: PlacementDraftAnswers;
 	plays: Record<string, number>;
 	writingText: string;
-	speakingMode: "none" | "skipped";
+	speakingMode: "none";
 	timerStartedAt: number | null;
 }
 
@@ -171,7 +160,7 @@ export function loadPlacementDraft(
 			plays,
 			writingText:
 				typeof parsed.writingText === "string" ? parsed.writingText : "",
-			speakingMode: parsed.speakingMode === "skipped" ? "skipped" : "none",
+			speakingMode: "none",
 			timerStartedAt:
 				typeof parsed.timerStartedAt === "number" &&
 				Number.isFinite(parsed.timerStartedAt)
@@ -348,7 +337,15 @@ export function computeSpeechFallbackTimeoutMs(prompt: string): number {
 	return Math.min(25_000, Math.max(4_000, wordCount * 550 + 2_500));
 }
 
-export type SpeakingPhase = "idle" | "reading" | "prep" | "answer" | "done";
+export const MAX_SPEAKING_RETRIES_PER_TASK = 2;
+
+export type SpeakingPhase =
+	| "idle"
+	| "reading"
+	| "prep"
+	| "answer"
+	| "paused"
+	| "done";
 
 export interface SpeakingSessionState {
 	status: "idle" | "active" | "completed";
@@ -357,6 +354,7 @@ export interface SpeakingSessionState {
 	phase: SpeakingPhase;
 	secondsLeft: number;
 	replayUsedForCurrentTask: boolean;
+	retriesUsedForCurrentTask: number;
 }
 
 export function createInitialSpeakingSession(
@@ -369,6 +367,7 @@ export function createInitialSpeakingSession(
 		phase: "idle",
 		secondsLeft: 0,
 		replayUsedForCurrentTask: false,
+		retriesUsedForCurrentTask: 0,
 	};
 }
 
@@ -393,6 +392,7 @@ export function startSpeakingTaskReading(
 		phase: "reading",
 		secondsLeft: 0,
 		replayUsedForCurrentTask: false,
+		retriesUsedForCurrentTask: 0,
 	};
 }
 
@@ -448,10 +448,63 @@ export function transitionSpeakingToAnswer(
 	};
 }
 
+export function canRetrySpeakingTask(session: SpeakingSessionState): boolean {
+	return (
+		session.status === "active" &&
+		session.phase === "paused" &&
+		session.retriesUsedForCurrentTask < MAX_SPEAKING_RETRIES_PER_TASK
+	);
+}
+
+export function transitionSpeakingToPaused(
+	session: SpeakingSessionState,
+): SpeakingSessionState {
+	if (session.status !== "active" || session.phase !== "answer") {
+		return session;
+	}
+	return {
+		...session,
+		phase: "paused",
+		secondsLeft: 0,
+	};
+}
+
+export function retrySpeakingCurrentTask(
+	session: SpeakingSessionState,
+	tasks: readonly PlacementPublishedSpeakingTask[],
+): SpeakingSessionState {
+	if (!canRetrySpeakingTask(session)) {
+		return session;
+	}
+	const task = tasks[session.taskIndex];
+	if (!task) {
+		return {
+			...session,
+			status: "completed",
+			phase: "done",
+			secondsLeft: 0,
+		};
+	}
+	const { answerSeconds } = resolveSpeakingTaskTimings(task);
+	return {
+		...session,
+		status: "active",
+		phase: "answer",
+		secondsLeft: answerSeconds,
+		retriesUsedForCurrentTask: session.retriesUsedForCurrentTask + 1,
+	};
+}
+
 export function transitionSpeakingNextTask(
 	session: SpeakingSessionState,
 	tasks: readonly PlacementPublishedSpeakingTask[],
 ): SpeakingSessionState {
+	if (
+		session.status !== "active" ||
+		(session.phase !== "answer" && session.phase !== "paused")
+	) {
+		return session;
+	}
 	const nextIndex = session.taskIndex + 1;
 	if (nextIndex < tasks.length) {
 		return startSpeakingTaskReading(session, nextIndex, tasks);
@@ -462,6 +515,7 @@ export function transitionSpeakingNextTask(
 		phase: "done",
 		secondsLeft: 0,
 		replayUsedForCurrentTask: false,
+		retriesUsedForCurrentTask: 0,
 	};
 }
 

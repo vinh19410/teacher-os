@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
+import { GOOGLE_MEET_SCOPES } from "server/lib/google-meet/google-oauth";
 
 /** Same file the boot shim uses (apps/e2e/src/boot.ts) — tests run after
  * boot, sequential (workers: 1), so a second short-lived connection is safe. */
@@ -16,7 +17,10 @@ const DB_PATH = fileURLToPath(new URL("../local.db", import.meta.url).href);
  * (`created_at` does have a DDL default; we set it anyway for symmetry).
  * SQLite has no randomUUID() function either — ids come from node crypto.
  */
-export async function seedGoogleAccount(email: string): Promise<void> {
+export async function seedGoogleAccount(
+	email: string,
+	opts: { withMeetScopes?: boolean } = {},
+): Promise<void> {
 	const client = createClient({ url: `file:${DB_PATH}` });
 	try {
 		const user = await client.execute({
@@ -32,10 +36,14 @@ export async function seedGoogleAccount(email: string): Promise<void> {
 			sql: "DELETE FROM account WHERE account_id = 'google-e2e-1' AND user_id = ?",
 			args: [userId as string],
 		});
+		const scope = opts.withMeetScopes
+			? ["openid", "email", "profile", ...GOOGLE_MEET_SCOPES].join(" ")
+			: null;
+		const refreshToken = opts.withMeetScopes ? "e2e-refresh-token" : null;
 		await client.execute({
-			sql: `INSERT INTO account (id, account_id, provider_id, user_id, created_at, updated_at)
-				VALUES (?, 'google-e2e-1', 'google', ?, ?, ?)`,
-			args: [randomUUID(), userId, Date.now(), Date.now()],
+			sql: `INSERT INTO account (id, account_id, provider_id, user_id, refresh_token, scope, created_at, updated_at)
+				VALUES (?, 'google-e2e-1', 'google', ?, ?, ?, ?, ?)`,
+			args: [randomUUID(), userId, refreshToken, scope, Date.now(), Date.now()],
 		});
 	} finally {
 		client.close();

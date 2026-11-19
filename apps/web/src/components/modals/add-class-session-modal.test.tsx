@@ -105,6 +105,7 @@ describe("AddClassSessionModal", () => {
 		expect(
 			(screen.getByLabelText(/Thời lượng/i) as HTMLInputElement).value,
 		).toBe("90");
+		expect(within(dialog).queryByLabelText(/Link Zoom/i)).toBeNull();
 	});
 
 	it("validates that topic is required", async () => {
@@ -209,6 +210,7 @@ describe("AddClassSessionModal", () => {
 			topic: "With materials",
 			materialIds: ["mat-1"],
 		});
+		expect(write?.body).not.toHaveProperty("zoom");
 	});
 
 	it("drops the materialIds key after the chip is removed", async () => {

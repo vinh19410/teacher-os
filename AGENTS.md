@@ -23,7 +23,7 @@
 
 - Đọc `DESIGN.md` trước khi sửa/thêm UI: token màu/type/motion lấy từ
   `packages/ui/src/styles/globals.css` (design v2 — shadcn neutral oklch, light mặc định,
-  Geist), không hard-code giá trị lệch scale. Component shadcn trong
+  Be Vietnam Pro + Geist Mono), không hard-code giá trị lệch scale. Component shadcn trong
   `apps/web/src/components/ui/*`; shell dùng chung `sidebar-07`, search ⌘K.
 - Trang list có bộ lọc: filter sống trong URL (search param), ô search debounce ~300ms mới đẩy
   lên URL; taxonomy hai cấp nhóm chip theo nhãn; badge đếm `aria-hidden`. Xem

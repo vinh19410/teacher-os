@@ -1,4 +1,6 @@
 import { mkdirSync } from "node:fs";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { expect, type Page, test } from "@playwright/test";
 import { addDaysISO, signUpViaApi, vietnamTodayISO } from "./helpers";
 import { seedDatedClass } from "./helpers-dated-class";
@@ -266,4 +268,118 @@ test("AC-004: thẻ kỳ nghỉ hiển thị trong cả 3 view Tháng/Tuần/Ng�
 			.getByTestId("holiday-calendar-card")
 			.filter({ hasText: "Nghỉ lễ E2E" }),
 	).toBeVisible();
+});
+
+const REPORT_DIR = fileURLToPath(
+	new URL("../../../plans/reports", import.meta.url),
+);
+
+const POT_VIEWPORTS = [
+	{ name: "desktop-1440x900", width: 1440, height: 900 },
+	{ name: "tablet-768x1024", width: 768, height: 1024 },
+	{ name: "mobile-375x812", width: 375, height: 812 },
+] as const;
+
+async function captureSchedulePot(page: Page, base: string): Promise<void> {
+	if (process.env.CAPTURE_POT !== "1") return;
+	mkdirSync(REPORT_DIR, { recursive: true });
+	for (const vp of POT_VIEWPORTS) {
+		await page.setViewportSize({ width: vp.width, height: vp.height });
+		await page.evaluate(() =>
+			document.documentElement.classList.remove("dark"),
+		);
+		await page.waitForTimeout(200);
+		await page.screenshot({
+			path: resolve(REPORT_DIR, `${base}-${vp.name}-light.png`),
+			fullPage: true,
+		});
+		await page.evaluate(() => document.documentElement.classList.add("dark"));
+		await page.waitForTimeout(200);
+		await page.screenshot({
+			path: resolve(REPORT_DIR, `${base}-${vp.name}-dark.png`),
+			fullPage: true,
+		});
+	}
+	await page.evaluate(() => document.documentElement.classList.remove("dark"));
+	await page.setViewportSize({ width: 1440, height: 900 });
+}
+
+test("khi chưa có lớp vẫn hiển thị calendar (Tuần/Tháng/Ngày) và card buổi học full width cột ngày", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 1440, height: 900 });
+	const teacherEmail = await signUpViaApi(page);
+
+	// 1. Chưa có lớp: /schedule vẫn hiển thị calendar cả 3 view cùng banner gọn.
+	await page.goto("/schedule");
+	await expect(page.getByTestId("schedule-empty-state")).toBeVisible();
+	await expect(page.locator(".week-cal")).toBeVisible();
+	await expect(page.locator(".day-col")).toHaveCount(7);
+	await expect(
+		page.getByText("Không có buổi học nào trong tuần này."),
+	).toHaveCount(0);
+	await captureSchedulePot(page, "769-schedule-empty");
+
+	for (const width of [375, 320]) {
+		await page.setViewportSize({ width, height: 812 });
+		await page.waitForTimeout(100);
+		const overflow = await page.evaluate(
+			() =>
+				document.documentElement.scrollWidth >
+				document.documentElement.clientWidth,
+		);
+		expect(overflow).toBe(false);
+	}
+	await page.setViewportSize({ width: 1440, height: 900 });
+
+	await page.getByRole("tab", { name: "Tháng" }).click();
+	await expect(page.getByTestId("schedule-empty-state")).toBeVisible();
+	await expect(page.getByTestId("schedule-month-grid")).toBeVisible();
+
+	await page.getByRole("tab", { name: "Ngày" }).click();
+	await expect(page.getByTestId("schedule-empty-state")).toBeVisible();
+	await expect(page.getByTestId("schedule-day-agenda")).toBeVisible();
+	await expect(
+		page.getByText("Không có ca học hay sự kiện nào trong ngày này."),
+	).toHaveCount(0);
+
+	// 2. Sau khi có lớp + buổi học: card trên lưới tuần chiếm full width cột ngày (~100% nội dung cột).
+	await seedDatedClass(page, {
+		name: "Test",
+		startDate: TODAY,
+		schedule: { start: "19:00", end: "20:00" },
+		sessionsTotal: 2,
+		students: { teacherEmail, names: ["Học viên Test"] },
+	});
+	await page.goto("/schedule");
+	const card = page.locator("button.lesson-block", { hasText: "Test" }).first();
+	await expect(card).toBeVisible();
+	const geometry = await card.evaluate((el) => {
+		const col = el.closest(".day-col");
+		if (!col) throw new Error("missing .day-col ancestor");
+		const colStyle = getComputedStyle(col);
+		const colInnerWidth =
+			col.getBoundingClientRect().width -
+			Number.parseFloat(colStyle.paddingLeft) -
+			Number.parseFloat(colStyle.paddingRight) -
+			Number.parseFloat(colStyle.borderLeftWidth) -
+			Number.parseFloat(colStyle.borderRightWidth);
+		return {
+			cardWidth: el.getBoundingClientRect().width,
+			colInnerWidth,
+		};
+	});
+	expect(geometry.cardWidth).toBeGreaterThanOrEqual(geometry.colInnerWidth - 2);
+	await captureSchedulePot(page, "769-schedule-cards");
+
+	for (const width of [375, 320]) {
+		await page.setViewportSize({ width, height: 812 });
+		await page.waitForTimeout(150);
+		const overflow = await page.evaluate(
+			() =>
+				document.documentElement.scrollWidth >
+				document.documentElement.clientWidth,
+		);
+		expect(overflow).toBe(false);
+	}
 });

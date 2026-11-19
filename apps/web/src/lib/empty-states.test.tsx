@@ -149,7 +149,7 @@ describe("List empty states (Issue #118)", () => {
 		expect(html).toContain("+ Tạo syllabus");
 	});
 
-	it("renders empty state card on /schedule when 0 classes exist", () => {
+	it("renders empty state banner alongside the calendar on /schedule when 0 classes exist", () => {
 		mockStoreData.classes = [];
 		mockStoreData.lessons = [];
 
@@ -157,6 +157,8 @@ describe("List empty states (Issue #118)", () => {
 		expect(html).toContain('data-testid="schedule-empty-state"');
 		expect(html).toContain("Chưa có lịch dạy nào");
 		expect(html).toContain("Quản lý lớp học");
+		expect(html).toContain("week-cal");
+		expect(html).not.toContain("Không có buổi học nào trong tuần này.");
 	});
 
 	it("renders class-colored week grid on /schedule when classes exist", () => {

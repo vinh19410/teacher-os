@@ -12,6 +12,8 @@ import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { HttpError } from "@/lib/query-client";
 import * as vocabRepo from "@/lib/repos/vocab";
+import { PromptSelfCheck } from "./prompt-self-check";
+import { VocabFeedbackPanel } from "./vocab-feedback-panel";
 import { VocabSessionView } from "./vocab-session-view";
 
 vi.mock("@/lib/repos/vocab", () => ({
@@ -555,5 +557,174 @@ describe("VocabSessionView mode prop (#372)", () => {
 			/>,
 		);
 		expect(screen.getByTestId("vocab-learn-intro")).toBeTruthy();
+	});
+});
+
+describe("Vocab metadata (entryType, pos, example) across session components", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	afterEach(() => {
+		cleanup();
+	});
+
+	it("LearnIntroCard renders Chunk badge, pos, and reveals example only when flipped", () => {
+		const chunkLearnData: VocabSessionData = {
+			deck: {
+				id: "deck-chunk",
+				title: "Friends & Introductions",
+				lessonNumber: 1,
+				topic: "Friends & Introductions",
+				lang: "en",
+			},
+			cards: [
+				{
+					id: "c-chunk-1",
+					wordId: "w-chunk-1",
+					word: "get along with",
+					entryType: "chunk",
+					translation: "hòa thuận với",
+					ipa: "/ɡet əˈlɒŋ wɪð/",
+					pos: "phr. v.",
+					example: "I get along with my new classmates very well.",
+					audioKey: null,
+					hasAudio: false,
+					level: 1,
+					isWarning: false,
+					state: "new",
+					intervalDays: 0,
+					dueAt: NOW,
+					lapses: 0,
+				},
+			],
+			pool: [
+				{
+					wordId: "w-chunk-1",
+					word: "get along with",
+					translation: "hòa thuận với",
+					lang: "en",
+					deckId: "deck-chunk",
+				},
+			],
+		};
+
+		render(
+			<VocabSessionView
+				sessionData={chunkLearnData}
+				rng={new SeededRandom(1)}
+				onExit={() => undefined}
+			/>,
+		);
+
+		expect(screen.getByTestId("vocab-intro-entry-type").textContent).toBe(
+			"Chunk",
+		);
+		expect(screen.getByTestId("vocab-intro-pos").textContent).toBe("(phr. v.)");
+		expect(screen.queryByTestId("vocab-intro-example")).toBeNull();
+
+		fireEvent.click(screen.getByTestId("vocab-intro-flip-btn"));
+
+		expect(screen.getByTestId("vocab-intro-example").textContent).toBe(
+			"I get along with my new classmates very well.",
+		);
+	});
+
+	it("PromptSelfCheck hides example before reveal and shows example after reveal", () => {
+		const { rerender } = render(
+			<PromptSelfCheck
+				word="keep in touch"
+				ipa="/kiːp ɪn tʌtʃ/"
+				translation="giữ liên lạc"
+				entryType="chunk"
+				pos="phr."
+				example="Let's keep in touch after graduation."
+				isRevealed={false}
+				disabled={false}
+				onReveal={() => undefined}
+				onRemembered={() => undefined}
+				onForgot={() => undefined}
+			/>,
+		);
+
+		expect(screen.getByTestId("vocab-selfcheck-entry-type").textContent).toBe(
+			"Chunk",
+		);
+		expect(screen.getByTestId("vocab-selfcheck-pos").textContent).toBe(
+			"(phr.)",
+		);
+		expect(screen.queryByTestId("vocab-selfcheck-example")).toBeNull();
+
+		rerender(
+			<PromptSelfCheck
+				word="keep in touch"
+				ipa="/kiːp ɪn tʌtʃ/"
+				translation="giữ liên lạc"
+				entryType="chunk"
+				pos="phr."
+				example="Let's keep in touch after graduation."
+				isRevealed={true}
+				disabled={false}
+				onReveal={() => undefined}
+				onRemembered={() => undefined}
+				onForgot={() => undefined}
+			/>,
+		);
+
+		expect(screen.getByTestId("vocab-selfcheck-example").textContent).toBe(
+			"Let's keep in touch after graduation.",
+		);
+	});
+
+	it("VocabFeedbackPanel shows Word/Chunk badge, pos, and example", () => {
+		const { rerender } = render(
+			<VocabFeedbackPanel
+				result="correct"
+				word="resilient"
+				ipa="/rɪˈzɪl.i.ənt/"
+				translation="kiên cường"
+				entryType="word"
+				pos="adj."
+				example="She is resilient enough to bounce back quickly."
+				persistStatus="idle"
+				onContinue={() => undefined}
+				onRetryPersist={() => undefined}
+				onDiscardPersist={() => undefined}
+			/>,
+		);
+
+		expect(screen.getByTestId("vocab-feedback-entry-type").textContent).toBe(
+			"Word",
+		);
+		expect(screen.getByTestId("vocab-feedback-pos").textContent).toBe("(adj.)");
+		expect(screen.getByTestId("vocab-feedback-example").textContent).toBe(
+			"Ví dụ: She is resilient enough to bounce back quickly.",
+		);
+
+		rerender(
+			<VocabFeedbackPanel
+				result="wrong"
+				word="hang out"
+				ipa="/hæŋ aʊt/"
+				translation="đi chơi"
+				entryType="chunk"
+				pos="phr. v."
+				example="We usually hang out at the park on Sundays."
+				persistStatus="idle"
+				onContinue={() => undefined}
+				onRetryPersist={() => undefined}
+				onDiscardPersist={() => undefined}
+			/>,
+		);
+
+		expect(screen.getByTestId("vocab-feedback-entry-type").textContent).toBe(
+			"Chunk",
+		);
+		expect(screen.getByTestId("vocab-feedback-pos").textContent).toBe(
+			"(phr. v.)",
+		);
+		expect(screen.getByTestId("vocab-feedback-example").textContent).toBe(
+			"Ví dụ: We usually hang out at the park on Sundays.",
+		);
 	});
 });

@@ -519,6 +519,41 @@
       "when": 1794891355627,
       "tag": "0073_shocking_absorbing_man",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "6",
+      "when": 1794980278820,
+      "tag": "0074_greedy_thanos",
+      "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "6",
+      "when": 1795013473440,
+      "tag": "0075_pretty_cammi",
+      "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "6",
+      "when": 1795020383654,
+      "tag": "0076_study_pack_audio_key",
+      "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "6",
+      "when": 1795027598845,
+      "tag": "0077_small_moon_knight",
+      "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "6",
+      "when": 1795029616786,
+      "tag": "0078_optimal_fenris",
+      "breakpoints": true
     }
   ]
 }

@@ -118,4 +118,17 @@ describe("questionSummary (#424 Task 1.5)", () => {
 			).choiceCount,
 		).toBeNull();
 	});
+
+	it("MCQ với opts rỗng [] fallback 4; opts > 4 bị giới hạn 4", () => {
+		expect(
+			questionSummary({ stem: "Q?", answer: "", opts: [], alts: "" }, "mcq")
+				.choiceCount,
+		).toBe(4);
+		expect(
+			questionSummary(
+				{ stem: "Q?", answer: "A", opts: ["1", "2", "3", "4", "5"], alts: "" },
+				"mcq",
+			).choiceCount,
+		).toBe(4);
+	});
 });

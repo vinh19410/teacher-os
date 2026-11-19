@@ -5,8 +5,7 @@ import {
 	CURRENT_LEVEL_OPTIONS,
 	DAILY_STUDY_HOUR_OPTIONS,
 	type EssayAnnotation,
-	EXAM_INTERESTS,
-	IELTS_TARGET_BANDS,
+	getTargetScoreOptions,
 	LEARNING_GOAL_OPTIONS,
 	type LearningGoalOption,
 	QUIZ_ESSAY_BODY_MAX,
@@ -18,6 +17,7 @@ import {
 	quizAnswerPatchSchema,
 	quizAttemptActionSchema,
 	quizEssayPatchSchema,
+	STORED_EXAM_INTERESTS,
 	STUDENT_ERROR_CODES,
 	STUDENT_INVITATION_ERROR_CODES,
 	type StudentClassDetail,
@@ -28,7 +28,6 @@ import {
 	type StudentScheduleLesson,
 	type StudentScheduleResponse,
 	studentOnboardingPayloadSchema,
-	TOEIC_TARGET_SCORES,
 } from "@teacher-os/api/contracts";
 import { essayToPlain } from "@teacher-os/api/lib/essay-plain";
 import { gradeQuiz } from "@teacher-os/api/lib/grade-quiz";
@@ -49,6 +48,7 @@ import {
 	assignmentTestPart,
 	classAssignment,
 	classAssignmentTarget,
+	classSessionMeeting,
 	classTable,
 	enrollment,
 	invoice,
@@ -65,6 +65,7 @@ import {
 	asc,
 	desc,
 	eq,
+	inArray,
 	isNotNull,
 	isNull,
 	notLike,
@@ -77,6 +78,7 @@ import type { Db } from "../app";
 import type { AiGrader } from "../lib/ai-grading/grader";
 import { scheduleAiGrading } from "../lib/ai-grading/run-grading";
 import { visibleAssignmentFilter } from "../lib/assignment-visibility";
+import { syncCalendarAttendeesForClass } from "../lib/google-meet/session-meet-service";
 import { mediaObjectResponse, toQuizAttemptMedia } from "../lib/media-response";
 import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
 import {
@@ -89,10 +91,11 @@ import {
 	toPlainAnnotation,
 } from "../lib/quiz-annotation";
 import { toQuizAttemptGrade } from "../lib/quiz-grade";
-import { streamStudyPackAudio } from "../lib/study-pack-audio";
+import { serveStudyPackAudio } from "../lib/study-pack-audio";
 import type { SessionUser } from "../session";
 import { provisionStudentForUser } from "../student-provisioning";
 import { activateEnrollment } from "./enrollment-activation";
+import { googleMeetDepsFrom, runGoogleSyncTask } from "./google-meet";
 import { parsePin } from "./snapshot";
 import {
 	loadClassAssignmentItems,
@@ -101,6 +104,7 @@ import {
 	orderStudentLessons,
 	studentClassColumns,
 	toStudentClass,
+	toStudentClassLessonWithMeeting,
 } from "./student-class";
 import { registerVocabRoutes } from "./vocab";
 
@@ -116,8 +120,16 @@ export interface StudentRouteDeps {
 	getAiGrader?(): AiGrader | undefined;
 	/** #702: injectable fetch cho audio proxy của listening study-pack prompts. */
 	fetchExternalAudio?: typeof fetch;
+	/** #814: kho audio R2 dùng chung cho study-pack prompts. */
+	getLibraryAudioStore?(): MediaStore | undefined;
 	/** Allowlist email giáo viên để định tuyến auto-join single-org (#716). */
 	teacherEmails?: string[];
+	googleClientId?: string;
+	googleClientSecret?: string;
+	googleFetch?: typeof fetch;
+	getGoogleWorkspaceClient?: import("../lib/google-meet/google-workspace-client").GoogleWorkspaceClient extends infer T
+		? (userId: string) => Promise<T> | T
+		: never;
 }
 
 export interface StudentContext {
@@ -286,9 +298,7 @@ function parseTargetScore(
 	examInterest: string | null,
 	raw: string | null,
 ): string | null {
-	const allowed =
-		examInterest === "toeic" ? TOEIC_TARGET_SCORES : IELTS_TARGET_BANDS;
-	return parseEnum(raw, allowed);
+	return parseEnum(raw, getTargetScoreOptions(examInterest));
 }
 
 /** Snapshot/prompt questions JSON → guarded AssignmentQuestion[] (same
@@ -395,7 +405,7 @@ function buildStudentMe(
 	sessionUser: { userName: string; email: string },
 	s: typeof student.$inferSelect,
 ): StudentMe {
-	const examInterest = parseEnum(s.examInterest ?? null, EXAM_INTERESTS);
+	const examInterest = parseEnum(s.examInterest ?? null, STORED_EXAM_INTERESTS);
 	return {
 		user: { name: sessionUser.userName, email: sessionUser.email },
 		student: {
@@ -1072,8 +1082,8 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			enrollmentRows.map(async (cls) =>
 				toStudentClass(
 					cls,
-					cls.status === "active"
-						? await loadNextSession(db, orgId, cls.id, now)
+					cls.status === "active" && cls.enrollmentStatus === "active"
+						? await loadNextSession(db, orgId, cls.id, now, cls.enrollmentId)
 						: null,
 					teacher,
 				),
@@ -1143,39 +1153,64 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		if (!row) return c.json({ error: "class not found" }, 404);
 
 		const now = new Date();
-		const [teacher, nextSession, lessons, assignments] = await Promise.all([
-			loadOrgTeacher(db, orgId),
-			row.status === "active"
-				? loadNextSession(db, orgId, row.id, now)
-				: Promise.resolve(null),
-			// Lọc theo enrollment (không theo lớp) để trạng thái riêng như
-			// "vắng" là của chính học viên. `date` null theo cả lớp nên không
-			// cần NULLS LAST; lớp legacy được sắp lại bởi orderStudentLessons.
-			db
-				.select({
-					id: lesson.id,
-					date: lesson.date,
-					day: lesson.day,
-					time: lesson.time,
-					dur: lesson.dur,
-					status: lesson.status,
-					topic: lesson.topic,
-				})
-				.from(lesson)
-				.where(
-					and(
-						eq(lesson.orgId, orgId),
-						eq(lesson.enrollmentId, row.enrollmentId),
+		const [teacher, nextSession, lessonRows, meetingRows, assignments] =
+			await Promise.all([
+				loadOrgTeacher(db, orgId),
+				row.status === "active"
+					? loadNextSession(db, orgId, row.id, now, row.enrollmentId)
+					: Promise.resolve(null),
+				// Lọc theo enrollment (không theo lớp) để trạng thái riêng như
+				// "vắng" là của chính học viên. `date` null theo cả lớp nên không
+				// cần NULLS LAST; lớp legacy được sắp lại bởi orderStudentLessons.
+				db
+					.select({
+						id: lesson.id,
+						date: lesson.date,
+						day: lesson.day,
+						time: lesson.time,
+						dur: lesson.dur,
+						status: lesson.status,
+						topic: lesson.topic,
+						zoom: lesson.zoom,
+					})
+					.from(lesson)
+					.where(
+						and(
+							eq(lesson.orgId, orgId),
+							eq(lesson.enrollmentId, row.enrollmentId),
+						),
+					)
+					.orderBy(
+						asc(lesson.date),
+						asc(lesson.day),
+						asc(lesson.time),
+						asc(lesson.id),
 					),
-				)
-				.orderBy(
-					asc(lesson.date),
-					asc(lesson.day),
-					asc(lesson.time),
-					asc(lesson.id),
-				),
-			loadClassAssignmentItems(db, orgId, s.id, row.id),
-		]);
+				db
+					.select({
+						classId: classSessionMeeting.classId,
+						date: classSessionMeeting.date,
+						meetUrl: classSessionMeeting.meetUrl,
+						recordingUrl: classSessionMeeting.recordingUrl,
+						recordingStatus: classSessionMeeting.recordingStatus,
+					})
+					.from(classSessionMeeting)
+					.where(
+						and(
+							eq(classSessionMeeting.orgId, orgId),
+							eq(classSessionMeeting.classId, row.id),
+						),
+					),
+				loadClassAssignmentItems(db, orgId, s.id, row.id),
+			]);
+
+		const meetingByDate = new Map(meetingRows.map((m) => [m.date, m]));
+		const lessons = lessonRows.map((l) =>
+			toStudentClassLessonWithMeeting(
+				l,
+				l.date ? meetingByDate.get(l.date) : undefined,
+			),
+		);
 
 		const response: StudentClassDetail = {
 			class: {
@@ -1221,11 +1256,12 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		}
 
 		const now = new Date();
+		const classIds = classRows.map((r) => r.id);
 		const [teacher, ...nextSessions] = await Promise.all([
 			loadOrgTeacher(db, orgId),
 			...classRows.map((r) =>
 				r.status === "active"
-					? loadNextSession(db, orgId, r.id, now)
+					? loadNextSession(db, orgId, r.id, now, r.enrollmentId)
 					: Promise.resolve(null),
 			),
 		]);
@@ -1234,35 +1270,57 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			toStudentClass(row, nextSessions[index] ?? null, teacher),
 		);
 
-		const lessonRows = await db
-			.select({
-				id: lesson.id,
-				classId: lesson.classId,
-				className: classTable.name,
-				enrollmentId: lesson.enrollmentId,
-				date: lesson.date,
-				day: lesson.day,
-				time: lesson.time,
-				dur: lesson.dur,
-				status: lesson.status,
-				topic: lesson.topic,
-			})
-			.from(lesson)
-			.innerJoin(enrollment, eq(lesson.enrollmentId, enrollment.id))
-			.innerJoin(classTable, eq(lesson.classId, classTable.id))
-			.where(
-				and(
-					eq(lesson.orgId, orgId),
-					eq(enrollment.studentId, s.id),
-					eq(enrollment.status, "active"),
+		const [lessonRows, meetingRows] = await Promise.all([
+			db
+				.select({
+					id: lesson.id,
+					classId: lesson.classId,
+					className: classTable.name,
+					enrollmentId: lesson.enrollmentId,
+					date: lesson.date,
+					day: lesson.day,
+					time: lesson.time,
+					dur: lesson.dur,
+					status: lesson.status,
+					topic: lesson.topic,
+					zoom: lesson.zoom,
+				})
+				.from(lesson)
+				.innerJoin(enrollment, eq(lesson.enrollmentId, enrollment.id))
+				.innerJoin(classTable, eq(lesson.classId, classTable.id))
+				.where(
+					and(
+						eq(lesson.orgId, orgId),
+						eq(enrollment.studentId, s.id),
+						eq(enrollment.status, "active"),
+					),
+				)
+				.orderBy(
+					asc(lesson.date),
+					asc(lesson.day),
+					asc(lesson.time),
+					asc(lesson.id),
 				),
-			)
-			.orderBy(
-				asc(lesson.date),
-				asc(lesson.day),
-				asc(lesson.time),
-				asc(lesson.id),
-			);
+			db
+				.select({
+					classId: classSessionMeeting.classId,
+					date: classSessionMeeting.date,
+					meetUrl: classSessionMeeting.meetUrl,
+					recordingUrl: classSessionMeeting.recordingUrl,
+					recordingStatus: classSessionMeeting.recordingStatus,
+				})
+				.from(classSessionMeeting)
+				.where(
+					and(
+						eq(classSessionMeeting.orgId, orgId),
+						inArray(classSessionMeeting.classId, classIds),
+					),
+				),
+		]);
+
+		const meetingByKey = new Map(
+			meetingRows.map((m) => [`${m.classId}|${m.date}`, m]),
+		);
 
 		// Gom bài học theo từng lớp để giữ đúng heuristic orderStudentLessons cho lớp legacy
 		const lessonsByClass = new Map<string, typeof lessonRows>();
@@ -1285,15 +1343,12 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			if (rawClassLessons.length === 0) continue;
 
 			const ordered = orderStudentLessons(
-				rawClassLessons.map((l) => ({
-					id: l.id,
-					date: l.date,
-					day: l.day,
-					time: l.time,
-					dur: l.dur,
-					status: l.status,
-					topic: l.topic,
-				})),
+				rawClassLessons.map((l) =>
+					toStudentClassLessonWithMeeting(
+						l,
+						l.date ? meetingByKey.get(`${classRow.id}|${l.date}`) : undefined,
+					),
+				),
 			);
 
 			for (const lessonItem of ordered) {
@@ -1394,7 +1449,10 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const enrollmentId = c.req.param("enrollmentId");
 
 		const [owned] = await db
-			.select({ studentId: enrollment.studentId })
+			.select({
+				studentId: enrollment.studentId,
+				classId: enrollment.classId,
+			})
 			.from(enrollment)
 			.where(and(eq(enrollment.id, enrollmentId), eq(enrollment.orgId, orgId)));
 		if (!owned || owned.studentId !== s.id) {
@@ -1403,6 +1461,12 @@ export function studentRoutes(deps: StudentRouteDeps) {
 
 		const result = await activateEnrollment(db, orgId, enrollmentId);
 		if (result.ok) {
+			await runGoogleSyncTask(deps, () =>
+				syncCalendarAttendeesForClass(googleMeetDepsFrom(deps), {
+					orgId,
+					classId: owned.classId,
+				}),
+			);
 			return c.json({ ok: true });
 		}
 		if (result.error === "class-paused") {
@@ -1512,7 +1576,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			cueTopic: prompt.cueTopic,
 			cuePoints: prompt.cuePoints,
 			audioName: prompt.audioName,
-			...(prompt.audioUrl ? { hasAudio: true } : {}),
+			...(prompt.audioUrl || prompt.audioKey ? { hasAudio: true } : {}),
 			imageUrl: prompt.imageUrl,
 			optionBank: parseQuizOptionBank(prompt.optionBank),
 			// Speaking (#305) không có đáp án — "Hướng dẫn thêm" là hướng dẫn
@@ -1559,7 +1623,11 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const assignmentId = c.req.param("assignmentId");
 		const [row] = await deps
 			.getDb()
-			.select({ audioUrl: assignmentPrompt.audioUrl })
+			.select({
+				audioUrl: assignmentPrompt.audioUrl,
+				audioKey: assignmentPrompt.audioKey,
+				audioName: assignmentPrompt.audioName,
+			})
 			.from(classAssignment)
 			.innerJoin(
 				classAssignmentTarget,
@@ -1584,10 +1652,16 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				),
 			)
 			.limit(1);
-		if (!row?.audioUrl) {
+		if (!row || (!row.audioUrl && !row.audioKey)) {
 			return c.json({ error: "audio not found" }, 404);
 		}
-		return streamStudyPackAudio(row.audioUrl, deps.fetchExternalAudio);
+		return serveStudyPackAudio({
+			audioKey: row.audioKey,
+			audioUrl: row.audioUrl,
+			audioName: row.audioName,
+			getLibraryAudioStore: deps.getLibraryAudioStore,
+			fetchExternalAudio: deps.fetchExternalAudio,
+		});
 	});
 
 	/**
@@ -2258,6 +2332,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 						skill: assignmentTest.skill,
 						part: assignmentPrompt.part,
 						audioUrl: assignmentPrompt.audioUrl,
+						audioKey: assignmentPrompt.audioKey,
 						transcript: assignmentPrompt.transcript,
 					})
 					.from(assignmentTest)
@@ -2291,6 +2366,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 						skill: assignmentPrompt.skill,
 						part: assignmentPrompt.part,
 						audioUrl: assignmentPrompt.audioUrl,
+						audioKey: assignmentPrompt.audioKey,
 						transcript: assignmentPrompt.transcript,
 						writingPart: assignmentPrompt.writingPart,
 						writingType: assignmentPrompt.writingType,
@@ -2331,7 +2407,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			promptType: header[0]?.type ?? "",
 			skill: header[0]?.skill ?? "",
 			part: header[0]?.part ?? "",
-			hasAudio: Boolean(header[0]?.audioUrl),
+			hasAudio: Boolean(header[0]?.audioUrl || header[0]?.audioKey),
 			transcript: header[0]?.transcript ?? "",
 			writing:
 				attempt.mode !== "practice" &&
