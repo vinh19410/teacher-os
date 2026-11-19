@@ -7,20 +7,29 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
+import { Tabs } from "@/components/ui/tabs";
 import { useData } from "@/lib/data-store";
 import { getApiBaseUrl } from "@/lib/repos/api-base-url";
+import { VocabTeacherDecksTab } from "./vocab-teacher-decks-tab";
 
 const MAX_CLONE_DECKS = 50;
 const MAX_CLONE_STATEMENTS = 500;
 const SEARCH_DEBOUNCE_MS = 300;
 
+type DialogTab = "library" | "teacher";
+
+const DIALOG_TABS: Array<{ id: DialogTab; label: string }> = [
+	{ id: "library", label: "Thư viện hệ thống" },
+	{ id: "teacher", label: "Bộ từ đã tạo" },
+];
+
 /**
- * Dialog 2 bước "Thêm từ thư viện" (#361):
- * - Bước 1 (`courses`): duyệt 20 khóa học có sẵn, tìm kiếm theo tên/mô tả.
- * - Bước 2 (`decks`): duyệt danh sách bài học trong khóa, tìm kiếm debounce 300ms,
- *   multi-select qua checkbox, hiển thị chip "Đã có trong lớp" khi trùng `sourceLibraryDeckId`,
- *   kiểm tra giới hạn `decks <= 50` và `decks + words <= 500` ở footer, rồi gọi command bus
+ * Dialog 2 tab "Thêm từ thư viện":
+ * - Tab 1 ("Thư viện hệ thống"): duyệt khóa học có sẵn, chọn bài học và clone qua
  *   `clone-vocab-library-decks`.
+ * - Tab 2 ("Bộ từ đã tạo"): duyệt bộ từ do giáo viên tạo ở nguồn khác, lọc theo
+ *   nguồn/tìm kiếm, chọn nhiều và clone qua `clone-vocab-teacher-decks`.
+ * Cả hai tab dùng chung kiểm tra giới hạn `decks <= 50` và `decks + words <= 500` ở footer.
  */
 export function VocabLibraryDialog({
 	open,
@@ -47,6 +56,7 @@ export function VocabLibraryDialog({
 		return ids;
 	}, [data.vocabDecks, targetClassId]);
 
+	const [activeTab, setActiveTab] = useState<DialogTab>("library");
 	const [step, setStep] = useState<"courses" | "decks">("courses");
 	const [courses, setCourses] = useState<VocabLibraryCourse[]>([]);
 	const [selectedCourse, setSelectedCourse] =
@@ -104,6 +114,7 @@ export function VocabLibraryDialog({
 
 	useEffect(() => {
 		if (!open) return;
+		setActiveTab("library");
 		setStep("courses");
 		setSelectedCourse(null);
 		setDecks([]);
@@ -158,6 +169,16 @@ export function VocabLibraryDialog({
 		selectedCount > MAX_CLONE_DECKS ||
 		selectedCount + totalWords > MAX_CLONE_STATEMENTS;
 
+	const handleTabChange = (nextTabId: string) => {
+		if (submitting) return;
+		if (nextTabId !== "library" && nextTabId !== "teacher") return;
+		if (nextTabId === activeTab) return;
+		setActiveTab(nextTabId);
+		setSelectedDecks(new Map());
+		setBatchCapHint(null);
+		setStatusNotice(null);
+	};
+
 	const handleSelectCourse = (course: VocabLibraryCourse) => {
 		setSelectedCourse(course);
 		setStep("decks");
@@ -180,7 +201,7 @@ export function VocabLibraryDialog({
 		setStatusNotice(null);
 	};
 
-	const handleToggleDeck = (deck: VocabLibraryDeck) => {
+	const handleToggleDeck = (deck: { id: string; wordCount: number }) => {
 		setBatchCapHint(null);
 		setStatusNotice(null);
 		setSelectedDecks((prev) => {
@@ -194,11 +215,13 @@ export function VocabLibraryDialog({
 		});
 	};
 
-	const handleSelectBatchFromFiltered = () => {
+	const handleSelectBatch = (
+		items: ReadonlyArray<{ id: string; wordCount: number }>,
+		unitLabel: string,
+	) => {
 		setStatusNotice(null);
 		const allFilteredSelected =
-			filteredDecks.length > 0 &&
-			filteredDecks.every((d) => selectedDecks.has(d.id));
+			items.length > 0 && items.every((d) => selectedDecks.has(d.id));
 		if (allFilteredSelected) {
 			setSelectedDecks(new Map());
 			setBatchCapHint(null);
@@ -209,7 +232,7 @@ export function VocabLibraryDialog({
 		let runningWords = 0;
 		let skippedDueToCap = 0;
 
-		for (const deck of filteredDecks) {
+		for (const deck of items) {
 			const nextCount = next.size + 1;
 			const nextWords = runningWords + deck.wordCount;
 			if (
@@ -226,7 +249,7 @@ export function VocabLibraryDialog({
 		setSelectedDecks(next);
 		if (skippedDueToCap > 0) {
 			setBatchCapHint(
-				`Đã chọn tối đa ${next.size} bài cho 1 lượt — còn ${skippedDueToCap} bài, hãy thêm tiếp ở lượt sau.`,
+				`Đã chọn tối đa ${next.size} ${unitLabel} cho 1 lượt — còn ${skippedDueToCap} ${unitLabel}, hãy thêm tiếp ở lượt sau.`,
 			);
 		} else {
 			setBatchCapHint(null);
@@ -239,19 +262,27 @@ export function VocabLibraryDialog({
 		setStatusNotice(null);
 		try {
 			const deckIds = [...selectedDecks.keys()];
-			const result = await dispatch({
-				type: "clone-vocab-library-decks",
-				payload: { classId: targetClassId, deckIds },
-			});
+			const result = await dispatch(
+				activeTab === "teacher"
+					? {
+							type: "clone-vocab-teacher-decks",
+							payload: { classId: targetClassId, deckIds },
+						}
+					: {
+							type: "clone-vocab-library-decks",
+							payload: { classId: targetClassId, deckIds },
+						},
+			);
 
 			if (result.kind === "refreshed") {
 				const addedCount = result.updated ?? deckIds.length;
 				const dupCount = result.duplicates?.length ?? 0;
+				const dupUnitLabel = activeTab === "teacher" ? "bộ từ" : "bài";
 				if (dupCount > 0) {
 					toast.warning(
 						isHubMode
-							? `Đã thêm ${addedCount} bộ từ (${dupCount} bài đã có trong hub từ trước).`
-							: `Đã thêm ${addedCount} bộ từ (${dupCount} bài đã có trong lớp từ trước).`,
+							? `Đã thêm ${addedCount} bộ từ (${dupCount} ${dupUnitLabel} đã có trong hub từ trước).`
+							: `Đã thêm ${addedCount} bộ từ (${dupCount} ${dupUnitLabel} đã có trong lớp từ trước).`,
 					);
 				} else {
 					toast.success(
@@ -292,14 +323,17 @@ export function VocabLibraryDialog({
 		}
 	};
 
+	const showConfirmButton =
+		(activeTab === "library" && step === "decks") || activeTab === "teacher";
+
 	return (
 		<Modal
 			open={open}
 			onClose={onClose}
 			title={
-				step === "courses"
-					? "Thêm từ thư viện"
-					: `Thêm từ thư viện · ${selectedCourse?.name ?? ""}`
+				activeTab === "library" && step === "decks"
+					? `Thêm từ thư viện · ${selectedCourse?.name ?? ""}`
+					: "Thêm từ thư viện"
 			}
 			footer={
 				<div className="flex w-full flex-col gap-2">
@@ -331,7 +365,8 @@ export function VocabLibraryDialog({
 					<div className="flex flex-wrap items-center justify-between gap-3">
 						<span
 							data-testid="vocab-library-selection-summary"
-							className="font-mono text-muted-foreground text-xs"
+							aria-live="polite"
+							className="font-mono text-muted-foreground text-xs tabular-nums"
 						>
 							Đã chọn {selectedCount} bộ · {totalWords} từ
 						</span>
@@ -339,7 +374,7 @@ export function VocabLibraryDialog({
 							<Button variant="secondary" type="button" onClick={onClose}>
 								Hủy
 							</Button>
-							{step === "decks" ? (
+							{showConfirmButton ? (
 								<Button
 									type="button"
 									data-testid="vocab-library-confirm-btn"
@@ -358,187 +393,207 @@ export function VocabLibraryDialog({
 				</div>
 			}
 		>
-			{step === "courses" ? (
-				<div className="space-y-3" data-testid="vocab-library-courses-step">
-					<Input
-						data-testid="vocab-library-course-search"
-						value={courseQuery}
-						onChange={(e) => setCourseQuery(e.target.value)}
-						placeholder="Tìm khóa học từ vựng..."
-						aria-label="Tìm khóa học từ vựng"
-					/>
+			<div>
+				<Tabs
+					tabs={DIALOG_TABS}
+					active={activeTab}
+					onChange={handleTabChange}
+					className="mb-4 max-w-full [&>button]:px-2.5 [&>button]:text-xs sm:[&>button]:px-3 sm:[&>button]:text-sm"
+				/>
 
-					{loading ? (
-						<p className="py-6 text-center font-mono text-muted-foreground text-xs">
-							Đang tải danh mục khóa học...
-						</p>
-					) : loadError ? (
-						<div className="space-y-2 py-6 text-center">
-							<p className="text-primary text-sm">
-								Không tải được danh mục thư viện từ vựng.
+				{activeTab === "teacher" ? (
+					<VocabTeacherDecksTab
+						targetClassId={targetClassId}
+						vocabDecks={data.vocabDecks}
+						classes={data.classes}
+						selectedDecks={selectedDecks}
+						onToggleDeck={handleToggleDeck}
+						onSelectBatch={(items) => handleSelectBatch(items, "bộ từ")}
+					/>
+				) : step === "courses" ? (
+					<div className="space-y-3" data-testid="vocab-library-courses-step">
+						<Input
+							data-testid="vocab-library-course-search"
+							value={courseQuery}
+							onChange={(e) => setCourseQuery(e.target.value)}
+							placeholder="Tìm khóa học từ vựng..."
+							aria-label="Tìm khóa học từ vựng"
+						/>
+
+						{loading ? (
+							<p className="py-6 text-center font-mono text-muted-foreground text-xs">
+								Đang tải danh mục khóa học...
 							</p>
-							<Button
-								size="sm"
-								variant="secondary"
-								type="button"
-								onClick={() => void loadCourses()}
-							>
-								Thử lại
-							</Button>
-						</div>
-					) : filteredCourses.length === 0 ? (
-						<p className="py-6 text-center text-muted-foreground text-sm">
-							Không tìm thấy khóa học phù hợp.
-						</p>
-					) : (
-						<div className="max-h-[380px] divide-y divide-border overflow-y-auto rounded-md border border-border">
-							{filteredCourses.map((course) => (
-								<div
-									key={course.id}
-									data-testid={`vocab-library-course-${course.id}`}
-									className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
+						) : loadError ? (
+							<div className="space-y-2 py-6 text-center">
+								<p className="text-primary text-sm">
+									Không tải được danh mục thư viện từ vựng.
+								</p>
+								<Button
+									size="sm"
+									variant="secondary"
+									type="button"
+									onClick={() => void loadCourses()}
 								>
-									<div className="min-w-0 flex-1">
-										<p className="truncate font-medium text-foreground text-sm">
-											{course.name}
-										</p>
-										{course.description || course.target ? (
-											<p className="mt-0.5 truncate text-muted-foreground text-xs">
-												{[course.description, course.target]
-													.filter(Boolean)
-													.join(" · ")}
-											</p>
-										) : null}
-									</div>
-									<div className="flex flex-none items-center gap-3">
-										<span className="font-mono text-[11px] text-muted-foreground">
-											{course.deckCount} bài
-										</span>
-										<Button
-											size="sm"
-											variant="secondary"
-											type="button"
-											data-testid={`vocab-library-select-course-${course.id}`}
-											onClick={() => handleSelectCourse(course)}
-										>
-											Chọn
-										</Button>
-									</div>
-								</div>
-							))}
-						</div>
-					)}
-				</div>
-			) : (
-				<div className="space-y-3" data-testid="vocab-library-decks-step">
-					<div className="flex flex-wrap items-center justify-between gap-2">
-						<Button
-							size="sm"
-							variant="ghost"
-							type="button"
-							data-testid="vocab-library-back-btn"
-							onClick={handleBackToCourses}
-						>
-							← Quay lại danh sách khóa
-						</Button>
-						{filteredDecks.length > 0 ? (
-							<Button
-								size="sm"
-								variant="secondary"
-								type="button"
-								data-testid="vocab-library-select-all"
-								onClick={handleSelectBatchFromFiltered}
-							>
-								Chọn theo lượt
-							</Button>
-						) : null}
-					</div>
-
-					<Input
-						data-testid="vocab-library-deck-search"
-						value={deckQueryInput}
-						onChange={(e) => setDeckQueryInput(e.target.value)}
-						placeholder="Tìm bài học theo tiêu đề..."
-						aria-label="Tìm bài học theo tiêu đề"
-					/>
-
-					{loading ? (
-						<p className="py-6 text-center font-mono text-muted-foreground text-xs">
-							Đang tải danh sách bài học...
-						</p>
-					) : loadError ? (
-						<div className="space-y-2 py-6 text-center">
-							<p className="text-primary text-sm">
-								Không tải được danh sách bài học của khóa này.
+									Thử lại
+								</Button>
+							</div>
+						) : filteredCourses.length === 0 ? (
+							<p className="py-6 text-center text-muted-foreground text-sm">
+								Không tìm thấy khóa học phù hợp.
 							</p>
+						) : (
+							<div className="max-h-[380px] divide-y divide-border overflow-y-auto rounded-md border border-border">
+								{filteredCourses.map((course) => (
+									<div
+										key={course.id}
+										data-testid={`vocab-library-course-${course.id}`}
+										className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
+									>
+										<div className="min-w-0 flex-1">
+											<p className="truncate font-medium text-foreground text-sm">
+												{course.name}
+											</p>
+											{course.description || course.target ? (
+												<p className="mt-0.5 truncate text-muted-foreground text-xs">
+													{[course.description, course.target]
+														.filter(Boolean)
+														.join(" · ")}
+												</p>
+											) : null}
+										</div>
+										<div className="flex flex-none items-center gap-3">
+											<span className="font-mono text-[11px] text-muted-foreground">
+												{course.deckCount} bài
+											</span>
+											<Button
+												size="sm"
+												variant="secondary"
+												type="button"
+												data-testid={`vocab-library-select-course-${course.id}`}
+												onClick={() => handleSelectCourse(course)}
+											>
+												Chọn
+											</Button>
+										</div>
+									</div>
+								))}
+							</div>
+						)}
+					</div>
+				) : (
+					<div className="space-y-3" data-testid="vocab-library-decks-step">
+						<div className="flex flex-wrap items-center justify-between gap-2">
 							<Button
 								size="sm"
-								variant="secondary"
+								variant="ghost"
 								type="button"
-								onClick={() =>
-									selectedCourse ? void loadDecks(selectedCourse.id) : undefined
-								}
+								data-testid="vocab-library-back-btn"
+								onClick={handleBackToCourses}
 							>
-								Thử lại
+								← Quay lại danh sách khóa
 							</Button>
+							{filteredDecks.length > 0 ? (
+								<Button
+									size="sm"
+									variant="secondary"
+									type="button"
+									data-testid="vocab-library-select-all"
+									onClick={() => handleSelectBatch(filteredDecks, "bài")}
+								>
+									Chọn theo lượt
+								</Button>
+							) : null}
 						</div>
-					) : filteredDecks.length === 0 ? (
-						<p className="py-6 text-center text-muted-foreground text-sm">
-							Không có bài học nào khớp từ khóa.
-						</p>
-					) : (
-						<div className="max-h-[340px] divide-y divide-border overflow-y-auto rounded-md border border-border">
-							{filteredDecks.map((deck) => {
-								const checked = selectedDecks.has(deck.id);
-								const alreadyInClass = existingLibraryDeckIds.has(deck.id);
-								return (
-									<label
-										key={deck.id}
-										data-testid={`vocab-library-deck-${deck.id}`}
-										className={`flex cursor-pointer items-center justify-between gap-3 px-4 py-3 transition-colors duration-150 ${
-											checked ? "rounded-md bg-muted" : "hover:bg-muted/50"
-										}`}
-									>
-										<div className="flex min-w-0 flex-1 items-center gap-3">
-											<input
-												type="checkbox"
-												data-testid={`vocab-library-deck-checkbox-${deck.id}`}
-												checked={checked}
-												onChange={() => handleToggleDeck(deck)}
-												className="size-4 accent-[var(--hot)] focus-visible:outline-2 focus-visible:outline-[var(--hot)] focus-visible:outline-offset-2"
-											/>
-											<div className="min-w-0 flex-1">
-												<div className="flex flex-wrap items-center gap-2">
-													<span
-														className={`truncate font-medium text-sm ${
-															checked ? "text-primary" : "text-foreground"
-														}`}
-													>
-														{deck.title}
-													</span>
-													{alreadyInClass ? (
+
+						<Input
+							data-testid="vocab-library-deck-search"
+							value={deckQueryInput}
+							onChange={(e) => setDeckQueryInput(e.target.value)}
+							placeholder="Tìm bài học theo tiêu đề..."
+							aria-label="Tìm bài học theo tiêu đề"
+						/>
+
+						{loading ? (
+							<p className="py-6 text-center font-mono text-muted-foreground text-xs">
+								Đang tải danh sách bài học...
+							</p>
+						) : loadError ? (
+							<div className="space-y-2 py-6 text-center">
+								<p className="text-primary text-sm">
+									Không tải được danh sách bài học của khóa này.
+								</p>
+								<Button
+									size="sm"
+									variant="secondary"
+									type="button"
+									onClick={() =>
+										selectedCourse
+											? void loadDecks(selectedCourse.id)
+											: undefined
+									}
+								>
+									Thử lại
+								</Button>
+							</div>
+						) : filteredDecks.length === 0 ? (
+							<p className="py-6 text-center text-muted-foreground text-sm">
+								Không có bài học nào khớp từ khóa.
+							</p>
+						) : (
+							<div className="max-h-[340px] divide-y divide-border overflow-y-auto rounded-md border border-border">
+								{filteredDecks.map((deck) => {
+									const checked = selectedDecks.has(deck.id);
+									const alreadyInClass = existingLibraryDeckIds.has(deck.id);
+									return (
+										<label
+											key={deck.id}
+											data-testid={`vocab-library-deck-${deck.id}`}
+											className={`flex cursor-pointer items-center justify-between gap-3 px-4 py-3 transition-colors duration-150 ${
+												checked ? "rounded-md bg-muted" : "hover:bg-muted/50"
+											}`}
+										>
+											<div className="flex min-w-0 flex-1 items-center gap-3">
+												<input
+													type="checkbox"
+													data-testid={`vocab-library-deck-checkbox-${deck.id}`}
+													checked={checked}
+													onChange={() => handleToggleDeck(deck)}
+													className="size-4 accent-primary focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+												/>
+												<div className="min-w-0 flex-1">
+													<div className="flex flex-wrap items-center gap-2">
 														<span
-															data-testid={`vocab-library-existing-chip-${deck.id}`}
-															className="rounded rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] text-primary uppercase tracking-widest"
+															className={`truncate font-medium text-sm ${
+																checked ? "text-primary" : "text-foreground"
+															}`}
 														>
-															{isHubMode
-																? "Đã có trong hub"
-																: "Đã có trong lớp"}
+															{deck.title}
 														</span>
-													) : null}
+														{alreadyInClass ? (
+															<span
+																data-testid={`vocab-library-existing-chip-${deck.id}`}
+																className="rounded rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] text-primary uppercase tracking-widest"
+															>
+																{isHubMode
+																	? "Đã có trong hub"
+																	: "Đã có trong lớp"}
+															</span>
+														) : null}
+													</div>
 												</div>
 											</div>
-										</div>
-										<span className="flex-none font-mono text-[11px] text-muted-foreground">
-											{deck.wordCount} từ
-										</span>
-									</label>
-								);
-							})}
-						</div>
-					)}
-				</div>
-			)}
+											<span className="flex-none font-mono text-[11px] text-muted-foreground">
+												{deck.wordCount} từ
+											</span>
+										</label>
+									);
+								})}
+							</div>
+						)}
+					</div>
+				)}
+			</div>
 		</Modal>
 	);
 }

@@ -38,6 +38,11 @@ export const vocabDeck = sqliteTable(
 		 * Chủ đích KHÔNG đặt FK để bộ từ của giáo viên sống sót kể cả khi thư viện được seed/prune lại.
 		 */
 		sourceLibraryDeckId: text("source_library_deck_id"),
+		/**
+		 * Con trỏ provenance tới `vocab_deck.id` khi bộ từ được clone từ một bộ từ khác trong org.
+		 * Chủ đích KHÔNG đặt FK để bản sao vẫn sống sót kể cả khi bộ từ gốc bị xoá.
+		 */
+		sourceDeckId: text("source_deck_id"),
 		createdAt: integer("created_at", { mode: "timestamp_ms" })
 			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 			.notNull(),
@@ -49,6 +54,7 @@ export const vocabDeck = sqliteTable(
 		index("vocab_deck_org_idx").on(table.orgId),
 		index("vocab_deck_class_idx").on(table.classId),
 		index("vocab_deck_source_library_idx").on(table.sourceLibraryDeckId),
+		index("vocab_deck_source_deck_idx").on(table.sourceDeckId),
 	],
 );
 

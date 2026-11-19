@@ -1353,4 +1353,517 @@ describe("teacher vocab kernel sub-routes (/api/kernel/vocab/* & snapshot)", () 
 			body: JSON.stringify({ deckId }),
 		});
 	});
+
+	test("POST /decks/clone clones independent and class decks into class or hub, preserves metadata/words, survives source edits/deletes, supports empty decks, and reports duplicates", async () => {
+		await libsql.insert(schema.classTable).values({
+			id: "class-t1-target",
+			orgId: "org-t1",
+			name: "IELTS Target Class",
+			level: "IELTS",
+			mode: "Online",
+			schedule: "T4",
+			sessionsDone: 0,
+			sessionsTotal: 12,
+			status: "active",
+		});
+
+		// 1) Seed hub deck (classId = null) with metadata, sourceLibraryDeckId, and 9 words (>7 chunk boundary)
+		const hubDeckId = "deck-clone-hub-src";
+		const classDeckId = "deck-clone-class-src";
+		const emptyDeckId = "deck-clone-empty-src";
+		const baseTime = new Date("2026-10-01T00:00:00Z");
+
+		await libsql.insert(schema.vocabDeck).values([
+			{
+				id: hubDeckId,
+				orgId: "org-t1",
+				classId: null,
+				title: "Lesson 3: Environment",
+				lessonNumber: 3,
+				topic: "Climate",
+				lang: "en",
+				sourceLibraryDeckId: "libdeck-origin-1",
+				createdAt: baseTime,
+				updatedAt: baseTime,
+			},
+			{
+				id: classDeckId,
+				orgId: "org-t1",
+				classId: "class-t1",
+				title: "Class A Deck",
+				lessonNumber: 4,
+				topic: "Work",
+				lang: "en",
+				sourceLibraryDeckId: null,
+				createdAt: new Date(baseTime.getTime() + 1000),
+				updatedAt: new Date(baseTime.getTime() + 1000),
+			},
+			{
+				id: emptyDeckId,
+				orgId: "org-t1",
+				classId: null,
+				title: "Empty Hub Deck",
+				lessonNumber: null,
+				topic: null,
+				lang: "vi",
+				sourceLibraryDeckId: null,
+				createdAt: new Date(baseTime.getTime() + 2000),
+				updatedAt: new Date(baseTime.getTime() + 2000),
+			},
+		]);
+
+		const seededHubWords = Array.from({ length: 9 }, (_, idx) => ({
+			id: `w-hub-clone-${idx}`,
+			deckId: hubDeckId,
+			word: idx === 0 ? "cut down on" : `eco-word-${idx}`,
+			entryType: idx === 0 ? ("chunk" as const) : ("word" as const),
+			ipa: idx === 0 ? "/kʌt daʊn ɒn/" : `/iːkoʊ${idx}/`,
+			pos: idx === 0 ? "phr. v." : "n",
+			translation: `nghĩa sinh thái ${idx}`,
+			example: `Example ${idx}.`,
+			audioKey: idx === 0 ? "vocab/org-t1/seed/eco0.mp3" : null,
+			audioUrl: idx === 1 ? "https://cdn.example.com/audio/eco1.mp3" : null,
+			sortOrder: idx,
+			createdAt: baseTime,
+			updatedAt: baseTime,
+		}));
+		await libsql.insert(schema.vocabWord).values([
+			...seededHubWords,
+			{
+				id: "w-class-clone-0",
+				deckId: classDeckId,
+				word: "deadline",
+				entryType: "word",
+				ipa: "/ˈded.laɪn/",
+				pos: "n",
+				translation: "hạn chót",
+				example: "Meet the deadline.",
+				audioKey: null,
+				audioUrl: null,
+				sortOrder: 0,
+				createdAt: baseTime,
+				updatedAt: baseTime,
+			},
+		]);
+
+		// 2) Clone both hub deck + class deck + empty deck into class-t1-target
+		const cloneToClassRes = await app.request("/api/kernel/vocab/decks/clone", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				classId: "class-t1-target",
+				deckIds: [hubDeckId, classDeckId, emptyDeckId],
+			}),
+		});
+		expect(cloneToClassRes.status).toBe(201);
+		const cloneToClassBody = (await cloneToClassRes.json()) as {
+			id: string;
+			updated: number;
+			duplicates: string[];
+		};
+		expect(cloneToClassBody.updated).toBe(3);
+		expect(cloneToClassBody.duplicates).toEqual([]);
+		expect(cloneToClassBody.id).toBeTruthy();
+
+		// Verify snapshot exposes sourceDeckId and metadata for all 3 cloned decks
+		const snapRes = await app.request("/api/kernel", {
+			headers: { "x-test-user": "teacher" },
+		});
+		const snap = (await snapRes.json()) as KernelSnapshot;
+		const clonedHub = snap.vocabDecks.find(
+			(d) => d.classId === "class-t1-target" && d.sourceDeckId === hubDeckId,
+		);
+		const clonedClass = snap.vocabDecks.find(
+			(d) => d.classId === "class-t1-target" && d.sourceDeckId === classDeckId,
+		);
+		const clonedEmpty = snap.vocabDecks.find(
+			(d) => d.classId === "class-t1-target" && d.sourceDeckId === emptyDeckId,
+		);
+		expect(clonedHub).toMatchObject({
+			id: cloneToClassBody.id,
+			classId: "class-t1-target",
+			title: "Lesson 3: Environment",
+			lessonNumber: 3,
+			topic: "Climate",
+			lang: "en",
+			wordCount: 9,
+			sourceLibraryDeckId: "libdeck-origin-1",
+			sourceDeckId: hubDeckId,
+		});
+		expect(clonedClass).toMatchObject({
+			classId: "class-t1-target",
+			title: "Class A Deck",
+			lessonNumber: 4,
+			topic: "Work",
+			lang: "en",
+			wordCount: 1,
+			sourceDeckId: classDeckId,
+		});
+		expect(clonedEmpty).toMatchObject({
+			classId: "class-t1-target",
+			title: "Empty Hub Deck",
+			lessonNumber: null,
+			topic: null,
+			lang: "vi",
+			wordCount: 0,
+			sourceDeckId: emptyDeckId,
+		});
+		if (!clonedHub || !clonedClass || !clonedEmpty) {
+			throw new Error("expected all 3 cloned decks in snapshot");
+		}
+
+		// Verify all word fields copied cleanly
+		const clonedWordsRes = await app.request(
+			`/api/kernel/vocab/decks/${clonedHub.id}/words`,
+			{ headers: { "x-test-user": "teacher" } },
+		);
+		expect(clonedWordsRes.status).toBe(200);
+		const clonedWords = vocabTeacherWordsResponseSchema.parse(
+			await clonedWordsRes.json(),
+		);
+		expect(clonedWords.words).toHaveLength(9);
+		expect(clonedWords.words[0]).toMatchObject({
+			deckId: clonedHub.id,
+			word: "cut down on",
+			entryType: "chunk",
+			ipa: "/kʌt daʊn ɒn/",
+			pos: "phr. v.",
+			translation: "nghĩa sinh thái 0",
+			example: "Example 0.",
+			audioKey: "vocab/org-t1/seed/eco0.mp3",
+			audioUrl: null,
+			sortOrder: 0,
+		});
+		expect(clonedWords.words[1]).toMatchObject({
+			word: "eco-word-1",
+			audioKey: null,
+			audioUrl: "https://cdn.example.com/audio/eco1.mp3",
+			sortOrder: 1,
+		});
+		expect(clonedWords.words[8]?.sortOrder).toBe(8);
+
+		// 3) Re-cloning hubDeckId to the same target class reports duplicates: [hubDeckId]
+		const dupCloneRes = await app.request("/api/kernel/vocab/decks/clone", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				classId: "class-t1-target",
+				deckIds: [hubDeckId],
+			}),
+		});
+		expect(dupCloneRes.status).toBe(201);
+		const dupCloneBody = (await dupCloneRes.json()) as {
+			id: string;
+			updated: number;
+			duplicates: string[];
+		};
+		expect(dupCloneBody.updated).toBe(1);
+		expect(dupCloneBody.duplicates).toEqual([hubDeckId]);
+
+		// 4) Clone class deck into hub (classId: null)
+		const cloneToHubRes = await app.request("/api/kernel/vocab/decks/clone", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				classId: null,
+				deckIds: [classDeckId],
+			}),
+		});
+		expect(cloneToHubRes.status).toBe(201);
+		const cloneToHubBody = (await cloneToHubRes.json()) as {
+			id: string;
+			updated: number;
+			duplicates: string[];
+		};
+		expect(cloneToHubBody.updated).toBe(1);
+		expect(cloneToHubBody.duplicates).toEqual([]);
+
+		// 5) Edit and delete source deck -> cloned deck & words remain intact
+		await app.request("/api/kernel/vocab/decks/rename", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				deckId: hubDeckId,
+				title: "Edited Source Title",
+			}),
+		});
+		await app.request("/api/kernel/vocab/decks/delete", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({ deckId: hubDeckId }),
+		});
+
+		const snapAfterDel = (await (
+			await app.request("/api/kernel", {
+				headers: { "x-test-user": "teacher" },
+			})
+		).json()) as KernelSnapshot;
+		expect(
+			snapAfterDel.vocabDecks.find((d) => d.id === clonedHub.id),
+		).toMatchObject({
+			title: "Lesson 3: Environment",
+			wordCount: 9,
+			sourceDeckId: hubDeckId,
+		});
+		expect(
+			snapAfterDel.vocabDecks.find((d) => d.id === cloneToHubBody.id),
+		).toMatchObject({
+			classId: null,
+			title: "Class A Deck",
+			sourceDeckId: classDeckId,
+		});
+
+		// Clean up created decks
+		for (const dId of [
+			classDeckId,
+			emptyDeckId,
+			clonedHub.id,
+			clonedClass.id,
+			clonedEmpty.id,
+			dupCloneBody.id,
+			cloneToHubBody.id,
+		]) {
+			await app.request("/api/kernel/vocab/decks/delete", {
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({ deckId: dId }),
+			});
+		}
+	});
+
+	test("POST /decks/clone enforces auth, IDOR guards, duplicate input rejection, and size limits", async () => {
+		// Unauthenticated -> 401
+		const unauthRes = await app.request("/api/kernel/vocab/decks/clone", {
+			method: "POST",
+			headers: {
+				Origin: TEACHER_ORIGIN,
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({ classId: null, deckIds: ["deck-1"] }),
+		});
+		expect(unauthRes.status).toBe(401);
+
+		// Invalid JSON -> 400
+		const badJsonRes = await app.request("/api/kernel/vocab/decks/clone", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: "{not-json",
+		});
+		expect(badJsonRes.status).toBe(400);
+
+		// Duplicate IDs inside deckIds -> 400 VOCAB_DECK_CLONE_DUPLICATE_DECK
+		const dupInputRes = await app.request("/api/kernel/vocab/decks/clone", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				classId: "class-t1",
+				deckIds: ["deck-a", "deck-a"],
+			}),
+		});
+		expect(dupInputRes.status).toBe(400);
+		expect(await dupInputRes.json()).toMatchObject({
+			code: VOCAB_ERROR_CODES.DECK_CLONE_DUPLICATE_DECK,
+		});
+
+		// Cross-org classId -> 404
+		const ownDeckRes = await app.request("/api/kernel/vocab/decks", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({ classId: null, title: "Own Guard Deck" }),
+		});
+		const { id: ownDeckId } = (await ownDeckRes.json()) as { id: string };
+
+		const foreignClassRes = await app.request("/api/kernel/vocab/decks/clone", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				classId: "class-t2",
+				deckIds: [ownDeckId],
+			}),
+		});
+		expect(foreignClassRes.status).toBe(404);
+
+		// Cross-org deckIds (mixed with own deck) -> 404 & 0 rows created
+		const countBefore = (
+			await libsql
+				.select({ id: schema.vocabDeck.id })
+				.from(schema.vocabDeck)
+				.where(eq(schema.vocabDeck.classId, "class-t1"))
+		).length;
+
+		const foreignDeckRes = await app.request("/api/kernel/vocab/decks/clone", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				classId: "class-t1",
+				deckIds: [ownDeckId, "deck-org2"],
+			}),
+		});
+		expect(foreignDeckRes.status).toBe(404);
+		expect(await foreignDeckRes.json()).toMatchObject({
+			code: VOCAB_ERROR_CODES.DECK_NOT_FOUND,
+		});
+
+		const countAfter = (
+			await libsql
+				.select({ id: schema.vocabDeck.id })
+				.from(schema.vocabDeck)
+				.where(eq(schema.vocabDeck.classId, "class-t1"))
+		).length;
+		expect(countAfter).toBe(countBefore);
+
+		// > 50 deckIds -> 422 VOCAB_DECK_CLONE_TOO_LARGE
+		const fiftyOneRes = await app.request("/api/kernel/vocab/decks/clone", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				classId: "class-t1",
+				deckIds: Array.from({ length: 51 }, (_, i) => `deck-cap-${i}`),
+			}),
+		});
+		expect(fiftyOneRes.status).toBe(422);
+		expect(await fiftyOneRes.json()).toMatchObject({
+			code: VOCAB_ERROR_CODES.DECK_CLONE_TOO_LARGE,
+		});
+
+		// decks + words > 500 -> 422 VOCAB_DECK_CLONE_TOO_LARGE
+		const bigDeckId = "deck-clone-too-large";
+		await libsql.insert(schema.vocabDeck).values({
+			id: bigDeckId,
+			orgId: "org-t1",
+			classId: null,
+			title: "500 Words Deck",
+			lang: "en",
+		});
+		const fiveHundredWords = Array.from({ length: 500 }, (_, i) => ({
+			id: `w-big-${i}`,
+			deckId: bigDeckId,
+			word: `bigword-${i}`,
+			translation: `nghĩa ${i}`,
+			sortOrder: i,
+		}));
+		for (let i = 0; i < fiveHundredWords.length; i += 20) {
+			await libsql
+				.insert(schema.vocabWord)
+				.values(fiveHundredWords.slice(i, i + 20));
+		}
+
+		const tooManyWordsRes = await app.request("/api/kernel/vocab/decks/clone", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				classId: "class-t1",
+				deckIds: [bigDeckId],
+			}),
+		});
+		expect(tooManyWordsRes.status).toBe(422);
+		expect(await tooManyWordsRes.json()).toMatchObject({
+			code: VOCAB_ERROR_CODES.DECK_CLONE_TOO_LARGE,
+		});
+
+		// Cleanup
+		for (const dId of [ownDeckId, bigDeckId]) {
+			await app.request("/api/kernel/vocab/decks/delete", {
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({ deckId: dId }),
+			});
+		}
+	});
+
+	test("PUT /words/:wordId/audio keeps shared R2 audioKey while cloned word still references it, and deletes it once unreferenced", async () => {
+		const deckRes = await app.request("/api/kernel/vocab/decks", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				classId: null,
+				title: "Shared Audio Source Deck",
+				lang: "en",
+			}),
+		});
+		expect(deckRes.status).toBe(201);
+		const { id: srcDeckId } = (await deckRes.json()) as { id: string };
+
+		const wordRes = await app.request("/api/kernel/vocab/words/upsert", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				deckId: srcDeckId,
+				word: "harmony",
+				translation: "sự hài hoà",
+				sortOrder: 0,
+			}),
+		});
+		expect(wordRes.status).toBe(201);
+		const { id: srcWordId } = (await wordRes.json()) as { id: string };
+
+		const uploadAudio = async (wordId: string, bytes: Uint8Array) =>
+			app.request(`/api/kernel/vocab/words/${wordId}/audio`, {
+				method: "PUT",
+				headers: {
+					"x-test-user": "teacher",
+					Origin: TEACHER_ORIGIN,
+					"Content-Type": "audio/mpeg",
+					"Content-Length": String(bytes.byteLength),
+					"X-File-Name": encodeURIComponent("harmony.mp3"),
+				},
+				body: bytes,
+			});
+
+		// 1) Upload original audio on source word
+		const firstUploadRes = await uploadAudio(srcWordId, mp3Bytes(16, 1));
+		expect(firstUploadRes.status).toBe(200);
+		const { audioKey: sharedKey } = (await firstUploadRes.json()) as {
+			audioKey: string;
+		};
+		expect(mediaStore.objects.has(sharedKey)).toBe(true);
+
+		// 2) Clone source deck to class-t1
+		const cloneRes = await app.request("/api/kernel/vocab/decks/clone", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				classId: "class-t1",
+				deckIds: [srcDeckId],
+			}),
+		});
+		expect(cloneRes.status).toBe(201);
+		const { id: clonedDeckId } = (await cloneRes.json()) as { id: string };
+
+		const clonedWordsRes = await app.request(
+			`/api/kernel/vocab/decks/${clonedDeckId}/words`,
+			{ headers: { "x-test-user": "teacher" } },
+		);
+		const clonedWords = vocabTeacherWordsResponseSchema.parse(
+			await clonedWordsRes.json(),
+		);
+		const clonedWord = clonedWords.words[0];
+		if (!clonedWord) throw new Error("expected cloned word");
+		expect(clonedWord.audioKey).toBe(sharedKey);
+
+		// 3) Replace audio on source word -> sharedKey MUST stay in R2 because cloned word still references it
+		const replaceSrcRes = await uploadAudio(srcWordId, mp3Bytes(24, 2));
+		expect(replaceSrcRes.status).toBe(200);
+		expect(mediaStore.objects.has(sharedKey)).toBe(true);
+
+		const getClonedAudioRes = await app.request(
+			`/api/kernel/vocab/words/${clonedWord.id}/audio`,
+			{ headers: { "x-test-user": "teacher" } },
+		);
+		expect(getClonedAudioRes.status).toBe(200);
+
+		// 4) Replace audio on cloned word too -> now no row references sharedKey, so R2 object IS deleted
+		const replaceClonedRes = await uploadAudio(clonedWord.id, mp3Bytes(32, 3));
+		expect(replaceClonedRes.status).toBe(200);
+		expect(mediaStore.objects.has(sharedKey)).toBe(false);
+
+		// Cleanup
+		for (const dId of [srcDeckId, clonedDeckId]) {
+			await app.request("/api/kernel/vocab/decks/delete", {
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({ deckId: dId }),
+			});
+		}
+	});
 });

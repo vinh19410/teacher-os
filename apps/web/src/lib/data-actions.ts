@@ -386,6 +386,11 @@ export type KernelAction =
 			payload: { classId: string | null; deckIds: string[] };
 	  }
 	| {
+			/** Clone các bộ từ đã tạo bởi giáo viên về lớp đích hoặc hub (classId = null). */
+			type: "clone-vocab-teacher-decks";
+			payload: { classId: string | null; deckIds: string[] };
+	  }
+	| {
 			/** Gợi ý bộ từ vựng cho học viên (#363, idempotent). */
 			type: "suggest-vocab-deck";
 			payload: {

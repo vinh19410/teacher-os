@@ -366,6 +366,11 @@ export function kernelCommand(action: KernelAction): KernelRequest {
 				path: "/api/kernel/vocab-library/clone",
 				body: { ...action.payload },
 			};
+		case "clone-vocab-teacher-decks":
+			return {
+				path: "/api/kernel/vocab/decks/clone",
+				body: { ...action.payload },
+			};
 		case "suggest-vocab-deck":
 			return {
 				path: "/api/kernel/vocab/suggestions",

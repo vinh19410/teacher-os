@@ -4,6 +4,7 @@ import {
 	VOCAB_DURATION_MAX_MS,
 	VOCAB_ERROR_CODES,
 	vocabAnswerSchema,
+	vocabDeckCloneSchema,
 	vocabDeckCreateSchema,
 	vocabDeckCsvImportSchema,
 	vocabDeckWordsImportSchema,
@@ -742,5 +743,88 @@ describe("vocab contracts (.strict() and boundary validation)", () => {
 				],
 			}).success,
 		).toBe(false);
+	});
+
+	it("validates vocabDeckCloneSchema boundaries (1..50 deckIds), classId default, strictness, and deck clone error codes", () => {
+		const defaultClass = vocabDeckCloneSchema.safeParse({
+			deckIds: ["deck-1", "deck-2"],
+		});
+		expect(defaultClass.success).toBe(true);
+		if (defaultClass.success) {
+			expect(defaultClass.data.classId).toBeNull();
+			expect(defaultClass.data.deckIds).toEqual(["deck-1", "deck-2"]);
+		}
+
+		expect(
+			vocabDeckCloneSchema.safeParse({
+				classId: "class-1",
+				deckIds: ["deck-1"],
+			}).success,
+		).toBe(true);
+
+		expect(
+			vocabDeckCloneSchema.safeParse({
+				classId: null,
+				deckIds: ["deck-1"],
+			}).success,
+		).toBe(true);
+
+		expect(
+			vocabDeckCloneSchema.safeParse({
+				classId: "",
+				deckIds: ["deck-1"],
+			}).success,
+		).toBe(false);
+
+		expect(
+			vocabDeckCloneSchema.safeParse({
+				classId: "class-1",
+				deckIds: [],
+			}).success,
+		).toBe(false);
+
+		expect(
+			vocabDeckCloneSchema.safeParse({
+				classId: "class-1",
+				deckIds: [""],
+			}).success,
+		).toBe(false);
+
+		const fiftyDecks = Array.from(
+			{ length: 50 },
+			(_, idx) => `deck-${idx + 1}`,
+		);
+		expect(
+			vocabDeckCloneSchema.safeParse({
+				classId: "class-1",
+				deckIds: fiftyDecks,
+			}).success,
+		).toBe(true);
+
+		const fiftyOneDecks = Array.from(
+			{ length: 51 },
+			(_, idx) => `deck-${idx + 1}`,
+		);
+		expect(
+			vocabDeckCloneSchema.safeParse({
+				classId: "class-1",
+				deckIds: fiftyOneDecks,
+			}).success,
+		).toBe(false);
+
+		expect(
+			vocabDeckCloneSchema.safeParse({
+				classId: "class-1",
+				deckIds: ["deck-1"],
+				extraField: true,
+			}).success,
+		).toBe(false);
+
+		expect(VOCAB_ERROR_CODES.DECK_CLONE_TOO_LARGE).toBe(
+			"VOCAB_DECK_CLONE_TOO_LARGE",
+		);
+		expect(VOCAB_ERROR_CODES.DECK_CLONE_DUPLICATE_DECK).toBe(
+			"VOCAB_DECK_CLONE_DUPLICATE_DECK",
+		);
 	});
 });

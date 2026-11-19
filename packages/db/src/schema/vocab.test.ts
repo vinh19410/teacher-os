@@ -552,7 +552,16 @@ describe("vocab_card polymorphic word_id & migration 0039 (#366)", () => {
 
 			const db = drizzle(client, { schema });
 			const [legacyDeck] = await db
-				.select()
+				.select({
+					id: schema.vocabDeck.id,
+					orgId: schema.vocabDeck.orgId,
+					classId: schema.vocabDeck.classId,
+					title: schema.vocabDeck.title,
+					lessonNumber: schema.vocabDeck.lessonNumber,
+					topic: schema.vocabDeck.topic,
+					lang: schema.vocabDeck.lang,
+					sourceLibraryDeckId: schema.vocabDeck.sourceLibraryDeckId,
+				})
 				.from(schema.vocabDeck)
 				.where(eq(schema.vocabDeck.id, "deck-legacy"));
 			expect(legacyDeck).toMatchObject({
@@ -574,14 +583,16 @@ describe("vocab_card polymorphic word_id & migration 0039 (#366)", () => {
 				example: null,
 			});
 
-			await db.insert(schema.vocabDeck).values({
-				id: "deck-lesson-1",
-				orgId: "org-legacy",
-				classId: null,
-				title: "Lesson 01 – Friends & Introductions",
-				lessonNumber: 1,
-				topic: "Friends & Introductions",
-				lang: "en",
+			await client.execute({
+				sql: "INSERT INTO vocab_deck (id, org_id, class_id, title, lesson_number, topic, lang, created_at, updated_at) VALUES (?, ?, NULL, ?, ?, ?, ?, 1700000000000, 1700000000000)",
+				args: [
+					"deck-lesson-1",
+					"org-legacy",
+					"Lesson 01 – Friends & Introductions",
+					1,
+					"Friends & Introductions",
+					"en",
+				],
 			});
 			await db.insert(schema.vocabWord).values({
 				id: "chunk-1",
@@ -603,6 +614,104 @@ describe("vocab_card polymorphic word_id & migration 0039 (#366)", () => {
 				entryType: "chunk",
 				pos: null,
 				example: "I'm from Hue, in the centre of Vietnam.",
+			});
+		} finally {
+			client.close();
+		}
+	});
+
+	it("rehearses 0079 additive migration on populated vocab_deck rows and preserves cloned decks when source deck is deleted", async () => {
+		const client = createClient({ url: "file::memory:" });
+		try {
+			const files = readdirSync(MIGRATIONS_DIR)
+				.filter((f) => f.endsWith(".sql"))
+				.sort();
+			const idx0079 = files.findIndex((f) => f.startsWith("0079_"));
+			expect(idx0079).toBeGreaterThan(0);
+
+			for (const file of files.slice(0, idx0079)) {
+				const rawSql = readFileSync(join(MIGRATIONS_DIR, file), "utf8");
+				for (const stmt of rawSql
+					.split("--> statement-breakpoint")
+					.map((s) => s.trim())
+					.filter(Boolean)) {
+					await client.execute(stmt);
+				}
+			}
+
+			await client.execute({
+				sql: "INSERT INTO organization (id, name, created_at) VALUES (?, ?, 1700000000000)",
+				args: ["org-clone", "Clone Org"],
+			});
+			await client.execute({
+				sql: "INSERT INTO class (id, org_id, name) VALUES (?, ?, ?)",
+				args: ["class-clone", "org-clone", "IELTS 6.0"],
+			});
+			await client.execute({
+				sql: "INSERT INTO vocab_deck (id, org_id, class_id, title, lesson_number, topic, lang, created_at, updated_at) VALUES (?, ?, NULL, ?, 1, ?, 'en', 1700000000000, 1700000000000)",
+				args: ["deck-source", "org-clone", "Hub Source Deck", "Travel"],
+			});
+
+			const file0079 = files[idx0079] as string;
+			const sql0079 = readFileSync(join(MIGRATIONS_DIR, file0079), "utf8");
+			for (const stmt of sql0079
+				.split("--> statement-breakpoint")
+				.map((s) => s.trim())
+				.filter(Boolean)) {
+				await client.execute(stmt);
+			}
+
+			await client.execute("PRAGMA foreign_keys = ON;");
+
+			const db = drizzle(client, { schema });
+
+			// 1. Existing row preserved with sourceDeckId = null
+			const [existingDeck] = await db
+				.select()
+				.from(schema.vocabDeck)
+				.where(eq(schema.vocabDeck.id, "deck-source"));
+			expect(existingDeck).toMatchObject({
+				id: "deck-source",
+				orgId: "org-clone",
+				classId: null,
+				title: "Hub Source Deck",
+				lessonNumber: 1,
+				topic: "Travel",
+				sourceDeckId: null,
+			});
+
+			// 2. Verify vocab_deck_source_deck_idx exists
+			const idxRows = await client.execute(
+				"SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'vocab_deck'",
+			);
+			const idxNames = idxRows.rows.map((r) => String(r.name));
+			expect(idxNames).toContain("vocab_deck_source_deck_idx");
+
+			// 3. New row can store sourceDeckId and survives when source deck is deleted
+			await db.insert(schema.vocabDeck).values({
+				id: "deck-cloned",
+				orgId: "org-clone",
+				classId: "class-clone",
+				title: "Hub Source Deck",
+				lessonNumber: 1,
+				topic: "Travel",
+				lang: "en",
+				sourceDeckId: "deck-source",
+			});
+
+			await db
+				.delete(schema.vocabDeck)
+				.where(eq(schema.vocabDeck.id, "deck-source"));
+
+			const [survivingClone] = await db
+				.select()
+				.from(schema.vocabDeck)
+				.where(eq(schema.vocabDeck.id, "deck-cloned"));
+			expect(survivingClone).toMatchObject({
+				id: "deck-cloned",
+				classId: "class-clone",
+				title: "Hub Source Deck",
+				sourceDeckId: "deck-source",
 			});
 		} finally {
 			client.close();
