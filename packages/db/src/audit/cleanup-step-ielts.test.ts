@@ -62,7 +62,7 @@ const DDL = [
 		part TEXT NOT NULL DEFAULT 'p1',
 		title TEXT NOT NULL DEFAULT '',
 		source TEXT NOT NULL DEFAULT '',
-		updated_at INTEGER NOT NULL DEFAULT 0
+		created_at INTEGER NOT NULL DEFAULT 0
 	)`,
 	`CREATE TABLE study_pack (
 		id TEXT PRIMARY KEY,

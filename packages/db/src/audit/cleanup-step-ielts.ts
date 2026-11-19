@@ -443,15 +443,15 @@ export function buildStepIeltsCleanupPlan(
 		}
 	}
 
-	// 4. assignment_prompt
+	// 4. assignment_prompt (không có cột updated_at trong schema)
 	for (const item of auditResult.assignmentPrompts) {
 		if (item.matchSource) {
 			statements.push({
-				sql: "UPDATE assignment_prompt SET source = '', updated_at = cast(unixepoch('subsecond') * 1000 as integer) WHERE id = ?",
+				sql: "UPDATE assignment_prompt SET source = '' WHERE id = ?",
 				args: [item.id],
 			});
 			rollbackStatements.push({
-				sql: "UPDATE assignment_prompt SET source = ?, updated_at = cast(unixepoch('subsecond') * 1000 as integer) WHERE id = ?",
+				sql: "UPDATE assignment_prompt SET source = ? WHERE id = ?",
 				args: [item.source, item.id],
 			});
 		}
