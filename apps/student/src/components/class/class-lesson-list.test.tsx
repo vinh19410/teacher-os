@@ -124,8 +124,8 @@ describe("ClassLessonList — lớp tạm dừng (#694)", () => {
 	});
 });
 
-describe("ClassLessonList — Google Meet & Recording (#816)", () => {
-	test("hiển thị 'Vào lớp (Google Meet)' cho buổi upcoming chưa kết thúc và ẩn khi đã kết thúc/huỷ/nghỉ lễ/đã học", () => {
+describe("ClassLessonList — Zoom & Recording (#816)", () => {
+	test("hiển thị 'Vào lớp (Zoom)' cho buổi upcoming chưa kết thúc và ẩn khi đã kết thúc/huỷ/nghỉ lễ/đã học", () => {
 		render(
 			<ClassLessonList
 				classId="c1"
@@ -135,35 +135,35 @@ describe("ClassLessonList — Google Meet & Recording (#816)", () => {
 						status: "upcoming",
 						date: "2026-11-25",
 						topic: "Upcoming with Meet",
-						meetUrl: "https://meet.google.com/class-upcoming",
+						joinUrl: "https://zoom.us/j/123456789",
 					}),
 					lesson({
 						id: "l-ended",
 						status: "upcoming",
 						date: "2026-11-18",
 						topic: "Ended with Meet",
-						meetUrl: "https://meet.google.com/class-ended",
+						joinUrl: "https://zoom.us/j/123456789",
 					}),
 					lesson({
 						id: "l-cancelled",
 						status: "cancelled",
 						date: "2026-11-26",
 						topic: "Cancelled with Meet",
-						meetUrl: "https://meet.google.com/class-cancelled",
+						joinUrl: "https://zoom.us/j/123456789",
 					}),
 					lesson({
 						id: "l-holiday",
 						status: "holiday",
 						date: "2026-11-27",
 						topic: "Holiday with Meet",
-						meetUrl: "https://meet.google.com/class-holiday",
+						joinUrl: "https://zoom.us/j/123456789",
 					}),
 					lesson({
 						id: "l-completed",
 						status: "completed",
 						date: "2026-11-10",
 						topic: "Completed with Meet",
-						meetUrl: "https://meet.google.com/class-completed",
+						joinUrl: "https://zoom.us/j/123456789",
 					}),
 				]}
 				todayISO={TODAY}
@@ -174,11 +174,9 @@ describe("ClassLessonList — Google Meet & Recording (#816)", () => {
 		const upcomingItem = screen.getByText("Upcoming with Meet").closest("li");
 		expect(upcomingItem).not.toBeNull();
 		const meetLink = within(upcomingItem as HTMLElement).getByRole("link", {
-			name: "Vào lớp (Google Meet)",
+			name: "Vào lớp (Zoom)",
 		});
-		expect(meetLink.getAttribute("href")).toBe(
-			"https://meet.google.com/class-upcoming",
-		);
+		expect(meetLink.getAttribute("href")).toBe("https://zoom.us/j/123456789");
 		expect(meetLink.getAttribute("target")).toBe("_blank");
 		expect(meetLink.getAttribute("rel")).toBe("noopener noreferrer");
 
@@ -190,12 +188,12 @@ describe("ClassLessonList — Google Meet & Recording (#816)", () => {
 		]) {
 			const item = screen.getByText(topic).closest("li") as HTMLElement;
 			expect(
-				within(item).queryByRole("link", { name: "Vào lớp (Google Meet)" }),
+				within(item).queryByRole("link", { name: "Vào lớp (Zoom)" }),
 			).toBeNull();
 		}
 	});
 
-	test("ẩn 'Vào lớp (Google Meet)' khi lớp tạm dừng (isPaused=true)", () => {
+	test("ẩn 'Vào lớp (Zoom)' khi lớp tạm dừng (isPaused=true)", () => {
 		render(
 			<ClassLessonList
 				classId="c1"
@@ -205,7 +203,7 @@ describe("ClassLessonList — Google Meet & Recording (#816)", () => {
 						id: "l-paused",
 						status: "upcoming",
 						date: "2026-11-25",
-						meetUrl: "https://meet.google.com/class-paused",
+						joinUrl: "https://zoom.us/j/123456789",
 					}),
 				]}
 				todayISO={TODAY}
@@ -213,9 +211,7 @@ describe("ClassLessonList — Google Meet & Recording (#816)", () => {
 			/>,
 		);
 
-		expect(
-			screen.queryByRole("link", { name: "Vào lớp (Google Meet)" }),
-		).toBeNull();
+		expect(screen.queryByRole("link", { name: "Vào lớp (Zoom)" })).toBeNull();
 	});
 
 	test("hiển thị 'Xem recording' khi có recordingUrl (trừ cancelled/holiday) và 'Đang chờ recording' khi pending sau buổi", () => {
@@ -228,7 +224,7 @@ describe("ClassLessonList — Google Meet & Recording (#816)", () => {
 						status: "completed",
 						date: "2026-11-10",
 						topic: "Completed with recording",
-						recordingUrl: "https://drive.google.com/file/d/class-rec-1/view",
+						recordingUrl: "https://zoom.us/rec/share/class-rec-1",
 						recordingStatus: "ready",
 					}),
 					lesson({
@@ -260,7 +256,7 @@ describe("ClassLessonList — Google Meet & Recording (#816)", () => {
 						status: "cancelled",
 						date: "2026-11-15",
 						topic: "Cancelled with recording",
-						recordingUrl: "https://drive.google.com/file/d/cancelled/view",
+						recordingUrl: "https://zoom.us/rec/share/cancelled",
 						recordingStatus: "ready",
 					}),
 					lesson({
@@ -268,7 +264,7 @@ describe("ClassLessonList — Google Meet & Recording (#816)", () => {
 						status: "holiday",
 						date: "2026-11-16",
 						topic: "Holiday with recording",
-						recordingUrl: "https://drive.google.com/file/d/holiday/view",
+						recordingUrl: "https://zoom.us/rec/share/holiday",
 						recordingStatus: "ready",
 					}),
 				]}
@@ -284,7 +280,7 @@ describe("ClassLessonList — Google Meet & Recording (#816)", () => {
 			name: "Xem recording",
 		});
 		expect(recLink.getAttribute("href")).toBe(
-			"https://drive.google.com/file/d/class-rec-1/view",
+			"https://zoom.us/rec/share/class-rec-1",
 		);
 		expect(recLink.getAttribute("target")).toBe("_blank");
 		expect(recLink.getAttribute("rel")).toBe("noopener noreferrer");
@@ -314,5 +310,33 @@ describe("ClassLessonList — Google Meet & Recording (#816)", () => {
 			).toBeNull();
 			expect(within(item).queryByText("Đang chờ recording")).toBeNull();
 		}
+	});
+
+	test("hiển thị mật khẩu recording kèm nút sao chép khi có recordingPassword", () => {
+		render(
+			<ClassLessonList
+				classId="c1"
+				lessons={[
+					lesson({
+						id: "l-pass",
+						status: "completed",
+						date: "2026-11-10",
+						topic: "Has passcode",
+						recordingUrl: "https://zoom.us/rec/share/pass-1",
+						recordingPassword: "Ab3dEf",
+						recordingStatus: "ready",
+					}),
+				]}
+				todayISO={TODAY}
+				now={NOW}
+			/>,
+		);
+		const item = screen.getByText("Has passcode").closest("li") as HTMLElement;
+		expect(within(item).getByText("Ab3dEf")).toBeTruthy();
+		expect(
+			within(item).getByRole("button", {
+				name: "Sao chép mật khẩu recording",
+			}),
+		).toBeTruthy();
 	});
 });

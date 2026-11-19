@@ -221,11 +221,8 @@ describe("account role separation round-trip", () => {
 			const body = (await res.json()) as { url?: string };
 			const authorize = new URL(body.url ?? "");
 			// Chọn lại tài khoản Google luôn được offer: sau khi bị chặn role
-			// mismatch, người dùng phải chọn được Gmail khác (issue #545), kết hợp
-			// `consent` để Google trả offline refresh token cho Google Meet (#816).
-			expect(authorize.searchParams.get("prompt")).toBe(
-				"select_account consent",
-			);
+			// mismatch, người dùng phải chọn được Gmail khác (issue #545).
+			expect(authorize.searchParams.get("prompt")).toBe("select_account");
 			const state = authorize.searchParams.get("state");
 			expect(state).toBeTruthy();
 			const row = await raw.execute({

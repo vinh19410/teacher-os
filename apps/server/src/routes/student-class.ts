@@ -118,13 +118,13 @@ export async function loadNextSession(
 		// time lệch format (end == null) → không đoán, coi là chưa kết thúc
 		// (phòng thủ invariant vỡ, nhất quán NaN→false với client #393).
 		if (end == null || end > now.getTime()) {
-			let meetUrl: string | undefined;
+			let joinUrl: string | undefined;
 			if (row.status !== "cancelled" && row.status !== "holiday") {
 				if (row.zoom) {
-					meetUrl = row.zoom;
+					joinUrl = row.zoom;
 				} else {
 					const [meeting] = await db
-						.select({ meetUrl: classSessionMeeting.meetUrl })
+						.select({ joinUrl: classSessionMeeting.joinUrl })
 						.from(classSessionMeeting)
 						.where(
 							and(
@@ -134,8 +134,8 @@ export async function loadNextSession(
 							),
 						)
 						.limit(1);
-					if (meeting?.meetUrl) {
-						meetUrl = meeting.meetUrl;
+					if (meeting?.joinUrl) {
+						joinUrl = meeting.joinUrl;
 					}
 				}
 			}
@@ -143,7 +143,7 @@ export async function loadNextSession(
 				date: row.date,
 				time: row.time,
 				topic: row.topic,
-				...(meetUrl ? { meetUrl } : {}),
+				...(joinUrl ? { joinUrl } : {}),
 			};
 		}
 	}
@@ -316,17 +316,18 @@ export function orderStudentLessons(
 export interface ClassSessionMeetingProjection {
 	classId: string;
 	date: string;
-	meetUrl: string;
+	joinUrl: string;
 	recordingUrl: string;
+	recordingPassword: string | null;
 	recordingStatus: string;
 }
 
 const VALID_RECORDING_STATUSES = new Set<string>(RECORDING_STATUSES);
 
 /**
- * Gắn `meetUrl` (ưu tiên `lesson.zoom`, fallback `class_session_meeting.meetUrl`)
- * và `recordingUrl` / `recordingStatus` vào item buổi học của học viên.
- * Buổi đã `cancelled` hoặc `holiday` không trả link Meet.
+ * Gắn `joinUrl` (ưu tiên `lesson.zoom`, fallback `class_session_meeting.joinUrl`)
+ * và `recordingUrl` / `recordingPassword` / `recordingStatus` vào item buổi học của học viên.
+ * Buổi đã `cancelled` hoặc `holiday` không trả link Zoom.
  */
 export function toStudentClassLessonWithMeeting(
 	row: {
@@ -342,8 +343,10 @@ export function toStudentClassLessonWithMeeting(
 	meeting?: ClassSessionMeetingProjection,
 ): StudentClassLesson {
 	const isInactive = row.status === "cancelled" || row.status === "holiday";
-	const meetUrl = !isInactive ? row.zoom || meeting?.meetUrl || "" : "";
+	const joinUrl = !isInactive ? row.zoom || meeting?.joinUrl || "" : "";
 	const recordingUrl = !isInactive ? meeting?.recordingUrl || "" : "";
+	const recordingPassword =
+		recordingUrl && meeting?.recordingPassword ? meeting.recordingPassword : "";
 	const rawRecStatus = meeting?.recordingStatus;
 	const recordingStatus =
 		!isInactive &&
@@ -361,8 +364,9 @@ export function toStudentClassLessonWithMeeting(
 		dur: row.dur,
 		status: row.status,
 		topic: row.topic,
-		...(meetUrl ? { meetUrl } : {}),
+		...(joinUrl ? { joinUrl } : {}),
 		...(recordingUrl ? { recordingUrl } : {}),
+		...(recordingPassword ? { recordingPassword } : {}),
 		...(recordingStatus ? { recordingStatus } : {}),
 	};
 }

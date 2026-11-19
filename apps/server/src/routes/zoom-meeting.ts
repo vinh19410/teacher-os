@@ -1,6 +1,6 @@
 import {
-	GOOGLE_MEET_ERROR_CODES,
 	sessionRecordingUpdateSchema,
+	ZOOM_ERROR_CODES,
 } from "@teacher-os/api/contracts";
 import { parseStartDateStrict } from "@teacher-os/api/skeleton";
 import { classTable } from "@teacher-os/db/schema/class";
@@ -8,54 +8,42 @@ import { and, eq } from "drizzle-orm";
 import { type Context, Hono, type Next } from "hono";
 import type { AppDeps, KernelCtx } from "../app";
 import {
-	GoogleIntegrationError,
-	getGoogleIntegrationStatus,
-} from "../lib/google-meet/google-oauth";
-import {
 	bulkCreateMeetingsForClass,
 	ensureSessionMeeting,
-	type GoogleMeetServiceDeps,
 	syncRecordingForOccurrence,
 	updateSessionRecordingManual,
-} from "../lib/google-meet/session-meet-service";
+	type ZoomServiceDeps,
+} from "../lib/zoom/session-zoom-service";
+import {
+	isZoomConfigured,
+	ZoomIntegrationError,
+} from "../lib/zoom/zoom-client";
 
-export type GoogleMeetRouteDeps = Pick<
+export type ZoomRouteDeps = Pick<
 	AppDeps,
-	| "getDb"
-	| "runInBackground"
-	| "googleClientId"
-	| "googleClientSecret"
-	| "googleFetch"
-	| "getGoogleWorkspaceClient"
+	"getDb" | "runInBackground" | "zoom" | "zoomFetch" | "getZoomClient"
 >;
 
-export function googleMeetDepsFrom(
-	deps: GoogleMeetRouteDeps,
-): GoogleMeetServiceDeps {
+export function zoomDepsFrom(deps: ZoomRouteDeps): ZoomServiceDeps {
 	return {
 		db: deps.getDb(),
-		googleClientId: deps.googleClientId,
-		googleClientSecret: deps.googleClientSecret,
-		fetchFn: deps.googleFetch,
-		getGoogleWorkspaceClient: deps.getGoogleWorkspaceClient,
-		clientCache: new Map(),
+		zoom: deps.zoom,
+		fetchFn: deps.zoomFetch,
+		getZoomClient: deps.getZoomClient,
 	};
 }
 
-export function isGoogleMeetEnabled(deps: GoogleMeetRouteDeps): boolean {
-	return Boolean(
-		deps.getGoogleWorkspaceClient ||
-			(deps.googleClientId && deps.googleClientSecret),
-	);
+export function isZoomEnabled(deps: ZoomRouteDeps): boolean {
+	return Boolean(deps.getZoomClient) || isZoomConfigured(deps.zoom);
 }
 
-export async function runGoogleSyncTask(
-	deps: GoogleMeetRouteDeps,
+export async function runZoomSyncTask(
+	deps: ZoomRouteDeps,
 	task: () => Promise<void>,
 ): Promise<void> {
-	if (!isGoogleMeetEnabled(deps)) return;
+	if (!isZoomEnabled(deps)) return;
 	const wrapped = task().catch((err) => {
-		console.warn("[google-meet] background sync error", err);
+		console.warn("[zoom] background sync error", err);
 	});
 	if (deps.runInBackground) {
 		deps.runInBackground(wrapped);
@@ -64,7 +52,7 @@ export async function runGoogleSyncTask(
 	}
 }
 
-export function googleMeetRoutes(deps: AppDeps) {
+export function zoomMeetingRoutes(deps: AppDeps) {
 	const router = new Hono<{ Variables: { kernelCtx: KernelCtx } }>();
 	const allowedOrigins = Array.isArray(deps.corsOrigin)
 		? deps.corsOrigin
@@ -84,15 +72,8 @@ export function googleMeetRoutes(deps: AppDeps) {
 		return next();
 	}
 
-	router.get("/integrations/google/status", async (c) => {
-		const ctx = c.get("kernelCtx");
-		if (!ctx) return c.json({ error: "unauthorized" }, 401);
-		const status = await getGoogleIntegrationStatus(deps.getDb(), ctx.userId);
-		return c.json(status);
-	});
-
 	router.post(
-		"/classes/:classId/sessions/:date/meet",
+		"/classes/:classId/sessions/:date/zoom",
 		requireWriteCsrf,
 		async (c) => {
 			const ctx = c.get("kernelCtx");
@@ -112,25 +93,34 @@ export function googleMeetRoutes(deps: AppDeps) {
 				return c.json({ error: "class not found" }, 404);
 			}
 
+			if (!isZoomEnabled(deps)) {
+				return c.json(
+					{
+						error: "Chưa cấu hình Zoom cho hệ thống.",
+						code: ZOOM_ERROR_CODES.NOT_CONFIGURED,
+					},
+					503,
+				);
+			}
+
 			try {
-				const res = await ensureSessionMeeting(googleMeetDepsFrom(deps), {
+				const res = await ensureSessionMeeting(zoomDepsFrom(deps), {
 					orgId: ctx.orgId,
 					classId,
 					dateISO,
-					actorUserId: ctx.userId,
 				});
 				return c.json(res);
 			} catch (err) {
-				if (err instanceof GoogleIntegrationError) {
+				if (err instanceof ZoomIntegrationError) {
 					return c.json(
 						{ error: err.message, code: err.code },
-						err.status as 400 | 404 | 409 | 412 | 502 | 503,
+						err.status as 400 | 404 | 409 | 502 | 503,
 					);
 				}
 				return c.json(
 					{
-						error: "Không tạo được Google Meet.",
-						code: GOOGLE_MEET_ERROR_CODES.API_ERROR,
+						error: "Không tạo được Zoom.",
+						code: ZOOM_ERROR_CODES.API_ERROR,
 					},
 					502,
 				);
@@ -138,7 +128,7 @@ export function googleMeetRoutes(deps: AppDeps) {
 		},
 	);
 
-	router.post("/classes/:classId/meet/bulk", requireWriteCsrf, async (c) => {
+	router.post("/classes/:classId/zoom/bulk", requireWriteCsrf, async (c) => {
 		const ctx = c.get("kernelCtx");
 		if (!ctx) return c.json({ error: "unauthorized" }, 401);
 		const classId = c.req.param("classId") ?? "";
@@ -152,24 +142,33 @@ export function googleMeetRoutes(deps: AppDeps) {
 			return c.json({ error: "class not found" }, 404);
 		}
 
+		if (!isZoomEnabled(deps)) {
+			return c.json(
+				{
+					error: "Chưa cấu hình Zoom cho hệ thống.",
+					code: ZOOM_ERROR_CODES.NOT_CONFIGURED,
+				},
+				503,
+			);
+		}
+
 		try {
-			const res = await bulkCreateMeetingsForClass(googleMeetDepsFrom(deps), {
+			const res = await bulkCreateMeetingsForClass(zoomDepsFrom(deps), {
 				orgId: ctx.orgId,
 				classId,
-				actorUserId: ctx.userId,
 			});
 			return c.json(res);
 		} catch (err) {
-			if (err instanceof GoogleIntegrationError) {
+			if (err instanceof ZoomIntegrationError) {
 				return c.json(
 					{ error: err.message, code: err.code },
-					err.status as 400 | 404 | 409 | 412 | 502 | 503,
+					err.status as 400 | 404 | 409 | 502 | 503,
 				);
 			}
 			return c.json(
 				{
-					error: "Không tạo được Google Meet cho lớp.",
-					code: GOOGLE_MEET_ERROR_CODES.API_ERROR,
+					error: "Không tạo được Zoom cho lớp.",
+					code: ZOOM_ERROR_CODES.API_ERROR,
 				},
 				502,
 			);
@@ -197,25 +196,34 @@ export function googleMeetRoutes(deps: AppDeps) {
 				return c.json({ error: "class not found" }, 404);
 			}
 
+			if (!isZoomEnabled(deps)) {
+				return c.json(
+					{
+						error: "Chưa cấu hình Zoom cho hệ thống.",
+						code: ZOOM_ERROR_CODES.NOT_CONFIGURED,
+					},
+					503,
+				);
+			}
+
 			try {
-				const res = await syncRecordingForOccurrence(googleMeetDepsFrom(deps), {
+				const res = await syncRecordingForOccurrence(zoomDepsFrom(deps), {
 					orgId: ctx.orgId,
 					classId,
 					dateISO,
-					actorUserId: ctx.userId,
 				});
 				return c.json(res);
 			} catch (err) {
-				if (err instanceof GoogleIntegrationError) {
+				if (err instanceof ZoomIntegrationError) {
 					return c.json(
 						{ error: err.message, code: err.code },
-						err.status as 400 | 404 | 409 | 412 | 502 | 503,
+						err.status as 400 | 404 | 409 | 502 | 503,
 					);
 				}
 				return c.json(
 					{
-						error: "Không đồng bộ được recording từ Google Meet.",
-						code: GOOGLE_MEET_ERROR_CODES.API_ERROR,
+						error: "Không đồng bộ được recording từ Zoom.",
+						code: ZOOM_ERROR_CODES.API_ERROR,
 					},
 					502,
 				);

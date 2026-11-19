@@ -1,8 +1,7 @@
 import type {
-	ClassMeetBulkCreateResponse,
-	GoogleIntegrationStatus,
-	SessionMeetCreateResponse,
+	ClassZoomBulkCreateResponse,
 	SessionRecordingSyncResponse,
+	SessionZoomCreateResponse,
 } from "@teacher-os/api/contracts";
 import { env } from "@teacher-os/env/web";
 import { getServerUrl } from "@/lib/auth-client";
@@ -18,10 +17,7 @@ function apiBase(): string {
 	}
 }
 
-async function googleMeetFetch<T>(
-	path: string,
-	init?: RequestInit,
-): Promise<T> {
+async function zoomFetch<T>(path: string, init?: RequestInit): Promise<T> {
 	const res = await fetch(`${apiBase()}${path}`, {
 		credentials: "include",
 		...init,
@@ -46,28 +42,21 @@ async function googleMeetFetch<T>(
 	return json as T;
 }
 
-export function fetchGoogleIntegrationStatus(): Promise<GoogleIntegrationStatus> {
-	return googleMeetFetch<GoogleIntegrationStatus>(
-		"/api/integrations/google/status",
-		{ method: "GET" },
-	);
-}
-
-export function createSessionMeet(
+export function createSessionZoom(
 	classId: string,
 	dateISO: string,
-): Promise<SessionMeetCreateResponse> {
-	return googleMeetFetch<SessionMeetCreateResponse>(
-		`/api/classes/${encodeURIComponent(classId)}/sessions/${encodeURIComponent(dateISO)}/meet`,
+): Promise<SessionZoomCreateResponse> {
+	return zoomFetch<SessionZoomCreateResponse>(
+		`/api/classes/${encodeURIComponent(classId)}/sessions/${encodeURIComponent(dateISO)}/zoom`,
 		{ method: "POST", body: "{}" },
 	);
 }
 
-export function createClassMeetBulk(
+export function createClassZoomBulk(
 	classId: string,
-): Promise<ClassMeetBulkCreateResponse> {
-	return googleMeetFetch<ClassMeetBulkCreateResponse>(
-		`/api/classes/${encodeURIComponent(classId)}/meet/bulk`,
+): Promise<ClassZoomBulkCreateResponse> {
+	return zoomFetch<ClassZoomBulkCreateResponse>(
+		`/api/classes/${encodeURIComponent(classId)}/zoom/bulk`,
 		{ method: "POST", body: "{}" },
 	);
 }
@@ -76,7 +65,7 @@ export function syncSessionRecording(
 	classId: string,
 	dateISO: string,
 ): Promise<SessionRecordingSyncResponse> {
-	return googleMeetFetch<SessionRecordingSyncResponse>(
+	return zoomFetch<SessionRecordingSyncResponse>(
 		`/api/classes/${encodeURIComponent(classId)}/sessions/${encodeURIComponent(dateISO)}/recording/sync`,
 		{ method: "POST", body: "{}" },
 	);
@@ -87,7 +76,7 @@ export function updateSessionRecording(
 	dateISO: string,
 	recordingUrl: string,
 ): Promise<SessionRecordingSyncResponse> {
-	return googleMeetFetch<SessionRecordingSyncResponse>(
+	return zoomFetch<SessionRecordingSyncResponse>(
 		`/api/classes/${encodeURIComponent(classId)}/sessions/${encodeURIComponent(dateISO)}/recording`,
 		{
 			method: "PUT",

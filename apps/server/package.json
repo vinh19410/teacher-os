@@ -10,10 +10,8 @@
 		"./lib/ai-grading/fake-grader": "./src/lib/ai-grading/fake-grader.ts",
 		"./lib/placement-ai/fake-grader": "./src/lib/placement-ai/fake-grader.ts",
 		"./lib/study-pack-audio": "./src/lib/study-pack-audio.ts",
-		"./lib/google-meet/google-oauth": "./src/lib/google-meet/google-oauth.ts",
-		"./lib/google-meet/google-workspace-client": "./src/lib/google-meet/google-workspace-client.ts",
-		"./lib/google-meet/fake-client": "./src/lib/google-meet/fake-client.ts",
-		"./lib/google-meet/session-meet-service": "./src/lib/google-meet/session-meet-service.ts"
+		"./lib/zoom/fake-zoom-client": "./src/lib/zoom/fake-zoom-client.ts",
+		"./lib/zoom/session-zoom-service": "./src/lib/zoom/session-zoom-service.ts"
 	},
 	"scripts": {
 		"build": "tsdown",

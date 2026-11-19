@@ -21,6 +21,7 @@ import {
 	X,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { RecordingPassword } from "@/components/class/recording-password";
 import { OverviewEmptyState } from "@/components/overview/empty-state";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
@@ -351,9 +352,9 @@ export function StudentScheduleView({
 													Chưa có lịch buổi tới
 												</span>
 											)}
-											{cls.status !== "paused" && cls.nextSession?.meetUrl && (
+											{cls.status !== "paused" && cls.nextSession?.joinUrl && (
 												<a
-													href={cls.nextSession.meetUrl}
+													href={cls.nextSession.joinUrl}
 													target="_blank"
 													rel="noopener noreferrer"
 													className={cn(
@@ -362,7 +363,7 @@ export function StudentScheduleView({
 													)}
 												>
 													<Video aria-hidden="true" className="size-3.5" />
-													Vào lớp (Google Meet)
+													Vào lớp (Zoom)
 												</a>
 											)}
 										</div>
@@ -547,8 +548,8 @@ export function StudentScheduleView({
 														? Clock
 														: CircleDashed;
 
-										const showMeetLink =
-											displayStatus === "upcoming" && Boolean(lesson.meetUrl);
+										const showZoomLink =
+											displayStatus === "upcoming" && Boolean(lesson.joinUrl);
 										const canShowRecording =
 											lesson.status !== "cancelled" &&
 											lesson.status !== "holiday";
@@ -561,7 +562,7 @@ export function StudentScheduleView({
 												lesson.status === "completed" ||
 												lesson.status === "absent");
 										const hasActions =
-											showMeetLink || showRecordingLink || showPendingRecording;
+											showZoomLink || showRecordingLink || showPendingRecording;
 
 										return (
 											<div
@@ -647,9 +648,9 @@ export function StudentScheduleView({
 
 													{hasActions && (
 														<div className="flex flex-wrap items-center gap-2 sm:justify-end">
-															{showMeetLink && lesson.meetUrl && (
+															{showZoomLink && lesson.joinUrl && (
 																<a
-																	href={lesson.meetUrl}
+																	href={lesson.joinUrl}
 																	target="_blank"
 																	rel="noopener noreferrer"
 																	className={cn(
@@ -664,7 +665,7 @@ export function StudentScheduleView({
 																		aria-hidden="true"
 																		className="size-3.5"
 																	/>
-																	Vào lớp (Google Meet)
+																	Vào lớp (Zoom)
 																</a>
 															)}
 															{showRecordingLink && lesson.recordingUrl && (
@@ -687,6 +688,13 @@ export function StudentScheduleView({
 																	Xem recording
 																</a>
 															)}
+															{showRecordingLink &&
+																lesson.recordingUrl &&
+																lesson.recordingPassword && (
+																	<RecordingPassword
+																		password={lesson.recordingPassword}
+																	/>
+																)}
 															{showPendingRecording && (
 																<Badge
 																	variant="outline"

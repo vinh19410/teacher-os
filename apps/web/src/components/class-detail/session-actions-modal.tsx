@@ -3,7 +3,7 @@ import {
 	type KernelSessionMeetingRow,
 } from "@teacher-os/api/contracts";
 import { useState } from "react";
-import { SessionMeetPanel } from "@/components/schedule/session-meet-panel";
+import { SessionZoomPanel } from "@/components/schedule/session-zoom-panel";
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { Field, Input } from "@/components/ui/field";
@@ -329,7 +329,7 @@ export function SessionActionsModal({
 
 				<section className="space-y-3 border-border border-t pt-4">
 					{classId && (
-						<SessionMeetPanel
+						<SessionZoomPanel
 							classId={classId}
 							dateISO={session.dateISO}
 							zoom={baseZoom}

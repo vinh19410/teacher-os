@@ -405,7 +405,7 @@ describe("StudentScheduleView component", () => {
 		expect(pausedRow.textContent).not.toContain("Đã kết thúc");
 	});
 
-	it("12. Hiển thị link Google Meet trên thẻ lớp và buổi upcoming (ẩn khi paused/ended/cancelled/holiday)", () => {
+	it("12. Hiển thị link Zoom trên thẻ lớp và buổi upcoming (ẩn khi paused/ended/cancelled/holiday)", () => {
 		const classesWithMeet: StudentClass[] = [
 			{
 				...MOCK_CLASSES[0],
@@ -413,7 +413,7 @@ describe("StudentScheduleView component", () => {
 					date: "2026-11-10",
 					time: "18:00",
 					topic: "Reading Task 1",
-					meetUrl: "https://meet.google.com/cls-1-room",
+					joinUrl: "https://zoom.us/j/123456789",
 				},
 			},
 			{
@@ -423,23 +423,23 @@ describe("StudentScheduleView component", () => {
 					date: "2026-11-12",
 					time: "09:00",
 					topic: "Paused class next",
-					meetUrl: "https://meet.google.com/cls-2-paused",
+					joinUrl: "https://zoom.us/j/123456789",
 				},
 			},
 		];
 
 		const lessonsWithMeet: StudentScheduleLesson[] = [
-			// Upcoming hợp lệ -> hiện Meet link
+			// Upcoming hợp lệ -> hiện Zoom link
 			{
 				...MOCK_LESSONS[2],
-				meetUrl: "https://meet.google.com/les-upcoming-next",
+				joinUrl: "https://zoom.us/j/123456789",
 			},
-			// Upcoming nhưng lớp paused -> ẩn Meet link
+			// Upcoming nhưng lớp paused -> ẩn Zoom link
 			{
 				...MOCK_LESSONS[3],
-				meetUrl: "https://meet.google.com/les-paused-hidden",
+				joinUrl: "https://zoom.us/j/123456789",
 			},
-			// Upcoming nhưng đã qua giờ kết thúc (ended) -> ẩn Meet link
+			// Upcoming nhưng đã qua giờ kết thúc (ended) -> ẩn Zoom link
 			{
 				id: "les-ended-meet",
 				classId: "cls-1",
@@ -450,14 +450,14 @@ describe("StudentScheduleView component", () => {
 				dur: 90,
 				status: "upcoming",
 				topic: "Ended session",
-				meetUrl: "https://meet.google.com/les-ended-hidden",
+				joinUrl: "https://zoom.us/j/123456789",
 			},
-			// Cancelled có meetUrl -> ẩn Meet link
+			// Cancelled có joinUrl -> ẩn Zoom link
 			{
 				...MOCK_LESSONS[4],
-				meetUrl: "https://meet.google.com/les-cancelled-hidden",
+				joinUrl: "https://zoom.us/j/123456789",
 			},
-			// Holiday tương lai có meetUrl -> ẩn Meet link
+			// Holiday tương lai có joinUrl -> ẩn Zoom link
 			{
 				id: "les-holiday-meet",
 				classId: "cls-1",
@@ -468,7 +468,7 @@ describe("StudentScheduleView component", () => {
 				dur: 90,
 				status: "holiday",
 				topic: "Holiday session",
-				meetUrl: "https://meet.google.com/les-holiday-hidden",
+				joinUrl: "https://zoom.us/j/123456789",
 			},
 		];
 
@@ -481,34 +481,30 @@ describe("StudentScheduleView component", () => {
 			/>,
 		);
 
-		// Card lớp active hiện Meet link; card lớp paused ẩn Meet link
+		// Card lớp active hiện Zoom link; card lớp paused ẩn Zoom link
 		const card1 = screen.getByTestId("class-schedule-card-cls-1");
 		const card1Meet = within(card1).getByRole("link", {
-			name: "Vào lớp (Google Meet)",
+			name: "Vào lớp (Zoom)",
 		});
-		expect(card1Meet.getAttribute("href")).toBe(
-			"https://meet.google.com/cls-1-room",
-		);
+		expect(card1Meet.getAttribute("href")).toBe("https://zoom.us/j/123456789");
 		expect(card1Meet.getAttribute("target")).toBe("_blank");
 		expect(card1Meet.getAttribute("rel")).toBe("noopener noreferrer");
 
 		const card2 = screen.getByTestId("class-schedule-card-cls-2");
 		expect(
-			within(card2).queryByRole("link", { name: "Vào lớp (Google Meet)" }),
+			within(card2).queryByRole("link", { name: "Vào lớp (Zoom)" }),
 		).toBeNull();
 
-		// Row upcoming hợp lệ hiện Meet link
+		// Row upcoming hợp lệ hiện Zoom link
 		const upcomingRow = screen.getByTestId("session-row-les-upcoming-next");
 		const rowMeet = within(upcomingRow).getByRole("link", {
-			name: "Vào lớp (Google Meet)",
+			name: "Vào lớp (Zoom)",
 		});
-		expect(rowMeet.getAttribute("href")).toBe(
-			"https://meet.google.com/les-upcoming-next",
-		);
+		expect(rowMeet.getAttribute("href")).toBe("https://zoom.us/j/123456789");
 		expect(rowMeet.getAttribute("target")).toBe("_blank");
 		expect(rowMeet.getAttribute("rel")).toBe("noopener noreferrer");
 
-		// Các row paused / ended / cancelled / holiday KHÔNG hiện Meet link
+		// Các row paused / ended / cancelled / holiday KHÔNG hiện Zoom link
 		for (const rowId of [
 			"session-row-les-upcoming-future",
 			"session-row-les-ended-meet",
@@ -517,7 +513,7 @@ describe("StudentScheduleView component", () => {
 		]) {
 			const row = screen.getByTestId(rowId);
 			expect(
-				within(row).queryByRole("link", { name: "Vào lớp (Google Meet)" }),
+				within(row).queryByRole("link", { name: "Vào lớp (Zoom)" }),
 			).toBeNull();
 		}
 	});

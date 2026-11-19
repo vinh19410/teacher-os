@@ -128,9 +128,9 @@ export function ClassCard({
 							{nextSessionText}
 						</p>
 
-						{!isPaused && cls.nextSession?.meetUrl && (
+						{!isPaused && cls.nextSession?.joinUrl && (
 							<a
-								href={cls.nextSession.meetUrl}
+								href={cls.nextSession.joinUrl}
 								target="_blank"
 								rel="noopener noreferrer"
 								className={cn(
@@ -139,7 +139,7 @@ export function ClassCard({
 								)}
 							>
 								<Video aria-hidden="true" className="size-4" />
-								Vào lớp (Google Meet)
+								Vào lớp (Zoom)
 							</a>
 						)}
 					</>
