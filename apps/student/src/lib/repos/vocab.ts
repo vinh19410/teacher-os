@@ -20,6 +20,8 @@ import { normalizeMediaType } from "@teacher-os/api/lib/quiz-media";
 import {
 	HttpError,
 	healStudentOrgMismatch,
+	isTeacherOnStudentPortalError,
+	redirectToLoginForWrongRole,
 	studentQueryClient,
 } from "@/lib/query-client";
 import {
@@ -42,10 +44,18 @@ async function parseErrorAndThrow(
 	sentOrgId?: string,
 ): Promise<never> {
 	const code = await extractErrorCode(res);
-	throw new HttpError(res.status, `Request failed with status ${res.status}`, {
-		code,
-		sentOrgId,
-	});
+	const error = new HttpError(
+		res.status,
+		`Request failed with status ${res.status}`,
+		{
+			code,
+			sentOrgId,
+		},
+	);
+	if (isTeacherOnStudentPortalError(error)) {
+		redirectToLoginForWrongRole();
+	}
+	throw error;
 }
 
 async function parseWriteErrorAndThrow(
@@ -56,10 +66,18 @@ async function parseWriteErrorAndThrow(
 	if (res.status === 403 && code === STUDENT_ERROR_CODES.ORG_MISMATCH) {
 		healStudentOrgMismatch();
 	}
-	throw new HttpError(res.status, `Request failed with status ${res.status}`, {
-		code,
-		sentOrgId,
-	});
+	const error = new HttpError(
+		res.status,
+		`Request failed with status ${res.status}`,
+		{
+			code,
+			sentOrgId,
+		},
+	);
+	if (isTeacherOnStudentPortalError(error)) {
+		redirectToLoginForWrongRole();
+	}
+	throw error;
 }
 
 export async function fetchVocabOverview(): Promise<VocabOverview> {
@@ -174,11 +192,15 @@ export async function fetchVocabAudioObjectUrl(
 				await parseErrorAndThrow(res);
 			}
 		} else {
-			throw new HttpError(
+			const error = new HttpError(
 				res.status,
 				`Request failed with status ${res.status}`,
 				{ code, sentOrgId },
 			);
+			if (isTeacherOnStudentPortalError(error)) {
+				redirectToLoginForWrongRole();
+			}
+			throw error;
 		}
 	}
 	const type = normalizeMediaType(res.headers.get("Content-Type") ?? "");

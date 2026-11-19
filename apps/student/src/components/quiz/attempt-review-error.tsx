@@ -1,10 +1,14 @@
-import { isHttpError } from "@/lib/query-client";
+import Loader from "@/components/loader";
+import { isHttpError, isTeacherOnStudentPortalError } from "@/lib/query-client";
 
 /**
  * Error view chung cho 2 route review (summary + detail). Route files giữ
  *nhận component qua import để router plugin tự code-split không warning.
  */
 export function AttemptReviewError({ error }: { error: unknown }) {
+	if (isTeacherOnStudentPortalError(error)) {
+		return <Loader />;
+	}
 	const notFound = isHttpError(error) && error.status === 404;
 	const code = isHttpError(error) ? error.code : undefined;
 	return (

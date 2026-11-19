@@ -4,7 +4,10 @@ import {
 	Navigate,
 	useNavigate,
 } from "@tanstack/react-router";
-import { STUDENT_ERROR_CODES } from "@teacher-os/api/contracts";
+import {
+	ACCOUNT_ERROR_CODES,
+	STUDENT_ERROR_CODES,
+} from "@teacher-os/api/contracts";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -87,6 +90,9 @@ export function StudentOverviewPage() {
 	if (meQuery.error) {
 		const err = meQuery.error;
 		const code = isHttpError(err) ? err.code : undefined;
+		if (code === ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL) {
+			return <Loader />;
+		}
 		if (code === STUDENT_ERROR_CODES.NOT_LINKED) {
 			return (
 				<StudentShell userEmail={sessionEmail}>
@@ -104,6 +110,9 @@ export function StudentOverviewPage() {
 	if (overviewQuery.error) {
 		const err = overviewQuery.error;
 		const code = isHttpError(err) ? err.code : undefined;
+		if (code === ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL) {
+			return <Loader />;
+		}
 		return (
 			<StudentShell
 				userName={meQuery.data?.student.name}

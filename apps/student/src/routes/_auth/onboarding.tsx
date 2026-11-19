@@ -1,4 +1,5 @@
 import { createFileRoute, Navigate, useNavigate } from "@tanstack/react-router";
+import { ACCOUNT_ERROR_CODES } from "@teacher-os/api/contracts";
 import { Loader } from "@/components/loader";
 import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard";
 import { StudentErrorView } from "@/components/overview/student-error-view";
@@ -19,6 +20,9 @@ function StudentOnboardingPage() {
 	if (meQuery.error) {
 		const err = meQuery.error;
 		const code = isHttpError(err) ? err.code : undefined;
+		if (code === ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL) {
+			return <Loader />;
+		}
 		// User chưa verify vào thẳng /onboarding vẫn thấy màn chờ xác thực cũ
 		return <StudentErrorView code={code} userEmail={sessionEmail} />;
 	}

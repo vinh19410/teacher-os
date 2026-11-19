@@ -6,7 +6,11 @@ import {
 	useState,
 	useSyncExternalStore,
 } from "react";
-import { isStudentOrgMismatchError } from "@/lib/query-client";
+import {
+	isStudentOrgMismatchError,
+	isTeacherOnStudentPortalError,
+	redirectToLoginForWrongRole,
+} from "@/lib/query-client";
 
 /** Debounce autosave PATCH (RT#7) — 600ms sau lần gõ cuối. */
 export const QUIZ_AUTOSAVE_DEBOUNCE_MS = 600;
@@ -262,6 +266,18 @@ export function createQuizAttemptStore(
 						waveFailed = true;
 						cancelTimer();
 						onAuthError?.();
+						return;
+					}
+					if (isTeacherOnStudentPortalError(error)) {
+						// Halt giữ nguyên pending + mirror để không mất bài làm;
+						// chuyển về /login không gọi signOut().
+						halted = "auth";
+						saveState = "error";
+						waveFailed = true;
+						lastSendError = error;
+						cancelTimer();
+						if (answers.get(q) === value) pending.set(q, value);
+						redirectToLoginForWrongRole();
 						return;
 					}
 					if (status === 409) {

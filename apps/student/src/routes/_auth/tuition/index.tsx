@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ACCOUNT_ERROR_CODES } from "@teacher-os/api/contracts";
 import { StudentPageGate } from "@/components/layout/student-page-gate";
 import Loader from "@/components/loader";
 import { OverviewEmptyState } from "@/components/overview/empty-state";
@@ -26,6 +27,9 @@ function StudentTuitionPage() {
 				if (invoicesQuery.error) {
 					const err = invoicesQuery.error;
 					const code = isHttpError(err) ? err.code : undefined;
+					if (code === ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL) {
+						return <Loader />;
+					}
 					return (
 						<StudentErrorView
 							code={code}

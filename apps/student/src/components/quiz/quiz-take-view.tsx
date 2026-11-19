@@ -37,6 +37,7 @@ import { formatQuizDueText } from "@/lib/assignment-status";
 import {
 	isHttpError,
 	isStudentOrgMismatchError,
+	isTeacherOnStudentPortalError,
 	reauth,
 } from "@/lib/query-client";
 import {
@@ -69,6 +70,9 @@ export const attemptSummaryHref = (attemptId: string): string =>
 	`/learn/quizzes/attempt/${attemptId}`;
 
 export function QuizTakeError({ error }: { error: unknown }) {
+	if (isTeacherOnStudentPortalError(error)) {
+		return <Loader />;
+	}
 	const notFound = isHttpError(error) && error.status === 404;
 	const code = isHttpError(error) ? error.code : undefined;
 	return (
