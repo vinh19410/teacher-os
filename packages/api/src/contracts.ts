@@ -3418,6 +3418,8 @@ export const VOCAB_ERROR_CODES = {
 	LIBRARY_DECK_NOT_FOUND: "LIBRARY_DECK_NOT_FOUND",
 	LIBRARY_CLONE_TOO_LARGE: "LIBRARY_CLONE_TOO_LARGE",
 	LIBRARY_CLONE_DUPLICATE_DECK: "LIBRARY_CLONE_DUPLICATE_DECK",
+	DECK_CLONE_TOO_LARGE: "VOCAB_DECK_CLONE_TOO_LARGE",
+	DECK_CLONE_DUPLICATE_DECK: "VOCAB_DECK_CLONE_DUPLICATE_DECK",
 	SUGGESTION_NOT_FOUND: "VOCAB_SUGGESTION_NOT_FOUND",
 	SUGGESTION_ALREADY_ACCEPTED: "VOCAB_SUGGESTION_ALREADY_ACCEPTED",
 } as const;
@@ -3437,6 +3439,7 @@ export interface KernelVocabDeckRow {
 	wordCount: number;
 	createdAt: string;
 	sourceLibraryDeckId: string | null;
+	sourceDeckId?: string | null;
 }
 export interface KernelVocabSuggestionRow {
 	id: string;
@@ -3710,6 +3713,14 @@ export const vocabLibraryCloneSchema = z
 	})
 	.strict();
 export type VocabLibraryCloneInput = z.infer<typeof vocabLibraryCloneSchema>;
+
+export const vocabDeckCloneSchema = z
+	.object({
+		classId: z.string().min(1).nullable().optional().default(null),
+		deckIds: z.array(z.string().min(1)).min(1).max(50),
+	})
+	.strict();
+export type VocabDeckCloneInput = z.infer<typeof vocabDeckCloneSchema>;
 
 export const vocabStudentLibraryCourseSchema = z
 	.object({

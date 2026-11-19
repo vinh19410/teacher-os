@@ -852,6 +852,7 @@ export async function loadSnapshot(
 			wordCount: vocabWordDeckIds.filter((w) => w.deckId === row.id).length,
 			createdAt: row.createdAt.toISOString(),
 			sourceLibraryDeckId: row.sourceLibraryDeckId ?? null,
+			sourceDeckId: row.sourceDeckId ?? null,
 		})),
 		vocabSuggestions: vocabSuggestionRows.map((row) => ({
 			id: row.id,

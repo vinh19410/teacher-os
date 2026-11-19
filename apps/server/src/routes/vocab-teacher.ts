@@ -5,6 +5,7 @@ import {
 	type VocabCsvImportResponse,
 	type VocabStudentProgressResponse,
 	type VocabTeacherSuggestionsResponse,
+	vocabDeckCloneSchema,
 	vocabDeckCreateSchema,
 	vocabDeckCsvImportSchema,
 	vocabDeckDeleteSchema,
@@ -33,11 +34,11 @@ import {
 	vocabSuggestion,
 	vocabWord,
 } from "@teacher-os/db/schema/index";
-import { and, asc, eq, gte, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNull, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
-import type { z } from "zod";
+import { z } from "zod";
 import type { Db, KernelCtx } from "../app";
 import { mediaObjectResponse } from "../lib/media-response";
 import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
@@ -54,6 +55,20 @@ type VocabTeacherContext = Context<Env>;
  * Giới hạn số dòng `vocab_word` mỗi câu INSERT khi bulk import CSV (8 * 11 = 88 < 100 biến bind của D1).
  */
 const MAX_WORD_INSERT_CHUNK = 8;
+
+/**
+ * Giới hạn số dòng `vocab_word` mỗi câu INSERT khi clone bộ từ (7 * 13 = 91 < 100 biến bind của D1).
+ */
+const MAX_CLONE_WORD_INSERT_CHUNK = 7;
+const MAX_CLONE_DECKS = 50;
+const MAX_CLONE_STATEMENTS = 500;
+
+const cloneRawEnvelopeSchema = z
+	.object({
+		classId: z.string().min(1).nullable().optional().default(null),
+		deckIds: z.array(z.string().min(1)).min(1),
+	})
+	.strict();
 
 function normalizeOptionalText(
 	value: string | null | undefined,
@@ -238,6 +253,197 @@ export function vocabTeacherRoutes(deps: {
 			);
 		}
 		return c.json({ id: body.data.deckId } satisfies CreatedResponse);
+	});
+
+	routes.post("/decks/clone", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return c.json({ error: "unauthorized" }, 401);
+
+		let raw: unknown;
+		try {
+			raw = await c.req.json();
+		} catch {
+			return c.json({ error: "invalid json" }, 400);
+		}
+
+		const baseParsed = cloneRawEnvelopeSchema.safeParse(raw);
+		if (!baseParsed.success) {
+			return c.json({ error: "invalid body" }, 400);
+		}
+
+		const { classId, deckIds } = baseParsed.data;
+		const uniqueDeckIds = [...new Set(deckIds)];
+		if (uniqueDeckIds.length !== deckIds.length) {
+			return c.json(
+				{
+					error: VOCAB_ERROR_CODES.DECK_CLONE_DUPLICATE_DECK,
+					code: VOCAB_ERROR_CODES.DECK_CLONE_DUPLICATE_DECK,
+				},
+				400,
+			);
+		}
+
+		const db = deps.getDb();
+
+		// IDOR guard first: when classId is provided, verify target class belongs to caller's org before reading decks.
+		if (classId !== null) {
+			const [cls] = await db
+				.select({ id: classTable.id })
+				.from(classTable)
+				.where(and(eq(classTable.id, classId), eq(classTable.orgId, ctx.orgId)))
+				.limit(1);
+
+			if (!cls) {
+				return c.json({ error: "class not found" }, 404);
+			}
+		}
+
+		if (
+			uniqueDeckIds.length > MAX_CLONE_DECKS ||
+			!vocabDeckCloneSchema.safeParse(baseParsed.data).success
+		) {
+			return c.json(
+				{
+					error: VOCAB_ERROR_CODES.DECK_CLONE_TOO_LARGE,
+					code: VOCAB_ERROR_CODES.DECK_CLONE_TOO_LARGE,
+				},
+				422,
+			);
+		}
+
+		const sourceDecks = await db
+			.select()
+			.from(vocabDeck)
+			.where(
+				and(
+					eq(vocabDeck.orgId, ctx.orgId),
+					inArray(vocabDeck.id, uniqueDeckIds),
+				),
+			)
+			.orderBy(asc(vocabDeck.createdAt), asc(vocabDeck.id));
+
+		if (sourceDecks.length !== uniqueDeckIds.length) {
+			return c.json(
+				{ error: "deck not found", code: VOCAB_ERROR_CODES.DECK_NOT_FOUND },
+				404,
+			);
+		}
+
+		const sourceWords = await db
+			.select()
+			.from(vocabWord)
+			.where(inArray(vocabWord.deckId, uniqueDeckIds))
+			.orderBy(
+				asc(vocabWord.sortOrder),
+				asc(vocabWord.createdAt),
+				asc(vocabWord.id),
+			);
+
+		if (
+			sourceDecks.length > MAX_CLONE_DECKS ||
+			sourceDecks.length + sourceWords.length > MAX_CLONE_STATEMENTS
+		) {
+			return c.json(
+				{
+					error: VOCAB_ERROR_CODES.DECK_CLONE_TOO_LARGE,
+					code: VOCAB_ERROR_CODES.DECK_CLONE_TOO_LARGE,
+				},
+				422,
+			);
+		}
+
+		const existingClones = await db
+			.select({ sourceDeckId: vocabDeck.sourceDeckId })
+			.from(vocabDeck)
+			.where(
+				and(
+					classId === null
+						? isNull(vocabDeck.classId)
+						: eq(vocabDeck.classId, classId),
+					eq(vocabDeck.orgId, ctx.orgId),
+					inArray(vocabDeck.sourceDeckId, uniqueDeckIds),
+				),
+			);
+		const duplicates = [
+			...new Set(
+				existingClones
+					.map((d) => d.sourceDeckId)
+					.filter((id): id is string => id !== null),
+			),
+		];
+
+		const baseNowMs = Date.now();
+		const deckIdMap = new Map<string, string>();
+		const deckNowMap = new Map<string, Date>();
+		for (const [idx, srcDeck] of sourceDecks.entries()) {
+			deckIdMap.set(srcDeck.id, crypto.randomUUID());
+			deckNowMap.set(srcDeck.id, new Date(baseNowMs + idx));
+		}
+
+		const firstSourceDeck = sourceDecks[0];
+		const firstDeckId = firstSourceDeck
+			? (deckIdMap.get(firstSourceDeck.id) ?? "")
+			: "";
+
+		const batchOps: BatchItem<"sqlite">[] = sourceDecks.map((srcDeck) => {
+			const clonedDeckId = deckIdMap.get(srcDeck.id) ?? crypto.randomUUID();
+			const deckNow = deckNowMap.get(srcDeck.id) ?? new Date(baseNowMs);
+			return db.insert(vocabDeck).values({
+				id: clonedDeckId,
+				orgId: ctx.orgId,
+				classId,
+				title: srcDeck.title,
+				lessonNumber: srcDeck.lessonNumber ?? null,
+				topic: srcDeck.topic ?? null,
+				lang: srcDeck.lang,
+				sourceLibraryDeckId: srcDeck.sourceLibraryDeckId ?? null,
+				sourceDeckId: srcDeck.id,
+				createdAt: deckNow,
+				updatedAt: deckNow,
+			});
+		});
+
+		const wordValues = sourceWords.map((srcWord, wordIdx) => {
+			const clonedDeckId = deckIdMap.get(srcWord.deckId) ?? "";
+			const deckNow = deckNowMap.get(srcWord.deckId) ?? new Date(baseNowMs);
+			const wordNow = new Date(deckNow.getTime() + wordIdx);
+			return {
+				id: crypto.randomUUID(),
+				deckId: clonedDeckId,
+				word: srcWord.word,
+				entryType:
+					srcWord.entryType === "chunk"
+						? ("chunk" as const)
+						: ("word" as const),
+				ipa: srcWord.ipa ?? null,
+				pos: srcWord.pos ?? null,
+				translation: srcWord.translation,
+				example: srcWord.example ?? null,
+				audioKey: srcWord.audioKey ?? null,
+				audioUrl: srcWord.audioUrl ?? null,
+				sortOrder: srcWord.sortOrder,
+				createdAt: wordNow,
+				updatedAt: wordNow,
+			};
+		});
+
+		for (const chunk of chunkItems(wordValues, MAX_CLONE_WORD_INSERT_CHUNK)) {
+			batchOps.push(db.insert(vocabWord).values(chunk));
+		}
+
+		const [firstBatchOp, ...restBatchOps] = batchOps;
+		if (firstBatchOp) {
+			await db.batch([firstBatchOp, ...restBatchOps]);
+		}
+
+		return c.json(
+			{
+				id: firstDeckId,
+				updated: sourceDecks.length,
+				duplicates,
+			},
+			201,
+		);
 	});
 
 	const csvImportBodyLimit = bodyLimit({
@@ -1138,7 +1344,15 @@ export function vocabTeacherRoutes(deps: {
 		}
 
 		if (oldKey) {
-			await store.delete(oldKey).catch(() => undefined);
+			// Chỉ xoá object R2 khi không còn dòng vocab_word nào (ví dụ bản sao từ clone) trỏ tới oldKey.
+			const [stillReferenced] = await db
+				.select({ id: vocabWord.id })
+				.from(vocabWord)
+				.where(eq(vocabWord.audioKey, oldKey))
+				.limit(1);
+			if (!stillReferenced) {
+				await store.delete(oldKey).catch(() => undefined);
+			}
 		}
 
 		return c.json({ id: wordId, audioKey: newKey });
