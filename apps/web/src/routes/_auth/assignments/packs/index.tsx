@@ -10,7 +10,7 @@ import {
 	type StudyPackSummaryView,
 } from "@teacher-os/api/contracts";
 import { canPublishGrade } from "@teacher-os/auth/role";
-import { ArrowLeft, Copy, Eye, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Eye, Pencil, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { StudyPackEditorModal } from "@/components/study-packs/study-pack-editor-modal";
@@ -22,18 +22,14 @@ import { Modal } from "@/components/ui/modal";
 import { PageHead } from "@/components/ui/page-head";
 import { cn } from "@/lib/cn";
 import { useData } from "@/lib/data-store";
-import {
-	cloneStudyPack,
-	deleteStudyPack,
-	fetchStudyPacks,
-} from "@/lib/repos/study-pack";
+import { deleteStudyPack, fetchStudyPacks } from "@/lib/repos/study-pack";
 
 export const Route = createFileRoute("/_auth/assignments/packs/")({
 	validateSearch: (
 		input: { scope?: string; level?: string } = {},
-	): { scope?: "org" | "system"; level?: string } => ({
+	): { scope?: "all" | "org" | "system"; level?: string } => ({
 		scope:
-			input.scope === "org" || input.scope === "system"
+			input.scope === "all" || input.scope === "org" || input.scope === "system"
 				? input.scope
 				: undefined,
 		level:
@@ -44,7 +40,8 @@ export const Route = createFileRoute("/_auth/assignments/packs/")({
 	component: StudyPacksRoute,
 });
 
-const ALL_LEVEL_LABEL = "Tất cả";
+const ALL_FILTER_LABEL = "Tất cả";
+const SCOPE_OPTIONS = ["Tất cả", "Trung tâm", "Hệ thống"] as const;
 
 export function StudyPacksRoute() {
 	const navigate = useNavigate();
@@ -56,15 +53,15 @@ export function StudyPacksRoute() {
 	const [packs, setPacks] = useState<StudyPackSummaryView[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
-	const scope: "org" | "system" = searchParams.scope ?? "org";
+	const scope: "all" | "org" | "system" = searchParams.scope ?? "all";
 	const levelFilter = searchParams.level ?? "all";
 
 	const setFilters = useCallback(
-		(nextScope: "org" | "system", nextLevel: string) => {
+		(nextScope: "all" | "org" | "system", nextLevel: string) => {
 			void navigate({
 				to: "/assignments/packs",
 				search: {
-					...(nextScope !== "org" ? { scope: nextScope } : {}),
+					...(nextScope !== "all" ? { scope: nextScope } : {}),
 					...(nextLevel !== "all" ? { level: nextLevel } : {}),
 				},
 				replace: true,
@@ -73,7 +70,7 @@ export function StudyPacksRoute() {
 		[navigate],
 	);
 
-	// Shared Create / Edit modal state for org packs
+	// Shared Create / Edit modal state for study packs
 	const [editorOpen, setEditorOpen] = useState(false);
 	const [editingPack, setEditingPack] = useState<StudyPackSummaryView | null>(
 		null,
@@ -102,14 +99,23 @@ export function StudyPacksRoute() {
 		void loadPacks();
 	}, [loadPacks]);
 
-	const scopePacks = useMemo(
-		() => packs.filter((p) => p.scope === scope),
-		[packs, scope],
+	const scopeFilteredPacks = useMemo(() => {
+		if (scope === "all") return packs;
+		return packs.filter((p) => p.scope === scope);
+	}, [packs, scope]);
+
+	const scopeCounts = useMemo(
+		() => ({
+			"Tất cả": packs.length,
+			"Trung tâm": packs.filter((p) => p.scope === "org").length,
+			"Hệ thống": packs.filter((p) => p.scope === "system").length,
+		}),
+		[packs],
 	);
 
 	const { levelOptions, levelCounts } = useMemo(() => {
 		const countsByLevel = new Map<string, number>();
-		for (const p of scopePacks) {
+		for (const p of scopeFilteredPacks) {
 			const lvl = p.level?.trim();
 			if (!lvl) continue;
 			countsByLevel.set(lvl, (countsByLevel.get(lvl) ?? 0) + 1);
@@ -124,23 +130,23 @@ export function StudyPacksRoute() {
 			),
 		];
 		const counts: Record<string, number> = {
-			[ALL_LEVEL_LABEL]: scopePacks.length,
+			[ALL_FILTER_LABEL]: scopeFilteredPacks.length,
 		};
 		for (const lvl of orderedLevels) {
 			counts[lvl] = countsByLevel.get(lvl) ?? 0;
 		}
 		return {
-			levelOptions: [ALL_LEVEL_LABEL, ...orderedLevels],
+			levelOptions: [ALL_FILTER_LABEL, ...orderedLevels],
 			levelCounts: counts,
 		};
-	}, [scopePacks, levelFilter]);
+	}, [scopeFilteredPacks, levelFilter]);
 
 	const filteredPacks = useMemo(
 		() =>
 			levelFilter === "all"
-				? scopePacks
-				: scopePacks.filter((p) => p.level === levelFilter),
-		[scopePacks, levelFilter],
+				? scopeFilteredPacks
+				: scopeFilteredPacks.filter((p) => p.level === levelFilter),
+		[scopeFilteredPacks, levelFilter],
 	);
 
 	function openCreateModal() {
@@ -151,20 +157,6 @@ export function StudyPacksRoute() {
 	function openEditModal(pack: StudyPackSummaryView) {
 		setEditingPack(pack);
 		setEditorOpen(true);
-	}
-
-	async function handleCloneSystemPack(pack: StudyPackSummaryView) {
-		setBusyId(pack.id);
-		try {
-			await cloneStudyPack(pack.id);
-			toast.success("Đã nhân bản bộ đề về trung tâm.");
-			await loadPacks();
-			setFilters("org", "all");
-		} catch {
-			toast.error("Không thể nhân bản bộ đề. Vui lòng thử lại.");
-		} finally {
-			setBusyId(null);
-		}
 	}
 
 	async function handleConfirmDelete() {
@@ -220,61 +212,56 @@ export function StudyPacksRoute() {
 				}
 			/>
 
-			<div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-				<fieldset
-					aria-label="Phạm vi bộ đề"
-					className="inline-flex rounded-md bg-muted p-1"
-				>
-					<button
-						type="button"
-						aria-pressed={scope === "org"}
-						onClick={() => setFilters("org", "all")}
-						className={cn(
-							"rounded-sm px-3 py-1.5 font-medium text-sm transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
-							scope === "org"
-								? "bg-background text-foreground shadow-sm"
-								: "text-muted-foreground hover:text-foreground",
-						)}
-					>
-						Bộ đề của tôi
-					</button>
-					<button
-						type="button"
-						aria-pressed={scope === "system"}
-						onClick={() => setFilters("system", "all")}
-						className={cn(
-							"rounded-sm px-3 py-1.5 font-medium text-sm transition-colors focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none",
-							scope === "system"
-								? "bg-background text-foreground shadow-sm"
-								: "text-muted-foreground hover:text-foreground",
-						)}
-					>
-						Thư viện hệ thống
-					</button>
-				</fieldset>
-
-				<p
-					aria-live="polite"
-					role="status"
-					className="text-muted-foreground text-sm tabular-nums"
-				>
-					{loading ? "Đang tải bộ đề…" : `${filteredPacks.length} bộ đề`}
-				</p>
-			</div>
-
-			{levelOptions.length > 1 && (
-				<div className="mb-6">
+			<div className="mb-6 flex flex-col gap-3">
+				<div className="flex flex-wrap items-center justify-between gap-3">
 					<ChipFilter
-						ariaLabel="Trình độ bộ đề"
-						options={levelOptions}
-						value={levelFilter === "all" ? ALL_LEVEL_LABEL : levelFilter}
-						onChange={(selected) =>
-							setFilters(scope, selected === ALL_LEVEL_LABEL ? "all" : selected)
+						ariaLabel="Nguồn bộ đề"
+						options={[...SCOPE_OPTIONS]}
+						value={
+							scope === "org"
+								? "Trung tâm"
+								: scope === "system"
+									? "Hệ thống"
+									: "Tất cả"
 						}
-						counts={levelCounts}
+						onChange={(selected) => {
+							const nextScope =
+								selected === "Trung tâm"
+									? "org"
+									: selected === "Hệ thống"
+										? "system"
+										: "all";
+							setFilters(nextScope, levelFilter);
+						}}
+						counts={scopeCounts}
 					/>
+
+					<p
+						aria-live="polite"
+						role="status"
+						className="text-muted-foreground text-sm tabular-nums"
+					>
+						{loading ? "Đang tải bộ đề…" : `${filteredPacks.length} bộ đề`}
+					</p>
 				</div>
-			)}
+
+				{levelOptions.length > 1 && (
+					<div>
+						<ChipFilter
+							ariaLabel="Trình độ bộ đề"
+							options={levelOptions}
+							value={levelFilter === "all" ? ALL_FILTER_LABEL : levelFilter}
+							onChange={(selected) =>
+								setFilters(
+									scope,
+									selected === ALL_FILTER_LABEL ? "all" : selected,
+								)
+							}
+							counts={levelCounts}
+						/>
+					</div>
+				)}
+			</div>
 
 			{error && (
 				<Card className="mb-6 border-destructive/40 bg-destructive/5 p-4">
@@ -293,30 +280,25 @@ export function StudyPacksRoute() {
 			{!loading && !error && filteredPacks.length === 0 && (
 				<Card variant="white" className="p-8 text-center">
 					<h2 className="font-semibold text-foreground text-lg">
-						{levelFilter !== "all" && scopePacks.length > 0
-							? `Không có bộ đề nào ở trình độ "${levelFilter}"`
-							: scope === "org"
-								? "Chưa có bộ đề nào của trung tâm"
-								: "Chưa có bộ đề nào trong thư viện hệ thống"}
+						{packs.length === 0
+							? "Chưa có bộ đề nào"
+							: "Không tìm thấy bộ đề phù hợp với bộ lọc"}
 					</h2>
 					<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
-						{levelFilter !== "all" && scopePacks.length > 0
-							? "Thử chọn lại Tất cả để xem toàn bộ bộ đề trong mục này."
-							: scope === "org"
-								? "Tạo bộ đề mới từ ngân hàng đề tự chấm hoặc nhân bản từ thư viện hệ thống để gán cho các lớp học."
-								: "Các bộ đề chuẩn hóa từ hệ thống sẽ hiển thị tại đây khi sẵn sàng."}
+						{packs.length === 0
+							? "Tạo bộ đề mới từ ngân hàng đề tự chấm để gán cho các lớp học."
+							: "Thử chọn lại Tất cả để xem toàn bộ bộ đề."}
 					</p>
-					{levelFilter !== "all" && scopePacks.length > 0 ? (
+					{packs.length > 0 ? (
 						<div className="mt-5 flex justify-center">
 							<Button
 								variant="outline"
-								onClick={() => setFilters(scope, "all")}
+								onClick={() => setFilters("all", "all")}
 							>
-								Xóa bộ lọc trình độ
+								Xóa bộ lọc
 							</Button>
 						</div>
 					) : (
-						scope === "org" &&
 						canManagePacks && (
 							<div className="mt-5 flex justify-center">
 								<Button onClick={openCreateModal}>Tạo bộ đề đầu tiên</Button>
@@ -346,6 +328,13 @@ export function StudyPacksRoute() {
 										</Link>
 									</h2>
 									<div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+										<Badge
+											variant={
+												pack.scope === "system" ? "secondary" : "outline"
+											}
+										>
+											{pack.scope === "system" ? "Hệ thống" : "Trung tâm"}
+										</Badge>
 										{pack.level && (
 											<Badge variant="secondary">{pack.level}</Badge>
 										)}
@@ -378,43 +367,31 @@ export function StudyPacksRoute() {
 									<Eye className="size-3.5" />
 									Xem chi tiết
 								</Link>
-								{pack.scope === "org"
-									? canManagePacks && (
-											<>
-												<Button
-													variant="outline"
-													size="sm"
-													disabled={busyId === pack.id}
-													onClick={() => openEditModal(pack)}
-												>
-													<Pencil className="size-3.5" />
-													Chỉnh sửa
-												</Button>
-												<Button
-													variant="danger"
-													size="sm"
-													disabled={busyId === pack.id}
-													onClick={() => {
-														setDeleteError(null);
-														setDeletingPack(pack);
-													}}
-												>
-													<Trash2 className="size-3.5" />
-													Xoá
-												</Button>
-											</>
-										)
-									: canManagePacks && (
-											<Button
-												variant="secondary"
-												size="sm"
-												disabled={busyId === pack.id}
-												onClick={() => void handleCloneSystemPack(pack)}
-											>
-												<Copy className="size-3.5" />
-												Nhân bản về trung tâm
-											</Button>
-										)}
+								{canManagePacks && (
+									<>
+										<Button
+											variant="outline"
+											size="sm"
+											disabled={busyId === pack.id}
+											onClick={() => openEditModal(pack)}
+										>
+											<Pencil className="size-3.5" />
+											Chỉnh sửa
+										</Button>
+										<Button
+											variant="danger"
+											size="sm"
+											disabled={busyId === pack.id}
+											onClick={() => {
+												setDeleteError(null);
+												setDeletingPack(pack);
+											}}
+										>
+											<Trash2 className="size-3.5" />
+											Xoá
+										</Button>
+									</>
+								)}
 							</div>
 						</Card>
 					))}
@@ -453,7 +430,6 @@ export function StudyPacksRoute() {
 					)}
 					<div className="flex justify-end gap-2">
 						<Button
-							type="button"
 							variant="outline"
 							disabled={deleting}
 							onClick={() => setDeletingPack(null)}
@@ -461,7 +437,6 @@ export function StudyPacksRoute() {
 							Huỷ
 						</Button>
 						<Button
-							type="button"
 							variant="danger"
 							disabled={deleting}
 							onClick={() => void handleConfirmDelete()}

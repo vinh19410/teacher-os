@@ -2163,4 +2163,117 @@ describe("study pack routes & student scheduled visibility (#533)", () => {
 		);
 		expect(unavailableRes.status).toBe(503);
 	});
+
+	test("teacher can update and delete system pack directly (#829)", async () => {
+		// 1. Seed a system study pack
+		await db.insert(schema.studyPack).values({
+			id: "sys-pack-test-829",
+			orgId: null,
+			title: "Bộ đề hệ thống gốc 829",
+			description: "Mô tả ban đầu",
+			level: "A2",
+			status: "ready",
+		});
+		await db.insert(schema.studyPackItem).values({
+			id: "sys-item-829-1",
+			packId: "sys-pack-test-829",
+			dayIndex: 1,
+			position: 0,
+			sourceKind: "library_exercise",
+			sourceId: "lex-vocab-1",
+			note: "Note 1",
+		});
+
+		// 2. Teacher updates system study pack
+		const updateRes = await app.request("/api/study-packs/sys-pack-test-829", {
+			method: "PUT",
+			headers: teacherHeaders("teacher-1"),
+			body: JSON.stringify({
+				title: "Bộ đề hệ thống đã sửa bởi giáo viên",
+				description: "Mô tả cập nhật",
+				level: "B1",
+				status: "ready",
+				items: [
+					{
+						dayIndex: 1,
+						sourceKind: "library_exercise",
+						sourceId: "lex-vocab-1",
+						note: "Note cập nhật",
+					},
+					{
+						dayIndex: 2,
+						sourceKind: "org_prompt",
+						sourceId: "pr-grammar-1",
+						note: "Thêm ngày 2",
+					},
+				],
+			}),
+		});
+		expect(updateRes.status).toBe(200);
+		const updated = (await updateRes.json()) as { pack: StudyPackDetailView };
+		expect(updated.pack.title).toBe("Bộ đề hệ thống đã sửa bởi giáo viên");
+		expect(updated.pack.level).toBe("B1");
+		expect(updated.pack.dayCount).toBe(2);
+		expect(updated.pack.itemCount).toBe(2);
+		expect(updated.pack.scope).toBe("system");
+		expect(updated.pack.orgId).toBeNull();
+
+		// 3. Seed another system study pack to test deletion
+		await db.insert(schema.studyPack).values({
+			id: "sys-pack-del-829",
+			orgId: null,
+			title: "Bộ đề hệ thống cần xoá 829",
+			description: "Sắp bị xoá",
+			level: "A1",
+			status: "ready",
+		});
+		await db.insert(schema.studyPackItem).values({
+			id: "sys-item-del-829",
+			packId: "sys-pack-del-829",
+			dayIndex: 1,
+			position: 0,
+			sourceKind: "library_exercise",
+			sourceId: "lex-vocab-1",
+		});
+
+		const deleteRes = await app.request("/api/study-packs/sys-pack-del-829", {
+			method: "DELETE",
+			headers: teacherHeaders("teacher-1"),
+		});
+		expect(deleteRes.status).toBe(200);
+
+		// Verify it is gone
+		const getDeleted = await app.request("/api/study-packs/sys-pack-del-829", {
+			headers: { "x-test-user": "teacher-1" },
+		});
+		expect(getDeleted.status).toBe(404);
+
+		// 4. Assigned system pack cannot be deleted (409)
+		await db.insert(schema.studyPack).values({
+			id: "sys-pack-assigned-829",
+			orgId: null,
+			title: "Bộ đề hệ thống đã gán 829",
+			status: "ready",
+		});
+		await db.insert(schema.classStudyPack).values({
+			id: "csp-sys-829",
+			orgId: "org-1",
+			classId: "class-1",
+			packId: "sys-pack-assigned-829",
+			title: "Bộ đề hệ thống đã gán 829",
+			status: "active",
+			startDate: "2026-11-20",
+			releaseTime: "06:00",
+			dueTime: "17:00",
+		});
+
+		const conflictDelRes = await app.request(
+			"/api/study-packs/sys-pack-assigned-829",
+			{
+				method: "DELETE",
+				headers: teacherHeaders("teacher-1"),
+			},
+		);
+		expect(conflictDelRes.status).toBe(409);
+	});
 });

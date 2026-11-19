@@ -275,7 +275,12 @@ export function studyPackRoutes(deps: {
 		const [existing] = await db
 			.select()
 			.from(studyPack)
-			.where(and(eq(studyPack.id, id), eq(studyPack.orgId, ctx.orgId)));
+			.where(
+				and(
+					eq(studyPack.id, id),
+					or(eq(studyPack.orgId, ctx.orgId), isNull(studyPack.orgId)),
+				),
+			);
 		if (!existing) {
 			return c.json({ error: "study pack not found" }, 404);
 		}
@@ -311,7 +316,12 @@ export function studyPackRoutes(deps: {
 					status: body.data.status,
 					updatedAt: new Date(),
 				})
-				.where(and(eq(studyPack.id, id), eq(studyPack.orgId, ctx.orgId))),
+				.where(
+					and(
+						eq(studyPack.id, id),
+						or(eq(studyPack.orgId, ctx.orgId), isNull(studyPack.orgId)),
+					),
+				),
 			db.delete(studyPackItem).where(eq(studyPackItem.packId, id)),
 			...buildStudyPackItemInsertStatements(
 				db,
@@ -325,7 +335,12 @@ export function studyPackRoutes(deps: {
 		const [updated] = await db
 			.select()
 			.from(studyPack)
-			.where(and(eq(studyPack.id, id), eq(studyPack.orgId, ctx.orgId)));
+			.where(
+				and(
+					eq(studyPack.id, id),
+					or(eq(studyPack.orgId, ctx.orgId), isNull(studyPack.orgId)),
+				),
+			);
 		if (!updated) {
 			return c.json({ error: "study pack not found" }, 404);
 		}
@@ -343,7 +358,12 @@ export function studyPackRoutes(deps: {
 		const [existing] = await db
 			.select({ id: studyPack.id })
 			.from(studyPack)
-			.where(and(eq(studyPack.id, id), eq(studyPack.orgId, ctx.orgId)));
+			.where(
+				and(
+					eq(studyPack.id, id),
+					or(eq(studyPack.orgId, ctx.orgId), isNull(studyPack.orgId)),
+				),
+			);
 		if (!existing) {
 			return c.json({ error: "study pack not found" }, 404);
 		}
@@ -364,7 +384,12 @@ export function studyPackRoutes(deps: {
 			db.delete(studyPackItem).where(eq(studyPackItem.packId, id)),
 			db
 				.delete(studyPack)
-				.where(and(eq(studyPack.id, id), eq(studyPack.orgId, ctx.orgId))),
+				.where(
+					and(
+						eq(studyPack.id, id),
+						or(eq(studyPack.orgId, ctx.orgId), isNull(studyPack.orgId)),
+					),
+				),
 		]);
 		return c.json({ ok: true }, 200);
 	});
