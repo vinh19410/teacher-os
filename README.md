@@ -79,6 +79,8 @@ Buổi học online có ngày cụ thể tự có Zoom meeting và cloud recordi
 - Meeting được tạo với học viên vào trước giáo viên (không phòng chờ) và tự ghi hình cloud.
 - Cron `*/10` lấy recording (share URL + mật khẩu); sau 72 giờ không có thì đánh dấu lỗi.
 - Giới hạn đã biết: tối đa 100 lệnh tạo/sửa meeting mỗi ngày cho một host; dung lượng cloud recording của gói Pro có hạn, đầy thì recording báo lỗi và phải dọn trên Zoom; nếu phòng bị đóng rồi mở lại giữa buổi, chỉ recording của phiên cuối được lấy.
+- Secret Zoom đặt theo environment (`production`), không đặt mức Repository: staging mà đọc cùng secret sẽ ăn quota 100 lệnh/ngày và giới hạn một meeting cùng lúc của license prod. Một license Pro chỉ mở được một meeting tại một thời điểm, nên hai lớp online trùng giờ thì lớp sau không vào được (chưa có cảnh báo trùng giờ).
+- Dọn staging sau khi bỏ Google Meet (làm tay một lần, không có migration): thu hồi refresh token Google có scope Drive/Calendar đã cấp ở bản cũ (bảng `account`, hoặc thu hồi tại myaccount.google.com/permissions) và xoá các link `meet.google.com` còn trong `class_session.zoom` / `lesson.zoom`.
 
 ## UI Customization
 
