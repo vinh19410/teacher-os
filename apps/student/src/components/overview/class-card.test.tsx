@@ -115,8 +115,8 @@ describe("ClassCard — paused class state (#694)", () => {
 	});
 });
 
-describe("ClassCard — Google Meet link (#816)", () => {
-	it("renders prominent 'Vào lớp (Google Meet)' link with z-10 above stretched card link when active and nextSession has meetUrl", () => {
+describe("ClassCard — Zoom link", () => {
+	it("renders prominent 'Vào lớp (Zoom)' link with z-10 above stretched card link when active and nextSession has joinUrl", () => {
 		render(
 			<ClassCard
 				cls={makeClass({
@@ -126,25 +126,23 @@ describe("ClassCard — Google Meet link (#816)", () => {
 						date: "2026-11-22",
 						time: "19:00",
 						topic: "Speaking Part 2",
-						meetUrl: "https://meet.google.com/abc-defg-hij",
+						joinUrl: "https://zoom.us/j/123456789",
 					},
 				})}
 			/>,
 		);
 
 		const meetLink = screen.getByRole("link", {
-			name: "Vào lớp (Google Meet)",
+			name: "Vào lớp (Zoom)",
 		});
-		expect(meetLink.getAttribute("href")).toBe(
-			"https://meet.google.com/abc-defg-hij",
-		);
+		expect(meetLink.getAttribute("href")).toBe("https://zoom.us/j/123456789");
 		expect(meetLink.getAttribute("target")).toBe("_blank");
 		expect(meetLink.getAttribute("rel")).toBe("noopener noreferrer");
 		expect(meetLink.className).toContain("relative");
 		expect(meetLink.className).toContain("z-10");
 	});
 
-	it("does not render Meet link when nextSession.meetUrl is missing or null", () => {
+	it("does not render Zoom link when nextSession.joinUrl is missing or null", () => {
 		render(
 			<ClassCard
 				cls={makeClass({
@@ -152,18 +150,16 @@ describe("ClassCard — Google Meet link (#816)", () => {
 						date: "2026-11-22",
 						time: "19:00",
 						topic: "Speaking Part 2",
-						meetUrl: null,
+						joinUrl: null,
 					},
 				})}
 			/>,
 		);
 
-		expect(
-			screen.queryByRole("link", { name: "Vào lớp (Google Meet)" }),
-		).toBeNull();
+		expect(screen.queryByRole("link", { name: "Vào lớp (Zoom)" })).toBeNull();
 	});
 
-	it("does not render Meet link when class is paused even if nextSession has meetUrl", () => {
+	it("does not render Zoom link when class is paused even if nextSession has joinUrl", () => {
 		render(
 			<ClassCard
 				cls={makeClass({
@@ -173,18 +169,16 @@ describe("ClassCard — Google Meet link (#816)", () => {
 						date: "2026-11-22",
 						time: "19:00",
 						topic: "Speaking Part 2",
-						meetUrl: "https://meet.google.com/paused-cls",
+						joinUrl: "https://zoom.us/j/123456789",
 					},
 				})}
 			/>,
 		);
 
-		expect(
-			screen.queryByRole("link", { name: "Vào lớp (Google Meet)" }),
-		).toBeNull();
+		expect(screen.queryByRole("link", { name: "Vào lớp (Zoom)" })).toBeNull();
 	});
 
-	it("does not render Meet link when enrollmentStatus is invited", () => {
+	it("does not render Zoom link when enrollmentStatus is invited", () => {
 		render(
 			<ClassCard
 				cls={makeClass({
@@ -194,15 +188,13 @@ describe("ClassCard — Google Meet link (#816)", () => {
 						date: "2026-11-22",
 						time: "19:00",
 						topic: "Speaking Part 2",
-						meetUrl: "https://meet.google.com/invited-cls",
+						joinUrl: "https://zoom.us/j/123456789",
 					},
 				})}
 				onAccept={vi.fn()}
 			/>,
 		);
 
-		expect(
-			screen.queryByRole("link", { name: "Vào lớp (Google Meet)" }),
-		).toBeNull();
+		expect(screen.queryByRole("link", { name: "Vào lớp (Zoom)" })).toBeNull();
 	});
 });

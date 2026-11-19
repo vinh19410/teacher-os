@@ -86,13 +86,6 @@ import type { Db, KernelCtx } from "../app";
 import type { AiGrader } from "../lib/ai-grading/grader";
 import { formatSenderName } from "../lib/brand";
 import { isManualClass } from "../lib/class-mode";
-import {
-	autoProvisionMeetingsForNewClass,
-	ensureSessionMeeting,
-	syncCalendarAttendeesForClass,
-	syncCalendarOnSessionCancelOrDelete,
-	syncCalendarOnSessionEdit,
-} from "../lib/google-meet/session-meet-service";
 import type { MediaStore } from "../lib/media-store";
 import {
 	deliverNotifications,
@@ -140,6 +133,13 @@ import {
 	MAX_IMPORT_NODES,
 	selectTemplateTree,
 } from "../lib/syllabus-curriculum";
+import {
+	autoProvisionMeetingsForNewClass,
+	ensureSessionMeeting,
+	syncZoomOnSessionCancelOrDelete,
+	syncZoomOnSessionEdit,
+} from "../lib/zoom/session-zoom-service";
+import type { ZoomClient, ZoomConfig } from "../lib/zoom/zoom-client";
 import { assignmentRoutes } from "./assignments";
 import { bankLinkRoutes } from "./bank-link";
 import { dailyAttendanceRoutes } from "./daily-attendance";
@@ -149,7 +149,6 @@ import {
 } from "./dashboard-reminders";
 import { activateEnrollment } from "./enrollment-activation";
 import { eventRoutes } from "./events";
-import { googleMeetDepsFrom, runGoogleSyncTask } from "./google-meet";
 import { gradingRoutes } from "./grading";
 import { holidayRoutes, isRollbackableConstraintError } from "./holidays";
 import { leadRoutes } from "./leads";
@@ -163,6 +162,7 @@ import { studyPackRoutes } from "./study-pack";
 import { backfillStuckEnrollments, syllabusRoutes } from "./syllabus";
 import { vocabLibraryRoutes } from "./vocab-library";
 import { vocabTeacherRoutes } from "./vocab-teacher";
+import { runZoomSyncTask, zoomDepsFrom } from "./zoom-meeting";
 
 // Re-export để giữ import path cũ của test (kernel.test.ts) sau khi helper
 // chuyển sang enrollment-activation.ts.
@@ -198,12 +198,9 @@ export function kernelRoutes(deps: {
 	aiRetryDelaysMs?: number[];
 	aiGradingTimeoutMs?: number;
 	fetchExternalAudio?: typeof fetch;
-	googleClientId?: string;
-	googleClientSecret?: string;
-	googleFetch?: typeof fetch;
-	getGoogleWorkspaceClient?: import("../lib/google-meet/google-workspace-client").GoogleWorkspaceClient extends infer T
-		? (userId: string) => Promise<T> | T
-		: never;
+	zoom?: ZoomConfig;
+	zoomFetch?: typeof fetch;
+	getZoomClient?: () => ZoomClient;
 	now?: () => Date;
 }) {
 	const kernel = new Hono<Env>();
@@ -756,12 +753,6 @@ export function kernelRoutes(deps: {
 					}
 					return c.json({ error: "enrollment activation failed" }, 500);
 				}
-				await runGoogleSyncTask(deps, () =>
-					syncCalendarAttendeesForClass(googleMeetDepsFrom(deps), {
-						orgId: ctx.orgId,
-						classId: cls.id,
-					}),
-				);
 				await acceptPendingInvitation();
 				const inviteEmailSent = await sendDirectPortalInviteBestEffort(
 					cls.name,
@@ -1779,12 +1770,6 @@ export function kernelRoutes(deps: {
 				}
 				return c.json({ error: "enrollment activation failed" }, 500);
 			}
-			await runGoogleSyncTask(deps, () =>
-				syncCalendarAttendeesForClass(googleMeetDepsFrom(deps), {
-					orgId: ctx.orgId,
-					classId: cls.id,
-				}),
-			);
 		} else {
 			const clsBeforeNotify = await findClass(db, cls.id, ctx.orgId);
 			if (clsBeforeNotify?.status !== "active") {
@@ -1830,21 +1815,6 @@ export function kernelRoutes(deps: {
 
 		const result = await activateEnrollment(db, ctx.orgId, enrollmentId);
 		if (result.ok) {
-			const [enrRow] = await db
-				.select({ classId: enrollment.classId })
-				.from(enrollment)
-				.where(
-					and(eq(enrollment.id, enrollmentId), eq(enrollment.orgId, ctx.orgId)),
-				)
-				.limit(1);
-			if (enrRow) {
-				await runGoogleSyncTask(deps, () =>
-					syncCalendarAttendeesForClass(googleMeetDepsFrom(deps), {
-						orgId: ctx.orgId,
-						classId: enrRow.classId,
-					}),
-				);
-			}
 			return c.json({ ok: true });
 		}
 		if (result.error === "class-paused") {
@@ -2107,11 +2077,10 @@ export function kernelRoutes(deps: {
 			input.mode === "Online" &&
 			input.sessionsTotal > 0
 		) {
-			await runGoogleSyncTask(deps, () =>
-				autoProvisionMeetingsForNewClass(googleMeetDepsFrom(deps), {
+			await runZoomSyncTask(deps, () =>
+				autoProvisionMeetingsForNewClass(zoomDepsFrom(deps), {
 					orgId: ctx.orgId,
 					classId,
-					actorUserId: ctx.userId,
 					mode: input.mode,
 					schedule: scheduleJson,
 					startDate: input.startDate,
@@ -2708,7 +2677,7 @@ export function kernelRoutes(deps: {
 		}
 		if (nextStatus === "cancelled" && row.date !== null) {
 			const cancelledDate = row.date;
-			await runGoogleSyncTask(deps, async () => {
+			await runZoomSyncTask(deps, async () => {
 				const counts = await bucketCounts(
 					db,
 					row.classId,
@@ -2716,15 +2685,10 @@ export function kernelRoutes(deps: {
 					ctx.orgId,
 				);
 				if (counts.upcoming === 0) {
-					await syncCalendarOnSessionCancelOrDelete(googleMeetDepsFrom(deps), {
+					await syncZoomOnSessionCancelOrDelete(zoomDepsFrom(deps), {
 						orgId: ctx.orgId,
 						classId: row.classId,
 						dateISO: cancelledDate,
-					});
-				} else {
-					await syncCalendarAttendeesForClass(googleMeetDepsFrom(deps), {
-						orgId: ctx.orgId,
-						classId: row.classId,
 					});
 				}
 			});
@@ -2826,8 +2790,8 @@ export function kernelRoutes(deps: {
 				);
 			}
 			const editedDate = pre.date;
-			await runGoogleSyncTask(deps, () =>
-				syncCalendarOnSessionEdit(googleMeetDepsFrom(deps), {
+			await runZoomSyncTask(deps, () =>
+				syncZoomOnSessionEdit(zoomDepsFrom(deps), {
 					orgId: ctx.orgId,
 					classId: pre.classId,
 					oldDateISO: editedDate,
@@ -3192,8 +3156,8 @@ export function kernelRoutes(deps: {
 					}),
 				);
 			}
-			await runGoogleSyncTask(deps, () =>
-				syncCalendarOnSessionEdit(googleMeetDepsFrom(deps), {
+			await runZoomSyncTask(deps, () =>
+				syncZoomOnSessionEdit(zoomDepsFrom(deps), {
 					orgId: ctx.orgId,
 					classId,
 					oldDateISO: dateISO,
@@ -3472,12 +3436,11 @@ export function kernelRoutes(deps: {
 			throw err;
 		}
 		if (cls.mode === "Online" && body.data.zoom.trim() === "") {
-			await runGoogleSyncTask(deps, async () => {
-				await ensureSessionMeeting(googleMeetDepsFrom(deps), {
+			await runZoomSyncTask(deps, async () => {
+				await ensureSessionMeeting(zoomDepsFrom(deps), {
 					orgId: kernelCtx.orgId,
 					classId,
 					dateISO,
-					actorUserId: kernelCtx.userId,
 				});
 			});
 		}
@@ -3655,8 +3618,8 @@ export function kernelRoutes(deps: {
 			}
 			throw err;
 		}
-		await runGoogleSyncTask(deps, () =>
-			syncCalendarOnSessionCancelOrDelete(googleMeetDepsFrom(deps), {
+		await runZoomSyncTask(deps, () =>
+			syncZoomOnSessionCancelOrDelete(zoomDepsFrom(deps), {
 				orgId: ctx.orgId,
 				classId,
 				dateISO,
@@ -3729,8 +3692,8 @@ export function kernelRoutes(deps: {
 			);
 		}
 		if (nextStatus === "cancelled" && rows.length > 0) {
-			await runGoogleSyncTask(deps, () =>
-				syncCalendarOnSessionCancelOrDelete(googleMeetDepsFrom(deps), {
+			await runZoomSyncTask(deps, () =>
+				syncZoomOnSessionCancelOrDelete(zoomDepsFrom(deps), {
 					orgId,
 					classId,
 					dateISO,

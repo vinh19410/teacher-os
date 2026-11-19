@@ -210,13 +210,10 @@ export function createAuth(input: CreateAuthInput) {
 			google: {
 				clientId: input.googleClientId,
 				clientSecret: input.googleClientSecret,
-				// Xin offline access + consent để luôn nhận được refresh_token lưu vào
-				// bảng account phục vụ tạo Google Meet / đồng bộ recording chạy nền.
-				accessType: "offline",
 				// Luôn hiện màn chọn tài khoản Google: sau khi bị chặn role
 				// mismatch, người dùng phải chọn được Gmail khác thay vì bị
 				// Google tự dùng lại phiên đang đăng nhập.
-				prompt: "select_account consent",
+				prompt: "select_account",
 			},
 		},
 		emailAndPassword: {

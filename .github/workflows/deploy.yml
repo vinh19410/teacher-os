@@ -69,6 +69,10 @@ jobs:
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          ZOOM_ACCOUNT_ID: ${{ secrets.ZOOM_ACCOUNT_ID }}
+          ZOOM_CLIENT_ID: ${{ secrets.ZOOM_CLIENT_ID }}
+          ZOOM_CLIENT_SECRET: ${{ secrets.ZOOM_CLIENT_SECRET }}
+          ZOOM_HOST_USER: ${{ vars.ZOOM_HOST_USER }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           # #730: chấm nháp AI bài test đầu vào (rỗng = tắt; model rỗng = mặc định).
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

@@ -2213,7 +2213,7 @@ export interface KernelSnapshot {
 	/** TOS-17 (#451): quyền tài chính của thành viên đang xem. Optional để
 	 * tương thích ngược với snapshot fixture cũ trong test. */
 	viewer?: KernelViewer;
-	/** Metadata Google Meet & Recording theo buổi (classId, date). Optional để
+	/** Metadata Zoom & recording theo buổi (classId, date). Optional để
 	 * tương thích ngược với snapshot fixture cũ trong test. */
 	sessionMeetings?: KernelSessionMeetingRow[];
 }
@@ -2396,7 +2396,7 @@ export const studentNextSessionSchema = z.object({
 	date: z.string(),
 	time: z.string(),
 	topic: z.string(),
-	meetUrl: z.string().nullable().optional(),
+	joinUrl: z.string().nullable().optional(),
 });
 export type StudentNextSession = z.infer<typeof studentNextSessionSchema>;
 
@@ -2493,8 +2493,9 @@ export const studentClassLessonSchema = z.object({
 	dur: z.number().int(),
 	status: z.string(),
 	topic: z.string(),
-	meetUrl: z.string().nullable().optional(),
+	joinUrl: z.string().nullable().optional(),
 	recordingUrl: z.string().nullable().optional(),
+	recordingPassword: z.string().nullable().optional(),
 	recordingStatus: z.enum(RECORDING_STATUSES).optional(),
 });
 export type StudentClassLesson = z.infer<typeof studentClassLessonSchema>;
@@ -5334,55 +5335,35 @@ export interface ClassStudyPacksResponse {
 	holidays: { date: string; name: string }[];
 }
 
-export const GOOGLE_MEET_SCOPES = [
-	"https://www.googleapis.com/auth/calendar.events",
-	"https://www.googleapis.com/auth/meetings.space.created",
-	"https://www.googleapis.com/auth/meetings.space.readonly",
-	"https://www.googleapis.com/auth/drive",
-] as const;
-
 export interface KernelSessionMeetingRow {
 	id: string;
 	classId: string;
 	date: string;
-	meetUrl: string;
-	googleCalendarEventId: string | null;
-	googleMeetCode: string | null;
+	joinUrl: string;
+	zoomMeetingId: string | null;
+	recordingPassword: string | null;
 	recordingUrl: string;
 	recordingStatus: RecordingStatus | string;
 	recordingError: string | null;
 	recordingSyncedAt: string | null;
 }
 
-export const GOOGLE_MEET_ERROR_CODES = {
-	NOT_CONNECTED: "GOOGLE_NOT_CONNECTED",
-	INSUFFICIENT_SCOPES: "GOOGLE_INSUFFICIENT_SCOPES",
-	REAUTH_REQUIRED: "GOOGLE_REAUTH_REQUIRED",
-	API_ERROR: "GOOGLE_API_ERROR",
+export const ZOOM_ERROR_CODES = {
+	NOT_CONFIGURED: "ZOOM_NOT_CONFIGURED",
+	API_ERROR: "ZOOM_API_ERROR",
+	RATE_LIMITED: "ZOOM_RATE_LIMITED",
 } as const;
 
-export const googleIntegrationStatusSchema = z.object({
-	linked: z.boolean(),
-	hasMeetScopes: z.boolean(),
-	hasRefreshToken: z.boolean(),
-	scopes: z.array(z.string()),
-	email: z.string().nullable(),
-});
-export type GoogleIntegrationStatus = z.infer<
-	typeof googleIntegrationStatusSchema
->;
-
-export const sessionMeetCreateResponseSchema = z.object({
-	meetUrl: z.string(),
-	googleCalendarEventId: z.string().nullable(),
-	googleMeetCode: z.string().nullable(),
+export const sessionZoomCreateResponseSchema = z.object({
+	joinUrl: z.string(),
+	zoomMeetingId: z.string().nullable(),
 	warning: z.string().nullable().optional(),
 });
-export type SessionMeetCreateResponse = z.infer<
-	typeof sessionMeetCreateResponseSchema
+export type SessionZoomCreateResponse = z.infer<
+	typeof sessionZoomCreateResponseSchema
 >;
 
-export const classMeetBulkCreateResponseSchema = z.object({
+export const classZoomBulkCreateResponseSchema = z.object({
 	created: z.number().int().nonnegative(),
 	skipped: z.number().int().nonnegative(),
 	failed: z.number().int().nonnegative(),
@@ -5393,13 +5374,14 @@ export const classMeetBulkCreateResponseSchema = z.object({
 		}),
 	),
 });
-export type ClassMeetBulkCreateResponse = z.infer<
-	typeof classMeetBulkCreateResponseSchema
+export type ClassZoomBulkCreateResponse = z.infer<
+	typeof classZoomBulkCreateResponseSchema
 >;
 
 export const sessionRecordingSyncResponseSchema = z.object({
 	status: z.enum(RECORDING_STATUSES),
 	recordingUrl: z.string(),
+	recordingPassword: z.string().nullable().optional(),
 	syncedAt: z.string().nullable(),
 	message: z.string().nullable().optional(),
 });

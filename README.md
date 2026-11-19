@@ -69,6 +69,17 @@ Sign-in uses Better-Auth with Google OAuth as the primary method (email/password
 
 The web origin must be listed in `CORS_ORIGIN` (server `trustedOrigins`) so the OAuth callback can redirect back to the app. With `APP_DOMAIN` set, `CORS_ORIGIN` defaults to `https://app.<domain>`.
 
+### Zoom (Server-to-Server OAuth)
+
+Buổi học online có ngày cụ thể tự có Zoom meeting và cloud recording (tài khoản Zoom Pro, một host).
+
+- Biến: `ZOOM_ACCOUNT_ID`, `ZOOM_CLIENT_ID`, `ZOOM_CLIENT_SECRET` (GitHub secrets) và `ZOOM_HOST_USER` (GitHub variable, mặc định `me` = chủ tài khoản). Thiếu một trong ba biến đầu thì tính năng Zoom tắt êm: nút tạo trả `ZOOM_NOT_CONFIGURED`, cron bỏ qua.
+- Scopes cần bật trên app Server-to-Server OAuth: tạo, sửa, xoá, đọc meeting (`meeting:write:meeting:admin`, `meeting:update:meeting:admin`, `meeting:delete:meeting:admin`, `meeting:read:meeting:admin`) và đọc danh sách cloud recording (`cloud_recording:read:list_recording_files:admin`); đối chiếu tên granular scope trên Marketplace khi tạo app.
+- Setting tài khoản Zoom: bật cloud recording; **tắt** "chỉ người đã đăng nhập mới xem được cloud recording" để học viên mở được share link kèm mật khẩu.
+- Meeting được tạo với học viên vào trước giáo viên (không phòng chờ) và tự ghi hình cloud.
+- Cron `*/10` lấy recording (share URL + mật khẩu); sau 72 giờ không có thì đánh dấu lỗi.
+- Giới hạn đã biết: tối đa 100 lệnh tạo/sửa meeting mỗi ngày cho một host; dung lượng cloud recording của gói Pro có hạn, đầy thì recording báo lỗi và phải dọn trên Zoom; nếu phòng bị đóng rồi mở lại giữa buổi, chỉ recording của phiên cuối được lấy.
+
 ## UI Customization
 
 React web apps in this stack share shadcn/ui primitives through `packages/ui`.

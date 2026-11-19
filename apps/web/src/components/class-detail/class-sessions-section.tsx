@@ -47,9 +47,9 @@ import type {
 	Student,
 	Syllabus,
 } from "@/lib/mock-data";
-import { createClassMeetBulk } from "@/lib/repos/google-meet";
 import { makeupDateForShift } from "@/lib/repos/holidays";
 import type { KernelCommandResult } from "@/lib/repos/kernel";
+import { createClassZoomBulk } from "@/lib/repos/zoom-meeting";
 import { todayISOVietnam } from "@/lib/week-grid";
 
 /** Space/Enter must not bubble past a CTA (parity with the roster modal). */
@@ -117,7 +117,7 @@ export function ClassSessionsSection({
 	isPending: (key: string) => boolean;
 	busy: boolean;
 }) {
-	const [bulkCreatingMeet, setBulkCreatingMeet] = useState(false);
+	const [bulkCreatingZoom, setBulkCreatingZoom] = useState(false);
 	const [expandedDetails, setExpandedDetails] = useState<Set<number>>(
 		new Set(),
 	);
@@ -243,7 +243,7 @@ export function ClassSessionsSection({
 	const meetingByDate = new Map(
 		sessionMeetings.filter((m) => m.classId === cls.id).map((m) => [m.date, m]),
 	);
-	const hasMissingMeet =
+	const hasMissingZoom =
 		cls.mode === "Online" &&
 		!(isProjected && cls.schedulingMode === "manual") &&
 		sessions.some((s) => {
@@ -251,44 +251,36 @@ export function ClassSessionsSection({
 			const st = sessionStatus(s);
 			if (st === "cancelled" || st === "holiday") return false;
 			const m = meetingByDate.get(s.dateISO);
-			const url = s.zoom || s.rows[0]?.zoom || m?.meetUrl || "";
+			const url = s.zoom || s.rows[0]?.zoom || m?.joinUrl || "";
 			return url === "";
 		});
 
-	async function handleBulkCreateMeet() {
-		if (bulkCreatingMeet) return;
-		setBulkCreatingMeet(true);
+	async function handleBulkCreateZoom() {
+		if (bulkCreatingZoom) return;
+		setBulkCreatingZoom(true);
 		try {
-			const res = await createClassMeetBulk(cls.id);
+			const res = await createClassZoomBulk(cls.id);
 			if (res.created > 0) {
-				toast.success(`Đã tạo ${res.created} link Google Meet cho lớp.`);
+				toast.success(`Đã tạo ${res.created} link Zoom cho lớp.`);
 			} else if (res.failed > 0) {
-				toast.error(
-					res.errors[0]?.message ?? "Không tạo được link Google Meet.",
-				);
+				toast.error(res.errors[0]?.message ?? "Không tạo được link Zoom.");
 			} else {
-				toast.info("Các buổi học đã có link Google Meet.");
+				toast.info("Các buổi học đã có link Zoom.");
 			}
 			await onRefresh?.();
 		} catch (err) {
 			const code = isHttpError(err) ? err.code : undefined;
-			if (
-				code === "GOOGLE_NOT_CONNECTED" ||
-				code === "GOOGLE_INSUFFICIENT_SCOPES" ||
-				code === "GOOGLE_REAUTH_REQUIRED"
-			) {
+			if (code === "ZOOM_NOT_CONFIGURED") {
 				toast.error(
-					err instanceof Error
-						? `${err.message} (Mở mục Hồ sơ để kết nối Google.)`
-						: "Cần kết nối Google Workspace ở trang Hồ sơ.",
+					"Chưa cấu hình Zoom cho hệ thống. Liên hệ quản trị để thêm ZOOM_ACCOUNT_ID / ZOOM_CLIENT_ID / ZOOM_CLIENT_SECRET.",
 				);
 			} else {
 				toast.error(
-					err instanceof Error ? err.message : "Không tạo được Google Meet.",
+					err instanceof Error ? err.message : "Không tạo được Zoom.",
 				);
 			}
 		} finally {
-			setBulkCreatingMeet(false);
+			setBulkCreatingZoom(false);
 		}
 	}
 
@@ -301,18 +293,18 @@ export function ClassSessionsSection({
 				title="Sessions"
 				count={sessions.length}
 				action={
-					showAddSessionBtn || hasMissingMeet ? (
+					showAddSessionBtn || hasMissingZoom ? (
 						<div className="flex flex-wrap items-center gap-2">
-							{hasMissingMeet && onRefresh && (
+							{hasMissingZoom && onRefresh && (
 								<Button
 									type="button"
 									variant="outline"
 									size="sm"
-									disabled={bulkCreatingMeet}
-									onClick={() => void handleBulkCreateMeet()}
+									disabled={bulkCreatingZoom}
+									onClick={() => void handleBulkCreateZoom()}
 								>
 									<Video aria-hidden="true" className="size-3.5" />
-									{bulkCreatingMeet ? "Đang tạo Meet…" : "Tạo Meet hàng loạt"}
+									{bulkCreatingZoom ? "Đang tạo Zoom…" : "Tạo Zoom hàng loạt"}
 								</Button>
 							)}
 							{showAddSessionBtn && onAddSession && (
@@ -379,9 +371,9 @@ export function ClassSessionsSection({
 							s.rows.length === 0 &&
 							makeupDateForShift({ holidayShifts }, cls.id, s.dateISO) !== null;
 						const meeting = meetingByDate.get(s.dateISO);
-						const rowMeetUrl =
+						const rowJoinUrl =
 							status !== "cancelled" && status !== "holiday" && !shiftedAway
-								? s.zoom || s.rows[0]?.zoom || meeting?.meetUrl || ""
+								? s.zoom || s.rows[0]?.zoom || meeting?.joinUrl || ""
 								: "";
 						const rowRecordingUrl =
 							status !== "cancelled" && status !== "holiday" && !shiftedAway
@@ -485,17 +477,17 @@ export function ClassSessionsSection({
 											</button>
 										)
 									}
-									{(rowMeetUrl || rowRecordingUrl) && (
+									{(rowJoinUrl || rowRecordingUrl) && (
 										<div className="mt-1 flex flex-wrap items-center gap-2.5">
-											{rowMeetUrl && (
+											{rowJoinUrl && (
 												<a
-													href={rowMeetUrl}
+													href={rowJoinUrl}
 													target="_blank"
 													rel="noopener noreferrer"
 													className="inline-flex items-center gap-1 whitespace-nowrap font-medium text-primary text-xs underline-offset-4 hover:underline focus-visible:shadow-[var(--focus-ring)] focus-visible:outline-none"
 												>
 													<Video aria-hidden="true" className="size-3.5" />
-													Vào Meet
+													Vào lớp (Zoom)
 													<ExternalLink aria-hidden="true" className="size-3" />
 												</a>
 											)}

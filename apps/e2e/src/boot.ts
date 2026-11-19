@@ -22,10 +22,10 @@ import { migrate } from "drizzle-orm/libsql/migrator";
 import { buildApp, type Db } from "server/app";
 import { createFakeAiGrader } from "server/lib/ai-grading/fake-grader";
 import { createFakeExamExtractor } from "server/lib/exam-import/fake-extractor";
-import { createFakeGoogleWorkspace } from "server/lib/google-meet/fake-client";
-import { runRecordingSyncCron } from "server/lib/google-meet/session-meet-service";
 import { createFakePlacementAiGrader } from "server/lib/placement-ai/fake-grader";
 import { isAllowedStudyPackAudioUrl } from "server/lib/study-pack-audio";
+import { createFakeZoom } from "server/lib/zoom/fake-zoom-client";
+import { runRecordingSyncCron } from "server/lib/zoom/session-zoom-service";
 import { getSessionUser } from "server/session";
 import { createFakeBankHub } from "./fake-bank-hub";
 import { createFsMediaStore } from "./fs-media-store";
@@ -200,7 +200,7 @@ const fakeBankHub = createFakeBankHub({
 });
 
 const placementAiGrader = createFakePlacementAiGrader();
-const fakeGoogleWorkspace = createFakeGoogleWorkspace();
+const fakeZoom = createFakeZoom();
 
 const app = buildApp({
 	getDb: () => libsql as unknown as Db,
@@ -221,8 +221,7 @@ const app = buildApp({
 	// #730: grader placement fake (rubric 3, lỗi = từ đầu tiên, transcript
 	// cố định) — E2E chấm nháp Writing/Speaking offline, không gọi OpenAI.
 	getPlacementAiGrader: () => placementAiGrader,
-	getGoogleWorkspaceClient: (userId) =>
-		fakeGoogleWorkspace.getClientForUser(libsql as unknown as Db, userId),
+	getZoomClient: () => fakeZoom.client,
 	adminEmails: ADMIN_EMAILS,
 	teacherEmails: runtimeTeacherEmails,
 	adminOrigins: [
@@ -349,12 +348,12 @@ app.post("/__e2e/teacher-emails", async (c) => {
 	return c.json({ ok: true, teacherEmails: [...runtimeTeacherEmails] });
 });
 
-app.post("/__e2e/google-meet-recording", async (c) => {
+app.post("/__e2e/zoom-recording", async (c) => {
 	const raw: unknown = await c.req.json().catch(() => null);
 	const ready = Boolean(
 		raw && typeof raw === "object" && "ready" in raw && raw.ready === true,
 	);
-	fakeGoogleWorkspace.setRecordingReady(ready);
+	fakeZoom.setRecordingReady(ready);
 	return c.json({ ok: true, ready });
 });
 
@@ -369,8 +368,7 @@ app.post("/__e2e/run-recording-cron", async (c) => {
 			: undefined;
 	const res = await runRecordingSyncCron({
 		db: libsql as unknown as Db,
-		getGoogleWorkspaceClient: (userId) =>
-			fakeGoogleWorkspace.getClientForUser(libsql as unknown as Db, userId),
+		getZoomClient: () => fakeZoom.client,
 		now: () => (nowIso ? new Date(nowIso) : new Date()),
 	});
 	return c.json(res);

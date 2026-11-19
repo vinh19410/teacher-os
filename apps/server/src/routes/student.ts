@@ -78,7 +78,6 @@ import type { Db } from "../app";
 import type { AiGrader } from "../lib/ai-grading/grader";
 import { scheduleAiGrading } from "../lib/ai-grading/run-grading";
 import { visibleAssignmentFilter } from "../lib/assignment-visibility";
-import { syncCalendarAttendeesForClass } from "../lib/google-meet/session-meet-service";
 import { mediaObjectResponse, toQuizAttemptMedia } from "../lib/media-response";
 import { MediaSizeMismatchError, type MediaStore } from "../lib/media-store";
 import {
@@ -95,7 +94,6 @@ import { serveStudyPackAudio } from "../lib/study-pack-audio";
 import type { SessionUser } from "../session";
 import { provisionStudentForUser } from "../student-provisioning";
 import { activateEnrollment } from "./enrollment-activation";
-import { googleMeetDepsFrom, runGoogleSyncTask } from "./google-meet";
 import { parsePin } from "./snapshot";
 import {
 	loadClassAssignmentItems,
@@ -124,12 +122,6 @@ export interface StudentRouteDeps {
 	getLibraryAudioStore?(): MediaStore | undefined;
 	/** Allowlist email giáo viên để định tuyến auto-join single-org (#716). */
 	teacherEmails?: string[];
-	googleClientId?: string;
-	googleClientSecret?: string;
-	googleFetch?: typeof fetch;
-	getGoogleWorkspaceClient?: import("../lib/google-meet/google-workspace-client").GoogleWorkspaceClient extends infer T
-		? (userId: string) => Promise<T> | T
-		: never;
 }
 
 export interface StudentContext {
@@ -1190,8 +1182,9 @@ export function studentRoutes(deps: StudentRouteDeps) {
 					.select({
 						classId: classSessionMeeting.classId,
 						date: classSessionMeeting.date,
-						meetUrl: classSessionMeeting.meetUrl,
+						joinUrl: classSessionMeeting.joinUrl,
 						recordingUrl: classSessionMeeting.recordingUrl,
+						recordingPassword: classSessionMeeting.recordingPassword,
 						recordingStatus: classSessionMeeting.recordingStatus,
 					})
 					.from(classSessionMeeting)
@@ -1305,8 +1298,9 @@ export function studentRoutes(deps: StudentRouteDeps) {
 				.select({
 					classId: classSessionMeeting.classId,
 					date: classSessionMeeting.date,
-					meetUrl: classSessionMeeting.meetUrl,
+					joinUrl: classSessionMeeting.joinUrl,
 					recordingUrl: classSessionMeeting.recordingUrl,
+					recordingPassword: classSessionMeeting.recordingPassword,
 					recordingStatus: classSessionMeeting.recordingStatus,
 				})
 				.from(classSessionMeeting)
@@ -1449,10 +1443,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 		const enrollmentId = c.req.param("enrollmentId");
 
 		const [owned] = await db
-			.select({
-				studentId: enrollment.studentId,
-				classId: enrollment.classId,
-			})
+			.select({ studentId: enrollment.studentId })
 			.from(enrollment)
 			.where(and(eq(enrollment.id, enrollmentId), eq(enrollment.orgId, orgId)));
 		if (!owned || owned.studentId !== s.id) {
@@ -1461,12 +1452,6 @@ export function studentRoutes(deps: StudentRouteDeps) {
 
 		const result = await activateEnrollment(db, orgId, enrollmentId);
 		if (result.ok) {
-			await runGoogleSyncTask(deps, () =>
-				syncCalendarAttendeesForClass(googleMeetDepsFrom(deps), {
-					orgId,
-					classId: owned.classId,
-				}),
-			);
 			return c.json({ ok: true });
 		}
 		if (result.error === "class-paused") {

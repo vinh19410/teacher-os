@@ -64,9 +64,9 @@ export function UpcomingSessions({
 							</div>
 							{cls.status !== "paused" &&
 								cls.enrollmentStatus === "active" &&
-								session.meetUrl && (
+								session.joinUrl && (
 									<a
-										href={session.meetUrl}
+										href={session.joinUrl}
 										target="_blank"
 										rel="noopener noreferrer"
 										className={cn(
@@ -75,7 +75,7 @@ export function UpcomingSessions({
 										)}
 									>
 										<Video aria-hidden="true" className="size-3.5" />
-										Vào lớp (Google Meet)
+										Vào lớp (Zoom)
 									</a>
 								)}
 						</div>

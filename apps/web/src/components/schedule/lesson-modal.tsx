@@ -5,7 +5,7 @@ import {
 	LessonEditForm,
 	type LessonEditValues,
 } from "@/components/schedule/lesson-edit-form";
-import { SessionMeetPanel } from "@/components/schedule/session-meet-panel";
+import { SessionZoomPanel } from "@/components/schedule/session-zoom-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -143,7 +143,7 @@ export function LessonModal({
 							<Badge variant="accent">Sắp tới</Badge>
 						)}
 					</div>
-					<SessionMeetPanel
+					<SessionZoomPanel
 						classId={lesson.classId}
 						dateISO={lesson.date}
 						zoom={lesson.zoom}

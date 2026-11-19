@@ -1,9 +1,9 @@
 import {
-	type ClassMeetBulkCreateResponse,
-	GOOGLE_MEET_ERROR_CODES,
+	type ClassZoomBulkCreateResponse,
 	type RecordingStatus,
-	type SessionMeetCreateResponse,
 	type SessionRecordingSyncResponse,
+	type SessionZoomCreateResponse,
+	ZOOM_ERROR_CODES,
 } from "@teacher-os/api/contracts";
 import {
 	parseStartDateStrict,
@@ -19,35 +19,25 @@ import {
 	classSession,
 	classSessionMeeting,
 	classTable,
-	enrollment,
 	lesson,
-	membership,
-	student,
 } from "@teacher-os/db/schema/index";
-import { and, asc, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
 import type { Db } from "../../app";
 import {
+	createZoomClient,
 	type FetchFn,
-	GoogleIntegrationError,
-	getValidGoogleAccessToken,
-} from "./google-oauth";
-import {
-	createGoogleWorkspaceClient,
-	extractMeetCodeFromUrl,
-	type GoogleWorkspaceClient,
-} from "./google-workspace-client";
+	isZoomConfigured,
+	type ZoomClient,
+	type ZoomConfig,
+	ZoomIntegrationError,
+} from "./zoom-client";
 
-export interface GoogleMeetServiceDeps {
+export interface ZoomServiceDeps {
 	db: Db;
-	googleClientId?: string;
-	googleClientSecret?: string;
+	zoom?: ZoomConfig;
 	fetchFn?: FetchFn;
-	/** Test/E2E injection hook to avoid real Google network calls. */
-	getGoogleWorkspaceClient?: (
-		userId: string,
-	) => Promise<GoogleWorkspaceClient> | GoogleWorkspaceClient;
-	/** Optional per-task client cache across multi-session sync loops. */
-	clientCache?: Map<string, GoogleWorkspaceClient>;
+	/** Test/E2E injection hook to avoid real Zoom network calls. */
+	getZoomClient?: () => ZoomClient;
 	now?: () => Date;
 }
 
@@ -59,57 +49,13 @@ const CRON_MIN_AFTER_END_MS = 5 * 60_000;
 const CRON_MAX_AFTER_END_MS = 72 * 3600_000;
 const CRON_FAILED_RETRY_MS = 60 * 60_000;
 
-async function resolveClient(
-	deps: GoogleMeetServiceDeps,
-	userId: string,
-): Promise<GoogleWorkspaceClient> {
-	const cached = deps.clientCache?.get(userId);
-	if (cached) return cached;
-	const client = deps.getGoogleWorkspaceClient
-		? await deps.getGoogleWorkspaceClient(userId)
-		: createGoogleWorkspaceClient({
-				accessToken: await getValidGoogleAccessToken(deps.db, {
-					userId,
-					clientId: deps.googleClientId ?? "",
-					clientSecret: deps.googleClientSecret ?? "",
-					fetchFn: deps.fetchFn,
-				}),
-				fetchFn: deps.fetchFn,
-			});
-	deps.clientCache?.set(userId, client);
-	return client;
-}
+const RECORDING_TIMEOUT_MESSAGE =
+	"Không tìm thấy cloud recording trên Zoom sau 72 giờ (có thể hết dung lượng cloud hoặc buổi không được ghi).";
 
-export async function resolveOrgTeacherUserId(
-	db: Db,
-	orgId: string,
-): Promise<string | null> {
-	const [row] = await db
-		.select({ userId: membership.userId })
-		.from(membership)
-		.where(and(eq(membership.orgId, orgId), eq(membership.role, "teacher")))
-		.orderBy(asc(membership.createdAt), asc(membership.id))
-		.limit(1);
-	return row?.userId ?? null;
-}
-
-export async function loadActiveClassStudentEmails(
-	db: Db,
-	orgId: string,
-	classId: string,
-): Promise<string[]> {
-	const rows = await db
-		.select({ email: student.email })
-		.from(enrollment)
-		.innerJoin(student, eq(enrollment.studentId, student.id))
-		.where(
-			and(
-				eq(enrollment.orgId, orgId),
-				eq(enrollment.classId, classId),
-				eq(enrollment.status, "active"),
-			),
-		);
-	return rows.map((r) => r.email).filter((e) => e.trim().length > 0);
+function resolveZoomClient(deps: ZoomServiceDeps): ZoomClient {
+	return deps.getZoomClient
+		? deps.getZoomClient()
+		: createZoomClient(deps.zoom ?? {}, deps.fetchFn);
 }
 
 function hhmmToMinutes(hhmm: string): number {
@@ -274,17 +220,17 @@ async function resolveOccurrenceTiming(
 	return resolveTimingFromRows(cls, cs, lessonRows, dateISO);
 }
 
-export async function mirrorMeetUrlToSessionRows(
+export async function mirrorJoinUrlToSessionRows(
 	db: Db,
 	orgId: string,
 	classId: string,
 	dateISO: string,
-	meetUrl: string,
+	joinUrl: string,
 ): Promise<void> {
 	await Promise.all([
 		db
 			.update(classSession)
-			.set({ zoom: meetUrl })
+			.set({ zoom: joinUrl })
 			.where(
 				and(
 					eq(classSession.orgId, orgId),
@@ -294,7 +240,7 @@ export async function mirrorMeetUrlToSessionRows(
 			),
 		db
 			.update(lesson)
-			.set({ zoom: meetUrl })
+			.set({ zoom: joinUrl })
 			.where(
 				and(
 					eq(lesson.orgId, orgId),
@@ -305,20 +251,27 @@ export async function mirrorMeetUrlToSessionRows(
 	]);
 }
 
-function buildCalendarSummary(className: string, topic: string): string {
+export function buildMeetingTopic(className: string, topic: string): string {
 	const trimmedTopic = topic.trim();
 	return trimmedTopic ? `${className} — ${trimmedTopic}` : className;
 }
 
+function buildMeetingAgenda(
+	className: string,
+	dateISO: string,
+	time: string,
+): string {
+	return `Buổi học lớp ${className} (${dateISO} ${time})`;
+}
+
 export async function ensureSessionMeeting(
-	deps: GoogleMeetServiceDeps,
+	deps: ZoomServiceDeps,
 	input: {
 		orgId: string;
 		classId: string;
 		dateISO: string;
-		actorUserId: string;
 	},
-): Promise<SessionMeetCreateResponse> {
+): Promise<SessionZoomCreateResponse> {
 	const [existing] = await deps.db
 		.select()
 		.from(classSessionMeeting)
@@ -331,18 +284,17 @@ export async function ensureSessionMeeting(
 		)
 		.limit(1);
 
-	if (existing?.meetUrl) {
-		await mirrorMeetUrlToSessionRows(
+	if (existing?.joinUrl) {
+		await mirrorJoinUrlToSessionRows(
 			deps.db,
 			input.orgId,
 			input.classId,
 			input.dateISO,
-			existing.meetUrl,
+			existing.joinUrl,
 		);
 		return {
-			meetUrl: existing.meetUrl,
-			googleCalendarEventId: existing.googleCalendarEventId,
-			googleMeetCode: existing.googleMeetCode,
+			joinUrl: existing.joinUrl,
+			zoomMeetingId: existing.zoomMeetingId,
 			warning: null,
 		};
 	}
@@ -354,53 +306,29 @@ export async function ensureSessionMeeting(
 		input.dateISO,
 	);
 	if (!timing) {
-		throw new GoogleIntegrationError(
-			GOOGLE_MEET_ERROR_CODES.API_ERROR,
-			"Không tìm thấy buổi học để tạo Google Meet.",
+		throw new ZoomIntegrationError(
+			ZOOM_ERROR_CODES.API_ERROR,
+			"Không tìm thấy buổi học để tạo Zoom.",
 			404,
 		);
 	}
 	if (timing.isCancelledOrHoliday) {
-		throw new GoogleIntegrationError(
-			GOOGLE_MEET_ERROR_CODES.API_ERROR,
-			"Không thể tạo Google Meet cho buổi đã hủy hoặc nghỉ lễ.",
+		throw new ZoomIntegrationError(
+			ZOOM_ERROR_CODES.API_ERROR,
+			"Không thể tạo Zoom cho buổi đã hủy hoặc nghỉ lễ.",
 			409,
 		);
 	}
 
-	const client = await resolveClient(deps, input.actorUserId);
-	const attendeeEmails = await loadActiveClassStudentEmails(
-		deps.db,
-		input.orgId,
-		input.classId,
-	);
-
-	const cal = await client.createCalendarEventWithMeet({
-		summary: buildCalendarSummary(timing.className, timing.topic),
-		description: `Buổi học lớp ${timing.className} (${input.dateISO} ${timing.time})`,
+	const client = resolveZoomClient(deps);
+	const created = await client.createMeeting({
+		topic: buildMeetingTopic(timing.className, timing.topic),
+		agenda: buildMeetingAgenda(timing.className, input.dateISO, timing.time),
 		dateISO: input.dateISO,
 		time: timing.time,
-		dur: timing.dur,
-		attendeeEmails,
-		requestId: `tos-${input.classId}-${input.dateISO}-${crypto.randomUUID().slice(0, 8)}`,
+		durMinutes: timing.dur,
 	});
-
-	let spaceName: string | null = null;
-	let warning: string | null = null;
-	const meetCode = cal.meetCode ?? extractMeetCodeFromUrl(cal.hangoutLink);
-	if (meetCode) {
-		const configured = await client
-			.configureMeetSpace({ meetCode })
-			.catch(() => ({
-				spaceName: null,
-				meetingUri: null,
-				warning: "Đã tạo link Meet nhưng không thể cấu hình phòng tự động.",
-			}));
-		spaceName = configured.spaceName;
-		warning = configured.warning;
-	}
-
-	const meetUrl = cal.hangoutLink;
+	const { joinUrl, meetingId } = created;
 
 	const saveClaimedMeeting = async (
 		winnerId: string,
@@ -409,24 +337,33 @@ export async function ensureSessionMeeting(
 		deps.db
 			.update(classSessionMeeting)
 			.set({
-				meetUrl,
-				googleCalendarEventId: cal.eventId,
-				googleMeetSpaceName: spaceName,
-				googleMeetCode: meetCode,
-				googleOwnerUserId: input.actorUserId,
+				joinUrl,
+				zoomMeetingId: meetingId,
 				recordingStatus: winnerHasRecording ? "ready" : "pending",
 			})
 			.where(
 				and(
 					eq(classSessionMeeting.id, winnerId),
-					eq(classSessionMeeting.meetUrl, ""),
+					eq(classSessionMeeting.joinUrl, ""),
 				),
 			)
 			.returning({ id: classSessionMeeting.id });
 
+	const deleteSurplusMeeting = async () => {
+		try {
+			await client.deleteMeeting(meetingId);
+		} catch (err) {
+			console.warn("[zoom] delete duplicate meeting failed", {
+				classId: input.classId,
+				date: input.dateISO,
+				err,
+			});
+		}
+	};
+
 	const cleanupAndReturnWinner =
-		async (): Promise<SessionMeetCreateResponse> => {
-			await client.deleteCalendarEvent(cal.eventId).catch(() => undefined);
+		async (): Promise<SessionZoomCreateResponse> => {
+			await deleteSurplusMeeting();
 			const [winner] = await deps.db
 				.select()
 				.from(classSessionMeeting)
@@ -438,24 +375,23 @@ export async function ensureSessionMeeting(
 					),
 				)
 				.limit(1);
-			if (!winner?.meetUrl) {
-				throw new GoogleIntegrationError(
-					GOOGLE_MEET_ERROR_CODES.API_ERROR,
-					"Không thể lưu thông tin Google Meet cho buổi học.",
+			if (!winner?.joinUrl) {
+				throw new ZoomIntegrationError(
+					ZOOM_ERROR_CODES.API_ERROR,
+					"Không thể lưu thông tin Zoom cho buổi học.",
 					409,
 				);
 			}
-			await mirrorMeetUrlToSessionRows(
+			await mirrorJoinUrlToSessionRows(
 				deps.db,
 				input.orgId,
 				input.classId,
 				input.dateISO,
-				winner.meetUrl,
+				winner.joinUrl,
 			);
 			return {
-				meetUrl: winner.meetUrl,
-				googleCalendarEventId: winner.googleCalendarEventId,
-				googleMeetCode: winner.googleMeetCode,
+				joinUrl: winner.joinUrl,
+				zoomMeetingId: winner.zoomMeetingId,
 				warning: null,
 			};
 		};
@@ -475,11 +411,8 @@ export async function ensureSessionMeeting(
 				orgId: input.orgId,
 				classId: input.classId,
 				date: input.dateISO,
-				meetUrl,
-				googleCalendarEventId: cal.eventId,
-				googleMeetSpaceName: spaceName,
-				googleMeetCode: meetCode,
-				googleOwnerUserId: input.actorUserId,
+				joinUrl,
+				zoomMeetingId: meetingId,
 				recordingUrl: "",
 				recordingStatus: "pending",
 			});
@@ -496,10 +429,10 @@ export async function ensureSessionMeeting(
 				)
 				.limit(1);
 			if (!winner) {
-				await client.deleteCalendarEvent(cal.eventId).catch(() => undefined);
+				await deleteSurplusMeeting();
 				throw err;
 			}
-			if (!winner.meetUrl) {
+			if (!winner.joinUrl) {
 				const claimed = await saveClaimedMeeting(
 					winner.id,
 					Boolean(winner.recordingUrl),
@@ -513,28 +446,29 @@ export async function ensureSessionMeeting(
 		}
 	}
 
-	await mirrorMeetUrlToSessionRows(
+	await mirrorJoinUrlToSessionRows(
 		deps.db,
 		input.orgId,
 		input.classId,
 		input.dateISO,
-		meetUrl,
+		joinUrl,
 	);
 
-	return {
-		meetUrl,
-		googleCalendarEventId: cal.eventId,
-		googleMeetCode: meetCode,
-		warning,
-	};
+	return { joinUrl, zoomMeetingId: meetingId, warning: null };
+}
+
+function isDailyQuotaError(err: unknown): boolean {
+	return (
+		err instanceof ZoomIntegrationError &&
+		err.code === ZOOM_ERROR_CODES.RATE_LIMITED
+	);
 }
 
 export async function autoProvisionMeetingsForNewClass(
-	deps: GoogleMeetServiceDeps,
+	deps: ZoomServiceDeps,
 	input: {
 		orgId: string;
 		classId: string;
-		actorUserId: string;
 		mode: string;
 		schedule: string;
 		startDate: string;
@@ -552,19 +486,23 @@ export async function autoProvisionMeetingsForNewClass(
 				orgId: input.orgId,
 				classId: input.classId,
 				dateISO: occ.date,
-				actorUserId: input.actorUserId,
 			});
 		} catch (err) {
 			if (
-				err instanceof GoogleIntegrationError &&
-				(err.code === GOOGLE_MEET_ERROR_CODES.NOT_CONNECTED ||
-					err.code === GOOGLE_MEET_ERROR_CODES.INSUFFICIENT_SCOPES ||
-					err.code === GOOGLE_MEET_ERROR_CODES.REAUTH_REQUIRED)
+				err instanceof ZoomIntegrationError &&
+				err.code === ZOOM_ERROR_CODES.NOT_CONFIGURED
 			) {
-				// Giáo viên chưa kết nối đủ quyền — dừng ngay không lặp vô ích.
+				// Chưa cấu hình Zoom — dừng ngay không lặp vô ích.
 				return;
 			}
-			console.warn("[google-meet] auto-provision session failed", {
+			if (isDailyQuotaError(err)) {
+				console.warn("[zoom] auto-provision stopped: Zoom quota reached", {
+					classId: input.classId,
+					date: occ.date,
+				});
+				return;
+			}
+			console.warn("[zoom] auto-provision session failed", {
 				classId: input.classId,
 				date: occ.date,
 				err,
@@ -574,13 +512,12 @@ export async function autoProvisionMeetingsForNewClass(
 }
 
 export async function bulkCreateMeetingsForClass(
-	deps: GoogleMeetServiceDeps,
+	deps: ZoomServiceDeps,
 	input: {
 		orgId: string;
 		classId: string;
-		actorUserId: string;
 	},
-): Promise<ClassMeetBulkCreateResponse> {
+): Promise<ClassZoomBulkCreateResponse> {
 	const [cls] = await deps.db
 		.select({
 			id: classTable.id,
@@ -596,8 +533,8 @@ export async function bulkCreateMeetingsForClass(
 		.limit(1);
 
 	if (!cls) {
-		throw new GoogleIntegrationError(
-			GOOGLE_MEET_ERROR_CODES.API_ERROR,
+		throw new ZoomIntegrationError(
+			ZOOM_ERROR_CODES.API_ERROR,
 			"Không tìm thấy lớp học.",
 			404,
 		);
@@ -626,7 +563,7 @@ export async function bulkCreateMeetingsForClass(
 		deps.db
 			.select({
 				date: classSessionMeeting.date,
-				meetUrl: classSessionMeeting.meetUrl,
+				joinUrl: classSessionMeeting.joinUrl,
 			})
 			.from(classSessionMeeting)
 			.where(
@@ -642,7 +579,7 @@ export async function bulkCreateMeetingsForClass(
 	const inactiveDates = new Set<string>();
 
 	for (const m of existingMeetings) {
-		if (m.meetUrl) existingZoomDates.add(m.date);
+		if (m.joinUrl) existingZoomDates.add(m.date);
 	}
 	for (const cs of csRows) {
 		candidateDates.add(cs.date);
@@ -671,10 +608,15 @@ export async function bulkCreateMeetingsForClass(
 	let failed = 0;
 	const errors: Array<{ date: string; message: string }> = [];
 
-	// Validate token/scopes once upfront so NOT_CONNECTED / INSUFFICIENT_SCOPES fails cleanly with 412.
-	await resolveClient(deps, input.actorUserId);
+	// Kiểm tra cấu hình Zoom một lần ngay đầu để trả 503 gọn thay vì lỗi từng buổi.
+	resolveZoomClient(deps);
 
+	let quotaReached = false;
 	for (const dateISO of sortedDates) {
+		if (quotaReached) {
+			skipped += 1;
+			continue;
+		}
 		if (existingZoomDates.has(dateISO) || inactiveDates.has(dateISO)) {
 			skipped += 1;
 			continue;
@@ -688,23 +630,35 @@ export async function bulkCreateMeetingsForClass(
 				orgId: input.orgId,
 				classId: input.classId,
 				dateISO,
-				actorUserId: input.actorUserId,
 			});
 			created += 1;
 		} catch (err) {
 			failed += 1;
 			errors.push({
 				date: dateISO,
-				message: err instanceof Error ? err.message : "Lỗi tạo Meet",
+				message: err instanceof Error ? err.message : "Lỗi tạo Zoom",
 			});
+			if (isDailyQuotaError(err)) quotaReached = true;
 		}
 	}
 
 	return { created, skipped, failed, errors };
 }
 
-export async function syncCalendarOnSessionEdit(
-	deps: GoogleMeetServiceDeps,
+async function deleteZoomMeetingBestEffort(
+	deps: ZoomServiceDeps,
+	zoomMeetingId: string,
+	context: { classId: string; date: string },
+): Promise<void> {
+	try {
+		await resolveZoomClient(deps).deleteMeeting(zoomMeetingId);
+	} catch (err) {
+		console.warn("[zoom] deleteMeeting failed", { ...context, err });
+	}
+}
+
+export async function syncZoomOnSessionEdit(
+	deps: ZoomServiceDeps,
 	input: {
 		orgId: string;
 		classId: string;
@@ -732,6 +686,23 @@ export async function syncCalendarOnSessionEdit(
 
 	const updatePatch: Partial<typeof classSessionMeeting.$inferInsert> = {};
 	if (input.oldDateISO !== input.newDateISO) {
+		const [target] = await deps.db
+			.select()
+			.from(classSessionMeeting)
+			.where(
+				and(
+					eq(classSessionMeeting.orgId, input.orgId),
+					eq(classSessionMeeting.classId, input.classId),
+					eq(classSessionMeeting.date, input.newDateISO),
+				),
+			)
+			.limit(1);
+		if (target?.zoomMeetingId) {
+			await deleteZoomMeetingBestEffort(deps, target.zoomMeetingId, {
+				classId: input.classId,
+				date: input.newDateISO,
+			});
+		}
 		await deps.db
 			.delete(classSessionMeeting)
 			.where(
@@ -743,9 +714,20 @@ export async function syncCalendarOnSessionEdit(
 			);
 		updatePatch.date = input.newDateISO;
 	}
-	if (input.zoom !== undefined && input.zoom !== meeting.meetUrl) {
-		updatePatch.meetUrl = input.zoom;
-		if (input.zoom === "" && !meeting.recordingUrl) {
+	let detachedFromSystemMeeting = false;
+	if (input.zoom !== undefined && input.zoom !== meeting.joinUrl) {
+		updatePatch.joinUrl = input.zoom;
+		if (meeting.zoomMeetingId) {
+			// Link do giáo viên tự nhập thay thế meeting hệ thống: xoá meeting cũ
+			// để không mồ côi và cron không theo dõi nhầm.
+			await deleteZoomMeetingBestEffort(deps, meeting.zoomMeetingId, {
+				classId: input.classId,
+				date: input.oldDateISO,
+			});
+			updatePatch.zoomMeetingId = null;
+			updatePatch.recordingStatus = meeting.recordingUrl ? "ready" : "none";
+			detachedFromSystemMeeting = true;
+		} else if (input.zoom === "" && !meeting.recordingUrl) {
 			updatePatch.recordingStatus = "none";
 		}
 	}
@@ -756,7 +738,7 @@ export async function syncCalendarOnSessionEdit(
 			.where(eq(classSessionMeeting.id, meeting.id));
 	}
 
-	if (!meeting.googleCalendarEventId || !meeting.googleOwnerUserId) return;
+	if (!meeting.zoomMeetingId || detachedFromSystemMeeting) return;
 
 	const timing = await resolveOccurrenceTiming(
 		deps.db,
@@ -767,19 +749,17 @@ export async function syncCalendarOnSessionEdit(
 	if (!timing) return;
 
 	try {
-		const client = await resolveClient(deps, meeting.googleOwnerUserId);
-		await client.patchCalendarEvent({
-			eventId: meeting.googleCalendarEventId,
-			summary: buildCalendarSummary(
-				timing.className,
-				input.topic ?? timing.topic,
-			),
+		const client = resolveZoomClient(deps);
+		const time = input.time ?? timing.time;
+		await client.updateMeeting(meeting.zoomMeetingId, {
+			topic: buildMeetingTopic(timing.className, input.topic ?? timing.topic),
+			agenda: buildMeetingAgenda(timing.className, input.newDateISO, time),
 			dateISO: input.newDateISO,
-			time: input.time ?? timing.time,
-			dur: input.dur ?? timing.dur,
+			time,
+			durMinutes: input.dur ?? timing.dur,
 		});
 	} catch (err) {
-		console.warn("[google-meet] patchCalendarEvent failed", {
+		console.warn("[zoom] updateMeeting failed", {
 			classId: input.classId,
 			date: input.newDateISO,
 			err,
@@ -787,8 +767,8 @@ export async function syncCalendarOnSessionEdit(
 	}
 }
 
-export async function syncCalendarOnSessionCancelOrDelete(
-	deps: GoogleMeetServiceDeps,
+export async function syncZoomOnSessionCancelOrDelete(
+	deps: ZoomServiceDeps,
 	input: {
 		orgId: string;
 		classId: string;
@@ -810,12 +790,12 @@ export async function syncCalendarOnSessionCancelOrDelete(
 
 	if (!meeting) return;
 
-	if (meeting.googleCalendarEventId && meeting.googleOwnerUserId) {
+	if (meeting.zoomMeetingId) {
 		try {
-			const client = await resolveClient(deps, meeting.googleOwnerUserId);
-			await client.deleteCalendarEvent(meeting.googleCalendarEventId);
+			const client = resolveZoomClient(deps);
+			await client.deleteMeeting(meeting.zoomMeetingId);
 		} catch (err) {
-			console.warn("[google-meet] deleteCalendarEvent failed", {
+			console.warn("[zoom] deleteMeeting failed", {
 				classId: input.classId,
 				date: input.dateISO,
 				err,
@@ -831,72 +811,28 @@ export async function syncCalendarOnSessionCancelOrDelete(
 		await deps.db
 			.update(classSessionMeeting)
 			.set({
-				googleCalendarEventId: null,
+				zoomMeetingId: null,
+				joinUrl: "",
 				recordingStatus: meeting.recordingUrl ? "ready" : "none",
 			})
 			.where(eq(classSessionMeeting.id, meeting.id));
-	}
-}
-
-export async function syncCalendarAttendeesForClass(
-	deps: GoogleMeetServiceDeps,
-	input: {
-		orgId: string;
-		classId: string;
-	},
-): Promise<void> {
-	const meetings = await deps.db
-		.select()
-		.from(classSessionMeeting)
-		.where(
-			and(
-				eq(classSessionMeeting.orgId, input.orgId),
-				eq(classSessionMeeting.classId, input.classId),
-			),
+		await mirrorJoinUrlToSessionRows(
+			deps.db,
+			input.orgId,
+			input.classId,
+			input.dateISO,
+			"",
 		);
-
-	const activeEvents = meetings.filter(
-		(m) => m.googleCalendarEventId && m.googleOwnerUserId && !m.recordingUrl,
-	);
-	if (activeEvents.length === 0) return;
-
-	const attendeeEmails = await loadActiveClassStudentEmails(
-		deps.db,
-		input.orgId,
-		input.classId,
-	);
-	const clientCache = new Map<string, GoogleWorkspaceClient>();
-
-	for (const m of activeEvents.slice(0, 10)) {
-		if (!m.googleCalendarEventId || !m.googleOwnerUserId) continue;
-		try {
-			let client = clientCache.get(m.googleOwnerUserId);
-			if (!client) {
-				client = await resolveClient(deps, m.googleOwnerUserId);
-				clientCache.set(m.googleOwnerUserId, client);
-			}
-			await client.patchCalendarEvent({
-				eventId: m.googleCalendarEventId,
-				attendeeEmails,
-			});
-		} catch (err) {
-			console.warn("[google-meet] sync attendees failed", {
-				classId: input.classId,
-				date: m.date,
-				err,
-			});
-		}
 	}
 }
 
 export async function syncRecordingForOccurrence(
-	deps: GoogleMeetServiceDeps,
+	deps: ZoomServiceDeps,
 	input: {
 		orgId: string;
 		classId: string;
 		dateISO: string;
-		actorUserId?: string;
-		cachedClient?: GoogleWorkspaceClient;
+		cachedClient?: ZoomClient;
 	},
 ): Promise<SessionRecordingSyncResponse> {
 	const [meeting] = await deps.db
@@ -911,35 +847,20 @@ export async function syncRecordingForOccurrence(
 		)
 		.limit(1);
 
-	if (!meeting || (!meeting.googleMeetSpaceName && !meeting.googleMeetCode)) {
-		throw new GoogleIntegrationError(
-			GOOGLE_MEET_ERROR_CODES.API_ERROR,
-			"Buổi học này chưa có phòng Google Meet được tạo qua hệ thống.",
+	if (!meeting?.zoomMeetingId) {
+		throw new ZoomIntegrationError(
+			ZOOM_ERROR_CODES.API_ERROR,
+			"Buổi học này chưa có Zoom meeting được tạo qua hệ thống.",
 			404,
 		);
 	}
 
-	const ownerId =
-		meeting.googleOwnerUserId ??
-		input.actorUserId ??
-		(await resolveOrgTeacherUserId(deps.db, input.orgId));
-	if (!ownerId) {
-		throw new GoogleIntegrationError(
-			GOOGLE_MEET_ERROR_CODES.NOT_CONNECTED,
-			"Không xác định được tài khoản Google của giáo viên.",
-			412,
-		);
-	}
-
-	const client = input.cachedClient ?? (await resolveClient(deps, ownerId));
+	const client = input.cachedClient ?? resolveZoomClient(deps);
 	const now = deps.now ? deps.now() : new Date();
 
-	const rec = await client.findReadyRecording({
-		spaceName: meeting.googleMeetSpaceName,
-		meetCode: meeting.googleMeetCode,
-	});
+	const rec = await client.getRecording(meeting.zoomMeetingId);
 
-	if (rec.status === "pending") {
+	if (rec.status !== "ready") {
 		await deps.db
 			.update(classSessionMeeting)
 			.set({
@@ -952,50 +873,39 @@ export async function syncRecordingForOccurrence(
 		return {
 			status: "pending",
 			recordingUrl: meeting.recordingUrl,
+			recordingPassword: meeting.recordingPassword,
 			syncedAt: now.toISOString(),
 			message:
-				"Recording chưa sẵn sàng trên Google Meet. Hệ thống sẽ tiếp tục kiểm tra định kỳ.",
+				"Recording chưa sẵn sàng trên Zoom. Hệ thống sẽ tiếp tục kiểm tra định kỳ.",
 		};
-	}
-
-	const studentEmails = await loadActiveClassStudentEmails(
-		deps.db,
-		input.orgId,
-		input.classId,
-	);
-	let shareWarning: string | null = null;
-	if (studentEmails.length > 0) {
-		const shareRes = await client.shareDriveFileWithEmails({
-			fileId: rec.fileId,
-			emails: studentEmails,
-		});
-		if (shareRes.errors.length > 0) {
-			shareWarning = `Không chia sẻ được cho ${shareRes.errors.length} email học viên.`;
-		}
 	}
 
 	await deps.db
 		.update(classSessionMeeting)
 		.set({
-			recordingUrl: rec.exportUri,
-			recordingFileId: rec.fileId,
+			recordingUrl: rec.shareUrl,
+			recordingPassword: rec.password,
 			recordingStatus: "ready",
-			recordingError: shareWarning,
+			recordingError: null,
 			recordingSyncedAt: now,
 		})
 		.where(eq(classSessionMeeting.id, meeting.id));
 
 	return {
 		status: "ready",
-		recordingUrl: rec.exportUri,
+		recordingUrl: rec.shareUrl,
+		recordingPassword: rec.password,
 		syncedAt: now.toISOString(),
-		message: shareWarning,
+		message: null,
 	};
 }
 
 export async function runRecordingSyncCron(
-	deps: GoogleMeetServiceDeps,
+	deps: ZoomServiceDeps,
 ): Promise<{ checked: number; updated: number; failed: number }> {
+	if (!isZoomConfigured(deps.zoom) && !deps.getZoomClient) {
+		return { checked: 0, updated: 0, failed: 0 };
+	}
 	const now = deps.now ? deps.now() : new Date();
 	const nowMs = now.getTime();
 	const todayISO = vietnamTodayISO(now);
@@ -1007,9 +917,7 @@ export async function runRecordingSyncCron(
 			orgId: classSessionMeeting.orgId,
 			classId: classSessionMeeting.classId,
 			date: classSessionMeeting.date,
-			googleMeetSpaceName: classSessionMeeting.googleMeetSpaceName,
-			googleMeetCode: classSessionMeeting.googleMeetCode,
-			googleOwnerUserId: classSessionMeeting.googleOwnerUserId,
+			zoomMeetingId: classSessionMeeting.zoomMeetingId,
 			recordingUrl: classSessionMeeting.recordingUrl,
 			recordingStatus: classSessionMeeting.recordingStatus,
 			recordingSyncedAt: classSessionMeeting.recordingSyncedAt,
@@ -1018,7 +926,22 @@ export async function runRecordingSyncCron(
 		.where(
 			and(
 				eq(classSessionMeeting.recordingUrl, ""),
-				inArray(classSessionMeeting.recordingStatus, ["pending", "failed"]),
+				or(
+					eq(classSessionMeeting.recordingStatus, "pending"),
+					// Dòng failed chỉ được thử lại khi đã qua chu kỳ retry và còn trong
+					// cửa sổ 72 giờ, để không chiếm chỗ của dòng pending.
+					and(
+						eq(classSessionMeeting.recordingStatus, "failed"),
+						gte(classSessionMeeting.date, addDaysISO(todayISO, -3)),
+						or(
+							isNull(classSessionMeeting.recordingSyncedAt),
+							lte(
+								classSessionMeeting.recordingSyncedAt,
+								new Date(nowMs - CRON_FAILED_RETRY_MS),
+							),
+						),
+					),
+				),
 				gte(classSessionMeeting.date, minDateISO),
 				lte(classSessionMeeting.date, todayISO),
 			),
@@ -1028,7 +951,7 @@ export async function runRecordingSyncCron(
 
 	const eligible = candidates.filter(
 		(row) =>
-			Boolean(row.googleMeetSpaceName || row.googleMeetCode) &&
+			Boolean(row.zoomMeetingId) &&
 			!(
 				row.recordingStatus === "failed" &&
 				row.recordingSyncedAt &&
@@ -1106,7 +1029,11 @@ export async function runRecordingSyncCron(
 		}
 	}
 
+	let checked = 0;
+	let updated = 0;
+	let failed = 0;
 	const dueCandidates: typeof candidates = [];
+	const expiredIds: string[] = [];
 	for (const row of eligible) {
 		const cls = clsByKey.get(`${row.orgId}|${row.classId}`);
 		const key = `${row.orgId}|${row.classId}|${row.date}`;
@@ -1120,51 +1047,49 @@ export async function runRecordingSyncCron(
 		const endMs = vietnamSessionEndMs(row.date, timing.time, timing.dur);
 		if (endMs == null) continue;
 		const elapsedMs = nowMs - endMs;
-		if (
-			elapsedMs >= CRON_MIN_AFTER_END_MS &&
-			elapsedMs <= CRON_MAX_AFTER_END_MS
-		) {
+		if (elapsedMs > CRON_MAX_AFTER_END_MS) {
+			if (row.recordingStatus === "pending") expiredIds.push(row.id);
+			continue;
+		}
+		if (elapsedMs >= CRON_MIN_AFTER_END_MS) {
 			dueCandidates.push(row);
 		}
 		if (dueCandidates.length >= MAX_CRON_SYNC_PER_TICK) break;
 	}
 
-	let checked = 0;
-	let updated = 0;
-	let failed = 0;
-	const clientCache = new Map<
-		string,
-		{ ok: true; client: GoogleWorkspaceClient } | { ok: false; err: unknown }
-	>();
+	for (const id of expiredIds) {
+		checked += 1;
+		failed += 1;
+		await deps.db
+			.update(classSessionMeeting)
+			.set({
+				recordingStatus: "failed",
+				recordingError: RECORDING_TIMEOUT_MESSAGE,
+				recordingSyncedAt: now,
+			})
+			.where(eq(classSessionMeeting.id, id));
+	}
+
+	if (dueCandidates.length === 0) {
+		return { checked, updated, failed };
+	}
+
+	let client: ZoomClient;
+	try {
+		client = resolveZoomClient(deps);
+	} catch (err) {
+		console.warn("[zoom] recording sync cron: client unavailable", err);
+		return { checked, updated, failed };
+	}
 
 	for (const row of dueCandidates) {
 		checked += 1;
 		try {
-			const ownerId =
-				row.googleOwnerUserId ??
-				(await resolveOrgTeacherUserId(deps.db, row.orgId));
-			if (!ownerId) continue;
-
-			let entry = clientCache.get(ownerId);
-			if (!entry) {
-				try {
-					const client = await resolveClient(deps, ownerId);
-					entry = { ok: true, client };
-				} catch (err) {
-					entry = { ok: false, err };
-				}
-				clientCache.set(ownerId, entry);
-			}
-			if (!entry.ok) {
-				throw entry.err;
-			}
-
 			const res = await syncRecordingForOccurrence(deps, {
 				orgId: row.orgId,
 				classId: row.classId,
 				dateISO: row.date,
-				actorUserId: ownerId,
-				cachedClient: entry.client,
+				cachedClient: client,
 			});
 			if (res.status === "ready") updated += 1;
 		} catch (err) {
@@ -1214,6 +1139,7 @@ export async function updateSessionRecordingManual(
 			.update(classSessionMeeting)
 			.set({
 				recordingUrl: trimmed,
+				recordingPassword: null,
 				recordingStatus: nextStatus,
 				recordingError: null,
 				recordingSyncedAt: now,
@@ -1225,7 +1151,7 @@ export async function updateSessionRecordingManual(
 			orgId: input.orgId,
 			classId: input.classId,
 			date: input.dateISO,
-			meetUrl: "",
+			joinUrl: "",
 			recordingUrl: trimmed,
 			recordingStatus: nextStatus,
 			recordingSyncedAt: now,

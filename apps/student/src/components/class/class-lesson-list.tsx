@@ -3,6 +3,7 @@ import { vietnamSessionEndMs } from "@teacher-os/api/vietnam-date";
 import { buttonVariants } from "@teacher-os/ui/components/button";
 import { Check, CircleDashed, Clock, PlayCircle, Video, X } from "lucide-react";
 import { LessonMaterialsDisclosure } from "@/components/class/lesson-materials";
+import { RecordingPassword } from "@/components/class/recording-password";
 import { OverviewEmptyState } from "@/components/overview/empty-state";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
@@ -127,8 +128,8 @@ export function ClassLessonList({
 							: isEnded
 								? "ended"
 								: lesson.status;
-					const showMeetLink =
-						displayStatus === "upcoming" && Boolean(lesson.meetUrl);
+					const showZoomLink =
+						displayStatus === "upcoming" && Boolean(lesson.joinUrl);
 					const canShowRecording =
 						lesson.status !== "cancelled" && lesson.status !== "holiday";
 					const showRecordingLink =
@@ -140,7 +141,7 @@ export function ClassLessonList({
 							lesson.status === "completed" ||
 							lesson.status === "absent");
 					const hasActions =
-						showMeetLink || showRecordingLink || showPendingRecording;
+						showZoomLink || showRecordingLink || showPendingRecording;
 					const future =
 						nextId !== null &&
 						displayStatus === "upcoming" &&
@@ -231,9 +232,9 @@ export function ClassLessonList({
 								)}
 								{hasActions && (
 									<div className="mt-2 flex w-full min-w-0 flex-wrap items-center gap-2">
-										{showMeetLink && lesson.meetUrl && (
+										{showZoomLink && lesson.joinUrl && (
 											<a
-												href={lesson.meetUrl}
+												href={lesson.joinUrl}
 												target="_blank"
 												rel="noopener noreferrer"
 												className={cn(
@@ -245,7 +246,7 @@ export function ClassLessonList({
 												)}
 											>
 												<Video aria-hidden="true" className="size-3.5" />
-												Vào lớp (Google Meet)
+												Vào lớp (Zoom)
 											</a>
 										)}
 										{showRecordingLink && lesson.recordingUrl && (
@@ -265,6 +266,13 @@ export function ClassLessonList({
 												Xem recording
 											</a>
 										)}
+										{showRecordingLink &&
+											lesson.recordingUrl &&
+											lesson.recordingPassword && (
+												<RecordingPassword
+													password={lesson.recordingPassword}
+												/>
+											)}
 										{showPendingRecording && (
 											<Badge
 												variant="outline"

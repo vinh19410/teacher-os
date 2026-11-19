@@ -492,7 +492,7 @@ export async function materializeScheduleForEnrollment(
 		const meetingRows = await db
 			.select({
 				date: classSessionMeeting.date,
-				meetUrl: classSessionMeeting.meetUrl,
+				joinUrl: classSessionMeeting.joinUrl,
 			})
 			.from(classSessionMeeting)
 			.where(
@@ -502,7 +502,7 @@ export async function materializeScheduleForEnrollment(
 				),
 			);
 		const meetByDate = new Map(
-			meetingRows.filter((m) => m.meetUrl).map((m) => [m.date, m.meetUrl]),
+			meetingRows.filter((m) => m.joinUrl).map((m) => [m.date, m.joinUrl]),
 		);
 		for (const row of rows) {
 			if (row.date && !row.zoom) {

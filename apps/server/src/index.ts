@@ -13,10 +13,10 @@ import {
 	type BankHubContext,
 	createBankHubContext,
 } from "./lib/bank-hub/bank-hub-client";
-import { runRecordingSyncCron } from "./lib/google-meet/session-meet-service";
 import type { PlacementAiGrader } from "./lib/placement-ai/grader";
 import { createPlacementAiGrader } from "./lib/placement-ai/openai-grader";
 import { createR2MediaStore } from "./lib/r2-media-store";
+import { runRecordingSyncCron } from "./lib/zoom/session-zoom-service";
 import { getSessionUser } from "./session";
 
 export function parseCORSOrigins(raw: string): string[] {
@@ -101,6 +101,13 @@ const getAuth = (): Auth => {
 	return auth;
 };
 
+const zoomConfig = {
+	accountId: env.ZOOM_ACCOUNT_ID,
+	clientId: env.ZOOM_CLIENT_ID,
+	clientSecret: env.ZOOM_CLIENT_SECRET,
+	hostUser: env.ZOOM_HOST_USER || "me",
+};
+
 const app = buildApp({
 	getDb: () => (db ??= createDb() as unknown as Db),
 	corsOrigin: parseCORSOrigins(env.CORS_ORIGIN),
@@ -182,8 +189,7 @@ const app = buildApp({
 	leadOrigins: parseCORSOrigins(env.LEAD_ORIGINS),
 	leadIpSecret: env.BETTER_AUTH_SECRET,
 	appOrigin: parseCORSOrigins(env.CORS_ORIGIN)[0],
-	googleClientId: env.GOOGLE_CLIENT_ID,
-	googleClientSecret: env.GOOGLE_CLIENT_SECRET,
+	zoom: zoomConfig,
 	runInBackground: (promise) => waitUntil(promise),
 });
 
@@ -200,10 +206,9 @@ export default {
 		ctx.waitUntil(
 			runRecordingSyncCron({
 				db,
-				googleClientId: env.GOOGLE_CLIENT_ID,
-				googleClientSecret: env.GOOGLE_CLIENT_SECRET,
+				zoom: zoomConfig,
 			}).catch((err) => {
-				console.error("[google-meet] recording sync cron failed", err);
+				console.error("[zoom] recording sync cron failed", err);
 			}),
 		);
 	},

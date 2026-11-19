@@ -21,7 +21,7 @@ function makeClass(overrides: Partial<StudentClass> = {}): StudentClass {
 			date: "2026-11-22",
 			time: "19:00",
 			topic: "Speaking Part 2",
-			meetUrl: "https://meet.google.com/upcoming-123",
+			joinUrl: "https://zoom.us/j/123456789",
 		},
 		enrollmentId: "enr-1",
 		enrollmentStatus: "active",
@@ -30,21 +30,19 @@ function makeClass(overrides: Partial<StudentClass> = {}): StudentClass {
 	};
 }
 
-describe("UpcomingSessions — Google Meet link (#816)", () => {
-	it("renders 'Vào lớp (Google Meet)' link when class is active and nextSession has meetUrl", () => {
+describe("UpcomingSessions — Zoom link", () => {
+	it("renders 'Vào lớp (Zoom)' link when class is active and nextSession has joinUrl", () => {
 		render(<UpcomingSessions classes={[makeClass()]} />);
 
 		const meetLink = screen.getByRole("link", {
-			name: "Vào lớp (Google Meet)",
+			name: "Vào lớp (Zoom)",
 		});
-		expect(meetLink.getAttribute("href")).toBe(
-			"https://meet.google.com/upcoming-123",
-		);
+		expect(meetLink.getAttribute("href")).toBe("https://zoom.us/j/123456789");
 		expect(meetLink.getAttribute("target")).toBe("_blank");
 		expect(meetLink.getAttribute("rel")).toBe("noopener noreferrer");
 	});
 
-	it("hides Meet link when class is paused even if nextSession has meetUrl", () => {
+	it("hides Zoom link when class is paused even if nextSession has joinUrl", () => {
 		render(
 			<UpcomingSessions
 				classes={[
@@ -56,12 +54,10 @@ describe("UpcomingSessions — Google Meet link (#816)", () => {
 		);
 
 		expect(screen.getByText("IELTS 6.5")).toBeTruthy();
-		expect(
-			screen.queryByRole("link", { name: "Vào lớp (Google Meet)" }),
-		).toBeNull();
+		expect(screen.queryByRole("link", { name: "Vào lớp (Zoom)" })).toBeNull();
 	});
 
-	it("hides Meet link when session.meetUrl is missing or null", () => {
+	it("hides Zoom link when session.joinUrl is missing or null", () => {
 		render(
 			<UpcomingSessions
 				classes={[
@@ -70,7 +66,7 @@ describe("UpcomingSessions — Google Meet link (#816)", () => {
 							date: "2026-11-22",
 							time: "19:00",
 							topic: "Reading",
-							meetUrl: null,
+							joinUrl: null,
 						},
 					}),
 				]}
@@ -78,9 +74,7 @@ describe("UpcomingSessions — Google Meet link (#816)", () => {
 		);
 
 		expect(screen.getByText("IELTS 6.5")).toBeTruthy();
-		expect(
-			screen.queryByRole("link", { name: "Vào lớp (Google Meet)" }),
-		).toBeNull();
+		expect(screen.queryByRole("link", { name: "Vào lớp (Zoom)" })).toBeNull();
 	});
 
 	it("hides entire card when enrollmentStatus is invited even if nextSession is attached", () => {
