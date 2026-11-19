@@ -1866,4 +1866,403 @@ describe("teacher vocab kernel sub-routes (/api/kernel/vocab/* & snapshot)", () 
 			});
 		}
 	});
+
+	test("vocab group CRUD, duplicate Vietnamese name 409, cross-org IDOR 404, deck assignment/clone/csv-import, snapshot exposure, and batch delete preserving decks/words/cards", async () => {
+		// 1) Create two groups
+		const g1Res = await app.request("/api/kernel/vocab/groups", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({ name: "  Giao Tiếp  " }),
+		});
+		expect(g1Res.status).toBe(201);
+		const { id: g1Id } = (await g1Res.json()) as { id: string };
+
+		const g2Res = await app.request("/api/kernel/vocab/groups", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({ name: "IELTS Speaking" }),
+		});
+		expect(g2Res.status).toBe(201);
+		const { id: g2Id } = (await g2Res.json()) as { id: string };
+
+		// 2) Duplicate name (Vietnamese case-insensitive & NFD/NFC) -> 409 VOCAB_GROUP_NAME_EXISTS
+		const dupCreateRes = await app.request("/api/kernel/vocab/groups", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({ name: "giao tiếp" }),
+		});
+		expect(dupCreateRes.status).toBe(409);
+		expect(await dupCreateRes.json()).toMatchObject({
+			code: VOCAB_ERROR_CODES.GROUP_NAME_EXISTS,
+		});
+
+		const dupNfdRes = await app.request("/api/kernel/vocab/groups", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({ name: "GIAO TIẾP".normalize("NFD") }),
+		});
+		expect(dupNfdRes.status).toBe(409);
+		expect(await dupNfdRes.json()).toMatchObject({
+			code: VOCAB_ERROR_CODES.GROUP_NAME_EXISTS,
+		});
+
+		// 3) Rename group: conflict with another group -> 409; case-only rename on self -> 200; normal rename -> 200
+		const dupRenameRes = await app.request("/api/kernel/vocab/groups/rename", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({ groupId: g2Id, name: "giao tiếp" }),
+		});
+		expect(dupRenameRes.status).toBe(409);
+		expect(await dupRenameRes.json()).toMatchObject({
+			code: VOCAB_ERROR_CODES.GROUP_NAME_EXISTS,
+		});
+
+		const selfCaseRenameRes = await app.request(
+			"/api/kernel/vocab/groups/rename",
+			{
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({ groupId: g1Id, name: "Giao tiếp" }),
+			},
+		);
+		expect(selfCaseRenameRes.status).toBe(200);
+		expect(await selfCaseRenameRes.json()).toEqual({ id: g1Id });
+
+		const renameG2Res = await app.request("/api/kernel/vocab/groups/rename", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({ groupId: g2Id, name: "IELTS Academic" }),
+		});
+		expect(renameG2Res.status).toBe(200);
+
+		// 4) Seed foreign org & group for cross-org IDOR checks
+		await libsql
+			.insert(schema.organization)
+			.values({ id: "org-foreign-grp", name: "Foreign Group Org" })
+			.onConflictDoNothing();
+		await libsql.insert(schema.vocabGroup).values({
+			id: "grp-foreign-1",
+			orgId: "org-foreign-grp",
+			name: "Giao Tiếp",
+			normalizedName: "giao tiếp",
+		});
+
+		const foreignRenameRes = await app.request(
+			"/api/kernel/vocab/groups/rename",
+			{
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({ groupId: "grp-foreign-1", name: "Hijacked" }),
+			},
+		);
+		expect(foreignRenameRes.status).toBe(404);
+		expect(await foreignRenameRes.json()).toMatchObject({
+			code: VOCAB_ERROR_CODES.GROUP_NOT_FOUND,
+		});
+
+		const foreignDeleteRes = await app.request(
+			"/api/kernel/vocab/groups/delete",
+			{
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({ groupId: "grp-foreign-1" }),
+			},
+		);
+		expect(foreignDeleteRes.status).toBe(404);
+		expect(await foreignDeleteRes.json()).toMatchObject({
+			code: VOCAB_ERROR_CODES.GROUP_NOT_FOUND,
+		});
+
+		const foreignDeckCreateRes = await app.request("/api/kernel/vocab/decks", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				classId: null,
+				groupId: "grp-foreign-1",
+				title: "IDOR Deck",
+			}),
+		});
+		expect(foreignDeckCreateRes.status).toBe(404);
+		expect(await foreignDeckCreateRes.json()).toMatchObject({
+			code: VOCAB_ERROR_CODES.GROUP_NOT_FOUND,
+		});
+
+		const foreignCsvRes = await app.request(
+			"/api/kernel/vocab/decks/import-csv",
+			{
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({
+					classId: null,
+					groupId: "grp-foreign-1",
+					decks: [
+						{
+							title: "Foreign CSV Deck",
+							words: [{ word: "test", translation: "kiểm tra" }],
+						},
+					],
+				}),
+			},
+		);
+		expect(foreignCsvRes.status).toBe(404);
+		expect(await foreignCsvRes.json()).toMatchObject({
+			code: VOCAB_ERROR_CODES.GROUP_NOT_FOUND,
+		});
+
+		// 5) Create deck with g1Id, upsert word & student card progress
+		const deckCreateRes = await app.request("/api/kernel/vocab/decks", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				classId: null,
+				groupId: g1Id,
+				title: "Grouped Hub Deck",
+				lang: "en",
+			}),
+		});
+		expect(deckCreateRes.status).toBe(201);
+		const { id: groupedDeckId } = (await deckCreateRes.json()) as {
+			id: string;
+		};
+
+		const wordRes = await app.request("/api/kernel/vocab/words/upsert", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				deckId: groupedDeckId,
+				word: "converse",
+				translation: "trò chuyện",
+				sortOrder: 0,
+			}),
+		});
+		expect(wordRes.status).toBe(201);
+		const { id: groupedWordId } = (await wordRes.json()) as { id: string };
+
+		await libsql.insert(schema.vocabCard).values({
+			id: "card-group-preserve-1",
+			studentId: "student-t1",
+			wordId: groupedWordId,
+			level: 3,
+			state: "review",
+			intervalDays: 7,
+			dueAt: Date.now() + 86_400_000,
+			lapses: 0,
+		});
+
+		// 6) Rename deck: foreign groupId -> 404; omit groupId -> keeps g1Id; switch to g2Id; clear with null; restore to g1Id
+		const foreignDeckRenameRes = await app.request(
+			"/api/kernel/vocab/decks/rename",
+			{
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({
+					deckId: groupedDeckId,
+					title: "Grouped Hub Deck",
+					groupId: "grp-foreign-1",
+				}),
+			},
+		);
+		expect(foreignDeckRenameRes.status).toBe(404);
+		expect(await foreignDeckRenameRes.json()).toMatchObject({
+			code: VOCAB_ERROR_CODES.GROUP_NOT_FOUND,
+		});
+
+		const renameKeepGroupRes = await app.request(
+			"/api/kernel/vocab/decks/rename",
+			{
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({
+					deckId: groupedDeckId,
+					title: "Grouped Hub Deck v2",
+				}),
+			},
+		);
+		expect(renameKeepGroupRes.status).toBe(200);
+		let [deckRow] = await libsql
+			.select()
+			.from(schema.vocabDeck)
+			.where(eq(schema.vocabDeck.id, groupedDeckId));
+		expect(deckRow?.groupId).toBe(g1Id);
+
+		const renameToG2Res = await app.request("/api/kernel/vocab/decks/rename", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				deckId: groupedDeckId,
+				title: "Grouped Hub Deck v2",
+				groupId: g2Id,
+			}),
+		});
+		expect(renameToG2Res.status).toBe(200);
+		[deckRow] = await libsql
+			.select()
+			.from(schema.vocabDeck)
+			.where(eq(schema.vocabDeck.id, groupedDeckId));
+		expect(deckRow?.groupId).toBe(g2Id);
+
+		const clearGroupRes = await app.request("/api/kernel/vocab/decks/rename", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				deckId: groupedDeckId,
+				title: "Grouped Hub Deck v2",
+				groupId: null,
+			}),
+		});
+		expect(clearGroupRes.status).toBe(200);
+		[deckRow] = await libsql
+			.select()
+			.from(schema.vocabDeck)
+			.where(eq(schema.vocabDeck.id, groupedDeckId));
+		expect(deckRow?.groupId).toBeNull();
+
+		await app.request("/api/kernel/vocab/decks/rename", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				deckId: groupedDeckId,
+				title: "Grouped Hub Deck v2",
+				groupId: g1Id,
+			}),
+		});
+
+		// 7) CSV import with groupId assigns groupId to all imported decks
+		const csvRes = await app.request("/api/kernel/vocab/decks/import-csv", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				classId: null,
+				groupId: g2Id,
+				decks: [
+					{
+						title: "CSV Group Deck 1",
+						words: [{ word: "alpha", translation: "a" }],
+					},
+					{
+						title: "CSV Group Deck 2",
+						words: [{ word: "beta", translation: "b" }],
+					},
+				],
+			}),
+		});
+		expect(csvRes.status).toBe(201);
+		const csvPayload = vocabCsvImportResponseSchema.parse(await csvRes.json());
+		expect(csvPayload.deckIds).toHaveLength(2);
+
+		// 8) Clone deck preserves srcDeck.groupId
+		const cloneRes = await app.request("/api/kernel/vocab/decks/clone", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({
+				classId: "class-t1",
+				deckIds: [groupedDeckId],
+			}),
+		});
+		expect(cloneRes.status).toBe(201);
+		const { id: clonedGroupedDeckId } = (await cloneRes.json()) as {
+			id: string;
+		};
+
+		// 9) Snapshot returns vocabGroups (org-scoped, excluding foreign org) and vocabDecks[*].groupId
+		const snapRes = await app.request("/api/kernel", {
+			headers: { "x-test-user": "teacher" },
+		});
+		expect(snapRes.status).toBe(200);
+		const snap = (await snapRes.json()) as KernelSnapshot;
+		expect(snap.vocabGroups).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ id: g1Id, name: "Giao tiếp" }),
+				expect.objectContaining({ id: g2Id, name: "IELTS Academic" }),
+			]),
+		);
+		expect(snap.vocabGroups?.some((g) => g.id === "grp-foreign-1")).toBe(false);
+
+		const snapGroupedDeck = snap.vocabDecks.find((d) => d.id === groupedDeckId);
+		const snapClonedDeck = snap.vocabDecks.find(
+			(d) => d.id === clonedGroupedDeckId,
+		);
+		const snapCsvDeck1 = snap.vocabDecks.find(
+			(d) => d.id === csvPayload.deckIds[0],
+		);
+		const snapCsvDeck2 = snap.vocabDecks.find(
+			(d) => d.id === csvPayload.deckIds[1],
+		);
+		expect(snapGroupedDeck?.groupId).toBe(g1Id);
+		expect(snapClonedDeck?.groupId).toBe(g1Id);
+		expect(snapCsvDeck1?.groupId).toBe(g2Id);
+		expect(snapCsvDeck2?.groupId).toBe(g2Id);
+
+		// 10) Delete g1Id (even with PRAGMA foreign_keys = OFF): explicitly ungroups decks while preserving decks, words, and student vocab_card
+		const deleteG1Res = await app.request("/api/kernel/vocab/groups/delete", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({ groupId: g1Id }),
+		});
+		expect(deleteG1Res.status).toBe(200);
+		expect(await deleteG1Res.json()).toEqual({ id: g1Id });
+
+		const [deletedGroup] = await libsql
+			.select()
+			.from(schema.vocabGroup)
+			.where(eq(schema.vocabGroup.id, g1Id));
+		expect(deletedGroup).toBeUndefined();
+
+		const [ungroupedSource] = await libsql
+			.select()
+			.from(schema.vocabDeck)
+			.where(eq(schema.vocabDeck.id, groupedDeckId));
+		expect(ungroupedSource?.groupId).toBeNull();
+
+		const [ungroupedClone] = await libsql
+			.select()
+			.from(schema.vocabDeck)
+			.where(eq(schema.vocabDeck.id, clonedGroupedDeckId));
+		expect(ungroupedClone?.groupId).toBeNull();
+
+		// Words and student progress survived group deletion
+		const [preservedWord] = await libsql
+			.select()
+			.from(schema.vocabWord)
+			.where(eq(schema.vocabWord.id, groupedWordId));
+		expect(preservedWord?.word).toBe("converse");
+
+		const [preservedCard] = await libsql
+			.select()
+			.from(schema.vocabCard)
+			.where(eq(schema.vocabCard.id, "card-group-preserve-1"));
+		expect(preservedCard).toMatchObject({
+			id: "card-group-preserve-1",
+			level: 3,
+			state: "review",
+		});
+
+		// Foreign org group untouched
+		const [foreignStillExists] = await libsql
+			.select()
+			.from(schema.vocabGroup)
+			.where(eq(schema.vocabGroup.id, "grp-foreign-1"));
+		expect(foreignStillExists?.name).toBe("Giao Tiếp");
+
+		// Cleanup
+		await app.request("/api/kernel/vocab/groups/delete", {
+			method: "POST",
+			headers: teacherHeaders,
+			body: JSON.stringify({ groupId: g2Id }),
+		});
+		for (const dId of [
+			groupedDeckId,
+			clonedGroupedDeckId,
+			...csvPayload.deckIds,
+		]) {
+			await app.request("/api/kernel/vocab/decks/delete", {
+				method: "POST",
+				headers: teacherHeaders,
+				body: JSON.stringify({ deckId: dId }),
+			});
+		}
+		await libsql
+			.delete(schema.vocabGroup)
+			.where(eq(schema.vocabGroup.id, "grp-foreign-1"));
+	});
 });

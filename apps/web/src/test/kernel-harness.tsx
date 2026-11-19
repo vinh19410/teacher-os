@@ -36,6 +36,7 @@ export function snapshotFixture(
 		reports: [],
 		notifs: [],
 		commentBank: [],
+		vocabGroups: [],
 		vocabDecks: [],
 		vocabSuggestions: [],
 		...overrides,

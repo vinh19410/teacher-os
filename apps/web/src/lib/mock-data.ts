@@ -13,6 +13,7 @@ import type {
 	KernelHolidaySummary,
 	KernelViewer,
 	KernelVocabDeckRow,
+	KernelVocabGroupRow,
 	KernelVocabSuggestionRow,
 } from "@teacher-os/api/contracts";
 import type { SyllabusBankMaterialRef } from "@teacher-os/api/material-contracts";
@@ -303,6 +304,8 @@ export type KernelHydratedData = Pick<
 	/** Full-test builder: full tests (parts đã group theo test);
 	 * MockData itself has no such collection. */
 	assignmentTests: KernelAssignmentTestRow[];
+	/** Danh mục nhóm bộ từ vựng theo org. */
+	vocabGroups: KernelVocabGroupRow[];
 	/** Student Vocab SRS (#359): deck list (aggregate wordCount) cho trang lớp. */
 	vocabDecks: KernelVocabDeckRow[];
 	/** Pending vocab suggestions (#363): danh sách gợi ý đang chờ học viên phản hồi. */

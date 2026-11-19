@@ -6,6 +6,7 @@ import {
 	screen,
 	waitFor,
 } from "@testing-library/react";
+import { toast } from "sonner";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	classRow,
@@ -19,6 +20,7 @@ import { VocabWordRow } from "./vocab-word-row";
 describe("VocabLibraryDialog & VocabDeckList library integration (#361)", () => {
 	afterEach(() => {
 		cleanup();
+		vi.restoreAllMocks();
 		vi.unstubAllGlobals();
 	});
 
@@ -597,7 +599,7 @@ describe("VocabLibraryDialog & VocabDeckList library integration (#361)", () => 
 		});
 	});
 
-	it("supports batch selection, enforces cap limits, and clears teacher selections when switching back to library tab", async () => {
+	it("allows selecting >500 words across batches on teacher tab without cap warning, and clears selections when switching back to library tab", async () => {
 		startKernelServer(
 			snapshotFixture({
 				classes: [
@@ -644,22 +646,17 @@ describe("VocabLibraryDialog & VocabDeckList library integration (#361)", () => 
 		fireEvent.click(screen.getByTestId("vocab-add-from-library"));
 		fireEvent.click(screen.getByRole("tab", { name: "Bộ từ đã tạo" }));
 
-		// Batch select picks only the first deck (301 <= 500) and shows batch cap hint
+		// Select all picks both decks (550 words across 2 batches) with no blocking cap warning
 		fireEvent.click(screen.getByTestId("vocab-teacher-select-all"));
 		expect(
 			screen.getByTestId("vocab-library-selection-summary").textContent,
-		).toContain("Đã chọn 1 bộ · 300 từ");
-		expect(screen.getByTestId("vocab-library-batch-hint")).toBeTruthy();
-
-		// Manually checking the second deck exceeds 500 statements -> cap warning & confirm disabled
-		fireEvent.click(
-			screen.getByTestId("vocab-teacher-deck-checkbox-deck-big-2"),
-		);
-		expect(screen.getByTestId("vocab-library-cap-warning")).toBeTruthy();
+		).toContain("Đã chọn 2 bộ · 550 từ (2 lượt gửi)");
+		expect(screen.queryByTestId("vocab-library-batch-hint")).toBeNull();
+		expect(screen.queryByTestId("vocab-library-cap-warning")).toBeNull();
 		expect(
 			(screen.getByTestId("vocab-library-confirm-btn") as HTMLButtonElement)
 				.disabled,
-		).toBe(true);
+		).toBe(false);
 
 		// Switching back to "Thư viện hệ thống" clears selections and notices
 		fireEvent.click(screen.getByRole("tab", { name: "Thư viện hệ thống" }));
@@ -824,5 +821,647 @@ describe("VocabLibraryDialog & VocabDeckList library integration (#361)", () => 
 			screen.getByText(/Chưa có bộ từ đã tạo nào từ lớp khác/),
 		).toBeTruthy();
 		expect(screen.queryByTestId("vocab-teacher-deck-search")).toBeNull();
+	});
+
+	it("filters teacher decks by group, combines group + source + search (including group name), renders group badges, and clears all filters", async () => {
+		startKernelServer(
+			snapshotFixture({
+				classes: [
+					classRow({ id: "cl-1", name: "IELTS 6.5" }),
+					classRow({ id: "cl-2", name: "IELTS 7.5" }),
+				],
+				vocabGroups: [
+					{
+						id: "grp-toeic",
+						name: "TOEIC 700+",
+						createdAt: "2026-10-18T00:00:00.000Z",
+						updatedAt: "2026-10-18T00:00:00.000Z",
+					},
+					{
+						id: "grp-ielts",
+						name: "IELTS Foundation",
+						createdAt: "2026-10-18T00:00:00.000Z",
+						updatedAt: "2026-10-18T00:00:00.000Z",
+					},
+				],
+				vocabDecks: [
+					{
+						id: "deck-ielts-indep",
+						classId: null,
+						groupId: "grp-ielts",
+						title: "Unit 1: Education",
+						lang: "en",
+						wordCount: 20,
+						createdAt: "2026-10-18T01:00:00.000Z",
+						sourceLibraryDeckId: null,
+					},
+					{
+						id: "deck-ielts-cl2",
+						classId: "cl-2",
+						groupId: "grp-ielts",
+						title: "Unit 2: Health",
+						lang: "en",
+						wordCount: 25,
+						createdAt: "2026-10-18T02:00:00.000Z",
+						sourceLibraryDeckId: null,
+					},
+					{
+						id: "deck-toeic-cl2",
+						classId: "cl-2",
+						groupId: "grp-toeic",
+						title: "Office Essentials",
+						lang: "en",
+						wordCount: 18,
+						createdAt: "2026-10-18T03:00:00.000Z",
+						sourceLibraryDeckId: null,
+					},
+					{
+						id: "deck-ungrouped",
+						classId: null,
+						groupId: null,
+						title: "Misc Vocabulary",
+						lang: "en",
+						wordCount: 10,
+						createdAt: "2026-10-18T04:00:00.000Z",
+						sourceLibraryDeckId: null,
+					},
+				],
+			}),
+			(req) => {
+				if (
+					req.method === "GET" &&
+					req.path === "/api/kernel/vocab-library/courses"
+				) {
+					return { status: 200, body: { courses: [] } };
+				}
+				return undefined;
+			},
+		);
+
+		renderWithKernel(<VocabDeckList classId="cl-1" />);
+		await waitFor(() => {
+			expect(screen.getByTestId("vocab-add-from-library")).toBeTruthy();
+		});
+
+		fireEvent.click(screen.getByTestId("vocab-add-from-library"));
+		fireEvent.click(screen.getByRole("tab", { name: "Bộ từ đã tạo" }));
+
+		// Group filter lists "Tất cả nhóm", sorted groups A-Z, and "Chưa phân nhóm"
+		const groupFilter = screen.getByTestId(
+			"vocab-teacher-group-filter",
+		) as HTMLSelectElement;
+		const optionLabels = Array.from(groupFilter.options).map((o) => o.text);
+		expect(optionLabels).toEqual([
+			"Tất cả nhóm",
+			"IELTS Foundation",
+			"TOEIC 700+",
+			"Chưa phân nhóm",
+		]);
+
+		// Group badges rendered only for grouped decks
+		expect(
+			screen.getByTestId("vocab-teacher-group-badge-deck-ielts-indep")
+				.textContent,
+		).toBe("IELTS Foundation");
+		expect(
+			screen.getByTestId("vocab-teacher-group-badge-deck-toeic-cl2")
+				.textContent,
+		).toBe("TOEIC 700+");
+		expect(
+			screen.queryByTestId("vocab-teacher-group-badge-deck-ungrouped"),
+		).toBeNull();
+
+		// Filter by group "IELTS Foundation" -> shows 2 decks
+		fireEvent.change(groupFilter, { target: { value: "group:grp-ielts" } });
+		expect(
+			screen.getByTestId("vocab-teacher-deck-deck-ielts-indep"),
+		).toBeTruthy();
+		expect(
+			screen.getByTestId("vocab-teacher-deck-deck-ielts-cl2"),
+		).toBeTruthy();
+		expect(
+			screen.queryByTestId("vocab-teacher-deck-deck-toeic-cl2"),
+		).toBeNull();
+		expect(
+			screen.queryByTestId("vocab-teacher-deck-deck-ungrouped"),
+		).toBeNull();
+
+		// Combine with Source filter "Lớp IELTS 7.5" -> only deck-ielts-cl2 remains
+		fireEvent.change(screen.getByTestId("vocab-teacher-source-filter"), {
+			target: { value: "class:cl-2" },
+		});
+		expect(
+			screen.getByTestId("vocab-teacher-deck-deck-ielts-cl2"),
+		).toBeTruthy();
+		expect(
+			screen.queryByTestId("vocab-teacher-deck-deck-ielts-indep"),
+		).toBeNull();
+
+		// Clear filters resets source + group + search
+		fireEvent.click(screen.getByTestId("vocab-teacher-clear-filters"));
+		expect(groupFilter.value).toBe("all");
+		expect(
+			(screen.getByTestId("vocab-teacher-source-filter") as HTMLSelectElement)
+				.value,
+		).toBe("all");
+		expect(
+			screen.getByTestId("vocab-teacher-deck-deck-ungrouped"),
+		).toBeTruthy();
+
+		// Filter by "Chưa phân nhóm"
+		fireEvent.change(groupFilter, { target: { value: "ungrouped" } });
+		expect(
+			screen.getByTestId("vocab-teacher-deck-deck-ungrouped"),
+		).toBeTruthy();
+		expect(
+			screen.queryByTestId("vocab-teacher-deck-deck-ielts-indep"),
+		).toBeNull();
+
+		// Clear filters then search by group name (debounced)
+		fireEvent.click(screen.getByTestId("vocab-teacher-clear-filters"));
+		fireEvent.change(screen.getByTestId("vocab-teacher-deck-search"), {
+			target: { value: "toeic 700+" },
+		});
+		await waitFor(
+			() => {
+				expect(
+					screen.queryByTestId("vocab-teacher-deck-deck-ielts-indep"),
+				).toBeNull();
+			},
+			{ timeout: 1000 },
+		);
+		expect(
+			screen.getByTestId("vocab-teacher-deck-deck-toeic-cl2"),
+		).toBeTruthy();
+	});
+
+	it("toggles filtered selection additively across groups without wiping selections from other groups", async () => {
+		startKernelServer(
+			snapshotFixture({
+				classes: [classRow({ id: "cl-1", name: "IELTS 6.5" })],
+				vocabGroups: [
+					{
+						id: "grp-a",
+						name: "Nhóm A",
+						createdAt: "2026-10-18T00:00:00.000Z",
+						updatedAt: "2026-10-18T00:00:00.000Z",
+					},
+					{
+						id: "grp-b",
+						name: "Nhóm B",
+						createdAt: "2026-10-18T00:00:00.000Z",
+						updatedAt: "2026-10-18T00:00:00.000Z",
+					},
+				],
+				vocabDecks: [
+					{
+						id: "deck-a1",
+						classId: null,
+						groupId: "grp-a",
+						title: "Group A Deck 1",
+						lang: "en",
+						wordCount: 15,
+						createdAt: "2026-10-18T01:00:00.000Z",
+						sourceLibraryDeckId: null,
+					},
+					{
+						id: "deck-a2",
+						classId: null,
+						groupId: "grp-a",
+						title: "Group A Deck 2",
+						lang: "en",
+						wordCount: 20,
+						createdAt: "2026-10-18T02:00:00.000Z",
+						sourceLibraryDeckId: null,
+					},
+					{
+						id: "deck-b1",
+						classId: null,
+						groupId: "grp-b",
+						title: "Group B Deck 1",
+						lang: "en",
+						wordCount: 30,
+						createdAt: "2026-10-18T03:00:00.000Z",
+						sourceLibraryDeckId: null,
+					},
+				],
+			}),
+			(req) => {
+				if (
+					req.method === "GET" &&
+					req.path === "/api/kernel/vocab-library/courses"
+				) {
+					return { status: 200, body: { courses: [] } };
+				}
+				return undefined;
+			},
+		);
+
+		renderWithKernel(<VocabDeckList classId="cl-1" />);
+		await waitFor(() => {
+			expect(screen.getByTestId("vocab-add-from-library")).toBeTruthy();
+		});
+
+		fireEvent.click(screen.getByTestId("vocab-add-from-library"));
+		fireEvent.click(screen.getByRole("tab", { name: "Bộ từ đã tạo" }));
+
+		const groupFilter = screen.getByTestId("vocab-teacher-group-filter");
+		const selectAllBtn = () => screen.getByTestId("vocab-teacher-select-all");
+
+		// Filter Group A -> click "Chọn tất cả" -> selects 2 decks (35 words)
+		fireEvent.change(groupFilter, { target: { value: "group:grp-a" } });
+		expect(selectAllBtn().textContent).toBe("Chọn tất cả");
+		fireEvent.click(selectAllBtn());
+		expect(selectAllBtn().textContent).toBe("Bỏ chọn nhóm lọc");
+		expect(
+			screen.getByTestId("vocab-library-selection-summary").textContent,
+		).toContain("Đã chọn 2 bộ · 35 từ");
+
+		// Switch to Group B -> button reads "Chọn tất cả" -> click adds Group B while keeping Group A
+		fireEvent.change(groupFilter, { target: { value: "group:grp-b" } });
+		expect(selectAllBtn().textContent).toBe("Chọn tất cả");
+		fireEvent.click(selectAllBtn());
+		expect(selectAllBtn().textContent).toBe("Bỏ chọn nhóm lọc");
+		expect(
+			screen.getByTestId("vocab-library-selection-summary").textContent,
+		).toContain("Đã chọn 3 bộ · 65 từ");
+
+		// Click "Bỏ chọn nhóm lọc" on Group B -> removes only Group B, Group A remains selected
+		fireEvent.click(selectAllBtn());
+		expect(selectAllBtn().textContent).toBe("Chọn tất cả");
+		expect(
+			screen.getByTestId("vocab-library-selection-summary").textContent,
+		).toContain("Đã chọn 2 bộ · 35 từ");
+
+		// Switch back to Group A -> both checkboxes still checked
+		fireEvent.change(groupFilter, { target: { value: "group:grp-a" } });
+		expect(selectAllBtn().textContent).toBe("Bỏ chọn nhóm lọc");
+		expect(
+			(
+				screen.getByTestId(
+					"vocab-teacher-deck-checkbox-deck-a1",
+				) as HTMLInputElement
+			).checked,
+		).toBe(true);
+		expect(
+			(
+				screen.getByTestId(
+					"vocab-teacher-deck-checkbox-deck-a2",
+				) as HTMLInputElement
+			).checked,
+		).toBe(true);
+	});
+
+	it("auto-batches large teacher deck clone (>500 words) into sequential requests, refreshes snapshot once, and closes modal", async () => {
+		const toastSuccessSpy = vi.spyOn(toast, "success");
+		const bulkDecks = Array.from({ length: 20 }, (_, idx) => ({
+			id: `deck-bulk-${idx + 1}`,
+			classId: null,
+			groupId: "grp-bulk",
+			title: `Bulk Deck ${idx + 1}`,
+			lang: "en",
+			wordCount: 30,
+			createdAt: `2026-10-18T00:${String(idx).padStart(2, "0")}:00.000Z`,
+			sourceLibraryDeckId: null,
+		}));
+
+		let cloneSeq = 0;
+		const server = startKernelServer(
+			snapshotFixture({
+				classes: [classRow({ id: "cl-1", name: "IELTS 6.5" })],
+				vocabGroups: [
+					{
+						id: "grp-bulk",
+						name: "Bộ 20 bài",
+						createdAt: "2026-10-18T00:00:00.000Z",
+						updatedAt: "2026-10-18T00:00:00.000Z",
+					},
+				],
+				vocabDecks: [...bulkDecks],
+			}),
+			(req, srv) => {
+				if (
+					req.method === "GET" &&
+					req.path === "/api/kernel/vocab-library/courses"
+				) {
+					return { status: 200, body: { courses: [] } };
+				}
+				if (
+					req.method === "POST" &&
+					req.path === "/api/kernel/vocab/decks/clone"
+				) {
+					const body = req.body as {
+						classId: string | null;
+						deckIds: string[];
+					};
+					for (const sourceId of body.deckIds) {
+						cloneSeq += 1;
+						const src = srv.snapshot.vocabDecks.find((d) => d.id === sourceId);
+						srv.snapshot.vocabDecks.push({
+							id: `cloned-${cloneSeq}`,
+							classId: body.classId,
+							groupId: src?.groupId ?? null,
+							title: src?.title ?? sourceId,
+							lang: "en",
+							wordCount: src?.wordCount ?? 30,
+							createdAt: "2026-10-19T00:00:00.000Z",
+							sourceLibraryDeckId: null,
+							sourceDeckId: sourceId,
+						});
+					}
+					return {
+						status: 201,
+						body: {
+							id: `cloned-${cloneSeq}`,
+							updated: body.deckIds.length,
+							duplicates: [],
+						},
+					};
+				}
+				return undefined;
+			},
+		);
+
+		renderWithKernel(<VocabDeckList classId="cl-1" />);
+		await waitFor(() => {
+			expect(screen.getByTestId("vocab-add-from-library")).toBeTruthy();
+		});
+		const loadsBeforeClone = server.snapshotLoads;
+
+		fireEvent.click(screen.getByTestId("vocab-add-from-library"));
+		fireEvent.click(screen.getByRole("tab", { name: "Bộ từ đã tạo" }));
+		fireEvent.click(screen.getByTestId("vocab-teacher-select-all"));
+
+		// 20 decks x 30 words = 600 words -> 2 batches (16 decks + 4 decks), no cap warning
+		expect(screen.queryByTestId("vocab-library-cap-warning")).toBeNull();
+		expect(
+			screen.getByTestId("vocab-library-selection-summary").textContent,
+		).toContain("Đã chọn 20 bộ · 600 từ (2 lượt gửi)");
+
+		const confirmBtn = screen.getByTestId(
+			"vocab-library-confirm-btn",
+		) as HTMLButtonElement;
+		expect(confirmBtn.disabled).toBe(false);
+		fireEvent.click(confirmBtn);
+
+		// Modal closes and all 20 cloned decks appear in VocabDeckList
+		await waitFor(() => {
+			expect(screen.queryByTestId("vocab-teacher-decks-tab")).toBeNull();
+		});
+		expect(screen.getByTestId("vocab-deck-row-cloned-1")).toBeTruthy();
+		expect(screen.getByTestId("vocab-deck-row-cloned-20")).toBeTruthy();
+
+		// Exactly 2 sequential POST clone requests, each within <= 50 decks & <= 500 statements
+		const cloneWrites = server.writes.filter(
+			(w) => w.method === "POST" && w.path === "/api/kernel/vocab/decks/clone",
+		);
+		expect(cloneWrites).toHaveLength(2);
+		const firstBody = cloneWrites[0]?.body as {
+			classId: string | null;
+			deckIds: string[];
+		};
+		const secondBody = cloneWrites[1]?.body as {
+			classId: string | null;
+			deckIds: string[];
+		};
+		expect(firstBody.classId).toBe("cl-1");
+		expect(secondBody.classId).toBe("cl-1");
+		expect(firstBody.deckIds).toHaveLength(16);
+		expect(secondBody.deckIds).toHaveLength(4);
+		expect(firstBody.deckIds.length * 31).toBeLessThanOrEqual(500);
+		expect(secondBody.deckIds.length * 31).toBeLessThanOrEqual(500);
+		expect([...firstBody.deckIds, ...secondBody.deckIds]).toEqual(
+			bulkDecks.map((d) => d.id),
+		);
+
+		// Snapshot refreshed ONCE at the end
+		expect(server.snapshotLoads - loadsBeforeClone).toBe(1);
+		expect(toastSuccessSpy).toHaveBeenCalledWith("Đã thêm 20 bộ từ vào lớp.");
+	});
+
+	it("handles partial multi-batch failure cleanly: refreshes committed batch, keeps only remaining decks selected, and retries remaining", async () => {
+		const bulkDecks = Array.from({ length: 20 }, (_, idx) => ({
+			id: `deck-retry-${idx + 1}`,
+			classId: null,
+			groupId: "grp-retry",
+			title: `Retry Deck ${idx + 1}`,
+			lang: "en",
+			wordCount: 30,
+			createdAt: `2026-10-18T00:${String(idx).padStart(2, "0")}:00.000Z`,
+			sourceLibraryDeckId: null,
+		}));
+
+		let postAttempt = 0;
+		let cloneSeq = 0;
+		const server = startKernelServer(
+			snapshotFixture({
+				classes: [classRow({ id: "cl-1", name: "IELTS 6.5" })],
+				vocabGroups: [
+					{
+						id: "grp-retry",
+						name: "Nhóm retry",
+						createdAt: "2026-10-18T00:00:00.000Z",
+						updatedAt: "2026-10-18T00:00:00.000Z",
+					},
+				],
+				vocabDecks: [...bulkDecks],
+			}),
+			(req, srv) => {
+				if (
+					req.method === "GET" &&
+					req.path === "/api/kernel/vocab-library/courses"
+				) {
+					return { status: 200, body: { courses: [] } };
+				}
+				if (
+					req.method === "POST" &&
+					req.path === "/api/kernel/vocab/decks/clone"
+				) {
+					postAttempt += 1;
+					// Fail the 2nd batch once with 422, succeed on subsequent retry
+					if (postAttempt === 2) {
+						return {
+							status: 422,
+							body: { error: "BATCH_LIMIT", reason: "Lỗi tạm thời lượt 2" },
+						};
+					}
+					const body = req.body as {
+						classId: string | null;
+						deckIds: string[];
+					};
+					for (const sourceId of body.deckIds) {
+						cloneSeq += 1;
+						const src = srv.snapshot.vocabDecks.find((d) => d.id === sourceId);
+						srv.snapshot.vocabDecks.push({
+							id: `retry-cloned-${cloneSeq}`,
+							classId: body.classId,
+							groupId: src?.groupId ?? null,
+							title: src?.title ?? sourceId,
+							lang: "en",
+							wordCount: src?.wordCount ?? 30,
+							createdAt: "2026-10-19T00:00:00.000Z",
+							sourceLibraryDeckId: null,
+							sourceDeckId: sourceId,
+						});
+					}
+					return {
+						status: 201,
+						body: {
+							id: `retry-cloned-${cloneSeq}`,
+							updated: body.deckIds.length,
+							duplicates: [],
+						},
+					};
+				}
+				return undefined;
+			},
+		);
+
+		renderWithKernel(<VocabDeckList classId="cl-1" />);
+		await waitFor(() => {
+			expect(screen.getByTestId("vocab-add-from-library")).toBeTruthy();
+		});
+		const loadsBeforeClone = server.snapshotLoads;
+
+		fireEvent.click(screen.getByTestId("vocab-add-from-library"));
+		fireEvent.click(screen.getByRole("tab", { name: "Bộ từ đã tạo" }));
+		fireEvent.click(screen.getByTestId("vocab-teacher-select-all"));
+		fireEvent.click(screen.getByTestId("vocab-library-confirm-btn"));
+
+		// Modal stays open with partial-progress notice and ONLY the remaining 4 decks selected
+		await waitFor(() => {
+			expect(screen.getByTestId("vocab-library-status-notice")).toBeTruthy();
+		});
+		expect(
+			screen.getByTestId("vocab-library-status-notice").textContent,
+		).toContain("Đã thêm 16/20 bộ — còn 4 bộ chưa thêm được");
+		expect(
+			screen.getByTestId("vocab-library-selection-summary").textContent,
+		).toContain("Đã chọn 4 bộ · 120 từ");
+
+		// Snapshot refreshed once to reconcile committed batch 1
+		expect(server.snapshotLoads - loadsBeforeClone).toBe(1);
+		// Batch 1 decks are unchecked & marked "Đã có trong lớp"; batch 2 decks remain checked
+		expect(
+			(
+				screen.getByTestId(
+					"vocab-teacher-deck-checkbox-deck-retry-1",
+				) as HTMLInputElement
+			).checked,
+		).toBe(false);
+		expect(
+			screen.getByTestId("vocab-teacher-existing-chip-deck-retry-1"),
+		).toBeTruthy();
+		expect(
+			(
+				screen.getByTestId(
+					"vocab-teacher-deck-checkbox-deck-retry-17",
+				) as HTMLInputElement
+			).checked,
+		).toBe(true);
+
+		// Click confirm again -> retries ONLY the remaining 4 decks and closes modal
+		fireEvent.click(screen.getByTestId("vocab-library-confirm-btn"));
+		await waitFor(() => {
+			expect(screen.queryByTestId("vocab-teacher-decks-tab")).toBeNull();
+		});
+
+		const cloneWrites = server.writes.filter(
+			(w) => w.method === "POST" && w.path === "/api/kernel/vocab/decks/clone",
+		);
+		expect(cloneWrites).toHaveLength(3);
+		const retryBody = cloneWrites[2]?.body as { deckIds: string[] } | undefined;
+		expect(retryBody?.deckIds).toEqual([
+			"deck-retry-17",
+			"deck-retry-18",
+			"deck-retry-19",
+			"deck-retry-20",
+		]);
+		expect(screen.getByTestId("vocab-deck-row-retry-cloned-20")).toBeTruthy();
+	});
+
+	it("disables oversized single deck (>= 500 words) with warning badge and excludes it from select-all", async () => {
+		startKernelServer(
+			snapshotFixture({
+				classes: [classRow({ id: "cl-1", name: "IELTS 6.5" })],
+				vocabDecks: [
+					{
+						id: "deck-normal",
+						classId: null,
+						title: "Normal Deck",
+						lang: "en",
+						wordCount: 40,
+						createdAt: "2026-10-18T01:00:00.000Z",
+						sourceLibraryDeckId: null,
+					},
+					{
+						id: "deck-oversized",
+						classId: null,
+						title: "Oversized Deck",
+						lang: "en",
+						wordCount: 500,
+						createdAt: "2026-10-18T02:00:00.000Z",
+						sourceLibraryDeckId: null,
+					},
+				],
+			}),
+			(req) => {
+				if (
+					req.method === "GET" &&
+					req.path === "/api/kernel/vocab-library/courses"
+				) {
+					return { status: 200, body: { courses: [] } };
+				}
+				return undefined;
+			},
+		);
+
+		renderWithKernel(<VocabDeckList classId="cl-1" />);
+		await waitFor(() => {
+			expect(screen.getByTestId("vocab-add-from-library")).toBeTruthy();
+		});
+
+		fireEvent.click(screen.getByTestId("vocab-add-from-library"));
+		fireEvent.click(screen.getByRole("tab", { name: "Bộ từ đã tạo" }));
+
+		const oversizedCheckbox = screen.getByTestId(
+			"vocab-teacher-deck-checkbox-deck-oversized",
+		) as HTMLInputElement;
+		expect(oversizedCheckbox.disabled).toBe(true);
+		expect(
+			screen.getByTestId("vocab-teacher-oversized-badge-deck-oversized")
+				.textContent,
+		).toContain("Vượt 499 từ/bộ");
+
+		// Select all selects only the normal deck and ignores the oversized deck
+		fireEvent.click(screen.getByTestId("vocab-teacher-select-all"));
+		expect(
+			screen.getByTestId("vocab-library-selection-summary").textContent,
+		).toContain("Đã chọn 1 bộ · 40 từ");
+		expect(
+			(
+				screen.getByTestId(
+					"vocab-teacher-deck-checkbox-deck-normal",
+				) as HTMLInputElement
+			).checked,
+		).toBe(true);
+		expect(oversizedCheckbox.checked).toBe(false);
+
+		// When search matches only the oversized deck, select-all is disabled
+		fireEvent.change(screen.getByTestId("vocab-teacher-deck-search"), {
+			target: { value: "Oversized" },
+		});
+		await waitFor(
+			() => {
+				expect(
+					screen.queryByTestId("vocab-teacher-deck-deck-normal"),
+				).toBeNull();
+			},
+			{ timeout: 1000 },
+		);
+		expect(
+			(screen.getByTestId("vocab-teacher-select-all") as HTMLButtonElement)
+				.disabled,
+		).toBe(true);
 	});
 });

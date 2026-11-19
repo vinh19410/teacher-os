@@ -1,7 +1,11 @@
-import type { KernelVocabDeckRow } from "@teacher-os/api/contracts";
+import type {
+	KernelVocabDeckRow,
+	KernelVocabGroupRow,
+} from "@teacher-os/api/contracts";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/field";
+import { isVocabDeckOversized } from "./vocab-clone-batches";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -26,10 +30,12 @@ function formatDeckLessonMeta(
 export interface VocabTeacherDecksTabProps {
 	targetClassId: string | null;
 	vocabDecks: ReadonlyArray<KernelVocabDeckRow>;
+	vocabGroups: ReadonlyArray<KernelVocabGroupRow>;
 	classes: ReadonlyArray<{ id: string; name: string }>;
 	selectedDecks: ReadonlyMap<string, number>;
+	disabled?: boolean;
 	onToggleDeck: (deck: { id: string; wordCount: number }) => void;
-	onSelectBatch: (
+	onToggleFilteredSelection: (
 		decks: ReadonlyArray<{ id: string; wordCount: number }>,
 	) => void;
 }
@@ -37,21 +43,25 @@ export interface VocabTeacherDecksTabProps {
 /**
  * Tab "Bộ từ đã tạo" trong dialog thêm bộ từ vựng:
  * liệt kê các bộ từ thuộc nguồn khác với đích (`classId !== targetClassId`),
- * hỗ trợ lọc theo nguồn ("Riêng" / "Lớp ..."), tìm kiếm debounce 300ms,
- * nhận diện bộ đã sao chép ở đích qua `sourceDeckId`, và chọn hàng loạt theo giới hạn batch.
+ * hỗ trợ lọc kết hợp theo nguồn ("Riêng" / "Lớp ..."), nhóm bộ từ, và tìm kiếm
+ * debounce 300ms; nhận diện bộ đã sao chép qua `sourceDeckId`, và cho phép chọn
+ * cộng dồn theo nhóm lọc để tự động chia lượt gửi khi sao chép số lượng lớn.
  */
 export function VocabTeacherDecksTab({
 	targetClassId,
 	vocabDecks,
+	vocabGroups,
 	classes,
 	selectedDecks,
+	disabled = false,
 	onToggleDeck,
-	onSelectBatch,
+	onToggleFilteredSelection,
 }: VocabTeacherDecksTabProps) {
 	const isHubMode = targetClassId === null;
 	const [searchInput, setSearchInput] = useState("");
 	const [debouncedQuery, setDebouncedQuery] = useState("");
 	const [sourceFilter, setSourceFilter] = useState("all");
+	const [groupFilter, setGroupFilter] = useState("all");
 
 	useEffect(() => {
 		if (searchInput.trim().length === 0) {
@@ -71,6 +81,14 @@ export function VocabTeacherDecksTab({
 		}
 		return map;
 	}, [classes]);
+
+	const groupNameById = useMemo(() => {
+		const map = new Map<string, string>();
+		for (const group of vocabGroups) {
+			map.set(group.id, group.name);
+		}
+		return map;
+	}, [vocabGroups]);
 
 	const candidateDecks = useMemo(
 		() => vocabDecks.filter((deck) => (deck.classId ?? null) !== targetClassId),
@@ -122,6 +140,40 @@ export function VocabTeacherDecksTab({
 		? sourceFilter
 		: "all";
 
+	const groupOptions = useMemo(() => {
+		let hasUngrouped = false;
+		const distinctGroups = new Map<string, string>();
+		for (const deck of candidateDecks) {
+			const groupId = deck.groupId ?? null;
+			const resolvedName = groupId ? groupNameById.get(groupId) : undefined;
+			if (!groupId || !resolvedName) {
+				hasUngrouped = true;
+			} else if (!distinctGroups.has(groupId)) {
+				distinctGroups.set(groupId, resolvedName);
+			}
+		}
+		const sortedGroups = [...distinctGroups.entries()]
+			.map(([id, name]) => ({ id, name }))
+			.sort((a, b) => a.name.localeCompare(b.name, "vi"));
+
+		const options: Array<{ value: string; label: string }> = [
+			{ value: "all", label: "Tất cả nhóm" },
+		];
+		for (const group of sortedGroups) {
+			options.push({ value: `group:${group.id}`, label: group.name });
+		}
+		if (hasUngrouped) {
+			options.push({ value: "ungrouped", label: "Chưa phân nhóm" });
+		}
+		return options;
+	}, [candidateDecks, groupNameById]);
+
+	const effectiveGroupFilter = groupOptions.some(
+		(option) => option.value === groupFilter,
+	)
+		? groupFilter
+		: "all";
+
 	const filteredDecks = useMemo(() => {
 		const q = debouncedQuery.trim().toLowerCase();
 		return candidateDecks.filter((deck) => {
@@ -132,6 +184,18 @@ export function VocabTeacherDecksTab({
 				if (deck.classId !== filterClassId) return false;
 			}
 
+			const resolvedGroupName = deck.groupId
+				? (groupNameById.get(deck.groupId) ?? null)
+				: null;
+			if (effectiveGroupFilter === "ungrouped") {
+				if (resolvedGroupName !== null) return false;
+			} else if (effectiveGroupFilter.startsWith("group:")) {
+				const filterGroupId = effectiveGroupFilter.slice("group:".length);
+				if (deck.groupId !== filterGroupId || resolvedGroupName === null) {
+					return false;
+				}
+			}
+
 			if (!q) return true;
 			const sourceLabel =
 				deck.classId === null
@@ -140,18 +204,38 @@ export function VocabTeacherDecksTab({
 			return (
 				deck.title.toLowerCase().includes(q) ||
 				(deck.topic?.toLowerCase().includes(q) ?? false) ||
-				sourceLabel.toLowerCase().includes(q)
+				sourceLabel.toLowerCase().includes(q) ||
+				(resolvedGroupName?.toLowerCase().includes(q) ?? false)
 			);
 		});
-	}, [candidateDecks, classNameById, debouncedQuery, effectiveSourceFilter]);
+	}, [
+		candidateDecks,
+		classNameById,
+		debouncedQuery,
+		effectiveGroupFilter,
+		effectiveSourceFilter,
+		groupNameById,
+	]);
+
+	const selectableFilteredDecks = useMemo(
+		() => filteredDecks.filter((deck) => !isVocabDeckOversized(deck.wordCount)),
+		[filteredDecks],
+	);
+
+	const allFilteredSelected =
+		selectableFilteredDecks.length > 0 &&
+		selectableFilteredDecks.every((deck) => selectedDecks.has(deck.id));
 
 	const hasActiveFilters =
-		searchInput.trim().length > 0 || effectiveSourceFilter !== "all";
+		searchInput.trim().length > 0 ||
+		effectiveSourceFilter !== "all" ||
+		effectiveGroupFilter !== "all";
 
 	const handleClearFilters = () => {
 		setSearchInput("");
 		setDebouncedQuery("");
 		setSourceFilter("all");
+		setGroupFilter("all");
 	};
 
 	if (candidateDecks.length === 0) {
@@ -175,28 +259,46 @@ export function VocabTeacherDecksTab({
 
 	return (
 		<div className="space-y-3" data-testid="vocab-teacher-decks-tab">
-			<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+			<div className="flex flex-col gap-2">
 				<Input
 					data-testid="vocab-teacher-deck-search"
 					value={searchInput}
 					onChange={(e) => setSearchInput(e.target.value)}
-					placeholder="Tìm bộ từ theo tên, chủ đề, lớp..."
+					placeholder="Tìm bộ từ theo tên, chủ đề, nhóm, lớp..."
 					aria-label="Tìm bộ từ đã tạo"
-					className="min-w-0 sm:flex-1"
+					disabled={disabled}
+					className="min-w-0"
 				/>
-				<Select
-					data-testid="vocab-teacher-source-filter"
-					aria-label="Lọc theo nguồn bộ từ"
-					value={effectiveSourceFilter}
-					onChange={(e) => setSourceFilter(e.target.value)}
-					className="sm:w-48 sm:flex-none"
-				>
-					{sourceOptions.map((option) => (
-						<option key={option.value} value={option.value}>
-							{option.label}
-						</option>
-					))}
-				</Select>
+				<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+					<Select
+						data-testid="vocab-teacher-source-filter"
+						aria-label="Lọc theo nguồn bộ từ"
+						value={effectiveSourceFilter}
+						onChange={(e) => setSourceFilter(e.target.value)}
+						disabled={disabled}
+						className="min-w-0"
+					>
+						{sourceOptions.map((option) => (
+							<option key={option.value} value={option.value}>
+								{option.label}
+							</option>
+						))}
+					</Select>
+					<Select
+						data-testid="vocab-teacher-group-filter"
+						aria-label="Lọc theo nhóm bộ từ"
+						value={effectiveGroupFilter}
+						onChange={(e) => setGroupFilter(e.target.value)}
+						disabled={disabled}
+						className="min-w-0"
+					>
+						{groupOptions.map((option) => (
+							<option key={option.value} value={option.value}>
+								{option.label}
+							</option>
+						))}
+					</Select>
+				</div>
 			</div>
 
 			<div className="flex flex-wrap items-center justify-between gap-2">
@@ -213,6 +315,7 @@ export function VocabTeacherDecksTab({
 							variant="ghost"
 							type="button"
 							data-testid="vocab-teacher-clear-filters"
+							disabled={disabled}
 							onClick={handleClearFilters}
 						>
 							Xóa bộ lọc
@@ -224,9 +327,10 @@ export function VocabTeacherDecksTab({
 							variant="secondary"
 							type="button"
 							data-testid="vocab-teacher-select-all"
-							onClick={() => onSelectBatch(filteredDecks)}
+							disabled={disabled || selectableFilteredDecks.length === 0}
+							onClick={() => onToggleFilteredSelection(selectableFilteredDecks)}
 						>
-							Chọn theo lượt
+							{allFilteredSelected ? "Bỏ chọn nhóm lọc" : "Chọn tất cả"}
 						</Button>
 					) : null}
 				</div>
@@ -242,6 +346,7 @@ export function VocabTeacherDecksTab({
 						variant="secondary"
 						type="button"
 						data-testid="vocab-teacher-clear-filters"
+						disabled={disabled}
 						onClick={handleClearFilters}
 					>
 						Xóa bộ lọc
@@ -250,12 +355,16 @@ export function VocabTeacherDecksTab({
 			) : (
 				<div className="max-h-[340px] divide-y divide-border overflow-y-auto rounded-md border border-border">
 					{filteredDecks.map((deck) => {
+						const oversized = isVocabDeckOversized(deck.wordCount);
 						const checked = selectedDecks.has(deck.id);
 						const alreadyInDestination = existingSourceDeckIds.has(deck.id);
 						const sourceLabel =
 							deck.classId === null
 								? "Riêng"
 								: `Lớp ${classNameById.get(deck.classId) ?? deck.classId}`;
+						const resolvedGroupName = deck.groupId
+							? (groupNameById.get(deck.groupId) ?? null)
+							: null;
 						const lessonMeta = formatDeckLessonMeta(
 							deck.lessonNumber,
 							deck.topic,
@@ -265,8 +374,12 @@ export function VocabTeacherDecksTab({
 							<label
 								key={deck.id}
 								data-testid={`vocab-teacher-deck-${deck.id}`}
-								className={`flex cursor-pointer items-center justify-between gap-3 px-4 py-3 transition-colors duration-150 ${
-									checked ? "bg-muted" : "hover:bg-muted/50"
+								className={`flex items-center justify-between gap-3 px-4 py-3 transition-colors duration-150 ${
+									oversized || disabled
+										? "cursor-not-allowed bg-muted/30"
+										: checked
+											? "cursor-pointer bg-muted"
+											: "cursor-pointer hover:bg-muted/50"
 								}`}
 							>
 								<div className="flex min-w-0 flex-1 items-start gap-3">
@@ -274,8 +387,12 @@ export function VocabTeacherDecksTab({
 										type="checkbox"
 										data-testid={`vocab-teacher-deck-checkbox-${deck.id}`}
 										checked={checked}
-										onChange={() => onToggleDeck(deck)}
-										className="mt-0.5 size-4 flex-none accent-primary focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+										disabled={disabled || oversized}
+										onChange={() => {
+											if (disabled || oversized) return;
+											onToggleDeck(deck);
+										}}
+										className="mt-0.5 size-4 flex-none accent-primary focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
 									/>
 									<div className="min-w-0 flex-1">
 										<p className="truncate font-medium text-foreground text-sm">
@@ -292,6 +409,14 @@ export function VocabTeacherDecksTab({
 											>
 												{sourceLabel}
 											</span>
+											{resolvedGroupName ? (
+												<span
+													data-testid={`vocab-teacher-group-badge-${deck.id}`}
+													className="rounded-md border border-border bg-secondary px-1.5 py-0.5 text-foreground text-xs"
+												>
+													{resolvedGroupName}
+												</span>
+											) : null}
 											{lessonMeta ? (
 												<span
 													data-testid={`vocab-teacher-lesson-meta-${deck.id}`}
@@ -310,6 +435,18 @@ export function VocabTeacherDecksTab({
 													className="rounded-md border border-border bg-secondary px-1.5 py-0.5 font-medium text-foreground text-xs"
 												>
 													{isHubMode ? "Đã có trong hub" : "Đã có trong lớp"}
+												</span>
+											) : null}
+											{oversized ? (
+												<span
+													data-testid={`vocab-teacher-oversized-badge-${deck.id}`}
+													className="inline-flex items-center gap-1 rounded-md border border-border bg-muted px-1.5 py-0.5 text-muted-foreground text-xs"
+												>
+													<span
+														aria-hidden="true"
+														className="size-1.5 rounded-full bg-warn"
+													/>
+													Vượt 499 từ/bộ
 												</span>
 											) : null}
 										</div>
