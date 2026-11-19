@@ -105,6 +105,9 @@ export function VocabGroupSelectField({
 		}
 	};
 
+	const effectiveValue =
+		value.length > 0 && sortedGroups.some((g) => g.id === value) ? value : "";
+
 	return (
 		<div className="flex flex-col gap-1.5">
 			<label
@@ -116,7 +119,7 @@ export function VocabGroupSelectField({
 			<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
 				<Select
 					id={selectId}
-					value={value}
+					value={effectiveValue}
 					onChange={(e) => onChange(e.target.value)}
 					disabled={disabled || saving}
 					aria-label="Nhóm bộ từ"

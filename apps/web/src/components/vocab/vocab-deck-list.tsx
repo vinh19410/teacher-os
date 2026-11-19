@@ -448,12 +448,18 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 		}
 		setCreateSaving(true);
 		try {
+			const effectiveNewGroupId =
+				newGroupId.length > 0 && groupNameById.has(newGroupId)
+					? newGroupId
+					: "";
 			const result = await dispatch({
 				type: "create-vocab-deck",
 				payload: {
 					classId: targetClassId,
 					title: createDraft.effectiveTitle,
-					...(newGroupId.length > 0 ? { groupId: newGroupId } : {}),
+					...(effectiveNewGroupId.length > 0
+						? { groupId: effectiveNewGroupId }
+						: {}),
 					...(createDraft.validLesson !== null
 						? { lessonNumber: createDraft.validLesson }
 						: {}),
@@ -493,7 +499,11 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 				renamingDeck.groupId && groupNameById.has(renamingDeck.groupId)
 					? renamingDeck.groupId
 					: "";
-			const groupChanged = renameGroupId !== initialGroupId;
+			const effectiveRenameGroupId =
+				renameGroupId.length > 0 && groupNameById.has(renameGroupId)
+					? renameGroupId
+					: "";
+			const groupChanged = effectiveRenameGroupId !== initialGroupId;
 			const result = await dispatch({
 				type: "rename-vocab-deck",
 				payload: {
@@ -503,7 +513,12 @@ export function VocabDeckList({ classId = null }: { classId?: string | null }) {
 					topic:
 						renameDraft.cleanTopic.length > 0 ? renameDraft.cleanTopic : null,
 					...(groupChanged
-						? { groupId: renameGroupId.length > 0 ? renameGroupId : null }
+						? {
+								groupId:
+									effectiveRenameGroupId.length > 0
+										? effectiveRenameGroupId
+										: null,
+							}
 						: {}),
 				},
 			});

@@ -130,14 +130,19 @@ export function VocabCsvImportDialog(props: VocabCsvImportDialogProps) {
 		setSubmitting(true);
 		setSubmitError(null);
 		try {
+			const effectiveGroupId =
+				selectedGroupId.length > 0 &&
+				data.vocabGroups.some((g) => g.id === selectedGroupId)
+					? selectedGroupId
+					: "";
 			const result =
 				props.mode === "create-decks"
 					? await dispatch({
 							type: "import-vocab-csv-decks",
 							payload: {
 								classId: props.classId,
-								...(selectedGroupId.length > 0
-									? { groupId: selectedGroupId }
+								...(effectiveGroupId.length > 0
+									? { groupId: effectiveGroupId }
 									: {}),
 								decks: parseResult.decks,
 							},

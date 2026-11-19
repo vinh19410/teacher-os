@@ -254,8 +254,9 @@ export function vocabTeacherRoutes(deps: {
 			);
 		}
 
+		let updated: Array<{ id: string }>;
 		try {
-			await db
+			updated = await db
 				.update(vocabGroup)
 				.set({
 					name: body.data.name,
@@ -264,7 +265,8 @@ export function vocabTeacherRoutes(deps: {
 				})
 				.where(
 					and(eq(vocabGroup.id, found.id), eq(vocabGroup.orgId, ctx.orgId)),
-				);
+				)
+				.returning({ id: vocabGroup.id });
 		} catch (err) {
 			if (isGroupNameUniqueError(err)) {
 				return c.json(
@@ -276,6 +278,16 @@ export function vocabTeacherRoutes(deps: {
 				);
 			}
 			throw err;
+		}
+
+		if (!updated[0]) {
+			return c.json(
+				{
+					error: "group not found",
+					code: VOCAB_ERROR_CODES.GROUP_NOT_FOUND,
+				},
+				404,
+			);
 		}
 
 		return c.json({ id: found.id } satisfies CreatedResponse);
@@ -613,7 +625,11 @@ export function vocabTeacherRoutes(deps: {
 				id: clonedDeckId,
 				orgId: ctx.orgId,
 				classId,
-				groupId: srcDeck.groupId ?? null,
+				groupId: srcDeck.groupId
+					? sql<
+							string | null
+						>`(SELECT ${vocabGroup.id} FROM ${vocabGroup} WHERE ${vocabGroup.id} = ${srcDeck.groupId} AND ${vocabGroup.orgId} = ${ctx.orgId} LIMIT 1)`
+					: null,
 				title: srcDeck.title,
 				lessonNumber: srcDeck.lessonNumber ?? null,
 				topic: srcDeck.topic ?? null,

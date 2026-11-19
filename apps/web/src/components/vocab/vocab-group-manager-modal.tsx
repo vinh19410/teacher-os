@@ -388,6 +388,7 @@ export function VocabGroupManagerModal({
 													type="button"
 													size="sm"
 													variant="secondary"
+													disabled={renameSaving || deleteSaving}
 													data-testid={`vocab-group-rename-btn-${group.id}`}
 													onClick={() => startRename(group)}
 												>
@@ -397,6 +398,7 @@ export function VocabGroupManagerModal({
 													type="button"
 													size="sm"
 													variant="ghost"
+													disabled={renameSaving || deleteSaving}
 													data-testid={`vocab-group-delete-btn-${group.id}`}
 													onClick={() => startDelete(group.id)}
 												>

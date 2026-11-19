@@ -435,11 +435,11 @@ export function VocabLibraryDialog({
 
 					const msg =
 						doneDecks > 0
-							? `Đã thêm ${totalAdded}/${totalTargetDecks} bộ — còn ${remaining.size} bộ chưa thêm được${
-									res.kind === "definite-failure" && res.reason
-										? ` (${res.reason})`
-										: ""
-								}. Hãy bấm thêm lại cho phần còn lại.`
+							? res.kind === "outcome-unknown"
+								? `Đã thêm ${totalAdded}/${totalTargetDecks} bộ, nhưng không rõ kết quả mạng ở lượt tiếp theo (${remaining.size} bộ còn lại) — hãy kiểm tra danh sách bộ từ trước khi thử lại.`
+								: `Đã thêm ${totalAdded}/${totalTargetDecks} bộ — còn ${remaining.size} bộ chưa thêm được${
+										res.reason ? ` (${res.reason})` : ""
+									}. Hãy bấm thêm lại cho phần còn lại.`
 							: res.kind === "definite-failure"
 								? res.reason
 									? `Không thể thêm bộ từ (${res.reason}).`
@@ -564,7 +564,7 @@ export function VocabLibraryDialog({
 					<div className="flex flex-wrap items-center justify-between gap-3">
 						<span
 							data-testid="vocab-library-selection-summary"
-							aria-live="polite"
+							aria-live={submitting && cloneProgress ? "off" : "polite"}
 							className="font-mono text-muted-foreground text-xs tabular-nums"
 						>
 							Đã chọn {selectedCount} bộ · {totalWords} từ
