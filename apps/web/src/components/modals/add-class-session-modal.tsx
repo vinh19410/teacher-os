@@ -89,7 +89,6 @@ export function AddClassSessionModal({
 	const [time, setTime] = useState("19:00");
 	const [dur, setDur] = useState("90");
 	const [topic, setTopic] = useState("");
-	const [zoom, setZoom] = useState("");
 	// Tài liệu ngân hàng chọn cho buổi mới (#655) — projection an toàn, chỉ
 	// materialIds đi lên payload.
 	const [bankMaterials, setBankMaterials] = useState<SyllabusBankMaterialRef[]>(
@@ -110,7 +109,6 @@ export function AddClassSessionModal({
 			setTime(suggestion.time);
 			setDur(String(suggestion.dur));
 			setTopic("");
-			setZoom("");
 			setBankMaterials([]);
 			setError(undefined);
 		}
@@ -119,7 +117,6 @@ export function AddClassSessionModal({
 
 	function resetForm() {
 		setTopic("");
-		setZoom("");
 		setBankMaterials([]);
 		setError(undefined);
 	}
@@ -159,7 +156,6 @@ export function AddClassSessionModal({
 				time: time.trim(),
 				dur: durNum,
 				topic: topic.trim(),
-				zoom: zoom.trim(),
 				// Chỉ gửi khi có chọn — thiếu key, server default [] (#655).
 				...(bankMaterials.length > 0
 					? { materialIds: bankMaterials.map((m) => m.id) }
@@ -228,15 +224,6 @@ export function AddClassSessionModal({
 						placeholder="VD: Writing Task 1: Line Chart"
 						disabled={saving}
 						required
-					/>
-				</Field>
-
-				<Field label="Link Zoom / Học online (tùy chọn)">
-					<Input
-						value={zoom}
-						onChange={(e) => setZoom(e.target.value)}
-						placeholder="https://zoom.us/j/..."
-						disabled={saving}
 					/>
 				</Field>
 
