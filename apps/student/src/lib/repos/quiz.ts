@@ -21,6 +21,8 @@ import { z } from "zod";
 import {
 	HttpError,
 	healStudentOrgMismatch,
+	isTeacherOnStudentPortalError,
+	redirectToLoginForWrongRole,
 	studentQueryClient,
 } from "@/lib/query-client";
 import { getApiBaseUrl, getStudentHeaders } from "@/lib/repos/student";
@@ -68,6 +70,18 @@ async function parseErrorBody(res: Response): Promise<{ code?: string }> {
 	}
 }
 
+function createQuizHttpError(
+	status: number,
+	message: string,
+	options?: { code?: string; sentOrgId?: string },
+): HttpError {
+	const error = new HttpError(status, message, options);
+	if (isTeacherOnStudentPortalError(error)) {
+		redirectToLoginForWrongRole();
+	}
+	return error;
+}
+
 async function request<T>(
 	path: string,
 	init: RequestInit & { keepalive?: boolean },
@@ -101,7 +115,7 @@ async function request<T>(
 				});
 				if (!res.ok) {
 					({ code } = await parseErrorBody(res));
-					throw new HttpError(
+					throw createQuizHttpError(
 						res.status,
 						`Request failed with status ${res.status}`,
 						{ code },
@@ -109,7 +123,7 @@ async function request<T>(
 				}
 			} else {
 				healStudentOrgMismatch();
-				throw new HttpError(
+				throw createQuizHttpError(
 					res.status,
 					`Request failed with status ${res.status}`,
 					{
@@ -119,7 +133,7 @@ async function request<T>(
 				);
 			}
 		} else {
-			throw new HttpError(
+			throw createQuizHttpError(
 				res.status,
 				`Request failed with status ${res.status}`,
 				{
@@ -400,10 +414,14 @@ export function uploadQuizMedia(
 				healStudentOrgMismatch();
 			}
 			reject(
-				new HttpError(xhr.status, `Upload failed with status ${xhr.status}`, {
-					code,
-					sentOrgId,
-				}),
+				createQuizHttpError(
+					xhr.status,
+					`Upload failed with status ${xhr.status}`,
+					{
+						code,
+						sentOrgId,
+					},
+				),
 			);
 		};
 		xhr.onerror = () => {
@@ -469,14 +487,14 @@ export async function fetchQuizMediaObjectUrl(
 			});
 			if (!res.ok) {
 				({ code } = await parseErrorBody(res));
-				throw new HttpError(
+				throw createQuizHttpError(
 					res.status,
 					`Request failed with status ${res.status}`,
 					{ code },
 				);
 			}
 		} else {
-			throw new HttpError(
+			throw createQuizHttpError(
 				res.status,
 				`Request failed with status ${res.status}`,
 				{
@@ -534,14 +552,14 @@ export async function fetchAssignmentAudioObjectUrl(
 			});
 			if (!res.ok) {
 				({ code } = await parseErrorBody(res));
-				throw new HttpError(
+				throw createQuizHttpError(
 					res.status,
 					`Request failed with status ${res.status}`,
 					{ code },
 				);
 			}
 		} else {
-			throw new HttpError(
+			throw createQuizHttpError(
 				res.status,
 				`Request failed with status ${res.status}`,
 				{

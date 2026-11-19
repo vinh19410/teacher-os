@@ -1,5 +1,8 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
-import { STUDENT_ERROR_CODES } from "@teacher-os/api/contracts";
+import {
+	ACCOUNT_ERROR_CODES,
+	STUDENT_ERROR_CODES,
+} from "@teacher-os/api/contracts";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
 import {
 	ClassDetailView,
@@ -29,6 +32,9 @@ function StudentClassDetailPage() {
 	if (meQuery.error) {
 		const err = meQuery.error;
 		const code = isHttpError(err) ? err.code : undefined;
+		if (code === ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL) {
+			return <Loader />;
+		}
 		if (code === STUDENT_ERROR_CODES.NOT_LINKED) {
 			return (
 				<StudentShell userEmail={sessionEmail}>
@@ -58,6 +64,9 @@ function StudentClassDetailPage() {
 			);
 		}
 		const code = isHttpError(err) ? err.code : undefined;
+		if (code === ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL) {
+			return <Loader />;
+		}
 		return (
 			<StudentShell userName={me.student.name} userEmail={userEmail}>
 				<StudentErrorView code={code} userEmail={userEmail} />

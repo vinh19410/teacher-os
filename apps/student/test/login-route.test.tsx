@@ -1,12 +1,32 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const router = vi.hoisted(() => ({
 	search: {} as Record<string, unknown>,
 	navigate: vi.fn(),
+}));
+
+const authState = vi.hoisted(() => ({
+	session: null as { user?: Record<string, unknown> } | null,
+	isPending: false,
+	signInEmail: vi.fn(),
+	signUpEmail: vi.fn(),
+	getSession: vi.fn(),
+	clearSessionCache: vi.fn(),
+}));
+
+const toastMock = vi.hoisted(() => ({
+	error: vi.fn(),
+	success: vi.fn(),
 }));
 
 vi.mock("@tanstack/react-router", () => ({
@@ -22,20 +42,25 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 
 vi.mock("sonner", () => ({
-	toast: {
-		error: vi.fn(),
-		success: vi.fn(),
-	},
+	toast: toastMock,
 }));
 
-vi.mock("@/lib/auth-client", () => ({
-	authClient: {
-		signIn: { email: vi.fn(), social: vi.fn() },
-		signUp: { email: vi.fn() },
-		getSession: vi.fn(),
-		useSession: () => ({ data: null, isPending: false }),
-	},
-}));
+vi.mock("@/lib/auth-client", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@/lib/auth-client")>();
+	return {
+		...actual,
+		authClient: {
+			signIn: { email: authState.signInEmail, social: vi.fn() },
+			signUp: { email: authState.signUpEmail },
+			getSession: authState.getSession,
+			clearSessionCache: authState.clearSessionCache,
+			useSession: () => ({
+				data: authState.session,
+				isPending: authState.isPending,
+			}),
+		},
+	};
+});
 
 import { Route as LoginRoute } from "@/routes/login";
 
@@ -45,6 +70,14 @@ const LoginPage = (LoginRoute as unknown as RouteWithComponent).component;
 beforeEach(() => {
 	router.search = {};
 	router.navigate = vi.fn();
+	authState.session = null;
+	authState.isPending = false;
+	authState.signInEmail.mockReset();
+	authState.signUpEmail.mockReset();
+	authState.getSession.mockReset();
+	authState.clearSessionCache.mockReset();
+	toastMock.error.mockReset();
+	toastMock.success.mockReset();
 	localStorage.clear();
 });
 
@@ -108,5 +141,172 @@ describe("/login route", () => {
 		expect(
 			screen.getByRole("heading", { name: "Chào mừng trở lại" }),
 		).toBeTruthy();
+	});
+
+	it("stays on /login without navigating or toasting when session belongs to a teacher", () => {
+		authState.session = {
+			user: { id: "u-teacher", email: "t@test.local", role: "teacher" },
+		};
+		render(<LoginPage />);
+
+		expect(router.navigate).not.toHaveBeenCalled();
+		expect(toastMock.error).not.toHaveBeenCalled();
+		expect(
+			screen.getByRole("heading", { name: "Chào mừng trở lại" }),
+		).toBeTruthy();
+	});
+
+	it("stays on /login without navigating or toasting when session belongs to an admin", () => {
+		authState.session = {
+			user: { id: "u-admin", email: "a@test.local", role: "admin" },
+		};
+		render(<LoginPage />);
+
+		expect(router.navigate).not.toHaveBeenCalled();
+		expect(toastMock.error).not.toHaveBeenCalled();
+		expect(
+			screen.getByRole("heading", { name: "Chào mừng trở lại" }),
+		).toBeTruthy();
+	});
+
+	it("stays on /login when session user has no role (fail-closed)", () => {
+		authState.session = {
+			user: { id: "u-unknown", email: "x@test.local" },
+		};
+		render(<LoginPage />);
+
+		expect(router.navigate).not.toHaveBeenCalled();
+		expect(toastMock.error).not.toHaveBeenCalled();
+	});
+
+	it("auto-redirects to validated returnUrl when session has student role and clears session cache first", () => {
+		const callOrder: string[] = [];
+		authState.clearSessionCache.mockImplementation(() => {
+			callOrder.push("clearSessionCache");
+		});
+		router.navigate.mockImplementation(() => {
+			callOrder.push("navigate");
+		});
+		authState.session = {
+			user: { id: "u-student", email: "s@test.local", role: "student" },
+		};
+		router.search = { returnUrl: "/classes" };
+		render(<LoginPage />);
+
+		expect(router.navigate).toHaveBeenCalledWith({ to: "/classes" });
+		expect(callOrder).toEqual(["clearSessionCache", "navigate"]);
+	});
+
+	it("falls back to root path for unsafe returnUrl when session has student role", () => {
+		authState.session = {
+			user: { id: "u-student", email: "s@test.local", role: "student" },
+		};
+		router.search = { returnUrl: "//evil.example/phish" };
+		render(<LoginPage />);
+
+		expect(router.navigate).toHaveBeenCalledWith({ to: "/" });
+	});
+
+	it("preserves ROLE_MISMATCH toast for Google OAuth error callbacks", () => {
+		router.search = {
+			error: "ROLE_MISMATCH",
+			error_description: "Email này thuộc tài khoản giáo viên.",
+			returnUrl: "/classes",
+		};
+		render(<LoginPage />);
+
+		expect(toastMock.error).toHaveBeenCalledWith(
+			"Email này thuộc tài khoản giáo viên.",
+		);
+		expect(router.navigate).toHaveBeenCalledWith({
+			search: { returnUrl: "/classes" },
+			replace: true,
+		});
+	});
+
+	it("clears session cache before navigating after successful email sign-in", async () => {
+		const callOrder: string[] = [];
+		const assignSpy = vi.fn(() => {
+			callOrder.push("assign");
+		});
+		vi.stubGlobal("location", {
+			origin: "http://localhost:8003",
+			assign: assignSpy,
+		});
+		authState.clearSessionCache.mockImplementation(() => {
+			callOrder.push("clearSessionCache");
+		});
+		authState.signInEmail.mockResolvedValue({ error: null });
+		authState.getSession.mockResolvedValue({
+			data: {
+				user: {
+					id: "u-student",
+					email: "hocvien@example.com",
+					role: "student",
+				},
+			},
+		});
+		router.search = { returnUrl: "/classes" };
+
+		try {
+			render(<LoginPage />);
+			fireEvent.change(document.getElementById("signin-email") as Element, {
+				target: { value: "hocvien@example.com" },
+			});
+			fireEvent.change(document.getElementById("signin-password") as Element, {
+				target: { value: "password123" },
+			});
+			fireEvent.submit(document.getElementById("panel-signin") as Element);
+
+			await waitFor(() => {
+				expect(assignSpy).toHaveBeenCalledWith("/classes");
+			});
+			expect(callOrder).toEqual(["clearSessionCache", "assign"]);
+		} finally {
+			vi.unstubAllGlobals();
+		}
+	});
+
+	it("clears session cache before navigating after successful email sign-up", async () => {
+		const callOrder: string[] = [];
+		const assignSpy = vi.fn(() => {
+			callOrder.push("assign");
+		});
+		vi.stubGlobal("location", {
+			origin: "http://localhost:8003",
+			assign: assignSpy,
+		});
+		authState.clearSessionCache.mockImplementation(() => {
+			callOrder.push("clearSessionCache");
+		});
+		authState.signUpEmail.mockResolvedValue({ error: null });
+		authState.getSession.mockResolvedValue({
+			data: {
+				user: { id: "u-student", email: "new@example.com", role: "student" },
+			},
+		});
+		router.search = { returnUrl: "/onboarding" };
+
+		try {
+			render(<LoginPage />);
+			fireEvent.click(screen.getByRole("tab", { name: "Đăng ký" }));
+			fireEvent.change(document.getElementById("signup-name") as Element, {
+				target: { value: "Nguyen Van A" },
+			});
+			fireEvent.change(document.getElementById("signup-email") as Element, {
+				target: { value: "new@example.com" },
+			});
+			fireEvent.change(document.getElementById("signup-password") as Element, {
+				target: { value: "password123" },
+			});
+			fireEvent.submit(document.getElementById("panel-signup") as Element);
+
+			await waitFor(() => {
+				expect(assignSpy).toHaveBeenCalledWith("/onboarding");
+			});
+			expect(callOrder).toEqual(["clearSessionCache", "assign"]);
+		} finally {
+			vi.unstubAllGlobals();
+		}
 	});
 });

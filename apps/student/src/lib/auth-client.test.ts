@@ -17,6 +17,8 @@ import {
 	authClient,
 	clearSessionCache,
 	getCachedSession,
+	getSessionUserRole,
+	isStudentSession,
 	SESSION_CACHE_TTL_MS,
 } from "./auth-client";
 
@@ -189,5 +191,36 @@ describe("auth-client session caching", () => {
 				}),
 			}),
 		);
+	});
+});
+
+describe("session role helpers", () => {
+	it("extracts role string and allows only student role (fail-closed)", () => {
+		expect(getSessionUserRole({ user: { role: "student" } })).toBe("student");
+		expect(isStudentSession({ user: { role: "student" } })).toBe(true);
+
+		expect(getSessionUserRole({ user: { role: "teacher" } })).toBe("teacher");
+		expect(isStudentSession({ user: { role: "teacher" } })).toBe(false);
+
+		expect(getSessionUserRole({ user: { role: "admin" } })).toBe("admin");
+		expect(isStudentSession({ user: { role: "admin" } })).toBe(false);
+	});
+
+	it("returns null and false for missing, empty, or malformed session data", () => {
+		expect(getSessionUserRole(null)).toBeNull();
+		expect(getSessionUserRole(undefined)).toBeNull();
+		expect(getSessionUserRole({})).toBeNull();
+		expect(getSessionUserRole({ user: null })).toBeNull();
+		expect(getSessionUserRole({ user: { id: "u-1" } })).toBeNull();
+		expect(getSessionUserRole({ user: { role: "" } })).toBeNull();
+		expect(getSessionUserRole({ user: { role: 123 } })).toBeNull();
+
+		expect(isStudentSession(null)).toBe(false);
+		expect(isStudentSession(undefined)).toBe(false);
+		expect(isStudentSession({})).toBe(false);
+		expect(isStudentSession({ user: null })).toBe(false);
+		expect(isStudentSession({ user: { id: "u-1" } })).toBe(false);
+		expect(isStudentSession({ user: { role: "" } })).toBe(false);
+		expect(isStudentSession({ user: { role: "student " } })).toBe(false);
 	});
 });

@@ -7,7 +7,7 @@ import { GoogleOAuthButton } from "@/components/auth/google-oauth-button";
 import { SignInForm } from "@/components/auth/sign-in-form";
 import { SignUpForm } from "@/components/auth/sign-up-form";
 import Loader from "@/components/loader";
-import { authClient } from "@/lib/auth-client";
+import { authClient, isStudentSession } from "@/lib/auth-client";
 import { validateReturnUrl } from "@/lib/validate-return-url";
 
 const TAB_STORAGE_KEY = "teacher-os-student-auth-tab";
@@ -42,7 +42,8 @@ function RouteComponent() {
 	const { data: session, isPending } = authClient.useSession();
 
 	useEffect(() => {
-		if (session?.user) {
+		if (isStudentSession(session)) {
+			authClient.clearSessionCache?.();
 			void navigate({ to: validateReturnUrl(returnUrl) });
 		}
 	}, [session, returnUrl, navigate]);

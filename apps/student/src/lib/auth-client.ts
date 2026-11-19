@@ -54,6 +54,23 @@ export type AuthSessionResult = Awaited<
 	ReturnType<typeof rawAuthClient.getSession>
 >;
 
+export type SessionDataLike = { user?: unknown } | null | undefined;
+
+export function getSessionUserRole(
+	sessionData: SessionDataLike,
+): string | null {
+	const user = sessionData?.user;
+	if (!user || typeof user !== "object") {
+		return null;
+	}
+	const role = (user as { role?: unknown }).role;
+	return typeof role === "string" && role.length > 0 ? role : null;
+}
+
+export function isStudentSession(sessionData: SessionDataLike): boolean {
+	return getSessionUserRole(sessionData) === "student";
+}
+
 let cacheEpoch = 0;
 let cachedSession: { data: AuthSessionResult; expiresAt: number } | null = null;
 let lastKnownSession: AuthSessionResult | null = null;

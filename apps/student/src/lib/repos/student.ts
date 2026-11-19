@@ -43,7 +43,9 @@ import { useSyncExternalStore } from "react";
 import {
 	HttpError,
 	isHttpError,
+	isTeacherOnStudentPortalError,
 	reauth,
+	redirectToLoginForWrongRole,
 	studentQueryClient,
 } from "@/lib/query-client";
 import {
@@ -97,10 +99,14 @@ async function throwStudentHttpError(
 	} catch {
 		// Non-JSON body
 	}
-	throw new HttpError(res.status, message, {
+	const error = new HttpError(res.status, message, {
 		code,
 		sentOrgId,
 	});
+	if (isTeacherOnStudentPortalError(error)) {
+		redirectToLoginForWrongRole();
+	}
+	throw error;
 }
 
 export async function fetchStudentMe(): Promise<StudentMe> {
@@ -474,7 +480,7 @@ export async function fetchLessonMaterialBlobUrl(
 			}
 		} else {
 			if (res.status === 401) reauth();
-			throw new HttpError(
+			const error = new HttpError(
 				res.status,
 				`Request failed with status ${res.status}`,
 				{
@@ -482,6 +488,10 @@ export async function fetchLessonMaterialBlobUrl(
 					sentOrgId,
 				},
 			);
+			if (isTeacherOnStudentPortalError(error)) {
+				redirectToLoginForWrongRole();
+			}
+			throw error;
 		}
 	}
 	if (!isPreviewableContentType(res.headers.get("content-type"))) {
