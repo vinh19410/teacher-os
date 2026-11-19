@@ -229,7 +229,7 @@ describe("class session dialog from the week grid", () => {
 		]);
 	});
 
-	it("edits the session with all five fields prefilled and leaves edit mode only after the refresh", async () => {
+	it("edits the session without a Link Zoom field while preserving the existing zoom link on submit", async () => {
 		start();
 		const dialog = await openMondaySession();
 		fireEvent.click(
@@ -242,7 +242,7 @@ describe("class session dialog from the week grid", () => {
 		expect(value("Thứ")).toBe("1");
 		expect(value("Giờ (HH:MM)")).toBe("19:00");
 		expect(value("Thời lượng (phút)")).toBe("90");
-		expect(value("Link Zoom/Meet")).toBe("https://meet.example/abc");
+		expect(within(dialog).queryByLabelText(/Link Zoom/i)).toBeNull();
 		expect(value("Chủ đề")).toBe("Line chart");
 
 		fireEvent.change(within(dialog).getByLabelText("Thời lượng (phút)"), {

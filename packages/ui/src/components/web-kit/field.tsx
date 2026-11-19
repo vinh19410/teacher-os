@@ -17,6 +17,14 @@ import {
 export const inputCls =
 	"flex h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none md:text-sm placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30";
 
+// Native `<input type="date">` breaks under `display: flex` in Chromium: the
+// user-agent shadow container shrinks to content width and pulls the calendar
+// icon next to the date text. Restoring `block` lets the shadow box span the
+// full input width so the calendar icon stays flush right and vertically
+// centered, while keeping WebKit date text left-aligned.
+export const dateInputCls =
+	"block [&::-webkit-date-and-time-value]:text-left [&::-webkit-calendar-picker-indicator]:cursor-pointer";
+
 export function Field({
 	label,
 	help,
@@ -101,13 +109,20 @@ export function Input({
 	className,
 	id,
 	ref,
+	type,
 	...props
 }: InputHTMLAttributes<HTMLInputElement> & {
 	/** React 19 ref-as-prop (imperative focus, e.g. TOS-8 auto-advance anchor). */
 	ref?: Ref<HTMLInputElement>;
 }) {
 	return (
-		<input id={id} ref={ref} className={cn(inputCls, className)} {...props} />
+		<input
+			id={id}
+			ref={ref}
+			type={type}
+			className={cn(inputCls, type === "date" && dateInputCls, className)}
+			{...props}
+		/>
 	);
 }
 
