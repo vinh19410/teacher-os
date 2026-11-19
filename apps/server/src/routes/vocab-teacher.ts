@@ -1,5 +1,6 @@
 import {
 	type CreatedResponse,
+	normalizeVocabGroupName,
 	QUIZ_MEDIA_MAX_BYTES,
 	VOCAB_ERROR_CODES,
 	type VocabCsvImportResponse,
@@ -11,6 +12,9 @@ import {
 	vocabDeckDeleteSchema,
 	vocabDeckRenameSchema,
 	vocabDeckWordsImportSchema,
+	vocabGroupCreateSchema,
+	vocabGroupDeleteSchema,
+	vocabGroupRenameSchema,
 	vocabRevokeSuggestionSchema,
 	vocabSuggestDeckSchema,
 	vocabWordRemoveSchema,
@@ -30,11 +34,12 @@ import {
 	student,
 	vocabCard,
 	vocabDeck,
+	vocabGroup,
 	vocabReviewLog,
 	vocabSuggestion,
 	vocabWord,
 } from "@teacher-os/db/schema/index";
-import { and, asc, eq, gte, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNull, ne, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
@@ -76,6 +81,24 @@ function normalizeOptionalText(
 	return value && value.length > 0 ? value : null;
 }
 
+/** Nhận diện lỗi trùng tên nhóm (UNIQUE trên `(org_id, normalized_name)`) khi đua request đồng thời trên cả D1 lẫn libsql. */
+function isGroupNameUniqueError(err: unknown): boolean {
+	let current: unknown = err;
+	for (let depth = 0; depth < 5 && current != null; depth += 1) {
+		const msg = current instanceof Error ? current.message : String(current);
+		if (
+			/UNIQUE/i.test(msg) &&
+			(/normalized_name|vocab_group_org_normalized_name_uq/i.test(msg) ||
+				!/vocab_group\.id\b/i.test(msg))
+		) {
+			return true;
+		}
+		current =
+			current instanceof Error && "cause" in current ? current.cause : null;
+	}
+	return false;
+}
+
 function chunkItems<T>(items: readonly T[], chunkSize: number): T[][] {
 	if (items.length === 0) return [];
 	const chunks: T[][] = [];
@@ -114,6 +137,182 @@ export function vocabTeacherRoutes(deps: {
 		}
 		return { ok: true, data: parsed.data };
 	}
+
+	async function requireOrgGroup(
+		c: VocabTeacherContext,
+		db: Db,
+		orgId: string,
+		groupId: string,
+	): Promise<{ ok: true; id: string } | { ok: false; response: Response }> {
+		const [group] = await db
+			.select({ id: vocabGroup.id })
+			.from(vocabGroup)
+			.where(and(eq(vocabGroup.id, groupId), eq(vocabGroup.orgId, orgId)))
+			.limit(1);
+		if (!group) {
+			return {
+				ok: false,
+				response: c.json(
+					{ error: "group not found", code: VOCAB_ERROR_CODES.GROUP_NOT_FOUND },
+					404,
+				),
+			};
+		}
+		return { ok: true, id: group.id };
+	}
+
+	routes.post("/groups", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return c.json({ error: "unauthorized" }, 401);
+		const body = await readBody(c, vocabGroupCreateSchema);
+		if (!body.ok) return body.response;
+		const db = deps.getDb();
+
+		const normalizedName = normalizeVocabGroupName(body.data.name);
+		const [existing] = await db
+			.select({ id: vocabGroup.id })
+			.from(vocabGroup)
+			.where(
+				and(
+					eq(vocabGroup.orgId, ctx.orgId),
+					eq(vocabGroup.normalizedName, normalizedName),
+				),
+			)
+			.limit(1);
+		if (existing) {
+			return c.json(
+				{
+					error: "group name already exists",
+					code: VOCAB_ERROR_CODES.GROUP_NAME_EXISTS,
+				},
+				409,
+			);
+		}
+
+		const id = body.data.id ?? crypto.randomUUID();
+		const now = new Date();
+		let created: { id: string } | undefined;
+		try {
+			const [row] = await db
+				.insert(vocabGroup)
+				.values({
+					id,
+					orgId: ctx.orgId,
+					name: body.data.name,
+					normalizedName,
+					createdAt: now,
+					updatedAt: now,
+				})
+				.returning({ id: vocabGroup.id });
+			created = row;
+		} catch (err) {
+			if (isGroupNameUniqueError(err)) {
+				return c.json(
+					{
+						error: "group name already exists",
+						code: VOCAB_ERROR_CODES.GROUP_NAME_EXISTS,
+					},
+					409,
+				);
+			}
+			throw err;
+		}
+
+		if (!created) return c.json({ error: "group write conflict" }, 500);
+		return c.json<CreatedResponse>(created, 201);
+	});
+
+	routes.post("/groups/rename", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return c.json({ error: "unauthorized" }, 401);
+		const body = await readBody(c, vocabGroupRenameSchema);
+		if (!body.ok) return body.response;
+		const db = deps.getDb();
+
+		const found = await requireOrgGroup(c, db, ctx.orgId, body.data.groupId);
+		if (!found.ok) return found.response;
+
+		const normalizedName = normalizeVocabGroupName(body.data.name);
+		const [conflict] = await db
+			.select({ id: vocabGroup.id })
+			.from(vocabGroup)
+			.where(
+				and(
+					eq(vocabGroup.orgId, ctx.orgId),
+					eq(vocabGroup.normalizedName, normalizedName),
+					ne(vocabGroup.id, found.id),
+				),
+			)
+			.limit(1);
+		if (conflict) {
+			return c.json(
+				{
+					error: "group name already exists",
+					code: VOCAB_ERROR_CODES.GROUP_NAME_EXISTS,
+				},
+				409,
+			);
+		}
+
+		try {
+			await db
+				.update(vocabGroup)
+				.set({
+					name: body.data.name,
+					normalizedName,
+					updatedAt: new Date(),
+				})
+				.where(
+					and(eq(vocabGroup.id, found.id), eq(vocabGroup.orgId, ctx.orgId)),
+				);
+		} catch (err) {
+			if (isGroupNameUniqueError(err)) {
+				return c.json(
+					{
+						error: "group name already exists",
+						code: VOCAB_ERROR_CODES.GROUP_NAME_EXISTS,
+					},
+					409,
+				);
+			}
+			throw err;
+		}
+
+		return c.json({ id: found.id } satisfies CreatedResponse);
+	});
+
+	/**
+	 * Gỡ `vocab_deck.group_id = null` và xoá `vocab_group` tường minh trong 1 `db.batch`
+	 * (không dựa vào FK `ON DELETE SET NULL` vì PRAGMA foreign_keys theo connection trên D1/SQLite),
+	 * đồng thời giữ nguyên toàn bộ bộ từ, từ vựng và tiến độ học viên.
+	 */
+	routes.post("/groups/delete", async (c) => {
+		const ctx = c.get("kernelCtx");
+		if (!ctx) return c.json({ error: "unauthorized" }, 401);
+		const body = await readBody(c, vocabGroupDeleteSchema);
+		if (!body.ok) return body.response;
+		const db = deps.getDb();
+
+		const found = await requireOrgGroup(c, db, ctx.orgId, body.data.groupId);
+		if (!found.ok) return found.response;
+
+		const now = new Date();
+		await db.batch([
+			db
+				.update(vocabDeck)
+				.set({ groupId: null, updatedAt: now })
+				.where(
+					and(eq(vocabDeck.orgId, ctx.orgId), eq(vocabDeck.groupId, found.id)),
+				),
+			db
+				.delete(vocabGroup)
+				.where(
+					and(eq(vocabGroup.id, found.id), eq(vocabGroup.orgId, ctx.orgId)),
+				),
+		]);
+
+		return c.json({ id: found.id } satisfies CreatedResponse);
+	});
 
 	routes.get("/decks/:deckId/words", async (c) => {
 		const ctx = c.get("kernelCtx");
@@ -196,6 +395,15 @@ export function vocabTeacherRoutes(deps: {
 				return c.json({ error: "class not found" }, 404);
 			}
 		}
+		if (typeof body.data.groupId === "string") {
+			const groupCheck = await requireOrgGroup(
+				c,
+				db,
+				ctx.orgId,
+				body.data.groupId,
+			);
+			if (!groupCheck.ok) return groupCheck.response;
+		}
 		const id = body.data.id ?? crypto.randomUUID();
 		const now = new Date();
 		const [created] = await db
@@ -204,6 +412,7 @@ export function vocabTeacherRoutes(deps: {
 				id,
 				orgId: ctx.orgId,
 				classId: body.data.classId,
+				groupId: body.data.groupId ?? null,
 				title: body.data.title,
 				lessonNumber: body.data.lessonNumber ?? null,
 				topic: normalizeOptionalText(body.data.topic),
@@ -236,6 +445,18 @@ export function vocabTeacherRoutes(deps: {
 		}
 		if (body.data.lang !== undefined) {
 			updates.lang = body.data.lang;
+		}
+		if (body.data.groupId !== undefined) {
+			if (body.data.groupId !== null) {
+				const groupCheck = await requireOrgGroup(
+					c,
+					db,
+					ctx.orgId,
+					body.data.groupId,
+				);
+				if (!groupCheck.ok) return groupCheck.response;
+			}
+			updates.groupId = body.data.groupId;
 		}
 
 		const updated = await db
@@ -392,6 +613,7 @@ export function vocabTeacherRoutes(deps: {
 				id: clonedDeckId,
 				orgId: ctx.orgId,
 				classId,
+				groupId: srcDeck.groupId ?? null,
 				title: srcDeck.title,
 				lessonNumber: srcDeck.lessonNumber ?? null,
 				topic: srcDeck.topic ?? null,
@@ -474,6 +696,16 @@ export function vocabTeacherRoutes(deps: {
 			}
 		}
 
+		if (typeof body.data.groupId === "string") {
+			const groupCheck = await requireOrgGroup(
+				c,
+				db,
+				ctx.orgId,
+				body.data.groupId,
+			);
+			if (!groupCheck.ok) return groupCheck.response;
+		}
+
 		const baseNowMs = Date.now();
 		const deckIds: string[] = [];
 		const batchOps: BatchItem<"sqlite">[] = [];
@@ -489,6 +721,7 @@ export function vocabTeacherRoutes(deps: {
 					id: deckId,
 					orgId: ctx.orgId,
 					classId: body.data.classId,
+					groupId: body.data.groupId ?? null,
 					title: deckItem.title,
 					lessonNumber: deckItem.lessonNumber ?? null,
 					topic: normalizeOptionalText(deckItem.topic),
