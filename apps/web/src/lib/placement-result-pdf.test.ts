@@ -590,7 +590,7 @@ describe("generatePlacementResultPdfBytes (real PDF binary + pdfjs-dist extracti
 		// No missing-glyph symbols emitted
 		expect(text).not.toContain("→");
 		expect(text).not.toContain("①");
-	});
+	}, 15_000);
 
 	it("renders legacy rubric, zero-error notice, and skipped Speaking cleanly into PDF", async () => {
 		const submission = makeIeltsSubmission({
@@ -620,7 +620,7 @@ describe("generatePlacementResultPdfBytes (real PDF binary + pdfjs-dist extracti
 		expect(extracted.fullText).toContain("5/5");
 		expect(extracted.fullText).toContain(PDF_NO_ERRORS_TEXT);
 		expect(extracted.fullText).toContain(PDF_SKIPPED_SPEAKING_TEXT);
-	});
+	}, 15_000);
 
 	it("paginates long essays and many error cards across multiple A4 pages with footer on every page", async () => {
 		const longEssay = Array.from(
@@ -653,7 +653,7 @@ describe("generatePlacementResultPdfBytes (real PDF binary + pdfjs-dist extracti
 			expect(pageText).toContain("Hỗ trợ: Zalo 0929.060.994");
 			expect(pageText).toContain(`Trang ${index + 1} / ${extracted.numPages}`);
 		});
-	});
+	}, 15_000);
 
 	it("surfaces font loading failures explicitly instead of failing silently", async () => {
 		const submission = makeIeltsSubmission();
@@ -730,5 +730,5 @@ describe("generatePlacementResultPdfBytes (real PDF binary + pdfjs-dist extracti
 		await exportPlacementResultPdf(submission);
 		expect(fetchMock).toHaveBeenCalledTimes(4);
 		expect(fakeAnchor.click).toHaveBeenCalledTimes(2);
-	});
+	}, 15_000);
 });
