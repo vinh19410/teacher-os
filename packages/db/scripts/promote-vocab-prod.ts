@@ -26,6 +26,7 @@ import { createClient } from "@libsql/client";
 import { redactSensitive } from "../src/audit/orphan-materials";
 import {
 	applyPromoteVocabPlan,
+	auditProdOrgVocabSummary,
 	auditStagingVocab,
 	buildPromoteVocabPlan,
 	createD1VocabPromoteRunner,
@@ -35,6 +36,7 @@ import {
 	loadSelectedStagingVocab,
 	type PromoteVocabPlan,
 	resolveMediaR2BucketName,
+	resolveTargetTeacherOrgId,
 	resolveVocabD1Database,
 	syncVocabAudioToR2,
 	type VocabPromoteSqlRunner,
@@ -54,6 +56,8 @@ export interface PromoteVocabCliArgs {
 	deckIds: string[];
 	sourceOrgId: string | null;
 	targetOrgId: string | null;
+	teacherEmails: string | null;
+	relocateFromOrgId: string | null;
 	includeClassDecks: boolean;
 	allowProd: boolean;
 	confirmProd: string | null;
@@ -82,7 +86,9 @@ Selection (required for dry-run and apply):
   --include-class-decks     Include class-bound decks (default: bank decks class_id IS NULL only)
 
 Target & Safety:
-  --target-org-id <id>      Target production organization.id (or env TARGET_ORG_ID / LEAD_ORG_ID)
+  --target-org-id <id>      Target production organization.id (optional; auto-resolved via TEACHER_EMAILS -> LEAD_ORG_ID)
+  --teacher-emails <csv>    Comma-separated teacher emails to resolve active org (or env TEACHER_EMAILS)
+  --relocate-from-org <id>  Allow moving matching promoted IDs from this specific prod org into target org
   --allow-prod              Required flag when --mode apply targets Cloudflare D1
   --confirm-prod <word>     Required confirmation when --mode apply targets Cloudflare D1 (must be "prod")
   --dump <path>             Path prefix for preimage JSON & rollback SQL backup
@@ -112,6 +118,8 @@ export function parsePromoteVocabArgs(
 	const deckIds: string[] = [];
 	let sourceOrgId: string | null = null;
 	let targetOrgId: string | null = null;
+	let teacherEmails: string | null = null;
+	let relocateFromOrgId: string | null = null;
 	let includeClassDecks = false;
 	let allowProd = false;
 	let confirmProd: string | null = null;
@@ -173,6 +181,10 @@ export function parsePromoteVocabArgs(
 			[sourceOrgId, i] = requireNext("--source-org-id", i);
 		} else if (arg === "--target-org-id") {
 			[targetOrgId, i] = requireNext("--target-org-id", i);
+		} else if (arg === "--teacher-emails") {
+			[teacherEmails, i] = requireNext("--teacher-emails", i);
+		} else if (arg === "--relocate-from-org") {
+			[relocateFromOrgId, i] = requireNext("--relocate-from-org", i);
 		} else if (arg === "--include-class-decks") {
 			includeClassDecks = true;
 		} else if (arg === "--allow-prod") {
@@ -199,6 +211,8 @@ export function parsePromoteVocabArgs(
 				deckIds: [],
 				sourceOrgId: null,
 				targetOrgId: null,
+				teacherEmails: null,
+				relocateFromOrgId: null,
 				includeClassDecks: false,
 				allowProd: false,
 				confirmProd: null,
@@ -261,6 +275,8 @@ export function parsePromoteVocabArgs(
 		deckIds,
 		sourceOrgId,
 		targetOrgId,
+		teacherEmails,
+		relocateFromOrgId,
 		includeClassDecks,
 		allowProd,
 		confirmProd,
@@ -402,25 +418,53 @@ export async function runPromoteVocabProdCli(
 		}
 
 		// 2. Modes: dry-run & apply
-		const targetOrgId = (
-			args.targetOrgId ??
-			env.TARGET_ORG_ID ??
-			env.LEAD_ORG_ID ??
-			""
-		).trim();
-		if (!targetOrgId) {
-			throw new Error(
-				"Missing target organization ID: pass --target-org-id <orgId> or set TARGET_ORG_ID / LEAD_ORG_ID.",
-			);
-		}
-		if (args.publicLogs) {
-			secrets.push(targetOrgId);
-		}
 		if (!prodRunner) {
 			throw new Error(
 				"Internal error: target production runner not initialized.",
 			);
 		}
+		const explicitTargetOrgId =
+			args.targetOrgId?.trim() || env.TARGET_ORG_ID?.trim() || "";
+		const teacherEmailsRaw =
+			args.teacherEmails?.trim() || env.TEACHER_EMAILS?.trim() || "";
+		const leadOrgId = env.LEAD_ORG_ID?.trim() || "";
+		const relocateFromOrgId =
+			args.relocateFromOrgId?.trim() || env.RELOCATE_FROM_ORG_ID?.trim() || "";
+
+		const resolvedTarget = await resolveTargetTeacherOrgId(prodRunner, {
+			explicitTargetOrgId: explicitTargetOrgId || undefined,
+			teacherEmails: teacherEmailsRaw || undefined,
+			leadOrgId: leadOrgId || undefined,
+		});
+		const targetOrgId = resolvedTarget.orgId;
+		if (args.publicLogs) {
+			secrets.push(targetOrgId);
+			if (leadOrgId) secrets.push(leadOrgId);
+			if (relocateFromOrgId) secrets.push(relocateFromOrgId);
+			if (teacherEmailsRaw) secrets.push(teacherEmailsRaw);
+		}
+
+		const prodOrgSummary = await auditProdOrgVocabSummary(prodRunner);
+		const summaryParts = prodOrgSummary.map((bucket, idx) => {
+			const tags: string[] = [];
+			if (bucket.orgId === targetOrgId) tags.push("target");
+			if (leadOrgId && bucket.orgId === leadOrgId) tags.push("lead");
+			if (relocateFromOrgId && bucket.orgId === relocateFromOrgId) {
+				tags.push("relocate-from");
+			}
+			const label = args.publicLogs
+				? tags.length > 0
+					? tags.join("+")
+					: `org-${idx + 1}`
+				: `${bucket.orgId}${tags.length > 0 ? `(${tags.join("+")})` : ""}`;
+			return `${label}[g=${bucket.groupCount},d=${bucket.deckCount},w=${bucket.wordCount}]`;
+		});
+		write(
+			`[promote-vocab] Target org resolved via=${resolvedTarget.resolvedVia}, sameAsLeadOrg=${resolvedTarget.sameAsLeadOrg}, relocateEnabled=${Boolean(relocateFromOrgId && relocateFromOrgId !== targetOrgId)}\n`,
+		);
+		write(
+			`[promote-vocab] Prod org vocab state (${prodOrgSummary.length} orgs): ${summaryParts.join(" | ")}\n`,
+		);
 
 		const selected = await loadSelectedStagingVocab(stagingRunner, {
 			groupNames: args.groupNames,
@@ -433,6 +477,7 @@ export async function runPromoteVocabProdCli(
 
 		const plan = await buildPromoteVocabPlan(selected, prodRunner, {
 			targetOrgId,
+			relocateFromOrgId: relocateFromOrgId || undefined,
 		});
 
 		write(
