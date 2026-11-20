@@ -237,6 +237,7 @@ test("buildChildEnv: luôn bật VITE_TEACHER_SIGNUP_ENABLED, giữ localhost or
 		{ apiPort: 8000, webPort: 8001, studentPort: 8003 },
 	);
 	assert.equal(env.VITE_TEACHER_SIGNUP_ENABLED, "true");
+	assert.equal(env.VITE_STUDENT_PRACTICE_ENABLED, "true");
 	assert.equal(env.VITE_SERVER_URL, "http://localhost:8000");
 	assert.equal(env.E2E_API_PORT, "8000");
 	assert.equal(env.E2E_WEB_PORT, "8001");
