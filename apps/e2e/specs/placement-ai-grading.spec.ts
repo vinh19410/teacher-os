@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
@@ -372,7 +373,7 @@ test.describe
 			await expect(cards.first()).toContainText("live");
 			await expect(cards.first()).toContainText("I live.");
 
-			// 5. Chốt → link kết quả + trạng thái email.
+			// 5. Chốt → phiếu kết quả PDF + trạng thái email.
 			await expect(saveBtn).toHaveText("Chốt kết quả & gửi học viên");
 			const patch = page.waitForResponse(
 				(res) =>
@@ -380,19 +381,83 @@ test.describe
 					res.request().method() === "PATCH",
 			);
 			await saveBtn.click();
-			expect((await patch).status()).toBe(200);
-			const resultLink = page.getByTestId("placement-result-link");
-			await expect(resultLink).toBeVisible();
-			await expect(
-				page.getByTestId("placement-result-email-status"),
-			).toHaveText("Đã gửi email kết quả cho học viên.");
-			await expect(saveBtn).toHaveText("Cập nhật kết quả đã chốt");
-			const resultUrl = await resultLink.locator("a").getAttribute("href");
+			const patchRes = await patch;
+			expect(patchRes.status()).toBe(200);
+			const graded = (await patchRes.json()) as { resultUrl?: string | null };
+			const resultUrl = graded.resultUrl ?? null;
 			expect(resultUrl).toMatch(
 				new RegExp(
 					`^${PROFILE_ORIGIN}/kiem-tra-dau-vao/ket-qua/\\?t=[0-9a-f]{64}$`,
 				),
 			);
+
+			await expect(page.getByTestId("placement-result-link")).toHaveCount(0);
+			const pdfCard = page.getByTestId("placement-result-pdf");
+			await expect(pdfCard).toBeVisible();
+			await expect(
+				page.getByTestId("placement-result-email-status"),
+			).toHaveText("Đã gửi email kết quả cho học viên.");
+			await expect(saveBtn).toHaveText("Cập nhật kết quả đã chốt");
+			await expect(page.getByTestId("placement-pdf-dirty-warning")).toHaveCount(
+				0,
+			);
+
+			// Tải phiếu kết quả PDF 1-click và kiểm tra tên file + nội dung PDF thật.
+			const exportPdfBtn = page.getByTestId("export-result-pdf-btn");
+			const downloadPromise = page.waitForEvent("download");
+			await exportPdfBtn.click();
+			const download = await downloadPromise;
+			expect(download.suggestedFilename()).toMatch(/^phieu-ket-qua-.*\.pdf$/);
+			const downloadPath = await download.path();
+			expect(downloadPath).toBeTruthy();
+			if (!downloadPath) {
+				throw new Error("Playwright download.path() trả về null");
+			}
+			const pdfBytes = await readFile(downloadPath);
+			expect(pdfBytes.subarray(0, 5).toString("ascii")).toBe("%PDF-");
+			expect(pdfBytes.byteLength).toBeGreaterThan(5_000);
+			await expect(exportPdfBtn).toBeEnabled();
+
+			// Kiểm tra responsive 3 viewport + light/dark và chụp ảnh POT cho khối PDF.
+			for (const vp of VIEWPORTS) {
+				await page.setViewportSize({ width: vp.width, height: vp.height });
+				await page.evaluate(() =>
+					document.documentElement.classList.remove("dark"),
+				);
+				await expectNoHorizontalOverflow(
+					page,
+					`/leads pdf-card light ${vp.label}`,
+				);
+				await pdfCard.scrollIntoViewIfNeeded();
+				await page.screenshot({
+					path: reportPath(`853-placement-pdf-panel-light-${vp.label}.png`),
+				});
+				await page.evaluate(() =>
+					document.documentElement.classList.add("dark"),
+				);
+				await expectNoHorizontalOverflow(
+					page,
+					`/leads pdf-card dark ${vp.label}`,
+				);
+				await pdfCard.scrollIntoViewIfNeeded();
+				await page.screenshot({
+					path: reportPath(`853-placement-pdf-panel-dark-${vp.label}.png`),
+				});
+			}
+			await page.evaluate(() =>
+				document.documentElement.classList.remove("dark"),
+			);
+			await page.setViewportSize({ width: 1440, height: 900 });
+
+			// Chỉnh sửa form sau khi chốt mà chưa lưu → hiện cảnh báo dirty trên khối PDF.
+			const feedbackInput = page.getByLabel("Nhận xét bài kiểm tra đầu vào");
+			const existingFeedback = await feedbackInput.inputValue();
+			await feedbackInput.fill(
+				`${existingFeedback}${existingFeedback ? " " : ""}Ghi chú thêm chưa lưu.`,
+			);
+			await expect(
+				page.getByTestId("placement-pdf-dirty-warning"),
+			).toBeVisible();
 
 			// 6. Học viên (context riêng, không đăng nhập) mở link kết quả.
 			const studentContext = await browser.newContext();
