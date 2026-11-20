@@ -150,7 +150,7 @@ test("doanh thu: chart 2 tháng theo created_at + toggle Quý đổi URL (?ky=qu
 	// Đi thẳng /tuition bằng goto (không click sidebar): store kernel nạp
 	// snapshot MỘT LẦN lúc login — seed SQL diễn ra sau đó nên phải full
 	// reload để snapshot thấy 2 hóa đơn vừa seed.
-	await page.goto("/tuition");
+	await page.goto("/teacher/tuition");
 	await expect(
 		page.getByRole("heading", { name: "Doanh thu" }).first(),
 	).toBeVisible();
@@ -200,7 +200,7 @@ test("doanh thu: ?ky=lạ không crash — rơi về cửa sổ tháng mặc đ�
 }) => {
 	teacherEmail = await signUpViaApi(page, { password: PASSWORD });
 	// Org trống — chart hiện empty-state, trang vẫn chạy (#343 non-throw).
-	await page.goto("/tuition?ky=abc");
+	await page.goto("/teacher/tuition?ky=abc");
 	await expect(
 		page.getByRole("heading", { name: "Doanh thu" }).first(),
 	).toBeVisible();

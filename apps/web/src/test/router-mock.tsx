@@ -88,7 +88,7 @@ export function routerMock() {
 			Boolean(
 				opts &&
 					typeof opts === "object" &&
-					("to" in opts || "isRedirect" in opts),
+					("to" in opts || "href" in opts || "isRedirect" in opts),
 			),
 		Link,
 	};

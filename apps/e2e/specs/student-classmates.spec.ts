@@ -6,7 +6,7 @@ import {
 	vietnamTodayISO,
 } from "./helpers";
 import { type QuizFixture, seedQuizFixture } from "./helpers-quiz";
-import { STUDENT_ORIGIN } from "./origins";
+import { LMS_ORIGIN, STUDENT_BASE_URL } from "./origins";
 
 /**
  * #378 — Tab "Bạn cùng lớp" trên trang chi tiết lớp: roster CHỈ gồm tên +
@@ -25,12 +25,12 @@ const className = "IELTS Classmates E2E";
 let fixture: QuizFixture;
 
 async function signIn(page: Page): Promise<void> {
-	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signin").click();
 	await page.locator("#signin-email").fill(studentEmail);
 	await page.locator("#signin-password").fill(PASSWORD);
 	await page.locator("#panel-signin button[type='submit']").click();
-	await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`), {
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
 		timeout: 30_000,
 	});
 }
@@ -87,7 +87,7 @@ test.beforeAll(async ({ browser }) => {
 
 	const context = await browser.newContext();
 	const page = await context.newPage();
-	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signup").click();
 	await page.locator("#signup-name").fill(studentName);
 	await page.locator("#signup-email").fill(studentEmail);
@@ -97,7 +97,7 @@ test.beforeAll(async ({ browser }) => {
 		timeout: 15_000,
 	});
 	await verifyStudentEmailFromMailLog(page, studentEmail);
-	await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`), {
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
 		timeout: 30_000,
 	});
 	await context.close();

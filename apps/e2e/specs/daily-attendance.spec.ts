@@ -57,7 +57,7 @@ test("AC-002: lọc theo ngày trên URL, buổi huỷ không hiện, tải ≤ 
 	await seedTodayClasses(page);
 
 	// 1. Mở /dashboard, ghi lại số trên thẻ "Ca học hôm nay chưa điểm danh" (N = 1).
-	await page.goto("/dashboard");
+	await page.goto("/teacher/dashboard");
 	const remindersSection = page.locator("section", {
 		hasText: "Việc cần làm hôm nay",
 	});
@@ -77,7 +77,7 @@ test("AC-002: lọc theo ngày trên URL, buổi huỷ không hiện, tải ≤ 
 	expect(dailyRes.status()).toBe(200);
 	expect(loadElapsedMs).toBeLessThanOrEqual(2000);
 
-	await page.goto(`/attendance?date=${TODAY}`);
+	await page.goto(`/teacher/attendance?date=${TODAY}`);
 	// 3. Lớp có buổi hôm nay hiện với nhãn "Chưa điểm danh"; buổi đã huỷ không xuất hiện.
 	await expect(page.getByText("IELTS 6.5A Hôm Nay")).toBeVisible();
 	await expect(page.getByText("IELTS Huỷ Hôm Nay")).toHaveCount(0);
@@ -188,7 +188,7 @@ test("AC-002: lọc theo ngày trên URL, buổi huỷ không hiện, tải ≤ 
 	};
 	expect(reminders.attendance.pending).toBe(0);
 
-	await page.goto("/dashboard");
+	await page.goto("/teacher/dashboard");
 	const attendanceCard = page
 		.getByRole("heading", { name: "Ca học hôm nay chưa điểm danh" })
 		.locator("xpath=..");
@@ -208,7 +208,7 @@ test("3 viewport (1440×900, 768×1024, 375×812): chụp screenshot ca đang m�
 	mkdirSync(screenshotsDir, { recursive: true });
 
 	await seedTodayClasses(page);
-	await page.goto(`/attendance?date=${TODAY}&status=pending`);
+	await page.goto(`/teacher/attendance?date=${TODAY}&status=pending`);
 
 	// Với status=pending, ca chưa điểm danh đầu tiên tự mở sẵn.
 	await expect(
@@ -307,7 +307,7 @@ test.describe("AC-003 mark all present (TOS-8)", () => {
 			},
 		});
 
-		await page.goto(`/attendance?date=${TODAY}`);
+		await page.goto(`/teacher/attendance?date=${TODAY}`);
 		await page.getByRole("button", { name: /TOS-8 AC-003/ }).click();
 
 		// Không ghi đè: An đã chọn Đi muộn TRƯỚC khi bấm điền nhanh.
@@ -386,7 +386,7 @@ test.describe("AC-003 mark all present (TOS-8)", () => {
 			},
 		});
 
-		await page.goto(`/attendance?date=${TODAY}`);
+		await page.goto(`/teacher/attendance?date=${TODAY}`);
 		await page.getByRole("button", { name: /TOS-8 Modal Xác Nhận/ }).click();
 
 		// Chỉ chọn 2/4 → bấm lưu → modal "Còn 2 học viên".
@@ -478,7 +478,7 @@ test.describe("AC-003 mark all present (TOS-8)", () => {
 		).attendance.pending;
 		expect(before).toBe(5);
 
-		await page.goto(`/attendance?date=${TODAY}&status=pending`);
+		await page.goto(`/teacher/attendance?date=${TODAY}&status=pending`);
 		// t0: ca đầu tiên tự mở sẵn (pending).
 		await expect(page.getByRole("radiogroup").first()).toBeVisible();
 		const t0 = Date.now();
@@ -552,7 +552,7 @@ test.describe("AC-003 mark all present (TOS-8)", () => {
 			students: { teacherEmail, names: ["An Nguyễn", "Bình Trần", "Cường Lê"] },
 		});
 
-		await page.goto(`/attendance?date=${TODAY}&status=pending`);
+		await page.goto(`/teacher/attendance?date=${TODAY}&status=pending`);
 		await expect(
 			page.getByRole("radiogroup", {
 				name: "Trạng thái điểm danh của An Nguyễn",

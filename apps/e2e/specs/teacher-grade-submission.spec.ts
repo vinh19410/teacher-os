@@ -11,7 +11,12 @@ import {
 	seedQuizFixture,
 	seedSubmittedEssay,
 } from "./helpers-quiz";
-import { STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
+import {
+	LMS_ORIGIN,
+	STUDENT_BASE_URL,
+	TEACHER_BASE_URL,
+	WEB_ORIGIN,
+} from "./origins";
 
 /**
  * #319 — Teacher grades a submitted Writing/Speaking attempt, end to end on
@@ -80,12 +85,12 @@ async function seedPracticeWritingTest(orgId: string): Promise<string> {
 
 /** Sign in through the portal login form (fresh context → sign-in tab). */
 async function signIn(page: Page): Promise<void> {
-	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signin").click();
 	await page.locator("#signin-email").fill(studentEmail);
 	await page.locator("#signin-password").fill(PASSWORD);
 	await page.locator("#panel-signin button[type='submit']").click();
-	await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`), {
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
 		timeout: 30_000,
 	});
 	await expect(page.getByRole("heading", { name: "Bài tập" })).toBeVisible();
@@ -177,7 +182,7 @@ test.beforeAll(async ({ browser }) => {
 	// later student logins must open their own fresh context (signIn).
 	const signupContext = await browser.newContext();
 	const page = await signupContext.newPage();
-	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signup").click();
 	await page.locator("#signup-name").fill("Học Viên Chấm");
 	await page.locator("#signup-email").fill(studentEmail);
@@ -187,7 +192,7 @@ test.beforeAll(async ({ browser }) => {
 		timeout: 15_000,
 	});
 	await verifyStudentEmailFromMailLog(page, studentEmail);
-	await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`), {
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
 		timeout: 30_000,
 	});
 	await expect(page.getByRole("heading", { name: "Bài tập" })).toBeVisible();
@@ -203,7 +208,7 @@ test.describe("Teacher grades Writing/Speaking submissions", () => {
 		browser,
 	}) => {
 		await teacherPage.goto(
-			`${WEB_ORIGIN}/classes/${fixture.classId}?tab=assignments`,
+			`${TEACHER_BASE_URL}/classes/${fixture.classId}?tab=assignments`,
 		);
 		await expect(teacherPage.locator("#assigned-list")).toBeVisible();
 		const row = teacherPage.locator("article.assign-item", {
@@ -260,7 +265,7 @@ test.describe("Teacher grades Writing/Speaking submissions", () => {
 		const sp = await sc.newPage();
 		await signIn(sp);
 		await sp.goto(
-			`${STUDENT_ORIGIN}/learn/quizzes/attempt/${writingAttemptId}`,
+			`${STUDENT_BASE_URL}/learn/quizzes/attempt/${writingAttemptId}`,
 		);
 		await expect(
 			sp.getByRole("heading", { name: "Kết quả chấm của giáo viên" }),
@@ -308,7 +313,7 @@ test.describe("Teacher grades Writing/Speaking submissions", () => {
 
 		// Teacher opens the grading page from the class assignments tab.
 		await teacherPage.goto(
-			`${WEB_ORIGIN}/classes/${fixture.classId}?tab=assignments`,
+			`${TEACHER_BASE_URL}/classes/${fixture.classId}?tab=assignments`,
 		);
 		await expect(teacherPage.locator("#assigned-list")).toBeVisible();
 		const row = teacherPage.locator("article.assign-item", {
@@ -352,7 +357,7 @@ test.describe("Teacher grades Writing/Speaking submissions", () => {
 		await signIn(sp);
 
 		// 1) Học viên mở Luyện tập › Writing, bắt đầu đề tự luyện và nộp bài.
-		await sp.goto(`${STUDENT_ORIGIN}/practice/writing`);
+		await sp.goto(`${STUDENT_BASE_URL}/practice/writing`);
 		const card = sp
 			.getByTestId("practice-test-card")
 			.filter({ hasText: practiceWritingTitle });
@@ -382,7 +387,7 @@ test.describe("Teacher grades Writing/Speaking submissions", () => {
 
 		// 2) Học viên vào Lịch sử thấy trạng thái thống nhất "Đã nộp — Đang
 		// chờ giáo viên chấm" (TOS-30 #478; không còn "Đã nộp — tự luyện").
-		await sp.goto(`${STUDENT_ORIGIN}/history`);
+		await sp.goto(`${STUDENT_BASE_URL}/history`);
 		const historyRow = sp
 			.getByTestId("history-entry-row")
 			.filter({ hasText: practiceWritingTitle });
@@ -390,7 +395,7 @@ test.describe("Teacher grades Writing/Speaking submissions", () => {
 		await expect(historyRow).not.toContainText("Đã nộp — tự luyện");
 
 		// 3) Giáo viên bấm mục nav "Chấm bài" trong sidebar → lọc "Luyện tập" → bấm "Chấm bài".
-		await teacherPage.goto(`${WEB_ORIGIN}/dashboard`);
+		await teacherPage.goto(`${TEACHER_BASE_URL}/dashboard`);
 		await teacherPage
 			.getByRole("navigation", { name: "Điều hướng chính" })
 			.getByRole("link", { name: "Chấm bài", exact: true })

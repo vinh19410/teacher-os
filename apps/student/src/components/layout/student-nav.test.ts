@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
 	ACTIVE_KEY_BY_PREFIX,
+	resolveStudentActiveKey,
 	STUDENT_NAV,
 	STUDENT_PAGE_LABEL,
 } from "./student-nav";
@@ -44,5 +45,28 @@ describe("student-nav practice & history menu visibility (#852)", () => {
 		expect(ACTIVE_KEY_BY_PREFIX["/history"]).toBe("history");
 		expect(STUDENT_PAGE_LABEL.practice).toBe("Luyện tập");
 		expect(STUDENT_PAGE_LABEL.history).toBe("Lịch sử");
+	});
+});
+
+describe("resolveStudentActiveKey with /student basepath", () => {
+	it("normalizes optional /student prefix before matching overview and section prefixes", () => {
+		expect(resolveStudentActiveKey("/")).toBe("overview");
+		expect(resolveStudentActiveKey("/student")).toBe("overview");
+		expect(resolveStudentActiveKey("/student/")).toBe("overview");
+		expect(resolveStudentActiveKey("/classes")).toBe("classes");
+		expect(resolveStudentActiveKey("/student/classes")).toBe("classes");
+		expect(resolveStudentActiveKey("/student/classes/cls-1")).toBe("classes");
+		expect(resolveStudentActiveKey("/student/schedule")).toBe("schedule");
+		expect(resolveStudentActiveKey("/student/assignments")).toBe("assignments");
+		expect(resolveStudentActiveKey("/student/practice/reading")).toBe(
+			"practice",
+		);
+		expect(resolveStudentActiveKey("/student/history")).toBe("history");
+		expect(resolveStudentActiveKey("/student/tuition/inv-1")).toBe("tuition");
+		expect(resolveStudentActiveKey("/student/placement-test")).toBe(
+			"placement-test",
+		);
+		expect(resolveStudentActiveKey("/student-other")).toBe("");
+		expect(resolveStudentActiveKey("/unknown")).toBe("");
 	});
 });

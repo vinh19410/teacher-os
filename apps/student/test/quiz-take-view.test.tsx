@@ -50,6 +50,7 @@ vi.mock("sonner", () => ({
 vi.mock("@/lib/query-client", () => ({
 	isHttpError: () => false,
 	isStudentOrgMismatchError: () => false,
+	isTeacherOnStudentPortalError: () => false,
 	reauth: vi.fn(),
 }));
 
@@ -74,7 +75,12 @@ vi.mock("@/lib/repos/quiz", () => ({
 	submitQuizAttempt: (...args: unknown[]) => submitMock(...args),
 }));
 
-import { QuizTakeView } from "@/components/quiz/quiz-take-view";
+import { AttemptReviewError } from "@/components/quiz/attempt-review-error";
+import {
+	attemptSummaryHref,
+	QuizTakeError,
+	QuizTakeView,
+} from "@/components/quiz/quiz-take-view";
 
 describe("QuizTakeView — hybrid MCQ + Writing dual-store runtime (#574)", () => {
 	beforeEach(() => {
@@ -425,5 +431,31 @@ describe("QuizTakeView — hybrid MCQ + Writing dual-store runtime (#574)", () =
 			),
 		).toBeTruthy();
 		expect(container.textContent).not.toContain("Band");
+	});
+
+	it("keeps quiz summary redirect and error home links under /student subpath", () => {
+		expect(attemptSummaryHref("att-1")).toBe(
+			"/student/learn/quizzes/attempt/att-1",
+		);
+		expect(attemptSummaryHref("att/with space")).toBe(
+			"/student/learn/quizzes/attempt/att%2Fwith%20space",
+		);
+
+		const takeError = render(<QuizTakeError error={new Error("boom")} />);
+		expect(
+			takeError.container
+				.querySelector('a[href="/student"]')
+				?.textContent?.trim(),
+		).toBe("Về trang chủ");
+		cleanup();
+
+		const reviewError = render(
+			<AttemptReviewError error={new Error("boom")} />,
+		);
+		expect(
+			reviewError.container
+				.querySelector('a[href="/student"]')
+				?.textContent?.trim(),
+		).toBe("Về trang chủ");
 	});
 });

@@ -7,6 +7,7 @@ import { routeTree } from "./routeTree.gen";
 
 const router = createRouter({
 	routeTree,
+	basepath: "/admin",
 	defaultPreload: "intent",
 	scrollRestoration: true,
 	defaultNotFoundComponent: NotFoundPage,

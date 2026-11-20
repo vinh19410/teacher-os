@@ -80,6 +80,7 @@ async function googleWith(returnUrl: string | undefined) {
 }
 
 const SAFE = "/classes/cl-1?tab=sessions";
+const EXPECTED_SAFE = "/teacher/classes/cl-1?tab=sessions";
 const HOSTILE = [
 	"https://evil.example/phish",
 	"//evil.example",
@@ -87,32 +88,41 @@ const HOSTILE = [
 ];
 
 describe("sign-in returns to where the teacher was", () => {
-	it("lands on a same-site return URL", async () => {
-		expect(await signInWith(SAFE)).toBe(SAFE);
-	});
+	it.each([SAFE, EXPECTED_SAFE])(
+		"lands on a same-site /teacher-prefixed return URL for %s",
+		async (url) => {
+			expect(await signInWith(url)).toBe(EXPECTED_SAFE);
+		},
+	);
 
 	it.each(HOSTILE)("refuses the off-site return URL %s", async (url) => {
-		expect(await signInWith(url)).toBe("/dashboard");
+		expect(await signInWith(url)).toBe("/teacher/dashboard");
 	});
 });
 
 describe("sign-up returns to where the teacher was", () => {
-	it("lands on a same-site return URL", async () => {
-		expect(await signUpWith(SAFE)).toBe(SAFE);
-	});
+	it.each([SAFE, EXPECTED_SAFE])(
+		"lands on a same-site /teacher-prefixed return URL for %s",
+		async (url) => {
+			expect(await signUpWith(url)).toBe(EXPECTED_SAFE);
+		},
+	);
 
 	it.each(HOSTILE)("refuses the off-site return URL %s", async (url) => {
-		expect(await signUpWith(url)).toBe("/dashboard");
+		expect(await signUpWith(url)).toBe("/teacher/dashboard");
 	});
 });
 
 describe("Google sign-in returns to where the teacher was", () => {
-	it("sends Google back to this app at the return URL", async () => {
-		expect(await googleWith(SAFE)).toBe(`${ORIGIN}${SAFE}`);
-	});
+	it.each([SAFE, EXPECTED_SAFE])(
+		"sends Google back to this app at the /teacher-prefixed return URL for %s",
+		async (url) => {
+			expect(await googleWith(url)).toBe(`${ORIGIN}${EXPECTED_SAFE}`);
+		},
+	);
 
 	it.each(HOSTILE)("never sends Google back off-site for %s", async (url) => {
-		expect(await googleWith(url)).toBe(`${ORIGIN}/dashboard`);
+		expect(await googleWith(url)).toBe(`${ORIGIN}/teacher/dashboard`);
 	});
 });
 
@@ -138,7 +148,7 @@ describe("signed-out visit to a workspace page", () => {
 		}
 	).beforeLoad;
 
-	it("goes to login carrying the full current path as returnUrl", async () => {
+	it("goes to root /login carrying the /teacher-prefixed full current path as returnUrl", async () => {
 		auth.getSession.mockResolvedValue({ data: null });
 		await expect(
 			beforeLoad({
@@ -149,8 +159,8 @@ describe("signed-out visit to a workspace page", () => {
 				},
 			}),
 		).rejects.toEqual({
-			to: "/login",
-			search: { returnUrl: "/schedule?week=2026-10-12#today" },
+			href: "/login?returnUrl=%2Fteacher%2Fschedule%3Fweek%3D2026-10-12%23today",
+			reloadDocument: true,
 		});
 	});
 

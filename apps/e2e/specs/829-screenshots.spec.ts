@@ -18,7 +18,7 @@ test("Issue #829: Chụp screenshots 3 viewports light & dark cho danh sách g�
 }) => {
 	await signUpViaApi(page);
 
-	await page.goto("/assignments/packs");
+	await page.goto("/teacher/assignments/packs");
 	await expect(
 		page.getByRole("heading", { name: "Bộ đề tự học" }),
 	).toBeVisible();

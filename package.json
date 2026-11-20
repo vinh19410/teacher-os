@@ -11,6 +11,7 @@
 		"dev": "turbo run dev",
 		"build": "turbo run build",
 		"check-types": "turbo run check-types",
+		"dev:lms": "pnpm --filter lms run dev:bare",
 		"dev:web": "pnpm --filter web run dev:bare",
 		"dev:server": "turbo run dev -F server --",
 		"dev:landing": "pnpm --filter landing run dev:bare",

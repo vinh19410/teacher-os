@@ -8,7 +8,7 @@ import {
 	verifyStudentEmailFromMailLog,
 } from "./helpers";
 import { seedQuizFixture } from "./helpers-quiz";
-import { STUDENT_ORIGIN } from "./origins";
+import { LMS_ORIGIN, STUDENT_BASE_URL } from "./origins";
 
 /**
  * Issue #202 — bank-first assignment prompt creation: compose → save to the
@@ -19,7 +19,7 @@ test("create a ready prompt, list it, and survive reload", async ({ page }) => {
 	const TITLE = "QC-202 Discuss both views";
 
 	await signUpViaApi(page);
-	await page.goto("/assignments");
+	await page.goto("/teacher/assignments");
 	await page.getByRole("button", { name: "+ Tạo bài tập" }).click();
 	await expect(page).toHaveURL(/\/assignments\/new$/);
 
@@ -58,7 +58,7 @@ test("create a ready prompt, list it, and survive reload", async ({ page }) => {
 	// "Tạo đề khác" returns to the form (#213: the create page no longer
 	// shows the bank — persistence is asserted on the assignments page instead).
 	await page.getByRole("button", { name: "Tạo đề khác" }).click();
-	await page.goto("/assignments");
+	await page.goto("/teacher/assignments");
 	await expect(page.getByText(TITLE).first()).toBeVisible();
 	await expect(page.getByText("Sẵn sàng").first()).toBeVisible();
 
@@ -69,7 +69,7 @@ test("create a ready prompt, list it, and survive reload", async ({ page }) => {
 
 test("create a draft prompt with the draft tag", async ({ page }) => {
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 
 	await page.getByRole("button", { name: "Bản nháp" }).first().click();
 	await page.getByLabel("Tiêu đề").fill("QC-202 Bản nháp");
@@ -84,7 +84,7 @@ test("create a draft prompt with the draft tag", async ({ page }) => {
 		page.getByRole("heading", { name: "Đã lưu bản nháp" }),
 	).toBeVisible();
 	await page.getByRole("button", { name: "Tạo đề khác" }).click();
-	await page.goto("/assignments");
+	await page.goto("/teacher/assignments");
 	await expect(page.getByText("QC-202 Bản nháp").first()).toBeVisible();
 	await expect(page.getByText("Bản nháp").first()).toBeVisible();
 });
@@ -95,7 +95,7 @@ test("preview as a student, return to the form without losing it, then save read
 	const TITLE = "QC-202 Preview Flow";
 
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill(TITLE);
 	await fillRichEditor(
@@ -134,7 +134,7 @@ test("preview as a student, return to the form without losing it, then save read
 	await expect(
 		page.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),
 	).toBeVisible();
-	await page.goto("/assignments");
+	await page.goto("/teacher/assignments");
 	await page.reload();
 	await expect(page.getByText(TITLE).first()).toBeVisible();
 });
@@ -145,7 +145,7 @@ test("create a ready reading prompt with answer key, survive reload", async ({
 	const TITLE = "QC-218 Reading TFNG";
 
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 
 	// Select Reading skill
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
@@ -195,7 +195,7 @@ test("create a ready reading prompt with answer key, survive reload", async ({
 	).toBe(0);
 
 	// Navigate to assignments and filter by Reading
-	await page.goto("/assignments");
+	await page.goto("/teacher/assignments");
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await expect(page.getByText(TITLE).first()).toBeVisible();
 
@@ -211,7 +211,7 @@ test("create a listening draft without audio; ready is blocked", async ({
 	const TITLE = "QC-218 Listening Draft";
 
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 
 	// Select Listening skill
 	await page.getByRole("button", { name: "Listening", exact: true }).click();
@@ -273,7 +273,7 @@ test("create a listening draft without audio; ready is blocked", async ({
 	await expect(page.getByText("Tự động · 1/1 đáp án đã khóa")).toBeVisible();
 
 	// Check assignments page
-	await page.goto("/assignments");
+	await page.goto("/teacher/assignments");
 	await page.getByRole("button", { name: "Listening", exact: true }).click();
 	await expect(page.getByText(TITLE).first()).toBeVisible();
 	await expect(page.getByText("Bản nháp").first()).toBeVisible();
@@ -290,7 +290,7 @@ test("author a 3-question tfng set with grid clicks only (FR1)", async ({
 	const TITLE = "QC-271 Grid TFNG";
 
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await page.getByLabel("Tiêu đề").fill(TITLE);
@@ -332,7 +332,7 @@ test("author a 3-question tfng set with grid clicks only (FR1)", async ({
 	).toBeVisible();
 	await expect(page.getByText("Tự động · 3/3 đáp án đã khóa")).toBeVisible();
 
-	await page.goto("/assignments");
+	await page.goto("/teacher/assignments");
 	await page.reload();
 	await expect(page.getByText(TITLE).first()).toBeVisible();
 });
@@ -341,7 +341,7 @@ test("grid keyboard shortcuts: letter keys pick chips, Enter adds, Backspace rem
 	page,
 }) => {
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await page.getByLabel("Tiêu đề").fill("QC-271 Grid Keyboard");
@@ -383,7 +383,7 @@ test("refresh mid-edit restores the autosave draft; Hủy clears it for good (FR
 	const TITLE = "QC-271 Draft Restore";
 
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await page.getByLabel("Tiêu đề").fill(TITLE);
@@ -440,7 +440,7 @@ test("preview draft beats the autosave restore banner (FR6 precedence)", async (
 	const TITLE = "QC-271 Preview Beats Banner";
 
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 
 	// Listening so the transcript round trip is exercised (FR6 bug fix).
 	await page.getByRole("button", { name: "Listening", exact: true }).click();
@@ -477,7 +477,7 @@ test("type change with authored content confirms; same-skill keeps transcript (F
 	page,
 }) => {
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 
 	await page.getByRole("button", { name: "Listening", exact: true }).click();
 	await page.getByLabel("Tiêu đề").fill("QC-271 Carry Transcript");
@@ -540,7 +540,7 @@ test("skill change with authored content confirms and resets on accept (FR5)", a
 	page,
 }) => {
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await page.getByLabel("Tiêu đề").fill("QC-271 Skill Confirm");
@@ -583,7 +583,7 @@ test("bulk key paste maps by question number and reports per-line errors (FR7)",
 	page,
 }) => {
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await page.getByLabel("Tiêu đề").fill("QC-271 Bulk Paste");
@@ -616,7 +616,7 @@ test("author answer explanation, preserve through preview and test-builder updat
 	const studentEmail = `student-571-${Date.now()}@test.local`;
 
 	const teacherEmail = await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await page.getByLabel("Tiêu đề").fill(TITLE);
@@ -662,7 +662,7 @@ test("author answer explanation, preserve through preview and test-builder updat
 	).toBeVisible();
 
 	// Full-Test Builder: gán vào Passage 1 -> Chỉnh sửa -> sửa giải thích -> Cập nhật đề.
-	await page.goto("/assignments/tests/new");
+	await page.goto("/teacher/assignments/tests/new");
 	await page.getByRole("button", { name: "Chọn từ ngân hàng" }).first().click();
 	await page
 		.getByRole("dialog")
@@ -686,7 +686,7 @@ test("author answer explanation, preserve through preview and test-builder updat
 		studentEmail,
 		prompts: [],
 	});
-	await page.goto(`/classes/${fixture.classId}`);
+	await page.goto(`/teacher/classes/${fixture.classId}`);
 	await page
 		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
@@ -716,7 +716,7 @@ test("author answer explanation, preserve through preview and test-builder updat
 			}
 		});
 
-		await studentPage.goto(`${STUDENT_ORIGIN}/login`);
+		await studentPage.goto(`${LMS_ORIGIN}/login`);
 		await studentPage.locator("#tab-signup").click();
 		await studentPage.locator("#signup-name").fill("Học viên 571");
 		await studentPage.locator("#signup-email").fill(studentEmail);
@@ -726,7 +726,7 @@ test("author answer explanation, preserve through preview and test-builder updat
 			{ timeout: 15_000 },
 		);
 		await verifyStudentEmailFromMailLog(studentPage, studentEmail);
-		await expect(studentPage).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`), {
+		await expect(studentPage).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
 			timeout: 30_000,
 		});
 

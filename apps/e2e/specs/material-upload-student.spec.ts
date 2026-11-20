@@ -42,7 +42,12 @@ import {
 	vietnamTodayISO,
 } from "./helpers";
 import { seedDatedClass } from "./helpers-dated-class";
-import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
+import {
+	API_ORIGIN,
+	LMS_ORIGIN,
+	STUDENT_BASE_URL,
+	WEB_ORIGIN,
+} from "./origins";
 
 const SPEAKING_SAMPLE = readFileSync(
 	new URL("../fixtures/speaking-sample.mp3", import.meta.url),
@@ -150,7 +155,7 @@ test("#647: upload thật + CORS preflight + «Phát» media + học viên đa-o
 	});
 
 	// ---- E1: upload ngân hàng PUT raw body + Unicode X-File-Name ----
-	await page.goto("/materials");
+	await page.goto("/teacher/materials");
 	await expect(page.getByTestId("materials-empty")).toBeVisible();
 	// Ngân hàng rỗng render đồng thời nút trong PageHead và trong empty state
 	// → strict mode bắt buộc .first() (red-team #2).
@@ -304,7 +309,7 @@ test("#647: upload thật + CORS preflight + «Phát» media + học viên đa-o
 	};
 	await acceptEnrollment(page, enrollmentId);
 
-	await page.goto(`/classes/${classAId}`);
+	await page.goto(`/teacher/classes/${classAId}`);
 	await page
 		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
@@ -407,7 +412,7 @@ test("#647: upload thật + CORS preflight + «Phát» media + học viên đa-o
 	const studentContext = await newStudentContext(context);
 	const studentPage = await studentContext.newPage();
 	try {
-		await studentPage.goto(`${STUDENT_ORIGIN}/login`);
+		await studentPage.goto(`${LMS_ORIGIN}/login`);
 		await studentPage.locator("#tab-signup").click();
 		await studentPage.locator("#signup-name").fill("Học viên Đa Org");
 		await studentPage.locator("#signup-email").fill(studentEmail);
@@ -417,7 +422,7 @@ test("#647: upload thật + CORS preflight + «Phát» media + học viên đa-o
 			{ timeout: 15_000 },
 		);
 		await verifyStudentEmailFromMailLog(studentPage, studentEmail);
-		await expect(studentPage).toHaveURL(new RegExp(STUDENT_ORIGIN), {
+		await expect(studentPage).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}`), {
 			timeout: 30_000,
 		});
 
@@ -555,7 +560,7 @@ test("#647: upload thật + CORS preflight + «Phát» media + học viên đa-o
 				email: otherStudentEmail,
 				onboarded: true,
 			});
-			await otherPage.goto(`${STUDENT_ORIGIN}/login`);
+			await otherPage.goto(`${LMS_ORIGIN}/login`);
 			await otherPage.locator("#tab-signup").click();
 			await otherPage.locator("#signup-name").fill("Học viên Khác Org");
 			await otherPage.locator("#signup-email").fill(otherStudentEmail);
@@ -565,7 +570,7 @@ test("#647: upload thật + CORS preflight + «Phát» media + học viên đa-o
 				{ timeout: 15_000 },
 			);
 			await verifyStudentEmailFromMailLog(otherPage, otherStudentEmail);
-			await expect(otherPage).toHaveURL(new RegExp(STUDENT_ORIGIN), {
+			await expect(otherPage).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}`), {
 				timeout: 30_000,
 			});
 			const unauthorizedList = await otherPage.request.get(

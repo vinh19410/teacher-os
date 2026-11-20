@@ -80,9 +80,10 @@ describe("isolated grading navigation with session caching", () => {
 	afterEach(() => {
 		cleanup();
 		clearSessionCache();
+		vi.unstubAllGlobals();
 	});
 
-	function buildTestRouter(initialEntry = "/dashboard") {
+	function buildTestRouter(initialEntry = "/teacher/dashboard") {
 		const rootRoute = createRootRoute({
 			component: RootLayout,
 		});
@@ -123,6 +124,7 @@ describe("isolated grading navigation with session caching", () => {
 
 		return createRouter({
 			routeTree,
+			basepath: "/teacher",
 			history,
 			defaultPreload: "intent",
 			defaultPendingMs: 200,
@@ -138,7 +140,7 @@ describe("isolated grading navigation with session caching", () => {
 		};
 		mockGetSession.mockResolvedValue(sampleSession);
 
-		const router = buildTestRouter("/dashboard");
+		const router = buildTestRouter("/teacher/dashboard");
 		render(<RouterProvider router={router} />);
 
 		// Initial dashboard load
@@ -180,7 +182,7 @@ describe("isolated grading navigation with session caching", () => {
 		};
 		mockGetSession.mockResolvedValueOnce(sampleSession);
 
-		const router = buildTestRouter("/dashboard");
+		const router = buildTestRouter("/teacher/dashboard");
 		render(<RouterProvider router={router} />);
 
 		await waitFor(() => {
@@ -214,16 +216,69 @@ describe("isolated grading navigation with session caching", () => {
 		dateSpy.mockRestore();
 	});
 
-	it("redirects to /login when unauthenticated user tries to access protected route", async () => {
+	it("redirects to root /login via full document navigation when unauthenticated user tries to access protected route", async () => {
 		mockGetSession.mockResolvedValue({ data: null });
+		const replace = vi.fn();
+		const hrefSetter = vi.fn();
+		vi.stubGlobal("location", {
+			...window.location,
+			replace,
+			get href() {
+				return "http://localhost/teacher/dashboard";
+			},
+			set href(value: string) {
+				hrefSetter(value);
+			},
+		});
 
-		const router = buildTestRouter("/dashboard");
+		const router = buildTestRouter("/teacher/dashboard");
 		render(<RouterProvider router={router} />);
 
 		await waitFor(() => {
-			expect(router.state.location.pathname).toBe("/login");
+			expect(
+				replace.mock.calls.length + hrefSetter.mock.calls.length,
+			).toBeGreaterThan(0);
+		});
+		const target = replace.mock.calls[0]?.[0] ?? hrefSetter.mock.calls[0]?.[0];
+		expect(target).toBe("/login?returnUrl=%2Fteacher%2Fdashboard");
+		expect(mockSignOut).not.toHaveBeenCalled();
+	});
+
+	it("auto-redirects wrong-role session to /student via full document navigation without calling signOut", async () => {
+		mockGetSession.mockResolvedValue({
+			data: {
+				user: {
+					id: "u-s1",
+					name: "Học viên A",
+					email: "hv@test.local",
+					role: "student",
+				},
+				session: { id: "s-s1" },
+			},
+		});
+		const replace = vi.fn();
+		const hrefSetter = vi.fn();
+		vi.stubGlobal("location", {
+			...window.location,
+			replace,
+			get href() {
+				return "http://localhost/teacher/dashboard";
+			},
+			set href(value: string) {
+				hrefSetter(value);
+			},
 		});
 
-		expect(screen.getByRole("heading", { name: "Đăng nhập" })).toBeDefined();
+		const router = buildTestRouter("/teacher/dashboard");
+		render(<RouterProvider router={router} />);
+
+		await waitFor(() => {
+			expect(
+				replace.mock.calls.length + hrefSetter.mock.calls.length,
+			).toBeGreaterThan(0);
+		});
+		const target = replace.mock.calls[0]?.[0] ?? hrefSetter.mock.calls[0]?.[0];
+		expect(target).toBe("/student");
+		expect(mockSignOut).not.toHaveBeenCalled();
 	});
 });

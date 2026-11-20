@@ -495,7 +495,8 @@ export function PlacementTestRoute() {
 		setReimportConfirmOpen(false);
 		setSeedProgress("Đang tải đề gốc 5 kỹ năng...");
 		try {
-			const seedRes = await fetch("/placement-seed/questions.json", {
+			const assetBase = (import.meta.env.BASE_URL || "/").replace(/\/?$/, "/");
+			const seedRes = await fetch(`${assetBase}placement-seed/questions.json`, {
 				cache: "no-cache",
 			});
 			if (!seedRes.ok) {
@@ -513,7 +514,9 @@ export function PlacementTestRoute() {
 				setSeedProgress(
 					`Đang tải audio ${idx + 1}/${clips.length} (${clip.id}.mp3)...`,
 				);
-				const audioRes = await fetch(`/placement-seed/${clip.id}.mp3`);
+				const audioRes = await fetch(
+					`${assetBase}placement-seed/${clip.id}.mp3`,
+				);
 				if (!audioRes.ok) {
 					throw new Error(
 						`Không tải được file audio mẫu ${clip.id}.mp3 (HTTP ${audioRes.status}).`,

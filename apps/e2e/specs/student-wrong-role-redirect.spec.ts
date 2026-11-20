@@ -6,7 +6,8 @@ import {
 	request as playwrightRequest,
 	test,
 } from "@playwright/test";
-import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
+import { ADMIN_EMAIL, ADMIN_PASSWORD, ensureAdminAccount } from "./helpers";
+import { API_ORIGIN, LMS_ORIGIN, STUDENT_BASE_URL } from "./origins";
 
 const DEFAULT_PASSWORD = "password-8chars";
 const LOCAL_DB_PATH = fileURLToPath(
@@ -29,11 +30,7 @@ async function openDb() {
  * Tạo tài khoản qua API trên context cô lập để không làm lẫn cookie jar
  * giữa các vai trò trong cùng một test.
  */
-async function signUpViaApi(
-	email: string,
-	origin: string,
-	name: string,
-): Promise<string> {
+async function signUpViaApi(email: string, name: string): Promise<string> {
 	const apiCtx = await playwrightRequest.newContext();
 	try {
 		const res = await apiCtx.post(`${API_ORIGIN}/api/auth/sign-up/email`, {
@@ -44,7 +41,7 @@ async function signUpViaApi(
 			},
 			headers: {
 				"Content-Type": "application/json",
-				Origin: origin,
+				Origin: LMS_ORIGIN,
 			},
 		});
 		if (res.status() !== 200) {
@@ -63,6 +60,38 @@ async function signUpViaApi(
 		const token = match?.[1];
 		if (!token) {
 			throw new Error("no session cookie on sign-up response");
+		}
+		return token;
+	} finally {
+		await apiCtx.dispose();
+	}
+}
+
+async function signInViaApi(email: string, password: string): Promise<string> {
+	const apiCtx = await playwrightRequest.newContext();
+	try {
+		const res = await apiCtx.post(`${API_ORIGIN}/api/auth/sign-in/email`, {
+			data: { email, password },
+			headers: {
+				"Content-Type": "application/json",
+				Origin: LMS_ORIGIN,
+			},
+		});
+		if (res.status() !== 200) {
+			throw new Error(`sign-in failed (${res.status()}): ${await res.text()}`);
+		}
+		const setCookie = res
+			.headersArray()
+			.find(
+				(h) =>
+					h.name.toLowerCase() === "set-cookie" &&
+					h.value.includes("better-auth.session_token="),
+			);
+		const token = /better-auth\.session_token=([^;]+)/.exec(
+			setCookie?.value ?? "",
+		)?.[1];
+		if (!token) {
+			throw new Error("no session cookie on sign-in response");
 		}
 		return token;
 	} finally {
@@ -120,14 +149,13 @@ async function attachSessionCookie(page: Page, token: string): Promise<void> {
 	]);
 }
 
-async function seedWrongRoleSession(
+async function seedTeacherSession(
 	page: Page,
-	role: "teacher" | "admin",
 	prefix: string,
 ): Promise<{ email: string; token: string }> {
 	const email = uniqueEmail(prefix);
-	const token = await signUpViaApi(email, WEB_ORIGIN, `E2E ${role}`);
-	await updateUserInDb(email, { role });
+	const token = await signUpViaApi(email, "E2E teacher");
+	await updateUserInDb(email, { role: "teacher", emailVerified: true });
 	await attachSessionCookie(page, token);
 	return { email, token };
 }
@@ -147,7 +175,7 @@ async function getSessionWithCookie(token: string) {
 	try {
 		const res = await apiCtx.get(`${API_ORIGIN}/api/auth/get-session`, {
 			headers: {
-				Origin: WEB_ORIGIN,
+				Origin: LMS_ORIGIN,
 				Cookie: `better-auth.session_token=${token}`,
 			},
 		});
@@ -164,48 +192,49 @@ async function getSessionWithCookie(token: string) {
 }
 
 /**
- * Khi session sai vai trò vào cổng học viên, app phải chuyển hướng về /login
- * sạch sẽ mà không gọi sign-out, không hiện màn hình chặn và không lặp redirect.
+ * Khi session sai vai trò vào `/student/*`, app phải tự động chuyển hướng sang
+ * đúng cổng của role đó (`/teacher/dashboard` hoặc `/admin/library/tests`)
+ * mà không gọi sign-out, không hiện màn hình chặn và không lặp redirect.
  */
-async function expectCleanLoginRedirect(
+async function expectCleanPortalRedirect(
 	page: Page,
-	expectedReturnUrl: string,
+	expectedUrlPattern: RegExp,
 	signOutRequests: string[],
 ): Promise<void> {
-	const expectedUrl = `${STUDENT_ORIGIN}/login?returnUrl=${encodeURIComponent(expectedReturnUrl)}`;
-	await expect(page).toHaveURL(expectedUrl);
-	await expect(
-		page.getByRole("heading", { name: "Chào mừng trở lại" }),
-	).toBeVisible();
+	await expect(page).toHaveURL(expectedUrlPattern, { timeout: 30_000 });
 	await expect(page.getByText("Đây là tài khoản giáo viên")).not.toBeVisible();
 	expect(signOutRequests).toEqual([]);
 
-	// Chờ ngắn để xác nhận URL giữ nguyên tại /login và không bật vòng lặp redirect.
+	// Chờ ngắn để xác nhận URL đứng yên và không bật vòng lặp redirect.
 	await page.waitForTimeout(500);
-	await expect(page).toHaveURL(expectedUrl);
-	await expect(
-		page.getByRole("heading", { name: "Chào mừng trở lại" }),
-	).toBeVisible();
+	await expect(page).toHaveURL(expectedUrlPattern);
 	await expect(page.getByText("Đây là tài khoản giáo viên")).not.toBeVisible();
 	expect(signOutRequests).toEqual([]);
 }
 
-test.describe("Student Portal Wrong-Role Redirect", () => {
-	test("teacher session cookie vào / và /classes chuyển về /login không thu hồi phiên giáo viên", async ({
+test.describe("Student Portal Wrong-Role Auto-Redirect", () => {
+	test("teacher session cookie vào /student và /student/classes tự chuyển về /teacher/dashboard không thu hồi phiên giáo viên", async ({
 		page,
 	}) => {
-		const { email, token } = await seedWrongRoleSession(
+		const { email, token } = await seedTeacherSession(
 			page,
-			"teacher",
 			"wrong-role-teacher",
 		);
 		const signOutRequests = trackSignOutRequests(page);
 
-		await page.goto(`${STUDENT_ORIGIN}/`);
-		await expectCleanLoginRedirect(page, "/", signOutRequests);
+		await page.goto(`${STUDENT_BASE_URL}/`);
+		await expectCleanPortalRedirect(
+			page,
+			/\/teacher\/dashboard/,
+			signOutRequests,
+		);
 
-		await page.goto(`${STUDENT_ORIGIN}/classes`);
-		await expectCleanLoginRedirect(page, "/classes", signOutRequests);
+		await page.goto(`${STUDENT_BASE_URL}/classes`);
+		await expectCleanPortalRedirect(
+			page,
+			/\/teacher\/dashboard/,
+			signOutRequests,
+		);
 
 		const sessionRes = await getSessionWithCookie(token);
 		expect(sessionRes.status).toBe(200);
@@ -215,20 +244,27 @@ test.describe("Student Portal Wrong-Role Redirect", () => {
 		);
 	});
 
-	test("admin session cookie vào / chuyển về /login sạch sẽ không gọi sign-out", async ({
+	test("admin session cookie vào /student tự chuyển về /admin/library/tests không gọi sign-out", async ({
 		page,
+		request,
 	}) => {
-		await seedWrongRoleSession(page, "admin", "wrong-role-admin");
+		await ensureAdminAccount(request);
+		const token = await signInViaApi(ADMIN_EMAIL, ADMIN_PASSWORD);
+		await attachSessionCookie(page, token);
 		const signOutRequests = trackSignOutRequests(page);
 
-		await page.goto(`${STUDENT_ORIGIN}/`);
-		await expectCleanLoginRedirect(page, "/", signOutRequests);
+		await page.goto(`${STUDENT_BASE_URL}/`);
+		await expectCleanPortalRedirect(
+			page,
+			/\/admin\/library\/tests/,
+			signOutRequests,
+		);
 	});
 
-	test("fallback 403 ACCOUNT_TEACHER_ROLE khi vượt qua beforeLoad chuyển về /login không lặp redirect", async ({
+	test("fallback 403 ACCOUNT_TEACHER_ROLE khi vượt qua beforeLoad tự chuyển về /teacher/dashboard không lặp redirect", async ({
 		page,
 	}) => {
-		await seedWrongRoleSession(page, "teacher", "wrong-role-fallback");
+		await seedTeacherSession(page, "wrong-role-fallback");
 		const signOutRequests = trackSignOutRequests(page);
 
 		const studentMeStatuses: number[] = [];
@@ -238,9 +274,9 @@ test.describe("Student Portal Wrong-Role Redirect", () => {
 			}
 		});
 
-		// Giả lập session cache hoặc role vừa đổi sau khi sign-up: chỉ thay role
-		// thành student ở lần GET get-session đầu tiên để đi qua beforeLoad, rồi
-		// gỡ route ngay để /login nhận đúng session teacher thật từ server.
+		// Giả lập session cache cũ: chỉ thay role thành student ở lần GET
+		// get-session đầu tiên để đi qua beforeLoad, rồi gỡ route ngay để
+		// root dispatcher `/` nhận đúng session teacher thật từ server.
 		let interceptedFirstGetSession = false;
 		await page.route("**/api/auth/get-session", async (route) => {
 			if (interceptedFirstGetSession || route.request().method() !== "GET") {
@@ -269,30 +305,42 @@ test.describe("Student Portal Wrong-Role Redirect", () => {
 			await page.unroute("**/api/auth/get-session");
 		});
 
-		await page.goto(`${STUDENT_ORIGIN}/`);
-		await expectCleanLoginRedirect(page, "/", signOutRequests);
+		await page.goto(`${STUDENT_BASE_URL}/`);
+		await expectCleanPortalRedirect(
+			page,
+			/\/teacher\/dashboard/,
+			signOutRequests,
+		);
 
 		expect(interceptedFirstGetSession).toBe(true);
 		expect(studentMeStatuses).toContain(403);
 	});
 
-	test("đăng nhập tài khoản học viên hợp lệ từ /login khi đang giữ cookie giáo viên vào được cổng học viên", async ({
+	test("giáo viên đăng xuất rồi đăng nhập tài khoản học viên hợp lệ ở /login vào được cổng học viên", async ({
 		page,
 	}) => {
 		await ensureOrganizationSeeded();
 
 		const studentEmail = uniqueEmail("valid-student");
-		await signUpViaApi(studentEmail, STUDENT_ORIGIN, "E2E Valid Student");
+		await signUpViaApi(studentEmail, "E2E Valid Student");
 		await updateUserInDb(studentEmail, {
 			role: "student",
 			emailVerified: true,
 		});
 
-		await seedWrongRoleSession(page, "teacher", "teacher-cookie-holder");
+		await seedTeacherSession(page, "teacher-cookie-holder");
 		const signOutRequests = trackSignOutRequests(page);
 
-		await page.goto(`${STUDENT_ORIGIN}/`);
-		await expectCleanLoginRedirect(page, "/", signOutRequests);
+		await page.goto(`${STUDENT_BASE_URL}/`);
+		await expectCleanPortalRedirect(
+			page,
+			/\/teacher\/dashboard/,
+			signOutRequests,
+		);
+
+		// Giáo viên chủ động đăng xuất → về unified /login → đăng nhập tài khoản học viên.
+		await page.getByRole("button", { name: "Đăng xuất" }).click();
+		await expect(page).toHaveURL(new RegExp(`^${LMS_ORIGIN}/login$`));
 
 		const signInForm = page.locator("#panel-signin");
 		await signInForm.locator("#signin-email").fill(studentEmail);
@@ -300,7 +348,7 @@ test.describe("Student Portal Wrong-Role Redirect", () => {
 		await signInForm.locator("button[type='submit']").click();
 
 		await expect(page).toHaveURL(
-			new RegExp(`^${STUDENT_ORIGIN}/(onboarding)?$`),
+			new RegExp(`^${STUDENT_BASE_URL}/(onboarding)?$`),
 			{ timeout: 20_000 },
 		);
 		await expect(page).not.toHaveURL(/\/login/);

@@ -24,7 +24,7 @@ test("create a ready summary prompt and leak-check the preview", async ({
 	const ANSWER_TWO = "quartz-7";
 
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	// Passage 2 → Summary completion (one of the 8 new types)
@@ -79,7 +79,7 @@ test("create a ready summary prompt and leak-check the preview", async ({
 	await expect(page.getByText("Tự động · 2/2 đáp án đã khóa")).toBeVisible();
 
 	// Bank lists it; the detail aside shows the intro option bank.
-	await page.goto("/assignments");
+	await page.goto("/teacher/assignments");
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await page.getByRole("button", { name: /QC-269 Summary/ }).click();
 	await expect(
@@ -104,7 +104,7 @@ test("create a ready diagram prompt with an https image URL", async ({
 		}),
 	);
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await page
@@ -194,7 +194,7 @@ test("create a ready diagram prompt with an https image URL", async ({
 
 	// Bank detail: the pinned image survives the snapshot round-trip —
 	// the aside draws the numbered pin overlay (phase-04 FR5/FR7).
-	await page.goto("/assignments");
+	await page.goto("/teacher/assignments");
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await page.getByRole("button", { name: /QC-269 Diagram/ }).click();
 	await expect(page.getByLabel("Điền đáp án câu 1")).toBeVisible();
@@ -213,7 +213,7 @@ test("create a ready features prompt with a 5-item bank and round-trip it throug
 	];
 
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await page.getByRole("button", { name: "Passage 3" }).click();
@@ -276,7 +276,7 @@ test("create a ready features prompt with a 5-item bank and round-trip it throug
 
 	// Round trip through the SNAPSHOT read path: reload the bank page, open
 	// the prompt, and the labeled bank must render in the preview aside.
-	await page.goto("/assignments");
+	await page.goto("/teacher/assignments");
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await page.getByRole("button", { name: /QC-271 Features bank/ }).click();
 	await expect(
@@ -293,7 +293,7 @@ test("sentend blocks a second question from keying an already-used label", async
 	const TITLE = "QC-271 Sentend distinct";
 
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await page.getByRole("button", { name: "Passage 2" }).click();
@@ -346,7 +346,7 @@ test("deleting a middle bank row resets the keys at or after that position", asy
 	const TITLE = "QC-271 Bank row delete";
 
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await page.getByRole("button", { name: "Passage 3" }).click();
@@ -441,7 +441,7 @@ test("a legacy prompt without a bank previews with the intro fallback and a miss
 	});
 	client.close();
 
-	await page.goto("/assignments");
+	await page.goto("/teacher/assignments");
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await page.getByRole("button", { name: /QC-271 Legacy headings/ }).click();
 	// Old intro fallback still renders — and the silence is broken loudly.
@@ -463,7 +463,7 @@ test("summary composes via click-to-blank: 4 clicked words become 4 keyed questi
 	const WORDS = ["raised", "dams", "store", "dry"];
 
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await page.getByRole("button", { name: "Passage 2" }).click();
@@ -536,7 +536,7 @@ test("tablecomp composes via the grid: 2×3 table with 2 blanks previews as labe
 	const TITLE = "QC-273 Table grid";
 
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await page.getByRole("button", { name: "Passage 2" }).click();
@@ -610,7 +610,7 @@ test("cloze apply is blocked above the caps: over 40 blanks and a 500-char segme
 	const TITLE = "QC-273 Cloze caps";
 
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	await page.getByRole("button", { name: "Passage 2" }).click();

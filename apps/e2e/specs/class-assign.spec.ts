@@ -58,7 +58,7 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 	await expect(confirmModal).toBeHidden();
 	await expect(page.getByText("Đang học")).toBeVisible();
 	// 5. Create 1 ready prompt and 1 draft prompt in the bank
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill(PROMPT_TITLE);
 	await fillRichEditor(
@@ -170,12 +170,12 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 	await expect(page.getByText("Đang mở").first()).toBeVisible();
 
 	// 12. Go to /assignments → prompt has tag "Đã dùng 1 lớp"
-	await page.goto("/assignments");
+	await page.goto("/teacher/assignments");
 	await expect(page.getByRole("heading", { name: PROMPT_TITLE })).toBeVisible();
 	await expect(page.getByText("Đã dùng 1 lớp")).toBeVisible();
 
 	// 13. Return to class → reassign the SAME prompt to the SAME class
-	await page.goto("/classes");
+	await page.goto("/teacher/classes");
 	await expect(page).toHaveURL(/\/classes$/);
 	await page.getByText(CLASS_NAME).click();
 	await expect(page).toHaveURL(/\/classes\/[a-zA-Z0-9_-]+$/);
@@ -212,7 +212,7 @@ test("class detail → assign prompt → verify list, bank tag, and reassign", a
 	await expect(items).toHaveCount(2);
 
 	// 14. Return to /assignments: tag MUST STILL BE "Đã dùng 1 lớp" (distinct classId)
-	await page.goto("/assignments");
+	await page.goto("/teacher/assignments");
 	await expect(page.getByRole("heading", { name: PROMPT_TITLE })).toBeVisible();
 	await expect(page.getByText("Đã dùng 1 lớp")).toBeVisible();
 	await expect(page.getByText("Đã dùng 2 lớp")).toHaveCount(0);
@@ -269,7 +269,7 @@ test("#572 (en-US locale): dd/mm/yyyy typing without segment jump, calendar popo
 		await expect(confirmModal).toBeHidden();
 
 		// Create 1 ready prompt
-		await page.goto("/assignments/new");
+		await page.goto("/teacher/assignments/new");
 		await selectWritingTask2(page);
 		await page.getByLabel("Tiêu đề").fill(PROMPT_TITLE);
 		await fillRichEditor(
@@ -286,7 +286,7 @@ test("#572 (en-US locale): dd/mm/yyyy typing without segment jump, calendar popo
 		).toBeVisible();
 
 		// Navigate to class assign modal
-		await page.goto("/classes");
+		await page.goto("/teacher/classes");
 		await page.getByText(CLASS_NAME).click();
 		await page
 			.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })

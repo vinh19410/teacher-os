@@ -67,7 +67,7 @@ class QuizSubmitSkippedError extends Error {
 
 /** URL summary của attempt (route Phase 4) — redirect cứng full-document. */
 export const attemptSummaryHref = (attemptId: string): string =>
-	`/learn/quizzes/attempt/${attemptId}`;
+	`/student/learn/quizzes/attempt/${encodeURIComponent(attemptId)}`;
 
 export function QuizTakeError({ error }: { error: unknown }) {
 	if (isTeacherOnStudentPortalError(error)) {
@@ -92,7 +92,7 @@ export function QuizTakeError({ error }: { error: unknown }) {
 				<p className="font-mono text-muted-foreground text-xs">{code}</p>
 			)}
 			<a
-				href="/"
+				href="/student"
 				className="text-primary text-sm underline-offset-4 hover:underline"
 			>
 				Về trang chủ

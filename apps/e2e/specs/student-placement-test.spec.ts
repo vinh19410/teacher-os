@@ -3,7 +3,13 @@ import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
 import { signUpViaApi, verifyStudentEmailFromMailLog } from "./helpers";
-import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
+import {
+	API_ORIGIN,
+	LMS_ORIGIN,
+	STUDENT_BASE_URL,
+	TEACHER_BASE_URL,
+	WEB_ORIGIN,
+} from "./origins";
 
 const LEAD_ORG_ID = "e2e-lead-org";
 const SEED_DIR = new URL("../../web/public/placement-seed/", import.meta.url);
@@ -223,7 +229,7 @@ test.describe
 			const studentName = "Học Viên Test Đầu Vào";
 
 			try {
-				await studentPage.goto(`${STUDENT_ORIGIN}/login`);
+				await studentPage.goto(`${LMS_ORIGIN}/login`);
 				await studentPage.locator("#tab-signup").click();
 				await studentPage.locator("#signup-name").fill(studentName);
 				await studentPage.locator("#signup-email").fill(email);
@@ -239,7 +245,10 @@ test.describe
 
 				// Hoàn tất onboarding 5 bước
 				await completeStudentOnboarding(studentPage);
-				await expect(studentPage).toHaveURL(/\/$/, { timeout: 20_000 });
+				await expect(studentPage).toHaveURL(
+					new RegExp(`^${STUDENT_BASE_URL}/?$`),
+					{ timeout: 20_000 },
+				);
 
 				// 3. Modal đề xuất lần đầu xuất hiện
 				const promptModal = studentPage.getByTestId("placement-prompt-modal");
@@ -481,7 +490,7 @@ test.describe
 				);
 				expect(unreadCount).toBeGreaterThanOrEqual(1);
 
-				await studentPage.goto(`${STUDENT_ORIGIN}/`);
+				await studentPage.goto(`${STUDENT_BASE_URL}/`);
 				await expect(notificationBadge).toBeVisible({ timeout: 15_000 });
 				await studentPage.getByRole("button", { name: /Thông báo/ }).click();
 				const notificationDialog = studentPage.getByRole("dialog", {
@@ -534,7 +543,7 @@ test.describe
 					db.close();
 				}
 
-				await teacherPage.goto(`${WEB_ORIGIN}/students/${studentId}`);
+				await teacherPage.goto(`${TEACHER_BASE_URL}/students/${studentId}`);
 				await expect(
 					teacherPage.getByTestId("placement-submission-panel"),
 				).toBeVisible({ timeout: 20_000 });
@@ -681,7 +690,7 @@ test.describe
 			await installSyntheticSpeakingDevice(studentPage);
 
 			try {
-				await studentPage.goto(`${STUDENT_ORIGIN}/login`);
+				await studentPage.goto(`${LMS_ORIGIN}/login`);
 				await studentPage.locator("#tab-signup").click();
 				await studentPage.locator("#signup-name").fill("Học Viên Speaking 780");
 				await studentPage.locator("#signup-email").fill(email);
@@ -694,9 +703,12 @@ test.describe
 				).toBeVisible({ timeout: 15_000 });
 				await verifyStudentEmailFromMailLog(studentPage, email);
 				await completeStudentOnboarding(studentPage);
-				await expect(studentPage).toHaveURL(/\/$/, { timeout: 20_000 });
+				await expect(studentPage).toHaveURL(
+					new RegExp(`^${STUDENT_BASE_URL}/?$`),
+					{ timeout: 20_000 },
+				);
 
-				await studentPage.goto(`${STUDENT_ORIGIN}/placement-test`);
+				await studentPage.goto(`${STUDENT_BASE_URL}/placement-test`);
 				await expect(
 					studentPage.getByTestId("placement-intro-card"),
 				).toBeVisible({ timeout: 15_000 });

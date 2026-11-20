@@ -195,7 +195,7 @@ test("AC-002: thu một phần 2.000.000 rồi thu đủ 2.500.000 — trạng t
 	// Chi tiết hóa đơn: 2 giao dịch — đợt 1 Tiền mặt "Đợt 1", đợt 2 Chuyển
 	// khoản (mặc định của hộp thoại) không ghi chú.
 	const invoiceId = await invoiceIdForStudent(stuA.id);
-	await page.goto(`/tuition/${invoiceId}`);
+	await page.goto(`/teacher/tuition/${invoiceId}`);
 	const txTable = page.locator("table").last();
 	await expect(txTable).toBeVisible();
 	const txRows = txTable.locator("tbody tr");

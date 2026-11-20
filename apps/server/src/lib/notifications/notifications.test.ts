@@ -688,4 +688,24 @@ describe("templates builder", () => {
 		);
 		expect(attrEscape).toContain("&quot; onclick=&quot;alert(1)");
 	});
+
+	test("invite-email builders route unified /student base to root /login", () => {
+		const orgMail = buildOrgInvitationEmail({
+			orgName: "Alpha Academy",
+			inviterName: "Cô Mỹ",
+			studentOrigin: "https://lms.msmy.io.vn/student",
+		});
+		expect(orgMail.html).toContain('href="https://lms.msmy.io.vn/login"');
+		expect(orgMail.text).toContain("https://lms.msmy.io.vn/login");
+		expect(orgMail.html).not.toContain("/student/login");
+
+		const portalMail = buildStudentPortalInviteEmail({
+			orgName: "Alpha Academy",
+			studentName: "Minh",
+			studentOrigin: "https://lms.msmy.io.vn/student/",
+		});
+		expect(portalMail.html).toContain('href="https://lms.msmy.io.vn/login"');
+		expect(portalMail.text).toContain("https://lms.msmy.io.vn/login");
+		expect(portalMail.html).not.toContain("/student/login");
+	});
 });

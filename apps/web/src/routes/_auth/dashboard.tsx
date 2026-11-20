@@ -68,7 +68,7 @@ function DashboardRoute() {
 	const { session } = useRouteContext({ from: "/_auth" });
 	const { data, classById } = useData();
 	if (!session?.data?.user) {
-		throw redirect({ to: "/login" });
+		throw redirect({ href: "/login", reloadDocument: true });
 	}
 
 	const displayName = session.data.user.name || "Giáo viên";

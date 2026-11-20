@@ -10,6 +10,14 @@ import {
 	isValidAppRoute,
 } from "./src/routes-matcher";
 
+function stripTeacherBase(pathname: string): string {
+	if (pathname === "/teacher") return "/";
+	if (pathname.startsWith("/teacher/")) {
+		return pathname.slice("/teacher".length);
+	}
+	return pathname;
+}
+
 function spa404Plugin(): Plugin {
 	const createMiddleware =
 		(
@@ -19,12 +27,13 @@ function spa404Plugin(): Plugin {
 		async (req, res, next) => {
 			const url = req.url ?? "/";
 			const pathname = new URL(url, "http://localhost").pathname;
+			const normalizedPathname = stripTeacherBase(pathname);
 
 			// 1. Vite dev internals pass through first
 			if (
-				pathname.startsWith("/@") ||
-				pathname.startsWith("/src/") ||
-				pathname.startsWith("/node_modules/")
+				normalizedPathname.startsWith("/@") ||
+				normalizedPathname.startsWith("/src/") ||
+				normalizedPathname.startsWith("/node_modules/")
 			) {
 				next();
 				return;
@@ -40,13 +49,13 @@ function spa404Plugin(): Plugin {
 			}
 
 			// 3. Static assets pass through
-			if (isStaticAssetPath(pathname)) {
+			if (isStaticAssetPath(normalizedPathname)) {
 				next();
 				return;
 			}
 
-			// 3. Valid SPA routes pass through to Vite SPA fallback (200 OK)
-			if (isValidAppRoute(pathname)) {
+			// 4. Valid SPA routes pass through to Vite SPA fallback (200 OK)
+			if (isValidAppRoute(normalizedPathname)) {
 				next();
 				return;
 			}
@@ -105,6 +114,7 @@ const rootPkg = JSON.parse(
 ) as { version?: string };
 
 export default defineConfig({
+	base: "/teacher/",
 	define: {
 		__APP_VERSION__: JSON.stringify(rootPkg.version ?? "0.0.0"),
 	},

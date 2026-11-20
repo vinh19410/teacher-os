@@ -387,7 +387,7 @@ describe("StudentErrorView", () => {
 	it("resolves teacher portal url from global window if available", () => {
 		vi.stubGlobal("window", {
 			location: {
-				hostname: "student.staging.teacheros.io.vn",
+				hostname: "lms.staging.teacheros.io.vn",
 				protocol: "https:",
 				port: "",
 			},
@@ -399,7 +399,9 @@ describe("StudentErrorView", () => {
 				/>,
 			);
 			expect(html).toContain("Chuyển sang cổng giáo viên");
-			expect(html).toContain('href="https://app.staging.teacheros.io.vn"');
+			expect(html).toContain(
+				'href="https://lms.staging.teacheros.io.vn/teacher"',
+			);
 			expect(html).toContain("Đăng xuất");
 		} finally {
 			vi.unstubAllGlobals();

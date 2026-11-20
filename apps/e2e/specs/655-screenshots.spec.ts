@@ -26,7 +26,7 @@ const VIEWPORTS = [
 
 /** Thêm một liên kết vào ngân hàng (thư mục gốc). */
 async function seedBankLink(page: Page, title: string) {
-	await page.goto("/materials");
+	await page.goto("/teacher/materials");
 	await page.getByRole("button", { name: "Thêm liên kết" }).first().click();
 	const dialog = page.getByRole("dialog", { name: "Thêm liên kết" });
 	await dialog.getByLabel("Tiêu đề").fill(title);
@@ -83,7 +83,7 @@ test("Issue #655: screenshots 3 viewports cho pick tài liệu khi tạo buổi 
 		schedulingMode: "manual",
 		students: { teacherEmail, names: ["Học viên POT"] },
 	});
-	await page.goto(`/classes/${classId}`);
+	await page.goto(`/teacher/classes/${classId}`);
 	await page.getByRole("button", { name: "+ Thêm buổi học" }).first().click();
 	const dialog = page.getByRole("dialog", { name: "Thêm buổi học" });
 	await expect(dialog).toBeVisible();
@@ -114,7 +114,7 @@ test("Issue #655: screenshots 3 viewports cho pick tài liệu khi tạo buổi 
 	expect(tplRes.status()).toBe(201);
 	const { id: templateId } = (await tplRes.json()) as { id: string };
 
-	await page.goto("/syllabus");
+	await page.goto("/teacher/syllabus");
 	await page.getByText(TEMPLATE).first().click();
 	await page.getByRole("button", { name: "+ Thêm buổi học" }).click();
 	const lessonDialog = page.getByRole("dialog", { name: "Thêm buổi học" });
@@ -136,7 +136,7 @@ test("Issue #655: screenshots 3 viewports cho pick tài liệu khi tạo buổi 
 		templateId,
 		students: { teacherEmail, names: ["Học viên POT Kế thừa"] },
 	});
-	await page.goto(`/classes/${classRes}`);
+	await page.goto(`/teacher/classes/${classRes}`);
 	await page
 		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();

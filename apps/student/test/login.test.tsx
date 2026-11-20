@@ -27,22 +27,27 @@ import { authErrorMessage } from "@/lib/auth-error";
 import { validateReturnUrl } from "@/lib/validate-return-url";
 
 describe("validateReturnUrl", () => {
-	it("allows safe internal paths", () => {
-		expect(validateReturnUrl("/")).toBe("/");
-		expect(validateReturnUrl("/overview")).toBe("/overview");
-		expect(validateReturnUrl("/classes?tab=active")).toBe(
-			"/classes?tab=active",
+	it("preserves safe /student paths and defaults / to /student", () => {
+		expect(validateReturnUrl("/student")).toBe("/student");
+		expect(validateReturnUrl("/student/overview")).toBe("/student/overview");
+		expect(validateReturnUrl("/student/classes?tab=active")).toBe(
+			"/student/classes?tab=active",
 		);
+		expect(validateReturnUrl("/")).toBe("/student");
 	});
 
-	it("rejects open-redirect attack vectors", () => {
-		expect(validateReturnUrl("//evil.com")).toBe("/");
-		expect(validateReturnUrl("/\\evil.com")).toBe("/");
-		expect(validateReturnUrl("https://evil.com")).toBe("/");
-		expect(validateReturnUrl("javascript:alert(1)")).toBe("/");
-		expect(validateReturnUrl("/\t/evil.com")).toBe("/");
-		expect(validateReturnUrl(null)).toBe("/");
-		expect(validateReturnUrl("")).toBe("/");
+	it("rejects cross-portal paths, traversal, and open-redirect attack vectors", () => {
+		expect(validateReturnUrl("/teacher/classes")).toBe("/student");
+		expect(validateReturnUrl("/admin/library")).toBe("/student");
+		expect(validateReturnUrl("/student/../teacher")).toBe("/student");
+		expect(validateReturnUrl("/student-extra")).toBe("/student");
+		expect(validateReturnUrl("//evil.com")).toBe("/student");
+		expect(validateReturnUrl("/\\evil.com")).toBe("/student");
+		expect(validateReturnUrl("https://evil.com")).toBe("/student");
+		expect(validateReturnUrl("javascript:alert(1)")).toBe("/student");
+		expect(validateReturnUrl("/\t/evil.com")).toBe("/student");
+		expect(validateReturnUrl(null)).toBe("/student");
+		expect(validateReturnUrl("")).toBe("/student");
 	});
 });
 

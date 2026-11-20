@@ -42,7 +42,14 @@ export function NotificationBell() {
 		}
 		setIsOpen(false);
 		if (linkPath) {
-			void navigate({ to: linkPath });
+			const stripped = linkPath.replace(/^\/student(?=\/|\?|#|$)/, "");
+			const target =
+				stripped.length === 0
+					? "/"
+					: stripped.startsWith("/")
+						? stripped
+						: `/${stripped}`;
+			void navigate({ to: target });
 		}
 	};
 

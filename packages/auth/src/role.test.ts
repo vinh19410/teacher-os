@@ -10,10 +10,15 @@ import {
 	FINANCE_ROLES,
 	GRADING_PUBLISH_ROLES,
 	GRADING_REVIEW_ROLES,
+	isPathForRole,
 	MATERIAL_READ_ROLES,
 	MATERIAL_WRITE_ROLES,
+	ROLE_HOME_PATH,
+	resolveAllowlistRole,
+	resolvePostAuthRedirect,
 	resolveRequestApp,
 	resolveUserRole,
+	roleHomePath,
 } from "./role";
 
 const STUDENT = ["http://localhost:8003", "https://portal.example.com"];
@@ -342,5 +347,155 @@ describe("class status role allowlist (#694)", () => {
 		expect(canManageClassStatus("")).toBe(false);
 		expect(canManageClassStatus(null)).toBe(false);
 		expect(canManageClassStatus(undefined)).toBe(false);
+	});
+});
+
+describe("ROLE_HOME_PATH, roleHomePath, isPathForRole", () => {
+	test("maps each app role to its canonical home path", () => {
+		expect(ROLE_HOME_PATH).toEqual({
+			teacher: "/teacher",
+			student: "/student",
+			admin: "/admin",
+		});
+		expect(roleHomePath("teacher")).toBe("/teacher");
+		expect(roleHomePath("student")).toBe("/student");
+		expect(roleHomePath("admin")).toBe("/admin");
+		expect(roleHomePath(null)).toBe("/teacher");
+		expect(roleHomePath(undefined)).toBe("/teacher");
+		expect(roleHomePath("unknown")).toBe("/teacher");
+	});
+
+	test("isPathForRole matches exact prefix or nested segment only", () => {
+		expect(isPathForRole("/teacher", "teacher")).toBe(true);
+		expect(isPathForRole("/teacher/", "teacher")).toBe(true);
+		expect(isPathForRole("/teacher/classes/123", "teacher")).toBe(true);
+		expect(isPathForRole("/student/classes", "student")).toBe(true);
+		expect(isPathForRole("/admin/library", "admin")).toBe(true);
+
+		expect(isPathForRole("/teacher2", "teacher")).toBe(false);
+		expect(isPathForRole("/student-portal", "student")).toBe(false);
+		expect(isPathForRole("/administrator", "admin")).toBe(false);
+		expect(isPathForRole("/student/classes", "teacher")).toBe(false);
+		expect(isPathForRole("/admin/library", "student")).toBe(false);
+		expect(isPathForRole("/teacher/leads", "admin")).toBe(false);
+		expect(isPathForRole("/", "teacher")).toBe(false);
+	});
+});
+
+describe("resolvePostAuthRedirect", () => {
+	test("preserves valid role-scoped path, search, and hash", () => {
+		expect(
+			resolvePostAuthRedirect(
+				"teacher",
+				"/teacher/classes?status=active&sort=desc#top",
+			),
+		).toBe("/teacher/classes?status=active&sort=desc#top");
+		expect(resolvePostAuthRedirect("student", "/student/assignments/a-1")).toBe(
+			"/student/assignments/a-1",
+		);
+		expect(resolvePostAuthRedirect("admin", "/admin/library?tab=tests")).toBe(
+			"/admin/library?tab=tests",
+		);
+		expect(
+			resolvePostAuthRedirect("student", "%2Fstudent%2Ftuition%3Fpaid%3D0"),
+		).toBe("/student/tuition?paid=0");
+		expect(
+			resolvePostAuthRedirect(
+				"teacher",
+				encodeURIComponent(encodeURIComponent("/teacher/leads?status=new")),
+			),
+		).toBe("/teacher/leads?status=new");
+	});
+
+	test("falls back to role home when returnUrl is empty or belongs to another role", () => {
+		expect(resolvePostAuthRedirect("teacher", null)).toBe("/teacher");
+		expect(resolvePostAuthRedirect("student", undefined)).toBe("/student");
+		expect(resolvePostAuthRedirect("admin", "")).toBe("/admin");
+		expect(resolvePostAuthRedirect("teacher", "/student/classes")).toBe(
+			"/teacher",
+		);
+		expect(resolvePostAuthRedirect("student", "/teacher/classes")).toBe(
+			"/student",
+		);
+		expect(resolvePostAuthRedirect("admin", "/teacher/leads")).toBe("/admin");
+		expect(resolvePostAuthRedirect("student", "/student2/classes")).toBe(
+			"/student",
+		);
+		expect(resolvePostAuthRedirect("teacher", "/")).toBe("/teacher");
+		expect(resolvePostAuthRedirect(null, "/teacher/overview")).toBe(
+			"/teacher/overview",
+		);
+	});
+
+	test("rejects open-redirect payloads, traversal, control characters, and malformed URIs", () => {
+		const malicious = [
+			"https://evil.com/student/classes",
+			"http://lms.invalid/student/classes",
+			"//evil.com/student/classes",
+			"///evil.com/student/classes",
+			"%2F%2Fevil.com/student/classes",
+			"%252F%252Fevil.com/student/classes",
+			"/\\evil.com/student/classes",
+			"/%5cevil.com/student/classes",
+			"/%255cevil.com/student/classes",
+			"javascript:alert(1)",
+			"javascript%3Aalert(1)",
+			"data:text/html,<script>alert(1)</script>",
+			" /student/classes",
+			"/student/classes\r\nSet-Cookie: a=1",
+			"/student/classes\t",
+			"/student/classes\u0000",
+			"/student/classes\u007f",
+			"/student/%0d%0aevil",
+			"/student/%250aevil",
+			"/student/%7f",
+			"/student/%E0%A4%A",
+			"/student/%ZZ",
+			"/student/../teacher/classes",
+			"/student/%2e%2e/admin/library",
+			"/student/%252e%252e/admin/library",
+		];
+
+		for (const payload of malicious) {
+			expect(resolvePostAuthRedirect("student", payload), payload).toBe(
+				"/student",
+			);
+		}
+	});
+});
+
+describe("resolveAllowlistRole", () => {
+	test("assigns role with priority admin > teacher > student", () => {
+		const options = {
+			adminEmails: [" Admin@Example.COM ", "both@example.com"],
+			teacherEmails: ["teacher@example.com", "BOTH@example.com"],
+		};
+
+		expect(resolveAllowlistRole("admin@example.com", options)).toBe("admin");
+		expect(resolveAllowlistRole("  ADMIN@example.com ", options)).toBe("admin");
+		expect(resolveAllowlistRole("both@example.com", options)).toBe("admin");
+		expect(resolveAllowlistRole("Teacher@Example.com", options)).toBe(
+			"teacher",
+		);
+		expect(resolveAllowlistRole("learner@example.com", options)).toBe(
+			"student",
+		);
+	});
+
+	test("falls back to student for empty or missing email and empty allowlists", () => {
+		expect(
+			resolveAllowlistRole("", {
+				adminEmails: [""],
+				teacherEmails: ["   "],
+			}),
+		).toBe("student");
+		expect(
+			resolveAllowlistRole("   ", {
+				adminEmails: ["admin@example.com"],
+			}),
+		).toBe("student");
+		expect(resolveAllowlistRole(null, {})).toBe("student");
+		expect(resolveAllowlistRole(undefined, {})).toBe("student");
+		expect(resolveAllowlistRole("anyone@example.com", {})).toBe("student");
 	});
 });

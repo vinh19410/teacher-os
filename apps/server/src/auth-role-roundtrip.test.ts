@@ -12,9 +12,14 @@
 
 import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
+import {
+	ACCOUNT_ERROR_CODES,
+	STUDENT_ERROR_CODES,
+} from "@teacher-os/api/contracts";
 import { createAuth } from "@teacher-os/auth";
 import { createLogMailer } from "@teacher-os/auth/mail/mailer";
 import * as schema from "@teacher-os/db/schema/index";
+import { count } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, test } from "vitest";
@@ -270,5 +275,287 @@ describe("account role separation round-trip", () => {
 		expect(res.status).toBe(200);
 		const body = (await res.json()) as { user?: { role?: string } };
 		expect(body.user?.role).toBe("teacher");
+	});
+});
+
+describe("unified origin auth and API role guards", () => {
+	const LMS_ORIGIN = "http://localhost:8001";
+	const ADMIN_EMAIL = "unified-admin@test.local";
+	const REMOVED_ADMIN_EMAIL = "revoked-admin@test.local";
+	const TEACHER_EMAIL = "unified-teacher@test.local";
+	const STUDENT_EMAIL = "unified-student@test.local";
+
+	let app: ReturnType<typeof buildApp>;
+	let raw: ReturnType<typeof createClient>;
+	let libsqlDb: ReturnType<typeof drizzle<typeof schema>>;
+	let adminToken = "";
+	let revokedAdminToken = "";
+	let teacherToken = "";
+	let studentToken = "";
+
+	function extractSessionToken(res: Response): string {
+		const token = /better-auth\.session_token=([^;]+)/.exec(
+			res.headers.getSetCookie().join("\n"),
+		)?.[1];
+		if (!token) throw new Error("missing session cookie");
+		return token;
+	}
+
+	async function countTable(
+		table: typeof schema.organization | typeof schema.membership,
+	): Promise<number> {
+		const [row] = await libsqlDb.select({ n: count() }).from(table);
+		return Number(row?.n ?? 0);
+	}
+
+	async function signUpUnified(email: string, name: string): Promise<string> {
+		const res = await app.request("/api/auth/sign-up/email", {
+			method: "POST",
+			headers: {
+				"content-type": "application/json",
+				origin: LMS_ORIGIN,
+			},
+			body: JSON.stringify({
+				name,
+				email,
+				password: "password-8chars",
+			}),
+		});
+		expect(res.status).toBe(200);
+		return extractSessionToken(res);
+	}
+
+	async function signInUnified(email: string): Promise<Response> {
+		return app.request("/api/auth/sign-in/email", {
+			method: "POST",
+			headers: {
+				"content-type": "application/json",
+				origin: LMS_ORIGIN,
+			},
+			body: JSON.stringify({
+				email,
+				password: "password-8chars",
+			}),
+		});
+	}
+
+	async function setVerified(email: string, verified: boolean): Promise<void> {
+		await raw.execute({
+			sql: "UPDATE user SET email_verified = ? WHERE lower(email) = ?",
+			args: [verified ? 1 : 0, email.toLowerCase()],
+		});
+	}
+
+	beforeAll(async () => {
+		raw = createClient({ url: "file::memory:" });
+		libsqlDb = drizzle(raw, { schema });
+		await migrate(libsqlDb, { migrationsFolder: MIGRATIONS_DIR });
+
+		const auth = createAuth({
+			db: libsqlDb,
+			corsOrigin: [LMS_ORIGIN],
+			unifiedOrigins: [LMS_ORIGIN],
+			adminOrigins: [LMS_ORIGIN],
+			adminEmails: [ADMIN_EMAIL, REMOVED_ADMIN_EMAIL],
+			teacherEmails: [TEACHER_EMAIL],
+			secret: "test-secret-0123456789abcdef0123456789abcdef",
+			baseURL: "http://localhost:8000",
+			googleClientId: "test-dummy",
+			googleClientSecret: "test-dummy",
+			mailer: createLogMailer(),
+		});
+
+		// App-level admin allowlist intentionally omits REMOVED_ADMIN_EMAIL to
+		// verify runtime allowlist enforcement on /api/admin/me.
+		app = buildApp({
+			getDb: () => libsqlDb as unknown as Db,
+			corsOrigin: [LMS_ORIGIN],
+			adminOrigins: [LMS_ORIGIN],
+			adminEmails: [ADMIN_EMAIL],
+			teacherEmails: [TEACHER_EMAIL],
+			getSessionUser: (headers) => getSessionUser(auth, headers),
+			authHandler: (req) => auth.handler(req),
+		});
+
+		adminToken = await signUpUnified(ADMIN_EMAIL, "Unified Admin");
+		revokedAdminToken = await signUpUnified(
+			REMOVED_ADMIN_EMAIL,
+			"Revoked Admin",
+		);
+		teacherToken = await signUpUnified(TEACHER_EMAIL, "Unified Teacher");
+		studentToken = await signUpUnified(STUDENT_EMAIL, "Unified Student");
+	});
+
+	test("teacher, student, and admin can all sign in via /api/auth/sign-in/email from the unified origin", async () => {
+		for (const [email, expectedRole] of [
+			[ADMIN_EMAIL, "admin"],
+			[TEACHER_EMAIL, "teacher"],
+			[STUDENT_EMAIL, "student"],
+		] as const) {
+			const res = await signInUnified(email);
+			expect(res.status).toBe(200);
+			const token = extractSessionToken(res);
+
+			const sessionRes = await app.request("/api/auth/get-session", {
+				headers: {
+					origin: LMS_ORIGIN,
+					cookie: `better-auth.session_token=${token}`,
+				},
+			});
+			expect(sessionRes.status).toBe(200);
+			const sessionBody = (await sessionRes.json()) as {
+				user?: { role?: string };
+			};
+			expect(sessionBody.user?.role).toBe(expectedRole);
+		}
+	});
+
+	test("/api/kernel strictly rejects student and admin sessions and enforces teacher email verification", async () => {
+		const orgsBefore = await countTable(schema.organization);
+		const membershipsBefore = await countTable(schema.membership);
+
+		const studentRes = await app.request("/api/kernel", {
+			headers: {
+				origin: LMS_ORIGIN,
+				cookie: `better-auth.session_token=${studentToken}`,
+			},
+		});
+		expect(studentRes.status).toBe(403);
+		expect(((await studentRes.json()) as { code?: string }).code).toBe(
+			ACCOUNT_ERROR_CODES.STUDENT_ON_TEACHER_APP,
+		);
+
+		const adminRes = await app.request("/api/kernel", {
+			headers: {
+				origin: LMS_ORIGIN,
+				cookie: `better-auth.session_token=${adminToken}`,
+			},
+		});
+		expect(adminRes.status).toBe(403);
+		expect(((await adminRes.json()) as { code?: string }).code).toBe(
+			ACCOUNT_ERROR_CODES.ADMIN_ON_TEACHER_APP,
+		);
+
+		// Unverified teacher is rejected before org bootstrap.
+		const unverifiedTeacherRes = await app.request("/api/kernel", {
+			headers: {
+				origin: LMS_ORIGIN,
+				cookie: `better-auth.session_token=${teacherToken}`,
+			},
+		});
+		expect(unverifiedTeacherRes.status).toBe(403);
+		expect(
+			((await unverifiedTeacherRes.json()) as { code?: string }).code,
+		).toBe(ACCOUNT_ERROR_CODES.TEACHER_EMAIL_UNVERIFIED);
+
+		expect(await countTable(schema.organization)).toBe(orgsBefore);
+		expect(await countTable(schema.membership)).toBe(membershipsBefore);
+
+		await setVerified(TEACHER_EMAIL, true);
+		const teacherRes = await app.request("/api/kernel", {
+			headers: {
+				origin: LMS_ORIGIN,
+				cookie: `better-auth.session_token=${teacherToken}`,
+			},
+		});
+		expect(teacherRes.status).toBe(200);
+	});
+
+	test("/api/student/me strictly rejects teacher and admin sessions while allowing student", async () => {
+		const teacherRes = await app.request("/api/student/me", {
+			headers: {
+				origin: LMS_ORIGIN,
+				cookie: `better-auth.session_token=${teacherToken}`,
+			},
+		});
+		expect(teacherRes.status).toBe(403);
+		expect(((await teacherRes.json()) as { code?: string }).code).toBe(
+			ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL,
+		);
+
+		const adminRes = await app.request("/api/student/me", {
+			headers: {
+				origin: LMS_ORIGIN,
+				cookie: `better-auth.session_token=${adminToken}`,
+			},
+		});
+		expect(adminRes.status).toBe(403);
+		expect(((await adminRes.json()) as { code?: string }).code).toBe(
+			ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL,
+		);
+
+		const unverifiedStudentRes = await app.request("/api/student/me", {
+			headers: {
+				origin: LMS_ORIGIN,
+				cookie: `better-auth.session_token=${studentToken}`,
+			},
+		});
+		expect(unverifiedStudentRes.status).toBe(403);
+		expect(
+			((await unverifiedStudentRes.json()) as { code?: string }).code,
+		).toBe(STUDENT_ERROR_CODES.EMAIL_UNVERIFIED);
+
+		await setVerified(STUDENT_EMAIL, true);
+		const studentRes = await app.request("/api/student/me", {
+			headers: {
+				origin: LMS_ORIGIN,
+				cookie: `better-auth.session_token=${studentToken}`,
+			},
+		});
+		expect(studentRes.status).toBe(200);
+	});
+
+	test("/api/admin/me strictly rejects teacher, student, unverified admin, and non-allowlisted admin", async () => {
+		for (const token of [teacherToken, studentToken, adminToken]) {
+			const res = await app.request("/api/admin/me", {
+				headers: {
+					origin: LMS_ORIGIN,
+					cookie: `better-auth.session_token=${token}`,
+				},
+			});
+			expect(res.status).toBe(403);
+			expect(((await res.json()) as { code?: string }).code).toBe(
+				ACCOUNT_ERROR_CODES.NOT_ADMIN,
+			);
+		}
+
+		// Verified admin whose email is not in app adminEmails must still be 403.
+		await setVerified(REMOVED_ADMIN_EMAIL, true);
+		const revokedRes = await app.request("/api/admin/me", {
+			headers: {
+				origin: LMS_ORIGIN,
+				cookie: `better-auth.session_token=${revokedAdminToken}`,
+			},
+		});
+		expect(revokedRes.status).toBe(403);
+		expect(((await revokedRes.json()) as { code?: string }).code).toBe(
+			ACCOUNT_ERROR_CODES.NOT_ADMIN,
+		);
+
+		// Verified allowlisted admin passes /api/admin/me.
+		await setVerified(ADMIN_EMAIL, true);
+		const allowedRes = await app.request("/api/admin/me", {
+			headers: {
+				origin: LMS_ORIGIN,
+				cookie: `better-auth.session_token=${adminToken}`,
+			},
+		});
+		expect(allowedRes.status).toBe(200);
+		expect(await allowedRes.json()).toEqual({
+			email: ADMIN_EMAIL,
+			name: "Unified Admin",
+		});
+
+		// Cross-origin CSRF write to /api/admin/library/* remains rejected.
+		const csrfRes = await app.request("/api/admin/library/tests", {
+			method: "POST",
+			headers: {
+				"content-type": "application/json",
+				origin: "https://evil.example.com",
+				cookie: `better-auth.session_token=${adminToken}`,
+			},
+			body: JSON.stringify({}),
+		});
+		expect(csrfRes.status).toBe(403);
 	});
 });

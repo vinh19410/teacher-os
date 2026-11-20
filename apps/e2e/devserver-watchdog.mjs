@@ -171,6 +171,9 @@ async function main() {
 			cmd[0],
 			cmd.slice(1),
 			buildSpawnOptions(ROOT, {
+				PORT: String(ports.web),
+				E2E_LMS_PORT: String(ports.web),
+				E2E_WEB_PORT: String(ports.web),
 				VITE_SERVER_URL: `http://localhost:${ports.api}`,
 				VITE_AI_ENABLED: "true",
 				VITE_TEACHER_SIGNUP_ENABLED: "true",

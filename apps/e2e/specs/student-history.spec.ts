@@ -6,7 +6,7 @@ import {
 	vietnamTodayISO,
 } from "./helpers";
 import { type QuizFixture, seedQuizFixture } from "./helpers-quiz";
-import { STUDENT_ORIGIN } from "./origins";
+import { LMS_ORIGIN, STUDENT_BASE_URL } from "./origins";
 
 /**
  * #378 phase 11 — Lịch sử: nộp 1 bài luyện (seed như phase 10) → heatmap
@@ -63,19 +63,19 @@ async function seedPracticeTest(): Promise<string> {
 }
 
 async function signIn(page: Page): Promise<void> {
-	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signin").click();
 	await page.locator("#signin-email").fill(studentEmail);
 	await page.locator("#signin-password").fill(PASSWORD);
 	await page.locator("#panel-signin button[type='submit']").click();
-	await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`), {
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
 		timeout: 30_000,
 	});
 }
 
 /** Nộp bài luyện reading seed — 2 câu đúng, nộp từ take screen. */
 async function submitPracticeReading(page: Page): Promise<void> {
-	await page.goto(`${STUDENT_ORIGIN}/practice/reading`);
+	await page.goto(`${STUDENT_BASE_URL}/practice/reading`);
 	const card = page
 		.getByTestId("practice-test-card")
 		.filter({ hasText: practiceTestTitle });
@@ -105,7 +105,7 @@ test.beforeAll(async ({ browser }) => {
 	// Auth học viên thật (portal signup + mail-log verification) như phase 10.
 	const context = await browser.newContext();
 	const page = await context.newPage();
-	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signup").click();
 	await page.locator("#signup-name").fill(studentName);
 	await page.locator("#signup-email").fill(studentEmail);
@@ -115,7 +115,7 @@ test.beforeAll(async ({ browser }) => {
 		timeout: 15_000,
 	});
 	await verifyStudentEmailFromMailLog(page, studentEmail);
-	await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`), {
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
 		timeout: 30_000,
 	});
 	await context.close();
@@ -130,7 +130,7 @@ test.describe("Student history (#378 phase 11)", () => {
 
 		// Summary/Review là full-bleed (không shell) — nav chỉ có khi vào trang
 		// trong shell (/history).
-		await page.goto(`${STUDENT_ORIGIN}/history`);
+		await page.goto(`${STUDENT_BASE_URL}/history`);
 		const nav = page.getByRole("navigation", { name: "Điều hướng học viên" });
 		await expect(nav.getByText("Lịch sử")).toBeVisible();
 
@@ -166,7 +166,7 @@ test.describe("Student history (#378 phase 11)", () => {
 		await expect(entry).toContainText("2/2");
 		await expect(entry).toContainText("Tự chấm");
 		// Lọc theo skill qua URL (?skill=) chỉ còn đúng dòng đó.
-		await page.goto(`${STUDENT_ORIGIN}/history?skill=writing`);
+		await page.goto(`${STUDENT_BASE_URL}/history?skill=writing`);
 		await expect(
 			page.getByText("Chưa có hoạt động Writing nào."),
 		).toBeVisible();
@@ -176,7 +176,7 @@ test.describe("Student history (#378 phase 11)", () => {
 		page,
 	}) => {
 		await signIn(page);
-		await page.goto(`${STUDENT_ORIGIN}/practice/reading`);
+		await page.goto(`${STUDENT_BASE_URL}/practice/reading`);
 		// Testid: nav item "Lịch sử" ở sidebar cũng là button — không dùng
 		// role/name trần kẻo trúng nhầm.
 		const historyButton = page.getByTestId("history-button");

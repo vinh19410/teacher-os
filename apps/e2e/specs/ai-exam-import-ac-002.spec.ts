@@ -18,9 +18,9 @@ test("AC-002: tải lại cùng tệp → banner trùng (0 Credit), mở lại b
 	await signUpViaApi(page);
 
 	// Lần 1: vào màn Nhập đề AI và bóc tách tệp mẫu (30 Cr → 25 Cr).
-	await page.goto("/assignments/tests/new");
+	await page.goto("/teacher/assignments/tests/new");
 	await page.getByRole("link", { name: "Nhập đề bằng AI (5 Credit)" }).click();
-	await expect(page).toHaveURL(/\/assignments\/tests\/import/);
+	await expect(page).toHaveURL(/\/teacher\/assignments\/tests\/import/);
 
 	const badge = page.getByTestId("credit-cost-badge");
 	await expect(badge).toContainText("Ví: 30 Cr");
@@ -29,14 +29,14 @@ test("AC-002: tải lại cùng tệp → banner trùng (0 Credit), mở lại b
 		.getByTestId("exam-import-file-input")
 		.setInputFiles("fixtures/exam-import/cambridge-sample.pdf");
 	await expect(page.getByText("Cambridge IELTS Sample").first()).toBeVisible();
-	await expect(page).toHaveURL(/\/assignments\/tests\/import\?job=/);
+	await expect(page).toHaveURL(/\/teacher\/assignments\/tests\/import\?job=/);
 	await expect(badge).toContainText("Ví: 25 Cr");
 
 	const firstJobId = new URL(page.url()).searchParams.get("job");
 	expect(firstJobId).toBeTruthy();
 
 	// Lần 2 (qua GET /lookup): quay lại màn [6] trống, chọn lại cùng tệp.
-	await page.goto("/assignments/tests/import");
+	await page.goto("/teacher/assignments/tests/import");
 	await page
 		.getByTestId("exam-import-file-input")
 		.setInputFiles("fixtures/exam-import/cambridge-sample.pdf");
@@ -67,7 +67,7 @@ test("AC-002: tải lại cùng tệp → banner trùng (0 Credit), mở lại b
 	// Bấm nút "Mở lại bản nháp cũ (0 Cr)" → mở đúng job cũ, banner biến mất.
 	await reopenButton.click();
 	await expect(page).toHaveURL(
-		new RegExp(`/assignments/tests/import\\?job=${firstJobId}$`),
+		new RegExp(`/teacher/assignments/tests/import\\?job=${firstJobId}$`),
 	);
 	await expect(banner).toBeHidden();
 	await expect(page.getByTestId("extracted-exam-panel")).toBeVisible();
@@ -77,7 +77,7 @@ test("AC-002: tải lại cùng tệp → banner trùng (0 Credit), mở lại b
 	// Lần 3 (chứng minh lớp 2 D3 + keyboard focus): chặn GET /lookup để client
 	// fail-open gửi POST → server chặn trước reserveCredits, trả { duplicateOf }.
 	await page.route("**/api/exam-imports/lookup*", (route) => route.abort());
-	await page.goto("/assignments/tests/import");
+	await page.goto("/teacher/assignments/tests/import");
 	await page
 		.getByTestId("exam-import-file-input")
 		.setInputFiles("fixtures/exam-import/cambridge-sample.pdf");
@@ -96,7 +96,7 @@ test("AC-002: tải lại cùng tệp → banner trùng (0 Credit), mở lại b
 	await page.keyboard.press("Enter");
 
 	await expect(page).toHaveURL(
-		new RegExp(`/assignments/tests/import\\?job=${firstJobId}$`),
+		new RegExp(`/teacher/assignments/tests/import\\?job=${firstJobId}$`),
 	);
 	await expect(banner).toBeHidden();
 	await expect(page.getByTestId("extracted-exam-panel")).toBeVisible();

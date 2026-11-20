@@ -26,38 +26,81 @@ test("runbook google redirect URI matches the mount path", () => {
 	);
 });
 
-test("dev CORS default in alchemy.run.ts matches web, student, and admin dev ports", () => {
-	const webVite = read("../apps/web/vite.config.ts");
-	const webPort = webVite.match(/port:\s*(\d+)/)?.[1];
-	assert.ok(webPort, "dev port found in apps/web/vite.config.ts");
+test("dev CORS, STUDENT_ORIGINS, and ADMIN_ORIGINS defaults in alchemy.run.ts match unified lms dev port", () => {
+	const lmsVite = read("../apps/lms/vite.config.ts");
+	const lmsPort = lmsVite.match(/port:\s*(\d+)/)?.[1];
+	assert.ok(lmsPort, "dev port found in apps/lms/vite.config.ts");
+	assert.equal(lmsPort, "8001");
 
-	const studentVite = read("../apps/student/vite.config.ts");
-	const studentPort = studentVite.match(/port:\s*(\d+)/)?.[1];
-	assert.ok(studentPort, "dev port found in apps/student/vite.config.ts");
-	assert.equal(studentPort, "8003");
-
-	// Plan #413 phase 1: cổng admin dev chạy ở 8004 (admin app ra mắt ở phase
-	// sau nhưng origin phải có trong CORS default từ phase này).
-	const ADMIN_DEV_PORT = "8004";
-
+	const expectedOrigin = `http://localhost:${lmsPort}`;
 	const run = read("../packages/infra/alchemy.run.ts");
-	const devDefault = run.match(
-		/withDefault\(\s*"(http:\/\/localhost:\d+,http:\/\/localhost:\d+,http:\/\/localhost:\d+)"\s*,?\s*\)/,
-	)?.[1];
+
+	const corsBlock = run
+		.split("const corsOriginConfig")[1]
+		?.split("const studentOriginsEnv")[0];
 	assert.ok(
-		devDefault,
-		"dev CORS default found in packages/infra/alchemy.run.ts",
+		corsBlock,
+		"corsOriginConfig found in packages/infra/alchemy.run.ts",
 	);
 	assert.equal(
-		devDefault,
-		`http://localhost:${webPort},http://localhost:${studentPort},http://localhost:${ADMIN_DEV_PORT}`,
+		corsBlock.match(
+			/withDefault\(\s*"(http:\/\/localhost:\d+)"\s*,?\s*\)/,
+		)?.[1],
+		expectedOrigin,
+		"CORS_ORIGIN dev default must match apps/lms/vite.config.ts port",
 	);
 
-	const adminDefault = run
+	const studentBlock = run
+		.split("const studentOriginsConfig")[1]
+		?.split("const adminOriginsEnv")[0];
+	assert.ok(
+		studentBlock,
+		"studentOriginsConfig found in packages/infra/alchemy.run.ts",
+	);
+	assert.equal(
+		studentBlock.match(
+			/withDefault\(\s*"(http:\/\/localhost:\d+)"\s*,?\s*\)/,
+		)?.[1],
+		expectedOrigin,
+		"STUDENT_ORIGINS dev default must match apps/lms/vite.config.ts port",
+	);
+
+	const adminBlock = run
 		.split("const adminOriginsConfig")[1]
-		?.match(/withDefault\("(http:\/\/localhost:(\d+))"\)/);
-	assert.ok(adminDefault, "ADMIN_ORIGINS dev default found in alchemy.run.ts");
-	assert.equal(adminDefault[2], ADMIN_DEV_PORT);
+		?.split("const adminEmailsConfig")[0];
+	assert.ok(
+		adminBlock,
+		"adminOriginsConfig found in packages/infra/alchemy.run.ts",
+	);
+	assert.equal(
+		adminBlock.match(
+			/withDefault\(\s*"(http:\/\/localhost:\d+)"\s*,?\s*\)/,
+		)?.[1],
+		expectedOrigin,
+		"ADMIN_ORIGINS dev default must match apps/lms/vite.config.ts port",
+	);
+
+	assert.match(
+		run,
+		/Cloudflare\.Website\.Vite\("lms"/,
+		'alchemy.run.ts must deploy unified Cloudflare.Website.Vite("lms") worker',
+	);
+	const lmsBlock = run
+		.split('Cloudflare.Website.Vite("lms"')[1]
+		?.split('Cloudflare.Website.StaticSite("landing"')[0];
+	assert.ok(lmsBlock, 'Website.Vite("lms") block found in alchemy.run.ts');
+	assert.match(
+		lmsBlock,
+		/runWorkerFirst:\s*true/,
+		'Website.Vite("lms") must enable runWorkerFirst: true on deploy so legacy root 301s, SW headers, and CSP run through worker.ts',
+	);
+	for (const legacy of ["web", "student", "admin"]) {
+		assert.doesNotMatch(
+			run,
+			new RegExp(`Cloudflare\\.Website\\.Vite\\("${legacy}"`),
+			`alchemy.run.ts must not deploy separate legacy Vite worker "${legacy}"`,
+		);
+	}
 });
 
 test("runbook never persists CORS_ORIGIN or APP_DOMAIN into .env", () => {
@@ -122,11 +165,21 @@ test("workflow APP_DOMAIN domains agree with the prod apex constant (cookie-zone
 	);
 });
 
-test("topology leaves landing unattached on prod and frees app aliases", async () => {
+test("topology resolves unified lms domain, legacy aliases, and leaves landing unattached on prod", async () => {
 	const { PROD_APP_DOMAIN, resolveDomainTopology } = await import(
 		"../packages/infra/src/topology.ts"
 	);
 	const t = resolveDomainTopology(PROD_APP_DOMAIN);
+	assert.equal(t.lmsHost, "lms.msmy.io.vn");
+	assert.equal(t.lmsOrigin, "https://lms.msmy.io.vn");
+	assert.deepEqual(t.lmsAliases, [
+		"app.msmy.io.vn",
+		"student.msmy.io.vn",
+		"admin.msmy.io.vn",
+	]);
+	assert.equal(t.teacherUrl, "https://lms.msmy.io.vn/teacher");
+	assert.equal(t.studentPortalUrl, "https://lms.msmy.io.vn/student");
+	assert.equal(t.adminUrl, "https://lms.msmy.io.vn/admin");
 	assert.equal(t.landingHost, undefined);
 	assert.deepEqual(t.landingAliases, []);
 	assert.deepEqual(t.appAliases, []);
@@ -144,24 +197,99 @@ test("workflow LANDING_ORIGIN matches the staging apex and is absent on prod", (
 	assert.equal(staging, "https://staging.teacheros.io.vn");
 });
 
-test("staging auth smoke signs up through the student portal origin so the TEACHER_EMAILS allowlist cannot reject it", async () => {
+test("deploy workflows wire unified LMS origin, legacy 301 redirect smoke, and unified auth smoke", async () => {
 	const { resolveDomainTopology } = await import(
 		"../packages/infra/src/topology.ts"
 	);
-	const yaml = read("../.github/workflows/deploy-staging.yml");
-	const appDomain = yaml.match(/^\s*APP_DOMAIN:\s*(\S+)\s*$/m)?.[1];
-	assert.ok(appDomain, "APP_DOMAIN found in deploy-staging.yml");
-	assert.equal(
-		yaml.match(/^\s*STUDENT_ORIGIN:\s*(\S+)\s*$/m)?.[1],
-		resolveDomainTopology(appDomain).studentOrigin,
-	);
+	for (const workflow of [
+		"../.github/workflows/deploy.yml",
+		"../.github/workflows/deploy-staging.yml",
+	]) {
+		const yaml = read(workflow);
+		const appDomain = yaml.match(/^\s*APP_DOMAIN:\s*(\S+)\s*$/m)?.[1];
+		assert.ok(appDomain, `APP_DOMAIN found in ${workflow}`);
+		const t = resolveDomainTopology(appDomain);
+		assert.equal(
+			yaml.match(/^\s*LMS_ORIGIN:\s*(\S+)\s*$/m)?.[1],
+			t.lmsOrigin,
+			`${workflow} LMS_ORIGIN must match resolveDomainTopology(${appDomain}).lmsOrigin`,
+		);
+		assert.equal(
+			yaml.match(/^\s*LEGACY_APP_ORIGIN:\s*(\S+)\s*$/m)?.[1],
+			t.appOrigin,
+			`${workflow} LEGACY_APP_ORIGIN must match appOrigin`,
+		);
+		assert.equal(
+			yaml.match(/^\s*LEGACY_STUDENT_ORIGIN:\s*(\S+)\s*$/m)?.[1],
+			t.studentOrigin,
+			`${workflow} LEGACY_STUDENT_ORIGIN must match studentOrigin`,
+		);
+		assert.equal(
+			yaml.match(/^\s*LEGACY_ADMIN_ORIGIN:\s*(\S+)\s*$/m)?.[1],
+			t.adminOrigin,
+			`${workflow} LEGACY_ADMIN_ORIGIN must match adminOrigin`,
+		);
+		assert.match(
+			yaml,
+			/- name: Smoke check LMS & legacy 301 redirects\b/,
+			`${workflow} must smoke check LMS & legacy 301 redirects`,
+		);
+		const detachStep = yaml
+			.split("- name: Detach legacy Worker custom domains")[1]
+			?.split("- name: Deploy to Cloudflare")[0];
+		assert.ok(
+			detachStep,
+			`${workflow} must detach legacy Worker custom domains before Deploy to Cloudflare`,
+		);
+		assert.match(
+			detachStep,
+			/if:\s*\$\{\{\s*!inputs\.dry_run\s*\}\}/,
+			`${workflow} legacy domain detach step must skip on dry_run`,
+		);
+		assert.match(
+			detachStep,
+			/detach-legacy-worker-domains\.ts --stage (?:staging|prod)/,
+			`${workflow} must invoke detach-legacy-worker-domains.ts`,
+		);
+		const lmsSmokeStep = yaml
+			.split("- name: Smoke check LMS & legacy 301 redirects")[1]
+			?.split("- name:")[0];
+		assert.ok(lmsSmokeStep, `LMS smoke step found in ${workflow}`);
+		assert.match(lmsSmokeStep, /"\$LEGACY_APP_ORIGIN\/"/);
+		assert.match(lmsSmokeStep, /"\$LEGACY_STUDENT_ORIGIN\/"/);
+		assert.match(lmsSmokeStep, /"\$LEGACY_ADMIN_ORIGIN\/"/);
+		assert.match(lmsSmokeStep, /"\$LMS_ORIGIN\/"/);
+		assert.match(lmsSmokeStep, /"\$LMS_ORIGIN\/teacher\/"/);
+		assert.match(lmsSmokeStep, /"\$LMS_ORIGIN\/student\/"/);
+		assert.match(lmsSmokeStep, /"\$LMS_ORIGIN\/admin\/"/);
+		assert.match(lmsSmokeStep, /strict-transport-security:/i);
+		assert.match(lmsSmokeStep, /content-security-policy:.*media-src/i);
+		const stubsStep = yaml
+			.split("- name: Smoke check auth stubs")[1]
+			?.split("- name:")[0];
+		assert.ok(stubsStep, `auth stubs smoke step found in ${workflow}`);
+		assert.match(stubsStep, /"\$LMS_ORIGIN"/);
+		assert.match(stubsStep, /"\$LEGACY_APP_ORIGIN"/);
+	}
 
-	const smoke = yaml
+	const stagingYaml = read("../.github/workflows/deploy-staging.yml");
+	const smoke = stagingYaml
 		.split("- name: Smoke check auth (sign-up")[1]
 		?.split("- name:")[0];
 	assert.ok(smoke, "auth smoke step found in deploy-staging.yml");
-	assert.match(smoke, /-H "Origin: \$STUDENT_ORIGIN"/);
+	assert.match(smoke, /-H "Origin: \$LMS_ORIGIN"/);
 	assert.doesNotMatch(smoke, /-H "Origin: \$APP_ORIGIN"/);
+	assert.doesNotMatch(smoke, /-H "Origin: \$STUDENT_ORIGIN"/);
+
+	const prodDeployStep = read("../.github/workflows/deploy.yml")
+		.split("- name: Deploy to Cloudflare")[1]
+		?.split("- name:")[0];
+	assert.ok(prodDeployStep, "Deploy to Cloudflare step found in deploy.yml");
+	assert.match(
+		prodDeployStep,
+		/^\s*ADMIN_EMAILS:\s*\$\{\{\s*vars\.ADMIN_EMAILS\s*\}\}\s*$/m,
+		"deploy.yml must pass ADMIN_EMAILS from vars.ADMIN_EMAILS",
+	);
 });
 
 test("deploy workflows pass LEAD_ORG_ID and LEAD_ORIGINS to alchemy deploy and alchemy.run.ts wires resolveLeadOrigins (#524)", () => {
@@ -277,26 +405,26 @@ test("workflow PROFILE_ORIGIN and profile smoke check match resolveDomainTopolog
 	);
 	assert.match(
 		profileBlock,
-		/STUDENT_PORTAL_URL:\s*topology\s*\?\s*topology\.studentOrigin\s*:\s*studentWorker\.url\.as<string>\(\)/,
-		'StaticSite("profile") in alchemy.run.ts must wire STUDENT_PORTAL_URL from topology.studentOrigin / studentWorker.url (#560)',
+		/STUDENT_PORTAL_URL:\s*topology\s*\?\s*topology\.studentPortalUrl\s*:\s*lmsWorker\.url\.as<string>\(\)/,
+		'StaticSite("profile") in alchemy.run.ts must wire STUDENT_PORTAL_URL from topology.studentPortalUrl / lmsWorker.url',
 	);
 
-	const studentVite = read("../apps/student/vite.config.ts");
-	const studentPort = studentVite.match(/port:\s*(\d+)/)?.[1];
-	assert.equal(studentPort, "8003");
-	const defaultStudentPortalPort = profileServe.match(
-		/process\.env\.STUDENT_PORTAL_URL\s*\?\?\s*"http:\/\/localhost:(\d+)"/,
+	const lmsVite = read("../apps/lms/vite.config.ts");
+	const lmsPort = lmsVite.match(/port:\s*(\d+)/)?.[1];
+	assert.equal(lmsPort, "8001");
+	const defaultStudentPortalUrl = profileServe.match(
+		/process\.env\.STUDENT_PORTAL_URL\s*\?\?\s*"(http:\/\/localhost:\d+\/student)"/,
 	)?.[1];
 	assert.equal(
-		defaultStudentPortalPort,
-		studentPort,
-		"apps/profile/serve.mjs default STUDENT_PORTAL_URL port must match apps/student/vite.config.ts (#560)",
+		defaultStudentPortalUrl,
+		`http://localhost:${lmsPort}/student`,
+		"apps/profile/serve.mjs default STUDENT_PORTAL_URL must match apps/lms/vite.config.ts port + /student",
 	);
 
 	const playwrightCfg = read("../apps/e2e/playwright.config.ts");
 	assert.match(
 		playwrightCfg,
-		/STUDENT_PORTAL_URL:\s*`http:\/\/localhost:\$\{studentPort\}`/,
-		"apps/e2e/playwright.config.ts must pass STUDENT_PORTAL_URL using studentPort (#560)",
+		/STUDENT_PORTAL_URL:\s*`http:\/\/localhost:\$\{lmsPort\}\/student`/,
+		"apps/e2e/playwright.config.ts must pass STUDENT_PORTAL_URL using lmsPort + /student",
 	);
 });

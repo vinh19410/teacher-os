@@ -116,7 +116,8 @@ function parseSingleByteRange(rangeHeader, total) {
 export function createProfileServer(
 	leadApiUrl = process.env.LEAD_API_URL || "http://localhost:8000",
 	// Use ?? (not ||) so explicit STUDENT_PORTAL_URL="" preserves the HTML prod default (#560).
-	studentPortalUrl = process.env.STUDENT_PORTAL_URL ?? "http://localhost:8003",
+	studentPortalUrl = process.env.STUDENT_PORTAL_URL ??
+		"http://localhost:8001/student",
 	{ maintenance = isProfileMaintenanceEnabled() } = {},
 ) {
 	const validatedStudentPortalUrl = normalizeStudentPortalUrl(studentPortalUrl);

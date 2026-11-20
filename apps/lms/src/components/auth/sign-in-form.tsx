@@ -1,0 +1,165 @@
+import { useForm } from "@tanstack/react-form";
+import { Link, useSearch } from "@tanstack/react-router";
+import { resolvePostAuthRedirect } from "@teacher-os/auth/role";
+import { useState } from "react";
+import { toast } from "sonner";
+import { AuthField, fieldErrors } from "@/components/auth/auth-field";
+import { NoticeOk } from "@/components/auth/notices";
+import { resetFieldErrors } from "@/components/auth/reset-field-errors";
+import { SubmitButton } from "@/components/auth/submit-button";
+import { authClient, getSessionUserRole } from "@/lib/auth-client";
+import { authErrorMessage } from "@/lib/auth-error";
+import { signInSchema } from "@/lib/auth-schemas";
+import { redirectAssign } from "@/lib/navigation";
+
+export function SignInForm({
+	hidden,
+	onSubmittingChange,
+}: {
+	hidden: boolean;
+	onSubmittingChange?: (submitting: boolean) => void;
+}) {
+	const search = useSearch({ strict: false }) as { returnUrl?: string };
+	const returnUrl = search.returnUrl;
+	const [signedIn, setSignedIn] = useState(false);
+
+	const form = useForm({
+		defaultValues: {
+			email: "",
+			password: "",
+		},
+		onSubmit: async ({ value }) => {
+			onSubmittingChange?.(true);
+			const AUTH_FAILED =
+				"Không thể đăng nhập. Vui lòng kiểm tra email và mật khẩu rồi thử lại.";
+			try {
+				const result = await authClient.signIn.email({
+					email: value.email.trim(),
+					password: value.password,
+				});
+				if (result.error) {
+					toast.error(authErrorMessage(result.error, AUTH_FAILED));
+					return;
+				}
+
+				let sessionData: unknown = null;
+				try {
+					sessionData = (await authClient.getSession())?.data ?? null;
+				} catch {
+					sessionData = null;
+				}
+				if (
+					!sessionData ||
+					typeof sessionData !== "object" ||
+					!("user" in sessionData) ||
+					!sessionData.user
+				) {
+					toast.error("Không thể khởi tạo phiên đăng nhập. Vui lòng thử lại.");
+					return;
+				}
+
+				const role =
+					getSessionUserRole(sessionData) ?? getSessionUserRole(result.data);
+				setSignedIn(true);
+				redirectAssign(resolvePostAuthRedirect(role, returnUrl));
+			} catch {
+				toast.error(AUTH_FAILED);
+			} finally {
+				onSubmittingChange?.(false);
+			}
+		},
+		validators: {
+			onSubmit: signInSchema,
+		},
+	});
+
+	return (
+		<form
+			noValidate
+			hidden={hidden}
+			id="panel-signin"
+			role="tabpanel"
+			aria-labelledby="tab-signin"
+			onSubmit={(event) => {
+				event.preventDefault();
+				event.stopPropagation();
+				void form.handleSubmit();
+			}}
+			className="fade-in slide-in-from-bottom-1 grid animate-in gap-4 duration-[220ms] ease-[cubic-bezier(0.28,0,0.22,1)] motion-reduce:animate-none"
+		>
+			{signedIn && (
+				<NoticeOk title="Đăng nhập thành công">
+					Đang chuyển đến trang của bạn…
+				</NoticeOk>
+			)}
+
+			<form.Field name="email">
+				{(field) => {
+					const errors = fieldErrors(field.state.meta.errors);
+					return (
+						<AuthField
+							id="signin-email"
+							label="Email"
+							type="email"
+							autoComplete="email"
+							placeholder="ban@example.com"
+							value={field.state.value}
+							onChange={(next) => {
+								resetFieldErrors(form, "email");
+								field.handleChange(next);
+							}}
+							onBlur={field.handleBlur}
+							errors={errors}
+							required
+						/>
+					);
+				}}
+			</form.Field>
+
+			<form.Field name="password">
+				{(field) => {
+					const errors = fieldErrors(field.state.meta.errors);
+					return (
+						<AuthField
+							id="signin-password"
+							label="Mật khẩu"
+							type="password"
+							autoComplete="current-password"
+							placeholder="Nhập mật khẩu"
+							passwordToggle
+							labelRowExtra={
+								<Link
+									to="/forgot-password"
+									className="font-medium text-primary text-xs underline-offset-4 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+								>
+									Quên mật khẩu?
+								</Link>
+							}
+							value={field.state.value}
+							onChange={(next) => {
+								resetFieldErrors(form, "password");
+								field.handleChange(next);
+							}}
+							onBlur={field.handleBlur}
+							errors={errors}
+							required
+						/>
+					);
+				}}
+			</form.Field>
+
+			<form.Subscribe
+				selector={(state) => [state.canSubmit, state.isSubmitting] as const}
+			>
+				{([canSubmit, isSubmitting]) => (
+					<SubmitButton
+						disabled={!canSubmit || isSubmitting || signedIn}
+						spinning={isSubmitting}
+						spinningLabel="Đang đăng nhập…"
+						label="Đăng nhập"
+					/>
+				)}
+			</form.Subscribe>
+		</form>
+	);
+}

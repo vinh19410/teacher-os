@@ -13,6 +13,7 @@ import {
 	settleLoadFailure,
 	settleLoadSuccess,
 	shouldSettle,
+	toTeacherReturnUrl,
 	validateReturnUrl,
 } from "./kernel-load-state";
 
@@ -149,7 +150,15 @@ describe("shouldSettle stale-attempt guard", () => {
 });
 
 describe("validateReturnUrl", () => {
-	test("internal paths survive", () => {
+	test("defaults to /teacher/dashboard", () => {
+		expect(DEFAULT_RETURN_URL).toBe("/teacher/dashboard");
+	});
+
+	test("internal paths and /teacher paths survive", () => {
+		expect(validateReturnUrl("/teacher/dashboard")).toBe("/teacher/dashboard");
+		expect(validateReturnUrl("/teacher/grading?a=1#sec")).toBe(
+			"/teacher/grading?a=1#sec",
+		);
 		expect(validateReturnUrl("/students/abc123")).toBe("/students/abc123");
 		expect(validateReturnUrl("/dashboard?tab=1")).toBe("/dashboard?tab=1");
 		expect(validateReturnUrl(undefined)).toBe(DEFAULT_RETURN_URL);
@@ -161,6 +170,9 @@ describe("validateReturnUrl", () => {
 		expect(validateReturnUrl(encodeURIComponent("/students/abc123"))).toBe(
 			"/students/abc123",
 		);
+		expect(
+			validateReturnUrl(encodeURIComponent("/teacher/students/abc123")),
+		).toBe("/teacher/students/abc123");
 	});
 
 	test("open-redirect payloads are rejected to the dashboard", () => {
@@ -207,5 +219,35 @@ describe("validateReturnUrl", () => {
 
 	test("malformed percent-encoding falls back safely", () => {
 		expect(validateReturnUrl("/students/%E0%A4%A")).toBe(DEFAULT_RETURN_URL);
+	});
+});
+
+describe("toTeacherReturnUrl", () => {
+	test("prefixes unprefixed paths with /teacher", () => {
+		expect(toTeacherReturnUrl("/grading")).toBe("/teacher/grading");
+		expect(toTeacherReturnUrl("/grading?tab=1#top")).toBe(
+			"/teacher/grading?tab=1#top",
+		);
+		expect(toTeacherReturnUrl("/")).toBe("/teacher");
+		expect(toTeacherReturnUrl("/?tab=1")).toBe("/teacher?tab=1");
+		expect(toTeacherReturnUrl("/#sec")).toBe("/teacher#sec");
+		expect(toTeacherReturnUrl("/teachers")).toBe("/teacher/teachers");
+	});
+
+	test("keeps already /teacher-prefixed paths without double-prefixing", () => {
+		expect(toTeacherReturnUrl("/teacher")).toBe("/teacher");
+		expect(toTeacherReturnUrl("/teacher/")).toBe("/teacher/");
+		expect(toTeacherReturnUrl("/teacher/grading?a=1")).toBe(
+			"/teacher/grading?a=1",
+		);
+		expect(toTeacherReturnUrl("/teacher?tab=1")).toBe("/teacher?tab=1");
+	});
+
+	test("falls back to /teacher for unsafe or empty values", () => {
+		expect(toTeacherReturnUrl("")).toBe("/teacher");
+		expect(toTeacherReturnUrl("//evil.com")).toBe("/teacher");
+		expect(toTeacherReturnUrl("/\\evil.com")).toBe("/teacher");
+		expect(toTeacherReturnUrl("https://evil.com")).toBe("/teacher");
+		expect(toTeacherReturnUrl("/\t/evil.com")).toBe("/teacher");
 	});
 });

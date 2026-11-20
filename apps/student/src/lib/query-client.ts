@@ -122,12 +122,14 @@ export function redirectToLoginForWrongRole(
 	client.clear();
 	authClient.clearSessionCache?.();
 	if (typeof window === "undefined") return;
-	if (window.location.pathname === "/login") return;
+	if (window.location.pathname === "/" || window.location.pathname === "/login")
+		return;
 	if (redirectingForWrongRole) return;
 	redirectingForWrongRole = true;
-	const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-	const returnUrl = validateReturnUrl(current);
-	window.location.assign(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
+	// Chuyển về root dispatcher `/` để tự điều hướng sang đúng cổng theo role
+	// (`/teacher`, `/student`, `/admin`, hoặc `/login` nếu đã đăng xuất) mà
+	// không phá phiên hiện tại.
+	window.location.assign("/");
 }
 
 export function createStudentQueryClient(): QueryClient {

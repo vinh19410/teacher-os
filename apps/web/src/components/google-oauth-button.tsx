@@ -3,7 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { authClient } from "@/lib/auth-client";
-import { validateReturnUrl } from "@/lib/kernel-load-state";
+import { toTeacherReturnUrl, validateReturnUrl } from "@/lib/kernel-load-state";
 
 function GoogleIcon() {
 	return (
@@ -45,7 +45,7 @@ export default function GoogleOAuthButton() {
 			// the API worker live on different origins. The return URL is
 			// validated first so a crafted `?returnUrl=` cannot redirect the
 			// OAuth callback to a foreign origin.
-			callbackURL: `${window.location.origin}${validateReturnUrl(returnUrl)}`,
+			callbackURL: `${window.location.origin}${toTeacherReturnUrl(validateReturnUrl(returnUrl))}`,
 			// Role-mismatch rejections (plan #260) land back on /login, which
 			// reads the ?error= params and toasts the message. No additionalData:
 			// the server stamps the app into the OAuth state itself.

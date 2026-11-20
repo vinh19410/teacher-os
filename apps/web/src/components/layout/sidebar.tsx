@@ -215,9 +215,10 @@ const ACTIVE_KEY_BY_PREFIX: Record<string, string> = {
 };
 
 export function teacherActiveKey(pathname: string): string {
-	if (pathname === "/") return "dashboard";
+	const normalized = pathname.replace(/^\/teacher(?=\/|$)/, "") || "/";
+	if (normalized === "/") return "dashboard";
 	for (const [prefix, key] of Object.entries(ACTIVE_KEY_BY_PREFIX)) {
-		if (pathname.startsWith(prefix)) return key;
+		if (normalized.startsWith(prefix)) return key;
 	}
 	return "";
 }

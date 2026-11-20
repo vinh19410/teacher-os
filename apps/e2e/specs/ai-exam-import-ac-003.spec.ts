@@ -19,7 +19,7 @@ test("AC-003: chỉnh sửa tay 0 Credit, khóa xuất bản tới khi xác nh�
 	await page.setViewportSize({ width: 1440, height: 900 });
 	await signUpViaApi(page);
 
-	await page.goto("/assignments/tests/import");
+	await page.goto("/teacher/assignments/tests/import");
 	const badge = page.getByTestId("credit-cost-badge");
 	await expect(badge).toContainText("Ví: 30 Cr");
 
@@ -56,7 +56,7 @@ test("AC-003: chỉnh sửa tay 0 Credit, khóa xuất bản tới khi xác nh�
 	);
 
 	await page.reload();
-	await expect(page).toHaveURL(/\/assignments\/tests\/import\?job=/);
+	await expect(page).toHaveURL(/\/teacher\/assignments\/tests\/import\?job=/);
 	await expect(page.getByTestId("credit-cost-badge")).toContainText(
 		"Ví: 25 Cr",
 	);
@@ -98,15 +98,15 @@ test("AC-003: chỉnh sửa tay 0 Credit, khóa xuất bản tới khi xác nh�
 	// Sau khi tích xác nhận: nút "Lưu vào Ngân hàng đề" được mở khóa.
 	await expect(page.getByTestId("publish-exam-button")).toBeEnabled();
 
-	// Bấm xuất bản → điều hướng tới /assignments/tests/<id> hiển thị bộ đề.
+	// Bấm xuất bản → điều hướng tới /teacher/assignments/tests/<id> hiển thị bộ đề.
 	await page.getByTestId("publish-exam-button").click();
-	await expect(page).toHaveURL(/\/assignments\/tests\/test-import-/);
+	await expect(page).toHaveURL(/\/teacher\/assignments\/tests\/test-import-/);
 	await expect(
 		page.getByRole("heading", { name: "Cambridge IELTS Sample" }),
 	).toBeVisible();
 	await expect(page.getByText("Passage 1").first()).toBeVisible();
 
-	// Mở Ngân hàng đề (/assignments) → thấy đề vừa xuất bản trong danh sách.
-	await page.goto("/assignments");
+	// Mở Ngân hàng đề (/teacher/assignments) → thấy đề vừa xuất bản trong danh sách.
+	await page.goto("/teacher/assignments");
 	await expect(page.getByText("Cambridge IELTS Sample").first()).toBeVisible();
 });

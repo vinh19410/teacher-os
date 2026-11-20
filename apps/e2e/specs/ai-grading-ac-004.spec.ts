@@ -12,7 +12,13 @@ import {
 	verifyStudentEmailFromMailLog,
 } from "./helpers";
 import { seedQuizFixture } from "./helpers-quiz";
-import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
+import {
+	API_ORIGIN,
+	LMS_ORIGIN,
+	STUDENT_BASE_URL,
+	TEACHER_BASE_URL,
+	WEB_ORIGIN,
+} from "./origins";
 
 /**
  * TOS-33 #481 — E2E AC-004 (US-006):
@@ -45,12 +51,12 @@ let normalAttemptId = "";
 let failAttemptId = "";
 
 async function signInStudent(page: Page): Promise<void> {
-	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signin").click();
 	await page.locator("#signin-email").fill(studentEmail);
 	await page.locator("#signin-password").fill(PASSWORD);
 	await page.locator("#panel-signin button[type='submit']").click();
-	await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`), {
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
 		timeout: 30_000,
 	});
 	await expect(page.getByRole("heading", { name: "Bài tập" })).toBeVisible();
@@ -161,7 +167,7 @@ test.beforeAll(async ({ browser }) => {
 
 	const signupContext = await browser.newContext();
 	const page = await signupContext.newPage();
-	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signup").click();
 	await page.locator("#signup-name").fill("Học Viên AC004");
 	await page.locator("#signup-email").fill(studentEmail);
@@ -171,7 +177,7 @@ test.beforeAll(async ({ browser }) => {
 		timeout: 15_000,
 	});
 	await verifyStudentEmailFromMailLog(page, studentEmail);
-	await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`), {
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
 		timeout: 30_000,
 	});
 	await signupContext.close();
@@ -192,7 +198,7 @@ test("Scenario 1: Trợ giảng (TA) mở bài ai_drafted, sửa điểm + Lưu 
 		"Public transport reduces traffic congestion and lowers carbon emissions in cities.",
 	);
 
-	await taPage.goto(`${WEB_ORIGIN}/grading/${normalAttemptId}`);
+	await taPage.goto(`${TEACHER_BASE_URL}/grading/${normalAttemptId}`);
 	const panel = taPage.getByTestId("ai-draft-panel");
 	await expect(panel).toBeVisible();
 	await expect(panel.getByText("AI đã chấm nháp")).toBeVisible();
@@ -252,7 +258,7 @@ test("Scenario 2: Bài chứa ai-fail lỗi sau 2 lần tự thử lại → ho�
 		"This essay contains ai-fail token to trigger simulated grader failure across retries.",
 	);
 
-	await teacherPage.goto(`${WEB_ORIGIN}/grading/${failAttemptId}`);
+	await teacherPage.goto(`${TEACHER_BASE_URL}/grading/${failAttemptId}`);
 	const panel = teacherPage.getByTestId("ai-draft-panel");
 	await expect(panel).toBeVisible();
 	await expect(panel.getByText("Chờ chấm tay")).toBeVisible();
@@ -296,8 +302,8 @@ test("Scenario 2: Bài chứa ai-fail lỗi sau 2 lần tự thử lại → ho�
 test("Scenario 3: TA và GV cùng mở 1 bài; TA lưu trước, GV lưu sau trên màn cũ → cảnh báo E-selfomy-alignment-011 + tải lại thấy bản của TA và giữ nội dung đang gõ", async () => {
 	test.setTimeout(60_000);
 	// Cả TA và GV cùng mở bài normalAttemptId (đang ở version 2 từ Scenario 1).
-	await teacherPage.goto(`${WEB_ORIGIN}/grading/${normalAttemptId}`);
-	await taPage.goto(`${WEB_ORIGIN}/grading/${normalAttemptId}`);
+	await teacherPage.goto(`${TEACHER_BASE_URL}/grading/${normalAttemptId}`);
+	await taPage.goto(`${TEACHER_BASE_URL}/grading/${normalAttemptId}`);
 
 	await expect(
 		teacherPage.getByTestId("ai-draft-panel").getByText("Đang rà soát"),

@@ -1,0 +1,13 @@
+{
+	"$schema": "https://turbo.build/schema.json",
+	"extends": ["//"],
+	"tasks": {
+		"build": {
+			"dependsOn": ["^build", "web#build", "student#build", "admin#build"],
+			"outputs": ["dist/**", "src/routeTree.gen.ts"]
+		},
+		"check-types": {
+			"dependsOn": ["$TURBO_EXTENDS$", "build"]
+		}
+	}
+}

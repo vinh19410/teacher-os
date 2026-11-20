@@ -224,6 +224,17 @@ describe("teacherActiveKey", () => {
 		expect(teacherActiveKey("/courses")).toBe("courses");
 		expect(teacherActiveKey("/login")).toBe("");
 	});
+
+	it("strips optional /teacher basepath prefix before matching active nav key", () => {
+		expect(teacherActiveKey("/teacher")).toBe("dashboard");
+		expect(teacherActiveKey("/teacher/")).toBe("dashboard");
+		expect(teacherActiveKey("/teacher/dashboard")).toBe("dashboard");
+		expect(teacherActiveKey("/teacher/classes/abc")).toBe("classes");
+		expect(teacherActiveKey("/teacher/grading/a-1")).toBe("grading");
+		expect(teacherActiveKey("/teacher/profile")).toBe("profile");
+		expect(teacherActiveKey("/teacher/login")).toBe("");
+		expect(teacherActiveKey("/teachers")).toBe("");
+	});
 });
 
 describe("TeacherShellLink", () => {

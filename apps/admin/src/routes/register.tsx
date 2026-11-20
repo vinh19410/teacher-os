@@ -9,6 +9,7 @@ import { SubmitButton } from "@/components/auth/submit-button";
 import { authClient } from "@/lib/auth-client";
 import { authErrorMessage } from "@/lib/auth-error";
 import { NAME_MIN, signUpSchema } from "@/lib/auth-schemas";
+import { validateReturnUrl } from "@/lib/validate-return-url";
 
 const SIGNUP_FAILED =
 	"Không thể tạo tài khoản. Email này có thể không nằm trong danh sách quản trị được cấp.";
@@ -43,9 +44,7 @@ function RouteComponent() {
 					return;
 				}
 				setDone(true);
-				window.location.assign(
-					returnUrl?.startsWith("/") ? returnUrl : "/library/tests",
-				);
+				window.location.assign(validateReturnUrl(returnUrl));
 			} catch {
 				toast.error(SIGNUP_FAILED);
 			} finally {

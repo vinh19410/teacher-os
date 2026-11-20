@@ -13,7 +13,7 @@ const watchdog = await import(
 	new URL(`file://${join(e2e, "devserver-watchdog.mjs")}`).href
 );
 
-const PORTS = { api: 8100, web: 8101, student: 8103, admin: 8104 };
+const PORTS = { api: 8100, web: 8101 };
 const ok = () => ({ ok: true });
 const refused = () => ({ ok: false, reason: "refused" });
 const stall = () => ({ ok: false, reason: "stall" });
@@ -36,40 +36,28 @@ const makeState = (kind, name, calls = []) =>
 	});
 const clock = { t: 0 };
 
-test("buildServices: đủ 4 service với url poll đúng, student/admin CÓ url", () => {
+test("buildServices: đủ 2 service cốt lõi (api + lms) với url poll và deadStatus đúng", () => {
 	const list = services.buildServices(PORTS);
 	assert.deepEqual(
 		list.map((s) => s.name),
-		["api", "web", "student", "admin"],
+		["api", "lms"],
 	);
 	const byName = Object.fromEntries(list.map((s) => [s.name, s]));
 	assert.equal(byName.api.pollUrl, "http://localhost:8100/readyz");
-	assert.equal(byName.web.pollUrl, "http://localhost:8101/");
-	assert.equal(
-		byName.student.pollUrl,
-		"http://localhost:8103/login",
-		"student phải có url poll (red-team FailH1)",
-	);
-	assert.equal(
-		byName.admin.pollUrl,
-		"http://localhost:8104/login",
-		"admin phải có url poll (plan #413 phase 5)",
-	);
+	assert.equal(byName.lms.pollUrl, "http://localhost:8101/login");
 	assert.equal(byName.api.deadStatus, 500);
-	assert.equal(byName.web.deadStatus, 404);
-	assert.equal(byName.student.deadStatus, 404);
-	assert.equal(byName.admin.deadStatus, 404);
+	assert.equal(byName.lms.deadStatus, 404);
 });
 
 test("buildRestartCommand/buildSpawnOptions: pnpm trực tiếp, không shell, không detached", () => {
 	const byName = Object.fromEntries(
 		services.buildServices(PORTS).map((s) => [s.name, s]),
 	);
-	const cmd = services.buildRestartCommand(byName.web);
+	const cmd = services.buildRestartCommand(byName.lms);
 	assert.deepEqual(cmd, [
 		"pnpm",
 		"--filter",
-		"web",
+		"lms",
 		"exec",
 		"vite",
 		"--port",
@@ -98,20 +86,30 @@ test("resolveViteMode/buildServices: preview là mặc định của e2e, dev ch
 	const preview = Object.fromEntries(
 		services.buildServices(PORTS, { mode: "preview" }).map((s) => [s.name, s]),
 	);
-	assert.deepEqual(services.buildRestartCommand(preview.student), [
+	assert.deepEqual(services.buildRestartCommand(preview.lms), [
 		"pnpm",
 		"--filter",
-		"student",
-		"exec",
-		"vite",
-		"preview",
-		"--port",
-		"8103",
-		"--strictPort",
+		"lms",
+		"run",
+		"serve",
 	]);
 });
 
-test("parsePorts: hợp lệ → số; sai/thiếu → throw message rõ", () => {
+test("parsePorts: hợp lệ → số; hỗ trợ E2E_LMS_PORT lẫn E2E_WEB_PORT; sai/thiếu → throw message rõ", () => {
+	assert.deepEqual(
+		services.parsePorts({
+			E2E_API_PORT: "8100",
+			E2E_WEB_PORT: "8101",
+		}),
+		PORTS,
+	);
+	assert.deepEqual(
+		services.parsePorts({
+			E2E_API_PORT: "8100",
+			E2E_LMS_PORT: "8101",
+		}),
+		PORTS,
+	);
 	assert.deepEqual(
 		services.parsePorts({
 			E2E_API_PORT: "8100",
@@ -126,26 +124,22 @@ test("parsePorts: hợp lệ → số; sai/thiếu → throw message rõ", () =>
 		{
 			E2E_API_PORT: "8100",
 			E2E_WEB_PORT: "",
-			E2E_STUDENT_PORT: "8103",
-			E2E_ADMIN_PORT: "8104",
 		},
 		{
 			E2E_API_PORT: "8100",
 			E2E_WEB_PORT: "abc",
-			E2E_STUDENT_PORT: "8103",
-			E2E_ADMIN_PORT: "8104",
 		},
 		{
 			E2E_API_PORT: "8100",
 			E2E_WEB_PORT: "99999",
-			E2E_STUDENT_PORT: "8103",
-			E2E_ADMIN_PORT: "8104",
 		},
 		{
 			E2E_API_PORT: "8100",
 			E2E_WEB_PORT: "8101 --host 0.0.0.0",
-			E2E_STUDENT_PORT: "8103",
-			E2E_ADMIN_PORT: "8104",
+		},
+		{
+			E2E_API_PORT: "8100",
+			E2E_LMS_PORT: "bad",
 		},
 	]) {
 		assert.throws(

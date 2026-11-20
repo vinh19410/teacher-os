@@ -315,7 +315,7 @@ function AttemptSummaryPage() {
 	// in_progress, nhưng không render partial theo RT#6).
 	useEffect(() => {
 		if (isHttpError(summaryQuery.error) && summaryQuery.error.status === 409) {
-			window.location.assign("/");
+			window.location.assign("/student");
 		}
 	}, [summaryQuery.error]);
 

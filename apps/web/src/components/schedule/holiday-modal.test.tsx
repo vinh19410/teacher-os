@@ -18,14 +18,23 @@ vi.mock("@/lib/repos/holidays", () => repos);
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
 
+import { todayISOVietnam } from "@/lib/week-grid";
 import { HolidayModal } from "./holiday-modal";
+
+function addDaysISO(iso: string, days: number): string {
+	return new Date(Date.parse(`${iso}T00:00:00Z`) + days * 86_400_000)
+		.toISOString()
+		.slice(0, 10);
+}
+
+const FUTURE_HOLIDAY_DATE = addDaysISO(todayISOVietnam(), 14);
 
 const PREVIEW: HolidayPreview = {
 	shifts: [
 		{
 			classId: "cl-1",
 			className: "IELTS Writing",
-			originalDate: "2026-11-20",
+			originalDate: FUTURE_HOLIDAY_DATE,
 			sessionOrdinal: 3,
 			makeupDate: "2027-01-22",
 			time: "19:00",
@@ -48,10 +57,10 @@ function fillValidForm() {
 		target: { value: "Nghỉ lễ 20/11" },
 	});
 	fireEvent.change(screen.getByTestId("holiday-from"), {
-		target: { value: "2026-11-20" },
+		target: { value: FUTURE_HOLIDAY_DATE },
 	});
 	fireEvent.change(screen.getByTestId("holiday-to"), {
-		target: { value: "2026-11-20" },
+		target: { value: FUTURE_HOLIDAY_DATE },
 	});
 }
 
@@ -116,8 +125,8 @@ describe("HolidayModal (TOS-11 phase 5)", () => {
 		);
 		expect(repos.previewHoliday).toHaveBeenCalledWith({
 			name: "Nghỉ lễ 20/11",
-			fromDate: "2026-11-20",
-			toDate: "2026-11-20",
+			fromDate: FUTURE_HOLIDAY_DATE,
+			toDate: FUTURE_HOLIDAY_DATE,
 			scope: "org",
 			classIds: [],
 			mode: "shift",
@@ -280,7 +289,7 @@ describe("HolidayModal TOS-12: nhảy kỳ nghỉ và giữ nguyên buổi đã 
 				{
 					classId: "cl-1",
 					className: "IELTS Writing",
-					date: "2026-11-20",
+					date: FUTURE_HOLIDAY_DATE,
 					sessionOrdinal: 3,
 				},
 			],
@@ -364,7 +373,7 @@ describe("HolidayModal TOS-13: phương thức Hủy buổi (không bù)", () =>
 						{
 							classId: "cl-1",
 							className: "IELTS Writing",
-							date: "2026-11-20",
+							date: FUTURE_HOLIDAY_DATE,
 							sessionOrdinal: 3,
 						},
 					],

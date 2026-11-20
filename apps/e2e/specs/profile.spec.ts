@@ -17,7 +17,7 @@ test("đổi tên hiển thị cập nhật sidebar ngay không cần reload", a
 	page,
 }) => {
 	const email = await signUpViaApi(page);
-	await page.goto("/profile");
+	await page.goto("/teacher/profile");
 	await expect(page.getByRole("heading", { name: "Hồ sơ" })).toBeVisible();
 
 	await page.getByTestId("profile-name-input").fill("Trần Thị Bích Hòa");
@@ -40,7 +40,7 @@ test("upload avatar nén về data URL JPEG ≤64KB và hiện ở cả sidebar"
 	page,
 }) => {
 	await signUpViaApi(page);
-	await page.goto("/profile");
+	await page.goto("/teacher/profile");
 
 	// Draw a detailed ≥400px image in the browser — a tiny buffer would make
 	// canvas upscale and skip the production downscale path entirely.
@@ -88,7 +88,7 @@ test("user đã seed account google hiển thị badge Đã kết nối qua list
 	page,
 }) => {
 	const email = await signUpViaApi(page);
-	await page.goto("/profile");
+	await page.goto("/teacher/profile");
 	// Not connected yet → the connect button renders.
 	await expect(
 		page.getByRole("button", { name: "Kết nối Google" }),
@@ -122,18 +122,18 @@ test("error-param branch từ OAuth callback hiện toast lỗi và tự clear U
 	page,
 }) => {
 	await signUpViaApi(page);
-	await page.goto("/profile");
+	await page.goto("/teacher/profile");
 	// A cancelled/denied consent lands back with ?error=<code> appended by
 	// better-auth; the route must toast (Vietnamese, mapped) and scrub the URL
-	// while REMAINING on /profile (not falling into not-found).
-	await page.goto("/profile?error=email_doesn%27t_match");
+	// while REMAINING on /teacher/profile (not falling into not-found).
+	await page.goto("/teacher/profile?error=email_doesn%27t_match");
 
 	await expect(
 		page
 			.locator("[data-sonner-toast]")
 			.filter({ hasText: "Email Google không khớp" }),
 	).toBeVisible();
-	await expect(page).toHaveURL(/\/profile$/);
+	await expect(page).toHaveURL(/\/teacher\/profile$/);
 	await expect(page.getByRole("heading", { name: "Hồ sơ" })).toBeVisible();
 });
 
@@ -145,7 +145,7 @@ test("nút Kết nối Google mở redirect sang Google khi cấu hình OAuth th
 		"boot shim dùng Google creds dummy — round-trip thật thuộc manual checklist",
 	);
 	const email = await signUpViaApi(page);
-	await page.goto("/profile");
+	await page.goto("/teacher/profile");
 	await page.getByRole("button", { name: "Kết nối Google" }).click();
 	await page.waitForURL(/accounts\.google\.com/, { timeout: 30_000 });
 	expect(email).toBeTruthy();

@@ -10,8 +10,18 @@ import {
 } from "./topology";
 
 describe("resolveDomainTopology", () => {
-	it("derives the exact app/api origins for a bare domain", () => {
+	it("derives the exact lms/app/api origins and portal URLs for a bare domain", () => {
 		expect(resolveDomainTopology("teacher-os.edu.vn")).toEqual({
+			lmsHost: "lms.teacher-os.edu.vn",
+			lmsOrigin: "https://lms.teacher-os.edu.vn",
+			lmsAliases: [
+				"app.teacher-os.edu.vn",
+				"student.teacher-os.edu.vn",
+				"admin.teacher-os.edu.vn",
+			],
+			teacherUrl: "https://lms.teacher-os.edu.vn/teacher",
+			studentPortalUrl: "https://lms.teacher-os.edu.vn/student",
+			adminUrl: "https://lms.teacher-os.edu.vn/admin",
 			appHost: "app.teacher-os.edu.vn",
 			apiHost: "api.teacher-os.edu.vn",
 			appOrigin: "https://app.teacher-os.edu.vn",
@@ -34,8 +44,18 @@ describe("resolveDomainTopology", () => {
 		});
 	});
 
-	it("derives the prod app/student/api hosts on msmy.io.vn and leaves landing unattached", () => {
+	it("derives the prod lms/legacy/api hosts on msmy.io.vn and leaves landing unattached", () => {
 		const topology = resolveDomainTopology("msmy.io.vn");
+		expect(topology.lmsHost).toBe("lms.msmy.io.vn");
+		expect(topology.lmsOrigin).toBe("https://lms.msmy.io.vn");
+		expect(topology.lmsAliases).toEqual([
+			"app.msmy.io.vn",
+			"student.msmy.io.vn",
+			"admin.msmy.io.vn",
+		]);
+		expect(topology.teacherUrl).toBe("https://lms.msmy.io.vn/teacher");
+		expect(topology.studentPortalUrl).toBe("https://lms.msmy.io.vn/student");
+		expect(topology.adminUrl).toBe("https://lms.msmy.io.vn/admin");
 		expect(topology.appOrigin).toBe("https://app.msmy.io.vn");
 		expect(topology.studentOrigin).toBe("https://student.msmy.io.vn");
 		expect(topology.apiOrigin).toBe("https://api.msmy.io.vn");
@@ -49,8 +69,22 @@ describe("resolveDomainTopology", () => {
 		expect(topology.appAliases).toEqual([]);
 	});
 
-	it("derives landing host and aliases for staging domain, appAliases empty", () => {
+	it("derives lms, portal URLs, and landing aliases for staging domain", () => {
 		const topology = resolveDomainTopology("staging.teacheros.io.vn");
+		expect(topology.lmsHost).toBe("lms.staging.teacheros.io.vn");
+		expect(topology.lmsOrigin).toBe("https://lms.staging.teacheros.io.vn");
+		expect(topology.lmsAliases).toEqual([
+			"app.staging.teacheros.io.vn",
+			"student.staging.teacheros.io.vn",
+			"admin.staging.teacheros.io.vn",
+		]);
+		expect(topology.teacherUrl).toBe(
+			"https://lms.staging.teacheros.io.vn/teacher",
+		);
+		expect(topology.studentPortalUrl).toBe(
+			"https://lms.staging.teacheros.io.vn/student",
+		);
+		expect(topology.adminUrl).toBe("https://lms.staging.teacheros.io.vn/admin");
 		expect(topology.landingHost).toBe("staging.teacheros.io.vn");
 		expect(topology.landingAliases).toEqual(["www.staging.teacheros.io.vn"]);
 		expect(topology.appAliases).toEqual([]);
@@ -111,6 +145,22 @@ describe("resolveDomainTopology", () => {
 
 	it("supports a multi-label domain", () => {
 		const topology = resolveDomainTopology("teacher-os.example.co.uk");
+		expect(topology.lmsHost).toBe("lms.teacher-os.example.co.uk");
+		expect(topology.lmsOrigin).toBe("https://lms.teacher-os.example.co.uk");
+		expect(topology.lmsAliases).toEqual([
+			"app.teacher-os.example.co.uk",
+			"student.teacher-os.example.co.uk",
+			"admin.teacher-os.example.co.uk",
+		]);
+		expect(topology.teacherUrl).toBe(
+			"https://lms.teacher-os.example.co.uk/teacher",
+		);
+		expect(topology.studentPortalUrl).toBe(
+			"https://lms.teacher-os.example.co.uk/student",
+		);
+		expect(topology.adminUrl).toBe(
+			"https://lms.teacher-os.example.co.uk/admin",
+		);
 		expect(topology.appOrigin).toBe("https://app.teacher-os.example.co.uk");
 		expect(topology.cookieDomain).toBe(".teacher-os.example.co.uk");
 	});

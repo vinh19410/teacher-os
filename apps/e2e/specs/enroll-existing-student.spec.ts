@@ -188,7 +188,7 @@ test("class detail → picker enroll học viên có sẵn → roster + KPI tăn
 		page,
 		"E2E 122 Template",
 	);
-	await page.goto("/students");
+	await page.goto("/teacher/students");
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 
 	// 3. Create a scheduled class (T2+T4, empty template → auto, 12 buổi).
@@ -309,7 +309,7 @@ test("class detail → hủy lời mời → row biến mất khỏi roster, có
 
 	// 1. Tạo học viên trước bằng seed
 	await seedStudent({ teacherEmail, name: STUDENT_NAME });
-	await page.goto("/students");
+	await page.goto("/teacher/students");
 	await expect(page.getByText(STUDENT_NAME)).toBeVisible();
 
 	// 2. Tạo lớp học

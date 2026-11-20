@@ -28,7 +28,7 @@ export function AttemptReviewError({ error }: { error: unknown }) {
 				<p className="font-mono text-muted-foreground text-xs">{code}</p>
 			)}
 			<a
-				href="/"
+				href="/student"
 				className="text-primary text-sm underline-offset-4 hover:underline"
 			>
 				Về trang chủ

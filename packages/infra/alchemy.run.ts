@@ -19,10 +19,11 @@ config({ path: "../../apps/server/.env" });
 
 /**
  * Domain topology: set APP_DOMAIN to a bare domain (msmy.io.vn for prod,
- * staging.teacheros.io.vn for staging) to serve the app at app.<domain> and
- * the API at api.<domain> with cross-subdomain session cookies. Without
- * APP_DOMAIN (local dev only) the stack keeps its generated workers.dev URLs
- * and per-host cookies.
+ * staging.teacheros.io.vn for staging) to serve the unified LMS app at
+ * lms.<domain> (with 301 aliases app/student/admin.<domain>) and the API at
+ * api.<domain> with cross-subdomain session cookies. Without APP_DOMAIN
+ * (local dev only) the stack keeps its generated workers.dev URLs and
+ * per-host cookies.
  *
  * APP_DOMAIN is read from process.env (after dotenv), not Effect Config: it is
  * deploy-time topology wiring the operator sets, and its presence/absence
@@ -47,75 +48,67 @@ const isDevCommand = process.env.ALCHEMY_DEV === "true";
 // callback, not just CORS), so fail the whole run before any resource is
 // touched — no legitimate combination sets both to different values.
 // dotenv precedence: packages/infra/.env wins over apps/*/.env.
-if (topology && process.env.CORS_ORIGIN) {
-	const explicit = process.env.CORS_ORIGIN.split(",").map((s) => s.trim());
-	if (
-		!explicit.includes(topology.appOrigin) ||
-		!explicit.includes(topology.studentOrigin) ||
-		!explicit.includes(topology.adminOrigin)
-	) {
+const corsOriginEnv = process.env.CORS_ORIGIN;
+if (topology && corsOriginEnv !== undefined) {
+	const explicit = corsOriginEnv
+		.split(",")
+		.map((s) => s.trim())
+		.filter((s) => s.length > 0);
+	if (!explicit.includes(topology.lmsOrigin)) {
 		throw new Error(
-			`[topology] CORS_ORIGIN=${process.env.CORS_ORIGIN} missing required origins ${topology.appOrigin}, ${topology.studentOrigin}, or ${topology.adminOrigin} (APP_DOMAIN=${process.env.APP_DOMAIN}). Clear CORS_ORIGIN from packages/infra/.env, apps/*/.env, and the shell — production must serve the derived origins.`,
+			`[topology] CORS_ORIGIN=${corsOriginEnv || "(empty)"} missing required LMS origin ${topology.lmsOrigin} (APP_DOMAIN=${process.env.APP_DOMAIN}). Clear CORS_ORIGIN from packages/infra/.env, apps/*/.env, and the shell — production must serve the derived origin.`,
 		);
 	}
 }
 
 const corsOriginConfig = topology
-	? Config.String("CORS_ORIGIN").pipe(
-			Config.withDefault(
-				`${topology.appOrigin},${topology.studentOrigin},${topology.adminOrigin}`,
-			),
-		)
+	? Config.String("CORS_ORIGIN").pipe(Config.withDefault(topology.lmsOrigin))
 	: isDevCommand
 		? Config.String("CORS_ORIGIN").pipe(
-				Config.withDefault(
-					"http://localhost:8001,http://localhost:8003,http://localhost:8004",
-				),
+				Config.withDefault("http://localhost:8001"),
 			)
 		: Config.String("CORS_ORIGIN");
 
-// An explicit STUDENT_ORIGINS that misses the portal origin (topology mode)
-// silently classifies every portal sign-up as teacher and locks students out
-// of the portal, so fail the whole run before any resource is touched — the
-// same override risk as CORS_ORIGIN above (alchemy loads apps/*/.env on
-// deploy too). Presence (not truthiness) is the gate: `STUDENT_ORIGINS=`
-// (empty) must throw as well, or the empty list would classify the portal
-// origin as teacher.
+// An explicit STUDENT_ORIGINS that misses the unified LMS origin (topology
+// mode) breaks student-portal origin matching, so fail the whole run before
+// any resource is touched — the same override risk as CORS_ORIGIN above
+// (alchemy loads apps/*/.env on deploy too). Presence (not truthiness) is the
+// gate: `STUDENT_ORIGINS=` (empty) must throw as well.
 const studentOriginsEnv = process.env.STUDENT_ORIGINS;
 if (topology && studentOriginsEnv !== undefined) {
 	const explicitStudents = studentOriginsEnv
 		.split(",")
 		.map((s) => s.trim())
 		.filter((s) => s.length > 0);
-	if (!explicitStudents.includes(topology.studentOrigin)) {
+	if (!explicitStudents.includes(topology.lmsOrigin)) {
 		throw new Error(
-			`[topology] STUDENT_ORIGINS=${studentOriginsEnv || "(empty)"} missing required portal origin ${topology.studentOrigin} (APP_DOMAIN=${process.env.APP_DOMAIN}). Clear STUDENT_ORIGINS from packages/infra/.env, apps/*/.env, and the shell — production must serve the derived origin.`,
+			`[topology] STUDENT_ORIGINS=${studentOriginsEnv || "(empty)"} missing required LMS origin ${topology.lmsOrigin} (APP_DOMAIN=${process.env.APP_DOMAIN}). Clear STUDENT_ORIGINS from packages/infra/.env, apps/*/.env, and the shell — production must serve the derived origin.`,
 		);
 	}
 }
 
 const studentOriginsConfig = topology
 	? Config.String("STUDENT_ORIGINS").pipe(
-			Config.withDefault(topology.studentOrigin),
+			Config.withDefault(topology.lmsOrigin),
 		)
 	: isDevCommand
 		? Config.String("STUDENT_ORIGINS").pipe(
-				Config.withDefault("http://localhost:8003"),
+				Config.withDefault("http://localhost:8001"),
 			)
 		: Config.String("STUDENT_ORIGINS");
 
-// Plan #413: ADMIN_ORIGINS mặc định theo topology (admin.<APP_DOMAIN>) —
-// explicit thiếu origin admin ở topology mode fail loud, cùng pattern
-// STUDENT_ORIGINS ở trên (presence, không phải truthiness, là gate).
+// ADMIN_ORIGINS mặc định theo topology (lms.<APP_DOMAIN>) — explicit thiếu
+// origin LMS ở topology mode fail loud, cùng pattern STUDENT_ORIGINS ở trên
+// (presence, không phải truthiness, là gate).
 const adminOriginsEnv = process.env.ADMIN_ORIGINS;
 if (topology && adminOriginsEnv !== undefined) {
 	const explicitAdmins = adminOriginsEnv
 		.split(",")
 		.map((s) => s.trim())
 		.filter((s) => s.length > 0);
-	if (!explicitAdmins.includes(topology.adminOrigin)) {
+	if (!explicitAdmins.includes(topology.lmsOrigin)) {
 		throw new Error(
-			`[topology] ADMIN_ORIGINS=${adminOriginsEnv || "(empty)"} missing required admin origin ${topology.adminOrigin} (APP_DOMAIN=${process.env.APP_DOMAIN}). Clear ADMIN_ORIGINS from packages/infra/.env, apps/*/.env, and the shell — production must serve the derived origin.`,
+			`[topology] ADMIN_ORIGINS=${adminOriginsEnv || "(empty)"} missing required LMS origin ${topology.lmsOrigin} (APP_DOMAIN=${process.env.APP_DOMAIN}). Clear ADMIN_ORIGINS from packages/infra/.env, apps/*/.env, and the shell — production must serve the derived origin.`,
 		);
 	}
 }
@@ -140,12 +133,10 @@ const leadOrigins = resolveLeadOrigins(process.env.LEAD_ORIGINS, {
 });
 
 const adminOriginsConfig = topology
-	? Config.String("ADMIN_ORIGINS").pipe(
-			Config.withDefault(topology.adminOrigin),
-		)
+	? Config.String("ADMIN_ORIGINS").pipe(Config.withDefault(topology.lmsOrigin))
 	: isDevCommand
 		? Config.String("ADMIN_ORIGINS").pipe(
-				Config.withDefault("http://localhost:8004"),
+				Config.withDefault("http://localhost:8001"),
 			)
 		: Config.String("ADMIN_ORIGINS");
 
@@ -156,8 +147,9 @@ const adminEmailsConfig = Config.String("ADMIN_EMAILS").pipe(
 	Config.withDefault(""),
 );
 
-// Single-org theo chính sách (#513): rỗng = không giới hạn (dev/e2e/staging);
-// production bắt buộc set (fail-closed khi deploy với APP_DOMAIN=msmy.io.vn).
+// Single-org theo chính sách (#513): danh sách email giáo viên (phân loại role
+// teacher trên unified LMS và allowlist bootstrapMiddleware); production bắt
+// buộc set (fail-closed khi APP_DOMAIN=msmy.io.vn), staging truyền qua vars.TEACHER_EMAILS.
 const teacherEmails = resolveTeacherEmails(
 	process.env.TEACHER_EMAILS,
 	process.env.APP_DOMAIN,
@@ -313,18 +305,19 @@ export default Alchemy.Stack(
 	Effect.gen(function* () {
 		const serverWorker = yield* server;
 		const aiEnabled = yield* aiEnabledConfig;
-		const webWorker = yield* Cloudflare.Website.Vite("web", {
+		const lmsWorker = yield* Cloudflare.Website.Vite("lms", {
 			compatibility: { date: WORKER_COMPATIBILITY_DATE },
-			rootDir: "../../apps/web",
+			rootDir: "../../apps/lms",
 			main: "src/worker.ts",
 			assets: {
 				htmlHandling: "auto-trailing-slash",
 				notFoundHandling: "none",
+				...(isDevCommand ? {} : { runWorkerFirst: true }),
 			},
 			...(topology && {
 				domain: {
-					name: topology.appHost,
-					aliases: topology.appAliases,
+					name: topology.lmsHost,
+					aliases: topology.lmsAliases,
 				},
 				workersDev: false,
 			}),
@@ -333,6 +326,7 @@ export default Alchemy.Stack(
 					? topology.apiOrigin
 					: serverWorker.url.as<string>(),
 				VITE_AI_ENABLED: aiEnabled,
+				LMS_REBUILD_PORTALS: "1",
 			},
 			dev: {
 				port: 8001,
@@ -361,57 +355,6 @@ export default Alchemy.Stack(
 			dev: {
 				command: "pnpm dev:bare",
 				url: "http://localhost:8002",
-			},
-		});
-
-		const studentWorker = yield* Cloudflare.Website.Vite("student", {
-			compatibility: { date: WORKER_COMPATIBILITY_DATE },
-			rootDir: "../../apps/student",
-			main: "src/worker.ts",
-			assets: {
-				htmlHandling: "auto-trailing-slash",
-				notFoundHandling: "none",
-			},
-			...(topology && {
-				domain: {
-					name: topology.studentHost,
-				},
-				workersDev: false,
-			}),
-			env: {
-				VITE_SERVER_URL: topology
-					? topology.apiOrigin
-					: serverWorker.url.as<string>(),
-			},
-			dev: {
-				port: 8003,
-				strictPort: true,
-			},
-		});
-
-		// Plan #413 phase 5: cổng quản trị — dev 8004, domain topology.adminHost.
-		const adminWorker = yield* Cloudflare.Website.Vite("admin", {
-			compatibility: { date: WORKER_COMPATIBILITY_DATE },
-			rootDir: "../../apps/admin",
-			main: "src/worker.ts",
-			assets: {
-				htmlHandling: "auto-trailing-slash",
-				notFoundHandling: "none",
-			},
-			...(topology && {
-				domain: {
-					name: topology.adminHost,
-				},
-				workersDev: false,
-			}),
-			env: {
-				VITE_SERVER_URL: topology
-					? topology.apiOrigin
-					: serverWorker.url.as<string>(),
-			},
-			dev: {
-				port: 8004,
-				strictPort: true,
 			},
 		});
 
@@ -465,8 +408,8 @@ export default Alchemy.Stack(
 					? topology.apiOrigin
 					: serverWorker.url.as<string>(),
 				STUDENT_PORTAL_URL: topology
-					? topology.studentOrigin
-					: studentWorker.url.as<string>(),
+					? topology.studentPortalUrl
+					: lmsWorker.url.as<string>(),
 				...(process.env.PROFILE_MAINTENANCE !== undefined && {
 					PROFILE_MAINTENANCE: process.env.PROFILE_MAINTENANCE,
 				}),
@@ -489,11 +432,9 @@ export default Alchemy.Stack(
 		});
 
 		return {
-			web: webWorker.url,
+			lms: lmsWorker.url,
 			server: serverWorker.url,
 			landing: landingWorker.url,
-			student: studentWorker.url,
-			admin: adminWorker.url,
 			profile: profileWorker.url,
 		};
 	}),

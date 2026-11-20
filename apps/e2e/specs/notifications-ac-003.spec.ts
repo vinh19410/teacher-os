@@ -8,7 +8,12 @@ import {
 	type VerificationEmailEntry,
 	verifyStudentEmailFromMailLog,
 } from "./helpers";
-import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
+import {
+	API_ORIGIN,
+	LMS_ORIGIN,
+	STUDENT_BASE_URL,
+	WEB_ORIGIN,
+} from "./origins";
 
 /**
  * AC-003 — plan TOS-23 (#464) phase 3:
@@ -191,7 +196,7 @@ test("AC-003 nút Gửi lại và Gửi lại tất cả mục lỗi đặt lạ
 		.toBe(2);
 
 	// --- Bước 2: kiểm tra màn [5] (/notifications), ẩn/hiện nút Gửi lại, 3 viewport ---
-	await teacher.goto("/notifications");
+	await teacher.goto("/teacher/notifications");
 	await expect(
 		teacher.getByRole("heading", { name: /Nhật ký gửi thông báo/ }),
 	).toBeVisible();
@@ -282,7 +287,7 @@ test("AC-003 nút Gửi lại và Gửi lại tất cả mục lỗi đặt lạ
 	// Kiểm tra cổng học viên của STUDENT_1: vẫn chỉ có đúng 1 mục In-app, mở đọc đặt read_at
 	const studentContext = await browser.newContext();
 	const student = await studentContext.newPage();
-	await student.goto(`${STUDENT_ORIGIN}/login`);
+	await student.goto(`${LMS_ORIGIN}/login`);
 	await student.locator("#tab-signup").click();
 	await student.locator("#signup-name").fill(STUDENT_1);
 	await student.locator("#signup-email").fill(bounceEmail1);
@@ -290,7 +295,7 @@ test("AC-003 nút Gửi lại và Gửi lại tất cả mục lỗi đặt lạ
 	await student.locator("#panel-signup button[type='submit']").click();
 	await expect(student.getByText("Email chưa được xác thực")).toBeVisible();
 	await verifyStudentEmailFromMailLog(student, bounceEmail1);
-	await expect(student).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`));
+	await expect(student).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`));
 
 	await expect(student.getByTestId("notification-badge")).toBeVisible();
 	await student

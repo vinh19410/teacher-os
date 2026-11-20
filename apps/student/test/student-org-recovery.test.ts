@@ -302,7 +302,7 @@ describe("Student Portal stale org self-healing & isolation (#675)", () => {
 	it("R1: reauth() clears active_student_org_id and user key before redirecting to /login", () => {
 		const assignSpy = vi.fn();
 		vi.stubGlobal("location", {
-			pathname: "/classes",
+			pathname: "/student/classes",
 			search: "",
 			hash: "",
 			assign: assignSpy,
@@ -314,6 +314,9 @@ describe("Student Portal stale org self-healing & isolation (#675)", () => {
 		expect(getActiveStudentOrgId()).toBeNull();
 		expect(localStorage.getItem(ACTIVE_STUDENT_USER_KEY)).toBeNull();
 		expect(assignSpy).toHaveBeenCalledTimes(1);
+		expect(assignSpy).toHaveBeenCalledWith(
+			`/login?returnUrl=${encodeURIComponent("/student/classes")}`,
+		);
 	});
 
 	it("B1: blob GET helpers (fetchQuizMediaObjectUrl & fetchVocabAudioObjectUrl) retry once on stale org and reject HTML/SVG MIME", async () => {

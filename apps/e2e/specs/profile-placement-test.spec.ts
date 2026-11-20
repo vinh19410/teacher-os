@@ -3,7 +3,12 @@ import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
 import { signUpViaApi } from "./helpers";
-import { API_ORIGIN, PROFILE_ORIGIN, WEB_ORIGIN } from "./origins";
+import {
+	API_ORIGIN,
+	PROFILE_ORIGIN,
+	TEACHER_BASE_URL,
+	WEB_ORIGIN,
+} from "./origins";
 
 const LEAD_ORG_ID = "e2e-lead-org";
 const STORAGE_KEY = "msmy_placement_attempt_v2";
@@ -870,7 +875,7 @@ test.describe
 			const teacherPage = await teacherContext.newPage();
 			try {
 				await signUpLeadOrgTeacher(teacherPage, "Cô Mỹ Chấm Bài E2E");
-				await teacherPage.goto(`${WEB_ORIGIN}/leads`);
+				await teacherPage.goto(`${TEACHER_BASE_URL}/leads`);
 				const table = teacherPage.getByTestId("leads-table");
 				await expect(table).toBeVisible();
 
