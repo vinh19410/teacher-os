@@ -53,14 +53,21 @@ vi.mock("@/lib/query-client", () => ({
 	reauth: vi.fn(),
 }));
 
+const useQuizAudioObjectUrlMock = vi.fn((_source: unknown) => ({
+	audioSrc: null as string | null,
+	audioLoading: false,
+	audioError: false,
+}));
+
 vi.mock("@/lib/repos/quiz", () => ({
 	quizDetailQueryKey: (s: unknown) => ["quiz-detail", s],
 	useStudentQuizDetail: () => ({ data: mockDetail, isPending: false }),
 	useStartQuizAttempt: () => ({ mutate: vi.fn(), isPending: false }),
+	useQuizAudioObjectUrl: (source: unknown) => useQuizAudioObjectUrlMock(source),
 	useAssignmentAudioObjectUrl: () => ({
 		audioSrc: null,
 		audioLoading: false,
-		audioError: null,
+		audioError: false,
 	}),
 	patchQuizAnswer: (...args: unknown[]) => patchAnswerMock(...args),
 	patchQuizEssay: (...args: unknown[]) => patchEssayMock(...args),
@@ -75,6 +82,7 @@ describe("QuizTakeView — hybrid MCQ + Writing dual-store runtime (#574)", () =
 		patchAnswerMock.mockClear();
 		patchEssayMock.mockClear();
 		submitMock.mockClear();
+		useQuizAudioObjectUrlMock.mockClear();
 		Object.defineProperty(window, "location", {
 			configurable: true,
 			value: { assign: vi.fn(), href: "http://localhost:8003" },
@@ -276,5 +284,34 @@ describe("QuizTakeView — hybrid MCQ + Writing dual-store runtime (#574)", () =
 			</QueryClientProvider>,
 		);
 		expect(screen.getByTestId("navigator-progress")).toBeTruthy();
+	});
+
+	it("loads practice audio through useQuizAudioObjectUrl when practice listening test hasAudio", () => {
+		mockDetail = {
+			...mockDetail,
+			assignmentId: "",
+			skill: "listening",
+			part: "s4",
+			type: "notes",
+			hasAudio: true,
+			audioName: "talking-about-the-history-of-bikes.mp3",
+			writing: undefined,
+		};
+		const qc = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		render(
+			<QueryClientProvider client={qc}>
+				<QuizTakeView
+					source={{ kind: "practice", testId: "test-listen-1" }}
+					serverAnswers={{}}
+					serverEssay=""
+				/>
+			</QueryClientProvider>,
+		);
+		expect(useQuizAudioObjectUrlMock).toHaveBeenCalledWith({
+			kind: "practice",
+			testId: "test-listen-1",
+		});
 	});
 });

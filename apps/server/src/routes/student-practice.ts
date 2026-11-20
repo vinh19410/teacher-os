@@ -23,6 +23,7 @@ import { type Context, Hono } from "hono";
 import type { Db } from "../app";
 import { syncLibraryTestsToOrg } from "../lib/library-test-sync";
 import { toQuizAttemptMedia } from "../lib/media-response";
+import { serveStudyPackAudio } from "../lib/study-pack-audio";
 import {
 	createQuizWriteGuard,
 	createStudentGuard,
@@ -165,6 +166,7 @@ function toPracticeQuizDetail(
 		cueTopic: header?.cueTopic ?? "",
 		cuePoints: header?.cuePoints ?? "",
 		audioName: header?.audioName ?? "",
+		...(header?.audioUrl || header?.audioKey ? { hasAudio: true } : {}),
 		imageUrl: header?.imageUrl ?? "",
 		optionBank: parseQuizOptionBank(header?.optionBank ?? "[]"),
 		// Speaking (#305) không có đáp án — note là hướng dẫn cho học viên;
@@ -404,6 +406,30 @@ export function studentPracticeRoutes(deps: PracticeRouteDeps) {
 			return c.json({ error: "test not found" }, 404);
 		}
 		return c.json(verified);
+	});
+
+	/**
+	 * GET /api/student/practice/:testId/audio — stream audio Listening của đề
+	 * tự luyện (part đầu, ưu tiên R2 `audioKey` rồi `audioUrl`, dùng chung
+	 * `serveStudyPackAudio` với luồng assignment).
+	 */
+	router.get("/practice/:testId/audio", async (c) => {
+		const { orgId } = c.get("studentCtx");
+		const db: Db = deps.getDb();
+		const testId = c.req.param("testId");
+
+		const loaded = await loadPracticeTestWithParts(db, orgId, testId);
+		const header = loaded?.parts[0]?.prompt;
+		if (!header || (!header.audioUrl && !header.audioKey)) {
+			return c.json({ error: "audio not found" }, 404);
+		}
+		return serveStudyPackAudio({
+			audioKey: header.audioKey,
+			audioUrl: header.audioUrl,
+			audioName: header.audioName,
+			getLibraryAudioStore: deps.getLibraryAudioStore,
+			fetchExternalAudio: deps.fetchExternalAudio,
+		});
 	});
 
 	/**
