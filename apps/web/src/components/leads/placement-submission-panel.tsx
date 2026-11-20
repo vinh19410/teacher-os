@@ -17,7 +17,7 @@ import {
 	type PlacementSubmissionDetail,
 	type PlacementTeacherGrade,
 } from "@teacher-os/api/placement-test-contracts";
-import { Check, Copy, Link2, RefreshCw } from "lucide-react";
+import { Check, Copy, FileDown, RefreshCw } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { StatusTag } from "@/components/assignments/status-tag";
@@ -178,8 +178,8 @@ function hasAiSourceOf(s: PlacementSubmissionDetail): boolean {
 
 const EMAIL_STATUS_TEXT = {
 	sent: "Đã gửi email kết quả cho học viên.",
-	failed: "Gửi email kết quả lỗi — hãy gửi link qua Zalo.",
-	skipped: "Học viên không có email — gửi link qua Zalo.",
+	failed: "Gửi email kết quả lỗi — hãy tải phiếu PDF gửi qua Zalo.",
+	skipped: "Học viên không có email — hãy tải phiếu PDF gửi qua Zalo.",
 } as const;
 
 /**
@@ -481,7 +481,8 @@ function PlacementSubmissionBody({
 	const [mediaError, setMediaError] = useState<string | null>(null);
 	const [mediaRetryTick, setMediaRetryTick] = useState(0);
 	const [copiedZalo, setCopiedZalo] = useState(false);
-	const [copiedLink, setCopiedLink] = useState(false);
+	const [exportingPdf, setExportingPdf] = useState(false);
+	const exportingPdfRef = useRef(false);
 
 	// Khởi tạo lại form khi đổi bài, khi vừa chốt, hoặc khi kết quả AI mới về.
 	// Kết quả AI mới về lúc form đang sửa → KHÔNG ghi đè, chỉ mời áp dụng lỗi.
@@ -762,15 +763,21 @@ function PlacementSubmissionBody({
 		}
 	};
 
-	const handleCopyLink = async () => {
-		if (!submission.resultUrl) return;
+	const handleExportPdf = async () => {
+		if (exportingPdf || exportingPdfRef.current) return;
+		exportingPdfRef.current = true;
+		setExportingPdf(true);
 		try {
-			await navigator.clipboard.writeText(submission.resultUrl);
-			setCopiedLink(true);
-			toast.success("Đã sao chép link kết quả.");
-			setTimeout(() => setCopiedLink(false), 2000);
+			const { exportPlacementResultPdf } = await import(
+				"@/lib/placement-result-pdf"
+			);
+			await exportPlacementResultPdf(submission);
+			toast.success("Đã tải phiếu kết quả PDF.");
 		} catch {
-			toast.error("Trình duyệt không cho phép sao chép tự động.");
+			toast.error("Không thể tạo file PDF. Vui lòng thử lại.");
+		} finally {
+			exportingPdfRef.current = false;
+			setExportingPdf(false);
 		}
 	};
 
@@ -1169,7 +1176,7 @@ function PlacementSubmissionBody({
 					>
 						{gradeMutation.isPending
 							? "Đang chốt kết quả..."
-							: submission.resultUrl
+							: submission.gradedAt !== null
 								? "Cập nhật kết quả đã chốt"
 								: "Chốt kết quả & gửi học viên"}
 					</Button>
@@ -1187,37 +1194,47 @@ function PlacementSubmissionBody({
 				)}
 			</div>
 
-			{submission.resultUrl && (
+			{submission.gradedAt !== null && (
 				<div
-					data-testid="placement-result-link"
+					data-testid="placement-result-pdf"
 					className="space-y-2 rounded-md border border-border bg-background p-3 text-xs"
 				>
-					<div className="font-medium text-foreground">
-						Link kết quả cho học viên
-					</div>
-					<div className="flex flex-wrap items-center gap-2">
-						<a
-							href={submission.resultUrl}
-							target="_blank"
-							rel="noreferrer"
-							className="min-w-0 flex-1 break-all text-foreground underline underline-offset-4"
-						>
-							{submission.resultUrl}
-						</a>
+					<div className="flex flex-wrap items-center justify-between gap-2">
+						<div className="min-w-0 flex-1 basis-52 space-y-0.5">
+							<div className="font-medium text-foreground">
+								Phiếu kết quả cho học viên (PDF)
+							</div>
+							<p className="text-muted-foreground">
+								Xuất phiếu đầy đủ 5 kỹ năng, lỗi cần sửa và nhận xét để gửi Zalo
+								hoặc in.
+							</p>
+						</div>
 						<Button
 							variant="outline"
 							size="sm"
-							onClick={() => void handleCopyLink()}
-							data-testid="copy-result-link-btn"
+							disabled={exportingPdf}
+							aria-busy={exportingPdf}
+							onClick={() => void handleExportPdf()}
+							data-testid="export-result-pdf-btn"
+							className="shrink-0"
 						>
-							{copiedLink ? (
-								<Check className="size-3.5" />
-							) : (
-								<Link2 className="size-3.5" />
-							)}
-							{copiedLink ? "Đã sao chép link" : "Copy link kết quả"}
+							<FileDown className="size-3.5" aria-hidden="true" />
+							{exportingPdf
+								? "Đang tạo file PDF..."
+								: "Tải phiếu kết quả (PDF)"}
 						</Button>
 					</div>
+					{dirty && (
+						<p
+							role="note"
+							data-testid="placement-pdf-dirty-warning"
+							className="rounded border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-amber-900 text-xs dark:text-amber-200"
+						>
+							Bạn có thay đổi chưa lưu — phiếu PDF sẽ xuất theo kết quả đã chốt
+							gần nhất. Bấm “Cập nhật kết quả đã chốt” để áp dụng thay đổi vào
+							phiếu.
+						</p>
+					)}
 					{submission.resultEmailStatus && (
 						<p
 							data-testid="placement-result-email-status"

@@ -17,8 +17,15 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 const toastMock = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
 const reauthMock = vi.hoisted(() => vi.fn());
+const exportPdfMock = vi.hoisted(() =>
+	vi.fn<(submission: PlacementSubmissionDetail) => Promise<void>>(),
+);
 vi.mock("sonner", () => ({ toast: toastMock }));
 vi.mock("@/lib/reauth", () => ({ reauth: reauthMock }));
+vi.mock("@/lib/placement-result-pdf", () => ({
+	exportPlacementResultPdf: (submission: PlacementSubmissionDetail) =>
+		exportPdfMock(submission),
+}));
 
 import {
 	initialPlacementGrading,
@@ -36,6 +43,7 @@ afterEach(() => {
 	vi.unstubAllGlobals();
 	toastMock.success.mockReset();
 	toastMock.error.mockReset();
+	exportPdfMock.mockReset();
 });
 
 const WRITING = "Hello Sarah, I goes to school yesterday.";
@@ -495,11 +503,7 @@ describe("PlacementSubmissionPanel — phân tích lỗi AI & chấm IELTS (#730
 	});
 
 	it("drafted → không có AiFeedbackNote, tự tính overall từ 4 tiêu chí, cho phép chỉnh tay overall, đồng bộ slider và gửi PATCH IELTS", async () => {
-		const clipboardWriteMock = vi.fn().mockResolvedValue(undefined);
-		Object.defineProperty(navigator, "clipboard", {
-			configurable: true,
-			value: { writeText: clipboardWriteMock },
-		});
+		exportPdfMock.mockResolvedValue(undefined);
 		let patchBody: Record<string, unknown> | null = null;
 		let server = DRAFTED;
 		stubFetch((url, method, body) => {
@@ -542,6 +546,10 @@ describe("PlacementSubmissionPanel — phân tích lỗi AI & chấm IELTS (#730
 			"Danh sách lỗi AI — chưa gửi học viên",
 		);
 		expect(screen.getByTestId("placement-ai-retry-btn")).toBeTruthy();
+
+		// Chưa chốt → không hiện khối PDF hay link kết quả cũ
+		expect(screen.queryByTestId("placement-result-pdf")).toBeNull();
+		expect(screen.queryByTestId("placement-result-link")).toBeNull();
 
 		// Không còn AiFeedbackNote hay RubricGuideDetails cũ
 		expect(screen.queryByTestId("writing-ai-feedback")).toBeNull();
@@ -640,19 +648,15 @@ describe("PlacementSubmissionPanel — phân tích lỗi AI & chấm IELTS (#730
 		]);
 		expect(sent.speakingErrors.map((e) => e.id)).toEqual(["s1"]);
 
-		const result = await screen.findByTestId("placement-result-link");
-		expect(result.textContent).toContain(
-			"https://example.test/placement-test/results/tok123",
-		);
+		const pdfCard = await screen.findByTestId("placement-result-pdf");
+		expect(pdfCard.textContent).toContain("Phiếu kết quả cho học viên (PDF)");
+		expect(screen.queryByTestId("placement-result-link")).toBeNull();
+		expect(screen.queryByTestId("copy-result-link-btn")).toBeNull();
 		expect(
 			screen.getByTestId("placement-result-email-status").textContent,
-		).toContain("Gửi email kết quả lỗi");
-		fireEvent.click(screen.getByTestId("copy-result-link-btn"));
-		await waitFor(() =>
-			expect(clipboardWriteMock).toHaveBeenCalledWith(
-				"https://example.test/placement-test/results/tok123",
-			),
-		);
+		).toBe("Gửi email kết quả lỗi — hãy tải phiếu PDF gửi qua Zalo.");
+		fireEvent.click(screen.getByTestId("export-result-pdf-btn"));
+		await waitFor(() => expect(exportPdfMock).toHaveBeenCalledWith(server));
 		expect(screen.getByTestId("copy-zalo-result-btn")).toBeTruthy();
 	});
 
@@ -871,5 +875,193 @@ describe("PlacementSubmissionPanel — phân tích lỗi AI & chấm IELTS (#730
 			"Chấm tự động 3 phần • giáo viên chấm Writing & Speaking",
 		);
 		expect(panel.textContent).not.toContain("khách quan");
+	});
+});
+
+describe("PlacementSubmissionPanel — PDF result export", () => {
+	function makeGradedSub(
+		overrides: Partial<PlacementSubmissionDetail> = {},
+	): PlacementSubmissionDetail {
+		return makeSub({
+			status: "graded",
+			gradedAt: "2026-11-15T10:00:00.000Z",
+			writingRubric: { task: 6, coherence: 6.5, lexical: 6, grammar: 6 },
+			writingScore: 6,
+			speakingRubric: {
+				fluency: 6.5,
+				lexical: 6,
+				grammar: 6,
+				pronunciation: 6.5,
+			},
+			speakingScore: 6.5,
+			teacherFeedback: "Nhận xét đã lưu.",
+			writingErrors: [],
+			speakingErrors: [],
+			resultUrl: "https://example.test/placement-test/results/tok123",
+			resultEmailStatus: "skipped",
+			...overrides,
+		});
+	}
+
+	it("hides placement-result-pdf and placement-result-link when submission is pending (gradedAt is null)", async () => {
+		stubFetch((url, method) =>
+			isGet(url, method) ? makeSub({ gradedAt: null }) : undefined,
+		);
+		renderPanel();
+		await screen.findByTestId("placement-submission-panel");
+		expect(screen.queryByTestId("placement-result-pdf")).toBeNull();
+		expect(screen.queryByTestId("placement-result-link")).toBeNull();
+		expect(screen.getByTestId("save-placement-grade-btn").textContent).toBe(
+			"Chốt kết quả & gửi học viên",
+		);
+	});
+
+	it("renders placement-result-pdf for legacy graded submission even when resultUrl is null", async () => {
+		exportPdfMock.mockResolvedValue(undefined);
+		const legacySub = makeSub({
+			status: "graded",
+			gradedAt: "2026-11-10T10:00:00.000Z",
+			writingRubric: { ct: 4, or: 4, lg: 3 },
+			writingScore: 11,
+			speakingRubric: { gv: 4, dm: 4, pr: 4, ic: 5 },
+			speakingScore: 17,
+			writingErrors: [],
+			speakingErrors: [],
+			resultUrl: null,
+			resultEmailStatus: "skipped",
+		});
+		stubFetch((url, method) => (isGet(url, method) ? legacySub : undefined));
+		renderPanel();
+
+		const pdfCard = await screen.findByTestId("placement-result-pdf");
+		expect(pdfCard.textContent).toContain("Phiếu kết quả cho học viên (PDF)");
+		expect(screen.queryByTestId("placement-result-link")).toBeNull();
+		expect(screen.getByTestId("save-placement-grade-btn").textContent).toBe(
+			"Cập nhật kết quả đã chốt",
+		);
+		expect(
+			screen.getByTestId("placement-result-email-status").textContent,
+		).toBe("Học viên không có email — hãy tải phiếu PDF gửi qua Zalo.");
+
+		fireEvent.click(screen.getByTestId("export-result-pdf-btn"));
+		await waitFor(() => expect(exportPdfMock).toHaveBeenCalledWith(legacySub));
+	});
+
+	it("manages pending state, double-click guard, success toast, and error recovery on export click", async () => {
+		let resolveExport: (() => void) | undefined;
+		exportPdfMock.mockImplementationOnce(
+			() =>
+				new Promise<void>((resolve) => {
+					resolveExport = resolve;
+				}),
+		);
+		const graded = makeGradedSub({ resultEmailStatus: "sent" });
+		stubFetch((url, method) => (isGet(url, method) ? graded : undefined));
+		renderPanel();
+
+		const exportBtn = (await screen.findByTestId(
+			"export-result-pdf-btn",
+		)) as HTMLButtonElement;
+		expect(
+			screen.getByTestId("placement-result-email-status").textContent,
+		).toBe("Đã gửi email kết quả cho học viên.");
+		expect(exportBtn.disabled).toBe(false);
+		expect(exportBtn.getAttribute("aria-busy")).toBe("false");
+
+		// Click once + double-click while pending: only 1 export call
+		fireEvent.click(exportBtn);
+		fireEvent.click(exportBtn);
+
+		await waitFor(() => expect(exportPdfMock).toHaveBeenCalledTimes(1));
+		expect(exportPdfMock).toHaveBeenCalledWith(graded);
+		expect(exportBtn.disabled).toBe(true);
+		expect(exportBtn.getAttribute("aria-busy")).toBe("true");
+		expect(exportBtn.textContent).toContain("Đang tạo file PDF...");
+
+		// Resolve export -> success toast & reset button state
+		await act(async () => {
+			resolveExport?.();
+		});
+		await waitFor(() => expect(exportBtn.disabled).toBe(false));
+		expect(exportBtn.getAttribute("aria-busy")).toBe("false");
+		expect(exportBtn.textContent).toContain("Tải phiếu kết quả (PDF)");
+		expect(toastMock.success).toHaveBeenCalledWith("Đã tải phiếu kết quả PDF.");
+
+		// Reject export -> error toast & reset button state
+		exportPdfMock.mockRejectedValueOnce(new Error("pdf failure"));
+		fireEvent.click(exportBtn);
+		await waitFor(() =>
+			expect(toastMock.error).toHaveBeenCalledWith(
+				"Không thể tạo file PDF. Vui lòng thử lại.",
+			),
+		);
+		expect(exportBtn.disabled).toBe(false);
+		expect(exportBtn.getAttribute("aria-busy")).toBe("false");
+	});
+
+	it("shows dirty warning after editing graded submission and still exports saved server submission", async () => {
+		exportPdfMock.mockResolvedValue(undefined);
+		const graded = makeGradedSub();
+		stubFetch((url, method) => (isGet(url, method) ? graded : undefined));
+		renderPanel();
+
+		await screen.findByTestId("placement-result-pdf");
+		expect(screen.queryByTestId("placement-pdf-dirty-warning")).toBeNull();
+
+		// Edit teacher feedback -> dirty becomes true
+		const feedbackInput = screen.getByLabelText(
+			"Nhận xét bài kiểm tra đầu vào",
+		) as HTMLTextAreaElement;
+		fireEvent.change(feedbackInput, {
+			target: { value: "Nhận xét nháp chưa lưu" },
+		});
+
+		const warning = screen.getByTestId("placement-pdf-dirty-warning");
+		expect(warning.getAttribute("role")).toBe("note");
+		expect(warning.textContent).toContain("Bạn có thay đổi chưa lưu");
+
+		// Also edit a band score -> warning remains, export still passes saved server submission
+		setBandInput("writing-overall-input", "7.5");
+		fireEvent.click(screen.getByTestId("export-result-pdf-btn"));
+
+		await waitFor(() => expect(exportPdfMock).toHaveBeenCalledTimes(1));
+		expect(exportPdfMock).toHaveBeenCalledWith(graded);
+		expect(exportPdfMock.mock.calls[0]?.[0]?.teacherFeedback).toBe(
+			"Nhận xét đã lưu.",
+		);
+		expect(exportPdfMock.mock.calls[0]?.[0]?.writingScore).toBe(6);
+	});
+
+	it("renders placement-result-pdf and exports PDF for studentId subject", async () => {
+		exportPdfMock.mockResolvedValue(undefined);
+		const studentSub = makeGradedSub({
+			leadId: null,
+			studentId: "st-pdf-1",
+			speakingStatus: "skipped",
+			resultUrl: null,
+			resultEmailStatus: "skipped",
+		});
+		stubFetch((url, method) =>
+			url.endsWith("/api/students/st-pdf-1/placement-submission") &&
+			method === "GET"
+				? studentSub
+				: undefined,
+		);
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		render(
+			<QueryClientProvider client={client}>
+				<PlacementSubmissionPanel studentId="st-pdf-1" />
+			</QueryClientProvider>,
+		);
+
+		const pdfCard = await screen.findByTestId("placement-result-pdf");
+		expect(pdfCard.textContent).toContain("Phiếu kết quả cho học viên (PDF)");
+		expect(screen.queryByTestId("placement-result-link")).toBeNull();
+
+		fireEvent.click(screen.getByTestId("export-result-pdf-btn"));
+		await waitFor(() => expect(exportPdfMock).toHaveBeenCalledWith(studentSub));
+		expect(toastMock.success).toHaveBeenCalledWith("Đã tải phiếu kết quả PDF.");
 	});
 });
