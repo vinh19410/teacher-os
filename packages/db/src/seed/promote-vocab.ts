@@ -158,8 +158,22 @@ export interface VocabPromotePreimage {
 	words: VocabWordRow[];
 }
 
+export interface ResolvedTargetOrg {
+	orgId: string;
+	resolvedVia: "explicit" | "teacher_emails" | "lead_org_fallback";
+	sameAsLeadOrg: boolean;
+}
+
+export interface ProdOrgVocabBucket {
+	orgId: string;
+	groupCount: number;
+	deckCount: number;
+	wordCount: number;
+}
+
 export interface PromoteVocabPlan {
 	targetOrgId: string;
+	relocateFromOrgId: string | null;
 	targetGroups: VocabGroupRow[];
 	targetDecks: VocabDeckRow[];
 	targetWords: VocabWordRow[];
@@ -1113,15 +1127,120 @@ function buildChunkedUpsertStatements<T>(options: {
 	return statements;
 }
 
+/**
+ * Phân giải `organization.id` đích trên production theo đúng quy tắc của
+ * `resolveLeadTargetOrg` (`apps/server/src/lib/resolve-lead-org.ts`):
+ * 1. Nếu truyền tường minh `explicitTargetOrgId` -> dùng trực tiếp.
+ * 2. Nếu có `teacherEmails` (`TEACHER_EMAILS`) và tồn tại thành viên thuộc
+ *    `FINANCE_ROLES` (`teacher`, `owner`, `admin`, bỏ qua `user.role` là
+ *    `student`/`admin`) -> chọn org hoạt động của giáo viên theo thứ tự
+ *    `teacherEmails`, rồi `membership.created_at ASC, membership.id ASC`.
+ * 3. Fallback về `leadOrgId` (`LEAD_ORG_ID`) nếu chưa có membership khớp.
+ */
+export async function resolveTargetTeacherOrgId(
+	prodRunner: VocabPromoteSqlRunner,
+	options: {
+		explicitTargetOrgId?: string | null;
+		teacherEmails?: string | readonly string[] | null;
+		leadOrgId?: string | null;
+	},
+): Promise<ResolvedTargetOrg> {
+	const leadOrgId = options.leadOrgId?.trim() ?? "";
+	const explicit = options.explicitTargetOrgId?.trim() ?? "";
+	if (explicit) {
+		return {
+			orgId: explicit,
+			resolvedVia: "explicit",
+			sameAsLeadOrg: leadOrgId.length > 0 && explicit === leadOrgId,
+		};
+	}
+
+	const rawEmails = Array.isArray(options.teacherEmails)
+		? options.teacherEmails
+		: typeof options.teacherEmails === "string"
+			? options.teacherEmails.split(",")
+			: [];
+	const normalizedEmails = Array.from(
+		new Set(
+			rawEmails
+				.map((email) => email.trim().toLowerCase())
+				.filter((email) => email.length > 0),
+		),
+	);
+
+	if (normalizedEmails.length > 0) {
+		const placeholders = normalizedEmails.map(() => "?").join(", ");
+		const rows = await prodRunner.queryRows(
+			`SELECT m.org_id AS org_id, lower(trim(u.email)) AS email
+			   FROM membership m
+			   INNER JOIN user u ON u.id = m.user_id
+			  WHERE m.role IN ('teacher', 'owner', 'admin')
+			    AND (u.role IS NULL OR u.role NOT IN ('student', 'admin'))
+			    AND lower(trim(u.email)) IN (${placeholders})
+			  ORDER BY m.created_at ASC, m.id ASC`,
+			normalizedEmails,
+		);
+		for (const email of normalizedEmails) {
+			const match = rows.find((r) => String(r.email ?? "") === email);
+			if (match?.org_id) {
+				const orgId = String(match.org_id);
+				return {
+					orgId,
+					resolvedVia: "teacher_emails",
+					sameAsLeadOrg: leadOrgId.length > 0 && orgId === leadOrgId,
+				};
+			}
+		}
+	}
+
+	if (leadOrgId) {
+		return {
+			orgId: leadOrgId,
+			resolvedVia: "lead_org_fallback",
+			sameAsLeadOrg: true,
+		};
+	}
+
+	throw new Error(
+		"Missing target organization ID: pass --target-org-id <orgId> or set TEACHER_EMAILS / TARGET_ORG_ID / LEAD_ORG_ID.",
+	);
+}
+
+export async function auditProdOrgVocabSummary(
+	prodRunner: VocabPromoteSqlRunner,
+): Promise<ProdOrgVocabBucket[]> {
+	const rows = await prodRunner.queryRows(
+		`SELECT o.id AS org_id,
+		        (SELECT COUNT(*) FROM vocab_group g WHERE g.org_id = o.id) AS group_count,
+		        (SELECT COUNT(*) FROM vocab_deck d WHERE d.org_id = o.id) AS deck_count,
+		        (SELECT COUNT(*) FROM vocab_word w INNER JOIN vocab_deck d ON d.id = w.deck_id WHERE d.org_id = o.id) AS word_count
+		   FROM organization o
+		  ORDER BY o.created_at ASC, o.id ASC`,
+	);
+	return rows.map((r) => ({
+		orgId: String(r.org_id),
+		groupCount: Number(r.group_count ?? 0),
+		deckCount: Number(r.deck_count ?? 0),
+		wordCount: Number(r.word_count ?? 0),
+	}));
+}
+
 export async function buildPromoteVocabPlan(
 	source: SelectedStagingVocabData,
 	prodRunner: VocabPromoteSqlRunner,
-	options: { targetOrgId: string; nowMs?: number },
+	options: {
+		targetOrgId: string;
+		relocateFromOrgId?: string | null;
+		nowMs?: number;
+	},
 ): Promise<PromoteVocabPlan> {
 	const targetOrgId = options.targetOrgId.trim();
 	if (!targetOrgId) {
 		throw new Error("targetOrgId is required to build a promote plan.");
 	}
+	const rawRelocate = options.relocateFromOrgId?.trim() ?? "";
+	const relocateFromOrgId =
+		rawRelocate && rawRelocate !== targetOrgId ? rawRelocate : null;
 	const nowMs = options.nowMs ?? Date.now();
 
 	// 1. Verify target organization exists on production
@@ -1229,7 +1348,11 @@ export async function buildPromoteVocabPlan(
 
 	for (const g of targetGroups) {
 		const byId = existingGroupById.get(g.id);
-		if (byId && byId.orgId !== targetOrgId) {
+		if (
+			byId &&
+			byId.orgId !== targetOrgId &&
+			byId.orgId !== relocateFromOrgId
+		) {
 			throw new Error(
 				`Safety gate: vocab_group id "${g.id}" already exists on production under a different organization.`,
 			);
@@ -1256,7 +1379,11 @@ export async function buildPromoteVocabPlan(
 	}
 	for (const d of targetDecks) {
 		const existing = existingDeckById.get(d.id);
-		if (existing && existing.orgId !== targetOrgId) {
+		if (
+			existing &&
+			existing.orgId !== targetOrgId &&
+			existing.orgId !== relocateFromOrgId
+		) {
 			throw new Error(
 				`Safety gate: vocab_deck id "${d.id}" already exists on production under a different organization.`,
 			);
@@ -1329,7 +1456,7 @@ export async function buildPromoteVocabPlan(
 				"created_at",
 				"updated_at",
 			],
-			updateColumns: ["name", "normalized_name", "updated_at"],
+			updateColumns: ["org_id", "name", "normalized_name", "updated_at"],
 			rows: targetGroups,
 			toParams: (g) => [
 				g.id,
@@ -1357,6 +1484,7 @@ export async function buildPromoteVocabPlan(
 				"updated_at",
 			],
 			updateColumns: [
+				"org_id",
 				"group_id",
 				"title",
 				"lesson_number",
@@ -1463,8 +1591,14 @@ export async function buildPromoteVocabPlan(
 		const prev = existingGroupById.get(g.id);
 		if (prev && !isGroupContentEqual(prev, g)) {
 			rollbackStatements.push({
-				sql: "UPDATE vocab_group SET name = ?, normalized_name = ?, updated_at = ? WHERE id = ?",
-				args: [prev.name, prev.normalizedName, prev.updatedAt, prev.id],
+				sql: "UPDATE vocab_group SET org_id = ?, name = ?, normalized_name = ?, updated_at = ? WHERE id = ?",
+				args: [
+					prev.orgId,
+					prev.name,
+					prev.normalizedName,
+					prev.updatedAt,
+					prev.id,
+				],
 			});
 		}
 	}
@@ -1472,8 +1606,9 @@ export async function buildPromoteVocabPlan(
 		const prev = existingDeckById.get(d.id);
 		if (prev && !isDeckContentEqual(prev, d)) {
 			rollbackStatements.push({
-				sql: "UPDATE vocab_deck SET group_id = ?, title = ?, lesson_number = ?, topic = ?, lang = ?, source_library_deck_id = ?, source_deck_id = ?, updated_at = ? WHERE id = ?",
+				sql: "UPDATE vocab_deck SET org_id = ?, group_id = ?, title = ?, lesson_number = ?, topic = ?, lang = ?, source_library_deck_id = ?, source_deck_id = ?, updated_at = ? WHERE id = ?",
 				args: [
+					prev.orgId,
 					prev.groupId,
 					prev.title,
 					prev.lessonNumber,
@@ -1541,6 +1676,7 @@ export async function buildPromoteVocabPlan(
 
 	return {
 		targetOrgId,
+		relocateFromOrgId,
 		targetGroups,
 		targetDecks,
 		targetWords,
