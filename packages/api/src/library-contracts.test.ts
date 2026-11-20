@@ -3,10 +3,13 @@ import { LIBRARY_ANSWER_CHOICES, LIBRARY_OPTION_BANK_MAX } from "./contracts";
 import type {
 	LibraryPartInput,
 	LibraryQuestionGroup,
+	LibraryTestListPageResponse,
 } from "./library-contracts";
 import {
 	countClozeMarkers,
+	DEFAULT_LIBRARY_TEST_PAGE_SIZE,
 	isLibraryBankableType,
+	isLibraryTestPageSize,
 	LIBRARY_AUDIO_MAX_BYTES,
 	LIBRARY_AUDIO_MIME,
 	LIBRARY_CLOZE_TYPES,
@@ -15,13 +18,19 @@ import {
 	LIBRARY_OPTION_BANK_TYPES,
 	LIBRARY_READING_TYPES,
 	LIBRARY_SKILLS,
+	LIBRARY_TEST_MAX_PAGE,
+	LIBRARY_TEST_PAGE_SIZES,
 	libraryOptionBankKindFor,
 	libraryPartDtoSchema,
 	libraryPartUpsertSchema,
 	libraryQuestionGroupSchema,
 	librarySkillTypes,
 	libraryTestCreateSchema,
+	libraryTestListCountsSchema,
+	libraryTestListPageResponseSchema,
 	libraryTestUpdateSchema,
+	parseLibraryTestPageParam,
+	parseLibraryTestPageSizeParam,
 	validatePartForReady,
 	validateTestReady,
 } from "./library-contracts";
@@ -1181,5 +1190,244 @@ describe("listening mcq_many in library part contracts", () => {
 		if (!parsed.success) return;
 		expect(validatePartForReady("listening", parsed.data)).toEqual([]);
 		expect(validateTestReady("listening", [parsed.data])).toEqual([]);
+	});
+});
+
+describe("library test list pagination contracts", () => {
+	function validPageResponse(
+		overrides: Partial<LibraryTestListPageResponse> = {},
+	): LibraryTestListPageResponse {
+		return {
+			tests: [
+				{
+					id: "test-1",
+					title: "Cambridge 18 Test 1",
+					description: "Full reading test",
+					skill: "reading",
+					timeLimitSeconds: 3600,
+					collection: "Cambridge 18",
+					testGroup: "Test 1",
+					status: "ready",
+					createdAt: "2026-10-20T00:00:00.000Z",
+					updatedAt: "2026-10-21T00:00:00.000Z",
+					partCount: 3,
+					questionCount: 40,
+					hasAllAudio: true,
+				},
+			],
+			total: 1,
+			page: 1,
+			pageSize: 20,
+			totalPages: 1,
+			counts: {
+				skill: { reading: 1, listening: 0 },
+				status: { draft: 0, ready: 1 },
+			},
+			...overrides,
+		};
+	}
+
+	test("pagination constants match expected values", () => {
+		expect(LIBRARY_TEST_PAGE_SIZES).toEqual([10, 20, 50]);
+		expect(DEFAULT_LIBRARY_TEST_PAGE_SIZE).toBe(20);
+		expect(LIBRARY_TEST_MAX_PAGE).toBe(100_000);
+	});
+
+	test("isLibraryTestPageSize accepts 10, 20, 50 and rejects other values", () => {
+		for (const valid of [10, 20, 50]) {
+			expect(isLibraryTestPageSize(valid)).toBe(true);
+		}
+		for (const invalid of [
+			0,
+			15,
+			25,
+			100,
+			-10,
+			Number.NaN,
+			Number.POSITIVE_INFINITY,
+			20.5,
+		]) {
+			expect(isLibraryTestPageSize(invalid)).toBe(false);
+		}
+	});
+
+	test("parseLibraryTestPageParam parses canonical integers 1..LIBRARY_TEST_MAX_PAGE", () => {
+		expect(parseLibraryTestPageParam("1")).toBe(1);
+		expect(parseLibraryTestPageParam("42")).toBe(42);
+		expect(parseLibraryTestPageParam(String(LIBRARY_TEST_MAX_PAGE))).toBe(
+			LIBRARY_TEST_MAX_PAGE,
+		);
+
+		for (const invalid of [
+			undefined,
+			"",
+			"0",
+			"-1",
+			"1.5",
+			"01",
+			"abc",
+			" 1",
+			"1 ",
+			"+1",
+			String(LIBRARY_TEST_MAX_PAGE + 1),
+			"999999999999999999999999",
+		]) {
+			expect(parseLibraryTestPageParam(invalid)).toBeNull();
+		}
+	});
+
+	test("parseLibraryTestPageSizeParam accepts only canonical allowed page sizes", () => {
+		expect(parseLibraryTestPageSizeParam("10")).toBe(10);
+		expect(parseLibraryTestPageSizeParam("20")).toBe(20);
+		expect(parseLibraryTestPageSizeParam("50")).toBe(50);
+
+		for (const invalid of [
+			undefined,
+			"",
+			"0",
+			"15",
+			"020",
+			"010",
+			"100",
+			"-10",
+			"20.0",
+			" 20",
+			"abc",
+		]) {
+			expect(parseLibraryTestPageSizeParam(invalid)).toBeNull();
+		}
+	});
+
+	test("libraryTestListCountsSchema validates non-negative integer counts and rejects extras", () => {
+		expect(
+			libraryTestListCountsSchema.safeParse({
+				skill: { reading: 12, listening: 8 },
+				status: { draft: 5, ready: 15 },
+			}).success,
+		).toBe(true);
+
+		expect(
+			libraryTestListCountsSchema.safeParse({
+				skill: { reading: -1, listening: 0 },
+				status: { draft: 0, ready: 0 },
+			}).success,
+		).toBe(false);
+
+		expect(
+			libraryTestListCountsSchema.safeParse({
+				skill: { reading: 1, listening: 0, writing: 0 },
+				status: { draft: 0, ready: 0 },
+			}).success,
+		).toBe(false);
+
+		expect(
+			libraryTestListCountsSchema.safeParse({
+				skill: { reading: 1, listening: 0 },
+				status: { draft: 0, ready: 0, archived: 1 },
+			}).success,
+		).toBe(false);
+	});
+
+	test("libraryTestListPageResponseSchema parses valid payloads including empty page", () => {
+		const populated = validPageResponse();
+		expect(libraryTestListPageResponseSchema.parse(populated)).toEqual(
+			populated,
+		);
+
+		for (const pageSize of [10, 20, 50] as const) {
+			const empty = validPageResponse({
+				tests: [],
+				total: 0,
+				page: 1,
+				pageSize,
+				totalPages: 1,
+				counts: {
+					skill: { reading: 0, listening: 0 },
+					status: { draft: 0, ready: 0 },
+				},
+			});
+			expect(libraryTestListPageResponseSchema.safeParse(empty).success).toBe(
+				true,
+			);
+		}
+	});
+
+	test("libraryTestListPageResponseSchema rejects invalid bounds, pageSize, counts, and extra keys", () => {
+		// Invalid pageSize
+		expect(
+			libraryTestListPageResponseSchema.safeParse({
+				...validPageResponse(),
+				pageSize: 25,
+			}).success,
+		).toBe(false);
+
+		// page < 1
+		expect(
+			libraryTestListPageResponseSchema.safeParse({
+				...validPageResponse(),
+				page: 0,
+			}).success,
+		).toBe(false);
+
+		// totalPages < 1
+		expect(
+			libraryTestListPageResponseSchema.safeParse({
+				...validPageResponse(),
+				totalPages: 0,
+			}).success,
+		).toBe(false);
+
+		// Negative total
+		expect(
+			libraryTestListPageResponseSchema.safeParse({
+				...validPageResponse(),
+				total: -1,
+			}).success,
+		).toBe(false);
+
+		// Non-integer pagination values
+		expect(
+			libraryTestListPageResponseSchema.safeParse({
+				...validPageResponse(),
+				page: 1.5,
+			}).success,
+		).toBe(false);
+
+		// Missing counts
+		const { counts: _omitted, ...withoutCounts } = validPageResponse();
+		expect(
+			libraryTestListPageResponseSchema.safeParse(withoutCounts).success,
+		).toBe(false);
+
+		// Negative counts
+		expect(
+			libraryTestListPageResponseSchema.safeParse({
+				...validPageResponse(),
+				counts: {
+					skill: { reading: 0, listening: 0 },
+					status: { draft: -2, ready: 1 },
+				},
+			}).success,
+		).toBe(false);
+
+		// Extra unknown top-level key
+		expect(
+			libraryTestListPageResponseSchema.safeParse({
+				...validPageResponse(),
+				extra: true,
+			}).success,
+		).toBe(false);
+
+		// Extra unknown key inside counts
+		expect(
+			libraryTestListPageResponseSchema.safeParse({
+				...validPageResponse(),
+				counts: {
+					skill: { reading: 1, listening: 0 },
+					status: { draft: 0, ready: 1 },
+					unknown: 0,
+				},
+			}).success,
+		).toBe(false);
 	});
 });

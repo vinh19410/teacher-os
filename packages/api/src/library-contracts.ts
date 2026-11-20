@@ -766,3 +766,83 @@ export const libraryTestDetailSchema = libraryTestListItemSchema
 	.extend({ parts: z.array(libraryPartDtoSchema) })
 	.strict();
 export type LibraryTestDetail = z.infer<typeof libraryTestDetailSchema>;
+
+/** Allowed page sizes for the admin library test list. */
+export const LIBRARY_TEST_PAGE_SIZES = [10, 20, 50] as const;
+export type LibraryTestPageSize = (typeof LIBRARY_TEST_PAGE_SIZES)[number];
+
+export const DEFAULT_LIBRARY_TEST_PAGE_SIZE: LibraryTestPageSize = 20;
+
+/** Upper bound for page query parameter validation. */
+export const LIBRARY_TEST_MAX_PAGE = 100_000;
+
+export function isLibraryTestPageSize(
+	value: number,
+): value is LibraryTestPageSize {
+	return (LIBRARY_TEST_PAGE_SIZES as readonly number[]).includes(value);
+}
+
+/**
+ * Parse a `page` query parameter into a positive integer within
+ * `1..LIBRARY_TEST_MAX_PAGE`. Returns `null` when absent or malformed.
+ */
+export function parseLibraryTestPageParam(
+	raw: string | undefined,
+): number | null {
+	if (raw === undefined || !/^[1-9]\d*$/.test(raw)) {
+		return null;
+	}
+	const parsed = Number(raw);
+	if (!Number.isSafeInteger(parsed) || parsed > LIBRARY_TEST_MAX_PAGE) {
+		return null;
+	}
+	return parsed;
+}
+
+/**
+ * Parse a `pageSize` query parameter into an allowed `LibraryTestPageSize`.
+ * Rejects leading zeros and values outside `LIBRARY_TEST_PAGE_SIZES`.
+ */
+export function parseLibraryTestPageSizeParam(
+	raw: string | undefined,
+): LibraryTestPageSize | null {
+	if (raw === undefined || !/^[1-9]\d*$/.test(raw)) {
+		return null;
+	}
+	const parsed = Number(raw);
+	return isLibraryTestPageSize(parsed) ? parsed : null;
+}
+
+/** Facet counts for the admin library test list filters. */
+export const libraryTestListCountsSchema = z
+	.object({
+		skill: z
+			.object({
+				reading: z.number().int().min(0),
+				listening: z.number().int().min(0),
+			})
+			.strict(),
+		status: z
+			.object({
+				draft: z.number().int().min(0),
+				ready: z.number().int().min(0),
+			})
+			.strict(),
+	})
+	.strict();
+export type LibraryTestListCounts = z.infer<typeof libraryTestListCountsSchema>;
+
+/** Paginated response payload for the admin library test list endpoint. */
+export const libraryTestListPageResponseSchema = z
+	.object({
+		tests: z.array(libraryTestListItemSchema),
+		total: z.number().int().min(0),
+		page: z.number().int().min(1),
+		pageSize: z.union([z.literal(10), z.literal(20), z.literal(50)]),
+		totalPages: z.number().int().min(1),
+		counts: libraryTestListCountsSchema,
+	})
+	.strict();
+export type LibraryTestListPageResponse = z.infer<
+	typeof libraryTestListPageResponseSchema
+>;
