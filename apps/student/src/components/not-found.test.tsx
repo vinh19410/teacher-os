@@ -8,6 +8,7 @@ describe("student NotFoundPage (#489)", () => {
 		expect(html).toContain("Trang không tồn tại");
 		expect(html).toContain("404");
 		expect(html).toContain("Về trang chủ");
+		expect(html).toContain('href="/student"');
 		expect(html).toContain('href="/login"');
 	});
 });

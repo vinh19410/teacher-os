@@ -34,9 +34,9 @@ function RouteComponent() {
 
 	useEffect(() => {
 		if (session?.user) {
-			void navigate({ to: validateReturnUrl(returnUrl) });
+			window.location.assign(validateReturnUrl(returnUrl));
 		}
-	}, [session, returnUrl, navigate]);
+	}, [session, returnUrl]);
 
 	useEffect(() => {
 		if (!error) return;

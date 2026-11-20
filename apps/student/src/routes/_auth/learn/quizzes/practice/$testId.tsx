@@ -23,7 +23,10 @@ export const Route = createFileRoute("/_auth/learn/quizzes/practice/$testId")({
 			} catch {
 				// Storage hỏng/blocked — redirect vẫn ưu tiên.
 			}
-			throw redirect({ href: attemptSummaryHref(detail.attempt.id) });
+			throw redirect({
+				href: attemptSummaryHref(detail.attempt.id),
+				reloadDocument: true,
+			});
 		}
 		return {
 			serverAnswers:

@@ -1,5 +1,5 @@
 import { authClient } from "@/lib/auth-client";
-import { validateReturnUrl } from "@/lib/kernel-load-state";
+import { toTeacherReturnUrl, validateReturnUrl } from "@/lib/kernel-load-state";
 
 let started = false;
 
@@ -28,6 +28,6 @@ export function reauth(): void {
 	authClient.clearSessionCache?.();
 	void authClient.signOut().catch(() => undefined);
 	const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-	const returnUrl = validateReturnUrl(current);
+	const returnUrl = toTeacherReturnUrl(validateReturnUrl(current));
 	window.location.assign(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
 }

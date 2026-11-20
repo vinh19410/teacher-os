@@ -6,10 +6,11 @@ export interface PortalLocation {
 
 /**
  * Suy luận URL của cổng giáo viên (web app) dựa trên topology:
- * - Khi đang ở `student.<domain>` -> chuyển sang `app.<domain>`.
- * - Khi ở `localhost` hoặc `127.0.0.1`:
- *   - port `8003` (dev portal) -> `8001` (dev web).
- *   - port `8103` (e2e/verify portal) -> `8101` (e2e/verify web).
+ * - Khi đang ở domain hợp nhất `lms.<domain>` -> `${protocol}://${host}/teacher`.
+ * - Khi đang ở alias cũ `student.<domain>` -> `${protocol}://lms.<domain>${port}/teacher`.
+ * - Khi ở `localhost` hoặc loopback (`127.0.0.1`, `[::1]`, `::1`):
+ *   - port `8001` (unified dev) hoặc `8003` (dev student) -> `:8001/teacher`.
+ *   - port `8101` (unified e2e) hoặc `8103` (e2e student) -> `:8101/teacher`.
  * - Trả về `undefined` với các host/port không nhận diện được (ví dụ deploy preview workers.dev, localhost port lạ)
  *   để tránh sinh link hỏng.
  */
@@ -34,12 +35,17 @@ export function getTeacherPortalUrl(
 	const protocol = current.protocol
 		? current.protocol.replace(/:$/, "")
 		: "http";
+	const portSuffix = current.port ? `:${current.port}` : "";
 
-	// student.<domain> -> app.<domain>
+	// Domain hợp nhất lms.<domain> -> cùng origin + /teacher
+	if (hostname.startsWith("lms.")) {
+		return `${protocol}://${hostname}${portSuffix}/teacher`;
+	}
+
+	// Alias cũ student.<domain> -> lms.<domain>/teacher
 	if (hostname.startsWith("student.")) {
-		const appHost = hostname.replace(/^student\./, "app.");
-		const portSuffix = current.port ? `:${current.port}` : "";
-		return `${protocol}://${appHost}${portSuffix}`;
+		const lmsHost = hostname.replace(/^student\./, "lms.");
+		return `${protocol}://${lmsHost}${portSuffix}/teacher`;
 	}
 
 	// Localhost hoặc loopback
@@ -50,11 +56,11 @@ export function getTeacherPortalUrl(
 		hostname === "::1"
 	) {
 		const port = current.port ?? "";
-		if (port === "8003") {
-			return `${protocol}://${hostname}:8001`;
+		if (port === "8001" || port === "8003") {
+			return `${protocol}://${hostname}:8001/teacher`;
 		}
-		if (port === "8103") {
-			return `${protocol}://${hostname}:8101`;
+		if (port === "8101" || port === "8103") {
+			return `${protocol}://${hostname}:8101/teacher`;
 		}
 		return undefined;
 	}

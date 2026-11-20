@@ -6,7 +6,13 @@ import type {
 	NavGroup,
 	ShellLinkProps,
 } from "@teacher-os/ui/components/app-shell/nav-group";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import { LayoutDashboard, School } from "lucide-react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createKernelQueryClient } from "@/lib/query-client";
@@ -28,8 +34,10 @@ vi.mock("@tanstack/react-router", () => ({
 		}),
 }));
 
+const mockSignOut = vi.hoisted(() => vi.fn());
+
 vi.mock("@/lib/auth-client", () => ({
-	authClient: { signOut: vi.fn() },
+	authClient: { signOut: mockSignOut },
 	getServerUrl: (base?: string) => base ?? "http://localhost:8000",
 }));
 
@@ -38,6 +46,7 @@ import { AppShell } from "./app-shell";
 afterEach(() => {
 	cleanup();
 	vi.unstubAllGlobals();
+	mockSignOut.mockReset();
 });
 
 /* ───────── Shell dùng chung (packages/ui) — nav, drawer, focus ───────── */
@@ -235,5 +244,29 @@ describe("Web AppShell v2", () => {
 		// Nhãn app giữ nguyên (accessible name e2e — spec syllabus/tuition).
 		expect(screen.getByRole("link", { name: "Syllabus" })).toBeTruthy();
 		expect(screen.getByRole("link", { name: "Doanh thu" })).toBeTruthy();
+	});
+
+	it("signs out to root /login via window.location.assign on success and fallback", async () => {
+		const assign = vi.fn();
+		vi.stubGlobal("location", { ...window.location, assign });
+		mockSignOut.mockImplementationOnce(
+			({ fetchOptions }: { fetchOptions?: { onSuccess?: () => void } }) => {
+				fetchOptions?.onSuccess?.();
+				return Promise.resolve({ data: { success: true } });
+			},
+		);
+		renderWebShell("/_auth/dashboard", "/teacher/dashboard");
+		const signOutBtn = await screen.findByRole("button", { name: "Đăng xuất" });
+		fireEvent.click(signOutBtn);
+		await waitFor(() => expect(assign).toHaveBeenCalledTimes(1));
+		expect(assign).toHaveBeenCalledWith("/login");
+		expect(routerState.navigate).not.toHaveBeenCalled();
+
+		// Fallback when signOut rejects without invoking onSuccess.
+		assign.mockClear();
+		mockSignOut.mockRejectedValueOnce(new Error("network"));
+		fireEvent.click(signOutBtn);
+		await waitFor(() => expect(assign).toHaveBeenCalledTimes(1));
+		expect(assign).toHaveBeenCalledWith("/login");
 	});
 });

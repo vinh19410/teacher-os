@@ -75,7 +75,7 @@ function AttemptDetailPage() {
 	// Phòng hờ 409 sau refetch — không render partial (RT#6).
 	useEffect(() => {
 		if (isHttpError(attemptQuery.error) && attemptQuery.error.status === 409) {
-			window.location.assign("/");
+			window.location.assign("/student");
 		}
 	}, [attemptQuery.error]);
 

@@ -57,7 +57,7 @@ function ProfileRoute() {
 	// must exist; a missing session means the guard chain is broken. Kept below
 	// the hooks so hook order can never depend on session state.
 	if (!session?.data?.user) {
-		throw redirect({ to: "/login" });
+		throw redirect({ href: "/login", reloadDocument: true });
 	}
 	const user = session.data.user;
 

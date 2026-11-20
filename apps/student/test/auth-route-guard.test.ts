@@ -30,7 +30,7 @@ vi.mock("@/lib/query-client", () => ({
 	syncStudentSessionUser: mocks.syncStudentSessionUser,
 }));
 
-import { Route as AuthRoute } from "@/routes/_auth/route";
+import { Route as AuthRoute, toStudentReturnUrl } from "@/routes/_auth/route";
 
 type AuthRouteOptions = {
 	beforeLoad: (args: { location: { href: string } }) => Promise<unknown>;
@@ -38,12 +38,38 @@ type AuthRouteOptions = {
 
 const beforeLoad = (AuthRoute as unknown as AuthRouteOptions).beforeLoad;
 
+describe("toStudentReturnUrl", () => {
+	it("ensures student returnUrl starts with /student without double prefixing", () => {
+		expect(toStudentReturnUrl("/")).toBe("/student");
+		expect(toStudentReturnUrl("/?tab=1")).toBe("/student?tab=1");
+		expect(toStudentReturnUrl("/#top")).toBe("/student#top");
+		expect(toStudentReturnUrl("/classes")).toBe("/student/classes");
+		expect(toStudentReturnUrl("/classes?tab=active")).toBe(
+			"/student/classes?tab=active",
+		);
+		expect(toStudentReturnUrl("/student")).toBe("/student");
+		expect(toStudentReturnUrl("/student/classes?x=1")).toBe(
+			"/student/classes?x=1",
+		);
+		expect(toStudentReturnUrl("/student-notes")).toBe("/student/student-notes");
+	});
+
+	it("falls back to /student on open-redirect or traversal payloads", () => {
+		expect(toStudentReturnUrl("")).toBe("/student");
+		expect(toStudentReturnUrl("//evil.com/phish")).toBe("/student");
+		expect(toStudentReturnUrl("/\\evil.com/phish")).toBe("/student");
+		expect(toStudentReturnUrl("https://evil.com/student")).toBe("/student");
+		expect(toStudentReturnUrl("/../teacher/classes")).toBe("/student");
+		expect(toStudentReturnUrl("/student/../admin")).toBe("/student");
+	});
+});
+
 describe("_auth route beforeLoad role guard", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
 
-	it("redirects to /login without signing out when session data is null", async () => {
+	it("redirects to root /login with /student returnUrl without signing out when session data is null", async () => {
 		mocks.getCachedSession.mockResolvedValue({ data: null });
 
 		await expect(
@@ -51,8 +77,8 @@ describe("_auth route beforeLoad role guard", () => {
 		).rejects.toEqual({
 			__redirect: true,
 			options: {
-				to: "/login",
-				search: { returnUrl: "/classes?tab=active" },
+				href: `/login?returnUrl=${encodeURIComponent("/student/classes?tab=active")}`,
+				reloadDocument: true,
 			},
 		});
 
@@ -61,7 +87,47 @@ describe("_auth route beforeLoad role guard", () => {
 		expect(mocks.signOut).not.toHaveBeenCalled();
 	});
 
-	it("redirects teacher session to /login without calling signOut", async () => {
+	it("treats session fetch error as unauthenticated and redirects to root /login", async () => {
+		mocks.getCachedSession.mockRejectedValue(new Error("network down"));
+
+		await expect(
+			beforeLoad({ location: { href: "/classes?tab=active" } }),
+		).rejects.toEqual({
+			__redirect: true,
+			options: {
+				href: `/login?returnUrl=${encodeURIComponent("/student/classes?tab=active")}`,
+				reloadDocument: true,
+			},
+		});
+
+		expect(mocks.syncStudentSessionUser).toHaveBeenCalledWith(null);
+		expect(mocks.clearSessionCache).toHaveBeenCalledTimes(1);
+		expect(mocks.signOut).not.toHaveBeenCalled();
+	});
+
+	it("redirects unauthenticated root / to /login?returnUrl=%2Fstudent and avoids double /student prefix", async () => {
+		mocks.getCachedSession.mockResolvedValue({ data: null });
+
+		await expect(beforeLoad({ location: { href: "/" } })).rejects.toEqual({
+			__redirect: true,
+			options: {
+				href: `/login?returnUrl=${encodeURIComponent("/student")}`,
+				reloadDocument: true,
+			},
+		});
+
+		await expect(
+			beforeLoad({ location: { href: "/student/classes?x=1" } }),
+		).rejects.toEqual({
+			__redirect: true,
+			options: {
+				href: `/login?returnUrl=${encodeURIComponent("/student/classes?x=1")}`,
+				reloadDocument: true,
+			},
+		});
+	});
+
+	it("auto-redirects teacher session to /teacher without calling signOut", async () => {
 		mocks.getCachedSession.mockResolvedValue({
 			data: {
 				user: { id: "u-teacher", email: "teacher@test.local", role: "teacher" },
@@ -74,8 +140,8 @@ describe("_auth route beforeLoad role guard", () => {
 		).rejects.toEqual({
 			__redirect: true,
 			options: {
-				to: "/login",
-				search: { returnUrl: "/assignments" },
+				href: "/teacher",
+				reloadDocument: true,
 			},
 		});
 
@@ -84,7 +150,7 @@ describe("_auth route beforeLoad role guard", () => {
 		expect(mocks.signOut).not.toHaveBeenCalled();
 	});
 
-	it("redirects admin session to /login without calling signOut", async () => {
+	it("auto-redirects admin session to /admin without calling signOut", async () => {
 		mocks.getCachedSession.mockResolvedValue({
 			data: {
 				user: { id: "u-admin", email: "admin@test.local", role: "admin" },
@@ -97,8 +163,8 @@ describe("_auth route beforeLoad role guard", () => {
 		).rejects.toEqual({
 			__redirect: true,
 			options: {
-				to: "/login",
-				search: { returnUrl: "/schedule" },
+				href: "/admin",
+				reloadDocument: true,
 			},
 		});
 
@@ -118,8 +184,8 @@ describe("_auth route beforeLoad role guard", () => {
 		await expect(beforeLoad({ location: { href: "/" } })).rejects.toEqual({
 			__redirect: true,
 			options: {
-				to: "/login",
-				search: { returnUrl: "/" },
+				href: "/login",
+				reloadDocument: true,
 			},
 		});
 

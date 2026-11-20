@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/react-router";
 import { CircleAlert, Loader2, MailCheck } from "lucide-react";
 import { useState } from "react";
 
@@ -78,7 +77,7 @@ export default function VerifyEmailView({
 				</p>
 				<div className="mt-6 flex justify-center">
 					<Button
-						onClick={() => window.location.assign("/")}
+						onClick={() => window.location.assign("/teacher")}
 						className="w-full"
 					>
 						Go to workspace
@@ -129,7 +128,7 @@ export default function VerifyEmailView({
 				)
 			) : !isPending && !canResend ? (
 				<p className="mt-6">
-					<Link to="/login">Back to sign in</Link>
+					<a href="/login">Back to sign in</a>
 				</p>
 			) : null}
 		</div>

@@ -12,10 +12,15 @@ vi.mock("@/lib/auth-client", () => ({
 
 import { reauth } from "@/lib/reauth";
 
-test("reauth() is single-flight and encodes the current location as returnUrl", async () => {
+test("reauth() is single-flight and preserves the /teacher returnUrl cleanly", async () => {
 	const assign = vi.fn();
 	vi.stubGlobal("window", {
-		location: { assign, pathname: "/x", search: "", hash: "" },
+		location: {
+			assign,
+			pathname: "/teacher/grading",
+			search: "?tab=pending",
+			hash: "#top",
+		},
 	});
 	try {
 		reauth();
@@ -23,7 +28,9 @@ test("reauth() is single-flight and encodes the current location as returnUrl", 
 		await Promise.resolve();
 		expect(signOutMock).toHaveBeenCalledTimes(1);
 		expect(assign).toHaveBeenCalledTimes(1);
-		expect(assign).toHaveBeenCalledWith("/login?returnUrl=%2Fx");
+		expect(assign).toHaveBeenCalledWith(
+			"/login?returnUrl=%2Fteacher%2Fgrading%3Ftab%3Dpending%23top",
+		);
 	} finally {
 		vi.unstubAllGlobals();
 	}

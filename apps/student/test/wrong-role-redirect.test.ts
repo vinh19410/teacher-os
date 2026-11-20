@@ -22,6 +22,7 @@ import {
 	createStudentQueryClient,
 	HttpError,
 	isTeacherOnStudentPortalError,
+	reauth,
 	redirectToLoginForWrongRole,
 	resetRedirectGuardsForTests,
 	resetStudentSessionUserForTests,
@@ -53,7 +54,7 @@ describe("wrong-role 403 ACCOUNT_TEACHER_ROLE redirect handling", () => {
 		resetRedirectGuardsForTests();
 		studentQueryClient.clear();
 		vi.stubGlobal("location", {
-			pathname: "/classes/cls-1",
+			pathname: "/student/classes/cls-1",
 			search: "?tab=lessons",
 			hash: "#top",
 			assign: assignSpy,
@@ -93,7 +94,7 @@ describe("wrong-role 403 ACCOUNT_TEACHER_ROLE redirect handling", () => {
 		expect(isTeacherOnStudentPortalError(new Error("boom"))).toBe(false);
 	});
 
-	it("redirects to /login on QueryCache 403 ACCOUNT_TEACHER_ROLE, clears local state, and does not signOut", async () => {
+	it("redirects to root dispatcher / on QueryCache 403 ACCOUNT_TEACHER_ROLE, clears local state, and does not signOut", async () => {
 		const client = createStudentQueryClient();
 		syncStudentSessionUser("u-prev", client);
 		setActiveStudentOrgId("org-1");
@@ -111,9 +112,7 @@ describe("wrong-role 403 ACCOUNT_TEACHER_ROLE redirect handling", () => {
 		).rejects.toBeInstanceOf(HttpError);
 
 		expect(assignSpy).toHaveBeenCalledTimes(1);
-		expect(assignSpy).toHaveBeenCalledWith(
-			`/login?returnUrl=${encodeURIComponent("/classes/cls-1?tab=lessons#top")}`,
-		);
+		expect(assignSpy).toHaveBeenCalledWith("/");
 		expect(getActiveStudentOrgId()).toBeNull();
 		expect(localStorage.getItem(ACTIVE_STUDENT_USER_KEY)).toBeNull();
 		expect(client.getQueryData(["student", "overview"])).toBeUndefined();
@@ -121,7 +120,7 @@ describe("wrong-role 403 ACCOUNT_TEACHER_ROLE redirect handling", () => {
 		expect(authMocks.signOut).not.toHaveBeenCalled();
 	});
 
-	it("redirects to /login on MutationCache 403 ACCOUNT_TEACHER_ROLE without calling signOut", async () => {
+	it("redirects to root dispatcher / on MutationCache 403 ACCOUNT_TEACHER_ROLE without calling signOut", async () => {
 		syncActiveStudentUser("u-prev");
 		setActiveStudentOrgId("org-1");
 
@@ -137,9 +136,7 @@ describe("wrong-role 403 ACCOUNT_TEACHER_ROLE redirect handling", () => {
 		await expect(mutation.execute(undefined)).rejects.toBeInstanceOf(HttpError);
 
 		expect(assignSpy).toHaveBeenCalledTimes(1);
-		expect(assignSpy).toHaveBeenCalledWith(
-			`/login?returnUrl=${encodeURIComponent("/classes/cls-1?tab=lessons#top")}`,
-		);
+		expect(assignSpy).toHaveBeenCalledWith("/");
 		expect(getActiveStudentOrgId()).toBeNull();
 		expect(localStorage.getItem(ACTIVE_STUDENT_USER_KEY)).toBeNull();
 		expect(authMocks.clearSessionCache).toHaveBeenCalledTimes(1);
@@ -216,24 +213,52 @@ describe("wrong-role 403 ACCOUNT_TEACHER_ROLE redirect handling", () => {
 		expect(authMocks.signOut).not.toHaveBeenCalled();
 	});
 
-	it("clears caches without reloading when already on /login", () => {
-		const client = createStudentQueryClient();
-		client.setQueryData(["student", "me"], { stale: true });
-		setActiveStudentOrgId("org-1");
+	it("clears caches without reloading when already on / or /login", () => {
+		for (const pathname of ["/", "/login"]) {
+			resetRedirectGuardsForTests();
+			assignSpy.mockClear();
+			authMocks.clearSessionCache.mockClear();
+
+			const client = createStudentQueryClient();
+			client.setQueryData(["student", "me"], { stale: true });
+			setActiveStudentOrgId("org-1");
+			vi.stubGlobal("location", {
+				pathname,
+				search: "",
+				hash: "",
+				assign: assignSpy,
+			});
+
+			redirectToLoginForWrongRole(client);
+
+			expect(assignSpy).not.toHaveBeenCalled();
+			expect(getActiveStudentOrgId()).toBeNull();
+			expect(client.getQueryData(["student", "me"])).toBeUndefined();
+			expect(authMocks.clearSessionCache).toHaveBeenCalledTimes(1);
+			expect(authMocks.signOut).not.toHaveBeenCalled();
+		}
+	});
+
+	it("reauth() preserves /student/... returnUrl and defaults non-student paths to /student", () => {
+		reauth();
+		expect(assignSpy).toHaveBeenCalledWith(
+			`/login?returnUrl=${encodeURIComponent("/student/classes/cls-1?tab=lessons#top")}`,
+		);
+		expect(authMocks.signOut).toHaveBeenCalledTimes(1);
+
+		resetRedirectGuardsForTests();
+		assignSpy.mockClear();
 		vi.stubGlobal("location", {
-			pathname: "/login",
-			search: "?returnUrl=%2Fclasses",
+			pathname: "/",
+			search: "",
 			hash: "",
 			assign: assignSpy,
 		});
 
-		redirectToLoginForWrongRole(client);
-
-		expect(assignSpy).not.toHaveBeenCalled();
-		expect(getActiveStudentOrgId()).toBeNull();
-		expect(client.getQueryData(["student", "me"])).toBeUndefined();
-		expect(authMocks.clearSessionCache).toHaveBeenCalledTimes(1);
-		expect(authMocks.signOut).not.toHaveBeenCalled();
+		reauth();
+		expect(assignSpy).toHaveBeenCalledWith(
+			`/login?returnUrl=${encodeURIComponent("/student")}`,
+		);
 	});
 
 	it("redirects to /login from imperative repo fetch and XHR calls on 403 ACCOUNT_TEACHER_ROLE without signOut", async () => {

@@ -2,7 +2,10 @@ import { NotFoundPage as SharedNotFoundPage } from "@teacher-os/ui/components/no
 
 export function NotFoundPage() {
 	return (
-		<SharedNotFoundPage homeHref="/dashboard" homeLabel="Về bảng điều khiển" />
+		<SharedNotFoundPage
+			homeHref="/teacher/dashboard"
+			homeLabel="Về bảng điều khiển"
+		/>
 	);
 }
 

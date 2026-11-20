@@ -163,7 +163,7 @@ describe("Google link card", () => {
 			await screen.findByRole("button", { name: "Kết nối Google" }),
 		);
 		await waitFor(() => expect(auth.linkSocial).toHaveBeenCalledTimes(1));
-		const profileUrl = `${window.location.origin}/profile`;
+		const profileUrl = `${window.location.origin}/teacher/profile`;
 		expect(auth.linkSocial).toHaveBeenCalledWith({
 			provider: "google",
 			callbackURL: profileUrl,

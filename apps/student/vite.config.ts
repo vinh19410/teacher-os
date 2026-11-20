@@ -13,6 +13,7 @@ const rootPkg = JSON.parse(
 ) as { version?: string };
 
 export default defineConfig({
+	base: "/student/",
 	define: {
 		__APP_VERSION__: JSON.stringify(rootPkg.version ?? "0.0.0"),
 	},

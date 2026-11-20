@@ -8,6 +8,7 @@ import { routeTree } from "./routeTree.gen";
 
 const router = createRouter({
 	routeTree,
+	basepath: "/student",
 	defaultPreload: "intent",
 	defaultPendingMs: 200,
 	defaultPendingComponent: () => <Loader />,
