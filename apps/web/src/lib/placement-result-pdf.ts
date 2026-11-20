@@ -366,7 +366,8 @@ function buildAnnotatedTextBox(
 			runs.push({ text: seg.text, color: COLOR_INK });
 			continue;
 		}
-		const palette = ERROR_CATEGORY_PALETTE[seg.category];
+		const palette =
+			ERROR_CATEGORY_PALETTE[seg.category] ?? ERROR_CATEGORY_PALETTE.grammar;
 		runs.push(
 			{
 				text: seg.text,
@@ -401,7 +402,8 @@ function buildAnnotatedTextBox(
 }
 
 function buildErrorCard(error: PlacementPdfNumberedError): Content {
-	const palette = ERROR_CATEGORY_PALETTE[error.category];
+	const palette =
+		ERROR_CATEGORY_PALETTE[error.category] ?? ERROR_CATEGORY_PALETTE.grammar;
 	const fixRuns: ContentText[] = [
 		{
 			text: error.quote,
@@ -449,15 +451,26 @@ function buildErrorCard(error: PlacementPdfNumberedError): Content {
 		},
 	];
 
-	if (error.explanation.trim()) {
+	const compactExplanation = error.explanation
+		.trim()
+		.replace(/\n{3,}/g, "\n\n");
+	if (compactExplanation) {
 		cardStack.push({
-			text: error.explanation,
+			text: compactExplanation,
 			fontSize: 9,
 			color: COLOR_INK_SECONDARY,
 			margin: [0, 3, 0, 0],
 			lineHeight: 1.4,
 		});
 	}
+
+	const totalLineBreaks =
+		(error.quote.match(/\n/g)?.length ?? 0) +
+		(error.correction.match(/\n/g)?.length ?? 0) +
+		(compactExplanation.match(/\n/g)?.length ?? 0);
+	const totalChars =
+		error.quote.length + error.correction.length + compactExplanation.length;
+	const keepTogether = totalLineBreaks <= 20 && totalChars <= 900;
 
 	const cardLayout: TableLayout = {
 		hLineWidth: () => 0.6,
@@ -472,9 +485,9 @@ function buildErrorCard(error: PlacementPdfNumberedError): Content {
 
 	return {
 		margin: [0, 0, 0, 6],
-		unbreakable: true,
+		...(keepTogether ? { unbreakable: true } : {}),
 		table: {
-			dontBreakRows: true,
+			dontBreakRows: keepTogether,
 			widths: ["*"],
 			body: [[{ stack: cardStack, fillColor: COLOR_WHITE }]],
 		},
@@ -548,10 +561,11 @@ export function buildPlacementResultDocDefinition(
 			{
 				table: {
 					dontBreakRows: true,
-					widths: ["*", "auto", "auto"],
+					widths: ["*", "*"],
 					body: [
 						[
 							{
+								colSpan: 2,
 								text: [
 									{ text: "Học viên: ", color: COLOR_MUTED, fontSize: 9.5 },
 									{
@@ -563,6 +577,9 @@ export function buildPlacementResultDocDefinition(
 								],
 								fillColor: COLOR_SURFACE,
 							},
+							{},
+						],
+						[
 							{
 								text: [
 									{ text: "Ngày làm bài: ", color: COLOR_MUTED, fontSize: 9.5 },
@@ -908,7 +925,15 @@ export async function exportPlacementResultPdf(
 	anchor.href = url;
 	anchor.download = filename;
 	anchor.rel = "noopener";
-	anchor.click();
-	// Revoke sau tick tiếp theo — revoke đồng bộ ngay sau click có thể hủy download trên Safari/Firefox.
-	setTimeout(() => URL.revokeObjectURL(url), 0);
+	if (anchor.style) {
+		anchor.style.display = "none";
+	}
+	document.body?.appendChild?.(anchor);
+	try {
+		anchor.click();
+	} finally {
+		anchor.remove?.();
+		// Trì hoãn thu hồi Object URL để trình duyệt (Safari/Firefox) kịp bắt đầu tải file PDF.
+		setTimeout(() => URL.revokeObjectURL(url), 1_000);
+	}
 }

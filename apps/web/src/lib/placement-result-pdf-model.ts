@@ -40,7 +40,19 @@ const CATEGORY_LABELS: Record<PlacementErrorCategory, string> =
 const CIRCLED_NUMBERS = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳";
 const CIRCLED_NUMBER_RE = /[①-⑳]/g;
 const EXTENDED_PICTOGRAPHIC_RE = /\p{Extended_Pictographic}/gu;
-const EMOJI_MODIFIER_RE = /[\u200D\uFE0E\uFE0F]/g;
+const EMOJI_AND_INVISIBLE_RE =
+	/(?:[\u{1F1E6}-\u{1F1FF}\u{1F3FB}-\u{1F3FF}\u200B-\u200F\uFEFF]|\u20E3|\uFE0E|\uFE0F)/gu;
+
+function stripNonPrintableControlChars(value: string): string {
+	let out = "";
+	for (let i = 0; i < value.length; i++) {
+		const code = value.charCodeAt(i);
+		if (code === 9 || code === 10 || (code >= 32 && code !== 127)) {
+			out += value[i];
+		}
+	}
+	return out;
+}
 
 export interface PlacementPdfRubricCriterion {
 	key: string;
@@ -129,11 +141,18 @@ export interface PlacementResultPdfModel {
  * đọc được, giữ nguyên toàn bộ tiếng Việt có dấu, `•`, `—`, `–`, `…`.
  */
 export function sanitizePdfText(raw: string): string {
-	return String(raw ?? "")
+	const cleaned = String(raw ?? "")
+		.normalize("NFC")
 		.replace(/\r\n?/g, "\n")
+		.replace(/↔/g, "<->")
 		.replace(/→/g, "->")
 		.replace(/←/g, "<-")
 		.replace(/⇒/g, "=>")
+		.replace(/↑/g, "^")
+		.replace(/↓/g, "v")
+		.replace(/[●▪]/g, "•")
+		.replace(/[★☆]/g, "*")
+		.replace(/☐/g, "[ ]")
 		.replace(/[✓✔]/g, "[OK]")
 		.replace(/[✗✘]/g, "[X]")
 		.replace(CIRCLED_NUMBER_RE, (ch) => {
@@ -141,7 +160,8 @@ export function sanitizePdfText(raw: string): string {
 			return idx >= 0 ? `[${idx + 1}]` : "";
 		})
 		.replace(EXTENDED_PICTOGRAPHIC_RE, "")
-		.replace(EMOJI_MODIFIER_RE, "");
+		.replace(EMOJI_AND_INVISIBLE_RE, "");
+	return stripNonPrintableControlChars(cleaned);
 }
 
 /**
@@ -425,6 +445,18 @@ function resolveBandAdvice(submission: PlacementSubmissionDetail): string {
 	);
 }
 
+function resolveBandCourseLabel(submission: PlacementSubmissionDetail): string {
+	const bands = Array.isArray(submission.snapshot?.bands)
+		? submission.snapshot.bands
+		: [];
+	const matched = submission.finalBandLevel
+		? bands.find((b) => b.cefr === submission.finalBandLevel)
+		: submission.finalCourse
+			? bands.find((b) => b.course === submission.finalCourse)
+			: undefined;
+	return matched?.displayCourse?.trim() || matched?.courseLabel?.trim() || "";
+}
+
 /**
  * Dựng dữ liệu phiếu kết quả PDF từ `PlacementSubmissionDetail`.
  * Không đưa SĐT, email, nháp AI hay bảng đáp án trắc nghiệm vào phiếu.
@@ -438,6 +470,7 @@ export function buildPlacementResultPdfModel(
 	const recommendedCourse =
 		sanitizePdfText(
 			submission.finalDisplayCourse?.trim() ||
+				resolveBandCourseLabel(submission) ||
 				submission.finalCourse?.trim() ||
 				"",
 		).trim() || "—";

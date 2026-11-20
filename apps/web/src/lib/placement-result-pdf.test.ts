@@ -294,6 +294,11 @@ describe("sanitizePdfText & formatPlacementPdfDate", () => {
 				"Điểm B1+ • Cô Đỗ Thục Mỹ — sửa ① → ② ✓ ✗ 🎓 0929.060.994",
 			),
 		).toBe("Điểm B1+ • Cô Đỗ Thục Mỹ — sửa [1] -> [2] [OK] [X]  0929.060.994");
+		// Emoji flags, skin-tone modifiers, keycap marks, bullet/star/arrow/checkbox, control chars & NFD Vietnamese
+		const nfdVietnamese = "Tie\u0302\u0301ng Vie\u0323\u0302t";
+		expect(
+			sanitizePdfText(`${nfdVietnamese} 🇻🇳 👍🏽 1️⃣ ● ★ ☆ ↑ ↓ ↔ ☐\u0007\u200B`),
+		).toBe("Tiếng Việt   1 • * * ^ v <-> [ ]");
 	});
 
 	it("formats ISO dates in Vietnam timezone and falls back to em dash", () => {
@@ -404,6 +409,17 @@ describe("buildPlacementResultPdfModel", () => {
 			"Pronunciation:3/5",
 			"Task Response:5/5",
 		]);
+
+		// Legacy fallback: when finalDisplayCourse is null, resolves readable label from snapshot.bands instead of raw slug
+		const legacyCourseModel = buildPlacementResultPdfModel(
+			makeIeltsSubmission({
+				finalDisplayCourse: null,
+				finalCourse: "raw-course-slug",
+			}),
+		);
+		expect(legacyCourseModel.overview.recommendedCourse).toBe(
+			"IELTS Foundation 5.5+",
+		);
 	});
 
 	it("handles empty writingText, skipped speaking, missing optional fields, and null errors", () => {
@@ -691,14 +707,19 @@ describe("generatePlacementResultPdfBytes (real PDF binary + pdfjs-dist extracti
 			.spyOn(URL, "revokeObjectURL")
 			.mockImplementation(() => {});
 
+		const appendChildSpy = vi.fn();
+		const removeSpy = vi.fn();
 		const fakeAnchor = {
 			href: "",
 			download: "",
 			rel: "",
+			style: { display: "" },
 			click: vi.fn(),
+			remove: removeSpy,
 		};
 		vi.stubGlobal("document", {
 			createElement: vi.fn(() => fakeAnchor),
+			body: { appendChild: appendChildSpy },
 		});
 
 		const submission = makeIeltsSubmission({ studentName: "Đỗ Thục Mỹ" });
@@ -720,10 +741,12 @@ describe("generatePlacementResultPdfBytes (real PDF binary + pdfjs-dist extracti
 		expect(createdBlobs[0]?.size).toBeGreaterThan(5_000);
 		expect(fakeAnchor.href).toBe("blob:placement-pdf-test");
 		expect(fakeAnchor.download).toBe("phieu-ket-qua-do-thuc-my.pdf");
+		expect(appendChildSpy).toHaveBeenCalledWith(fakeAnchor);
 		expect(fakeAnchor.click).toHaveBeenCalledTimes(1);
+		expect(removeSpy).toHaveBeenCalledTimes(1);
 
-		// Wait for deferred revokeObjectURL
-		await new Promise((resolve) => setTimeout(resolve, 10));
+		// Wait for deferred revokeObjectURL (1s grace window for Safari/Firefox)
+		await new Promise((resolve) => setTimeout(resolve, 1_100));
 		expect(revokeObjectURLSpy).toHaveBeenCalledWith("blob:placement-pdf-test");
 
 		// Third export reuses cached font VFS (0 additional fetches!)
