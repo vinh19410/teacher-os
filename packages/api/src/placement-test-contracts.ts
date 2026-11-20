@@ -2442,6 +2442,11 @@ export const placementTeacherGradeSchema = z
 		writingScore: placementIeltsBandSchema,
 		speakingRubric: placementSpeakingRubricSchema.nullable().default(null),
 		speakingScore: placementIeltsBandSchema.nullable().default(null),
+		courseId: z
+			.string()
+			.trim()
+			.min(1, "Vui lòng chọn khóa học đề xuất.")
+			.max(128),
 		teacherFeedback: z.string().max(PLACEMENT_TEACHER_FEEDBACK_MAX).default(""),
 		/** #730: lỗi giáo viên chốt cho bài viết / transcript (đã sửa/xoá/thêm). */
 		writingErrors: placementErrorListSchema.default([]),
@@ -2489,6 +2494,7 @@ export interface PlacementSubmissionDetail {
 	speakingScore: number | null;
 	teacherFeedback: string;
 	finalBandLevel: string | null;
+	finalCourseId: string | null;
 	finalCourse: string | null;
 	finalDisplayCourse: string | null;
 	finalScorePct: number | null;

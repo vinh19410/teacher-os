@@ -26,6 +26,10 @@ import { and, asc, desc, eq, inArray, isNull, notLike, sql } from "drizzle-orm";
 import type { Context } from "hono";
 import type { Db, KernelCtx } from "../app";
 import { parseByteRange } from "./byte-range";
+import {
+	isSqliteForeignKeyError,
+	resolveCourseForGrading,
+} from "./course-catalog";
 import { mediaObjectResponse } from "./media-response";
 import type { MediaStore } from "./media-store";
 import type { PlacementAiGrader } from "./placement-ai/grader";
@@ -298,15 +302,18 @@ export function buildPlacementSubmissionDetail(
 			? "legacy"
 			: "ielts";
 
+	const activeCourseDisplay = sub.finalDisplayCourse ?? sub.finalCourse;
 	const activeBand =
-		sub.finalBandLevel && sub.finalCourse
+		sub.finalBandLevel && activeCourseDisplay
 			? {
 					min: objective.provisionalBand.min,
 					max: objective.provisionalBand.max,
 					cefr: sub.finalBandLevel,
-					course: sub.finalCourse as typeof objective.provisionalBand.course,
-					courseLabel: sub.finalDisplayCourse ?? sub.finalCourse,
-					displayCourse: sub.finalDisplayCourse ?? sub.finalCourse,
+					course: (sub.finalCourse ??
+						objective.provisionalBand
+							.course) as typeof objective.provisionalBand.course,
+					courseLabel: activeCourseDisplay,
+					displayCourse: activeCourseDisplay,
 					advice:
 						snapshot.bands.find((b) => b.cefr === sub.finalBandLevel)?.advice ??
 						objective.provisionalBand.advice,
@@ -360,6 +367,7 @@ export function buildPlacementSubmissionDetail(
 		speakingScore,
 		teacherFeedback: sub.teacherFeedback,
 		finalBandLevel: sub.finalBandLevel,
+		finalCourseId: sub.finalCourseId ?? null,
 		finalCourse: sub.finalCourse,
 		finalDisplayCourse: sub.finalDisplayCourse,
 		finalScorePct: sub.finalScorePct,
@@ -555,6 +563,23 @@ export async function gradePlacementSubmissionResponse(
 	const db = deps.getDb();
 	const resultOrigin = deps.leadOrigins?.[0];
 
+	const resolvedCourse = await resolveCourseForGrading(
+		db,
+		ctx.orgId,
+		parsedBody.courseId,
+		sub.finalCourseId,
+	);
+	if (!resolvedCourse.ok) {
+		return c.json(
+			{
+				error: resolvedCourse.code,
+				code: resolvedCourse.code,
+				message: resolvedCourse.message,
+			},
+			resolvedCourse.status,
+		);
+	}
+
 	const snapshot = JSON.parse(sub.snapshotJson) as PlacementSnapshot;
 	const objective = JSON.parse(
 		sub.objectiveBreakdownJson,
@@ -578,40 +603,56 @@ export async function gradePlacementSubmissionResponse(
 	);
 
 	const now = new Date();
-	const [updatedSub] = await db
-		.update(placementTestSubmission)
-		.set({
-			status: "graded",
-			writingRubricJson: JSON.stringify(parsedBody.writingRubric),
-			writingScore: null,
-			writingBand: final.writingScore,
-			speakingRubricJson: parsedBody.speakingRubric
-				? JSON.stringify(parsedBody.speakingRubric)
-				: null,
-			speakingScore: null,
-			speakingBand: final.speakingScore,
-			teacherFeedback: parsedBody.teacherFeedback,
-			finalBandLevel: final.band.cefr,
-			finalCourse: final.band.course,
-			finalDisplayCourse: final.band.displayCourse || final.band.courseLabel,
-			finalScorePct: final.averagePct,
-			finalNote: final.note,
-			writingErrorsJson: JSON.stringify(writingErrors),
-			speakingErrorsJson: JSON.stringify(speakingErrors),
-			// Token sinh một lần ở lần chốt đầu, giữ nguyên khi chốt lại —
-			// coalesce trong UPDATE để hai lượt chốt đồng thời dùng chung token.
-			resultToken: sql`coalesce(${placementTestSubmission.resultToken}, ${randomResultToken()})`,
-			gradedBy: ctx.userId,
-			gradedAt: now,
-			updatedAt: now,
-		})
-		.where(
-			and(
-				eq(placementTestSubmission.id, sub.id),
-				eq(placementTestSubmission.orgId, ctx.orgId),
-			),
-		)
-		.returning();
+	let updatedSub: typeof placementTestSubmission.$inferSelect | undefined;
+	try {
+		[updatedSub] = await db
+			.update(placementTestSubmission)
+			.set({
+				status: "graded",
+				writingRubricJson: JSON.stringify(parsedBody.writingRubric),
+				writingScore: null,
+				writingBand: final.writingScore,
+				speakingRubricJson: parsedBody.speakingRubric
+					? JSON.stringify(parsedBody.speakingRubric)
+					: null,
+				speakingScore: null,
+				speakingBand: final.speakingScore,
+				teacherFeedback: parsedBody.teacherFeedback,
+				finalBandLevel: final.band.cefr,
+				finalCourseId: resolvedCourse.courseId,
+				finalCourse: resolvedCourse.courseId,
+				finalDisplayCourse: resolvedCourse.displayName,
+				finalScorePct: final.averagePct,
+				finalNote: final.note,
+				writingErrorsJson: JSON.stringify(writingErrors),
+				speakingErrorsJson: JSON.stringify(speakingErrors),
+				// Token sinh một lần ở lần chốt đầu, giữ nguyên khi chốt lại —
+				// coalesce trong UPDATE để hai lượt chốt đồng thời dùng chung token.
+				resultToken: sql`coalesce(${placementTestSubmission.resultToken}, ${randomResultToken()})`,
+				gradedBy: ctx.userId,
+				gradedAt: now,
+				updatedAt: now,
+			})
+			.where(
+				and(
+					eq(placementTestSubmission.id, sub.id),
+					eq(placementTestSubmission.orgId, ctx.orgId),
+				),
+			)
+			.returning();
+	} catch (err: unknown) {
+		if (isSqliteForeignKeyError(err)) {
+			return c.json(
+				{
+					error: "COURSE_NOT_FOUND",
+					code: "COURSE_NOT_FOUND",
+					message: "Khóa học đề xuất không tồn tại.",
+				},
+				422,
+			);
+		}
+		throw err;
+	}
 
 	if (!updatedSub) {
 		return c.json({ error: "not found" }, 404);
@@ -625,7 +666,7 @@ export async function gradePlacementSubmissionResponse(
 			.update(lead)
 			.set({
 				placement: final.finalSummary,
-				course: final.band.course,
+				course: resolvedCourse.displayName,
 				updatedAt: now,
 			})
 			.where(and(eq(lead.id, targetLeadId), eq(lead.orgId, ctx.orgId)))
@@ -706,7 +747,7 @@ export async function gradePlacementSubmissionResponse(
 		}
 		const summary: PlacementResultEmailSummary = {
 			cefr: final.band.cefr,
-			displayCourse: final.band.displayCourse || final.band.courseLabel,
+			displayCourse: resolvedCourse.displayName,
 			scorePct: final.averagePct,
 			listening: objective.listening,
 			vocabGrammar: objective.vocabGrammar,
@@ -725,9 +766,7 @@ export async function gradePlacementSubmissionResponse(
 			);
 			summary.cefr = stored.finalBandLevel ?? summary.cefr;
 			summary.displayCourse =
-				stored.finalDisplayCourse ??
-				stored.finalCourse ??
-				summary.displayCourse;
+				stored.finalDisplayCourse ?? resolvedCourse.displayName;
 			summary.scorePct = stored.finalScorePct ?? summary.scorePct;
 			summary.writingScore = stored.writingBand ?? stored.writingScore;
 			summary.speakingScore = stored.speakingBand ?? stored.speakingScore;

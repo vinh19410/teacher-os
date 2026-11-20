@@ -29,6 +29,8 @@ export const VALID_EXACT_ROUTES: Record<string, true> = {
 	"/leads": true,
 	// Bài test đầu vào (#515) — màn sửa và phát hành đề /kiem-tra-dau-vao/.
 	"/placement-test": true,
+	// Danh mục khóa học master data 2 cấp cho bài chấm đầu vào.
+	"/courses": true,
 	"/syllabus": true,
 	"/vocab": true,
 	// Ngân hàng tài liệu chung của trung tâm.

@@ -937,6 +937,10 @@ test.describe
 				).toContainText("A2 (71%)");
 
 				await teacherPage
+					.getByTestId("placement-course-select")
+					.selectOption({ label: "Communication English Level 2" });
+
+				await teacherPage
 					.getByLabel("Nhận xét bài kiểm tra đầu vào")
 					.fill(
 						"Nghe đọc ngữ pháp rất vững, cần luyện phản xạ nói câu trọn vẹn.",

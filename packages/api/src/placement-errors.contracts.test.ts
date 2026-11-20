@@ -88,17 +88,36 @@ describe("placementTeacherGradeSchema errors", () => {
 		const parsed = placementTeacherGradeSchema.parse({
 			writingRubric: { task: 6.5, coherence: 6, lexical: 6.5, grammar: 6 },
 			writingScore: 6.5,
+			courseId: "course-ielts-foundation",
 		});
 		expect(parsed.writingErrors).toEqual([]);
 		expect(parsed.speakingErrors).toEqual([]);
 		expect(parsed.speakingRubric).toBeNull();
 		expect(parsed.speakingScore).toBeNull();
+		expect(parsed.courseId).toBe("course-ielts-foundation");
+	});
+
+	it("rejects missing or blank courseId", () => {
+		expect(
+			placementTeacherGradeSchema.safeParse({
+				writingRubric: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
+				writingScore: 6,
+			}).success,
+		).toBe(false);
+		expect(
+			placementTeacherGradeSchema.safeParse({
+				writingRubric: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
+				writingScore: 6,
+				courseId: "   ",
+			}).success,
+		).toBe(false);
 	});
 
 	it("rejects mismatched speakingRubric and speakingScore", () => {
 		const parsed = placementTeacherGradeSchema.safeParse({
 			writingRubric: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
 			writingScore: 6,
+			courseId: "course-ielts-foundation",
 			speakingRubric: {
 				fluency: 6,
 				lexical: 6,
@@ -114,12 +133,14 @@ describe("placementTeacherGradeSchema errors", () => {
 		const badBand = placementTeacherGradeSchema.safeParse({
 			writingRubric: { task: 6.3, coherence: 6, lexical: 6, grammar: 6 },
 			writingScore: 6,
+			courseId: "course-ielts-foundation",
 		});
 		expect(badBand.success).toBe(false);
 
 		const parsed = placementTeacherGradeSchema.safeParse({
 			writingRubric: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
 			writingScore: 6,
+			courseId: "course-ielts-foundation",
 			writingErrors: [{ id: "1", category: "style", quote: "x" }],
 		});
 		expect(parsed.success).toBe(false);

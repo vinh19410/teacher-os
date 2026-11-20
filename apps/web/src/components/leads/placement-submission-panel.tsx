@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { formatCourseDisplayName } from "@teacher-os/api/course-contracts";
 import {
 	formatBand,
 	ieltsOverallBand,
@@ -23,10 +24,15 @@ import { toast } from "sonner";
 import { StatusTag } from "@/components/assignments/status-tag";
 import { BandSlider } from "@/components/grading/band-slider";
 import { Button } from "@/components/ui/button";
-import { inputCls } from "@/components/ui/field";
+import { inputCls, Select } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 import { isHttpError } from "@/lib/kernel-load-state";
 import { reauth } from "@/lib/reauth";
+import {
+	activeCourseCatalogQueryKey,
+	activeCourseCatalogQueryOptions,
+	courseErrorMessage,
+} from "@/lib/repos/courses";
 import {
 	fetchLeadPlacementSubmission,
 	gradeLeadPlacementSubmission,
@@ -164,7 +170,7 @@ export function initialPlacementGrading(
 }
 
 function hydrationKeyOf(s: PlacementSubmissionDetail): string {
-	return `${s.id}:${s.gradedAt ?? "pending"}:${s.aiDraftedAt ?? "no-ai"}`;
+	return `${s.id}:${s.gradedAt ?? "pending"}:${s.finalCourseId ?? "no-course"}:${s.aiDraftedAt ?? "no-ai"}`;
 }
 
 /** Bài có nguồn để AI phân tích lỗi (bài viết hoặc file nói đã upload/transcript). */
@@ -446,6 +452,7 @@ function PlacementSubmissionBody({
 		action: "grade" | "retry",
 	) => void;
 }) {
+	const queryClient = useQueryClient();
 	const [initial] = useState(() => initialPlacementGrading(submission));
 	const [writingRubric, setWritingRubric] =
 		useState<NullablePlacementWritingRubric>(initial.writingRubric);
@@ -469,7 +476,16 @@ function PlacementSubmissionBody({
 	const [teacherFeedback, setTeacherFeedback] = useState(
 		() => submission.teacherFeedback,
 	);
-	// Giáo viên đã sửa form (rubric/điểm/lỗi/nhận xét) kể từ lần hydrate gần nhất.
+	const [selectedCourseId, setSelectedCourseId] = useState<string>(
+		() => submission.finalCourseId ?? "",
+	);
+	const coursesQuery = useQuery(activeCourseCatalogQueryOptions());
+	useEffect(() => {
+		if (isHttpError(coursesQuery.error) && coursesQuery.error.status === 401) {
+			reauth();
+		}
+	}, [coursesQuery.error]);
+	// Giáo viên đã sửa form (rubric/điểm/khóa/lỗi/nhận xét) kể từ lần hydrate gần nhất.
 	const [dirty, setDirty] = useState(false);
 	// Danh sách lỗi AI mới về khi form đang sửa → chờ giáo viên bấm "Áp dụng lỗi AI".
 	const [draftPending, setDraftPending] = useState(false);
@@ -516,6 +532,7 @@ function PlacementSubmissionBody({
 		setWritingErrors(next.writingErrors);
 		setSpeakingErrors(next.speakingErrors);
 		setTeacherFeedback(submission.teacherFeedback);
+		setSelectedCourseId(submission.finalCourseId ?? "");
 	}, [submission, dirty]);
 
 	/** Chỉ cập nhật danh sách lỗi từ AI, KHÔNG chạm vào điểm hay nhận xét. */
@@ -655,7 +672,39 @@ function PlacementSubmissionBody({
 			speakingRubric.pronunciation !== null &&
 			speakingScore !== null);
 
-	const canSave = hasCompleteWriting && hasCompleteSpeaking;
+	const activeCategories = coursesQuery.data?.categories ?? [];
+	const activeCourseDisplayById = new Map<string, string>();
+	for (const cat of activeCategories) {
+		for (const course of cat.courses) {
+			activeCourseDisplayById.set(
+				course.id,
+				formatCourseDisplayName(cat.name, course.name),
+			);
+		}
+	}
+	const savedHiddenCourse =
+		submission.finalCourseId &&
+		!coursesQuery.isPending &&
+		!coursesQuery.isError &&
+		!activeCourseDisplayById.has(submission.finalCourseId)
+			? {
+					id: submission.finalCourseId,
+					displayName:
+						submission.finalDisplayCourse ?? submission.finalCourseId,
+				}
+			: null;
+	const selectedDisplayCourse = selectedCourseId
+		? (activeCourseDisplayById.get(selectedCourseId) ??
+			(savedHiddenCourse && savedHiddenCourse.id === selectedCourseId
+				? savedHiddenCourse.displayName
+				: submission.finalCourseId === selectedCourseId
+					? (submission.finalDisplayCourse ?? null)
+					: null))
+		: null;
+
+	const hasSelectedCourse = selectedCourseId.trim().length > 0;
+	const canSave =
+		hasCompleteWriting && hasCompleteSpeaking && hasSelectedCourse;
 	const activeSpeakingScore = includeSpeaking ? speakingScore : null;
 
 	const previewFinal = computePlacementFinal({
@@ -687,6 +736,7 @@ function PlacementSubmissionBody({
 						}
 					: null,
 				speakingScore: includeSpeaking ? (speakingScore as number) : null,
+				courseId: selectedCourseId.trim(),
 				teacherFeedback: teacherFeedback.trim(),
 				writingErrors,
 				speakingErrors: includeSpeaking ? speakingErrors : [],
@@ -704,7 +754,21 @@ function PlacementSubmissionBody({
 				reauth();
 				return;
 			}
-			toast.error("Không thể lưu điểm chấm. Vui lòng thử lại.");
+			const code =
+				err &&
+				typeof err === "object" &&
+				"code" in err &&
+				typeof err.code === "string"
+					? err.code
+					: null;
+			if (code === "COURSE_INACTIVE" || code === "COURSE_NOT_FOUND") {
+				void queryClient.invalidateQueries({
+					queryKey: activeCourseCatalogQueryKey,
+				});
+			}
+			toast.error(
+				courseErrorMessage(err, "Không thể lưu điểm chấm. Vui lòng thử lại."),
+			);
 		},
 	});
 
@@ -737,7 +801,13 @@ function PlacementSubmissionBody({
 		writingScore: previewFinal.writingScore,
 		speakingScore: previewFinal.speakingScore,
 		speakingStatus: submission.speakingStatus,
-		band: previewFinal.band,
+		band: {
+			...previewFinal.band,
+			displayCourse:
+				(selectedDisplayCourse ??
+					(submission.gradedAt ? (submission.finalDisplayCourse ?? "") : "")) ||
+				previewFinal.band.displayCourse,
+		},
 		averagePct: previewFinal.averagePct,
 		note: previewFinal.note,
 		teacherFeedback,
@@ -1083,7 +1153,7 @@ function PlacementSubmissionBody({
 			</div>
 
 			{/* Xem trước kết quả cuối cùng */}
-			<div className="space-y-2 rounded-md border border-border bg-background p-3">
+			<div className="space-y-2.5 rounded-md border border-border bg-background p-3">
 				<div className="flex flex-wrap items-baseline justify-between gap-2">
 					<div>
 						<span className="text-muted-foreground text-xs">
@@ -1096,8 +1166,15 @@ function PlacementSubmissionBody({
 							{previewFinal.band.cefr} ({previewFinal.averagePct}%)
 						</strong>
 					</div>
-					<span className="font-medium text-foreground text-xs">
-						{previewFinal.band.displayCourse || previewFinal.band.courseLabel}
+					<span
+						data-testid="selected-course-preview"
+						className={
+							selectedDisplayCourse
+								? "font-medium text-foreground text-xs"
+								: "text-muted-foreground text-xs"
+						}
+					>
+						{selectedDisplayCourse ?? "Chưa chọn khóa đề xuất"}
 					</span>
 				</div>
 				<p
@@ -1125,6 +1202,89 @@ function PlacementSubmissionBody({
 						Lộ trình: {previewFinal.band.advice}
 					</p>
 				)}
+
+				<div className="space-y-1.5 border-border border-t pt-2.5">
+					<label
+						htmlFor="placement-course-select"
+						className="block font-medium text-foreground text-xs"
+					>
+						Khóa học đề xuất{" "}
+						<span aria-hidden="true" className="text-destructive">
+							*
+						</span>
+					</label>
+					<Select
+						id="placement-course-select"
+						data-testid="placement-course-select"
+						value={selectedCourseId}
+						disabled={coursesQuery.isPending}
+						required
+						aria-required="true"
+						onChange={(e) => {
+							touch();
+							setSelectedCourseId(e.target.value);
+						}}
+					>
+						<option value="">
+							{coursesQuery.isPending
+								? "Đang tải danh mục khóa học..."
+								: "-- Chọn khóa học đề xuất --"}
+						</option>
+						{activeCategories
+							.filter((cat) => cat.courses.length > 0)
+							.map((cat) => (
+								<optgroup key={cat.id} label={cat.name}>
+									{cat.courses.map((course) => (
+										<option key={course.id} value={course.id}>
+											{course.name}
+										</option>
+									))}
+								</optgroup>
+							))}
+						{savedHiddenCourse && (
+							<optgroup label="Khóa đã lưu (đã ẩn)">
+								<option value={savedHiddenCourse.id}>
+									{savedHiddenCourse.displayName} (đã ẩn)
+								</option>
+							</optgroup>
+						)}
+					</Select>
+					{coursesQuery.isError && (
+						<div
+							role="alert"
+							className="flex flex-wrap items-center justify-between gap-2 rounded border border-destructive/40 bg-destructive/10 px-2.5 py-1.5 text-destructive text-xs"
+						>
+							<span>Không tải được danh mục khóa học.</span>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => void coursesQuery.refetch()}
+							>
+								<RefreshCw className="size-3.5" />
+								Thử lại
+							</Button>
+						</div>
+					)}
+					{!coursesQuery.isPending &&
+						!coursesQuery.isError &&
+						activeCourseDisplayById.size === 0 && (
+							<p className="text-muted-foreground text-xs">
+								Chưa có khóa học đang hoạt động. Vui lòng tạo hoặc hiện khóa tại
+								mục Khóa học.
+							</p>
+						)}
+					{submission.gradedAt !== null &&
+						submission.finalCourseId === null &&
+						submission.finalDisplayCourse && (
+							<p
+								data-testid="legacy-course-note"
+								className="text-muted-foreground text-xs"
+							>
+								Khóa đề xuất trước đó: {submission.finalDisplayCourse} — chọn
+								khóa từ danh mục hiện tại để cập nhật.
+							</p>
+						)}
+				</div>
 			</div>
 
 			{/* Nhận xét & nút lưu */}
@@ -1180,9 +1340,10 @@ function PlacementSubmissionBody({
 						className="text-right text-muted-foreground text-xs"
 					>
 						{!hasCompleteWriting
-							? "Nhập đủ 4 tiêu chí và điểm tổng IELTS cho Writing"
-							: "Nhập đủ 4 tiêu chí và điểm tổng IELTS cho Speaking (hoặc bỏ chọn Tính điểm Speaking)"}
-						{" để chốt kết quả."}
+							? "Nhập đủ 4 tiêu chí và điểm tổng IELTS cho Writing để chốt kết quả."
+							: !hasCompleteSpeaking
+								? "Nhập đủ 4 tiêu chí và điểm tổng IELTS cho Speaking (hoặc bỏ chọn Tính điểm Speaking) để chốt kết quả."
+								: "Chọn khóa học đề xuất để chốt kết quả."}
 					</p>
 				)}
 			</div>
