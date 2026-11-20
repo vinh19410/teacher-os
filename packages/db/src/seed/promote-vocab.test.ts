@@ -29,6 +29,7 @@ import {
 	normalizeVocabLabel,
 	remapVocabAudioKey,
 	resolveMediaR2BucketName,
+	resolveTargetTeacherOrgId,
 	resolveVocabD1Database,
 	syncVocabAudioToR2,
 	verifyPromotedVocab,
@@ -932,5 +933,190 @@ describe("promote-vocab staging -> prod pipeline", () => {
 				fetchImpl: fetchMock,
 			}),
 		).rejects.toThrow(/Refusing staging-like D1 database/i);
+	});
+
+	it("resolves active teacher org via TEACHER_EMAILS over LEAD_ORG_ID and relocates misplaced rows cleanly with exact rollback", async () => {
+		const dir = makeTempDir();
+		const stagingPath = join(dir, "staging.sqlite");
+		const prodPath = join(dir, "prod.sqlite");
+		const staging = await openMigratedDb(stagingPath);
+		const prod = await openMigratedDb(prodPath);
+
+		try {
+			await staging.db
+				.insert(schema.organization)
+				.values({ id: "org-stg", name: "Stg" });
+			await staging.db.insert(schema.vocabGroup).values({
+				id: "grp-ce1",
+				orgId: "org-stg",
+				name: "Communication English Level 1",
+				normalizedName: normalizeVocabLabel("Communication English Level 1"),
+			});
+			await staging.db.insert(schema.vocabDeck).values({
+				id: "deck-ce1-1",
+				orgId: "org-stg",
+				classId: null,
+				groupId: "grp-ce1",
+				title: "Lesson 01 – Friends",
+				lessonNumber: 1,
+				lang: "en",
+			});
+			await staging.db.insert(schema.vocabWord).values({
+				id: "word-ce1-1",
+				deckId: "deck-ce1-1",
+				word: "introduce",
+				entryType: "word",
+				translation: "giới thiệu",
+				sortOrder: 0,
+			});
+
+			// Prod has an older lead org (where rows were initially promoted) AND the active teacher's real org
+			await prod.db.insert(schema.organization).values([
+				{ id: "org-lead-old", name: "Old QA Lead Org" },
+				{ id: "org-teacher-real", name: "Ms My Active Org" },
+				{ id: "org-third-party", name: "Unrelated Org" },
+			]);
+			await prod.db.insert(schema.user).values([
+				{
+					id: "u-teacher",
+					name: "Ms My",
+					email: "msthucmy@gmail.com",
+					emailVerified: true,
+					role: "teacher",
+				},
+				{
+					id: "u-student",
+					name: "Student Same Email",
+					email: "student@example.com",
+					emailVerified: true,
+					role: "student",
+				},
+			]);
+			await prod.db.insert(schema.membership).values([
+				{
+					id: "mem-1",
+					orgId: "org-teacher-real",
+					userId: "u-teacher",
+					role: "teacher",
+				},
+				{
+					id: "mem-2",
+					orgId: "org-third-party",
+					userId: "u-student",
+					role: "teacher",
+				},
+			]);
+
+			const prodRunner = createLibsqlVocabPromoteRunner(prod.client);
+			const stgRunner = createLibsqlVocabPromoteRunner(staging.client);
+
+			// 1. resolveTargetTeacherOrgId prefers active teacher membership over LEAD_ORG_ID
+			const resolved = await resolveTargetTeacherOrgId(prodRunner, {
+				teacherEmails: "msthucmy@gmail.com",
+				leadOrgId: "org-lead-old",
+			});
+			expect(resolved).toEqual({
+				orgId: "org-teacher-real",
+				resolvedVia: "teacher_emails",
+				sameAsLeadOrg: false,
+			});
+
+			// Student user role is ignored even if email passed -> falls back to LEAD_ORG_ID
+			const fallback = await resolveTargetTeacherOrgId(prodRunner, {
+				teacherEmails: "student@example.com",
+				leadOrgId: "org-lead-old",
+			});
+			expect(fallback).toEqual({
+				orgId: "org-lead-old",
+				resolvedVia: "lead_org_fallback",
+				sameAsLeadOrg: true,
+			});
+
+			// 2. First apply into org-lead-old (simulating previous misplaced run)
+			const selected = await loadSelectedStagingVocab(stgRunner, {
+				groupNames: ["Communication English Level 1"],
+			});
+			const initialPlan = await buildPromoteVocabPlan(selected, prodRunner, {
+				targetOrgId: "org-lead-old",
+			});
+			await applyPromoteVocabPlan(prodRunner, initialPlan);
+
+			// Without relocateFromOrgId, promoting into org-teacher-real fails closed
+			await expect(
+				buildPromoteVocabPlan(selected, prodRunner, {
+					targetOrgId: "org-teacher-real",
+				}),
+			).rejects.toThrow(/under a different organization/i);
+
+			// Relocating from the wrong org (org-third-party) still fails closed
+			await expect(
+				buildPromoteVocabPlan(selected, prodRunner, {
+					targetOrgId: "org-teacher-real",
+					relocateFromOrgId: "org-third-party",
+				}),
+			).rejects.toThrow(/under a different organization/i);
+
+			// 3. Relocating from org-lead-old -> org-teacher-real via CLI with empty TARGET_ORG_ID=""
+			const logs: string[] = [];
+			await runPromoteVocabProdCli(
+				[
+					"--staging-file",
+					stagingPath,
+					"--prod-file",
+					prodPath,
+					"--mode",
+					"apply",
+					"--group",
+					"Communication English Level 1",
+					"--relocate-from-org",
+					"org-lead-old",
+					"--dump",
+					join(dir, "relocate-backup"),
+					"--public-logs",
+				],
+				{
+					env: {
+						TARGET_ORG_ID: "",
+						TEACHER_EMAILS: "msthucmy@gmail.com",
+						LEAD_ORG_ID: "org-lead-old",
+					},
+					writeStdout: (s) => logs.push(s),
+				},
+			);
+			const out = logs.join("");
+			expect(out).toContain("resolved via=teacher_emails, sameAsLeadOrg=false");
+			expect(out).toContain("Verify parity: ok=true");
+			expect(out).not.toContain("org-teacher-real");
+			expect(out).not.toContain("msthucmy@gmail.com");
+
+			// Verify DB rows now belong to org-teacher-real, and org-lead-old has 0 groups/decks
+			const groupsAfter = await prodRunner.queryRows(
+				"SELECT id, org_id FROM vocab_group",
+			);
+			expect(groupsAfter).toEqual([
+				{ id: "grp-ce1", org_id: "org-teacher-real" },
+			]);
+			const decksAfter = await prodRunner.queryRows(
+				"SELECT id, org_id FROM vocab_deck",
+			);
+			expect(decksAfter).toEqual([
+				{ id: "deck-ce1-1", org_id: "org-teacher-real" },
+			]);
+
+			// Rollback SQL restores org_id back to org-lead-old
+			const rollbackSql = readFileSync(
+				join(dir, "relocate-backup-rollback.sql"),
+				"utf8",
+			);
+			expect(rollbackSql).toContain(
+				"UPDATE vocab_group SET org_id = 'org-lead-old'",
+			);
+			expect(rollbackSql).toContain(
+				"UPDATE vocab_deck SET org_id = 'org-lead-old'",
+			);
+		} finally {
+			staging.client.close();
+			prod.client.close();
+		}
 	});
 });
