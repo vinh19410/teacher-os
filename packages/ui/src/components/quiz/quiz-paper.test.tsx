@@ -475,3 +475,45 @@ describe("QuizPaper — Wave 2A (mcq_many, extended banks, summary word bank, di
 		expect(mixed).not.toContain("Choose the correct letter A, B, C or D.");
 	});
 });
+
+describe("QuizPaper — header omits difficulty band", () => {
+	it("renders skill without band in take mode when level is absent", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={baseDetail({
+					skill: "listening",
+					band: "7.0",
+					level: undefined,
+				})}
+				parts={[]}
+				answers={{}}
+				onAnswer={vi.fn()}
+				currentQuestion={null}
+			/>,
+		);
+		expect(html).toContain(">Listening</p>");
+		expect(html).not.toContain("Band");
+		expect(html).not.toContain("7.0");
+	});
+
+	it("renders skill and level without band in review mode", () => {
+		const html = renderToStaticMarkup(
+			<QuizPaper
+				detail={baseDetail({
+					skill: "listening",
+					band: "7.0",
+					level: "IELTS Academic",
+				})}
+				parts={[]}
+				answers={{}}
+				onAnswer={vi.fn()}
+				currentQuestion={null}
+				mode="review"
+				review={{}}
+			/>,
+		);
+		expect(html).toContain(">Listening · IELTS Academic</p>");
+		expect(html).not.toContain("Band");
+		expect(html).not.toContain("7.0");
+	});
+});

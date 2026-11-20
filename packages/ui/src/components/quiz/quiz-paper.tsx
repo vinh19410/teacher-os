@@ -576,8 +576,7 @@ export function QuizPaper({
 		<article className="flex flex-col gap-4 rounded-xl bg-card text-foreground">
 			<p className="font-mono text-[11px] text-muted-foreground uppercase tracking-[0.08em]">
 				{SKILL_LABELS[skill] ?? skill}
-				{detail.level?.trim() ? ` · ${detail.level.trim()}` : ""} · Band{" "}
-				{detail.band}
+				{detail.level?.trim() ? ` · ${detail.level.trim()}` : ""}
 			</p>
 
 			{skill === "listening" && (

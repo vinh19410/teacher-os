@@ -119,6 +119,7 @@ describe("PreviewQuizSimulation — take view", () => {
 		for (const leak of LEAK_STRINGS) {
 			expect(html).not.toContain(leak);
 		}
+		expect(html).not.toContain("Band 6.0");
 		expect(screen.queryByTestId("quiz-review-item")).toBeNull();
 		expect(screen.getByRole("button", { name: /Nộp bài/ })).toBeTruthy();
 	});
@@ -196,6 +197,7 @@ describe("PreviewQuizSimulation — composed state", () => {
 		for (const leak of LEAK_STRINGS) {
 			expect(html).not.toContain(leak);
 		}
+		expect(html).not.toContain("Band 6.0");
 		// Input trở về rỗng.
 		expect(
 			(screen.getByLabelText("Điền đáp án câu 1") as HTMLInputElement).value,

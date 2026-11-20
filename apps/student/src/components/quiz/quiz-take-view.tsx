@@ -443,18 +443,17 @@ export function QuizTakeView({
 								<>
 									Bài nói
 									{speakingPartLabel && ` · ${speakingPartLabel}`} · nộp 1 file
-									audio/video (tối đa 50 MB) · Band {detail.band}
+									audio/video (tối đa 50 MB)
 								</>
 							) : isWriting ? (
 								<>
 									Bài viết
-									{minWords !== null && ` · tối thiểu ${minWords} từ`} · Band{" "}
-									{detail.band}
+									{minWords !== null && ` · tối thiểu ${minWords} từ`}
 								</>
 							) : (
 								<>
 									{allQuestions.length} câu hỏi
-									{hasHybridWriting ? " + Bài viết" : ""} · Band {detail.band}
+									{hasHybridWriting ? " + Bài viết" : ""}
 								</>
 							)}
 						</p>

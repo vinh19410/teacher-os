@@ -192,4 +192,17 @@ describe("PromptPreviewAside — Xem trước CTA (#282)", () => {
 		const html = renderToStaticMarkup(<PromptPreviewAside prompt={prompt()} />);
 		expect(html).toContain("Xem trước</button>");
 	});
+
+	it("omits difficulty band from spec line and tag row while preserving level", () => {
+		const html = renderToStaticMarkup(
+			<PromptPreviewAside
+				prompt={prompt({ band: "7.0", level: "IELTS Academic" })}
+			/>,
+		);
+		expect(html).toContain(
+			">Academic · Passage 3 · 20 phút · IELTS Academic</p>",
+		);
+		expect(html).not.toContain("Band 7.0");
+		expect(html).not.toContain("· Band");
+	});
 });

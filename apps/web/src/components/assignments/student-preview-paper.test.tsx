@@ -323,3 +323,14 @@ describe("StudentPreviewPaper — hybrid writing section (#574)", () => {
 		expect(html).toContain("Discuss remote education.");
 	});
 });
+
+describe("StudentPreviewPaper — omits difficulty band", () => {
+	it("renders part spec without band in header or tag row", () => {
+		const html = renderToStaticMarkup(
+			<StudentPreviewPaper {...base({ band: "7.0" })} />,
+		);
+		expect(html).toContain(">Academic · Passage 3 · 20 phút</p>");
+		expect(html).not.toContain("Band 7.0");
+		expect(html).not.toContain("· Band");
+	});
+});
