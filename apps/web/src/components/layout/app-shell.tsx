@@ -38,6 +38,8 @@ const ROUTE_CRUMBS: Record<string, string[]> = {
 	"/_auth/leads/": ["Đăng ký mới"],
 	"/_auth/placement-test": ["Bài test đầu vào"],
 	"/_auth/placement-test/": ["Bài test đầu vào"],
+	"/_auth/courses": ["Khóa học"],
+	"/_auth/courses/": ["Khóa học"],
 	"/_auth/tuition/": ["Doanh thu"],
 	"/_auth/tuition/$invoiceId": ["Doanh thu"],
 	"/_auth/debts": ["Công nợ"],

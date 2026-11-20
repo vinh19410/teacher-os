@@ -11,6 +11,7 @@ import {
 	CalendarCheck,
 	CalendarDays,
 	ClipboardList,
+	GraduationCap,
 	Inbox,
 	LayoutDashboard,
 	Library,
@@ -56,6 +57,12 @@ export const TEACHER_NAV: NavGroup[] = [
 				label: "Bài test đầu vào",
 				icon: ClipboardList,
 				href: "/placement-test",
+			},
+			{
+				key: "courses",
+				label: "Khóa học",
+				icon: GraduationCap,
+				href: "/courses",
 			},
 			{
 				key: "schedule",
@@ -130,6 +137,7 @@ const FINANCE_NAV_KEY_MAP: Record<string, true> = {
 	debts: true,
 	leads: true,
 	"placement-test": true,
+	courses: true,
 };
 
 /**
@@ -192,6 +200,7 @@ const ACTIVE_KEY_BY_PREFIX: Record<string, string> = {
 	"/students": "students",
 	"/leads": "leads",
 	"/placement-test": "placement-test",
+	"/courses": "courses",
 	"/schedule": "schedule",
 	"/syllabus": "syllabus",
 	"/materials": "materials",

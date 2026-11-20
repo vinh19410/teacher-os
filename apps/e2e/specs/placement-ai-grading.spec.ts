@@ -301,6 +301,11 @@ test.describe
 			await expect(page.getByTestId("speaking-overall-input")).toHaveValue(
 				"6.5",
 			);
+			// Chưa chọn khóa học đề xuất → nút chốt vẫn bị khóa.
+			await expect(saveBtn).toBeDisabled();
+			const courseSelect = page.getByTestId("placement-course-select");
+			await expect(courseSelect).toBeVisible();
+			await courseSelect.selectOption({ label: "Pre IELTS" });
 			await expect(saveBtn).toBeEnabled();
 
 			const writingHighlighter = page.getByTestId("writing-error-highlighter");

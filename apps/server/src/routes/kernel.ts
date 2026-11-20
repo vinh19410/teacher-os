@@ -142,6 +142,7 @@ import {
 import type { ZoomClient, ZoomConfig } from "../lib/zoom/zoom-client";
 import { assignmentRoutes } from "./assignments";
 import { bankLinkRoutes } from "./bank-link";
+import { courseRoutes } from "./courses";
 import { dailyAttendanceRoutes } from "./daily-attendance";
 import {
 	dashboardReminderRoutes,
@@ -4510,6 +4511,8 @@ export function kernelRoutes(deps: {
 	kernel.route("/notification-logs", notificationLogRoutes(deps));
 	// #506 phase 3: quản lý lead đăng ký — GET/PATCH /api/leads.
 	kernel.route("/leads", leadRoutes(deps));
+	// Danh mục khóa học master data 2 cấp — /api/courses.
+	kernel.route("/courses", courseRoutes(deps));
 	// #515 phase 2: soạn và phát hành bộ đề kiểm tra đầu vào — /api/placement-test.
 	kernel.route("/placement-test", placementTestRoutes(deps));
 	// TOS-6 (#439): bộ đếm 3 thẻ "Việc cần làm hôm nay" — GET /api/dashboard/reminders.

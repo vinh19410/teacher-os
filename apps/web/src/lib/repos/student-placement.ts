@@ -9,6 +9,7 @@ import type {
 } from "@teacher-os/api/placement-test-contracts";
 import { HttpError } from "@/lib/kernel-load-state";
 import { getApiBaseUrl } from "./api-base-url";
+import { toApiHttpError } from "./courses";
 
 export const studentPlacementAllQueryKey = [
 	"kernel",
@@ -80,8 +81,8 @@ export async function gradeStudentPlacementSubmission(
 		body: JSON.stringify(input),
 	});
 	if (!res.ok) {
-		throw new HttpError(
-			res.status,
+		throw await toApiHttpError(
+			res,
 			`Failed to grade student placement submission: ${res.status}`,
 		);
 	}

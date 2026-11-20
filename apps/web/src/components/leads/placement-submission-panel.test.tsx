@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { CourseCatalogResponse } from "@teacher-os/api/course-contracts";
 import type {
 	PlacementError,
 	PlacementPublishedBand,
@@ -123,6 +124,7 @@ function makeSub(
 		speakingScore: null,
 		teacherFeedback: "",
 		finalBandLevel: null,
+		finalCourseId: null,
 		finalCourse: null,
 		finalDisplayCourse: null,
 		finalScorePct: null,
@@ -161,11 +163,72 @@ const DRAFTED = makeSub({
 	},
 });
 
+const ACTIVE_COURSES: CourseCatalogResponse = {
+	categories: [
+		{
+			id: "cat-comm",
+			name: "Giao Tiếp",
+			sortOrder: 0,
+			isActive: true,
+			createdAt: "2026-11-01T00:00:00.000Z",
+			updatedAt: "2026-11-01T00:00:00.000Z",
+			courses: [
+				{
+					id: "course-comm-1",
+					categoryId: "cat-comm",
+					name: "Communication English Level 1",
+					sortOrder: 0,
+					isActive: true,
+					createdAt: "2026-11-01T00:00:00.000Z",
+					updatedAt: "2026-11-01T00:00:00.000Z",
+				},
+				{
+					id: "course-comm-2",
+					categoryId: "cat-comm",
+					name: "Communication English Level 2",
+					sortOrder: 1,
+					isActive: true,
+					createdAt: "2026-11-01T00:00:00.000Z",
+					updatedAt: "2026-11-01T00:00:00.000Z",
+				},
+			],
+		},
+		{
+			id: "cat-ielts",
+			name: "IELTS",
+			sortOrder: 1,
+			isActive: true,
+			createdAt: "2026-11-01T00:00:00.000Z",
+			updatedAt: "2026-11-01T00:00:00.000Z",
+			courses: [
+				{
+					id: "course-ielts-1",
+					categoryId: "cat-ielts",
+					name: "Foundation",
+					sortOrder: 0,
+					isActive: true,
+					createdAt: "2026-11-01T00:00:00.000Z",
+					updatedAt: "2026-11-01T00:00:00.000Z",
+				},
+				{
+					id: "course-ielts-2",
+					categoryId: "cat-ielts",
+					name: "Pre IELTS",
+					sortOrder: 1,
+					isActive: true,
+					createdAt: "2026-11-01T00:00:00.000Z",
+					updatedAt: "2026-11-01T00:00:00.000Z",
+				},
+			],
+		},
+	],
+};
+
 type Handler = (
 	url: string,
 	method: string,
 	body: unknown,
-) => PlacementSubmissionDetail | Response | undefined;
+) => PlacementSubmissionDetail | CourseCatalogResponse | Response | undefined;
 
 function stubFetch(handler: Handler) {
 	const calls: Array<{
@@ -181,14 +244,23 @@ function stubFetch(handler: Handler) {
 		calls.push({ url, method, body, headers: new Headers(init?.headers) });
 		const data = handler(url, method, body);
 		if (data instanceof Response) return Promise.resolve(data);
-		return Promise.resolve(
-			data
-				? new Response(JSON.stringify(data), {
-						status: 200,
-						headers: { "content-type": "application/json" },
-					})
-				: new Response("not found", { status: 404 }),
-		);
+		if (data) {
+			return Promise.resolve(
+				new Response(JSON.stringify(data), {
+					status: 200,
+					headers: { "content-type": "application/json" },
+				}),
+			);
+		}
+		if (url.includes("/api/courses?activeOnly=true") && method === "GET") {
+			return Promise.resolve(
+				new Response(JSON.stringify(ACTIVE_COURSES), {
+					status: 200,
+					headers: { "content-type": "application/json" },
+				}),
+			);
+		}
+		return Promise.resolve(new Response("not found", { status: 404 }));
 	});
 	vi.stubGlobal("fetch", fetchMock);
 	return calls;
@@ -524,6 +596,8 @@ describe("PlacementSubmissionPanel — phân tích lỗi AI & chấm IELTS (#730
 						pronunciation: 6.5,
 					},
 					speakingScore: 6.5,
+					finalCourseId: (body as { courseId: string }).courseId,
+					finalDisplayCourse: "IELTS - Foundation",
 					writingErrors: (body as { writingErrors: PlacementError[] })
 						.writingErrors,
 					speakingErrors: (body as { speakingErrors: PlacementError[] })
@@ -596,8 +670,36 @@ describe("PlacementSubmissionPanel — phân tích lỗi AI & chấm IELTS (#730
 			(screen.getByTestId("speaking-overall-input") as HTMLInputElement).value,
 		).toBe("6.5");
 		expect(summary.textContent).toContain("Speaking Band 6.5/9");
+
+		// Đủ điểm Writing & Speaking nhưng chưa chọn khóa đề xuất -> nút chốt vẫn khóa + hiện gợi ý
+		expect(saveBtn.disabled).toBe(true);
+		expect(screen.getByTestId("save-placement-grade-hint").textContent).toBe(
+			"Chọn khóa học đề xuất để chốt kết quả.",
+		);
+		expect(screen.getByTestId("selected-course-preview").textContent).toBe(
+			"Chưa chọn khóa đề xuất",
+		);
+
+		// Chọn khóa IELTS - Foundation -> mở khóa nút chốt, cập nhật preview & Zalo text
+		const courseSelect = (await screen.findByTestId(
+			"placement-course-select",
+		)) as HTMLSelectElement;
+		await waitFor(() => expect(courseSelect.disabled).toBe(false));
+		fireEvent.change(courseSelect, { target: { value: "course-ielts-1" } });
+
+		expect(screen.getByTestId("selected-course-preview").textContent).toBe(
+			"IELTS - Foundation",
+		);
 		expect(saveBtn.disabled).toBe(false);
 		expect(screen.queryByTestId("save-placement-grade-hint")).toBeNull();
+
+		// Copy Zalo trước khi chốt phải phản ánh khóa đề xuất đã chọn
+		fireEvent.click(screen.getByTestId("copy-zalo-result-btn"));
+		await waitFor(() =>
+			expect(clipboardWriteMock).toHaveBeenCalledWith(
+				expect.stringContaining("IELTS - Foundation"),
+			),
+		);
 
 		// Nhập nhận xét & xoá lỗi Speaking số 2 rồi chốt.
 		fireEvent.change(screen.getByLabelText("Nhận xét bài kiểm tra đầu vào"), {
@@ -612,6 +714,7 @@ describe("PlacementSubmissionPanel — phân tích lỗi AI & chấm IELTS (#730
 			writingScore: number;
 			speakingRubric: unknown;
 			speakingScore: number;
+			courseId: string;
 			teacherFeedback: string;
 			writingErrors: PlacementError[];
 			speakingErrors: PlacementError[];
@@ -630,6 +733,7 @@ describe("PlacementSubmissionPanel — phân tích lỗi AI & chấm IELTS (#730
 			pronunciation: 6.5,
 		});
 		expect(sent.speakingScore).toBe(6.5);
+		expect(sent.courseId).toBe("course-ielts-1");
 		expect(sent.teacherFeedback).toBe("Nói khá trôi chảy.");
 		expect(sent.writingErrors).toEqual([
 			{
@@ -654,7 +758,7 @@ describe("PlacementSubmissionPanel — phân tích lỗi AI & chấm IELTS (#730
 			),
 		);
 		expect(screen.getByTestId("copy-zalo-result-btn")).toBeTruthy();
-	});
+	}, 15_000);
 
 	it("chuẩn hóa giá trị nhập số không hợp lệ khi blur và khóa lưu khi xóa trống", async () => {
 		stubFetch((url, method) =>
@@ -684,6 +788,11 @@ describe("PlacementSubmissionPanel — phân tích lỗi AI & chấm IELTS (#730
 		setBandInput("writing-coherence-input", "7");
 		setBandInput("writing-lexical-input", "7");
 		setBandInput("writing-grammar-input", "7");
+		const courseSelect = (await screen.findByTestId(
+			"placement-course-select",
+		)) as HTMLSelectElement;
+		await waitFor(() => expect(courseSelect.disabled).toBe(false));
+		fireEvent.change(courseSelect, { target: { value: "course-comm-1" } });
 		const saveBtn = screen.getByTestId(
 			"save-placement-grade-btn",
 		) as HTMLButtonElement;
@@ -824,6 +933,11 @@ describe("PlacementSubmissionPanel — phân tích lỗi AI & chấm IELTS (#730
 		setBandInput("writing-lexical-input", "6.5");
 		setBandInput("writing-grammar-input", "6.5");
 		fireEvent.click(screen.getByTestId("toggle-speaking-grading"));
+		const courseSelect = (await screen.findByTestId(
+			"placement-course-select",
+		)) as HTMLSelectElement;
+		await waitFor(() => expect(courseSelect.disabled).toBe(false));
+		fireEvent.change(courseSelect, { target: { value: "course-ielts-2" } });
 
 		fireEvent.click(screen.getByTestId("save-placement-grade-btn"));
 		await waitFor(() => expect(onGraded).toHaveBeenCalledTimes(1));
@@ -871,5 +985,90 @@ describe("PlacementSubmissionPanel — phân tích lỗi AI & chấm IELTS (#730
 			"Chấm tự động 3 phần • giáo viên chấm Writing & Speaking",
 		);
 		expect(panel.textContent).not.toContain("khách quan");
+	});
+
+	it("mở lại bài đã chấm pre-fill đúng finalCourseId (kể cả khi khóa đã ẩn với optgroup fallback)", async () => {
+		stubFetch((url, method) =>
+			isGet(url, method)
+				? makeSub({
+						status: "graded",
+						gradedAt: "2026-11-16T08:00:00.000Z",
+						writingRubric: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
+						writingScore: 6,
+						speakingStatus: "skipped",
+						speakingRubric: null,
+						speakingScore: null,
+						finalCourseId: "course-hidden-old",
+						finalDisplayCourse: "IELTS - Fast Track",
+						writingErrors: [],
+						speakingErrors: [],
+					})
+				: undefined,
+		);
+		renderPanel();
+
+		const select = (await screen.findByTestId(
+			"placement-course-select",
+		)) as HTMLSelectElement;
+		await waitFor(() => expect(select.disabled).toBe(false));
+		expect(select.value).toBe("course-hidden-old");
+		expect(
+			select.querySelector('optgroup[label="Khóa đã lưu (đã ẩn)"]'),
+		).toBeTruthy();
+		expect(select.textContent).toContain("IELTS - Fast Track (đã ẩn)");
+		expect(screen.getByTestId("selected-course-preview").textContent).toBe(
+			"IELTS - Fast Track",
+		);
+	});
+
+	it("bài đã chấm cũ không có finalCourseId hiện ghi chú khóa đề xuất trước đó và báo lỗi server COURSE_INACTIVE", async () => {
+		stubFetch((url, method) => {
+			if (isGet(url, method)) {
+				return makeSub({
+					status: "graded",
+					gradedAt: "2026-11-10T08:00:00.000Z",
+					writingRubric: { task: 6, coherence: 6, lexical: 6, grammar: 6 },
+					writingScore: 6,
+					speakingStatus: "skipped",
+					speakingRubric: null,
+					speakingScore: null,
+					finalCourseId: null,
+					finalDisplayCourse: "Giao tiếp 2",
+					writingErrors: [],
+					speakingErrors: [],
+				});
+			}
+			if (url.endsWith("/placement-submission") && method === "PATCH") {
+				return Response.json(
+					{
+						error: "COURSE_INACTIVE",
+						code: "COURSE_INACTIVE",
+						message: "Khóa học đã bị ẩn, vui lòng chọn khóa đang hoạt động.",
+					},
+					{ status: 400 },
+				);
+			}
+			return undefined;
+		});
+		renderPanel();
+
+		expect(
+			(await screen.findByTestId("legacy-course-note")).textContent,
+		).toContain(
+			"Khóa đề xuất trước đó: Giao tiếp 2 — chọn khóa từ danh mục hiện tại để cập nhật.",
+		);
+
+		const select = (await screen.findByTestId(
+			"placement-course-select",
+		)) as HTMLSelectElement;
+		await waitFor(() => expect(select.disabled).toBe(false));
+		fireEvent.change(select, { target: { value: "course-comm-1" } });
+		fireEvent.click(screen.getByTestId("save-placement-grade-btn"));
+
+		await waitFor(() =>
+			expect(toastMock.error).toHaveBeenCalledWith(
+				"Khóa học đã bị ẩn, vui lòng chọn khóa đang hoạt động.",
+			),
+		);
 	});
 });
