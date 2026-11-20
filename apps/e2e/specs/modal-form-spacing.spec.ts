@@ -83,7 +83,7 @@ test("Modal 'Tạo syllabus mới' spacing và DOM measurements trên 3 viewport
 		expect(metrics).not.toBeNull();
 		if (!metrics) return;
 
-		// Root font-size là 16px (globals.css) -> gap-4 = 1rem = 16px chuẩn
+		// Root font-size là 16px (mặc định trình duyệt) -> gap-4 = 1rem = 16px chuẩn
 		for (const g of metrics.gaps) {
 			expect(g.gap).toBe(16);
 		}

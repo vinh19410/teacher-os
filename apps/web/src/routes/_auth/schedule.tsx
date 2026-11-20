@@ -172,7 +172,7 @@ export function ScheduleRoute() {
 					</div>
 				}
 			/>
-			<div className="mb-4 flex items-center justify-between gap-2">
+			<div className="mb-4 flex flex-wrap items-center justify-between gap-2">
 				<Button
 					variant="outline"
 					onClick={() => step(-1)}

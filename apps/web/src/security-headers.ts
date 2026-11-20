@@ -29,7 +29,8 @@ export function isLocalHost(hostname: string): boolean {
 
 /**
  * Hostnames that should be redirected to their canonical app hostname (app.<domain>).
- * Covers apex and www domains (issue #117: teacheros.io.vn and www.teacheros.io.vn).
+ * Covers apex and www domains (issue #117). The former prod hosts under teacheros.io.vn are
+ * no longer attached to the web Worker; a Cloudflare Redirect Rule owns that redirect in practice.
  */
 export function shouldRedirectHost(request: Request): string | null {
 	const url = new URL(request.url);

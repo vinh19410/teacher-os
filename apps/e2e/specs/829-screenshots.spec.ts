@@ -27,12 +27,8 @@ test("Issue #829: Chụp screenshots 3 viewports light & dark cho danh sách g�
 	await expect(
 		page.getByRole("button", { name: /^Tất cả/ }).first(),
 	).toBeVisible();
-	await expect(
-		page.getByRole("button", { name: /^Bộ đề của tôi/ }),
-	).toBeVisible();
-	await expect(
-		page.getByRole("button", { name: /^Thư viện hệ thống/ }),
-	).toBeVisible();
+	await expect(page.getByRole("button", { name: /^Trung tâm/ })).toBeVisible();
+	await expect(page.getByRole("button", { name: /^Hệ thống/ })).toBeVisible();
 
 	// Chụp trang danh sách ở 3 viewports (light & dark)
 	for (const vp of VIEWPORTS) {
