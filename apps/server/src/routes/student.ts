@@ -27,6 +27,8 @@ import {
 	type StudentQuizDetail,
 	type StudentScheduleLesson,
 	type StudentScheduleResponse,
+	type StudentZoomJoinError,
+	type StudentZoomJoinResponse,
 	studentOnboardingPayloadSchema,
 } from "@teacher-os/api/contracts";
 import { essayToPlain } from "@teacher-os/api/lib/essay-plain";
@@ -41,6 +43,12 @@ import {
 	quizMediaExtensionMatches,
 	sanitizeMediaFileName,
 } from "@teacher-os/api/lib/quiz-media";
+import { parseStartDateStrict } from "@teacher-os/api/skeleton";
+import {
+	evaluateZoomJoinWindow,
+	formatZoomJoinWindowMessage,
+	ZOOM_JOIN_ERROR_CODES,
+} from "@teacher-os/api/zoom-window";
 import {
 	assignment,
 	assignmentPrompt,
@@ -96,6 +104,7 @@ import { provisionStudentForUser } from "../student-provisioning";
 import { activateEnrollment } from "./enrollment-activation";
 import { parsePin } from "./snapshot";
 import {
+	isValidZoomJoinUrl,
 	loadClassAssignmentItems,
 	loadNextSession,
 	loadOrgTeacher,
@@ -122,6 +131,8 @@ export interface StudentRouteDeps {
 	getLibraryAudioStore?(): MediaStore | undefined;
 	/** Allowlist email giáo viên để định tuyến auto-join single-org (#716). */
 	teacherEmails?: string[];
+	/** Đồng hồ server có thể inject cho test/E2E (mặc định `() => new Date()`). */
+	now?: () => Date;
 }
 
 export interface StudentContext {
@@ -797,6 +808,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	router.use("/me", requireStudent);
 	router.use("/overview", requireStudent);
 	router.use("/classes/:classId", requireStudent);
+	router.use("/classes/:classId/sessions/:date/zoom-join", requireStudent);
 	router.use("/onboarding", requireStudent);
 	router.use("/enrollments/:enrollmentId/accept", requireStudent);
 
@@ -1058,7 +1070,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	router.get("/overview", async (c) => {
 		const { student: s, orgId } = c.get("studentCtx");
 		const db = deps.getDb();
-		const now = new Date();
+		const now = deps.now ? deps.now() : new Date();
 
 		const [enrollmentRows, teacher] = await Promise.all([
 			db
@@ -1144,7 +1156,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			.limit(1);
 		if (!row) return c.json({ error: "class not found" }, 404);
 
-		const now = new Date();
+		const now = deps.now ? deps.now() : new Date();
 		const [teacher, nextSession, lessonRows, meetingRows, assignments] =
 			await Promise.all([
 				loadOrgTeacher(db, orgId),
@@ -1217,6 +1229,233 @@ export function studentRoutes(deps: StudentRouteDeps) {
 	});
 
 	/**
+	 * GET /api/student/classes/:classId/sessions/:date/zoom-join
+	 *
+	 * Kiểm tra cửa sổ tham gia Zoom phía server `[start - 30 phút, end)` theo
+	 * giờ Việt Nam (UTC+7). Chỉ trả raw `joinUrl` khi học viên có enrollment
+	 * `active`, lớp `active`, buổi chưa bị hủy/nghỉ lễ, có link `https://` hợp
+	 * lệ và đang trong khung giờ mở lớp.
+	 */
+	router.get("/classes/:classId/sessions/:date/zoom-join", async (c) => {
+		c.header("Cache-Control", "no-store");
+
+		const { student: s, orgId } = c.get("studentCtx");
+		const classId = c.req.param("classId");
+		const date = parseStartDateStrict(c.req.param("date") ?? "");
+		if (!date) {
+			const body: StudentZoomJoinError = {
+				error: formatZoomJoinWindowMessage({ status: "invalid" }),
+				code: ZOOM_JOIN_ERROR_CODES.INVALID_SCHEDULE,
+			};
+			return c.json(body, 400);
+		}
+
+		const db = deps.getDb();
+		const [cls] = await db
+			.select({
+				id: classTable.id,
+				status: classTable.status,
+				enrollmentId: enrollment.id,
+			})
+			.from(enrollment)
+			.innerJoin(classTable, eq(enrollment.classId, classTable.id))
+			.where(
+				and(
+					eq(enrollment.orgId, orgId),
+					eq(classTable.orgId, orgId),
+					eq(enrollment.studentId, s.id),
+					eq(enrollment.classId, classId),
+					eq(enrollment.status, "active"),
+				),
+			)
+			.limit(1);
+
+		if (!cls) {
+			const body: StudentZoomJoinError = {
+				error: "Không tìm thấy lớp học.",
+				code: "CLASS_NOT_FOUND",
+			};
+			return c.json(body, 404);
+		}
+
+		if (cls.status === "paused") {
+			const body: StudentZoomJoinError = {
+				error: "Lớp học đang tạm dừng.",
+				code: CLASS_ERROR_CODES.CLASS_PAUSED,
+			};
+			return c.json(body, 409);
+		}
+
+		const rows = await db
+			.select({
+				id: lesson.id,
+				date: lesson.date,
+				time: lesson.time,
+				dur: lesson.dur,
+				status: lesson.status,
+				zoom: lesson.zoom,
+			})
+			.from(lesson)
+			.where(
+				and(
+					eq(lesson.orgId, orgId),
+					eq(lesson.enrollmentId, cls.enrollmentId),
+					eq(lesson.classId, cls.id),
+					eq(lesson.date, date),
+				),
+			)
+			.orderBy(asc(lesson.time), asc(lesson.id));
+
+		if (rows.length === 0) {
+			const body: StudentZoomJoinError = {
+				error: "Không tìm thấy buổi học.",
+				code: ZOOM_JOIN_ERROR_CODES.NOT_AVAILABLE,
+			};
+			return c.json(body, 404);
+		}
+
+		const activeRows = rows.filter(
+			(r) => r.status !== "cancelled" && r.status !== "holiday",
+		);
+		const firstActive = activeRows[0];
+		if (!firstActive) {
+			const body: StudentZoomJoinError = {
+				error: "Buổi học đã bị hủy hoặc dời lịch nghỉ lễ.",
+				code: ZOOM_JOIN_ERROR_CODES.SESSION_INACTIVE,
+			};
+			return c.json(body, 409);
+		}
+
+		const now = deps.now ? deps.now() : new Date();
+		const nowMs = now.getTime();
+
+		const [meeting] = await db
+			.select({ joinUrl: classSessionMeeting.joinUrl })
+			.from(classSessionMeeting)
+			.where(
+				and(
+					eq(classSessionMeeting.orgId, orgId),
+					eq(classSessionMeeting.classId, cls.id),
+					eq(classSessionMeeting.date, date),
+				),
+			)
+			.limit(1);
+		const meetingJoinUrl = meeting?.joinUrl?.trim() ?? "";
+
+		const evaluatedRows = activeRows.map((row) => {
+			const joinUrl = row.zoom.trim() || meetingJoinUrl;
+			return {
+				row,
+				joinUrl,
+				hasValidZoom: isValidZoomJoinUrl(joinUrl),
+				windowResult: evaluateZoomJoinWindow({
+					date: row.date,
+					time: row.time,
+					dur: row.dur,
+					nowMs,
+				}),
+			};
+		});
+
+		// Khi cùng ngày có nhiều buổi active (vd sáng 08:00 và tối 19:00), chọn theo
+		// thứ tự ưu tiên: (1) buổi đang mở (ưu tiên buổi có link Zoom hợp lệ),
+		// (2) buổi sắp tới gần nhất (`too_early`, ưu tiên có link Zoom — khớp nút UI),
+		// (3) buổi vừa kết thúc gần nhất (`ended`), rồi fallback buổi đầu tiên.
+		const picked =
+			evaluatedRows.find(
+				(e) => e.windowResult.status === "open" && e.hasValidZoom,
+			) ??
+			evaluatedRows.find((e) => e.windowResult.status === "open") ??
+			evaluatedRows.find(
+				(e) => e.windowResult.status === "too_early" && e.hasValidZoom,
+			) ??
+			evaluatedRows.find((e) => e.windowResult.status === "too_early") ??
+			[...evaluatedRows]
+				.reverse()
+				.find((e) => e.windowResult.status === "ended" && e.hasValidZoom) ??
+			[...evaluatedRows]
+				.reverse()
+				.find((e) => e.windowResult.status === "ended") ??
+			evaluatedRows[0];
+
+		if (!picked) {
+			const body: StudentZoomJoinError = {
+				error: "Không tìm thấy buổi học.",
+				code: ZOOM_JOIN_ERROR_CODES.NOT_AVAILABLE,
+			};
+			return c.json(body, 404);
+		}
+
+		const { row: target, joinUrl, windowResult } = picked;
+
+		if (!isValidZoomJoinUrl(joinUrl)) {
+			const body: StudentZoomJoinError = {
+				error: "Buổi học chưa có link Zoom.",
+				code: ZOOM_JOIN_ERROR_CODES.NOT_AVAILABLE,
+			};
+			return c.json(body, 404);
+		}
+
+		if (windowResult.status === "invalid") {
+			const body: StudentZoomJoinError = {
+				error: formatZoomJoinWindowMessage({ status: "invalid" }),
+				code: ZOOM_JOIN_ERROR_CODES.INVALID_SCHEDULE,
+			};
+			return c.json(body, 409);
+		}
+
+		const openAt = new Date(windowResult.openMs).toISOString();
+		const closeAt = new Date(windowResult.closeMs).toISOString();
+
+		if (windowResult.status === "too_early") {
+			const body: StudentZoomJoinError = {
+				error: formatZoomJoinWindowMessage({
+					status: "too_early",
+					date: target.date,
+					time: target.time,
+					dur: target.dur,
+					openAt,
+					closeAt,
+				}),
+				code: ZOOM_JOIN_ERROR_CODES.TOO_EARLY,
+				date: target.date ?? date,
+				time: target.time,
+				dur: target.dur,
+				openAt,
+				closeAt,
+			};
+			return c.json(body, 403);
+		}
+
+		if (windowResult.status === "ended") {
+			const body: StudentZoomJoinError = {
+				error: formatZoomJoinWindowMessage({
+					status: "ended",
+					date: target.date,
+					time: target.time,
+					dur: target.dur,
+					openAt,
+					closeAt,
+				}),
+				code: ZOOM_JOIN_ERROR_CODES.ENDED,
+				date: target.date ?? date,
+				time: target.time,
+				dur: target.dur,
+				openAt,
+				closeAt,
+			};
+			return c.json(body, 403);
+		}
+
+		const response: StudentZoomJoinResponse = {
+			joinUrl,
+			openAt,
+			closeAt,
+		};
+		return c.json(response, 200);
+	});
+
+	/**
 	 * GET /api/student/schedule (#584)
 	 *
 	 * Lịch học gộp của tất cả các lớp mà học viên đang tham gia (enrollment active)
@@ -1248,7 +1487,7 @@ export function studentRoutes(deps: StudentRouteDeps) {
 			return c.json(emptyResponse);
 		}
 
-		const now = new Date();
+		const now = deps.now ? deps.now() : new Date();
 		const classIds = classRows.map((r) => r.id);
 		const [teacher, ...nextSessions] = await Promise.all([
 			loadOrgTeacher(db, orgId),

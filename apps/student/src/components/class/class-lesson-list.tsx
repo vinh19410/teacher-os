@@ -1,9 +1,10 @@
 import type { StudentClassLesson } from "@teacher-os/api/contracts";
 import { vietnamSessionEndMs } from "@teacher-os/api/vietnam-date";
 import { buttonVariants } from "@teacher-os/ui/components/button";
-import { Check, CircleDashed, Clock, PlayCircle, Video, X } from "lucide-react";
+import { Check, CircleDashed, Clock, PlayCircle, X } from "lucide-react";
 import { LessonMaterialsDisclosure } from "@/components/class/lesson-materials";
 import { RecordingPassword } from "@/components/class/recording-password";
+import { ZoomJoinButton } from "@/components/class/zoom-join-button";
 import { OverviewEmptyState } from "@/components/overview/empty-state";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
@@ -97,12 +98,15 @@ export function ClassLessonList({
 	lessons,
 	todayISO,
 	now,
+	zoomNowMs,
 }: {
 	classId: string;
 	isPaused?: boolean;
 	lessons: StudentClassLesson[];
 	todayISO: string;
 	now: Date;
+	/** Chỉ dùng trong unit test để cố định đồng hồ cục bộ cho ZoomJoinButton. */
+	zoomNowMs?: number;
 }) {
 	if (lessons.length === 0) {
 		return (
@@ -129,7 +133,8 @@ export function ClassLessonList({
 								? "ended"
 								: lesson.status;
 					const showZoomLink =
-						displayStatus === "upcoming" && Boolean(lesson.joinUrl);
+						displayStatus === "upcoming" &&
+						Boolean(lesson.hasZoom ?? lesson.joinUrl);
 					const canShowRecording =
 						lesson.status !== "cancelled" && lesson.status !== "holiday";
 					const showRecordingLink =
@@ -232,22 +237,17 @@ export function ClassLessonList({
 								)}
 								{hasActions && (
 									<div className="mt-2 flex w-full min-w-0 flex-wrap items-center gap-2">
-										{showZoomLink && lesson.joinUrl && (
-											<a
-												href={lesson.joinUrl}
-												target="_blank"
-												rel="noopener noreferrer"
-												className={cn(
-													buttonVariants({
-														variant: isNext ? "default" : "outline",
-														size: "sm",
-													}),
-													"max-w-full whitespace-normal text-center focus-visible:shadow-[var(--focus-ring)] focus-visible:ring-0",
-												)}
-											>
-												<Video aria-hidden="true" className="size-3.5" />
-												Vào lớp (Zoom)
-											</a>
+										{showZoomLink && (
+											<ZoomJoinButton
+												classId={classId}
+												date={lesson.date}
+												time={lesson.time}
+												dur={lesson.dur}
+												variant={isNext ? "default" : "outline"}
+												size="sm"
+												className="max-w-full"
+												nowMs={zoomNowMs}
+											/>
 										)}
 										{showRecordingLink && lesson.recordingUrl && (
 											<a

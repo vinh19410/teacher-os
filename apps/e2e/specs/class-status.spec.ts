@@ -323,6 +323,9 @@ test.describe("Issue #694 — Reversible class pause & resume E2E", () => {
 		await expect(lanPage.getByRole("link", { name: /Vào Zoom/i })).toHaveCount(
 			0,
 		);
+		await expect(
+			lanPage.getByRole("button", { name: /Vào lớp \(Zoom\)/i }),
+		).toHaveCount(0);
 		await expect(lanPage.getByText("Tạm hoãn").first()).toBeVisible();
 		await capturePotScreenshots(lanPage, "694-student-paused");
 		await lanCtx.close();

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+	ACCOUNT_ERROR_CODES,
 	CLASS_ERROR_CODES,
 	type ClassmatesResponse,
 	classmatesResponseSchema,
@@ -26,12 +27,16 @@ import {
 	type StudentOrgItem,
 	type StudentOverview,
 	type StudentScheduleResponse,
+	type StudentZoomJoinError,
+	type StudentZoomJoinResponse,
 	startPracticeResponseSchema,
 	studentClassDetailSchema,
 	studentInboxResponseSchema,
 	studentMeSchema,
 	studentOverviewSchema,
 	studentScheduleResponseSchema,
+	studentZoomJoinErrorSchema,
+	studentZoomJoinResponseSchema,
 } from "@teacher-os/api/contracts";
 import type {
 	StudentLessonMaterialListResponse,
@@ -87,14 +92,20 @@ async function throwStudentHttpError(
 	sentOrgId: string | undefined,
 	fallbackMessage = `Request failed with status ${res.status}`,
 	useBodyErrorAsMessage = false,
+	parsedBody?: unknown,
 ): Promise<never> {
 	let code: string | undefined;
 	let message = fallbackMessage;
 	try {
-		const body = (await res.json()) as { code?: string; error?: string };
-		code = body.code ?? body.error;
-		if (useBodyErrorAsMessage && body.error) {
-			message = body.error;
+		const body = (parsedBody !== undefined ? parsedBody : await res.json()) as {
+			code?: string;
+			error?: string;
+		} | null;
+		if (body && typeof body === "object") {
+			code = body.code ?? body.error;
+			if (useBodyErrorAsMessage && body.error) {
+				message = body.error;
+			}
 		}
 	} catch {
 		// Non-JSON body
@@ -207,6 +218,70 @@ export async function fetchStudentClassDetail(
 
 	const data = (await res.json()) as unknown;
 	return studentClassDetailSchema.parse(data);
+}
+
+export type StudentZoomJoinResult =
+	| { ok: true; data: StudentZoomJoinResponse }
+	| { ok: false; status: number; error: StudentZoomJoinError };
+
+const ZOOM_JOIN_AUTH_ERROR_CODES = new Set<string>([
+	ACCOUNT_ERROR_CODES.TEACHER_ON_STUDENT_PORTAL,
+	STUDENT_ERROR_CODES.EMAIL_UNVERIFIED,
+	STUDENT_ERROR_CODES.NOT_LINKED,
+	STUDENT_ERROR_CODES.ORG_MISMATCH,
+]);
+
+export async function requestStudentZoomJoin(
+	classId: string,
+	date: string,
+): Promise<StudentZoomJoinResult> {
+	const headers = getStudentHeaders();
+	const sentOrgId = headers["x-student-org-id"];
+	const res = await fetch(
+		`${getApiBaseUrl()}/api/student/classes/${encodeURIComponent(classId)}/sessions/${encodeURIComponent(date)}/zoom-join`,
+		{
+			method: "GET",
+			headers,
+			credentials: "include",
+			cache: "no-store",
+		},
+	);
+
+	if (res.ok) {
+		const data = (await res.json()) as unknown;
+		return { ok: true, data: studentZoomJoinResponseSchema.parse(data) };
+	}
+
+	if (res.status === 401) {
+		return await throwStudentHttpError(res, sentOrgId);
+	}
+
+	if (
+		res.status === 400 ||
+		res.status === 403 ||
+		res.status === 404 ||
+		res.status === 409
+	) {
+		let raw: unknown;
+		try {
+			raw = await res.json();
+		} catch {
+			return await throwStudentHttpError(
+				res,
+				sentOrgId,
+				undefined,
+				false,
+				null,
+			);
+		}
+		const parsed = studentZoomJoinErrorSchema.safeParse(raw);
+		if (parsed.success && !ZOOM_JOIN_AUTH_ERROR_CODES.has(parsed.data.code)) {
+			return { ok: false, status: res.status, error: parsed.data };
+		}
+		return await throwStudentHttpError(res, sentOrgId, undefined, false, raw);
+	}
+
+	return await throwStudentHttpError(res, sentOrgId);
 }
 
 export async function fetchStudentNotifications(): Promise<

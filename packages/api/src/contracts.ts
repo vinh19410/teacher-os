@@ -2396,7 +2396,9 @@ export type StudentMe = z.infer<typeof studentMeSchema>;
 export const studentNextSessionSchema = z.object({
 	date: z.string(),
 	time: z.string(),
+	dur: z.number().int().positive().optional(),
 	topic: z.string(),
+	hasZoom: z.boolean().optional(),
 	joinUrl: z.string().nullable().optional(),
 });
 export type StudentNextSession = z.infer<typeof studentNextSessionSchema>;
@@ -2494,6 +2496,7 @@ export const studentClassLessonSchema = z.object({
 	dur: z.number().int(),
 	status: z.string(),
 	topic: z.string(),
+	hasZoom: z.boolean().optional(),
 	joinUrl: z.string().nullable().optional(),
 	recordingUrl: z.string().nullable().optional(),
 	recordingPassword: z.string().nullable().optional(),
@@ -5457,3 +5460,25 @@ export const sessionRecordingUpdateSchema = z
 export type SessionRecordingUpdateInput = z.infer<
 	typeof sessionRecordingUpdateSchema
 >;
+
+/** Phản hồi khi học viên lấy link Zoom trong khung giờ hợp lệ `[start - 30 phút, end)`. */
+export const studentZoomJoinResponseSchema = z.object({
+	joinUrl: z.string(),
+	openAt: z.string(),
+	closeAt: z.string(),
+});
+export type StudentZoomJoinResponse = z.infer<
+	typeof studentZoomJoinResponseSchema
+>;
+
+/** Phản hồi lỗi khi học viên không được phép mở link Zoom (ngoài khung giờ, chưa có link, buổi không hoạt động...). */
+export const studentZoomJoinErrorSchema = z.object({
+	error: z.string(),
+	code: z.string(),
+	date: z.string().optional(),
+	time: z.string().optional(),
+	dur: z.number().int().optional(),
+	openAt: z.string().optional(),
+	closeAt: z.string().optional(),
+});
+export type StudentZoomJoinError = z.infer<typeof studentZoomJoinErrorSchema>;
