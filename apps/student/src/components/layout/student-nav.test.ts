@@ -26,3 +26,23 @@ describe("student-nav placement test entry removal", () => {
 		expect(STUDENT_PAGE_LABEL["placement-test"]).toBe("Kiểm tra đầu vào");
 	});
 });
+
+describe("student-nav practice & history menu visibility (#852)", () => {
+	it("excludes practice and history from STUDENT_NAV by default", () => {
+		const allItems = STUDENT_NAV.flatMap((group) => group.items);
+		const allKeys = allItems.map((item) => item.key);
+		const allHrefs = allItems.map((item) => item.href);
+
+		expect(allKeys).not.toContain("practice");
+		expect(allKeys).not.toContain("history");
+		expect(allHrefs).not.toContain("/practice");
+		expect(allHrefs).not.toContain("/history");
+	});
+
+	it("preserves practice and history active keys and crumb labels", () => {
+		expect(ACTIVE_KEY_BY_PREFIX["/practice"]).toBe("practice");
+		expect(ACTIVE_KEY_BY_PREFIX["/history"]).toBe("history");
+		expect(STUDENT_PAGE_LABEL.practice).toBe("Luyện tập");
+		expect(STUDENT_PAGE_LABEL.history).toBe("Lịch sử");
+	});
+});

@@ -107,6 +107,7 @@ export default defineConfig({
 			url: studentSvc.pollUrl,
 			env: {
 				VITE_SERVER_URL: `http://localhost:${apiPort}`,
+				VITE_STUDENT_PRACTICE_ENABLED: "true",
 				E2E_API_PORT: String(apiPort),
 				E2E_STUDENT_PORT: String(studentPort),
 			},
