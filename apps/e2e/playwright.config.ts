@@ -6,40 +6,35 @@ import { buildServices, resolveViteMode } from "./devserver-services.mjs";
 // Port override cho chạy song song với dev server chiếm 8000/8001 — mặc định
 // giữ nguyên như CI; boot:api cùng đọc env này (fail-loud semantics không đổi).
 const apiPort = Number(process.env.E2E_API_PORT ?? 8000);
-const webPort = Number(process.env.E2E_WEB_PORT ?? 8001);
-const studentPort = Number(process.env.E2E_STUDENT_PORT ?? 8003);
-const adminPort = Number(process.env.E2E_ADMIN_PORT ?? 8104);
+const lmsPort = Number(
+	process.env.E2E_LMS_PORT ?? process.env.E2E_WEB_PORT ?? 8001,
+);
 const profilePort = Number(process.env.E2E_PROFILE_PORT ?? 8105);
 const viteMode = resolveViteMode(process.env);
 const requireService = (name: string) => {
 	const svc = buildServices(
 		{
 			api: apiPort,
-			web: webPort,
-			student: studentPort,
-			admin: adminPort,
+			web: lmsPort,
 		},
 		{ mode: viteMode },
 	).find((s) => s.name === name);
 	if (!svc) throw new Error(`devserver-services thiếu service ${name}`);
 	return svc;
 };
-const webSvc = requireService("web");
-const studentSvc = requireService("student");
-const adminSvc = requireService("admin");
-// Preview chạy bản build nên phải build trước (VITE_* được nhúng lúc build, lấy
-// từ env của chính webServer entry). Watchdog restart chỉ cần preview vì bản
-// build đã có sẵn.
-const viteCommand = (app: string, svc: { restartArgs?: string[] }) => {
-	const serve = ["pnpm", ...(svc.restartArgs ?? [])].join(" ");
-	return viteMode === "preview"
-		? `pnpm --filter ${app} exec vite build && ${serve}`
-		: serve;
-};
+const lmsSvc = requireService("lms");
+// Preview chạy bản build hợp nhất của apps/lms (tự build & gom /teacher,
+// /student, /admin khi LMS_REBUILD_PORTALS=1) rồi phục vụ qua serve-lms.mjs.
+// Watchdog restart chỉ cần chạy lại `pnpm --filter lms run serve`.
+const serveLms = ["pnpm", ...(lmsSvc.restartArgs ?? [])].join(" ");
+const lmsCommand =
+	viteMode === "preview"
+		? `pnpm --filter lms exec vite build && ${serveLms}`
+		: serveLms;
 export default defineConfig({
 	testDir: "./specs",
 	// #402: fail-loud khi hạ tầng dev server bất ổn giữa run (marker/heartbeat
-	// của devserver-watchdog hoặc probe cuối 3 service).
+	// của devserver-watchdog hoặc probe cuối các service).
 	globalTeardown: "./global-teardown.ts",
 	// Fail-fast: suite khỏe mất khoảng 9 phút và test lâu nhất khoảng 10 giây,
 	// nên run hỏng phải dừng sớm thay vì treo hàng giờ. Máy chậm hoặc cần chạy
@@ -56,7 +51,7 @@ export default defineConfig({
 	retries: process.env.CI ? 1 : 0,
 	reporter: [["list"], ["html", { open: "never" }]],
 	use: {
-		baseURL: `http://localhost:${webPort}`,
+		baseURL: `http://localhost:${lmsPort}`,
 		actionTimeout: 15_000,
 		navigationTimeout: 30_000,
 		// Pin Vietnam time so "start tomorrow" in the UI and the VN-today date
@@ -81,52 +76,27 @@ export default defineConfig({
 			timeout: 120_000,
 			env: {
 				E2E_API_PORT: String(apiPort),
-				E2E_WEB_PORT: String(webPort),
-				E2E_STUDENT_PORT: String(studentPort),
-				E2E_ADMIN_PORT: String(adminPort),
+				E2E_LMS_PORT: String(lmsPort),
+				E2E_WEB_PORT: String(lmsPort),
 				E2E_PROFILE_PORT: String(profilePort),
 			},
 		},
 		{
-			command: viteCommand("web", webSvc),
-			url: webSvc.pollUrl,
+			command: lmsCommand,
+			url: lmsSvc.pollUrl,
 			env: {
 				VITE_SERVER_URL: `http://localhost:${apiPort}`,
 				VITE_AI_ENABLED: "true",
 				VITE_TEACHER_SIGNUP_ENABLED: "true",
-				E2E_API_PORT: String(apiPort),
-				E2E_WEB_PORT: String(webPort),
-			},
-			reuseExistingServer: false,
-			timeout: 120_000,
-			// Tường minh: stderr vite (panic/crash rolldown, #402) forward ra output.
-			stderr: "pipe",
-		},
-		{
-			command: viteCommand("student", studentSvc),
-			url: studentSvc.pollUrl,
-			env: {
-				VITE_SERVER_URL: `http://localhost:${apiPort}`,
 				VITE_STUDENT_PRACTICE_ENABLED: "true",
-				E2E_API_PORT: String(apiPort),
-				E2E_STUDENT_PORT: String(studentPort),
+				LMS_REBUILD_PORTALS: "1",
+				PORT: String(lmsPort),
+				E2E_LMS_PORT: String(lmsPort),
+				E2E_WEB_PORT: String(lmsPort),
 			},
 			reuseExistingServer: false,
-			timeout: 120_000,
-			stderr: "pipe",
-		},
-		{
-			// Plan #413 phase 5: cổng quản trị (4th vite — xem memory note
-			// rolldown abort trong AGENTS.md).
-			command: viteCommand("admin", adminSvc),
-			url: adminSvc.pollUrl,
-			env: {
-				VITE_SERVER_URL: `http://localhost:${apiPort}`,
-				E2E_API_PORT: String(apiPort),
-				E2E_ADMIN_PORT: String(adminPort),
-			},
-			reuseExistingServer: false,
-			timeout: 120_000,
+			timeout: 180_000,
+			// Tường minh: stderr build/server forward ra output.
 			stderr: "pipe",
 		},
 		{
@@ -137,7 +107,7 @@ export default defineConfig({
 			env: {
 				PORT: String(profilePort),
 				LEAD_API_URL: `http://localhost:${apiPort}`,
-				STUDENT_PORTAL_URL: `http://localhost:${studentPort}`,
+				STUDENT_PORTAL_URL: `http://localhost:${lmsPort}/student`,
 				PROFILE_MAINTENANCE: "false",
 			},
 			reuseExistingServer: false,
@@ -145,21 +115,20 @@ export default defineConfig({
 			stderr: "pipe",
 		},
 		{
-			// #402: giám sát 4 service trên — vite web/student/admin chết giữa run
-			// được restart (tối đa 1 lần/vite), api chết → marker fail-loud và
+			// #402: giám sát 2 service cốt lõi (api + lms) — lms chết giữa run
+			// được restart tối đa 1 lần, api chết → marker fail-loud và
 			// SIGINT tới runner (E2E_RUNNER_PID) để dừng run ngay.
 			// KHÔNG có `url` (playwright spawn xong không chờ) và đặt CUỐI mảng:
-			// plugin setup chạy tuần tự nên watchdog chỉ poll khi 4 service đã
-			// available.
+			// plugin setup chạy tuần tự nên watchdog chỉ poll khi service đã sẵn sàng.
 			name: "dev-watchdog",
 			command: "node devserver-watchdog.mjs",
 			stdout: "pipe",
 			reuseExistingServer: false,
 			env: {
 				E2E_API_PORT: String(apiPort),
-				E2E_WEB_PORT: String(webPort),
-				E2E_STUDENT_PORT: String(studentPort),
-				E2E_ADMIN_PORT: String(adminPort),
+				E2E_LMS_PORT: String(lmsPort),
+				E2E_WEB_PORT: String(lmsPort),
+				E2E_VITE_MODE: viteMode,
 				E2E_RUNNER_PID: String(process.pid),
 			},
 		},

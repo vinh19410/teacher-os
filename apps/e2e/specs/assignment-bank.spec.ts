@@ -12,7 +12,7 @@ test("bank lists prompts with filters, search, and preview", async ({
 	await signUpViaApi(page);
 
 	// Seed: 1 ready Task 2 prompt + 1 draft Task 1 prompt via /assignments/new.
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill("QC-208 Bank Discuss");
 	await fillRichEditor(
@@ -40,7 +40,7 @@ test("bank lists prompts with filters, search, and preview", async ({
 	).toBeVisible();
 
 	// /assignments hiển thị trực tiếp danh sách bài tập đã tạo (#267).
-	await page.goto("/assignments");
+	await page.goto("/teacher/assignments");
 	await expect(page.getByRole("heading", { name: "Bài tập" })).toBeVisible();
 
 	// Both rows visible + count 2/2 (drafts count toward M).
@@ -102,12 +102,12 @@ test("bank lists prompts with filters, search, and preview", async ({
 
 	// Xem trước (#282) → trang riêng góc nhìn học viên (?id=).
 	await page.getByRole("button", { name: "Xem trước" }).click();
-	await expect(page).toHaveURL(/\/assignments\/preview\?id=/);
+	await expect(page).toHaveURL(/\/teacher\/assignments\/preview\?id=/);
 	// Title trong StudentPreviewPaper là <p>, không phải heading.
 	await expect(page.getByText("QC-208 Bank Chart Draft").first()).toBeVisible();
 	await expect(page.getByText("Xem trước phía học viên").first()).toBeVisible();
 	await page.getByRole("button", { name: "Quay lại danh sách" }).click();
-	await expect(page).toHaveURL(/\/assignments$/);
+	await expect(page).toHaveURL(/\/teacher\/assignments$/);
 	await expect(
 		page.getByRole("heading", { name: "QC-208 Bank Discuss" }),
 	).toBeVisible();

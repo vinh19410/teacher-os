@@ -1,7 +1,7 @@
 import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
 import { seedStudent, signUpViaApi } from "./helpers";
-import { API_ORIGIN, WEB_ORIGIN } from "./origins";
+import { API_ORIGIN, LMS_ORIGIN, TEACHER_BASE_URL } from "./origins";
 
 /**
  * Invoice detail page E2E (#345). Click/Enter trên dòng hóa đơn mở
@@ -111,20 +111,20 @@ async function simulateIpn(
 }
 
 async function teacherSignIn(page: Page): Promise<void> {
-	await page.goto(`${WEB_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signin").click();
-	await page.locator("#si-email").fill(teacherEmail);
-	await page.locator("#si-password").fill(PASSWORD);
+	await page.locator("#signin-email").fill(teacherEmail);
+	await page.locator("#signin-password").fill(PASSWORD);
 	await Promise.all([
 		page.waitForResponse((r) => r.url().includes("/api/auth/sign-in/email")),
-		page.getByRole("button", { name: "Sign in" }).click(),
+		page.locator("#panel-signin button[type='submit']").click(),
 	]);
-	await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
+	await expect(page).toHaveURL(/\/teacher\/dashboard/, { timeout: 30_000 });
 }
 
 /** Click the invoice row whose amount cell shows `amountText`. */
 async function clickInvoiceRow(page: Page, amountText: string) {
-	await page.goto(`${WEB_ORIGIN}/tuition`);
+	await page.goto(`${TEACHER_BASE_URL}/tuition`);
 	await expect(page.getByRole("heading", { name: "Hóa đơn" })).toBeVisible();
 	const row = page.locator("tbody tr", { hasText: amountText }).first();
 	await row.click();
@@ -139,9 +139,8 @@ test.describe("Invoice detail page (#345)", () => {
 	}) => {
 		teacherEmail = `lan.detail.${Date.now()}@e2e.local`;
 		await signUpViaApi(page, { email: teacherEmail, password: PASSWORD });
-		await teacherSignIn(page);
 
-		await page.goto(`${WEB_ORIGIN}/profile`);
+		await page.goto(`${TEACHER_BASE_URL}/profile`);
 		await page
 			.getByRole("button", { name: "Liên kết tài khoản ngân hàng" })
 			.click();
@@ -325,14 +324,14 @@ test.describe("Invoice detail page (#345)", () => {
 		page,
 	}) => {
 		await teacherSignIn(page);
-		await page.goto(`${WEB_ORIGIN}/tuition`);
+		await page.goto(`${TEACHER_BASE_URL}/tuition`);
 		await expect(page.getByRole("heading", { name: "Hóa đơn" })).toBeVisible();
 
 		// Click "Thu học phí" trong dòng legacy 400k → modal mở, URL giữ nguyên.
 		const row = page.locator("tbody tr", { hasText: "400.000đ" }).first();
 		await row.locator("button", { hasText: "Thu học phí" }).click();
 		await expect(page.locator("img[src*='vietqr.app']")).toBeVisible();
-		expect(page.url()).toBe(`${WEB_ORIGIN}/tuition`);
+		expect(page.url()).toBe(`${TEACHER_BASE_URL}/tuition`);
 		await page.keyboard.press("Escape");
 
 		// Keyboard: Tab đến nút trong dòng rồi Enter → modal mở, không điều hướng.
@@ -340,7 +339,7 @@ test.describe("Invoice detail page (#345)", () => {
 		await button.focus();
 		await page.keyboard.press("Enter");
 		await expect(page.locator("img[src*='vietqr.app']")).toBeVisible();
-		expect(page.url()).toBe(`${WEB_ORIGIN}/tuition`);
+		expect(page.url()).toBe(`${TEACHER_BASE_URL}/tuition`);
 		await page.keyboard.press("Escape");
 
 		// Enter trên dòng (tr focus) → điều hướng detail.
@@ -353,7 +352,7 @@ test.describe("Invoice detail page (#345)", () => {
 		page,
 	}) => {
 		await teacherSignIn(page);
-		await page.goto(`${WEB_ORIGIN}/tuition?ky=quarter`);
+		await page.goto(`${TEACHER_BASE_URL}/tuition?ky=quarter`);
 		const row = page.locator("tbody tr", { hasText: "400.000đ" }).first();
 		await row.click();
 		await expect(page).toHaveURL(new RegExp(`/tuition/${legacyId}`));
@@ -363,7 +362,7 @@ test.describe("Invoice detail page (#345)", () => {
 
 	test("student profile tuition tab opens the detail", async ({ page }) => {
 		await teacherSignIn(page);
-		await page.goto(`${WEB_ORIGIN}/students/${studentId}`);
+		await page.goto(`${TEACHER_BASE_URL}/students/${studentId}`);
 		await page.getByRole("tab", { name: "Học phí" }).click();
 		const row = page.locator("tbody tr", { hasText: "400.000đ" }).first();
 		await row.click();
@@ -375,11 +374,13 @@ test.describe("Invoice detail page (#345)", () => {
 		page,
 	}) => {
 		await teacherSignIn(page);
-		const res = await page.goto(`${WEB_ORIGIN}/tuition/${legacyId}`);
+		const res = await page.goto(`${TEACHER_BASE_URL}/tuition/${legacyId}`);
 		expect(res?.status()).toBe(200);
 		await expect(page.getByText("400.000đ").first()).toBeVisible();
 
-		const missing = await page.goto(`${WEB_ORIGIN}/tuition/khong-ton-tai`);
+		const missing = await page.goto(
+			`${TEACHER_BASE_URL}/tuition/khong-ton-tai`,
+		);
 		expect(missing?.status()).toBe(200);
 		await expect(page.getByText("Không tìm thấy hóa đơn")).toBeVisible();
 	});
@@ -390,7 +391,7 @@ test.describe("Invoice detail page (#345)", () => {
 			import.meta.url,
 		).pathname;
 		await teacherSignIn(page);
-		await page.goto(`${WEB_ORIGIN}/tuition/${shotId}`);
+		await page.goto(`${TEACHER_BASE_URL}/tuition/${shotId}`);
 		await expect(
 			page
 				.getByText("Học phí tháng 10 — EARLY BIRD")

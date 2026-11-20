@@ -19,9 +19,9 @@ test("nhập đề bằng AI: trừ 5 Credit, bóc tách 2 trang, cần rà soá
 	// Link (pattern điều hướng của repo) nên role đúng là `link`, không phải
 	// `button` (kongming e2e-consult #470: snapshot chỉ link với
 	// buttonVariants).
-	await page.goto("/assignments/tests/new");
+	await page.goto("/teacher/assignments/tests/new");
 	await page.getByRole("link", { name: "Nhập đề bằng AI (5 Credit)" }).click();
-	await expect(page).toHaveURL(/\/assignments\/tests\/import/);
+	await expect(page).toHaveURL(/\/teacher\/assignments\/tests\/import/);
 
 	// Ví 30 Credit của org mới + đơn giá 5 Credit hiển thị sẵn.
 	const badge = page.getByTestId("credit-cost-badge");
@@ -50,7 +50,7 @@ test("nhập đề bằng AI: trừ 5 Credit, bóc tách 2 trang, cần rà soá
 
 	// Reload giữ ?job= — ví đã trừ 5 Credit (30 → 25).
 	await page.reload();
-	await expect(page).toHaveURL(/\/assignments\/tests\/import\?job=/);
+	await expect(page).toHaveURL(/\/teacher\/assignments\/tests\/import\?job=/);
 	await expect(page.getByTestId("credit-cost-badge")).toContainText(
 		"Ví: 25 Cr",
 	);

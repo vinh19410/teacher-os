@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { type Client, createClient } from "@libsql/client";
 import { expect, test } from "@playwright/test";
 import { signUpViaApi, verifyStudentEmailFromMailLog } from "./helpers";
-import { STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
+import { LMS_ORIGIN, TEACHER_BASE_URL } from "./origins";
 
 const PASSWORD = "password-8chars";
 const runToken = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -212,7 +212,7 @@ test.describe
 			}
 
 			// Navigate to Class Beta -> Từ vựng tab
-			await page.goto(`${WEB_ORIGIN}/classes`);
+			await page.goto(`${TEACHER_BASE_URL}/classes`);
 			const classCard = page.locator("h3", { hasText: classBetaName });
 			await expect(classCard).toBeVisible();
 			await classCard.click();
@@ -423,8 +423,8 @@ test.describe
 			await page.keyboard.press("Escape");
 			await expect(page.getByTestId("vocab-teacher-decks-tab")).toHaveCount(0);
 
-			// Hub /vocab flow: clone Class Alpha deck into Hub (classId = null)
-			await page.goto(`${WEB_ORIGIN}/vocab`);
+			// Hub /teacher/vocab flow: clone Class Alpha deck into Hub (classId = null)
+			await page.goto(`${TEACHER_BASE_URL}/vocab`);
 			await page.getByTestId("vocab-add-from-library").click();
 			await page.getByRole("tab", { name: "Bộ từ đã tạo" }).click();
 			await expect(
@@ -457,7 +457,7 @@ test.describe
 		test("enrolled student in target class can see and start learning the cloned teacher deck", async ({
 			page,
 		}) => {
-			await page.goto(`${STUDENT_ORIGIN}/login`);
+			await page.goto(`${LMS_ORIGIN}/login`);
 			await page.locator("#tab-signup").click();
 			await page.locator("#signup-name").fill("Beta Student");
 			await page.locator("#signup-email").fill(studentEmail);

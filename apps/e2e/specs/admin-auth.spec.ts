@@ -1,57 +1,83 @@
+import { fileURLToPath } from "node:url";
+import { createClient } from "@libsql/client";
+import { expect, request as playwrightRequest, test } from "@playwright/test";
 import {
-	type APIRequestContext,
-	expect,
-	type Page,
-	test,
-} from "@playwright/test";
-import {
+	ADMIN_EMAIL,
 	ADMIN_PASSWORD,
 	adminSignInViaUi,
 	ensureAdminAccount,
 } from "./helpers";
 import {
-	ADMIN_ORIGIN,
+	ADMIN_BASE_URL,
 	API_ORIGIN,
-	STUDENT_ORIGIN,
-	WEB_ORIGIN,
+	LMS_ORIGIN,
+	STUDENT_BASE_URL,
 } from "./origins";
 
 /**
- * Admin auth E2E (plan #413 phase 7): ba lớp gate của console quản trị.
- * Cơ chế thật (khớp unit test phase 1):
- * - Admin (role + verified + ∈ ADMIN_EMAILS) đăng nhập ở admin origin và
- *   qua guard `GET /api/admin/me` vào được shell.
- * - Teacher/student sign-in tại admin origin bị kernel từ chối 403
- *   ROLE_MISMATCH ngay tại form (không tạo session); teacher giữ cookie
- *   web cũ đi thẳng admin app thì guard `requireAdmin` trả 403
- *   ACCOUNT_NOT_ADMIN → toast "Tài khoản của bạn không có quyền quản trị."
- * - Admin bị chặn ở kernel tree và portal học viên (session bị từ chối
- *   ngay tại form, không bao giờ bootstrap org).
- * - Sign-up admin origin với email ngoài ADMIN_EMAILS → 403
- *   ADMIN_SIGNUP_FORBIDDEN (toast "không được cấp quyền quản trị").
+ * Admin auth E2E under unified LMS origin:
+ * - Admin (role + verified + ∈ ADMIN_EMAILS) đăng nhập ở `/login`, tự chuyển
+ *   sang `/admin/library/tests` và qua guard `GET /api/admin/me` vào được shell.
+ * - Cookie teacher/student gọi `GET /api/admin/me` vẫn bị từ chối 403
+ *   `ACCOUNT_NOT_ADMIN`.
+ * - Teacher/student mở `/admin/library/tests` tự động chuyển về cổng của mình
+ *   (`/teacher/dashboard`, `/student`) mà không gọi `signOut`.
+ * - Cookie admin gọi `GET /api/kernel` bị chặn 403 `ACCOUNT_ADMIN_ROLE` (không
+ *   bao giờ bootstrap org) và gọi `GET /api/student/me` bị chặn 403
+ *   `ACCOUNT_TEACHER_ROLE`.
+ * - Đăng ký công khai ở `/login?tab=signup` với email ngoài `ADMIN_EMAILS` chỉ
+ *   được gán role `student` (least privilege) và bị chặn 403 trên `/api/admin/me`.
  */
 
-/** Toast sonner sống ~4s — assert NGAY sau hành động, không chờ URL trước. */
-async function expectToast(page: Page, pattern: RegExp): Promise<void> {
-	await expect(page.getByText(pattern).first()).toBeVisible();
+const LOCAL_DB_PATH = fileURLToPath(
+	new URL("../local.db", import.meta.url).href,
+);
+
+async function openDb() {
+	const client = createClient({
+		url: `file:${LOCAL_DB_PATH}`,
+	});
+	await client.execute("PRAGMA busy_timeout = 5000;");
+	return client;
 }
 
-const NOT_ADMIN_TOAST =
-	/không được phép đăng nhập vào cổng quản trị|không phải tài khoản quản trị/;
-
-async function signUpStudentViaApi(
-	request: APIRequestContext,
-	email: string,
-): Promise<void> {
-	// Không mang Origin admin → classify student (least privilege).
-	const res = await request.post(`${API_ORIGIN}/api/auth/sign-up/email`, {
-		data: { name: "E2E Student", email, password: ADMIN_PASSWORD },
-		headers: { "Content-Type": "application/json" },
-	});
-	if (res.status() !== 200) {
-		throw new Error(
-			`student sign-up failed (${res.status()}): ${await res.text()}`,
-		);
+async function createRoleCookie(opts: {
+	name: string;
+	email: string;
+	role: "teacher" | "student";
+}): Promise<string> {
+	const apiCtx = await playwrightRequest.newContext();
+	try {
+		const signUp = await apiCtx.post(`${API_ORIGIN}/api/auth/sign-up/email`, {
+			data: {
+				name: opts.name,
+				email: opts.email,
+				password: ADMIN_PASSWORD,
+			},
+			headers: { "Content-Type": "application/json", Origin: LMS_ORIGIN },
+		});
+		expect(signUp.status()).toBe(200);
+		const cookie = signUp
+			.headersArray()
+			.find(
+				(h) =>
+					h.name.toLowerCase() === "set-cookie" &&
+					h.value.includes("better-auth.session_token="),
+			)
+			?.value.split(";")[0];
+		expect(cookie).toContain("better-auth.session_token=");
+		const db = await openDb();
+		try {
+			await db.execute({
+				sql: "UPDATE user SET role = ?, email_verified = 1 WHERE lower(email) = lower(?)",
+				args: [opts.role, opts.email],
+			});
+		} finally {
+			db.close();
+		}
+		return cookie as string;
+	} finally {
+		await apiCtx.dispose();
 	}
 }
 
@@ -74,133 +100,181 @@ test("admin đăng nhập vào được shell quản trị với nav Thư viện
 	).toBeVisible();
 });
 
-test("cookie teacher bị guard admin chặn → 403 ACCOUNT_NOT_ADMIN", async ({
+test("cookie teacher và student bị guard admin chặn → 403 ACCOUNT_NOT_ADMIN", async ({
 	request,
 }) => {
 	await ensureAdminAccount(request);
-	// Session teacher thật: sign-up qua API với Origin web (classify teacher),
-	// giữ cookie rồi gọi /api/admin/me với Origin admin như guard của console.
-	const teacherEmail = `e2e-teacher-gate-${Date.now()}@test.local`;
-	const signUp = await request.post(`${API_ORIGIN}/api/auth/sign-up/email`, {
-		data: {
-			name: "E2E Teacher",
-			email: teacherEmail,
-			password: ADMIN_PASSWORD,
-		},
-		headers: { "Content-Type": "application/json", Origin: WEB_ORIGIN },
+	const teacherCookie = await createRoleCookie({
+		name: "E2E Teacher",
+		email: `e2e-teacher-gate-${Date.now()}@test.local`,
+		role: "teacher",
 	});
-	expect(signUp.status()).toBe(200);
-	const cookie = signUp
-		.headersArray()
-		.find((h) => h.name === "set-cookie")
-		?.value.split(";")[0];
-	expect(cookie).toContain("better-auth.session_token=");
-	// Cookie teacher không bao giờ qua admin gate → 403 ACCOUNT_NOT_ADMIN.
-	const me = await request.get(`${API_ORIGIN}/api/admin/me`, {
-		headers: { Origin: ADMIN_ORIGIN, Cookie: cookie as string },
+	const studentCookie = await createRoleCookie({
+		name: "E2E Student",
+		email: `e2e-student-gate-${Date.now()}@test.local`,
+		role: "student",
 	});
-	expect(me.status()).toBe(403);
-	const body: unknown = await me.json();
-	if (
-		!(typeof body === "object" && body !== null && "code" in body) ||
-		body.code !== "ACCOUNT_NOT_ADMIN"
-	) {
-		throw new Error(`admin/me 403 body sai shape: ${JSON.stringify(body)}`);
+
+	for (const cookie of [teacherCookie, studentCookie]) {
+		const me = await request.get(`${API_ORIGIN}/api/admin/me`, {
+			headers: { Origin: LMS_ORIGIN, Cookie: cookie },
+		});
+		expect(me.status()).toBe(403);
+		const body: unknown = await me.json();
+		if (
+			!(typeof body === "object" && body !== null && "code" in body) ||
+			body.code !== "ACCOUNT_NOT_ADMIN"
+		) {
+			throw new Error(`admin/me 403 body sai shape: ${JSON.stringify(body)}`);
+		}
 	}
 });
 
-test("teacher sign-in trực tiếp ở admin origin bị từ chối 403 ROLE_MISMATCH", async ({
+test("teacher vào /admin/library/tests tự động chuyển sang /teacher/dashboard không gọi sign-out", async ({
 	page,
 	request,
 }) => {
 	await ensureAdminAccount(request);
-	const teacherEmail = `e2e-teacher-gate-${Date.now()}@test.local`;
-	// Tạo account teacher thật qua API (origin web → classify teacher).
-	const res = await request.post(`${API_ORIGIN}/api/auth/sign-up/email`, {
-		data: {
-			name: "E2E Teacher",
-			email: teacherEmail,
-			password: ADMIN_PASSWORD,
-		},
-		headers: { "Content-Type": "application/json", Origin: WEB_ORIGIN },
+	const teacherEmail = `e2e-teacher-admin-redirect-${Date.now()}@test.local`;
+	await createRoleCookie({
+		name: "E2E Teacher",
+		email: teacherEmail,
+		role: "teacher",
 	});
-	expect(res.status()).toBe(200);
-	await page.goto(`${ADMIN_ORIGIN}/login`);
+
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#signin-email").fill(teacherEmail);
 	await page.locator("#signin-password").fill(ADMIN_PASSWORD);
-	const [signIn] = await Promise.all([
-		page.waitForResponse((r) => r.url().includes("/api/auth/sign-in/email")),
-		page.locator("#panel-signin button[type='submit']").click(),
-	]);
-	expect(signIn.status()).toBe(403);
-	await expectToast(page, NOT_ADMIN_TOAST);
-	await expect(page).toHaveURL(/\/login/);
+	await page.locator("#panel-signin button[type='submit']").click();
+	await expect(page).toHaveURL(/\/teacher\/dashboard/, { timeout: 30_000 });
+
+	const signOutRequests: string[] = [];
+	page.on("request", (req) => {
+		if (req.url().includes("/api/auth/sign-out")) {
+			signOutRequests.push(`${req.method()} ${req.url()}`);
+		}
+	});
+
+	await page.goto(`${ADMIN_BASE_URL}/library/tests`);
+	await expect(page).toHaveURL(/\/teacher\/dashboard/, { timeout: 30_000 });
+	expect(signOutRequests).toEqual([]);
 });
 
-test("student sign-in ở admin origin bị từ chối — không tạo session", async ({
+test("student vào /admin/library/tests tự động chuyển sang /student không gọi sign-out", async ({
 	page,
 	request,
 }) => {
 	await ensureAdminAccount(request);
-	const studentEmail = `e2e-admin-gate-${Date.now()}@test.local`;
-	await signUpStudentViaApi(request, studentEmail);
-	await page.goto(`${ADMIN_ORIGIN}/login`);
+	const studentEmail = `e2e-student-admin-redirect-${Date.now()}@test.local`;
+	await createRoleCookie({
+		name: "E2E Student",
+		email: studentEmail,
+		role: "student",
+	});
+
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#signin-email").fill(studentEmail);
 	await page.locator("#signin-password").fill(ADMIN_PASSWORD);
-	const [signIn] = await Promise.all([
-		page.waitForResponse((r) => r.url().includes("/api/auth/sign-in/email")),
-		page.locator("#panel-signin button[type='submit']").click(),
-	]);
-	expect(signIn.status()).toBe(403);
-	// Không bao giờ vào được console; toast từ chối (role khác admin).
-	await expectToast(page, NOT_ADMIN_TOAST);
-	await expect(page).toHaveURL(/\/login/);
+	await page.locator("#panel-signin button[type='submit']").click();
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}`), {
+		timeout: 30_000,
+	});
+
+	const signOutRequests: string[] = [];
+	page.on("request", (req) => {
+		if (req.url().includes("/api/auth/sign-out")) {
+			signOutRequests.push(`${req.method()} ${req.url()}`);
+		}
+	});
+
+	await page.goto(`${ADMIN_BASE_URL}/library/tests`);
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}`), {
+		timeout: 30_000,
+	});
+	expect(signOutRequests).toEqual([]);
 });
 
-test("admin sign-in ở web origin bị từ chối — kernel không bao giờ bootstrap org", async ({
-	page,
+test("cookie admin bị /api/kernel và /api/student/me chặn 403, không bao giờ bootstrap org", async ({
 	request,
 }) => {
 	await ensureAdminAccount(request);
-	await page.goto("/login");
-	await page.locator("#tab-signin").click();
-	await page.locator("#si-email").fill("admin@e2e.local");
-	await page.locator("#si-password").fill(ADMIN_PASSWORD);
-	const [signIn] = await Promise.all([
-		page.waitForResponse((r) => r.url().includes("/api/auth/sign-in/email")),
-		page.locator("#panel-signin button[type='submit']").click(),
-	]);
-	expect(signIn.status()).toBe(403);
-	// Không vào dashboard, không mount workspace.
-	await expect(page).toHaveURL(/\/login/);
-	const snapshot = await request.get(`${API_ORIGIN}/api/kernel`);
-	expect(snapshot.status()).toBe(401); // không cookie → 401, không bootstrap
+
+	const apiCtx = await playwrightRequest.newContext();
+	const db = await openDb();
+	try {
+		const orgsBefore = await db.execute(
+			"SELECT count(*) AS n FROM organization",
+		);
+		const membershipsBefore = await db.execute(
+			"SELECT count(*) AS n FROM membership",
+		);
+
+		const signIn = await apiCtx.post(`${API_ORIGIN}/api/auth/sign-in/email`, {
+			data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
+			headers: { "Content-Type": "application/json", Origin: LMS_ORIGIN },
+		});
+		expect(signIn.status()).toBe(200);
+		const cookie = signIn
+			.headersArray()
+			.find(
+				(h) =>
+					h.name.toLowerCase() === "set-cookie" &&
+					h.value.includes("better-auth.session_token="),
+			)
+			?.value.split(";")[0];
+		expect(cookie).toContain("better-auth.session_token=");
+
+		const kernelRes = await apiCtx.get(`${API_ORIGIN}/api/kernel`, {
+			headers: { Origin: LMS_ORIGIN, Cookie: cookie as string },
+		});
+		expect(kernelRes.status()).toBe(403);
+		expect(((await kernelRes.json()) as { code?: string }).code).toBe(
+			"ACCOUNT_ADMIN_ROLE",
+		);
+
+		const studentRes = await apiCtx.get(`${API_ORIGIN}/api/student/me`, {
+			headers: { Origin: LMS_ORIGIN, Cookie: cookie as string },
+		});
+		expect(studentRes.status()).toBe(403);
+		expect(((await studentRes.json()) as { code?: string }).code).toBe(
+			"ACCOUNT_TEACHER_ROLE",
+		);
+
+		const orgsAfter = await db.execute(
+			"SELECT count(*) AS n FROM organization",
+		);
+		const membershipsAfter = await db.execute(
+			"SELECT count(*) AS n FROM membership",
+		);
+		expect(Number(orgsAfter.rows[0]?.n)).toBe(Number(orgsBefore.rows[0]?.n));
+		expect(Number(membershipsAfter.rows[0]?.n)).toBe(
+			Number(membershipsBefore.rows[0]?.n),
+		);
+	} finally {
+		db.close();
+		await apiCtx.dispose();
+	}
 });
 
-test("admin sign-in ở cổng học viên bị từ chối", async ({ page }) => {
-	await page.goto(`${STUDENT_ORIGIN}/login`);
-	await page.locator("#tab-signin").click();
-	await page.locator("#signin-email").fill("admin@e2e.local");
-	await page.locator("#signin-password").fill(ADMIN_PASSWORD);
-	const [signIn] = await Promise.all([
-		page.waitForResponse((r) => r.url().includes("/api/auth/sign-in/email")),
-		page.locator("#panel-signin button[type='submit']").click(),
-	]);
-	expect(signIn.status()).toBe(403);
-	await expect(page).toHaveURL(/\/login/);
-});
-
-test("sign-up trên admin origin với email ngoài ADMIN_EMAILS bị từ chối", async ({
+test("đăng ký công khai tại /login với email ngoài ADMIN_EMAILS chỉ nhận role student và bị chặn ở /api/admin/me", async ({
 	page,
 }) => {
-	await page.goto(`${ADMIN_ORIGIN}/register`);
-	await page.locator("#register-name").fill("Stranger");
-	await page
-		.locator("#register-email")
-		.fill(`stranger-${Date.now()}@test.local`);
-	await page.locator("#register-password").fill(ADMIN_PASSWORD);
-	await page.getByRole("button", { name: "Tạo tài khoản" }).click();
-	await expectToast(page, /không được cấp quyền quản trị|danh sách quản trị/);
-	// Không điều hướng vào console sau sign-up bị chặn.
-	await expect(page).toHaveURL(/\/register/);
+	const strangerEmail = `stranger-${Date.now()}@test.local`;
+	await page.goto(`${LMS_ORIGIN}/login?tab=signup`);
+	await page.locator("#signup-name").fill("Stranger");
+	await page.locator("#signup-email").fill(strangerEmail);
+	await page.locator("#signup-password").fill(ADMIN_PASSWORD);
+	await page.locator("#panel-signup button[type='submit']").click();
+
+	// Email lạ chỉ được gán student và chuyển sang /student (không bao giờ thành admin).
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}`), {
+		timeout: 30_000,
+	});
+	const meRes = await page.request.get(`${API_ORIGIN}/api/admin/me`, {
+		headers: { Origin: LMS_ORIGIN },
+	});
+	expect(meRes.status()).toBe(403);
+	expect(((await meRes.json()) as { code?: string }).code).toBe(
+		"ACCOUNT_NOT_ADMIN",
+	);
 });

@@ -1,8 +1,8 @@
 import { mkdirSync } from "node:fs";
 import { type Client, createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
-import { verifyStudentEmailFromMailLog } from "./helpers";
-import { STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
+import { signUpViaApi, verifyStudentEmailFromMailLog } from "./helpers";
+import { LMS_ORIGIN, STUDENT_BASE_URL, TEACHER_BASE_URL } from "./origins";
 
 /**
  * Vocab Independent Hub, Suggestion Lifecycle & Per-Student Progress E2E (#363).
@@ -41,15 +41,12 @@ function openDb(): Client {
 }
 
 async function signInTeacher(page: Page): Promise<void> {
-	await page.goto(`${WEB_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signin").click();
-	await page.locator("#si-email").fill(teacherEmail);
-	await page.locator("#si-password").fill(PASSWORD);
-	await page
-		.locator("#panel-signin")
-		.getByRole("button", { name: "Sign in" })
-		.click();
-	await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
+	await page.locator("#signin-email").fill(teacherEmail);
+	await page.locator("#signin-password").fill(PASSWORD);
+	await page.locator("#panel-signin button[type='submit']").click();
+	await expect(page).toHaveURL(/\/teacher\/dashboard/, { timeout: 30_000 });
 }
 
 test.describe
@@ -63,13 +60,12 @@ test.describe
 		test("teacher creates independent decks in /vocab hub (not shown in class tab) and suggests to student", async ({
 			page,
 		}) => {
-			// 1) Teacher signs up through real UI (bootstraps org + membership)
-			await page.goto(`${WEB_ORIGIN}/login`);
-			await page.locator("#su-name").fill("Hub Teacher");
-			await page.locator("#su-email").fill(teacherEmail);
-			await page.locator("#su-password").fill(PASSWORD);
-			await page.getByRole("button", { name: "Create account" }).click();
-			await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
+			// 1) Teacher signs up via API (promotes to verified teacher + bootstraps org)
+			await signUpViaApi(page, {
+				name: "Hub Teacher",
+				email: teacherEmail,
+				password: PASSWORD,
+			});
 
 			// 2) Seed a class and a student (NOT enrolled in the class) in the teacher's org
 			const db = openDb();
@@ -114,7 +110,7 @@ test.describe
 
 			// Reload so teacher kernel snapshot picks up the seeded class and student
 			await page.reload();
-			await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
+			await expect(page).toHaveURL(/\/teacher\/dashboard/, { timeout: 30_000 });
 
 			// 3) Navigate to /vocab via sidebar "Từ vựng"
 			const sidebarVocabLink = page
@@ -224,7 +220,7 @@ test.describe
 			await page.getByTestId("vocab-suggest-close").click();
 
 			// 5) Verify independent decks do NOT appear in class's "Từ vựng" tab
-			await page.goto(`${WEB_ORIGIN}/classes/${classId}`);
+			await page.goto(`${TEACHER_BASE_URL}/classes/${classId}`);
 			await page.getByRole("tab", { name: "Từ vựng" }).click();
 			await expect(page.getByTestId(`vocab-deck-row-${deckId1}`)).toHaveCount(
 				0,
@@ -238,7 +234,7 @@ test.describe
 			page,
 		}) => {
 			// 1) Student signs up and verifies email
-			await page.goto(`${STUDENT_ORIGIN}/login`);
+			await page.goto(`${LMS_ORIGIN}/login`);
 			await page.locator("#tab-signup").click();
 			await page.locator("#signup-name").fill(studentName);
 			await page.locator("#signup-email").fill(studentEmail);
@@ -250,9 +246,9 @@ test.describe
 			await verifyStudentEmailFromMailLog(page, studentEmail);
 			await expect(page.getByTestId("vocab-home-entry")).toBeVisible();
 
-			// 2) Student opens /practice/vocabulary -> sees "Gợi ý cho bạn" with both suggestions
+			// 2) Student opens /student/practice/vocabulary -> sees "Gợi ý cho bạn" with both suggestions
 			await page.getByTestId("vocab-home-entry").click();
-			await expect(page).toHaveURL(`${STUDENT_ORIGIN}/practice/vocabulary`);
+			await expect(page).toHaveURL(`${STUDENT_BASE_URL}/practice/vocabulary`);
 			await expect(page.getByTestId("vocab-overview-page")).toBeVisible();
 			await expect(page.getByTestId("vocab-suggestions-section")).toBeVisible();
 			await expect(page.getByTestId("vocab-suggestions-section")).toContainText(
@@ -298,12 +294,12 @@ test.describe
 				page.getByTestId("vocab-suggestions-section"),
 			).not.toContainText(deckTitle2);
 
-			// 4) Accept 1st suggestion ("Bắt đầu học") -> navigates to /practice/vocabulary/$deckId1
+			// 4) Accept 1st suggestion ("Bắt đầu học") -> navigates to /student/practice/vocabulary/$deckId1
 			await page
 				.getByRole("button", { name: `Bắt đầu học ${deckTitle1}` })
 				.click();
 			await expect(page).toHaveURL(
-				`${STUDENT_ORIGIN}/practice/vocabulary/${deckId1}`,
+				`${STUDENT_BASE_URL}/practice/vocabulary/${deckId1}`,
 			);
 			await expect(page.getByTestId("vocab-deck-detail")).toBeVisible();
 			await expect(page.getByTestId("vocab-deck-title")).toHaveText(deckTitle1);
@@ -441,7 +437,7 @@ test.describe
 			page,
 		}) => {
 			await signInTeacher(page);
-			await page.goto(`${WEB_ORIGIN}/vocab`);
+			await page.goto(`${TEACHER_BASE_URL}/vocab`);
 
 			// Switch to "Tiến độ" tab
 			await page.getByRole("tab", { name: "Tiến độ" }).click();

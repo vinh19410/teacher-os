@@ -48,7 +48,7 @@ test("xem trước PDF và ảnh inline trong ngân hàng; file Office chỉ hi�
 		clip: { x: 0, y: 0, width: 480, height: 270 },
 	});
 
-	await page.goto("/materials");
+	await page.goto("/teacher/materials");
 	await expect(page.getByTestId("materials-empty")).toBeVisible();
 	await uploadToBank(page, {
 		name: PDF_NAME,

@@ -81,7 +81,7 @@ async function seedTemplate(page: Page, name: string): Promise<string> {
 }
 
 async function openClassFromList(page: Page, className: string) {
-	await page.goto("/classes");
+	await page.goto("/teacher/classes");
 	await page.getByText(className).first().click();
 	await expect(page).toHaveURL(/\/classes\/.+/);
 }
@@ -93,7 +93,7 @@ test("A: tạo lớp kèm template qua TemplatePicker — tab Giáo trình thấ
 	await signUpViaApi(page);
 	await seedTemplate(page, `E2E 394 Template ${stamp}`);
 
-	await page.goto("/classes");
+	await page.goto("/teacher/classes");
 	await page.getByRole("button", { name: "+ Tạo lớp" }).click();
 	const dialog = page.getByRole("dialog");
 	await dialog
@@ -132,7 +132,7 @@ test("B: gán sau — lớp trống nhập từ template; nhập lần hai bằn
 	await signUpViaApi(page);
 	const templateId = await seedTemplate(page, `E2E 394 Assign ${stamp}`);
 
-	await page.goto("/classes");
+	await page.goto("/teacher/classes");
 	await page.getByRole("button", { name: "+ Tạo lớp" }).click();
 	const dialog = page.getByRole("dialog");
 	await dialog
@@ -338,7 +338,7 @@ test("C: sửa buổi trên bản copy không đổi template gốc", async ({ p
 	const templateId = await seedTemplate(page, `E2E 394 Copy ${stamp}`);
 
 	// Tạo lớp kèm template bằng API cho nhanh — focus của test là edit copy.
-	await page.goto("/classes");
+	await page.goto("/teacher/classes");
 	await page.getByRole("button", { name: "+ Tạo lớp" }).click();
 	const dialog = page.getByRole("dialog");
 	await dialog
@@ -373,7 +373,7 @@ test("C: sửa buổi trên bản copy không đổi template gốc", async ({ p
 	await expect(manageDialog.getByText("Buổi A1 (bản copy)")).toBeVisible();
 
 	// Template gốc giữ tiêu đề cũ.
-	await page.goto(`/syllabus/${templateId}`);
+	await page.goto(`/teacher/syllabus/${templateId}`);
 	await expect(page.getByText("Buổi A1", { exact: true })).toBeVisible();
 	await expect(page.getByText("Buổi A1 (bản copy)")).toHaveCount(0);
 });
@@ -385,7 +385,7 @@ test("D: gỡ giáo trình — tab trở về trạng thái trống, template c�
 	await signUpViaApi(page);
 	const templateId = await seedTemplate(page, `E2E 394 Remove ${stamp}`);
 
-	await page.goto("/classes");
+	await page.goto("/teacher/classes");
 	await page.getByRole("button", { name: "+ Tạo lớp" }).click();
 	const dialog = page.getByRole("dialog");
 	await dialog
@@ -420,7 +420,7 @@ test("D: gỡ giáo trình — tab trở về trạng thái trống, template c�
 	).toBeVisible();
 
 	// Template vẫn còn nguyên.
-	await page.goto(`/syllabus/${templateId}`);
+	await page.goto(`/teacher/syllabus/${templateId}`);
 	await expect(page.getByText(`E2E 394 Remove ${stamp}`)).toBeVisible();
 });
 
@@ -453,12 +453,12 @@ test("E: id bản copy không mở được như template — 404 branded", asyn
 	const copyId = copy.id ?? "";
 	expect(copyId).not.toBe("");
 
-	await page.goto(`/syllabus/${copyId}`);
+	await page.goto(`/teacher/syllabus/${copyId}`);
 	await expect(
 		page.getByText("Không tìm thấy syllabus", { exact: true }),
 	).toBeVisible();
 
 	// Còn template id thật thì vẫn mở được.
-	await page.goto(`/syllabus/${templateId}`);
+	await page.goto(`/teacher/syllabus/${templateId}`);
 	await expect(page.getByText(`E2E 394 Guard ${stamp}`)).toBeVisible();
 });

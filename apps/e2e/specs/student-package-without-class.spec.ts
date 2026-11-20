@@ -22,7 +22,7 @@ test("học viên chưa lớp: 'Chưa có lớp' → enroll lớp 'Đã mời' �
 	await seedStudent({ teacherEmail, name: STUDENT_NAME, email: STUDENT_EMAIL });
 
 	// 3. Students list: row shows "Chưa có lớp"
-	await page.goto("/students");
+	await page.goto("/teacher/students");
 	const studentRow = page.locator("tr", { hasText: STUDENT_NAME });
 	await expect(studentRow).toBeVisible();
 	await expect(studentRow.getByText("Chưa có lớp")).toBeVisible();
@@ -33,7 +33,7 @@ test("học viên chưa lớp: 'Chưa có lớp' → enroll lớp 'Đã mời' �
 	await expect(page.getByText("Chưa tham gia lớp học nào.")).toBeVisible();
 
 	// 5. Tuition page: row shows "Chưa có gói", no "Sắp hết" badge
-	await page.goto("/tuition");
+	await page.goto("/teacher/tuition");
 	const tuitionRow = page.getByRole("row").filter({ hasText: STUDENT_NAME });
 	await expect(tuitionRow).toBeVisible();
 	await expect(tuitionRow.getByText("Chưa có gói")).toBeVisible();
@@ -78,7 +78,7 @@ test("học viên chưa lớp: 'Chưa có lớp' → enroll lớp 'Đã mời' �
 	await expect(page.getByText("Đang học")).toBeVisible();
 
 	// 9. Tuition page: package now generated and visible
-	await page.goto("/tuition");
+	await page.goto("/teacher/tuition");
 	const activeTuitionRow = page
 		.getByRole("row")
 		.filter({ hasText: STUDENT_NAME });

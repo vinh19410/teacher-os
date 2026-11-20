@@ -29,7 +29,7 @@ test("Issue #649: Chụp screenshots 3 viewports light & dark cho tính năng th
 		schedulingMode: "manual",
 	});
 
-	await page.goto(`/classes/${classId}`);
+	await page.goto(`/teacher/classes/${classId}`);
 	await expect(page.getByText(CLASS_NAME)).toBeVisible();
 	await expect(page.getByText("Chưa có buổi học nào")).toBeVisible();
 

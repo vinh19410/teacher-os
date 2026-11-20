@@ -30,7 +30,7 @@ test("AC-004 scenario 1: chặn tệp 21 trang, có mật khẩu và > 15 MB nga
 		}
 	});
 
-	await page.goto("/assignments/tests/import");
+	await page.goto("/teacher/assignments/tests/import");
 	const badge = page.getByTestId("credit-cost-badge");
 	await expect(badge).toContainText("Ví: 30 Cr");
 
@@ -82,7 +82,7 @@ test("AC-004 scenario 2: AI lỗi khi bóc tách → hoàn đủ 5 Credit, hiệ
 }) => {
 	await signUpViaApi(page);
 
-	await page.goto("/assignments/tests/import");
+	await page.goto("/teacher/assignments/tests/import");
 	const badge = page.getByTestId("credit-cost-badge");
 	await expect(badge).toContainText("Ví: 30 Cr");
 

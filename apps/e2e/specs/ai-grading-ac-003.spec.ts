@@ -13,7 +13,12 @@ import {
 	verifyStudentEmailFromMailLog,
 } from "./helpers";
 import { seedQuizFixture } from "./helpers-quiz";
-import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
+import {
+	API_ORIGIN,
+	LMS_ORIGIN,
+	STUDENT_BASE_URL,
+	TEACHER_BASE_URL,
+} from "./origins";
 
 /**
  * TOS-32 #480 — E2E AC-003 (US-006): khi tổ chức ở gói thuê bao tháng còn
@@ -46,12 +51,12 @@ function openLocalDb() {
 }
 
 async function signInStudent(page: Page): Promise<void> {
-	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signin").click();
 	await page.locator("#signin-email").fill(studentEmail);
 	await page.locator("#signin-password").fill(PASSWORD);
 	await page.locator("#panel-signin button[type='submit']").click();
-	await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`), {
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
 		timeout: 30_000,
 	});
 	await expect(page.getByRole("heading", { name: "Bài tập" })).toBeVisible();
@@ -92,7 +97,7 @@ async function submitWritingPaper(page: Page, title: string): Promise<string> {
 
 test.beforeAll(async ({ browser }) => {
 	test.setTimeout(120_000);
-	teacherContext = await browser.newContext({ baseURL: WEB_ORIGIN });
+	teacherContext = await browser.newContext({ baseURL: LMS_ORIGIN });
 	teacherPage = await teacherContext.newPage();
 	const teacherEmail = await signUpViaApi(teacherPage, {
 		name: "Cô Chấm Nhanh",
@@ -162,7 +167,7 @@ test.beforeAll(async ({ browser }) => {
 
 	const signupContext = await browser.newContext();
 	const page = await signupContext.newPage();
-	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signup").click();
 	await page.locator("#signup-name").fill("Học Viên Quick");
 	await page.locator("#signup-email").fill(studentEmail);
@@ -172,7 +177,7 @@ test.beforeAll(async ({ browser }) => {
 		timeout: 15_000,
 	});
 	await verifyStudentEmailFromMailLog(page, studentEmail);
-	await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`), {
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
 		timeout: 30_000,
 	});
 	await signupContext.close();
@@ -192,7 +197,7 @@ test("Scenario 1 (lượt 30/30): học viên nộp Writing → chấm nhanh 0 C
 	attemptId1 = await submitWritingPaper(page, writingTitle1);
 	await context.close();
 
-	await teacherPage.goto(`${WEB_ORIGIN}/grading/${attemptId1}`);
+	await teacherPage.goto(`${TEACHER_BASE_URL}/grading/${attemptId1}`);
 	const panel = teacherPage.getByTestId("ai-draft-panel");
 	await expect(panel).toBeVisible();
 	await expect(panel.getByText("AI đã chấm nháp")).toBeVisible();
@@ -203,8 +208,8 @@ test("Scenario 1 (lượt 30/30): học viên nộp Writing → chấm nhanh 0 C
 	await expect(panel.getByText("7.0")).toBeVisible();
 	await expect(panel.getByText("6.0")).toBeVisible();
 
-	// Hàng chờ /grading cũng hiển thị badge "Bản nháp chấm nhanh".
-	await teacherPage.goto(`${WEB_ORIGIN}/grading`);
+	// Hàng chờ /teacher/grading cũng hiển thị badge "Bản nháp chấm nhanh".
+	await teacherPage.goto(`${TEACHER_BASE_URL}/grading`);
 	await expect(
 		teacherPage.getByTestId("ai-quick-grade-badge").first(),
 	).toHaveText("Bản nháp chấm nhanh");
@@ -229,7 +234,7 @@ test("Scenario 2 (lượt 31/30): đã dùng hết 30/30 lượt → manual_pend
 	attemptId2 = await submitWritingPaper(page, writingTitle2);
 	await context.close();
 
-	await teacherPage.goto(`${WEB_ORIGIN}/grading/${attemptId2}`);
+	await teacherPage.goto(`${TEACHER_BASE_URL}/grading/${attemptId2}`);
 	const panel = teacherPage.getByTestId("ai-draft-panel");
 	await expect(panel).toBeVisible();
 	await expect(panel.getByText("Chờ chấm tay")).toBeVisible();

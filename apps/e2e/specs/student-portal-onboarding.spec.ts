@@ -1,7 +1,7 @@
 import { createClient } from "@libsql/client";
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import { verifyStudentEmailFromMailLog } from "./helpers";
-import { STUDENT_ORIGIN } from "./origins";
+import { LMS_ORIGIN, STUDENT_BASE_URL } from "./origins";
 
 const REVIEW_VIEWPORTS = [
 	{ width: 1440, height: 900 },
@@ -313,7 +313,7 @@ test.describe("Student Portal Onboarding Wizard", () => {
 		const studentName = "Học Viên Onboarding";
 
 		// 1. Đăng ký tài khoản
-		await page.goto(`${STUDENT_ORIGIN}/login`);
+		await page.goto(`${LMS_ORIGIN}/login`);
 		await page.locator("#tab-signup").click();
 		await page.locator("#signup-name").fill(studentName);
 		await page.locator("#signup-email").fill(email);
@@ -417,12 +417,14 @@ test.describe("Student Portal Onboarding Wizard", () => {
 		await finishBtn.click();
 
 		// 6. Chuyển về overview
-		await expect(page).toHaveURL(/\/$/, { timeout: 20_000 });
+		await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
+			timeout: 20_000,
+		});
 		await expect(page.getByRole("heading", { name: /Chào/ })).toBeVisible();
 
 		// Anti-bounce check
 		await page.waitForTimeout(1500);
-		await expect(page).toHaveURL(/\/$/);
+		await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`));
 		await expect(
 			page.getByText("Bạn muốn học tiếng Anh theo hướng nào?"),
 		).not.toBeVisible();
@@ -455,9 +457,11 @@ test.describe("Student Portal Onboarding Wizard", () => {
 			client.close();
 		}
 
-		// 8. Gate ngược: User đã hoàn thành onboarding khi vào lại /onboarding bị đẩy về /
-		await page.goto(`${STUDENT_ORIGIN}/onboarding`);
-		await expect(page).toHaveURL(/\/$/, { timeout: 20_000 });
+		// 8. Gate ngược: User đã hoàn thành onboarding khi vào lại /student/onboarding bị đẩy về /student
+		await page.goto(`${STUDENT_BASE_URL}/onboarding`);
+		await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
+			timeout: 20_000,
+		});
 		await expect(page.getByRole("heading", { name: /Chào/ })).toBeVisible();
 	});
 
@@ -468,7 +472,7 @@ test.describe("Student Portal Onboarding Wizard", () => {
 		const studentName = "Học Viên Unverified";
 
 		// 1. Đăng ký tài khoản nhưng KHÔNG verify
-		await page.goto(`${STUDENT_ORIGIN}/login`);
+		await page.goto(`${LMS_ORIGIN}/login`);
 		await page.locator("#tab-signup").click();
 		await page.locator("#signup-name").fill(studentName);
 		await page.locator("#signup-email").fill(email);
@@ -479,8 +483,8 @@ test.describe("Student Portal Onboarding Wizard", () => {
 			timeout: 15_000,
 		});
 
-		// 2. Vào thẳng /onboarding
-		await page.goto(`${STUDENT_ORIGIN}/onboarding`);
+		// 2. Vào thẳng /student/onboarding
+		await page.goto(`${STUDENT_BASE_URL}/onboarding`);
 
 		// 3. Vẫn thấy màn chờ xác thực
 		await expect(page.getByText("Email chưa được xác thực")).toBeVisible({

@@ -3,7 +3,12 @@ import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
 import { signUpViaApi } from "./helpers";
-import { API_ORIGIN, PROFILE_ORIGIN, WEB_ORIGIN } from "./origins";
+import {
+	API_ORIGIN,
+	PROFILE_ORIGIN,
+	TEACHER_BASE_URL,
+	WEB_ORIGIN,
+} from "./origins";
 
 /**
  * #851: Master data khóa học 2 cấp (/courses) và dropdown bắt buộc chọn 1 khóa
@@ -186,7 +191,7 @@ test.describe
 			await publishSeedPlacementTest(page);
 
 			// 1. Mở /courses → thấy 2 nhóm mặc định (Giao Tiếp 3 khóa, IELTS 4 khóa).
-			await page.goto(`${WEB_ORIGIN}/courses`);
+			await page.goto(`${TEACHER_BASE_URL}/courses`);
 			const categoryCards = page.getByTestId("course-category-card");
 			await expect(categoryCards).toHaveCount(2);
 			await expect(categoryCards.nth(0)).toContainText("Giao Tiếp");
@@ -289,7 +294,7 @@ test.describe
 			expect(uploadRes.status()).toBe(200);
 
 			// 4. Mở /leads → chấm bài: nhập đủ Writing & Speaking nhưng chưa chọn khóa → nút Chốt disabled.
-			await page.goto(`${WEB_ORIGIN}/leads`);
+			await page.goto(`${TEACHER_BASE_URL}/leads`);
 			const table = page.getByTestId("leads-table");
 			await expect(table).toBeVisible();
 			await table.locator("tr", { hasText: phone }).click();
@@ -359,7 +364,7 @@ test.describe
 			);
 
 			// 6. Xóa khóa "TOEIC 650+" trong /courses → xác nhận lịch sử bài đã chấm cũ vẫn giữ snapshot "TOEIC - TOEIC 650+".
-			await page.goto(`${WEB_ORIGIN}/courses`);
+			await page.goto(`${TEACHER_BASE_URL}/courses`);
 			const toeicCard = page
 				.getByTestId("course-category-card")
 				.filter({ hasText: "TOEIC" });

@@ -23,7 +23,7 @@ test("create a ready listening map with bank, pins and audio; round-trip through
 	);
 
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 
 	await page.getByRole("button", { name: "Listening", exact: true }).click();
 	await page.getByRole("button", { name: "Section 2" }).click();
@@ -92,7 +92,7 @@ test("create a ready listening map with bank, pins and audio; round-trip through
 	).toBeVisible();
 
 	// Snapshot round-trip: the bank page aside draws the map pins + bank.
-	await page.goto("/assignments");
+	await page.goto("/teacher/assignments");
 	await page.getByRole("button", { name: "Listening", exact: true }).click();
 	await page.getByRole("button", { name: /QC-271 Listening Map/ }).click();
 	await expect(page.getByLabel("Điền đáp án câu 11")).toBeVisible();
@@ -104,7 +104,7 @@ test("writing task1 map is never image/pin-gated (skill-qualified)", async ({
 	page,
 }) => {
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 
 	await page.getByRole("button", { name: "Writing", exact: true }).click();
 	await page.getByRole("button", { name: "Task 1 · 150 từ" }).click();

@@ -2,8 +2,8 @@ import { mkdirSync } from "node:fs";
 import { type Client, createClient } from "@libsql/client";
 import { expect, test } from "@playwright/test";
 import { EXPECTED_COUNTS } from "@teacher-os/db/seed/vocab-library";
-import { verifyStudentEmailFromMailLog } from "./helpers";
-import { STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
+import { signUpViaApi, verifyStudentEmailFromMailLog } from "./helpers";
+import { LMS_ORIGIN, STUDENT_BASE_URL, TEACHER_BASE_URL } from "./origins";
 
 /**
  * Built-in Vocabulary Courses — Clone-on-Assign E2E (#361).
@@ -78,13 +78,12 @@ test.describe
 				dbSeed.close();
 			}
 
-			// 2) Teacher signs up through real UI (bootstraps org + membership)
-			await page.goto(`${WEB_ORIGIN}/login`);
-			await page.locator("#su-name").fill("Library Teacher");
-			await page.locator("#su-email").fill(teacherEmail);
-			await page.locator("#su-password").fill(PASSWORD);
-			await page.getByRole("button", { name: "Create account" }).click();
-			await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
+			// 2) Teacher signs up via API (promotes to verified teacher + bootstraps org)
+			await signUpViaApi(page, {
+				name: "Library Teacher",
+				email: teacherEmail,
+				password: PASSWORD,
+			});
 
 			// 3) Resolve orgId and seed class + student + active enrollment in DB
 			const dbSetup = openDb();
@@ -145,7 +144,7 @@ test.describe
 			}
 
 			// 4) Teacher opens class -> tab "Từ vựng" -> "Thêm từ thư viện" -> selects course -> ticks 2 decks -> clones
-			await page.goto(`${WEB_ORIGIN}/classes`);
+			await page.goto(`${TEACHER_BASE_URL}/classes`);
 			const classCard = page.locator("h3", { hasText: className });
 			await expect(classCard).toBeVisible();
 			await classCard.click();
@@ -257,7 +256,7 @@ test.describe
 		test("enrolled student sees cloned deck, session-data reports hasAudio=true, and Learn intro renders", async ({
 			page,
 		}) => {
-			await page.goto(`${STUDENT_ORIGIN}/login`);
+			await page.goto(`${LMS_ORIGIN}/login`);
 			await page.locator("#tab-signup").click();
 			await page.locator("#signup-name").fill("Library Student");
 			await page.locator("#signup-email").fill(studentEmail);
@@ -314,7 +313,7 @@ test.describe
 			).pathname;
 			mkdirSync(screenshots, { recursive: true });
 
-			await page.goto(`${STUDENT_ORIGIN}/login`);
+			await page.goto(`${LMS_ORIGIN}/login`);
 			await page.locator("#tab-signup").click();
 			await page.locator("#signup-name").fill("Free Course Student");
 			await page.locator("#signup-email").fill(freeStudentEmail);
@@ -543,7 +542,7 @@ test.describe
 			// Thứ tự query do router serialize — assert bằng searchParams thay vì regex (#372)
 			const sessionUrl = new URL(page.url());
 			expect(sessionUrl.pathname).toBe(
-				`/practice/vocabulary/${libDeck1Id}/session`,
+				`/student/practice/vocabulary/${libDeck1Id}/session`,
 			);
 			expect(sessionUrl.searchParams.get("course")).toBe(targetCourseId);
 			expect(sessionUrl.searchParams.get("mode")).toBe("learn");
@@ -597,8 +596,8 @@ test.describe
 				page.getByTestId(`vocab-deck-source-${libDeck1Id}`),
 			).toContainText("Khóa ");
 
-			// 8. Legacy redirect /vocab/courses?q=IELTS -> /practice/vocabulary/courses?q=IELTS
-			await page.goto(`${STUDENT_ORIGIN}/vocab/courses?q=IELTS`);
+			// 8. Legacy redirect /student/vocab/courses?q=IELTS -> /student/practice/vocabulary/courses?q=IELTS
+			await page.goto(`${STUDENT_BASE_URL}/vocab/courses?q=IELTS`);
 			await expect(page).toHaveURL(/\/practice\/vocabulary\/courses\?q=IELTS/);
 		});
 	});

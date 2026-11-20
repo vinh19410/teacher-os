@@ -4,7 +4,7 @@ import {
 	readVerificationEmails,
 	verifyStudentEmailFromMailLog,
 } from "./helpers";
-import { STUDENT_ORIGIN } from "./origins";
+import { LMS_ORIGIN } from "./origins";
 
 test.describe("Student Portal Email Verification", () => {
 	test.beforeAll(async () => {
@@ -33,7 +33,7 @@ test.describe("Student Portal Email Verification", () => {
 		const email = `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@test.local`;
 		const studentName = "Học Viên Happy Path";
 		// 1. Mở trang login student portal
-		await page.goto(`${STUDENT_ORIGIN}/login`);
+		await page.goto(`${LMS_ORIGIN}/login`);
 
 		// 2. Chuyển sang tab Đăng ký
 		await page.locator("#tab-signup").click();
@@ -87,7 +87,7 @@ test.describe("Student Portal Email Verification", () => {
 		const studentName = "Học Viên Resend";
 
 		// 1. Đăng ký qua student portal
-		await page.goto(`${STUDENT_ORIGIN}/login`);
+		await page.goto(`${LMS_ORIGIN}/login`);
 		await page.locator("#tab-signup").click();
 		await page.locator("#signup-name").fill(studentName);
 		await page.locator("#signup-email").fill(email);

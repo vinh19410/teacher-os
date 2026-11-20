@@ -80,7 +80,7 @@ async function createInvoice(
 	amount: string,
 	due: string,
 ): Promise<void> {
-	await page.goto("/tuition");
+	await page.goto("/teacher/tuition");
 	await page.getByRole("button", { name: "+ Tạo hóa đơn" }).click();
 	const dialog = page.getByRole("dialog");
 	await expect(
@@ -102,7 +102,7 @@ function invoiceRegion(page: Page) {
 }
 
 async function markAllInvoicesPaid(page: Page): Promise<void> {
-	await page.goto("/tuition");
+	await page.goto("/teacher/tuition");
 	const unpaidButtons = invoiceRegion(page).getByRole("button", {
 		name: "Đã nhận",
 	});
@@ -143,7 +143,7 @@ test("class roster reflects the tuition-debt lifecycle of the class", async ({
 
 	// The same past-due invoice shows "Quá hạn" on /tuition (shared helper,
 	// #322): exactly one row — the +30d one stays "Chưa thu".
-	await page.goto("/tuition");
+	await page.goto("/teacher/tuition");
 	await expect(
 		invoiceRegion(page).locator("tbody tr").filter({ hasText: "Quá hạn" }),
 	).toHaveCount(1);

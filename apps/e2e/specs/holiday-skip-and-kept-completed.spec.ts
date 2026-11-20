@@ -179,7 +179,7 @@ async function seedClassWithAttendanceToday(page: Page): Promise<string> {
 	});
 
 	// Điểm danh buổi hôm nay qua /attendance.
-	await page.goto(`/attendance?date=${TODAY}`);
+	await page.goto(`/teacher/attendance?date=${TODAY}`);
 	await page.getByRole("button", { name: /Giao tiếp 1/ }).click();
 	const groupA = page.getByRole("radiogroup", {
 		name: "Trạng thái điểm danh của Hằng Nguyễn",
@@ -228,7 +228,7 @@ test("AC-002 (1440×900): buổi đã điểm danh trong khoảng nghỉ → Gi�
 	await expect(dialog).toBeHidden();
 
 	// Buổi hôm nay vẫn hiện ca đã điểm danh, nguyên trạng.
-	await page.goto(`/attendance?date=${TODAY}`);
+	await page.goto(`/teacher/attendance?date=${TODAY}`);
 	await expect(page.getByText("Giao tiếp 1")).toBeVisible();
 	await expect(page.getByText("Đã điểm danh (2/2 có mặt)")).toBeVisible();
 });
@@ -279,7 +279,7 @@ for (const viewport of [
 			.click();
 		await expect(page.getByText(/Đã dời 1 buổi của 1 lớp/)).toBeVisible();
 		await expect(dialog).toBeHidden();
-		await page.goto(`/attendance?date=${TODAY}`);
+		await page.goto(`/teacher/attendance?date=${TODAY}`);
 		await expect(page.getByText("Đã điểm danh (2/2 có mặt)")).toBeVisible();
 	});
 }

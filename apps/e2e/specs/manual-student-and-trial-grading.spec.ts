@@ -25,7 +25,7 @@ test("manual student creation + instant activation unlocks invoice & assignment,
 	await signUpViaApi(page);
 
 	// 2. Tạo 1 đề Writing trạng thái ready trong ngân hàng đề
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill(PROMPT_TITLE);
 	await fillRichEditor(
@@ -39,7 +39,7 @@ test("manual student creation + instant activation unlocks invoice & assignment,
 	).toBeVisible();
 
 	// 3. Tạo 1 lớp học mới tại /classes
-	await page.goto("/classes");
+	await page.goto("/teacher/classes");
 	await page.getByRole("button", { name: "+ Tạo lớp" }).click();
 	const classDialog = page.getByRole("dialog");
 	await classDialog.getByLabel("Tên lớp *").fill(CLASS_NAME);
@@ -79,7 +79,7 @@ test("manual student creation + instant activation unlocks invoice & assignment,
 	await expect(page.getByText("Đang học")).toBeVisible();
 
 	// 6. Điều hướng tới /tuition → + Tạo hóa đơn (học viên đã được tự chọn nhờ enrollment active)
-	await page.goto("/tuition");
+	await page.goto("/teacher/tuition");
 	await page.getByTestId("create-invoice").click();
 	const invoiceDialog = page.getByRole("dialog");
 	await expect(invoiceDialog.getByLabel("Học viên *")).toContainText(
@@ -98,7 +98,7 @@ test("manual student creation + instant activation unlocks invoice & assignment,
 	);
 
 	// 7. Quay lại lớp → tab Buổi học & luyện tập → Giao bài tập cho học viên vừa kích hoạt
-	await page.goto("/classes");
+	await page.goto("/teacher/classes");
 	await page.getByText(CLASS_NAME).click();
 	await page
 		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
@@ -121,7 +121,7 @@ test("manual student creation + instant activation unlocks invoice & assignment,
 	).toBeVisible();
 
 	// 8. Điều hướng tới /grading → kiểm tra 3 viewport không tràn ngang → Tạo, chấm & xóa bài nộp mẫu
-	await page.goto("/grading");
+	await page.goto("/teacher/grading");
 	await expect(page.getByTestId("grading-empty-state")).toBeVisible();
 
 	for (const vp of [

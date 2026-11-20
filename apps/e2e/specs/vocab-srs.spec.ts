@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { type Client, createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
-import { verifyStudentEmailFromMailLog } from "./helpers";
-import { STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
+import { signUpViaApi, verifyStudentEmailFromMailLog } from "./helpers";
+import { LMS_ORIGIN, STUDENT_BASE_URL, TEACHER_BASE_URL } from "./origins";
 
 /**
  * Student Vocab SRS Game (#359) — end to end trên portal thật.
@@ -37,12 +37,12 @@ function openDb(): Client {
 }
 
 async function signInStudent(page: Page): Promise<void> {
-	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signin").click();
 	await page.locator("#signin-email").fill(studentEmail);
 	await page.locator("#signin-password").fill(studentPassword);
 	await page.locator("#panel-signin button[type='submit']").click();
-	await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`), {
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
 		timeout: 30_000,
 	});
 }
@@ -160,7 +160,7 @@ test.describe
 			// 2) Auth học sinh THẬT (các bước của test 2): signup portal + verify
 			// mail-log. Verify auto-login hạ cánh portal home → test ở nhánh isolated
 			// KHÔNG gọi signInStudent nữa (form login sẽ detach vì đã có session).
-			await page.goto(`${STUDENT_ORIGIN}/login`);
+			await page.goto(`${LMS_ORIGIN}/login`);
 			await page.locator("#tab-signup").click();
 			await page.locator("#signup-name").fill("Vocab Student");
 			await page.locator("#signup-email").fill(studentEmail);
@@ -176,13 +176,12 @@ test.describe
 		test("teacher creates deck with 3 words via kernel (1 word uploads audio)", async ({
 			page,
 		}) => {
-			// 1) Teacher signs up through the real UI (bootstraps org + membership).
-			await page.goto(`${WEB_ORIGIN}/login`);
-			await page.locator("#su-name").fill("Vocab Teacher");
-			await page.locator("#su-email").fill(teacherEmail);
-			await page.locator("#su-password").fill(PASSWORD);
-			await page.getByRole("button", { name: "Create account" }).click();
-			await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
+			// 1) Teacher signs up via API (promotes to verified teacher + bootstraps org).
+			await signUpViaApi(page, {
+				name: "Vocab Teacher",
+				email: teacherEmail,
+				password: PASSWORD,
+			});
 
 			// 2) Resolve org + create class + seed student/enrollment directly in DB.
 			const db = openDb();
@@ -233,7 +232,7 @@ test.describe
 			}
 
 			// 3) Teacher creates the deck through the UI (kernel tab Từ vựng).
-			await page.goto(`${WEB_ORIGIN}/classes`);
+			await page.goto(`${TEACHER_BASE_URL}/classes`);
 			const classCard = page.locator("h3", { hasText: className });
 			await expect(classCard).toBeVisible();
 			await classCard.click();
@@ -368,7 +367,7 @@ test.describe
 				console.log(`[pageerror] ${err.message}`);
 			});
 			// Seed student portal auth (real signup + email verification).
-			await page.goto(`${STUDENT_ORIGIN}/login`);
+			await page.goto(`${LMS_ORIGIN}/login`);
 			await page.locator("#tab-signup").click();
 			await page.locator("#signup-name").fill("Vocab Student");
 			await page.locator("#signup-email").fill(studentEmail);
@@ -653,7 +652,7 @@ test.describe
 
 			// Sau khi xoá deck, đang ở /practice/vocabulary/$deckId (404) — sang /practice/vocabulary để assert
 			// overview: mất deck nhưng streak giữ nguyên (review_log sống sót).
-			await page.goto(`${STUDENT_ORIGIN}/practice/vocabulary`);
+			await page.goto(`${STUDENT_BASE_URL}/practice/vocabulary`);
 			await expect(page.getByTestId("vocab-overview-page")).toBeVisible();
 			await expect(page.getByTestId("vocab-overview-streak")).toHaveText(
 				"1 ngày",

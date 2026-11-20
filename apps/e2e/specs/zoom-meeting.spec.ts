@@ -8,7 +8,13 @@ import {
 	verifyStudentEmailFromMailLog,
 	vietnamTodayISO,
 } from "./helpers";
-import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
+import {
+	API_ORIGIN,
+	LMS_ORIGIN,
+	STUDENT_BASE_URL,
+	STUDENT_ORIGIN,
+	WEB_ORIGIN,
+} from "./origins";
 
 const CAPTURE_POT = process.env.E2E_CAPTURE_POT === "1";
 const VIEWPORTS = [
@@ -23,7 +29,7 @@ async function signUpStudentOnPortal(
 	opts: { name: string; email: string; password?: string },
 ): Promise<void> {
 	const password = opts.password ?? "password-8chars";
-	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signup").click();
 	await page.locator("#signup-name").fill(opts.name);
 	await page.locator("#signup-email").fill(opts.email);
@@ -33,7 +39,7 @@ async function signUpStudentOnPortal(
 		timeout: 15_000,
 	});
 	await verifyStudentEmailFromMailLog(page, opts.email);
-	await expect(page).toHaveURL(new RegExp(`^${STUDENT_ORIGIN}/$`), {
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
 		timeout: 30_000,
 	});
 }
@@ -118,7 +124,7 @@ test.describe("Zoom meeting & recording per session", () => {
 		expect(sessionRes.status()).toBe(201);
 
 		// 1. Giáo viên mở lớp -> Điều chỉnh buổi -> thấy link Zoom
-		await page.goto(`/classes/${classId}`);
+		await page.goto(`/teacher/classes/${classId}`);
 		await page.getByRole("button", { name: "Điều chỉnh" }).first().click();
 		const dialog = page.getByRole("dialog");
 		// Tạo buổi manual đã tự dựng Zoom meeting; panel chỉ hiện nút tạo tay
@@ -187,7 +193,7 @@ test.describe("Zoom meeting & recording per session", () => {
 			);
 			expect(upcomingLesson?.hasZoom).toBe(true);
 
-			await studentPage.goto(`${STUDENT_ORIGIN}/classes/${classId}`);
+			await studentPage.goto(`${STUDENT_BASE_URL}/classes/${classId}`);
 			const join = studentPage.getByRole("button", {
 				name: /Vào lớp \(Zoom\)/i,
 			});

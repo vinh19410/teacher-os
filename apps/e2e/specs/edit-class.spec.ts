@@ -46,7 +46,7 @@ test.describe("edit class information (issue #693)", () => {
 			sessionsTotal: 8,
 		});
 
-		await page.goto(`/classes/${classAId}`);
+		await page.goto(`/teacher/classes/${classAId}`);
 		await expect(page.getByRole("heading", { name: classAName })).toBeVisible();
 
 		const editBtn = page.getByRole("button", {
@@ -97,7 +97,7 @@ test.describe("edit class information (issue #693)", () => {
 			sessionsTotal: 12,
 		});
 
-		await page.goto(`/classes/${classId}`);
+		await page.goto(`/teacher/classes/${classId}`);
 		await page.getByRole("button", { name: "Chỉnh sửa", exact: true }).click();
 		const dialog = page.getByRole("dialog", { name: "Chỉnh sửa lớp học" });
 		await expect(dialog).toBeVisible();
@@ -178,7 +178,7 @@ test.describe("edit class information (issue #693)", () => {
 		);
 		expect(addRes.status()).toBe(201);
 
-		await page.goto(`/classes/${classId}`);
+		await page.goto(`/teacher/classes/${classId}`);
 		await expect(
 			page.getByRole("heading", { name: initialName }),
 		).toBeVisible();
@@ -230,7 +230,7 @@ test.describe("edit class information (issue #693)", () => {
 			sessionsTotal: 12,
 		});
 
-		await page.goto(`/classes/${classId}`);
+		await page.goto(`/teacher/classes/${classId}`);
 		await page.getByRole("button", { name: "Chỉnh sửa", exact: true }).click();
 		const dialog = page.getByRole("dialog", { name: "Chỉnh sửa lớp học" });
 		await expect(dialog).toBeVisible();

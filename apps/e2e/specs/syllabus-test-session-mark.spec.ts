@@ -5,7 +5,7 @@ import { signUpViaApi } from "./helpers";
  * trang detail. Trả về id template trên URL /syllabus/:id — không phải id
  * bản copy gắn class. */
 async function createSyllabusTemplate(page: Page, name: string) {
-	await page.goto("/syllabus");
+	await page.goto("/teacher/syllabus");
 	await page.getByRole("button", { name: "+ Tạo syllabus" }).click();
 	const dialog = page.getByRole("dialog");
 	await dialog.getByPlaceholder("VD: IELTS Writing 7.0").fill(name);
@@ -137,7 +137,7 @@ test("màn hình lớp không có select Loại; sửa buổi thi từ lớp gi�
 	await expect(page.getByText("Đã ghi đè nội dung giáo trình.")).toBeVisible();
 
 	// Tạo lớp chọn template này → server deep-copy thành bản copy của lớp.
-	await page.goto("/classes");
+	await page.goto("/teacher/classes");
 	await page.getByRole("button", { name: "+ Tạo lớp" }).click();
 	const classDialog = page.getByRole("dialog");
 	await classDialog
@@ -180,7 +180,7 @@ test("màn hình lớp không có select Loại; sửa buổi thi từ lớp gi�
 	// Màn hình Chi tiết lớp (#391): "Sắp xếp buổi" ở header, mở modal sửa buổi.
 	// buổi thi (Buổi 3) → KHÔNG có select "Loại buổi học"; đổi title rồi lưu.
 	// Locator scope lesson row (grid 20px_1fr_auto) của curriculum section.
-	await page.goto(`/classes/${copy.classId}`);
+	await page.goto(`/teacher/classes/${copy.classId}`);
 	await page
 		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
@@ -201,11 +201,11 @@ test("màn hình lớp không có select Loại; sửa buổi thi từ lớp gi�
 	// Issue #394: id bản copy không còn mở trang /syllabus/<copy> (chỉ
 	// template) — rơi vào 404 branded. Kind không bị reset đã được khoá ở
 	// các assert edit phía trên; title mới xem được trên lịch lớp.
-	await page.goto(`/syllabus/${copy.id}`);
+	await page.goto(`/teacher/syllabus/${copy.id}`);
 	await expect(
 		page.getByText("Không tìm thấy syllabus", { exact: true }),
 	).toBeVisible();
-	await page.goto(`/classes/${copy.classId}`);
+	await page.goto(`/teacher/classes/${copy.classId}`);
 	await page
 		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();

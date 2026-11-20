@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
 import { signUpViaApi } from "./helpers";
-import { API_ORIGIN, PROFILE_ORIGIN, WEB_ORIGIN } from "./origins";
+import { API_ORIGIN, PROFILE_ORIGIN, TEACHER_BASE_URL } from "./origins";
 
 const LEAD_ORG_ID = "e2e-lead-org";
 const STORAGE_KEY = "msmy_placement_attempt_v2";
@@ -124,7 +124,7 @@ test.describe("placement test editor 5 kỹ năng (/placement-test -> /kiem-tra-
 
 		// 2. Đăng nhập giáo viên thuộc e2e-lead-org, mở /placement-test và bấm Nhập đề gốc
 		await signUpLeadTeacher(page);
-		await page.goto(`${WEB_ORIGIN}/placement-test`);
+		await page.goto(`${TEACHER_BASE_URL}/placement-test`);
 		await expect(
 			page.getByRole("heading", { name: "Bài test đầu vào" }),
 		).toBeVisible();

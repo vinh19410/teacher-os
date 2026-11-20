@@ -44,7 +44,7 @@ test("AC-004: đổi view Tháng/Tuần/Ngày ≤ 2s, màu theo lớp, tạo s�
 	const teacherEmail = await seedTwoDistinctColorClasses(page);
 
 	// Reload (không goto) sau seed để ['kernel'] lấy snapshot mới; rồi mở /schedule.
-	await page.goto("/schedule");
+	await page.goto("/teacher/schedule");
 	await expect(page.getByText("IELTS 6.5A Sáng")).toBeVisible();
 	await expect(page.getByText("Giao tiếp Tối")).toBeVisible();
 
@@ -166,7 +166,7 @@ test("AC-004 mục 2: hộp thoại Lịch nghỉ chung — tên 1 ký tự ho�
 		sessionsTotal: 2,
 		students: { teacherEmail, names: ["An Nguyễn"] },
 	});
-	await page.goto("/schedule");
+	await page.goto("/teacher/schedule");
 	await expect(page.getByText("IELTS Kiểm tra Nghỉ")).toBeVisible();
 	await page.getByTestId("holiday-open").click();
 
@@ -211,7 +211,7 @@ test("AC-004: thẻ kỳ nghỉ hiển thị trong cả 3 view Tháng/Tuần/Ng�
 		sessionsTotal: 2,
 		students: { teacherEmail, names: ["An Nguyễn"] },
 	});
-	await page.goto("/schedule");
+	await page.goto("/teacher/schedule");
 	await expect(page.getByText("IELTS Kỳ nghỉ")).toBeVisible();
 
 	// Tạo holiday 1 ngày hôm nay qua hộp thoại (preview → apply thật).
@@ -311,7 +311,7 @@ test("khi chưa có lớp vẫn hiển thị calendar (Tuần/Tháng/Ngày) và 
 	const teacherEmail = await signUpViaApi(page);
 
 	// 1. Chưa có lớp: /schedule vẫn hiển thị calendar cả 3 view cùng banner gọn.
-	await page.goto("/schedule");
+	await page.goto("/teacher/schedule");
 	await expect(page.getByTestId("schedule-empty-state")).toBeVisible();
 	await expect(page.locator(".week-cal")).toBeVisible();
 	await expect(page.locator(".day-col")).toHaveCount(7);
@@ -351,7 +351,7 @@ test("khi chưa có lớp vẫn hiển thị calendar (Tuần/Tháng/Ngày) và 
 		sessionsTotal: 2,
 		students: { teacherEmail, names: ["Học viên Test"] },
 	});
-	await page.goto("/schedule");
+	await page.goto("/teacher/schedule");
 	const card = page.locator("button.lesson-block", { hasText: "Test" }).first();
 	await expect(card).toBeVisible();
 	const geometry = await card.evaluate((el) => {

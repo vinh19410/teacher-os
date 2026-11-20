@@ -42,7 +42,7 @@ function fulfillJson(route: Route, status: number, body: string) {
 
 async function openSignInTab(page: import("@playwright/test").Page) {
 	await page.goto("/login");
-	await page.getByRole("tab", { name: "Sign in" }).click();
+	await page.getByRole("tab", { name: "Đăng nhập" }).click();
 	await expect(page.locator("#panel-signin")).toBeVisible();
 }
 
@@ -50,19 +50,16 @@ test("empty submit reports required fields, not sign-up copy (#114)", async ({
 	page,
 }) => {
 	await openSignInTab(page);
-	await page
-		.locator("#panel-signin")
-		.getByRole("button", { name: "Sign in" })
-		.click();
+	await page.locator("#panel-signin button[type='submit']").click();
 
-	await expect(page.locator("#si-email-status")).toHaveText(
-		"Email is required",
+	await expect(page.locator("#signin-email-error")).toHaveText(
+		"Vui lòng nhập email",
 	);
-	await expect(page.locator("#si-password-status")).toHaveText(
-		"Password is required",
+	await expect(page.locator("#signin-password-error")).toHaveText(
+		"Vui lòng nhập mật khẩu",
 	);
-	await expect(page.locator("#si-password-status")).not.toContainText(
-		"at least 8",
+	await expect(page.locator("#signin-password-error")).not.toContainText(
+		"8 ký tự",
 	);
 });
 
@@ -78,12 +75,9 @@ test("short password is not client-blocked; client sends the sign-in request wit
 	});
 
 	await openSignInTab(page);
-	await page.locator("#si-email").fill("  signin-validation@test.local ");
-	await page.locator("#si-password").fill("abc");
-	await page
-		.locator("#panel-signin")
-		.getByRole("button", { name: "Sign in" })
-		.click();
+	await page.locator("#signin-email").fill("  signin-validation@test.local ");
+	await page.locator("#signin-password").fill("abc");
+	await page.locator("#panel-signin button[type='submit']").click();
 
 	await expect(page.locator("[data-sonner-toast]").first()).toBeVisible();
 	expect(capturedPayload).toEqual({
@@ -95,17 +89,14 @@ test("short password is not client-blocked; client sends the sign-in request wit
 test("sign-up still enforces min 8 characters client-side (regression guard)", async ({
 	page,
 }) => {
-	await page.goto("/login");
-	await page.locator("#su-name").fill("Validation Guard");
-	await page.locator("#su-email").fill("signup-guard@test.local");
-	await page.locator("#su-password").fill("abc");
-	await page
-		.locator("#panel-signup")
-		.getByRole("button", { name: "Create account" })
-		.click();
+	await page.goto("/login?tab=signup");
+	await page.locator("#signup-name").fill("Validation Guard");
+	await page.locator("#signup-email").fill("signup-guard@test.local");
+	await page.locator("#signup-password").fill("abc");
+	await page.locator("#panel-signup button[type='submit']").click();
 
-	await expect(page.locator("#su-password-status")).toHaveText(
-		"Password must be at least 8 characters",
+	await expect(page.locator("#signup-password-error")).toHaveText(
+		"Mật khẩu phải có ít nhất 8 ký tự",
 	);
 	await expect(page.locator("[data-sonner-toast]")).toHaveCount(0);
 });

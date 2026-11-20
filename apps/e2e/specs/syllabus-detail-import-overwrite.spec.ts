@@ -7,7 +7,7 @@ import { signUpViaApi } from "./helpers";
  * trang detail. Trả về id template trên URL /syllabus/:id — không phải id
  * bản copy gắn class. */
 async function createSyllabusTemplate(page: Page, name: string) {
-	await page.goto("/syllabus");
+	await page.goto("/teacher/syllabus");
 	await page.getByRole("button", { name: "+ Tạo syllabus" }).click();
 	const dialog = page.getByRole("dialog");
 	await dialog.getByPlaceholder("VD: IELTS Writing 7.0").fill(name);
@@ -93,7 +93,7 @@ test("bản copy của lớp không có nút import ghi đè (chỉ template)", 
 	).toBeVisible();
 
 	// Tạo lớp chọn template này → server deep-copy thành bản copy của lớp.
-	await page.goto("/classes");
+	await page.goto("/teacher/classes");
 	await page.getByRole("button", { name: "+ Tạo lớp" }).click();
 	const classDialog = page.getByRole("dialog");
 	await classDialog
@@ -144,7 +144,7 @@ test("bản copy của lớp không có nút import ghi đè (chỉ template)", 
 	// Issue #394: id bản copy KHÔNG còn mở trang /syllabus/<copy> — rơi vào
 	// trạng thái không tìm thấy của route. Nút import chỉ tồn tại ở template
 	// (đã assert ở đầu test); copy chỉ sửa được qua "Quản lý buổi" của lớp.
-	await page.goto(`/syllabus/${copy.id}`);
+	await page.goto(`/teacher/syllabus/${copy.id}`);
 	await expect(page.getByText("Không tìm thấy syllabus")).toBeVisible();
 });
 

@@ -132,8 +132,8 @@ test.describe("profile lead intake", () => {
 			/VietQR|chuyển khoản|TPBank|số tài khoản/i,
 		);
 
-		// Web: /leads hiện dòng lead mới.
-		await page.goto("/leads");
+		// Web: /teacher/leads hiện dòng lead mới.
+		await page.goto("/teacher/leads");
 		await expect(
 			page
 				.getByRole("heading", { name: "Đăng Ký Mới" })
@@ -193,7 +193,7 @@ test.describe("profile lead intake", () => {
 		await form.getByRole("button", { name: "Đăng Ký Khóa Học" }).click();
 		await expect(page.locator("#leadSuccessBox")).toBeVisible();
 
-		await page.goto("/leads");
+		await page.goto("/teacher/leads");
 		const table = page.getByTestId("leads-table");
 		const leadRow = table.locator("tr", { hasText: phone });
 		await expect(leadRow).toHaveCount(1);
@@ -218,7 +218,7 @@ test.describe("profile lead intake", () => {
 		const honeypotBody = (await honeypot.json()) as { id: string };
 		expect(honeypotBody.id).toBeTruthy();
 
-		await page.goto("/leads");
+		await page.goto("/teacher/leads");
 		const table = page.getByTestId("leads-table");
 		await expect(
 			page.getByRole("heading", { name: "Đăng ký mới" }),

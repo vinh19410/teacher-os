@@ -126,7 +126,7 @@ test("two enrolled classes sum into the tuition summary and survive reload (#347
 	await expect(invoiceRow.getByText("Đã thu")).toBeVisible();
 
 	// The summary: totals 16tr / 2tr / 14tr, per-class rows exact.
-	await page.goto(`/students/${seeded.id}`);
+	await page.goto(`/teacher/students/${seeded.id}`);
 	await page.getByRole("tab", { name: "Học phí" }).click();
 	await expect(summaryNum(page, "Tổng học phí (VND)")).toHaveText(
 		"16.000.000đ",
@@ -198,7 +198,7 @@ test("tuition summary screenshots at 3 viewports", async ({ page }) => {
 		page.locator("tbody tr").filter({ hasText: "Đã thu" }),
 	).toBeVisible();
 
-	await page.goto(`/students/${seeded.id}`);
+	await page.goto(`/teacher/students/${seeded.id}`);
 	await page.getByRole("tab", { name: "Học phí" }).click();
 	await expect(summaryNum(page, "Tổng học phí (VND)")).toHaveText(
 		"16.000.000đ",

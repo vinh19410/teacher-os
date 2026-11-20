@@ -4,7 +4,12 @@ import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
 import { signUpViaApi } from "./helpers";
-import { API_ORIGIN, PROFILE_ORIGIN, WEB_ORIGIN } from "./origins";
+import {
+	API_ORIGIN,
+	PROFILE_ORIGIN,
+	TEACHER_BASE_URL,
+	WEB_ORIGIN,
+} from "./origins";
 
 /**
  * #730: nộp bài test đầu vào có Writing → server chấm nháp AI nền (fake grader
@@ -247,7 +252,7 @@ test.describe
 			expect(uploadRes.status()).toBe(200);
 
 			// 2. Giáo viên mở lead → banner AI đã liệt kê lỗi, ô điểm IELTS trống (không đề xuất điểm/nhận xét), highlight lỗi AI.
-			await page.goto(`${WEB_ORIGIN}/leads`);
+			await page.goto(`${TEACHER_BASE_URL}/leads`);
 			const table = page.getByTestId("leads-table");
 			await expect(table).toBeVisible();
 			await table.locator("tr", { hasText: phone }).click();

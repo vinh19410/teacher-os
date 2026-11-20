@@ -20,7 +20,7 @@ test("bold formatting persists through save and renders in the preview", async (
 	const TITLE = "QC-280 Rich Bold Persist";
 
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill(TITLE);
 	await fillRichEditor(
@@ -49,7 +49,7 @@ test("bold formatting persists through save and renders in the preview", async (
 	).toBeVisible();
 
 	// Bank row → aside preview renders real bold markup for students.
-	await page.goto("/assignments");
+	await page.goto("/teacher/assignments");
 	await page.getByRole("button", { name: new RegExp(TITLE) }).click();
 	await expect(page.getByText("Xem trước phía học viên")).toBeVisible();
 	await expect(
@@ -63,7 +63,7 @@ test("XSS payload in rich text is stored but never executes at render", async ({
 	const TITLE = "QC-280 Rich XSS Neutralize";
 
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill(TITLE);
 
@@ -95,7 +95,7 @@ test("XSS payload in rich text is stored but never executes at render", async ({
 	).toBeVisible();
 
 	// Render the stored payload through the preview surface.
-	await page.goto("/assignments");
+	await page.goto("/teacher/assignments");
 	await page.getByRole("button", { name: new RegExp(TITLE) }).click();
 	await expect(page.getByText("Xem trước phía học viên")).toBeVisible();
 	await expect(page.getByText("safe text").first()).toBeVisible();
@@ -113,7 +113,7 @@ test("multi-line prompt keeps its line breaks through the editor round trip", as
 	const TITLE = "QC-280 Rich Newlines";
 
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill(TITLE);
 	await fillRichEditor(page, "Nội dung đề", "Dòng thứ nhất");
@@ -140,7 +140,7 @@ test("full-option toolbar structures persist and render for students", async ({
 	const TITLE = "QC-436 Rich Full Option";
 
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill(TITLE);
 	await fillRichEditor(page, "Nội dung đề", "Phần giảng dạy chính");
@@ -177,7 +177,7 @@ test("full-option toolbar structures persist and render for students", async ({
 	).toBeVisible();
 
 	// Student-facing preview keeps the structure (h2 + blockquote + hr).
-	await page.goto("/assignments");
+	await page.goto("/teacher/assignments");
 	await page.getByRole("button", { name: new RegExp(TITLE) }).click();
 	await expect(page.getByText("Xem trước phía học viên")).toBeVisible();
 	const paper = page.getByText("Xem trước phía học viên").locator("..");
@@ -197,7 +197,7 @@ test("link popover persists an allowlisted href and renders for students", async
 	const TITLE = "QC-438 Rich Link Popover";
 
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 	await selectWritingTask2(page);
 	await page.getByLabel("Tiêu đề").fill(TITLE);
 	await fillRichEditor(page, "Nội dung đề", "Tài liệu đọc thêm");
@@ -225,7 +225,7 @@ test("link popover persists an allowlisted href and renders for students", async
 		page.getByRole("heading", { name: "Đã thêm vào ngân hàng" }),
 	).toBeVisible();
 
-	await page.goto("/assignments");
+	await page.goto("/teacher/assignments");
 	await page.getByRole("button", { name: new RegExp(TITLE) }).click();
 	await expect(page.getByText("Xem trước phía học viên")).toBeVisible();
 	const paper = page.getByText("Xem trước phía học viên").locator("..");
@@ -241,7 +241,7 @@ test("empty-selection link applies as a stored mark at the caret and traps focus
 	page,
 }) => {
 	await signUpViaApi(page);
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 	await selectWritingTask2(page);
 	await fillRichEditor(page, "Nội dung đề", "Mở đầu");
 
@@ -291,7 +291,7 @@ test("callsite min-height utilities override the layered ProseMirror base", asyn
 	await signUpViaApi(page);
 
 	// test-header-form "Mô tả" carries min-h-22 = 5.5rem = 88px @16px root.
-	await page.goto("/assignments/tests/new");
+	await page.goto("/teacher/assignments/tests/new");
 	await expect(page.getByLabel("Mô tả")).toBeVisible();
 	expect(
 		await page
@@ -300,7 +300,7 @@ test("callsite min-height utilities override the layered ProseMirror base", asyn
 	).toBe("88px");
 
 	// prompt-composer main prompt carries min-h-42 = 10.5rem = 168px.
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 	await expect(page.getByLabel("Nội dung đề")).toBeVisible();
 	expect(
 		await page
@@ -310,6 +310,8 @@ test("callsite min-height utilities override the layered ProseMirror base", asyn
 
 	// Admin library part editor: PartContentFields "Ghi chú nội bộ" and
 	// AnswerKeyGrid "Giải thích câu 1" both carry min-h-16 = 4rem = 64px.
+	// Clear teacher cookies so unified /login renders the sign-in form for admin.
+	await page.context().clearCookies();
 	await ensureAdminAccount(request);
 	await adminOpenNewTestPage(page);
 	await page.getByLabel("Tiêu đề", { exact: true }).fill("QC-438 MinH16");

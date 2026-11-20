@@ -2,8 +2,8 @@ import { mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { type Client, createClient } from "@libsql/client";
 import { expect, type Page, test } from "@playwright/test";
-import { verifyStudentEmailFromMailLog } from "./helpers";
-import { STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
+import { signUpViaApi, verifyStudentEmailFromMailLog } from "./helpers";
+import { LMS_ORIGIN, STUDENT_BASE_URL, TEACHER_BASE_URL } from "./origins";
 
 /**
  * Vocab CSV Import & Lesson/Chunk Alignment E2E (#815):
@@ -82,12 +82,11 @@ test.describe
 		test("teacher imports lesson CSV, appends via editor, and suggests deck to student", async ({
 			page,
 		}) => {
-			await page.goto(`${WEB_ORIGIN}/login`);
-			await page.locator("#su-name").fill("CSV Teacher");
-			await page.locator("#su-email").fill(teacherEmail);
-			await page.locator("#su-password").fill(PASSWORD);
-			await page.getByRole("button", { name: "Create account" }).click();
-			await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
+			await signUpViaApi(page, {
+				name: "CSV Teacher",
+				email: teacherEmail,
+				password: PASSWORD,
+			});
 
 			const db = openDb();
 			try {
@@ -123,7 +122,7 @@ test.describe
 				db.close();
 			}
 
-			await page.goto(`${WEB_ORIGIN}/vocab`);
+			await page.goto(`${TEACHER_BASE_URL}/vocab`);
 			await expect(page.getByTestId("vocab-import-csv-btn")).toBeVisible();
 			await page.getByTestId("vocab-import-csv-btn").click();
 			await page
@@ -242,7 +241,7 @@ test.describe
 		test("student accepts suggested CSV deck and sees Word/Chunk, POS, and reveal-gated Example", async ({
 			page,
 		}) => {
-			await page.goto(`${STUDENT_ORIGIN}/login`);
+			await page.goto(`${LMS_ORIGIN}/login`);
 			await page.locator("#tab-signup").click();
 			await page.locator("#signup-name").fill(studentName);
 			await page.locator("#signup-email").fill(studentEmail);
@@ -254,7 +253,7 @@ test.describe
 			await verifyStudentEmailFromMailLog(page, studentEmail);
 			await expect(page.getByTestId("vocab-home-entry")).toBeVisible();
 
-			await page.goto(`${STUDENT_ORIGIN}/practice/vocabulary`);
+			await page.goto(`${STUDENT_BASE_URL}/practice/vocabulary`);
 			const acceptSuggestionBtn = page.getByRole("button", {
 				name: "Bắt đầu học Lesson 01 – Friends & Introductions",
 			});

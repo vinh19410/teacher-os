@@ -119,7 +119,7 @@ test("AC-003 Scenario 1: nợ 2.500.000 — nhập 0 hoặc 3.000.000 hiện l�
 	);
 	expect(prePayRes.status()).toBe(201);
 
-	await page.goto("/debts");
+	await page.goto("/teacher/debts");
 	const rowA = page
 		.getByTestId("debt-ledger-table")
 		.locator("tbody tr")
@@ -224,7 +224,7 @@ test("AC-003 Scenario 2: thành viên role ta và class_teacher bị chặn 403 
 
 	// 1. Đăng nhập thành viên role "ta" → mở /debts → về /dashboard + thông báo, Sidebar ẩn mục tài chính, API trả 403.
 	await seedOrgMember(page, { teacherEmail, role: "ta" });
-	await page.goto("/debts");
+	await page.goto("/teacher/debts");
 	await expect(page).toHaveURL(/\/dashboard$/);
 	await expect(
 		page.getByText("Bạn không có quyền xem Sổ công nợ"),
@@ -268,7 +268,7 @@ test("AC-003 Scenario 2: thành viên role ta và class_teacher bị chặn 403 
 
 	// 2. Đăng nhập thành viên role "class_teacher" → mở /tuition → về /dashboard + thông báo, API trả 403.
 	await seedOrgMember(page, { teacherEmail, role: "class_teacher" });
-	await page.goto("/tuition");
+	await page.goto("/teacher/tuition");
 	await expect(page).toHaveURL(/\/dashboard$/);
 	await expect(
 		page.getByText("Bạn không có quyền xem Sổ công nợ"),

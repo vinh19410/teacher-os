@@ -127,7 +127,7 @@ test("3 thẻ nhắc việc: số đếm khớp seed, API ≤ 2s, bấm thẻ/n�
 	expect(body.tuition?.students).toBe(1);
 	expect(body.tuition?.outstanding).toBe(1_200_000);
 
-	await page.goto("/dashboard");
+	await page.goto("/teacher/dashboard");
 	const section = page.locator("section", { hasText: "Việc cần làm hôm nay" });
 	await expect(section).toBeVisible();
 	// Chờ thẻ có số (mốc đo UX vẫn ≤ 2s từ navigate — assert không phá nếu
@@ -145,14 +145,14 @@ test("3 thẻ nhắc việc: số đếm khớp seed, API ≤ 2s, bấm thẻ/n�
 		.getByRole("link", { name: /Ca học hôm nay chưa điểm danh/ })
 		.click();
 	await expect(page).toHaveURL(
-		new RegExp(`/attendance\\?date=${TODAY}&status=pending$`),
+		new RegExp(`/teacher/attendance\\?date=${TODAY}&status=pending$`),
 	);
 	await expect(
 		page.getByRole("heading", { name: "Điểm danh tổng theo ngày" }),
 	).toBeVisible();
 
 	// Quay dashboard, bấm nút thẻ chấm bài → /grading?status=awaiting.
-	await page.goto("/dashboard");
+	await page.goto("/teacher/dashboard");
 	const sectionAgain = page.locator("section", {
 		hasText: "Việc cần làm hôm nay",
 	});
@@ -160,7 +160,7 @@ test("3 thẻ nhắc việc: số đếm khớp seed, API ≤ 2s, bấm thẻ/n�
 	await sectionAgain
 		.getByRole("link", { name: /Bài tập quá hạn chấm/ })
 		.click();
-	await expect(page).toHaveURL(/\/grading\?status=awaiting$/);
+	await expect(page).toHaveURL(/\/teacher\/grading\?status=awaiting$/);
 });
 
 test("screenshots dashboard reminders at 3 viewports", async ({ page }) => {
@@ -169,7 +169,7 @@ test("screenshots dashboard reminders at 3 viewports", async ({ page }) => {
 		import.meta.url,
 	).pathname;
 	await seedRemindersOrg(page);
-	await page.goto("/dashboard");
+	await page.goto("/teacher/dashboard");
 	await expect(
 		page
 			.locator("section", { hasText: "Việc cần làm hôm nay" })

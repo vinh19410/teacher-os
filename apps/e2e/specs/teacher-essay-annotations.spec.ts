@@ -9,7 +9,13 @@ import {
 	seedQuizFixture,
 	seedSubmittedEssay,
 } from "./helpers-quiz";
-import { API_ORIGIN, STUDENT_ORIGIN, WEB_ORIGIN } from "./origins";
+import {
+	API_ORIGIN,
+	LMS_ORIGIN,
+	STUDENT_BASE_URL,
+	TEACHER_BASE_URL,
+	WEB_ORIGIN,
+} from "./origins";
 
 /**
  * #332 — Teacher highlights words/phrases on a submitted Writing essay while
@@ -40,7 +46,7 @@ let htmlAttemptId = "";
 
 /** Sau đăng nhập/đăng ký: URL về trang chủ + thấy heading Bài tập. */
 async function expectAssignmentsHome(page: Page): Promise<void> {
-	await expect(page).toHaveURL(new RegExp(`${STUDENT_ORIGIN}/$`), {
+	await expect(page).toHaveURL(new RegExp(`^${STUDENT_BASE_URL}/?$`), {
 		timeout: 30_000,
 	});
 	await expect(page.getByRole("heading", { name: "Bài tập" })).toBeVisible();
@@ -48,7 +54,7 @@ async function expectAssignmentsHome(page: Page): Promise<void> {
 
 /** Sign in through the portal login form (fresh context → sign-in tab). */
 async function signIn(page: Page): Promise<void> {
-	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signin").click();
 	await page.locator("#signin-email").fill(studentEmail);
 	await page.locator("#signin-password").fill(PASSWORD);
@@ -143,7 +149,7 @@ test.beforeAll(async ({ browser }) => {
 
 	const signupContext = await browser.newContext();
 	const page = await signupContext.newPage();
-	await page.goto(`${STUDENT_ORIGIN}/login`);
+	await page.goto(`${LMS_ORIGIN}/login`);
 	await page.locator("#tab-signup").click();
 	await page.locator("#signup-name").fill("Học Viên Ghi Chú");
 	await page.locator("#signup-email").fill(studentEmail);
@@ -163,7 +169,7 @@ test.afterAll(async () => {
 
 test.describe("Teacher essay annotations (#332)", () => {
 	test("teacher highlights two phrases, edits a note, survives reload", async () => {
-		await teacherPage.goto(`${WEB_ORIGIN}/grading/${attemptId}`);
+		await teacherPage.goto(`${TEACHER_BASE_URL}/grading/${attemptId}`);
 		await expect(teacherPage.getByTestId("essay-text")).toBeVisible();
 
 		// 1) Bôi đen một phần từ "benefits" → popover bắt dính cả từ.
@@ -230,7 +236,7 @@ test.describe("Teacher essay annotations (#332)", () => {
 		const studentPage = await studentContext.newPage();
 		await signIn(studentPage);
 		await studentPage.goto(
-			`${STUDENT_ORIGIN}/learn/quizzes/attempt/${attemptId}`,
+			`${STUDENT_BASE_URL}/learn/quizzes/attempt/${attemptId}`,
 		);
 		await expect(
 			studentPage.getByText("Giáo viên sẽ chấm bài viết của bạn."),
@@ -387,7 +393,7 @@ test.describe("Teacher essay annotations (#332)", () => {
 	test("renders HTML-wrapped essay (<p> tags) as clean text with aligned highlights (#382)", async ({
 		browser,
 	}) => {
-		await teacherPage.goto(`${WEB_ORIGIN}/grading/${htmlAttemptId}`);
+		await teacherPage.goto(`${TEACHER_BASE_URL}/grading/${htmlAttemptId}`);
 		await expect(teacherPage.getByTestId("essay-text")).toBeVisible();
 		await expect(teacherPage.getByTestId("essay-text")).not.toContainText(
 			"<p>",
@@ -423,7 +429,7 @@ test.describe("Teacher essay annotations (#332)", () => {
 			const studentPage = await studentContext.newPage();
 			await signIn(studentPage);
 			await studentPage.goto(
-				`${STUDENT_ORIGIN}/learn/quizzes/attempt/${htmlAttemptId}`,
+				`${STUDENT_BASE_URL}/learn/quizzes/attempt/${htmlAttemptId}`,
 			);
 			await expect(studentPage.getByTestId("essay-frame")).not.toContainText(
 				"<p>",

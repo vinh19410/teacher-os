@@ -11,7 +11,7 @@ import { signUpViaApi, vietnamTodayISO } from "./helpers";
 import { seedDatedClass } from "./helpers-dated-class";
 
 async function openFirstSessionMaterials(page: Page, classId: string) {
-	await page.goto(`/classes/${classId}`);
+	await page.goto(`/teacher/classes/${classId}`);
 	await page
 		.getByRole("tab", { name: "Buổi học & luyện tập", exact: true })
 		.click();
@@ -38,7 +38,7 @@ test("tạo thư mục → thêm liên kết → gắn vào buổi học → g�
 	});
 
 	// Ngân hàng trống → empty state; tạo thư mục, thư mục mới được chọn.
-	await page.goto("/materials");
+	await page.goto("/teacher/materials");
 	await expect(page.getByTestId("materials-empty")).toBeVisible();
 	await page.getByRole("button", { name: "Thư mục mới" }).click();
 	const folderDialog = page.getByRole("dialog", { name: "Thư mục mới" });
@@ -87,7 +87,7 @@ test("tạo thư mục → thêm liên kết → gắn vào buổi học → g�
 	).toBeVisible();
 
 	// Đang dùng ở 1 buổi → xóa bị chặn với thông báo số buổi.
-	await page.goto("/materials");
+	await page.goto("/teacher/materials");
 	await expect(item.getByText("Dùng ở 1 buổi")).toBeVisible();
 	await item.getByRole("button", { name: `Xóa ${TITLE}` }).click();
 	let deleteDialog = page.getByRole("dialog", { name: "Xóa tài liệu" });
@@ -105,7 +105,7 @@ test("tạo thư mục → thêm liên kết → gắn vào buổi học → g�
 	).toBeVisible();
 
 	// Xóa tài liệu rồi xóa thư mục (đã rỗng).
-	await page.goto("/materials");
+	await page.goto("/teacher/materials");
 	await item.getByRole("button", { name: `Xóa ${TITLE}` }).click();
 	deleteDialog = page.getByRole("dialog", { name: "Xóa tài liệu" });
 	await deleteDialog.getByRole("button", { name: "Xóa", exact: true }).click();

@@ -102,7 +102,7 @@ async function composeReadingPart(
 		answers: string[];
 	},
 ) {
-	await page.goto("/assignments/new");
+	await page.goto("/teacher/assignments/new");
 	await page.getByRole("button", { name: "Reading", exact: true }).click();
 	if (opts.passage2) {
 		await page.getByRole("button", { name: "Passage 2", exact: true }).click();
@@ -165,7 +165,7 @@ test("build a 3-part/40-question reading test end-to-end", async ({ page }) => {
 	});
 
 	// --- Build the full test. ---
-	await page.goto("/assignments/tests/new");
+	await page.goto("/teacher/assignments/tests/new");
 	await page.getByLabel("Tiêu đề").fill(TITLE);
 	await page.getByLabel("Time limit").fill("60:00");
 	// Inputs with a datalist expose their placeholder as the accessible
@@ -265,7 +265,7 @@ test("build a 3-part/40-question reading test end-to-end", async ({ page }) => {
 	// pending submit navigation (which then overwrites the preview URL).
 	await page.waitForURL(
 		(url) =>
-			/^\/assignments\/tests\/[^/]+$/.test(url.pathname) &&
+			/^\/teacher\/assignments\/tests\/[^/]+$/.test(url.pathname) &&
 			!url.pathname.endsWith("/new"),
 		{ timeout: 30_000 },
 	);
@@ -273,7 +273,7 @@ test("build a 3-part/40-question reading test end-to-end", async ({ page }) => {
 
 	// --- Full-test preview: student paper, continuous numbering, no key. ---
 	await page.getByRole("button", { name: "Xem trước" }).click();
-	await expect(page).toHaveURL(/\/assignments\/tests\/preview$/, {
+	await expect(page).toHaveURL(/\/teacher\/assignments\/tests\/preview$/, {
 		// First-ever hit compiles the lazily-loaded preview route on the
 		// cold vite dev server — can outrun the default 15s expect timeout.
 		timeout: 30_000,
@@ -300,7 +300,7 @@ test("build a 3-part/40-question reading test end-to-end", async ({ page }) => {
 	await page.getByRole("button", { name: "Quay lại soạn" }).click();
 	await page.waitForURL(
 		(url) =>
-			/^\/assignments\/tests\/[^/]+$/.test(url.pathname) &&
+			/^\/teacher\/assignments\/tests\/[^/]+$/.test(url.pathname) &&
 			!url.pathname.endsWith("/new"),
 	);
 	await expect(page.getByText("3/3 parts · 40 questions")).toBeVisible();
