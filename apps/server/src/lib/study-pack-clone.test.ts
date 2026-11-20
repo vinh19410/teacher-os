@@ -171,12 +171,15 @@ describe("study-pack-clone (validateStudyPackItems & materializePrompts)", () =>
 				id: "ltp-listening-s1",
 				testId: "lt-listening-ready",
 				part: "s1",
-				type: "gap",
+				type: "notes",
 				title: "Section 1",
 				band: "7.0",
 				source: "Cam 18",
 				intro: "",
 				passage: "",
+				transcript: "Welcome to the listening test.",
+				audioKey: "library/lt-listening-ready/s1/sample.mp3",
+				audioName: "sample.mp3",
 				questions: JSON.stringify([
 					{ stem: "Name: ____", opts: null, answer: "Smith", alts: "" },
 				]),
@@ -356,5 +359,32 @@ describe("study-pack-clone (validateStudyPackItems & materializePrompts)", () =>
 		expect(exerciseClone?.part).toBe("g1");
 		expect(exerciseClone?.type).toBe("transform");
 		expect(exerciseClone?.status).toBe("ready");
+	});
+
+	test("materializePrompts supports listening library_test_part when allowListeningLibraryParts is enabled", async () => {
+		const res = await materializePrompts(
+			db,
+			"org-clone-1",
+			[{ sourceKind: "library_test_part", sourceId: "ltp-listening-s1" }],
+			{ allowListeningLibraryParts: true },
+		);
+		expect(res.ok).toBe(true);
+		if (!res.ok) return;
+
+		expect(res.items[0]?.skill).toBe("listening");
+		const promptId = res.promptIdBySourceKey.get(
+			"library_test_part:ltp-listening-s1",
+		);
+		expect(promptId).toBeTruthy();
+
+		const [row] = await db
+			.select()
+			.from(assignmentPrompt)
+			.where(eq(assignmentPrompt.id, promptId ?? ""));
+		expect(row?.skill).toBe("listening");
+		expect(row?.part).toBe("s1");
+		expect(row?.audioKey).toBe("library/lt-listening-ready/s1/sample.mp3");
+		expect(row?.audioName).toBe("sample.mp3");
+		expect(row?.transcript).toBe("Welcome to the listening test.");
 	});
 });

@@ -53,7 +53,7 @@ import {
 	type QuizTakeSource,
 	quizDetailQueryKey,
 	submitQuizAttempt,
-	useAssignmentAudioObjectUrl,
+	useQuizAudioObjectUrl,
 	useStartQuizAttempt,
 	useStudentQuizDetail,
 } from "@/lib/repos/quiz";
@@ -361,10 +361,8 @@ export function QuizTakeView({
 	// Speaking (#305): file bài nói & speakingPartLabel giữ ở đây.
 	// Audio proxy (#702): gọi hook TRƯỚC mọi early return để không đổi số hook
 	// khi attempt chuyển từ null -> in_progress (Rules of Hooks).
-	const { audioSrc, audioLoading, audioError } = useAssignmentAudioObjectUrl(
-		source.kind === "assignment" && detail?.hasAudio && attempt !== null
-			? source.id
-			: null,
+	const { audioSrc, audioLoading, audioError } = useQuizAudioObjectUrl(
+		detail?.hasAudio && attempt !== null ? source : null,
 	);
 
 	// RT red-team G: sau khi rời take screen (store dispose flush PATCH cuối),

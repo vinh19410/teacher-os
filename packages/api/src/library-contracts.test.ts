@@ -11,6 +11,7 @@ import {
 	LIBRARY_AUDIO_MIME,
 	LIBRARY_CLOZE_TYPES,
 	LIBRARY_ERROR_CODES,
+	LIBRARY_LISTENING_TYPES,
 	LIBRARY_OPTION_BANK_TYPES,
 	LIBRARY_READING_TYPES,
 	LIBRARY_SKILLS,
@@ -622,6 +623,7 @@ describe("Issue #762 — 15 IELTS Reading types & validation rules", () => {
 		]);
 		expect(LIBRARY_READING_TYPES).toHaveLength(15);
 		expect(librarySkillTypes("reading")).toEqual(LIBRARY_READING_TYPES);
+		expect(librarySkillTypes("listening")).toEqual(LIBRARY_LISTENING_TYPES);
 		expect(librarySkillTypes("listening")).toEqual([
 			"form",
 			"mcq1",
@@ -631,6 +633,7 @@ describe("Issue #762 — 15 IELTS Reading types & validation rules", () => {
 			"flow",
 			"notes",
 			"sent4",
+			"mcq_many",
 		]);
 		for (const legacy of ["note", "tablecomp", "flowchart"]) {
 			const issues = validatePartForReady(
@@ -1071,5 +1074,112 @@ describe("mcq 3 or 4 options in library part contracts", () => {
 				(issue) => issue.path === "questions.0.answer",
 			),
 		).toBe(true);
+	});
+});
+
+describe("listening mcq_many in library part contracts", () => {
+	test("chấp nhận listening s4 có nhóm notes + mcq_many ở upsert, validatePartForReady và validateTestReady", () => {
+		const listeningS4: LibraryPartInput = {
+			part: "s4",
+			type: "notes",
+			title: "Section 4: Talking about the history of bikes",
+			band: "7.0",
+			source: "",
+			intro: "",
+			passage: "",
+			transcript: "Good afternoon, ladies and gentlemen.",
+			imageUrl: "",
+			questions: [
+				{
+					stem: "1830s — Advantage: need ____ than walking",
+					opts: null,
+					answer: "less effort",
+					alts: "",
+					type: "notes",
+					pin: null,
+				},
+				{
+					stem: "Which THREE of the following were affected?",
+					opts: [
+						"Wheel size",
+						"Balance",
+						"Rate of speed",
+						"The back wheel",
+						"Safety",
+						"Downhill travel",
+					],
+					answer: "C",
+					alts: "",
+					type: "mcq_many",
+					pin: null,
+					answerSet: "g2",
+				},
+				{
+					stem: "Which THREE of the following were affected?",
+					opts: [
+						"Wheel size",
+						"Balance",
+						"Rate of speed",
+						"The back wheel",
+						"Safety",
+						"Downhill travel",
+					],
+					answer: "D",
+					alts: "",
+					type: "mcq_many",
+					pin: null,
+					answerSet: "g2",
+				},
+				{
+					stem: "Which THREE of the following were affected?",
+					opts: [
+						"Wheel size",
+						"Balance",
+						"Rate of speed",
+						"The back wheel",
+						"Safety",
+						"Downhill travel",
+					],
+					answer: "F",
+					alts: "",
+					type: "mcq_many",
+					pin: null,
+					answerSet: "g2",
+				},
+			],
+			optionBank: [],
+			note: "",
+			audioName: "talking-about-the-history-of-bikes.mp3",
+			groups: [
+				{
+					id: "grp-notes",
+					type: "notes",
+					instruction: "<p>Complete the notes below.</p>",
+					startIndex: 0,
+					count: 1,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+				{
+					id: "grp-mcq-many",
+					type: "mcq_many",
+					instruction: "<p>Choose THREE letters, A–F.</p>",
+					startIndex: 1,
+					count: 3,
+					optionBank: [],
+					answersInline: false,
+					splitContent: false,
+					dragDrop: false,
+				},
+			],
+		};
+
+		const parsed = libraryPartUpsertSchema.safeParse(listeningS4);
+		expect(parsed.success).toBe(true);
+		if (!parsed.success) return;
+		expect(validatePartForReady("listening", parsed.data)).toEqual([]);
+		expect(validateTestReady("listening", [parsed.data])).toEqual([]);
 	});
 });

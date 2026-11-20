@@ -214,10 +214,17 @@ export function libraryOptionBankKindFor(
 	return undefined;
 }
 
+/** Dạng bài IELTS Listening cho thư viện đề Admin (8 dạng theo section + mcq_many). */
+export const LIBRARY_LISTENING_TYPES = [
+	...new Set([
+		...Object.values(ASSIGNMENT_PART_TYPES.listening.types).flat(),
+		"mcq_many",
+	]),
+] as const;
+
 /** Thư viện bỏ khóa dạng-bài-theo-slot: mọi dạng của skill dùng được ở mọi slot. */
 export function librarySkillTypes(skill: LibrarySkill): readonly string[] {
-	if (skill === "reading") return LIBRARY_READING_TYPES;
-	return [...new Set(Object.values(ASSIGNMENT_PART_TYPES[skill].types).flat())];
+	return skill === "reading" ? LIBRARY_READING_TYPES : LIBRARY_LISTENING_TYPES;
 }
 
 /** Upsert một slot part. Câu hỏi/optionBank/imageUrl tái dùng schema của

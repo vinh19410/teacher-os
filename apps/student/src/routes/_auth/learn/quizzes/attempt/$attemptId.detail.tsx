@@ -23,8 +23,8 @@ import {
 	attemptDetailQueryOptions,
 	type QuizTakeSource,
 	quizDetailQueryOptions,
-	useAssignmentAudioObjectUrl,
 	useAttemptDetail,
+	useQuizAudioObjectUrl,
 	useStudentQuizDetail,
 } from "@/lib/repos/quiz";
 
@@ -88,14 +88,18 @@ function AttemptDetailPage() {
 function AttemptDetailScreen({ attempt }: { attempt: QuizAttemptDetail }) {
 	const quizQuery = useStudentQuizDetail(attemptTakeSource(attempt));
 	const [currentQuestion, setCurrentQuestion] = useState<number | null>(null);
-	const audioAssignmentId =
-		!attempt.practice &&
-		(attempt.hasAudio || quizQuery.data?.hasAudio) &&
-		attempt.assignmentId
-			? attempt.assignmentId
+	const audioSource: QuizTakeSource | null =
+		attempt.hasAudio || quizQuery.data?.hasAudio
+			? attempt.practice === true
+				? attempt.testId
+					? { kind: "practice", testId: attempt.testId }
+					: null
+				: attempt.assignmentId
+					? { kind: "assignment", id: attempt.assignmentId }
+					: null
 			: null;
 	const { audioSrc, audioLoading, audioError } =
-		useAssignmentAudioObjectUrl(audioAssignmentId);
+		useQuizAudioObjectUrl(audioSource);
 
 	// Attempt detail đã mang type từng câu (server resolve fallback
 	// prompt.type); promptType ở đây là fallback kép khi payload cũ thiếu.
