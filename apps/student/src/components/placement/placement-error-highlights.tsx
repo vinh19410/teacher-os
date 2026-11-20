@@ -1,20 +1,29 @@
-import type { PlacementError } from "@teacher-os/api/placement-test-contracts";
+import type {
+	PlacementError,
+	PlacementErrorSkill,
+} from "@teacher-os/api/placement-test-contracts";
 import { useState } from "react";
 import { cn } from "@/lib/cn";
 import {
 	buildPlacementHighlightSegments,
 	circledErrorNumber,
-	PLACEMENT_ERROR_CATEGORY_LIST,
 	PLACEMENT_ERROR_STYLES,
+	placementErrorCategoriesForSkill,
+	resolvePlacementErrorStyle,
 } from "@/lib/placement-test-helpers";
 
-export function PlacementErrorLegend() {
+export function PlacementErrorLegend({
+	skill,
+}: {
+	skill: PlacementErrorSkill;
+}) {
+	const categories = placementErrorCategoriesForSkill(skill);
 	return (
 		<ul
 			aria-label="Chú giải loại lỗi"
 			className="flex flex-wrap gap-x-4 gap-y-1.5 text-muted-foreground text-xs"
 		>
-			{PLACEMENT_ERROR_CATEGORY_LIST.map((cat) => {
+			{categories.map((cat) => {
 				const style = PLACEMENT_ERROR_STYLES[cat.key];
 				return (
 					<li key={cat.key} className="inline-flex items-center gap-1.5">
@@ -25,7 +34,7 @@ export function PlacementErrorLegend() {
 								style.swatchCls,
 							)}
 						/>
-						<span>{style.label}</span>
+						<span>{cat.label}</span>
 						<span className="sr-only">({style.lineLabel})</span>
 					</li>
 				);
@@ -36,11 +45,13 @@ export function PlacementErrorLegend() {
 
 export function PlacementAnnotatedText({
 	idPrefix,
+	skill,
 	text,
 	errors,
 	emptyLabel = "Không có nội dung.",
 }: {
 	idPrefix: string;
+	skill: PlacementErrorSkill;
 	text: string;
 	errors: readonly PlacementError[];
 	emptyLabel?: string;
@@ -56,7 +67,7 @@ export function PlacementAnnotatedText({
 
 	return (
 		<div className="space-y-4">
-			{errors.length > 0 ? <PlacementErrorLegend /> : null}
+			{errors.length > 0 ? <PlacementErrorLegend skill={skill} /> : null}
 
 			{trimmed ? (
 				<div
@@ -69,7 +80,7 @@ export function PlacementAnnotatedText({
 								<span key={`${idPrefix}-txt-${seg.start}`}>{seg.text}</span>
 							);
 						}
-						const style = PLACEMENT_ERROR_STYLES[seg.error.category];
+						const style = resolvePlacementErrorStyle(seg.error.category, skill);
 						const isActive = activeErrorId === seg.error.id;
 						return (
 							<mark
@@ -104,7 +115,7 @@ export function PlacementAnnotatedText({
 				<ol className="space-y-2.5" data-testid={`${idPrefix}-error-cards`}>
 					{located.map((err, idx) => {
 						const number = idx + 1;
-						const style = PLACEMENT_ERROR_STYLES[err.category];
+						const style = resolvePlacementErrorStyle(err.category, skill);
 						const isLocated = err.start !== null && err.end !== null;
 						const isActive = activeErrorId === err.id;
 						return (
@@ -133,8 +144,8 @@ export function PlacementAnnotatedText({
 									)}
 									<span
 										className={cn(
-											"inline-block size-2.5 rounded-full border",
-											style.swatchCls,
+											"inline-block size-2.5 shrink-0 rounded-full",
+											style.dotCls,
 										)}
 										aria-hidden="true"
 									/>
