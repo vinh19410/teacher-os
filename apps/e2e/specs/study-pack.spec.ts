@@ -17,6 +17,15 @@ const REVIEW_VIEWPORTS = [
 	{ width: 375, height: 812 },
 ] as const;
 
+/** Modal nhắc kiểm tra đầu vào (#748) chỉ hiện khi org đã có bài kiểm tra; đóng nếu xuất hiện để không chặn click. */
+async function dismissPlacementPromptIfPresent(page: Page): Promise<void> {
+	const later = page.getByRole("button", { name: "Để sau" });
+	if (await later.isVisible({ timeout: 3000 }).catch(() => false)) {
+		await later.click();
+		await expect(page.getByTestId("placement-prompt-backdrop")).toBeHidden();
+	}
+}
+
 async function assertNoHorizontalOverflow(
 	page: Page,
 	screenshotPrefix?: string,
@@ -264,6 +273,7 @@ test("study pack end-to-end: create grammar & reading prompts -> build 2-day pac
 	expect(day2DirectRes.status()).toBe(404);
 
 	// 8. Student 1 completes and submits Day 1 Grammar quiz -> auto-graded immediately
+	await dismissPlacementPromptIfPresent(studentPage);
 	await studentPage
 		.getByRole("link", { name: `Làm bài: ${GRAMMAR_TITLE}` })
 		.click();
@@ -597,6 +607,7 @@ test("built-in Course Foun/GT1 IELTS Foundation study pack: filter, detail page 
 	await expect(
 		studentPage.getByRole("link", { name: `Làm bài: ${DAY_1_TITLE}` }),
 	).toBeVisible();
+	await dismissPlacementPromptIfPresent(studentPage);
 	await studentPage
 		.getByRole("link", { name: `Làm bài: ${DAY_1_TITLE}` })
 		.click();
