@@ -8,19 +8,35 @@
  * workers.dev URLs and per-host cookies.
  */
 export interface DomainTopology {
-	/** Web app hostname: app.<domain> */
+	/** Unified LMS gateway hostname: lms.<domain> */
+	lmsHost: string;
+	/** Canonical browser origin of the unified LMS app (CORS_ORIGIN / STUDENT_ORIGINS / ADMIN_ORIGINS default). */
+	lmsOrigin: string;
+	/**
+	 * Legacy portal hostnames attached to the unified LMS Worker as aliases so
+	 * the Worker serves 301 redirects to `https://lms.<domain>` (and keeps
+	 * `/sw.js` + `/registerSW.js` self-heal stubs on `app.<domain>`).
+	 */
+	lmsAliases: string[];
+	/** Canonical teacher portal URL: https://lms.<domain>/teacher */
+	teacherUrl: string;
+	/** Canonical student portal URL: https://lms.<domain>/student */
+	studentPortalUrl: string;
+	/** Canonical admin console URL: https://lms.<domain>/admin */
+	adminUrl: string;
+	/** Legacy web app hostname (redirected via lmsAliases): app.<domain> */
 	appHost: string;
 	/** API worker hostname: api.<domain> */
 	apiHost: string;
-	/** Browser origin of the web app (CORS_ORIGIN default). */
+	/** Legacy web app origin (redirected via lmsAliases): https://app.<domain> */
 	appOrigin: string;
-	/** Student portal hostname: student.<domain> */
+	/** Legacy student portal hostname (redirected via lmsAliases): student.<domain> */
 	studentHost: string;
-	/** Browser origin of the student portal. */
+	/** Legacy student portal origin (redirected via lmsAliases): https://student.<domain> */
 	studentOrigin: string;
-	/** Admin console hostname: admin.<domain> (plan #413). */
+	/** Legacy admin console hostname (redirected via lmsAliases): admin.<domain> */
 	adminHost: string;
-	/** Browser origin of the admin console (plan #413). */
+	/** Legacy admin console origin (redirected via lmsAliases): https://admin.<domain> */
 	adminOrigin: string;
 	/** Browser origin of the API (BETTER_AUTH_URL). */
 	apiOrigin: string;
@@ -117,6 +133,12 @@ export function resolveDomainTopology(appDomain: string): DomainTopology {
 		domain === zone || domain.endsWith(`.${zone}`);
 	const inProdCookieZone =
 		inCookieZone(PROD_APP_DOMAIN) || inCookieZone(LEGACY_PROD_APP_DOMAIN);
+	const lmsHost = `lms.${domain}`;
+	const lmsOrigin = `https://${lmsHost}`;
+	const appHost = `app.${domain}`;
+	const studentHost = `student.${domain}`;
+	const adminHost = `admin.${domain}`;
+	const lmsAliases = [appHost, studentHost, adminHost];
 	const apiOrigin = `https://api.${domain}`;
 	const appAliases: string[] = [];
 	const isProd = domain === PROD_APP_DOMAIN;
@@ -126,13 +148,19 @@ export function resolveDomainTopology(appDomain: string): DomainTopology {
 		(h) => `https://${h}`,
 	);
 	return {
-		appHost: `app.${domain}`,
+		lmsHost,
+		lmsOrigin,
+		lmsAliases,
+		teacherUrl: `${lmsOrigin}/teacher`,
+		studentPortalUrl: `${lmsOrigin}/student`,
+		adminUrl: `${lmsOrigin}/admin`,
+		appHost,
 		apiHost: `api.${domain}`,
-		appOrigin: `https://app.${domain}`,
-		studentHost: `student.${domain}`,
-		studentOrigin: `https://student.${domain}`,
-		adminHost: `admin.${domain}`,
-		adminOrigin: `https://admin.${domain}`,
+		appOrigin: `https://${appHost}`,
+		studentHost,
+		studentOrigin: `https://${studentHost}`,
+		adminHost,
+		adminOrigin: `https://${adminHost}`,
 		apiOrigin,
 		authBaseURL: `${apiOrigin}${AUTH_MOUNT_PATH}`,
 		googleRedirectURI: `${apiOrigin}${AUTH_MOUNT_PATH}/callback/google`,

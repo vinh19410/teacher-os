@@ -67,7 +67,7 @@ Sign-in uses Better-Auth with Google OAuth as the primary method (email/password
    - Production (`APP_DOMAIN=<domain>`): `https://api.<domain>/api/auth/callback/google`
 3. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `apps/server/.env`, then restart `pnpm run dev` (or redeploy).
 
-The web origin must be listed in `CORS_ORIGIN` (server `trustedOrigins`) so the OAuth callback can redirect back to the app. With `APP_DOMAIN` set, `CORS_ORIGIN` defaults to `https://app.<domain>`.
+The web origin must be listed in `CORS_ORIGIN` (server `trustedOrigins`) so the OAuth callback can redirect back to the app. With `APP_DOMAIN` set, `CORS_ORIGIN` defaults to `https://lms.<domain>`.
 
 ### Zoom (Server-to-Server OAuth)
 
@@ -137,7 +137,7 @@ pnpm alchemy deploy --stage prod      # production
 
 ### Production topology
 
-Pass `APP_DOMAIN` (bare lowercase domain) inline on the deploy command — `env "APP_DOMAIN=<domain>" pnpm alchemy deploy --stage prod` from `packages/infra` — to serve the app at `app.<domain>` and the API at `api.<domain>`; CORS origin, Better Auth base URL, the Google redirect URI, cross-subdomain session cookies, and the auth cookie namespace prefix all derive from it (see `packages/infra/src/topology.ts` — staging, as a non-prod member of the prod cookie zone, gets the `teacheros-staging` namespace so prod's parent-domain cookie cannot shadow its sessions). Never persist `APP_DOMAIN` in `.env`: it would flip `pnpm dev` onto a domain topology. Without `APP_DOMAIN` (local dev), deploys keep their generated `workers.dev` URLs and `alchemy dev` defaults `CORS_ORIGIN` to `http://localhost:8001`. Staging uses the same derivation with `APP_DOMAIN=staging.teacheros.io.vn` (see the runbook's "Provision staging").
+Pass `APP_DOMAIN` (bare lowercase domain) inline on the deploy command — `env "APP_DOMAIN=<domain>" pnpm alchemy deploy --stage prod` from `packages/infra` — to serve the unified LMS at `lms.<domain>` (`/teacher`, `/student`, `/admin`, `/login`, `/pay/:token`, with legacy `app.<domain>`, `student.<domain>`, and `admin.<domain>` attached as 301 redirect aliases) and the API at `api.<domain>`; CORS origin, Better Auth base URL, the Google redirect URI, cross-subdomain session cookies, and the auth cookie namespace prefix all derive from it (see `packages/infra/src/topology.ts` — staging, as a non-prod member of the prod cookie zone, gets the `teacheros-staging` namespace so prod's parent-domain cookie cannot shadow its sessions). Never persist `APP_DOMAIN` in `.env`: it would flip `pnpm dev` onto a domain topology. Without `APP_DOMAIN` (local dev), deploys keep their generated `workers.dev` URLs and `alchemy dev` defaults `CORS_ORIGIN` to `http://localhost:8001`. Staging uses the same derivation with `APP_DOMAIN=staging.teacheros.io.vn` (see the runbook's "Provision staging").
 
 Release preflight, smoke tests, rollback, GO/NO-GO, and support procedure live in the [production release runbook](docs/production-release-runbook.md) — that is the entry point for every release and UAT.
 
