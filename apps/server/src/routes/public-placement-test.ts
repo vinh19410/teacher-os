@@ -14,7 +14,9 @@ import {
 	type PlacementPublicResultView,
 	type PlacementPublicSubmit,
 	type PlacementSnapshot,
+	parseStoredSpeakingCriterionComments,
 	parseStoredSpeakingRubric,
+	parseStoredWritingCriterionComments,
 	parseStoredWritingRubric,
 	placementPublicSubmitSchema,
 } from "@teacher-os/api/placement-test-contracts";
@@ -1022,14 +1024,25 @@ export function publicPlacementTestRoutes(deps: PublicPlacementTestRouteDeps) {
 			writingText: sub.writingText,
 			writingRubric: parseStoredWritingRubric(sub.writingRubricJson),
 			writingScore: sub.writingBand ?? sub.writingScore,
+			writingCriterionComments: parseStoredWritingCriterionComments(
+				sub.writingCriterionCommentsJson,
+			),
 			writingErrors:
-				parseStoredErrors(sub.writingErrorsJson, sub.writingText) ?? [],
+				parseStoredErrors(sub.writingErrorsJson, sub.writingText, "writing") ??
+				[],
 			speakingStatus: sub.speakingStatus,
 			speakingTranscript: sub.speakingTranscript,
 			speakingRubric: parseStoredSpeakingRubric(sub.speakingRubricJson),
 			speakingScore: sub.speakingBand ?? sub.speakingScore,
+			speakingCriterionComments: parseStoredSpeakingCriterionComments(
+				sub.speakingCriterionCommentsJson,
+			),
 			speakingErrors:
-				parseStoredErrors(sub.speakingErrorsJson, sub.speakingTranscript) ?? [],
+				parseStoredErrors(
+					sub.speakingErrorsJson,
+					sub.speakingTranscript,
+					"speaking",
+				) ?? [],
 			finalBandLevel: sub.finalBandLevel,
 			finalDisplayCourse: sub.finalDisplayCourse,
 			finalScorePct: sub.finalScorePct,

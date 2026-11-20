@@ -1,14 +1,21 @@
 /**
  * Hàm thuần cho highlight lỗi Writing/Speaking trên panel chấm bài test đầu
- * vào (#730): nhãn/màu theo loại lỗi, chia văn bản thành đoạn thường/đoạn lỗi,
- * quy đổi vị trí DOM selection → offset trong văn bản nguồn.
+ * vào: nhãn/màu đồng bộ 1-1 với 4 tiêu chí IELTS theo kỹ năng, chia văn bản
+ * thành đoạn thường/đoạn lỗi, quy đổi vị trí DOM selection → offset trong văn
+ * bản nguồn.
  */
 import {
-	PLACEMENT_ERROR_CATEGORIES,
+	normalizePlacementErrorCategory,
 	PLACEMENT_ERROR_EXPLANATION_MAX,
 	PLACEMENT_ERROR_QUOTE_MAX,
 	type PlacementError,
 	type PlacementErrorCategory,
+	type PlacementErrorSkill,
+	type PlacementSpeakingError,
+	type PlacementSpeakingErrorCategory,
+	type PlacementWritingError,
+	type PlacementWritingErrorCategory,
+	placementErrorCategoriesForSkill,
 } from "@teacher-os/api/placement-test-contracts";
 
 export type PlacementErrorCategoryStyle = {
@@ -19,54 +26,162 @@ export type PlacementErrorCategoryStyle = {
 	markCls: string;
 	/** Lớp cho ô mẫu ở chú giải và chấm màu trên thẻ lỗi. */
 	swatchCls: string;
+	/** Lớp chấm tròn màu đồng bộ với tiêu chí IELTS. */
+	dotCls: string;
+	/** Lớp viền trái đồng bộ màu tiêu chí IELTS trên card. */
+	borderLeftCls: string;
+	/** Lớp `accent-color` đồng bộ màu cho `<BandSlider />`. */
+	sliderAccentCls: string;
 };
 
 /**
- * Năm loại lỗi dùng 5 hue phân tách sẵn có `--class-*` (globals.css) và mỗi
- * loại có một kiểu nét gạch chân khác nhau để phân biệt cả khi không thấy màu.
+ * 6 loại lỗi IELTS (4 cho Writing, 4 cho Speaking) dùng bộ token `--class-*`
+ * sẵn có trong `globals.css` (hỗ trợ cả light/dark) kèm kiểu nét gạch chân
+ * riêng để phân biệt ngay cả khi không dựa vào màu.
  */
 export const PLACEMENT_ERROR_STYLES: Record<
 	PlacementErrorCategory,
 	PlacementErrorCategoryStyle
 > = {
-	grammar: {
-		label: "Ngữ pháp",
-		lineLabel: "gạch liền",
-		markCls: "bg-class-5-soft decoration-class-5 decoration-solid",
-		swatchCls: "bg-class-5-soft border-class-5 border-solid",
-	},
-	vocabulary: {
-		label: "Từ vựng",
-		lineLabel: "gạch đứt",
-		markCls: "bg-class-1-soft decoration-class-1 decoration-dashed",
-		swatchCls: "bg-class-1-soft border-class-1 border-dashed",
-	},
-	spelling: {
-		label: "Chính tả",
+	task: {
+		label: "Task Response",
 		lineLabel: "gạch sóng",
 		markCls: "bg-class-3-soft decoration-class-3 decoration-wavy",
 		swatchCls: "bg-class-3-soft border-class-3 border-solid",
+		dotCls: "bg-class-3",
+		borderLeftCls: "border-l-4 border-l-class-3",
+		sliderAccentCls: "accent-class-3",
 	},
 	coherence: {
-		label: "Mạch lạc",
+		label: "Coherence & Cohesion",
 		lineLabel: "gạch chấm",
 		markCls: "bg-class-4-soft decoration-class-4 decoration-dotted",
 		swatchCls: "bg-class-4-soft border-class-4 border-dotted",
+		dotCls: "bg-class-4",
+		borderLeftCls: "border-l-4 border-l-class-4",
+		sliderAccentCls: "accent-class-4",
+	},
+	fluency: {
+		label: "Fluency & Coherence",
+		lineLabel: "gạch chấm",
+		markCls: "bg-class-4-soft decoration-class-4 decoration-dotted",
+		swatchCls: "bg-class-4-soft border-class-4 border-dotted",
+		dotCls: "bg-class-4",
+		borderLeftCls: "border-l-4 border-l-class-4",
+		sliderAccentCls: "accent-class-4",
+	},
+	lexical: {
+		label: "Lexical Resource",
+		lineLabel: "gạch đứt",
+		markCls: "bg-class-1-soft decoration-class-1 decoration-dashed",
+		swatchCls: "bg-class-1-soft border-class-1 border-dashed",
+		dotCls: "bg-class-1",
+		borderLeftCls: "border-l-4 border-l-class-1",
+		sliderAccentCls: "accent-class-1",
+	},
+	grammar: {
+		label: "Grammatical Range & Accuracy",
+		lineLabel: "gạch liền",
+		markCls: "bg-class-5-soft decoration-class-5 decoration-solid",
+		swatchCls: "bg-class-5-soft border-class-5 border-solid",
+		dotCls: "bg-class-5",
+		borderLeftCls: "border-l-4 border-l-class-5",
+		sliderAccentCls: "accent-class-5",
 	},
 	pronunciation: {
-		label: "Phát âm",
+		label: "Pronunciation",
 		lineLabel: "gạch đôi",
 		markCls: "bg-class-2-soft decoration-class-2 decoration-double",
 		swatchCls: "bg-class-2-soft border-class-2 border-double",
+		dotCls: "bg-class-2",
+		borderLeftCls: "border-l-4 border-l-class-2",
+		sliderAccentCls: "accent-class-2",
 	},
 };
 
-export const PLACEMENT_ERROR_CATEGORY_OPTIONS = PLACEMENT_ERROR_CATEGORIES.map(
-	(c) => ({ key: c.key, label: PLACEMENT_ERROR_STYLES[c.key].label }),
-);
+export function placementErrorCategoryOptionsForSkill(
+	skill: "writing",
+): readonly {
+	readonly key: PlacementWritingErrorCategory;
+	readonly label: string;
+}[];
+export function placementErrorCategoryOptionsForSkill(
+	skill: "speaking",
+): readonly {
+	readonly key: PlacementSpeakingErrorCategory;
+	readonly label: string;
+}[];
+export function placementErrorCategoryOptionsForSkill(
+	skill: PlacementErrorSkill,
+): readonly { readonly key: PlacementErrorCategory; readonly label: string }[];
+export function placementErrorCategoryOptionsForSkill(
+	skill: PlacementErrorSkill,
+): readonly { readonly key: PlacementErrorCategory; readonly label: string }[] {
+	return placementErrorCategoriesForSkill(skill).map((c) => ({
+		key: c.key,
+		label: PLACEMENT_ERROR_STYLES[c.key].label,
+	}));
+}
 
-export function placementErrorLabel(category: PlacementErrorCategory): string {
-	return PLACEMENT_ERROR_STYLES[category]?.label ?? category;
+export function resolvePlacementErrorCategory(
+	category: string,
+	skill: "writing",
+): PlacementWritingErrorCategory;
+export function resolvePlacementErrorCategory(
+	category: string,
+	skill: "speaking",
+): PlacementSpeakingErrorCategory;
+export function resolvePlacementErrorCategory(
+	category: string,
+	skill?: PlacementErrorSkill,
+): PlacementErrorCategory;
+export function resolvePlacementErrorCategory(
+	category: string,
+	skill?: PlacementErrorSkill,
+): PlacementErrorCategory {
+	if (skill) {
+		return normalizePlacementErrorCategory(category, skill) ?? "grammar";
+	}
+	if (Object.hasOwn(PLACEMENT_ERROR_STYLES, category)) {
+		return category as PlacementErrorCategory;
+	}
+	return normalizePlacementErrorCategory(category, "writing") ?? "grammar";
+}
+
+export function placementErrorStyle(
+	category: string,
+	skill?: PlacementErrorSkill,
+): PlacementErrorCategoryStyle {
+	return PLACEMENT_ERROR_STYLES[resolvePlacementErrorCategory(category, skill)];
+}
+
+export function placementErrorLabel(
+	category: string,
+	skill?: PlacementErrorSkill,
+): string {
+	return placementErrorStyle(category, skill).label;
+}
+
+export function normalizePlacementErrorsForSkill(
+	errors: readonly PlacementError[],
+	skill: "writing",
+): PlacementWritingError[];
+export function normalizePlacementErrorsForSkill(
+	errors: readonly PlacementError[],
+	skill: "speaking",
+): PlacementSpeakingError[];
+export function normalizePlacementErrorsForSkill(
+	errors: readonly PlacementError[],
+	skill: PlacementErrorSkill,
+): PlacementError[];
+export function normalizePlacementErrorsForSkill(
+	errors: readonly PlacementError[],
+	skill: PlacementErrorSkill,
+): PlacementError[] {
+	return errors.map((err) => ({
+		...err,
+		category: resolvePlacementErrorCategory(err.category, skill),
+	}));
 }
 
 const CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳";

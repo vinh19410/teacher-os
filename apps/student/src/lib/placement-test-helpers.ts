@@ -1,12 +1,14 @@
 import { LEAD_COURSE_LABELS } from "@teacher-os/api/lead-contracts";
 import {
 	locatePlacementErrors,
-	PLACEMENT_ERROR_CATEGORIES,
+	normalizePlacementErrorCategory,
 	type PlacementError,
 	type PlacementErrorCategory,
+	type PlacementErrorSkill,
 	type PlacementPublishedBand,
 	type PlacementPublishedSpeakingTask,
 	type PlacementSnapshot,
+	placementErrorCategoriesForSkill,
 	type StudentPlacementSubmit,
 	stripInlineCefrLabel,
 } from "@teacher-os/api/placement-test-contracts";
@@ -572,48 +574,79 @@ export function resolveSpeakingUploadMeta(blobType: string): {
 	}
 }
 
+export interface PlacementErrorStyle {
+	label: string;
+	lineLabel: string;
+	markCls: string;
+	swatchCls: string;
+	dotCls: string;
+	borderLeftCls: string;
+}
+
 export const PLACEMENT_ERROR_STYLES: Record<
 	PlacementErrorCategory,
-	{
-		label: string;
-		lineLabel: string;
-		markCls: string;
-		swatchCls: string;
-	}
+	PlacementErrorStyle
 > = {
-	grammar: {
-		label: "Ngữ pháp",
-		lineLabel: "gạch liền",
-		markCls: "bg-class-5-soft decoration-class-5 decoration-solid",
-		swatchCls: "bg-class-5-soft border-class-5 border-solid",
-	},
-	vocabulary: {
-		label: "Từ vựng",
-		lineLabel: "gạch đứt",
-		markCls: "bg-class-1-soft decoration-class-1 decoration-dashed",
-		swatchCls: "bg-class-1-soft border-class-1 border-dashed",
-	},
-	spelling: {
-		label: "Chính tả",
+	task: {
+		label: "Task Response",
 		lineLabel: "gạch sóng",
 		markCls: "bg-class-3-soft decoration-class-3 decoration-wavy",
 		swatchCls: "bg-class-3-soft border-class-3 border-solid",
+		dotCls: "bg-class-3",
+		borderLeftCls: "border-l-4 border-l-class-3",
 	},
 	coherence: {
-		label: "Mạch lạc",
+		label: "Coherence & Cohesion",
 		lineLabel: "gạch chấm",
 		markCls: "bg-class-4-soft decoration-class-4 decoration-dotted",
 		swatchCls: "bg-class-4-soft border-class-4 border-dotted",
+		dotCls: "bg-class-4",
+		borderLeftCls: "border-l-4 border-l-class-4",
+	},
+	fluency: {
+		label: "Fluency & Coherence",
+		lineLabel: "gạch chấm",
+		markCls: "bg-class-4-soft decoration-class-4 decoration-dotted",
+		swatchCls: "bg-class-4-soft border-class-4 border-dotted",
+		dotCls: "bg-class-4",
+		borderLeftCls: "border-l-4 border-l-class-4",
+	},
+	lexical: {
+		label: "Lexical Resource",
+		lineLabel: "gạch đứt",
+		markCls: "bg-class-1-soft decoration-class-1 decoration-dashed",
+		swatchCls: "bg-class-1-soft border-class-1 border-dashed",
+		dotCls: "bg-class-1",
+		borderLeftCls: "border-l-4 border-l-class-1",
+	},
+	grammar: {
+		label: "Grammatical Range & Accuracy",
+		lineLabel: "gạch liền",
+		markCls: "bg-class-5-soft decoration-class-5 decoration-solid",
+		swatchCls: "bg-class-5-soft border-class-5 border-solid",
+		dotCls: "bg-class-5",
+		borderLeftCls: "border-l-4 border-l-class-5",
 	},
 	pronunciation: {
-		label: "Phát âm",
+		label: "Pronunciation",
 		lineLabel: "gạch đôi",
 		markCls: "bg-class-2-soft decoration-class-2 decoration-double",
 		swatchCls: "bg-class-2-soft border-class-2 border-double",
+		dotCls: "bg-class-2",
+		borderLeftCls: "border-l-4 border-l-class-2",
 	},
 };
 
-export const PLACEMENT_ERROR_CATEGORY_LIST = PLACEMENT_ERROR_CATEGORIES;
+export { placementErrorCategoriesForSkill };
+
+export function resolvePlacementErrorStyle(
+	category: string,
+	skill: PlacementErrorSkill,
+): PlacementErrorStyle {
+	const normalized =
+		normalizePlacementErrorCategory(String(category ?? ""), skill) ?? "grammar";
+	return PLACEMENT_ERROR_STYLES[normalized];
+}
 
 const CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳";
 

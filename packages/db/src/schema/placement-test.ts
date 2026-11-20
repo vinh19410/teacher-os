@@ -119,11 +119,15 @@ export const placementTestSubmission = sqliteTable(
 		writingScore: integer("writing_score"),
 		/** Điểm tổng Writing theo IELTS (0–9, bước 0.5). Null với bài chấm kiểu cũ. */
 		writingBand: real("writing_band"),
+		/** JSON `PlacementWritingCriterionComments` nhận xét giáo viên theo 4 tiêu chí Writing. */
+		writingCriterionCommentsJson: text("writing_criterion_comments_json"),
 		speakingRubricJson: text("speaking_rubric_json"),
 		/** Điểm Speaking kiểu cũ (0–20 nguyên). Null với bài chấm theo chuẩn IELTS. */
 		speakingScore: integer("speaking_score"),
 		/** Điểm tổng Speaking theo IELTS (0–9, bước 0.5). Null với bài chấm kiểu cũ. */
 		speakingBand: real("speaking_band"),
+		/** JSON `PlacementSpeakingCriterionComments` nhận xét giáo viên theo 4 tiêu chí Speaking. */
+		speakingCriterionCommentsJson: text("speaking_criterion_comments_json"),
 		teacherFeedback: text("teacher_feedback").notNull().default(""),
 		/**
 		 * Chấm nháp AI Writing/Speaking (#730). `ai_status`:

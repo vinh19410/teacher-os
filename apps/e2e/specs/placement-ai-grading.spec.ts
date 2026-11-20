@@ -310,6 +310,107 @@ test.describe
 			await expect(saveBtn).toBeEnabled();
 
 			const writingHighlighter = page.getByTestId("writing-error-highlighter");
+			const speakingHighlighter = page.getByTestId(
+				"speaking-error-highlighter",
+			);
+
+			// Kiểm tra chú giải 4 tiêu chí tiếng Anh riêng cho Writing & Speaking.
+			const writingLegend = writingHighlighter.getByLabel("Chú giải loại lỗi");
+			await expect(writingLegend).toContainText("Task Response");
+			await expect(writingLegend).toContainText("Coherence & Cohesion");
+			await expect(writingLegend).toContainText("Lexical Resource");
+			await expect(writingLegend).toContainText("Grammatical Range & Accuracy");
+			await expect(writingLegend).not.toContainText("Pronunciation");
+			await expect(writingLegend).not.toContainText("Chính tả");
+
+			const speakingLegend =
+				speakingHighlighter.getByLabel("Chú giải loại lỗi");
+			await expect(speakingLegend).toContainText("Fluency & Coherence");
+			await expect(speakingLegend).toContainText("Lexical Resource");
+			await expect(speakingLegend).toContainText(
+				"Grammatical Range & Accuracy",
+			);
+			await expect(speakingLegend).toContainText("Pronunciation");
+			await expect(speakingLegend).not.toContainText("Task Response");
+			await expect(speakingLegend).not.toContainText("Chính tả");
+
+			// Kiểm tra màu slider 4 tiêu chí đồng bộ với chú giải & khác slider tổng (cả light & dark).
+			for (const dark of [false, true]) {
+				await page.evaluate((enableDark) => {
+					document.documentElement.classList.toggle("dark", enableDark);
+				}, dark);
+				const sliderColors = await page.evaluate(() => {
+					const accentOf = (id: string) => {
+						const el = document.getElementById(id);
+						return el ? getComputedStyle(el).accentColor : "";
+					};
+					return {
+						wTask: accentOf("writing-task-slider"),
+						wCoherence: accentOf("writing-coherence-slider"),
+						wLexical: accentOf("writing-lexical-slider"),
+						wGrammar: accentOf("writing-grammar-slider"),
+						wOverall: accentOf("writing-overall-slider"),
+						sFluency: accentOf("speaking-fluency-slider"),
+						sLexical: accentOf("speaking-lexical-slider"),
+						sGrammar: accentOf("speaking-grammar-slider"),
+						sPronunciation: accentOf("speaking-pronunciation-slider"),
+						sOverall: accentOf("speaking-overall-slider"),
+					};
+				});
+				expect(
+					new Set([
+						sliderColors.wTask,
+						sliderColors.wCoherence,
+						sliderColors.wLexical,
+						sliderColors.wGrammar,
+					]).size,
+					`4 màu slider Writing phân biệt (${dark ? "dark" : "light"})`,
+				).toBe(4);
+				expect(sliderColors.wTask).not.toBe(sliderColors.wOverall);
+				expect(sliderColors.wCoherence).toBe(sliderColors.sFluency);
+				expect(sliderColors.wLexical).toBe(sliderColors.sLexical);
+				expect(sliderColors.wGrammar).toBe(sliderColors.sGrammar);
+				expect(
+					new Set([
+						sliderColors.sFluency,
+						sliderColors.sLexical,
+						sliderColors.sGrammar,
+						sliderColors.sPronunciation,
+					]).size,
+					`4 màu slider Speaking phân biệt (${dark ? "dark" : "light"})`,
+				).toBe(4);
+				expect(sliderColors.sPronunciation).not.toBe(sliderColors.sOverall);
+			}
+			await page.evaluate(() =>
+				document.documentElement.classList.remove("dark"),
+			);
+
+			// Nhập nhận xét từng tiêu chí (bỏ trống Lexical để kiểm tra ẩn khi rỗng).
+			const WRITING_TASK_COMMENT =
+				"Trả lời đủ ý chính của đề bài, nên phát triển thêm ví dụ cụ thể.";
+			const WRITING_COHERENCE_COMMENT =
+				"Bố cục rõ ràng, có thể đa dạng hơn các từ nối giữa các đoạn.";
+			const WRITING_GRAMMAR_COMMENT =
+				"Chú ý chia động từ hiện tại đơn với chủ ngữ ngôi thứ nhất.";
+			const SPEAKING_FLUENCY_COMMENT =
+				"Tốc độ nói tự nhiên, ít ngập ngừng ở các câu quen thuộc.";
+			const SPEAKING_PRONUNCIATION_COMMENT =
+				"Cần nhấn rõ âm cuối của danh từ số nhiều.";
+
+			await page.getByTestId("writing-task-comment").fill(WRITING_TASK_COMMENT);
+			await page
+				.getByTestId("writing-coherence-comment")
+				.fill(WRITING_COHERENCE_COMMENT);
+			await page
+				.getByTestId("writing-grammar-comment")
+				.fill(WRITING_GRAMMAR_COMMENT);
+			await page
+				.getByTestId("speaking-fluency-comment")
+				.fill(SPEAKING_FLUENCY_COMMENT);
+			await page
+				.getByTestId("speaking-pronunciation-comment")
+				.fill(SPEAKING_PRONUNCIATION_COMMENT);
+
 			const marks = writingHighlighter.getByTestId("writing-error-mark");
 			await expect(marks).toHaveCount(1);
 			await expect(marks.first()).toHaveText(AI_ERROR_QUOTE);
@@ -343,25 +444,54 @@ test.describe
 			await page.getByTestId("writing-error-save-btn").click();
 			await expect(form).toBeHidden();
 
-			// Chụp POT panel giáo viên (đủ 2 highlight + IELTS grading) trước khi xoá lỗi AI.
+			// Chụp POT panel giáo viên (đủ 2 highlight + IELTS grading + màu slider + comment tiêu chí).
+			const potIssue = process.env.CAPTURE_POT_ISSUE?.trim();
 			await writingHighlighter.scrollIntoViewIfNeeded();
 			for (const vp of VIEWPORTS) {
 				await page.setViewportSize({ width: vp.width, height: vp.height });
-				await expectNoHorizontalOverflow(page, `/leads ${vp.label}`);
+				await page.evaluate(() =>
+					document.documentElement.classList.remove("dark"),
+				);
+				await expectNoHorizontalOverflow(page, `/leads light ${vp.label}`);
 				await writingHighlighter.scrollIntoViewIfNeeded();
-				await page.screenshot({
-					path: reportPath(`800-leads-grading-${vp.label}.png`),
-				});
+				if (potIssue === "863") {
+					await page.screenshot({
+						path: reportPath(`863-teacher-grading-light-${vp.label}.png`),
+					});
+					await page.evaluate(() =>
+						document.documentElement.classList.add("dark"),
+					);
+					await expectNoHorizontalOverflow(page, `/leads dark ${vp.label}`);
+					await writingHighlighter.scrollIntoViewIfNeeded();
+					await page.screenshot({
+						path: reportPath(`863-teacher-grading-dark-${vp.label}.png`),
+					});
+				} else {
+					await page.screenshot({
+						path: reportPath(`800-leads-grading-${vp.label}.png`),
+					});
+				}
 			}
-			await page.setViewportSize({ width: 1440, height: 900 });
-			await page.evaluate(() => document.documentElement.classList.add("dark"));
-			await writingHighlighter.scrollIntoViewIfNeeded();
-			await page.screenshot({
-				path: reportPath("800-leads-grading-desktop-dark.png"),
-			});
+			// Kiểm tra reflow 320px không tràn ngang.
+			await page.setViewportSize({ width: 320, height: 812 });
 			await page.evaluate(() =>
 				document.documentElement.classList.remove("dark"),
 			);
+			await expectNoHorizontalOverflow(page, "/leads reflow 320px");
+
+			await page.setViewportSize({ width: 1440, height: 900 });
+			if (potIssue !== "863") {
+				await page.evaluate(() =>
+					document.documentElement.classList.add("dark"),
+				);
+				await writingHighlighter.scrollIntoViewIfNeeded();
+				await page.screenshot({
+					path: reportPath("800-leads-grading-desktop-dark.png"),
+				});
+				await page.evaluate(() =>
+					document.documentElement.classList.remove("dark"),
+				);
+			}
 
 			await writingHighlighter
 				.getByRole("button", { name: "Xoá lỗi 1" })
@@ -418,7 +548,7 @@ test.describe
 			expect(pdfBytes.byteLength).toBeGreaterThan(5_000);
 			await expect(exportPdfBtn).toBeEnabled();
 
-			// Kiểm tra responsive 3 viewport + light/dark và chụp ảnh POT cho khối PDF.
+			// Kiểm tra responsive 3 viewport + light/dark.
 			for (const vp of VIEWPORTS) {
 				await page.setViewportSize({ width: vp.width, height: vp.height });
 				await page.evaluate(() =>
@@ -428,10 +558,12 @@ test.describe
 					page,
 					`/leads pdf-card light ${vp.label}`,
 				);
-				await pdfCard.scrollIntoViewIfNeeded();
-				await page.screenshot({
-					path: reportPath(`853-placement-pdf-panel-light-${vp.label}.png`),
-				});
+				if (potIssue !== "863") {
+					await pdfCard.scrollIntoViewIfNeeded();
+					await page.screenshot({
+						path: reportPath(`853-placement-pdf-panel-light-${vp.label}.png`),
+					});
+				}
 				await page.evaluate(() =>
 					document.documentElement.classList.add("dark"),
 				);
@@ -439,10 +571,12 @@ test.describe
 					page,
 					`/leads pdf-card dark ${vp.label}`,
 				);
-				await pdfCard.scrollIntoViewIfNeeded();
-				await page.screenshot({
-					path: reportPath(`853-placement-pdf-panel-dark-${vp.label}.png`),
-				});
+				if (potIssue !== "863") {
+					await pdfCard.scrollIntoViewIfNeeded();
+					await page.screenshot({
+						path: reportPath(`853-placement-pdf-panel-dark-${vp.label}.png`),
+					});
+				}
 			}
 			await page.evaluate(() =>
 				document.documentElement.classList.remove("dark"),
@@ -472,12 +606,54 @@ test.describe
 				});
 				await expect(writingSection).toContainText("Writing: Band 6.5/9");
 				await expect(writingSection).toContainText("Task Response");
+				await expect(
+					writingSection.locator(".error-legend-list"),
+				).toContainText("Task Response");
+				await expect(
+					writingSection.locator(".error-legend-list"),
+				).not.toContainText("Pronunciation");
+				await expect(
+					writingSection.locator('[data-criterion-comment="task"]'),
+				).toHaveText(WRITING_TASK_COMMENT);
+				await expect(
+					writingSection.locator('[data-criterion-comment="coherence"]'),
+				).toHaveText(WRITING_COHERENCE_COMMENT);
+				await expect(
+					writingSection.locator('[data-criterion-comment="grammar"]'),
+				).toHaveText(WRITING_GRAMMAR_COMMENT);
+				await expect(
+					writingSection.locator('[data-criterion-comment="lexical"]'),
+				).toHaveCount(0);
+
+				const speakingSection = student.locator("section", {
+					has: student.locator("#secSpeaking"),
+				});
+				await expect(speakingSection).toContainText("Speaking: Band 6.5/9");
+				await expect(
+					speakingSection.locator('[data-criterion-comment="fluency"]'),
+				).toHaveText(SPEAKING_FLUENCY_COMMENT);
+				await expect(
+					speakingSection.locator('[data-criterion-comment="pronunciation"]'),
+				).toHaveText(SPEAKING_PRONUNCIATION_COMMENT);
+				await expect(
+					speakingSection.locator('[data-criterion-comment="lexical"]'),
+				).toHaveCount(0);
+				await expect(
+					speakingSection.locator(".error-legend-list"),
+				).toContainText("Pronunciation");
+				await expect(
+					speakingSection.locator(".error-legend-list"),
+				).not.toContainText("Task Response");
+
 				const resultMarks = writingSection.locator(".annotated-text mark");
 				await expect(resultMarks).toHaveCount(1);
 				await expect(resultMarks.first()).toHaveAttribute("id", "w-mark-1");
 				await expect(resultMarks.first()).toContainText(ADDED_ERROR_QUOTE);
 				await expect(resultMarks.first()).toHaveClass(/err-grammar/);
 				await expect(writingSection.locator(".error-cards li")).toHaveCount(1);
+				await expect(writingSection.locator(".error-cards")).toContainText(
+					"Grammatical Range & Accuracy",
+				);
 				await expect(writingSection.locator(".error-cards")).toContainText(
 					"lives → live",
 				);
@@ -492,10 +668,18 @@ test.describe
 					await student.setViewportSize({ width: vp.width, height: vp.height });
 					await expectNoHorizontalOverflow(student, `kết quả ${vp.label}`);
 					await writingSection.scrollIntoViewIfNeeded();
-					await student.screenshot({
-						path: reportPath(`800-profile-result-${vp.label}.png`),
-					});
+					if (potIssue === "863") {
+						await student.screenshot({
+							path: reportPath(`863-profile-result-${vp.label}.png`),
+						});
+					} else {
+						await student.screenshot({
+							path: reportPath(`800-profile-result-${vp.label}.png`),
+						});
+					}
 				}
+				await student.setViewportSize({ width: 320, height: 812 });
+				await expectNoHorizontalOverflow(student, "kết quả reflow 320px");
 			} finally {
 				await studentContext.close();
 			}

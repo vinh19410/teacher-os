@@ -3,6 +3,7 @@ import {
 	type PlacementResultEmailSummary,
 	parseAiSpeakingDraft,
 	parseAiWritingDraft,
+	parseStoredErrors,
 	renderPlacementResultEmail,
 } from "./placement-result";
 
@@ -197,5 +198,163 @@ describe("parseAiWritingDraft / parseAiSpeakingDraft", () => {
 		});
 		expect(parseAiWritingDraft("not json", text)).toBeNull();
 		expect(parseAiWritingDraft(null, text)).toBeNull();
+	});
+
+	test("chuẩn hóa category legacy trong parseStoredErrors và AI draft mà không làm rớt cả mảng", () => {
+		const essay = "I lives in big city and recieve mail.";
+		const writingErrors = parseStoredErrors(
+			JSON.stringify([
+				{
+					id: "w1",
+					category: "vocabulary",
+					quote: "big city",
+					start: null,
+					end: null,
+					correction: "a big city",
+					explanation: "Thiếu mạo từ.",
+				},
+				{
+					id: "w2",
+					category: "spelling",
+					quote: "recieve",
+					start: null,
+					end: null,
+					correction: "receive",
+					explanation: "Sai chính tả.",
+				},
+				{
+					id: "w3",
+					category: "pronunciation",
+					quote: "mail",
+					start: null,
+					end: null,
+					correction: "letters",
+					explanation: "Chuyển về lexical.",
+				},
+				{
+					id: "w4",
+					category: "unknown",
+					quote: "I lives",
+					start: null,
+					end: null,
+					correction: "I live",
+					explanation: "Bị bỏ qua.",
+				},
+			]),
+			essay,
+			"writing",
+		);
+		expect(
+			writingErrors?.map((e) => ({
+				id: e.id,
+				category: e.category,
+				start: e.start,
+			})),
+		).toEqual([
+			{ id: "w1", category: "lexical", start: essay.indexOf("big city") },
+			{ id: "w2", category: "lexical", start: essay.indexOf("recieve") },
+			{ id: "w3", category: "lexical", start: essay.indexOf("mail") },
+		]);
+
+		const transcript = "Well I go beach yesterday.";
+		const speakingErrors = parseStoredErrors(
+			JSON.stringify([
+				{
+					id: "s1",
+					category: "coherence",
+					quote: "Well",
+					start: null,
+					end: null,
+					correction: "Actually",
+					explanation: "Mạch lạc.",
+				},
+				{
+					id: "s2",
+					category: "task",
+					quote: "yesterday",
+					start: null,
+					end: null,
+					correction: "last week",
+					explanation: "Trả lời ý.",
+				},
+				{
+					id: "s3",
+					category: "spelling",
+					quote: "beach",
+					start: null,
+					end: null,
+					correction: "seaside",
+					explanation: "Từ vựng.",
+				},
+				{
+					id: "s4",
+					category: "invalid",
+					quote: "go",
+					start: null,
+					end: null,
+					correction: "went",
+					explanation: "Bị lọc.",
+				},
+			]),
+			transcript,
+			"speaking",
+		);
+		expect(
+			speakingErrors?.map((e) => ({ id: e.id, category: e.category })),
+		).toEqual([
+			{ id: "s1", category: "fluency" },
+			{ id: "s3", category: "lexical" },
+			{ id: "s2", category: "fluency" },
+		]);
+
+		expect(parseStoredErrors(null, essay, "writing")).toBeNull();
+		expect(parseStoredErrors("not-json", essay, "writing")).toEqual([]);
+
+		const legacyWritingDraft = parseAiWritingDraft(
+			JSON.stringify({
+				errors: [
+					{
+						id: "w1",
+						category: "spelling",
+						quote: "recieve",
+						start: null,
+						end: null,
+						correction: "receive",
+						explanation: "Chính tả.",
+					},
+					{
+						id: "w2",
+						category: "bogus",
+						quote: "mail",
+						start: null,
+						end: null,
+						correction: "",
+						explanation: "",
+					},
+				],
+			}),
+			essay,
+		);
+		expect(legacyWritingDraft?.errors).toHaveLength(1);
+		expect(legacyWritingDraft?.errors[0]?.category).toBe("lexical");
+
+		const legacySpeakingDraft = parseAiSpeakingDraft(
+			JSON.stringify({
+				errors: [
+					{
+						id: "s1",
+						category: "coherence",
+						quote: "Well",
+						start: null,
+						end: null,
+						correction: "Actually",
+						explanation: "Mạch lạc.",
+					},
+				],
+			}),
+			transcript,
+		);
+		expect(legacySpeakingDraft?.errors).toHaveLength(1);
+		expect(legacySpeakingDraft?.errors[0]?.category).toBe("fluency");
 	});
 });

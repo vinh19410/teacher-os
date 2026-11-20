@@ -1,6 +1,11 @@
 import {
 	PLACEMENT_AI_ERROR_CODES,
-	PLACEMENT_ERROR_CATEGORIES,
+	PLACEMENT_SPEAKING_ERROR_CATEGORIES,
+	PLACEMENT_WRITING_ERROR_CATEGORIES,
+	type PlacementErrorSkill,
+	type PlacementSpeakingErrorCategory,
+	type PlacementWritingErrorCategory,
+	placementErrorCategoriesForSkill,
 } from "@teacher-os/api/placement-test-contracts";
 import {
 	normalizeKindDraft,
@@ -50,29 +55,62 @@ export function createPlacementAiGrader(
 	});
 }
 
-const CATEGORY_LINES = PLACEMENT_ERROR_CATEGORIES.map(
-	(c) => `- "${c.key}": ${c.label}`,
-).join("\n");
+const WRITING_CATEGORY_DESCRIPTIONS: Record<
+	PlacementWritingErrorCategory,
+	string
+> = {
+	task: "trả lời chưa đầy đủ, lạc ý hoặc thiếu yêu cầu đề bài",
+	coherence: "mạch lạc, liên kết câu/đoạn, từ nối và bố cục bài viết",
+	lexical: "chọn từ, cụm từ, lặp từ và lỗi chính tả (spelling)",
+	grammar: "ngữ pháp, chia động từ, cấu trúc câu và dấu câu",
+};
 
-const COMMON_RULES = [
-	"Nhiệm vụ DUY NHẤT của bạn là liệt kê các lỗi ngôn ngữ thực sự có trong bài làm của học viên.",
-	"TUYỆT ĐỐI KHÔNG chấm điểm, KHÔNG gợi ý band hay trình độ, và KHÔNG viết nhận xét tổng quan.",
-	`"errors": tối đa ${PLACEMENT_AI_ERRORS_MAX} lỗi, ưu tiên lỗi quan trọng nhất. Mỗi lỗi gồm:`,
-	'  - "category": một trong các key sau:',
-	CATEGORY_LINES,
-	'  - "quote": đoạn NGUYÊN VĂN NGẮN NHẤT chứa lỗi, chép y hệt từ bài (giữ nguyên hoa/thường, dấu câu) — không sửa, không thêm dấu ba chấm.',
-	'  - "correction": cách viết/nói đúng cho đoạn đó (tiếng Anh).',
-	'  - "explanation": giải thích tiếng Việt 1–2 câu, ngắn gọn, dễ hiểu cho học viên.',
-	"Không bịa lỗi; bài không có lỗi thì trả errors rỗng.",
-].join("\n");
+const SPEAKING_CATEGORY_DESCRIPTIONS: Record<
+	PlacementSpeakingErrorCategory,
+	string
+> = {
+	fluency: "độ trôi chảy, ngập ngừng, lặp ý, mạch lạc và từ nối khi nói",
+	lexical: "chọn từ, cụm từ tự nhiên và phạm vi từ vựng",
+	grammar: "ngữ pháp, chia động từ và cấu trúc câu khi nói",
+	pronunciation:
+		"phát âm sai từ hoặc bị nhận diện lệch rõ ràng trong transcript",
+};
+
+function categoryLinesFor(skill: PlacementErrorSkill): string {
+	if (skill === "writing") {
+		return PLACEMENT_WRITING_ERROR_CATEGORIES.map(
+			(c) =>
+				`- "${c.key}" (${c.label}): ${WRITING_CATEGORY_DESCRIPTIONS[c.key]}`,
+		).join("\n");
+	}
+	return PLACEMENT_SPEAKING_ERROR_CATEGORIES.map(
+		(c) =>
+			`- "${c.key}" (${c.label}): ${SPEAKING_CATEGORY_DESCRIPTIONS[c.key]}`,
+	).join("\n");
+}
+
+function commonRulesFor(skill: PlacementErrorSkill): string {
+	return [
+		"Nhiệm vụ DUY NHẤT của bạn là liệt kê các lỗi ngôn ngữ thực sự có trong bài làm của học viên.",
+		"TUYỆT ĐỐI KHÔNG chấm điểm, KHÔNG gợi ý band hay trình độ, và KHÔNG viết nhận xét tổng quan.",
+		`"errors": tối đa ${PLACEMENT_AI_ERRORS_MAX} lỗi, ưu tiên lỗi quan trọng nhất. Mỗi lỗi gồm:`,
+		'  - "category": một trong 4 key IELTS sau:',
+		categoryLinesFor(skill),
+		'  - "quote": đoạn NGUYÊN VĂN NGẮN NHẤT chứa lỗi, chép y hệt từ bài (giữ nguyên hoa/thường, dấu câu) — không sửa, không thêm dấu ba chấm.',
+		'  - "correction": cách viết/nói đúng cho đoạn đó (tiếng Anh).',
+		'  - "explanation": giải thích tiếng Việt 1–2 câu, ngắn gọn, dễ hiểu cho học viên.',
+		"Không bịa lỗi; bài không có lỗi thì trả errors rỗng.",
+	].join("\n");
+}
 
 function writingMessages(input: { prompt: string; text: string }) {
 	return [
 		{
 			role: "system",
 			content: [
-				"Bạn là trợ lý phân tích lỗi bài WRITING trong bài kiểm tra đầu vào tiếng Anh cho học viên người Việt.",
-				COMMON_RULES,
+				"Bạn là trợ lý phân tích lỗi bài WRITING theo 4 tiêu chí IELTS trong bài kiểm tra đầu vào tiếng Anh cho học viên người Việt.",
+				'Lưu ý: mọi lỗi chính tả (spelling) đều xếp vào category "lexical".',
+				commonRulesFor("writing"),
 			].join("\n"),
 		},
 		{
@@ -87,10 +125,10 @@ function speakingMessages(input: { prompts: string[]; transcript: string }) {
 		{
 			role: "system",
 			content: [
-				"Bạn là trợ lý phân tích lỗi bài SPEAKING trong bài kiểm tra đầu vào tiếng Anh cho học viên người Việt.",
+				"Bạn là trợ lý phân tích lỗi bài SPEAKING theo 4 tiêu chí IELTS trong bài kiểm tra đầu vào tiếng Anh cho học viên người Việt.",
 				"Bạn CHỈ có transcript (văn bản do máy chuyển từ giọng nói), không nghe được audio.",
 				'Lỗi category "pronunciation" chỉ đánh dấu khi transcript cho thấy rõ từ bị nói sai hoặc bị nhận diện lệch rõ ràng; tránh suy đoán khi không chắc chắn.',
-				COMMON_RULES,
+				commonRulesFor("speaking"),
 			].join("\n"),
 		},
 		{
@@ -100,7 +138,7 @@ function speakingMessages(input: { prompts: string[]; transcript: string }) {
 	];
 }
 
-function draftJsonSchema(name: string) {
+function draftJsonSchema(name: string, skill: PlacementErrorSkill) {
 	return {
 		name,
 		strict: true,
@@ -118,7 +156,7 @@ function draftJsonSchema(name: string) {
 						properties: {
 							category: {
 								type: "string",
-								enum: PLACEMENT_ERROR_CATEGORIES.map((c) => c.key),
+								enum: placementErrorCategoriesForSkill(skill).map((c) => c.key),
 							},
 							quote: { type: "string" },
 							correction: { type: "string" },
@@ -313,7 +351,7 @@ export function createOpenAiPlacementGrader(
 		startWriting(input, signal) {
 			return startJob(
 				writingMessages(input),
-				draftJsonSchema("placement_writing_grade"),
+				draftJsonSchema("placement_writing_grade", "writing"),
 				signal,
 			);
 		},
@@ -321,7 +359,7 @@ export function createOpenAiPlacementGrader(
 		startSpeaking(input, signal) {
 			return startJob(
 				speakingMessages(input),
-				draftJsonSchema("placement_speaking_grade"),
+				draftJsonSchema("placement_speaking_grade", "speaking"),
 				signal,
 			);
 		},

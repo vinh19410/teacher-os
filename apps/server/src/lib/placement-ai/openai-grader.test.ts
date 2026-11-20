@@ -107,6 +107,8 @@ describe("OpenAI placement grader (#730)", () => {
 		expect(body.input[0].content).toContain("KHÔNG chấm điểm");
 		expect(body.input[0].content).toContain("KHÔNG gợi ý band");
 		expect(body.input[0].content).toContain("KHÔNG viết nhận xét");
+		expect(body.input[0].content).toContain("spelling");
+		expect(body.input[0].content).toContain('"lexical"');
 		expect(body.input[0].content).not.toContain("Mức 5:");
 		expect(body.input[1].content).toContain(ESSAY);
 		expect(body.text.format.type).toBe("json_schema");
@@ -114,6 +116,9 @@ describe("OpenAI placement grader (#730)", () => {
 		expect(body.text.format.strict).toBe(true);
 		expect(body.text.format.schema.required).toEqual(["errors"]);
 		expect(Object.keys(body.text.format.schema.properties)).toEqual(["errors"]);
+		expect(
+			body.text.format.schema.properties.errors.items.properties.category.enum,
+		).toEqual(["task", "coherence", "lexical", "grammar"]);
 	});
 
 	test("timeout mỗi lượt HTTP mặc định 25 giây", () => {
@@ -172,6 +177,11 @@ describe("OpenAI placement grader (#730)", () => {
 		const draft = draftOf(result);
 		expect(Object.keys(draft)).toEqual(["errors"]);
 		expect(draft.errors.map((e) => e.id)).toEqual(["w1", "w2", "w3"]);
+		expect(draft.errors.map((e) => e.category)).toEqual([
+			"grammar",
+			"lexical",
+			"lexical",
+		]);
 		const lives = draft.errors.find((e) => e.quote === "I lives");
 		expect(lives?.start).toBe(ESSAY.indexOf("I lives"));
 		expect(lives?.end).toBe(ESSAY.indexOf("I lives") + "I lives".length);
@@ -367,9 +377,52 @@ describe("OpenAI placement grader (#730)", () => {
 		expect(body.text.format.name).toBe("placement_speaking_grade");
 		expect(body.text.format.schema.required).toEqual(["errors"]);
 		expect(Object.keys(body.text.format.schema.properties)).toEqual(["errors"]);
+		expect(
+			body.text.format.schema.properties.errors.items.properties.category.enum,
+		).toEqual(["fluency", "lexical", "grammar", "pronunciation"]);
 		const draft = draftOf(await grader.poll(id, "speaking", transcript));
 		expect(calls[1]?.url).toBe("https://api.openai.com/v1/responses/resp_s");
 		expect(Object.keys(draft)).toEqual(["errors"]);
 		expect(draft.errors[0]).toMatchObject({ id: "s1", start: 2, end: 4 });
+	});
+
+	test("poll speaking chuẩn hóa category legacy/chéo kỹ năng (coherence→fluency, vocabulary→lexical) và bỏ key lạ", async () => {
+		const transcript = "Well I go to the big shop yesterday.";
+		const { fetchImpl } = recordingFetch(() =>
+			completedResponse({
+				errors: [
+					{
+						category: "coherence",
+						quote: "Well",
+						correction: "Actually,",
+						explanation: "Mạch nối.",
+					},
+					{
+						category: "vocabulary",
+						quote: "big shop",
+						correction: "supermarket",
+						explanation: "Từ tự nhiên hơn.",
+					},
+					{
+						category: "style",
+						quote: "yesterday",
+						correction: "",
+						explanation: "",
+					},
+				],
+			}),
+		);
+		const draft = draftOf(
+			await createOpenAiPlacementGrader({
+				apiKey: "k",
+				fetch: fetchImpl,
+			}).poll("resp_s2", "speaking", transcript),
+		);
+		expect(
+			draft.errors.map((e) => ({ id: e.id, category: e.category })),
+		).toEqual([
+			{ id: "s1", category: "fluency" },
+			{ id: "s2", category: "lexical" },
+		]);
 	});
 });

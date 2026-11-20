@@ -4,9 +4,10 @@
  * `pdfmake` được dynamic-import để tách chunk riêng, không tăng initial bundle.
  */
 import {
-	PLACEMENT_ERROR_CATEGORIES,
 	type PlacementErrorCategory,
+	type PlacementErrorSkill,
 	type PlacementSubmissionDetail,
+	placementErrorCategoriesForSkill,
 } from "@teacher-os/api/placement-test-contracts";
 import type {
 	Content,
@@ -60,12 +61,22 @@ const ERROR_CATEGORY_PALETTE: Record<
 	PlacementErrorCategory,
 	{ accent: string; softBg: string }
 > = {
-	grammar: { accent: "#be123c", softBg: "#ffe4e6" },
-	vocabulary: { accent: "#1d4ed8", softBg: "#dbeafe" },
-	spelling: { accent: "#b45309", softBg: "#fef3c7" },
+	task: { accent: "#b45309", softBg: "#fef3c7" },
 	coherence: { accent: "#7e22ce", softBg: "#f3e8ff" },
+	fluency: { accent: "#7e22ce", softBg: "#f3e8ff" },
+	lexical: { accent: "#1d4ed8", softBg: "#dbeafe" },
+	grammar: { accent: "#be123c", softBg: "#ffe4e6" },
 	pronunciation: { accent: "#0f766e", softBg: "#ccfbf1" },
 };
+
+function paletteForCriterionKey(
+	key: string,
+): { accent: string; softBg: string } | null {
+	if (Object.hasOwn(ERROR_CATEGORY_PALETTE, key)) {
+		return ERROR_CATEGORY_PALETTE[key as PlacementErrorCategory];
+	}
+	return null;
+}
 
 const FONT_FAMILY = "BeVietnamPro";
 const FONT_FILES = {
@@ -270,6 +281,7 @@ function buildSectionHeading(
 
 function buildRubricTable(
 	criteria: readonly PlacementPdfRubricCriterion[],
+	isIelts: boolean,
 ): ContentTable {
 	const headerRow: TableCell[] = [
 		{
@@ -296,23 +308,100 @@ function buildRubricTable(
 		},
 	];
 
-	const bodyRows: TableCell[][] = criteria.map((criterion) => [
-		{ text: criterion.label, bold: true, fontSize: 9.5, color: COLOR_INK },
-		{ text: criterion.desc, fontSize: 9, color: COLOR_MUTED },
-		{
-			text: criterion.valueText,
-			bold: true,
-			fontSize: 9.5,
-			color: COLOR_BRAND,
-			alignment: "right",
-		},
-	]);
+	const bodyRows: TableCell[][] = criteria.map((criterion) => {
+		const palette = isIelts ? paletteForCriterionKey(criterion.key) : null;
+		const titleCell: TableCell = palette
+			? {
+					columns: [
+						{
+							width: 7,
+							canvas: [
+								{
+									type: "rect",
+									x: 0,
+									y: 2,
+									w: 3.5,
+									h: 11,
+									r: 1.5,
+									color: palette.accent,
+								},
+							],
+						},
+						{
+							width: "*",
+							text: criterion.label,
+							bold: true,
+							fontSize: 9.5,
+							color: palette.accent,
+						},
+					],
+					columnGap: 4,
+				}
+			: {
+					text: criterion.label,
+					bold: true,
+					fontSize: 9.5,
+					color: COLOR_INK,
+				};
+
+		const compactComment = criterion.comment.trim().replace(/\n{3,}/g, "\n\n");
+		const descCell: TableCell = compactComment
+			? {
+					stack: [
+						{
+							text: criterion.desc,
+							fontSize: 8.5,
+							color: COLOR_MUTED,
+						},
+						{
+							margin: [0, 4, 0, 0],
+							text: [
+								{
+									text: "Nhận xét: ",
+									bold: true,
+									fontSize: 9,
+									color: COLOR_INK_SECONDARY,
+								},
+								{
+									text: compactComment,
+									fontSize: 9,
+									color: COLOR_INK,
+								},
+							],
+							lineHeight: 1.4,
+						},
+					],
+				}
+			: {
+					text: criterion.desc,
+					fontSize: 9,
+					color: COLOR_MUTED,
+				};
+
+		return [
+			titleCell,
+			descCell,
+			{
+				text: criterion.valueText,
+				bold: true,
+				fontSize: 9.5,
+				color: palette?.accent ?? COLOR_BRAND,
+				alignment: "right",
+			},
+		];
+	});
+
+	const hasTallCriterionComment = criteria.some((criterion) => {
+		const compact = criterion.comment.trim().replace(/\n{3,}/g, "\n\n");
+		const lineBreaks = compact.match(/\n/g)?.length ?? 0;
+		return lineBreaks > 18 || compact.length > 600;
+	});
 
 	return {
 		margin: [0, 0, 0, 10],
 		table: {
 			headerRows: 1,
-			dontBreakRows: true,
+			dontBreakRows: !hasTallCriterionComment,
 			widths: ["32%", "*", 56],
 			body: [headerRow, ...bodyRows],
 		},
@@ -320,7 +409,7 @@ function buildRubricTable(
 	};
 }
 
-function buildErrorLegend(): Content {
+function buildErrorLegend(skill: PlacementErrorSkill): Content {
 	const inlineItems: ContentText[] = [
 		{
 			text: "Chú giải loại lỗi:  ",
@@ -329,7 +418,7 @@ function buildErrorLegend(): Content {
 			color: COLOR_MUTED,
 		},
 	];
-	for (const category of PLACEMENT_ERROR_CATEGORIES) {
+	for (const category of placementErrorCategoriesForSkill(skill)) {
 		const palette = ERROR_CATEGORY_PALETTE[category.key];
 		inlineItems.push(
 			{
@@ -718,7 +807,9 @@ export function buildPlacementResultDocDefinition(
 		buildSectionHeading(sectionIndex, "Writing", model.writing.totalText),
 	);
 	if (model.writing.criteria) {
-		content.push(buildRubricTable(model.writing.criteria));
+		content.push(
+			buildRubricTable(model.writing.criteria, model.writing.isIelts),
+		);
 	}
 
 	const writingTitle =
@@ -735,7 +826,7 @@ export function buildPlacementResultDocDefinition(
 
 	if (model.writing.text.trim().length > 0) {
 		content.push(
-			buildErrorLegend(),
+			buildErrorLegend("writing"),
 			buildAnnotatedTextBox(model.writing.segments, model.writing.text),
 			...buildErrorListBlocks(model.writing.errors),
 		);
@@ -768,7 +859,9 @@ export function buildPlacementResultDocDefinition(
 			});
 		}
 		if (model.speaking.criteria) {
-			content.push(buildRubricTable(model.speaking.criteria));
+			content.push(
+				buildRubricTable(model.speaking.criteria, model.speaking.isIelts),
+			);
 		}
 		if (model.speaking.transcript.trim().length > 0) {
 			content.push(
@@ -779,7 +872,7 @@ export function buildPlacementResultDocDefinition(
 					color: COLOR_INK,
 					margin: [0, 2, 0, 4],
 				},
-				buildErrorLegend(),
+				buildErrorLegend("speaking"),
 				buildAnnotatedTextBox(
 					model.speaking.segments,
 					model.speaking.transcript,

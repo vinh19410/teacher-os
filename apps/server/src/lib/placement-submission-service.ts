@@ -5,6 +5,7 @@ import {
 import {
 	buildPlacementZaloText,
 	computePlacementFinal,
+	emptySpeakingCriterionComments,
 	hasPlacementSpeakingTasks,
 	isIeltsSpeakingRubric,
 	isIeltsWritingRubric,
@@ -13,7 +14,9 @@ import {
 	type PlacementObjectiveResult,
 	type PlacementSnapshot,
 	type PlacementSubmissionDetail,
+	parseStoredSpeakingCriterionComments,
 	parseStoredSpeakingRubric,
+	parseStoredWritingCriterionComments,
 	parseStoredWritingRubric,
 	type placementTeacherGradeSchema,
 } from "@teacher-os/api/placement-test-contracts";
@@ -363,8 +366,14 @@ export function buildPlacementSubmissionDetail(
 		speakingDurationSec: sub.speakingDurationSec,
 		writingRubric,
 		writingScore,
+		writingCriterionComments: parseStoredWritingCriterionComments(
+			sub.writingCriterionCommentsJson,
+		),
 		speakingRubric,
 		speakingScore,
+		speakingCriterionComments: parseStoredSpeakingCriterionComments(
+			sub.speakingCriterionCommentsJson,
+		),
 		teacherFeedback: sub.teacherFeedback,
 		finalBandLevel: sub.finalBandLevel,
 		finalCourseId: sub.finalCourseId ?? null,
@@ -383,10 +392,15 @@ export function buildPlacementSubmissionDetail(
 			sub.speakingTranscript,
 		),
 		speakingTranscript: sub.speakingTranscript,
-		writingErrors: parseStoredErrors(sub.writingErrorsJson, sub.writingText),
+		writingErrors: parseStoredErrors(
+			sub.writingErrorsJson,
+			sub.writingText,
+			"writing",
+		),
 		speakingErrors: parseStoredErrors(
 			sub.speakingErrorsJson,
 			sub.speakingTranscript,
+			"speaking",
 		),
 		resultUrl: sub.resultToken
 			? buildPlacementResultUrl(resultOrigin, sub.resultToken)
@@ -612,11 +626,20 @@ export async function gradePlacementSubmissionResponse(
 				writingRubricJson: JSON.stringify(parsedBody.writingRubric),
 				writingScore: null,
 				writingBand: final.writingScore,
+				writingCriterionCommentsJson: JSON.stringify(
+					parsedBody.writingCriterionComments,
+				),
 				speakingRubricJson: parsedBody.speakingRubric
 					? JSON.stringify(parsedBody.speakingRubric)
 					: null,
 				speakingScore: null,
 				speakingBand: final.speakingScore,
+				speakingCriterionCommentsJson: parsedBody.speakingRubric
+					? JSON.stringify(
+							parsedBody.speakingCriterionComments ??
+								emptySpeakingCriterionComments(),
+						)
+					: null,
 				teacherFeedback: parsedBody.teacherFeedback,
 				finalBandLevel: final.band.cefr,
 				finalCourseId: resolvedCourse.courseId,

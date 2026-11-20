@@ -940,6 +940,8 @@ describe("student portal placement test routes (#748)", () => {
 		expect(pendingView.snapshot).toBeNull();
 		expect(pendingView.submission?.speakingStatus).toBe("uploaded");
 		expect(pendingView.submission?.speakingTranscript).toBe("");
+		expect(pendingView.submission?.writingCriterionComments).toBeNull();
+		expect(pendingView.submission?.speakingCriterionComments).toBeNull();
 		expect(JSON.stringify(pendingView)).not.toContain("aiWriting");
 		expect(JSON.stringify(pendingView)).not.toContain("w-job-1");
 
@@ -1045,6 +1047,18 @@ describe("student portal placement test routes (#748)", () => {
 						pronunciation: 7.5,
 					},
 					speakingScore: 7.5,
+					writingCriterionComments: {
+						task: "  Đáp ứng tốt đề bài.  ",
+						coherence: "",
+						lexical: "  Từ vựng tự nhiên. ",
+						grammar: "",
+					},
+					speakingCriterionComments: {
+						fluency: "  Tốc độ nói ổn định.  ",
+						lexical: "",
+						grammar: "",
+						pronunciation: "  Phát âm rõ ràng. ",
+					},
 					courseId: "org-1:course:ielts-advanced",
 					teacherFeedback: "Làm bài rất tốt!",
 					writingErrors: [
@@ -1111,6 +1125,18 @@ describe("student portal placement test routes (#748)", () => {
 		expect(gradedView.submission?.finalDisplayCourse).toBe("IELTS - Advanced");
 		expect(gradedView.submission?.teacherFeedback).toBe("Làm bài rất tốt!");
 		expect(gradedView.submission?.bandAdvice).toBe("Học B1+.");
+		expect(gradedView.submission?.writingCriterionComments).toEqual({
+			task: "Đáp ứng tốt đề bài.",
+			coherence: "",
+			lexical: "Từ vựng tự nhiên.",
+			grammar: "",
+		});
+		expect(gradedView.submission?.speakingCriterionComments).toEqual({
+			fluency: "Tốc độ nói ổn định.",
+			lexical: "",
+			grammar: "",
+			pronunciation: "Phát âm rõ ràng.",
+		});
 		expect(gradedView.submission?.writingErrors[0]?.start).toBeGreaterThan(0);
 
 		// Public result link works when leadId === null
@@ -1126,6 +1152,18 @@ describe("student portal placement test routes (#748)", () => {
 		expect(publicResult.finalBandLevel).toBe("B1 trở lên");
 		expect(publicResult.finalDisplayCourse).toBe("IELTS - Advanced");
 		expect(publicResult.teacherFeedback).toBe("Làm bài rất tốt!");
+		expect(publicResult.writingCriterionComments).toEqual({
+			task: "Đáp ứng tốt đề bài.",
+			coherence: "",
+			lexical: "Từ vựng tự nhiên.",
+			grammar: "",
+		});
+		expect(publicResult.speakingCriterionComments).toEqual({
+			fluency: "Tốc độ nói ổn định.",
+			lexical: "",
+			grammar: "",
+			pronunciation: "Phát âm rõ ràng.",
+		});
 	});
 
 	test("links existing email-matched lead on student submit and backfills studentId for pre-existing lead submission", async () => {
@@ -1543,6 +1581,28 @@ describe("student portal placement test routes (#748)", () => {
 			speakingRubricJson: JSON.stringify({ gv: 4, dm: 3, pr: 4, ic: 3 }),
 			speakingScore: 14,
 			speakingBand: null,
+			writingErrorsJson: JSON.stringify([
+				{
+					id: "w1",
+					category: "spelling",
+					quote: "Ben",
+					start: null,
+					end: null,
+					correction: "Ben",
+					explanation: "Kiểm tra chính tả.",
+				},
+			]),
+			speakingErrorsJson: JSON.stringify([
+				{
+					id: "s1",
+					category: "coherence",
+					quote: "Hi",
+					start: null,
+					end: null,
+					correction: "Hello",
+					explanation: "Mạch lạc.",
+				},
+			]),
 			finalBandLevel: "A2",
 			finalCourse: "comm-2",
 			finalDisplayCourse: "Communication English Level 2",
@@ -1565,5 +1625,9 @@ describe("student portal placement test routes (#748)", () => {
 			ic: 3,
 		});
 		expect(view.submission?.speakingScore).toBe(14);
+		expect(view.submission?.writingCriterionComments).toBeNull();
+		expect(view.submission?.speakingCriterionComments).toBeNull();
+		expect(view.submission?.writingErrors[0]?.category).toBe("lexical");
+		expect(view.submission?.speakingErrors[0]?.category).toBe("fluency");
 	});
 });

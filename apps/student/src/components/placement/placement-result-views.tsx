@@ -8,6 +8,7 @@ import {
 	PLACEMENT_LEGACY_WRITING_RUBRIC,
 	PLACEMENT_SPEAKING_RUBRIC,
 	PLACEMENT_WRITING_RUBRIC,
+	type PlacementErrorSkill,
 	type PlacementPublishedBand,
 	type PlacementSectionScore,
 	type StudentPlacementSubmissionView,
@@ -33,7 +34,11 @@ import {
 } from "lucide-react";
 import { PlacementAnnotatedText } from "@/components/placement/placement-error-highlights";
 import { Badge } from "@/components/ui/badge";
-import { DEFAULT_PLACEMENT_BANDS } from "@/lib/placement-test-helpers";
+import { cn } from "@/lib/cn";
+import {
+	DEFAULT_PLACEMENT_BANDS,
+	resolvePlacementErrorStyle,
+} from "@/lib/placement-test-helpers";
 
 function PendingSkillReportCard({
 	label,
@@ -365,6 +370,93 @@ export function PlacementPendingResultView({
 	);
 }
 
+function PlacementRubricGrid({
+	skill,
+	isIelts,
+	items,
+	rubric,
+	comments,
+	legacyGridCls,
+}: {
+	skill: PlacementErrorSkill;
+	isIelts: boolean;
+	items: ReadonlyArray<{ readonly key: string; readonly label: string }>;
+	rubric: Record<string, number>;
+	comments: Record<string, string> | null;
+	legacyGridCls: string;
+}) {
+	return (
+		<div
+			className={
+				isIelts ? "grid grid-cols-1 gap-2.5 sm:grid-cols-2" : legacyGridCls
+			}
+		>
+			{items.map((item) => {
+				const raw = rubric[item.key];
+				const display =
+					raw !== undefined
+						? isIelts
+							? `${formatBand(raw)}/9`
+							: `${raw}/5`
+						: "—";
+
+				if (!isIelts) {
+					return (
+						<div
+							key={item.key}
+							className="rounded-lg border bg-muted/30 px-3 py-2.5"
+						>
+							<div className="text-muted-foreground text-xs">{item.label}</div>
+							<div className="mt-0.5 font-semibold text-foreground text-sm tabular-nums">
+								{display}
+							</div>
+						</div>
+					);
+				}
+
+				const style = resolvePlacementErrorStyle(item.key, skill);
+				const rawComment = comments?.[item.key];
+				const comment = typeof rawComment === "string" ? rawComment.trim() : "";
+
+				return (
+					<div
+						key={item.key}
+						data-testid={`student-${skill}-criterion-${item.key}`}
+						className={cn(
+							"rounded-lg border bg-muted/30 px-3 py-2.5",
+							style.borderLeftCls,
+						)}
+					>
+						<div className="flex items-start justify-between gap-2">
+							<div className="flex min-w-0 items-center gap-1.5 font-medium text-foreground text-xs">
+								<span
+									aria-hidden="true"
+									className={cn(
+										"inline-block size-2.5 shrink-0 rounded-full",
+										style.dotCls,
+									)}
+								/>
+								<span className="break-words">{item.label}</span>
+							</div>
+							<div className="shrink-0 font-semibold text-foreground text-sm tabular-nums">
+								{display}
+							</div>
+						</div>
+						{comment ? (
+							<p
+								data-testid={`student-${skill}-${item.key}-comment`}
+								className="mt-2 whitespace-pre-wrap break-words border-border/60 border-t pt-2 text-muted-foreground text-xs leading-relaxed"
+							>
+								{comment}
+							</p>
+						) : null}
+					</div>
+				);
+			})}
+		</div>
+	);
+}
+
 export function PlacementGradedResultView({
 	submission,
 }: {
@@ -506,38 +598,19 @@ export function PlacementGradedResultView({
 				</CardHeader>
 				<CardContent className="space-y-4">
 					{submission.writingRubric ? (
-						<div
-							className={
-								writingIsIelts
-									? "grid grid-cols-2 gap-2.5 sm:grid-cols-4"
-									: "grid grid-cols-1 gap-2.5 sm:grid-cols-3"
+						<PlacementRubricGrid
+							skill="writing"
+							isIelts={writingIsIelts}
+							items={writingRubricItems}
+							rubric={submission.writingRubric as Record<string, number>}
+							comments={
+								submission.writingCriterionComments as Record<
+									string,
+									string
+								> | null
 							}
-						>
-							{writingRubricItems.map((item) => {
-								const raw = (
-									submission.writingRubric as Record<string, number> | null
-								)?.[item.key];
-								const display =
-									raw !== undefined
-										? writingIsIelts
-											? `${formatBand(raw)}/9`
-											: `${raw}/5`
-										: "—";
-								return (
-									<div
-										key={item.key}
-										className="rounded-lg border bg-muted/30 px-3 py-2.5"
-									>
-										<div className="text-muted-foreground text-xs">
-											{item.label}
-										</div>
-										<div className="mt-0.5 font-semibold text-foreground text-sm tabular-nums">
-											{display}
-										</div>
-									</div>
-								);
-							})}
-						</div>
+							legacyGridCls="grid grid-cols-1 gap-2.5 sm:grid-cols-3"
+						/>
 					) : null}
 
 					<div>
@@ -546,6 +619,7 @@ export function PlacementGradedResultView({
 						</h3>
 						<PlacementAnnotatedText
 							idPrefix="writing"
+							skill="writing"
 							text={submission.writingText}
 							errors={submission.writingErrors}
 							emptyLabel="Bạn không nhập nội dung cho phần Writing."
@@ -579,32 +653,19 @@ export function PlacementGradedResultView({
 				</CardHeader>
 				<CardContent className="space-y-4">
 					{submission.speakingRubric ? (
-						<div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-							{speakingRubricItems.map((item) => {
-								const raw = (
-									submission.speakingRubric as Record<string, number> | null
-								)?.[item.key];
-								const display =
-									raw !== undefined
-										? speakingIsIelts
-											? `${formatBand(raw)}/9`
-											: `${raw}/5`
-										: "—";
-								return (
-									<div
-										key={item.key}
-										className="rounded-lg border bg-muted/30 px-3 py-2.5"
-									>
-										<div className="text-muted-foreground text-xs">
-											{item.label}
-										</div>
-										<div className="mt-0.5 font-semibold text-foreground text-sm tabular-nums">
-											{display}
-										</div>
-									</div>
-								);
-							})}
-						</div>
+						<PlacementRubricGrid
+							skill="speaking"
+							isIelts={speakingIsIelts}
+							items={speakingRubricItems}
+							rubric={submission.speakingRubric as Record<string, number>}
+							comments={
+								submission.speakingCriterionComments as Record<
+									string,
+									string
+								> | null
+							}
+							legacyGridCls="grid grid-cols-2 gap-2.5 sm:grid-cols-4"
+						/>
 					) : null}
 
 					{submission.speakingTranscript ||
@@ -615,6 +676,7 @@ export function PlacementGradedResultView({
 							</h3>
 							<PlacementAnnotatedText
 								idPrefix="speaking"
+								skill="speaking"
 								text={submission.speakingTranscript}
 								errors={submission.speakingErrors}
 								emptyLabel="Chưa có transcript cho phần Speaking."

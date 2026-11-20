@@ -6,6 +6,7 @@ import { formatBand } from "@teacher-os/api/lib/ielts-band";
 import {
 	isIeltsSpeakingRubric,
 	isIeltsWritingRubric,
+	normalizePlacementErrorCategory,
 	PLACEMENT_ERROR_CATEGORIES,
 	PLACEMENT_LEGACY_SPEAKING_RUBRIC,
 	PLACEMENT_LEGACY_WRITING_RUBRIC,
@@ -13,6 +14,7 @@ import {
 	PLACEMENT_WRITING_RUBRIC,
 	type PlacementError,
 	type PlacementErrorCategory,
+	type PlacementErrorSkill,
 	type PlacementSectionScore,
 	type PlacementSubmissionDetail,
 } from "@teacher-os/api/placement-test-contracts";
@@ -59,6 +61,7 @@ export interface PlacementPdfRubricCriterion {
 	label: string;
 	desc: string;
 	valueText: string;
+	comment: string;
 }
 
 export interface PlacementPdfNumberedError {
@@ -223,6 +226,7 @@ function isLocatedError(
 function buildAnnotatedSkillData(
 	rawText: string,
 	rawErrors: readonly PlacementError[] | null | undefined,
+	skill: PlacementErrorSkill,
 ): {
 	segments: PlacementPdfHighlightSegment[];
 	errors: PlacementPdfNumberedError[];
@@ -233,7 +237,14 @@ function buildAnnotatedSkillData(
 		: [];
 
 	const sorted = list
-		.map((err, index) => ({ err, index }))
+		.map((err, index) => ({
+			err: {
+				...err,
+				category:
+					normalizePlacementErrorCategory(err.category, skill) ?? "grammar",
+			},
+			index,
+		}))
 		.sort((a, b) => {
 			const as = isLocatedError(a.err) ? a.err.start : Number.POSITIVE_INFINITY;
 			const bs = isLocatedError(b.err) ? b.err.start : Number.POSITIVE_INFINITY;
@@ -317,11 +328,13 @@ function buildWritingSection(
 		if (isIeltsWritingRubric(rubric)) {
 			criteria = PLACEMENT_WRITING_RUBRIC.map(({ key, label, desc }) => {
 				const value = rubric[key];
+				const rawComment = submission.writingCriterionComments?.[key] ?? "";
 				return {
 					key,
 					label,
 					desc,
 					valueText: Number.isFinite(value) ? `${formatBand(value)}/9` : "—/9",
+					comment: sanitizePdfText(rawComment).trim(),
 				};
 			});
 		} else {
@@ -332,6 +345,7 @@ function buildWritingSection(
 					label,
 					desc,
 					valueText: Number.isFinite(value) ? `${value}/5` : "—/5",
+					comment: "",
 				};
 			});
 		}
@@ -341,6 +355,7 @@ function buildWritingSection(
 	const { segments, errors } = buildAnnotatedSkillData(
 		rawText,
 		submission.writingErrors,
+		"writing",
 	);
 	const sanitizedText = sanitizePdfText(rawText);
 
@@ -386,11 +401,13 @@ function buildSpeakingSection(
 		if (isIeltsSpeakingRubric(rubric)) {
 			criteria = PLACEMENT_SPEAKING_RUBRIC.map(({ key, label, desc }) => {
 				const value = rubric[key];
+				const rawComment = submission.speakingCriterionComments?.[key] ?? "";
 				return {
 					key,
 					label,
 					desc,
 					valueText: Number.isFinite(value) ? `${formatBand(value)}/9` : "—/9",
+					comment: sanitizePdfText(rawComment).trim(),
 				};
 			});
 		} else {
@@ -402,6 +419,7 @@ function buildSpeakingSection(
 						label,
 						desc,
 						valueText: Number.isFinite(value) ? `${value}/5` : "—/5",
+						comment: "",
 					};
 				},
 			);
@@ -412,6 +430,7 @@ function buildSpeakingSection(
 	const { segments, errors } = buildAnnotatedSkillData(
 		rawTranscript,
 		submission.speakingErrors,
+		"speaking",
 	);
 	const sanitizedTranscript = sanitizePdfText(rawTranscript);
 

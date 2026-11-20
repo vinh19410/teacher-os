@@ -2,6 +2,7 @@
 import {
 	locatePlacementErrors,
 	type PlacementError,
+	type PlacementErrorSkill,
 } from "@teacher-os/api/placement-test-contracts";
 import {
 	cleanup,
@@ -43,21 +44,25 @@ function err(
 
 const SEED = locatePlacementErrors(TEXT, [
 	err("e1", "goes", { correction: "went", explanation: "Quá khứ đơn" }),
-	err("e2", "buyed", { category: "spelling", correction: "bought" }),
+	err("e2", "buyed", { category: "task", correction: "bought" }),
 ]);
 
 function Harness({
+	skill = "writing",
+	text = TEXT,
 	initial = SEED,
 	onChange,
 }: {
+	skill?: PlacementErrorSkill;
+	text?: string;
 	initial?: PlacementError[];
 	onChange?: (next: PlacementError[]) => void;
 }) {
 	const [errors, setErrors] = useState(initial);
 	return (
 		<PlacementErrorHighlighter
-			skill="writing"
-			text={TEXT}
+			skill={skill}
+			text={text}
 			emptyText="(trống)"
 			errors={errors}
 			onChange={(next) => {
@@ -96,21 +101,90 @@ function selectSource(start: number, end: number) {
 }
 
 describe("PlacementErrorHighlighter", () => {
-	it("tô lỗi theo loại kèm số thứ tự, aria-label và chú giải màu", () => {
+	it("tô lỗi Writing theo 4 tiêu chí IELTS tiếng Anh, kèm chú giải màu không lẫn Speaking/nhãn cũ", () => {
 		render(<Harness />);
 		const marks = screen.getAllByTestId("writing-error-mark");
 		expect(marks.map((m) => m.textContent)).toEqual(["goes", "buyed"]);
-		expect(marks[0]?.getAttribute("aria-label")).toContain("Lỗi 1: Ngữ pháp");
-		expect(marks[1]?.getAttribute("aria-label")).toContain("Lỗi 2: Chính tả");
+		expect(marks[0]?.getAttribute("aria-label")).toContain(
+			"Lỗi 1: Grammatical Range & Accuracy",
+		);
+		expect(marks[1]?.getAttribute("aria-label")).toContain(
+			"Lỗi 2: Task Response",
+		);
 		expect(marks[1]?.className).toContain("decoration-wavy");
+		expect(marks[1]?.getAttribute("data-category")).toBe("task");
 		expect(screen.getAllByText("①")).toHaveLength(2); // badge trong bài + nút số trên thẻ
+
+		const legend = screen.getByLabelText("Chú giải loại lỗi");
+		expect(within(legend).getByText("Task Response")).toBeTruthy();
+		expect(within(legend).getByText("Coherence & Cohesion")).toBeTruthy();
+		expect(within(legend).getByText("Lexical Resource")).toBeTruthy();
 		expect(
-			within(screen.getByLabelText("Chú giải loại lỗi")).getByText("Phát âm"),
+			within(legend).getByText("Grammatical Range & Accuracy"),
 		).toBeTruthy();
+		expect(within(legend).queryByText("Pronunciation")).toBeNull();
+		expect(within(legend).queryByText("Fluency & Coherence")).toBeNull();
+		expect(within(legend).queryByText("Chính tả")).toBeNull();
+		expect(within(legend).queryByText("Ngữ pháp")).toBeNull();
+
 		const cards = screen.getAllByTestId("writing-error-card");
 		expect(cards[0]?.textContent).toContain("goes");
 		expect(cards[0]?.textContent).toContain("went");
 		expect(cards[0]?.textContent).toContain("Quá khứ đơn");
+		expect(cards[0]?.className).toContain("border-l-class-5");
+		expect(cards[1]?.className).toContain("border-l-class-3");
+	});
+
+	it("Speaking chỉ hiển thị 4 nhãn IELTS Speaking tiếng Anh ở chú giải và select loại lỗi", () => {
+		const speakingText = "I like play football with my friend.";
+		const speakingErrors = locatePlacementErrors(speakingText, [
+			err("s1", "like play", {
+				category: "fluency",
+				correction: "like playing",
+			}),
+			err("s2", "friend", { category: "pronunciation" }),
+			// Lỗi legacy hoặc lệch kỹ năng vẫn render an toàn nhờ normalize
+			err("s3", "football", {
+				category: "spelling" as unknown as PlacementError["category"],
+			}),
+		]);
+		render(
+			<Harness skill="speaking" text={speakingText} initial={speakingErrors} />,
+		);
+
+		const legend = screen.getByLabelText("Chú giải loại lỗi");
+		expect(within(legend).getByText("Fluency & Coherence")).toBeTruthy();
+		expect(within(legend).getByText("Lexical Resource")).toBeTruthy();
+		expect(
+			within(legend).getByText("Grammatical Range & Accuracy"),
+		).toBeTruthy();
+		expect(within(legend).getByText("Pronunciation")).toBeTruthy();
+		expect(within(legend).queryByText("Task Response")).toBeNull();
+		expect(within(legend).queryByText("Coherence & Cohesion")).toBeNull();
+		expect(within(legend).queryByText("Chính tả")).toBeNull();
+
+		const marks = screen.getAllByTestId("speaking-error-mark");
+		expect(marks.map((m) => m.getAttribute("data-category"))).toEqual([
+			"fluency",
+			"lexical",
+			"pronunciation",
+		]);
+		expect(marks[1]?.getAttribute("aria-label")).toContain(
+			"Lỗi 2: Lexical Resource",
+		);
+		expect(marks[2]?.getAttribute("aria-label")).toContain(
+			"Lỗi 3: Pronunciation",
+		);
+
+		fireEvent.click(screen.getByLabelText("Sửa lỗi 1"));
+		const form = screen.getByTestId("speaking-error-form");
+		const select = within(form).getByLabelText("Loại lỗi") as HTMLSelectElement;
+		expect(Array.from(select.options).map((o) => [o.value, o.text])).toEqual([
+			["fluency", "Fluency & Coherence"],
+			["lexical", "Lexical Resource"],
+			["grammar", "Grammatical Range & Accuracy"],
+			["pronunciation", "Pronunciation"],
+		]);
 	});
 
 	it("Enter trên mark focus thẻ lỗi; nút số trên thẻ focus lại mark", () => {
@@ -138,8 +212,15 @@ describe("PlacementErrorHighlighter", () => {
 		fireEvent.click(addBtn);
 
 		const form = screen.getByTestId("writing-error-form");
-		fireEvent.change(within(form).getByLabelText("Loại lỗi"), {
-			target: { value: "vocabulary" },
+		const select = within(form).getByLabelText("Loại lỗi") as HTMLSelectElement;
+		expect(Array.from(select.options).map((o) => [o.value, o.text])).toEqual([
+			["task", "Task Response"],
+			["coherence", "Coherence & Cohesion"],
+			["lexical", "Lexical Resource"],
+			["grammar", "Grammatical Range & Accuracy"],
+		]);
+		fireEvent.change(select, {
+			target: { value: "lexical" },
 		});
 		fireEvent.change(within(form).getByLabelText("Cách sửa"), {
 			target: { value: "last week" },
@@ -153,7 +234,7 @@ describe("PlacementErrorHighlighter", () => {
 		expect(next.map((e) => e.quote)).toEqual(["goes", "yesterday", "buyed"]);
 		const added = next[1];
 		expect(added).toMatchObject({
-			category: "vocabulary",
+			category: "lexical",
 			quote: "yesterday",
 			start: TEXT.indexOf("yesterday"),
 			end: TEXT.indexOf("yesterday") + "yesterday".length,
@@ -162,8 +243,12 @@ describe("PlacementErrorHighlighter", () => {
 		});
 		expect(added?.id.length).toBeLessThanOrEqual(40);
 		const marks = screen.getAllByTestId("writing-error-mark");
-		expect(marks[1]?.getAttribute("aria-label")).toContain("Lỗi 2: Từ vựng");
-		expect(marks[2]?.getAttribute("aria-label")).toContain("Lỗi 3: Chính tả");
+		expect(marks[1]?.getAttribute("aria-label")).toContain(
+			"Lỗi 2: Lexical Resource",
+		);
+		expect(marks[2]?.getAttribute("aria-label")).toContain(
+			"Lỗi 3: Task Response",
+		);
 	});
 
 	it("chặn thêm lỗi khi đoạn chọn trùng lỗi đã có", () => {
@@ -203,7 +288,7 @@ describe("PlacementErrorHighlighter", () => {
 		expect(screen.getAllByTestId("writing-error-mark")).toHaveLength(1);
 		expect(
 			screen.getByTestId("writing-error-mark").getAttribute("aria-label"),
-		).toContain("Lỗi 1: Ngữ pháp");
+		).toContain("Lỗi 1: Grammatical Range & Accuracy");
 	});
 
 	it("sửa quote thành đoạn không có trong bài → thẻ vẫn còn nhưng không tô", () => {
