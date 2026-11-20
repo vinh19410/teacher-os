@@ -5,7 +5,10 @@ import {
 	useNavigate,
 	useSearch,
 } from "@tanstack/react-router";
-import type { LibraryTestListItem } from "@teacher-os/api/library-contracts";
+import type {
+	LibraryTestListItem,
+	LibraryTestPageSize,
+} from "@teacher-os/api/library-contracts";
 import { buttonVariants } from "@teacher-os/ui/components/web-kit/button";
 import { ChipFilter } from "@teacher-os/ui/components/web-kit/chip-filter";
 import { Input } from "@teacher-os/ui/components/web-kit/field";
@@ -15,10 +18,11 @@ import { toast } from "sonner";
 import { DeleteTestDialog } from "@/components/library/delete-test-dialog";
 import { libraryErrorMessage } from "@/components/library/library-error";
 import {
-	chipCounts,
+	countsToChipCounts,
 	DEFAULT_FILTERS,
 	filtersToSearch,
-	matchesFilters,
+	hasActiveFilters,
+	type LibraryTestFilters,
 	normalizeFilters,
 	parseLibrarySearch,
 	SKILL_CHIPS,
@@ -26,16 +30,17 @@ import {
 	STATUS_CHIPS,
 	type StatusFilter,
 } from "@/components/library/library-filters";
+import { PaginationBar } from "@/components/library/pagination-bar";
 import { TestTable } from "@/components/library/test-table";
 import {
 	deleteLibraryTest,
-	libraryTestsQueryOptions,
+	libraryTestsPageQueryOptions,
 } from "@/lib/repos/library";
 
 /**
- * Trang danh sách bộ đề thư viện (phase 6): filter skill/status/search
- * sống trong URL, search debounce ~300ms (mẫu `/assignments` của web),
- * badge đếm trên chip aria-hidden, xóa qua dialog xác nhận.
+ * Trang danh sách bộ đề thư viện: filter skill/status/search và phân trang
+ * phía server sống trong URL, search debounce ~300ms, badge đếm trên chip
+ * aria-hidden, xóa qua dialog xác nhận.
  */
 
 export const Route = createFileRoute("/_auth/library/tests/")({
@@ -43,16 +48,33 @@ export const Route = createFileRoute("/_auth/library/tests/")({
 	component: LibraryTestsRoute,
 });
 
-function LibraryTestsRoute() {
+export function LibraryTestsRoute() {
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
 	const searchParams = useSearch({ from: "/_auth/library/tests/" });
-	const filters = normalizeFilters(searchParams);
+	const filters = useMemo(() => normalizeFilters(searchParams), [searchParams]);
 
-	const query = useQuery(libraryTestsQueryOptions());
-	const items = query.data ?? [];
+	const query = useQuery(
+		libraryTestsPageQueryOptions({
+			skill: filters.skill === "all" ? undefined : filters.skill,
+			status: filters.status === "all" ? undefined : filters.status,
+			q: filters.q || undefined,
+			page: filters.page,
+			pageSize: filters.pageSize,
+		}),
+	);
+
+	const tests = query.data?.tests ?? [];
+	const total = query.data?.total ?? 0;
+	const totalPages = query.data?.totalPages ?? 1;
+	const isUpdating = query.isFetching && query.isPlaceholderData;
+	const isClamping =
+		!query.isPlaceholderData &&
+		query.data !== undefined &&
+		filters.page > query.data.totalPages;
 
 	const [deleting, setDeleting] = useState<LibraryTestListItem | null>(null);
+	const tableTopRef = useRef<HTMLDivElement>(null);
 
 	const deleteMutation = useMutation({
 		mutationFn: (testId: string) => deleteLibraryTest(testId),
@@ -69,57 +91,73 @@ function LibraryTestsRoute() {
 		},
 	});
 
-	// --- Search debounce 300ms lên URL (mẫu web: state local + lastEmitted
-	// để điều hướng không rớt ký tự khi commit trễ) ---
+	// --- Search debounce 300ms lên URL (state local + lastEmitted để điều
+	// hướng không rớt ký tự khi commit trễ) ---
 	const [queryInput, setQueryInput] = useState(() => filters.q);
 	const lastEmitted = useRef(filters.q);
 
-	const setFilters = (next: {
+	const updateFilters = (next: {
 		q?: string;
 		skill?: SkillFilter;
 		status?: StatusFilter;
+		pageSize?: LibraryTestPageSize;
 	}) => {
-		const merged = { ...filters, ...next };
-		lastEmitted.current = merged.q;
-		navigate({
+		const merged: LibraryTestFilters = {
+			...filters,
+			...next,
+			page: 1,
+		};
+		lastEmitted.current = merged.q.trim();
+		void navigate({
 			to: "/library/tests",
 			search: filtersToSearch(merged),
 			replace: true,
 		});
 	};
 
-	useEffect(() => {
-		const urlQ = normalizeFilters(searchParams).q;
-		if (urlQ !== lastEmitted.current) {
-			lastEmitted.current = urlQ;
-			setQueryInput(urlQ);
-		}
-	}, [searchParams]);
+	const updateFiltersRef = useRef(updateFilters);
+	updateFiltersRef.current = updateFilters;
 
 	useEffect(() => {
+		if (filters.q !== lastEmitted.current) {
+			lastEmitted.current = filters.q;
+			setQueryInput(filters.q);
+		}
+	}, [filters.q]);
+
+	useEffect(() => {
+		const trimmed = queryInput.trim();
+		if (trimmed === lastEmitted.current) return;
 		const timer = setTimeout(() => {
-			if (queryInput === lastEmitted.current) return;
-			setFilters({ q: queryInput });
+			updateFiltersRef.current({ q: trimmed });
 		}, 300);
 		return () => clearTimeout(timer);
-		// setFilters ổn định theo filters/searchParams — không đưa vào deps
-		// để timer chỉ chạy khi text hoặc filter đổi.
-		// biome-ignore lint/correctness/useExhaustiveDependencies: debounce chỉ theo text; filter đổi qua path khác
-	}, [queryInput, setFilters]);
+	}, [queryInput]);
 
-	const filtered = useMemo(
-		() => items.filter((item) => matchesFilters(item, filters)),
-		[items, filters],
-	);
+	useEffect(() => {
+		if (!isClamping || !query.data) return;
+		void navigate({
+			to: "/library/tests",
+			search: filtersToSearch({ ...filters, page: query.data.totalPages }),
+			replace: true,
+		});
+	}, [isClamping, query.data, filters, navigate]);
 
-	const skillCounts = useMemo(
-		() => chipCounts(items, filters, "skill"),
-		[items, filters],
-	);
-	const statusCounts = useMemo(
-		() => chipCounts(items, filters, "status"),
-		[items, filters],
-	);
+	const handlePageChange = (nextPage: number) => {
+		void navigate({
+			to: "/library/tests",
+			search: filtersToSearch({ ...filters, page: nextPage }),
+			replace: false,
+		});
+		tableTopRef.current?.scrollIntoView?.({
+			behavior: "smooth",
+			block: "nearest",
+		});
+	};
+
+	const skillCounts = countsToChipCounts(query.data?.counts, "skill");
+	const statusCounts = countsToChipCounts(query.data?.counts, "status");
+	const activeFilters = hasActiveFilters(filters);
 
 	return (
 		<section
@@ -172,7 +210,7 @@ function LibraryTestsRoute() {
 					}
 					onChange={(label) => {
 						const chip = SKILL_CHIPS.find((entry) => entry.label === label);
-						if (chip) setFilters({ skill: chip.id });
+						if (chip) updateFilters({ skill: chip.id });
 					}}
 					ariaLabel="Lọc theo kỹ năng"
 					counts={skillCounts}
@@ -185,7 +223,7 @@ function LibraryTestsRoute() {
 					}
 					onChange={(label) => {
 						const chip = STATUS_CHIPS.find((entry) => entry.label === label);
-						if (chip) setFilters({ status: chip.id });
+						if (chip) updateFilters({ status: chip.id });
 					}}
 					ariaLabel="Lọc theo trạng thái"
 					counts={statusCounts}
@@ -199,7 +237,9 @@ function LibraryTestsRoute() {
 			>
 				{query.isPending
 					? "Đang tải danh sách bộ đề…"
-					: `Tìm thấy ${filtered.length} bộ đề.`}
+					: query.isError
+						? ""
+						: `Tìm thấy ${total} bộ đề.${isUpdating ? " Đang cập nhật…" : ""}`}
 			</p>
 
 			{query.isError && (
@@ -224,15 +264,30 @@ function LibraryTestsRoute() {
 				</div>
 			)}
 
-			{query.isSuccess && filtered.length > 0 && (
-				<TestTable
-					items={filtered}
-					deletingId={deleteMutation.isPending ? (deleting?.id ?? null) : null}
-					onDelete={setDeleting}
-				/>
+			{query.isSuccess && !isClamping && tests.length > 0 && (
+				<>
+					<div ref={tableTopRef}>
+						<TestTable
+							items={tests}
+							deletingId={
+								deleteMutation.isPending ? (deleting?.id ?? null) : null
+							}
+							onDelete={setDeleting}
+						/>
+					</div>
+					<PaginationBar
+						page={filters.page}
+						pageSize={filters.pageSize}
+						total={total}
+						totalPages={totalPages}
+						isFetching={isUpdating}
+						onPageChange={handlePageChange}
+						onPageSizeChange={(pageSize) => updateFilters({ pageSize })}
+					/>
+				</>
 			)}
 
-			{query.isSuccess && items.length === 0 && (
+			{query.isSuccess && !isClamping && total === 0 && !activeFilters && (
 				<div className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-10 text-center">
 					<p className="font-medium text-sm">Chưa có bộ đề nào.</p>
 					<p className="text-muted-foreground text-sm">
@@ -247,15 +302,16 @@ function LibraryTestsRoute() {
 				</div>
 			)}
 
-			{query.isSuccess && items.length > 0 && filtered.length === 0 && (
+			{query.isSuccess && !isClamping && total === 0 && activeFilters && (
 				<div className="flex flex-col items-center gap-3 rounded-lg border border-dashed p-10 text-center">
 					<p className="font-medium text-sm">Không có bộ đề nào khớp bộ lọc.</p>
 					<button
 						type="button"
 						className={buttonVariants({ variant: "outline", size: "sm" })}
 						onClick={() => {
+							lastEmitted.current = "";
 							setQueryInput("");
-							navigate({
+							void navigate({
 								to: "/library/tests",
 								search: filtersToSearch(DEFAULT_FILTERS),
 								replace: true,

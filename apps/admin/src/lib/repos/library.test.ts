@@ -8,7 +8,9 @@ import {
 	isLibraryHttpError,
 	libraryAudioUrl,
 	libraryIssuesOf,
+	libraryTestsPageQueryOptions,
 	listLibraryTests,
+	listLibraryTestsPage,
 	setLibraryTestStatus,
 	updateLibraryTest,
 	uploadLibraryAudio,
@@ -101,6 +103,83 @@ describe("listLibraryTests", () => {
 			jsonResponse(200, { tests: [{ ...listItem, questionCount: "13" }] }),
 		);
 		await expect(listLibraryTests()).rejects.toThrow();
+	});
+});
+
+describe("listLibraryTestsPage", () => {
+	const pageResponse = {
+		tests: [listItem],
+		total: 25,
+		page: 2,
+		pageSize: 10 as const,
+		totalPages: 3,
+		counts: {
+			skill: { reading: 15, listening: 10 },
+			status: { draft: 12, ready: 13 },
+		},
+	};
+
+	it("gửi đủ query param page/pageSize và các bộ lọc khác khi có", async () => {
+		fetchMock.mockResolvedValue(jsonResponse(200, pageResponse));
+		const result = await listLibraryTestsPage({
+			skill: "reading",
+			status: "draft",
+			q: "  Cambridge 18  ",
+			page: 2,
+			pageSize: 10,
+		});
+		expect(result).toEqual(pageResponse);
+		const { url, init } = callOf(0);
+		const parsedUrl = new URL(url);
+		expect(parsedUrl.pathname).toBe("/api/admin/library/tests");
+		expect(parsedUrl.searchParams.get("page")).toBe("2");
+		expect(parsedUrl.searchParams.get("pageSize")).toBe("10");
+		expect(parsedUrl.searchParams.get("skill")).toBe("reading");
+		expect(parsedUrl.searchParams.get("status")).toBe("draft");
+		expect(parsedUrl.searchParams.get("q")).toBe("Cambridge 18");
+		expect(init.credentials).toBe("include");
+	});
+
+	it("bỏ qua skill/status/q khi không truyền hoặc q chỉ có khoảng trắng", async () => {
+		fetchMock.mockResolvedValue(
+			jsonResponse(200, { ...pageResponse, page: 1, pageSize: 20 }),
+		);
+		await listLibraryTestsPage({
+			page: 1,
+			pageSize: 20,
+			q: "   ",
+		});
+		const { url } = callOf(0);
+		const parsedUrl = new URL(url);
+		expect(parsedUrl.searchParams.get("page")).toBe("1");
+		expect(parsedUrl.searchParams.get("pageSize")).toBe("20");
+		expect(parsedUrl.searchParams.has("skill")).toBe(false);
+		expect(parsedUrl.searchParams.has("status")).toBe(false);
+		expect(parsedUrl.searchParams.has("q")).toBe(false);
+	});
+
+	it("response phân trang sai shape → zod báo lỗi", async () => {
+		fetchMock.mockResolvedValue(
+			jsonResponse(200, {
+				...pageResponse,
+				pageSize: 15,
+			}),
+		);
+		await expect(
+			listLibraryTestsPage({ page: 1, pageSize: 20 }),
+		).rejects.toThrow();
+	});
+
+	it("libraryTestsPageQueryOptions dùng prefix ['admin', 'library', 'tests'] và giữ placeholderData", () => {
+		const opts = libraryTestsPageQueryOptions({ page: 2, pageSize: 10 });
+		expect(opts.queryKey.slice(0, 4)).toEqual([
+			"admin",
+			"library",
+			"tests",
+			"page",
+		]);
+		expect(opts.queryKey[4]).toEqual({ page: 2, pageSize: 10 });
+		expect(opts.placeholderData).toBeTypeOf("function");
 	});
 });
 
