@@ -382,10 +382,19 @@ export async function resolveStudyPackItemMetadata(
 /**
  * Validate all study pack items and return their resolved metadata.
  */
+export interface ValidateStudyPackItemsOptions {
+	/**
+	 * Cho phép materialize `library_test_part` của đề Listening (dùng cho luồng
+	 * sync thư viện đề sang Student Practice; study packs giữ mặc định `false`).
+	 */
+	allowListeningLibraryParts?: boolean;
+}
+
 export async function validateStudyPackItems(
 	db: Db,
 	orgId: string | null,
 	items: readonly StudyPackItemSourceRef[],
+	options?: ValidateStudyPackItemsOptions,
 ): Promise<ValidateStudyPackItemsResult> {
 	const metadataByKey = new Map<string, ResolvedStudyPackItemMeta>();
 	if (items.length === 0) {
@@ -561,14 +570,17 @@ export async function validateStudyPackItems(
 					error: "library_test_part not found",
 				};
 			}
-			if (row.testSkill === "listening") {
+			if (
+				row.testSkill === "listening" &&
+				!options?.allowListeningLibraryParts
+			) {
 				return {
 					ok: false,
 					status: 422,
 					error: "listening library parts are not supported in study packs yet",
 				};
 			}
-			if (row.testSkill !== "reading") {
+			if (row.testSkill !== "reading" && row.testSkill !== "listening") {
 				return {
 					ok: false,
 					status: 422,
@@ -587,7 +599,7 @@ export async function validateStudyPackItems(
 				sourceKind: "library_test_part",
 				sourceId: row.id,
 				title: formatLibraryPartTitle(row.title, row.testTitle, row.part),
-				skill: "reading",
+				skill: row.testSkill as StudyPackSkill,
 				part: row.part,
 				type: row.type.trim() || groups[0]?.type || "tfng",
 				level: "",
@@ -675,8 +687,9 @@ export async function materializePrompts(
 	db: Db,
 	orgId: string,
 	items: readonly StudyPackItemSourceRef[],
+	options?: ValidateStudyPackItemsOptions,
 ): Promise<MaterializePromptsResult> {
-	const validated = await validateStudyPackItems(db, orgId, items);
+	const validated = await validateStudyPackItems(db, orgId, items, options);
 	if (!validated.ok) return validated;
 
 	const promptIdBySourceKey = new Map<string, string>();

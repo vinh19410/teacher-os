@@ -215,6 +215,7 @@ export async function syncLibraryTestsToOrg(
 			sourceKind: "library_test_part",
 			sourceId: row.id,
 		})),
+		{ allowListeningLibraryParts: true },
 	);
 	if (!materialized.ok) {
 		throw new Error(`library test sync failed: ${materialized.error}`);
