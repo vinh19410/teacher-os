@@ -292,7 +292,7 @@ test("header has exactly one #studentPortalLink in .nav-actions with default pro
 	assert.ok(linkMatch, "#studentPortalLink must live inside .nav-actions");
 	const attrs = linkMatch[1];
 	const label = linkMatch[2].trim();
-	assert.match(attrs, /\bhref="https:\/\/student\.msmy\.io\.vn"/);
+	assert.match(attrs, /\bhref="https:\/\/lms\.msmy\.io\.vn\/student"/);
 	assert.match(attrs, /\brel="noopener"/);
 	assert.match(
 		attrs,
@@ -320,23 +320,30 @@ test("replaceStudentPortalHref replaces href safely, preserves attributes, escap
 
 	const stagingHtml = replaceStudentPortalHref(
 		html,
-		"  https://student.staging.teacheros.io.vn  ",
+		"  https://lms.staging.teacheros.io.vn/student  ",
 	);
 	assert.match(
 		stagingHtml,
-		/<a\b[^>]*\bhref="https:\/\/student\.staging\.teacheros\.io\.vn"[^>]*\bid="studentPortalLink"[^>]*\bclass="btn btn-outline btn-sm"[^>]*\brel="noopener"[^>]*>Góc học viên<\/a>/,
+		/<a\b[^>]*\bhref="https:\/\/lms\.staging\.teacheros\.io\.vn\/student"[^>]*\bid="studentPortalLink"[^>]*\bclass="btn btn-outline btn-sm"[^>]*\brel="noopener"[^>]*>Góc học viên<\/a>/,
 	);
 
 	// Attribute-order tolerance: id before href + extra target attribute
 	const reorderedSample =
-		'<div class="nav-actions"><a id="studentPortalLink" class="btn btn-outline btn-sm" target="_self" href="https://student.msmy.io.vn" rel="noopener">Góc học viên</a></div>';
+		'<div class="nav-actions"><a id="studentPortalLink" class="btn btn-outline btn-sm" target="_self" href="https://lms.msmy.io.vn/student" rel="noopener">Góc học viên</a></div>';
 	const reorderedReplaced = replaceStudentPortalHref(
 		reorderedSample,
-		"http://localhost:8003",
+		"http://localhost:8001/student",
 	);
 	assert.equal(
 		reorderedReplaced,
-		'<div class="nav-actions"><a id="studentPortalLink" class="btn btn-outline btn-sm" target="_self" href="http://localhost:8003" rel="noopener">Góc học viên</a></div>',
+		'<div class="nav-actions"><a id="studentPortalLink" class="btn btn-outline btn-sm" target="_self" href="http://localhost:8001/student" rel="noopener">Góc học viên</a></div>',
+	);
+	assert.equal(
+		replaceStudentPortalHref(
+			reorderedReplaced,
+			"https://lms.msmy.io.vn/student",
+		),
+		reorderedSample,
 	);
 
 	// Quote escaping + String.prototype.replace $-pattern immunity
@@ -357,9 +364,9 @@ test("replaceStudentPortalHref replaces href safely, preserves attributes, escap
 		"JAVASCRIPT:alert(1)",
 		"data:text/html,<script>alert(1)</script>",
 		"//evil.example/login",
-		"student.msmy.io.vn",
-		"ftp://student.msmy.io.vn",
-		"https://user:pass@student.msmy.io.vn",
+		"lms.msmy.io.vn/student",
+		"ftp://lms.msmy.io.vn/student",
+		"https://user:pass@lms.msmy.io.vn/student",
 	]) {
 		assert.throws(
 			() => replaceStudentPortalHref(reorderedSample, badUrl),
@@ -372,7 +379,7 @@ test("replaceStudentPortalHref replaces href safely, preserves attributes, escap
 		() =>
 			replaceStudentPortalHref(
 				'<div><a href="https://x.example">No id</a></div>',
-				"http://localhost:8003",
+				"http://localhost:8001/student",
 			),
 		/studentPortalLink/i,
 	);
@@ -380,7 +387,7 @@ test("replaceStudentPortalHref replaces href safely, preserves attributes, escap
 		() =>
 			replaceStudentPortalHref(
 				`${reorderedSample}${reorderedSample}`,
-				"http://localhost:8003",
+				"http://localhost:8001/student",
 			),
 		/studentPortalLink/i,
 	);
@@ -388,12 +395,13 @@ test("replaceStudentPortalHref replaces href safely, preserves attributes, escap
 
 test("createProfileServer and buildProfile wire studentPortalUrl only on root index.html with exact byte Content-Length (#560)", async () => {
 	assert.throws(
-		() => createProfileServer("http://localhost:8100", "localhost:8003"),
+		() =>
+			createProfileServer("http://localhost:8100", "localhost:8001/student"),
 		/STUDENT_PORTAL_URL/i,
 	);
 	const server = createProfileServer(
 		"http://localhost:8100",
-		"http://localhost:8103",
+		"http://localhost:8101/student",
 		{ maintenance: false },
 	);
 	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -413,7 +421,7 @@ test("createProfileServer and buildProfile wire studentPortalUrl only on root in
 		);
 		assert.match(
 			homeText,
-			/\bhref="http:\/\/localhost:8103"[^>]*\bid="studentPortalLink"|\bid="studentPortalLink"[^>]*\bhref="http:\/\/localhost:8103"/,
+			/\bhref="http:\/\/localhost:8101\/student"[^>]*\bid="studentPortalLink"|\bid="studentPortalLink"[^>]*\bhref="http:\/\/localhost:8101\/student"/,
 		);
 
 		const headHome = await fetch(`${base}/`, { method: "HEAD" });
@@ -435,6 +443,37 @@ test("createProfileServer and buildProfile wire studentPortalUrl only on root in
 		await new Promise((resolve) => server.close(resolve));
 	}
 
+	// Default studentPortalUrl points to local unified LMS /student route when env is unset
+	const hadPortalEnv = Object.hasOwn(process.env, "STUDENT_PORTAL_URL");
+	const prevPortalEnv = process.env.STUDENT_PORTAL_URL;
+	delete process.env.STUDENT_PORTAL_URL;
+	let defaultUrlServer;
+	try {
+		defaultUrlServer = createProfileServer("http://localhost:8100", undefined, {
+			maintenance: false,
+		});
+	} finally {
+		if (hadPortalEnv) {
+			process.env.STUDENT_PORTAL_URL = prevPortalEnv;
+		} else {
+			delete process.env.STUDENT_PORTAL_URL;
+		}
+	}
+	await new Promise((resolve) =>
+		defaultUrlServer.listen(0, "127.0.0.1", resolve),
+	);
+	const defaultPort = defaultUrlServer.address().port;
+	try {
+		const res = await fetch(`http://127.0.0.1:${defaultPort}/`);
+		const body = await res.text();
+		assert.match(
+			body,
+			/\bhref="http:\/\/localhost:8001\/student"[^>]*\bid="studentPortalLink"|\bid="studentPortalLink"[^>]*\bhref="http:\/\/localhost:8001\/student"/,
+		);
+	} finally {
+		await new Promise((resolve) => defaultUrlServer.close(resolve));
+	}
+
 	// Empty string keeps HTML prod default even in serve.mjs
 	const emptyUrlServer = createProfileServer("http://localhost:8100", "", {
 		maintenance: false,
@@ -448,7 +487,7 @@ test("createProfileServer and buildProfile wire studentPortalUrl only on root in
 		const body = await res.text();
 		assert.match(
 			body,
-			/\bhref="https:\/\/student\.msmy\.io\.vn"[^>]*\bid="studentPortalLink"|\bid="studentPortalLink"[^>]*\bhref="https:\/\/student\.msmy\.io\.vn"/,
+			/\bhref="https:\/\/lms\.msmy\.io\.vn\/student"[^>]*\bid="studentPortalLink"|\bid="studentPortalLink"[^>]*\bhref="https:\/\/lms\.msmy\.io\.vn\/student"/,
 		);
 	} finally {
 		await new Promise((resolve) => emptyUrlServer.close(resolve));
@@ -461,13 +500,13 @@ test("createProfileServer and buildProfile wire studentPortalUrl only on root in
 		await buildProfile({
 			distUrl: pathToFileURL(distDir),
 			leadApiUrl: "",
-			studentPortalUrl: "https://student.staging.teacheros.io.vn",
+			studentPortalUrl: "https://lms.staging.teacheros.io.vn/student",
 			maintenance: false,
 		});
 		const builtHome = readFileSync(join(distDir, "index.html"), "utf8");
 		assert.match(
 			builtHome,
-			/\bhref="https:\/\/student\.staging\.teacheros\.io\.vn"[^>]*\bid="studentPortalLink"|\bid="studentPortalLink"[^>]*\bhref="https:\/\/student\.staging\.teacheros\.io\.vn"/,
+			/\bhref="https:\/\/lms\.staging\.teacheros\.io\.vn\/student"[^>]*\bid="studentPortalLink"|\bid="studentPortalLink"[^>]*\bhref="https:\/\/lms\.staging\.teacheros\.io\.vn\/student"/,
 		);
 		assert.match(
 			builtHome,
@@ -1648,7 +1687,7 @@ test("placement walkthrough mp4 is published as static asset with video/mp4 MIME
 		await buildProfile({
 			distUrl: pathToFileURL(distDir),
 			leadApiUrl: "https://api.msmy.io.vn",
-			studentPortalUrl: "https://student.msmy.io.vn",
+			studentPortalUrl: "https://lms.msmy.io.vn/student",
 			maintenance: false,
 		});
 		const builtVideoPath = join(distDir, "huong-dan-kiem-tra-dau-vao.mp4");

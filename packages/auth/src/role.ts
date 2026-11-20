@@ -17,6 +17,120 @@ export function resolveUserRole(role: string | null | undefined): AppRole {
 	return "teacher";
 }
 
+export const ROLE_HOME_PATH: Record<AppRole, string> = {
+	teacher: "/teacher",
+	student: "/student",
+	admin: "/admin",
+};
+
+export function roleHomePath(role: string | null | undefined): string {
+	return ROLE_HOME_PATH[resolveUserRole(role)];
+}
+
+export function isPathForRole(pathname: string, role: AppRole): boolean {
+	const prefix = ROLE_HOME_PATH[role];
+	return pathname === prefix || pathname.startsWith(`${prefix}/`);
+}
+
+const REDIRECT_SCHEME_PREFIX_RE = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
+const REDIRECT_BASE_ORIGIN = "https://lms.invalid";
+
+function hasControlCharacter(value: string): boolean {
+	for (let i = 0; i < value.length; i += 1) {
+		const code = value.charCodeAt(i);
+		if (code <= 0x1f || code === 0x7f) return true;
+	}
+	return false;
+}
+
+/**
+ * Chuẩn hóa đích redirect sau đăng nhập theo role hiện tại. Chặn open redirect
+ * (scheme, protocol-relative `//`, backslash `/\`, ký tự điều khiển, URI lỗi,
+ * path traversal) và chỉ chấp nhận đường dẫn thuộc namespace của role đó.
+ */
+export function resolvePostAuthRedirect(
+	role: string | null | undefined,
+	returnUrl: string | null | undefined,
+): string {
+	const resolvedRole = resolveUserRole(role);
+	const fallback = ROLE_HOME_PATH[resolvedRole];
+	if (typeof returnUrl !== "string" || returnUrl.length === 0) {
+		return fallback;
+	}
+	if (hasControlCharacter(returnUrl)) {
+		return fallback;
+	}
+
+	let candidate = returnUrl;
+	for (let round = 0; round < 2; round += 1) {
+		let decoded: string;
+		try {
+			decoded = decodeURIComponent(candidate);
+		} catch {
+			return fallback;
+		}
+		if (hasControlCharacter(decoded)) {
+			return fallback;
+		}
+		if (decoded === candidate) {
+			break;
+		}
+		candidate = decoded;
+	}
+
+	if (
+		!candidate.startsWith("/") ||
+		candidate.startsWith("//") ||
+		candidate.startsWith("/\\") ||
+		REDIRECT_SCHEME_PREFIX_RE.test(candidate)
+	) {
+		return fallback;
+	}
+
+	let parsed: URL;
+	try {
+		parsed = new URL(candidate, REDIRECT_BASE_ORIGIN);
+	} catch {
+		return fallback;
+	}
+
+	if (
+		parsed.origin !== REDIRECT_BASE_ORIGIN ||
+		!isPathForRole(parsed.pathname, resolvedRole)
+	) {
+		return fallback;
+	}
+
+	return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+}
+
+/**
+ * Xác định role khi đăng ký qua domain hợp nhất dựa trên allowlist email.
+ * Ưu tiên: `adminEmails` > `teacherEmails` > `"student"` (least privilege).
+ */
+export function resolveAllowlistRole(
+	email: string | null | undefined,
+	options: { adminEmails?: string[]; teacherEmails?: string[] } = {},
+): AppRole {
+	const normalized = (email ?? "").trim().toLowerCase();
+	if (!normalized) return "student";
+	if (
+		(options.adminEmails ?? []).some(
+			(entry) => entry.trim().toLowerCase() === normalized,
+		)
+	) {
+		return "admin";
+	}
+	if (
+		(options.teacherEmails ?? []).some(
+			(entry) => entry.trim().toLowerCase() === normalized,
+		)
+	) {
+		return "teacher";
+	}
+	return "student";
+}
+
 function matchOrigin(origin: string, known: string[]): boolean {
 	const normalized = origin.trim().toLowerCase();
 	return (

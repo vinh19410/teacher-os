@@ -12,10 +12,19 @@ function cleanInlineText(value: string, maxLen = 160): string {
 
 function normalizePortalUrl(studentOrigin?: string): string {
 	const trimmed = (studentOrigin ?? "").trim().replace(/\/+$/, "");
-	if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-		return `${trimmed}/login`;
+	if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
+		return "";
 	}
-	return "";
+	try {
+		const parsed = new URL(trimmed);
+		const normalizedPath = parsed.pathname.replace(/\/+$/, "");
+		if (normalizedPath.endsWith("/student")) {
+			return `${parsed.origin}/login`;
+		}
+		return `${trimmed}/login`;
+	} catch {
+		return "";
+	}
 }
 
 export interface BuiltInviteEmail {

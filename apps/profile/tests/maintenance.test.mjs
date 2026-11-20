@@ -71,7 +71,7 @@ test("createProfileServer serves maintenance HTML on all GET/HEAD routes and rej
 	await withMaintenanceEnv("true", async () => {
 		const server = createProfileServer(
 			"http://localhost:8100",
-			"http://localhost:8103",
+			"http://localhost:8101/student",
 		);
 		await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 		const { port } = server.address();
@@ -178,7 +178,7 @@ test("PROFILE_MAINTENANCE=false env override restores normal profile serving and
 	await withMaintenanceEnv("false", async () => {
 		const server = createProfileServer(
 			"http://localhost:8100",
-			"http://localhost:8103",
+			"http://localhost:8101/student",
 		);
 		await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 		const { port } = server.address();
@@ -197,7 +197,7 @@ test("PROFILE_MAINTENANCE=false env override restores normal profile serving and
 			await buildProfile({
 				distUrl: pathToFileURL(distDir),
 				leadApiUrl: "https://api.example.test",
-				studentPortalUrl: "https://student.example.test",
+				studentPortalUrl: "https://lms.example.test/student",
 			});
 			assert.equal(existsSync(join(distDir, "_headers")), false);
 			assert.match(

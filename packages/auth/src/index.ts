@@ -13,6 +13,7 @@ import { resetPasswordEmailTemplate } from "./mail/reset-password-email-template
 import { verificationEmailTemplate } from "./mail/verification-email-template";
 import {
 	OAUTH_APP_STATE_KEY,
+	resolveAllowlistRole,
 	resolveRequestApp,
 	resolveUserRole,
 } from "./role";
@@ -45,11 +46,18 @@ export interface CreateAuthInput {
 	db: AuthDatabase;
 	corsOrigin: string | string[];
 	/**
+	 * Origins phục vụ cổng LMS hợp nhất (một origin chung cho teacher, student,
+	 * admin với auto-redirect theo role). Đăng ký qua origin hợp nhất gán role
+	 * theo allowlist (`adminEmails` > `teacherEmails` > `"student"`), và đăng
+	 * nhập / xác thực email / đặt lại mật khẩu cho phép mọi role hợp lệ.
+	 */
+	unifiedOrigins?: string[];
+	/**
 	 * Origins of the student portal app; teacher origins are derived as
 	 * corsOrigin minus studentOrigins. Sign-ups from an unknown origin default
 	 * to the student role (least privilege, plan #260 D3).
 	 */
-	studentOrigins: string[];
+	studentOrigins?: string[];
 	/**
 	 * Origins of the admin console (plan #413). Sign-ups here are rejected
 	 * unless the email is in `adminEmails`; origin khớp CHÍNH XÁC mới tính.
@@ -103,11 +111,28 @@ export function createAuth(input: CreateAuthInput) {
 	const trustedOrigins = Array.isArray(input.corsOrigin)
 		? input.corsOrigin
 		: [input.corsOrigin];
+	const studentOrigins = input.studentOrigins ?? [];
+	const adminOrigins = input.adminOrigins ?? [];
+	const unifiedOrigins = input.unifiedOrigins ?? [];
 	const teacherOrigins = trustedOrigins.filter(
-		(o) =>
-			!input.studentOrigins.includes(o) &&
-			!(input.adminOrigins ?? []).includes(o),
+		(o) => !studentOrigins.includes(o) && !adminOrigins.includes(o),
 	);
+
+	function matchesOriginList(
+		origin: string | null | undefined,
+		list: string[],
+	): boolean {
+		const normalized = (origin ?? "").trim().toLowerCase();
+		return (
+			normalized.length > 0 &&
+			normalized !== "null" &&
+			list.some((o) => o.trim().toLowerCase() === normalized)
+		);
+	}
+
+	function isUnifiedOrigin(origin: string | null | undefined): boolean {
+		return matchesOriginList(origin, unifiedOrigins);
+	}
 
 	/** App nguồn từ OAuth state (server-side stamp tại /sign-in/social). */
 	async function readOAuthApp(): Promise<string | null> {
@@ -144,6 +169,38 @@ export function createAuth(input: CreateAuthInput) {
 		}
 	}
 
+	async function isUnifiedContext(
+		ctx:
+			| {
+					request?: Request | null;
+					path?: string;
+					query?: Record<string, unknown>;
+			  }
+			| null
+			| undefined,
+	): Promise<boolean> {
+		if (unifiedOrigins.length === 0) return false;
+		if (isUnifiedOrigin(ctx?.request?.headers?.get("origin"))) return true;
+		if (isUnifiedOrigin(verifyEmailCallbackOrigin(ctx))) return true;
+		return (await readOAuthApp()) === "unified";
+	}
+
+	function normalizeUserProfile(user: {
+		name?: string | null;
+		email?: string | null;
+		image?: string | null;
+	}) {
+		let userName = user.name?.trim() ?? "";
+		if (!userName && user.email) {
+			userName = user.email.split("@")[0] || "Học viên";
+		}
+		let userImage = user.image;
+		if (userImage && validateUpdateUserImage(userImage)) {
+			userImage = undefined;
+		}
+		return { userName, userImage };
+	}
+
 	/** App nguồn của request hiện tại: Origin trước, rồi callbackURL của link
 	 * xác thực email, OAuth state làm fallback. */
 	async function resolveRequestAppForContext(
@@ -161,9 +218,9 @@ export function createAuth(input: CreateAuthInput) {
 			origin:
 				ctx?.request?.headers?.get("origin") ?? verifyEmailCallbackOrigin(ctx),
 			oauthApp,
-			studentOrigins: input.studentOrigins,
+			studentOrigins,
 			teacherOrigins,
-			adminOrigins: input.adminOrigins ?? [],
+			adminOrigins,
 		});
 	}
 
@@ -224,21 +281,25 @@ export function createAuth(input: CreateAuthInput) {
 			// không bao giờ tới client; lỗi gửi mail chỉ có thể được log tại đây.
 			sendResetPassword: async ({ user, url }) => {
 				const callbackURL = new URL(url).searchParams.get("callbackURL");
-				let targetApp: string | null = null;
-				try {
-					targetApp = callbackURL
-						? resolveRequestApp({
-								origin: new URL(callbackURL).origin,
-								studentOrigins: input.studentOrigins,
-								teacherOrigins,
-								adminOrigins: input.adminOrigins ?? [],
-							})
-						: null;
-				} catch {
-					targetApp = null;
+				let callbackOrigin: string | null = null;
+				if (callbackURL) {
+					try {
+						callbackOrigin = new URL(callbackURL).origin;
+					} catch {
+						callbackOrigin = null;
+					}
 				}
-				// Chặn gửi link sang cổng khác role của tài khoản; response vẫn trung tính.
-				if (targetApp !== resolveUserRole(await getUserRole(user.id))) return;
+				if (!isUnifiedOrigin(callbackOrigin)) {
+					if (!matchesOriginList(callbackOrigin, trustedOrigins)) return;
+					const targetApp = resolveRequestApp({
+						origin: callbackOrigin,
+						studentOrigins,
+						teacherOrigins,
+						adminOrigins,
+					});
+					// Chặn gửi link sang cổng khác role của tài khoản; response vẫn trung tính.
+					if (targetApp !== resolveUserRole(await getUserRole(user.id))) return;
+				}
 
 				const { html, text } = resetPasswordEmailTemplate({ url });
 				try {
@@ -310,19 +371,22 @@ export function createAuth(input: CreateAuthInput) {
 					// stamping round-trip test).
 					const body = (ctx.body ?? {}) as Record<string, unknown>;
 					const extra = (body.additionalData ?? {}) as Record<string, unknown>;
-					const appRole = resolveRequestApp({
-						origin: ctx.headers?.get("origin") ?? null,
-						studentOrigins: input.studentOrigins,
-						teacherOrigins,
-						adminOrigins: input.adminOrigins ?? [],
-					});
+					const origin = ctx.headers?.get("origin") ?? null;
+					const appState = isUnifiedOrigin(origin)
+						? "unified"
+						: resolveRequestApp({
+								origin,
+								studentOrigins,
+								teacherOrigins,
+								adminOrigins,
+							});
 					return {
 						context: {
 							body: {
 								...body,
 								additionalData: {
 									...extra,
-									[OAUTH_APP_STATE_KEY]: appRole,
+									[OAUTH_APP_STATE_KEY]: appState,
 								},
 							},
 						},
@@ -342,6 +406,21 @@ export function createAuth(input: CreateAuthInput) {
 			user: {
 				create: {
 					before: async (user, ctx) => {
+						if (await isUnifiedContext(ctx)) {
+							const role = resolveAllowlistRole(user.email, {
+								adminEmails: input.adminEmails,
+								teacherEmails: input.teacherEmails,
+							});
+							const { userName, userImage } = normalizeUserProfile(user);
+							return {
+								data: {
+									...user,
+									name: userName,
+									image: userImage,
+									role,
+								},
+							};
+						}
 						const appRole = await resolveRequestAppForContext(ctx);
 						// Plan #413: origin admin không được tự cấp quyền admin cho
 						// người lạ — chỉ email trong ADMIN_EMAILS được tạo user role
@@ -384,14 +463,7 @@ export function createAuth(input: CreateAuthInput) {
 							}
 						}
 						// Normalize empty/whitespace names and strip unsafe avatars on signup/OAuth.
-						let userName = user.name?.trim() ?? "";
-						if (!userName && user.email) {
-							userName = user.email.split("@")[0] || "Học viên";
-						}
-						let userImage = user.image;
-						if (userImage && validateUpdateUserImage(userImage)) {
-							userImage = undefined;
-						}
+						const { userName, userImage } = normalizeUserProfile(user);
 						return {
 							data: {
 								...user,
@@ -414,6 +486,9 @@ export function createAuth(input: CreateAuthInput) {
 			session: {
 				create: {
 					before: async (session, ctx) => {
+						if (await isUnifiedContext(ctx)) {
+							return;
+						}
 						const requiredApp = await resolveRequestAppForContext(ctx);
 						const userRole = await getUserRole(session.userId);
 						if (userRole !== requiredApp) {
