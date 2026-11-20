@@ -141,7 +141,7 @@ function criterionTile({ key, label, valueText, comment }) {
 	if (trimmedComment) {
 		children.push(
 			el(
-				"p",
+				"dd",
 				{
 					className: "result-criterion-comment",
 					"data-criterion-comment": key,
@@ -201,9 +201,9 @@ export function buildLegend(skill) {
 /** Văn bản có highlight + danh sách thẻ lỗi. `prefix` tách id giữa Writing/Speaking. */
 export function buildAnnotatedText({ prefix, skill, text, errors }) {
 	const numbered = numberErrors(errors);
-	const resolveCategory = (raw) => {
+	const resolveStyleCategory = (raw) => {
 		const rawCategory = typeof raw === "string" ? raw : "";
-		return normalizePlacementErrorCategory(rawCategory, skill) ?? rawCategory;
+		return normalizePlacementErrorCategory(rawCategory, skill) ?? "grammar";
 	};
 	const textBox = el("p", { className: "annotated-text" });
 	for (const seg of buildHighlightSegments(text, errors)) {
@@ -212,11 +212,12 @@ export function buildAnnotatedText({ prefix, skill, text, errors }) {
 			continue;
 		}
 		const e = seg.error;
-		const cat = resolveCategory(e.category);
+		const styleCat = resolveStyleCategory(e.category);
+		const label = categoryLabel(e.category, skill);
 		const mark = el(
 			"mark",
 			{
-				className: `err-mark err-${cat}`,
+				className: `err-mark err-${styleCat}`,
 				id: `${prefix}-mark-${e.number}`,
 			},
 			[
@@ -226,7 +227,7 @@ export function buildAnnotatedText({ prefix, skill, text, errors }) {
 					{
 						className: "err-num",
 						href: `#${prefix}-card-${e.number}`,
-						"aria-label": `Lỗi ${e.number}, ${categoryLabel(cat, skill)}. Xem giải thích`,
+						"aria-label": `Lỗi ${e.number}, ${label}. Xem giải thích`,
 					},
 					errorNumberLabel(e.number),
 				),
@@ -248,11 +249,12 @@ export function buildAnnotatedText({ prefix, skill, text, errors }) {
 					numbered.map((e) => {
 						const located =
 							Number.isInteger(e.start) && Number.isInteger(e.end);
-						const cat = resolveCategory(e.category);
+						const styleCat = resolveStyleCategory(e.category);
+						const label = categoryLabel(e.category, skill);
 						return el(
 							"li",
 							{
-								className: `error-card err-border-${cat}`,
+								className: `error-card err-border-${styleCat}`,
 								id: `${prefix}-card-${e.number}`,
 								tabindex: "-1",
 							},
@@ -273,7 +275,7 @@ export function buildAnnotatedText({ prefix, skill, text, errors }) {
 												{ className: "err-num" },
 												errorNumberLabel(e.number),
 											),
-									el("strong", {}, categoryLabel(cat, skill)),
+									el("strong", {}, label),
 								]),
 								el("p", { className: "error-fix" }, [
 									el("span", { className: "error-quote" }, e.quote),

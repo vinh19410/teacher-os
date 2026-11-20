@@ -125,6 +125,7 @@ export function PlacementAnnotatedText({
 								className={cn(
 									"rounded-lg border bg-card p-3 text-sm transition-colors",
 									isActive && "border-primary ring-1 ring-primary",
+									style.borderLeftCls,
 								)}
 							>
 								<div className="flex flex-wrap items-center gap-2">

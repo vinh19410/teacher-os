@@ -83,10 +83,11 @@
 	overflow-wrap: anywhere;
 }
 
-.result-criterion-comment {
+.result-stat dd.result-criterion-comment {
 	margin: var(--space-2) 0 0;
 	padding-top: var(--space-2);
 	border-top: 1px dashed var(--hairline-soft);
+	font-weight: 400;
 	font-size: 0.875rem;
 	color: var(--ink-raised);
 	white-space: pre-wrap;

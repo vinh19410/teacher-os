@@ -602,6 +602,7 @@ test("result.js renders skill-specific legends, normalized error highlights, syn
 		const comments = ieltsList.findAll(
 			(el) => el.className === "result-criterion-comment",
 		);
+		assert.ok(comments.every((el) => el.tagName === "dd"));
 		assert.deepEqual(
 			comments.map((p) => [
 				p.getAttribute("data-criterion-comment"),
@@ -612,6 +613,26 @@ test("result.js renders skill-specific legends, normalized error highlights, syn
 				["grammar", "Cẩn thận thì."],
 			],
 		);
+
+		// Unknown error categories fall back to grammar CSS class without interpolating raw strings
+		const [fallbackBox, fallbackCards] = buildAnnotatedText({
+			prefix: "u",
+			skill: "writing",
+			text: "Hello world",
+			errors: [
+				err({
+					id: "u1",
+					category: "unknown-cat injected",
+					quote: "Hello",
+					start: 0,
+					end: 5,
+				}),
+			],
+		});
+		const fallbackMark = fallbackBox.findAll((el) => el.tagName === "mark")[0];
+		assert.equal(fallbackMark.className, "err-mark err-grammar");
+		const fallbackCard = fallbackCards.findAll((el) => el.tagName === "li")[0];
+		assert.equal(fallbackCard.className, "error-card err-border-grammar");
 
 		// Legacy rubric omits IELTS criterion classes, dots and comments
 		const legacyDisplay = buildSkillRubricDisplay(

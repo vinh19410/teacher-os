@@ -876,4 +876,28 @@ describe("generatePlacementResultPdfBytes (real PDF binary + pdfjs-dist extracti
 		expect(fetchMock).toHaveBeenCalledTimes(4);
 		expect(fakeAnchor.click).toHaveBeenCalledTimes(2);
 	}, 15_000);
+
+	it("paginates multi-line criterion comments (<= 1000 chars) across pages without truncation", async () => {
+		const lines = Array.from({ length: 65 }, (_, idx) =>
+			idx === 64 ? "- CUỐI_CÙNG" : `- Ý ${idx + 1}: sửa`,
+		);
+		const multilineComment = lines.join("\n");
+		expect(multilineComment.length).toBeLessThanOrEqual(1000);
+
+		const submission = makeIeltsSubmission({
+			writingCriterionComments: {
+				task: multilineComment,
+				coherence: "",
+				lexical: "",
+				grammar: "",
+			},
+		});
+		const bytes = await generatePlacementResultPdfBytes(submission, {
+			loadFont: loadRealFontFromDisk,
+		});
+		const extracted = await extractPdfText(bytes);
+		expect(extracted.numPages).toBeGreaterThanOrEqual(2);
+		expect(extracted.fullText).toContain("- Ý 1: sửa");
+		expect(extracted.fullText).toContain("- CUỐI_CÙNG");
+	}, 20_000);
 });

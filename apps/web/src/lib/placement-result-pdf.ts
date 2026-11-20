@@ -72,7 +72,7 @@ const ERROR_CATEGORY_PALETTE: Record<
 function paletteForCriterionKey(
 	key: string,
 ): { accent: string; softBg: string } | null {
-	if (key in ERROR_CATEGORY_PALETTE) {
+	if (Object.hasOwn(ERROR_CATEGORY_PALETTE, key)) {
 		return ERROR_CATEGORY_PALETTE[key as PlacementErrorCategory];
 	}
 	return null;
@@ -391,11 +391,17 @@ function buildRubricTable(
 		];
 	});
 
+	const hasTallCriterionComment = criteria.some((criterion) => {
+		const compact = criterion.comment.trim().replace(/\n{3,}/g, "\n\n");
+		const lineBreaks = compact.match(/\n/g)?.length ?? 0;
+		return lineBreaks > 18 || compact.length > 600;
+	});
+
 	return {
 		margin: [0, 0, 0, 10],
 		table: {
 			headerRows: 1,
-			dontBreakRows: true,
+			dontBreakRows: !hasTallCriterionComment,
 			widths: ["32%", "*", 56],
 			body: [headerRow, ...bodyRows],
 		},

@@ -142,7 +142,7 @@ export function resolvePlacementErrorCategory(
 	if (skill) {
 		return normalizePlacementErrorCategory(category, skill) ?? "grammar";
 	}
-	if (category in PLACEMENT_ERROR_STYLES) {
+	if (Object.hasOwn(PLACEMENT_ERROR_STYLES, category)) {
 		return category as PlacementErrorCategory;
 	}
 	return normalizePlacementErrorCategory(category, "writing") ?? "grammar";
