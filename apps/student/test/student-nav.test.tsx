@@ -20,6 +20,8 @@ vi.mock("@tanstack/react-router", () => ({
 
 import {
 	ACTIVE_KEY_BY_PREFIX,
+	PRACTICE_HISTORY_ITEMS,
+	PRACTICE_ROUTES_LIVE,
 	STUDENT_NAV,
 	STUDENT_PAGE_LABEL,
 	StudentShellLink,
@@ -42,8 +44,17 @@ describe("STUDENT_NAV v2", () => {
 		expect(ITEM_BY_HREF["/vocab"]).toBeUndefined();
 		expect(ITEM_BY_HREF["/tuition"]?.label).toBe("Học phí");
 		// #584: "Lịch học" đã có route riêng /schedule gộp các buổi của mọi lớp.
-		expect(STUDENT_NAV[0].items).toHaveLength(7);
-		const practice = ITEM_BY_HREF["/practice"];
+		// #852: Mặc định ẩn "Luyện tập" và "Lịch sử" trên PROD (PRACTICE_ROUTES_LIVE=false).
+		expect(PRACTICE_ROUTES_LIVE).toBe(false);
+		expect(STUDENT_NAV[0].items).toHaveLength(5);
+		expect(ITEM_BY_HREF["/practice"]).toBeUndefined();
+		expect(ITEM_BY_HREF["/history"]).toBeUndefined();
+
+		// Cấu trúc của PRACTICE_HISTORY_ITEMS vẫn được bảo toàn khi bật cờ
+		const PRACTICE_ITEM_BY_HREF: Record<string, NavItem> = Object.fromEntries(
+			PRACTICE_HISTORY_ITEMS.map((item) => [item.href, item]),
+		);
+		const practice = PRACTICE_ITEM_BY_HREF["/practice"];
 		expect(practice?.label).toBe("Luyện tập");
 		expect(practice?.children?.map((child) => child.href)).toEqual([
 			"/practice/reading",
@@ -57,9 +68,8 @@ describe("STUDENT_NAV v2", () => {
 				child.label.toLowerCase().includes("dictation"),
 			),
 		).toBe(false);
-		// Phase 10: "Luyện tập" đã bật (5 skill con, không Dictation);
-		// Phase 11: "Lịch sử" cũng đã bật cùng route /history.
-		expect(ITEM_BY_HREF["/history"]?.enabled).toBe(true);
+		// Phase 11: "Lịch sử" vẫn có enabled=true trong PRACTICE_HISTORY_ITEMS
+		expect(PRACTICE_ITEM_BY_HREF["/history"]?.enabled).toBe(true);
 	});
 
 	it("renders links through the router, exact match only for '/'", () => {

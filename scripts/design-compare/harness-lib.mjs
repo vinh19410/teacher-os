@@ -67,6 +67,7 @@ export function buildChildEnv(
 		E2E_STUDENT_PORT: String(studentPort),
 		VITE_SERVER_URL: `http://localhost:${apiPort}`,
 		VITE_TEACHER_SIGNUP_ENABLED: "true",
+		VITE_STUDENT_PRACTICE_ENABLED: "true",
 		...extraEnv,
 	};
 }
