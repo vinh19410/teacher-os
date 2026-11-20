@@ -19,5 +19,5 @@
   - `student-dev`: `apps/student` (placement-test-helpers, placement-error-highlights, placement-result-views, placement-test-runner + tests). (`655e7770`, verified)
   - `profile-dev`: `apps/profile` (highlight.js, result.js, result.css + tests + parity check). (`92286f37`, verified)
 - [x] **Wave 3 (Orchestrator):** Tích hợp, cập nhật E2E placement specs, chạy unit tests + placement E2E + verify 3 viewport light/dark + chụp POT screenshots + `biome check` + `check-types`. (PASS — 4/4 E2E tests, 14/14 check-types, 0 biome errors)
-- [ ] **Wave 4 (Isolated Review):** Fresh `code-reviewer` subagent review diff theo `REVIEW.md` & `DESIGN.md`, sửa finding & re-review đến sạch.
+- [x] **Wave 4 (Isolated Review):** Fresh `code-reviewer` subagent review diff theo `REVIEW.md` & `DESIGN.md`, sửa finding & re-review đến sạch. (Vòng 1 phát hiện 1 BLOCKING PDF pagination + 4 non-blocking → đã sửa tại `b871aef0` & tách issue #864 → Vòng 2 `VERDICT: CLEAN`)
 - [ ] **Wave 5 (Ship `--merge --beta`):** Commit/push, mở PR vào `develop`, đợi CI xanh, squash-merge, đăng POT lên #863, cập nhật label `shipped`, dọn rác.
