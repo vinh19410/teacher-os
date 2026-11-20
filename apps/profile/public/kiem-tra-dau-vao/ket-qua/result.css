@@ -34,6 +34,10 @@
 	margin: var(--space-3) 0;
 }
 
+.result-rubric--criteria {
+	grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+}
+
 .result-stat {
 	background: var(--paper);
 	border: 1px solid var(--hairline-soft);
@@ -42,15 +46,44 @@
 	min-width: 0;
 }
 
+.result-stat--criterion {
+	border-left: 4px solid var(--err, var(--hairline-soft));
+}
+
 .result-stat dt {
 	font-size: 0.8125rem;
 	color: var(--muted);
+}
+
+.result-stat--criterion dt {
+	display: flex;
+	align-items: center;
+	gap: 0.45rem;
+}
+
+.criterion-dot {
+	display: inline-block;
+	width: 0.55rem;
+	height: 0.55rem;
+	border-radius: 999px;
+	background: var(--err);
+	flex-shrink: 0;
 }
 
 .result-stat dd {
 	margin: var(--space-1) 0 0;
 	font-weight: 700;
 	font-size: 1.125rem;
+	overflow-wrap: anywhere;
+}
+
+.result-criterion-comment {
+	margin: var(--space-2) 0 0;
+	padding-top: var(--space-2);
+	border-top: 1px dashed var(--hairline-soft);
+	font-size: 0.875rem;
+	color: var(--ink-raised);
+	white-space: pre-wrap;
 	overflow-wrap: anywhere;
 }
 
@@ -92,22 +125,12 @@
 }
 
 /*
- * Màu loại lỗi khớp token `--class-*` của app giáo viên (packages/ui
- * globals.css, light) để giáo viên và học viên nói cùng một màu:
- * grammar = class-5, vocabulary = class-1, spelling = class-3,
- * coherence = class-4, pronunciation = class-2.
+ * Màu tiêu chí & loại lỗi khớp token `--class-*` của app giáo viên (packages/ui
+ * globals.css, light) để giáo viên, học viên và trang kết quả dùng cùng một màu:
+ * task = class-3, coherence/fluency = class-4, lexical = class-1,
+ * grammar = class-5, pronunciation = class-2.
  */
-.err-grammar {
-	--err: oklch(0.55 0.19 5);
-	text-decoration: underline solid var(--err);
-}
-
-.err-vocabulary {
-	--err: oklch(0.53 0.16 255);
-	text-decoration: underline dashed var(--err);
-}
-
-.err-spelling {
+.err-task {
 	--err: oklch(0.55 0.14 65);
 	text-decoration: underline wavy var(--err);
 }
@@ -117,25 +140,44 @@
 	text-decoration: underline dotted var(--err);
 }
 
+.err-fluency {
+	--err: oklch(0.52 0.17 295);
+	text-decoration: underline dotted var(--err);
+}
+
+.err-lexical {
+	--err: oklch(0.53 0.16 255);
+	text-decoration: underline dashed var(--err);
+}
+
+.err-grammar {
+	--err: oklch(0.55 0.19 5);
+	text-decoration: underline solid var(--err);
+}
+
 .err-pronunciation {
 	--err: oklch(0.52 0.12 185);
 	text-decoration: underline double var(--err);
 }
 
-.err-border-grammar {
-	--err: oklch(0.55 0.19 5);
-}
-
-.err-border-vocabulary {
-	--err: oklch(0.53 0.16 255);
-}
-
-.err-border-spelling {
+.err-border-task {
 	--err: oklch(0.55 0.14 65);
 }
 
 .err-border-coherence {
 	--err: oklch(0.52 0.17 295);
+}
+
+.err-border-fluency {
+	--err: oklch(0.52 0.17 295);
+}
+
+.err-border-lexical {
+	--err: oklch(0.53 0.16 255);
+}
+
+.err-border-grammar {
+	--err: oklch(0.55 0.19 5);
 }
 
 .err-border-pronunciation {
@@ -146,10 +188,11 @@
 	border-left-color: var(--err);
 }
 
-.err-grammar,
-.err-vocabulary,
-.err-spelling,
+.err-task,
 .err-coherence,
+.err-fluency,
+.err-lexical,
+.err-grammar,
 .err-pronunciation {
 	background: color-mix(in oklab, var(--err), transparent 88%);
 }
