@@ -206,6 +206,8 @@ export interface AppDeps {
 	zoom?: ZoomConfig;
 	zoomFetch?: typeof fetch;
 	getZoomClient?: () => ZoomClient;
+	/** Đồng hồ server có thể inject cho test/E2E (mặc định `() => new Date()`). */
+	now?: () => Date;
 }
 
 /** Better-Auth handles its own session bootstrapping under /api/auth. */

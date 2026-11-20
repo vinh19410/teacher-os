@@ -1,11 +1,37 @@
 // @vitest-environment jsdom
 
 import type { StudentClass } from "@teacher-os/api/contracts";
-import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { ZOOM_JOIN_ERROR_CODES } from "@teacher-os/api/zoom-window";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
+import { toast } from "sonner";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { requestStudentZoomJoin } from "@/lib/repos/student";
 import { UpcomingSessions } from "./upcoming-sessions";
 
-afterEach(cleanup);
+vi.mock("sonner", () => ({
+	toast: {
+		info: vi.fn(),
+		error: vi.fn(),
+		success: vi.fn(),
+	},
+}));
+
+vi.mock("@/lib/repos/student", async (importOriginal) => {
+	const mod = await importOriginal<typeof import("@/lib/repos/student")>();
+	return {
+		...mod,
+		requestStudentZoomJoin: vi.fn(),
+	};
+});
+
+const INSIDE_WINDOW_MS = Date.parse("2026-11-22T11:45:00Z"); // 18:45 VN
+const TOO_EARLY_MS = Date.parse("2026-11-22T10:00:00Z"); // 17:00 VN
 
 function makeClass(overrides: Partial<StudentClass> = {}): StudentClass {
 	return {
@@ -20,8 +46,9 @@ function makeClass(overrides: Partial<StudentClass> = {}): StudentClass {
 		nextSession: {
 			date: "2026-11-22",
 			time: "19:00",
+			dur: 90,
 			topic: "Speaking Part 2",
-			joinUrl: "https://zoom.us/j/123456789",
+			hasZoom: true,
 		},
 		enrollmentId: "enr-1",
 		enrollmentStatus: "active",
@@ -30,19 +57,79 @@ function makeClass(overrides: Partial<StudentClass> = {}): StudentClass {
 	};
 }
 
-describe("UpcomingSessions — Zoom link", () => {
-	it("renders 'Vào lớp (Zoom)' link when class is active and nextSession has joinUrl", () => {
-		render(<UpcomingSessions classes={[makeClass()]} />);
+describe("UpcomingSessions — Zoom join button", () => {
+	let openSpy: ReturnType<typeof vi.spyOn>;
 
-		const meetLink = screen.getByRole("link", {
-			name: "Vào lớp (Zoom)",
-		});
-		expect(meetLink.getAttribute("href")).toBe("https://zoom.us/j/123456789");
-		expect(meetLink.getAttribute("target")).toBe("_blank");
-		expect(meetLink.getAttribute("rel")).toBe("noopener noreferrer");
+	beforeEach(() => {
+		vi.clearAllMocks();
+		openSpy = vi.spyOn(window, "open");
 	});
 
-	it("hides Zoom link when class is paused even if nextSession has joinUrl", () => {
+	afterEach(() => {
+		openSpy.mockRestore();
+		cleanup();
+	});
+
+	it("renders 'Vào lớp (Zoom)' button when class is active and nextSession hasZoom and opens Zoom inside window", async () => {
+		const fakeWin = {
+			opener: window as Window | null,
+			closed: false,
+			close: vi.fn(),
+			location: { assign: vi.fn() },
+		};
+		openSpy.mockReturnValue(fakeWin as unknown as Window);
+		vi.mocked(requestStudentZoomJoin).mockResolvedValueOnce({
+			ok: true,
+			data: {
+				joinUrl: "https://zoom.us/j/123456789",
+				openAt: "2026-11-22T11:30:00.000Z",
+				closeAt: "2026-11-22T13:30:00.000Z",
+			},
+		});
+
+		render(
+			<UpcomingSessions classes={[makeClass()]} nowMs={INSIDE_WINDOW_MS} />,
+		);
+
+		const meetBtn = screen.getByRole("button", {
+			name: "Vào lớp (Zoom)",
+		});
+		fireEvent.click(meetBtn);
+
+		await waitFor(() => {
+			expect(requestStudentZoomJoin).toHaveBeenCalledWith(
+				"cls-1",
+				"2026-11-22",
+			);
+			expect(fakeWin.location.assign).toHaveBeenCalledWith(
+				"https://zoom.us/j/123456789",
+			);
+		});
+	});
+
+	it("shows info toast when clicking 'Vào lớp (Zoom)' outside window", async () => {
+		const msg =
+			"Chưa đến giờ vào lớp. Link Zoom chỉ mở từ 18:30 đến 20:30 ngày 22/11/2026 (được vào sớm 30 phút).";
+		vi.mocked(requestStudentZoomJoin).mockResolvedValueOnce({
+			ok: false,
+			status: 403,
+			error: {
+				error: msg,
+				code: ZOOM_JOIN_ERROR_CODES.TOO_EARLY,
+			},
+		});
+
+		render(<UpcomingSessions classes={[makeClass()]} nowMs={TOO_EARLY_MS} />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Vào lớp (Zoom)" }));
+
+		await waitFor(() => {
+			expect(toast.info).toHaveBeenCalledWith(msg);
+		});
+		expect(openSpy).not.toHaveBeenCalled();
+	});
+
+	it("hides Zoom button when class is paused even if nextSession hasZoom", () => {
 		render(
 			<UpcomingSessions
 				classes={[
@@ -54,10 +141,10 @@ describe("UpcomingSessions — Zoom link", () => {
 		);
 
 		expect(screen.getByText("IELTS 6.5")).toBeTruthy();
-		expect(screen.queryByRole("link", { name: "Vào lớp (Zoom)" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Vào lớp (Zoom)" })).toBeNull();
 	});
 
-	it("hides Zoom link when session.joinUrl is missing or null", () => {
+	it("hides Zoom button when session hasZoom is false/absent and joinUrl is null", () => {
 		render(
 			<UpcomingSessions
 				classes={[
@@ -66,6 +153,7 @@ describe("UpcomingSessions — Zoom link", () => {
 							date: "2026-11-22",
 							time: "19:00",
 							topic: "Reading",
+							hasZoom: false,
 							joinUrl: null,
 						},
 					}),
@@ -74,7 +162,7 @@ describe("UpcomingSessions — Zoom link", () => {
 		);
 
 		expect(screen.getByText("IELTS 6.5")).toBeTruthy();
-		expect(screen.queryByRole("link", { name: "Vào lớp (Zoom)" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Vào lớp (Zoom)" })).toBeNull();
 	});
 
 	it("hides entire card when enrollmentStatus is invited even if nextSession is attached", () => {

@@ -201,6 +201,8 @@ const fakeBankHub = createFakeBankHub({
 
 const placementAiGrader = createFakePlacementAiGrader();
 const fakeZoom = createFakeZoom();
+// Đồng hồ máy chủ có thể dịch chuyển tạm thời trong E2E (luôn reset về null ở finally).
+let runtimeNowMs: number | null = null;
 
 const app = buildApp({
 	getDb: () => libsql as unknown as Db,
@@ -222,6 +224,7 @@ const app = buildApp({
 	// cố định) — E2E chấm nháp Writing/Speaking offline, không gọi OpenAI.
 	getPlacementAiGrader: () => placementAiGrader,
 	getZoomClient: () => fakeZoom.client,
+	now: () => (runtimeNowMs !== null ? new Date(runtimeNowMs) : new Date()),
 	adminEmails: ADMIN_EMAILS,
 	teacherEmails: runtimeTeacherEmails,
 	adminOrigins: [
@@ -372,6 +375,27 @@ app.post("/__e2e/run-recording-cron", async (c) => {
 		now: () => (nowIso ? new Date(nowIso) : new Date()),
 	});
 	return c.json(res);
+});
+
+// E2E-only helper: đặt hoặc khôi phục đồng hồ máy chủ cho các spec cần kiểm thử
+// ranh giới thời gian (như khung giờ mở link Zoom) mà không phải chờ đồng hồ thật.
+app.post("/__e2e/clock", async (c) => {
+	const raw: unknown = await c.req.json().catch(() => null);
+	if (!raw || typeof raw !== "object" || !("nowIso" in raw)) {
+		return c.json({ error: "invalid-now-iso" }, 400);
+	}
+	if (raw.nowIso === null) {
+		runtimeNowMs = null;
+		return c.json({ ok: true, nowIso: null });
+	}
+	if (typeof raw.nowIso === "string") {
+		const ms = Date.parse(raw.nowIso);
+		if (Number.isFinite(ms)) {
+			runtimeNowMs = ms;
+			return c.json({ ok: true, nowIso: new Date(ms).toISOString() });
+		}
+	}
+	return c.json({ error: "invalid-now-iso" }, 400);
 });
 
 // Fake SePay hosted-link pages (#320) ride the same API server — the iframe

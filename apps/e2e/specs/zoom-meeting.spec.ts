@@ -38,22 +38,11 @@ async function signUpStudentOnPortal(
 	});
 }
 
-async function captureViewports(
-	page: Page,
-	name: string,
-	settle: () => Promise<void>,
-) {
-	if (CAPTURE_POT) mkdirSync(REPORT_DIR, { recursive: true });
-	for (const vp of VIEWPORTS) {
-		await page.setViewportSize({ width: vp.width, height: vp.height });
-		await assertNoHorizontalOverflow(page);
-		await settle();
-		if (CAPTURE_POT) {
-			await page.screenshot({
-				path: resolve(REPORT_DIR, `831-zoom-${name}-${vp.name}.png`),
-			});
-		}
-	}
+async function setE2eClock(page: Page, nowIso: string | null): Promise<void> {
+	const res = await page.request.post(`${API_ORIGIN}/__e2e/clock`, {
+		data: { nowIso },
+	});
+	expect(res.status()).toBe(200);
 }
 
 async function assertNoHorizontalOverflow(page: Page) {
@@ -156,16 +145,22 @@ test.describe("Zoom meeting & recording per session", () => {
 		await page.reload();
 		await page.getByRole("button", { name: "Điều chỉnh" }).first().click();
 		const panel = page.getByRole("dialog");
+		await expect(panel.getByText("Phòng học Zoom")).toBeVisible();
+		await expect(panel.getByText(/^https:\/\/zoom\.us\/j\//)).toBeVisible();
 		await expect(panel.getByText("Xem recording")).toBeVisible();
 		await expect(panel.getByText("rec123")).toBeVisible();
 		await expect(panel.getByText(/Mật khẩu recording:/)).toBeVisible();
 
-		await captureViewports(page, "teacher-panel", async () => {
-			await panel.getByText("Phòng học Zoom").scrollIntoViewIfNeeded();
-		});
-
-		// 3. Học viên thấy Vào lớp (Zoom), Xem recording và mật khẩu
+		// 3. Học viên: payload không lộ raw joinUrl, nút Vào lớp (Zoom) kiểm tra khung giờ
+		// [start - 30 phút, end) theo đồng hồ máy chủ, và vẫn thấy recording + mật khẩu.
 		const studentCtx = await browser.newContext();
+		await studentCtx.route("https://zoom.us/**", (route) =>
+			route.fulfill({
+				status: 200,
+				contentType: "text/html",
+				body: "<html><body>Zoom Meeting Stub</body></html>",
+			}),
+		);
 		const studentPage = await studentCtx.newPage();
 		try {
 			await signUpStudentOnPortal(studentPage, {
@@ -173,12 +168,30 @@ test.describe("Zoom meeting & recording per session", () => {
 				email: studentEmail,
 			});
 
-			await studentPage.goto(`${STUDENT_ORIGIN}/classes/${classId}`);
-			const join = studentPage.getByRole("link", { name: /Vào lớp \(Zoom\)/i });
-			await expect(join.first()).toBeVisible();
-			expect(await join.first().getAttribute("href")).toMatch(
-				/^https:\/\/zoom\.us\/j\//,
+			const detailRes = await studentPage.request.get(
+				`${API_ORIGIN}/api/student/classes/${classId}`,
+				{ headers: { origin: STUDENT_ORIGIN } },
 			);
+			expect(detailRes.status()).toBe(200);
+			const detailRaw = await detailRes.text();
+			expect(detailRaw).not.toContain("https://zoom.us/j/");
+			const detailJson = JSON.parse(detailRaw) as {
+				lessons: Array<{
+					date: string | null;
+					status: string;
+					hasZoom?: boolean;
+				}>;
+			};
+			const upcomingLesson = detailJson.lessons.find(
+				(lesson) => lesson.date === tomorrowISO && lesson.status === "upcoming",
+			);
+			expect(upcomingLesson?.hasZoom).toBe(true);
+
+			await studentPage.goto(`${STUDENT_ORIGIN}/classes/${classId}`);
+			const join = studentPage.getByRole("button", {
+				name: /Vào lớp \(Zoom\)/i,
+			});
+			await expect(join.first()).toBeVisible();
 			const rec = studentPage.getByRole("link", { name: /Xem recording/i });
 			await expect(rec.first()).toBeVisible();
 			expect(await rec.first().getAttribute("href")).toMatch(
@@ -187,7 +200,7 @@ test.describe("Zoom meeting & recording per session", () => {
 			await expect(studentPage.getByText("Mật khẩu:").first()).toBeVisible();
 			await expect(studentPage.getByText("rec123").first()).toBeVisible();
 
-			// Bàn phím: Tab phải chạm được cả hai link và nút sao chép mật khẩu.
+			// Bàn phím: Tab phải chạm được nút Vào lớp (Zoom), link Xem recording và nút sao chép mật khẩu.
 			await studentPage.locator("body").click({ position: { x: 1, y: 1 } });
 			const reached = new Set<string>();
 			for (let i = 0; i < 80 && reached.size < 3; i++) {
@@ -208,23 +221,97 @@ test.describe("Zoom meeting & recording per session", () => {
 			}
 			expect([...reached].sort()).toHaveLength(3);
 
-			await captureViewports(studentPage, "student-class", async () => {
-				await studentPage.waitForTimeout(600);
-				await rec.first().scrollIntoViewIfNeeded();
-			});
+			// Kịch bản A — Quá sớm (18:29:00+07:00 cho buổi 19:00, dur 90): không mở tab Zoom, hiện toast khung giờ.
+			await setE2eClock(page, `${tomorrowISO}T18:29:00+07:00`);
+			let unexpectedPopup = false;
+			const onUnexpectedPopup = () => {
+				unexpectedPopup = true;
+			};
+			studentPage.on("popup", onUnexpectedPopup);
+			try {
+				await join.first().scrollIntoViewIfNeeded();
+				await join.first().click();
+				const tooEarlyToast = studentPage
+					.locator("[data-sonner-toast]")
+					.filter({ hasText: "Chưa đến giờ vào lớp" })
+					.last();
+				await expect(tooEarlyToast).toBeVisible();
+				await expect(tooEarlyToast).toContainText("18:30");
+				await expect(tooEarlyToast).toContainText("20:30");
+				expect(unexpectedPopup).toBe(false);
+				expect(studentCtx.pages()).toHaveLength(1);
 
-			if (CAPTURE_POT) {
+				// Kiểm tra không tràn ngang trên 3 viewport + 320px reflow; chụp POT khi E2E_CAPTURE_POT=1.
+				if (CAPTURE_POT) mkdirSync(REPORT_DIR, { recursive: true });
+				for (const vp of VIEWPORTS) {
+					await studentPage.setViewportSize({
+						width: vp.width,
+						height: vp.height,
+					});
+					await join.first().scrollIntoViewIfNeeded();
+					if (CAPTURE_POT) {
+						await join.first().click();
+						await expect(tooEarlyToast).toBeVisible();
+						await studentPage.waitForTimeout(300);
+					}
+					await assertNoHorizontalOverflow(studentPage);
+					if (CAPTURE_POT) {
+						await studentPage.screenshot({
+							path: resolve(REPORT_DIR, `840-zoom-too-early-${vp.name}.png`),
+						});
+					}
+				}
+				await studentPage.setViewportSize({ width: 320, height: 812 });
+				await assertNoHorizontalOverflow(studentPage);
+
+				if (CAPTURE_POT) {
+					await studentPage.setViewportSize({ width: 1440, height: 900 });
+					await studentPage.evaluate(() => {
+						document.documentElement.classList.add("dark");
+					});
+					await join.first().scrollIntoViewIfNeeded();
+					await join.first().click();
+					await expect(tooEarlyToast).toBeVisible();
+					await studentPage.waitForTimeout(300);
+					await assertNoHorizontalOverflow(studentPage);
+					await studentPage.screenshot({
+						path: resolve(REPORT_DIR, "840-zoom-too-early-dark.png"),
+					});
+					await studentPage.evaluate(() => {
+						document.documentElement.classList.remove("dark");
+					});
+				}
 				await studentPage.setViewportSize({ width: 1440, height: 900 });
-				await studentPage.evaluate(() => {
-					document.documentElement.classList.add("dark");
-				});
-				await studentPage.waitForTimeout(600);
-				await rec.first().scrollIntoViewIfNeeded();
-				await studentPage.screenshot({
-					path: resolve(REPORT_DIR, "831-zoom-student-class-dark.png"),
-				});
+			} finally {
+				studentPage.off("popup", onUnexpectedPopup);
 			}
+
+			// Kịch bản B — Trong khung giờ (18:30:00+07:00, đúng sớm 30 phút): mở tab Zoom thật.
+			await setE2eClock(page, `${tomorrowISO}T18:30:00+07:00`);
+			await join.first().scrollIntoViewIfNeeded();
+			const [popup] = await Promise.all([
+				studentPage.waitForEvent("popup"),
+				join.first().click(),
+			]);
+			await expect(popup).toHaveURL(/^https:\/\/zoom\.us\/j\//);
+			await popup.close();
+
+			// Kịch bản C — Đã kết thúc (20:30:00+07:00, giữ nguyên trang không reload): hiện toast kết thúc, không còn tab Zoom mở.
+			await setE2eClock(page, `${tomorrowISO}T20:30:00+07:00`);
+			await join.first().scrollIntoViewIfNeeded();
+			await join.first().click();
+			const endedToast = studentPage
+				.locator("[data-sonner-toast]")
+				.filter({ hasText: "Buổi học đã kết thúc" })
+				.last();
+			await expect(endedToast).toBeVisible();
+			await expect
+				.poll(() => studentCtx.pages().length, { timeout: 3_000 })
+				.toBe(1);
 		} finally {
+			await page.request
+				.post(`${API_ORIGIN}/__e2e/clock`, { data: { nowIso: null } })
+				.catch(() => {});
 			await studentCtx.close();
 		}
 	});

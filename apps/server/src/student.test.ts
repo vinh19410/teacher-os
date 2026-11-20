@@ -335,6 +335,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 		expect(overview.classes[0]?.nextSession).toEqual({
 			date: "2099-01-01",
 			time: "18:30",
+			dur: 90,
 			topic: "Writing Task 2",
 		});
 		expect(overview.assignments).toHaveLength(2);
@@ -1884,6 +1885,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 			expect(a?.nextSession).toEqual({
 				date: TODAY,
 				time: "23:00",
+				dur: 90,
 				topic: "Buổi tối",
 			});
 		});
@@ -1897,6 +1899,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 			expect(detail.class.nextSession).toEqual({
 				date: TODAY,
 				time: "23:00",
+				dur: 90,
 				topic: "Buổi tối",
 			});
 		});
@@ -1911,6 +1914,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 			expect(b?.nextSession).toEqual({
 				date: TODAY,
 				time: "7pm",
+				dur: 60,
 				topic: "Legacy lệch format",
 			});
 		});
@@ -1945,6 +1949,7 @@ describe("student portal server bridge & api (/api/student/*)", () => {
 			expect(next).toEqual({
 				date: "2099-03-10",
 				time: "10:30",
+				dur: 90,
 				topic: "Ranh giới",
 			});
 		});

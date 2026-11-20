@@ -815,7 +815,7 @@ describe("Cron không bị dòng failed hết hạn chiếm chỗ", () => {
 });
 
 describe("Học viên thấy link Zoom và recording", () => {
-	test("joinUrl, recordingUrl và recordingPassword xuất hiện trong chi tiết lớp và lịch học", async () => {
+	test("ẩn raw joinUrl, trả hasZoom + recordingUrl + recordingPassword trong chi tiết lớp và lịch học", async () => {
 		const fake = createFakeZoom();
 		fake.setRecordingReady(true);
 		const app = createApp(fake.client);
@@ -841,29 +841,44 @@ describe("Học viên thấy link Zoom và recording", () => {
 				headers: STUDENT_HEADERS,
 			})
 		).json()) as {
-			class: { nextSession: { joinUrl?: string } | null };
+			class: {
+				nextSession: {
+					dur?: number;
+					hasZoom?: boolean;
+					joinUrl?: string;
+				} | null;
+			};
 			lessons: Array<{
+				hasZoom?: boolean;
 				joinUrl?: string;
 				recordingUrl?: string;
 				recordingPassword?: string;
 			}>;
 		};
-		expect(detail.class.nextSession?.joinUrl).toBe(meeting?.joinUrl);
+		expect(detail.class.nextSession?.hasZoom).toBe(true);
+		expect(detail.class.nextSession?.dur).toBe(90);
+		expect(detail.class.nextSession?.joinUrl).toBeUndefined();
 		expect(detail.lessons[0]).toMatchObject({
-			joinUrl: meeting?.joinUrl,
+			hasZoom: true,
 			recordingUrl: `https://zoom.us/rec/share/fake-${meeting?.zoomMeetingId}`,
 			recordingPassword: "rec123",
 		});
+		expect(detail.lessons[0]?.joinUrl).toBeUndefined();
 
 		const schedule = (await (
 			await app.request("/api/student/schedule", { headers: STUDENT_HEADERS })
 		).json()) as {
-			lessons: Array<{ joinUrl?: string; recordingPassword?: string }>;
+			lessons: Array<{
+				hasZoom?: boolean;
+				joinUrl?: string;
+				recordingPassword?: string;
+			}>;
 		};
 		expect(schedule.lessons[0]).toMatchObject({
-			joinUrl: meeting?.joinUrl,
+			hasZoom: true,
 			recordingPassword: "rec123",
 		});
+		expect(schedule.lessons[0]?.joinUrl).toBeUndefined();
 	});
 });
 
@@ -1063,8 +1078,9 @@ describe("Bảo vệ route Zoom", () => {
 				headers: STUDENT_HEADERS,
 			})
 		).json()) as {
-			class: { nextSession: { joinUrl?: string } | null };
+			class: { nextSession: { hasZoom?: boolean; joinUrl?: string } | null };
 		};
+		expect(s1Detail.class.nextSession?.hasZoom).toBeUndefined();
 		expect(s1Detail.class.nextSession?.joinUrl).toBeUndefined();
 	});
 });

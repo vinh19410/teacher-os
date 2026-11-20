@@ -17,11 +17,11 @@ import {
 	PlayCircle,
 	Sparkles,
 	UserRound,
-	Video,
 	X,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { RecordingPassword } from "@/components/class/recording-password";
+import { ZoomJoinButton } from "@/components/class/zoom-join-button";
 import { OverviewEmptyState } from "@/components/overview/empty-state";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
@@ -352,20 +352,22 @@ export function StudentScheduleView({
 													Chưa có lịch buổi tới
 												</span>
 											)}
-											{cls.status !== "paused" && cls.nextSession?.joinUrl && (
-												<a
-													href={cls.nextSession.joinUrl}
-													target="_blank"
-													rel="noopener noreferrer"
-													className={cn(
-														buttonVariants({ variant: "default", size: "sm" }),
-														"w-full whitespace-normal text-center focus-visible:shadow-[var(--focus-ring)] focus-visible:ring-0",
-													)}
-												>
-													<Video aria-hidden="true" className="size-3.5" />
-													Vào lớp (Zoom)
-												</a>
-											)}
+											{cls.status !== "paused" &&
+												cls.nextSession &&
+												Boolean(
+													cls.nextSession.hasZoom ?? cls.nextSession.joinUrl,
+												) && (
+													<ZoomJoinButton
+														classId={cls.id}
+														date={cls.nextSession.date}
+														time={cls.nextSession.time}
+														dur={cls.nextSession.dur}
+														variant="default"
+														size="sm"
+														className="w-full"
+														nowMs={now?.getTime()}
+													/>
+												)}
 										</div>
 									</div>
 								);
@@ -549,7 +551,8 @@ export function StudentScheduleView({
 														: CircleDashed;
 
 										const showZoomLink =
-											displayStatus === "upcoming" && Boolean(lesson.joinUrl);
+											displayStatus === "upcoming" &&
+											Boolean(lesson.hasZoom ?? lesson.joinUrl);
 										const canShowRecording =
 											lesson.status !== "cancelled" &&
 											lesson.status !== "holiday";
@@ -648,25 +651,17 @@ export function StudentScheduleView({
 
 													{hasActions && (
 														<div className="flex flex-wrap items-center gap-2 sm:justify-end">
-															{showZoomLink && lesson.joinUrl && (
-																<a
-																	href={lesson.joinUrl}
-																	target="_blank"
-																	rel="noopener noreferrer"
-																	className={cn(
-																		buttonVariants({
-																			variant: isNext ? "default" : "outline",
-																			size: "sm",
-																		}),
-																		"max-w-full whitespace-normal text-center focus-visible:shadow-[var(--focus-ring)] focus-visible:ring-0",
-																	)}
-																>
-																	<Video
-																		aria-hidden="true"
-																		className="size-3.5"
-																	/>
-																	Vào lớp (Zoom)
-																</a>
+															{showZoomLink && (
+																<ZoomJoinButton
+																	classId={lesson.classId}
+																	date={lesson.date}
+																	time={lesson.time}
+																	dur={lesson.dur}
+																	variant={isNext ? "default" : "outline"}
+																	size="sm"
+																	className="max-w-full"
+																	nowMs={now?.getTime()}
+																/>
 															)}
 															{showRecordingLink && lesson.recordingUrl && (
 																<a

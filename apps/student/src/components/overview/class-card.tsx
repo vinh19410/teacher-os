@@ -5,9 +5,8 @@ import type {
 } from "@teacher-os/api/contracts";
 import { formatSchedule } from "@teacher-os/api/format-schedule";
 import { vietnamTodayISO } from "@teacher-os/api/vietnam-date";
-import { buttonVariants } from "@teacher-os/ui/components/button";
-import { Video } from "lucide-react";
 import { TeacherAvatar } from "@/components/class/teacher-avatar";
+import { ZoomJoinButton } from "@/components/class/zoom-join-button";
 import { deriveAssignmentStatus } from "@/lib/assignment-status";
 import { cn } from "@/lib/cn";
 import { formatVietnamDateFromISO } from "@/lib/vietnam-display-date";
@@ -22,6 +21,8 @@ export interface ClassCardProps {
 	assignments?: StudentAssignment[];
 	todayISO?: string;
 	nowMs?: number;
+	/** Chỉ dùng trong unit test để cố định đồng hồ cục bộ cho ZoomJoinButton. */
+	zoomNowMs?: number;
 }
 
 export function ClassCard({
@@ -31,6 +32,7 @@ export function ClassCard({
 	assignments,
 	todayISO,
 	nowMs,
+	zoomNowMs,
 }: ClassCardProps) {
 	const isInvited = cls.enrollmentStatus === "invited";
 	const isPaused = cls.status === "paused";
@@ -128,20 +130,21 @@ export function ClassCard({
 							{nextSessionText}
 						</p>
 
-						{!isPaused && cls.nextSession?.joinUrl && (
-							<a
-								href={cls.nextSession.joinUrl}
-								target="_blank"
-								rel="noopener noreferrer"
-								className={cn(
-									buttonVariants({ variant: "default" }),
-									"relative z-10 mt-3 w-full whitespace-normal text-center focus-visible:shadow-[var(--focus-ring)] focus-visible:ring-0",
-								)}
-							>
-								<Video aria-hidden="true" className="size-4" />
-								Vào lớp (Zoom)
-							</a>
-						)}
+						{!isPaused &&
+							cls.nextSession &&
+							Boolean(cls.nextSession.hasZoom ?? cls.nextSession.joinUrl) && (
+								<ZoomJoinButton
+									classId={cls.id}
+									date={cls.nextSession.date}
+									time={cls.nextSession.time}
+									dur={cls.nextSession.dur}
+									variant="default"
+									size="default"
+									iconClassName="size-4"
+									className="relative z-10 mt-3 w-full"
+									nowMs={zoomNowMs}
+								/>
+							)}
 					</>
 				)}
 			</div>

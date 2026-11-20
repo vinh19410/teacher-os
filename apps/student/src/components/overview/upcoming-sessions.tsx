@@ -1,7 +1,6 @@
 import type { StudentOverview } from "@teacher-os/api/contracts";
-import { buttonVariants } from "@teacher-os/ui/components/button";
-import { CalendarClock, Video } from "lucide-react";
-import { cn } from "@/lib/cn";
+import { CalendarClock } from "lucide-react";
+import { ZoomJoinButton } from "@/components/class/zoom-join-button";
 import { formatVietnamDateFromISO } from "@/lib/vietnam-display-date";
 
 /**
@@ -11,8 +10,10 @@ import { formatVietnamDateFromISO } from "@/lib/vietnam-display-date";
  */
 export function UpcomingSessions({
 	classes,
+	nowMs,
 }: {
 	classes: StudentOverview["classes"];
+	nowMs?: number;
 }) {
 	const upcoming = classes.flatMap((c) =>
 		c.enrollmentStatus === "active" && c.nextSession
@@ -64,19 +65,17 @@ export function UpcomingSessions({
 							</div>
 							{cls.status !== "paused" &&
 								cls.enrollmentStatus === "active" &&
-								session.joinUrl && (
-									<a
-										href={session.joinUrl}
-										target="_blank"
-										rel="noopener noreferrer"
-										className={cn(
-											buttonVariants({ variant: "default", size: "sm" }),
-											"w-full shrink-0 whitespace-normal text-center focus-visible:shadow-[var(--focus-ring)] focus-visible:ring-0 sm:w-auto",
-										)}
-									>
-										<Video aria-hidden="true" className="size-3.5" />
-										Vào lớp (Zoom)
-									</a>
+								Boolean(session.hasZoom ?? session.joinUrl) && (
+									<ZoomJoinButton
+										classId={cls.id}
+										date={session.date}
+										time={session.time}
+										dur={session.dur}
+										variant="default"
+										size="sm"
+										className="w-full shrink-0 sm:w-auto"
+										nowMs={nowMs}
+									/>
 								)}
 						</div>
 					);
