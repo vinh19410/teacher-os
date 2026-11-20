@@ -317,8 +317,8 @@ export function StudyPacksRoute() {
 							className="flex flex-col justify-between gap-4 p-5"
 						>
 							<div className="space-y-2">
-								<div className="flex items-start justify-between gap-3">
-									<h2 className="font-semibold text-base text-foreground">
+								<div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+									<h2 className="min-w-0 break-words font-semibold text-base text-foreground">
 										<Link
 											to="/assignments/packs/$packId"
 											params={{ packId: pack.id }}
@@ -327,7 +327,7 @@ export function StudyPacksRoute() {
 											{pack.title}
 										</Link>
 									</h2>
-									<div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+									<div className="flex flex-wrap items-center justify-end gap-1.5">
 										<Badge
 											variant={
 												pack.scope === "system" ? "secondary" : "outline"

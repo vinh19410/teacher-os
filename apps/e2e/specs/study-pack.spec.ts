@@ -384,7 +384,7 @@ test("built-in Course Foun/GT1 IELTS Foundation study pack: filter, detail page 
 
 	// 2. Navigate to /assignments/packs -> System Library -> IELTS Foundation chip filter
 	await page.goto("/assignments/packs");
-	await page.getByRole("button", { name: "Thư viện hệ thống" }).click();
+	await page.getByRole("button", { name: "Hệ thống" }).click();
 	await expect(page).toHaveURL(/scope=system/);
 
 	const foundationChip = page.getByRole("button", {

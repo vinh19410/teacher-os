@@ -290,6 +290,7 @@ export function ClassSessionsSection({
 	return (
 		<>
 			<Section
+				className="max-sm:[&>div:first-child]:flex-wrap"
 				title="Sessions"
 				count={sessions.length}
 				action={
