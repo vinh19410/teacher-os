@@ -1,17 +1,21 @@
-import { queryOptions } from "@tanstack/react-query";
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 import {
 	type LibraryPartAudio,
 	type LibraryPartDto,
 	type LibraryPartIssue,
+	type LibrarySkill,
 	type LibraryTestCreate,
 	type LibraryTestDetail,
 	type LibraryTestListItem,
+	type LibraryTestListPageResponse,
+	type LibraryTestPageSize,
 	type LibraryTestUpdate,
 	libraryPartDtoSchema,
 	libraryPartUpsertSchema,
 	libraryTestCreateSchema,
 	libraryTestDetailSchema,
 	libraryTestListItemSchema,
+	libraryTestListPageResponseSchema,
 	libraryTestUpdateSchema,
 } from "@teacher-os/api/library-contracts";
 import { env } from "@teacher-os/env/web";
@@ -134,6 +138,31 @@ export async function listLibraryTests(): Promise<LibraryTestListItem[]> {
 		.object({ tests: z.array(libraryTestListItemSchema) })
 		.parse(data);
 	return parsed.tests;
+}
+
+export interface LibraryTestsPageParams {
+	skill?: LibrarySkill;
+	status?: "draft" | "ready";
+	q?: string;
+	page: number;
+	pageSize: LibraryTestPageSize;
+}
+
+/** Danh sách đề phân trang phía server, kèm tổng số và số đếm theo bộ lọc. */
+export async function listLibraryTestsPage(
+	params: LibraryTestsPageParams,
+): Promise<LibraryTestListPageResponse> {
+	const search = new URLSearchParams();
+	search.set("page", String(params.page));
+	search.set("pageSize", String(params.pageSize));
+	if (params.skill !== undefined) search.set("skill", params.skill);
+	if (params.status !== undefined) search.set("status", params.status);
+	const trimmedQ = params.q?.trim();
+	if (trimmedQ) search.set("q", trimmedQ);
+	const data = await libraryRequest<unknown>(
+		`${TESTS_PATH}?${search.toString()}`,
+	);
+	return libraryTestListPageResponseSchema.parse(data);
 }
 
 export async function getLibraryTest(
@@ -301,11 +330,19 @@ export async function deleteLibraryAudio(
 	);
 }
 
-/** Query list — không truyền filter: UI lọc phía client để có số đếm chip. */
+/** Query list toàn bộ đề (dùng cho gợi ý bộ sưu tập / nhóm khi tạo đề mới). */
 export const libraryTestsQueryOptions = () =>
 	queryOptions({
 		queryKey: ["admin", "library", "tests"],
 		queryFn: listLibraryTests,
+	});
+
+/** Query list phân trang phía server — giữ dữ liệu trang trước khi chuyển trang. */
+export const libraryTestsPageQueryOptions = (params: LibraryTestsPageParams) =>
+	queryOptions({
+		queryKey: ["admin", "library", "tests", "page", params] as const,
+		queryFn: () => listLibraryTestsPage(params),
+		placeholderData: keepPreviousData,
 	});
 
 export const libraryTestQueryOptions = (testId: string) =>
